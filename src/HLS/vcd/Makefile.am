@@ -32,14 +32,27 @@ lib_vcd_la_CPPFLAGS = \
    -I$(top_srcdir)/src/frontend_analysis \
    -I$(BOOST_DIR) $(all_includes)
 
-noinst_HEADERS = vcd_trace_head.hpp VcdSignalSelection.hpp \
-   CallSitesCollectorVisitor.hpp HWCallPathCalculator.hpp \
-	CallGraphUnfolder.hpp UnfoldedFunctionInfo.hpp UnfoldedCallInfo.hpp \
-	UnfoldedCallGraph.hpp Discrepancy.hpp vcd_utility.hpp
+noinst_HEADERS = \
+   CallGraphUnfolder.hpp \
+   CallSitesCollectorVisitor.hpp \
+   Discrepancy.hpp \
+   HWCallPathCalculator.hpp \
+   HWDiscrepancyAnalysis.hpp \
+   UnfoldedFunctionInfo.hpp \
+   UnfoldedCallInfo.hpp \
+   UnfoldedCallGraph.hpp \
+   VcdSignalSelection.hpp \
+   vcd_trace_head.hpp \
+   vcd_utility.hpp
 
-lib_vcd_la_SOURCES = vcd_trace_head.cpp VcdSignalSelection.cpp \
-   CallSitesCollectorVisitor.cpp CallGraphUnfolder.cpp \
-	vcd_utility.cpp HWCallPathCalculator.cpp
+lib_vcd_la_SOURCES = \
+   CallGraphUnfolder.cpp \
+   CallSitesCollectorVisitor.cpp \
+   HWCallPathCalculator.cpp \
+   HWDiscrepancyAnalysis.cpp \
+   vcd_trace_head.cpp \
+   VcdSignalSelection.cpp \
+   vcd_utility.cpp
 
 #do not touch the following line
 
