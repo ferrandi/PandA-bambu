@@ -33,10 +33,12 @@ if BUILD_LIB_FROM_PRAGMA
 
    noinst_HEADERS += \
       omp_function_allocation.hpp \
+      omp_function_allocation_CS.hpp \
       omp_functions.hpp
 
    lib_function_allocation_la_SOURCES += \
       omp_function_allocation.cpp \
+      omp_function_allocation_CS.cpp \
       omp_functions.cpp
 endif
 #DOCUMENTATION STUFF

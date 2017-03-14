@@ -68,6 +68,12 @@ class OmpFunctions : public functions
       CustomSet<unsigned int> omp_for_wrappers;
 
       ///The set of functions which have to be parallelized
+      CustomSet<unsigned int> kernel_functions;
+
+      ///The set of functions which have to be parallelized
+      CustomSet<unsigned int> atomic_functions;
+
+      ///The set of functions which have to be parallelized
       CustomSet<unsigned int> parallelized_functions;
 
       ///The set of functions which lock/unlock mutexes

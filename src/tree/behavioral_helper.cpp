@@ -5418,6 +5418,13 @@ size_t BehavioralHelper::GetOmpForDegree() const
    return fd->omp_for_wrapper;
 }
 
+bool BehavioralHelper::IsOmpFunctionAtomic() const
+{
+   const auto fd = GetPointer<const function_decl>(TM->get_tree_node_const(function_index));
+   return fd->omp_atomic;
+}
+
+
 bool BehavioralHelper::IsOmpBodyLoop() const
 {
    const auto fd = GetPointer<const function_decl>(TM->get_tree_node_const(function_index));

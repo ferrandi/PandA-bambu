@@ -686,7 +686,11 @@ class BehavioralHelper
        * Return the degree of parallelism for openmp for wrapper function, 0 otherwise
        */
       size_t GetOmpForDegree() const;
-
+      
+      /**
+       * Return true if is the function is atomic
+       */
+      bool IsOmpFunctionAtomic() const;
       /**
        * Return true if the function is the body of an openmp for
        */

@@ -262,6 +262,8 @@ const std::string HLS_step::EnumToName(const HLSFlowStep_Type hls_flow_step_type
          return "OmpForWrapperSynthesisFlow";
       case HLSFlowStep_Type::OMP_FUNCTION_ALLOCATION:
          return "OmpFunctionAllocation";
+      case HLSFlowStep_Type::OMP_FUNCTION_ALLOCATION_CS:
+         return "OmpFunctionAllocationCS";
 #endif
       case HLSFlowStep_Type::PARALLEL_CONTROLLER_CREATOR:
          return "ParallelControllerCreator";

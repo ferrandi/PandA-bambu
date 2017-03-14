@@ -135,6 +135,7 @@
 #include "fun_dominator_allocation.hpp"
 #if HAVE_EXPERIMENTAL && HAVE_FROM_PRAGMA_BUILT
 #include "omp_function_allocation.hpp"
+#include "omp_function_allocation_CS.hpp"
 #endif
 
 ///HLS/hls_flow includes
@@ -565,6 +566,12 @@ DesignFlowStepRef HLSFlowStepFactory::CreateHLSFlowStep(const HLSFlowStep_Type t
             design_flow_step = DesignFlowStepRef(new OmpFunctionAllocation(parameters, HLS_mgr, design_flow_manager.lock()));
             break;
          }
+      case HLSFlowStep_Type::OMP_FUNCTION_ALLOCATION_CS:
+         {
+            std::cerr<<"Error in function"<<std::endl;
+            design_flow_step = DesignFlowStepRef(new OmpFunctionAllocationCS(parameters, HLS_mgr, design_flow_manager.lock()));
+            break;
+         }
 #endif
       case HLSFlowStep_Type::PARALLEL_CONTROLLER_CREATOR:
          {
@@ -848,6 +855,7 @@ const DesignFlowStepSet HLSFlowStepFactory::CreateHLSFlowSteps(const std::unorde
          case HLSFlowStep_Type::OMP_BODY_LOOP_SYNTHESIS_FLOW:
          case HLSFlowStep_Type::OMP_FOR_WRAPPER_SYNTHESIS_FLOW:
          case HLSFlowStep_Type::OMP_FUNCTION_ALLOCATION:
+         case HLSFlowStep_Type::OMP_FUNCTION_ALLOCATION_CS:
 #endif
 #if HAVE_EXPERIMENTAL
          case HLSFlowStep_Type::PARALLEL_CONTROLLER_CREATOR:
