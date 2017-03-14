@@ -66,7 +66,7 @@
 #include "utility.hpp"
 
 OmpFunctionAllocationCS::OmpFunctionAllocationCS(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, const DesignFlowManagerConstRef _design_flow_manager) :
-   fun_dominator_allocation(_parameters, _HLSMgr, _design_flow_manager, HLSFlowStep_Type::OMP_FUNCTION_ALLOCATION)
+   fun_dominator_allocation(_parameters, _HLSMgr, _design_flow_manager, HLSFlowStep_Type::OMP_FUNCTION_ALLOCATION_CS)
 {
   debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }
