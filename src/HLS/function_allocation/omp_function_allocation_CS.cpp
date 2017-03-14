@@ -84,10 +84,12 @@ DesignFlowStep_Status OmpFunctionAllocationCS::Exec()
    std::list<vertex> sorted_functions;
    call_graph->TopologicalSort(sorted_functions);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Computing functions to be parallelized");
+   int cycleInd=0;
    for(const auto function : sorted_functions)
    {
       bool function_classification_found=false;
       const auto function_id = call_graph_manager->get_function(function);
+      std::cout<<cycleInd<<" "<<HLSMgr->CGetFunctionBehavior(function_id)->CGetBehavioralHelper()->get_function_name()<<std::endl;
       if(HLSMgr->CGetFunctionBehavior(function_id)->CGetBehavioralHelper()->GetOmpForDegree())  //look for OMP function, add it to struct
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Found omp for wrapper " + HLSMgr->CGetFunctionBehavior(function_id)->CGetBehavioralHelper()->get_function_name());
@@ -96,7 +98,7 @@ DesignFlowStep_Status OmpFunctionAllocationCS::Exec()
          continue;
       }
       InEdgeIterator ie, ie_end;
-      for(boost::tie(ie, ie_end) = boost::in_edges(function, *call_graph); ie != ie_end && function_classification_found; ie++)  
+      for(boost::tie(ie, ie_end) = boost::in_edges(function, *call_graph); ie != ie_end && !function_classification_found; ie++)  
       {            //if current function is called by parallel then is kernel
          const auto source = boost::source(*ie, *call_graph);
          const auto source_id = call_graph_manager->get_function(source);
@@ -108,13 +110,13 @@ DesignFlowStep_Status OmpFunctionAllocationCS::Exec()
             break;
          }
       }
-      for(boost::tie(ie, ie_end) = boost::in_edges(function, *call_graph); ie != ie_end && function_classification_found; ie++)
+      for(boost::tie(ie, ie_end) = boost::in_edges(function, *call_graph); ie != ie_end && !function_classification_found; ie++)
       {		//if current function is called by kernel or a parallel function then is a function inside the kernel
          const auto source = boost::source(*ie, *call_graph);
          const auto source_id = call_graph_manager->get_function(source);
          if(omp_functions->kernel_functions.find(source_id) != omp_functions->kernel_functions.end() or omp_functions->parallelized_functions.find(source_id) != omp_functions->parallelized_functions.end())
          {
-            if(!HLSMgr->CGetFunctionBehavior(function_id)->CGetBehavioralHelper()->IsOmpFunctionAtomic())	//atomic function
+            if(HLSMgr->CGetFunctionBehavior(function_id)->CGetBehavioralHelper()->IsOmpFunctionAtomic())	//atomic function
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Found atomic function: " + HLSMgr->CGetFunctionBehavior(function_id)->CGetBehavioralHelper()->get_function_name());
                omp_functions->atomic_functions.insert(function_id);
@@ -128,6 +130,7 @@ DesignFlowStep_Status OmpFunctionAllocationCS::Exec()
             break;
          }
       }
+      cycleInd=cycleInd+1;
    }
    return DesignFlowStep_Status::SUCCESS;
 }

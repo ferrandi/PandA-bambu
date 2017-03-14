@@ -2969,7 +2969,7 @@ void BambuParameter::CheckParameters()
    if(getOption<bool>(OPT_parse_pragma))
    {
       setOption(OPT_disable_function_proxy, true);
-      setOption(OPT_function_allocation_algorithm, HLSFlowStep_Type::OMP_FUNCTION_ALLOCATION);
+      setOption(OPT_function_allocation_algorithm, HLSFlowStep_Type::OMP_FUNCTION_ALLOCATION_CS);
       add_bambu_library("pthread");
    }
 #endif

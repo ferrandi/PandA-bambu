@@ -568,7 +568,6 @@ DesignFlowStepRef HLSFlowStepFactory::CreateHLSFlowStep(const HLSFlowStep_Type t
          }
       case HLSFlowStep_Type::OMP_FUNCTION_ALLOCATION_CS:
          {
-            std::cerr<<"Error in function"<<std::endl;
             design_flow_step = DesignFlowStepRef(new OmpFunctionAllocationCS(parameters, HLS_mgr, design_flow_manager.lock()));
             break;
          }
