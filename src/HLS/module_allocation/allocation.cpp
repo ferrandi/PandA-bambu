@@ -999,7 +999,7 @@ bool allocation::check_for_memory_compliancy(bool Has_extern_allocated_data, tec
          case(MemoryAllocation_ChannelsType::MEM_ACC_11):
          case(MemoryAllocation_ChannelsType::MEM_ACC_N1):
             {
-               if(channels_type.find(CHANNELS_TYPE_MEM_ACC_NN) != std::string::npos or channels_type.find(CHANNELS_TYPE_MEM_ACC_P1N) != std::string::npos)
+               if(channels_type.find(CHANNELS_TYPE_MEM_ACC_NN) != std::string::npos or channels_type.find(CHANNELS_TYPE_MEM_ACC_P1N) !=std::string::npos)
                   return true;
                break;
             }
@@ -1012,6 +1012,14 @@ bool allocation::check_for_memory_compliancy(bool Has_extern_allocated_data, tec
          case(MemoryAllocation_ChannelsType::MEM_ACC_P1N):
             {
                if(channels_type.find(CHANNELS_TYPE_MEM_ACC_P1N) == std::string::npos)
+               {
+                  return true;
+               }
+               break;
+            }
+         case(MemoryAllocation_ChannelsType::MEM_ACC_CS):
+            {
+               if(channels_type.find(CHANNELS_TYPE_MEM_ACC_CS) == std::string::npos)
                {
                   return true;
                }
@@ -1773,6 +1781,12 @@ DesignFlowStep_Status allocation::InternalExec()
                         unsigned int n_ports = parameters->getOption<unsigned int>(OPT_memory_banks_number);
                         set_number_channels(specializedId, n_ports);
                      }
+                     else if(channels_type == CHANNELS_TYPE_MEM_ACC_CS and memory_ctrl_type != "")
+                     {
+                        unsigned int n_ports = parameters->getOption<unsigned int>(OPT_memory_banks_number);
+                        set_number_channels(specializedId, n_ports);
+                     }
+
                      else if( channels_type == CHANNELS_TYPE_MEM_ACC_NN && memory_ctrl_type != "")
                      {
                         unsigned int n_ports = parameters->getOption<unsigned int>(OPT_channels_number);
@@ -2108,7 +2122,7 @@ void allocation::IntegrateTechnologyLibraries()
 
       bool is_async_var = false;
 
-      THROW_ASSERT(parameters->getOption<MemoryAllocation_ChannelsType>(OPT_channels_type) != MemoryAllocation_ChannelsType::MEM_ACC_P1N, "unexpected condition");
+      THROW_ASSERT(parameters->getOption<MemoryAllocation_ChannelsType>(OPT_channels_type) != (MemoryAllocation_ChannelsType::MEM_ACC_P1N), "unexpected condition");
       bool unaligned_access_p = parameters->isOption(OPT_unaligned_access) && parameters->getOption<bool>(OPT_unaligned_access);
       if(parameters->getOption<MemoryAllocation_ChannelsType>(OPT_channels_type) == MemoryAllocation_ChannelsType::MEM_ACC_11)
       {

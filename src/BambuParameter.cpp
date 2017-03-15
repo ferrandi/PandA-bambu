@@ -3004,7 +3004,7 @@ void BambuParameter::CheckParameters()
    }
    if(isOption(OPT_memory_banks_number) && getOption<int>(OPT_memory_banks_number) > 1)
    {
-      setOption(OPT_channels_type, MemoryAllocation_ChannelsType::MEM_ACC_P1N);
+      setOption(OPT_channels_type, MemoryAllocation_ChannelsType::MEM_ACC_CS);
    }
    if(not isOption(OPT_channels_type))
    {

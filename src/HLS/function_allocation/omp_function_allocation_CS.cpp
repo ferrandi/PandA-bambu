@@ -132,6 +132,26 @@ DesignFlowStep_Status OmpFunctionAllocationCS::Exec()
       }
       cycleInd=cycleInd+1;
    }
+   //invert list
+   cycleInd=0;
+   for(const auto function : boost::adaptors::reverse(sorted_functions))
+   {
+      const auto function_id = call_graph_manager->get_function(function);
+      std::cout<<cycleInd<<" "<<HLSMgr->CGetFunctionBehavior(function_id)->CGetBehavioralHelper()->get_function_name()<<std::endl;
+      OutEdgeIterator ie, ie_end;
+      for(boost::tie(ie, ie_end) = boost::out_edges(function, *call_graph); ie != ie_end; ie++)
+      {            //if current function is called by parallel then is kernel
+         const auto target = boost::target(*ie, *call_graph);
+         const auto target_id = call_graph_manager->get_function(target);
+         if(omp_functions->omp_for_wrappers.find(target_id) != omp_functions->omp_for_wrappers.end() or omp_functions->hierarchical_functions.find(target_id) != omp_functions->hierarchical_functions.end() )
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Found hierarchical function: " + HLSMgr->CGetFunctionBehavior(function_id)->CGetBehavioralHelper()->get_function_name());
+            omp_functions->hierarchical_functions.insert(function_id);
+            break;
+         }
+      }
+      cycleInd=cycleInd+1;
+   } 
    return DesignFlowStep_Status::SUCCESS;
 }
 

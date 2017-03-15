@@ -76,6 +76,9 @@ class OmpFunctions : public functions
       ///The set of functions which have to be parallelized
       CustomSet<unsigned int> parallelized_functions;
 
+      ///The set of functions which have to be parallelized
+      CustomSet<unsigned int> hierarchical_functions;
+
       ///The set of functions which lock/unlock mutexes
       CustomSet<unsigned int> locking_functions;
 

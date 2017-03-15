@@ -270,7 +270,7 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj,
       {
          if(with_master && !Has_unknown_addresses)
          {
-            THROW_ASSERT(parameters->getOption<MemoryAllocation_ChannelsType>(OPT_channels_type) != MemoryAllocation_ChannelsType::MEM_ACC_P1N, "unexpected condition");
+            THROW_ASSERT(parameters->getOption<MemoryAllocation_ChannelsType>(OPT_channels_type) != (MemoryAllocation_ChannelsType::MEM_ACC_P1N) , "unexpected condition");
             /// allocate the unique shared memory
             structural_objectRef shared_memory;
             bool is_memory_splitted;

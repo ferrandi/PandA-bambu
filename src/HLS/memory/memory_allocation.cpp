@@ -113,6 +113,9 @@ const std::string MemoryAllocationSpecialization::GetKindText() const
       case MemoryAllocation_ChannelsType::MEM_ACC_P1N:
          ret += "P1N";
          break;
+      case MemoryAllocation_ChannelsType::MEM_ACC_CS:
+         ret += "CS";
+         break;
       default:
          THROW_UNREACHABLE("");
    }
