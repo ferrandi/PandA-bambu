@@ -1782,11 +1782,26 @@ DesignFlowStep_Status allocation::InternalExec()
                         set_number_channels(specializedId, n_ports);
                      }
                      else if(channels_type == CHANNELS_TYPE_MEM_ACC_CS and memory_ctrl_type != "")
-                     {
-                        unsigned int n_ports = parameters->getOption<unsigned int>(OPT_memory_banks_number);
-                        set_number_channels(specializedId, n_ports);
+                     {  
+			bool function_found=false;
+                        auto omp_functions = GetPointer<OmpFunctions>(HLSMgr->Rfuns);
+			for(const auto function : omp_functions->hierarchical_functions)
+                        {
+                           if(function==funId) 
+                           {  
+                              unsigned int n_ports = parameters->getOption<unsigned int>(OPT_channels_number);
+                              set_number_channels(specializedId, n_ports);
+                              std::cout<<"Num channels for function"<<HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->get_function_name()<<" is: "<<n_ports<<std::endl;
+                              function_found=true;
+                              break;
+                           }
+                        }
+                        if(!function_found)
+                        {
+                           set_number_channels(specializedId, 1);
+			   std::cout<<"Num channels for function"<<HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->get_function_name()<<" is: 1"<<std::endl;
+                        }
                      }
-
                      else if( channels_type == CHANNELS_TYPE_MEM_ACC_NN && memory_ctrl_type != "")
                      {
                         unsigned int n_ports = parameters->getOption<unsigned int>(OPT_channels_number);

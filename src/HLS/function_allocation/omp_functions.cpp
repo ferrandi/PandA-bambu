@@ -64,6 +64,26 @@ std::ostream & operator<<(std::ostream & os, const OmpFunctions * omp_functions)
    {
       os << std::string(indentation+2, ' ') << HLSMgr->CGetFunctionBehavior(omp_for_wrapper)->CGetBehavioralHelper()->get_function_name() << std::endl;
    }
+   os << std::string(indentation, ' ') << "Functions that are kernel:" << std::endl;
+   for(const auto kernel_functions : omp_functions->kernel_functions)
+   {  
+      os << std::string(indentation+2, ' ') << HLSMgr->CGetFunctionBehavior(kernel_functions)->CGetBehavioralHelper()->get_function_name() << std::endl;
+   }
+   os << std::string(indentation, ' ') << "Functions that are atomic:" << std::endl;
+   for(const auto atomic_functions : omp_functions->atomic_functions)
+   {  
+      os << std::string(indentation+2, ' ') << HLSMgr->CGetFunctionBehavior(atomic_functions)->CGetBehavioralHelper()->get_function_name() << std::endl;
+   }
+   os << std::string(indentation, ' ') << "Functions that are inside the kernel:" << std::endl;
+   for(const auto parallelized_functions : omp_functions->parallelized_functions)
+   {  
+      os << std::string(indentation+2, ' ') << HLSMgr->CGetFunctionBehavior(parallelized_functions)->CGetBehavioralHelper()->get_function_name() << std::endl;
+   }
+   os << std::string(indentation, ' ') << "Functions that are top of the parallel:" << std::endl;
+   for(const auto hierarchical_functions : omp_functions->hierarchical_functions)
+   {
+      os << std::string(indentation+2, ' ') << HLSMgr->CGetFunctionBehavior(hierarchical_functions)->CGetBehavioralHelper()->get_function_name() << std::endl;
+   }
    os << std::string(indentation, ' ') << "Functions which have to be created in multiple parallel instances:" << std::endl;
    for(const auto parallelized_function : omp_functions->parallelized_functions)
    {
