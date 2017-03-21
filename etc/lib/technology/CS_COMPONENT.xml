@@ -1,0 +1,983 @@
+<?xml version="1.0"?>
+<technology>
+  <library>
+    <name>CS_COMPONENT</name>
+    <cell>
+      <name>fifio</name>
+      <operation operation_name="fifio"/>
+      <circuit>
+        <component_o id="fifio">
+          <parameter name="ADDR_WIDTH">3</parameter>
+          <structural_type_descriptor id_type="fifio"/>
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="reset" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="data_in" dir="IN">
+            <structural_type_descriptor type="INT" size="1"/>
+          </port_o>
+          <port_o id="rd_en" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="wr_en" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="full" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1" />
+          </port_o>
+          <port_o id="empty" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1" />
+          </port_o>
+          <port_o id="data_out" dir="OUT">
+            <structural_type_descriptor type="INT" size="1" />
+          </port_o>
+          <NP_functionality LIBRARY="fifio data_in data_out ADDR_WIDTH" VERILOG_PROVIDED=
+"parameter DEPTH = 2**ADDR_WIDTH;
+
+  reg [ADDR_WIDTH-1:0] rd_addr; 
+  reg [ADDR_WIDTH-1:0] wr_addr; 
+  reg [BITSIZE_data_in-1:0] ram [DEPTH-1:0];
+  reg [ADDR_WIDTH:0] status_cnt;  
+
+  // initialization of the fifio all data = 0
+  integer i; 
+  initial begin 
+    for (i=0; i&lt;DEPTH; i=i+1) begin 
+      ram[i] = {BITSIZE_data_in{1'b0}}; 
+    end
+  end
+
+  assign full = (status_cnt > DEPTH-1);
+  assign empty = (status_cnt == 0);
+  assign data_out = ram[rd_addr];   
+
+  always @(posedge clock) begin
+    if (!reset) begin 
+      status_cnt &lt;= 0; 
+      rd_addr &lt;= 0; 
+      wr_addr &lt;= 0; 
+    end else begin  
+      if (rd_en &amp;&amp; !wr_en) begin 
+        rd_addr &lt;= rd_addr +1; 
+        if (status_cnt != 0) begin 
+          status_cnt &lt;= status_cnt -1; 
+        end
+      end else if (wr_en &amp;&amp; !rd_en) begin 
+        ram[wr_addr] &lt;= data_in;
+        wr_addr &lt;= wr_addr +1;
+        if (status_cnt != DEPTH) begin 
+          status_cnt &lt;= status_cnt +1;
+        end 
+      end else if (wr_en &amp;&amp; rd_en) begin
+        rd_addr &lt;= rd_addr +1;
+        wr_addr &lt;= wr_addr +1;
+        ram[wr_addr] &lt;= data_in;        
+      end 
+    end
+  end"/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>fifio_free</name>
+      <operation operation_name="fifio_free"/>
+      <circuit>
+        <component_o id="fifio_free">
+          <parameter name="ADDR_WIDTH">3</parameter>
+          <structural_type_descriptor id_type="fifio_free"/>
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="reset" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="data_in" dir="IN">
+            <structural_type_descriptor type="INT" size="1"/>
+          </port_o>
+          <port_o id="rd_en" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="wr_en" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="full" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1" />
+          </port_o>
+          <port_o id="empty" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1" />
+          </port_o>
+          <port_o id="data_out" dir="OUT">
+            <structural_type_descriptor type="INT" size="1" />
+          </port_o>
+          <NP_functionality LIBRARY="fifio_free data_in data_out ADDR_WIDTH" VERILOG_PROVIDED=
+"parameter DEPTH = 2**ADDR_WIDTH;
+
+  reg [ADDR_WIDTH-1:0] rd_addr;
+  reg [ADDR_WIDTH-1:0] wr_addr;
+  reg [BITSIZE_data_in-1:0] ram [DEPTH-1:0];
+  reg [ADDR_WIDTH:0] status_cnt;
+
+  integer i; 
+  initial begin 
+    for (i=1; i&lt;DEPTH; i=i+1) begin 
+      ram[i] = i; 
+    end
+  end
+
+  assign full = (status_cnt > DEPTH-1);
+  assign empty = (status_cnt == 0);
+
+  assign data_out = ram[rd_addr];
+
+  always @(posedge clock) begin
+    if (!reset) begin 
+      status_cnt &lt;= DEPTH-1; // fifio free is initiliazed full
+      rd_addr &lt;= 1;   //slot 0 is running so is not considered as free - slot 0 assigned by reset of selector
+      wr_addr &lt;= 0; 
+    end else begin  
+      if (rd_en &amp;&amp; !wr_en) begin 
+        rd_addr &lt;= rd_addr +1; 
+        if (status_cnt != 0) begin 
+          status_cnt &lt;= status_cnt -1; 
+        end
+      end else if (wr_en &amp;&amp; !rd_en) begin 
+        ram[wr_addr] &lt;= data_in;
+        wr_addr &lt;= wr_addr +1;
+        if (status_cnt != DEPTH) begin 
+          status_cnt &lt;= status_cnt +1;
+        end
+      end else if (wr_en &amp;&amp; rd_en) begin
+        rd_addr &lt;= rd_addr +1;
+        wr_addr &lt;= wr_addr +1;
+        ram[wr_addr] &lt;= data_in;        
+      end 
+    end
+  end"/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>rams_dist</name>
+      <operation operation_name="rams_dist"/>
+      <circuit>
+        <component_o id="rams_dist">
+          <parameter name="BITSIZE_MEM">1</parameter>
+          <structural_type_descriptor id_type="rams_dist"/>
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="data" dir="IN">
+            <structural_type_descriptor type="INT" size="1"/>
+          </port_o>
+          <port_o id="we" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="addr" dir="IN">
+            <structural_type_descriptor type="INT" size="1" />
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="INT" size="1" />
+          </port_o>
+          <NP_functionality LIBRARY="rams_dist data addr out1 BITSIZE_MEM " VERILOG_PROVIDED=
+"reg [BITSIZE_DATA-1:0] ram [BITSIZE_MEM-1:0]; 
+  always @(posedge clock)
+  begin
+  if (we)
+    ram[addr] &lt;= data;
+  end
+  assign out1 = ram[addr];"/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>register_SE_r</name>
+      <operation operation_name="register_SE_r"/>
+      <circuit>
+        <component_o id="register_SE_r">
+          <structural_type_descriptor id_type="register_SE_r"/>
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="reset" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="INT" size="1"/>
+          </port_o>
+          <port_o id="we" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="INT" size="1" />
+          </port_o>
+          <NP_functionality LIBRARY="register_SE_r in1 out1" VERILOG_PROVIDED= "reg [BITSIZE_out1-1:0] reg_out1;
+  assign out1 = reg_out1;
+  always @(posedge clock)
+    if(!reset) begin
+      reg_out1 &lt;={BITSIZE_out1{1'b0}};
+    end else begin
+      if (we) begin 
+        reg_out1 &lt;= in1;
+      end
+    end
+  initial begin 
+    reg_out1 ={BITSIZE_out1{1'b0}};
+  end"/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>simple_dual_port_ram_single_clock</name>
+      <operation operation_name="simple_dual_port_ram_single_clock"/>
+      <circuit>
+        <component_o id="simple_dual_port_ram_single_clock">
+          <structural_type_descriptor id_type="simple_dual_port_ram_single_clock"/>
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="we" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="data" dir="IN">
+            <structural_type_descriptor type="INT" size="1"/>
+          </port_o>
+          <port_o id="read_addr" dir="IN">
+            <structural_type_descriptor type="INT" size="1"/>
+          </port_o>
+          <port_o id="write_addr" dir="IN">
+            <structural_type_descriptor type="INT" size="1" />
+          </port_o>
+          <port_o id="out" dir="OUT">
+            <structural_type_descriptor type="INT" size="1" />
+          </port_o>
+          <NP_functionality LIBRARY="simple_dual_port_ram_single_clock data addr out1" VERILOG_PROVIDED="reg [BITSIZE_data-1:0] q;
+reg [BITSIZE_data-1:0] ram[2**BITSIZE_addr-1:0];
+	always @ (posedge clock)
+	begin
+		// Write
+		if (we)
+			ram[write_addr] &lt;= data;
+
+		q &lt;= ram[read_addr];
+	end
+assign out=q;"/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>fifo</name>
+      <operation operation_name="fifo"/>
+      <circuit>
+        <component_o id="fifo">
+          <structural_type_descriptor id_type="fifo"/>
+          <parameter name="RAM_DEPTH">1</parameter>
+          <parameter name="ADDR_WIDTH">1</parameter>
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="reset" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="data_in" dir="IN">
+            <structural_type_descriptor type="INT" size="1"/>
+          </port_o>
+          <port_o id="data_out" dir="OUT">
+            <structural_type_descriptor type="INT" size="1"/>
+          </port_o>
+          <port_o id="empty" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1" />
+          </port_o>
+          <port_o id="full" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1" />
+          </port_o>
+          <port_o id="rd_en" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1" />
+          </port_o>
+          <port_o id="wr_en" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1" />
+          </port_o>
+          <port_o id="rd_cs" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1" />
+          </port_o>
+          <port_o id="wr_cs" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1" />
+          </port_o>
+          <NP_functionality LIBRARY="fifo data_in data_out RAM_DEPTH ADDR_WIDTH" VERILOG_PROVIDED="parameter ADDR_WIDTH = 8;
+parameter RAM_DEPTH = (1 &lt;&lt; ADDR_WIDTH);
+
+reg [ADDR_WIDTH-1:0] wr_pointer;
+reg [ADDR_WIDTH-1:0] rd_pointer;
+reg [ADDR_WIDTH :0] status_cnt;
+reg [BITSIZE_data_in-1:0] data_out ;
+wire [BITSIZE_data_in-1:0] data_ram ;
+
+assign full = (status_cnt > (RAM_DEPTH-1));
+assign empty = (status_cnt == 0);
+
+always @ (posedge clock or posedge reset)
+begin : WRITE_POINTER
+  if (reset) begin
+    wr_pointer &lt;= 0;
+  end else if (wr_cs &amp;&amp; wr_en ) begin
+    wr_pointer &lt;= wr_pointer + 1;
+  end
+end
+
+always @ (posedge clock or posedge reset)
+begin : READ_POINTER
+  if (reset) begin
+    rd_pointer &lt;= 0;
+  end else if (rd_cs &amp;&amp; rd_en ) begin
+    rd_pointer &lt;= rd_pointer + 1;
+  end
+end
+
+always  @ (posedge clock or posedge reset)
+begin : READ_DATA
+  if (reset) begin
+    data_out &lt;= 0;
+  end else if (rd_cs &amp;&amp; rd_en ) begin
+    data_out &lt;= data_ram;
+  end
+end
+
+always @ (posedge clock or posedge reset)
+begin : STATUS_COUNTER
+  if (reset) begin
+    status_cnt &lt;= 0;
+  end else if ((rd_cs &amp;&amp; rd_en) &amp;&amp; !(wr_cs &amp;&amp; wr_en) 
+                &amp;&amp; (status_cnt != 0)) begin
+    status_cnt &lt;= status_cnt - 1;
+  end else if ((wr_cs &amp;&amp; wr_en) &amp;&amp; !(rd_cs &amp;&amp; rd_en) 
+               &amp;&amp; (status_cnt != RAM_DEPTH)) begin
+    status_cnt &lt;= status_cnt + 1;
+  end
+end
+   
+simple_dual_port_ram_single_clock #(.BITSIZE_data(BITSIZE_data_in),.BITSIZE_addr(BITSIZE_addr)) DP_RAM (.clock(clock), .write_addr(wr_pointer), .data(data_in), .we(wr_en), .read_addr (rd_pointer), .q(data_ram));"/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>Counter</name>
+      <operation operation_name="Counter"/>
+      <circuit>
+        <component_o id="Counter">  BITSIZE_value
+          <structural_type_descriptor id_type="Counter"/>
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="reset" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="value" dir="OUT">
+            <structural_type_descriptor type="INT" size="1"/>
+          </port_o>
+          <port_o id="driver_lines" dir="IN">
+            <structural_type_descriptor type="INT" size="1"/>
+          </port_o> 
+          <NP_functionality LIBRARY="Counter value driver_lines" VERILOG_PROVIDED="
+   reg [BITSIZE_value - 1 : 0]    counter;
+   reg [BITSIZE_value - 1 : 0]    next_counter;
+   always @(posedge clock or negedge reset) begin
+      if (!reset)
+        counter &lt;= {BITSIZE_value{1'b0}};
+      else
+        counter &lt;= next_counter;
+   end
+
+   assign value = counter;
+
+   reg [BITSIZE_value - 1 : 0]        increment;
+   always @(*) begin
+      next_counter = counter + increment;
+   end
+
+   integer                              i;
+   always @(*) begin
+      increment = {BITSIZE_value{1'b0}};
+      for (i = 0; i &lt; BITSIZE_driver_lines; i = i+1) begin
+         increment = increment + driver_lines[i];
+      end
+   end"/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>CallDispatcher</name>
+      <operation operation_name="CallDispatcher"/>
+      <circuit>
+        <component_o id="CallDispatcher">
+          <structural_type_descriptor id_type="CallDispatcher"/>
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="reset" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="fifo_data_out" dir="IN">
+            <structural_type_descriptor type="INT" size="1"/>
+          </port_o>
+          <port_o id="fifo_empty" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="worker_status" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="fifo_rd_cs" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="fifo_rd_en" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="request" dir="OUT">
+            <structural_type_descriptor type="INT" size="1"/>
+          </port_o>
+          <port_o id="selected_worker" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="CallDispatcher request selected_worker fifo_data_out worker_status" VERILOG_PROVIDED="
+   reg fifo_rd_cs;
+   reg fifo_rd_en;
+   reg [BITSIZE_worker_status-1:0] selected_worker;
+   wire                    available_workers;
+   reg                     call_state;
+   reg                     next_call_state;
+
+   always @ (posedge clock or negedge reset) begin : CALL_STATE_REGISTER
+      if (!reset) begin
+         call_state &lt;= 1'h0;
+      end else begin
+         call_state &lt;= next_call_state;
+      end
+   end
+
+   reg available_data;
+   always @(posedge clock or negedge reset) begin
+      if (!reset)
+        available_data &lt;= 1'b0;
+      else
+        available_data &lt;= !fifo_empty;
+   end
+   
+   wire [BITSIZE_worker_status - 1 : 0] notFull = ~worker_status;
+   reg [BITSIZE_fifo_data_out - 1 : 0] request;
+   assign available_workers = ~(&amp; worker_status);
+   always @ (*) begin
+      fifo_rd_cs = 1'b0;
+      fifo_rd_en = 1'b0;
+      next_call_state = 1'b0;
+      request = {BITSIZE_fifo_data_out{1'b0}};
+      selected_worker = {BITSIZE_worker_status{1'b0}};
+      if (call_state == 1'b0) begin
+         if (available_workers &amp; available_data) begin
+            fifo_rd_cs = 1'b1;
+            fifo_rd_en = 1'b1;
+            next_call_state = 1'b1;
+         end
+      end else begin
+            selected_worker = notFull &amp; (-notFull); // find the first 0 bit
+            request = fifo_data_out;
+      end
+   end // always @ (*)
+
+/* -----\/----- EXCLUDED -----\/-----
+   wire available_data;
+   assign available_data = ~fifo_empty;
+ -----/\----- EXCLUDED -----/\----- */"/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>scheduler</name>
+      <operation operation_name="scheduler"/>
+      <circuit>
+        <component_o id="scheduler">
+          <structural_type_descriptor id_type="scheduler"/>
+          <parameter name="NUM_TASKS">8</parameter>
+          <parameter name="KERN_NUM">0</parameter>
+          <parameter name="ADDR_ACC">2</parameter>
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="reset" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="Min_oe_ram" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="Min_we_ram" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="Min_addr_ram" dir="IN">
+            <structural_type_descriptor type="INT" size="1"/>
+          </port_o>
+          <port_o id="Min_Wdata_ram" dir="IN">
+            <structural_type_descriptor type="INT" size="1"/>
+          </port_o>
+          <port_o id="Min_data_ram_size" dir="IN">
+            <structural_type_descriptor type="INT" size="1"/>
+          </port_o>
+          <port_o id="Min_tag_ram" dir="IN">
+            <structural_type_descriptor type="INT" size="1"/>
+          </port_o>
+          <port_o id="M_Rdata_ram" dir="IN">
+            <structural_type_descriptor type="INT" size="1"/>
+          </port_o>
+          <port_o id="M_DataRdy" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="Min_tag" dir="IN">
+            <structural_type_descriptor type="INT" size="1"/>
+          </port_o>
+          <port_o id="done_port_task" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="suspension" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="request_accepted" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="task_finished" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="Mout_oe_ram" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="Mout_we_ram" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="Mout_addr_ram" dir="OUT">
+            <structural_type_descriptor type="INT" size="1"/>
+          </port_o>
+          <port_o id="Mout_Wdata_ram" dir="OUT">
+            <structural_type_descriptor type="INT" size="1"/>
+          </port_o>
+          <port_o id="Mout_data_ram_size" dir="OUT">
+            <structural_type_descriptor type="INT" size="1"/>
+          </port_o>
+          <port_o id="Mout_tag_ram" dir="OUT">
+            <structural_type_descriptor type="INT" size="1"/>
+          </port_o>
+          <port_o id="Mout_tag" dir="OUT">
+            <structural_type_descriptor type="INT" size="1"/>
+          </port_o>
+          <port_o id="Mout_Rdata_ram" dir="OUT">
+            <structural_type_descriptor type="INT" size="1"/>
+          </port_o>
+          <port_o id="Mout_DataRdy" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="request_wait_accepted" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="done_request_port" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="selector_register_file" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="scheduler selector_register_file M_Rdata_ramM_DataRdy Min_tag Mout_Rdata_ram Mout_DataRdy Mout_tag Min_oe_ram Min_we_ram Min_addr_ram Min_Wdata_ram Min_data_ram_size Min_tag_ram Mout_oe_ram Mout_we_ram Mout_addr_ram Mout_Wdata_ram Mout_data_ram_size Mout_tag_ram NUM_TASKS KERN_NUM ADDR_ACC" VERILOG_PROVIDED="
+  parameter SIZE_IN=BITSIZE_Mout_oe_ram+BITSIZE_Mout_we_ram+BITSIZE_Mout_addr_ram+BITSIZE_Mout_data_ram_size+BITSIZE_Mout_Wdata_ram+BITSIZE_Mout_tag;
+
+  reg done_request_port;
+  reg [BITSIZE_M_DataRdy-1:0] Mout_DataRdy;
+  reg [BITSIZE_selector_register_file-1:0] selector_register_file;
+
+  parameter [2:0] S_0 = 3'd0,
+                  S_1 = 3'd1,
+                  S_2 = 3'd2,
+                  S_3 = 3'd3,
+                  S_4 = 3'd4;
+
+  reg [2:0] _present_state, _next_state;
+  wire [BITSIZE_selector_register_file-1:0] next_selector_register_file;
+  wire fifo_empty_free; 
+  wire [BITSIZE_selector_register_file-1:0] fifo_data_out_free;
+  wire fifo_wait_empty;
+  wire fifo_empty_ready;
+  wire [BITSIZE_selector_register_file-1:0] fifo_data_out_ready;
+  wire fifo_rd_en_ready;
+  wire fifo_wr_en_ready;
+  wire [BITSIZE_selector_register_file-1:0] fifo_wait_data_out;
+  wire [SIZE_IN-1:0] data_out_mem_kern;
+  wire [SIZE_IN-1:0] data_out_mem_par;
+  wire [SIZE_IN-1:0] data_in_kern_mem;
+  wire [SIZE_IN-1:0] data_in_par_mem;
+  wire [SIZE_IN-1:0] temp; 
+  reg [31:0] i;
+  wire fifo_rd_en_free; 
+  wire fifo_wr_en_free; 
+  wire mux_fifo_sel;
+  wire [BITSIZE_selector_register_file-1:0] old_selector;
+  wire [BITSIZE_selector_register_file-1:0] new_selector;
+  wire mux_switching_logic;
+  wire fifo_full_free;
+  wire [BITSIZE_M_DataRdy-1:0] Mout_DataRdy_next;
+  wire done_request_port_next;
+  wire [BITSIZE_selector_register_file-1:0] data_ready;
+  wire selectorByMemory;
+
+  fifio_free #(.DATA_WIDTH(BITSIZE_selector_register_file), .ADDR_WIDTH($clog2(NUM_TASKS) )) fifo_free(
+  .full        (fifo_full_free),
+  .empty       (fifo_empty_free),
+  .data_out    (fifo_data_out_free),
+  .clk         (clock),
+  .rst         (reset),
+  .rd_en       (fifo_rd_en_free),
+  .wr_en       (fifo_wr_en_free),
+  .data_in     (selector_register_file)); // just the selector can write the data_in of fifo_free
+
+  fifio #(.DATA_WIDTH(BITSIZE_selector_register_file), .ADDR_WIDTH($clog2(NUM_TASKS))) fifo_ready(
+  .full        (),
+  .empty       (fifo_empty_ready),
+  .data_out    (fifo_data_out_ready),
+  .clk         (clock),
+  .rst         (reset),
+  .rd_en       (fifo_rd_en_ready),
+  .wr_en       (fifo_wr_en_ready),  // when data is copied insert data of task ready on ready 
+  .data_in     (Min_tag[BITSIZE_selector_register_file-1:0]));    // data go into memory to say in which cell to write and here to say which task is now ready
+
+  fifio #(.DATA_WIDTH(BITSIZE_selector_register_file), .ADDR_WIDTH($clog2(NUM_TASKS))) fifo_wait(
+  .full (),  	         //used by arbiter
+  .empty (fifo_wait_empty),         //used by arbiter
+  .data_out (fifo_wait_data_out),
+  .clk (clock),
+  .rst (reset),
+  .rd_en (request_accepted),
+  .wr_en (suspension),
+  .data_in (selector_register_file));
+
+  //if fifo ready empty but data from memory ready then use data from memory
+  assign selectorByMemory = fifo_empty_ready &amp;&amp; M_DataRdy;
+  //next selector can be old ones or new depending on state of fifo and signal arriving
+  assign next_selector_register_file = (mux_switching_logic)? new_selector : old_selector;
+  //if signal to end or switch and there is at least one task that is ready or free then swith moreover if you are in S_2 (no free or ready and arrive a response in ready then switch
+  assign mux_switching_logic= ((done_port_task || suspension) &amp;&amp; ((!fifo_empty_ready || selectorByMemory) || (!fifo_empty_free &amp;&amp; !task_finished))) || ((_present_state==S_2 || _present_state==S_4) &amp;&amp; (!fifo_empty_ready || selectorByMemory));  
+  //new selector can be a old task suspended or a new ones
+  assign new_selector = (mux_fifo_sel)? data_ready : fifo_data_out_free;
+  assign data_ready = (selectorByMemory) ? Min_tag[BITSIZE_selector_register_file-1:0] : fifo_data_out_ready;
+  //if at least one task in ready and is true that arrive one signal or you are in S_2 (wait for fifo_ready to be not-empty) then use ready
+  assign mux_fifo_sel = (done_port_task || suspension || _present_state==S_2 || _present_state==S_4) &amp;&amp; (!fifo_empty_ready || selectorByMemory);
+  //if reset start task is 0 otherwise old selector
+  assign old_selector = (!reset)? {BITSIZE_selector_register_file{1'b0}} : selector_register_file;
+
+  assign fifo_rd_en_free = mux_switching_logic &amp;&amp; !mux_fifo_sel;
+  assign fifo_wr_en_free = done_port_task &amp;&amp; (!fifo_empty_free || !fifo_empty_ready || selectorByMemory || task_finished);
+  assign fifo_rd_en_ready = mux_fifo_sel &amp;&amp; !selectorByMemory;
+  assign fifo_wr_en_ready = M_DataRdy &amp;&amp; !(mux_fifo_sel &amp;&amp; selectorByMemory);
+
+  mem_scheduler #(.addr_mem_kern(BITSIZE_selector_register_file), .addr_kern_mem(BITSIZE_selector_register_file), .addr_mem_par(BITSIZE_selector_register_file), .addr_par_mem(BITSIZE_selector_register_file), .BITSIZE_data_in_kern_mem(SIZE_IN), .BITSIZE_data_in_par_mem(SIZE_IN), .BITSIZE_data_out_mem_kern(SIZE_IN), .BITSIZE_data_out_mem_par(SIZE_IN)) mem_scheduler (  
+    .clock(clock),
+    .reset(reset),
+    .addr_mem_kern(selector_register_file),
+    .addr_kern_mem(selector_register_file),
+    .addr_mem_par(fifo_wait_data_out),
+    .addr_par_mem(Min_tag[BITSIZE_selector_register_file-1:0]),
+    .we_kern_mem(suspension),
+    .we_par_mem(M_DataRdy),    //if ready 1 then write
+    .data_in_kern_mem(data_in_kern_mem),
+    .data_in_par_mem(data_in_par_mem), //remove addr_task-bits of tag
+    .data_out_mem_kern(data_out_mem_kern), 
+    .data_out_mem_par(data_out_mem_par));
+
+  assign data_in_kern_mem = {Min_tag_ram,Min_Wdata_ram,Min_data_ram_size,Min_addr_ram,Min_we_ram,Min_oe_ram};
+  assign data_in_par_mem = {Min_tag[BITSIZE_Mout_tag-1:BITSIZE_selector_register_file+KERN_NUM], {(BITSIZE_selector_register_file+KERN_NUM){1'b0}}, M_Rdata_ram,{(BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram){1'b0}}};
+  assign Mout_oe_ram=(data_out_mem_par[BITSIZE_Mout_oe_ram-1] &amp;&amp; !fifo_wait_empty);
+  assign Mout_we_ram=(data_out_mem_par[BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1] &amp;&amp; !fifo_wait_empty);
+  assign Mout_addr_ram=data_out_mem_par[BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1:BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram];
+  assign Mout_data_ram_size=data_out_mem_par[BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1:BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram];
+  assign Mout_Wdata_ram=data_out_mem_par[BITSIZE_Mout_Wdata_ram + BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1:BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram];
+  assign Mout_tag_ram={data_out_mem_par[BITSIZE_Mout_tag + BITSIZE_Mout_Wdata_ram + BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1:ADDR_ACC + BITSIZE_selector_register_file+ BITSIZE_Mout_Wdata_ram + BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram],KERN_NUM,fifo_wait_data_out};
+
+  assign Mout_Rdata_ram=data_out_mem_kern[BITSIZE_Mout_Wdata_ram + BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1:BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram];
+  assign Mout_tag=data_out_mem_kern[BITSIZE_Mout_tag + BITSIZE_Mout_Wdata_ram + BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1:BITSIZE_Mout_Wdata_ram + BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram];
+  assign request_wait_accepted= Min_oe_ram||Min_we_ram; //memory always not full so if oe=1 or we=1 i save your request
+
+  always @(posedge clock) begin
+    if (!reset) begin 
+      _present_state &lt;= S_0;
+    end else begin 
+      _present_state &lt;= _next_state;
+    end
+  end
+
+  always @(*)	//FSM of scheduler
+    begin
+      _next_state = S_0;
+      case (_present_state)  
+
+      S_0: begin 
+        // initialization of fifo 
+         if(!reset || task_finished) begin
+            _next_state = S_0;
+         end else begin
+           _next_state = S_1;
+         end
+      end
+
+      S_1: begin
+        if (task_finished) begin 
+          if ((done_port_task || suspension) &amp;&amp; (fifo_empty_ready &amp;&amp; !M_DataRdy)) begin //if fifo ready empty and not ready
+            _next_state = S_4;
+          end else begin
+            _next_state = S_3;
+          end
+        end else begin
+          if (suspension &amp;&amp; (fifo_empty_ready &amp;&amp; !M_DataRdy &amp;&amp; fifo_empty_free)) begin
+            _next_state = S_2;
+          end else begin
+            _next_state = S_1; 
+          end  
+        end    
+      end
+        
+      S_2: begin
+        if (!fifo_empty_ready || M_DataRdy) begin
+          _next_state = S_1;
+        end else begin
+          _next_state = S_2;
+        end
+      end
+
+      S_3: begin //wait only for Ready
+        if ((done_port_task || suspension) &amp;&amp; (fifo_empty_ready &amp;&amp; !M_DataRdy)) begin
+          _next_state = S_4;
+        end else begin
+          _next_state = S_3;
+        end
+      end
+
+      S_4: begin //wait only for Ready
+        if (!fifo_empty_ready || M_DataRdy) begin
+          _next_state = S_3;
+        end else if (fifo_full_free) begin
+          _next_state = S_0;
+        end else begin
+          _next_state = S_4;
+        end
+      end
+
+      default: begin 	  
+      _next_state = S_0;
+      end
+    endcase
+  end
+
+  always @(posedge clock) begin
+    if (!reset) begin 
+      Mout_DataRdy &lt;= 1'b0;
+    end else begin 
+      Mout_DataRdy &lt;= Mout_DataRdy_next;
+    end
+  end
+
+  always @(posedge clock) begin
+    if (!reset) begin 
+      done_request_port &lt;= 1'b0;
+    end else begin 
+      done_request_port &lt;= done_request_port_next;
+    end
+  end
+
+  always @(posedge clock) begin
+    if (!reset) begin 
+      selector_register_file &lt;= {BITSIZE_selector_register_file{1'b0}};
+    end else begin 
+      selector_register_file &lt;= next_selector_register_file;
+    end
+  end
+
+  assign Mout_DataRdy_next=fifo_rd_en_ready || (mux_fifo_sel &amp;&amp; selectorByMemory);
+  assign done_request_port_next= fifo_rd_en_free || (done_port_task &amp; fifo_empty_free &amp; fifo_empty_ready &amp; !selectorByMemory);"/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>mem_scheduler</name>
+      <operation operation_name="mem_scheduler"/>
+      <circuit>
+        <component_o id="mem_scheduler">
+          <structural_type_descriptor id_type="mem_scheduler"/>
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="reset" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="we_kern_mem" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="we_par_mem" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="addr_mem_kern" dir="IN">
+            <structural_type_descriptor type="INT" size="1"/>
+          </port_o>
+          <port_o id="addr_kern_mem" dir="IN">
+            <structural_type_descriptor type="INT" size="1"/>
+          </port_o>
+          <port_o id="addr_mem_par" dir="IN">
+            <structural_type_descriptor type="INT" size="1"/>
+          </port_o>
+          <port_o id="addr_par_mem" dir="IN">
+            <structural_type_descriptor type="INT" size="1"/>
+          </port_o>
+          <port_o id="data_in_kern_mem" dir="IN">
+            <structural_type_descriptor type="INT" size="1"/>
+          </port_o>
+          <port_o id="data_in_par_mem" dir="IN">
+            <structural_type_descriptor type="INT" size="1"/>
+          </port_o>
+          <port_o id="data_out_mem_kern" dir="OUT">
+            <structural_type_descriptor type="INT" size="1"/>
+          </port_o>
+          <port_o id="data_out_mem_par" dir="OUT">
+            <structural_type_descriptor type="INT" size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="mem_scheduler addr_mem_kern addr_kern_mem addr_mem_par addr_par_mem data_in_kern_mem data_in_par_mem  data_out_mem_kern data_out_mem_par NUM_TASKS" VERILOG_PROVIDED=" 
+  reg [BITSIZE_data_in_kern_mem-1:0] local_mem[NUM_TASKS-1:0]; 
+ 
+  integer i; 
+  initial begin 
+    for (i=0; i&lt;NUM_TASKS; i=i+1) begin 
+       local_mem[i] = {BITSIZE_data_in_kern_mem{1'b0}};
+    end
+  end
+
+  always @(posedge clock) begin 
+    if (we_kern_mem == 1'b1) begin 
+      local_mem[addr_kern_mem] &lt;= data_in_kern_mem; // from the memory controller response    
+    end 
+    if (we_par_mem == 1'b1) begin
+      local_mem[addr_par_mem] &lt;= data_in_par_mem;  
+    end
+  end
+
+  assign data_out_mem_kern = local_mem[addr_mem_kern]; 
+  assign data_out_mem_par = local_mem[addr_mem_par];"/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>mem_ctrl_kernel</name>
+      <operation operation_name="mem_ctrl_kernel"/>
+      <circuit>
+        <component_o id="mem_ctrl_kernel">
+          <structural_type_descriptor id_type="mem_ctrl_kernel"/>
+          <parameter name="TAG_MEM_REQ">0</parameter>
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="in2" dir="IN">
+            <structural_type_descriptor type="INT" size="1"/>
+          </port_o>
+          <port_o id="in3" dir="IN">
+            <structural_type_descriptor type="INT" size="1"/>
+          </port_o>
+          <port_o id="M_Rdata_ram" dir="IN">
+            <structural_type_descriptor type="INT" size="1"/>
+          </port_o>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="INT" size="1"/>
+          </port_o>
+          <port_o id="Min_tag" dir="IN">
+            <structural_type_descriptor type="INT" size="1"/>
+          </port_o>
+          <port_o id="sel_LOAD" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="sel_STORE" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="M_DataRdy" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="done" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="request_accepted" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="Mout_addr_ram" dir="OUT">
+            <structural_type_descriptor type="INT" size="1"/>
+          </port_o>
+          <port_o id="Mout_data_ram_size" dir="OUT">
+            <structural_type_descriptor type="INT" size="1"/>
+          </port_o>
+          <port_o id="Mout_Wdata_ram" dir="OUT">
+            <structural_type_descriptor type="INT" size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="INT" size="out1"/>
+          </port_o>
+          <port_o id="Mout_oe_ram" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="Mout_we_ram" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="Mout_tag_ram" dir="OUT">
+            <structural_type_descriptor type="INT" size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="module mem_ctrl_kernel in2 in3 M_Rdata_ram in1 M_DataRdy Min_tag Mout_addr_ram out1 Mout_data_ram_size Mout_Wdata_ram Mout_oe_ram  Mout_we_ram Mout_tag_ram TAG_MEM_REQ" VERILOG_PROVIDED="
+  assign done=((Min_tag==TAG_MEM_REQ) &amp;&amp; M_DataRdy[0]);  //if the tag is equal and ready=1 then its the right data
+  assign Mout_Wdata_ram = (sel_LOAD || sel_STORE) ? in1 :{BITSIZE_Mout_Wdata_ram{1'b0}};
+  assign out1 = M_Rdata_ram;  
+  assign Mout_addr_ram = (sel_LOAD || sel_STORE) ? in2 :{BITSIZE_Mout_addr_ram{1'b0}}; 
+  assign Mout_data_ram_size = (sel_LOAD || sel_STORE) ? in3 :{BITSIZE_Mout_data_ram_size{1'b0}};
+  assign Mout_oe_ram = sel_LOAD;
+  assign Mout_we_ram = sel_STORE;
+  assign Mout_tag_ram = (sel_LOAD || sel_STORE) ? TAG_MEM_REQ :{BITSIZE_Mout_tag_ram{1'b0}};"/>
+        </component_o>
+      </circuit>
+    </cell>
+  </library>
+</technology>
