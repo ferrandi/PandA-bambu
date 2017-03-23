@@ -180,7 +180,8 @@
 #define OPT_CHANNELS_NUMBER                     1+OPT_BRAM_HIGH_LATENCY
 #define OPT_CHANNELS_TYPE                       1+OPT_CHANNELS_NUMBER
 #define OPT_CLOCK_PERIOD_RESOURCE_FRACTION      1+OPT_CHANNELS_TYPE
-#define OPT_DEVICE_NAME                         1+OPT_CLOCK_PERIOD_RESOURCE_FRACTION
+#define OPT_CONTEXT_SWITCH                      1+OPT_CLOCK_PERIOD_RESOURCE_FRACTION
+#define OPT_DEVICE_NAME                         1+OPT_CONTEXT_SWITCH
 #define OPT_DISABLE_BOUNDED_FUNCTION            1+OPT_DEVICE_NAME
 #define OPT_DISABLE_FUNCTION_PROXY              1+OPT_DISABLE_BOUNDED_FUNCTION
 #define OPT_DISABLE_IOB                         1+OPT_DISABLE_FUNCTION_PROXY
@@ -1185,6 +1186,7 @@ int BambuParameter::Exec()
          {"discrepancy-permissive-ptrs",     no_argument, nullptr, OPT_DISCREPANCY_PERMISSIVE_PTRS},
 #if HAVE_EXPERIMENTAL && HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
          {"num-threads",                required_argument, nullptr, OPT_NUM_THREADS},
+         {"context_switch",                optional_argument, nullptr, OPT_CONTEXT_SWITCH},
 #endif
 #if HAVE_EXPERIMENTAL
          {"memory-banks-number",        required_argument, nullptr, OPT_MEMORY_BANKS_NUMBER},
@@ -2143,6 +2145,19 @@ int BambuParameter::Exec()
             setOption(OPT_num_threads, std::string(optarg));
             break;
          }
+         case OPT_CONTEXT_SWITCH:
+         {
+            if(optarg)
+            {
+                setOption(OPT_context_switch, std::string(optarg));
+                break;
+            }
+            else
+            {
+                setOption(OPT_context_switch, "4");
+                break;
+            }
+         }
 #endif
 #if HAVE_EXPERIMENTAL
          case OPT_MEMORY_BANKS_NUMBER:
@@ -2969,7 +2984,8 @@ void BambuParameter::CheckParameters()
    if(getOption<bool>(OPT_parse_pragma))
    {
       setOption(OPT_disable_function_proxy, true);
-      setOption(OPT_function_allocation_algorithm, HLSFlowStep_Type::OMP_FUNCTION_ALLOCATION_CS);
+      if(isOption(OPT_context_switch)) setOption(OPT_function_allocation_algorithm, HLSFlowStep_Type::OMP_FUNCTION_ALLOCATION_CS);
+      else setOption(OPT_function_allocation_algorithm, HLSFlowStep_Type::OMP_FUNCTION_ALLOCATION);
       add_bambu_library("pthread");
    }
 #endif
@@ -3137,6 +3153,7 @@ void BambuParameter::CheckParameters()
    {
       setOption(OPT_evaluation_mode, Evaluation_Mode::DRY_RUN);
    }
+   if(isOption(OPT_context_switch)) setOption(OPT_memory_allocation_algorithm, HLSFlowStep_Type::DOMINATOR_MEMORY_ALLOCATION_CS);
 }
 
 void BambuParameter::SetDefaults()

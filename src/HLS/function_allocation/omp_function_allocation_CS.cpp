@@ -151,7 +151,7 @@ DesignFlowStep_Status OmpFunctionAllocationCS::Exec()
          }
       }
       cycleInd=cycleInd+1;
-   } 
+   }
    return DesignFlowStep_Status::SUCCESS;
 }
 

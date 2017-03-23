@@ -120,6 +120,7 @@ enum class DiopsisInstrumentWriter_Type;
 (chaining_algorithm) \
 (constraints_file) \
 (controller_architecture) \
+(context_switch) \
 (datapath_architecture) \
 (distram_threshold)\
 (DSP_allocation_coefficient)\
@@ -141,6 +142,7 @@ enum class DiopsisInstrumentWriter_Type;
 (interface) \
 (interface_type) \
 (additional_top) \
+(tag_bus_bitsize) \
 (data_bus_bitsize) \
 (addr_bus_bitsize) \
 (libm_std_rounding)\

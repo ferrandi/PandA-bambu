@@ -130,7 +130,6 @@ static unsigned int get_data_bus_bitsize(const hlsRef HLS, const HLS_managerRef 
    return data_bus_bitsize;
 }
 
-
 static unsigned int get_addr_bus_bitsize(const HLS_managerRef HLSMgr)
 {
    unsigned int addr_bus_bitsize = HLSMgr->Rmem->get_bus_addr_bitsize();

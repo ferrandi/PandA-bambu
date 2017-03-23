@@ -455,14 +455,13 @@ void memory_allocation::finalize_memory_allocation()
       if(HLSMgr->Rmem->count_non_private_internal_symbols()==1)
          ++addr_bus_bitsize;
    }
-   HLSMgr->Rmem->set_bus_addr_bitsize(addr_bus_bitsize);
+   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---SIZE bus bitsize: " + STR(size_bus_bitsize));
    if(needMemoryMappedRegisters)
       maximum_bus_size = std::max(maximum_bus_size, addr_bus_bitsize);
    data_bus_bitsize = maximum_bus_size;
    HLSMgr->Rmem->set_bus_data_bitsize(data_bus_bitsize);
    for(size_bus_bitsize=4; data_bus_bitsize >= (1u<<size_bus_bitsize); ++size_bus_bitsize);
    HLSMgr->Rmem->set_bus_size_bitsize(size_bus_bitsize);
-
    HLSMgr->Rmem->set_aligned_bitsize(aligned_bitsize);
    HLSMgr->Rmem->set_bram_bitsize(bram_bitsize);
    HLSMgr->Rmem->set_intern_shared_data(has_intern_shared_data);

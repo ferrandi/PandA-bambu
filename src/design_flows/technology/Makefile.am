@@ -55,11 +55,14 @@ lib_technology_la_CPPFLAGS = \
    -I$(top_srcdir)/src/technology/target_device \
    -I$(top_srcdir)/src/utility \
    -I$(BOOST_DIR) $(all_includes)
-load_default_technology.cpp : C_COMPLEX_IPs.data C_FP_IPs.data C_HLS_IPs.data C_IO_IPs.data C_MEM_IPs.data               C_PROFILING_IPs.data C_STD_IPs.data C_VEC_IPs.data NC_HLS_IPs.data NC_MEM_IPs.data NC_SF_IPs.data NC_STD_IPs.data NC_VEC_IPs.data NC_wishbone_IPs.data
+load_default_technology.cpp : C_COMPLEX_IPs.data C_FP_IPs.data C_HLS_IPs.data C_IO_IPs.data C_MEM_IPs.data C_PROFILING_IPs.data CS_COMPONENT.data C_STD_IPs.data C_VEC_IPs.data NC_HLS_IPs.data NC_MEM_IPs.data NC_SF_IPs.data NC_STD_IPs.data NC_VEC_IPs.data NC_wishbone_IPs.data
 
 #The tab in this rule can't be replaced by blanks
 C_COMPLEX_IPs.data: $(top_srcdir)/etc/lib/technology/C_COMPLEX_IPs.xml
 	$(top_srcdir)/etc/scripts/add_escape.sh $(top_srcdir)/etc/lib/technology/C_COMPLEX_IPs.xml C_COMPLEX_IPs.data
+
+CS_COMPONENT.data: $(top_srcdir)/etc/lib/technology/CS_COMPONENT.xml
+	$(top_srcdir)/etc/scripts/add_escape.sh $(top_srcdir)/etc/lib/technology/CS_COMPONENT.xml CS_COMPONENT.data
 
 C_FP_IPs.data: $(top_srcdir)/etc/lib/technology/C_FP_IPs.xml
 	$(top_srcdir)/etc/scripts/add_escape.sh $(top_srcdir)/etc/lib/technology/C_FP_IPs.xml C_FP_IPs.data

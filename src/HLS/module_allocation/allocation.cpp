@@ -1783,9 +1783,9 @@ DesignFlowStep_Status allocation::InternalExec()
                      }
                      else if(channels_type == CHANNELS_TYPE_MEM_ACC_CS and memory_ctrl_type != "")
                      {  
-			bool function_found=false;
+                        bool function_found=false;
                         auto omp_functions = GetPointer<OmpFunctions>(HLSMgr->Rfuns);
-			for(const auto function : omp_functions->hierarchical_functions)
+                        for(const auto function : omp_functions->hierarchical_functions)
                         {
                            if(function==funId) 
                            {  

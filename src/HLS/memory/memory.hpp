@@ -202,17 +202,22 @@ class memory
             address = ((address / alignment) + 1) * alignment;
       }
 
-   public:
+   protected:
 
       /**
        * Constructor
        */
       memory(const tree_managerRef TreeM, unsigned int off_base_address, unsigned int max_bram, bool null_pointer_check, bool initial_internal_address_p, unsigned int initial_internal_address, unsigned int &_address_bitsize);
 
+   public:
+
       /**
        * Destructor
        */
       ~memory();
+
+      static
+      memoryRef create_memory(const ParameterConstRef parameter, const tree_managerRef TreeM, unsigned int off_base_address, unsigned int max_bram, bool null_pointer_check, bool initial_internal_address_p, unsigned int initial_internal_address, unsigned int &_address_bitsize);
 
       /**
        * Return variables allocated out of the top module

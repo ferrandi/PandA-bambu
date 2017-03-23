@@ -118,17 +118,20 @@ class reg_binding : public variable2obj< generic_objRef >
        */
       void specialise_reg(structural_objectRef & reg, unsigned int r);
 
-   public:
+    protected:
 
       /**
       * Constructor.
       */
       reg_binding(const hlsRef& HLS, const HLS_managerRef HLSMgr_);
+    public:
 
       /**
        * Destructor.
        */
       virtual ~reg_binding();
+
+      static reg_bindingRef create_reg_binding(const hlsRef& HLS, const HLS_managerRef HLSMgr_);
 
       /**
        *

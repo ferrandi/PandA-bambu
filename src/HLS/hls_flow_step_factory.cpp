@@ -355,6 +355,11 @@ DesignFlowStepRef HLSFlowStepFactory::CreateHLSFlowStep(const HLSFlowStep_Type t
             design_flow_step = DesignFlowStepRef(new mem_dominator_allocation(parameters, HLS_mgr, design_flow_manager.lock(), hls_flow_step_specialization));
             break;
          }
+      case HLSFlowStep_Type::DOMINATOR_MEMORY_ALLOCATION_CS:
+         {
+            design_flow_step = DesignFlowStepRef(new mem_dominator_allocation(parameters, HLS_mgr, design_flow_manager.lock(), hls_flow_step_specialization));
+            break;
+         }
       case HLSFlowStep_Type::DRY_RUN_EVALUATION:
          {
             design_flow_step = DesignFlowStepRef(new DryRunEvaluation(parameters, HLS_mgr, design_flow_manager.lock()));
@@ -761,6 +766,7 @@ const DesignFlowStepSet HLSFlowStepFactory::CreateHLSFlowSteps(const std::unorde
             }
          case HLSFlowStep_Type::CLASSICAL_HLS_SYNTHESIS_FLOW:
          case HLSFlowStep_Type::DOMINATOR_MEMORY_ALLOCATION:
+         case HLSFlowStep_Type::DOMINATOR_MEMORY_ALLOCATION_CS:
          case HLSFlowStep_Type::DOMINATOR_FUNCTION_ALLOCATION:
 #if HAVE_SIMULATION_WRAPPER_BUILT
          case HLSFlowStep_Type::GENERATE_SIMULATION_SCRIPT:

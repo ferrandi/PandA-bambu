@@ -66,6 +66,7 @@
 
 ///HLS/memory include
 #include "memory.hpp"
+#include "memory_cs.hpp"
 
 ///STD includes
 #include <iosfwd>
@@ -208,11 +209,12 @@ std::string moduleGenerator::GenerateHDL(const std::string& hdl_template, std::v
       cpp_code_body += "   _p["+STR(portNum)+"].type_size = "+ STR(resize_to_8_or_greater(dataSize)) +";\n";
       portNum++;
    }
-
    cpp_code_body += "std::string data_bus_bitsize = \"" + STR(HLSMgr->Rmem->get_bus_data_bitsize()) + "\";\n";
    cpp_code_body += "std::string addr_bus_bitsize = \"" + STR(HLSMgr->Rmem->get_bus_addr_bitsize()) + "\";\n";
    cpp_code_body += "std::string size_bus_bitsize = \"" + STR(HLSMgr->Rmem->get_bus_size_bitsize()) + "\";\n";
    cpp_code_body += "std::string _specializing_string = \"" + specializing_string + "\";\n";
+   if(parameters->isOption(OPT_context_switch))
+       cpp_code_body += "std::string tag_bus_bitsize = \"" + STR(HLSMgr->Rmem->get_bus_tag_bitsize()) + "\";\n";
    if(parameters->isOption(OPT_channels_number) && parameters->getOption<unsigned int>(OPT_channels_number) > 1)
       cpp_code_body += "unsigned int _number_of_channes = " + STR(parameters->getOption<unsigned int>(OPT_channels_number)) + ";\n";
 
