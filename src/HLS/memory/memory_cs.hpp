@@ -51,6 +51,9 @@ class memory_CS : memory
     /// bus data bitsize
     unsigned int bus_tag_bitsize;
 
+    /// tag of memory assigned to each function
+    std::map<int,int> tag_memory;
+
 public:
    /**
     * Constructor
@@ -71,6 +74,16 @@ public:
     * return the bitsize of the tag bus
     */
    unsigned int get_bus_tag_bitsize() const {return bus_tag_bitsize;}
+
+   /**
+    * set the bus tag bitsize
+    */
+   void set_tag_memory_number(int funID, int tag_number) {tag_memory[funID]=tag_number;}
+
+   /**
+    * return the bitsize of the tag bus
+    */
+   int get_tag_memory_number(int funID) {return tag_memory[funID];}
 
 };
 

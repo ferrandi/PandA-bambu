@@ -118,13 +118,12 @@ class reg_binding : public variable2obj< generic_objRef >
        */
       void specialise_reg(structural_objectRef & reg, unsigned int r);
 
-    protected:
+    public:
 
       /**
       * Constructor.
       */
       reg_binding(const hlsRef& HLS, const HLS_managerRef HLSMgr_);
-    public:
 
       /**
        * Destructor.
@@ -138,6 +137,11 @@ class reg_binding : public variable2obj< generic_objRef >
        */
       void bind(unsigned int sv, unsigned int index);
 
+       /**
+        * return the name of register to be used
+        */
+      std::string CalculateRegisterName(unsigned int i);
+ 
       /**
        * returns number of used register
        * @return the number of used register

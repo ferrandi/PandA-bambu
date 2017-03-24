@@ -54,10 +54,11 @@
 #include "target_device.hpp"
 #include "FPGA_device.hpp"
 #include "liveness.hpp"
+#include "reg_binding_cs.hpp"
+#include "Parameter.hpp"
 
 #include "structural_manager.hpp"
 #include "technology_manager.hpp"
-#include "Parameter.hpp"
 #include "boost/lexical_cast.hpp"
 
 ///HLS/binding/storage_value_information
@@ -77,8 +78,10 @@ reg_binding::~reg_binding()
 
 reg_bindingRef create_reg_binding(const hlsRef& HLS, const HLS_managerRef HLSMgr_)
 {
-   if(parameters->isOption(OPT_context_switch)) HLS->Rreg = reg_bindingRef(new reg_binding_cs(HLS, HLSMgr));
-   else HLS->Rreg = reg_bindingRef(new reg_binding(HLS, HLSMgr));
+   if(HLS->Param->isOption(OPT_context_switch))
+       return reg_bindingRef(new reg_binding_cs(HLS, HLSMgr_));
+   else
+       return reg_bindingRef(new reg_binding(HLS, HLSMgr_));
 }
 
 void reg_binding::print_el(const_iterator &it) const
@@ -240,7 +243,7 @@ void reg_binding::add_to_SM(structural_objectRef clock_port, structural_objectRe
       generic_objRef regis = get(i);
       std::string name = regis->get_string();
       all_regs_without_enable = all_regs_without_enable && curr_is_is_without_enable;
-      std::string register_type_name=CalculateRegisterName();
+      std::string register_type_name=CalculateRegisterName(i);
       std::string library = HLS->HLS_T->get_technology_manager()->get_library(register_type_name);
       structural_objectRef reg_mod = SM->add_module_from_technology_library(name, register_type_name, library, circuit, HLS->HLS_T->get_technology_manager());
       this->specialise_reg(reg_mod, i);
@@ -249,9 +252,7 @@ void reg_binding::add_to_SM(structural_objectRef clock_port, structural_objectRe
       structural_objectRef port_rst = reg_mod->find_member(RESET_PORT_NAME, port_o_K, reg_mod);
       SM->add_connection(reset_port, port_rst);
       regis->set_structural_obj(reg_mod);
-
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug, "Register " + boost::lexical_cast<std::string>(i) + " successfully allocated");
-
    }
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug, "reg_binding::add_registers - End");
    if (HLS->output_level >= OUTPUT_LEVEL_MINIMUM)
@@ -269,7 +270,7 @@ void reg_binding::add_to_SM(structural_objectRef clock_port, structural_objectRe
    }
 }
 
-std::string CalculateRegisterName()
+std::string reg_binding::CalculateRegisterName(unsigned int i)
 {
     std::string register_type_name;
     std::string synch_reset = HLS->Param->getOption<std::string>(OPT_sync_reset);

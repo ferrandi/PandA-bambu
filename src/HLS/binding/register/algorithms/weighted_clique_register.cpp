@@ -48,7 +48,6 @@
 #include "hls.hpp"
 #include "hls_manager.hpp"
 #include "reg_binding.hpp"
-#include "reg_binding_cs.hpp"
 #include "liveness.hpp"
 
 ///. include
@@ -93,8 +92,7 @@ weighted_clique_register::~weighted_clique_register()
 void weighted_clique_register::Initialize()
 {
    HLSFunctionStep::Initialize();
-   if(parameters->getOption<int>(OPT_context_switch)) HLS->Rreg = reg_bindingRef(new reg_binding_cs(HLS, HLSMgr));
-   else HLS->Rreg = reg_bindingRef(new reg_binding(HLS, HLSMgr));
+   HLS->Rreg = reg_binding::create_reg_binding(HLS, HLSMgr);
 }
 
 DesignFlowStep_Status weighted_clique_register::InternalExec()
@@ -146,8 +144,7 @@ DesignFlowStep_Status weighted_clique_register::InternalExec()
          }
       }
       /// finalize
-      if(parameters->isOption(OPT_context_switch)) HLS->Rreg = reg_bindingRef(new reg_binding_cs(HLS, HLSMgr));
-      else HLS->Rreg = reg_bindingRef(new reg_binding(HLS, HLSMgr));
+      HLS->Rreg = reg_binding::create_reg_binding(HLS, HLSMgr);
       const std::list<vertex> & support = HLS->Rliv->get_support();
 
       const std::list<vertex>::const_iterator vEnd = support.end();
@@ -164,8 +161,7 @@ DesignFlowStep_Status weighted_clique_register::InternalExec()
    }
    else
    {
-      if(parameters->isOption(OPT_context_switch)) HLS->Rreg = reg_bindingRef(new reg_binding_cs(HLS, HLSMgr));
-      else HLS->Rreg = reg_bindingRef(new reg_binding(HLS, HLSMgr));
+      HLS->Rreg = reg_binding::create_reg_binding(HLS, HLSMgr);
       num_registers = 0;
    }
    HLS->Rreg->set_used_regs(num_registers);

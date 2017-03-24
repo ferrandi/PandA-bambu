@@ -49,7 +49,6 @@
 class mem_dominator_allocation_CS : public mem_dominator_allocation
 {
 public:
-    std::map<int,int> tag_memory;
     /**
      * Constructor
      * @param design_flow_manager is the design flow manager

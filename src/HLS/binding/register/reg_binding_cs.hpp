@@ -60,14 +60,9 @@ public:
     /**
      * Destructor.
      */
-    virtual ~reg_binding_cs();
+    ~reg_binding_cs();
 
-    std::string CalculateRegisterName();
-
-    /**
-     * Add the resulting registers to the structural description of the datapath
-     */
-    virtual void add_to_SM(structural_objectRef clock_port, structural_objectRef reset_port);
+    virtual std::string CalculateRegisterName();
 };
 
 #endif // REG_BINDING_CS_H

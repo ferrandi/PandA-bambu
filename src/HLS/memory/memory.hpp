@@ -55,6 +55,7 @@ REF_FORWARD_DECL(tree_manager);
 REF_FORWARD_DECL(memory_symbol);
 REF_FORWARD_DECL(structural_manager);
 REF_FORWARD_DECL(structural_object);
+REF_FORWARD_DECL(memory);
 //@}
 class xml_element;
 
@@ -216,8 +217,7 @@ class memory
        */
       ~memory();
 
-      static
-      memoryRef create_memory(const ParameterConstRef parameter, const tree_managerRef TreeM, unsigned int off_base_address, unsigned int max_bram, bool null_pointer_check, bool initial_internal_address_p, unsigned int initial_internal_address, unsigned int &_address_bitsize);
+      static memoryRef create_memory(const tree_managerRef TreeM, unsigned int off_base_address, unsigned int max_bram, bool null_pointer_check, bool initial_internal_address_p, unsigned int initial_internal_address, unsigned int &_address_bitsize);
 
       /**
        * Return variables allocated out of the top module

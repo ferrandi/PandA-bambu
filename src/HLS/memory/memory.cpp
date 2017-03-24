@@ -43,6 +43,7 @@
  *
 */
 #include "memory.hpp"
+#include "memory_cs.hpp"
 
 #include "memory_symbol.hpp"
 
@@ -109,10 +110,12 @@ memory::~memory()
 
 }
 
-memoryRef memory::create_memory(const ParameterConstRef parameter, const tree_managerRef TreeM, unsigned int off_base_address, unsigned int max_bram, bool null_pointer_check, bool initial_internal_address_p, unsigned int initial_internal_address, unsigned int &_address_bitsize) (const ParameterConstRef parameter, const tree_managerRef TreeM, unsigned int off_base_address, unsigned int max_bram, bool null_pointer_check, bool initial_internal_address_p, unsigned int initial_internal_address, unsigned int &_address_bitsize)
+memoryRef memory::create_memory(const tree_managerRef TreeM, unsigned int off_base_address, unsigned int max_bram, bool null_pointer_check, bool initial_internal_address_p, unsigned int initial_internal_address, unsigned int &_address_bitsize)
 {
-   if(parameters->isOption(OPT_context_switch)) return memoryRef(new memory_cs(TreeM, base_address, max_bram, null_pointer_check, initial_internal_address_p, initial_internal_address, HLSMgr->get_address_bitsize()));
-   else return memoryRef(new memory(TreeM, base_address, max_bram, null_pointer_check, initial_internal_address_p, initial_internal_address, HLSMgr->get_address_bitsize()));
+   if(parameters->isOption(OPT_context_switch))
+       return memoryRef(new memory_CS(TreeM, base_address, max_bram, null_pointer_check, initial_internal_address_p, initial_internal_address, HLSMgr->get_address_bitsize()));
+   else
+       return memoryRef(new memory(TreeM, base_address, max_bram, null_pointer_check, initial_internal_address_p, initial_internal_address, HLSMgr->get_address_bitsize()));
 }
 
 std::map<unsigned int, memory_symbolRef> memory::get_ext_memory_variables() const

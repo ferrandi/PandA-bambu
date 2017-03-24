@@ -55,7 +55,7 @@ class datapath_CS: classic_datapath
     /**
      * Adds the input/output ports of the module
      */
-    void add_ports();
+    virtual void add_ports();
 
  public:
     /**
