@@ -217,7 +217,7 @@ class memory
        */
       ~memory();
 
-      static memoryRef create_memory(const tree_managerRef TreeM, unsigned int off_base_address, unsigned int max_bram, bool null_pointer_check, bool initial_internal_address_p, unsigned int initial_internal_address, unsigned int &_address_bitsize);
+      static memoryRef create_memory(const tree_managerRef TreeM, unsigned int base_address, unsigned int max_bram, bool null_pointer_check, bool initial_internal_address_p, unsigned int initial_internal_address, unsigned int &_address_bitsize);
 
       /**
        * Return variables allocated out of the top module
