@@ -43,50 +43,15 @@
 */
 
 #include "omp_functions.hpp"
-#include "hls.hpp"
-#include "hls_target.hpp"
-#include "hls_manager.hpp"
-#include "function_behavior.hpp"
-#include "behavioral_helper.hpp"
-
-#include "generic_obj.hpp"
-#include "mux_conn.hpp"
-#include "mux_obj.hpp"
-#include "commandport_obj.hpp"
-#include "dataport_obj.hpp"
-
-#include "technology_manager.hpp"
-
-#include "BambuParameter.hpp"
-#include "schedule.hpp"
-#include "fu_binding.hpp"
-#include "reg_binding.hpp"
-#include "conn_binding.hpp"
-#include "memory.hpp"
-
-#include "exceptions.hpp"
-
+#include "datapath_cs.hpp"
 #include "structural_objects.hpp"
 #include "structural_manager.hpp"
-
-#include "tree_reindex.hpp"
-#include "tree_manager.hpp"
-#include "tree_node.hpp"
-
-#include "dbgPrintHelper.hpp"
 #include "Parameter.hpp"
-
-#include <iosfwd>
-#include <boost/lexical_cast.hpp>
-
-///technology/physical_library include
-#include "technology_node.hpp"
-
-#include "copyrights_strings.hpp"
-#include "datapath_cs.hpp"
+#include "hls_manager.hpp"
+#include "hls.hpp"
 
 datapath_CS::datapath_CS(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager) :
-   classic_datapath(_parameters, _HLSMgr, _funId, _design_flow_manager, HLSFlowStep_Type::DATAPATH_CS_CREATOR)
+   classic_datapath(_parameters, _HLSMgr, _funId, _design_flow_manager)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }
@@ -98,12 +63,23 @@ datapath_CS::~datapath_CS()
 DesignFlowStep_Status datapath_CS::InternalExec()
 {
     classic_datapath::Exec();    //exec of hierarchical class
-    for (auto const functional_unit : HLS->Rfu)
-    {
-
-    }
+    //new merging
+    return DesignFlowStep_Status::SUCCESS;
 }
 
 void datapath_CS::add_ports()
 {
+    classic_datapath::add_ports();      //add standard port
+    auto omp_functions = GetPointer<OmpFunctions>(HLSMgr->Rfuns);
+    bool found=false;
+    if(omp_functions->kernel_functions.find(funId) != omp_functions->kernel_functions.end()) found=true;
+    if(omp_functions->parallelized_functions.find(funId) != omp_functions->kernel_functions.end()) found=true;
+    if(omp_functions->atomic_functions.find(funId) != omp_functions->kernel_functions.end()) found=true;
+    if(found)       //function with selector
+    {
+       const structural_managerRef& SM = this->HLS->datapath;
+       const structural_objectRef circuit = SM->get_circ();
+       structural_type_descriptorRef port_type = structural_type_descriptorRef(new structural_type_descriptor("bool", HLS->Param->getOption(OPT_context_switch)));
+       SM->add_port(SELECTOR_REGISTER_FILE, port_o::IN, circuit, port_type);
+    }
 }

@@ -3275,6 +3275,7 @@ void BambuParameter::SetDefaults()
    setOption(OPT_datapath_interconnection_algorithm, HLSFlowStep_Type::MUX_INTERCONNECTION_BINDING);
    /// Datapath architecture
    setOption(OPT_datapath_architecture, HLSFlowStep_Type::CLASSIC_DATAPATH_CREATOR);
+   setOption(OPT_datapath_architecture, HLSFlowStep_Type::DATAPATH_CS_CREATOR);
 
    /// -- Controller -- //
    /// target architecture for the controller

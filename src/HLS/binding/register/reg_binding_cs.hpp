@@ -62,12 +62,12 @@ public:
      */
     ~reg_binding_cs();
 
-    std::string CalculateRegisterName();
+    std::string CalculateRegisterName(unsigned int i);
 
     /**
     * Add to the resulting registers file the clock and selector
     */
-    void add_to_SM(structural_objectRef clock_port, structural_objectRef selector_register_file);
+    void add_to_SM(structural_objectRef clock_port, structural_objectRef reset_port, structural_objectRef selector_register_file_signal_port);
 };
 
 #endif // REG_BINDING_CS_H

@@ -49,7 +49,7 @@
 #include "classic_datapath.hpp"
 REF_FORWARD_DECL(structural_object);
 
-class datapath_CS: classic_datapath
+class datapath_CS: public classic_datapath
 {
  protected:
     /**

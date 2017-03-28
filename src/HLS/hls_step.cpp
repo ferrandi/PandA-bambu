@@ -150,6 +150,8 @@ const std::string HLS_step::EnumToName(const HLSFlowStep_Type hls_flow_step_type
          return "ChordalColoringRegisterBinding";
       case HLSFlowStep_Type::CLASSIC_DATAPATH_CREATOR:
          return "ClassicDatapathCreator";
+      case HLSFlowStep_Type::DATAPATH_CS_CREATOR:
+         return "ClassicDatapathCreator";
       case HLSFlowStep_Type::CLASSICAL_HLS_SYNTHESIS_FLOW:
          return "ClassicalHLSSynthesisFlow";
 #if HAVE_EXPERIMENTAL

@@ -59,6 +59,7 @@
 
 ///HLS/architecture_creator/datapath_creation
 #include "classic_datapath.hpp"
+#include "datapath_cs.hpp"
 
 ///HLS/architecture_creator/fsm_creator/algorithms include
 #include "fsm_controller.hpp"
@@ -326,6 +327,11 @@ DesignFlowStepRef HLSFlowStepFactory::CreateHLSFlowStep(const HLSFlowStep_Type t
       case HLSFlowStep_Type::CLASSIC_DATAPATH_CREATOR:
          {
             design_flow_step = DesignFlowStepRef(new classic_datapath(parameters, HLS_mgr, funId, design_flow_manager.lock()));
+            break;
+         }
+      case HLSFlowStep_Type::DATAPATH_CS_CREATOR:
+         {
+            design_flow_step = DesignFlowStepRef(new datapath_cs(parameters, HLS_mgr, funId, design_flow_manager.lock()));
             break;
          }
       case HLSFlowStep_Type::CLASSICAL_HLS_SYNTHESIS_FLOW:
@@ -806,6 +812,7 @@ const DesignFlowStepSet HLSFlowStepFactory::CreateHLSFlowSteps(const std::unorde
          case HLSFlowStep_Type::CLOCK_SLACK_ESTIMATION:
 #endif
          case HLSFlowStep_Type::COLORING_REGISTER_BINDING:
+         case HLSFlowStep_Type::DATAPATH_CS_CREATOR:
 #if HAVE_BEAGLE
          case HLSFlowStep_Type::DSE_DESIGN_FLOW:
 #endif

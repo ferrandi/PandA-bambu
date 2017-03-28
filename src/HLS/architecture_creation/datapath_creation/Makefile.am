@@ -25,11 +25,12 @@ lib_datapath_creation_la_CPPFLAGS =  \
    -I$(top_srcdir)/src/technology/target_device \
    -I$(top_srcdir)/src/tree \
    -I$(top_srcdir)/src/utility \
+   -I$(top_srcdir)/src/HLS/function_allocation \
    -I$(BOOST_DIR) $(all_includes)
 
-noinst_HEADERS = datapath_creator.hpp classic_datapath.hpp
+noinst_HEADERS = datapath_creator.hpp classic_datapath.hpp datapath_cs.hpp
 
-lib_datapath_creation_la_SOURCES = datapath_creator.cpp classic_datapath.cpp
+lib_datapath_creation_la_SOURCES = datapath_creator.cpp classic_datapath.cpp datapath_cs.cpp
 
 #DOCUMENTATION STUFF
 DOX_TAGFILES=

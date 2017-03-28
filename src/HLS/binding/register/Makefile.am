@@ -25,6 +25,7 @@ lib_registerbinding_la_CPPFLAGS = \
     -I$(top_srcdir)/src/technology/physical_library \
     -I$(top_srcdir)/src/tree \
     -I$(top_srcdir)/src/utility \
+    -I$(top_srcdir)/src/HLS/function_allocation \
     -I$(BOOST_DIR) $(all_includes)
 
 METASOURCES = AUTO

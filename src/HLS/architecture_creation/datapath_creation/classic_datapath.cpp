@@ -207,7 +207,7 @@ void classic_datapath::add_ports()
       structural_type_descriptorRef port_type;
       if(HLSMgr->Rmem->has_base_address(function_parameter) && !HLSMgr->Rmem->has_parameter_base_address(function_parameter, HLS->functionId) && !HLSMgr->Rmem->is_parm_decl_stored(function_parameter))
       {
-         port_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 32));
+          port_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 32));
       }
       else
          port_type = structural_type_descriptorRef(new structural_type_descriptor(function_parameter, BH)) ;

@@ -284,6 +284,7 @@
       <channels_type>MEM_ACC_CS</channels_type>
       <circuit>
         <component_o id="OPEN">
+          <parameter name="TAG_MEM_REQ">0</parameter>
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
           <copyright>Copyright (C) 2015-2016 Politecnico di Milano</copyright>
           <authors>Marco Lattuada&lt;marco.lattuada@polimi.it&gt;</authors>
@@ -362,7 +363,7 @@
             <structural_type_descriptor type="BOOL" size="1"/>
             <connected_objects/>
           </port_vector_o>
-          <NP_functionality LIBRARY="out1 Mout_oe_ram Mout_we_ram Mout_addr_ram M_Rdata_ram Mout_Wdata_ram Mout_data_ram_size M_DataRdy " IP_COMPONENT="MEMORY_CTRL_P1N" VERILOG_GENERATOR="open_verilog_generator_p1n.cpp"/>
+          <NP_functionality LIBRARY="out1 Mout_oe_ram Mout_we_ram Mout_addr_ram M_Rdata_ram Mout_Wdata_ram Mout_data_ram_size M_DataRdy TAG_MEM_REQ" IP_COMPONENT="mem_ctrl_kernel" VERILOG_GENERATOR="open_verilog_generator_p1n.cpp"/>
         </component_o>
       </circuit>
     </cell>
