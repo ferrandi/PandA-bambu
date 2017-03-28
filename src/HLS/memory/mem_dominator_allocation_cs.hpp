@@ -44,7 +44,7 @@
 #ifndef MEMORY_DOMINATOR_ALLOCATION_HPP
 #define MEMORY_DOMINATOR_ALLOCATION_HPP
 
-#include "memory_allocation_CS.hpp"
+#include "mem_dominator_allocation.hpp"
 
 class mem_dominator_allocation_CS : public mem_dominator_allocation
 {
@@ -58,7 +58,7 @@ public:
     /**
      * Destructor
      */
-    ~mem_dominator_allocation_CS();
+    virtual ~mem_dominator_allocation_CS();
 
     /**
      * Execute the step

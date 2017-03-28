@@ -214,7 +214,7 @@ std::string moduleGenerator::GenerateHDL(const std::string& hdl_template, std::v
    cpp_code_body += "std::string size_bus_bitsize = \"" + STR(HLSMgr->Rmem->get_bus_size_bitsize()) + "\";\n";
    cpp_code_body += "std::string _specializing_string = \"" + specializing_string + "\";\n";
    if(parameters->isOption(OPT_context_switch))
-       cpp_code_body += "std::string tag_bus_bitsize = \"" + STR(HLSMgr->Rmem->get_bus_tag_bitsize()) + "\";\n";
+       cpp_code_body += "std::string tag_bus_bitsize = \"" + STR(GetPointer<memory_cs>(HLSMgr->Rmem)->get_bus_tag_bitsize()) + "\";\n";
    if(parameters->isOption(OPT_channels_number) && parameters->getOption<unsigned int>(OPT_channels_number) > 1)
       cpp_code_body += "unsigned int _number_of_channes = " + STR(parameters->getOption<unsigned int>(OPT_channels_number)) + ";\n";
 

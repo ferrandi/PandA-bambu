@@ -46,7 +46,7 @@
 #define MEMORY_CS_H
 #include "memory.hpp"
 
-class memory_CS : memory
+class memory_cs : public memory
 {  
     /// bus data bitsize
     unsigned int bus_tag_bitsize;
@@ -58,12 +58,12 @@ public:
    /**
     * Constructor
     */
-   memory_CS(const tree_managerRef TreeM, unsigned int off_base_address, unsigned int max_bram, bool null_pointer_check, bool initial_internal_address_p, unsigned int initial_internal_address, unsigned int &_address_bitsize);
+   memory_cs(const tree_managerRef TreeM, unsigned int off_base_address, unsigned int max_bram, bool null_pointer_check, bool initial_internal_address_p, unsigned int initial_internal_address, unsigned int &_address_bitsize);
 
    /**
     * Destructor
     */
-   ~memory_CS();
+   virtual ~memory_cs();
 
    /**
     * set the bus tag bitsize

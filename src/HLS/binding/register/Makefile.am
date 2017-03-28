@@ -29,9 +29,9 @@ lib_registerbinding_la_CPPFLAGS = \
 
 METASOURCES = AUTO
 
-noinst_HEADERS = reg_binding.hpp reg_binding_creator.hpp Variable.hpp
+noinst_HEADERS = reg_binding.hpp reg_binding_creator.hpp Variable.hpp reg_binding_cs.hpp
 
-lib_registerbinding_la_SOURCES = reg_binding.cpp reg_binding_creator.cpp
+lib_registerbinding_la_SOURCES = reg_binding.cpp reg_binding_creator.cpp reg_binding_cs.cpp
 
 lib_registerbinding_la_LIBADD = \
       $(top_builddir)/src/HLS/binding/register/algorithms/lib_register_algorithms.la

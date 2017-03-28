@@ -180,10 +180,10 @@
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
-          <port_o id="data" dir="IN">
+          <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
-          <port_o id="we" dir="IN">
+          <port_o id="wenable" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="addr" dir="IN">
@@ -191,13 +191,13 @@
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-          </port_o>
-          <NP_functionality LIBRARY="rams_dist data addr out1 BITSIZE_MEM " VERILOG_PROVIDED=
-"reg [BITSIZE_DATA-1:0] ram [BITSIZE_MEM-1:0]; 
+          </port_o> in1
+          <NP_functionality LIBRARY="rams_dist in1 addr out1 BITSIZE_MEM " VERILOG_PROVIDED=
+"reg [BITSIZE_in1-1:0] ram [BITSIZE_MEM-1:0];
   always @(posedge clock)
   begin
-  if (we)
-    ram[addr] &lt;= data;
+  if (wenable)
+    ram[addr] &lt;= in1;
   end
   assign out1 = ram[addr];"/>
         </component_o>

@@ -41,6 +41,7 @@
  *
 */
 #include "omp_functions.hpp"
+#include "memory_cs.hpp"
 #include "mem_dominator_allocation_cs.hpp"
 #include "cmath"
 
@@ -69,7 +70,7 @@ DesignFlowStep_Status mem_dominator_allocation_CS::Exec()
     for (const auto & funID : reached_fu_ids)
     {
        std::cout<<HLSMgr->CGetFunctionBehavior(funID)->CGetBehavioralHelper()->get_function_name()<<" has to be syntetized"<<std::endl;
-       GetPointer<memory_CS>(HLSMgr->Rmem)->set_tag_memory_number(funID,tag_index);
+       GetPointer<memory_cs>(HLSMgr->Rmem)->set_tag_memory_number(funID,tag_index);
        if(omp_functions->kernel_functions.find(funID) != omp_functions->kernel_functions.end()) noMemory=true;
        if(omp_functions->parallelized_functions.find(funID) != omp_functions->parallelized_functions.end()) noMemory=true;
        if(omp_functions->atomic_functions.find(funID) != omp_functions->atomic_functions.end()) noMemory=true;
@@ -81,7 +82,7 @@ DesignFlowStep_Status mem_dominator_allocation_CS::Exec()
     int context_switch=log2(parameters->getOption<int>(OPT_context_switch));
     int num_threads=log2(parameters->getOption<int>(OPT_num_threads));
     tag_index=tag_index+context_switch+num_threads; //tag_index final
-    GetPointer<memory_CS>(HLSMgr->Rmem)->set_bus_tag_bitsize(tag_index);
+    GetPointer<memory_cs>(HLSMgr->Rmem)->set_bus_tag_bitsize(tag_index);
 
     int iterator=0;
     int base_address= pow((num_threads+context_switch),2);
@@ -91,7 +92,7 @@ DesignFlowStep_Status mem_dominator_allocation_CS::Exec()
        if(omp_functions->atomic_functions.find(funID) != omp_functions->atomic_functions.end()) tag_number+=pow((tag_index-2),2);     //second bit 1
        tag_number+=(i*base_address);    //add number
        if(omp_functions->omp_for_wrappers.find(source_id) != omp_functions->omp_for_wrappers.end()) tag_number=pow((tag_index-1),2);  // first bit 1
-       GetPointer<memory_CS>(HLSMgr->Rmem)->set_tag_memory_number(funID,tag_number);
+       GetPointer<memory_cs>(HLSMgr->Rmem)->set_tag_memory_number(funID,tag_number);
        iterator++;
     }
 }

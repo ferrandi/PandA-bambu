@@ -187,7 +187,7 @@ class reg_binding : public variable2obj< generic_objRef >
       /**
        * Add the resulting registers to the structural description of the datapath
        */
-      virtual void add_to_SM(structural_objectRef clock_port, structural_objectRef reset_port);
+      void add_to_SM(structural_objectRef clock_port, structural_objectRef reset_port);
 
       /**
        * return bitsize

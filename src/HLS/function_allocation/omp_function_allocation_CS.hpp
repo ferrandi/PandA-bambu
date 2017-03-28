@@ -55,7 +55,7 @@ class OmpFunctionAllocationCS : public fun_dominator_allocation
       /**
        * Destructor
        */
-      ~OmpFunctionAllocationCS();
+     virtual ~OmpFunctionAllocationCS();
 
       /**
        * Execute the step
