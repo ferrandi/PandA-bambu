@@ -102,6 +102,7 @@ class xml_element;
 #define DONE_PORT_NAME "done_port"
 #define RETURN_PORT_NAME "return_port"
 #define SELECTOR_REGISTER_FILE "selector_register_file_signal"
+#define SUSPENSION "suspension_signal"
 #define PROXY_PREFIX "PROXY_PREF_"
 #define WRAPPED_PROXY_PREFIX "WRAPPED_PROXY_PREF_"
 

@@ -75,9 +75,8 @@
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
 
-
-mem_dominator_allocation::mem_dominator_allocation(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStepSpecializationConstRef _hls_flow_step_specialization) :
-   memory_allocation(_parameters, _HLSMgr, _design_flow_manager, HLSFlowStep_Type::DOMINATOR_MEMORY_ALLOCATION, _hls_flow_step_specialization)
+mem_dominator_allocation::mem_dominator_allocation(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStepSpecializationConstRef _hls_flow_step_specialization, const HLSFlowStep_Type _hls_flow_step_type) :
+   memory_allocation(_parameters, _HLSMgr, _design_flow_manager, _hls_flow_step_type, _hls_flow_step_specialization)
 {
    debug_level = _parameters->get_class_debug_level(GET_CLASS(*this));
 }

@@ -31,37 +31,40 @@
  *
 */
 /**
- * @file reg_binding.hpp
- * @brief add register file and add selector to their input
- *
+ * @file controller_cs.hpp
+ * @brief Base class for all the controller creation algorithms.
  * @author Nicola Saporetti <nicola.saporetti@gmail.com>
  *
 */
+#ifndef CONTROLLER_CS_H
+#define CONTROLLER_CS_H
 
-#ifndef REG_BINDING_CS_H
-#define REG_BINDING_CS_H
+#include "controller_creator_base_step.hpp"
 
-#include "reg_binding.hpp"
-
-class reg_binding_cs : public reg_binding
+class controller_cs : public ControllerCreatorBaseStep
 {
-public:
+ public:
     /**
-    * Constructor.
-    */
-    reg_binding_cs(const hlsRef& HLS, const HLS_managerRef HLSMgr_);
+     * Constructor
+     */
+    controller_cs(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type);
 
     /**
      * Destructor.
      */
-    virtual ~reg_binding_cs();
+    virtual ~controller_cs();
 
-    std::string CalculateRegisterName(unsigned int i);
+ protected:
+
+    void add_common_ports(structural_objectRef circuit);
 
     /**
-    * Add to the resulting registers file the clock and selector
+    * Adds the done port to a circuit. Called by add_common_ports
+    * The done port appears to go high once all the calculation of a function are completed
+    * \param circuit the circuit where to add the done port
     */
-    void add_to_SM(structural_objectRef clock_port, structural_objectRef reset_port, structural_objectRef selector_register_file_signal_port);
+    void add_selector_register_file_port(structural_objectRef circuit);
+
 };
 
-#endif // REG_BINDING_CS_H
+#endif // CONTROLLER_CS_H

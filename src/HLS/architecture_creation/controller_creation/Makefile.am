@@ -32,10 +32,14 @@ lib_controller_creation_la_CPPFLAGS = \
 
 
 noinst_HEADERS = \
-   controller_creator_base_step.hpp fsm_controller.hpp
+   controller_creator_base_step.hpp \
+   controller_cs.hpp \
+   fsm_controller.hpp
 
 lib_controller_creation_la_SOURCES = \
-   controller_creator_base_step.cpp fsm_controller.cpp
+   controller_creator_base_step.cpp \
+   controller_cs.cpp \
+   fsm_controller.cpp
 
 #DOCUMENTATION STUFF
 PRJ_DOC = controller.doc fsm.doc

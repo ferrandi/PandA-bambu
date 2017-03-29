@@ -32,15 +32,9 @@
 */
 /**
  * @file classic_datapath.hpp
- * @brief Base class for usual datapath creation.
+ * @brief Base class for usual add new port in datapath of context_switch.
  *
- * @author Christian Pilato <pilato@elet.polimi.it>
- * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
- * $Locker:  $
- * $State: Exp $
+ * @author Nicola Saporetti <nicola.saporetti@gmail.com>
  *
 */
 #ifndef DATAPATH_CS_H
@@ -49,31 +43,31 @@
 #include "classic_datapath.hpp"
 REF_FORWARD_DECL(structural_object);
 
-class datapath_CS: public classic_datapath
+class datapath_cs: public classic_datapath
 {
  protected:
     /**
      * Adds the input/output ports of the module
      */
-    virtual void add_ports();
+    void add_ports();
 
  public:
     /**
      * Constructor.
      * @param design_flow_manager is the design flow manager
      */
-    datapath_CS(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager);
+    datapath_cs(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager);
 
     /**
      * Destructor.
      */
-    ~datapath_CS();
+    virtual ~datapath_cs();
 
     /**
      * Execute the step
      * @return the exit status of this step
      */
-    virtual DesignFlowStep_Status InternalExec();
+    DesignFlowStep_Status InternalExec();
 };
 #endif
 

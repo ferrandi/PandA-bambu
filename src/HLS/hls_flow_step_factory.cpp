@@ -204,6 +204,7 @@
 
 ///HLS/memory
 #include "mem_dominator_allocation.hpp"
+#include "mem_dominator_allocation_cs.hpp"
 #include "mem_xml_allocation.hpp"
 
 ///HLS/module_allocation includes
@@ -358,12 +359,14 @@ DesignFlowStepRef HLSFlowStepFactory::CreateHLSFlowStep(const HLSFlowStep_Type t
          }
       case HLSFlowStep_Type::DOMINATOR_MEMORY_ALLOCATION:
          {
+            std::cout<<"Called the wrong hls step"<<std::endl;
             design_flow_step = DesignFlowStepRef(new mem_dominator_allocation(parameters, HLS_mgr, design_flow_manager.lock(), hls_flow_step_specialization));
             break;
          }
       case HLSFlowStep_Type::DOMINATOR_MEMORY_ALLOCATION_CS:
          {
-            design_flow_step = DesignFlowStepRef(new mem_dominator_allocation(parameters, HLS_mgr, design_flow_manager.lock(), hls_flow_step_specialization));
+            std::cout<<"Called the right hls step"<<std::endl;
+            design_flow_step = DesignFlowStepRef(new mem_dominator_allocation_cs(parameters, HLS_mgr, design_flow_manager.lock(), hls_flow_step_specialization, HLSFlowStep_Type::DOMINATOR_MEMORY_ALLOCATION_CS));
             break;
          }
       case HLSFlowStep_Type::DRY_RUN_EVALUATION:

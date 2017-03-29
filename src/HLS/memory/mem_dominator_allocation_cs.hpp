@@ -31,45 +31,36 @@
  *
 */
 /**
- * @file mem_dominator_allocation.hpp
- * @brief Class to allocate memories in HLS based on dominators
+ * @file mem_dominator_allocation_CS.hpp
+ * @brief Class to allocate memories in HLS based on dominators, add tag for context switch
  *
- * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
- *
+ * @author Nicola Saporetti <nicola.saporetti@gmail.com>
 */
 
-#ifndef MEMORY_DOMINATOR_ALLOCATION_HPP
-#define MEMORY_DOMINATOR_ALLOCATION_HPP
+#ifndef MEMORY_DOMINATOR_ALLOCATION_CS_HPP
+#define MEMORY_DOMINATOR_ALLOCATION_CS_HPP
 
 #include "mem_dominator_allocation.hpp"
 
-class mem_dominator_allocation_CS : public mem_dominator_allocation
+class mem_dominator_allocation_cs : public mem_dominator_allocation
 {
 public:
     /**
      * Constructor
      * @param design_flow_manager is the design flow manager
      */
-    mem_dominator_allocation_CS(const ParameterConstRef Param, const HLS_managerRef HLSMgr, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStepSpecializationConstRef hls_flow_step_specialization);
+    mem_dominator_allocation_cs(const ParameterConstRef Param, const HLS_managerRef HLSMgr, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStepSpecializationConstRef hls_flow_step_specialization, const HLSFlowStep_Type hls_flow_step_type);
 
     /**
      * Destructor
      */
-    virtual ~mem_dominator_allocation_CS();
+    virtual ~mem_dominator_allocation_cs();
 
     /**
      * Execute the step
      * @return the exit status of this step
      */
     virtual DesignFlowStep_Status Exec();
-
-    /**
-     * Initialize the step (i.e., like a constructor, but executed just before exec
-     */
-    virtual void Initialize();
 };
 
 #endif // MEM_DOMINATOR_ALLOCATION_CS_H

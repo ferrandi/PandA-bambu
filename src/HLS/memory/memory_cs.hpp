@@ -31,15 +31,10 @@
  *
 */
 /**
- * @file memory.hpp
- * @brief Datastructure to represent memory information in high-level synthesis
+ * @file mem_dominator_allocation_CS.hpp
+ * @brief add tag information
  *
- * @author Christian Pilato <pilato@elet.polimi.it>
- * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
- *
+ * @author Nicola Saporetti <nicola.saporetti@gmail.com>
 */
 
 #ifndef MEMORY_CS_H
@@ -52,7 +47,7 @@ class memory_cs : public memory
     unsigned int bus_tag_bitsize;
 
     /// tag of memory assigned to each function
-    std::map<int,int> tag_memory;
+    std::map<unsigned int,unsigned int> tag_memory;
 
 public:
    /**
@@ -78,12 +73,12 @@ public:
    /**
     * set the bus tag bitsize
     */
-   void set_tag_memory_number(int funID, int tag_number) {tag_memory[funID]=tag_number;}
+   void set_tag_memory_number(unsigned int funID, unsigned int tag_number) {tag_memory[funID]=tag_number;}
 
    /**
     * return the bitsize of the tag bus
     */
-   int get_tag_memory_number(int funID) {return tag_memory[funID];}
+   unsigned int get_tag_memory_number(unsigned int funID) {return tag_memory[funID];}
 
 };
 

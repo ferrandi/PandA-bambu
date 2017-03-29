@@ -76,7 +76,7 @@ reg_binding::~reg_binding()
 {
 }
 
-reg_bindingRef create_reg_binding(const hlsRef& HLS, const HLS_managerRef HLSMgr_)
+reg_bindingRef reg_binding::create_reg_binding(const hlsRef& HLS, const HLS_managerRef HLSMgr_)
 {
    if(HLS->Param->isOption(OPT_context_switch))
        return reg_bindingRef(new reg_binding_cs(HLS, HLSMgr_));

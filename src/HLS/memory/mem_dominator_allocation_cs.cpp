@@ -31,31 +31,32 @@
  *
 */
 /**
- * @file mem_dominator_allocation.cpp
- * @brief Memory allocation based on the dominator tree of the call graph.
+ * @file mem_dominator_allocation_CS.hpp
+ * @brief Class to allocate memories in HLS based on dominators, add tag for context switch
  *
- * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
- *
+ * @author Nicola Saporetti <nicola.saporetti@gmail.com>
 */
 #include "omp_functions.hpp"
 #include "memory_cs.hpp"
 #include "mem_dominator_allocation_cs.hpp"
 #include "cmath"
+#include "Parameter.hpp"
+#include "hls_manager.hpp"
+#include "call_graph_manager.hpp"
+#include "function_behavior.hpp"
+#include "behavioral_helper.hpp"
 
-mem_dominator_allocation_CS::mem_dominator_allocation_CS(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStepSpecializationConstRef _hls_flow_step_specialization) :
-   mem_dominator_allocation (_parameters, _HLSMgr, _design_flow_manager, HLSFlowStep_Type::DOMINATOR_MEMORY_ALLOCATION_CS, _hls_flow_step_specialization)
+mem_dominator_allocation_cs::mem_dominator_allocation_cs(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStepSpecializationConstRef _hls_flow_step_specialization, const HLSFlowStep_Type _hls_flow_step_type) :
+   mem_dominator_allocation (_parameters, _HLSMgr, _design_flow_manager, _hls_flow_step_specialization, _hls_flow_step_type)
 {
    debug_level = _parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
-mem_dominator_allocation_CS::~mem_dominator_allocation_CS()
+mem_dominator_allocation_cs::~mem_dominator_allocation_cs()
 {
 }
 
-DesignFlowStep_Status mem_dominator_allocation_CS::Exec()
+DesignFlowStep_Status mem_dominator_allocation_cs::Exec()
 {
     mem_dominator_allocation::Exec();    //exec of hierarchical class
     const auto call_graph_manager = HLSMgr->CGetCallGraphManager();
@@ -65,7 +66,7 @@ DesignFlowStep_Status mem_dominator_allocation_CS::Exec()
        for (const auto reached_f_id : call_graph_manager->GetReachedBodyFunctionsFrom(f_id))
           reached_fu_ids.insert(reached_f_id);
     auto omp_functions = GetPointer<OmpFunctions>(HLSMgr->Rfuns);
-    int tag_index=0;
+    unsigned int tag_index=0;
     bool noMemory=false;
     for (const auto & funID : reached_fu_ids)
     {
@@ -77,26 +78,25 @@ DesignFlowStep_Status mem_dominator_allocation_CS::Exec()
        if(noMemory) tag_index++;    //only parallel and other function have memory_ctrl
        noMemory=false;  //reset counter
     }
-    tag_index=ceil(log2(tag_index));    //reduce into log2 and take the upper bound
+    tag_index=static_cast<unsigned int>(ceil(log2(tag_index)));    //reduce into log2 and take the upper bound
     tag_index+=2;   //bit for parallel and atomic
-    int context_switch=log2(parameters->getOption<int>(OPT_context_switch));
-    int num_threads=log2(parameters->getOption<int>(OPT_num_threads));
+    unsigned int context_switch=static_cast<unsigned int>(log2(parameters->getOption<int>(OPT_context_switch)));
+    unsigned int num_threads=static_cast<unsigned int>(log2(parameters->getOption<int>(OPT_num_threads)));
     tag_index=tag_index+context_switch+num_threads; //tag_index final
     GetPointer<memory_cs>(HLSMgr->Rmem)->set_bus_tag_bitsize(tag_index);
 
-    int iterator=0;
-    int base_address= pow((num_threads+context_switch),2);
+    unsigned int iterator=0;
+    unsigned int base_address=static_cast<unsigned int>(pow((num_threads+context_switch),2));
     for (const auto & funID : reached_fu_ids)
     {
-       int tag_number=0;   //number of tag to assign
-       if(omp_functions->atomic_functions.find(funID) != omp_functions->atomic_functions.end()) tag_number+=pow((tag_index-2),2);     //second bit 1
-       tag_number+=(i*base_address);    //add number
-       if(omp_functions->omp_for_wrappers.find(source_id) != omp_functions->omp_for_wrappers.end()) tag_number=pow((tag_index-1),2);  // first bit 1
+       unsigned int tag_number=0;   //number of tag to assign
+       if(omp_functions->atomic_functions.find(funID) != omp_functions->atomic_functions.end())
+           tag_number+=static_cast<unsigned int>(pow((tag_index-2),2));     //second bit 1
+       tag_number+=(iterator*base_address);    //add number
+       if(omp_functions->omp_for_wrappers.find(funID) != omp_functions->omp_for_wrappers.end())
+           tag_number=static_cast<unsigned int>(pow((tag_index-1),2));  // first bit 1
        GetPointer<memory_cs>(HLSMgr->Rmem)->set_tag_memory_number(funID,tag_number);
        iterator++;
     }
-}
-
-void mem_dominator_allocation_CS::Initialize()
-{
+    return DesignFlowStep_Status::SUCCESS;
 }

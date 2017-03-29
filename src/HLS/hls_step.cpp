@@ -163,7 +163,7 @@ const std::string HLS_step::EnumToName(const HLSFlowStep_Type hls_flow_step_type
       case HLSFlowStep_Type::DOMINATOR_MEMORY_ALLOCATION:
          return "DominatorMemoryAllocation";
       case HLSFlowStep_Type::DOMINATOR_MEMORY_ALLOCATION_CS:
-         return "DominatorMemoryAllocationCS";
+         return "DominatorMemoryAllocationcs";
       case HLSFlowStep_Type::DOMINATOR_FUNCTION_ALLOCATION:
          return "DominatorFunctionAllocation";
       case HLSFlowStep_Type::DRY_RUN_EVALUATION:

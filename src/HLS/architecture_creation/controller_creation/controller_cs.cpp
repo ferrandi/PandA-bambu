@@ -1,0 +1,78 @@
+/*
+ *
+ *                   _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
+ *                  _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
+ *                 _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
+ *                _/      _/    _/ _/    _/ _/   _/ _/    _/
+ *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
+ *
+ *             ***********************************************
+ *                              PandA Project
+ *                     URL: http://panda.dei.polimi.it
+ *                       Politecnico di Milano - DEIB
+ *                        System Architectures Group
+ *             ***********************************************
+ *              Copyright (c) 2004-2016 Politecnico di Milano
+ *
+ *   This file is part of the PandA framework.
+ *
+ *   The PandA framework is free software; you can redistribute it and/or modify
+ *   it under the terms of the GNU General Public License as published by
+ *   the Free Software Foundation; either version 3 of the License, or
+ *   (at your option) any later version.
+ *
+ *   This program is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU General Public License for more details.
+ *
+ *   You should have received a copy of the GNU General Public License
+ *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+*/
+/**
+ * @file controller_creator_base_step.hpp
+ * @brief Base class for all the controller creation algorithms.
+ *
+ * This class is a pure virtual one, that has to be specilized in order to implement a particular algorithm to create the
+ * controller.
+ *
+ * @author Nicola Saporetti <nicola.saporetti@gmail.com>
+ *
+*/
+
+#include "controller_cs.hpp"
+#include "math.h"
+#include "structural_objects.hpp"
+#include "hls.hpp"
+#include "structural_manager.hpp"
+#include "BambuParameter.hpp"
+
+controller_cs::controller_cs(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type) :
+    ControllerCreatorBaseStep(_Param, _HLSMgr, _funId, _design_flow_manager, _hls_flow_step_type)
+{
+}
+
+controller_cs::~controller_cs()
+{
+
+}
+
+void controller_cs::add_common_ports(structural_objectRef circuit)
+{
+   ControllerCreatorBaseStep::add_common_ports(circuit);
+   PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Adding the selector port...");
+   this->add_selector_register_file_port(circuit);
+
+}
+
+void controller_cs::add_selector_register_file_port(structural_objectRef circuit)
+{
+    unsigned int num_slots=static_cast<unsigned int>(log2(HLS->Param->getOption<unsigned int>(OPT_context_switch)));
+    structural_type_descriptorRef port_type = structural_type_descriptorRef(new structural_type_descriptor("bool", num_slots));
+    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "  * Start adding Selector signal...");
+    /// add selector port
+    SM->add_port(SELECTOR_REGISTER_FILE, port_o::IN, circuit, port_type);
+    PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "  - Selector signal added!");
+}
+

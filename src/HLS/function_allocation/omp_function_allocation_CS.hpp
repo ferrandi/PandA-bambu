@@ -32,9 +32,9 @@
 */
 /**
  * @file omp_function_allocation.hpp
- * @brief Class to allocate function in HLS based on dominators and openmp information
+ * @brief extension of Class to allocate function in HLS based on context switch
  *
- * @author Marco Lattuada <marco.lattuada@polimi.it>
+ * @author Nicola Saporetti <nicola.saporetti@gmail.com>
  *
 */
 
@@ -61,11 +61,11 @@ class OmpFunctionAllocationCS : public fun_dominator_allocation
        * Execute the step
        * @return the exit status of this step
        */
-      virtual DesignFlowStep_Status Exec();
+      DesignFlowStep_Status Exec();
 
       /**
        * Initialize the step (i.e., like a constructor, but executed just before exec
        */
-      virtual void Initialize();
+      void Initialize();
 };
 #endif

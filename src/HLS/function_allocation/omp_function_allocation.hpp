@@ -61,11 +61,11 @@ class OmpFunctionAllocation : public fun_dominator_allocation
        * Execute the step
        * @return the exit status of this step
        */
-      virtual DesignFlowStep_Status Exec();
+      DesignFlowStep_Status Exec();
 
       /**
        * Initialize the step (i.e., like a constructor, but executed just before exec
        */
-      virtual void Initialize();
+      void Initialize();
 };
 #endif

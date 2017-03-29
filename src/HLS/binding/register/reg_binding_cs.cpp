@@ -32,13 +32,10 @@
 */
 /**
  * @file reg_binding.cpp
- * @brief Class implementation of the register binding data structure.
+ * @brief add register file and add selector to their input
  *
- * @author Christian Pilato <pilato@elet.polimi.it>
- * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
+ * @author Nicola Saporetti <nicola.saporetti@gmail.com>
+ *
  *
 */
 #include "reg_binding_cs.hpp"
@@ -46,6 +43,9 @@
 #include "hls.hpp"
 #include "hls_manager.hpp"
 #include "structural_objects.hpp"
+#include "hls_target.hpp"
+#include "structural_manager.hpp"
+#include "technology_manager.hpp"
 
 reg_binding_cs::reg_binding_cs(const hlsRef& HLS_, const HLS_managerRef HLSMgr_) :
     reg_binding(HLS_, HLSMgr_)
@@ -62,8 +62,8 @@ std::string reg_binding_cs::CalculateRegisterName(unsigned int i)
     auto omp_functions = GetPointer<OmpFunctions>(HLSMgr->Rfuns);
     bool found=false;
     if(omp_functions->kernel_functions.find(HLS->functionId) != omp_functions->kernel_functions.end()) found=true;
-    if(omp_functions->parallelized_functions.find(HLS->functionId) != omp_functions->kernel_functions.end()) found=true;
-    if(omp_functions->atomic_functions.find(HLS->functionId) != omp_functions->kernel_functions.end()) found=true;
+    if(omp_functions->parallelized_functions.find(HLS->functionId) != omp_functions->parallelized_functions.end()) found=true;
+    if(omp_functions->atomic_functions.find(HLS->functionId) != omp_functions->atomic_functions.end()) found=true;
     if(found)
        register_type_name = "rams_dist";
     else

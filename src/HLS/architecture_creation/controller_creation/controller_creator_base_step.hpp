@@ -94,7 +94,7 @@ class ControllerCreatorBaseStep : public HLSFunctionStep
       /**
        * Initialize the step (i.e., like a constructor, but executed just before exec
        */
-      virtual void Initialize();
+      void Initialize();
 
       /**
        * This member function adds the standard ports (clock, reset, done and command ones) to a circuit.

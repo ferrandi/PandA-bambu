@@ -81,6 +81,6 @@ class classic_datapath: public datapath_creator
        * Execute the step
        * @return the exit status of this step
        */
-      virtual DesignFlowStep_Status InternalExec();
+      DesignFlowStep_Status InternalExec();
 };
 #endif

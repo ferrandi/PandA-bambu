@@ -32,9 +32,10 @@
 */
 /**
  * @file omp_function_allocation.cpp
- * @brief Class to allocate function in HLS based on dominators and openmp information
+ * @brief extension of Class to allocate function in HLS based on context switch
  *
- * @author Marco Lattuada <marco.lattuada@polimi.it>
+ * @author Nicola Saporetti <nicola.saporetti@gmail.com>
+ *
  *
 */
 

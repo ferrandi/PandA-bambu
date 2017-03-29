@@ -31,37 +31,16 @@
  *
 */
 /**
- * @file reg_binding.hpp
- * @brief add register file and add selector to their input
+ * @file classic_datapath.hpp
+ * @brief Base class for top entity for context_switch.
  *
  * @author Nicola Saporetti <nicola.saporetti@gmail.com>
  *
 */
+#include "top_entity_cs.hpp"
 
-#ifndef REG_BINDING_CS_H
-#define REG_BINDING_CS_H
-
-#include "reg_binding.hpp"
-
-class reg_binding_cs : public reg_binding
+top_entity_cs::top_entity_cs(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type) :
+   top_entity(_parameters, _HLSMgr, _funId, _design_flow_manager, _hls_flow_step_type)
 {
-public:
-    /**
-    * Constructor.
-    */
-    reg_binding_cs(const hlsRef& HLS, const HLS_managerRef HLSMgr_);
-
-    /**
-     * Destructor.
-     */
-    virtual ~reg_binding_cs();
-
-    std::string CalculateRegisterName(unsigned int i);
-
-    /**
-    * Add to the resulting registers file the clock and selector
-    */
-    void add_to_SM(structural_objectRef clock_port, structural_objectRef reset_port, structural_objectRef selector_register_file_signal_port);
-};
-
-#endif // REG_BINDING_CS_H
+   debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
+}
