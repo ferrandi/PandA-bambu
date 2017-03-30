@@ -904,7 +904,10 @@ simple_dual_port_ram_single_clock #(.BITSIZE_data(BITSIZE_data_in),.BITSIZE_addr
     </cell>
     <cell>
       <name>mem_ctrl_kernel</name>
-      <operation operation_name="mem_ctrl_kernel"/>
+      <operation operation_name="LOAD" bounded="0"/>
+      <operation operation_name="STORE" bounded="0"/>
+      <channels_type>MEM_ACC_CS</channels_type>
+      <memory_ctrl_type>D00</memory_ctrl_type>
       <circuit>
         <component_o id="mem_ctrl_kernel">
           <structural_type_descriptor id_type="mem_ctrl_kernel"/>
