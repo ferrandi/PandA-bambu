@@ -215,8 +215,9 @@ std::string moduleGenerator::GenerateHDL(const std::string& hdl_template, std::v
    cpp_code_body += "std::string _specializing_string = \"" + specializing_string + "\";\n";
    if(parameters->isOption(OPT_context_switch))
    {
+      std::cout<<"Set new parameter as tag and tag dimension"<<std::endl;
       cpp_code_body += "std::string tag_bus_bitsize = \"" + STR(GetPointer<memory_cs>(HLSMgr->Rmem)->get_bus_tag_bitsize()) + "\";\n";
-      cpp_code_body += "std::string tag_memory_ctrl = 0;\n";        //tag 0 before all component have been instantiated
+      cpp_code_body += "std::string tag_memory_ctrl = \"0\";\n";        //tag 0 before all component have been instantiated
    }
    if(parameters->isOption(OPT_channels_number) && parameters->getOption<unsigned int>(OPT_channels_number) > 1)
       cpp_code_body += "unsigned int _number_of_channes = " + STR(parameters->getOption<unsigned int>(OPT_channels_number)) + ";\n";
@@ -240,7 +241,6 @@ std::string moduleGenerator::GenerateHDL(const std::string& hdl_template, std::v
    File.close();
 
    int err;
-
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "dynamic_generators @ Compiling temp c++ file...");
    err = PandaSystem(parameters, "g++ " + temp_generator_filename + " -o" + temp_generator_exec + " -I" + BOOST_INCLUDE_DIR);
    if(IsError(err))
@@ -269,7 +269,6 @@ std::string moduleGenerator::GenerateHDL(const std::string& hdl_template, std::v
    }
    else
       THROW_ERROR("dynamic_generators @ Unable to open file " + temp_generated_filename);
-
    if(!parameters->isOption(OPT_no_clean) || !parameters->getOption<bool>(OPT_no_clean))
    {
       PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "dynamic_generators @ Deleting all temp files...");
