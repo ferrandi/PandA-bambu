@@ -919,6 +919,9 @@ simple_dual_port_ram_single_clock #(.BITSIZE_data(BITSIZE_data_in),.BITSIZE_addr
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
+          <port_o id="start" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
           <port_o id="in2" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
@@ -943,7 +946,7 @@ simple_dual_port_ram_single_clock #(.BITSIZE_data(BITSIZE_data_in),.BITSIZE_addr
           <port_o id="M_DataRdy" dir="IN" is_memory="1" is_global="1" is_extern="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
-          <port_o id="done" dir="IN">
+          <port_o id="done" dir="OUT">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="request_accepted" dir="IN" is_memory="1" is_master="1">
@@ -972,13 +975,13 @@ simple_dual_port_ram_single_clock #(.BITSIZE_data(BITSIZE_data_in),.BITSIZE_addr
           </port_o>
           <NP_functionality LIBRARY="module mem_ctrl_kernel in2 in3 M_Rdata_ram in1 M_DataRdy Min_tag Mout_addr_ram out1 Mout_data_ram_size Mout_Wdata_ram Mout_oe_ram  Mout_we_ram Mout_tag_ram TAG_MEM_REQ" VERILOG_PROVIDED="
   assign done=((Min_tag==TAG_MEM_REQ) &amp;&amp; M_DataRdy[0]);  //if the tag is equal and ready=1 then its the right data
-  assign Mout_Wdata_ram = (sel_LOAD || sel_STORE) ? in1 :{BITSIZE_Mout_Wdata_ram{1'b0}};
+  assign Mout_Wdata_ram = ((sel_LOAD || sel_STORE) &amp;&amp; start_port) ? in1 :{BITSIZE_Mout_Wdata_ram{1'b0}};
   assign out1 = M_Rdata_ram;  
-  assign Mout_addr_ram = (sel_LOAD || sel_STORE) ? in2 :{BITSIZE_Mout_addr_ram{1'b0}}; 
-  assign Mout_data_ram_size = (sel_LOAD || sel_STORE) ? in3 :{BITSIZE_Mout_data_ram_size{1'b0}};
-  assign Mout_oe_ram = sel_LOAD;
-  assign Mout_we_ram = sel_STORE;
-  assign Mout_tag_ram = (sel_LOAD || sel_STORE) ? TAG_MEM_REQ :{BITSIZE_Mout_tag_ram{1'b0}};"/>
+  assign Mout_addr_ram = ((sel_LOAD || sel_STORE) &amp;&amp; start_port) ? in2 :{BITSIZE_Mout_addr_ram{1'b0}};
+  assign Mout_data_ram_size = ((sel_LOAD || sel_STORE) &amp;&amp; start_port) ? in3 :{BITSIZE_Mout_data_ram_size{1'b0}};
+  assign Mout_oe_ram = sel_LOAD &amp;&amp; start_port;
+  assign Mout_we_ram = sel_STORE &amp;&amp; start_port;
+  assign Mout_tag_ram = ((sel_LOAD || sel_STORE) &amp;&amp; start_port) ? TAG_MEM_REQ :{BITSIZE_Mout_tag_ram{1'b0}};"/>
         </component_o>
       </circuit>
     </cell>

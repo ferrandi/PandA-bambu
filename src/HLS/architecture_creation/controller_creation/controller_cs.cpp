@@ -48,8 +48,8 @@
 #include "structural_manager.hpp"
 #include "BambuParameter.hpp"
 
-controller_cs::controller_cs(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type) :
-    ControllerCreatorBaseStep(_Param, _HLSMgr, _funId, _design_flow_manager, _hls_flow_step_type)
+controller_cs::controller_cs(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager) :
+    fsm_controller(_Param, _HLSMgr, _funId, _design_flow_manager)
 {
 }
 
@@ -60,7 +60,7 @@ controller_cs::~controller_cs()
 
 void controller_cs::add_common_ports(structural_objectRef circuit)
 {
-   ControllerCreatorBaseStep::add_common_ports(circuit);
+   fsm_controller::add_common_ports(circuit);
    PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Adding the selector port...");
    this->add_selector_register_file_port(circuit);
 

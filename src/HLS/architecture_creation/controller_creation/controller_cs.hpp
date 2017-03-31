@@ -39,15 +39,15 @@
 #ifndef CONTROLLER_CS_H
 #define CONTROLLER_CS_H
 
-#include "controller_creator_base_step.hpp"
+#include "fsm_controller.hpp"
 
-class controller_cs : public ControllerCreatorBaseStep
+class controller_cs : public fsm_controller
 {
  public:
     /**
      * Constructor
      */
-    controller_cs(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type);
+    controller_cs(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager);
 
     /**
      * Destructor.
