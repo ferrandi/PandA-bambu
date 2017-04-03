@@ -50,8 +50,8 @@
 #include "omp_functions.hpp"
 #include "hls_manager.hpp"
 
-controller_cs::controller_cs(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager) :
-    fsm_controller(_Param, _HLSMgr, _funId, _design_flow_manager)
+controller_cs::controller_cs(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type) :
+    fsm_controller(_Param, _HLSMgr, _funId, _design_flow_manager, _hls_flow_step_type)
 {
 }
 

@@ -85,8 +85,8 @@
 
 #include "copyrights_strings.hpp"
 
-classic_datapath::classic_datapath(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager) :
-   datapath_creator(_parameters, _HLSMgr, _funId, _design_flow_manager, HLSFlowStep_Type::CLASSIC_DATAPATH_CREATOR)
+classic_datapath::classic_datapath(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type) :
+   datapath_creator(_parameters, _HLSMgr, _funId, _design_flow_manager, _hls_flow_step_type)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }

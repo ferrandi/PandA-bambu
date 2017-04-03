@@ -151,7 +151,7 @@ const std::string HLS_step::EnumToName(const HLSFlowStep_Type hls_flow_step_type
       case HLSFlowStep_Type::CLASSIC_DATAPATH_CREATOR:
          return "ClassicDatapathCreator";
       case HLSFlowStep_Type::DATAPATH_CS_CREATOR:
-         return "ClassicDatapathCreator";
+         return "DatapathCreatorCS";
       case HLSFlowStep_Type::CLASSICAL_HLS_SYNTHESIS_FLOW:
          return "ClassicalHLSSynthesisFlow";
 #if HAVE_EXPERIMENTAL
@@ -163,7 +163,7 @@ const std::string HLS_step::EnumToName(const HLSFlowStep_Type hls_flow_step_type
       case HLSFlowStep_Type::DOMINATOR_MEMORY_ALLOCATION:
          return "DominatorMemoryAllocation";
       case HLSFlowStep_Type::DOMINATOR_MEMORY_ALLOCATION_CS:
-         return "DominatorMemoryAllocationcs";
+         return "DominatorMemoryAllocationCS";
       case HLSFlowStep_Type::DOMINATOR_FUNCTION_ALLOCATION:
          return "DominatorFunctionAllocation";
       case HLSFlowStep_Type::DRY_RUN_EVALUATION:
@@ -311,7 +311,7 @@ const std::string HLS_step::EnumToName(const HLSFlowStep_Type hls_flow_step_type
       case HLSFlowStep_Type::TOP_ENTITY_CREATION:
          return "TopEntityCreation";
       case HLSFlowStep_Type::TOP_ENTITY_CS_CREATION:
-         return "TopEntityCreation";
+         return "TopEntityCSCreation";
       case HLSFlowStep_Type::TOP_ENTITY_MEMORY_MAPPED_CREATION:
          return "TopEntityMemoryMappedCreation";
       case HLSFlowStep_Type::UNIQUE_MODULE_BINDING:

@@ -334,7 +334,7 @@ DesignFlowStepRef HLSFlowStepFactory::CreateHLSFlowStep(const HLSFlowStep_Type t
          }
       case HLSFlowStep_Type::DATAPATH_CS_CREATOR:
          {
-            design_flow_step = DesignFlowStepRef(new datapath_cs(parameters, HLS_mgr, funId, design_flow_manager.lock()));
+            design_flow_step = DesignFlowStepRef(new datapath_cs(parameters, HLS_mgr, funId, design_flow_manager.lock(),HLSFlowStep_Type::DATAPATH_CS_CREATOR));
             break;
          }
       case HLSFlowStep_Type::CLASSICAL_HLS_SYNTHESIS_FLOW:
@@ -448,7 +448,7 @@ DesignFlowStepRef HLSFlowStepFactory::CreateHLSFlowStep(const HLSFlowStep_Type t
          }
       case HLSFlowStep_Type::FSM_CS_CONTROLLER_CREATOR:
          {
-            design_flow_step = DesignFlowStepRef(new controller_cs(parameters, HLS_mgr, funId, design_flow_manager.lock()));
+            design_flow_step = DesignFlowStepRef(new controller_cs(parameters, HLS_mgr, funId, design_flow_manager.lock(), HLSFlowStep_Type::FSM_CS_CONTROLLER_CREATOR));
             break;
          }
       case HLSFlowStep_Type::FSM_NI_SSA_LIVENESS:

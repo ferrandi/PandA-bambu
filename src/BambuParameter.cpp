@@ -2986,11 +2986,10 @@ void BambuParameter::CheckParameters()
       setOption(OPT_disable_function_proxy, true);
       if(isOption(OPT_context_switch))
       {
-          std::cout<<"New parameter passed to Bambu"<<std::endl;
-          setOption(OPT_function_allocation_algorithm, HLSFlowStep_Type::OMP_FUNCTION_ALLOCATION_CS);
-          setOption(OPT_memory_allocation_algorithm, HLSFlowStep_Type::DOMINATOR_MEMORY_ALLOCATION_CS);
-          setOption(OPT_datapath_architecture, HLSFlowStep_Type::DATAPATH_CS_CREATOR);
-          setOption(OPT_controller_architecture, HLSFlowStep_Type::FSM_CS_CONTROLLER_CREATOR);
+         setOption(OPT_function_allocation_algorithm, HLSFlowStep_Type::OMP_FUNCTION_ALLOCATION_CS);
+         setOption(OPT_memory_allocation_algorithm, HLSFlowStep_Type::DOMINATOR_MEMORY_ALLOCATION_CS);
+         setOption(OPT_datapath_architecture, HLSFlowStep_Type::DATAPATH_CS_CREATOR);
+         setOption(OPT_controller_architecture, HLSFlowStep_Type::FSM_CS_CONTROLLER_CREATOR);
       }
       else setOption(OPT_function_allocation_algorithm, HLSFlowStep_Type::OMP_FUNCTION_ALLOCATION);
       add_bambu_library("pthread");

@@ -47,7 +47,7 @@ class controller_cs : public fsm_controller
     /**
      * Constructor
      */
-    controller_cs(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager);
+    controller_cs(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type);
 
     /**
      * Destructor.

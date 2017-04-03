@@ -47,8 +47,8 @@
 #include "hls.hpp"
 #include "math.h"
 
-datapath_cs::datapath_cs(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager) :
-   classic_datapath(_parameters, _HLSMgr, _funId, _design_flow_manager)
+datapath_cs::datapath_cs(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type) :
+   classic_datapath(_parameters, _HLSMgr, _funId, _design_flow_manager, _hls_flow_step_type)
 {
     debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }
@@ -60,7 +60,7 @@ datapath_cs::~datapath_cs()
 
 DesignFlowStep_Status datapath_cs::InternalExec()
 {
-    classic_datapath::Exec();    //exec of hierarchical class
+    classic_datapath::InternalExec();    //exec of hierarchical class
     //new merging
     return DesignFlowStep_Status::SUCCESS;
 }
