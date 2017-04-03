@@ -55,6 +55,7 @@
 
 ///HLS/architecture_creator
 #include "top_entity.hpp"
+#include "top_entity_cs.hpp"
 #include "TopEntityMemoryMapped.hpp"
 
 ///HLS/architecture_creator/datapath_creation
@@ -63,6 +64,7 @@
 
 ///HLS/architecture_creator/fsm_creator/algorithms include
 #include "fsm_controller.hpp"
+#include "controller_cs.hpp"
 #if HAVE_EXPERIMENTAL
 #include "ParallelController.hpp"
 #endif
@@ -444,6 +446,11 @@ DesignFlowStepRef HLSFlowStepFactory::CreateHLSFlowStep(const HLSFlowStep_Type t
             design_flow_step = DesignFlowStepRef(new fsm_controller(parameters, HLS_mgr, funId, design_flow_manager.lock()));
             break;
          }
+      case HLSFlowStep_Type::FSM_CS_CONTROLLER_CREATOR:
+         {
+            design_flow_step = DesignFlowStepRef(new controller_cs(parameters, HLS_mgr, funId, design_flow_manager.lock()));
+            break;
+         }
       case HLSFlowStep_Type::FSM_NI_SSA_LIVENESS:
          {
             design_flow_step = DesignFlowStepRef(new FSM_NI_SSA_liveness(parameters, HLS_mgr, funId, design_flow_manager.lock()));
@@ -667,6 +674,12 @@ DesignFlowStepRef HLSFlowStepFactory::CreateHLSFlowStep(const HLSFlowStep_Type t
             design_flow_step = DesignFlowStepRef(new top_entity(parameters, HLS_mgr, funId, design_flow_manager.lock()));
             break;
          }
+
+      case HLSFlowStep_Type::TOP_ENTITY_CS_CREATION:
+         {
+            design_flow_step = DesignFlowStepRef(new top_entity_cs(parameters, HLS_mgr, funId, design_flow_manager.lock(), HLSFlowStep_Type::TOP_ENTITY_CS_CREATION));
+            break;
+         }
       case HLSFlowStep_Type::TOP_ENTITY_MEMORY_MAPPED_CREATION:
          {
             design_flow_step = DesignFlowStepRef(new TopEntityMemoryMapped(parameters, HLS_mgr, funId, design_flow_manager.lock()));
@@ -836,6 +849,7 @@ const DesignFlowStepSet HLSFlowStepFactory::CreateHLSFlowSteps(const std::unorde
          case HLSFlowStep_Type::FSL_INTERFACE_GENERATION:
 #endif
          case HLSFlowStep_Type::FSM_CONTROLLER_CREATOR:
+         case HLSFlowStep_Type::FSM_CS_CONTROLLER_CREATOR:
          case HLSFlowStep_Type::FSM_NI_SSA_LIVENESS:
 #if HAVE_EXPERIMENTAL
          case HLSFlowStep_Type::FU_REG_BINDING_DESIGN_FLOW:
@@ -897,6 +911,7 @@ const DesignFlowStepSet HLSFlowStepFactory::CreateHLSFlowSteps(const std::unorde
          case HLSFlowStep_Type::TIME_ESTIMATION:
 #endif
          case HLSFlowStep_Type::TOP_ENTITY_CREATION:
+         case HLSFlowStep_Type::TOP_ENTITY_CS_CREATION:
          case HLSFlowStep_Type::TOP_ENTITY_MEMORY_MAPPED_CREATION:
          case HLSFlowStep_Type::UNIQUE_MODULE_BINDING:
          case HLSFlowStep_Type::UNIQUE_REGISTER_BINDING:

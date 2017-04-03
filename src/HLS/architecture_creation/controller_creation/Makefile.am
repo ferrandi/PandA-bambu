@@ -14,6 +14,7 @@ lib_controller_creation_la_CPPFLAGS = \
    -I$(top_srcdir)/src/HLS/module_allocation \
    -I$(top_srcdir)/src/HLS/virtual_components \
    -I$(top_srcdir)/src/HLS/binding \
+   -I$(top_srcdir)/src/HLS/function_allocation \
    -I$(top_srcdir)/src/HLS/binding/interconnection \
    -I$(top_srcdir)/src/HLS/binding/module \
    -I$(top_srcdir)/src/HLS/binding/register \

@@ -58,12 +58,9 @@ class controller_cs : public fsm_controller
 
     void add_common_ports(structural_objectRef circuit);
 
-    /**
-    * Adds the done port to a circuit. Called by add_common_ports
-    * The done port appears to go high once all the calculation of a function are completed
-    * \param circuit the circuit where to add the done port
-    */
     void add_selector_register_file_port(structural_objectRef circuit);
+
+    void add_correct_transition_memory(std::string state_representation);
 
 };
 

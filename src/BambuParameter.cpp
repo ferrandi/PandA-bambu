@@ -2677,7 +2677,7 @@ void BambuParameter::CheckParameters()
 
 
    ///controller options
-   if (getOption<HLSFlowStep_Type>(OPT_controller_architecture) == HLSFlowStep_Type::FSM_CONTROLLER_CREATOR)
+   if (getOption<HLSFlowStep_Type>(OPT_controller_architecture) == HLSFlowStep_Type::FSM_CONTROLLER_CREATOR || getOption<HLSFlowStep_Type>(OPT_controller_architecture) == HLSFlowStep_Type::FSM_CS_CONTROLLER_CREATOR)
       setOption(OPT_stg, true);
 
    ///chaining options
@@ -2989,6 +2989,8 @@ void BambuParameter::CheckParameters()
           std::cout<<"New parameter passed to Bambu"<<std::endl;
           setOption(OPT_function_allocation_algorithm, HLSFlowStep_Type::OMP_FUNCTION_ALLOCATION_CS);
           setOption(OPT_memory_allocation_algorithm, HLSFlowStep_Type::DOMINATOR_MEMORY_ALLOCATION_CS);
+          setOption(OPT_datapath_architecture, HLSFlowStep_Type::DATAPATH_CS_CREATOR);
+          setOption(OPT_controller_architecture, HLSFlowStep_Type::FSM_CS_CONTROLLER_CREATOR);
       }
       else setOption(OPT_function_allocation_algorithm, HLSFlowStep_Type::OMP_FUNCTION_ALLOCATION);
       add_bambu_library("pthread");
@@ -3279,7 +3281,6 @@ void BambuParameter::SetDefaults()
    setOption(OPT_datapath_interconnection_algorithm, HLSFlowStep_Type::MUX_INTERCONNECTION_BINDING);
    /// Datapath architecture
    setOption(OPT_datapath_architecture, HLSFlowStep_Type::CLASSIC_DATAPATH_CREATOR);
-   setOption(OPT_datapath_architecture, HLSFlowStep_Type::DATAPATH_CS_CREATOR);
 
    /// -- Controller -- //
    /// target architecture for the controller

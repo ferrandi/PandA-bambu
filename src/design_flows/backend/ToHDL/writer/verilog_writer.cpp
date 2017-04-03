@@ -959,11 +959,29 @@ void verilog_writer::write_state_declaration(const structural_objectRef &cir, co
    indented_output_stream->Append(";\n");
    //indented_output_stream->Append("// synthesis attribute init of _present_state is " + reset_state + ";\n");
    //indented_output_stream->Append("// synthesis attribute use_sync_reset of _present_state is no;\n");
-   if(one_hot)
-      indented_output_stream->Append("reg ["+boost::lexical_cast<std::string>(max_value)+":0] _present_state, _next_state;\n");
-   else
-      indented_output_stream->Append("reg ["+boost::lexical_cast<std::string>(bitsnumber-1)+":0] _present_state, _next_state;\n");
    module * mod = GetPointer<module>(cir);
+   const NP_functionalityRef &np = mod->get_NP_functionality();
+   if(np->get_NP_functionality(NP_functionality::FSM_CS)=="") //fsm of context_switch
+   {
+      if(one_hot)
+      {
+         indented_output_stream->Append("reg ["+boost::lexical_cast<std::string>(max_value)+":0] _present_state["+STR(parameters->getOption<unsigned int>(OPT_context_switch)-1)+":0];\n");
+         indented_output_stream->Append("reg ["+boost::lexical_cast<std::string>(max_value)+":0] _next_state;\n");
+      }
+      else
+      {
+         indented_output_stream->Append("reg ["+boost::lexical_cast<std::string>(bitsnumber-1)+":0] _present_state["+STR(parameters->getOption<unsigned int>(OPT_context_switch)-1)+":0];\n");
+         indented_output_stream->Append("reg ["+boost::lexical_cast<std::string>(bitsnumber-1)+":0] _next_state;\n");
+      }
+
+   }
+   else
+   {
+      if(one_hot)
+         indented_output_stream->Append("reg ["+boost::lexical_cast<std::string>(max_value)+":0] _present_state, _next_state;\n");
+      else
+         indented_output_stream->Append("reg ["+boost::lexical_cast<std::string>(bitsnumber-1)+":0] _present_state, _next_state;\n");
+   }
    THROW_ASSERT(mod, "Expected a component object");
    THROW_ASSERT(mod->get_out_port_size(), "Expected a FSM with at least one output");
 
@@ -979,7 +997,7 @@ void verilog_writer::write_state_declaration(const structural_objectRef &cir, co
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Completed state declaration");
 }
 
-void verilog_writer::write_present_state_update(const std::string&reset_state, const std::string&reset_port, const std::string&clock_port, const std::string&reset_type)
+void verilog_writer::write_present_state_update(const structural_objectRef &cir, const std::string &reset_state, const std::string &reset_port, const std::string &clock_port, const std::string &reset_type)
 {
    if(reset_type == "no" || reset_type == "sync")
       indented_output_stream->Append("always @(posedge "+clock_port+")\n");
@@ -989,11 +1007,24 @@ void verilog_writer::write_present_state_update(const std::string&reset_state, c
       indented_output_stream->Append("always @(posedge "+clock_port+" or posedge " + reset_port + ")\n");
    indented_output_stream->Indent();
    ///reset is needed even in case of reset_type == "no"
-   if(!parameters->getOption<bool>(OPT_level_reset))
-      indented_output_stream->Append("if (" + reset_port + " == 1'b0) _present_state <= "+reset_state+";\n");
+   module * mod = GetPointer<module>(cir);
+   const NP_functionalityRef &np = mod->get_NP_functionality();
+   if(np->get_NP_functionality(NP_functionality::FSM_CS)=="") //fsm of context_switch
+   {
+      if(!parameters->getOption<bool>(OPT_level_reset))
+         indented_output_stream->Append("if (" + reset_port + " == 1'b0) _present_state[selector_register_file_signal] <= "+reset_state+";\n");
+      else
+         indented_output_stream->Append("if (" + reset_port + " == 1'b1) _present_state[selector_register_file_signal] <= "+reset_state+";\n");
+      indented_output_stream->Append("else _present_state[selector_register_file_signal] <= _next_state;\n");
+   }
    else
-      indented_output_stream->Append("if (" + reset_port + " == 1'b1) _present_state <= "+reset_state+";\n");
-   indented_output_stream->Append("else _present_state <= _next_state;\n");
+   {
+      if(!parameters->getOption<bool>(OPT_level_reset))
+         indented_output_stream->Append("if (" + reset_port + " == 1'b0) _present_state <= "+reset_state+";\n");
+      else
+         indented_output_stream->Append("if (" + reset_port + " == 1'b1) _present_state <= "+reset_state+";\n");
+      indented_output_stream->Append("else _present_state <= _next_state;\n");
+   }
    indented_output_stream->Deindent();
 }
 
@@ -1014,11 +1045,15 @@ void verilog_writer::write_transition_output_functions(bool single_proc, unsigne
 
    std::string port_name;
 
+   const NP_functionalityRef &np = mod->get_NP_functionality();
    /// state transitions description
 #ifdef VERILOG_2001_SUPPORTED
    indented_output_stream->Append("\nalways @(*)\nbegin");
 #else
-   indented_output_stream->Append("\nalways @(_present_state");
+   if(np->get_NP_functionality(NP_functionality::FSM_CS)=="") //fsm of context_switch
+      indented_output_stream->Append("\nalways @(_present_state[selector_register_file_signal]");
+   else
+      indented_output_stream->Append("\nalways @(_present_state");
    if (mod->get_in_port_size())
    {
       for (unsigned int i = 0; i < mod->get_in_port_size(); i++)
@@ -1043,7 +1078,10 @@ void verilog_writer::write_transition_output_functions(bool single_proc, unsigne
       indented_output_stream->Append(port_name + " = 1'b0;\n");
    }
 
-   indented_output_stream->Append("case (_present_state)");
+   if(np->get_NP_functionality(NP_functionality::FSM_CS)=="") //fsm of context_switch
+      indented_output_stream->Append("case (_present_state[selector_register_file_signal])");
+   else
+      indented_output_stream->Append("case (_present_state)");
    indented_output_stream->Append(soc);
 
    for(std::vector<std::string>::const_iterator first_it = first; first_it != end; ++first_it)

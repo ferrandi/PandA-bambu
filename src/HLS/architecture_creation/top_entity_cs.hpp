@@ -41,17 +41,27 @@
 #define TOP_ENTITY_CS_H
 #include "top_entity.hpp"
 
-class top_entity_cs
+class top_entity_cs : public top_entity
 {
    protected:
 
-   public:
-   top_entity_cs(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type = HLSFlowStep_Type::TOP_ENTITY_CREATION);
+    void add_context_switch_port();
+
+    void add_context_switch_port_kernel();
+public:
+   top_entity_cs(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type);
 
    /**
     * Destructor
     */
    virtual ~top_entity_cs();
+
+
+   /**
+    * Add selector and suspension
+    * @return the exit status of this step
+    */
+   virtual DesignFlowStep_Status InternalExec();
 
 };
 

@@ -70,6 +70,7 @@ const char* NP_functionality::NP_functionaly_typeNames[] =
    "LIBRARY",
    "GRAPH",
    "FSM",
+   "FSM_CS",
    "SC_PROVIDED",
    "VHDL_PROVIDED",
    "VERILOG_PROVIDED",

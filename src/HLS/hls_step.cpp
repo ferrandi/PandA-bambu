@@ -200,6 +200,8 @@ const std::string HLS_step::EnumToName(const HLSFlowStep_Type hls_flow_step_type
 #endif
       case HLSFlowStep_Type::FSM_CONTROLLER_CREATOR:
          return "FsmControllerCreator";
+      case HLSFlowStep_Type::FSM_CS_CONTROLLER_CREATOR:
+         return "FsmCSControllerCreator";
       case HLSFlowStep_Type::FSM_NI_SSA_LIVENESS:
          return "FsmNiSsaLiveness";
 #if HAVE_EXPERIMENTAL
@@ -307,6 +309,8 @@ const std::string HLS_step::EnumToName(const HLSFlowStep_Type hls_flow_step_type
          return "TimeEstimation";
 #endif
       case HLSFlowStep_Type::TOP_ENTITY_CREATION:
+         return "TopEntityCreation";
+      case HLSFlowStep_Type::TOP_ENTITY_CS_CREATION:
          return "TopEntityCreation";
       case HLSFlowStep_Type::TOP_ENTITY_MEMORY_MAPPED_CREATION:
          return "TopEntityMemoryMappedCreation";

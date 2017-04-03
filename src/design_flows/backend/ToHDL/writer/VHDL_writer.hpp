@@ -176,7 +176,7 @@ struct VHDL_writer : public language_writer
        * @param clock_port is the clock port.
        * @param synch_reset when true the FSM will have an synchronous reset
        */
-      void write_present_state_update(const std::string&reset_state, const std::string&reset_port, const std::string&clock_port, const std::string& reset_type);
+      void write_present_state_update(const structural_objectRef &cir, const std::string &reset_state, const std::string &reset_port, const std::string &clock_port, const std::string & reset_type);
       /**
        * Write the transition and output functions.
        * @param cir is the component.

@@ -1113,7 +1113,7 @@ void VHDL_writer::write_state_declaration(const structural_objectRef &, const st
    }
 }
 
-void VHDL_writer::write_present_state_update(const std::string&reset_state, const std::string&reset_port, const std::string&clock_port, const std::string&reset_type)
+void VHDL_writer::write_present_state_update(const structural_objectRef &, const std::string &reset_state, const std::string &reset_port, const std::string &clock_port, const std::string &reset_type)
 {
    write_comment("concurrent process#1: state registers\n");
    if(reset_type == "no" || reset_type == "sync")

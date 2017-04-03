@@ -47,6 +47,8 @@
 #include "hls.hpp"
 #include "structural_manager.hpp"
 #include "BambuParameter.hpp"
+#include "omp_functions.hpp"
+#include "hls_manager.hpp"
 
 controller_cs::controller_cs(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager) :
     fsm_controller(_Param, _HLSMgr, _funId, _design_flow_manager)
@@ -61,8 +63,16 @@ controller_cs::~controller_cs()
 void controller_cs::add_common_ports(structural_objectRef circuit)
 {
    fsm_controller::add_common_ports(circuit);
-   PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Adding the selector port...");
-   this->add_selector_register_file_port(circuit);
+   auto omp_functions = GetPointer<OmpFunctions>(HLSMgr->Rfuns);
+   bool found=false;
+   if(omp_functions->kernel_functions.find(funId) != omp_functions->kernel_functions.end()) found=true;
+   if(omp_functions->parallelized_functions.find(funId) != omp_functions->parallelized_functions.end()) found=true;
+   if(omp_functions->atomic_functions.find(funId) != omp_functions->atomic_functions.end()) found=true;
+   if(found)       //function with selector
+   {
+     PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Adding the selector port...");
+     this->add_selector_register_file_port(circuit);
+   }
 
 }
 
@@ -74,5 +84,21 @@ void controller_cs::add_selector_register_file_port(structural_objectRef circuit
     /// add selector port
     SM->add_port(SELECTOR_REGISTER_FILE, port_o::IN, circuit, port_type);
     PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "  - Selector signal added!");
+}
+
+void controller_cs::add_correct_transition_memory(std::string state_representation)
+{
+    structural_objectRef circuit = this->SM->get_circ();
+    auto omp_functions = GetPointer<OmpFunctions>(HLSMgr->Rfuns);
+    bool found=false;
+    if(omp_functions->kernel_functions.find(funId) != omp_functions->kernel_functions.end()) found=true;
+    if(omp_functions->parallelized_functions.find(funId) != omp_functions->parallelized_functions.end()) found=true;
+    if(omp_functions->atomic_functions.find(funId) != omp_functions->atomic_functions.end()) found=true;
+    if(found)       //function with selector
+    {
+       SM->add_NP_functionality(circuit, NP_functionality::FSM_CS, state_representation);
+    }
+    else
+       SM->add_NP_functionality(circuit, NP_functionality::FSM, state_representation);
 }
 

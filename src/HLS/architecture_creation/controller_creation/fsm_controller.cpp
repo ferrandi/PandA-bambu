@@ -128,7 +128,7 @@ DesignFlowStep_Status fsm_controller::InternalExec()
    std::string state_representation;
    this->create_state_machine(state_representation);
 
-   SM->add_NP_functionality(circuit, NP_functionality::FSM, state_representation);
+   add_correct_transition_memory(state_representation); //if CS is activated some register are memory
    
    PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Machine encoding");
    PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, state_representation);
@@ -455,4 +455,10 @@ std::string fsm_controller::get_guard_value(const tree_managerRef TM, const unsi
          return res_string;
       }
    }
+}
+
+void fsm_controller::add_correct_transition_memory(std::string state_representation)
+{
+    structural_objectRef circuit = this->SM->get_circ();
+    SM->add_NP_functionality(circuit, NP_functionality::FSM, state_representation);
 }
