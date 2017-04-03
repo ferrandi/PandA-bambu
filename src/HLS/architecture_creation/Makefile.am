@@ -5,9 +5,9 @@ SUBDIRS = controller_creation datapath_creation
 
 noinst_LTLIBRARIES = lib_architecture_creation.la
 
-noinst_HEADERS = top_entity.hpp TopEntityMemoryMapped.hpp
+noinst_HEADERS = top_entity.hpp TopEntityMemoryMapped.hpp top_entity_cs.hpp
 
-lib_architecture_creation_la_SOURCES = top_entity.cpp TopEntityMemoryMapped.cpp
+lib_architecture_creation_la_SOURCES = top_entity.cpp TopEntityMemoryMapped.cpp top_entity_cs.cpp
 
 lib_architecture_creation_la_CPPFLAGS = \
    -I$(top_srcdir)/src \

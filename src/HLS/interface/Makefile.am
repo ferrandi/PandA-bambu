@@ -15,6 +15,7 @@ lib_interface_la_CPPFLAGS = \
     -I$(top_srcdir)/src/HLS/binding/interconnection \
     -I$(top_srcdir)/src/HLS/binding/module \
     -I$(top_srcdir)/src/HLS/binding/register \
+    -I$(top_srcdir)/src/HLS/function_allocation \
     -I$(top_srcdir)/src/HLS/interface \
     -I$(top_srcdir)/src/HLS/interface/WB4 \
     -I$(top_srcdir)/src/HLS/interface/minimal \

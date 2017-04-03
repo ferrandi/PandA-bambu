@@ -40,6 +40,10 @@
 #include "top_entity_cs.hpp"
 #include "structural_objects.hpp"
 #include "omp_functions.hpp"
+#include "BambuParameter.hpp"
+#include "hls_manager.hpp"
+#include "structural_manager.hpp"
+#include "hls.hpp"
 
 top_entity_cs::top_entity_cs(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type) :
    top_entity(_parameters, _HLSMgr, _funId, _design_flow_manager, _hls_flow_step_type)
@@ -55,20 +59,18 @@ top_entity_cs::~top_entity_cs()
 DesignFlowStep_Status top_entity_cs::InternalExec()
 {
     auto omp_functions = GetPointer<OmpFunctions>(HLSMgr->Rfuns);
-    bool found=false;
     if(omp_functions->kernel_functions.find(funId) != omp_functions->kernel_functions.end())
     {
         add_context_switch_port_kernel();
     }
     else
     {
+       bool found=false;
        if(omp_functions->parallelized_functions.find(funId) != omp_functions->parallelized_functions.end()) found=true;
        if(omp_functions->atomic_functions.find(funId) != omp_functions->atomic_functions.end()) found=true;
        if(found)       //function with selector
        {
           add_context_switch_port();
-          PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Adding the selector port...");
-          this->add_selector_register_file_port(circuit);
        }
     }
     top_entity::InternalExec();
@@ -81,8 +83,12 @@ void top_entity_cs::add_context_switch_port()
     structural_type_descriptorRef bool_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 0));
     PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "\tStart adding suspension signal...");
     structural_objectRef suspension_obj = SM->add_port(SUSPENSION, port_o::OUT, circuit, bool_type);
-    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "\Suspension signal added!");
+    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "\tSuspension signal added!");
 
+    structural_managerRef Datapath = HLS->datapath;
+    structural_managerRef Controller = HLS->controller;
+    structural_objectRef datapath_circuit = Datapath->get_circ();
+    structural_objectRef controller_circuit = Controller->get_circ();
     unsigned int num_slots=static_cast<unsigned int>(log2(HLS->Param->getOption<unsigned int>(OPT_context_switch)));
     structural_type_descriptorRef port_type = structural_type_descriptorRef(new structural_type_descriptor("bool", num_slots));
     PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "\tStart selector signal...");
@@ -91,11 +97,15 @@ void top_entity_cs::add_context_switch_port()
     SM->add_connection(datapath_selector, selector_obj);
     structural_objectRef controller_selector = controller_circuit->find_member(SELECTOR_REGISTER_FILE, port_o_K, controller_circuit);
     SM->add_connection(controller_selector, selector_obj);
-    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "\Selector signal added!");
+    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "\tSelector signal added!");
 }
 
 void top_entity_cs::add_context_switch_port_kernel()
 {
+    structural_managerRef Datapath = HLS->datapath;
+    structural_managerRef Controller = HLS->controller;
+    structural_objectRef datapath_circuit = Datapath->get_circ();
+    structural_objectRef controller_circuit = Controller->get_circ();
     structural_objectRef circuit = SM->get_circ();
     unsigned int num_slots=static_cast<unsigned int>(log2(HLS->Param->getOption<unsigned int>(OPT_context_switch)));
     structural_type_descriptorRef port_type = structural_type_descriptorRef(new structural_type_descriptor("bool", num_slots));
@@ -106,5 +116,5 @@ void top_entity_cs::add_context_switch_port_kernel()
     SM->add_connection(datapath_selector, selector_obj);
     structural_objectRef controller_selector = controller_circuit->find_member(SELECTOR_REGISTER_FILE, port_o_K, controller_circuit);
     SM->add_connection(controller_selector, selector_obj);
-    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "\Selector signal added!");
+    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "\tSelector signal added!");
 }
