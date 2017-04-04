@@ -44,6 +44,7 @@
 */
 
 #include "fu_binding.hpp"
+#include "fu_binding_cs.hpp"
 #include "funit_obj.hpp"
 
 #include "call_graph_manager.hpp"
@@ -54,6 +55,7 @@
 #include "memory_symbol.hpp"
 #include "memory_allocation.hpp"
 #include "reg_binding.hpp"
+#include "omp_functions.hpp"
 
 #include "functions.hpp"
 
@@ -120,6 +122,23 @@ fu_binding::fu_binding(const fu_binding &original) :
 
 fu_binding::~fu_binding()
 {
+}
+
+fu_bindingRef fu_binding::create_fu_binding(const HLS_managerConstRef _HLSMgr, const unsigned int _function_id, const ParameterConstRef _parameters)
+{
+   if(_parameters->isOption(OPT_context_switch))
+   {
+      auto omp_functions = GetPointer<OmpFunctions>(HLSMgr->Rfuns);
+      bool found=false;
+      if(omp_functions->kernel_functions.find(funId) != omp_functions->kernel_functions.end()) found=true;
+      if(omp_functions->omp_for_wrappers.find(funId) != omp_functions->omp_for_wrappers.end()) found=true;
+      if(found)
+         return fu_bindingRef(new fu_binding_cs(_HLSMgr, _function_id, _parameters));
+      else
+         return fu_bindingRef(new fu_binding(_HLSMgr, _function_id, _parameters));
+   }
+   else
+      return fu_bindingRef(new fu_binding(_HLSMgr, _function_id, _parameters));
 }
 
 void fu_binding::bind(const vertex& v, unsigned int unit, unsigned int index)

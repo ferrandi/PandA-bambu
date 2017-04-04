@@ -2988,6 +2988,8 @@ void BambuParameter::CheckParameters()
       {
          setOption(OPT_function_allocation_algorithm, HLSFlowStep_Type::OMP_FUNCTION_ALLOCATION_CS);
          setOption(OPT_memory_allocation_algorithm, HLSFlowStep_Type::DOMINATOR_MEMORY_ALLOCATION_CS);
+         setOption(OPT_channels_type, MemoryAllocation_ChannelsType::MEM_ACC_CS);
+         setOption(OPT_channels_number, 2);
          setOption(OPT_datapath_architecture, HLSFlowStep_Type::DATAPATH_CS_CREATOR);
          setOption(OPT_controller_architecture, HLSFlowStep_Type::FSM_CS_CONTROLLER_CREATOR);
       }

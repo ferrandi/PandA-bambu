@@ -3869,11 +3869,11 @@ out1 &lt;= resize(in1, BITSIZE_out1) or resize(in2, BITSIZE_out1);"/>
             <connected_objects/>
           </port_vector_o>
           <port_vector_o id="M_Rdata_ram" dir="IN" is_memory="1" is_global="1" is_extern="1" is_data_bus="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
             <connected_objects/>
           </port_vector_o>
           <port_vector_o id="Mout_Wdata_ram" dir="OUT" is_memory="1" is_master="1" is_data_bus="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
             <connected_objects/>
           </port_vector_o>
           <port_vector_o id="Mout_data_ram_size" dir="OUT" is_memory="1" is_master="1" is_size_bus="1">

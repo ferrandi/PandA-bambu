@@ -230,6 +230,7 @@ void fsm_controller::create_state_machine(std::string &parse)
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--");
    #endif
 
+      const tree_managerRef TreeM = HLSMgr->get_tree_manager();
       const auto & operations = astg->CGetStateInfo(v)->executing_operations;
       for (const auto & op : operations)
       {
@@ -246,7 +247,7 @@ void fsm_controller::create_state_machine(std::string &parse)
          structural_objectRef done_port_i = fu_module->find_member(DONE_PORT_NAME, port_o_K, top);
          /// do some checks
          if(!GetPointer<operation>(op_tn)->is_bounded() && (!start_port_i || !done_port_i))
-             THROW_ERROR("Unbonded operations have to have both done_port and start_port ports!");
+             THROW_ERROR("Unbonded operations have to have both done_port and start_port ports!"+STR(TreeM->CGetTreeNode(data->CGetOpNodeInfo(op)->GetNodeId())));
          if (((GET_TYPE(data, op) & TYPE_EXTERNAL && start_port_i) or !GetPointer<operation>(op_tn)->is_bounded() or start_port_i) and
              !stg->CGetStateInfo(v)->is_dummy and
              std::find(stg->CGetStateInfo(v)->starting_operations.begin(), stg->CGetStateInfo(v)->starting_operations.end(), op) != stg->CGetStateInfo(v)->starting_operations.end())

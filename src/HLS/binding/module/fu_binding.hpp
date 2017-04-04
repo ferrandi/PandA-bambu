@@ -60,6 +60,7 @@ CONSTREF_FORWARD_DECL(AllocationInformation);
 REF_FORWARD_DECL(AllocationInformation);
 class funit_obj;
 REF_FORWARD_DECL(generic_obj);
+REF_FORWARD_DECL(fu_bindig);
 REF_FORWARD_DECL(hls);
 CONSTREF_FORWARD_DECL(HLS_manager);
 REF_FORWARD_DECL(HLS_manager);
@@ -197,6 +198,15 @@ class fu_binding
        * Destructor.
        */
       virtual ~fu_binding();
+
+      /**
+       * @brief create_fu_binding: factory method for fu_binding
+       * @param _HLSMgr
+       * @param _function_id
+       * @param _parameters
+       * @return the correct class of fu_binding
+       */
+      fu_bindingRef create_fu_binding(const HLS_managerConstRef _HLSMgr, const unsigned int _function_id, const ParameterConstRef _parameters);
 
       /**
        * Binds an operation vertex to a functional unit. The functional unit is identified by an id and
@@ -342,7 +352,7 @@ class fu_binding
        * @return true when ports of v are swapped, false otherwise
        */
       bool
-         get_ports_are_swapped(vertex v) const {return ports_are_swapped.find(v) != ports_are_swapped.end();}
+            get_ports_are_swapped(vertex v) const {return ports_are_swapped.find(v) != ports_are_swapped.end();}
 
       /// return true in case at least one resource is shared
       bool has_resource_sharing() const {return has_resource_sharing_p;}
