@@ -96,7 +96,7 @@ void easy_module_binding::Initialize()
       else
 #endif
       {
-         HLS->Rfu = fu_bindingRef(new fu_binding(HLSMgr, funId, parameters));
+         HLS->Rfu = create_fu_binding(HLSMgr, funId, parameters);
       }
    }
 }
