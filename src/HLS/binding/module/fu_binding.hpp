@@ -60,7 +60,7 @@ CONSTREF_FORWARD_DECL(AllocationInformation);
 REF_FORWARD_DECL(AllocationInformation);
 class funit_obj;
 REF_FORWARD_DECL(generic_obj);
-REF_FORWARD_DECL(fu_bindig);
+REF_FORWARD_DECL(fu_binding);
 REF_FORWARD_DECL(hls);
 CONSTREF_FORWARD_DECL(HLS_manager);
 REF_FORWARD_DECL(HLS_manager);
@@ -177,6 +177,17 @@ class fu_binding
 
       static void manage_killing_function_proxies(std::map<unsigned int, structural_objectRef>&fun_obj, std::map<std::string, unsigned int> &reverse_function_units, std::map<std::string, std::set<structural_objectRef> > &fun_call_sites_rel, const structural_managerRef SM, const hlsRef HLS, unsigned int & _unique_id);
 
+      /**
+       * @brief call_version_of_jms used to allow at the derived class to call the right joinMergeSplit
+       * @param SM
+       * @param HLS
+       * @param primary_outs
+       * @param circuit
+       * @param _unique_id
+       */
+      virtual void call_version_of_jms(const structural_managerRef SM, const hlsRef HLS, std::map<structural_objectRef, std::set<structural_objectRef> > &primary_outs, const structural_objectRef circuit, unsigned int &_unique_id);
+
+      virtual void connectSplitsToDatapath(std::map<structural_objectRef, std::set<structural_objectRef> >::const_iterator po, const structural_objectRef circuit, const structural_managerRef SM, std::string bus_merger_inst_name, structural_objectRef ss_out_port);
    public:
       ///The value used to identified unknown functional unit
       static
@@ -206,7 +217,7 @@ class fu_binding
        * @param _parameters
        * @return the correct class of fu_binding
        */
-      fu_bindingRef create_fu_binding(const HLS_managerConstRef _HLSMgr, const unsigned int _function_id, const ParameterConstRef _parameters);
+      static fu_bindingRef create_fu_binding(const HLS_managerConstRef _HLSMgr, const unsigned int _function_id, const ParameterConstRef _parameters);
 
       /**
        * Binds an operation vertex to a functional unit. The functional unit is identified by an id and
@@ -313,7 +324,7 @@ class fu_binding
        * Manage the connections between memory ports
        */
       static void manage_memory_ports_chained(const structural_managerRef SM, const std::set<structural_objectRef> &memory_modules, const structural_objectRef circuit);
-      static void manage_memory_ports_parallel_chained(const structural_managerRef SM, const std::set<structural_objectRef> &memory_modules, const structural_objectRef circuit, const hlsRef HLS, unsigned int & unique_id);
+      virtual void manage_memory_ports_parallel_chained(const structural_managerRef SM, const std::set<structural_objectRef> &memory_modules, const structural_objectRef circuit, const hlsRef HLS, unsigned int & unique_id);
 
       /**
        * Return the operations that are executed by the given functional unit

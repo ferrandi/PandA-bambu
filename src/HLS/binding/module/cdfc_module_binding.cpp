@@ -1493,7 +1493,7 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
       else
 #endif
       {
-         fu_best = create_fu_binding(HLSMgr, funId, parameters);
+         fu_best = fu_bindingRef(fu_binding::create_fu_binding(HLSMgr, funId, parameters));
       }
       double total_area_best =0;
       size_t total_modules_allocated_best = 0;

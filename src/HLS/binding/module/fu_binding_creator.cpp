@@ -85,7 +85,7 @@ void fu_binding_creator::Initialize()
       else
 #endif
       {
-         HLS->Rfu = create_fu_binding(HLSMgr, funId, parameters);
+         HLS->Rfu = fu_bindingRef(fu_binding::create_fu_binding(HLSMgr, funId, parameters));
       }
    }
 }

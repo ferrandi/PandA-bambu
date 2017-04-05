@@ -128,10 +128,11 @@ fu_bindingRef fu_binding::create_fu_binding(const HLS_managerConstRef _HLSMgr, c
 {
    if(_parameters->isOption(OPT_context_switch))
    {
-      auto omp_functions = GetPointer<OmpFunctions>(HLSMgr->Rfuns);
+      auto omp_functions = GetPointer<OmpFunctions>(_HLSMgr->Rfuns);
       bool found=false;
-      if(omp_functions->kernel_functions.find(funId) != omp_functions->kernel_functions.end()) found=true;
-      if(omp_functions->omp_for_wrappers.find(funId) != omp_functions->omp_for_wrappers.end()) found=true;
+      if(omp_functions->kernel_functions.find(_function_id) != omp_functions->kernel_functions.end()) found=true;
+      if(omp_functions->omp_for_wrappers.find(_function_id) != omp_functions->omp_for_wrappers.end()) found=true;
+      if(omp_functions->hierarchical_functions.find(_function_id) != omp_functions->hierarchical_functions.end()) found=true;
       if(found)
          return fu_bindingRef(new fu_binding_cs(_HLSMgr, _function_id, _parameters));
       else
@@ -394,7 +395,6 @@ void fu_binding::manage_killing_memory_proxies(std::map<unsigned int, structural
 
          structural_objectRef port_proxy_in1 = proxied_unit->find_member("proxy_in1_"+STR(var), port_o_K, proxied_unit);
          to_be_merged[port_in1].insert(port_proxy_in1);
-
          structural_objectRef port_proxy_in2 = proxied_unit->find_member("proxy_in2_"+STR(var), port_o_K, proxied_unit);
          to_be_merged[port_in2].insert(port_proxy_in2);
          structural_objectRef port_proxy_in3 = proxied_unit->find_member("proxy_in3_"+STR(var), port_o_K, proxied_unit);
@@ -1243,17 +1243,11 @@ void fu_binding::join_merge_split(const structural_managerRef SM, const hlsRef H
          structural_objectRef ss_out_port = GetPointer<module>(ss_mod)->get_out_port(0);
          GetPointer<port_o>(ss_out_port)->add_n_ports(static_cast<unsigned int>(GetPointer<port_o>(po->first)->get_ports_size()), ss_out_port);
          port_o::resize_std_port(STD_GET_SIZE(po->first->get_typeRef()), 0, 0, ss_out_port);
-         if(po->first->get_owner() != circuit)
-         {
-            structural_objectRef sign_out_vector = SM->add_sign_vector("sig_out_vector_"+bus_merger_inst_name, GetPointer<port_o>(po->first)->get_ports_size(), circuit, po->first->get_typeRef());
-            SM->add_connection(ss_out_port,sign_out_vector);
-            SM->add_connection(sign_out_vector,po->first);
-         }
-         else
-            SM->add_connection(ss_out_port,po->first);
+         connectSplitsToDatapath(po,circuit,SM,bus_merger_inst_name,ss_out_port);
       }
       else
       {
+         THROW_UNREACHABLE("Memory_channel should always be port_vector");
          structural_type_descriptorRef sig_type = structural_type_descriptorRef(new structural_type_descriptor);
          bm_out_port->get_typeRef()->copy(sig_type);
          sign_out = SM->add_sign("sig_out_"+bus_merger_inst_name, circuit, sig_type);
@@ -1321,8 +1315,7 @@ void fu_binding::manage_memory_ports_parallel_chained(const structural_managerRe
          }
       }
    }
-
-   join_merge_split(SM, HLS, primary_outs, circuit, _unique_id);
+   call_version_of_jms(SM, HLS, primary_outs, circuit, _unique_id);
 }
 
 void fu_binding::manage_extern_global_port(const structural_managerRef SM, structural_objectRef port_in, unsigned int _dir, structural_objectRef circuit, unsigned int num)
@@ -2758,3 +2751,19 @@ generic_objRef fu_binding::get(const vertex v) const
    return op_binding.find(statement_index)->second;
 }
 
+void fu_binding::call_version_of_jms(const structural_managerRef SM, const hlsRef HLS, std::map<structural_objectRef, std::set<structural_objectRef> > &primary_outs, const structural_objectRef circuit, unsigned int & _unique_id)
+{
+   join_merge_split(SM, HLS, primary_outs, circuit, _unique_id);
+}
+
+void fu_binding::connectSplitsToDatapath(std::map<structural_objectRef, std::set<structural_objectRef> >::const_iterator po, const structural_objectRef circuit, const structural_managerRef SM, std::string bus_merger_inst_name, structural_objectRef ss_out_port)
+{
+   if(po->first->get_owner() != circuit)
+   {
+      structural_objectRef sign_out_vector = SM->add_sign_vector("sig_out_vector_"+bus_merger_inst_name, GetPointer<port_o>(po->first)->get_ports_size(), circuit, po->first->get_typeRef());
+      SM->add_connection(ss_out_port,sign_out_vector);
+      SM->add_connection(sign_out_vector,po->first);
+   }
+   else
+      SM->add_connection(ss_out_port,po->first);
+}
