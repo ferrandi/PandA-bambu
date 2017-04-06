@@ -35,8 +35,6 @@
  * @brief add register file and add selector to their input
  *
  * @author Nicola Saporetti <nicola.saporetti@gmail.com>
- *
- *
 */
 #include "reg_binding_cs.hpp"
 #include "omp_functions.hpp"

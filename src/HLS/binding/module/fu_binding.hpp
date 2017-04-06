@@ -173,9 +173,9 @@ class fu_binding
        * @param var_call_sites_rel is the relation between var and call sites having a proxy as module parameter
        * @param SM is the structural manager
        */
-      static void manage_killing_memory_proxies(std::map<unsigned int, structural_objectRef>&mem_obj, std::map<unsigned int, unsigned int> &reverse_memory_units, std::map<unsigned int, std::set<structural_objectRef> > &var_call_sites_rel, const structural_managerRef SM, const hlsRef HLS, unsigned int & _unique_id);
+      void manage_killing_memory_proxies(std::map<unsigned int, structural_objectRef>&mem_obj, std::map<unsigned int, unsigned int> &reverse_memory_units, std::map<unsigned int, std::set<structural_objectRef> > &var_call_sites_rel, const structural_managerRef SM, const hlsRef HLS, unsigned int & _unique_id);
 
-      static void manage_killing_function_proxies(std::map<unsigned int, structural_objectRef>&fun_obj, std::map<std::string, unsigned int> &reverse_function_units, std::map<std::string, std::set<structural_objectRef> > &fun_call_sites_rel, const structural_managerRef SM, const hlsRef HLS, unsigned int & _unique_id);
+      void manage_killing_function_proxies(std::map<unsigned int, structural_objectRef>&fun_obj, std::map<std::string, unsigned int> &reverse_function_units, std::map<std::string, std::set<structural_objectRef> > &fun_call_sites_rel, const structural_managerRef SM, const hlsRef HLS, unsigned int & _unique_id);
 
       /**
        * @brief call_version_of_jms used to allow at the derived class to call the right joinMergeSplit
@@ -185,9 +185,6 @@ class fu_binding
        * @param circuit
        * @param _unique_id
        */
-      virtual void call_version_of_jms(const structural_managerRef SM, const hlsRef HLS, std::map<structural_objectRef, std::set<structural_objectRef> > &primary_outs, const structural_objectRef circuit, unsigned int &_unique_id);
-
-      virtual void connectSplitsToDatapath(std::map<structural_objectRef, std::set<structural_objectRef> >::const_iterator po, const structural_objectRef circuit, const structural_managerRef SM, std::string bus_merger_inst_name, structural_objectRef ss_out_port);
    public:
       ///The value used to identified unknown functional unit
       static
@@ -346,8 +343,7 @@ class fu_binding
 
       virtual bool manage_module_ports(const HLS_managerRef HLSMgr, const hlsRef HLS, const structural_managerRef SM, const structural_objectRef curr_gate, unsigned int num);
 
-      static
-         void join_merge_split(const structural_managerRef SM, const hlsRef HLS, std::map<structural_objectRef, std::set<structural_objectRef> > &primary_outs, const structural_objectRef circuit, unsigned int & unique_id);
+      virtual void join_merge_split(const structural_managerRef SM, const hlsRef HLS, std::map<structural_objectRef, std::set<structural_objectRef> > &primary_outs, const structural_objectRef circuit, unsigned int & unique_id);
 
       /**
        * specify if vertex v have or not its ports swapped

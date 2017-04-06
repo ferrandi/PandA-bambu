@@ -1001,7 +1001,7 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
       port_sel_STORE->set_id("proxy_sel_STORE");
       port_proxy_out1->set_id("proxy_out1");
    }
-   manage_killing_memory_proxies(mem_obj, reverse_memory_units, var_call_sites_rel, SM, HLS, unique_id);
+   HLS->Rfu->manage_killing_memory_proxies(mem_obj, reverse_memory_units, var_call_sites_rel, SM, HLS, unique_id);
 
    /// rename back all the function proxies ports
    const std::set<std::pair<structural_objectRef, std::string> >::const_iterator pfutbrb_it_end = proxy_function_units_to_be_renamed_back.end();
@@ -1041,7 +1041,7 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
          }
       }
    }
-   manage_killing_function_proxies(fun_obj, reverse_function_units, fun_call_sites_rel, SM, HLS, unique_id);
+   HLS->Rfu->manage_killing_function_proxies(fun_obj, reverse_function_units, fun_call_sites_rel, SM, HLS, unique_id);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Added functional units to circuit");
 }
 
@@ -1315,7 +1315,7 @@ void fu_binding::manage_memory_ports_parallel_chained(const structural_managerRe
          }
       }
    }
-   call_version_of_jms(SM, HLS, primary_outs, circuit, _unique_id);
+   join_merge_split(SM, HLS, primary_outs, circuit, _unique_id);
 }
 
 void fu_binding::manage_extern_global_port(const structural_managerRef SM, structural_objectRef port_in, unsigned int _dir, structural_objectRef circuit, unsigned int num)
@@ -2749,21 +2749,4 @@ generic_objRef fu_binding::get(const vertex v) const
 {
    const unsigned int statement_index = op_graph->CGetOpNodeInfo(v)->GetNodeId();
    return op_binding.find(statement_index)->second;
-}
-
-void fu_binding::call_version_of_jms(const structural_managerRef SM, const hlsRef HLS, std::map<structural_objectRef, std::set<structural_objectRef> > &primary_outs, const structural_objectRef circuit, unsigned int & _unique_id)
-{
-   join_merge_split(SM, HLS, primary_outs, circuit, _unique_id);
-}
-
-void fu_binding::connectSplitsToDatapath(std::map<structural_objectRef, std::set<structural_objectRef> >::const_iterator po, const structural_objectRef circuit, const structural_managerRef SM, std::string bus_merger_inst_name, structural_objectRef ss_out_port)
-{
-   if(po->first->get_owner() != circuit)
-   {
-      structural_objectRef sign_out_vector = SM->add_sign_vector("sig_out_vector_"+bus_merger_inst_name, GetPointer<port_o>(po->first)->get_ports_size(), circuit, po->first->get_typeRef());
-      SM->add_connection(ss_out_port,sign_out_vector);
-      SM->add_connection(sign_out_vector,po->first);
-   }
-   else
-      SM->add_connection(ss_out_port,po->first);
 }
