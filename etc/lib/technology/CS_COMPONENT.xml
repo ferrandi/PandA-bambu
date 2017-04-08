@@ -550,7 +550,7 @@ simple_dual_port_ram_single_clock #(.BITSIZE_data(BITSIZE_data_in),.BITSIZE_addr
           <port_o id="IN_Min_tag" dir="IN" is_memory="1" is_global="1" is_extern="1" is_tag_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
-          <port_o id="IN_request_accepted" dir="IN">
+          <port_o id="IN_request_accepted" dir="IN" is_memory="1" is_global="1" is_extern="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="Mout_oe_ram" dir="IN">
@@ -955,7 +955,7 @@ simple_dual_port_ram_single_clock #(.BITSIZE_data(BITSIZE_data_in),.BITSIZE_addr
           <port_o id="M_DataRdy" dir="IN" is_memory="1" is_global="1" is_extern="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
-          <port_o id="request_accepted" dir="IN" is_memory="1" is_master="1">
+          <port_o id="request_accepted" dir="IN" is_memory="1" is_global="1" is_extern="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="Mout_addr_ram" dir="OUT" is_memory="1" is_master="1" is_addr_bus="1">
@@ -1360,67 +1360,67 @@ simple_dual_port_ram_single_clock #(.BITSIZE_data(BITSIZE_data_in),.BITSIZE_addr
           <port_o id="reset" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
-          <port_o id="M_Rdata_ram" dir="IN" is_memory="1" is_global="1" is_extern="1" is_data_bus="1">
+          <port_o id="IN_M_Rdata_ram" dir="IN" is_memory="1" is_global="1" is_extern="1" is_data_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
-          <port_o id="Min_tag" dir="IN" is_memory="1" is_global="1" is_extern="1" is_tag_bus="1">
+          <port_o id="IN_Min_tag" dir="IN" is_memory="1" is_global="1" is_extern="1" is_tag_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
-          <port_o id="M_DataRdy" dir="IN" is_memory="1" is_global="1" is_extern="1">
+          <port_o id="IN_M_DataRdy" dir="IN" is_memory="1" is_global="1" is_extern="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
-          <port_o id="Min_tag_ram" dir="IN">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-          </port_o>
-          <port_o id="Min_oe_ram" dir="IN">
+          <port_o id="IN_request_accepted" dir="IN" is_memory="1" is_global="1" is_extern="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
-          <port_o id="Min_we_ram" dir="IN">
+          <port_o id="Mout_oe_ram" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
-          <port_o id="Min_addr_ram" dir="IN">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-          </port_o>
-          <port_o id="Min_Wdata_ram" dir="IN">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-          </port_o>
-          <port_o id="Min_data_ram_size" dir="IN">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-          </port_o>
-          <port_o id="request_accepted" dir="IN">
+          <port_o id="Mout_we_ram" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
-          <port_o id="Mout_addr_ram" dir="OUT" is_memory="1" is_master="1" is_addr_bus="1">
+          <port_o id="Mout_addr_ram" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
-          <port_o id="Mout_data_ram_size" dir="OUT" is_memory="1" is_master="1" is_size_bus="1">
+          <port_o id="Mout_data_ram_size" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
-          <port_o id="Mout_Wdata_ram" dir="OUT" is_memory="1" is_master="1" is_data_bus="1">
+          <port_o id="Mout_Wdata_ram" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
-          <port_o id="Mout_tag_ram" dir="OUT" is_memory="1" is_master="1" is_tag_bus="1">
+          <port_o id="Mout_tag_ram" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
-          <port_o id="Mout_oe_ram" dir="OUT" is_memory="1" is_master="1">
+          <port_o id="OUT_Mout_oe_ram" dir="OUT" is_memory="1" is_master="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
-          <port_o id="Mout_we_ram" dir="OUT" is_memory="1" is_master="1">
+          <port_o id="OUT_Mout_we_ram" dir="OUT" is_memory="1" is_master="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
-          <port_o id="Mout_tag" dir="OUT">
+          <port_o id="OUT_Mout_addr_ram" dir="OUT" is_memory="1" is_master="1" is_addr_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
-          <port_o id="Mout_DataRdy" dir="OUT">
+          <port_o id="OUT_Mout_data_ram_size" dir="OUT" is_memory="1" is_master="1" is_size_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="OUT_Mout_Wdata_ram" dir="OUT" is_memory="1" is_master="1" is_data_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="OUT_Mout_tag_ram" dir="OUT" is_memory="1" is_master="1" is_tag_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="M_Rdata_ram" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="Min_tag" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="M_DataRdy" dir="OUT">
             <structural_type_descriptor type="INT" size="1"/>
           </port_o>
-          <port_o id="Mout_Rdata_ram" dir="OUT">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-          </port_o>
-          <port_o id="request_wait_accepted" dir="OUT" is_memory="1" is_master="1">
+          <port_o id="request_accepted" dir="OUT">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="memory_ctrl_parallel request_wait_accepted request_accepted M_Rdata_ram M_DataRdy Min_tag Mout_Rdata_ram Mout_DataRdy Mout_tag Min_oe_ram Min_we_ram Min_addr_ram Min_Wdata_ram Min_data_ram_size Min_tag_ram Mout_oe_ram Mout_we_ram Mout_addr_ram Mout_Wdata_ram Mout_data_ram_size Mout_tag_ram" VERILOG_PROVIDED="
+          <NP_functionality LIBRARY="memory_ctrl_parallel IN_M_Rdata_ram IN_Min_tag IN_M_DataRdy Mout_oe_ram Mout_we_ram Mout_addr_ram Mout_data_ram_size Mout_Wdata_ram Mout_tag_ram OUT_Mout_oe_ram OUT_Mout_we_ram OUT_Mout_addr_ram OUT_Mout_data_ram_size OUT_Mout_Wdata_ram OUT_Mout_tag_ram M_Rdata_ram Min_tag M_DataRdy" VERILOG_PROVIDED="
           //In order to be generated correctly NUM_CHANNEL<=NUM_ACC and both of them must be a power of 2
           parameter SIZE_TOT_IN = BITSIZE_Mout_tag_ram+BITSIZE_Mout_Wdata_ram+BITSIZE_Mout_data_ram_size+BITSIZE_Mout_addr_ram+BITSIZE_Mout_we_ram+BITSIZE_Mout_oe_ram;
           parameter SIZE_TOT_OUT = BITSIZE_Mout_tag_ram+BITSIZE_M_Rdata_ram;
@@ -1436,18 +1436,18 @@ simple_dual_port_ram_single_clock #(.BITSIZE_data(BITSIZE_data_in),.BITSIZE_addr
           generate
           for(i=0; i&lt;NUM_CHANNEL; i=i+1)  //or a x ingressi
           begin
-            assign Mout_oe_ram[(i+1)*BITSIZE_Mout_oe_ram-1:i*BITSIZE_Mout_oe_ram]=(|fifo_wait_notempty[(i+1)*RATIO-1:i*RATIO])? data_in[SIZE_TOT_IN*i+BITSIZE_Mout_oe_ram-1] : {BITSIZE_Mout_oe_ram{1'b0}};
-            assign Mout_we_ram[(i+1)*BITSIZE_Mout_we_ram-1:i*BITSIZE_Mout_we_ram]=(|fifo_wait_notempty[(i+1)*RATIO-1:i*RATIO])? data_in[SIZE_TOT_IN*i+BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1] : {BITSIZE_Mout_we_ram{1'b0}};
-            assign Mout_addr_ram[(i+1)*BITSIZE_Mout_addr_ram-1:i*BITSIZE_Mout_addr_ram]=(|fifo_wait_notempty[(i+1)*RATIO-1:i*RATIO])? data_in[SIZE_TOT_IN*i+BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1:SIZE_TOT_IN*i+BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram] : {BITSIZE_Mout_addr_ram{1'b0}};
-            assign Mout_data_ram_size[(i+1)*BITSIZE_Mout_data_ram_size-1:i*BITSIZE_Mout_data_ram_size]=(|fifo_wait_notempty[(i+1)*RATIO-1:i*RATIO])? data_in[SIZE_TOT_IN*i+BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1:SIZE_TOT_IN*i+BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram] : {BITSIZE_Mout_data_ram_size{1'b0}};
-            assign Mout_Wdata_ram[(i+1)*BITSIZE_Mout_Wdata_ram-1:i*BITSIZE_Mout_Wdata_ram]=(|fifo_wait_notempty[(i+1)*RATIO-1:i*RATIO])? data_in[SIZE_TOT_IN*i+BITSIZE_Mout_Wdata_ram + BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1:SIZE_TOT_IN*i+BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram] : {BITSIZE_Mout_Wdata_ram{1'b0}};
-            assign Mout_tag_ram[(i+1)*BITSIZE_Mout_tag_ram-1:i*BITSIZE_Mout_tag_ram]=(|fifo_wait_notempty[(i+1)*RATIO-1:i*RATIO])? {1'b1,data_in[SIZE_TOT_IN*i+BITSIZE_Mout_tag_ram + BITSIZE_Mout_Wdata_ram + BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-2:SIZE_TOT_IN*i+BITSIZE_Mout_Wdata_ram + BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram]} : {BITSIZE_Mout_tag_ram{1'b0}};   //every data out has 1 as first bit of tag
+            assign OUT_Mout_oe_ram[(i+1)*BITSIZE_Mout_oe_ram-1:i*BITSIZE_Mout_oe_ram]=(|fifo_wait_notempty[(i+1)*RATIO-1:i*RATIO])? data_in[SIZE_TOT_IN*i+BITSIZE_Mout_oe_ram-1] : {BITSIZE_Mout_oe_ram{1'b0}};
+            assign OUT_Mout_we_ram[(i+1)*BITSIZE_Mout_we_ram-1:i*BITSIZE_Mout_we_ram]=(|fifo_wait_notempty[(i+1)*RATIO-1:i*RATIO])? data_in[SIZE_TOT_IN*i+BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1] : {BITSIZE_Mout_we_ram{1'b0}};
+            assign OUT_Mout_addr_ram[(i+1)*BITSIZE_Mout_addr_ram-1:i*BITSIZE_Mout_addr_ram]=(|fifo_wait_notempty[(i+1)*RATIO-1:i*RATIO])? data_in[SIZE_TOT_IN*i+BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1:SIZE_TOT_IN*i+BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram] : {BITSIZE_Mout_addr_ram{1'b0}};
+            assign OUT_Mout_data_ram_size[(i+1)*BITSIZE_Mout_data_ram_size-1:i*BITSIZE_Mout_data_ram_size]=(|fifo_wait_notempty[(i+1)*RATIO-1:i*RATIO])? data_in[SIZE_TOT_IN*i+BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1:SIZE_TOT_IN*i+BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram] : {BITSIZE_Mout_data_ram_size{1'b0}};
+            assign OUT_Mout_Wdata_ram[(i+1)*BITSIZE_Mout_Wdata_ram-1:i*BITSIZE_Mout_Wdata_ram]=(|fifo_wait_notempty[(i+1)*RATIO-1:i*RATIO])? data_in[SIZE_TOT_IN*i+BITSIZE_Mout_Wdata_ram + BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1:SIZE_TOT_IN*i+BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram] : {BITSIZE_Mout_Wdata_ram{1'b0}};
+            assign OUT_Mout_tag_ram[(i+1)*BITSIZE_Mout_tag_ram-1:i*BITSIZE_Mout_tag_ram]=(|fifo_wait_notempty[(i+1)*RATIO-1:i*RATIO])? {1'b1,data_in[SIZE_TOT_IN*i+BITSIZE_Mout_tag_ram + BITSIZE_Mout_Wdata_ram + BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-2:SIZE_TOT_IN*i+BITSIZE_Mout_Wdata_ram + BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram]} : {BITSIZE_Mout_tag_ram{1'b0}};   //every data out has 1 as first bit of tag
 
             //arbiter for decide which data go to memory
             PT_RR_FU #(.BITSIZE_ops(1), .PORTSIZE_ops(RATIO), .BITSIZE_rops(1), .PORTSIZE_rops(RATIO)) RR_fifo_in_0(.ops(selector_mux_fifo_in[RATIO*(i+1)-1:RATIO*i]), .ENABLE(1'b1), .clock(clock), .reset(!reset), .rops(fifo_wait_notempty[RATIO*(i+1)-1:RATIO*i]));
 
             //assign tag out
-            assign Mout_tag[BITSIZE_Mout_tag_ram*(i+1)-1:BITSIZE_Mout_tag_ram*i]={1'b0,Min_tag[BITSIZE_Mout_tag_ram*(i+1)-2:BITSIZE_Mout_tag_ram*i]};
+            assign Mout_tag[BITSIZE_Mout_tag_ram*(i+1)-1:BITSIZE_Mout_tag_ram*i]={1'b0,IN_Min_tag[BITSIZE_Mout_tag_ram*(i+1)-2:BITSIZE_Mout_tag_ram*i]};
 
             //BIND in of IN_fifo_in       //MUX with n in
           mux_pw_2 #(.BITSIZE_selector(RATIO), .BITSIZE_data(SIZE_TOT_IN*RATIO), .BITSIZE_out(SIZE_TOT_IN)) mux_in (.selector(selector_mux_fifo_in[RATIO*(i+1)-1:RATIO*i]), .data(data_in_mem_par[SIZE_TOT_IN*((i+1)*RATIO)-1:SIZE_TOT_IN*(i*RATIO)]), .out(data_in[SIZE_TOT_IN*(i+1)-1:SIZE_TOT_IN*i]));
@@ -1458,21 +1458,21 @@ simple_dual_port_ram_single_clock #(.BITSIZE_data(BITSIZE_data_in),.BITSIZE_addr
           for(i=0; i&lt;NUM_ACC; i=i+1)
             begin
               //check if there is a real request
-              assign fifo_wait_notempty[i]=Min_oe_ram[i]||Min_we_ram[i];
+              assign fifo_wait_notempty[i]=Mout_oe_ram[i]||Mout_we_ram[i];
 
               //reconstruct block from input
-              assign data_in_mem_par[SIZE_TOT_IN*(i+1)-1:SIZE_TOT_IN*i]={Min_tag_ram[BITSIZE_Mout_tag_ram*(i+1)-1:BITSIZE_Mout_tag_ram*i], Min_Wdata_ram[BITSIZE_Mout_Wdata_ram*(i+1)-1:BITSIZE_Mout_Wdata_ram*i], Min_data_ram_size[BITSIZE_Mout_data_ram_size*(i+1)-1:BITSIZE_Mout_data_ram_size*i], Min_addr_ram[BITSIZE_Mout_addr_ram*(i+1)-1:BITSIZE_Mout_addr_ram*i], Min_we_ram[BITSIZE_Mout_we_ram*(i+1)-1:BITSIZE_Mout_we_ram*i], Min_oe_ram[BITSIZE_Mout_oe_ram*(i+1)-1:BITSIZE_Mout_oe_ram*i]};
+              assign data_in_mem_par[SIZE_TOT_IN*(i+1)-1:SIZE_TOT_IN*i]={Mout_tag_ram[BITSIZE_Mout_tag_ram*(i+1)-1:BITSIZE_Mout_tag_ram*i], Mout_Wdata_ram[BITSIZE_Mout_Wdata_ram*(i+1)-1:BITSIZE_Mout_Wdata_ram*i], Mout_data_ram_size[BITSIZE_Mout_data_ram_size*(i+1)-1:BITSIZE_Mout_data_ram_size*i], Mout_addr_ram[BITSIZE_Mout_addr_ram*(i+1)-1:BITSIZE_Mout_addr_ram*i], Mout_we_ram[BITSIZE_Mout_we_ram*(i+1)-1:BITSIZE_Mout_we_ram*i], Mout_oe_ram[BITSIZE_Mout_oe_ram*(i+1)-1:BITSIZE_Mout_oe_ram*i]};
 
               //ack that is the rd_en on the scheduler, if fifo not empty push down data    //POSSIBLE TO DO REST
-              assign Mout_DataRdy[i]=(M_DataRdy[i/RATIO] &amp;&amp; Min_tag[BITSIZE_Mout_tag_ram*(i/RATIO)+ADDR_TASKS+ADDR_ACC-1:BITSIZE_Mout_tag_ram*(i/RATIO)+ADDR_TASKS]==i &amp;&amp; Min_tag[BITSIZE_Mout_tag_ram*(i/RATIO+1)-1]);
+              assign M_DataRdy[i]=(IN_M_DataRdy[i/RATIO] &amp;&amp; IN_Min_tag[BITSIZE_Mout_tag_ram*(i/RATIO)+ADDR_TASKS+ADDR_ACC-1:BITSIZE_Mout_tag_ram*(i/RATIO)+ADDR_TASKS]==i &amp;&amp; IN_Min_tag[BITSIZE_Mout_tag_ram*(i/RATIO+1)-1]);
 
               //ack on the appropriate kernel if its request is accepted
-              assign request_wait_accepted[i] =(request_accepted[(i/RATIO)] &amp;&amp; fifo_wait_notempty[i] &amp;&amp; selector_mux_fifo_in[i]==1'b1);
+              assign request_accepted[i] =(IN_request_accepted[(i/RATIO)] &amp;&amp; fifo_wait_notempty[i] &amp;&amp; selector_mux_fifo_in[i]==1'b1);
             end
           endgenerate
 
           //BIND out of OUT_fifo_out
-          assign Mout_Rdata_ram= M_Rdata_ram;"/>
+          assign M_Rdata_ram= IN_M_Rdata_ram;"/>
         </component_o>
       </circuit>
     </cell>

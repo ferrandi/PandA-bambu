@@ -188,7 +188,7 @@ DesignFlowStep_Status TopEntityMemoryMapped::InternalExec()
    }
 
    unsigned int unique_id = 0;
-   HLS->Rfu->manage_memory_ports_parallel_chained(SM_mm_interface, AddedComponents, interfaceObj, HLS, unique_id);
+   HLS->Rfu->manage_memory_ports_parallel_chained(HLSMgr, SM_mm_interface, AddedComponents, interfaceObj, HLS, unique_id);
 
    memory::propagate_memory_parameters(interfaceObj, SM_mm_interface);
 

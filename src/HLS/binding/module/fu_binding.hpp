@@ -321,7 +321,7 @@ class fu_binding
        * Manage the connections between memory ports
        */
       static void manage_memory_ports_chained(const structural_managerRef SM, const std::set<structural_objectRef> &memory_modules, const structural_objectRef circuit);
-      virtual void manage_memory_ports_parallel_chained(const structural_managerRef SM, const std::set<structural_objectRef> &memory_modules, const structural_objectRef circuit, const hlsRef HLS, unsigned int & unique_id);
+      virtual void manage_memory_ports_parallel_chained(const HLS_managerRef HLSMgr, const structural_managerRef SM, const std::set<structural_objectRef> &memory_modules, const structural_objectRef circuit, const hlsRef HLS, unsigned int & unique_id);
 
       /**
        * Return the operations that are executed by the given functional unit
@@ -359,7 +359,10 @@ class fu_binding
        * @return true when ports of v are swapped, false otherwise
        */
       bool
-            get_ports_are_swapped(vertex v) const {return ports_are_swapped.find(v) != ports_are_swapped.end();}
+            get_ports_are_swapped(vertex v) const
+      {
+         return ports_are_swapped.find(v) != ports_are_swapped.end();
+      }
 
       /// return true in case at least one resource is shared
       bool has_resource_sharing() const {return has_resource_sharing_p;}

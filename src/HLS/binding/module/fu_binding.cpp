@@ -976,9 +976,9 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
       }
    }
    if(parameters->IsParameter("chained-memory-modules") && parameters->GetParameter<int>("chained-memory-modules") == 1)
-      manage_memory_ports_chained(SM, memory_modules, circuit);
+      manage_memory_ports_chained(HLSMgr, SM, memory_modules, circuit);
    else
-      manage_memory_ports_parallel_chained(SM, memory_modules, circuit, HLS, unique_id);
+      manage_memory_ports_parallel_chained(HLSMgr, SM, memory_modules, circuit, HLS, unique_id);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Managed memory ports");
 
    /// rename back all the memory proxies ports
@@ -1243,7 +1243,14 @@ void fu_binding::join_merge_split(const structural_managerRef SM, const hlsRef H
          structural_objectRef ss_out_port = GetPointer<module>(ss_mod)->get_out_port(0);
          GetPointer<port_o>(ss_out_port)->add_n_ports(static_cast<unsigned int>(GetPointer<port_o>(po->first)->get_ports_size()), ss_out_port);
          port_o::resize_std_port(STD_GET_SIZE(po->first->get_typeRef()), 0, 0, ss_out_port);
-         connectSplitsToDatapath(po,circuit,SM,bus_merger_inst_name,ss_out_port);
+         if(po->first->get_owner() != circuit)
+         {
+            structural_objectRef sign_out_vector = SM->add_sign_vector("sig_out_vector_"+bus_merger_inst_name, GetPointer<port_o>(po->first)->get_ports_size(), circuit, po->first->get_typeRef());
+            SM->add_connection(ss_out_port,sign_out_vector);
+            SM->add_connection(sign_out_vector,po->first);
+         }
+         else
+            SM->add_connection(ss_out_port,po->first);
       }
       else
       {
@@ -1266,7 +1273,7 @@ void fu_binding::join_merge_split(const structural_managerRef SM, const hlsRef H
    }
 }
 
-void fu_binding::manage_memory_ports_parallel_chained(const structural_managerRef SM, const std::set<structural_objectRef> &memory_modules, const structural_objectRef circuit, const hlsRef HLS, unsigned int & _unique_id)
+void fu_binding::manage_memory_ports_parallel_chained(const HLS_managerRef , const structural_managerRef SM, const std::set<structural_objectRef> &memory_modules, const structural_objectRef circuit, const hlsRef HLS, unsigned int & _unique_id)
 {
    std::map<structural_objectRef, std::set<structural_objectRef> > primary_outs;
    structural_objectRef cir_port;

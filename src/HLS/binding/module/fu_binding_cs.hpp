@@ -1,5 +1,6 @@
 /*
  *
+ *
  *                   _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
  *                  _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
  *                 _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
@@ -48,9 +49,71 @@ class fu_binding_cs : public fu_binding
    fu_binding_cs(const HLS_managerConstRef HLS_mgr, const unsigned int function_id, const ParameterConstRef parameters);
 
    /**
-    * Instance the functional unit inside the structural representation of the datapath
+    * Call different method that instantiate the new component for each function_type
     */
    virtual void add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, structural_objectRef clock_port, structural_objectRef reset_port);
 
+protected:
+   /**
+    * @brief instantiate_component_kernel
+    * @param HLS
+    * @param clock_port
+    * @param reset_port
+    */
+   void instantiate_component_kernel(const hlsRef HLS, structural_objectRef clock_port, structural_objectRef reset_port);
 
+   /**
+    * @brief instantiate_component_parallel
+    * @param HLS
+    * @param clock_port
+    * @param reset_port
+    */
+   void instantiate_component_parallel(const hlsRef HLS, structural_objectRef clock_port, structural_objectRef reset_port);
+
+   /**
+    * @brief instantiate_suspension_component
+    * @param HLS
+    */
+   void instantiate_suspension_component(const hlsRef HLS);
+
+   /**
+    * @brief decide based on function what function to call in order to connect appropriately the datapath memory_signal with the component
+    * @param HLSMgr
+    * @param SM
+    * @param memory_modules
+    * @param circuit
+    * @param HLS
+    * @param _unique_id
+    */
+   void manage_memory_ports_parallel_chained(const HLS_managerRef HLSMgr, const structural_managerRef SM, const std::set<structural_objectRef> &memory_modules, const structural_objectRef circuit, const hlsRef HLS, unsigned int & _unique_id);
+
+   /**
+    * @brief connect scheduler with datapath and other memory modules
+    * @param SM
+    * @param memory_modules
+    * @param circuit
+    * @param HLS
+    * @param _unique_id
+    */
+   void manage_memory_ports_parallel_chained_kernel(const structural_managerRef SM, const std::set<structural_objectRef> &memory_modules, const structural_objectRef circuit, const hlsRef HLS, unsigned int & _unique_id);
+
+   /**
+    * @brief connect mem_parallel with datapath and kernels
+    * @param SM
+    * @param memory_modules
+    * @param circuit
+    */
+   void manage_memory_ports_parallel_chained_parallel(const structural_managerRef SM, const std::set<structural_objectRef> &memory_modules, const structural_objectRef circuit);
+
+   /**
+    * @brief merging on exit for the 1° channel, division on input for the 2 channel
+    * @param SM
+    * @param memory_modules
+    * @param circuit
+    * @param HLS
+    * @param _unique_id
+    */
+   void manage_memory_ports_parallel_chained_hierarchical(const structural_managerRef SM, const std::set<structural_objectRef> &memory_modules, const structural_objectRef circuit, const hlsRef HLS, unsigned int & _unique_id);
+
+};
 #endif // FU_BINDING_CS_H
