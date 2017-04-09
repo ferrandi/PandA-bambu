@@ -273,16 +273,13 @@
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <NP_functionality LIBRARY="simple_dual_port_ram_single_clock data addr out1" VERILOG_PROVIDED="reg [BITSIZE_data-1:0] q;
-reg [BITSIZE_data-1:0] ram[2**BITSIZE_addr-1:0];
-	always @ (posedge clock)
-	begin
-		// Write
-		if (we)
-			ram[write_addr] &lt;= data;
-
-		q &lt;= ram[read_addr];
-	end
-assign out=q;"/>
+   reg [BITSIZE_data-1:0] ram[2**BITSIZE_addr-1:0];
+      always @ (posedge clock) begin
+         if (we)
+            ram[write_addr] &lt;= data;
+         q &lt;= ram[read_addr];
+      end
+   assign out=q;"/>
         </component_o>
       </circuit>
     </cell>
@@ -407,8 +404,10 @@ simple_dual_port_ram_single_clock #(.BITSIZE_data(BITSIZE_data_in),.BITSIZE_addr
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o> 
           <NP_functionality LIBRARY="Counter value driver_lines" VERILOG_PROVIDED="
-   reg [BITSIZE_value - 1 : 0]    counter;
-   reg [BITSIZE_value - 1 : 0]    next_counter;
+   reg [BITSIZE_value - 1 : 0] counter;
+   reg [BITSIZE_value - 1 : 0] next_counter;
+   reg [BITSIZE_value - 1 : 0] increment;
+
    always @(posedge clock or negedge reset) begin
       if (!reset)
         counter &lt;= {BITSIZE_value{1'b0}};
@@ -418,12 +417,11 @@ simple_dual_port_ram_single_clock #(.BITSIZE_data(BITSIZE_data_in),.BITSIZE_addr
 
    assign value = counter;
 
-   reg [BITSIZE_value - 1 : 0]        increment;
    always @(*) begin
       next_counter = counter + increment;
    end
 
-   integer                              i;
+   integer i;
    always @(*) begin
       increment = {BITSIZE_value{1'b0}};
       for (i = 0; i &lt; BITSIZE_driver_lines; i = i+1) begin
@@ -470,55 +468,58 @@ simple_dual_port_ram_single_clock #(.BITSIZE_data(BITSIZE_data_in),.BITSIZE_addr
           <port_o id="selected_worker" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="CallDispatcher request selected_worker fifo_data_out worker_status" VERILOG_PROVIDED="
-   reg fifo_rd_cs;
-   reg fifo_rd_en;
-   reg [BITSIZE_worker_status-1:0] selected_worker;
-   wire                    available_workers;
-   reg                     call_state;
-   reg                     next_call_state;
+          <NP_functionality LIBRARY="CallDispatcher fifo_data_out worker_status request selected_worker" VERILOG_PROVIDED="
+ reg fifo_rd_cs;
+ reg fifo_rd_en;
+ reg [WORKERS - 1 : 0] selected_worker;
+ wire [WORKERS - 1 : 0] notFull;
+ reg [BITSIZE_REQUEST - 1 : 0] request;
+ wire available_workers;
+ reg call_state;
+ reg next_call_state;
+ reg available_data;
+ assign notFull = ~worker_status;
+ always @ (posedge clock or negedge reset) begin : CALL_STATE_REGISTER
+    if (!reset) begin // Beginning of autoreset for uninitialized flops
+       call_state <= 1'h0;  // End of automatics
+    end
+    else begin
+       call_state <= next_call_state;
+    end
+ end
 
-   always @ (posedge clock or negedge reset) begin : CALL_STATE_REGISTER
-      if (!reset) begin
-         call_state &lt;= 1'h0;
-      end else begin
-         call_state &lt;= next_call_state;
-      end
-   end
+ always @(posedge clock or negedge reset) begin
+    if (!reset)
+      available_data <= 1'b0;
+    else
+      available_data <= !fifo_empty;
+ end
 
-   reg available_data;
-   always @(posedge clock or negedge reset) begin
-      if (!reset)
-        available_data &lt;= 1'b0;
-      else
-        available_data &lt;= !fifo_empty;
-   end
-   
-   wire [BITSIZE_worker_status - 1 : 0] notFull = ~worker_status;
-   reg [BITSIZE_fifo_data_out - 1 : 0] request;
-   assign available_workers = ~(&amp; worker_status);
-   always @ (*) begin
-      fifo_rd_cs = 1'b0;
-      fifo_rd_en = 1'b0;
-      next_call_state = 1'b0;
-      request = {BITSIZE_fifo_data_out{1'b0}};
-      selected_worker = {BITSIZE_worker_status{1'b0}};
-      if (call_state == 1'b0) begin
-         if (available_workers &amp; available_data) begin
-            fifo_rd_cs = 1'b1;
-            fifo_rd_en = 1'b1;
-            next_call_state = 1'b1;
-         end
-      end else begin
-            selected_worker = notFull &amp; (-notFull); // find the first 0 bit
-            request = fifo_data_out;
-      end
-   end // always @ (*)
+ assign available_workers = ~(& worker_status);
+
+ always @ (*) begin
+    fifo_rd_cs = 1'b0;
+    fifo_rd_en = 1'b0;
+    next_call_state = 1'b0;
+    request = {BITSIZE_REQUEST{1'b0}};
+    selected_worker = {WORKERS{1'b0}};
+    if (call_state == 1'b0) begin
+       if (available_workers & available_data) begin
+          fifo_rd_cs = 1'b1;
+          fifo_rd_en = 1'b1;
+          next_call_state = 1'b1;
+       end
+    end
+    else begin
+       selected_worker = notFull & (-notFull); // find the first 0 bit
+       request = fifo_data_out;
+    end
+ end // always @ (*)
 
 /* -----\/----- EXCLUDED -----\/-----
-   wire available_data;
-   assign available_data = ~fifo_empty;
- -----/\----- EXCLUDED -----/\----- */"/>
+ wire available_data;
+ assign available_data = ~fifo_empty;
+-----/\----- EXCLUDED -----/\----- */"/>
         </component_o>
       </circuit>
     </cell>
@@ -616,7 +617,8 @@ simple_dual_port_ram_single_clock #(.BITSIZE_data(BITSIZE_data_in),.BITSIZE_addr
           <port_o id="selector_register_file_signal" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="scheduler IN_M_Rdata_ram IN_M_DataRdy IN_Min_tag Mout_oe_ram Mout_we_ram Mout_addr_ram Mout_data_ram_size Mout_Wdata_ram Mout_tag_ram done_port_task suspension task_finished OUT_Mout_oe_ram OUT_Mout_we_ram OUT_Mout_addr_ram OUT_Mout_data_ram_size OUT_Mout_Wdata_ram OUT_Mout_tag_ramMin_tag M_Rdata_ram M_DataRdy request_accepted done_request_port selector_register_file_signal NUM_TASKS KERN_NUM ADDR_ACC" VERILOG_PROVIDED="
+          <NP_functionality LIBRARY="scheduler IN_M_Rdata_ram IN_M_DataRdy IN_Min_tag Mout_oe_ram Mout_we_ram Mout_addr_ram Mout_data_ram_size Mout_Wdata_ram Mout_tag_ram done_port_task suspension task_finished OUT_Mout_oe_ram OUT_Mout_we_ram OUT_Mout_addr_ram OUT_Mout_data_ram_size OUT_Mout_Wdata_ram OUT_Mout_tag_ramMin_tag M_Rdata_ram M_DataRdy request_accepted done_request_port selector_register_file_signal NUM_TASKS KERN_NUM ADDR_ACC"
+          IP_COMPONENT="fifio, fifio_free, mem_scheduler" VERILOG_PROVIDED="
   parameter SIZE_IN=BITSIZE_Mout_oe_ram+BITSIZE_Mout_we_ram+BITSIZE_Mout_addr_ram+BITSIZE_Mout_data_ram_size+BITSIZE_Mout_Wdata_ram+BITSIZE_Mout_tag;
 
   reg done_request_port;
@@ -1067,7 +1069,8 @@ simple_dual_port_ram_single_clock #(.BITSIZE_data(BITSIZE_data_in),.BITSIZE_addr
           <port_o id="occupancies" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="memory_ctrl request_wait_accepted M_Rdata_ram M_DataRdy Mout_Rdata_ram Mout_DataRdy Mout_tag Min_oe_ram Min_we_ram Min_addr_ram Min_Wdata_ram Min_data_ram_size Min_tag_ram Mout_oe_ram Mout_we_ram Mout_addr_ram Mout_Wdata_ram Mout_data_ram_size occupancies" VERILOG_PROVIDED="
+          <NP_functionality LIBRARY="memory_ctrl request_wait_accepted M_Rdata_ram M_DataRdy Mout_Rdata_ram Mout_DataRdy Mout_tag Min_oe_ram Min_we_ram Min_addr_ram Min_Wdata_ram Min_data_ram_size Min_tag_ram Mout_oe_ram Mout_we_ram Mout_addr_ram Mout_Wdata_ram Mout_data_ram_size occupancies"
+          IP_COMPONENT="fifio, register_SE_r, PT_RR_FU, mux_pw_2, bus_merger" VERILOG_PROVIDED="
           //In order to be generated correctly num NUM_BANK>=NUM_CHANNEL and both of them must be a power of 2
 
           parameter FIFO_OUT =ADDR_TASKS+ADDR_ACC, FIFO_IN=ADDR_TASKS+ADDR_ACC;
@@ -1420,7 +1423,8 @@ simple_dual_port_ram_single_clock #(.BITSIZE_data(BITSIZE_data_in),.BITSIZE_addr
           <port_o id="request_accepted" dir="OUT">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="memory_ctrl_parallel IN_M_Rdata_ram IN_Min_tag IN_M_DataRdy Mout_oe_ram Mout_we_ram Mout_addr_ram Mout_data_ram_size Mout_Wdata_ram Mout_tag_ram OUT_Mout_oe_ram OUT_Mout_we_ram OUT_Mout_addr_ram OUT_Mout_data_ram_size OUT_Mout_Wdata_ram OUT_Mout_tag_ram M_Rdata_ram Min_tag M_DataRdy" VERILOG_PROVIDED="
+          <NP_functionality LIBRARY="memory_ctrl_parallel IN_M_Rdata_ram IN_Min_tag IN_M_DataRdy Mout_oe_ram Mout_we_ram Mout_addr_ram Mout_data_ram_size Mout_Wdata_ram Mout_tag_ram OUT_Mout_oe_ram OUT_Mout_we_ram OUT_Mout_addr_ram OUT_Mout_data_ram_size OUT_Mout_Wdata_ram OUT_Mout_tag_ram M_Rdata_ram Min_tag M_DataRdy"
+          IP_COMPONENT="PT_RR_FU, mux_pw_2" VERILOG_PROVIDED="
           //In order to be generated correctly NUM_CHANNEL<=NUM_ACC and both of them must be a power of 2
           parameter SIZE_TOT_IN = BITSIZE_Mout_tag_ram+BITSIZE_Mout_Wdata_ram+BITSIZE_Mout_data_ram_size+BITSIZE_Mout_addr_ram+BITSIZE_Mout_we_ram+BITSIZE_Mout_oe_ram;
           parameter SIZE_TOT_OUT = BITSIZE_Mout_tag_ram+BITSIZE_M_Rdata_ram;
@@ -1450,7 +1454,7 @@ simple_dual_port_ram_single_clock #(.BITSIZE_data(BITSIZE_data_in),.BITSIZE_addr
             assign Mout_tag[BITSIZE_Mout_tag_ram*(i+1)-1:BITSIZE_Mout_tag_ram*i]={1'b0,IN_Min_tag[BITSIZE_Mout_tag_ram*(i+1)-2:BITSIZE_Mout_tag_ram*i]};
 
             //BIND in of IN_fifo_in       //MUX with n in
-          mux_pw_2 #(.BITSIZE_selector(RATIO), .BITSIZE_data(SIZE_TOT_IN*RATIO), .BITSIZE_out(SIZE_TOT_IN)) mux_in (.selector(selector_mux_fifo_in[RATIO*(i+1)-1:RATIO*i]), .data(data_in_mem_par[SIZE_TOT_IN*((i+1)*RATIO)-1:SIZE_TOT_IN*(i*RATIO)]), .out(data_in[SIZE_TOT_IN*(i+1)-1:SIZE_TOT_IN*i]));
+            mux_pw_2 #(.BITSIZE_selector(RATIO), .BITSIZE_data(SIZE_TOT_IN*RATIO), .BITSIZE_out(SIZE_TOT_IN)) mux_in (.selector(selector_mux_fifo_in[RATIO*(i+1)-1:RATIO*i]), .data(data_in_mem_par[SIZE_TOT_IN*((i+1)*RATIO)-1:SIZE_TOT_IN*(i*RATIO)]), .out(data_in[SIZE_TOT_IN*(i+1)-1:SIZE_TOT_IN*i]));
           end
           endgenerate
 
@@ -1692,5 +1696,325 @@ simple_dual_port_ram_single_clock #(.BITSIZE_data(BITSIZE_data_in),.BITSIZE_addr
       </component_o>
     </circuit>
   </cell>
+  <cell>
+  <name>controller_parallel</name>
+  <operation operation_name="controller_parallel"/>
+  <circuit>
+    <component_o id="controller_parallel">
+      <structural_type_descriptor id_type="controller_parallel"/>
+      <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+      <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>
+      <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+      <license>PANDA_LGPLv3</license>
+      <port_o id="clock" dir="IN" is_clock="1">
+        <structural_type_descriptor type="BOOL" size="1"/>
+      </port_o>
+      <port_o id="reset" dir="IN">
+        <structural_type_descriptor type="BOOL" size="1"/>
+      </port_o>
+      <port_o id="start_port" dir="IN">
+        <structural_type_descriptor type="BOOL" size="1"/>
+      </port_o>
+      <port_o id="done_port_accelerator" dir="IN" is_clock="1">
+        <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+      </port_o>
+      <port_o id="done_request_accelerator" dir="IN">
+        <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+      </port_o>
+      <port_o id="in_port_in_degree_var_4" dir="IN">
+        <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+      </port_o>
+      <port_o id="done_port" dir="OUT">
+        <structural_type_descriptor type="BOOL" size="1"/>
+      </port_o>
+      <port_o id="task_finished" dir="OUT">
+        <structural_type_descriptor type="BOOL" size="1"/>
+      </port_o>
+      <port_o id="start_port_accelerator" dir="OUT">
+        <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+      </port_o>
+      <port_o id="request" dir="OUT">
+        <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+      </port_o>
+      <NP_functionality LIBRARY="controller_parallel done_port_accelerator done_request_accelerator start_port_accelerator"
+      IP_COMPONENT="ui_ne_expr_FU, read_cond_FU, register_SE, fifo, CallDispatcher, Counter, MUX_GATE, UUdata_converter_FU, constant_value, ASSIGN_UNSIGNED_FU, ui_plus_expr_FU" VERILOG_PROVIDED="
+        parameter [2:0] S_0 = 3'd0,
+          S_1 = 3'd1,
+          S_4 = 3'd4,
+          S_5 = 3'd5,
+          S_6 = 3'd6,
+          S_2 = 3'd2,
+          S_3 = 3'd3;
+        reg [2:0] _present_state, _next_state;
+        reg done_port;
+        reg wrenable_reg_1;
+        reg wrenable_reg_0;
+        reg selector_MUX_2_reg_0_0_0_0;
+        reg selector_IN_UNBOUNDED_parallel_18797_18995;
+        reg [BITSIZE_start_port_accelerator-1:0]            worker_status;          // To CallDispatcher_i0 of CallDispatcher.v
+
+        wire [31:0] out_MUX_2_reg_0_0_0_0;
+        wire out_const_0;
+        wire out_const_1;
+        wire [31:0]   out_conv_out_u_assign_conn_obj_0_ASSIGN_UNSIGNED_FU_u_assign_0_1_32;
+        wire out_read_cond_FU_5_i0_fu_parallel_18797_19050;
+        wire [31:0] out_reg_0_reg_0;
+        wire [31:0] out_reg_1_reg_1;
+        wire [0:0] out_u_assign_conn_obj_0_ASSIGN_UNSIGNED_FU_u_assign_0;
+        wire out_ui_ne_expr_FU_32_32_32_7_i0_fu_parallel_18797_19732;
+        wire [31:0] out_ui_plus_expr_FU_32_0_32_8_i0_fu_parallel_18797_18996;
+        wire [31:0]          fifo_data_out;          // From fifo_i0 of fifo.v
+        wire fifo_empty;             // From fifo_i0 of fifo.v
+        wire fifo_full;              // keep name fifo_full
+        wire completed;              // added
+        wire OUT_CONDITION_parallel_18797_19050; //added
+        wire fifo_rd_cs;             // From CallDispatcher_i0 of CallDispatcher.v
+        wire fifo_rd_en;             // From CallDispatcher_i0 of CallDispatcher.v
+        wire [31:0] DoneCounter_value;      // From DoneCounter of Counter.v
+        wire [31:0] StartCounter_value;     // From StartCounter of Counter.v
+        wire [31:0] number_req_tasks;
+        wire [31:0]          request;    // From CallDispatcher_i0 of CallDispatcher.v
+        wire OUT_UNBOUNDED_parallel_18797_18995;
+        wire [BITSIZE_start_port_accelerator-1:0] selected_worker;        // From CallDispatcher_i0 of CallDispatcher.v
+        reg reset_counter;
+        reg next_reset_counter;
+
+        always @(posedge clock)
+          if (!reset) _present_state <= S_0;
+          else _present_state <= _next_state;
+
+        always @(*)
+        begin
+          _next_state = S_0;
+          done_port = 1'b0;
+          wrenable_reg_1 = 1'b0;
+          wrenable_reg_0 = 1'b0;
+          selector_MUX_2_reg_0_0_0_0 = 1'b0;
+          selector_IN_UNBOUNDED_parallel_18797_18995 = 1'b0;
+          case (_present_state)
+            S_0 :
+              if(start_port != 1'b1 )
+              begin
+                _next_state = S_0;
+              end
+              else
+              begin
+                _next_state = S_1;
+              end
+            S_1 :
+              begin
+                wrenable_reg_0 = 1'b1;
+                _next_state = S_4;
+              end
+            S_4 :
+              begin
+                wrenable_reg_1 = 1'b1;
+                if ((out_read_cond_FU_5_i0_fu_parallel_18797_19050 == 1'b1) & (fifo_full == 1'b0))
+                  begin
+                    _next_state = S_2;
+                  end
+                else if (fifo_full == 1'b1)
+                  begin
+                    _next_state = S_3;
+                    wrenable_reg_1 = 1'b0;
+                  end
+                else
+                  begin
+                    _next_state = S_6;
+                  end
+              end
+            S_5 :
+              begin
+                _next_state = S_0;
+              end
+            S_6 :
+              begin
+                _next_state = S_6;
+                if (completed) begin
+                    _next_state = S_5;
+                    done_port = 1'b1;
+                    wrenable_reg_1 = 1'b0;
+                end
+              end
+            S_2 :
+              begin
+                wrenable_reg_0 = 1'b1;
+                selector_MUX_2_reg_0_0_0_0 = 1'b1;
+                selector_IN_UNBOUNDED_parallel_18797_18995 = 1'b1;
+      //          if (OUT_UNBOUNDED_parallel_18797_18995 == 1'b0)
+                if (fifo_full == 1'b1)
+                  begin
+                    _next_state = S_3;
+                    wrenable_reg_0 = 1'b0;
+                    selector_MUX_2_reg_0_0_0_0 = 1'b0;
+                  end
+                else
+                  begin
+                    _next_state = S_4;
+                  end
+              end
+            S_3 :
+              begin
+                wrenable_reg_0 = 1'b1;
+                selector_MUX_2_reg_0_0_0_0 = 1'b1;
+      //          if (OUT_UNBOUNDED_parallel_18797_18995 == 1'b0)
+                if (fifo_full == 1'b1)
+                  begin
+                    _next_state = S_3;
+                    wrenable_reg_0 = 1'b0;
+                    selector_MUX_2_reg_0_0_0_0 = 1'b0;
+                  end
+                else
+                  begin
+                    _next_state = S_4;
+                  end
+              end
+            default :
+              begin
+                done_port = 1'b0;
+                wrenable_reg_1 = 1'b0;
+                wrenable_reg_0 = 1'b0;
+                selector_MUX_2_reg_0_0_0_0 = 1'b0;
+                selector_IN_UNBOUNDED_parallel_18797_18995 = 1'b0;
+              end
+          endcase
+        end
+
+        ui_ne_expr_FU #(.BITSIZE_in1(32), .BITSIZE_in2(32), .BITSIZE_out1(1)) fu_parallel_18797_19732(
+        .out1(out_ui_ne_expr_FU_32_32_32_7_i0_fu_parallel_18797_19732),
+        .in1(out_reg_0_reg_0),
+        .in2(in_port_in_degree_var_4));
+
+        read_cond_FU #(.BITSIZE_in1(1)) fu_parallel_18797_19050(
+        .out1(out_read_cond_FU_5_i0_fu_parallel_18797_19050),
+        .in1(out_ui_ne_expr_FU_32_32_32_7_i0_fu_parallel_18797_19732));
+
+        register_SE #(.BITSIZE_in1(32), .BITSIZE_out1(32)) reg_0 (
+        .out1(out_reg_0_reg_0),
+        .clock(clock),
+        .reset(reset),
+        .in1(out_MUX_2_reg_0_0_0_0),
+        .wenable(wrenable_reg_0));
+
+        fifo #(.DATA_WIDTH(32), .ADDR_WIDTH(10)) fifo_i0
+         (/*AUTOINST*/
+          // Outputs
+          .full                             (fifo_full),             // Templated
+          .empty                            (fifo_empty),            // Templated
+          .data_out                         (fifo_data_out[31:0]),   // Templated
+          // Inputs
+          .clk                              (clock),                 // Templated
+          .rst                              (!reset),                // Templated
+          .wr_cs                            (selector_IN_UNBOUNDED_parallel_18797_18995),            // Templated
+          .rd_cs                            (fifo_rd_cs),            // Templated
+          .rd_en                            (fifo_rd_en),            // Templated
+          .wr_en                            (selector_IN_UNBOUNDED_parallel_18797_18995),            // Templated
+          .data_in                          (out_reg_0_reg_0));               // Templated
+
+        CallDispatcher #(.WORKERS(4), .BITSIZE_REQUEST(32)) CallDispatcher_i0
+         (/*AUTOINST*/
+          // Outputs
+          .fifo_rd_cs                       (fifo_rd_cs),
+          .fifo_rd_en                       (fifo_rd_en),
+          .request                          (request),
+          .selected_worker                  (selected_worker),
+          // Inputs
+          .clock                            (clock),
+          .reset                            (reset),
+          .fifo_data_out                    (fifo_data_out),
+          .fifo_empty                       (fifo_empty),
+          .worker_status                    (worker_status));
+
+        Counter #(.BITSIZE_COUNTER(32), .DRIVERS(1)) StartCounter (
+        /*AUTOINST*/
+        // Outputs
+        .value             (StartCounter_value), // Templated
+        // Inputs
+        .clock              (clock),                 // Templated
+        .reset              (reset_counter),         // Templated
+        .driver_lines   (selector_IN_UNBOUNDED_parallel_18797_18995));            // Templated
+
+        Counter #(.BITSIZE_COUNTER(32), .DRIVERS(BITSIZE_start_port_accelerator)) DoneCounter(
+        /*AUTOINST*/
+        // Outputs
+        .value                         (DoneCounter_value), // Templated
+        // Inputs
+        .clock                         (clock),                 // Templated
+        .reset                         (reset_counter),         // Templated
+        .driver_lines                  (done_port_accelerator)); // Templated
+
+        // done request counter
+        Counter #(.BITSIZE_COUNTER(32), .DRIVERS(BITSIZE_start_port_accelerator)) DoneReqCounter(
+        /*AUTOINST*/
+        // Outputs
+        .value (number_req_tasks), // Templated
+        // Inputs
+        .clock (clock),                 // Templated
+        .reset (reset_counter),         // Templated
+        .driver_lines (selected_worker)); // Templated
+
+        MUX_GATE #(.BITSIZE_in1(32), .BITSIZE_in2(32), .BITSIZE_out1(32)) MUX_2_reg_0_0_0_0 (.out1(out_MUX_2_reg_0_0_0_0), .sel(selector_MUX_2_reg_0_0_0_0), .in1(out_reg_1_reg_1), .in2(out_conv_out_u_assign_conn_obj_0_ASSIGN_UNSIGNED_FU_u_assign_0_1_32));
+
+        always @(posedge clock or negedge reset)
+          if (!reset)
+            reset_counter <= 1'b0;
+          else
+            reset_counter <= next_reset_counter;
+
+        always @(*) next_reset_counter = ~completed;
+
+        assign completed = fifo_empty & (StartCounter_value == DoneCounter_value) & (| StartCounter_value) & (| DoneCounter_value);
+
+        assign task_finished = (number_req_tasks == StartCounter_value) & (| StartCounter_value) & (| number_req_tasks);
+
+        register_SE #(.BITSIZE_in1(32), .BITSIZE_out1(32)) reg_1 (
+        .out1(out_reg_1_reg_1),
+        .clock(clock), .reset(reset),
+        .in1(out_ui_plus_expr_FU_32_0_32_8_i0_fu_parallel_18797_18996),
+        .wenable(wrenable_reg_1));
+
+        UUdata_converter_FU #(.BITSIZE_in1(1), .BITSIZE_out1(32)) conv_out_u_assign_conn_obj_0_ASSIGN_UNSIGNED_FU_u_assign_0_1_32 (.out1(out_conv_out_u_assign_conn_obj_0_ASSIGN_UNSIGNED_FU_u_assign_0_1_32), .in1(out_u_assign_conn_obj_0_ASSIGN_UNSIGNED_FU_u_assign_0));
+
+        ASSIGN_UNSIGNED_FU #(.BITSIZE_in1(1), .BITSIZE_out1(1)) ASSIGN_UNSIGNED_FU_u_assign_0 (.out1(out_u_assign_conn_obj_0_ASSIGN_UNSIGNED_FU_u_assign_0), .in1(out_const_0));
+
+        //assign OUT_UNBOUNDED_parallel_18797_18995 = selector_IN_UNBOUNDED_parallel_18797_18995 & !fifo_full;
+
+        constant_value #(.BITSIZE_out1(1), .value(1'b0)) const_0 (.out1(out_const_0));
+        constant_value #(.BITSIZE_out1(1), .value(1'b1)) const_1 (.out1(out_const_1));
+
+
+      // Worker status register
+        reg [3:0] next_worker_status;
+         always @(posedge clock or negedge reset) begin
+            if (!reset)
+              worker_status <= {BITSIZE_start_port_accelerator{1'b0}};
+            else
+              worker_status <= next_worker_status;
+         end
+        always @(*) begin
+          next_worker_status = worker_status;
+        end
+
+        generate
+          for(i=0; i<NUM_CHANNEL; i=i+1)  //or a x ingressi
+          begin
+            always @(*) begin
+              if (selected_worker[i])
+                next_worker_status[i] =1'b1;
+              if (done_request_accelerator[i])
+                next_worker_status[i] =1'b0;
+            end
+          end
+        endgenerate
+
+        ui_plus_expr_FU #(.BITSIZE_in1(32), .BITSIZE_in2(1), .BITSIZE_out1(32)) fu_parallel_18797_18996(
+        .out1(out_ui_plus_expr_FU_32_0_32_8_i0_fu_parallel_18797_18996),
+        .in1(out_reg_0_reg_0), .in2(out_const_1));
+
+        assign start_port_accelerator = selected_worker;  //bind start_port"/>
+        </component_o>
+      </circuit>
+    </cell>
   </library>
 </technology>
+

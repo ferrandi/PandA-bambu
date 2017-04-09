@@ -82,7 +82,7 @@ void controller_cs::add_selector_register_file_port(structural_objectRef circuit
     structural_type_descriptorRef port_type = structural_type_descriptorRef(new structural_type_descriptor("bool", num_slots));
     PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "  * Start adding Selector signal...");
     /// add selector port
-    SM->add_port(SELECTOR_REGISTER_FILE, port_o::IN, circuit, port_type);
+    SM->add_port(STR(SELECTOR_REGISTER_FILE)+"port", port_o::IN, circuit, port_type);
     PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "  - Selector signal added!");
 }
 

@@ -58,13 +58,6 @@ datapath_cs::~datapath_cs()
 
 }
 
-DesignFlowStep_Status datapath_cs::InternalExec()
-{
-    classic_datapath::InternalExec();    //exec of hierarchical class
-    //new merging
-    return DesignFlowStep_Status::SUCCESS;
-}
-
 void datapath_cs::add_ports()
 {
     classic_datapath::add_ports();      //add standard port
@@ -78,9 +71,9 @@ void datapath_cs::add_ports()
     {
        unsigned int num_slots=static_cast<unsigned int>(log2(HLS->Param->getOption<unsigned int>(OPT_context_switch)));
        structural_type_descriptorRef port_type = structural_type_descriptorRef(new structural_type_descriptor("bool", num_slots));
-       SM->add_port(SELECTOR_REGISTER_FILE, port_o::IN, circuit, port_type);
+       SM->add_port(STR(SELECTOR_REGISTER_FILE)+"port", port_o::IN, circuit, port_type);
        structural_type_descriptorRef bool_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 0));
-       SM->add_port(SUSPENSION, port_o::OUT, circuit, bool_type);
+       SM->add_port(STR(SUSPENSION)+"port", port_o::OUT, circuit, bool_type);
     }
     if(omp_functions->kernel_functions.find(funId) != omp_functions->kernel_functions.end())
     {
@@ -88,11 +81,10 @@ void datapath_cs::add_ports()
        structural_type_descriptorRef port_type = structural_type_descriptorRef(new structural_type_descriptor("bool", num_slots));
        structural_type_descriptorRef bool_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 0));
        SM->add_port(STR(SELECTOR_REGISTER_FILE)+"port", port_o::OUT, circuit, port_type);
-       SM->add_port(STR(SUSPENSION)+"port", port_o::OUT, circuit, bool_type);
        SM->add_port(STR(REQUEST_ACCEPTED)+"port", port_o::IN, circuit, bool_type);
        SM->add_port(STR(TASK_FINISHED)+"port", port_o::IN, circuit, bool_type);
        SM->add_port(STR(DONE_PORT_NAME)+"port", port_o::IN, circuit, bool_type);
        SM->add_port(STR(TASK_FINISHED)+"port", port_o::IN, circuit, bool_type);
-       SM->add_port(STR(DONE_REQUEST)+"port", port_o::IN, circuit, bool_type);
+       SM->add_port(STR(DONE_REQUEST)+"port", port_o::OUT, circuit, bool_type);
     }
 }

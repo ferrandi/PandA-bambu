@@ -62,12 +62,6 @@ class datapath_cs: public classic_datapath
      * Destructor.
      */
     virtual ~datapath_cs();
-
-    /**
-     * Execute the step
-     * @return the exit status of this step
-     */
-    DesignFlowStep_Status InternalExec();
 };
 #endif
 
