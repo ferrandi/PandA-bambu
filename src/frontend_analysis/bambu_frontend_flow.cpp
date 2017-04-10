@@ -170,7 +170,10 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
 #if HAVE_EXPERIMENTAL
                relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(EXTRACT_OMP_ATOMIC, WHOLE_APPLICATION));
                relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(EXTRACT_OMP_FOR, WHOLE_APPLICATION));
-               relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(UNROLL_LOOPS, WHOLE_APPLICATION));
+               if(not parameters->isOption(OPT_context_switch))
+               {
+                  relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(UNROLL_LOOPS, WHOLE_APPLICATION));
+               }
 #endif
             }
             if(parameters->getOption<int>(OPT_gcc_openmp_simd))
