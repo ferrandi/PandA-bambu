@@ -84,7 +84,6 @@ void datapath_cs::add_ports()
        SM->add_port(STR(REQUEST_ACCEPTED)+"port", port_o::IN, circuit, bool_type);
        SM->add_port(STR(TASK_FINISHED)+"port", port_o::IN, circuit, bool_type);
        SM->add_port(STR(DONE_PORT_NAME)+"port", port_o::IN, circuit, bool_type);
-       SM->add_port(STR(TASK_FINISHED)+"port", port_o::IN, circuit, bool_type);
        SM->add_port(STR(DONE_REQUEST)+"port", port_o::OUT, circuit, bool_type);
     }
 }

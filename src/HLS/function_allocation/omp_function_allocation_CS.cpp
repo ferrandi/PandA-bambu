@@ -76,7 +76,7 @@ OmpFunctionAllocationCS::~OmpFunctionAllocationCS()
 {}
 
 DesignFlowStep_Status OmpFunctionAllocationCS::Exec()
-{ 
+{
    auto omp_functions = GetPointer<OmpFunctions>(HLSMgr->Rfuns);
    const auto TM = HLSMgr->get_tree_manager();
    fun_dominator_allocation::Exec();

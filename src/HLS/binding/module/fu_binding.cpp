@@ -1254,7 +1254,6 @@ void fu_binding::join_merge_split(const structural_managerRef SM, const hlsRef H
       }
       else
       {
-         THROW_UNREACHABLE("Memory_channel should always be port_vector");
          structural_type_descriptorRef sig_type = structural_type_descriptorRef(new structural_type_descriptor);
          bm_out_port->get_typeRef()->copy(sig_type);
          sign_out = SM->add_sign("sig_out_"+bus_merger_inst_name, circuit, sig_type);

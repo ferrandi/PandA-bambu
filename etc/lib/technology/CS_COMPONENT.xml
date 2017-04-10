@@ -481,21 +481,21 @@ simple_dual_port_ram_single_clock #(.BITSIZE_data(BITSIZE_data_in),.BITSIZE_addr
  assign notFull = ~worker_status;
  always @ (posedge clock or negedge reset) begin : CALL_STATE_REGISTER
     if (!reset) begin // Beginning of autoreset for uninitialized flops
-       call_state <= 1'h0;  // End of automatics
+       call_state &lt;= 1'h0;  // End of automatics
     end
     else begin
-       call_state <= next_call_state;
+       call_state &lt;= next_call_state;
     end
  end
 
  always @(posedge clock or negedge reset) begin
     if (!reset)
-      available_data <= 1'b0;
+      available_data &lt;= 1'b0;
     else
-      available_data <= !fifo_empty;
+      available_data &lt;= !fifo_empty;
  end
 
- assign available_workers = ~(& worker_status);
+ assign available_workers = ~(&amp; worker_status);
 
  always @ (*) begin
     fifo_rd_cs = 1'b0;
@@ -504,14 +504,14 @@ simple_dual_port_ram_single_clock #(.BITSIZE_data(BITSIZE_data_in),.BITSIZE_addr
     request = {BITSIZE_REQUEST{1'b0}};
     selected_worker = {WORKERS{1'b0}};
     if (call_state == 1'b0) begin
-       if (available_workers & available_data) begin
+       if (available_workers &amp; available_data) begin
           fifo_rd_cs = 1'b1;
           fifo_rd_en = 1'b1;
           next_call_state = 1'b1;
        end
     end
     else begin
-       selected_worker = notFull & (-notFull); // find the first 0 bit
+       selected_worker = notFull &amp; (-notFull); // find the first 0 bit
        request = fifo_data_out;
     end
  end // always @ (*)
@@ -949,7 +949,7 @@ simple_dual_port_ram_single_clock #(.BITSIZE_data(BITSIZE_data_in),.BITSIZE_addr
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <port_o id="M_Rdata_ram" dir="IN" is_memory="1" is_global="1" is_extern="1" is_data_bus="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <port_o id="Min_tag" dir="IN" is_memory="1" is_global="1" is_extern="1" is_tag_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
@@ -960,6 +960,12 @@ simple_dual_port_ram_single_clock #(.BITSIZE_data(BITSIZE_data_in),.BITSIZE_addr
           <port_o id="request_accepted" dir="IN" is_memory="1" is_global="1" is_extern="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
+          <port_o id="Mout_oe_ram" dir="OUT" is_memory="1" is_master="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="Mout_we_ram" dir="OUT" is_memory="1" is_master="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
           <port_o id="Mout_addr_ram" dir="OUT" is_memory="1" is_master="1" is_addr_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
@@ -967,18 +973,12 @@ simple_dual_port_ram_single_clock #(.BITSIZE_data(BITSIZE_data_in),.BITSIZE_addr
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <port_o id="Mout_Wdata_ram" dir="OUT" is_memory="1" is_master="1" is_data_bus="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
-          </port_o>
-          <port_o id="Mout_oe_ram" dir="OUT" is_memory="1" is_master="1">
-            <structural_type_descriptor type="BOOL" size="1"/>
-          </port_o>
-          <port_o id="Mout_we_ram" dir="OUT" is_memory="1" is_master="1">
-            <structural_type_descriptor type="BOOL" size="1"/>
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <port_o id="Mout_tag_ram" dir="OUT" is_memory="1" is_master="1" is_tag_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="mem_ctrl_kernel in1 in2 in3 in4 out1 M_Rdata_ram Min_tag M_DataRdy Mout_addr_ram Mout_data_ram_size Mout_Wdata_ram Mout_oe_ram Mout_we_ram Mout_tag_ram TAG_MEM_REQ" VERILOG_PROVIDED="
+          <NP_functionality LIBRARY="mem_ctrl_kernel in1 in2 in3 in4 out1 M_Rdata_ram Min_tag M_DataRdy Mout_oe_ram Mout_we_ram Mout_addr_ram Mout_data_ram_size Mout_Wdata_ram Mout_tag_ram TAG_MEM_REQ" VERILOG_PROVIDED="
   assign done_port=((Min_tag==TAG_MEM_REQ) &amp;&amp; M_DataRdy[0]);  //if the tag is equal and ready=1 then its the right data
   assign Mout_Wdata_ram = ((sel_LOAD || sel_STORE) &amp;&amp; start_port) ? in1 :{BITSIZE_Mout_Wdata_ram{1'b0}};
   assign out1 = M_Rdata_ram;  
@@ -1425,7 +1425,7 @@ simple_dual_port_ram_single_clock #(.BITSIZE_data(BITSIZE_data_in),.BITSIZE_addr
           </port_o>
           <NP_functionality LIBRARY="memory_ctrl_parallel IN_M_Rdata_ram IN_Min_tag IN_M_DataRdy Mout_oe_ram Mout_we_ram Mout_addr_ram Mout_data_ram_size Mout_Wdata_ram Mout_tag_ram OUT_Mout_oe_ram OUT_Mout_we_ram OUT_Mout_addr_ram OUT_Mout_data_ram_size OUT_Mout_Wdata_ram OUT_Mout_tag_ram M_Rdata_ram Min_tag M_DataRdy"
           IP_COMPONENT="PT_RR_FU, mux_pw_2" VERILOG_PROVIDED="
-          //In order to be generated correctly NUM_CHANNEL<=NUM_ACC and both of them must be a power of 2
+          //In order to be generated correctly NUM_CHANNEL&lt;=NUM_ACC and both of them must be a power of 2
           parameter SIZE_TOT_IN = BITSIZE_Mout_tag_ram+BITSIZE_Mout_Wdata_ram+BITSIZE_Mout_data_ram_size+BITSIZE_Mout_addr_ram+BITSIZE_Mout_we_ram+BITSIZE_Mout_oe_ram;
           parameter SIZE_TOT_OUT = BITSIZE_Mout_tag_ram+BITSIZE_M_Rdata_ram;
 
@@ -1780,8 +1780,8 @@ simple_dual_port_ram_single_clock #(.BITSIZE_data(BITSIZE_data_in),.BITSIZE_addr
         reg next_reset_counter;
 
         always @(posedge clock)
-          if (!reset) _present_state <= S_0;
-          else _present_state <= _next_state;
+          if (!reset) _present_state &lt;= S_0;
+          else _present_state &lt;= _next_state;
 
         always @(*)
         begin
@@ -1809,7 +1809,7 @@ simple_dual_port_ram_single_clock #(.BITSIZE_data(BITSIZE_data_in),.BITSIZE_addr
             S_4 :
               begin
                 wrenable_reg_1 = 1'b1;
-                if ((out_read_cond_FU_5_i0_fu_parallel_18797_19050 == 1'b1) & (fifo_full == 1'b0))
+                if ((out_read_cond_FU_5_i0_fu_parallel_18797_19050 == 1'b1) &amp; (fifo_full == 1'b0))
                   begin
                     _next_state = S_2;
                   end
@@ -1957,15 +1957,15 @@ simple_dual_port_ram_single_clock #(.BITSIZE_data(BITSIZE_data_in),.BITSIZE_addr
 
         always @(posedge clock or negedge reset)
           if (!reset)
-            reset_counter <= 1'b0;
+            reset_counter &lt;= 1'b0;
           else
-            reset_counter <= next_reset_counter;
+            reset_counter &lt;= next_reset_counter;
 
         always @(*) next_reset_counter = ~completed;
 
-        assign completed = fifo_empty & (StartCounter_value == DoneCounter_value) & (| StartCounter_value) & (| DoneCounter_value);
+        assign completed = fifo_empty &amp; (StartCounter_value == DoneCounter_value) &amp; (| StartCounter_value) &amp; (| DoneCounter_value);
 
-        assign task_finished = (number_req_tasks == StartCounter_value) & (| StartCounter_value) & (| number_req_tasks);
+        assign task_finished = (number_req_tasks == StartCounter_value) &amp; (| StartCounter_value) &amp; (| number_req_tasks);
 
         register_SE #(.BITSIZE_in1(32), .BITSIZE_out1(32)) reg_1 (
         .out1(out_reg_1_reg_1),
@@ -1977,7 +1977,7 @@ simple_dual_port_ram_single_clock #(.BITSIZE_data(BITSIZE_data_in),.BITSIZE_addr
 
         ASSIGN_UNSIGNED_FU #(.BITSIZE_in1(1), .BITSIZE_out1(1)) ASSIGN_UNSIGNED_FU_u_assign_0 (.out1(out_u_assign_conn_obj_0_ASSIGN_UNSIGNED_FU_u_assign_0), .in1(out_const_0));
 
-        //assign OUT_UNBOUNDED_parallel_18797_18995 = selector_IN_UNBOUNDED_parallel_18797_18995 & !fifo_full;
+        //assign OUT_UNBOUNDED_parallel_18797_18995 = selector_IN_UNBOUNDED_parallel_18797_18995 &amp; !fifo_full;
 
         constant_value #(.BITSIZE_out1(1), .value(1'b0)) const_0 (.out1(out_const_0));
         constant_value #(.BITSIZE_out1(1), .value(1'b1)) const_1 (.out1(out_const_1));
@@ -1987,16 +1987,16 @@ simple_dual_port_ram_single_clock #(.BITSIZE_data(BITSIZE_data_in),.BITSIZE_addr
         reg [3:0] next_worker_status;
          always @(posedge clock or negedge reset) begin
             if (!reset)
-              worker_status <= {BITSIZE_start_port_accelerator{1'b0}};
+              worker_status &lt;= {BITSIZE_start_port_accelerator{1'b0}};
             else
-              worker_status <= next_worker_status;
+              worker_status &lt;= next_worker_status;
          end
         always @(*) begin
           next_worker_status = worker_status;
         end
 
         generate
-          for(i=0; i<NUM_CHANNEL; i=i+1)  //or a x ingressi
+          for(i=0; i&lt;NUM_CHANNEL; i=i+1)  //or a x ingressi
           begin
             always @(*) begin
               if (selected_worker[i])
