@@ -984,6 +984,9 @@ struct port_o : public structural_object
       /// when true the port is a size bus
       bool is_size_bus;
 
+      /// when true te port is a tag bus
+      bool is_tag_bus;
+
       /// when true the port has a doubled size
       bool is_doubled;
 

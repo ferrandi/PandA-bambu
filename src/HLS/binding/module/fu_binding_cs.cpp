@@ -148,7 +148,36 @@ void fu_binding_cs::instantiate_suspension_component(const hlsRef HLS)
 {
    const structural_managerRef SM = HLS->datapath;
    const structural_objectRef circuit = SM->get_circ();
-   structural_type_descriptorRef bool_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 0));
+   structural_objectRef startOr = SM->add_module_from_technology_library("startOr", OR_GATE_STD, HLS->HLS_T->get_technology_manager()->get_library(OR_GATE_STD), interfaceObj, HLS->HLS_T->get_technology_manager());
+   structural_objectRef port_in_or = startOr->find_member("in", port_o_K, startOr);
+   structural_objectRef port_out_or = startOr->find_member("out1", port_o_K, startOr);
+   //search in module and find one with suspension
+   if()
+   {
+      inPortStartOr->add_n_ports(3, port_startOr);
+      //connect the 3° port
+   }
+   else
+   {
+      inPortStartOr->add_n_ports(2, port_startOr);
+   }
+   SM->add_connection(circuit->find_member("sel_LOAD", port_o_K, circuit), GetPointer<port_o>(port_in_or)->get_port(0));
+   SM->add_connection(circuit->find_member("sel_STORE", port_o_K, circuit), GetPointer<port_o>(port_in_or)->get_port(1));
+   connect_out_or_port(HLS, port_out_or);
+   SM->add_connection(GetPointer<port_o>(port_out_or), circuit->find_member(STR(SUSPENSION)+"port", port_o_K, circuit));
+}
+
+void fu_binding_cs::connect_out_or_port(const hlsRef HLS)
+{
+   auto omp_functions = GetPointer<OmpFunctions>(HLSMgr->Rfuns);
+   const structural_managerRef SM = HLS->datapath;
+   const structural_objectRef circuit = SM->get_circ();
+   if(omp_functions->kernel_functions.find(HLS->functionId) != omp_functions->kernel_functions.end())
+   {
+
+   }
+   else
+      SM->add_connection(GetPointer<port_o>(port_out_or), circuit->find_member(STR(SUSPENSION)+"port", port_o_K, circuit));
 }
 
 void fu_binding_cs::manage_memory_ports_parallel_chained(const HLS_managerRef HLSMgr, const structural_managerRef SM, const std::set<structural_objectRef> &memory_modules, const structural_objectRef circuit, const hlsRef HLS, unsigned int & _unique_id)
@@ -175,7 +204,7 @@ void fu_binding_cs::manage_memory_ports_parallel_chained_kernel(const structural
    std::map<structural_objectRef, std::set<structural_objectRef> > primary_outs;
    structural_objectRef cir_port;
    structural_objectRef sche_port;
-   structural_objectRef scheduler; //fetch scheduler
+   structural_objectRef scheduler = circuit->find_member("scheduler_kernel", module, circuit);
 
    for(unsigned int j = 0; j < GetPointer<module>(scheduler)->get_in_port_size(); j++) //connect input datapath memory_port with scheduler
    {
@@ -266,7 +295,7 @@ void fu_binding_cs::manage_memory_ports_parallel_chained_parallel(const structur
 {
    structural_objectRef cir_port;
    structural_objectRef mem_paral_port;
-   structural_objectRef memory_parallel; //fetch scheduler
+   structural_objectRef memory_parallel = circuit->find_member("memory_parallel", GetPointer<module>, circuit);
    unsigned int num_kernel=0;
    for (std::set<structural_objectRef>::iterator i = memory_modules.begin(); i != memory_modules.end(); i++)  //from ctrl_parallel to module
    {
