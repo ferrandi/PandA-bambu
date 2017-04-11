@@ -44,7 +44,27 @@
 class top_entity_parallel_cs : public top_entity
 {
    protected:
-    void connect_port_parallel();
+
+   /**
+    * @brief add_port of top entity
+    * @param circuit
+    * @param controller_circuit
+    * @param datapath_circuit
+    */
+   void add_port(const structural_objectRef circuit, structural_objectRef controller_circuit, structural_objectRef datapath_circuit);
+
+    /**
+     * @brief connect_port_parallel connect datapath and controller
+     * @param circuit
+     */
+    void connect_port_parallel(const structural_objectRef circuit);
+
+    /**
+     * @brief propagate_memory_signals from datapath to top and viceversa
+     * @param Datapath
+     * @param circuit
+     */
+    void propagate_memory_signals(structural_managerRef Datapath, const structural_objectRef circuit);
 
 public:
    top_entity_parallel_cs(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type);

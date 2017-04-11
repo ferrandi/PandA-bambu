@@ -77,17 +77,17 @@ void fu_binding_cs::instantiate_component_kernel(const hlsRef HLS, structural_ob
    std::string sche_library = HLS->HLS_T->get_technology_manager()->get_library(scheduler_model);
    structural_objectRef scheduler_mod = SM->add_module_from_technology_library(scheduler_name, scheduler_model, sche_library, circuit, HLS->HLS_T->get_technology_manager());
    unsigned int num_slots=static_cast<unsigned int>(ceil(log2(HLS->Param->getOption<unsigned int>(OPT_context_switch))));
-   port_o::resize_std_port(num_slots, 1, 0, scheduler_mod->find_member(STR(SELECTOR_REGISTER_FILE)+"port",port_o_K,scheduler_mod));  //resize selector-port
+   port_o::resize_std_port(num_slots, 1, 0, scheduler_mod->find_member(STR(SELECTOR_REGISTER_FILE),port_o_K,scheduler_mod));  //resize selector-port
 
-   structural_objectRef selector_regFile_scheduler = scheduler_mod->find_member(STR(SELECTOR_REGISTER_FILE)+"port",port_o_K,scheduler_mod);
-   structural_objectRef selector_regFile_datapath = circuit->find_member(STR(SELECTOR_REGISTER_FILE)+"port",port_o_K,circuit);
+   structural_objectRef selector_regFile_scheduler = scheduler_mod->find_member(STR(SELECTOR_REGISTER_FILE),port_o_K,scheduler_mod);
+   structural_objectRef selector_regFile_datapath = circuit->find_member(STR(SELECTOR_REGISTER_FILE),port_o_K,circuit);
    structural_type_descriptorRef port_type = structural_type_descriptorRef(new structural_type_descriptor("bool", num_slots));
    structural_objectRef selector_regFile_sign=SM->add_sign(STR(SELECTOR_REGISTER_FILE)+"signal", circuit, port_type);
    SM->add_connection(selector_regFile_sign, selector_regFile_datapath);
    SM->add_connection(selector_regFile_sign, selector_regFile_scheduler);
 
-   structural_objectRef suspension_scheduler = scheduler_mod->find_member(STR(SUSPENSION)+"port",port_o_K,scheduler_mod);
-   structural_objectRef suspension_datapath = circuit->find_member(STR(SUSPENSION)+"port",port_o_K,circuit);
+   structural_objectRef suspension_scheduler = scheduler_mod->find_member(STR(SUSPENSION),port_o_K,scheduler_mod);
+   structural_objectRef suspension_datapath = circuit->find_member(STR(SUSPENSION),port_o_K,circuit);
    structural_objectRef suspension_sign=SM->add_sign(STR(SUSPENSION)+"signal", circuit, bool_type);
    SM->add_connection(suspension_sign, suspension_datapath);
    SM->add_connection(suspension_sign, suspension_scheduler);
@@ -108,20 +108,20 @@ void fu_binding_cs::instantiate_component_kernel(const hlsRef HLS, structural_ob
    SM->add_connection(done_sign, done_datapath);
    SM->add_connection(done_sign, done_scheduler);
 
-   structural_objectRef request_accepted_scheduler = scheduler_mod->find_member(STR(REQUEST_ACCEPTED)+"port",port_o_K,scheduler_mod);
-   structural_objectRef request_accepted_datapath = circuit->find_member(STR(REQUEST_ACCEPTED)+"port",port_o_K,circuit);
+   structural_objectRef request_accepted_scheduler = scheduler_mod->find_member(STR(REQUEST_ACCEPTED),port_o_K,scheduler_mod);
+   structural_objectRef request_accepted_datapath = circuit->find_member(STR(REQUEST_ACCEPTED),port_o_K,circuit);
    structural_objectRef request_accepted_sign=SM->add_sign(STR(REQUEST_ACCEPTED)+"signal", circuit, bool_type);
    SM->add_connection(request_accepted_sign, request_accepted_datapath);
    SM->add_connection(request_accepted_sign, request_accepted_scheduler);
 
-   structural_objectRef task_finished_scheduler = scheduler_mod->find_member(STR(TASK_FINISHED)+"port",port_o_K,scheduler_mod);
-   structural_objectRef task_finished_datapath = circuit->find_member(STR(TASK_FINISHED)+"port",port_o_K,circuit);
+   structural_objectRef task_finished_scheduler = scheduler_mod->find_member(STR(TASK_FINISHED),port_o_K,scheduler_mod);
+   structural_objectRef task_finished_datapath = circuit->find_member(STR(TASK_FINISHED),port_o_K,circuit);
    structural_objectRef task_finished_sign=SM->add_sign(STR(TASK_FINISHED)+"signal", circuit, bool_type);
    SM->add_connection(task_finished_sign, task_finished_datapath);
    SM->add_connection(task_finished_sign, task_finished_scheduler);
 
-   structural_objectRef done_request_scheduler = scheduler_mod->find_member(STR(DONE_REQUEST)+"port",port_o_K,scheduler_mod);
-   structural_objectRef done_request_datapath = circuit->find_member(STR(DONE_REQUEST)+"port",port_o_K,circuit);
+   structural_objectRef done_request_scheduler = scheduler_mod->find_member(STR(DONE_REQUEST),port_o_K,scheduler_mod);
+   structural_objectRef done_request_datapath = circuit->find_member(STR(DONE_REQUEST),port_o_K,circuit);
    structural_objectRef done_request_sign=SM->add_sign(STR(DONE_REQUEST)+"signal", circuit, bool_type);
    SM->add_connection(done_request_sign, done_request_datapath);
    SM->add_connection(done_request_sign, done_request_scheduler);
@@ -211,14 +211,14 @@ void fu_binding_cs::connectOutOr(const HLS_managerRef HLSMgr, const hlsRef HLS, 
    {
       structural_objectRef scheduler = circuit->find_member("scheduler_kernel", component_o_K, circuit);
       structural_type_descriptorRef bool_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 0));
-      structural_objectRef suspension_scheduler = scheduler->find_member(STR(SUSPENSION)+"port",port_o_K,circuit);
+      structural_objectRef suspension_scheduler = scheduler->find_member(STR(SUSPENSION),port_o_K,circuit);
       structural_objectRef suspension_sign=SM->add_sign(STR(SUSPENSION)+"signal", circuit, bool_type);
       SM->add_connection(port_out_or, suspension_sign);
       SM->add_connection(suspension_sign, suspension_scheduler);
    }
    else
    {
-      structural_objectRef suspension_datapath = circuit->find_member(STR(SUSPENSION)+"port",port_o_K,circuit);
+      structural_objectRef suspension_datapath = circuit->find_member(STR(SUSPENSION),port_o_K,circuit);
       SM->add_connection(port_out_or, suspension_datapath);
    }
 }

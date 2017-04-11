@@ -111,10 +111,10 @@ void datapath_parallel_cs::add_ports()
     unsigned int num_slots=static_cast<unsigned int>(log2(HLS->Param->getOption<unsigned int>(OPT_context_switch)));
     structural_type_descriptorRef port_type = structural_type_descriptorRef(new structural_type_descriptor("bool", num_slots));
     structural_type_descriptorRef bool_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 0));
-    SM->add_port(STR(DONE_PORT_NAME)+"port"+"accelerator", port_o::OUT, circuit, port_type);
-    SM->add_port(STR(DONE_REQUEST)+"port"+"accelerator", port_o::OUT, circuit, port_type);
-    SM->add_port(STR(START_PORT_NAME)+"port"+"accelerator", port_o::IN, circuit, port_type);
-    SM->add_port(STR(TASK_FINISHED)+"port", port_o::IN, circuit, bool_type);
+    SM->add_port(STR(DONE_PORT_NAME)+"accelerator", port_o::OUT, circuit, port_type);
+    SM->add_port(STR(DONE_REQUEST)+"accelerator", port_o::OUT, circuit, port_type);
+    SM->add_port(STR(START_PORT_NAME)+"accelerator", port_o::IN, circuit, port_type);
+    SM->add_port(STR(TASK_FINISHED), port_o::IN, circuit, bool_type);
     structural_type_descriptorRef request_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 32));
     SM->add_port("request", port_o::IN, circuit, request_type);
 }

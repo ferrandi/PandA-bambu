@@ -86,18 +86,18 @@ void top_entity_cs::add_context_switch_port()
 
     structural_type_descriptorRef bool_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 0));
     PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "\tStart adding suspension signal...");
-    structural_objectRef suspension_obj = SM->add_port(STR(SUSPENSION)+"port", port_o::OUT, circuit, bool_type);
+    structural_objectRef suspension_obj = SM->add_port(STR(SUSPENSION), port_o::OUT, circuit, bool_type);
+    structural_objectRef datapath_suspension = datapath_circuit->find_member(STR(SELECTOR_REGISTER_FILE), port_o_K, datapath_circuit);
+    SM->add_connection(datapath_suspension, suspension_obj);
     PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "\tSuspension signal added!");
-
-    //add or and add connection with suspension port
 
     unsigned int num_slots=static_cast<unsigned int>(log2(HLS->Param->getOption<unsigned int>(OPT_context_switch)));
     structural_type_descriptorRef port_type = structural_type_descriptorRef(new structural_type_descriptor("bool", num_slots));
     PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "\tStart selector signal...");
-    structural_objectRef selector_obj = SM->add_port(STR(SELECTOR_REGISTER_FILE)+"port", port_o::IN, circuit, port_type);
-    structural_objectRef datapath_selector = datapath_circuit->find_member(STR(SELECTOR_REGISTER_FILE)+"port", port_o_K, datapath_circuit);
+    structural_objectRef selector_obj = SM->add_port(STR(SELECTOR_REGISTER_FILE), port_o::IN, circuit, port_type);
+    structural_objectRef datapath_selector = datapath_circuit->find_member(STR(SELECTOR_REGISTER_FILE), port_o_K, datapath_circuit);
     SM->add_connection(datapath_selector, selector_obj);
-    structural_objectRef controller_selector = controller_circuit->find_member(STR(SELECTOR_REGISTER_FILE)+"port", port_o_K, controller_circuit);
+    structural_objectRef controller_selector = controller_circuit->find_member(STR(SELECTOR_REGISTER_FILE), port_o_K, controller_circuit);
     SM->add_connection(controller_selector, selector_obj);
     PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "\tSelector signal added!");
 }
@@ -115,23 +115,23 @@ void top_entity_cs::add_context_switch_port_kernel()
     PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "\tStart selector signal...");
     //check if SM->add port add the port to the structural if so delete it
     structural_objectRef selector_obj = SM->add_port(STR(SELECTOR_REGISTER_FILE)+"port", port_o::IN, circuit, port_type);
-    structural_objectRef datapath_selector = datapath_circuit->find_member(STR(SELECTOR_REGISTER_FILE)+"port", port_o_K, datapath_circuit);
+    structural_objectRef datapath_selector = datapath_circuit->find_member(STR(SELECTOR_REGISTER_FILE), port_o_K, datapath_circuit);
     SM->add_connection(datapath_selector, selector_obj);
-    structural_objectRef controller_selector = controller_circuit->find_member(STR(SELECTOR_REGISTER_FILE)+"port", port_o_K, controller_circuit);
+    structural_objectRef controller_selector = controller_circuit->find_member(STR(SELECTOR_REGISTER_FILE), port_o_K, controller_circuit);
     SM->add_connection(controller_selector, selector_obj);
     PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "\tSelector signal added!");
 
-    structural_objectRef task_finished_obj = SM->add_port(STR(TASK_FINISHED)+"port", port_o::IN, circuit, bool_type);
-    structural_objectRef datapath_task_finished = datapath_circuit->find_member(STR(TASK_FINISHED)+"port", port_o_K, datapath_circuit);
+    structural_objectRef task_finished_obj = SM->add_port(STR(TASK_FINISHED), port_o::IN, circuit, bool_type);
+    structural_objectRef datapath_task_finished = datapath_circuit->find_member(STR(TASK_FINISHED), port_o_K, datapath_circuit);
     SM->add_connection(datapath_task_finished, task_finished_obj);
 
-    structural_objectRef done_request_obj = SM->add_port(STR(DONE_REQUEST)+"port", port_o::OUT, circuit, bool_type);
-    structural_objectRef datapath_done_request = datapath_circuit->find_member(STR(DONE_REQUEST)+"port", port_o_K, datapath_circuit);
+    structural_objectRef done_request_obj = SM->add_port(STR(DONE_REQUEST), port_o::OUT, circuit, bool_type);
+    structural_objectRef datapath_done_request = datapath_circuit->find_member(STR(DONE_REQUEST), port_o_K, datapath_circuit);
     SM->add_connection(datapath_done_request, done_request_obj);
 
-    structural_objectRef datapath_done_port = datapath_circuit->find_member(STR(DONE_PORT_NAME)+"port", port_o_K, datapath_circuit);
+    structural_objectRef datapath_done_port = datapath_circuit->find_member(STR(DONE_PORT_NAME), port_o_K, datapath_circuit);
     structural_objectRef done_port_sign=SM->add_sign(STR(DONE_REQUEST)+"signal", circuit, bool_type);
-    structural_objectRef controller_done_port = controller_circuit->find_member(STR(DONE_PORT_NAME)+"port", port_o_K, controller_circuit);
+    structural_objectRef controller_done_port = controller_circuit->find_member(STR(DONE_PORT_NAME), port_o_K, controller_circuit);
     SM->add_connection(controller_done_port, done_port_sign);
     SM->add_connection(done_port_sign, datapath_done_port);
 }

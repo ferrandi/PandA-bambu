@@ -1721,7 +1721,7 @@ simple_dual_port_ram_single_clock #(.BITSIZE_data(BITSIZE_data_in),.BITSIZE_addr
       <port_o id="done_request_accelerator" dir="IN">
         <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
       </port_o>
-      <port_o id="in_port_in_degree_var_4" dir="IN">
+      <port_o id="LoopIteration" dir="IN">
         <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
       </port_o>
       <port_o id="done_port" dir="OUT">
@@ -1883,7 +1883,7 @@ simple_dual_port_ram_single_clock #(.BITSIZE_data(BITSIZE_data_in),.BITSIZE_addr
         ui_ne_expr_FU #(.BITSIZE_in1(32), .BITSIZE_in2(32), .BITSIZE_out1(1)) fu_parallel_18797_19732(
         .out1(out_ui_ne_expr_FU_32_32_32_7_i0_fu_parallel_18797_19732),
         .in1(out_reg_0_reg_0),
-        .in2(in_port_in_degree_var_4));
+        .in2(LoopIteration));
 
         read_cond_FU #(.BITSIZE_in1(1)) fu_parallel_18797_19050(
         .out1(out_read_cond_FU_5_i0_fu_parallel_18797_19050),
