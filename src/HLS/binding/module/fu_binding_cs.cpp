@@ -44,6 +44,7 @@
 #include "hls.hpp"
 #include "hls_target.hpp"
 #include "Parameter.hpp"
+#include "technology_node.hpp"
 #include "technology_manager.hpp"
 
 fu_binding_cs::fu_binding_cs(const HLS_managerConstRef _HLSMgr, const unsigned int _function_id, const ParameterConstRef _parameters) :
@@ -55,11 +56,14 @@ void fu_binding_cs::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, str
 {
    auto omp_functions = GetPointer<OmpFunctions>(HLSMgr->Rfuns);
    if(omp_functions->kernel_functions.find(HLS->functionId) != omp_functions->kernel_functions.end())
+   {
+      instantiate_suspension_component(HLSMgr,HLS);
       instantiate_component_kernel(HLS, clock_port, reset_port);
+   }
    else if(omp_functions->omp_for_wrappers.find(HLS->functionId) != omp_functions->omp_for_wrappers.end())
       instantiate_component_parallel(HLS, clock_port, reset_port);
    else if((omp_functions->parallelized_functions.find(HLS->functionId) != omp_functions->parallelized_functions.end()) || (omp_functions->atomic_functions.find(HLS->functionId) != omp_functions->atomic_functions.end()))
-      instantiate_suspension_component(HLS);
+      instantiate_suspension_component(HLSMgr,HLS);
    fu_binding::add_to_SM(HLSMgr,HLS,clock_port,reset_port);
 }
 
@@ -144,40 +148,79 @@ void fu_binding_cs::instantiate_component_parallel(const hlsRef HLS, structural_
    SM->add_connection(reset_sign, reset_mem_par);
 }
 
-void fu_binding_cs::instantiate_suspension_component(const hlsRef HLS)
+void fu_binding_cs::instantiate_suspension_component(const HLS_managerRef HLSMgr, const hlsRef HLS)
 {
+   structural_type_descriptorRef bool_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 0));
    const structural_managerRef SM = HLS->datapath;
    const structural_objectRef circuit = SM->get_circ();
-   structural_objectRef startOr = SM->add_module_from_technology_library("startOr", OR_GATE_STD, HLS->HLS_T->get_technology_manager()->get_library(OR_GATE_STD), interfaceObj, HLS->HLS_T->get_technology_manager());
-   structural_objectRef port_in_or = startOr->find_member("in", port_o_K, startOr);
-   structural_objectRef port_out_or = startOr->find_member("out1", port_o_K, startOr);
+   structural_objectRef suspensionOr = SM->add_module_from_technology_library("suspensionOr", OR_GATE_STD, HLS->HLS_T->get_technology_manager()->get_library(OR_GATE_STD), circuit, HLS->HLS_T->get_technology_manager());
+   structural_objectRef port_in_or = suspensionOr->find_member("in", port_o_K, suspensionOr);
+   structural_objectRef port_out_or = suspensionOr->find_member("out1", port_o_K, suspensionOr);
+   bool foundSuspension=false;
    //search in module and find one with suspension
-   if()
+   unsigned int num_suspension=0;
+   unsigned int n_elements = GetPointer<module>(circuit)->get_internal_objects_size();
+   unsigned int i=0;
+   for(i=0;i<n_elements;i++)
    {
-      inPortStartOr->add_n_ports(3, port_startOr);
-      //connect the 3° port
+      structural_objectRef curr_gate = GetPointer<module>(circuit)->get_internal_object(i);
+      if(curr_gate->find_member("suspension", port_o_K, curr_gate)!=NULL)
+         ++num_suspension;
+   }
+   if(foundSuspension)
+   {
+      GetPointer<port_o>(port_in_or)->add_n_ports(num_suspension+2, suspensionOr);
+      for(i=0;i<n_elements;i++)
+      {
+         structural_objectRef curr_gate = GetPointer<module>(circuit)->get_internal_object(i);
+         structural_objectRef port_suspension_module = curr_gate->find_member("suspension", port_o_K, curr_gate);
+         if(port_suspension_module!=NULL)
+         {
+            structural_objectRef suspension_sign=SM->add_sign(STR(SUSPENSION)+"signal"+STR(i), circuit, bool_type);
+            SM->add_connection(port_suspension_module, suspension_sign);
+            SM->add_connection(suspension_sign, GetPointer<port_o>(port_in_or)->get_port(i+2));
+         }
+      }
    }
    else
    {
-      inPortStartOr->add_n_ports(2, port_startOr);
+      GetPointer<port_o>(port_in_or)->add_n_ports(2, suspensionOr);
    }
-   SM->add_connection(circuit->find_member("sel_LOAD", port_o_K, circuit), GetPointer<port_o>(port_in_or)->get_port(0));
-   SM->add_connection(circuit->find_member("sel_STORE", port_o_K, circuit), GetPointer<port_o>(port_in_or)->get_port(1));
-   connect_out_or_port(HLS, port_out_or);
-   SM->add_connection(GetPointer<port_o>(port_out_or), circuit->find_member(STR(SUSPENSION)+"port", port_o_K, circuit));
+   for(unsigned int j = 0; j < GetPointer<module>(circuit)->get_in_port_size(); j++)
+   {
+      structural_objectRef port_i = GetPointer<module>(circuit)->get_in_port(j);
+      std::string port_name = GetPointer<port_o>(port_i)->get_id();
+      if(port_name.substr(0,8).compare("sel_LOAD")==0)
+      {
+         SM->add_connection(port_i, GetPointer<port_o>(port_in_or)->get_port(0));
+      }
+      if(port_name.substr(0,8).compare("sel_STORE")==0)
+      {
+         SM->add_connection(port_i, GetPointer<port_o>(port_in_or)->get_port(1));
+      }
+   }
+   connectOutOr(HLSMgr, HLS, port_out_or);
 }
 
-void fu_binding_cs::connect_out_or_port(const hlsRef HLS)
+void fu_binding_cs::connectOutOr(const HLS_managerRef HLSMgr, const hlsRef HLS, structural_objectRef port_out_or)
 {
-   auto omp_functions = GetPointer<OmpFunctions>(HLSMgr->Rfuns);
    const structural_managerRef SM = HLS->datapath;
    const structural_objectRef circuit = SM->get_circ();
+   auto omp_functions = GetPointer<OmpFunctions>(HLSMgr->Rfuns);
    if(omp_functions->kernel_functions.find(HLS->functionId) != omp_functions->kernel_functions.end())
    {
-
+      structural_objectRef scheduler = circuit->find_member("scheduler_kernel", component_o_K, circuit);
+      structural_type_descriptorRef bool_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 0));
+      structural_objectRef suspension_scheduler = scheduler->find_member(STR(SUSPENSION)+"port",port_o_K,circuit);
+      structural_objectRef suspension_sign=SM->add_sign(STR(SUSPENSION)+"signal", circuit, bool_type);
+      SM->add_connection(port_out_or, suspension_sign);
+      SM->add_connection(suspension_sign, suspension_scheduler);
    }
    else
-      SM->add_connection(GetPointer<port_o>(port_out_or), circuit->find_member(STR(SUSPENSION)+"port", port_o_K, circuit));
+   {
+      structural_objectRef suspension_datapath = circuit->find_member(STR(SUSPENSION)+"port",port_o_K,circuit);
+      SM->add_connection(port_out_or, suspension_datapath);
+   }
 }
 
 void fu_binding_cs::manage_memory_ports_parallel_chained(const HLS_managerRef HLSMgr, const structural_managerRef SM, const std::set<structural_objectRef> &memory_modules, const structural_objectRef circuit, const hlsRef HLS, unsigned int & _unique_id)
@@ -204,7 +247,7 @@ void fu_binding_cs::manage_memory_ports_parallel_chained_kernel(const structural
    std::map<structural_objectRef, std::set<structural_objectRef> > primary_outs;
    structural_objectRef cir_port;
    structural_objectRef sche_port;
-   structural_objectRef scheduler = circuit->find_member("scheduler_kernel", module, circuit);
+   structural_objectRef scheduler = circuit->find_member("scheduler_kernel", component_o_K, circuit);
 
    for(unsigned int j = 0; j < GetPointer<module>(scheduler)->get_in_port_size(); j++) //connect input datapath memory_port with scheduler
    {
@@ -295,7 +338,7 @@ void fu_binding_cs::manage_memory_ports_parallel_chained_parallel(const structur
 {
    structural_objectRef cir_port;
    structural_objectRef mem_paral_port;
-   structural_objectRef memory_parallel = circuit->find_member("memory_parallel", GetPointer<module>, circuit);
+   structural_objectRef memory_parallel = circuit->find_member("memory_parallel", component_o_K, circuit);
    unsigned int num_kernel=0;
    for (std::set<structural_objectRef>::iterator i = memory_modules.begin(); i != memory_modules.end(); i++)  //from ctrl_parallel to module
    {

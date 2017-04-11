@@ -72,9 +72,18 @@ protected:
 
    /**
     * @brief instantiate_suspension_component
+    * @param HLSMgr
     * @param HLS
     */
-   void instantiate_suspension_component(const hlsRef HLS);
+   void instantiate_suspension_component(const HLS_managerRef HLSMgr, const hlsRef HLS);
+
+   /**
+    * @brief connectOutOr connect or with datapath or scheduler depending on function
+    * @param HLSMgr
+    * @param HLS
+    * @param suspensionOr
+    */
+   void connectOutOr(const HLS_managerRef HLSMgr, const hlsRef HLS, structural_objectRef port_out_or);
 
    /**
     * @brief decide based on function what function to call in order to connect appropriately the datapath memory_signal with the component
