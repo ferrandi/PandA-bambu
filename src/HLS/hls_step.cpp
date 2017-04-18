@@ -152,6 +152,8 @@ const std::string HLS_step::EnumToName(const HLSFlowStep_Type hls_flow_step_type
          return "ClassicDatapathCreator";
       case HLSFlowStep_Type::DATAPATH_CS_CREATOR:
          return "DatapathCreatorCS";
+      case HLSFlowStep_Type::DATAPATH_CS_PARALLEL_CREATOR:
+         return "DatapathCreatorCSParalle";
       case HLSFlowStep_Type::CLASSICAL_HLS_SYNTHESIS_FLOW:
          return "ClassicalHLSSynthesisFlow";
 #if HAVE_EXPERIMENTAL
@@ -266,6 +268,8 @@ const std::string HLS_step::EnumToName(const HLSFlowStep_Type hls_flow_step_type
          return "OmpBodyLoopSynthesisFlow";
       case HLSFlowStep_Type::OMP_FOR_WRAPPER_SYNTHESIS_FLOW:
          return "OmpForWrapperSynthesisFlow";
+      case HLSFlowStep_Type::OMP_FOR_WRAPPER_CS_SYNTHESIS_FLOW:
+         return "OmpForWrapperCSSynthesisFlow";
       case HLSFlowStep_Type::OMP_FUNCTION_ALLOCATION:
          return "OmpFunctionAllocation";
       case HLSFlowStep_Type::OMP_FUNCTION_ALLOCATION_CS:
@@ -312,6 +316,8 @@ const std::string HLS_step::EnumToName(const HLSFlowStep_Type hls_flow_step_type
          return "TopEntityCreation";
       case HLSFlowStep_Type::TOP_ENTITY_CS_CREATION:
          return "TopEntityCSCreation";
+      case HLSFlowStep_Type::TOP_ENTITY_CS_PARALLEL_CREATION:
+         return "TopEntityCSParallelCreation";
       case HLSFlowStep_Type::TOP_ENTITY_MEMORY_MAPPED_CREATION:
          return "TopEntityMemoryMappedCreation";
       case HLSFlowStep_Type::UNIQUE_MODULE_BINDING:

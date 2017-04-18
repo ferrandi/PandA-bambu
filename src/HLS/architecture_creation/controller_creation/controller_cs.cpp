@@ -73,7 +73,6 @@ void controller_cs::add_common_ports(structural_objectRef circuit)
      PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Adding the selector port...");
      this->add_selector_register_file_port(circuit);
    }
-
 }
 
 void controller_cs::add_selector_register_file_port(structural_objectRef circuit)

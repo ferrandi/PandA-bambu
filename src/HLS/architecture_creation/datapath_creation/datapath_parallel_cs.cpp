@@ -47,16 +47,41 @@
 #include "BambuParameter.hpp"
 #include "behavioral_helper.hpp"
 #include "copyrights_strings.hpp"
+#include "hls_target.hpp"
+#include "technology_manager.hpp"
 
 datapath_parallel_cs::datapath_parallel_cs(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type) :
-   classic_datapath(_parameters, _HLSMgr, _funId, _design_flow_manager, _hls_flow_step_type)
+   HLSFunctionStep(_parameters, _HLSMgr, _funId, _design_flow_manager, _hls_flow_step_type)
 {
-    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
+   debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }
-
 datapath_parallel_cs::~datapath_parallel_cs()
 {
 
+}
+
+const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > datapath_parallel_cs::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+{
+   std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > ret;
+   switch(relationship_type)
+   {
+      case DEPENDENCE_RELATIONSHIP:
+         {
+            ret.insert(std::make_tuple(HLSFlowStep_Type::OMP_BODY_LOOP_SYNTHESIS_FLOW, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::TOP_FUNCTION));   //to check
+            break;
+         }
+      case INVALIDATION_RELATIONSHIP:
+         {
+            break;
+         }
+      case PRECEDENCE_RELATIONSHIP:
+         {
+            break;
+         }
+      default:
+         THROW_UNREACHABLE("");
+   }
+   return ret;
 }
 
 DesignFlowStep_Status datapath_parallel_cs::InternalExec()
@@ -95,17 +120,23 @@ DesignFlowStep_Status datapath_parallel_cs::InternalExec()
    structural_objectRef clock, reset;
    add_clock_reset(clock, reset);
 
+   instantiate_component_parallel(clock, reset);
+
    /// add all input ports
    INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "---Adding ports for primary inputs and outputs");
    add_ports();
 
-   //instantiate x kernel
+   const std::set<structural_objectRef> memory_modules;
+
+   //instantiate x kernel and put them into set
+   const structural_managerRef SM = HLS->datapath;
+   manage_memory_ports_parallel_chained_parallel(SM, memory_modules, datapath_cir);
+
    return DesignFlowStep_Status::SUCCESS;
 }
 
 void datapath_parallel_cs::add_ports()
 {
-    classic_datapath::add_ports();      //add standard port
     const structural_managerRef& SM = this->HLS->datapath;
     const structural_objectRef circuit = SM->get_circ();
     unsigned int num_slots=static_cast<unsigned int>(log2(HLS->Param->getOption<unsigned int>(OPT_context_switch)));
@@ -117,4 +148,123 @@ void datapath_parallel_cs::add_ports()
     SM->add_port(STR(TASK_FINISHED), port_o::IN, circuit, bool_type);
     structural_type_descriptorRef request_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 32));
     SM->add_port("request", port_o::IN, circuit, request_type);
+}
+
+void datapath_parallel_cs::add_clock_reset(structural_objectRef& clock_obj, structural_objectRef& reset_obj)
+{
+   const structural_managerRef& SM = this->HLS->datapath;
+   const structural_objectRef& circuit = SM->get_circ();
+
+   /// define boolean type for clock and reset signal
+   structural_type_descriptorRef port_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 0));
+
+   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "   * Start adding clock signal...");
+   /// add clock port
+   clock_obj = SM->add_port(CLOCK_PORT_NAME, port_o::IN, circuit, port_type);
+   GetPointer<port_o>(clock_obj)->set_is_clock(true);
+   PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "    Clock signal added!");
+
+   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "   * Start adding reset signal...");
+   /// add reset port
+   reset_obj = SM->add_port(RESET_PORT_NAME, port_o::IN, circuit, port_type);
+   PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "    Reset signal added!");
+
+   return;
+}
+
+void datapath_parallel_cs::instantiate_component_parallel(structural_objectRef clock_port, structural_objectRef reset_port)
+{
+   const structural_managerRef SM = HLS->datapath;
+   const structural_objectRef circuit = SM->get_circ();
+   structural_type_descriptorRef bool_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 0));
+   std::string mem_par_model = "memory_ctrl_parallel";
+   std::string mem_par_name = "memory_parallel";
+   std::string mem_par_library = HLS->HLS_T->get_technology_manager()->get_library(mem_par_model);
+   structural_objectRef mem_par_mod = SM->add_module_from_technology_library(mem_par_name, mem_par_model, mem_par_library, circuit, HLS->HLS_T->get_technology_manager());
+
+   structural_objectRef clock_mem_par = mem_par_mod->find_member(CLOCK_PORT_NAME,port_o_K,mem_par_mod);
+   structural_objectRef clock_sign=SM->add_sign("clock_mem_par_signal", circuit, bool_type);
+   SM->add_connection(clock_sign, clock_port);
+   SM->add_connection(clock_sign, clock_mem_par);
+
+   structural_objectRef reset_mem_par = mem_par_mod->find_member(RESET_PORT_NAME,port_o_K,mem_par_mod);
+   structural_objectRef reset_sign=SM->add_sign("reset_mem_par_signal", circuit, bool_type);
+   SM->add_connection(reset_sign, reset_port);
+   SM->add_connection(reset_sign, reset_mem_par);
+}
+
+void datapath_parallel_cs::manage_memory_ports_parallel_chained_parallel(const structural_managerRef SM, const std::set<structural_objectRef> &memory_modules, const structural_objectRef circuit)
+{
+   structural_objectRef cir_port;
+   structural_objectRef mem_paral_port;
+   structural_objectRef memory_parallel = circuit->find_member("memory_parallel", component_o_K, circuit);
+   unsigned int num_kernel=0;
+   for (std::set<structural_objectRef>::iterator i = memory_modules.begin(); i != memory_modules.end(); i++)  //from ctrl_parallel to module
+   {
+      for(unsigned int j = 0; j < GetPointer<module>(*i)->get_in_port_size(); j++)
+      {
+         structural_objectRef port_i = GetPointer<module>(*i)->get_in_port(j);
+         if(GetPointer<port_o>(port_i)->get_is_memory() && (!GetPointer<port_o>(port_i)->get_is_global()) && (!GetPointer<port_o>(port_i)->get_is_extern()))
+         {
+            std::string port_name = GetPointer<port_o>(port_i)->get_id();
+            mem_paral_port = memory_parallel->find_member(port_name, port_i->get_kind(), circuit);
+            structural_objectRef mem_paral_Sign=SM->add_sign_vector(port_name, 1, circuit, port_i->get_typeRef());
+            THROW_ASSERT(!mem_paral_port || GetPointer<port_o>(mem_paral_port), "should be a port");
+            SM->add_connection(GetPointer<port_o>(mem_paral_port)->get_port(num_kernel), mem_paral_Sign);
+            SM->add_connection(mem_paral_Sign, port_i);
+         }
+      }
+      for(unsigned int j = 0; j < GetPointer<module>(*i)->get_out_port_size(); j++)    //from module to ctrl_parallel
+      {
+         structural_objectRef port_i = GetPointer<module>(*i)->get_out_port(j);
+         if(GetPointer<port_o>(port_i)->get_is_memory() && (!GetPointer<port_o>(port_i)->get_is_global()) && (!GetPointer<port_o>(port_i)->get_is_extern()))
+         {
+            std::string port_name = GetPointer<port_o>(port_i)->get_id();
+            mem_paral_port = memory_parallel->find_member(port_name, port_i->get_kind(), circuit);
+            structural_objectRef mem_paral_Sign=SM->add_sign_vector(port_name, 1, circuit, port_i->get_typeRef());
+            THROW_ASSERT(!mem_paral_port || GetPointer<port_o>(mem_paral_port), "should be a port or null");
+            if(!mem_paral_port)
+            {
+               if(port_i->get_kind() == port_vector_o_K)
+                  mem_paral_port = SM->add_port_vector(port_name, port_o::OUT, GetPointer<port_o>(port_i)->get_ports_size()*parameters->getOption<unsigned int>(OPT_num_threads), circuit, port_i->get_typeRef());
+               else
+                  mem_paral_port = SM->add_port(port_name, port_o::OUT, circuit, port_i->get_typeRef());
+               port_o::fix_port_properties(port_i, mem_paral_port);
+            }
+            SM->add_connection(port_i, mem_paral_Sign);
+            SM->add_connection(mem_paral_Sign, GetPointer<port_o>(mem_paral_port)->get_port(num_kernel));
+         }
+      }
+      ++num_kernel;
+   }
+   for(unsigned int j = 0; j < GetPointer<module>(memory_parallel)->get_in_port_size(); j++)  //datapath to ctrl_parallel
+   {
+      structural_objectRef port_i = GetPointer<module>(memory_parallel)->get_in_port(j);
+      if(GetPointer<port_o>(port_i)->get_is_memory() && (!GetPointer<port_o>(port_i)->get_is_global()) && (!GetPointer<port_o>(port_i)->get_is_extern()))
+      {
+         std::string port_name = GetPointer<port_o>(port_i)->get_id();
+         cir_port = circuit->find_member(port_name.erase(0,3), port_i->get_kind(), circuit);
+         THROW_ASSERT(!cir_port || GetPointer<port_o>(cir_port), "should be a port");
+         SM->add_connection(cir_port,port_i);
+      }
+   }
+   for(unsigned int j = 0; j < GetPointer<module>(memory_parallel)->get_out_port_size(); j++)    //ctrl_parallel to datapath
+   {
+      structural_objectRef port_i = GetPointer<module>(memory_parallel)->get_out_port(j);
+      if(GetPointer<port_o>(port_i)->get_is_memory() && (!GetPointer<port_o>(port_i)->get_is_global()) && (!GetPointer<port_o>(port_i)->get_is_extern()))
+      {
+         std::string port_name = GetPointer<port_o>(port_i)->get_id();
+         cir_port = circuit->find_member(port_name.erase(0,4), port_i->get_kind(), circuit); //delete OUT from port name
+         THROW_ASSERT(!cir_port || GetPointer<port_o>(cir_port), "should be a port or null");
+         if(!cir_port)
+         {
+            if(port_i->get_kind() == port_vector_o_K)
+               cir_port = SM->add_port_vector(port_name, port_o::OUT, GetPointer<port_o>(port_i)->get_ports_size(), circuit, port_i->get_typeRef());
+            else
+               cir_port = SM->add_port(port_name, port_o::OUT, circuit, port_i->get_typeRef());
+            port_o::fix_port_properties(port_i, cir_port);
+         }
+         SM->add_connection(port_i, cir_port);
+      }
+   }
 }

@@ -56,11 +56,13 @@
 ///HLS/architecture_creator
 #include "top_entity.hpp"
 #include "top_entity_cs.hpp"
+#include "top_entity_parallel_cs.hpp"
 #include "TopEntityMemoryMapped.hpp"
 
 ///HLS/architecture_creator/datapath_creation
 #include "classic_datapath.hpp"
 #include "datapath_cs.hpp"
+#include "datapath_parallel_cs.hpp"
 
 ///HLS/architecture_creator/fsm_creator/algorithms include
 #include "fsm_controller.hpp"
@@ -155,6 +157,7 @@
 #if HAVE_EXPERIMENTAL && HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
 #include "omp_body_loop_synthesis_flow.hpp"
 #include "omp_for_wrapper_synthesis_flow.hpp"
+#include "omp_for_wrapper_cs_synthesis_flow.hpp"
 #endif
 #include "standard_hls.hpp"
 #include "virtual_hls.hpp"
@@ -335,6 +338,11 @@ DesignFlowStepRef HLSFlowStepFactory::CreateHLSFlowStep(const HLSFlowStep_Type t
       case HLSFlowStep_Type::DATAPATH_CS_CREATOR:
          {
             design_flow_step = DesignFlowStepRef(new datapath_cs(parameters, HLS_mgr, funId, design_flow_manager.lock(),HLSFlowStep_Type::DATAPATH_CS_CREATOR));
+            break;
+         }
+      case HLSFlowStep_Type::DATAPATH_CS_PARALLEL_CREATOR:
+         {
+            design_flow_step = DesignFlowStepRef(new datapath_parallel_cs(parameters, HLS_mgr, funId, design_flow_manager.lock(),HLSFlowStep_Type::DATAPATH_CS_PARALLEL_CREATOR));
             break;
          }
       case HLSFlowStep_Type::CLASSICAL_HLS_SYNTHESIS_FLOW:
@@ -582,6 +590,11 @@ DesignFlowStepRef HLSFlowStepFactory::CreateHLSFlowStep(const HLSFlowStep_Type t
             design_flow_step = DesignFlowStepRef(new OmpForWrapperSynthesisFlow(parameters, HLS_mgr, funId, design_flow_manager.lock()));
             break;
          }
+      case HLSFlowStep_Type::OMP_FOR_WRAPPER_CS_SYNTHESIS_FLOW:
+         {
+            design_flow_step = DesignFlowStepRef(new OmpForWrapperCSSynthesisFlow(parameters, HLS_mgr, funId, design_flow_manager.lock()));
+            break;
+         }
       case HLSFlowStep_Type::OMP_FUNCTION_ALLOCATION:
          {
             design_flow_step = DesignFlowStepRef(new OmpFunctionAllocation(parameters, HLS_mgr, design_flow_manager.lock()));
@@ -678,6 +691,12 @@ DesignFlowStepRef HLSFlowStepFactory::CreateHLSFlowStep(const HLSFlowStep_Type t
       case HLSFlowStep_Type::TOP_ENTITY_CS_CREATION:
          {
             design_flow_step = DesignFlowStepRef(new top_entity_cs(parameters, HLS_mgr, funId, design_flow_manager.lock(), HLSFlowStep_Type::TOP_ENTITY_CS_CREATION));
+            break;
+         }
+
+      case HLSFlowStep_Type::TOP_ENTITY_CS_PARALLEL_CREATION:
+         {
+            design_flow_step = DesignFlowStepRef(new top_entity_parallel_cs(parameters, HLS_mgr, funId, design_flow_manager.lock(), HLSFlowStep_Type::TOP_ENTITY_CS_PARALLEL_CREATION));
             break;
          }
       case HLSFlowStep_Type::TOP_ENTITY_MEMORY_MAPPED_CREATION:
@@ -829,6 +848,7 @@ const DesignFlowStepSet HLSFlowStepFactory::CreateHLSFlowSteps(const std::unorde
 #endif
          case HLSFlowStep_Type::COLORING_REGISTER_BINDING:
          case HLSFlowStep_Type::DATAPATH_CS_CREATOR:
+         case HLSFlowStep_Type::DATAPATH_CS_PARALLEL_CREATOR:
 #if HAVE_BEAGLE
          case HLSFlowStep_Type::DSE_DESIGN_FLOW:
 #endif
@@ -883,6 +903,7 @@ const DesignFlowStepSet HLSFlowStepFactory::CreateHLSFlowSteps(const std::unorde
          case HLSFlowStep_Type::OMP_ALLOCATION:
          case HLSFlowStep_Type::OMP_BODY_LOOP_SYNTHESIS_FLOW:
          case HLSFlowStep_Type::OMP_FOR_WRAPPER_SYNTHESIS_FLOW:
+         case HLSFlowStep_Type::OMP_FOR_WRAPPER_CS_SYNTHESIS_FLOW:
          case HLSFlowStep_Type::OMP_FUNCTION_ALLOCATION:
          case HLSFlowStep_Type::OMP_FUNCTION_ALLOCATION_CS:
 #endif
@@ -912,6 +933,7 @@ const DesignFlowStepSet HLSFlowStepFactory::CreateHLSFlowSteps(const std::unorde
 #endif
          case HLSFlowStep_Type::TOP_ENTITY_CREATION:
          case HLSFlowStep_Type::TOP_ENTITY_CS_CREATION:
+         case HLSFlowStep_Type::TOP_ENTITY_CS_PARALLEL_CREATION:
          case HLSFlowStep_Type::TOP_ENTITY_MEMORY_MAPPED_CREATION:
          case HLSFlowStep_Type::UNIQUE_MODULE_BINDING:
          case HLSFlowStep_Type::UNIQUE_REGISTER_BINDING:

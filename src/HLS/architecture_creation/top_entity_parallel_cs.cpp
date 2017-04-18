@@ -51,7 +51,7 @@
 #include "technology_manager.hpp"
 
 top_entity_parallel_cs::top_entity_parallel_cs(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type) :
-   top_entity(_parameters, _HLSMgr, _funId, _design_flow_manager, _hls_flow_step_type)
+   HLSFunctionStep(_parameters, _HLSMgr, _funId, _design_flow_manager, _hls_flow_step_type)
 {
     debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }
@@ -61,9 +61,34 @@ top_entity_parallel_cs::~top_entity_parallel_cs()
 
 }
 
+const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > top_entity_parallel_cs::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+{
+   std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > ret;
+   switch(relationship_type)
+   {
+      case DEPENDENCE_RELATIONSHIP:
+         {
+            ret.insert(std::make_tuple(HLSFlowStep_Type::DATAPATH_CS_PARALLEL_CREATOR, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
+            break;
+         }
+      case INVALIDATION_RELATIONSHIP:
+         {
+            break;
+         }
+      case PRECEDENCE_RELATIONSHIP:
+         {
+            break;
+         }
+      default:
+         THROW_UNREACHABLE("");
+   }
+   return ret;
+}
+
 DesignFlowStep_Status top_entity_parallel_cs::InternalExec()
 {
    /// function name to be synthesized
+   SM = HLS->top;
    structural_objectRef circuit = SM->get_circ();
    const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(funId);
    const std::string function_name = FB->CGetBehavioralHelper()->get_function_name();
@@ -103,11 +128,11 @@ DesignFlowStep_Status top_entity_parallel_cs::InternalExec()
    add_port(circuit, controller_circuit, datapath_circuit);
 
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "\tAdding command ports...");
-   this->add_command_signals(circuit);
+   //this->add_command_signals(circuit);  -->add command port
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "\tCommand ports added!");
 
    //memory::propagate_memory_parameters(HLS->datapath->get_circ(), HLS->top);
-   propagate_memory_signals(Datapath, circuit);
+   propagate_memory_signals(datapath_circuit, circuit);
 
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Circuit created without errors!");
 
@@ -221,12 +246,12 @@ void top_entity_parallel_cs::connect_port_parallel(const structural_objectRef ci
     //connect LoopIteration
 }
 
-void top_entity_parallel_cs::propagate_memory_signals(structural_managerRef Datapath, const structural_objectRef circuit)
+void top_entity_parallel_cs::propagate_memory_signals(structural_objectRef datapath_circuit, const structural_objectRef circuit)
 {
    structural_objectRef cir_port;
-   for(unsigned int j = 0; j < GetPointer<module>(Datapath)->get_in_port_size(); j++)
+   for(unsigned int j = 0; j < GetPointer<module>(datapath_circuit)->get_in_port_size(); j++)
    {
-      structural_objectRef port_i = GetPointer<module>(Datapath)->get_in_port(j);
+      structural_objectRef port_i = GetPointer<module>(datapath_circuit)->get_in_port(j);
       if(GetPointer<port_o>(port_i)->get_is_memory() && (!GetPointer<port_o>(port_i)->get_is_global()) && (!GetPointer<port_o>(port_i)->get_is_extern()))
       {
          std::string port_name = GetPointer<port_o>(port_i)->get_id();
@@ -247,9 +272,9 @@ void top_entity_parallel_cs::propagate_memory_signals(structural_managerRef Data
          }
       }
    }
-   for(unsigned int j = 0; j < GetPointer<module>(Datapath)->get_out_port_size(); j++)
+   for(unsigned int j = 0; j < GetPointer<module>(datapath_circuit)->get_out_port_size(); j++)
    {
-      structural_objectRef port_i = GetPointer<module>(Datapath)->get_out_port(j);
+      structural_objectRef port_i = GetPointer<module>(datapath_circuit)->get_out_port(j);
       if(GetPointer<port_o>(port_i)->get_is_memory() && (!GetPointer<port_o>(port_i)->get_is_global()) && (!GetPointer<port_o>(port_i)->get_is_extern()))
       {
          std::string port_name = GetPointer<port_o>(port_i)->get_id();

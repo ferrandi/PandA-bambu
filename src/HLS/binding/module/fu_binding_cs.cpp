@@ -55,16 +55,14 @@ fu_binding_cs::fu_binding_cs(const HLS_managerConstRef _HLSMgr, const unsigned i
 void fu_binding_cs::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, structural_objectRef clock_port, structural_objectRef reset_port)
 {
    auto omp_functions = GetPointer<OmpFunctions>(HLSMgr->Rfuns);
+   fu_binding::add_to_SM(HLSMgr,HLS,clock_port,reset_port);
    if(omp_functions->kernel_functions.find(HLS->functionId) != omp_functions->kernel_functions.end())
    {
       instantiate_suspension_component(HLSMgr,HLS);
       instantiate_component_kernel(HLS, clock_port, reset_port);
    }
-   else if(omp_functions->omp_for_wrappers.find(HLS->functionId) != omp_functions->omp_for_wrappers.end())
-      instantiate_component_parallel(HLS, clock_port, reset_port);
    else if((omp_functions->parallelized_functions.find(HLS->functionId) != omp_functions->parallelized_functions.end()) || (omp_functions->atomic_functions.find(HLS->functionId) != omp_functions->atomic_functions.end()))
       instantiate_suspension_component(HLSMgr,HLS);
-   fu_binding::add_to_SM(HLSMgr,HLS,clock_port,reset_port);
 }
 
 void fu_binding_cs::instantiate_component_kernel(const hlsRef HLS, structural_objectRef clock_port, structural_objectRef reset_port)
@@ -127,27 +125,6 @@ void fu_binding_cs::instantiate_component_kernel(const hlsRef HLS, structural_ob
    SM->add_connection(done_request_sign, done_request_scheduler);
 }
 
-void fu_binding_cs::instantiate_component_parallel(const hlsRef HLS, structural_objectRef clock_port, structural_objectRef reset_port)
-{
-   const structural_managerRef SM = HLS->datapath;
-   const structural_objectRef circuit = SM->get_circ();
-   structural_type_descriptorRef bool_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 0));
-   std::string mem_par_model = "memory_ctrl_parallel";
-   std::string mem_par_name = "memory_parallel";
-   std::string mem_par_library = HLS->HLS_T->get_technology_manager()->get_library(mem_par_model);
-   structural_objectRef mem_par_mod = SM->add_module_from_technology_library(mem_par_name, mem_par_model, mem_par_library, circuit, HLS->HLS_T->get_technology_manager());
-
-   structural_objectRef clock_mem_par = mem_par_mod->find_member(CLOCK_PORT_NAME,port_o_K,mem_par_mod);
-   structural_objectRef clock_sign=SM->add_sign("clock_mem_par_signal", circuit, bool_type);
-   SM->add_connection(clock_sign, clock_port);
-   SM->add_connection(clock_sign, clock_mem_par);
-
-   structural_objectRef reset_mem_par = mem_par_mod->find_member(RESET_PORT_NAME,port_o_K,mem_par_mod);
-   structural_objectRef reset_sign=SM->add_sign("reset_mem_par_signal", circuit, bool_type);
-   SM->add_connection(reset_sign, reset_port);
-   SM->add_connection(reset_sign, reset_mem_par);
-}
-
 void fu_binding_cs::instantiate_suspension_component(const HLS_managerRef HLSMgr, const hlsRef HLS)
 {
    structural_type_descriptorRef bool_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 0));
@@ -156,7 +133,6 @@ void fu_binding_cs::instantiate_suspension_component(const HLS_managerRef HLSMgr
    structural_objectRef suspensionOr = SM->add_module_from_technology_library("suspensionOr", OR_GATE_STD, HLS->HLS_T->get_technology_manager()->get_library(OR_GATE_STD), circuit, HLS->HLS_T->get_technology_manager());
    structural_objectRef port_in_or = suspensionOr->find_member("in", port_o_K, suspensionOr);
    structural_objectRef port_out_or = suspensionOr->find_member("out1", port_o_K, suspensionOr);
-   bool foundSuspension=false;
    //search in module and find one with suspension
    unsigned int num_suspension=0;
    unsigned int n_elements = GetPointer<module>(circuit)->get_internal_objects_size();
@@ -164,16 +140,16 @@ void fu_binding_cs::instantiate_suspension_component(const HLS_managerRef HLSMgr
    for(i=0;i<n_elements;i++)
    {
       structural_objectRef curr_gate = GetPointer<module>(circuit)->get_internal_object(i);
-      if(curr_gate->find_member("suspension", port_o_K, curr_gate)!=NULL)
+      if(curr_gate->find_member(STR(SUSPENSION), port_o_K, curr_gate)!=NULL)
          ++num_suspension;
    }
-   if(foundSuspension)
+   if(num_suspension>0)
    {
       GetPointer<port_o>(port_in_or)->add_n_ports(num_suspension+2, suspensionOr);
       for(i=0;i<n_elements;i++)
       {
          structural_objectRef curr_gate = GetPointer<module>(circuit)->get_internal_object(i);
-         structural_objectRef port_suspension_module = curr_gate->find_member("suspension", port_o_K, curr_gate);
+         structural_objectRef port_suspension_module = curr_gate->find_member(STR(SUSPENSION), port_o_K, curr_gate);
          if(port_suspension_module!=NULL)
          {
             structural_objectRef suspension_sign=SM->add_sign(STR(SUSPENSION)+"signal"+STR(i), circuit, bool_type);
@@ -194,7 +170,7 @@ void fu_binding_cs::instantiate_suspension_component(const HLS_managerRef HLSMgr
       {
          SM->add_connection(port_i, GetPointer<port_o>(port_in_or)->get_port(0));
       }
-      if(port_name.substr(0,8).compare("sel_STORE")==0)
+      if(port_name.substr(0,9).compare("sel_STORE")==0)
       {
          SM->add_connection(port_i, GetPointer<port_o>(port_in_or)->get_port(1));
       }
@@ -229,10 +205,6 @@ void fu_binding_cs::manage_memory_ports_parallel_chained(const HLS_managerRef HL
    if(omp_functions->kernel_functions.find(HLS->functionId) != omp_functions->kernel_functions.end())
    {
       manage_memory_ports_parallel_chained_kernel(SM, memory_modules, circuit, HLS, _unique_id);
-   }
-   else if(omp_functions->omp_for_wrappers.find(HLS->functionId) != omp_functions->omp_for_wrappers.end())
-   {
-      manage_memory_ports_parallel_chained_parallel(SM, memory_modules, circuit);
    }
    else if(omp_functions->hierarchical_functions.find(HLS->functionId) != omp_functions->hierarchical_functions.end())
    {
@@ -320,82 +292,6 @@ void fu_binding_cs::manage_memory_ports_parallel_chained_kernel(const structural
       {
          std::string port_name = GetPointer<port_o>(port_i)->get_id();
          cir_port = circuit->find_member(port_name.erase(0,4), port_i->get_kind(), circuit); //erase OUT_ from port name
-         THROW_ASSERT(!cir_port || GetPointer<port_o>(cir_port), "should be a port or null");
-         if(!cir_port)
-         {
-            if(port_i->get_kind() == port_vector_o_K)
-               cir_port = SM->add_port_vector(port_name, port_o::OUT, GetPointer<port_o>(port_i)->get_ports_size(), circuit, port_i->get_typeRef());
-            else
-               cir_port = SM->add_port(port_name, port_o::OUT, circuit, port_i->get_typeRef());
-            port_o::fix_port_properties(port_i, cir_port);
-         }
-         SM->add_connection(port_i, cir_port);
-      }
-   }
-}
-
-void fu_binding_cs::manage_memory_ports_parallel_chained_parallel(const structural_managerRef SM, const std::set<structural_objectRef> &memory_modules, const structural_objectRef circuit)
-{
-   structural_objectRef cir_port;
-   structural_objectRef mem_paral_port;
-   structural_objectRef memory_parallel = circuit->find_member("memory_parallel", component_o_K, circuit);
-   unsigned int num_kernel=0;
-   for (std::set<structural_objectRef>::iterator i = memory_modules.begin(); i != memory_modules.end(); i++)  //from ctrl_parallel to module
-   {
-      for(unsigned int j = 0; j < GetPointer<module>(*i)->get_in_port_size(); j++)
-      {
-         structural_objectRef port_i = GetPointer<module>(*i)->get_in_port(j);
-         if(GetPointer<port_o>(port_i)->get_is_memory() && (!GetPointer<port_o>(port_i)->get_is_global()) && (!GetPointer<port_o>(port_i)->get_is_extern()))
-         {
-            std::string port_name = GetPointer<port_o>(port_i)->get_id();
-            mem_paral_port = memory_parallel->find_member(port_name, port_i->get_kind(), circuit);
-            structural_objectRef mem_paral_Sign=SM->add_sign_vector(port_name, 1, circuit, port_i->get_typeRef());
-            THROW_ASSERT(!mem_paral_port || GetPointer<port_o>(mem_paral_port), "should be a port");
-            SM->add_connection(GetPointer<port_o>(mem_paral_port)->get_port(num_kernel), mem_paral_Sign);
-            SM->add_connection(mem_paral_Sign, port_i);
-         }
-      }
-      for(unsigned int j = 0; j < GetPointer<module>(*i)->get_out_port_size(); j++)    //from module to ctrl_parallel
-      {
-         structural_objectRef port_i = GetPointer<module>(*i)->get_out_port(j);
-         if(GetPointer<port_o>(port_i)->get_is_memory() && (!GetPointer<port_o>(port_i)->get_is_global()) && (!GetPointer<port_o>(port_i)->get_is_extern()))
-         {
-            std::string port_name = GetPointer<port_o>(port_i)->get_id();
-            mem_paral_port = memory_parallel->find_member(port_name, port_i->get_kind(), circuit);
-            structural_objectRef mem_paral_Sign=SM->add_sign_vector(port_name, 1, circuit, port_i->get_typeRef());
-            THROW_ASSERT(!mem_paral_port || GetPointer<port_o>(mem_paral_port), "should be a port or null");
-            if(!mem_paral_port)
-            {
-               if(port_i->get_kind() == port_vector_o_K)
-                  mem_paral_port = SM->add_port_vector(port_name, port_o::OUT, GetPointer<port_o>(port_i)->get_ports_size()*parameters->getOption<unsigned int>(OPT_num_threads), circuit, port_i->get_typeRef());
-               else
-                  mem_paral_port = SM->add_port(port_name, port_o::OUT, circuit, port_i->get_typeRef());
-               port_o::fix_port_properties(port_i, mem_paral_port);
-            }
-            SM->add_connection(port_i, mem_paral_Sign);
-            SM->add_connection(mem_paral_Sign, GetPointer<port_o>(mem_paral_port)->get_port(num_kernel));
-         }
-      }
-      ++num_kernel;
-   }
-   for(unsigned int j = 0; j < GetPointer<module>(memory_parallel)->get_in_port_size(); j++)  //datapath to ctrl_parallel
-   {
-      structural_objectRef port_i = GetPointer<module>(memory_parallel)->get_in_port(j);
-      if(GetPointer<port_o>(port_i)->get_is_memory() && (!GetPointer<port_o>(port_i)->get_is_global()) && (!GetPointer<port_o>(port_i)->get_is_extern()))
-      {
-         std::string port_name = GetPointer<port_o>(port_i)->get_id();
-         cir_port = circuit->find_member(port_name.erase(0,3), port_i->get_kind(), circuit);
-         THROW_ASSERT(!cir_port || GetPointer<port_o>(cir_port), "should be a port");
-         SM->add_connection(cir_port,port_i);
-      }
-   }
-   for(unsigned int j = 0; j < GetPointer<module>(memory_parallel)->get_out_port_size(); j++)    //ctrl_parallel to datapath
-   {
-      structural_objectRef port_i = GetPointer<module>(memory_parallel)->get_out_port(j);
-      if(GetPointer<port_o>(port_i)->get_is_memory() && (!GetPointer<port_o>(port_i)->get_is_global()) && (!GetPointer<port_o>(port_i)->get_is_extern()))
-      {
-         std::string port_name = GetPointer<port_o>(port_i)->get_id();
-         cir_port = circuit->find_member(port_name.erase(0,4), port_i->get_kind(), circuit); //delete OUT from port name
          THROW_ASSERT(!cir_port || GetPointer<port_o>(cir_port), "should be a port or null");
          if(!cir_port)
          {

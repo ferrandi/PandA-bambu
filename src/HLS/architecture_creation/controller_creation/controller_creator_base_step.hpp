@@ -100,7 +100,7 @@ class ControllerCreatorBaseStep : public HLSFunctionStep
        * This member function adds the standard ports (clock, reset, done and command ones) to a circuit.
        * \param circuit it is the datastructure of the component where to add these ports
        */
-      void add_common_ports(structural_objectRef circuit);
+      virtual void add_common_ports(structural_objectRef circuit);
 
       /// structural representation of the resulting controller circuit
       structural_managerRef SM;

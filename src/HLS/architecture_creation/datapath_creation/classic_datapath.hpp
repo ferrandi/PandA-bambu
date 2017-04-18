@@ -63,7 +63,7 @@ class classic_datapath: public datapath_creator
       /**
        * Adds the input/output ports of the module
        */
-      void add_ports();
+      virtual void add_ports();
 
    public:
       /**

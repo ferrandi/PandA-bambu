@@ -147,7 +147,6 @@ DesignFlowStep_Status classic_datapath::InternalExec()
    /// allocate interconnections
    INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "---Adding interconnections");
    HLS->Rconn->add_to_SM(HLSMgr, HLS, HLS->datapath);
-
    unsigned int n_elements = GetPointer<module>(datapath_cir)->get_internal_objects_size();
    if(n_elements==0)
    {

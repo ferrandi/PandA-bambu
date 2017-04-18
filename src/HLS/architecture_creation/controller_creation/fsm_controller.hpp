@@ -86,7 +86,7 @@ class fsm_controller : public ControllerCreatorBaseStep
        * Set the correct NP functionality
        * @param state_representation is the state representation of the FSM
        */
-      void add_correct_transition_memory(std::string state_representation);
+      virtual void add_correct_transition_memory(std::string state_representation);
 
 };
 #endif

@@ -96,6 +96,7 @@ DesignFlowStep_Status OmpFunctionAllocationCS::Exec()
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Found omp for wrapper " + HLSMgr->CGetFunctionBehavior(function_id)->CGetBehavioralHelper()->get_function_name());
          omp_functions->omp_for_wrappers.insert(function_id);
          function_classification_found=true;
+         ++cycleInd;
          continue;
       }
       InEdgeIterator ie, ie_end;
@@ -151,7 +152,7 @@ DesignFlowStep_Status OmpFunctionAllocationCS::Exec()
             break;
          }
       }
-      cycleInd=cycleInd+1;
+      ++cycleInd;
    }
    return DesignFlowStep_Status::SUCCESS;
 }

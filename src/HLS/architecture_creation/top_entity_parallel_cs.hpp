@@ -39,11 +39,15 @@
 */
 #ifndef TOP_ENTITY_PARALLEL_CS_H
 #define TOP_ENTITY_PARALLEL_CS_H
-#include "top_entity.hpp"
+#include "hls_function_step.hpp"
+REF_FORWARD_DECL(structural_manager);
+REF_FORWARD_DECL(structural_object);
 
-class top_entity_parallel_cs : public top_entity
+class top_entity_parallel_cs : public HLSFunctionStep
 {
    protected:
+   ///reference to the resulting circuit
+   structural_managerRef SM;
 
    /**
     * @brief add_port of top entity
@@ -61,10 +65,16 @@ class top_entity_parallel_cs : public top_entity
 
     /**
      * @brief propagate_memory_signals from datapath to top and viceversa
-     * @param Datapath
+     * @param datapath_circuit
      * @param circuit
      */
-    void propagate_memory_signals(structural_managerRef Datapath, const structural_objectRef circuit);
+    void propagate_memory_signals(structural_objectRef datapath_circuit, const structural_objectRef circuit);
+
+    /**
+     * Return the set of analyses in relationship with this design step
+     * @param relationship_type is the type of relationship to be considered
+     */
+    virtual const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const;
 
 public:
    top_entity_parallel_cs(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type);

@@ -1485,13 +1485,12 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
 
       fu_bindingRef fu_best;
 #if HAVE_EXPERIMENTAL
-      if(parameters->getOption<int>(OPT_memory_banks_number) > 1)
+      if(parameters->getOption<int>(OPT_memory_banks_number) > 1 && !parameters->isOption(OPT_context_switch))
       {
          fu_best = fu_bindingRef(new ParallelMemoryFuBinding(HLSMgr, funId, parameters));
-
       }
       else
-#endif
+   #endif
       {
          fu_best = fu_bindingRef(fu_binding::create_fu_binding(HLSMgr, funId, parameters));
       }

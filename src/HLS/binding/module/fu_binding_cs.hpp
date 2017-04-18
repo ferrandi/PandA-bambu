@@ -63,14 +63,6 @@ protected:
    void instantiate_component_kernel(const hlsRef HLS, structural_objectRef clock_port, structural_objectRef reset_port);
 
    /**
-    * @brief instantiate_component_parallel
-    * @param HLS
-    * @param clock_port
-    * @param reset_port
-    */
-   void instantiate_component_parallel(const hlsRef HLS, structural_objectRef clock_port, structural_objectRef reset_port);
-
-   /**
     * @brief instantiate_suspension_component
     * @param HLSMgr
     * @param HLS
@@ -105,14 +97,6 @@ protected:
     * @param _unique_id
     */
    void manage_memory_ports_parallel_chained_kernel(const structural_managerRef SM, const std::set<structural_objectRef> &memory_modules, const structural_objectRef circuit, const hlsRef HLS, unsigned int & _unique_id);
-
-   /**
-    * @brief connect mem_parallel with datapath and kernels
-    * @param SM
-    * @param memory_modules
-    * @param circuit
-    */
-   void manage_memory_ports_parallel_chained_parallel(const structural_managerRef SM, const std::set<structural_objectRef> &memory_modules, const structural_objectRef circuit);
 
    /**
     * @brief merging on exit for the 1° channel, division on input for the 2 channel

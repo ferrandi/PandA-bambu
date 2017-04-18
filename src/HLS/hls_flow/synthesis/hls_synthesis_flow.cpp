@@ -80,7 +80,14 @@ const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
             }
             else if(behavioral_helper->GetOmpForDegree())
             {
-               ret.insert(std::make_tuple(HLSFlowStep_Type::OMP_FOR_WRAPPER_SYNTHESIS_FLOW, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
+               if(parameters->isOption(OPT_context_switch))
+               {
+                  ret.insert(std::make_tuple(HLSFlowStep_Type::OMP_FOR_WRAPPER_CS_SYNTHESIS_FLOW, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
+               }
+               else
+               {
+                  ret.insert(std::make_tuple(HLSFlowStep_Type::OMP_FOR_WRAPPER_SYNTHESIS_FLOW, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
+               }
             }
             else
 #endif

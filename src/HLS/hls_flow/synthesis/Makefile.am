@@ -43,5 +43,10 @@ METASOURCES = AUTO
 noinst_HEADERS = standard_hls.hpp virtual_hls.hpp hls_synthesis_flow.hpp
 lib_hls_synthesis_la_SOURCES = standard_hls.cpp virtual_hls.cpp hls_synthesis_flow.cpp
 
+if BUILD_LIB_FROM_PRAGMA
+   noinst_HEADERS += omp_body_loop_synthesis_flow.hpp omp_for_wrapper_synthesis_flow.hpp omp_for_wrapper_cs_synthesis_flow.hpp
+   lib_hls_synthesis_la_SOURCES += omp_body_loop_synthesis_flow.cpp omp_for_wrapper_synthesis_flow.cpp omp_for_wrapper_cs_synthesis_flow.cpp
+endif
+
 #do not touch the following line
 

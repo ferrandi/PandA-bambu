@@ -69,6 +69,7 @@ void datapath_cs::add_ports()
     if(omp_functions->atomic_functions.find(funId) != omp_functions->atomic_functions.end()) found=true;
     if(found)       //function with selector
     {
+       INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "---Adding ports selector and suspension");
        unsigned int num_slots=static_cast<unsigned int>(log2(HLS->Param->getOption<unsigned int>(OPT_context_switch)));
        structural_type_descriptorRef port_type = structural_type_descriptorRef(new structural_type_descriptor("bool", num_slots));
        SM->add_port(STR(SELECTOR_REGISTER_FILE), port_o::IN, circuit, port_type);
@@ -77,6 +78,7 @@ void datapath_cs::add_ports()
     }
     if(omp_functions->kernel_functions.find(funId) != omp_functions->kernel_functions.end())
     {
+       INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "---Adding ports for kernel module");
        unsigned int num_slots=static_cast<unsigned int>(ceil(log2(HLS->Param->getOption<unsigned int>(OPT_context_switch))));
        structural_type_descriptorRef port_type = structural_type_descriptorRef(new structural_type_descriptor("bool", num_slots));
        structural_type_descriptorRef bool_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 0));

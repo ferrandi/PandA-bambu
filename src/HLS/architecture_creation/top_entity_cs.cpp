@@ -59,6 +59,7 @@ top_entity_cs::~top_entity_cs()
 DesignFlowStep_Status top_entity_cs::InternalExec()
 {
     auto omp_functions = GetPointer<OmpFunctions>(HLSMgr->Rfuns);
+    top_entity::InternalExec();
     if(omp_functions->kernel_functions.find(funId) != omp_functions->kernel_functions.end())
     {
         add_context_switch_port_kernel();
@@ -73,7 +74,7 @@ DesignFlowStep_Status top_entity_cs::InternalExec()
           add_context_switch_port();
        }
     }
-    return top_entity::InternalExec();
+    return DesignFlowStep_Status::SUCCESS;
 }
 
 void top_entity_cs::add_context_switch_port()
@@ -83,11 +84,10 @@ void top_entity_cs::add_context_switch_port()
     structural_managerRef Controller = HLS->controller;
     structural_objectRef datapath_circuit = Datapath->get_circ();
     structural_objectRef controller_circuit = Controller->get_circ();
-
     structural_type_descriptorRef bool_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 0));
     PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "\tStart adding suspension signal...");
     structural_objectRef suspension_obj = SM->add_port(STR(SUSPENSION), port_o::OUT, circuit, bool_type);
-    structural_objectRef datapath_suspension = datapath_circuit->find_member(STR(SELECTOR_REGISTER_FILE), port_o_K, datapath_circuit);
+    structural_objectRef datapath_suspension = datapath_circuit->find_member(STR(SUSPENSION), port_o_K, datapath_circuit);
     SM->add_connection(datapath_suspension, suspension_obj);
     PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "\tSuspension signal added!");
 

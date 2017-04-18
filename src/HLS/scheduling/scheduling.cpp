@@ -102,7 +102,7 @@ void Scheduling::Initialize()
       HLS->Rsch = ScheduleRef(new Schedule(HLSMgr, funId, FB->CGetOpGraph(FunctionBehavior::FLSAODG), parameters));
    }
 #if HAVE_EXPERIMENTAL
-   if(parameters->getOption<int>(OPT_memory_banks_number) > 1)
+   if(parameters->getOption<int>(OPT_memory_banks_number) > 1 && !parameters->isOption(OPT_context_switch))
    {
       HLS->Rfu = fu_bindingRef(new ParallelMemoryFuBinding(HLSMgr, funId, parameters));
    }

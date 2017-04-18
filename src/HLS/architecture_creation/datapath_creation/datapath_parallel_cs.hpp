@@ -41,15 +41,48 @@
 #ifndef DATAPATH_PARALLEL_CS_H
 #define DATAPATH_PARALLEL_CS_H
 
-#include "classic_datapath.hpp"
+#include "hls_function_step.hpp"
 
-class datapath_parallel_cs: public classic_datapath
+REF_FORWARD_DECL(structural_object);
+REF_FORWARD_DECL(structural_manager);
+
+class datapath_parallel_cs : public HLSFunctionStep
 {
 protected:
+   /**
+    * Return the set of analyses in relationship with this design step
+    * @param relationship_type is the type of relationship to be considered
+    */
+   virtual const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const;
+
    /**
     * Adds the input/output ports of the module
     */
    void add_ports();
+
+   /**
+    * Adds the clock and reset ports to the structural description of the circuit
+    * @param clock_sign is the object representing the clock signal
+    * @param reset_sign is the object representing the reset signal
+    */
+   void add_clock_reset(structural_objectRef& clock_sign, structural_objectRef& reset_sign);
+
+   /**
+    * @brief instantiate_component_parallel
+    * @param HLS
+    * @param clock_port
+    * @param reset_port
+    */
+   void instantiate_component_parallel(structural_objectRef clock_port, structural_objectRef reset_port);
+
+   /**
+    * @brief connect mem_parallel with datapath and kernels
+    * @param SM
+    * @param memory_modules
+    * @param circuit
+    */
+   void manage_memory_ports_parallel_chained_parallel(const structural_managerRef SM, const std::set<structural_objectRef> &memory_modules, const structural_objectRef circuit);
+
 
 public:
    /**
