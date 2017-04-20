@@ -186,20 +186,20 @@
           <port_o id="wenable" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
-          <port_o id="selector_register_file_signal" dir="IN">
+          <port_o id="selector_register_file" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o> in1
-          <NP_functionality LIBRARY="rams_dist in1 selector_register_file_signal out1 BITSIZE_MEM " VERILOG_PROVIDED=
+          <NP_functionality LIBRARY="rams_dist in1 selector_register_file out1 BITSIZE_MEM " VERILOG_PROVIDED=
 "reg [BITSIZE_in1-1:0] ram [BITSIZE_MEM-1:0];
   always @(posedge clock)
   begin
   if (wenable)
-    ram[selector_register_file_signal] &lt;= in1;
+    ram[selector_register_file] &lt;= in1;
   end
-  assign out1 = ram[selector_register_file_signal];"/>
+  assign out1 = ram[selector_register_file];"/>
         </component_o>
       </circuit>
     </cell>
@@ -614,16 +614,16 @@ simple_dual_port_ram_single_clock #(.BITSIZE_data(BITSIZE_data_in),.BITSIZE_addr
           <port_o id="done_request_port" dir="OUT">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
-          <port_o id="selector_register_file_signal" dir="OUT">
+          <port_o id="selector_register_file" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="scheduler IN_M_Rdata_ram IN_M_DataRdy IN_Min_tag Mout_oe_ram Mout_we_ram Mout_addr_ram Mout_data_ram_size Mout_Wdata_ram Mout_tag_ram done_port_task suspension task_finished OUT_Mout_oe_ram OUT_Mout_we_ram OUT_Mout_addr_ram OUT_Mout_data_ram_size OUT_Mout_Wdata_ram OUT_Mout_tag_ramMin_tag M_Rdata_ram M_DataRdy request_accepted done_request_port selector_register_file_signal NUM_TASKS KERN_NUM ADDR_ACC"
+          <NP_functionality LIBRARY="scheduler IN_M_Rdata_ram IN_M_DataRdy IN_Min_tag Mout_oe_ram Mout_we_ram Mout_addr_ram Mout_data_ram_size Mout_Wdata_ram Mout_tag_ram done_port_task suspension task_finished OUT_Mout_oe_ram OUT_Mout_we_ram OUT_Mout_addr_ram OUT_Mout_data_ram_size OUT_Mout_Wdata_ram OUT_Mout_tag_ramMin_tag M_Rdata_ram M_DataRdy request_accepted done_request_port selector_register_file NUM_TASKS KERN_NUM ADDR_ACC"
           IP_COMPONENT="fifio, fifio_free, mem_scheduler" VERILOG_PROVIDED="
   parameter SIZE_IN=BITSIZE_Mout_oe_ram+BITSIZE_Mout_we_ram+BITSIZE_Mout_addr_ram+BITSIZE_Mout_data_ram_size+BITSIZE_Mout_Wdata_ram+BITSIZE_Mout_tag;
 
   reg done_request_port;
   reg [BITSIZE_M_DataRdy-1:0] M_DataRdy;
-  reg [BITSIZE_selector_register_file_signal-1:0] selector_register_file_signal;
+  reg [BITSIZE_selector_register_file-1:0] selector_register_file;
 
   parameter [2:0] S_0 = 3'd0,
                   S_1 = 3'd1,
@@ -632,15 +632,15 @@ simple_dual_port_ram_single_clock #(.BITSIZE_data(BITSIZE_data_in),.BITSIZE_addr
                   S_4 = 3'd4;
 
   reg [2:0] _present_state, _next_state;
-  wire [BITSIZE_selector_register_file_signal-1:0] next_selector_register_file_signal;
+  wire [BITSIZE_selector_register_file-1:0] next_selector_register_file;
   wire fifo_empty_free; 
-  wire [BITSIZE_selector_register_file_signal-1:0] fifo_data_out_free;
+  wire [BITSIZE_selector_register_file-1:0] fifo_data_out_free;
   wire fifo_wait_empty;
   wire fifo_empty_ready;
-  wire [BITSIZE_selector_register_file_signal-1:0] fifo_data_out_ready;
+  wire [BITSIZE_selector_register_file-1:0] fifo_data_out_ready;
   wire fifo_rd_en_ready;
   wire fifo_wr_en_ready;
-  wire [BITSIZE_selector_register_file_signal-1:0] fifo_wait_data_out;
+  wire [BITSIZE_selector_register_file-1:0] fifo_wait_data_out;
   wire [SIZE_IN-1:0] data_out_mem_kern;
   wire [SIZE_IN-1:0] data_out_mem_par;
   wire [SIZE_IN-1:0] data_in_kern_mem;
@@ -650,16 +650,16 @@ simple_dual_port_ram_single_clock #(.BITSIZE_data(BITSIZE_data_in),.BITSIZE_addr
   wire fifo_rd_en_free; 
   wire fifo_wr_en_free; 
   wire mux_fifo_sel;
-  wire [BITSIZE_selector_register_file_signal-1:0] old_selector;
-  wire [BITSIZE_selector_register_file_signal-1:0] new_selector;
+  wire [BITSIZE_selector_register_file-1:0] old_selector;
+  wire [BITSIZE_selector_register_file-1:0] new_selector;
   wire mux_switching_logic;
   wire fifo_full_free;
   wire [BITSIZE_M_DataRdy-1:0] M_DataRdy_next;
   wire done_request_port_next;
-  wire [BITSIZE_selector_register_file_signal-1:0] data_ready;
+  wire [BITSIZE_selector_register_file-1:0] data_ready;
   wire selectorByMemory;
 
-  fifio_free #(.DATA_WIDTH(BITSIZE_selector_register_file_signal), .ADDR_WIDTH($clog2(NUM_TASKS) )) fifo_free(
+  fifio_free #(.DATA_WIDTH(BITSIZE_selector_register_file), .ADDR_WIDTH($clog2(NUM_TASKS) )) fifo_free(
   .full        (fifo_full_free),
   .empty       (fifo_empty_free),
   .data_out    (fifo_data_out_free),
@@ -667,9 +667,9 @@ simple_dual_port_ram_single_clock #(.BITSIZE_data(BITSIZE_data_in),.BITSIZE_addr
   .rst         (reset),
   .rd_en       (fifo_rd_en_free),
   .wr_en       (fifo_wr_en_free),
-  .data_in     (selector_register_file_signal)); // just the selector can write the data_in of fifo_free
+  .data_in     (selector_register_file)); // just the selector can write the data_in of fifo_free
 
-  fifio #(.DATA_WIDTH(BITSIZE_selector_register_file_signal), .ADDR_WIDTH($clog2(NUM_TASKS))) fifo_ready(
+  fifio #(.DATA_WIDTH(BITSIZE_selector_register_file), .ADDR_WIDTH($clog2(NUM_TASKS))) fifo_ready(
   .full        (),
   .empty       (fifo_empty_ready),
   .data_out    (fifo_data_out_ready),
@@ -677,9 +677,9 @@ simple_dual_port_ram_single_clock #(.BITSIZE_data(BITSIZE_data_in),.BITSIZE_addr
   .rst         (reset),
   .rd_en       (fifo_rd_en_ready),
   .wr_en       (fifo_wr_en_ready),  // when data is copied insert data of task ready on ready 
-  .data_in     (IN_Min_tag[BITSIZE_selector_register_file_signal-1:0]));    // data go into memory to say in which cell to write and here to say which task is now ready
+  .data_in     (IN_Min_tag[BITSIZE_selector_register_file-1:0]));    // data go into memory to say in which cell to write and here to say which task is now ready
 
-  fifio #(.DATA_WIDTH(BITSIZE_selector_register_file_signal), .ADDR_WIDTH($clog2(NUM_TASKS))) fifo_wait(
+  fifio #(.DATA_WIDTH(BITSIZE_selector_register_file), .ADDR_WIDTH($clog2(NUM_TASKS))) fifo_wait(
   .full (),  	         //used by arbiter
   .empty (fifo_wait_empty),         //used by arbiter
   .data_out (fifo_wait_data_out),
@@ -687,34 +687,34 @@ simple_dual_port_ram_single_clock #(.BITSIZE_data(BITSIZE_data_in),.BITSIZE_addr
   .rst (reset),
   .rd_en (IN_request_accepted),
   .wr_en (suspension),
-  .data_in (selector_register_file_signal));
+  .data_in (selector_register_file));
 
   //if fifo ready empty but data from memory ready then use data from memory
   assign selectorByMemory = fifo_empty_ready &amp;&amp; IN_M_DataRdy;
   //next selector can be old ones or new depending on state of fifo and signal arriving
-  assign next_selector_register_file_signal = (mux_switching_logic)? new_selector : old_selector;
+  assign next_selector_register_file = (mux_switching_logic)? new_selector : old_selector;
   //if signal to end or switch and there is at least one task that is ready or free then swith moreover if you are in S_2 (no free or ready and arrive a response in ready then switch
   assign mux_switching_logic= ((done_port_task || suspension) &amp;&amp; ((!fifo_empty_ready || selectorByMemory) || (!fifo_empty_free &amp;&amp; !task_finished))) || ((_present_state==S_2 || _present_state==S_4) &amp;&amp; (!fifo_empty_ready || selectorByMemory));  
   //new selector can be a old task suspended or a new ones
   assign new_selector = (mux_fifo_sel)? data_ready : fifo_data_out_free;
-  assign data_ready = (selectorByMemory) ? IN_Min_tag[BITSIZE_selector_register_file_signal-1:0] : fifo_data_out_ready;
+  assign data_ready = (selectorByMemory) ? IN_Min_tag[BITSIZE_selector_register_file-1:0] : fifo_data_out_ready;
   //if at least one task in ready and is true that arrive one signal or you are in S_2 (wait for fifo_ready to be not-empty) then use ready
   assign mux_fifo_sel = (done_port_task || suspension || _present_state==S_2 || _present_state==S_4) &amp;&amp; (!fifo_empty_ready || selectorByMemory);
   //if reset start task is 0 otherwise old selector
-  assign old_selector = (!reset)? {BITSIZE_selector_register_file_signal{1'b0}} : selector_register_file_signal;
+  assign old_selector = (!reset)? {BITSIZE_selector_register_file{1'b0}} : selector_register_file;
 
   assign fifo_rd_en_free = mux_switching_logic &amp;&amp; !mux_fifo_sel;
   assign fifo_wr_en_free = done_port_task &amp;&amp; (!fifo_empty_free || !fifo_empty_ready || selectorByMemory || task_finished);
   assign fifo_rd_en_ready = mux_fifo_sel &amp;&amp; !selectorByMemory;
   assign fifo_wr_en_ready = IN_M_DataRdy &amp;&amp; !(mux_fifo_sel &amp;&amp; selectorByMemory);
 
-  mem_scheduler #(.addr_mem_kern(BITSIZE_selector_register_file_signal), .addr_kern_mem(BITSIZE_selector_register_file_signal), .addr_mem_par(BITSIZE_selector_register_file_signal), .addr_par_mem(BITSIZE_selector_register_file_signal), .BITSIZE_data_in_kern_mem(SIZE_IN), .BITSIZE_data_in_par_mem(SIZE_IN), .BITSIZE_data_out_mem_kern(SIZE_IN), .BITSIZE_data_out_mem_par(SIZE_IN)) mem_scheduler (
+  mem_scheduler #(.addr_mem_kern(BITSIZE_selector_register_file), .addr_kern_mem(BITSIZE_selector_register_file), .addr_mem_par(BITSIZE_selector_register_file), .addr_par_mem(BITSIZE_selector_register_file), .BITSIZE_data_in_kern_mem(SIZE_IN), .BITSIZE_data_in_par_mem(SIZE_IN), .BITSIZE_data_out_mem_kern(SIZE_IN), .BITSIZE_data_out_mem_par(SIZE_IN)) mem_scheduler (
     .clock(clock),
     .reset(reset),
-    .addr_mem_kern(selector_register_file_signal),
-    .addr_kern_mem(selector_register_file_signal),
+    .addr_mem_kern(selector_register_file),
+    .addr_kern_mem(selector_register_file),
     .addr_mem_par(fifo_wait_data_out),
-    .addr_par_mem(IN_Min_tag[BITSIZE_selector_register_file_signal-1:0]),
+    .addr_par_mem(IN_Min_tag[BITSIZE_selector_register_file-1:0]),
     .we_kern_mem(suspension),
     .we_par_mem(IN_M_DataRdy),    //if ready 1 then write
     .data_in_kern_mem(data_in_kern_mem),
@@ -723,13 +723,13 @@ simple_dual_port_ram_single_clock #(.BITSIZE_data(BITSIZE_data_in),.BITSIZE_addr
     .data_out_mem_par(data_out_mem_par));
 
   assign data_in_kern_mem = {IN_Mout_tag_ram,Mout_Wdata_ram,Mout_data_ram_size,Mout_addr_ram,Mout_we_ram,Mout_oe_ram};
-  assign data_in_par_mem = {IN_Min_tag[BITSIZE_Mout_tag-1:BITSIZE_selector_register_file_signal+KERN_NUM], {(BITSIZE_selector_register_file_signal+KERN_NUM){1'b0}}, IN_M_Rdata_ram,{(BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram){1'b0}}};
+  assign data_in_par_mem = {IN_Min_tag[BITSIZE_Mout_tag-1:BITSIZE_selector_register_file+KERN_NUM], {(BITSIZE_selector_register_file+KERN_NUM){1'b0}}, IN_M_Rdata_ram,{(BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram){1'b0}}};
   assign OUT_Mout_oe_ram=(data_out_mem_par[BITSIZE_Mout_oe_ram-1] &amp;&amp; !fifo_wait_empty);
   assign OUT_Mout_we_ram=(data_out_mem_par[BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1] &amp;&amp; !fifo_wait_empty);
   assign OUT_Mout_addr_ram=data_out_mem_par[BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1:BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram];
   assign OUT_Mout_data_ram_size=data_out_mem_par[BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1:BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram];
   assign OUT_Mout_Wdata_ram=data_out_mem_par[BITSIZE_Mout_Wdata_ram + BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1:BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram];
-  assign OUT_Mout_tag_ram={data_out_mem_par[BITSIZE_Mout_tag + BITSIZE_Mout_Wdata_ram + BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1:ADDR_ACC + BITSIZE_selector_register_file_signal+ BITSIZE_Mout_Wdata_ram + BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram],KERN_NUM,fifo_wait_data_out};
+  assign OUT_Mout_tag_ram={data_out_mem_par[BITSIZE_Mout_tag + BITSIZE_Mout_Wdata_ram + BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1:ADDR_ACC + BITSIZE_selector_register_file+ BITSIZE_Mout_Wdata_ram + BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram],KERN_NUM,fifo_wait_data_out};
 
   assign M_Rdata_ram=data_out_mem_kern[BITSIZE_Mout_Wdata_ram + BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1:BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram];
   assign Min_tag=data_out_mem_kern[BITSIZE_Mout_tag + BITSIZE_Mout_Wdata_ram + BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1:BITSIZE_Mout_Wdata_ram + BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram];
@@ -823,9 +823,9 @@ simple_dual_port_ram_single_clock #(.BITSIZE_data(BITSIZE_data_in),.BITSIZE_addr
 
   always @(posedge clock) begin
     if (!reset) begin 
-      selector_register_file_signal &lt;= {BITSIZE_selector_register_file_signal{1'b0}};
+      selector_register_file &lt;= {BITSIZE_selector_register_file{1'b0}};
     end else begin 
-      selector_register_file_signal &lt;= next_selector_register_file_signal;
+      selector_register_file &lt;= next_selector_register_file;
     end
   end
 

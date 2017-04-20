@@ -56,6 +56,7 @@
 #include "liveness.hpp"
 #include "reg_binding_cs.hpp"
 #include "Parameter.hpp"
+#include "omp_functions.hpp"
 
 #include "structural_manager.hpp"
 #include "technology_manager.hpp"
@@ -79,7 +80,17 @@ reg_binding::~reg_binding()
 reg_bindingRef reg_binding::create_reg_binding(const hlsRef& HLS, const HLS_managerRef HLSMgr_)
 {
    if(HLS->Param->isOption(OPT_context_switch))
-       return reg_bindingRef(new reg_binding_cs(HLS, HLSMgr_));
+   {
+      auto omp_functions = GetPointer<OmpFunctions>(HLSMgr_->Rfuns);
+      bool found=false;
+      if(omp_functions->kernel_functions.find(HLS->functionId) != omp_functions->kernel_functions.end()) found=true;
+      if(omp_functions->parallelized_functions.find(HLS->functionId) != omp_functions->parallelized_functions.end()) found=true;
+      if(omp_functions->atomic_functions.find(HLS->functionId) != omp_functions->atomic_functions.end()) found=true;
+      if(found)
+         return reg_bindingRef(new reg_binding_cs(HLS, HLSMgr_));
+      else
+         return reg_bindingRef(new reg_binding(HLS, HLSMgr_));
+   }
    else
        return reg_bindingRef(new reg_binding(HLS, HLSMgr_));
 }

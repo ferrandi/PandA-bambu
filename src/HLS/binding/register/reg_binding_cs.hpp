@@ -61,7 +61,19 @@ public:
     /**
     * Add to the resulting registers file the clock and selector
     */
-    void add_to_SM(structural_objectRef clock_port, structural_objectRef reset_port, structural_objectRef selector_register_file_signal_port);
+    void add_to_SM(structural_objectRef clock_port, structural_objectRef reset_port);
+
+    /**
+     * @brief function kernel need to instantiate scheduler before connect selector port of register file
+     * @param selector_regFile_sign
+     */
+    void add_register_file_kernel(structural_objectRef selector_regFile_sign);
+
+protected:
+    /**
+     * @brief function inside kernel need to connect selector
+     */
+    void add_register_file_function();
 };
 
 #endif // REG_BINDING_CS_H

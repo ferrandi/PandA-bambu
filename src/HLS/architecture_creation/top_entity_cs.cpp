@@ -130,7 +130,7 @@ void top_entity_cs::add_context_switch_port_kernel()
     SM->add_connection(datapath_done_request, done_request_obj);
 
     structural_objectRef datapath_done_port = datapath_circuit->find_member(STR(DONE_PORT_NAME), port_o_K, datapath_circuit);
-    structural_objectRef done_port_sign=SM->add_sign(STR(DONE_REQUEST)+"signal", circuit, bool_type);
+    structural_objectRef done_port_sign=SM->add_sign(STR(DONE_REQUEST)+"_signal", circuit, bool_type);
     structural_objectRef controller_done_port = controller_circuit->find_member(STR(DONE_PORT_NAME), port_o_K, controller_circuit);
     SM->add_connection(controller_done_port, done_port_sign);
     SM->add_connection(done_port_sign, datapath_done_port);

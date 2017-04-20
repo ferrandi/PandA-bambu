@@ -54,24 +54,46 @@ reg_binding_cs::~reg_binding_cs()
 {
 }
 
-std::string reg_binding_cs::CalculateRegisterName(unsigned int i)
+std::string reg_binding_cs::CalculateRegisterName(unsigned int )
 {
-    std::string register_type_name;
-    auto omp_functions = GetPointer<OmpFunctions>(HLSMgr->Rfuns);
-    bool found=false;
-    if(omp_functions->kernel_functions.find(HLS->functionId) != omp_functions->kernel_functions.end()) found=true;
-    if(omp_functions->parallelized_functions.find(HLS->functionId) != omp_functions->parallelized_functions.end()) found=true;
-    if(omp_functions->atomic_functions.find(HLS->functionId) != omp_functions->atomic_functions.end()) found=true;
-    if(found)
-       register_type_name = "rams_dist";
-    else
-       register_type_name=reg_binding::CalculateRegisterName(i);
-    return register_type_name;
+   return "rams_dist";
 }
 
-void reg_binding_cs::add_to_SM(structural_objectRef clock_port, structural_objectRef reset_port, structural_objectRef selector_register_file_signal_port)
+void reg_binding_cs::add_to_SM(structural_objectRef clock_port, structural_objectRef reset_port)
 {
    reg_binding::add_to_SM(clock_port, reset_port);
+   auto omp_functions = GetPointer<OmpFunctions>(HLSMgr->Rfuns);
+   if(omp_functions->kernel_functions.find(HLS->functionId) != omp_functions->kernel_functions.end())
+   {
+      //selector connected when scheduler instantiated
+   }
+   else
+   {
+      add_register_file_function();
+   }
+}
+
+void reg_binding_cs::add_register_file_function()
+{
+   const structural_managerRef& SM = HLS->datapath;
+   const structural_objectRef& circuit = SM->get_circ();
+   structural_objectRef selector_register_file_datapath = circuit->find_member(SELECTOR_REGISTER_FILE,port_o_K,circuit);
+   for (unsigned int i = 0; i < get_used_regs(); i++)
+   {
+      generic_objRef regis = get(i);
+      std::string name = regis->get_string();
+      std::string register_type_name=CalculateRegisterName(i);
+      std::string library = HLS->HLS_T->get_technology_manager()->get_library(register_type_name);
+      structural_objectRef reg_mod = SM->add_module_from_technology_library(name, register_type_name, library, circuit, HLS->HLS_T->get_technology_manager());
+      this->specialise_reg(reg_mod, i);
+      structural_objectRef port_selector = reg_mod->find_member(SELECTOR_REGISTER_FILE, port_o_K, reg_mod);
+      SM->add_connection(selector_register_file_datapath, port_selector);
+      regis->set_structural_obj(reg_mod);
+   }
+}
+
+void reg_binding_cs::add_register_file_kernel(structural_objectRef selector_regFile_sign)
+{
    const structural_managerRef& SM = HLS->datapath;
    const structural_objectRef& circuit = SM->get_circ();
    for (unsigned int i = 0; i < get_used_regs(); i++)
@@ -83,7 +105,7 @@ void reg_binding_cs::add_to_SM(structural_objectRef clock_port, structural_objec
       structural_objectRef reg_mod = SM->add_module_from_technology_library(name, register_type_name, library, circuit, HLS->HLS_T->get_technology_manager());
       this->specialise_reg(reg_mod, i);
       structural_objectRef port_selector = reg_mod->find_member(SELECTOR_REGISTER_FILE, port_o_K, reg_mod);
-      SM->add_connection(selector_register_file_signal_port, port_selector);
+      SM->add_connection(selector_regFile_sign, port_selector);
       regis->set_structural_obj(reg_mod);
    }
 }

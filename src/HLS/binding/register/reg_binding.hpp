@@ -140,8 +140,8 @@ class reg_binding : public variable2obj< generic_objRef >
        /**
         * return the name of register to be used
         */
-      std::string CalculateRegisterName(unsigned int i);
- 
+      virtual std::string CalculateRegisterName(unsigned int i);
+
       /**
        * returns number of used register
        * @return the number of used register
@@ -187,7 +187,7 @@ class reg_binding : public variable2obj< generic_objRef >
       /**
        * Add the resulting registers to the structural description of the datapath
        */
-      void add_to_SM(structural_objectRef clock_port, structural_objectRef reset_port);
+      virtual void add_to_SM(structural_objectRef clock_port, structural_objectRef reset_port);
 
       /**
        * return bitsize
