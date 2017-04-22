@@ -132,6 +132,8 @@ fu_bindingRef fu_binding::create_fu_binding(const HLS_managerConstRef _HLSMgr, c
       bool found=false;
       if(omp_functions->kernel_functions.find(_function_id) != omp_functions->kernel_functions.end()) found=true;
       if(omp_functions->hierarchical_functions.find(_function_id) != omp_functions->hierarchical_functions.end()) found=true;
+      if(omp_functions->parallelized_functions.find(_function_id) != omp_functions->parallelized_functions.end()) found=true;
+      if(omp_functions->atomic_functions.find(_function_id) != omp_functions->atomic_functions.end()) found=true;
       if(found)
          return fu_bindingRef(new fu_binding_cs(_HLSMgr, _function_id, _parameters));
       else
