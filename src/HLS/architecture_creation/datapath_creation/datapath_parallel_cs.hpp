@@ -84,6 +84,9 @@ protected:
    void manage_memory_ports_parallel_chained_parallel(const structural_managerRef SM, const std::set<structural_objectRef> &memory_modules, const structural_objectRef circuit);
 
 
+   void connect_module_kernel(structural_objectRef kernel);
+
+   void add_parameter_ports();
 public:
    /**
     * Constructor.

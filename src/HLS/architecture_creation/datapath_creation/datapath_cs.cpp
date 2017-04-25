@@ -83,9 +83,8 @@ void datapath_cs::add_ports()
        structural_type_descriptorRef port_type = structural_type_descriptorRef(new structural_type_descriptor("bool", num_slots));
        structural_type_descriptorRef bool_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 0));
        SM->add_port(STR(SELECTOR_REGISTER_FILE), port_o::OUT, circuit, port_type);
-       SM->add_port(STR(REQUEST_ACCEPTED), port_o::IN, circuit, bool_type);
-       SM->add_port(STR(TASK_FINISHED), port_o::IN, circuit, bool_type);
-       SM->add_port(STR(DONE_PORT_NAME), port_o::IN, circuit, bool_type);
+       SM->add_port(STR(TASKS_POOL_END), port_o::IN, circuit, bool_type);
+       SM->add_port(STR(DONE_SCHEDULER), port_o::IN, circuit, bool_type);
        SM->add_port(STR(DONE_REQUEST), port_o::OUT, circuit, bool_type);
     }
 }

@@ -572,13 +572,13 @@ simple_dual_port_ram_single_clock #(.BITSIZE_data(BITSIZE_data_in),.BITSIZE_addr
           <port_o id="Mout_tag_ram" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
-          <port_o id="done_port" dir="IN">
+          <port_o id="done_scheduler" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="suspension" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
-          <port_o id="task_finished" dir="IN">
+          <port_o id="task_pool_end" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="OUT_Mout_oe_ram" dir="OUT" is_memory="1" is_master="1">
@@ -617,7 +617,7 @@ simple_dual_port_ram_single_clock #(.BITSIZE_data(BITSIZE_data_in),.BITSIZE_addr
           <port_o id="selector_register_file" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="scheduler IN_M_Rdata_ram IN_M_DataRdy IN_Min_tag Mout_oe_ram Mout_we_ram Mout_addr_ram Mout_data_ram_size Mout_Wdata_ram Mout_tag_ram done_port suspension task_finished OUT_Mout_oe_ram OUT_Mout_we_ram OUT_Mout_addr_ram OUT_Mout_data_ram_size OUT_Mout_Wdata_ram OUT_Mout_tag_ramMin_tag M_Rdata_ram M_DataRdy request_accepted done_request selector_register_file NUM_TASKS KERN_NUM ADDR_ACC"
+          <NP_functionality LIBRARY="scheduler IN_M_Rdata_ram IN_M_DataRdy IN_Min_tag Mout_oe_ram Mout_we_ram Mout_addr_ram Mout_data_ram_size Mout_Wdata_ram Mout_tag_ram done_scheduler suspension task_pool_end OUT_Mout_oe_ram OUT_Mout_we_ram OUT_Mout_addr_ram OUT_Mout_data_ram_size OUT_Mout_Wdata_ram OUT_Mout_tag_ramMin_tag M_Rdata_ram M_DataRdy request_accepted done_request selector_register_file NUM_TASKS KERN_NUM ADDR_ACC"
           IP_COMPONENT="fifio, fifio_free, mem_scheduler" VERILOG_PROVIDED="
   parameter SIZE_IN=BITSIZE_Mout_oe_ram+BITSIZE_Mout_we_ram+BITSIZE_Mout_addr_ram+BITSIZE_Mout_data_ram_size+BITSIZE_Mout_Wdata_ram+BITSIZE_Mout_tag;
 
@@ -694,17 +694,17 @@ simple_dual_port_ram_single_clock #(.BITSIZE_data(BITSIZE_data_in),.BITSIZE_addr
   //next selector can be old ones or new depending on state of fifo and signal arriving
   assign next_selector_register_file = (mux_switching_logic)? new_selector : old_selector;
   //if signal to end or switch and there is at least one task that is ready or free then swith moreover if you are in S_2 (no free or ready and arrive a response in ready then switch
-  assign mux_switching_logic= ((done_port || suspension) &amp;&amp; ((!fifo_empty_ready || selectorByMemory) || (!fifo_empty_free &amp;&amp; !task_finished))) || ((_present_state==S_2 || _present_state==S_4) &amp;&amp; (!fifo_empty_ready || selectorByMemory));
+  assign mux_switching_logic= ((done_scheduler || suspension) &amp;&amp; ((!fifo_empty_ready || selectorByMemory) || (!fifo_empty_free &amp;&amp; !task_pool_end))) || ((_present_state==S_2 || _present_state==S_4) &amp;&amp; (!fifo_empty_ready || selectorByMemory));
   //new selector can be a old task suspended or a new ones
   assign new_selector = (mux_fifo_sel)? data_ready : fifo_data_out_free;
   assign data_ready = (selectorByMemory) ? IN_Min_tag[BITSIZE_selector_register_file-1:0] : fifo_data_out_ready;
   //if at least one task in ready and is true that arrive one signal or you are in S_2 (wait for fifo_ready to be not-empty) then use ready
-  assign mux_fifo_sel = (done_port || suspension || _present_state==S_2 || _present_state==S_4) &amp;&amp; (!fifo_empty_ready || selectorByMemory);
+  assign mux_fifo_sel = (done_scheduler || suspension || _present_state==S_2 || _present_state==S_4) &amp;&amp; (!fifo_empty_ready || selectorByMemory);
   //if reset start task is 0 otherwise old selector
   assign old_selector = (!reset)? {BITSIZE_selector_register_file{1'b0}} : selector_register_file;
 
   assign fifo_rd_en_free = mux_switching_logic &amp;&amp; !mux_fifo_sel;
-  assign fifo_wr_en_free = done_port &amp;&amp; (!fifo_empty_free || !fifo_empty_ready || selectorByMemory || task_finished);
+  assign fifo_wr_en_free = done_scheduler &amp;&amp; (!fifo_empty_free || !fifo_empty_ready || selectorByMemory || task_pool_end);
   assign fifo_rd_en_ready = mux_fifo_sel &amp;&amp; !selectorByMemory;
   assign fifo_wr_en_ready = IN_M_DataRdy &amp;&amp; !(mux_fifo_sel &amp;&amp; selectorByMemory);
 
@@ -750,7 +750,7 @@ simple_dual_port_ram_single_clock #(.BITSIZE_data(BITSIZE_data_in),.BITSIZE_addr
 
       S_0: begin 
         // initialization of fifo 
-         if(!reset || task_finished) begin
+         if(!reset || task_pool_end) begin
             _next_state = S_0;
          end else begin
            _next_state = S_1;
@@ -758,8 +758,8 @@ simple_dual_port_ram_single_clock #(.BITSIZE_data(BITSIZE_data_in),.BITSIZE_addr
       end
 
       S_1: begin
-        if (task_finished) begin 
-          if ((done_port || suspension) &amp;&amp; (fifo_empty_ready &amp;&amp; !IN_M_DataRdy)) begin //if fifo ready empty and not ready
+        if (task_pool_end) begin
+          if ((done_scheduler || suspension) &amp;&amp; (fifo_empty_ready &amp;&amp; !IN_M_DataRdy)) begin //if fifo ready empty and not ready
             _next_state = S_4;
           end else begin
             _next_state = S_3;
@@ -782,7 +782,7 @@ simple_dual_port_ram_single_clock #(.BITSIZE_data(BITSIZE_data_in),.BITSIZE_addr
       end
 
       S_3: begin //wait only for Ready
-        if ((done_port || suspension) &amp;&amp; (fifo_empty_ready &amp;&amp; !IN_M_DataRdy)) begin
+        if ((done_scheduler || suspension) &amp;&amp; (fifo_empty_ready &amp;&amp; !IN_M_DataRdy)) begin
           _next_state = S_4;
         end else begin
           _next_state = S_3;
@@ -830,7 +830,7 @@ simple_dual_port_ram_single_clock #(.BITSIZE_data(BITSIZE_data_in),.BITSIZE_addr
   end
 
   assign M_DataRdy_next=fifo_rd_en_ready || (mux_fifo_sel &amp;&amp; selectorByMemory);
-  assign done_request_next= fifo_rd_en_free || (done_port &amp; fifo_empty_free &amp; fifo_empty_ready &amp; !selectorByMemory);"/>
+  assign done_request_next= fifo_rd_en_free || (done_scheduler &amp; fifo_empty_free &amp; fifo_empty_ready &amp; !selectorByMemory);"/>
         </component_o>
       </circuit>
     </cell>

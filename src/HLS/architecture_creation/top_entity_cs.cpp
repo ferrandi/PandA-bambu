@@ -121,17 +121,15 @@ void top_entity_cs::add_context_switch_port_kernel()
     SM->add_connection(controller_selector, selector_obj);
     PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "\tSelector signal added!");
 
-    structural_objectRef task_finished_obj = SM->add_port(STR(TASK_FINISHED), port_o::IN, circuit, bool_type);
-    structural_objectRef datapath_task_finished = datapath_circuit->find_member(STR(TASK_FINISHED), port_o_K, datapath_circuit);
-    SM->add_connection(datapath_task_finished, task_finished_obj);
+    structural_objectRef task_pool_end_obj = SM->add_port(STR(TASKS_POOL_END), port_o::IN, circuit, bool_type);
+    structural_objectRef datapath_task_pool_end = datapath_circuit->find_member(STR(TASKS_POOL_END), port_o_K, datapath_circuit);
+    SM->add_connection(datapath_task_pool_end, task_pool_end_obj);
 
     structural_objectRef done_request_obj = SM->add_port(STR(DONE_REQUEST), port_o::OUT, circuit, bool_type);
     structural_objectRef datapath_done_request = datapath_circuit->find_member(STR(DONE_REQUEST), port_o_K, datapath_circuit);
     SM->add_connection(datapath_done_request, done_request_obj);
 
-    structural_objectRef datapath_done_port = datapath_circuit->find_member(STR(DONE_PORT_NAME), port_o_K, datapath_circuit);
-    structural_objectRef done_port_sign=SM->add_sign(STR(DONE_REQUEST)+"_signal", circuit, bool_type);
-    structural_objectRef controller_done_port = controller_circuit->find_member(STR(DONE_PORT_NAME), port_o_K, controller_circuit);
-    SM->add_connection(controller_done_port, done_port_sign);
-    SM->add_connection(done_port_sign, datapath_done_port);
+    structural_objectRef datapath_done_port = datapath_circuit->find_member(STR(DONE_SCHEDULER), port_o_K, datapath_circuit);
+    structural_objectRef done_signal_in = circuit->find_member("done_delayed_REG_signal_in", signal_o_K, circuit);
+    SM->add_connection(done_signal_in, datapath_done_port);
 }

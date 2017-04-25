@@ -102,26 +102,19 @@ void fu_binding_cs::instantiate_component_kernel(const hlsRef HLS, structural_ob
    SM->add_connection(reset_sign, reset_scheduler);
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, " - Added reset sche");
 
-   structural_objectRef done_scheduler = scheduler_mod->find_member(DONE_PORT_NAME,port_o_K,scheduler_mod);
-   structural_objectRef done_datapath = circuit->find_member(DONE_PORT_NAME,port_o_K,circuit);
+   structural_objectRef done_scheduler = scheduler_mod->find_member(DONE_SCHEDULER,port_o_K,scheduler_mod);
+   structural_objectRef done_datapath = circuit->find_member(DONE_SCHEDULER,port_o_K,circuit);
    structural_objectRef done_sign=SM->add_sign("done_scheduler_signal", circuit, bool_type);
    SM->add_connection(done_sign, done_datapath);
    SM->add_connection(done_sign, done_scheduler);
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, " - Added done sche");
 
-   structural_objectRef request_accepted_scheduler = scheduler_mod->find_member(STR(REQUEST_ACCEPTED),port_o_K,scheduler_mod);
-   structural_objectRef request_accepted_datapath = circuit->find_member(STR(REQUEST_ACCEPTED),port_o_K,circuit);
-   structural_objectRef request_accepted_sign=SM->add_sign(STR(REQUEST_ACCEPTED)+"_signal", circuit, bool_type);
-   SM->add_connection(request_accepted_sign, request_accepted_datapath);
-   SM->add_connection(request_accepted_sign, request_accepted_scheduler);
-   PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, " - Added request_accepted sche");
-
-   structural_objectRef task_finished_scheduler = scheduler_mod->find_member(STR(TASK_FINISHED),port_o_K,scheduler_mod);
-   structural_objectRef task_finished_datapath = circuit->find_member(STR(TASK_FINISHED),port_o_K,circuit);
-   structural_objectRef task_finished_sign=SM->add_sign(STR(TASK_FINISHED)+"_signal", circuit, bool_type);
-   SM->add_connection(task_finished_sign, task_finished_datapath);
-   SM->add_connection(task_finished_sign, task_finished_scheduler);
-   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - Added task_finished sche");
+   structural_objectRef task_pool_end_scheduler = scheduler_mod->find_member(STR(TASKS_POOL_END),port_o_K,scheduler_mod);
+   structural_objectRef task_pool_end_datapath = circuit->find_member(STR(TASKS_POOL_END),port_o_K,circuit);
+   structural_objectRef task_pool_end_sign=SM->add_sign(STR(TASKS_POOL_END)+"_signal", circuit, bool_type);
+   SM->add_connection(task_pool_end_sign, task_pool_end_datapath);
+   SM->add_connection(task_pool_end_sign, task_pool_end_scheduler);
+   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - Added task_pool_end sche");
 
    structural_objectRef done_request_scheduler = scheduler_mod->find_member(STR(DONE_REQUEST),port_o_K,scheduler_mod);
    structural_objectRef done_request_datapath = circuit->find_member(STR(DONE_REQUEST),port_o_K,circuit);
@@ -203,7 +196,7 @@ void fu_binding_cs::connectOutOr(const HLS_managerRef HLSMgr, const hlsRef HLS, 
       std::cout<<"point 0"<<std::endl;
       SM->add_connection(port_out_or, suspension_sign_out);
       std::cout<<"point 1"<<std::endl;
-      SM->add_connection(suspension_sign_out, suspension_scheduler);
+      //SM->add_connection(suspension_sign_out, suspension_scheduler);
    }
    else
    {
@@ -235,7 +228,7 @@ void fu_binding_cs::manage_memory_ports_parallel_chained_kernel(const structural
    structural_objectRef cir_port;
    structural_objectRef sche_port;
    structural_objectRef scheduler = circuit->find_member("scheduler_kernel", component_o_K, circuit);
-
+   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - Connecting memory_port of scheduler");
    for(unsigned int j = 0; j < GetPointer<module>(scheduler)->get_in_port_size(); j++) //connect input datapath memory_port with scheduler
    {
       structural_objectRef port_i = GetPointer<module>(scheduler)->get_in_port(j);
@@ -284,7 +277,7 @@ void fu_binding_cs::manage_memory_ports_parallel_chained_kernel(const structural
          if(GetPointer<port_o>(port_i)->get_is_memory() && (!GetPointer<port_o>(port_i)->get_is_global()) && (!GetPointer<port_o>(port_i)->get_is_extern()))
          {
             std::string port_name = GetPointer<port_o>(port_i)->get_id();
-            sche_port = scheduler->find_member(port_name, port_i->get_kind(), circuit);
+            sche_port = scheduler->find_member(port_name, port_i->get_kind(), scheduler);
             THROW_ASSERT(!sche_port || GetPointer<port_o>(sche_port), "should be a port or null");
             if(!sche_port)
             {
@@ -325,6 +318,7 @@ void fu_binding_cs::manage_memory_ports_parallel_chained_hierarchical(const stru
 {
    std::map<structural_objectRef, std::set<structural_objectRef> > primary_outs;
    structural_objectRef cir_port;
+   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - Start merging, splitting for hierarchical");
    for (std::set<structural_objectRef>::iterator i = memory_modules.begin(); i != memory_modules.end(); i++)
    {
       for(unsigned int j = 0; j < GetPointer<module>(*i)->get_in_port_size(); j++)

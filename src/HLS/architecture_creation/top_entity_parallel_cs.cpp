@@ -213,11 +213,11 @@ void top_entity_parallel_cs::connect_port_parallel(const structural_objectRef ci
     unsigned int num_slots=static_cast<unsigned int>(log2(HLS->Param->getOption<unsigned int>(OPT_context_switch)));
     structural_type_descriptorRef data_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 32));
 
-    structural_objectRef controller_task_finished = controller_circuit->find_member(STR(TASK_FINISHED), port_o_K, controller_circuit);
-    structural_objectRef datapath_task_finished = datapath_circuit->find_member(STR(TASK_FINISHED), port_o_K, datapath_circuit);
-    structural_objectRef task_finished_sign=SM->add_sign(STR(TASK_FINISHED)+"_signal", circuit, bool_type);
-    SM->add_connection(datapath_task_finished, task_finished_sign);
-    SM->add_connection(task_finished_sign, controller_task_finished);
+    structural_objectRef controller_task_pool_end = controller_circuit->find_member(STR(TASKS_POOL_END), port_o_K, controller_circuit);
+    structural_objectRef datapath_task_pool_end = datapath_circuit->find_member(STR(TASKS_POOL_END), port_o_K, datapath_circuit);
+    structural_objectRef task_pool_end_sign=SM->add_sign(STR(TASKS_POOL_END)+"_signal", circuit, bool_type);
+    SM->add_connection(datapath_task_pool_end, task_pool_end_sign);
+    SM->add_connection(task_pool_end_sign, controller_task_pool_end);
 
     structural_objectRef datapath_done_request = datapath_circuit->find_member(STR(DONE_REQUEST)+"accelerator", port_vector_o_K, datapath_circuit);
     structural_objectRef controller_done_request = controller_circuit->find_member(STR(DONE_REQUEST)+"accelerator", port_vector_o_K, datapath_circuit);
