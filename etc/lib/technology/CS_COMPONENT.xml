@@ -949,10 +949,10 @@ simple_dual_port_ram_single_clock #(.BITSIZE_data(BITSIZE_data_in),.BITSIZE_addr
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <port_o id="M_Rdata_ram" dir="IN" is_memory="1" is_global="1" is_extern="1" is_data_bus="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <structural_type_descriptor type="VECTOR_BOOL" size="1"/>
           </port_o>
           <port_o id="Min_tag" dir="IN" is_memory="1" is_global="1" is_extern="1" is_tag_bus="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <structural_type_descriptor type="VECTOR_BOOL" size="1"/>
           </port_o>
           <port_o id="M_DataRdy" dir="IN" is_memory="1" is_global="1" is_extern="1">
             <structural_type_descriptor type="BOOL" size="1"/>
@@ -967,16 +967,16 @@ simple_dual_port_ram_single_clock #(.BITSIZE_data(BITSIZE_data_in),.BITSIZE_addr
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="Mout_addr_ram" dir="OUT" is_memory="1" is_master="1" is_addr_bus="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <structural_type_descriptor type="VECTOR_BOOL" size="1"/>
           </port_o>
           <port_o id="Mout_data_ram_size" dir="OUT" is_memory="1" is_master="1" is_size_bus="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <structural_type_descriptor type="VECTOR_BOOL" size="1"/>
           </port_o>
           <port_o id="Mout_Wdata_ram" dir="OUT" is_memory="1" is_master="1" is_data_bus="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <structural_type_descriptor type="VECTOR_BOOL" size="1"/>
           </port_o>
           <port_o id="Mout_tag_ram" dir="OUT" is_memory="1" is_master="1" is_tag_bus="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <structural_type_descriptor type="VECTOR_BOOL" size="1"/>
           </port_o>
           <NP_functionality LIBRARY="mem_ctrl_kernel in1 in2 in3 in4 out1 M_Rdata_ram Min_tag M_DataRdy Mout_oe_ram Mout_we_ram Mout_addr_ram Mout_data_ram_size Mout_Wdata_ram Mout_tag_ram TAG_MEM_REQ" VERILOG_PROVIDED="
   assign done_port=((Min_tag==TAG_MEM_REQ) &amp;&amp; M_DataRdy[0]);  //if the tag is equal and ready=1 then its the right data
@@ -1363,66 +1363,66 @@ simple_dual_port_ram_single_clock #(.BITSIZE_data(BITSIZE_data_in),.BITSIZE_addr
           <port_o id="reset" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
-          <port_o id="IN_M_Rdata_ram" dir="IN" is_memory="1" is_global="1" is_extern="1" is_data_bus="1">
+          <port_vector_o id="IN_M_Rdata_ram" dir="IN" is_memory="1" is_global="1" is_extern="1" is_data_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-          </port_o>
-          <port_o id="IN_Min_tag" dir="IN" is_memory="1" is_global="1" is_extern="1" is_tag_bus="1">
+          </port_vector_o>
+          <port_vector_o id="IN_Min_tag" dir="IN" is_memory="1" is_global="1" is_extern="1" is_tag_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-          </port_o>
-          <port_o id="IN_M_DataRdy" dir="IN" is_memory="1" is_global="1" is_extern="1">
+          </port_vector_o>
+          <port_vector_o id="IN_M_DataRdy" dir="IN" is_memory="1" is_global="1" is_extern="1">
             <structural_type_descriptor type="BOOL" size="1"/>
-          </port_o>
-          <port_o id="IN_request_accepted" dir="IN" is_memory="1" is_global="1" is_extern="1">
+          </port_vector_o>
+          <port_vector_o id="IN_request_accepted" dir="IN" is_memory="1" is_global="1" is_extern="1">
             <structural_type_descriptor type="BOOL" size="1"/>
-          </port_o>
-          <port_o id="Mout_oe_ram" dir="IN">
+          </port_vector_o>
+          <port_vector_o id="Mout_oe_ram" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
-          </port_o>
-          <port_o id="Mout_we_ram" dir="IN">
+          </port_vector_o>
+          <port_vector_o id="Mout_we_ram" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
-          </port_o>
-          <port_o id="Mout_addr_ram" dir="IN">
+          </port_vector_o>
+          <port_vector_o id="Mout_addr_ram" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-          </port_o>
-          <port_o id="Mout_data_ram_size" dir="IN">
+          </port_vector_o>
+          <port_vector_o id="Mout_data_ram_size" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-          </port_o>
-          <port_o id="Mout_Wdata_ram" dir="IN">
+          </port_vector_o>
+          <port_vector_o id="Mout_Wdata_ram" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-          </port_o>
-          <port_o id="Mout_tag_ram" dir="IN">
+          </port_vector_o>
+          <port_vector_o id="Mout_tag_ram" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-          </port_o>
-          <port_o id="OUT_Mout_oe_ram" dir="OUT" is_memory="1" is_master="1">
+          </port_vector_o>
+          <port_vector_o id="OUT_Mout_oe_ram" dir="OUT" is_memory="1" is_master="1">
             <structural_type_descriptor type="BOOL" size="1"/>
-          </port_o>
-          <port_o id="OUT_Mout_we_ram" dir="OUT" is_memory="1" is_master="1">
+          </port_vector_o>
+          <port_vector_o id="OUT_Mout_we_ram" dir="OUT" is_memory="1" is_master="1">
             <structural_type_descriptor type="BOOL" size="1"/>
-          </port_o>
-          <port_o id="OUT_Mout_addr_ram" dir="OUT" is_memory="1" is_master="1" is_addr_bus="1">
+          </port_vector_o>
+          <port_vector_o id="OUT_Mout_addr_ram" dir="OUT" is_memory="1" is_master="1" is_addr_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-          </port_o>
-          <port_o id="OUT_Mout_data_ram_size" dir="OUT" is_memory="1" is_master="1" is_size_bus="1">
+          </port_vector_o>
+          <port_vector_o id="OUT_Mout_data_ram_size" dir="OUT" is_memory="1" is_master="1" is_size_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-          </port_o>
-          <port_o id="OUT_Mout_Wdata_ram" dir="OUT" is_memory="1" is_master="1" is_data_bus="1">
+          </port_vector_o>
+          <port_vector_o id="OUT_Mout_Wdata_ram" dir="OUT" is_memory="1" is_master="1" is_data_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-          </port_o>
-          <port_o id="OUT_Mout_tag_ram" dir="OUT" is_memory="1" is_master="1" is_tag_bus="1">
+          </port_vector_o>
+          <port_vector_o id="OUT_Mout_tag_ram" dir="OUT" is_memory="1" is_master="1" is_tag_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-          </port_o>
-          <port_o id="M_Rdata_ram" dir="OUT">
+          </port_vector_o>
+          <port_vector_o id="M_Rdata_ram" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-          </port_o>
-          <port_o id="Min_tag" dir="OUT">
+          </port_vector_o>
+          <port_vector_o id="Min_tag" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-          </port_o>
-          <port_o id="M_DataRdy" dir="OUT">
+          </port_vector_o>
+          <port_vector_o id="M_DataRdy" dir="OUT">
             <structural_type_descriptor type="INT" size="1"/>
-          </port_o>
-          <port_o id="request_accepted" dir="OUT">
+          </port_vector_o>
+          <port_vector_o id="request_accepted" dir="OUT">
             <structural_type_descriptor type="BOOL" size="1"/>
-          </port_o>
+          </port_vector_o>
           <NP_functionality LIBRARY="memory_ctrl_parallel IN_M_Rdata_ram IN_Min_tag IN_M_DataRdy Mout_oe_ram Mout_we_ram Mout_addr_ram Mout_data_ram_size Mout_Wdata_ram Mout_tag_ram OUT_Mout_oe_ram OUT_Mout_we_ram OUT_Mout_addr_ram OUT_Mout_data_ram_size OUT_Mout_Wdata_ram OUT_Mout_tag_ram M_Rdata_ram Min_tag M_DataRdy"
           IP_COMPONENT="PT_RR_FU, mux_pw_2" VERILOG_PROVIDED="
           //In order to be generated correctly NUM_CHANNEL&lt;=NUM_ACC and both of them must be a power of 2

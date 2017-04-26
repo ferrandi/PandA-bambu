@@ -91,15 +91,13 @@ void fu_binding_cs::instantiate_component_kernel(const hlsRef HLS, structural_ob
    //suspension connected when or_port instantiated
 
    structural_objectRef clock_scheduler = scheduler_mod->find_member(CLOCK_PORT_NAME,port_o_K,scheduler_mod);
-   structural_objectRef clock_sign=SM->add_sign("clock_scheduler_signal", circuit, bool_type);
-   SM->add_connection(clock_sign, clock_port);
-   SM->add_connection(clock_sign, clock_scheduler);
+   structural_objectRef clock_datapath = circuit->find_member(CLOCK_PORT_NAME,port_o_K,circuit);
+   SM->add_connection(clock_datapath, clock_scheduler);
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, " - Added clock sche");
 
    structural_objectRef reset_scheduler = scheduler_mod->find_member(RESET_PORT_NAME,port_o_K,scheduler_mod);
-   structural_objectRef reset_sign=SM->add_sign("reset_scheduler_signal", circuit, bool_type);
-   SM->add_connection(reset_sign, reset_port);
-   SM->add_connection(reset_sign, reset_scheduler);
+   structural_objectRef reset_datapath = circuit->find_member(RESET_PORT_NAME,port_o_K,circuit);
+   SM->add_connection(reset_datapath, reset_scheduler);
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, " - Added reset sche");
 
    structural_objectRef done_scheduler = scheduler_mod->find_member(DONE_SCHEDULER,port_o_K,scheduler_mod);
@@ -140,7 +138,7 @@ void fu_binding_cs::instantiate_suspension_component(const HLS_managerRef HLSMgr
    for(i=0;i<n_elements;i++)
    {
       structural_objectRef curr_gate = GetPointer<module>(circuit)->get_internal_object(i);
-      if(curr_gate->find_member(STR(SUSPENSION), port_o_K, curr_gate)!=NULL)
+      if(curr_gate->find_member(STR(SUSPENSION), port_o_K, curr_gate)!=NULL && curr_gate->get_id()!="scheduler_kernel")
          ++num_suspension;
    }
    if(num_suspension>0)
@@ -150,13 +148,16 @@ void fu_binding_cs::instantiate_suspension_component(const HLS_managerRef HLSMgr
       for(i=0;i<n_elements;i++)
       {
          structural_objectRef curr_gate = GetPointer<module>(circuit)->get_internal_object(i);
-         structural_objectRef port_suspension_module = curr_gate->find_member(STR(SUSPENSION), port_o_K, curr_gate);
-         if(port_suspension_module!=NULL)
+         if(curr_gate->get_id()!="scheduler_kernel")
          {
-            structural_objectRef suspension_sign=SM->add_sign(STR(SUSPENSION)+"_signal_"+STR(i), circuit, bool_type);
-            SM->add_connection(port_suspension_module, suspension_sign);
-            SM->add_connection(suspension_sign, GetPointer<port_o>(port_in_or)->get_port(num_signal_or+2));
-            ++num_signal_or;
+            structural_objectRef port_suspension_module = curr_gate->find_member(STR(SUSPENSION), port_o_K, curr_gate);
+            if(port_suspension_module!=NULL)
+            {
+               structural_objectRef suspension_sign=SM->add_sign(STR(SUSPENSION)+"_signal_"+STR(i), circuit, bool_type);
+               SM->add_connection(port_suspension_module, suspension_sign);
+               SM->add_connection(suspension_sign, GetPointer<port_o>(port_in_or)->get_port(num_signal_or+2));
+               ++num_signal_or;
+            }
          }
       }
    }
@@ -193,10 +194,8 @@ void fu_binding_cs::connectOutOr(const HLS_managerRef HLSMgr, const hlsRef HLS, 
       structural_type_descriptorRef bool_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 0));
       structural_objectRef suspension_scheduler = scheduler->find_member(STR(SUSPENSION),port_o_K,scheduler);
       structural_objectRef suspension_sign_out=SM->add_sign(STR(SUSPENSION)+"_signal", circuit, bool_type);
-      std::cout<<"point 0"<<std::endl;
       SM->add_connection(port_out_or, suspension_sign_out);
-      std::cout<<"point 1"<<std::endl;
-      //SM->add_connection(suspension_sign_out, suspension_scheduler);
+      SM->add_connection(suspension_sign_out, suspension_scheduler);
    }
    else
    {

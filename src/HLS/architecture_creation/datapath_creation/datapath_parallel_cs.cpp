@@ -52,13 +52,15 @@
 #include "conn_binding.hpp"
 
 datapath_parallel_cs::datapath_parallel_cs(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type) :
-   HLSFunctionStep(_parameters, _HLSMgr, _funId, _design_flow_manager, _hls_flow_step_type)
+   classic_datapath(_parameters, _HLSMgr, _funId, _design_flow_manager, _hls_flow_step_type)
 {
-   debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
+    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }
+
+//HLSFunctionStep(_parameters, _HLSMgr, _funId, _design_flow_manager, _hls_flow_step_type)
+
 datapath_parallel_cs::~datapath_parallel_cs()
 {
-
 }
 
 const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > datapath_parallel_cs::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
@@ -68,7 +70,7 @@ const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
    {
       case DEPENDENCE_RELATIONSHIP:
          {
-            ret.insert(std::make_tuple(HLSFlowStep_Type::OMP_BODY_LOOP_SYNTHESIS_FLOW, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::TOP_FUNCTION));   //to check
+            ret.insert(std::make_tuple(HLSFlowStep_Type::OMP_BODY_LOOP_SYNTHESIS_FLOW, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::CALLED_FUNCTIONS));
             break;
          }
       case INVALIDATION_RELATIONSHIP:
@@ -87,27 +89,24 @@ const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
 
 DesignFlowStep_Status datapath_parallel_cs::InternalExec()
 {
-   /// Test on previuos steps. They checks if schedule and connection binding have been performed. If they didn't,
-   /// circuit cannot be created.
-   THROW_ASSERT(HLS->Rfu, "Functional units not allocated");
-   THROW_ASSERT(HLS->Rreg, "Register allocation not performed");
-   THROW_ASSERT(HLS->Rconn, "Connection allocation not performed");
-   /// Test on memory allocation
-   THROW_ASSERT(HLSMgr->Rmem, "Memory allocation not performed");
-
+   std::cout<<"Point 0"<<std::endl;
    /// main circuit type
    const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(funId);
    structural_type_descriptorRef module_type = structural_type_descriptorRef(new structural_type_descriptor("datapath_"+FB->CGetBehavioralHelper()->get_function_name()));
 
+   std::cout<<"Point 1"<<std::endl;
    /// top circuit creation
    HLS->datapath = structural_managerRef(new structural_manager(HLS->Param));
 
+   std::cout<<"Point 11"<<std::endl;
    HLS->datapath->set_top_info("Datapath_i", module_type);
+   std::cout<<"Point 12"<<std::endl;
    const structural_objectRef datapath_cir = HLS->datapath->get_circ();
 
    // Now the top circuit is created, just as an empty box. <circuit> is a reference to the structural object that
    // will contain all the circuit components
 
+   std::cout<<"Point 2"<<std::endl;
    datapath_cir->set_black_box(false);
 
    ///Set some descriptions and legal stuff
@@ -121,11 +120,12 @@ DesignFlowStep_Status datapath_parallel_cs::InternalExec()
    structural_objectRef clock, reset;
    add_clock_reset(clock, reset);
 
-   instantiate_component_parallel(clock, reset);
-
    /// add all input ports
    INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "---Adding ports for primary inputs and outputs");
    add_ports();
+
+   std::cout<<"Point 3"<<std::endl;
+   instantiate_component_parallel(clock, reset);
 
    std::set<structural_objectRef> memory_modules;
    const structural_managerRef& SM = this->HLS->datapath;
@@ -137,7 +137,7 @@ DesignFlowStep_Status datapath_parallel_cs::InternalExec()
       std::string kernel_name = "kernel_"+STR(i);
       structural_objectRef kernel_mod = SM->add_module_from_technology_library(kernel_name, kernel_model, kernel_library, circuit, HLS->HLS_T->get_technology_manager());
       memory_modules.insert(kernel_mod);
-      connect_module_kernel(kernel_mod);
+      connect_module_kernel(kernel_mod,i);
    }
    manage_memory_ports_parallel_chained_parallel(SM, memory_modules, datapath_cir);
 
@@ -146,6 +146,7 @@ DesignFlowStep_Status datapath_parallel_cs::InternalExec()
 
 void datapath_parallel_cs::add_ports()
 {
+    classic_datapath::add_ports();      //add standard port
     const structural_managerRef& SM = this->HLS->datapath;
     const structural_objectRef circuit = SM->get_circ();
     unsigned int num_slots=static_cast<unsigned int>(log2(HLS->Param->getOption<unsigned int>(OPT_context_switch)));
@@ -157,120 +158,59 @@ void datapath_parallel_cs::add_ports()
     SM->add_port(STR(TASKS_POOL_END), port_o::IN, circuit, bool_type);
     structural_type_descriptorRef request_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 32));
     SM->add_port("request", port_o::IN, circuit, request_type);
-    add_parameter_ports();
 }
 
-void datapath_parallel_cs::add_parameter_ports()
+void datapath_parallel_cs::connect_module_kernel(structural_objectRef kernel_mod, unsigned int num_kernel)
 {
-   /*bool need_start_done = false;
    const structural_managerRef SM = this->HLS->datapath;
    const structural_objectRef circuit = SM->get_circ();
    const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(funId);
-
    const BehavioralHelperConstRef BH = FB->CGetBehavioralHelper();
+   std::string prefix = "in_port_";
+
+   structural_objectRef clock_kernel = kernel_mod->find_member(CLOCK_PORT_NAME,port_o_K,kernel_mod);
+   structural_objectRef clock_datapath = circuit->find_member(CLOCK_PORT_NAME,port_o_K,circuit);
+   SM->add_connection(clock_datapath, clock_kernel);
+   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - Connected clock port");
+
+   structural_objectRef reset_kernel = kernel_mod->find_member(RESET_PORT_NAME,port_o_K,kernel_mod);
+   structural_objectRef reset_datapath = circuit->find_member(RESET_PORT_NAME,port_o_K,circuit);
+   SM->add_connection(reset_datapath, reset_kernel);
+   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - Connected reset port");
 
    const std::list<unsigned int>& function_parameters = BH->get_parameters();
    for(auto const function_parameter : function_parameters)
    {
-      PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Parameter: " + BH->PrintVariable(function_parameter) + " IN");
-
-      conn_binding::direction_type direction = conn_binding::IN;
-      generic_objRef port_obj = HLS->Rconn->get_port(function_parameter, direction);
-      structural_type_descriptorRef port_type;
-      if(HLSMgr->Rmem->has_base_address(function_parameter) && !HLSMgr->Rmem->has_parameter_base_address(function_parameter, HLS->functionId) && !HLSMgr->Rmem->is_parm_decl_stored(function_parameter))
-      {
-          port_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 32));
-      }
-      else
-         port_type = structural_type_descriptorRef(new structural_type_descriptor(function_parameter, BH)) ;
-      if(HLSMgr->Rmem->has_base_address(function_parameter) && (HLSMgr->Rmem->is_parm_decl_stored(function_parameter) || HLSMgr->Rmem->is_parm_decl_copied(function_parameter)))
-         need_start_done = true;
-      PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "  type is: " + port_type->get_name());
-      std::string prefix = "in_port_";
-      port_o::port_direction port_direction = port_o::IN;
-      structural_objectRef p_obj = SM->add_port(prefix + BH->PrintVariable(function_parameter), port_direction, circuit, port_type);
-      port_obj->set_structural_obj(p_obj);
-      port_obj->set_out_sign(p_obj);
+      structural_objectRef parameter_kernel = kernel_mod->find_member(prefix + BH->PrintVariable(function_parameter),port_o_K,kernel_mod);
+      structural_objectRef parameter_datapath = circuit->find_member(prefix + BH->PrintVariable(function_parameter),port_o_K,circuit);
+      SM->add_connection(parameter_datapath, parameter_kernel);
    }
+   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - Connected parameter port");
 
-   std::map<conn_binding::const_param, generic_objRef> const_objs = HLS->Rconn->get_constant_objs();
-   unsigned int num = 0;
-   for(std::map<conn_binding::const_param, generic_objRef>::iterator c = const_objs.begin(); c != const_objs.end(); c++)
-   {
-      generic_objRef constant_obj = c->second;
-      structural_objectRef const_obj = SM->add_module_from_technology_library("const_" + STR(num), CONSTANT_STD, LIBRARY_STD, circuit, HLS->HLS_T->get_technology_manager());
+   structural_objectRef request_kernel = kernel_mod->find_member("request",port_o_K,kernel_mod);
+   structural_objectRef request_datapath = circuit->find_member("request",port_o_K,circuit);
+   SM->add_connection(request_datapath, request_kernel);
+   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - Connected request port");
 
-      std::string value = std::get<0>(c->first);
-      std::string param = std::get<1>(c->first);
-      std::string trimmed_value;
-      unsigned int precision;
-      if (param.size() == 0)
-      {
-         trimmed_value = "\"" + std::get<0>(c->first) + "\"";
-         precision = static_cast<unsigned int>(value.size());
-      }
-      else
-      {
-         trimmed_value = param;
-         memory::add_memory_parameter(SM, param, std::get<0>(c->first));
-         precision = GetPointer<dataport_obj>(constant_obj)->get_bitsize();
-      }
-      const_obj->set_parameter("value", trimmed_value);
-      constant_obj->set_structural_obj(const_obj);
-      std::string name = "out_const_" + boost::lexical_cast<std::string>(num);
-      structural_type_descriptorRef sign_type = structural_type_descriptorRef(new structural_type_descriptor("bool", precision));
-      structural_objectRef sign = SM->add_sign(name, circuit, sign_type);
-      structural_objectRef out_port =const_obj->find_member("out1", port_o_K, const_obj);
-      //customize output port size
-      out_port->type_resize(precision);
-      SM->add_connection(sign, out_port);
-      constant_obj->set_out_sign(sign);
-      num++;
-   }
-   const unsigned int return_type_index = BH->GetFunctionReturnType(BH->get_function_index());
-   if(return_type_index)
-   {
-      PRINT_DBG_STRING(DEBUG_LEVEL_PEDANTIC, debug_level, "Return type: " + BH->print_type(return_type_index));
+   structural_objectRef task_pool_kernel = kernel_mod->find_member(TASKS_POOL_END,port_o_K,kernel_mod);
+   structural_objectRef task_pool_datapath = circuit->find_member(TASKS_POOL_END,port_o_K,circuit);
+   SM->add_connection(task_pool_datapath, task_pool_kernel);
+   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - Connected task_pool_end");
 
-      generic_objRef port_obj = HLS->Rconn->get_port(return_type_index, conn_binding::OUT);
-      structural_type_descriptorRef port_type = structural_type_descriptorRef(new structural_type_descriptor(return_type_index, BH));
-      structural_objectRef p_obj = SM->add_port(RETURN_PORT_NAME, port_o::OUT, circuit, port_type);
-      port_obj->set_structural_obj(p_obj);
-   }
-   /// add start and done when needed
-   if(need_start_done)
-   {
-      structural_type_descriptorRef bool_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 0));
-      SM->add_port(START_PORT_NAME, port_o::IN, circuit, bool_type);
-      SM->add_port(DONE_PORT_NAME, port_o::OUT, circuit, bool_type);
-   }*/
-}
+   structural_objectRef start_kernel = kernel_mod->find_member(START_PORT_NAME,port_o_K,kernel_mod);
+   structural_objectRef start_datapath = circuit->find_member(START_PORT_NAME,port_vector_o_K,circuit);
+   SM->add_connection(GetPointer<port_o>(start_datapath)->get_port(num_kernel), start_kernel);
+   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - Connected start");
 
-void datapath_parallel_cs::add_clock_reset(structural_objectRef& clock_obj, structural_objectRef& reset_obj)
-{
-   const structural_managerRef& SM = this->HLS->datapath;
-   const structural_objectRef& circuit = SM->get_circ();
+   structural_objectRef done_kernel = kernel_mod->find_member(DONE_PORT_NAME,port_o_K,kernel_mod);
+   structural_objectRef done_datapath = circuit->find_member(DONE_PORT_NAME,port_vector_o_K,circuit);
+   SM->add_connection(GetPointer<port_o>(done_datapath)->get_port(num_kernel), done_kernel);
+   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - Connected done");
 
-   /// define boolean type for clock and reset signal
-   structural_type_descriptorRef port_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 0));
-
-   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "   * Start adding clock signal...");
-   /// add clock port
-   clock_obj = SM->add_port(CLOCK_PORT_NAME, port_o::IN, circuit, port_type);
-   GetPointer<port_o>(clock_obj)->set_is_clock(true);
-   PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "    Clock signal added!");
-
-   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "   * Start adding reset signal...");
-   /// add reset port
-   reset_obj = SM->add_port(RESET_PORT_NAME, port_o::IN, circuit, port_type);
-   PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "    Reset signal added!");
-
-   return;
-}
-
-void datapath_parallel_cs::connect_module_kernel(structural_objectRef )
-{
-
+   structural_objectRef done_req_kernel = kernel_mod->find_member(DONE_REQUEST,port_o_K,kernel_mod);
+   structural_objectRef done_req_datapath = circuit->find_member(DONE_REQUEST,port_vector_o_K,circuit);
+   SM->add_connection(GetPointer<port_o>(done_req_datapath)->get_port(num_kernel), done_req_kernel);
+   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - Connected done_req");
 }
 
 void datapath_parallel_cs::instantiate_component_parallel(structural_objectRef clock_port, structural_objectRef reset_port)

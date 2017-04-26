@@ -41,34 +41,16 @@
 #ifndef DATAPATH_PARALLEL_CS_H
 #define DATAPATH_PARALLEL_CS_H
 
-#include "hls_function_step.hpp"
+#include "classic_datapath.hpp"
 
 REF_FORWARD_DECL(structural_object);
 REF_FORWARD_DECL(structural_manager);
 
-class datapath_parallel_cs : public HLSFunctionStep
+class datapath_parallel_cs : public classic_datapath
 {
 protected:
    /**
-    * Return the set of analyses in relationship with this design step
-    * @param relationship_type is the type of relationship to be considered
-    */
-   virtual const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const;
-
-   /**
-    * Adds the input/output ports of the module
-    */
-   void add_ports();
-
-   /**
-    * Adds the clock and reset ports to the structural description of the circuit
-    * @param clock_sign is the object representing the clock signal
-    * @param reset_sign is the object representing the reset signal
-    */
-   void add_clock_reset(structural_objectRef& clock_sign, structural_objectRef& reset_sign);
-
-   /**
-    * @brief instantiate_component_parallel
+    * @brief instantiate memory_parallel
     * @param HLS
     * @param clock_port
     * @param reset_port
@@ -83,10 +65,24 @@ protected:
     */
    void manage_memory_ports_parallel_chained_parallel(const structural_managerRef SM, const std::set<structural_objectRef> &memory_modules, const structural_objectRef circuit);
 
+   /**
+    * @brief connect datapath with each kernel
+    * @param kernel
+    * @param num_kernel
+    */
+   void connect_module_kernel(structural_objectRef kernel, unsigned int num_kernel);
 
-   void connect_module_kernel(structural_objectRef kernel);
+   /**
+    * Adds the input/output ports of the module
+    */
+   virtual void add_ports();
 
-   void add_parameter_ports();
+   /**
+    * @brief ComputeHLSRelationships datapath need kernel in order to be created
+    * @param relationship_type
+    * @return
+    */
+   const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const;
 public:
    /**
     * Constructor.
@@ -100,8 +96,8 @@ public:
    virtual ~datapath_parallel_cs();
 
    /**
-    * Execute the step
-    * @return the exit status of this step
+    * @brief InternalExec
+    * @return
     */
    DesignFlowStep_Status InternalExec();
 };
