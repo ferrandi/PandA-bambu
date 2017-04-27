@@ -118,6 +118,9 @@ parameter [2:0] S_0 = 3'd0,\n\
   S_5 = 3'd5,\n\
   S_6 = 3'd6,\n\
   S_7 = 3'd7;\n\
+  S_8 = 3'd8;\n\
+  S_9 = 3'd9;\n\
+  S_10 = 3'd10;\n\
 reg [2:0] _present_state 1INIT_ZERO_VALUE;\n\
 reg [2:0] _next_state;\n\
 reg ["+selector_left+":0] _present_selector 1INIT_ZERO_VALUE;\n\
@@ -174,13 +177,32 @@ reg write_done;\n\
              mem_in3 = {{BITSIZE_Mout_data_ram_size-4{1'b0}}, 4'd8};\n\
              mem_sel_LOAD=1'b1;\n\
              if(mem_done_port)\n\
-             begin\n\
-                _next_data2 = mem_out1[7:0];\n\
-                _next_state=S_2;\n\
-// synthesis translate_off\n\
-                write_done=1'b0;\n\
-// synthesis translate_on\n\
-             end\n\
+               begin\n\
+                  _next_data2 = mem_out1[7:0];\n\
+                  _next_state=S_2;\n\
+ // synthesis translate_off\n\
+                  write_done=1'b0;\n\
+ // synthesis translate_on\n\
+               end\n\
+             else\n\
+               begin\n\
+                 _next_state=S_8;\n\
+               end\n\
+           end\n\
+         S_8:\n\
+           begin\n\
+             if(mem_done_port)\n\
+               begin\n\
+                  _next_data2 = mem_out1[7:0];\n\
+                  _next_state=S_2;\n\
+   // synthesis translate_off\n\
+                  write_done=1'b0;\n\
+   // synthesis translate_on\n\
+               end\n\
+             else\n\
+               begin\n\
+                 _next_state=S_8;\n\
+               end\n\
            end\n\
          S_2:\n\
            begin\n\
@@ -210,13 +232,32 @@ reg write_done;\n\
              mem_in3 = {{BITSIZE_Mout_data_ram_size-4{1'b0}}, 4'd8};\n\
              mem_sel_LOAD=1'b1;\n\
              if(mem_done_port)\n\
-             begin\n\
-                _next_data2 = mem_out1[7:0];\n\
-                _next_state=S_5;\n\
-// synthesis translate_off\n\
-                write_done=1'b0;\n\
-// synthesis translate_on\n\
-             end\n\
+               begin\n\
+                  _next_data2 = mem_out1[7:0];\n\
+                  _next_state=S_5;\n\
+   // synthesis translate_off\n\
+                  write_done=1'b0;\n\
+   // synthesis translate_on\n\
+               end\n\
+             else\n\
+               begin\n\
+                 _next_state=S_9;\n\
+               end\n\
+           end\n\
+         S_9:\n\
+           begin\n\
+             if(mem_done_port)\n\
+               begin\n\
+                 _next_data2 = mem_out1[7:0];\n\
+                 _next_state=S_5;\n\
+   // synthesis translate_off\n\
+                 write_done=1'b0;\n\
+   // synthesis translate_on\n\
+               end\n\
+             else\n\
+               begin\n\
+                 _next_state=S_9;\n\
+               end\n\
            end\n\
          S_5 :\n\
            begin\n\
@@ -749,6 +790,25 @@ reg write_done;\n\
                write_done=1'b0;\n\
 // synthesis translate_on\n\
              end\n\
+             else\n\
+               begin\n\
+                 _next_state=S_10;\n\
+               end\n\
+           end\n\
+         S_10:\n\
+           begin\n\
+             if(mem_done_port)\n\
+             begin\n\
+               _next_data2 = mem_out1[7:0];\n\
+               _next_state=S_4;\n\
+      // synthesis translate_off\n\
+               write_done=1'b0;\n\
+      // synthesis translate_on\n\
+             end\n\
+             else\n\
+               begin\n\
+                 _next_state=S_10;\n\
+               end\n\
            end\n\
          S_4:\n\
            begin\n\

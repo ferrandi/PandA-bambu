@@ -200,9 +200,12 @@ void classic_datapath::add_ports()
    for(auto const function_parameter : function_parameters)
    {
       PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Parameter: " + BH->PrintVariable(function_parameter) + " IN");
-
-      conn_binding::direction_type direction = conn_binding::IN;
-      generic_objRef port_obj = HLS->Rconn->get_port(function_parameter, direction);
+      generic_objRef port_obj;
+      if(HLS->Rconn!=NULL)
+      {
+         conn_binding::direction_type direction = conn_binding::IN;
+         port_obj = HLS->Rconn->get_port(function_parameter, direction);
+      }
       structural_type_descriptorRef port_type;
       if(HLSMgr->Rmem->has_base_address(function_parameter) && !HLSMgr->Rmem->has_parameter_base_address(function_parameter, HLS->functionId) && !HLSMgr->Rmem->is_parm_decl_stored(function_parameter))
       {
@@ -216,54 +219,66 @@ void classic_datapath::add_ports()
       std::string prefix = "in_port_";
       port_o::port_direction port_direction = port_o::IN;
       structural_objectRef p_obj = SM->add_port(prefix + BH->PrintVariable(function_parameter), port_direction, circuit, port_type);
-      port_obj->set_structural_obj(p_obj);
-      port_obj->set_out_sign(p_obj);
+      if(HLS->Rconn!=NULL)
+      {
+         port_obj->set_structural_obj(p_obj);
+         port_obj->set_out_sign(p_obj);
+      }
    }
-
-   std::map<conn_binding::const_param, generic_objRef> const_objs = HLS->Rconn->get_constant_objs();
-   unsigned int num = 0;
-   for(std::map<conn_binding::const_param, generic_objRef>::iterator c = const_objs.begin(); c != const_objs.end(); ++c)
+   if(HLS->Rconn!=NULL)
    {
-      generic_objRef constant_obj = c->second;
-      structural_objectRef const_obj = SM->add_module_from_technology_library("const_" + STR(num), CONSTANT_STD, LIBRARY_STD, circuit, HLS->HLS_T->get_technology_manager());
+      std::map<conn_binding::const_param, generic_objRef> const_objs = HLS->Rconn->get_constant_objs();
+      unsigned int num = 0;
+      for(std::map<conn_binding::const_param, generic_objRef>::iterator c = const_objs.begin(); c != const_objs.end(); c++)
+      {
+         generic_objRef constant_obj = c->second;
+         structural_objectRef const_obj = SM->add_module_from_technology_library("const_" + STR(num), CONSTANT_STD, LIBRARY_STD, circuit, HLS->HLS_T->get_technology_manager());
 
-      std::string value = std::get<0>(c->first);
-      std::string param = std::get<1>(c->first);
-      std::string trimmed_value;
-      unsigned int precision;
-      if (param.size() == 0)
-      {
-         trimmed_value = "\"" + std::get<0>(c->first) + "\"";
-         precision = static_cast<unsigned int>(value.size());
+         std::string value = std::get<0>(c->first);
+         std::string param = std::get<1>(c->first);
+         std::string trimmed_value;
+         unsigned int precision;
+         if (param.size() == 0)
+         {
+            trimmed_value = "\"" + std::get<0>(c->first) + "\"";
+            precision = static_cast<unsigned int>(value.size());
+         }
+         else
+         {
+            trimmed_value = param;
+            memory::add_memory_parameter(SM, param, std::get<0>(c->first));
+            precision = GetPointer<dataport_obj>(constant_obj)->get_bitsize();
+         }
+         const_obj->set_parameter("value", trimmed_value);
+         constant_obj->set_structural_obj(const_obj);
+         std::string name = "out_const_" + boost::lexical_cast<std::string>(num);
+         structural_type_descriptorRef sign_type = structural_type_descriptorRef(new structural_type_descriptor("bool", precision));
+         structural_objectRef sign = SM->add_sign(name, circuit, sign_type);
+         structural_objectRef out_port =const_obj->find_member("out1", port_o_K, const_obj);
+         //customize output port size
+         out_port->type_resize(precision);
+         SM->add_connection(sign, out_port);
+         constant_obj->set_out_sign(sign);
+         num++;
       }
-      else
-      {
-         trimmed_value = param;
-         memory::add_memory_parameter(SM, param, std::get<0>(c->first));
-         precision = GetPointer<dataport_obj>(constant_obj)->get_bitsize();
-      }
-      const_obj->set_parameter("value", trimmed_value);
-      constant_obj->set_structural_obj(const_obj);
-      std::string name = "out_const_" + boost::lexical_cast<std::string>(num);
-      structural_type_descriptorRef sign_type = structural_type_descriptorRef(new structural_type_descriptor("bool", precision));
-      structural_objectRef sign = SM->add_sign(name, circuit, sign_type);
-      structural_objectRef out_port =const_obj->find_member("out1", port_o_K, const_obj);
-      //customize output port size
-      out_port->type_resize(precision);
-      SM->add_connection(sign, out_port);
-      constant_obj->set_out_sign(sign);
-      num++;
    }
    const unsigned int return_type_index = BH->GetFunctionReturnType(BH->get_function_index());
    if(return_type_index)
    {
       PRINT_DBG_STRING(DEBUG_LEVEL_PEDANTIC, debug_level, "Return type: " + BH->print_type(return_type_index));
 
-      generic_objRef port_obj = HLS->Rconn->get_port(return_type_index, conn_binding::OUT);
-      structural_type_descriptorRef port_type = structural_type_descriptorRef(new structural_type_descriptor(return_type_index, BH));
-      structural_objectRef p_obj = SM->add_port(RETURN_PORT_NAME, port_o::OUT, circuit, port_type);
-      port_obj->set_structural_obj(p_obj);
-   }
+      generic_objRef port_obj;
+      if(HLS->Rconn!=NULL)
+      {
+         port_obj = HLS->Rconn->get_port(return_type_index, conn_binding::OUT);
+      }
+       structural_type_descriptorRef port_type = structural_type_descriptorRef(new structural_type_descriptor(return_type_index, BH));
+       structural_objectRef p_obj = SM->add_port(RETURN_PORT_NAME, port_o::OUT, circuit, port_type);
+      if(HLS->Rconn!=NULL)
+      {
+         port_obj->set_structural_obj(p_obj);
+      }
+    }
    /// add start and done when needed
    if(need_start_done)
    {
