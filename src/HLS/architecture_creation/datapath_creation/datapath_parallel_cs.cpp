@@ -49,6 +49,8 @@
 #include "copyrights_strings.hpp"
 #include "hls_target.hpp"
 #include "technology_manager.hpp"
+#include "memory_cs.hpp"
+#include "memory.hpp"
 
 datapath_parallel_cs::datapath_parallel_cs(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type) :
    classic_datapath(_parameters, _HLSMgr, _funId, _design_flow_manager, _hls_flow_step_type)
@@ -230,6 +232,60 @@ void datapath_parallel_cs::instantiate_component_parallel(structural_objectRef c
    SM->add_connection(reset_sign, reset_port);
    SM->add_connection(reset_sign, reset_mem_par);
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Instantiate memory_ctrl_parallel!");
+
+   resize_ctrl_parallel_ports(mem_par_mod);
+}
+
+void datapath_parallel_cs::resize_ctrl_parallel_ports(structural_objectRef mem_par_mod)
+{
+   const structural_managerRef SM = HLS->datapath;
+   const structural_objectRef circuit = SM->get_circ();
+   structural_objectRef memory_parallel = circuit->find_member("memory_parallel", component_o_K, circuit);
+   unsigned int memory_channel=HLS->Param->getOption<unsigned int>(OPT_channels_number);
+   unsigned int num_kernel=HLS->Param->getOption<unsigned int>(OPT_num_threads);
+   for(unsigned int j = 0; j < GetPointer<module>(memory_parallel)->get_in_port_size(); j++)  //resize input port
+   {
+      structural_objectRef port_i = GetPointer<module>(mem_par_mod)->get_in_port(j);
+      if(GetPointer<port_o>(port_i)->get_is_memory())
+      {
+         std::string port_name = GetPointer<port_o>(port_i)->get_id();
+         if(port_name.substr(0,3)=="IN_")
+            resize_dimension_bus_port(memory_channel, port_i);
+         else
+            resize_dimension_bus_port(num_kernel, port_i);
+      }
+   }
+   for(unsigned int j = 0; j < GetPointer<module>(mem_par_mod)->get_out_port_size(); j++)    //resize output port
+   {
+      structural_objectRef port_i = GetPointer<module>(mem_par_mod)->get_out_port(j);
+      if(GetPointer<port_o>(port_i)->get_is_memory())
+      {
+         std::string port_name = GetPointer<port_o>(port_i)->get_id();
+         if(port_name.substr(0,4)=="OUT_")
+            resize_dimension_bus_port(memory_channel, port_i);
+         else
+            resize_dimension_bus_port(num_kernel, port_i);
+      }
+   }
+}
+
+void datapath_parallel_cs::resize_dimension_bus_port(unsigned int vector_size, structural_objectRef port)
+{
+   unsigned int bus_data_bitsize = HLSMgr->Rmem->get_bus_data_bitsize();
+   unsigned int bus_addr_bitsize = HLSMgr->Rmem->get_bus_addr_bitsize();
+   unsigned int bus_size_bitsize = HLSMgr->Rmem->get_bus_size_bitsize();
+   unsigned int bus_tag_bitsize = GetPointer<memory_cs>(HLSMgr->Rmem)->get_bus_tag_bitsize();
+
+   if (GetPointer<port_o>(port)->get_is_data_bus())
+      port->type_resize(bus_data_bitsize, vector_size);
+   else if (GetPointer<port_o>(port)->get_is_addr_bus())
+      port->type_resize(bus_addr_bitsize, vector_size);
+   else if (GetPointer<port_o>(port)->get_is_size_bus())
+      port->type_resize(bus_size_bitsize, vector_size);
+   else if (GetPointer<port_o>(port)->get_is_tag_bus())
+      port->type_resize(bus_tag_bitsize, vector_size);
+   else
+      port->type_resize(1, vector_size);
 }
 
 void datapath_parallel_cs::manage_memory_ports_parallel_chained_parallel(const structural_managerRef SM, const std::set<structural_objectRef> &memory_modules, const structural_objectRef circuit)

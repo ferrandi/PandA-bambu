@@ -47,6 +47,8 @@
 #include "technology_node.hpp"
 #include "technology_manager.hpp"
 #include "reg_binding_cs.hpp"
+#include "memory.hpp"
+#include "memory_cs.hpp"
 
 fu_binding_cs::fu_binding_cs(const HLS_managerConstRef _HLSMgr, const unsigned int _function_id, const ParameterConstRef _parameters) :
    fu_binding(_HLSMgr, _function_id, _parameters)
@@ -58,7 +60,7 @@ void fu_binding_cs::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, str
    auto omp_functions = GetPointer<OmpFunctions>(HLSMgr->Rfuns);
    if(omp_functions->kernel_functions.find(HLS->functionId) != omp_functions->kernel_functions.end())
    {
-      instantiate_component_kernel(HLS, clock_port, reset_port);
+      instantiate_component_kernel(HLSMgr, HLS, clock_port, reset_port);
       instantiate_suspension_component(HLSMgr,HLS);
    }
    else if((omp_functions->parallelized_functions.find(HLS->functionId) != omp_functions->parallelized_functions.end()) || (omp_functions->atomic_functions.find(HLS->functionId) != omp_functions->atomic_functions.end()))
@@ -66,7 +68,7 @@ void fu_binding_cs::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, str
    fu_binding::add_to_SM(HLSMgr,HLS,clock_port,reset_port);
 }
 
-void fu_binding_cs::instantiate_component_kernel(const hlsRef HLS, structural_objectRef clock_port, structural_objectRef reset_port)
+void fu_binding_cs::instantiate_component_kernel(const HLS_managerRef HLSMgr, const hlsRef HLS, structural_objectRef clock_port, structural_objectRef reset_port)
 {
    const structural_managerRef SM = HLS->datapath;
    const structural_objectRef circuit = SM->get_circ();
@@ -78,7 +80,8 @@ void fu_binding_cs::instantiate_component_kernel(const hlsRef HLS, structural_ob
    structural_objectRef scheduler_mod = SM->add_module_from_technology_library(scheduler_name, scheduler_model, sche_library, circuit, HLS->HLS_T->get_technology_manager());
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - Added Scheduler");
    unsigned int num_slots=static_cast<unsigned int>(ceil(log2(HLS->Param->getOption<unsigned int>(OPT_context_switch))));   //resize selector-port
-   port_o::resize_std_port(num_slots, 0, 0, scheduler_mod->find_member(STR(SELECTOR_REGISTER_FILE),port_o_K,scheduler_mod));  //resize selector-port
+   structural_objectRef port_selector = scheduler_mod->find_member(STR(SELECTOR_REGISTER_FILE),port_o_K,scheduler_mod);
+   port_selector->type_resize(num_slots);
    structural_objectRef selector_regFile_scheduler = scheduler_mod->find_member(STR(SELECTOR_REGISTER_FILE),port_o_K,scheduler_mod);
    structural_objectRef selector_regFile_datapath = circuit->find_member(STR(SELECTOR_REGISTER_FILE),port_o_K,circuit);
    structural_type_descriptorRef port_type = structural_type_descriptorRef(new structural_type_descriptor("bool", num_slots));
@@ -91,13 +94,13 @@ void fu_binding_cs::instantiate_component_kernel(const hlsRef HLS, structural_ob
    //suspension connected when or_port instantiated
 
    structural_objectRef clock_scheduler = scheduler_mod->find_member(CLOCK_PORT_NAME,port_o_K,scheduler_mod);
-   structural_objectRef clock_datapath = circuit->find_member(CLOCK_PORT_NAME,port_o_K,circuit);
-   SM->add_connection(clock_datapath, clock_scheduler);
+   //structural_objectRef clock_datapath = circuit->find_member(CLOCK_PORT_NAME,port_o_K,circuit);
+   SM->add_connection(clock_port, clock_scheduler);
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, " - Added clock sche");
 
    structural_objectRef reset_scheduler = scheduler_mod->find_member(RESET_PORT_NAME,port_o_K,scheduler_mod);
-   structural_objectRef reset_datapath = circuit->find_member(RESET_PORT_NAME,port_o_K,circuit);
-   SM->add_connection(reset_datapath, reset_scheduler);
+   //structural_objectRef reset_datapath = circuit->find_member(RESET_PORT_NAME,port_o_K,circuit);
+   SM->add_connection(reset_port, reset_scheduler);
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, " - Added reset sche");
 
    structural_objectRef done_scheduler = scheduler_mod->find_member(DONE_SCHEDULER,port_o_K,scheduler_mod);
@@ -120,6 +123,46 @@ void fu_binding_cs::instantiate_component_kernel(const hlsRef HLS, structural_ob
    SM->add_connection(done_request_sign, done_request_datapath);
    SM->add_connection(done_request_sign, done_request_scheduler);
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - Added done_request sche");
+
+   resize_scheduler_ports(HLSMgr,HLS,scheduler_mod);
+}
+
+void fu_binding_cs::resize_scheduler_ports(const HLS_managerRef HLSMgr, const hlsRef HLS, structural_objectRef scheduler_mod)
+{
+   const structural_managerRef SM = HLS->datapath;
+   const structural_objectRef circuit = SM->get_circ();
+   structural_objectRef scheduler = circuit->find_member("scheduler_kernel", component_o_K, circuit);
+   for(unsigned int j = 0; j < GetPointer<module>(scheduler)->get_in_port_size(); j++)  //resize input port
+   {
+      structural_objectRef port_i = GetPointer<module>(scheduler_mod)->get_in_port(j);
+      if(GetPointer<port_o>(port_i)->get_is_memory())
+         resize_dimension_bus_port(HLSMgr,1, port_i);
+   }
+   for(unsigned int j = 0; j < GetPointer<module>(scheduler_mod)->get_out_port_size(); j++)    //resize output port
+   {
+      structural_objectRef port_i = GetPointer<module>(scheduler_mod)->get_out_port(j);
+      if(GetPointer<port_o>(port_i)->get_is_memory())
+         resize_dimension_bus_port(HLSMgr,1, port_i);
+   }
+}
+
+void fu_binding_cs::resize_dimension_bus_port(const HLS_managerRef HLSMgr, unsigned int vector_size, structural_objectRef port)
+{
+   unsigned int bus_data_bitsize = HLSMgr->Rmem->get_bus_data_bitsize();
+   unsigned int bus_addr_bitsize = HLSMgr->Rmem->get_bus_addr_bitsize();
+   unsigned int bus_size_bitsize = HLSMgr->Rmem->get_bus_size_bitsize();
+   unsigned int bus_tag_bitsize = GetPointer<memory_cs>(HLSMgr->Rmem)->get_bus_tag_bitsize();
+
+   if (GetPointer<port_o>(port)->get_is_data_bus())
+      port->type_resize(bus_data_bitsize, vector_size);
+   else if (GetPointer<port_o>(port)->get_is_addr_bus())
+      port->type_resize(bus_addr_bitsize, vector_size);
+   else if (GetPointer<port_o>(port)->get_is_size_bus())
+      port->type_resize(bus_size_bitsize, vector_size);
+   else if (GetPointer<port_o>(port)->get_is_tag_bus())
+      port->type_resize(bus_tag_bitsize, vector_size);
+   else
+      port->type_resize(1, vector_size);
 }
 
 void fu_binding_cs::instantiate_suspension_component(const HLS_managerRef HLSMgr, const hlsRef HLS)

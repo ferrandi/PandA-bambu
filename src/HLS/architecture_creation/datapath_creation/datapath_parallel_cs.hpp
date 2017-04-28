@@ -83,6 +83,19 @@ protected:
     * @return
     */
    const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const;
+
+   /**
+    * @brief for each port resize it depending on the type of bus port
+    * @param vector_size
+    * @param port
+    */
+   void resize_dimension_bus_port(unsigned int vector_size, structural_objectRef port);
+
+   /**
+    * @brief for each port decide the vector size
+    * @param mem_par_mod
+    */
+   void resize_ctrl_parallel_ports(structural_objectRef mem_par_mod);
 public:
    /**
     * Constructor.

@@ -784,6 +784,17 @@ struct port_o : public structural_object
       bool get_is_size_bus() const;
 
       /**
+       * set the is_tag_bus attribute.
+       * @param c when true the port is a port used as an tag bus
+      */
+      void set_is_tag_bus(bool c);
+
+      /**
+       * return true if the port works as an tag bus
+      */
+      bool get_is_tag_bus() const;
+
+      /**
        * set the is_doubled attribute.
        * @param c when true the port has a doubled size w.r.t the precision
       */
@@ -985,7 +996,7 @@ struct port_o : public structural_object
       /// when true the port is a size bus
       bool is_size_bus;
 
-      /// when true te port is a tag bus
+      /// when true the port is a tag bus
       bool is_tag_bus;
 
       /// when true the port has a doubled size
@@ -1026,6 +1037,7 @@ struct port_o : public structural_object
       static const bool is_master_DEFAULT = false;
       static const bool is_data_bus_DEFAULT = false;
       static const bool is_addr_bus_DEFAULT = false;
+      static const bool is_tag_bus_DEFAULT = false;
       static const bool is_size_bus_DEFAULT = false;
       static const bool is_doubled_DEFAULT = false;
       static const bool is_halved_DEFAULT = false;

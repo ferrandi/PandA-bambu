@@ -865,7 +865,7 @@ port_o::port_o(int _debug_level, const structural_objectRef o, port_direction _d
    is_clock(is_clock_DEFAULT), is_extern(is_extern_DEFAULT), is_global(is_global_DEFAULT),
    is_reverse(is_reverse_DEFAULT),
    is_memory(is_memory_DEFAULT), is_slave(is_slave_DEFAULT), is_master(is_master_DEFAULT),
-   is_data_bus(is_data_bus_DEFAULT), is_addr_bus(is_addr_bus_DEFAULT), is_size_bus(is_size_bus_DEFAULT), is_doubled(is_doubled_DEFAULT), is_halved(is_halved_DEFAULT), is_critical(is_critical_DEFAULT),
+   is_data_bus(is_data_bus_DEFAULT), is_addr_bus(is_addr_bus_DEFAULT), is_size_bus(is_size_bus_DEFAULT), is_tag_bus(is_tag_bus_DEFAULT), is_doubled(is_doubled_DEFAULT), is_halved(is_halved_DEFAULT), is_critical(is_critical_DEFAULT),
    lsb(0),
    port_type(_port_type)
 {
@@ -1103,6 +1103,16 @@ bool port_o::get_is_size_bus() const
    return is_size_bus;
 }
 
+void port_o::set_is_tag_bus(bool c)
+{
+   is_tag_bus = c;
+}
+
+bool port_o::get_is_tag_bus() const
+{
+   return is_tag_bus;
+}
+
 void port_o::set_is_doubled(bool c)
 {
    is_doubled = c;
@@ -1281,6 +1291,7 @@ void port_o::copy(structural_objectRef dest) const
    GetPointer<port_o>(dest)->is_data_bus = is_data_bus;
    GetPointer<port_o>(dest)->is_addr_bus = is_addr_bus;
    GetPointer<port_o>(dest)->is_size_bus = is_size_bus;
+   GetPointer<port_o>(dest)->is_tag_bus = is_tag_bus;
    GetPointer<port_o>(dest)->is_doubled = is_doubled;
    GetPointer<port_o>(dest)->is_halved = is_halved;
    GetPointer<port_o>(dest)->is_critical = is_critical;
@@ -1335,6 +1346,7 @@ void port_o::xload(const xml_element* Enode, structural_objectRef _owner, struct
    if (CE_XVM(is_data_bus, Enode)) LOAD_XVM(is_data_bus, Enode);
    if (CE_XVM(is_addr_bus, Enode)) LOAD_XVM(is_addr_bus, Enode);
    if (CE_XVM(is_size_bus, Enode)) LOAD_XVM(is_size_bus, Enode);
+   if (CE_XVM(is_tag_bus, Enode)) LOAD_XVM(is_tag_bus, Enode);
    if (CE_XVM(is_doubled, Enode)) LOAD_XVM(is_doubled, Enode);
    if (CE_XVM(is_halved, Enode)) LOAD_XVM(is_halved, Enode);
    if (CE_XVM(is_critical, Enode)) LOAD_XVM(is_critical, Enode);
@@ -1411,6 +1423,7 @@ void port_o::xwrite(xml_element* rootnode)
    if (is_data_bus != is_data_bus_DEFAULT) WRITE_XVM(is_data_bus, Enode);
    if (is_addr_bus != is_addr_bus_DEFAULT) WRITE_XVM(is_addr_bus, Enode);
    if (is_size_bus != is_size_bus_DEFAULT) WRITE_XVM(is_size_bus, Enode);
+   if (is_tag_bus != is_tag_bus_DEFAULT) WRITE_XVM(is_tag_bus, Enode);
    if (is_doubled != is_doubled_DEFAULT) WRITE_XVM(is_doubled, Enode);
    if (is_halved != is_halved_DEFAULT) WRITE_XVM(is_halved, Enode);
    if (is_critical != is_critical_DEFAULT) WRITE_XVM(is_critical, Enode);
@@ -4197,6 +4210,8 @@ void port_o::fix_port_properties(structural_objectRef port_i, structural_objectR
       GetPointer<port_o>(cir_port)->set_is_addr_bus(true);
    if(GetPointer<port_o>(port_i)->get_is_size_bus())
       GetPointer<port_o>(cir_port)->set_is_size_bus(true);
+   if(GetPointer<port_o>(port_i)->get_is_tag_bus())
+      GetPointer<port_o>(cir_port)->set_is_tag_bus(true);
    if(GetPointer<port_o>(port_i)->get_is_doubled())
       GetPointer<port_o>(cir_port)->set_is_doubled(true);
    if(GetPointer<port_o>(port_i)->get_is_halved())

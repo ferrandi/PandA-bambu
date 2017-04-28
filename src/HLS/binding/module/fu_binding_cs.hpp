@@ -56,11 +56,12 @@ class fu_binding_cs : public fu_binding
 protected:
    /**
     * @brief instantiate_component_kernel
+    * @param HLSMgr
     * @param HLS
     * @param clock_port
     * @param reset_port
     */
-   void instantiate_component_kernel(const hlsRef HLS, structural_objectRef clock_port, structural_objectRef reset_port);
+   void instantiate_component_kernel(const HLS_managerRef HLSMgr, const hlsRef HLS, structural_objectRef clock_port, structural_objectRef reset_port);
 
    /**
     * @brief instantiate_suspension_component
@@ -108,5 +109,20 @@ protected:
     */
    void manage_memory_ports_parallel_chained_hierarchical(const structural_managerRef SM, const std::set<structural_objectRef> &memory_modules, const structural_objectRef circuit, const hlsRef HLS, unsigned int & _unique_id);
 
+   /**
+    * @brief for each port decide its vector size
+    * @param HLSMgr
+    * @param HLS
+    * @param scheduler_mod
+    */
+   void resize_scheduler_ports(const HLS_managerRef HLSMgr, const hlsRef HLS, structural_objectRef scheduler_mod);
+
+   /**
+    * @brief for each port resize it using vector size
+    * @param HLSMgr
+    * @param vector_size
+    * @param port
+    */
+   void resize_dimension_bus_port(const HLS_managerRef HLSMgr, unsigned int vector_size, structural_objectRef port);
 };
 #endif // FU_BINDING_CS_H
