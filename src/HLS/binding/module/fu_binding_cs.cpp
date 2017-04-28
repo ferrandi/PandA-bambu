@@ -127,26 +127,23 @@ void fu_binding_cs::instantiate_component_kernel(const HLS_managerRef HLSMgr, co
    resize_scheduler_ports(HLSMgr,HLS,scheduler_mod);
 }
 
-void fu_binding_cs::resize_scheduler_ports(const HLS_managerRef HLSMgr, const hlsRef HLS, structural_objectRef scheduler_mod)
+void fu_binding_cs::resize_scheduler_ports(const HLS_managerRef HLSMgr, structural_objectRef scheduler_mod)
 {
-   const structural_managerRef SM = HLS->datapath;
-   const structural_objectRef circuit = SM->get_circ();
-   structural_objectRef scheduler = circuit->find_member("scheduler_kernel", component_o_K, circuit);
-   for(unsigned int j = 0; j < GetPointer<module>(scheduler)->get_in_port_size(); j++)  //resize input port
+   for(unsigned int j = 0; j < GetPointer<module>(scheduler_mod)->get_in_port_size(); j++)  //resize input port
    {
       structural_objectRef port_i = GetPointer<module>(scheduler_mod)->get_in_port(j);
       if(GetPointer<port_o>(port_i)->get_is_memory())
-         resize_dimension_bus_port(HLSMgr,1, port_i);
+         resize_dimension_bus_port(HLSMgr,port_i);
    }
    for(unsigned int j = 0; j < GetPointer<module>(scheduler_mod)->get_out_port_size(); j++)    //resize output port
    {
       structural_objectRef port_i = GetPointer<module>(scheduler_mod)->get_out_port(j);
       if(GetPointer<port_o>(port_i)->get_is_memory())
-         resize_dimension_bus_port(HLSMgr,1, port_i);
+         resize_dimension_bus_port(HLSMgr,port_i);
    }
 }
 
-void fu_binding_cs::resize_dimension_bus_port(const HLS_managerRef HLSMgr, unsigned int vector_size, structural_objectRef port)
+void fu_binding_cs::resize_dimension_bus_port(const HLS_managerRef HLSMgr, structural_objectRef port)
 {
    unsigned int bus_data_bitsize = HLSMgr->Rmem->get_bus_data_bitsize();
    unsigned int bus_addr_bitsize = HLSMgr->Rmem->get_bus_addr_bitsize();
@@ -154,15 +151,13 @@ void fu_binding_cs::resize_dimension_bus_port(const HLS_managerRef HLSMgr, unsig
    unsigned int bus_tag_bitsize = GetPointer<memory_cs>(HLSMgr->Rmem)->get_bus_tag_bitsize();
 
    if (GetPointer<port_o>(port)->get_is_data_bus())
-      port->type_resize(bus_data_bitsize, vector_size);
+      port->type_resize(bus_data_bitsize);
    else if (GetPointer<port_o>(port)->get_is_addr_bus())
-      port->type_resize(bus_addr_bitsize, vector_size);
+      port->type_resize(bus_addr_bitsize);
    else if (GetPointer<port_o>(port)->get_is_size_bus())
-      port->type_resize(bus_size_bitsize, vector_size);
+      port->type_resize(bus_size_bitsize);
    else if (GetPointer<port_o>(port)->get_is_tag_bus())
-      port->type_resize(bus_tag_bitsize, vector_size);
-   else
-      port->type_resize(1, vector_size);
+      port->type_resize(bus_tag_bitsize);
 }
 
 void fu_binding_cs::instantiate_suspension_component(const HLS_managerRef HLSMgr, const hlsRef HLS)
@@ -271,12 +266,12 @@ void fu_binding_cs::manage_memory_ports_parallel_chained_kernel(const structural
    structural_objectRef sche_port;
    structural_objectRef scheduler = circuit->find_member("scheduler_kernel", component_o_K, circuit);
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - Connecting memory_port of scheduler");
-   for(unsigned int j = 0; j < GetPointer<module>(scheduler)->get_in_port_size(); j++) //connect input datapath memory_port with scheduler
+   for(unsigned int j = 0; j < GetPointer<module>(scheduler)->get_in_port_size(); j++) //connect input scheduler with datapath input
    {
       structural_objectRef port_i = GetPointer<module>(scheduler)->get_in_port(j);
-      if(GetPointer<port_o>(port_i)->get_is_memory() && (!GetPointer<port_o>(port_i)->get_is_global()) && (!GetPointer<port_o>(port_i)->get_is_extern()))
+      std::string port_name = GetPointer<port_o>(port_i)->get_id();
+      if(GetPointer<port_o>(port_i)->get_is_memory() && port_name.substr(0,3)=="IN_")
       {
-         std::string port_name = GetPointer<port_o>(port_i)->get_id();
          cir_port = circuit->find_member(port_name.erase(0,3), port_i->get_kind(), circuit); //erase IN_ from port name
          THROW_ASSERT(!cir_port || GetPointer<port_o>(cir_port), "should be a port or null");
          if(!cir_port)
@@ -295,52 +290,47 @@ void fu_binding_cs::manage_memory_ports_parallel_chained_kernel(const structural
       }
    }
 
-   for (std::set<structural_objectRef>::iterator i = memory_modules.begin(); i != memory_modules.end(); i++)   //connect scheduler with memory_modules
+   for (std::set<structural_objectRef>::iterator i = memory_modules.begin(); i != memory_modules.end(); i++)   //connect in memory modules with output scheduler
    {
       for(unsigned int j = 0; j < GetPointer<module>(*i)->get_in_port_size(); j++)
       {
          structural_objectRef port_i = GetPointer<module>(*i)->get_in_port(j);
+         structural_objectRef scheMemorySign;
          if(GetPointer<port_o>(port_i)->get_is_memory() && (!GetPointer<port_o>(port_i)->get_is_global()) && (!GetPointer<port_o>(port_i)->get_is_extern()))
          {
             std::string port_name = GetPointer<port_o>(port_i)->get_id();
             sche_port = scheduler->find_member(port_name, port_i->get_kind(), scheduler);
-            structural_objectRef scheMemorySign=SM->add_sign_vector(port_name, 1, circuit, port_i->get_typeRef());
+            if(scheMemorySign==NULL)
+               SM->add_sign(port_name+"_signal", circuit, port_i->get_typeRef());
             THROW_ASSERT(GetPointer<port_o>(sche_port), "should be a port");
-            SM->add_connection(scheMemorySign, sche_port);   //from scheduler to every memory unit
+            SM->add_connection(sche_port, scheMemorySign);   //from scheduler to every memory unit
             SM->add_connection(scheMemorySign, port_i);
          }
       }
    }
+
    for (std::set<structural_objectRef>::iterator i = memory_modules.begin(); i != memory_modules.end(); i++)   //connect scheduler with memory_modules
    {
-      for(unsigned int j = 0; j < GetPointer<module>(*i)->get_out_port_size(); j++)   //connect memory_modules with scheduler
+      for(unsigned int j = 0; j < GetPointer<module>(*i)->get_out_port_size(); j++)   //connect memory_modules out with scheduler by jms
       {
          structural_objectRef port_i = GetPointer<module>(*i)->get_out_port(j);
          if(GetPointer<port_o>(port_i)->get_is_memory() && (!GetPointer<port_o>(port_i)->get_is_global()) && (!GetPointer<port_o>(port_i)->get_is_extern()))
          {
             std::string port_name = GetPointer<port_o>(port_i)->get_id();
             sche_port = scheduler->find_member(port_name, port_i->get_kind(), scheduler);
-            THROW_ASSERT(!sche_port || GetPointer<port_o>(sche_port), "should be a port or null");
-            if(!sche_port)
-            {
-               if(port_i->get_kind() == port_vector_o_K)
-                  sche_port = SM->add_port_vector(port_name, port_o::OUT, GetPointer<port_o>(port_i)->get_ports_size(), circuit, port_i->get_typeRef());
-               else
-                  sche_port = SM->add_port(port_name, port_o::OUT, circuit, port_i->get_typeRef());
-               port_o::fix_port_properties(port_i, sche_port);
-            }
+            THROW_ASSERT(!sche_port || GetPointer<port_o>(sche_port), "should be a port");
             primary_outs[sche_port].insert(port_i);
          }
       }
    }
    join_merge_split(SM, HLS, primary_outs, circuit, _unique_id);
 
-   for(unsigned int j = 0; j < GetPointer<module>(scheduler)->get_out_port_size(); j++) //connect scheduler with datapath
+   for(unsigned int j = 0; j < GetPointer<module>(scheduler)->get_out_port_size(); j++) //connect scheduler out with datapath out
    {
       structural_objectRef port_i = GetPointer<module>(scheduler)->get_out_port(j);
-      if(GetPointer<port_o>(port_i)->get_is_memory() && (!GetPointer<port_o>(port_i)->get_is_global()) && (!GetPointer<port_o>(port_i)->get_is_extern()))
+      std::string port_name = GetPointer<port_o>(port_i)->get_id();
+      if(GetPointer<port_o>(port_i)->get_is_memory() && port_name.substr(0,4)=="OUT_")
       {
-         std::string port_name = GetPointer<port_o>(port_i)->get_id();
          cir_port = circuit->find_member(port_name.erase(0,4), port_i->get_kind(), circuit); //erase OUT_ from port name
          THROW_ASSERT(!cir_port || GetPointer<port_o>(cir_port), "should be a port or null");
          if(!cir_port)

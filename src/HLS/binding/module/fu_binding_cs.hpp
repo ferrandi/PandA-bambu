@@ -112,17 +112,15 @@ protected:
    /**
     * @brief for each port decide its vector size
     * @param HLSMgr
-    * @param HLS
     * @param scheduler_mod
     */
-   void resize_scheduler_ports(const HLS_managerRef HLSMgr, const hlsRef HLS, structural_objectRef scheduler_mod);
+   void resize_scheduler_ports(const HLS_managerRef HLSMgr, structural_objectRef scheduler_mod);
 
    /**
     * @brief for each port resize it using vector size
     * @param HLSMgr
-    * @param vector_size
     * @param port
     */
-   void resize_dimension_bus_port(const HLS_managerRef HLSMgr, unsigned int vector_size, structural_objectRef port);
+   void resize_dimension_bus_port(const HLS_managerRef HLSMgr, structural_objectRef port);
 };
 #endif // FU_BINDING_CS_H

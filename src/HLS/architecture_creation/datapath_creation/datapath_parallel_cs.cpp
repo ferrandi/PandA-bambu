@@ -238,12 +238,9 @@ void datapath_parallel_cs::instantiate_component_parallel(structural_objectRef c
 
 void datapath_parallel_cs::resize_ctrl_parallel_ports(structural_objectRef mem_par_mod)
 {
-   const structural_managerRef SM = HLS->datapath;
-   const structural_objectRef circuit = SM->get_circ();
-   structural_objectRef memory_parallel = circuit->find_member("memory_parallel", component_o_K, circuit);
    unsigned int memory_channel=HLS->Param->getOption<unsigned int>(OPT_channels_number);
    unsigned int num_kernel=HLS->Param->getOption<unsigned int>(OPT_num_threads);
-   for(unsigned int j = 0; j < GetPointer<module>(memory_parallel)->get_in_port_size(); j++)  //resize input port
+   for(unsigned int j = 0; j < GetPointer<module>(mem_par_mod)->get_in_port_size(); j++)  //resize input port
    {
       structural_objectRef port_i = GetPointer<module>(mem_par_mod)->get_in_port(j);
       if(GetPointer<port_o>(port_i)->get_is_memory())
@@ -277,15 +274,14 @@ void datapath_parallel_cs::resize_dimension_bus_port(unsigned int vector_size, s
    unsigned int bus_tag_bitsize = GetPointer<memory_cs>(HLSMgr->Rmem)->get_bus_tag_bitsize();
 
    if (GetPointer<port_o>(port)->get_is_data_bus())
-      port->type_resize(bus_data_bitsize, vector_size);
+      port->type_resize(bus_data_bitsize);
    else if (GetPointer<port_o>(port)->get_is_addr_bus())
-      port->type_resize(bus_addr_bitsize, vector_size);
+      port->type_resize(bus_addr_bitsize);
    else if (GetPointer<port_o>(port)->get_is_size_bus())
-      port->type_resize(bus_size_bitsize, vector_size);
+      port->type_resize(bus_size_bitsize);
    else if (GetPointer<port_o>(port)->get_is_tag_bus())
-      port->type_resize(bus_tag_bitsize, vector_size);
-   else
-      port->type_resize(1, vector_size);
+      port->type_resize(bus_tag_bitsize);
+   GetPointer<port_o>(port)->add_n_ports(vector_size,port);
 }
 
 void datapath_parallel_cs::manage_memory_ports_parallel_chained_parallel(const structural_managerRef SM, const std::set<structural_objectRef> &memory_modules, const structural_objectRef circuit)
@@ -294,6 +290,7 @@ void datapath_parallel_cs::manage_memory_ports_parallel_chained_parallel(const s
    structural_objectRef mem_paral_port;
    structural_objectRef memory_parallel = circuit->find_member("memory_parallel", component_o_K, circuit);
    unsigned int num_kernel=0;
+   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - Connecting memory_port of memory_parallel");
    for (std::set<structural_objectRef>::iterator i = memory_modules.begin(); i != memory_modules.end(); i++)  //from ctrl_parallel to module
    {
       for(unsigned int j = 0; j < GetPointer<module>(*i)->get_in_port_size(); j++)  //from ctrl_parallel to module
@@ -309,7 +306,6 @@ void datapath_parallel_cs::manage_memory_ports_parallel_chained_parallel(const s
             SM->add_connection(mem_paral_Sign, port_i);
          }
       }
-      std::cout<<"End intermediate part"<<std::endl;
       for(unsigned int j = 0; j < GetPointer<module>(*i)->get_out_port_size(); j++)    //from module to ctrl_parallel
       {
          structural_objectRef port_i = GetPointer<module>(*i)->get_out_port(j);
@@ -325,14 +321,13 @@ void datapath_parallel_cs::manage_memory_ports_parallel_chained_parallel(const s
       }
       ++num_kernel;
    }
-   std::cout<<"End first part"<<std::endl;
 
-   for(unsigned int j = 0; j < GetPointer<module>(memory_parallel)->get_in_port_size(); j++)  //datapath to ctrl_parallel
+   for(unsigned int j = 0; j < GetPointer<module>(memory_parallel)->get_in_port_size(); j++)  //connect input ctrl_parallel with input datapath
    {
       structural_objectRef port_i = GetPointer<module>(memory_parallel)->get_in_port(j);
-      if(GetPointer<port_o>(port_i)->get_is_memory() && (!GetPointer<port_o>(port_i)->get_is_global()) && (!GetPointer<port_o>(port_i)->get_is_extern()))
+      std::string port_name = GetPointer<port_o>(port_i)->get_id();
+      if(GetPointer<port_o>(port_i)->get_is_memory() && port_name.substr(0,3)=="IN_")
       {
-         std::string port_name = GetPointer<port_o>(port_i)->get_id();
          cir_port = circuit->find_member(port_name.erase(0,3), port_i->get_kind(), circuit);
          THROW_ASSERT(!cir_port || GetPointer<port_o>(cir_port), "should be a port or null");
          if(!cir_port)
@@ -350,12 +345,12 @@ void datapath_parallel_cs::manage_memory_ports_parallel_chained_parallel(const s
          }
       }
    }
-   for(unsigned int j = 0; j < GetPointer<module>(memory_parallel)->get_out_port_size(); j++)    //ctrl_parallel to datapath
+   for(unsigned int j = 0; j < GetPointer<module>(memory_parallel)->get_out_port_size(); j++)    //connect output ctrl_parallel with output datapath
    {
       structural_objectRef port_i = GetPointer<module>(memory_parallel)->get_out_port(j);
-      if(GetPointer<port_o>(port_i)->get_is_memory() && (!GetPointer<port_o>(port_i)->get_is_global()) && (!GetPointer<port_o>(port_i)->get_is_extern()))
+      std::string port_name = GetPointer<port_o>(port_i)->get_id();
+      if(GetPointer<port_o>(port_i)->get_is_memory() && port_name.substr(0,4)=="OUT_")
       {
-         std::string port_name = GetPointer<port_o>(port_i)->get_id();
          cir_port = circuit->find_member(port_name.erase(0,4), port_i->get_kind(), circuit); //delete OUT from port name
          THROW_ASSERT(!cir_port || GetPointer<port_o>(cir_port), "should be a port or null");
          if(!cir_port)
@@ -374,3 +369,4 @@ void datapath_parallel_cs::manage_memory_ports_parallel_chained_parallel(const s
       }
    }
 }
+

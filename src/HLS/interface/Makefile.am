@@ -42,12 +42,14 @@ lib_interface_la_CPPFLAGS = \
 noinst_HEADERS = module_interface.hpp \
                  minimal/minimal_interface.hpp \
                  WB4/WB4_interface.hpp \
-                 WB4/WB4Intercon_interface.hpp
+                 WB4/WB4Intercon_interface.hpp \
+                 cs_interface.hpp
 
 lib_interface_la_SOURCES = module_interface.cpp \
                            minimal/minimal_interface.cpp \
                            WB4/WB4_interface.cpp \
-                           WB4/WB4Intercon_interface.cpp
+                           WB4/WB4Intercon_interface.cpp \
+                           cs_interface.cpp
 
 if BUILD_TASTE
 noinst_HEADERS += \
