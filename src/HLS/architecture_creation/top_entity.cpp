@@ -285,6 +285,7 @@ void top_entity::add_ports(structural_objectRef circuit, structural_objectRef cl
    const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(funId);
    const BehavioralHelperConstRef BH = FB->CGetBehavioralHelper();
    bool has_registered_inputs = HLS->registered_inputs;
+   std::cout<<"point 0"<<std::endl;
 
    const structural_objectRef& Datapath = HLS->datapath->get_circ();
    const std::list<unsigned int>& function_parameters = BH->get_parameters();

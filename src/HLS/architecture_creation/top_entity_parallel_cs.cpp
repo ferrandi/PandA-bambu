@@ -49,9 +49,11 @@
 #include "copyrights_strings.hpp"
 #include "hls_target.hpp"
 #include "technology_manager.hpp"
+#include "memory.hpp"
+
 
 top_entity_parallel_cs::top_entity_parallel_cs(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type) :
-   HLSFunctionStep(_parameters, _HLSMgr, _funId, _design_flow_manager, _hls_flow_step_type)
+   top_entity(_parameters, _HLSMgr, _funId, _design_flow_manager, _hls_flow_step_type)
 {
     debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }
@@ -88,27 +90,34 @@ const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
 DesignFlowStep_Status top_entity_parallel_cs::InternalExec()
 {
    /// function name to be synthesized
-   SM = HLS->top;
-   structural_objectRef circuit = SM->get_circ();
    const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(funId);
    const std::string function_name = FB->CGetBehavioralHelper()->get_function_name();
 
+   /// Test on previuos steps. They checks if datapath and controller have been created. If they didn't,
+   /// top circuit cannot be created.
+   THROW_ASSERT(HLS->datapath, "Datapath not created");
+
+   // reference to hls top circuit
+   HLS->top = structural_managerRef(new structural_manager(parameters));
+   SM = HLS->top;
+   structural_managerRef Datapath = HLS->datapath;
    std::string parallel_controller_model = "controller_parallel";
    std::string parallel_controller_name = "controller_parallel";
    std::string par_ctrl_library = HLS->HLS_T->get_technology_manager()->get_library(parallel_controller_model);
    structural_objectRef controller_circuit = SM->add_module_from_technology_library(parallel_controller_name, parallel_controller_model, par_ctrl_library, circuit, HLS->HLS_T->get_technology_manager());
 
-   THROW_ASSERT(HLS->datapath, "Datapath not created");
-   //instantiate controller
+   /// top circuit creation
+   PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Top circuit creation");
 
-   HLS->top = structural_managerRef(new structural_manager(parameters));
-   SM = HLS->top;
-   structural_managerRef Datapath = HLS->datapath;
-   structural_managerRef Controller = HLS->controller;
-
+   /// main circuit type
    structural_type_descriptorRef module_type = structural_type_descriptorRef(new structural_type_descriptor(function_name));
+   /// setting top circuit component
    SM->set_top_info(function_name, module_type);
+   structural_objectRef circuit = SM->get_circ();
    THROW_ASSERT(circuit, "Top circuit is missing");
+   // Now the top circuit is created, just as an empty box. <circuit> is a reference to the structural object that
+   // will contain all the circuit components
+
    circuit->set_black_box(false);
 
    ///Set some descriptions and legal stuff
@@ -118,32 +127,24 @@ DesignFlowStep_Status top_entity_parallel_cs::InternalExec()
    GetPointer<module>(circuit)->set_license(GENERATED_LICENSE);
 
    structural_objectRef datapath_circuit = Datapath->get_circ();
+   THROW_ASSERT(datapath_circuit, "Missing datapath circuit");
+   THROW_ASSERT(controller_circuit, "Missing controller circuit");
 
+   PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Creating controller object");
+   /// creating structural_manager
+   PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Adding controller");
    datapath_circuit->set_owner(circuit);
    GetPointer<module>(circuit)->add_internal_object(datapath_circuit);
 
+   PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Creating datapath object");
+   /// creating structural_manager
+   PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Adding datapath");
    controller_circuit->set_owner(circuit);
    GetPointer<module>(circuit)->add_internal_object(controller_circuit);
 
-   add_port(circuit, controller_circuit, datapath_circuit);
-
-   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "\tAdding command ports...");
-   //this->add_command_signals(circuit);  -->add command port
-   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "\tCommand ports added!");
-
-   //memory::propagate_memory_parameters(HLS->datapath->get_circ(), HLS->top);
-   propagate_memory_signals(datapath_circuit, circuit);
-
-   PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Circuit created without errors!");
-
-   connect_port_parallel(circuit);
-
-   return DesignFlowStep_Status::SUCCESS;
-}
-
-void top_entity_parallel_cs::add_port(const structural_objectRef circuit, structural_objectRef controller_circuit, structural_objectRef datapath_circuit)
-{
+   /// command signal type descriptor
    structural_type_descriptorRef bool_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 0));
+
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "\tStart adding clock signal...");
    /// add clock port
    structural_objectRef clock_obj = SM->add_port(CLOCK_PORT_NAME, port_o::IN, circuit, bool_type);
@@ -170,37 +171,52 @@ void top_entity_parallel_cs::add_port(const structural_objectRef circuit, struct
    /// start port
    structural_objectRef start_obj = SM->add_port(START_PORT_NAME, port_o::IN, circuit, bool_type);
    structural_objectRef controller_start = controller_circuit->find_member(START_PORT_NAME, port_o_K, controller_circuit);
+   /// check if datapath has a start signal
    SM->add_connection(start_obj, controller_start);
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "\tStart signal added!");
 
-
-   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "\tAdding done signal...");
-   /// start port
+   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "\tStart adding Done signal...");
+   /// add done port
    structural_objectRef done_obj = SM->add_port(DONE_PORT_NAME, port_o::OUT, circuit, bool_type);
+   THROW_ASSERT(done_obj, "Done port not added in the top component");
    structural_objectRef controller_done = controller_circuit->find_member(DONE_PORT_NAME, port_o_K, controller_circuit);
-   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "\tDone signal added!");
+   THROW_ASSERT(controller_done, "Done signal not found in the controller");
+   if(HLS->registered_done_port && (parameters->getOption<HLSFlowStep_Type>(OPT_controller_architecture) == HLSFlowStep_Type::FSM_CONTROLLER_CREATOR || parameters->getOption<HLSFlowStep_Type>(OPT_controller_architecture) == HLSFlowStep_Type::FSM_CS_CONTROLLER_CREATOR))
+   {
+      const technology_managerRef TM = HLS->HLS_T->get_technology_manager();
+      std::string delay_unit;
+      std::string synch_reset = HLS->Param->getOption<std::string>(OPT_sync_reset);
+      if(synch_reset == "sync")
+         delay_unit = flipflop_SR;
+      else
+         delay_unit = flipflop_AR;
+      structural_objectRef delay_gate = SM->add_module_from_technology_library("done_delayed_REG", delay_unit, LIBRARY_STD, circuit, TM);
+      structural_objectRef port_ck = delay_gate->find_member(CLOCK_PORT_NAME, port_o_K, delay_gate);
+      if(port_ck) SM->add_connection(clock_obj, port_ck);
+      structural_objectRef port_rst = delay_gate->find_member(RESET_PORT_NAME, port_o_K, delay_gate);
+      if(port_rst) SM->add_connection(reset_obj, port_rst);
 
-   const technology_managerRef TM = HLS->HLS_T->get_technology_manager();
-   std::string delay_unit;
-   std::string synch_reset = HLS->Param->getOption<std::string>(OPT_sync_reset);
-   if(synch_reset == "sync")
-      delay_unit = flipflop_SR;
+      structural_objectRef done_signal_in = SM->add_sign("done_delayed_REG_signal_in", circuit, GetPointer<module>(delay_gate)->get_in_port(2)->get_typeRef());
+      SM->add_connection(GetPointer<module>(delay_gate)->get_in_port(2), done_signal_in);
+      SM->add_connection(controller_done, done_signal_in);
+      structural_objectRef done_signal_out = SM->add_sign("done_delayed_REG_signal_out", circuit, GetPointer<module>(delay_gate)->get_out_port(0)->get_typeRef());
+      SM->add_connection(GetPointer<module>(delay_gate)->get_out_port(0), done_signal_out);
+      SM->add_connection(done_obj, done_signal_out);
+   }
    else
-      delay_unit = flipflop_AR;
-   structural_objectRef delay_gate = SM->add_module_from_technology_library("done_delayed_REG", delay_unit, LIBRARY_STD, circuit, TM);
-   structural_objectRef port_ck = delay_gate->find_member(CLOCK_PORT_NAME, port_o_K, delay_gate);
-   if(port_ck) SM->add_connection(clock_obj, port_ck);
-   structural_objectRef port_rst = delay_gate->find_member(RESET_PORT_NAME, port_o_K, delay_gate);
-   if(port_rst) SM->add_connection(reset_obj, port_rst);
-
-   structural_objectRef done_signal_in = SM->add_sign("done_delayed_REG_signal_in", circuit, GetPointer<module>(delay_gate)->get_in_port(2)->get_typeRef());
-   SM->add_connection(GetPointer<module>(delay_gate)->get_in_port(2), done_signal_in);
-   SM->add_connection(controller_done, done_signal_in);
-   structural_objectRef done_signal_out = SM->add_sign("done_delayed_REG_signal_out", circuit, GetPointer<module>(delay_gate)->get_out_port(0)->get_typeRef());
-   SM->add_connection(GetPointer<module>(delay_gate)->get_out_port(0), done_signal_out);
-   SM->add_connection(done_obj, done_signal_out);
+      SM->add_connection(controller_done, done_obj);
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "\tDone signal added!");
 
+   /// add entry in in_port_map between port id and port index
+
+   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "\tAdding input/output ports...");
+   this->add_ports(circuit, clock_obj, reset_obj);
+   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "\tInput/output ports added!");
+
+   memory::propagate_memory_parameters(HLS->datapath->get_circ(), HLS->top);
+
+   PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Circuit created without errors!");
+   return DesignFlowStep_Status::SUCCESS;
 }
 
 void top_entity_parallel_cs::connect_port_parallel(const structural_objectRef circuit)
@@ -242,57 +258,28 @@ void top_entity_parallel_cs::connect_port_parallel(const structural_objectRef ci
     structural_objectRef request_sign=SM->add_sign("request_signal", circuit, data_type);
     SM->add_connection(controller_request, request_sign);
     SM->add_connection(request_sign, datapath_request);
-
-    //connect LoopIteration
 }
 
-void top_entity_parallel_cs::propagate_memory_signals(structural_objectRef datapath_circuit, const structural_objectRef circuit)
+void top_entity_parallel_cs::add_ports(structural_objectRef circuit, structural_objectRef clock_port, structural_objectRef reset_port)
 {
-   structural_objectRef cir_port;
-   for(unsigned int j = 0; j < GetPointer<module>(datapath_circuit)->get_in_port_size(); j++)
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Adding ports");
+   const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(funId);
+   const BehavioralHelperConstRef BH = FB->CGetBehavioralHelper();
+
+   const structural_objectRef& Datapath = HLS->datapath->get_circ();
+   const std::list<unsigned int>& function_parameters = BH->get_parameters();
+   conn_binding& conn = *(HLS->Rconn);
+   for (const auto function_parameter : function_parameters)
    {
-      structural_objectRef port_i = GetPointer<module>(datapath_circuit)->get_in_port(j);
-      if(GetPointer<port_o>(port_i)->get_is_memory() && (!GetPointer<port_o>(port_i)->get_is_global()) && (!GetPointer<port_o>(port_i)->get_is_extern()))
-      {
-         std::string port_name = GetPointer<port_o>(port_i)->get_id();
-         cir_port = circuit->find_member(port_name, port_i->get_kind(), circuit);
-         THROW_ASSERT(!cir_port || GetPointer<port_o>(cir_port), "should be a port or null");
-         if(!cir_port)
-         {
-            if(port_i->get_kind() == port_vector_o_K)
-               cir_port = SM->add_port_vector(port_name, port_o::IN, GetPointer<port_o>(port_i)->get_ports_size(), circuit, port_i->get_typeRef());
-            else
-               cir_port = SM->add_port(port_name, port_o::IN, circuit, port_i->get_typeRef());
-            port_o::fix_port_properties(port_i, cir_port);
-            SM->add_connection(cir_port,port_i);
-         }
-         else
-         {
-            SM->add_connection(cir_port,port_i);
-         }
-      }
+      generic_objRef input = conn.get_port(function_parameter, conn_binding::IN);
+      structural_objectRef in_obj = input->get_structural_obj();
+      structural_type_descriptorRef port_type = in_obj->get_typeRef();
+      structural_objectRef top_obj;
+      if(in_obj->get_kind() == port_vector_o_K)
+         top_obj = SM->add_port_vector(FB->CGetBehavioralHelper()->PrintVariable(function_parameter), port_o::IN, GetPointer<port_o>(in_obj)->get_ports_size(), circuit, port_type);
+      else
+         top_obj = SM->add_port(FB->CGetBehavioralHelper()->PrintVariable(function_parameter), port_o::IN, circuit, port_type);
    }
-   for(unsigned int j = 0; j < GetPointer<module>(datapath_circuit)->get_out_port_size(); j++)
-   {
-      structural_objectRef port_i = GetPointer<module>(datapath_circuit)->get_out_port(j);
-      if(GetPointer<port_o>(port_i)->get_is_memory() && (!GetPointer<port_o>(port_i)->get_is_global()) && (!GetPointer<port_o>(port_i)->get_is_extern()))
-      {
-         std::string port_name = GetPointer<port_o>(port_i)->get_id();
-         cir_port = circuit->find_member(port_name, port_i->get_kind(), circuit);
-         THROW_ASSERT(!cir_port || GetPointer<port_o>(cir_port), "should be a port or null");
-         if(!cir_port)
-         {
-            if(port_i->get_kind() == port_vector_o_K)
-               cir_port = SM->add_port_vector(port_name, port_o::OUT, GetPointer<port_o>(port_i)->get_ports_size(), circuit, port_i->get_typeRef());
-            else
-               cir_port = SM->add_port(port_name, port_o::OUT, circuit, port_i->get_typeRef());
-            port_o::fix_port_properties(port_i, cir_port);
-            SM->add_connection(port_i,cir_port);
-         }
-         else
-         {
-            SM->add_connection(port_i,cir_port);
-         }
-      }
-   }
+   //add parameter port to top entity, connect them to datapath
+   //connect loop index (in_port_var_4) with controller
 }

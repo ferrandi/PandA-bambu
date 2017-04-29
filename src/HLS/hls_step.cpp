@@ -238,6 +238,8 @@ const std::string HLS_step::EnumToName(const HLSFlowStep_Type hls_flow_step_type
 #endif
       case HLSFlowStep_Type::INITIALIZE_HLS:
          return "InitializeHLS";
+      case HLSFlowStep_Type::INTERFACE_CS_GENERATION:
+         return "InterfaceCSGeneration";
 #if HAVE_EXPERIMENTAL
       case HLSFlowStep_Type::K_COFAMILY_REGISTER_BINDING:
          return "KCofamilyRegisterBinding";

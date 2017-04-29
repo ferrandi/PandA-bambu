@@ -40,7 +40,11 @@
 #ifndef CS_INTERFACE_H
 #define CS_INTERFACE_H
 
-class cs_interface : public module_interface
+#include "hls_function_step.hpp"
+REF_FORWARD_DECL(structural_manager);
+REF_FORWARD_DECL(structural_object);
+
+class cs_interface : public HLSFunctionStep
 {
    public:
 
@@ -83,6 +87,6 @@ protected:
        * @param memory_module
        * @param circuit
        */
-      void manage_memory_ports_parallel_chained_parallel(const structural_managerRef SM, const structural_objectRef memory_module, const structural_objectRef circuit);
+      void manage_memory_ports_parallel_chained_top(const structural_managerRef SM, const structural_objectRef memory_module, const structural_objectRef circuit);
 };
 #endif // CS_INTERFACE_H

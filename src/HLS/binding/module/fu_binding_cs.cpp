@@ -124,7 +124,7 @@ void fu_binding_cs::instantiate_component_kernel(const HLS_managerRef HLSMgr, co
    SM->add_connection(done_request_sign, done_request_scheduler);
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - Added done_request sche");
 
-   resize_scheduler_ports(HLSMgr,HLS,scheduler_mod);
+   resize_scheduler_ports(HLSMgr,scheduler_mod);
 }
 
 void fu_binding_cs::resize_scheduler_ports(const HLS_managerRef HLSMgr, structural_objectRef scheduler_mod)

@@ -39,36 +39,18 @@
 */
 #ifndef TOP_ENTITY_PARALLEL_CS_H
 #define TOP_ENTITY_PARALLEL_CS_H
-#include "hls_function_step.hpp"
+#include "top_entity.hpp"
 REF_FORWARD_DECL(structural_manager);
 REF_FORWARD_DECL(structural_object);
 
-class top_entity_parallel_cs : public HLSFunctionStep
+class top_entity_parallel_cs : public top_entity
 {
    protected:
-   ///reference to the resulting circuit
-   structural_managerRef SM;
-
-   /**
-    * @brief add_port of top entity
-    * @param circuit
-    * @param controller_circuit
-    * @param datapath_circuit
-    */
-   void add_port(const structural_objectRef circuit, structural_objectRef controller_circuit, structural_objectRef datapath_circuit);
-
     /**
      * @brief connect_port_parallel connect datapath and controller
      * @param circuit
      */
     void connect_port_parallel(const structural_objectRef circuit);
-
-    /**
-     * @brief propagate_memory_signals from datapath to top and viceversa
-     * @param datapath_circuit
-     * @param circuit
-     */
-    void propagate_memory_signals(structural_objectRef datapath_circuit, const structural_objectRef circuit);
 
     /**
      * Return the set of analyses in relationship with this design step

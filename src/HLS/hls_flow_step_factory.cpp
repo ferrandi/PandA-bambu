@@ -529,6 +529,11 @@ DesignFlowStepRef HLSFlowStepFactory::CreateHLSFlowStep(const HLSFlowStep_Type t
             design_flow_step = DesignFlowStepRef(new InitializeHLS(parameters, HLS_mgr, funId, design_flow_manager.lock()));
             break;
          }
+      case HLSFlowStep_Type::INTERFACE_CS_GENERATION:
+         {
+            design_flow_step = DesignFlowStepRef(new cs_interface(parameters, HLS_mgr, funId, design_flow_manager.lock()));
+            break;
+         }
 #if HAVE_EXPERIMENTAL
       case HLSFlowStep_Type::K_COFAMILY_REGISTER_BINDING:
          {
@@ -884,6 +889,7 @@ const DesignFlowStepSet HLSFlowStepFactory::CreateHLSFlowSteps(const std::unorde
          case HLSFlowStep_Type::ILP_SCHEDULING:
 #endif
          case HLSFlowStep_Type::INITIALIZE_HLS:
+         case HLSFlowStep_Type::INTERFACE_CS_GENERATION:
 #if HAVE_EXPERIMENTAL
          case HLSFlowStep_Type::K_COFAMILY_REGISTER_BINDING:
          case HLSFlowStep_Type::LEFT_EDGE_REGISTER_BINDING:
