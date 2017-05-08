@@ -184,6 +184,7 @@
 
 ///HLS/interface/minmal include
 #include "minimal_interface.hpp"
+#include "cs_interface.hpp"
 
 ///HLS/interface/NPI include
 #if HAVE_EXPERIMENTAL

@@ -1783,8 +1783,17 @@ DesignFlowStep_Status allocation::InternalExec()
                      }
                      else if(channels_type == CHANNELS_TYPE_MEM_ACC_CS and memory_ctrl_type != "")
                      {
-                        set_number_channels(specializedId, 1);
-                        std::cout<<"Num channels for function"<<HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->get_function_name()<<" is: 1"<<std::endl;
+                        auto omp_functions = GetPointer<OmpFunctions>(HLSMgr->Rfuns);
+                        if(omp_functions->hierarchical_functions.find(funId) != omp_functions->hierarchical_functions.end())
+                        {
+                           set_number_channels(specializedId, parameters->getOption<unsigned int>(OPT_channels_number));
+                           std::cout<<"Num channels for function "<<HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->get_function_name()<<" is: "<<parameters->getOption<unsigned int>(OPT_channels_number)<<std::endl;
+                        }
+                        else
+                        {
+                           set_number_channels(specializedId, 1);
+                           std::cout<<"Num channels for function "<<HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->get_function_name()<<" is: 1"<<std::endl;
+                        }
                      }
                      else if( channels_type == CHANNELS_TYPE_MEM_ACC_NN && memory_ctrl_type != "")
                      {

@@ -66,14 +66,24 @@ const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
 #if HAVE_TASTE
                interface_type == HLSFlowStep_Type::TASTE_INTERFACE_GENERATION or
 #endif
-               interface_type == HLSFlowStep_Type::WB4_INTERFACE_GENERATION;
+               interface_type == HLSFlowStep_Type::WB4_INTERFACE_GENERATION or interface_type == HLSFlowStep_Type::INTERFACE_CS_GENERATION;
             THROW_ASSERT(interface, "Unexpected interface type");
 #endif
-            ret.insert(std::make_tuple(interface_type == HLSFlowStep_Type::MINIMAL_INTERFACE_GENERATION ?
-                     HLSFlowStep_Type::MINIMAL_TESTBENCH_GENERATION :
-                     HLSFlowStep_Type::WB4_TESTBENCH_GENERATION,
-                  HLSFlowStepSpecializationConstRef(),
-                  HLSFlowStep_Relationship::TOP_FUNCTION));
+            if(parameters->isOption(OPT_context_switch))
+            {
+               ret.insert(std::make_tuple(HLSFlowStep_Type::INTERFACE_CS_GENERATION,
+                                        HLSFlowStepSpecializationConstRef(),
+                                        HLSFlowStep_Relationship::TOP_FUNCTION));
+
+            }
+            else
+            {
+               ret.insert(std::make_tuple(interface_type == HLSFlowStep_Type::MINIMAL_INTERFACE_GENERATION ?
+                        HLSFlowStep_Type::MINIMAL_TESTBENCH_GENERATION :
+                        HLSFlowStep_Type::WB4_TESTBENCH_GENERATION,
+                     HLSFlowStepSpecializationConstRef(),
+                     HLSFlowStep_Relationship::TOP_FUNCTION));
+            }
             break;
          }
       case INVALIDATION_RELATIONSHIP:

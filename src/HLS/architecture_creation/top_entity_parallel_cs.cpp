@@ -101,10 +101,6 @@ DesignFlowStep_Status top_entity_parallel_cs::InternalExec()
    HLS->top = structural_managerRef(new structural_manager(parameters));
    SM = HLS->top;
    structural_managerRef Datapath = HLS->datapath;
-   std::string parallel_controller_model = "controller_parallel";
-   std::string parallel_controller_name = "controller_parallel";
-   std::string par_ctrl_library = HLS->HLS_T->get_technology_manager()->get_library(parallel_controller_model);
-   structural_objectRef controller_circuit = SM->add_module_from_technology_library(parallel_controller_name, parallel_controller_model, par_ctrl_library, circuit, HLS->HLS_T->get_technology_manager());
 
    /// top circuit creation
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Top circuit creation");
@@ -128,6 +124,11 @@ DesignFlowStep_Status top_entity_parallel_cs::InternalExec()
 
    structural_objectRef datapath_circuit = Datapath->get_circ();
    THROW_ASSERT(datapath_circuit, "Missing datapath circuit");
+
+   std::string parallel_controller_model = "controller_parallel";
+   std::string parallel_controller_name = "controller_parallel";
+   std::string par_ctrl_library = HLS->HLS_T->get_technology_manager()->get_library(parallel_controller_model);
+   structural_objectRef controller_circuit = SM->add_module_from_technology_library(parallel_controller_name, parallel_controller_model, par_ctrl_library, circuit, HLS->HLS_T->get_technology_manager());
    THROW_ASSERT(controller_circuit, "Missing controller circuit");
 
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Creating controller object");
@@ -260,26 +261,4 @@ void top_entity_parallel_cs::connect_port_parallel(const structural_objectRef ci
     SM->add_connection(request_sign, datapath_request);
 }
 
-void top_entity_parallel_cs::add_ports(structural_objectRef circuit, structural_objectRef clock_port, structural_objectRef reset_port)
-{
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Adding ports");
-   const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(funId);
-   const BehavioralHelperConstRef BH = FB->CGetBehavioralHelper();
-
-   const structural_objectRef& Datapath = HLS->datapath->get_circ();
-   const std::list<unsigned int>& function_parameters = BH->get_parameters();
-   conn_binding& conn = *(HLS->Rconn);
-   for (const auto function_parameter : function_parameters)
-   {
-      generic_objRef input = conn.get_port(function_parameter, conn_binding::IN);
-      structural_objectRef in_obj = input->get_structural_obj();
-      structural_type_descriptorRef port_type = in_obj->get_typeRef();
-      structural_objectRef top_obj;
-      if(in_obj->get_kind() == port_vector_o_K)
-         top_obj = SM->add_port_vector(FB->CGetBehavioralHelper()->PrintVariable(function_parameter), port_o::IN, GetPointer<port_o>(in_obj)->get_ports_size(), circuit, port_type);
-      else
-         top_obj = SM->add_port(FB->CGetBehavioralHelper()->PrintVariable(function_parameter), port_o::IN, circuit, port_type);
-   }
-   //add parameter port to top entity, connect them to datapath
-   //connect loop index (in_port_var_4) with controller
-}
+//ADD loop iteration to controller

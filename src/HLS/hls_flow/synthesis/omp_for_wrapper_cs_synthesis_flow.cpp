@@ -38,6 +38,7 @@
  *
 */
 #include "omp_for_wrapper_cs_synthesis_flow.hpp"
+#include "add_library.hpp"
 
 OmpForWrapperCSSynthesisFlow::OmpForWrapperCSSynthesisFlow(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager) :
    HLSFunctionStep(_parameters, _HLSMgr, _funId, _design_flow_manager, HLSFlowStep_Type::OMP_FOR_WRAPPER_SYNTHESIS_FLOW)
@@ -60,6 +61,7 @@ const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
          {
             ret.insert(std::make_tuple(HLSFlowStep_Type::TOP_ENTITY_CS_PARALLEL_CREATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
             ret.insert(std::make_tuple(HLSFlowStep_Type::DATAPATH_CS_PARALLEL_CREATOR, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
+            ret.insert(std::make_tuple(HLSFlowStep_Type::ADD_LIBRARY, HLSFlowStepSpecializationConstRef(new AddLibrarySpecialization(false)), HLSFlowStep_Relationship::SAME_FUNCTION));
             break;
          }
       case INVALIDATION_RELATIONSHIP:
