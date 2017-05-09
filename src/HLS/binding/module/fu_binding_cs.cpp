@@ -344,6 +344,7 @@ void fu_binding_cs::manage_memory_ports_parallel_chained_kernel(const structural
          SM->add_connection(port_i, cir_port);
       }
    }
+   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - Connected memory_port of scheduler");
 }
 
 void fu_binding_cs::manage_memory_ports_parallel_chained_hierarchical(const structural_managerRef SM, const std::set<structural_objectRef> &memory_modules, const structural_objectRef circuit, const hlsRef HLS, unsigned int & _unique_id)
@@ -363,12 +364,12 @@ void fu_binding_cs::manage_memory_ports_parallel_chained_hierarchical(const stru
             THROW_ASSERT(!cir_port || GetPointer<port_o>(cir_port), "should be a port or null");
             if(!cir_port)
             {
-               if(port_i->get_kind() == port_vector_o_K)
-                  cir_port = SM->add_port_vector(port_name, port_o::IN, GetPointer<port_o>(port_i)->get_ports_size(), circuit, port_i->get_typeRef());
-               else
-                  cir_port = SM->add_port(port_name, port_o::IN, circuit, port_i->get_typeRef());
+               cir_port = SM->add_port_vector(port_name, port_o::IN, parameters->getOption<unsigned int>(OPT_channels_number), circuit, port_i->get_typeRef());
                port_o::fix_port_properties(port_i, cir_port);
-               SM->add_connection(GetPointer<port_o>(cir_port)->get_port(0), GetPointer<port_o>(port_i)->get_port(0));  //connect first
+            }
+            if(port_i->get_kind() == port_vector_o_K) //connecting a port vector
+            {
+               SM->add_connection(GetPointer<port_o>(cir_port)->get_port(0), GetPointer<port_o>(port_i)->get_port(0));  //connect first port
                if(GetPointer<port_o>(port_i)->get_ports_size()>1)   //More than 1 channel
                {
                   for(unsigned int num_chan=1;num_chan<parameters->getOption<unsigned int>(OPT_channels_number);num_chan++)
@@ -378,16 +379,7 @@ void fu_binding_cs::manage_memory_ports_parallel_chained_hierarchical(const stru
                }
             }
             else
-            {
-               SM->add_connection(GetPointer<port_o>(cir_port)->get_port(0), GetPointer<port_o>(port_i)->get_port(0));
-               if(GetPointer<port_o>(port_i)->get_ports_size()>1)   //More than 1 channel
-               {
-                  for(unsigned int num_chan=1;num_chan<parameters->getOption<unsigned int>(OPT_channels_number);num_chan++)
-                  {
-                     SM->add_connection(GetPointer<port_o>(cir_port)->get_port(num_chan), GetPointer<port_o>(port_i)->get_port(num_chan));  //connect other port one by one
-                  }
-               }
-            }
+               SM->add_connection(GetPointer<port_o>(cir_port)->get_port(0), port_i);  //connect a normal port
          }
       }
       for(unsigned int j = 0; j < GetPointer<module>(*i)->get_out_port_size(); j++)
@@ -400,22 +392,25 @@ void fu_binding_cs::manage_memory_ports_parallel_chained_hierarchical(const stru
             THROW_ASSERT(!cir_port || GetPointer<port_o>(cir_port), "should be a port or null");
             if(!cir_port)
             {
-               if(port_i->get_kind() == port_vector_o_K)
-                  cir_port = SM->add_port_vector(port_name, port_o::OUT, GetPointer<port_o>(port_i)->get_ports_size(), circuit, port_i->get_typeRef());
-               else
-                  cir_port = SM->add_port(port_name, port_o::OUT, circuit, port_i->get_typeRef());
+               cir_port = SM->add_port_vector(port_name, port_o::OUT, parameters->getOption<unsigned int>(OPT_channels_number), circuit, port_i->get_typeRef());
                port_o::fix_port_properties(port_i, cir_port);
             }
-            primary_outs[GetPointer<port_o>(cir_port)->get_port(0)].insert(GetPointer<port_o>(port_i)->get_port(0));    //merge first cell of vector
-            if(GetPointer<port_o>(port_i)->get_ports_size()>1)   //More than 1 channel
+            if(port_i->get_kind() == port_vector_o_K) //connecting a port vector
             {
-               for(unsigned int num_chan=1;num_chan<parameters->getOption<unsigned int>(OPT_channels_number);num_chan++)
+               primary_outs[GetPointer<port_o>(cir_port)->get_port(0)].insert(GetPointer<port_o>(port_i)->get_port(0));    //merge first cell of vector
+               if(GetPointer<port_o>(port_i)->get_ports_size()>1)   //More than 1 channel
                {
-                  SM->add_connection(GetPointer<port_o>(port_i)->get_port(num_chan), GetPointer<port_o>(cir_port)->get_port(num_chan));  //connect other port one by one
+                  for(unsigned int num_chan=1;num_chan<parameters->getOption<unsigned int>(OPT_channels_number);num_chan++)
+                  {
+                     SM->add_connection(GetPointer<port_o>(port_i)->get_port(num_chan), GetPointer<port_o>(cir_port)->get_port(num_chan));  //connect other port one by one
+                  }
                }
             }
+            else
+               primary_outs[GetPointer<port_o>(cir_port)->get_port(0)].insert(port_i);    //merge normal port
          }
       }
    }
    join_merge_split(SM, HLS, primary_outs, circuit, _unique_id);
+   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - End merging, splitting for hierarchical");
 }

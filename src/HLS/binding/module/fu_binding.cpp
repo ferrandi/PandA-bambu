@@ -740,7 +740,6 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
       structural_objectRef curr_gate = add_gate(HLSMgr, HLS, fu_lib_unit, wu->second+"_instance", std::set<vertex>(), clock_port, reset_port);
       PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Wrapped Unit: " + allocation_information->get_string_name(wu->first));
       const std::set<vertex>& mapped_operations = get_operations(wu->first, 0);
-      std::cout<<"POINT 1"<<std::endl;
       specialise_fu(HLSMgr, HLS, curr_gate, wu->first, mapped_operations, 0);
       check_parametrization(curr_gate);
       fun_obj[wu->first] = curr_gate;
@@ -832,7 +831,6 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
                                             STR(callSiteMemorySym->get_address()));
             }
             const unsigned int ar_var = allocation_information->is_proxy_memory_unit(*i) ? allocation_information->get_proxy_memory_var(*i) : 0;
-            std::cout<<"POINT 3"<<std::endl;
             specialise_fu(HLSMgr, HLS, curr_gate, *i, mapped_operations, ar_var);
             check_parametrization(curr_gate);
             if(proxy_memory_units.find(*i) != proxy_memory_units.end())

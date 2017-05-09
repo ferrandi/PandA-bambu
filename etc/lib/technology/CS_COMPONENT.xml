@@ -617,7 +617,7 @@ simple_dual_port_ram_single_clock #(.BITSIZE_data(BITSIZE_data_in),.BITSIZE_addr
           <port_o id="selector_register_file" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" />
           </port_o>
-          <NP_functionality LIBRARY="scheduler IN_M_Rdata_ram IN_M_DataRdy IN_Min_tag Mout_oe_ram Mout_we_ram Mout_addr_ram Mout_data_ram_size Mout_Wdata_ram Mout_tag_ram done_scheduler suspension task_pool_end OUT_Mout_oe_ram OUT_Mout_we_ram OUT_Mout_addr_ram OUT_Mout_data_ram_size OUT_Mout_Wdata_ram OUT_Mout_tag_ramMin_tag M_Rdata_ram M_DataRdy request_accepted done_request selector_register_file NUM_TASKS KERN_NUM ADDR_ACC"
+          <NP_functionality LIBRARY="scheduler IN_M_Rdata_ram IN_M_DataRdy IN_Min_tag IN_request_accepted Mout_oe_ram Mout_we_ram Mout_addr_ram Mout_data_ram_size Mout_Wdata_ram Mout_tag_ram done_scheduler suspension task_pool_end OUT_Mout_oe_ram OUT_Mout_we_ram OUT_Mout_addr_ram OUT_Mout_data_ram_size OUT_Mout_Wdata_ram OUT_Mout_tag_ramMin_tag M_Rdata_ram M_DataRdy request_accepted selector_register_file NUM_TASKS KERN_NUM ADDR_ACC"
           IP_COMPONENT="fifio, fifio_free, mem_scheduler" VERILOG_PROVIDED="
   parameter SIZE_IN=BITSIZE_Mout_oe_ram+BITSIZE_Mout_we_ram+BITSIZE_Mout_addr_ram+BITSIZE_Mout_data_ram_size+BITSIZE_Mout_Wdata_ram+BITSIZE_Mout_tag;
 
@@ -978,7 +978,7 @@ simple_dual_port_ram_single_clock #(.BITSIZE_data(BITSIZE_data_in),.BITSIZE_addr
           <port_o id="Mout_tag_ram" dir="OUT" is_memory="1" is_master="1" is_tag_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" />
           </port_o>
-          <NP_functionality LIBRARY="mem_ctrl_kernel in1 in2 in3 in4 out1 M_Rdata_ram Min_tag M_DataRdy Mout_oe_ram Mout_we_ram Mout_addr_ram Mout_data_ram_size Mout_Wdata_ram Mout_tag_ram TAG_MEM_REQ" VERILOG_PROVIDED="
+          <NP_functionality LIBRARY="mem_ctrl_kernel in1 in2 in3 in4 out1 M_Rdata_ram Min_tag M_DataRdy request_accepted Mout_oe_ram Mout_we_ram Mout_addr_ram Mout_data_ram_size Mout_Wdata_ram Mout_tag_ram TAG_MEM_REQ" VERILOG_PROVIDED="
   assign done_port=((Min_tag==TAG_MEM_REQ) &amp;&amp; M_DataRdy[0]);  //if the tag is equal and ready=1 then its the right data
   assign Mout_Wdata_ram = ((sel_LOAD || sel_STORE) &amp;&amp; start_port) ? in1 :{BITSIZE_Mout_Wdata_ram{1'b0}};
   assign out1 = M_Rdata_ram;  
@@ -1060,7 +1060,7 @@ simple_dual_port_ram_single_clock #(.BITSIZE_data(BITSIZE_data_in),.BITSIZE_addr
           <port_vector_o id="M_DataRdy" dir="OUT" is_memory="1">
             <structural_type_descriptor type="INT" size="1" vector_size="1"/>
           </port_vector_o>
-          <port_vector_o id="request_accepted" dir="OUT" is_memory="1" is_master="1">
+          <port_vector_o id="request_accepted" dir="OUT" is_memory="1">
             <structural_type_descriptor type="BOOL" size="1" vector_size="1"/>
           </port_vector_o>
           <port_o id="occupancies" dir="OUT">
@@ -1420,7 +1420,7 @@ simple_dual_port_ram_single_clock #(.BITSIZE_data(BITSIZE_data_in),.BITSIZE_addr
           <port_vector_o id="request_accepted" dir="OUT" is_memory="1">
             <structural_type_descriptor type="BOOL" size="1" vector_size="1"/>
           </port_vector_o>
-          <NP_functionality LIBRARY="memory_ctrl_parallel IN_M_Rdata_ram IN_Min_tag IN_M_DataRdy Mout_oe_ram Mout_we_ram Mout_addr_ram Mout_data_ram_size Mout_Wdata_ram Mout_tag_ram OUT_Mout_oe_ram OUT_Mout_we_ram OUT_Mout_addr_ram OUT_Mout_data_ram_size OUT_Mout_Wdata_ram OUT_Mout_tag_ram M_Rdata_ram Min_tag M_DataRdy"
+          <NP_functionality LIBRARY="memory_ctrl_parallel IN_M_Rdata_ram IN_Min_tag IN_M_DataRdy IN_request_accepted Mout_oe_ram Mout_we_ram Mout_addr_ram Mout_data_ram_size Mout_Wdata_ram Mout_tag_ram OUT_Mout_oe_ram OUT_Mout_we_ram OUT_Mout_addr_ram OUT_Mout_data_ram_size OUT_Mout_Wdata_ram OUT_Mout_tag_ram M_Rdata_ram Min_tag M_DataRdy request_accepted"
           IP_COMPONENT="PT_RR_FU, mux_pw_2" VERILOG_PROVIDED="
           //In order to be generated correctly NUM_CHANNEL&lt;=NUM_ACC and both of them must be a power of 2
           parameter SIZE_TOT_IN = BITSIZE_Mout_tag_ram+BITSIZE_Mout_Wdata_ram+BITSIZE_Mout_data_ram_size+BITSIZE_Mout_addr_ram+BITSIZE_Mout_we_ram+BITSIZE_Mout_oe_ram;

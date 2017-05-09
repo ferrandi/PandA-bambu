@@ -331,7 +331,7 @@
             <structural_type_descriptor type="BOOL" size="1"/>
             <connected_objects/>
           </port_o>
-          <port_o id="request_accepted" dir="IN" is_memory="1" is_master="1">
+          <port_o id="request_accepted" dir="IN" is_memory="1" is_global="1" is_extern="1">
             <structural_type_descriptor type="BOOL" size="1"/>
             <connected_objects/>
           </port_o>
