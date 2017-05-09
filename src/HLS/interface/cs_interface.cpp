@@ -85,7 +85,6 @@ DesignFlowStep_Status cs_interface::InternalExec()
    GetPointer<module>(interfaceObj)->set_license(GENERATED_LICENSE);
 
    add_parameter_port(SM_cs_interface,interfaceObj,wrappedObj);   //connect port
-
    structural_objectRef clock_port, reset_port;
    structural_objectRef port_ck = wrappedObj->find_member(CLOCK_PORT_NAME, port_o_K, wrappedObj);
    clock_port= SM_cs_interface->add_port(GetPointer<port_o>(port_ck)->get_id(), port_o::IN,
@@ -140,7 +139,7 @@ void cs_interface::instantiate_component_parallel(const structural_managerRef SM
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Start to instantiate memory_ctrl_top");
    structural_type_descriptorRef bool_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 0));
    std::string memory_ctrl_model = "memory_ctrl";
-   std::string memory_ctrl_name = "memory_parallel_top";
+   std::string memory_ctrl_name = "memory_ctrl_top";
    std::string memory_ctrl_library = HLS->HLS_T->get_technology_manager()->get_library(memory_ctrl_model);
    structural_objectRef mem_ctrl_mod = SM->add_module_from_technology_library(memory_ctrl_name, memory_ctrl_model, memory_ctrl_library, circuit, HLS->HLS_T->get_technology_manager());
 
@@ -212,6 +211,7 @@ void cs_interface::manage_memory_ports_parallel_chained_top(const structural_man
    structural_objectRef memory_ctrl_port;
    unsigned int num_channel=HLS->Param->getOption<unsigned int>(OPT_channels_number);
    structural_objectRef memory_ctrl = circuit->find_member("memory_ctrl_top", component_o_K, circuit);
+   THROW_ASSERT(memory_ctrl, "NULL, memmory_ctrl");
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - Connecting memory_port of memory_ctrl");
    for(unsigned int j = 0; j < GetPointer<module>(memory_module)->get_in_port_size(); j++)  //from memory_ctrl output to module input
    {
@@ -219,13 +219,15 @@ void cs_interface::manage_memory_ports_parallel_chained_top(const structural_man
       if(GetPointer<port_o>(port_i)->get_is_memory() && (!GetPointer<port_o>(port_i)->get_is_global()) && (!GetPointer<port_o>(port_i)->get_is_extern()))
       {
          std::string port_name = GetPointer<port_o>(port_i)->get_id();
+         std::cout<<"Called memory_ctrl"<<std::endl;
          memory_ctrl_port = memory_ctrl->find_member(port_name, port_vector_o_K, memory_ctrl);
-         structural_objectRef mem_paral_Sign=SM->add_sign_vector(port_name+"_signal", num_channel, circuit, port_i->get_typeRef());
+         structural_objectRef memory_Sign=SM->add_sign_vector(port_name+"_signal", num_channel, circuit, port_i->get_typeRef());
          THROW_ASSERT(!memory_ctrl_port || GetPointer<port_o>(memory_ctrl_port), "should be a port");
-         SM->add_connection(memory_ctrl_port, mem_paral_Sign);
-         SM->add_connection(mem_paral_Sign, port_i);
+         SM->add_connection(memory_ctrl_port, memory_Sign);
+         SM->add_connection(memory_Sign, port_i);
       }
    }
+   std::cout<<"Finish part 1"<<std::endl;
    for(unsigned int j = 0; j < GetPointer<module>(memory_module)->get_out_port_size(); j++)    //from module output to memory_ctrl input
    {
       structural_objectRef port_i = GetPointer<module>(memory_module)->get_out_port(j);
@@ -233,10 +235,10 @@ void cs_interface::manage_memory_ports_parallel_chained_top(const structural_man
       {
          std::string port_name = GetPointer<port_o>(port_i)->get_id();
          memory_ctrl_port = memory_ctrl->find_member(port_name, port_vector_o_K, memory_ctrl);
-         structural_objectRef mem_paral_Sign=SM->add_sign_vector(port_name+"_signal", num_channel, circuit, port_i->get_typeRef());
+         structural_objectRef memory_Sign=SM->add_sign_vector(port_name+"_signal", num_channel, circuit, port_i->get_typeRef());
          THROW_ASSERT(!memory_ctrl_port || GetPointer<port_o>(memory_ctrl_port), "should be a port");
-         SM->add_connection(port_i, mem_paral_Sign);
-         SM->add_connection(mem_paral_Sign, memory_ctrl_port);
+         SM->add_connection(port_i, memory_Sign);
+         SM->add_connection(memory_Sign, memory_ctrl_port);
       }
    }
 
@@ -250,17 +252,10 @@ void cs_interface::manage_memory_ports_parallel_chained_top(const structural_man
          THROW_ASSERT(!cir_port || GetPointer<port_o>(cir_port), "should be a port or null");
          if(!cir_port)
          {
-            if(port_i->get_kind() == port_vector_o_K)
-               cir_port = SM->add_port_vector(port_name, port_o::IN, GetPointer<port_o>(port_i)->get_ports_size(), circuit, port_i->get_typeRef());
-            else
-               cir_port = SM->add_port(port_name, port_o::IN, circuit, port_i->get_typeRef());
+            cir_port = SM->add_port_vector(port_name, port_o::IN, GetPointer<port_o>(port_i)->get_ports_size(), circuit, port_i->get_typeRef());
             port_o::fix_port_properties(port_i, cir_port);
-            SM->add_connection(cir_port,port_i);
          }
-         else
-         {
-            SM->add_connection(cir_port,port_i);
-         }
+         SM->add_connection(cir_port,port_i);
       }
    }
    for(unsigned int j = 0; j < GetPointer<module>(memory_ctrl)->get_out_port_size(); j++)    //connect output memory_ctrl with output circuit
@@ -273,17 +268,10 @@ void cs_interface::manage_memory_ports_parallel_chained_top(const structural_man
          THROW_ASSERT(!cir_port || GetPointer<port_o>(cir_port), "should be a port or null");
          if(!cir_port)
          {
-            if(port_i->get_kind() == port_vector_o_K)
-               cir_port = SM->add_port_vector(port_name, port_o::OUT, GetPointer<port_o>(port_i)->get_ports_size(), circuit, port_i->get_typeRef());
-            else
-               cir_port = SM->add_port(port_name, port_o::OUT, circuit, port_i->get_typeRef());
+            cir_port = SM->add_port_vector(port_name, port_o::OUT, GetPointer<port_o>(port_i)->get_ports_size(), circuit, port_i->get_typeRef());
             port_o::fix_port_properties(port_i, cir_port);
-            SM->add_connection(cir_port,port_i);
          }
-         else
-         {
-            SM->add_connection(cir_port,port_i);
-         }
+         SM->add_connection(cir_port,port_i);
       }
    }
 }

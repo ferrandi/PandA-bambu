@@ -1058,7 +1058,7 @@ simple_dual_port_ram_single_clock #(.BITSIZE_data(BITSIZE_data_in),.BITSIZE_addr
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
           <port_vector_o id="M_DataRdy" dir="OUT" is_memory="1">
-            <structural_type_descriptor type="INT" size="1" vector_size="1"/>
+            <structural_type_descriptor type="BOOL" size="1" vector_size="1"/>
           </port_vector_o>
           <port_vector_o id="request_accepted" dir="OUT" is_memory="1">
             <structural_type_descriptor type="BOOL" size="1" vector_size="1"/>

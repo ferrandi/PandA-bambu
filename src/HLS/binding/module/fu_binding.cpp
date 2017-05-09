@@ -1164,7 +1164,6 @@ void fu_binding::manage_memory_ports_chained(const structural_managerRef SM, con
 
 void fu_binding::join_merge_split(const structural_managerRef SM, const hlsRef HLS, std::map<structural_objectRef, std::set<structural_objectRef> > &primary_outs, const structural_objectRef circuit, unsigned int & _unique_id)
 {
-   std::cout<<"using jms"<<std::endl;
    std::string js_name = "join_signal";
    std::string js_library = HLS->HLS_T->get_technology_manager()->get_library(js_name);
    std::string ss_name = "split_signal";
