@@ -57,6 +57,7 @@ fu_binding_cs::fu_binding_cs(const HLS_managerConstRef _HLSMgr, const unsigned i
 
 void fu_binding_cs::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, structural_objectRef clock_port, structural_objectRef reset_port)
 {
+   std::cout<<"Using fu_binding_cs"<<std::endl;
    auto omp_functions = GetPointer<OmpFunctions>(HLSMgr->Rfuns);
    if(omp_functions->kernel_functions.find(HLS->functionId) != omp_functions->kernel_functions.end())
    {
@@ -179,9 +180,14 @@ void fu_binding_cs::instantiate_suspension_component(const HLS_managerRef HLSMgr
       if(curr_gate->find_member(STR(SUSPENSION), port_o_K, curr_gate)!=NULL && curr_gate->get_id()!="scheduler_kernel")
          ++num_suspension;
    }
+   unsigned int num_starting_port_or=GetPointer<port_o>(port_in_or)->get_ports_size();   //or must start with 2 port
+   if(num_starting_port_or>2)
+      THROW_ERROR("Or start with more than 2 input port");
+   else if(num_starting_port_or<2)
+      GetPointer<port_o>(port_in_or)->add_n_ports(2-num_starting_port_or, port_in_or);
    if(num_suspension>0)
    {
-      GetPointer<port_o>(port_in_or)->add_n_ports(num_suspension+2, port_in_or);
+      GetPointer<port_o>(port_in_or)->add_n_ports(num_suspension, port_in_or);
       unsigned int num_signal_or=0;
       for(i=0;i<n_elements;i++)
       {
@@ -198,10 +204,6 @@ void fu_binding_cs::instantiate_suspension_component(const HLS_managerRef HLSMgr
             }
          }
       }
-   }
-   else
-   {
-      GetPointer<port_o>(port_in_or)->add_n_ports(static_cast<unsigned int>(2), port_in_or);
    }
    for(unsigned int j = 0; j < GetPointer<module>(circuit)->get_in_port_size(); j++)
    {

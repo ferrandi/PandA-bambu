@@ -58,8 +58,11 @@ top_entity_cs::~top_entity_cs()
 
 DesignFlowStep_Status top_entity_cs::InternalExec()
 {
+   structural_managerRef Datapath = HLS->datapath;
+   structural_objectRef datapath_circuit = Datapath->get_circ();
     auto omp_functions = GetPointer<OmpFunctions>(HLSMgr->Rfuns);
     top_entity::InternalExec();
+
     if(omp_functions->kernel_functions.find(funId) != omp_functions->kernel_functions.end())
     {
         add_context_switch_port_kernel();

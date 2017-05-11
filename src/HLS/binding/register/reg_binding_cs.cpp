@@ -82,13 +82,9 @@ void reg_binding_cs::add_register_file_function()
    {
       generic_objRef regis = get(i);
       std::string name = regis->get_string();
-      std::string register_type_name=CalculateRegisterName(i);
-      std::string library = HLS->HLS_T->get_technology_manager()->get_library(register_type_name);
-      structural_objectRef reg_mod = SM->add_module_from_technology_library(name, register_type_name, library, circuit, HLS->HLS_T->get_technology_manager());
-      this->specialise_reg(reg_mod, i);
-      structural_objectRef port_selector = reg_mod->find_member(SELECTOR_REGISTER_FILE, port_o_K, reg_mod);
+      structural_objectRef registerFile = circuit->find_member(name, component_o_K, circuit);
+      structural_objectRef port_selector = registerFile->find_member(SELECTOR_REGISTER_FILE, port_o_K, registerFile);
       SM->add_connection(selector_register_file_datapath, port_selector);
-      regis->set_structural_obj(reg_mod);
    }
 }
 
@@ -100,12 +96,8 @@ void reg_binding_cs::add_register_file_kernel(structural_objectRef selector_regF
    {
       generic_objRef regis = get(i);
       std::string name = regis->get_string();
-      std::string register_type_name=CalculateRegisterName(i);
-      std::string library = HLS->HLS_T->get_technology_manager()->get_library(register_type_name);
-      structural_objectRef reg_mod = SM->add_module_from_technology_library(name, register_type_name, library, circuit, HLS->HLS_T->get_technology_manager());
-      this->specialise_reg(reg_mod, i);
-      structural_objectRef port_selector = reg_mod->find_member(SELECTOR_REGISTER_FILE, port_o_K, reg_mod);
+      structural_objectRef registerFile = circuit->find_member(name, component_o_K, circuit);
+      structural_objectRef port_selector = registerFile->find_member(SELECTOR_REGISTER_FILE, port_o_K, registerFile);
       SM->add_connection(selector_regFile_sign, port_selector);
-      regis->set_structural_obj(reg_mod);
    }
 }

@@ -131,6 +131,31 @@ DesignFlowStep_Status top_entity_parallel_cs::InternalExec()
    structural_objectRef controller_circuit = SM->add_module_from_technology_library(parallel_controller_name, parallel_controller_model, par_ctrl_library, circuit, HLS->HLS_T->get_technology_manager());
    THROW_ASSERT(controller_circuit, "Missing controller circuit");
 
+   for(unsigned int j = 0; j < GetPointer<module>(datapath_circuit)->get_in_port_size(); j++)  //resize input port
+   {
+      structural_objectRef port_i = GetPointer<module>(datapath_circuit)->get_in_port(j);
+      if(GetPointer<port_o>(port_i)->get_is_memory())
+      {
+         std::string port_name = GetPointer<port_o>(port_i)->get_id();
+         if((port_i->get_kind() == port_vector_o_K))
+            std::cout<<"Port_vector "<<port_name<<" dimension"<<GetPointer<port_o>(port_i)->get_ports_size()<<std::endl;
+         else
+            std::cout<<"Port "<<port_name<<std::endl;
+      }
+   }
+   for(unsigned int j = 0; j < GetPointer<module>(datapath_circuit)->get_out_port_size(); j++)  //resize input port
+   {
+      structural_objectRef port_i = GetPointer<module>(datapath_circuit)->get_out_port(j);
+      if(GetPointer<port_o>(port_i)->get_is_memory())
+      {
+         std::string port_name = GetPointer<port_o>(port_i)->get_id();
+         if((port_i->get_kind() == port_vector_o_K))
+            std::cout<<"Port_vector "<<port_name<<" dimension"<<GetPointer<port_o>(port_i)->get_ports_size()<<std::endl;
+         else
+            std::cout<<"Port "<<port_name<<std::endl;
+      }
+   }
+
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Creating controller object");
    /// creating structural_manager
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Adding controller");
@@ -217,48 +242,85 @@ DesignFlowStep_Status top_entity_parallel_cs::InternalExec()
    memory::propagate_memory_parameters(HLS->datapath->get_circ(), HLS->top);
 
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Circuit created without errors!");
+
+   for(unsigned int j = 0; j < GetPointer<module>(circuit)->get_in_port_size(); j++)  //resize input port
+   {
+      structural_objectRef port_i = GetPointer<module>(circuit)->get_in_port(j);
+      if(GetPointer<port_o>(port_i)->get_is_memory())
+      {
+         std::string port_name = GetPointer<port_o>(port_i)->get_id();
+         if((port_i->get_kind() == port_vector_o_K))
+            std::cout<<"Port_vector "<<port_name<<" dimension"<<GetPointer<port_o>(port_i)->get_ports_size()<<std::endl;
+         else
+            std::cout<<"Port "<<port_name<<std::endl;
+      }
+   }
+   for(unsigned int j = 0; j < GetPointer<module>(circuit)->get_out_port_size(); j++)  //resize input port
+   {
+      structural_objectRef port_i = GetPointer<module>(circuit)->get_out_port(j);
+      if(GetPointer<port_o>(port_i)->get_is_memory())
+      {
+         std::string port_name = GetPointer<port_o>(port_i)->get_id();
+         if((port_i->get_kind() == port_vector_o_K))
+            std::cout<<"Port_vector "<<port_name<<" dimension"<<GetPointer<port_o>(port_i)->get_ports_size()<<std::endl;
+         else
+            std::cout<<"Port "<<port_name<<std::endl;
+      }
+   }
+
    return DesignFlowStep_Status::SUCCESS;
 }
 
 void top_entity_parallel_cs::connect_port_parallel(const structural_objectRef circuit)
 {
-    structural_managerRef Datapath = HLS->datapath;
-    structural_managerRef Controller = HLS->controller;
-    structural_objectRef datapath_circuit = Datapath->get_circ();
-    structural_objectRef controller_circuit = Controller->get_circ();
-    structural_type_descriptorRef bool_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 0));
-    unsigned int num_slots=static_cast<unsigned int>(log2(HLS->Param->getOption<unsigned int>(OPT_context_switch)));
-    structural_type_descriptorRef data_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 32));
+   structural_managerRef Datapath = HLS->datapath;
+   structural_managerRef Controller = HLS->controller;
+   structural_objectRef datapath_circuit = Datapath->get_circ();
+   structural_objectRef controller_circuit = Controller->get_circ();
+   structural_type_descriptorRef bool_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 0));
+   unsigned int num_slots=static_cast<unsigned int>(log2(HLS->Param->getOption<unsigned int>(OPT_context_switch)));
+   structural_type_descriptorRef data_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 32));
 
-    structural_objectRef controller_task_pool_end = controller_circuit->find_member(STR(TASKS_POOL_END), port_o_K, controller_circuit);
-    structural_objectRef datapath_task_pool_end = datapath_circuit->find_member(STR(TASKS_POOL_END), port_o_K, datapath_circuit);
-    structural_objectRef task_pool_end_sign=SM->add_sign(STR(TASKS_POOL_END)+"_signal", circuit, bool_type);
-    SM->add_connection(datapath_task_pool_end, task_pool_end_sign);
-    SM->add_connection(task_pool_end_sign, controller_task_pool_end);
+   structural_objectRef controller_task_pool_end = controller_circuit->find_member(STR(TASKS_POOL_END), port_o_K, controller_circuit);
+   structural_objectRef datapath_task_pool_end = datapath_circuit->find_member(STR(TASKS_POOL_END), port_o_K, datapath_circuit);
+   structural_objectRef task_pool_end_sign=SM->add_sign(STR(TASKS_POOL_END)+"_signal", circuit, bool_type);
+   SM->add_connection(datapath_task_pool_end, task_pool_end_sign);
+   SM->add_connection(task_pool_end_sign, controller_task_pool_end);
 
-    structural_objectRef datapath_done_request = datapath_circuit->find_member(STR(DONE_REQUEST)+"accelerator", port_vector_o_K, datapath_circuit);
-    structural_objectRef controller_done_request = controller_circuit->find_member(STR(DONE_REQUEST)+"accelerator", port_vector_o_K, datapath_circuit);
-    structural_objectRef done_request_sign=SM->add_sign_vector(STR(DONE_REQUEST)+"accelerator"+"_signal", num_slots, circuit, bool_type);
-    SM->add_connection(datapath_done_request, done_request_sign);
-    SM->add_connection(done_request_sign, controller_done_request);
+   structural_objectRef datapath_done_request = datapath_circuit->find_member(STR(DONE_REQUEST)+"accelerator", port_vector_o_K, datapath_circuit);
+   structural_objectRef controller_done_request = controller_circuit->find_member(STR(DONE_REQUEST)+"accelerator", port_vector_o_K, datapath_circuit);
+   structural_objectRef done_request_sign=SM->add_sign_vector(STR(DONE_REQUEST)+"accelerator"+"_signal", num_slots, circuit, bool_type);
+   SM->add_connection(datapath_done_request, done_request_sign);
+   SM->add_connection(done_request_sign, controller_done_request);
 
-    structural_objectRef datapath_done_port = datapath_circuit->find_member(STR(DONE_PORT_NAME)+"accelerator", port_vector_o_K, datapath_circuit);
-    structural_objectRef controller_done_port = controller_circuit->find_member(STR(DONE_PORT_NAME)+"accelerator", port_vector_o_K, controller_circuit);
-    structural_objectRef done_port_sign=SM->add_sign_vector(STR(DONE_PORT_NAME)+"accelerator"+"_signal", num_slots, circuit, bool_type);
-    SM->add_connection(datapath_done_port, done_port_sign);
-    SM->add_connection(done_port_sign, controller_done_port);
+   structural_objectRef datapath_done_port = datapath_circuit->find_member(STR(DONE_PORT_NAME)+"accelerator", port_vector_o_K, datapath_circuit);
+   structural_objectRef controller_done_port = controller_circuit->find_member(STR(DONE_PORT_NAME)+"accelerator", port_vector_o_K, controller_circuit);
+   structural_objectRef done_port_sign=SM->add_sign_vector(STR(DONE_PORT_NAME)+"accelerator"+"_signal", num_slots, circuit, bool_type);
+   SM->add_connection(datapath_done_port, done_port_sign);
+   SM->add_connection(done_port_sign, controller_done_port);
 
-    structural_objectRef datapath_start_port = datapath_circuit->find_member(STR(START_PORT_NAME)+"accelerator", port_vector_o_K, datapath_circuit);
-    structural_objectRef controller_start_port = controller_circuit->find_member(STR(START_PORT_NAME)+"accelerator", port_vector_o_K, controller_circuit);
-    structural_objectRef done_start_sign=SM->add_sign_vector(STR(START_PORT_NAME)+"accelerator"+"_signal", num_slots, circuit, bool_type);
-    SM->add_connection(controller_start_port, done_start_sign);
-    SM->add_connection(done_start_sign, datapath_start_port);
+   structural_objectRef datapath_start_port = datapath_circuit->find_member(STR(START_PORT_NAME)+"accelerator", port_vector_o_K, datapath_circuit);
+   structural_objectRef controller_start_port = controller_circuit->find_member(STR(START_PORT_NAME)+"accelerator", port_vector_o_K, controller_circuit);
+   structural_objectRef done_start_sign=SM->add_sign_vector(STR(START_PORT_NAME)+"accelerator"+"_signal", num_slots, circuit, bool_type);
+   SM->add_connection(controller_start_port, done_start_sign);
+   SM->add_connection(done_start_sign, datapath_start_port);
 
-    structural_objectRef datapath_request = datapath_circuit->find_member("request_port", port_o_K, datapath_circuit);
-    structural_objectRef controller_request = controller_circuit->find_member("request_port", port_o_K, controller_circuit);
-    structural_objectRef request_sign=SM->add_sign("request_signal", circuit, data_type);
-    SM->add_connection(controller_request, request_sign);
-    SM->add_connection(request_sign, datapath_request);
+   structural_objectRef datapath_request = datapath_circuit->find_member("request_port", port_o_K, datapath_circuit);
+   structural_objectRef controller_request = controller_circuit->find_member("request_port", port_o_K, controller_circuit);
+   structural_objectRef request_sign=SM->add_sign("request_signal", circuit, data_type);
+   SM->add_connection(controller_request, request_sign);
+   SM->add_connection(request_sign, datapath_request);
+
+   /*structural_objectRef controller_loopIter=controller_circuit->find_member("LoopIteration", port_o_K, controller_circuit);
+   bool loopIvFound=false;
+   for(std::list<LoopConstRef> iterator;!loopIvFound || ;)
+   {
+      unsigned int LoopNumber= ->NumLoops()
+      if(LoopNumber!=0)
+      {
+         loopIvFound=false;
+      }
+   }
+   structural_objectRef circuit_loopIter=circuit->FB->CGetLoops->NumLoops()
+   SM->add_connection(circuit_loopIter, controller_loopIter);*/
 }
-
-//ADD loop iteration to controller

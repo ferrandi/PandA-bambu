@@ -67,7 +67,7 @@ DesignFlowStep_Status cs_interface::InternalExec()
    if (!SM) THROW_ERROR("Top component has not been created yet!");
 
    structural_objectRef wrappedObj = SM->get_circ();
-   std::string module_name = wrappedObj->get_id() + "_minimal_interface";
+   std::string module_name = wrappedObj->get_id() + "_cs_interface";
 
    structural_managerRef SM_cs_interface =structural_managerRef(new structural_manager(parameters));
    structural_type_descriptorRef module_type =structural_type_descriptorRef(new structural_type_descriptor(module_name));
@@ -202,7 +202,7 @@ void cs_interface::resize_dimension_bus_port(unsigned int vector_size, structura
       port->type_resize(bus_size_bitsize);
    else if (GetPointer<port_o>(port)->get_is_tag_bus())
       port->type_resize(bus_tag_bitsize);
-   GetPointer<port_o>(port)->add_n_ports(vector_size,port);
+   GetPointer<port_o>(port)->add_n_ports(vector_size-1,port);
 }
 
 void cs_interface::manage_memory_ports_parallel_chained_top(const structural_managerRef SM, const structural_objectRef memory_module, const structural_objectRef circuit)
@@ -213,13 +213,14 @@ void cs_interface::manage_memory_ports_parallel_chained_top(const structural_man
    structural_objectRef memory_ctrl = circuit->find_member("memory_ctrl_top", component_o_K, circuit);
    THROW_ASSERT(memory_ctrl, "NULL, memmory_ctrl");
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - Connecting memory_port of memory_ctrl");
+   std::cout<<"NUM_input port:"<<GetPointer<module>(memory_module)->get_in_port_size()<<std::endl;
    for(unsigned int j = 0; j < GetPointer<module>(memory_module)->get_in_port_size(); j++)  //from memory_ctrl output to module input
    {
       structural_objectRef port_i = GetPointer<module>(memory_module)->get_in_port(j);
-      if(GetPointer<port_o>(port_i)->get_is_memory() && (!GetPointer<port_o>(port_i)->get_is_global()) && (!GetPointer<port_o>(port_i)->get_is_extern()))
+      if(GetPointer<port_o>(port_i)->get_is_memory() && (GetPointer<port_o>(port_i)->get_is_global()) && (GetPointer<port_o>(port_i)->get_is_extern()))
       {
          std::string port_name = GetPointer<port_o>(port_i)->get_id();
-         std::cout<<"Called memory_ctrl"<<std::endl;
+         std::cout<<"Port name: "<<port_name<<std::endl;
          memory_ctrl_port = memory_ctrl->find_member(port_name, port_vector_o_K, memory_ctrl);
          structural_objectRef memory_Sign=SM->add_sign_vector(port_name+"_signal", num_channel, circuit, port_i->get_typeRef());
          THROW_ASSERT(!memory_ctrl_port || GetPointer<port_o>(memory_ctrl_port), "should be a port");
@@ -227,13 +228,14 @@ void cs_interface::manage_memory_ports_parallel_chained_top(const structural_man
          SM->add_connection(memory_Sign, port_i);
       }
    }
-   std::cout<<"Finish part 1"<<std::endl;
+   std::cout<<"NUM_output port:"<<GetPointer<module>(memory_module)->get_out_port_size()<<std::endl;
    for(unsigned int j = 0; j < GetPointer<module>(memory_module)->get_out_port_size(); j++)    //from module output to memory_ctrl input
    {
       structural_objectRef port_i = GetPointer<module>(memory_module)->get_out_port(j);
       if(GetPointer<port_o>(port_i)->get_is_memory() && (!GetPointer<port_o>(port_i)->get_is_global()) && (!GetPointer<port_o>(port_i)->get_is_extern()))
       {
          std::string port_name = GetPointer<port_o>(port_i)->get_id();
+         std::cout<<"Port name: "<<port_name<<std::endl;
          memory_ctrl_port = memory_ctrl->find_member(port_name, port_vector_o_K, memory_ctrl);
          structural_objectRef memory_Sign=SM->add_sign_vector(port_name+"_signal", num_channel, circuit, port_i->get_typeRef());
          THROW_ASSERT(!memory_ctrl_port || GetPointer<port_o>(memory_ctrl_port), "should be a port");

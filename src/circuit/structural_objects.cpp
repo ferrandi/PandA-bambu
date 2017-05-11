@@ -2664,6 +2664,7 @@ void module::set_NP_functionality(NP_functionalityRef f)
 {
    NP_descriptions = f;
    if (get_black_box() and (f->exist_NP_functionality(NP_functionality::FSM) or
+       f->exist_NP_functionality(NP_functionality::FSM_CS) or
        f->exist_NP_functionality(NP_functionality::SC_PROVIDED) or
        f->exist_NP_functionality(NP_functionality::VHDL_PROVIDED) or
        f->exist_NP_functionality(NP_functionality::VERILOG_PROVIDED) or

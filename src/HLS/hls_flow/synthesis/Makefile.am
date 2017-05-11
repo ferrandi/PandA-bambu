@@ -21,6 +21,7 @@ lib_hls_synthesis_la_CPPFLAGS = \
    -I$(top_srcdir)/src/HLS/binding/module \
    -I$(top_srcdir)/src/HLS/binding/interconnection \
    -I$(top_srcdir)/src/HLS/chaining \
+   -I$(top_srcdir)/src/HLS/function_allocation \
    -I$(top_srcdir)/src/HLS/hls_flow \
    -I$(top_srcdir)/src/HLS/interface \
    -I$(top_srcdir)/src/HLS/liveness \

@@ -961,7 +961,7 @@ void verilog_writer::write_state_declaration(const structural_objectRef &cir, co
    //indented_output_stream->Append("// synthesis attribute use_sync_reset of _present_state is no;\n");
    module * mod = GetPointer<module>(cir);
    const NP_functionalityRef &np = mod->get_NP_functionality();
-   if(np->get_NP_functionality(NP_functionality::FSM_CS)=="") //fsm of context_switch
+   if(np->exist_NP_functionality(NP_functionality::FSM_CS)) //fsm of context_switch
    {
       if(one_hot)
       {
@@ -1009,13 +1009,13 @@ void verilog_writer::write_present_state_update(const structural_objectRef &cir,
    ///reset is needed even in case of reset_type == "no"
    module * mod = GetPointer<module>(cir);
    const NP_functionalityRef &np = mod->get_NP_functionality();
-   if(np->get_NP_functionality(NP_functionality::FSM_CS)=="") //fsm of context_switch
+   if(np->exist_NP_functionality(NP_functionality::FSM_CS)) //fsm of context_switch
    {
       if(!parameters->getOption<bool>(OPT_level_reset))
-         indented_output_stream->Append("if (" + reset_port + " == 1'b0) _present_state[selector_register_file_signal] <= "+reset_state+";\n");
+         indented_output_stream->Append("if (" + reset_port + " == 1'b0) _present_state["+STR(SELECTOR_REGISTER_FILE)+"] <= "+reset_state+";\n");
       else
-         indented_output_stream->Append("if (" + reset_port + " == 1'b1) _present_state[selector_register_file_signal] <= "+reset_state+";\n");
-      indented_output_stream->Append("else _present_state[selector_register_file_signal] <= _next_state;\n");
+         indented_output_stream->Append("if (" + reset_port + " == 1'b1) _present_state["+STR(SELECTOR_REGISTER_FILE)+"] <= "+reset_state+";\n");
+      indented_output_stream->Append("else _present_state["+STR(SELECTOR_REGISTER_FILE)+"] <= _next_state;\n");
    }
    else
    {
@@ -1042,16 +1042,20 @@ void verilog_writer::write_transition_output_functions(bool single_proc, unsigne
    module * mod = GetPointer<module>(cir);
    THROW_ASSERT(mod, "Expected a component object");
    THROW_ASSERT(mod->get_out_port_size(), "Expected a FSM with at least one output");
-
    std::string port_name;
 
    const NP_functionalityRef &np = mod->get_NP_functionality();
+   unsigned int numInputIgnored; // clock,reset,start_port are always present
+   if(np->exist_NP_functionality(NP_functionality::FSM_CS))
+      numInputIgnored=4;  //added selector
+   else
+      numInputIgnored=3;
    /// state transitions description
 #ifdef VERILOG_2001_SUPPORTED
    indented_output_stream->Append("\nalways @(*)\nbegin");
 #else
-   if(np->get_NP_functionality(NP_functionality::FSM_CS)=="") //fsm of context_switch
-      indented_output_stream->Append("\nalways @(_present_state[selector_register_file_signal]");
+   if(np->exist_NP_functionality(NP_functionality::FSM_CS)) //fsm of context_switch
+      indented_output_stream->Append("\nalways @(_present_state["+STR(SELECTOR_REGISTER_FILE)+"]");
    else
       indented_output_stream->Append("\nalways @(_present_state");
    if (mod->get_in_port_size())
@@ -1069,7 +1073,6 @@ void verilog_writer::write_transition_output_functions(bool single_proc, unsigne
 
    ///compute the default output
    std::string default_output;
-   //std::cerr << "Number of output ports: " << mod->get_out_port_size() << std::endl;
    for (unsigned int i = 0; i < mod->get_out_port_size(); i++)
    {
       default_output += "0";
@@ -1078,33 +1081,29 @@ void verilog_writer::write_transition_output_functions(bool single_proc, unsigne
       indented_output_stream->Append(port_name + " = 1'b0;\n");
    }
 
-   if(np->get_NP_functionality(NP_functionality::FSM_CS)=="") //fsm of context_switch
-      indented_output_stream->Append("case (_present_state[selector_register_file_signal])");
+   if(np->exist_NP_functionality(NP_functionality::FSM_CS)) //fsm of context_switch
+      indented_output_stream->Append("case (_present_state["+STR(SELECTOR_REGISTER_FILE)+"])");
    else
       indented_output_stream->Append("case (_present_state)");
    indented_output_stream->Append(soc);
 
    for(std::vector<std::string>::const_iterator first_it = first; first_it != end; ++first_it)
    {
-      //std::cerr << "writing '" << *first_it << std::endl;
       tokenizer state_tokens_first(*first_it, state_sep);
 
       tokenizer::const_iterator it = state_tokens_first.begin();
 
       std::string state_description = *it;
-      //std::cerr << "  state: '" << state_description << "'" << std::endl;
       ++it;
 
       std::vector<std::string> state_transitions;
       for(; it != state_tokens_first.end(); ++it)
          state_transitions.push_back(*it);
-      //std::cerr << "    number of transitions: '" << state_transitions.size() << "'" << std::endl;
 
       tokenizer tokens_curr(state_description, sep);
 
       ///get the present state
       it = tokens_curr.begin();
-      //std::cerr << "    present state: '" << *it << "'" << std::endl;
       std::string present_state = HDL_manager::convert_to_identifier(this, *it);
       ///get the current output
       ++it;
@@ -1121,10 +1120,9 @@ void verilog_writer::write_transition_output_functions(bool single_proc, unsigne
             tokenizer transition_tokens(current_transition, sep);
             tokenizer::const_iterator itt = transition_tokens.begin();
 
-            //std::string current_input;
             tokenizer::const_iterator current_input_it;
             std::string input_string=*itt;
-            if(mod->get_in_port_size() - 3) // clock and reset are always present
+            if(mod->get_in_port_size() - numInputIgnored) // clock and reset are always present
             {
                boost::char_separator<char> comma_sep(",", nullptr);
                tokenizer current_input_tokens(input_string, comma_sep);
@@ -1165,7 +1163,6 @@ void verilog_writer::write_transition_output_functions(bool single_proc, unsigne
       }
 
       bool unique_transition = (state_transitions.size() == 1);
-      //std::cerr << "start writing transitions..." << std::endl;
 
       for(unsigned int i = 0; i < state_transitions.size(); i++)
       {
@@ -1173,10 +1170,9 @@ void verilog_writer::write_transition_output_functions(bool single_proc, unsigne
          tokenizer transition_tokens(state_transitions[i], sep);
          tokenizer::const_iterator itt = transition_tokens.begin();
 
-         //std::string current_input;
          tokenizer::const_iterator current_input_it;
          std::string input_string=*itt;
-         if(mod->get_in_port_size() - 3) // clock and reset are always present
+         if(mod->get_in_port_size() - numInputIgnored)
          {
             boost::char_separator<char> comma_sep(",", nullptr);
             tokenizer current_input_tokens(input_string, comma_sep);
@@ -1211,7 +1207,8 @@ void verilog_writer::write_transition_output_functions(bool single_proc, unsigne
                   port_name = HDL_manager::convert_to_identifier(this, mod->get_in_port(ind)->get_id());
                   unsigned int port_size = mod->get_in_port(ind)->get_typeRef()->size;
                   unsigned int vec_size =mod->get_in_port(ind)->get_typeRef()->vector_size;
-                  if(port_name != reset_port && port_name != clock_port && port_name != start_port)
+                  if(port_name != reset_port && port_name != clock_port && port_name != start_port and
+                        (np->exist_NP_functionality(NP_functionality::FSM_CS) and port_name != ""+STR(SELECTOR_REGISTER_FILE)+""))
                   {
                      std::string in_or_conditions = *current_input_it;
                      boost::char_separator<char> pipe_sep("|", nullptr);
@@ -1299,7 +1296,6 @@ void verilog_writer::write_transition_output_functions(bool single_proc, unsigne
       }
       indented_output_stream->Append(scc);
 
-      //std::cerr << "completed '" << *first_it << "'" << std::endl;
    }
 
    indented_output_stream->Append(soc1);
@@ -1809,7 +1805,7 @@ void verilog_writer::write_timing_specification(const technology_managerConstRef
    module* mod_inst = GetPointer<module>(circ);
    if (mod_inst->get_internal_objects_size() > 0) return;
    const NP_functionalityRef &np = mod_inst->get_NP_functionality();
-   if (np && np->exist_NP_functionality(NP_functionality::FSM)) return;
+   if (np && (np->exist_NP_functionality(NP_functionality::FSM) or np->exist_NP_functionality(NP_functionality::FSM_CS))) return;
 
    std::string library = TM->get_library(circ->get_typeRef()->id_type);
    const technology_nodeRef& fu = TM->get_fu(circ->get_typeRef()->id_type, library);

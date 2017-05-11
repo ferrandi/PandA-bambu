@@ -338,7 +338,7 @@
           <port_o id="Mout_oe_ram" dir="OUT" is_memory="1" is_master="1">
             <structural_type_descriptor type="BOOL" size="1"/>
             <connected_objects/>
-          </port_o>M_Rdata_ram M_DataRdy Min_tag request_accepted
+          </port_o>
           <port_o id="Mout_we_ram" dir="OUT" is_memory="1" is_master="1">
             <structural_type_descriptor type="BOOL" size="1"/>
             <connected_objects/>
@@ -355,7 +355,7 @@
             <structural_type_descriptor type="VECTOR_BOOL" size="1"/>
             <connected_objects/>
           </port_o>
-          <port_o id="Mout_tag_ram" dir="OUT" is_memory="1" is_master="1"  is_tag_bus="1">
+          <port_o id="Mout_tag_ram" dir="OUT" is_memory="1" is_master="1" is_tag_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1"/>
             <connected_objects/>
           </port_o>

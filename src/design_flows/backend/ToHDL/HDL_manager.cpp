@@ -253,7 +253,7 @@ void HDL_manager::write_components(const std::string &filename,  const std::list
       }
       else
       {
-         if (np and np->exist_NP_functionality(NP_functionality::FSM))
+         if (np and (np->exist_NP_functionality(NP_functionality::FSM) or np->exist_NP_functionality(NP_functionality::FSM_CS)))
          {
             component_language[language].push_back(*cit);
          }
@@ -367,7 +367,7 @@ bool HDL_manager::is_fsm(const structural_objectRef &cir) const
    const NP_functionalityRef &np = mod_inst->get_NP_functionality();
    if (np)
    {
-      return np->exist_NP_functionality(NP_functionality::FSM);
+      return (np->exist_NP_functionality(NP_functionality::FSM) or np->exist_NP_functionality(NP_functionality::FSM_CS));
    }
    return false;
 }
@@ -859,7 +859,12 @@ void HDL_manager::write_module(const language_writerRef writer, const structural
       else if(is_fsm(cir))
       {
          THROW_ASSERT(np, "Behavior not expected: " + HDL_manager::convert_to_identifier(writer.get(), GET_TYPE_NAME(cir)));
-         std::string fsm_desc = np->get_NP_functionality(NP_functionality::FSM);
+         THROW_ASSERT(!(np->exist_NP_functionality(NP_functionality::FSM) and np->exist_NP_functionality(NP_functionality::FSM_CS)), "Cannot exist both fsm and fsm_cs for the same function");
+         std::string fsm_desc;
+         if(np->exist_NP_functionality(NP_functionality::FSM_CS))
+            fsm_desc= np->get_NP_functionality(NP_functionality::FSM_CS);
+         else
+            fsm_desc = np->get_NP_functionality(NP_functionality::FSM);
          THROW_ASSERT(fsm_desc != "", "Behavior not expected: "+HDL_manager::convert_to_identifier(writer.get(), GET_TYPE_NAME(cir)));
          write_fsm(writer, cir, fsm_desc);
       }
@@ -968,8 +973,6 @@ void HDL_manager::write_fsm(const language_writerRef writer, const structural_ob
 
    std::string fsm_desc=fsm_desc_i;
    boost::algorithm::erase_all(fsm_desc, "\n");
-
-   //std::cout << fsm_desc_i << std::endl;
 
    std::vector<std::string> SplitVec;
    boost::algorithm::split( SplitVec, fsm_desc, boost::algorithm::is_any_of(";") );
