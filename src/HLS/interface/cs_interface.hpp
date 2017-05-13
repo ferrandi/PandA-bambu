@@ -87,7 +87,7 @@ protected:
        * @param memory_module
        * @param circuit
        */
-      void manage_memory_ports_parallel_chained_top(const structural_managerRef SM, const structural_objectRef memory_module, const structural_objectRef circuit);
+      void manage_extern_global_port_top(const structural_managerRef SM, const structural_objectRef memory_module, const structural_objectRef circuit);
 
       /**
        * @brief instantiate_component_parallel

@@ -116,7 +116,7 @@ void ParallelMemoryFuBinding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRe
          SM->add_connection(reset_port, reset);
          const auto amaf_access_allowed = allow_mem_access->find_member("access_allowed", port_o_K, allow_mem_access);
          GetPointer<port_o>(amaf_access_allowed)->add_n_ports(memory_banks_number, amaf_access_allowed);
-         manage_extern_global_port(SM, amaf_access_allowed, port_o::IN, circuit, 0);
+         HLS->Rfu->manage_extern_global_port(HLSMgr, HLS, SM, amaf_access_allowed, port_o::IN, circuit, 0);
 
          //start_port and done_port are connected in ParallelMemoryConnBinding::add_to_SM
 
@@ -158,7 +158,7 @@ void ParallelMemoryFuBinding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRe
 
          const auto amaf_access_allowed = allow_mem_access->find_member("access_allowed", port_o_K, allow_mem_access);
          GetPointer<port_o>(amaf_access_allowed)->add_n_ports(memory_banks_number, amaf_access_allowed);
-         manage_extern_global_port(SM, amaf_access_allowed, port_o::IN, circuit, 0);
+         HLS->Rfu->manage_extern_global_port(HLSMgr, HLS, SM, amaf_access_allowed, port_o::IN, circuit, 0);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Connected access allowed");
 
          //Done is connected in ParallelMemoryConnBinding::add_to_SM
@@ -210,7 +210,7 @@ void ParallelMemoryFuBinding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRe
          GetPointer<port_o>(memory_enableds.front())->set_is_memory(true);
          GetPointer<port_o>(memory_enableds.front())->set_is_global(true);
          GetPointer<port_o>(memory_enableds.front())->set_is_extern(true);
-         manage_extern_global_port(SM, memory_enableds.front(), port_o::OUT, circuit, 0);
+         HLS->Rfu->manage_extern_global_port(HLSMgr, HLS, SM, memory_enableds.front(), port_o::OUT, circuit, 0);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Generated memory enabled and");
       }
       else

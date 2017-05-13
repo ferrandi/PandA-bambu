@@ -314,8 +314,7 @@ class fu_binding
        */
       virtual void add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, structural_objectRef clock_port, structural_objectRef reset_port);
 
-      static
-         void manage_extern_global_port(const structural_managerRef SM, structural_objectRef port_in, unsigned int dir, structural_objectRef circuit, unsigned int num);
+      virtual void manage_extern_global_port(const HLS_managerRef HLSMgr, const hlsRef HLS, const structural_managerRef SM, structural_objectRef port_in, unsigned int dir, structural_objectRef circuit, unsigned int num);
 
       /**
        * Manage the connections between memory ports

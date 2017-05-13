@@ -53,6 +53,29 @@ class fu_binding_cs : public fu_binding
     */
    virtual void add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, structural_objectRef clock_port, structural_objectRef reset_port);
 
+   /**
+    * @brief decide based on function what function to call in order to connect appropriately the datapath memory_signal with the component
+    * @param HLSMgr
+    * @param SM
+    * @param memory_modules
+    * @param circuit
+    * @param HLS
+    * @param _unique_id
+    */
+   void manage_memory_ports_parallel_chained(const HLS_managerRef HLSMgr, const structural_managerRef SM, const std::set<structural_objectRef> &memory_modules, const structural_objectRef circuit, const hlsRef HLS, unsigned int & _unique_id);
+
+   /**
+    * @brief manage_extern_global_port based on function attach the input of memory modules
+    * @param HLSMgr
+    * @param HLS
+    * @param SM
+    * @param port_in
+    * @param dir
+    * @param circuit
+    * @param num
+    */
+   void manage_extern_global_port(const HLS_managerRef HLSMgr, const hlsRef HLS, const structural_managerRef SM, structural_objectRef port_in, unsigned int dir, structural_objectRef circuit, unsigned int num);
+
 protected:
    /**
     * @brief instantiate_component_kernel
@@ -79,17 +102,6 @@ protected:
    void connectOutOr(const HLS_managerRef HLSMgr, const hlsRef HLS, structural_objectRef port_out_or);
 
    /**
-    * @brief decide based on function what function to call in order to connect appropriately the datapath memory_signal with the component
-    * @param HLSMgr
-    * @param SM
-    * @param memory_modules
-    * @param circuit
-    * @param HLS
-    * @param _unique_id
-    */
-   void manage_memory_ports_parallel_chained(const HLS_managerRef HLSMgr, const structural_managerRef SM, const std::set<structural_objectRef> &memory_modules, const structural_objectRef circuit, const hlsRef HLS, unsigned int & _unique_id);
-
-   /**
     * @brief connect scheduler with datapath and other memory modules
     * @param SM
     * @param memory_modules
@@ -97,17 +109,7 @@ protected:
     * @param HLS
     * @param _unique_id
     */
-   void manage_memory_ports_parallel_chained_kernel(const structural_managerRef SM, const std::set<structural_objectRef> &memory_modules, const structural_objectRef circuit, const hlsRef HLS, unsigned int & _unique_id);
-
-   /**
-    * @brief merging on exit for the 1° channel, division on input for the 2 channel
-    * @param SM
-    * @param memory_modules
-    * @param circuit
-    * @param HLS
-    * @param _unique_id
-    */
-   void manage_memory_ports_parallel_chained_hierarchical(const structural_managerRef SM, const std::set<structural_objectRef> &memory_modules, const structural_objectRef circuit, const hlsRef HLS, unsigned int & _unique_id);
+   void connect_scheduler_Datapath(const structural_managerRef SM, const std::set<structural_objectRef> &memory_modules, const structural_objectRef circuit, const hlsRef HLS, unsigned int & _unique_id);
 
    /**
     * @brief for each port decide its vector size
@@ -122,5 +124,25 @@ protected:
     * @param port
     */
    void resize_dimension_bus_port(const HLS_managerRef HLSMgr, structural_objectRef port);
+
+   /**
+    * @brief manage_extern_global_port_kernel connect correctly memory port when in kernel function
+    * @param SM
+    * @param memory_modules
+    * @param circuit
+    * @param HLS
+    * @param _unique_id
+    */
+   void manage_extern_global_port_kernel(const structural_managerRef SM, const std::set<structural_objectRef> &memory_modules, const structural_objectRef circuit, const hlsRef HLS, unsigned int &_unique_id);
+
+   /**
+    * @brief manage_extern_global_port_hierarchical connect correctly memory port when in hierarchical function
+    * @param SM
+    * @param memory_modules
+    * @param circuit
+    * @param HLS
+    * @param _unique_id
+    */
+   void manage_extern_global_port_hierarchical(const structural_managerRef SM, const std::set<structural_objectRef> &memory_modules, const structural_objectRef circuit, const hlsRef HLS, unsigned int &_unique_id);
 };
 #endif // FU_BINDING_CS_H

@@ -132,7 +132,7 @@ DesignFlowStep_Status datapath_parallel_cs::InternalExec()
       memory_modules.insert(kernel_mod);
       connect_module_kernel(kernel_mod,i);
    }
-   manage_memory_ports_parallel_chained_parallel(SM, memory_modules, datapath_cir);
+   manage_extern_global_port_parallel(SM, memory_modules, datapath_cir);
 
    return DesignFlowStep_Status::SUCCESS;
 }
@@ -284,7 +284,7 @@ void datapath_parallel_cs::resize_dimension_bus_port(unsigned int vector_size, s
    GetPointer<port_o>(port)->add_n_ports(vector_size,port);
 }
 
-void datapath_parallel_cs::manage_memory_ports_parallel_chained_parallel(const structural_managerRef SM, const std::set<structural_objectRef> &memory_modules, const structural_objectRef circuit)
+void datapath_parallel_cs::manage_extern_global_port_parallel(const structural_managerRef SM, const std::set<structural_objectRef> &memory_modules, const structural_objectRef circuit)
 {
    structural_objectRef cir_port;
    structural_objectRef mem_paral_port;
@@ -296,7 +296,7 @@ void datapath_parallel_cs::manage_memory_ports_parallel_chained_parallel(const s
       for(unsigned int j = 0; j < GetPointer<module>(*i)->get_in_port_size(); j++)  //from ctrl_parallel to module
       {
          structural_objectRef port_i = GetPointer<module>(*i)->get_in_port(j);
-         if(GetPointer<port_o>(port_i)->get_is_memory() && (!GetPointer<port_o>(port_i)->get_is_global()) && (!GetPointer<port_o>(port_i)->get_is_extern()))
+         if(GetPointer<port_o>(port_i)->get_is_memory() && (GetPointer<port_o>(port_i)->get_is_global()) && (GetPointer<port_o>(port_i)->get_is_extern()))
          {
             std::string port_name = GetPointer<port_o>(port_i)->get_id();
             mem_paral_port = memory_parallel->find_member(port_name, port_vector_o_K, memory_parallel);
@@ -309,7 +309,7 @@ void datapath_parallel_cs::manage_memory_ports_parallel_chained_parallel(const s
       for(unsigned int j = 0; j < GetPointer<module>(*i)->get_out_port_size(); j++)    //from module to ctrl_parallel
       {
          structural_objectRef port_i = GetPointer<module>(*i)->get_out_port(j);
-         if(GetPointer<port_o>(port_i)->get_is_memory() && (!GetPointer<port_o>(port_i)->get_is_global()) && (!GetPointer<port_o>(port_i)->get_is_extern()))
+         if(GetPointer<port_o>(port_i)->get_is_memory() && (GetPointer<port_o>(port_i)->get_is_global()) && (GetPointer<port_o>(port_i)->get_is_extern()))
          {
             std::string port_name = GetPointer<port_o>(port_i)->get_id();
             mem_paral_port = memory_parallel->find_member(port_name, port_vector_o_K, memory_parallel);
@@ -326,7 +326,7 @@ void datapath_parallel_cs::manage_memory_ports_parallel_chained_parallel(const s
    {
       structural_objectRef port_i = GetPointer<module>(memory_parallel)->get_in_port(j);
       std::string port_name = GetPointer<port_o>(port_i)->get_id();
-      if(GetPointer<port_o>(port_i)->get_is_memory() && port_name.substr(0,3)=="IN_")
+      if(GetPointer<port_o>(port_i)->get_is_memory() && (GetPointer<port_o>(port_i)->get_is_global()) && (GetPointer<port_o>(port_i)->get_is_extern()) && port_name.substr(0,3)=="IN_")
       {
          cir_port = circuit->find_member(port_name.erase(0,3), port_i->get_kind(), circuit);
          THROW_ASSERT(!cir_port || GetPointer<port_o>(cir_port), "should be a port or null");
@@ -349,7 +349,7 @@ void datapath_parallel_cs::manage_memory_ports_parallel_chained_parallel(const s
    {
       structural_objectRef port_i = GetPointer<module>(memory_parallel)->get_out_port(j);
       std::string port_name = GetPointer<port_o>(port_i)->get_id();
-      if(GetPointer<port_o>(port_i)->get_is_memory() && port_name.substr(0,4)=="OUT_")
+      if(GetPointer<port_o>(port_i)->get_is_memory()  && (GetPointer<port_o>(port_i)->get_is_global()) && (GetPointer<port_o>(port_i)->get_is_extern()) && port_name.substr(0,4)=="OUT_")
       {
          cir_port = circuit->find_member(port_name.erase(0,4), port_i->get_kind(), circuit); //delete OUT from port name
          THROW_ASSERT(!cir_port || GetPointer<port_o>(cir_port), "should be a port or null");

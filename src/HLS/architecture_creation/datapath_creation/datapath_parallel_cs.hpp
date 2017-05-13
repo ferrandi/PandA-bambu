@@ -63,7 +63,7 @@ protected:
     * @param memory_modules
     * @param circuit
     */
-   void manage_memory_ports_parallel_chained_parallel(const structural_managerRef SM, const std::set<structural_objectRef> &memory_modules, const structural_objectRef circuit);
+   void manage_extern_global_port_parallel(const structural_managerRef SM, const std::set<structural_objectRef> &memory_modules, const structural_objectRef circuit);
 
    /**
     * @brief connect datapath with each kernel

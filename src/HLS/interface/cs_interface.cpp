@@ -98,7 +98,7 @@ DesignFlowStep_Status cs_interface::InternalExec()
 
    instantiate_component_parallel(SM_cs_interface,clock_port,reset_port);   //instantiate memory_ctrl_top
 
-   manage_memory_ports_parallel_chained_top(SM_cs_interface,wrappedObj,interfaceObj);  //connect memory port for memory_ctrl_top
+   manage_extern_global_port_top(SM_cs_interface,wrappedObj,interfaceObj);  //connect memory port for memory_ctrl_top
 
    // Generation completed, the new created module substitutes the current top-level one
    HLS->top = SM_cs_interface;
@@ -205,7 +205,7 @@ void cs_interface::resize_dimension_bus_port(unsigned int vector_size, structura
    GetPointer<port_o>(port)->add_n_ports(vector_size-1,port);
 }
 
-void cs_interface::manage_memory_ports_parallel_chained_top(const structural_managerRef SM, const structural_objectRef memory_module, const structural_objectRef circuit)
+void cs_interface::manage_extern_global_port_top(const structural_managerRef SM, const structural_objectRef memory_module, const structural_objectRef circuit)
 {
    structural_objectRef cir_port;
    structural_objectRef memory_ctrl_port;
@@ -232,7 +232,7 @@ void cs_interface::manage_memory_ports_parallel_chained_top(const structural_man
    for(unsigned int j = 0; j < GetPointer<module>(memory_module)->get_out_port_size(); j++)    //from module output to memory_ctrl input
    {
       structural_objectRef port_i = GetPointer<module>(memory_module)->get_out_port(j);
-      if(GetPointer<port_o>(port_i)->get_is_memory() && (!GetPointer<port_o>(port_i)->get_is_global()) && (!GetPointer<port_o>(port_i)->get_is_extern()))
+      if(GetPointer<port_o>(port_i)->get_is_memory() && (GetPointer<port_o>(port_i)->get_is_global()) && (GetPointer<port_o>(port_i)->get_is_extern()))
       {
          std::string port_name = GetPointer<port_o>(port_i)->get_id();
          std::cout<<"Port name: "<<port_name<<std::endl;
@@ -248,7 +248,7 @@ void cs_interface::manage_memory_ports_parallel_chained_top(const structural_man
    {
       structural_objectRef port_i = GetPointer<module>(memory_ctrl)->get_in_port(j);
       std::string port_name = GetPointer<port_o>(port_i)->get_id();
-      if(GetPointer<port_o>(port_i)->get_is_memory() && port_name.substr(0,3)=="IN_")
+      if(GetPointer<port_o>(port_i)->get_is_memory() && (GetPointer<port_o>(port_i)->get_is_global()) && (GetPointer<port_o>(port_i)->get_is_extern()) && port_name.substr(0,3)=="IN_")
       {
          cir_port = circuit->find_member(port_name.erase(0,3), port_i->get_kind(), circuit);
          THROW_ASSERT(!cir_port || GetPointer<port_o>(cir_port), "should be a port or null");
@@ -264,7 +264,7 @@ void cs_interface::manage_memory_ports_parallel_chained_top(const structural_man
    {
       structural_objectRef port_i = GetPointer<module>(memory_ctrl)->get_out_port(j);
       std::string port_name = GetPointer<port_o>(port_i)->get_id();
-      if(GetPointer<port_o>(port_i)->get_is_memory() && port_name.substr(0,4)=="OUT_")
+      if(GetPointer<port_o>(port_i)->get_is_memory() && (GetPointer<port_o>(port_i)->get_is_global()) && (GetPointer<port_o>(port_i)->get_is_extern()) && port_name.substr(0,4)=="OUT_")
       {
          cir_port = circuit->find_member(port_name.erase(0,4), port_i->get_kind(), circuit); //delete OUT from port name
          THROW_ASSERT(!cir_port || GetPointer<port_o>(cir_port), "should be a port or null");

@@ -251,17 +251,17 @@ void fu_binding_cs::manage_memory_ports_parallel_chained(const HLS_managerRef HL
    auto omp_functions = GetPointer<OmpFunctions>(HLSMgr->Rfuns);
    if(omp_functions->kernel_functions.find(HLS->functionId) != omp_functions->kernel_functions.end())
    {
-      manage_memory_ports_parallel_chained_kernel(SM, memory_modules, circuit, HLS, _unique_id);
+      manage_extern_global_port_kernel(SM, memory_modules, circuit, HLS, _unique_id);
    }
    else if(omp_functions->hierarchical_functions.find(HLS->functionId) != omp_functions->hierarchical_functions.end())
    {
-      manage_memory_ports_parallel_chained_hierarchical(SM, memory_modules, circuit, HLS, _unique_id);
+      manage_extern_global_port_hierarchical(SM, memory_modules, circuit, HLS, _unique_id);
    }
    else
       fu_binding::manage_memory_ports_parallel_chained(HLSMgr,SM,memory_modules, circuit,HLS,unique_id);
 }
 
-void fu_binding_cs::manage_memory_ports_parallel_chained_kernel(const structural_managerRef SM, const std::set<structural_objectRef> &memory_modules, const structural_objectRef circuit, const hlsRef HLS, unsigned int & _unique_id)
+void fu_binding_cs::manage_extern_global_port_kernel(const structural_managerRef SM, const std::set<structural_objectRef> &memory_modules, const structural_objectRef circuit, const hlsRef HLS, unsigned int & _unique_id)
 {
    std::map<structural_objectRef, std::set<structural_objectRef> > primary_outs;
    structural_objectRef cir_port;
@@ -272,7 +272,7 @@ void fu_binding_cs::manage_memory_ports_parallel_chained_kernel(const structural
    {
       structural_objectRef port_i = GetPointer<module>(scheduler)->get_in_port(j);
       std::string port_name = GetPointer<port_o>(port_i)->get_id();
-      if(GetPointer<port_o>(port_i)->get_is_memory() && port_name.substr(0,3)=="IN_")
+      if(GetPointer<port_o>(port_i)->get_is_memory()&& (GetPointer<port_o>(port_i)->get_is_global()) && (GetPointer<port_o>(port_i)->get_is_extern()) && port_name.substr(0,3)=="IN_")
       {
          cir_port = circuit->find_member(port_name.erase(0,3), port_i->get_kind(), circuit); //erase IN_ from port name
          THROW_ASSERT(!cir_port || GetPointer<port_o>(cir_port), "should be a port or null");
@@ -292,13 +292,13 @@ void fu_binding_cs::manage_memory_ports_parallel_chained_kernel(const structural
       }
    }
 
-   for (std::set<structural_objectRef>::iterator i = memory_modules.begin(); i != memory_modules.end(); i++)   //connect in memory modules with output scheduler
+   for (std::set<structural_objectRef>::iterator i = memory_modules.begin(); i != memory_modules.end(); i++)   //connect scheduler with memory_modules
    {
       for(unsigned int j = 0; j < GetPointer<module>(*i)->get_in_port_size(); j++)
       {
-         structural_objectRef port_i = GetPointer<module>(*i)->get_in_port(j);
          structural_objectRef scheMemorySign;
-         if(GetPointer<port_o>(port_i)->get_is_memory() && (!GetPointer<port_o>(port_i)->get_is_global()) && (!GetPointer<port_o>(port_i)->get_is_extern()))
+         structural_objectRef port_i = GetPointer<module>(*i)->get_in_port(j);
+         if(GetPointer<port_o>(port_i)->get_is_memory() && (GetPointer<port_o>(port_i)->get_is_global()) && (GetPointer<port_o>(port_i)->get_is_extern()))
          {
             std::string port_name = GetPointer<port_o>(port_i)->get_id();
             sche_port = scheduler->find_member(port_name, port_i->get_kind(), scheduler);
@@ -309,14 +309,11 @@ void fu_binding_cs::manage_memory_ports_parallel_chained_kernel(const structural
             SM->add_connection(scheMemorySign, port_i);
          }
       }
-   }
 
-   for (std::set<structural_objectRef>::iterator i = memory_modules.begin(); i != memory_modules.end(); i++)   //connect scheduler with memory_modules
-   {
       for(unsigned int j = 0; j < GetPointer<module>(*i)->get_out_port_size(); j++)   //connect memory_modules out with scheduler by jms
       {
          structural_objectRef port_i = GetPointer<module>(*i)->get_out_port(j);
-         if(GetPointer<port_o>(port_i)->get_is_memory() && (!GetPointer<port_o>(port_i)->get_is_global()) && (!GetPointer<port_o>(port_i)->get_is_extern()))
+         if(GetPointer<port_o>(port_i)->get_is_memory() && (GetPointer<port_o>(port_i)->get_is_global()) && (GetPointer<port_o>(port_i)->get_is_extern()))
          {
             std::string port_name = GetPointer<port_o>(port_i)->get_id();
             sche_port = scheduler->find_member(port_name, port_i->get_kind(), scheduler);
@@ -331,7 +328,7 @@ void fu_binding_cs::manage_memory_ports_parallel_chained_kernel(const structural
    {
       structural_objectRef port_i = GetPointer<module>(scheduler)->get_out_port(j);
       std::string port_name = GetPointer<port_o>(port_i)->get_id();
-      if(GetPointer<port_o>(port_i)->get_is_memory() && port_name.substr(0,4)=="OUT_")
+      if(GetPointer<port_o>(port_i)->get_is_memory()&& (GetPointer<port_o>(port_i)->get_is_global()) && (GetPointer<port_o>(port_i)->get_is_extern()) && port_name.substr(0,4)=="OUT_")
       {
          cir_port = circuit->find_member(port_name.erase(0,4), port_i->get_kind(), circuit); //erase OUT_ from port name
          THROW_ASSERT(!cir_port || GetPointer<port_o>(cir_port), "should be a port or null");
@@ -349,7 +346,7 @@ void fu_binding_cs::manage_memory_ports_parallel_chained_kernel(const structural
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - Connected memory_port of scheduler");
 }
 
-void fu_binding_cs::manage_memory_ports_parallel_chained_hierarchical(const structural_managerRef SM, const std::set<structural_objectRef> &memory_modules, const structural_objectRef circuit, const hlsRef HLS, unsigned int & _unique_id)
+void fu_binding_cs::manage_extern_global_port_hierarchical(const structural_managerRef SM, const std::set<structural_objectRef> &memory_modules, const structural_objectRef circuit, const hlsRef HLS, unsigned int & _unique_id)
 {
    std::map<structural_objectRef, std::set<structural_objectRef> > primary_outs;
    structural_objectRef cir_port;
@@ -359,7 +356,7 @@ void fu_binding_cs::manage_memory_ports_parallel_chained_hierarchical(const stru
       for(unsigned int j = 0; j < GetPointer<module>(*i)->get_in_port_size(); j++)
       {
          structural_objectRef port_i = GetPointer<module>(*i)->get_in_port(j);
-         if(GetPointer<port_o>(port_i)->get_is_memory() && (!GetPointer<port_o>(port_i)->get_is_global()) && (!GetPointer<port_o>(port_i)->get_is_extern()))
+         if(GetPointer<port_o>(port_i)->get_is_memory() && (GetPointer<port_o>(port_i)->get_is_global()) && (GetPointer<port_o>(port_i)->get_is_extern()))
          {
             std::string port_name = GetPointer<port_o>(port_i)->get_id();
             cir_port = circuit->find_member(port_name, port_i->get_kind(), circuit);
@@ -376,7 +373,7 @@ void fu_binding_cs::manage_memory_ports_parallel_chained_hierarchical(const stru
                {
                   for(unsigned int num_chan=1;num_chan<parameters->getOption<unsigned int>(OPT_channels_number);num_chan++)
                   {
-                      SM->add_connection(GetPointer<port_o>(cir_port)->get_port(num_chan), GetPointer<port_o>(port_i)->get_port(num_chan));  //connect other port one by one
+                     SM->add_connection(GetPointer<port_o>(cir_port)->get_port(num_chan), GetPointer<port_o>(port_i)->get_port(num_chan));  //connect other port one by one
                   }
                }
             }
@@ -384,6 +381,7 @@ void fu_binding_cs::manage_memory_ports_parallel_chained_hierarchical(const stru
                SM->add_connection(GetPointer<port_o>(cir_port)->get_port(0), port_i);  //connect a normal port
          }
       }
+
       for(unsigned int j = 0; j < GetPointer<module>(*i)->get_out_port_size(); j++)
       {
          structural_objectRef port_i = GetPointer<module>(*i)->get_out_port(j);
@@ -415,4 +413,34 @@ void fu_binding_cs::manage_memory_ports_parallel_chained_hierarchical(const stru
    }
    join_merge_split(SM, HLS, primary_outs, circuit, _unique_id);
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - End merging, splitting for hierarchical");
+}
+
+void fu_binding_cs::manage_extern_global_port(const HLS_managerRef HLSMgr, const hlsRef HLS, const structural_managerRef SM, structural_objectRef port_in, unsigned int _dir, structural_objectRef circuit, unsigned int num)
+{
+   auto omp_functions = GetPointer<OmpFunctions>(HLSMgr->Rfuns);
+   if(omp_functions->kernel_functions.find(HLS->functionId) != omp_functions->kernel_functions.end())
+   {
+      if(GetPointer<port_o>(port_in)->get_is_memory())
+      {
+         THROW_ERROR("port declared as extern and global but is not a memory_port");
+      }
+      if(_dir==port_o::IO)
+      {
+         THROW_ERROR("port declared as IO not accepted in context switch");
+      }
+   }
+   else if(omp_functions->hierarchical_functions.find(HLS->functionId) != omp_functions->hierarchical_functions.end())
+   {
+      if(GetPointer<port_o>(port_in)->get_is_memory())
+      {
+         THROW_ERROR("port declared as extern and global but is not a memory_port");
+      }
+      if(_dir==port_o::IO)
+      {
+         THROW_ERROR("port declared as IO not accepted in context switch");
+      }
+   }
+   else
+      fu_binding::manage_extern_global_port(HLSMgr, HLS, SM, port_in, _dir, circuit, num);
+
 }

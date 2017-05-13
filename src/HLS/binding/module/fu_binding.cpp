@@ -471,7 +471,6 @@ void fu_binding::manage_killing_function_proxies(std::map<unsigned int, structur
    }
 }
 
-
 void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, structural_objectRef clock_port, structural_objectRef reset_port)
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Adding functional units to circuit");
@@ -1060,7 +1059,7 @@ void fu_binding::check_parametrization(structural_objectRef curr_gate)
    }
 }
 
-bool fu_binding::manage_module_ports(const HLS_managerRef, const hlsRef, const structural_managerRef SM, const structural_objectRef curr_gate, unsigned int num)
+bool fu_binding::manage_module_ports(const HLS_managerRef HLSMgr, const hlsRef HLS, const structural_managerRef SM, const structural_objectRef curr_gate, unsigned int num)
 {
    const structural_objectRef circuit = SM->get_circ();
    /// creating extern IN port on datapath starting from extern ports on module
@@ -1068,7 +1067,7 @@ bool fu_binding::manage_module_ports(const HLS_managerRef, const hlsRef, const s
    for(unsigned int j = 0; j < GetPointer<module>(curr_gate)->get_in_port_size(); j++)
    {
       structural_objectRef port_in = GetPointer<module>(curr_gate)->get_in_port(j);
-      manage_extern_global_port(SM, port_in, port_o::IN, circuit, num);
+      manage_extern_global_port(HLSMgr, HLS, SM, port_in, port_o::IN, circuit, num);
       if(GetPointer<port_o>(port_in)->get_is_memory())
       {
          added_memory_element = true;
@@ -1078,13 +1077,13 @@ bool fu_binding::manage_module_ports(const HLS_managerRef, const hlsRef, const s
    for(unsigned int j = 0; j < GetPointer<module>(curr_gate)->get_out_port_size(); j++)
    {
       structural_objectRef port_out = GetPointer<module>(curr_gate)->get_out_port(j);
-      manage_extern_global_port(SM, port_out, port_o::OUT, circuit, num);
+      manage_extern_global_port(HLSMgr, HLS, SM, port_out, port_o::OUT, circuit, num);
    }
    /// creating extern IO port on datapath starting from extern ports on module
    for(unsigned int j = 0; j < GetPointer<module>(curr_gate)->get_in_out_port_size(); j++)
    {
       structural_objectRef port_in_out = GetPointer<module>(curr_gate)->get_in_out_port(j);
-      manage_extern_global_port(SM, port_in_out, port_o::IO, circuit, num);
+      manage_extern_global_port(HLSMgr, HLS, SM, port_in_out, port_o::IO, circuit, num);
    }
    return added_memory_element;
 }
@@ -1325,7 +1324,7 @@ void fu_binding::manage_memory_ports_parallel_chained(const HLS_managerRef , con
    join_merge_split(SM, HLS, primary_outs, circuit, _unique_id);
 }
 
-void fu_binding::manage_extern_global_port(const structural_managerRef SM, structural_objectRef port_in, unsigned int _dir, structural_objectRef circuit, unsigned int num)
+void fu_binding::manage_extern_global_port(const HLS_managerRef , const hlsRef , const structural_managerRef SM, structural_objectRef port_in, unsigned int _dir, structural_objectRef circuit, unsigned int num)
 {
    port_o::port_direction dir = static_cast<port_o::port_direction>(_dir);
    if(GetPointer<port_o>(port_in)->get_is_extern())
@@ -1377,7 +1376,6 @@ void fu_binding::manage_extern_global_port(const structural_managerRef SM, struc
       SM->add_connection(port_in,ext_port);
    }
 }
-
 
 tree_nodeRef getFunctionType(tree_nodeRef  exp);
 void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, structural_objectRef fu_obj, unsigned int fu, const std::set<vertex>& mapped_operations, unsigned int ar)

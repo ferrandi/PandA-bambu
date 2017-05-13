@@ -572,22 +572,22 @@ simple_dual_port_ram_single_clock #(.BITSIZE_data(BITSIZE_data_in),.BITSIZE_addr
           <port_o id="task_pool_end" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
-          <port_o id="OUT_Mout_oe_ram" dir="OUT" is_memory="1" is_master="1">
+          <port_o id="OUT_Mout_oe_ram" dir="OUT" is_memory="1" is_global="1" is_extern="1">
             <structural_type_descriptor type="BOOL" size="1" />
           </port_o>
-          <port_o id="OUT_Mout_we_ram" dir="OUT" is_memory="1" is_master="1">
+          <port_o id="OUT_Mout_we_ram" dir="OUT" is_memory="1" is_global="1" is_extern="1">
             <structural_type_descriptor type="BOOL" size="1" />
           </port_o>
-          <port_o id="OUT_Mout_addr_ram" dir="OUT" is_memory="1" is_master="1" is_addr_bus="1">
+          <port_o id="OUT_Mout_addr_ram" dir="OUT" is_memory="1" is_global="1" is_extern="1" is_addr_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" />
           </port_o>
-          <port_o id="OUT_Mout_data_ram_size" dir="OUT" is_memory="1" is_master="1" is_size_bus="1">
+          <port_o id="OUT_Mout_data_ram_size" dir="OUT" is_memory="1" is_global="1" is_extern="1" is_size_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" />
           </port_o>
-          <port_o id="OUT_Mout_Wdata_ram" dir="OUT" is_memory="1" is_master="1" is_data_bus="1">
+          <port_o id="OUT_Mout_Wdata_ram" dir="OUT" is_memory="1" is_global="1" is_extern="1" is_data_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" />
           </port_o>
-          <port_o id="OUT_Mout_tag_ram" dir="OUT" is_memory="1" is_master="1" is_tag_bus="1">
+          <port_o id="OUT_Mout_tag_ram" dir="OUT" is_memory="1" is_global="1" is_extern="1" is_tag_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" />
           </port_o>
           <port_o id="M_Rdata_ram" dir="OUT" is_memory="1" is_data_bus="1">
@@ -950,22 +950,22 @@ simple_dual_port_ram_single_clock #(.BITSIZE_data(BITSIZE_data_in),.BITSIZE_addr
           <port_o id="request_accepted" dir="IN" is_memory="1" is_global="1" is_extern="1">
             <structural_type_descriptor type="BOOL" size="1" />
           </port_o>
-          <port_o id="Mout_oe_ram" dir="OUT" is_memory="1" is_master="1">
+          <port_o id="Mout_oe_ram" dir="OUT" is_memory="1" is_global="1" is_extern="1">
             <structural_type_descriptor type="BOOL" size="1" />
           </port_o>
-          <port_o id="Mout_we_ram" dir="OUT" is_memory="1" is_master="1">
+          <port_o id="Mout_we_ram" dir="OUT" is_memory="1" is_global="1" is_extern="1">
             <structural_type_descriptor type="BOOL" size="1" />
           </port_o>
-          <port_o id="Mout_addr_ram" dir="OUT" is_memory="1" is_master="1" is_addr_bus="1">
+          <port_o id="Mout_addr_ram" dir="OUT" is_memory="1" is_global="1" is_extern="1" is_addr_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" />
           </port_o>
-          <port_o id="Mout_data_ram_size" dir="OUT" is_memory="1" is_master="1" is_size_bus="1">
+          <port_o id="Mout_data_ram_size" dir="OUT" is_memory="1" is_global="1" is_extern="1" is_size_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" />
           </port_o>
-          <port_o id="Mout_Wdata_ram" dir="OUT" is_memory="1" is_master="1" is_data_bus="1">
+          <port_o id="Mout_Wdata_ram" dir="OUT" is_memory="1" is_global="1" is_extern="1" is_data_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" />
           </port_o>
-          <port_o id="Mout_tag_ram" dir="OUT" is_memory="1" is_master="1" is_tag_bus="1">
+          <port_o id="Mout_tag_ram" dir="OUT" is_memory="1" is_global="1" is_extern="1" is_tag_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" />
           </port_o>
           <NP_functionality LIBRARY="mem_ctrl_kernel in1 in2 in3 in4 out1 M_Rdata_ram Min_tag M_DataRdy request_accepted Mout_oe_ram Mout_we_ram Mout_addr_ram Mout_data_ram_size Mout_Wdata_ram Mout_tag_ram TAG_MEM_REQ" VERILOG_PROVIDED="
@@ -1025,19 +1025,19 @@ simple_dual_port_ram_single_clock #(.BITSIZE_data(BITSIZE_data_in),.BITSIZE_addr
           <port_vector_o id="Mout_tag_ram" dir="IN" is_memory="1" is_tag_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
-          <port_vector_o id="OUT_Mout_oe_ram" dir="OUT" is_memory="1" is_master="1">
+          <port_vector_o id="OUT_Mout_oe_ram" dir="OUT" is_memory="1" is_global="1" is_extern="1">
             <structural_type_descriptor type="BOOL" size="1" vector_size="1"/>
           </port_vector_o>
-          <port_vector_o id="OUT_Mout_we_ram" dir="OUT" is_memory="1" is_master="1">
+          <port_vector_o id="OUT_Mout_we_ram" dir="OUT" is_memory="1"  is_global="1" is_extern="1">
             <structural_type_descriptor type="BOOL" size="1" vector_size="1"/>
           </port_vector_o>
-          <port_vector_o id="OUT_Mout_addr_ram" dir="OUT" is_memory="1" is_master="1" is_addr_bus="1">
+          <port_vector_o id="OUT_Mout_addr_ram" dir="OUT" is_memory="1" is_global="1" is_extern="1" is_addr_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
-          <port_vector_o id="OUT_Mout_data_ram_size" dir="OUT" is_memory="1" is_master="1" is_size_bus="1">
+          <port_vector_o id="OUT_Mout_data_ram_size" dir="OUT" is_memory="1" is_global="1" is_extern="1" is_size_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
-          <port_vector_o id="OUT_Mout_Wdata_ram" dir="OUT" is_memory="1" is_master="1" is_data_bus="1">
+          <port_vector_o id="OUT_Mout_Wdata_ram" dir="OUT" is_memory="1" is_global="1" is_extern="1" is_data_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
           <port_vector_o id="M_Rdata_ram" dir="OUT" is_memory="1" is_data_bus="1">
@@ -1378,22 +1378,22 @@ simple_dual_port_ram_single_clock #(.BITSIZE_data(BITSIZE_data_in),.BITSIZE_addr
           <port_vector_o id="Mout_tag_ram" dir="IN" is_memory="1" is_tag_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
-          <port_vector_o id="OUT_Mout_oe_ram" dir="OUT" is_memory="1" is_master="1">
+          <port_vector_o id="OUT_Mout_oe_ram" dir="OUT" is_memory="1"  is_global="1" is_extern="1">
             <structural_type_descriptor type="BOOL" size="1" vector_size="1"/>
           </port_vector_o>
-          <port_vector_o id="OUT_Mout_we_ram" dir="OUT" is_memory="1" is_master="1">
+          <port_vector_o id="OUT_Mout_we_ram" dir="OUT" is_memory="1" is_global="1" is_extern="1">
             <structural_type_descriptor type="BOOL" size="1" vector_size="1"/>
           </port_vector_o>
-          <port_vector_o id="OUT_Mout_addr_ram" dir="OUT" is_memory="1" is_master="1" is_addr_bus="1">
+          <port_vector_o id="OUT_Mout_addr_ram" dir="OUT" is_memory="1" is_global="1" is_extern="1" is_addr_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
-          <port_vector_o id="OUT_Mout_data_ram_size" dir="OUT" is_memory="1" is_master="1" is_size_bus="1">
+          <port_vector_o id="OUT_Mout_data_ram_size" dir="OUT" is_memory="1" is_global="1" is_extern="1" is_size_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
-          <port_vector_o id="OUT_Mout_Wdata_ram" dir="OUT" is_memory="1" is_master="1" is_data_bus="1">
+          <port_vector_o id="OUT_Mout_Wdata_ram" dir="OUT" is_memory="1" is_global="1" is_extern="1" is_data_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
-          <port_vector_o id="OUT_Mout_tag_ram" dir="OUT" is_memory="1" is_master="1" is_tag_bus="1">
+          <port_vector_o id="OUT_Mout_tag_ram" dir="OUT" is_memory="1" is_global="1" is_extern="1" is_tag_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
           <port_vector_o id="M_Rdata_ram" dir="OUT" is_memory="1" is_data_bus="1">
