@@ -272,7 +272,7 @@ void fu_binding_cs::manage_extern_global_port_kernel(const structural_managerRef
    {
       structural_objectRef port_i = GetPointer<module>(scheduler)->get_in_port(j);
       std::string port_name = GetPointer<port_o>(port_i)->get_id();
-      if(GetPointer<port_o>(port_i)->get_is_memory()&& (GetPointer<port_o>(port_i)->get_is_global()) && (GetPointer<port_o>(port_i)->get_is_extern()) && port_name.substr(0,3)=="IN_")
+      if(GetPointer<port_o>(port_i)->get_is_memory()&& GetPointer<port_o>(port_i)->get_is_global() && GetPointer<port_o>(port_i)->get_is_extern() && port_name.substr(0,3)=="IN_")
       {
          cir_port = circuit->find_member(port_name.erase(0,3), port_i->get_kind(), circuit); //erase IN_ from port name
          THROW_ASSERT(!cir_port || GetPointer<port_o>(cir_port), "should be a port or null");
@@ -298,14 +298,17 @@ void fu_binding_cs::manage_extern_global_port_kernel(const structural_managerRef
       {
          structural_objectRef scheMemorySign;
          structural_objectRef port_i = GetPointer<module>(*i)->get_in_port(j);
-         if(GetPointer<port_o>(port_i)->get_is_memory() && (GetPointer<port_o>(port_i)->get_is_global()) && (GetPointer<port_o>(port_i)->get_is_extern()))
+         if(GetPointer<port_o>(port_i)->get_is_memory() && GetPointer<port_o>(port_i)->get_is_global() && GetPointer<port_o>(port_i)->get_is_extern())
          {
             std::string port_name = GetPointer<port_o>(port_i)->get_id();
             sche_port = scheduler->find_member(port_name, port_i->get_kind(), scheduler);
+            scheMemorySign=GetPointer<port_o>(sche_port)->get_connected_signal();
             if(scheMemorySign==NULL)
-               SM->add_sign(port_name+"_signal", circuit, port_i->get_typeRef());
+            {
+               scheMemorySign=SM->add_sign(port_name+"_signal", circuit, port_i->get_typeRef());
+               SM->add_connection(sche_port, scheMemorySign);   //connect port scheduler with signal only one time
+            }
             THROW_ASSERT(GetPointer<port_o>(sche_port), "should be a port");
-            SM->add_connection(sche_port, scheMemorySign);   //from scheduler to every memory unit
             SM->add_connection(scheMemorySign, port_i);
          }
       }
@@ -420,9 +423,9 @@ void fu_binding_cs::manage_extern_global_port(const HLS_managerRef HLSMgr, const
    auto omp_functions = GetPointer<OmpFunctions>(HLSMgr->Rfuns);
    if(omp_functions->kernel_functions.find(HLS->functionId) != omp_functions->kernel_functions.end())
    {
-      if(GetPointer<port_o>(port_in)->get_is_memory())
+      if(!GetPointer<port_o>(port_in)->get_is_memory())
       {
-         THROW_ERROR("port declared as extern and global but is not a memory_port");
+         fu_binding::manage_extern_global_port(HLSMgr, HLS, SM, port_in, _dir, circuit, num);
       }
       if(_dir==port_o::IO)
       {
@@ -431,9 +434,11 @@ void fu_binding_cs::manage_extern_global_port(const HLS_managerRef HLSMgr, const
    }
    else if(omp_functions->hierarchical_functions.find(HLS->functionId) != omp_functions->hierarchical_functions.end())
    {
-      if(GetPointer<port_o>(port_in)->get_is_memory())
+      if(!GetPointer<port_o>(port_in)->get_is_memory())
       {
-         THROW_ERROR("port declared as extern and global but is not a memory_port");
+         std::string port_name = GetPointer<port_o>(port_in)->get_id();
+         std::cout<<port_name<<std::endl;
+         fu_binding::manage_extern_global_port(HLSMgr, HLS, SM, port_in, _dir, circuit, num);
       }
       if(_dir==port_o::IO)
       {

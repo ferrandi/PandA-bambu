@@ -1409,7 +1409,7 @@ simple_dual_port_ram_single_clock #(.BITSIZE_data(BITSIZE_data_in),.BITSIZE_addr
             <structural_type_descriptor type="BOOL" size="1" vector_size="1"/>
           </port_vector_o>
           <NP_functionality LIBRARY="memory_ctrl_parallel IN_M_Rdata_ram IN_M_DataRdy IN_Min_tag IN_request_accepted Mout_oe_ram Mout_we_ram Mout_addr_ram Mout_data_ram_size Mout_Wdata_ram Mout_tag_ram OUT_Mout_oe_ram OUT_Mout_we_ram OUT_Mout_addr_ram OUT_Mout_data_ram_size OUT_Mout_Wdata_ram OUT_Mout_tag_ram M_Rdata_ram Min_tag M_DataRdy request_accepted"
-          IP_COMPONENT="PT_RR_FU, mux_pw_2" VERILOG_PROVIDED="
+          IP_COMPONENT="PT_RR_FU,mux_pw_2" VERILOG_PROVIDED="
           //In order to be generated correctly NUM_CHANNEL&lt;=NUM_ACC and both of them must be a power of 2
           parameter SIZE_TOT_IN = BITSIZE_Mout_tag_ram+BITSIZE_Mout_Wdata_ram+BITSIZE_Mout_data_ram_size+BITSIZE_Mout_addr_ram+BITSIZE_Mout_we_ram+BITSIZE_Mout_oe_ram;
           parameter SIZE_TOT_OUT = BITSIZE_Mout_tag_ram+BITSIZE_M_Rdata_ram;

@@ -129,6 +129,7 @@ DesignFlowStep_Status top_entity_parallel_cs::InternalExec()
    std::string parallel_controller_name = "controller_parallel";
    std::string par_ctrl_library = HLS->HLS_T->get_technology_manager()->get_library(parallel_controller_model);
    structural_objectRef controller_circuit = SM->add_module_from_technology_library(parallel_controller_name, parallel_controller_model, par_ctrl_library, circuit, HLS->HLS_T->get_technology_manager());
+   resize_controller_parallel(controller_circuit);
    THROW_ASSERT(controller_circuit, "Missing controller circuit");
 
    for(unsigned int j = 0; j < GetPointer<module>(datapath_circuit)->get_in_port_size(); j++)  //resize input port
@@ -271,6 +272,36 @@ DesignFlowStep_Status top_entity_parallel_cs::InternalExec()
    return DesignFlowStep_Status::SUCCESS;
 }
 
+void top_entity_parallel_cs::resize_controller_parallel(structural_objectRef controller_circuit)
+{
+   unsigned int memory_channel=HLS->Param->getOption<unsigned int>(OPT_channels_number);
+   unsigned int num_kernel=HLS->Param->getOption<unsigned int>(OPT_num_threads);
+   for(unsigned int j = 0; j < GetPointer<module>(mem_par_mod)->get_in_port_size(); j++)  //resize input port
+   {
+      structural_objectRef port_i = GetPointer<module>(mem_par_mod)->get_in_port(j);
+      if(GetPointer<port_o>(port_i)->get_is_memory())
+      {
+         std::string port_name = GetPointer<port_o>(port_i)->get_id();
+         if(port_name.substr(0,3)=="IN_")
+            resize_dimension_bus_port(memory_channel, port_i);
+         else
+            resize_dimension_bus_port(num_kernel, port_i);
+      }
+   }
+   for(unsigned int j = 0; j < GetPointer<module>(mem_par_mod)->get_out_port_size(); j++)    //resize output port
+   {
+      structural_objectRef port_i = GetPointer<module>(mem_par_mod)->get_out_port(j);
+      if(GetPointer<port_o>(port_i)->get_is_memory())
+      {
+         std::string port_name = GetPointer<port_o>(port_i)->get_id();
+         if(port_name.substr(0,4)=="OUT_")
+            resize_dimension_bus_port(memory_channel, port_i);
+         else
+            resize_dimension_bus_port(num_kernel, port_i);
+      }
+   }
+}
+
 void top_entity_parallel_cs::connect_port_parallel(const structural_objectRef circuit)
 {
    structural_managerRef Datapath = HLS->datapath;
@@ -278,7 +309,8 @@ void top_entity_parallel_cs::connect_port_parallel(const structural_objectRef ci
    structural_objectRef datapath_circuit = Datapath->get_circ();
    structural_objectRef controller_circuit = Controller->get_circ();
    structural_type_descriptorRef bool_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 0));
-   unsigned int num_slots=static_cast<unsigned int>(log2(HLS->Param->getOption<unsigned int>(OPT_context_switch)));
+   unsigned int num_slots=HLS->Param->getOption<unsigned int>(OPT_num_threads);
+   std::cout<<"NUM thread: "<<num_slots;
    structural_type_descriptorRef data_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 32));
 
    structural_objectRef controller_task_pool_end = controller_circuit->find_member(STR(TASKS_POOL_END), port_o_K, controller_circuit);

@@ -143,13 +143,12 @@ void datapath_parallel_cs::add_ports()
     PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Added standard port kernel");
     const structural_managerRef& SM = this->HLS->datapath;
     const structural_objectRef circuit = SM->get_circ();
-    unsigned int num_slots=static_cast<unsigned int>(log2(HLS->Param->getOption<unsigned int>(OPT_context_switch)));
-    structural_type_descriptorRef port_type = structural_type_descriptorRef(new structural_type_descriptor("bool", num_slots));
+    unsigned int num_thread=HLS->Param->getOption<unsigned int>(OPT_num_threads);
     structural_type_descriptorRef bool_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 0));
     PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Start adding new ports");
-    SM->add_port_vector(STR(DONE_PORT_NAME)+"_accelerator", port_o::OUT, HLS->Param->getOption<unsigned int>(OPT_num_threads), circuit, port_type);
-    SM->add_port_vector(STR(DONE_REQUEST)+"_accelerator", port_o::OUT, HLS->Param->getOption<unsigned int>(OPT_num_threads), circuit, port_type);
-    SM->add_port_vector(STR(START_PORT_NAME)+"_accelerator", port_o::IN, HLS->Param->getOption<unsigned int>(OPT_num_threads), circuit, port_type);
+    SM->add_port_vector(STR(DONE_PORT_NAME)+"_accelerator", port_o::OUT, num_thread, circuit, bool_type);
+    SM->add_port_vector(STR(DONE_REQUEST)+"_accelerator", port_o::OUT, num_thread, circuit, bool_type);
+    SM->add_port_vector(STR(START_PORT_NAME)+"_accelerator", port_o::IN, num_thread, circuit, bool_type);
 
     SM->add_port(STR(TASKS_POOL_END), port_o::IN, circuit, bool_type);
     structural_type_descriptorRef request_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 32));
@@ -208,7 +207,7 @@ void datapath_parallel_cs::connect_module_kernel(structural_objectRef kernel_mod
    structural_objectRef request_kernel = kernel_mod->find_member("i_var_5",port_o_K,kernel_mod);
    structural_objectRef request_datapath = circuit->find_member("request",port_o_K,circuit);
    SM->add_connection(request_datapath, request_kernel);
-   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - Connected done_req");
+   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - Connected request");
 }
 
 void datapath_parallel_cs::instantiate_component_parallel(structural_objectRef clock_port, structural_objectRef reset_port)
@@ -231,7 +230,7 @@ void datapath_parallel_cs::instantiate_component_parallel(structural_objectRef c
    structural_objectRef reset_sign=SM->add_sign("reset_mem_par_signal", circuit, bool_type);
    SM->add_connection(reset_sign, reset_port);
    SM->add_connection(reset_sign, reset_mem_par);
-   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Instantiate memory_ctrl_parallel!");
+   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Instantiated memory_ctrl_parallel!");
 
    resize_ctrl_parallel_ports(mem_par_mod);
 }
