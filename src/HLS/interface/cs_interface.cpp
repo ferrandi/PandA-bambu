@@ -100,6 +100,31 @@ DesignFlowStep_Status cs_interface::InternalExec()
 
    manage_extern_global_port_top(SM_cs_interface,wrappedObj,interfaceObj);  //connect memory port for memory_ctrl_top
 
+   for(unsigned int j = 0; j < GetPointer<module>(interfaceObj)->get_in_port_size(); j++)  //resize input port
+   {
+      structural_objectRef port_i = GetPointer<module>(interfaceObj)->get_in_port(j);
+      if(GetPointer<port_o>(port_i)->get_is_memory())
+      {
+         std::string port_name = GetPointer<port_o>(port_i)->get_id();
+         if((port_i->get_kind() == port_vector_o_K))
+            std::cout<<"Port_vector "<<port_name<<" dimension"<<GetPointer<port_o>(port_i)->get_ports_size()<<std::endl;
+         else
+            std::cout<<"Port "<<port_name<<std::endl;
+      }
+   }
+   for(unsigned int j = 0; j < GetPointer<module>(interfaceObj)->get_out_port_size(); j++)  //resize input port
+   {
+      structural_objectRef port_i = GetPointer<module>(interfaceObj)->get_out_port(j);
+      if(GetPointer<port_o>(port_i)->get_is_memory())
+      {
+         std::string port_name = GetPointer<port_o>(port_i)->get_id();
+         if((port_i->get_kind() == port_vector_o_K))
+            std::cout<<"Port_vector "<<port_name<<" dimension"<<GetPointer<port_o>(port_i)->get_ports_size()<<std::endl;
+         else
+            std::cout<<"Port "<<port_name<<std::endl;
+      }
+   }
+
    // Generation completed, the new created module substitutes the current top-level one
    HLS->top = SM_cs_interface;
    return DesignFlowStep_Status::SUCCESS;

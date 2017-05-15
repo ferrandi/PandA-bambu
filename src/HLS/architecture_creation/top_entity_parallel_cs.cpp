@@ -256,6 +256,8 @@ DesignFlowStep_Status top_entity_parallel_cs::InternalExec()
             std::cout<<"Port_vector "<<port_name<<" dimension"<<GetPointer<port_o>(port_i)->get_ports_size()<<std::endl;
          else
             std::cout<<"Port "<<port_name<<std::endl;
+         if(GetPointer<port_o>(port_i)->get_is_global() && GetPointer<port_o>(port_i)->get_is_extern())
+            std::cout<<"extern and global"<<std::endl;
       }
    }
    for(unsigned int j = 0; j < GetPointer<module>(circuit)->get_out_port_size(); j++)  //resize input port
@@ -268,6 +270,8 @@ DesignFlowStep_Status top_entity_parallel_cs::InternalExec()
             std::cout<<"Port_vector "<<port_name<<" dimension"<<GetPointer<port_o>(port_i)->get_ports_size()<<std::endl;
          else
             std::cout<<"Port "<<port_name<<std::endl;
+         if(GetPointer<port_o>(port_i)->get_is_global() && GetPointer<port_o>(port_i)->get_is_extern())
+            std::cout<<"extern and global"<<std::endl;
       }
    }
 

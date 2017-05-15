@@ -144,5 +144,15 @@ protected:
     * @param _unique_id
     */
    void manage_extern_global_port_hierarchical(const structural_managerRef SM, const std::set<structural_objectRef> &memory_modules, const structural_objectRef circuit, const hlsRef HLS, unsigned int &_unique_id);
+
+   /**
+    * @brief manage_memory_ports_parallel_chained_CS version to propagate global and extern port
+    * @param SM
+    * @param memory_modules
+    * @param circuit
+    * @param HLS
+    * @param _unique_id
+    */
+   void manage_memory_ports_parallel_chained_CS(const HLS_managerRef, const structural_managerRef SM, const std::set<structural_objectRef> &memory_modules, const structural_objectRef circuit, const hlsRef HLS, unsigned int &_unique_id);
 };
 #endif // FU_BINDING_CS_H

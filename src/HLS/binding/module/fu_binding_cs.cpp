@@ -258,7 +258,7 @@ void fu_binding_cs::manage_memory_ports_parallel_chained(const HLS_managerRef HL
       manage_extern_global_port_hierarchical(SM, memory_modules, circuit, HLS, _unique_id);
    }
    else
-      fu_binding::manage_memory_ports_parallel_chained(HLSMgr,SM,memory_modules, circuit,HLS,unique_id);
+      manage_memory_ports_parallel_chained_CS(HLSMgr,SM,memory_modules, circuit,HLS,unique_id);
 }
 
 void fu_binding_cs::manage_extern_global_port_kernel(const structural_managerRef SM, const std::set<structural_objectRef> &memory_modules, const structural_objectRef circuit, const hlsRef HLS, unsigned int & _unique_id)
@@ -388,7 +388,7 @@ void fu_binding_cs::manage_extern_global_port_hierarchical(const structural_mana
       for(unsigned int j = 0; j < GetPointer<module>(*i)->get_out_port_size(); j++)
       {
          structural_objectRef port_i = GetPointer<module>(*i)->get_out_port(j);
-         if(GetPointer<port_o>(port_i)->get_is_memory() && (!GetPointer<port_o>(port_i)->get_is_global()) && (!GetPointer<port_o>(port_i)->get_is_extern()))
+         if(GetPointer<port_o>(port_i)->get_is_memory() && GetPointer<port_o>(port_i)->get_is_global() && GetPointer<port_o>(port_i)->get_is_extern())
          {
             std::string port_name = GetPointer<port_o>(port_i)->get_id();
             cir_port = circuit->find_member(port_name, port_i->get_kind(), circuit);
@@ -418,34 +418,70 @@ void fu_binding_cs::manage_extern_global_port_hierarchical(const structural_mana
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - End merging, splitting for hierarchical");
 }
 
+void fu_binding_cs::manage_memory_ports_parallel_chained_CS(const HLS_managerRef , const structural_managerRef SM, const std::set<structural_objectRef> &memory_modules, const structural_objectRef circuit, const hlsRef HLS, unsigned int & _unique_id)
+{
+   std::cout<<"Using manage_cs"<<std::endl;
+   std::map<structural_objectRef, std::set<structural_objectRef> > primary_outs;
+   structural_objectRef cir_port;
+   for (std::set<structural_objectRef>::iterator i = memory_modules.begin(); i != memory_modules.end(); i++)
+   {
+      for(unsigned int j = 0; j < GetPointer<module>(*i)->get_in_port_size(); j++)
+      {
+         structural_objectRef port_i = GetPointer<module>(*i)->get_in_port(j);
+         if(GetPointer<port_o>(port_i)->get_is_memory() && GetPointer<port_o>(port_i)->get_is_global() && GetPointer<port_o>(port_i)->get_is_extern())
+         {
+            std::string port_name = GetPointer<port_o>(port_i)->get_id();
+            cir_port = circuit->find_member(port_name, port_i->get_kind(), circuit);
+            THROW_ASSERT(!cir_port || GetPointer<port_o>(cir_port), "should be a port or null");
+            if(!cir_port)
+            {
+               if(port_i->get_kind() == port_vector_o_K)
+                  cir_port = SM->add_port_vector(port_name, port_o::IN, GetPointer<port_o>(port_i)->get_ports_size(), circuit, port_i->get_typeRef());
+               else
+                  cir_port = SM->add_port(port_name, port_o::IN, circuit, port_i->get_typeRef());
+               port_o::fix_port_properties(port_i, cir_port);
+               SM->add_connection(cir_port,port_i);
+            }
+            else
+            {
+               SM->add_connection(cir_port,port_i);
+            }
+         }
+      }
+      for(unsigned int j = 0; j < GetPointer<module>(*i)->get_out_port_size(); j++)
+      {
+         structural_objectRef port_i = GetPointer<module>(*i)->get_out_port(j);
+         if(GetPointer<port_o>(port_i)->get_is_memory() && GetPointer<port_o>(port_i)->get_is_global() && GetPointer<port_o>(port_i)->get_is_extern())
+         {
+            std::string port_name = GetPointer<port_o>(port_i)->get_id();
+            cir_port = circuit->find_member(port_name, port_i->get_kind(), circuit);
+            THROW_ASSERT(!cir_port || GetPointer<port_o>(cir_port), "should be a port or null");
+            if(!cir_port)
+            {
+               if(port_i->get_kind() == port_vector_o_K)
+                  cir_port = SM->add_port_vector(port_name, port_o::OUT, GetPointer<port_o>(port_i)->get_ports_size(), circuit, port_i->get_typeRef());
+               else
+                  cir_port = SM->add_port(port_name, port_o::OUT, circuit, port_i->get_typeRef());
+               port_o::fix_port_properties(port_i, cir_port);
+            }
+            primary_outs[cir_port].insert(port_i);
+         }
+      }
+   }
+   join_merge_split(SM, HLS, primary_outs, circuit, _unique_id);
+}
+
 void fu_binding_cs::manage_extern_global_port(const HLS_managerRef HLSMgr, const hlsRef HLS, const structural_managerRef SM, structural_objectRef port_in, unsigned int _dir, structural_objectRef circuit, unsigned int num)
 {
-   auto omp_functions = GetPointer<OmpFunctions>(HLSMgr->Rfuns);
-   if(omp_functions->kernel_functions.find(HLS->functionId) != omp_functions->kernel_functions.end())
+   if(_dir==port_o::IO)
    {
-      if(!GetPointer<port_o>(port_in)->get_is_memory())
-      {
-         fu_binding::manage_extern_global_port(HLSMgr, HLS, SM, port_in, _dir, circuit, num);
-      }
-      if(_dir==port_o::IO)
-      {
-         THROW_ERROR("port declared as IO not accepted in context switch");
-      }
+      THROW_ERROR("port declared as IO not accepted in context switch");
    }
-   else if(omp_functions->hierarchical_functions.find(HLS->functionId) != omp_functions->hierarchical_functions.end())
+   if(!GetPointer<port_o>(port_in)->get_is_memory())
    {
-      if(!GetPointer<port_o>(port_in)->get_is_memory())
-      {
-         std::string port_name = GetPointer<port_o>(port_in)->get_id();
+      std::string port_name = GetPointer<port_o>(port_in)->get_id();
+      if(GetPointer<port_o>(port_in)->get_is_global() && GetPointer<port_o>(port_in)->get_is_extern())
          std::cout<<port_name<<std::endl;
-         fu_binding::manage_extern_global_port(HLSMgr, HLS, SM, port_in, _dir, circuit, num);
-      }
-      if(_dir==port_o::IO)
-      {
-         THROW_ERROR("port declared as IO not accepted in context switch");
-      }
-   }
-   else
       fu_binding::manage_extern_global_port(HLSMgr, HLS, SM, port_in, _dir, circuit, num);
-
+   }
 }
