@@ -240,6 +240,8 @@ DesignFlowStep_Status top_entity_parallel_cs::InternalExec()
    this->add_ports(circuit, clock_obj, reset_obj);
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "\tInput/output ports added!");
 
+   connect_port_parallel(circuit);
+
    memory::propagate_memory_parameters(HLS->datapath->get_circ(), HLS->top);
 
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Circuit created without errors!");
@@ -274,43 +276,22 @@ DesignFlowStep_Status top_entity_parallel_cs::InternalExec()
 
 void top_entity_parallel_cs::resize_controller_parallel(structural_objectRef controller_circuit)
 {
-   unsigned int memory_channel=HLS->Param->getOption<unsigned int>(OPT_channels_number);
    unsigned int num_kernel=HLS->Param->getOption<unsigned int>(OPT_num_threads);
-   for(unsigned int j = 0; j < GetPointer<module>(mem_par_mod)->get_in_port_size(); j++)  //resize input port
-   {
-      structural_objectRef port_i = GetPointer<module>(mem_par_mod)->get_in_port(j);
-      if(GetPointer<port_o>(port_i)->get_is_memory())
-      {
-         std::string port_name = GetPointer<port_o>(port_i)->get_id();
-         if(port_name.substr(0,3)=="IN_")
-            resize_dimension_bus_port(memory_channel, port_i);
-         else
-            resize_dimension_bus_port(num_kernel, port_i);
-      }
-   }
-   for(unsigned int j = 0; j < GetPointer<module>(mem_par_mod)->get_out_port_size(); j++)    //resize output port
-   {
-      structural_objectRef port_i = GetPointer<module>(mem_par_mod)->get_out_port(j);
-      if(GetPointer<port_o>(port_i)->get_is_memory())
-      {
-         std::string port_name = GetPointer<port_o>(port_i)->get_id();
-         if(port_name.substr(0,4)=="OUT_")
-            resize_dimension_bus_port(memory_channel, port_i);
-         else
-            resize_dimension_bus_port(num_kernel, port_i);
-      }
-   }
+   structural_objectRef controller_done_request = controller_circuit->find_member(STR(DONE_REQUEST)+"_accelerator", port_vector_o_K, controller_circuit);
+   GetPointer<port_o>(controller_done_request)->add_n_ports(num_kernel,controller_done_request);
+   structural_objectRef controller_done_port = controller_circuit->find_member(STR(DONE_PORT_NAME)+"_accelerator", port_vector_o_K, controller_circuit);
+   GetPointer<port_o>(controller_done_port)->add_n_ports(num_kernel,controller_done_port);
+   structural_objectRef controller_start_port = controller_circuit->find_member(STR(START_PORT_NAME)+"_accelerator", port_vector_o_K, controller_circuit);
+   GetPointer<port_o>(controller_start_port)->add_n_ports(num_kernel,controller_start_port);
 }
 
 void top_entity_parallel_cs::connect_port_parallel(const structural_objectRef circuit)
 {
    structural_managerRef Datapath = HLS->datapath;
-   structural_managerRef Controller = HLS->controller;
    structural_objectRef datapath_circuit = Datapath->get_circ();
-   structural_objectRef controller_circuit = Controller->get_circ();
+   structural_objectRef controller_circuit = circuit->find_member("controller_parallel", component_o_K, circuit);
    structural_type_descriptorRef bool_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 0));
    unsigned int num_slots=HLS->Param->getOption<unsigned int>(OPT_num_threads);
-   std::cout<<"NUM thread: "<<num_slots;
    structural_type_descriptorRef data_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 32));
 
    structural_objectRef controller_task_pool_end = controller_circuit->find_member(STR(TASKS_POOL_END), port_o_K, controller_circuit);
@@ -319,26 +300,32 @@ void top_entity_parallel_cs::connect_port_parallel(const structural_objectRef ci
    SM->add_connection(datapath_task_pool_end, task_pool_end_sign);
    SM->add_connection(task_pool_end_sign, controller_task_pool_end);
 
-   structural_objectRef datapath_done_request = datapath_circuit->find_member(STR(DONE_REQUEST)+"accelerator", port_vector_o_K, datapath_circuit);
-   structural_objectRef controller_done_request = controller_circuit->find_member(STR(DONE_REQUEST)+"accelerator", port_vector_o_K, datapath_circuit);
-   structural_objectRef done_request_sign=SM->add_sign_vector(STR(DONE_REQUEST)+"accelerator"+"_signal", num_slots, circuit, bool_type);
+   structural_objectRef datapath_done_request = datapath_circuit->find_member(STR(DONE_REQUEST)+"_accelerator", port_vector_o_K, datapath_circuit);
+   structural_objectRef controller_done_request = controller_circuit->find_member(STR(DONE_REQUEST)+"_accelerator", port_vector_o_K, controller_circuit);
+   std::cout<<"Port done request datapath size:"<<GetPointer<port_o>(datapath_done_request)->get_ports_size()<<std::endl;
+   std::cout<<"Port done request controller size:"<<GetPointer<port_o>(controller_done_request)->get_ports_size()<<std::endl;
+   structural_objectRef done_request_sign=SM->add_sign_vector(STR(DONE_REQUEST)+"_accelerator"+"_signal", num_slots, circuit, bool_type);
    SM->add_connection(datapath_done_request, done_request_sign);
    SM->add_connection(done_request_sign, controller_done_request);
 
-   structural_objectRef datapath_done_port = datapath_circuit->find_member(STR(DONE_PORT_NAME)+"accelerator", port_vector_o_K, datapath_circuit);
-   structural_objectRef controller_done_port = controller_circuit->find_member(STR(DONE_PORT_NAME)+"accelerator", port_vector_o_K, controller_circuit);
-   structural_objectRef done_port_sign=SM->add_sign_vector(STR(DONE_PORT_NAME)+"accelerator"+"_signal", num_slots, circuit, bool_type);
+   structural_objectRef datapath_done_port = datapath_circuit->find_member(STR(DONE_PORT_NAME)+"_accelerator", port_vector_o_K, datapath_circuit);
+   structural_objectRef controller_done_port = controller_circuit->find_member(STR(DONE_PORT_NAME)+"_accelerator", port_vector_o_K, controller_circuit);
+   std::cout<<"Port done port datapath size:"<<GetPointer<port_o>(datapath_done_port)->get_ports_size()<<std::endl;
+   std::cout<<"Port done port controller size:"<<GetPointer<port_o>(controller_done_port)->get_ports_size()<<std::endl;
+   structural_objectRef done_port_sign=SM->add_sign_vector(STR(DONE_PORT_NAME)+"_accelerator"+"_signal", num_slots, circuit, bool_type);
    SM->add_connection(datapath_done_port, done_port_sign);
    SM->add_connection(done_port_sign, controller_done_port);
 
-   structural_objectRef datapath_start_port = datapath_circuit->find_member(STR(START_PORT_NAME)+"accelerator", port_vector_o_K, datapath_circuit);
-   structural_objectRef controller_start_port = controller_circuit->find_member(STR(START_PORT_NAME)+"accelerator", port_vector_o_K, controller_circuit);
-   structural_objectRef done_start_sign=SM->add_sign_vector(STR(START_PORT_NAME)+"accelerator"+"_signal", num_slots, circuit, bool_type);
+   structural_objectRef datapath_start_port = datapath_circuit->find_member(STR(START_PORT_NAME)+"_accelerator", port_vector_o_K, datapath_circuit);
+   structural_objectRef controller_start_port = controller_circuit->find_member(STR(START_PORT_NAME)+"_accelerator", port_vector_o_K, controller_circuit);
+   std::cout<<"Port start port datapath size:"<<GetPointer<port_o>(datapath_start_port)->get_ports_size()<<std::endl;
+   std::cout<<"Port start port controller size:"<<GetPointer<port_o>(controller_start_port)->get_ports_size()<<std::endl;
+   structural_objectRef done_start_sign=SM->add_sign_vector(STR(START_PORT_NAME)+"_accelerator"+"_signal", num_slots, circuit, bool_type);
    SM->add_connection(controller_start_port, done_start_sign);
    SM->add_connection(done_start_sign, datapath_start_port);
 
-   structural_objectRef datapath_request = datapath_circuit->find_member("request_port", port_o_K, datapath_circuit);
-   structural_objectRef controller_request = controller_circuit->find_member("request_port", port_o_K, controller_circuit);
+   structural_objectRef datapath_request = datapath_circuit->find_member("request", port_o_K, datapath_circuit);
+   structural_objectRef controller_request = controller_circuit->find_member("request", port_o_K, controller_circuit);
    structural_objectRef request_sign=SM->add_sign("request_signal", circuit, data_type);
    SM->add_connection(controller_request, request_sign);
    SM->add_connection(request_sign, datapath_request);

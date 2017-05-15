@@ -202,7 +202,7 @@ void cs_interface::resize_dimension_bus_port(unsigned int vector_size, structura
       port->type_resize(bus_size_bitsize);
    else if (GetPointer<port_o>(port)->get_is_tag_bus())
       port->type_resize(bus_tag_bitsize);
-   GetPointer<port_o>(port)->add_n_ports(vector_size-1,port);
+   GetPointer<port_o>(port)->add_n_ports(vector_size,port);
 }
 
 void cs_interface::manage_extern_global_port_top(const structural_managerRef SM, const structural_objectRef memory_module, const structural_objectRef circuit)
