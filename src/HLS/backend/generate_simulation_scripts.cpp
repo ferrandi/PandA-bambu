@@ -73,10 +73,13 @@
 
 // include from tree
 #include "behavioral_helper.hpp"
+#include "tree_helper.hpp"
 
 GenerateSimulationScripts::GenerateSimulationScripts(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, const DesignFlowManagerConstRef _design_flow_manager) :
    HLS_step(_parameters, _HLSMgr, _design_flow_manager, HLSFlowStep_Type::GENERATE_SIMULATION_SCRIPT)
-{}
+{
+   debug_level = _parameters->get_class_debug_level(GET_CLASS(*this));
+}
 
 GenerateSimulationScripts::~GenerateSimulationScripts()
 {}
@@ -111,6 +114,9 @@ DesignFlowStep_Status GenerateSimulationScripts::Exec()
    const auto top_function_ids = HLSMgr->CGetCallGraphManager()->GetRootFunctions();
    THROW_ASSERT(top_function_ids.size() == 1, "Multiple top functions");
    const auto top_fun_id = *(top_function_ids.begin());
+   std::cerr << "BBB " << top_fun_id << std::endl;
+   std::cerr << tree_helper::name_function(HLSMgr->get_tree_manager(), top_fun_id) << std::endl;
+   std::cerr << "CCC " << top_fun_id << std::endl;
 
    const hlsRef top_hls = HLSMgr->get_HLS(top_fun_id);
    const std::string suffix = "_beh";

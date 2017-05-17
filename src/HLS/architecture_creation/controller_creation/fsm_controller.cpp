@@ -126,9 +126,8 @@ DesignFlowStep_Status fsm_controller::InternalExec()
 
    PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Creating state machine representations...");
    std::string state_representation;
-   this->create_state_machine(state_representation);
-
    add_correct_transition_memory(state_representation); //if CS is activated some register are memory
+   this->create_state_machine(state_representation);
    
    PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Machine encoding");
    PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, state_representation);

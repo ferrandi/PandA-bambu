@@ -126,33 +126,24 @@ protected:
    void resize_dimension_bus_port(const HLS_managerRef HLSMgr, structural_objectRef port);
 
    /**
-    * @brief manage_extern_global_port_kernel connect correctly memory port when in kernel function
+    * @brief manage_memory_port_kernel connect correctly memory port when in kernel function
     * @param SM
     * @param memory_modules
     * @param circuit
     * @param HLS
     * @param _unique_id
     */
-   void manage_extern_global_port_kernel(const structural_managerRef SM, const std::set<structural_objectRef> &memory_modules, const structural_objectRef circuit, const hlsRef HLS, unsigned int &_unique_id);
+   void manage_memory_port_kernel(const structural_managerRef SM, const std::set<structural_objectRef> &memory_modules, const structural_objectRef circuit, const hlsRef HLS, unsigned int &_unique_id);
 
    /**
-    * @brief manage_extern_global_port_hierarchical connect correctly memory port when in hierarchical function
+    * @brief manage_memory_port_hierarchical connect correctly memory port when in hierarchical function
     * @param SM
     * @param memory_modules
     * @param circuit
     * @param HLS
     * @param _unique_id
     */
-   void manage_extern_global_port_hierarchical(const structural_managerRef SM, const std::set<structural_objectRef> &memory_modules, const structural_objectRef circuit, const hlsRef HLS, unsigned int &_unique_id);
+   void manage_memory_port_hierarchical(const structural_managerRef SM, const std::set<structural_objectRef> &memory_modules, const structural_objectRef circuit, const hlsRef HLS, unsigned int &_unique_id);
 
-   /**
-    * @brief manage_memory_ports_parallel_chained_CS version to propagate global and extern port
-    * @param SM
-    * @param memory_modules
-    * @param circuit
-    * @param HLS
-    * @param _unique_id
-    */
-   void manage_memory_ports_parallel_chained_CS(const HLS_managerRef, const structural_managerRef SM, const std::set<structural_objectRef> &memory_modules, const structural_objectRef circuit, const hlsRef HLS, unsigned int &_unique_id);
 };
 #endif // FU_BINDING_CS_H

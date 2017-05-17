@@ -74,6 +74,13 @@ protected:
      * @brief function inside kernel need to connect selector
      */
     void add_register_file_function();
+
+    /**
+     * @brief specialise_reg add dimension selector
+     * @param reg
+     * @param r
+     */
+    void specialise_reg(structural_objectRef &reg, unsigned int r);
 };
 
 #endif // REG_BINDING_CS_H

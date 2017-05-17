@@ -44,6 +44,7 @@
 #include "hls_target.hpp"
 #include "structural_manager.hpp"
 #include "technology_manager.hpp"
+#include "Parameter.hpp"
 
 reg_binding_cs::reg_binding_cs(const hlsRef& HLS_, const HLS_managerRef HLSMgr_) :
     reg_binding(HLS_, HLSMgr_)
@@ -100,4 +101,19 @@ void reg_binding_cs::add_register_file_kernel(structural_objectRef selector_regF
       structural_objectRef port_selector = registerFile->find_member(SELECTOR_REGISTER_FILE, port_o_K, registerFile);
       SM->add_connection(selector_regFile_sign, port_selector);
    }
+}
+
+void reg_binding_cs::specialise_reg(structural_objectRef & reg, unsigned int r)
+{
+   reg_binding_cs::specialise_reg(reg, r);
+   unsigned int offset=2;
+   if (GetPointer<module>(reg)->get_in_port(0)->get_id() == CLOCK_PORT_NAME)
+   {
+      if(GetPointer<module>(reg)->get_in_port(1)->get_id() == RESET_PORT_NAME)
+         offset = 3;
+      else
+         offset = 2;
+   }
+   unsigned int dimension=static_cast<unsigned int>(log2(HLS->Param->getOption<unsigned int>(OPT_context_switch)));
+   GetPointer<module>(reg)->get_in_port(offset)->type_resize(dimension); // selector
 }

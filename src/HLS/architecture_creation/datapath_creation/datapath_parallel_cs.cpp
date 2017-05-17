@@ -232,6 +232,13 @@ void datapath_parallel_cs::instantiate_component_parallel(structural_objectRef c
    SM->add_connection(reset_sign, reset_mem_par);
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Instantiated memory_ctrl_parallel!");
 
+   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Starting setting parameter memory_ctrl_parallel!");
+   GetPointer<module>(mem_par_mod)->set_parameter("NUM_CHANNEL", STR(HLS->Param->getOption<unsigned int>(OPT_channels_number)));
+   GetPointer<module>(mem_par_mod)->set_parameter("NUM_ACC", STR(HLS->Param->getOption<unsigned int>(OPT_num_threads)));
+   GetPointer<module>(mem_par_mod)->set_parameter("ADDR_TASKS", STR(log2(parameters->getOption<unsigned int>(OPT_context_switch))));
+   GetPointer<module>(mem_par_mod)->set_parameter("ADDR_ACC", STR(log2(parameters->getOption<unsigned int>(OPT_num_threads))));
+   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Parameter memory_ctrl_top setted!");
+
    resize_ctrl_parallel_ports(mem_par_mod);
 }
 
@@ -295,7 +302,7 @@ void datapath_parallel_cs::manage_extern_global_port_parallel(const structural_m
       for(unsigned int j = 0; j < GetPointer<module>(*i)->get_in_port_size(); j++)  //from ctrl_parallel to module
       {
          structural_objectRef port_i = GetPointer<module>(*i)->get_in_port(j);
-         if(GetPointer<port_o>(port_i)->get_is_memory() && (GetPointer<port_o>(port_i)->get_is_global()) && (GetPointer<port_o>(port_i)->get_is_extern()))
+         if(GetPointer<port_o>(port_i)->get_is_memory() && GetPointer<port_o>(port_i)->get_is_global() && GetPointer<port_o>(port_i)->get_is_extern())
          {
             std::string port_name = GetPointer<port_o>(port_i)->get_id();
             mem_paral_port = memory_parallel->find_member(port_name, port_vector_o_K, memory_parallel);
@@ -308,7 +315,7 @@ void datapath_parallel_cs::manage_extern_global_port_parallel(const structural_m
       for(unsigned int j = 0; j < GetPointer<module>(*i)->get_out_port_size(); j++)    //from module to ctrl_parallel
       {
          structural_objectRef port_i = GetPointer<module>(*i)->get_out_port(j);
-         if(GetPointer<port_o>(port_i)->get_is_memory() && (GetPointer<port_o>(port_i)->get_is_global()) && (GetPointer<port_o>(port_i)->get_is_extern()))
+         if(GetPointer<port_o>(port_i)->get_is_memory() && !GetPointer<port_o>(port_i)->get_is_global() && !GetPointer<port_o>(port_i)->get_is_extern())
          {
             std::string port_name = GetPointer<port_o>(port_i)->get_id();
             mem_paral_port = memory_parallel->find_member(port_name, port_vector_o_K, memory_parallel);
@@ -325,7 +332,7 @@ void datapath_parallel_cs::manage_extern_global_port_parallel(const structural_m
    {
       structural_objectRef port_i = GetPointer<module>(memory_parallel)->get_in_port(j);
       std::string port_name = GetPointer<port_o>(port_i)->get_id();
-      if(GetPointer<port_o>(port_i)->get_is_memory() && (GetPointer<port_o>(port_i)->get_is_global()) && (GetPointer<port_o>(port_i)->get_is_extern()) && port_name.substr(0,3)=="IN_")
+      if(GetPointer<port_o>(port_i)->get_is_memory() && GetPointer<port_o>(port_i)->get_is_global() && GetPointer<port_o>(port_i)->get_is_extern() && port_name.substr(0,3)=="IN_")
       {
          cir_port = circuit->find_member(port_name.erase(0,3), port_i->get_kind(), circuit);
          THROW_ASSERT(!cir_port || GetPointer<port_o>(cir_port), "should be a port or null");
@@ -348,7 +355,7 @@ void datapath_parallel_cs::manage_extern_global_port_parallel(const structural_m
    {
       structural_objectRef port_i = GetPointer<module>(memory_parallel)->get_out_port(j);
       std::string port_name = GetPointer<port_o>(port_i)->get_id();
-      if(GetPointer<port_o>(port_i)->get_is_memory()  && (GetPointer<port_o>(port_i)->get_is_global()) && (GetPointer<port_o>(port_i)->get_is_extern()) && port_name.substr(0,4)=="OUT_")
+      if(GetPointer<port_o>(port_i)->get_is_memory()  && !GetPointer<port_o>(port_i)->get_is_global() && !GetPointer<port_o>(port_i)->get_is_extern() && port_name.substr(0,4)=="OUT_")
       {
          cir_port = circuit->find_member(port_name.erase(0,4), port_i->get_kind(), circuit); //delete OUT from port name
          THROW_ASSERT(!cir_port || GetPointer<port_o>(cir_port), "should be a port or null");

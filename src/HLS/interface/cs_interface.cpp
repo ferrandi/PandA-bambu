@@ -100,31 +100,6 @@ DesignFlowStep_Status cs_interface::InternalExec()
 
    manage_extern_global_port_top(SM_cs_interface,wrappedObj,interfaceObj);  //connect memory port for memory_ctrl_top
 
-   for(unsigned int j = 0; j < GetPointer<module>(interfaceObj)->get_in_port_size(); j++)  //resize input port
-   {
-      structural_objectRef port_i = GetPointer<module>(interfaceObj)->get_in_port(j);
-      if(GetPointer<port_o>(port_i)->get_is_memory())
-      {
-         std::string port_name = GetPointer<port_o>(port_i)->get_id();
-         if((port_i->get_kind() == port_vector_o_K))
-            std::cout<<"Port_vector "<<port_name<<" dimension"<<GetPointer<port_o>(port_i)->get_ports_size()<<std::endl;
-         else
-            std::cout<<"Port "<<port_name<<std::endl;
-      }
-   }
-   for(unsigned int j = 0; j < GetPointer<module>(interfaceObj)->get_out_port_size(); j++)  //resize input port
-   {
-      structural_objectRef port_i = GetPointer<module>(interfaceObj)->get_out_port(j);
-      if(GetPointer<port_o>(port_i)->get_is_memory())
-      {
-         std::string port_name = GetPointer<port_o>(port_i)->get_id();
-         if((port_i->get_kind() == port_vector_o_K))
-            std::cout<<"Port_vector "<<port_name<<" dimension"<<GetPointer<port_o>(port_i)->get_ports_size()<<std::endl;
-         else
-            std::cout<<"Port "<<port_name<<std::endl;
-      }
-   }
-
    // Generation completed, the new created module substitutes the current top-level one
    HLS->top = SM_cs_interface;
    return DesignFlowStep_Status::SUCCESS;
@@ -178,6 +153,13 @@ void cs_interface::instantiate_component_parallel(const structural_managerRef SM
    SM->add_connection(reset_sign, reset_port);
    SM->add_connection(reset_sign, reset_mem_ctrl);
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Instantiate memory_ctrl_top!");
+
+   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Starting setting parameter memory_ctrl_top!");
+   GetPointer<module>(mem_ctrl_mod)->set_parameter("NUM_CHANNEL", STR(OPT_channels_number));
+   GetPointer<module>(mem_ctrl_mod)->set_parameter("NUM_BANK", STR(OPT_memory_banks_number));
+   GetPointer<module>(mem_ctrl_mod)->set_parameter("ADDR_TASKS", STR(log2(parameters->getOption<unsigned int>(OPT_context_switch))));
+   GetPointer<module>(mem_ctrl_mod)->set_parameter("ADDR_ACC", STR(log2(parameters->getOption<unsigned int>(OPT_num_threads))));
+   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Parameter memory_ctrl_top setted!");
 
    resize_memory_ctrl_ports(mem_ctrl_mod);
 }
@@ -242,7 +224,7 @@ void cs_interface::manage_extern_global_port_top(const structural_managerRef SM,
    for(unsigned int j = 0; j < GetPointer<module>(memory_module)->get_in_port_size(); j++)  //from memory_ctrl output to module input
    {
       structural_objectRef port_i = GetPointer<module>(memory_module)->get_in_port(j);
-      if(GetPointer<port_o>(port_i)->get_is_memory() && (GetPointer<port_o>(port_i)->get_is_global()) && (GetPointer<port_o>(port_i)->get_is_extern()))
+      if(GetPointer<port_o>(port_i)->get_is_memory() && GetPointer<port_o>(port_i)->get_is_global() && GetPointer<port_o>(port_i)->get_is_extern())
       {
          std::string port_name = GetPointer<port_o>(port_i)->get_id();
          std::cout<<"Port name: "<<port_name<<std::endl;
@@ -257,7 +239,7 @@ void cs_interface::manage_extern_global_port_top(const structural_managerRef SM,
    for(unsigned int j = 0; j < GetPointer<module>(memory_module)->get_out_port_size(); j++)    //from module output to memory_ctrl input
    {
       structural_objectRef port_i = GetPointer<module>(memory_module)->get_out_port(j);
-      if(GetPointer<port_o>(port_i)->get_is_memory() && (GetPointer<port_o>(port_i)->get_is_global()) && (GetPointer<port_o>(port_i)->get_is_extern()))
+      if(GetPointer<port_o>(port_i)->get_is_memory() && !GetPointer<port_o>(port_i)->get_is_global() && !GetPointer<port_o>(port_i)->get_is_extern())
       {
          std::string port_name = GetPointer<port_o>(port_i)->get_id();
          std::cout<<"Port name: "<<port_name<<std::endl;
@@ -273,7 +255,7 @@ void cs_interface::manage_extern_global_port_top(const structural_managerRef SM,
    {
       structural_objectRef port_i = GetPointer<module>(memory_ctrl)->get_in_port(j);
       std::string port_name = GetPointer<port_o>(port_i)->get_id();
-      if(GetPointer<port_o>(port_i)->get_is_memory() && (GetPointer<port_o>(port_i)->get_is_global()) && (GetPointer<port_o>(port_i)->get_is_extern()) && port_name.substr(0,3)=="IN_")
+      if(GetPointer<port_o>(port_i)->get_is_memory() && GetPointer<port_o>(port_i)->get_is_global() && GetPointer<port_o>(port_i)->get_is_extern() && port_name.substr(0,3)=="IN_")
       {
          cir_port = circuit->find_member(port_name.erase(0,3), port_i->get_kind(), circuit);
          THROW_ASSERT(!cir_port || GetPointer<port_o>(cir_port), "should be a port or null");
@@ -289,7 +271,7 @@ void cs_interface::manage_extern_global_port_top(const structural_managerRef SM,
    {
       structural_objectRef port_i = GetPointer<module>(memory_ctrl)->get_out_port(j);
       std::string port_name = GetPointer<port_o>(port_i)->get_id();
-      if(GetPointer<port_o>(port_i)->get_is_memory() && (GetPointer<port_o>(port_i)->get_is_global()) && (GetPointer<port_o>(port_i)->get_is_extern()) && port_name.substr(0,4)=="OUT_")
+      if(GetPointer<port_o>(port_i)->get_is_memory() && !GetPointer<port_o>(port_i)->get_is_global() && !GetPointer<port_o>(port_i)->get_is_extern() && port_name.substr(0,4)=="OUT_")
       {
          cir_port = circuit->find_member(port_name.erase(0,4), port_i->get_kind(), circuit); //delete OUT from port name
          THROW_ASSERT(!cir_port || GetPointer<port_o>(cir_port), "should be a port or null");

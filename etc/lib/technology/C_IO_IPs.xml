@@ -335,31 +335,31 @@
             <structural_type_descriptor type="BOOL" size="1"/>
             <connected_objects/>
           </port_o>
-          <port_o id="Mout_oe_ram" dir="OUT" is_memory="1" is_global="1" is_extern="1" >
+          <port_o id="Mout_oe_ram" dir="OUT" is_memory="1" is_master="1" >
             <structural_type_descriptor type="BOOL" size="1"/>
             <connected_objects/>
           </port_o>
-          <port_o id="Mout_we_ram" dir="OUT" is_memory="1" is_global="1" is_extern="1" >
+          <port_o id="Mout_we_ram" dir="OUT" is_memory="1" is_master="1" >
             <structural_type_descriptor type="BOOL" size="1"/>
             <connected_objects/>
           </port_o>
-          <port_o id="Mout_addr_ram" dir="OUT" is_memory="1" is_global="1" is_extern="1" is_addr_bus="1">
+          <port_o id="Mout_addr_ram" dir="OUT" is_memory="1" is_master="1" is_addr_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1"/>
             <connected_objects/>
           </port_o>
-          <port_o id="Mout_data_ram_size" dir="OUT" is_memory="1" is_global="1" is_extern="1" is_size_bus="1">
+          <port_o id="Mout_data_ram_size" dir="OUT" is_memory="1" is_master="1" is_size_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1"/>
             <connected_objects/>
           </port_o>
-          <port_o id="Mout_Wdata_ram" dir="OUT" is_memory="1" is_global="1" is_extern="1" is_data_bus="1">
+          <port_o id="Mout_Wdata_ram" dir="OUT" is_memory="1" is_master="1" is_data_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1"/>
             <connected_objects/>
           </port_o>
-          <port_o id="Mout_tag_ram" dir="OUT" is_memory="1" is_global="1" is_extern="1"  is_tag_bus="1">
+          <port_o id="Mout_tag_ram" dir="OUT" is_memory="1" is_master="1"  is_tag_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1"/>
             <connected_objects/>
           </port_o>
-          <NP_functionality LIBRARY="out1 M_Rdata_ram M_DataRdy Min_tag request_accepted Mout_oe_ram Mout_we_ram Mout_addr_ram Mout_data_ram_size Mout_Wdata_ram Mout_tag_ram TAG_MEM_REQ" IP_COMPONENT="mem_ctrl_kernel" VERILOG_GENERATOR="open_verilog_generator_p1n.cpp"/>
+          <NP_functionality LIBRARY="out1 M_Rdata_ram M_DataRdy Min_tag request_accepted Mout_oe_ram Mout_we_ram Mout_addr_ram Mout_data_ram_size Mout_Wdata_ram Mout_tag_ram TAG_MEM_REQ" IP_COMPONENT="mem_ctrl_kernel" VERILOG_GENERATOR="open_verilog_generator_CS.cpp"/>
         </component_o>
       </circuit>
     </cell>

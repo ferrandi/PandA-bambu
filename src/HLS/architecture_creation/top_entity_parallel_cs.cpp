@@ -132,31 +132,6 @@ DesignFlowStep_Status top_entity_parallel_cs::InternalExec()
    resize_controller_parallel(controller_circuit);
    THROW_ASSERT(controller_circuit, "Missing controller circuit");
 
-   for(unsigned int j = 0; j < GetPointer<module>(datapath_circuit)->get_in_port_size(); j++)  //resize input port
-   {
-      structural_objectRef port_i = GetPointer<module>(datapath_circuit)->get_in_port(j);
-      if(GetPointer<port_o>(port_i)->get_is_memory())
-      {
-         std::string port_name = GetPointer<port_o>(port_i)->get_id();
-         if((port_i->get_kind() == port_vector_o_K))
-            std::cout<<"Port_vector "<<port_name<<" dimension"<<GetPointer<port_o>(port_i)->get_ports_size()<<std::endl;
-         else
-            std::cout<<"Port "<<port_name<<std::endl;
-      }
-   }
-   for(unsigned int j = 0; j < GetPointer<module>(datapath_circuit)->get_out_port_size(); j++)  //resize input port
-   {
-      structural_objectRef port_i = GetPointer<module>(datapath_circuit)->get_out_port(j);
-      if(GetPointer<port_o>(port_i)->get_is_memory())
-      {
-         std::string port_name = GetPointer<port_o>(port_i)->get_id();
-         if((port_i->get_kind() == port_vector_o_K))
-            std::cout<<"Port_vector "<<port_name<<" dimension"<<GetPointer<port_o>(port_i)->get_ports_size()<<std::endl;
-         else
-            std::cout<<"Port "<<port_name<<std::endl;
-      }
-   }
-
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Creating controller object");
    /// creating structural_manager
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Adding controller");
@@ -246,35 +221,6 @@ DesignFlowStep_Status top_entity_parallel_cs::InternalExec()
 
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Circuit created without errors!");
 
-   for(unsigned int j = 0; j < GetPointer<module>(circuit)->get_in_port_size(); j++)  //resize input port
-   {
-      structural_objectRef port_i = GetPointer<module>(circuit)->get_in_port(j);
-      if(GetPointer<port_o>(port_i)->get_is_memory())
-      {
-         std::string port_name = GetPointer<port_o>(port_i)->get_id();
-         if((port_i->get_kind() == port_vector_o_K))
-            std::cout<<"Port_vector "<<port_name<<" dimension"<<GetPointer<port_o>(port_i)->get_ports_size()<<std::endl;
-         else
-            std::cout<<"Port "<<port_name<<std::endl;
-         if(GetPointer<port_o>(port_i)->get_is_global() && GetPointer<port_o>(port_i)->get_is_extern())
-            std::cout<<"extern and global"<<std::endl;
-      }
-   }
-   for(unsigned int j = 0; j < GetPointer<module>(circuit)->get_out_port_size(); j++)  //resize input port
-   {
-      structural_objectRef port_i = GetPointer<module>(circuit)->get_out_port(j);
-      if(GetPointer<port_o>(port_i)->get_is_memory())
-      {
-         std::string port_name = GetPointer<port_o>(port_i)->get_id();
-         if((port_i->get_kind() == port_vector_o_K))
-            std::cout<<"Port_vector "<<port_name<<" dimension"<<GetPointer<port_o>(port_i)->get_ports_size()<<std::endl;
-         else
-            std::cout<<"Port "<<port_name<<std::endl;
-         if(GetPointer<port_o>(port_i)->get_is_global() && GetPointer<port_o>(port_i)->get_is_extern())
-            std::cout<<"extern and global"<<std::endl;
-      }
-   }
-
    return DesignFlowStep_Status::SUCCESS;
 }
 
@@ -306,24 +252,18 @@ void top_entity_parallel_cs::connect_port_parallel(const structural_objectRef ci
 
    structural_objectRef datapath_done_request = datapath_circuit->find_member(STR(DONE_REQUEST)+"_accelerator", port_vector_o_K, datapath_circuit);
    structural_objectRef controller_done_request = controller_circuit->find_member(STR(DONE_REQUEST)+"_accelerator", port_vector_o_K, controller_circuit);
-   std::cout<<"Port done request datapath size:"<<GetPointer<port_o>(datapath_done_request)->get_ports_size()<<std::endl;
-   std::cout<<"Port done request controller size:"<<GetPointer<port_o>(controller_done_request)->get_ports_size()<<std::endl;
    structural_objectRef done_request_sign=SM->add_sign_vector(STR(DONE_REQUEST)+"_accelerator"+"_signal", num_slots, circuit, bool_type);
    SM->add_connection(datapath_done_request, done_request_sign);
    SM->add_connection(done_request_sign, controller_done_request);
 
    structural_objectRef datapath_done_port = datapath_circuit->find_member(STR(DONE_PORT_NAME)+"_accelerator", port_vector_o_K, datapath_circuit);
    structural_objectRef controller_done_port = controller_circuit->find_member(STR(DONE_PORT_NAME)+"_accelerator", port_vector_o_K, controller_circuit);
-   std::cout<<"Port done port datapath size:"<<GetPointer<port_o>(datapath_done_port)->get_ports_size()<<std::endl;
-   std::cout<<"Port done port controller size:"<<GetPointer<port_o>(controller_done_port)->get_ports_size()<<std::endl;
-   structural_objectRef done_port_sign=SM->add_sign_vector(STR(DONE_PORT_NAME)+"_accelerator"+"_signal", num_slots, circuit, bool_type);
+    structural_objectRef done_port_sign=SM->add_sign_vector(STR(DONE_PORT_NAME)+"_accelerator"+"_signal", num_slots, circuit, bool_type);
    SM->add_connection(datapath_done_port, done_port_sign);
    SM->add_connection(done_port_sign, controller_done_port);
 
    structural_objectRef datapath_start_port = datapath_circuit->find_member(STR(START_PORT_NAME)+"_accelerator", port_vector_o_K, datapath_circuit);
    structural_objectRef controller_start_port = controller_circuit->find_member(STR(START_PORT_NAME)+"_accelerator", port_vector_o_K, controller_circuit);
-   std::cout<<"Port start port datapath size:"<<GetPointer<port_o>(datapath_start_port)->get_ports_size()<<std::endl;
-   std::cout<<"Port start port controller size:"<<GetPointer<port_o>(controller_start_port)->get_ports_size()<<std::endl;
    structural_objectRef done_start_sign=SM->add_sign_vector(STR(START_PORT_NAME)+"_accelerator"+"_signal", num_slots, circuit, bool_type);
    SM->add_connection(controller_start_port, done_start_sign);
    SM->add_connection(done_start_sign, datapath_start_port);

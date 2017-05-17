@@ -55,7 +55,8 @@
   reg [" + addr_bus_bitsize + "-1:0] mem_in2;\n\
   reg [" + size_bus_bitsize + "-1:0] mem_in3;\n\
   reg mem_sel_LOAD;\n\
-  mem_ctrl_kernel #(.BITSIZE_tag(" + tag_bus_bitsize + "), .TAG_MEM_REQ(" + tag_memory_ctrl + "), .BITSIZE_in1(" + data_bus_bitsize + "), .BITSIZE_in2(" + addr_bus_bitsize + "), .BITSIZE_in3(" + size_bus_bitsize + "), .BITSIZE_out1(" + data_bus_bitsize + "), .BITSIZE_Mout_oe_ram(BITSIZE_Mout_oe_ram), .BITSIZE_Mout_we_ram(BITSIZE_Mout_we_ram), .BITSIZE_Mout_addr_ram(BITSIZE_Mout_addr_ram), .BITSIZE_M_Rdata_ram(BITSIZE_M_Rdata_ram), .BITSIZE_Mout_Wdata_ram(BITSIZE_Mout_Wdata_ram), .BITSIZE_Mout_data_ram_size(BITSIZE_Mout_data_ram_size), .BITSIZE_M_DataRdy(BITSIZE_M_DataRdy)) mem_ctrl_kernel_instance (.in2(mem_in2), .in3(mem_in3), .M_Rdata_ram(M_Rdata_ram), .in1(0), .sel_LOAD(mem_sel_LOAD), .sel_STORE(1'b0), .M_DataRdy(M_DataRdy), .done(mem_done_port), .Mout_addr_ram(Mout_addr_ram), .out1(mem_out1), .Mout_data_ram_size(Mout_data_ram_size), .Mout_Wdata_ram(Mout_Wdata_ram), .Mout_oe_ram(Mout_oe_ram), .Mout_we_ram(Mout_we_ram), .Mout_tag_ram(Mout_tag_ram), .Min_tag(Min_tag), .request_accepted(request_accepted));\n\
+  reg start_memory_op;\n\
+  mem_ctrl_kernel #(.BITSIZE_tag(" + tag_bus_bitsize + "), .TAG_MEM_REQ(" + tag_memory_ctrl + "), .BITSIZE_in1(" + data_bus_bitsize + "), .BITSIZE_in2(" + addr_bus_bitsize + "), .BITSIZE_in3(" + size_bus_bitsize + "), .BITSIZE_out1(" + data_bus_bitsize + "), .BITSIZE_Mout_oe_ram(BITSIZE_Mout_oe_ram), .BITSIZE_Mout_we_ram(BITSIZE_Mout_we_ram), .BITSIZE_Mout_addr_ram(BITSIZE_Mout_addr_ram), .BITSIZE_M_Rdata_ram(BITSIZE_M_Rdata_ram), .BITSIZE_Mout_Wdata_ram(BITSIZE_Mout_Wdata_ram), .BITSIZE_Mout_data_ram_size(BITSIZE_Mout_data_ram_size), .BITSIZE_M_DataRdy(BITSIZE_M_DataRdy)) mem_ctrl_kernel_instance (.in2(mem_in2), .in3(mem_in3), .M_Rdata_ram(M_Rdata_ram), .in1(0), .sel_LOAD(mem_sel_LOAD), .sel_STORE(1'b0), .M_DataRdy(M_DataRdy), .done(mem_done_port), .Mout_addr_ram(Mout_addr_ram), .out1(mem_out1), .Mout_data_ram_size(Mout_data_ram_size), .Mout_Wdata_ram(Mout_Wdata_ram), .Mout_oe_ram(Mout_oe_ram), .Mout_we_ram(Mout_we_ram), .Mout_tag_ram(Mout_tag_ram), .Min_tag(Min_tag), .request_accepted(request_accepted), .start_port(start_memory_op));\n\
   \n\
   \n\
   always @(posedge clock 1RESET_EDGE)\n\
@@ -80,6 +81,7 @@
         _next_pointer = _present_pointer;\n\
         _next_index = _present_index;\n\
         mem_sel_LOAD = 1'b0;\n\
+        start_memory_op= 1'b0;\n\
         mem_in2=" + addr_bus_bitsize + "'d0;\n\
         mem_in3=" + size_bus_bitsize + "'d0;\n\
         case (_present_state)\n\
@@ -97,6 +99,7 @@
              mem_in2 = in1[BITSIZE_Mout_addr_ram-1:0]+_present_pointer;\n\
              mem_in3 = {{BITSIZE_Mout_data_ram_size-4{1'b0}}, 4'd8};\n\
              mem_sel_LOAD=1'b1;\n\
+             start_memory_op= 1'b1;\n\
              if(mem_done_port)\n\
              begin\n\
                 buffer_name[_present_index*8 +:8] = mem_out1[7:0];\n\
@@ -108,6 +111,7 @@
            end\n\
          S_2:\n\
            begin\n\
+             mem_sel_LOAD=1'b1;\n\
 // synthesis translate_off\n\
              temp_out1 = $fopen(buffer_name, "+ flags_string + ");\n\
 // synthesis translate_on\n\

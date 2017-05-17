@@ -965,15 +965,14 @@ void verilog_writer::write_state_declaration(const structural_objectRef &cir, co
    {
       if(one_hot)
       {
-         indented_output_stream->Append("reg ["+boost::lexical_cast<std::string>(max_value)+":0] _present_state["+STR(parameters->getOption<unsigned int>(OPT_context_switch)-1)+":0];\n");
+         indented_output_stream->Append("reg ["+boost::lexical_cast<std::string>(max_value)+":0] _present_state["+STR(static_cast<unsigned int>(log2(parameters->getOption<unsigned int>(OPT_context_switch)))-1)+":0];\n");
          indented_output_stream->Append("reg ["+boost::lexical_cast<std::string>(max_value)+":0] _next_state;\n");
       }
       else
       {
-         indented_output_stream->Append("reg ["+boost::lexical_cast<std::string>(bitsnumber-1)+":0] _present_state["+STR(parameters->getOption<unsigned int>(OPT_context_switch)-1)+":0];\n");
+         indented_output_stream->Append("reg ["+boost::lexical_cast<std::string>(bitsnumber-1)+":0] _present_state["+STR(static_cast<unsigned int>(log2(parameters->getOption<unsigned int>(OPT_context_switch)))-1)+":0];\n");
          indented_output_stream->Append("reg ["+boost::lexical_cast<std::string>(bitsnumber-1)+":0] _next_state;\n");
       }
-
    }
    else
    {

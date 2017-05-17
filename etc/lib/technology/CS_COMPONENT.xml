@@ -36,50 +36,50 @@
           <port_o id="data_out" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="fifio data_in data_out ADDR_WIDTH" VERILOG_PROVIDED=
-"parameter DEPTH = 2**ADDR_WIDTH;
+          <NP_functionality LIBRARY="fifio data_in data_out ADDR_WIDTH" VERILOG_PROVIDED="
+parameter DEPTH = 2**ADDR_WIDTH;
 
-  reg [ADDR_WIDTH-1:0] rd_addr; 
-  reg [ADDR_WIDTH-1:0] wr_addr; 
-  reg [BITSIZE_data_in-1:0] ram [DEPTH-1:0];
-  reg [ADDR_WIDTH:0] status_cnt;  
+reg [ADDR_WIDTH-1:0] rd_addr;
+reg [ADDR_WIDTH-1:0] wr_addr;
+reg [BITSIZE_data_in-1:0] ram [DEPTH-1:0];
+reg [ADDR_WIDTH:0] status_cnt;
 
-  // initialization of the fifio all data = 0
-  integer i; 
-  initial begin 
-    for (i=0; i&lt;DEPTH; i=i+1) begin 
-      ram[i] = {BITSIZE_data_in{1'b0}}; 
-    end
-  end
+// initialization of the fifio all data = 0
+integer i;
+initial begin
+ for (i=0; i&lt;DEPTH; i=i+1) begin
+   ram[i] = {BITSIZE_data_in{1'b0}};
+ end
+end
 
-  assign full = (status_cnt > DEPTH-1);
-  assign empty = (status_cnt == 0);
-  assign data_out = ram[rd_addr];   
+assign full = (status_cnt > DEPTH-1);
+assign empty = (status_cnt == 0);
+assign data_out = ram[rd_addr];
 
-  always @(posedge clock) begin
-    if (!reset) begin 
-      status_cnt &lt;= 0; 
-      rd_addr &lt;= 0; 
-      wr_addr &lt;= 0; 
-    end else begin  
-      if (rd_en &amp;&amp; !wr_en) begin 
-        rd_addr &lt;= rd_addr +1; 
-        if (status_cnt != 0) begin 
-          status_cnt &lt;= status_cnt -1; 
-        end
-      end else if (wr_en &amp;&amp; !rd_en) begin 
-        ram[wr_addr] &lt;= data_in;
-        wr_addr &lt;= wr_addr +1;
-        if (status_cnt != DEPTH) begin 
-          status_cnt &lt;= status_cnt +1;
-        end 
-      end else if (wr_en &amp;&amp; rd_en) begin
-        rd_addr &lt;= rd_addr +1;
-        wr_addr &lt;= wr_addr +1;
-        ram[wr_addr] &lt;= data_in;        
-      end 
-    end
-  end"/>
+always @(posedge clock) begin
+ if (!reset) begin
+   status_cnt &lt;= 0;
+   rd_addr &lt;= 0;
+   wr_addr &lt;= 0;
+ end else begin
+   if (rd_en &amp;&amp; !wr_en) begin
+     rd_addr &lt;= rd_addr +1;
+     if (status_cnt != 0) begin
+       status_cnt &lt;= status_cnt -1;
+     end
+   end else if (wr_en &amp;&amp; !rd_en) begin
+     ram[wr_addr] &lt;= data_in;
+     wr_addr &lt;= wr_addr +1;
+     if (status_cnt != DEPTH) begin
+       status_cnt &lt;= status_cnt +1;
+     end
+   end else if (wr_en &amp;&amp; rd_en) begin
+     rd_addr &lt;= rd_addr +1;
+     wr_addr &lt;= wr_addr +1;
+     ram[wr_addr] &lt;= data_in;
+   end
+ end
+end"/>
         </component_o>
       </circuit>
     </cell>
@@ -117,50 +117,50 @@
           <port_o id="data_out" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="fifio_free data_in data_out ADDR_WIDTH" VERILOG_PROVIDED=
-"parameter DEPTH = 2**ADDR_WIDTH;
+          <NP_functionality LIBRARY="fifio_free data_in data_out ADDR_WIDTH" VERILOG_PROVIDED="
+parameter DEPTH = 2**ADDR_WIDTH;
 
-  reg [ADDR_WIDTH-1:0] rd_addr;
-  reg [ADDR_WIDTH-1:0] wr_addr;
-  reg [BITSIZE_data_in-1:0] ram [DEPTH-1:0];
-  reg [ADDR_WIDTH:0] status_cnt;
+reg [ADDR_WIDTH-1:0] rd_addr;
+reg [ADDR_WIDTH-1:0] wr_addr;
+reg [BITSIZE_data_in-1:0] ram [DEPTH-1:0];
+reg [ADDR_WIDTH:0] status_cnt;
 
-  integer i; 
-  initial begin 
-    for (i=1; i&lt;DEPTH; i=i+1) begin 
-      ram[i] = i; 
-    end
-  end
+integer i;
+initial begin
+ for (i=1; i&lt;DEPTH; i=i+1) begin
+   ram[i] = i;
+ end
+end
 
-  assign full = (status_cnt > DEPTH-1);
-  assign empty = (status_cnt == 0);
+assign full = (status_cnt > DEPTH-1);
+assign empty = (status_cnt == 0);
 
-  assign data_out = ram[rd_addr];
+assign data_out = ram[rd_addr];
 
-  always @(posedge clock) begin
-    if (!reset) begin 
-      status_cnt &lt;= DEPTH-1; // fifio free is initiliazed full
-      rd_addr &lt;= 1;   //slot 0 is running so is not considered as free - slot 0 assigned by reset of selector
-      wr_addr &lt;= 0; 
-    end else begin  
-      if (rd_en &amp;&amp; !wr_en) begin 
-        rd_addr &lt;= rd_addr +1; 
-        if (status_cnt != 0) begin 
-          status_cnt &lt;= status_cnt -1; 
-        end
-      end else if (wr_en &amp;&amp; !rd_en) begin 
-        ram[wr_addr] &lt;= data_in;
-        wr_addr &lt;= wr_addr +1;
-        if (status_cnt != DEPTH) begin 
-          status_cnt &lt;= status_cnt +1;
-        end
-      end else if (wr_en &amp;&amp; rd_en) begin
-        rd_addr &lt;= rd_addr +1;
-        wr_addr &lt;= wr_addr +1;
-        ram[wr_addr] &lt;= data_in;        
-      end 
-    end
-  end"/>
+always @(posedge clock) begin
+ if (!reset) begin
+   status_cnt &lt;= DEPTH-1; // fifio free is initiliazed full
+   rd_addr &lt;= 1;   //slot 0 is running so is not considered as free - slot 0 assigned by reset of selector
+   wr_addr &lt;= 0;
+ end else begin
+   if (rd_en &amp;&amp; !wr_en) begin
+     rd_addr &lt;= rd_addr +1;
+     if (status_cnt != 0) begin
+       status_cnt &lt;= status_cnt -1;
+     end
+   end else if (wr_en &amp;&amp; !rd_en) begin
+     ram[wr_addr] &lt;= data_in;
+     wr_addr &lt;= wr_addr +1;
+     if (status_cnt != DEPTH) begin
+       status_cnt &lt;= status_cnt +1;
+     end
+   end else if (wr_en &amp;&amp; rd_en) begin
+     rd_addr &lt;= rd_addr +1;
+     wr_addr &lt;= wr_addr +1;
+     ram[wr_addr] &lt;= data_in;
+   end
+ end
+end"/>
         </component_o>
       </circuit>
     </cell>
@@ -189,14 +189,14 @@
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o> in1
-          <NP_functionality LIBRARY="rams_dist in1 selector_register_file out1 BITSIZE_MEM " VERILOG_PROVIDED=
-"reg [BITSIZE_in1-1:0] ram [BITSIZE_MEM-1:0];
-  always @(posedge clock)
-  begin
-  if (wenable)
-    ram[selector_register_file] &lt;= in1;
-  end
-  assign out1 = ram[selector_register_file];"/>
+          <NP_functionality LIBRARY="rams_dist in1 selector_register_file out1 BITSIZE_MEM " VERILOG_PROVIDED="
+reg [BITSIZE_in1-1:0] ram [BITSIZE_MEM-1:0];
+always @(posedge clock)
+begin
+if (wenable)
+  ram[selector_register_file] &lt;= in1;
+end
+assign out1 = ram[selector_register_file];"/>
         </component_o>
       </circuit>
     </cell>
@@ -224,19 +224,20 @@
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="register_SE_r in1 out1" VERILOG_PROVIDED= "reg [BITSIZE_out1-1:0] reg_out1;
-  assign out1 = reg_out1;
-  always @(posedge clock)
-    if(!reset) begin
-      reg_out1 &lt;={BITSIZE_out1{1'b0}};
-    end else begin
-      if (we) begin 
-        reg_out1 &lt;= in1;
-      end
+          <NP_functionality LIBRARY="register_SE_r in1 out1" VERILOG_PROVIDED="
+reg [BITSIZE_out1-1:0] reg_out1;
+assign out1 = reg_out1;
+always @(posedge clock)
+  if(!reset) begin
+    reg_out1 &lt;={BITSIZE_out1{1'b0}};
+  end else begin
+    if (we) begin
+      reg_out1 &lt;= in1;
     end
-  initial begin 
-    reg_out1 ={BITSIZE_out1{1'b0}};
-  end"/>
+  end
+initial begin
+  reg_out1 ={BITSIZE_out1{1'b0}};
+end"/>
         </component_o>
       </circuit>
     </cell>
@@ -244,6 +245,7 @@
       <name>simple_dual_port_ram_single_clock</name>
       <circuit>
         <component_o id="simple_dual_port_ram_single_clock">
+        <parameter name="BITSIZE_addr">1</parameter>
           <structural_type_descriptor id_type="simple_dual_port_ram_single_clock"/>
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
@@ -267,14 +269,15 @@
           <port_o id="out" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="simple_dual_port_ram_single_clock data addr out1" VERILOG_PROVIDED="reg [BITSIZE_data-1:0] q;
-   reg [BITSIZE_data-1:0] ram[2**BITSIZE_addr-1:0];
-      always @ (posedge clock) begin
-         if (we)
-            ram[write_addr] &lt;= data;
-         q &lt;= ram[read_addr];
-      end
-   assign out=q;"/>
+          <NP_functionality LIBRARY="simple_dual_port_ram_single_clock data read_addr out BITSIZE_addr" VERILOG_PROVIDED="
+reg [BITSIZE_data-1:0] q;
+reg [BITSIZE_data-1:0] ram[2**BITSIZE_addr-1:0];
+  always @ (posedge clock) begin
+    if (we)
+      ram[write_addr] &lt;= data;
+      q &lt;= ram[read_addr];
+  end
+assign out=q;"/>
         </component_o>
       </circuit>
     </cell>
@@ -283,7 +286,6 @@
       <circuit>
         <component_o id="fifo">
           <structural_type_descriptor id_type="fifo"/>
-          <parameter name="RAM_DEPTH">1</parameter>
           <parameter name="ADDR_WIDTH">1</parameter>
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
@@ -319,7 +321,7 @@
           <port_o id="wr_cs" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="fifo data_in data_out RAM_DEPTH ADDR_WIDTH" VERILOG_PROVIDED="parameter ADDR_WIDTH = 8;
+          <NP_functionality LIBRARY="fifo data_in data_out ADDR_WIDTH" IP_COMPONENT="simple_dual_port_ram_single_clock" VERILOG_PROVIDED="
 parameter RAM_DEPTH = (1 &lt;&lt; ADDR_WIDTH);
 
 reg [ADDR_WIDTH-1:0] wr_pointer;
@@ -371,7 +373,7 @@ begin : STATUS_COUNTER
   end
 end
    
-simple_dual_port_ram_single_clock #(.BITSIZE_data(BITSIZE_data_in),.BITSIZE_addr(BITSIZE_addr)) DP_RAM (.clock(clock), .write_addr(wr_pointer), .data(data_in), .we(wr_en), .read_addr (rd_pointer), .q(data_ram));"/>
+simple_dual_port_ram_single_clock #(.BITSIZE_data(BITSIZE_data_in),.BITSIZE_addr(ADDR_WIDTH)) DP_RAM (.clock(clock), .write_addr(wr_pointer), .data(data_in), .we(wr_en), .read_addr (rd_pointer), .q(data_ram));"/>
         </component_o>
       </circuit>
     </cell>
@@ -397,30 +399,30 @@ simple_dual_port_ram_single_clock #(.BITSIZE_data(BITSIZE_data_in),.BITSIZE_addr
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o> 
           <NP_functionality LIBRARY="Counter value driver_lines" VERILOG_PROVIDED="
-   reg [BITSIZE_value - 1 : 0] counter;
-   reg [BITSIZE_value - 1 : 0] next_counter;
-   reg [BITSIZE_value - 1 : 0] increment;
+reg [BITSIZE_value - 1 : 0] counter;
+reg [BITSIZE_value - 1 : 0] next_counter;
+reg [BITSIZE_value - 1 : 0] increment;
 
-   always @(posedge clock or negedge reset) begin
-      if (!reset)
-        counter &lt;= {BITSIZE_value{1'b0}};
-      else
-        counter &lt;= next_counter;
-   end
+always @(posedge clock or negedge reset) begin
+  if (!reset)
+    counter &lt;= {BITSIZE_value{1'b0}};
+  else
+    counter &lt;= next_counter;
+end
 
-   assign value = counter;
+assign value = counter;
 
-   always @(*) begin
-      next_counter = counter + increment;
-   end
+always @(*) begin
+  next_counter = counter + increment;
+end
 
-   integer i;
-   always @(*) begin
-      increment = {BITSIZE_value{1'b0}};
-      for (i = 0; i &lt; BITSIZE_driver_lines; i = i+1) begin
-         increment = increment + driver_lines[i];
-      end
-   end"/>
+integer i;
+always @(*) begin
+  increment = {BITSIZE_value{1'b0}};
+  for (i = 0; i &lt; BITSIZE_driver_lines; i = i+1) begin
+     increment = increment + driver_lines[i];
+  end
+end"/>
         </component_o>
       </circuit>
     </cell>
@@ -461,56 +463,56 @@ simple_dual_port_ram_single_clock #(.BITSIZE_data(BITSIZE_data_in),.BITSIZE_addr
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <NP_functionality LIBRARY="CallDispatcher fifo_data_out worker_status request selected_worker" VERILOG_PROVIDED="
- reg fifo_rd_cs;
- reg fifo_rd_en;
- reg [WORKERS - 1 : 0] selected_worker;
- wire [WORKERS - 1 : 0] notFull;
- reg [BITSIZE_REQUEST - 1 : 0] request;
- wire available_workers;
- reg call_state;
- reg next_call_state;
- reg available_data;
- assign notFull = ~worker_status;
- always @ (posedge clock or negedge reset) begin : CALL_STATE_REGISTER
-    if (!reset) begin // Beginning of autoreset for uninitialized flops
-       call_state &lt;= 1'h0;  // End of automatics
-    end
-    else begin
-       call_state &lt;= next_call_state;
-    end
- end
+reg fifo_rd_cs;
+reg fifo_rd_en;
+reg [BITSIZE_worker_status - 1 : 0] selected_worker;
+wire [BITSIZE_worker_status - 1 : 0] notFull;
+reg [BITSIZE_request - 1 : 0] request;
+wire available_workers;
+reg call_state;
+reg next_call_state;
+reg available_data;
+assign notFull = ~worker_status;
+always @ (posedge clock or negedge reset) begin : CALL_STATE_REGISTER
+if (!reset) begin // Beginning of autoreset for uninitialized flops
+  call_state &lt;= 1'h0;  // End of automatics
+end
+else begin
+  call_state &lt;= next_call_state;
+end
+end
 
- always @(posedge clock or negedge reset) begin
-    if (!reset)
-      available_data &lt;= 1'b0;
-    else
-      available_data &lt;= !fifo_empty;
- end
+always @(posedge clock or negedge reset) begin
+if (!reset)
+  available_data &lt;= 1'b0;
+else
+  available_data &lt;= !fifo_empty;
+end
 
- assign available_workers = ~(&amp; worker_status);
+assign available_workers = ~(&amp; worker_status);
 
- always @ (*) begin
-    fifo_rd_cs = 1'b0;
-    fifo_rd_en = 1'b0;
-    next_call_state = 1'b0;
-    request = {BITSIZE_REQUEST{1'b0}};
-    selected_worker = {WORKERS{1'b0}};
-    if (call_state == 1'b0) begin
-       if (available_workers &amp; available_data) begin
-          fifo_rd_cs = 1'b1;
-          fifo_rd_en = 1'b1;
-          next_call_state = 1'b1;
-       end
+always @ (*) begin
+  fifo_rd_cs = 1'b0;
+  fifo_rd_en = 1'b0;
+  next_call_state = 1'b0;
+  request = {BITSIZE_request{1'b0}};
+  selected_worker = {BITSIZE_worker_status{1'b0}};
+  if (call_state == 1'b0) begin
+    if (available_workers &amp; available_data) begin
+      fifo_rd_cs = 1'b1;
+      fifo_rd_en = 1'b1;
+      next_call_state = 1'b1;
     end
-    else begin
-       selected_worker = notFull &amp; (-notFull); // find the first 0 bit
-       request = fifo_data_out;
-    end
- end // always @ (*)
+  end
+  else begin
+    selected_worker = notFull &amp; (-notFull); // find the first 0 bit
+    request = fifo_data_out;
+  end
+end // always @ (*)
 
 /* -----\/----- EXCLUDED -----\/-----
- wire available_data;
- assign available_data = ~fifo_empty;
+wire available_data;
+assign available_data = ~fifo_empty;
 -----/\----- EXCLUDED -----/\----- */"/>
         </component_o>
       </circuit>
@@ -572,22 +574,22 @@ simple_dual_port_ram_single_clock #(.BITSIZE_data(BITSIZE_data_in),.BITSIZE_addr
           <port_o id="task_pool_end" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
-          <port_o id="OUT_Mout_oe_ram" dir="OUT" is_memory="1" is_global="1" is_extern="1">
+          <port_o id="OUT_Mout_oe_ram" dir="OUT" is_memory="1" is_master="1">
             <structural_type_descriptor type="BOOL" size="1" />
           </port_o>
-          <port_o id="OUT_Mout_we_ram" dir="OUT" is_memory="1" is_global="1" is_extern="1">
+          <port_o id="OUT_Mout_we_ram" dir="OUT" is_memory="1" is_master="1">
             <structural_type_descriptor type="BOOL" size="1" />
           </port_o>
-          <port_o id="OUT_Mout_addr_ram" dir="OUT" is_memory="1" is_global="1" is_extern="1" is_addr_bus="1">
+          <port_o id="OUT_Mout_addr_ram" dir="OUT" is_memory="1" is_master="1" is_addr_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" />
           </port_o>
-          <port_o id="OUT_Mout_data_ram_size" dir="OUT" is_memory="1" is_global="1" is_extern="1" is_size_bus="1">
+          <port_o id="OUT_Mout_data_ram_size" dir="OUT" is_memory="1" is_master="1" is_size_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" />
           </port_o>
-          <port_o id="OUT_Mout_Wdata_ram" dir="OUT" is_memory="1" is_global="1" is_extern="1" is_data_bus="1">
+          <port_o id="OUT_Mout_Wdata_ram" dir="OUT" is_memory="1" is_master="1" is_data_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" />
           </port_o>
-          <port_o id="OUT_Mout_tag_ram" dir="OUT" is_memory="1" is_global="1" is_extern="1" is_tag_bus="1">
+          <port_o id="OUT_Mout_tag_ram" dir="OUT" is_memory="1" is_master="1" is_tag_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" />
           </port_o>
           <port_o id="M_Rdata_ram" dir="OUT" is_memory="1" is_data_bus="1">
@@ -610,218 +612,216 @@ simple_dual_port_ram_single_clock #(.BITSIZE_data(BITSIZE_data_in),.BITSIZE_addr
           </port_o>
           <NP_functionality LIBRARY="scheduler IN_M_Rdata_ram IN_M_DataRdy IN_Min_tag IN_request_accepted Mout_oe_ram Mout_we_ram Mout_addr_ram Mout_data_ram_size Mout_Wdata_ram Mout_tag_ram done_scheduler suspension task_pool_end OUT_Mout_oe_ram OUT_Mout_we_ram OUT_Mout_addr_ram OUT_Mout_data_ram_size OUT_Mout_Wdata_ram OUT_Mout_tag_ram M_Rdata_ram M_DataRdy Min_tag request_accepted selector_register_file NUM_TASKS KERN_NUM ADDR_ACC"
           IP_COMPONENT="fifio,fifio_free,mem_scheduler" VERILOG_PROVIDED="
-  parameter SIZE_IN=BITSIZE_Mout_oe_ram+BITSIZE_Mout_we_ram+BITSIZE_Mout_addr_ram+BITSIZE_Mout_data_ram_size+BITSIZE_Mout_Wdata_ram+BITSIZE_Mout_tag;
+parameter SIZE_IN=BITSIZE_Mout_oe_ram+BITSIZE_Mout_we_ram+BITSIZE_Mout_addr_ram+BITSIZE_Mout_data_ram_size+BITSIZE_Mout_Wdata_ram+BITSIZE_Mout_tag_ram;
 
-  reg done_request;
-  reg [BITSIZE_M_DataRdy-1:0] M_DataRdy;
-  reg [BITSIZE_selector_register_file-1:0] selector_register_file;
+reg done_request;
+reg [BITSIZE_M_DataRdy-1:0] M_DataRdy;
+reg [BITSIZE_selector_register_file-1:0] selector_register_file;
 
-  parameter [2:0] S_0 = 3'd0,
-                  S_1 = 3'd1,
-                  S_2 = 3'd2,
-                  S_3 = 3'd3,
-                  S_4 = 3'd4;
+parameter [2:0] S_0 = 3'd0,
+               S_1 = 3'd1,
+               S_2 = 3'd2,
+               S_3 = 3'd3,
+               S_4 = 3'd4;
 
-  reg [2:0] _present_state, _next_state;
-  wire [BITSIZE_selector_register_file-1:0] next_selector_register_file;
-  wire fifo_empty_free; 
-  wire [BITSIZE_selector_register_file-1:0] fifo_data_out_free;
-  wire fifo_wait_empty;
-  wire fifo_empty_ready;
-  wire [BITSIZE_selector_register_file-1:0] fifo_data_out_ready;
-  wire fifo_rd_en_ready;
-  wire fifo_wr_en_ready;
-  wire [BITSIZE_selector_register_file-1:0] fifo_wait_data_out;
-  wire [SIZE_IN-1:0] data_out_mem_kern;
-  wire [SIZE_IN-1:0] data_out_mem_par;
-  wire [SIZE_IN-1:0] data_in_kern_mem;
-  wire [SIZE_IN-1:0] data_in_par_mem;
-  wire [SIZE_IN-1:0] temp; 
-  reg [31:0] i;
-  wire fifo_rd_en_free; 
-  wire fifo_wr_en_free; 
-  wire mux_fifo_sel;
-  wire [BITSIZE_selector_register_file-1:0] old_selector;
-  wire [BITSIZE_selector_register_file-1:0] new_selector;
-  wire mux_switching_logic;
-  wire fifo_full_free;
-  wire [BITSIZE_M_DataRdy-1:0] M_DataRdy_next;
-  wire done_request_next;
-  wire [BITSIZE_selector_register_file-1:0] data_ready;
-  wire selectorByMemory;
+reg [2:0] _present_state, _next_state;
+wire [BITSIZE_selector_register_file-1:0] next_selector_register_file;
+wire fifo_empty_free;
+wire [BITSIZE_selector_register_file-1:0] fifo_data_out_free;
+wire fifo_wait_empty;
+wire fifo_empty_ready;
+wire [BITSIZE_selector_register_file-1:0] fifo_data_out_ready;
+wire fifo_rd_en_ready;
+wire fifo_wr_en_ready;
+wire [BITSIZE_selector_register_file-1:0] fifo_wait_data_out;
+wire [SIZE_IN-1:0] data_out_mem_kern;
+wire [SIZE_IN-1:0] data_out_mem_par;
+wire [SIZE_IN-1:0] data_in_kern_mem;
+wire [SIZE_IN-1:0] data_in_par_mem;
+wire [SIZE_IN-1:0] temp;
+reg [31:0] i;
+wire fifo_rd_en_free;
+wire fifo_wr_en_free;
+wire mux_fifo_sel;
+wire [BITSIZE_selector_register_file-1:0] old_selector;
+wire [BITSIZE_selector_register_file-1:0] new_selector;
+wire mux_switching_logic;
+wire fifo_full_free;
+wire [BITSIZE_M_DataRdy-1:0] M_DataRdy_next;
+wire done_request_next;
+wire [BITSIZE_selector_register_file-1:0] data_ready;
+wire selectorByMemory;
 
-  fifio_free #(.DATA_WIDTH(BITSIZE_selector_register_file), .ADDR_WIDTH($clog2(NUM_TASKS) )) fifo_free(
-  .full        (fifo_full_free),
-  .empty       (fifo_empty_free),
-  .data_out    (fifo_data_out_free),
-  .clk         (clock),
-  .rst         (reset),
-  .rd_en       (fifo_rd_en_free),
-  .wr_en       (fifo_wr_en_free),
-  .data_in     (selector_register_file)); // just the selector can write the data_in of fifo_free
+fifio_free #(.DATA_WIDTH(BITSIZE_selector_register_file), .ADDR_WIDTH($clog2(NUM_TASKS) )) fifo_free(
+.full        (fifo_full_free),
+.empty       (fifo_empty_free),
+.data_out    (fifo_data_out_free),
+.clk         (clock),
+.rst         (reset),
+.rd_en       (fifo_rd_en_free),
+.wr_en       (fifo_wr_en_free),
+.data_in     (selector_register_file)); // just the selector can write the data_in of fifo_free
 
-  fifio #(.DATA_WIDTH(BITSIZE_selector_register_file), .ADDR_WIDTH($clog2(NUM_TASKS))) fifo_ready(
-  .full        (),
-  .empty       (fifo_empty_ready),
-  .data_out    (fifo_data_out_ready),
-  .clk         (clock),
-  .rst         (reset),
-  .rd_en       (fifo_rd_en_ready),
-  .wr_en       (fifo_wr_en_ready),  // when data is copied insert data of task ready on ready 
-  .data_in     (IN_Min_tag[BITSIZE_selector_register_file-1:0]));    // data go into memory to say in which cell to write and here to say which task is now ready
+fifio #(.DATA_WIDTH(BITSIZE_selector_register_file), .ADDR_WIDTH($clog2(NUM_TASKS))) fifo_ready(
+.full        (),
+.empty       (fifo_empty_ready),
+.data_out    (fifo_data_out_ready),
+.clk         (clock),
+.rst         (reset),
+.rd_en       (fifo_rd_en_ready),
+.wr_en       (fifo_wr_en_ready),  // when data is copied insert data of task ready on ready
+.data_in     (IN_Min_tag[BITSIZE_selector_register_file-1:0]));    // data go into memory to say in which cell to write and here to say which task is now ready
 
-  fifio #(.DATA_WIDTH(BITSIZE_selector_register_file), .ADDR_WIDTH($clog2(NUM_TASKS))) fifo_wait(
-  .full (),  	         //used by arbiter
-  .empty (fifo_wait_empty),         //used by arbiter
-  .data_out (fifo_wait_data_out),
-  .clk (clock),
-  .rst (reset),
-  .rd_en (IN_request_accepted),
-  .wr_en (suspension),
-  .data_in (selector_register_file));
+fifio #(.DATA_WIDTH(BITSIZE_selector_register_file), .ADDR_WIDTH($clog2(NUM_TASKS))) fifo_wait(
+.full (),  	         //used by arbiter
+.empty (fifo_wait_empty),         //used by arbiter
+.data_out (fifo_wait_data_out),
+.clk (clock),
+.rst (reset),
+.rd_en (IN_request_accepted),
+.wr_en (suspension),
+.data_in (selector_register_file));
 
-  //if fifo ready empty but data from memory ready then use data from memory
-  assign selectorByMemory = fifo_empty_ready &amp;&amp; IN_M_DataRdy;
-  //next selector can be old ones or new depending on state of fifo and signal arriving
-  assign next_selector_register_file = (mux_switching_logic)? new_selector : old_selector;
-  //if signal to end or switch and there is at least one task that is ready or free then swith moreover if you are in S_2 (no free or ready and arrive a response in ready then switch
-  assign mux_switching_logic= ((done_scheduler || suspension) &amp;&amp; ((!fifo_empty_ready || selectorByMemory) || (!fifo_empty_free &amp;&amp; !task_pool_end))) || ((_present_state==S_2 || _present_state==S_4) &amp;&amp; (!fifo_empty_ready || selectorByMemory));
-  //new selector can be a old task suspended or a new ones
-  assign new_selector = (mux_fifo_sel)? data_ready : fifo_data_out_free;
-  assign data_ready = (selectorByMemory) ? IN_Min_tag[BITSIZE_selector_register_file-1:0] : fifo_data_out_ready;
-  //if at least one task in ready and is true that arrive one signal or you are in S_2 (wait for fifo_ready to be not-empty) then use ready
-  assign mux_fifo_sel = (done_scheduler || suspension || _present_state==S_2 || _present_state==S_4) &amp;&amp; (!fifo_empty_ready || selectorByMemory);
-  //if reset start task is 0 otherwise old selector
-  assign old_selector = (!reset)? {BITSIZE_selector_register_file{1'b0}} : selector_register_file;
+//if fifo ready empty but data from memory ready then use data from memory
+assign selectorByMemory = fifo_empty_ready &amp;&amp; IN_M_DataRdy;
+//next selector can be old ones or new depending on state of fifo and signal arriving
+assign next_selector_register_file = (mux_switching_logic)? new_selector : old_selector;
+//if signal to end or switch and there is at least one task that is ready or free then swith moreover if you are in S_2 (no free or ready and arrive a response in ready then switch
+assign mux_switching_logic= ((done_scheduler || suspension) &amp;&amp; ((!fifo_empty_ready || selectorByMemory) || (!fifo_empty_free &amp;&amp; !task_pool_end))) || ((_present_state==S_2 || _present_state==S_4) &amp;&amp; (!fifo_empty_ready || selectorByMemory));
+//new selector can be a old task suspended or a new ones
+assign new_selector = (mux_fifo_sel)? data_ready : fifo_data_out_free;
+assign data_ready = (selectorByMemory) ? IN_Min_tag[BITSIZE_selector_register_file-1:0] : fifo_data_out_ready;
+//if at least one task in ready and is true that arrive one signal or you are in S_2 (wait for fifo_ready to be not-empty) then use ready
+assign mux_fifo_sel = (done_scheduler || suspension || _present_state==S_2 || _present_state==S_4) &amp;&amp; (!fifo_empty_ready || selectorByMemory);
+//if reset start task is 0 otherwise old selector
+assign old_selector = (!reset)? {BITSIZE_selector_register_file{1'b0}} : selector_register_file;
 
-  assign fifo_rd_en_free = mux_switching_logic &amp;&amp; !mux_fifo_sel;
-  assign fifo_wr_en_free = done_scheduler &amp;&amp; (!fifo_empty_free || !fifo_empty_ready || selectorByMemory || task_pool_end);
-  assign fifo_rd_en_ready = mux_fifo_sel &amp;&amp; !selectorByMemory;
-  assign fifo_wr_en_ready = IN_M_DataRdy &amp;&amp; !(mux_fifo_sel &amp;&amp; selectorByMemory);
+assign fifo_rd_en_free = mux_switching_logic &amp;&amp; !mux_fifo_sel;
+assign fifo_wr_en_free = done_scheduler &amp;&amp; (!fifo_empty_free || !fifo_empty_ready || selectorByMemory || task_pool_end);
+assign fifo_rd_en_ready = mux_fifo_sel &amp;&amp; !selectorByMemory;
+assign fifo_wr_en_ready = IN_M_DataRdy &amp;&amp; !(mux_fifo_sel &amp;&amp; selectorByMemory);
 
-  mem_scheduler #(.addr_mem_kern(BITSIZE_selector_register_file), .addr_kern_mem(BITSIZE_selector_register_file), .addr_mem_par(BITSIZE_selector_register_file), .addr_par_mem(BITSIZE_selector_register_file), .BITSIZE_data_in_kern_mem(SIZE_IN), .BITSIZE_data_in_par_mem(SIZE_IN), .BITSIZE_data_out_mem_kern(SIZE_IN), .BITSIZE_data_out_mem_par(SIZE_IN)) mem_scheduler (
-    .clock(clock),
-    .reset(reset),
-    .addr_mem_kern(selector_register_file),
-    .addr_kern_mem(selector_register_file),
-    .addr_mem_par(fifo_wait_data_out),
-    .addr_par_mem(IN_Min_tag[BITSIZE_selector_register_file-1:0]),
-    .we_kern_mem(suspension),
-    .we_par_mem(IN_M_DataRdy),    //if ready 1 then write
-    .data_in_kern_mem(data_in_kern_mem),
-    .data_in_par_mem(data_in_par_mem), //remove addr_task-bits of tag
-    .data_out_mem_kern(data_out_mem_kern), 
-    .data_out_mem_par(data_out_mem_par));
+mem_scheduler #(.addr_mem_kern(BITSIZE_selector_register_file), .addr_kern_mem(BITSIZE_selector_register_file), .addr_mem_par(BITSIZE_selector_register_file), .addr_par_mem(BITSIZE_selector_register_file), .BITSIZE_data_in_kern_mem(SIZE_IN), .BITSIZE_data_in_par_mem(SIZE_IN), .BITSIZE_data_out_mem_kern(SIZE_IN), .BITSIZE_data_out_mem_par(SIZE_IN)) mem_scheduler (
+.clock(clock),
+.reset(reset),
+.addr_mem_kern(selector_register_file),
+.addr_kern_mem(selector_register_file),
+.addr_mem_par(fifo_wait_data_out),
+.addr_par_mem(IN_Min_tag[BITSIZE_selector_register_file-1:0]),
+.we_kern_mem(suspension),
+.we_par_mem(IN_M_DataRdy),    //if ready 1 then write
+.data_in_kern_mem(data_in_kern_mem),
+.data_in_par_mem(data_in_par_mem), //remove addr_task-bits of tag
+.data_out_mem_kern(data_out_mem_kern),
+.data_out_mem_par(data_out_mem_par));
 
-  assign data_in_kern_mem = {IN_Mout_tag_ram,Mout_Wdata_ram,Mout_data_ram_size,Mout_addr_ram,Mout_we_ram,Mout_oe_ram};
-  assign data_in_par_mem = {IN_Min_tag[BITSIZE_Mout_tag-1:BITSIZE_selector_register_file+KERN_NUM], {(BITSIZE_selector_register_file+KERN_NUM){1'b0}}, IN_M_Rdata_ram,{(BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram){1'b0}}};
-  assign OUT_Mout_oe_ram=(data_out_mem_par[BITSIZE_Mout_oe_ram-1] &amp;&amp; !fifo_wait_empty);
-  assign OUT_Mout_we_ram=(data_out_mem_par[BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1] &amp;&amp; !fifo_wait_empty);
-  assign OUT_Mout_addr_ram=data_out_mem_par[BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1:BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram];
-  assign OUT_Mout_data_ram_size=data_out_mem_par[BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1:BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram];
-  assign OUT_Mout_Wdata_ram=data_out_mem_par[BITSIZE_Mout_Wdata_ram + BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1:BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram];
-  assign OUT_Mout_tag_ram={data_out_mem_par[BITSIZE_Mout_tag + BITSIZE_Mout_Wdata_ram + BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1:ADDR_ACC + BITSIZE_selector_register_file+ BITSIZE_Mout_Wdata_ram + BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram],KERN_NUM,fifo_wait_data_out};
+assign data_in_kern_mem = {Mout_tag_ram,Mout_Wdata_ram,Mout_data_ram_size,Mout_addr_ram,Mout_we_ram,Mout_oe_ram};
+assign data_in_par_mem = {IN_Min_tag[BITSIZE_Mout_tag_ram-1:BITSIZE_selector_register_file+KERN_NUM], {(BITSIZE_selector_register_file+KERN_NUM){1'b0}}, IN_M_Rdata_ram,{(BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram){1'b0}}};
+assign OUT_Mout_oe_ram=(data_out_mem_par[BITSIZE_Mout_oe_ram-1] &amp;&amp; !fifo_wait_empty);
+assign OUT_Mout_we_ram=(data_out_mem_par[BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1] &amp;&amp; !fifo_wait_empty);
+assign OUT_Mout_addr_ram=data_out_mem_par[BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1:BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram];
+assign OUT_Mout_data_ram_size=data_out_mem_par[BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1:BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram];
+assign OUT_Mout_Wdata_ram=data_out_mem_par[BITSIZE_Mout_Wdata_ram + BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1:BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram];
+assign OUT_Mout_tag_ram={data_out_mem_par[BITSIZE_Mout_tag_ram + BITSIZE_Mout_Wdata_ram + BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1:ADDR_ACC + BITSIZE_selector_register_file+ BITSIZE_Mout_Wdata_ram + BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram],KERN_NUM,fifo_wait_data_out};
 
-  assign M_Rdata_ram=data_out_mem_kern[BITSIZE_Mout_Wdata_ram + BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1:BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram];
-  assign Min_tag=data_out_mem_kern[BITSIZE_Mout_tag + BITSIZE_Mout_Wdata_ram + BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1:BITSIZE_Mout_Wdata_ram + BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram];
-  assign request_accepted= Mout_oe_ram||Mout_we_ram; //memory always not full so if oe=1 or we=1 i save your request
+assign M_Rdata_ram=data_out_mem_kern[BITSIZE_Mout_Wdata_ram + BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1:BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram];
+assign Min_tag=data_out_mem_kern[BITSIZE_Mout_tag_ram + BITSIZE_Mout_Wdata_ram + BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1:BITSIZE_Mout_Wdata_ram + BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram];
+assign request_accepted= Mout_oe_ram||Mout_we_ram; //memory always not full so if oe=1 or we=1 i save your request
 
-  always @(posedge clock) begin
-    if (!reset) begin 
-      _present_state &lt;= S_0;
-    end else begin 
-      _present_state &lt;= _next_state;
-    end
+always @(posedge clock) begin
+  if (!reset) begin
+    _present_state &lt;= S_0;
+  end else begin
+    _present_state &lt;= _next_state;
   end
+end
 
-  always @(*)	//FSM of scheduler
-    begin
+always @(*) begin	//FSM of scheduler
+  _next_state = S_0;
+  case (_present_state)
+
+  S_0: begin   // initialization of fifo
+    if(!reset || task_pool_end) begin
       _next_state = S_0;
-      case (_present_state)  
+    end else begin
+     _next_state = S_1;
+    end
+  end
 
-      S_0: begin 
-        // initialization of fifo 
-         if(!reset || task_pool_end) begin
-            _next_state = S_0;
-         end else begin
-           _next_state = S_1;
-         end
+  S_1: begin
+    if (task_pool_end) begin
+      if ((done_scheduler || suspension) &amp;&amp; (fifo_empty_ready &amp;&amp; !IN_M_DataRdy)) begin //if fifo ready empty and not ready
+        _next_state = S_4;
+      end else begin
+        _next_state = S_3;
       end
+    end else begin
+      if (suspension &amp;&amp; (fifo_empty_ready &amp;&amp; !IN_M_DataRdy &amp;&amp; fifo_empty_free)) begin
+        _next_state = S_2;
+      end else begin
+        _next_state = S_1;
+      end
+    end
+  end
 
-      S_1: begin
-        if (task_pool_end) begin
-          if ((done_scheduler || suspension) &amp;&amp; (fifo_empty_ready &amp;&amp; !IN_M_DataRdy)) begin //if fifo ready empty and not ready
-            _next_state = S_4;
-          end else begin
-            _next_state = S_3;
-          end
-        end else begin
-          if (suspension &amp;&amp; (fifo_empty_ready &amp;&amp; !IN_M_DataRdy &amp;&amp; fifo_empty_free)) begin
-            _next_state = S_2;
-          end else begin
-            _next_state = S_1; 
-          end  
-        end    
-      end
-        
-      S_2: begin
-        if (!fifo_empty_ready || IN_M_DataRdy) begin
-          _next_state = S_1;
-        end else begin
-          _next_state = S_2;
-        end
-      end
+  S_2: begin
+    if (!fifo_empty_ready || IN_M_DataRdy) begin
+      _next_state = S_1;
+    end else begin
+      _next_state = S_2;
+    end
+  end
 
-      S_3: begin //wait only for Ready
-        if ((done_scheduler || suspension) &amp;&amp; (fifo_empty_ready &amp;&amp; !IN_M_DataRdy)) begin
-          _next_state = S_4;
-        end else begin
-          _next_state = S_3;
-        end
-      end
+  S_3: begin //wait only for Ready
+    if ((done_scheduler || suspension) &amp;&amp; (fifo_empty_ready &amp;&amp; !IN_M_DataRdy)) begin
+      _next_state = S_4;
+    end else begin
+      _next_state = S_3;
+    end
+  end
 
-      S_4: begin //wait only for Ready
-        if (!fifo_empty_ready || IN_M_DataRdy) begin
-          _next_state = S_3;
-        end else if (fifo_full_free) begin
-          _next_state = S_0;
-        end else begin
-          _next_state = S_4;
-        end
-      end
-
-      default: begin 	  
+  S_4: begin //wait only for Ready
+    if (!fifo_empty_ready || IN_M_DataRdy) begin
+      _next_state = S_3;
+    end else if (fifo_full_free) begin
       _next_state = S_0;
-      end
-    endcase
-  end
-
-  always @(posedge clock) begin
-    if (!reset) begin
-      M_DataRdy &lt;= 1'b0;
-    end else begin 
-      M_DataRdy &lt;= M_DataRdy_next;
+    end else begin
+      _next_state = S_4;
     end
   end
 
-  always @(posedge clock) begin
-    if (!reset) begin 
-      done_request &lt;= 1'b0;
-    end else begin 
-      done_request &lt;= done_request_next;
-    end
+  default: begin
+    _next_state = S_0;
   end
+  endcase
+end
 
-  always @(posedge clock) begin
-    if (!reset) begin 
-      selector_register_file &lt;= {BITSIZE_selector_register_file{1'b0}};
-    end else begin 
-      selector_register_file &lt;= next_selector_register_file;
-    end
+always @(posedge clock) begin
+  if (!reset) begin
+    M_DataRdy &lt;= 1'b0;
+  end else begin
+    M_DataRdy &lt;= M_DataRdy_next;
   end
+end
 
-  assign M_DataRdy_next=fifo_rd_en_ready || (mux_fifo_sel &amp;&amp; selectorByMemory);
-  assign done_request_next= fifo_rd_en_free || (done_scheduler &amp; fifo_empty_free &amp; fifo_empty_ready &amp; !selectorByMemory);"/>
+always @(posedge clock) begin
+  if (!reset) begin
+    done_request &lt;= 1'b0;
+  end else begin
+    done_request &lt;= done_request_next;
+  end
+end
+
+always @(posedge clock) begin
+  if (!reset) begin
+    selector_register_file &lt;= {BITSIZE_selector_register_file{1'b0}};
+  end else begin
+    selector_register_file &lt;= next_selector_register_file;
+  end
+end
+
+assign M_DataRdy_next=fifo_rd_en_ready || (mux_fifo_sel &amp;&amp; selectorByMemory);
+assign done_request_next= fifo_rd_en_free || (done_scheduler &amp; fifo_empty_free &amp; fifo_empty_ready &amp; !selectorByMemory);"/>
         </component_o>
       </circuit>
     </cell>
@@ -871,26 +871,26 @@ simple_dual_port_ram_single_clock #(.BITSIZE_data(BITSIZE_data_in),.BITSIZE_addr
             <structural_type_descriptor type="VECTOR_BOOL" size="1" />
           </port_o>
           <NP_functionality LIBRARY="mem_scheduler addr_mem_kern addr_kern_mem addr_mem_par addr_par_mem data_in_kern_mem data_in_par_mem  data_out_mem_kern data_out_mem_par" VERILOG_PROVIDED="
-  reg [BITSIZE_data_in_kern_mem-1:0] local_mem[BITSIZE_addr_mem_kern-1:0];
- 
-  integer i; 
-  initial begin 
-    for (i=0; i&lt;BITSIZE_addr_mem_kern; i=i+1) begin
-       local_mem[i] = {BITSIZE_data_in_kern_mem{1'b0}};
-    end
-  end
+reg [BITSIZE_data_in_kern_mem-1:0] local_mem[BITSIZE_addr_mem_kern-1:0];
 
-  always @(posedge clock) begin 
-    if (we_kern_mem == 1'b1) begin 
-      local_mem[addr_kern_mem] &lt;= data_in_kern_mem; // from the memory controller response    
-    end 
-    if (we_par_mem == 1'b1) begin
-      local_mem[addr_par_mem] &lt;= data_in_par_mem;  
-    end
+integer i;
+initial begin
+  for (i=0; i&lt;BITSIZE_addr_mem_kern; i=i+1) begin
+    local_mem[i] = {BITSIZE_data_in_kern_mem{1'b0}};
   end
+end
 
-  assign data_out_mem_kern = local_mem[addr_mem_kern]; 
-  assign data_out_mem_par = local_mem[addr_mem_par];"/>
+always @(posedge clock) begin
+  if (we_kern_mem == 1'b1) begin
+    local_mem[addr_kern_mem] &lt;= data_in_kern_mem; // from the memory controller response
+  end
+  if (we_par_mem == 1'b1) begin
+    local_mem[addr_par_mem] &lt;= data_in_par_mem;
+  end
+end
+
+assign data_out_mem_kern = local_mem[addr_mem_kern];
+assign data_out_mem_par = local_mem[addr_mem_par];"/>
         </component_o>
       </circuit>
     </cell>
@@ -950,33 +950,33 @@ simple_dual_port_ram_single_clock #(.BITSIZE_data(BITSIZE_data_in),.BITSIZE_addr
           <port_o id="request_accepted" dir="IN" is_memory="1" is_global="1" is_extern="1">
             <structural_type_descriptor type="BOOL" size="1" />
           </port_o>
-          <port_o id="Mout_oe_ram" dir="OUT" is_memory="1" is_global="1" is_extern="1">
+          <port_o id="Mout_oe_ram" dir="OUT" is_memory="1" is_master="1">
             <structural_type_descriptor type="BOOL" size="1" />
           </port_o>
-          <port_o id="Mout_we_ram" dir="OUT" is_memory="1" is_global="1" is_extern="1">
+          <port_o id="Mout_we_ram" dir="OUT" is_memory="1" is_master="1">
             <structural_type_descriptor type="BOOL" size="1" />
           </port_o>
-          <port_o id="Mout_addr_ram" dir="OUT" is_memory="1" is_global="1" is_extern="1" is_addr_bus="1">
+          <port_o id="Mout_addr_ram" dir="OUT" is_memory="1" is_master="1" is_addr_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" />
           </port_o>
-          <port_o id="Mout_data_ram_size" dir="OUT" is_memory="1" is_global="1" is_extern="1" is_size_bus="1">
+          <port_o id="Mout_data_ram_size" dir="OUT" is_memory="1" is_master="1" is_size_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" />
           </port_o>
-          <port_o id="Mout_Wdata_ram" dir="OUT" is_memory="1" is_global="1" is_extern="1" is_data_bus="1">
+          <port_o id="Mout_Wdata_ram" dir="OUT" is_memory="1" is_master="1" is_data_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" />
           </port_o>
-          <port_o id="Mout_tag_ram" dir="OUT" is_memory="1" is_global="1" is_extern="1" is_tag_bus="1">
+          <port_o id="Mout_tag_ram" dir="OUT" is_memory="1" is_master="1" is_tag_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" />
           </port_o>
           <NP_functionality LIBRARY="mem_ctrl_kernel in1 in2 in3 in4 out1 M_Rdata_ram Min_tag M_DataRdy request_accepted Mout_oe_ram Mout_we_ram Mout_addr_ram Mout_data_ram_size Mout_Wdata_ram Mout_tag_ram TAG_MEM_REQ" VERILOG_PROVIDED="
-  assign done_port=((Min_tag==TAG_MEM_REQ) &amp;&amp; M_DataRdy[0]);  //if the tag is equal and ready=1 then its the right data
-  assign Mout_Wdata_ram = ((sel_LOAD || sel_STORE) &amp;&amp; start_port) ? in1 :{BITSIZE_Mout_Wdata_ram{1'b0}};
-  assign out1 = M_Rdata_ram;  
-  assign Mout_addr_ram = ((sel_LOAD || sel_STORE) &amp;&amp; start_port) ? in2 :{BITSIZE_Mout_addr_ram{1'b0}};
-  assign Mout_data_ram_size = ((sel_LOAD || sel_STORE) &amp;&amp; start_port) ? in3 :{BITSIZE_Mout_data_ram_size{1'b0}};
-  assign Mout_oe_ram = sel_LOAD &amp;&amp; start_port;
-  assign Mout_we_ram = sel_STORE &amp;&amp; start_port;
-  assign Mout_tag_ram = ((sel_LOAD || sel_STORE) &amp;&amp; start_port) ? TAG_MEM_REQ :{BITSIZE_Mout_tag_ram{1'b0}};"/>
+assign done_port=((Min_tag==TAG_MEM_REQ) &amp;&amp; M_DataRdy);  //if the tag is equal and ready=1 then its the right data
+assign Mout_Wdata_ram = ((sel_LOAD || sel_STORE) &amp;&amp; start_port) ? in1 :{BITSIZE_Mout_Wdata_ram{1'b0}};
+assign out1 = M_Rdata_ram;
+assign Mout_addr_ram = ((sel_LOAD || sel_STORE) &amp;&amp; start_port) ? in2 :{BITSIZE_Mout_addr_ram{1'b0}};
+assign Mout_data_ram_size = ((sel_LOAD || sel_STORE) &amp;&amp; start_port) ? in3 :{BITSIZE_Mout_data_ram_size{1'b0}};
+assign Mout_oe_ram = sel_LOAD &amp;&amp; start_port;
+assign Mout_we_ram = sel_STORE &amp;&amp; start_port;
+assign Mout_tag_ram = ((sel_LOAD || sel_STORE) &amp;&amp; start_port) ? TAG_MEM_REQ :{BITSIZE_Mout_tag_ram{1'b0}};"/>
         </component_o>
       </circuit>
     </cell>
@@ -986,8 +986,6 @@ simple_dual_port_ram_single_clock #(.BITSIZE_data(BITSIZE_data_in),.BITSIZE_addr
         <component_o id="memory_ctrl">
           <structural_type_descriptor id_type="memory_ctrl"/>
           <parameter name="NUM_CHANNEL">2</parameter>
-          <parameter name="NUM_ACC">4</parameter>
-          <parameter name="NUM_TASKS">8</parameter>
           <parameter name="ADDR_TASKS">3</parameter>
           <parameter name="ADDR_ACC">2</parameter>
           <parameter name="NUM_BANK">4</parameter>
@@ -1025,19 +1023,19 @@ simple_dual_port_ram_single_clock #(.BITSIZE_data(BITSIZE_data_in),.BITSIZE_addr
           <port_vector_o id="Mout_tag_ram" dir="IN" is_memory="1" is_tag_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
-          <port_vector_o id="OUT_Mout_oe_ram" dir="OUT" is_memory="1" is_global="1" is_extern="1">
+          <port_vector_o id="OUT_Mout_oe_ram" dir="OUT" is_memory="1" is_master="1">
             <structural_type_descriptor type="BOOL" size="1" vector_size="1"/>
           </port_vector_o>
-          <port_vector_o id="OUT_Mout_we_ram" dir="OUT" is_memory="1"  is_global="1" is_extern="1">
+          <port_vector_o id="OUT_Mout_we_ram" dir="OUT" is_memory="1"  is_master="1">
             <structural_type_descriptor type="BOOL" size="1" vector_size="1"/>
           </port_vector_o>
-          <port_vector_o id="OUT_Mout_addr_ram" dir="OUT" is_memory="1" is_global="1" is_extern="1" is_addr_bus="1">
+          <port_vector_o id="OUT_Mout_addr_ram" dir="OUT" is_memory="1" is_master="1" is_addr_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
-          <port_vector_o id="OUT_Mout_data_ram_size" dir="OUT" is_memory="1" is_global="1" is_extern="1" is_size_bus="1">
+          <port_vector_o id="OUT_Mout_data_ram_size" dir="OUT" is_memory="1" is_master="1" is_size_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
-          <port_vector_o id="OUT_Mout_Wdata_ram" dir="OUT" is_memory="1" is_global="1" is_extern="1" is_data_bus="1">
+          <port_vector_o id="OUT_Mout_Wdata_ram" dir="OUT" is_memory="1" is_master="1" is_data_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
           <port_vector_o id="M_Rdata_ram" dir="OUT" is_memory="1" is_data_bus="1">
@@ -1055,276 +1053,276 @@ simple_dual_port_ram_single_clock #(.BITSIZE_data(BITSIZE_data_in),.BITSIZE_addr
           <port_o id="occupancies" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="memory_ctrl IN_M_Rdata_ram IN_M_DataRdy Mout_oe_ram Mout_we_ram Mout_addr_ram Mout_data_ram_size Mout_Wdata_ram Mout_tag_ram OUT_Mout_oe_ram OUT_Mout_we_ram OUT_Mout_addr_ram OUT_Mout_data_ram_size OUT_Mout_Wdata_ram M_Rdata_ram M_DataRdy Min_tag request_accepted occupancies"
+          <NP_functionality LIBRARY="memory_ctrl IN_M_Rdata_ram IN_M_DataRdy Mout_oe_ram Mout_we_ram Mout_addr_ram Mout_data_ram_size Mout_Wdata_ram Mout_tag_ram OUT_Mout_oe_ram OUT_Mout_we_ram OUT_Mout_addr_ram OUT_Mout_data_ram_size OUT_Mout_Wdata_ram M_Rdata_ram M_DataRdy Min_tag request_accepted occupancies NUM_CHANNEL ADDR_TASKS ADDR_ACC NUM_BANK"
           IP_COMPONENT="fifio,register_SE_r,PT_RR_FU,mux_pw_2,bus_merger" VERILOG_PROVIDED="
-          //In order to be generated correctly num NUM_BANK>=NUM_CHANNEL and both of them must be a power of 2
+//In order to be generated correctly num NUM_BANK>=NUM_CHANNEL and both of them must be a power of 2
 
-          parameter FIFO_OUT =ADDR_TASKS+ADDR_ACC, FIFO_IN=ADDR_TASKS+ADDR_ACC;
-          parameter SIZE_TOT_IN = BITSIZE_Mout_tag_ram+BITSIZE_Mout_Wdata_ram+BITSIZE_Mout_data_ram_size+BITSIZE_Mout_addr_ram+BITSIZE_Mout_we_ram+BITSIZE_Mout_oe_ram;
-          parameter SIZE_TOT_OUT = BITSIZE_Mout_tag_ram+BITSIZE_M_Rdata_ram;
-          parameter MSB_OUT_0=ADDR_ACC+ADDR_TASKS+BITSIZE_M_Rdata_ram-1;  //MSB=Most significant bit of addr_acc
-          parameter MSB_OUT_1=ADDR_ACC+ADDR_TASKS+BITSIZE_M_Rdata_ram-$clog2(NUM_CHANNEL);  //MSB=Most significant bit of addr_acc
-          parameter MSB_BANK_0=$clog2(NUM_BANK)+2+BITSIZE_Mout_we_ram+BITSIZE_Mout_oe_ram-1; //MSB=oe+we+2 bit (32 bit address)+log2(bank) -1
-          parameter MSB_BANK_1=$clog2(NUM_BANK)-$clog2(NUM_CHANNEL)+2+BITSIZE_Mout_we_ram+BITSIZE_Mout_oe_ram; //MSB=oe+we+2 bit (32 bit address)+log2(bank)-log2(channel)
-          parameter LSB_BANK_0=$clog2(NUM_BANK)-$clog2(NUM_CHANNEL)+2+BITSIZE_Mout_we_ram+BITSIZE_Mout_oe_ram-1; //MSB=oe+we+2 bit (32 bit address)+log2(bank)-log2(channel) -1
-          parameter LSB_BANK_1=2+BITSIZE_Mout_we_ram+BITSIZE_Mout_oe_ram; //MSB=oe+we+2 bit (32 bit address)
-          parameter RATIO=NUM_BANK/NUM_CHANNEL;
+parameter FIFO_OUT =ADDR_TASKS+ADDR_ACC, FIFO_IN=ADDR_TASKS+ADDR_ACC;
+parameter SIZE_TOT_IN = BITSIZE_Mout_tag_ram+BITSIZE_Mout_Wdata_ram+BITSIZE_Mout_data_ram_size+BITSIZE_Mout_addr_ram+BITSIZE_Mout_we_ram+BITSIZE_Mout_oe_ram;
+parameter SIZE_TOT_OUT = BITSIZE_Mout_tag_ram+BITSIZE_M_Rdata_ram;
+parameter MSB_OUT_0=ADDR_ACC+ADDR_TASKS+BITSIZE_M_Rdata_ram-1;  //MSB=Most significant bit of addr_acc
+parameter MSB_OUT_1=ADDR_ACC+ADDR_TASKS+BITSIZE_M_Rdata_ram-$clog2(NUM_CHANNEL);  //MSB=Most significant bit of addr_acc
+parameter MSB_BANK_0=$clog2(NUM_BANK)+2+BITSIZE_Mout_we_ram+BITSIZE_Mout_oe_ram-1; //MSB=oe+we+2 bit (32 bit address)+log2(bank) -1
+parameter MSB_BANK_1=$clog2(NUM_BANK)-$clog2(NUM_CHANNEL)+2+BITSIZE_Mout_we_ram+BITSIZE_Mout_oe_ram; //MSB=oe+we+2 bit (32 bit address)+log2(bank)-log2(channel)
+parameter LSB_BANK_0=$clog2(NUM_BANK)-$clog2(NUM_CHANNEL)+2+BITSIZE_Mout_we_ram+BITSIZE_Mout_oe_ram-1; //MSB=oe+we+2 bit (32 bit address)+log2(bank)-log2(channel) -1
+parameter LSB_BANK_1=2+BITSIZE_Mout_we_ram+BITSIZE_Mout_oe_ram; //MSB=oe+we+2 bit (32 bit address)
+parameter RATIO=NUM_BANK/NUM_CHANNEL;
 
-          // fifo in
-          wire [NUM_BANK-1:0] IN_fifo_full;
-          wire [NUM_BANK-1:0] IN_fifo_empty;
-          wire [SIZE_TOT_IN*NUM_BANK-1:0] IN_fifo_data_out;
-          wire [NUM_BANK-1:0] IN_fifo_rd_en;
-          wire [NUM_BANK-1:0] IN_fifo_wr_en;
-          wire [SIZE_TOT_IN*NUM_BANK-1:0] IN_fifo_data_in;
+// fifo in
+wire [NUM_BANK-1:0] IN_fifo_full;
+wire [NUM_BANK-1:0] IN_fifo_empty;
+wire [SIZE_TOT_IN*NUM_BANK-1:0] IN_fifo_data_out;
+wire [NUM_BANK-1:0] IN_fifo_rd_en;
+wire [NUM_BANK-1:0] IN_fifo_wr_en;
+wire [SIZE_TOT_IN*NUM_BANK-1:0] IN_fifo_data_in;
 
-          // fifo out
-          wire [NUM_BANK-1:0] OUT_fifo_full;
-          wire [NUM_BANK-1:0] OUT_fifo_empty;
-          wire [SIZE_TOT_OUT*NUM_BANK-1:0] OUT_fifo_data_out;
-          wire [NUM_BANK-1:0] OUT_fifo_rd_en;
-          wire [NUM_BANK-1:0] OUT_fifo_wr_en;
-          wire [SIZE_TOT_OUT*NUM_BANK-1:0] OUT_fifo_data_in;
+// fifo out
+wire [NUM_BANK-1:0] OUT_fifo_full;
+wire [NUM_BANK-1:0] OUT_fifo_empty;
+wire [SIZE_TOT_OUT*NUM_BANK-1:0] OUT_fifo_data_out;
+wire [NUM_BANK-1:0] OUT_fifo_rd_en;
+wire [NUM_BANK-1:0] OUT_fifo_wr_en;
+wire [SIZE_TOT_OUT*NUM_BANK-1:0] OUT_fifo_data_in;
 
-          //register status
-          reg [3*NUM_BANK-1:0] in_status;
-          wire [3*NUM_BANK-1:0] out_status;
-          wire [SIZE_TOT_IN*NUM_BANK-1:0] out_reg;
-          wire [NUM_CHANNEL-1:0] fifo_wait_empty;
+//register status
+reg [3*NUM_BANK-1:0] in_status;
+wire [3*NUM_BANK-1:0] out_status;
+wire [SIZE_TOT_IN*NUM_BANK-1:0] out_reg;
+wire [NUM_CHANNEL-1:0] fifo_wait_empty;
 
-          //to bank
-          wire [BITSIZE_Mout_oe_ram*NUM_BANK-1:0] Mout_oe_ram_0;
-          wire [BITSIZE_Mout_we_ram*NUM_BANK-1:0] Mout_we_ram_0;
-          wire [BITSIZE_Mout_addr_ram*NUM_BANK-1:0] Mout_addr_ram_0;
-          wire [BITSIZE_Mout_Wdata_ram*NUM_BANK-1:0] Mout_Wdata_ram_0;
-          wire [BITSIZE_Mout_data_ram_size*NUM_BANK-1:0] Mout_data_ram_size_0;
-          wire [BITSIZE_Mout_oe_ram*NUM_BANK-1:0] Mout_oe_ram_1;
-          wire [BITSIZE_Mout_we_ram*NUM_BANK-1:0] Mout_we_ram_1;
-          wire [BITSIZE_Mout_addr_ram*NUM_BANK-1:0] Mout_addr_ram_1;
-          wire [BITSIZE_Mout_Wdata_ram*NUM_BANK-1:0] Mout_Wdata_ram_1;
-          wire [BITSIZE_Mout_data_ram_size*NUM_BANK-1:0] Mout_data_ram_size_1;
-          wire [NUM_BANK-1:0] valid_Out_reg_oe_we;
-          wire [NUM_BANK-1:0] valid_Out_reg;
-          wire [NUM_BANK-1:0] valid_Out_fifo;
+//to bank
+wire [BITSIZE_Mout_oe_ram*NUM_BANK-1:0] Mout_oe_ram_0;
+wire [BITSIZE_Mout_we_ram*NUM_BANK-1:0] Mout_we_ram_0;
+wire [BITSIZE_Mout_addr_ram*NUM_BANK-1:0] Mout_addr_ram_0;
+wire [BITSIZE_Mout_Wdata_ram*NUM_BANK-1:0] Mout_Wdata_ram_0;
+wire [BITSIZE_Mout_data_ram_size*NUM_BANK-1:0] Mout_data_ram_size_0;
+wire [BITSIZE_Mout_oe_ram*NUM_BANK-1:0] Mout_oe_ram_1;
+wire [BITSIZE_Mout_we_ram*NUM_BANK-1:0] Mout_we_ram_1;
+wire [BITSIZE_Mout_addr_ram*NUM_BANK-1:0] Mout_addr_ram_1;
+wire [BITSIZE_Mout_Wdata_ram*NUM_BANK-1:0] Mout_Wdata_ram_1;
+wire [BITSIZE_Mout_data_ram_size*NUM_BANK-1:0] Mout_data_ram_size_1;
+wire [NUM_BANK-1:0] valid_Out_reg_oe_we;
+wire [NUM_BANK-1:0] valid_Out_reg;
+wire [NUM_BANK-1:0] valid_Out_fifo;
 
-          //rotation in
-          wire [NUM_CHANNEL-1:0] fifo_notempty;
-          wire [NUM_BANK-1:0] selector_mux_fifo_in;
-          wire [NUM_BANK-1:0] arbiter_0_fifo_in;
-          wire [SIZE_TOT_IN*NUM_BANK-1:0] exit_arbiter_0_fifo;
-          wire [NUM_BANK-1:0] request_cycle_on;
-          wire [NUM_BANK-1:0] request_accepted_by_fifo;
+//rotation in
+wire [NUM_CHANNEL-1:0] fifo_notempty;
+wire [NUM_BANK-1:0] selector_mux_fifo_in;
+wire [NUM_BANK-1:0] arbiter_0_fifo_in;
+wire [SIZE_TOT_IN*NUM_BANK-1:0] exit_arbiter_0_fifo;
+wire [NUM_BANK-1:0] request_cycle_on;
+wire [NUM_BANK-1:0] request_accepted_by_fifo;
 
-          //rotation out
-          wire [NUM_BANK-1:0] selector_mux_OUT_fifo_out;
-          wire [NUM_CHANNEL-1:0] rotation_fifo_out;
-          wire [SIZE_TOT_IN*NUM_CHANNEL-1:0] data_in;
-          wire [NUM_BANK-1:0] request_OUT_fifo;
-          wire [NUM_BANK-1:0] request_out;
-          wire [SIZE_TOT_OUT*NUM_CHANNEL-1:0] channel_out;
+//rotation out
+wire [NUM_BANK-1:0] selector_mux_OUT_fifo_out;
+wire [NUM_CHANNEL-1:0] rotation_fifo_out;
+wire [SIZE_TOT_IN*NUM_CHANNEL-1:0] data_in;
+wire [NUM_BANK-1:0] request_OUT_fifo;
+wire [NUM_BANK-1:0] request_out;
+wire [SIZE_TOT_OUT*NUM_CHANNEL-1:0] channel_out;
 
-          // synthesis translate_off
-          wire [NUM_BANK-1:0] bank_occ;
-          Counter #(.BITSIZE_COUNTER(32), .DRIVERS(4)) CounterBank1(.value(occupancies), .clock(clock), .reset(reset), .driver_lines(bank_occ));
-          // synthesis translate_on
-          parameter S_0 = 3'b000,
-                    S_1 = 3'b001,
-                    S_2 = 3'b010,
-                    S_3 = 3'b011,
-                    S_4 = 3'b100,
-                    S_5 = 3'b101;
-          genvar i;
-          generate
-            for(i=0; i&lt;NUM_BANK; i=i+1)
-            begin
-              assign bank_occ[i]=(valid_Out_reg_oe_we[i] || valid_Out_fifo[i] || IN_M_DataRdy[i]);
+// synthesis translate_off
+wire [NUM_BANK-1:0] bank_occ;
+Counter #(.BITSIZE_COUNTER(32), .DRIVERS(4)) CounterBank1(.value(occupancies), .clock(clock), .reset(reset), .driver_lines(bank_occ));
+// synthesis translate_on
+parameter S_0 = 3'b000,
+          S_1 = 3'b001,
+          S_2 = 3'b010,
+          S_3 = 3'b011,
+          S_4 = 3'b100,
+          S_5 = 3'b101;
+genvar i;
+generate
+  for(i=0; i&lt;NUM_BANK; i=i+1)
+  begin
+    assign bank_occ[i]=(valid_Out_reg_oe_we[i] || valid_Out_fifo[i] || IN_M_DataRdy[i]);
 
-              // IN - I am putting data from parallel
-              fifio #(.DATA_WIDTH(SIZE_TOT_IN), .ADDR_WIDTH(FIFO_IN)) IN_fifo (.full (IN_fifo_full[i]), .empty (IN_fifo_empty[i]), .data_out (IN_fifo_data_out[SIZE_TOT_IN*(i+1)-1:SIZE_TOT_IN*i]), .clk (clock), .rst (reset), .rd_en (IN_fifo_rd_en[i]), .wr_en (IN_fifo_wr_en[i]), .data_in (IN_fifo_data_in[SIZE_TOT_IN*(i+1)-1:SIZE_TOT_IN*i]));
+    // IN - I am putting data from parallel
+    fifio #(.DATA_WIDTH(SIZE_TOT_IN), .ADDR_WIDTH(FIFO_IN)) IN_fifo (.full (IN_fifo_full[i]), .empty (IN_fifo_empty[i]), .data_out (IN_fifo_data_out[SIZE_TOT_IN*(i+1)-1:SIZE_TOT_IN*i]), .clk (clock), .rst (reset), .rd_en (IN_fifo_rd_en[i]), .wr_en (IN_fifo_wr_en[i]), .data_in (IN_fifo_data_in[SIZE_TOT_IN*(i+1)-1:SIZE_TOT_IN*i]));
 
-              //OUT - I am putting data from memory
-              fifio #(.DATA_WIDTH(SIZE_TOT_OUT), .ADDR_WIDTH(FIFO_OUT)) OUT_fifo_0 (.full (OUT_fifo_full[i]), .empty (OUT_fifo_empty[i]), .data_out (OUT_fifo_data_out[SIZE_TOT_OUT*(i+1)-1:SIZE_TOT_OUT*i]), .clk (clock), .rst (reset), .rd_en (OUT_fifo_rd_en[i]), .wr_en (OUT_fifo_wr_en[i]), .data_in (OUT_fifo_data_in[SIZE_TOT_OUT*(i+1)-1:SIZE_TOT_OUT*i]));
+    //OUT - I am putting data from memory
+    fifio #(.DATA_WIDTH(SIZE_TOT_OUT), .ADDR_WIDTH(FIFO_OUT)) OUT_fifo_0 (.full (OUT_fifo_full[i]), .empty (OUT_fifo_empty[i]), .data_out (OUT_fifo_data_out[SIZE_TOT_OUT*(i+1)-1:SIZE_TOT_OUT*i]), .clk (clock), .rst (reset), .rd_en (OUT_fifo_rd_en[i]), .wr_en (OUT_fifo_wr_en[i]), .data_in (OUT_fifo_data_in[SIZE_TOT_OUT*(i+1)-1:SIZE_TOT_OUT*i]));
 
-              //register of data that is connected with memory (blocking)
-              register_SE_r #(.BITSIZE_in1(SIZE_TOT_IN), .BITSIZE_out1(SIZE_TOT_IN)) register_status(.clock(clock), .reset(reset), .in1(IN_fifo_data_out[SIZE_TOT_IN*(i+1)-1:SIZE_TOT_IN*i]), .wenable(valid_Out_fifo[i]), .out1(out_reg[SIZE_TOT_IN*(i+1)-1:SIZE_TOT_IN*i]));
+    //register of data that is connected with memory (blocking)
+    register_SE_r #(.BITSIZE_in1(SIZE_TOT_IN), .BITSIZE_out1(SIZE_TOT_IN)) register_status(.clock(clock), .reset(reset), .in1(IN_fifo_data_out[SIZE_TOT_IN*(i+1)-1:SIZE_TOT_IN*i]), .wenable(valid_Out_fifo[i]), .out1(out_reg[SIZE_TOT_IN*(i+1)-1:SIZE_TOT_IN*i]));
 
-              //register status of each bank of memory
-              register_SE_r #(.BITSIZE_in1(3), .BITSIZE_out1(3)) register_0(.clock(clock), .reset(reset), .in1(in_status[3*(i+1)-1:3*i]), .wenable(1'b1), .out1(out_status[3*(i+1)-1:3*i]));
+    //register status of each bank of memory
+    register_SE_r #(.BITSIZE_in1(3), .BITSIZE_out1(3)) register_0(.clock(clock), .reset(reset), .in1(in_status[3*(i+1)-1:3*i]), .wenable(1'b1), .out1(out_status[3*(i+1)-1:3*i]));
 
-              //fifo that accept a request from parallel write, the second arbiter is 1
-              assign request_accepted_by_fifo[i]=(IN_fifo_wr_en[i] &amp;&amp; !selector_mux_fifo_in[i] &amp;&amp; arbiter_0_fifo_in[i]);
+    //fifo that accept a request from parallel write, the second arbiter is 1
+    assign request_accepted_by_fifo[i]=(IN_fifo_wr_en[i] &amp;&amp; !selector_mux_fifo_in[i] &amp;&amp; arbiter_0_fifo_in[i]);
 
-              // IN_fifo_data_in can be output of IN_fifo_data_out or data from arbiter_0 (HIGH LEVEL)
-              assign IN_fifo_data_in[SIZE_TOT_IN*(i+1)-1:SIZE_TOT_IN*i] = (selector_mux_fifo_in[i]) ? IN_fifo_data_out[SIZE_TOT_IN*((i+RATIO)%NUM_BANK+1)-1:SIZE_TOT_IN*((i+RATIO)%NUM_BANK)] : exit_arbiter_0_fifo[SIZE_TOT_IN*(i+1)-1:SIZE_TOT_IN*i];
+    // IN_fifo_data_in can be output of IN_fifo_data_out or data from arbiter_0 (HIGH LEVEL)
+    assign IN_fifo_data_in[SIZE_TOT_IN*(i+1)-1:SIZE_TOT_IN*i] = (selector_mux_fifo_in[i]) ? IN_fifo_data_out[SIZE_TOT_IN*((i+RATIO)%NUM_BANK+1)-1:SIZE_TOT_IN*((i+RATIO)%NUM_BANK)] : exit_arbiter_0_fifo[SIZE_TOT_IN*(i+1)-1:SIZE_TOT_IN*i];
 
-              // exit_arbiter_0 can be output of IN_fifo_data_out itself or data from channel (LOW LEVEL)
-              assign exit_arbiter_0_fifo[SIZE_TOT_IN*(i+1)-1:SIZE_TOT_IN*i] = (arbiter_0_fifo_in[i]) ? data_in[SIZE_TOT_IN*(i/RATIO+1)-1:SIZE_TOT_IN*(i/RATIO)] : IN_fifo_data_out[SIZE_TOT_IN*(i+1)-1:SIZE_TOT_IN*i];
+    // exit_arbiter_0 can be output of IN_fifo_data_out itself or data from channel (LOW LEVEL)
+    assign exit_arbiter_0_fifo[SIZE_TOT_IN*(i+1)-1:SIZE_TOT_IN*i] = (arbiter_0_fifo_in[i]) ? data_in[SIZE_TOT_IN*(i/RATIO+1)-1:SIZE_TOT_IN*(i/RATIO)] : IN_fifo_data_out[SIZE_TOT_IN*(i+1)-1:SIZE_TOT_IN*i];
 
-              //write on fifo if not full and or there is a real request from another fifo, a rotation or data from channel
-              assign IN_fifo_wr_en[i]=(selector_mux_fifo_in[i] || arbiter_0_fifo_in[i] || request_cycle_on[i]);
+    //write on fifo if not full and or there is a real request from another fifo, a rotation or data from channel
+    assign IN_fifo_wr_en[i]=(selector_mux_fifo_in[i] || arbiter_0_fifo_in[i] || request_cycle_on[i]);
 
-              //request from channel (valid only if fifo not full)
-              assign arbiter_0_fifo_in[i]=(fifo_notempty[i/RATIO] &amp;&amp; !IN_fifo_full[i] &amp;&amp; data_in[SIZE_TOT_IN*(i/RATIO)+LSB_BANK_0:SIZE_TOT_IN*(i/RATIO)+LSB_BANK_1]==(i%RATIO));
+    //request from channel (valid only if fifo not full)
+    assign arbiter_0_fifo_in[i]=(fifo_notempty[i/RATIO] &amp;&amp; !IN_fifo_full[i] &amp;&amp; data_in[SIZE_TOT_IN*(i/RATIO)+LSB_BANK_0:SIZE_TOT_IN*(i/RATIO)+LSB_BANK_1]==(i%RATIO));
 
-              //if fifo_in opposite wants to copy data on correct fifo then do it only if destination not full
-              assign selector_mux_fifo_in[i]=(!IN_fifo_empty[(i+RATIO)%NUM_BANK] &amp;&amp; IN_fifo_data_out[SIZE_TOT_IN*((i+RATIO)%NUM_BANK)+MSB_BANK_0:SIZE_TOT_IN*((i+RATIO)%NUM_BANK)+MSB_BANK_1]!=(((i+RATIO)%NUM_BANK)/RATIO) &amp;&amp; !IN_fifo_full[i]);
+    //if fifo_in opposite wants to copy data on correct fifo then do it only if destination not full
+    assign selector_mux_fifo_in[i]=(!IN_fifo_empty[(i+RATIO)%NUM_BANK] &amp;&amp; IN_fifo_data_out[SIZE_TOT_IN*((i+RATIO)%NUM_BANK)+MSB_BANK_0:SIZE_TOT_IN*((i+RATIO)%NUM_BANK)+MSB_BANK_1]!=(((i+RATIO)%NUM_BANK)/RATIO) &amp;&amp; !IN_fifo_full[i]);
 
-              //read if there is a write in output but its not from a different fifo, if write on a different fifo, if rotating
-              assign IN_fifo_rd_en[i]= selector_mux_fifo_in[(i+RATIO)%NUM_BANK] || (request_cycle_on[i] &amp;&amp; !arbiter_0_fifo_in[i] &amp;&amp; !selector_mux_fifo_in[i]) || valid_Out_fifo[i];
+    //read if there is a write in output but its not from a different fifo, if write on a different fifo, if rotating
+    assign IN_fifo_rd_en[i]= selector_mux_fifo_in[(i+RATIO)%NUM_BANK] || (request_cycle_on[i] &amp;&amp; !arbiter_0_fifo_in[i] &amp;&amp; !selector_mux_fifo_in[i]) || valid_Out_fifo[i];
 
-              //cycle if fifo not empty, state is S_3, but copy data on another fifo and data from channal are false, data is store but not atomic, data il load atomic
-              assign request_cycle_on[i]=!IN_fifo_empty[i] &amp;&amp; (out_status[3*(i+1)-1:3*i]==3'b011 || out_status[3*(i+1)-1:3*i]==3'b100 || out_status[3*(i+1)-1:3*i]==3'b101) &amp;&amp; !selector_mux_fifo_in[(i+RATIO)%NUM_BANK] &amp;&amp; ((IN_fifo_data_out[SIZE_TOT_IN*(i+1)-2] &amp;&amp; IN_fifo_data_out[SIZE_TOT_IN*i+BITSIZE_Mout_oe_ram-1]) || (!IN_fifo_data_out[SIZE_TOT_IN*(i+1)-2] &amp;&amp; IN_fifo_data_out[SIZE_TOT_IN*i+BITSIZE_Mout_we_ram+BITSIZE_Mout_oe_ram-1]));
+    //cycle if fifo not empty, state is S_3, but copy data on another fifo and data from channal are false, data is store but not atomic, data il load atomic
+    assign request_cycle_on[i]=!IN_fifo_empty[i] &amp;&amp; (out_status[3*(i+1)-1:3*i]==3'b011 || out_status[3*(i+1)-1:3*i]==3'b100 || out_status[3*(i+1)-1:3*i]==3'b101) &amp;&amp; !selector_mux_fifo_in[(i+RATIO)%NUM_BANK] &amp;&amp; ((IN_fifo_data_out[SIZE_TOT_IN*(i+1)-2] &amp;&amp; IN_fifo_data_out[SIZE_TOT_IN*i+BITSIZE_Mout_oe_ram-1]) || (!IN_fifo_data_out[SIZE_TOT_IN*(i+1)-2] &amp;&amp; IN_fifo_data_out[SIZE_TOT_IN*i+BITSIZE_Mout_we_ram+BITSIZE_Mout_oe_ram-1]));
 
-              //FSM for the state of the register
-              always @(*) begin
-                case(out_status[3*(i+1)-1:3*i])
-                  S_0: begin
-                    if (!IN_fifo_empty[i] &amp;&amp; IN_fifo_data_out[SIZE_TOT_IN*i+MSB_BANK_0:SIZE_TOT_IN*i+MSB_BANK_1]==(i/RATIO)) begin
-                      if(IN_fifo_data_out[SIZE_TOT_IN*(i+1)-2] &amp;&amp; IN_fifo_data_out[SIZE_TOT_IN*i+BITSIZE_Mout_oe_ram-1]) begin
-                        in_status[3*(i+1)-1:3*i]=S_4;        //status is busy rotate
-                      end
-                      else begin
-                        in_status[3*(i+1)-1:3*i]=S_1;        //status is busy
-                      end
-                    end
-                    else begin
-                      in_status[3*(i+1)-1:3*i]=S_0;
-                    end
-                  end
-                  S_1: begin
-                    if(!IN_M_DataRdy[i]) begin
-                      in_status[3*(i+1)-1:3*i]=S_1;
-                    end
-                    else begin
-                      if(!request_OUT_fifo[(i+RATIO)%NUM_BANK] &amp;&amp; !OUT_fifo_full[i]) begin  //if ready, no request to rotate and fifo not full then free
-                        in_status[3*(i+1)-1:3*i]=S_0;
-                      end
-                      else begin
-                        in_status[3*(i+1)-1:3*i]=S_2;
-                      end
-                    end
-                  end
-                  S_2: begin
-                    if(!request_OUT_fifo[(i+RATIO)%NUM_BANK] &amp;&amp; !OUT_fifo_full[i]) begin
-                      in_status[3*(i+1)-1:3*i]=S_0;
-                    end
-                    else begin
-                      in_status[3*(i+1)-1:3*i]=S_2;
-                    end
-                  end
-                  S_3: begin
-                    if (!IN_fifo_empty[i] &amp;&amp; IN_fifo_data_out[SIZE_TOT_IN*i+MSB_BANK_0:SIZE_TOT_IN*i+MSB_BANK_1]==(i/RATIO) &amp;&amp; !request_cycle_on[i]) begin
-                      if(IN_fifo_data_out[SIZE_TOT_IN*(i+1)-2] &amp;&amp; IN_fifo_data_out[SIZE_TOT_IN*i+BITSIZE_Mout_we_ram+BITSIZE_Mout_oe_ram-1]) begin
-                        in_status[3*(i+1)-1:3*i]=S_1;        //status is busy
-                      end
-                      else begin
-                        in_status[3*(i+1)-1:3*i]=S_4;        //status is busy rotate
-                      end
-                    end
-                    else begin
-                      in_status[3*(i+1)-1:3*i]=S_3;
-                    end
-                  end
-                  S_4: begin
-                    if(!IN_M_DataRdy[i]) begin
-                      in_status[3*(i+1)-1:3*i]=S_4;
-                    end
-                    else begin
-                      if(!request_OUT_fifo[(i+RATIO)%NUM_BANK] &amp;&amp; !OUT_fifo_full[i]) begin  //if ready, no request to rotate and fifo not full then free
-                        in_status[3*(i+1)-1:3*i]=S_3;
-                      end
-                      else begin
-                        in_status[3*(i+1)-1:3*i]=S_5;
-                      end
-                    end
-                  end
-                  S_5: begin
-                    if(!request_OUT_fifo[(i+RATIO)%NUM_BANK] &amp;&amp; !OUT_fifo_full[i]) begin
-                      in_status[3*(i+1)-1:3*i]=S_3;
-                    end
-                    else begin
-                      in_status[3*(i+1)-1:3*i]=S_5;
-                    end
-                  end
-                  default: begin
-                    in_status[3*(i+1)-1:3*i]=S_0;
-                  end
-                endcase
-              end
-
-              //OUT PART
-
-              //valid output only if fifo not empty and state is 00 and data is correct, or status is 01 and not ready, or status is 11 data correct, no rotation and fifo not empty
-              assign valid_Out_reg_oe_we[i]=((out_status[3*(i+1)-1:3*i]==3'b001 || out_status[3*(i+1)-1:3*i]==3'b100) &amp;&amp; !IN_M_DataRdy[i]);
-              assign valid_Out_reg[i]= out_status[3*(i+1)-1:3*i]==3'b001 || out_status[3*(i+1)-1:3*i]==3'b100 || out_status[3*(i+1)-1:3*i]==3'b010 || out_status[3*(i+1)-1:3*i]==3'b101;
-
-              //valid output only if fifo not empty and state is 00 and data is correct, or status is 01 and not ready, or status is 11 data correct, no rotation and fifo not empty
-              assign valid_Out_fifo[i]=((out_status[3*(i+1)-1:3*i]==3'b000 &amp;&amp; !IN_fifo_empty[i] &amp;&amp; IN_fifo_data_out[SIZE_TOT_IN*i+MSB_BANK_0:SIZE_TOT_IN*i+MSB_BANK_1]==(i/RATIO)) || (out_status[3*(i+1)-1:3*i]==3'b011 &amp;&amp; !IN_fifo_empty[i] &amp;&amp; IN_fifo_data_out[SIZE_TOT_IN*i+MSB_BANK_0:SIZE_TOT_IN*i+MSB_BANK_1]==(i/RATIO) &amp;&amp; !request_cycle_on[i]));
-
-        //output send out by module
-              assign Mout_oe_ram_0[i]=(out_reg[SIZE_TOT_IN*i+BITSIZE_Mout_oe_ram-1] &amp; {BITSIZE_Mout_oe_ram{valid_Out_reg_oe_we[i]}});
-              assign Mout_we_ram_0[i]= (out_reg[SIZE_TOT_IN*i+BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1] &amp; {BITSIZE_Mout_we_ram{valid_Out_reg_oe_we[i]}});
-              assign Mout_addr_ram_0[BITSIZE_Mout_addr_ram*(i+1)-1:BITSIZE_Mout_addr_ram*i]= (out_reg[SIZE_TOT_IN*i+BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1:SIZE_TOT_IN*i+BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram] &amp; {BITSIZE_Mout_addr_ram{valid_Out_reg[i]}});
-              assign Mout_data_ram_size_0[BITSIZE_Mout_data_ram_size*(i+1)-1:BITSIZE_Mout_data_ram_size*i]= (out_reg[SIZE_TOT_IN*i+BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1:SIZE_TOT_IN*i+BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram] &amp; {BITSIZE_Mout_data_ram_size{valid_Out_reg[i]}});
-              assign Mout_Wdata_ram_0[BITSIZE_Mout_Wdata_ram*(i+1)-1:BITSIZE_Mout_Wdata_ram*i]= (out_reg[SIZE_TOT_IN*i+BITSIZE_Mout_Wdata_ram + BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1:SIZE_TOT_IN*i+BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram] &amp; {BITSIZE_Mout_Wdata_ram{valid_Out_reg[i]}});
-
-          //output send out by module
-              assign Mout_oe_ram_1[i]=(IN_fifo_data_out[SIZE_TOT_IN*i+BITSIZE_Mout_oe_ram-1] &amp; {BITSIZE_Mout_oe_ram{valid_Out_fifo[i]}});
-              assign Mout_we_ram_1[i]=(IN_fifo_data_out[SIZE_TOT_IN*i+BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1] &amp; {BITSIZE_Mout_we_ram{valid_Out_fifo[i]}});
-              assign Mout_addr_ram_1[BITSIZE_Mout_addr_ram*(i+1)-1:BITSIZE_Mout_addr_ram*i]=(IN_fifo_data_out[SIZE_TOT_IN*i+BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1:SIZE_TOT_IN*i+BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram] &amp; {BITSIZE_Mout_addr_ram{valid_Out_fifo[i]}});
-              assign Mout_data_ram_size_1[BITSIZE_Mout_data_ram_size*(i+1)-1:BITSIZE_Mout_data_ram_size*i]=(IN_fifo_data_out[SIZE_TOT_IN*i+BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1:SIZE_TOT_IN*i+BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram] &amp; {BITSIZE_Mout_data_ram_size{valid_Out_fifo[i]}});
-              assign Mout_Wdata_ram_1[BITSIZE_Mout_Wdata_ram*(i+1)-1:BITSIZE_Mout_Wdata_ram*i]=(IN_fifo_data_out[SIZE_TOT_IN*i+BITSIZE_Mout_Wdata_ram + BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1:SIZE_TOT_IN*i+BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram] &amp; {BITSIZE_Mout_Wdata_ram{valid_Out_fifo[i]}});
-
-              //if there is a block on out_channel that has incorrect kernel translate it
-              assign request_OUT_fifo[i]= (OUT_fifo_data_out[SIZE_TOT_OUT*i+MSB_OUT_0:SIZE_TOT_OUT*i+MSB_OUT_1]!=(i/RATIO) &amp;&amp; !OUT_fifo_empty[i] &amp;&amp; !OUT_fifo_full[(i+RATIO)%NUM_BANK]);
-
-              //if fifo out not full and or there is a request to rotate or the corresponding register has data ready then copy data
-              assign OUT_fifo_wr_en[i]= (!OUT_fifo_full[i] &amp;&amp; (request_OUT_fifo[(i+RATIO)%NUM_BANK] || out_status[3*(i+1)-1:3*i]==3'b010 || out_status[3*(i+1)-1:3*i]==3'b101 || IN_M_DataRdy[i]));
-
-              //if there is a request to rotate then that is data in of FIFO_OUT, otherwise is exit of register
-              assign OUT_fifo_data_in[SIZE_TOT_OUT*(i+1)-1:SIZE_TOT_OUT*i]=(request_OUT_fifo[(i+RATIO)%NUM_BANK])? OUT_fifo_data_out[SIZE_TOT_OUT*((i+RATIO)%NUM_BANK+1)-1:SIZE_TOT_OUT*((i+RATIO)%NUM_BANK)] : {out_reg[SIZE_TOT_IN*(i+1)-1:SIZE_TOT_IN*(i+1)-BITSIZE_Mout_tag_ram],IN_M_Rdata_ram[BITSIZE_M_Rdata_ram*(i+1)-1:BITSIZE_M_Rdata_ram*i]};
-
-              //if fifo is nonempty and data is in the correct channel (look at the most significant bit of the kernel) then request to go down
-              assign request_out[i]=(!OUT_fifo_empty[i] &amp;&amp; OUT_fifo_data_out[SIZE_TOT_OUT*i+MSB_OUT_0:SIZE_TOT_OUT*i+MSB_OUT_1]==(i/RATIO));
-
-              // read if data selected has to go down or to be translated
-              assign OUT_fifo_rd_en[i]=(request_OUT_fifo[i] || selector_mux_OUT_fifo_out[i]);
+    //FSM for the state of the register
+    always @(*) begin
+      case(out_status[3*(i+1)-1:3*i])
+        S_0: begin
+          if (!IN_fifo_empty[i] &amp;&amp; IN_fifo_data_out[SIZE_TOT_IN*i+MSB_BANK_0:SIZE_TOT_IN*i+MSB_BANK_1]==(i/RATIO)) begin
+            if(IN_fifo_data_out[SIZE_TOT_IN*(i+1)-2] &amp;&amp; IN_fifo_data_out[SIZE_TOT_IN*i+BITSIZE_Mout_oe_ram-1]) begin
+              in_status[3*(i+1)-1:3*i]=S_4;        //status is busy rotate
             end
-          endgenerate
-
-          generate
-          for(i=0; i&lt;NUM_CHANNEL; i=i+1)
-            begin
-              //arbiter to decide in case of multiple data ready which one go down
-              PT_RR_FU #(.BITSIZE_ops(1), .PORTSIZE_ops(RATIO), .BITSIZE_rops(1), .PORTSIZE_rops(RATIO)) RR_fifo_in(.ops(selector_mux_OUT_fifo_out[RATIO*(i+1)-1:RATIO*i]), .ENABLE(1'b1), .clock(clock), .reset(!reset), .rops(request_out[RATIO*(i+1)-1:RATIO*i]));
-
-              //mux for exit, decide which data output of fifo to give on output
-              mux_pw_2 #(.BITSIZE_selector(RATIO), .BITSIZE_data(SIZE_TOT_OUT*RATIO), .BITSIZE_out(SIZE_TOT_OUT)) mux_out (.selector(selector_mux_OUT_fifo_out[RATIO*(i+1)-1:RATIO*i]), .data(OUT_fifo_data_out[RATIO*(i+1)*SIZE_TOT_OUT-1:RATIO*i*SIZE_TOT_OUT]), .out(channel_out[SIZE_TOT_OUT*(i+1)-1:SIZE_TOT_OUT*i]));
-
-              //create the packed used to put data toghether into fifo
-              assign data_in[SIZE_TOT_IN*(i+1)-1:SIZE_TOT_IN*i]={Mout_tag_ram[BITSIZE_Mout_tag_ram*(i+1)-1:BITSIZE_Mout_tag_ram*i], Mout_Wdata_ram[BITSIZE_Mout_Wdata_ram*(i+1)-1:BITSIZE_Mout_Wdata_ram*i], Mout_data_ram_size[BITSIZE_Mout_data_ram_size*(i+1)-1:BITSIZE_Mout_data_ram_size*i], Mout_addr_ram[BITSIZE_Mout_addr_ram*(i+1)-1:BITSIZE_Mout_addr_ram*i], Mout_we_ram[BITSIZE_Mout_we_ram*(i+1)-1:BITSIZE_Mout_we_ram*i], Mout_oe_ram[BITSIZE_Mout_oe_ram*(i+1)-1:BITSIZE_Mout_oe_ram*i]};
-
-              //check if there is a real request
-              assign fifo_notempty[i]=Mout_oe_ram[i]||Mout_we_ram[i];
-
-              //bind the channel for the output
-              assign M_Rdata_ram[BITSIZE_M_Rdata_ram*(i+1)-1:BITSIZE_M_Rdata_ram*i]=channel_out[SIZE_TOT_OUT*i+BITSIZE_M_Rdata_ram-1:SIZE_TOT_OUT*i];
-              assign Min_tag[BITSIZE_Mout_tag_ram*(i+1)-1:BITSIZE_Mout_tag_ram*i]=channel_out[SIZE_TOT_OUT*i+BITSIZE_M_Rdata_ram+BITSIZE_Mout_tag_ram-1:SIZE_TOT_OUT*i+BITSIZE_M_Rdata_ram];
-
-              //if or of selector has at least 1 means that there is a data ready coming down
-              assign M_DataRdy[i]=(|selector_mux_OUT_fifo_out[RATIO*(i+1)-1:RATIO*i]);
-
-              //rd_en send to lower level only if the fifo in this module read their data
-              assign request_accepted[i]=(|request_accepted_by_fifo[(i+1)*RATIO-1:i*RATIO]);
+            else begin
+              in_status[3*(i+1)-1:3*i]=S_1;        //status is busy
             end
-          endgenerate
+          end
+          else begin
+            in_status[3*(i+1)-1:3*i]=S_0;
+          end
+        end
+        S_1: begin
+          if(!IN_M_DataRdy[i]) begin
+            in_status[3*(i+1)-1:3*i]=S_1;
+          end
+          else begin
+            if(!request_OUT_fifo[(i+RATIO)%NUM_BANK] &amp;&amp; !OUT_fifo_full[i]) begin  //if ready, no request to rotate and fifo not full then free
+              in_status[3*(i+1)-1:3*i]=S_0;
+            end
+            else begin
+              in_status[3*(i+1)-1:3*i]=S_2;
+            end
+          end
+        end
+        S_2: begin
+          if(!request_OUT_fifo[(i+RATIO)%NUM_BANK] &amp;&amp; !OUT_fifo_full[i]) begin
+            in_status[3*(i+1)-1:3*i]=S_0;
+          end
+          else begin
+            in_status[3*(i+1)-1:3*i]=S_2;
+          end
+        end
+        S_3: begin
+          if (!IN_fifo_empty[i] &amp;&amp; IN_fifo_data_out[SIZE_TOT_IN*i+MSB_BANK_0:SIZE_TOT_IN*i+MSB_BANK_1]==(i/RATIO) &amp;&amp; !request_cycle_on[i]) begin
+            if(IN_fifo_data_out[SIZE_TOT_IN*(i+1)-2] &amp;&amp; IN_fifo_data_out[SIZE_TOT_IN*i+BITSIZE_Mout_we_ram+BITSIZE_Mout_oe_ram-1]) begin
+              in_status[3*(i+1)-1:3*i]=S_1;        //status is busy
+            end
+            else begin
+              in_status[3*(i+1)-1:3*i]=S_4;        //status is busy rotate
+            end
+          end
+          else begin
+            in_status[3*(i+1)-1:3*i]=S_3;
+          end
+        end
+        S_4: begin
+          if(!IN_M_DataRdy[i]) begin
+            in_status[3*(i+1)-1:3*i]=S_4;
+          end
+          else begin
+            if(!request_OUT_fifo[(i+RATIO)%NUM_BANK] &amp;&amp; !OUT_fifo_full[i]) begin  //if ready, no request to rotate and fifo not full then free
+              in_status[3*(i+1)-1:3*i]=S_3;
+            end
+            else begin
+              in_status[3*(i+1)-1:3*i]=S_5;
+            end
+          end
+        end
+        S_5: begin
+          if(!request_OUT_fifo[(i+RATIO)%NUM_BANK] &amp;&amp; !OUT_fifo_full[i]) begin
+            in_status[3*(i+1)-1:3*i]=S_3;
+          end
+          else begin
+            in_status[3*(i+1)-1:3*i]=S_5;
+          end
+        end
+        default: begin
+          in_status[3*(i+1)-1:3*i]=S_0;
+        end
+      endcase
+    end
 
-          //output to bank is the merge of out fifo and register
-          bus_merger #(.BITSIZE_in1(BITSIZE_Mout_oe_ram*NUM_BANK), .PORTSIZE_in1(2), .BITSIZE_out1(BITSIZE_Mout_oe_ram*NUM_BANK)) bus_merger_Mout_oe_ram (.out1(OUT_Mout_oe_ram), .in1({Mout_oe_ram_0, Mout_oe_ram_1}));
-          bus_merger #(.BITSIZE_in1(BITSIZE_Mout_we_ram*NUM_BANK), .PORTSIZE_in1(2), .BITSIZE_out1(BITSIZE_Mout_we_ram*NUM_BANK)) bus_merger_Mout_we_ram (.out1(OUT_Mout_we_ram), .in1({Mout_we_ram_0, Mout_we_ram_1}));
-          bus_merger #(.BITSIZE_in1(BITSIZE_Mout_addr_ram*NUM_BANK), .PORTSIZE_in1(2), .BITSIZE_out1(BITSIZE_Mout_addr_ram*NUM_BANK)) bus_merger_Mout_addr_ram (.out1(OUT_Mout_addr_ram), .in1({Mout_addr_ram_0, Mout_addr_ram_1}));
-          bus_merger #(.BITSIZE_in1(BITSIZE_Mout_data_ram_size*NUM_BANK), .PORTSIZE_in1(2), .BITSIZE_out1(BITSIZE_Mout_data_ram_size*NUM_BANK)) bus_merger_Mout_data_ram_size (.out1(OUT_Mout_data_ram_size), .in1({Mout_data_ram_size_0, Mout_data_ram_size_1}));
-          bus_merger #(.BITSIZE_in1(BITSIZE_Mout_Wdata_ram*NUM_BANK), .PORTSIZE_in1(2), .BITSIZE_out1(BITSIZE_Mout_Wdata_ram*NUM_BANK)) bus_merger_Mout_Wdata_ram (.out1(OUT_Mout_Wdata_ram), .in1({Mout_Wdata_ram_0, Mout_Wdata_ram_1}));"/>
+    //OUT PART
+
+    //valid output only if fifo not empty and state is 00 and data is correct, or status is 01 and not ready, or status is 11 data correct, no rotation and fifo not empty
+    assign valid_Out_reg_oe_we[i]=((out_status[3*(i+1)-1:3*i]==3'b001 || out_status[3*(i+1)-1:3*i]==3'b100) &amp;&amp; !IN_M_DataRdy[i]);
+    assign valid_Out_reg[i]= out_status[3*(i+1)-1:3*i]==3'b001 || out_status[3*(i+1)-1:3*i]==3'b100 || out_status[3*(i+1)-1:3*i]==3'b010 || out_status[3*(i+1)-1:3*i]==3'b101;
+
+    //valid output only if fifo not empty and state is 00 and data is correct, or status is 01 and not ready, or status is 11 data correct, no rotation and fifo not empty
+    assign valid_Out_fifo[i]=((out_status[3*(i+1)-1:3*i]==3'b000 &amp;&amp; !IN_fifo_empty[i] &amp;&amp; IN_fifo_data_out[SIZE_TOT_IN*i+MSB_BANK_0:SIZE_TOT_IN*i+MSB_BANK_1]==(i/RATIO)) || (out_status[3*(i+1)-1:3*i]==3'b011 &amp;&amp; !IN_fifo_empty[i] &amp;&amp; IN_fifo_data_out[SIZE_TOT_IN*i+MSB_BANK_0:SIZE_TOT_IN*i+MSB_BANK_1]==(i/RATIO) &amp;&amp; !request_cycle_on[i]));
+
+//output send out by module
+    assign Mout_oe_ram_0[i]=(out_reg[SIZE_TOT_IN*i+BITSIZE_Mout_oe_ram-1] &amp; {BITSIZE_Mout_oe_ram{valid_Out_reg_oe_we[i]}});
+    assign Mout_we_ram_0[i]= (out_reg[SIZE_TOT_IN*i+BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1] &amp; {BITSIZE_Mout_we_ram{valid_Out_reg_oe_we[i]}});
+    assign Mout_addr_ram_0[BITSIZE_Mout_addr_ram*(i+1)-1:BITSIZE_Mout_addr_ram*i]= (out_reg[SIZE_TOT_IN*i+BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1:SIZE_TOT_IN*i+BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram] &amp; {BITSIZE_Mout_addr_ram{valid_Out_reg[i]}});
+    assign Mout_data_ram_size_0[BITSIZE_Mout_data_ram_size*(i+1)-1:BITSIZE_Mout_data_ram_size*i]= (out_reg[SIZE_TOT_IN*i+BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1:SIZE_TOT_IN*i+BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram] &amp; {BITSIZE_Mout_data_ram_size{valid_Out_reg[i]}});
+    assign Mout_Wdata_ram_0[BITSIZE_Mout_Wdata_ram*(i+1)-1:BITSIZE_Mout_Wdata_ram*i]= (out_reg[SIZE_TOT_IN*i+BITSIZE_Mout_Wdata_ram + BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1:SIZE_TOT_IN*i+BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram] &amp; {BITSIZE_Mout_Wdata_ram{valid_Out_reg[i]}});
+
+//output send out by module
+    assign Mout_oe_ram_1[i]=(IN_fifo_data_out[SIZE_TOT_IN*i+BITSIZE_Mout_oe_ram-1] &amp; {BITSIZE_Mout_oe_ram{valid_Out_fifo[i]}});
+    assign Mout_we_ram_1[i]=(IN_fifo_data_out[SIZE_TOT_IN*i+BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1] &amp; {BITSIZE_Mout_we_ram{valid_Out_fifo[i]}});
+    assign Mout_addr_ram_1[BITSIZE_Mout_addr_ram*(i+1)-1:BITSIZE_Mout_addr_ram*i]=(IN_fifo_data_out[SIZE_TOT_IN*i+BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1:SIZE_TOT_IN*i+BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram] &amp; {BITSIZE_Mout_addr_ram{valid_Out_fifo[i]}});
+    assign Mout_data_ram_size_1[BITSIZE_Mout_data_ram_size*(i+1)-1:BITSIZE_Mout_data_ram_size*i]=(IN_fifo_data_out[SIZE_TOT_IN*i+BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1:SIZE_TOT_IN*i+BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram] &amp; {BITSIZE_Mout_data_ram_size{valid_Out_fifo[i]}});
+    assign Mout_Wdata_ram_1[BITSIZE_Mout_Wdata_ram*(i+1)-1:BITSIZE_Mout_Wdata_ram*i]=(IN_fifo_data_out[SIZE_TOT_IN*i+BITSIZE_Mout_Wdata_ram + BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1:SIZE_TOT_IN*i+BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram] &amp; {BITSIZE_Mout_Wdata_ram{valid_Out_fifo[i]}});
+
+    //if there is a block on out_channel that has incorrect kernel translate it
+    assign request_OUT_fifo[i]= (OUT_fifo_data_out[SIZE_TOT_OUT*i+MSB_OUT_0:SIZE_TOT_OUT*i+MSB_OUT_1]!=(i/RATIO) &amp;&amp; !OUT_fifo_empty[i] &amp;&amp; !OUT_fifo_full[(i+RATIO)%NUM_BANK]);
+
+    //if fifo out not full and or there is a request to rotate or the corresponding register has data ready then copy data
+    assign OUT_fifo_wr_en[i]= (!OUT_fifo_full[i] &amp;&amp; (request_OUT_fifo[(i+RATIO)%NUM_BANK] || out_status[3*(i+1)-1:3*i]==3'b010 || out_status[3*(i+1)-1:3*i]==3'b101 || IN_M_DataRdy[i]));
+
+    //if there is a request to rotate then that is data in of FIFO_OUT, otherwise is exit of register
+    assign OUT_fifo_data_in[SIZE_TOT_OUT*(i+1)-1:SIZE_TOT_OUT*i]=(request_OUT_fifo[(i+RATIO)%NUM_BANK])? OUT_fifo_data_out[SIZE_TOT_OUT*((i+RATIO)%NUM_BANK+1)-1:SIZE_TOT_OUT*((i+RATIO)%NUM_BANK)] : {out_reg[SIZE_TOT_IN*(i+1)-1:SIZE_TOT_IN*(i+1)-BITSIZE_Mout_tag_ram],IN_M_Rdata_ram[BITSIZE_M_Rdata_ram*(i+1)-1:BITSIZE_M_Rdata_ram*i]};
+
+    //if fifo is nonempty and data is in the correct channel (look at the most significant bit of the kernel) then request to go down
+    assign request_out[i]=(!OUT_fifo_empty[i] &amp;&amp; OUT_fifo_data_out[SIZE_TOT_OUT*i+MSB_OUT_0:SIZE_TOT_OUT*i+MSB_OUT_1]==(i/RATIO));
+
+    // read if data selected has to go down or to be translated
+    assign OUT_fifo_rd_en[i]=(request_OUT_fifo[i] || selector_mux_OUT_fifo_out[i]);
+  end
+endgenerate
+
+generate
+for(i=0; i&lt;NUM_CHANNEL; i=i+1)
+  begin
+    //arbiter to decide in case of multiple data ready which one go down
+    PT_RR_FU #(.BITSIZE_ops(1), .PORTSIZE_ops(RATIO), .BITSIZE_rops(1), .PORTSIZE_rops(RATIO)) RR_fifo_in(.ops(selector_mux_OUT_fifo_out[RATIO*(i+1)-1:RATIO*i]), .ENABLE(1'b1), .clock(clock), .reset(!reset), .rops(request_out[RATIO*(i+1)-1:RATIO*i]));
+
+    //mux for exit, decide which data output of fifo to give on output
+    mux_pw_2 #(.BITSIZE_selector(RATIO), .BITSIZE_data(SIZE_TOT_OUT*RATIO), .BITSIZE_out(SIZE_TOT_OUT)) mux_out (.selector(selector_mux_OUT_fifo_out[RATIO*(i+1)-1:RATIO*i]), .data(OUT_fifo_data_out[RATIO*(i+1)*SIZE_TOT_OUT-1:RATIO*i*SIZE_TOT_OUT]), .out(channel_out[SIZE_TOT_OUT*(i+1)-1:SIZE_TOT_OUT*i]));
+
+    //create the packed used to put data toghether into fifo
+    assign data_in[SIZE_TOT_IN*(i+1)-1:SIZE_TOT_IN*i]={Mout_tag_ram[BITSIZE_Mout_tag_ram*(i+1)-1:BITSIZE_Mout_tag_ram*i], Mout_Wdata_ram[BITSIZE_Mout_Wdata_ram*(i+1)-1:BITSIZE_Mout_Wdata_ram*i], Mout_data_ram_size[BITSIZE_Mout_data_ram_size*(i+1)-1:BITSIZE_Mout_data_ram_size*i], Mout_addr_ram[BITSIZE_Mout_addr_ram*(i+1)-1:BITSIZE_Mout_addr_ram*i], Mout_we_ram[BITSIZE_Mout_we_ram*(i+1)-1:BITSIZE_Mout_we_ram*i], Mout_oe_ram[BITSIZE_Mout_oe_ram*(i+1)-1:BITSIZE_Mout_oe_ram*i]};
+
+    //check if there is a real request
+    assign fifo_notempty[i]=Mout_oe_ram[i]||Mout_we_ram[i];
+
+    //bind the channel for the output
+    assign M_Rdata_ram[BITSIZE_M_Rdata_ram*(i+1)-1:BITSIZE_M_Rdata_ram*i]=channel_out[SIZE_TOT_OUT*i+BITSIZE_M_Rdata_ram-1:SIZE_TOT_OUT*i];
+    assign Min_tag[BITSIZE_Mout_tag_ram*(i+1)-1:BITSIZE_Mout_tag_ram*i]=channel_out[SIZE_TOT_OUT*i+BITSIZE_M_Rdata_ram+BITSIZE_Mout_tag_ram-1:SIZE_TOT_OUT*i+BITSIZE_M_Rdata_ram];
+
+    //if or of selector has at least 1 means that there is a data ready coming down
+    assign M_DataRdy[i]=(|selector_mux_OUT_fifo_out[RATIO*(i+1)-1:RATIO*i]);
+
+    //rd_en send to lower level only if the fifo in this module read their data
+    assign request_accepted[i]=(|request_accepted_by_fifo[(i+1)*RATIO-1:i*RATIO]);
+  end
+endgenerate
+
+//output to bank is the merge of out fifo and register
+bus_merger #(.BITSIZE_in1(BITSIZE_Mout_oe_ram*NUM_BANK), .PORTSIZE_in1(2), .BITSIZE_out1(BITSIZE_Mout_oe_ram*NUM_BANK)) bus_merger_Mout_oe_ram (.out1(OUT_Mout_oe_ram), .in1({Mout_oe_ram_0, Mout_oe_ram_1}));
+bus_merger #(.BITSIZE_in1(BITSIZE_Mout_we_ram*NUM_BANK), .PORTSIZE_in1(2), .BITSIZE_out1(BITSIZE_Mout_we_ram*NUM_BANK)) bus_merger_Mout_we_ram (.out1(OUT_Mout_we_ram), .in1({Mout_we_ram_0, Mout_we_ram_1}));
+bus_merger #(.BITSIZE_in1(BITSIZE_Mout_addr_ram*NUM_BANK), .PORTSIZE_in1(2), .BITSIZE_out1(BITSIZE_Mout_addr_ram*NUM_BANK)) bus_merger_Mout_addr_ram (.out1(OUT_Mout_addr_ram), .in1({Mout_addr_ram_0, Mout_addr_ram_1}));
+bus_merger #(.BITSIZE_in1(BITSIZE_Mout_data_ram_size*NUM_BANK), .PORTSIZE_in1(2), .BITSIZE_out1(BITSIZE_Mout_data_ram_size*NUM_BANK)) bus_merger_Mout_data_ram_size (.out1(OUT_Mout_data_ram_size), .in1({Mout_data_ram_size_0, Mout_data_ram_size_1}));
+bus_merger #(.BITSIZE_in1(BITSIZE_Mout_Wdata_ram*NUM_BANK), .PORTSIZE_in1(2), .BITSIZE_out1(BITSIZE_Mout_Wdata_ram*NUM_BANK)) bus_merger_Mout_Wdata_ram (.out1(OUT_Mout_Wdata_ram), .in1({Mout_Wdata_ram_0, Mout_Wdata_ram_1}));"/>
         </component_o>
       </circuit>
     </cell>
@@ -1335,7 +1333,6 @@ simple_dual_port_ram_single_clock #(.BITSIZE_data(BITSIZE_data_in),.BITSIZE_addr
           <structural_type_descriptor id_type="memory_ctrl_parallel"/>
           <parameter name="NUM_CHANNEL">2</parameter>
           <parameter name="NUM_ACC">4</parameter>
-          <parameter name="NUM_TASKS">8</parameter>
           <parameter name="ADDR_TASKS">3</parameter>
           <parameter name="ADDR_ACC">2</parameter>
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
@@ -1378,22 +1375,22 @@ simple_dual_port_ram_single_clock #(.BITSIZE_data(BITSIZE_data_in),.BITSIZE_addr
           <port_vector_o id="Mout_tag_ram" dir="IN" is_memory="1" is_tag_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
-          <port_vector_o id="OUT_Mout_oe_ram" dir="OUT" is_memory="1"  is_global="1" is_extern="1">
+          <port_vector_o id="OUT_Mout_oe_ram" dir="OUT" is_memory="1"  is_master="1">
             <structural_type_descriptor type="BOOL" size="1" vector_size="1"/>
           </port_vector_o>
-          <port_vector_o id="OUT_Mout_we_ram" dir="OUT" is_memory="1" is_global="1" is_extern="1">
+          <port_vector_o id="OUT_Mout_we_ram" dir="OUT" is_memory="1" is_master="1">
             <structural_type_descriptor type="BOOL" size="1" vector_size="1"/>
           </port_vector_o>
-          <port_vector_o id="OUT_Mout_addr_ram" dir="OUT" is_memory="1" is_global="1" is_extern="1" is_addr_bus="1">
+          <port_vector_o id="OUT_Mout_addr_ram" dir="OUT" is_memory="1" is_master="1" is_addr_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
-          <port_vector_o id="OUT_Mout_data_ram_size" dir="OUT" is_memory="1" is_global="1" is_extern="1" is_size_bus="1">
+          <port_vector_o id="OUT_Mout_data_ram_size" dir="OUT" is_memory="1" is_master="1" is_size_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
-          <port_vector_o id="OUT_Mout_Wdata_ram" dir="OUT" is_memory="1" is_global="1" is_extern="1" is_data_bus="1">
+          <port_vector_o id="OUT_Mout_Wdata_ram" dir="OUT" is_memory="1" is_master="1" is_data_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
-          <port_vector_o id="OUT_Mout_tag_ram" dir="OUT" is_memory="1" is_global="1" is_extern="1" is_tag_bus="1">
+          <port_vector_o id="OUT_Mout_tag_ram" dir="OUT" is_memory="1" is_master="1" is_tag_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
           <port_vector_o id="M_Rdata_ram" dir="OUT" is_memory="1" is_data_bus="1">
@@ -1408,60 +1405,60 @@ simple_dual_port_ram_single_clock #(.BITSIZE_data(BITSIZE_data_in),.BITSIZE_addr
           <port_vector_o id="request_accepted" dir="OUT" is_memory="1">
             <structural_type_descriptor type="BOOL" size="1" vector_size="1"/>
           </port_vector_o>
-          <NP_functionality LIBRARY="memory_ctrl_parallel IN_M_Rdata_ram IN_M_DataRdy IN_Min_tag IN_request_accepted Mout_oe_ram Mout_we_ram Mout_addr_ram Mout_data_ram_size Mout_Wdata_ram Mout_tag_ram OUT_Mout_oe_ram OUT_Mout_we_ram OUT_Mout_addr_ram OUT_Mout_data_ram_size OUT_Mout_Wdata_ram OUT_Mout_tag_ram M_Rdata_ram Min_tag M_DataRdy request_accepted"
+          <NP_functionality LIBRARY="memory_ctrl_parallel IN_M_Rdata_ram IN_M_DataRdy IN_Min_tag IN_request_accepted Mout_oe_ram Mout_we_ram Mout_addr_ram Mout_data_ram_size Mout_Wdata_ram Mout_tag_ram OUT_Mout_oe_ram OUT_Mout_we_ram OUT_Mout_addr_ram OUT_Mout_data_ram_size OUT_Mout_Wdata_ram OUT_Mout_tag_ram M_Rdata_ram Min_tag M_DataRdy request_accepted NUM_CHANNEL NUM_ACC ADDR_TASKS ADDR_ACC"
           IP_COMPONENT="PT_RR_FU,mux_pw_2" VERILOG_PROVIDED="
-          //In order to be generated correctly NUM_CHANNEL&lt;=NUM_ACC and both of them must be a power of 2
-          parameter SIZE_TOT_IN = BITSIZE_Mout_tag_ram+BITSIZE_Mout_Wdata_ram+BITSIZE_Mout_data_ram_size+BITSIZE_Mout_addr_ram+BITSIZE_Mout_we_ram+BITSIZE_Mout_oe_ram;
-          parameter SIZE_TOT_OUT = BITSIZE_Mout_tag_ram+BITSIZE_M_Rdata_ram;
+//In order to be generated correctly NUM_CHANNEL&lt;=NUM_ACC and both of them must be a power of 2
+parameter SIZE_TOT_IN = BITSIZE_Mout_tag_ram+BITSIZE_Mout_Wdata_ram+BITSIZE_Mout_data_ram_size+BITSIZE_Mout_addr_ram+BITSIZE_Mout_we_ram+BITSIZE_Mout_oe_ram;
+parameter SIZE_TOT_OUT = BITSIZE_Mout_tag_ram+BITSIZE_M_Rdata_ram;
 
-          parameter RATIO=NUM_ACC/NUM_CHANNEL;
-          wire [NUM_ACC-1:0] selector_mux_fifo_in;
-          wire [SIZE_TOT_IN*NUM_ACC-1:0] data_in_mem_par;
-          wire [NUM_ACC-1:0] fifo_wait_notempty;
-          wire [SIZE_TOT_IN*NUM_CHANNEL-1:0] data_in;
+parameter RATIO=NUM_ACC/NUM_CHANNEL;
+wire [NUM_ACC-1:0] selector_mux_fifo_in;
+wire [SIZE_TOT_IN*NUM_ACC-1:0] data_in_mem_par;
+wire [NUM_ACC-1:0] fifo_wait_notempty;
+wire [SIZE_TOT_IN*NUM_CHANNEL-1:0] data_in;
 
-          //out of fifo_IN_0 is 0 if fifo is empty
-          genvar i;
-          generate
-          for(i=0; i&lt;NUM_CHANNEL; i=i+1)  //or a x ingressi
-          begin
-            assign OUT_Mout_oe_ram[(i+1)*BITSIZE_Mout_oe_ram-1:i*BITSIZE_Mout_oe_ram]=(|fifo_wait_notempty[(i+1)*RATIO-1:i*RATIO])? data_in[SIZE_TOT_IN*i+BITSIZE_Mout_oe_ram-1] : {BITSIZE_Mout_oe_ram{1'b0}};
-            assign OUT_Mout_we_ram[(i+1)*BITSIZE_Mout_we_ram-1:i*BITSIZE_Mout_we_ram]=(|fifo_wait_notempty[(i+1)*RATIO-1:i*RATIO])? data_in[SIZE_TOT_IN*i+BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1] : {BITSIZE_Mout_we_ram{1'b0}};
-            assign OUT_Mout_addr_ram[(i+1)*BITSIZE_Mout_addr_ram-1:i*BITSIZE_Mout_addr_ram]=(|fifo_wait_notempty[(i+1)*RATIO-1:i*RATIO])? data_in[SIZE_TOT_IN*i+BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1:SIZE_TOT_IN*i+BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram] : {BITSIZE_Mout_addr_ram{1'b0}};
-            assign OUT_Mout_data_ram_size[(i+1)*BITSIZE_Mout_data_ram_size-1:i*BITSIZE_Mout_data_ram_size]=(|fifo_wait_notempty[(i+1)*RATIO-1:i*RATIO])? data_in[SIZE_TOT_IN*i+BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1:SIZE_TOT_IN*i+BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram] : {BITSIZE_Mout_data_ram_size{1'b0}};
-            assign OUT_Mout_Wdata_ram[(i+1)*BITSIZE_Mout_Wdata_ram-1:i*BITSIZE_Mout_Wdata_ram]=(|fifo_wait_notempty[(i+1)*RATIO-1:i*RATIO])? data_in[SIZE_TOT_IN*i+BITSIZE_Mout_Wdata_ram + BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1:SIZE_TOT_IN*i+BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram] : {BITSIZE_Mout_Wdata_ram{1'b0}};
-            assign OUT_Mout_tag_ram[(i+1)*BITSIZE_Mout_tag_ram-1:i*BITSIZE_Mout_tag_ram]=(|fifo_wait_notempty[(i+1)*RATIO-1:i*RATIO])? {1'b1,data_in[SIZE_TOT_IN*i+BITSIZE_Mout_tag_ram + BITSIZE_Mout_Wdata_ram + BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-2:SIZE_TOT_IN*i+BITSIZE_Mout_Wdata_ram + BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram]} : {BITSIZE_Mout_tag_ram{1'b0}};   //every data out has 1 as first bit of tag
+//out of fifo_IN_0 is 0 if fifo is empty
+genvar i;
+generate
+for(i=0; i&lt;NUM_CHANNEL; i=i+1)  //or a x ingressi
+begin
+  assign OUT_Mout_oe_ram[(i+1)*BITSIZE_Mout_oe_ram-1:i*BITSIZE_Mout_oe_ram]=(|fifo_wait_notempty[(i+1)*RATIO-1:i*RATIO])? data_in[SIZE_TOT_IN*i+BITSIZE_Mout_oe_ram-1] : {BITSIZE_Mout_oe_ram{1'b0}};
+  assign OUT_Mout_we_ram[(i+1)*BITSIZE_Mout_we_ram-1:i*BITSIZE_Mout_we_ram]=(|fifo_wait_notempty[(i+1)*RATIO-1:i*RATIO])? data_in[SIZE_TOT_IN*i+BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1] : {BITSIZE_Mout_we_ram{1'b0}};
+  assign OUT_Mout_addr_ram[(i+1)*BITSIZE_Mout_addr_ram-1:i*BITSIZE_Mout_addr_ram]=(|fifo_wait_notempty[(i+1)*RATIO-1:i*RATIO])? data_in[SIZE_TOT_IN*i+BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1:SIZE_TOT_IN*i+BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram] : {BITSIZE_Mout_addr_ram{1'b0}};
+  assign OUT_Mout_data_ram_size[(i+1)*BITSIZE_Mout_data_ram_size-1:i*BITSIZE_Mout_data_ram_size]=(|fifo_wait_notempty[(i+1)*RATIO-1:i*RATIO])? data_in[SIZE_TOT_IN*i+BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1:SIZE_TOT_IN*i+BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram] : {BITSIZE_Mout_data_ram_size{1'b0}};
+  assign OUT_Mout_Wdata_ram[(i+1)*BITSIZE_Mout_Wdata_ram-1:i*BITSIZE_Mout_Wdata_ram]=(|fifo_wait_notempty[(i+1)*RATIO-1:i*RATIO])? data_in[SIZE_TOT_IN*i+BITSIZE_Mout_Wdata_ram + BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1:SIZE_TOT_IN*i+BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram] : {BITSIZE_Mout_Wdata_ram{1'b0}};
+  assign OUT_Mout_tag_ram[(i+1)*BITSIZE_Mout_tag_ram-1:i*BITSIZE_Mout_tag_ram]=(|fifo_wait_notempty[(i+1)*RATIO-1:i*RATIO])? {1'b1,data_in[SIZE_TOT_IN*i+BITSIZE_Mout_tag_ram + BITSIZE_Mout_Wdata_ram + BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-2:SIZE_TOT_IN*i+BITSIZE_Mout_Wdata_ram + BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram]} : {BITSIZE_Mout_tag_ram{1'b0}};   //every data out has 1 as first bit of tag
 
-            //arbiter for decide which data go to memory
-            PT_RR_FU #(.BITSIZE_ops(1), .PORTSIZE_ops(RATIO), .BITSIZE_rops(1), .PORTSIZE_rops(RATIO)) RR_fifo_in_0(.ops(selector_mux_fifo_in[RATIO*(i+1)-1:RATIO*i]), .ENABLE(1'b1), .clock(clock), .reset(!reset), .rops(fifo_wait_notempty[RATIO*(i+1)-1:RATIO*i]));
+  //arbiter for decide which data go to memory
+  PT_RR_FU #(.BITSIZE_ops(1), .PORTSIZE_ops(RATIO), .BITSIZE_rops(1), .PORTSIZE_rops(RATIO)) RR_fifo_in_0(.ops(selector_mux_fifo_in[RATIO*(i+1)-1:RATIO*i]), .ENABLE(1'b1), .clock(clock), .reset(!reset), .rops(fifo_wait_notempty[RATIO*(i+1)-1:RATIO*i]));
 
-            //assign tag out
-            assign Mout_tag[BITSIZE_Mout_tag_ram*(i+1)-1:BITSIZE_Mout_tag_ram*i]={1'b0,IN_Min_tag[BITSIZE_Mout_tag_ram*(i+1)-2:BITSIZE_Mout_tag_ram*i]};
+  //assign tag out
+  assign Min_tag[BITSIZE_Mout_tag_ram*(i+1)-1:BITSIZE_Mout_tag_ram*i]={1'b0,IN_Min_tag[BITSIZE_Mout_tag_ram*(i+1)-2:BITSIZE_Mout_tag_ram*i]};
 
-            //BIND in of IN_fifo_in       //MUX with n in
-            mux_pw_2 #(.BITSIZE_selector(RATIO), .BITSIZE_data(SIZE_TOT_IN*RATIO), .BITSIZE_out(SIZE_TOT_IN)) mux_in (.selector(selector_mux_fifo_in[RATIO*(i+1)-1:RATIO*i]), .data(data_in_mem_par[SIZE_TOT_IN*((i+1)*RATIO)-1:SIZE_TOT_IN*(i*RATIO)]), .out(data_in[SIZE_TOT_IN*(i+1)-1:SIZE_TOT_IN*i]));
-          end
-          endgenerate
+  //BIND in of IN_fifo_in       //MUX with n in
+  mux_pw_2 #(.BITSIZE_selector(RATIO), .BITSIZE_data(SIZE_TOT_IN*RATIO), .BITSIZE_out(SIZE_TOT_IN)) mux_in (.selector(selector_mux_fifo_in[RATIO*(i+1)-1:RATIO*i]), .data(data_in_mem_par[SIZE_TOT_IN*((i+1)*RATIO)-1:SIZE_TOT_IN*(i*RATIO)]), .out(data_in[SIZE_TOT_IN*(i+1)-1:SIZE_TOT_IN*i]));
+end
+endgenerate
 
-          generate
-          for(i=0; i&lt;NUM_ACC; i=i+1)
-            begin
-              //check if there is a real request
-              assign fifo_wait_notempty[i]=Mout_oe_ram[i]||Mout_we_ram[i];
+generate
+for(i=0; i&lt;NUM_ACC; i=i+1)
+  begin
+    //check if there is a real request
+    assign fifo_wait_notempty[i]=Mout_oe_ram[i]||Mout_we_ram[i];
 
-              //reconstruct block from input
-              assign data_in_mem_par[SIZE_TOT_IN*(i+1)-1:SIZE_TOT_IN*i]={Mout_tag_ram[BITSIZE_Mout_tag_ram*(i+1)-1:BITSIZE_Mout_tag_ram*i], Mout_Wdata_ram[BITSIZE_Mout_Wdata_ram*(i+1)-1:BITSIZE_Mout_Wdata_ram*i], Mout_data_ram_size[BITSIZE_Mout_data_ram_size*(i+1)-1:BITSIZE_Mout_data_ram_size*i], Mout_addr_ram[BITSIZE_Mout_addr_ram*(i+1)-1:BITSIZE_Mout_addr_ram*i], Mout_we_ram[BITSIZE_Mout_we_ram*(i+1)-1:BITSIZE_Mout_we_ram*i], Mout_oe_ram[BITSIZE_Mout_oe_ram*(i+1)-1:BITSIZE_Mout_oe_ram*i]};
+    //reconstruct block from input
+    assign data_in_mem_par[SIZE_TOT_IN*(i+1)-1:SIZE_TOT_IN*i]={Mout_tag_ram[BITSIZE_Mout_tag_ram*(i+1)-1:BITSIZE_Mout_tag_ram*i], Mout_Wdata_ram[BITSIZE_Mout_Wdata_ram*(i+1)-1:BITSIZE_Mout_Wdata_ram*i], Mout_data_ram_size[BITSIZE_Mout_data_ram_size*(i+1)-1:BITSIZE_Mout_data_ram_size*i], Mout_addr_ram[BITSIZE_Mout_addr_ram*(i+1)-1:BITSIZE_Mout_addr_ram*i], Mout_we_ram[BITSIZE_Mout_we_ram*(i+1)-1:BITSIZE_Mout_we_ram*i], Mout_oe_ram[BITSIZE_Mout_oe_ram*(i+1)-1:BITSIZE_Mout_oe_ram*i]};
 
-              //ack that is the rd_en on the scheduler, if fifo not empty push down data    //POSSIBLE TO DO REST
-              assign M_DataRdy[i]=(IN_M_DataRdy[i/RATIO] &amp;&amp; IN_Min_tag[BITSIZE_Mout_tag_ram*(i/RATIO)+ADDR_TASKS+ADDR_ACC-1:BITSIZE_Mout_tag_ram*(i/RATIO)+ADDR_TASKS]==i &amp;&amp; IN_Min_tag[BITSIZE_Mout_tag_ram*(i/RATIO+1)-1]);
+    //ack that is the rd_en on the scheduler, if fifo not empty push down data    //POSSIBLE TO DO REST
+    assign M_DataRdy[i]=(IN_M_DataRdy[i/RATIO] &amp;&amp; IN_Min_tag[BITSIZE_Mout_tag_ram*(i/RATIO)+ADDR_TASKS+ADDR_ACC-1:BITSIZE_Mout_tag_ram*(i/RATIO)+ADDR_TASKS]==i &amp;&amp; IN_Min_tag[BITSIZE_Mout_tag_ram*(i/RATIO+1)-1]);
 
-              //ack on the appropriate kernel if its request is accepted
-              assign request_accepted[i] =(IN_request_accepted[(i/RATIO)] &amp;&amp; fifo_wait_notempty[i] &amp;&amp; selector_mux_fifo_in[i]==1'b1);
-            end
-          endgenerate
+    //ack on the appropriate kernel if its request is accepted
+    assign request_accepted[i] =(IN_request_accepted[(i/RATIO)] &amp;&amp; fifo_wait_notempty[i] &amp;&amp; selector_mux_fifo_in[i]==1'b1);
+  end
+endgenerate
 
-          //BIND out of OUT_fifo_out
-          assign M_Rdata_ram= IN_M_Rdata_ram;"/>
+//BIND out of OUT_fifo_out
+assign M_Rdata_ram= IN_M_Rdata_ram;"/>
         </component_o>
       </circuit>
     </cell>
@@ -1484,199 +1481,199 @@ simple_dual_port_ram_single_clock #(.BITSIZE_data(BITSIZE_data_in),.BITSIZE_addr
           <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
         </port_o>
         <NP_functionality LIBRARY="mux_pw_2 data selector out" VERILOG_PROVIDED="
-        //BITSIZE_selector must be a power of 2
-        parameter DATA_SIZE=BITSIZE_out;
+//BITSIZE_selector must be a power of 2
+parameter DATA_SIZE=BITSIZE_out;
 
-        generate
-          if(BITSIZE_selector==1) begin
-            assign out=data;
-          end
-          if(BITSIZE_selector==2) begin
-            assign out=(selector[1:0]==2'b01)?data[DATA_SIZE-1:0]:data[DATA_SIZE*2-1:DATA_SIZE];
-          end
-          if(BITSIZE_selector==4) begin
-            wire [DATA_SIZE-1:0] mux1;
-            wire [DATA_SIZE-1:0] mux2;
-            wire sel1;
-            //level 0
-            assign mux1=(selector[1:0]==2'b01)?data[DATA_SIZE-1:0]:data[DATA_SIZE*2-1:DATA_SIZE];
-            assign mux2=(selector[3:2]==2'b01)?data[DATA_SIZE*3-1:DATA_SIZE*2]:data[DATA_SIZE*4-1:DATA_SIZE*3];
-            assign sel1=|selector[1:0];
-            //level 1
-            assign out=(sel1)?mux1:mux2;
-          end
-          if(BITSIZE_selector==8) begin
-            wire [DATA_SIZE-1:0] mux1;
-            wire [DATA_SIZE-1:0] mux2;
-            wire [DATA_SIZE-1:0] mux3;
-            wire [DATA_SIZE-1:0] mux4;
-            wire sel1;
-            wire sel2;
-            wire [DATA_SIZE-1:0] mux11;
-            wire [DATA_SIZE-1:0] mux12;
-            wire sel11;
-            //level 0
-            assign mux1=(selector[1:0]==2'b01)?data[DATA_SIZE-1:0]:data[DATA_SIZE*2-1:DATA_SIZE];
-            assign mux2=(selector[3:2]==2'b01)?data[DATA_SIZE*3-1:DATA_SIZE*2]:data[DATA_SIZE*4-1:DATA_SIZE*3];
-            assign mux3=(selector[5:4]==2'b01)?data[DATA_SIZE*5-1:DATA_SIZE*4]:data[DATA_SIZE*6-1:DATA_SIZE*5];
-            assign mux4=(selector[7:6]==2'b01)?data[DATA_SIZE*7-1:DATA_SIZE*6]:data[DATA_SIZE*8-1:DATA_SIZE*7];
-            assign sel1=|selector[1:0];
-            assign sel2=|selector[5:4];
-            //level 1
-            assign mux11=(sel1)?mux1:mux2;
-            assign mux12=(sel2)?mux3:mux4;
-            assign sel11=|selector[3:0];
-            //level 2
-            assign out=(sel11)?mux11:mux12;
-          end
-          if(BITSIZE_selector==16) begin
-            wire [DATA_SIZE-1:0] mux1;
-            wire [DATA_SIZE-1:0] mux2;
-            wire [DATA_SIZE-1:0] mux3;
-            wire [DATA_SIZE-1:0] mux4;
-            wire [DATA_SIZE-1:0] mux5;
-            wire [DATA_SIZE-1:0] mux6;
-            wire [DATA_SIZE-1:0] mux7;
-            wire [DATA_SIZE-1:0] mux8;
-            wire sel1;
-            wire sel2;
-            wire sel3;
-            wire sel4;
-            wire [DATA_SIZE-1:0] mux11;
-            wire [DATA_SIZE-1:0] mux12;
-            wire [DATA_SIZE-1:0] mux13;
-            wire [DATA_SIZE-1:0] mux14;
-            wire sel11;
-            wire sel12;
-            wire [DATA_SIZE-1:0] mux21;
-            wire [DATA_SIZE-1:0] mux22;
-            wire sel21;
-            //level 0
-            assign mux1=(selector[1:0]==2'b01)?data[DATA_SIZE-1:0]:data[DATA_SIZE*2-1:DATA_SIZE];
-            assign mux2=(selector[3:2]==2'b01)?data[DATA_SIZE*3-1:DATA_SIZE*2]:data[DATA_SIZE*4-1:DATA_SIZE*3];
-            assign mux3=(selector[5:4]==2'b01)?data[DATA_SIZE*5-1:DATA_SIZE*4]:data[DATA_SIZE*6-1:DATA_SIZE*5];
-            assign mux4=(selector[7:6]==2'b01)?data[DATA_SIZE*7-1:DATA_SIZE*6]:data[DATA_SIZE*8-1:DATA_SIZE*7];
-            assign mux5=(selector[9:8]==2'b01)?data[DATA_SIZE*9-1:DATA_SIZE*8]:data[DATA_SIZE*10-1:DATA_SIZE*9];
-            assign mux6=(selector[11:10]==2'b01)?data[DATA_SIZE*11-1:DATA_SIZE*10]:data[DATA_SIZE*12-1:DATA_SIZE*11];
-            assign mux7=(selector[13:12]==2'b01)?data[DATA_SIZE*13-1:DATA_SIZE*12]:data[DATA_SIZE*14-1:DATA_SIZE*13];
-            assign mux8=(selector[15:14]==2'b01)?data[DATA_SIZE*15-1:DATA_SIZE*14]:data[DATA_SIZE*16-1:DATA_SIZE*15];
-            assign sel1=|selector[1:0];
-            assign sel2=|selector[5:4];
-            assign sel3=|selector[9:8];
-            assign sel4=|selector[13:12];
-            //level 1
-            assign mux11=(sel1)?mux1:mux2;
-            assign mux12=(sel2)?mux3:mux4;
-            assign mux13=(sel3)?mux5:mux6;
-            assign mux14=(sel4)?mux7:mux8;
-            assign sel11=|selector[3:0];
-            assign sel12=|selector[11:8];
-            //level 2
-            assign mux21=(sel11)?mux11:mux12;
-            assign mux22=(sel12)?mux13:mux14;
-            assign sel21=|selector[7:0];
-            //level 3
-            assign out=(sel21)?mux21:mux22;
-          end
-          if(BITSIZE_selector==32) begin
-            wire [DATA_SIZE-1:0] mux1;
-            wire [DATA_SIZE-1:0] mux2;
-            wire [DATA_SIZE-1:0] mux3;
-            wire [DATA_SIZE-1:0] mux4;
-            wire [DATA_SIZE-1:0] mux5;
-            wire [DATA_SIZE-1:0] mux6;
-            wire [DATA_SIZE-1:0] mux7;
-            wire [DATA_SIZE-1:0] mux8;
-            wire [DATA_SIZE-1:0] mux9;
-            wire [DATA_SIZE-1:0] mux10;
-            wire [DATA_SIZE-1:0] mux11;
-            wire [DATA_SIZE-1:0] mux12;
-            wire [DATA_SIZE-1:0] mux13;
-            wire [DATA_SIZE-1:0] mux14;
-            wire [DATA_SIZE-1:0] mux15;
-            wire [DATA_SIZE-1:0] mux16;
-            wire sel1;
-            wire sel2;
-            wire sel3;
-            wire sel4;
-            wire sel5;
-            wire sel6;
-            wire sel7;
-            wire sel8;
-            wire [DATA_SIZE-1:0] mux21;
-            wire [DATA_SIZE-1:0] mux22;
-            wire [DATA_SIZE-1:0] mux23;
-            wire [DATA_SIZE-1:0] mux24;
-            wire [DATA_SIZE-1:0] mux25;
-            wire [DATA_SIZE-1:0] mux26;
-            wire [DATA_SIZE-1:0] mux27;
-            wire [DATA_SIZE-1:0] mux28;
-            wire sel21;
-            wire sel22;
-            wire sel23;
-            wire sel24;
-            wire [DATA_SIZE-1:0] mux31;
-            wire [DATA_SIZE-1:0] mux32;
-            wire [DATA_SIZE-1:0] mux33;
-            wire [DATA_SIZE-1:0] mux34;
-            wire sel31;
-            wire sel32;
-            wire [DATA_SIZE-1:0] mux41;
-            wire [DATA_SIZE-1:0] mux42;
-            wire sel41;
-            //level 0
-            assign mux1=(selector[1:0]==2'b01)?data[DATA_SIZE-1:0]:data[DATA_SIZE*2-1:DATA_SIZE];
-            assign mux2=(selector[3:2]==2'b01)?data[DATA_SIZE*3-1:DATA_SIZE*2]:data[DATA_SIZE*4-1:DATA_SIZE*3];
-            assign mux3=(selector[5:4]==2'b01)?data[DATA_SIZE*5-1:DATA_SIZE*4]:data[DATA_SIZE*6-1:DATA_SIZE*5];
-            assign mux4=(selector[7:6]==2'b01)?data[DATA_SIZE*7-1:DATA_SIZE*6]:data[DATA_SIZE*8-1:DATA_SIZE*7];
-            assign mux5=(selector[9:8]==2'b01)?data[DATA_SIZE*9-1:DATA_SIZE*8]:data[DATA_SIZE*10-1:DATA_SIZE*9];
-            assign mux6=(selector[11:10]==2'b01)?data[DATA_SIZE*11-1:DATA_SIZE*10]:data[DATA_SIZE*12-1:DATA_SIZE*11];
-            assign mux7=(selector[13:12]==2'b01)?data[DATA_SIZE*13-1:DATA_SIZE*12]:data[DATA_SIZE*14-1:DATA_SIZE*13];
-            assign mux8=(selector[15:14]==2'b01)?data[DATA_SIZE*15-1:DATA_SIZE*14]:data[DATA_SIZE*16-1:DATA_SIZE*15];
-            assign mux9=(selector[17:16]==2'b01)?data[DATA_SIZE*17-1:DATA_SIZE*16]:data[DATA_SIZE*18-1:DATA_SIZE*17];
-            assign mux10=(selector[19:18]==2'b01)?data[DATA_SIZE*19-1:DATA_SIZE*18]:data[DATA_SIZE*20-1:DATA_SIZE*19];
-            assign mux11=(selector[21:20]==2'b01)?data[DATA_SIZE*21-1:DATA_SIZE*20]:data[DATA_SIZE*22-1:DATA_SIZE*21];
-            assign mux12=(selector[23:22]==2'b01)?data[DATA_SIZE*23-1:DATA_SIZE*22]:data[DATA_SIZE*24-1:DATA_SIZE*23];
-            assign mux13=(selector[25:24]==2'b01)?data[DATA_SIZE*25-1:DATA_SIZE*24]:data[DATA_SIZE*26-1:DATA_SIZE*25];
-            assign mux14=(selector[27:26]==2'b01)?data[DATA_SIZE*27-1:DATA_SIZE*26]:data[DATA_SIZE*28-1:DATA_SIZE*27];
-            assign mux15=(selector[29:28]==2'b01)?data[DATA_SIZE*29-1:DATA_SIZE*28]:data[DATA_SIZE*30-1:DATA_SIZE*29];
-            assign mux16=(selector[31:30]==2'b01)?data[DATA_SIZE*31-1:DATA_SIZE*30]:data[DATA_SIZE*32-1:DATA_SIZE*31];
-            assign sel1=|selector[1:0];
-            assign sel2=|selector[5:4];
-            assign sel3=|selector[9:8];
-            assign sel4=|selector[13:12];
-            assign sel5=|selector[17:16];
-            assign sel6=|selector[21:20];
-            assign sel7=|selector[25:24];
-            assign sel8=|selector[29:28];
-            //level 1
-            assign mux21=(sel1)?mux1:mux2;
-            assign mux22=(sel2)?mux3:mux4;
-            assign mux23=(sel3)?mux5:mux6;
-            assign mux24=(sel4)?mux7:mux8;
-            assign mux25=(sel5)?mux9:mux10;
-            assign mux26=(sel6)?mux11:mux12;
-            assign mux27=(sel7)?mux13:mux14;
-            assign mux28=(sel8)?mux15:mux16;
-            assign sel21=|selector[3:0];
-            assign sel22=|selector[11:8];
-            assign sel23=|selector[19:16];
-            assign sel24=|selector[27:24];
-            //level 2
-            assign mux31=(sel21)?mux21:mux22;
-            assign mux32=(sel22)?mux23:mux24;
-            assign mux33=(sel23)?mux25:mux26;
-            assign mux34=(sel24)?mux27:mux28;
-            assign sel31=|selector[7:0];
-            assign sel32=|selector[23:16];
-            //level 3
-            assign mux41=(sel31)?mux31:mux32;
-            assign mux42=(sel32)?mux33:mux34;
-            assign sel41=|selector[15:0];
-            //level 4
-            assign out=(sel41)?mux41:mux42;
-          end
-        endgenerate"/>
+generate
+  if(BITSIZE_selector==1) begin
+    assign out=data;
+  end
+  if(BITSIZE_selector==2) begin
+    assign out=(selector[1:0]==2'b01)?data[DATA_SIZE-1:0]:data[DATA_SIZE*2-1:DATA_SIZE];
+  end
+  if(BITSIZE_selector==4) begin
+    wire [DATA_SIZE-1:0] mux1;
+    wire [DATA_SIZE-1:0] mux2;
+    wire sel1;
+    //level 0
+    assign mux1=(selector[1:0]==2'b01)?data[DATA_SIZE-1:0]:data[DATA_SIZE*2-1:DATA_SIZE];
+    assign mux2=(selector[3:2]==2'b01)?data[DATA_SIZE*3-1:DATA_SIZE*2]:data[DATA_SIZE*4-1:DATA_SIZE*3];
+    assign sel1=|selector[1:0];
+    //level 1
+    assign out=(sel1)?mux1:mux2;
+  end
+  if(BITSIZE_selector==8) begin
+    wire [DATA_SIZE-1:0] mux1;
+    wire [DATA_SIZE-1:0] mux2;
+    wire [DATA_SIZE-1:0] mux3;
+    wire [DATA_SIZE-1:0] mux4;
+    wire sel1;
+    wire sel2;
+    wire [DATA_SIZE-1:0] mux11;
+    wire [DATA_SIZE-1:0] mux12;
+    wire sel11;
+    //level 0
+    assign mux1=(selector[1:0]==2'b01)?data[DATA_SIZE-1:0]:data[DATA_SIZE*2-1:DATA_SIZE];
+    assign mux2=(selector[3:2]==2'b01)?data[DATA_SIZE*3-1:DATA_SIZE*2]:data[DATA_SIZE*4-1:DATA_SIZE*3];
+    assign mux3=(selector[5:4]==2'b01)?data[DATA_SIZE*5-1:DATA_SIZE*4]:data[DATA_SIZE*6-1:DATA_SIZE*5];
+    assign mux4=(selector[7:6]==2'b01)?data[DATA_SIZE*7-1:DATA_SIZE*6]:data[DATA_SIZE*8-1:DATA_SIZE*7];
+    assign sel1=|selector[1:0];
+    assign sel2=|selector[5:4];
+    //level 1
+    assign mux11=(sel1)?mux1:mux2;
+    assign mux12=(sel2)?mux3:mux4;
+    assign sel11=|selector[3:0];
+    //level 2
+    assign out=(sel11)?mux11:mux12;
+  end
+  if(BITSIZE_selector==16) begin
+    wire [DATA_SIZE-1:0] mux1;
+    wire [DATA_SIZE-1:0] mux2;
+    wire [DATA_SIZE-1:0] mux3;
+    wire [DATA_SIZE-1:0] mux4;
+    wire [DATA_SIZE-1:0] mux5;
+    wire [DATA_SIZE-1:0] mux6;
+    wire [DATA_SIZE-1:0] mux7;
+    wire [DATA_SIZE-1:0] mux8;
+    wire sel1;
+    wire sel2;
+    wire sel3;
+    wire sel4;
+    wire [DATA_SIZE-1:0] mux11;
+    wire [DATA_SIZE-1:0] mux12;
+    wire [DATA_SIZE-1:0] mux13;
+    wire [DATA_SIZE-1:0] mux14;
+    wire sel11;
+    wire sel12;
+    wire [DATA_SIZE-1:0] mux21;
+    wire [DATA_SIZE-1:0] mux22;
+    wire sel21;
+    //level 0
+    assign mux1=(selector[1:0]==2'b01)?data[DATA_SIZE-1:0]:data[DATA_SIZE*2-1:DATA_SIZE];
+    assign mux2=(selector[3:2]==2'b01)?data[DATA_SIZE*3-1:DATA_SIZE*2]:data[DATA_SIZE*4-1:DATA_SIZE*3];
+    assign mux3=(selector[5:4]==2'b01)?data[DATA_SIZE*5-1:DATA_SIZE*4]:data[DATA_SIZE*6-1:DATA_SIZE*5];
+    assign mux4=(selector[7:6]==2'b01)?data[DATA_SIZE*7-1:DATA_SIZE*6]:data[DATA_SIZE*8-1:DATA_SIZE*7];
+    assign mux5=(selector[9:8]==2'b01)?data[DATA_SIZE*9-1:DATA_SIZE*8]:data[DATA_SIZE*10-1:DATA_SIZE*9];
+    assign mux6=(selector[11:10]==2'b01)?data[DATA_SIZE*11-1:DATA_SIZE*10]:data[DATA_SIZE*12-1:DATA_SIZE*11];
+    assign mux7=(selector[13:12]==2'b01)?data[DATA_SIZE*13-1:DATA_SIZE*12]:data[DATA_SIZE*14-1:DATA_SIZE*13];
+    assign mux8=(selector[15:14]==2'b01)?data[DATA_SIZE*15-1:DATA_SIZE*14]:data[DATA_SIZE*16-1:DATA_SIZE*15];
+    assign sel1=|selector[1:0];
+    assign sel2=|selector[5:4];
+    assign sel3=|selector[9:8];
+    assign sel4=|selector[13:12];
+    //level 1
+    assign mux11=(sel1)?mux1:mux2;
+    assign mux12=(sel2)?mux3:mux4;
+    assign mux13=(sel3)?mux5:mux6;
+    assign mux14=(sel4)?mux7:mux8;
+    assign sel11=|selector[3:0];
+    assign sel12=|selector[11:8];
+    //level 2
+    assign mux21=(sel11)?mux11:mux12;
+    assign mux22=(sel12)?mux13:mux14;
+    assign sel21=|selector[7:0];
+    //level 3
+    assign out=(sel21)?mux21:mux22;
+  end
+  if(BITSIZE_selector==32) begin
+    wire [DATA_SIZE-1:0] mux1;
+    wire [DATA_SIZE-1:0] mux2;
+    wire [DATA_SIZE-1:0] mux3;
+    wire [DATA_SIZE-1:0] mux4;
+    wire [DATA_SIZE-1:0] mux5;
+    wire [DATA_SIZE-1:0] mux6;
+    wire [DATA_SIZE-1:0] mux7;
+    wire [DATA_SIZE-1:0] mux8;
+    wire [DATA_SIZE-1:0] mux9;
+    wire [DATA_SIZE-1:0] mux10;
+    wire [DATA_SIZE-1:0] mux11;
+    wire [DATA_SIZE-1:0] mux12;
+    wire [DATA_SIZE-1:0] mux13;
+    wire [DATA_SIZE-1:0] mux14;
+    wire [DATA_SIZE-1:0] mux15;
+    wire [DATA_SIZE-1:0] mux16;
+    wire sel1;
+    wire sel2;
+    wire sel3;
+    wire sel4;
+    wire sel5;
+    wire sel6;
+    wire sel7;
+    wire sel8;
+    wire [DATA_SIZE-1:0] mux21;
+    wire [DATA_SIZE-1:0] mux22;
+    wire [DATA_SIZE-1:0] mux23;
+    wire [DATA_SIZE-1:0] mux24;
+    wire [DATA_SIZE-1:0] mux25;
+    wire [DATA_SIZE-1:0] mux26;
+    wire [DATA_SIZE-1:0] mux27;
+    wire [DATA_SIZE-1:0] mux28;
+    wire sel21;
+    wire sel22;
+    wire sel23;
+    wire sel24;
+    wire [DATA_SIZE-1:0] mux31;
+    wire [DATA_SIZE-1:0] mux32;
+    wire [DATA_SIZE-1:0] mux33;
+    wire [DATA_SIZE-1:0] mux34;
+    wire sel31;
+    wire sel32;
+    wire [DATA_SIZE-1:0] mux41;
+    wire [DATA_SIZE-1:0] mux42;
+    wire sel41;
+    //level 0
+    assign mux1=(selector[1:0]==2'b01)?data[DATA_SIZE-1:0]:data[DATA_SIZE*2-1:DATA_SIZE];
+    assign mux2=(selector[3:2]==2'b01)?data[DATA_SIZE*3-1:DATA_SIZE*2]:data[DATA_SIZE*4-1:DATA_SIZE*3];
+    assign mux3=(selector[5:4]==2'b01)?data[DATA_SIZE*5-1:DATA_SIZE*4]:data[DATA_SIZE*6-1:DATA_SIZE*5];
+    assign mux4=(selector[7:6]==2'b01)?data[DATA_SIZE*7-1:DATA_SIZE*6]:data[DATA_SIZE*8-1:DATA_SIZE*7];
+    assign mux5=(selector[9:8]==2'b01)?data[DATA_SIZE*9-1:DATA_SIZE*8]:data[DATA_SIZE*10-1:DATA_SIZE*9];
+    assign mux6=(selector[11:10]==2'b01)?data[DATA_SIZE*11-1:DATA_SIZE*10]:data[DATA_SIZE*12-1:DATA_SIZE*11];
+    assign mux7=(selector[13:12]==2'b01)?data[DATA_SIZE*13-1:DATA_SIZE*12]:data[DATA_SIZE*14-1:DATA_SIZE*13];
+    assign mux8=(selector[15:14]==2'b01)?data[DATA_SIZE*15-1:DATA_SIZE*14]:data[DATA_SIZE*16-1:DATA_SIZE*15];
+    assign mux9=(selector[17:16]==2'b01)?data[DATA_SIZE*17-1:DATA_SIZE*16]:data[DATA_SIZE*18-1:DATA_SIZE*17];
+    assign mux10=(selector[19:18]==2'b01)?data[DATA_SIZE*19-1:DATA_SIZE*18]:data[DATA_SIZE*20-1:DATA_SIZE*19];
+    assign mux11=(selector[21:20]==2'b01)?data[DATA_SIZE*21-1:DATA_SIZE*20]:data[DATA_SIZE*22-1:DATA_SIZE*21];
+    assign mux12=(selector[23:22]==2'b01)?data[DATA_SIZE*23-1:DATA_SIZE*22]:data[DATA_SIZE*24-1:DATA_SIZE*23];
+    assign mux13=(selector[25:24]==2'b01)?data[DATA_SIZE*25-1:DATA_SIZE*24]:data[DATA_SIZE*26-1:DATA_SIZE*25];
+    assign mux14=(selector[27:26]==2'b01)?data[DATA_SIZE*27-1:DATA_SIZE*26]:data[DATA_SIZE*28-1:DATA_SIZE*27];
+    assign mux15=(selector[29:28]==2'b01)?data[DATA_SIZE*29-1:DATA_SIZE*28]:data[DATA_SIZE*30-1:DATA_SIZE*29];
+    assign mux16=(selector[31:30]==2'b01)?data[DATA_SIZE*31-1:DATA_SIZE*30]:data[DATA_SIZE*32-1:DATA_SIZE*31];
+    assign sel1=|selector[1:0];
+    assign sel2=|selector[5:4];
+    assign sel3=|selector[9:8];
+    assign sel4=|selector[13:12];
+    assign sel5=|selector[17:16];
+    assign sel6=|selector[21:20];
+    assign sel7=|selector[25:24];
+    assign sel8=|selector[29:28];
+    //level 1
+    assign mux21=(sel1)?mux1:mux2;
+    assign mux22=(sel2)?mux3:mux4;
+    assign mux23=(sel3)?mux5:mux6;
+    assign mux24=(sel4)?mux7:mux8;
+    assign mux25=(sel5)?mux9:mux10;
+    assign mux26=(sel6)?mux11:mux12;
+    assign mux27=(sel7)?mux13:mux14;
+    assign mux28=(sel8)?mux15:mux16;
+    assign sel21=|selector[3:0];
+    assign sel22=|selector[11:8];
+    assign sel23=|selector[19:16];
+    assign sel24=|selector[27:24];
+    //level 2
+    assign mux31=(sel21)?mux21:mux22;
+    assign mux32=(sel22)?mux23:mux24;
+    assign mux33=(sel23)?mux25:mux26;
+    assign mux34=(sel24)?mux27:mux28;
+    assign sel31=|selector[7:0];
+    assign sel32=|selector[23:16];
+    //level 3
+    assign mux41=(sel31)?mux31:mux32;
+    assign mux42=(sel32)?mux33:mux34;
+    assign sel41=|selector[15:0];
+    //level 4
+    assign out=(sel41)?mux41:mux42;
+  end
+endgenerate"/>
       </component_o>
     </circuit>
   </cell>
@@ -1721,280 +1718,281 @@ simple_dual_port_ram_single_clock #(.BITSIZE_data(BITSIZE_data_in),.BITSIZE_addr
       </port_o>
       <NP_functionality LIBRARY="controller_parallel done_port_accelerator done_request_accelerator start_port_accelerator"
       IP_COMPONENT="ui_ne_expr_FU,read_cond_FU,register_SE,fifo,CallDispatcher,Counter,MUX_GATE,UUdata_converter_FU,constant_value,ASSIGN_UNSIGNED_FU,ui_plus_expr_FU" VERILOG_PROVIDED="
-        parameter [2:0] S_0 = 3'd0,
-          S_1 = 3'd1,
-          S_4 = 3'd4,
-          S_5 = 3'd5,
-          S_6 = 3'd6,
-          S_2 = 3'd2,
-          S_3 = 3'd3;
-        reg [2:0] _present_state, _next_state;
-        reg done_port;
-        reg wrenable_reg_1;
-        reg wrenable_reg_0;
-        reg selector_MUX_2_reg_0_0_0_0;
-        reg selector_IN_UNBOUNDED_parallel_18797_18995;
-        reg [BITSIZE_start_port_accelerator-1:0]            worker_status;          // To CallDispatcher_i0 of CallDispatcher.v
+parameter [2:0] S_0 = 3'd0,
+  S_1 = 3'd1,
+  S_4 = 3'd4,
+  S_5 = 3'd5,
+  S_6 = 3'd6,
+  S_2 = 3'd2,
+  S_3 = 3'd3;
+reg [2:0] _present_state, _next_state;
+reg done_port;
+reg wrenable_reg_1;
+reg wrenable_reg_0;
+reg selector_MUX_2_reg_0_0_0_0;
+reg selector_IN_UNBOUNDED_parallel_18797_18995;
+reg [BITSIZE_start_port_accelerator-1:0]            worker_status;          // To CallDispatcher_i0 of CallDispatcher.v
 
-        wire [31:0] out_MUX_2_reg_0_0_0_0;
-        wire out_const_0;
-        wire out_const_1;
-        wire [31:0]   out_conv_out_u_assign_conn_obj_0_ASSIGN_UNSIGNED_FU_u_assign_0_1_32;
-        wire out_read_cond_FU_5_i0_fu_parallel_18797_19050;
-        wire [31:0] out_reg_0_reg_0;
-        wire [31:0] out_reg_1_reg_1;
-        wire [0:0] out_u_assign_conn_obj_0_ASSIGN_UNSIGNED_FU_u_assign_0;
-        wire out_ui_ne_expr_FU_32_32_32_7_i0_fu_parallel_18797_19732;
-        wire [31:0] out_ui_plus_expr_FU_32_0_32_8_i0_fu_parallel_18797_18996;
-        wire [31:0]          fifo_data_out;          // From fifo_i0 of fifo.v
-        wire fifo_empty;             // From fifo_i0 of fifo.v
-        wire fifo_full;              // keep name fifo_full
-        wire completed;              // added
-        wire OUT_CONDITION_parallel_18797_19050; //added
-        wire fifo_rd_cs;             // From CallDispatcher_i0 of CallDispatcher.v
-        wire fifo_rd_en;             // From CallDispatcher_i0 of CallDispatcher.v
-        wire [31:0] DoneCounter_value;      // From DoneCounter of Counter.v
-        wire [31:0] StartCounter_value;     // From StartCounter of Counter.v
-        wire [31:0] number_req_tasks;
-        wire [31:0]          request;    // From CallDispatcher_i0 of CallDispatcher.v
-        wire OUT_UNBOUNDED_parallel_18797_18995;
-        wire [BITSIZE_start_port_accelerator-1:0] selected_worker;        // From CallDispatcher_i0 of CallDispatcher.v
-        reg reset_counter;
-        reg next_reset_counter;
+wire [31:0] out_MUX_2_reg_0_0_0_0;
+wire out_const_0;
+wire out_const_1;
+wire [31:0]   out_conv_out_u_assign_conn_obj_0_ASSIGN_UNSIGNED_FU_u_assign_0_1_32;
+wire out_read_cond_FU_5_i0_fu_parallel_18797_19050;
+wire [31:0] out_reg_0_reg_0;
+wire [31:0] out_reg_1_reg_1;
+wire [0:0] out_u_assign_conn_obj_0_ASSIGN_UNSIGNED_FU_u_assign_0;
+wire out_ui_ne_expr_FU_32_32_32_7_i0_fu_parallel_18797_19732;
+wire [31:0] out_ui_plus_expr_FU_32_0_32_8_i0_fu_parallel_18797_18996;
+wire [31:0]          fifo_data_out;          // From fifo_i0 of fifo.v
+wire fifo_empty;             // From fifo_i0 of fifo.v
+wire fifo_full;              // keep name fifo_full
+wire completed;              // added
+wire OUT_CONDITION_parallel_18797_19050; //added
+wire fifo_rd_cs;             // From CallDispatcher_i0 of CallDispatcher.v
+wire fifo_rd_en;             // From CallDispatcher_i0 of CallDispatcher.v
+wire [31:0] DoneCounter_value;      // From DoneCounter of Counter.v
+wire [31:0] StartCounter_value;     // From StartCounter of Counter.v
+wire [31:0] number_req_tasks;
+wire [31:0]          request;    // From CallDispatcher_i0 of CallDispatcher.v
+wire OUT_UNBOUNDED_parallel_18797_18995;
+wire [BITSIZE_start_port_accelerator-1:0] selected_worker;        // From CallDispatcher_i0 of CallDispatcher.v
+reg reset_counter;
+reg next_reset_counter;
 
-        always @(posedge clock)
-          if (!reset) _present_state &lt;= S_0;
-          else _present_state &lt;= _next_state;
+always @(posedge clock)
+  if (!reset) _present_state &lt;= S_0;
+  else _present_state &lt;= _next_state;
 
-        always @(*)
-        begin
-          _next_state = S_0;
-          done_port = 1'b0;
-          wrenable_reg_1 = 1'b0;
-          wrenable_reg_0 = 1'b0;
-          selector_MUX_2_reg_0_0_0_0 = 1'b0;
-          selector_IN_UNBOUNDED_parallel_18797_18995 = 1'b0;
-          case (_present_state)
-            S_0 :
-              if(start_port != 1'b1 )
-              begin
-                _next_state = S_0;
-              end
-              else
-              begin
-                _next_state = S_1;
-              end
-            S_1 :
-              begin
-                wrenable_reg_0 = 1'b1;
-                _next_state = S_4;
-              end
-            S_4 :
-              begin
-                wrenable_reg_1 = 1'b1;
-                if ((out_read_cond_FU_5_i0_fu_parallel_18797_19050 == 1'b1) &amp; (fifo_full == 1'b0))
-                  begin
-                    _next_state = S_2;
-                  end
-                else if (fifo_full == 1'b1)
-                  begin
-                    _next_state = S_3;
-                    wrenable_reg_1 = 1'b0;
-                  end
-                else
-                  begin
-                    _next_state = S_6;
-                  end
-              end
-            S_5 :
-              begin
-                _next_state = S_0;
-              end
-            S_6 :
-              begin
-                _next_state = S_6;
-                if (completed) begin
-                    _next_state = S_5;
-                    done_port = 1'b1;
-                    wrenable_reg_1 = 1'b0;
-                end
-              end
-            S_2 :
-              begin
-                wrenable_reg_0 = 1'b1;
-                selector_MUX_2_reg_0_0_0_0 = 1'b1;
-                selector_IN_UNBOUNDED_parallel_18797_18995 = 1'b1;
-      //          if (OUT_UNBOUNDED_parallel_18797_18995 == 1'b0)
-                if (fifo_full == 1'b1)
-                  begin
-                    _next_state = S_3;
-                    wrenable_reg_0 = 1'b0;
-                    selector_MUX_2_reg_0_0_0_0 = 1'b0;
-                  end
-                else
-                  begin
-                    _next_state = S_4;
-                  end
-              end
-            S_3 :
-              begin
-                wrenable_reg_0 = 1'b1;
-                selector_MUX_2_reg_0_0_0_0 = 1'b1;
-      //          if (OUT_UNBOUNDED_parallel_18797_18995 == 1'b0)
-                if (fifo_full == 1'b1)
-                  begin
-                    _next_state = S_3;
-                    wrenable_reg_0 = 1'b0;
-                    selector_MUX_2_reg_0_0_0_0 = 1'b0;
-                  end
-                else
-                  begin
-                    _next_state = S_4;
-                  end
-              end
-            default :
-              begin
-                done_port = 1'b0;
-                wrenable_reg_1 = 1'b0;
-                wrenable_reg_0 = 1'b0;
-                selector_MUX_2_reg_0_0_0_0 = 1'b0;
-                selector_IN_UNBOUNDED_parallel_18797_18995 = 1'b0;
-              end
-          endcase
-        end
-
-        ui_ne_expr_FU #(.BITSIZE_in1(32), .BITSIZE_in2(32), .BITSIZE_out1(1)) fu_parallel_18797_19732(
-        .out1(out_ui_ne_expr_FU_32_32_32_7_i0_fu_parallel_18797_19732),
-        .in1(out_reg_0_reg_0),
-        .in2(LoopIteration));
-
-        read_cond_FU #(.BITSIZE_in1(1)) fu_parallel_18797_19050(
-        .out1(out_read_cond_FU_5_i0_fu_parallel_18797_19050),
-        .in1(out_ui_ne_expr_FU_32_32_32_7_i0_fu_parallel_18797_19732));
-
-        register_SE #(.BITSIZE_in1(32), .BITSIZE_out1(32)) reg_0 (
-        .out1(out_reg_0_reg_0),
-        .clock(clock),
-        .reset(reset),
-        .in1(out_MUX_2_reg_0_0_0_0),
-        .wenable(wrenable_reg_0));
-
-        fifo #(.DATA_WIDTH(32), .ADDR_WIDTH(10)) fifo_i0
-         (/*AUTOINST*/
-          // Outputs
-          .full                             (fifo_full),             // Templated
-          .empty                            (fifo_empty),            // Templated
-          .data_out                         (fifo_data_out[31:0]),   // Templated
-          // Inputs
-          .clk                              (clock),                 // Templated
-          .rst                              (!reset),                // Templated
-          .wr_cs                            (selector_IN_UNBOUNDED_parallel_18797_18995),            // Templated
-          .rd_cs                            (fifo_rd_cs),            // Templated
-          .rd_en                            (fifo_rd_en),            // Templated
-          .wr_en                            (selector_IN_UNBOUNDED_parallel_18797_18995),            // Templated
-          .data_in                          (out_reg_0_reg_0));               // Templated
-
-        CallDispatcher #(.WORKERS(4), .BITSIZE_REQUEST(32)) CallDispatcher_i0
-         (/*AUTOINST*/
-          // Outputs
-          .fifo_rd_cs                       (fifo_rd_cs),
-          .fifo_rd_en                       (fifo_rd_en),
-          .request                          (request),
-          .selected_worker                  (selected_worker),
-          // Inputs
-          .clock                            (clock),
-          .reset                            (reset),
-          .fifo_data_out                    (fifo_data_out),
-          .fifo_empty                       (fifo_empty),
-          .worker_status                    (worker_status));
-
-        Counter #(.BITSIZE_COUNTER(32), .DRIVERS(1)) StartCounter (
-        /*AUTOINST*/
-        // Outputs
-        .value             (StartCounter_value), // Templated
-        // Inputs
-        .clock              (clock),                 // Templated
-        .reset              (reset_counter),         // Templated
-        .driver_lines   (selector_IN_UNBOUNDED_parallel_18797_18995));            // Templated
-
-        Counter #(.BITSIZE_COUNTER(32), .DRIVERS(BITSIZE_start_port_accelerator)) DoneCounter(
-        /*AUTOINST*/
-        // Outputs
-        .value                         (DoneCounter_value), // Templated
-        // Inputs
-        .clock                         (clock),                 // Templated
-        .reset                         (reset_counter),         // Templated
-        .driver_lines                  (done_port_accelerator)); // Templated
-
-        // done request counter
-        Counter #(.BITSIZE_COUNTER(32), .DRIVERS(BITSIZE_start_port_accelerator)) DoneReqCounter(
-        /*AUTOINST*/
-        // Outputs
-        .value (number_req_tasks), // Templated
-        // Inputs
-        .clock (clock),                 // Templated
-        .reset (reset_counter),         // Templated
-        .driver_lines (selected_worker)); // Templated
-
-        MUX_GATE #(.BITSIZE_in1(32), .BITSIZE_in2(32), .BITSIZE_out1(32)) MUX_2_reg_0_0_0_0 (.out1(out_MUX_2_reg_0_0_0_0), .sel(selector_MUX_2_reg_0_0_0_0), .in1(out_reg_1_reg_1), .in2(out_conv_out_u_assign_conn_obj_0_ASSIGN_UNSIGNED_FU_u_assign_0_1_32));
-
-        always @(posedge clock or negedge reset)
-          if (!reset)
-            reset_counter &lt;= 1'b0;
-          else
-            reset_counter &lt;= next_reset_counter;
-
-        always @(*) next_reset_counter = ~completed;
-
-        assign completed = fifo_empty &amp; (StartCounter_value == DoneCounter_value) &amp; (| StartCounter_value) &amp; (| DoneCounter_value);
-
-        assign task_pool_end = (number_req_tasks == StartCounter_value) &amp; (| StartCounter_value) &amp; (| number_req_tasks);
-
-        register_SE #(.BITSIZE_in1(32), .BITSIZE_out1(32)) reg_1 (
-        .out1(out_reg_1_reg_1),
-        .clock(clock), .reset(reset),
-        .in1(out_ui_plus_expr_FU_32_0_32_8_i0_fu_parallel_18797_18996),
-        .wenable(wrenable_reg_1));
-
-        UUdata_converter_FU #(.BITSIZE_in1(1), .BITSIZE_out1(32)) conv_out_u_assign_conn_obj_0_ASSIGN_UNSIGNED_FU_u_assign_0_1_32 (.out1(out_conv_out_u_assign_conn_obj_0_ASSIGN_UNSIGNED_FU_u_assign_0_1_32), .in1(out_u_assign_conn_obj_0_ASSIGN_UNSIGNED_FU_u_assign_0));
-
-        ASSIGN_UNSIGNED_FU #(.BITSIZE_in1(1), .BITSIZE_out1(1)) ASSIGN_UNSIGNED_FU_u_assign_0 (.out1(out_u_assign_conn_obj_0_ASSIGN_UNSIGNED_FU_u_assign_0), .in1(out_const_0));
-
-        //assign OUT_UNBOUNDED_parallel_18797_18995 = selector_IN_UNBOUNDED_parallel_18797_18995 &amp; !fifo_full;
-
-        constant_value #(.BITSIZE_out1(1), .value(1'b0)) const_0 (.out1(out_const_0));
-        constant_value #(.BITSIZE_out1(1), .value(1'b1)) const_1 (.out1(out_const_1));
-
-
-      // Worker status register
-        reg [3:0] next_worker_status;
-         always @(posedge clock or negedge reset) begin
-            if (!reset)
-              worker_status &lt;= {BITSIZE_start_port_accelerator{1'b0}};
-            else
-              worker_status &lt;= next_worker_status;
-         end
-        always @(*) begin
-          next_worker_status = worker_status;
-        end
-
-        generate
-          for(i=0; i&lt;NUM_CHANNEL; i=i+1)  //or a x ingressi
+always @(*)
+begin
+  _next_state = S_0;
+  done_port = 1'b0;
+  wrenable_reg_1 = 1'b0;
+  wrenable_reg_0 = 1'b0;
+  selector_MUX_2_reg_0_0_0_0 = 1'b0;
+  selector_IN_UNBOUNDED_parallel_18797_18995 = 1'b0;
+  case (_present_state)
+    S_0 :
+      if(start_port != 1'b1 )
+      begin
+        _next_state = S_0;
+      end
+      else
+      begin
+        _next_state = S_1;
+      end
+    S_1 :
+      begin
+        wrenable_reg_0 = 1'b1;
+        _next_state = S_4;
+      end
+    S_4 :
+      begin
+        wrenable_reg_1 = 1'b1;
+        if ((out_read_cond_FU_5_i0_fu_parallel_18797_19050 == 1'b1) &amp; (fifo_full == 1'b0))
           begin
-            always @(*) begin
-              if (selected_worker[i])
-                next_worker_status[i] =1'b1;
-              if (done_request_accelerator[i])
-                next_worker_status[i] =1'b0;
-            end
+            _next_state = S_2;
           end
-        endgenerate
+        else if (fifo_full == 1'b1)
+          begin
+            _next_state = S_3;
+            wrenable_reg_1 = 1'b0;
+          end
+        else
+          begin
+            _next_state = S_6;
+          end
+      end
+    S_5 :
+      begin
+        _next_state = S_0;
+      end
+    S_6 :
+      begin
+        _next_state = S_6;
+        if (completed) begin
+            _next_state = S_5;
+            done_port = 1'b1;
+            wrenable_reg_1 = 1'b0;
+        end
+      end
+    S_2 :
+      begin
+        wrenable_reg_0 = 1'b1;
+        selector_MUX_2_reg_0_0_0_0 = 1'b1;
+        selector_IN_UNBOUNDED_parallel_18797_18995 = 1'b1;
+//          if (OUT_UNBOUNDED_parallel_18797_18995 == 1'b0)
+        if (fifo_full == 1'b1)
+          begin
+            _next_state = S_3;
+            wrenable_reg_0 = 1'b0;
+            selector_MUX_2_reg_0_0_0_0 = 1'b0;
+          end
+        else
+          begin
+            _next_state = S_4;
+          end
+      end
+    S_3 :
+      begin
+        wrenable_reg_0 = 1'b1;
+        selector_MUX_2_reg_0_0_0_0 = 1'b1;
+//          if (OUT_UNBOUNDED_parallel_18797_18995 == 1'b0)
+        if (fifo_full == 1'b1)
+          begin
+            _next_state = S_3;
+            wrenable_reg_0 = 1'b0;
+            selector_MUX_2_reg_0_0_0_0 = 1'b0;
+          end
+        else
+          begin
+            _next_state = S_4;
+          end
+      end
+    default :
+      begin
+        done_port = 1'b0;
+        wrenable_reg_1 = 1'b0;
+        wrenable_reg_0 = 1'b0;
+        selector_MUX_2_reg_0_0_0_0 = 1'b0;
+        selector_IN_UNBOUNDED_parallel_18797_18995 = 1'b0;
+      end
+  endcase
+end
 
-        ui_plus_expr_FU #(.BITSIZE_in1(32), .BITSIZE_in2(1), .BITSIZE_out1(32)) fu_parallel_18797_18996(
-        .out1(out_ui_plus_expr_FU_32_0_32_8_i0_fu_parallel_18797_18996),
-        .in1(out_reg_0_reg_0), .in2(out_const_1));
+ui_ne_expr_FU #(.BITSIZE_in1(32), .BITSIZE_in2(32), .BITSIZE_out1(1)) fu_parallel_18797_19732(
+.out1(out_ui_ne_expr_FU_32_32_32_7_i0_fu_parallel_18797_19732),
+.in1(out_reg_0_reg_0),
+.in2(LoopIteration));
 
-        assign start_port_accelerator = selected_worker;  //bind start_port"/>
+read_cond_FU #(.BITSIZE_in1(1)) fu_parallel_18797_19050(
+.out1(out_read_cond_FU_5_i0_fu_parallel_18797_19050),
+.in1(out_ui_ne_expr_FU_32_32_32_7_i0_fu_parallel_18797_19732));
+
+register_SE #(.BITSIZE_in1(32), .BITSIZE_out1(32)) reg_0 (
+.out1(out_reg_0_reg_0),
+.clock(clock),
+.reset(reset),
+.in1(out_MUX_2_reg_0_0_0_0),
+.wenable(wrenable_reg_0));
+
+fifo #(.DATA_WIDTH(32), .ADDR_WIDTH(10)) fifo_i0
+ (/*AUTOINST*/
+  // Outputs
+  .full                             (fifo_full),             // Templated
+  .empty                            (fifo_empty),            // Templated
+  .data_out                         (fifo_data_out[31:0]),   // Templated
+  // Inputs
+  .clk                              (clock),                 // Templated
+  .rst                              (!reset),                // Templated
+  .wr_cs                            (selector_IN_UNBOUNDED_parallel_18797_18995),            // Templated
+  .rd_cs                            (fifo_rd_cs),            // Templated
+  .rd_en                            (fifo_rd_en),            // Templated
+  .wr_en                            (selector_IN_UNBOUNDED_parallel_18797_18995),            // Templated
+  .data_in                          (out_reg_0_reg_0));               // Templated
+
+CallDispatcher #(.WORKERS(BITSIZE_start_port_accelerator), .BITSIZE_REQUEST(32)) CallDispatcher_i0
+ (/*AUTOINST*/
+  // Outputs
+  .fifo_rd_cs                       (fifo_rd_cs),
+  .fifo_rd_en                       (fifo_rd_en),
+  .request                          (request),
+  .selected_worker                  (selected_worker),
+  // Inputs
+  .clock                            (clock),
+  .reset                            (reset),
+  .fifo_data_out                    (fifo_data_out),
+  .fifo_empty                       (fifo_empty),
+  .worker_status                    (worker_status));
+
+Counter #(.BITSIZE_COUNTER(32), .DRIVERS(1)) StartCounter (
+/*AUTOINST*/
+// Outputs
+.value             (StartCounter_value), // Templated
+// Inputs
+.clock              (clock),                 // Templated
+.reset              (reset_counter),         // Templated
+.driver_lines   (selector_IN_UNBOUNDED_parallel_18797_18995));            // Templated
+
+Counter #(.BITSIZE_COUNTER(32), .DRIVERS(BITSIZE_start_port_accelerator)) DoneCounter(
+/*AUTOINST*/
+// Outputs
+.value                         (DoneCounter_value), // Templated
+// Inputs
+.clock                         (clock),                 // Templated
+.reset                         (reset_counter),         // Templated
+.driver_lines                  (done_port_accelerator)); // Templated
+
+// done request counter
+Counter #(.BITSIZE_COUNTER(32), .DRIVERS(BITSIZE_start_port_accelerator)) DoneReqCounter(
+/*AUTOINST*/
+// Outputs
+.value (number_req_tasks), // Templated
+// Inputs
+.clock (clock),                 // Templated
+.reset (reset_counter),         // Templated
+.driver_lines (selected_worker)); // Templated
+
+MUX_GATE #(.BITSIZE_in1(32), .BITSIZE_in2(32), .BITSIZE_out1(32)) MUX_2_reg_0_0_0_0 (.out1(out_MUX_2_reg_0_0_0_0), .sel(selector_MUX_2_reg_0_0_0_0), .in1(out_reg_1_reg_1), .in2(out_conv_out_u_assign_conn_obj_0_ASSIGN_UNSIGNED_FU_u_assign_0_1_32));
+
+always @(posedge clock or negedge reset)
+  if (!reset)
+    reset_counter &lt;= 1'b0;
+  else
+    reset_counter &lt;= next_reset_counter;
+
+always @(*) next_reset_counter = ~completed;
+
+assign completed = fifo_empty &amp; (StartCounter_value == DoneCounter_value) &amp; (| StartCounter_value) &amp; (| DoneCounter_value);
+
+assign task_pool_end = (number_req_tasks == StartCounter_value) &amp; (| StartCounter_value) &amp; (| number_req_tasks);
+
+register_SE #(.BITSIZE_in1(32), .BITSIZE_out1(32)) reg_1 (
+.out1(out_reg_1_reg_1),
+.clock(clock), .reset(reset),
+.in1(out_ui_plus_expr_FU_32_0_32_8_i0_fu_parallel_18797_18996),
+.wenable(wrenable_reg_1));
+
+UUdata_converter_FU #(.BITSIZE_in1(1), .BITSIZE_out1(32)) conv_out_u_assign_conn_obj_0_ASSIGN_UNSIGNED_FU_u_assign_0_1_32 (.out1(out_conv_out_u_assign_conn_obj_0_ASSIGN_UNSIGNED_FU_u_assign_0_1_32), .in1(out_u_assign_conn_obj_0_ASSIGN_UNSIGNED_FU_u_assign_0));
+
+ASSIGN_UNSIGNED_FU #(.BITSIZE_in1(1), .BITSIZE_out1(1)) ASSIGN_UNSIGNED_FU_u_assign_0 (.out1(out_u_assign_conn_obj_0_ASSIGN_UNSIGNED_FU_u_assign_0), .in1(out_const_0));
+
+//assign OUT_UNBOUNDED_parallel_18797_18995 = selector_IN_UNBOUNDED_parallel_18797_18995 &amp; !fifo_full;
+
+constant_value #(.BITSIZE_out1(1), .value(1'b0)) const_0 (.out1(out_const_0));
+constant_value #(.BITSIZE_out1(1), .value(1'b1)) const_1 (.out1(out_const_1));
+
+
+// Worker status register
+reg [BITSIZE_start_port_accelerator-1:0] next_worker_status;
+ always @(posedge clock or negedge reset) begin
+    if (!reset)
+      worker_status &lt;= {BITSIZE_start_port_accelerator{1'b0}};
+    else
+      worker_status &lt;= next_worker_status;
+ end
+always @(*) begin
+  next_worker_status = worker_status;
+end
+
+genvar i;
+generate
+  for(i=0; i&lt;BITSIZE_start_port_accelerator; i=i+1)  //or a x ingressi
+  begin
+    always @(*) begin
+      if (selected_worker[i])
+        next_worker_status[i] =1'b1;
+      if (done_request_accelerator[i])
+        next_worker_status[i] =1'b0;
+    end
+  end
+endgenerate
+
+ui_plus_expr_FU #(.BITSIZE_in1(32), .BITSIZE_in2(1), .BITSIZE_out1(32)) fu_parallel_18797_18996(
+.out1(out_ui_plus_expr_FU_32_0_32_8_i0_fu_parallel_18797_18996),
+.in1(out_reg_0_reg_0), .in2(out_const_1));
+
+assign start_port_accelerator = selected_worker;  //bind start_port"/>
         </component_o>
       </circuit>
     </cell>
