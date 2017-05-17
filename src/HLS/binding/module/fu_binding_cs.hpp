@@ -145,5 +145,10 @@ protected:
     */
    void manage_memory_port_hierarchical(const structural_managerRef SM, const std::set<structural_objectRef> &memory_modules, const structural_objectRef circuit, const hlsRef HLS, unsigned int &_unique_id);
 
+   /**
+    * @brief connect_selector in function not kernel connect selector with all the module that have the right port
+    * @param HLS
+    */
+   void connect_selector(const hlsRef HLS);
 };
 #endif // FU_BINDING_CS_H

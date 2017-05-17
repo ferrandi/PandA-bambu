@@ -155,8 +155,8 @@ void cs_interface::instantiate_component_parallel(const structural_managerRef SM
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Instantiate memory_ctrl_top!");
 
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Starting setting parameter memory_ctrl_top!");
-   GetPointer<module>(mem_ctrl_mod)->set_parameter("NUM_CHANNEL", STR(OPT_channels_number));
-   GetPointer<module>(mem_ctrl_mod)->set_parameter("NUM_BANK", STR(OPT_memory_banks_number));
+   GetPointer<module>(mem_ctrl_mod)->set_parameter("NUM_CHANNEL", STR(parameters->getOption<unsigned int>(OPT_channels_number)));
+   GetPointer<module>(mem_ctrl_mod)->set_parameter("NUM_BANK", STR(parameters->getOption<unsigned int>(OPT_memory_banks_number)));
    GetPointer<module>(mem_ctrl_mod)->set_parameter("ADDR_TASKS", STR(log2(parameters->getOption<unsigned int>(OPT_context_switch))));
    GetPointer<module>(mem_ctrl_mod)->set_parameter("ADDR_ACC", STR(log2(parameters->getOption<unsigned int>(OPT_num_threads))));
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Parameter memory_ctrl_top setted!");

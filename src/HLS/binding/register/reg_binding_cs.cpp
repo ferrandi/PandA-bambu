@@ -74,46 +74,15 @@ void reg_binding_cs::add_to_SM(structural_objectRef clock_port, structural_objec
    }
 }
 
-void reg_binding_cs::add_register_file_function()
-{
-   const structural_managerRef& SM = HLS->datapath;
-   const structural_objectRef& circuit = SM->get_circ();
-   structural_objectRef selector_register_file_datapath = circuit->find_member(SELECTOR_REGISTER_FILE,port_o_K,circuit);
-   for (unsigned int i = 0; i < get_used_regs(); i++)
-   {
-      generic_objRef regis = get(i);
-      std::string name = regis->get_string();
-      structural_objectRef registerFile = circuit->find_member(name, component_o_K, circuit);
-      structural_objectRef port_selector = registerFile->find_member(SELECTOR_REGISTER_FILE, port_o_K, registerFile);
-      SM->add_connection(selector_register_file_datapath, port_selector);
-   }
-}
-
-void reg_binding_cs::add_register_file_kernel(structural_objectRef selector_regFile_sign)
-{
-   const structural_managerRef& SM = HLS->datapath;
-   const structural_objectRef& circuit = SM->get_circ();
-   for (unsigned int i = 0; i < get_used_regs(); i++)
-   {
-      generic_objRef regis = get(i);
-      std::string name = regis->get_string();
-      structural_objectRef registerFile = circuit->find_member(name, component_o_K, circuit);
-      structural_objectRef port_selector = registerFile->find_member(SELECTOR_REGISTER_FILE, port_o_K, registerFile);
-      SM->add_connection(selector_regFile_sign, port_selector);
-   }
-}
-
 void reg_binding_cs::specialise_reg(structural_objectRef & reg, unsigned int r)
 {
    reg_binding_cs::specialise_reg(reg, r);
-   unsigned int offset=2;
-   if (GetPointer<module>(reg)->get_in_port(0)->get_id() == CLOCK_PORT_NAME)
-   {
-      if(GetPointer<module>(reg)->get_in_port(1)->get_id() == RESET_PORT_NAME)
-         offset = 3;
-      else
-         offset = 2;
-   }
    unsigned int dimension=static_cast<unsigned int>(log2(HLS->Param->getOption<unsigned int>(OPT_context_switch)));
-   GetPointer<module>(reg)->get_in_port(offset)->type_resize(dimension); // selector
+   for(unsigned int i=0;i<GetPointer<module>(reg)->get_in_port_size();i++)
+   {
+      if (GetPointer<module>(reg)->get_in_port(i)->get_id() == SELECTOR_REGISTER_FILE)
+      {
+         GetPointer<module>(reg)->get_in_port(i)->type_resize(dimension); // selector
+      }
+   }
 }

@@ -610,7 +610,7 @@ assign available_data = ~fifo_empty;
           <port_o id="selector_register_file" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" />
           </port_o>
-          <NP_functionality LIBRARY="scheduler IN_M_Rdata_ram IN_M_DataRdy IN_Min_tag IN_request_accepted Mout_oe_ram Mout_we_ram Mout_addr_ram Mout_data_ram_size Mout_Wdata_ram Mout_tag_ram done_scheduler suspension task_pool_end OUT_Mout_oe_ram OUT_Mout_we_ram OUT_Mout_addr_ram OUT_Mout_data_ram_size OUT_Mout_Wdata_ram OUT_Mout_tag_ram M_Rdata_ram M_DataRdy Min_tag request_accepted selector_register_file NUM_TASKS KERN_NUM ADDR_ACC"
+          <NP_functionality LIBRARY="scheduler IN_M_Rdata_ram IN_M_DataRdy IN_Min_tag IN_request_accepted Mout_oe_ram Mout_we_ram Mout_addr_ram Mout_data_ram_size Mout_Wdata_ram Mout_tag_ram OUT_Mout_oe_ram OUT_Mout_we_ram OUT_Mout_addr_ram OUT_Mout_data_ram_size OUT_Mout_Wdata_ram OUT_Mout_tag_ram M_Rdata_ram M_DataRdy Min_tag request_accepted selector_register_file NUM_TASKS KERN_NUM ADDR_ACC"
           IP_COMPONENT="fifio,fifio_free,mem_scheduler" VERILOG_PROVIDED="
 parameter SIZE_IN=BITSIZE_Mout_oe_ram+BITSIZE_Mout_we_ram+BITSIZE_Mout_addr_ram+BITSIZE_Mout_data_ram_size+BITSIZE_Mout_Wdata_ram+BITSIZE_Mout_tag_ram;
 

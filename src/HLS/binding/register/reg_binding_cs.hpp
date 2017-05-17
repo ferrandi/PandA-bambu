@@ -63,17 +63,7 @@ public:
     */
     void add_to_SM(structural_objectRef clock_port, structural_objectRef reset_port);
 
-    /**
-     * @brief function kernel need to instantiate scheduler before connect selector port of register file
-     * @param selector_regFile_sign
-     */
-    void add_register_file_kernel(structural_objectRef selector_regFile_sign);
-
 protected:
-    /**
-     * @brief function inside kernel need to connect selector
-     */
-    void add_register_file_function();
 
     /**
      * @brief specialise_reg add dimension selector
