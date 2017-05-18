@@ -92,13 +92,6 @@ protected:
    void instantiate_component_kernel(const HLS_managerRef HLSMgr, const hlsRef HLS, structural_objectRef clock_port, structural_objectRef reset_port);
 
    /**
-    * @brief instantiate_suspension_component
-    * @param HLSMgr
-    * @param HLS
-    */
-   void instantiate_suspension_component(const HLS_managerRef HLSMgr, const hlsRef HLS);
-
-   /**
     * @brief connectOutOr connect or with datapath or scheduler depending on function
     * @param HLSMgr
     * @param HLS

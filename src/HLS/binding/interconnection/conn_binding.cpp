@@ -108,15 +108,15 @@ conn_binding::conn_binding(const BehavioralHelperConstRef _BH, const ParameterCo
 {
 }
 
-conn_bindingRef conn_binding::create_conn_binding(const BehavioralHelperConstRef _BH, const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr)
+conn_bindingRef conn_binding::create_conn_binding(const HLS_managerRef _HLSMgr, const hlsRef _HLS, const BehavioralHelperConstRef _BH, const ParameterConstRef _parameters)
 {
    if(_parameters->isOption(OPT_context_switch))
    {
       auto omp_functions = GetPointer<OmpFunctions>(_HLSMgr->Rfuns);
       bool found=false;
-      if(omp_functions->kernel_functions.find(HLS->functionId) != omp_functions->kernel_functions.end()) found=true;
-      if(omp_functions->parallelized_functions.find(HLS->functionId) != omp_functions->parallelized_functions.end()) found=true;
-      if(omp_functions->atomic_functions.find(HLS->functionId) != omp_functions->atomic_functions.end()) found=true;
+      if(omp_functions->kernel_functions.find(_HLS->functionId) != omp_functions->kernel_functions.end()) found=true;
+      if(omp_functions->parallelized_functions.find(_HLS->functionId) != omp_functions->parallelized_functions.end()) found=true;
+      if(omp_functions->atomic_functions.find(_HLS->functionId) != omp_functions->atomic_functions.end()) found=true;
       if(found)
          return conn_bindingRef(new conn_binding_cs(_BH, _parameters));
       else
@@ -326,7 +326,7 @@ void conn_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, cons
    for (unsigned int i = 0; i < GetPointer<module>(circuit)->get_internal_objects_size(); i++)
    {
       structural_objectRef curr_gate = GetPointer<module>(circuit)->get_internal_object(i);
-      if (!GetPointer<module>(curr_gate)) continue;
+      if (!GetPointer<module>(curr_gate) || GetPointer<module>(curr_gate)->get_id()=="scheduler_kernel") continue;
       for(unsigned int j = 0; j < GetPointer<module>(curr_gate)->get_in_port_size(); j++)
       {
          structural_objectRef port_i = GetPointer<module>(curr_gate)->get_in_port(j);

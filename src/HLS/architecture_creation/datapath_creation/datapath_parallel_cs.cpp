@@ -132,10 +132,11 @@ DesignFlowStep_Status datapath_parallel_cs::InternalExec()
       memory_modules.insert(kernel_mod);
       connect_module_kernel(kernel_mod,i);
       //setting num of kernel in each scheduler
-      structural_managerRef Datapath = HLS->datapath;
-      structural_objectRef datapath_circuit = Datapath->get_circ();
-      structural_objectRef scheduler = datapath_circuit->find_member("scheduler_kernel", component_o_K, datapath_circuit);
-      GetPointer<module>(scheduler)->set_parameter("NUM_KERN", STR(i));
+      structural_objectRef datapath_kernel = kernel_mod->find_member("Datapath_i", component_o_K, kernel_mod);
+      if(datapath_kernel==NULL) std::cout<<"No datapath?"<<std::endl;
+      structural_objectRef scheduler_kernel = datapath_kernel->find_member("scheduler_kernel", component_o_K, datapath_kernel);
+      if(scheduler_kernel==NULL) std::cout<<"No scheduler?"<<std::endl;
+      GetPointer<module>(scheduler_kernel)->set_parameter("NUM_KERN", STR(i));
    }
    manage_extern_global_port_parallel(SM, memory_modules, datapath_cir);
 

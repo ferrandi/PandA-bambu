@@ -65,23 +65,11 @@ public:
 protected:
 
    /**
-    * @brief connect_scheduler_kernel
-    * @param HLS
-    */
-   void connect_scheduler_kernel(const hlsRef HLS);
-
-   /**
-    * @brief connect_selector
-    * @param HLS
-    */
-   void connect_selector(const hlsRef HLS);
-
-   /**
     * @brief connect_suspension_component
     * @param HLSMgr
     * @param HLS
     */
-   void connect_suspension_component(const HLS_managerRef HLSMgr, const hlsRef HLS);
+   void instantiate_suspension_component(const HLS_managerRef HLSMgr, const hlsRef HLS);
 
    /**
     * @brief connectOutOr depending if module is kernel or another connect out

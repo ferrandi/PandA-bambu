@@ -44,12 +44,11 @@
 #include "hls.hpp"
 #include "hls_target.hpp"
 #include "Parameter.hpp"
-#include "technology_node.hpp"
 #include "technology_manager.hpp"
 #include "reg_binding_cs.hpp"
 #include "memory.hpp"
 #include "memory_cs.hpp"
-#include <math.h>
+#include "math.h"
 
 fu_binding_cs::fu_binding_cs(const HLS_managerConstRef _HLSMgr, const unsigned int _function_id, const ParameterConstRef _parameters) :
    fu_binding(_HLSMgr, _function_id, _parameters)
@@ -67,15 +66,10 @@ void fu_binding_cs::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, str
    if(omp_functions->kernel_functions.find(HLS->functionId) != omp_functions->kernel_functions.end())
    {
       instantiate_component_kernel(HLSMgr, HLS, clock_port, reset_port);
-      instantiate_suspension_component(HLSMgr,HLS);
    }
-   else if(omp_functions->atomic_functions.find(HLS->functionId) != omp_functions->atomic_functions.end())
+   else if(omp_functions->atomic_functions.find(HLS->functionId) != omp_functions->atomic_functions.end() || omp_functions->parallelized_functions.find(HLS->functionId) != omp_functions->parallelized_functions.end())
    {
-      instantiate_suspension_component(HLSMgr,HLS);
-   }
-   else if(omp_functions->parallelized_functions.find(HLS->functionId) != omp_functions->parallelized_functions.end())
-   {
-      instantiate_suspension_component(HLSMgr,HLS);
+      connect_selector(HLS);
    }
    fu_binding::add_to_SM(HLSMgr,HLS,clock_port,reset_port);
 }
@@ -103,6 +97,48 @@ void fu_binding_cs::instantiate_component_kernel(const HLS_managerRef HLSMgr, co
    structural_objectRef reset_scheduler = scheduler_mod->find_member(RESET_PORT_NAME,port_o_K,scheduler_mod);
    SM->add_connection(reset_port, reset_scheduler);
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, " - Added reset sche");
+
+   structural_type_descriptorRef bool_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 0));
+   unsigned int num_slots=static_cast<unsigned int>(ceil(log2(HLS->Param->getOption<unsigned int>(OPT_context_switch))));   //resize selector-port
+   structural_objectRef port_selector = scheduler_mod->find_member(STR(SELECTOR_REGISTER_FILE),port_o_K,scheduler_mod);
+   port_selector->type_resize(num_slots);
+   structural_objectRef selector_regFile_scheduler = scheduler_mod->find_member(STR(SELECTOR_REGISTER_FILE),port_o_K,scheduler_mod);
+   structural_objectRef selector_regFile_datapath = circuit->find_member(STR(SELECTOR_REGISTER_FILE),port_o_K,circuit);
+   structural_type_descriptorRef port_type = structural_type_descriptorRef(new structural_type_descriptor("bool", num_slots));
+   structural_objectRef selector_regFile_sign=SM->add_sign(STR(SELECTOR_REGISTER_FILE)+"_signal", circuit, port_type);
+   SM->add_connection(selector_regFile_scheduler, selector_regFile_sign);
+   SM->add_connection(selector_regFile_sign, selector_regFile_datapath);
+   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - Added selector");
+   for(unsigned int i=0;i<GetPointer<module>(circuit)->get_internal_objects_size();i++)
+   {
+      structural_objectRef curr_gate = GetPointer<module>(circuit)->get_internal_object(i);
+      const structural_objectRef port_selector_module=curr_gate->find_member(STR(SELECTOR_REGISTER_FILE), port_o_K, curr_gate);
+      if(port_selector_module!=NULL)
+         SM->add_connection(selector_regFile_sign, port_selector_module);
+   }
+   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - Connected register");
+   //suspension connected when or_port instantiated
+
+   structural_objectRef done_scheduler = scheduler_mod->find_member(DONE_SCHEDULER,port_o_K,scheduler_mod);
+   structural_objectRef done_datapath = circuit->find_member(DONE_SCHEDULER,port_o_K,circuit);
+   structural_objectRef done_sign=SM->add_sign("done_scheduler_signal", circuit, bool_type);
+   SM->add_connection(done_sign, done_datapath);
+   SM->add_connection(done_sign, done_scheduler);
+   PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, " - Added done sche");
+
+   structural_objectRef task_pool_end_scheduler = scheduler_mod->find_member(STR(TASKS_POOL_END),port_o_K,scheduler_mod);
+   structural_objectRef task_pool_end_datapath = circuit->find_member(STR(TASKS_POOL_END),port_o_K,circuit);
+   structural_objectRef task_pool_end_sign=SM->add_sign(STR(TASKS_POOL_END)+"_signal", circuit, bool_type);
+   SM->add_connection(task_pool_end_sign, task_pool_end_datapath);
+   SM->add_connection(task_pool_end_sign, task_pool_end_scheduler);
+   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - Added task_pool_end sche");
+
+   structural_objectRef done_request_scheduler = scheduler_mod->find_member(STR(DONE_REQUEST),port_o_K,scheduler_mod);
+   structural_objectRef done_request_datapath = circuit->find_member(STR(DONE_REQUEST),port_o_K,circuit);
+   structural_objectRef done_request_sign=SM->add_sign(STR(DONE_REQUEST)+"_signal", circuit, bool_type);
+   SM->add_connection(done_request_sign, done_request_datapath);
+   SM->add_connection(done_request_sign, done_request_scheduler);
+   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - Added done_request sche");
 
    resize_scheduler_ports(HLSMgr,scheduler_mod);
 }
@@ -140,30 +176,17 @@ void fu_binding_cs::resize_dimension_bus_port(const HLS_managerRef HLSMgr, struc
       port->type_resize(bus_tag_bitsize);
 }
 
-void fu_binding_cs::instantiate_suspension_component(const HLS_managerRef HLSMgr, const hlsRef HLS)
+void fu_binding_cs::connect_selector(const hlsRef HLS)
 {
    const structural_managerRef SM = HLS->datapath;
    const structural_objectRef circuit = SM->get_circ();
-   structural_objectRef suspensionOr = SM->add_module_from_technology_library("suspensionOr", OR_GATE_STD, HLS->HLS_T->get_technology_manager()->get_library(OR_GATE_STD), circuit, HLS->HLS_T->get_technology_manager());
-   structural_objectRef port_in_or = suspensionOr->find_member("in", port_vector_o_K, suspensionOr);
-   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - Added or_suspension sche");
-   //search in module and find one with suspension
-   unsigned int num_suspension=0;
-   unsigned int n_elements = GetPointer<module>(circuit)->get_internal_objects_size();
-   unsigned int i=0;
-   for(i=0;i<n_elements;i++)
+   structural_objectRef port_selector_datapath = circuit->find_member(SELECTOR_REGISTER_FILE, port_o_K, circuit);
+   for(unsigned int i=0;i<GetPointer<module>(circuit)->get_internal_objects_size();i++)
    {
       structural_objectRef curr_gate = GetPointer<module>(circuit)->get_internal_object(i);
-      if(curr_gate->find_member(STR(SUSPENSION), port_o_K, curr_gate)!=NULL && curr_gate->get_id()!="scheduler_kernel")
-         ++num_suspension;
-   }
-   unsigned int num_starting_port_or=GetPointer<port_o>(port_in_or)->get_ports_size();   //or must start with 2 port
-   if(num_starting_port_or>2)
-      THROW_ERROR("Or start with more than 2 input port");
-   else
-   {
-      GetPointer<port_o>(port_in_or)->add_n_ports(2-num_starting_port_or+num_suspension, port_in_or);
-      std::cout<<"Num port is 2+"<<num_suspension<<std::endl;
+      const structural_objectRef port_selector_module=curr_gate->find_member(STR(SELECTOR_REGISTER_FILE), port_o_K, curr_gate);
+      if(port_selector_module!=NULL)
+         SM->add_connection(port_selector_datapath, port_selector_module);
    }
 }
 
