@@ -64,6 +64,5 @@ DesignFlowStep_Status mem_dominator_allocation_cs::Exec()
     unsigned int num_threads=static_cast<unsigned int>(log2(parameters->getOption<int>(OPT_num_threads)));
     tag_index=context_switch+num_threads+2; //tag_index is log2(switch)+log2(thread)+2
     GetPointer<memory_cs>(HLSMgr->Rmem)->set_bus_tag_bitsize(tag_index);
-
     return DesignFlowStep_Status::SUCCESS;
 }

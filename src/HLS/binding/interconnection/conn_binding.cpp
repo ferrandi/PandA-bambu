@@ -47,6 +47,7 @@
 #include "config_HAVE_EXPERIMENTAL.hpp"
 
 #include "conn_binding.hpp"
+#include "conn_binding_cs.hpp"
 
 #include "hls_manager.hpp"
 #include "hls_target.hpp"
@@ -67,6 +68,7 @@
 #include "funit_obj.hpp"
 #include "register_obj.hpp"
 #include "fu_binding.hpp"
+#include "omp_functions.hpp"
 
 #include "hls.hpp"
 
@@ -104,6 +106,25 @@ conn_binding::conn_binding(const BehavioralHelperConstRef _BH, const ParameterCo
    output_level(_parameters->getOption<int>(OPT_output_level)),
    BH(_BH)
 {
+}
+
+conn_bindingRef conn_binding::create_conn_binding(const BehavioralHelperConstRef _BH, const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr)
+{
+   if(_parameters->isOption(OPT_context_switch))
+   {
+      auto omp_functions = GetPointer<OmpFunctions>(_HLSMgr->Rfuns);
+      bool found=false;
+      if(omp_functions->kernel_functions.find(HLS->functionId) != omp_functions->kernel_functions.end()) found=true;
+      if(omp_functions->parallelized_functions.find(HLS->functionId) != omp_functions->parallelized_functions.end()) found=true;
+      if(omp_functions->atomic_functions.find(HLS->functionId) != omp_functions->atomic_functions.end()) found=true;
+      if(found)
+         return conn_bindingRef(new conn_binding_cs(_BH, _parameters));
+      else
+         return conn_bindingRef(new conn_binding(_BH, _parameters));
+   }
+   else
+      return conn_bindingRef(new conn_binding(_BH, _parameters));
+
 }
 
 conn_binding::~conn_binding()

@@ -49,6 +49,11 @@ class fu_binding_cs : public fu_binding
    fu_binding_cs(const HLS_managerConstRef HLS_mgr, const unsigned int function_id, const ParameterConstRef parameters);
 
    /**
+    * Destructor
+    */
+   virtual ~fu_binding_cs();
+
+   /**
     * Call different method that instantiate the new component for each function_type
     */
    virtual void add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, structural_objectRef clock_port, structural_objectRef reset_port);

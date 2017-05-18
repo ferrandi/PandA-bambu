@@ -502,7 +502,7 @@ void RTLCharacterization::resize_port(const structural_objectRef& port, unsigned
       port_o::resize_std_port(prec, 0, 0, port);
 }
 
-void RTLCharacterization::specialize_fu(const module* mod, unsigned int prec, unsigned int bus_data_bitsize, unsigned int bus_addr_bitsize, unsigned int bus_size_bitsize, size_t portsize_value)
+void RTLCharacterization::specialize_fu(const module* mod, unsigned int prec, unsigned int bus_data_bitsize, unsigned int bus_addr_bitsize, unsigned int bus_size_bitsize, unsigned int bus_tag_bitsize, size_t portsize_value)
 {
    for(unsigned int i = 0; i < mod->get_in_port_size(); i++)
    {
@@ -511,7 +511,7 @@ void RTLCharacterization::specialize_fu(const module* mod, unsigned int prec, un
       {
          if(GetPointer<port_o>(port)->get_ports_size() == 0) GetPointer<port_o>(port)->add_n_ports(static_cast<unsigned int>(portsize_value), port);
          if(GetPointer<port_o>(port)->get_is_data_bus() || GetPointer<port_o>(port)->get_is_addr_bus() || GetPointer<port_o>(port)->get_is_size_bus())
-            port_o::resize_busport(bus_size_bitsize, bus_addr_bitsize, bus_data_bitsize, port);
+            port_o::resize_busport(bus_size_bitsize, bus_addr_bitsize, bus_data_bitsize, bus_tag_bitsize, port);
          else
          {
             for(unsigned int p = 0; p < GetPointer<port_o>(port)->get_ports_size() ; ++p)
@@ -521,7 +521,7 @@ void RTLCharacterization::specialize_fu(const module* mod, unsigned int prec, un
       else
       {
          if(GetPointer<port_o>(port)->get_is_data_bus() || GetPointer<port_o>(port)->get_is_addr_bus() || GetPointer<port_o>(port)->get_is_size_bus())
-            port_o::resize_busport(bus_size_bitsize, bus_addr_bitsize, bus_data_bitsize, port);
+            port_o::resize_busport(bus_size_bitsize, bus_addr_bitsize, bus_data_bitsize, bus_tag_bitsize, port);
          else
             resize_port(port, prec);
       }
@@ -533,7 +533,7 @@ void RTLCharacterization::specialize_fu(const module* mod, unsigned int prec, un
       {
          if(GetPointer<port_o>(port)->get_ports_size() == 0) GetPointer<port_o>(port)->add_n_ports(static_cast<unsigned int>(portsize_value), port);
          if(GetPointer<port_o>(port)->get_is_data_bus() || GetPointer<port_o>(port)->get_is_addr_bus() || GetPointer<port_o>(port)->get_is_size_bus())
-            port_o::resize_busport(bus_size_bitsize, bus_addr_bitsize, bus_data_bitsize, port);
+            port_o::resize_busport(bus_size_bitsize, bus_addr_bitsize, bus_data_bitsize, bus_tag_bitsize, port);
          else
          {
             for(unsigned int p = 0; p < GetPointer<port_o>(port)->get_ports_size() ; ++p)
@@ -543,7 +543,7 @@ void RTLCharacterization::specialize_fu(const module* mod, unsigned int prec, un
       else
       {
          if(GetPointer<port_o>(port)->get_is_data_bus() || GetPointer<port_o>(port)->get_is_addr_bus() || GetPointer<port_o>(port)->get_is_size_bus())
-            port_o::resize_busport(bus_size_bitsize, bus_addr_bitsize, bus_data_bitsize, port);
+            port_o::resize_busport(bus_size_bitsize, bus_addr_bitsize, bus_data_bitsize, bus_tag_bitsize, port);
          else
             resize_port(port, prec);
       }
@@ -694,10 +694,11 @@ void RTLCharacterization::AnalyzeCell(functional_unit * fu, const unsigned int p
       unsigned int BUS_DATA_BITSIZE = 2*BRAM_BITSIZE;
       unsigned int BUS_ADDR_BITSIZE = 15;
       unsigned int BUS_SIZE_BITSIZE = 7;
+      unsigned int BUS_TAG_BITSIZE = 8;
       unsigned int NUMBER_OF_BYTES_ALLOCATED = 1024;
       if(memory_type ==  MEMORY_TYPE_ASYNCHRONOUS )
          NUMBER_OF_BYTES_ALLOCATED = NUMBER_OF_BYTES_ALLOCATED/16;
-      specialize_fu(spec_module, prec, BUS_DATA_BITSIZE, BUS_ADDR_BITSIZE, BUS_SIZE_BITSIZE, n_portsize_parameters>0 ? boost::lexical_cast<unsigned int>(portsize_parameters[portsize_index]) : PORT_VECTOR_N_PORTS);
+      specialize_fu(spec_module, prec, BUS_DATA_BITSIZE, BUS_ADDR_BITSIZE, BUS_SIZE_BITSIZE, BUS_TAG_BITSIZE, n_portsize_parameters>0 ? boost::lexical_cast<unsigned int>(portsize_parameters[portsize_index]) : PORT_VECTOR_N_PORTS);
 
       if(fu_base_name == "MC_FU") /// add further specializations for this module
       {

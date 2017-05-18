@@ -63,6 +63,7 @@
 
 ///HLS/memory include
 #include "memory.hpp"
+#include "memory_cs.hpp"
 
 ///HLS/module_allocation include
 #include "add_library.hpp"
@@ -376,6 +377,9 @@ DesignFlowStep_Status TasteInterfaceGeneration::InternalExec()
       unsigned int bus_size_bitsize = HLSMgr->Rmem->get_bus_size_bitsize();
       unsigned int bus_data_bytesize = HLSMgr->Rmem->get_bus_data_bitsize()/8;
 
+      unsigned int bus_tag_bitsize=0;
+      if(HLS->Param->isOption(OPT_context_switch))
+         bus_tag_bitsize= GetPointer<memory_cs>(HLSMgr->Rmem)->get_bus_tag_bitsize();
 
       const unsigned int n_elements = aadl_information->internal_memory_sizes[function_name]/bus_data_bytesize + ((aadl_information->internal_memory_sizes[function_name]%bus_data_bytesize) ? 1 : 0);
 
@@ -403,7 +407,7 @@ DesignFlowStep_Status TasteInterfaceGeneration::InternalExec()
          if(port->get_kind() == port_vector_o_K && GetPointer<port_o>(port)->get_ports_size() == 0)
             GetPointer<port_o>(port)->add_n_ports(2, port);
          if(GetPointer<port_o>(port)->get_is_data_bus() || GetPointer<port_o>(port)->get_is_addr_bus() || GetPointer<port_o>(port)->get_is_size_bus())
-            port_o::resize_busport(bus_size_bitsize, bus_addr_bitsize, bus_data_bitsize, port);
+            port_o::resize_busport(bus_size_bitsize, bus_addr_bitsize, bus_data_bitsize, bus_tag_bitsize, port);
       }
 
       const auto in1_port = memory->find_member("in1", port_vector_o_K, memory);
@@ -424,7 +428,7 @@ DesignFlowStep_Status TasteInterfaceGeneration::InternalExec()
          if(port->get_kind() == port_vector_o_K && GetPointer<port_o>(port)->get_ports_size() == 0)
             GetPointer<port_o>(port)->add_n_ports(2, port);
          if(GetPointer<port_o>(port)->get_is_data_bus() || GetPointer<port_o>(port)->get_is_addr_bus() || GetPointer<port_o>(port)->get_is_size_bus())
-            port_o::resize_busport(bus_size_bitsize, bus_addr_bitsize, bus_data_bitsize, port);
+            port_o::resize_busport(bus_size_bitsize, bus_addr_bitsize, bus_data_bitsize, bus_tag_bitsize, port);
       }
 
       CustomSet<std::pair<std::string, std::string> > mem_signals;

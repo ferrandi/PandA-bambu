@@ -55,6 +55,7 @@
 
 ///HLS/memory includes
 #include "memory.hpp"
+#include "memory_cs.hpp"
 #include "memory_symbol.hpp"
 #include "memory_allocation.hpp"
 
@@ -97,6 +98,9 @@ void TopEntityMemoryMapped::resizing_IO(module*fu_module, unsigned int max_n_por
     unsigned int bus_addr_bitsize = HLSMgr->Rmem->get_bus_addr_bitsize();
     unsigned int bus_data_bitsize = HLSMgr->Rmem->get_bus_data_bitsize();
     unsigned int bus_size_bitsize = HLSMgr->Rmem->get_bus_size_bitsize();
+    unsigned int bus_tag_bitsize=0;
+    if(HLS->Param->isOption(OPT_context_switch))
+       bus_tag_bitsize= GetPointer<memory_cs>(HLSMgr->Rmem)->get_bus_tag_bitsize();
     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Resizing input ports");
     for(unsigned int i = 0; i < fu_module->get_in_port_size(); i++)
     {
@@ -105,7 +109,7 @@ void TopEntityMemoryMapped::resizing_IO(module*fu_module, unsigned int max_n_por
           GetPointer<port_o>(port)->add_n_ports(max_n_ports, port);
 
        if(GetPointer<port_o>(port)->get_is_data_bus() || GetPointer<port_o>(port)->get_is_addr_bus() || GetPointer<port_o>(port)->get_is_size_bus())
-          port_o::resize_busport(bus_size_bitsize, bus_addr_bitsize, bus_data_bitsize, port);
+          port_o::resize_busport(bus_size_bitsize, bus_addr_bitsize, bus_data_bitsize, bus_tag_bitsize,  port);
     }
     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Resized input ports");
     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Resizing output ports");
@@ -115,7 +119,7 @@ void TopEntityMemoryMapped::resizing_IO(module*fu_module, unsigned int max_n_por
        if(port->get_kind() == port_vector_o_K && GetPointer<port_o>(port)->get_ports_size() == 0)
              GetPointer<port_o>(port)->add_n_ports(max_n_ports, port);
        if(GetPointer<port_o>(port)->get_is_data_bus() || GetPointer<port_o>(port)->get_is_addr_bus() || GetPointer<port_o>(port)->get_is_size_bus())
-          port_o::resize_busport(bus_size_bitsize, bus_addr_bitsize, bus_data_bitsize, port);
+          port_o::resize_busport(bus_size_bitsize, bus_addr_bitsize, bus_data_bitsize, bus_tag_bitsize, port);
     }
     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Resized output ports");
 

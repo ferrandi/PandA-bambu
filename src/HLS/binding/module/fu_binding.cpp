@@ -52,6 +52,7 @@
 #include "hls_target.hpp"
 #include "hls_manager.hpp"
 #include "memory.hpp"
+#include "memory_cs.hpp"
 #include "memory_symbol.hpp"
 #include "memory_allocation.hpp"
 #include "reg_binding.hpp"
@@ -556,6 +557,9 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
          unsigned int bus_data_bitsize = HLSMgr->Rmem->get_bus_data_bitsize();
          unsigned int bus_addr_bitsize = HLSMgr->Rmem->get_bus_addr_bitsize();
          unsigned int bus_size_bitsize = HLSMgr->Rmem->get_bus_size_bitsize();
+         unsigned int bus_tag_bitsize=0;
+         if(HLS->Param->isOption(OPT_context_switch))
+            bus_tag_bitsize= GetPointer<memory_cs>(HLSMgr->Rmem)->get_bus_tag_bitsize();
          structural_objectRef curr_gate;
          bool is_multiport;
          size_t max_n_ports = HLS->Param->isOption(OPT_channels_number) ? HLS->Param->getOption<unsigned int>(OPT_channels_number) : 0;
@@ -642,7 +646,7 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
             if(is_multiport && port->get_kind() == port_vector_o_K && GetPointer<port_o>(port)->get_ports_size() == 0)
                   GetPointer<port_o>(port)->add_n_ports(static_cast<unsigned int>(max_n_ports), port);
             if(GetPointer<port_o>(port)->get_is_data_bus() || GetPointer<port_o>(port)->get_is_addr_bus() || GetPointer<port_o>(port)->get_is_size_bus())
-               port_o::resize_busport(bus_size_bitsize, bus_addr_bitsize, bus_data_bitsize, port);
+               port_o::resize_busport(bus_size_bitsize, bus_addr_bitsize, bus_data_bitsize, bus_tag_bitsize, port);
          }
          for(unsigned int i = 0; i < GetPointer<module>(curr_gate)->get_out_port_size(); i++)
          {
@@ -650,7 +654,7 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
             if(is_multiport && port->get_kind() == port_vector_o_K && GetPointer<port_o>(port)->get_ports_size() == 0)
                   GetPointer<port_o>(port)->add_n_ports(static_cast<unsigned int>(max_n_ports), port);
             if(GetPointer<port_o>(port)->get_is_data_bus() || GetPointer<port_o>(port)->get_is_addr_bus() || GetPointer<port_o>(port)->get_is_size_bus())
-               port_o::resize_busport(bus_size_bitsize, bus_addr_bitsize, bus_data_bitsize, port);
+               port_o::resize_busport(bus_size_bitsize, bus_addr_bitsize, bus_data_bitsize,bus_tag_bitsize, port);
          }
          manage_module_ports(HLSMgr, HLS, SM, curr_gate, 0);
          memory_modules.insert(curr_gate);
@@ -1384,6 +1388,9 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
    unsigned int bus_data_bitsize = HLSMgr->Rmem->get_bus_data_bitsize();
    unsigned int bus_size_bitsize = HLSMgr->Rmem->get_bus_size_bitsize();
    unsigned int bus_addr_bitsize = HLSMgr->Rmem->get_bus_addr_bitsize();
+   unsigned int bus_tag_bitsize =0;
+   if(HLS->Param->isOption(OPT_context_switch))
+      bus_tag_bitsize= GetPointer<memory_cs>(HLSMgr->Rmem)->get_bus_tag_bitsize();
    module* fu_module = GetPointer<module>(fu_obj);
    const technology_nodeRef fu_tech_obj = allocation_information->get_fu(fu);
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Specializing " + fu_obj->get_path() + " of type " + GET_TYPE_NAME(fu_obj));
@@ -1572,6 +1579,19 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
                {
                   if(*it == "ALIGNED_BITSIZE")
                      fu_module->set_parameter("ALIGNED_BITSIZE", boost::lexical_cast<std::string>(HLSMgr->Rmem->get_aligned_bitsize()));
+                  if(*it == "TAG_MEM_REQ")
+                  {
+                     auto omp_functions = GetPointer<OmpFunctions>(HLSMgr->Rfuns);
+                     unsigned int tag_num=0;
+                     if(omp_functions->atomic_functions.find(HLS->functionId) != omp_functions->atomic_functions.end())
+                     {
+                        unsigned int addr_tasks=static_cast<unsigned int>(log2(HLS->Param->getOption<unsigned int>(OPT_context_switch)));
+                        unsigned int addr_acc=static_cast<unsigned int>(log2(HLS->Param->getOption<unsigned int>(OPT_num_threads)));
+                        unsigned int bit_atomic=addr_tasks+addr_acc;
+                        tag_num= static_cast<unsigned int>(pow(2, bit_atomic));
+                     }//set correct tag for atomic operation
+                     fu_module->set_parameter("TAG_MEM_REQ", STR(tag_num));
+                  }
                   if(*it == "LSB_PARAMETER" && op_name == "pointer_plus_expr")
                   {
                      unsigned int curr_LSB=0;
@@ -1724,7 +1744,7 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
       else if(is_multi_read_cond && port->get_kind() == port_vector_o_K && GetPointer<port_o>(port)->get_ports_size() == 0)
          GetPointer<port_o>(port)->add_n_ports(static_cast<unsigned int>(required_variables.size()), port);
       if(GetPointer<port_o>(port)->get_is_data_bus() || GetPointer<port_o>(port)->get_is_addr_bus() || GetPointer<port_o>(port)->get_is_size_bus())
-         port_o::resize_busport(bus_size_bitsize, bus_addr_bitsize, bus_data_bitsize, port);
+         port_o::resize_busport(bus_size_bitsize, bus_addr_bitsize, bus_data_bitsize, bus_tag_bitsize, port);
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Resized input ports");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Resizing variables");
@@ -1747,7 +1767,7 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
       if(is_multiport && port->get_kind() == port_vector_o_K && GetPointer<port_o>(port)->get_ports_size() == 0)
             GetPointer<port_o>(port)->add_n_ports(static_cast<unsigned int>(max_n_ports), port);
       if(GetPointer<port_o>(port)->get_is_data_bus() || GetPointer<port_o>(port)->get_is_addr_bus() || GetPointer<port_o>(port)->get_is_size_bus())
-         port_o::resize_busport(bus_size_bitsize, bus_addr_bitsize, bus_data_bitsize, port);
+         port_o::resize_busport(bus_size_bitsize, bus_addr_bitsize, bus_data_bitsize, bus_tag_bitsize, port);
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Resized output ports");
    if (offset < fu_module->get_out_port_size())

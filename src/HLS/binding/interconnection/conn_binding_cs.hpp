@@ -31,41 +31,65 @@
  *
 */
 /**
- * @file reg_binding.hpp
- * @brief add register file and add selector to their input
+ * @file conn_binding_cs.cpp
+ * @brief Connect the new component instantiated by the flow context_switch
  *
  * @author Nicola Saporetti <nicola.saporetti@gmail.com>
- *
 */
 
-#ifndef REG_BINDING_CS_H
-#define REG_BINDING_CS_H
+#ifndef CONN_BINDING_CS_H
+#define CONN_BINDING_CS_H
 
-#include "reg_binding.hpp"
+#include "conn_binding.hpp"
 
-class reg_binding_cs : public reg_binding
+class conn_binding_cs : public conn_binding
 {
 public:
-    /**
-    * Constructor.
+   /**
+    * @Constructor
     */
-    reg_binding_cs(const hlsRef& HLS, const HLS_managerRef HLSMgr_);
+   conn_binding_cs(const BehavioralHelperConstRef BH, const ParameterConstRef parameters);
 
-    /**
-     * Destructor.
-     */
-    virtual ~reg_binding_cs();
+   /**
+    * Destructor
+    */
+   virtual ~conn_binding_cs();
 
-    std::string CalculateRegisterName(unsigned int i);
-
+   /**
+    * @brief add_to_SM
+    * @param HLSMgr
+    * @param HLS
+    * @param SM
+    */
+   void add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, const structural_managerRef SM);
 protected:
 
-    /**
-     * @brief specialise_reg add dimension selector
-     * @param reg
-     * @param r
-     */
-    void specialise_reg(structural_objectRef &reg, unsigned int r);
+   /**
+    * @brief connect_scheduler_kernel
+    * @param HLS
+    */
+   void connect_scheduler_kernel(const hlsRef HLS);
+
+   /**
+    * @brief connect_selector
+    * @param HLS
+    */
+   void connect_selector(const hlsRef HLS);
+
+   /**
+    * @brief connect_suspension_component
+    * @param HLSMgr
+    * @param HLS
+    */
+   void connect_suspension_component(const HLS_managerRef HLSMgr, const hlsRef HLS);
+
+   /**
+    * @brief connectOutOr depending if module is kernel or another connect out
+    * @param HLSMgr
+    * @param HLS
+    * @param port_out_or
+    */
+   void connectOutOr(const HLS_managerRef HLSMgr, const hlsRef HLS, structural_objectRef port_out_or);
 };
 
-#endif // REG_BINDING_CS_H
+#endif // CONN_BINDING_CS_H

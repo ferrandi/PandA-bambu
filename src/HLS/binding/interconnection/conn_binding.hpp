@@ -413,6 +413,14 @@ class conn_binding
 
       std::map<const_param, generic_objRef> get_constant_objs() const;
 
+      /**
+       * @brief factory method to create the right conn_binding depending on the flow
+       * @param _BH
+       * @param _parameters
+       * @param _HLSMgr
+       * @return
+       */
+      conn_bindingRef create_conn_binding(const BehavioralHelperConstRef _BH, const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr);
 };
 ///Refcount definition of the class
 typedef refcount<conn_binding> conn_bindingRef;

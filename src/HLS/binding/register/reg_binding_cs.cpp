@@ -60,20 +60,6 @@ std::string reg_binding_cs::CalculateRegisterName(unsigned int )
    return "rams_dist";
 }
 
-void reg_binding_cs::add_to_SM(structural_objectRef clock_port, structural_objectRef reset_port)
-{
-   reg_binding::add_to_SM(clock_port, reset_port);
-   auto omp_functions = GetPointer<OmpFunctions>(HLSMgr->Rfuns);
-   if(omp_functions->kernel_functions.find(HLS->functionId) != omp_functions->kernel_functions.end())
-   {
-      //selector connected when scheduler instantiated
-   }
-   else
-   {
-      add_register_file_function();
-   }
-}
-
 void reg_binding_cs::specialise_reg(structural_objectRef & reg, unsigned int r)
 {
    reg_binding_cs::specialise_reg(reg, r);

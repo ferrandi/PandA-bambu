@@ -4134,7 +4134,7 @@ unsigned int port_o::get_port_size() const
 }
 
 
-void port_o::resize_busport(unsigned int bus_size_bitsize, unsigned int bus_addr_bitsize, unsigned int bus_data_bitsize, structural_objectRef port)
+void port_o::resize_busport(unsigned int bus_size_bitsize, unsigned int bus_addr_bitsize, unsigned int bus_data_bitsize, unsigned int bus_tag_bitsize, structural_objectRef port)
 {
    if (GetPointer<port_o>(port)->get_is_data_bus())
       port->type_resize(bus_data_bitsize);
@@ -4142,7 +4142,8 @@ void port_o::resize_busport(unsigned int bus_size_bitsize, unsigned int bus_addr
       port->type_resize(bus_addr_bitsize);
    else if (GetPointer<port_o>(port)->get_is_size_bus())
       port->type_resize(bus_size_bitsize);
-
+   else if (GetPointer<port_o>(port)->get_is_tag_bus())
+      port->type_resize(bus_tag_bitsize);
    if(port->get_kind() == port_vector_o_K)
    {
       for(unsigned int pi = 0; pi < GetPointer<port_o>(port)->get_ports_size(); ++pi)
@@ -4154,6 +4155,8 @@ void port_o::resize_busport(unsigned int bus_size_bitsize, unsigned int bus_addr
             port_d->type_resize(bus_addr_bitsize);
          else if (GetPointer<port_o>(port)->get_is_size_bus())
             port_d->type_resize(bus_size_bitsize);
+         else if (GetPointer<port_o>(port)->get_is_tag_bus())
+            port_d->type_resize(bus_tag_bitsize);
       }
    }
 }

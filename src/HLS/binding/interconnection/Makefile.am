@@ -36,9 +36,9 @@ lib_interconnectionbinding_la_CPPFLAGS = \
 
 METASOURCES = AUTO
 
-noinst_HEADERS = conn_binding_creator.hpp connection_obj.hpp conn_binding.hpp port_swapping.hpp mux_connection_binding.hpp  direct_conn.hpp mux_conn.hpp
+noinst_HEADERS = conn_binding_creator.hpp connection_obj.hpp conn_binding.hpp port_swapping.hpp mux_connection_binding.hpp direct_conn.hpp mux_conn.hpp conn_binding_cs.hpp
 
-lib_interconnectionbinding_la_SOURCES = conn_binding_creator.cpp conn_binding.cpp port_swapping.cpp mux_connection_binding.cpp
+lib_interconnectionbinding_la_SOURCES = conn_binding_creator.cpp conn_binding.cpp port_swapping.cpp mux_connection_binding.cpp conn_binding_cs.cpp
 
 PRJ_DOC = mux_connection_binding.doc
 

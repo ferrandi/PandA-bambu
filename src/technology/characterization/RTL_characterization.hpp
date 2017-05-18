@@ -110,7 +110,7 @@ class RTLCharacterization : public FunctionalUnitStep
       /**
        * Performing the specialization of the given object
        */
-      void specialize_fu(const module* mod, unsigned int prec, unsigned int bus_data_bitsize, unsigned int bus_addr_bitsize, unsigned int bus_size_bitsize, size_t portsize_value);
+      void specialize_fu(const module* mod, unsigned int prec, unsigned int bus_data_bitsize, unsigned int bus_addr_bitsize, unsigned int bus_size_bitsize, unsigned int bus_tag_bitsize, size_t portsize_value);
 
       /**
        * Generate the output file

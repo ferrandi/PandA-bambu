@@ -914,10 +914,11 @@ struct port_o : public structural_object
        * @param bus_size_bitsize bitsize of sizes
        * @param bus_addr_bitsize bitsize of addresses
        * @param bus_data_bitsize bitsize of data
+       * @param bus_tag_bitsize bitsize of tag
        * @param port is the port to be resized
        */
       static
-      void resize_busport(unsigned int bus_size_bitsize, unsigned int bus_addr_bitsize, unsigned int bus_data_bitsize, structural_objectRef port);
+      void resize_busport(unsigned int bus_size_bitsize, unsigned int bus_addr_bitsize, unsigned int bus_data_bitsize, unsigned int bus_tag_bitsize, structural_objectRef port);
 
       /**
        * auxiliary function used to resize the standard ports

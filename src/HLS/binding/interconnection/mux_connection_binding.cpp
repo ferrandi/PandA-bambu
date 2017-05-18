@@ -1584,7 +1584,7 @@ void mux_connection_binding::create_connections()
    else
 #endif
    {
-      HLS->Rconn = conn_bindingRef(new conn_binding(behavioral_helper, parameters));
+      HLS->Rconn = conn_bindingRef(conn_binding::create_conn_binding(HLSMgr, behavioral_helper, parameters));
    }
 
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Starting execution of interconnection binding");
