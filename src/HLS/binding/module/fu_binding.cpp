@@ -1581,10 +1581,12 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
                      fu_module->set_parameter("ALIGNED_BITSIZE", boost::lexical_cast<std::string>(HLSMgr->Rmem->get_aligned_bitsize()));
                   if(*it == "TAG_MEM_REQ")
                   {
+                     std::cout<<"Function with correct tag found"<<std::endl;
                      auto omp_functions = GetPointer<OmpFunctions>(HLSMgr->Rfuns);
                      unsigned int tag_num=0;
                      if(omp_functions->atomic_functions.find(HLS->functionId) != omp_functions->atomic_functions.end())
                      {
+                        std::cout<<"Function atomic found:setting parameter"<<std::endl;
                         unsigned int addr_tasks=static_cast<unsigned int>(log2(HLS->Param->getOption<unsigned int>(OPT_context_switch)));
                         unsigned int addr_acc=static_cast<unsigned int>(log2(HLS->Param->getOption<unsigned int>(OPT_num_threads)));
                         unsigned int bit_atomic=addr_tasks+addr_acc;
@@ -1800,20 +1802,9 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Specialized " + fu_obj->get_path());
 }
 
-void fu_binding::specialize_memory_unit
-(
-   const HLS_managerRef HLSMgr,
-   const hlsRef HLS,
-   structural_objectRef fu_obj,
-   unsigned int ar,
-   std::string & base_address,
-   unsigned int rangesize,
-   bool is_doubled,
-   bool is_memory_splitted,
-   bool is_sparse_memory,
-   bool is_sds
-)
+void fu_binding::specialize_memory_unit(const HLS_managerRef HLSMgr, const hlsRef HLS, structural_objectRef fu_obj, unsigned int ar, std::string & base_address, unsigned int rangesize, bool is_doubled, bool is_memory_splitted, bool is_sparse_memory, bool is_sds)
 {
+   std::cout<<"Fdddddddddddddddddddddddd"<<std::endl;
    module* fu_module = GetPointer<module>(fu_obj);
    /// base address specialization
    fu_module->set_parameter("address_space_begin", boost::lexical_cast<std::string>(base_address));
@@ -1822,6 +1813,21 @@ void fu_binding::specialize_memory_unit
       fu_module->set_parameter("USE_SPARSE_MEMORY", boost::lexical_cast<std::string>(1));
    else
       fu_module->set_parameter("USE_SPARSE_MEMORY", boost::lexical_cast<std::string>(0));
+   if(parameters->isOption(OPT_context_switch))
+   {
+      std::cout<<"Function with correct tag found111"<<std::endl;
+      auto omp_functions = GetPointer<OmpFunctions>(HLSMgr->Rfuns);
+      unsigned int tag_num=0;
+      if(omp_functions->atomic_functions.find(HLS->functionId) != omp_functions->atomic_functions.end())
+      {
+         std::cout<<"Function atomic found:setting parameter1111"<<std::endl;
+         unsigned int addr_tasks=static_cast<unsigned int>(log2(HLS->Param->getOption<unsigned int>(OPT_context_switch)));
+         unsigned int addr_acc=static_cast<unsigned int>(log2(HLS->Param->getOption<unsigned int>(OPT_num_threads)));
+         unsigned int bit_atomic=addr_tasks+addr_acc;
+         tag_num= static_cast<unsigned int>(pow(2, bit_atomic));
+      }//set correct tag for atomic operation
+      fu_module->set_parameter("TAG_MEM_REQ", STR(tag_num));
+   }
    memory::add_memory_parameter(HLS->datapath, base_address, STR(HLSMgr->Rmem->get_base_address(ar, HLS->functionId)));
 
    long long int vec_size=0;

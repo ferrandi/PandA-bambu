@@ -85,35 +85,30 @@ void conn_binding_cs::instantiate_suspension_component(const HLS_managerRef HLSM
          ++num_suspension;
    }
    unsigned int num_starting_port_or=GetPointer<port_o>(port_in_or)->get_ports_size();   //or must start with 2 port
-   std::cout<<"starting port number: "<<num_starting_port_or<<std::endl;
    if(num_starting_port_or!=0)
       THROW_ERROR("Or start with more than 0 input port");
    else
    {
       GetPointer<port_o>(port_in_or)->add_n_ports(2+num_suspension, port_in_or);
-      std::cout<<"Num port is 2+"<<num_suspension<<std::endl;
+      num_starting_port_or=GetPointer<port_o>(port_in_or)->get_ports_size();   //or must start with 2 port
    }
    for(unsigned int j = 0; j < GetPointer<module>(circuit)->get_in_port_size(); j++)
    {
       structural_objectRef port_i = GetPointer<module>(circuit)->get_in_port(j);
       std::string port_name = GetPointer<port_o>(port_i)->get_id();
-      std::cout<<"Port name: "<<port_name<<std::endl;
       std::size_t found = port_name.find("LOAD");
       if(found!=std::string::npos)
       {
-         std::cout<<"Port found"<<std::endl;
          SM->add_connection(port_i, GetPointer<port_o>(port_in_or)->get_port(0));
       }
       found = port_name.find("STORE");
       if(found!=std::string::npos)
       {
-         std::cout<<"Port found"<<std::endl;
          SM->add_connection(port_i, GetPointer<port_o>(port_in_or)->get_port(1));
       }
    }
    if(num_suspension>0)
    {
-      GetPointer<port_o>(port_in_or)->add_n_ports(num_suspension, port_in_or);
       unsigned int num_signal_or=0;
       for(i=0;i<n_elements;i++)
       {
@@ -121,7 +116,6 @@ void conn_binding_cs::instantiate_suspension_component(const HLS_managerRef HLSM
          structural_objectRef port_suspension_module = curr_gate->find_member(STR(SUSPENSION), port_o_K, curr_gate);
          if(port_suspension_module!=NULL && curr_gate->get_id()!="scheduler_kernel")
          {
-            std::cout<<"found supension_port in module: "<<curr_gate->get_id()<<std::endl;
             structural_objectRef suspension_sign=SM->add_sign(STR(SUSPENSION)+"_signal_"+STR(i), circuit, bool_type);
             SM->add_connection(port_suspension_module, suspension_sign);
             SM->add_connection(suspension_sign, GetPointer<port_o>(port_in_or)->get_port(num_signal_or+2));
@@ -129,6 +123,7 @@ void conn_binding_cs::instantiate_suspension_component(const HLS_managerRef HLSM
          }
       }
    }
+   num_starting_port_or=GetPointer<port_o>(port_in_or)->get_ports_size();   //or must start with 2 port
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - Connected load and store");
    connectOutOr(HLSMgr, HLS, port_out_or);
 }

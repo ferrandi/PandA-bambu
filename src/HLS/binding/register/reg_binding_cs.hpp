@@ -56,9 +56,15 @@ public:
      */
     virtual ~reg_binding_cs();
 
-    std::string CalculateRegisterName(unsigned int i);
 
 protected:
+
+    /**
+     * @brief CalculateRegisterName
+     * @param i
+     * @return
+     */
+    std::string CalculateRegisterName(unsigned int i);
 
     /**
      * @brief specialise_reg add dimension selector

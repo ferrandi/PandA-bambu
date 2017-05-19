@@ -148,5 +148,11 @@ protected:
     * @param HLS
     */
    void connect_selector(const hlsRef HLS);
+
+   /**
+    * @brief connect_selector_kernel, kernel take selector from scheduler
+    * @param HLS
+    */
+   void connect_selector_kernel(const hlsRef HLS);
 };
 #endif // FU_BINDING_CS_H

@@ -116,7 +116,7 @@ class reg_binding : public variable2obj< generic_objRef >
        * @param reg is the register
        * @param reg is the id of the register
        */
-      void specialise_reg(structural_objectRef & reg, unsigned int r);
+      virtual void specialise_reg(structural_objectRef & reg, unsigned int r);
 
     public:
 

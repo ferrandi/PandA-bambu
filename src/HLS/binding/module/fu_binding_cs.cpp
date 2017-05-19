@@ -67,15 +67,20 @@ void fu_binding_cs::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, str
    {
       instantiate_component_kernel(HLSMgr, HLS, clock_port, reset_port);
    }
+   fu_binding::add_to_SM(HLSMgr,HLS,clock_port,reset_port);
+   if(omp_functions->kernel_functions.find(HLS->functionId) != omp_functions->kernel_functions.end())
+   {
+      connect_selector_kernel(HLS);
+   }
    else if(omp_functions->atomic_functions.find(HLS->functionId) != omp_functions->atomic_functions.end() || omp_functions->parallelized_functions.find(HLS->functionId) != omp_functions->parallelized_functions.end())
    {
       connect_selector(HLS);
    }
-   fu_binding::add_to_SM(HLSMgr,HLS,clock_port,reset_port);
 }
 
 void fu_binding_cs::instantiate_component_kernel(const HLS_managerRef HLSMgr, const hlsRef HLS, structural_objectRef clock_port, structural_objectRef reset_port)
 {
+   structural_type_descriptorRef bool_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 0));
    const structural_managerRef SM = HLS->datapath;
    const structural_objectRef circuit = SM->get_circ();
    std::string scheduler_model = "scheduler";
@@ -97,27 +102,6 @@ void fu_binding_cs::instantiate_component_kernel(const HLS_managerRef HLSMgr, co
    structural_objectRef reset_scheduler = scheduler_mod->find_member(RESET_PORT_NAME,port_o_K,scheduler_mod);
    SM->add_connection(reset_port, reset_scheduler);
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, " - Added reset sche");
-
-   structural_type_descriptorRef bool_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 0));
-   unsigned int num_slots=static_cast<unsigned int>(ceil(log2(HLS->Param->getOption<unsigned int>(OPT_context_switch))));   //resize selector-port
-   structural_objectRef port_selector = scheduler_mod->find_member(STR(SELECTOR_REGISTER_FILE),port_o_K,scheduler_mod);
-   port_selector->type_resize(num_slots);
-   structural_objectRef selector_regFile_scheduler = scheduler_mod->find_member(STR(SELECTOR_REGISTER_FILE),port_o_K,scheduler_mod);
-   structural_objectRef selector_regFile_datapath = circuit->find_member(STR(SELECTOR_REGISTER_FILE),port_o_K,circuit);
-   structural_type_descriptorRef port_type = structural_type_descriptorRef(new structural_type_descriptor("bool", num_slots));
-   structural_objectRef selector_regFile_sign=SM->add_sign(STR(SELECTOR_REGISTER_FILE)+"_signal", circuit, port_type);
-   SM->add_connection(selector_regFile_scheduler, selector_regFile_sign);
-   SM->add_connection(selector_regFile_sign, selector_regFile_datapath);
-   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - Added selector");
-   for(unsigned int i=0;i<GetPointer<module>(circuit)->get_internal_objects_size();i++)
-   {
-      structural_objectRef curr_gate = GetPointer<module>(circuit)->get_internal_object(i);
-      const structural_objectRef port_selector_module=curr_gate->find_member(STR(SELECTOR_REGISTER_FILE), port_o_K, curr_gate);
-      if(port_selector_module!=NULL)
-         SM->add_connection(selector_regFile_sign, port_selector_module);
-   }
-   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - Connected register");
-   //suspension connected when or_port instantiated
 
    structural_objectRef done_scheduler = scheduler_mod->find_member(DONE_SCHEDULER,port_o_K,scheduler_mod);
    structural_objectRef done_datapath = circuit->find_member(DONE_SCHEDULER,port_o_K,circuit);
@@ -189,6 +173,37 @@ void fu_binding_cs::connect_selector(const hlsRef HLS)
          SM->add_connection(port_selector_datapath, port_selector_module);
    }
 }
+
+void fu_binding_cs::connect_selector_kernel(const hlsRef HLS)
+{
+   const structural_managerRef SM = HLS->datapath;
+   const structural_objectRef circuit = SM->get_circ();
+   unsigned int num_slots=static_cast<unsigned int>(log2(HLS->Param->getOption<unsigned int>(OPT_context_switch)));   //resize selector-port
+   structural_type_descriptorRef port_type = structural_type_descriptorRef(new structural_type_descriptor("bool", num_slots));
+
+   structural_objectRef scheduler_mod = circuit->find_member("scheduler_kernel", component_o_K, circuit);
+   structural_objectRef port_selector = scheduler_mod->find_member(STR(SELECTOR_REGISTER_FILE),port_o_K,scheduler_mod);
+   port_selector->type_resize(num_slots);
+   structural_objectRef selector_regFile_scheduler = scheduler_mod->find_member(STR(SELECTOR_REGISTER_FILE),port_o_K,scheduler_mod);
+   structural_objectRef selector_regFile_datapath = circuit->find_member(STR(SELECTOR_REGISTER_FILE),port_o_K,circuit);
+   structural_objectRef selector_regFile_sign=SM->add_sign(STR(SELECTOR_REGISTER_FILE)+"_signal", circuit, port_type);
+   SM->add_connection(selector_regFile_scheduler, selector_regFile_sign);
+   SM->add_connection(selector_regFile_sign, selector_regFile_datapath);
+
+   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - Added selector");
+   for(unsigned int i=0;i<GetPointer<module>(circuit)->get_internal_objects_size();i++)
+   {
+      structural_objectRef curr_gate = GetPointer<module>(circuit)->get_internal_object(i);
+      if(curr_gate->get_id()!="scheduler_kernel")
+      {
+         const structural_objectRef port_selector_module=curr_gate->find_member(STR(SELECTOR_REGISTER_FILE), port_o_K, curr_gate);
+         if(port_selector_module!=NULL)
+            SM->add_connection(selector_regFile_sign, port_selector_module);
+      }
+   }
+   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - Connected register");
+}
+
 
 void fu_binding_cs::manage_memory_ports_parallel_chained(const HLS_managerRef HLSMgr, const structural_managerRef SM, const std::set<structural_objectRef> &memory_modules, const structural_objectRef circuit, const hlsRef HLS, unsigned int & _unique_id)
 {

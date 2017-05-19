@@ -62,13 +62,18 @@ std::string reg_binding_cs::CalculateRegisterName(unsigned int )
 
 void reg_binding_cs::specialise_reg(structural_objectRef & reg, unsigned int r)
 {
-   reg_binding_cs::specialise_reg(reg, r);
+   reg_binding::specialise_reg(reg, r);
+   unsigned int mem_dimension=HLS->Param->getOption<unsigned int>(OPT_context_switch);
    unsigned int dimension=static_cast<unsigned int>(log2(HLS->Param->getOption<unsigned int>(OPT_context_switch)));
-   for(unsigned int i=0;i<GetPointer<module>(reg)->get_in_port_size();i++)
+   structural_objectRef selector_port = reg->find_member(SELECTOR_REGISTER_FILE, port_o_K, reg);
+   if(selector_port!=NULL)
    {
-      if (GetPointer<module>(reg)->get_in_port(i)->get_id() == SELECTOR_REGISTER_FILE)
-      {
-         GetPointer<module>(reg)->get_in_port(i)->type_resize(dimension); // selector
-      }
+      selector_port->type_resize(dimension); // selector
+   }
+   GetPointer<module>(reg)->set_parameter("BITSIZE_MEM", STR(mem_dimension));
+   for(unsigned int j = 0; j < GetPointer<module>(reg)->get_in_port_size(); j++) //connect input scheduler with datapath input
+   {
+      structural_objectRef port_i = GetPointer<module>(reg)->get_in_port(j);
+      std::string port_name = GetPointer<port_o>(port_i)->get_id();
    }
 }
