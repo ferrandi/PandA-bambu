@@ -645,7 +645,7 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
             structural_objectRef port = GetPointer<module>(curr_gate)->get_in_port(i);
             if(is_multiport && port->get_kind() == port_vector_o_K && GetPointer<port_o>(port)->get_ports_size() == 0)
                   GetPointer<port_o>(port)->add_n_ports(static_cast<unsigned int>(max_n_ports), port);
-            if(GetPointer<port_o>(port)->get_is_data_bus() || GetPointer<port_o>(port)->get_is_addr_bus() || GetPointer<port_o>(port)->get_is_size_bus())
+            if(GetPointer<port_o>(port)->get_is_data_bus() || GetPointer<port_o>(port)->get_is_addr_bus() || GetPointer<port_o>(port)->get_is_size_bus() || GetPointer<port_o>(port)->get_is_tag_bus())
                port_o::resize_busport(bus_size_bitsize, bus_addr_bitsize, bus_data_bitsize, bus_tag_bitsize, port);
          }
          for(unsigned int i = 0; i < GetPointer<module>(curr_gate)->get_out_port_size(); i++)
@@ -653,7 +653,7 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
             structural_objectRef port = GetPointer<module>(curr_gate)->get_out_port(i);
             if(is_multiport && port->get_kind() == port_vector_o_K && GetPointer<port_o>(port)->get_ports_size() == 0)
                   GetPointer<port_o>(port)->add_n_ports(static_cast<unsigned int>(max_n_ports), port);
-            if(GetPointer<port_o>(port)->get_is_data_bus() || GetPointer<port_o>(port)->get_is_addr_bus() || GetPointer<port_o>(port)->get_is_size_bus())
+            if(GetPointer<port_o>(port)->get_is_data_bus() || GetPointer<port_o>(port)->get_is_addr_bus() || GetPointer<port_o>(port)->get_is_size_bus() || GetPointer<port_o>(port)->get_is_tag_bus())
                port_o::resize_busport(bus_size_bitsize, bus_addr_bitsize, bus_data_bitsize,bus_tag_bitsize, port);
          }
          manage_module_ports(HLSMgr, HLS, SM, curr_gate, 0);
@@ -1390,7 +1390,10 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
    unsigned int bus_addr_bitsize = HLSMgr->Rmem->get_bus_addr_bitsize();
    unsigned int bus_tag_bitsize =0;
    if(HLS->Param->isOption(OPT_context_switch))
+   {
       bus_tag_bitsize= GetPointer<memory_cs>(HLSMgr->Rmem)->get_bus_tag_bitsize();
+      std::cout<<"Tag size(2): "<<bus_tag_bitsize<<std::endl;
+   }
    module* fu_module = GetPointer<module>(fu_obj);
    const technology_nodeRef fu_tech_obj = allocation_information->get_fu(fu);
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Specializing " + fu_obj->get_path() + " of type " + GET_TYPE_NAME(fu_obj));
@@ -1579,21 +1582,6 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
                {
                   if(*it == "ALIGNED_BITSIZE")
                      fu_module->set_parameter("ALIGNED_BITSIZE", boost::lexical_cast<std::string>(HLSMgr->Rmem->get_aligned_bitsize()));
-                  if(*it == "TAG_MEM_REQ")
-                  {
-                     std::cout<<"Function with correct tag found"<<std::endl;
-                     auto omp_functions = GetPointer<OmpFunctions>(HLSMgr->Rfuns);
-                     unsigned int tag_num=0;
-                     if(omp_functions->atomic_functions.find(HLS->functionId) != omp_functions->atomic_functions.end())
-                     {
-                        std::cout<<"Function atomic found:setting parameter"<<std::endl;
-                        unsigned int addr_tasks=static_cast<unsigned int>(log2(HLS->Param->getOption<unsigned int>(OPT_context_switch)));
-                        unsigned int addr_acc=static_cast<unsigned int>(log2(HLS->Param->getOption<unsigned int>(OPT_num_threads)));
-                        unsigned int bit_atomic=addr_tasks+addr_acc;
-                        tag_num= static_cast<unsigned int>(pow(2, bit_atomic));
-                     }//set correct tag for atomic operation
-                     fu_module->set_parameter("TAG_MEM_REQ", STR(tag_num));
-                  }
                   if(*it == "LSB_PARAMETER" && op_name == "pointer_plus_expr")
                   {
                      unsigned int curr_LSB=0;
@@ -1745,7 +1733,7 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
          GetPointer<port_o>(port)->add_n_ports(static_cast<unsigned int>(max_n_ports), port);
       else if(is_multi_read_cond && port->get_kind() == port_vector_o_K && GetPointer<port_o>(port)->get_ports_size() == 0)
          GetPointer<port_o>(port)->add_n_ports(static_cast<unsigned int>(required_variables.size()), port);
-      if(GetPointer<port_o>(port)->get_is_data_bus() || GetPointer<port_o>(port)->get_is_addr_bus() || GetPointer<port_o>(port)->get_is_size_bus())
+      if(GetPointer<port_o>(port)->get_is_data_bus() || GetPointer<port_o>(port)->get_is_addr_bus() || GetPointer<port_o>(port)->get_is_size_bus() || GetPointer<port_o>(port)->get_is_tag_bus())
          port_o::resize_busport(bus_size_bitsize, bus_addr_bitsize, bus_data_bitsize, bus_tag_bitsize, port);
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Resized input ports");
@@ -1768,7 +1756,7 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
       if (port->get_id() == DONE_PORT_NAME) offset++;
       if(is_multiport && port->get_kind() == port_vector_o_K && GetPointer<port_o>(port)->get_ports_size() == 0)
             GetPointer<port_o>(port)->add_n_ports(static_cast<unsigned int>(max_n_ports), port);
-      if(GetPointer<port_o>(port)->get_is_data_bus() || GetPointer<port_o>(port)->get_is_addr_bus() || GetPointer<port_o>(port)->get_is_size_bus())
+      if(GetPointer<port_o>(port)->get_is_data_bus() || GetPointer<port_o>(port)->get_is_addr_bus() || GetPointer<port_o>(port)->get_is_size_bus() || GetPointer<port_o>(port)->get_is_tag_bus())
          port_o::resize_busport(bus_size_bitsize, bus_addr_bitsize, bus_data_bitsize, bus_tag_bitsize, port);
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Resized output ports");
@@ -1813,21 +1801,6 @@ void fu_binding::specialize_memory_unit(const HLS_managerRef HLSMgr, const hlsRe
       fu_module->set_parameter("USE_SPARSE_MEMORY", boost::lexical_cast<std::string>(1));
    else
       fu_module->set_parameter("USE_SPARSE_MEMORY", boost::lexical_cast<std::string>(0));
-   if(parameters->isOption(OPT_context_switch))
-   {
-      std::cout<<"Function with correct tag found111"<<std::endl;
-      auto omp_functions = GetPointer<OmpFunctions>(HLSMgr->Rfuns);
-      unsigned int tag_num=0;
-      if(omp_functions->atomic_functions.find(HLS->functionId) != omp_functions->atomic_functions.end())
-      {
-         std::cout<<"Function atomic found:setting parameter1111"<<std::endl;
-         unsigned int addr_tasks=static_cast<unsigned int>(log2(HLS->Param->getOption<unsigned int>(OPT_context_switch)));
-         unsigned int addr_acc=static_cast<unsigned int>(log2(HLS->Param->getOption<unsigned int>(OPT_num_threads)));
-         unsigned int bit_atomic=addr_tasks+addr_acc;
-         tag_num= static_cast<unsigned int>(pow(2, bit_atomic));
-      }//set correct tag for atomic operation
-      fu_module->set_parameter("TAG_MEM_REQ", STR(tag_num));
-   }
    memory::add_memory_parameter(HLS->datapath, base_address, STR(HLSMgr->Rmem->get_base_address(ar, HLS->functionId)));
 
    long long int vec_size=0;

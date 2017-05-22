@@ -75,6 +75,7 @@ void fu_binding_cs::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, str
    else if(omp_functions->atomic_functions.find(HLS->functionId) != omp_functions->atomic_functions.end() || omp_functions->parallelized_functions.find(HLS->functionId) != omp_functions->parallelized_functions.end())
    {
       connect_selector(HLS);
+      set_atomic_memory_parameter(HLS);
    }
 }
 
@@ -93,6 +94,7 @@ void fu_binding_cs::instantiate_component_kernel(const HLS_managerRef HLSMgr, co
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Starting setting parameter scheduler!");
    GetPointer<module>(scheduler_mod)->set_parameter("NUM_TASKS", STR(HLS->Param->getOption<unsigned int>(OPT_context_switch)));
    GetPointer<module>(scheduler_mod)->set_parameter("ADDR_ACC", STR(log2(HLS->Param->getOption<unsigned int>(OPT_num_threads))));
+   GetPointer<module>(scheduler_mod)->set_parameter("KERN_NUM", "KERN_NUM");  //taken from datapath
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Parameter scheduler setted!");
 
    structural_objectRef clock_scheduler = scheduler_mod->find_member(CLOCK_PORT_NAME,port_o_K,scheduler_mod);
@@ -204,6 +206,25 @@ void fu_binding_cs::connect_selector_kernel(const hlsRef HLS)
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - Connected register");
 }
 
+void fu_binding_cs::set_atomic_memory_parameter(const hlsRef HLS)
+{
+   const structural_managerRef SM = HLS->datapath;
+   const structural_objectRef circuit = SM->get_circ();
+   for(unsigned int i=0;i<GetPointer<module>(circuit)->get_internal_objects_size();i++)
+   {
+      structural_objectRef curr_gate = GetPointer<module>(circuit)->get_internal_object(i);
+      if(curr_gate->is_parameter("TAG_MEM_REQ"))
+      {
+         std::cout<<"Function atomic found:setting parameter"<<std::endl;
+         unsigned int addr_tasks=static_cast<unsigned int>(log2(HLS->Param->getOption<unsigned int>(OPT_context_switch)));
+         unsigned int addr_acc=static_cast<unsigned int>(log2(HLS->Param->getOption<unsigned int>(OPT_num_threads)));
+         unsigned int bit_atomic=addr_tasks+addr_acc;
+         tag_num= static_cast<unsigned int>(pow(2, bit_atomic));
+         curr_gate->set_parameter("TAG_MEM_REQ", STR(tag_num));
+      }
+   }
+
+}
 
 void fu_binding_cs::manage_memory_ports_parallel_chained(const HLS_managerRef HLSMgr, const structural_managerRef SM, const std::set<structural_objectRef> &memory_modules, const structural_objectRef circuit, const hlsRef HLS, unsigned int & _unique_id)
 {

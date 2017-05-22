@@ -132,11 +132,7 @@ DesignFlowStep_Status datapath_parallel_cs::InternalExec()
       memory_modules.insert(kernel_mod);
       connect_module_kernel(kernel_mod,i);
       //setting num of kernel in each scheduler
-      structural_objectRef datapath_kernel = kernel_mod->find_member("Datapath_i", component_o_K, kernel_mod);
-      if(datapath_kernel==NULL) std::cout<<"No datapath?"<<std::endl;
-      structural_objectRef scheduler_kernel = datapath_kernel->find_member("scheduler_kernel", component_o_K, datapath_kernel);
-      if(scheduler_kernel==NULL) std::cout<<"No scheduler?"<<std::endl;
-      GetPointer<module>(scheduler_kernel)->set_parameter("NUM_KERN", STR(i));
+      GetPointer<module>(kernel_mod)->set_parameter("NUM_KERN", STR(i));   //add num_kernel to kernel
    }
    manage_extern_global_port_parallel(SM, memory_modules, datapath_cir);
 
@@ -293,7 +289,7 @@ void datapath_parallel_cs::resize_dimension_bus_port(unsigned int vector_size, s
       port->type_resize(bus_size_bitsize);
    else if (GetPointer<port_o>(port)->get_is_tag_bus())
       port->type_resize(bus_tag_bitsize);
-   GetPointer<port_o>(port)->add_n_ports(vector_size,port);
+   GetPointer<port_o>(port)->add_n_ports(vector_size,port);   
 }
 
 void datapath_parallel_cs::manage_extern_global_port_parallel(const structural_managerRef SM, const std::set<structural_objectRef> &memory_modules, const structural_objectRef circuit)

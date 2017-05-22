@@ -154,5 +154,11 @@ protected:
     * @param HLS
     */
    void connect_selector_kernel(const hlsRef HLS);
+
+   /**
+    * @brief set_atomic_memory_parameter need to set in order to have memory operation defined as atomic
+    * @param HLS
+    */
+   void set_atomic_memory_parameter(const hlsRef HLS);
 };
 #endif // FU_BINDING_CS_H

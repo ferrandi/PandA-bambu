@@ -86,5 +86,6 @@ void datapath_cs::add_ports()
        SM->add_port(STR(TASKS_POOL_END), port_o::IN, circuit, bool_type);
        SM->add_port(STR(DONE_SCHEDULER), port_o::IN, circuit, bool_type);
        SM->add_port(STR(DONE_REQUEST), port_o::OUT, circuit, bool_type);
+       GetPointer<module>(circuit)->set_parameter("KERN_NUM", "KERN_NUM");  //taken from top entity
     }
 }

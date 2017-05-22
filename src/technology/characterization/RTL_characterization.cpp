@@ -510,7 +510,7 @@ void RTLCharacterization::specialize_fu(const module* mod, unsigned int prec, un
       if (port->get_kind() == port_vector_o_K)
       {
          if(GetPointer<port_o>(port)->get_ports_size() == 0) GetPointer<port_o>(port)->add_n_ports(static_cast<unsigned int>(portsize_value), port);
-         if(GetPointer<port_o>(port)->get_is_data_bus() || GetPointer<port_o>(port)->get_is_addr_bus() || GetPointer<port_o>(port)->get_is_size_bus())
+         if(GetPointer<port_o>(port)->get_is_data_bus() || GetPointer<port_o>(port)->get_is_addr_bus() || GetPointer<port_o>(port)->get_is_size_bus() || GetPointer<port_o>(port)->get_is_tag_bus())
             port_o::resize_busport(bus_size_bitsize, bus_addr_bitsize, bus_data_bitsize, bus_tag_bitsize, port);
          else
          {
@@ -520,7 +520,7 @@ void RTLCharacterization::specialize_fu(const module* mod, unsigned int prec, un
       }
       else
       {
-         if(GetPointer<port_o>(port)->get_is_data_bus() || GetPointer<port_o>(port)->get_is_addr_bus() || GetPointer<port_o>(port)->get_is_size_bus())
+         if(GetPointer<port_o>(port)->get_is_data_bus() || GetPointer<port_o>(port)->get_is_addr_bus() || GetPointer<port_o>(port)->get_is_size_bus() || GetPointer<port_o>(port)->get_is_tag_bus())
             port_o::resize_busport(bus_size_bitsize, bus_addr_bitsize, bus_data_bitsize, bus_tag_bitsize, port);
          else
             resize_port(port, prec);
@@ -532,7 +532,7 @@ void RTLCharacterization::specialize_fu(const module* mod, unsigned int prec, un
       if (port->get_kind() == port_vector_o_K)
       {
          if(GetPointer<port_o>(port)->get_ports_size() == 0) GetPointer<port_o>(port)->add_n_ports(static_cast<unsigned int>(portsize_value), port);
-         if(GetPointer<port_o>(port)->get_is_data_bus() || GetPointer<port_o>(port)->get_is_addr_bus() || GetPointer<port_o>(port)->get_is_size_bus())
+         if(GetPointer<port_o>(port)->get_is_data_bus() || GetPointer<port_o>(port)->get_is_addr_bus() || GetPointer<port_o>(port)->get_is_size_bus() || GetPointer<port_o>(port)->get_is_tag_bus())
             port_o::resize_busport(bus_size_bitsize, bus_addr_bitsize, bus_data_bitsize, bus_tag_bitsize, port);
          else
          {
@@ -542,7 +542,7 @@ void RTLCharacterization::specialize_fu(const module* mod, unsigned int prec, un
       }
       else
       {
-         if(GetPointer<port_o>(port)->get_is_data_bus() || GetPointer<port_o>(port)->get_is_addr_bus() || GetPointer<port_o>(port)->get_is_size_bus())
+         if(GetPointer<port_o>(port)->get_is_data_bus() || GetPointer<port_o>(port)->get_is_addr_bus() || GetPointer<port_o>(port)->get_is_size_bus() || GetPointer<port_o>(port)->get_is_tag_bus())
             port_o::resize_busport(bus_size_bitsize, bus_addr_bitsize, bus_data_bitsize, bus_tag_bitsize, port);
          else
             resize_port(port, prec);
