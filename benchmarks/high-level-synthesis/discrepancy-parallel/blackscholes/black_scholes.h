@@ -1,4 +1,4 @@
-/* 
+/*
  * File:   black_scholes.h
  * Author: Yolanda
  *
@@ -7,7 +7,7 @@
 
 
 #ifndef BLACK_SCHOLES_H
-#define	BLACK_SCHOLES_H
+#define BLACK_SCHOLES_H
 
 # include "fixedptc.h"
 
@@ -17,5 +17,5 @@ fixedpt get_uniform_fixed ( int *seed );
 
 
 
-#endif	/* BLACK_SCHOLES_H */
+#endif  /* BLACK_SCHOLES_H */
 
