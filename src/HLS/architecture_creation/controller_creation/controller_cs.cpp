@@ -94,9 +94,7 @@ void controller_cs::add_correct_transition_memory(std::string state_representati
     if(omp_functions->parallelized_functions.find(funId) != omp_functions->parallelized_functions.end()) found=true;
     if(omp_functions->atomic_functions.find(funId) != omp_functions->atomic_functions.end()) found=true;
     if(found)       //function with selector
-    {
        SM->add_NP_functionality(circuit, NP_functionality::FSM_CS, state_representation);
-    }
     else
        SM->add_NP_functionality(circuit, NP_functionality::FSM, state_representation);
 }

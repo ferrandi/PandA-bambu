@@ -210,14 +210,12 @@ void fu_binding_cs::set_atomic_memory_parameter(const hlsRef HLS)
 {
    const structural_managerRef SM = HLS->datapath;
    const structural_objectRef circuit = SM->get_circ();
-   std::cout<<"Atomic function: searching for tag"<<std::endl;
    for(unsigned int i=0;i<GetPointer<module>(circuit)->get_internal_objects_size();i++)
    {
       structural_objectRef curr_gate = GetPointer<module>(circuit)->get_internal_object(i);
       if(curr_gate->is_parameter("TAG_MEM_REQ"))
       {
          unsigned int tag_num=0;
-         std::cout<<"Function atomic found:setting parameter"<<std::endl;
          unsigned int addr_tasks=static_cast<unsigned int>(log2(HLS->Param->getOption<unsigned int>(OPT_context_switch)));
          unsigned int addr_acc=static_cast<unsigned int>(log2(HLS->Param->getOption<unsigned int>(OPT_num_threads)));
          unsigned int bit_atomic=addr_tasks+addr_acc;

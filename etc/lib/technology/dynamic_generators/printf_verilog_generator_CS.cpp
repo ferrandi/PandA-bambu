@@ -109,7 +109,7 @@ reg done_port;\n\
 wire [" + data_bus_bitsize + "-1:0] mem_out1;\n\
 reg [" + addr_bus_bitsize + "-1:0] mem_in2;\n\
 reg [" + size_bus_bitsize + "-1:0] mem_in3;\n\
-mem_ctrl_kernel #(.TAG_MEM_REQ(" + tag_memory_ctrl + "), .BITSIZE_in1(" + data_bus_bitsize + "), .BITSIZE_in2(" + addr_bus_bitsize + "), .BITSIZE_in3(" + size_bus_bitsize + "), .BITSIZE_out1(" + data_bus_bitsize + "), .BITSIZE_Mout_oe_ram(BITSIZE_Mout_oe_ram), .BITSIZE_Mout_we_ram(BITSIZE_Mout_we_ram), .BITSIZE_Mout_addr_ram(BITSIZE_Mout_addr_ram), .BITSIZE_Mout_data_ram_size(BITSIZE_Mout_data_ram_size), .BITSIZE_Mout_Wdata_ram(BITSIZE_Mout_Wdata_ram), .BITSIZE_Mout_tag_ram(BITSIZE_Mout_tag_ram), .BITSIZE_M_Rdata_ram(BITSIZE_M_Rdata_ram), .BITSIZE_M_DataRdy(BITSIZE_M_DataRdy), .BITSIZE_Min_tag(BITSIZE_Min_tag), .BITSIZE_request_accepted(BITSIZE_request_accepted)) mem_ctrl_kernel_instance (.in1(0), .in2(mem_in2), .in3(mem_in3), .sel_LOAD(mem_sel_LOAD), .sel_STORE(1'b0), .done(mem_done_port), .out1(mem_out1), .Mout_oe_ram(Mout_oe_ram), .Mout_we_ram(Mout_we_ram), .Mout_addr_ram(Mout_addr_ram), .Mout_data_ram_size(Mout_data_ram_size), .Mout_Wdata_ram(Mout_Wdata_ram), .Mout_tag_ram(Mout_tag_ram), .M_Rdata_ram(M_Rdata_ram), .M_DataRdy(M_DataRdy), .Min_tag(Min_tag), .request_accepted(request_accepted), .start_port(start_memory_op));\n\
+mem_ctrl_kernel #(.TAG_MEM_REQ(0), .BITSIZE_in1(" + data_bus_bitsize + "), .BITSIZE_in2(" + addr_bus_bitsize + "), .BITSIZE_in3(" + size_bus_bitsize + "), .BITSIZE_out1(" + data_bus_bitsize + "), .BITSIZE_Mout_oe_ram(BITSIZE_Mout_oe_ram), .BITSIZE_Mout_we_ram(BITSIZE_Mout_we_ram), .BITSIZE_Mout_addr_ram(BITSIZE_Mout_addr_ram), .BITSIZE_Mout_data_ram_size(BITSIZE_Mout_data_ram_size), .BITSIZE_Mout_Wdata_ram(BITSIZE_Mout_Wdata_ram), .BITSIZE_Mout_tag_ram(BITSIZE_Mout_tag_ram), .BITSIZE_M_Rdata_ram(BITSIZE_M_Rdata_ram), .BITSIZE_M_DataRdy(BITSIZE_M_DataRdy), .BITSIZE_Min_tag(BITSIZE_Min_tag), .BITSIZE_request_accepted(BITSIZE_request_accepted)) mem_ctrl_kernel_instance (.in1(0), .in2(mem_in2), .in3(mem_in3), .sel_LOAD(mem_sel_LOAD), .sel_STORE(1'b0), .done(mem_done_port), .out1(mem_out1), .Mout_oe_ram(Mout_oe_ram), .Mout_we_ram(Mout_we_ram), .Mout_addr_ram(Mout_addr_ram), .Mout_data_ram_size(Mout_data_ram_size), .Mout_Wdata_ram(Mout_Wdata_ram), .Mout_tag_ram(Mout_tag_ram), .M_Rdata_ram(M_Rdata_ram), .M_DataRdy(M_DataRdy), .Min_tag(Min_tag), .request_accepted(request_accepted), .start_port(start_memory_op));\n\
 \n\
 parameter [3:0] S_0 = 4'd0,\n\
   S_1 = 4'd1,\n\
@@ -150,7 +150,7 @@ reg write_done;\n\
         _present_data2 <= _next_data2;\n\
       end\n\
 \n\
-  always @(_present_state or _present_pointer or _present_pointer1 or _present_selector or start_port or M_DataRdy or " + sensitivity + " or _present_data2 or mem_done_port or M_Rdata_ram[7:0])\n\
+  always @(_present_state or _present_pointer or _present_pointer1 or _present_selector or start_port or M_DataRdy" + sensitivity + " or _present_data2 or mem_done_port or M_Rdata_ram[7:0])\n\
       begin\n\
         _next_state = _present_state;\n\
         _next_pointer = _present_pointer;\n\

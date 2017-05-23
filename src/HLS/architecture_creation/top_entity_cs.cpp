@@ -135,5 +135,6 @@ void top_entity_cs::add_context_switch_port_kernel()
     structural_objectRef done_signal_in = circuit->find_member("done_delayed_REG_signal_in", signal_o_K, circuit);
     SM->add_connection(done_signal_in, datapath_done_port);    //connect signal out controller to datapath
 
+    SM->add_NP_functionality(circuit, NP_functionality::LIBRARY, "KERN_NUM");
     GetPointer<module>(circuit)->set_parameter("KERN_NUM", "KERN_NUM");  //taken from kernel instantiation
 }

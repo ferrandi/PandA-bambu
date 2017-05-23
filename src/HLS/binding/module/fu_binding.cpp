@@ -1390,10 +1390,7 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
    unsigned int bus_addr_bitsize = HLSMgr->Rmem->get_bus_addr_bitsize();
    unsigned int bus_tag_bitsize =0;
    if(HLS->Param->isOption(OPT_context_switch))
-   {
       bus_tag_bitsize= GetPointer<memory_cs>(HLSMgr->Rmem)->get_bus_tag_bitsize();
-      std::cout<<"Tag size(2): "<<bus_tag_bitsize<<std::endl;
-   }
    module* fu_module = GetPointer<module>(fu_obj);
    const technology_nodeRef fu_tech_obj = allocation_information->get_fu(fu);
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Specializing " + fu_obj->get_path() + " of type " + GET_TYPE_NAME(fu_obj));
@@ -1792,7 +1789,6 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
 
 void fu_binding::specialize_memory_unit(const HLS_managerRef HLSMgr, const hlsRef HLS, structural_objectRef fu_obj, unsigned int ar, std::string & base_address, unsigned int rangesize, bool is_doubled, bool is_memory_splitted, bool is_sparse_memory, bool is_sds)
 {
-   std::cout<<"Fdddddddddddddddddddddddd"<<std::endl;
    module* fu_module = GetPointer<module>(fu_obj);
    /// base address specialization
    fu_module->set_parameter("address_space_begin", boost::lexical_cast<std::string>(base_address));

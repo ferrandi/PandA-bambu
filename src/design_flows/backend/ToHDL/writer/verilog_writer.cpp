@@ -1206,8 +1206,7 @@ void verilog_writer::write_transition_output_functions(bool single_proc, unsigne
                   port_name = HDL_manager::convert_to_identifier(this, mod->get_in_port(ind)->get_id());
                   unsigned int port_size = mod->get_in_port(ind)->get_typeRef()->size;
                   unsigned int vec_size =mod->get_in_port(ind)->get_typeRef()->vector_size;
-                  if(port_name != reset_port && port_name != clock_port && port_name != start_port and
-                        (np->exist_NP_functionality(NP_functionality::FSM_CS) and port_name != ""+STR(SELECTOR_REGISTER_FILE)+""))
+                  if(port_name != reset_port && port_name != clock_port && port_name != start_port && port_name != STR(SELECTOR_REGISTER_FILE))
                   {
                      std::string in_or_conditions = *current_input_it;
                      boost::char_separator<char> pipe_sep("|", nullptr);

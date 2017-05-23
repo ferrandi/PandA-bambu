@@ -1050,10 +1050,7 @@ assign Mout_tag_ram = ((sel_LOAD || sel_STORE) &amp;&amp; start_port) ? TAG_MEM_
           <port_vector_o id="request_accepted" dir="OUT" is_memory="1">
             <structural_type_descriptor type="BOOL" size="1" vector_size="1"/>
           </port_vector_o>
-          <port_o id="occupancies" dir="OUT">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1"/>
-          </port_o>
-          <NP_functionality LIBRARY="memory_ctrl IN_M_Rdata_ram IN_M_DataRdy Mout_oe_ram Mout_we_ram Mout_addr_ram Mout_data_ram_size Mout_Wdata_ram Mout_tag_ram OUT_Mout_oe_ram OUT_Mout_we_ram OUT_Mout_addr_ram OUT_Mout_data_ram_size OUT_Mout_Wdata_ram M_Rdata_ram M_DataRdy Min_tag request_accepted occupancies NUM_CHANNEL ADDR_TASKS ADDR_ACC NUM_BANK"
+          <NP_functionality LIBRARY="memory_ctrl IN_M_Rdata_ram IN_M_DataRdy Mout_oe_ram Mout_we_ram Mout_addr_ram Mout_data_ram_size Mout_Wdata_ram Mout_tag_ram OUT_Mout_oe_ram OUT_Mout_we_ram OUT_Mout_addr_ram OUT_Mout_data_ram_size OUT_Mout_Wdata_ram M_Rdata_ram M_DataRdy Min_tag request_accepted NUM_CHANNEL ADDR_TASKS ADDR_ACC NUM_BANK"
           IP_COMPONENT="fifio,register_SE_r,PT_RR_FU,mux_pw_2,bus_merger" VERILOG_PROVIDED="
 //In order to be generated correctly num NUM_BANK>=NUM_CHANNEL and both of them must be a power of 2
 
@@ -1121,10 +1118,6 @@ wire [NUM_BANK-1:0] request_OUT_fifo;
 wire [NUM_BANK-1:0] request_out;
 wire [SIZE_TOT_OUT*NUM_CHANNEL-1:0] channel_out;
 
-// synthesis translate_off
-wire [NUM_BANK-1:0] bank_occ;
-Counter #(.BITSIZE_COUNTER(32), .DRIVERS(4)) CounterBank1(.value(occupancies), .clock(clock), .reset(reset), .driver_lines(bank_occ));
-// synthesis translate_on
 parameter S_0 = 3'b000,
           S_1 = 3'b001,
           S_2 = 3'b010,
@@ -1135,8 +1128,6 @@ genvar i;
 generate
   for(i=0; i&lt;NUM_BANK; i=i+1)
   begin
-    assign bank_occ[i]=(valid_Out_reg_oe_we[i] || valid_Out_fifo[i] || IN_M_DataRdy[i]);
-
     // IN - I am putting data from parallel
     fifio #(.DATA_WIDTH(SIZE_TOT_IN), .ADDR_WIDTH(FIFO_IN)) IN_fifo (.full (IN_fifo_full[i]), .empty (IN_fifo_empty[i]), .data_out (IN_fifo_data_out[SIZE_TOT_IN*(i+1)-1:SIZE_TOT_IN*i]), .clk (clock), .rst (reset), .rd_en (IN_fifo_rd_en[i]), .wr_en (IN_fifo_wr_en[i]), .data_in (IN_fifo_data_in[SIZE_TOT_IN*(i+1)-1:SIZE_TOT_IN*i]));
 
