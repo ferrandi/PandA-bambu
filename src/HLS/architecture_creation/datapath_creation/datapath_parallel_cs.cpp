@@ -51,6 +51,8 @@
 #include "technology_manager.hpp"
 #include "memory_cs.hpp"
 #include "memory.hpp"
+#include "loops.hpp"
+#include "loop.hpp"
 
 datapath_parallel_cs::datapath_parallel_cs(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type) :
    classic_datapath(_parameters, _HLSMgr, _funId, _design_flow_manager, _hls_flow_step_type)
@@ -208,9 +210,22 @@ void datapath_parallel_cs::connect_module_kernel(structural_objectRef kernel_mod
    SM->add_connection(GetPointer<port_o>(done_req_datapath)->get_port(num_kernel), done_req_kernel);
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - Connected done_req");
 
-   structural_objectRef request_kernel = kernel_mod->find_member("i_var_5",port_o_K,kernel_mod);
+  //connecting request datapath with the corresponding port name on kernel
+   const auto listLoops = FB->CGetLoops()->GetList();
+   std::string name_Loop_Variable;
+   for(auto loop: listLoops)
+   {
+      if(loop->GetId()!=0)
+      {
+         std::cout<<"Found variable (i)"<<std::endl;
+         name_Loop_Variable=BH->PrintVariable(loop->main_iv);
+      }
+   }
+   std::cout<<"Variable name: "<<name_Loop_Variable<<std::endl;
+   structural_objectRef request_kernel = kernel_mod->find_member(name_Loop_Variable,port_o_K,kernel_mod);
    structural_objectRef request_datapath = circuit->find_member("request",port_o_K,circuit);
-   SM->add_connection(request_datapath, request_kernel);
+   if(false)
+      SM->add_connection(request_datapath, request_kernel);
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - Connected request");
 }
 

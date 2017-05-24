@@ -5,6 +5,7 @@ noinst_LTLIBRARIES =  lib_datapath_creation.la
 
 lib_datapath_creation_la_CPPFLAGS =  \
    -I$(top_srcdir)/src \
+   -I$(top_srcdir)/src/algorithms/loops_detection \
    -I$(top_srcdir)/src/behavior \
    -I$(top_srcdir)/src/circuit \
    -I$(top_srcdir)/src/constants \

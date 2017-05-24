@@ -50,6 +50,9 @@
 #include "hls_target.hpp"
 #include "technology_manager.hpp"
 #include "memory.hpp"
+#include "loops.hpp"
+#include "loop.hpp"
+#include "tree_node.hpp"
 
 
 top_entity_parallel_cs::top_entity_parallel_cs(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type) :
@@ -229,10 +232,19 @@ void top_entity_parallel_cs::resize_controller_parallel(structural_objectRef con
    GetPointer<port_o>(controller_done_port)->add_n_ports(num_kernel,controller_done_port);
    structural_objectRef controller_start_port = controller_circuit->find_member(STR(START_PORT_NAME)+"_accelerator", port_vector_o_K, controller_circuit);
    GetPointer<port_o>(controller_start_port)->add_n_ports(num_kernel,controller_start_port);
+
+   unsigned int bus_data_bitsize = HLSMgr->Rmem->get_bus_data_bitsize();
+   structural_objectRef controller_request = controller_circuit->find_member("request", port_o_K, controller_circuit);
+   GetPointer<port_o>(controller_request)->type_resize(bus_data_bitsize);
+   structural_objectRef controller_LoopIteration = controller_circuit->find_member("LoopIteration", port_o_K, controller_circuit);
+   GetPointer<port_o>(controller_LoopIteration)->type_resize(bus_data_bitsize);
 }
 
 void top_entity_parallel_cs::connect_port_parallel(const structural_objectRef circuit)
 {
+   const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(funId);
+   const BehavioralHelperConstRef BH = FB->CGetBehavioralHelper();
+
    structural_managerRef Datapath = HLS->datapath;
    structural_objectRef datapath_circuit = Datapath->get_circ();
    structural_objectRef controller_circuit = circuit->find_member("controller_parallel", component_o_K, circuit);
@@ -270,16 +282,35 @@ void top_entity_parallel_cs::connect_port_parallel(const structural_objectRef ci
    SM->add_connection(controller_request, request_sign);
    SM->add_connection(request_sign, datapath_request);
 
-   /*structural_objectRef controller_loopIter=controller_circuit->find_member("LoopIteration", port_o_K, controller_circuit);
-   bool loopIvFound=false;
-   for(std::list<LoopConstRef> iterator;!loopIvFound || ;)
+   long long int n=0;
+   const auto listLoops = FB->CGetLoops()->GetList();
+   for(auto loop: listLoops)
    {
-      unsigned int LoopNumber= ->NumLoops()
-      if(LoopNumber!=0)
+      if(loop->GetId()!=0)
       {
-         loopIvFound=false;
+         n=loop->upper_bound;
       }
    }
-   structural_objectRef circuit_loopIter=circuit->FB->CGetLoops->NumLoops()
-   SM->add_connection(circuit_loopIter, controller_loopIter);*/
+   if(n!=0)
+   {
+      structural_objectRef constant(new constant_o(parameters->getOption<int>(OPT_debug_level), circuit, STR(n)));
+      structural_type_descriptorRef constant_type = structural_type_descriptorRef(new structural_type_descriptor("bool", static_cast<unsigned int>(n)));
+      constant->set_type(constant_type);
+      GetPointer<module>(SM->get_circ())->add_internal_object(constant);
+      structural_objectRef controller_Loop_Iter = controller_circuit->find_member("LoopIteration", port_o_K, controller_circuit);
+      SM->add_connection(constant, controller_Loop_Iter);
+   }
+   else
+   {
+      for(auto loop: listLoops)
+      {
+         if(loop->GetId()!=0)
+         {
+            std::string name_Loop_Upper_Bound=BH->PrintVariable(loop->upper_bound_tn->index);
+            structural_objectRef port_Loop_Iter = circuit->find_member(name_Loop_Upper_Bound, port_o_K, circuit);
+            structural_objectRef controller_Loop_Iter = controller_circuit->find_member("LoopIteration", port_o_K, controller_circuit);
+            SM->add_connection(port_Loop_Iter, controller_Loop_Iter);
+         }
+      }
+   }
 }

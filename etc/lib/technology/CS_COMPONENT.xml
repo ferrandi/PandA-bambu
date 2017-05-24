@@ -1707,7 +1707,7 @@ endgenerate"/>
       <port_o id="request" dir="OUT">
         <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
       </port_o>
-      <NP_functionality LIBRARY="controller_parallel done_port_accelerator done_request_accelerator start_port_accelerator"
+      <NP_functionality LIBRARY="controller_parallel done_port_accelerator done_request_accelerator start_port_accelerator request LoopIteration"
       IP_COMPONENT="ui_ne_expr_FU,read_cond_FU,register_SE,fifo,CallDispatcher,Counter,MUX_GATE,UUdata_converter_FU,constant_value,ASSIGN_UNSIGNED_FU,ui_plus_expr_FU" VERILOG_PROVIDED="
 parameter [2:0] S_0 = 3'd0,
   S_1 = 3'd1,

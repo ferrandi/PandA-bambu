@@ -11,6 +11,7 @@ lib_architecture_creation_la_SOURCES = top_entity.cpp TopEntityMemoryMapped.cpp 
 
 lib_architecture_creation_la_CPPFLAGS = \
    -I$(top_srcdir)/src \
+   -I$(top_srcdir)/src/algorithms/loops_detection \
    -I$(top_srcdir)/src/behavior \
    -I$(top_srcdir)/src/circuit \
    -I$(top_srcdir)/src/constants \
