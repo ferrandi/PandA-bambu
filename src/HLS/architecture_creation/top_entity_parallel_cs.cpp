@@ -125,24 +125,20 @@ DesignFlowStep_Status top_entity_parallel_cs::InternalExec()
    structural_objectRef datapath_circuit = Datapath->get_circ();
    THROW_ASSERT(datapath_circuit, "Missing datapath circuit");
 
+   PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Creating datapath object");
    std::string parallel_controller_model = "controller_parallel";
    std::string parallel_controller_name = "controller_parallel";
    std::string par_ctrl_library = HLS->HLS_T->get_technology_manager()->get_library(parallel_controller_model);
    structural_objectRef controller_circuit = SM->add_module_from_technology_library(parallel_controller_name, parallel_controller_model, par_ctrl_library, circuit, HLS->HLS_T->get_technology_manager());
+   controller_circuit->set_owner(circuit);
    resize_controller_parallel(controller_circuit);
    THROW_ASSERT(controller_circuit, "Missing controller circuit");
-
-   PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Creating controller object");
-   /// creating structural_manager
-   PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Adding controller");
-   datapath_circuit->set_owner(circuit);
-   GetPointer<module>(circuit)->add_internal_object(datapath_circuit);
 
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Creating datapath object");
    /// creating structural_manager
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Adding datapath");
-   controller_circuit->set_owner(circuit);
-   GetPointer<module>(circuit)->add_internal_object(controller_circuit);
+   datapath_circuit->set_owner(circuit);
+   GetPointer<module>(circuit)->add_internal_object(datapath_circuit);
 
    /// command signal type descriptor
    structural_type_descriptorRef bool_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 0));

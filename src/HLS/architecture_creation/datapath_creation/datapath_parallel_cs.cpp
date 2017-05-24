@@ -125,16 +125,18 @@ DesignFlowStep_Status datapath_parallel_cs::InternalExec()
    const structural_objectRef circuit = SM->get_circ();
    std::string kernel_model = "kernel";
    std::string kernel_library = HLS->HLS_T->get_technology_manager()->get_library(kernel_model);
+   structural_objectRef kernel_mod;
    for(unsigned int i=0;i<HLS->Param->getOption<unsigned int>(OPT_num_threads);++i)
    {
       std::string kernel_name = "kernel_"+STR(i);
-      structural_objectRef kernel_mod = SM->add_module_from_technology_library(kernel_name, kernel_model, kernel_library, circuit, HLS->HLS_T->get_technology_manager());
+      kernel_mod = SM->add_module_from_technology_library(kernel_name, kernel_model, kernel_library, circuit, HLS->HLS_T->get_technology_manager());
       memory_modules.insert(kernel_mod);
       connect_module_kernel(kernel_mod,i);
       //setting num of kernel in each scheduler
       GetPointer<module>(kernel_mod)->set_parameter("NUM_KERN", STR(i));   //add num_kernel to kernel
    }
    manage_extern_global_port_parallel(SM, memory_modules, datapath_cir);
+   memory::propagate_memory_parameters(const_cast<structural_objectRef&>(kernel_mod), SM); //propagate memory_parameter to datapath_parallel
 
    return DesignFlowStep_Status::SUCCESS;
 }
@@ -377,4 +379,3 @@ void datapath_parallel_cs::manage_extern_global_port_parallel(const structural_m
       }
    }
 }
-

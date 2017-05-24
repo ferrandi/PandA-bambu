@@ -54,7 +54,6 @@ OmpForWrapperCSSynthesisFlow::~OmpForWrapperCSSynthesisFlow()
 const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > OmpForWrapperCSSynthesisFlow::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > ret;
-   std::cout<<"Use PARALLEL flow-step-type"<<std::endl;
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:
