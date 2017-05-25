@@ -651,6 +651,7 @@ void structural_manager::add_connection(structural_objectRef src, structural_obj
          {
             case port_o_K:
             {
+               std::cout<<"Enter_port part 0"<<std::endl;
                THROW_ASSERT(src->get_owner() != dest->get_owner(), "A direct connection between ports of the same object is not allowed. Put a signal in between...: " + std::string(src->get_path()) + std::string(" ") + std::string(dest->get_path()));
                THROW_ASSERT(check_type(src, dest), "Ports have to be compatible: "+ src->get_path() + " -> " + dest->get_path());
                THROW_ASSERT(!src->find_member(dest->get_id(), port_o_K, dest->get_owner()), "Port " + src->get_id() + " already bound to " + dest->get_id());
@@ -658,6 +659,11 @@ void structural_manager::add_connection(structural_objectRef src, structural_obj
                port_o * p_d = GetPointer<port_o>(dest);
                p_s->add_connection(dest);
                p_d->add_connection(src);
+               std::cout<<"Path p_s: "<< p_s->get_path()<<std::endl;
+               std::cout<<"Path p_d: "<< p_d->get_path()<<std::endl;
+               std::cout<<"Path src: "<< src->get_path()<<std::endl;
+               std::cout<<"Path dest: "<< dest->get_path()<<std::endl;
+               std::cout<<"Exit port part 1"<<std::endl;
                break;
             }
             case signal_o_K:

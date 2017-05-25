@@ -882,16 +882,23 @@ port_o::port_o(int _debug_level, const structural_objectRef o, port_direction _d
 
 void port_o::add_connection(structural_objectRef s)
 {
+   std::cout<<"Who i am: "<< get_path()<<std::endl;
+   std::cout<<"Path port passed: "<< s->get_path()<<std::endl;
    THROW_ASSERT(s, get_path() + ": NULL object received: " + s->get_path());
    THROW_ASSERT((get_kind() == port_o_K && (s->get_kind() == port_o_K || s->get_kind() == signal_o_K || s->get_kind() == constant_o_K)) || (get_kind() == port_vector_o_K && (s->get_kind() == port_vector_o_K || s->get_kind() == signal_vector_o_K)),
                 get_path() + ": port cannot be connected to an object of type: " + std::string(s->get_kind_text()));
+   std::cout<<"Num connectd object: "<<connected_objects.size()<<std::endl;
    for(unsigned int i = 0; i < connected_objects.size(); i++)
    {
+     std::cout<<"Connectd with "<<connected_objects[i].lock()->get_path()<<std::endl;
      if (connected_objects[i].lock() == s) return;
      THROW_ASSERT(!(((s->get_kind() == signal_o_K and connected_objects[i].lock()->get_kind() == signal_o_K) || (s->get_kind() == signal_vector_o_K and connected_objects[i].lock()->get_kind() == signal_vector_o_K)) and
                     s->get_owner() == connected_objects[i].lock()->get_owner()), "The port " + get_path() + " can have only one signal. " + s->get_path() + " and " + connected_objects[i].lock()->get_path());
    }
+   std::cout<<"Point 3"<<std::endl;
    connected_objects.push_back(s);
+   for(unsigned int i = 0; i < connected_objects.size(); i++)
+     std::cout<<"Connectd with "<<connected_objects[i].lock()->get_path()<<std::endl;
 }
 
 void port_o::remove_connection(structural_objectRef s)
@@ -1138,7 +1145,7 @@ structural_objectRef port_o::find_bounded_object(const structural_objectConstRef
 {
    THROW_ASSERT(get_owner(), "The port has to have an owner " + get_id());
    //THROW_ASSERT(get_owner()->get_owner(), "The owner of the port has to have an owner " + get_id());
-   THROW_ASSERT(get_owner()->get_kind() != port_vector_o_K || get_owner()->get_owner()->get_owner(), "The owner of the port_vector has to have an owner " + get_id());
+   THROW_ASSERT(get_owner()->get_kind() != port_vector_o_K || get_owner()->get_owner(), "The owner of the port_vector has to have an owner " + get_id());
    THROW_ASSERT(get_kind() == port_o_K || get_kind() == port_vector_o_K, "Expected a port got something of different");
    structural_objectRef res;
    unsigned int port_count = 0;

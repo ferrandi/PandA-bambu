@@ -196,18 +196,30 @@ void datapath_parallel_cs::connect_module_kernel(structural_objectRef kernel_mod
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - Connected task_pool_end");
 
    structural_objectRef start_kernel = kernel_mod->find_member(START_PORT_NAME,port_o_K,kernel_mod);
+   if(start_kernel==NULL) std::cout<<"Why start is null"<<std::endl;
+   else std::cout<<"Ok point 0"<<std::endl;
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, start_kernel->get_path());
    structural_objectRef start_datapath = circuit->find_member(STR(START_PORT_NAME)+"_accelerator",port_vector_o_K,circuit);
-   SM->add_connection(GetPointer<port_o>(start_datapath)->get_port(num_kernel), start_kernel);
+   if(start_datapath==NULL) std::cout<<"Why start datapath is null"<<std::endl;
+   else std::cout<<"Ok point 1"<<std::endl;
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, start_datapath->get_path());
+   if(GetPointer<port_o>(start_datapath)->get_port(num_kernel)==NULL) std::cout<<"Why single port is null?"<<std::endl;
+   SM->add_connection(start_kernel, GetPointer<port_o>(start_datapath)->get_port(num_kernel));
+
+   const structural_objectRef object_bounded = GetPointer<port_o>(GetPointer<port_o>(start_datapath)->get_port(num_kernel))->find_bounded_object(GetPointer<port_o>(start_datapath)->get_port(num_kernel)->get_owner());
+   if(object_bounded==NULL)   std::cout<<"Nothing attached"<<std::endl;
+   const structural_objectRef object_bounded2 = GetPointer<port_o>(start_kernel)->find_bounded_object(start_kernel->get_owner());
+   if(object_bounded2==NULL)   std::cout<<"Nothing attached2"<<std::endl;
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - Connected start");
 
    structural_objectRef done_kernel = kernel_mod->find_member(DONE_PORT_NAME,port_o_K,kernel_mod);
    structural_objectRef done_datapath = circuit->find_member(STR(DONE_PORT_NAME)+"_accelerator",port_vector_o_K,circuit);
-   SM->add_connection(GetPointer<port_o>(done_datapath)->get_port(num_kernel), done_kernel);
+   SM->add_connection(done_kernel, GetPointer<port_o>(done_datapath)->get_port(num_kernel));
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - Connected done");
 
    structural_objectRef done_req_kernel = kernel_mod->find_member(DONE_REQUEST,port_o_K,kernel_mod);
    structural_objectRef done_req_datapath = circuit->find_member(STR(DONE_REQUEST)+"_accelerator",port_vector_o_K,circuit);
-   SM->add_connection(GetPointer<port_o>(done_req_datapath)->get_port(num_kernel), done_req_kernel);
+   SM->add_connection(done_req_kernel, GetPointer<port_o>(done_req_datapath)->get_port(num_kernel));
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - Connected done_req");
 
   //connecting request datapath with the corresponding port name on kernel
