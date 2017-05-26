@@ -711,7 +711,7 @@ void HDL_manager::write_module(const language_writerRef writer, const structural
                            const structural_objectRef object_bounded = GetPointer<port_o>(mod_inst->get_out_port(i))->find_bounded_object(cir);
                            if (!object_bounded)
                            {
-                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped " + mod_inst->get_out_port(i)->get_id());
+                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped " + mod_inst->get_out_port(i)->get_path());
                               continue;
                            }
                            writer->write_port_binding(mod_inst->get_out_port(i), object_bounded, first_port_analyzed);
@@ -732,9 +732,11 @@ void HDL_manager::write_module(const language_writerRef writer, const structural
                   //writer->write_comment("IN binding\n");
                   for (unsigned int i = 0; i < mod_inst->get_in_port_size(); i++)
                   {
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Writing port binding of " + mod_inst->get_in_port(i)->get_id());
                      if (mod_inst->get_in_port(i)->get_kind() == port_o_K)
                      {
                         const structural_objectRef object_bounded = GetPointer<port_o>(mod_inst->get_in_port(i))->find_bounded_object(cir);
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Bounded object is " + (object_bounded ? object_bounded->get_path() : " nothing"));
                         writer->write_port_binding(mod_inst->get_in_port(i), object_bounded, first_port_analyzed);
                      }
                      else
@@ -742,6 +744,7 @@ void HDL_manager::write_module(const language_writerRef writer, const structural
                         writer->write_vector_port_binding(mod_inst->get_in_port(i), first_port_analyzed);
                      }
                      first_port_analyzed = true;
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Written port binding of " + mod_inst->get_in_port(i)->get_id());
                   }
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Written input ports binding");
                }

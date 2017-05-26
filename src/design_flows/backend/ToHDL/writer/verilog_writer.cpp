@@ -172,8 +172,22 @@ std::string verilog_writer::type_converter_size(const structural_objectRef &cir)
             else
                return "[" + boost::lexical_cast<std::string>(GetPointer<port_o>(cir)->get_ports_size() - 1) + ":0] ";
          }
+         else if(cir->get_owner() and cir->get_owner()->get_kind() == port_vector_o_K)
+         {
+            const auto owner_vector = GetPointer<const port_o>(cir->get_owner());
+            for(unsigned int vector_index = 0; vector_index < owner_vector->get_ports_size(); vector_index++)
+            {
+               if(owner_vector->get_port(vector_index) == cir)
+               {
+                  return "[" + STR(vector_index) + ":" + STR(vector_index) + "]";
+               }
+            }
+            THROW_UNREACHABLE("");
+         }
          else
+         {
             return "";
+         }
       }
       case structural_type_descriptor::USER:
       {
@@ -192,6 +206,10 @@ std::string verilog_writer::type_converter_size(const structural_objectRef &cir)
             {
                unsigned int lsb = GetPointer<port_o>(cir)->get_lsb();
                return "[(" + (PORTSIZE_PREFIX+port_name) +"*" + (BITSIZE_PREFIX+port_name) + ")+(" + boost::lexical_cast<std::string>(static_cast<int>(lsb)-1) + "):" + boost::lexical_cast<std::string>(lsb) + "] ";
+            }
+            else if(cir->get_owner() and cir->get_owner()->get_kind() == port_vector_o_K)
+            {
+               THROW_UNREACHABLE("");
             }
             else
                return "[" + (BITSIZE_PREFIX+port_name) + "-1:0] ";
@@ -218,6 +236,21 @@ std::string verilog_writer::type_converter_size(const structural_objectRef &cir)
                unsigned int size_fp = Type_fp->vector_size>0 ? Type_fp->size*Type_fp->vector_size : Type_fp->size;
                unsigned int msb = size_fp * n_ports+lsb;
                return "[" + boost::lexical_cast<std::string>(static_cast<int>(msb) - 1 ) + ":" + boost::lexical_cast<std::string>(lsb) + "] ";
+            }
+            else if(cir->get_owner() and cir->get_owner()->get_kind() == port_vector_o_K)
+            {
+               const auto owner_vector = GetPointer<const port_o>(cir->get_owner());
+               unsigned int lsb = owner_vector->get_lsb();
+               for(unsigned int vector_index = 0; vector_index < owner_vector->get_ports_size(); vector_index++)
+               {
+                  if(owner_vector->get_port(vector_index) == cir)
+                  {
+                     const structural_objectRef first_port = owner_vector->get_port(0);
+                     unsigned int single_size_port = GET_TYPE_SIZE(first_port);
+                     return "[" + STR(((vector_index+1)*single_size_port)-1+lsb) + ":" + STR(vector_index*single_size_port+lsb) + "]";
+                  }
+               }
+               THROW_UNREACHABLE("");
             }
             if (Type->vector_size > 1 && Type->size == 1)
                return "[" + boost::lexical_cast<std::string>(static_cast<int>(Type->vector_size) - 1) + ":0] ";
@@ -477,7 +510,7 @@ void verilog_writer::WriteBuiltin(const structural_objectConstRef component)
    THROW_ASSERT(mod, component->get_path() + " is not a module");
    THROW_ASSERT(GetPointer<const port_o>(mod->get_out_port(0)),"does not have an output port");
    THROW_ASSERT(component->get_owner(),"does not have an owner");
-   THROW_ASSERT(GetPointer<const port_o>(mod->get_out_port(0))->find_bounded_object(component->get_owner()),"does not have a bounded object");
+   THROW_ASSERT(GetPointer<const port_o>(mod->get_out_port(0))->find_bounded_object(component->get_owner()), component->get_path() + " does not have a bounded object");
    const auto object_bounded = GetPointer<const port_o>(mod->get_out_port(0))->find_bounded_object(component->get_owner());
    const auto component_name = GET_TYPE_NAME(component);
    THROW_ASSERT(builtin_to_verilog_keyword.find(component_name) != builtin_to_verilog_keyword.end(), "Verilog keyword corresponding to " + component_name + " not found");
@@ -574,6 +607,7 @@ void verilog_writer::write_vector_port_binding(const structural_objectRef &port,
    }
    else
    {
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Port binding for " + port->get_path() + " not found - looking for single port binding");
       std::string port_binding;
       port_o * pv = GetPointer<port_o>(port);
       bool local_first_port_analyzed = false;
@@ -722,6 +756,7 @@ void verilog_writer::write_vector_port_binding(const structural_objectRef &port,
       indented_output_stream->Append("({");
       indented_output_stream->Append(port_binding);
       indented_output_stream->Append("})");
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Port binding for " + port->get_path() + " not found - looking for single port binding");
    }
 }
 
@@ -1152,7 +1187,6 @@ void verilog_writer::write_transition_output_functions(bool single_proc, unsigne
          for (unsigned int i = 0; i < mod->get_out_port_size(); i++)
          {
             port_name = HDL_manager::convert_to_identifier(this, mod->get_out_port(i)->get_id());
-            //std::cerr << "setting output of port '" << port_name << "'" << std::endl;
             if(default_output[i] != current_output[i] and current_output[i] != '-')
             {
                if(single_proc || output_index == i)
