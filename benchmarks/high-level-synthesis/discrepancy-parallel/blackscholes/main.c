@@ -23,7 +23,7 @@ fixedpt black_scholes()
 {
   int run = RUN;
   fixedpt sum = 0;
-  fixedpt seeds[RUN] = {
+  const fixedpt seeds[RUN] = {
     35645,
     20955,
     3231,
@@ -57,9 +57,9 @@ fixedpt black_scholes()
     22002,
     49795,
   };
+#pragma omp parallel for reduction(+:sum)
   for (int i = 0; i < run; i++) {
-    fixedpt seed = seeds[i];
-    fixedpt u = asset_path_test(seed);
+    fixedpt u = asset_path_test(seeds[i]);
     sum += (u >> FIXEDPT_BITS - FIXEDPT_WBITS);
   }
   return sum;

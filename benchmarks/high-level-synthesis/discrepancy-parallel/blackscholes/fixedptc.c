@@ -97,7 +97,6 @@ fixedpt fixedpt_sqrt(fixedpt A)
 {
   int invert = 0;
   int iter = FIXEDPT_FBITS;
-  int l, i;
 
   if (A < 0)
     return (-1);
@@ -118,8 +117,8 @@ fixedpt fixedpt_sqrt(fixedpt A)
   }
 
   /* Newton's iterations */
-  l = (A >> 1) + 1;
-  for (i = 0; i < iter; i++)
+  int l = (A >> 1) + 1;
+  for (int i = 0; i < iter; i++)
     l = (l + fixedpt_div(A, l)) >> 1;
   if (invert)
     return (fixedpt_div(FIXEDPT_ONE, l));
