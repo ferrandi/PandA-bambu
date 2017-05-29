@@ -139,9 +139,7 @@ const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
    {
       case DEPENDENCE_RELATIONSHIP:
          {
-            ret.insert(std::make_tuple(HLSFlowStep_Type::TEST_VECTOR_PARSER,
-                  HLSFlowStepSpecializationConstRef(),
-                  HLSFlowStep_Relationship::TOP_FUNCTION));
+
             ret.insert(std::make_tuple(HLSFlowStep_Type::TESTBENCH_MEMORY_ALLOCATION,
                   HLSFlowStepSpecializationConstRef(),
                   HLSFlowStep_Relationship::TOP_FUNCTION));

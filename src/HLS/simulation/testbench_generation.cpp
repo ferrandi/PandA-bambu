@@ -60,6 +60,9 @@ const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
    {
       case DEPENDENCE_RELATIONSHIP:
          {
+            ret.insert(std::make_tuple(HLSFlowStep_Type::TEST_VECTOR_PARSER,
+                                    HLSFlowStepSpecializationConstRef(),
+                                    HLSFlowStep_Relationship::TOP_FUNCTION));
             const HLSFlowStep_Type interface_type = parameters->getOption<HLSFlowStep_Type>(OPT_interface_type);
 #ifndef NDEBUG
             bool interface = interface_type == HLSFlowStep_Type::MINIMAL_INTERFACE_GENERATION or
@@ -71,7 +74,8 @@ const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
 #endif
             if(parameters->isOption(OPT_context_switch))
             {
-               ret.insert(std::make_tuple(HLSFlowStep_Type::INTERFACE_CS_GENERATION,
+               THROW_ASSERT(interface_type == HLSFlowStep_Type::INTERFACE_CS_GENERATION,"");
+               ret.insert(std::make_tuple(HLSFlowStep_Type::MINIMAL_TESTBENCH_GENERATION,
                                         HLSFlowStepSpecializationConstRef(),
                                         HLSFlowStep_Relationship::TOP_FUNCTION));
 

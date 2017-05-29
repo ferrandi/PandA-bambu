@@ -137,9 +137,12 @@ DesignFlowStep_Status GenerateSimulationScripts::Exec()
       full_list.push_back(std::string(LATTICE_PMI_MUL));
    }
 #endif
+   std::cerr << "HHH " << top_fun_id << std::endl;
    THROW_ASSERT(HLSMgr->RSim->filename_bench != "", "Testbench not yet set");
    full_list.push_back(HLSMgr->RSim->filename_bench);
 
+   std::cerr << "Simulator: "<<STR(OPT_simulator) << std::endl;
+   std::cerr << "III " << top_fun_id << std::endl;
    if (parameters->getOption<std::string>(OPT_simulator) == "MODELSIM")
    {
       HLSMgr->RSim->sim_tool = SimulationTool::CreateSimulationTool(SimulationTool::MODELSIM, parameters, suffix);
