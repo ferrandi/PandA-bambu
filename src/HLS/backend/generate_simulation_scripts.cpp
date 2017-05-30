@@ -114,9 +114,6 @@ DesignFlowStep_Status GenerateSimulationScripts::Exec()
    const auto top_function_ids = HLSMgr->CGetCallGraphManager()->GetRootFunctions();
    THROW_ASSERT(top_function_ids.size() == 1, "Multiple top functions");
    const auto top_fun_id = *(top_function_ids.begin());
-   std::cerr << "BBB " << top_fun_id << std::endl;
-   std::cerr << tree_helper::name_function(HLSMgr->get_tree_manager(), top_fun_id) << std::endl;
-   std::cerr << "CCC " << top_fun_id << std::endl;
 
    const hlsRef top_hls = HLSMgr->get_HLS(top_fun_id);
    const std::string suffix = "_beh";
@@ -137,12 +134,9 @@ DesignFlowStep_Status GenerateSimulationScripts::Exec()
       full_list.push_back(std::string(LATTICE_PMI_MUL));
    }
 #endif
-   std::cerr << "HHH " << top_fun_id << std::endl;
    THROW_ASSERT(HLSMgr->RSim->filename_bench != "", "Testbench not yet set");
    full_list.push_back(HLSMgr->RSim->filename_bench);
 
-   std::cerr << "Simulator: "<<STR(OPT_simulator) << std::endl;
-   std::cerr << "III " << top_fun_id << std::endl;
    if (parameters->getOption<std::string>(OPT_simulator) == "MODELSIM")
    {
       HLSMgr->RSim->sim_tool = SimulationTool::CreateSimulationTool(SimulationTool::MODELSIM, parameters, suffix);

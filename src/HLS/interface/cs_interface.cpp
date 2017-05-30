@@ -100,6 +100,7 @@ DesignFlowStep_Status cs_interface::InternalExec()
 
    manage_extern_global_port_top(SM_cs_interface,wrappedObj,interfaceObj);  //connect memory port for memory_ctrl_top
 
+   memory::propagate_memory_parameters(HLS->top->get_circ(), SM_cs_interface);
    // Generation completed, the new created module substitutes the current top-level one
    HLS->top = SM_cs_interface;
    return DesignFlowStep_Status::SUCCESS;
@@ -209,6 +210,7 @@ void cs_interface::resize_dimension_bus_port(unsigned int vector_size, structura
       port->type_resize(bus_size_bitsize);
    else if (GetPointer<port_o>(port)->get_is_tag_bus())
       port->type_resize(bus_tag_bitsize);
+
    GetPointer<port_o>(port)->add_n_ports(vector_size,port);
 }
 

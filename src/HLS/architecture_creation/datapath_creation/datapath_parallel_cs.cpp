@@ -305,7 +305,8 @@ void datapath_parallel_cs::resize_dimension_bus_port(unsigned int vector_size, s
       port->type_resize(bus_size_bitsize);
    else if (GetPointer<port_o>(port)->get_is_tag_bus())
       port->type_resize(bus_tag_bitsize);
-   GetPointer<port_o>(port)->add_n_ports(vector_size,port);   
+
+   GetPointer<port_o>(port)->add_n_ports(vector_size,port);
 }
 
 void datapath_parallel_cs::manage_extern_global_port_parallel(const structural_managerRef SM, const std::set<structural_objectRef> &memory_modules, const structural_objectRef circuit)
@@ -356,10 +357,7 @@ void datapath_parallel_cs::manage_extern_global_port_parallel(const structural_m
          THROW_ASSERT(!cir_port || GetPointer<port_o>(cir_port), "should be a port or null");
          if(!cir_port)
          {
-            if(port_i->get_kind() == port_vector_o_K)
-               cir_port = SM->add_port_vector(port_name, port_o::IN, GetPointer<port_o>(port_i)->get_ports_size(), circuit, port_i->get_typeRef());
-            else
-               cir_port = SM->add_port(port_name, port_o::IN, circuit, port_i->get_typeRef());
+            cir_port = SM->add_port_vector(port_name, port_o::IN, GetPointer<port_o>(port_i)->get_ports_size(), circuit, port_i->get_typeRef());
             port_o::fix_port_properties(port_i, cir_port);
             SM->add_connection(cir_port,port_i);
          }
@@ -379,10 +377,7 @@ void datapath_parallel_cs::manage_extern_global_port_parallel(const structural_m
          THROW_ASSERT(!cir_port || GetPointer<port_o>(cir_port), "should be a port or null");
          if(!cir_port)
          {
-            if(port_i->get_kind() == port_vector_o_K)
-               cir_port = SM->add_port_vector(port_name, port_o::OUT, GetPointer<port_o>(port_i)->get_ports_size(), circuit, port_i->get_typeRef());
-            else
-               cir_port = SM->add_port(port_name, port_o::OUT, circuit, port_i->get_typeRef());
+            cir_port = SM->add_port_vector(port_name, port_o::OUT, GetPointer<port_o>(port_i)->get_ports_size(), circuit, port_i->get_typeRef());
             port_o::fix_port_properties(port_i, cir_port);
             SM->add_connection(cir_port,port_i);
          }

@@ -1423,9 +1423,6 @@ begin
   //arbiter for decide which data go to memory
   PT_RR_FU #(.BITSIZE_ops(1), .PORTSIZE_ops(RATIO), .BITSIZE_rops(1), .PORTSIZE_rops(RATIO)) RR_fifo_in_0(.ops(selector_mux_fifo_in[RATIO*(i+1)-1:RATIO*i]), .ENABLE(1'b1), .clock(clock), .reset(!reset), .rops(fifo_wait_notempty[RATIO*(i+1)-1:RATIO*i]));
 
-  //assign tag out
-  assign Min_tag[BITSIZE_Mout_tag_ram*(i+1)-1:BITSIZE_Mout_tag_ram*i]={1'b0,IN_Min_tag[BITSIZE_Mout_tag_ram*(i+1)-2:BITSIZE_Mout_tag_ram*i]};
-
   //BIND in of IN_fifo_in       //MUX with n in
   mux_pw_2 #(.BITSIZE_selector(RATIO), .BITSIZE_data(SIZE_TOT_IN*RATIO), .BITSIZE_out(SIZE_TOT_IN)) mux_in (.selector(selector_mux_fifo_in[RATIO*(i+1)-1:RATIO*i]), .data(data_in_mem_par[SIZE_TOT_IN*((i+1)*RATIO)-1:SIZE_TOT_IN*(i*RATIO)]), .out(data_in[SIZE_TOT_IN*(i+1)-1:SIZE_TOT_IN*i]));
 end
@@ -1440,16 +1437,19 @@ for(i=0; i&lt;NUM_ACC; i=i+1)
     //reconstruct block from input
     assign data_in_mem_par[SIZE_TOT_IN*(i+1)-1:SIZE_TOT_IN*i]={Mout_tag_ram[BITSIZE_Mout_tag_ram*(i+1)-1:BITSIZE_Mout_tag_ram*i], Mout_Wdata_ram[BITSIZE_Mout_Wdata_ram*(i+1)-1:BITSIZE_Mout_Wdata_ram*i], Mout_data_ram_size[BITSIZE_Mout_data_ram_size*(i+1)-1:BITSIZE_Mout_data_ram_size*i], Mout_addr_ram[BITSIZE_Mout_addr_ram*(i+1)-1:BITSIZE_Mout_addr_ram*i], Mout_we_ram[BITSIZE_Mout_we_ram*(i+1)-1:BITSIZE_Mout_we_ram*i], Mout_oe_ram[BITSIZE_Mout_oe_ram*(i+1)-1:BITSIZE_Mout_oe_ram*i]};
 
+    //BIND out of OUT_fifo_out
+    assign M_Rdata_ram[BITSIZE_M_Rdata_ram*(i+1)-1:BITSIZE_M_Rdata_ram*i]= IN_M_Rdata_ram[BITSIZE_M_Rdata_ram*((i/RATIO)+1)-1:BITSIZE_M_Rdata_ram*(i/RATIO)];
+
+    //assign tag out
+    assign Min_tag[BITSIZE_Mout_tag_ram*(i+1)-1:BITSIZE_Mout_tag_ram*i]={1'b0,IN_Min_tag[BITSIZE_Mout_tag_ram*((i/RATIO)+1)-2:BITSIZE_Mout_tag_ram*(i/RATIO)]};
+
     //ack that is the rd_en on the scheduler, if fifo not empty push down data    //POSSIBLE TO DO REST
     assign M_DataRdy[i]=(IN_M_DataRdy[i/RATIO] &amp;&amp; IN_Min_tag[BITSIZE_Mout_tag_ram*(i/RATIO)+ADDR_TASKS+ADDR_ACC-1:BITSIZE_Mout_tag_ram*(i/RATIO)+ADDR_TASKS]==i &amp;&amp; IN_Min_tag[BITSIZE_Mout_tag_ram*(i/RATIO+1)-1]);
 
     //ack on the appropriate kernel if its request is accepted
     assign request_accepted[i] =(IN_request_accepted[(i/RATIO)] &amp;&amp; fifo_wait_notempty[i] &amp;&amp; selector_mux_fifo_in[i]==1'b1);
   end
-endgenerate
-
-//BIND out of OUT_fifo_out
-assign M_Rdata_ram= IN_M_Rdata_ram;"/>
+endgenerate"/>
         </component_o>
       </circuit>
     </cell>
