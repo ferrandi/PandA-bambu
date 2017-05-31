@@ -1964,7 +1964,6 @@ reg [PORTSIZE_start_port_accelerator-1:0] next_worker_status;
       worker_status &lt;= next_worker_status;
  end
 always @(*) begin
-  next_worker_status = worker_status;
 end
 
 genvar i;
@@ -1972,6 +1971,7 @@ generate
   for(i=0; i&lt;PORTSIZE_start_port_accelerator; i=i+1)  //or a x ingressi
   begin
     always @(*) begin
+      next_worker_status[i] = worker_status[i];
       if (selected_worker[i])
         next_worker_status[i] =1'b1;
       if (done_request_accelerator[i])

@@ -125,7 +125,30 @@ void conn_binding_cs::instantiate_suspension_component(const HLS_managerRef HLSM
    }
    num_starting_port_or=GetPointer<port_o>(port_in_or)->get_ports_size();   //or must start with 2 port
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - Connected load and store");
-   connectOutOr(HLSMgr, HLS, port_out_or);
+
+   //adding or to put in or memory_op
+   structural_objectRef andStartMemOp = SM->add_module_from_technology_library("andStartMemOp", AND_GATE_STD, HLS->HLS_T->get_technology_manager()->get_library(OR_GATE_STD), circuit, HLS->HLS_T->get_technology_manager());
+   structural_objectRef port_in_and = andStartMemOp->find_member("in", port_vector_o_K, andStartMemOp);
+   structural_objectRef port_out_and = andStartMemOp->find_member("out1", port_o_K, andStartMemOp);
+   GetPointer<port_o>(port_in_and)->add_n_ports(2, port_in_and);
+
+   structural_type_descriptorRef bool_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 0));
+   structural_objectRef signal_out_or=SM->add_sign(STR(SUSPENSION)+"_signal_or", circuit, bool_type);
+   SM->add_connection(port_out_or, signal_out_or);
+   SM->add_connection(signal_out_or, GetPointer<port_o>(port_in_and)->get_port(0));
+   for(unsigned int j=0;j<n_elements;j++)
+   {
+      structural_objectRef curr_gate = GetPointer<module>(circuit)->get_internal_object(j);
+      if(GET_TYPE_NAME(curr_gate)=="mem_ctrl_kernel")
+      {
+         structural_objectRef portStart=curr_gate->find_member(STR(START_PORT_NAME), port_o_K, curr_gate);
+         structural_objectRef startMemOp=GetPointer<port_o>(portStart)->get_connected_signal();
+         THROW_ASSERT(startMemOp!=NULL, "No start port for mem_ctrl_found");
+         SM->add_connection(startMemOp, GetPointer<port_o>(port_in_and)->get_port(1));
+         break;
+      }
+   }
+   connectOutOr(HLSMgr, HLS, port_out_and);
 }
 
 void conn_binding_cs::connectOutOr(const HLS_managerRef HLSMgr, const hlsRef HLS, structural_objectRef port_out_or)
