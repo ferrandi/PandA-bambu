@@ -269,9 +269,9 @@ end"/>
           <port_o id="out" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="simple_dual_port_ram_single_clock data read_addr out BITSIZE_addr" VERILOG_PROVIDED="
+          <NP_functionality LIBRARY="simple_dual_port_ram_single_clock data read_addr write_addr out" VERILOG_PROVIDED="
 reg [BITSIZE_data-1:0] q;
-reg [BITSIZE_data-1:0] ram[2**BITSIZE_addr-1:0];
+reg [BITSIZE_data-1:0] ram[2**BITSIZE_read_addr-1:0];
   always @ (posedge clock) begin
     if (we)
       ram[write_addr] &lt;= data;
@@ -373,7 +373,7 @@ begin : STATUS_COUNTER
   end
 end
    
-simple_dual_port_ram_single_clock #(.BITSIZE_data(BITSIZE_data_in),.BITSIZE_addr(ADDR_WIDTH)) DP_RAM (.clock(clock), .write_addr(wr_pointer), .data(data_in), .we(wr_en), .read_addr (rd_pointer), .out(data_ram));"/>
+simple_dual_port_ram_single_clock #(.BITSIZE_data(BITSIZE_data_in), .BITSIZE_read_addr(ADDR_WIDTH), .BITSIZE_write_addr(ADDR_WIDTH), .BITSIZE_out(BITSIZE_data_out)) DP_RAM (.clock(clock), .write_addr(wr_pointer), .data(data_in), .we(wr_en), .read_addr (rd_pointer), .out(data_ram));"/>
         </component_o>
       </circuit>
     </cell>
@@ -522,7 +522,7 @@ assign available_data = ~fifo_empty;
       <circuit>
         <component_o id="scheduler">
           <structural_type_descriptor id_type="scheduler"/>
-          <parameter name="NUM_TASKS">8</parameter>
+          <parameter name="NUM_TASKS">2</parameter>
           <parameter name="KERN_NUM">0</parameter>
           <parameter name="ADDR_ACC">2</parameter>
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
@@ -652,7 +652,7 @@ wire done_request_next;
 wire [BITSIZE_selector_register_file-1:0] data_ready;
 wire selectorByMemory;
 
-fifio_free #(.BITSIZE_data_in(BITSIZE_selector_register_file), .ADDR_WIDTH($clog2(NUM_TASKS) )) fifo_free(
+fifio_free #(.BITSIZE_data_in(BITSIZE_selector_register_file), .BITSIZE_data_out(BITSIZE_selector_register_file), .ADDR_WIDTH($clog2(NUM_TASKS) )) fifo_free(
 .full        (fifo_full_free),
 .empty       (fifo_empty_free),
 .data_out    (fifo_data_out_free),
@@ -662,7 +662,7 @@ fifio_free #(.BITSIZE_data_in(BITSIZE_selector_register_file), .ADDR_WIDTH($clog
 .wr_en       (fifo_wr_en_free),
 .data_in     (selector_register_file)); // just the selector can write the data_in of fifo_free
 
-fifio #(.BITSIZE_data_in(BITSIZE_selector_register_file), .ADDR_WIDTH($clog2(NUM_TASKS))) fifo_ready(
+fifio #(.BITSIZE_data_in(BITSIZE_selector_register_file), .BITSIZE_data_out(BITSIZE_selector_register_file), .ADDR_WIDTH($clog2(NUM_TASKS))) fifo_ready(
 .full        (),
 .empty       (fifo_empty_ready),
 .data_out    (fifo_data_out_ready),
@@ -672,7 +672,7 @@ fifio #(.BITSIZE_data_in(BITSIZE_selector_register_file), .ADDR_WIDTH($clog2(NUM
 .wr_en       (fifo_wr_en_ready),  // when data is copied insert data of task ready on ready
 .data_in     (IN_Min_tag[BITSIZE_selector_register_file-1:0]));    // data go into memory to say in which cell to write and here to say which task is now ready
 
-fifio #(.BITSIZE_data_in(BITSIZE_selector_register_file), .ADDR_WIDTH($clog2(NUM_TASKS))) fifo_wait(
+fifio #(.BITSIZE_data_in(BITSIZE_selector_register_file), .BITSIZE_data_out(BITSIZE_selector_register_file), .ADDR_WIDTH($clog2(NUM_TASKS))) fifo_wait(
 .full (),  	         //used by arbiter
 .empty (fifo_wait_empty),         //used by arbiter
 .data_out (fifo_wait_data_out),
@@ -701,7 +701,7 @@ assign fifo_wr_en_free = done_scheduler &amp;&amp; (!fifo_empty_free || !fifo_em
 assign fifo_rd_en_ready = mux_fifo_sel &amp;&amp; !selectorByMemory;
 assign fifo_wr_en_ready = IN_M_DataRdy &amp;&amp; !(mux_fifo_sel &amp;&amp; selectorByMemory);
 
-mem_scheduler #(.BITSIZE_addr_mem_kern(BITSIZE_selector_register_file), .BITSIZE_addr_kern_mem(BITSIZE_selector_register_file), .BITSIZE_addr_mem_par(BITSIZE_selector_register_file), .BITSIZE_addr_par_mem(BITSIZE_selector_register_file), .BITSIZE_data_in_kern_mem(SIZE_IN), .BITSIZE_data_in_par_mem(SIZE_IN), .BITSIZE_data_out_mem_kern(SIZE_IN), .BITSIZE_data_out_mem_par(SIZE_IN)) mem_scheduler (
+mem_scheduler #(.BITSIZE_addr_mem_kern(BITSIZE_selector_register_file), .BITSIZE_addr_kern_mem(BITSIZE_selector_register_file), .BITSIZE_addr_mem_par(BITSIZE_selector_register_file), .BITSIZE_addr_par_mem(BITSIZE_selector_register_file), .BITSIZE_data_in_kern_mem(SIZE_IN), .BITSIZE_data_in_par_mem(SIZE_IN), .BITSIZE_data_out_mem_kern(SIZE_IN), .BITSIZE_data_out_mem_par(SIZE_IN), .NUM_TASKS(NUM_TASKS)) mem_scheduler (
 .clock(clock),
 .reset(reset),
 .addr_mem_kern(selector_register_file),
@@ -830,6 +830,7 @@ assign done_request_next= fifo_rd_en_free || (done_scheduler &amp; fifo_empty_fr
       <circuit>
         <component_o id="mem_scheduler">
           <structural_type_descriptor id_type="mem_scheduler"/>
+          <parameter name="NUM_TASKS">2</parameter>
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
@@ -870,12 +871,12 @@ assign done_request_next= fifo_rd_en_free || (done_scheduler &amp; fifo_empty_fr
           <port_o id="data_out_mem_par" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" />
           </port_o>
-          <NP_functionality LIBRARY="mem_scheduler addr_mem_kern addr_kern_mem addr_mem_par addr_par_mem data_in_kern_mem data_in_par_mem  data_out_mem_kern data_out_mem_par" VERILOG_PROVIDED="
-reg [BITSIZE_data_in_kern_mem-1:0] local_mem[BITSIZE_addr_mem_kern-1:0];
+          <NP_functionality LIBRARY="mem_scheduler addr_mem_kern addr_kern_mem addr_mem_par addr_par_mem data_in_kern_mem data_in_par_mem  data_out_mem_kern data_out_mem_par NUM_TASKS" VERILOG_PROVIDED="
+reg [BITSIZE_data_in_kern_mem-1:0] local_mem[NUM_TASKS-1:0];
 
 integer i;
 initial begin
-  for (i=0; i&lt;BITSIZE_addr_mem_kern; i=i+1) begin
+  for (i=0; i&lt;NUM_TASKS; i=i+1) begin
     local_mem[i] = {BITSIZE_data_in_kern_mem{1'b0}};
   end
 end
@@ -1129,10 +1130,10 @@ generate
   for(i=0; i&lt;NUM_BANK; i=i+1)
   begin
     // IN - I am putting data from parallel
-    fifio #(.BITSIZE_data_in(SIZE_TOT_IN), .ADDR_WIDTH(FIFO_IN)) IN_fifo (.full (IN_fifo_full[i]), .empty (IN_fifo_empty[i]), .data_out (IN_fifo_data_out[SIZE_TOT_IN*(i+1)-1:SIZE_TOT_IN*i]), .clock (clock), .reset (reset), .rd_en (IN_fifo_rd_en[i]), .wr_en (IN_fifo_wr_en[i]), .data_in (IN_fifo_data_in[SIZE_TOT_IN*(i+1)-1:SIZE_TOT_IN*i]));
+    fifio #(.BITSIZE_data_in(SIZE_TOT_IN), .BITSIZE_data_out(SIZE_TOT_IN), .ADDR_WIDTH(FIFO_IN)) IN_fifo (.full (IN_fifo_full[i]), .empty (IN_fifo_empty[i]), .data_out (IN_fifo_data_out[SIZE_TOT_IN*(i+1)-1:SIZE_TOT_IN*i]), .clock (clock), .reset (reset), .rd_en (IN_fifo_rd_en[i]), .wr_en (IN_fifo_wr_en[i]), .data_in (IN_fifo_data_in[SIZE_TOT_IN*(i+1)-1:SIZE_TOT_IN*i]));
 
     //OUT - I am putting data from memory
-    fifio #(.BITSIZE_data_in(SIZE_TOT_OUT), .ADDR_WIDTH(FIFO_OUT)) OUT_fifo_0 (.full (OUT_fifo_full[i]), .empty (OUT_fifo_empty[i]), .data_out (OUT_fifo_data_out[SIZE_TOT_OUT*(i+1)-1:SIZE_TOT_OUT*i]), .clock (clock), .reset (reset), .rd_en (OUT_fifo_rd_en[i]), .wr_en (OUT_fifo_wr_en[i]), .data_in (OUT_fifo_data_in[SIZE_TOT_OUT*(i+1)-1:SIZE_TOT_OUT*i]));
+    fifio #(.BITSIZE_data_in(SIZE_TOT_OUT), .BITSIZE_data_out(SIZE_TOT_OUT), .ADDR_WIDTH(FIFO_OUT)) OUT_fifo_0 (.full (OUT_fifo_full[i]), .empty (OUT_fifo_empty[i]), .data_out (OUT_fifo_data_out[SIZE_TOT_OUT*(i+1)-1:SIZE_TOT_OUT*i]), .clock (clock), .reset (reset), .rd_en (OUT_fifo_rd_en[i]), .wr_en (OUT_fifo_wr_en[i]), .data_in (OUT_fifo_data_in[SIZE_TOT_OUT*(i+1)-1:SIZE_TOT_OUT*i]));
 
     //register of data that is connected with memory (blocking)
     register_SE_r #(.BITSIZE_in1(SIZE_TOT_IN), .BITSIZE_out1(SIZE_TOT_IN)) register_status(.clock(clock), .reset(reset), .in1(IN_fifo_data_out[SIZE_TOT_IN*(i+1)-1:SIZE_TOT_IN*i]), .we(valid_Out_fifo[i]), .out1(out_reg[SIZE_TOT_IN*(i+1)-1:SIZE_TOT_IN*i]));
@@ -1722,7 +1723,7 @@ reg wrenable_reg_1;
 reg wrenable_reg_0;
 reg selector_MUX_2_reg_0_0_0_0;
 reg selector_IN_UNBOUNDED_parallel_18797_18995;
-reg [BITSIZE_start_port_accelerator-1:0]            worker_status;          // To CallDispatcher_i0 of CallDispatcher.v
+reg [PORTSIZE_start_port_accelerator-1:0]            worker_status;          // To CallDispatcher_i0 of CallDispatcher.v
 
 wire [31:0] out_MUX_2_reg_0_0_0_0;
 wire out_const_0;
@@ -1746,7 +1747,7 @@ wire [31:0] StartCounter_value;     // From StartCounter of Counter.v
 wire [31:0] number_req_tasks;
 wire [31:0]          request;    // From CallDispatcher_i0 of CallDispatcher.v
 wire OUT_UNBOUNDED_parallel_18797_18995;
-wire [BITSIZE_start_port_accelerator-1:0] selected_worker;        // From CallDispatcher_i0 of CallDispatcher.v
+wire [PORTSIZE_start_port_accelerator-1:0] selected_worker;        // From CallDispatcher_i0 of CallDispatcher.v
 reg reset_counter;
 reg next_reset_counter;
 
@@ -1867,12 +1868,12 @@ register_SE #(.BITSIZE_in1(32), .BITSIZE_out1(32)) reg_0 (
 .in1(out_MUX_2_reg_0_0_0_0),
 .wenable(wrenable_reg_0));
 
-fifo #(.BITSIZE_data_in(32), .ADDR_WIDTH(10)) fifo_i0
+fifo #(.BITSIZE_data_in(32), .BITSIZE_data_out(32), .ADDR_WIDTH(10)) fifo_i0
  (/*AUTOINST*/
   // Outputs
   .full                             (fifo_full),             // Templated
   .empty                            (fifo_empty),            // Templated
-  .data_out                         (fifo_data_out[31:0]),   // Templated
+  .data_out                         (fifo_data_out),   // Templated
   // Inputs
   .clock                              (clock),                 // Templated
   .reset                              (!reset),                // Templated
@@ -1882,7 +1883,7 @@ fifo #(.BITSIZE_data_in(32), .ADDR_WIDTH(10)) fifo_i0
   .wr_en                            (selector_IN_UNBOUNDED_parallel_18797_18995),            // Templated
   .data_in                          (out_reg_0_reg_0));               // Templated
 
-CallDispatcher #(.BITSIZE_worker_status(BITSIZE_start_port_accelerator), .BITSIZE_request(32)) CallDispatcher_i0
+CallDispatcher #(.BITSIZE_fifo_data_out(32), .BITSIZE_worker_status(PORTSIZE_start_port_accelerator), .BITSIZE_request(32), .BITSIZE_selected_worker(PORTSIZE_start_port_accelerator)) CallDispatcher_i0
  (/*AUTOINST*/
   // Outputs
   .fifo_rd_cs                       (fifo_rd_cs),
@@ -1905,7 +1906,7 @@ Counter #(.BITSIZE_value(32), .BITSIZE_driver_lines(1)) StartCounter (
 .reset              (reset_counter),         // Templated
 .driver_lines   (selector_IN_UNBOUNDED_parallel_18797_18995));            // Templated
 
-Counter #(.BITSIZE_value(32), .BITSIZE_driver_lines(BITSIZE_start_port_accelerator)) DoneCounter(
+Counter #(.BITSIZE_value(32), .BITSIZE_driver_lines(PORTSIZE_start_port_accelerator)) DoneCounter(
 /*AUTOINST*/
 // Outputs
 .value                         (DoneCounter_value), // Templated
@@ -1915,7 +1916,7 @@ Counter #(.BITSIZE_value(32), .BITSIZE_driver_lines(BITSIZE_start_port_accelerat
 .driver_lines                  (done_port_accelerator)); // Templated
 
 // done request counter
-Counter #(.BITSIZE_value(32), .BITSIZE_driver_lines(BITSIZE_start_port_accelerator)) DoneReqCounter(
+Counter #(.BITSIZE_value(32), .BITSIZE_driver_lines(PORTSIZE_start_port_accelerator)) DoneReqCounter(
 /*AUTOINST*/
 // Outputs
 .value (number_req_tasks), // Templated
@@ -1955,10 +1956,10 @@ constant_value #(.BITSIZE_out1(1), .value(1'b1)) const_1 (.out1(out_const_1));
 
 
 // Worker status register
-reg [BITSIZE_start_port_accelerator-1:0] next_worker_status;
+reg [PORTSIZE_start_port_accelerator-1:0] next_worker_status;
  always @(posedge clock or negedge reset) begin
     if (!reset)
-      worker_status &lt;= {BITSIZE_start_port_accelerator{1'b0}};
+      worker_status &lt;= {PORTSIZE_start_port_accelerator{1'b0}};
     else
       worker_status &lt;= next_worker_status;
  end
@@ -1968,7 +1969,7 @@ end
 
 genvar i;
 generate
-  for(i=0; i&lt;BITSIZE_start_port_accelerator; i=i+1)  //or a x ingressi
+  for(i=0; i&lt;PORTSIZE_start_port_accelerator; i=i+1)  //or a x ingressi
   begin
     always @(*) begin
       if (selected_worker[i])

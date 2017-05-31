@@ -185,7 +185,15 @@ void datapath_parallel_cs::connect_module_kernel(structural_objectRef kernel_mod
    {
       structural_objectRef parameter_kernel = kernel_mod->find_member(BH->PrintVariable(function_parameter),port_o_K,kernel_mod);
       structural_objectRef parameter_datapath = circuit->find_member(prefix + BH->PrintVariable(function_parameter),port_o_K,circuit);
-      SM->add_connection(parameter_datapath, parameter_kernel);
+      if(parameter_datapath==NULL)
+      {
+         structural_type_descriptorRef request_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 32));
+         SM->add_port(prefix + BH->PrintVariable(function_parameter), port_o::IN, circuit, request_type);
+         parameter_datapath = circuit->find_member(prefix + BH->PrintVariable(function_parameter),port_o_K,circuit);
+      }
+      std::cout<<"Parameter: "<<BH->PrintVariable(function_parameter)<<std::endl;
+      if(parameter_kernel!=NULL)
+         SM->add_connection(parameter_datapath, parameter_kernel);
    }
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - Connected parameter port");
 
