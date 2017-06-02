@@ -626,27 +626,28 @@ parameter [2:0] S_0 = 3'd0,
 
 reg [2:0] _present_state, _next_state;
 wire [BITSIZE_selector_register_file-1:0] next_selector_register_file;
-wire fifo_empty_free;
 wire [BITSIZE_selector_register_file-1:0] fifo_data_out_free;
-wire fifo_wait_empty;
+wire fifo_empty_free;
+wire fifo_empty_wait;
 wire fifo_empty_ready;
 wire [BITSIZE_selector_register_file-1:0] fifo_data_out_ready;
 wire fifo_rd_en_ready;
 wire fifo_wr_en_ready;
-wire [BITSIZE_selector_register_file-1:0] fifo_wait_data_out;
+wire fifo_rd_en_free;
+wire fifo_wr_en_free;
+wire fifo_full_free;
+wire fifo_full_ready;
+wire fifo_full_wait;
+wire [BITSIZE_selector_register_file-1:0] fifo_data_out_wait;
 wire [SIZE_IN-1:0] data_out_mem_kern;
 wire [SIZE_IN-1:0] data_out_mem_par;
 wire [SIZE_IN-1:0] data_in_kern_mem;
 wire [SIZE_IN-1:0] data_in_par_mem;
 wire [SIZE_IN-1:0] temp;
-reg [31:0] i;
-wire fifo_rd_en_free;
-wire fifo_wr_en_free;
 wire mux_fifo_sel;
 wire [BITSIZE_selector_register_file-1:0] old_selector;
 wire [BITSIZE_selector_register_file-1:0] new_selector;
 wire mux_switching_logic;
-wire fifo_full_free;
 wire [BITSIZE_M_DataRdy-1:0] M_DataRdy_next;
 wire done_request_next;
 wire [BITSIZE_selector_register_file-1:0] data_ready;
@@ -663,7 +664,7 @@ fifio_free #(.BITSIZE_data_in(BITSIZE_selector_register_file), .BITSIZE_data_out
 .data_in     (selector_register_file)); // just the selector can write the data_in of fifo_free
 
 fifio #(.BITSIZE_data_in(BITSIZE_selector_register_file), .BITSIZE_data_out(BITSIZE_selector_register_file), .ADDR_WIDTH($clog2(NUM_TASKS))) fifo_ready(
-.full        (),
+.full        (fifo_full_ready),
 .empty       (fifo_empty_ready),
 .data_out    (fifo_data_out_ready),
 .clock       (clock),
@@ -673,14 +674,14 @@ fifio #(.BITSIZE_data_in(BITSIZE_selector_register_file), .BITSIZE_data_out(BITS
 .data_in     (IN_Min_tag[BITSIZE_selector_register_file-1:0]));    // data go into memory to say in which cell to write and here to say which task is now ready
 
 fifio #(.BITSIZE_data_in(BITSIZE_selector_register_file), .BITSIZE_data_out(BITSIZE_selector_register_file), .ADDR_WIDTH($clog2(NUM_TASKS))) fifo_wait(
-.full (),  	         //used by arbiter
-.empty (fifo_wait_empty),         //used by arbiter
-.data_out (fifo_wait_data_out),
-.clock (clock),
-.reset (reset),
-.rd_en (IN_request_accepted),
-.wr_en (suspension),
-.data_in (selector_register_file));
+.full        (fifo_full_wait),  	         //used by arbiter
+.empty       (fifo_empty_wait),         //used by arbiter
+.data_out    (fifo_data_out_wait),
+.clock       (clock),
+.reset       (reset),
+.rd_en       (IN_request_accepted),
+.wr_en       (suspension),
+.data_in     (selector_register_file));
 
 //if fifo ready empty but data from memory ready then use data from memory
 assign selectorByMemory = fifo_empty_ready &amp;&amp; IN_M_DataRdy;
@@ -706,7 +707,7 @@ mem_scheduler #(.BITSIZE_addr_mem_kern(BITSIZE_selector_register_file), .BITSIZE
 .reset(reset),
 .addr_mem_kern(selector_register_file),
 .addr_kern_mem(selector_register_file),
-.addr_mem_par(fifo_wait_data_out),
+.addr_mem_par(fifo_data_out_wait),
 .addr_par_mem(IN_Min_tag[BITSIZE_selector_register_file-1:0]),
 .we_kern_mem(suspension),
 .we_par_mem(IN_M_DataRdy),    //if ready 1 then write
@@ -717,12 +718,12 @@ mem_scheduler #(.BITSIZE_addr_mem_kern(BITSIZE_selector_register_file), .BITSIZE
 
 assign data_in_kern_mem = {Mout_tag_ram,Mout_Wdata_ram,Mout_data_ram_size,Mout_addr_ram,Mout_we_ram,Mout_oe_ram};
 assign data_in_par_mem = {IN_Min_tag[BITSIZE_Mout_tag_ram-1:BITSIZE_selector_register_file+KERN_NUM], {(BITSIZE_selector_register_file+KERN_NUM){1'b0}}, IN_M_Rdata_ram,{(BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram){1'b0}}};
-assign OUT_Mout_oe_ram=(data_out_mem_par[BITSIZE_Mout_oe_ram-1] &amp;&amp; !fifo_wait_empty);
-assign OUT_Mout_we_ram=(data_out_mem_par[BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1] &amp;&amp; !fifo_wait_empty);
+assign OUT_Mout_oe_ram=(data_out_mem_par[BITSIZE_Mout_oe_ram-1] &amp;&amp; !fifo_empty_wait);
+assign OUT_Mout_we_ram=(data_out_mem_par[BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1] &amp;&amp; !fifo_empty_wait);
 assign OUT_Mout_addr_ram=data_out_mem_par[BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1:BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram];
 assign OUT_Mout_data_ram_size=data_out_mem_par[BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1:BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram];
 assign OUT_Mout_Wdata_ram=data_out_mem_par[BITSIZE_Mout_Wdata_ram + BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1:BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram];
-assign OUT_Mout_tag_ram={data_out_mem_par[BITSIZE_Mout_tag_ram + BITSIZE_Mout_Wdata_ram + BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1:ADDR_ACC + BITSIZE_selector_register_file+ BITSIZE_Mout_Wdata_ram + BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram],KERN_NUM,fifo_wait_data_out};
+assign OUT_Mout_tag_ram={data_out_mem_par[BITSIZE_Mout_tag_ram + BITSIZE_Mout_Wdata_ram + BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1:ADDR_ACC + BITSIZE_selector_register_file+ BITSIZE_Mout_Wdata_ram + BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram],KERN_NUM,fifo_data_out_wait};
 
 assign M_Rdata_ram=data_out_mem_kern[BITSIZE_Mout_Wdata_ram + BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1:BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram];
 assign Min_tag=data_out_mem_kern[BITSIZE_Mout_tag_ram + BITSIZE_Mout_Wdata_ram + BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1:BITSIZE_Mout_Wdata_ram + BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram];
