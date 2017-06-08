@@ -81,7 +81,6 @@ void fu_binding_cs::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, str
 
 void fu_binding_cs::instantiate_component_kernel(const HLS_managerRef HLSMgr, const hlsRef HLS, structural_objectRef clock_port, structural_objectRef reset_port)
 {
-   structural_type_descriptorRef bool_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 0));
    const structural_managerRef SM = HLS->datapath;
    const structural_objectRef circuit = SM->get_circ();
    std::string scheduler_model = "scheduler";
@@ -107,23 +106,22 @@ void fu_binding_cs::instantiate_component_kernel(const HLS_managerRef HLSMgr, co
 
    structural_objectRef done_scheduler = scheduler_mod->find_member(DONE_SCHEDULER,port_o_K,scheduler_mod);
    structural_objectRef done_datapath = circuit->find_member(DONE_SCHEDULER,port_o_K,circuit);
-   structural_objectRef done_sign=SM->add_sign("done_scheduler_signal", circuit, bool_type);
-   SM->add_connection(done_sign, done_datapath);
-   SM->add_connection(done_sign, done_scheduler);
+   SM->add_connection(done_datapath, done_scheduler);
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, " - Added done sche");
+
+   structural_objectRef start_port_scheduler = scheduler_mod->find_member(STR(START_PORT_NAME)+"_task",port_o_K,scheduler_mod);
+   structural_objectRef start_port_datapath = circuit->find_member(STR(START_PORT_NAME)+"_task",port_o_K,circuit);
+   SM->add_connection(start_port_datapath, start_port_scheduler);
+   PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, " - Added start sche");
 
    structural_objectRef task_pool_end_scheduler = scheduler_mod->find_member(STR(TASKS_POOL_END),port_o_K,scheduler_mod);
    structural_objectRef task_pool_end_datapath = circuit->find_member(STR(TASKS_POOL_END),port_o_K,circuit);
-   structural_objectRef task_pool_end_sign=SM->add_sign(STR(TASKS_POOL_END)+"_signal", circuit, bool_type);
-   SM->add_connection(task_pool_end_sign, task_pool_end_datapath);
-   SM->add_connection(task_pool_end_sign, task_pool_end_scheduler);
+   SM->add_connection(task_pool_end_datapath, task_pool_end_scheduler);
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - Added task_pool_end sche");
 
    structural_objectRef done_request_scheduler = scheduler_mod->find_member(STR(DONE_REQUEST),port_o_K,scheduler_mod);
    structural_objectRef done_request_datapath = circuit->find_member(STR(DONE_REQUEST),port_o_K,circuit);
-   structural_objectRef done_request_sign=SM->add_sign(STR(DONE_REQUEST)+"_signal", circuit, bool_type);
-   SM->add_connection(done_request_sign, done_request_datapath);
-   SM->add_connection(done_request_sign, done_request_scheduler);
+   SM->add_connection(done_request_scheduler, done_request_datapath);
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - Added done_request sche");
 
    resize_scheduler_ports(HLSMgr,scheduler_mod);
