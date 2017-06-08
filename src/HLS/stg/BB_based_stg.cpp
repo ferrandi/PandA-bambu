@@ -110,6 +110,7 @@
 #include "tree_basic_block.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
+#include "omp_functions.hpp"
 
 #include <set>
 #include <unordered_map>
@@ -277,6 +278,13 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
       {
          has_registered_inputs = true;
       }
+   }
+
+   auto omp_functions = GetPointer<OmpFunctions>(HLSMgr->Rfuns);
+   if(HLS->Param->isOption(OPT_context_switch))
+   {
+      if(omp_functions->kernel_functions.find(funId) != omp_functions->kernel_functions.end())
+         has_registered_inputs = true;
    }
    HLS->registered_inputs = has_registered_inputs;
 
