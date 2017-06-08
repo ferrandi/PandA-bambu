@@ -58,26 +58,24 @@ top_entity_cs::~top_entity_cs()
 
 DesignFlowStep_Status top_entity_cs::InternalExec()
 {
-   structural_managerRef Datapath = HLS->datapath;
-   structural_objectRef datapath_circuit = Datapath->get_circ();
-    auto omp_functions = GetPointer<OmpFunctions>(HLSMgr->Rfuns);
-    top_entity::InternalExec();
+   auto omp_functions = GetPointer<OmpFunctions>(HLSMgr->Rfuns);
+   top_entity::InternalExec();
 
-    if(omp_functions->kernel_functions.find(funId) != omp_functions->kernel_functions.end())
-    {
-        add_context_switch_port_kernel();
-    }
-    else
-    {
-       bool found=false;
-       if(omp_functions->parallelized_functions.find(funId) != omp_functions->parallelized_functions.end()) found=true;
-       if(omp_functions->atomic_functions.find(funId) != omp_functions->atomic_functions.end()) found=true;
-       if(found)       //function with selector
-       {
-          add_context_switch_port();
-       }
-    }
-    return DesignFlowStep_Status::SUCCESS;
+   if(omp_functions->kernel_functions.find(funId) != omp_functions->kernel_functions.end())
+   {
+      add_context_switch_port_kernel();
+   }
+   else
+   {
+      bool found=false;
+      if(omp_functions->parallelized_functions.find(funId) != omp_functions->parallelized_functions.end()) found=true;
+      if(omp_functions->atomic_functions.find(funId) != omp_functions->atomic_functions.end()) found=true;
+      if(found)       //function with selector
+      {
+         add_context_switch_port();
+      }
+   }
+   return DesignFlowStep_Status::SUCCESS;
 }
 
 void top_entity_cs::add_context_switch_port()
@@ -135,8 +133,10 @@ void top_entity_cs::add_context_switch_port_kernel()
     structural_objectRef done_signal_in = circuit->find_member("done_delayed_REG_signal_in", signal_o_K, circuit);
     SM->add_connection(done_signal_in, datapath_done_port);    //connect signal out controller to datapath START_PORT_NAME
 
-    structural_objectRef datapath_start_port = datapath_circuit->find_member(STR(START_PORT_NAME)+"task", port_o_K, datapath_circuit);
-    structural_objectRef start_signal_in = circuit->find_member(STR(START_PORT_NAME), signal_o_K, circuit);
+    structural_objectRef datapath_start_port = datapath_circuit->find_member(STR(START_PORT_NAME)+"_task", port_o_K, datapath_circuit);
+    if(datapath_start_port==NULL) std::cout<<"No datapath_start"<<std::endl;
+    structural_objectRef start_signal_in = circuit->find_member(STR(START_PORT_NAME), port_o_K, circuit);
+    if(start_signal_in==NULL) std::cout<<"No circuit_start"<<std::endl;
     SM->add_connection(start_signal_in, datapath_start_port);    //connect start to datapath
 
     SM->add_NP_functionality(circuit, NP_functionality::LIBRARY, "KERN_NUM");

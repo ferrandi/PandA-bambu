@@ -1007,8 +1007,8 @@ void verilog_writer::write_state_declaration(const structural_objectRef &cir, co
          indented_output_stream->Append("initial begin\n");
          indented_output_stream->Append("  for (i=0; i<"+STR(parameters->getOption<unsigned int>(OPT_context_switch))+"; i=i+1) begin\n");
          indented_output_stream->Append("    _present_state[i] = "+boost::lexical_cast<std::string>(max_value+1)+"'d1;\n");
-         indented_output_stream->Append("  end;\n");
-         indented_output_stream->Append("end i;\n");
+         indented_output_stream->Append("  end\n");
+         indented_output_stream->Append("end\n");
       }
       else
       {
@@ -1019,8 +1019,8 @@ void verilog_writer::write_state_declaration(const structural_objectRef &cir, co
          indented_output_stream->Append("initial begin\n");
          indented_output_stream->Append("  for (i=0; i<"+STR(parameters->getOption<unsigned int>(OPT_context_switch))+"; i=i+1) begin\n");
          indented_output_stream->Append("    _present_state[i] = "+boost::lexical_cast<std::string>(bitsnumber)+"'d1;\n");
-         indented_output_stream->Append("  end;\n");
-         indented_output_stream->Append("end i;\n");
+         indented_output_stream->Append("  end\n");
+         indented_output_stream->Append("end\n");
       }
    }
    else
