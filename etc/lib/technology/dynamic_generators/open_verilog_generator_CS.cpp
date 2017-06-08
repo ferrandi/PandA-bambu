@@ -43,12 +43,13 @@
   wire mem_done_port;\n\
   reg signed [BITSIZE_out1-1:0] temp_out1;\n\
   \n\
-  parameter [1:0] S_0 = 2'd0,\n\
-                  S_1 = 2'd1,\n\
-                  S_2 = 2'd2,\n\
-                  S_3 = 2'd3;\n\
-  reg [3:0] _present_state 1INIT_ZERO_VALUE;\n\
-  reg [3:0] _next_state;\n\
+  parameter [2:0] S_0 = 3'd0,\n\
+                  S_1 = 3'd1,\n\
+                  S_2 = 3'd2,\n\
+                  S_3 = 3'd3;\n\
+                  S_4 = 3'd4;\n\
+  reg [2:0] _present_state 1INIT_ZERO_VALUE;\n\
+  reg [2:0] _next_state;\n\
   reg [63:0] data1;\n\
   reg [7:0] data1_size;\n\
   wire [" + data_bus_bitsize + "-1:0] mem_out1;\n\
@@ -108,10 +109,26 @@
                 else\n\
                   _next_state=S_3;\n\
              end\n\
+             else begin\n\
+               _next_state=S_4;\n\
+             end\n\
            end\n\
+         S_4:\n\
+         begin\n\
+           mem_in2 = in1[BITSIZE_Mout_addr_ram-1:0]+_present_pointer;\n\
+           mem_in3 = {{BITSIZE_Mout_data_ram_size-4{1'b0}}, 4'd8};\n\
+           mem_sel_LOAD=1'b1;\n\
+           if(mem_done_port)\n\
+           begin\n\
+              buffer_name[_present_index*8 +:8] = mem_out1[7:0];\n\
+              if(mem_out1[7:0] == 8'd0)\n\
+                _next_state=S_2;\n\
+              else\n\
+                _next_state=S_3;\n\
+           end\n\
+         end\n\
          S_2:\n\
            begin\n\
-             mem_sel_LOAD=1'b1;\n\
 // synthesis translate_off\n\
              temp_out1 = $fopen(buffer_name, "+ flags_string + ");\n\
 // synthesis translate_on\n\

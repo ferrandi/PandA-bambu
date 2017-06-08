@@ -253,7 +253,6 @@ reg write_done;\n\
          S_9:\n\
            begin\n\
              mem_sel_LOAD=1'b1;\n\
-             start_memory_op= 1'b0;\n\
              if(mem_done_port)\n\
                begin\n\
                  _next_data2 = mem_out1[7:0];\n\
@@ -790,6 +789,7 @@ reg write_done;\n\
              mem_in2 = data1[BITSIZE_Mout_addr_ram-1:0]+_present_pointer1;\n\
              mem_in3 = {{BITSIZE_Mout_data_ram_size-4{1'b0}}, 4'd8};\n\
              mem_sel_LOAD=1'b1;\n\
+             start_memory_op= 1'b1;\n\
              if(mem_done_port)\n\
              begin\n\
                _next_data2 = mem_out1[7:0];\n\
@@ -805,6 +805,7 @@ reg write_done;\n\
            end\n\
          S_10:\n\
            begin\n\
+             mem_sel_LOAD=1'b1;\n\
              if(mem_done_port)\n\
              begin\n\
                _next_data2 = mem_out1[7:0];\n\
