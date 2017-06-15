@@ -1210,9 +1210,9 @@ void TestbenchGenerationBaseStep::write_auxiliary_signal_declaration() const
    writer->write("parameter MEMSIZE = " + STR(testbench_memsize));
 
    ///writing memory-related parameters
-   if (mod->is_parameter(MEMORY_PARAMETER))
+   if (mod->ExistsParameter(MEMORY_PARAMETER))
    {
-      std::string memory_str = mod->get_parameter(MEMORY_PARAMETER);
+      std::string memory_str = mod->GetParameter(MEMORY_PARAMETER);
       std::vector<std::string> mem_tag = convert_string_to_vector<std::string>(memory_str, ";");
       for(unsigned int i = 0; i < mem_tag.size(); i++)
       {

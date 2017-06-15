@@ -508,7 +508,7 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
          structural_objectRef dest = GetPointer<module>(curr_gate)->find_member("dest", port_o_K, curr_gate);
 
          structural_objectRef const_obj = SM->add_module_from_technology_library("memcpy_dest_" + HLSMgr->Rmem->get_symbol(function_parameter, HLS->functionId)->get_symbol_name(), CONSTANT_STD, LIBRARY_STD, circuit, HLS->HLS_T->get_technology_manager());
-         const_obj->set_parameter("value", HLSMgr->Rmem->get_symbol(function_parameter, HLS->functionId)->get_symbol_name());
+         const_obj->SetParameter("value", HLSMgr->Rmem->get_symbol(function_parameter, HLS->functionId)->get_symbol_name());
          std::string name = "out_const_memcpy_dest_" + HLSMgr->Rmem->get_symbol(function_parameter, HLS->functionId)->get_symbol_name();
          structural_objectRef dest_sign = SM->add_sign(name, circuit, dest->get_typeRef());
          structural_objectRef out_port =const_obj->find_member("out1", port_o_K, const_obj);
@@ -588,7 +588,7 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
          size->type_resize(STD_GET_SIZE(in_par->get_typeRef()));
          structural_objectRef size_const_obj = SM->add_module_from_technology_library("size_par_" + HLSMgr->Rmem->get_symbol(function_parameter, HLS->functionId)->get_symbol_name(), CONSTANT_STD, LIBRARY_STD, circuit, HLS->HLS_T->get_technology_manager());
          const std::string parameter_value =  (static_cast<HDLWriter_Language>(parameters->getOption<unsigned int>(OPT_writer_language)) == HDLWriter_Language::VHDL) ? std::string("\"") + NumberToBinaryString(STD_GET_SIZE(in_par->get_typeRef()), STD_GET_SIZE(in_par->get_typeRef())) + std::string("\"") : STR(STD_GET_SIZE(in_par->get_typeRef()));
-         size_const_obj->set_parameter("value", parameter_value);
+         size_const_obj->SetParameter("value", parameter_value);
          std::string size_name = "out_const_size_par_" + HLSMgr->Rmem->get_symbol(function_parameter, HLS->functionId)->get_symbol_name();
          structural_objectRef size_sign = SM->add_sign(size_name, circuit, size->get_typeRef());
          structural_objectRef size_out_port =size_const_obj->find_member("out1", port_o_K, size_const_obj);
@@ -600,7 +600,7 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
          structural_objectRef addr = GetPointer<module>(curr_gate)->find_member("addr", port_o_K, curr_gate);
          addr->type_resize(bus_addr_bitsize);
          structural_objectRef const_obj = SM->add_module_from_technology_library("addr_par_" + HLSMgr->Rmem->get_symbol(function_parameter, HLS->functionId)->get_symbol_name(), CONSTANT_STD, LIBRARY_STD, circuit, HLS->HLS_T->get_technology_manager());
-         const_obj->set_parameter("value", HLSMgr->Rmem->get_symbol(function_parameter, HLS->functionId)->get_symbol_name());
+         const_obj->SetParameter("value", HLSMgr->Rmem->get_symbol(function_parameter, HLS->functionId)->get_symbol_name());
          std::string name = "out_const_addr_par_" + HLSMgr->Rmem->get_symbol(function_parameter, HLS->functionId)->get_symbol_name();
          structural_objectRef addr_sign = SM->add_sign(name, circuit, addr->get_typeRef());
          structural_objectRef out_port =const_obj->find_member("out1", port_o_K, const_obj);
@@ -964,7 +964,7 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
             structural_objectRef constZeroOutPort =
                   constZeroParam->find_member("out1", port_o_K, constZeroParam);
             const std::string parameter_value =  (static_cast<HDLWriter_Language>(parameters->getOption<unsigned int>(OPT_writer_language)) == HDLWriter_Language::VHDL) ? std::string("\"") + NumberToBinaryString(0, STD_GET_SIZE(parameterPort->get_typeRef())) + std::string("\"") : "0";
-            constZeroParam->set_parameter("value", parameter_value);
+            constZeroParam->SetParameter("value", parameter_value);
 
             constZeroOutPort->type_resize(STD_GET_SIZE(parameterPort->get_typeRef()));
 
@@ -1059,7 +1059,7 @@ void fu_binding::check_parametrization(structural_objectRef curr_gate)
       np->get_library_parameters(param);
       std::vector<std::string>::const_iterator it_end = param.end();
       for (std::vector<std::string>::const_iterator it = param.begin(); it != it_end; ++it)
-         THROW_ASSERT(curr_gate->find_member(*it, port_o_K, curr_gate) || curr_gate->find_member(*it, port_vector_o_K, curr_gate) ||  curr_gate->is_parameter(*it), "parameter not yet specialized: " + *it + " for module " + GET_TYPE_NAME(curr_gate));
+         THROW_ASSERT(curr_gate->find_member(*it, port_o_K, curr_gate) || curr_gate->find_member(*it, port_vector_o_K, curr_gate) ||  curr_gate->ExistsParameter(*it), "parameter not yet specialized: " + *it + " for module " + GET_TYPE_NAME(curr_gate));
    }
 }
 
@@ -1477,7 +1477,7 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
       if(bram_bitsize > HLSMgr->Rmem->get_maxbram_bitsize())
          THROW_ERROR("incorrect operation mapping on memory module");
 
-      fu_module->set_parameter("BRAM_BITSIZE", boost::lexical_cast<std::string>(bram_bitsize));
+      fu_module->SetParameter("BRAM_BITSIZE", STR(bram_bitsize));
       bool Has_extern_allocated_data = ((HLSMgr->Rmem->get_memory_address()-HLSMgr->base_address)>0 and
                                         parameters->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) != MemoryAllocation_Policy::EXT_PIPELINED_BRAM)
                                        or
@@ -1485,9 +1485,9 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
                                         HLS->Param->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) != MemoryAllocation_Policy::ALL_BRAM and
                                         HLS->Param->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) != MemoryAllocation_Policy::EXT_PIPELINED_BRAM);
       if(Has_extern_allocated_data)
-         fu_module->set_parameter("BUS_PIPELINED", boost::lexical_cast<std::string>(0));
+         fu_module->SetParameter("BUS_PIPELINED", "0");
       else
-         fu_module->set_parameter("BUS_PIPELINED", boost::lexical_cast<std::string>(1));
+         fu_module->SetParameter("BUS_PIPELINED", "1");
    }
    else
    {
@@ -1578,7 +1578,7 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
                for (std::vector<std::string>::const_iterator it = param.begin(); it != it_end; ++it)
                {
                   if(*it == "ALIGNED_BITSIZE")
-                     fu_module->set_parameter("ALIGNED_BITSIZE", boost::lexical_cast<std::string>(HLSMgr->Rmem->get_aligned_bitsize()));
+                     fu_module->SetParameter("ALIGNED_BITSIZE", STR(HLSMgr->Rmem->get_aligned_bitsize()));
                   if(*it == "LSB_PARAMETER" && op_name == "pointer_plus_expr")
                   {
                      unsigned int curr_LSB=0;
@@ -1608,18 +1608,18 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
                               curr_LSB=0;
                         }
                      }
-                     if(fu_module->is_parameter("LSB_PARAMETER"))
+                     if(fu_module->ExistsParameter("LSB_PARAMETER"))
                      {
-                        int lsb_parameter = boost::lexical_cast<int>(fu_module->get_parameter("LSB_PARAMETER"));
+                        int lsb_parameter = boost::lexical_cast<int>(fu_module->GetParameter("LSB_PARAMETER"));
                         if(lsb_parameter < 0)
                            lsb_parameter = static_cast<int>(curr_LSB);
                         else
                            lsb_parameter = std::min(lsb_parameter, static_cast<int>(curr_LSB));
-                        fu_module->set_parameter("LSB_PARAMETER", boost::lexical_cast<std::string>(lsb_parameter));
+                        fu_module->SetParameter("LSB_PARAMETER", STR(lsb_parameter));
                      }
                      else
                      {
-                        fu_module->set_parameter("LSB_PARAMETER", boost::lexical_cast<std::string>(curr_LSB));
+                        fu_module->SetParameter("LSB_PARAMETER", STR(curr_LSB));
                      }
                   }
                   if(*it == "OFFSET_PARAMETER" && op_name == "bit_ior_concat_expr")
@@ -1631,14 +1631,14 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
                       const tree_nodeRef offset_node = GET_NODE(ce->op2);
                       const integer_cst *int_const= GetPointer<integer_cst>(offset_node);
                       unsigned long long int offset_value = static_cast<unsigned long long int>(int_const->value);
-                      fu_module->set_parameter("OFFSET_PARAMETER", STR(offset_value));
+                      fu_module->SetParameter("OFFSET_PARAMETER", STR(offset_value));
 
                   }
                   if(*it == "unlock_address" && op_name == BUILTIN_WAIT_CALL)
                   {
                      unsigned int index = data->CGetOpNodeInfo(*op)->GetNodeId();
                      std::string parameterName = HLSMgr->Rmem->get_symbol(index, HLS->functionId)->get_symbol_name();
-                     fu_module->set_parameter("unlock_address", parameterName);
+                     fu_module->SetParameter("unlock_address", parameterName);
                   }
                   if (*it == "MEMORY_INIT_file" && op_name == BUILTIN_WAIT_CALL)
                   {
@@ -1678,7 +1678,7 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
                         parameterAddressFile << str_address <<"\n";
                      }
                      parameterAddressFile.close();
-                     fu_module->set_parameter("MEMORY_INIT_file", "\"\"" + parameterAddressFileName + "\"\"");
+                     fu_module->SetParameter("MEMORY_INIT_file", "\"\"" + parameterAddressFileName + "\"\"");
                   }
                }
             }
@@ -1710,7 +1710,7 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
                         unsigned int sizetype = tree_helper::size(TreeM, tree_helper::get_type_index(TreeM,out_var));
                         if(sizetype==1)
                            sizetype = 8;
-                        fu_module->set_parameter("PRECISION", boost::lexical_cast<std::string>(sizetype));
+                        fu_module->SetParameter("PRECISION", STR(sizetype));
                      }
                   }
                }
@@ -1780,7 +1780,7 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
          std::string pipe_parameters_str = curr_op->pipe_parameters;
          if(pipe_parameters_str != "")
          {
-            fu_module->set_parameter(PIPE_PARAMETER, pipe_parameters_str);
+            fu_module->SetParameter(PIPE_PARAMETER, pipe_parameters_str);
          }
       }
    }
@@ -1791,12 +1791,12 @@ void fu_binding::specialize_memory_unit(const HLS_managerRef HLSMgr, const hlsRe
 {
    module* fu_module = GetPointer<module>(fu_obj);
    /// base address specialization
-   fu_module->set_parameter("address_space_begin", boost::lexical_cast<std::string>(base_address));
-   fu_module->set_parameter("address_space_rangesize", boost::lexical_cast<std::string>(rangesize));
+   fu_module->SetParameter("address_space_begin", STR(base_address));
+   fu_module->SetParameter("address_space_rangesize", STR(rangesize));
    if(is_sparse_memory)
-      fu_module->set_parameter("USE_SPARSE_MEMORY", boost::lexical_cast<std::string>(1));
+      fu_module->SetParameter("USE_SPARSE_MEMORY", "1");
    else
-      fu_module->set_parameter("USE_SPARSE_MEMORY", boost::lexical_cast<std::string>(0));
+      fu_module->SetParameter("USE_SPARSE_MEMORY", "0");
    memory::add_memory_parameter(HLS->datapath, base_address, STR(HLSMgr->Rmem->get_base_address(ar, HLS->functionId)));
 
    long long int vec_size=0;
@@ -1808,36 +1808,36 @@ void fu_binding::specialize_memory_unit(const HLS_managerRef HLSMgr, const hlsRe
    if(is_memory_splitted)
       init_file_b.open(("0_"+init_filename).c_str());
    unsigned int elts_size;
-   fill_array_ref_memory(init_file_a, init_file_b, ar, vec_size, elts_size, HLSMgr->Rmem, ((is_doubled ? 2 : 1) * boost::lexical_cast<unsigned int>(fu_module->get_parameter("BRAM_BITSIZE"))), is_memory_splitted, is_sds, fu_module);
+   fill_array_ref_memory(init_file_a, init_file_b, ar, vec_size, elts_size, HLSMgr->Rmem, ((is_doubled ? 2 : 1) * boost::lexical_cast<unsigned int>(fu_module->GetParameter("BRAM_BITSIZE"))), is_memory_splitted, is_sds, fu_module);
    THROW_ASSERT(vec_size, "at least one element is expected");
    if(is_memory_splitted)
    {
-      fu_module->set_parameter("MEMORY_INIT_file_a", "\"\""+init_filename+"\"\"");
-      fu_module->set_parameter("MEMORY_INIT_file_b", "\"\"0_"+init_filename+"\"\"");
+      fu_module->SetParameter("MEMORY_INIT_file_a", "\"\""+init_filename+"\"\"");
+      fu_module->SetParameter("MEMORY_INIT_file_b", "\"\"0_"+init_filename+"\"\"");
    }
    else
-      fu_module->set_parameter("MEMORY_INIT_file", "\"\""+init_filename+"\"\"");
+      fu_module->SetParameter("MEMORY_INIT_file", "\"\""+init_filename+"\"\"");
 
    /// specialize the number of elements in the array
    bool unaligned_access_p = parameters->isOption(OPT_unaligned_access) && parameters->getOption<bool>(OPT_unaligned_access);
    if(!unaligned_access_p && HLSMgr->Rmem->get_bram_bitsize() == 8 && HLSMgr->Rmem->get_bus_data_bitsize() == 8 && !HLSMgr->Rmem->is_private_memory(ar))
    {
-      fu_module->set_parameter("n_elements", boost::lexical_cast<std::string>((vec_size*elts_size)/8));
-      fu_module->set_parameter("data_size", boost::lexical_cast<std::string>(8));
+      fu_module->SetParameter("n_elements", STR((vec_size*elts_size)/8));
+      fu_module->SetParameter("data_size", "8");
    }
    else
    {
-      fu_module->set_parameter("n_elements", boost::lexical_cast<std::string>(vec_size));
-      fu_module->set_parameter("data_size", boost::lexical_cast<std::string>(elts_size));
+      fu_module->SetParameter("n_elements", STR(vec_size));
+      fu_module->SetParameter("data_size", STR(elts_size));
    }
    if(HLSMgr->Rmem->is_private_memory(ar))
-      fu_module->set_parameter("PRIVATE_MEMORY", boost::lexical_cast<std::string>(1));
+      fu_module->SetParameter("PRIVATE_MEMORY", "1");
    else
-      fu_module->set_parameter("PRIVATE_MEMORY", boost::lexical_cast<std::string>(0));
+      fu_module->SetParameter("PRIVATE_MEMORY", "0");
    if(HLSMgr->Rmem->is_read_only_variable(ar))
-      fu_module->set_parameter("READ_ONLY_MEMORY", boost::lexical_cast<std::string>(1));
+      fu_module->SetParameter("READ_ONLY_MEMORY", "1");
    else
-      fu_module->set_parameter("READ_ONLY_MEMORY", boost::lexical_cast<std::string>(0));
+      fu_module->SetParameter("READ_ONLY_MEMORY", "0");
 
 }
 #define CHANGE_SDS_MEMORY_LAYOUT 0
@@ -1896,14 +1896,14 @@ void fu_binding::fill_array_ref_memory(std::ostream &init_file_a, std::ostream &
       bool unaligned_access_p = parameters->isOption(OPT_unaligned_access) && parameters->getOption<bool>(OPT_unaligned_access);
       if(!unaligned_access_p && mem->get_bram_bitsize() == 8 && mem->get_bus_data_bitsize() == 8 && !mem->is_private_memory(ar))
       {
-         fu_module->set_parameter("BRAM_BITSIZE", "8");
+         fu_module->SetParameter("BRAM_BITSIZE", "8");
          vec_size = (vec_size*elts_size)/8;
          bram_bitsize = 8;
          elts_size = 8;
          is_sds = false;
       }
       else
-         fu_module->set_parameter("BRAM_BITSIZE", boost::lexical_cast<std::string>(elts_size));
+         fu_module->SetParameter("BRAM_BITSIZE", STR(elts_size));
 #if CHANGE_SDS_MEMORY_LAYOUT
       if(vd && vd->bit_values.size())
       {

@@ -702,9 +702,9 @@ void RTLCharacterization::AnalyzeCell(functional_unit * fu, const unsigned int p
 
       if(fu_base_name == "MC_FU") /// add further specializations for this module
       {
-         spec_module->set_parameter("EXECUTION_TIME", STR(2));
-         spec_module->set_parameter("BITSIZE", STR(8));
-         spec_module->set_parameter("INITIATION_TIME", STR(1));
+         spec_module->SetParameter("EXECUTION_TIME", STR(2));
+         spec_module->SetParameter("BITSIZE", STR(8));
+         spec_module->SetParameter("INITIATION_TIME", STR(1));
       }
       else if(memory_type != "")
       {
@@ -773,33 +773,33 @@ void RTLCharacterization::AnalyzeCell(functional_unit * fu, const unsigned int p
             }
             init_file.close();
          }
-         spec_module->set_parameter("address_space_begin", boost::lexical_cast<std::string>(base_address));
-         spec_module->set_parameter("address_space_rangesize", boost::lexical_cast<std::string>((elts_size/8)*vec_size));
-         spec_module->set_parameter("USE_SPARSE_MEMORY", boost::lexical_cast<std::string>(1));
+         spec_module->SetParameter("address_space_begin", STR(base_address));
+         spec_module->SetParameter("address_space_rangesize", STR((elts_size/8)*vec_size));
+         spec_module->SetParameter("USE_SPARSE_MEMORY", "1");
          if(memory_type == MEMORY_TYPE_SYNCHRONOUS_UNALIGNED &&
                (channels_type.find(CHANNELS_TYPE_MEM_ACC_NN) != std::string::npos ||
                 (channels_type.find(CHANNELS_TYPE_MEM_ACC_N1) != std::string::npos && channels_type.find(CHANNELS_TYPE_MEM_ACC_11) == std::string::npos)))
          {
-            spec_module->set_parameter("MEMORY_INIT_file_a", "\"\"a_"+init_filename+"\"\"");
-            spec_module->set_parameter("MEMORY_INIT_file_b", "\"\"b_"+init_filename+"\"\"");
+            spec_module->SetParameter("MEMORY_INIT_file_a", "\"\"a_"+init_filename+"\"\"");
+            spec_module->SetParameter("MEMORY_INIT_file_b", "\"\"b_"+init_filename+"\"\"");
          }
          else
-            spec_module->set_parameter("MEMORY_INIT_file", "\"\""+init_filename+"\"\"");
-         spec_module->set_parameter("n_elements", boost::lexical_cast<std::string>(vec_size));
-         spec_module->set_parameter("data_size", boost::lexical_cast<std::string>(elts_size));
-         spec_module->set_parameter("BRAM_BITSIZE", boost::lexical_cast<std::string>(BRAM_BITSIZE));
-         spec_module->set_parameter("BUS_PIPELINED", boost::lexical_cast<std::string>(1));
-         spec_module->set_parameter("PRIVATE_MEMORY", boost::lexical_cast<std::string>(0));
+            spec_module->SetParameter("MEMORY_INIT_file", "\"\""+init_filename+"\"\"");
+         spec_module->SetParameter("n_elements", STR(vec_size));
+         spec_module->SetParameter("data_size", STR(elts_size));
+         spec_module->SetParameter("BRAM_BITSIZE", STR(BRAM_BITSIZE));
+         spec_module->SetParameter("BUS_PIPELINED", "1");
+         spec_module->SetParameter("PRIVATE_MEMORY", "0");
       }
       else if(fu_base_name == MEMLOAD_STD)
-         spec_module->set_parameter("base_address", boost::lexical_cast<std::string>(8));
+         spec_module->SetParameter("base_address", "8");
       else if(fu_base_name == MEMSTORE_STD)
-         spec_module->set_parameter("base_address", boost::lexical_cast<std::string>(8));
+         spec_module->SetParameter("base_address", "8");
       structural_objectRef e_port, one_port;
 
       if(n_pipe_parameters>0)
       {
-         spec_module->set_parameter(PIPE_PARAMETER, pipe_parameters[stage_index]);
+         spec_module->SetParameter(PIPE_PARAMETER, pipe_parameters[stage_index]);
          PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, " - PIPE_PARAMETER=" + pipe_parameters[stage_index]);
       }
       if(NPF)
@@ -812,12 +812,12 @@ void RTLCharacterization::AnalyzeCell(functional_unit * fu, const unsigned int p
             {
                unsigned int precision_bitsize = prec;
                precision_bitsize = std::max(8u, precision_bitsize);
-               spec_module->set_parameter("PRECISION", boost::lexical_cast<std::string>(precision_bitsize));
+               spec_module->SetParameter("PRECISION", boost::lexical_cast<std::string>(precision_bitsize));
             }
             else if(*it == "ALIGNED_BITSIZE")
-               spec_module->set_parameter("ALIGNED_BITSIZE", boost::lexical_cast<std::string>(ALIGNED_BITSIZE));
+               spec_module->SetParameter("ALIGNED_BITSIZE", boost::lexical_cast<std::string>(ALIGNED_BITSIZE));
             else if(*it == "LSB_PARAMETER")
-               spec_module->set_parameter("LSB_PARAMETER", boost::lexical_cast<std::string>(0));
+               spec_module->SetParameter("LSB_PARAMETER", boost::lexical_cast<std::string>(0));
 
       }
       if(NPF)
@@ -826,7 +826,7 @@ void RTLCharacterization::AnalyzeCell(functional_unit * fu, const unsigned int p
          NPF->get_library_parameters(param);
          std::vector<std::string>::const_iterator it_end = param.end();
          for (std::vector<std::string>::const_iterator it = param.begin(); it != it_end; ++it)
-            THROW_ASSERT(template_circuit->find_member(*it, port_o_K, template_circuit) || template_circuit->find_member(*it, port_vector_o_K, template_circuit) ||  spec_module->is_parameter(*it), "parameter not yet specialized: " + *it + " for module " + spec_module->get_typeRef()->get_name());
+            THROW_ASSERT(template_circuit->find_member(*it, port_o_K, template_circuit) || template_circuit->find_member(*it, port_vector_o_K, template_circuit) ||  spec_module->ExistsParameter(*it), "parameter not yet specialized: " + *it + " for module " + spec_module->get_typeRef()->get_name());
       }
 
 

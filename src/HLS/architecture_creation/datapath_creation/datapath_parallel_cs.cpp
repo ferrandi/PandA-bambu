@@ -93,6 +93,7 @@ const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
 
 DesignFlowStep_Status datapath_parallel_cs::InternalExec()
 {
+   std::cerr << "C000" << std::endl;
    /// main circuit type
    const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(funId);
    structural_type_descriptorRef module_type = structural_type_descriptorRef(new structural_type_descriptor("datapath_"+FB->CGetBehavioralHelper()->get_function_name()));
@@ -135,7 +136,8 @@ DesignFlowStep_Status datapath_parallel_cs::InternalExec()
       memory_modules.insert(kernel_mod);
       connect_module_kernel(kernel_mod,i);
       //setting num of kernel in each scheduler
-      GetPointer<module>(kernel_mod)->set_parameter("NUM_KERN", STR(i));   //add num_kernel to kernel
+      GetPointer<module>(kernel_mod)->SetParameter("KERN_NUM", STR(i));   //add num_kernel to kernel
+      std::cerr << "Setting KERN_NUM to " << kernel_mod->get_path() << std::endl;
    }
    manage_extern_global_port_parallel(SM, memory_modules, datapath_cir);
    memory::propagate_memory_parameters(const_cast<structural_objectRef&>(kernel_mod), SM); //propagate memory_parameter to datapath_parallel
@@ -224,7 +226,7 @@ void datapath_parallel_cs::connect_module_kernel(structural_objectRef kernel_mod
    {
       if(loop->GetId()!=0)
       {
-         std::cout<<"Found variable (i)"<<std::endl;
+         std::cout<<"--Found variable (i)"<<std::endl;
          name_Loop_Variable=BH->PrintVariable(loop->main_iv);
       }
    }
@@ -259,10 +261,10 @@ void datapath_parallel_cs::instantiate_component_parallel(structural_objectRef c
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Instantiated memory_ctrl_parallel!");
 
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Starting setting parameter memory_ctrl_parallel!");
-   GetPointer<module>(mem_par_mod)->set_parameter("NUM_CHANNEL", STR(HLS->Param->getOption<unsigned int>(OPT_channels_number)));
-   GetPointer<module>(mem_par_mod)->set_parameter("NUM_ACC", STR(HLS->Param->getOption<unsigned int>(OPT_num_threads)));
-   GetPointer<module>(mem_par_mod)->set_parameter("ADDR_TASKS", STR(log2(HLS->Param->getOption<unsigned int>(OPT_context_switch))));
-   GetPointer<module>(mem_par_mod)->set_parameter("ADDR_ACC", STR(log2(HLS->Param->getOption<unsigned int>(OPT_num_threads))));
+   GetPointer<module>(mem_par_mod)->SetParameter("NUM_CHANNEL", STR(HLS->Param->getOption<unsigned int>(OPT_channels_number)));
+   GetPointer<module>(mem_par_mod)->SetParameter("NUM_ACC", STR(HLS->Param->getOption<unsigned int>(OPT_num_threads)));
+   GetPointer<module>(mem_par_mod)->SetParameter("ADDR_TASKS", STR(log2(HLS->Param->getOption<unsigned int>(OPT_context_switch))));
+   GetPointer<module>(mem_par_mod)->SetParameter("ADDR_ACC", STR(log2(HLS->Param->getOption<unsigned int>(OPT_num_threads))));
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Parameter memory_ctrl_top setted!");
 
    resize_ctrl_parallel_ports(mem_par_mod);

@@ -270,7 +270,7 @@ TopEntityMemoryMapped::insertMemoryMappedRegister(
                interfaceObj, HLS->HLS_T->get_technology_manager());
       if(multi_channel_bus)
          resizing_IO(GetPointer<module>(memoryMappedRegister), HLS->Param->getOption<unsigned int>(OPT_channels_number));
-      GetPointer<module>(memoryMappedRegister)->set_parameter(
+      GetPointer<module>(memoryMappedRegister)->SetParameter(
             "ALLOCATED_ADDRESS", HLSMgr->Rmem->get_symbol(function_parameter.first, HLS->functionId)->get_symbol_name());
       setBusSizes(memoryMappedRegister, HLSMgr->Rmem);
 
@@ -325,7 +325,7 @@ TopEntityMemoryMapped::insertMemoryMappedRegister(
             interfaceObj, HLS->HLS_T->get_technology_manager());
    if(multi_channel_bus)
       resizing_IO(GetPointer<module>(returnRegister), HLS->Param->getOption<unsigned int>(OPT_channels_number));
-   GetPointer<module>(returnRegister)->set_parameter(
+   GetPointer<module>(returnRegister)->SetParameter(
          "ALLOCATED_ADDRESS", HLSMgr->Rmem->get_symbol(returnType, HLS->functionId)->get_symbol_name());
    setBusSizes(returnRegister, HLSMgr->Rmem);
    connectClockAndReset(SM_mm, interfaceObj, returnRegister);
@@ -448,7 +448,7 @@ TopEntityMemoryMapped::insertStatusRegister(
                interfaceObj, HLS->HLS_T->get_technology_manager());
       if(multi_channel_bus)
          resizing_IO(GetPointer<module>(statusRegister), HLS->Param->getOption<unsigned int>(OPT_channels_number));
-      GetPointer<module>(statusRegister)->set_parameter(
+      GetPointer<module>(statusRegister)->SetParameter(
             "ALLOCATED_ADDRESS", HLSMgr->Rmem->get_symbol(HLS->functionId, HLS->functionId)->get_symbol_name());
       setBusSizes(statusRegister, HLSMgr->Rmem);
       connectClockAndReset(SM_mm, interfaceObj, statusRegister);
@@ -501,7 +501,7 @@ TopEntityMemoryMapped::insertStatusRegister(
                interfaceObj, HLS->HLS_T->get_technology_manager());
       if(multi_channel_bus)
          resizing_IO(GetPointer<module>(statusRegister), HLS->Param->getOption<unsigned int>(OPT_channels_number));
-      GetPointer<module>(statusRegister)->set_parameter(
+      GetPointer<module>(statusRegister)->SetParameter(
             "ALLOCATED_ADDRESS", HLSMgr->Rmem->get_symbol(HLS->functionId, HLS->functionId)->get_symbol_name());
       setBusSizes(statusRegister, HLSMgr->Rmem);
       connectClockAndReset(SM_mm, interfaceObj, statusRegister);

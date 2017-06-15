@@ -816,11 +816,11 @@ void conn_binding::add_sparse_logic_dp(const hlsRef HLS, const structural_manage
       unsigned int shift_index = 0;
       if(component->get_type() == generic_obj::MULTIPLIER_CONN_OBJ && GetPointer<multiplier_conn_obj>(component)->is_multiplication_to_constant())
       {
-         sparse_module->set_parameter(VALUE_PARAMETER, STR(GetPointer<multiplier_conn_obj>(component)->get_constant_value()));
+         sparse_module->SetParameter(VALUE_PARAMETER, STR(GetPointer<multiplier_conn_obj>(component)->get_constant_value()));
       }
       if(component->get_type() == generic_obj::ADDER_CONN_OBJ && GetPointer<adder_conn_obj>(component)->is_align_adder())
       {
-         sparse_module->set_parameter(VALUE_PARAMETER, STR(GetPointer<adder_conn_obj>(component)->get_trimmed_bits()));
+         sparse_module->SetParameter(VALUE_PARAMETER, STR(GetPointer<adder_conn_obj>(component)->get_trimmed_bits()));
       }
       else
       if(GetPointer<port_o>(sparse_module->get_in_port(shift_index)) && GetPointer<port_o>(sparse_module->get_in_port(shift_index))->get_is_clock())
@@ -829,7 +829,7 @@ void conn_binding::add_sparse_logic_dp(const hlsRef HLS, const structural_manage
          /// so we use the non-pipelined version by setting PIPE_PARAMETER to 0
          if(component->get_type() == generic_obj::MULTIPLIER_CONN_OBJ)
          {
-               sparse_module->set_parameter(PIPE_PARAMETER, "0");
+               sparse_module->SetParameter(PIPE_PARAMETER, "0");
          }
          ++shift_index;
       }

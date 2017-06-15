@@ -52,6 +52,9 @@
 #include "config_HAVE_TECHNOLOGY_BUILT.hpp"
 #include "config_HAVE_TUCANO_BUILT.hpp"
 
+///utility include
+#include "custom_map.hpp"
+
 #include <string>
 #include <ostream>
 #include <map>
@@ -306,8 +309,11 @@ class structural_object
       /// True if the structural object is a black box (e.g., a library component).
       bool black_box;
 
-      /// Map between parameter string and related values
-      std::map<std::string,std::string> parameters_list;
+      /// Map between parameter string and related values of an instance
+      CustomMap<std::string, std::string> parameters;
+
+      /// Map between parameter string and its default value
+      CustomMap<std::string, std::string> default_parameters;
 
    protected:
 
@@ -442,90 +448,104 @@ class structural_object
       bool get_black_box() const;
 
       /**
-          * Set a parameter value
-          * @param name is parameter name
-          * @param value is parameter value
-         */
-      void set_parameter(const std::string& name, const std::string& value);
+       * Set a parameter value
+       * @param name is parameter name
+       * @param value is parameter value
+       */
+      void SetParameter(const std::string& name, const std::string& value);
 
       /**
           * Check if a parameter has been specified
           * @param name is parameter name
          */
-      bool is_parameter(std::string name) const;
+      bool ExistsParameter(std::string name) const;
 
       /**
-          * Get the value associated to parameter if it has been associated. It throws an exception if it has not
-          * been associated
-          * @param name is parameter name
-          * @return parameter value
-         */
-      std::string get_parameter(std::string name) const;
-
-      /// return the whole parameter list
-      std::map<std::string,std::string> get_parameters() {return parameters_list;}
-
-      /// set the whole parameter list
-      void set_parameters(std::map<std::string,std::string>&p) {parameters_list=p;}
+       * Get the value associated to parameter if it has been associated; if it has not specified returns the default
+       * @param name is parameter name
+       * @return parameter value
+       */
+      std::string GetParameter(std::string name) const;
 
       /**
-          * Return a unique identifier of the structural object.
-          * It is composed by the identifier of the current structural object
-          * and by its owners separated by the HIERARCHY_SEPARATOR. Structural objects are viewed as elements of a standard filesystem.
-         */
+       * Get the value associated to parameter if it has been associate; It throws an exception if it has not
+       * been associated
+       * @param name is parameter name
+       * @return parameter value
+       */
+      std::string GetDefaultParameter(std::string name) const;
+
+      /**
+       * return the whole set of parameters
+       * @return the whole set of parameters
+       */
+      CustomMap<std::string, std::string> GetParameters();
+
+      /**
+       * Add a parameter
+       * @param name is the name of the parameter
+       * @param default_value is the default of the value
+       */
+      virtual void AddParameter(const std::string name, const std::string default_value);
+
+      /**
+       * Return a unique identifier of the structural object.
+       * It is composed by the identifier of the current structural object
+       * and by its owners separated by the HIERARCHY_SEPARATOR. Structural objects are viewed as elements of a standard filesystem.
+       */
       const std::string get_path() const;
 
       /**
-          * Perform a copy of the structural object.
-          * @param dest destination object.
-         */
+       * Perform a copy of the structural object.
+       * @param dest destination object.
+       */
       virtual void copy(structural_objectRef dest) const;
 
       /**
-          * Return the object named id of a given type which belongs to or it is associated with the object.
-          * @param id is the identifier of the object we are looking for.
-          * @param type is the type of the object we are looking for.
-          * @param owner is the owner of the object named id.
-         */
-      virtual structural_objectRef find_member(const std::string&id, so_kind type, const structural_objectRef owner) const = 0;
+       * Return the object named id of a given type which belongs to or it is associated with the object.
+       * @param id is the identifier of the object we are looking for.
+       * @param type is the type of the object we are looking for.
+       * @param owner is the owner of the object named id.
+       */
+      virtual structural_objectRef find_member(const std::string &id, so_kind type, const structural_objectRef owner) const = 0;
 
       /**
-          * Find key in this object.
-          * @param key is the object searched.
-         */
+       * Find key in this object.
+       * @param key is the object searched.
+       */
       virtual structural_objectRef find_isomorphic(const structural_objectRef key) const = 0;
 
       /**
-          * Load a structural_object starting from an xml file.
-          * @param node is a node of the xml tree.
-          * @param owner is the refcount version of this.
-          * @param CM is the circuit manager.
-         */
-      virtual void xload(const xml_element* Enode, structural_objectRef owner, structural_managerRef const & CM);
+       * Load a structural_object starting from an xml file.
+       * @param node is a node of the xml tree.
+       * @param owner is the refcount version of this.
+       * @param CM is the circuit manager.
+       */
+       virtual void xload(const xml_element* Enode, structural_objectRef owner, structural_managerRef const & CM);
 
-      /**
-          * Add a structural_object to an xml tree.
-          * @param rootnode is the root node at which the xml representation of the structural object is attached.
-         */
-      virtual void xwrite(xml_element* rootnode);
+       /**
+       * Add a structural_object to an xml tree.
+       * @param rootnode is the root node at which the xml representation of the structural object is attached.
+       */
+       virtual void xwrite(xml_element* rootnode);
 
 #if HAVE_TECHNOLOGY_BUILT
       /**
-          * Add the list of attributes for the object
-          * @param rootnode is the root node at which the xml representation of the attributes is attached
-         */
+       * Add the list of attributes for the object
+       * @param rootnode is the root node at which the xml representation of the attributes is attached
+       */
       virtual void xwrite_attributes(xml_element* rootnode, const technology_nodeRef& tn = technology_nodeRef());
 #endif
 
       /**
-          * Print the structural_object (for debug purpose)
-          * @param os is an output stream
-         */
+       * Print the structural_object (for debug purpose)
+       * @param os is an output stream
+       */
       virtual void print(std::ostream& os) const;
 
       /**
-          * Friend definition of the << operator.
-         */
+       * Friend definition of the << operator.
+       */
       friend std::ostream& operator<<(std::ostream& os, const structural_objectRef o)
       {
          if (o)
@@ -534,16 +554,16 @@ class structural_object
       }
 
       /**
-          * Virtual function used to get the string name
-          * of a structural_object instance.
-          * @return a string identifying the object type.
-         */
+       * Virtual function used to get the string name
+       * of a structural_object instance.
+       * @return a string identifying the object type.
+       */
       virtual std::string get_kind_text() const = 0;
       /**
-          * Virtual function used to find the real type
-          * of a structural_object instance.
-          * @return a so_kind enum identifying the object type.
-         */
+       * Virtual function used to find the real type
+       * of a structural_object instance.
+       * @return a so_kind enum identifying the object type.
+       */
       virtual enum so_kind get_kind() const = 0;
 
 #if HAVE_TECHNOLOGY_BUILT
@@ -2061,6 +2081,13 @@ class module : public structural_object
        */
       structural_objectRef get_generic_object(const technology_managerConstRef TM) const;
 #endif
+
+      /**
+       * Add a parameter
+       * @param name is the name of the parameter
+       * @param default_value is the default of the value
+       */
+      virtual void AddParameter(const std::string name, const std::string default_value);
 };
 
 /**

@@ -229,7 +229,7 @@ DesignFlowStep_Status TasteInterfaceGeneration::InternalExec()
    ///Preparing and connecting reg_status
    const auto reg_status = SM_taste_interface->add_module_from_technology_library("reg_status", register_SE, TM->get_library(register_SE), taste_interface_circuit, TM);
    const auto shift = SM_taste_interface->add_module_from_technology_library("shift", "ui_rshift_expr_FU", TM->get_library("ui_rshift_expr_FU"), taste_interface_circuit, TM);
-   shift->set_parameter("PRECISION", "32");
+   shift->SetParameter("PRECISION", "32");
    GetPointer<port_o>(GetPointer<module>(reg_status)->find_member("in1", port_o_K, reg_status))->type_resize(32);
    GetPointer<port_o>(GetPointer<module>(reg_status)->find_member("out1", port_o_K, reg_status))->type_resize(32);
    GetPointer<port_o>(GetPointer<module>(shift)->find_member("in1", port_o_K, shift))->type_resize(32);
@@ -368,8 +368,8 @@ DesignFlowStep_Status TasteInterfaceGeneration::InternalExec()
    if(with_memory)
    {
       memory = SM_taste_interface->add_module_from_technology_library("local_memory", ARRAY_1D_STD_BRAM_NN, LIBRARY_STD_FU, taste_interface_circuit, TM);
-      memory->set_parameter("address_space_rangesize", STR(aadl_information->internal_memory_sizes[function_name]));
-      memory->set_parameter("BRAM_BITSIZE", STR(HLSMgr->Rmem->get_bram_bitsize()));
+      memory->SetParameter("address_space_rangesize", STR(aadl_information->internal_memory_sizes[function_name]));
+      memory->SetParameter("BRAM_BITSIZE", STR(HLSMgr->Rmem->get_bram_bitsize()));
 
       /// component specialization
       unsigned int bus_data_bitsize = HLSMgr->Rmem->get_bus_data_bitsize();
@@ -383,15 +383,15 @@ DesignFlowStep_Status TasteInterfaceGeneration::InternalExec()
 
       const unsigned int n_elements = aadl_information->internal_memory_sizes[function_name]/bus_data_bytesize + ((aadl_information->internal_memory_sizes[function_name]%bus_data_bytesize) ? 1 : 0);
 
-      memory->set_parameter("n_elements", STR(n_elements));
+      memory->SetParameter("n_elements", STR(n_elements));
 
       std::string init_filename_a = function_name + "_a.data";
       std::string init_filename_b = function_name + "_b.data";
       std::ofstream init_file_a(init_filename_a.c_str());
       std::ofstream init_file_b(init_filename_b.c_str());
 
-      memory->set_parameter("MEMORY_INIT_file_a", "\"\"" + init_filename_a + "\"\"");
-      memory->set_parameter("MEMORY_INIT_file_b", "\"\"" + init_filename_b +"\"\"");
+      memory->SetParameter("MEMORY_INIT_file_a", "\"\"" + init_filename_a + "\"\"");
+      memory->SetParameter("MEMORY_INIT_file_b", "\"\"" + init_filename_b +"\"\"");
 
       for(unsigned int row_index = 0; row_index < n_elements; row_index++)
       {
@@ -577,9 +577,8 @@ DesignFlowStep_Status TasteInterfaceGeneration::InternalExec()
    AddSignal(SM_taste_interface, swap32_out_cond_expr, "out1", taste_interface_circuit, "apbo_prdata", "swap32_out_cond_expr_output");
 #endif
 
-   taste_interface_circuit->set_parameter("paddr","0");
-   taste_interface_circuit->set_parameter("pindex","0");
-   SM_taste_interface->add_NP_functionality(SM_taste_interface->get_circ(), NP_functionality::LIBRARY, function_name + "_taste_interface paddr pindex");
+   taste_interface_circuit->AddParameter("paddr", "0");
+   taste_interface_circuit->AddParameter("pindex", "0");
 
    SM_taste_interface->INIT(true);
 

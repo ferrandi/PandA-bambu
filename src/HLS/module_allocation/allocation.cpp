@@ -439,9 +439,9 @@ void allocation::add_proxy_function_wrapper(
    GetPointer<module>(wrapper_top)->set_copyright(fu_module->get_copyright());
    GetPointer<module>(wrapper_top)->set_authors(fu_module->get_authors());
    GetPointer<module>(wrapper_top)->set_license(fu_module->get_license());
-   if (fu_module->is_parameter(MEMORY_PARAMETER))
+   if (fu_module->ExistsParameter(MEMORY_PARAMETER))
    {
-      GetPointer<module>(wrapper_top)->set_parameter(MEMORY_PARAMETER, fu_module->get_parameter(MEMORY_PARAMETER));
+      GetPointer<module>(wrapper_top)->set_parameter(MEMORY_PARAMETER, fu_module->GetParameter(MEMORY_PARAMETER));
    }
    // handle input ports
    unsigned int inPortSize = static_cast<unsigned int>(fu_module->get_in_port_size());

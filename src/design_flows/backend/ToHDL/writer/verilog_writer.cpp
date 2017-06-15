@@ -200,6 +200,7 @@ std::string verilog_writer::type_converter_size(const structural_objectRef &cir)
       case structural_type_descriptor::REAL:
       case structural_type_descriptor::VECTOR_BOOL:
       {
+         std::cerr << "A001" << std::endl;
          if(specialization_string)
          {
             if (cir->get_kind() == port_vector_o_K)
@@ -239,6 +240,7 @@ std::string verilog_writer::type_converter_size(const structural_objectRef &cir)
             }
             else if(cir->get_owner() and cir->get_owner()->get_kind() == port_vector_o_K)
             {
+               std::cerr << "A000" << std::endl;
                const auto owner_vector = GetPointer<const port_o>(cir->get_owner());
                unsigned int lsb = owner_vector->get_lsb();
                for(unsigned int vector_index = 0; vector_index < owner_vector->get_ports_size(); vector_index++)
@@ -625,6 +627,7 @@ void verilog_writer::write_vector_port_binding(const structural_objectRef &port,
 
          if (object_bounded->get_owner()->get_kind() == port_vector_o_K || object_bounded->get_owner()->get_kind() == signal_vector_o_K)
          {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Bounded to a port of a port vector");
             unsigned int bit = boost::lexical_cast<unsigned int>(object_bounded->get_id());
             if (slice and slice->get_id() != object_bounded->get_owner()->get_id())
             {
@@ -652,6 +655,7 @@ void verilog_writer::write_vector_port_binding(const structural_objectRef &port,
             }
             if (!slice || (slice->get_id() == object_bounded->get_owner()->get_id() and bit == lsb - 1))
             {
+               std::cerr << "B000" << std::endl;
                slice = object_bounded->get_owner();
                if (msb == std::numeric_limits<unsigned int>::max())
                   msb = bit;
@@ -768,6 +772,7 @@ void verilog_writer::write_port_binding(const structural_objectRef &port, const 
    THROW_ASSERT(port->get_owner(), "The port has to have an owner");
    THROW_ASSERT(object_bounded, "NULL object_bounded received for port: " + port->get_path());
    THROW_ASSERT(object_bounded->get_kind() != port_o_K || object_bounded->get_owner(), "A port has to have always an owner");
+   std::cerr << "Write port binding" << std::endl;
    if (first_port_analyzed)
       indented_output_stream->Append(", ");
    if (port->get_owner()->get_kind() == port_vector_o_K)
@@ -783,10 +788,12 @@ void verilog_writer::write_port_binding(const structural_objectRef &port, const 
    indented_output_stream->Append("(");
    if (object_bounded->get_kind() == port_o_K && object_bounded->get_owner()->get_kind() == port_vector_o_K)
    {
+      std::cerr << "B000" << std::endl;
       indented_output_stream->Append(HDL_manager::convert_to_identifier(this, object_bounded->get_owner()->get_id()) + type_converter_size(object_bounded));
    }
    else if (object_bounded->get_kind() == signal_o_K && object_bounded->get_owner()->get_kind() == signal_vector_o_K)
    {
+      std::cerr << "B001" << std::endl;
       indented_output_stream->Append(HDL_manager::convert_to_identifier(this, object_bounded->get_owner()->get_id()) + type_converter_size(object_bounded));
    }
    else if (object_bounded->get_kind() == constant_o_K)
@@ -845,10 +852,10 @@ void verilog_writer::write_module_parametrization(const structural_objectRef &ci
    const NP_functionalityRef &np = mod->get_NP_functionality();
 
    ///writing memory-related parameters
-   if (mod->is_parameter(MEMORY_PARAMETER))
+   if (mod->ExistsParameter(MEMORY_PARAMETER))
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Writing memory parameters");
-      std::string memory_str = mod->get_parameter(MEMORY_PARAMETER);
+      std::string memory_str = mod->GetParameter(MEMORY_PARAMETER);
       std::vector<std::string> mem_tag = convert_string_to_vector<std::string>(memory_str, ";");
       for(unsigned int i = 0; i < mem_tag.size(); i++)
       {
@@ -887,7 +894,7 @@ void verilog_writer::write_module_parametrization(const structural_objectRef &ci
          const std::string&name = library_parameter.first;
          structural_objectRef obj = library_parameter.second;
 
-         if (!mod->is_parameter(std::string(BITSIZE_PREFIX)+name) && obj)
+         if (!mod->ExistsParameter(std::string(BITSIZE_PREFIX)+name) && obj)
          {
             structural_type_descriptor::s_type type=obj->get_typeRef()->type;
             if((type == structural_type_descriptor::VECTOR_INT ||
@@ -912,14 +919,14 @@ void verilog_writer::write_module_parametrization(const structural_objectRef &ci
          else
          {
             std::string param_value, param_name;
-            if (mod->is_parameter(name))
+            if (mod->ExistsParameter(name))
             {
-               param_value = mod->get_parameter(name);
+               param_value = mod->GetParameter(name);
                param_name = name;
             }
-            else if (mod->is_parameter(std::string(BITSIZE_PREFIX)+name))
+            else if (mod->ExistsParameter(std::string(BITSIZE_PREFIX)+name))
             {
-               param_value = mod->get_parameter(std::string(BITSIZE_PREFIX)+name);
+               param_value = mod->GetParameter(std::string(BITSIZE_PREFIX)+name);
                param_name = std::string(BITSIZE_PREFIX)+name;
             }
             else
@@ -1424,9 +1431,10 @@ void verilog_writer::write_module_parametrization_decl(const structural_objectRe
    bool first_it = true;
 
    ///writing memory-related parameters
-   if (mod->is_parameter(MEMORY_PARAMETER))
+   if (mod->ExistsParameter(MEMORY_PARAMETER))
    {
-      std::string memory_str = mod->get_parameter(MEMORY_PARAMETER);
+      ///FIXME: this is workaround due to the fact that the default value of MEMORY_PARAMETER is ""
+      std::string memory_str = mod->GetParameter(MEMORY_PARAMETER);
       std::vector<std::string> mem_tag = convert_string_to_vector<std::string>(memory_str, ";");
       for(unsigned int i = 0; i < mem_tag.size(); i++)
       {
@@ -1498,7 +1506,7 @@ void verilog_writer::write_module_parametrization_decl(const structural_objectRe
          }
          else
          {
-            std::string param = mod->get_parameter(name);
+            std::string param = mod->GetDefaultParameter(name);
             PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "  parameter = #" << name << "#; value = #" << param << "#");
             if (param.find("\"\"") != std::string::npos)
             {

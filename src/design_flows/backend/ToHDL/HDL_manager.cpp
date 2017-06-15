@@ -944,8 +944,8 @@ void HDL_manager::write_flopoco_module(const structural_objectRef &cir, std::lis
    // Create the module
    PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, this->debug_level, "Creating " + mod_type + ", named " + mod_name + " whose size is " + STR(mod_size_in) + "|" + STR(mod_size_out));
    std::string pipe_parameter;
-   if(mod_inst->is_parameter(PIPE_PARAMETER))
-      pipe_parameter = mod_inst->get_parameter(PIPE_PARAMETER);
+   if(mod_inst->ExistsParameter(PIPE_PARAMETER))
+      pipe_parameter = mod_inst->GetParameter(PIPE_PARAMETER);
    flopo_wrap->add_FU(mod_type, static_cast<unsigned int>(mod_size_in), static_cast<unsigned int>(mod_size_out), mod_name, pipe_parameter);
    std::string created_file;
    flopo_wrap->writeVHDL(mod_name, static_cast<unsigned int>(mod_size_in), static_cast<unsigned int>(mod_size_out), pipe_parameter, created_file);
@@ -1117,8 +1117,8 @@ std::string HDL_manager::get_mod_typename(const language_writer* lan, const stru
             mod_size_out = STD_GET_SIZE(mod->get_out_port(i)->get_typeRef());
       }
       res = res + "_" + STR(mod_size_out);
-      if(mod->is_parameter(PIPE_PARAMETER) && mod->get_parameter(PIPE_PARAMETER) != "")
-         res = res + "_" + mod->get_parameter(PIPE_PARAMETER);
+      if(mod->ExistsParameter(PIPE_PARAMETER) and mod->GetParameter(PIPE_PARAMETER) != "")
+         res = res + "_" + mod->GetParameter(PIPE_PARAMETER);
    }
    return convert_to_identifier(lan, res);
 }

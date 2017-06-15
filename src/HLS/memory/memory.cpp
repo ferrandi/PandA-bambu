@@ -545,9 +545,9 @@ void memory::propagate_memory_parameters(const structural_objectRef src, const s
 {
    std::map<std::string, std::string> res_parameters;
 
-   if (src->is_parameter(MEMORY_PARAMETER))
+   if (src->ExistsParameter(MEMORY_PARAMETER))
    {
-      std::vector<std::string> current_src_parameters = convert_string_to_vector<std::string>(src->get_parameter(MEMORY_PARAMETER), ";");
+      std::vector<std::string> current_src_parameters = convert_string_to_vector<std::string>(src->GetParameter(MEMORY_PARAMETER), ";");
       for(unsigned int l = 0; l < current_src_parameters.size(); l++)
       {
          std::vector<std::string> current_parameter = convert_string_to_vector<std::string>(current_src_parameters[l], "=");
@@ -562,9 +562,9 @@ void memory::propagate_memory_parameters(const structural_objectRef src, const s
       for (unsigned int i = 0; i < srcModule->get_internal_objects_size(); ++i)
       {
          structural_objectRef subModule = srcModule->get_internal_object(i);
-         if (subModule->is_parameter(MEMORY_PARAMETER))
+         if (subModule->ExistsParameter(MEMORY_PARAMETER))
          {
-            std::vector<std::string> current_src_parameters = convert_string_to_vector<std::string>(subModule->get_parameter(MEMORY_PARAMETER), ";");
+            std::vector<std::string> current_src_parameters = convert_string_to_vector<std::string>(subModule->GetParameter(MEMORY_PARAMETER), ";");
             for(unsigned int l = 0; l < current_src_parameters.size(); l++)
             {
                std::vector<std::string> current_parameter = convert_string_to_vector<std::string>(current_src_parameters[l], "=");
@@ -574,16 +574,17 @@ void memory::propagate_memory_parameters(const structural_objectRef src, const s
       }
    }
 
-   if (tgt->get_circ()->is_parameter(MEMORY_PARAMETER))
+   if (not tgt->get_circ()->ExistsParameter(MEMORY_PARAMETER))
    {
-      std::vector<std::string> current_tgt_parameters = convert_string_to_vector<std::string>(tgt->get_circ()->get_parameter(MEMORY_PARAMETER), ";");
-      for(unsigned int l = 0; l < current_tgt_parameters.size(); l++)
-      {
-         std::vector<std::string> current_parameter = convert_string_to_vector<std::string>(current_tgt_parameters[l], "=");
-         if (res_parameters.find(current_parameter[0]) != res_parameters.end() && res_parameters[current_parameter[0]] != current_parameter[1])
-            THROW_ERROR("The parameter \"" + current_parameter[0] + "\" has been set with (at least) two different values");
-         res_parameters[current_parameter[0]] = current_parameter[1];
-      }
+      tgt->get_circ()->AddParameter(MEMORY_PARAMETER, "");
+   }
+   std::vector<std::string> current_tgt_parameters = convert_string_to_vector<std::string>(tgt->get_circ()->GetParameter(MEMORY_PARAMETER), ";");
+   for(unsigned int l = 0; l < current_tgt_parameters.size(); l++)
+   {
+      std::vector<std::string> current_parameter = convert_string_to_vector<std::string>(current_tgt_parameters[l], "=");
+      if (res_parameters.find(current_parameter[0]) != res_parameters.end() && res_parameters[current_parameter[0]] != current_parameter[1])
+         THROW_ERROR("The parameter \"" + current_parameter[0] + "\" has been set with (at least) two different values");
+      res_parameters[current_parameter[0]] = current_parameter[1];
    }
 
    if (res_parameters.size() == 0)
@@ -595,16 +596,17 @@ void memory::propagate_memory_parameters(const structural_objectRef src, const s
       if (memory_parameters.size()) memory_parameters += ";";
       memory_parameters += it->first +"="+it->second;
    }
-   tgt->get_circ()->set_parameter(MEMORY_PARAMETER, memory_parameters);
+   std::cerr << "Setting MEMORY_PARAMETER of " << tgt->get_circ()->get_path() << " to " << memory_parameters << std::endl;
+   tgt->get_circ()->SetParameter(MEMORY_PARAMETER, memory_parameters);
 }
 
 void memory::add_memory_parameter(const structural_managerRef SM, const std::string& name, const std::string& value)
 {
-   std::string memory_parameters;
-   if (SM->get_circ()->is_parameter(MEMORY_PARAMETER))
+   if (not SM->get_circ()->ExistsParameter(MEMORY_PARAMETER))
    {
-      memory_parameters = SM->get_circ()->get_parameter(MEMORY_PARAMETER) + ";";
+      SM->get_circ()->AddParameter(MEMORY_PARAMETER, "");
    }
+   auto memory_parameters = SM->get_circ()->GetParameter(MEMORY_PARAMETER) + ";";
    std::vector<std::string> current_parameters = convert_string_to_vector<std::string>(memory_parameters, ";");
    for(unsigned int l = 0; l < current_parameters.size(); l++)
    {
@@ -618,7 +620,7 @@ void memory::add_memory_parameter(const structural_managerRef SM, const std::str
       }
    }
    memory_parameters += name + "=" + value;
-   SM->get_circ()->set_parameter(MEMORY_PARAMETER, memory_parameters);
+   SM->get_circ()->SetParameter(MEMORY_PARAMETER, memory_parameters);
 }
 
 void memory::xwrite(xml_element* node)

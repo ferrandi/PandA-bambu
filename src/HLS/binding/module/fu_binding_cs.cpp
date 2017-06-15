@@ -91,9 +91,9 @@ void fu_binding_cs::instantiate_component_kernel(const HLS_managerRef HLSMgr, co
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - Added Scheduler");
 
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Starting setting parameter scheduler!");
-   GetPointer<module>(scheduler_mod)->set_parameter("NUM_TASKS", STR(HLS->Param->getOption<unsigned int>(OPT_context_switch)));
-   GetPointer<module>(scheduler_mod)->set_parameter("ADDR_ACC", STR(log2(HLS->Param->getOption<unsigned int>(OPT_num_threads))));
-   GetPointer<module>(scheduler_mod)->set_parameter("KERN_NUM", "KERN_NUM");  //taken from datapath
+   GetPointer<module>(scheduler_mod)->SetParameter("NUM_TASKS", STR(HLS->Param->getOption<unsigned int>(OPT_context_switch)));
+   GetPointer<module>(scheduler_mod)->SetParameter("ADDR_ACC", STR(log2(HLS->Param->getOption<unsigned int>(OPT_num_threads))));
+   GetPointer<module>(scheduler_mod)->SetParameter("KERN_NUM", "KERN_NUM");  //taken from datapath
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Parameter scheduler setted!");
 
    structural_objectRef clock_scheduler = scheduler_mod->find_member(CLOCK_PORT_NAME,port_o_K,scheduler_mod);
@@ -211,14 +211,14 @@ void fu_binding_cs::set_atomic_memory_parameter(const hlsRef HLS)
    for(unsigned int i=0;i<GetPointer<module>(circuit)->get_internal_objects_size();i++)
    {
       structural_objectRef curr_gate = GetPointer<module>(circuit)->get_internal_object(i);
-      if(curr_gate->is_parameter("TAG_MEM_REQ"))
+      if(curr_gate->ExistsParameter("TAG_MEM_REQ"))
       {
          unsigned int tag_num=0;
          unsigned int addr_tasks=static_cast<unsigned int>(log2(HLS->Param->getOption<unsigned int>(OPT_context_switch)));
          unsigned int addr_acc=static_cast<unsigned int>(log2(HLS->Param->getOption<unsigned int>(OPT_num_threads)));
          unsigned int bit_atomic=addr_tasks+addr_acc;
          tag_num= static_cast<unsigned int>(pow(2, bit_atomic));
-         curr_gate->set_parameter("TAG_MEM_REQ", STR(tag_num));
+         curr_gate->SetParameter("TAG_MEM_REQ", STR(tag_num));
       }
    }
 

@@ -691,7 +691,8 @@ void structural_object::copy(structural_objectRef dest) const
    dest->treenode = treenode;
    dest->black_box = black_box;
    dest->debug_level = debug_level;
-   dest->parameters_list = parameters_list;
+   dest->default_parameters = default_parameters;
+   dest->parameters = parameters;
 
 #if HAVE_TECHNOLOGY_BUILT
    dest->attribute_list = attribute_list;
@@ -709,15 +710,46 @@ bool structural_object::get_black_box() const
    return black_box;
 }
 
-void structural_object::set_parameter(const std::string& name, const std::string& value)
+void structural_object::SetParameter(const std::string& name, const std::string& value)
 {
-   parameters_list[name] = value;
+   THROW_ASSERT(default_parameters.find(name) != default_parameters.end(), "Parameter " + name + " does not exist in " + get_typeRef()->id_type);
+   parameters[name] = value;
 }
 
-std::string structural_object::get_parameter(std::string name) const
+std::string structural_object::GetParameter(std::string name) const
 {
-   THROW_ASSERT(parameters_list.find(name) != parameters_list.end(), "Parameter " + name + " has no value associated for unit " + get_typeRef()->id_type);
-   return parameters_list.find(name)->second;
+   if(parameters.find(name) != parameters.end())
+   {
+      return parameters.at(name);
+   }
+   THROW_ASSERT(default_parameters.find(name) != default_parameters.end(), "Parameter " + name + " has no value associated for unit " + get_typeRef()->id_type);
+   return default_parameters.at(name);
+}
+
+void structural_object::AddParameter(const std::string name, const std::string default_value)
+{
+   THROW_ASSERT(default_parameters.find(name) == default_parameters.end() or default_parameters.at(name) == default_value, "Parameter " + name + " already added. Old default: " + default_parameters.at(name) + " New default: " + default_value);
+   default_parameters[name] = default_value;
+}
+
+std::string structural_object::GetDefaultParameter(std::string name) const
+{
+   THROW_ASSERT(default_parameters.find(name) != default_parameters.end(), "Parameter " + name + " does not exist");
+   return default_parameters.at(name);
+}
+
+CustomMap<std::string, std::string> structural_object::GetParameters()
+{
+   CustomMap<std::string, std::string> ret;
+   for(const auto default_parameter : default_parameters)
+   {
+      ret[default_parameter.first] = default_parameter.second;
+   }
+   for(const auto parameter : parameters)
+   {
+      ret[parameter.first] = parameter.second;
+   }
+   return ret;
 }
 
 #if HAVE_TECHNOLOGY_BUILT
@@ -737,7 +769,7 @@ structural_objectRef module::get_generic_object(const technology_managerConstRef
 structural_type_descriptor::s_type module::get_parameter_type(const technology_managerConstRef TM, const std::string&name) const
 {
    const auto module_type = get_generic_object(TM);
-   const auto default_value = module_type->get_parameter(name);
+   const auto default_value = module_type->GetDefaultParameter(name);
    if(default_value.substr(0,2) == "\"\"" and default_value.substr(default_value.size() - 2, 2) == "\"\"")
    {
       return structural_type_descriptor::OTHER;
@@ -765,9 +797,9 @@ structural_type_descriptor::s_type module::get_parameter_type(const technology_m
 }
 #endif
 
-bool structural_object::is_parameter(std::string name) const
+bool structural_object::ExistsParameter(std::string name) const
 {
-   return parameters_list.find(name) != parameters_list.end();
+   return default_parameters.find(name) != default_parameters.end();
 }
 
 void structural_object::xload(const xml_element* Enode, structural_objectRef, structural_managerRef const &)
@@ -802,7 +834,7 @@ void structural_object::xload(const xml_element* Enode, structural_objectRef, st
          if (!text) THROW_ERROR("parameter definition is missing");
          std::string default_value = text->get_content();
          xml_node::convert_escaped(default_value);
-         set_parameter(name, default_value);
+         default_parameter(name, default_value);
       }
    }
    THROW_ASSERT(has_structural_type_descriptor, "A structural object has to have a type." + boost::lexical_cast<std::string>(Enode->get_line()));
@@ -816,14 +848,13 @@ void structural_object::xwrite(xml_element* Enode)
    if (treenode != treenode_DEFAULT) WRITE_XVM(treenode, Enode);
    if (black_box != black_box_DEFAULT) WRITE_XVM(black_box, Enode);
    if (type) type->xwrite(Enode);
-   if(!parameters_list.empty())
+   if(!default_parameters.empty())
    {
-      const std::map<std::string,std::string>::const_iterator pl_it_end = parameters_list.end();
-      for(std::map<std::string,std::string>::const_iterator pl_it = parameters_list.begin(); pl_it != pl_it_end; ++pl_it)
+      for(const auto default_parameter : default_parameters)
       {
          xml_element* Enode_parameter = Enode->add_child_element("parameter");
-         WRITE_XNVM2("name", pl_it->first, Enode_parameter);
-         Enode_parameter->add_child_text(STR(pl_it->second));
+         WRITE_XNVM2("name", default_parameter.first, Enode_parameter);
+         Enode_parameter->add_child_text(STR(default_parameter.second));
       }
    }
 
@@ -2676,7 +2707,7 @@ const NP_functionalityRef& module::get_NP_functionality() const
    return NP_descriptions;
 }
 
-void module::get_NP_library_parameters(structural_objectRef _owner, std::vector<std::pair<std::string, structural_objectRef> > &parameters) const
+void module::get_NP_library_parameters(structural_objectRef _owner, std::vector<std::pair<std::string, structural_objectRef> > & computed_parameters) const
 {
    std::vector<std::string> param;
    NP_descriptions->get_library_parameters(param);
@@ -2684,7 +2715,7 @@ void module::get_NP_library_parameters(structural_objectRef _owner, std::vector<
    for (std::vector<std::string>::const_iterator it = param.begin(); it != it_end; ++it)
    {
       structural_objectRef obj = find_member(*it, port_vector_o_K, _owner);
-      parameters.push_back(std::make_pair(*it,obj));
+      computed_parameters.push_back(std::make_pair(*it,obj));
    }
 }
 
@@ -3785,6 +3816,18 @@ void module::change_port_direction(structural_objectRef port, port_o::port_direc
 
    GetPointer<port_o>(port)->set_port_direction(pdir);
 }
+
+void module::AddParameter(const std::string name, const std::string default_value)
+{
+   if(not NP_descriptions)
+   {
+      NP_descriptions = NP_functionalityRef(new NP_functionality);
+      NP_descriptions->add_NP_functionality(NP_functionality::LIBRARY, get_id());
+   }
+   NP_descriptions->add_NP_functionality(NP_functionality::LIBRARY, NP_descriptions->get_NP_functionality(NP_functionality::LIBRARY) + " " + name);
+   structural_object::AddParameter(name, default_value);
+}
+
 
 component_o::component_o(int _debug_level, const structural_objectRef o) :
       module(_debug_level, o)

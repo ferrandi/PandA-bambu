@@ -299,26 +299,26 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj,
             std::ofstream init_file_b((+"0_"+init_filename).c_str());
 
             module* shared_memory_module = GetPointer<module>(shared_memory);
-            shared_memory_module->set_parameter("address_space_begin", boost::lexical_cast<std::string>(base_address));
-            shared_memory_module->set_parameter("address_space_rangesize", boost::lexical_cast<std::string>(n_bytes));
+            shared_memory_module->SetParameter("address_space_begin", STR(base_address));
+            shared_memory_module->SetParameter("address_space_rangesize", STR(n_bytes));
             if(parameters->isOption(OPT_sparse_memory) && parameters->getOption<bool>(OPT_sparse_memory))
-               shared_memory_module->set_parameter("USE_SPARSE_MEMORY", boost::lexical_cast<std::string>(1));
+               shared_memory_module->SetParameter("USE_SPARSE_MEMORY", "1");
             else
-               shared_memory_module->set_parameter("USE_SPARSE_MEMORY", boost::lexical_cast<std::string>(0));
+               shared_memory_module->SetParameter("USE_SPARSE_MEMORY", "0");
             if(is_memory_splitted)
             {
-               shared_memory_module->set_parameter("MEMORY_INIT_file_a", "\"\""+init_filename+"\"\"");
-               shared_memory_module->set_parameter("MEMORY_INIT_file_b", "\"\"0_"+init_filename+"\"\"");
+               shared_memory_module->SetParameter("MEMORY_INIT_file_a", "\"\""+init_filename+"\"\"");
+               shared_memory_module->SetParameter("MEMORY_INIT_file_b", "\"\"0_"+init_filename+"\"\"");
             }
             else
-               shared_memory_module->set_parameter("MEMORY_INIT_file", "\"\""+init_filename+"\"\"");
-            shared_memory_module->set_parameter("n_elements", boost::lexical_cast<std::string>(vec_size));
-            shared_memory_module->set_parameter("data_size", boost::lexical_cast<std::string>(bus_data_bitsize));
-            shared_memory_module->set_parameter("BRAM_BITSIZE", boost::lexical_cast<std::string>(bram_bitsize));
+               shared_memory_module->SetParameter("MEMORY_INIT_file", "\"\""+init_filename+"\"\"");
+            shared_memory_module->SetParameter("n_elements", STR(vec_size));
+            shared_memory_module->SetParameter("data_size", STR(bus_data_bitsize));
+            shared_memory_module->SetParameter("BRAM_BITSIZE", STR(bram_bitsize));
             if(Has_extern_allocated_data || Has_unknown_addresses)
-               shared_memory_module->set_parameter("BUS_PIPELINED", boost::lexical_cast<std::string>(0));
+               shared_memory_module->SetParameter("BUS_PIPELINED", "0");
             else
-               shared_memory_module->set_parameter("BUS_PIPELINED", boost::lexical_cast<std::string>(1));
+               shared_memory_module->SetParameter("BUS_PIPELINED", "1");
             unsigned int n_ports = parameters->isOption(OPT_channels_number) ? parameters->getOption<unsigned int>(OPT_channels_number) : 0;
             for(unsigned int i = 0; i < shared_memory_module->get_in_port_size(); i++)
             {

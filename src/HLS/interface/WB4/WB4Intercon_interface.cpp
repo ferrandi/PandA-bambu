@@ -271,7 +271,7 @@ buildCircuit(
    std::ofstream baseAddressFile(baseAddressFileName);
 
    std::string topFunctionBaseAddress = STR(WB_BASE_ADDRESS) + "_" + topFunctionName;
-   wrappedObj->set_parameter(topFunctionBaseAddress,
+   wrappedObj->SetParameter(topFunctionBaseAddress,
                              topModuleBaseAddress + " + " + topFunctionBaseAddress);
 
    baseAddressFile
@@ -300,7 +300,7 @@ buildCircuit(
 	  HLS->HLS_T->get_technology_manager());
 
       std::string acceleratorBaseAddress = STR(WB_BASE_ADDRESS) + "_" + functionName;
-      additionalTop->set_parameter(acceleratorBaseAddress,
+      additionalTop->SetParameter(acceleratorBaseAddress,
                                    topModuleBaseAddress + " + " + acceleratorBaseAddress);
 
       // Clock and reset connection
@@ -384,7 +384,7 @@ buildCircuit(
 			 irqSignal);
    }
 
-   interconModule->set_parameter("MASTERS", STR(masters.size() + 1));
-   interconModule->set_parameter("SLAVES", STR(slaves.size() + 1));
-   interconModule->set_parameter("MEMORY_INIT_file", "\"\"" + baseAddressFileName + "\"\"");
+   interconModule->SetParameter("MASTERS", STR(masters.size() + 1));
+   interconModule->SetParameter("SLAVES", STR(slaves.size() + 1));
+   interconModule->SetParameter("MEMORY_INIT_file", "\"\"" + baseAddressFileName + "\"\"");
 }

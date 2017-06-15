@@ -249,7 +249,7 @@ void classic_datapath::add_ports()
             memory::add_memory_parameter(SM, param, std::get<0>(c->first));
             precision = GetPointer<dataport_obj>(constant_obj)->get_bitsize();
          }
-         const_obj->set_parameter("value", trimmed_value);
+         const_obj->SetParameter("value", trimmed_value);
          constant_obj->set_structural_obj(const_obj);
          std::string name = "out_const_" + boost::lexical_cast<std::string>(num);
          structural_type_descriptorRef sign_type = structural_type_descriptorRef(new structural_type_descriptor("bool", precision));

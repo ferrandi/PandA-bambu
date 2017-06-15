@@ -70,7 +70,7 @@ void reg_binding_cs::specialise_reg(structural_objectRef & reg, unsigned int r)
    {
       selector_port->type_resize(dimension); // selector
    }
-   GetPointer<module>(reg)->set_parameter("BITSIZE_MEM", STR(mem_dimension));
+   GetPointer<module>(reg)->SetParameter("BITSIZE_MEM", STR(mem_dimension));
    for(unsigned int j = 0; j < GetPointer<module>(reg)->get_in_port_size(); j++) //connect input scheduler with datapath input
    {
       structural_objectRef port_i = GetPointer<module>(reg)->get_in_port(j);

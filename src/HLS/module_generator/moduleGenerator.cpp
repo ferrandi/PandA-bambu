@@ -347,8 +347,11 @@ void moduleGenerator::specialize_fu(std::string fuName, vertex ve, std::string l
       GetPointer<module>(top)->set_copyright(fu_module->get_copyright());
       GetPointer<module>(top)->set_authors(fu_module->get_authors());
       GetPointer<module>(top)->set_license(fu_module->get_license());
-      std::map<std::string,std::string> p = fu_module->get_parameters();
-      GetPointer<module>(top)->set_parameters(p);
+      for(const auto module_parameter : fu_module->GetParameters())
+      {
+         GetPointer<module>(top)->AddParameter(module_parameter.first, fu_module->GetDefaultParameter(module_parameter.first));
+         GetPointer<module>(top)->SetParameter(module_parameter.first, module_parameter.second);
+      }
 
       //std::cout<<"Module created, adding ports"<<std::endl;
 
