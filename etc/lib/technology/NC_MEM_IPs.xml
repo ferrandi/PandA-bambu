@@ -424,6 +424,8 @@
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="PROXY_CTRL"/>
+          <parameter name="BRAM_BITSIZE">0</parameter>
+          <parameter name="BUS_PIPELINED">1</parameter>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
@@ -511,6 +513,8 @@ begin
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="PROXY_CTRL_3"/>
+          <parameter name="BRAM_BITSIZE">0</parameter>
+          <parameter name="BUS_PIPELINED">1</parameter>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
@@ -578,6 +582,8 @@ PROXY_CTRL #(.BITSIZE_in1(BITSIZE_in1), .BITSIZE_in2(BITSIZE_in2), .BITSIZE_in3(
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="PROXY_CTRL_4"/>
+          <parameter name="BRAM_BITSIZE">0</parameter>
+          <parameter name="BUS_PIPELINED">1</parameter>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
@@ -645,6 +651,8 @@ PROXY_CTRL #(.BITSIZE_in1(BITSIZE_in1), .BITSIZE_in2(BITSIZE_in2), .BITSIZE_in3(
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="PROXY_CTRLN"/>
+          <parameter name="BRAM_BITSIZE">0</parameter>
+          <parameter name="BUS_PIPELINED">1</parameter>
           <port_vector_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
@@ -744,6 +752,8 @@ assign proxy_sel_STORE = int_sel_STORE;
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="PROXY_CTRLN_3"/>
+          <parameter name="BRAM_BITSIZE">0</parameter>
+          <parameter name="BUS_PIPELINED">1</parameter>
           <port_vector_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
@@ -812,6 +822,8 @@ PROXY_CTRLN #(.BITSIZE_in1(BITSIZE_in1), .PORTSIZE_in1(PORTSIZE_in1), .BITSIZE_i
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="PROXY_CTRLN_4"/>
+          <parameter name="BRAM_BITSIZE">0</parameter>
+          <parameter name="BUS_PIPELINED">1</parameter>
           <port_vector_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
@@ -879,6 +891,8 @@ PROXY_CTRLN #(.BITSIZE_in1(BITSIZE_in1), .PORTSIZE_in1(PORTSIZE_in1), .BITSIZE_i
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="DPROXY_CTRL"/>
+          <parameter name="BRAM_BITSIZE">0</parameter>
+          <parameter name="BUS_PIPELINED">1</parameter>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
@@ -964,6 +978,8 @@ begin
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="DPROXY_CTRLN"/>
+          <parameter name="BRAM_BITSIZE">0</parameter>
+          <parameter name="BUS_PIPELINED">1</parameter>
           <port_vector_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
