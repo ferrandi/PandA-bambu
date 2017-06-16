@@ -596,7 +596,6 @@ void memory::propagate_memory_parameters(const structural_objectRef src, const s
       if (memory_parameters.size()) memory_parameters += ";";
       memory_parameters += it->first +"="+it->second;
    }
-   std::cerr << "Setting MEMORY_PARAMETER of " << tgt->get_circ()->get_path() << " to " << memory_parameters << std::endl;
    tgt->get_circ()->SetParameter(MEMORY_PARAMETER, memory_parameters);
 }
 

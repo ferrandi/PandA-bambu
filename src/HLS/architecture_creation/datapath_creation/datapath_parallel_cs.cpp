@@ -93,7 +93,6 @@ const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
 
 DesignFlowStep_Status datapath_parallel_cs::InternalExec()
 {
-   std::cerr << "C000" << std::endl;
    /// main circuit type
    const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(funId);
    structural_type_descriptorRef module_type = structural_type_descriptorRef(new structural_type_descriptor("datapath_"+FB->CGetBehavioralHelper()->get_function_name()));
