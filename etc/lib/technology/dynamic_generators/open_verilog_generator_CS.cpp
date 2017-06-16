@@ -46,7 +46,7 @@
   parameter [2:0] S_0 = 3'd0,\n\
                   S_1 = 3'd1,\n\
                   S_2 = 3'd2,\n\
-                  S_3 = 3'd3;\n\
+                  S_3 = 3'd3,\n\
                   S_4 = 3'd4;\n\
   reg [2:0] _present_state 1INIT_ZERO_VALUE;\n\
   reg [2:0] _next_state;\n\
