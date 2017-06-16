@@ -3819,12 +3819,15 @@ void module::change_port_direction(structural_objectRef port, port_o::port_direc
 
 void module::AddParameter(const std::string name, const std::string default_value)
 {
-   if(not NP_descriptions)
+   if(name != MEMORY_PARAMETER)
    {
-      NP_descriptions = NP_functionalityRef(new NP_functionality);
-      NP_descriptions->add_NP_functionality(NP_functionality::LIBRARY, get_id());
+      if(not NP_descriptions)
+      {
+         NP_descriptions = NP_functionalityRef(new NP_functionality);
+         NP_descriptions->add_NP_functionality(NP_functionality::LIBRARY, get_id());
+      }
+      NP_descriptions->add_NP_functionality(NP_functionality::LIBRARY, NP_descriptions->get_NP_functionality(NP_functionality::LIBRARY) + " " + name);
    }
-   NP_descriptions->add_NP_functionality(NP_functionality::LIBRARY, NP_descriptions->get_NP_functionality(NP_functionality::LIBRARY) + " " + name);
    structural_object::AddParameter(name, default_value);
 }
 

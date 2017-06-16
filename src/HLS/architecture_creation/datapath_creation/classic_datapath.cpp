@@ -189,6 +189,7 @@ void classic_datapath::add_clock_reset(structural_objectRef& clock_obj, structur
 
 void classic_datapath::add_ports()
 {
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Starting " + STR(__PRETTY_FUNCTION__));
    bool need_start_done = false;
    const structural_managerRef SM = this->HLS->datapath;
    const structural_objectRef circuit = SM->get_circ();
@@ -225,6 +226,7 @@ void classic_datapath::add_ports()
          port_obj->set_out_sign(p_obj);
       }
    }
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Added function parameters");
    if(HLS->Rconn!=NULL)
    {
       std::map<conn_binding::const_param, generic_objRef> const_objs = HLS->Rconn->get_constant_objs();
@@ -262,6 +264,7 @@ void classic_datapath::add_ports()
          num++;
       }
    }
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Added interconnection");
    const unsigned int return_type_index = BH->GetFunctionReturnType(BH->get_function_index());
    if(return_type_index)
    {
@@ -286,5 +289,6 @@ void classic_datapath::add_ports()
       SM->add_port(START_PORT_NAME, port_o::IN, circuit, bool_type);
       SM->add_port(DONE_PORT_NAME, port_o::OUT, circuit, bool_type);
    }
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Ended " + STR(__PRETTY_FUNCTION__));
 }
 

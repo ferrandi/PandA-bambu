@@ -60,33 +60,35 @@ datapath_cs::~datapath_cs()
 
 void datapath_cs::add_ports()
 {
-    classic_datapath::add_ports();      //add standard port
-    auto omp_functions = GetPointer<OmpFunctions>(HLSMgr->Rfuns);
-    const structural_managerRef& SM = this->HLS->datapath;
-    const structural_objectRef circuit = SM->get_circ();
-    bool found=false;
-    if(omp_functions->parallelized_functions.find(funId) != omp_functions->parallelized_functions.end()) found=true;
-    if(omp_functions->atomic_functions.find(funId) != omp_functions->atomic_functions.end()) found=true;
-    if(found)       //function with selector
-    {
-       INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "---Adding ports selector and suspension");
-       unsigned int num_slots=static_cast<unsigned int>(log2(HLS->Param->getOption<unsigned int>(OPT_context_switch)));
-       structural_type_descriptorRef port_type = structural_type_descriptorRef(new structural_type_descriptor("bool", num_slots));
-       SM->add_port(STR(SELECTOR_REGISTER_FILE), port_o::IN, circuit, port_type);
-       structural_type_descriptorRef bool_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 0));
-       SM->add_port(STR(SUSPENSION), port_o::OUT, circuit, bool_type);
-    }
-    if(omp_functions->kernel_functions.find(funId) != omp_functions->kernel_functions.end())
-    {
-       INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "---Adding ports for kernel module");
-       unsigned int num_slots=static_cast<unsigned int>(ceil(log2(HLS->Param->getOption<unsigned int>(OPT_context_switch))));
-       structural_type_descriptorRef port_type = structural_type_descriptorRef(new structural_type_descriptor("bool", num_slots));
-       structural_type_descriptorRef bool_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 0));
-       SM->add_port(STR(SELECTOR_REGISTER_FILE), port_o::OUT, circuit, port_type);
-       SM->add_port(STR(TASKS_POOL_END), port_o::IN, circuit, bool_type);
-       SM->add_port(STR(DONE_SCHEDULER), port_o::IN, circuit, bool_type);
-       SM->add_port(STR(START_PORT_NAME)+"_task", port_o::IN, circuit, bool_type);
-       SM->add_port(STR(DONE_REQUEST), port_o::OUT, circuit, bool_type);
-       SM->get_circ()->AddParameter("KERN_NUM", "0");
-    }
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Starting " + GET_CLASS(*this) + "::" + __func__);
+   classic_datapath::add_ports();      //add standard port
+   auto omp_functions = GetPointer<OmpFunctions>(HLSMgr->Rfuns);
+   const structural_managerRef& SM = this->HLS->datapath;
+   const structural_objectRef circuit = SM->get_circ();
+   bool found=false;
+   if(omp_functions->parallelized_functions.find(funId) != omp_functions->parallelized_functions.end()) found=true;
+   if(omp_functions->atomic_functions.find(funId) != omp_functions->atomic_functions.end()) found=true;
+   if(found)       //function with selector
+   {
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "---Adding ports selector and suspension");
+      unsigned int num_slots=static_cast<unsigned int>(log2(HLS->Param->getOption<unsigned int>(OPT_context_switch)));
+      structural_type_descriptorRef port_type = structural_type_descriptorRef(new structural_type_descriptor("bool", num_slots));
+      SM->add_port(STR(SELECTOR_REGISTER_FILE), port_o::IN, circuit, port_type);
+      structural_type_descriptorRef bool_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 0));
+      SM->add_port(STR(SUSPENSION), port_o::OUT, circuit, bool_type);
+   }
+   if(omp_functions->kernel_functions.find(funId) != omp_functions->kernel_functions.end())
+   {
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "---Adding ports for kernel module");
+      unsigned int num_slots=static_cast<unsigned int>(ceil(log2(HLS->Param->getOption<unsigned int>(OPT_context_switch))));
+      structural_type_descriptorRef port_type = structural_type_descriptorRef(new structural_type_descriptor("bool", num_slots));
+      structural_type_descriptorRef bool_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 0));
+      SM->add_port(STR(SELECTOR_REGISTER_FILE), port_o::OUT, circuit, port_type);
+      SM->add_port(STR(TASKS_POOL_END), port_o::IN, circuit, bool_type);
+      SM->add_port(STR(DONE_SCHEDULER), port_o::IN, circuit, bool_type);
+      SM->add_port(STR(START_PORT_NAME)+"_task", port_o::IN, circuit, bool_type);
+      SM->add_port(STR(DONE_REQUEST), port_o::OUT, circuit, bool_type);
+      SM->get_circ()->AddParameter("KERN_NUM", "0");
+   }
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Ended " + GET_CLASS(*this) + "::" + __func__);
 }
