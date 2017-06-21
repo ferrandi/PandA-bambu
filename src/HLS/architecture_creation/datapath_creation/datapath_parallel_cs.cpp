@@ -232,6 +232,17 @@ void datapath_parallel_cs::connect_module_kernel(structural_objectRef kernel_mod
    std::cout<<"Variable name: "<<name_Loop_Variable<<std::endl;
    structural_objectRef request_kernel = kernel_mod->find_member(name_Loop_Variable,port_o_K,kernel_mod);
    structural_objectRef request_datapath = circuit->find_member("request",port_o_K,circuit);
+   for(unsigned int j = 0; j < GetPointer<module>(kernel_mod)->get_in_port_size(); j++) //find i
+   {
+      structural_objectRef port_i = GetPointer<module>(kernel_mod)->get_in_port(j);
+      structural_objectRef connectedPort=GetPointer<port_o>(port_i)->find_bounded_object();
+      if(connectedPort==NULL)
+      {
+         std::cout<<"Found i var"<<std::endl;
+         SM->add_connection(request_datapath, port_i);
+      }
+
+   }
    if(false)
       SM->add_connection(request_datapath, request_kernel);
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - Connected request");
