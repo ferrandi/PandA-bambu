@@ -135,12 +135,17 @@ DesignFlowStep_Status datapath_parallel_cs::InternalExec()
       memory_modules.insert(kernel_mod);
       connect_module_kernel(kernel_mod,i);
       //setting num of kernel in each scheduler
-      GetPointer<module>(kernel_mod)->SetParameter("KERN_NUM", STR(i));   //add num_kernel to kernel
+      GetPointer<module>(kernel_mod)->set_parameter("NUM_KERN", "2d'"+STR(i));   //add num_kernel to kernel
       std::cerr << "Setting KERN_NUM to " << kernel_mod->get_path() << std::endl;
    }
    manage_extern_global_port_parallel(SM, memory_modules, datapath_cir);
    memory::propagate_memory_parameters(const_cast<structural_objectRef&>(kernel_mod), SM); //propagate memory_parameter to datapath_parallel
 
+   for(unsigned int i=0;i<HLS->Param->getOption<unsigned int>(OPT_num_threads);++i)
+   {
+      kernel_mod=circuit->find_member("kernel_"+STR(i),component_o_K,circuit);
+      connect_i_module_kernel(kernel_mod);
+   }
    return DesignFlowStep_Status::SUCCESS;
 }
 
@@ -217,35 +222,40 @@ void datapath_parallel_cs::connect_module_kernel(structural_objectRef kernel_mod
    structural_objectRef done_req_datapath = circuit->find_member(STR(DONE_REQUEST)+"_accelerator",port_vector_o_K,circuit);
    SM->add_connection(done_req_kernel, GetPointer<port_o>(done_req_datapath)->get_port(num_kernel));
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - Connected done_req");
+}
+ 
+void datapath_parallel_cs::connect_i_module_kernel(structural_objectRef kernel_mod)
+{
+   const structural_managerRef SM = this->HLS->datapath;
+    const structural_objectRef circuit = SM->get_circ();
+    /*const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(funId);
+    const BehavioralHelperConstRef BH = FB->CGetBehavioralHelper();
+    //connecting request datapath with the corresponding port name on kernel
+    const auto listLoops = FB->CGetLoops()->GetList();
+    std::string name_Loop_Variable;
+    for(auto loop: listLoops)
+    {
+       if(loop->GetId()!=0)
+       {
+          std::cout<<"Found variable (i)"<<std::endl;
+          name_Loop_Variable=BH->PrintVariable(loop->main_iv);
+       }
+    }
+    std::cout<<"Variable name: "<<name_Loop_Variable<<std::endl;
+    structural_objectRef request_kernel = kernel_mod->find_member(name_Loop_Variable,port_o_K,kernel_mod);*/
+    structural_objectRef request_datapath = circuit->find_member("request",port_o_K,circuit);
+    for(unsigned int j = 0; j < GetPointer<module>(kernel_mod)->get_in_port_size(); j++) //find i
+    {
+       structural_objectRef port_i = GetPointer<module>(kernel_mod)->get_in_port(j);
+       structural_objectRef connectedPort=GetPointer<port_o>(port_i)->find_bounded_object();
+       if(connectedPort==NULL)
+       {
+          std::cout<<"Found i var"<<std::endl;
+          SM->add_connection(request_datapath, port_i);
+       }
 
-  //connecting request datapath with the corresponding port name on kernel
-   const auto listLoops = FB->CGetLoops()->GetList();
-   std::string name_Loop_Variable;
-   for(auto loop: listLoops)
-   {
-      if(loop->GetId()!=0)
-      {
-         std::cout<<"--Found variable (i)"<<std::endl;
-         name_Loop_Variable=BH->PrintVariable(loop->main_iv);
-      }
-   }
-   std::cout<<"Variable name: "<<name_Loop_Variable<<std::endl;
-   structural_objectRef request_kernel = kernel_mod->find_member(name_Loop_Variable,port_o_K,kernel_mod);
-   structural_objectRef request_datapath = circuit->find_member("request",port_o_K,circuit);
-   for(unsigned int j = 0; j < GetPointer<module>(kernel_mod)->get_in_port_size(); j++) //find i
-   {
-      structural_objectRef port_i = GetPointer<module>(kernel_mod)->get_in_port(j);
-      structural_objectRef connectedPort=GetPointer<port_o>(port_i)->find_bounded_object();
-      if(connectedPort==NULL)
-      {
-         std::cout<<"Found i var"<<std::endl;
-         SM->add_connection(request_datapath, port_i);
-      }
-
-   }
-   if(false)
-      SM->add_connection(request_datapath, request_kernel);
-   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - Connected request");
+    }
+    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - Connected request");
 }
 
 void datapath_parallel_cs::instantiate_component_parallel(structural_objectRef clock_port, structural_objectRef reset_port)

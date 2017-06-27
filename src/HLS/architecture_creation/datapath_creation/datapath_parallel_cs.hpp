@@ -73,6 +73,12 @@ protected:
    void connect_module_kernel(structural_objectRef kernel, unsigned int num_kernel);
 
    /**
+    * @brief connect datapath with each kernel
+    * @param kernel
+    */
+   void connect_i_module_kernel(structural_objectRef kernel);
+
+   /**
     * Adds the input/output ports of the module
     */
    virtual void add_ports();
