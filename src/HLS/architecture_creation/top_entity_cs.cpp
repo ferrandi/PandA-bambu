@@ -137,4 +137,8 @@ void top_entity_cs::add_context_switch_port_kernel()
     structural_objectRef start_signal_in = circuit->find_member(STR(START_PORT_NAME), port_o_K, circuit);
     SM->add_connection(start_signal_in, datapath_start_port);    //connect start to datapath
     circuit->AddParameter("KERN_NUM", "0");
+
+    GetPointer<module>(datapath_circuit)->SetParameter("KERN_NUM", "KERN_NUM");
+    SM->add_NP_functionality(circuit, NP_functionality::LIBRARY, "KERN_NUM");
+    GetPointer<module>(circuit)->AddParameter("KERN_NUM", "0");  //taken from kernel instantiation
 }
