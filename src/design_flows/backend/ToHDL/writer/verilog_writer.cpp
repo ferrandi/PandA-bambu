@@ -628,7 +628,7 @@ void verilog_writer::write_vector_port_binding(const structural_objectRef &port,
          if (object_bounded->get_owner()->get_kind() == port_vector_o_K || object_bounded->get_owner()->get_kind() == signal_vector_o_K)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Bounded to a port of a port vector");
-            unsigned int bit = boost::lexical_cast<unsigned int>(object_bounded->get_id());
+            unsigned int vector_position = boost::lexical_cast<unsigned int>(object_bounded->get_id());
             if (slice and slice->get_id() != object_bounded->get_owner()->get_id())
             {
                if (local_first_port_analyzed)
@@ -653,13 +653,12 @@ void verilog_writer::write_vector_port_binding(const structural_objectRef &port,
                slice = null_object;
                msb = std::numeric_limits<unsigned int>::max();
             }
-            if (!slice || (slice->get_id() == object_bounded->get_owner()->get_id() and bit == lsb - 1))
+            if (!slice || (slice->get_id() == object_bounded->get_owner()->get_id() and (((vector_position + 1) * GET_TYPE_SIZE(object_bounded)) - 1)  == lsb - 1))
             {
-               std::cerr << "B000" << std::endl;
                slice = object_bounded->get_owner();
                if (msb == std::numeric_limits<unsigned int>::max())
-                  msb = bit;
-               lsb = bit;
+                  msb = (vector_position + 1) * GET_TYPE_SIZE(object_bounded) -1;
+               lsb = vector_position * GET_TYPE_SIZE(object_bounded);
                continue;
             }
          }
