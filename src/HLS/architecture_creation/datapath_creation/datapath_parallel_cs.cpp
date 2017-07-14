@@ -135,7 +135,7 @@ DesignFlowStep_Status datapath_parallel_cs::InternalExec()
       memory_modules.insert(kernel_mod);
       connect_module_kernel(kernel_mod,i);
       //setting num of kernel in each scheduler
-      GetPointer<module>(kernel_mod)->SetParameter("NUM_KERN", "2d'"+STR(i));   //add num_kernel to kernel
+      GetPointer<module>(kernel_mod)->SetParameter("NUM_KERN", "2'd'"+STR(i));   //add num_kernel to kernel
       std::cerr << "Setting KERN_NUM to " << kernel_mod->get_path() << std::endl;
    }
    manage_extern_global_port_parallel(SM, memory_modules, datapath_cir);
@@ -228,21 +228,6 @@ void datapath_parallel_cs::connect_i_module_kernel(structural_objectRef kernel_m
 {
    const structural_managerRef SM = this->HLS->datapath;
     const structural_objectRef circuit = SM->get_circ();
-    /*const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(funId);
-    const BehavioralHelperConstRef BH = FB->CGetBehavioralHelper();
-    //connecting request datapath with the corresponding port name on kernel
-    const auto listLoops = FB->CGetLoops()->GetList();
-    std::string name_Loop_Variable;
-    for(auto loop: listLoops)
-    {
-       if(loop->GetId()!=0)
-       {
-          std::cout<<"Found variable (i)"<<std::endl;
-          name_Loop_Variable=BH->PrintVariable(loop->main_iv);
-       }
-    }
-    std::cout<<"Variable name: "<<name_Loop_Variable<<std::endl;
-    structural_objectRef request_kernel = kernel_mod->find_member(name_Loop_Variable,port_o_K,kernel_mod);*/
     structural_objectRef request_datapath = circuit->find_member("request",port_o_K,circuit);
     for(unsigned int j = 0; j < GetPointer<module>(kernel_mod)->get_in_port_size(); j++) //find i
     {
