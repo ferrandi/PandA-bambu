@@ -128,7 +128,7 @@ DesignFlowStep_Status datapath_parallel_cs::InternalExec()
    std::string kernel_model = "kernel";
    std::string kernel_library = HLS->HLS_T->get_technology_manager()->get_library(kernel_model);
    structural_objectRef kernel_mod;
-   unsigned int addr_kernel=log2(<unsigned int>(OPT_num_threads));
+   unsigned int addr_kernel=static_cast<unsigned int>(log2(HLS->Param->getOption<unsigned int>(OPT_num_threads)));
    for(unsigned int i=0;i<HLS->Param->getOption<unsigned int>(OPT_num_threads);++i)
    {
       std::string kernel_name = "kernel_"+STR(i);
@@ -136,8 +136,7 @@ DesignFlowStep_Status datapath_parallel_cs::InternalExec()
       memory_modules.insert(kernel_mod);
       connect_module_kernel(kernel_mod,i);
       //setting num of kernel in each scheduler
-      GetPointer<module>(kernel_mod)->SetParameter("NUM_KERN",addr_kernel+"'d"+ STR(i));   //add num_kernel to kernel
-      std::cerr << "Setting KERN_NUM to " << kernel_mod->get_path() << std::endl;
+      GetPointer<module>(kernel_mod)->SetParameter("KERN_NUM",STR(addr_kernel)+"'d"+ STR(i));   //add num_kernel to kernel
    }
    manage_extern_global_port_parallel(SM, memory_modules, datapath_cir);
    memory::propagate_memory_parameters(const_cast<structural_objectRef&>(kernel_mod), SM); //propagate memory_parameter to datapath_parallel

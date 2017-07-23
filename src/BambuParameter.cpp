@@ -2986,7 +2986,22 @@ void BambuParameter::CheckParameters()
       setOption(OPT_disable_function_proxy, true);
       if(isOption(OPT_context_switch))
       {
-         PRINT_MSG("Passed parameter OPT_context_switch, this means that the following step are already defined and cannot be changed (if passed by command line are ignored). Controller,Datapath,Channel number, Channel Type, Interface generator and memory dominator\n");
+         if(getOption<unsigned int>(OPT_channels_number)==1)
+            THROW_ERROR("This configuration doesn't support a single channel");
+         if(getOption<unsigned int>(OPT_channels_number)>=getOption<unsigned int>(OPT_memory_banks_number))
+            THROW_ERROR("This configuration doesn't support a number of channel equal or greater than the number of memory_bank");
+         if(getOption<unsigned int>(OPT_channels_number)>=getOption<unsigned int>(OPT_num_threads))
+            THROW_ERROR("This configuration doesn't support a number of channel equal or greater than the number of accelerator");
+         unsigned int v=getOption<unsigned int>(OPT_channels_number); // we want to see if v is a power of 2
+         bool f;         // the result goes here
+         f = v && !(v & (v - 1));
+         if(!f)
+            THROW_ERROR("Number of channel must be a power of 2");
+         v=getOption<unsigned int>(OPT_memory_banks_number); // we want to see if v is a power of 2
+         f = v && !(v & (v - 1));
+         if(!f)
+            THROW_ERROR("Number of bank must be a power of 2");
+         PRINT_MSG("Passed parameter OPT_context_switch, this means that the following step are already defined and cannot be changed (if passed by command line are ignored). Controller,Datapath, Channel Type, Interface generator and memory dominator\n");
          setOption(OPT_function_allocation_algorithm, HLSFlowStep_Type::OMP_FUNCTION_ALLOCATION_CS);
          setOption(OPT_memory_allocation_algorithm, HLSFlowStep_Type::DOMINATOR_MEMORY_ALLOCATION_CS);
          setOption(OPT_channels_type, MemoryAllocation_ChannelsType::MEM_ACC_CS);
@@ -2995,14 +3010,7 @@ void BambuParameter::CheckParameters()
          setOption(OPT_controller_architecture, HLSFlowStep_Type::FSM_CS_CONTROLLER_CREATOR);
          setOption(OPT_interface_type, HLSFlowStep_Type::INTERFACE_CS_GENERATION);
       }
-      else
-      {
-#if HAVE_EXPERIMENTAL
-         setOption(OPT_function_allocation_algorithm, HLSFlowStep_Type::OMP_FUNCTION_ALLOCATION);
-#else
-         THROW_UNREACHABLE("");
-      }
-#endif
+      else setOption(OPT_function_allocation_algorithm, HLSFlowStep_Type::OMP_FUNCTION_ALLOCATION);
       add_bambu_library("pthread");
    }
 #endif
