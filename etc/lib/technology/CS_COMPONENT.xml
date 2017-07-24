@@ -692,12 +692,12 @@ assign selectorByMemory = fifo_empty_ready &amp;&amp; IN_M_DataRdy;
 //next selector can be old ones or new depending on state of fifo and signal arriving
 assign next_selector_register_file = (mux_switching_logic)? new_selector : old_selector;
 //if signal to end or switch and there is at least one task that is ready or free then swith moreover if you are in S_2, (no free or ready), or S_4 (no_ready and no more tastk) and arrive a response in ready then switch,
-assign mux_switching_logic= ((done_scheduler || suspension) &amp;&amp; ((!fifo_empty_ready || selectorByMemory) || (!fifo_empty_free &amp;&amp; !task_pool_end))) || ((_present_state==S_2 || _present_state==S_4) &amp;&amp; (selectorByMemory || !fifo_empty_ready));
+assign mux_switching_logic= ((done_scheduler || suspension) &amp;&amp; ((!fifo_empty_ready || selectorByMemory) || (!fifo_empty_free &amp;&amp; !task_pool_end))) || ((_present_state==S_2 || _present_state==S_4) &amp;&amp; (selectorByMemory || !fifo_empty_ready)) || (_present_state==S_5 &amp;&amp; task_pool_end &amp;&amp; selectorByMemory);
 //new selector can be a old task suspended or a new ones
 assign new_selector = (mux_fifo_sel)? data_ready : fifo_data_out_free;
 assign data_ready = (selectorByMemory) ? IN_Min_tag[BITSIZE_selector_register_file-1:0] : fifo_data_out_ready;
 //if at least one task in ready and is true that arrive one signal or you are in S_2 (wait for fifo_ready to be not-empty) then use ready
-assign mux_fifo_sel = ((done_scheduler || suspension) &amp;&amp; (!fifo_empty_ready || selectorByMemory)) || ((_present_state==S_2 || _present_state==S_4) &amp;&amp; (selectorByMemory || !fifo_empty_ready));
+assign mux_fifo_sel = ((done_scheduler || suspension) &amp;&amp; (!fifo_empty_ready || selectorByMemory)) || ((_present_state==S_2 || _present_state==S_4) &amp;&amp; (selectorByMemory || !fifo_empty_ready)) || (_present_state==S_5 &amp;&amp; task_pool_end &amp;&amp; selectorByMemory);
 //if reset start task is 0 otherwise old selector
 assign old_selector = (!reset)? {BITSIZE_selector_register_file{1'b0}} : selector_register_file;
 
