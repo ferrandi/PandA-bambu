@@ -2986,8 +2986,6 @@ void BambuParameter::CheckParameters()
       setOption(OPT_disable_function_proxy, true);
       if(isOption(OPT_context_switch))
       {
-         if(getOption<unsigned int>(OPT_channels_number)==1)
-            THROW_ERROR("This configuration doesn't support a single channel");
          if(getOption<unsigned int>(OPT_channels_number)>=getOption<unsigned int>(OPT_memory_banks_number))
             THROW_ERROR("This configuration doesn't support a number of channel equal or greater than the number of memory_bank");
          if(getOption<unsigned int>(OPT_channels_number)>=getOption<unsigned int>(OPT_num_threads))
