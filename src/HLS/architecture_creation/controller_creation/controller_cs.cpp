@@ -78,6 +78,7 @@ void controller_cs::add_common_ports(structural_objectRef circuit)
 void controller_cs::add_selector_register_file_port(structural_objectRef circuit)
 {
     unsigned int num_slots=static_cast<unsigned int>(log2(HLS->Param->getOption<unsigned int>(OPT_context_switch)));
+    if(!num_slots) num_slots=1;
     structural_type_descriptorRef port_type = structural_type_descriptorRef(new structural_type_descriptor("bool", num_slots));
     PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "  * Start adding Selector signal...");
     /// add selector port

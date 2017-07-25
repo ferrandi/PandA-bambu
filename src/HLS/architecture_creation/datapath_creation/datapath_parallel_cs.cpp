@@ -129,6 +129,7 @@ DesignFlowStep_Status datapath_parallel_cs::InternalExec()
    std::string kernel_library = HLS->HLS_T->get_technology_manager()->get_library(kernel_model);
    structural_objectRef kernel_mod;
    unsigned int addr_kernel=static_cast<unsigned int>(log2(HLS->Param->getOption<unsigned int>(OPT_num_threads)));
+   if(!addr_kernel) addr_kernel=1;
    for(unsigned int i=0;i<HLS->Param->getOption<unsigned int>(OPT_num_threads);++i)
    {
       std::string kernel_name = "kernel_"+STR(i);
@@ -268,8 +269,12 @@ void datapath_parallel_cs::instantiate_component_parallel(structural_objectRef c
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Starting setting parameter memory_ctrl_parallel!");
    GetPointer<module>(mem_par_mod)->SetParameter("NUM_CHANNEL", STR(HLS->Param->getOption<unsigned int>(OPT_channels_number)));
    GetPointer<module>(mem_par_mod)->SetParameter("NUM_ACC", STR(HLS->Param->getOption<unsigned int>(OPT_num_threads)));
-   GetPointer<module>(mem_par_mod)->SetParameter("ADDR_TASKS", STR(log2(HLS->Param->getOption<unsigned int>(OPT_context_switch))));
-   GetPointer<module>(mem_par_mod)->SetParameter("ADDR_ACC", STR(log2(HLS->Param->getOption<unsigned int>(OPT_num_threads))));
+   unsigned int addr_task=static_cast<unsigned int>(log2(parameters->getOption<unsigned int>(OPT_context_switch)));
+   if(!addr_task) addr_task=1;
+   GetPointer<module>(mem_par_mod)->SetParameter("ADDR_TASKS", STR(addr_task));
+   unsigned int addr_kern=static_cast<unsigned int>(log2(parameters->getOption<unsigned int>(OPT_num_threads)));
+   if(!addr_kern) addr_kern=1;
+   GetPointer<module>(mem_par_mod)->SetParameter("ADDR_ACC", STR(addr_kern));
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Parameter memory_ctrl_top setted!");
 
    resize_ctrl_parallel_ports(mem_par_mod);

@@ -616,6 +616,7 @@ assign available_data = ~fifo_empty;
           <NP_functionality LIBRARY="scheduler IN_M_Rdata_ram IN_M_DataRdy IN_Min_tag IN_request_accepted Mout_oe_ram Mout_we_ram Mout_addr_ram Mout_data_ram_size Mout_Wdata_ram Mout_tag_ram OUT_Mout_oe_ram OUT_Mout_we_ram OUT_Mout_addr_ram OUT_Mout_data_ram_size OUT_Mout_Wdata_ram OUT_Mout_tag_ram M_Rdata_ram M_DataRdy Min_tag request_accepted selector_register_file NUM_TASKS KERN_NUM ADDR_ACC"
           IP_COMPONENT="fifio,fifio_free,mem_scheduler" VERILOG_PROVIDED="
 parameter SIZE_IN=BITSIZE_Mout_oe_ram+BITSIZE_Mout_we_ram+BITSIZE_Mout_addr_ram+BITSIZE_Mout_data_ram_size+BITSIZE_Mout_Wdata_ram+BITSIZE_Mout_tag_ram;
+parameter ADDR_WIDTH=($clog2(NUM_TASKS)!=0)?$clog2(NUM_TASKS):1;
 
 reg done_request;
 reg [BITSIZE_M_DataRdy-1:0] M_DataRdy;
@@ -657,7 +658,7 @@ wire done_request_next;
 wire [BITSIZE_selector_register_file-1:0] data_ready;
 wire selectorByMemory;
 
-fifio_free #(.BITSIZE_data_in(BITSIZE_selector_register_file), .BITSIZE_data_out(BITSIZE_selector_register_file), .ADDR_WIDTH($clog2(NUM_TASKS) )) fifo_free(
+fifio_free #(.BITSIZE_data_in(BITSIZE_selector_register_file), .BITSIZE_data_out(BITSIZE_selector_register_file), .ADDR_WIDTH(ADDR_WIDTH)) fifo_free(
 .full        (fifo_full_free),
 .empty       (fifo_empty_free),
 .data_out    (fifo_data_out_free),
@@ -667,7 +668,7 @@ fifio_free #(.BITSIZE_data_in(BITSIZE_selector_register_file), .BITSIZE_data_out
 .wr_en       (fifo_wr_en_free),
 .data_in     (selector_register_file)); // just the selector can write the data_in of fifo_free
 
-fifio #(.BITSIZE_data_in(BITSIZE_selector_register_file), .BITSIZE_data_out(BITSIZE_selector_register_file), .ADDR_WIDTH($clog2(NUM_TASKS))) fifo_ready(
+fifio #(.BITSIZE_data_in(BITSIZE_selector_register_file), .BITSIZE_data_out(BITSIZE_selector_register_file), .ADDR_WIDTH(ADDR_WIDTH)) fifo_ready(
 .full        (fifo_full_ready),
 .empty       (fifo_empty_ready),
 .data_out    (fifo_data_out_ready),
@@ -677,7 +678,7 @@ fifio #(.BITSIZE_data_in(BITSIZE_selector_register_file), .BITSIZE_data_out(BITS
 .wr_en       (fifo_wr_en_ready),  // when data is copied insert data of task ready on ready
 .data_in     (IN_Min_tag[BITSIZE_selector_register_file-1:0]));    // data go into memory to say in which cell to write and here to say which task is now ready
 
-fifio #(.BITSIZE_data_in(BITSIZE_selector_register_file), .BITSIZE_data_out(BITSIZE_selector_register_file), .ADDR_WIDTH($clog2(NUM_TASKS))) fifo_wait(
+fifio #(.BITSIZE_data_in(BITSIZE_selector_register_file), .BITSIZE_data_out(BITSIZE_selector_register_file), .ADDR_WIDTH(ADDR_WIDTH)) fifo_wait(
 .full (fifo_full_wait),  	         //used by arbiter
 .empty (fifo_empty_wait),         //used by arbiter
 .data_out (fifo_data_out_wait),

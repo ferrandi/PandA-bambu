@@ -158,8 +158,12 @@ void cs_interface::instantiate_component_parallel(const structural_managerRef SM
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Starting setting parameter memory_ctrl_top!");
    GetPointer<module>(mem_ctrl_mod)->SetParameter("NUM_CHANNEL", STR(parameters->getOption<unsigned int>(OPT_channels_number)));
    GetPointer<module>(mem_ctrl_mod)->SetParameter("NUM_BANK", STR(parameters->getOption<unsigned int>(OPT_memory_banks_number)));
-   GetPointer<module>(mem_ctrl_mod)->SetParameter("ADDR_TASKS", STR(log2(parameters->getOption<unsigned int>(OPT_context_switch))));
-   GetPointer<module>(mem_ctrl_mod)->SetParameter("ADDR_ACC", STR(log2(parameters->getOption<unsigned int>(OPT_num_threads))));
+   unsigned int addr_task=static_cast<unsigned int>(log2(parameters->getOption<unsigned int>(OPT_context_switch)));
+   if(!addr_task) addr_task=1;
+   GetPointer<module>(mem_ctrl_mod)->SetParameter("ADDR_TASKS", STR(addr_task));
+   unsigned int addr_kern=static_cast<unsigned int>(log2(parameters->getOption<unsigned int>(OPT_num_threads)));
+   if(!addr_kern) addr_kern=1;
+   GetPointer<module>(mem_ctrl_mod)->SetParameter("ADDR_ACC", STR(addr_kern));
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Parameter memory_ctrl_top setted!");
 
    resize_memory_ctrl_ports(mem_ctrl_mod);

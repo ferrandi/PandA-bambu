@@ -61,7 +61,9 @@ DesignFlowStep_Status mem_dominator_allocation_cs::Exec()
     mem_dominator_allocation::Exec();    //exec of hierarchical class
     unsigned int tag_index=0;
     unsigned int context_switch=static_cast<unsigned int>(log2(parameters->getOption<int>(OPT_context_switch)));
+    if(!context_switch) context_switch=1;
     unsigned int num_threads=static_cast<unsigned int>(log2(parameters->getOption<int>(OPT_num_threads)));
+    if(!num_threads) num_threads=1;
     tag_index=context_switch+num_threads+2; //tag_index is log2(switch)+log2(thread)+2
     GetPointer<memory_cs>(HLSMgr->Rmem)->set_bus_tag_bitsize(tag_index);
     return DesignFlowStep_Status::SUCCESS;

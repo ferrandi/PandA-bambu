@@ -92,7 +92,9 @@ void fu_binding_cs::instantiate_component_kernel(const HLS_managerRef HLSMgr, co
 
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Starting setting parameter scheduler!");
    GetPointer<module>(scheduler_mod)->SetParameter("NUM_TASKS", STR(HLS->Param->getOption<unsigned int>(OPT_context_switch)));
-   GetPointer<module>(scheduler_mod)->SetParameter("ADDR_ACC", STR(log2(HLS->Param->getOption<unsigned int>(OPT_num_threads))));
+   unsigned int addr_acc=static_cast<unsigned int>(log2(HLS->Param->getOption<unsigned int>(OPT_num_threads)));
+   if(!addr_acc) addr_acc=1;
+   GetPointer<module>(scheduler_mod)->SetParameter("ADDR_ACC", STR(addr_acc));
    GetPointer<module>(scheduler_mod)->SetParameter("KERN_NUM", "KERN_NUM");  //taken from datapath
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Parameter scheduler setted!");
 
@@ -179,6 +181,7 @@ void fu_binding_cs::connect_selector_kernel(const hlsRef HLS)
    const structural_managerRef SM = HLS->datapath;
    const structural_objectRef circuit = SM->get_circ();
    unsigned int num_slots=static_cast<unsigned int>(log2(HLS->Param->getOption<unsigned int>(OPT_context_switch)));   //resize selector-port
+   if(!num_slots) num_slots=1;
    structural_type_descriptorRef port_type = structural_type_descriptorRef(new structural_type_descriptor("bool", num_slots));
 
    structural_objectRef scheduler_mod = circuit->find_member("scheduler_kernel", component_o_K, circuit);
@@ -215,7 +218,9 @@ void fu_binding_cs::set_atomic_memory_parameter(const hlsRef HLS)
       {
          unsigned int tag_num=0;
          unsigned int addr_tasks=static_cast<unsigned int>(log2(HLS->Param->getOption<unsigned int>(OPT_context_switch)));
+         if(!addr_tasks) addr_tasks=1;
          unsigned int addr_acc=static_cast<unsigned int>(log2(HLS->Param->getOption<unsigned int>(OPT_num_threads)));
+         if(!addr_acc) addr_acc=1;
          unsigned int bit_atomic=addr_tasks+addr_acc;
          tag_num= static_cast<unsigned int>(pow(2, bit_atomic));
          curr_gate->SetParameter("TAG_MEM_REQ", STR(tag_num));
