@@ -7,6 +7,7 @@
       <circuit>
         <component_o id="fifio">
           <parameter name="ADDR_WIDTH">3</parameter>
+          <parameter name="DEPTH">8</parameter>
           <structural_type_descriptor id_type="fifio"/>
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
@@ -36,9 +37,7 @@
           <port_o id="data_out" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="fifio data_in data_out ADDR_WIDTH" VERILOG_PROVIDED="
-parameter DEPTH = 2**ADDR_WIDTH;
-
+          <NP_functionality LIBRARY="fifio data_in data_out ADDR_WIDTH DEPTH" VERILOG_PROVIDED="
 reg [ADDR_WIDTH-1:0] rd_addr;
 reg [ADDR_WIDTH-1:0] wr_addr;
 reg [BITSIZE_data_in-1:0] ram [DEPTH-1:0];
@@ -88,6 +87,7 @@ end"/>
       <circuit>
         <component_o id="fifio_free">
           <parameter name="ADDR_WIDTH">3</parameter>
+          <parameter name="DEPTH">8</parameter>
           <structural_type_descriptor id_type="fifio_free"/>
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
@@ -117,9 +117,7 @@ end"/>
           <port_o id="data_out" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="fifio_free data_in data_out ADDR_WIDTH" VERILOG_PROVIDED="
-parameter DEPTH = (!ADDR_WIDTH)?2**ADDR_WIDTH:1;
-
+          <NP_functionality LIBRARY="fifio_free data_in data_out ADDR_WIDTH DEPTH" VERILOG_PROVIDED="
 reg [ADDR_WIDTH-1:0] rd_addr;
 reg [ADDR_WIDTH-1:0] wr_addr;
 reg [BITSIZE_data_in-1:0] ram [DEPTH-1:0];
@@ -616,7 +614,8 @@ assign available_data = ~fifo_empty;
           <NP_functionality LIBRARY="scheduler IN_M_Rdata_ram IN_M_DataRdy IN_Min_tag IN_request_accepted Mout_oe_ram Mout_we_ram Mout_addr_ram Mout_data_ram_size Mout_Wdata_ram Mout_tag_ram OUT_Mout_oe_ram OUT_Mout_we_ram OUT_Mout_addr_ram OUT_Mout_data_ram_size OUT_Mout_Wdata_ram OUT_Mout_tag_ram M_Rdata_ram M_DataRdy Min_tag request_accepted selector_register_file NUM_TASKS KERN_NUM ADDR_ACC"
           IP_COMPONENT="fifio,fifio_free,mem_scheduler" VERILOG_PROVIDED="
 parameter SIZE_IN=BITSIZE_Mout_oe_ram+BITSIZE_Mout_we_ram+BITSIZE_Mout_addr_ram+BITSIZE_Mout_data_ram_size+BITSIZE_Mout_Wdata_ram+BITSIZE_Mout_tag_ram;
-
+parameter ADDR_WIDTH=(!($clog2(NUM_TASKS)))?$clog2(NUM_TASKS):1;
+parameter DEPTH=(!($clog2(NUM_TASKS)))?NUM_TASKS:1;
 reg done_request;
 reg [BITSIZE_M_DataRdy-1:0] M_DataRdy;
 reg [BITSIZE_selector_register_file-1:0] selector_register_file;
@@ -657,7 +656,7 @@ wire done_request_next;
 wire [BITSIZE_selector_register_file-1:0] data_ready;
 wire selectorByMemory;
 
-fifio_free #(.BITSIZE_data_in(BITSIZE_selector_register_file), .BITSIZE_data_out(BITSIZE_selector_register_file), .ADDR_WIDTH($clog2(NUM_TASKS))) fifo_free(
+fifio_free #(.BITSIZE_data_in(BITSIZE_selector_register_file), .BITSIZE_data_out(BITSIZE_selector_register_file), .ADDR_WIDTH(ADDR_WIDTH), .DEPTH(DEPTH)) fifo_free(
 .full        (fifo_full_free),
 .empty       (fifo_empty_free),
 .data_out    (fifo_data_out_free),
@@ -667,7 +666,7 @@ fifio_free #(.BITSIZE_data_in(BITSIZE_selector_register_file), .BITSIZE_data_out
 .wr_en       (fifo_wr_en_free),
 .data_in     (selector_register_file)); // just the selector can write the data_in of fifo_free
 
-fifio #(.BITSIZE_data_in(BITSIZE_selector_register_file), .BITSIZE_data_out(BITSIZE_selector_register_file), .ADDR_WIDTH($clog2(NUM_TASKS))) fifo_ready(
+fifio #(.BITSIZE_data_in(BITSIZE_selector_register_file), .BITSIZE_data_out(BITSIZE_selector_register_file), .ADDR_WIDTH(ADDR_WIDTH), .DEPTH(DEPTH)) fifo_ready(
 .full        (fifo_full_ready),
 .empty       (fifo_empty_ready),
 .data_out    (fifo_data_out_ready),
@@ -677,7 +676,7 @@ fifio #(.BITSIZE_data_in(BITSIZE_selector_register_file), .BITSIZE_data_out(BITS
 .wr_en       (fifo_wr_en_ready),  // when data is copied insert data of task ready on ready
 .data_in     (IN_Min_tag[BITSIZE_selector_register_file-1:0]));    // data go into memory to say in which cell to write and here to say which task is now ready
 
-fifio #(.BITSIZE_data_in(BITSIZE_selector_register_file), .BITSIZE_data_out(BITSIZE_selector_register_file), .ADDR_WIDTH($clog2(NUM_TASKS))) fifo_wait(
+fifio #(.BITSIZE_data_in(BITSIZE_selector_register_file), .BITSIZE_data_out(BITSIZE_selector_register_file), .ADDR_WIDTH(ADDR_WIDTH), .DEPTH(DEPTH)) fifo_wait(
 .full (fifo_full_wait),  	         //used by arbiter
 .empty (fifo_empty_wait),         //used by arbiter
 .data_out (fifo_data_out_wait),
@@ -1155,10 +1154,10 @@ generate
   for(i=0; i&lt;NUM_BANK; i=i+1)
   begin
     // IN - I am putting data from parallel
-    fifio #(.BITSIZE_data_in(SIZE_TOT_IN), .BITSIZE_data_out(SIZE_TOT_IN), .ADDR_WIDTH(FIFO_IN)) IN_fifo (.full (IN_fifo_full[i]), .empty (IN_fifo_empty[i]), .data_out (IN_fifo_data_out[SIZE_TOT_IN*(i+1)-1:SIZE_TOT_IN*i]), .clock (clock), .reset (reset), .rd_en (IN_fifo_rd_en[i]), .wr_en (IN_fifo_wr_en[i]), .data_in (IN_fifo_data_in[SIZE_TOT_IN*(i+1)-1:SIZE_TOT_IN*i]));
+    fifio #(.BITSIZE_data_in(SIZE_TOT_IN), .BITSIZE_data_out(SIZE_TOT_IN), .ADDR_WIDTH(FIFO_IN), .DEPTH(2**FIFO_IN)) IN_fifo (.full (IN_fifo_full[i]), .empty (IN_fifo_empty[i]), .data_out (IN_fifo_data_out[SIZE_TOT_IN*(i+1)-1:SIZE_TOT_IN*i]), .clock (clock), .reset (reset), .rd_en (IN_fifo_rd_en[i]), .wr_en (IN_fifo_wr_en[i]), .data_in (IN_fifo_data_in[SIZE_TOT_IN*(i+1)-1:SIZE_TOT_IN*i]));
 
     //OUT - I am putting data from memory
-    fifio #(.BITSIZE_data_in(SIZE_TOT_OUT), .BITSIZE_data_out(SIZE_TOT_OUT), .ADDR_WIDTH(FIFO_OUT)) OUT_fifo_0 (.full (OUT_fifo_full[i]), .empty (OUT_fifo_empty[i]), .data_out (OUT_fifo_data_out[SIZE_TOT_OUT*(i+1)-1:SIZE_TOT_OUT*i]), .clock (clock), .reset (reset), .rd_en (OUT_fifo_rd_en[i]), .wr_en (OUT_fifo_wr_en[i]), .data_in (OUT_fifo_data_in[SIZE_TOT_OUT*(i+1)-1:SIZE_TOT_OUT*i]));
+    fifio #(.BITSIZE_data_in(SIZE_TOT_OUT), .BITSIZE_data_out(SIZE_TOT_OUT), .ADDR_WIDTH(FIFO_OUT), .DEPTH(2**FIFO_OUT)) OUT_fifo_0 (.full (OUT_fifo_full[i]), .empty (OUT_fifo_empty[i]), .data_out (OUT_fifo_data_out[SIZE_TOT_OUT*(i+1)-1:SIZE_TOT_OUT*i]), .clock (clock), .reset (reset), .rd_en (OUT_fifo_rd_en[i]), .wr_en (OUT_fifo_wr_en[i]), .data_in (OUT_fifo_data_in[SIZE_TOT_OUT*(i+1)-1:SIZE_TOT_OUT*i]));
 
     //register of data that is connected with memory (blocking)
     register_SE_r #(.BITSIZE_in1(SIZE_TOT_IN), .BITSIZE_out1(SIZE_TOT_IN)) register_status(.clock(clock), .reset(reset), .in1(IN_fifo_data_out[SIZE_TOT_IN*(i+1)-1:SIZE_TOT_IN*i]), .we(valid_Out_fifo[i]), .out1(out_reg[SIZE_TOT_IN*(i+1)-1:SIZE_TOT_IN*i]));
