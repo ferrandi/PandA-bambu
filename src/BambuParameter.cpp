@@ -2988,8 +2988,6 @@ void BambuParameter::CheckParameters()
       {
          if(getOption<unsigned int>(OPT_channels_number)>=getOption<unsigned int>(OPT_memory_banks_number))
             THROW_ERROR("This configuration doesn't support a number of channel equal or greater than the number of memory_bank");
-         if(getOption<unsigned int>(OPT_channels_number)>=getOption<unsigned int>(OPT_num_threads))
-            THROW_ERROR("This configuration doesn't support a number of channel equal or greater than the number of accelerator");
          unsigned int v=getOption<unsigned int>(OPT_channels_number); // we want to see if v is a power of 2
          bool f;         // the result goes here
          f = v && !(v & (v - 1));
