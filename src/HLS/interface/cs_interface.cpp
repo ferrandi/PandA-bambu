@@ -139,7 +139,11 @@ void cs_interface::instantiate_component_parallel(const structural_managerRef SM
    const structural_objectRef circuit = SM->get_circ();
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Start to instantiate memory_ctrl_top");
    structural_type_descriptorRef bool_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 0));
-   std::string memory_ctrl_model = "memory_ctrl";
+   std::string memory_ctrl_model;
+   if(HLS->Param->getOption<unsigned int>(OPT_channels_number)!=1)
+      memory_ctrl_model = "memory_ctrl";
+   else
+      memory_ctrl_model = "memory_ctrl_sigle_input";
    std::string memory_ctrl_name = "memory_ctrl_top";
    std::string memory_ctrl_library = HLS->HLS_T->get_technology_manager()->get_library(memory_ctrl_model);
    structural_objectRef mem_ctrl_mod = SM->add_module_from_technology_library(memory_ctrl_name, memory_ctrl_model, memory_ctrl_library, circuit, HLS->HLS_T->get_technology_manager());
