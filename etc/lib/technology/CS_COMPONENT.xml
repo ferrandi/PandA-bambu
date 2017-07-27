@@ -1181,7 +1181,7 @@ generate
     assign arbiter_0_fifo_in[i]=(fifo_notempty[i/RATIO] &amp;&amp; !IN_fifo_full[i] &amp;&amp; data_in[SIZE_TOT_IN*(i/RATIO)+LSB_BANK_0:SIZE_TOT_IN*(i/RATIO)+LSB_BANK_1]==(i%RATIO));
 
     //if fifo_in opposite wants to copy data on correct fifo then do it only if destination not full
-    assign selector_mux_fifo_in[i]=(!IN_fifo_empty[(i+RATIO)%NUM_BANK] &amp;&amp; IN_fifo_data_out[SIZE_TOT_IN*((i+RATIO)%NUM_BANK)+MSB_BANK_0:SIZE_TOT_IN*((i+RATIO)%NUM_BANK)+MSB_BANK_1]!=(((i+RATIO)%NUM_BANK)/RATIO) &amp;&amp; !IN_fifo_full[i]);
+    assign selector_mux_fifo_in[i]=(!IN_fifo_empty[(NUM_BANK+i-RATIO)%NUM_BANK] &amp;&amp; IN_fifo_data_out[SIZE_TOT_IN*((NUM_BANK+i-RATIO)%NUM_BANK)+MSB_BANK_0:SIZE_TOT_IN*((NUM_BANK+i-RATIO)%NUM_BANK)+MSB_BANK_1]!=(((NUM_BANK+i-RATIO)%NUM_BANK)/RATIO) &amp;&amp; !IN_fifo_full[i]);
 
     //read if there is a write in output but its not from a different fifo, if write on a different fifo, if rotating
     assign IN_fifo_rd_en[i]= selector_mux_fifo_in[(i+RATIO)%NUM_BANK] || (request_cycle_on[i] &amp;&amp; !arbiter_0_fifo_in[i] &amp;&amp; !selector_mux_fifo_in[i]) || valid_Out_fifo[i];
@@ -1210,7 +1210,7 @@ generate
             in_status[3*(i+1)-1:3*i]=S_1;
           end
           else begin
-            if(!request_OUT_fifo[(i+RATIO)%NUM_BANK] &amp;&amp; !OUT_fifo_full[i]) begin  //if ready, no request to rotate and fifo not full then free
+            if(!request_OUT_fifo[(NUM_BANK+i-RATIO)%NUM_BANK] &amp;&amp; !OUT_fifo_full[i]) begin  //if ready, no request to rotate and fifo not full then free
               in_status[3*(i+1)-1:3*i]=S_0;
             end
             else begin
@@ -1219,7 +1219,7 @@ generate
           end
         end
         S_2: begin
-          if(!request_OUT_fifo[(i+RATIO)%NUM_BANK] &amp;&amp; !OUT_fifo_full[i]) begin
+          if(!request_OUT_fifo[(NUM_BANK+i-RATIO)%NUM_BANK] &amp;&amp; !OUT_fifo_full[i]) begin
             in_status[3*(i+1)-1:3*i]=S_0;
           end
           else begin
@@ -1244,7 +1244,7 @@ generate
             in_status[3*(i+1)-1:3*i]=S_4;
           end
           else begin
-            if(!request_OUT_fifo[(i+RATIO)%NUM_BANK] &amp;&amp; !OUT_fifo_full[i]) begin  //if ready, no request to rotate and fifo not full then free
+            if(!request_OUT_fifo[(NUM_BANK+i-RATIO)%NUM_BANK] &amp;&amp; !OUT_fifo_full[i]) begin  //if ready, no request to rotate and fifo not full then free
               in_status[3*(i+1)-1:3*i]=S_3;
             end
             else begin
@@ -1253,7 +1253,7 @@ generate
           end
         end
         S_5: begin
-          if(!request_OUT_fifo[(i+RATIO)%NUM_BANK] &amp;&amp; !OUT_fifo_full[i]) begin
+          if(!request_OUT_fifo[(NUM_BANK+i-RATIO)%NUM_BANK] &amp;&amp; !OUT_fifo_full[i]) begin
             in_status[3*(i+1)-1:3*i]=S_3;
           end
           else begin
@@ -1293,10 +1293,10 @@ generate
     assign request_OUT_fifo[i]= (OUT_fifo_data_out[SIZE_TOT_OUT*i+MSB_OUT_0:SIZE_TOT_OUT*i+MSB_OUT_1]!=(i/RATIO) &amp;&amp; !OUT_fifo_empty[i] &amp;&amp; !OUT_fifo_full[(i+RATIO)%NUM_BANK]);
 
     //if fifo out not full and or there is a request to rotate or the corresponding register has data ready then copy data
-    assign OUT_fifo_wr_en[i]= (!OUT_fifo_full[i] &amp;&amp; (request_OUT_fifo[(i+RATIO)%NUM_BANK] || out_status[3*(i+1)-1:3*i]==3'b010 || out_status[3*(i+1)-1:3*i]==3'b101 || IN_M_DataRdy[i]));
+    assign OUT_fifo_wr_en[i]= (!OUT_fifo_full[i] &amp;&amp; (request_OUT_fifo[(NUM_BANK+i-RATIO)%NUM_BANK] || out_status[3*(i+1)-1:3*i]==3'b010 || out_status[3*(i+1)-1:3*i]==3'b101 || IN_M_DataRdy[i]));
 
     //if there is a request to rotate then that is data in of FIFO_OUT, otherwise is exit of register
-    assign OUT_fifo_data_in[SIZE_TOT_OUT*(i+1)-1:SIZE_TOT_OUT*i]=(request_OUT_fifo[(i+RATIO)%NUM_BANK])? OUT_fifo_data_out[SIZE_TOT_OUT*((i+RATIO)%NUM_BANK+1)-1:SIZE_TOT_OUT*((i+RATIO)%NUM_BANK)] : {out_reg[SIZE_TOT_IN*(i+1)-1:SIZE_TOT_IN*(i+1)-BITSIZE_Mout_tag_ram],IN_M_Rdata_ram[BITSIZE_M_Rdata_ram*(i+1)-1:BITSIZE_M_Rdata_ram*i]};
+    assign OUT_fifo_data_in[SIZE_TOT_OUT*(i+1)-1:SIZE_TOT_OUT*i]=(request_OUT_fifo[(NUM_BANK+i-RATIO)%NUM_BANK])? OUT_fifo_data_out[SIZE_TOT_OUT*((i+RATIO)%NUM_BANK+1)-1:SIZE_TOT_OUT*((i+RATIO)%NUM_BANK)] : {out_reg[SIZE_TOT_IN*(i+1)-1:SIZE_TOT_IN*(i+1)-BITSIZE_Mout_tag_ram],IN_M_Rdata_ram[BITSIZE_M_Rdata_ram*(i+1)-1:BITSIZE_M_Rdata_ram*i]};
 
     //if fifo is nonempty and data is in the correct channel (look at the most significant bit of the kernel) then request to go down
     assign request_out[i]=(!OUT_fifo_empty[i] &amp;&amp; OUT_fifo_data_out[SIZE_TOT_OUT*i+MSB_OUT_0:SIZE_TOT_OUT*i+MSB_OUT_1]==(i/RATIO));
@@ -1543,7 +1543,7 @@ generate
             in_status[3*(i+1)-1:3*i]=S_1;
           end
           else begin
-            if(!request_OUT_fifo[(i+RATIO)%NUM_BANK] &amp;&amp; !OUT_fifo_full[i]) begin  //if ready, no request to rotate and fifo not full then free
+            if(!request_OUT_fifo[(NUM_BANK+i-RATIO)%NUM_BANK] &amp;&amp; !OUT_fifo_full[i]) begin  //if ready, no request to rotate and fifo not full then free
               in_status[3*(i+1)-1:3*i]=S_0;
             end
             else begin
@@ -1552,7 +1552,7 @@ generate
           end
         end
         S_2: begin
-          if(!request_OUT_fifo[(i+RATIO)%NUM_BANK] &amp;&amp; !OUT_fifo_full[i]) begin
+          if(!request_OUT_fifo[(NUM_BANK+i-RATIO)%NUM_BANK] &amp;&amp; !OUT_fifo_full[i]) begin
             in_status[3*(i+1)-1:3*i]=S_0;
           end
           else begin
@@ -1577,7 +1577,7 @@ generate
             in_status[3*(i+1)-1:3*i]=S_4;
           end
           else begin
-            if(!request_OUT_fifo[(i+RATIO)%NUM_BANK] &amp;&amp; !OUT_fifo_full[i]) begin  //if ready, no request to rotate and fifo not full then free
+            if(!request_OUT_fifo[(NUM_BANK+i-RATIO)%NUM_BANK] &amp;&amp; !OUT_fifo_full[i]) begin  //if ready, no request to rotate and fifo not full then free
               in_status[3*(i+1)-1:3*i]=S_3;
             end
             else begin
@@ -1586,7 +1586,7 @@ generate
           end
         end
         S_5: begin
-          if(!request_OUT_fifo[(i+RATIO)%NUM_BANK] &amp;&amp; !OUT_fifo_full[i]) begin
+          if(!request_OUT_fifo[(NUM_BANK+i-RATIO)%NUM_BANK] &amp;&amp; !OUT_fifo_full[i]) begin
             in_status[3*(i+1)-1:3*i]=S_3;
           end
           else begin
@@ -1626,10 +1626,10 @@ generate
     assign request_OUT_fifo[i]=0;
 
     //if fifo out not full and or there is a request to rotate or the corresponding register has data ready then copy data
-    assign OUT_fifo_wr_en[i]= (!OUT_fifo_full[i] &amp;&amp; (request_OUT_fifo[(i+RATIO)%NUM_BANK] || out_status[3*(i+1)-1:3*i]==3'b010 || out_status[3*(i+1)-1:3*i]==3'b101 || IN_M_DataRdy[i]));
+    assign OUT_fifo_wr_en[i]= (!OUT_fifo_full[i] &amp;&amp; (request_OUT_fifo[(NUM_BANK+i-RATIO)%NUM_BANK] || out_status[3*(i+1)-1:3*i]==3'b010 || out_status[3*(i+1)-1:3*i]==3'b101 || IN_M_DataRdy[i]));
 
     //if there is a request to rotate then that is data in of FIFO_OUT, otherwise is exit of register
-    assign OUT_fifo_data_in[SIZE_TOT_OUT*(i+1)-1:SIZE_TOT_OUT*i]=(request_OUT_fifo[(i+RATIO)%NUM_BANK])? OUT_fifo_data_out[SIZE_TOT_OUT*((i+RATIO)%NUM_BANK+1)-1:SIZE_TOT_OUT*((i+RATIO)%NUM_BANK)] : {out_reg[SIZE_TOT_IN*(i+1)-1:SIZE_TOT_IN*(i+1)-BITSIZE_Mout_tag_ram],IN_M_Rdata_ram[BITSIZE_M_Rdata_ram*(i+1)-1:BITSIZE_M_Rdata_ram*i]};
+    assign OUT_fifo_data_in[SIZE_TOT_OUT*(i+1)-1:SIZE_TOT_OUT*i]=(request_OUT_fifo[(NUM_BANK+i-RATIO)%NUM_BANK])? OUT_fifo_data_out[SIZE_TOT_OUT*((i+RATIO)%NUM_BANK+1)-1:SIZE_TOT_OUT*((i+RATIO)%NUM_BANK)] : {out_reg[SIZE_TOT_IN*(i+1)-1:SIZE_TOT_IN*(i+1)-BITSIZE_Mout_tag_ram],IN_M_Rdata_ram[BITSIZE_M_Rdata_ram*(i+1)-1:BITSIZE_M_Rdata_ram*i]};
 
     //if fifo is nonempty and data is in the correct channel (look at the most significant bit of the kernel) then request to go down
     assign request_out[i]=!OUT_fifo_empty[i];
