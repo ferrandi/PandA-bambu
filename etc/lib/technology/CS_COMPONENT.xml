@@ -1169,7 +1169,7 @@ generate
     assign request_accepted_by_fifo[i]=(IN_fifo_wr_en[i] &amp;&amp; !selector_mux_fifo_in[i] &amp;&amp; arbiter_0_fifo_in[i]);
 
     // IN_fifo_data_in can be output of IN_fifo_data_out or data from arbiter_0 (HIGH LEVEL)
-    assign IN_fifo_data_in[SIZE_TOT_IN*(i+1)-1:SIZE_TOT_IN*i] = (selector_mux_fifo_in[i]) ? IN_fifo_data_out[SIZE_TOT_IN*((i+RATIO)%NUM_BANK+1)-1:SIZE_TOT_IN*((i+RATIO)%NUM_BANK)] : exit_arbiter_0_fifo[SIZE_TOT_IN*(i+1)-1:SIZE_TOT_IN*i];
+    assign IN_fifo_data_in[SIZE_TOT_IN*(i+1)-1:SIZE_TOT_IN*i] = (selector_mux_fifo_in[i]) ? IN_fifo_data_out[SIZE_TOT_IN*((NUM_BANK+i-RATIO)%NUM_BANK+1)-1:SIZE_TOT_IN*((NUM_BANK+i-RATIO)%NUM_BANK)] : exit_arbiter_0_fifo[SIZE_TOT_IN*(i+1)-1:SIZE_TOT_IN*i];
 
     // exit_arbiter_0 can be output of IN_fifo_data_out itself or data from channel (LOW LEVEL)
     assign exit_arbiter_0_fifo[SIZE_TOT_IN*(i+1)-1:SIZE_TOT_IN*i] = (arbiter_0_fifo_in[i]) ? data_in[SIZE_TOT_IN*(i/RATIO+1)-1:SIZE_TOT_IN*(i/RATIO)] : IN_fifo_data_out[SIZE_TOT_IN*(i+1)-1:SIZE_TOT_IN*i];
