@@ -152,8 +152,6 @@ make_pass_empty (gcc::context *ctxt)
 }
 #endif
 
-
-
 int
 plugin_init (struct plugin_name_args *plugin_info,
              struct plugin_gcc_version *version)
@@ -227,6 +225,30 @@ plugin_init (struct plugin_name_args *plugin_info,
   pass_info.pos_op = PASS_POS_INSERT_AFTER;
   pass_info.ref_pass_instance_number = 1;
   register_callback ("chapre", PLUGIN_PASS_MANAGER_SETUP, NULL,
+                     &pass_info);
+#endif
+
+#if  __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ == 9)
+  extern  gimple_opt_pass * make_pass_sra_earlyAggressive (gcc::context *ctxt);
+  pass_info.pass = make_pass_sra_earlyAggressive(g);
+  pass_info.reference_pass_name = "esra";
+  pass_info.pos_op = PASS_POS_REPLACE;
+  pass_info.ref_pass_instance_number = 1;
+  extern gimple_opt_pass * make_pass_sraAggressive (gcc::context *ctxt);
+  register_callback ("esraAggressive", PLUGIN_PASS_MANAGER_SETUP, NULL,
+                     &pass_info);
+  pass_info.pass = make_pass_sraAggressive(g);
+  pass_info.reference_pass_name = "sra";
+  pass_info.pos_op = PASS_POS_REPLACE;
+  pass_info.ref_pass_instance_number = 1;
+  register_callback ("sraAggressive", PLUGIN_PASS_MANAGER_SETUP, NULL,
+                     &pass_info);
+  extern gimple_opt_pass * make_pass_early_ipa_sraAggressive (gcc::context *ctxt);
+  pass_info.pass = make_pass_early_ipa_sraAggressive(g);
+  pass_info.reference_pass_name = "eipa_sra";
+  pass_info.pos_op = PASS_POS_REPLACE;
+  pass_info.ref_pass_instance_number = 1;
+  register_callback ("eipa_sraAggressive", PLUGIN_PASS_MANAGER_SETUP, NULL,
                      &pass_info);
 #endif
 

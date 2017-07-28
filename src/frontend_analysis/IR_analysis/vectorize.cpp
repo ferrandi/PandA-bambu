@@ -583,6 +583,7 @@ void Vectorize::ClassifyTreeNode(const unsigned int loop_id, const tree_nodeCons
       case parm_decl_K:
       case result_decl_K:
       case translation_unit_decl_K:
+      case template_decl_K:
       case error_mark_K:
       case using_decl_K:
       case type_decl_K:
@@ -2085,6 +2086,7 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
                case parm_decl_K:
                case result_decl_K:
                case translation_unit_decl_K:
+               case template_decl_K:
                case error_mark_K:
                case using_decl_K:
                case type_decl_K:
@@ -2300,6 +2302,7 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
                         case set_type_K:
                         case template_type_parm_K:
                         case typename_type_K:
+                        case type_argument_pack_K:
                         case union_type_K:
                         case vector_type_K:
                         case binfo_K:
@@ -2433,6 +2436,7 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
                         case translation_unit_decl_K:
                         case error_mark_K:
                         case using_decl_K:
+                        case template_decl_K:
                         case binfo_K:
                         case block_K:
                         case call_expr_K:
@@ -2703,6 +2707,7 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
                case namespace_decl_K:
                case parm_decl_K:
                case result_decl_K:
+               case template_decl_K:
                case binfo_K:
                case block_K:
                case call_expr_K:

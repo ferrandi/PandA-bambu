@@ -133,6 +133,7 @@ PLUGIN_TEST
          build_I386_GCC45=yes;
          build_I386_GCC45_EMPTY_PLUGIN=yes;
          build_I386_GCC45_SSA_PLUGIN=yes;
+         build_I386_GCC45_SSA_PLUGINCPP=yes;
          build_I386_GCC45_SSAVRP_PLUGIN=yes;
          build_I386_GCC45_TOPFNAME_PLUGIN=yes;
          break;
@@ -146,10 +147,12 @@ if test x$I386_GCC45_PLUGIN_COMPILER != x; then
 dnl set configure and makefile variables
   I386_GCC45_EMPTY_PLUGIN=gcc45_plugin_dumpGimpleEmpty
   I386_GCC45_SSA_PLUGIN=gcc45_plugin_dumpGimpleSSA
+  I386_GCC45_SSA_PLUGINCPP=gcc45_plugin_dumpGimpleSSACpp
   I386_GCC45_SSAVRP_PLUGIN=gcc45_plugin_dumpGimpleSSAVRP
   I386_GCC45_TOPFNAME_PLUGIN=gcc45_plugin_topfname
   AC_SUBST(I386_GCC45_EMPTY_PLUGIN)
   AC_SUBST(I386_GCC45_SSA_PLUGIN)
+  AC_SUBST(I386_GCC45_SSA_PLUGINCPP)
   AC_SUBST(I386_GCC45_SSAVRP_PLUGIN)
   AC_SUBST(I386_GCC45_TOPFNAME_PLUGIN)
   AC_SUBST(I386_GCC45_PLUGIN_DIR)
@@ -162,6 +165,7 @@ dnl set configure and makefile variables
   AC_DEFINE_UNQUOTED(I386_GPP45_EXE, "${I386_GPP45_EXE}", "Define the plugin g++")
   AC_DEFINE_UNQUOTED(I386_GCC45_EMPTY_PLUGIN, "${I386_GCC45_EMPTY_PLUGIN}", "Define the filename of the GCC PandA Empty plugin")
   AC_DEFINE_UNQUOTED(I386_GCC45_SSA_PLUGIN, "${I386_GCC45_SSA_PLUGIN}", "Define the filename of the GCC PandA SSA plugin")
+  AC_DEFINE_UNQUOTED(I386_GCC45_SSA_PLUGINCPP, "${I386_GCC45_SSA_PLUGINCPP}", "Define the filename of the GCC PandA C++ SSA plugin")
   AC_DEFINE_UNQUOTED(I386_GCC45_SSAVRP_PLUGIN, "${I386_GCC45_SSAVRP_PLUGIN}", "Define the filename of the GCC PandA SSAVRP plugin")
   AC_DEFINE_UNQUOTED(I386_GCC45_TOPFNAME_PLUGIN, "${I386_GCC45_TOPFNAME_PLUGIN}", "Define the filename of the GCC PandA topfname plugin")
   AC_DEFINE_UNQUOTED(I386_GCC45_VERSION, "${I386_GCC45_VERSION}", "Define the gcc version")
@@ -329,6 +333,7 @@ PLUGIN_TEST
          build_I386_GCC46=yes;
          build_I386_GCC46_EMPTY_PLUGIN=yes;
          build_I386_GCC46_SSA_PLUGIN=yes;
+         build_I386_GCC46_SSA_PLUGINCPP=yes;
          build_I386_GCC46_SSAVRP_PLUGIN=yes;
          build_I386_GCC46_TOPFNAME_PLUGIN=yes;
          break;
@@ -345,10 +350,12 @@ if test x$I386_GCC46_PLUGIN_COMPILER != x; then
   dnl set configure and makefile variables
   I386_GCC46_EMPTY_PLUGIN=gcc46_plugin_dumpGimpleEmpty
   I386_GCC46_SSA_PLUGIN=gcc46_plugin_dumpGimpleSSA
+  I386_GCC46_SSA_PLUGINCPP=gcc46_plugin_dumpGimpleSSACpp
   I386_GCC46_SSAVRP_PLUGIN=gcc46_plugin_dumpGimpleSSAVRP
   I386_GCC46_TOPFNAME_PLUGIN=gcc46_plugin_topfname
   AC_SUBST(I386_GCC46_EMPTY_PLUGIN)
   AC_SUBST(I386_GCC46_SSA_PLUGIN)
+  AC_SUBST(I386_GCC46_SSA_PLUGINCPP)
   AC_SUBST(I386_GCC46_SSAVRP_PLUGIN)
   AC_SUBST(I386_GCC46_TOPFNAME_PLUGIN)
   AC_SUBST(I386_GCC46_PLUGIN_DIR)
@@ -363,6 +370,7 @@ if test x$I386_GCC46_PLUGIN_COMPILER != x; then
   AC_DEFINE_UNQUOTED(I386_GPP46_EXE, "${I386_GPP46_EXE}", "Define the plugin g++")
   AC_DEFINE_UNQUOTED(I386_GCC46_EMPTY_PLUGIN, "${I386_GCC46_EMPTY_PLUGIN}", "Define the filename of the GCC PandA Empty plugin")
   AC_DEFINE_UNQUOTED(I386_GCC46_SSA_PLUGIN, "${I386_GCC46_SSA_PLUGIN}", "Define the filename of the GCC PandA SSA plugin")
+  AC_DEFINE_UNQUOTED(I386_GCC46_SSA_PLUGINCPP, "${I386_GCC46_SSA_PLUGINCPP}", "Define the filename of the GCC PandA C++ SSA plugin")
   AC_DEFINE_UNQUOTED(I386_GCC46_SSAVRP_PLUGIN, "${I386_GCC46_SSAVRP_PLUGIN}", "Define the filename of the GCC PandA SSAVRP plugin")
   AC_DEFINE_UNQUOTED(I386_GCC46_TOPFNAME_PLUGIN, "${I386_GCC46_TOPFNAME_PLUGIN}", "Define the filename of the GCC PandA topfname plugin")
   AC_DEFINE_UNQUOTED(I386_GCC46_VERSION, "${I386_GCC46_VERSION}", "Define the gcc version")
@@ -551,6 +559,7 @@ PLUGIN_TEST
          build_I386_GCC47=yes;
          build_I386_GCC47_EMPTY_PLUGIN=yes;
          build_I386_GCC47_SSA_PLUGIN=yes;
+         build_I386_GCC47_SSA_PLUGINCPP=yes;
          build_I386_GCC47_SSAVRP_PLUGIN=yes;
          build_I386_GCC47_TOPFNAME_PLUGIN=yes;
          break;
@@ -567,10 +576,12 @@ if test x$I386_GCC47_PLUGIN_COMPILER != x; then
   dnl set configure and makefile variables
   I386_GCC47_EMPTY_PLUGIN=gcc47_plugin_dumpGimpleEmpty
   I386_GCC47_SSA_PLUGIN=gcc47_plugin_dumpGimpleSSA
+  I386_GCC47_SSA_PLUGINCPP=gcc47_plugin_dumpGimpleSSACpp
   I386_GCC47_SSAVRP_PLUGIN=gcc47_plugin_dumpGimpleSSAVRP
   I386_GCC47_TOPFNAME_PLUGIN=gcc47_plugin_topfname
   AC_SUBST(I386_GCC47_EMPTY_PLUGIN)
   AC_SUBST(I386_GCC47_SSA_PLUGIN)
+  AC_SUBST(I386_GCC47_SSA_PLUGINCPP)
   AC_SUBST(I386_GCC47_SSAVRP_PLUGIN)
   AC_SUBST(I386_GCC47_TOPFNAME_PLUGIN)
   AC_SUBST(I386_GCC47_PLUGIN_DIR)
@@ -585,6 +596,7 @@ if test x$I386_GCC47_PLUGIN_COMPILER != x; then
   AC_DEFINE_UNQUOTED(I386_GPP47_EXE, "${I386_GPP47_EXE}", "Define the plugin g++")
   AC_DEFINE_UNQUOTED(I386_GCC47_EMPTY_PLUGIN, "${I386_GCC47_EMPTY_PLUGIN}", "Define the filename of the GCC PandA Empty plugin")
   AC_DEFINE_UNQUOTED(I386_GCC47_SSA_PLUGIN, "${I386_GCC47_SSA_PLUGIN}", "Define the filename of the GCC PandA SSA plugin")
+  AC_DEFINE_UNQUOTED(I386_GCC47_SSA_PLUGINCPP, "${I386_GCC47_SSA_PLUGINCPP}", "Define the filename of the GCC PandA C++ SSA plugin")
   AC_DEFINE_UNQUOTED(I386_GCC47_SSAVRP_PLUGIN, "${I386_GCC47_SSAVRP_PLUGIN}", "Define the filename of the GCC PandA SSAVRP plugin")
   AC_DEFINE_UNQUOTED(I386_GCC47_TOPFNAME_PLUGIN, "${I386_GCC47_TOPFNAME_PLUGIN}", "Define the filename of the GCC PandA topfname plugin")
   AC_DEFINE_UNQUOTED(I386_GCC47_VERSION, "${I386_GCC47_VERSION}", "Define the gcc version")
@@ -774,6 +786,7 @@ PLUGIN_TEST
          build_I386_GCC48=yes;
          build_I386_GCC48_EMPTY_PLUGIN=yes;
          build_I386_GCC48_SSA_PLUGIN=yes;
+         build_I386_GCC48_SSA_PLUGINCPP=yes;
          build_I386_GCC48_SSAVRP_PLUGIN=yes;
          build_I386_GCC48_TOPFNAME_PLUGIN=yes;
          break;
@@ -790,10 +803,12 @@ if test x$I386_GCC48_PLUGIN_COMPILER != x; then
   dnl set configure and makefile variables
   I386_GCC48_EMPTY_PLUGIN=gcc48_plugin_dumpGimpleEmpty
   I386_GCC48_SSA_PLUGIN=gcc48_plugin_dumpGimpleSSA
+  I386_GCC48_SSA_PLUGINCPP=gcc48_plugin_dumpGimpleSSACpp
   I386_GCC48_SSAVRP_PLUGIN=gcc48_plugin_dumpGimpleSSAVRP
   I386_GCC48_TOPFNAME_PLUGIN=gcc48_plugin_topfname
   AC_SUBST(I386_GCC48_EMPTY_PLUGIN)
   AC_SUBST(I386_GCC48_SSA_PLUGIN)
+  AC_SUBST(I386_GCC48_SSA_PLUGINCPP)
   AC_SUBST(I386_GCC48_SSAVRP_PLUGIN)
   AC_SUBST(I386_GCC48_TOPFNAME_PLUGIN)
   AC_SUBST(I386_GCC48_PLUGIN_DIR)
@@ -808,6 +823,7 @@ if test x$I386_GCC48_PLUGIN_COMPILER != x; then
   AC_DEFINE_UNQUOTED(I386_GPP48_EXE, "${I386_GPP48_EXE}", "Define the plugin g++")
   AC_DEFINE_UNQUOTED(I386_GCC48_EMPTY_PLUGIN, "${I386_GCC48_EMPTY_PLUGIN}", "Define the filename of the GCC PandA Empty plugin")
   AC_DEFINE_UNQUOTED(I386_GCC48_SSA_PLUGIN, "${I386_GCC48_SSA_PLUGIN}", "Define the filename of the GCC PandA SSA plugin")
+  AC_DEFINE_UNQUOTED(I386_GCC48_SSA_PLUGINCPP, "${I386_GCC48_SSA_PLUGINCPP}", "Define the filename of the GCC PandA C++ SSA plugin")
   AC_DEFINE_UNQUOTED(I386_GCC48_SSAVRP_PLUGIN, "${I386_GCC48_SSAVRP_PLUGIN}", "Define the filename of the GCC PandA SSAVRP plugin")
   AC_DEFINE_UNQUOTED(I386_GCC48_TOPFNAME_PLUGIN, "${I386_GCC48_TOPFNAME_PLUGIN}", "Define the filename of the GCC PandA topfname plugin")
   AC_DEFINE_UNQUOTED(I386_GCC48_VERSION, "${I386_GCC48_VERSION}", "Define the gcc version")
@@ -997,6 +1013,7 @@ PLUGIN_TEST
          build_I386_GCC49=yes;
          build_I386_GCC49_EMPTY_PLUGIN=yes;
          build_I386_GCC49_SSA_PLUGIN=yes;
+         build_I386_GCC49_SSA_PLUGINCPP=yes;
          build_I386_GCC49_TOPFNAME_PLUGIN=yes;
       done
       if test "x$I386_GCC49_PLUGIN_COMPILER" != x; then
@@ -1011,9 +1028,11 @@ if test x$I386_GCC49_PLUGIN_COMPILER != x; then
   dnl set configure and makefile variables
   I386_GCC49_EMPTY_PLUGIN=gcc49_plugin_dumpGimpleEmpty
   I386_GCC49_SSA_PLUGIN=gcc49_plugin_dumpGimpleSSA
+  I386_GCC49_SSA_PLUGINCPP=gcc49_plugin_dumpGimpleSSACpp
   I386_GCC49_TOPFNAME_PLUGIN=gcc49_plugin_topfname
   AC_SUBST(I386_GCC49_EMPTY_PLUGIN)
   AC_SUBST(I386_GCC49_SSA_PLUGIN)
+  AC_SUBST(I386_GCC49_SSA_PLUGINCPP)
   AC_SUBST(I386_GCC49_TOPFNAME_PLUGIN)
   AC_SUBST(I386_GCC49_PLUGIN_DIR)
   AC_SUBST(I386_GCC49_GENGTYPE)
@@ -1027,6 +1046,7 @@ if test x$I386_GCC49_PLUGIN_COMPILER != x; then
   AC_DEFINE_UNQUOTED(I386_GPP49_EXE, "${I386_GPP49_EXE}", "Define the plugin g++")
   AC_DEFINE_UNQUOTED(I386_GCC49_EMPTY_PLUGIN, "${I386_GCC49_EMPTY_PLUGIN}", "Define the filename of the GCC PandA Empty plugin")
   AC_DEFINE_UNQUOTED(I386_GCC49_SSA_PLUGIN, "${I386_GCC49_SSA_PLUGIN}", "Define the filename of the GCC PandA SSA plugin")
+  AC_DEFINE_UNQUOTED(I386_GCC49_SSA_PLUGINCPP, "${I386_GCC49_SSA_PLUGINCPP}", "Define the filename of the GCC PandA C++ SSA plugin")
   AC_DEFINE_UNQUOTED(I386_GCC49_TOPFNAME_PLUGIN, "${I386_GCC49_TOPFNAME_PLUGIN}", "Define the filename of the GCC PandA topfname plugin")
   AC_DEFINE_UNQUOTED(I386_GCC49_VERSION, "${I386_GCC49_VERSION}", "Define the gcc version")
   AC_DEFINE_UNQUOTED(I386_GCC49_PLUGIN_COMPILER, "${I386_GCC49_PLUGIN_COMPILER}", "Define the plugin compiler")
@@ -1215,6 +1235,7 @@ PLUGIN_TEST
          build_I386_GCC5=yes;
          build_I386_GCC5_EMPTY_PLUGIN=yes;
          build_I386_GCC5_SSA_PLUGIN=yes;
+         build_I386_GCC5_SSA_PLUGINCPP=yes;
          build_I386_GCC5_TOPFNAME_PLUGIN=yes;
       done
       if test "x$I386_GCC5_PLUGIN_COMPILER" != x; then
@@ -1229,9 +1250,11 @@ if test x$I386_GCC5_PLUGIN_COMPILER != x; then
   dnl set configure and makefile variables
   I386_GCC5_EMPTY_PLUGIN=gcc5_plugin_dumpGimpleEmpty
   I386_GCC5_SSA_PLUGIN=gcc5_plugin_dumpGimpleSSA
+  I386_GCC5_SSA_PLUGINCPP=gcc5_plugin_dumpGimpleSSACpp
   I386_GCC5_TOPFNAME_PLUGIN=gcc5_plugin_topfname
   AC_SUBST(I386_GCC5_EMPTY_PLUGIN)
   AC_SUBST(I386_GCC5_SSA_PLUGIN)
+  AC_SUBST(I386_GCC5_SSA_PLUGINCPP)
   AC_SUBST(I386_GCC5_TOPFNAME_PLUGIN)
   AC_SUBST(I386_GCC5_PLUGIN_DIR)
   AC_SUBST(I386_GCC5_GENGTYPE)
@@ -1245,6 +1268,7 @@ if test x$I386_GCC5_PLUGIN_COMPILER != x; then
   AC_DEFINE_UNQUOTED(I386_GPP5_EXE, "${I386_GPP5_EXE}", "Define the plugin g++")
   AC_DEFINE_UNQUOTED(I386_GCC5_EMPTY_PLUGIN, "${I386_GCC5_EMPTY_PLUGIN}", "Define the filename of the GCC PandA Empty plugin")
   AC_DEFINE_UNQUOTED(I386_GCC5_SSA_PLUGIN, "${I386_GCC5_SSA_PLUGIN}", "Define the filename of the GCC PandA SSA plugin")
+  AC_DEFINE_UNQUOTED(I386_GCC5_SSA_PLUGINCPP, "${I386_GCC5_SSA_PLUGINCPP}", "Define the filename of the GCC PandA C++ SSA plugin")
   AC_DEFINE_UNQUOTED(I386_GCC5_TOPFNAME_PLUGIN, "${I386_GCC5_TOPFNAME_PLUGIN}", "Define the filename of the GCC PandA topfname plugin")
   AC_DEFINE_UNQUOTED(I386_GCC5_VERSION, "${I386_GCC5_VERSION}", "Define the gcc version")
   AC_DEFINE_UNQUOTED(I386_GCC5_PLUGIN_COMPILER, "${I386_GCC5_PLUGIN_COMPILER}", "Define the plugin compiler")
@@ -1433,6 +1457,7 @@ PLUGIN_TEST
          build_I386_GCC6=yes;
          build_I386_GCC6_EMPTY_PLUGIN=yes;
          build_I386_GCC6_SSA_PLUGIN=yes;
+         build_I386_GCC6_SSA_PLUGINCPP=yes;
          build_I386_GCC6_TOPFNAME_PLUGIN=yes;
       done
       if test "x$I386_GCC6_PLUGIN_COMPILER" != x; then
@@ -1447,9 +1472,11 @@ if test x$I386_GCC6_PLUGIN_COMPILER != x; then
   dnl set configure and makefile variables
   I386_GCC6_EMPTY_PLUGIN=gcc6_plugin_dumpGimpleEmpty
   I386_GCC6_SSA_PLUGIN=gcc6_plugin_dumpGimpleSSA
+  I386_GCC6_SSA_PLUGINCPP=gcc6_plugin_dumpGimpleSSACpp
   I386_GCC6_TOPFNAME_PLUGIN=gcc6_plugin_topfname
   AC_SUBST(I386_GCC6_EMPTY_PLUGIN)
   AC_SUBST(I386_GCC6_SSA_PLUGIN)
+  AC_SUBST(I386_GCC6_SSA_PLUGINCPP)
   AC_SUBST(I386_GCC6_TOPFNAME_PLUGIN)
   AC_SUBST(I386_GCC6_PLUGIN_DIR)
   AC_SUBST(I386_GCC6_GENGTYPE)
@@ -1463,6 +1490,7 @@ if test x$I386_GCC6_PLUGIN_COMPILER != x; then
   AC_DEFINE_UNQUOTED(I386_GPP6_EXE, "${I386_GPP6_EXE}", "Define the plugin g++")
   AC_DEFINE_UNQUOTED(I386_GCC6_EMPTY_PLUGIN, "${I386_GCC6_EMPTY_PLUGIN}", "Define the filename of the GCC PandA Empty plugin")
   AC_DEFINE_UNQUOTED(I386_GCC6_SSA_PLUGIN, "${I386_GCC6_SSA_PLUGIN}", "Define the filename of the GCC PandA SSA plugin")
+  AC_DEFINE_UNQUOTED(I386_GCC6_SSA_PLUGINCPP, "${I386_GCC6_SSA_PLUGINCPP}", "Define the filename of the GCC PandA C++ SSA plugin")
   AC_DEFINE_UNQUOTED(I386_GCC6_TOPFNAME_PLUGIN, "${I386_GCC6_TOPFNAME_PLUGIN}", "Define the filename of the GCC PandA topfname plugin")
   AC_DEFINE_UNQUOTED(I386_GCC6_VERSION, "${I386_GCC6_VERSION}", "Define the gcc version")
   AC_DEFINE_UNQUOTED(I386_GCC6_PLUGIN_COMPILER, "${I386_GCC6_PLUGIN_COMPILER}", "Define the plugin compiler")
@@ -1651,6 +1679,7 @@ PLUGIN_TEST
          build_I386_GCC7=yes;
          build_I386_GCC7_EMPTY_PLUGIN=yes;
          build_I386_GCC7_SSA_PLUGIN=yes;
+         build_I386_GCC7_SSA_PLUGINCPP=yes;
          build_I386_GCC7_TOPFNAME_PLUGIN=yes;
       done
       if test "x$I386_GCC7_PLUGIN_COMPILER" != x; then
@@ -1665,9 +1694,11 @@ if test x$I386_GCC7_PLUGIN_COMPILER != x; then
   dnl set configure and makefile variables
   I386_GCC7_EMPTY_PLUGIN=gcc7_plugin_dumpGimpleEmpty
   I386_GCC7_SSA_PLUGIN=gcc7_plugin_dumpGimpleSSA
+  I386_GCC7_SSA_PLUGINCPP=gcc7_plugin_dumpGimpleSSACpp
   I386_GCC7_TOPFNAME_PLUGIN=gcc7_plugin_topfname
   AC_SUBST(I386_GCC7_EMPTY_PLUGIN)
   AC_SUBST(I386_GCC7_SSA_PLUGIN)
+  AC_SUBST(I386_GCC7_SSA_PLUGINCPP)
   AC_SUBST(I386_GCC7_TOPFNAME_PLUGIN)
   AC_SUBST(I386_GCC7_PLUGIN_DIR)
   AC_SUBST(I386_GCC7_GENGTYPE)
@@ -1681,6 +1712,7 @@ if test x$I386_GCC7_PLUGIN_COMPILER != x; then
   AC_DEFINE_UNQUOTED(I386_GPP7_EXE, "${I386_GPP7_EXE}", "Define the plugin g++")
   AC_DEFINE_UNQUOTED(I386_GCC7_EMPTY_PLUGIN, "${I386_GCC7_EMPTY_PLUGIN}", "Define the filename of the GCC PandA Empty plugin")
   AC_DEFINE_UNQUOTED(I386_GCC7_SSA_PLUGIN, "${I386_GCC7_SSA_PLUGIN}", "Define the filename of the GCC PandA SSA plugin")
+  AC_DEFINE_UNQUOTED(I386_GCC7_SSA_PLUGINCPP, "${I386_GCC7_SSA_PLUGINCPP}", "Define the filename of the GCC PandA C++ SSA plugin")
   AC_DEFINE_UNQUOTED(I386_GCC7_TOPFNAME_PLUGIN, "${I386_GCC7_TOPFNAME_PLUGIN}", "Define the filename of the GCC PandA topfname plugin")
   AC_DEFINE_UNQUOTED(I386_GCC7_VERSION, "${I386_GCC7_VERSION}", "Define the gcc version")
   AC_DEFINE_UNQUOTED(I386_GCC7_PLUGIN_COMPILER, "${I386_GCC7_PLUGIN_COMPILER}", "Define the plugin compiler")
@@ -1798,12 +1830,15 @@ fi
 dnl set configure and makefile variables
 build_ARM_EMPTY_PLUGIN=yes;
 build_ARM_SSA_PLUGIN=yes;
+build_ARM_SSA_PLUGINCPP=yes;
 build_ARM_RTL_PLUGIN=yes;
-ARM_EMPTY_PLUGIN=ARM_plugin_dumpGimpleEmpty.so
-ARM_SSA_PLUGIN=ARM_plugin_dumpGimpleSSA.so
-ARM_RTL_PLUGIN=ARM_plugin_dumpRTL.so
+ARM_EMPTY_PLUGIN=ARM_plugin_dumpGimpleEmpty
+ARM_SSA_PLUGIN=ARM_plugin_dumpGimpleSSA
+ARM_SSA_PLUGINCPP=ARM_plugin_dumpGimpleSSACpp
+ARM_RTL_PLUGIN=ARM_plugin_dumpRTL
 AC_SUBST(ARM_EMPTY_PLUGIN)
 AC_SUBST(ARM_SSA_PLUGIN)
+AC_SUBST(ARM_SSA_PLUGINCPP)
 AC_SUBST(ARM_RTL_PLUGIN)
 AC_SUBST(ARM_GCC_PLUGIN_DIR)
 AC_SUBST(ARM_GCC_EXE)
@@ -1817,6 +1852,7 @@ AC_DEFINE_UNQUOTED(ARM_CPP_EXE, "${ARM_CPP_EXE}", "Define the plugin cpp")
 AC_DEFINE_UNQUOTED(ARM_GPP_EXE, "${ARM_GPP_EXE}", "Define the plugin g++")
 AC_DEFINE_UNQUOTED(ARM_EMPTY_PLUGIN, "${ARM_EMPTY_PLUGIN}", "Define the filename of the GCC PandA Empty plugin")
 AC_DEFINE_UNQUOTED(ARM_SSA_PLUGIN, "${ARM_SSA_PLUGIN}", "Define the filename of the GCC PandA SSA plugin")
+AC_DEFINE_UNQUOTED(ARM_SSA_PLUGINCPP, "${ARM_SSA_PLUGINCPP}", "Define the filename of the GCC PandA C++ SSA plugin")
 AC_DEFINE_UNQUOTED(ARM_RTL_PLUGIN, "${ARM_RTL_PLUGIN}", "Define the filename of the GCC PandA RTL plugin")
 AC_DEFINE_UNQUOTED(ARM_GCC_VERSION, "${ARM_GCC_VERSION}", "Define the arm gcc version")
 
@@ -1936,12 +1972,15 @@ fi
 dnl set configure and makefile variables
 build_SPARC_EMPTY_PLUGIN=yes;
 build_SPARC_SSA_PLUGIN=yes;
+build_SPARC_SSA_PLUGINCPP=yes;
 build_SPARC_RTL_PLUGIN=yes;
-SPARC_EMPTY_PLUGIN=SPARC_plugin_dumpGimpleEmpty.so
-SPARC_SSA_PLUGIN=SPARC_plugin_dumpGimpleSSA.so
-SPARC_RTL_PLUGIN=SPARC_plugin_dumpRTL.so
+SPARC_EMPTY_PLUGIN=SPARC_plugin_dumpGimpleEmpty
+SPARC_SSA_PLUGIN=SPARC_plugin_dumpGimpleSSA
+SPARC_SSA_PLUGINCPP=SPARC_plugin_dumpGimpleSSACpp
+SPARC_RTL_PLUGIN=SPARC_plugin_dumpRTL
 AC_SUBST(SPARC_EMPTY_PLUGIN)
 AC_SUBST(SPARC_SSA_PLUGIN)
+AC_SUBST(SPARC_SSA_PLUGINCPP)
 AC_SUBST(SPARC_RTL_PLUGIN)
 AC_SUBST(SPARC_GCC_PLUGIN_DIR)
 AC_SUBST(SPARC_GCC_EXE)
@@ -1955,6 +1994,7 @@ AC_DEFINE_UNQUOTED(SPARC_CPP_EXE, "${SPARC_CPP_EXE}", "Define the plugin CPP")
 AC_DEFINE_UNQUOTED(SPARC_GPP_EXE, "${SPARC_GPP_EXE}", "Define the plugin GPP")
 AC_DEFINE_UNQUOTED(SPARC_EMPTY_PLUGIN, "${SPARC_EMPTY_PLUGIN}", "Define the filename of the GCC PandA Empty plugin")
 AC_DEFINE_UNQUOTED(SPARC_SSA_PLUGIN, "${SPARC_SSA_PLUGIN}", "Define the filename of the GCC PandA SSA plugin")
+AC_DEFINE_UNQUOTED(SPARC_SSA_PLUGINCPP, "${SPARC_SSA_PLUGINCPP}", "Define the filename of the GCC PandA C++ SSA plugin")
 AC_DEFINE_UNQUOTED(SPARC_RTL_PLUGIN, "${SPARC_RTL_PLUGIN}", "Define the filename of the GCC PandA RTL plugin")
 AC_DEFINE_UNQUOTED(SPARC_GCC_VERSION, "${SPARC_GCC_VERSION}", "Define the sparc gcc version")
 

@@ -568,6 +568,7 @@ void VarComputation::RecursivelyAnalyze(const vertex op_vertex, const tree_nodeC
       case integer_cst_K:
       case label_decl_K:
       case namespace_decl_K:
+      case template_decl_K:
       case real_cst_K:
       case string_cst_K:
       case vector_cst_K:

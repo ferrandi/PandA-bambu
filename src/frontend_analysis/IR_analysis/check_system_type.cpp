@@ -162,7 +162,9 @@ DesignFlowStep_Status CheckSystemType::InternalExec()
       if(it->second)
       {
          for(const auto stmt : it->second->CGetStmtList())
+         {
             recursive_examinate(stmt);
+         }
       }
    }
 
@@ -182,8 +184,14 @@ void CheckSystemType::recursive_examinate(const tree_nodeRef &tn)
 
 void CheckSystemType::recursive_examinate(const tree_nodeRef & curr_tn, const unsigned int index)
 {
+   THROW_ASSERT(curr_tn, "Empty current tree node");
+   if(already_visited.find(index) != already_visited.end())
+   {
+      return;
+   }
+   already_visited.insert(index);
    THROW_ASSERT(curr_tn->get_kind() != tree_reindex_K, "Passed tree_reindex instead of real node");
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Checking " + curr_tn->ToString());
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Checking @" + STR(index));
    switch(curr_tn->get_kind())
    {
       case call_expr_K:
@@ -214,8 +222,12 @@ void CheckSystemType::recursive_examinate(const tree_nodeRef & curr_tn, const un
       case gimple_assign_K:
       {
          const gimple_assign * gm = GetPointer<gimple_assign>(curr_tn);
+         std::cout << "Lpart" << std::endl;
          recursive_examinate(gm->op0);
+         std::cout << "Rpart" << std::endl;
          recursive_examinate(gm->op1);
+         std::cout << "done" << std::endl;
+
          if(gm->predicate)
          {
             recursive_examinate(gm->predicate);
@@ -365,14 +377,6 @@ void CheckSystemType::recursive_examinate(const tree_nodeRef & curr_tn, const un
       }
       case CASE_UNARY_EXPRESSION:
       {
-         if(curr_tn->get_kind() == addr_expr_K)
-         {
-            if(already_visited_ae.find(index) != already_visited_ae.end())
-            {
-               break;
-            }
-            already_visited_ae.insert(index);
-         }
          const unary_expr * ue = GetPointer<unary_expr>(curr_tn);
          if(ue->type)
             recursive_examinate(ue->type);
@@ -479,12 +483,8 @@ void CheckSystemType::recursive_examinate(const tree_nodeRef & curr_tn, const un
       }
       case CASE_TYPE_NODES:
       {
-         if(already_visited_ae.find(index) != already_visited_ae.end())
-         {
-            break;
-         }
-         already_visited_ae.insert(index);
          type_node * ty = GetPointer<type_node>(curr_tn);
+         THROW_ASSERT(ty, "expected a name");
          if(ty->name)
             recursive_examinate(ty->name);
          switch(curr_tn->get_kind())
@@ -626,10 +626,24 @@ void CheckSystemType::recursive_examinate(const tree_nodeRef & curr_tn, const un
                }
                break;
             }
+            case template_type_parm_K:
+            {
+               const template_type_parm * ttp = GetPointer<template_type_parm>(curr_tn);
+               recursive_examinate(ttp->name);
+               break;
+            }
+            case typename_type_K:
+            {
+               const typename_type * tt = GetPointer<typename_type>(curr_tn);
+               recursive_examinate(tt->name);
+               break;
+            }
+
             case enumeral_type_K:
             case CharType_K:
             case nullptr_type_K:
             case type_pack_expansion_K:
+            case type_argument_pack_K:
             case complex_type_K:
             case real_type_K:
             case void_type_K:
@@ -650,13 +664,11 @@ void CheckSystemType::recursive_examinate(const tree_nodeRef & curr_tn, const un
             case target_expr_K:
             case target_mem_ref_K:
             case target_mem_ref461_K:
-            case template_type_parm_K:
-            case typename_type_K:
             case tree_list_K:
             case tree_vec_K:
             case error_mark_K:
-            case CASE_BINARY_EXPRESSION:
             case CASE_CPP_NODES:
+            case CASE_BINARY_EXPRESSION:
             case CASE_CST_NODES:
             case CASE_DECL_NODES:
             case CASE_FAKE_NODES:
@@ -727,9 +739,35 @@ void CheckSystemType::recursive_examinate(const tree_nodeRef & curr_tn, const un
       case identifier_node_K:
       case CASE_PRAGMA_NODES:
          break;
+      case cast_expr_K:
+      {
+         const cast_expr * ce = GetPointer<cast_expr>(curr_tn);
+         if(ce->op)
+            recursive_examinate(ce->op);
+         break;
+      }
       case binfo_K:
       case block_K:
-      case CASE_CPP_NODES:
+      case baselink_K:
+      case ctor_initializer_K:
+      case do_stmt_K:
+      case expr_stmt_K:
+      case if_stmt_K:
+      case for_stmt_K:
+      case handler_K:
+      case modop_expr_K:
+      case new_expr_K:
+      case overload_K:
+      case return_stmt_K:
+      case scope_ref_K:
+      case template_id_expr_K:
+      case template_parm_index_K:
+      case trait_expr_K:
+      case try_block_K:
+      case vec_new_expr_K:
+      case while_stmt_K:
+      case nontype_argument_pack_K:
+      case expr_pack_expansion_K:
       case CASE_FAKE_NODES:
       case gimple_bind_K:
       case gimple_phi_K:
@@ -746,7 +784,7 @@ void CheckSystemType::recursive_examinate(const tree_nodeRef & curr_tn, const un
          THROW_UNREACHABLE("");
       }
    }
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Checked" + curr_tn->ToString());
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Checked @" + STR(index));
    return;
 }
 

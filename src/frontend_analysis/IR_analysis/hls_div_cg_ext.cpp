@@ -381,6 +381,7 @@ void hls_div_cg_ext::recursive_examinate(const tree_nodeRef & current_tree_node,
       }
       case CASE_TYPE_NODES:
       case type_decl_K:
+      case template_decl_K:
       {
          break;
       }

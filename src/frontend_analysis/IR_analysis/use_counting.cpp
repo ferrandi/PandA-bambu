@@ -424,6 +424,7 @@ void use_counting::analyze_node(tree_nodeRef & tn, std::set<tree_nodeRef> & ssa_
       case complex_cst_K:
       case field_decl_K:
       case label_decl_K:
+      case template_decl_K:
       case gimple_label_K:
       case gimple_pragma_K:
       case gimple_resx_K:

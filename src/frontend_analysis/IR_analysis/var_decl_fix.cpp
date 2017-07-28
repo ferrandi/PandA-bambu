@@ -441,6 +441,7 @@ void VarDeclFix::recursive_examinate(const tree_nodeRef & tn)
       case function_decl_K:
       case label_decl_K:
       case result_decl_K:
+      case template_decl_K:
       case vector_cst_K:
       case void_cst_K:
       case tree_vec_K:

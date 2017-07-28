@@ -65,7 +65,6 @@
    (bit_not_expr)\
    (buffer_ref)\
    (card_expr)\
-   (cast_expr)\
    (cleanup_point_expr)\
    (conj_expr)\
    (convert_expr)\
@@ -98,7 +97,8 @@
    (vec_unpack_hi_expr)\
    (vec_unpack_lo_expr)\
    (vec_unpack_float_hi_expr)\
-   (vec_unpack_float_lo_expr)
+   (vec_unpack_float_lo_expr)\
+   (paren_expr)
 
 #define BINARY_EXPRESSION_TREE_NODES \
    (assert_expr)\
@@ -214,6 +214,9 @@
    (template_id_expr)\
    (trait_expr)\
    (vec_new_expr)\
+   (nontype_argument_pack)\
+   (expr_pack_expansion)\
+   (cast_expr)\
 
 #define PANDA_GIMPLE_NODES \
    (gimple_for) \
@@ -281,6 +284,7 @@
    (typename_type)\
    (union_type)\
    (vector_type)\
+   (type_argument_pack)\
    (void_type)
 
 #define CONST_OBJ_TREE_NODES \
@@ -324,7 +328,9 @@
    (trait_expr)\
    (try_block)\
    (vec_new_expr)\
-   (while_stmt)
+   (while_stmt)\
+   (nontype_argument_pack)\
+   (expr_pack_expansion)
 
 #define CPP_STMT_NODES \
    (do_stmt) \

@@ -268,7 +268,7 @@ void tree_node_finder::operator()(const call_expr* obj, unsigned int & mask)
 void tree_node_finder::operator()(const aggr_init_expr* obj, unsigned int & mask)
 {
    tree_node_mask::operator()(obj,mask);
-   find_res = find_res && CHECK_TREE_NODE_OPT(TOK_SLOT, obj->slot);
+   find_res = find_res && CHECK_VALUE_OPT(TOK_CTOR, obj->ctor) && CHECK_TREE_NODE_OPT(TOK_SLOT, obj->slot);
 }
 
 void tree_node_finder::operator()(const gimple_call* obj, unsigned int & mask)
@@ -285,6 +285,12 @@ void tree_node_finder::operator()(const case_label_expr* obj, unsigned int & mas
          CHECK_TREE_NODE_OPT(TOK_OP1, obj->op1) &&
          CHECK_VALUE_OPT(TOK_DEFAULT, obj->default_flag) &&
          CHECK_TREE_NODE_OPT(TOK_GOTO, obj->got);
+}
+
+void tree_node_finder::operator()(const cast_expr* obj, unsigned int & mask)
+{
+   tree_node_mask::operator()(obj,mask);
+   find_res = find_res && CHECK_TREE_NODE_OPT(TOK_OP, obj->op);
 }
 
 void tree_node_finder::operator()(const complex_cst* obj, unsigned int & mask)
@@ -622,6 +628,18 @@ void tree_node_finder::operator()(const template_decl* obj, unsigned int & mask)
          CHECK_TREE_NODE_OPT(TOK_PRMS, obj->prms);
 }
 
+void tree_node_finder::operator()(const template_parm_index* obj, unsigned int & mask)
+{
+   tree_node_mask::operator()(obj,mask);
+   find_res = find_res && CHECK_TREE_NODE_OPT(TOK_TYPE, obj->type) &&
+         CHECK_TREE_NODE_OPT(TOK_DECL, obj->decl) &&
+         CHECK_VALUE_OPT(TOK_CONSTANT, obj->constant_flag) &&
+         CHECK_VALUE_OPT(TOK_READONLY, obj->readonly_flag) &&
+         CHECK_VALUE_OPT(TOK_IDX, obj->idx) &&
+         CHECK_VALUE_OPT(TOK_LEVEL, obj->level) &&
+         CHECK_VALUE_OPT(TOK_ORIG_LEVEL, obj->orig_level);
+}
+
 void tree_node_finder::operator()(const tree_list* obj, unsigned int & mask)
 {
    tree_node_mask::operator()(obj,mask);
@@ -702,6 +720,26 @@ void tree_node_finder::operator()(const vector_cst* obj, unsigned int & mask)
    //std::vector<tree_nodeRef>::const_iterator vend = obj->list_of_valu.end();
    //for (std::vector<tree_nodeRef>::const_iterator i = obj->list_of_valu.begin(); i != vend; i++)
    //   write_when_not_null(STOK(TOK_VALU), *i);
+}
+
+void tree_node_finder::operator()(const type_argument_pack* obj, unsigned int & mask)
+{
+   tree_node_mask::operator()(obj,mask);
+   find_res = find_res && CHECK_TREE_NODE_OPT(TOK_ARG, obj->arg);
+}
+
+void tree_node_finder::operator()(const nontype_argument_pack* obj, unsigned int & mask)
+{
+   tree_node_mask::operator()(obj,mask);
+   find_res = find_res && CHECK_TREE_NODE_OPT(TOK_ARG, obj->arg);
+}
+
+void tree_node_finder::operator()(const expr_pack_expansion* obj, unsigned int & mask)
+{
+   tree_node_mask::operator()(obj,mask);
+   find_res = find_res && CHECK_TREE_NODE_OPT(TOK_OP, obj->op)
+         && CHECK_TREE_NODE_OPT(TOK_PARAM_PACKS, obj->param_packs)
+         && CHECK_TREE_NODE_OPT(TOK_ARG, obj->arg);
 }
 
 void tree_node_finder::operator()(const vector_type* obj, unsigned int & mask)

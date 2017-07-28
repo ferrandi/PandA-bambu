@@ -165,7 +165,6 @@ void GimpleWriter::operator()(const unary_expr* obj, unsigned int & mask)
       case bit_not_expr_K:
       case buffer_ref_K:
       case card_expr_K:
-      case cast_expr_K:
       case cleanup_point_expr_K:
       case conj_expr_K:
       case exit_expr_K:
@@ -177,6 +176,7 @@ void GimpleWriter::operator()(const unary_expr* obj, unsigned int & mask)
       case loop_expr_K:
       case negate_expr_K:
       case non_lvalue_expr_K:
+      case paren_expr_K:
       case reference_expr_K:
       case reinterpret_cast_expr_K:
       case sizeof_expr_K:
@@ -752,6 +752,7 @@ void GimpleWriter::operator()(const aggr_init_expr* obj, unsigned int & mask)
          os << ")";
       }
    }
+   os << "ctor: " << obj->ctor;
    if(obj->slot) obj->slot->visit(this);
 }
 
@@ -801,6 +802,17 @@ void GimpleWriter::operator()(const case_label_expr* obj, unsigned int & mask)
    }
    if(obj->got)
       obj->got->visit(this);
+   obj->expr_node::visit(this);
+}
+
+void GimpleWriter::operator()(const cast_expr* obj, unsigned int & mask)
+{
+   mask = NO_VISIT;
+   os << "cast_expr ";
+   if(obj->op)
+   {
+      obj->op->visit(this);
+   }
    obj->expr_node::visit(this);
 }
 
@@ -1209,6 +1221,20 @@ void GimpleWriter::operator()(const template_decl* obj, unsigned int & mask)
    obj->decl_node::visit(this);
 }
 
+void GimpleWriter::operator()(const template_parm_index* obj, unsigned int & mask)
+{
+   mask = NO_VISIT;
+   obj->type->visit(this);
+   obj->decl->visit(this);
+   if(obj->constant_flag)
+      os << "_C";
+   if(obj->readonly_flag)
+      os << "_R";
+   os << "_" << obj->idx;
+   os << "_" << obj->level;
+   os << "_" << obj->orig_level;
+}
+
 void GimpleWriter::operator()(const tree_list* obj, unsigned int & mask)
 {
    mask = NO_VISIT;
@@ -1287,6 +1313,39 @@ void GimpleWriter::operator()(const vector_cst* obj, unsigned int & mask)
 
    mask = NO_VISIT;
    obj->cst_node::visit(this);
+}
+
+void GimpleWriter::operator()(const type_argument_pack* obj, unsigned int & mask)
+{
+   mask = NO_VISIT;
+   if(not obj->unql and not obj->name)
+   {
+      os << "type_argument_pack ";
+      obj->arg->visit(this);
+      mask = NO_VISIT;
+      obj->type_node::visit(this);
+   }
+   obj->type_node::visit(this);
+}
+
+void GimpleWriter::operator()(const nontype_argument_pack* obj, unsigned int & mask)
+{
+   mask = NO_VISIT;
+   os << "nontype_argument_pack ";
+   obj->arg->visit(this);
+   mask = NO_VISIT;
+   obj->expr_node::visit(this);
+}
+
+void GimpleWriter::operator()(const expr_pack_expansion* obj, unsigned int & mask)
+{
+   mask = NO_VISIT;
+   os << "expr_pack_expansion ";
+   obj->op->visit(this);
+   obj->param_packs->visit(this);
+   obj->arg->visit(this);
+   mask = NO_VISIT;
+   obj->expr_node::visit(this);
 }
 
 void GimpleWriter::operator()(const vector_type* obj, unsigned int & mask)

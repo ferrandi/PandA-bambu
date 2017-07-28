@@ -401,6 +401,7 @@ void call_graph_computation::call_graph_computation_recursive(
       case complex_cst_K:
       case field_decl_K:
       case label_decl_K:
+      case template_decl_K:
       case gimple_label_K:
       case gimple_goto_K:
       case gimple_asm_K:

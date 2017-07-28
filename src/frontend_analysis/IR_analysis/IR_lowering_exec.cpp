@@ -1956,8 +1956,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                                        break;
                                     }
                               }
-                           }
-                        }
+                           }                        }
                      }
                   }
                   else if(code1 == mult_expr_K)

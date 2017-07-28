@@ -305,6 +305,8 @@ void tree_node_factory::create_tree_node(unsigned int node_id, enum kind tree_no
          CREATE_TREE_NODE_CASE_BODY(qual_union_type, node_id)
       case range_expr_K:
          CREATE_TREE_NODE_CASE_BODY(range_expr, node_id)
+      case paren_expr_K:
+         CREATE_TREE_NODE_CASE_BODY(paren_expr, node_id)
       case rdiv_expr_K:
          CREATE_TREE_NODE_CASE_BODY(rdiv_expr, node_id)
       case real_cst_K:
@@ -485,6 +487,12 @@ void tree_node_factory::create_tree_node(unsigned int node_id, enum kind tree_no
          CREATE_TREE_NODE_CASE_BODY(vector_cst, node_id)
       case void_cst_K:
          CREATE_TREE_NODE_CASE_BODY(void_cst, node_id)
+      case type_argument_pack_K:
+         CREATE_TREE_NODE_CASE_BODY(type_argument_pack, node_id)
+      case nontype_argument_pack_K:
+         CREATE_TREE_NODE_CASE_BODY(nontype_argument_pack, node_id)
+      case expr_pack_expansion_K:
+         CREATE_TREE_NODE_CASE_BODY(expr_pack_expansion, node_id)
       case vector_type_K:
          CREATE_TREE_NODE_CASE_BODY(vector_type, node_id)
       case view_convert_expr_K:
@@ -872,6 +880,7 @@ void tree_node_factory::operator()(const aggr_init_expr* obj, unsigned int & mas
 {
    THROW_ASSERT(obj==curr_tree_node_ptr, "wrong factory setup");
    tree_node_mask::operator()(obj,mask);
+   SET_VALUE(TOK_CTOR,ctor,aggr_init_expr,int);
    SET_NODE_ID_OPT(TOK_SLOT,slot,aggr_init_expr);
 }
 
@@ -900,6 +909,13 @@ void tree_node_factory::operator()(const case_label_expr* obj, unsigned int & ma
    SET_NODE_ID_OPT(TOK_OP1,op1,case_label_expr);
    SET_VALUE_OPT(TOK_DEFAULT,default_flag,case_label_expr,bool);
    SET_NODE_ID_OPT(TOK_GOTO,got,case_label_expr);
+}
+
+void tree_node_factory::operator()(const cast_expr* obj, unsigned int & mask)
+{
+   THROW_ASSERT(obj==curr_tree_node_ptr, "wrong factory setup");
+   tree_node_mask::operator()(obj,mask);
+   SET_NODE_ID_OPT(TOK_OP, op,cast_expr);
 }
 
 void tree_node_factory::operator()(const complex_cst* obj, unsigned int & mask)
@@ -1290,6 +1306,19 @@ void tree_node_factory::operator()(const template_decl* obj, unsigned int & mask
    SET_NODE_ID_OPT(TOK_PRMS,prms,template_decl);
 }
 
+void tree_node_factory::operator()(const template_parm_index* obj, unsigned int & mask)
+{
+   THROW_ASSERT(obj==curr_tree_node_ptr, "wrong factory setup");
+   tree_node_mask::operator()(obj,mask);
+   SET_NODE_ID_OPT(TOK_TYPE,type,template_parm_index);
+   SET_NODE_ID_OPT(TOK_DECL,decl,template_parm_index);
+   SET_VALUE_OPT(TOK_CONSTANT, constant_flag, template_parm_index, bool);
+   SET_VALUE_OPT(TOK_READONLY, readonly_flag, template_parm_index, bool);
+   SET_VALUE_OPT(TOK_IDX, idx, template_parm_index, int);
+   SET_VALUE_OPT(TOK_LEVEL, level, template_parm_index, int);
+   SET_VALUE_OPT(TOK_ORIG_LEVEL, orig_level, template_parm_index, int);
+}
+
 void tree_node_factory::operator()(const tree_list* obj, unsigned int & mask)
 {
    THROW_ASSERT(obj==curr_tree_node_ptr, "wrong factory setup");
@@ -1376,6 +1405,29 @@ void tree_node_factory::operator()(const vector_cst* obj, unsigned int & mask)
    //std::vector<tree_nodeRef>::const_iterator vend = obj->list_of_valu.end();
    //for (std::vector<tree_nodeRef>::const_iterator i = obj->list_of_valu.begin(); i != vend; i++)
    //   write_when_not_null(STOK(TOK_VALU), *i);
+}
+
+void tree_node_factory::operator()(const type_argument_pack* obj, unsigned int & mask)
+{
+   THROW_ASSERT(obj==curr_tree_node_ptr, "wrong factory setup");
+   tree_node_mask::operator()(obj,mask);
+   SET_NODE_ID_OPT(TOK_ARG,arg,type_argument_pack);
+}
+
+void tree_node_factory::operator()(const nontype_argument_pack* obj, unsigned int & mask)
+{
+   THROW_ASSERT(obj==curr_tree_node_ptr, "wrong factory setup");
+   tree_node_mask::operator()(obj,mask);
+   SET_NODE_ID_OPT(TOK_ARG,arg,nontype_argument_pack);
+}
+
+void tree_node_factory::operator()(const expr_pack_expansion* obj, unsigned int & mask)
+{
+   THROW_ASSERT(obj==curr_tree_node_ptr, "wrong factory setup");
+   tree_node_mask::operator()(obj,mask);
+   SET_NODE_ID_OPT(TOK_OP,op,expr_pack_expansion);
+   SET_NODE_ID_OPT(TOK_PARAM_PACKS,param_packs,expr_pack_expansion);
+   SET_NODE_ID_OPT(TOK_ARG,arg,expr_pack_expansion);
 }
 
 void tree_node_factory::operator()(const vector_type* obj, unsigned int & mask)

@@ -1407,6 +1407,539 @@ serialize_string_cst (const char *field, const char *str, int length, unsigned i
    }
 }
 
+#ifdef CPP_LANGUAGE
+/* Dump a representation of the specific operator for an overloaded
+   operator associated with node t.  */
+
+static void
+serialize_op (tree t)
+{
+   switch (DECL_OVERLOADED_OPERATOR_P (t))
+   {
+      case NEW_EXPR:
+         serialize_string ("new");
+         break;
+      case VEC_NEW_EXPR:
+         serialize_string ("vecnew");
+         break;
+      case DELETE_EXPR:
+         serialize_string ("delete");
+         break;
+      case VEC_DELETE_EXPR:
+         serialize_string ("vecdelete");
+         break;
+      case UNARY_PLUS_EXPR:
+         serialize_string ("pos");
+         break;
+      case NEGATE_EXPR:
+         serialize_string ("neg");
+         break;
+      case ADDR_EXPR:
+         serialize_string ("addr");
+         break;
+      case INDIRECT_REF:
+         serialize_string("deref");
+         break;
+      case BIT_NOT_EXPR:
+         serialize_string("not");
+         break;
+      case TRUTH_NOT_EXPR:
+         serialize_string("lnot");
+         break;
+      case PREINCREMENT_EXPR:
+         serialize_string("preinc");
+         break;
+      case PREDECREMENT_EXPR:
+         serialize_string("predec");
+         break;
+      case PLUS_EXPR:
+         if (DECL_ASSIGNMENT_OPERATOR_P (t))
+            serialize_string ("plusassign");
+         else
+            serialize_string("plus");
+         break;
+      case MINUS_EXPR:
+         if (DECL_ASSIGNMENT_OPERATOR_P (t))
+            serialize_string ("minusassign");
+         else
+            serialize_string("minus");
+         break;
+      case MULT_EXPR:
+         if (DECL_ASSIGNMENT_OPERATOR_P (t))
+            serialize_string ("multassign");
+         else
+            serialize_string ("mult");
+         break;
+      case TRUNC_DIV_EXPR:
+         if (DECL_ASSIGNMENT_OPERATOR_P (t))
+            serialize_string ("divassign");
+         else
+            serialize_string ("div");
+         break;
+      case TRUNC_MOD_EXPR:
+         if (DECL_ASSIGNMENT_OPERATOR_P (t))
+            serialize_string ("modassign");
+         else
+            serialize_string ("mod");
+         break;
+      case BIT_AND_EXPR:
+         if (DECL_ASSIGNMENT_OPERATOR_P (t))
+            serialize_string ("andassign");
+         else
+            serialize_string ("and");
+         break;
+      case BIT_IOR_EXPR:
+         if (DECL_ASSIGNMENT_OPERATOR_P (t))
+            serialize_string ("orassign");
+         else
+            serialize_string ("or");
+         break;
+      case BIT_XOR_EXPR:
+         if (DECL_ASSIGNMENT_OPERATOR_P (t))
+            serialize_string ("xorassign");
+         else
+            serialize_string ("xor");
+         break;
+      case LSHIFT_EXPR:
+         if (DECL_ASSIGNMENT_OPERATOR_P (t))
+            serialize_string ("lshiftassign");
+         else
+            serialize_string ("lshift");
+         break;
+      case RSHIFT_EXPR:
+         if (DECL_ASSIGNMENT_OPERATOR_P (t))
+            serialize_string ("rshiftassign");
+         else
+            serialize_string ("rshift");
+         break;
+      case EQ_EXPR:
+         serialize_string ("eq");
+         break;
+      case NE_EXPR:
+         serialize_string ("ne");
+         break;
+      case LT_EXPR:
+         serialize_string ("lt");
+         break;
+      case GT_EXPR:
+         serialize_string ("gt");
+         break;
+      case LE_EXPR:
+         serialize_string ("le");
+         break;
+      case GE_EXPR:
+         serialize_string ("ge");
+         break;
+      case TRUTH_ANDIF_EXPR:
+         serialize_string ("land");
+         break;
+      case TRUTH_ORIF_EXPR:
+         serialize_string ("lor");
+         break;
+      case COMPOUND_EXPR:
+         serialize_string ("compound");
+         break;
+      case MEMBER_REF:
+         serialize_string ("memref");
+         break;
+      case COMPONENT_REF:
+         serialize_string ("ref");
+         break;
+      case ARRAY_REF:
+         serialize_string ("subs");
+         break;
+      case POSTINCREMENT_EXPR:
+         serialize_string ("postinc");
+         break;
+      case POSTDECREMENT_EXPR:
+         serialize_string ("postdec");
+         break;
+      case CALL_EXPR:
+         serialize_string ("call");
+         break;
+      case NOP_EXPR:
+         if (DECL_ASSIGNMENT_OPERATOR_P (t))
+            serialize_string ("assign");
+         break;
+      default:
+         break;
+  }
+}
+
+/* Dump information common to statements from STMT.  */
+
+static void
+serialize_stmt (const_tree t)
+{
+  if (EXPR_HAS_LOCATION (t))
+    serialize_int ("line", EXPR_LINENO (t));
+}
+
+
+static bool serialize_cpp_specifics(tree t)
+{
+   enum tree_code code;
+
+   tree templ_t = NULL_TREE;
+   tree templ = NULL_TREE;
+   tree template_args = NULL_TREE;
+   tree template_parms = NULL_TREE;
+gcc_assert(t!=0);
+   /* Figure out what kind of node this is.  */
+   code = TREE_CODE (t);
+
+   if (DECL_P (t))
+   {
+      templ = t;
+      templ_t = t;
+      if (TREE_CODE (templ_t) == TEMPLATE_DECL)
+         templ_t = DECL_TEMPLATE_RESULT (templ_t);
+
+      /* Print template instantiations only.  */
+      if (DECL_LANG_SPECIFIC (templ_t))
+      {
+         int i = 0;
+         /* Indicates whether or not (and how) a template was expanded for this
+                    FUNCTION_DECL or VAR_DECL or TYPE_DECL.
+                      0=normal declaration, e.g. int min (int, int);
+                      1=implicit template instantiation
+                      2=explicit template specialization, e.g. int min<int> (int, int);
+                      3=explicit template instantiation, e.g. template int min<int> (int, int);  */
+         i = DECL_USE_TEMPLATE(templ_t);
+
+         if (TREE_CODE(templ) == VAR_DECL)
+            serialize_int ("use_tmpl", i);
+
+         if ((TREE_CODE(templ) == VAR_DECL) || (TREE_CODE(templ) == FUNCTION_DECL)
+             || (TREE_CODE(templ) == TYPE_DECL) )
+         {
+
+
+            if ((DECL_TEMPLATE_INFO (templ_t) != NULL_TREE) && (i != 0))
+            {
+               tree tmpl;
+
+               template_args = DECL_TI_ARGS (templ_t);
+
+               tmpl = most_general_template (templ_t);
+
+               if (tmpl && TREE_CODE (tmpl) == TEMPLATE_DECL)
+               {
+                  template_parms = DECL_TEMPLATE_PARMS (tmpl);
+
+               }
+            }
+         }
+      }
+   }
+
+   if (TREE_CODE(t) == RECORD_TYPE)
+   {
+      int i = 0;
+
+      /* Indicates whether or not (and how) a template was expanded for this class.
+                 0=no information yet/non-template class
+                 1=implicit template instantiation
+                 2=explicit template specialization
+                 3=explicit template instantiation  */
+      i = CLASSTYPE_USE_TEMPLATE(t);
+
+      if ((CLASSTYPE_TEMPLATE_INFO (t) != NULL_TREE) && (i != 0))
+      {
+         tree tmpl;
+
+         template_args = CLASSTYPE_TI_ARGS (t);
+
+         tmpl = CLASSTYPE_TI_TEMPLATE(t);
+
+         if (tmpl && TREE_CODE (tmpl) == TEMPLATE_DECL)
+         {
+            template_parms = DECL_TEMPLATE_PARMS (tmpl);
+
+         }
+      }
+
+      if (template_parms)
+      {
+         serialize_child ("tmpl_parms", template_parms);
+         serialize_child ("tmpl_args", template_args);
+      }
+   }
+
+   switch (code)
+   {
+      case IDENTIFIER_NODE:
+         if (IDENTIFIER_OPNAME_P (t))
+         {
+            serialize_string ("operator");
+            return true;
+         }
+         else if (IDENTIFIER_TYPENAME_P (t))
+         {
+            serialize_child ("tynm", TREE_TYPE (t));
+            return true;
+         }
+         break;
+
+      case OFFSET_TYPE:
+         serialize_string ("ptrmem");
+         serialize_child ("ptd", TYPE_PTRMEM_POINTED_TO_TYPE (t));
+         serialize_child ("cls", TYPE_PTRMEM_CLASS_TYPE (t));
+         return true;
+
+      case RECORD_TYPE:
+         if (TYPE_PTRMEMFUNC_P (t))
+         {
+            serialize_string ("ptrmem");
+            serialize_child ("ptd", TYPE_PTRMEM_POINTED_TO_TYPE (t));
+            serialize_child ("cls", TYPE_PTRMEM_CLASS_TYPE (t));
+            return true;
+         }
+         /* Fall through.  */
+
+      case UNION_TYPE:
+         /* Is it a type used as a base? */
+         if (TYPE_CONTEXT (t) && TREE_CODE (TYPE_CONTEXT (t)) == TREE_CODE (t)
+             && CLASSTYPE_AS_BASE (TYPE_CONTEXT (t)) == t)
+         {
+            serialize_child ("bfld", TYPE_CONTEXT (t));
+            return true;
+         }
+
+         if (! MAYBE_CLASS_TYPE_P (t))
+            break;
+
+         serialize_child ("vfld", TYPE_VFIELD (t));
+         if (CLASSTYPE_TEMPLATE_SPECIALIZATION(t))
+            serialize_string("spec");
+
+         break;
+
+      case FIELD_DECL:
+         if (DECL_MUTABLE_P (t))
+            serialize_string ("mutable");
+         break;
+
+      case FUNCTION_DECL:
+         if (!DECL_THUNK_P (t))
+         {
+            if (DECL_OVERLOADED_OPERATOR_P (t))
+            {
+               serialize_string ("operator");
+               serialize_op (t);
+            }
+            if (LANG_DECL_FN_CHECK(t) && DECL_FUNCTION_MEMBER_P (t))
+            {
+               serialize_string ("member");
+            }
+            if (LANG_DECL_FN_CHECK(t) && DECL_PURE_VIRTUAL_P (t))
+               serialize_string ("pure");
+            if (DECL_VIRTUAL_P (t))
+               serialize_string ("virtual");
+            if (DECL_CONSTRUCTOR_P (t))
+               serialize_string ("constructor");
+            if (DECL_DESTRUCTOR_P (t))
+               serialize_string ("destructor");
+            if (DECL_CONV_FN_P (t))
+               serialize_string ("conversion");
+            if (LANG_DECL_FN_CHECK(t) && DECL_GLOBAL_CTOR_P (t))
+               serialize_string ("global_init");
+            if (LANG_DECL_FN_CHECK(t) && DECL_GLOBAL_DTOR_P (t))
+               serialize_string ("global_fini");
+           if (DECL_LANG_SPECIFIC (t) && DECL_FRIEND_PSEUDO_TEMPLATE_INSTANTIATION (t))
+               serialize_string ("pseudo_tmpl");
+         }
+         else
+         {
+            tree virt = THUNK_VIRTUAL_OFFSET (t);
+
+            serialize_string ("thunk");
+            if (DECL_THIS_THUNK_P (t))
+               serialize_string ("this_adjusting");
+            else
+            {
+               serialize_string ("result_adjusting");
+               if (virt)
+                  virt = BINFO_VPTR_FIELD (virt);
+            }
+            serialize_int ("fixd", THUNK_FIXED_OFFSET (t));
+            if (virt)
+               serialize_int ("virt", TREE_INT_CST_LOW (virt));
+            serialize_child ("fn", DECL_INITIAL (t));
+         }
+         break;
+
+      case TYPE_DECL:
+      {
+         if (template_parms)
+         {
+            serialize_child ("tmpl_parms", template_parms);
+            serialize_child ("tmpl_args", template_args);
+         }
+
+      }
+         break;
+
+      case NAMESPACE_DECL:
+         if (DECL_NAMESPACE_ALIAS (t))
+            serialize_child ("alis", DECL_NAMESPACE_ALIAS (t));
+         else
+            serialize_child ("dcls", NAMESPACE_LEVEL (t)->names);
+         break;
+
+      case TEMPLATE_DECL:
+         serialize_child ("rslt", DECL_TEMPLATE_RESULT (t));
+         serialize_child ("inst", DECL_TEMPLATE_INSTANTIATIONS (t));
+         serialize_child ("spcs", DECL_TEMPLATE_SPECIALIZATIONS (t));
+         serialize_child ("prms", DECL_TEMPLATE_PARMS (t));
+         break;
+
+      case TEMPLATE_PARM_INDEX:
+         serialize_child ("type", TREE_TYPE (t));
+         serialize_child ("decl", TEMPLATE_PARM_DECL (t));
+         if(TREE_CONSTANT(t))
+            serialize_string ("constant");
+         if(TREE_READONLY(t))
+            serialize_string ("readonly");
+         serialize_int("index", TEMPLATE_PARM_IDX(t));
+         serialize_int("level", TEMPLATE_PARM_LEVEL(t));
+         serialize_int("orig_level", TEMPLATE_PARM_ORIG_LEVEL(t));
+         break;
+
+      case OVERLOAD:
+         serialize_child ("crnt", OVL_CURRENT (t));
+         serialize_child ("chan", OVL_CHAIN (t));
+         break;
+
+      case TRY_BLOCK:
+         serialize_stmt (t);
+         if (CLEANUP_P (t))
+            serialize_string ("cleanup");
+         serialize_child ("body", TRY_STMTS (t));
+         serialize_child ("hdlr", TRY_HANDLERS (t));
+         break;
+
+      case EH_SPEC_BLOCK:
+         serialize_stmt (t);
+         serialize_child ("body", EH_SPEC_STMTS (t));
+         serialize_child ("raises", EH_SPEC_RAISES (t));
+         break;
+
+      case PTRMEM_CST:
+         serialize_child ("clas", PTRMEM_CST_CLASS (t));
+         serialize_child ("mbr", PTRMEM_CST_MEMBER (t));
+         break;
+
+      case THROW_EXPR:
+         /* These nodes are unary, but do not have code class `1'.  */
+         serialize_child ("op", TREE_OPERAND (t, 0));
+         break;
+
+      case AGGR_INIT_EXPR:
+      {
+         tree arg;
+         aggr_init_expr_arg_iterator iter;
+         serialize_child ("fn", AGGR_INIT_EXPR_FN (t));
+         FOR_EACH_AGGR_INIT_EXPR_ARG (arg, iter, t)
+         {
+            serialize_child ("arg", arg);
+         }
+         serialize_int ("ctor", AGGR_INIT_VIA_CTOR_P (t));
+         serialize_child ("slot", AGGR_INIT_EXPR_SLOT (t));
+         break;
+      }
+      case HANDLER:
+         serialize_stmt (t);
+         serialize_child ("parm", HANDLER_PARMS (t));
+         serialize_child ("body", HANDLER_BODY (t));
+         break;
+
+      case MUST_NOT_THROW_EXPR:
+         serialize_stmt (t);
+         serialize_child ("body", TREE_OPERAND (t, 0));
+         break;
+
+      case USING_STMT:
+         serialize_stmt (t);
+         serialize_child ("nmsp", USING_STMT_NAMESPACE (t));
+         break;
+
+      case CLEANUP_STMT:
+         serialize_stmt (t);
+         serialize_child ("decl", CLEANUP_DECL (t));
+         serialize_child ("expr", CLEANUP_EXPR (t));
+         serialize_child ("body", CLEANUP_BODY (t));
+         break;
+
+      case IF_STMT:
+         serialize_stmt (t);
+         serialize_child ("cond", IF_COND (t));
+         serialize_child ("then", THEN_CLAUSE (t));
+         serialize_child ("else", ELSE_CLAUSE (t));
+         break;
+
+      case BREAK_STMT:
+      case CONTINUE_STMT:
+         serialize_stmt (t);
+         break;
+
+      case DO_STMT:
+         serialize_stmt (t);
+         serialize_child ("body", DO_BODY (t));
+         serialize_child ("cond", DO_COND (t));
+         break;
+
+      case FOR_STMT:
+         serialize_stmt (t);
+         serialize_child ("init", FOR_INIT_STMT (t));
+         serialize_child ("cond", FOR_COND (t));
+         serialize_child ("expr", FOR_EXPR (t));
+         serialize_child ("body", FOR_BODY (t));
+         break;
+
+      case SWITCH_STMT:
+         serialize_stmt (t);
+         serialize_child ("cond", SWITCH_STMT_COND (t));
+         serialize_child ("body", SWITCH_STMT_BODY (t));
+         break;
+
+      case WHILE_STMT:
+         serialize_stmt (t);
+         serialize_child ("cond", WHILE_COND (t));
+         serialize_child ("body", WHILE_BODY (t));
+         break;
+
+      case STMT_EXPR:
+         serialize_child ("stmt", STMT_EXPR_STMT (t));
+         break;
+
+      case EXPR_STMT:
+         serialize_stmt (t);
+         serialize_child ("expr", EXPR_STMT_EXPR (t));
+         break;
+      case SCOPE_REF:
+         serialize_child ("op", TREE_OPERAND (t, 0));
+         serialize_child ("op", TREE_OPERAND (t, 1));
+         break;
+      case TYPE_ARGUMENT_PACK:
+         serialize_child ("arg", ARGUMENT_PACK_ARGS(t) );
+         break;
+      case NONTYPE_ARGUMENT_PACK:
+         serialize_child ("arg", ARGUMENT_PACK_ARGS(t) );
+         break;
+      case EXPR_PACK_EXPANSION:
+         serialize_child ("op", PACK_EXPANSION_PATTERN(t) );
+#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 7)
+         serialize_child ("param_packs", PACK_EXPANSION_PARAMETER_PACKS(t) );
+         serialize_child ("arg", PACK_EXPANSION_EXTRA_ARGS(t) );
+#endif
+      default:
+         break;
+   }
+   return false;
+
+}
+#endif
 
 /* Serialize the next node in the queue.  */
 static void
@@ -1649,11 +2182,11 @@ dequeue_and_serialize ()
   /* Give the language-specific code a chance to print something.  If
      it's completely taken care of things, don't bother printing
      anything more ourselves.
-     FIXME this language specific part cannot be used since the type of the parameters used by this plugin is different from the GCC one.
-     FIXME Currently, only C is supported correctly.
-     if (lang_hooks.tree_dump.dump_tree (t))
-     goto done;
      */
+#ifdef CPP_LANGUAGE
+  if(serialize_cpp_specifics(t))
+     goto done;
+#endif
   /* Now handle the various kinds of nodes.  */
   switch (code)
     {
@@ -1978,25 +2511,8 @@ if (!POINTER_TYPE_P (TREE_TYPE (t))
 #if (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)) && !defined(SPARC) && !defined(ARM)
     case MEM_REF:
       {
-#if 0
-         unsigned HOST_WIDE_INT misalign=0;
-         unsigned int align;
-         tree temporary_addr;
-         temporary_addr = build_fold_addr_expr(t);
-#endif
          serialize_child ("op", TREE_OPERAND (t, 0));
          serialize_child ("op", TREE_OPERAND (t, 1));
-#if 0
-#if (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 8))
-         get_pointer_alignment_1 (temporary_addr, &align, &misalign);
-#elif(__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 7))
-         align = get_pointer_alignment_1 (temporary_addr, &misalign);/*GCC 4.7*/
-#else
-         align = get_pointer_alignment (temporary_addr, BIGGEST_ALIGNMENT);/*GCC 4.6*/
-#endif
-         serialize_int("align", align);
-         serialize_int("misalign", misalign);
-#endif
          break;
       }
 #endif
@@ -2054,20 +2570,6 @@ if (!POINTER_TYPE_P (TREE_TYPE (t))
       serialize_child ("op", TREE_OPERAND (t, 1));
       break;
 
-    case AGGR_INIT_EXPR:
-      {
-         if(AGGR_INIT_EXPR_FN (t))
-            serialize_child ("fn", AGGR_INIT_EXPR_FN (t));
-         tree arg;
-         aggr_init_expr_arg_iterator iter;
-         FOR_EACH_AGGR_INIT_EXPR_ARG (arg, iter, t)
-         {
-            serialize_child ("arg", arg);
-         }
-         if(AGGR_INIT_EXPR_SLOT (t))
-            serialize_child ("slot", AGGR_INIT_EXPR_SLOT (t));
-         break;
-      }
     case CALL_EXPR:
       {
 #if (__GNUC__ > 4)
@@ -2225,6 +2727,12 @@ if (!POINTER_TYPE_P (TREE_TYPE (t))
          serialize_child ("op", TREE_OPERAND (t, 1));
          serialize_child ("op", TREE_OPERAND (t, 2));
          break;
+      case OBJ_TYPE_REF:
+         serialize_child ("op", TREE_OPERAND (t, 0));
+         serialize_child ("op", TREE_OPERAND (t, 1));
+         serialize_child ("op", TREE_OPERAND (t, 2));
+         break;
+
     default:
       /* There are no additional fields to print.  */
       break;

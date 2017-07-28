@@ -74,8 +74,8 @@ class CheckSystemType : public FunctionFrontendFlowStep
       ///The tree manager
       const tree_managerRef TM;
 
-      ///Already visited address expression (used to avoid infinite recursion)
-      std::unordered_set<unsigned int> already_visited_ae;
+      ///Already visited tree node (used to avoid infinite recursion)
+      std::unordered_set<unsigned int> already_visited;
 
       ///Contains the list of the folders containining the system header files
       static

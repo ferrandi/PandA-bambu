@@ -53,7 +53,7 @@
 #define STR_CST_gcc_include "__include"
 
 ///The maximum version of the plugin supported
-#define STR_CST_gcc_max_plugin_version "0.10"
+#define STR_CST_gcc_max_plugin_version "0.11"
 
 ///The minimum version of the plugin supported
 #define STR_CST_gcc_min_plugin_version "0.10"

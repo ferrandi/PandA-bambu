@@ -50,6 +50,7 @@
 #include "config_ARM_GCC_EXE.hpp"
 #include "config_ARM_RTL_PLUGIN.hpp"
 #include "config_ARM_SSA_PLUGIN.hpp"
+#include "config_ARM_SSA_PLUGINCPP.hpp"
 #include "config_HAVE_ARM_COMPILER.hpp"
 #include "config_HAVE_I386_GCC45_COMPILER.hpp"
 #include "config_HAVE_I386_GCC46_COMPILER.hpp"
@@ -67,6 +68,7 @@
 #include "config_I386_GCC45_EXE.hpp"
 #include "config_I386_GPP45_EXE.hpp"
 #include "config_I386_GCC45_SSA_PLUGIN.hpp"
+#include "config_I386_GCC45_SSA_PLUGINCPP.hpp"
 #include "config_I386_GCC45_SSAVRP_PLUGIN.hpp"
 #include "config_I386_GCC45_TOPFNAME_PLUGIN.hpp"
 #include "config_I386_CPP46_EXE.hpp"
@@ -74,6 +76,7 @@
 #include "config_I386_GCC46_EXE.hpp"
 #include "config_I386_GPP46_EXE.hpp"
 #include "config_I386_GCC46_SSA_PLUGIN.hpp"
+#include "config_I386_GCC46_SSA_PLUGINCPP.hpp"
 #include "config_I386_GCC46_SSAVRP_PLUGIN.hpp"
 #include "config_I386_GCC46_TOPFNAME_PLUGIN.hpp"
 #include "config_I386_CPP47_EXE.hpp"
@@ -81,6 +84,7 @@
 #include "config_I386_GCC47_EXE.hpp"
 #include "config_I386_GPP47_EXE.hpp"
 #include "config_I386_GCC47_SSA_PLUGIN.hpp"
+#include "config_I386_GCC47_SSA_PLUGINCPP.hpp"
 #include "config_I386_GCC47_SSAVRP_PLUGIN.hpp"
 #include "config_I386_GCC47_TOPFNAME_PLUGIN.hpp"
 #include "config_I386_CPP48_EXE.hpp"
@@ -88,6 +92,7 @@
 #include "config_I386_GCC48_EXE.hpp"
 #include "config_I386_GPP48_EXE.hpp"
 #include "config_I386_GCC48_SSA_PLUGIN.hpp"
+#include "config_I386_GCC48_SSA_PLUGINCPP.hpp"
 #include "config_I386_GCC48_SSAVRP_PLUGIN.hpp"
 #include "config_I386_GCC48_TOPFNAME_PLUGIN.hpp"
 #include "config_I386_CPP49_EXE.hpp"
@@ -95,24 +100,28 @@
 #include "config_I386_GCC49_EXE.hpp"
 #include "config_I386_GPP49_EXE.hpp"
 #include "config_I386_GCC49_SSA_PLUGIN.hpp"
+#include "config_I386_GCC49_SSA_PLUGINCPP.hpp"
 #include "config_I386_GCC49_TOPFNAME_PLUGIN.hpp"
 #include "config_I386_CPP5_EXE.hpp"
 #include "config_I386_GCC5_EMPTY_PLUGIN.hpp"
 #include "config_I386_GCC5_EXE.hpp"
 #include "config_I386_GPP5_EXE.hpp"
 #include "config_I386_GCC5_SSA_PLUGIN.hpp"
+#include "config_I386_GCC5_SSA_PLUGINCPP.hpp"
 #include "config_I386_GCC5_TOPFNAME_PLUGIN.hpp"
 #include "config_I386_CPP6_EXE.hpp"
 #include "config_I386_GCC6_EMPTY_PLUGIN.hpp"
 #include "config_I386_GCC6_EXE.hpp"
 #include "config_I386_GPP6_EXE.hpp"
 #include "config_I386_GCC6_SSA_PLUGIN.hpp"
+#include "config_I386_GCC6_SSA_PLUGINCPP.hpp"
 #include "config_I386_GCC6_TOPFNAME_PLUGIN.hpp"
 #include "config_I386_CPP7_EXE.hpp"
 #include "config_I386_GCC7_EMPTY_PLUGIN.hpp"
 #include "config_I386_GCC7_EXE.hpp"
 #include "config_I386_GPP7_EXE.hpp"
 #include "config_I386_GCC7_SSA_PLUGIN.hpp"
+#include "config_I386_GCC7_SSA_PLUGINCPP.hpp"
 #include "config_I386_GCC7_TOPFNAME_PLUGIN.hpp"
 #include "config_HAVE_I386_GCC47_MX32.hpp"
 #include "config_HAVE_I386_GCC48_MX32.hpp"
@@ -129,6 +138,7 @@
 #include "config_SPARC_GCC_EXE.hpp"
 #include "config_SPARC_RTL_PLUGIN.hpp"
 #include "config_SPARC_SSA_PLUGIN.hpp"
+#include "config_SPARC_SSA_PLUGINCPP.hpp"
 #include "config_PLUGIN_DIR.hpp"
 
 /// Header include
@@ -1038,8 +1048,8 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
       }
       else
       {
-         compiler.ssa_plugin_obj = plugin_dir + I386_GCC45_SSA_PLUGIN + plugin_ext;
-         compiler.ssa_plugin_name = I386_GCC45_SSA_PLUGIN;
+         compiler.ssa_plugin_obj = plugin_dir + (flag_cpp ? I386_GCC45_SSA_PLUGINCPP: I386_GCC45_SSA_PLUGIN) + plugin_ext;
+         compiler.ssa_plugin_name = (flag_cpp ? I386_GCC45_SSA_PLUGINCPP: I386_GCC45_SSA_PLUGIN);
       }
       compiler.topfname_plugin_obj = plugin_dir + I386_GCC45_TOPFNAME_PLUGIN + plugin_ext;
       compiler.topfname_plugin_name = I386_GCC45_TOPFNAME_PLUGIN;
@@ -1067,8 +1077,8 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
       }
       else
       {
-         compiler.ssa_plugin_obj = plugin_dir + I386_GCC46_SSA_PLUGIN + plugin_ext;
-         compiler.ssa_plugin_name = I386_GCC46_SSA_PLUGIN;
+         compiler.ssa_plugin_obj = plugin_dir + (flag_cpp ? I386_GCC46_SSA_PLUGINCPP: I386_GCC46_SSA_PLUGIN) + plugin_ext;
+         compiler.ssa_plugin_name = (flag_cpp ? I386_GCC46_SSA_PLUGINCPP: I386_GCC46_SSA_PLUGIN);
       }
       compiler.topfname_plugin_obj = plugin_dir + I386_GCC46_TOPFNAME_PLUGIN + plugin_ext;
       compiler.topfname_plugin_name = I386_GCC46_TOPFNAME_PLUGIN;
@@ -1103,8 +1113,8 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
       }
       else
       {
-         compiler.ssa_plugin_obj = plugin_dir + I386_GCC47_SSA_PLUGIN + plugin_ext;
-         compiler.ssa_plugin_name = I386_GCC47_SSA_PLUGIN;
+         compiler.ssa_plugin_obj = plugin_dir + (flag_cpp ? I386_GCC47_SSA_PLUGINCPP : I386_GCC47_SSA_PLUGIN) + plugin_ext;
+         compiler.ssa_plugin_name = (flag_cpp ? I386_GCC47_SSA_PLUGINCPP : I386_GCC47_SSA_PLUGIN);
       }
       compiler.topfname_plugin_obj = plugin_dir + I386_GCC47_TOPFNAME_PLUGIN + plugin_ext;
       compiler.topfname_plugin_name = I386_GCC47_TOPFNAME_PLUGIN;
@@ -1139,8 +1149,8 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
       }
       else
       {
-         compiler.ssa_plugin_obj = plugin_dir + I386_GCC48_SSA_PLUGIN + plugin_ext;
-         compiler.ssa_plugin_name = I386_GCC48_SSA_PLUGIN;
+         compiler.ssa_plugin_obj = plugin_dir + (flag_cpp ? I386_GCC48_SSA_PLUGINCPP: I386_GCC48_SSA_PLUGIN) + plugin_ext;
+         compiler.ssa_plugin_name = (flag_cpp ? I386_GCC48_SSA_PLUGINCPP: I386_GCC48_SSA_PLUGIN);
       }
       compiler.topfname_plugin_obj = plugin_dir + I386_GCC48_TOPFNAME_PLUGIN + plugin_ext;
       compiler.topfname_plugin_name = I386_GCC48_TOPFNAME_PLUGIN;
@@ -1168,8 +1178,8 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
          compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m32_mx32);
       compiler.empty_plugin_obj = plugin_dir + I386_GCC49_EMPTY_PLUGIN + plugin_ext;
       compiler.empty_plugin_name = I386_GCC49_EMPTY_PLUGIN;
-      compiler.ssa_plugin_obj = plugin_dir + I386_GCC49_SSA_PLUGIN + plugin_ext;
-      compiler.ssa_plugin_name = I386_GCC49_SSA_PLUGIN;
+      compiler.ssa_plugin_obj = plugin_dir + (flag_cpp ? I386_GCC49_SSA_PLUGINCPP : I386_GCC49_SSA_PLUGIN) + plugin_ext;
+      compiler.ssa_plugin_name = (flag_cpp ? I386_GCC49_SSA_PLUGINCPP : I386_GCC49_SSA_PLUGIN);
       compiler.topfname_plugin_obj = plugin_dir + I386_GCC49_TOPFNAME_PLUGIN + plugin_ext;
       compiler.topfname_plugin_name = I386_GCC49_TOPFNAME_PLUGIN;
 #if HAVE_FROM_RTL_BUILT
@@ -1196,8 +1206,8 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
          compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m32_mx32);
       compiler.empty_plugin_obj = plugin_dir + I386_GCC5_EMPTY_PLUGIN + plugin_ext;
       compiler.empty_plugin_name = I386_GCC5_EMPTY_PLUGIN;
-      compiler.ssa_plugin_obj = plugin_dir + I386_GCC5_SSA_PLUGIN + plugin_ext;
-      compiler.ssa_plugin_name = I386_GCC5_SSA_PLUGIN;
+      compiler.ssa_plugin_obj = plugin_dir + (flag_cpp ? I386_GCC5_SSA_PLUGINCPP : I386_GCC5_SSA_PLUGIN) + plugin_ext;
+      compiler.ssa_plugin_name = (flag_cpp ? I386_GCC5_SSA_PLUGINCPP : I386_GCC5_SSA_PLUGIN);
       compiler.topfname_plugin_obj = plugin_dir + I386_GCC5_TOPFNAME_PLUGIN + plugin_ext;
       compiler.topfname_plugin_name = I386_GCC5_TOPFNAME_PLUGIN;
 #if HAVE_FROM_RTL_BUILT
@@ -1225,8 +1235,8 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
          compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m32_mx32);
       compiler.empty_plugin_obj = plugin_dir + I386_GCC6_EMPTY_PLUGIN + plugin_ext;
       compiler.empty_plugin_name = I386_GCC6_EMPTY_PLUGIN;
-      compiler.ssa_plugin_obj = plugin_dir + I386_GCC6_SSA_PLUGIN + plugin_ext;
-      compiler.ssa_plugin_name = I386_GCC6_SSA_PLUGIN;
+      compiler.ssa_plugin_obj = plugin_dir + (flag_cpp ? I386_GCC6_SSA_PLUGINCPP : I386_GCC6_SSA_PLUGIN) + plugin_ext;
+      compiler.ssa_plugin_name = (flag_cpp ? I386_GCC6_SSA_PLUGINCPP : I386_GCC6_SSA_PLUGIN);
       compiler.topfname_plugin_obj = plugin_dir + I386_GCC6_TOPFNAME_PLUGIN + plugin_ext;
       compiler.topfname_plugin_name = I386_GCC6_TOPFNAME_PLUGIN;
 
@@ -1255,8 +1265,8 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
          compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m32_mx32);
       compiler.empty_plugin_obj = plugin_dir + I386_GCC7_EMPTY_PLUGIN + plugin_ext;
       compiler.empty_plugin_name = I386_GCC7_EMPTY_PLUGIN;
-      compiler.ssa_plugin_obj = plugin_dir + I386_GCC7_SSA_PLUGIN + plugin_ext;
-      compiler.ssa_plugin_name = I386_GCC7_SSA_PLUGIN;
+      compiler.ssa_plugin_obj = plugin_dir + (flag_cpp ? I386_GCC7_SSA_PLUGINCPP : I386_GCC7_SSA_PLUGIN) + plugin_ext;
+      compiler.ssa_plugin_name = (flag_cpp ? I386_GCC7_SSA_PLUGINCPP : I386_GCC7_SSA_PLUGIN);
       compiler.topfname_plugin_obj = plugin_dir + I386_GCC7_TOPFNAME_PLUGIN + plugin_ext;
       compiler.topfname_plugin_name = I386_GCC7_TOPFNAME_PLUGIN;
 
@@ -1272,12 +1282,12 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
       compiler.gcc = SPARC_GCC_EXE;
       compiler.cpp = SPARC_CPP_EXE;
       compiler.extra_options = gcc_extra_options;
-      compiler.empty_plugin_obj = plugin_dir + SPARC_EMPTY_PLUGIN;
+      compiler.empty_plugin_obj = plugin_dir + SPARC_EMPTY_PLUGIN + plugin_ext;
       compiler.empty_plugin_name = SPARC_EMPTY_PLUGIN;
-      compiler.ssa_plugin_obj = plugin_dir + SPARC_SSA_PLUGIN;
-      compiler.ssa_plugin_name = SPARC_SSA_PLUGIN;
+      compiler.ssa_plugin_obj = plugin_dir + (flag_cpp ? SPARC_SSA_PLUGINCPP : SPARC_SSA_PLUGIN) + plugin_ext;
+      compiler.ssa_plugin_name = (flag_cpp ? SPARC_SSA_PLUGINCPP : SPARC_SSA_PLUGIN);
 #if HAVE_FROM_RTL_BUILT
-      compiler.rtl_plugin = plugin_dir + SPARC_RTL_PLUGIN;
+      compiler.rtl_plugin = plugin_dir + SPARC_RTL_PLUGIN + plugin_ext;
 #endif
    }
 #endif
@@ -1295,12 +1305,12 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
       compiler.gcc = ARM_GCC_EXE;
       compiler.cpp = ARM_CPP_EXE;
       compiler.extra_options = gcc_extra_options + " -mlittle-endian -fsigned-char";
-      compiler.empty_plugin_obj = plugin_dir + ARM_EMPTY_PLUGIN;
+      compiler.empty_plugin_obj = plugin_dir + ARM_EMPTY_PLUGIN + plugin_ext;
       compiler.empty_plugin_name = ARM_EMPTY_PLUGIN;
-      compiler.ssa_plugin_obj = plugin_dir + ARM_SSA_PLUGIN;
-      compiler.ssa_plugin_name = ARM_SSA_PLUGIN;
+      compiler.ssa_plugin_obj = plugin_dir + (flag_cpp ? ARM_SSA_PLUGINCPP: ARM_SSA_PLUGIN) + plugin_ext;
+      compiler.ssa_plugin_name = (flag_cpp ? ARM_SSA_PLUGINCPP: ARM_SSA_PLUGIN);
 #if HAVE_FROM_RTL_BUILT
-      compiler.rtl_plugin = plugin_dir + ARM_RTL_PLUGIN;
+      compiler.rtl_plugin = plugin_dir + ARM_RTL_PLUGIN + plugin_ext;
 #endif
    }
 #endif

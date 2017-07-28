@@ -685,7 +685,6 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
                      case bit_not_expr_K:
                      case buffer_ref_K:
                      case card_expr_K:
-                     case cast_expr_K:
                      case cleanup_point_expr_K:
                      case conj_expr_K:
                      case convert_expr_K:
@@ -700,6 +699,7 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
                      case negate_expr_K:
                      case non_lvalue_expr_K:
                      case nop_expr_K:
+                     case paren_expr_K:
                      case realpart_expr_K:
                      case reference_expr_K:
                      case reinterpret_cast_expr_K:
@@ -884,7 +884,6 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
                      case bit_not_expr_K:
                      case buffer_ref_K:
                      case card_expr_K:
-                     case cast_expr_K:
                      case cleanup_point_expr_K:
                      case conj_expr_K:
                      case convert_expr_K:
@@ -899,6 +898,7 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
                      case negate_expr_K:
                      case non_lvalue_expr_K:
                      case nop_expr_K:
+                     case paren_expr_K:
                      case realpart_expr_K:
                      case reference_expr_K:
                      case reinterpret_cast_expr_K:
@@ -1177,6 +1177,7 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
          break;
       }
       case function_decl_K:
+      case template_decl_K:
       {
          break;
       }

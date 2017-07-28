@@ -180,6 +180,12 @@ void function_decl_refs::operator()(const case_label_expr* obj, unsigned int & m
    if(visited.find(obj->index) != visited.end()) mask = NO_VISIT;
 }
 
+void function_decl_refs::operator()(const cast_expr* obj, unsigned int & mask)
+{
+   if(visited.find(obj->index) != visited.end()) mask = NO_VISIT;
+}
+
+
 void function_decl_refs::operator()(const complex_cst* obj, unsigned int & mask)
 {
    if(visited.find(obj->index) != visited.end()) mask = NO_VISIT;
@@ -369,6 +375,11 @@ void function_decl_refs::operator()(const template_decl* obj, unsigned int & mas
    if(visited.find(obj->index) != visited.end()) mask = NO_VISIT;
 }
 
+void function_decl_refs::operator()(const template_parm_index* obj, unsigned int & mask)
+{
+   if(visited.find(obj->index) != visited.end()) mask = NO_VISIT;
+}
+
 void function_decl_refs::operator()(const tree_list* obj, unsigned int & mask)
 {
    if(visited.find(obj->index) != visited.end()) mask = NO_VISIT;
@@ -400,6 +411,21 @@ void function_decl_refs::operator()(const var_decl* obj, unsigned int & mask)
 }
 
 void function_decl_refs::operator()(const vector_cst* obj, unsigned int & mask)
+{
+   if(visited.find(obj->index) != visited.end()) mask = NO_VISIT;
+}
+
+void function_decl_refs::operator()(const type_argument_pack* obj, unsigned int & mask)
+{
+   if(visited.find(obj->index) != visited.end()) mask = NO_VISIT;
+}
+
+void function_decl_refs::operator()(const nontype_argument_pack* obj, unsigned int & mask)
+{
+   if(visited.find(obj->index) != visited.end()) mask = NO_VISIT;
+}
+
+void function_decl_refs::operator()(const expr_pack_expansion* obj, unsigned int & mask)
 {
    if(visited.find(obj->index) != visited.end()) mask = NO_VISIT;
 }

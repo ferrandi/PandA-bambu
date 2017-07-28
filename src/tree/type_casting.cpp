@@ -212,6 +212,11 @@ void type_casting::operator()(const case_label_expr* obj, unsigned int & mask)
    if(visited.find(obj->index) != visited.end()) mask = NO_VISIT;
 }
 
+void type_casting::operator()(const cast_expr* obj, unsigned int & mask)
+{
+   if(visited.find(obj->index) != visited.end()) mask = NO_VISIT;
+}
+
 void type_casting::operator()(const complex_cst* obj, unsigned int & mask)
 {
    if(visited.find(obj->index) != visited.end()) mask = NO_VISIT;
@@ -398,6 +403,11 @@ void type_casting::operator()(const template_decl* obj, unsigned int & mask)
    if(visited.find(obj->index) != visited.end()) mask = NO_VISIT;
 }
 
+void type_casting::operator()(const template_parm_index* obj, unsigned int & mask)
+{
+   if(visited.find(obj->index) != visited.end()) mask = NO_VISIT;
+}
+
 void type_casting::operator()(const tree_list* obj, unsigned int & mask)
 {
    if(visited.find(obj->index) != visited.end()) mask = NO_VISIT;
@@ -429,6 +439,21 @@ void type_casting::operator()(const var_decl* obj, unsigned int & mask)
 }
 
 void type_casting::operator()(const vector_cst* obj, unsigned int & mask)
+{
+   if(visited.find(obj->index) != visited.end()) mask = NO_VISIT;
+}
+
+void type_casting::operator()(const type_argument_pack* obj, unsigned int & mask)
+{
+   if(visited.find(obj->index) != visited.end()) mask = NO_VISIT;
+}
+
+void type_casting::operator()(const nontype_argument_pack* obj, unsigned int & mask)
+{
+   if(visited.find(obj->index) != visited.end()) mask = NO_VISIT;
+}
+
+void type_casting::operator()(const expr_pack_expansion* obj, unsigned int & mask)
 {
    if(visited.find(obj->index) != visited.end()) mask = NO_VISIT;
 }

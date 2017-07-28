@@ -403,6 +403,7 @@ void string_cst_fix::recursive_examinate(tree_nodeRef & tn, const std::string & 
       case function_decl_K:
       case label_decl_K:
       case result_decl_K:
+      case template_decl_K:
       case vector_cst_K:
       case void_cst_K:
       case tree_vec_K:

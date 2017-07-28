@@ -370,7 +370,6 @@ std::string BehavioralHelper::print_init(unsigned int var, const var_pp_functorC
       case bit_not_expr_K:
       case buffer_ref_K:
       case card_expr_K:
-      case cast_expr_K:
       case cleanup_point_expr_K:
       case conj_expr_K:
       case convert_expr_K:
@@ -387,6 +386,7 @@ std::string BehavioralHelper::print_init(unsigned int var, const var_pp_functorC
       case lut_expr_K:
       case negate_expr_K:
       case non_lvalue_expr_K:
+      case paren_expr_K:
       case realpart_expr_K:
       case reinterpret_cast_expr_K:
       case sizeof_expr_K:
@@ -485,6 +485,7 @@ std::string BehavioralHelper::print_init(unsigned int var, const var_pp_functorC
       case parm_decl_K:
       case result_decl_K:
       case translation_unit_decl_K:
+      case template_decl_K:
       case error_mark_K:
       case using_decl_K:
       case type_decl_K:
@@ -908,12 +909,12 @@ std::string BehavioralHelper::print_constant(unsigned int var, const var_pp_func
       case using_decl_K:
       case type_decl_K:
       case var_decl_K:
+      case template_decl_K:
       case abs_expr_K:
       case arrow_expr_K:
       case bit_not_expr_K:
       case buffer_ref_K:
       case card_expr_K:
-      case cast_expr_K:
       case cleanup_point_expr_K:
       case conj_expr_K:
       case convert_expr_K:
@@ -929,6 +930,7 @@ std::string BehavioralHelper::print_constant(unsigned int var, const var_pp_func
       case loop_expr_K:
       case negate_expr_K:
       case non_lvalue_expr_K:
+      case paren_expr_K:
       case realpart_expr_K:
       case reference_expr_K:
       case reinterpret_cast_expr_K:
@@ -1643,6 +1645,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "New op node is " + boost::lexical_cast<std::string>(GET_INDEX_NODE(ne->op)) + " - " + right_op_node->get_kind_text());
                      break;
                   }
+                  case paren_expr_K:
                   case(nop_expr_K) :
                   {
                      nop_expr * ne = GetPointer<nop_expr>(right_op_node);
@@ -1668,7 +1671,6 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
                   case bit_not_expr_K:
                   case buffer_ref_K:
                   case card_expr_K:
-                  case cast_expr_K:
                   case cleanup_point_expr_K:
                   case conj_expr_K:
                   case convert_expr_K:
@@ -2766,6 +2768,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
             case convert_expr_K:
             case view_convert_expr_K:
             case nop_expr_K:
+            case paren_expr_K:
             {
                unary_expr *ue = GetPointer<unary_expr>(right);
                res = res + "(" + tree_helper::print_type(TM, get_type(GET_INDEX_NODE(be->op0))) + ") ";
@@ -2792,7 +2795,6 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
             case bit_not_expr_K:
             case buffer_ref_K:
             case card_expr_K:
-            case cast_expr_K:
             case cleanup_point_expr_K:
             case conj_expr_K:
             case exit_expr_K:
@@ -2889,7 +2891,6 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
                case bit_not_expr_K:
                case buffer_ref_K:
                case card_expr_K:
-               case cast_expr_K:
                case cleanup_point_expr_K:
                case conj_expr_K:
                case exit_expr_K:
@@ -2917,6 +2918,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
                case vec_unpack_float_lo_expr_K:
                case view_convert_expr_K:
                case error_mark_K:
+               case paren_expr_K:
                case CASE_BINARY_EXPRESSION:
                case CASE_CPP_NODES:
                case CASE_CST_NODES:
@@ -3016,6 +3018,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
             case vec_perm_expr_K:
             case target_expr_K:
             case error_mark_K:
+            case paren_expr_K:
             case CASE_BINARY_EXPRESSION:
             case CASE_CPP_NODES:
             case CASE_CST_NODES:
@@ -3193,6 +3196,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
             case vec_perm_expr_K:
             case target_expr_K:
             case error_mark_K:
+            case paren_expr_K:
             case CASE_BINARY_EXPRESSION:
             case CASE_CPP_NODES:
             case CASE_CST_NODES:
@@ -3783,6 +3787,13 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
          res += "/*"+ vie->get_kind_text() + "*/" + print_node(GET_INDEX_NODE(vie->op), v, vppf);
          break;
       }
+      case paren_expr_K:
+      {
+         unary_expr* vie = GetPointer<unary_expr>(node);
+         res += "(" + print_node(GET_INDEX_NODE(vie->op), v, vppf) + ")";
+         break;
+      }
+
       case vec_pack_trunc_expr_K:
       {
          vec_pack_trunc_expr* vpt = GetPointer<vec_pack_trunc_expr>(node);
@@ -4026,6 +4037,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
       case const_decl_K:
       case namespace_decl_K:
       case translation_unit_decl_K:
+      case template_decl_K:
       case using_decl_K:
       case type_decl_K:
       case gimple_bind_K:
@@ -4043,7 +4055,6 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
       case arrow_expr_K:
       case buffer_ref_K:
       case card_expr_K:
-      case cast_expr_K:
       case cleanup_point_expr_K:
       case conj_expr_K:
       case exit_expr_K:
@@ -4358,6 +4369,7 @@ std::string BehavioralHelper::print_type_declaration(unsigned int type) const
       case set_type_K:
       case template_type_parm_K:
       case typename_type_K:
+      case type_argument_pack_K:
       case vector_type_K:
       case void_type_K:
       {
@@ -4550,6 +4562,7 @@ bool BehavioralHelper::is_a_constant(unsigned int obj) const
    {
       case addr_expr_K:
          return true;
+      case paren_expr_K:
       case nop_expr_K:
       {
          unary_expr *ue = GetPointer<unary_expr>(node);
@@ -4583,6 +4596,7 @@ bool BehavioralHelper::is_a_constant(unsigned int obj) const
       case parm_decl_K:
       case result_decl_K:
       case translation_unit_decl_K:
+      case template_decl_K:
       case using_decl_K:
       case type_decl_K:
       case var_decl_K:
@@ -4591,7 +4605,6 @@ bool BehavioralHelper::is_a_constant(unsigned int obj) const
       case bit_not_expr_K:
       case buffer_ref_K:
       case card_expr_K:
-      case cast_expr_K:
       case cleanup_point_expr_K:
       case conj_expr_K:
       case convert_expr_K:
@@ -4778,6 +4791,7 @@ unsigned int BehavioralHelper::get_intermediate_var(unsigned int obj) const
             case nop_expr_K:
             case realpart_expr_K:
             case imagpart_expr_K:
+            case paren_expr_K:
             {
                unary_expr *ue = GetPointer<unary_expr>(right);
                return GET_INDEX_NODE(ue->op);
@@ -4802,7 +4816,6 @@ unsigned int BehavioralHelper::get_intermediate_var(unsigned int obj) const
             case bit_not_expr_K:
             case buffer_ref_K:
             case card_expr_K:
-            case cast_expr_K:
             case cleanup_point_expr_K:
             case conj_expr_K:
             case exit_expr_K:
@@ -5079,6 +5092,7 @@ unsigned int BehavioralHelper::get_attributes(unsigned int var) const
       case translation_unit_decl_K:
       case using_decl_K:
       case type_decl_K:
+      case template_decl_K:
       case error_mark_K:
       case CASE_BINARY_EXPRESSION:
       case CASE_CPP_NODES:
@@ -5179,6 +5193,7 @@ unsigned int BehavioralHelper::GetInit(unsigned int var, std::unordered_set<unsi
       case parm_decl_K:
       case result_decl_K:
       case translation_unit_decl_K:
+      case template_decl_K:
       case using_decl_K:
       case type_decl_K:
       case error_mark_K:
@@ -5329,6 +5344,7 @@ std::string BehavioralHelper::print_forward_declaration(unsigned int type) const
       case target_mem_ref_K:
       case target_mem_ref461_K:
       case template_type_parm_K:
+      case type_argument_pack_K:
       case tree_list_K:
       case tree_vec_K:
       case typename_type_K:

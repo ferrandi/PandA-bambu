@@ -91,6 +91,8 @@ tree_manipulation::tree_manipulation(const tree_managerRef _TreeM, const Paramet
    enum2tok[boolean_type_K] = TOK(TOK_BOOLEAN_TYPE);
    enum2tok[lang_type_K] = TOK(TOK_LANG_TYPE);
    enum2tok[complex_type_K] = TOK(TOK_COMPLEX_TYPE);
+   enum2tok[type_argument_pack_K] = TOK(TOK_TYPE_ARGUMENT_PACK);
+   enum2tok[nontype_argument_pack_K] = TOK(TOK_NONTYPE_ARGUMENT_PACK);
    enum2tok[vector_type_K] = TOK(TOK_VECTOR_TYPE);
    enum2tok[CharType_K] = TOK(TOK_CHAR_TYPE);
    enum2tok[nullptr_type_K] = TOK(TOK_NULLPTR_TYPE);
@@ -356,6 +358,7 @@ tree_nodeRef tree_manipulation::create_unary_operation(const tree_nodeRef & type
       case reference_type_K:
       case set_type_K:
       case template_type_parm_K:
+      case type_argument_pack_K:
       case typename_type_K:
       case union_type_K:
       case vector_type_K:
@@ -475,6 +478,7 @@ tree_nodeRef tree_manipulation::create_binary_operation(const tree_nodeRef & typ
       case set_type_K:
       case template_type_parm_K:
       case typename_type_K:
+      case type_argument_pack_K:
       case union_type_K:
       case vector_type_K:
       case void_type_K:
@@ -595,6 +599,7 @@ tree_nodeRef tree_manipulation::create_ternary_operation(const tree_nodeRef & ty
       case set_type_K:
       case template_type_parm_K:
       case typename_type_K:
+      case type_argument_pack_K:
       case union_type_K:
       case vector_type_K:
       case void_type_K:
@@ -717,6 +722,7 @@ tree_nodeRef tree_manipulation::create_quaternary_operation(const tree_nodeRef &
       case set_type_K:
       case template_type_parm_K:
       case typename_type_K:
+      case type_argument_pack_K:
       case union_type_K:
       case vector_type_K:
       case void_type_K:

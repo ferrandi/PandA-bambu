@@ -322,6 +322,8 @@ unsigned int  tree_node_dup::create_tree_node(const tree_nodeRef &tn)
          RET_NODE_ID_CASE_BODY(qual_union_type, node_id)
       case range_expr_K:
          CREATE_TREE_NODE_CASE_BODY(range_expr, node_id)
+      case paren_expr_K:
+         CREATE_TREE_NODE_CASE_BODY(paren_expr, node_id)
       case rdiv_expr_K:
          CREATE_TREE_NODE_CASE_BODY(rdiv_expr, node_id)
       case real_cst_K:
@@ -502,6 +504,12 @@ unsigned int  tree_node_dup::create_tree_node(const tree_nodeRef &tn)
          RET_NODE_ID_CASE_BODY(vector_cst, node_id)
       case void_cst_K:
          RET_NODE_ID_CASE_BODY(void_cst, node_id)
+      case type_argument_pack_K:
+         RET_NODE_ID_CASE_BODY(type_argument_pack, node_id)
+      case nontype_argument_pack_K:
+         RET_NODE_ID_CASE_BODY(nontype_argument_pack, node_id)
+      case expr_pack_expansion_K:
+         RET_NODE_ID_CASE_BODY(expr_pack_expansion, node_id)
       case vector_type_K:
          RET_NODE_ID_CASE_BODY(vector_type, node_id)
       case view_convert_expr_K:
@@ -950,6 +958,13 @@ void tree_node_dup::operator()(const case_label_expr* obj, unsigned int & mask)
    SET_NODE_ID(got,case_label_expr);
 }
 
+void tree_node_dup::operator()(const cast_expr* obj, unsigned int & mask)
+{
+   THROW_ASSERT(obj==curr_tree_node_ptr, "wrong factory setup");
+   tree_node_mask::operator()(obj,mask);
+   SET_NODE_ID(op,cast_expr);
+}
+
 void tree_node_dup::operator()(const complex_cst* obj, unsigned int & mask)
 {
    THROW_ASSERT(obj==curr_tree_node_ptr, "wrong factory setup");
@@ -1366,6 +1381,19 @@ void tree_node_dup::operator()(const template_decl* obj, unsigned int & mask)
    SET_NODE_ID(prms,template_decl);
 }
 
+void tree_node_dup::operator()(const template_parm_index* obj, unsigned int & mask)
+{
+   THROW_ASSERT(obj==curr_tree_node_ptr, "wrong factory setup");
+   tree_node_mask::operator()(obj,mask);
+   SET_NODE_ID(type,template_parm_index);
+   SET_NODE_ID(decl,template_parm_index);
+   SET_VALUE(constant_flag,template_parm_index);
+   SET_VALUE(readonly_flag,template_parm_index);
+   SET_VALUE(idx,template_parm_index);
+   SET_VALUE(level,template_parm_index);
+   SET_VALUE(orig_level,template_parm_index);
+}
+
 void tree_node_dup::operator()(const tree_list* obj, unsigned int & mask)
 {
    THROW_ASSERT(obj==curr_tree_node_ptr, "wrong factory setup");
@@ -1438,6 +1466,29 @@ void tree_node_dup::operator()(const vector_cst* obj, unsigned int & mask)
    THROW_ASSERT(obj==curr_tree_node_ptr, "wrong factory setup");
    tree_node_mask::operator()(obj,mask);
    SEQ_SET_NODE_ID(list_of_valu,vector_cst);
+}
+
+void tree_node_dup::operator()(const type_argument_pack* obj, unsigned int & mask)
+{
+   THROW_ASSERT(obj==curr_tree_node_ptr, "wrong factory setup");
+   tree_node_mask::operator()(obj,mask);
+   SET_NODE_ID(arg,type_argument_pack);
+}
+
+void tree_node_dup::operator()(const nontype_argument_pack* obj, unsigned int & mask)
+{
+   THROW_ASSERT(obj==curr_tree_node_ptr, "wrong factory setup");
+   tree_node_mask::operator()(obj,mask);
+   SET_NODE_ID(arg,nontype_argument_pack);
+}
+
+void tree_node_dup::operator()(const expr_pack_expansion* obj, unsigned int & mask)
+{
+   THROW_ASSERT(obj==curr_tree_node_ptr, "wrong factory setup");
+   tree_node_mask::operator()(obj,mask);
+   SET_NODE_ID(op,expr_pack_expansion);
+   SET_NODE_ID(param_packs,expr_pack_expansion);
+   SET_NODE_ID(arg,expr_pack_expansion);
 }
 
 void tree_node_dup::operator()(const vector_type* obj, unsigned int & mask)

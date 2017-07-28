@@ -1097,7 +1097,6 @@ void mux_connection_binding::determine_connection(const vertex& op, const HLS_ma
          case bit_not_expr_K:
          case buffer_ref_K:
          case card_expr_K:
-         case cast_expr_K:
          case cleanup_point_expr_K:
          case conj_expr_K:
          case convert_expr_K:
@@ -1159,6 +1158,7 @@ void mux_connection_binding::determine_connection(const vertex& op, const HLS_ma
          case mult_highpart_expr_K:
          case ne_expr_K:
          case ordered_expr_K:
+         case paren_expr_K:
          case plus_expr_K:
          case pointer_plus_expr_K:
          case postdecrement_expr_K:
@@ -1214,6 +1214,7 @@ void mux_connection_binding::determine_connection(const vertex& op, const HLS_ma
          case error_mark_K:
          case using_decl_K:
          case type_decl_K:
+         case template_decl_K:
          case CASE_GIMPLE_NODES:
          case call_expr_K:
          case aggr_init_expr_K:
@@ -1822,6 +1823,7 @@ void mux_connection_binding::create_connections()
                   case mult_highpart_expr_K:
                   case ne_expr_K:
                   case ordered_expr_K:
+                  case paren_expr_K:
                   case plus_expr_K:
                   case pointer_plus_expr_K:
                   case postdecrement_expr_K:
@@ -1893,6 +1895,7 @@ void mux_connection_binding::create_connections()
                   case error_mark_K:
                   case using_decl_K:
                   case type_decl_K:
+                  case template_decl_K:
                   case array_range_ref_K:
                   case target_expr_K:
                   case vtable_ref_K:
@@ -1912,7 +1915,6 @@ void mux_connection_binding::create_connections()
                   case bit_not_expr_K:
                   case buffer_ref_K:
                   case card_expr_K:
-                  case cast_expr_K:
                   case cleanup_point_expr_K:
                   case conj_expr_K:
                   case convert_expr_K:

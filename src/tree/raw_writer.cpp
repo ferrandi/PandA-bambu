@@ -436,6 +436,7 @@ void raw_writer::operator()(const aggr_init_expr* obj, unsigned int & mask)
 {
    mask = NO_VISIT;
    obj->call_expr::visit(this);
+   WRITE_NFIELD(os, STOK(TOK_CTOR), obj->ctor);
    write_when_not_null(STOK(TOK_SLOT), obj->slot);
 }
 
@@ -460,6 +461,13 @@ void raw_writer::operator()(const case_label_expr* obj, unsigned int & mask)
    if (obj->default_flag)
       WRITE_TOKEN(os, TOK_DEFAULT );
    write_when_not_null(STOK(TOK_GOTO), obj->got);
+}
+
+void raw_writer::operator()(const cast_expr* obj, unsigned int & mask)
+{
+   mask = NO_VISIT;
+   obj->expr_node::visit(this);
+   write_when_not_null(STOK(TOK_OP), obj->op);
 }
 
 void raw_writer::operator()(const complex_cst* obj, unsigned int & mask)
@@ -904,6 +912,21 @@ void raw_writer::operator()(const template_decl* obj, unsigned int & mask)
    write_when_not_null(STOK(TOK_PRMS), obj->prms);
 }
 
+void raw_writer::operator()(const template_parm_index* obj, unsigned int & mask)
+{
+   mask = NO_VISIT;
+   obj->tree_node::visit(this);
+   write_when_not_null(STOK(TOK_TYPE), obj->type);
+   write_when_not_null(STOK(TOK_DECL), obj->decl);
+   if (obj->constant_flag)
+      WRITE_TOKEN(os, TOK_CONSTANT);
+   if (obj->readonly_flag)
+      WRITE_TOKEN(os, TOK_READONLY);
+   WRITE_NFIELD(os, STOK(TOK_IDX), obj->idx);
+   WRITE_NFIELD(os, STOK(TOK_LEVEL), obj->level);
+   WRITE_NFIELD(os, STOK(TOK_ORIG_LEVEL), obj->orig_level);
+}
+
 void raw_writer::operator()(const tree_list* obj, unsigned int & mask)
 {
    mask = NO_VISIT;
@@ -1014,6 +1037,30 @@ void raw_writer::operator()(const vector_cst* obj, unsigned int & mask)
    for (std::vector<tree_nodeRef>::const_iterator i = obj->list_of_valu.begin(); i != vend; i++)
       write_when_not_null(STOK(TOK_VALU), *i);
 }
+
+void raw_writer::operator()(const type_argument_pack* obj, unsigned int & mask)
+{
+   mask = NO_VISIT;
+   obj->type_node::visit(this);
+   write_when_not_null(STOK(TOK_ARG), obj->arg);
+}
+
+void raw_writer::operator()(const nontype_argument_pack* obj, unsigned int & mask)
+{
+   mask = NO_VISIT;
+   obj->expr_node::visit(this);
+   write_when_not_null(STOK(TOK_ARG), obj->arg);
+}
+
+void raw_writer::operator()(const expr_pack_expansion* obj, unsigned int & mask)
+{
+   mask = NO_VISIT;
+   obj->expr_node::visit(this);
+   write_when_not_null(STOK(TOK_OP), obj->op);
+   write_when_not_null(STOK(TOK_PARAM_PACKS), obj->param_packs);
+   write_when_not_null(STOK(TOK_ARG), obj->arg);
+}
+
 
 void raw_writer::operator()(const vector_type* obj, unsigned int & mask)
 {

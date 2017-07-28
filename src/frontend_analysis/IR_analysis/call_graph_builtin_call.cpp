@@ -238,6 +238,7 @@ CallGraphBuiltinCall::lookForBuiltinCall(const tree_nodeRef TN)
       case translation_unit_decl_K:
       case error_mark_K:
       case using_decl_K:
+      case template_decl_K:
       case tree_reindex_K:
       default:
       {

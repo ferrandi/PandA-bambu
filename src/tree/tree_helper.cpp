@@ -302,6 +302,7 @@ unsigned int tree_helper::Size(const tree_nodeConstRef t)
       case CharType_K:
       case nullptr_type_K:
       case type_pack_expansion_K:
+      case type_argument_pack_K:
       case real_type_K:
       case complex_type_K:
       case function_type_K:
@@ -442,7 +443,7 @@ unsigned int tree_helper::Size(const tree_nodeConstRef t)
       case gimple_call_K:
       case function_decl_K:
       {
-         return_value =  32;
+         return_value =  32;//static_cast<unsigned int>(GccWrapper::CGetPointerSize(parameters));
          break;
       }
       case array_range_ref_K:
@@ -462,6 +463,7 @@ unsigned int tree_helper::Size(const tree_nodeConstRef t)
       case target_mem_ref_K:
       case template_type_parm_K:
       case translation_unit_decl_K:
+      case template_decl_K:
       case using_decl_K:
       case tree_list_K:
       case tree_vec_K:
@@ -719,6 +721,7 @@ std::string tree_helper::name_type(const tree_managerConstRef tm, int unsigned i
       case target_mem_ref_K:
       case target_mem_ref461_K:
       case template_type_parm_K:
+      case type_argument_pack_K:
       case tree_vec_K:
       case typename_type_K:
       case error_mark_K:
@@ -1166,6 +1169,7 @@ void tree_helper::get_used_variables(bool first_level_only, const tree_nodeRef t
       case target_mem_ref_K:
       case target_mem_ref461_K:
       case translation_unit_decl_K:
+      case template_decl_K:
       case using_decl_K:
       case type_decl_K:
       case error_mark_K:
@@ -1563,6 +1567,7 @@ const std::unordered_set<unsigned int> tree_helper::RecursiveGetTypesToBeDeclare
       case target_mem_ref_K:
       case target_mem_ref461_K:
       case template_type_parm_K:
+      case type_argument_pack_K:
       case tree_list_K:
       case tree_vec_K:
       case typename_type_K:
@@ -1696,7 +1701,9 @@ tree_nodeRef tree_helper::GetFunctionReturnType(const tree_nodeRef function)
       case target_mem_ref_K:
       case target_mem_ref461_K:
       case template_type_parm_K:
+      case type_argument_pack_K:
       case translation_unit_decl_K:
+      case template_decl_K:
       case using_decl_K:
       case tree_list_K:
       case tree_vec_K:
@@ -1803,7 +1810,9 @@ unsigned int tree_helper::get_pointed_type(const tree_managerConstRef TM, const 
       case target_mem_ref_K:
       case target_mem_ref461_K:
       case template_type_parm_K:
+      case type_argument_pack_K:
       case translation_unit_decl_K:
+      case template_decl_K:
       case using_decl_K:
       case tree_list_K:
       case tree_vec_K:
@@ -1882,6 +1891,7 @@ const tree_nodeConstRef tree_helper::CGetPointedType(const tree_nodeConstRef poi
       case target_mem_ref_K:
       case target_mem_ref461_K:
       case template_type_parm_K:
+      case type_argument_pack_K:
       case tree_list_K:
       case tree_vec_K:
       case typename_type_K:
@@ -1940,10 +1950,12 @@ std::string tree_helper::get_type_name(const tree_managerConstRef  TM, const uns
       if(GET_NODE(tn->name)->get_kind() == type_decl_K)
       {
          name = GetPointer<type_decl>(GET_NODE(tn->name))->name;
+         if(!name)
+            return "Internal_" + boost::lexical_cast<std::string>(type_index);
       }
       else
          name = tn->name;
-      THROW_ASSERT(GET_NODE(name)->get_kind() == identifier_node_K, "Not an identifier node");
+      THROW_ASSERT(name && GET_NODE(name)->get_kind() == identifier_node_K, "Not an identifier node:" + STR(index));
       identifier_node * id = GetPointer<identifier_node>(GET_NODE(name));
       return id->strg;
    }
@@ -2293,6 +2305,7 @@ const tree_nodeConstRef tree_helper::CGetType (const tree_nodeConstRef node)
       case type_decl_K:
       case parm_decl_K:
       case var_decl_K:
+      case template_decl_K:
       {
          const decl_node *dn = GetPointer<const decl_node>(node);
          return GET_NODE(dn->type);
@@ -3031,6 +3044,7 @@ bool tree_helper::is_a_variable(const tree_managerConstRef TM, const unsigned in
       case target_mem_ref_K:
       case target_mem_ref461_K:
       case translation_unit_decl_K:
+      case template_decl_K:
       case using_decl_K:
       case tree_list_K:
       case tree_vec_K:
@@ -3235,6 +3249,7 @@ static unsigned int check_for_simple_pointer_arithmetic(tree_nodeRef node)
       case namespace_decl_K:
       case result_decl_K:
       case translation_unit_decl_K:
+      case template_decl_K:
       case using_decl_K:
       case type_decl_K:
       case CASE_FAKE_NODES:
@@ -3273,7 +3288,6 @@ static unsigned int check_for_simple_pointer_arithmetic(tree_nodeRef node)
       case bit_not_expr_K:
       case buffer_ref_K:
       case card_expr_K:
-      case cast_expr_K:
       case cleanup_point_expr_K:
       case conj_expr_K:
       case convert_expr_K:
@@ -3310,6 +3324,7 @@ static unsigned int check_for_simple_pointer_arithmetic(tree_nodeRef node)
       case array_range_ref_K:
       case error_mark_K:
       case target_expr_K:
+      case paren_expr_K:
       {
          return 0;
       }
@@ -3493,6 +3508,7 @@ unsigned int tree_helper::get_base_index(const tree_managerConstRef TM, const un
                      case target_mem_ref_K:
                      case target_mem_ref461_K:
                      case translation_unit_decl_K:
+                     case template_decl_K:
                      case using_decl_K:
                      case tree_list_K:
                      case tree_vec_K:
@@ -3538,6 +3554,7 @@ unsigned int tree_helper::get_base_index(const tree_managerConstRef TM, const un
             case target_mem_ref_K:
             case target_mem_ref461_K:
             case translation_unit_decl_K:
+            case template_decl_K:
             case using_decl_K:
             case tree_list_K:
             case tree_vec_K:
@@ -3599,6 +3616,7 @@ unsigned int tree_helper::get_base_index(const tree_managerConstRef TM, const un
             case statement_list_K:
             case target_expr_K:
             case translation_unit_decl_K:
+            case template_decl_K:
             case using_decl_K:
             case target_mem_ref_K:
             case target_mem_ref461_K:
@@ -3718,6 +3736,7 @@ unsigned int tree_helper::get_base_index(const tree_managerConstRef TM, const un
       case label_decl_K:
       case namespace_decl_K:
       case translation_unit_decl_K:
+      case template_decl_K:
       case using_decl_K:
       case type_decl_K:
       case array_range_ref_K:
@@ -3738,7 +3757,6 @@ unsigned int tree_helper::get_base_index(const tree_managerConstRef TM, const un
       case bit_not_expr_K:
       case buffer_ref_K:
       case card_expr_K:
-      case cast_expr_K:
       case cleanup_point_expr_K:
       case conj_expr_K:
       case convert_expr_K:
@@ -3769,6 +3787,7 @@ unsigned int tree_helper::get_base_index(const tree_managerConstRef TM, const un
       case vec_unpack_float_hi_expr_K:
       case vec_unpack_float_lo_expr_K:
       case error_mark_K:
+      case paren_expr_K:
       case CASE_CPP_NODES:
       case CASE_FAKE_NODES:
       case CASE_GIMPLE_NODES:
@@ -3980,6 +3999,7 @@ bool tree_helper::is_fully_resolved(const tree_managerConstRef TM, const unsigne
       case label_decl_K:
       case namespace_decl_K:
       case translation_unit_decl_K:
+      case template_decl_K:
       case using_decl_K:
       case type_decl_K:
       case array_range_ref_K:
@@ -4000,7 +4020,6 @@ bool tree_helper::is_fully_resolved(const tree_managerConstRef TM, const unsigne
       case bit_not_expr_K:
       case buffer_ref_K:
       case card_expr_K:
-      case cast_expr_K:
       case cleanup_point_expr_K:
       case conj_expr_K:
       case convert_expr_K:
@@ -4036,6 +4055,7 @@ bool tree_helper::is_fully_resolved(const tree_managerConstRef TM, const unsigne
       case CASE_GIMPLE_NODES:
       case CASE_PRAGMA_NODES:
       case CASE_TYPE_NODES:
+      case paren_expr_K:
       default:
          THROW_ERROR_CODE(NODE_NOT_YET_SUPPORTED_EC, "tree_helper::get_base_index - variable type is not supported: " + STR(index) + "-" +std::string(node->get_kind_text()));
    }
@@ -4561,7 +4581,6 @@ std::string tree_helper::op_symbol(const tree_node * op)
       case aggr_init_expr_K:
       case card_expr_K:
       case case_label_expr_K:
-      case cast_expr_K:
       case catch_expr_K:
       case cleanup_point_expr_K:
       case complex_expr_K:
@@ -4627,6 +4646,7 @@ std::string tree_helper::op_symbol(const tree_node * op)
       case widen_mult_lo_expr_K:
       case with_size_expr_K:
       case error_mark_K:
+      case paren_expr_K:
       case CASE_CPP_NODES:
       case CASE_CST_NODES:
       case CASE_DECL_NODES:
@@ -5142,6 +5162,7 @@ std::string tree_helper::print_type(const tree_managerConstRef TM, unsigned int 
                case target_mem_ref_K:
                case target_mem_ref461_K:
                case template_type_parm_K:
+               case type_argument_pack_K:
                case tree_list_K:
                case tree_vec_K:
                case typename_type_K:
@@ -5365,6 +5386,7 @@ std::string tree_helper::print_type(const tree_managerConstRef TM, unsigned int 
                   case target_mem_ref_K:
                   case target_mem_ref461_K:
                   case translation_unit_decl_K:
+                  case template_decl_K:
                   case using_decl_K:
                   case tree_list_K:
                   case tree_vec_K:
@@ -5485,7 +5507,9 @@ std::string tree_helper::print_type(const tree_managerConstRef TM, unsigned int 
       case target_mem_ref_K:
       case target_mem_ref461_K:
       case template_type_parm_K:
+      case type_argument_pack_K:
       case translation_unit_decl_K:
+      case template_decl_K:
       case using_decl_K:
       case tree_vec_K:
       case typename_type_K:
@@ -5810,6 +5834,7 @@ bool tree_helper::is_packed(const tree_managerConstRef TreeM, unsigned int node_
       case reference_type_K:
       case set_type_K:
       case template_type_parm_K:
+      case type_argument_pack_K:
       case typename_type_K:
       case vector_type_K:
       case void_type_K:
@@ -5945,6 +5970,7 @@ bool tree_helper::is_packed_access(const tree_managerConstRef TreeM, unsigned in
       case mult_highpart_expr_K:
       case ne_expr_K:
       case ordered_expr_K:
+      case paren_expr_K:
       case plus_expr_K:
       case pointer_plus_expr_K:
       case postdecrement_expr_K:
@@ -5998,6 +6024,7 @@ bool tree_helper::is_packed_access(const tree_managerConstRef TreeM, unsigned in
       case parm_decl_K:
       case result_decl_K:
       case translation_unit_decl_K:
+      case template_decl_K:
       case using_decl_K:
       case type_decl_K:
       case CASE_FAKE_NODES:
@@ -6021,7 +6048,6 @@ bool tree_helper::is_packed_access(const tree_managerConstRef TreeM, unsigned in
       case bit_not_expr_K:
       case buffer_ref_K:
       case card_expr_K:
-      case cast_expr_K:
       case cleanup_point_expr_K:
       case conj_expr_K:
       case convert_expr_K:
@@ -6087,6 +6113,8 @@ void tree_helper::accessed_greatest_bitsize(const tree_managerConstRef TreeM, tr
          for (std::vector<tree_nodeRef>::const_iterator fli = field_list.begin(); fli != flend; fli++)
          {
             if(GET_NODE(*fli)->get_kind() == type_decl_K) continue;
+            if(GET_NODE(*fli)->get_kind() == const_decl_K) continue;
+            if(GET_NODE(*fli)->get_kind() == template_decl_K) continue;
             if(GET_NODE(*fli)->get_kind() == function_decl_K) continue;
             if(GET_NODE(*fli)->get_kind() == var_decl_K)
                accessed_greatest_bitsize(TreeM, GET_NODE(GetPointer<var_decl>(GET_NODE(*fli))->type), GET_INDEX_NODE(GetPointer<var_decl>(GET_NODE(*fli))->type), bitsize);
@@ -6166,7 +6194,9 @@ void tree_helper::accessed_greatest_bitsize(const tree_managerConstRef TreeM, tr
       case target_mem_ref_K:
       case target_mem_ref461_K:
       case template_type_parm_K:
+      case type_argument_pack_K:
       case translation_unit_decl_K:
+      case template_decl_K:
       case using_decl_K:
       case tree_list_K:
       case tree_vec_K:
@@ -6184,7 +6214,7 @@ void tree_helper::accessed_greatest_bitsize(const tree_managerConstRef TreeM, tr
       case CASE_TERNARY_EXPRESSION:
       case CASE_UNARY_EXPRESSION:
       default:
-         THROW_ERROR("elements not yet supported: "+type_node->get_kind_text() + STR(type_node->index));
+         THROW_ERROR("elements not yet supported: "+type_node->get_kind_text() + " " + STR(type_node->index));
    }
 
 }
@@ -6207,6 +6237,8 @@ void tree_helper::accessed_minimum_bitsize(const tree_managerConstRef TreeM, tre
          for (std::vector<tree_nodeRef>::const_iterator fli = field_list.begin(); fli != flend; fli++)
          {
             if(GET_NODE(*fli)->get_kind() == type_decl_K) continue;
+            if(GET_NODE(*fli)->get_kind() == const_decl_K) continue;
+            if(GET_NODE(*fli)->get_kind() == template_decl_K) continue;
             if(GET_NODE(*fli)->get_kind() == function_decl_K) continue;
             if(GET_NODE(*fli)->get_kind() == var_decl_K)
                accessed_minimum_bitsize(TreeM, GET_NODE(GetPointer<var_decl>(GET_NODE(*fli))->type), GET_INDEX_NODE(GetPointer<var_decl>(GET_NODE(*fli))->type), bitsize);
@@ -6282,7 +6314,9 @@ void tree_helper::accessed_minimum_bitsize(const tree_managerConstRef TreeM, tre
       case target_mem_ref_K:
       case target_mem_ref461_K:
       case template_type_parm_K:
+      case type_argument_pack_K:
       case translation_unit_decl_K:
+      case template_decl_K:
       case using_decl_K:
       case tree_list_K:
       case tree_vec_K:
@@ -6361,6 +6395,7 @@ size_t tree_helper::AllocatedMemorySize(const tree_nodeConstRef parameter)
                case namespace_decl_K:
                case result_decl_K:
                case translation_unit_decl_K:
+               case template_decl_K:
                case using_decl_K:
                case type_decl_K:
                case bit_field_ref_K:
@@ -6591,6 +6626,7 @@ size_t tree_helper::AllocatedMemorySize(const tree_nodeConstRef parameter)
       case namespace_decl_K:
       case obj_type_ref_K:
       case offset_type_K:
+      case paren_expr_K:
       case pointer_type_K:
       case qual_union_type_K:
       case real_cst_K:
@@ -6602,7 +6638,9 @@ size_t tree_helper::AllocatedMemorySize(const tree_nodeConstRef parameter)
       case target_mem_ref_K:
       case target_mem_ref461_K:
       case template_type_parm_K:
+      case type_argument_pack_K:
       case translation_unit_decl_K:
+      case template_decl_K:
       case using_decl_K:
       case tree_list_K:
       case tree_vec_K:
@@ -6622,7 +6660,6 @@ size_t tree_helper::AllocatedMemorySize(const tree_nodeConstRef parameter)
       case bit_not_expr_K:
       case buffer_ref_K:
       case card_expr_K:
-      case cast_expr_K:
       case cleanup_point_expr_K:
       case conj_expr_K:
       case convert_expr_K:
@@ -6799,6 +6836,7 @@ size_t tree_helper::CountPointers(const tree_nodeConstRef tn)
       case target_mem_ref_K:
       case target_mem_ref461_K:
       case template_type_parm_K:
+      case type_argument_pack_K:
       case tree_list_K:
       case tree_vec_K:
       case typename_type_K:
@@ -6808,6 +6846,7 @@ size_t tree_helper::CountPointers(const tree_nodeConstRef tn)
       case namespace_decl_K:
       case result_decl_K:
       case translation_unit_decl_K:
+      case template_decl_K:
       case using_decl_K:
       case type_decl_K:
       case var_decl_K:
@@ -7102,6 +7141,7 @@ void tree_helper::compute_ssa_uses_rec_ptr(const tree_nodeRef curr_tn, std::set<
       case CASE_TYPE_NODES:
       case error_mark_K:
       case gimple_while_K:
+      case template_decl_K:
       {
          THROW_UNREACHABLE("Node is " + curr_tn->get_kind_text());
          break;
@@ -7367,6 +7407,7 @@ void tree_helper::ComputeSsaUses(const tree_nodeRef tn, TreeNodeMap<size_t> & ss
       case statement_list_K:
       case target_expr_K:
       case translation_unit_decl_K:
+      case template_decl_K:
       case using_decl_K:
       case tree_vec_K:
       case type_decl_K:
@@ -7745,6 +7786,7 @@ void tree_helper::get_required_values(const tree_managerConstRef TM, std::vector
       case statement_list_K:
       case target_expr_K:
       case translation_unit_decl_K:
+      case template_decl_K:
       case using_decl_K:
       case tree_vec_K:
       case type_decl_K:

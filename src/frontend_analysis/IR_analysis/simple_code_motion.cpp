@@ -565,7 +565,6 @@ FunctionFrontendFlowStep_Movable simple_code_motion::CheckMovable(const unsigned
       case arrow_expr_K:
       case buffer_ref_K:
       case card_expr_K:
-      case cast_expr_K:
       case cleanup_point_expr_K:
       case conj_expr_K:
       case exit_expr_K:
@@ -600,6 +599,7 @@ FunctionFrontendFlowStep_Movable simple_code_motion::CheckMovable(const unsigned
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--No because right part is " + right->get_kind_text());
          return FunctionFrontendFlowStep_Movable::UNMOVABLE;
       }
+      case paren_expr_K:
       default:
       {
          THROW_UNREACHABLE("");

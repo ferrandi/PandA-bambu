@@ -234,10 +234,22 @@ DesignFlowStep_Status mem_cg_ext::Exec()
                         const auto src_type = tree_helper::CGetType(GET_NODE(mr_rhs->op0));
                         const pointer_type * dst_ptr_t = GetPointer<const pointer_type>(dst_type);
                         const pointer_type * src_ptr_t = GetPointer<const pointer_type>(src_type);
-                        THROW_ASSERT(dst_ptr_t, "");
-                        THROW_ASSERT(src_ptr_t, "");
-                        const auto dst_size = tree_helper::Size(dst_ptr_t->ptd);
-                        const auto src_size = tree_helper::Size(src_ptr_t->ptd);
+                        unsigned int dst_size;
+                        if(dst_ptr_t)
+                           dst_size = tree_helper::Size(dst_ptr_t->ptd);
+                        else
+                        {
+                           const reference_type * dst_rptr_t = GetPointer<const reference_type>(dst_type);
+                           dst_size = tree_helper::Size(dst_rptr_t->refd);
+                        }
+                        unsigned int src_size;
+                        if(src_ptr_t)
+                           src_size = tree_helper::Size(src_ptr_t->ptd);
+                        else
+                        {
+                           const reference_type * src_rptr_t = GetPointer<const reference_type>(src_type);
+                           src_size = tree_helper::Size(src_rptr_t->refd);
+                        }
                         if (src_size != dst_size)
                         {
                            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,

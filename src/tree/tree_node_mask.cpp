@@ -197,6 +197,12 @@ void tree_node_mask::operator()(const case_label_expr* , unsigned int & mask)
    SET_VISIT_INDEX(mask,case_label_expr::expr_node);
 }
 
+void tree_node_mask::operator()(const cast_expr* , unsigned int & mask)
+{
+   mask = NO_VISIT;
+   SET_VISIT_INDEX(mask,cast_expr::expr_node);
+}
+
 void tree_node_mask::operator()(const complex_cst* , unsigned int & mask)
 {
    mask = NO_VISIT;
@@ -414,6 +420,11 @@ void tree_node_mask::operator()(const template_decl* , unsigned int & mask)
    SET_VISIT_INDEX(mask,template_decl::decl_node);
 }
 
+void tree_node_mask::operator()(const template_parm_index* , unsigned int & mask)
+{
+   mask = NO_VISIT;
+}
+
 void tree_node_mask::operator()(const tree_list* , unsigned int & mask)
 {
    mask = NO_VISIT;
@@ -453,6 +464,24 @@ void tree_node_mask::operator()(const vector_cst* , unsigned int & mask)
 {
    mask = NO_VISIT;
    SET_VISIT_INDEX(mask,vector_cst::cst_node);
+}
+
+void tree_node_mask::operator()(const type_argument_pack* , unsigned int & mask)
+{
+   mask = NO_VISIT;
+   SET_VISIT_INDEX(mask,type_argument_pack::type_node);
+}
+
+void tree_node_mask::operator()(const nontype_argument_pack* , unsigned int & mask)
+{
+   mask = NO_VISIT;
+   SET_VISIT_INDEX(mask,nontype_argument_pack::expr_node);
+}
+
+void tree_node_mask::operator()(const expr_pack_expansion* , unsigned int & mask)
+{
+   mask = NO_VISIT;
+   SET_VISIT_INDEX(mask,expr_pack_expansion::expr_node);
 }
 
 void tree_node_mask::operator()(const vector_type* , unsigned int & mask)

@@ -2505,6 +2505,7 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
                      case error_mark_K:
                      case using_decl_K:
                      case type_decl_K:
+                     case template_decl_K:
                      default:
                         THROW_ERROR("addr_expr-array_ref[0] pattern not supported: " + std::string(addr_expr_op->get_kind_text())+ " @" + STR(addr_expr_op_idx));
                   }
@@ -2551,6 +2552,7 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
             case target_mem_ref_K:
             case target_mem_ref461_K:
             case translation_unit_decl_K:
+            case template_decl_K:
             case error_mark_K:
             case using_decl_K:
             case tree_list_K:
@@ -2606,6 +2608,7 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
       case aggr_init_expr_K:
       case case_label_expr_K:
       case identifier_node_K:
+      case paren_expr_K:
       case ssa_name_K:
       case statement_list_K:
       case target_mem_ref_K:
@@ -2619,6 +2622,7 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
       case parm_decl_K:
       case result_decl_K:
       case translation_unit_decl_K:
+      case template_decl_K:
       case error_mark_K:
       case using_decl_K:
       case type_decl_K:
@@ -2628,7 +2632,6 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
       case bit_not_expr_K:
       case buffer_ref_K:
       case card_expr_K:
-      case cast_expr_K:
       case cleanup_point_expr_K:
       case conj_expr_K:
       case convert_expr_K:

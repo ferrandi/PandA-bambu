@@ -766,6 +766,7 @@ void tree_manager::collapse_into(const unsigned int & funID, std::unordered_map<
       case statement_list_K:
       case target_expr_K:
       case translation_unit_decl_K:
+      case template_decl_K:
       case using_decl_K:
       case tree_list_K:
       case tree_vec_K:
@@ -1097,6 +1098,7 @@ void tree_manager::RecursiveReplaceTreeNode(tree_nodeRef & tn, const tree_nodeRe
       case statement_list_K:
       case target_expr_K:
       case translation_unit_decl_K:
+      case template_decl_K:
       case using_decl_K:
       case tree_vec_K:
       case type_decl_K:
@@ -1264,6 +1266,7 @@ void tree_manager::erase_usage_info(tree_nodeRef tn, tree_nodeRef stmt)
       case statement_list_K:
       case target_expr_K:
       case translation_unit_decl_K:
+      case template_decl_K:
       case using_decl_K:
       case tree_list_K:
       case type_decl_K:
@@ -1423,6 +1426,7 @@ void tree_manager::insert_usage_info(tree_nodeRef tn, tree_nodeRef stmt)
       case statement_list_K:
       case target_expr_K:
       case translation_unit_decl_K:
+      case template_decl_K:
       case using_decl_K:
       case tree_list_K:
       case tree_vec_K:

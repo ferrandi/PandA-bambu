@@ -94,18 +94,18 @@ REF_FORWARD_DECL(WeightInformation);
 /// sequence of obj that have to be specialized
 #define OBJ_SPECIALIZED_SEQ (tree_node) (WeightedNode) (attr) (srcp) (decl_node)\
          (expr_node) (gimple_node) (unary_expr) (binary_expr) (ternary_expr) (quaternary_expr) (type_node) (memory_tag) (cst_node) (error_mark)\
-         (array_type) (gimple_asm) (baselink) (gimple_bind) (binfo) (block) (call_expr) (aggr_init_expr) (gimple_call) (case_label_expr) (complex_cst)\
+         (array_type) (gimple_asm) (baselink) (gimple_bind) (binfo) (block) (call_expr) (aggr_init_expr) (gimple_call) (case_label_expr) (cast_expr) (complex_cst)\
          (complex_type) (gimple_cond) (const_decl) (constructor) (enumeral_type) \
          (expr_stmt) (field_decl) (function_decl) (function_type) (gimple_assign) (gimple_goto) (handler) (identifier_node)\
          (integer_cst) (integer_type) (gimple_label) (method_type) (namespace_decl) (overload) (parm_decl) (gimple_phi)\
-         (pointer_type) (real_cst) (real_type) (record_type) (reference_type) (result_decl) (gimple_return) (return_stmt) (scope_ref)\
-         (ssa_name) (statement_list) (string_cst) (gimple_switch) (template_decl) (tree_list) (tree_vec) (try_block)\
-         (type_decl) (union_type) (var_decl) (vector_cst) (vector_type) (target_expr) (target_mem_ref) (target_mem_ref461)\
+         (pointer_type) (real_cst) (real_type) (record_type) (reference_type) (result_decl) (gimple_return) (return_stmt) (expr_pack_expansion) (scope_ref)\
+         (ssa_name) (statement_list) (string_cst) (gimple_switch) (template_decl) (template_parm_index) (tree_list) (tree_vec) (try_block)\
+         (type_decl) (union_type) (var_decl) (vector_cst) (vector_type) (type_argument_pack) (nontype_argument_pack) (target_expr) (target_mem_ref) (target_mem_ref461)\
          (bloc) (null_node) (gimple_pragma) (issue_pragma) (blackbox_pragma) (profiling_pragma) (statistical_profiling) \
          (map_pragma) (call_hw_pragma) (call_point_hw_pragma) (omp_pragma) (omp_critical_pragma)\
          (omp_declare_simd_pragma) (omp_for_pragma) (omp_parallel_pragma) (omp_sections_pragma) (omp_parallel_sections_pragma) (omp_section_pragma) (omp_simd_pragma) (omp_target_pragma) (omp_task_pragma) (gimple_while) (gimple_for) (gimple_multi_way_if) (tree_reindex)
 
-#define OBJ_NOT_SPECIALIZED_SEQ (translation_unit_decl) (label_decl) (void_type) (template_type_parm) (set_type) (qual_union_type) (offset_type) (lang_type) (CharType) (nullptr_type) (type_pack_expansion) (boolean_type) (template_parm_index) (typename_type) (none) (vec_new_expr) UNARY_EXPRESSION_TREE_NODES BINARY_EXPRESSION_TREE_NODES TERNARY_EXPRESSION_TREE_NODES (ctor_initializer) (trait_expr) (template_id_expr) (placeholder_expr) (new_expr) (gimple_resx) (gimple_predict) (gimple_nop) QUATERNARY_EXPRESSION_TREE_NODES (modop_expr) (PointToSolution) (omp_atomic_pragma) (using_decl) (void_cst)
+#define OBJ_NOT_SPECIALIZED_SEQ (translation_unit_decl) (label_decl) (void_type) (template_type_parm) (set_type) (qual_union_type) (offset_type) (lang_type) (CharType) (nullptr_type) (type_pack_expansion) (boolean_type) (typename_type) (none) (vec_new_expr) UNARY_EXPRESSION_TREE_NODES BINARY_EXPRESSION_TREE_NODES TERNARY_EXPRESSION_TREE_NODES (ctor_initializer) (trait_expr) (template_id_expr) (placeholder_expr) (new_expr) (gimple_resx) (gimple_predict) (gimple_nop) QUATERNARY_EXPRESSION_TREE_NODES (modop_expr) (PointToSolution) (omp_atomic_pragma) (using_decl) (void_cst)
 
 
 #include "visitor.hpp"
@@ -358,7 +358,6 @@ class TreeNodeMap : public std::map<tree_nodeRef, value, TreeNodeSorter>
    case bit_not_expr_K:\
    case buffer_ref_K:\
    case card_expr_K:\
-   case cast_expr_K:\
    case cleanup_point_expr_K:\
    case conj_expr_K:\
    case convert_expr_K:\
@@ -375,6 +374,7 @@ class TreeNodeMap : public std::map<tree_nodeRef, value, TreeNodeSorter>
    case negate_expr_K:\
    case non_lvalue_expr_K:\
    case nop_expr_K:\
+   case paren_expr_K:\
    case realpart_expr_K:\
    case reference_expr_K:\
    case reinterpret_cast_expr_K:\
@@ -404,7 +404,6 @@ class TreeNodeMap : public std::map<tree_nodeRef, value, TreeNodeSorter>
    case bit_not_expr_K:\
    case buffer_ref_K:\
    case card_expr_K:\
-   case cast_expr_K:\
    case cleanup_point_expr_K:\
    case conj_expr_K:\
    case convert_expr_K:\
@@ -576,7 +575,8 @@ class TreeNodeMap : public std::map<tree_nodeRef, value, TreeNodeSorter>
    case typename_type_K:\
    case union_type_K:\
    case vector_type_K:\
-   case void_type_K
+   case void_type_K:\
+   case type_argument_pack_K
 
 /**
  * This macro collects all case labels for pragma objects
@@ -629,13 +629,16 @@ class TreeNodeMap : public std::map<tree_nodeRef, value, TreeNodeSorter>
    case overload_K:\
    case return_stmt_K:\
    case scope_ref_K:\
-   case template_decl_K:\
    case template_id_expr_K:\
    case template_parm_index_K:\
    case trait_expr_K:\
    case try_block_K:\
    case vec_new_expr_K:\
-   case while_stmt_K
+   case while_stmt_K:\
+   case nontype_argument_pack_K:\
+   case cast_expr_K:\
+   case expr_pack_expansion_K
+/// NOTE that cast_expr is a unary expression but it could not be included in the CASE_UNARY_EXPRESSION because the operand could be null
 
 /**
  * This macro collects all case labels for declaration nodes
@@ -651,7 +654,8 @@ class TreeNodeMap : public std::map<tree_nodeRef, value, TreeNodeSorter>
    case translation_unit_decl_K:\
    case type_decl_K:\
    case using_decl_K:\
-   case var_decl_K
+   case var_decl_K:\
+   case template_decl_K
 
 /**
  * This macro collects all case labels for cast nodes
@@ -1789,6 +1793,9 @@ struct aggr_init_expr : public call_expr
       /// constructor
       aggr_init_expr(unsigned int i);
 
+      /// operand count
+      int ctor;
+
       /// slot is the slot which was allocated for this expression
       tree_nodeRef slot;
 
@@ -1805,7 +1812,7 @@ struct aggr_init_expr : public call_expr
       virtual void visit(tree_node_visitor * const v) const;
 
       /// visitor enum
-      enum {GETID(call_expr)=0, GETID(slot)};
+      enum {GETID(call_expr)=0, GETID(ctor),  GETID(slot)};
 };
 
 /**
@@ -1901,7 +1908,30 @@ struct case_label_expr : public expr_node
  * The walker for this struct is
  *   #(TOK_CAST_EXPR wunary_expr);
 */
-CREATE_TREE_NODE_CLASS(cast_expr,unary_expr);
+struct cast_expr : public expr_node
+{
+      /// constructor
+      cast_expr(unsigned int i) : expr_node(i) {}
+
+      /// op is casted node
+      tree_nodeRef op;
+
+      /// Redefinition of get_kind_text.
+      GET_KIND_TEXT(cast_expr)
+
+      /// Redefinition of get_kind.
+      GET_KIND(cast_expr)
+
+      /**
+       * virtual function used to traverse the tree_node data structure.
+       * @param v is a reference to the tree_node visitor class
+       */
+      virtual void visit(tree_node_visitor * const v) const;
+
+      /// visitor enum
+      enum {GETID(expr_node)=0, GETID(op)};
+
+};
 
 /**
  * This struct specifies the catch_expr node.
@@ -1959,7 +1989,42 @@ CREATE_TREE_NODE_CLASS(nullptr_type,type_node);
 */
 CREATE_TREE_NODE_CLASS(type_pack_expansion,type_node);
 
+/**
+ * Represents an expression that will be expanded into a list of
+ * expressions when instantiated with one or more argument packs.
+ *
+ * EXPR_PACK_EXPANSION plays precisely the same role as TYPE_PACK_EXPANSION,
+ * but will be used for expressions.
+*/
+struct expr_pack_expansion : public expr_node
+{
+  /// constructor
+  expr_pack_expansion(unsigned int i) : expr_node(i) {}
 
+  /// PACK_EXPANSION_PATTERN
+  tree_nodeRef op;
+
+  /// PACK_EXPANSION_PARAMETER_PACKS
+  tree_nodeRef param_packs;
+
+  /// PACK_EXPANSION_EXTRA_ARGS
+  tree_nodeRef arg;
+
+  /// Redefinition of get_kind_text.
+  GET_KIND_TEXT(expr_pack_expansion)
+
+  /// Redefinition of get_kind.
+  GET_KIND(expr_pack_expansion)
+
+  /**
+   * virtual function used to traverse the tree_node data structure.
+   * @param v is a reference to the tree_node visitor class
+   */
+  virtual void visit(tree_node_visitor * const v) const;
+
+  /// visitor enum
+  enum {GETID(expr_node)=0, GETID(op), GETID(param_packs), GETID(arg)};
+};
 
 /**
  * This struct specifies the cleanup_point_expr node.
@@ -3542,6 +3607,13 @@ CREATE_TREE_NODE_CLASS(qual_union_type,type_node);
 CREATE_TREE_NODE_CLASS(range_expr,binary_expr);
 
 /**
+ * Represents a re-association barrier for floating point expressions
+ * like explicit parenthesis in fortran.
+*/
+CREATE_TREE_NODE_CLASS(paren_expr,unary_expr);
+
+
+/**
  * This struct specifies the rdiv_expr node.
  * Division for real result.
 */
@@ -4486,10 +4558,68 @@ struct template_decl : public decl_node
 */
 CREATE_TREE_NODE_CLASS(template_id_expr,expr_node);
 
-/**
- * This struct represents a template parameter index
-*/
-CREATE_TREE_NODE_CLASS(template_parm_index,tree_node);
+/* Index into a template parameter list.  The TEMPLATE_PARM_IDX gives
+   the index (from 0) of the parameter, while the TEMPLATE_PARM_LEVEL
+   gives the level (from 1) of the parameter.
+
+   Here's an example:
+
+   template <class T> // Index 0, Level 1.
+   struct S
+   {
+      template <class U, // Index 0, Level 2.
+      class V> // Index 1, Level 2.
+      void f();
+   };
+
+   The DESCENDANTS will be a chain of TEMPLATE_PARM_INDEXs descended
+   from this one.  The first descendant will have the same IDX, but
+   its LEVEL will be one less.  The TREE_CHAIN field is used to chain
+   together the descendants.  The TEMPLATE_PARM_DECL is the
+   declaration of this parameter, either a TYPE_DECL or CONST_DECL.
+   The TEMPLATE_PARM_ORIG_LEVEL is the LEVEL of the most distant
+   parent, i.e., the LEVEL that the parameter originally had when it
+   was declared.  For example, if we instantiate S<int>, we will have:
+
+   struct S<int>
+   {
+     template <class U, // Index 0, Level 1, Orig Level 2
+          class V> // Index 1, Level 1, Orig Level 2
+     void f();
+   };
+
+   The LEVEL is the level of the parameter when we are worrying about
+   the types of things; the ORIG_LEVEL is the level when we are
+   worrying about instantiating things.  */
+struct template_parm_index : public tree_node
+{
+      tree_nodeRef type;
+      tree_nodeRef decl;
+      bool constant_flag;
+      bool readonly_flag;
+      int idx;
+      int level;
+      int orig_level;
+
+      /// constructor
+      template_parm_index(unsigned int i) : tree_node(i), constant_flag(false), readonly_flag(false), idx(0), level(0), orig_level(0)  {}
+
+      /// Redefinition of get_kind_text.
+      GET_KIND_TEXT(template_parm_index)
+
+      /// Redefinition of get_kind.
+      GET_KIND(template_parm_index)
+
+      /**
+       * virtual function used to traverse the tree_node data structure.
+       * @param v is a reference to the tree_node visitor class
+       */
+      virtual void visit(tree_node_visitor * const v) const;
+
+      /// visitor enum
+      enum {GETID(tree_node)=0, GETID(type), GETID(decl)};
+
+};
 
 /**
  * struct definition of the template_type_parm tree node.
@@ -4497,6 +4627,81 @@ CREATE_TREE_NODE_CLASS(template_parm_index,tree_node);
  * #(TOK_TEMPLATE_TYPE_PARM type_node)
 */
 CREATE_TREE_NODE_CLASS(template_type_parm,type_node);
+
+/**
+ * Represents an argument pack of types (or templates). An argument
+ * pack stores zero or more arguments that will be used to instantiate
+ * a parameter pack.
+ *
+ * ARGUMENT_PACK_ARGS retrieves the arguments stored in the argument
+ * pack.
+ *
+ * Example:
+ *   template<typename... Values>
+ *   class tuple { ... };
+ *
+ *   tuple<int, float, double> t;
+ *
+ * Values is a (template) parameter pack. When tuple<int, float,
+ * double> is instantiated, the Values parameter pack is instantiated
+ * with the argument pack <int, float, double>. ARGUMENT_PACK_ARGS will
+   be a TREE_VEC containing int, float, and double.
+*/
+struct type_argument_pack : public type_node
+{
+   /// constructor
+   type_argument_pack(unsigned int i) : type_node(i) {}
+
+   /// arguments stored in the argument pack
+   tree_nodeRef arg;
+
+   /// Redefinition of get_kind_text.
+   GET_KIND_TEXT(type_argument_pack)
+
+   /// Redefinition of get_kind.
+   GET_KIND(type_argument_pack)
+
+   /**
+    * virtual function used to traverse the tree_node data structure.
+    * @param v is a reference to the tree_node visitor class
+    */
+   virtual void visit(tree_node_visitor * const v) const;
+
+   /// visitor enum
+   enum {GETID(type_node)=0, GETID(arg)};
+};
+
+/* Represents an argument pack of values, which can be used either for
+   non-type template arguments or function call arguments.
+
+   NONTYPE_ARGUMENT_PACK plays precisely the same role as
+   TYPE_ARGUMENT_PACK, but will be used for packing non-type template
+   arguments (e.g., "int... Dimensions") or function arguments ("const
+   Args&... args"). */
+
+struct nontype_argument_pack : public expr_node
+{
+   /// constructor
+   nontype_argument_pack(unsigned int i) : expr_node(i) {}
+
+   /// arguments stored in the argument pack
+   tree_nodeRef arg;
+
+   /// Redefinition of get_kind_text.
+   GET_KIND_TEXT(nontype_argument_pack)
+
+   /// Redefinition of get_kind.
+   GET_KIND(nontype_argument_pack)
+
+   /**
+    * virtual function used to traverse the tree_node data structure.
+    * @param v is a reference to the tree_node visitor class
+    */
+   virtual void visit(tree_node_visitor * const v) const;
+
+   /// visitor enum
+   enum {GETID(expr_node)=0, GETID(arg)};
+};
 
 /**
  * This struct specifies the a + b + c node.

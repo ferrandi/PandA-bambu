@@ -266,13 +266,13 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef current_statement,
                case indirect_ref_K:
                case imagpart_expr_K:
                case realpart_expr_K:
+               case paren_expr_K:
                   break;
                case addr_expr_K:
                case arrow_expr_K:
                case bit_not_expr_K:
                case buffer_ref_K:
                case card_expr_K:
-               case cast_expr_K:
                case cleanup_point_expr_K:
                case conj_expr_K:
                case convert_expr_K:
@@ -391,7 +391,6 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef current_statement,
                case bit_not_expr_K:
                case buffer_ref_K:
                case card_expr_K:
-               case cast_expr_K:
                case cleanup_point_expr_K:
                case conj_expr_K:
                case convert_expr_K:
@@ -407,6 +406,7 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef current_statement,
                case negate_expr_K:
                case non_lvalue_expr_K:
                case nop_expr_K:
+               case paren_expr_K:
                case realpart_expr_K:
                case reference_expr_K:
                case reinterpret_cast_expr_K:
@@ -750,6 +750,7 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef current_statement,
       case statement_list_K:
       case translation_unit_decl_K:
       case using_decl_K:
+      case template_decl_K:
       case tree_reindex_K:
       case target_expr_K:
       case error_mark_K:
