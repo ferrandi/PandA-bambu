@@ -222,11 +222,8 @@ void CheckSystemType::recursive_examinate(const tree_nodeRef & curr_tn, const un
       case gimple_assign_K:
       {
          const gimple_assign * gm = GetPointer<gimple_assign>(curr_tn);
-         std::cout << "Lpart" << std::endl;
          recursive_examinate(gm->op0);
-         std::cout << "Rpart" << std::endl;
          recursive_examinate(gm->op1);
-         std::cout << "done" << std::endl;
 
          if(gm->predicate)
          {
