@@ -155,6 +155,59 @@ int StorageValueInformation::get_compatibility_weight(unsigned int storage_value
    bool is_a_phi1 = (GET_TYPE(data, v1) & TYPE_PHI)!=0;
    vertex v2 = vw2vertex.find(var2)->second;
    bool is_a_phi2 = (GET_TYPE(data, v2) & TYPE_PHI)!=0;
+
+   // BIAGIO
+   // prendo i successori della operazione v1 e v2
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, DEBUG_LEVEL_VERY_PEDANTIC,
+                  "-->[D]Evaluation storage values (vars): [" +
+                  STR(HLS_mgr->get_tree_manager()->CGetTreeNode(var1)) + "]"
+                  " and [" + STR(HLS_mgr->get_tree_manager()->CGetTreeNode(var2)) + "]");
+   const auto it_succ_v1 = boost::adjacent_vertices(v1, *data);
+   const auto it_succ_v2 = boost::adjacent_vertices(v2, *data);
+
+   // Verifico se v1 e v2 pilotano moltiplicazioni
+   std::set<unsigned int> mult_succ_of_v1;
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, DEBUG_LEVEL_VERY_PEDANTIC,
+                  "-->[D]Statement with USE first variable");
+   std::for_each(it_succ_v1.first, it_succ_v1.second,
+                 [this, &mult_succ_of_v1] (const vertex succ) {
+                   const std::string op_label = data->CGetOpNodeInfo(succ)->GetOperation();
+                   const unsigned int succ_id = data->CGetOpNodeInfo(succ)->GetNodeId();
+                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, DEBUG_LEVEL_VERY_PEDANTIC,
+                                  "---[D][" + STR(succ_id) + "] type: " + STR(op_label));
+                   if (op_label == "mult_expr") {
+                     mult_succ_of_v1.insert(succ_id);
+                   }
+                 });
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, DEBUG_LEVEL_VERY_PEDANTIC, "<--");
+
+   std::set<unsigned int> mult_succ_of_v2;
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, DEBUG_LEVEL_VERY_PEDANTIC,
+                  "-->[D]Statement with USE second variable");
+   std::for_each(it_succ_v2.first, it_succ_v2.second,
+                 [this, &mult_succ_of_v2] (const vertex succ) {
+                   const std::string op_label = data->CGetOpNodeInfo(succ)->GetOperation();
+                   const unsigned int succ_id = data->CGetOpNodeInfo(succ)->GetNodeId();
+                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, DEBUG_LEVEL_VERY_PEDANTIC,
+                                  "---[D][" + STR(succ_id) + "] type: " + STR(op_label));
+                   if (op_label == "mult_expr") {
+                     mult_succ_of_v2.insert(succ_id);
+                   }
+                 });
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, DEBUG_LEVEL_VERY_PEDANTIC, "<--");
+
+   // Check both pilot mult
+   const bool both_pilot_mult = mult_succ_of_v1.empty() == false &&
+       mult_succ_of_v2.empty() == false;
+
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, DEBUG_LEVEL_VERY_PEDANTIC,
+                  "Both pilot mult_expr: " + STR(both_pilot_mult));
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, DEBUG_LEVEL_VERY_PEDANTIC, "<--");
+   if (both_pilot_mult) {
+     return 5;
+   }
+   // ------------
+
    const CustomSet<unsigned int> & ssa_read1 = data->CGetOpNodeInfo(v1)->GetVariables(FunctionBehavior_VariableType::SCALAR, FunctionBehavior_VariableAccessType::USE);
    if(is_a_phi1)
    {
