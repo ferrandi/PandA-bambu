@@ -1136,6 +1136,9 @@ struct gimple_node : public srcp, public WeightedNode
     * structs by value or accepting structs by value as parameters
     */
    bool artificial;
+
+   /// when true CSE and Bit Value optimization will not remove from the IR
+   bool keep;
 };
 
 

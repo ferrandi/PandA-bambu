@@ -174,6 +174,11 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
             continue;
          }
 #endif
+         if(GetPointer<gimple_node>(GET_NODE(stmt))->keep)
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped because the statement has been annotated with the keep tag");
+            continue;
+         }
          if(GET_NODE(stmt)->get_kind() == gimple_assign_K)
          {
             gimple_assign * ga =  GetPointer<gimple_assign>(GET_NODE(stmt));

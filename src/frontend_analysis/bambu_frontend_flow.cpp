@@ -155,6 +155,7 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
             relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(CALL_GRAPH_BUILTIN_CALL, WHOLE_APPLICATION));
             relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(COND_EXPR_RESTRUCTURING, WHOLE_APPLICATION));
             relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(CSE_STEP, WHOLE_APPLICATION));
+            relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(FANOUT_OPT, WHOLE_APPLICATION));
 #if HAVE_PRAGMA_BUILT
             if((parameters->isOption(OPT_parse_pragma) and parameters->getOption<bool>(OPT_parse_pragma)) or parameters->getOption<int>(OPT_gcc_openmp_simd))
             {

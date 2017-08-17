@@ -143,6 +143,7 @@
 #if HAVE_BAMBU_BUILT
 #include "extract_gimple_cond_op.hpp"
 #include "extract_patterns.hpp"
+#include "fanout_opt.hpp"
 #include "FixStructsPassedByValue.hpp"
 #include "FunctionCallTypeCleanup.hpp"
 #endif
@@ -392,6 +393,7 @@ const DesignFlowStepRef FrontendFlowStepFactory::GenerateFrontendStep(FrontendFl
 #endif
       case DOM_POST_DOM_COMPUTATION:
 #if HAVE_BAMBU_BUILT
+      case (FANOUT_OPT):
       case MULTIPLE_ENTRY_IF_REDUCTION:
 #endif
 #if HAVE_EXPERIMENTAL && HAVE_ZEBU_BUILT
@@ -782,6 +784,7 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateApplicationFrontendFlowSt
 #endif
       case DOM_POST_DOM_COMPUTATION:
 #if HAVE_BAMBU_BUILT
+      case (FANOUT_OPT):
       case MULTIPLE_ENTRY_IF_REDUCTION:
 #endif
 #if HAVE_EXPERIMENTAL && HAVE_ZEBU_BUILT
@@ -1111,6 +1114,10 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateFunctionFrontendFlowStep(
          return DesignFlowStepRef(new dom_post_dom_computation(parameters, AppM, function_id, design_flow_manager.lock()));
       }
 #if HAVE_BAMBU_BUILT
+      case (FANOUT_OPT):
+      {
+         return DesignFlowStepRef(new fanout_opt(parameters, AppM, function_id, design_flow_manager.lock()));
+      }
       case(MULTIPLE_ENTRY_IF_REDUCTION):
       {
          return DesignFlowStepRef(new MultipleEntryIfReduction(parameters, AppM, function_id, design_flow_manager.lock()));

@@ -249,6 +249,8 @@ const std::string FrontendFlowStep::EnumToKindText(const FrontendFlowStepType fr
       case(DOM_POST_DOM_COMPUTATION):
          return "DomPostDomComputation";
 #if HAVE_BAMBU_BUILT
+      case(FANOUT_OPT):
+         return "FanoutOpt";
       case(MULTIPLE_ENTRY_IF_REDUCTION): //modified here
          return "MultipleEntryIfReduction";
 #endif

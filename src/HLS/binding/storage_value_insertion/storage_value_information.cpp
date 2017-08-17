@@ -175,7 +175,7 @@ int StorageValueInformation::get_compatibility_weight(unsigned int storage_value
                    const unsigned int succ_id = data->CGetOpNodeInfo(succ)->GetNodeId();
                    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, DEBUG_LEVEL_VERY_PEDANTIC,
                                   "---[D][" + STR(succ_id) + "] type: " + STR(op_label));
-                   if (op_label == "mult_expr") {
+                   if (op_label == "mult_expr"||op_label == "widen_mult_expr") {
                      mult_succ_of_v1.insert(succ_id);
                    }
                  });
@@ -190,7 +190,7 @@ int StorageValueInformation::get_compatibility_weight(unsigned int storage_value
                    const unsigned int succ_id = data->CGetOpNodeInfo(succ)->GetNodeId();
                    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, DEBUG_LEVEL_VERY_PEDANTIC,
                                   "---[D][" + STR(succ_id) + "] type: " + STR(op_label));
-                   if (op_label == "mult_expr") {
+                   if (op_label == "mult_expr"||op_label == "widen_mult_expr") {
                      mult_succ_of_v2.insert(succ_id);
                    }
                  });

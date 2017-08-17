@@ -120,6 +120,7 @@ const std::string ApplicationFrontendFlowStep::ComputeSignature(const FrontendFl
 #endif
       case DOM_POST_DOM_COMPUTATION:
 #if HAVE_BAMBU_BUILT
+      case (FANOUT_OPT):
       case MULTIPLE_ENTRY_IF_REDUCTION:
 #endif
 #if HAVE_ZEBU_BUILT && HAVE_EXPERIMENTAL

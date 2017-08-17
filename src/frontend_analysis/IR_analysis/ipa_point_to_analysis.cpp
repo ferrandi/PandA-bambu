@@ -158,6 +158,7 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
       {
          relationships.insert (std::pair<FrontendFlowStepType, FunctionRelationship> (BUILD_VIRTUAL_PHI, ALL_FUNCTIONS));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship> (CSE_STEP, ALL_FUNCTIONS));
+         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship> (FANOUT_OPT, ALL_FUNCTIONS));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship> (HLS_DIV_CG_EXT, ALL_FUNCTIONS));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship> (MEM_CG_EXT, ALL_FUNCTIONS));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship> (SOFT_FLOAT_CG_EXT, ALL_FUNCTIONS));

@@ -317,7 +317,8 @@ gimple_node::gimple_node(unsigned int i) :
    use_set(new PointToSolution()),
    clobbered_set(new PointToSolution()),
    bb_index(0),
-   artificial(false)
+   artificial(false),
+   keep(false)
 {}
 
 void gimple_node::AddVdef(const tree_nodeRef _vdef)

@@ -221,6 +221,11 @@ bool CSE::check_loads(const gimple_assign* ga, unsigned int right_part_index, tr
 tree_nodeRef CSE::hash_check(tree_nodeRef tn, vertex bb)
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Checking: "+ tn->ToString());
+   if(GetPointer<gimple_node>(tn)->keep)
+   {
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Checked: null");
+      return tree_nodeRef();
+   }
    const gimple_assign * ga = GetPointer<gimple_assign>(tn);
    if(ga && (ga->clobber || ga->init_assignment))
    {
