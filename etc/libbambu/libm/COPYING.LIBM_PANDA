@@ -1,0 +1,52 @@
+The libm subdirectory is a collection of software from several sources adapted to 
+the PandA infrastructure by Fabrizio Ferrandi from Politecnico di Milano.
+September, 11 2013.
+
+Each file may have its own copyright/license that is embedded in the source 
+file.  Unless otherwise noted in the body of the source file(s), the following copyright
+notices will apply to the contents of the libm subdirectory:
+
+(1) Red Hat Incorporated
+
+Copyright (c) 1994-2009  Red Hat, Inc. All rights reserved.
+
+This copyrighted material is made available to anyone wishing to use,
+modify, copy, or redistribute it subject to the terms and conditions
+of the BSD License.   This program is distributed in the hope that 
+it will be useful, but WITHOUT ANY WARRANTY expressed or implied, 
+including the implied warranties of MERCHANTABILITY or FITNESS FOR 
+A PARTICULAR PURPOSE.  A copy of this license is available at 
+http://www.opensource.org/licenses. Any Red Hat trademarks that are
+incorporated in the source code or documentation are not subject to
+the BSD License and may only be used or replicated with the express
+permission of Red Hat, Inc.
+
+(2) Sun Microsystems
+
+Copyright (C) 1993 by Sun Microsystems, Inc. All rights reserved.
+
+Developed at SunPro, a Sun Microsystems, Inc. business.
+Permission to use, copy, modify, and distribute this
+software is freely granted, provided that this notice is preserved.
+
+(3) Free Software Foundation LGPL License
+
+   Copyright (C) 1990-1999, 2000, 2001    Free Software Foundation, Inc.
+   This file is part of the GNU C Library.
+   Contributed by Mark Kettenis <kettenis@phys.uva.nl>, 1997.
+
+   The GNU C Library is free software; you can redistribute it and/or
+   modify it under the terms of the GNU Lesser General Public
+   License as published by the Free Software Foundation; either
+   version 2.1 of the License, or (at your option) any later version.
+
+   The GNU C Library is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+   Lesser General Public License for more details.
+
+   You should have received a copy of the GNU Lesser General Public
+   License along with the GNU C Library; if not, write to the Free
+   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+   02110-1301 USA.
+

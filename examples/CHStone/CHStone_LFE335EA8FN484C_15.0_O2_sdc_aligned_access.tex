@@ -1,0 +1,40 @@
+%Generated at 2017-08-04 18:53:52.116744 with bambu   Version: PandA 0.9.5-dev - Revision 0932a1484a18f7557c36fcb0be9ad53698014d8c with arguments --compiler=I386_GCC49 --device-name=TO_BE_OVERWRITTEN --evaluation -fwhole-program -fno-delete-null-pointer-checks --no-iob --clock-period=15 --device=LFE335EA8FN484C --speculative-sdc-scheduling --aligned-access --simulator=XSIM
+\begin{tabular}{|l|c|c|c|c|c|c|c|c|c|}
+\hline
+Benchmark Name          & Tot. Latency           & Num Cycles & SLICEs    & Registers & DSPs    & BRAMs   & Clock Frequency & Clock Slack & HLS Time(s) \\
+\hline
+adpcm:main\_0           & $ 2.247 \cdot 10^{2} $ & $ 17790  $ & $ 6655  $ & $ 6272  $ & $ 15  $ & $ 13  $ & $ 79.16       $ & $ 2.37    $ & $ 22.76   $ \\
+aes:main\_0             & $ 3.267 \cdot 10^{1} $ & $ 2630   $ & $ 2427  $ & $ 1595  $ & $ 0   $ & $ 38  $ & $ 80.51       $ & $ 2.58    $ & $ 78.94   $ \\
+bf:main\_0              & $ 1.143 \cdot 10^{3} $ & $ 88992  $ & $ 7652  $ & $ 1986  $ & $ 0   $ & $ 10  $ & $ 77.83       $ & $ 2.15    $ & $ 21.98   $ \\
+dfadd:main\_0           & $ 3.985 \cdot 10^{0} $ & $ 311    $ & $ 1638  $ & $ 1004  $ & $ 0   $ & $ 7   $ & $ 78.05       $ & $ 2.19    $ & $ 40.24   $ \\
+dfdiv:main\_0           & $ 2.520 \cdot 10^{1} $ & $ 1815   $ & $ 2050  $ & $ 1951  $ & $ 36  $ & $ 2   $ & $ 72.01       $ & $ 1.11    $ & $ 14.16   $ \\
+dfdiv\_hls\_div:main\_0 & $ 1.576 \cdot 10^{1} $ & $ 951    $ & $ 2942  $ & $ 2945  $ & $ 24  $ & $ 2   $ & $ 60.35       $ & $ -1.57   $ & $ 16.13   $ \\
+dfmul:main\_0           & $ 1.455 \cdot 10^{0} $ & $ 113    $ & $ 1025  $ & $ 841   $ & $ 24  $ & $ 2   $ & $ 77.69       $ & $ 2.13    $ & $ 10.90   $ \\
+dfsin:main\_0           & $ 7.094 \cdot 10^{2} $ & $ 47428  $ & $ 9193  $ & $ 7491  $ & $ 90  $ & $ 6   $ & $ 66.85       $ & $ 0.04    $ & $ 193.64  $ \\
+dfsin\_hls\_div:main\_0 & $ 4.295 \cdot 10^{2} $ & $ 23131  $ & $ 10334 $ & $ 8233  $ & $ 42  $ & $ 6   $ & $ 53.86       $ & $ -3.57   $ & $ 193.34  $ \\
+gsm:main\_0             & $ 3.239 \cdot 10^{1} $ & $ 2315   $ & $ 3483  $ & $ 3353  $ & $ 36  $ & $ 4   $ & $ 71.47       $ & $ 1.01    $ & $ 19.24   $ \\
+jpeg:main\_0            & $ 7.821 \cdot 10^{3} $ & $ 525884 $ & $ 15237 $ & $ 6144  $ & $ 13  $ & $ 50  $ & $ 67.24       $ & $ 0.13    $ & $ 36.87   $ \\
+mips:main\_0            & $ 3.937 \cdot 10^{1} $ & $ 2493   $ & $ 3495  $ & $ 1596  $ & $ 12  $ & $ 7   $ & $ 63.33       $ & $ -0.79   $ & $ 12.35   $ \\
+mpeg2:main\_0           & $ 4.421 \cdot 10^{1} $ & $ 4223   $ & $ 1720  $ & $ 1188  $ & $ 0   $ & $ 3   $ & $ 95.52       $ & $ 4.53    $ & $ 5.04    $ \\
+sha\_driver:main\_0     & $ 1.745 \cdot 10^{3} $ & $ 113322 $ & $ 8082  $ & $ 2042  $ & $ 0   $ & $ 4   $ & $ 64.93       $ & $ -0.40   $ & $ 7.47    $ \\
+\hline
+Average                 & $                    $ & $        $ & $       $ & $       $ & $     $ & $     $ & $ 72.06       $ & $ 0.85    $ & $         $ \\
+\hline
+Overall                 & $ 1.227 \cdot 10^{4} $ & $ 831398 $ & $ 75933 $ & $ 46641 $ & $ 292 $ & $ 154 $ & $             $ & $         $ & $ 673.06  $ \\
+\hline
+\end{tabular}
+%Benchmarks:
+%adpcm/adpcm.c ECP3_CHStone_constraints/adpcm_constraints.xml --skip-pipe-parameter=1
+%aes/aes.c
+%dfadd/dfadd.c
+%dfdiv/dfdiv.c --benchmark-name=dfdiv
+%dfdiv/dfdiv.c ECP3_CHStone_constraints/dfdiv_hls_div_constraints.xml --hls-div --benchmark-name=dfdiv_hls_div
+%dfmul/dfmul.c
+%dfsin/dfsin.c --benchmark-name=dfsin
+%dfsin/dfsin.c ECP3_CHStone_constraints/dfsin_hls_div_constraints.xml --hls-div --benchmark-name=dfsin_hls_div
+%gsm/gsm.c
+%mips/mips.c
+%motion/mpeg2.c
+%sha/sha_driver.c
+%blowfish/bf.c
+%jpeg/main.c ECP3_CHStone_constraints/jpeg_constraints.xml --benchmark-name=jpeg -Os --aligned-access

@@ -1,0 +1,31 @@
+\subsection{quad}
+\label{labquad}
+\noindent Names: \textbf{quad}, \textbf{QD}\\
+rounding to the nearest IEEE 754 quad (binary128).\\
+\noindent Description: \begin{itemize}
+
+\item \textbf{quad} is both a function and a constant.
+
+\item As a function, it rounds its argument to the nearest IEEE 754 quad precision (i.e. IEEE754-2008 binary128) number.
+   Subnormal numbers are supported as well as standard numbers: it is the real
+   rounding described in the standard.
+
+\item As a constant, it symbolizes the quad precision format. It is used in 
+   contexts when a precision format is necessary, e.g. in the commands 
+   \textbf{round} and \textbf{roundcoefficients}. It is not supported for \textbf{implementpoly}.
+   See the corresponding help pages for examples.
+\end{itemize}
+\noindent Example 1: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> display=binary!;
+> QD(0.1);
+1.100110011001100110011001100110011001100110011001100110011001100110011001100110
+011001100110011001100110011001101_2 * 2^(-4)
+> QD(4.17);
+1.000010101110000101000111101011100001010001111010111000010100011110101110000101
+000111101011100001010001111010111_2 * 2^(2)
+> QD(1.011_2 * 2^(-16493));
+1.1_2 * 2^(-16493)
+\end{Verbatim}
+\end{minipage}\end{center}
+See also: \textbf{halfprecision} (\ref{labhalfprecision}), \textbf{single} (\ref{labsingle}), \textbf{double} (\ref{labdouble}), \textbf{doubleextended} (\ref{labdoubleextended}), \textbf{doubledouble} (\ref{labdoubledouble}), \textbf{tripledouble} (\ref{labtripledouble}), \textbf{roundcoefficients} (\ref{labroundcoefficients}), \textbf{implementpoly} (\ref{labimplementpoly}), \textbf{fpminimax} (\ref{labfpminimax}), \textbf{round} (\ref{labround}), \textbf{printsingle} (\ref{labprintsingle})

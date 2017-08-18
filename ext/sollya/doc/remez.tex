@@ -1,0 +1,83 @@
+\subsection{remez}
+\label{labremez}
+\noindent Name: \textbf{remez}\\
+computes the minimax of a function on an interval.\\
+\noindent Usage: 
+\begin{center}
+\textbf{remez}(\emph{f}, \emph{n}, \emph{range}, \emph{w}, \emph{quality}) : (\textsf{function}, \textsf{integer}, \textsf{range}, \textsf{function}, \textsf{constant}) $\rightarrow$ \textsf{function}\\
+\textbf{remez}(\emph{f}, \emph{L}, \emph{range}, \emph{w}, \emph{quality}) : (\textsf{function}, \textsf{list}, \textsf{range}, \textsf{function}, \textsf{constant}) $\rightarrow$ \textsf{function}\\
+\end{center}
+Parameters: 
+\begin{itemize}
+\item \emph{f} is the function to be approximated
+\item \emph{n} is the degree of the polynomial that must approximate \emph{f}
+\item \emph{L} is a list of monomials that can be used to represent the polynomial that must approximate \emph{f}
+\item \emph{range} is the interval where the function must be approximated
+\item \emph{w} (optional) is a weight function. Default is 1.
+\item \emph{quality} (optional) is a parameter that controls the quality of the returned polynomial \emph{p}, with respect to the exact minimax $p^\star$. Default is 1e-5.
+\end{itemize}
+\noindent Description: \begin{itemize}
+
+\item \textbf{remez} computes an approximation of the function $f$ with respect to 
+   the weight function $w$ on the interval \emph{range}. More precisely, it 
+   searches a polynomial $p$ such that $\|pw-f\|_{\infty}$ is 
+   (almost) minimal among all polynomials $p$ of a certain form. The norm is
+   the infinity norm, e.g. $\|g\|_{\infty} = \max \{|g(x)|, x \in \mathrm{range}\}.$
+
+\item If $w=1$ (the default case), it consists in searching the best 
+   polynomial approximation of $f$ with respect to the absolute error.
+   If $f=1$ and $w$ is of the form $1/g$, it consists in 
+   searching the best polynomial approximation of $g$ with respect to the 
+   relative error.
+
+\item If $n$ is given, the polynomial $p$ is searched among the 
+   polynomials with degree not greater than $n$.
+   If \emph{L} is given, the polynomial $p$ is searched as a linear combination 
+   of monomials $X^k$ where $k$ belongs to \emph{L}.
+   \emph{L} may contain ellipses but cannot be end-elliptic.
+
+\item The polynomial is obtained by a convergent iteration called Remez' algorithm. 
+   The algorithm computes a sequence $p_1,\dots ,p_k,\dots$ 
+   such that $e_k = \|p_k w-f\|_{\infty}$ converges towards 
+   the optimal value $e$. The algorithm is stopped when the relative error 
+   between $e_k$ and $e$ is less than \emph{quality}.
+
+\item Note: the algorithm may not converge in certain cases. Moreover, it may 
+   converge towards a polynomial that is not optimal. These cases correspond to 
+   the cases when the Haar condition is not fulfilled.
+   See [Cheney - Approximation theory] for details.
+\end{itemize}
+\noindent Example 1: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> p = remez(exp(x),5,[0;1]);
+> degree(p);
+5
+> dirtyinfnorm(p-exp(x),[0;1]);
+1.12956984638214536849843017679626063762687501534126e-6
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 2: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> p = remez(1,[|0,2,4,6,8|],[0,Pi/4],1/cos(x));
+> canonical=on!;
+> p;
+0.99999999994393749280444571988532724907643631727381 + -0.4999999957155746773720
+4931630836834563663039748203 * x^2 + 4.16666132335010905188253972212748718651775
+241902969e-2 * x^4 + -1.38865291475286141707180658383176799662601691348739e-3 * 
+x^6 + 2.437267919111162694221738667927916761689966804242e-5 * x^8
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 3: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> p1 = remez(exp(x),5,[0;1],default,1e-5);
+> p2 = remez(exp(x),5,[0;1],default,1e-10);
+> p3 = remez(exp(x),5,[0;1],default,1e-15);
+> dirtyinfnorm(p1-exp(x),[0;1]);
+1.12956984638214536849843017679626063762687501534126e-6
+> dirtyinfnorm(p2-exp(x),[0;1]);
+1.12956980227478687332174207517728389861926659249056e-6
+> dirtyinfnorm(p3-exp(x),[0;1]);
+1.12956980227478687332174207517728389861926659249056e-6
+\end{Verbatim}
+\end{minipage}\end{center}
+See also: \textbf{dirtyinfnorm} (\ref{labdirtyinfnorm}), \textbf{infnorm} (\ref{labinfnorm}), \textbf{fpminimax} (\ref{labfpminimax}), \textbf{guessdegree} (\ref{labguessdegree}), \textbf{taylorform} (\ref{labtaylorform}), \textbf{taylor} (\ref{labtaylor})

@@ -1,0 +1,988 @@
+/* Set of tests for pattern matching support */
+
+/* Pattern matching in Sollya 
+
+   Let's look at syntax and typing first.  match-with constructs in
+   Sollya are, like in Ocaml, expressions that evaluate to the value
+   of the matching expression.
+
+   Concerning syntax, please pay attention to the fact that 
+   the parentheses around the expression to return in the case
+   of a match are mandatory.
+*/
+
+match exp(x) with 
+    exp(x)  : (1) 
+    sin(x)  : (2)
+    default : (3);
+
+match sin(x) with 
+    exp(x)  : (1) 
+    sin(x)  : (2)
+    default : (3);
+
+(match exp(x) with 
+    exp(x)  : (1) 
+    sin(x)  : (2)
+    default : (3)) + 16;
+
+/* Nevertheless, as Sollya basically is an imperative language,
+   pattern expressions can also be blocks of code, finished by a
+   return statement.  
+*/
+
+match exp(x) with 
+    exp(x)  : { 
+                 print("We are matching an exponential function.");
+                 return 1;
+              }
+    sin(x)  : { 
+                 print("We are matching a sine function.");
+                 return 2;
+              }
+    default : { 
+                 print("We are matching something else.");
+                 return 1;
+              };    
+
+(match exp(x) with 
+    exp(x)  : { 
+                 print("We are matching an exponential function.");
+                 return 1;
+              }
+    sin(x)  : { 
+                 print("We are matching a sine function.");
+                 return 2;
+              }
+    default : { 
+                 print("We are matching something else.");
+                 return 1;
+              }) + 16;
+
+/* In the case when no return statement is given, the matching 
+   code block evaluates to void. void is not autoprinted on 
+   the Sollya prompt.
+*/
+
+match exp(x) with 
+    exp(x)  : { 
+                 print("We are matching an exponential function.");
+              }
+    sin(x)  : { 
+                 print("We are matching a sine function.");
+              }
+    default : { 
+                 print("We are matching something else.");
+              };    
+
+/* As already illustrated by examples, default matches any 
+   expression when the whole expression given to match is 
+   correctly typed.
+*/
+
+match exp(x) with 
+      sin(x)  : ("Sine")
+      default : ("Something else");
+
+match "Hello" with 
+      sin(x)  : ("Sine")
+      default : ("Something else");
+
+match sin(exp(x)) with 
+      sin(default)  : ("Sine")
+      default       : ("Something else");
+
+/* If no default case is given and no other pattern matches,
+   the match-with construct evaluates to error and an warning
+   message is printed.
+*/
+match "Hello" with 
+      exp(x) : (1)
+      sin(x) : (2);
+
+/* Pattern matching allows free variables to be bound,
+   as long as they are different from the free mathematical
+   variable. This is the main feature of pattern matching.
+   The following examples illustrate that behavior.
+*/
+
+match [| 1, 2, 3, 4 |] with 
+      [||]             :  {
+                             print("Empty list");
+		          }
+      [| 1, a, 3, 4 |] :  {
+                             print("List of four elements, starting with 1, ending with 3, 4 and ", a, " in second position");
+                          }
+      b                :  {  
+                             print("Something else, for instance ", b);
+                          };
+
+match [| 1, exp(x), 3, 4 |] with 
+      [||]             :  {
+                             print("Empty list");
+		          }
+      [| 1, a, 3, 4 |] :  {
+                             print("List of four elements, starting with 1, ending with 3, 4 and ", a, " in second position");
+                          }
+      b                :  {  
+                             print("Something else, for instance ", b);
+                          };
+
+match exp(sin(x)) with 
+      exp(a)           : {
+                            print("Exponential of ", a);
+                         }
+      sin(b)           : {
+                            print("Sine of ", b);
+                         }
+      default          : {
+                            print("Something else");
+                         };
+
+match sin(exp(atan(x + 3))) with 
+      exp(a)           : {
+                            print("Exponential of ", a);
+                         }
+      sin(b)           : {
+                            print("Sine of ", b);
+                         }
+      default          : {
+                            print("Something else");
+                         };
+
+match exp(sin(atan(x + 3))) with 
+      exp(f(atan(x + 3))) : (f)
+      exp(g(x + 2))       : (g);
+
+match exp(sin(atan(x + 2))) with 
+      exp(f(atan(x + 3))) : (f)
+      exp(g(x + 2))       : (g);
+
+/* All variables in the patterns are new local variables that 
+   shadow other variables of the same name defined in the context.
+   The variables in the patterns are *not* evaluated before 
+   evaluating the match-with construct (otherwise shadowing would
+   make no sense and the semantics of the match-with construct 
+   would depend on the context). 
+*/
+
+a = 5;
+b = 6;
+
+match exp(x + 3) with 
+      exp(a + b) : {
+                      print("Exponential");
+                      print("a = ", a);
+                      print("b = ", b);
+                   }
+      sin(x)     : {
+                      print("Sine of x");
+                   };
+
+print("a = ", a);
+print("b = ", b);
+
+/* It is possible to declare other auxilliary local variables 
+   in the block evaluated for each pattern. These variables shadow
+   the variables bound by pattern evaluation.
+*/
+
+a = 5;
+b = 6;
+
+match exp(x + 3) with 
+      exp(a + b) : {
+                      var a, c;
+                      a = 17;
+                      c = "Hallo";
+                      print("Exponential");
+                      print("a = ", a);
+                      print("b = ", b);
+                      print("c = ", c);
+                   }
+      sin(x)     : {
+                      print("Sine of x");
+                   };
+
+print("a = ", a);
+print("b = ", b);
+
+/* The use of variables in the pattern does not need to be linear. In
+   other words, a free variable may appear twice or more times in a
+   same pattern. The pattern will match only if in both occurences of
+   the same variable the same subtree is found. Sollya will apply
+   structural identity for these tests; not mathematical or floating-point
+   identity. This means it will not be able to discover that a = 5 + 1
+   may also match the subtree 6.
+*/
+
+match exp(sin(x)) + sin(x) with
+      exp(a) + a : {
+                      print("Winner");
+                      print("a = ", a);
+                   }
+      default    : {
+                      print("Loser");
+                   };
+
+match exp(sin(x)) + cos(x) with
+      exp(a) + a : {
+                      print("Winner");
+                      print("a = ", a);
+                   }
+      default    : {
+                      print("Loser");
+                   };
+
+match exp(atan(x + 17)/19) + atan(x + 17)/19 with
+      exp(a) + a : {
+                      print("Winner");
+                      print("a = ", a);
+                   }
+      default    : {
+                      print("Loser");
+                   };
+
+/* The following symbolic operations are allowed in patterns:
+
+    - .: (prepend), :. (append) and @ (concat) on lists.
+    - @ (concat) on strings.
+    - [| a, b, c |] (symbolic instantiation) on lists
+    - [| a, 1, ..., 5, b |] (sequences of natural numbers) on lists
+      Symbolic sequences of natural numbers are however excluded,
+      i.e. [| a, ..., b |] will never match, even if there exists
+      two integers a and b in the beginning and in the end of the 
+      list for which the expansion were possible.
+    - Instantiation of symbolic ranges. If at least one 
+      bound is explicitly given, outward rounding is correctly applied.
+      While it is possible to match point intervals using the
+      expression [a], there is no support for symbolic 
+      midpointconstants (things like 1.2345~a/b~ which would
+      match all ranges between 1.23450 and 1.23459 and 
+      would bind a and b to the appropriate number)
+
+    - Instantiation of symbolic structures, see below.
+
+    Currently there is a limitation for the concat operator @.
+    Matches can only be found if there (recursively) is a prefix
+    or a postfix of the list or string that is not symbolic. This means
+    a @ b is not allowed as it would have to cut the matching
+    list or string at an arbitrary length.
+*/
+
+match [| 1, 2, 3, 4 |] with 
+      a .: [| 2, 3, 4 |] : {
+                              print(a," prepended to a list of elements 2, 3 and 4");
+                           }
+      a .: b             : {
+                              print(a," prepended to ", b);
+                           }
+      default            : {
+                              print("something else");
+                           };
+
+match [| 1, 2, 3, 5 |] with 
+      a .: [| 2, 3, 4 |] : {
+                              print(a," prepended to a list of elements 2, 3 and 4");
+                           }
+      a .: b             : {
+                              print(a," prepended to ", b);
+                           }
+      default            : {
+                              print("something else");
+                           };
+
+match [| 1, ..., 17 |] with 
+      a .: [| 2 , ... , 16, c |] : {
+                              print(a," prepended to a list ending in ", c);
+                           }
+      a .: b             : {
+                              print(a," prepended to ", b);
+                           }
+      default            : {
+                              print("something else");
+                           };
+
+match [| 1, ..., 17 |] with 
+      [| 1 , ... , 16 |] :. a : {
+                              print(a," appended to a list");
+                           }
+      a :. b             : {
+                              print(b," appended to ", b);
+                           }
+      default            : {
+                              print("something else");
+                           };
+
+match "Hello world" with 
+      "Hello" @ a        : {
+                              print("Salut", a);
+                           }
+      default            : {
+                              print("something else");
+                           };
+
+match "Hello world" with 
+      a @ "world"        : {
+                              print("Salut =", a);
+                           }
+      default            : {
+                              print("something else");
+                           };
+
+match [| 1, 2, 3, 4, 5 |] with
+      a @ [| 4, 5 |]     : {
+                             print(a);
+                           }
+      b @ [| 5, c |]     : {
+                             print(b,c);
+                           }
+      default            : {
+                              print("something else");
+                           };
+
+match [| 1, 2, 3, 4, 5, 6 |] with
+      a @ [| 4, 5 |]     : {
+                             print(a);
+                           }
+      b @ [| 5, c |]     : {
+                             print(b,c);
+                           }
+      default            : {
+                              print("something else");
+                           };
+
+match [1;2] with 
+      [3;4]              : {
+                              print("Interval between 3 and 4");
+                           }
+      [a;2]              : { 
+                              print("Interval between ",a," and 2");
+                           }
+      default            : {
+                              print("something else");
+                           };
+
+match exp([1;2]) with 
+      [a;b]              : {
+                              print(a,b);
+                           }
+      default            : {
+                              print("something else");
+                           };
+
+/* Pattern matching is possible on literate structures with
+   variable binding. It is not possible on structure dereferentiation,
+   regardless of binding the matched structure or not. (No 
+   support for "match thing with a.b.c : ...")
+*/
+
+structure.f = exp(x);
+structure.dom = [1;2];
+structure.formats = [| DD, D, D, D |];
+
+match structure with 
+     { .f = sin(x);
+       .dom = [a;b]
+     }                    : {
+                               print("Sine",a,b);
+                            }
+     { .f = exp(c);
+       .dom = [a;b];
+       .point = default 
+     }                    : {
+                               print("Exponential",a,b,c);
+                            }
+     { .f = exp(x);
+       .dom = [a;b]
+     }                    : {
+                               print("Exponential",a,b);
+                            }
+     default              : {
+                               print("Something else");
+                            };
+
+structure.f = sin(x);
+
+match structure with 
+     { .f = sin(x);
+       .dom = [a;b]
+     }                    : {
+                               print("Sine",a,b);
+                            }
+     { .f = exp(c);
+       .dom = [a;b];
+       .point = default 
+     }                    : {
+                               print("Exponential",a,b,c);
+                            }
+     { .f = exp(x);
+       .dom = [a;b]
+     }                    : {
+                               print("Exponential",a,b);
+                            }
+     default              : {
+                               print("Something else");
+                            };
+
+structure.f = exp(x + 2);
+structure.point = 23;
+
+match structure with 
+     { .f = sin(x);
+       .dom = [a;b]
+     }                    : {
+                               print("Sine",a,b);
+                            }
+     { .f = exp(c);
+       .dom = [a;b];
+       .point = default 
+     }                    : {
+                               print("Exponential",a,b,c);
+                            }
+     { .f = exp(x);
+       .dom = [a;b]
+     }                    : {
+                               print("Exponential",a,b);
+                            }
+     default              : {
+                               print("Something else");
+                            };
+
+
+/* Shall we match variable content ?
+   Yes of course!
+*/
+
+f = exp(x);
+match f with
+  sin(x) : (1)
+  cos(x) : (2)
+  exp(x) : (3)
+  default : (4);
+
+
+/* It works even for more complicated expressions */
+
+f = sin(x)+cos(exp(x));
+match f with
+    a + b : { print("Addition of ", a, " and ", b); }
+    default : { printf("Failure"); };
+
+
+/* Does a match look into variables, or are they simply rebound?
+   If so, do the variables recover their previous value, when exiting the match?
+   Answer: they are rebound, and they recover their old value after the match.
+*/
+
+a = 2;
+match f with
+    a + b : { print("Addition of ", a, " and ", b); }
+    default : { printf("Failure"); };
+a;
+b;
+
+
+
+/* If a pattern does not match in a list, we look at the next one, as expected */
+
+match [| 1, 2, 3, 5 |] with 
+      [||]             :  {
+                             print("Empty list");
+          }
+      [| 1, a, 3, 4 |] :  {
+                             print("List of four elements, starting with 1, ending with 3, 4 and ", a, " in second position");
+                          }
+      b                :  {  
+                             print("Something else, for instance ", b);
+                          };
+
+
+
+/* If several pattern match the expression, only the first matching one is considered */
+
+match [| 1, 2, 3, 4 |] with 
+      [||]             :  {
+                             print("Empty list");
+          }
+      b                :  {  
+                              print("Something else, for instance ", b);
+                          }
+      [| 1, a, 3, 4 |] :  {
+                             print("List of four elements, starting with 1, ending with 3, 4 and ", a, " in second position");
+                          };
+
+
+
+/* If a variable exists and is not used in a pattern, does it keep its old value,
+   or is it shadowed?
+   Answer: it keeps its old value.
+*/
+a = 5;
+b = 6;
+match exp(x + 3) with 
+      exp(a + 3) : {
+                      print("We matched exp(a+3)");
+                      print("with a = ", a);
+                      print("b remains ", b);
+                   }
+      sin(x)     : {
+                      print("Sine of x");
+                   };
+
+
+/* We cannot use an existing variable in a pattern (since it would immediately be rebound),
+   but we can test the equality a posteriori.
+*/
+
+b = 4;
+match exp(x + 6) with 
+  exp(a + c) : { if (b==c)
+                 then { print("Exponential : a+b with a = ",a); }
+                 else { print("Exponential : a+c with a = ",a, " and c = ", c); };
+               }
+  sin(x)     : {
+                 print("Sine of x");
+               };
+
+b = 6;
+match exp(x + 6) with 
+  exp(a + c) : { if (b==c)
+                 then { print("Exponential : a+b with a = ",a); }
+                 else { print("Exponential : a+c with a = ",a, " and c = ", c); };
+               }
+  sin(x)     : {
+                 print("Sine of x");
+               };
+
+
+/* Can we use "@" arbitrarily in lists? Answer: no. */
+match [|1,2,3,4|] with
+   a@b: {print(a); print(b);}
+   default: {print("nothing");};
+
+
+/* Is the interval [pi] matched as an exact [pi; pi]?
+   Answer: no, it is evaluated first.
+*/
+match [pi] with
+  [a, b] : { if (a==b)
+             then { print("It works!"); }
+             else { print("It does not work, though pi==pi returns ", pi==pi); };
+           }
+  default: { print("nothing"); };
+
+
+/* Can we match a constant expression inside an interval? Answer: yes */
+match [1;pi] with
+  [a; pi] : { print("We detected [",a,", pi]"); }
+  default : { print("Failure"); };
+
+
+/* We can use a match to affect several variables simultaneously.
+   However, the variables are bound only until the end of the match.
+*/
+d=[1;2]; match d with [a;b]: {print("a=", a,"and b=",b);};
+
+
+/* An expression involving intervals is evaluated before being matched. */
+match exp([1;2]) with 
+      [a;b]              : {
+                              print(a,b);
+                           }
+      default            : {
+                              print("something else");
+                           };
+
+
+/* Can we match an expression involving intervals, as an expression? Answer: no. */
+match exp([1;2]) with 
+      exp([a;b])         : {
+                              print(a,b);
+                           }
+      default            : {
+                              print("something else");
+                           };
+
+/* Can we at least recover that it was exp of an interval? Answer: no. */
+match exp([1;2]) with 
+  exp(a)  : {
+             print(a,b);
+            }
+  default : {
+             print("something else");
+            };
+
+
+/* Can we see that [pi] is a point interval?
+   Answer: no, the information is lost in the evaluation of [pi],
+   performed before the pattern matching.
+*/
+match [pi] with
+ [a;a]  : { print("[a, a] with a = ",a); }
+ default: { print("Failure"); };
+
+
+/* But of course, it works when the point-interval is exactly representable. */
+match [3] with
+ [a;a]  : { print("[a, a] with a = ",a); }
+ default: { print("Failure"); };
+
+/* default appears to be an allowed keyword when matching structures, with
+   the same behavior as "_" in OCaml. Does it work everywhere?
+*/
+match 1+2 with
+  a+default : { print("a + something with a = ",a); }
+  default   : { print("Failure"); };
+
+
+/* Some additional tests for lists and end-elliptic lists */
+
+match [| 1, 2, 3, 4, D... |] with 
+      a @ [| 4, D...|] : (a);
+
+match [| 1, 2, 3, 4, D... |] with 
+      a @ [| D...|] : (a);
+
+match [| 1, 2, 3, 4... |] with 
+      a @ [| 3...|] : (a);
+
+match [| 1, 2, 3, 4... |] with 
+      a @ [| 4...|] : (a);
+
+match [| 1, 2, 3, 4... |] with 
+      a @ [| 17...|] : (a);
+
+match [| 1, 2, 3, 19... |] with 
+      a @ [| 171...|] : (a);
+
+match [| exp(sin(x)), sin(x), 4, DE(x), 9... |] with
+      exp(a) .: (a .: (([||] :. 4) @ (b @ [| 13... |]))) : { print("a = ", a, ", b = ", b); };
+
+
+/* The examples from the documentation */
+
+match exp(x) with 
+    exp(x)      : (1) 
+    sin(x)      : (2)
+    default     : (3);
+
+match sin(x) with 
+    exp(x)      : (1) 
+    sin(x)      : (2)
+    default     : (3);
+
+match exp(sin(x)) with
+    exp(x)      : ("Exponential of x")
+    exp(sin(x)) : ("Exponential of sine of x")
+    default     : ("Something else");
+
+match exp(sin(x)) with
+    exp(x)      : ("Exponential of x")
+    exp(a)      : ("Exponential of " @ a)
+    default     : ("Something else");
+
+
+procedure differentiate(f) {
+    return match f with 
+        g + h   : (differentiate(g) + differentiate(h))
+        g * h   : (differentiate(g) * h + differentiate(h) * g)
+        g / h   : ((differentiate(g) * h - differentiate(h) * g) / (h^2))
+        exp(x)  : (exp(x))
+        sin(x)  : (cos(x))
+        cos(x)  : (-sin(x))
+        g(h)    : ((differentiate(g))(h) * differentiate(h))
+        x       : (1)
+        h(x)    : (NaN)
+        c       : (0);
+};
+
+differentiate(exp(sin(x + x)));
+diff(exp(sin(x + x)));
+
+restart;
+match exp(sin(x)) with
+    exp(a)  : { 
+                 write("Exponential of ", a, "\n");
+                 return a;
+              }
+    sin(x)  : {
+                 var foo;
+                 foo = 17;
+                 write("Sine of x\n");
+                 return foo;
+              }
+    default : {
+                 write("Something else\n");
+                 return true;
+              };
+
+match sin(x) with
+    exp(a)  : { 
+                 write("Exponential of ", a, "\n");
+                 return a;
+              }
+    sin(x)  : {
+                 var foo;
+                 foo = 17;
+                 write("Sine of x\n");
+                 return foo;
+              }
+    default : {
+                 write("Something else\n");
+                 return true;
+              };
+
+match acos(17 * pi * x) with
+    exp(a)  : { 
+                 write("Exponential of ", a, "\n");
+                 return a;
+              }
+    sin(x)  : {
+                 var foo;
+                 foo = 17;
+                 write("Sine of x\n");
+                 return foo;
+              }
+    default : {
+                 write("Something else\n");
+                 return true;
+              };
+restart;
+a = 5;
+b = 6;
+match exp(x + 3) with 
+      exp(a + b) : {
+                      print("Exponential");
+                      print("a = ", a);
+                      print("b = ", b);
+                   }
+      sin(x)     : {
+                      print("Sine of x");
+                   };
+print("a = ", a, ", b = ", b);
+
+a = 5;
+b = 6;
+match exp(x + 3) with 
+      exp(a + b) : {
+                      var a, c;
+                      a = 17;
+                      c = "Hallo";
+                      print("Exponential");
+                      print("a = ", a);
+                      print("b = ", b);
+                      print("c = ", c);
+                   }
+      sin(x)     : {
+                      print("Sine of x");
+                   };
+print("a = ", a, ", b = ", b);
+restart;
+match exp(sin(x)) + sin(x) with
+      exp(a) + a : {
+                      print("Winner");
+                      print("a = ", a);
+                   }
+      default    : {
+                      print("Loser");
+                   };
+
+match exp(sin(x)) + sin(3 * x) with
+      exp(a) + a : {
+                      print("Winner");
+                      print("a = ", a);
+                   }
+      default    : {
+                      print("Loser");
+                   };
+
+f = exp(x);
+match f with
+      sin(x) : (1)
+      cos(x) : (2)
+      exp(x) : (3)
+      default : (4);
+restart;
+match 5 + 1 with 
+    1 + 5 : ("One plus five")
+    6     : ("Six")
+    5 + 1 : ("Five plus one");
+
+match 6 with 
+    1 + 5 : ("One plus five")
+    6     : ("Six")
+    5 + 1 : ("Five plus one");
+  
+match 1 + 5 with 
+    1 + 5 : ("One plus five")
+    6     : ("Six")
+    5 + 1 : ("Five plus one");
+
+match [1; 5 + 1] with
+    [1; 1 + 5] : ("Interval from one to one plus five")
+    [1; 6]     : ("Interval from one to six")
+    [1; 5 + 1] : ("Interval from one to five plus one");
+
+match [1; 6] with
+    [1; 1 + 5] : ("Interval from one to one plus five")
+    [1; 6]     : ("Interval from one to six")
+    [1; 5 + 1] : ("Interval from one to five plus one");
+
+restart;
+match exp(x) with 
+    sin(x)    : ("Sine of x")
+    atan(x^2) : ("Arctangent of square of x")
+    default   : ("Something else")
+    exp(x)    : ("Exponential of x");
+
+match atan(x^2) with 
+    sin(x)          : ("Sine of x")
+    atan(default^2) : ("Arctangent of the square of something")
+    default         : ("Something else");
+
+match atan(exp(x)^2) with 
+    sin(x)          : ("Sine of x")
+    atan(default^2) : ("Arctangent of the square of something")
+    default         : ("Something else");
+
+match exp("Hello world") with 
+    exp(default)    : ("A miracle has happened")
+    default         : ("Something else");
+restart;
+procedure detector(obj) {
+    match obj with 
+        exp(a * x)            : { "Exponential of ", a, " times x"; }
+        [ a; 17 ]             : { "An interval from ", a, " to 17"; }
+        [| |]                 : { "Empty list"; }
+        [| a, b, 2, exp(c) |] : { "A list of ", a, ", ", b, ", 2 and ",
+                                  "exponential of ", c; }
+        a @ [| 2, 3 |]        : { "Concatenation of the list ", a, " and ",
+                                  "the list of 2 and 3"; }
+        a .: [| 9 ... |]      : { a, " prepended to all integers >= 9"; }
+        "Hello" @ w           : { "Hello concatenated with ", w; }
+        { .a = sin(b); 
+          .b = [c;d] }        : { "A structure containing as .a the ",
+                                  "sine of ", b,
+                                  " and as .b the range from ", c, 
+                                  " to ", d; }
+        perturb               : { "The special object perturb"; }
+        default               : { "Something else"; };
+};
+
+detector(exp(5 * x));
+detector([3.25;17]);
+detector([||]);
+detector([| sin(x), nearestint(x), 2, exp(5 * atan(x)) |]);
+detector([| sin(x), cos(5 * x), "foo", 2, 3 |]);
+detector([| DE, 9... |]);
+detector("Hello world");
+detector({ .a = sin(x); .c = "Hello"; .b = [9;10] });
+detector(perturb);
+detector([13;19]);
+restart;
+match exp([1;2]) with 
+      [a;b]              : {
+                              a,", ",b;
+                           }
+      default            : {
+                              "Something else";
+                           };
+
+match exp([1;2]) with 
+      exp([a;b])         : {
+                              a,", ", b;
+                           }
+      default            : {
+                              "Something else";
+                           };
+
+match exp([1;2]) with 
+  exp(a)  : {
+              "Exponential of ", a;
+            }
+  default : {
+              "Something else";
+            };
+restart;
+match [| exp(sin(x)), sin(x), 4, DE(x), 9... |] with
+      exp(a) .: (a .: (([||] :. 4) @ (b @ [| 13... |]))) : 
+                         { "a = ", a, ", b = ", b; };
+
+match [| 1, 2, 3, 4, D... |] with 
+      a @ [| 4, D...|] : (a);
+
+match [| 1, 2, 3, 4, D... |] with 
+      a @ [| D...|] : (a);
+
+match [| 1, 2, 3, 4... |] with 
+      a @ [| 3...|] : (a);
+
+match [| 1, 2, 3, 4... |] with 
+      a @ [| 4...|] : (a);
+
+match [| 1, 2, 3, 4... |] with 
+      a @ [| 17...|] : (a);
+
+match [| 1, 2, 3, 4... |] with 
+      a @ [| 17, 18, 19 |] : (a)
+      default              : ("Something else");
+restart;
+structure.f = exp(x);
+structure.dom = [1;2];
+structure.formats = [| DD, D, D, D |];
+match structure with 
+     { .f = sin(x);
+       .dom = [a;b]
+     }                    : { "Sine, ",a,", ",b; }
+     { .f = exp(c);
+       .dom = [a;b];
+       .point = default 
+     }                    : { "Exponential, ",a, ", ", b, ", ", c; }
+     { .f = exp(x);
+       .dom = [a;b]
+     }                    : { "Exponential, ",a, ", ", b; }
+     default              : { "Something else"; };
+
+structure.f = sin(x);
+match structure with 
+     { .f = sin(x);
+       .dom = [a;b]
+     }                    : { "Sine, ",a,", ",b; }
+     { .f = exp(c);
+       .dom = [a;b];
+       .point = default 
+     }                    : { "Exponential, ",a, ", ", b, ", ", c; }
+     { .f = exp(x);
+       .dom = [a;b]
+     }                    : { "Exponential, ",a, ", ", b; }
+     default              : { "Something else"; };
+
+structure.f = exp(x + 2);
+structure.point = 23;
+match structure with 
+     { .f = sin(x);
+       .dom = [a;b]
+     }                    : { "Sine, ",a,", ",b; }
+     { .f = exp(c);
+       .dom = [a;b];
+       .point = default 
+     }                    : { "Exponential, ",a, ", ", b, ", ", c; }
+     { .f = exp(x);
+       .dom = [a;b]
+     }                    : { "Exponential, ",a, ", ", b; }
+     default              : { "Something else"; };
+restart;
+
+/* Some additional checks */
+
+match [1;2] with [1;default] : (1) default : (2);
+match [1;2] with [default;2] : (1) default : (2);
+match "Hallo du da" with ("Hall" @ default) @ "da"  : (1) default : (2);
+match [|1,...,6,18...|] with default @ [| 6, 18, 19, 20... |] : (1) default : (2);
+match [|1,...,6,18...|] with default @ [| 20... |] : (1) default : (2);
+match [|1,...,6,18...|] with [|1 |] @ default : (1) default : (2);
+match [|1,...,6|] with [||] @ default : (1) default : (2);
+match [|1,...,6|] with default @ [| 5,6 |] : (1) default : (2);
+
+

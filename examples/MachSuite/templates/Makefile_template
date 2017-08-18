@@ -1,0 +1,5 @@
+radix: radix.c radix.h ../../common/harness.c
+	$(CC) $(CFLAGS) -o radix radix.c ../../common/harness.c
+
+clean:
+	rm -f radix

@@ -1,0 +1,18 @@
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> a = { .f = exp(x), .dom = [-1;1] };
+> a;
+{ .f = exp(x), .dom = [-1;1] }
+> a.f;
+exp(x)
+> a.dom;
+[-1;1]
+> b.f = sin(x);
+> b.dom = [-1b-5;1b-5];
+> b;
+{ .dom = [-3.125e-2;3.125e-2], .f = sin(x) }
+> { .f = asin(x), .dom = [-1;1] }.f(1);
+Warning: rounding has happened. The value displayed is a faithful rounding of th
+e true result.
+1.57079632679489661923132169163975144209858469968754
+\end{Verbatim}
+\end{minipage}\end{center}

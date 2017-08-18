@@ -1,0 +1,66 @@
+\subsection{libraryconstant}
+\label{lablibraryconstant}
+\noindent Name: \textbf{libraryconstant}\\
+binds an external mathematical constant to a variable in \sollya\\
+\noindent Usage: 
+\begin{center}
+\textbf{libraryconstant}(\emph{path}) : \textsf{string} $\rightarrow$ \textsf{function}\\
+\end{center}
+\noindent Description: \begin{itemize}
+
+\item The command \textbf{libraryconstant} lets you extend the set of mathematical
+   constants known to \sollya.
+   By default, the only mathematical constant known by \sollya is \textbf{pi}.
+   For particular applications, one may want to
+   manipulate other constants, such as Euler's gamma constant, for instance.
+
+\item \textbf{libraryconstant} makes it possible to let \sollya know about new constants.
+   In order to let it know, you have to provide an implementation of the
+   constant you are interested in. This implementation is a C file containing
+   a function of the form:
+   \begin{verbatim} void my_ident(mpfr_t result, mp_prec_t prec)\end{verbatim}
+   The semantic of this function is the following: it is an implementation of
+   the constant in arbitrary precision.
+   \verb|my_ident(result, prec)| shall set the
+   precision of the variable result to a suitable precision (the variable is
+   assumed to be already initialized) and store in result an approximate value
+   of the constant with a relative error not greater than $2^{1-\mathrm{prec}}$.
+   More precisely, if $c$ is the exact value of the constant, the value stored
+   in result should satisfy $$|\mathrm{result}-c| \le |c|\,2^{1-\mathrm{prec}}.$$
+
+\item You can include sollya.h in your implementation and use library 
+   functionnalities of \sollya for your implementation. However, this requires to
+   have compiled \sollya with \texttt{-fPIC} in order to make the \sollya executable
+   code position independent and to use a system on with programs, using \texttt{dlopen}
+   to open dynamic routines can dynamically open themselves.
+
+\item To bind your constant into \sollya, you must use the same identifier as the
+   function name used in your implementation file (\verb|my_ident| in the previous
+   example). Once the function code has been bound to an identifier, you can use
+   a simple assignment to assign the bound identifier to yet another identifier.
+   This way, you may use convenient names inside \sollya even if your
+   implementation environment requires you to use a less convenient name.
+
+\item Once your constant is bound, it is considered by \sollya as an infinitely
+   accurate constant (i.e. a 0-ary function, exactly like \textbf{pi}).
+\end{itemize}
+\noindent Example 1: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> bashexecute("gcc -fPIC -Wall -c libraryconstantexample.c -I$HOME/.local/includ
+e");
+> bashexecute("gcc -shared -o libraryconstantexample libraryconstantexample.o -l
+gmp -lmpfr");
+> euler_gamma = libraryconstant("./libraryconstantexample");
+> prec = 20!;
+> euler_gamma;
+0.577215
+> prec = 100!;
+> euler_gamma;
+0.577215664901532860606512090082
+> midpointmode = on;
+Midpoint mode has been activated.
+> [euler_gamma];
+0.577215664901532860606512090~0/1~
+\end{Verbatim}
+\end{minipage}\end{center}
+See also: \textbf{bashexecute} (\ref{labbashexecute}), \textbf{externalproc} (\ref{labexternalproc}), \textbf{externalplot} (\ref{labexternalplot}), \textbf{pi} (\ref{labpi}), \textbf{library} (\ref{lablibrary}), \textbf{evaluate} (\ref{labevaluate}), \textbf{implementconstant} (\ref{labimplementconstant})

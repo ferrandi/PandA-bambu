@@ -1,0 +1,255 @@
+The tool has been restarted.
+=============== Test number 1 ================
+0
+Warning: rounding has happened.
+The displayed value is *NOT* guaranteed to be a faithful rounding of the true result.
+The displayed value has been computed using plain floating-point arithmetic and might be completely wrong.
+-5.2672331945605609510698374476395405103035179241388e12715
+Warning: rounding has happened.
+The displayed value is *NOT* guaranteed to be a faithful rounding of the true result.
+The displayed value has been computed using plain floating-point arithmetic and might be completely wrong.
+-0.6154138956554673381485474094428967527572078572788
+Warning: the given expression is undefined or numerically unstable.
+@NaN@
+Warning: the given expression is undefined or numerically unstable.
+@NaN@
+The tool has been restarted.
+=============== Test number 2 ================
+0x7f7fffff
+0x7f7fffff
+0x7f7fffff
+0x7f800000
+0x7f800000
+0x7f800000
+0x7f800000
+0x00000202
+0x80000201
+0x00000000
+0x80000000
+0x00000000
+0x80000000
+0x7f800000
+0xff800000
+0xffc00000
+0x00000000
+0x00000001
+0x00000000
+0x80000000
+0x80000001
+The tool has been restarted.
+=============== Test number 3 ================
+Warning: the given expression is undefined or numerically unstable.
+@NaN@
+Warning: the given expression is undefined or numerically unstable.
+@NaN@
+1
+Warning: the given expression is undefined or numerically unstable.
+@NaN@
+1
+sin(x) / cos(1.57079632679489661923132169163975144209858469968754 + x)
+[@NaN@;@NaN@]
+[-@Inf@;@Inf@]
+[1;1]
+[-@Inf@;@Inf@]
+1
+1
+-1
+[@NaN@;@NaN@]
+[-@Inf@;@Inf@]
+[1;1]
+[-@Inf@;@Inf@]
+[1;1]
+[1;1]
+[1;1]
+[-1.0000000000000000000000000000000000000000000000003;-0.99999999999999999999999999999999999999999999999967]
+The tool has been restarted.
+Warning: the given expression is undefined or numerically unstable.
+@NaN@
+Warning: the given expression is undefined or numerically unstable.
+@NaN@
+Warning: the given expression is undefined or numerically unstable.
+@NaN@
+Warning: the given expression is undefined or numerically unstable.
+@NaN@
+[@NaN@;@NaN@]
+[@NaN@;@NaN@]
+Warning: the given expression is undefined or numerically unstable.
+@NaN@
+[@NaN@;@NaN@]
+[0;0]
+[@NaN@;@NaN@]
+[@NaN@;@NaN@]
+[0;0]
+[0;0]
+[0;0]
+[0;0]
+The tool has been restarted.
+[5;6]
+[9;11]
+[11;13]
+[1.48413159102576603421115580040552279623487667593878e2;1.48413159102576603421115580040552279623487667593883e2]
+[0.383304995172271405300674298992716994324221525765986;0.75622562754285520105978586991665623136079159670958]
+The tool has been restarted.
+Midpoint mode has been activated.
+-0.350783227689619848120368800043635585084981735940588
+-0.3507832276896198481203688000436355850849817359405~9/7~
+-0.255541102026831319249902429363739075810920379434329
+-0.255541102026831319249902429363739075810920379434~5/3~
+-1
+[-1;-0.99999999999999999999999999999999999999999999999997]
+-0.95105651629515357211643933337938214340569863412572
+-0.95105651629515357211643933337938214340569863412~6/5~
+-0.93645668729079633769865762667176046301995776578195
+-0.9364566872907963376986576266717604630199577657819~8/5~
+-0.9667981925794610142822015397656939111959444268489
+-0.96679819257946101428220153976569391119594442684~9/8~
+[-4.89422029936844146150073710813639570136621233271748e-12715;5.0628857292543278449623900656885559485888217625523e-12715]
+[-4.89422029936844146150073710813639570136621233271748e-12715;5.0628857292543278449623900656885559485888217625523e-12715]
+-0.30901699437494742410229341718281905886015458990293
+-0.30901699437494742410229341718281905886015458990~4/2~
+The tool has been restarted.
+[232;233]
+Warning: the range bounds are given in inverse order. Will revert them.
+[232;233]
+[0.11;0.12]
+[0.125;0.125]
+Warning: the range bounds are given in inverse order. Will revert them.
+[0.11;0.12]
+[0.11;0.190000000000000000000000000000000000000000000000004]
+Warning: the range bounds are given in inverse order. Will revert them.
+[0.11;0.190000000000000000000000000000000000000000000000004]
+Warning: the range bounds are given in inverse order. Will revert them.
+true
+Warning: the range bounds are given in inverse order. Will revert them.
+[-233;-232]
+[-233;-232]
+Warning: the range bounds are given in inverse order. Will revert them.
+[-0.12;-0.11]
+[-0.125;-0.125]
+[-0.12;-0.11]
+Warning: the range bounds are given in inverse order. Will revert them.
+[-0.190000000000000000000000000000000000000000000000004;-0.11]
+[-0.190000000000000000000000000000000000000000000000004;-0.11]
+Warning: the range bounds are given in inverse order. Will revert them.
+true
+Midpoint mode has been activated.
+0.23~2/3~e3
+Warning: the range bounds are given in inverse order. Will revert them.
+0.23~2/3~e3
+0.1~0/3~
+[0.125]
+Warning: the range bounds are given in inverse order. Will revert them.
+0.1~0/3~
+[0.11;0.190000000000000000000000000000000000000000000000004]
+Warning: the range bounds are given in inverse order. Will revert them.
+[0.11;0.190000000000000000000000000000000000000000000000004]
+Warning: the range bounds are given in inverse order. Will revert them.
+true
+Warning: the range bounds are given in inverse order. Will revert them.
+-0.23~3/2~e3
+-0.23~3/2~e3
+Warning: the range bounds are given in inverse order. Will revert them.
+-0.1~3/0~
+[-0.125]
+-0.1~3/0~
+Warning: the range bounds are given in inverse order. Will revert them.
+[-0.190000000000000000000000000000000000000000000000004;-0.11]
+[-0.190000000000000000000000000000000000000000000000004;-0.11]
+Warning: the range bounds are given in inverse order. Will revert them.
+true
+The tool has been restarted.
+4096
+Warning: the precision of values in the tool must be at least 12 bits.
+0.100006103515625
+0.1
+4.9999999999999999999999999999999999999999999999999e-3
+0.5
+5
+The tool has been restarted.
+-0.2345909579608844241969993617028300510911361813189~3/1~
+0.2345909579608844241969993617028300510911361813189~1/3~
+[0]
+[1.25]
+0.1000000000000000000000000000000000000000000000000000000000000~6/7~e1
+[0;0]
+[1000;1000]
+The tool has been restarted.
+4.52055246569216251373291015625e-5
+4.520552107578623690642416477203369140625e-5
+4.5205521043867324948450914234854280948638916015625e-5
+The tool has been restarted.
+0.45205~5/7~e-4
+4.5205521043867324948450914234854280948638916015625e-5
+The tool has been restarted.
+=============== Test number 4 ================
+false
+The tool has been restarted.
+=============== Test number 5 ================
+true
+The tool has been restarted.
+=============== Test number 6 ================
+[|2, 3, 4, 5|]
+The tool has been restarted.
+=============== Test number 7 ================
+[|1, 2, 3, [|4, 5, 6|]|]
+The tool has been restarted.
+=============== Test number 8 ================
+[|1|]
+The tool has been restarted.
+=============== Test number 9 ================
+0
+Automatic pure tree simplification has been deactivated.
+x - x
+The tool has been restarted.
+0.5
+1 / 2
+The tool has been restarted.
+on
+The tool has been restarted.
+=============== Test number 10 ================
+1 + x^2 + 3 * x^3
+1 + 7 * x + 21 * x^2 + 35 * x^3 + 35 * x^4 + 21 * x^5 + 7 * x^6 + x^7
+The tool has been restarted.
+=============== Test number 11 ================
+exp(1 + 5 * x + 10 * x^2 + 10 * x^3 + 5 * x^4 + x^5) - log(asin(16 + 80 * x + 160 * x^2 + 160 * x^3 + 80 * x^4 + 16 * x^5) + x)
+The tool has been restarted.
+=============== Test number 12 ================
+off
+512 + x * (2304 + x * (4608 + x * (5376 + x * (4032 + x * (2016 + x * (672 + x * (144 + x * (18 + x))))))))
+Canonical automatic printing output has been activated.
+512 + 2304 * x + 4608 * x^2 + 5376 * x^3 + 4032 * x^4 + 2016 * x^5 + 672 * x^6 + 144 * x^7 + 18 * x^8 + x^9
+on
+512 + x * (2304 + x * (4608 + x * (5376 + x * (4032 + x * (2016 + x * (672 + x * (144 + x * (18 + x))))))))
+The tool has been restarted.
+true
+false
+true
+The tool has been restarted.
+=============== Test number 13 ================
+false
+false
+false
+true
+The tool has been restarted.
+=============== Test number 14 ================
+10
+The tool has been restarted.
+=============== Test number 15 ================
+0
+The tool has been restarted.
+=============== Test number 16 ================
+[|1, 2, 3, 7, 8, 9|]
+The tool has been restarted.
+=============== Test number 17 ================
+Hello World!
+The tool has been restarted.
+=============== Test number 18 ================
+true
+The tool has been restarted.
+=============== Test number 19 ================
+165
+The precision has been set to 200 bits.
+The tool has been restarted.
+=============== Test number 20 ================
+3
+0

@@ -1,0 +1,103 @@
+The tool has been restarted.
+=============== Test number 181 ================
+Warning: the current free variable is named "x" and not "y". Can only rename the free variable.
+The last command will have no effect.
+The tool has been restarted.
+=============== Test number 182 ================
+false
+true
+The tool has been restarted.
+=============== Test number 183 ================
+exp(x)
+The tool has been restarted.
+=============== Test number 184 ================
+x
+Warning: the identifier "a" is neither assigned to, nor bound to a library function nor external procedure, nor equal to the current free variable.
+Will interpret "a" as "x".
+x
+The tool has been restarted.
+=============== Test number 185 ================
+exp(x)
+1
+2
+3
+4
+5
+The tool has been restarted.
+Warning: the tool has been restarted inside a for loop.
+The for loop will no longer be executed.
+The tool has been restarted.
+=============== Test number 186 ================
+exp(x)
+1
+2
+3
+4
+5
+The tool has been restarted.
+8
+9
+10
+x
+Warning: the identifier "a" is neither assigned to, nor bound to a library function nor external procedure, nor equal to the current free variable.
+Will interpret "a" as "x".
+x
+The tool has been restarted.
+=============== Test number 187 ================
+6
+proc(n)
+{
+var res;
+res := (n) + (1);
+return res;
+}
+The tool has been restarted.
+=============== Test number 188 ================
+Hello world
+proc(s)
+{
+print("Hello", s);
+return void;
+}
+The tool has been restarted.
+=============== Test number 189 ================
+[| |]
+The tool has been restarted.
+=============== Test number 190 ================
+[|4, 1, 2, 5, 3, 2|]
+The tool has been restarted.
+=============== Test number 191 ================
+1.100100100001111111_2 * 2^(1)
+The tool has been restarted.
+=============== Test number 192 ================
+1.010110111111000010101000101100010100010101110110100101010011010101011111101110001010110001000000010011101_2 * 2^(1) + x * (1.110110001110011001001011100011010100110111011010111_2 * 2^(2) + x * (1.010000010101111001011011111101101111101100010000011_2 * 2^(4)))
+1.010110111111000010101000101100010100010101110110100101010011010101011111101110001010110001000000010011101_2 * 2^(1) + x * (1.110110001110011001001011100011010100110111011010111_2 * 2^(2) + x * (1.010000010101111001011011111101101111101100010000011_2 * 2^(4)))
+The tool has been restarted.
+=============== Test number 193 ================
+sin(x * (1.0101101111110000101010001011000101000101011101101001010100110101010111111011100010101100010000000100111001111010011110011110001110110001011100111000101100000111101_2 * 2^(1)))
+Warning: the given function is not a polynomial.
+sin(x * (1.0101101111110000101010001011000101000101011101101001010100110101010111111011100010101100010000000100111001111010011110011110001110110001011100111000101100000111101_2 * 2^(1)))
+The tool has been restarted.
+=============== Test number 194 ================
+Warning: the number of the given formats does not correspond to the degree of the given polynomial.
+1.010110111111000010101000101100010100010101110110100101010011010101011111101110001010110001000000010011101_2 * 2^(1) + x * (1.110110001110011001001011100011010100110111011010111_2 * 2^(2) + x * (1.01000001010111100101101111110110111110110001000001011111001011010100101111011111110001010011011101000100110000111010001110010000010110000101100000111001011100101001_2 * 2^(4)))
+The tool has been restarted.
+=============== Test number 195 ================
+1.01_2
+1_2
+The tool has been restarted.
+=============== Test number 196 ================
+@NaN@
+The tool has been restarted.
+=============== Test number 197 ================
+1.100100100001111111_2 * 2^(1)
+The tool has been restarted.
+=============== Test number 198 ================
+1_2 * 2^(-1100)
+0
+The tool has been restarted.
+=============== Test number 199 ================
+1.100100100001111111_2 * 2^(1)
+The tool has been restarted.
+=============== Test number 200 ================
+1.1001001000011111101_2 * 2^(1)

@@ -1,0 +1,37 @@
+\subsection{tripledouble}
+\label{labtripledouble}
+\noindent Names: \textbf{tripledouble}, \textbf{TD}\\
+represents a number as the sum of three IEEE doubles.\\
+\noindent Description: \begin{itemize}
+
+\item \textbf{tripledouble} is both a function and a constant.
+
+\item As a function, it rounds its argument to the nearest number that can be written
+   as the sum of three double precision numbers.
+
+\item The algorithm used to compute \textbf{tripledouble}($x$) is the following: let $x_h$ = \textbf{double}($x$),
+   let $x_m$ = \textbf{double}($x-x_h$) and let $x_l$ = \textbf{double}($x-x_h-x_m$). 
+   Return the number $x_h+x_m+x_l$. Note that if the
+   current precision is not sufficient to represent exactly $x_h+x_m+x_l$, a rounding will
+   occur and the result of \textbf{tripledouble}(x) will be useless.
+
+\item As a constant, it symbolizes the triple-double precision format. It is used in 
+   contexts when a precision format is necessary, e.g. in the commands 
+   \textbf{roundcoefficients} and \textbf{implementpoly}.
+   See the corresponding help pages for examples.
+\end{itemize}
+\noindent Example 1: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> verbosity=1!;
+> a = 1+ 2^(-55)+2^(-115);
+> TD(a);
+1.00000000000000002775557561562891353466491600711096
+> prec=110!;
+> TD(a);
+Warning: double rounding occurred on invoking the triple-double rounding operato
+r.
+Try to increase the working precision.
+1.000000000000000027755575615628913
+\end{Verbatim}
+\end{minipage}\end{center}
+See also: \textbf{halfprecision} (\ref{labhalfprecision}), \textbf{single} (\ref{labsingle}), \textbf{double} (\ref{labdouble}), \textbf{doubleextended} (\ref{labdoubleextended}), \textbf{doubledouble} (\ref{labdoubledouble}), \textbf{quad} (\ref{labquad}), \textbf{roundcoefficients} (\ref{labroundcoefficients}), \textbf{implementpoly} (\ref{labimplementpoly}), \textbf{fpminimax} (\ref{labfpminimax}), \textbf{printexpansion} (\ref{labprintexpansion})

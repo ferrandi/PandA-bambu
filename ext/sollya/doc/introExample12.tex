@@ -1,0 +1,33 @@
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> f = exp(x);
+> f;
+exp(x)
+> a = "Hello world";
+> a;
+Hello world
+> b = 5;
+> f(b);
+Warning: rounding has happened. The value displayed is a faithful rounding of th
+e true result.
+1.48413159102576603421115580040552279623487667593878e2
+> {var b; b = 4; f(b); };
+Warning: rounding has happened. The value displayed is a faithful rounding of th
+e true result.
+5.45981500331442390781102612028608784027907370386137e1
+> {var x; x = 3; };
+Warning: the identifier "x" is already bound to the current free variable.
+It cannot be declared as a local variable. The declaration of "x" will have no e
+ffect.
+Warning: the identifier "x" is already bound to the free variable, to a library 
+function, library constant or to an external procedure.
+The command will have no effect.
+Warning: the last assignment will have no effect.
+> {var a, b; a=5; b=3; {var a; var b; b = true; a = 1; a; b;}; a; b; };
+1
+true
+5
+3
+> a;
+Hello world
+\end{Verbatim}
+\end{minipage}\end{center}

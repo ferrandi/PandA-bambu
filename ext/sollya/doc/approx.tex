@@ -1,0 +1,83 @@
+\subsection{$\sim$}
+\label{labapprox}
+\noindent Name: \textbf{$\sim$}\\
+floating-point evaluation of a constant expression\\
+\noindent Usage: 
+\begin{center}
+\textbf{$\sim$} \emph{expression} : \textsf{function} $\rightarrow$ \textsf{constant}\\
+\textbf{$\sim$} \emph{something} : \textsf{any type} $\rightarrow$ \textsf{any type}\\
+\end{center}
+Parameters: 
+\begin{itemize}
+\item \emph{expression} stands for an expression that is a constant
+\item \emph{something} stands for some language element that is not a constant expression
+\end{itemize}
+\noindent Description: \begin{itemize}
+
+\item \textbf{$\sim$} \emph{expression} evaluates the \emph{expression} that is a constant
+   term to a floating-point constant. The evaluation may involve a
+   rounding. If \emph{expression} is not a constant, the evaluated constant is
+   a faithful rounding of \emph{expression} with \textbf{precision} bits, unless the
+   \emph{expression} is exactly $0$ as a result of cancellation. In the
+   latter case, a floating-point approximation of some (unknown) accuracy
+   is returned.
+
+\item \textbf{$\sim$} does not do anything on all language elements that are not a
+   constant expression.  In other words, it behaves like the identity
+   function on any type that is not a constant expression. It can hence
+   be used in any place where one wants to be sure that expressions are
+   simplified using floating-point computations to constants of a known
+   precision, regardless of the type of actual language elements.
+
+\item \textbf{$\sim$} \textbf{error} evaluates to error and provokes a warning.
+
+\item \textbf{$\sim$} is a prefix operator not requiring parentheses. Its
+   precedence is the same as for the unary $+$ and $-$
+   operators. It cannot be repeatedly used without brackets.
+\end{itemize}
+\noindent Example 1: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> print(exp(5));
+exp(5)
+> print(~ exp(5));
+1.48413159102576603421115580040552279623487667593878e2
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 2: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> autosimplify = off!;
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 3: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> print(~sin(5 * pi));
+0
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 4: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> print(~exp(x));
+exp(x)
+> print(~ "Hello");
+Hello
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 5: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> print(~exp(x*5*Pi));
+exp((pi) * 5 * x)
+> print(exp(x* ~(5*Pi)));
+exp(x * 1.57079632679489661923132169163975144209858469968757e1)
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 6: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> print(~exp(5)*x);
+1.48413159102576603421115580040552279623487667593878e2 * x
+> print( (~exp(5))*x);
+1.48413159102576603421115580040552279623487667593878e2 * x
+> print(~(exp(5)*x));
+exp(5) * x
+\end{Verbatim}
+\end{minipage}\end{center}
+See also: \textbf{evaluate} (\ref{labevaluate}), \textbf{prec} (\ref{labprec}), \textbf{error} (\ref{laberror})

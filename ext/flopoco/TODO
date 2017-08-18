@@ -1,0 +1,151 @@
+TODO file for FloPoCo
+Bug (ds FixRealKCM?) ./flopoco -verbose=3 FPExp 7 12 
+With Matei: see the nextCycles in FPExp and see if we can push them in IntMultiplier somehow
+
+Here and there, fix VHDL style issues needed for whimsical simulators or synthesizers. See doc/VHDLStyle.txt
+
+
+Clean up src/ file hierarchy:
+
+Add LUT-based integer comparators
+
+
+BitHeapization 
+(and provide a bitheap-only constructor for all the following):
+* all the KCMs
+* PolyEval
+* FixSinCos
+* FPExp
+* HOTBM
+* IntAddition/*
+* Rework Guillaume Sergent's operators around the bit heap
+* define a policy for enableSuperTile: default to false or true?
+* Push this option to FPMult and other users of IntMult.
+* Replace tiling exploration with cached/classical tilings
+* More debogdanization: Get rid of
+    IntAddition/IntCompressorTree
+    IntAddition/NewIntCompressorTree
+    IntAddition/PopCount
+    after checking the new bit heap compression is at least as good...
+* replace "Virtex4" tests in IntAddition  with Target calls
+
+
+Testbench
+* Bug on outputs that are bits with isBus false and  multiple-valued  
+	(see the P output of Collision in release 2.1.0)
+* Multiple valued outputs should always be intervals, shouldn't they?
+
+
+Pipeline framework, Operator and Targets:
+* global switch to ieee standard signed and unsigned libraries
+* add FPU object and remove all global variables, to enable library build
+* add semantic support of fixed-point to Signal
+* fix obvious memory leaks
+* fix the default getCycleFromSignal . 
+* define a Timing as a (Cycle, CriticalPath), and associate that cleanly to Signals with getTiming methods that set both cycle and critical path.
+* insert getNewUId and comb/freq info directly in setName(), and clean up
+
+
+Collision
+* manage infinities etc
+* decompose into FPSumOf3Squares and Collision
+* Sum of n squares
+
+Table and FunctionTable:
+* FunctionEvaluator with degree=0 should generate a FunctionTable
+* VHDL generation is broken when logicTable=0 (pipeline depth=1 but no register)
+
+FPLog:
+* Fix a few remaining last-bit accuracy problems, damn.
+* compare with polynomial-based version.
+
+FPExp:
+* Everybody wants less-than-single-precision
+
+HOTBM:
+* true FloPoCoization, pipeline
+* better (DSP-aware) architectural exploration
+
+ConstMult:
+* group KCM and shift-and-add in a single OO hierearchy (selecting the one with less hardware)
+* For FPConstMult, don't output the LSBs of the IntConstMult 
+   but only their sticky
+* Try left to right and right to left; try variations of the initial recoding
+* more clever, Lefevre-inspired algorithm
+* Use DSP: find the most interesting constant fitting on 18 bits
+* compare with Spiral.net and Gustafsson papers
+* Implement the continued fraction stuff for FPCRConstMult
+
+SumOfProducts, LongAcc
+* add test bench generation
+
+Shifters
+* provide finer spec, see the TODOs inside Shifter.cpp
+
+General
+* Doxygenize while it's not too late
+
+********************************************************************
+
+Tentative roadmap 
+(minor version number count, more or less, the number of working operators. 
+We have left  0.xx for 1.xx when all the basic operators have been backported with working pipeline):
+
+Version 0.1: IntConstMult, FPConstMult, FPCRConstMult
+Version 0.4: LongAccumulator, FPMultiplier
+Version 0.5 : HOTBM integration 
+Version 0.6 : FPLog
+Version 0.7 : FPExp
+Version 0.8 : DotProduct
+Version 0.9 : LNS operators, thanks to Sylvain Collange
+Version 0.11: FPDiv, IntSquarer, new pipeline framework
+Version 1.15: FPSqrt FPSquarer InputIEEE Fix2FP 
+Version 2.0 : FunctionEvaluator
+Version 2.2 : FPExp, FPPowr (experimental)
+Version 2.3 : IntConstDiv, FPConstDiv and FPConstDivExpert, FPConstMultRational, TaMaDi architecture
+-- we're here (faster than expected)
+Version 2.4   RNGs, BitHeap, revamped multipliers, FPSinCos, CORDIC
+              FPAddSub (for FFT butterfly structure)
+Version ???   Complex operators (in particular division)
+Version ???   FixToFPUniformDist (2008 ASAP paper by Thomas)
+Version ???   FPNorm2D
+Version ???   FPNorm3D -- Almost there, see Collision
+Version ??    FPBoxMuller
+Version ???   Interval operators
+(insert your wishlist here)
+
+
+
+If we were to redo the pipeline framework from scratch, here is the proper way to do it.
+
+The current situation has a history: we first added cycle management, then, as a refinement, critical-path based subcycle timing.
+So we have to manage explicitely the two components of a lexicographic time (cycle and delay within a cycle)
+But there is only one wallclock time, and the decomposition of this wallclock time into cycles and sub-cycles could be automatic. And should.
+ 
+The following version of declare() could remove the need for manageCriticalPath as well as all the explicit synchronization methods.
+declare(name, size, delay)
+declares a signal, and associates its computation delay to it.  This delay is what we currently pass to manageCriticalPath. Each signal now will have a delay associated to it (with a default of 0 for signals that do not add to the critical path).
+The semantics is: this signal will not be assigned its value before the instant delta + max(instants of the RHS signals) 
+This is all what the first pass, the one that populates the vhdl stream, needs to do. No explicit synchronization management needed. No need to setCycle to "come back in time", etc.
+
+Then we have a retiming procedure that must associate a cycle to each signal. 
+It will do both synchronization and cycle computation. According to Alain Darte there is an old retiming paper that shows that the retiming problem can be solved optimally in linear time for DAGs, which is not surprising.
+Example of simple procedure: 
+first build the DAG of signals (all it takes is the same RHS parsing, looking for signal names, as we do)
+Then sit on the existing scheduling literature...
+For instance  
+1/ build the operator's critical path
+2/ build the ASAP and ALAP instants for each signal
+3/ progress from output to input, allocating a cycle to each signal, with ALAP scheduling (should minimize register count for compressing operators)
+4/ possibly do a bit of Leiserson and Saxe retiming 
+
+We keep all the current advantages: 
+- still VHDL printing based
+- When developing an operator, we initially leave all the deltas to zero to debug the combinatorial version. Then we incrementally add deltas, just like we currently  add manageCriticalPath(). 
+- etc
+
+The difference is that the semantic is now much clearer. No more notion of a block following a manageCriticalPath(), etc
+
+The question is: don't we loose some control on the circuit with this approach, compared to what we currently do?
+
+Note that all this is so much closer to textbook literature, with simple DAGs labelled by delay...

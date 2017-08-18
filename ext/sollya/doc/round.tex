@@ -1,0 +1,59 @@
+\subsection{round}
+\label{labround}
+\noindent Name: \textbf{round}\\
+rounds a number to a floating-point format.\\
+\noindent Usage: 
+\begin{center}
+\textbf{round}(\emph{x},\emph{n},\emph{mode}) : (\textsf{constant}, \textsf{integer}, \textsf{RN$|$RZ$|$RU$|$RD}) $\rightarrow$ \textsf{constant}\\
+\textbf{round}(\emph{x},\emph{format},\emph{mode}) : (\textsf{constant}, \textsf{HP$|$halfprecision$|$SG$|$single$|$D$|$double$|$DE$|$doubleextended$|$DD$|$doubledouble$|$QD$|$quad$|$TD$|$tripledouble}, \textsf{RN$|$RZ$|$RU$|$RD}) $\rightarrow$ \textsf{constant}\\
+\end{center}
+Parameters: 
+\begin{itemize}
+\item \emph{x} is a constant to be rounded.
+\item \emph{n} is the precision of the target format.
+\item \emph{format} is the name of a supported floating-point format.
+\item \emph{mode} is the desired rounding mode.
+\end{itemize}
+\noindent Description: \begin{itemize}
+
+\item If used with an integer parameter \emph{n}, \textbf{round}(\emph{x},\emph{n},\emph{mode}) rounds \emph{x} to a floating-point number with 
+   precision \emph{n}, according to rounding-mode \emph{mode}. 
+
+\item If used with a format parameter \emph{format}, \textbf{round}(\emph{x},\emph{format},\emph{mode}) rounds \emph{x} to a floating-point number in the 
+   floating-point format \emph{format}, according to rounding-mode \emph{mode}. 
+
+\item Subnormal numbers are handled for the case when \emph{format} is one of
+   \textbf{halfprecision}, \textbf{single}, \textbf{double}, \textbf{doubleextended}, \textbf{doubledouble},
+   \textbf{quad} or \textbf{tripledouble}. Otherwise, when \emph{format} is an integer,
+   \textbf{round} does not take any exponent range into consideration,
+   i.e. typically uses the full exponent range of the underlying MPFR
+   library.
+\end{itemize}
+\noindent Example 1: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> display=binary!;
+> round(Pi,20,RN);
+1.100100100001111111_2 * 2^(1)
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 2: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> printdouble(round(exp(17),53,RU));
+0x417709348c0ea4f9
+> printdouble(D(exp(17)));
+0x417709348c0ea4f9
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 3: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> display=binary!;
+> a=2^(-1100);
+> round(a,53,RN);
+1_2 * 2^(-1100)
+> round(a,D,RN);
+0
+> double(a);
+0
+\end{Verbatim}
+\end{minipage}\end{center}
+See also: \textbf{RN} (\ref{labrn}), \textbf{RD} (\ref{labrd}), \textbf{RU} (\ref{labru}), \textbf{RZ} (\ref{labrz}), \textbf{halfprecision} (\ref{labhalfprecision}), \textbf{single} (\ref{labsingle}), \textbf{double} (\ref{labdouble}), \textbf{doubleextended} (\ref{labdoubleextended}), \textbf{doubledouble} (\ref{labdoubledouble}), \textbf{quad} (\ref{labquad}), \textbf{tripledouble} (\ref{labtripledouble}), \textbf{roundcoefficients} (\ref{labroundcoefficients}), \textbf{roundcorrectly} (\ref{labroundcorrectly}), \textbf{printdouble} (\ref{labprintdouble}), \textbf{printsingle} (\ref{labprintsingle}), \textbf{ceil} (\ref{labceil}), \textbf{floor} (\ref{labfloor}), \textbf{nearestint} (\ref{labnearestint})

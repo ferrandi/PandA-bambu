@@ -1,0 +1,416 @@
+The tool has been restarted.
+=============== Test number 241 ================
+Testing taylorform( exp(x) , 5 , 0 , absolute : OK
+Testing taylorform( sin(x) , 17 , 1.2587890625 , absolute : OK
+Testing taylorform( sin(exp(x)) + 2 - x , 7 , 0 , absolute : OK
+Testing taylorform( sin(exp(x)) + 2 - x , 7 , [-1;1] , absolute : OK
+Testing taylorform( sin(exp(x)) + 2 - x , 7 , 1.2587890625 , absolute : OK
+true
+true
+Testing taylorform( sin(exp(x)) + 2 - x , 7 , 0 , [-1;1] , absolute : OK
+Testing taylorform( sin(exp(x)) + 2 - x , 7 , [-1;1] , [-1;1] , absolute : OK
+Testing taylorform( sin(exp(x)) + 2 - x , 7 , [-1;1] , [-1;1] , relative : OK
+Testing taylorform( sin(exp(x)) + 2 - x , 7 , 2.4585723876953125e-3 , [-3.90625e-3;7.8125e-3] , absolute : OK
+Testing taylorform( sin(exp(x)) + 2 - x , 7 , 2.4585723876953125e-3 , [-3.90625e-3;7.8125e-3] , relative : OK
+true
+Testing taylorform( sin(exp(x)) + 2 - x , 7 , 0 , [-3.90625e-3;7.8125e-3] , relative : OK
+Testing taylorform( sin(exp(x)) + 2 - x , 7 , 0 , [-3.90625e-3;7.8125e-3] , absolute : OK
+Testing taylorform( sin(x)^4 + x^5 * exp(17 * x) , 7 , 2.4585723876953125e-3 , [-3.90625e-3;7.8125e-3] , relative : OK
+Testing taylorform( 2^x , 7 , 2.4585723876953125e-3 , [-3.90625e-3;7.8125e-3] , relative : OK
+Testing taylorform( x^17 , 7 , 2.4585723876953125e-3 , [-3.90625e-3;7.8125e-3] , relative : OK
+Testing taylorform( x^5 , 7 , 2.4585723876953125e-3 , [-3.90625e-3;7.8125e-3] , relative : OK
+Testing taylorform( 2^x , 7 , 2.4585723876953125e-3 , [-3.90625e-3;7.8125e-3] , absolute : OK
+Testing taylorform( 2^x , 7 , 0 , [-3.90625e-3;7.8125e-3] , relative : OK
+Testing taylorform( 2^x , 7 , 0 , [-3.90625e-3;7.8125e-3] , absolute : OK
+Testing taylorform( x^17 , 7 , 2.4585723876953125e-3 , [-3.90625e-3;7.8125e-3] , absolute : OK
+Testing taylorform( x^5 , 7 , 0 , [-3.90625e-3;7.8125e-3] , absolute : OK
+Testing taylorform( 1 + 2 * x + 3 * x^2 + 4 * x^3 , 7 , 0 , [-3.90625e-3;7.8125e-3] , relative : OK
+Testing taylorform( 2 * x + 3 * x^2 + 4 * x^3 , 7 , 0 , [-3.90625e-3;7.8125e-3] , relative : OK
+Testing taylorform( exp(sin(x))^log2(1 + sin(x)^2) * erf(x) , 7 , 2.4585723876953125e-3 , [-3.90625e-3;7.8125e-3] , relative : OK
+Testing taylorform( exp(sin(x))^log2(1 + sin(x)^2) * erf(x) , 7 , 2.4585723876953125e-3 , [-3.90625e-3;7.8125e-3] , absolute : OK
+Testing taylorform( exp(sin(x))^log2(1 + sin(x)^2) * erf(x) , 7 , 0 , [-3.90625e-3;7.8125e-3] , absolute : OK
+Testing taylorform( exp(sin(x))^log2(1 + sin(x)^2) * erf(x) , 7 , 0 , [-3.90625e-3;7.8125e-3] , relative : OK
+The tool has been restarted.
+=============== Test number 242 ================
+true
+true
+true
+false
+false
+true
+false
+true
+true
+false
+false
+The tool has been restarted.
+=============== Test number 243 ================
+24154953
+2
+4
+-24154953
+-2
+-4
+The tool has been restarted.
+=============== Test number 243 ================
+1.484131622314453125e2
+0
+0
+0
+1.40129846432481707092372958328991613128026194187652e-45
+0
+The tool has been restarted.
+=============== Test number 244 ================
+6
+4
+proc(n)
+{
+nop;
+return (n) + (1);
+}
+11
+proc(m, n)
+{
+var res;
+res := (m) + (n);
+return res;
+}
+Warning: at least one of the given expressions or a subexpression is not correctly typed
+or its evaluation has failed because of some error on a side-effect.
+error
+Warning: at least one of the given expressions or a subexpression is not correctly typed
+or its evaluation has failed because of some error on a side-effect.
+Warning: the given expression or command could not be handled.
+error
+6
+1 + x
+Hello world.
+Hello world.
+void
+proc()
+{
+print("Hello world.");
+return void;
+}
+120
+39916800
+proc(n)
+{
+var res;
+if (n) == (0) then
+res := 1
+else
+res := (n) * (fac((n) - (1)));
+return res;
+}
+11
+-1
+6
+4
+proc(n)
+{
+print(n);
+quit;
+return void;
+}
+Warning: a quit or restart command may not be part of a procedure body.
+The procedure will not be executed.
+Warning: an error occurred while executing a procedure.
+Warning: the given expression or command could not be handled.
+error
+Successor of 5 is 6
+n = 4
+proc(m, n)
+{
+nop;
+return (n) + (m);
+}
+n = 4
+11
+proc(L = ...)
+{
+var acc, i;
+acc = 0;
+for i in L do
+acc = (acc) + (i);
+return acc;
+}
+0
+2
+7
+39
+55
+The tool has been restarted.
+=============== Test number 245 ================
+The tool has been restarted.
+=============== Test number 246 ================
+1.00004475029055070643077052482053398765426158966754 + x * (1.00003834652983970735244541124504033817544233075356 + x * (0.49919698262882986492168824494240374771969012861297 + x * (0.166424656075155194415920597322727380932279602909199 + x * (4.37936963873280470271257566207183496659575464236489e-2 + x * 8.7381910388065551140158420278330960479960476713376e-3))))
+The tool has been restarted.
+=============== Test number 247 ================
+Display mode is binary numbers.
+x^(1.1_2 * 2^(1))
+x^(1.11_2 * 2^(1))  x^(1.11_2 * 2^(1))
+x^(1.11_2 * 2^(1))
+x^(1.11_2 * 2^(1))
+
+This is a test x^(1.00011_2 * 2^(4)) x^(1.00001_2 * 2^(4)) x
+proc(n)
+{
+var res;
+res = (n) * ((x) ^ (17));
+return res;
+}
+The tool has been restarted.
+=============== Test number 248 ================
+Display mode is dyadic numbers in integer-power-of-2 notation.
+x^(7 * 2^(-1))
+x^(7 * 2^(-1))  x^(7 * 2^(-1))
+x^(7 * 2^(-1))
+x^(7 * 2^(-1))
+
+This is a test x^(35 * 2^(-1)) x^(33 * 2^(-1)) x
+proc(n)
+{
+var res;
+res = (n) * ((x) ^ (17));
+return res;
+}
+The tool has been restarted.
+=============== Test number 249 ================
+Display mode is binary numbers.
+x^(1.11_2 * 2^(1))
+x^(1.11_2 * 2^(1))x^(1.11_2 * 2^(1))
+x^(1.11_2 * 2^(1))
+x^(1.11_2 * 2^(1))
+
+This is a test x^(1.00011_2 * 2^(4)) x^(1.00001_2 * 2^(4)) x
+proc(n)
+{
+var res;
+res = (n) * ((x) ^ (17));
+return res;
+}
+The tool has been restarted.
+=============== Test number 250 ================
+false
+true
+true
+false
+true
+true
+false
+false
+true
+true
+Warning: equality test relies on floating-point result that is faithfully evaluated and different faithful roundings toggle the result.
+Warning: equality test relies on floating-point result that is faithfully evaluated and different faithful roundings toggle the result.
+true
+Warning: inequality test relies on floating-point result that is faithfully evaluated and different faithful roundings toggle the result.
+true
+Warning: inequality test relies on floating-point result that is faithfully evaluated and different faithful roundings toggle the result.
+false
+Warning: inequality test relies on floating-point result that is faithfully evaluated and different faithful roundings toggle the result.
+true
+Warning: inequality test relies on floating-point result that is faithfully evaluated and different faithful roundings toggle the result.
+false
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+The tool has been restarted.
+=============== Test number 251 ================
+5.53427734375e1
+5.53427734375e1
+The tool has been restarted.
+=============== Test number 252 ================
+Warning: using slower GMP MPQ version
+0
+The tool has been restarted.
+=============== Test number 253 ================
+false
+false
+false
+false
+false
+false
+false
+false
+true
+false
+false
+The tool has been restarted.
+=============== Test number 254 ================
+true
+The tool has been restarted.
+=============== Test number 255 ================
+{ .a = 5, .b = exp(x) }
+5
+exp(x)
+1.48413159102576603421115580040552279623487667593878e2
+5
+5 + exp(x)
+sin(x * 3.14159265358979323846264338327950288419716939937508)
+-0.70710678118654752440084436210484903928483593768847
+{ .e = { .f = { .g = "Salut" } }, .d = sin(x * 3.14159265358979323846264338327950288419716939937508), .a = 5, .b = exp(x) }
+{ .f = { .g = "Salut" } }
+{ .f = { .g = "Salut" } }
+Salut and hello
+true
+{ .h = { .a = 17, .n = true }, .e = { .f = { .g = "Salut" } }, .d = sin(x * 3.14159265358979323846264338327950288419716939937508), .a = 5, .b = exp(x) }
+{ .a = { .b = { .c = "Hallo" } } }
+{ .a = { .b = { .c = 17 } } }
+{ .a = { .b = "Blub" } }
+{ .a = { .b = { .a = "Blub" } } }
+{ .a = { .b = { .d = { .e = { .f = "Blib" } }, .a = "Blub" } } }
+{ .a = { .b = { .f = { .h = 17 }, .d = { .e = { .f = "Blib" } }, .a = "Blub" } } }
+Warning: cannot modify an element of something that is not a structure.
+Warning: the last assignment will have no effect.
+exp(x)
+{ .a = 17, .b = exp(x) }
+{ .toto = { .u = 1 } }
+{ .a = { .toto = 0.25 } }
+Warning: a literal structure contains at least one entry twice. This is not allowed.
+Warning: at least one of the given expressions or a subexpression is not correctly typed
+or its evaluation has failed because of some error on a side-effect.
+The tool has been restarted.
+=============== Test number 256 ================
+The verbosity level has been set to 0.
+Test 1: (-3)^(+0) = 1 IEEE 754-2008: 1
+Test 2: 3^(+0) = 1 IEEE 754-2008: 1
+Test 3: NaN^(+0) = @NaN@ IEEE 754-2008: 1
+Test 4: NaN^(-0) = @NaN@ IEEE 754-2008: 1
+Test 5: (-infty)^(+0) = 1 IEEE 754-2008: 1
+Test 6: (-infty)^(-0) = 1 IEEE 754-2008: 1
+Test 7: (infty)^(+0) = 1 IEEE 754-2008: 1
+Test 8: (infty)^(-0) = 1 IEEE 754-2008: 1
+Test 9: (+0)^(-5) = @NaN@ IEEE 754-2008: +infty
+Test 10: (-0)^(-5) = @NaN@ IEEE 754-2008: -infty
+Test 11: (+0)^(-4) = @NaN@ IEEE 754-2008: +infty
+Test 12: (-0)^(-4) = @NaN@ IEEE 754-2008: +infty
+Test 13: (+0)^(+5) = 0 IEEE 754-2008: +0
+Test 14: (-0)^(+5) = 0 IEEE 754-2008: -0
+Test 15: (+0)^(+4) = 0 IEEE 754-2008: +0
+Test 16: (-0)^(+4) = 0 IEEE 754-2008: +0
+Test 17: (+0)^(-5.5) = @NaN@ IEEE 754-2008: +infty
+Test 18: (-0)^(-5.5) = @NaN@ IEEE 754-2008: +infty
+Test 19: (+0)^(-4.5) = @NaN@ IEEE 754-2008: +infty
+Test 20: (-0)^(-4.5) = @NaN@ IEEE 754-2008: +infty
+Test 21: (+0)^(+5.5) = 0 IEEE 754-2008: +0
+Test 22: (-0)^(+5.5) = 0 IEEE 754-2008: +0
+Test 23: (+0)^(+4.5) = 0 IEEE 754-2008: +0
+Test 24: (-0)^(+4.5) = 0 IEEE 754-2008: +0
+Test 25: (+0)^(-infty) = @NaN@ IEEE 754-2008: +infty
+Test 26: (-0)^(-infty) = @NaN@ IEEE 754-2008: +infty
+Test 27: (+0)^(+infty) = 0 IEEE 754-2008: +0
+Test 28: (-0)^(+infty) = 0 IEEE 754-2008: +0
+Test 29: (-1)^(+infty) = 1 IEEE 754-2008: 1
+Test 30: (-1)^(-infty) = 1 IEEE 754-2008: 1
+Test 31: (+1)^(+infty) = 1 IEEE 754-2008: 1
+Test 32: (+1)^(-infty) = 1 IEEE 754-2008: 1
+Test 33: (+1)^(-3) = 1 IEEE 754-2008: 1
+Test 34: (+1)^(-3.5) = 1 IEEE 754-2008: 1
+Test 35: (+1)^(-4) = 1 IEEE 754-2008: 1
+Test 36: (+1)^(-3.5) = 1 IEEE 754-2008: 1
+Test 37: (-1)^(-3) = -1 IEEE 754-2008: -1
+Test 38: (-1)^(-3.5) = @NaN@ IEEE 754-2008: NaN
+Test 39: (-1)^(-4) = 1 IEEE 754-2008: 1
+Test 40: (-1)^(-4.5) = @NaN@ IEEE 754-2008: NaN
+Test 41: (+1)^(+0) = 1 IEEE 754-2008: 1
+Test 42: (+1)^(-0) = 1 IEEE 754-2008: 1
+Test 43: (-1)^(+0) = 1 IEEE 754-2008: 1
+Test 44: (-1)^(-0) = 1 IEEE 754-2008: 1
+Test 45: (+1)^(+2) = 1 IEEE 754-2008: 1
+Test 46: (-1)^(+2) = 1 IEEE 754-2008: 1
+Test 47: (+1)^(+2.5) = 1 IEEE 754-2008: 1
+Test 48: (-1)^(+2.5) = @NaN@ IEEE 754-2008: NaN
+Test 49: (+1)^(+infty) = 1 IEEE 754-2008: 1
+Test 50: (+1)^(-infty) = 1 IEEE 754-2008: 1
+Test 51: (-1)^(+infty) = 1 IEEE 754-2008: 1
+Test 52: (-1)^(-infty) = 1 IEEE 754-2008: 1
+Test 53: (+1)^NaN = @NaN@ IEEE 754-2008: 1
+Test 54: (-1)^NaN = @NaN@ IEEE 754-2008: NaN
+Test 55: (-5)^(-5.5) = @NaN@ IEEE 754-2008: NaN
+Test 56: (-5)^(-4.5) = @NaN@ IEEE 754-2008: NaN
+Test 57: (-5)^(+5.5) = @NaN@ IEEE 754-2008: NaN
+Test 58: (-5)^(+4.5) = @NaN@ IEEE 754-2008: NaN
+Test 59: (+5)^(-5.5) = 1.4310835055998654057018711479880167906819957501514e-4 IEEE 754-2008: real
+Test 60: (+5)^(-4.5) = 7.1554175279993270285093557399400839534099787507568e-4 IEEE 754-2008: real
+Test 61: (+5)^(+5.5) = 6.9877124296868428012786677147852382357519323737861e3 IEEE 754-2008: real
+Test 62: (+5)^(+4.5) = 1.39754248593736856025573354295704764715038647475718e3 IEEE 754-2008: real
+Test 63: NaN^NaN = @NaN@ IEEE 754-2008: NaN
+Test 64: (+infty)^(+infty) = @NaN@ IEEE 754-2008: +infty
+Test 65: (+infty)^(-infty) = 0 IEEE 754-2008: +0
+Test 66: (-infty)^(+infty) = @NaN@ IEEE 754-2008: NaN
+Test 67: (-infty)^(-infty) = 0 IEEE 754-2008: NaN
+Test 68: (+infty)^NaN = @NaN@ IEEE 754-2008: NaN
+Test 69: (-infty)^NaN = @NaN@ IEEE 754-2008: NaN
+Test 70: NaN^(+infty) = @NaN@ IEEE 754-2008: NaN
+Test 71: NaN^(-infty) = @NaN@ IEEE 754-2008: NaN
+The tool has been restarted.
+=============== Test number 257 ================
+[@Inf@;@Inf@]  [@Inf@;@Inf@]
+[-@Inf@;-@Inf@]  [-@Inf@;-@Inf@]
+[-@Inf@;-@Inf@]  [-@Inf@;-@Inf@]
+[@Inf@;@Inf@]  [@Inf@;@Inf@]
+[-@Inf@;@Inf@]  [-@Inf@;@Inf@]
+[-@Inf@;@Inf@]  [-@Inf@;@Inf@]
+Warning: one bound of a range is NaN while the other is not. Will normalize the range to have two NaN endpoints.
+[@NaN@;@NaN@]  [@NaN@;@NaN@]
+Warning: one bound of a range is NaN while the other is not. Will normalize the range to have two NaN endpoints.
+[@NaN@;@NaN@]  [@NaN@;@NaN@]
+Warning: the bounds of the given range are in wrong order. Will reverse them.
+[-2;2]
+Warning: the bounds of the given range are in wrong order. Will reverse them.
+[-@Inf@;@Inf@]
+[1;1]  [1;1]
+[1;1]  [1;1]
+[@NaN@;@NaN@]  [@NaN@;@NaN@]
+[0;0]  [0;0]
+[@Inf@;@Inf@]  [@Inf@;@Inf@]
+[0;@Inf@]  [0;@Inf@]
+[@Inf@;@Inf@]  [@Inf@;@Inf@]
+[1;@Inf@]  [1;@Inf@]
+[0;2]  [0;2]
+[0;0]  [0;0]
+[0;0]  [0;0]
+[0;0]  [0;0]
+[0;0]  [0;0]
+[0;0]  [0;0]
+[0;0]  [0;0]
+[0;0]  [0;0]
+The tool has been restarted.
+=============== Test number 258 ================
+false
+The tool has been restarted.
+=============== Test number 259 ================
+-1.3862943611198906188344642429163531361510002687205
+17
+-1.3862943611198906188344642429163531361510002687205
+sin(62)
+Warning: minimum computation relies on floating-point result that is faithfully evaluated and different faithful roundings toggle the result.
+17 + log(13) / log(9)
+1.48413159102576603421115580040552279623487667593878e2
+17
+1.48413159102576603421115580040552279623487667593878e2
+exp(17)
+Warning: maximum computation relies on floating-point result that is faithfully evaluated and different faithful roundings toggle the result.
+17 + log2(13) / log2(9)
+The tool has been restarted.
+=============== Test number 260 ================
+Check that mpfr_urandom has the expected behavior (either one of the old 32-bit or 64-bit behavior), or the new one. OK

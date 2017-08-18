@@ -1,0 +1,41 @@
+\subsection{printdouble}
+\label{labprintdouble}
+\noindent Name: \textbf{printdouble}\\
+prints a constant value as a hexadecimal double precision number\\
+\noindent Usage: 
+\begin{center}
+\textbf{printdouble}(\emph{constant}) : \textsf{constant} $\rightarrow$ \textsf{void}\\
+\end{center}
+Parameters: 
+\begin{itemize}
+\item \emph{constant} represents a constant
+\end{itemize}
+\noindent Description: \begin{itemize}
+
+\item Prints a constant value as a hexadecimal number on 16 hexadecimal
+   digits. The hexadecimal number represents the integer equivalent to
+   the 64 bit memory representation of the constant considered as a
+   double precision number.
+    
+   If the constant value does not hold on a double precision number, it
+   is first rounded to the nearest double precision number before
+   displayed. A warning is displayed in this case.
+\end{itemize}
+\noindent Example 1: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> printdouble(3);
+0x4008000000000000
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 2: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> prec=100!;
+> verbosity = 1!;
+> printdouble(exp(5));
+Warning: the given expression is not a constant but an expression to evaluate. A
+ faithful evaluation will be used.
+Warning: rounding down occurred before printing a value as a double.
+0x40628d389970338f
+\end{Verbatim}
+\end{minipage}\end{center}
+See also: \textbf{printsingle} (\ref{labprintsingle}), \textbf{printexpansion} (\ref{labprintexpansion}), \textbf{double} (\ref{labdouble})

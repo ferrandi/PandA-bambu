@@ -1,0 +1,98 @@
+\subsection{supnorm}
+\label{labsupnorm}
+\noindent Name: \textbf{supnorm}\\
+computes an interval bounding the supremum norm of an approximation error (absolute or relative) between a given polynomial and a function.\\
+\noindent Usage: 
+\begin{center}
+\textbf{supnorm}(\emph{p}, \emph{f}, \emph{I}, \emph{errorType}, \emph{accuracy}) : (\textsf{function}, \textsf{function}, \textsf{range}, \textsf{absolute$|$relative}, \textsf{constant}) $\rightarrow$ \textsf{range}\\
+\end{center}
+Parameters: 
+\begin{itemize}
+\item \emph{p} is a polynomial.
+\item \emph{f} is a function.
+\item \emph{I} is an interval.
+\item \emph{errorType} is the type of error to be considered: \textbf{absolute} or \textbf{relative} (see details below).
+\item \emph{accuracy} is a constant that controls the relative tightness of the interval returned. 
+\end{itemize}
+\noindent Description: \begin{itemize}
+
+\item \textbf{supnorm}(\emph{p}, \emph{f}, \emph{I}, \emph{errorType}, \emph{accuracy}) tries to compute an
+   interval bound $r = [\ell,\,u]$ for the supremum norm of the error function
+   $\varepsilon_{\textrm{absolute}}=p-f$ (when \emph{errorType} evaluates to \textbf{absolute})
+   or $\varepsilon_{\textrm{relative}}=p/f-1$ (when \emph{errorType} evaluates to \textbf{relative}),
+   over the interval $I$, such that $\sup_{x \in I} \{|\varepsilon(x)|\}\subseteq r$
+   and $0 \le \left \vert\frac{u}{\ell} - 1 \right \vert \le$ \emph{accuracy}. If \textbf{supnorm} succeeds in computing a suitable
+   interval $r$, which it returns, that interval is guaranteed to contain the
+   supremum norm value and to satisfy the required quality. Otherwise, \textbf{supnorm}
+   evaluates to \textbf{error}, displaying a corresponding error message. These failure
+   cases are rare and basically happen only for functions which are too
+   complicated.
+
+\item Roughly speaking, \textbf{supnorm} is based on \textbf{taylorform} to obtain a higher
+   degree polynomial approximation for \emph{f}. This process is coupled with
+   an a posteriori validation of a potential supremum norm upper bound. 
+   The validation is based on showing a certain polynomial the problem gets
+   reduced to does not vanish. In cases when this process alone does not 
+   succeed, for instance because \textbf{taylorform} is unable to compute a 
+   sufficiently good approximation to \emph{f}, \textbf{supnorm} falls back to
+   bisecting the working interval until safe supremum norm bounds can be
+   computed with the required accuracy or until the width of the
+   subintervals becomes less than \textbf{diam} times the original interval \emph{I}, 
+   in which case \textbf{supnorm} fails.
+
+\item The algorithm used for \textbf{supnorm} is quite complex, which makes it impossible 
+   to explain it here in further detail. 
+   Please find a complete description in the following article:\\
+   ~\\
+      Sylvain Chevillard, John Harrison, Mioara Joldes, Christoph Lauter\\
+      Efficient and accurate computation of upper bounds of approximation errors\\
+      Journal of Theoretical Computer Science (TCS), 2010\\
+      LIP Research Report number RR LIP2010-2\\
+      http://prunel.ccsd.cnrs.fr/ensl-00445343/fr/\\
+
+\item In practical cases, \textbf{supnorm} should be able to automatically handle
+   removable discontinuities that relative errors might have. This means
+   that usually, if \emph{f} vanishes at a point $x_0$ in the interval
+   considered, the approximation polynomial \emph{p} is designed such that it
+   also vanishes at the same point with a multiplicity large
+   enough. Hence, although \emph{f} vanishes, $\varepsilon_{\textrm{relative}}=p/f-1$ may be 
+   defined by continuous extension at such points $x_0$, called 
+   removable discontinuities (see Example~$3$).
+\end{itemize}
+\noindent Example 1: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> p = remez(exp(x), 5, [-1;1]);
+> midpointmode=on!;
+> supnorm(p, exp(x), [-1;1], absolute, 2^(-40));
+0.452055210438~2/7~e-4
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 2: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> prec=200!;
+> midpointmode=on!;
+> d = [1;2];
+> f = exp(cos(x)^2 + 1);
+> p = remez(1,15,d,1/f,1e-40);
+> theta=1b-60;
+> prec=default!;
+> mode=relative;
+> supnorm(p,f,d,mode,theta);
+0.30893006200251428~5/6~e-13
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 3: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> midpointmode=on!;
+> mode=relative;
+> theta=1b-135;
+> d = [-1b-2;1b-2];
+> f = expm1(x);
+> p = x * (1 +  x * ( 2097145 * 2^(-22) + x * ( 349527 * 2^(-21) + x * (87609 * 
+2^(-21) + x * 4369 * 2^(-19))))); 
+> theta=1b-40;
+> supnorm(p,f,d,mode,theta);
+0.98349131972~2/3~e-7
+\end{Verbatim}
+\end{minipage}\end{center}
+See also: \textbf{dirtyinfnorm} (\ref{labdirtyinfnorm}), \textbf{infnorm} (\ref{labinfnorm}), \textbf{checkinfnorm} (\ref{labcheckinfnorm}), \textbf{absolute} (\ref{lababsolute}), \textbf{relative} (\ref{labrelative}), \textbf{taylorform} (\ref{labtaylorform}), \textbf{autodiff} (\ref{labautodiff}), \textbf{numberroots} (\ref{labnumberroots}), \textbf{diam} (\ref{labdiam})

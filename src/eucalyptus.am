@@ -1,0 +1,108 @@
+########## eucalyptus tool ##########
+bin_PROGRAMS += eucalyptus
+
+noinst_HEADERS += EucalyptusParameter.hpp
+
+eucalyptus_SOURCES = eucalyptus.cpp EucalyptusParameter.cpp Parameter.cpp
+
+noinst_LTLIBRARIES += lib_eucalyptus.la
+
+lib_eucalyptus_la_LIBADD =
+lib_eucalyptus_la_SOURCES =
+
+eucalyptus_CPPFLAGS = \
+ -I$(top_srcdir)/src \
+ -I$(top_srcdir)/src/design_flows \
+ -I$(top_srcdir)/src/design_flows/backend/ToHDL \
+ -I$(top_srcdir)/src/design_flows/technology \
+ -I$(top_srcdir)/src/constants \
+ -I$(top_srcdir)/src/graph \
+ -I$(top_srcdir)/src/HLS \
+ -I$(top_srcdir)/src/parser/polixml \
+ -I$(top_srcdir)/src/technology \
+ -I$(top_srcdir)/src/technology/characterization \
+ -I$(top_srcdir)/src/technology/physical_library \
+ -I$(top_srcdir)/src/technology/target_device \
+ -I$(top_srcdir)/src/technology/target_technology \
+ -I$(top_srcdir)/src/utility \
+ -I$(top_srcdir)/src/wrapper/treegcc \
+ $(AM_CPPFLAGS)
+
+lib_eucalyptus_la_LIBADD += \
+   $(top_builddir)/src/circuit/lib_circuit.la \
+   $(top_builddir)/src/design_flows/lib_design_flows.la \
+   $(top_builddir)/src/design_flows/backend/lib_backend.la \
+   $(top_builddir)/src/graph/lib_graph.la \
+   $(top_builddir)/src/parser/lib_parser.la \
+   $(top_builddir)/src/parser/polixml/lib_xml_dom_parser.la \
+   $(top_builddir)/src/polixml/lib_polixml.la \
+   $(top_builddir)/src/technology/lib_technology.la \
+   $(top_builddir)/src/utility/lib_utility.la \
+   $(top_builddir)/src/wrapper/lib_wrapper.la \
+   $(BOOST_DATE_TIME_LIB) $(BOOST_FILESYSTEM_LIB) $(BOOST_SYSTEM_LIB)
+
+if BUILD_LIB_CODE_ESTIMATION
+   eucalyptus_CPPFLAGS += \
+      -I$(top_srcdir)/src/design_flows/codesign/estimation \
+      -I$(top_srcdir)/src/utility/probability_distribution
+endif
+
+if BUILD_LIB_CODE_ESTIMATION
+   lib_eucalyptus_la_LIBADD += \
+      $(top_builddir)/src/utility/probability_distribution/lib_ProbabilityDistribution.la
+endif
+
+if BUILD_LIB_ALGORITHMS
+   lib_eucalyptus_la_LIBADD += \
+      $(top_builddir)/src/algorithms/lib_algorithms.la
+endif
+
+if BUILD_LIB_ARCH
+   lib_eucalyptus_la_LIBADD += \
+      $(top_builddir)/src/machine/lib_machine.la
+endif
+
+if BUILD_LIB_BEHAVIOR
+   lib_eucalyptus_la_LIBADD += \
+      $(top_builddir)/src/behavior/lib_behavior.la
+endif
+
+if BUILD_LIB_HLS
+   lib_eucalyptus_la_LIBADD += \
+      $(top_builddir)/src/HLS/lib_HLS.la
+endif
+
+if BUILD_LIB_INTERMEDIATE_REPRESENTATIONS
+   lib_eucalyptus_la_LIBADD += \
+      $(top_builddir)/src/intermediate_representations/lib_intermediate_representations.la
+endif
+
+if BUILD_LIB_FROM_PRAGMA
+   lib_eucalyptus_la_LIBADD += \
+      $(top_builddir)/src/pragma/libpragma.la
+endif
+
+if BUILD_LIB_RTL
+   lib_eucalyptus_la_LIBADD += \
+      $(top_builddir)/src/rtl/lib_rtl.la
+endif
+
+if BUILD_LIB_TREE
+   lib_eucalyptus_la_LIBADD += \
+      $(top_builddir)/src/tree/lib_tree.la
+endif
+
+if BUILD_LIB_TREE_MANIPULATION
+   lib_eucalyptus_la_LIBADD += \
+      $(top_builddir)/src/tree/lib_tree_manipulation.la
+endif
+
+if BUILD_FLOPOCO
+   lib_eucalyptus_la_LIBADD += \
+      $(top_builddir)/ext/flopoco/src/libflopoco.la \
+      $(top_builddir)/ext/sollya/libsollya.la
+endif
+
+eucalyptus_LDADD = lib_eucalyptus.la
+
+PRJ_DOC += eucalyptus.doc

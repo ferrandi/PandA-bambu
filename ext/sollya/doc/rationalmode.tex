@@ -1,0 +1,51 @@
+\subsection{rationalmode}
+\label{labrationalmode}
+\noindent Name: \textbf{rationalmode}\\
+global variable controlling if rational arithmetic is used or not.\\
+\noindent Usage: 
+\begin{center}
+\textbf{rationalmode} = \emph{activation value} : \textsf{on$|$off} $\rightarrow$ \textsf{void}\\
+\textbf{rationalmode} = \emph{activation value} ! : \textsf{on$|$off} $\rightarrow$ \textsf{void}\\
+\textbf{rationalmode} : \textsf{on$|$off}\\
+\end{center}
+Parameters: 
+\begin{itemize}
+\item \emph{activation value} controls if rational arithmetic should be used or not
+\end{itemize}
+\noindent Description: \begin{itemize}
+
+\item \textbf{rationalmode} is a global variable. When its value is \textbf{off}, which is the default,
+   \sollya will not use rational arithmetic to simplify expressions. All computations,
+   including the evaluation of constant expressions given on the \sollya prompt,
+   will be performed using floating-point and interval arithmetic. Constant expressions
+   will be approximated by floating-point numbers, which are in most cases faithful 
+   roundings of the expressions, when shown at the prompt. 
+
+\item When the value of the global variable \textbf{rationalmode} is \textbf{on}, \sollya will use 
+   rational arithmetic when simplifying expressions. Constant expressions, given 
+   at the \sollya prompt, will be simplified to rational numbers and displayed 
+   as such when they are in the set of the rational numbers. Otherwise, flaoting-point
+   and interval arithmetic will be used to compute a floating-point approximation,
+   which is in most cases a faithful rounding of the constant expression.
+\end{itemize}
+\noindent Example 1: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> rationalmode=off!;
+> 19/17 + 3/94;
+1.1495619524405506883604505632040050062578222778473
+> rationalmode=on!;
+> 19/17 + 3/94;
+1837 / 1598
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 2: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> rationalmode=off!;
+> exp(19/17 + 3/94);
+3.15680977395514136754709208944824276340328162814418
+> rationalmode=on!;
+> exp(19/17 + 3/94);
+3.15680977395514136754709208944824276340328162814418
+\end{Verbatim}
+\end{minipage}\end{center}
+See also: \textbf{on} (\ref{labon}), \textbf{off} (\ref{laboff}), \textbf{numerator} (\ref{labnumerator}), \textbf{denominator} (\ref{labdenominator}), \textbf{simplifysafe} (\ref{labsimplifysafe}), \textbf{rationalapprox} (\ref{labrationalapprox}), \textbf{autosimplify} (\ref{labautosimplify})

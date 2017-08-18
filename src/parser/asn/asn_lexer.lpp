@@ -1,0 +1,133 @@
+/*
+ *
+ *                   _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
+ *                  _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
+ *                 _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
+ *                _/      _/    _/ _/    _/ _/   _/ _/    _/
+ *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
+ *
+ *             ***********************************************
+ *                              PandA Project
+ *                     URL: http://panda.dei.polimi.it
+ *                       Politecnico di Milano - DEIB
+ *                        System Architectures Group
+ *             ***********************************************
+ *              Copyright (c) 2015 Politecnico di Milano
+ *
+ *   This file is part of the PandA framework.
+ *
+ *   The PandA framework is free software; you can redistribute it and/or modify
+ *   it under the terms of the GNU General Public License as published by
+ *   the Free Software Foundation; either version 3 of the License, or
+ *   (at your option) any later version.
+ *
+ *   This program is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU General Public License for more details.
+ *
+ *   You should have received a copy of the GNU General Public License
+ *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+*/
+/**
+ * @file asn_lexer.lpp
+ * @brief LEX based lexer for asn
+ *
+ * @author Marco Lattuada <marco.lattuada@polimi.it>
+ *
+*/
+%option yylineno
+%option never-interactive
+/*%option noyywrap*/
+%{
+
+#include "config_HAVE_BISON_2_7_OR_GREATER.hpp"
+
+///. include
+#include "Parameter.hpp"
+
+///parser/asn
+#include "asn_parser_node.hpp"
+
+///utility include
+#include "refcount.hpp"
+#include "utility.hpp"
+
+#define YYSTYPE AsnParserNode
+
+///NOTE: forward declarations of AsnParserData and AsnFlexLexer are in this point since they will be used in asn_yparser.h
+REF_FORWARD_DECL(AsnParserData);
+REF_FORWARD_DECL(AsnFlexLexer);
+
+#if HAVE_BISON_2_7_OR_GREATER
+#include "asn_yparser.hpp"
+#else
+#include "asn_yparser.h"
+#endif
+#include "asn_lexer.hpp"
+using namespace std;
+
+///Skipping warnings due to bison
+#pragma GCC diagnostic ignored "-Wconversion"
+#pragma GCC diagnostic ignored "-Wsign-compare"
+#pragma GCC diagnostic ignored "-Wsign-conversion"
+#pragma GCC diagnostic ignored "-Wredundant-decls"
+#pragma GCC diagnostic ignored "-Wold-style-cast"
+#pragma GCC diagnostic ignored "-Wswitch-default"
+#pragma GCC diagnostic ignored "-Wzero-as-null-pointer-constant"
+
+AsnFlexLexer::AsnFlexLexer(const ParameterConstRef parameters,  std::istream* argin, std::ostream* argout) :
+   yyFlexLexer(argin, argout),
+   debug_level(parameters->get_class_debug_level(GET_CLASS(*this))),
+   skip(false)
+{
+}
+
+AsnFlexLexer::~AsnFlexLexer()
+{}
+
+%}
+letter [_a-zA-Z/]
+digit [0-9]
+digit_point [0-9.]
+char [_a-zA-Z:0-9/\-]
+
+%%
+\) { INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Read )"); if (not skip) return CLOSE;}
+\} { INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Read }"); if (not skip) return CLOSE_CURLY_TOK;}
+, { INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Read ,"); if (not skip) return COMA;}
+\. { INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Read ."); if (not skip) return DOT;}
+"::=" { INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Read ::="); if (not skip) return EQUAL_TOK;}
+- { INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Read -"); if (not skip) return MINUS_TOK;}
+\( { INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Read ("); if (not skip) return OPEN;}
+\{ { INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Read {"); if (not skip) return OPEN_CURLY;}
+; { INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Read ;"); if (not skip) return SEMICOLON;}
+
+"BEGIN" { INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Read BEGIN"); return BEGIN_TOK;}
+"BOOLEAN" { INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Read BOOLEAN"); return BOOLEAN_TOK;}
+"CHOICE" { INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Read CHOICE"); return CHOICE_TOK;}
+"DEFINITIONS" { INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Read DEFNITIONS"); return DEFINITIONS_TOK;}
+"END" { INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Read END"); return END_TOK;}
+"ENUMERATED" { INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Read ENUMERATED"); return ENUMERATED_TOK;}
+"False" { INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Read False"); return FALSE_TOK;}
+"FROM" { INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Read FROM"); return FROM_TOK;}
+"IMPORTS" { INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Read IMPORTS"); return IMPORTS_TOK;}
+"INTEGER" { INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Read INTEGER"); return INTEGER_TOK;}
+"OCTET" { INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Read OCTET"); return OCTET_TOK;}
+"OF" { INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Read OF"); return OF_TOK;}
+"SEQUENCE" { INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Read SEQUENCE"); return SEQUENCE_TOK;}
+"SET" { INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Read SET"); return SET_TOK;}
+"SIZE" { INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Read SIZE"); return SIZE_TOK;}
+"STRING" { INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Read STRING"); return STRING_TOK;}
+
+{digit}{digit_point}* {INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Read NUMBER " + std::string(YYText())); lvalp->strg = YYText(); return NUMBER;}
+{letter}{char}* {INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Read WORD " + std::string(YYText())); lvalp->strg = YYText(); return WORD;}
+{letter}{char}*\. {INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Read WORD_DOT " + std::string(YYText())); lvalp->strg = YYText(); return WORD_DOT_TOK;}
+
+--.*\n {INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, std::string("Read comment: ") + std::string(YYText()).substr(0, std::string(YYText()).size() -1));}
+[ \t]
+. {INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, std::string("Read single character: ") + YYText()); THROW_UNREACHABLE(YYText());}
+\n
+%%
+

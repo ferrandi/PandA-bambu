@@ -1,0 +1,38 @@
+\subsection{.:}
+\label{labprepend}
+\noindent Name: \textbf{.:}\\
+add an element at the beginning of a list.\\
+\noindent Usage: 
+\begin{center}
+\emph{x}\textbf{.:}\emph{L} : (\textsf{any type}, \textsf{list}) $\rightarrow$ \textsf{list}\\
+\end{center}
+Parameters: 
+\begin{itemize}
+\item \emph{x} is an object of any type.
+\item \emph{L} is a list (possibly empty).
+\end{itemize}
+\noindent Description: \begin{itemize}
+
+\item \textbf{.:} adds the element \emph{x} at the beginning of the list \emph{L}.
+
+\item Note that since \emph{x} may be of any type, it can be in particular a list.
+\end{itemize}
+\noindent Example 1: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> 1.:[|2,3,4|];
+[|1, 2, 3, 4|]
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 2: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> [|1,2,3|].:[|4,5,6|];
+[|[|1, 2, 3|], 4, 5, 6|]
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 3: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> 1.:[||];
+[|1|]
+\end{Verbatim}
+\end{minipage}\end{center}
+See also: \textbf{:.} (\ref{labappend}), \textbf{@} (\ref{labconcat})

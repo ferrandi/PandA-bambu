@@ -1,0 +1,29 @@
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> match exp(x) with 
+      sin(x)    : ("Sine of x")
+      atan(x^2) : ("Arctangent of square of x")
+      default   : ("Something else")
+      exp(x)    : ("Exponential of x");
+Something else
+> 
+> match atan(x^2) with 
+      sin(x)          : ("Sine of x")
+      atan(default^2) : ("Arctangent of the square of something")
+      default         : ("Something else");
+Arctangent of the square of something
+> 
+> match atan(exp(x)^2) with 
+      sin(x)          : ("Sine of x")
+      atan(default^2) : ("Arctangent of the square of something")
+      default         : ("Something else");
+Arctangent of the square of something
+> 
+> match exp("Hello world") with 
+      exp(default)    : ("A miracle has happened")
+      default         : ("Something else");
+Warning: at least one of the given expressions or a subexpression is not correct
+ly typed
+or its evaluation has failed because of some error on a side-effect.
+error
+\end{Verbatim}
+\end{minipage}\end{center}

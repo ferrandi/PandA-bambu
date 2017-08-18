@@ -1,0 +1,104 @@
+########## gecco tool ##########
+bin_PROGRAMS += gecco
+
+noinst_HEADERS += GeccoParameter.hpp
+
+gecco_SOURCES = gecco.cpp GeccoParameter.cpp Parameter.cpp
+
+gecco_CPPFLAGS = \
+     -I$(top_srcdir)/src/constants \
+     -I$(top_srcdir)/src/design_flows \
+     -I$(top_srcdir)/src/design_flows/codesign/mapping \
+     -I$(top_srcdir)/src/design_flows/codesign/mapping/utility \
+     -I$(top_srcdir)/src/design_flows/codesign/mapping/SA \
+     -I$(top_srcdir)/src/design_flows/codesign/mapping/TS \
+     -I$(top_srcdir)/src/design_flows/codesign/mapping/BOA \
+     -I$(top_srcdir)/src/design_flows/codesign/mapping/ACO/MAH \
+     -I$(top_srcdir)/src/design_flows/codesign/mapping/ACO/HMAH \
+     -I$(top_srcdir)/src/design_flows/codesign/partitioning/graph_partitioning \
+     -I$(top_srcdir)/src/design_flows/codesign/partitioning/graph_partitioning/sdf_design_flow_steps \
+     -I$(top_srcdir)/src/design_flows/codesign/partitioning/graph_partitioning/utility \
+     -I$(top_srcdir)/src/intermediate_representations/actor_graphs \
+     -I$(top_srcdir)/src/intermediate_representations/actor_graphs/sdf_graphs \
+     -I$(top_srcdir)/src/intermediate_representations/actor_graphs/task_graphs \
+     -I$(top_srcdir)/src/intermediate_representations/mapping_annotations \
+     -I$(top_srcdir)/src/machine \
+     -I$(top_srcdir)/src/parser/machine \
+     -I$(top_srcdir)/src/parser/psplib \
+     -I$(top_srcdir)/src/parser/sdf3 \
+     -I$(top_srcdir)/src/parser/TGFF \
+     -I$(top_srcdir)/src/tree \
+     -I$(top_srcdir)/src/utility/probability_distribution \
+     -I$(top_srcdir)/src/wrapper/treegcc \
+      $(AM_CPPFLAGS)
+
+gecco_LDADD=
+
+if BUILD_LIB_CODE_ESTIMATION
+  gecco_LDADD += $(top_builddir)/src/design_flows/estimation/lib_estimation.la
+endif
+
+if BUILD_LIB_BEHAVIOR
+  gecco_LDADD += $(top_builddir)/src/behavior/lib_behavior.la
+endif
+
+if BUILD_LIB_PRAGMA
+  gecco_LDADD += $(top_builddir)/src/pragma/libpragma.la
+endif
+
+  gecco_LDADD += \
+          $(top_builddir)/src/machine/lib_machine.la
+
+if BUILD_LIB_FROM_C
+  gecco_LDADD +=  \
+                 $(top_builddir)/src/wrapper/lib_wrapper.la \
+                 $(BOOST_REGEX_LIB)
+endif
+
+if BUILD_LIB_BACKEND
+  gecco_LDADD += \
+          $(top_builddir)/src/design_flows/backend/lib_backend.la
+endif
+
+if BUILD_LIB_FROM_C
+  gecco_LDADD += $(top_builddir)/src/tree/lib_tree.la \
+                 $(top_builddir)/src/tree/lib_tree_manipulation.la 
+endif
+
+  gecco_LDADD += \
+          $(top_builddir)/src/parser/lib_parser.la \
+          $(top_builddir)/src/design_flows/lib_design_flows.la \
+          $(top_builddir)/src/graph/lib_graph.la \
+          $(top_builddir)/src/polixml/lib_polixml.la \
+          $(top_builddir)/src/parser/polixml/lib_xml_dom_parser.la
+if BUILD_BEAGLE
+  gecco_CPPFLAGS += \
+        -I$(top_srcdir)/src/design_flows/codesign/mapping/GA
+endif
+
+if BUILD_LIB_RTL
+  gecco_LDADD += \
+          $(top_builddir)/src/rtl/lib_rtl.la \
+          $(BOOST_DATE_TIME_LIB)
+endif
+
+if BUILD_BEAGLE
+  gecco_CPPFLAGS += -I$(BEAGLE_DIR)/beagle/include/ \
+      -I$(top_builddir)/ext/beagle/beagle/include/ -I$(BEAGLE_DIR)/beagle/GA/include/ -I$(BEAGLE_DIR)/PACC
+  gecco_LDADD += $(top_builddir)/ext/beagle/beagle/src/libbeagle.la
+endif
+
+
+if BUILD_LIB_ILP
+   gecco_CPPFLAGS += \
+        -I$(top_srcdir)/src/design_flows/codesign/mapping/ILP
+   gecco_LDADD += \
+          $(top_builddir)/src/ilp/lib_ilp.la
+endif
+
+gecco_LDADD += \
+   $(top_builddir)/src/intermediate_representations/lib_intermediate_representations.la \
+   $(top_builddir)/src/algorithms/lib_algorithms.la \
+   $(top_builddir)/src/utility/lib_utility.la \
+   $(BOOST_FILESYSTEM_LIB) $(BOOST_SYSTEM_LIB)
+

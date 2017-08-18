@@ -1,0 +1,27 @@
+\subsection{prec}
+\label{labprec}
+\noindent Name: \textbf{prec}\\
+controls the precision used in numerical computations.\\
+\noindent Description: \begin{itemize}
+
+\item \textbf{prec} is a global variable. Its value represents the precision of the 
+   floating-point format used in numerical computations.
+
+\item Many commands try to adapt their working precision in order to have 
+   approximately $n$ correct bits in output, where $n$ is the value of \textbf{prec}.
+\end{itemize}
+\noindent Example 1: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> display=binary!;
+> prec=50;
+The precision has been set to 50 bits.
+> dirtyinfnorm(exp(x),[1;2]);
+1.110110001110011001001011100011010100110111011011_2 * 2^(2)
+> prec=100;
+The precision has been set to 100 bits.
+> dirtyinfnorm(exp(x),[1;2]);
+1.110110001110011001001011100011010100110111011010110111001100001100111010001110
+11101000100000011011_2 * 2^(2)
+\end{Verbatim}
+\end{minipage}\end{center}
+See also: \textbf{evaluate} (\ref{labevaluate}), \textbf{diam} (\ref{labdiam})

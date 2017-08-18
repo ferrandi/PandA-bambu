@@ -1,0 +1,486 @@
+/*
+ *
+ *                   _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
+ *                  _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
+ *                 _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
+ *                _/      _/    _/ _/    _/ _/   _/ _/    _/
+ *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
+ *
+ *             ***********************************************
+ *                              PandA Project
+ *                     URL: http://panda.dei.polimi.it
+ *                       Politecnico di Milano - DEIB
+ *                        System Architectures Group
+ *             ***********************************************
+ *              Copyright (c) 2015 Politecnico di Milano
+ *
+ *   This file is part of the PandA framework.
+ *
+ *   The PandA framework is free software; you can redistribute it and/or modify
+ *   it under the terms of the GNU General Public License as published by
+ *   the Free Software Foundation; either version 3 of the License, or
+ *   (at your option) any later version.
+ *
+ *   This program is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU General Public License for more details.
+ *
+ *   You should have received a copy of the GNU General Public License
+ *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+*/
+/**
+ * @file asn_yparser.ypp
+ * @brief BISON based parser for asn
+ *
+ * @author Marco Lattuada <marco.lattuada@polimi.it>
+ *
+*/
+
+%{
+
+/**
+* Includes
+*/
+///Autoheader include
+#include "config_HAVE_BISON_2_7_OR_GREATER.hpp"
+
+///boost include
+#include <boost/lexical_cast.hpp>
+
+///intermediate_representations/aadl_asn
+#include "aadl_information.hpp"
+#include "asn_type.hpp"
+
+///parser/asn include
+#include "asn_parser.hpp"
+#include "asn_parser_node.hpp"
+
+///utility include
+#include "refcount.hpp"
+
+
+#define YYLTYPE_IS_TRIVIAL 0
+
+#define YYSTYPE AsnParserNode
+
+///NOTE: forward declarations of AsnParserData and AsnFlexLexer are in this point since they will be used in rtlParser.h
+REF_FORWARD_DECL(AsnParserData);
+REF_FORWARD_DECL(AsnFlexLexer);
+
+///Included after vector for the definition of YYSTYPE
+///Parser include
+#if HAVE_BISON_2_7_OR_GREATER
+#include "asn_yparser.hpp"
+#else
+#include "asn_yparser.h"
+#endif
+#include "asn_lexer.hpp"
+
+///Skipping warnings due to bison
+#pragma GCC diagnostic ignored "-Wconversion"
+#pragma GCC diagnostic ignored "-Wsign-conversion"
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+#pragma GCC diagnostic ignored "-Wwrite-strings"
+#pragma GCC diagnostic ignored "-Wold-style-cast"
+#pragma GCC diagnostic ignored "-Wredundant-decls"
+#pragma GCC diagnostic ignored "-Wzero-as-null-pointer-constant"
+
+/**
+* Class declarations
+*/
+
+/**
+* Local Data Structures
+*/
+
+
+/**
+* Global Data Structures
+*/
+
+/**
+* Function Prototypes
+*/
+extern int yylex(YYSTYPE *lvalp, const AsnFlexLexerRef lexer);
+extern void yyerror(const AsnParserDataRef data, const AsnFlexLexerRef lexer, const char *msg);
+
+%}
+/**
+* BISON DECLARATIONS
+*/
+
+%token ABSENT_TOK BEGIN_TOK BINARY_STRING_TOK BOOLEAN_TOK CHOICE_TOK CLOSE CLOSE_CURLY_TOK COMA COMPONENT COMPONENTS DEFAULT DEFINITIONS_TOK DOT END_TOK ENUMERATED_TOK EQUAL_TOK FALSE_TOK FROM_TOK HEXADECIMAL_STRING IMPORTS_TOK INCLUDES INTEGER_TOK MAX_TOK MIN_TOK MINOR MINUS_TOK MINUS_INFINITY_TOK NULL_TOK NUMBER OCTET_TOK OF_TOK OPEN OPEN_CURLY OPTIONAL PIPE PLUS_INFINITY PRESENT QUOTED_STRING REAL SEMICOLON SEQUENCE_TOK SET_TOK SIZE_TOK STRING_TOK TRUE WITH WORD WORD_DOT_TOK
+
+%parse-param {const AsnParserDataRef data}
+%parse-param {const AsnFlexLexerRef lexer}
+%lex-param {const AsnFlexLexerRef lexer}
+
+///There are a lot of conflicts in the grammar as it has been written, but we want to use the same grammar of syntax card
+///%expect 0
+
+%pure-parser
+%start module_definition
+
+%%
+
+alphabet_constraint : FROM_TOK value_or_constraint_list;
+
+assignment : type_assignment semicolon_opt
+           | value_assignment semicolon_opt
+           ;
+
+assignment_list : assignment
+                | assignment assignment_list
+                ;
+
+binary_value : BINARY_STRING_TOK;
+
+bit_or_object_identifier_value : name_value_list;
+
+boolean_type : BOOLEAN_TOK {$$ = AsnParserNode(); $$.asn_type = AsnTypeRef(new BooleanAsnType());};
+
+boolean_value : TRUE
+              | FALSE_TOK
+              ;
+
+builtin_type : boolean_type {$$ = $1;}
+             | choice_type {$$ = $1;}
+             | enumerated_type {$$ = $1;}
+             | integer_type {$$ = $1;}
+             | real_type {$$ = $1;}
+             | sequence_type {$$ = $1;}
+             | sequenceof_type {$$ = $1;}
+             | set_type {$$ = $1;}
+             | setof_type {$$ = $1;}
+             | string_type {$$ = $1;}
+             ;
+
+builtin_value : binary_value {$$ = $1;}
+              | bit_or_object_identifier_value {$$ = $1;}
+              | boolean_value  {$$ = $1;}
+              | hexadecimal_value  {$$ = $1;}
+              | null_value {$$ = $1;}
+              | number_value {$$ = $1;}
+              | special_real_value {$$ = $1;}
+              | string_value {$$ = $1;}
+              ;
+
+choice_type : CHOICE_TOK OPEN_CURLY element_type_list CLOSE_CURLY_TOK {$$ = AsnParserNode(); $$.asn_type = AsnTypeRef(new ChoiceAsnType($3.element_type_list));};
+
+coma_opt : /* empty */
+         | COMA
+         ;
+
+component_constraint : DOT DOT DOT
+                     | identifier component_value_presence_opt
+                     | component_value_presence
+                     ;
+
+component_constraints : component_constraint
+                      | component_constraint COMA component_constraints
+                      ;
+
+component_presence : PRESENT
+                   | ABSENT_TOK
+                   | OPTIONAL
+                   ;
+
+component_presence_opt : /* empty */
+                       | component_presence
+                       ;
+
+component_value_presence : value_or_constraint_list component_presence_opt
+                         | component_presence
+                         ;
+
+component_value_presence_opt : /* empty */
+                             | component_value_presence
+                             ;
+
+components_list : OPEN_CURLY component_constraints CLOSE_CURLY_TOK;
+
+constraint : alphabet_constraint {$$ = $1;}
+           | contained_type_constraint {$$ = $1;}
+           | inner_type_constraint {$$ = $1;}
+           | size_constraint {$$ = $1;}
+           | value_constraint {$$ = $1;}
+           ;
+
+constraint_list : OPEN constraints CLOSE {$$ = $2;};
+
+constraint_list_opt : /* empty */ {$$ = AsnParserNode();}
+                    | constraint_list {$$ = $1;}
+                    ;
+
+constraints : constraint {$$ = $1;}
+            | constraint PIPE constraints {$$ = $1; $$.strg += "|" + $3.strg;}
+            ;
+
+contained_type_constraint : INCLUDES type;
+
+defined_type : module_reference_opt identifier value_or_constraint_list_opt {$$ = AsnParserNode(); $$.asn_type = AsnTypeRef(new RedefineAsnType($2.strg));};
+
+defined_value : module_reference_opt identifier;
+
+element_type : identifier_opt type optional_or_default_element_opt {$$ = AsnParserNode(); $$.strg = $1.strg; $$.asn_type = $2.asn_type;}
+             | identifier COMPONENTS OF_TOK type {THROW_UNREACHABLE("COMPONENTS OF not supported");}
+             ;
+
+element_type_list : element_type {$$ = AsnParserNode(); $$.element_type_list.push_back(std::pair<std::string, AsnTypeRef>($1.strg, $1.asn_type));}
+                  | element_type COMA element_type_list {$$ = $3; $$.element_type_list.push_front(std::pair<std::string, AsnTypeRef>($1.strg, $1.asn_type));}
+                  ;
+
+element_type_list_opt : /* empty */ {$$ = AsnParserNode();}
+                      | element_type_list_opt {$$ = $1;}
+                      ;
+
+enumerated_type : ENUMERATED_TOK named_number_list {$$ = AsnParserNode(); $$.asn_type = AsnTypeRef(new EnumeratedAsnType($2.named_number_list));};
+
+hexadecimal_value : HEXADECIMAL_STRING;
+
+identifier : WORD {$$ = AsnParserNode(); $$.strg = $1.strg;};
+
+identifier_opt : /*empty */
+               | identifier
+               ;
+
+import_list : IMPORTS_TOK symbols_from_module_list_opt SEMICOLON;
+
+import_list_opt : /* empty */
+                | import_list
+                ;
+
+inner_type_constraint : WITH COMPONENT value_or_constraint_list
+                      | WITH COMPONENTS components_list
+                      ;
+
+integer_type : INTEGER_TOK value_or_constraint_list_opt {$$ = AsnParserNode(); $$.asn_type = AsnTypeRef(new IntegerAsnType());};
+
+lower_end_point : value {$$ = $1;}
+                | MIN_TOK {$$ = $1;}
+                ;
+
+minor_opt : /* empty */
+          | MINOR
+          ;
+
+minus_opt : /* empty */ {$$ = AsnParserNode();}
+          | MINUS_TOK   {$$ = AsnParserNode(); $$.strg = "-";}
+          ;
+
+module_body : import_list_opt assignment_list;
+
+module_body_opt : /* empty */
+                | module_body
+                ;
+
+module_definition : module_identifier DEFINITIONS_TOK EQUAL_TOK BEGIN_TOK module_body_opt END_TOK;
+
+module_identifier : identifier;
+
+module_reference : WORD_DOT_TOK;
+
+module_reference_opt : /* empty */
+                     | module_reference
+                     ;
+
+name_and_number : identifier OPEN NUMBER CLOSE
+                | identifier OPEN defined_value CLOSE
+                ;
+
+name_or_number : NUMBER
+               | identifier
+               | name_and_number
+               ;
+
+name_value_component : coma_opt name_or_number;
+
+name_value_components : name_value_component
+                      | name_value_component name_value_components
+                      ;
+
+name_value_components_opt : /* empty */
+                          | name_value_components
+                          ;
+
+name_value_list : OPEN_CURLY name_value_components_opt CLOSE_CURLY_TOK;
+
+named_number : identifier /*NOTE: this rule is not present in the asn grammar */ {$$ = AsnParserNode(); $$.named_number_list.push_back(std::pair<std::string, unsigned int>($1.strg, 0));}
+             | identifier OPEN number CLOSE
+             {
+                $$ = AsnParserNode();
+                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, data->debug_level, "---Read " + $1.strg + "(" + $3.strg + ")");
+                $$.named_number_list.push_back(std::pair<std::string, unsigned int>($1.strg, boost::lexical_cast<unsigned int>($3.strg)));
+             }
+             ;
+
+named_numbers : named_number {$$ = $1;}
+              | named_number COMA named_numbers {$$ = $3; $$.named_number_list.push_front($1.named_number_list.front());}
+              ;
+
+named_number_list : OPEN_CURLY named_numbers CLOSE_CURLY_TOK {$$ = $2;};
+
+null_value : NULL_TOK;
+
+number : minus_opt NUMBER
+       {
+          $$ = AsnParserNode();
+          $$.strg = $1.strg + $2.strg;
+          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, data->debug_level, "---Read number " + STR($$));
+       }
+       | defined_value {$$ = $1;}
+       ;
+
+number_value : minus_opt number
+             {
+                $$ = AsnParserNode();
+                $$.strg = $1.strg + $2.strg;
+                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, data->debug_level, "---Read number_value " + STR($$));
+             };
+
+optional_or_default_element : OPTIONAL
+                            | DEFAULT identifier_opt value
+                            ;
+
+optional_or_default_element_opt : /* empty */
+                                | optional_or_default_element
+                                ;
+
+real_type : REAL {$$ = AsnParserNode(); $$.asn_type = AsnTypeRef(new RealAsnType());};
+
+semicolon_opt : /* empty */
+              | SEMICOLON
+              ;
+
+sequence_type : SEQUENCE_TOK OPEN_CURLY element_type_list CLOSE_CURLY_TOK {$$ = AsnParserNode(); $$.asn_type = AsnTypeRef(new SequenceAsnType($3.element_type_list));};
+
+sequenceof_type : SEQUENCE_TOK constraint_list_opt OF_TOK type
+                {
+                   THROW_ASSERT($2.strg != "","");
+                   THROW_ASSERT($4.asn_type and $4.asn_type->GetKind() == AsnType_Kind::REDEFINE, "");
+                   $$ = AsnParserNode();
+                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, data->debug_level, "---Read " + $2.strg);
+                   $$.asn_type = AsnTypeRef(new SequenceOfAsnType(GetPointer<const RedefineAsnType>($4.asn_type)->name, $2.strg));
+                };
+
+set_type : SET_TOK OPEN_CURLY element_type_list_opt CLOSE_CURLY_TOK {$$ = AsnParserNode(); $$.asn_type = AsnTypeRef(new SetAsnType($3.element_type_list));};
+
+setof_type : SET_TOK size_constraint OF_TOK type
+           {
+              $$ = AsnParserNode();
+              THROW_ASSERT($4.asn_type and $$.asn_type->GetKind() == AsnType_Kind::REDEFINE,"");
+              $$.asn_type = AsnTypeRef(new SetOfAsnType($2.strg, GetPointer<const RedefineAsnType>($4.asn_type)->name));
+           }
+           ;
+
+size_constraint : SIZE_TOK value_constraint_list {$$ = AsnParserNode(); $$.strg = "SIZE " + $2.strg;};
+
+special_real_value : PLUS_INFINITY
+                   | MINUS_INFINITY_TOK
+                   ;
+
+string_type : OCTET_TOK STRING_TOK constraint_list_opt {$$ = AsnParserNode(); $$.asn_type = AsnTypeRef(new OctetStringAsnType($3.strg));};
+
+string_value : QUOTED_STRING;
+
+symbol : identifier;
+
+symbol_list : symbol
+            | symbol COMA symbol_list
+            ;
+
+symbols_from_module : symbol_list FROM_TOK module_identifier
+
+symbols_from_module_list : symbols_from_module
+                       | symbols_from_module symbols_from_module_list
+                       ;
+
+symbols_from_module_list_opt : /* empty */
+                           | symbols_from_module_list
+                           ;
+
+type : builtin_type {$$ = $1;}
+     | defined_type {$$ = $1;}
+     ;
+
+type_assignment : identifier EQUAL_TOK type
+                {
+                   THROW_ASSERT($3.asn_type,"");
+                   data->aadl_information->AddAsnType($1.strg, $3.asn_type);
+                }
+                ;
+
+upper_end_point : value
+                | MAX_TOK
+                ;
+
+value : builtin_value
+      {
+         $$ = $1;
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, data->debug_level, "---Read value as builtin_value " + STR($$));
+      }
+      | defined_value {$$ = $1;}
+      ;
+
+value_assignment : identifier type EQUAL_TOK value;
+
+value_constraint : lower_end_point value_range_opt 
+                 {
+                    $$ = AsnParserNode();
+                    $$.strg = $1.strg + ($2.strg != "" ? " " : "") + $2.strg;
+                    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, data->debug_level, "---Read value constraint " + STR($$));
+                 };
+
+value_constraint_list : OPEN value_constraints CLOSE
+                      {
+                          $$ = AsnParserNode();
+                          $$.strg = "(" + $2.strg + ")";
+                     };
+
+value_constraints : value_constraint {$$ = $1;}
+                  | value_constraint PIPE value_constraints {$$ = $1; $$.strg += "|" + $3.strg;};
+                  ;
+
+value_or_constraint_list : named_number_list {$$ = $1;}
+                         | constraint_list {$$ = $1;}
+                         ;
+
+value_or_constraint_list_opt : /* empty */ {$$ = AsnParserNode();}
+                             | value_or_constraint_list {$$ = $1;}
+                             ;
+
+value_range : minor_opt DOT DOT minor_opt  upper_end_point {$$ = AsnParserNode(); $$ = $5;}
+
+value_range_opt : /* empty */ {$$ = AsnParserNode();}
+                | value_range {$$ = $1;}
+                ;
+
+/* End of Grammar */
+
+%%
+/**
+* EPILOGUE
+*/
+
+void AsnParser::YYParse(const AsnParserDataRef data, const AsnFlexLexerRef lexer) const
+{
+#if YYDEBUG
+   yydebug = 1;
+#endif
+   yyparse(data, lexer);
+}
+
+void yyerror(const AsnParserDataRef data, const AsnFlexLexerRef lexer, const char *msg)
+{
+   lexer->yyerror(msg);
+}
+
+int yylex(YYSTYPE *lvalp, const AsnFlexLexerRef lexer)
+{
+   lexer->lvalp=lvalp;
+   return lexer->yylex();
+}
+
+

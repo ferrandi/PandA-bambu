@@ -1,0 +1,107 @@
+/*
+
+Copyright 2006-2011 by 
+
+Laboratoire de l'Informatique du Parallelisme, 
+UMR CNRS - ENS Lyon - UCB Lyon 1 - INRIA 5668
+
+and by
+
+Centre de recherche INRIA Sophia-Antipolis Mediterranee, equipe APICS,
+Sophia Antipolis, France.
+
+Contributors Ch. Lauter, S. Chevillard
+
+christoph.lauter@ens-lyon.org
+sylvain.chevillard@ens-lyon.org
+
+This software is a computer program whose purpose is to provide an
+environment for safe floating-point code development. It is
+particularily targeted to the automatized implementation of
+mathematical floating-point libraries (libm). Amongst other features,
+it offers a certified infinity norm, an automatic polynomial
+implementer and a fast Remez algorithm.
+
+This software is governed by the CeCILL-C license under French law and
+abiding by the rules of distribution of free software.  You can  use, 
+modify and/ or redistribute the software under the terms of the CeCILL-C
+license as circulated by CEA, CNRS and INRIA at the following URL
+"http://www.cecill.info". 
+
+As a counterpart to the access to the source code and  rights to copy,
+modify and redistribute granted by the license, users are provided only
+with a limited warranty  and the software's author,  the holder of the
+economic rights,  and the successive licensors  have only  limited
+liability. 
+
+In this respect, the user's attention is drawn to the risks associated
+with loading,  using,  modifying and/or developing or reproducing the
+software by the user in light of its specific status of free software,
+that may mean  that it is complicated to manipulate,  and  that  also
+therefore means  that it is reserved for developers  and  experienced
+professionals having in-depth computer knowledge. Users are therefore
+encouraged to load and test the software's suitability as regards their
+requirements in conditions enabling the security of their systems and/or 
+data to be ensured and,  more generally, to use and operate it in the 
+same conditions as regards security. 
+
+The fact that you are presently reading this means that you have had
+knowledge of the CeCILL-C license and that you accept its terms.
+
+This program is distributed WITHOUT ANY WARRANTY; without even the
+implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+*/
+
+#ifndef CHAIN_H
+#define CHAIN_H
+
+typedef struct chainStruct chain;
+
+struct chainStruct 
+{
+  void *value;
+  chain *next;
+};
+
+
+void freeChain(chain *c, void (*f) (void *));
+chain *addElement(chain *c, void *elem);
+chain *removeInt(chain *c, int n);
+void *first(chain *c);
+chain *tail(chain *c);
+chain *copyChain(chain *c, void * (*f) (void *));
+chain *copyChainWithoutReversal(chain *c, void * (*f) (void *));
+void *copyString(void *oldString);
+void *copyTreeOnVoid(void *tree);
+void *copyRangetypePtr(void *ptr);
+void *copyMpfiPtr(void *ptr);
+void *copyIntPtrOnVoid(void *);
+void *copyMpfrPtr(void *ptr);
+
+chain *concatChains(chain *c1, chain *c2);
+
+void freeRangetypePtr(void *ptr);
+void freeMpfrPtr(void *ptr);
+void freeMpfiPtr(void *i);
+void freeIntPtr(void *ptr);
+void freeStringPtr(void *aString);
+void freeMemoryOnVoid(void *tree);
+void freeNoPointer(void *thing); /* Does nothing */
+
+chain *makeIntPtrChain(int n);
+chain *makeIntPtrChainFromTo(int m, int n);
+int lengthChain(chain *c);
+void sortChain(chain *c,  int (*f) (void *, void *));
+int cmpIntPtr(void *a, void *b);
+int cmpMpfrPtr(void *a, void *b);
+void printIntChain(chain *c);
+void *accessInList(chain *, int);
+chain *copyChainAndReplaceNth(chain *c, int k, void *obj, void * (*f) (void *));
+
+int isEqualStringOnVoid(void *s, void *s2);
+int isEqualIntPtrOnVoid(void *a, void *b);
+
+int isEqualChain(chain *c, chain *c2, int (*f) (void *, void *));
+
+#endif /* ifdef CHAIN_H*/

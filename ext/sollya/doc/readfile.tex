@@ -1,0 +1,42 @@
+\subsection{readfile}
+\label{labreadfile}
+\noindent Name: \textbf{readfile}\\
+reads the content of a file into a string variable\\
+\noindent Usage: 
+\begin{center}
+\textbf{readfile}(\emph{filename}) : \textsf{string} $\rightarrow$ \textsf{string}\\
+\end{center}
+Parameters: 
+\begin{itemize}
+\item \emph{filename} represents a character sequence indicating a file name
+\end{itemize}
+\noindent Description: \begin{itemize}
+
+\item \textbf{readfile} opens the file indicated by \emph{filename}, reads it and puts its
+   contents in a character sequence of type \textsf{string} that is returned.
+    
+   If the file indicated by \emph{filename} cannot be opened for reading, a
+   warning is displayed and \textbf{readfile} evaluates to an \textbf{error} variable of
+   type \textsf{error}.
+\end{itemize}
+\noindent Example 1: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> print("Hello world") > "myfile.txt";
+> t = readfile("myfile.txt"); 
+> t;
+Hello world
+
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 2: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> verbosity=1!;
+> readfile("afile.txt");
+Warning: the file "afile.txt" could not be opened for reading.
+Warning: at least one of the given expressions or a subexpression is not correct
+ly typed
+or its evaluation has failed because of some error on a side-effect.
+error
+\end{Verbatim}
+\end{minipage}\end{center}
+See also: \textbf{parse} (\ref{labparse}), \textbf{execute} (\ref{labexecute}), \textbf{write} (\ref{labwrite}), \textbf{print} (\ref{labprint}), \textbf{bashexecute} (\ref{labbashexecute}), \textbf{error} (\ref{laberror})

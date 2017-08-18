@@ -1,0 +1,46 @@
+\subsection{length}
+\label{lablength}
+\noindent Name: \textbf{length}\\
+computes the length of a list or string.\\
+\noindent Usage: 
+\begin{center}
+\textbf{length}(\emph{L}) : \textsf{list} $\rightarrow$ \textsf{integer}\\
+\textbf{length}(\emph{s}) : \textsf{string} $\rightarrow$ \textsf{integer}\\
+\end{center}
+Parameters: 
+\begin{itemize}
+\item \emph{L} is a list.
+\item \emph{s} is a string.
+\end{itemize}
+\noindent Description: \begin{itemize}
+
+\item \textbf{length} returns the length of a list or a string, e.g. the number of elements
+   or letters.
+
+\item The empty list or string have length 0.
+   If \emph{L} is an end-elliptic list, \textbf{length} returns +Inf.
+\end{itemize}
+\noindent Example 1: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> length("Hello World!");
+12
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 2: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> length([|1,...,5|]);
+5
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 3: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> length([| |]);
+0
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 4: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> length([|1,2...|]);
+@Inf@
+\end{Verbatim}
+\end{minipage}\end{center}

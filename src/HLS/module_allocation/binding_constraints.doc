@@ -1,0 +1,111 @@
+/*
+ *
+ *                   _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
+ *                  _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
+ *                 _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
+ *                _/      _/    _/ _/    _/ _/   _/ _/    _/
+ *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
+ *
+ *             ***********************************************
+ *                              PandA Project
+ *                     URL: http://panda.dei.polimi.it
+ *                       Politecnico di Milano - DEIB
+ *                        System Architectures Group
+ *             ***********************************************
+ *              Copyright (c) 2004-2017 Politecnico di Milano
+ *
+ *   This file is part of the PandA framework.
+ *
+ *   The PandA framework is free software; you can redistribute it and/or modify
+ *   it under the terms of the GNU General Public License as published by
+ *   the Free Software Foundation; either version 3 of the License, or
+ *   (at your option) any later version.
+ *
+ *   This program is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU General Public License for more details.
+ *
+ *   You should have received a copy of the GNU General Public License
+ *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+*/
+/*!
+  \page src_HLS_binding_constraints_page Binding constraints
+
+  A kind of implementation constraint for the high-level synthesis is a <B>resource binding constraint</B>.
+  In this case, a particular operation is required to be implemented by a given resource.
+  These constraints are motivated by the designer's previous knowledge, or intuition,
+  that one particular choice is the best and that other choices do not need investigation.
+
+  Architectural synthesis with resource binding constraints is often referred to as synthesis from partial 
+  structure. Design systems that support such a feature allow a designer to specify a circuit in a wide spectrum 
+  of ways, ranging from a full behavioral model to a structural one. This modeling capability may be useful 
+  to leverage previously designed components.
+
+  When binding constraints are specified, a resource binding must be compatible with them. In particular, a partial 
+  binding may be part of the original specification. This corresponds 
+  to specifying a binding for a subset of the operations \f$U\subseteq V_o\f$. A resource binding is compatible with a 
+  partial binding when its restriction to the operations \f$U\f$ is identical to the partial binding itself.
+
+  A <b>partial binding</b> is defined as a relation \f$\beta\f$ between an 
+  operation vertex into the behavioral specification and the functional unit instance where it will have 
+  to be executed:
+  \f$
+   \beta(v_l) = (t,r)
+  \f$
+  where \f$v_l\in V_o\f$ is an operation of type \f$l\f$ to be executed, \f$t\f$ is a functional unit that 
+  is able to executed the operation type \f$l\f$ and \f$r\f$ is an integer representing the instance of the 
+  functional unit in the design. The following algorithms will accept this information as a constraint, 
+  without investigate why it has been imposed.
+
+
+  \section src_HLS_binding_constraints_parsing Binding constraints in the Bambu tool
+
+  Once the internal representation has been created and the informations about resources and constraints 
+  have been loaded, some additional informations can be added to ensure that operations will be bounded on 
+  specific resources. In fact, as described in many books regarding high-level synthesis, the allocation task 
+  can be performed before scheduling one and a <I>partial binding</I> can be introduced to partially control 
+  the area occupation on the final design. 
+
+  In Bambu tool, this information can be provided by an XML file, where the binding constraints are specified 
+  (see \ref src_frontend_HLS_constraintsIOParser). The information can be represented as follows:
+\verbatim
+  <constraints>
+    <HLS_constraints>
+      <binding_constraints vertex_name="simple_add_1_28_38" 
+                           fu_name="plus_expr_FU" fu_index="0"/>
+      <binding_constraints vertex_name="simple_add_1_28_39" 
+                           fu_name="plus_expr_FU" fu_index="0"/>
+    </HLS_constraints>
+  </constraints>
+\endverbatim
+  where <i>simple_add_1_28_38</i> and <I>simple_add_1_28_39</i> are both bound to functional unit plus_expr_FU:0. Note 
+  that forces the two operations to be executed in different control steps (provided they are not in mutual exclusion),
+  since they can not use the same functional unit in the same control step.
+
+  \if BEAGLE
+  In the mixed high-level synthesis, this information is used for chromosome encoding and it allows to perform design 
+  space exploration oriented to optimize the figures of merit and search the best trade-offs between execution 
+  time (spreading operations in different functional units, to reduce latency, this leads to increase area occupation)
+  and area occupation (trying to concentrate operations in the same functional units, this could lead to increase 
+  latency, as explained above).
+  \endif
+
+  \subsection sec_binding_constraints_in_hls Storing binding constraints
+
+  This information is so added to the HLS_constraints data structure as additional constraints to be met by 
+  the final design. Note that the following steps simply use this datastructure to have informations about binding
+  constraints. In particular, the method HLS_constraints::bind_vertex_to_fu can be used to bind an operation of the 
+  behavioral specification to a functional unit. The binding constraints are so stored in the datastructure
+  HLS_constraints::binding_constraints as a map between the operation name (as given by the macro GET_NAME) and 
+  a pair of strings representing the library name and the functional unit name.
+
+  Therefore, the algorithms will be executed as usual on operations where no constraints have been specified. 
+  The algorithms will have the freedom to assign the operations to any 
+  admissible and free functional units. At the opposite, if constraints have been imposed, the algorithms 
+  will have to satisfy them, since they can be considered as a request formulated by the designer to consider 
+  the final design as feasible.
+
+  
+*/

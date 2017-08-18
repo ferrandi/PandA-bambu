@@ -1,0 +1,1036 @@
+\documentclass[a4paper]{article}
+ 
+\usepackage[english]{babel}
+\usepackage[naturalnames]{hyperref}
+\usepackage{fullpage}
+\usepackage{xspace}
+\usepackage{amssymb}
+\usepackage{fancyvrb}
+
+\newcommand{\com}[1]{\texttt{#1}}
+\newcommand{\key}[1]{\texttt{#1}}
+\newcommand{\sollya}{\texttt{Sollya}\xspace}
+\newcommand{\rlwrap}{\texttt{rlwrap}\xspace}
+
+\newcommand{\csi}{\xi} % Workaround before dealing with commands of the form
+                       % \xsomething in .shlp files.
+
+\newcommand{\code}[1]{
+\begin{center}
+\begin{tabular}{|p{14.8cm}|}
+\hline
+#1
+\hline
+\end{tabular}
+\end{center}
+}
+
+\newcommand{\ligne}[1]{\texttt{#1}\\}
+
+\title{Users' manual for the \sollya tool \\ {\large Release 3.0}}
+
+\author{Sylvain Chevillard \\ \small{\url{sylvain.chevillard@ens-lyon.org}} \and Christoph Lauter \\ \small{\url{christoph.lauter@ens-lyon.org}} \and Mioara Jolde\c{s} \\ \small{\url{mioara.joldes@ens-lyon.fr}} }
+
+\date{\today}
+
+
+\begin{document}
+
+\maketitle
+
+\section*{License}
+
+The \sollya tool is Copyright \copyright~2006-2011 by \vspace{2mm} \\
+\indent Laboratoire de
+l'Informatique du Parall\'elisme - UMR CNRS - ENS Lyon - UCB Lyon 1 -
+INRIA 5668, Lyon, France, \vspace{2mm} \\
+\indent LORIA (CNRS, INPL, INRIA, UHP, U-Nancy 2), Nancy, France, \vspace{2mm} \\
+\indent Laboratoire d'Informatique de Paris 6, \'Equipe PEQUAN,
+UPMC Universit\'e Paris 06 - CNRS - UMR 7606 - LIP6, Paris, France,\vspace{2mm} \\ and by \vspace{2mm} \\
+\indent INRIA Sophia-Antipolis M\'editerran\'ee, APICS Team, Sophia-Antipolis, France. \vspace{2mm} \\
+All rights reserved.\\[0.2cm]
+
+\noindent The \sollya tool is open software. It is distributed and can be used,
+modified and redistributed under the terms of the CeCILL-C licence
+available at \url{http://www.cecill.info/} and reproduced in the
+\texttt{COPYING} file of the distribution. The distribution contains
+parts of other libraries as a support for but not integral part of
+\sollya. These libraries are reigned by the GNU Lesser General Public
+License that is available at \url{http://www.gnu.org/licenses/} and
+reproduced in the \texttt{COPYING} file of the distribution.\\[0.2cm]
+
+\noindent This software (\sollya) is distributed WITHOUT ANY WARRANTY; without even the 
+implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+\tableofcontents
+
+\section{Compilation and installation of the \sollya tool}
+
+\subsection{Compilation dependencies}
+
+The \sollya distribution can be compiled and installed using the usual
+\texttt{./configure}, \texttt{make}, \texttt{make install}
+procedure. Besides a \texttt{C} and a \texttt{C++} compiler, \sollya needs the following
+software libraries and tools to be installed. The \texttt{./configure}
+script checks for the installation of the libraries. However \sollya
+will build without error if some of its external tools are not
+installed. In this case an error will be displayed at runtime.
+\begin{itemize}
+\item \texttt{GMP}
+\item \texttt{MPFR}
+\item \texttt{MPFI}
+\item \texttt{fplll}
+\item \texttt{libxml2}
+\item \texttt{gnuplot} (external tool)
+\end{itemize}
+The use of the external tool \texttt{rlwrap} is highly recommended but
+not required. Use the \texttt{-A} option of \texttt{rlwrap} for
+correctly displayed ANSI X3.64/ ISO/IEC 6429 colored prompts (see
+below).
+
+\subsection{\sollya command line options}
+
+\sollya can read input on standard input or in a file whose name is given 
+as an argument when \sollya is invoked. The tool will always produce its 
+output on standard output, unless specificly instructed by a particular
+\sollya command that writes to a file.
+The following lines are valid invocations of \sollya, assuming that 
+\texttt{bash} is used as a shell:
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+~/% sollya
+...
+~/% sollya myfile.sollya
+...
+~/% sollya < myfile.sollya
+\end{Verbatim}
+\end{minipage}\end{center}
+If a file given as an input does not exist, an error message is displayed.
+
+All configurations of the internal state of the tool are done by
+commands given on the \sollya prompt or in \sollya
+scripts. Nevertheless, some command line options are supported; they
+work at a very basic I/O-level and can therefore not be implemented as
+commands.
+
+The following options are supported when calling \sollya:
+\begin{itemize}
+\item \texttt{--donotmodifystacksize}: When invoked, \sollya trys to increase
+the stack size that is available to a user process to the maximum size
+supported by the kernel. On some systems, the correspondent \texttt{ioctl} 
+does not work properly. Use the option to prevent \sollya from changing the 
+stack size.
+\item \texttt{--flush}: When this option is given, \sollya will flush
+all its input and output buffers after parsing and executing each
+command resp. sequence of commands. This option is needed when pipes
+are used to communicate with \sollya from another program.
+\item \texttt{--help}: Prints help on the usage of the tool and quits.
+\item \texttt{--nocolor}: \sollya supports coloring of the output
+  using ANSI X3.64/ ISO/IEC 6429 escape sequences. Coloring is
+  deactivated when \sollya is connected on standard input to a file
+  that is not a terminal. This option forces the deactivation of ANSI
+  coloring. This might be necessary on very old grey-scale terminals or when
+  encountering problems with old versions of \texttt{rlwrap}. 
+\item \texttt{--noprompt}: \sollya prints a prompt symbol when
+  connected on standard input to a pseudo-file that is a terminal. The
+  option deactivates the prompt.
+\item \texttt{--oldautoprint}: The behaviour of an undocumented
+feature for displaying values has changed in \sollya from version 1.1
+to version 2.0. The old feature is deprecated. If you wish to use it
+nevertheless, use this deprecated option.
+\item \texttt{--oldrlwrapcompatible}: This option is deprecated. It
+  makes \sollya emit a non ANSI X3.64 compliant coloring escape
+  sequence for making it compatible with versions of \texttt{rlwrap}
+  that do not support the \texttt{-A} option. The option is considered
+  a hack since it is known to garble the output of the tool under
+  some particular circumstances.
+\item \texttt{--warninfile[append] <file>}: Normally, \sollya emits
+  warning and information messages together with all other displayed
+  information on either standard output or standard error. This option
+  allows all warning and information messages to get redirected to a
+  file. The filename to be used must be given after the option.  When
+  \texttt{--warninfile} is used, the existing content (if any) of the
+  file is first removed before writing to the file. With
+  \texttt{--warninfileappend}, the messages are appended to an
+  existing file. Even if coloring is used for the displaying all other
+  \sollya output, no coloring sequences are ever written to the
+  file. Let us emphasize on the fact that any file of a unixoid system
+  can be used for output, for instance also a named pipe. This allows
+  for error messaging to be performed on a separate terminal. The use
+  of this option is mutually exclusive with the
+  \texttt{--warnonstderr} option.
+\item \texttt{--warnonstderr}: Normally, \sollya prints warning and
+  information messages on standard output, using a warning color 
+  when coloring is activated. When this option is given, \sollya will 
+  output all warning and information messages on standard error. Coloring
+  will be used even on standard error, when activated. The use of 
+  this option is mutually exclusive with the \texttt{--warninfile[append]} 
+  option.
+\end{itemize}
+
+
+\section{Introduction}
+\sollya is an interactive tool for handling numerical functions and working with arbitrary precision. It can evaluate functions accurately, compute polynomial approximations of functions, automatically implement polynomials for use in math libraries, plot functions, compute infinity norms, etc. \sollya is also a full-featured script programming language with support for procedures~etc.
+
+Let us begin this manual with an example. \sollya does not allow command line edition; since this may quickly become uncomfortable, we highly suggest to use the \rlwrap tool with \sollya:
+
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+~/% rlwrap -A sollya
+>
+\end{Verbatim}
+\end{minipage}\end{center}
+
+\sollya manipulates only functions in one variable. The first time that an unbound variable is used, this name is fixed. It will be used to refer to the free variable. For instance, try
+
+\input{introExample1}
+
+Now, the name $x$ can only be used to refer to the free variable:
+
+\input{introExample2}
+
+If you really want to unbind $x$, you can use the \com{rename} command and change the name of the free variable:
+
+\input{introExample3}
+
+As you have seen, you can name functions and easily work with them. The basic thing to do with a function is to evaluate it at some point:
+
+\input{introExample4}
+
+The printed value is generally a faithful rounding of the exact value at the working precision (i.e. one of the two floating-point numbers enclosing the exact value). Internally \sollya represents numbers as floating-point numbers in arbitrary precision with radix~$2$: the fact that a faithful rounding is performed in binary does not imply much on the exactness of the digits displayed in decimal. The working precision is controlled by the global variable \com{prec}:
+
+\input{introExample5}
+
+Sometimes a faithful rounding cannot easily be computed. In such a case, a value is printed that was obtained using floating-point approximations without control on the final accuracy:
+
+\input{introExample6}
+
+The philosophy of \sollya is: \emph{Whenever something is not exact, print a warning}. This explains the warnings in the previous examples. If the result can be shown to be exact, there is no warning:
+
+\input{introExample7}
+
+Let us finish this Section with a small complete example that shows a bit of what can be done with~\sollya:
+
+% Warning: this file must be manually corrected: delete the extra ">"
+\input{introExample8}
+
+In this example, we define a function $f$, an interval $d$ and we compute the best degree-2 polynomial approximation of $f$ on $d$ with respect to the infinity norm. In other words, $\max_{x \in d} \{|p(x)-f(x)|\}$ is minimal amongst polynomials with degree not greater than $2$. Then, we compute the list of the zeros of the derivative of $p-f$ and add the bounds of $d$ to this list. Finally, we evaluate $|p-f|$ for each point in the list and store the maximum and the point where it is reached. We conclude by printing the result in a formatted way.
+
+Let us mention as a sidenote that you do not really need to use such a script for computing an infinity norm; as we will see, the command \com{dirtyinfnorm} does this for you.
+
+\section{General principles}\label{sec:general_principles}
+The first purpose of \sollya is to help people using numerical functions and numerical algorithms in a safe way. It is first designed to be used interactively but it can also be used in scripts\footnote{Remark: some of the behaviors of \sollya slightly change when it is used in scripts. For example, no prompt is printed.}.
+
+One of the particularities of \sollya is to work with multi-precision arithmetic (it uses the \texttt{MPFR} library). For safety purposes, \sollya knows how to use interval arithmetic. It uses interval arithmetic to produce tight and safe results with the precision required by the user.
+
+The general philosophy of \sollya is: \emph{When you can perform a computation exactly and sufficiently quickly, do it; when you cannot, do not, unless you have been explicitly asked for.}
+
+The precision of the tool is set by the global variable \key{prec}. In general, the variable \key{prec} determines the precision of the outputs of commands: more precisely, the command will internally determine how much precision should be used during the computations in order to ensure that the output is a faithfully rounded result with \key{prec} bits.
+
+For decidability and efficiency reasons, this general principle cannot be applied every time, so be careful. Moreover certain commands are known to be unsafe: they give in general excellent results and give almost \key{prec} correct bits in output for everyday examples. However they are merely based on heuristics and should not be used when the result must be safe. See the documentation of each command to know precisely how confident you can be with their result.
+
+A second principle (that comes together with the first one) is the following one: \emph{When a computation leads to inexact results, inform the user with a warning}. This can be quite irritating in some circumstances: in particular if you are using \sollya within other scripts. The global variable \key{verbosity} lets you change the level of verbosity of \sollya. When the variable is set to $0$, \sollya becomes completely silent on standard output and prints only very important messages on standard error. Increase \key{verbosity} if you want more information about what \sollya is doing. Please keep in mind that when you affect a value to a global variable, a message is always printed even if \com{verbosity} is set to $0$. In order to silently affect a global variable, use~\texttt{!}:
+
+\input{introExample9}
+
+For conviviality reasons, values are displayed in decimal by default. This lets a normal human being understand the numbers they manipulate. But since constants are internally represented in binary, this causes permanent conversions that are sources of roundings. Thus you are loosing in accuracy and \sollya is always complaining about inexact results. If you just want to store or communicate your results (to another tools for instance) you can use bit-exact representations available in \sollya. The global variable \key{display} defines the way constants are displayed. Here is an example of the five available modes:
+
+\input{introExample10}
+
+Please keep in mind that it is possible to maintain the general verbosity level at
+some higher setting while deactivating all warnings on roundings. This
+feature is controlled using the \key{roundingwarnings} global
+variable. It may be set to \key{on} or \key{off}. By default, the
+warnings are activated (\key{roundingwarnings = on}) when \sollya is
+connected on standard input to a pseudo-file that represents a
+terminal. They are deactivated when \sollya is connected on standard
+input to a real file. See \ref{labroundingwarnings} for further details; the behavior is
+illustrated with examples there.
+
+As always, the symbol \texttt{e} means $\times 10^\square $. The same way the symbol \texttt{b} means  $\times 2^\square $. The symbol \texttt{p} means $\times 16^\square$ and is used only with the \texttt{0x} prefix. The prefix \texttt{0x} indicates that the digits of the following number until 
+a symbol \texttt{p} or white-space are hexadecimal. The suffix \texttt{\_2} indicates to \sollya that the previous number has been written in binary. \sollya can parse these notations even if you are not in the corresponding \key{display} mode, so you can always use them.
+
+You can also use memory-dump hexadecimal notation frequently used to represent IEEE 754 \texttt{double} and \texttt{single} precision numbers. Since this notation does not allow for exactly representing numbers with arbitrary precision, there is no corresponding \key{display} mode. However, the commands \com{printdouble} respectively \com{printsingle} round the value to the nearest \texttt{double} respectively \texttt{single}. The number is then printed in hexadecimal as the integer number corresponding to the memory representation of the IEEE 754 \texttt{double} or \texttt{single} number:
+
+\input{introExample11}
+
+\sollya can parse these memory-dump hexadecimal notation back in any
+\key{display} mode. The difference of this memory-dump
+notation with the hexadecimal notation (as defined above) is made by
+the presence or absence of a \texttt{p} indicator.
+
+\section{Variables}\label{variables}
+
+As already explained, \sollya can manipulate variate functional
+expressions in one variable. These expressions contain a unique free variable the name
+of which is fixed by its first usage in an expression that is not a
+left-hand-side of an assignment. This global and unique free variable is 
+a variable in the mathematical sense of the term. 
+
+\sollya also provides variables in the sense programming languages
+give to the term.  These variables, which must be different in their
+name from the global free variable, may be global or declared and
+attached to a block of statements, i.e. a begin-end-block. These
+programming language variables may hold any object of the \sollya
+language, as for example functional expressions, strings, intervals,
+constant values, procedures, external functions and procedures, etc.
+
+Global variables need not to be declared. They start existing,
+i.e. can be correctly used in expressions that are not left-hand-sides
+of assignments, when they are assigned a value in an assignment. Since
+they are global, this kind of variables is recommended only for small
+\sollya scripts.  Larger scripts with code reuse should use
+declared variables in order to avoid name clashes for example in loop
+variables.
+
+Declared variables are attached to a begin-end-block. The block
+structure builds scopes for declared variables. Declared variables in
+inner scopes shadow (global and declared) variables of outer
+scopes. The global free variable, i.e. the mathematical variable for
+variate functional expressions in one variable, cannot be shadowed. Variables are
+declared using the \key{var} keyword. See section \ref{labvar} for details
+on its usage and semantic.
+
+The following code examples illustrate the use of variables.
+
+
+\input{introExample12}
+
+Let us state that a variable identifier, just as every identifier in
+\sollya, contains at least one character, starts with a ASCII letter
+and continues with ASCII letters or numerical digits.
+
+
+
+\section{Data types}
+\sollya has a (very) basic system of types. If you try to perform an illicit operation (such as adding a number and a string, for instance), you will get a typing error. Let us see the available data types.
+
+\subsection{Booleans}
+There are two special values \key{true} and \key{false}. Boolean expressions can be constructed using the boolean connectors \key{\&\&} (and), \key{||} (or), \key{!} (not), and comparisons.
+
+The comparison operators \key{<}, \key{<=}, \key{>} and \key{>=} can only be used between two numbers or constant expressions.
+
+The comparison operators \key{==} and \key{!=} are polymorphic. You can use them to compare any two objects, like two strings, two intervals, etc. As a matter of fact, polymorphism is allowed on both sides: it is possible to compare objects of different type. Such objects of different type, as they can never be syntactically equal, will always compare unequal (see exception for \key{error}, section \ref{laberror}) and never equal. It is important to remember that testing the equality between two functions will return \key{true} if and only if the expression trees representing the two functions are exactly the same. See \ref{laberror} for an exception concerning the special object \key{error}. Example:
+
+\input{introExample13}
+
+\subsection{Numbers} \label{sec:numbers}
+\sollya represents numbers as binary multi-precision floating-point values. For integer values and values in dyadic, binary, hexadecimal or memory dump notation, it 
+automatically uses a precision needed for representing the value exactly (unless this behaviour is overridden using the syntax given below). Additionally, automatic precision adaption takes place for all 
+integer values (even in decimal notation) written without the exponent sign \texttt{e} or with the exponent sign \texttt{e} and an exponent sufficiently 
+small that they are less than $10^{999}$. Otherwise the values are represented with the current precision \com{prec}. When a number must be rounded, it is rounded to the precision \com{prec} before the expression get evaluated:
+
+\input{introExample14}
+
+As a matter of fact, each variable has its own precision that corresponds to its intrinsic precision or, if it cannot be represented, to the value of \com{prec} when the variable was set. Thus you can work with variables having a precision higher than the current precision.
+
+The same way, if you define a function that refers to some constant, this constant is stored in the function with the current precision and will keep this value in the future, even if \com{prec} becomes smaller.
+
+If you define a function that refers to some variable, the precision of the variable is kept, independently of the current precision:
+
+\input{introExample15}
+
+In some rare cases, it is necessary to read in decimal constants with
+a particular precision being used in the conversion to the binary
+floating-point format, which \sollya uses. Setting \key{prec} to that
+precision may prove to be an insufficient means for doing so, for
+example when several different precisions have to be used in one
+expression. For these rare cases, \sollya provides the following
+syntax: decimal constants may be written {\tt
+  \%}\emph{precision}{\tt\%}\emph{constant}, where \emph{precision} is
+a constant integer, written in decimal, and \emph{constant} is the
+decimal constant. \sollya will convert the constant \emph{constant}
+with precision \emph{precision}, regardless of the global variable
+\key{prec} and regardless if \emph{constant} is an integer or would
+otherwise be representable.
+
+\input{introExample44}
+
+\sollya is an environment that uses floating-point arithmetic. The
+IEEE 754-2008 standard on floating-point arithmetic does not only
+define floating-point numbers that represent real numbers but also
+floating-point data representing infinities and Not-a-Numbers (NaNs).
+\sollya also supports infinities and NaNs in the spirit of the IEEE
+754-2008 standard without taking the standard's choices literally. 
+
+\begin{itemize}
+\item Signed infinities are available through the \sollya objects
+\texttt{infty, -infty, @Inf@} and \texttt{-@Inf@}.
+\item Not-a-Numbers are supported through the \sollya objects
+\texttt{NaN} and \texttt{@NaN@}. \sollya does not have support for NaN
+payloads, signaling or quiet NaNs or signs of NaNs. Signaling NaNs
+are supported on input for single and double precision memory
+notation (see section \ref{sec:general_principles}). However, they
+immediately get converted to plain \sollya NaNs.
+\end{itemize}
+
+The evaluation of an expression involving a NaN or the evaluation of a
+function at a point being NaN always results in a NaN. 
+
+Infinities are considered to be the limits of expressions tending to
+infinity. They are supported as bounds of intervals in some
+cases. However, particular commands might prohibit their use even
+though there might be a mathematical meaning attached to such
+expressions. For example, while \sollya will evaluate expressions such
+as $\lim\limits_{x \rightarrow -\infty} e^x$, expressed e.g. through
+\texttt{evaluate(exp(x),[-infty;0])}, it will not accept to compute
+the (finite) value of
+$$\int\limits_{-\infty}^0 e^x \,\mbox{d}x.$$
+
+The following examples give an idea of what can be done with \sollya
+infinities and NaNs. Here is what can be done with infinities:
+\input{introExample32}
+And the following example illustrates NaN behavior.
+\input{introExample33}
+
+\subsection{Rational numbers and rational arithmetic}\label{sec:rationalmode}
+
+The \sollya tool is mainly based on floating-point arithmetic:
+wherever possible, floating-point algorithms, including algorithms
+using interval arithmetic, are used to produce approximate but safe
+results. For some particular cases, floating-point arithmetic is not
+sufficient: some algorithms just require natural and rational numbers
+to be handled exactly. More importantly, for these applications, it is
+required that rational numbers be displayed as such.
+
+\sollya implements a particular mode that offers a lightweight support
+for rational arithmetic. When needed, it can be enabled by assigning
+\com{on} to the global variable \com{rationalmode}. It is disabled by
+assigning \com{off}; the default is \com{off}.
+
+When the mode for rational arithmetic is enabled, \sollya's behavior
+will change as follows:
+\begin{itemize}
+\item When a constant expression is given at the \sollya prompt,
+  \sollya will first try to simplify the expression to a rational
+  number. If such an evaluation to a rational number is possible,
+  \sollya will display that number as an integer or a fraction of two
+  integers. Only if \sollya is not able to simplify the constant
+  expression to a rational number, it will launch the default behavior
+  of evaluating constant expressions to floating-point numbers that
+  are generally faithful roundings of the expressions.
+\item When the global mode \com{autosimplify} is \com{on}, which is
+  the default, \sollya will additionally use rational arithmetic while
+  trying to simplify expressions given in argument of commands. 
+\end{itemize}
+
+Even when \com{rationalmode} is \com{on}, \sollya will not be able to
+exhibit integer ratios between transcendental quantities. For example,
+\sollya will not display $\frac{1}{6}$ for $\arcsin\left(
+\frac{1}{2} \right) / \pi$ but $0.16666\dots$. \sollya's evaluator
+for rational arithmetic is only able to simplify rational expressions
+based on addition, subtraction, multiplication, division, negation,
+perfect squares (for square root) and integer powers.
+
+The following example illustrates what can and what cannot be done
+with \sollya's mode for rational arithmetic: 
+
+\input{introExample34}
+
+\subsection{Intervals and interval arithmetic}
+
+\sollya can manipulate intervals that are closed subsets of the real
+numbers. Several ways of defining intervals exist in \sollya. There is the
+most common way where intervals are composed of two numbers or
+constant expressions representing the lower and the upper bound. These
+values are separated either by commas or semi-colons. Interval bound 
+evaluation is performed in a way that ensures the inclusion property:
+all points in the original, unevaluated interval will be contained in
+the interval with its bounds evaluated to floating-point numbers. 
+
+\input{introExample16}
+
+\sollya has a mode for printing intervals that are that thin that
+their bounds have a number of decimal digits in common when
+printed. That mode is called \com{midpointmode}; see below for an
+introduction and section \ref{labmidpointmode} for details. As \sollya
+must be able to parse back its own output, a syntax is provided to
+input intervals in midpoint~mode. However, please pay attention to the fact that the
+notation used in midpoint~mode generally increases the width of
+intervals: hence when an interval is displayed in midpoint~mode and
+read again, the resulting interval may be wider than the original
+interval.
+
+\input{introExample41}
+
+In some cases, intervals become infinitely thin in theory, in which
+case one tends to think of point intervals even if their
+floating-point representation is not infinitely thin. \sollya provides
+a very covenient way for input of such point intervals. Instead of
+writing \texttt{[a;a]}, it is possible to just write
+\texttt{[a]}. \sollya will expand the notation while making sure that
+the inclusion property is satisfied:
+
+\input{introExample38}
+
+When the mode \com{midpointmode} is set to \com{on} (see
+\ref{labmidpointmode}), \sollya will display intervals that are
+provably reduced to one point in this extended interval syntax. It
+will use \com{midpointmode} syntax for intervals that are sufficiently
+thin but not reduced to one point (see section \ref{labmidpointmode}
+for details):
+
+\input{introExample40}
+
+\sollya intervals are internally represented with floating-point
+numbers as bounds; rational numbers are not supported here. If bounds
+are defined by constant expressions, these are evaluated to
+floating-point numbers using the current precision. Numbers or
+variables containing numbers keep their precision for the interval
+bounds.
+
+Constant expressions get evaluated to floating-point values
+immediately; this includes $\pi$ and rational numbers, even when
+\com{rationalmode} is \com{on} (see section \ref{sec:rationalmode} for
+this mode).
+
+\input{introExample17}
+
+You can get the upper-bound (respectively the lower-bound) of an interval with the command \com{sup} (respectively \com{inf}). The middle of the interval can be computed with the command \com{mid}. Let us also mention that these commands can also be used on numbers (in that case, the number is interpreted as an interval containing only one single point. In that case the commands \com{inf}, \com{mid} and \com{sup} are just the identity):
+
+\input{introExample18}
+
+Let us mention that the \com{mid} operator never provokes a
+rounding. It is rewritten as an unevaluated expression in terms of
+\com{inf} and \com{sup}.
+
+\sollya permits intervals to also have non-real bounds, such as
+infinities or NaNs. When evaluating certain expressions, in particular
+given as interval bounds, \sollya will itself generate intervals
+containing infinities or NaNs. When evaluation yields an interval with
+a NaN bound, the given expression is most likely undefined or
+numerically unstable. Such results should not be trusted; a warning is
+displayed.
+
+While computations on intervals with bounds being NaN will always
+fail, \sollya will try to interpret infinities in the common way as
+limits. However, this is not guaranteed to work, even if it is
+guaranteed that no unsafe results will be produced. See also section
+\ref{sec:numbers} for more detail on infinities in \sollya. The behavior of interval arithmetic on intervals containing infinities or NaNs is subject to debate; moreover, there is no complete consensus on what should be the result of the evaluation of a function $f$ over an interval $I$ containing points where $f$ is not defined. \sollya has its own philosophy regarding these questions. This philosophy is explained in Appendix~\ref{IntervalArithmeticPhilopshy} at the end of this document.
+
+\input{introExample39}
+
+\sollya internally uses interval arithmetic extensively to provide
+safe answers. In order to provide for algorithms written in the
+\sollya language being able to use interval arithmetic, \sollya offers
+native support of interval arithmetic. Intervals can be added,
+subtracted, multiplied, divided, raised to powers, for short, given in
+argument to any \sollya function. The tool will apply the rules of
+interval arithmetic in order to compute output intervals that safely
+encompass the hull of the image of the function on the given interval:
+
+\input{introExample42}
+
+When such expressions involving intervals are given, \sollya will
+follow the rules of interval arithmetic in precision \com{prec} for
+immediately evaluating them to interval enclosures. While \sollya's
+evaluator always guarantees the inclusion property, it also applies
+some optimisations in some cases in order to make the image interval
+as thin as possible. For example, \sollya will use a Taylor expansion
+based evaluation if a composed function, call it $f$, is applied to an
+interval. In other words, in this case \sollya will behave as if the
+\com{evaluate} command (see section \ref{labevaluate}) were implicitly
+used. In most cases, the result will be different from the one obtained
+by replacing all occurences of the free variable of a function by the 
+interval the function is to be evaluated on:
+
+\input{introExample43}
+
+\subsection{Functions}
+\sollya knows only about functions with one single variable. The first time in a session that an unbound name is used (without being assigned) it determines the name used to refer to the free variable.
+
+The basic functions available in \sollya are the following:
+\begin{itemize}
+\item \com{+}, \com{-}, \com{*}, \com{/}, \com{\^{}}
+\item \com{sqrt}
+\item \com{abs}
+\item \com{sin}, \com{cos}, \com{tan}, \com{sinh}, \com{cosh}, \com{tanh}
+\item \com{asin}, \com{acos}, \com{atan}, \com{asinh}, \com{acosh}, \com{atanh}
+\item \com{exp}, \com{expm1} (defined as $\mathrm{expm1}(x) = \exp(x)-1$)
+\item \com{log} (natural logarithm), \com{log2} (binary logarithm), \com{log10} (decimal logarithm), \com{log1p} (defined as $\mathrm{log1p}(x) = \log(1+x)$)
+\item \com{erf}, \com{erfc}
+\item \com{halfprecision}, \com{single}, \com{double}, \com{doubleextended}, \com{doubledouble}, \com{quad}, \com{tripledouble} (see sections \ref{labhalfprecision}, \ref{labsingle}, \ref{labdouble}, \ref{labdoubleextended}, \ref{labdoubledouble}, \ref{labquad} and \ref{labtripledouble})
+\item \com{HP}, \com{SG}, \com{D}, \com{DE}, \com{DD}, \com{QD}, \com{TD} (see sections \ref{labhalfprecision}, \ref{labsingle}, \ref{labdouble}, \ref{labdoubleextended}, \ref{labdoubledouble}, \ref{labquad} and \ref{labtripledouble})
+\item \com{floor}, \com{ceil}, \com{nearestint}.
+\end{itemize}
+
+The constant $\pi$ is available through the keyword \key{pi} as a $0$-ary function: 
+
+\input{introExample19}
+
+The reader may wish to see Sections \ref{lablibrary} and \ref{labfunction} for ways of dynamically adding other base functions to Sollya.
+
+\subsection{Strings}
+Anything written between quotes is interpreted as a string. The infix operator \com{@} concatenates two strings. To get the length of a string, use the \com{length} function. You can access the $i$-th character of a string using brackets (see the example below). There is no character type in \sollya: the $i$-th character of a string is returned as a string itself.
+
+\input{introExample20}
+
+Strings may contain the following escape sequences:
+\texttt{$\backslash\backslash$}, \texttt{$\backslash$\"},
+\texttt{$\backslash$?}, \texttt{$\backslash$\'},
+\texttt{$\backslash$n}, \texttt{$\backslash$t},
+\texttt{$\backslash$a}, \texttt{$\backslash$b},
+\texttt{$\backslash$f}, \texttt{$\backslash$r},
+\texttt{$\backslash$v}, \texttt{$\backslash$x}[hexadecimal number] and
+\texttt{$\backslash$}[octal number]. Refer to the C99 standard for their
+meaning.
+
+\subsection{Particular values}
+\sollya knows about some particular values. These values do not really have a type. They can be stored in variables and in lists. A (possibly not exhaustive) list of such values is the following one:
+
+\begin{itemize}
+\item \com{on}, \com{off} (see sections \ref{labon} and \ref{laboff})
+\item \com{dyadic}, \com{powers}, \com{binary}, \com{decimal}, \com{hexadecimal} (see sections \ref{labdyadic}, \ref{labpowers}, \ref{labbinary}, \ref{labdecimal} and \ref{labhexadecimal})
+\item \com{file}, \com{postscript}, \com{postscriptfile} (see sections \ref{labfile}, \ref{labpostscript} and \ref{labpostscriptfile})
+\item \com{RU}, \com{RD}, \com{RN}, \com{RZ} (see sections \ref{labru}, \ref{labrd}, \ref{labrn} and \ref{labrz})
+\item \com{absolute}, \com{relative} (see sections \ref{lababsolute} and \ref{labrelative})
+\item \com{floating}, \com{fixed} (see sections \ref{labfloating} and \ref{labfixed})
+\item \com{halfprecision}, \com{single}, \com{double}, \com{doubleextended}, \com{doubledouble}, \com{quad}, \com{tripledouble} (see sections \ref{labhalfprecision}, \ref{labsingle}, \ref{labdouble}, \ref{labdoubleextended}, \ref{labdoubledouble}, \ref{labquad} and \ref{labtripledouble})
+\item \com{HP}, \com{SG}, \com{D}, \com{DE}, \com{DD}, \com{QD}, \com{TD} (see sections \ref{labhalfprecision}, \ref{labsingle}, \ref{labdouble}, \ref{labdoubleextended}, \ref{labdoubledouble}, \ref{labquad} and \ref{labtripledouble})
+\item \com{perturb} (see section \ref{labperturb})
+\item \com{honorcoeffprec} (see section \ref{labhonorcoeffprec})
+\item \com{default} (see section \ref{labdefault})
+\item \com{error} (see section \ref{laberror})
+\item \com{void} (see section \ref{labvoid})
+\end{itemize}
+
+\subsection{Lists}
+Objects can be grouped into lists. A list can contain elements with different types. As for strings, you can concatenate two lists with \com{@}. The function \com{length} also gives the length of a list.
+
+You can prepend an element to a list using \com{.:} and you can append an element to a list using \com{:.}\\ The following example illustrates some features:
+
+\input{introExample21}
+
+Lists can be considered arrays and elements of lists can be
+referenced using brackets. Possible indices start at $0$. The
+following example illustrates this point:
+
+\input{introExample22}
+
+Please be aware of the fact that the complexity for accessing an
+element of the list using indices is~$\mathcal{O}(n)$, where $n$ is the length of the whole list.
+
+Lists may contain ellipses indicated by \texttt{,...,} between
+elements that are constant and evaluate to integers that are
+incrementally ordered. \sollya translates such ellipses to the full
+list upon evaluation. The use of ellipses between elements that are not
+constants is not allowed. This feature is provided for ease of
+programming; remark that the complexity for expanding such lists is
+high. For illustration, see the following example:
+
+\input{introExample23}
+
+Lists may be continued to infinity by means of the \texttt{...}
+indicator after the last element given. At least one element must
+explicitly be given. If the last element given is a constant
+expression that evaluates to an integer, the list is considered as
+continued to infinity by all integers greater than that last
+element. If the last element is another object, the list is considered
+as continued to infinity by re-duplicating this last element. Let us remark
+that bracket notation is supported for such end-elliptic lists even
+for implicitly given elements. However, evaluation complexity is
+high. Combinations of ellipses inside a list and in its end are
+possible. The usage of lists described here is best illustrated by the
+following examples:
+
+\input{introExample24}
+
+\subsection{Structures}
+
+In a similar way as in lists, \sollya allows data to be grouped in --
+untyped -- structures. A structure forms an object to which other
+objects can be added as elements and identified by their names. The
+elements of a structure can be retrieved under their name and used as
+usual. The following sequence shows that point:
+
+\input{introExample46}
+
+Structures can also be defined literally using the syntax illustrated
+in the next example. They will also be printed in that syntax.
+
+\input{introExample47}
+
+If the variable \texttt{a} is bound to an existing structure, it is possible to use the ``dot notation'' \texttt{a.b} to assign the value of the field \texttt{b} of the structure \texttt{a}. This works even if \texttt{b} is not yet a field of \texttt{a}: in this case a new field is created inside the structure \texttt{a}. 
+
+Besides, the dot notation can be used even when \texttt{a} is unassigned. In this case a new structure is created with a field \texttt{b}, and this structure is bound to \texttt{a}. However, the dot notation cannot be used if \texttt{a} is already bound to something that is not a structure.
+
+These principles apply recursively: for instance, if \texttt{a} is a structure that contains only one field \texttt{d}, the command \texttt{a.b.c = 3} creates a new field named \texttt{b} inside the structure \texttt{a}; this field itself is a structure containing the field \texttt{c}. The command \texttt{a.d.c = 3} is allowed if \texttt{a.d} is already a structure, but forbidden otherwise (e.g. if \texttt{a.d} was equal to \texttt{sin(x)}). This is summed up in the following example.
+
+\input{introExample48}
+
+When printed, the elements of a structure are not sorted in any
+manner. They get printed in an arbitrary order that just maintains the
+order given in the definition of literate structures. That said, when
+compared, two structures compare equal iff they contain the same
+number of identifiers, with the same names and iff the elements of
+corresponding names all compare equal. This means the order does
+not matter in comparisons and otherwise does only for printing.
+
+The following example illustrates this matter:
+
+\input{introExample49}
+
+\section{Iterative language elements: assignments, conditional statements and loops}
+
+\subsection{Blocks}
+
+Statements in \sollya can be grouped in blocks, so-called
+begin-end-blocks.  This can be done using the key tokens \key{$\lbrace$} and
+\key{$\rbrace$}. Blocks declared this way are considered to be one single
+statement. As already explained in section \ref{variables}, using
+begin-end-blocks also opens the possibility of declaring variables
+through the keyword \key{var}. 
+
+\subsection{Assignments}
+
+\sollya has two different assignment operators, \texttt{=} and
+\texttt{:=}. The assignment operator \texttt{=} assigns its
+right-hand-object ``as is'', i.e. without evaluating functional
+expressions. For instance, \texttt{i = i + 1;} will dereferentiate the
+identifier \texttt{i} with some content, notate it $y$, build up the
+expression (function) $y + 1$ and assign this expression back to
+\texttt{i}. In the example, if \texttt{i} stood for the value $1000$,
+the statement \texttt{i = i + 1;} would assign ``$1000 + 1$'' -- and not
+``$1001$'' -- to \texttt{i}. The assignment operator \texttt{:=} evaluates
+constant functional expressions before assigning them. On other
+expressions it behaves like \texttt{=}. Still in the example, the
+statement \texttt{i := i + 1;} really assigns $1001$ to \texttt{i}.
+
+Both \sollya assignment operators support indexing of lists or strings
+elements using brackets on the left-hand-side of the assignment
+operator. The indexed element of the list or string gets replaced by
+the right-hand-side of the assignment operator.  When indexing strings
+this way, that right-hand side must evaluate to a string of length
+$1$. End-elliptic lists are supported with their usual semantic for
+this kind of assignment.  When referencing and assigning a value in
+the implicit part of the end-elliptic list, the list gets expanded to
+the corresponding length.
+
+The following examples well illustrate the behavior of assignment
+statements:
+
+\input{introExample25}
+
+
+The indexing of lists on left-hand sides of assignments is reduced to
+the first order. Multiple indexing of lists of lists on assignment is
+not supported for complexity reasons. Multiple indexing is possible in
+right-hand sides.
+
+\input{introExample45}
+
+\subsection{Conditional statements}
+
+\sollya supports conditional statements expressed with the keywords
+\key{if}, \key{then} and optionally \key{else}. Let us mention that only
+conditional statements are supported and not conditional expressions. 
+
+The following examples illustrate both syntax and semantic of
+conditional statements in \sollya. Concerning syntax, be aware that there must not be any semicolon
+before the \key{else} keyword.
+
+\input{introExample26}
+
+\subsection{Loops}
+
+\sollya supports three kinds of loops. General \emph{while-condition}
+loops can be expressed using the keywords \key{while} and
+\key{do}. One has to be aware of the fact that the condition test is
+executed always before the loop, there is no \emph{do-until-condition}
+loop. Consider the following examples for both syntax and semantic:
+
+\input{introExample27}
+
+The second kind of loops are loops on a variable ranging from a
+numerical start value and a end value. These kind of loops can be
+expressed using the keywords \key{for}, \key{from}, \key{to}, \key{do}
+and optionally \key{by}. The \key{by} statement indicates the width of
+the steps on the variable from the start value to the end value. Once
+again, syntax and semantic are best explained with an example:
+
+\input{introExample28}
+
+The third kind of loops are loops on a variable ranging on values
+contained in a list. In order to ensure the termination of the loop,
+that list must not be end-elliptic. The loop is expressed using the
+keywords \key{for}, \key{in} and \key{do} as in the following
+examples:
+
+\input{introExample29}
+
+For both types of \key{for} loops, assigning the loop variable is
+allowed and possible. When the loop terminates, the loop variable will
+contain the value that made the loop condition fail. Consider the
+following examples:
+
+\input{introExample30}
+
+\section{Functional language elements: procedures and pattern matching}
+
+\subsection{Procedures}
+\sollya has some elements of functional languages. In order to 
+avoid confusion with mathematical functions, the associated 
+programming objects are called \emph{procedures} in \sollya. 
+
+\sollya procedures are common objects that can be, for example,
+assigned to variables or stored in lists. Procedures are declared by
+the \key{proc} keyword; see section \ref{labproc} for details. The
+returned procedure object must then be assigned to a variable. It can
+hence be applied to arguments with common application syntax. The
+\key{procedure} keyword provides an abbreviation for declaring and
+assigning a procedure; see section \ref{labprocedure} for details.
+
+\sollya procedures can return objects using the \key{return} keyword
+at the end of the begin-end-block of the procedure. Section
+\ref{labreturn} gives details on the usage of \key{return}. Procedures
+further can take any type of object in argument, in particular also
+other procedures that are then applied to arguments. Procedures can
+be declared inside other procedures. 
+
+Common \sollya procedures are declared with a certain number of formal
+parameters. When the procedure is applied to actual parameters, a
+check is performed if the right number of actual parameters is
+given. Then the actual parameters are applied to the formal
+parameters. In some cases, it is required that the number of
+parameters of a procedure be variable. \sollya provides support for
+the case with procedures with an arbitrary number of actual arguments.
+When the procedure is called, those actual arguments are gathered in a
+list which is applied to the only formal list parameter of a procedure
+with an arbitrary number of arguments. See section \ref{labprocedure}
+for the exact syntax and details; an example is given just below.
+
+Let us remark that declaring a procedure does not involve any evaluation or
+other interpretation of the procedure body. In particular, this means
+that constants are evaluated to floating-point values inside \sollya
+when the procedure is applied to actual parameters and the global
+precision valid at this moment.
+
+\sollya procedures are well illustrated with the following examples:
+
+\input{introExample31}
+
+\input{introExample35}
+
+\input{introExample36}
+
+\input{introExample37}
+
+
+\sollya also supports external procedures, i.e. procedures written in
+\texttt{C} (or some other language) and dynamically bound to \sollya
+identifiers. See \ref{labexternalproc} for details.
+
+\subsection{Pattern matching}
+
+Starting with version 3.0, \sollya supports matching expressions with
+expression patterns. This feature is important for an extended
+functional programming style. Further, and most importantly, it allows
+expression trees to be recursively decomposed using native constructs
+of the \sollya language. This means no help from external procedures
+or other compiled-language mechanisms is needed here anymore.
+
+Basically, pattern matching supports relies on one \sollya construct: 
+\begin{center}
+\begin{minipage}{0.8\textwidth}
+\key{match {\it expr} with \\
+{\it pattern1} : ({\it return-expr1}) \\
+{\it pattern2} : ({\it return-expr2}) \\
+\dots \\
+{\it patternN} : ({\it return-exprN}) }
+\end{minipage}
+\end{center} 
+That construct has the following semantic: try to match the
+expression {\it expr} with the patterns {\it pattern1} through {\it
+  patternN}, proceeding in natural order. If a pattern
+{\it patternI} is found that matches, evaluate the whole \key{match
+  \dots~with} construct to the return expression {\it return-exprI}
+associated with the matching pattern {\it patternI}. If no matching
+pattern is found, display an error warning and return \key{error}. Note that the parentheses around the expressions {\it return-exprI} are mandatory.
+
+Matching a pattern means the following: 
+\begin{itemize}
+  \item If a pattern does not contain any programming-language-level
+    variables (different from the free mathematical variable), it
+    matches expressions that are syntactically equal to itself. For
+    instance, the pattern \key{exp(sin(3 * x))} will match the
+    expression \key{exp(sin(3 * x))}, but it does not match \key{exp(sin(x * 3))} because the expressions are not syntactically equal.
+  \item If a pattern does contain variables, it matches an expression
+    {\it expr} if these variables can be bound to subexpressions of
+    {\it expr} such that once the pattern is evaluated with that
+    variable binding, it becomes syntactically equal to the expression
+    {\it expr}. For instance, the pattern \key{exp(sin(a * x))} will
+    match the expression \key{exp(sin(3 * x))} as it is possible to
+    bind \key{a} to \key{3} such that \key{exp(sin(a~*~x))} evaluates
+    to \key{exp(sin(3~*~x))}.
+\end{itemize}
+
+If a pattern {\it patternI} with variables is matched in a \key{match
+  \dots~with} construct, the variables in the pattern stay bound
+during the evaluation of the corresponding return expression {\it
+  return-exprI}. This allows subexpressions to be extracted from
+expressions and/or recursively handled as needed.
+
+The following examples illustrate the basic principles of pattern
+matching in \sollya:
+
+\input{introExample50}
+
+As \sollya is not a purely functional language, the \key{match
+  \dots~with} construct can also be used in a more imperative style,
+which makes it become closer to constructs like \key{switch} in {\tt
+  C} or {\tt Perl}. In lieu of a simple return expression, a whole
+block of imperative statements can be given. The expression to be
+returned by that block is indicated in the end of the block, using
+the \key{return} keyword. That syntax is illustrated in the next
+example:
+
+\input{introExample51}
+
+In the case when no return statement is indicated for a
+statement-block in a \key{match \dots~with} construct, the construct
+evaluates to the special value \key{void} if that pattern matches. 
+
+In order to well understand pattern matching in \sollya, it is
+important to realize the meaning of variables in patterns. This
+meaning is different from the one usually found for variables. In a
+pattern, variables are never evaluated to whatever they might have set
+before the pattern is executed. In contrast, all variables in patterns
+are new, free variables that will freshly be bound to subexpressions
+of the matching expression. If a variable of the same name already
+exists, it will be shadowed during the evaluation of the statement
+block and the return expression corresponding to the matching
+expression. This type of semantic implies that patterns can never be
+computed at run-time, they must always be hard-coded
+beforehand. However this is necessary to make pattern matching
+context-free.
+
+As a matter of course, all variables figuring in the expression {\it
+  expr} to be matched are evaluated before pattern matching is
+attempted. In fact, {\it expr} is a usual \sollya expression, not a
+pattern.
+
+In \sollya, the use of variables in patterns does not need to be
+linear. This means the same variable might appear twice or more in a
+pattern. Such a pattern will only match an expression if it contains
+the same subexpression, associated with the variable, in all places
+indicated by the variable in the pattern.
+
+The following examples illustrate the use of variables in patterns in
+detail:
+
+\input{introExample52}
+
+\input{introExample53}
+
+Pattern matching is meant to be a means to decompose expressions
+structurally. For this reason and in an analogous way to variables, no
+evaluation is performed at all on (sub-)expressions that form constant
+functions. As a consequence, patterns match constant expressions
+only if they are structurally identical. For example $5 + 1$ only
+matches $5 + 1$ and not $1 + 5$, $3 + 3$ nor $6$.
+
+This general rule on constant expressions admits one exception.
+Intervals in \sollya can be defined using constant expressions as
+bounds. These bounds are immediately evaluated to floating-point
+constants, though. In order to permit pattern matching on intervals,
+constant expressions given as bounds of intervals that form patterns
+are evaluated before pattern matching. However, in order not conflict
+with the rules of no evaluation of variables, these constant
+expressions as bounds of intervals in patterns must not contain free
+variables.
+
+\input{introExample54}
+
+The \sollya keyword \key{default} has a special meaning in patterns.
+It acts like a wild-card, matching any (sub-)expression, as long as
+the whole expression stays correctly typed. Upon matching with
+\key{default}, no variable gets bound. This feature is illustrated in
+the next example:
+
+\input{introExample55}
+
+In \sollya, pattern matching is possible on the following \sollya
+types and operations defined on them:
+\begin{itemize}
+\item Expressions that define univariate functions, as explained above,
+\item Intervals with one, two or no bound defined in the pattern by a variable,
+\item Character sequences, literate or defined using the \key{@} operator, possibly with a variable on one of the sides of the \key{@} operator,
+\item Lists, literate, literate with variables or defined using the \key{.:}, \key{:.} and \key{@} operators, possibly with a variable on one of the sides of the \key{@} operator or one or two variables for \key{.:} and \key{:.},
+\item Structures, literate or literate with variables, and
+\item All other \sollya objects, matchable with themselves (\key{DE} matches \key{DE}, \key{on} matches \key{on}, \key{perturb} matches \key{perturb} etc.)
+\end{itemize}
+
+\input{introExample56}
+
+Concerning intervals, please pay attention to the fact that expressions involving 
+intervals are immediately evaluated and that structural pattern matching on functions
+on intervals is not possible. This point is illustrated in the next example:
+
+\input{introExample57}
+
+With respect to pattern matching on lists or character sequences
+defined using the \key{@} operator, the following is to be mentionned:
+\begin{itemize}
+\item Patterns like \key{a @ b} are not allowed as they would need to
+  perform an ambiguous cut of the list or character sequence to be
+  matched. This restriction is maintained even if the variables (here
+  \key{a} and \key{b}) are constrained by other occurrences in the
+  pattern (for example in a list) which would make the cut
+  unambiguous.
+\item Recursive use of the \key{@} operator (even mixed with the
+  operators \key{.:} and \key{:.}) is possible under the condition
+  that there must not exist any other parenthezation of the term in
+  concatenations (\key{@}) such that the rule of one single variable
+  for \key{@} above gets violated. For instance, \key{( [| 1 |] @ a) @
+    (b @ [| 4 |])} is not possible as it can be re-parenthesized \key{
+    [| 1 |] @ (a @ b) @ [| 4 |]}, which exhibits the ambiguous case.
+\end{itemize}
+These points are illustrated in this example:
+
+\input{introExample58}
+
+As mentionned above, pattern matching on \sollya structures is
+possible. Patterns for such a match are given in a literately,
+i.e. using the syntax \key{ \{ .a = {\it exprA}, .b = {\it exprB},
+  {\it \dots}~\}}. A structure pattern {\it sp} will be matched by a
+structure {\it s} iff that structure {\it s} contains at least all the
+elements (like \key{.a}, \key{.b} etc.) of the structure pattern {\it
+  sp} and iff each of the elements of the structure {\it s} matches
+the pattern in the corresponding element of the structure pattern {\it
+  sp}. The user should be aware of the fact that the structure to be
+matched is only supposed to have at least the elements of the pattern
+but that it may contain more elements is a particular \sollya
+feature. For instance with pattern matching, it is hence possible to
+ensure that access to particular elements will be possible in a
+particular code segment. The following example is meant to clarify
+this point:
+
+\input{introExample59}
+
+\section{Commands and functions}
+
+\input{CommandsAndFunctions}
+
+\newpage
+\section{Appendix: interval arithmetic philosophy in \sollya}
+\label{IntervalArithmeticPhilopshy}
+
+Although it is currently based on the MPFI library, \sollya has its own way of interpreting interval arithmetic when infinities or NaN occur, or when a function is evaluated on an interval containing points out of its domain, etc. This philosophy may differ from the one applied in MPFI. It is also possible that the behavior of \sollya does not correspond to the behavior that one would expect, e.g. as a natural consequence of the IEEE-754 standard.
+
+The topology that we consider is always the usual topology of $\overline{\mathbb{R}} = \mathbb{R} \cup \{-\infty,\,+\infty\}$. For any function, if one of its arguments is empty (respectively NaN), we return empty (respectively NaN).
+
+\subsection{Univariate functions}
+Let $f$ be a univariate basic function and $I$ an interval. We denote by $J$ the result of the interval evaluation of $f$ over $I$ in \sollya. If $I$ is completely included in the domain of $f$, $J$ will usually be the smallest interval (at the current precision) containing the exact image $f(I)$. However, in some cases, it may happen that $J$ is not as small as possible. It is guaranteed however, that $J$ tends to $f(I)$ when the precision of the tool tends to infinity.
+
+When $f$ is not defined at some point $x$ but is defined on a neighborhood of $x$, we consider that the ``value'' of $f$ at $x$ is the convex hull of the limit points of $f$ around $x$. For instance, consider the evaluation of $f= \tan$ on $[0,\, \pi]$. It is not defined at $\pi/2$ (and only at this point). The limit points of $f$ around $\pi/2$ are $-\infty$ and $+\infty$, so, we return $[-\infty,\,\infty]$. Another example: $f=\sin$ on $[+\infty]$. The function has no limit at this point, but all points of $[-1, 1]$ are limit points. So, we return $[-1,\,1]$.
+
+Finally, if $I$ contains a subinterval on which $f$ is not defined, we return $[\textrm{NaN},\,\textrm{NaN}]$ (example: $\sqrt{[-1,\,2]}$).
+
+\subsection{Bivariate functions}
+Let $f$ be a bivariate function and $I_1$ and $I_2$ be intervals. If $I_1=[x]$ and $I_2=[y]$ are both point-intervals, we return the convex hull of the limit points of $f$ around $(x,\,y)$ if it exists. In particular, if $f$ is defined at $(x,\,y)$ we return its value (or a small interval around it, if it is not exactly representable). As an example $[1]/[+\infty]$ returns $[0]$. Also, $[1]/[0]$ returns $[-\infty,\,+\infty]$ (note that \sollya does not consider signed zeros). If it is not possible to give a meaning to the expression $f(I_1,\,I_2)$, we return NaN: for instance $[0]/[0]$ or $[0]*[+\infty]$.
+
+If one and only one of the intervals is a point-interval (say $I_1 = [x]$), we consider the partial function $g: y \mapsto f(x,y)$ and return the value that would be obtained when evaluating $g$ on $I_2$. For instance, in order to evaluate $[0]/I_2$, we consider the function $g$ defined for every $y \neq 0$ by $g(y)=0/y=0$. Hence, $g(I_2) = [0]$ (even if $I_2$ contains $0$, by the argument of limit-points). In particular, please note that $[0]/[-1,\,1]$ returns $[0]$ even though $[0]/[0]$ returns NaN. This rule even holds when $g$ can only be defined as limit points: for instance, in the case $I_1/[0]$ we consider $g: x \mapsto x/0$. This function cannot be defined \emph{stricto sensu}, but we can give it a meaning by considering $0$ as a limit. Hence $g$ is multivalued and its value is $\{-\infty,\,+\infty\}$ for every $x$. Hence, $I_1/[0]$ returns $[-\infty,\,+\infty]$ when $I_1$ is not a point-interval.
+
+Finally, if neither $I_1$ nor $I_2$ are point-intervals, we try to give a meaning to $f(I_1,\,I_2)$ by an argument of limit-points when possible. For instance $[1,\,2] / [0,\,1]$ returns $[1,\,+\infty]$.
+
+As a special exception to these rules, $[0]^{[0]}$ returns $[1]$.
+
+\end{document}

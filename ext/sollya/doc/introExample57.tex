@@ -1,0 +1,33 @@
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> match exp([1;2]) with 
+        [a;b]              : {
+                                a,", ",b;
+                             }
+        default            : {
+                                "Something else";
+                             };
+2.71828182845904523536028747135266249775724709369989, 7.389056098930650227230427
+4605750078131803155705518
+> 
+> match exp([1;2]) with 
+        exp([a;b])         : {
+                                a,", ", b;
+                             }
+        default            : {
+                                "Something else";
+                             };
+Warning: at least one of the given expressions or a subexpression is not correct
+ly typed
+or its evaluation has failed because of some error on a side-effect.
+error
+> 
+> match exp([1;2]) with 
+    exp(a)  : {
+                "Exponential of ", a;
+              }
+    default : {
+                "Something else";
+              };
+Something else
+\end{Verbatim}
+\end{minipage}\end{center}

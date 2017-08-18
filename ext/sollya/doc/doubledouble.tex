@@ -1,0 +1,36 @@
+\subsection{doubledouble}
+\label{labdoubledouble}
+\noindent Names: \textbf{doubledouble}, \textbf{DD}\\
+represents a number as the sum of two IEEE doubles.\\
+\noindent Description: \begin{itemize}
+
+\item \textbf{doubledouble} is both a function and a constant.
+
+\item As a function, it rounds its argument to the nearest number that can be written
+   as the sum of two double precision numbers.
+
+\item The algorithm used to compute \textbf{doubledouble}($x$) is the following: let $x_h$ = \textbf{double}($x$)
+   and let $x_l$ = \textbf{double}($x-x_h$). Return the number $x_h+x_l$. Note that if the current 
+   precision is not sufficient to exactly represent $x_h + x_l$, a rounding will occur
+   and the result of \textbf{doubledouble}($x$) will be useless.
+
+\item As a constant, it symbolizes the double-double precision format. It is used in 
+   contexts when a precision format is necessary, e.g. in the commands 
+   \textbf{round}, \textbf{roundcoefficients} and \textbf{implementpoly}.
+   See the corresponding help pages for examples.
+\end{itemize}
+\noindent Example 1: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> verbosity=1!;
+> a = 1+ 2^(-100);
+> DD(a);
+1.0000000000000000000000000000007888609052210118054
+> prec=50!;
+> DD(a);
+Warning: double rounding occurred on invoking the double-double rounding operato
+r.
+Try to increase the working precision.
+1
+\end{Verbatim}
+\end{minipage}\end{center}
+See also: \textbf{halfprecision} (\ref{labhalfprecision}), \textbf{single} (\ref{labsingle}), \textbf{double} (\ref{labdouble}), \textbf{doubleextended} (\ref{labdoubleextended}), \textbf{quad} (\ref{labquad}), \textbf{tripledouble} (\ref{labtripledouble}), \textbf{roundcoefficients} (\ref{labroundcoefficients}), \textbf{implementpoly} (\ref{labimplementpoly}), \textbf{round} (\ref{labround})

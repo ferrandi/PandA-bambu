@@ -1,0 +1,66 @@
+\subsection{library}
+\label{lablibrary}
+\noindent Name: \textbf{library}\\
+binds an external mathematical function to a variable in \sollya\\
+\noindent Usage: 
+\begin{center}
+\textbf{library}(\emph{path}) : \textsf{string} $\rightarrow$ \textsf{function}\\
+\end{center}
+\noindent Description: \begin{itemize}
+
+\item The command \textbf{library} lets you extend the set of mathematical
+   functions known to \sollya.
+   By default, \sollya knows the most common mathematical functions such
+   as \textbf{exp}, \textbf{sin}, \textbf{erf}, etc. Within \sollya, these functions may be
+   composed. This way, \sollya should satisfy the needs of a lot of
+   users. However, for particular applications, one may want to
+   manipulate other functions such as Bessel functions, or functions
+   defined by an integral or even a particular solution of an ODE.
+
+\item \textbf{library} makes it possible to let \sollya know about new functions. In
+   order to let it know, you have to provide an implementation of the
+   function you are interested in. This implementation is a C file containing
+   a function of the form:
+   \begin{verbatim} int my_ident(sollya_mpfi_t result, sollya_mpfi_t op, int n)\end{verbatim}
+   The semantic of this function is the following: it is an implementation of
+   the function and its derivatives in interval arithmetic.
+   \verb|my_ident(result, I, n)| shall store in \verb|result| an enclosure 
+   of the image set of the $n$-th derivative
+   of the function f over \verb|I|: $f^{(n)}(I) \subseteq \mathrm{result}$.
+
+\item The integer value returned by the function implementation currently has no meaning.
+
+\item You do not need to provide a working implementation for any \verb|n|. Most functions
+   of \sollya requires a relevant implementation only for $f$, $f'$ and $f''$. For higher 
+   derivatives, its is not so critical and the implementation may just store 
+   $[-\infty,\,+\infty]$ in result whenever $n>2$.
+
+\item Note that you should respect somehow interval-arithmetic standards in your implementation:
+   \verb|result| has its own precision and you should perform the 
+   intermediate computations so that \verb|result| is as tight as possible.
+
+\item You can include sollya.h in your implementation and use library 
+   functionnalities of \sollya for your implementation. However, this requires to have compiled
+   \sollya with \texttt{-fPIC} in order to make the \sollya executable code position 
+   independent and to use a system on with programs, using \texttt{dlopen} to open
+   dynamic routines can dynamically open themselves.
+
+\item To bind your function into \sollya, you must use the same identifier as the
+   function name used in your implementation file (\verb|my_ident| in the previous
+   example). Once the function code has been bound to an identifier, you can use a simple assignment
+   to assign the bound identifier to yet another identifier. This way, you may use convenient
+   names inside \sollya even if your implementation environment requires you to use a less
+   convenient name.
+\end{itemize}
+\noindent Example 1: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> bashexecute("gcc -fPIC -Wall -c libraryexample.c -I$HOME/.local/include");
+> bashexecute("gcc -shared -o libraryexample libraryexample.o -lgmp -lmpfr");
+> myownlog = library("./libraryexample");
+> evaluate(log(x), 2);
+0.69314718055994530941723212145817656807550013436024
+> evaluate(myownlog(x), 2);
+0.69314718055994530941723212145817656807550013436024
+\end{Verbatim}
+\end{minipage}\end{center}
+See also: \textbf{function} (\ref{labfunction}), \textbf{bashexecute} (\ref{labbashexecute}), \textbf{externalproc} (\ref{labexternalproc}), \textbf{externalplot} (\ref{labexternalplot}), \textbf{diff} (\ref{labdiff}), \textbf{evaluate} (\ref{labevaluate}), \textbf{libraryconstant} (\ref{lablibraryconstant})

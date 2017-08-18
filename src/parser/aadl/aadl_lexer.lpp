@@ -1,0 +1,143 @@
+/*
+ *
+ *                   _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
+ *                  _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
+ *                 _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
+ *                _/      _/    _/ _/    _/ _/   _/ _/    _/
+ *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
+ *
+ *             ***********************************************
+ *                              PandA Project
+ *                     URL: http://panda.dei.polimi.it
+ *                       Politecnico di Milano - DEIB
+ *                        System Architectures Group
+ *             ***********************************************
+ *              Copyright (c) 2015 Politecnico di Milano
+ *
+ *   This file is part of the PandA framework.
+ *
+ *   The PandA framework is free software; you can redistribute it and/or modify
+ *   it under the terms of the GNU General Public License as published by
+ *   the Free Software Foundation; either version 3 of the License, or
+ *   (at your option) any later version.
+ *
+ *   This program is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU General Public License for more details.
+ *
+ *   You should have received a copy of the GNU General Public License
+ *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+*/
+/**
+ * @file aadl_lexer.lpp
+ * @brief LEX based lexer for aadl
+ *
+ * @author Marco Lattuada <marco.lattuada@polimi.it>
+ *
+*/
+%option yylineno
+%option never-interactive
+/*%option noyywrap*/
+%{
+
+#include "config_HAVE_BISON_2_7_OR_GREATER.hpp"
+
+///. include
+#include "Parameter.hpp"
+
+///parser/aadl
+#include "aadl_parser_node.hpp"
+
+///utility include
+#include "refcount.hpp"
+#include "utility.hpp"
+
+#define YYSTYPE AadlParserNode
+
+///NOTE: forward declarations of AadlParserData and AadlFlexLexer are in this point since they will be used in aadl_yparser.h
+REF_FORWARD_DECL(AadlParserData);
+REF_FORWARD_DECL(AadlFlexLexer);
+
+#if HAVE_BISON_2_7_OR_GREATER
+#include "aadl_yparser.hpp"
+#else
+#include "aadl_yparser.h"
+#endif
+#include "aadl_lexer.hpp"
+using namespace std;
+
+///Skipping warnings due to bison
+#pragma GCC diagnostic ignored "-Wconversion"
+#pragma GCC diagnostic ignored "-Wsign-compare"
+#pragma GCC diagnostic ignored "-Wsign-conversion"
+#pragma GCC diagnostic ignored "-Wredundant-decls"
+#pragma GCC diagnostic ignored "-Wold-style-cast"
+#pragma GCC diagnostic ignored "-Wswitch-default"
+#pragma GCC diagnostic ignored "-Wzero-as-null-pointer-constant"
+
+AadlFlexLexer::AadlFlexLexer(const ParameterConstRef parameters,  std::istream* argin, std::ostream* argout) :
+   yyFlexLexer(argin, argout),
+   debug_level(parameters->get_class_debug_level(GET_CLASS(*this))),
+   skip(false)
+{
+}
+
+AadlFlexLexer::~AadlFlexLexer()
+{}
+
+%}
+letter [\-_a-zA-Z/]
+digit [0-9]
+digit_point [0-9.]
+char [_a-zA-Z:.0-9/\-]
+
+%%
+=> { INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Read =>"); if (not skip) return ARROW;}
+-> { INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Read =>"); if (not skip) return ARROW;}
+\) { INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Read )"); if (not skip) return CLOSE;}
+\} { INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Read }"); if (not skip) return CLOSE_CURLY;}
+: { INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Read :"); if (not skip) return COLON;}
+, { INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Read ,"); if (not skip) return COMA;}
+\. { INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Read ."); if (not skip) return DOT;}
+\( { INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Read ("); if (not skip) return OPEN;}
+\{ { INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Read {"); if (not skip) return OPEN_CURLY;}
+\" { INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Read \""); if (not skip) return QUOTAS;}
+; { INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Read ;"); if (not skip) return SEMICOLON;}
+
+
+"ACCESS" { INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Read ACCESS"); if (not skip) return ACCESS;}
+"classifier" { INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Read classifier"); if (not skip) return CLASSIFIER;}
+"CONNECTIONS" { INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Read CONNECTIONS"); if (not skip) return CONNECTIONS;}
+"data" { INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Read DATA"); if (not skip) return DATA;}
+"DATA" { INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Read DATA"); if (not skip) return DATA;}
+"end" { skip = false; INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Read END"); return END;}
+"END" { skip = false; INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Read END"); return END;}
+"FEATURES" { INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Read FEATURES"); if (not skip) return FEATURES;}
+"IN" { INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Read IN"); if (not skip) return IN;}
+"IMPLEMENTATION" { INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Read IMPLEMENTATION"); if (not skip) return IMPLEMENTATION;}
+"OUT" { INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Read OUT"); if (not skip) return OUT;}
+"package" { INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Read PACKAGE"); if (not skip) return PACKAGE;}
+"PACKAGE" { INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Read PACKAGE"); if (not skip) return PACKAGE;}
+"PARAMETER" { INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Read PARAMETER"); if (not skip) return PARAMETER;}
+"properties" { INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Read PROPERTIES"); if (not skip) return PROPERTIES;}
+"PROPERTIES" { INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Read PROPERTIES"); if (not skip) return PROPERTIES;}
+"PROVIDES" { INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Read PROVIDES"); if (not skip) return PROVIDES;}
+"public" { INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Read PUBLIC"); if (not skip) return PUBLIC;}
+"PUBLIC" { INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Read PUBLIC"); if (not skip) return PUBLIC;}
+"REQUIRES" { INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Read REQUIRES"); if (not skip) return REQUIRES;}
+"SUBCOMPONENTS" { INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Read SUBCOMPONENTS"); if (not skip) return SUBCOMPONENTS;}
+"SUBPROGRAM" { INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Read SUBPROGRAM"); if (not skip) return SUBPROGRAM;}
+"SYSTEM" { INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Read SYSTEM"); if (not skip) return SYSTEM;}
+"with" { INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Read WITH"); if (not skip) return WITH;}
+"WITH" { INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Read WITH"); if (not skip) return WITH;}
+
+{digit}{digit_point}* {INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Read NUMBER " + std::string(YYText())); lvalp->strg = YYText(); return NUMBER;}
+{letter}{char}* {INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Read WORD " + std::string(YYText())); lvalp->strg = YYText(); return WORD;}
+
+--.*\n {INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, std::string("Read comment: ") + std::string(YYText()).substr(0, std::string(YYText()).size() -1));}
+[ ]
+. {INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, std::string("Read single character: ") + YYText()); THROW_UNREACHABLE();}
+\n
+%%

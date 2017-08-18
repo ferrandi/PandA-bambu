@@ -1,0 +1,25 @@
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> sumall = proc(args = ...) { var i, acc; acc = 0; for i in args do acc = acc + 
+i; return acc; };
+> sumall;
+proc(args = ...)
+{
+var i, acc;
+acc = 0;
+for i in args do
+acc = (acc) + (i);
+return acc;
+}
+> sumall();
+0
+> sumall(1);
+1
+> sumall(1,5);
+6
+> sumall(1,5,9);
+15
+> sumall @ [|1,5,9,4,8|];
+27
+> 
+\end{Verbatim}
+\end{minipage}\end{center}

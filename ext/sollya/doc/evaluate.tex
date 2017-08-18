@@ -1,0 +1,85 @@
+\subsection{evaluate}
+\label{labevaluate}
+\noindent Name: \textbf{evaluate}\\
+evaluates a function at a constant point or in a range\\
+\noindent Usage: 
+\begin{center}
+\textbf{evaluate}(\emph{function}, \emph{constant}) : (\textsf{function}, \textsf{constant}) $\rightarrow$ \textsf{constant} $|$ \textsf{range}\\
+\textbf{evaluate}(\emph{function}, \emph{range}) : (\textsf{function}, \textsf{range}) $\rightarrow$ \textsf{range}\\
+\textbf{evaluate}(\emph{function}, \emph{function2}) : (\textsf{function}, \textsf{function}) $\rightarrow$ \textsf{function}\\
+\end{center}
+Parameters: 
+\begin{itemize}
+\item \emph{function} represents a function
+\item \emph{constant} represents a constant point
+\item \emph{range} represents a range
+\item \emph{function2} represents a function that is not constant
+\end{itemize}
+\noindent Description: \begin{itemize}
+
+\item If its second argument is a constant \emph{constant}, \textbf{evaluate} evaluates
+   its first argument \emph{function} at the point indicated by
+   \emph{constant}. This evaluation is performed in a way that the result is a
+   faithful rounding of the real value of the \emph{function} at \emph{constant} to
+   the current global precision. If such a faithful rounding is not
+   possible, \textbf{evaluate} returns a range surely encompassing the real value
+   of the function \emph{function} at \emph{constant}. If even interval evaluation
+   is not possible because the expression is undefined or numerically
+   unstable, NaN will be produced.
+
+\item If its second argument is a range \emph{range}, \textbf{evaluate} evaluates its
+   first argument \emph{function} by interval evaluation on this range
+   \emph{range}. This ensures that the image domain of the function \emph{function}
+   on the preimage domain \emph{range} is surely enclosed in the returned
+   range.
+
+\item In the case when the second argument is a range that is reduced to a
+   single point (such that $[1;\,1]$ for instance), the evaluation
+   is performed in the same way as when the second argument is a constant but
+   it produces a range as a result: \textbf{evaluate} automatically adjusts the precision
+   of the intern computations and returns a range that contains at most three floating-point
+   consecutive numbers in precision \textbf{prec}. This correponds to the same accuracy
+   as a faithful rounding of the actual result. If such a faithful rounding
+   is not possible, \textbf{evaluate} has the same behavior as in the case when the
+   second argument is a constant.
+
+\item If its second argument is a function \emph{function2} that is not a
+   constant, \textbf{evaluate} replaces all occurrences of the free variable in
+   function \emph{function} by function \emph{function2}.
+\end{itemize}
+\noindent Example 1: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> midpointmode=on!;
+> print(evaluate(sin(pi * x), 2.25));
+0.70710678118654752440084436210484903928483593768847
+> print(evaluate(sin(pi * x), [2.25; 2.25]));
+0.707106781186547524400844362104849039284835937688~4/5~
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 2: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> print(evaluate(sin(pi * x), 2));
+[-1.72986452514381269516508615031098129542836767991679e-12715;7.5941198201187963
+145069564314525661706039084390067e-12716]
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 3: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> print(evaluate(sin(pi * x), [2, 2.25]));
+[-5.143390272677254630046998919961912407349224165421e-50;0.707106781186547524400
+84436210484903928483593768866]
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 4: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> print(evaluate(sin(pi * x), 2 + 0.25 * x));
+sin((pi) * (2 + 0.25 * x))
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 5: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> print(evaluate(sin(pi * 1/x), 0));
+[@NaN@;@NaN@]
+\end{Verbatim}
+\end{minipage}\end{center}
+See also: \textbf{isevaluable} (\ref{labisevaluable})

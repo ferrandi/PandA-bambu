@@ -1,0 +1,29 @@
+#set_directive_allocation -limit 26858 -type operation md_kernel add
+#set_directive_allocation -limit 11150 -type operation md_kernel mul
+
+#set_directive_resource -core RAM_1P_BRAM "md_kernel" d_force_x
+#set_directive_resource -core RAM_1P_BRAM "md_kernel" d_force_y
+#set_directive_resource -core RAM_1P_BRAM "md_kernel" d_force_z
+#set_directive_resource -core RAM_1P_BRAM "md_kernel" position_x
+#set_directive_resource -core RAM_1P_BRAM "md_kernel" position_y
+#set_directive_resource -core RAM_1P_BRAM "md_kernel" position_z
+#set_directive_resource -core RAM_1P_BRAM "md_kernel" NL
+
+#set_directive_array_partition -factor 64 -type cyclic md_kernel d_force_x
+#set_directive_array_partition -factor 64 -type cyclic md_kernel d_force_y
+#set_directive_array_partition -factor 64 -type cyclic md_kernel d_force_z
+#set_directive_array_partition -factor 64 -type cyclic md_kernel position_x
+#set_directive_array_partition -factor 64 -type cyclic md_kernel position_y
+#set_directive_array_partition -factor 64 -type cyclic md_kernel position_z
+#set_directive_array_partition -factor 64 -type cyclic md_kernel NL
+
+#set_directive_unroll -factor 8 md_kernel/loopi
+#set_directive_unroll -factor 8 md_kernel/loopj
+
+#set_directive_loop_flatten md_kernel/loopj
+#set_directive_loop_flatten md_kernel/loopj
+
+#set_directive_pipeline md_kernel/loopi
+#set_directive_pipeline md_kernel/loopj
+
+set_directive_resource -core Mul "md_kernel" mult

@@ -1,0 +1,45 @@
+\subsection{$>$}
+\label{labgt}
+\noindent Name: \textbf{$>$}\\
+greater-than operator\\
+\noindent Usage: 
+\begin{center}
+\emph{expr1} \textbf{$>$} \emph{expr2} : (\textsf{constant}, \textsf{constant}) $\rightarrow$ \textsf{boolean}\\
+\end{center}
+Parameters: 
+\begin{itemize}
+\item \emph{expr1} and \emph{expr2} represent constant expressions
+\end{itemize}
+\noindent Description: \begin{itemize}
+
+\item The operator \textbf{$>$} evaluates to true iff its operands \emph{expr1} and
+   \emph{expr2} evaluate to two floating-point numbers $a_1$
+   respectively $a_2$ with the global precision \textbf{prec} and
+   $a_1$ is greater than $a_2$. The user should
+   be aware of the fact that because of floating-point evaluation, the
+   operator \textbf{$>$} is not exactly the same as the mathematical
+   operation \emph{greater-than}.
+\end{itemize}
+\noindent Example 1: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> 5 > 4;
+true
+> 5 > 5;
+false
+> 5 > 6;
+false
+> exp(2) > exp(1);
+true
+> log(1) > exp(2);
+false
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 2: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> prec = 12;
+The precision has been set to 12 bits.
+> 16385.1 > 16384.1;
+false
+\end{Verbatim}
+\end{minipage}\end{center}
+See also: \textbf{$==$} (\ref{labequal}), \textbf{!$=$} (\ref{labneq}), \textbf{$>=$} (\ref{labge}), \textbf{$<=$} (\ref{lable}), \textbf{$<$} (\ref{lablt}), \textbf{in} (\ref{labin}), \textbf{!} (\ref{labnot}), \textbf{$\&\&$} (\ref{laband}), \textbf{$||$} (\ref{labor}), \textbf{prec} (\ref{labprec}), \textbf{max} (\ref{labmax}), \textbf{min} (\ref{labmin})

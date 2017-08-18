@@ -1,0 +1,469 @@
+/*
+ *
+ *                   _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
+ *                  _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
+ *                 _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
+ *                _/      _/    _/ _/    _/ _/   _/ _/    _/
+ *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
+ *
+ *             ***********************************************
+ *                              PandA Project
+ *                     URL: http://panda.dei.polimi.it
+ *                       Politecnico di Milano - DEIB
+ *                        System Architectures Group
+ *             ***********************************************
+ *              Copyright (c) 2004-2017 Politecnico di Milano
+ *
+ *   This file is part of the PandA framework.
+ *
+ *   The PandA framework is free software; you can redistribute it and/or modify
+ *   it under the terms of the GNU General Public License as published by
+ *   the Free Software Foundation; either version 3 of the License, or
+ *   (at your option) any later version.
+ *
+ *   This program is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU General Public License for more details.
+ *
+ *   You should have received a copy of the GNU General Public License
+ *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+*/
+/*!
+
+  \page src_HLS_page High-Level Synthesis
+
+  This page is organized as follows:
+  - \ref HLS_overview presents the general outlines of the high-level synthesis problem.
+  - \ref HLS_problem defines the problem in a formal way.
+  - \ref HLS_bambu describes how informations are stored in the Bambu tool and how they can be retrieved.
+
+  \section HLS_overview High-Level Synthesis overview
+
+  Forty years ago, Electronics Magazine asked Intel co-founder Gordon Moore to 
+  write an article summarizing the state of the electronics industry. When 
+  writing the article, Moore noted that the number of devices (which then 
+  included transistors and resistors) inside chips was doubling every year, 
+  largely because engineers could shrink the size of transistors. That meant 
+  that the performance and capabilities of semiconductors were growing exponentially 
+  and would continue to. In 1975, Moore amended the law to state that the number 
+  of transistors doubled about every 24 months.
+
+  Very-large-scale integration (VLSI) is the process of creating integrated 
+  circuits (IC) by combining thousands of transistor-based circuits into a single 
+  chip. VLSI began in the 1970s when complex semiconductor and communication 
+  technologies were being developed.
+  Modern ICs are enormously complicated. A large chip may well have 
+  more transistors than people on Earth within few years: VLSI technology provides densities of 
+  multiple-million gates of logic per chip. Furthermore, the rules for what can and cannot be 
+  manufactured are also extremely complex. An integrated circuit process as of 
+  2006 may well have more than 600 rules.
+
+Chip of such complexity are very difficult, if not impossible, to design using the 
+traditional <I>capture-and-simulate</I> design methodology. Instead, time 
+to market is usually equally, if not more important than area or speed. 
+So the industry has started looking at the product development cycle comprehensively 
+to reduce the design time and to gain a competitive edge in the time-to-market 
+race. 
+
+As the complexity of chips increases, so will the need for design automation 
+on higher level of abstraction, where functionality is easier to understand and 
+trade-off is more influential. There are several advantages to automating part 
+or all of the design process and moving automation to higher levels. First, 
+automation assures a much shorter design cycle. Then, it allows for more exploration 
+at different design styles since different designs can be generated and evaluated 
+quickly. Finally, design automation tools may out-perform average human designers 
+in meeting most design constraints and requirements.
+
+<b>Computer-aided tools</B> provide an effective mean for designing microelectronic circuits
+that are economically viable products. Synthesis techniques speed up the design cycle
+and reduce the human effort. Optimization techniques enhance the design quality. At
+present, synthesis and optimization techniques are used for most digital circuit designs.
+Nevertheless their power is not yet exploited in full and most of the work is still made 
+by hand. 
+
+\subsection sec_synthesis The synthesis process
+
+<I><B>Synthesis</B></I> is the generation of a circuit model, starting
+from a less detailed one. Models can be classified in terms of levels of abstraction
+and views. We consider here three main abstractions, namely: <i>architectural</I>, <I>logic</I> and
+<I>geometrical</I>. The levels can he visualized as follows. At the <i>architectural level</I> a circuit
+performs a set of operations, such as data computation or transfer. At the <I>logic level</I>,
+a digital circuit evaluates a set of logic functions. At the <I>geometrical level</I>, a circuit
+is a set of geometrical entities. 
+
+
+The architectural-level synthesis consists of generating a structural view of an architectural-level model. This corresponds to determining an assignment of the circuit
+functions to operators, called resources, as well as their interconnection and the
+timing of their execution. It has also been called <b>high-level synthesis</B> or <B>structural synthesis</B>, because it determines the macroscopic (i.e., block-level) structure of the circuit. A behavioral architectural-level model can be abstracted as a set of operations and dependencies. Architectural synthesis entails identifying the hardware resources that can implement the operations, scheduling the execution time of the operations and binding them to the resources. In other words, synthesis defines a structural model of a data path, as an interconnection of resources, and a logic-level model of a control unit, that issues the control signals to the data path according to the schedule.
+After the architectural-level synthesis, the <i>logic-level synthesis</I> step has to be performed. Logic-level synthesis is the task of generating a structural view of a logic-level
+model. Logic synthesis is the manipulation of logic specifications to create logic
+models as an interconnection of logic primitives. Thus logic synthesis determines
+the microscopic (i.e., gate-level) structure of a circuit. The task of transforming a
+logic model into an interconnection of instances of library cells, i.e., the back end
+of logic synthesis, is often referred to as library binding or technology mapping.
+A logic-level model of a circuit can be provided by a state transition diagram of a finite-state machine, by a circuit schematic or equivalently by an HDL model. It may be specified by a designer or synthesized from an architectural-level model.
+The logic synthesis tasks may be different according to the nature of the circuit
+(e.g., sequential or combinational) and to the initial representation (e.g., state diagram
+or schematic). Since many are the possible configurations of a circuit, optimization plays
+a major role, in connection with synthesis, in determining the microscopic figures
+of merit of the implementation. The final outcome of logic synthesis is a fully structural representation, such as a gate-level netlist.
+The final step is the <I>geometrical-level synthesis</I>, that consists of creating a physical view at the geometric level. It entails the specification of all geometric patterns defining the physical
+layout of the chip, as well as their position. It is often called physical design, and
+we shall call it so. Physical design consists of generating the layout of the chip.
+The layers of the layout are in correspondence with the masks used for chip fabrication.
+Therefore, the geometrical layout is the final target of microelectronic circuit design.
+Physical design depends much on the design style. On one end of the spectrum, for
+custom design, physical design is handcrafted by using layout editors. This means
+that the designer renounces the use of automated synthesis tools in the search for
+optimizing the circuit geometries by fine hand-tuning. On the opposite end of the
+spectrum, in case of prewired circuits, physical design is performed in a virtual
+fashion, because chips are fully manufactured in advance. 
+The major tasks in physical design are placement and wiring, called also routing. Cell generation is essential in the particular case of macro-cell design, where cells are synthesized and not extracted from a library.
+
+Logic-level and physic synthesis steps have already been consistently automatized; for instance, logic synthesis has been well performed by Altera and Xilinx in their synthesis tools for FPGA design. The main problem up to now is that these tools require a RTL design described through an hardware description language to be synthesized. So a further step into design automation is to develop tools able to bridge the gap between behavioral specification and RTL design. This kind of tools have to be able to produce RTL design in a quite short time, with respect to design constraints. Besides, they have to be able to explore larger and larger design space region to find better and better solutions with respect to design goals. This is why <I>high-level synthesis</I> has been a very hot research topic over past two decades. 
+
+\if BEAGLE
+However, design space is too large and any optimal method is inefficient to handle the problem. Genetic algorithms are a good candidate to tackle such complex explorations, with their <i>simil-random</I> search. That feature has been 
+implemented in the mixed high-level syntesis (see \ref src_HLS_hls_flow_mixed_flow_page) that tries to exploit genetic algorithms to perform design space exploration in order to reduce objectives.
+\endif
+
+  \section HLS_problem Problem description
+
+<i>High-Level Synthesis</I> (HLS) is defined as a translation process from 
+behavioural description into register-transfer-level (RTL) structural description. It can be considered the 
+automation of first step of the design flow, the architectural-level synthesis.
+
+
+The inputs to a typical HLS tool include a <I>behavioral description</I>, 
+a <I>resource library</I> describing available hardware resources and a set 
+of <I>design constraints</I>.
+
+The output from a high-level synthesizer consists of two parts: a datapath 
+structure at the register-transfer level (RTL) and a specification of the finite 
+state machine to control the datapath. At the RTL level, a datapath is composed 
+of functional units, storage and interconnection elements. The finite state 
+machine specifies every set of microoperations for the datapath to be performed 
+during each control step. The output can be then synthesized using related tools.
+
+The goal is to reduce one or more design targets. Objectives can be to minimize 
+total area occupied, latency or power consumption.
+
+<I>Behavioral description</I> specifies behaviour in terms of operations, 
+assignment statements, and control constructs in a common high-level language 
+(e.g. C language). In the Bambu tool, it is represented by the class behavioral_manager.
+
+In the <I>resource library</I>, there may be several alternatives 
+among which the synthesizer must select the one that best matches the design 
+constraints and maximizes the optimization objective. In the Bambu tool, it is represented by the class 
+technology_manager.
+
+The <I>constraints</I> can be on the maximum number of available units of each resources, 
+on total area or on the latency of the specification execution. In the Bambu tool, it is represented by the class HLS_constraints.
+
+There are two main tasks in high-level synthesis: operations scheduling and resources 
+allocation. <I>Scheduling</i> provides the control steps in which 
+operations start their execution (see \ref src_HLS_scheduling_general). <I>Resource allocation</I> (see \ref src_HLS_allocation_page and \ref src_HLS_binding_page)
+is concerned with assigning operations and values to hardware components and 
+interconnect them using connection elements. Solving these problems efficiently is 
+a non-trivial matter because of their NP-complete nature. Furthermore, the objectives are usually in contrast and the 
+best high-level synthesis design flow cannot be known a priori since it depends heavily 
+on nature of the problem: on some examples, executing scheduling before allocation can leads to better results, on other examples, it can leads to worse ones.
+
+The remaining task is the creation of the structural representation of the datapath and the controller units (see \ref src_HLS_datapath_page and \ref src_HLS_controller_fsm).
+
+
+\section HLS_bambu Datastructure in the Bambu tool
+
+
+   "Scheduling assigns operations in the behavioral description to 
+   control steps. Within each control step, a separate functional unit is 
+   required to execute each operation assigned to that step.
+    
+   After scheduling, the datapath is constructed in two steps: 
+   unit allocation and unit binding; some researchers call unit allocation and 
+   unit binding collectively as datapath allocation. 
+   Unit allocation determines the number and types of RT components to be used 
+   in the design. Since a real RT component library may contain multiple types 
+   of functional units, each with different characteristics (e.g., 
+   functionality, size, delay and power dissipation), unit allocation needs to 
+   determine the number and types of different functional and storage units 
+   present in the component library. Unit binding maps the operations, variables, 
+   and data transfers from the scheduled CDFG to the functional, storage and 
+   interconnection units, respectively, while ensuring that the design 
+   behavior operates correctly on the selected set of components. 
+   Unit binding consists of three interdependent tasks: storage binding, functional-unit 
+   binding, and interconnection binding.
+   Storage binding maps data carriers (e.g., constants, variables and data 
+   structures like arrays) in the behavioral description onto storage 
+   elements (e.g., ROMs, registers and memory units) in the datapath. 
+   Functional-unit binding involves the mapping of operations in the 
+   behavioral description to the set of selected functional units. 
+   Interconnection binding maps every data transfer in the behavior into a 
+   set of interconnection units for data routing"[1].
+
+  \section src_HLS_phases Phases 
+  - Subproject \ref src_HLS_scheduling_general provides scheduling algorithms.
+  - Subproject \ref src_HLS_allocation_page provides facilities for functional unit allocation
+  - Subproject \ref src_HLS_binding_constraints_page provides facilities for operation binding on functional units
+  - Subproject \ref src_HLS_binding_page provides synthesis algorithms about register allocation, module binding optimization and interconnetion allocation.
+  - Subproject \ref src_HLS_datapath_page creates structural representation about datapath
+  - Subproject \ref src_HLS_controller_fsm creates structural representation about controller
+  - Subproject \ref src_HLS_hls_flow_page contains implemented high-level synthesis flow
+
+  \section src_HLS_additional Additional subprojects 
+  - Subproject \ref src_HLS_estimation provides some metrics for result estimation
+
+  \section src_HLS_data_structure Data structures
+  This section describes the data structures used in High Level Synthesis algorithm.
+  Typically a High Level Synthesis task is divided in four stages and our algorithm follows
+  this division:
+  - Scheduling and functional unit binding;
+  - Register Binding;
+  - Interconnection Binding;
+  - Datapath and Controller generation. \n
+
+  For each of this stages a set of variables are defined in class hls. For scheduling 
+  problem the variable to be used are:
+  - sch;
+  - fu. \n
+
+  For register binding the variables are:
+  - bind;
+  - bind_const. \n
+
+  For interconnection binding and datapath (controller) creation the variables are:
+  - Datapath;
+  - Fsm. \n
+
+  These structures will described more in detail in the next sections.
+  \subsection src_HLS_data_structure_scheduling Scheduling data structures
+  The hls struct contains some variables that are used to represent
+  an intermediate layer for all scheduling algorithm. These variables are sch and fu.
+  \subsubsection sch
+  It is used to map operations on control steps; this variable is built during the 
+  execution of the scheduling algorithm. They type of this variable is <I>sdt::map\<vertex, unsigned int\></I>:
+  each vertex has associated the control step in which the operation (represented by the vertex itself)
+  is executed.
+  \subsubsection fu
+  This variable stores, for all scheduled operations, where they are executed. This structure is
+  composed of two element: one (the first), named "assign", stores the type of the functional unit
+  that has to perform the specific operation; the other, named "index", stores the instance of
+  functional unit (identified by assign) that has to perform the operation.
+  \subsection src_HLS_data_structure_binding Register binding data structures
+  There are four structures used by the register binding problem: bind, bind_const,
+  used_reg and used_const. These structures must be used by all register binding algorithms as an
+  intermediate layer.
+  \subsubsection bind
+  This variable maps all values in the system specification to a register. This variable is used by 
+  all register binding algorithms. The type of this variable is <I>std::map \< std::pair<vertex , unsigned int\> , int \></I>: 
+  the first field represents the value to
+  be stored, and it is a pair operation variable; the second is an integer number which represents the specific 
+  instance of the register used to store the value.
+  \subsubsection bind_const
+  This variable maps the constants, specified in the system, on the storage units. This variable must 
+  be used to create a working datapath. Because the binding of the constants is not required in register binding
+  algorithm, is not required that this variable has to be used from binding algorithms. The structure of this 
+  variable is equal to the structure of variable bind.
+  \subsubsection used_reg
+  This variable stores the number of register used.
+  \subsubsection used_const
+  This variable stores the number of constants used.
+  \subsection src_HLS_data_structure_datapath Interconnection binding data structures
+  \subsubsection datapath
+  Data structure storing the structural description of the datapath, in term of:
+  - component (even with gerarchic structure);
+  - channel (even with gerarchic structure);
+  - signal;
+  - input, output and generic port;
+  - interface.
+  This representation has to be created after the application of an interconnection binding algorithm, to complete
+  the datapath description, after the scheduling (with fu binding) and register binding phases.
+  \subsection src_HLS_data_structure_fsm Controller creation
+  \subsubsection FSM
+  The <B>FSM</B> variable stores a pointer to the circuit implementing the architecture of the controller.
+  This field must be filled after the datapath creation. There are some support variables, which will be introduced 
+  in the next sections, which contain informations usefull for the controller creation.
+  \subsection src_HLS_data_structure_other Other data structure
+  This section introduces some usefull variables, which must be used to couple the controller with the datapath.
+  \subsubsection input_enable_port
+  This variable is managed by datapath (interconnection binding) and fsm creation algorithms; its type is
+  <I>std::map\< vertex , std::set\< int \> \></I>: each vertex (i.e. operation) has associated a set of integers, which
+  are index in the "in_port_map" variable, described below. The datapath creation part fills this data structure 
+  with the reference to the input ports that have to be set to true to perform the memorization of a value in a register
+  when each operation (as I've just said operations and vertex are used here as synonims) is executed.
+  The FSM creation algorithm must visit this structure and, according with the result of the scheduling phase,
+  it nust set the approriate port in the "in_port_map" field associated with the integer contained in input_enable_port
+  \subsubsection input_address_port
+  This variable is managed by datapath (interconnection binding) and fsm creation algorithms; its type is
+  <I>std::map\< vertex , std::set\< std::pari\<int, int\> \> \></I>: each vertex (i.e. operation) 
+  has a pair associated: the first element is an index in the "in_port_map" variable, described below, the second element
+  the value which must be asserted on the associated port (the association is contained in the "in_port_map" variable), in
+  order to perform the selection of mux input (or the enable of tristate).
+  The datapath creation part fills this data structure 
+  with the reference to the input ports that have to be set to true to perform the memorization of a value in a register
+  when each operation (as I've just said operations and vertex are used here as synonims) is executed.
+  The FSM creation algorithm has to visit this structure and, according with the result of the scheduling phase, 
+  sets the value to the appropriated ports.
+  This variable is composed of two fields. The first represents the operations, the second is a pair formed by
+  an index in the "in_port_map" variable which points to the address port which must be set when the specified operation is performed,
+  and the 32 bit integer value which must be issued on that port. 
+  This variable considers also tristate enables, because this enables has to be setted at the beginning of a control step, while the
+  register enables have to be setted at the end of the control step.
+  A convention is introduced about the value to set. If the value is greater or equal to zero, this value
+  represents a mux address, otherwise, if the value is equal to "-1", it represents a tristate enable.
+  \subsubsection output_port
+  This variable, whose type is again <I>std::map \< vertex , int \></I> stores the association between the conditional output ports
+  of the datapath and and index in the "out_port_map", which in turn has associated the id of the input port
+  in the controller. With conditional output ports I mean the ports which carry the result of conditional operations (if, while...)
+  so just conditional vertex should have an entry in this field.
+  \subsubsection in_port_map
+  This variable is filled during the controller creation step: it is again a map and it associates an index in the "input_address_port"
+  or "input_enable_port" variables with the index of the desired port in the fsm circuit.
+  \subsubsection out_port_map
+  This variable is filled during the controller creation step: it is again a map and it associates an index in the "output_port"
+  variable with the index of the desired port in the fsm circuit.
+  \subsubsection bind_write_port
+  This variable has to be managed by the datapath creation algorithms. The algorithm, during datapath creation, maps the vertex that write an output on the relative output port.
+  \subsubsection convertion_map
+  This variable maps all the input and output data port of the system with the relative variable. During datapath creation this variable is filled, as shown in the next example.
+  \subsection src_HLS_data_strucutre_example Example
+  This section provides a simple example of the hls flow.
+  Lets start with the specification of the problem; suppose to have the following specification:\n
+\n
+   +1 : a = i1 + c1 ;\n
+   -1 : b = i2 - c1 ;\n
+   +2 : o1 = a + b ;\n
+\n
+  The most relevant graphs that will be created are:
+  - FSDG;
+  \dot
+   digraph FSDG
+   {
+    0[color=blue,shape=Msquare,label="entry"];
+    1[color=blue,shape=Msquare,label="exit"];
+    2[label="+1"];
+    3[label="-1"];
+    4[label="+2"];
+    0 -> 2 [label="i1 c1"];
+    0 -> 3 [label="i2 c1"];
+    2 -> 4 [label="a"];
+    3 -> 4 [label="b"];
+   }
+  \enddot
+  - BB;
+  \dot
+   digraph BB
+   {
+    0[color=blue,shape=Msquare,label="BB0 - entry"];
+    1[color=blue,shape=Msquare,label="BB1 - exit"];
+    2[shape=box,label="BB2 - +1, -1, +2"];
+    0 -> 1;
+    0 -> 2;
+    2 -> 1;
+   }
+  \enddot
+  \subsubsection Scheduling
+  Suppose to have 1 plus and 1 minus functional unit. During the scheduling phase these information are written:
+  - variable sch \n
+   +1 => control step 0;\n
+   -1 => control step 0;\n
+   +2 => control step 1;\n
+  - variable fu_binding \n
+   +1 => <plus,0>;\n
+   -1 => <minus,0>;\n
+   +2 => <plus,0>;\n
+   \subsubsection Binding
+   The data which is produced in this step is:
+   - variable bind \n
+   < +1 , a > => register 0;\n
+   < -1 , b > => register 1;\n
+   - variable used_regis\n
+   used_regis = 2;\n
+   - variable bind_const \n
+   < Entry , c1 > => constant storage 0;\n
+   - variable used_const\n
+   used_const = 1;\n
+   - variable bind_write_port \n
+   < +2 , o1 > => WRITE_PORT 0;
+   \subsubsection Datapath
+   Now the datapath of the circuit can be created. First of all we must perform the connection binding: this operation
+   is executed with several operation and can use several data structure that are not presented here.
+   In this section will only show the datapath, and the intermediate structure used to support the controller creation.
+   A simplified view of the datapath is
+   \dot
+    digraph circuit
+    {
+     subgraph datapath
+     {
+      label = "Datapath";
+      0[label="Reg0",shape=record];
+      1[label="Reg1",shape=record];
+      2[label="Const0",shape=record];
+      3[label="READ_PORT0",shape=record];
+      4[label="READ_PORT1",shape=record];
+      5[label="Mux0",shape=record];
+      6[label="Mux1",shape=record];
+      7[label="plus0",shape=record];
+      8[label="minus0",shape=record];
+      9[label="WRITE_PORT0",shape=record];
+     }
+     0 -> 5;
+     1 -> 6;
+     2 -> 6;
+     2 -> 8;
+     3 -> 5;
+     4 -> 8;
+     7 -> 0;
+     8 -> 1;
+     7 -> 9;
+     5 -> 7;
+     6 -> 7;
+     {rank=same; 0 1 2 3 4}
+     {rank=same; 5 6}
+     {rank=same; 7 8}
+    }
+   \enddot
+   The support data structure are:
+   - input_address_port (Mux*_ra represent the integer reference to datapath port, i.e. the index in the in_port_map field) \n
+   +1 => < Mux0_ra , 0 > , < Mux1_ra , 0 > ;\n
+   -1 => ;\n
+   +2 => < Mux0_ra , 1 > , < Mux1_ra , 1 > ;\n
+   - input_enable_port (Reg*_re represent the integer reference to datapath port) \n
+   +1 => < Reg0_re > ; \n
+   -1 => < Reg1_re > ; \n
+   +2 => ; \n
+   - output_port \n
+   For this example is empty: there are no conditional (if, while, switch...) vertex.\n
+   - convertion_map\n
+   READ_PORT0 => i1;\n
+   READ_PORT1 => i2;\n
+   WRITE_PORT0 => o1;\n
+   
+\subsubsection Controller
+	Previously described data structures are used for the generation of the controller, too. In particular, the SDG is analysed to build a finite state machine in which all data and control constraints are respected. There are two types of FSM output, which correspond to the two types of datapath input: enabling signals (1 bit), and addresses (currently 32 bit). \n
+HLS data structures input_address_port and input_enable_port are used in FSM generation to produce the right output at the right control step. \n
+Continuing the example above:\n
+- input_address_port \n
++1 => < Mux0_ra , 0 > , < Mux1_ra , 0 > means that the ports indexed by Mux0_ra and Mux1_ra must be set to 0 at the FSM state associated by the schedule to operation +1; \n
+Operation -1 has no entry because there is no need to set any address when executing it;\n
++2 => < Mux0_ra , 1 > , < Mux1_ra , 1 > means that the ports indexed by Mux0_ra and Mux1_ra must be set to 1 at the FSM state associated by the schedule to operation +2; \n
+- input_enable_port \n
++1 => < Reg0_re > means that the port indexed by Reg0_re must be set HIGH at the FSM state associated by the schedule to operation +1; \n
+-1 => < Reg1_re > means that the port indexed by Reg1_re must be set HIGH at the FSM state associated by the schedule to operation -1; \n
++2 has no entry beacuse no enabling signal must be set HIGH for the execution of operation +2;\n
+Notice that output unspecified in the input_enable_port data structure must be set LOW in all the other FSM state, while unspecified addresses can be set to any other value, either left unchanged or set to some conventional value for further optimization possibly performed by synthesis tools.\n
+- in_port_map is filled by the FSM generator algorithm to associate a circuit port with the indexes specified in the "input_address_port" or "input_enable_port" variables. \n
+In the example above (Mux*_ra and Reg*_re represent the integer reference to datapath input port (and also the index in the in_port_map structure), while FSMMux*_ra and FSMReg*_re represet the integer reference to associated output port in the FSM circuit): \n
+< Reg0_re, FSMReg0_re >\n
+< Reg1_re, FSMReg1_re >\n
+< Mux0_ra, FSMMux0_ra >\n
+- out_port_map \n
+For this example is empty: there are no conditional (if, while, switch...) vertex.\n
+
+   \section References
+  
+   [1] Recent Development in High Level Synthesisy
+   Youn-Long Lin Department of Computer Science Tsing Hua University Hsin-Chu, Taiwan 30043, R. O. C.
+*/

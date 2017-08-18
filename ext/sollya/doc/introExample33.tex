@@ -1,0 +1,37 @@
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> 3/0;
+Warning: the given expression is undefined or numerically unstable.
+@NaN@
+> (-3)/0;
+Warning: the given expression is undefined or numerically unstable.
+@NaN@
+> infty/infty;
+Warning: the given expression is undefined or numerically unstable.
+@NaN@
+> infty + infty;
+Warning: the given expression is undefined or numerically unstable.
+@Inf@
+> infty - infty;
+Warning: the given expression is undefined or numerically unstable.
+@NaN@
+> f = exp(x) + 5;
+> f(NaN);
+@NaN@
+> NaN == 5;
+false
+> NaN == NaN;
+false
+> NaN != NaN;
+false
+> X = "Vive la Republique!";
+> !(X == X);
+false
+> X = 5;
+> !(X == X);
+false
+> X = NaN;
+> !(X == X);
+true
+> 
+\end{Verbatim}
+\end{minipage}\end{center}

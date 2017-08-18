@@ -1,0 +1,50 @@
+\subsection{externalplot}
+\label{labexternalplot}
+\noindent Name: \textbf{externalplot}\\
+plots the error of an external code with regard to a function\\
+\noindent Usage: 
+\begin{center}
+\textbf{externalplot}(\emph{filename}, \emph{mode}, \emph{function}, \emph{range}, \emph{precision}) : (\textsf{string}, \textsf{absolute$|$relative}, \textsf{function}, \textsf{range}, \textsf{integer}) $\rightarrow$ \textsf{void}\\
+\textbf{externalplot}(\emph{filename}, \emph{mode}, \emph{function}, \emph{range}, \emph{precision}, \emph{perturb}) : (\textsf{string}, \textsf{absolute$|$relative}, \textsf{function}, \textsf{range}, \textsf{integer}, \textsf{perturb}) $\rightarrow$ \textsf{void}\\
+\textbf{externalplot}(\emph{filename}, \emph{mode}, \emph{function}, \emph{range}, \emph{precision}, \emph{plot mode}, \emph{result filename}) : (\textsf{string}, \textsf{absolute$|$relative}, \textsf{function}, \textsf{range}, \textsf{integer}, \textsf{file$|$postscript$|$postscriptfile}, \textsf{string}) $\rightarrow$ \textsf{void}\\
+\textbf{externalplot}(\emph{filename}, \emph{mode}, \emph{function}, \emph{range}, \emph{precision}, \emph{perturb}, \emph{plot mode}, \emph{result filename}) : (\textsf{string}, \textsf{absolute$|$relative}, \textsf{function}, \textsf{range}, \textsf{integer}, \textsf{perturb}, \textsf{file$|$postscript$|$postscriptfile}, \textsf{string}) $\rightarrow$ \textsf{void}\\
+\end{center}
+\noindent Description: \begin{itemize}
+
+\item The command \textbf{externalplot} plots the error of an external function
+   evaluation code sequence implemented in the object file named
+   \emph{filename} with regard to the function \emph{function}.  If \emph{mode}
+   evaluates to \emph{absolute}, the difference of both functions is
+   considered as an error function; if \emph{mode} evaluates to \emph{relative},
+   the difference is divided by the function \emph{function}. The resulting
+   error function is plotted on all floating-point numbers with
+   \emph{precision} significant mantissa bits in the range \emph{range}. 
+    
+   If the sixth argument of the command \textbf{externalplot} is given and evaluates to
+   \textbf{perturb}, each of the floating-point numbers the function is evaluated at gets perturbed by a
+   random value that is uniformly distributed in $\pm1$ ulp
+   around the original \emph{precision} bit floating-point variable.
+    
+   If a sixth and seventh argument, respectively a seventh and eighth
+   argument in the presence of \textbf{perturb} as a sixth argument, are given
+   that evaluate to a variable of type \textsf{file$|$postscript$|$postscriptfile} respectively to a
+   character sequence of type \textsf{string}, \textbf{externalplot} will plot
+   (additionally) to a file in the same way as the command \textbf{plot}
+   does. See \textbf{plot} for details.
+    
+   The external function evaluation code given in the object file name
+   \emph{filename} is supposed to define a function name \texttt{f} as
+   follows (here in C syntax): \texttt{void f(mpfr\_t rop, mpfr\_ op)}. 
+   This function is supposed to evaluate \texttt{op} with an accuracy corresponding
+   to the precision of \texttt{rop} and assign this value to
+   \texttt{rop}.
+\end{itemize}
+\noindent Example 1: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> bashexecute("gcc -fPIC -c externalplotexample.c");
+> bashexecute("gcc -shared -o externalplotexample externalplotexample.o -lgmp -l
+mpfr");
+> externalplot("./externalplotexample",relative,exp(x),[-1/2;1/2],12,perturb);
+\end{Verbatim}
+\end{minipage}\end{center}
+See also: \textbf{plot} (\ref{labplot}), \textbf{asciiplot} (\ref{labasciiplot}), \textbf{perturb} (\ref{labperturb}), \textbf{absolute} (\ref{lababsolute}), \textbf{relative} (\ref{labrelative}), \textbf{file} (\ref{labfile}), \textbf{postscript} (\ref{labpostscript}), \textbf{postscriptfile} (\ref{labpostscriptfile}), \textbf{bashexecute} (\ref{labbashexecute}), \textbf{externalproc} (\ref{labexternalproc}), \textbf{library} (\ref{lablibrary})

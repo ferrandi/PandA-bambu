@@ -1,0 +1,132 @@
+The tool has been restarted.
+=============== Test number 161 ================
+6
+4
+proc(n)
+{
+nop;
+return (n) + (1);
+}
+The tool has been restarted.
+=============== Test number 162 ================
+6
+4
+proc(n)
+{
+nop;
+return (n) + (1);
+}
+The tool has been restarted.
+=============== Test number 163 ================
+11
+proc(m, n)
+{
+var res;
+res := (m) + (n);
+return res;
+}
+Warning: at least one of the given expressions or a subexpression is not correctly typed
+or its evaluation has failed because of some error on a side-effect.
+error
+Warning: at least one of the given expressions or a subexpression is not correctly typed
+or its evaluation has failed because of some error on a side-effect.
+Warning: the given expression or command could not be handled.
+error
+The tool has been restarted.
+=============== Test number 164 ================
+6
+1 + x
+The tool has been restarted.
+=============== Test number 165 ================
+Hello world.
+Hello world.
+void
+proc()
+{
+print("Hello world.");
+return void;
+}
+The tool has been restarted.
+=============== Test number 166 ================
+120
+39916800
+proc(n)
+{
+var res;
+if (n) == (0) then
+res := 1
+else
+res := (n) * (fac((n) - (1)));
+return res;
+}
+The tool has been restarted.
+=============== Test number 167 ================
+11
+-1
+6
+4
+The tool has been restarted.
+=============== Test number 168 ================
+proc(n)
+{
+print(n);
+quit;
+return void;
+}
+Warning: a quit or restart command may not be part of a procedure body.
+The procedure will not be executed.
+Warning: an error occurred while executing a procedure.
+Warning: the given expression or command could not be handled.
+error
+The tool has been restarted.
+=============== Test number 169 ================
+Successor of 5 is 6
+The tool has been restarted.
+=============== Test number 170 ================
+n = 4
+proc(m, n)
+{
+nop;
+return (n) + (m);
+}
+n = 4
+11
+The tool has been restarted.
+=============== Test number 172 ================
+22 / 7 :  11 bits.
+90982559 / 28960648 :  50 bits.
+4850225745369133 / 1543874804974140 :  101 bits.
+The tool has been restarted.
+=============== Test number 173 ================
+1
+10
+166 bits.
+The tool has been restarted.
+=============== Test number 174 ================
+1.1001001000011111101_2 * 2^(1)
+The tool has been restarted.
+=============== Test number 175 ================
+0.69314718055994530941723291117010805819419057626826 + x * (0.240226506959100712333551719243740305432813038088964 + x * (5.5504108664821579943033960829724273617647213579845e-2 + x * (9.6181291076284771599940346103544064830207937680207e-3 + x * (1.33335581464286504410632041066940823413836636568706e-3 + x * (1.54035303933818586648526018644991703469895380128073e-4 + x * (1.52527337892208633524154849828133520418211195342975e-5 + x * (1.32154867771652571440613729908675243869893129937575e-6 + x * (1.01785201524479457993453898916407328516110900896595e-7 + x * 7.0552125416516580640579322674194254499311195121517e-9))))))))
+The tool has been restarted.
+=============== Test number 176 ================
+5
+1.12956984638214536849843017679626063762687501534126e-6
+The tool has been restarted.
+=============== Test number 177 ================
+Warning in Remez: a slower algorithm is used for this step
+0.99999999994393749280444571988532724907643631727381 + -0.49999999571557467737204931630836834563663039748203 * x^2 + 4.16666132335010905188253972212748718651775241902969e-2 * x^4 + -1.38865291475286141707180658383176799662601691348739e-3 * x^6 + 2.437267919111162694221738667927916761689966804242e-5 * x^8
+The tool has been restarted.
+=============== Test number 178 ================
+1.12956984638214536849843017679626063762687501534126e-6
+1.12956980227478687332174207517728389861926659249056e-6
+1.12956980227478687332174207517728389861926659249056e-6
+The tool has been restarted.
+=============== Test number 179 ================
+sin(x)
+Information: the free variable has been renamed from "x" to "y".
+sin(y)
+The tool has been restarted.
+=============== Test number 180 ================
+Information: the free variable has been renamed from "x" to "a".
+a
+sin(a)

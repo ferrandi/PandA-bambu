@@ -1,0 +1,78 @@
+<?xml version="1.0"?>
+<latex_table_format max_column_size="20">
+   <column name="Benchmark">
+      <source_name value="benchmark_name"/>
+      <alignment value="l|"/>
+      <text_format value="text"/>
+   </column>
+   <column name="Cycles">
+      <source_name value="TOTAL_CYCLES"/>
+      <alignment value="c|"/>
+      <text_format value="number"/>
+      <precision value="0"/>
+      <total value="overall"/>
+   </column>
+   <column name="Period">
+      <source_name value="PERIOD"/>
+      <alignment value="H"/>
+      <text_format value="number"/>
+      <precision value="0"/>
+      <total value="average"/>
+   </column>
+   <column name="Slack">
+      <source_name value="CLOCK_SLACK"/>
+      <alignment value="H"/>
+      <text_format value="number"/>
+      <precision value="2"/>
+      <total value="average"/>
+   </column>
+   <column name="Fmax">
+      <source_name value="FREQUENCY"/>
+      <alignment value="c|"/>
+      <text_format value="number"/>
+      <precision value="2"/>
+      <total value="average"/>
+   </column>
+   <column name="Wall-clock">
+      <source_name value="TOTAL_TIME"/>
+      <alignment value="c|"/>
+      <text_format value="number"/>
+      <precision value="0"/>
+      <total value="overall"/>
+   </column>
+   <column name="LUTs">
+      <source_name value="SLICE_LUTS"/>
+      <alignment value="c|"/>
+      <text_format value="number"/>
+      <precision value="0"/>
+      <total value="overall"/>
+   </column>
+   <column name="Slices">
+      <source_name value="SLICE"/>
+      <alignment value="c|"/>
+      <text_format value="number"/>
+      <precision value="0"/>
+      <total value="overall"/>
+   </column>
+   <column name="BRAMB18">
+      <source_name value="BRAMS"/>
+      <alignment value="c|"/>
+      <text_format value="number"/>
+      <precision value="0"/>
+      <total value="overall"/>
+   </column>
+   <column name="DSP48s">
+      <source_name value="DSPS"/>
+      <alignment value="c"/>
+      <text_format value="number"/>
+      <precision value="0"/>
+      <total value="overall"/>
+   </column>
+   <column name="HLS Time(s)">
+      <source_name value="HLS_execution_time"/>
+      <alignment value="H|"/>
+      <text_format value="number"/>
+      <precision value="2"/>
+      <total value="overall"/>
+   </column>
+</latex_table_format>

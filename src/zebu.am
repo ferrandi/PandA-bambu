@@ -1,0 +1,212 @@
+########## zebu tool ##########
+bin_PROGRAMS += zebu
+
+noinst_HEADERS += ZebuParameter.hpp
+
+zebu_SOURCES = zebu.cpp ZebuParameter.cpp Parameter.cpp
+
+noinst_LTLIBRARIES += lib_zebu.la
+
+PRJ_DOC += zebu.doc
+
+lib_zebu_la_LIBADD =
+lib_zebu_la_SOURCES =
+
+if BUILD_BAMBU
+   zebu_SOURCES += BambuParameter.cpp 
+endif
+
+zebu_CPPFLAGS = -DPKGLIBDIR="\"$(pkglibdir)\"" -DPKGDATADIR="\"$(pkgdatadir)\""\
+   -I$(top_srcdir)/src/algorithms/graph_helpers \
+   -I$(top_srcdir)/src/behavior \
+   -I$(top_srcdir)/src/constants \
+   -I$(top_srcdir)/src/design_flows/ \
+   -I$(top_srcdir)/src/design_flows/backend/ToC \
+   -I$(top_srcdir)/src/design_flows/backend/ToC/source_code_writers \
+   -I$(top_srcdir)/src/design_flows/backend/ToC/progModels \
+   -I$(top_srcdir)/src/design_flows/codesign \
+   -I$(top_srcdir)/src/design_flows/codesign/Metrics \
+   -I$(top_srcdir)/src/design_flows/codesign/Metrics/Dynamic \
+   -I$(top_srcdir)/src/design_flows/codesign/Metrics/Static \
+   -I$(top_srcdir)/src/design_flows/codesign/Metrics/compare_models \
+   -I$(top_srcdir)/src/design_flows/codesign/estimation \
+   -I$(top_srcdir)/src/design_flows/codesign/mapping \
+   -I$(top_srcdir)/src/design_flows/codesign/mapping/utility \
+   -I$(top_srcdir)/src/design_flows/codesign/mapping/ACO/CyclicMAH \
+   -I$(top_srcdir)/src/design_flows/codesign/mapping/SA \
+   -I$(top_srcdir)/src/design_flows/codesign/mapping/TS \
+   -I$(top_srcdir)/src/design_flows/codesign/mapping/static \
+   -I$(top_srcdir)/src/design_flows/codesign/partitioning/graph_partitioning \
+   -I$(top_srcdir)/src/design_flows/codesign/partitioning/graph_partitioning/algorithms \
+   -I$(top_srcdir)/src/design_flows/codesign/partitioning/graph_partitioning/models/Fork_Join \
+   -I$(top_srcdir)/src/design_flows/codesign/partitioning/graph_partitioning/partFlow \
+   -I$(top_srcdir)/src/design_flows/codesign/partitioning/graph_partitioning/sdf_design_flow_steps \
+   -I$(top_srcdir)/src/design_flows/codesign/partitioning/graph_partitioning/transformations \
+   -I$(top_srcdir)/src/design_flows/codesign/partitioning/graph_partitioning/utility \
+   -I$(top_srcdir)/src/constants \
+   -I$(top_srcdir)/src/frontend_analysis \
+   -I$(top_srcdir)/src/frontend_analysis/behavior_analysis \
+   -I$(top_srcdir)/src/frontend_analysis/IR_analysis \
+   -I$(top_srcdir)/src/intermediate_representations/actor_graphs/ \
+   -I$(top_srcdir)/src/intermediate_representations/actor_graphs/task_graphs \
+   -I$(top_srcdir)/src/intermediate_representations/mapping_annotations \
+   -I$(top_srcdir)/src/parser/machine \
+   -I$(top_srcdir)/src/machine \
+   -I$(top_srcdir)/src/pragma \
+   -I$(top_srcdir)/src/tree \
+   -I$(top_srcdir)/src/utility/probability_distribution \
+   -I$(top_srcdir)/src/wrapper/treegcc \
+   -I$(top_srcdir)/src/wrapper/target_architectures \
+   $(AM_CPPFLAGS)
+
+if BUILD_BAMBU
+  zebu_CPPFLAGS += -DPKGLIBDIR="\"$(pkglibdir)\"" -DPKGDATADIR="\"$(pkgdatadir)\""\
+    -I$(top_srcdir)/src/algorithms/bipartite_matching \
+    -I$(top_srcdir)/src/algorithms/clique_covering \
+    -I$(top_srcdir)/src/design_flows/backend/ToHDL \
+    -I$(top_srcdir)/src/HLS \
+    -I$(top_srcdir)/src/HLS/architecture_creation \
+    -I$(top_srcdir)/src/HLS/architecture_creation/controller_creation \
+    -I$(top_srcdir)/src/HLS/architecture_creation/datapath_creation \
+    -I$(top_srcdir)/src/HLS/binding \
+    -I$(top_srcdir)/src/HLS/binding/module \
+    -I$(top_srcdir)/src/HLS/binding/interconnection \
+    -I$(top_srcdir)/src/HLS/binding/register \
+    -I$(top_srcdir)/src/HLS/binding/storage_value_insertion \
+    -I$(top_srcdir)/src/HLS/chaining \
+    -I$(top_srcdir)/src/HLS/evaluation \
+    -I$(top_srcdir)/src/HLS/function_allocation \
+    -I$(top_srcdir)/src/HLS/hls_flow \
+    -I$(top_srcdir)/src/HLS/export \
+    -I$(top_srcdir)/src/HLS/interface \
+    -I$(top_srcdir)/src/HLS/liveness \
+    -I$(top_srcdir)/src/HLS/memory \
+    -I$(top_srcdir)/src/HLS/scheduling \
+    -I$(top_srcdir)/src/HLS/stg \
+    -I$(top_srcdir)/src/technology \
+    -I$(top_srcdir)/src/technology/physical_library \
+    -I$(top_srcdir)/src/technology/target_device
+
+if BUILD_LIB_ILP
+  zebu_CPPFLAGS += \
+        -I$(top_srcdir)/src/ilp
+endif
+endif
+
+if BUILD_LIB_TARGET_PROFILING
+   zebu_CPPFLAGS += \
+      -I$(top_srcdir)/src/design_flows/codesign/Metrics/Dynamic
+endif
+
+if BUILD_LIB_RTL
+   zebu_CPPFLAGS += \
+     -I$(top_srcdir)/src/rtl
+endif
+
+if BUILD_SIMIT
+   zebu_CPPFLAGS += \
+      -I$(top_srcdir)/src/wrapper/target_architectures/SimIt
+endif
+
+if BUILD_TRNG
+   zebu_CPPFLAGS += \
+      -I$(top_builddir)/ext/trng-4.17
+endif
+
+lib_zebu_la_LIBADD += \
+   $(top_builddir)/src/algorithms/lib_algorithms.la \
+   $(top_builddir)/src/behavior/lib_behavior.la \
+   $(top_builddir)/src/design_flows/codesign/lib_codesign.la \
+   $(top_builddir)/src/design_flows/lib_design_flows.la \
+   $(top_builddir)/src/frontend_analysis/lib_frontend_analysis.la \
+   $(top_builddir)/src/graph/lib_graph.la \
+   $(top_builddir)/src/parser/lib_parser.la \
+   $(top_builddir)/src/parser/polixml/lib_xml_dom_parser.la \
+   $(top_builddir)/src/polixml/lib_polixml.la \
+   $(top_builddir)/src/pragma/libpragma.la \
+   $(top_builddir)/src/tree/lib_tree.la \
+   $(top_builddir)/src/tree/lib_tree_manipulation.la \
+   $(top_builddir)/src/utility/probability_distribution/lib_ProbabilityDistribution.la \
+   $(top_builddir)/src/utility/lib_utility.la \
+   $(top_builddir)/src/wrapper/lib_wrapper.la \
+   $(BOOST_DATE_TIME_LIB) \
+   $(BOOST_FILESYSTEM_LIB) \
+   $(BOOST_SYSTEM_LIB)
+
+if BUILD_LIB_COMPARE_MODELS
+   lib_zebu_la_LIBADD += \
+      $(top_builddir)/src/design_flows/codesign/Metrics/compare_models/lib_compare_models.la
+endif
+
+if BUILD_LIB_INTERMEDIATE_REPRESENTATIONS
+  lib_zebu_la_LIBADD += $(top_builddir)/src/intermediate_representations/lib_intermediate_representations.la
+endif
+
+if BUILD_BAMBU
+   lib_zebu_la_LIBADD += \
+      $(top_builddir)/src/design_flows/backend/ToHDL/lib_ToHDL.la \
+      $(top_builddir)/src/HLS/lib_HLS.la \
+      $(top_builddir)/src/circuit/lib_circuit.la \
+      $(top_builddir)/src/circuit/lib_structuralIO.la
+
+if BUILD_LIB_ILP
+   lib_zebu_la_LIBADD += $(top_builddir)/src/ilp/lib_ilp.la
+endif
+
+endif
+
+if BUILD_LIB_TECHNOLOGY
+   lib_zebu_la_LIBADD += \
+      $(top_builddir)/src/technology/lib_technology.la
+endif
+
+if BUILD_LIB_ARCH
+   lib_zebu_la_LIBADD += \
+      $(top_builddir)/src/machine/lib_machine.la
+endif
+
+if BUILD_LIB_RTL
+   lib_zebu_la_LIBADD += \
+      $(top_builddir)/src/rtl/lib_rtl.la
+endif
+
+if BUILD_LIB_BDD
+   lib_zebu_la_LIBADD += \
+      $(top_builddir)/src/bdd/lib_bdd.la
+endif
+
+if BUILD_LIB_2LEV
+   lib_zebu_la_LIBADD += \
+      $(top_builddir)/src/logic_synthesis/lib_logic_synthesis.la
+endif
+
+if BUILD_LIB_BDD
+   lib_zebu_la_LIBADD += \
+      $(CUDD_LIBS)
+endif
+
+if BUILD_LIB_FROM_PRAGMA
+   lib_zebu_la_LIBADD += \
+      $(BOOST_REGEX_LIB)
+endif
+
+if BUILD_FLOPOCO
+   lib_zebu_la_LIBADD += \
+      $(top_builddir)/ext/flopoco/src/libflopoco.la \
+      $(top_builddir)/ext/sollya/libsollya.la
+endif
+
+if BUILD_STATIC
+   lib_zebu_la_LIBADD += \
+      -lbfd -liberty -ldl
+else
+   lib_zebu_la_LIBADD += \
+      -lbfd
+endif
+
+if BUILD_TRNG
+   lib_zebu_la_LIBADD += \
+      $(top_builddir)/ext/trng-4.17/src/libtrng4.la
+endif
+
+zebu_LDADD = lib_zebu.la

@@ -1,0 +1,37 @@
+\subsection{timing}
+\label{labtiming}
+\noindent Name: \textbf{timing}\\
+global variable controlling timing measures in \sollya.\\
+\noindent Usage: 
+\begin{center}
+\textbf{timing} = \emph{activation value} : \textsf{on$|$off} $\rightarrow$ \textsf{void}\\
+\textbf{timing} = \emph{activation value} ! : \textsf{on$|$off} $\rightarrow$ \textsf{void}\\
+\textbf{timing} : \textsf{on$|$off}\\
+\end{center}
+Parameters: 
+\begin{itemize}
+\item \emph{activation value} controls if timing should be performed or not
+\end{itemize}
+\noindent Description: \begin{itemize}
+
+\item \textbf{timing} is a global variable. When its value is \textbf{on}, the time spent in each 
+   command is measured and displayed (for \textbf{verbosity} levels higher than 1).
+\end{itemize}
+\noindent Example 1: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> verbosity=1!;
+> timing=on;
+Timing has been activated.
+> p=remez(sin(x),10,[-1;1]);
+Information: Remez: computing the matrix spent 2 ms
+Information: Remez: computing the quality of approximation spent 11 ms
+Information: Remez: computing the matrix spent 1 ms
+Information: Remez: computing the quality of approximation spent 7 ms
+Information: Remez: computing the matrix spent 1 ms
+Information: Remez: computing the quality of approximation spent 7 ms
+Information: computing a minimax approximation spent 142 ms
+Information: assignment spent 142 ms
+Information: full execution of the last parse chunk spent 142 ms
+\end{Verbatim}
+\end{minipage}\end{center}
+See also: \textbf{on} (\ref{labon}), \textbf{off} (\ref{laboff}), \textbf{time} (\ref{labtime})

@@ -1,0 +1,19 @@
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> fac = proc(n) { var res; if (n == 0) then res := 1 else res := n * fac(n - 1);
+ return res; };
+> fac(5);
+120
+> fac(11);
+39916800
+> fac;
+proc(n)
+{
+var res;
+if (n) == (0) then
+res := 1
+else
+res := (n) * (fac((n) - (1)));
+return res;
+}
+\end{Verbatim}
+\end{minipage}\end{center}

@@ -1,0 +1,54 @@
+\subsection{verbosity}
+\label{labverbosity}
+\noindent Name: \textbf{verbosity}\\
+global variable controlling the amount of information displayed by commands.\\
+\noindent Usage: 
+\begin{center}
+\textbf{verbosity} = \emph{n} : \textsf{integer} $\rightarrow$ \textsf{void}\\
+\textbf{verbosity} = \emph{n} ! : \textsf{integer} $\rightarrow$ \textsf{void}\\
+\textbf{verbosity} : \textsf{integer}\\
+\end{center}
+Parameters: 
+\begin{itemize}
+\item \emph{n} controls the amount of information to be displayed
+\end{itemize}
+\noindent Description: \begin{itemize}
+
+\item \textbf{verbosity} accepts any integer value. At level 0, commands do not display anything
+   on standard output. Note that very critical information may however be displayed on
+   standard error.
+
+\item Default level is 1. It displays important information such as warnings when 
+   roundings happen.
+
+\item For higher levels more information is displayed depending on the command.
+\end{itemize}
+\noindent Example 1: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> verbosity=0!;
+> 1.2+"toto";
+error
+> verbosity=1!;
+> 1.2+"toto";
+Warning: Rounding occurred when converting the constant "1.2" to floating-point 
+with 165 bits.
+If safe computation is needed, try to increase the precision.
+Warning: at least one of the given expressions or a subexpression is not correct
+ly typed
+or its evaluation has failed because of some error on a side-effect.
+error
+> verbosity=2!;
+> 1.2+"toto";
+Warning: Rounding occurred when converting the constant "1.2" to floating-point 
+with 165 bits.
+If safe computation is needed, try to increase the precision.
+Warning: at least one of the given expressions or a subexpression is not correct
+ly typed
+or its evaluation has failed because of some error on a side-effect.
+Information: the expression or a partial evaluation of it has been the following
+:
+(1.19999999999999999999999999999999999999999999999999) + ("toto")
+error
+\end{Verbatim}
+\end{minipage}\end{center}
+See also: \textbf{roundingwarnings} (\ref{labroundingwarnings})

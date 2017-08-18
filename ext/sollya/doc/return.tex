@@ -1,0 +1,57 @@
+\subsection{return}
+\label{labreturn}
+\noindent Name: \textbf{return}\\
+indicates an expression to be returned in a procedure\\
+\noindent Usage: 
+\begin{center}
+\textbf{return} \emph{expression} : \textsf{void}\\
+\end{center}
+Parameters: 
+\begin{itemize}
+\item \emph{expression} represents the expression to be returned
+\end{itemize}
+\noindent Description: \begin{itemize}
+
+\item The keyword \textbf{return} allows for returning the (evaluated) expression
+   \emph{expression} at the end of a begin-end-block ({}-block) used as a
+   \sollya procedure body. See \textbf{proc} for further details concerning
+   \sollya procedure definitions.
+     
+   Statements for returning expressions using \textbf{return} are only possible
+    at the end of a begin-end-block used as a \sollya procedure
+    body. Only one \textbf{return} statement can be given per begin-end-block.
+
+\item If at the end of a procedure definition using \textbf{proc} no \textbf{return}
+   statement is given, a \textbf{return} \textbf{void} statement is implicitely
+   added. Procedures, i.e. procedure objects, when printed out in \sollya
+   defined with an implicit \textbf{return} \textbf{void} statement are displayed with
+   this statement explicitly given.
+\end{itemize}
+\noindent Example 1: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> succ = proc(n) { var res; res := n + 1; return res; };
+> succ(5);
+6
+> succ;
+proc(n)
+{
+var res;
+res := (n) + (1);
+return res;
+}
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 2: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> hey = proc(s) { print("Hello",s); };
+> hey("world");
+Hello world
+> hey;
+proc(s)
+{
+print("Hello", s);
+return void;
+}
+\end{Verbatim}
+\end{minipage}\end{center}
+See also: \textbf{proc} (\ref{labproc}), \textbf{void} (\ref{labvoid})

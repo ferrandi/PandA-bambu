@@ -1,0 +1,20 @@
+#mem
+#set_directive_resource -core RAM_1P_BRAM "backprop" weights
+#set_directive_resource -core RAM_1P_BRAM "backprop" inputs
+#set_directive_resource -core RAM_1P_BRAM "backprop" targets
+
+#partitioning
+#set_directive_array_partition -factor 64 -type cyclic backprop weights
+#set_directive_array_partition -factor 64 -type cyclic backprop inputs
+#set_directive_array_partition -factor 64 -type cyclic backprop targets
+
+#unrolling
+#set_directive_unroll -factor 8 update_layer/ul_1
+#set_directive_unroll -factor 8 propagate_error_layer/pel_1
+
+#pipeline
+#set_directive_pipeline update_layer/ul_1
+#set_directive_pipeline propagate_error_layer/pel_1
+
+#resources
+#set_directive_resource -core Mul "update_weights" change

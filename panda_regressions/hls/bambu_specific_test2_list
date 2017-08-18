@@ -1,0 +1,8 @@
+bambu_specific_test2/duff_device.c --generate-tb=BENCHMARKS_ROOT/bambu_specific_test2/dd_test1.xml
+bambu_specific_test2/irr1_a.c  bambu_specific_test2/irr3_b.c --generate-tb=BENCHMARKS_ROOT/bambu_specific_test2/dd_test1.xml
+bambu_specific_test2/irr2.c --generate-tb=a=2,b=5,c=10
+bambu_specific_test2/irr3_a.c  bambu_specific_test2/irr3_b.c --generate-tb=a=2,b=5,c=10
+bambu_specific_test2/irr4_a.c  bambu_specific_test2/irr4_b.c
+bambu_specific_test2/par-bool1.c --generate-tb=a=2,b=5,c=10,d=3,e=4,f=5,cond=1 --speculative-sdc-scheduling
+bambu_specific_test2/port_swapping_test.c bambu_specific_test2/ps_constraints.xml --no-chaining
+bambu_specific_test2/port_swapping_test2.c bambu_specific_test2/ps_constraints.xml --no-chaining

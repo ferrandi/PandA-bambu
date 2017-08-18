@@ -1,0 +1,43 @@
+\subsection{sup}
+\label{labsup}
+\noindent Name: \textbf{sup}\\
+gives the upper bound of an interval.\\
+\noindent Usage: 
+\begin{center}
+\textbf{sup}(\emph{I}) : \textsf{range} $\rightarrow$ \textsf{constant}\\
+\textbf{sup}(\emph{x}) : \textsf{constant} $\rightarrow$ \textsf{constant}\\
+\end{center}
+Parameters: 
+\begin{itemize}
+\item \emph{I} is an interval.
+\item \emph{x} is a real number.
+\end{itemize}
+\noindent Description: \begin{itemize}
+
+\item Returns the upper bound of the interval \emph{I}. Each bound of an interval has its 
+   own precision, so this command is exact, even if the current precision is too 
+   small to represent the bound.
+
+\item When called on a real number \emph{x}, \textbf{sup} considers it as an interval formed
+   of a single point: $\left[ x, x \right]$. In other words, \textbf{sup} behaves like the identity.
+\end{itemize}
+\noindent Example 1: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> sup([1;3]);
+3
+> sup(5);
+5
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 2: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> display=binary!;
+> I=[0; 0.111110000011111_2];
+> sup(I);
+1.11110000011111_2 * 2^(-1)
+> prec=12!;
+> sup(I);
+1.11110000011111_2 * 2^(-1)
+\end{Verbatim}
+\end{minipage}\end{center}
+See also: \textbf{inf} (\ref{labinf}), \textbf{mid} (\ref{labmid}), \textbf{max} (\ref{labmax}), \textbf{min} (\ref{labmin})

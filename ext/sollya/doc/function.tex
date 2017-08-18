@@ -1,0 +1,118 @@
+\subsection{function}
+\label{labfunction}
+\noindent Name: \textbf{function}\\
+keyword for declaring a procedure-based function or a keyword representing a \textsf{function} type \\
+\noindent Usage: 
+\begin{center}
+\textbf{function}(\emph{procedure})  : \textsf{procedure} $\rightarrow$ \textsf{function}\\
+\textbf{function} : \textsf{type type}\\
+\end{center}
+Parameters: 
+\begin{itemize}
+\item \emph{procedure} is a procedure of type (\textsf{range}, \textsf{integer}, \textsf{integer}) $\rightarrow$ \textsf{range}
+\end{itemize}
+\noindent Description: \begin{itemize}
+
+\item For the sake of safety and mathematical consistency, \sollya
+   distinguishes clearly between functions, seen in the mathematical
+   sense of the term, i.e. mappings, and procedures, seen in the sense
+   Computer Science gives to functions, i.e. pieces of code that compute
+   results for arguments following an algorithm. In some cases however,
+   it is interesting to use such Computer Science procedures as
+   realisations of mathematical functions, e.g. in order to plot them or
+   even to perform polynomial approximation on them. The \textbf{function} keyword
+   allows for such a transformation of a \sollya procedure into a \sollya
+   function. 
+
+\item The procedure to be used as a function through \textbf{function}(\emph{procedure})
+   must be of type (\textsf{range}, \textsf{integer}, \textsf{integer})
+   $\rightarrow$ \textsf{range}. This means it must take in argument
+   an interval $X$, a degree of differentiation $n$ and a
+   working precision $p$. It must return in result an interval
+   $Y$ encompassing the image $f^{(n)}(X)$ of the
+   $n$-th derivative of the implemented function $f$,
+   i.e. $f^{(n)}(X) \subseteq Y$. In order to allow
+   \sollya's algorithms to work properly, the procedure must ensure that,
+   whenever $(p, \textrm{diam}(X))$ tends to $(+\infty,\,0)$,
+   the computed over-estimated bounding $Y$ tends to the actual image $f^{(n)}(X)$.
+
+\item The user must be aware that they are responsible of the correctness
+   of the procedure. If, for some $n$ and $X$, \emph{procedure} returns an interval $Y$
+   such that $f^{(n)}(X) \not\subseteq Y$, \textbf{function} will successfully
+   return a function without any complain, but this function might behave
+   inconsistently in further computations.
+
+\item For cases when the procedure does not have the correct signature or
+   does not return a finite interval as a result \textbf{function}(\emph{procedure})
+   evaluates to Not-A-Number (resp. to an interval of Not-A-Numbers for
+   interval evaluation).
+
+\item \textbf{function} also represents the \textsf{function} type for declarations
+   of external procedures by means of \textbf{externalproc}.
+    
+   Remark that in contrast to other indicators, type indicators like
+   \textbf{function} cannot be handled outside the \textbf{externalproc} context.  In
+   particular, they cannot be assigned to variables.
+\end{itemize}
+\noindent Example 1: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> procedure EXP(X,n,p) {
+        var res, oldPrec;
+        oldPrec = prec;
+        prec = p!;
+        
+        res = exp(X);
+        
+        prec = oldPrec!;
+        return res;
+  };
+> f = function(EXP);
+> f(1);
+2.71828182845904523536028747135266249775724709369998
+> exp(1);
+2.71828182845904523536028747135266249775724709369998
+> f(x + 3);
+(function(proc(X, n, p)
+{
+var res, oldPrec;
+oldPrec = prec;
+prec = p!;
+res = exp(X);
+prec = oldPrec!;
+return res;
+}))(3 + x)
+> diff(f);
+diff(function(proc(X, n, p)
+{
+var res, oldPrec;
+oldPrec = prec;
+prec = p!;
+res = exp(X);
+prec = oldPrec!;
+return res;
+}))
+> (diff(f))(0);
+1
+> g = f(sin(x));
+> g(17);
+0.382358169993866834026905546416556413595734583420876
+> diff(g);
+(diff(function(proc(X, n, p)
+{
+var res, oldPrec;
+oldPrec = prec;
+prec = p!;
+res = exp(X);
+prec = oldPrec!;
+return res;
+})))(sin(x)) * cos(x)
+> (diff(g))(1);
+1.25338076749344683697237458088447611474812675164344
+> p = remez(f,3,[-1/2;1/2]);
+> p;
+0.9996712090142519365811043588840936667986880903378 + x * (0.9997370298357005328
+0233869785694438940067223265505 + x * (0.510497293602565555358002020522814444513
+04355667385 + x * 0.1698143246071767617700502198641549152447429302716))
+\end{Verbatim}
+\end{minipage}\end{center}
+See also: \textbf{proc} (\ref{labproc}), \textbf{library} (\ref{lablibrary}), \textbf{procedure} (\ref{labprocedure}), \textbf{externalproc} (\ref{labexternalproc}), \textbf{boolean} (\ref{labboolean}), \textbf{constant} (\ref{labconstant}), \textbf{integer} (\ref{labinteger}), \textbf{list of} (\ref{lablistof}), \textbf{range} (\ref{labrange}), \textbf{string} (\ref{labstring})

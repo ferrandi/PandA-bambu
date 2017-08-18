@@ -1,0 +1,37 @@
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> autosimplify = off;
+Automatic pure tree simplification has been deactivated.
+> i = 1000;
+> i = i + 1;
+> print(i);
+1000 + 1
+> i := i + 1;
+> print(i);
+1002
+> L = [|1,...,5|];
+> print(L);
+[|1, 2, 3, 4, 5|]
+> L[3] = L[3] + 1;
+> L[4] := L[4] + 1;
+> print(L);
+[|1, 2, 3, 4 + 1, 6|]
+> L[5] = true;
+> L;
+[|1, 2, 3, 5, 6, true|]
+> s = "Hello world";
+> s;
+Hello world
+> s[1] = "a";
+> s;
+Hallo world
+> s[2] = "foo";
+Warning: the string to be assigned is not of length 1.
+This command will have no effect.
+> L = [|true,1,...,5,9...|];
+> L;
+[|true, 1, 2, 3, 4, 5, 9...|]
+> L[13] = "Hello";
+> L;
+[|true, 1, 2, 3, 4, 5, 9, 10, 11, 12, 13, 14, 15, "Hello"...|]
+\end{Verbatim}
+\end{minipage}\end{center}

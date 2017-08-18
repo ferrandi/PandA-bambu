@@ -1,0 +1,47 @@
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> match exp(x) with 
+      exp(x)      : (1) 
+      sin(x)      : (2)
+      default     : (3);
+1
+> 
+> match sin(x) with 
+      exp(x)      : (1) 
+      sin(x)      : (2)
+      default     : (3);
+2
+> 
+> match exp(sin(x)) with
+      exp(x)      : ("Exponential of x")
+      exp(sin(x)) : ("Exponential of sine of x")
+      default     : ("Something else");
+Exponential of sine of x
+> 
+> match exp(sin(x)) with
+      exp(x)      : ("Exponential of x")
+      exp(a)      : ("Exponential of " @ a)
+      default     : ("Something else");
+Exponential of sin(x)
+> 
+> 
+> procedure differentiate(f) {
+      return match f with 
+          g + h   : (differentiate(g) + differentiate(h))
+          g * h   : (differentiate(g) * h + differentiate(h) * g)
+          g / h   : ((differentiate(g) * h - differentiate(h) * g) / (h^2))
+          exp(x)  : (exp(x))
+          sin(x)  : (cos(x))
+          cos(x)  : (-sin(x))
+          g(h)    : ((differentiate(g))(h) * differentiate(h))
+          x       : (1)
+          h(x)    : (NaN)
+          c       : (0);
+  };
+> 
+> differentiate(exp(sin(x + x)));
+exp(sin(x * 2)) * cos(x * 2) * 2
+> diff(exp(sin(x + x)));
+exp(sin(x * 2)) * cos(x * 2) * 2
+> 
+\end{Verbatim}
+\end{minipage}\end{center}

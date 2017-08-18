@@ -1,0 +1,68 @@
+\subsection{min}
+\label{labmin}
+\noindent Name: \textbf{min}\\
+determines which of given constant expressions has minimum value\\
+\noindent Usage: 
+\begin{center}
+\textbf{min}(\emph{expr1},\emph{expr2},...,\emph{exprn}) : (\textsf{constant}, \textsf{constant}, ..., \textsf{constant}) $\rightarrow$ \textsf{constant}\\
+\textbf{min}(\emph{l}) : \textsf{list} $\rightarrow$ \textsf{constant}\\
+\end{center}
+Parameters: 
+\begin{itemize}
+\item \emph{expr} are constant expressions.
+\item \emph{l} is a list of constant expressions.
+\end{itemize}
+\noindent Description: \begin{itemize}
+
+\item \textbf{min} determines which of a given set of constant expressions
+   \emph{expr} has minimum value. To do so, \textbf{min} tries to increase the
+   precision used for evaluation until it can decide the ordering or some
+   maximum precision is reached. In the latter case, a warning is printed
+   indicating that there might actually be another expression that has a
+   lesser value.
+
+\item Even though \textbf{min} determines the minimum expression by evaluation, it 
+   returns the expression that is minimum as is, i.e. as an expression
+   tree that might be evaluated to any accuracy afterwards.
+
+\item \textbf{min} can be given either an arbitrary number of constant
+   expressions in argument or a list of constant expressions. The list
+   however must not be end-elliptic.
+
+\item Users should be aware that the behavior of \textbf{min} follows the IEEE
+   754-2008 standard with respect to NaNs. In particular, a NaN given as
+   the first argument will not be promoted as a result unless the other
+   argument is a NaN. This means that NaNs may seem to disappear during
+   computations.
+\end{itemize}
+\noindent Example 1: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> min(1,2,3,exp(5),log(0.25));
+-1.3862943611198906188344642429163531361510002687205
+> min(17);
+17
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 2: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> l = [|1,2,3,exp(5),log(0.25)|];
+> min(l);
+-1.3862943611198906188344642429163531361510002687205
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 3: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> print(min(exp(17),sin(62)));
+sin(62)
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 4: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> verbosity = 1!;
+> print(min(17 + log2(13)/log2(9),17 + log(13)/log(9)));
+Warning: minimum computation relies on floating-point result that is faithfully 
+evaluated and different faithful roundings toggle the result.
+17 + log(13) / log(9)
+\end{Verbatim}
+\end{minipage}\end{center}
+See also: \textbf{max} (\ref{labmax}), \textbf{$==$} (\ref{labequal}), \textbf{!$=$} (\ref{labneq}), \textbf{$>=$} (\ref{labge}), \textbf{$>$} (\ref{labgt}), \textbf{$<$} (\ref{lablt}), \textbf{$<=$} (\ref{lable}), \textbf{in} (\ref{labin}), \textbf{inf} (\ref{labinf}), \textbf{sup} (\ref{labsup})

@@ -1,0 +1,43 @@
+\subsection{simplifysafe}
+\label{labsimplifysafe}
+\noindent Name: \textbf{simplifysafe}\\
+simplifies an expression representing a function\\
+\noindent Usage: 
+\begin{center}
+\textbf{simplifysafe}(\emph{function}) : \textsf{function} $\rightarrow$ \textsf{function}\\
+\end{center}
+Parameters: 
+\begin{itemize}
+\item \emph{function} represents the expression to be simplified
+\end{itemize}
+\noindent Description: \begin{itemize}
+
+\item The command \textbf{simplifysafe} simplifies the expression given in argument
+   representing the function \emph{function}.  The command \textbf{simplifysafe} does not
+   endanger the safety of computations even in \sollya's floating-point
+   environment: the function returned is mathematically equal to the
+   function \emph{function}. 
+    
+   Remark that the simplification provided by \textbf{simplifysafe} is not perfect:
+   they may exist simpler equivalent expressions for expressions returned
+   by \textbf{simplifysafe}.
+\end{itemize}
+\noindent Example 1: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> print(simplifysafe((6 + 2) + (5 + exp(0)) * x));
+8 + 6 * x
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 2: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> print(simplifysafe((log(x - x + 1) + asin(1))));
+(pi) / 2
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 3: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> print(simplifysafe((log(x - x + 1) + asin(1)) - (atan(1) * 2)));
+(pi) / 2 - (pi) / 4 * 2
+\end{Verbatim}
+\end{minipage}\end{center}
+See also: \textbf{simplify} (\ref{labsimplify}), \textbf{autosimplify} (\ref{labautosimplify}), \textbf{rationalmode} (\ref{labrationalmode}), \textbf{horner} (\ref{labhorner})

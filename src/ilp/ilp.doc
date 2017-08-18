@@ -1,0 +1,161 @@
+/*
+ *
+ *                   _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
+ *                  _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
+ *                 _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
+ *                _/      _/    _/ _/    _/ _/   _/ _/    _/
+ *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
+ *
+ *             ***********************************************
+ *                              PandA Project 
+ *                     URL: http://panda.dei.polimi.it
+ *                       Politecnico di Milano - DEIB
+ *                        System Architectures Group
+ *             ***********************************************
+ *              Copyright (c) 2004-2017 Politecnico di Milano
+ *
+ *   This file is part of the PandA framework.
+ *
+ *   The PandA framework is free software; you can redistribute it and/or modify
+ *   it under the terms of the GNU General Public License as published by
+ *   the Free Software Foundation; either version 3 of the License, or
+ *   (at your option) any later version.
+ *
+ *   This program is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU General Public License for more details.
+ *
+ *   You should have received a copy of the GNU General Public License
+ *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+*/
+/*!
+  \page src_ilp_page ILP 
+
+  \section  ILP_INTRO Introduction
+
+  ILP is a set of classes providing several methods to encapsulate the interface to several Integer Linear Programming solvers.
+  It is mainly intended for solving mixed integer programming even if a lot of wrapped solvers are also able to solve different Linear Programming problems.
+  Currently, the wrapped solvers supported by ILP are:
+  - GPLK (http://www.gnu.org/software/glpk) working as the default solver.
+  - COIN-OR (http://www.coin-or.org/).
+  - LP_SOLVE (http://tech.groups.yahoo.com/group/lp_solve/).
+
+  In mathematics, Linear Programming (LP) problems are optimization problems in which the objective function and the constraints are all linear.
+  The maximization problem (similarly for the minimization) is usually expressed in matrix form:
+
+    \e maximize \f$ \mathbf{c}^T \mathbf{x} \f$
+
+    subject to \f$ \mathbf{A}\mathbf{x} \le \mathbf{b}, \, \mathbf{x} \ge 0 \f$
+
+  Mixed integer linear programming (MIP) problem is a Linear Programming problem in which some variables are additionally required to be integer.
+
+  To improve the efficiency of the MIP solvers we also exploit Branch and Cut algorithms provided by the considered ILP solvers.
+  Branch and cut is a refinement of the standard linear programming based branch and bound approach.
+  It starts by solving the continuous relaxation of an ILP formulation, thus obtaining a fractional solution. 
+  At this point, the standard branch and bound algorithm would split the current problem into subproblems by 
+  fixing some fractional variable to an integer value. The branch and cut approach, on the contrary, first looks for 
+  linear inequalities which are violated by the current fractional optimal solution but are respected by all feasible integer
+  solutions of the problem.
+  These inequalities are named cuts or valid inequalities. They are added to the ILP formulation and the continuous relaxation 
+  is solved once again, achieving a different (tight bound) and a different (hopefully less fractional) solution.
+  The process can be repeated several times. It can even be proved that after a finite number of iterations, the solution will be 
+  integer and it will be the optimal solution of the original ILP.
+  The disadvantage of such a method however is that the number of iterations required is exponential and the formulation size grows 
+  correspondingly, so that solving it becomes too expensive.
+  Therefore, at some stage the generation of valid inequalities is interrupted and standard branching is performed.
+
+  \section ILP_EXAMPLE Example
+
+  In formulating the LP problem, the first step is to define the decision variables of the problem.
+  Given the set of the decision variables, the objective function and constraints in terms of these decision variables are defined.
+
+  For example, assuming that we have to produce two products: USB pen and Hard Drive USB. Their manifacturing requires two stages: assembly and testing.
+  Each  USB pen requires 2 hours for assembly and 1 hour of testing, while the Hard Drive USB requires 4 hours of assembly and 1 hours of testing.
+  Assuming that in each day we have at maximum 100 hours dedicated to the assemby of the two products and at maximum 40 hours for testing,
+  we would like to identify which is the mix of products maximizing the revenue.
+
+  The decision variables choosen are \f$ X_1 \f$ representing the number of USB pen produced and \f$ X_2 \f$ representing the number of Hard Drive USB produced.
+  The revenue for each unit produced is 0.5 euro for USB pen and 10 euro for Hard Drive USB.
+
+  The objective function trying to maximize the revenues can be written as:
+
+  \f$ R = 0.5 X_1 + 10 X_2 \f$
+
+  The associated constraints are:
+
+   \f$ 2 X_1 + 4 X_2 \le 100 \f$ 
+
+   \f$ 1 X_1 + 1 X_2 \le 40 \f$ 
+
+  where all variables are non-negative:
+
+  \f$ X_1  \ge 0 \f$, \f$ X_2 \ge 0 \f$
+
+  The following C++ sample code use the ILP library to solve the trivial example before formulated.
+  \code
+  #include "meilp_solver.hpp"
+  int main()
+  {
+    // Making the ilp problem...
+    meilp_solverRef solver=meilp_solverRef(new glpk_solver()); //the wrapper will use GLPK as ILP solver.
+    solver->make(0); //zero variables
+
+    //add the two variables
+    int x1, x2;
+    x1=solver->add_empty_column();
+    x2=solver->add_empty_column();
+
+    //add a name to the two variables
+    solver->set_col_name(x1,  "x1");
+    solver->set_col_name(x2,  "x2");
+    //define the two variables as integer variables
+    solver->set_int(x1);
+    solver->set_int(x2);
+
+    // creating the objective function filling the variable obj_coeff
+    std::map<int,double> obj_coeff;
+    obj_coeff[x1] = 0.5;
+    obj_coeff[x2] = 10;
+    solver->objective_add(obj_coeff, meilp_solver::max);
+
+    // Add the first constraints
+    std::map<int,double> row_coeff;
+    row_coeff[x1]=2;
+    row_coeff[x2]=4;
+    solver->add_row(row_coeff, 100.0, meilp_solver::L, "ExampleConstraints1");
+    row_coeff.clear();
+
+    // Add the second constraints
+    std::map<int,double> row_coeff;
+    row_coeff[x1]=1;
+    row_coeff[x2]=1;
+    solver->add_row(row_coeff, 40.0, meilp_solver::L, "ExampleConstraints2");
+    row_coeff.clear();
+
+    //non-negative variables are specified fixing the range of the variables
+    solver->set_lowbo(x1, 0);
+    solver->set_lowbo(x2, 0);
+
+    //now we are ready to solve the problem
+    int res = solver->solve();
+    if(res == 0)
+    {
+      //Extraction of the results
+      std::vector<double> values;
+      solver->get_vars_solution(values);
+
+      //And finaly we print the solution
+      std::cout << "The solution is ";
+      std::vector<double>:iterator it_end = values.end();
+      for(std::vector<double>:iterator it = values.begin(); it != it_end; it++)
+      {
+        std::cout << *it << " ";
+      }
+      std::cout << std::endl;
+    }
+    return EXIT_SUCCESS;
+  }
+  \endcode
+*/

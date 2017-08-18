@@ -1,0 +1,41 @@
+\subsection{printsingle}
+\label{labprintsingle}
+\noindent Name: \textbf{printsingle}\\
+prints a constant value as a hexadecimal single precision number\\
+\noindent Usage: 
+\begin{center}
+\textbf{printsingle}(\emph{constant}) : \textsf{constant} $\rightarrow$ \textsf{void}\\
+\end{center}
+Parameters: 
+\begin{itemize}
+\item \emph{constant} represents a constant
+\end{itemize}
+\noindent Description: \begin{itemize}
+
+\item Prints a constant value as a hexadecimal number on 8 hexadecimal
+   digits. The hexadecimal number represents the integer equivalent to
+   the 32 bit memory representation of the constant considered as a
+   single precision number.
+    
+   If the constant value does not hold on a single precision number, it
+   is first rounded to the nearest single precision number before it is
+   displayed. A warning is displayed in this case.
+\end{itemize}
+\noindent Example 1: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> printsingle(3);
+0x40400000
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 2: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> prec=100!;
+> verbosity = 1!;
+> printsingle(exp(5));
+Warning: the given expression is not a constant but an expression to evaluate. A
+ faithful evaluation will be used.
+Warning: rounding down occurred before printing a value as a simple.
+0x431469c5
+\end{Verbatim}
+\end{minipage}\end{center}
+See also: \textbf{printdouble} (\ref{labprintdouble}), \textbf{single} (\ref{labsingle})

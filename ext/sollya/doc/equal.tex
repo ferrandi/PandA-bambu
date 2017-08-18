@@ -1,0 +1,77 @@
+\subsection{$==$}
+\label{labequal}
+\noindent Name: \textbf{$==$}\\
+equality test operator\\
+\noindent Usage: 
+\begin{center}
+\emph{expr1} \textbf{$==$} \emph{expr2} : (\textsf{any type}, \textsf{any type}) $\rightarrow$ \textsf{boolean}\\
+\end{center}
+Parameters: 
+\begin{itemize}
+\item \emph{expr1} and \emph{expr2} represent expressions
+\end{itemize}
+\noindent Description: \begin{itemize}
+
+\item The operator \textbf{$==$} evaluates to true iff its operands \emph{expr1} and
+   \emph{expr2} are syntactically equal and different from \textbf{error} or constant
+   expressions that are not constants and that evaluate to the same
+   floating-point number with the global precision \textbf{prec}. The user should
+   be aware of the fact that because of floating-point evaluation, the
+   operator \textbf{$==$} is not exactly the same as the mathematical
+   equality. Further remark that according to IEEE 754-2008 floating-point
+   rules, which \sollya emulates, floating-point data which are NaN do not
+   compare equal to any other floating-point datum, including NaN. 
+\end{itemize}
+\noindent Example 1: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> "Hello" == "Hello";
+true
+> "Hello" == "Salut";
+false
+> "Hello" == 5;
+false
+> 5 + x == 5 + x;
+true
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 2: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> 1 == exp(0);
+true
+> asin(1) * 2 == pi;
+true
+> exp(5) == log(4);
+false
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 3: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> sin(pi/6) == 1/2 * sqrt(3);
+false
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 4: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> prec = 12;
+The precision has been set to 12 bits.
+> 16384.1 == 16385.1;
+true
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 5: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> error == error;
+false
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 6: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> a = "Biba";
+> b = NaN;
+> a == a;
+true
+> b == b;
+false
+\end{Verbatim}
+\end{minipage}\end{center}
+See also: \textbf{!$=$} (\ref{labneq}), \textbf{$>$} (\ref{labgt}), \textbf{$>=$} (\ref{labge}), \textbf{$<=$} (\ref{lable}), \textbf{$<$} (\ref{lablt}), \textbf{in} (\ref{labin}), \textbf{!} (\ref{labnot}), \textbf{$\&\&$} (\ref{laband}), \textbf{$||$} (\ref{labor}), \textbf{error} (\ref{laberror}), \textbf{prec} (\ref{labprec})

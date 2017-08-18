@@ -1,0 +1,43 @@
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> 1/3 - 1/7;
+Warning: rounding has happened. The value displayed is a faithful rounding of th
+e true result.
+0.19047619047619047619047619047619047619047619047619
+> rationalmode = on;
+Rational mode has been activated.
+> 1/3 - 1/7;
+4 / 21
+> (2 + 1/7)^2 + (6/7)^2 + 2 * (2 + 1/7) * 6/7;
+9
+> rationalmode = off;
+Rational mode has been deactivated.
+> (2 + 1/7)^2 + (6/7)^2 + 2 * (2 + 1/7) * 6/7;
+Warning: rounding has happened. The value displayed is a faithful rounding of th
+e true result.
+9
+> rationalmode = on;
+Rational mode has been activated.
+> asin(1)/pi;
+Warning: rounding has happened. The value displayed is a faithful rounding of th
+e true result.
+0.5
+> sin(1/6 * pi);
+Warning: rounding has happened. The value displayed is a faithful rounding of th
+e true result.
+0.5
+> exp(1/7 - 3/21) / 7;
+1 / 7
+> rationalmode = off;
+Rational mode has been deactivated.
+> exp(1/7 - 3/21) / 7;
+Warning: rounding has happened. The value displayed is a faithful rounding of th
+e true result.
+0.142857142857142857142857142857142857142857142857145
+> print(1/7 - 3/21);
+1 / 7 - 3 / 21
+> rationalmode = on;
+Rational mode has been activated.
+> print(1/7 - 3/21);
+0
+\end{Verbatim}
+\end{minipage}\end{center}

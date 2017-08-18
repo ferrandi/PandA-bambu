@@ -1,0 +1,29 @@
+\subsection{halfprecision}
+\label{labhalfprecision}
+\noindent Names: \textbf{halfprecision}, \textbf{HP}\\
+rounding to the nearest IEEE 754 half-precision number (binary16).\\
+\noindent Description: \begin{itemize}
+
+\item \textbf{halfprecision} is both a function and a constant.
+
+\item As a function, it rounds its argument to the nearest IEEE 754 half-precision (i.e. IEEE754-2008 binary16) number.
+   Subnormal numbers are supported as well as standard numbers: it is the real
+   rounding described in the standard.
+
+\item As a constant, it symbolizes the half-precision format. It is used in 
+   contexts when a precision format is necessary, e.g. in the commands 
+   \textbf{round} and \textbf{roundcoefficients}. It is not supported for \textbf{implementpoly}.
+   See the corresponding help pages for examples.
+\end{itemize}
+\noindent Example 1: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> display=binary!;
+> HP(0.1);
+1.100110011_2 * 2^(-4)
+> HP(4.17);
+1.00001011_2 * 2^(2)
+> HP(1.011_2 * 2^(-23));
+1.1_2 * 2^(-23)
+\end{Verbatim}
+\end{minipage}\end{center}
+See also: \textbf{single} (\ref{labsingle}), \textbf{double} (\ref{labdouble}), \textbf{doubleextended} (\ref{labdoubleextended}), \textbf{doubledouble} (\ref{labdoubledouble}), \textbf{quad} (\ref{labquad}), \textbf{tripledouble} (\ref{labtripledouble}), \textbf{roundcoefficients} (\ref{labroundcoefficients}), \textbf{fpminimax} (\ref{labfpminimax}), \textbf{implementpoly} (\ref{labimplementpoly}), \textbf{round} (\ref{labround}), \textbf{printsingle} (\ref{labprintsingle})

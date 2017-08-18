@@ -1,0 +1,58 @@
+\subsection{procedure}
+\label{labprocedure}
+\noindent Name: \textbf{procedure}\\
+defines and assigns a \sollya procedure\\
+\noindent Usage: 
+\begin{center}
+\textbf{procedure} \emph{identifier}(\emph{formal parameter1}, \emph{formal parameter2},..., \emph{formal parameter n}) \key{$\lbrace$} \emph{procedure body} \key{$\rbrace$} : \textsf{void} $\rightarrow$ \textsf{void}\\
+\textbf{procedure} \emph{identifier}(\emph{formal parameter1}, \emph{formal parameter2},..., \emph{formal parameter n}) \key{$\lbrace$} \emph{procedure body} \textbf{return} \emph{expression}; \key{$\rbrace$} : \textsf{void} $\rightarrow$ \textsf{void}\\
+\textbf{procedure} \emph{identifier}(\emph{formal list parameter} = ...) \key{$\lbrace$} \emph{procedure body} \key{$\rbrace$} : \textsf{void} $\rightarrow$ \textsf{void}\\
+\textbf{procedure} \emph{identifier}(\emph{formal list parameter} = ...) \key{$\lbrace$} \emph{procedure body} \textbf{return} \emph{expression}; \key{$\rbrace$} : \textsf{void} $\rightarrow$ \textsf{void}\\
+\end{center}
+Parameters: 
+\begin{itemize}
+\item \emph{identifier} represents the name of the procedure to be defined and assigned
+\item \emph{formal parameter1}, \emph{formal parameter2} through \emph{formal parameter n} represent identifiers used as formal parameters
+\item \emph{formal list parameter} represents an identifier used as a formal parameter for the list of an arbitrary number of parameters
+\item \emph{procedure body} represents the imperative statements in the body of the procedure
+\item \emph{expression} represents the expression \textbf{procedure} shall evaluate to
+\end{itemize}
+\noindent Description: \begin{itemize}
+
+\item The \textbf{procedure} keyword allows for defining and assigning procedures in
+   the \sollya language. It is an abbreviation to a procedure definition
+   using \textbf{proc} with the same formal parameters, procedure body and
+   return-expression followed by an assignment of the procedure (object)
+   to the identifier \emph{identifier}. In particular, all rules concerning
+   local variables declared using the \textbf{var} keyword apply for \textbf{procedure}.
+\end{itemize}
+\noindent Example 1: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> procedure succ(n) { return n + 1; };
+> succ(5);
+6
+> 3 + succ(0);
+4
+> succ;
+proc(n)
+{
+nop;
+return (n) + (1);
+}
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 2: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> procedure myprint(L = ...) { var i; for i in L do i; };
+> myprint("Lyon","Nancy","Beaverton","Coye-la-Foret","Amberg","Nizhny Novgorod",
+"Cluj-Napoca");
+Lyon
+Nancy
+Beaverton
+Coye-la-Foret
+Amberg
+Nizhny Novgorod
+Cluj-Napoca
+\end{Verbatim}
+\end{minipage}\end{center}
+See also: \textbf{proc} (\ref{labproc}), \textbf{var} (\ref{labvar})

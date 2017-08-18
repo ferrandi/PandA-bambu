@@ -1,0 +1,36 @@
+\subsection{degree}
+\label{labdegree}
+\noindent Name: \textbf{degree}\\
+gives the degree of a polynomial.\\
+\noindent Usage: 
+\begin{center}
+\textbf{degree}(\emph{f}) : \textsf{function} $\rightarrow$ \textsf{integer}\\
+\end{center}
+Parameters: 
+\begin{itemize}
+\item \emph{f} is a function (usually a polynomial).
+\end{itemize}
+\noindent Description: \begin{itemize}
+
+\item If \emph{f} is a polynomial, \textbf{degree}(\emph{f}) returns the degree of \emph{f}.
+
+\item Contrary to the usage, \sollya considers that the degree of the null polynomial
+   is 0.
+
+\item If \emph{f} is a function that is not a polynomial, \textbf{degree}(\emph{f}) returns -1.
+\end{itemize}
+\noindent Example 1: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> degree((1+x)*(2+5*x^2));
+3
+> degree(0);
+0
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 2: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> degree(sin(x));
+-1
+\end{Verbatim}
+\end{minipage}\end{center}
+See also: \textbf{coeff} (\ref{labcoeff}), \textbf{subpoly} (\ref{labsubpoly}), \textbf{roundcoefficients} (\ref{labroundcoefficients})

@@ -1,0 +1,30 @@
+\subsection{revert}
+\label{labrevert}
+\noindent Name: \textbf{revert}\\
+reverts a list.\\
+\noindent Usage: 
+\begin{center}
+\textbf{revert}(\emph{L}) : \textsf{list} $\rightarrow$ \textsf{list}\\
+\end{center}
+Parameters: 
+\begin{itemize}
+\item \emph{L} is a list.
+\end{itemize}
+\noindent Description: \begin{itemize}
+
+\item \textbf{revert}(\emph{L}) returns the same list, but with its elements in reverse order.
+
+\item If \emph{L} is an end-elliptic list, \textbf{revert} will fail with an error.
+\end{itemize}
+\noindent Example 1: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> revert([| |]);
+[| |]
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 2: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> revert([|2,3,5,2,1,4|]);
+[|4, 1, 2, 5, 3, 2|]
+\end{Verbatim}
+\end{minipage}\end{center}

@@ -1,0 +1,58 @@
+\subsection{error}
+\label{laberror}
+\noindent Name: \textbf{error}\\
+expression representing an input that is wrongly typed or that cannot be executed\\
+\noindent Usage: 
+\begin{center}
+\textbf{error} : \textsf{error}\\
+\end{center}
+\noindent Description: \begin{itemize}
+
+\item The variable \textbf{error} represents an input during the evaluation of
+   which a type or execution error has been detected or is to be
+   detected. Inputs that are syntactically correct but wrongly typed
+   evaluate to \textbf{error} at some stage.  Inputs that are correctly typed
+   but containing commands that depend on side-effects that cannot be
+   performed or inputs that are wrongly typed at meta-level (cf. \textbf{parse}),
+   evaluate to \textbf{error}.
+    
+   Remark that in contrast to all other elements of the \sollya language,
+   \textbf{error} compares neither equal nor unequal to itself. This provides a
+   means of detecting syntax errors inside the \sollya language itself
+   without introducing issues of two different wrongly typed inputs being
+   equal.
+\end{itemize}
+\noindent Example 1: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> print(5 + "foo");
+error
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 2: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> error;
+error
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 3: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> error == error;
+false
+> error != error;
+false
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 4: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> correct = 5 + 6;
+> incorrect = 5 + "foo";
+> correct == correct;
+true
+> incorrect == incorrect;
+false
+> errorhappened = !(incorrect == incorrect);
+> errorhappened;
+true
+\end{Verbatim}
+\end{minipage}\end{center}
+See also: \textbf{void} (\ref{labvoid}), \textbf{parse} (\ref{labparse}), \textbf{$==$} (\ref{labequal}), \textbf{!$=$} (\ref{labneq})

@@ -1,0 +1,88 @@
+########## tree-panda-gcc tool ##########
+bin_PROGRAMS += tree-panda-gcc
+
+noinst_HEADERS += tree-panda-gcc-Parameter.hpp
+
+tree_panda_gcc_SOURCES = tree-panda-gcc.cpp tree-panda-gcc-Parameter.cpp Parameter.cpp
+
+noinst_LTLIBRARIES += lib_treepandagcc.la
+
+lib_treepandagcc_la_LIBADD =
+lib_treepandagcc_la_SOURCES =
+
+tree_panda_gcc_CPPFLAGS = \
+   -I$(top_srcdir)/src/behavior \
+   -I$(top_srcdir)/src/constants \
+   -I$(top_srcdir)/src/design_flows \
+   -I$(top_srcdir)/src/frontend_analysis \
+   -I$(top_srcdir)/src/parser/machine \
+   -I$(top_srcdir)/src/parser/treegcc \
+   -I$(top_srcdir)/src/HLS/ \
+   -I$(top_srcdir)/src/HLS/interface \
+   -I$(top_srcdir)/src/tree \
+   -I$(top_srcdir)/src/wrapper/treegcc \
+    $(AM_CPPFLAGS)
+
+if BUILD_LIB_CODE_ESTIMATION
+   tree_panda_gcc_CPPFLAGS += \
+      -I$(top_srcdir)/src/design_flows/codesign/estimation \
+      -I$(top_srcdir)/src/utility/probability_distribution
+endif
+
+lib_treepandagcc_la_LIBADD += \
+   $(top_builddir)/src/algorithms/lib_algorithms.la \
+   $(top_builddir)/src/behavior/lib_behavior.la \
+   $(top_builddir)/src/design_flows/backend/lib_backend.la \
+   $(top_builddir)/src/graph/lib_graph.la \
+   $(top_builddir)/src/parser/lib_parser.la \
+   $(top_builddir)/src/parser/polixml/lib_xml_dom_parser.la \
+   $(top_builddir)/src/polixml/lib_polixml.la \
+   $(top_builddir)/src/tree/lib_tree.la \
+   $(top_builddir)/src/tree/lib_tree_manipulation.la \
+   $(top_builddir)/src/utility/lib_utility.la \
+   $(top_builddir)/src/wrapper/lib_wrapper.la \
+   $(BOOST_FILESYSTEM_LIB) $(BOOST_SYSTEM_LIB) $(BOOST_DATE_TIME_LIB)
+
+if BUILD_LIB_ARCH
+   lib_treepandagcc_la_LIBADD += \
+   $(top_builddir)/src/machine/lib_machine.la
+endif
+
+if BUILD_LIB_CIRCUIT
+   lib_treepandagcc_la_LIBADD += \
+      $(top_builddir)/src/circuit/lib_circuit.la
+endif
+
+if BUILD_LIB_CODE_ESTIMATION
+   lib_treepandagcc_la_LIBADD += \
+      $(top_builddir)/src/utility/probability_distribution/lib_ProbabilityDistribution.la \
+      $(top_builddir)/src/design_flows/codesign/lib_codesign.la
+endif
+
+if BUILD_LIB_FROM_PRAGMA
+   lib_treepandagcc_la_LIBADD += \
+      $(top_builddir)/src/pragma/libpragma.la \
+      $(BOOST_REGEX_LIB)
+endif
+
+if BUILD_LIB_HLS
+   lib_treepandagcc_la_LIBADD += \
+      $(top_builddir)/src/HLS/lib_HLS.la
+endif
+
+if BUILD_LIB_INTERMEDIATE_REPRESENTATIONS
+   lib_treepandagcc_la_LIBADD += \
+      $(top_builddir)/src/intermediate_representations/lib_intermediate_representations.la
+endif
+
+if BUILD_LIB_RTL
+   lib_treepandagcc_la_LIBADD += \
+      $(top_builddir)/src/rtl/lib_rtl.la
+endif
+
+if BUILD_LIB_TECHNOLOGY
+   lib_treepandagcc_la_LIBADD += \
+      $(top_builddir)/src/technology/lib_technology.la
+endif
+
+tree_panda_gcc_LDADD = lib_treepandagcc.la 

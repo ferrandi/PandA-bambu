@@ -1,0 +1,45 @@
+\subsection{honorcoeffprec}
+\label{labhonorcoeffprec}
+\noindent Name: \textbf{honorcoeffprec}\\
+indicates the (forced) honoring the precision of the coefficients in \textbf{implementpoly}\\
+\noindent Usage: 
+\begin{center}
+\textbf{honorcoeffprec} : \textsf{honorcoeffprec}\\
+\end{center}
+\noindent Description: \begin{itemize}
+
+\item Used with command \textbf{implementpoly}, \textbf{honorcoeffprec} makes \textbf{implementpoly} honor
+   the precision of the given polynomial. This means if a coefficient
+   needs a double-double or a triple-double to be exactly stored,
+   \textbf{implementpoly} will allocate appropriate space and use a double-double
+   or triple-double operation even if the automatic (heuristic)
+   determination implemented in command \textbf{implementpoly} indicates that the
+   coefficient could be stored on less precision or, respectively, the
+   operation could be performed with less precision. See \textbf{implementpoly}
+   for details.
+\end{itemize}
+\noindent Example 1: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> verbosity = 1!;
+> q = implementpoly(1 - simplify(TD(1/6)) * x^2,[-1b-10;1b-10],1b-60,DD,"p","imp
+lementation.c");
+Warning: at least one of the coefficients of the given polynomial has been round
+ed in a way
+that the target precision can be achieved at lower cost. Nevertheless, the imple
+mented polynomial
+is different from the given one.
+> printexpansion(q);
+0x3ff0000000000000 + x^2 * 0xbfc5555555555555
+> r = implementpoly(1 - simplify(TD(1/6)) * x^2,[-1b-10;1b-10],1b-60,DD,"p","imp
+lementation.c",honorcoeffprec);
+Warning: the infered precision of the 2th coefficient of the polynomial is great
+er than
+the necessary precision computed for this step. This may make the automatic dete
+rmination
+of precisions useless.
+> printexpansion(r);
+0x3ff0000000000000 + x^2 * (0xbfc5555555555555 + 0xbc65555555555555 + 0xb9055555
+55555555)
+\end{Verbatim}
+\end{minipage}\end{center}
+See also: \textbf{implementpoly} (\ref{labimplementpoly}), \textbf{printexpansion} (\ref{labprintexpansion}), \textbf{fpminimax} (\ref{labfpminimax})

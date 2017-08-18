@@ -1,0 +1,53 @@
+\subsection{bashevaluate}
+\label{labbashevaluate}
+\noindent Name: \textbf{bashevaluate}\\
+executes a shell command and returns its output as a string\\
+\noindent Usage: 
+\begin{center}
+\textbf{bashevaluate}(\emph{command}) : \textsf{string} $\rightarrow$ \textsf{string}\\
+\textbf{bashevaluate}(\emph{command},\emph{input}) : (\textsf{string}, \textsf{string}) $\rightarrow$ \textsf{string}\\
+\end{center}
+Parameters: 
+\begin{itemize}
+\item \emph{command} is a command to be interpreted by the shell.
+\item \emph{input} is an optional character sequence to be fed to the command.
+\end{itemize}
+\noindent Description: \begin{itemize}
+
+\item \textbf{bashevaluate}(\emph{command}) will execute the shell command \emph{command} in a shell.
+   All output on the command's standard output is collected and returned 
+   as a character sequence.
+
+\item If an additional argument \emph{input} is given in a call to
+   \textbf{bashevaluate}(\emph{command},\emph{input}), this character sequence is written to the
+   standard input of the command \emph{command} that gets executed.
+
+\item All characters output by \emph{command} are included in the character
+   sequence to which \textbf{bashevaluate} evaluates but two exceptions. Every NULL
+   character ($`\backslash 0$') in the output is replaced with
+   `?' as \sollya is unable to handle character sequences containing that
+   character. Additionally, if the output ends in a newline character
+   ($`\backslash$n'), this character is stripped off. Other
+   newline characters which are not at the end of the output are left as
+   such.
+\end{itemize}
+\noindent Example 1: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> bashevaluate("LANG=C date");
+Mon May 23 17:36:50 CEST 2011
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 2: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> [| bashevaluate("echo Hello") |];
+[|"Hello"|]
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 3: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> a = bashevaluate("sed -e 's/a/e/g;'", "Hallo");
+> a;
+Hello
+\end{Verbatim}
+\end{minipage}\end{center}
+See also: \textbf{bashexecute} (\ref{labbashexecute})

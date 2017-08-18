@@ -1,0 +1,28 @@
+%Generated at 2017-07-30 15:21:57.016541 with bambu Version: PandA 0.9.5-dev - Revision ee6d2c488b508061bb2be1f9ab518031d3167635-non_restoring_sdiv with arguments --no-iob --soft-float --hls-div --device=TO_BE_OVERWRITTEN --evaluation --clock-period=10 --speculative-sdc-scheduling --device=xc7vx690t-3ffg1930-VVD
+\begin{tabular}{|l|c|c|c|c|c|c|c|c|c|c|c|}
+\hline
+Benchmark Name                                   & Tot. Latency            & Num Cycles & LUTs     & Slices   & Registers & DSPs   & BRAMs & Clock Frequency & Clock Slack & HLS Time(s) \\
+\hline
+addition64:double\_prec\_addition\_0             & $ 2.136 \cdot 10^{-2} $ & $ 3      $ & $ 1091 $ & $ 329  $ & $ 328   $ & $ 0  $ & $ 0 $ & $ 140.43      $ & $ 2.88    $ & $ 24.54   $ \\
+addition:single\_prec\_addition\_0               & $ 1.586 \cdot 10^{-3} $ & $ 2      $ & $ 412  $ & $ 122  $ & $ 74    $ & $ 0  $ & $ 0 $ & $ 1261.03     $ & $ 9.21    $ & $ 11.06   $ \\
+division64:double\_prec\_division\_0             & $ 1.042 \cdot 10^{-1} $ & $ 11     $ & $ 1567 $ & $ 525  $ & $ 808   $ & $ 44 $ & $ 0 $ & $ 105.61      $ & $ 0.53    $ & $ 13.83   $ \\
+division:single\_prec\_division\_0               & $ 6.996 \cdot 10^{-2} $ & $ 8      $ & $ 486  $ & $ 168  $ & $ 308   $ & $ 9  $ & $ 0 $ & $ 114.35      $ & $ 1.25    $ & $ 8.47    $ \\
+multiplication64:double\_prec\_multiplication\_0 & $ 1.498 \cdot 10^{-2} $ & $ 3      $ & $ 610  $ & $ 186  $ & $ 198   $ & $ 10 $ & $ 0 $ & $ 200.32      $ & $ 5.01    $ & $ 7.29    $ \\
+multiplication:single\_prec\_multiplication\_0   & $ 4.974 \cdot 10^{-3} $ & $ 3      $ & $ 152  $ & $ 53   $ & $ 80    $ & $ 2  $ & $ 0 $ & $ 603.14      $ & $ 8.34    $ & $ 6.90    $ \\
+subtraction64:double\_prec\_subtraction\_0       & $ 2.136 \cdot 10^{-2} $ & $ 3      $ & $ 1091 $ & $ 329  $ & $ 328   $ & $ 0  $ & $ 0 $ & $ 140.43      $ & $ 2.88    $ & $ 24.56   $ \\
+subtraction:single\_prec\_subtraction\_0         & $ 1.586 \cdot 10^{-3} $ & $ 2      $ & $ 412  $ & $ 122  $ & $ 74    $ & $ 0  $ & $ 0 $ & $ 1261.03     $ & $ 9.21    $ & $ 11.27   $ \\
+\hline
+Average                                          & $                     $ & $        $ & $      $ & $      $ & $       $ & $    $ & $   $ & $ 478.29      $ & $ 4.91    $ & $         $ \\
+\hline
+Overall                                          & $ 2.400 \cdot 10^{-1} $ & $ 35     $ & $ 5821 $ & $ 1834 $ & $ 2198  $ & $ 65 $ & $ 0 $ & $             $ & $         $ & $ 107.92  $ \\
+\hline
+\end{tabular}
+%Benchmarks:
+%src/fdiv.c --top-fname=single_prec_division --benchmark-name=division --generate-tb=a=106\\\,b=57 --evaluation
+%src/fmul.c --top-fname=single_prec_multiplication --benchmark-name=multiplication --generate-tb=a=106\\\,b=57 --evaluation
+%src/fsub.c --top-fname=single_prec_subtraction --benchmark-name=subtraction --generate-tb=a=106\\\,b=57 --evaluation
+%src/fsum.c --top-fname=single_prec_addition --benchmark-name=addition --generate-tb=a=106\\\,b=57 --evaluation
+%src/f64div.c --top-fname=double_prec_division --benchmark-name=division64 --generate-tb=a=61\\\,b=3 --evaluation
+%src/f64mul.c --top-fname=double_prec_multiplication --benchmark-name=multiplication64 --generate-tb=a=0\\\,b=0 --evaluation
+%src/f64sub.c --top-fname=double_prec_subtraction --benchmark-name=subtraction64 --generate-tb=a=0\\\,b=0 --evaluation
+%src/f64sum.c --top-fname=double_prec_addition --benchmark-name=addition64 --generate-tb=a=0\\\,b=0 --evaluation

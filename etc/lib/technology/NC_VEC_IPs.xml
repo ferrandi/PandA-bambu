@@ -1,0 +1,262 @@
+<?xml version="1.0"?>
+<technology>
+  <library>
+    <name>STD_FU</name>
+    <cell>
+      <name>vec_bit_field_ref_FU</name>
+      <operation operation_name="bit_field_ref" supported_types="VECTOR_INT:*" />
+      <circuit>
+        <component_o id="vec_bit_field_ref_FU">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="vec_bit_field_ref_FU"/>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="in2" dir="IN">
+            <structural_type_descriptor type="UINT" size="1"/>
+          </port_o>
+          <port_o id="in3" dir="IN">
+            <structural_type_descriptor type="UINT" size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="INT" size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="vec_bit_field_ref_FU in1 in2 in3 out1" VERILOG_PROVIDED=
+"`ifndef _SIM_HAVE_CLOG2
+  function integer log2;
+     input integer value;
+     integer temp_value;
+    begin
+      temp_value = value-1;
+      for (log2=0; temp_value&gt;0; log2=log2+1)
+        temp_value = temp_value&gt;&gt;1;
+    end
+  endfunction
+`endif
+`ifdef _SIM_HAVE_CLOG2
+  parameter arg2_bitsize = $clog2(BITSIZE_in1*NUM_ELEM_in1);
+`else
+  parameter arg2_bitsize = log2(BITSIZE_in1*NUM_ELEM_in1);
+`endif
+generate
+  if(BITSIZE_in3 &gt; arg2_bitsize)
+    assign out1 = in1 &gt;&gt;&gt; (in3[arg2_bitsize-1:0]);
+  else
+    assign out1 = in1 &gt;&gt;&gt; in3;
+endgenerate"
+VHDL_PROVIDED=
+"begin
+   process(in1, in3)
+   begin
+      if(BITSIZE_in3 &gt; integer(log2(real(BITSIZE_in1*NUM_ELEM_in1)))) then
+         out1 &lt;= resize(signed(in1((to_integer(in3(integer(log2(real(BITSIZE_in1*NUM_ELEM_in1)))-1 downto 0) + BITSIZE_out1 - 1)) downto to_integer(in3(integer(log2(real(BITSIZE_in1*NUM_ELEM_in1)))-1 downto 0)))), BITSIZE_out1);
+      else
+         out1 &lt;= resize(signed(in1((to_integer(in3) + BITSIZE_out1 -1) downto to_integer(in3))), BITSIZE_out1);
+      end if;
+   end process;
+"/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>ui_vec_bit_field_ref_FU</name>
+      <operation operation_name="bit_field_ref" supported_types="VECTOR_UINT:*" />
+      <component_timing_alias>ASSIGN_VECTOR_BOOL_FU</component_timing_alias>
+      <circuit>
+        <component_o id="ui_vec_bit_field_ref_FU">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="ui_vec_bit_field_ref_FU"/>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="in2" dir="IN">
+            <structural_type_descriptor type="UINT" size="1"/>
+          </port_o>
+          <port_o id="in3" dir="IN">
+            <structural_type_descriptor type="UINT" size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="UINT" size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="ui_vec_bit_field_ref_FU in1 in2 in3 out1" VERILOG_PROVIDED="`ifndef _SIM_HAVE_CLOG2
+  function integer log2;
+     input integer value;
+     integer temp_value;
+    begin
+      temp_value = value-1;
+      for (log2=0; temp_value&gt;0; log2=log2+1)
+        temp_value = temp_value&gt;&gt;1;
+    end
+  endfunction
+`endif
+`ifdef _SIM_HAVE_CLOG2
+  parameter arg2_bitsize = $clog2(BITSIZE_in1*NUM_ELEM_in1);
+`else
+  parameter arg2_bitsize = log2(BITSIZE_in1*NUM_ELEM_in1);
+`endif
+generate
+  if(BITSIZE_in3 &gt; arg2_bitsize)
+    assign out1 = $unsigned(in1 &gt;&gt; (in3[arg2_bitsize-1:0]));
+  else
+    assign out1 = $unsigned(in1 &gt;&gt; in3);
+endgenerate"/>
+        </component_o>
+      </circuit>
+    </cell>
+    <template>
+      <name>vec_cond_expr_FU</name>
+      <operation operation_name="vec_cond_expr" supported_types="VECTOR_INT:*" />
+      <circuit>
+        <component_o id="vec_cond_expr_FU">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="vec_cond_expr_FU"/>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="in2" dir="IN">
+            <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="in3" dir="IN">
+            <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="vec_cond_expr_FU in1 in2 in3 out1" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)\n  begin  : vec_expr\n    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1] != 0 ? in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2] : in3[o1*BITSIZE_in3+BITSIZE_in3-1:o1*BITSIZE_in3];\n  end\nendgenerate"/>
+        </component_o>
+      </circuit>
+    </template>
+    <template>
+      <name>ui_vec_cond_expr_FU</name>
+      <operation operation_name="vec_cond_expr" supported_types="VECTOR_UINT:*" />
+      <circuit>
+        <component_o id="ui_vec_cond_expr_FU">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="ui_vec_cond_expr_FU"/>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="in2" dir="IN">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="in3" dir="IN">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="ui_vec_cond_expr_FU in1 in2 in3 out1" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)\n  begin  : vec_expr\n    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1] != 0 ? in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2] : in3[o1*BITSIZE_in3+BITSIZE_in3-1:o1*BITSIZE_in3];\n  end\nendgenerate"/>
+        </component_o>
+      </circuit>
+    </template>
+    <template>
+      <name>ui_vec_cond_expr_FU</name>
+      <operation operation_name="vec_cond_expr" supported_types="VECTOR_UINT:*" />
+      <circuit>
+        <component_o id="ui_vec_cond_expr_FU">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="ui_vec_cond_expr_FU"/>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="in2" dir="IN">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="in3" dir="IN">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="ui_vec_cond_expr_FU in1 in2 in3 out1" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)\n  begin  : vec_expr\n    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1] != 0 ? in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2] : in3[o1*BITSIZE_in3+BITSIZE_in3-1:o1*BITSIZE_in3];\n  end\nendgenerate"/>
+        </component_o>
+      </circuit>
+    </template>
+    <cell>
+      <name>BIvector_converter_FU</name>
+      <operation operation_name="nop_expr" />
+      <circuit>
+        <component_o id="BIvector_converter_FU">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2017 Politecnico di Milano</copyright>
+          <authors>Marco Lattuada &lt;marco_lattuada@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="BIvector_converter_FU"/>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="BIvector_converter_FU in1 out1" VERILOG_PROVIDED=
+"generate
+genvar o1;
+  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)
+  begin  : vec_expr
+  assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = {{{BITSIZE_out1-1}{1&apos;b0}},in1[o1]};
+  end
+endgenerate"
+VHDL_PROVIDED=
+"process(in1)
+begin
+   for index in 0 to NUM_ELEM_out1-1 loop
+       out1((index+1)*BITSIZE_out1-1 downto index*BITSIZE_out1) &lt;= std_logic_vector(resize(unsigned(in1(index), BITSIZE_out1)));
+   end loop;
+end process;
+"/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>BUvector_converter_FU</name>
+      <operation operation_name="nop_expr" />
+      <circuit>
+        <component_o id="BUvector_converter_FU">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2017 Politecnico di Milano</copyright>
+          <authors>Marco Lattuada &lt;marco_lattuada@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="BUvector_converter_FU"/>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="BUvector_converter_FU in1 out1" VERILOG_PROVIDED=
+"generate
+genvar o1;
+  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)
+  begin  : vec_expr
+    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1];
+  end
+endgenerate"
+VHDL_PROVIDED=
+"process(in1)
+begin
+   for index in 0 to NUM_ELEM_out1-1 loop
+       out1((index+1)*BITSIZE_out1-1 downto index*BITSIZE_out1) &lt;= std_logic_vector(resize(unsigned(in1((index+1)*BITSIZE_in1-1 downto index*BITSIZE_in1)), BITSIZE_out1));
+   end loop;
+end process;
+"/>
+        </component_o>
+      </circuit>
+    </cell>
+  </library>
+</technology>
+

@@ -1,0 +1,87 @@
+\subsection{isbound}
+\label{labisbound}
+\noindent Name: \textbf{isbound}\\
+indicates whether a variable is bound or not.\\
+\noindent Usage: 
+\begin{center}
+\textbf{isbound}(\emph{ident}) : \textsf{boolean}\\
+\end{center}
+Parameters: 
+\begin{itemize}
+\item \emph{ident} is a name.
+\end{itemize}
+\noindent Description: \begin{itemize}
+
+\item \textbf{isbound}(\emph{ident}) returns a boolean value indicating whether the name \emph{ident}
+   is used or not to represent a variable. It returns true when \emph{ident} is the 
+   name used to represent the global variable or if the name is currently used
+   to refer to a (possibly local) variable.
+
+\item When a variable is defined in a block and has not been defined outside, 
+   \textbf{isbound} returns true when called inside the block, and false outside.
+   Note that \textbf{isbound} returns true as soon as a variable has been declared with 
+   \textbf{var}, even if no value is actually stored in it.
+
+\item If \emph{ident1} is bound to a variable and if \emph{ident2} refers to the global 
+   variable, the command \textbf{rename}(\emph{ident2}, \emph{ident1}) hides the value of \emph{ident1}
+   which becomes the global variable. However, if the global variable is again
+   renamed, \emph{ident1} gets its value back. In this case, \textbf{isbound}(\emph{ident1}) returns
+   true. If \emph{ident1} was not bound before, \textbf{isbound}(\emph{ident1}) returns false after
+   that \emph{ident1} has been renamed.
+\end{itemize}
+\noindent Example 1: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> isbound(x);
+false
+> isbound(f);
+false
+> isbound(g);
+false
+> f=sin(x);
+> isbound(x);
+true
+> isbound(f);
+true
+> isbound(g);
+false
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 2: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> isbound(a);
+false
+> { var a; isbound(a); };
+true
+> isbound(a);
+false
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 3: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> f=sin(x);
+> isbound(x);
+true
+> rename(x,y);
+> isbound(x);
+false
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 4: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> x=1;
+> f=sin(y);
+> rename(y,x);
+> f;
+sin(x)
+> x;
+x
+> isbound(x);
+true
+> rename(x,y);
+> isbound(x);
+true
+> x;
+1
+\end{Verbatim}
+\end{minipage}\end{center}
+See also: \textbf{rename} (\ref{labrename})

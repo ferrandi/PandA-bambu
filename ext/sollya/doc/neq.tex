@@ -1,0 +1,69 @@
+\subsection{!$=$}
+\label{labneq}
+\noindent Name: \textbf{!$=$}\\
+negated equality test operator\\
+\noindent Usage: 
+\begin{center}
+\emph{expr1} \textbf{!$=$} \emph{expr2} : (\textsf{any type}, \textsf{any type}) $\rightarrow$ \textsf{boolean}\\
+\end{center}
+Parameters: 
+\begin{itemize}
+\item \emph{expr1} and \emph{expr2} represent expressions
+\end{itemize}
+\noindent Description: \begin{itemize}
+
+\item The operator \textbf{!$=$} evaluates to true iff its operands \emph{expr1} and
+   \emph{expr2} are syntactically unequal and both different from \textbf{error} or
+   constant expressions that are not constants and that evaluate to two
+   different floating-point number with the global precision \textbf{prec}. The
+   user should be aware of the fact that because of floating-point
+   evaluation, the operator \textbf{!$=$} is not exactly the same as the
+   negation of the mathematical equality.
+     
+   Note that the expressions \textbf{!}(\emph{expr1} \textbf{!$=$} \emph{expr2}) and \emph{expr1}
+   \textbf{$==$} \emph{expr2} do not evaluate to the same boolean value. See \textbf{error}
+   for details.
+\end{itemize}
+\noindent Example 1: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> "Hello" != "Hello";
+false
+> "Hello" != "Salut";
+true
+> "Hello" != 5;
+true
+> 5 + x != 5 + x;
+false
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 2: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> 1 != exp(0);
+false
+> asin(1) * 2 != pi;
+false
+> exp(5) != log(4);
+true
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 3: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> sin(pi/6) != 1/2 * sqrt(3);
+true
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 4: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> prec = 12;
+The precision has been set to 12 bits.
+> 16384.1 != 16385.1;
+false
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 5: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> error != error;
+false
+\end{Verbatim}
+\end{minipage}\end{center}
+See also: \textbf{$==$} (\ref{labequal}), \textbf{$>$} (\ref{labgt}), \textbf{$>=$} (\ref{labge}), \textbf{$<=$} (\ref{lable}), \textbf{$<$} (\ref{lablt}), \textbf{in} (\ref{labin}), \textbf{!} (\ref{labnot}), \textbf{$\&\&$} (\ref{laband}), \textbf{$||$} (\ref{labor}), \textbf{error} (\ref{laberror}), \textbf{prec} (\ref{labprec})

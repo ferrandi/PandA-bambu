@@ -1,0 +1,38 @@
+<?xml version="1.0"?>
+<latex_table_format max_column_size="10">
+   <column name="Benchmark Name">
+      <source_name value="benchmark_name"/>
+      <alignment value="c|"/>
+      <text_format value="text"/>
+   </column>
+   <column name="Source Code Lines">
+      <source_name value="source_code_lines"/>
+      <alignment value="c|"/>
+      <text_format value="number"/>
+      <precision value="0"/>
+   </column>
+   <column name="Functions">
+      <source_name value="functions_with_body"/>
+      <alignment value="c|"/>
+      <text_format value="number"/>
+      <precision value="0"/>
+   </column>
+   <column name="Loops">
+      <source_name value="loops_number"/>
+      <alignment value="c|"/>
+      <text_format value="number"/>
+      <precision value="0"/>
+   </column>
+   <column name="Loop Maximum Depth">
+      <source_name value="loop_maximum_depth"/>
+      <alignment value="c|"/>
+      <text_format value="number"/>
+      <precision value="0"/>
+   </column>
+   <column name="If">
+      <source_name value="conditional_construct"/>
+      <alignment value="c|"/>
+      <text_format value="number"/>
+      <precision value="0"/>
+   </column>
+</latex_table_format>

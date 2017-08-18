@@ -1,0 +1,24 @@
+\subsection{perturb}
+\label{labperturb}
+\noindent Name: \textbf{perturb}\\
+indicates random perturbation of sampling points for \textbf{externalplot}\\
+\noindent Usage: 
+\begin{center}
+\textbf{perturb} : \textsf{perturb}\\
+\end{center}
+\noindent Description: \begin{itemize}
+
+\item The use of \textbf{perturb} in the command \textbf{externalplot} enables the addition
+   of some random noise around each sampling point in \textbf{externalplot}.
+    
+   See \textbf{externalplot} for details.
+\end{itemize}
+\noindent Example 1: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> bashexecute("gcc -fPIC -c externalplotexample.c");
+> bashexecute("gcc -shared -o externalplotexample externalplotexample.o -lgmp -l
+mpfr");
+> externalplot("./externalplotexample",relative,exp(x),[-1/2;1/2],12,perturb);
+\end{Verbatim}
+\end{minipage}\end{center}
+See also: \textbf{externalplot} (\ref{labexternalplot}), \textbf{absolute} (\ref{lababsolute}), \textbf{relative} (\ref{labrelative}), \textbf{bashexecute} (\ref{labbashexecute})

@@ -1,0 +1,18 @@
+\subsection{RZ}
+\label{labrz}
+\noindent Name: \textbf{RZ}\\
+constant representing rounding-to-zero mode.\\
+\noindent Description: \begin{itemize}
+
+\item \textbf{RZ} is used in command \textbf{round} to specify that the value must be rounded
+   to the closest floating-point number towards zero. It just consists in 
+   truncating the value to the desired format.
+\end{itemize}
+\noindent Example 1: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> display=binary!;
+> round(Pi,20,RZ);
+1.1001001000011111101_2 * 2^(1)
+\end{Verbatim}
+\end{minipage}\end{center}
+See also: \textbf{RD} (\ref{labrd}), \textbf{RU} (\ref{labru}), \textbf{RN} (\ref{labrn}), \textbf{round} (\ref{labround}), \textbf{floor} (\ref{labfloor}), \textbf{ceil} (\ref{labceil})

@@ -1,0 +1,2711 @@
+/**
+ *
+ *                   _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
+ *                  _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
+ *                 _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
+ *                _/      _/    _/ _/    _/ _/   _/ _/    _/
+ *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
+ *
+ *             ***********************************************
+ *                              PandA Project 
+ *                     URL: http://panda.dei.polimi.it
+ *                       Politecnico di Milano - DEIB
+ *                        System Architectures Group
+ *             ***********************************************
+ *              Copyright (c) 2004-2017 Politecnico di Milano
+ *
+ *   This file is part of the PandA framework.
+ *
+ *   The PandA framework is free software; you can redistribute it and/or modify
+ *   it under the terms of the GNU General Public License as published by
+ *   the Free Software Foundation; either version 3 of the License, or
+ *   (at your option) any later version.
+ *
+ *   This program is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU General Public License for more details.
+ *
+ *   You should have received a copy of the GNU General Public License
+ *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+*/
+/**
+ * @file treeParser.ypp
+ * @brief BISON based parser for the GCC raw file.
+ *
+ * 
+ *
+ * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
+ * $Revision$
+ * $Date$
+ * Last modified by $Author$
+ *
+*/
+
+%{
+/**
+* Includes
+*/
+
+///Autoheader include
+#include "config_HAVE_CODE_ESTIMATION_BUILT.hpp"
+#include "config_HAVE_MAPPING_BUILT.hpp"
+#include "config_HAVE_RTL_BUILT.hpp"
+#include "config_HAVE_BISON_2_7_OR_GREATER.hpp"
+
+#define YYLTYPE_IS_TRIVIAL 0
+
+///Utility include
+#include "refcount.hpp"
+
+///NOTE: forward declarations of BisonParserData and TreeFlexLexer are in this point since they will be used in treeParser.h
+REF_FORWARD_DECL(BisonParserData);
+struct info_map;
+REF_FORWARD_DECL(TreeFlexLexer);
+
+///Header include
+#if HAVE_BISON_2_7_OR_GREATER
+#include "treeParser.hpp"
+#else
+#include "treeParser.h"
+#endif
+///Lexer include
+#include "treeLexer.hpp"
+
+///Machine include
+#if HAVE_MAPPING_BUILT
+#include "machine_node.hpp"
+#endif
+
+///Parameter include
+#include "Parameter.hpp"
+
+///RTL include
+#if HAVE_RTL_BUILT
+#include "rtl_common.hpp"
+#endif
+
+///STD include
+#include <cstdio>
+#include <cstring>
+#include <fstream>
+#include <string>
+#include <iosfwd>
+
+///Tree include
+#include "tree_basic_block.hpp"
+#include "tree_helper.hpp"
+#include "tree_manager.hpp"
+#include "ext_tree_node.hpp"
+#include "tree_reindex.hpp"
+
+///Utiliy include
+#include "exceptions.hpp"
+#include "fileIO.hpp"
+#if HAVE_CODE_ESTIMATION_BUILT
+#include "probability_distribution.hpp"
+#include "weight_information.hpp"
+#endif
+
+///Wrapper include
+#include "gcc_wrapper.hpp"
+/**
+* Defines
+*/
+//#define YYDEBUG 1
+//#define NDEBUG 1
+///Skipping warnings due to bison
+#pragma GCC diagnostic ignored "-Wconversion"
+#pragma GCC diagnostic ignored "-Wsign-conversion"
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+#pragma GCC diagnostic ignored "-Wwrite-strings"
+#pragma GCC diagnostic ignored "-Wold-style-cast"
+#pragma GCC diagnostic ignored "-Wredundant-decls"
+#if (__GNUC__ > 4) || (__GNUC__ == 4 && __GNUC_MINOR__ >= 7)
+#pragma GCC diagnostic ignored "-Wzero-as-null-pointer-constant"
+#endif
+/**
+* MACROS
+*/
+
+#if HAVE_RTL_BUILT
+#define SET_DATA(data, value) data = value
+#else
+#define SET_DATA(data, value)
+#endif
+
+#define NO_OPT(cond, action) if(cond) action else YYABORT;
+#define OPT(cond, action) if(cond) action
+
+/**
+ * Macro used to set a generic field of a generic object.
+ * @param obj_node is the type of the object to which the field is setted.
+ * @param field is the name of the member of the obj_node to be setted. The type of field member has to be tree_nodeRef.
+*/
+#define NS(obj_node, field) \
+  assign_tree_reindex_to_member(data->curr_tree_nodeRef, &obj_node::field, data->curr_NODE_ID, data->current_TM);
+
+/**
+ * Macro used to set a generic field of a generic object.
+ * @param curr is the current object reference.
+ * @param obj_node is the type of the object to which the field is setted.
+ * @param field is the name of the member of the obj_node to be setted. The type of field member has to be tree_nodeRef.
+*/
+#define NS2(curr, obj_node, field) \
+  assign_tree_reindex_to_member(curr, &obj_node::field, data->curr_NODE_ID, data->current_TM);
+
+/**
+ * Macro used to set a generic field with a generic value of a generic object.
+ * @param obj_node is the type of the object to which the field is setted.
+ * @param field is the name of the member of the obj_node to be setted.
+ * @param value is the value used to set the field member.
+*/
+#define NSV(obj_node, field, value) \
+    assign_value_to_member(data->curr_tree_nodeRef, &obj_node::field, value);
+
+/**
+ * Macro used to set a generic field with a generic value of a generic object.
+ * @param obj_node is the type of the object to which the field is setted.
+ * @param field is the name of the member of the obj_node to be setted.
+ * @param value is the value used to set the field member.
+*/
+#define NBV(obj_node, field, value) \
+  assign_value_to_member<obj_node, blocRef, unsigned int>(data->curr_blocRef, &obj_node::field, value);
+
+/**
+ * Create the empty tree_node and set the curr_tree_nodeRef.
+ * @param obj_node is the type of the tree_node to create.
+*/
+#define CTN(obj_node) \
+  create_Ref_id<obj_node>(data, &BisonParserData::curr_tree_nodeRef);
+
+/**
+ * Create the identifier_node
+*/
+#define CTN_ID(parameter) \
+  create_Ref_identifier(&BisonParserData::curr_tree_nodeRef, data, parameter, data->current_TM);
+
+/**
+ * Create the empty bloc and set the curr_blocRef.
+ * @param obj_node is the type of the bloc to create.
+*/
+#define CB(number_value) \
+  create_Ref_bloc(&BisonParserData::curr_blocRef, data, number_value);
+
+/**
+ * Macro used to add attribute to the class attr.
+ * @param token is the token associated to the attribute.
+*/
+#define ADD_ATTR(token) \
+  add_attr<attr>(data->curr_tree_nodeRef, token);
+
+/**
+ * Macro used to add attribute to the class function_decl.
+ * @param token is the token associated to the attribute.
+*/
+#define ADD_OP_NAME(token) \
+  add_op_name<function_decl>(data->curr_tree_nodeRef, token);
+
+/**
+* Macro used to add a NODE_ID to the object obj_node through the function add_function.
+* @param obj_node is the type of the object to which the field is setted.
+* @param add_function is the name of function that add a NODE_ID
+*/
+#define ADDV(obj_node, add_function) \
+  addv(data->curr_tree_nodeRef, &obj_node::add_function, data->curr_NODE_ID, data->current_TM);
+
+/**
+ * Macro used to add a phi node to the object obj_node through the function add_function.
+ * @param obj_node is the type of the object to which the field is setted.
+ * @param add_function is the name of function that add a phi
+*/
+#define ADDP(obj_node, add_function) \
+  addv(data->curr_blocRef, &obj_node::add_function, data->curr_NODE_ID, data->current_TM);
+
+/**
+* Macro used to add a NODE_ID to the object obj_node through the function add_function.
+* @param obj_node is the type of the object to which the field is setted.
+* @param add_function is the name of function that add a NODE_ID
+*/
+#define ADDV2(obj_node, add_function) \
+  addv2<obj_node, tree_nodeRef>(data->curr_tree_nodeRef, &obj_node::add_function, data->curr_NODE_ID_BIS, data->curr_NODE_ID, data->current_TM);
+
+/**
+* Macro used to add a NODE_ID to the object obj_node through the function add_function.
+* @param obj_node is the type of the object to which the field is setted.
+* @param add_function is the name of function that add a NODE_ID
+*/
+#define ADDV3(obj_node, add_function) \
+  addv3<obj_node, tree_nodeRef>(data->curr_tree_nodeRef, &obj_node::add_function, data->curr_NODE_ID, data->curr_unumber, data->current_TM);
+
+/**
+* Macro used to add an unsigned int to the object obj_node through the function add_function.
+* @param obj_node is the type of the object to which the field is setted.
+* @param add_function is the name of function that add a NODE_ID
+*/
+#define ADD_UNSIGNED(obj_node, add_function) \
+  add_unsigned<obj_node, tree_nodeRef>(data->curr_tree_nodeRef, &obj_node::add_function, data->curr_NODE_ID, data->curr_unumber, data->current_TM);
+
+/**
+* Macro used to add a bloc to the object obj_node through the function add_function.
+* @param obj_node is the type of the object to which the field is setted.
+* @param add_function is the name of function that add a bloc
+* @param bloc is the bloc to add.
+*/
+#define ADDB(obj_node, add_function, vbloc) \
+  addo<obj_node, tree_nodeRef, blocRef>(data->curr_tree_nodeRef, &obj_node::add_function, vbloc);
+
+/**
+ * Macro used to add a value to the object obj_node through the function add_function.
+ * @param obj_node is the type of the object to which the field is setted.
+ * @param add_function is the name of function that add a pred
+ * @param val is the value to add.
+*/
+#define ADDVALUE(obj_node, add_function, val) \
+  addo(data->curr_blocRef, &obj_node::add_function, val);
+
+
+/**
+ * Macro used to add access_binf
+ * @param obj_node is the type of the object to which the field is setted.
+ * @param add_function is the name of function that add a vuse
+ * @param binf is the binf
+ * @param access is a token between TOK_PUB TOK_PROT TOK_PRIV.
+*/
+#define ADD_ACCESS_BINF(obj_node, add_function) \
+  add_access_binf(data->curr_tree_nodeRef, data->curr_NODE_ID, data->curr_token_enum, data->current_TM);
+
+
+struct BisonParserData
+{
+   BisonParserData(const ParameterConstRef _Param, int _debug_level) :
+      Param(_Param),
+      debug_level(_debug_level),
+      curr_NODE_ID(0),
+      curr_NODE_ID_BIS(0),
+      implement_node(false),
+      curr_number(0),
+      curr_size_t_number(0),
+      id(0)
+   {
+#if HAVE_MAPPING_BUILT
+      std::string driving_component_string = Param->getOption<std::string>(OPT_driving_component_type);
+      driving_component = processingElement::get_component_type((driving_component_string));
+#endif
+   }
+   //the set of parameter
+   const ParameterConstRef Param;
+
+   ///debug level
+   int debug_level;
+
+   /// Current tree_node reference
+   tree_nodeRef curr_tree_nodeRef;
+
+   /// Current bloc reference
+   blocRef curr_blocRef;
+
+   /// Current string reference
+   std::string curr_string;
+
+   /// GCC version
+   std::string gcc_version;
+
+   /// Store the current NODE_ID as integer.
+   unsigned int curr_NODE_ID;
+
+   /// Store the current NODE_ID_BIS as integer.
+   unsigned int curr_NODE_ID_BIS;
+
+   /// Is true if the current node is an implementation node
+   bool implement_node;
+
+   /// Store the current signed NUMBER.
+   int curr_number;
+
+   /// Store the current size_t NUMBER.
+   size_t curr_size_t_number;
+
+   /// Store the current unsigned NUMBER
+   unsigned int curr_unumber;
+
+   /// Store the current NUMBER (long long)
+   int long long curr_long_long_number;
+
+   /// Store the current NUMBER (long double)
+   long double curr_double_number;
+
+   /// Store the current token_enum (long double)
+   TreeVocabularyTokenTypes_TokenEnum curr_token_enum;
+
+   /// Store the current id of the node. Used by node to identify the id of the current node.
+   int id;
+
+   ///merge all the raw read
+   tree_managerRef final_TM;
+
+   ///current tree manager
+   tree_managerRef current_TM;
+
+#if HAVE_RTL_BUILT
+   ///current list of enum rtl_kind
+   std::list<std::pair<enum rtl_kind, enum mode_kind> > rtls;
+
+   ///current rtl
+   enum rtl_kind single_rtl;
+
+   ///current mode_kind
+   enum mode_kind mode_rtl;
+#endif
+
+#if HAVE_MAPPING_BUILT
+   ///The type of the driving_component
+   ComponentTypeConstRef driving_component;
+#endif
+
+   /// unique version identifier used for SSA_NAMEs objects
+   static unsigned int global_uniq_vers_id;
+};
+
+unsigned int BisonParserData::global_uniq_vers_id = 1;
+
+/**
+* Local Data Structures
+*/
+
+/**
+* Global Data Structures
+*/
+
+/** 
+* Function Prototypes
+*/
+extern int yylex(YYSTYPE *lvalp, const TreeFlexLexerRef lexer);
+extern void yyerror(const BisonParserDataRef data, const TreeFlexLexerRef lexer, const char *s);
+
+/**
+* Templates
+*/
+template<class obj_node, class TRef, class value_t>
+inline
+void assign_value_to_member(const TRef &curr, value_t obj_node::* field, const value_t value)
+  {
+    THROW_ASSERT(curr, "");
+    ((dynamic_cast<obj_node*>(curr.get())) ->* field) = value;
+  }
+
+template<class obj_node, class TRef>
+inline
+void assign_tree_reindex_to_member(const TRef &curr, tree_nodeRef obj_node::* field, const unsigned int tree_index, const tree_managerRef TM)
+  {
+    THROW_ASSERT(curr, "");
+((dynamic_cast<obj_node*>(curr.get())) ->* field) = TM->GetTreeReindex(tree_index);
+  }
+
+inline
+void create_Ref_bloc( refcount<bloc> BisonParserData::* field, const BisonParserDataRef data, unsigned int number_value)
+  {
+   (*data .* field) = refcount<bloc>(new bloc(number_value));
+  }
+
+template<class obj_node>
+inline
+void create_Ref_id(const BisonParserDataRef data, tree_nodeRef BisonParserData::* field)
+{
+    (*data .* field) = tree_nodeRef(new obj_node(data->id));
+}
+
+template<class constructor_parameter_type>
+inline
+void create_Ref_identifier(tree_nodeRef BisonParserData::* field, const BisonParserDataRef data, constructor_parameter_type par, tree_managerRef const &Root)
+{
+    (*data .* field) = tree_nodeRef(new identifier_node(data->id,par,Root.get()));
+}
+
+template<class attr>
+inline
+void add_attr(const tree_nodeRef &curr, const TreeVocabularyTokenTypes_TokenEnum &token_i)
+  {
+    (dynamic_cast<attr*>(curr.get()))->add(token_i);
+  }
+
+template<class attr>
+inline
+void add_attr_node(const tree_nodeRef &curr, const unsigned int tree_index, const tree_managerRef TM)
+  {
+    (dynamic_cast<attr*>(curr.get()))->add(TM->GetTreeReindex(tree_index));
+  }
+
+template<class function_decl>
+inline
+void add_op_name(const tree_nodeRef &curr, const std::string & token_s)
+  {
+    (dynamic_cast<function_decl*>(curr.get()))->add(token_s);
+  }
+
+template<class obj_node, class TRef>
+inline
+void  addv(const TRef &curr, void (obj_node::*add_function)(const tree_nodeRef), const unsigned int tree_index, const tree_managerRef TM)
+  {
+((dynamic_cast<obj_node*>(curr.get()))->*add_function)(TM->GetTreeReindex(tree_index));
+  }
+
+template<class obj_node, class TRef>
+inline
+void  addv2(const TRef &curr, void (obj_node::*add_function)(const tree_nodeRef, const tree_nodeRef), const unsigned int tree_index_1, const unsigned int tree_index_2, const tree_managerRef TM)
+{
+((dynamic_cast<obj_node*>(curr.get()))->*add_function)(TM->GetTreeReindex(tree_index_1), TM->GetTreeReindex(tree_index_2));
+}
+
+template<class obj_node, class TRef>
+inline
+void  addv3(const TRef &curr, void (obj_node::*add_function)(const tree_nodeRef, int), const unsigned int tree_index, const int value, const tree_managerRef TM)
+{
+((dynamic_cast<obj_node*>(curr.get()))->*add_function)(TM->GetTreeReindex(tree_index), value);
+}
+
+template<class obj_node, class TRef>
+inline
+void  add_unsigned(const TRef &curr, void (obj_node::*add_function)(const tree_nodeRef, unsigned int), const unsigned int tree_index, const unsigned int value, const tree_managerRef TM)
+{
+   ((dynamic_cast<obj_node*>(curr.get()))->*add_function)(TM->GetTreeReindex(tree_index), value);
+}
+
+
+template<class obj_node, class TRefCurr, class TRef>
+inline
+void  addo(const TRefCurr &curr, void (obj_node::*add_function)(const TRef), const TRef & obj)
+  {
+    ((dynamic_cast<obj_node*>(curr.get()))->*add_function)(obj);
+  }
+
+inline
+void add_access_binf(const tree_nodeRef & curr, const unsigned int binf_index, const TreeVocabularyTokenTypes_TokenEnum enum_access, const tree_managerRef TM)
+{
+   (dynamic_cast<binfo*>(curr.get()))->add_access_binf(TM->GetTreeReindex(binf_index), enum_access);
+}
+
+  
+inline
+void do_fun_decl(const bool &in, const int & cnib, const int & cni, const BisonParserDataRef data, const tree_managerRef TM)
+  {
+    TM->add_function(cni, data->curr_tree_nodeRef);
+  }
+
+template<class type_node>
+inline
+void do_qual(const tree_nodeRef &curr, const int & value)
+  {
+    THROW_ASSERT(curr, "");
+    ((dynamic_cast<type_node*>(curr.get()))->qual) = static_cast<TreeVocabularyTokenTypes_TokenEnum>(value);
+  }
+
+
+%}
+/**
+* BISON DECLARATIONS
+*/
+%union {
+const char *text;
+int value;
+long long int long_value;
+bool pred;
+}
+%token <value> NODE_ID
+%token <text> TOK_BISON_STRING
+%token <long_value> TOK_BISON_NUMBER
+%token TOK_BISON_GCC_VERSION TOK_BISON_PLUGIN_VERSION
+%token TOK_BISON_ERROR_MARK TOK_BISON_IDENTIFIER_NODE TOK_BISON_TREE_LIST TOK_BISON_TREE_VEC
+%token TOK_BISON_BLOCK TOK_BISON_VOID_TYPE TOK_BISON_INTEGER_TYPE TOK_BISON_REAL_TYPE
+%token TOK_BISON_COMPLEX_TYPE TOK_BISON_VECTOR_TYPE TOK_BISON_ENUMERAL_TYPE TOK_BISON_BOOLEAN_TYPE
+%token TOK_BISON_CHAR_TYPE TOK_BISON_NULLPTR_TYPE TOK_BISON_TYPE_PACK_EXPANSION TOK_BISON_POINTER_TYPE TOK_BISON_OFFSET_TYPE TOK_BISON_REFERENCE_TYPE
+%token TOK_BISON_METHOD_TYPE TOK_BISON_ARRAY_TYPE TOK_BISON_SET_TYPE
+%token TOK_BISON_RECORD_TYPE TOK_BISON_UNION_TYPE TOK_BISON_QUAL_UNION_TYPE TOK_BISON_FUNCTION_TYPE
+%token TOK_BISON_LANG_TYPE TOK_BISON_INTEGER_CST TOK_BISON_REAL_CST TOK_BISON_COMPLEX_CST
+%token TOK_BISON_VECTOR_CST TOK_BISON_VOID_CST TOK_BISON_STRING_CST TOK_BISON_FUNCTION_DECL TOK_BISON_LABEL_DECL TOK_BISON_USING_DECL
+%token TOK_BISON_CONST_DECL TOK_BISON_TYPE_DECL TOK_BISON_VAR_DECL TOK_BISON_PARM_DECL
+%token TOK_BISON_RESULT_DECL TOK_BISON_FIELD_DECL TOK_BISON_NAMESPACE_DECL TOK_BISON_TRANSLATION_UNIT_DECL
+%token TOK_BISON_COMPONENT_REF TOK_BISON_BIT_FIELD_REF TOK_BISON_INDIRECT_REF TOK_BISON_MISALIGNED_INDIRECT_REF TOK_BISON_BUFFER_REF
+%token TOK_BISON_ARRAY_REF TOK_BISON_ARRAY_RANGE_REF TOK_BISON_VTABLE_REF
+%token TOK_BISON_CONSTRUCTOR TOK_BISON_DESTRUCTOR TOK_BISON_COMPOUND_EXPR
+%token TOK_BISON_MODIFY_EXPR TOK_BISON_GIMPLE_ASSIGN TOK_BISON_INIT_EXPR TOK_BISON_TARGET_EXPR TOK_BISON_COND_EXPR TOK_BISON_GIMPLE_COND
+%token TOK_BISON_GIMPLE_BIND TOK_BISON_GIMPLE_CALL TOK_BISON_CALL_EXPR TOK_BISON_AGGR_INIT_EXPR TOK_BISON_WITH_CLEANUP_EXPR
+%token TOK_BISON_GIMPLE_NOP
+%token TOK_BISON_CLEANUP_POINT_EXPR TOK_BISON_PLACEHOLDER_EXPR TOK_BISON_REDUC_MAX_EXPR TOK_BISON_REDUC_MIN_EXPR TOK_BISON_REDUC_PLUS_EXPR TOK_BISON_PLUS_EXPR TOK_BISON_TERNARY_PLUS_EXPR TOK_BISON_TERNARY_PM_EXPR TOK_BISON_TERNARY_MP_EXPR TOK_BISON_TERNARY_MM_EXPR TOK_BISON_BIT_IOR_CONCAT_EXPR TOK_BISON_MINUS_EXPR
+%token TOK_BISON_MULT_EXPR TOK_BISON_TRUNC_DIV_EXPR TOK_BISON_CEIL_DIV_EXPR TOK_BISON_FLOOR_DIV_EXPR
+%token TOK_BISON_ROUND_DIV_EXPR TOK_BISON_TRUNC_MOD_EXPR TOK_BISON_CEIL_MOD_EXPR TOK_BISON_FLOOR_MOD_EXPR
+%token TOK_BISON_ROUND_MOD_EXPR TOK_BISON_RDIV_EXPR TOK_BISON_EXACT_DIV_EXPR TOK_BISON_FIX_TRUNC_EXPR
+%token TOK_BISON_FIX_CEIL_EXPR TOK_BISON_FIX_FLOOR_EXPR TOK_BISON_FIX_ROUND_EXPR TOK_BISON_FLOAT_EXPR
+%token TOK_BISON_NEGATE_EXPR TOK_BISON_MIN_EXPR TOK_BISON_MAX_EXPR TOK_BISON_ABS_EXPR
+%token TOK_BISON_LUT_EXPR
+%token TOK_BISON_LSHIFT_EXPR TOK_BISON_RSHIFT_EXPR TOK_BISON_LROTATE_EXPR TOK_BISON_RROTATE_EXPR
+%token TOK_BISON_BIT_IOR_EXPR TOK_BISON_BIT_XOR_EXPR TOK_BISON_BIT_AND_EXPR TOK_BISON_BIT_NOT_EXPR
+%token TOK_BISON_TRUTH_ANDIF_EXPR TOK_BISON_TRUTH_ORIF_EXPR TOK_BISON_TRUTH_AND_EXPR TOK_BISON_TRUTH_OR_EXPR
+%token TOK_BISON_TRUTH_XOR_EXPR TOK_BISON_TRUTH_NOT_EXPR TOK_BISON_LT_EXPR TOK_BISON_LE_EXPR
+%token TOK_BISON_GT_EXPR TOK_BISON_GE_EXPR TOK_BISON_EQ_EXPR TOK_BISON_NE_EXPR
+%token TOK_BISON_UNORDERED_EXPR TOK_BISON_ORDERED_EXPR TOK_BISON_UNLT_EXPR TOK_BISON_UNLE_EXPR
+%token TOK_BISON_UNGT_EXPR TOK_BISON_UNGE_EXPR TOK_BISON_UNEQ_EXPR TOK_BISON_LTGT_EXPR TOK_BISON_IN_EXPR
+%token TOK_BISON_SET_LE_EXPR TOK_BISON_CARD_EXPR TOK_BISON_RANGE_EXPR TOK_BISON_CONVERT_EXPR
+%token TOK_BISON_NOP_EXPR TOK_BISON_NON_LVALUE_EXPR TOK_BISON_VIEW_CONVERT_EXPR TOK_BISON_SAVE_EXPR
+%token TOK_BISON_UNSAVE_EXPR TOK_BISON_ADDR_EXPR TOK_BISON_REFERENCE_EXPR
+%token TOK_BISON_FDESC_EXPR TOK_BISON_COMPLEX_EXPR TOK_BISON_CONJ_EXPR
+%token TOK_BISON_REALPART_EXPR TOK_BISON_IMAGPART_EXPR TOK_BISON_PREDECREMENT_EXPR TOK_BISON_PREINCREMENT_EXPR
+%token TOK_BISON_POSTDECREMENT_EXPR TOK_BISON_POSTINCREMENT_EXPR TOK_BISON_VA_ARG_EXPR TOK_BISON_TRY_CATCH_EXPR
+%token TOK_BISON_TRY_FINALLY TOK_BISON_ TOK_BISON_GIMPLE_GOTO TOK_BISON_GOTO_SUBROUTINE
+%token TOK_BISON_GIMPLE_RETURN TOK_BISON_EXIT_EXPR TOK_BISON_LOOP_EXPR
+%token TOK_BISON_GIMPLE_SWITCH TOK_BISON_GIMPLE_MULTI_WAY_IF TOK_BISON_CASE_LABEL_EXPR TOK_BISON_GIMPLE_RESX TOK_BISON_GIMPLE_ASM
+%token TOK_BISON_SSA_NAME
+%token TOK_BISON_GIMPLE_PHI TOK_BISON_CATCH_EXPR TOK_BISON_EH_FILTER_EXPR
+%token TOK_BISON_STATEMENT_LIST TOK_BISON_TEMPLATE_DECL TOK_BISON_TEMPLATE_TYPE_PARM TOK_BISON_CAST_EXPR
+%token TOK_BISON_STATIC_CAST_EXPR TOK_BISON_TYPENAME_TYPE TOK_BISON_SIZEOF_EXPR
+%token TOK_BISON_SCOPE_REF TOK_BISON_CTOR_INITIALIZER
+%token TOK_BISON_DO_STMT TOK_BISON_EXPR_STMT TOK_BISON_FOR_STMT TOK_BISON_IF_STMT
+%token TOK_BISON_RETURN_STMT TOK_BISON_WHILE_STMT TOK_BISON_MODOP_EXPR TOK_BISON_NEW_EXPR TOK_BISON_VEC_COND_EXPR TOK_BISON_VEC_PERM_EXPR TOK_BISON_DOT_PROD_EXPR TOK_BISON_VEC_LSHIFT_EXPR
+%token TOK_BISON_VEC_RSHIFT_EXPR TOK_BISON_WIDEN_MULT_HI_EXPR TOK_BISON_WIDEN_MULT_LO_EXPR TOK_BISON_VEC_UNPACK_HI_EXPR TOK_BISON_VEC_UNPACK_LO_EXPR
+%token TOK_BISON_VEC_UNPACK_FLOAT_HI_EXPR TOK_BISON_VEC_UNPACK_FLOAT_LO_EXPR TOK_BISON_VEC_PACK_TRUNC_EXPR TOK_BISON_VEC_PACK_SAT_EXPR
+%token TOK_BISON_VEC_PACK_FIX_TRUNC_EXPR TOK_BISON_VEC_EXTRACTEVEN_EXPR TOK_BISON_VEC_EXTRACTODD_EXPR TOC_BISON_VEC_INTERLEAVEHIGH_EXPR
+%token TOC_BISON_VEC_INTERLEAVELOW_EXPR
+%token TOK_BISON_VEC_NEW_EXPR TOK_BISON_OVERLOAD TOK_BISON_REINTERPRET_CAST_EXPR TOK_BISON_TEMPLATE_ID_EXPR
+%token TOK_BISON_THROW_EXPR TOK_BISON_TRY_BLOCK TOK_BISON_ARROW_EXPR TOK_BISON_HANDLER
+%token TOK_BISON_BASELINK TOK_BISON_NAME TOK_BISON_TYPE TOK_BISON_SRCP
+%token TOK_BISON_ARG TOK_BISON_BODY TOK_BISON_STRG TOK_BISON_LNGT
+%token TOK_BISON_SIZE TOK_BISON_ALGN TOK_BISON_RETN TOK_BISON_PRMS
+%token TOK_BISON_SCPE TOK_BISON_USED TOK_BISON_VALUE TOK_BISON_ARGT
+%token TOK_BISON_PREC TOK_BISON_BB_INDEX TOK_BISON_MIN TOK_BISON_MAX TOK_BISON_BIT_VALUES TOK_BISON_VALU
+%token TOK_BISON_CHAN TOK_BISON_STMT TOK_BISON_OP TOK_BISON_TIME_WEIGHT TOK_BISON_SIZE_WEIGHT TOK_BISON_RTL_SIZE_WEIGHT
+%token TOK_BISON_VARS TOK_BISON_UNQL TOK_BISON_ELTS TOK_BISON_DOMN
+%token TOK_BISON_BLOC TOK_BISON_DCLS TOK_BISON_MNGL TOK_BISON_PTD
+%token TOK_BISON_REFD TOK_BISON_QUAL TOK_BISON_VALR TOK_BISON_VALX
+%token TOK_BISON_FLDS TOK_BISON_VFLD TOK_BISON_BPOS TOK_BISON_FN
+%token TOK_BISON_GOTO TOK_BISON_REAL TOK_BISON_IMAG
+%token TOK_BISON_BASES TOK_BISON_BINFO TOK_BISON_PUB TOK_BISON_PROT TOK_BISON_PRIV
+%token TOK_BISON_BINF TOK_BISON_UID TOK_BISON_OLD_UID TOK_BISON_INIT TOK_BISON_FINI
+%token TOK_BISON_PURP TOK_BISON_PRED TOK_BISON_SUCC TOK_BISON_HPL TOK_BISON_LOOP_ID TOK_BISON_ATTRIBUTES TOK_BISON_PHI
+%token TOK_BISON_RES TOK_BISON_DEF TOK_BISON_EDGE TOK_BISON_VAR TOK_BISON_DEF_STMT TOK_BISON_ADDR_STMT TOK_BISON_USE_STMT
+%token TOK_BISON_VERS TOK_BISON_ORIG_VERS TOK_BISON_CNST TOK_BISON_CLAS TOK_BISON_DECL
+%token TOK_BISON_CLNP TOK_BISON_LAB TOK_BISON_TRY TOK_BISON_EX
+%token TOK_BISON_OUT TOK_BISON_IN TOK_BISON_STR TOK_BISON_CLOB TOK_BISON_CLOBBER
+%token TOK_BISON_REF
+%token TOK_BISON_FNCS TOK_BISON_CSTS TOK_BISON_RSLT
+%token TOK_BISON_INST TOK_BISON_SPCS TOK_BISON_CLS TOK_BISON_BFLD
+%token TOK_BISON_CTOR TOK_BISON_NEXT TOK_BISON_COND TOK_BISON_EXPR
+%token TOK_BISON_THEN TOK_BISON_ELSE TOK_BISON_CRNT TOK_BISON_HDLR
+%token TOK_BISON_USE_TMPL TOK_BISON_TMPL_PARMS TOK_BISON_TMPL_ARGS
+
+%token TOK_BISON_ARTIFICIAL TOK_BISON_SYSTEM TOK_BISON_OPERATING_SYSTEM TOK_BISON_LIBRARY_SYSTEM TOK_BISON_LIBBAMBU TOK_BISON_EXTERN TOK_BISON_C TOK_BISON_LSHIFT
+%token TOK_BISON_GLOBAL_INIT TOK_BISON_GLOBAL_FINI TOK_BISON_UNDEFINED TOK_BISON_BUILTIN TOK_BISON_HWCALL TOK_BISON_OPERATOR
+%token TOK_BISON_OVERFLOW TOK_BISON_VIRT TOK_BISON_UNSIGNED TOK_BISON_STRUCT
+%token TOK_BISON_UNION TOK_BISON_READONLY TOK_BISON_REGISTER TOK_BISON_STATIC TOK_BISON_REVERSE_RESTRICT TOK_BISON_OMP_ATOMIC TOK_BISON_OMP_BODY_LOOP TOK_BISON_OMP_CRITICAL_SESSION TOK_BISON_OMP_FOR_WRAPPER
+%token TOK_BISON_DEFAULT TOK_BISON_VOLATILE TOK_BISON_INF TOK_BISON_NAN TOK_BISON_VARARGS
+%token TOK_BISON_ENTRY TOK_BISON_EXIT TOK_BISON_NEW TOK_BISON_DELETE
+%token TOK_BISON_ASSIGN TOK_BISON_MEMBER TOK_BISON_PUBLIC TOK_BISON_PRIVATE
+%token TOK_BISON_PROTECTED TOK_BISON_NORETURN TOK_BISON_NOINLINE TOK_BISON_ALWAYS_INLINE
+%token TOK_BISON_UNUSED TOK_BISON_CONST TOK_BISON_TRANSPARENT_UNION TOK_BISON_MODE
+%token TOK_BISON_SECTION TOK_BISON_ALIGNED TOK_BISON_PACKED TOK_BISON_WEAK TOK_BISON_ALIAS
+%token TOK_BISON_NO_INSTRUMENT_FUNCTION TOK_BISON_MALLOC TOK_BISON_NO_STACK_LIMIT TOK_BISON_NO_STACK
+%token TOK_BISON_PURE TOK_BISON_DEPRECATED TOK_BISON_VECTOR_SIZE TOK_BISON_VISIBILITY
+%token TOK_BISON_TLS_MODEL TOK_BISON_NONNULL TOK_BISON_NOTHROW TOK_BISON_MAY_ALIAS
+%token TOK_BISON_WARN_UNUSED_RESULT TOK_BISON_FORMAT TOK_BISON_FORMAT_ARG TOK_BISON_NULL
+%token TOK_BISON_CONVERSION TOK_BISON_VIRTUAL TOK_BISON_MUTABLE TOK_BISON_PSEUDO_TMPL
+%token TOK_BISON_SPEC TOK_BISON_LINE
+%token TOK_BISON_FIXD TOK_BISON_VECNEW TOK_BISON_VECDELETE TOK_BISON_POS
+%token TOK_BISON_NEG TOK_BISON_ADDR TOK_BISON_DEREF TOK_BISON_NOT
+%token TOK_BISON_LNOT TOK_BISON_PREINC TOK_BISON_PREDEC TOK_BISON_PLUSASSIGN
+%token TOK_BISON_PLUS TOK_BISON_MINUSASSIGN TOK_BISON_MINUS TOK_BISON_MULTASSIGN
+%token TOK_BISON_MULT TOK_BISON_DIVASSIGN TOK_BISON_DIV TOK_BISON_MODASSIGN
+%token TOK_BISON_MOD TOK_BISON_ANDASSIGN TOK_BISON_AND TOK_BISON_ORASSIGN
+%token TOK_BISON_OR TOK_BISON_XORASSIGN TOK_BISON_XOR TOK_BISON_LSHIFTASSIGN
+%token TOK_BISON_RSHIFTASSIGN TOK_BISON_RSHIFT TOK_BISON_EQ TOK_BISON_NE
+%token TOK_BISON_LT TOK_BISON_GT TOK_BISON_LE TOK_BISON_GE
+%token TOK_BISON_LAND TOK_BISON_LOR TOK_BISON_COMPOUND TOK_BISON_MEMREF
+%token TOK_BISON_SUBS TOK_BISON_POSTINC TOK_BISON_POSTDEC TOK_BISON_CALL
+%token TOK_BISON_THUNK TOK_BISON_THIS_ADJUSTING TOK_BISON_RESULT_ADJUSTING TOK_BISON_PTRMEM
+%token TOK_BISON_QUAL_R TOK_BISON_QUAL_V TOK_BISON_QUAL_VR TOK_BISON_QUAL_C
+%token TOK_BISON_QUAL_CR TOK_BISON_QUAL_CV TOK_BISON_QUAL_CVR TOK_BISON_TEMPLATE_PARM_INDEX TOK_BISON_INLINE_BODY TOK_BISON_BITFIELD TOK_BISON_WITH_SIZE_EXPR TOK_BISON_OBJ_TYPE_REF
+%token TOK_BISON_MEMUSE TOK_BISON_MEMDEF TOK_BISON_VUSE TOK_BISON_VDEF TOK_BISON_VOVER
+%token TOK_BISON_PTR_INFO TOK_BISON_TRUE_EDGE TOK_BISON_FALSE_EDGE
+%token TOK_BISON_POINTER_PLUS_EXPR TOK_BISON_TARGET_MEM_REF TOK_BISON_TARGET_MEM_REF461 TOK_BISON_SYMBOL TOK_BISON_BASE TOK_BISON_IDX TOK_BISON_IDX2 TOK_BISON_STEP TOK_BISON_OFFSET TOK_BISON_ORIG TOK_BISON_TAG TOK_BISON_SMT_ANN
+%token TOK_BISON_TRAIT_EXPR TOK_BISON_GIMPLE_PREDICT TOK_BISON_MEM_REF TOK_BISON_WIDEN_SUM_EXPR TOK_BISON_WIDEN_MULT_EXPR TOK_BISON_MULT_HIGHPART_EXPR TOK_BISON_ASSERT_EXPR
+%token TOK_BISON_PREDICATE TOK_BISON_SLOT
+%token TOK_BISON_RTL
+%token TOK_BISON_ABS_R TOK_BISON_AND_R TOK_BISON_ASHIFT_R TOK_BISON_ASHIFTRT_R TOK_BISON_BSWAP_R TOK_BISON_CALL_R TOK_BISON_CALL_INSN_R TOK_BISON_CLZ_R TOK_BISON_CODE_LABEL_R TOK_BISON_COMPARE_R TOK_BISON_CONCAT_R TOK_BISON_CTZ_R TOK_BISON_DIV_R TOK_BISON_EQ_R TOK_BISON_FFS_R TOK_BISON_FIX_R TOK_BISON_FLOAT_R TOK_BISON_FLOAT_EXTEND_R TOK_BISON_FLOAT_TRUNCATE_R TOK_BISON_FRACT_CONVERT_R TOK_BISON_GE_R TOK_BISON_GEU_R TOK_BISON_GT_R TOK_BISON_GTU_R TOK_BISON_HIGH_R TOK_BISON_IF_THEN_ELSE_R TOK_BISON_INSN_R TOK_BISON_IOR_R TOK_BISON_JUMP_INSN_R TOK_BISON_LABEL_REF_R TOK_BISON_LE_R TOK_BISON_LEU_R TOK_BISON_LSHIFTRT_R TOK_BISON_LO_SUM_R TOK_BISON_LT_R TOK_BISON_LTGT_R TOK_BISON_LTU_R TOK_BISON_WRITE_MEM_R TOK_BISON_READ_MEM_R TOK_BISON_MINUS_R TOK_BISON_MOD_R TOK_BISON_MULT_R TOK_BISON_NE_R TOK_BISON_NEG_R TOK_BISON_NOT_R TOK_BISON_ORDERED_R TOK_BISON_PARALLEL_R TOK_BISON_PARITY_R TOK_BISON_PC_R TOK_BISON_PLUS_R TOK_BISON_POPCOUNT_R TOK_BISON_REG_R TOK_BISON_ROTATE_R TOK_BISON_ROTATERT_R TOK_BISON_SAT_FRACT_R TOK_BISON_SET_R TOK_BISON_SIGN_EXTEND_R TOK_BISON_SMAX_R TOK_BISON_SMIN_R TOK_BISON_SQRT_R TOK_BISON_SYMBOL_REF_R TOK_BISON_TRUNCATE_R TOK_BISON_UDIV_R TOK_BISON_UMAX_R TOK_BISON_UMIN_R TOK_BISON_UMOD_R TOK_BISON_UNEQ_R TOK_BISON_UNGE_R TOK_BISON_UNGT_R TOK_BISON_UNLE_R TOK_BISON_UNLT_R TOK_BISON_UNORDERED_R TOK_BISON_UNSIGNED_FIX_R TOK_BISON_UNSIGNED_FLOAT_R TOK_BISON_UNSIGNED_FRACT_CONVERT_R TOK_BISON_UNSIGNED_SAT_FRACT_R TOK_BISON_XOR_R TOK_BISON_ZERO_EXTEND_R
+%token TOK_BISON_QC_R TOK_BISON_HC_R TOK_BISON_SC_R TOK_BISON_DC_R TOK_BISON_TC_R TOK_BISON_CQI_R TOK_BISON_CHI_R TOK_BISON_CSI_R TOK_BISON_CDI_R TOK_BISON_CTI_R TOK_BISON_QF_R TOK_BISON_HF_R TOK_BISON_SF_R TOK_BISON_DF_R TOK_BISON_TF_R TOK_BISON_QI_R TOK_BISON_HI_R TOK_BISON_SI_R TOK_BISON_DO_R TOK_BISON_TI_R TOK_BISON_V2SI_R TOK_BISON_V4HI_R TOK_BISON_V8QI_R TOK_BISON_CC_R TOK_BISON_CCFP_R TOK_BISON_CCFPE_R TOK_BISON_CCZ_R
+%token TOK_BISON_CLB TOK_BISON_CLB_VARS TOK_BISON_USE TOK_BISON_USE_VARS
+
+%type<pred> var_opt orig_vers_opt op_opt time_weight_opt size_weight_opt rtl_size_weight_opt
+%type<pred> name_opt type_opt body_opt size_opt chan_opt prms_opt argt_opt retn_opt scpe_opt attrib_opt unql_opt domn_opt dcls_opt mngl_opt ptd_opt vfld_opt bpos_opt fn_opt
+%type<pred> binf_opt init_opt purp_opt cnst_opt clas_opt clob_opt clobber_opt rslt_opt inst_opt spcs_opt cls_opt bfld_opt next_opt expr_opt valu_opt
+%type<pred> uid_opt algn_opt virt_opt fixd_opt use_tmpl_opt predicate_opt slot_opt clnp_opt decl_opt
+%type<pred> tok_artificial_opt tok_packed_opt tok_operating_system_opt tok_library_system_opt tok_libbambu_opt tok_system_opt tok_virtual_opt tok_default_opt qual_opt string_id_opt
+%type<pred> min_opt max_opt bit_values_opt inline_body_opt out_opt in_opt true_edge_opt false_edge_opt
+%type<pred> symbol_opt base_opt step_opt offset_opt tag_opt orig_opt smt_ann_opt idx_opt idx2_opt
+
+%parse-param {const BisonParserDataRef data}
+%parse-param {const TreeFlexLexerRef lexer}
+%lex-param {const TreeFlexLexerRef lexer}
+///throw compilation error if a conflict is detected
+%expect 0
+
+%pure-parser
+%start root
+
+%%
+/**
+* GRAMMAR RULES
+*/
+   root : raw_unit
+        | root raw_unit
+        ;
+   raw_unit:
+      version
+      | raw_unit node
+      ;
+   version : TOK_BISON_GCC_VERSION
+             string_id {data->gcc_version = data->curr_string;}
+             TOK_BISON_PLUGIN_VERSION
+             string_id
+             {
+                GccWrapper::CheckGccCompatibleVersion(data->gcc_version, data->curr_string);
+                if(data->final_TM)
+                   data->final_TM->merge_tree_managers(data->current_TM);
+                else if(data->current_TM)
+                   data->final_TM = data->current_TM;
+                data->current_TM = tree_managerRef(new tree_manager(data->Param));
+             }
+             ;
+
+   node : NODE_ID {data->curr_NODE_ID=data->id=$1;}
+          node_d  {
+                      data->current_TM->AddTreeNode(data->id, data->curr_tree_nodeRef);
+                      data->curr_tree_nodeRef=tree_nodeRef();
+                  };
+
+   node_d : wfunction_decl
+      | widentifier_node
+      | wfunction_type
+      | wparm_decl
+      | wgimple_bind
+      | winteger_cst
+      | winteger_type
+      | wtree_list
+      | wvoid_type
+      | wstatement_list
+      | wtype_decl
+      | wreturn_expr
+      | wvar_decl
+      | wgimple_assign
+      | wstring_cst
+      | warray_type
+      | wcond_expr
+      | wgimple_cond
+      | wgt_expr
+      | wboolean_type
+      | wnullptr_type
+      | wtype_pack_expansion
+      | wplus_expr
+      | wternary_plus_expr
+      | wternary_pm_expr
+      | wternary_mp_expr
+      | wternary_mm_expr
+      | wbit_ior_concat_expr
+      | wreduc_max_expr
+      | wreduc_min_expr
+      | wreduc_plus_expr
+      | wpointer_plus_expr
+      | wminus_expr
+      | wmult_expr
+      | wtrunc_div_expr
+      | wtrunc_mod_expr
+      | wle_expr
+      | wtruth_or_expr
+      | wtruth_not_expr
+      | wgoto_expr
+      | wgimple_label
+      | wnop_expr
+      | wgimple_nop
+      | wne_expr
+      | wnegate_expr
+      | wssa_name
+      | weq_expr
+      | wnamespace_decl
+      | wpointer_type
+      | wlang_type
+      | wreference_type
+      | wcomplex_type
+      | wlabel_decl
+      | wresult_decl
+      | wreal_type
+      | wreal_cst
+      | wconvert_expr
+      | wtranslation_unit_decl
+      | wrecord_type
+      | wfield_decl
+      | wcall_expr
+      | wgimple_call
+      | wcomponent_ref
+      | wgimple_switch
+      | wtree_vec
+      | wblock
+      | wbuffer_ref
+      | warray_range_ref
+      | wwith_cleanup_expr
+      | wplaceholder_expr
+      | wgoto_subroutine
+      | wvector_type
+      | wcase_label_expr
+      | wenumeral_type
+      | wCharType
+      | woffset_type
+      | wmethod_type
+      | wset_type
+      | wunion_type
+      | wqual_union_type
+      | waddr_expr
+      | warray_ref
+      | windirect_ref
+      | wmisaligned_indirect_ref
+      | wcleanup_point_expr
+      | wsave_expr
+      | wreference_expr
+      | wcomplex_cst
+      | wvector_cst
+      | wvoid_cst
+      | wconst_decl
+      | wbit_field_ref
+      | wvtable_ref
+      | wcompound_expr
+      | winit_expr
+      | wceil_div_expr
+      | wgimple_phi
+      | wtarget_expr
+      | wfloor_div_expr
+      | wround_div_expr
+      | wceil_mod_expr
+      | wfloor_mod_expr
+      | wround_mod_expr
+      | wexact_div_expr
+      | wfix_trunc_expr
+      | wfix_ceil_expr
+      | wfix_floor_expr
+      | wfix_round_expr
+      | wmin_expr
+      | wmax_expr
+      | wabs_expr
+      | wlshift_expr
+      | wrshift_expr
+      | wlrotate_expr
+      | wrrotate_expr
+      | wbit_ior_expr
+      | wbit_xor_expr
+      | wbit_and_expr
+      | wbit_not_expr
+      | wtruth_andif_expr
+      | wtruth_orif_expr
+      | wtruth_and_expr
+      | wtruth_xor_expr
+      | wlt_expr
+      | wge_expr
+      | wunordered_expr
+      | wordered_expr
+      | wunlt_expr
+      | wunle_expr
+      | wungt_expr
+      | wunge_expr
+      | wuneq_expr
+      | wltgt_expr
+      | win_expr
+      | wset_le_expr
+      | wcard_expr
+      | wrange_expr
+      | wnon_lvalue_expr
+      | wview_convert_expr
+      | wunsave_expr
+      | wfdesc_expr
+      | wcomplex_expr
+      | wconj_expr
+      | wrealpart_expr
+      | wimagpart_expr
+      | wpredecrement_expr
+      | wpreincrement_expr
+      | wpostdecrement_expr
+      | wpostincrement_expr
+      | wva_arg_expr
+      | wtry_catch_expr
+      | wtry_finally
+      | wexit_expr
+      | wloop_expr
+      | wgimple_resx
+      | wgimple_asm
+      | wcatch_expr
+      | weh_filter_expr
+      | wconstructor
+      | wbinfo
+      | wtemplate_decl
+      | wtemplate_type_parm
+      | wtypename_type
+      | wcast_expr
+      | wstatic_cast_expr
+      | wsizeof_expr
+      | wscope_ref
+      | wfloat_expr
+      | wrdiv_expr
+      | wctor_initializer
+      | wexpr_stmt
+      | wreturn_stmt
+      | wmodop_expr
+      | wnew_expr
+      | wvec_cond_expr
+      | wvec_perm_expr
+      | wdot_prod_expr
+      | wvec_lshift_expr
+      | wvec_rshift_expr
+      | wwiden_mult_hi_expr
+      | wwiden_mult_lo_expr
+      | wvec_unpack_hi_expr
+      | wvec_unpack_lo_expr
+      | wvec_unpack_float_hi_expr
+      | wvec_unpack_float_lo_expr
+      | wvec_pack_trunc_expr
+      | wvec_pack_sat_expr
+      | wvec_pack_fix_trunc_expr
+      | wvec_extracteven_expr
+      | wvec_extractodd_expr
+      | wvec_interleavehigh_expr
+      | wvec_interleavelow_expr
+      | wvec_new_expr
+      | woverload
+      | wreinterpret_cast_expr
+      | wtemplate_id_expr
+      | wthrow_expr
+      | wtry_block
+      | warrow_expr
+      | wbaselink
+      | whandler
+      | wtemplate_parm_index
+      | wwith_size_expr
+      | wobj_type_ref
+      | wtarget_mem_ref
+      | wtarget_mem_ref461
+      | wtrait_expr
+      | wgimple_predict
+      | wmem_ref
+      | wwiden_sum_expr
+      | wwiden_mult_expr
+      | wmult_highpart_expr
+      | wassert_expr
+      | wgimple_multi_way_if
+      | wusing_decl
+      | waggr_init_expr
+      | werror_mark
+    ;
+
+   fun_ext_static: 
+            /*empty*/
+        | TOK_BISON_STATIC{NSV(function_decl, static_flag, true)}
+        ;
+
+   reverse_restrict_flag : /* empty */
+                         | TOK_BISON_REVERSE_RESTRICT {NSV(function_decl, reverse_restrict_flag, true)}
+                         ;
+
+   omp_atomic_flag : /* empty */
+                         | TOK_BISON_OMP_ATOMIC {
+#if HAVE_EXPERIMENTAL && HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
+                         NSV(function_decl, omp_atomic, true)
+#endif
+                         }
+                         ;
+
+   omp_body_loop_flag : /* empty */
+                         | TOK_BISON_OMP_BODY_LOOP {
+#if HAVE_EXPERIMENTAL && HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
+                         NSV(function_decl, omp_body_loop, true)
+#endif
+                         }
+                         ;
+
+   omp_for_wrapper_opt : /* empty */
+                         | TOK_BISON_OMP_FOR_WRAPPER number_id {
+#if HAVE_EXPERIMENTAL && HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
+                         NSV(function_decl, omp_for_wrapper, data->curr_size_t_number)
+#endif
+                         }
+                         ;
+
+   tok_undefined : /*empty*/
+                 | TOK_BISON_UNDEFINED{NSV(function_decl, undefined_flag, true)}
+                 ;
+   tok_builtin : /*empty*/
+                 | TOK_BISON_BUILTIN{NSV(function_decl, builtin_flag, true)}
+                 ;
+
+   tok_hwcall  : /*empty*/
+                 | TOK_BISON_HWCALL{NSV(function_decl, hwcall_flag, true)}
+                 ;
+
+
+   fun_args : /*empty*/
+            | fun_args arg{ADDV(function_decl,AddArg)}
+            ;
+
+   fun_op : /*empty*/
+          | TOK_BISON_OPERATOR{NSV(function_decl, operator_flag, true)}  fun_op_strings
+          ;
+
+   fun_op_strings : /*empty*/
+                  | fun_op_strings string_id{ADD_OP_NAME(data->curr_string)}
+                  ;
+
+   fun_tmpl : /*empty*/
+            | tmpl_parms{NS(function_decl,tmpl_parms)} tmpl_args{NS(function_decl,tmpl_args)}
+            ;
+
+   wfunction_decl : TOK_BISON_FUNCTION_DECL {CTN(function_decl) do_fun_decl(data->implement_node, data->curr_NODE_ID_BIS, data->curr_NODE_ID, data, data->current_TM);}
+                    wdecl_node              {;}
+                    fun_op                  {;}
+                    wattr                   {;}
+                    fun_tmpl                {;}
+                    fixd_opt                {OPT($11, {NSV(function_decl,fixd,data->curr_number); NSV(function_decl,fixd_flag,true)})}
+                    virt_opt                {OPT($13, {NSV(function_decl,virt,data->curr_number); NSV(function_decl,virt_flag,true)})}
+                    fn_opt                  {OPT($15, NS(function_decl,fn))}
+                    fun_args                {;}
+                    tok_undefined           {;}
+                    tok_builtin             {;}
+                    fun_ext_static          {;}
+                    tok_hwcall              {;}
+                    reverse_restrict_flag   {;}
+                    omp_atomic_flag         {;}
+                    omp_body_loop_flag      {;}
+                    omp_for_wrapper_opt     {;}
+                    body_opt                {OPT($35, NS(function_decl,body))}
+                    inline_body_opt         {OPT($37, NS(function_decl,inline_body))}
+             ;
+
+  //identifier_node: TOK_BISON_IDENTIFIER_NODE^ ((strg lngt) | TOK_BISON_OPERATOR);
+  widentifier_node :  TOK_BISON_IDENTIFIER_NODE strg{CTN_ID(data->curr_string)}  lngt
+                    | TOK_BISON_IDENTIFIER_NODE TOK_BISON_OPERATOR{CTN_ID(true)}
+                    ;
+
+   //function_type: TOK_BISON_FUNCTION_TYPE^ type_node retn (prms)?;
+   wfunction_type:
+      TOK_BISON_FUNCTION_TYPE {CTN(function_type)}
+      wtype_node retn{NS(function_type, retn)}
+      prms_opt{OPT($6, NS(function_type, prms))}
+      tok_varargs;
+
+   tok_varargs: /* empty */ |
+      TOK_BISON_VARARGS
+                 {
+
+                    NSV(function_type, varargs_flag, true);
+                 };
+
+  parm_tok_register : /*empty*/
+               | TOK_BISON_REGISTER{NSV(parm_decl,register_flag, true)}
+               ;
+  parm_tok_readonly : /*empty*/
+               | TOK_BISON_READONLY{NSV(parm_decl,readonly_flag, true)}
+               ;
+
+   //parm_decl: TOK_BISON_PARM_DECL^  decl_node (argt)? (size)? algn used (TOK_BISON_REGISTER)?;
+   wparm_decl: TOK_BISON_PARM_DECL {CTN(parm_decl)}
+               wdecl_node          {}
+               argt_opt            {OPT($5, NS(parm_decl, argt))}
+               size_opt            {OPT($7, NS(parm_decl, size))}
+               algn                {NSV(parm_decl,algn, data->curr_unumber)}
+               tok_artificial_opt  {OPT($11, NSV(decl_node, artificial_flag, true))}
+               used                {NSV(parm_decl, used, data->curr_number)}
+               parm_tok_register   {}
+               parm_tok_readonly   {}
+               smt_ann_opt         {OPT($19, NS(parm_decl, smt_ann))}
+               ;
+
+  gimple_bind_vars : /*empty*/
+                 | vars{ADDV(gimple_bind,add_vars)} gimple_bind_vars
+                 ;
+  //gimple_bind:	TOK_BISON_GIMPLE_BIND^ expr_node (vars)* body;
+  wgimple_bind :	TOK_BISON_GIMPLE_BIND{CTN(gimple_bind)}  wexpr_node  gimple_bind_vars  body{NS(gimple_bind,body)};
+
+   //integer_cst: TOK_BISON_INTEGER_CST^ type value;
+   winteger_cst : TOK_BISON_INTEGER_CST
+                  {
+                     CTN(integer_cst)
+                  }
+                  type
+                  {
+                     NS(integer_cst,type)
+                  }
+                  value
+                  {
+                    NSV(integer_cst, value, data->curr_long_long_number);
+                  };
+
+  //tree_list:	TOK_BISON_TREE_LIST^ (purp)? valu (chan)?;
+  wtree_list : TOK_BISON_TREE_LIST{CTN(tree_list)} purp_opt{OPT($3, NS(tree_list, purp))}  valu_opt{OPT($5, NS(tree_list, valu))}  chan_opt{OPT($7, NS(tree_list, chan))};
+
+  var_decl_ext_stat : /*empty*/
+                    | TOK_BISON_STATIC TOK_BISON_STATIC {NSV(var_decl,static_static_flag, true)} 
+                    | TOK_BISON_STATIC{NSV(var_decl,static_flag, true)} 
+                    | TOK_BISON_EXTERN{NSV(var_decl,extern_flag, true)}
+                    | TOK_BISON_EXTERN TOK_BISON_STATIC {NSV(var_decl,extern_flag, true)NSV(var_decl,static_flag, true)}
+                    ;
+   var_tok_register : /*empty*/ | TOK_BISON_REGISTER{NSV(var_decl,register_flag, true)};
+
+   var_tok_readonly : /*empty*/ | TOK_BISON_READONLY{NSV(var_decl,readonly_flag, true)};
+
+   //var_decl: TOK_BISON_VAR_DECL^ decl_node attr (TOK_BISON_STATIC TOK_BISON_STATIC | TOK_BISON_STATIC |TOK_BISON_EXTERN)? (init)? (size)? algn used (TOK_BISON_REGISTER)?;
+   wvar_decl : TOK_BISON_VAR_DECL   {CTN(var_decl)}
+               wdecl_node           {}
+               use_tmpl_opt         {OPT($5, NSV(var_decl,use_tmpl,data->curr_number))}
+               wattr                {}
+               var_decl_ext_stat    {}
+               init_opt             {OPT($11, NS(var_decl, init))}
+               size_opt             {OPT($13, NS(var_decl, size))}
+               algn                 {NSV(var_decl,algn, data->curr_unumber)}
+               tok_packed_opt       {OPT($17, NSV(var_decl, packed_flag, true))}
+               used                 {NSV(var_decl, used, data->curr_number)}
+               var_decl_definitions {;}
+               var_decl_uses        {;}
+               var_decl_addressings {;}
+               var_tok_register     {}
+               var_tok_readonly     {}
+               bit_values_opt{OPT($31, NSV(var_decl, bit_values, data->curr_string));}
+               smt_ann_opt          {OPT($33, NS(var_decl, smt_ann))}
+               ;
+
+   var_decl_definitions : /*empty*/
+                        | var_decl_definition var_decl_definitions
+                        ;
+
+   var_decl_definition : TOK_BISON_DEF_STMT node_id {GetPointer<var_decl>(data->curr_tree_nodeRef)->defs.insert(data->current_TM->GetTreeReindex(data->curr_NODE_ID));};
+
+   var_decl_uses : /*empty*/
+                 | var_decl_use var_decl_uses
+                 ;
+
+   var_decl_use : TOK_BISON_USE_STMT node_id {GetPointer<var_decl>(data->curr_tree_nodeRef)->uses.insert(data->current_TM->GetTreeReindex(data->curr_NODE_ID));};
+
+   var_decl_addressings : /*empty*/
+                        | var_decl_addressing var_decl_addressings
+                        ;
+
+   var_decl_addressing : TOK_BISON_ADDR_STMT node_id {GetPointer<var_decl>(data->curr_tree_nodeRef)->addressings.insert(data->current_TM->GetTreeReindex(data->curr_NODE_ID));};
+
+  //string_cst:	TOK_BISON_STRING_CST^ (type)? strg lngt;
+  wstring_cst : TOK_BISON_STRING_CST{CTN(string_cst)}  type_opt{OPT($3, NS(string_cst,type))}  strg{NSV(string_cst, strg, data->curr_string)}  lngt{NSV(string_cst, lngt, data->curr_number)};
+
+  //void_type: TOK_BISON_VOID_TYPE^ type_node;
+  wvoid_type : TOK_BISON_VOID_TYPE{CTN(void_type)}  wtype_node;
+
+  //boolean_type: TOK_BISON_BOOLEAN_TYPE^ type_node;
+  wboolean_type : TOK_BISON_BOOLEAN_TYPE{CTN(boolean_type)}  wtype_node;
+
+  //nullptr_type: TOK_BISON_NULLPTR_TYPE^ type_node;
+  wnullptr_type : TOK_BISON_NULLPTR_TYPE{CTN(nullptr_type)}  wtype_node;
+
+  //error_mark : TOK_BISON_ERROR_MARK^;
+  werror_mark : TOK_BISON_ERROR_MARK{CTN(error_mark)};
+
+  //type_pack_expansion: TOK_BISON_TYPE_PACK_EXPANSION^ type_node;
+  wtype_pack_expansion : TOK_BISON_TYPE_PACK_EXPANSION{CTN(type_pack_expansion)} wtype_node;
+
+  //lang_type:	TOK_BISON_LANG_TYPE^ type_node;
+  wlang_type : TOK_BISON_LANG_TYPE{CTN(lang_type)}  wtype_node;
+
+  complex_tok_unsigned : /*empty*/ | TOK_BISON_UNSIGNED{NSV(complex_type, unsigned_flag, true)};
+  complex_tok_real : /*empty*/ | TOK_BISON_REAL{NSV(complex_type, real_flag, true)};
+  //complex_type: TOK_BISON_COMPLEX_TYPE^ type_node  (TOK_BISON_UNSIGNED)? (TOK_BISON_REAL)?;
+  wcomplex_type : TOK_BISON_COMPLEX_TYPE{CTN(complex_type)}  wtype_node complex_tok_unsigned complex_tok_real;
+
+  //vector_type: TOK_BISON_VECTOR_TYPE^ type_node elts;
+  wvector_type : TOK_BISON_VECTOR_TYPE{CTN(vector_type)} wtype_node elts{NS(vector_type, elts)};
+
+  //CharType: TOK_BISON_CHAR_TYPE^ type_node;
+  wCharType : TOK_BISON_CHAR_TYPE{CTN(CharType)}  wtype_node;
+
+  //offset_type: TOK_BISON_OFFSET_TYPE^ type_node;
+  woffset_type : TOK_BISON_OFFSET_TYPE{CTN(offset_type)}  wtype_node;
+
+  //set_type: TOK_BISON_SET_TYPE^ type_node;
+  wset_type : TOK_BISON_SET_TYPE{CTN(set_type)}  wtype_node;
+
+  //qual_union_type: TOK_BISON_QUAL_UNION_TYPE^ type_node;
+  wqual_union_type : TOK_BISON_QUAL_UNION_TYPE{CTN(qual_union_type)}  wtype_node;
+
+  //typename_type: TOK_BISON_TYPENAME_TYPE^ type_node;
+  wtypename_type : TOK_BISON_TYPENAME_TYPE{CTN(typename_type)}  wtype_node;
+
+  //template_type_parm: TOK_BISON_TEMPLATE_TYPE_PARM^ type_node;
+  wtemplate_type_parm : TOK_BISON_TEMPLATE_TYPE_PARM{CTN(template_type_parm)}  wtype_node;
+
+   //real_type: TOK_BISON_REAL_TYPE^ type_node prec;
+   wreal_type : TOK_BISON_REAL_TYPE{CTN(real_type)}
+                wtype_node
+                prec{NSV(real_type, prec, data->curr_unumber)}
+                ;
+
+   int_tok_unsigned : /*empty*/ | TOK_BISON_UNSIGNED{NSV(integer_type, unsigned_flag, true)};
+
+   //integer_type: TOK_BISON_INTEGER_TYPE^ type_node prec (TOK_BISON_STRING)? (TOK_BISON_UNSIGNED)? (min)? (max)?;
+   winteger_type : TOK_BISON_INTEGER_TYPE{CTN(integer_type)}
+                   wtype_node
+                   prec{NSV(integer_type, prec, data->curr_unumber)}
+                   string_id_opt{OPT($6, NSV(integer_type, str, data->curr_string))}
+                   int_tok_unsigned 
+                   min_opt{OPT($9, NS(integer_type,min))}
+                   max_opt{OPT($11, NS(integer_type,max))}
+                   ;
+
+   enum_tok_unsigned : /*empty*/ | TOK_BISON_UNSIGNED{NSV(enumeral_type, unsigned_flag, true)};
+
+   //enumeral_type: TOK_BISON_ENUMERAL_TYPE^ type_node prec (TOK_BISON_UNSIGNED)? min max csts;
+   wenumeral_type : TOK_BISON_ENUMERAL_TYPE{CTN(enumeral_type)}
+                    wtype_node
+                    prec{NSV(enumeral_type, prec, data->curr_unumber)}
+                    enum_tok_unsigned
+                    min_opt{OPT($7,NS(enumeral_type,min))}
+                    max_opt{OPT($9, NS(enumeral_type,max))}
+                    csts{NS(enumeral_type,csts)}
+                    ;
+
+   //pointer_type: TOK_BISON_POINTER_TYPE^ type_node ptd;
+   wpointer_type : TOK_BISON_POINTER_TYPE{CTN(pointer_type)} wtype_node ptd{NS(pointer_type, ptd)}
+                 ;
+
+   //reference_type: TOK_BISON_REFERENCE_TYPE^ type_node refd;
+   wreference_type : TOK_BISON_REFERENCE_TYPE{CTN(reference_type)} wtype_node refd{NS(reference_type, refd)}
+                   ;
+
+   //array_type: TOK_BISON_ARRAY_TYPE^ type_node elts (domn)?;
+   warray_type : TOK_BISON_ARRAY_TYPE{CTN(array_type)}  wtype_node elts{NS(array_type, elts)} domn_opt{OPT($6, NS(array_type, domn))}
+               ;
+
+   tok_ptrmem : /*empty*/
+              | TOK_BISON_PTRMEM{NSV(record_type, ptrmem_flag, true)}
+              ;
+
+   tok_spec : /*empty*/
+            | TOK_BISON_SPEC{NSV(record_type, spec_flag, true)}
+            ;
+
+   tok_struct : /*empty*/
+              | TOK_BISON_STRUCT{NSV(record_type, struct_flag, true)}
+              ;
+
+   record_flds : /*empty*/
+               | record_flds flds{ADDV(record_type, add_flds)}
+               ;
+
+   record_fncs : /*empty*/
+               | record_fncs fncs{ADDV(record_type, add_fncs)}
+               ;
+
+   rec_tmpl : /*empty*/
+            | tmpl_parms{NS(record_type,tmpl_parms)} tmpl_args{NS(record_type,tmpl_args)}
+            ;
+
+  //record_type: TOK_BISON_RECORD_TYPE^ type_node (tmpl_parm tmpl_arg)? (TOK_BISON_PTRMEM)? (ptd)? (cls)? (bfld)? (vfld)? (TOK_BISON_SPEC)? (TOK_BISON_STRUCT)? (flds)* (fncs)* (binf)?;
+  wrecord_type : TOK_BISON_RECORD_TYPE{CTN(record_type)}  wtype_node  rec_tmpl tok_ptrmem  ptd_opt{OPT($6, NS(record_type, ptd))}  cls_opt{OPT($8, NS(record_type, cls))}  bfld_opt{OPT($10, NS(record_type, bfld))}  vfld_opt{OPT($12, NS(record_type, vfld))}  tok_spec  tok_struct  record_flds  record_fncs  binf_opt{OPT($18, NS(record_type, binf))};
+
+   union_flds :/*empty*/
+              | union_flds flds{ADDV(union_type, add_flds)}
+              ;
+
+   union_fncs : /*empty*/
+              | union_fncs fncs{ADDV(union_type, add_fncs)}
+              ;
+
+  //union_type: TOK_BISON_UNION_TYPE^ type_node TOK_BISON_UNION (flds)* (fncs)* (binf)?;
+  wunion_type : TOK_BISON_UNION_TYPE{CTN(union_type)}  wtype_node TOK_BISON_UNION  union_flds union_fncs  binf_opt{OPT($7, NS(union_type, binf))};
+
+  //method_type: TOK_BISON_METHOD_TYPE^ type_node (retn)? (prms)? (clas)? ;
+  wmethod_type : TOK_BISON_METHOD_TYPE{CTN(method_type)}  wtype_node retn_opt{OPT($4, NS(method_type, retn))} prms_opt{OPT($6, NS(method_type, prms))} clas_opt{OPT($8, NS(method_type, clas))} ;
+
+
+  type_tmpl : /*empty*/
+        | tmpl_parms{NS(type_decl,tmpl_parms)} tmpl_args{NS(type_decl,tmpl_args)}
+        ;
+  //type_decl:	TOK_BISON_TYPE_DECL^ decl_node;
+  wtype_decl : TOK_BISON_TYPE_DECL{CTN(type_decl)}  wdecl_node  type_tmpl;
+
+  //translation_unit_decl: TOK_BISON_TRANSLATION_UNIT_DECL^ decl_node;
+  wtranslation_unit_decl : TOK_BISON_TRANSLATION_UNIT_DECL{CTN(translation_unit_decl)}  wdecl_node;
+
+   //label_decl:	TOK_BISON_LABEL_DECL^ decl_node;
+   wlabel_decl :	TOK_BISON_LABEL_DECL{CTN(label_decl)}  wdecl_node;
+
+  //using_decl:	TOK_BISON_USING_DECL^ decl_node;
+  wusing_decl :	TOK_BISON_USING_DECL{CTN(using_decl)}  wdecl_node;
+
+  //const_decl: TOK_BISON_CONST_DECL^ decl_node (cnst)?;
+  wconst_decl :  TOK_BISON_CONST_DECL{CTN(const_decl)}  wdecl_node  cnst_opt{OPT($4, NS(const_decl, cnst))};
+
+  //namespace_decl:	TOK_BISON_NAMESPACE_DECL^ decl_node (TOK_BISON_C)? (dcls)?;
+  wnamespace_decl : TOK_BISON_NAMESPACE_DECL{CTN(namespace_decl)}  wdecl_node  dcls_opt{OPT($4, NS(namespace_decl, dcls))};
+
+   //result_decl:	TOK_BISON_RESULT_DECL^ decl_node (init)? size algn;
+   wresult_decl : TOK_BISON_RESULT_DECL {CTN(result_decl)}
+                  wdecl_node            {}
+                  init_opt              {OPT($5, NS(result_decl, init))}
+                  size                  {NS(result_decl, size)}
+                  algn                  {NSV(result_decl,algn, data->curr_unumber)}
+                  tok_packed_opt        {OPT($11, NSV(result_decl, packed_flag, true))}
+                  smt_ann_opt           {OPT($13, NS(result_decl, smt_ann))}
+                  ;
+
+   //field_decl: TOK_BISON_FIELD_DECL^ decl_node attr (init)? (size)? algn (bpos)?;
+   wfield_decl : TOK_BISON_FIELD_DECL {CTN(field_decl)}
+                 wdecl_node           {}
+                 wattr                {}
+                 init_opt             {OPT($7, NS(field_decl, init))}
+                 size_opt             {OPT($9, NS(field_decl, size))}
+                 algn                 {NSV(field_decl,algn, data->curr_unumber)}
+                 tok_packed_opt       {OPT($13, NSV(field_decl, packed_flag, true))}
+                 bpos_opt             {OPT($15, NS(field_decl, bpos))}
+                 smt_ann_opt          {OPT($17, NS(field_decl, smt_ann))}
+                 ;
+
+  //template_decl: TOK_BISON_TEMPLATE_DECL^ decl_node (rslt)? (inst)? (spcs)? (prms)?;
+  wtemplate_decl : TOK_BISON_TEMPLATE_DECL{CTN(template_decl)}  wdecl_node rslt_opt{OPT($4, NS(template_decl,rslt))} inst_opt{OPT($6, NS(template_decl,inst))} spcs_opt{OPT($8, NS(template_decl,spcs))} prms_opt{OPT($10, NS(template_decl,prms))};
+
+
+   //gimple_return: TOK_BISON_GIMPLE_RETURN^ gimple_node (op)?;
+   wreturn_expr :
+      TOK_BISON_GIMPLE_RETURN{CTN(gimple_return)}
+      wgimple_node
+      op_opt{OPT($4, NS(gimple_return,op))}
+   ;
+
+  //UNARY EXPRESSION
+
+  //gimple_goto: TOK_BISON_GIMPLE_GOTO^ unary_expr;
+  wgoto_expr : TOK_BISON_GIMPLE_GOTO{CTN(gimple_goto)}  wgimple_node op{NS(gimple_goto,op)};
+
+  //gimple_label:	TOK_BISON_^ unary_expr;
+  wgimple_label :	TOK_BISON_{CTN(gimple_label)}  wgimple_node op{NS(gimple_label,op)};
+
+  //unsave_expr:    TOK_BISON_UNSAVE_EXPR^ unary_expr;
+  wunsave_expr : TOK_BISON_UNSAVE_EXPR{CTN(unsave_expr)}  wunary_expr;
+
+  //gimple_resx:      TOK_BISON_GIMPLE_RESX^ unary_expr;
+  wgimple_resx : TOK_BISON_GIMPLE_RESX{CTN(gimple_resx)}  wunary_expr;
+
+  //va_arg_expr:    TOK_BISON_VA_ARG_EXPR^ unary_expr;
+  wva_arg_expr : TOK_BISON_VA_ARG_EXPR{CTN(va_arg_expr)}  wunary_expr;
+
+  //exit_expr:      TOK_BISON_EXIT_EXPR^ unary_expr;
+  wexit_expr : TOK_BISON_EXIT_EXPR{CTN(exit_expr)}  wunary_expr;
+
+  //loop_expr:      TOK_BISON_LOOP_EXPR^ unary_expr;
+  wloop_expr : TOK_BISON_LOOP_EXPR{CTN(loop_expr)}  wunary_expr;
+
+  //nop_expr:	TOK_BISON_NOP_EXPR^ unary_expr;
+  wnop_expr :	TOK_BISON_NOP_EXPR{CTN(nop_expr)}  wunary_expr;
+
+   //gimple_nop: TOK_BISON_GIMPLE_NOP_EXPR srcp;
+   wgimple_nop : TOK_BISON_GIMPLE_NOP{CTN(gimple_nop)} wgimple_node;
+
+  //negate_expr:	TOK_BISON_NEGATE_EXPR^ unary_expr;
+  wnegate_expr : TOK_BISON_NEGATE_EXPR{CTN(negate_expr)}  wunary_expr;
+
+  //truth_not_expr:	TOK_BISON_TRUTH_NOT_EXPR^ unary_expr;
+  wtruth_not_expr : TOK_BISON_TRUTH_NOT_EXPR{CTN(truth_not_expr)}  wunary_expr;
+
+  //convert_expr:   TOK_BISON_CONVERT_EXPR^ unary_expr;
+  wconvert_expr : TOK_BISON_CONVERT_EXPR{CTN(convert_expr)}  wunary_expr;
+
+  //addr_expr:	TOK_BISON_ADDR_EXPR^ unary_expr;
+  waddr_expr :	TOK_BISON_ADDR_EXPR{CTN(addr_expr)}  wunary_expr;
+
+  //reference_expr: TOK_BISON_REFERENCE_EXPR^ unary_expr;
+  wreference_expr : TOK_BISON_REFERENCE_EXPR{CTN(reference_expr)}  wunary_expr;
+
+  //cleanup_point_expr: TOK_BISON_CLEANUP_POINT_EXPR^ unary_expr;
+  wcleanup_point_expr : TOK_BISON_CLEANUP_POINT_EXPR{CTN(cleanup_point_expr)}  wunary_expr;
+
+  //fix_trunc_expr: TOK_BISON_FIX_TRUNC_EXPR^ unary_expr;
+  wfix_trunc_expr : TOK_BISON_FIX_TRUNC_EXPR{CTN(fix_trunc_expr)}  wunary_expr;
+
+  //fix_ceil_expr:  TOK_BISON_FIX_CEIL_EXPR^ unary_expr;
+  wfix_ceil_expr : TOK_BISON_FIX_CEIL_EXPR{CTN(fix_ceil_expr)}  wunary_expr;
+
+  //fix_floor_expr: TOK_BISON_FIX_FLOOR_EXPR^ unary_expr;
+  wfix_floor_expr : TOK_BISON_FIX_FLOOR_EXPR{CTN(fix_floor_expr)}  wunary_expr;
+
+  //fix_round_expr: TOK_BISON_FIX_ROUND_EXPR^ unary_expr;
+  wfix_round_expr : TOK_BISON_FIX_ROUND_EXPR{CTN(fix_round_expr)}  wunary_expr;
+
+  //float_expr:     TOK_BISON_FLOAT_EXPR^ unary_expr;
+  wfloat_expr : TOK_BISON_FLOAT_EXPR{CTN(float_expr)}  wunary_expr;
+
+  //abs_expr:       TOK_BISON_ABS_EXPR^ unary_expr;
+  wabs_expr : TOK_BISON_ABS_EXPR{CTN(abs_expr)}  wunary_expr;
+
+  //conj_expr:      TOK_BISON_CONJ_EXPR^ unary_expr;
+  wconj_expr : TOK_BISON_CONJ_EXPR{CTN(conj_expr)}  wunary_expr;
+
+  //realpart_expr:  TOK_BISON_REALPART_EXPR^ unary_expr;
+  wrealpart_expr : TOK_BISON_REALPART_EXPR{CTN(realpart_expr)}  wunary_expr;
+
+  //imagpart_expr:  TOK_BISON_IMAGPART_EXPR^ unary_expr;
+  wimagpart_expr : TOK_BISON_IMAGPART_EXPR{CTN(imagpart_expr)}  wunary_expr;
+
+  //card_expr:      TOK_BISON_CARD_EXPR^ unary_expr;
+  wcard_expr : TOK_BISON_CARD_EXPR{CTN(card_expr)}  wunary_expr;
+
+  //non_lvalue_expr: TOK_BISON_NON_LVALUE_EXPR^ unary_expr;
+  wnon_lvalue_expr : TOK_BISON_NON_LVALUE_EXPR{CTN(non_lvalue_expr)}  wunary_expr;
+
+  //view_convert_expr: TOK_BISON_VIEW_CONVERT_EXPR^ unary_expr;
+  wview_convert_expr : TOK_BISON_VIEW_CONVERT_EXPR{CTN(view_convert_expr)}  wunary_expr;
+
+  //indirect_ref:   TOK_BISON_INDIRECT_REF^ unary_expr;
+  windirect_ref : TOK_BISON_INDIRECT_REF{CTN(indirect_ref)}  wunary_expr;
+
+//misaligned_indirect_ref:   TOK_BISON_MISALIGNED_INDIRECT_REF^ unary_expr;
+ wmisaligned_indirect_ref : TOK_BISON_MISALIGNED_INDIRECT_REF{CTN(misaligned_indirect_ref)}  wunary_expr;
+
+  //cast_expr:      TOK_BISON_CAST_EXPR^ unary_expr;
+  wcast_expr : TOK_BISON_CAST_EXPR{CTN(cast_expr)}  wunary_expr;
+
+  //static_cast_expr: TOK_BISON_STATIC_CAST_EXPR^ unary_expr;
+  wstatic_cast_expr : TOK_BISON_STATIC_CAST_EXPR{CTN(static_cast_expr)}  wunary_expr;
+
+  //reinterpret_cast_expr: TOK_BISON_REINTERPRET_CAST_EXPR^ unary_expr;
+  wreinterpret_cast_expr : TOK_BISON_REINTERPRET_CAST_EXPR{CTN(reinterpret_cast_expr)}  wunary_expr;
+
+  //sizeof_expr: TOK_BISON_SIZEOF_EXPR^ unary_expr;
+  wsizeof_expr : TOK_BISON_SIZEOF_EXPR{CTN(sizeof_expr)}  wunary_expr;
+
+  //throw_expr:     TOK_BISON_THROW_EXPR^ unary_expr;
+  wthrow_expr : TOK_BISON_THROW_EXPR{CTN(throw_expr)}  wunary_expr;
+
+  //arrow_expr:     TOK_BISON_ARROW_EXPR^ unary_expr;
+  warrow_expr : TOK_BISON_ARROW_EXPR{CTN(arrow_expr)}  wunary_expr;
+
+  //buffer_ref:     TOK_BISON_BUFFER_REF^ unary_expr;
+  wbuffer_ref : TOK_BISON_BUFFER_REF{CTN(buffer_ref)}  wunary_expr;
+
+  //gimple_predict: TOK_BISON_GIMPLE_PREDICT^ unary_expr;
+  wgimple_predict : TOK_BISON_GIMPLE_PREDICT{CTN(gimple_predict)}  wunary_expr;
+
+  //BINARY EXPRESSION
+
+   wgimple_assign : TOK_BISON_GIMPLE_ASSIGN {CTN(gimple_assign)}
+                    wgimple_node            {;}
+                    op                      {NS(gimple_assign,op0)}
+                    op                      {NS(gimple_assign,op1)}
+                    predicate_opt           {OPT($9, NS(gimple_assign, predicate))}
+                    gimple_modify_uses      {;}
+                    gimple_modify_clbs      {;}
+                    clobber_opt             {OPT($15,GetPointer<gimple_assign>(data->curr_tree_nodeRef)->clobber = true;)}
+                  ;
+
+   gimple_modify_uses : /*empty*/
+                  | gimple_modify_use gimple_modify_uses
+                  ;
+
+   gimple_modify_use : TOK_BISON_USE string_id {GetPointer<gimple_assign>(data->curr_tree_nodeRef)->use_set->Add(data->curr_string);}
+                     | TOK_BISON_USE_VARS node_id {GetPointer<gimple_assign>(data->curr_tree_nodeRef)->use_set->Add(data->current_TM->GetTreeReindex(data->curr_NODE_ID));}
+                     ;
+
+   gimple_modify_clbs : /*empty*/
+                  | gimple_modify_clb gimple_modify_clbs
+                  ;
+
+   gimple_modify_clb : TOK_BISON_CLB string_id {GetPointer<gimple_assign>(data->curr_tree_nodeRef)->clobbered_set->Add(data->curr_string);}
+                 | TOK_BISON_CLB_VARS node_id {GetPointer<gimple_assign>(data->curr_tree_nodeRef)->clobbered_set->Add(data->current_TM->GetTreeReindex(data->curr_NODE_ID));}
+                 ;
+
+  //gt_expr:	TOK_BISON_GT_EXPR^ binary_expr;
+  wgt_expr : TOK_BISON_GT_EXPR{CTN(gt_expr)}  wbinary_expr;
+
+  //reduc_max_expr:	TOK_BISON_MAX_PLUS_EXPR^ unary_expr;
+  wreduc_max_expr: TOK_BISON_REDUC_MAX_EXPR{CTN(reduc_max_expr)}  wunary_expr;
+  //reduc_min_expr:	TOK_BISON_REDUC_MIN_EXPR^ unary_expr;
+  wreduc_min_expr: TOK_BISON_REDUC_MIN_EXPR{CTN(reduc_min_expr)}  wunary_expr;
+  //reduc_plus_expr: TOK_BISON_REDUC_PLUS_EXPR^ unary_expr;
+  wreduc_plus_expr: TOK_BISON_REDUC_PLUS_EXPR{CTN(reduc_plus_expr)}  wunary_expr;
+
+  //plus_expr:	TOK_BISON_PLUS_EXPR^ binary_expr;
+  wplus_expr : TOK_BISON_PLUS_EXPR{CTN(plus_expr)}  wbinary_expr;
+
+  //ternary_plus_expr:	TOK_BISON_TERNARY_PLUS_EXPR^ ternary_expr;
+  wternary_plus_expr : TOK_BISON_TERNARY_PLUS_EXPR{CTN(ternary_plus_expr)}  wternary_expr;
+  //ternary_pm_expr:	TOK_BISON_TERNARY_PM_EXPR^ ternary_expr;
+  wternary_pm_expr : TOK_BISON_TERNARY_PM_EXPR{CTN(ternary_pm_expr)}  wternary_expr;
+  //ternary_mp_expr:	TOK_BISON_TERNARY_MP_EXPR^ ternary_expr;
+  wternary_mp_expr : TOK_BISON_TERNARY_MP_EXPR{CTN(ternary_mp_expr)}  wternary_expr;
+  //ternary_mm_expr:	TOK_BISON_TERNARY_MM_EXPR^ ternary_expr;
+  wternary_mm_expr : TOK_BISON_TERNARY_MM_EXPR{CTN(ternary_mm_expr)}  wternary_expr;
+  //bit_ior_concat_expr:	TOK_BISON_BIT_IOR_CONCAT_EXPR^ ternary_expr;
+  wbit_ior_concat_expr : TOK_BISON_BIT_IOR_CONCAT_EXPR{CTN(bit_ior_concat_expr)}  wternary_expr;
+
+  //pointer_plus_expr:  TOK_BISON_PLUS_EXPR^ binary_expr;
+  wpointer_plus_expr : TOK_BISON_POINTER_PLUS_EXPR{CTN(pointer_plus_expr)}  wbinary_expr;
+
+  //minus_expr:	TOK_BISON_MINUS_EXPR^ binary_expr;
+  wminus_expr :	TOK_BISON_MINUS_EXPR{CTN(minus_expr)}  wbinary_expr;
+
+  //mult_expr:	TOK_BISON_MULT_EXPR^ binary_expr;
+  wmult_expr : TOK_BISON_MULT_EXPR{CTN(mult_expr)}  wbinary_expr;
+
+  //trunc_div_expr:	TOK_BISON_TRUNC_DIV_EXPR^ binary_expr;
+  wtrunc_div_expr :	TOK_BISON_TRUNC_DIV_EXPR{CTN(trunc_div_expr)}  wbinary_expr;
+
+  //trunc_mod_expr:	TOK_BISON_TRUNC_MOD_EXPR^ binary_expr;
+  wtrunc_mod_expr :	TOK_BISON_TRUNC_MOD_EXPR{CTN(trunc_mod_expr)}  wbinary_expr;
+
+  //le_expr:	TOK_BISON_LE_EXPR^ binary_expr;
+  wle_expr : TOK_BISON_LE_EXPR{CTN(le_expr)}  wbinary_expr;
+
+  //truth_or_expr:	TOK_BISON_TRUTH_OR_EXPR^ binary_expr;
+  wtruth_or_expr : TOK_BISON_TRUTH_OR_EXPR{CTN(truth_or_expr)}  wbinary_expr;
+
+  //ne_expr:	TOK_BISON_NE_EXPR^ binary_expr;
+  wne_expr : TOK_BISON_NE_EXPR{CTN(ne_expr)}  wbinary_expr;
+
+  //eq_expr:	TOK_BISON_EQ_EXPR^ binary_expr;
+  weq_expr : TOK_BISON_EQ_EXPR{CTN(eq_expr)}  wbinary_expr;
+
+  //compound_expr:  TOK_BISON_COMPOUND_EXPR^ binary_expr;
+  wcompound_expr : TOK_BISON_COMPOUND_EXPR{CTN(compound_expr)}  wbinary_expr;
+
+  //init_expr:      TOK_BISON_INIT_EXPR^ binary_expr;
+  winit_expr : TOK_BISON_INIT_EXPR{CTN(init_expr)}  wbinary_expr;
+
+  //ceil_div_expr:  TOK_BISON_CEIL_DIV_EXPR^ binary_expr;
+  wceil_div_expr : TOK_BISON_CEIL_DIV_EXPR{CTN(ceil_div_expr)}  wbinary_expr;
+
+  //floor_div_expr: TOK_BISON_FLOOR_DIV_EXPR^ binary_expr;
+  wfloor_div_expr : TOK_BISON_FLOOR_DIV_EXPR{CTN(floor_div_expr)}  wbinary_expr;
+
+  //round_div_expr: TOK_BISON_ROUND_DIV_EXPR^ binary_expr;
+  wround_div_expr : TOK_BISON_ROUND_DIV_EXPR{CTN(round_div_expr)}  wbinary_expr;
+
+  //ceil_mod_expr:  TOK_BISON_CEIL_MOD_EXPR^ binary_expr;
+  wceil_mod_expr : TOK_BISON_CEIL_MOD_EXPR{CTN(ceil_mod_expr)}  wbinary_expr;
+
+  //floor_mod_expr: TOK_BISON_FLOOR_MOD_EXPR^ binary_expr;
+  wfloor_mod_expr : TOK_BISON_FLOOR_MOD_EXPR{CTN(floor_mod_expr)}  wbinary_expr;
+
+  //round_mod_expr: TOK_BISON_ROUND_MOD_EXPR^ binary_expr;
+  wround_mod_expr : TOK_BISON_ROUND_MOD_EXPR{CTN(round_mod_expr)}  wbinary_expr;
+
+  //rdiv_expr:      TOK_BISON_RDIV_EXPR^ binary_expr;
+  wrdiv_expr : TOK_BISON_RDIV_EXPR{CTN(rdiv_expr)}  wbinary_expr;
+
+  //exact_div_expr: TOK_BISON_EXACT_DIV_EXPR^ binary_expr;
+  wexact_div_expr : TOK_BISON_EXACT_DIV_EXPR{CTN(exact_div_expr)}  wbinary_expr;
+
+  //min_expr:       TOK_BISON_MIN_EXPR^ binary_expr;
+  wmin_expr : TOK_BISON_MIN_EXPR{CTN(min_expr)}  wbinary_expr;
+
+  //max_expr:       TOK_BISON_MAX_EXPR^ binary_expr;
+  wmax_expr : TOK_BISON_MAX_EXPR{CTN(max_expr)}  wbinary_expr;
+
+  //lshift_expr:    TOK_BISON_LSHIFT_EXPR^ binary_expr;
+  wlshift_expr : TOK_BISON_LSHIFT_EXPR{CTN(lshift_expr)}  wbinary_expr;
+
+  //rshift_expr:    TOK_BISON_RSHIFT_EXPR^ binary_expr;
+  wrshift_expr : TOK_BISON_RSHIFT_EXPR{CTN(rshift_expr)}  wbinary_expr;
+
+  //lrotate_expr:   TOK_BISON_LROTATE_EXPR^ binary_expr;
+  wlrotate_expr : TOK_BISON_LROTATE_EXPR{CTN(lrotate_expr)}  wbinary_expr;
+
+  //rrotate_expr:   TOK_BISON_RROTATE_EXPR^ binary_expr;
+  wrrotate_expr : TOK_BISON_RROTATE_EXPR{CTN(rrotate_expr)}  wbinary_expr;
+
+  //bit_ior_expr:   TOK_BISON_BIT_IOR_EXPR^ binary_expr;
+  wbit_ior_expr : TOK_BISON_BIT_IOR_EXPR{CTN(bit_ior_expr)}  wbinary_expr;
+
+  //bit_xor_expr:   TOK_BISON_BIT_XOR_EXPR^ binary_expr;
+  wbit_xor_expr : TOK_BISON_BIT_XOR_EXPR{CTN(bit_xor_expr)}  wbinary_expr;
+
+  //bit_and_expr:   TOK_BISON_BIT_AND_EXPR^ binary_expr;
+  wbit_and_expr : TOK_BISON_BIT_AND_EXPR{CTN(bit_and_expr)}  wbinary_expr;
+
+  //bit_not_expr:   TOK_BISON_BIT_NOT_EXPR^ unary_expr;
+  wbit_not_expr : TOK_BISON_BIT_NOT_EXPR{CTN(bit_not_expr)}  wunary_expr;
+
+  //truth_andif_expr: TOK_BISON_TRUTH_ANDIF_EXPR^ binary_expr;
+  wtruth_andif_expr : TOK_BISON_TRUTH_ANDIF_EXPR{CTN(truth_andif_expr)}  wbinary_expr;
+
+  //truth_orif_expr:TOK_BISON_TRUTH_ORIF_EXPR^ binary_expr;
+  wtruth_orif_expr : TOK_BISON_TRUTH_ORIF_EXPR{CTN(truth_orif_expr)}  wbinary_expr;
+
+  //truth_and_expr: TOK_BISON_TRUTH_AND_EXPR^ binary_expr;
+  wtruth_and_expr : TOK_BISON_TRUTH_AND_EXPR{CTN(truth_and_expr)}  wbinary_expr;
+
+  //truth_xor_expr: TOK_BISON_TRUTH_XOR_EXPR^ binary_expr;
+  wtruth_xor_expr : TOK_BISON_TRUTH_XOR_EXPR{CTN(truth_xor_expr)}  wbinary_expr;
+
+  //lt_expr:        TOK_BISON_LT_EXPR^ binary_expr;
+  wlt_expr : TOK_BISON_LT_EXPR{CTN(lt_expr)}  wbinary_expr;
+
+  //ge_expr:        TOK_BISON_GE_EXPR^ binary_expr;
+  wge_expr : TOK_BISON_GE_EXPR{CTN(ge_expr)}  wbinary_expr;
+
+  //unordered_expr: TOK_BISON_UNORDERED_EXPR^ binary_expr;
+  wunordered_expr : TOK_BISON_UNORDERED_EXPR{CTN(unordered_expr)}  wbinary_expr;
+
+  //ordered_expr:   TOK_BISON_ORDERED_EXPR^ binary_expr;
+  wordered_expr : TOK_BISON_ORDERED_EXPR{CTN(ordered_expr)}  wbinary_expr;
+
+  //unlt_expr:      TOK_BISON_UNLT_EXPR^ binary_expr;
+  wunlt_expr : TOK_BISON_UNLT_EXPR{CTN(unlt_expr)}  wbinary_expr;
+
+  //unle_expr:      TOK_BISON_UNLE_EXPR^ binary_expr;
+  wunle_expr : TOK_BISON_UNLE_EXPR{CTN(unle_expr)}  wbinary_expr;
+
+  //ungt_expr:      TOK_BISON_UNGT_EXPR^ binary_expr;
+  wungt_expr : TOK_BISON_UNGT_EXPR{CTN(ungt_expr)}  wbinary_expr;
+
+  //unge_expr:      TOK_BISON_UNGE_EXPR^ binary_expr;
+  wunge_expr : TOK_BISON_UNGE_EXPR{CTN(unge_expr)}  wbinary_expr;
+
+  //uneq_expr:      TOK_BISON_UNEQ_EXPR^ binary_expr;
+  wuneq_expr :  TOK_BISON_UNEQ_EXPR{CTN(uneq_expr)}  wbinary_expr;
+
+  //ltgt_expr:      TOK_BISON_LTGT_EXPR^ binary_expr;
+  wltgt_expr :  TOK_BISON_LTGT_EXPR{CTN(ltgt_expr)}  wbinary_expr;
+
+  //in_expr:        TOK_BISON_IN_EXPR^ binary_expr;
+  win_expr : TOK_BISON_IN_EXPR{CTN(in_expr)}  wbinary_expr;
+
+  //set_le_expr:    TOK_BISON_SET_LE_EXPR^ binary_expr;
+  wset_le_expr : TOK_BISON_SET_LE_EXPR{CTN(set_le_expr)}  wbinary_expr;
+
+  //range_expr:     TOK_BISON_RANGE_EXPR^ binary_expr;
+  wrange_expr : TOK_BISON_RANGE_EXPR{CTN(range_expr)}  wbinary_expr;
+
+  //complex_expr:   TOK_BISON_COMPLEX_EXPR^ binary_expr;
+  wcomplex_expr : TOK_BISON_COMPLEX_EXPR{CTN(complex_expr)}  wbinary_expr;
+
+  //predecrement_expr: TOK_BISON_PREDECREMENT_EXPR^ binary_expr;
+  wpredecrement_expr : TOK_BISON_PREDECREMENT_EXPR{CTN(predecrement_expr)}  wbinary_expr;
+
+  //preincrement_expr: TOK_BISON_PREINCREMENT_EXPR^ binary_expr;
+  wpreincrement_expr : TOK_BISON_PREINCREMENT_EXPR{CTN(preincrement_expr)}  wbinary_expr;
+
+  //with_cleanup_expr: TOK_BISON_WITH_CLEANUP_EXPR^ ternary_expr;
+  wwith_cleanup_expr : TOK_BISON_WITH_CLEANUP_EXPR{CTN(with_cleanup_expr)}  wternary_expr;
+
+  vector_valu : valu{ADDV(vector_cst, add_valu)}
+              | vector_valu valu{ADDV(vector_cst, add_valu)};
+  //vector_cst,     TOK_BISON_VECTOR_CST^ type (valu)+;
+  wvector_cst : TOK_BISON_VECTOR_CST{CTN(vector_cst)}  type{NS(vector_cst,type)}  vector_valu;
+
+  //void_cst,     TOK_BISON_VOID_CST^ type;
+  wvoid_cst : TOK_BISON_VOID_CST{CTN(void_cst)}  type{NS(vector_cst,type)};
+
+  //try_catch_expr: TOK_BISON_TRY_CATCH_EXPR^ binary_expr;
+  wtry_catch_expr : TOK_BISON_TRY_CATCH_EXPR{CTN(try_catch_expr)}  wbinary_expr;
+
+  //vtable_ref:     TOK_BISON_VTABLE_REF^ ternary_expr;
+  wvtable_ref : TOK_BISON_VTABLE_REF{CTN(vtable_ref)}  wternary_expr;
+
+  //try_finally:    TOK_BISON_TRY_FINALLY^ binary_expr;
+  wtry_finally : TOK_BISON_TRY_FINALLY{CTN(try_finally)}  wbinary_expr;
+
+
+  //mem_ref: TOK_BISON_MEM_REF^ binary_expr;
+  wmem_ref : TOK_BISON_MEM_REF{CTN(mem_ref)}  wbinary_expr;
+
+  wassert_expr : TOK_BISON_ASSERT_EXPR{CTN(assert_expr)}  wbinary_expr;
+
+  //widen_sum_expr: TOK_BISON_WIDEN_SUM_EXPR^ binary_expr;
+  wwiden_sum_expr : TOK_BISON_WIDEN_SUM_EXPR{CTN(widen_sum_expr)} wbinary_expr;
+
+  //widen_mult_expr: TOK_BISON_WIDEN_MULT_EXPR^ binary_expr;
+  wwiden_mult_expr : TOK_BISON_WIDEN_MULT_EXPR{CTN(widen_mult_expr)} wbinary_expr;
+
+  //mult_highpart_expr : TOK_BISON_MULT_HIGHPART_EXPR^ binary_expr;
+  wmult_highpart_expr : TOK_BISON_MULT_HIGHPART_EXPR{CTN(mult_highpart_expr)} wbinary_expr;
+
+  //vec_new_expr:   TOK_BISON_VEC_NEW_EXPR^ expr_node;
+  wvec_new_expr :   TOK_BISON_VEC_NEW_EXPR{CTN(vec_new_expr)}  wexpr_node;
+
+  //try_block:      TOK_BISON_TRY_BLOCK^ line body hdlr (next)?;
+  wtry_block : TOK_BISON_TRY_BLOCK{CTN(try_block)}  line{NSV(try_block,line,data->curr_number)}  body{NS(try_block,body)}  hdlr{NS(try_block,hdlr)}  next_opt{OPT($9, NS(try_block,next))};
+
+  tree_vec_op : op{ADDV(tree_vec, add_op)}
+              | tree_vec_op op{ADDV(tree_vec, add_op)} 
+              ;
+  tree_vec_op_opt : /*empty*/ | tree_vec_op;
+
+  //tree_vec:       TOK_BISON_TREE_VEC^ lngt (op)*;
+  wtree_vec : TOK_BISON_TREE_VEC{CTN(tree_vec)}  lngt{NSV(tree_vec, lngt, data->curr_size_t_number)}  tree_vec_op_opt;
+
+  //template_id_expr: TOK_BISON_TEMPLATE_ID_EXPR^ expr_node;
+  wtemplate_id_expr : TOK_BISON_TEMPLATE_ID_EXPR{CTN(template_id_expr)}  wexpr_node;
+
+  wtarget_expr : TOK_BISON_TARGET_EXPR{CTN(target_expr)} wexpr_node decl_opt init_opt clnp_opt;
+
+   //ssa_name: TOK_BISON_SSA_NAME^ var vers (ptr_info)? (TOK_BISON_VOLATILE | def);
+   wssa_name : TOK_BISON_SSA_NAME {CTN(ssa_name)}
+               type_opt{OPT($3, NS(ssa_name,type))}
+               var_opt{OPT($5, NS(ssa_name, var))}
+               vers{NSV(ssa_name, vers, (BisonParserData::global_uniq_vers_id++))NSV(ssa_name, orig_vers, data->curr_unumber)}
+               orig_vers_opt{OPT($9, NSV(ssa_name, orig_vers, data->curr_unumber))}
+               ptr_info_opt{;}
+               tok_ssa_name_def
+               tok_virtual_opt{OPT($14, NSV(ssa_name, virtual_flag, true));}
+               tok_default_opt{OPT($16, NSV(ssa_name, default_flag, true));}
+               min_opt{OPT($18, NS(ssa_name,min))}
+               max_opt{OPT($20, NS(ssa_name,max))}
+               bit_values_opt{OPT($22, NSV(ssa_name, bit_values, data->curr_string));}
+             ;
+
+    ptr_info_opt : /*empty*/
+                 | ptr_info ptr_info_opt
+                 ;
+
+    ptr_info : TOK_BISON_USE string_id {GetPointer<ssa_name>(data->curr_tree_nodeRef)->use_set->Add(data->curr_string);}
+             | TOK_BISON_USE_VARS node_id {GetPointer<ssa_name>(data->curr_tree_nodeRef)->use_set->Add(data->current_TM->GetTreeReindex(data->curr_NODE_ID));}
+             ;
+
+   tok_ssa_name_def: tok_volatile_ssa_name | def_stmt_list;
+   
+   def_stmt_list: def_stmt {ADDV(ssa_name, AddDefStmt)}
+                | def_stmt_list def_stmt {ADDV(ssa_name, AddDefStmt)}
+                ;
+
+   tok_volatile_ssa_name : /*empty*/ | TOK_BISON_VOLATILE{NSV(ssa_name, volatile_flag, true)};
+
+   //gimple_switch:    TOK_BISON_GIMPLE_SWITCH^ op op;
+   wgimple_switch :
+      TOK_BISON_GIMPLE_SWITCH{CTN(gimple_switch)}
+      wgimple_node op{NS(gimple_switch,op0)} op{NS(gimple_switch,op1)}
+   ;
+
+   //save_expr:      TOK_BISON_SAVE_EXPR^ ternary_expr;//on GCC4.0 is unary while on GCC3.5 is ternary
+   wsave_expr : TOK_BISON_SAVE_EXPR
+                {CTN(save_expr)}
+                wexpr_node
+                op
+                {NS(ternary_expr,op0)}
+                ternary_opt_ops
+              ;
+
+   ternary_opt_ops : /* empty */
+                   | op
+                     {NS(ternary_expr, op1)}
+                   | op
+                     {NS(ternary_expr, op1)}
+                     op
+                     {NS(ternary_expr, op2)}
+                   ;
+
+  //scope_ref:      TOK_BISON_SCOPE_REF^ expr_node?;
+  wscope_ref : TOK_BISON_SCOPE_REF{CTN(scope_ref)}  wexpr_node op{NS(scope_ref,op0)} op{NS(scope_ref,op1)};
+
+  statement_list_stmt : stmt{ADDV(statement_list, add_stmt)}
+                      | statement_list_stmt stmt{ADDV(statement_list, add_stmt)}
+                      ;
+  statement_list_bloc : wbloc{ADDB(statement_list, add_bloc,data->curr_blocRef)}
+                      | statement_list_bloc wbloc{ADDB(statement_list, add_bloc,data->curr_blocRef)}
+                      ;
+
+  statement_list_stmt_bloc : /*empty*/ 
+                           | statement_list_stmt
+                           | statement_list_bloc
+  ;
+
+  //statement_list: TOK_BISON_STATEMENT_LIST^ ((stmt)+ (bloc)+)?;
+  wstatement_list : TOK_BISON_STATEMENT_LIST { CTN(statement_list) }
+                    statement_list_stmt_bloc {;};
+
+  //new_expr:       TOK_BISON_NEW_EXPR^ expr_node;
+  wnew_expr : TOK_BISON_NEW_EXPR{CTN(new_expr)}  wexpr_node;
+
+  //dot_prod_expr: TOK_BISON_DOT_PROD_EXPR^ ternary_expr;
+  wdot_prod_expr : TOK_BISON_DOT_PROD_EXPR {CTN(dot_prod_expr)} wternary_expr;
+
+  //vec_cond_expr: TOK_BISON_VEC_COND_EXPR^ ternary_expr;
+  wvec_cond_expr : TOK_BISON_VEC_COND_EXPR {CTN(vec_cond_expr)} wternary_expr;
+
+  //vec_perm_expr: TOK_BISON_VEC_PERM_EXPR^ ternary_expr;
+  wvec_perm_expr : TOK_BISON_VEC_PERM_EXPR {CTN(vec_perm_expr)} wternary_expr;
+
+  //vec_lshift_expr: TOK_BISON_VEC_LSHIFT_EXPR^ binary_expr;
+  wvec_lshift_expr : TOK_BISON_VEC_LSHIFT_EXPR {CTN(vec_lshift_expr)}  wbinary_expr;
+
+  //vec_rshift_expr: TOK_BISON_VEC_RSHIFT_EXPR^  binary_expr;
+  wvec_rshift_expr : TOK_BISON_VEC_RSHIFT_EXPR {CTN(vec_rshift_expr)}  wbinary_expr;
+
+  //widen_mult_hi_expr: TOK_BISON_WIDEN_MULT_HI_EXPR^  binary_expr;
+  wwiden_mult_hi_expr : TOK_BISON_WIDEN_MULT_HI_EXPR {CTN(widen_mult_hi_expr)}  wbinary_expr;
+
+  //widen_mult_lo_expr: TOK_BISON_WIDEN_MULT_LO_EXPR^ binary_expr;
+  wwiden_mult_lo_expr : TOK_BISON_WIDEN_MULT_LO_EXPR {CTN(widen_mult_lo_expr)}  wbinary_expr;
+
+  //vec_unpack_hi_expr: TOK_BISON_VEC_UNPACK_HI_EXPR^ unary_expr;
+  wvec_unpack_hi_expr : TOK_BISON_VEC_UNPACK_HI_EXPR {CTN(vec_unpack_hi_expr)}  wunary_expr;
+
+  //vec_unpack_lo_expr: TOK_BISON_VEC_UNPACK_LO_EXPR^ unary_expr;
+  wvec_unpack_lo_expr : TOK_BISON_VEC_UNPACK_LO_EXPR {CTN(vec_unpack_lo_expr)}  wunary_expr;
+
+  //vec_unpack_float_hi_expr: TOK_BISON_VEC_UNPACK_FLOAT_HI_EXPR^ unary_expr;
+  wvec_unpack_float_hi_expr : TOK_BISON_VEC_UNPACK_FLOAT_HI_EXPR {CTN(vec_unpack_float_hi_expr)}  wunary_expr;
+
+  //vec_unpack_float_lo_expr: TOK_BISON_VEC_UNPACK_FLOAT_LO_EXPR^ unary_expr;
+  wvec_unpack_float_lo_expr : TOK_BISON_VEC_UNPACK_FLOAT_LO_EXPR {CTN(vec_unpack_float_lo_expr)}  wunary_expr;
+
+  //vec_pack_trunc_expr: TOK_BISON_VEC_PACK_TRUNC_EXPR^ binary_expr;
+  wvec_pack_trunc_expr : TOK_BISON_VEC_PACK_TRUNC_EXPR {CTN(vec_pack_trunc_expr)}  wbinary_expr;
+
+  //vec_pack_sat_expr: TOK_BISON_VEC_PACK_SAT_EXPR^ binary_expr;
+  wvec_pack_sat_expr : TOK_BISON_VEC_PACK_SAT_EXPR{CTN(vec_pack_sat_expr)}  wbinary_expr;
+
+  //vec_pack_fix_trunc_expr: TOK_BISON_VEC_PACK_FIX_TRUNC_EXPR^ binary_expr;
+  wvec_pack_fix_trunc_expr : TOK_BISON_VEC_PACK_FIX_TRUNC_EXPR {CTN(vec_pack_fix_trunc_expr)}  wbinary_expr;
+
+  //vec_extracteven_expr: TOK_BISON_VEC_EXTRACTEVEN_EXPR^ binary_expr;
+  wvec_extracteven_expr : TOK_BISON_VEC_EXTRACTEVEN_EXPR {CTN(vec_extracteven_expr)}  wbinary_expr;
+
+  //vec_extractodd_expr: TOK_BISON_VEC_EXTRACTODD_EXPR^ binary_expr;
+  wvec_extractodd_expr: TOK_BISON_VEC_EXTRACTODD_EXPR {CTN(vec_extractodd_expr)}  wbinary_expr;
+
+  //vec_interleavehigh_expr: TOC_BISON_VEC_INTERLEAVEHIGH_EXPR^ binary_expr;
+  wvec_interleavehigh_expr : TOC_BISON_VEC_INTERLEAVEHIGH_EXPR{CTN(vec_interleavehigh_expr)}  wbinary_expr;
+
+  //vec_interleavelow_expr: TOC_BISON_VEC_INTERLEAVELOW_EXPR^ binary_expr;
+  wvec_interleavelow_expr : TOC_BISON_VEC_INTERLEAVELOW_EXPR{CTN(vec_interleavelow_expr)}  wbinary_expr;
+
+  //return_stmt:    TOK_BISON_RETURN_STMT^ line (expr)?;
+  wreturn_stmt : TOK_BISON_RETURN_STMT{CTN(return_stmt)}  line{NSV(return_stmt,line,data->curr_number)}  expr_opt{OPT($5, NS(return_stmt,expr))};
+
+
+  //postincrement_expr: TOK_BISON_POSTINCREMENT_EXPR^ binary_expr;
+  wpostincrement_expr : TOK_BISON_POSTINCREMENT_EXPR{CTN(postincrement_expr)}  wbinary_expr;
+
+  //modop_expr:     TOK_BISON_MODOP_EXPR^;
+  wmodop_expr : TOK_BISON_MODOP_EXPR{CTN(modop_expr)};
+
+  gimple_phi_tuples : /*empty*/
+                   | gimple_phi_tuples gimple_phi_tuples_pair
+                   ;
+
+  gimple_phi_tuples_pair : def edge{GetPointer<gimple_phi>(data->curr_tree_nodeRef)->AddDefEdge(data->current_TM, gimple_phi::DefEdge(data->current_TM->GetTreeReindex(data->curr_NODE_ID), data->curr_unumber));}
+  ;
+
+   //gimple_phi:       TOK_BISON_GIMPLE_PHI^ res (def edge)* (TOK_BISON_VIRTUAL)?;
+   wgimple_phi : TOK_BISON_GIMPLE_PHI  {CTN(gimple_phi)}
+                 wgimple_node          {;}
+                 res{NS                (gimple_phi,res)}
+                 gimple_phi_tuples     {;}
+                 tok_virtual_opt       {OPT($9, NSV(gimple_phi, virtual_flag, true));}
+               ;
+
+   gimple_multi_way_if_tuples : /*empty*/
+                                  | gimple_multi_way_if_tuples gimple_multi_way_if_tuples_pair
+                                  ;
+
+   gimple_multi_way_if_tuples_pair : def edge{ADD_UNSIGNED(gimple_multi_way_if, add_cond)}
+                 ;
+
+   wgimple_multi_way_if : TOK_BISON_GIMPLE_MULTI_WAY_IF  {CTN(gimple_multi_way_if)}
+                               wgimple_node          {;}
+                               gimple_multi_way_if_tuples     {;}
+                             ;
+
+
+  //postdecrement_expr: TOK_BISON_POSTDECREMENT_EXPR^ binary_expr;
+  wpostdecrement_expr : TOK_BISON_POSTDECREMENT_EXPR{CTN(postdecrement_expr)}  wbinary_expr;
+
+  tok_overflow : /*empty*/ | TOK_BISON_OVERFLOW{NSV(real_cst, overflow_flag, true)};
+
+   //real_cst:	TOK_BISON_REAL_CST^ type (TOK_BISON_OVERFLOW)? valr valx;
+   wreal_cst :	TOK_BISON_REAL_CST{CTN(real_cst)}  type{NS(real_cst,type)}  tok_overflow  valr{NSV(real_cst, valr,data->curr_string)}  valx{NSV(real_cst, valx, data->curr_string)};
+
+  //placeholder_expr: TOK_BISON_PLACEHOLDER_EXPR;
+  wplaceholder_expr : TOK_BISON_PLACEHOLDER_EXPR{CTN(placeholder_expr)};
+
+  //overload:       TOK_BISON_OVERLOAD^ crnt (chan)?;
+  woverload : TOK_BISON_OVERLOAD{CTN(overload)}  crnt{NS(overload,crnt)}  chan_opt{OPT($5, NS(overload,chan))};
+
+  //fdesc_expr:     TOK_BISON_FDESC_EXPR^ binary_expr;
+  wfdesc_expr : TOK_BISON_FDESC_EXPR{CTN(fdesc_expr)}  wbinary_expr;
+
+  //handler:        TOK_BISON_HANDLER^ line body;
+  whandler : TOK_BISON_HANDLER{CTN(handler)}  line{NSV(handler,line,data->curr_number)}  body{NS(handler,body)};
+
+  //catch_expr:     TOK_BISON_CATCH_EXPR^ binary_expr;
+  wcatch_expr : TOK_BISON_CATCH_EXPR{CTN(catch_expr)}  wbinary_expr;
+
+  //component_ref:  TOK_BISON_COMPONENT_REF^ ternary_expr;
+  wcomponent_ref : TOK_BISON_COMPONENT_REF{CTN(component_ref)}  wternary_expr;
+
+  //expr_stmt:      TOK_BISON_EXPR_STMT^ line expr (next)?;
+  wexpr_stmt : TOK_BISON_EXPR_STMT{CTN(expr_stmt)}  line{NSV(expr_stmt,line,data->curr_number)}  expr{NS(expr_stmt,expr)}  next{NS(expr_stmt,next)};
+
+  //complex_cst:    TOK_BISON_COMPLEX_CST^ type real imag;
+  wcomplex_cst : TOK_BISON_COMPLEX_CST{CTN(complex_cst)}  type{NS(complex_cst,type)}  real{NS(complex_cst,real)}  imag{NS(complex_cst,imag)};
+
+  //eh_filter_expr: TOK_BISON_EH_FILTER_EXPR^ binary_expr;
+  weh_filter_expr : TOK_BISON_EH_FILTER_EXPR{CTN(eh_filter_expr)}  wbinary_expr;
+
+  //ctor_initializer: TOK_BISON_CTOR_INITIALIZER^;
+  wctor_initializer : TOK_BISON_CTOR_INITIALIZER{CTN(ctor_initializer)};
+
+  //constructor:    TOK_BISON_CONSTRUCTOR^ (type)? (elts)?;
+  wconstructor : TOK_BISON_CONSTRUCTOR{CTN(constructor)}  type_opt{OPT($3,NS(constructor,type))}  constructor_elts
+  ;
+
+  constructor_elts : /*empty*/
+                    | constructor_elts constructor_elts_pair
+                    ;
+
+  constructor_elts_pair : idx{data->curr_NODE_ID_BIS=data->curr_NODE_ID;} valu{ADDV2(constructor, add_idx_valu)}
+                        | valu{ADDV(constructor, add_valu)}
+  ;
+
+  //block:          TOK_BISON_BLOCK^ (TOK_BISON_STRING)?;
+  wblock : TOK_BISON_BLOCK{CTN(block)}  string_id_opt{OPT($3, {NSV(block, bl, data->curr_string); NSV(block,bl_flag,true)})};
+
+  //cond_expr:   TOK_BISON_COND_EXPR^ expr_node op op op;
+  wcond_expr : TOK_BISON_COND_EXPR
+                {CTN(cond_expr)}
+                wexpr_node
+                op {NS(cond_expr, op0)}
+                op {NS(cond_expr, op1)}
+                op {NS(cond_expr, op2)}
+              ;
+
+  //gimple_cond:   TOK_BISON_GIMPLE_COND^ gimple_node op;
+  wgimple_cond : TOK_BISON_GIMPLE_COND
+                 {CTN(gimple_cond)}
+                 wgimple_node
+                 op {NS(gimple_cond, op0)}
+               ;
+
+  //goto_subroutine:  TOK_BISON_GOTO_SUBROUTINE^ binary_expr;
+  wgoto_subroutine : TOK_BISON_GOTO_SUBROUTINE{CTN(goto_subroutine)}  wbinary_expr;
+
+  tok_volatile_asm : /*empty*/ | TOK_BISON_VOLATILE{NSV(gimple_asm, volatile_flag, true)};
+
+   //gimple_asm:       TOK_BISON_GIMPLE_ASM^ gimple_phi (TOK_BISON_VOLATILE)? str (out)? in (clob)?;
+   wgimple_asm : TOK_BISON_GIMPLE_ASM{CTN(gimple_asm)}  wgimple_node  tok_volatile_asm  str{NSV(gimple_asm,str,data->curr_string)}  out_opt{OPT($7, NS(gimple_asm,out))}  in_opt{OPT($9, NS(gimple_asm,in))}  clob_opt{OPT($11, NS(gimple_asm,clob))};
+
+  op_op_default : op{NS(case_label_expr,op0)}  op_opt{OPT($3, NS(case_label_expr,op1))}
+                | TOK_BISON_DEFAULT{NSV(case_label_expr, default_flag, true)}
+                ;
+  //case_label_expr: TOK_BISON_CASE_LABEL_EXPR^ expr_node ((op (op)?) | TOK_BISON_DEFAULT) got;
+  wcase_label_expr : TOK_BISON_CASE_LABEL_EXPR{CTN(case_label_expr)}  wexpr_node op_op_default got{NS(case_label_expr,got)};
+
+
+  binfo_baseinfos : /*empty*/
+                   | binfo_baseinfos binfo_baseinfo_elts_pair
+                   ;
+
+   binfo_baseinfo_elts_pair : TOK_BISON_PUB  {data->curr_token_enum=lexer->bison2token(TOK_BISON_PUB); }  binf{ADD_ACCESS_BINF(binfo, add_access_binf)}
+                            | TOK_BISON_PROT {data->curr_token_enum=lexer->bison2token(TOK_BISON_PROT);}  binf{ADD_ACCESS_BINF(binfo, add_access_binf)}
+                            | TOK_BISON_PRIV {data->curr_token_enum=lexer->bison2token(TOK_BISON_PRIV);}  binf{ADD_ACCESS_BINF(binfo, add_access_binf)}
+                            ;
+
+  binfo_tok_virt : /*empty*/ | TOK_BISON_VIRT{NSV(binfo, virt_flag, true)};
+
+  binfo_bases : /*empty*/ | TOK_BISON_BASES number_id {NSV(binfo,bases,data->curr_number);};
+
+  //binfo:  TOK_BISON_BINFO^ (type)? (TOK_BISON_VIRT)? (baseinfo)*;
+  wbinfo : TOK_BISON_BINFO{CTN(binfo)}  type_opt{OPT($3, NS(binfo,type))} binfo_tok_virt binfo_bases binfo_baseinfos;
+
+
+  //baselink:       TOK_BISON_BASELINK^ (type)?;
+  wbaselink : TOK_BISON_BASELINK{CTN(baselink)}  type_opt{OPT($3, NS(baselink,type))};
+
+
+  //array_ref:	TOK_BISON_ARRAY_REF^ quaternary_expr;
+  warray_ref : TOK_BISON_ARRAY_REF{CTN(array_ref)}  wquaternary_expr;
+
+   //call_expr: TOK_BISON_CALL_EXPR^ expr_node_fn (arg)*;
+  wcall_expr : TOK_BISON_CALL_EXPR{CTN(call_expr)}
+                wexpr_node
+                fn{NS(call_expr,fn)}
+                call_expr_args
+                ;
+
+  call_expr_args : /*empty*/
+                 | arg {ADDV(call_expr,AddArg)} call_expr_args
+                 ;
+
+  //call_expr: TOK_BISON_AGGR_INIT_EXPR^ expr_node_fn slot (arg)*;
+  waggr_init_expr : TOK_BISON_AGGR_INIT_EXPR{CTN(aggr_init_expr)}
+                             wexpr_node
+                             fn{NS(aggr_init_expr,fn)}
+                             call_expr_args
+                             slot_opt{OPT($7, NS(aggr_init_expr,slot))}
+                             ;
+  wgimple_call : TOK_BISON_GIMPLE_CALL{CTN(gimple_call)}
+                  wgimple_node
+                  fn{NS(gimple_call,fn)}
+                  gimple_call_args
+                  gimple_call_uses
+                  gimple_call_clbs
+               ;
+
+  gimple_call_args : /*empty*/
+                   | arg {ADDV(gimple_call,AddArg)} gimple_call_args
+                   ;
+
+  gimple_call_uses : /*empty*/
+                   | gimple_call_use gimple_call_uses
+                   ;
+
+  gimple_call_use : TOK_BISON_USE string_id {GetPointer<gimple_call>(data->curr_tree_nodeRef)->use_set->Add(data->curr_string);}
+                  | TOK_BISON_USE_VARS node_id {GetPointer<gimple_call>(data->curr_tree_nodeRef)->use_set->Add(data->current_TM->GetTreeReindex(data->curr_NODE_ID));}
+                  ;
+
+  gimple_call_clbs : /*empty*/
+                   | gimple_call_clb gimple_call_clbs
+                   ;
+
+  gimple_call_clb : TOK_BISON_CLB string_id {GetPointer<gimple_call>(data->curr_tree_nodeRef)->clobbered_set->Add(data->curr_string);}
+                  | TOK_BISON_CLB_VARS node_id {GetPointer<gimple_call>(data->curr_tree_nodeRef)->clobbered_set->Add(data->current_TM->GetTreeReindex(data->curr_NODE_ID));}
+                  ;
+
+  //bit_field_ref:  TOK_BISON_BIT_FIELD_REF^ ternary_expr;
+  wbit_field_ref : TOK_BISON_BIT_FIELD_REF{CTN(bit_field_ref)}  wternary_expr;
+
+  //array_range_ref: TOK_BISON_ARRAY_RANGE_REF^ quaternary_expr;
+  warray_range_ref : TOK_BISON_ARRAY_RANGE_REF{CTN(array_range_ref)}  wquaternary_expr;
+  
+  //template_parm_index: TOK_BISON_TEMPLATE_PARM_INDEX^
+  wtemplate_parm_index: TOK_BISON_TEMPLATE_PARM_INDEX{CTN(template_parm_index)};
+
+  //with_size_expr: TOK_BISON_WITH_SIZE_EXPR^ binary_expr;
+  wwith_size_expr : TOK_BISON_WITH_SIZE_EXPR{CTN(with_size_expr)} wbinary_expr;
+
+  //obj_type_ref:  TOK_BISON_OBJ_TYPE_REF^ ternary_expr;
+  wobj_type_ref : TOK_BISON_OBJ_TYPE_REF{CTN(obj_type_ref)}  wternary_expr;
+
+//SUBROUTINES
+  tok_C:
+          /*empty*/
+          | TOK_BISON_C{NSV(decl_node, C_flag, true)}
+          ;
+
+  tok_artificial_opt : /*empty*/{$$=false;} | TOK_BISON_ARTIFICIAL{$$=true;};
+
+  tok_system_opt : /*empty*/{$$=false;} | TOK_BISON_SYSTEM{$$=true;};
+
+  tok_virtual_opt : /*empty*/{$$=false;} | TOK_BISON_VIRTUAL{$$=true;};
+
+  tok_default_opt : /*empty*/{$$=false;} | TOK_BISON_DEFAULT{$$=true;};
+
+  tok_operating_system_opt : /*empty*/{$$=false;} | TOK_BISON_OPERATING_SYSTEM{$$=true;};
+
+  tok_library_system_opt : /*empty*/{$$=false;} | TOK_BISON_LIBRARY_SYSTEM{$$=true;};
+
+  tok_libbambu_opt : /* empty */         {$$=false;}
+                   | TOK_BISON_LIBBAMBU  {$$=true;}
+
+   tok_packed_opt : /* empty */ { $$=false; }
+                  | TOK_BISON_PACKED {$$=true;}
+                  ;
+
+  //decl_node:   (name)? (mngl)? (type)? (scpe)? (srcp)? (attrib)? (TOK_BISON_ARTIFICIAL)? (chan)? (uid)?;
+  wdecl_node: name_opt                  {OPT($1, NS(decl_node,name))}
+               mngl_opt                 {OPT($3, NS(decl_node,mngl))}
+               orig_opt                 {OPT($5, NS(decl_node,orig))}
+               type_opt                 {OPT($7, NS(decl_node,type))}
+               scpe_opt                 {OPT($9, NS(decl_node,scpe))}
+               wsrcp_opt                {}
+               chan_opt                 {OPT($13, NS(decl_node,chan))}
+               attrib_opt               {OPT($15, NS(decl_node,attributes))}
+               tok_artificial_opt       {OPT($17, NSV(decl_node, artificial_flag, true))}
+               tok_operating_system_opt {OPT($19, NSV(decl_node, operating_system_flag, true))}
+               tok_library_system_opt   {OPT($21, NSV(decl_node, library_system_flag, true))}
+               tok_libbambu_opt         {
+#if HAVE_BAMBU_BUILT
+                                         OPT($23, NSV(decl_node, libbambu_flag, true))
+#endif
+                                        }
+               tok_C                    {}
+               uid_opt                  {NSV(decl_node, uid, data->curr_unumber)}
+               ;
+
+   wexpr_node : type_opt  {OPT($1, NS(expr_node,type))}
+                wsrcp_opt {;}
+              ;
+
+   //gimple_node: wvops  (type)? (srcp)? (time_weight)? (size_weight)? (rtl_size_weight)?;
+   wgimple_node : scpe_opt          {OPT($1, NS(gimple_node, scpe))}
+                  bb_index          {NSV(gimple_node, bb_index, data->curr_unumber)}
+                  mem_virtual_ops   {;}
+                  wsrcp_opt         {;}
+                  time_weight_opt
+                  {
+#if HAVE_MAPPING_BUILT && HAVE_CODE_ESTIMATION_BUILT
+                     std::map<ComponentTypeConstRef, ProbabilityDistribution> weights;
+                     if((data->Param->getOption<bool>(OPT_gcc_costs)))
+                     {
+                        weights[data->driving_component] = data->curr_double_number;
+                     }
+                     OPT($9, GetPointer<gimple_node>(data->curr_tree_nodeRef)->weight_information->recursive_weight = weights);
+#endif
+                  }
+                  size_weight_opt
+                  {
+#if HAVE_CODE_ESTIMATION_BUILT
+                     OPT($11, GetPointer<gimple_node>(data->curr_tree_nodeRef)->weight_information->instruction_size = data->curr_unumber);
+#endif
+                  }
+                  rtl_size_weight_opt
+                  {
+#if HAVE_CODE_ESTIMATION_BUILT && HAVE_RTL_BUILT
+                     OPT($13, GetPointer<gimple_node>(data->curr_tree_nodeRef)->weight_information->rtl_instruction_size = data->curr_unumber);
+#endif
+                  }
+                  rtl_star
+                  {
+#if HAVE_CODE_ESTIMATION_BUILT && HAVE_RTL_BUILT
+                       GetPointer<gimple_node>(data->curr_tree_nodeRef)->weight_information->rtl_nodes = data->rtls;
+                       data->rtls.clear();
+#endif
+                  }
+                ;
+
+   //type_node: (qual)? (name)? (unql)? (size)? (algn)?;
+  wtype_node: qual_opt         {OPT($1, do_qual<type_node>(data->curr_tree_nodeRef, data->curr_number);)}
+              name_opt         {OPT($3, NS(type_node,name))}
+              unql_opt         {OPT($5, NS(type_node,unql))}
+              size_opt         {OPT($7, NS(type_node,size))}
+              scpe_opt         {OPT($9, NS(type_node,scpe))}
+              algn_opt         {OPT($11, NSV(type_node,algn, data->curr_unumber))}
+              tok_packed_opt   {OPT($13, NSV(type_node, packed_flag, true))}
+              tok_system_opt   {OPT($15, NSV(type_node, system_flag, true))}
+              tok_libbambu_opt {
+#if HAVE_BAMBU_BUILT
+              OPT($15, NSV(type_node, libbambu_flag, true))
+#endif
+                               }
+            ;
+
+   //qual: TOK_BISON_QUAL (TOK_BISON_QUAL_R | TOK_BISON_QUAL_V | TOK_BISON_QUAL_VR | TOK_BISON_QUAL_C | TOK_BISON_QUAL_CR | TOK_BISON_QUAL_CV | TOK_BISON_QUAL_CVR );
+  qual_opt :  /*empty*/{$$=false;}
+         | TOK_BISON_QUAL TOK_BISON_QUAL_R {data->curr_number = static_cast<unsigned int>(lexer->bison2token(TOK_BISON_QUAL_R));$$=true;}
+         | TOK_BISON_QUAL TOK_BISON_QUAL_V {data->curr_number = static_cast<unsigned int>(lexer->bison2token(TOK_BISON_QUAL_V));$$=true;}
+         | TOK_BISON_QUAL TOK_BISON_QUAL_VR {data->curr_number = static_cast<unsigned int>(lexer->bison2token(TOK_BISON_QUAL_VR));$$=true;}
+         | TOK_BISON_QUAL TOK_BISON_QUAL_C {data->curr_number = static_cast<unsigned int>(lexer->bison2token(TOK_BISON_QUAL_C));$$=true;}
+         | TOK_BISON_QUAL TOK_BISON_QUAL_CR {data->curr_number = static_cast<unsigned int>(lexer->bison2token(TOK_BISON_QUAL_CR));$$=true;}
+         | TOK_BISON_QUAL TOK_BISON_QUAL_CV {data->curr_number = static_cast<unsigned int>(lexer->bison2token(TOK_BISON_QUAL_CV));$$=true;}
+         | TOK_BISON_QUAL TOK_BISON_QUAL_CVR {data->curr_number = static_cast<unsigned int>(lexer->bison2token(TOK_BISON_QUAL_CVR));$$=true;}
+         ;
+
+  /*
+  attr:   (TOK_BISON_NEW | TOK_BISON_DELETE | TOK_BISON_ASSIGN | TOK_BISON_MEMBER | TOK_BISON_PUBLIC | TOK_BISON_PRIVATE | TOK_BISON_PROTECTED | TOK_BISON_NORETURN | TOK_BISON_VOLATILE | TOK_BISON_NOINLINE | TOK_BISON_ALWAYS_INLINE | TOK_BISON_USED | TOK_BISON_UNUSED | TOK_BISON_CONST | TOK_BISON_TRANSPARENT_UNION | TOK_BISON_CONSTRUCTOR | TOK_BISON_DESTRUCTOR |
+           TOK_BISON_MODE | TOK_BISON_SECTION | TOK_BISON_ALIGNED | TOK_BISON_WEAK | TOK_BISON_ALIAS | TOK_BISON_NO_INSTRUMENT_FUNCTION | TOK_BISON_MALLOC | TOK_BISON_NO_STACK_LIMIT |
+  	 TOK_BISON_PURE | TOK_BISON_DEPRECATED | TOK_BISON_VECTOR_SIZE | TOK_BISON_VISIBILITY | TOK_BISON_TLS_MODEL | TOK_BISON_NONNULL | TOK_BISON_NOTHROW | TOK_BISON_MAY_ALIAS |
+  	 TOK_BISON_WARN_UNUSED_RESULT | TOK_BISON_FORMAT | TOK_BISON_FORMAT_ARG | TOK_BISON_NULL |
+  	 TOK_BISON_GLOBAL_INIT | TOK_BISON_GLOBAL_FINI | TOK_BISON_CONVERSION | TOK_BISON_VIRTUAL | TOK_BISON_LSHIFT | TOK_BISON_MUTABLE | TOK_BISON_PSEUDO_TMPL |
+  	 TOK_BISON_VECNEW | TOK_BISON_VECDELETE | TOK_BISON_POS | TOK_BISON_NEG | TOK_BISON_ADDR | TOK_BISON_DEREF | TOK_BISON_NOT | TOK_BISON_LNOT | TOK_BISON_PREINC | TOK_BISON_PREDEC | TOK_BISON_PLUSASSIGN | TOK_BISON_PLUS	|
+  	 TOK_BISON_MINUSASSIGN | TOK_BISON_MINUS | TOK_BISON_MULTASSIGN | TOK_BISON_MULT | TOK_BISON_DIVASSIGN | TOK_BISON_DIV | TOK_BISON_MODASSIGN | TOK_BISON_MOD | TOK_BISON_ANDASSIGN | TOK_BISON_AND | TOK_BISON_ORASSIGN |
+  	 TOK_BISON_OR | TOK_BISON_XORASSIGN | TOK_BISON_XOR | TOK_BISON_LSHIFTASSIGN | TOK_BISON_RSHIFTASSIGN | TOK_BISON_RSHIFT | TOK_BISON_EQ | TOK_BISON_NE | TOK_BISON_LT | TOK_BISON_GT |		
+  	 TOK_BISON_LE | TOK_BISON_GE | TOK_BISON_LAND | TOK_BISON_LOR | TOK_BISON_COMPOUND | TOK_BISON_MEMREF | TOK_BISON_REF | TOK_BISON_SUBS | TOK_BISON_POSTINC | TOK_BISON_POSTDEC | TOK_BISON_CALL |	
+  	 TOK_BISON_THUNK | TOK_BISON_THIS_ADJUSTING | TOK_BISON_RESULT_ADJUSTING)*;
+  */
+  wattr :  /*empty*/
+        | wattr wattr_el
+        ;
+  wattr_el:
+            TOK_BISON_NEW {ADD_ATTR(lexer->bison2token(TOK_BISON_NEW))} |
+            TOK_BISON_DELETE {ADD_ATTR(lexer->bison2token(TOK_BISON_DELETE))} |
+            TOK_BISON_ASSIGN {ADD_ATTR(lexer->bison2token(TOK_BISON_ASSIGN))} |
+            TOK_BISON_MEMBER {ADD_ATTR(lexer->bison2token(TOK_BISON_MEMBER))} |
+            TOK_BISON_PUBLIC {ADD_ATTR(lexer->bison2token(TOK_BISON_PUBLIC))} |
+            TOK_BISON_PROTECTED {ADD_ATTR(lexer->bison2token(TOK_BISON_PROTECTED))} |
+            TOK_BISON_PRIVATE {ADD_ATTR(lexer->bison2token(TOK_BISON_PRIVATE))} |
+            TOK_BISON_NORETURN {ADD_ATTR(lexer->bison2token(TOK_BISON_NORETURN))} |
+            TOK_BISON_VOLATILE {ADD_ATTR(lexer->bison2token(TOK_BISON_VOLATILE))} |
+            TOK_BISON_NOINLINE {ADD_ATTR(lexer->bison2token(TOK_BISON_NOINLINE))} |
+            TOK_BISON_ALWAYS_INLINE {ADD_ATTR(lexer->bison2token(TOK_BISON_ALWAYS_INLINE))} |
+            TOK_BISON_USED {ADD_ATTR(lexer->bison2token(TOK_BISON_USED))} |
+            TOK_BISON_UNUSED {ADD_ATTR(lexer->bison2token(TOK_BISON_UNUSED))} |
+            TOK_BISON_CONST {ADD_ATTR(lexer->bison2token(TOK_BISON_CONST))} |
+            TOK_BISON_TRANSPARENT_UNION {ADD_ATTR(lexer->bison2token(TOK_BISON_TRANSPARENT_UNION))} |
+            TOK_BISON_CONSTRUCTOR {ADD_ATTR(lexer->bison2token(TOK_BISON_CONSTRUCTOR))} |
+            TOK_BISON_DESTRUCTOR {ADD_ATTR(lexer->bison2token(TOK_BISON_DESTRUCTOR))} |
+            TOK_BISON_MODE {ADD_ATTR(lexer->bison2token(TOK_BISON_MODE))} |
+            TOK_BISON_SECTION {ADD_ATTR(lexer->bison2token(TOK_BISON_SECTION))} |
+            TOK_BISON_ALIGNED {ADD_ATTR(lexer->bison2token(TOK_BISON_ALIGNED))} |
+            TOK_BISON_WEAK {ADD_ATTR(lexer->bison2token(TOK_BISON_WEAK))} |
+            TOK_BISON_ALIAS {ADD_ATTR(lexer->bison2token(TOK_BISON_ALIAS))} |
+            TOK_BISON_NO_INSTRUMENT_FUNCTION {ADD_ATTR(lexer->bison2token(TOK_BISON_NO_INSTRUMENT_FUNCTION))} |
+            TOK_BISON_MALLOC {ADD_ATTR(lexer->bison2token(TOK_BISON_MALLOC))} |
+            TOK_BISON_NO_STACK_LIMIT {ADD_ATTR(lexer->bison2token(TOK_BISON_NO_STACK_LIMIT))} |
+            TOK_BISON_PURE {ADD_ATTR(lexer->bison2token(TOK_BISON_PURE))} |
+            TOK_BISON_DEPRECATED {ADD_ATTR(lexer->bison2token(TOK_BISON_DEPRECATED))} |
+            TOK_BISON_VECTOR_SIZE {ADD_ATTR(lexer->bison2token(TOK_BISON_VECTOR_SIZE))} |
+            TOK_BISON_VISIBILITY {ADD_ATTR(lexer->bison2token(TOK_BISON_VISIBILITY))} |
+            TOK_BISON_TLS_MODEL {ADD_ATTR(lexer->bison2token(TOK_BISON_TLS_MODEL))} |
+            TOK_BISON_NONNULL {ADD_ATTR(lexer->bison2token(TOK_BISON_NONNULL))} |
+            TOK_BISON_NOTHROW {ADD_ATTR(lexer->bison2token(TOK_BISON_NOTHROW))} |
+            TOK_BISON_MAY_ALIAS {ADD_ATTR(lexer->bison2token(TOK_BISON_MAY_ALIAS))} |
+            TOK_BISON_WARN_UNUSED_RESULT {ADD_ATTR(lexer->bison2token(TOK_BISON_WARN_UNUSED_RESULT))} |
+            TOK_BISON_FORMAT {ADD_ATTR(lexer->bison2token(TOK_BISON_FORMAT))} |
+            TOK_BISON_FORMAT_ARG {ADD_ATTR(lexer->bison2token(TOK_BISON_FORMAT_ARG))} |
+            TOK_BISON_NULL {ADD_ATTR(lexer->bison2token(TOK_BISON_NULL))} |
+            TOK_BISON_GLOBAL_INIT {ADD_ATTR(lexer->bison2token(TOK_BISON_GLOBAL_INIT))} |
+            TOK_BISON_GLOBAL_FINI {ADD_ATTR(lexer->bison2token(TOK_BISON_GLOBAL_FINI))} |
+            TOK_BISON_CONVERSION {ADD_ATTR(lexer->bison2token(TOK_BISON_CONVERSION))} |
+            TOK_BISON_VIRTUAL {ADD_ATTR(lexer->bison2token(TOK_BISON_VIRTUAL))} |
+            TOK_BISON_LSHIFT {ADD_ATTR(lexer->bison2token(TOK_BISON_LSHIFT))} |
+            TOK_BISON_MUTABLE {ADD_ATTR(lexer->bison2token(TOK_BISON_MUTABLE))} |
+            TOK_BISON_PSEUDO_TMPL {ADD_ATTR(lexer->bison2token(TOK_BISON_PSEUDO_TMPL))} |
+            TOK_BISON_VECNEW {ADD_ATTR(lexer->bison2token(TOK_BISON_VECNEW))} |
+            TOK_BISON_VECDELETE {ADD_ATTR(lexer->bison2token(TOK_BISON_VECDELETE))} |
+            TOK_BISON_POS {ADD_ATTR(lexer->bison2token(TOK_BISON_POS))} |
+            TOK_BISON_NEG {ADD_ATTR(lexer->bison2token(TOK_BISON_NEG))} |
+            TOK_BISON_ADDR {ADD_ATTR(lexer->bison2token(TOK_BISON_ADDR))} |
+            TOK_BISON_DEREF {ADD_ATTR(lexer->bison2token(TOK_BISON_DEREF))} |
+            TOK_BISON_LNOT {ADD_ATTR(lexer->bison2token(TOK_BISON_LNOT))} |
+            TOK_BISON_NOT {ADD_ATTR(lexer->bison2token(TOK_BISON_NOT))} |
+            TOK_BISON_PREINC {ADD_ATTR(lexer->bison2token(TOK_BISON_PREINC))} |
+            TOK_BISON_PREDEC {ADD_ATTR(lexer->bison2token(TOK_BISON_PREDEC))} |
+            TOK_BISON_PLUSASSIGN {ADD_ATTR(lexer->bison2token(TOK_BISON_PLUSASSIGN))} |
+            TOK_BISON_PLUS {ADD_ATTR(lexer->bison2token(TOK_BISON_PLUS))} |
+            TOK_BISON_MINUSASSIGN {ADD_ATTR(lexer->bison2token(TOK_BISON_MINUSASSIGN))} |
+            TOK_BISON_MINUS {ADD_ATTR(lexer->bison2token(TOK_BISON_MINUS))} |
+            TOK_BISON_MULTASSIGN {ADD_ATTR(lexer->bison2token(TOK_BISON_MULTASSIGN))} |
+            TOK_BISON_MULT {ADD_ATTR(lexer->bison2token(TOK_BISON_MULT))} |
+            TOK_BISON_DIVASSIGN {ADD_ATTR(lexer->bison2token(TOK_BISON_DIVASSIGN))} |
+            TOK_BISON_DIV {ADD_ATTR(lexer->bison2token(TOK_BISON_DIV))} |
+            TOK_BISON_MODASSIGN {ADD_ATTR(lexer->bison2token(TOK_BISON_MODASSIGN))} |
+            TOK_BISON_MOD {ADD_ATTR(lexer->bison2token(TOK_BISON_MOD))} |
+            TOK_BISON_ANDASSIGN {ADD_ATTR(lexer->bison2token(TOK_BISON_ANDASSIGN))} |
+            TOK_BISON_AND {ADD_ATTR(lexer->bison2token(TOK_BISON_AND))} |
+            TOK_BISON_ORASSIGN {ADD_ATTR(lexer->bison2token(TOK_BISON_ORASSIGN))} |
+            TOK_BISON_OR {ADD_ATTR(lexer->bison2token(TOK_BISON_OR))} |
+            TOK_BISON_XORASSIGN {ADD_ATTR(lexer->bison2token(TOK_BISON_XORASSIGN))} |
+            TOK_BISON_XOR {ADD_ATTR(lexer->bison2token(TOK_BISON_XOR))} |
+            TOK_BISON_LSHIFTASSIGN {ADD_ATTR(lexer->bison2token(TOK_BISON_LSHIFTASSIGN))} |
+            TOK_BISON_RSHIFTASSIGN {ADD_ATTR(lexer->bison2token(TOK_BISON_RSHIFTASSIGN))} |
+            TOK_BISON_RSHIFT {ADD_ATTR(lexer->bison2token(TOK_BISON_RSHIFT))} |
+            TOK_BISON_EQ {ADD_ATTR(lexer->bison2token(TOK_BISON_EQ))} |
+            TOK_BISON_NE {ADD_ATTR(lexer->bison2token(TOK_BISON_NE))} |
+            TOK_BISON_LT {ADD_ATTR(lexer->bison2token(TOK_BISON_LT))} |
+            TOK_BISON_GT {ADD_ATTR(lexer->bison2token(TOK_BISON_GT))} |
+            TOK_BISON_LE {ADD_ATTR(lexer->bison2token(TOK_BISON_LE))} |
+            TOK_BISON_GE {ADD_ATTR(lexer->bison2token(TOK_BISON_GE))} |
+            TOK_BISON_LAND {ADD_ATTR(lexer->bison2token(TOK_BISON_LAND))} |
+            TOK_BISON_LOR {ADD_ATTR(lexer->bison2token(TOK_BISON_LOR))} |
+            TOK_BISON_COMPOUND {ADD_ATTR(lexer->bison2token(TOK_BISON_COMPOUND))} |
+            TOK_BISON_MEMREF {ADD_ATTR(lexer->bison2token(TOK_BISON_MEMREF))} |
+            TOK_BISON_REF {ADD_ATTR(lexer->bison2token(TOK_BISON_REF))} |
+            TOK_BISON_SUBS {ADD_ATTR(lexer->bison2token(TOK_BISON_SUBS))} |
+            TOK_BISON_POSTINC {ADD_ATTR(lexer->bison2token(TOK_BISON_POSTINC))} |
+            TOK_BISON_POSTDEC {ADD_ATTR(lexer->bison2token(TOK_BISON_POSTDEC))} |
+            TOK_BISON_CALL {ADD_ATTR(lexer->bison2token(TOK_BISON_CALL))} |
+            TOK_BISON_THUNK {ADD_ATTR(lexer->bison2token(TOK_BISON_THUNK))} |
+            TOK_BISON_THIS_ADJUSTING {ADD_ATTR(lexer->bison2token(TOK_BISON_THIS_ADJUSTING))} |
+            TOK_BISON_RESULT_ADJUSTING    {ADD_ATTR(lexer->bison2token(TOK_BISON_RESULT_ADJUSTING))} |
+            TOK_BISON_BITFIELD  {ADD_ATTR(lexer->bison2token(TOK_BISON_BITFIELD))}
+            ;
+
+  //unary_expr: expr_node (op)?;
+  wunary_expr : wexpr_node op_opt{OPT($2, NS(unary_expr,op))};
+
+  //binary_expr: expr_node op (op)?;
+  wbinary_expr : wexpr_node op{NS(binary_expr,op0)} op_opt{OPT($4, NS(binary_expr,op1))};
+
+  //ternary_expr: expr_node op op (op)?;
+  wternary_expr : wexpr_node  op{NS(ternary_expr,op0)}  op{NS(ternary_expr,op1)}  op_opt{OPT($6, NS(ternary_expr,op2))};
+
+   //quaternary_expr: expr_node op op (op)? (op)?;//binary on GCC3.5 and quaternary on gcc4.0
+   wquaternary_expr : wexpr_node
+                      op
+                      {NS(quaternary_expr,op0)}
+                      op
+                      {NS(quaternary_expr,op1)}
+                      quaternary_opt_op
+                    ;
+
+   quaternary_opt_op : /* Empty */
+                     | op
+                       {NS(quaternary_expr, op2)}
+                     | op
+                       {NS(quaternary_expr, op2)}
+                       op
+                       {NS(quaternary_expr, op3)}
+                     ;
+
+   //srcp: TOK_BISON_SRCP^ TOK_BISON_STRING TOK_BISON_NUMBER;
+   wsrcp_opt     : /*empty*/| TOK_BISON_SRCP string_id{NSV(srcp, include_name, data->curr_string)} number_id{NSV(srcp, line_number, data->curr_unumber)} number_id{NSV(srcp, column_number, data->curr_unumber)};
+
+
+
+   /* BLOC GRAMMAR */
+   tok_hpl : /* empty */
+           | TOK_BISON_HPL {data->current_TM->add_parallel_loop();NBV(bloc, hpl, 1)}
+           ;
+   wloop_id:  /* empty */
+           | TOK_BISON_LOOP_ID number_id{NBV(bloc, loop_id, data->curr_unumber)}
+           ;
+
+
+   wpred_star : /* emptyr */
+              | wpred_star wpred{ADDVALUE(bloc, add_pred, data->curr_unumber)}
+              ;
+
+   wsucc_star : /*empty*/
+              | wsucc_star wsucc{ADDVALUE(bloc, add_succ, data->curr_unumber)}
+              ;
+
+   phi_star : /*empty*/
+            | phi_star phi{data->curr_blocRef->AddPhi(data->current_TM->GetTreeReindex(data->curr_NODE_ID));}
+            ;
+
+   stmt_star : /*empty*/
+             | stmt_star stmt{data->curr_blocRef->PushBack(data->current_TM->GetTreeReindex(data->curr_NODE_ID));}
+             ;
+
+   rtl_star : /*empty*/
+            | rtl_star
+              TOK_BISON_RTL
+              rtl
+              rtl_mode
+              {
+#if HAVE_RTL_BUILT
+                 data->rtls.push_back(std::pair<enum rtl_kind, enum mode_kind>(data->single_rtl, data->mode_rtl));
+#endif
+              }
+            ;
+
+   rtl : TOK_BISON_ABS_R {SET_DATA(data->single_rtl, abs_R);}
+       | TOK_BISON_AND_R {SET_DATA(data->single_rtl, and_R);}
+       | TOK_BISON_ASHIFT_R {SET_DATA(data->single_rtl, ashift_R);}
+       | TOK_BISON_ASHIFTRT_R {SET_DATA(data->single_rtl, ashiftrt_R);}
+       | TOK_BISON_BSWAP_R {SET_DATA(data->single_rtl, bswap_R);}
+       | TOK_BISON_CALL_R {SET_DATA(data->single_rtl, call_R);}
+       | TOK_BISON_CALL_INSN_R {SET_DATA(data->single_rtl, call_insn_R);}
+       | TOK_BISON_CLZ_R {SET_DATA(data->single_rtl, clz_R);}
+       | TOK_BISON_CODE_LABEL_R {SET_DATA(data->single_rtl, code_label_R);}
+       | TOK_BISON_COMPARE_R {SET_DATA(data->single_rtl, compare_R);}
+       | TOK_BISON_CONCAT_R {SET_DATA(data->single_rtl, concat_R);}
+       | TOK_BISON_CTZ_R {SET_DATA(data->single_rtl, ctz_R);}
+       | TOK_BISON_DIV_R {SET_DATA(data->single_rtl, div_R);}
+       | TOK_BISON_EQ_R {SET_DATA(data->single_rtl, eq_R);}
+       | TOK_BISON_FFS_R {SET_DATA(data->single_rtl, ffs_R);}
+       | TOK_BISON_FIX_R {SET_DATA(data->single_rtl, fix_R);}
+       | TOK_BISON_FLOAT_R {SET_DATA(data->single_rtl, float_R);}
+       | TOK_BISON_FLOAT_EXTEND_R {SET_DATA(data->single_rtl, float_extend_R);}
+       | TOK_BISON_FLOAT_TRUNCATE_R {SET_DATA(data->single_rtl, float_truncate_R);}
+       | TOK_BISON_FRACT_CONVERT_R {SET_DATA(data->single_rtl, fract_convert_R);}
+       | TOK_BISON_GE_R {SET_DATA(data->single_rtl, ge_R);}
+       | TOK_BISON_GEU_R {SET_DATA(data->single_rtl, geu_R);}
+       | TOK_BISON_GT_R {SET_DATA(data->single_rtl, gt_R);}
+       | TOK_BISON_GTU_R {SET_DATA(data->single_rtl, gtu_R);}
+       | TOK_BISON_HIGH_R {SET_DATA(data->single_rtl, high_R);}
+       | TOK_BISON_IF_THEN_ELSE_R {SET_DATA(data->single_rtl, if_then_else_R);}
+       | TOK_BISON_INSN_R {SET_DATA(data->single_rtl, insn_R);}
+       | TOK_BISON_IOR_R {SET_DATA(data->single_rtl, ior_R);}
+       | TOK_BISON_JUMP_INSN_R {SET_DATA(data->single_rtl, jump_insn_R);}
+       | TOK_BISON_LABEL_REF_R {SET_DATA(data->single_rtl, label_ref_R);}
+       | TOK_BISON_LE_R {SET_DATA(data->single_rtl, le_R);}
+       | TOK_BISON_LEU_R {SET_DATA(data->single_rtl, leu_R);}
+       | TOK_BISON_LO_SUM_R {SET_DATA(data->single_rtl, lo_sum_R);}
+       | TOK_BISON_LSHIFTRT_R {SET_DATA(data->single_rtl, lshiftrt_R);}
+       | TOK_BISON_LT_R {SET_DATA(data->single_rtl, lt_R);}
+       | TOK_BISON_LTGT_R {SET_DATA(data->single_rtl, ltgt_R);}
+       | TOK_BISON_LTU_R {SET_DATA(data->single_rtl, ltu_R);}
+       | TOK_BISON_WRITE_MEM_R {SET_DATA(data->single_rtl, write_mem_R);}
+       | TOK_BISON_READ_MEM_R {SET_DATA(data->single_rtl, read_mem_R);}
+       | TOK_BISON_MINUS_R {SET_DATA(data->single_rtl, minus_R);}
+       | TOK_BISON_MOD_R {SET_DATA(data->single_rtl, mod_R);}
+       | TOK_BISON_MULT_R {SET_DATA(data->single_rtl, mult_R);}
+       | TOK_BISON_NE_R {SET_DATA(data->single_rtl, ne_R);}
+       | TOK_BISON_NEG_R {SET_DATA(data->single_rtl, neg_R);}
+       | TOK_BISON_NOT_R {SET_DATA(data->single_rtl, not_R);}
+       | TOK_BISON_ORDERED_R {SET_DATA(data->single_rtl, ordered_R);}
+       | TOK_BISON_PARALLEL_R {SET_DATA(data->single_rtl, parallel_R);}
+       | TOK_BISON_PARITY_R {SET_DATA(data->single_rtl, parity_R);}
+       | TOK_BISON_PC_R {SET_DATA(data->single_rtl, pc_R);}
+       | TOK_BISON_PLUS_R {SET_DATA(data->single_rtl, plus_R);}
+       | TOK_BISON_POPCOUNT_R {SET_DATA(data->single_rtl, popcount_R);}
+       | TOK_BISON_REG_R {SET_DATA(data->single_rtl, reg_R);}
+       | TOK_BISON_ROTATE_R {SET_DATA(data->single_rtl, rotate_R);}
+       | TOK_BISON_ROTATERT_R {SET_DATA(data->single_rtl, rotatert_R);}
+       | TOK_BISON_SAT_FRACT_R {SET_DATA(data->single_rtl, sat_fract_R);}
+       | TOK_BISON_SET_R {SET_DATA(data->single_rtl, set_R);}
+       | TOK_BISON_SIGN_EXTEND_R {SET_DATA(data->single_rtl, sign_extend_R);}
+       | TOK_BISON_SMAX_R {SET_DATA(data->single_rtl, smax_R);}
+       | TOK_BISON_SMIN_R {SET_DATA(data->single_rtl, smin_R);}
+       | TOK_BISON_SQRT_R {SET_DATA(data->single_rtl, sqrt_R);}
+       | TOK_BISON_SYMBOL_REF_R {SET_DATA(data->single_rtl, symbol_ref_R);}
+       | TOK_BISON_TRUNCATE_R {SET_DATA(data->single_rtl, truncate_R);}
+       | TOK_BISON_UDIV_R {SET_DATA(data->single_rtl, udiv_R);}
+       | TOK_BISON_UMAX_R {SET_DATA(data->single_rtl, umax_R);}
+       | TOK_BISON_UMIN_R {SET_DATA(data->single_rtl, umin_R);}
+       | TOK_BISON_UMOD_R {SET_DATA(data->single_rtl, umod_R);}
+       | TOK_BISON_UNEQ_R {SET_DATA(data->single_rtl, uneq_R);}
+       | TOK_BISON_UNGE_R {SET_DATA(data->single_rtl, unge_R);}
+       | TOK_BISON_UNGT_R {SET_DATA(data->single_rtl, ungt_R);}
+       | TOK_BISON_UNLE_R {SET_DATA(data->single_rtl, unle_R);}
+       | TOK_BISON_UNLT_R {SET_DATA(data->single_rtl, unlt_R);}
+       | TOK_BISON_UNORDERED_R {SET_DATA(data->single_rtl, unordered_R);}
+       | TOK_BISON_UNSIGNED_FIX_R {SET_DATA(data->single_rtl, unsigned_fix_R);}
+       | TOK_BISON_UNSIGNED_FLOAT_R {SET_DATA(data->single_rtl, unsigned_float_R);}
+       | TOK_BISON_UNSIGNED_FRACT_CONVERT_R {SET_DATA(data->single_rtl, unsigned_fract_convert_R);}
+       | TOK_BISON_UNSIGNED_SAT_FRACT_R {SET_DATA(data->single_rtl, unsigned_sat_fract_R);}
+       | TOK_BISON_XOR_R {SET_DATA(data->single_rtl, xor_R);}
+       | TOK_BISON_ZERO_EXTEND_R {SET_DATA(data->single_rtl, zero_extend_R);}
+       ;
+
+   rtl_mode : /*empty */ {SET_DATA(data->mode_rtl, none_R);}
+            | TOK_BISON_QC_R {SET_DATA(data->mode_rtl, qc_R);}
+            | TOK_BISON_HC_R {SET_DATA(data->mode_rtl, hc_R);}
+            | TOK_BISON_SC_R {SET_DATA(data->mode_rtl, sc_R);}
+            | TOK_BISON_DC_R {SET_DATA(data->mode_rtl, dc_R);}
+            | TOK_BISON_TC_R {SET_DATA(data->mode_rtl, tc_R);}
+            | TOK_BISON_CQI_R {SET_DATA(data->mode_rtl, cqi_R);}
+            | TOK_BISON_CHI_R {SET_DATA(data->mode_rtl, chi_R);}
+            | TOK_BISON_CSI_R {SET_DATA(data->mode_rtl, csi_R);}
+            | TOK_BISON_CDI_R {SET_DATA(data->mode_rtl, cdi_R);}
+            | TOK_BISON_CTI_R {SET_DATA(data->mode_rtl, cti_R);}
+            | TOK_BISON_QF_R {SET_DATA(data->mode_rtl, qf_R);}
+            | TOK_BISON_HF_R {SET_DATA(data->mode_rtl, hf_R);}
+            | TOK_BISON_SF_R {SET_DATA(data->mode_rtl, sf_R);}
+            | TOK_BISON_DF_R {SET_DATA(data->mode_rtl, df_R);}
+            | TOK_BISON_TF_R {SET_DATA(data->mode_rtl, tf_R);}
+            | TOK_BISON_QI_R {SET_DATA(data->mode_rtl, qi_R);}
+            | TOK_BISON_HI_R {SET_DATA(data->mode_rtl, hi_R);}
+            | TOK_BISON_SI_R {SET_DATA(data->mode_rtl, si_R);}
+            | TOK_BISON_DO_R {SET_DATA(data->mode_rtl, di_R);}
+            | TOK_BISON_TI_R {SET_DATA(data->mode_rtl, ti_R);}
+            | TOK_BISON_V2SI_R {SET_DATA(data->mode_rtl, v2si_R);}
+            | TOK_BISON_V4HI_R {SET_DATA(data->mode_rtl, v4hi_R);}
+            | TOK_BISON_V8QI_R {SET_DATA(data->mode_rtl, v8qi_R);}
+            | TOK_BISON_CC_R {SET_DATA(data->mode_rtl, cc_R);}
+            | TOK_BISON_CCFP_R {SET_DATA(data->mode_rtl, ccfp_R);}
+            | TOK_BISON_CCFPE_R {SET_DATA(data->mode_rtl, ccfpe_R);}
+            | TOK_BISON_CCZ_R {SET_DATA(data->mode_rtl, ccz_R);}
+
+   //bloc: TOK_BISON_BLOC^ TOK_BISON_NUMBER (TOK_BISON_HPL)? (pred)*  (succ)*  (phi)*  (stmt)*;
+   wbloc : TOK_BISON_BLOC {;}
+           number_id      {CB(data->curr_unumber)}
+           tok_hpl        {;}
+           wloop_id       {;}
+           wpred_star     {;}
+           wsucc_star     {;}
+           true_edge_opt  {OPT($13,NBV(bloc, true_edge, data->curr_unumber))}
+           false_edge_opt {OPT($15,NBV(bloc, false_edge, data->curr_unumber))}
+           phi_star       {;}
+           stmt_star      {;}
+           rtl_star       {;}
+         ;
+
+   //pred: TOK_BISON_PRED^ (TOK_BISON_ENTRY | TOK_BISON_NUMBER);
+   wpred : TOK_BISON_PRED TOK_BISON_ENTRY{data->curr_unumber=bloc::ENTRY_BLOCK_ID;}
+         | TOK_BISON_PRED number_id
+         ;
+
+   wsucc : TOK_BISON_SUCC TOK_BISON_EXIT{data->curr_unumber=bloc::EXIT_BLOCK_ID;}
+         | TOK_BISON_SUCC number_id
+         ;
+
+   mem_virtual_ops : mem_ops        {;}
+                     virtual_ops    {;}
+                   ;
+
+   mem_ops : memuse_opt             {;}
+             memdef_opt             {;}
+           ;
+
+   memuse_opt : /*empty*/
+              | TOK_BISON_MEMUSE node_id {NS(gimple_node, memuse)}
+              ;
+
+   memdef_opt : /*empty*/
+              | TOK_BISON_MEMDEF node_id {NS(gimple_node, memdef)}
+              ;
+
+   virtual_ops : /* empty */        {;}
+               | virtual_ops        {;}
+                 virtual_op         {;}
+               ;
+
+   virtual_op : TOK_BISON_VUSE       {;}
+                node_id              {ADDV(gimple_node, AddVuse)}
+              | TOK_BISON_VDEF       {;}
+                node_id              {ADDV(gimple_node, AddVdef)}
+              | TOK_BISON_VOVER      {;}
+                node_id              {ADDV(gimple_node, AddVover)}
+              ;
+
+   wtarget_mem_ref461 : TOK_BISON_TARGET_MEM_REF461 {CTN(target_mem_ref461)}
+                        type                        {NS(target_mem_ref461,type)}
+                        base_opt                    {OPT($5, NS(target_mem_ref461,base))}
+                        offset_opt                  {OPT($7, NS(target_mem_ref461,offset))}
+                        idx_opt                     {OPT($9, NS(target_mem_ref461,idx))}
+                        step_opt                    {OPT($11, NS(target_mem_ref461,step))}
+                        idx2_opt                    {OPT($13, NS(target_mem_ref461,idx2))}
+                      ;
+
+   wtarget_mem_ref : TOK_BISON_TARGET_MEM_REF{CTN(target_mem_ref)}
+                     type{NS(target_mem_ref,type)}
+                     symbol_opt{OPT($5, NS(target_mem_ref,symbol))}
+                     base_opt{OPT($7, NS(target_mem_ref,base))}
+                     idx_opt{OPT($9, NS(target_mem_ref,idx))}
+                     step_opt{OPT($11, NS(target_mem_ref,step))}
+                     offset_opt{OPT($13, NS(target_mem_ref,offset))}
+                     orig{NS(target_mem_ref,orig)}
+                     tag_opt{OPT($17, NS(target_mem_ref,tag));}
+                     ;
+
+   wtrait_expr : TOK_BISON_TRAIT_EXPR{CTN(trait_expr)} ;
+
+   time_weight_opt :  {$$=false;}| TOK_BISON_TIME_WEIGHT number_id{$$=true;} ;
+
+   size_weight_opt :  {$$=false;}| TOK_BISON_SIZE_WEIGHT number_id{$$=true;} ;
+
+   rtl_size_weight_opt :  {$$=false;}| TOK_BISON_RTL_SIZE_WEIGHT number_id{$$=true;} ;
+
+   phi       : TOK_BISON_PHI node_id;
+   stmt      : TOK_BISON_STMT  node_id;
+   def       : TOK_BISON_DEF  node_id;
+   def_stmt  : TOK_BISON_DEF_STMT node_id;
+   edge      : TOK_BISON_EDGE  number_id;
+   arg       : TOK_BISON_ARG   node_id;
+   vars      : TOK_BISON_VARS  node_id;
+   flds      : TOK_BISON_FLDS  node_id;
+   fncs      : TOK_BISON_FNCS  node_id;
+   valu      : TOK_BISON_VALU  node_id;
+   op        : TOK_BISON_OP  node_id;
+
+
+
+  strg      : TOK_BISON_STRG  string_id     ;
+
+  valr      : TOK_BISON_VALR  string_id     ;
+
+  valx      : TOK_BISON_VALX  string_id     ;
+
+
+  type      : TOK_BISON_TYPE  node_id       ;
+
+  body      : TOK_BISON_BODY  node_id       ;
+
+  size      : TOK_BISON_SIZE  node_id       ;
+
+  csts      : TOK_BISON_CSTS  node_id       ;
+
+  retn      : TOK_BISON_RETN  node_id       ;
+
+  elts      : TOK_BISON_ELTS  node_id       ;
+
+  ptd       : TOK_BISON_PTD  node_id        ;
+
+  refd      : TOK_BISON_REFD  node_id       ;
+
+  fn        : TOK_BISON_FN  node_id         ;
+
+  got       : TOK_BISON_GOTO  node_id       ;
+
+  real      : TOK_BISON_REAL  node_id       ;
+
+  imag      : TOK_BISON_IMAG  node_id       ;
+
+  binf      : TOK_BISON_BINF  node_id       ;
+
+  res       : TOK_BISON_RES  node_id        ;
+
+  var_opt   : /*empty*/{$$=false;} | TOK_BISON_VAR  node_id {$$=true;} ;
+
+  str       : TOK_BISON_STR  string_id      ;
+
+  next      : TOK_BISON_NEXT  node_id       ;
+
+  expr      : TOK_BISON_EXPR  node_id       ;
+
+  crnt      : TOK_BISON_CRNT  node_id       ;
+
+  hdlr      : TOK_BISON_HDLR  node_id       ;
+
+  tmpl_parms : TOK_BISON_TMPL_PARMS node_id ;
+
+  tmpl_args : TOK_BISON_TMPL_ARGS node_id   ;
+
+  vers      : TOK_BISON_VERS  number_id     ;
+
+
+  orig_vers_opt : /*empty*/{$$=false;} | TOK_BISON_ORIG_VERS  number_id {$$=true;} ;
+
+  algn      : TOK_BISON_ALGN  number_id     ;
+
+  prec      : TOK_BISON_PREC  number_id     ;
+
+  bb_index  : TOK_BISON_BB_INDEX number_id  ;
+
+  value     : TOK_BISON_VALUE  number_id    ;
+
+  lngt      : TOK_BISON_LNGT  number_id     ;
+
+  used      : TOK_BISON_USED  number_id     ;
+
+  line      : TOK_BISON_LINE  number_id     ;
+
+  orig  : TOK_BISON_ORIG  node_id           ;
+
+  idx       : TOK_BISON_IDX  node_id       ;
+
+
+  name_opt      : /*empty*/{$$=false;} | TOK_BISON_NAME  node_id        {$$=true;} ;
+
+  type_opt      : /*empty*/{$$=false;} | TOK_BISON_TYPE  node_id        {$$=true;} ;
+
+  body_opt      : /*empty*/{$$=false;} | TOK_BISON_BODY  node_id        {$$=true;} ;
+  inline_body_opt: /*empty*/{$$=false;} | TOK_BISON_INLINE_BODY  node_id{$$=true;} ;
+
+  size_opt      : /*empty*/{$$=false;} | TOK_BISON_SIZE  node_id        {$$=true;} ;
+
+  chan_opt      : /*empty*/{$$=false;} | TOK_BISON_CHAN  node_id        {$$=true;} ;
+
+  attrib_opt    : /*empty*/{$$=false;} | TOK_BISON_ATTRIBUTES  node_id  {$$=true;} ;
+
+  prms_opt      : /*empty*/{$$=false;} | TOK_BISON_PRMS  node_id        {$$=true;} ;
+
+  argt_opt      : /*empty*/{$$=false;} | TOK_BISON_ARGT  node_id        {$$=true;} ;
+
+  retn_opt      : /*empty*/{$$=false;} | TOK_BISON_RETN  node_id        {$$=true;} ;
+
+  scpe_opt      : /*empty*/{$$=false;} | TOK_BISON_SCPE  node_id        {$$=true;} ;
+
+  unql_opt      : /*empty*/{$$=false;} | TOK_BISON_UNQL  node_id        {$$=true;} ;
+
+  op_opt        : /*empty*/{$$=false;} | TOK_BISON_OP  node_id          {$$=true;} ;
+
+  domn_opt      : /*empty*/{$$=false;} | TOK_BISON_DOMN  node_id        {$$=true;} ;
+
+  dcls_opt      : /*empty*/{$$=false;} | TOK_BISON_DCLS  node_id        {$$=true;} ;
+
+  mngl_opt      : /*empty*/{$$=false;} | TOK_BISON_MNGL  node_id        {$$=true;} ;
+
+  ptd_opt       : /*empty*/{$$=false;} | TOK_BISON_PTD  node_id         {$$=true;} ;
+
+  vfld_opt      : /*empty*/{$$=false;} | TOK_BISON_VFLD  node_id        {$$=true;} ;
+
+  bpos_opt      : /*empty*/{$$=false;} | TOK_BISON_BPOS  node_id        {$$=true;} ;
+
+  fn_opt        : /*empty*/{$$=false;} | TOK_BISON_FN  node_id          {$$=true;} ;
+
+  binf_opt      : /*empty*/{$$=false;} | TOK_BISON_BINF  node_id        {$$=true;} ;
+
+  init_opt      : /*empty*/{$$=false;} | TOK_BISON_INIT  node_id        {$$=true;} ;
+
+  purp_opt      : /*empty*/{$$=false;} | TOK_BISON_PURP  node_id        {$$=true;} ;
+
+  valu_opt      : /*empty*/{$$=false;} | valu {$$=true;};
+
+  cnst_opt      : /*empty*/{$$=false;} | TOK_BISON_CNST  node_id        {$$=true;} ;
+
+  clas_opt      : /*empty*/{$$=false;} | TOK_BISON_CLAS  node_id        {$$=true;} ;
+
+  clob_opt      : /*empty*/{$$=false;} | TOK_BISON_CLOB  node_id        {$$=true;} ;
+
+  clobber_opt   : /*empty*/{$$=false;} | TOK_BISON_CLOBBER            {$$=true;} ;
+
+  rslt_opt      : /*empty*/{$$=false;} | TOK_BISON_RSLT  node_id        {$$=true;} ;
+
+  inst_opt      : /*empty*/{$$=false;} | TOK_BISON_INST  node_id        {$$=true;} ;
+
+  spcs_opt      : /*empty*/{$$=false;} | TOK_BISON_SPCS  node_id        {$$=true;} ;
+
+  cls_opt       : /*empty*/{$$=false;} | TOK_BISON_CLS  node_id         {$$=true;} ;
+
+  bfld_opt      : /*empty*/{$$=false;} | TOK_BISON_BFLD  node_id        {$$=true;} ;
+
+  next_opt      : /*empty*/{$$=false;} | TOK_BISON_NEXT  node_id        {$$=true;} ;
+
+  expr_opt      : /*empty*/{$$=false;} | TOK_BISON_EXPR  node_id        {$$=true;} ;
+
+  uid_opt       : /*empty*/{$$=false;} | TOK_BISON_UID  number_id       {$$=true;} | TOK_BISON_OLD_UID number_id {$$=true;};
+
+  algn_opt      : /*empty*/{$$=false;} | TOK_BISON_ALGN  number_id      {$$=true;} ;
+
+  virt_opt      : /*empty*/{$$=false;} | TOK_BISON_VIRT  number_id      {$$=true;} ;
+
+  fixd_opt      : /*empty*/{$$=false;} | TOK_BISON_FIXD  number_id      {$$=true;} ;
+
+  use_tmpl_opt  : /*empty*/{$$=false;} | TOK_BISON_USE_TMPL  number_id    {$$=true;} ;
+
+  min_opt       : /*empty*/{$$=false;} | TOK_BISON_MIN  node_id         {$$=true;} ;
+
+  max_opt       : /*empty*/{$$=false;} | TOK_BISON_MAX  node_id         {$$=true;} ;
+
+  bit_values_opt: /*empty*/{$$=false;} | TOK_BISON_BIT_VALUES  string_id  {$$=true;} ;
+
+  out_opt       : /*empty*/{$$=false;} | TOK_BISON_OUT  node_id         {$$=true;} ;
+
+  in_opt        : /*empty*/{$$=false;} | TOK_BISON_IN  node_id          {$$=true;} ;
+
+  true_edge_opt: /*empty*/{$$=false;}  | TOK_BISON_TRUE_EDGE number_id  {$$=true;} ;
+
+  false_edge_opt: /*empty*/{$$=false;} | TOK_BISON_FALSE_EDGE number_id {$$=true;} ;
+
+  symbol_opt: /*empty*/{$$=false;}     | TOK_BISON_SYMBOL node_id       {$$=true;} ;
+
+  base_opt: /*empty*/{$$=false;}       | TOK_BISON_BASE node_id         {$$=true;} ;
+
+  step_opt: /*empty*/{$$=false;}       | TOK_BISON_STEP node_id         {$$=true;} ;
+
+  offset_opt: /*empty*/{$$=false;}     | TOK_BISON_OFFSET node_id       {$$=true;} ;
+
+  tag_opt: /*empty*/{$$=false;}        | TOK_BISON_TAG node_id          {$$=true;} ;
+
+  orig_opt  :  /*empty*/{$$=false;}    | TOK_BISON_ORIG  node_id        {$$=true;} ;
+
+  smt_ann_opt: /*empty*/{$$=false;}    | TOK_BISON_SMT_ANN node_id      {$$=true;} ;
+
+  idx_opt    : /*empty*/{$$=false;}    | TOK_BISON_IDX  node_id         {$$=true;};
+
+  idx2_opt    : /*empty*/{$$=false;}    | TOK_BISON_IDX2 node_id        {$$=true;};
+
+  predicate_opt : /*empty*/{$$=false;}  |  TOK_BISON_PREDICATE node_id  {$$=true;};
+
+  slot_opt : /*empty*/{$$=false;}  |  TOK_BISON_SLOT node_id  {$$=true;};
+
+  clnp_opt: /*empty*/{$$=false;}  |  TOK_BISON_CLNP node_id  {$$=true;};
+
+  decl_opt: /*empty*/{$$=false;}  |  TOK_BISON_DECL node_id  {$$=true;};
+
+  node_id   : NODE_ID    {data->curr_NODE_ID=$1;};
+  string_id : TOK_BISON_STRING {data->curr_string=std::string($1+1, $1+strlen($1)-1);};
+  number_id : TOK_BISON_NUMBER {data->curr_number=$1; data->curr_unumber = $1; data->curr_size_t_number=$1; data->curr_long_long_number=$1;  data->curr_double_number=$1;};
+  string_id_opt : /*empty*/ {$$ = false;} | string_id {$$ = true;}
+
+%%
+/**
+* EPILOGUE
+*/
+
+extern tree_managerRef tree_parseY(const ParameterConstRef Param, std::string fn)
+{
+    fileIO_istreamRef sname = fileIO_istream_open(fn);
+    if(sname->fail()) THROW_ERROR(std::string("FILE does not exist: ")+fn);
+    const TreeFlexLexerRef lexer(new TreeFlexLexer(sname.get(), 0));
+    const BisonParserDataRef data(new BisonParserData(Param, Param->get_class_debug_level("tree_parse")));
+    data->final_TM = tree_managerRef();
+    data->current_TM = tree_managerRef();
+#if YYDEBUG
+    yydebug = 1;
+#endif
+    yyparse(data, lexer);
+    if(data->final_TM)
+      data->final_TM->merge_tree_managers(data->current_TM);
+    else
+      data->final_TM = data->current_TM;
+    return data->final_TM;
+}
+
+void yyerror(const BisonParserDataRef data, const TreeFlexLexerRef lexer, const char *msg)
+{
+  lexer->yyerror(msg);
+}
+int yylex(YYSTYPE *lvalp, const TreeFlexLexerRef lexer)
+{
+  lexer->lvalp=lvalp;
+  return lexer->yylex();
+}

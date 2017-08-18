@@ -1,0 +1,30 @@
+\subsection{tail}
+\label{labtail}
+\noindent Name: \textbf{tail}\\
+gives the tail of a list.\\
+\noindent Usage: 
+\begin{center}
+\textbf{tail}(\emph{L}) : \textsf{list} $\rightarrow$ \textsf{list}\\
+\end{center}
+Parameters: 
+\begin{itemize}
+\item \emph{L} is a list.
+\end{itemize}
+\noindent Description: \begin{itemize}
+
+\item \textbf{tail}(\emph{L}) returns the list \emph{L} without its first element.
+
+\item If \emph{L} is empty, the command will fail with an error.
+
+\item \textbf{tail} can also be used with end-elliptic lists. In this case, the result of
+   \textbf{tail} is also an end-elliptic list.
+\end{itemize}
+\noindent Example 1: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> tail([|1,2,3|]);
+[|2, 3|]
+> tail([|1,2...|]);
+[|2...|]
+\end{Verbatim}
+\end{minipage}\end{center}
+See also: \textbf{head} (\ref{labhead})

@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<constraints>
+   <HLS_constraints>
+      <tech_constraints fu_name="fp_ge_expr_FU" fu_library="STD_FU" n="1"/>
+      <tech_constraints fu_name="fp_lt_expr_FU" fu_library="STD_FU" n="1"/>
+      <tech_constraints fu_name="fp_le_expr_FU" fu_library="STD_FU" n="1"/>
+      <tech_constraints fu_name="fp_gt_expr_FU" fu_library="STD_FU" n="1"/>
+      <tech_constraints fu_name="fp_plus_expr_FU" fu_library="STD_FU" n="1"/>
+      <tech_constraints fu_name="fp_minus_expr_FU" fu_library="STD_FU" n="1"/>
+      <tech_constraints fu_name="fp_mult_expr_FU" fu_library="STD_FU" n="1"/>
+      <tech_constraints fu_name="fp_rdiv_expr_FU" fu_library="STD_FU" n="1"/>
+      <tech_constraints fu_name="fp_float_expr_FU" fu_library="STD_FU" n="1"/>
+      <tech_constraints fu_name="ui_fp_float_expr_FU" fu_library="STD_FU" n="1"/>
+      <tech_constraints fu_name="fp_fix_trunc_expr_FU" fu_library="STD_FU" n="1"/>
+      <tech_constraints fu_name="fp_exp_FU" fu_library="STD_FU" n="1"/>
+      <tech_constraints fu_name="fp_expf_FU" fu_library="STD_FU" n="1"/>
+      <tech_constraints fu_name="fp_sqrt_FU" fu_library="STD_FU" n="1"/>
+      <tech_constraints fu_name="fp_sqrtf_FU" fu_library="STD_FU" n="1"/>
+      <tech_constraints fu_name="fp_log_FU" fu_library="STD_FU" n="1"/>
+      <tech_constraints fu_name="fp_logf_FU" fu_library="STD_FU" n="1"/>
+      <tech_constraints fu_name="fp_pow_FU" fu_library="STD_FU" n="1"/>
+      <tech_constraints fu_name="fp_powf_FU" fu_library="STD_FU" n="1"/>
+      <tech_constraints fu_name="BAMBU_READC" fu_library="STD_FU" n="1"/>
+      <tech_constraints fu_name="BAMBU_WRITEC" fu_library="STD_FU" n="1"/>
+      <tech_constraints fu_name="CLOSE" fu_library="STD_FU" n="1"/>
+      <tech_constraints fu_name="ui_ternary_alu_expr_FU" fu_library="STD_FU" n="0"/>
+      <tech_constraints fu_name="ternary_alu_expr_FU" fu_library="STD_FU" n="0"/>
+   </HLS_constraints>
+</constraints>

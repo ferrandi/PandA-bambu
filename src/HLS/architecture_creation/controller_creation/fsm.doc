@@ -1,0 +1,49 @@
+/*
+ *
+ *                   _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
+ *                  _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
+ *                 _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
+ *                _/      _/    _/ _/    _/ _/   _/ _/    _/
+ *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
+ *
+ *             ***********************************************
+ *                              PandA Project 
+ *                     URL: http://panda.dei.polimi.it
+ *                       Politecnico di Milano - DEIB
+ *                        System Architectures Group
+ *             ***********************************************
+ *              Copyright (c) 2004-2017 Politecnico di Milano
+ *
+ *   This file is part of the PandA framework.
+ *
+ *   The PandA framework is free software; you can redistribute it and/or modify
+ *   it under the terms of the GNU General Public License as published by
+ *   the Free Software Foundation; either version 3 of the License, or
+ *   (at your option) any later version.
+ *
+ *   This program is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU General Public License for more details.
+ *
+ *   You should have received a copy of the GNU General Public License
+ *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+*/
+/*!
+  \page src_HLS_controller_stg Finite State Machine
+
+\section stg_definition State Transition Graph definition
+
+After the scheduling phase (see \ref src_HLS_scheduling_general), the operations have been assigned to control steps where they will be executed and then, inside each control steps, they are associated to functional units that will execute them. To perform further analysis can be useful reconstruct a flow similar to Control Flow Graph (CFG). In fact, the CFG represents, for each moment, which is the operation that is executed, the previous one and the next one. In the high-level synthesis problem, it is necessary to know, for each control step, which are the operations executed together and then which are previous and next ones. For instance, this information is needed by the register allocation task, that needs to know which values are alive between two control steps to store them in the storage elements.
+This feature is provided by the Finite State Machine (FSM), created on Gajski's FSMD and it is well represented by the <b>State Transition Graph</b> (STG). This model describes the evolution of the system based on control flow. The STG is defined as a graph where:
+- the vertices represent a set of operations all executed together in the same time, under certain control conditions
+- the edges are the transitions from the control steps to the following ones and they are eventually labeled with control conditions that have to be occurred to perform the transition.
+
+When an operation produces a branch in the control flow (e.g. an \e if statement), the resulting condition will produce a branch also into the finite state machine graph.
+
+This is not the only approach that can be used to create the finite state machine. For instance, Kuehlmann and Bergamaschi create the RTL specification of the controller even before the scheduling step is performed: this way it is possible to generate a schedule which takes into account also the area, or the speed of the resulting controller.
+
+
+
+*/

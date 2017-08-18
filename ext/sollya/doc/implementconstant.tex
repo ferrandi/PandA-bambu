@@ -1,0 +1,267 @@
+\subsection{implementconstant}
+\label{labimplementconstant}
+\noindent Name: \textbf{implementconstant}\\
+implements a constant in arbitrary precision\\
+\noindent Usage: 
+\begin{center}
+\textbf{implementconstant}(\emph{expr}) : \textsf{constant} $\rightarrow$ \textsf{void}\\
+\textbf{implementconstant}(\emph{expr},\emph{filename}) : (\textsf{constant}, \textsf{string}) $\rightarrow$ \textsf{void}\\
+\textbf{implementconstant}(\emph{expr},\emph{filename},\emph{functionname}) : (\textsf{constant}, \textsf{string}, \textsf{string}) $\rightarrow$ \textsf{void}\\
+\end{center}
+\noindent Description: \begin{itemize}
+
+\item The command \textbf{implementconstant} implements the constant expression \emph{expr} in 
+   arbitrary precision. More precisely, it generates the source code (written
+   in C, and using MPFR) of a C function \texttt{const\_something} with the following
+   signature:
+   \begin{center}
+   \texttt{void const\_something (mpfr\_ptr y, mp\_prec\_t prec)}
+   \end{center}
+   Let us denote by $c$ the exact mathematical value of the constant defined by
+   the expression \emph{expr}. When called with arguments $y$ and prec (where the
+   variable $y$ is supposed to be already initialized), the function
+   \texttt{mpfr\_const\_something} sets the precision of $y$ to a suitable precision and
+   stores in it an approximate value of $c$ such that
+   $$|y-c| \le |c|\,2^{1-\mathrm{prec}}.$$
+
+\item When no filename \emph{filename} is given or if \textbf{default} is given as
+   \emph{filename}, the source code produced by \textbf{implementconstant} is printed on
+   standard output. Otherwise, when \emph{filename} is given as a 
+   string of characters, the source code is output to a file 
+   named \emph{filename}. If that file cannot be opened and/or 
+   written to, \textbf{implementconstant} fails and has no other effect.
+
+\item When \emph{functionname} is given as an argument to \textbf{implementconstant} and
+   \emph{functionname} evaluates to a string of characters, the default name
+   for the C function \texttt{const\_something} is
+   replaced by \emph{functionname}. When \textbf{default} is given as \emph{functionname},
+   the default name is used nevertheless, as if no \emph{functionname}
+   argument were given.  When choosing a character sequence for
+   \emph{functionname}, the user should keep attention to the fact that
+   \emph{functionname} must be a valid C identifier in order to enable
+   error-free compilation of the produced code.
+
+\item If \emph{expr} refers to a constant defined with \textbf{libraryconstant}, the produced
+   code uses the external code implementing this constant. The user should
+   keep in mind that it is up to them to make sure the symbol for that 
+   external code can get resolved when the newly generated code is to 
+   be loaded.
+
+\item If a subexpression of \emph{expr} evaluates to $0$, \textbf{implementconstant} will most
+   likely fail with an error message.
+
+\item \textbf{implementconstant} is unable to implement constant expressions \emph{expr} that
+   contain procedure-based functions, i.e. functions created from \sollya
+   procedures using the \textbf{function} construct. If \emph{expr} contains such a
+   procedure-based function, \textbf{implementconstant} prints a warning and fails
+   silently. The reason for this lack of functionality is that the
+   produced C source code, which is supposed to be compiled, would have
+   to call back to the \sollya interpreter in order to evaluate the
+   procedure-based function.
+
+\item Similarily, \textbf{implementconstant} is currently unable to implement constant
+   expressions \emph{expr} that contain library-based functions, i.e.
+   functions dynamically bound to \sollya using the \textbf{library} construct.
+   If \emph{expr} contains such a library-based function, \textbf{implementconstant} prints
+   a warning and fails silently. Support for this feature is in principle
+   feasible from a technical standpoint and might be added in a future
+   release of \sollya.
+
+\item Currently, non-differentiable functions such as \textbf{double}, \textbf{doubledouble},
+   \textbf{tripledouble}, \textbf{single}, \textbf{halfprecision}, \textbf{quad}, \textbf{doubleextended}, 
+   \textbf{floor}, \textbf{ceil}, \textbf{nearestint} are not supported by \textbf{implementconstant}. 
+   If \textbf{implementconstant} encounters one of them, a warning message is displayed 
+   and no code is produced. However, if \textbf{autosimplify} equals on, it is 
+   possible that \sollya silently simplifies subexpressions of \emph{expr} 
+   containing such functions and that \textbf{implementconstant} successfully produces 
+   code for evaluating \emph{expr}.
+
+\item While it produces an MPFR-based C source code for \emph{expr}, \textbf{implementconstant}
+   takes architectural and system-dependent parameters into account.  For
+   example, it checks whether literal constants figuring in \emph{expr} can be
+   represented on a C \texttt{long int} type or if they must
+   be stored in a different manner not to affect their accuracy. These
+   tests, performed by \sollya during execution of \textbf{implementconstant}, depend
+   themselves on the architecture \sollya is running on. Users should
+   keep this matter in mind, especially when trying to compile source
+   code on one machine whilst it has been produced on another.
+\end{itemize}
+\noindent Example 1: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> implementconstant(exp(1)+log(2)/sqrt(1/10));
+#include <mpfr.h>
+
+void
+const_something (mpfr_ptr y, mp_prec_t prec)
+{
+  /* Declarations */
+  mpfr_t tmp1;
+  mpfr_t tmp2;
+  mpfr_t tmp3;
+  mpfr_t tmp4;
+  mpfr_t tmp5;
+  mpfr_t tmp6;
+  mpfr_t tmp7;
+
+  /* Initializations */
+  mpfr_init2 (tmp2, prec+5);
+  mpfr_init2 (tmp1, prec+3);
+  mpfr_init2 (tmp4, prec+8);
+  mpfr_init2 (tmp3, prec+7);
+  mpfr_init2 (tmp6, prec+11);
+  mpfr_init2 (tmp7, prec+11);
+  mpfr_init2 (tmp5, prec+11);
+
+  /* Core */
+  mpfr_set_prec (tmp2, prec+4);
+  mpfr_set_ui (tmp2, 1, MPFR_RNDN);
+  mpfr_set_prec (tmp1, prec+3);
+  mpfr_exp (tmp1, tmp2, MPFR_RNDN);
+  mpfr_set_prec (tmp4, prec+8);
+  mpfr_set_ui (tmp4, 2, MPFR_RNDN);
+  mpfr_set_prec (tmp3, prec+7);
+  mpfr_log (tmp3, tmp4, MPFR_RNDN);
+  mpfr_set_prec (tmp6, prec+11);
+  mpfr_set_ui (tmp6, 1, MPFR_RNDN);
+  mpfr_set_prec (tmp7, prec+11);
+  mpfr_set_ui (tmp7, 10, MPFR_RNDN);
+  mpfr_set_prec (tmp5, prec+11);
+  mpfr_div (tmp5, tmp6, tmp7, MPFR_RNDN);
+  mpfr_set_prec (tmp4, prec+7);
+  mpfr_sqrt (tmp4, tmp5, MPFR_RNDN);
+  mpfr_set_prec (tmp2, prec+5);
+  mpfr_div (tmp2, tmp3, tmp4, MPFR_RNDN);
+  mpfr_set_prec (y, prec+3);
+  mpfr_add (y, tmp1, tmp2, MPFR_RNDN);
+
+  /* Cleaning stuff */
+  mpfr_clear(tmp1);
+  mpfr_clear(tmp2);
+  mpfr_clear(tmp3);
+  mpfr_clear(tmp4);
+  mpfr_clear(tmp5);
+  mpfr_clear(tmp6);
+  mpfr_clear(tmp7);
+}
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 2: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> implementconstant(sin(13/17),"sine_of_thirteen_seventeenth.c");
+> readfile("sine_of_thirteen_seventeenth.c");
+#include <mpfr.h>
+
+void
+const_something (mpfr_ptr y, mp_prec_t prec)
+{
+  /* Declarations */
+  mpfr_t tmp1;
+  mpfr_t tmp2;
+  mpfr_t tmp3;
+
+  /* Initializations */
+  mpfr_init2 (tmp2, prec+6);
+  mpfr_init2 (tmp3, prec+6);
+  mpfr_init2 (tmp1, prec+6);
+
+  /* Core */
+  mpfr_set_prec (tmp2, prec+6);
+  mpfr_set_ui (tmp2, 13, MPFR_RNDN);
+  mpfr_set_prec (tmp3, prec+6);
+  mpfr_set_ui (tmp3, 17, MPFR_RNDN);
+  mpfr_set_prec (tmp1, prec+6);
+  mpfr_div (tmp1, tmp2, tmp3, MPFR_RNDN);
+  mpfr_set_prec (y, prec+2);
+  mpfr_sin (y, tmp1, MPFR_RNDN);
+
+  /* Cleaning stuff */
+  mpfr_clear(tmp1);
+  mpfr_clear(tmp2);
+  mpfr_clear(tmp3);
+}
+
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 3: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> implementconstant(asin(1/3 * pi),default,"arcsin_of_one_third_pi");
+#include <mpfr.h>
+
+void
+arcsin_of_one_third_pi (mpfr_ptr y, mp_prec_t prec)
+{
+  /* Declarations */
+  mpfr_t tmp1;
+  mpfr_t tmp2;
+  mpfr_t tmp3;
+
+  /* Initializations */
+  mpfr_init2 (tmp2, prec+8);
+  mpfr_init2 (tmp3, prec+8);
+  mpfr_init2 (tmp1, prec+8);
+
+  /* Core */
+  mpfr_set_prec (tmp2, prec+8);
+  mpfr_const_pi (tmp2, MPFR_RNDN);
+  mpfr_set_prec (tmp3, prec+8);
+  mpfr_set_ui (tmp3, 3, MPFR_RNDN);
+  mpfr_set_prec (tmp1, prec+8);
+  mpfr_div (tmp1, tmp2, tmp3, MPFR_RNDN);
+  mpfr_set_prec (y, prec+2);
+  mpfr_asin (y, tmp1, MPFR_RNDN);
+
+  /* Cleaning stuff */
+  mpfr_clear(tmp1);
+  mpfr_clear(tmp2);
+  mpfr_clear(tmp3);
+}
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 4: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> implementconstant(ceil(log(19 + 1/3)),"constant_code.c","magic_constant");
+> readfile("constant_code.c");
+#include <mpfr.h>
+
+void
+magic_constant (mpfr_ptr y, mp_prec_t prec)
+{
+  /* Initializations */
+
+  /* Core */
+  mpfr_set_prec (y, prec);
+  mpfr_set_ui (y, 3, MPFR_RNDN);
+}
+
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 5: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> bashexecute("gcc -fPIC -Wall -c libraryconstantexample.c -I$HOME/.local/includ
+e");
+> bashexecute("gcc -shared -o libraryconstantexample libraryconstantexample.o -l
+gmp -lmpfr");
+> euler_gamma = libraryconstant("./libraryconstantexample");
+> implementconstant(euler_gamma^(1/3));
+#include <mpfr.h>
+
+void
+const_something (mpfr_ptr y, mp_prec_t prec)
+{
+  /* Declarations */
+  mpfr_t tmp1;
+
+  /* Initializations */
+  mpfr_init2 (tmp1, prec+1);
+
+  /* Core */
+  euler_gamma (tmp1, prec+1);
+  mpfr_set_prec (y, prec+2);
+  mpfr_root (y, tmp1, 3, MPFR_RNDN);
+
+  /* Cleaning stuff */
+  mpfr_clear(tmp1);
+}
+\end{Verbatim}
+\end{minipage}\end{center}
+See also: \textbf{implementpoly} (\ref{labimplementpoly}), \textbf{libraryconstant} (\ref{lablibraryconstant}), \textbf{library} (\ref{lablibrary}), \textbf{function} (\ref{labfunction})

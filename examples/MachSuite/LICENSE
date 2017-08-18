@@ -1,0 +1,164 @@
+MachSuite License Information
+
+----
+Non-legal summary:
+
+MachSuite is a collection of benchmarks, some of which are derived from other
+authors. As a result, some of the source files in MachSuite have different
+licenses. However, all of the files in MachSuite are licensed under compatible
+terms, and MachSuite as a whole can be thought of as a BSD-3 compatible package.
+Each benchmark contains its own license header as necessary when derived from
+another source and all of those licenses are included in this file as well.
+All other files in MachSuite use the MachSuite BSD-3 license included below.
+
+What does this mean to you? Treat MachSuite as a BSD-3 licensed codebase. You
+can use it, modify it, distribute it, etc., so long as you include the license
+and copyright information. Just be aware that many people deserve credit for
+the code, so include this license file if you use it.
+
+----
+
+License Overview:
+
+(kernel/algorithm) | License | Copyright holders
+
+aes/aes            | ISC     | Ilya O. Levin, Hal Finney, Harvard University
+backprop/backprop  | BSD-3   | University of Virginia, Harvard University
+bfs/bulk           | BSD-3   | Harvard University
+bfs/queue          | BSD-3   | Harvard University
+des/des            | BSD-3   | Harvard University*
+fft/simple         | BSD-3   | Harvard University
+fft/transpose      | BSD-3   | UT-Battelle, Harvard University
+gemm/simple        | BSD-3   | Harvard University
+gemm/blocked       | BSD-3   | Harvard University 
+kmp/kmp            | BSD-3   | Harvard University
+md/grid            | BSD-3   | Harvard University
+md/knn             | BSD-3   | UT-Battelle, Harvard University
+nw/nw              | BSD-3   | Harvard University
+sha/sha            | BSD-3   | Harvard University**
+sort/merge         | BSD-3   | Harvard University
+sort/radix         | BSD-3   | Harvard University
+spmv/crs           | BSD-3   | Harvard University
+spmv/ellpack       | BSD-3   | Harvard University
+stencil/simple     | BSD-3   | Harvard University
+stencil/stencil3d  | BSD-3   | Harvard University
+viterbi/viterbi    | BSD-3   | Harvard University
+
+Notes:
+*Our DES code is derived from public domain code written by Richard Outerbridge.
+**Our SHA code is derived from public domain code written by Steve Reid et al.
+
+----
+
+MachSuite (BSD-3) License
+
+Copyright (c) 2014, the President and Fellows of Harvard College.
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+* Redistributions of source code must retain the above copyright notice, this
+  list of conditions and the following disclaimer.
+
+* Redistributions in binary form must reproduce the above copyright notice,
+  this list of conditions and the following disclaimer in the documentation
+  and/or other materials provided with the distribution.
+
+* Neither the name of Harvard University nor the names of its contributors may
+  be used to endorse or promote products derived from this software without
+  specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+----
+
+ISC License (aes implementation)
+
+Copyright (c) 2007-2009 Ilya O. Levin, http://www.literatecode.com
+Other contributors: Hal Finney
+Copyright (c) 2014, President and Fellows of Harvard College
+
+Permission to use, copy, modify, and distribute this software for any
+purpose with or without fee is hereby granted, provided that the above
+copyright notice and this permission notice appear in all copies.
+
+THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+
+----
+
+BSD-3 License (backprop implementation)
+
+Copyright (c)2008-2011 University of Virginia
+Copyright (c) 2014, the President and Fellows of Harvard College
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without modification,
+are permitted without royalty fees or other restrictions, provided that the
+following conditions are met:
+
+* Redistributions of source code must retain the above copyright notice, this
+  list of conditions and the following disclaimer.
+* Redistributions in binary form must reproduce the above copyright notice, this
+  list of conditions and the following disclaimer in the documentation and/or
+  other materials provided with the distribution.
+* Neither the name of the University of Virginia, the Dept. of Computer Science,
+  nor the names of its contributors may be used to endorse or promote products
+  derived from this software without specific prior written permission. 
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE UNIVERSITY OF VIRGINIA OR THE SOFTWARE AUTHORS
+BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE
+GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
+THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+----
+
+BSD-3 License (fft/transpose and md/knn implementation)
+
+Copyright (c) 2011, UT-Battelle, LLC
+Copyright (c) 2014, the President and Fellows of Harvard College
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+* Redistributions of source code must retain the above copyright
+  notice, this list of conditions and the following disclaimer.
+* Redistributions in binary form must reproduce the above copyright
+  notice, this list of conditions and the following disclaimer in the
+  documentation and/or other materials provided with the distribution.
+* Neither the name of Oak Ridge National Laboratory, nor UT-Battelle, LLC, nor
+  the names of its contributors may be used to endorse or promote products
+  derived from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.

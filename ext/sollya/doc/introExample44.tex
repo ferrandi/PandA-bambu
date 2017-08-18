@@ -1,0 +1,38 @@
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> prec = 24;
+The precision has been set to 24 bits.
+> a = 0.1;
+Warning: Rounding occurred when converting the constant "0.1" to floating-point 
+with 24 bits.
+If safe computation is needed, try to increase the precision.
+> b = 33554433;
+> prec = 64;
+The precision has been set to 64 bits.
+> display = binary;
+Display mode is binary numbers.
+> a;
+1.10011001100110011001101_2 * 2^(-4)
+> 0.1;
+Warning: Rounding occurred when converting the constant "0.1" to floating-point 
+with 64 bits.
+If safe computation is needed, try to increase the precision.
+1.100110011001100110011001100110011001100110011001100110011001101_2 * 2^(-4)
+> %24%0.1;
+Warning: Rounding occurred when converting the constant "0.1" to floating-point 
+with 24 bits.
+If safe computation is needed, try to increase the precision.
+1.10011001100110011001101_2 * 2^(-4)
+> c = 33554433;
+> b;
+1.0000000000000000000000001_2 * 2^(25)
+> c;
+1.0000000000000000000000001_2 * 2^(25)
+> %24%33554433;
+Warning: Rounding occurred when converting the constant "33554433" to floating-p
+oint with 24 bits.
+If safe computation is needed, try to increase the precision.
+1_2 * 2^(25)
+> 
+> 
+\end{Verbatim}
+\end{minipage}\end{center}

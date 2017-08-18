@@ -1,0 +1,55 @@
+<?xml version="1.0"?>
+<technology>
+  <library>
+    <name>STD_FU</name>
+    <template>
+      <name>MUX_GATE</name>
+      <circuit>
+        <component_o id="MUX_GATE">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;, Christian Pilato &lt;christian.pilato@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="MUX_GATE"/>
+          <port_o id="sel" dir="IN">
+            <structural_type_descriptor type="BOOL"/>
+          </port_o>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="in2" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="MUX_GATE in1 in2 out1" VERILOG_PROVIDED="assign out1 = sel ? in1 : in2;" VHDL_PROVIDED="begin\nout1 &lt;= in1 when sel=&apos;1&apos; else in2;"/>
+        </component_o>
+      </circuit>
+    </template>
+    <template>
+      <name>MUX_N_to_1</name>
+      <no_constant_characterization></no_constant_characterization>
+      <operation operation_name="MUX_N_to_1" portsize_parameters="*:2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,25,29,30,31,32,33,34,40,50,62,63,64,65"/>
+      <circuit>
+        <component_o id="MUX_N_to_1">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2015-2017 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="MUX_N_to_1"/>
+          <port_o id="selector" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_vector_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="MUX_N_to_1 selector in1 out1" VERILOG_PROVIDED="wire [BITSIZE_in1-1:0] inputarray [0:PORTSIZE_in1-1];\ngenvar i;\ngenerate\nfor (i=0; i &lt; PORTSIZE_in1; i=i+1)\n  begin : MUX_pack_block\n    assign inputarray[i] = in1[i*BITSIZE_in1 + BITSIZE_in1-1:i*BITSIZE_in1];\n end\nendgenerate\nassign out1 = inputarray[selector];"/>
+        </component_o>
+      </circuit>
+    </template>
+  </library>
+</technology>

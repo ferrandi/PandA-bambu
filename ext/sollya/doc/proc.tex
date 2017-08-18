@@ -1,0 +1,253 @@
+\subsection{proc}
+\label{labproc}
+\noindent Name: \textbf{proc}\\
+defines a \sollya procedure\\
+\noindent Usage: 
+\begin{center}
+\textbf{proc}(\emph{formal parameter1}, \emph{formal parameter2},..., \emph{formal parameter n}) \key{$\lbrace$} \emph{procedure body} \key{$\rbrace$} : \textsf{void} $\rightarrow$ \textsf{procedure}\\
+\textbf{proc}(\emph{formal parameter1}, \emph{formal parameter2},..., \emph{formal parameter n}) \key{$\lbrace$} \emph{procedure body} \textbf{return} \emph{expression}; \key{$\rbrace$} : \textsf{void} $\rightarrow$ \textsf{procedure}\\
+\textbf{proc}(\emph{formal list parameter} = ...) \key{$\lbrace$} \emph{procedure body} \key{$\rbrace$} : \textsf{void} $\rightarrow$ \textsf{procedure}\\
+\textbf{proc}(\emph{formal list parameter} = ...) \key{$\lbrace$} \emph{procedure body} \textbf{return} \emph{expression}; \key{$\rbrace$} : \textsf{void} $\rightarrow$ \textsf{procedure}\\
+\end{center}
+Parameters: 
+\begin{itemize}
+\item \emph{formal parameter1}, \emph{formal parameter2} through \emph{formal parameter n} represent identifiers used as formal parameters
+\item \emph{formal list parameter} represents an identifier used as a formal parameter for the list of an arbitrary number of parameters
+\item \emph{procedure body} represents the imperative statements in the body of the procedure
+\item \emph{expression} represents the expression \textbf{proc} shall evaluate to
+\end{itemize}
+\noindent Description: \begin{itemize}
+
+\item The \textbf{proc} keyword allows for defining procedures in the \sollya
+   language. These procedures are common \sollya objects that can be
+   applied to actual parameters after definition. Upon such an
+   application, the \sollya interpreter applies the actual parameters to
+   the formal parameters \emph{formal parameter1} through \emph{formal parameter n}
+   (resp. builds up the list of arguments and applies it to the list
+   \emph{formal list parameter}) and executes the \emph{procedure body}. The
+   procedure applied to actual parameters evaluates then to the
+   expression \emph{expression} in the \textbf{return} statement after the \emph{procedure body} 
+   or to \textbf{void}, if no return statement is given (i.e. a \textbf{return}
+   \textbf{void} statement is implicitly given).
+
+\item \sollya procedures defined by \textbf{proc} have no name. They can be bound
+   to an identifier by assigning the procedure object a \textbf{proc}
+   expression produces to an identifier. However, it is possible to use
+   procedures without giving them any name. For instance, \sollya
+   procedures, i.e. procedure objects, can be elements of lists. They can
+   even be given as an argument to other internal \sollya procedures. See
+   also \textbf{procedure} on this subject.
+
+\item Upon definition of a \sollya procedure using \textbf{proc}, no type check
+   is performed. More precisely, the statements in \emph{procedure body} are
+   merely parsed but not interpreted upon procedure definition with
+   \textbf{proc}. Type checks are performed once the procedure is applied to
+   actual parameters or to \textbf{void}. At this time, if the procedure was
+   defined using several different formal parameters \emph{formal parameter 1}
+   through \emph{formal parameter n}, it is checked whether the number of
+   actual parameters corresponds to the number of formal parameters. If
+   the procedure was defined using the syntax for a procedure with an
+   arbitrary number of parameters by giving a \emph{formal list parameter},
+   the number of actual arguments is not checked but only a list <formal
+   list parameter> of appropriate length is built up. Type checks are
+   further performed upon execution of each statement in \emph{procedure body}
+   and upon evaluation of the expression \emph{expression} to be returned.
+    
+   Procedures defined by \textbf{proc} containing a \textbf{quit} or \textbf{restart} command
+   cannot be executed (i.e. applied). Upon application of a procedure,
+   the \sollya interpreter checks beforehand for such a statement. If one
+   is found, the application of the procedure to its arguments evaluates
+   to \textbf{error}. A warning is displayed. Remark that in contrast to other
+   type or semantic correctness checks, this check is really performed
+   before interpreting any other statement in the body of the procedure.
+
+\item Through the \textbf{var} keyword it is possible to declare local
+   variables and thus to have full support of recursive procedures. This
+   means a procedure defined using \textbf{proc} may contain in its \emph{procedure body} 
+   an application of itself to some actual parameters: it suffices
+   to assign the procedure (object) to an identifier with an appropriate
+   name.
+
+\item \sollya procedures defined using \textbf{proc} may return other
+   procedures. Further \emph{procedure body} may contain assignments of
+   locally defined procedure objects to identifiers. See \textbf{var} for the
+   particular behaviour of local and global variables.
+
+\item The expression \emph{expression} returned by a procedure is evaluated with
+   regard to \sollya commands, procedures and external
+   procedures. Simplification may be performed.  However, an application
+   of a procedure defined by \textbf{proc} to actual parameters evaluates to the
+   expression \emph{expression} that may contain the free global variable or
+   that may be composed.
+\end{itemize}
+\noindent Example 1: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> succ = proc(n) { return n + 1; };
+> succ(5);
+6
+> 3 + succ(0);
+4
+> succ;
+proc(n)
+{
+nop;
+return (n) + (1);
+}
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 2: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> add = proc(m,n) { var res; res := m + n; return res; };
+> add(5,6);
+11
+> add;
+proc(m, n)
+{
+var res;
+res := (m) + (n);
+return res;
+}
+> verbosity = 1!;
+> add(3);
+Warning: at least one of the given expressions or a subexpression is not correct
+ly typed
+or its evaluation has failed because of some error on a side-effect.
+error
+> add(true,false);
+Warning: at least one of the given expressions or a subexpression is not correct
+ly typed
+or its evaluation has failed because of some error on a side-effect.
+Warning: the given expression or command could not be handled.
+error
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 3: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> succ = proc(n) { return n + 1; };
+> succ(5);
+6
+> succ(x);
+1 + x
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 4: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> hey = proc() { print("Hello world."); };
+> hey();
+Hello world.
+> print(hey());
+Hello world.
+void
+> hey;
+proc()
+{
+print("Hello world.");
+return void;
+}
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 5: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> fac = proc(n) { var res; if (n == 0) then res := 1 else res := n * fac(n - 1);
+ return res; };
+> fac(5);
+120
+> fac(11);
+39916800
+> fac;
+proc(n)
+{
+var res;
+if (n) == (0) then
+res := 1
+else
+res := (n) * (fac((n) - (1)));
+return res;
+}
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 6: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> myprocs = [| proc(m,n) { return m + n; }, proc(m,n) { return m - n; } |];
+> (myprocs[0])(5,6);
+11
+> (myprocs[1])(5,6);
+-1
+> succ = proc(n) { return n + 1; };
+> pred = proc(n) { return n - 1; };
+> applier = proc(p,n) { return p(n); };
+> applier(succ,5);
+6
+> applier(pred,5);
+4
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 7: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> verbosity = 1!;
+> myquit = proc(n) { print(n); quit; };
+> myquit;
+proc(n)
+{
+print(n);
+quit;
+return void;
+}
+> myquit(5);
+Warning: a quit or restart command may not be part of a procedure body.
+The procedure will not be executed.
+Warning: an error occurred while executing a procedure.
+Warning: the given expression or command could not be handled.
+error
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 8: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> printsucc = proc(n) { var succ; succ = proc(n) { return n + 1; }; print("Succe
+ssor of",n,"is",succ(n)); };
+> printsucc(5);
+Successor of 5 is 6
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 9: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> makeadd = proc(n) { var add; print("n =",n); add = proc(m,n) { return n + m; }
+; return add; };
+> makeadd(4);
+n = 4
+proc(m, n)
+{
+nop;
+return (n) + (m);
+}
+> (makeadd(4))(5,6);
+n = 4
+11
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 10: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> sumall = proc(L = ...) { var acc, i; acc = 0; for i in L do acc = acc + i; ret
+urn acc; };
+> sumall;
+proc(L = ...)
+{
+var acc, i;
+acc = 0;
+for i in L do
+acc = (acc) + (i);
+return acc;
+}
+> sumall();
+0
+> sumall(2);
+2
+> sumall(2,5);
+7
+> sumall(2,5,7,9,16);
+39
+> sumall @ [|1,...,10|];
+55
+\end{Verbatim}
+\end{minipage}\end{center}
+See also: \textbf{return} (\ref{labreturn}), \textbf{externalproc} (\ref{labexternalproc}), \textbf{void} (\ref{labvoid}), \textbf{quit} (\ref{labquit}), \textbf{restart} (\ref{labrestart}), \textbf{var} (\ref{labvar}), \textbf{@} (\ref{labconcat}), \textbf{error} (\ref{laberror})

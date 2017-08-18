@@ -1,0 +1,34 @@
+\subsection{absolute}
+\label{lababsolute}
+\noindent Name: \textbf{absolute}\\
+indicates an absolute error for \textbf{externalplot}, \textbf{fpminimax} or \textbf{supnorm}\\
+\noindent Usage: 
+\begin{center}
+\textbf{absolute} : \textsf{absolute$|$relative}\\
+\end{center}
+\noindent Description: \begin{itemize}
+
+\item The use of \textbf{absolute} in the command \textbf{externalplot} indicates that during
+   plotting in \textbf{externalplot} an absolute error is to be considered.
+    
+   See \textbf{externalplot} for details.
+
+\item Used with \textbf{fpminimax}, \textbf{absolute} indicates that \textbf{fpminimax} must try to minimize
+   the absolute error.
+    
+   See \textbf{fpminimax} for details.
+
+\item When given in argument to \textbf{supnorm}, \textbf{absolute} indicates that an absolute error
+   is to be considered for supremum norm computation.
+    
+   See \textbf{supnorm} for details.
+\end{itemize}
+\noindent Example 1: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> bashexecute("gcc -fPIC -c externalplotexample.c");
+> bashexecute("gcc -shared -o externalplotexample externalplotexample.o -lgmp -l
+mpfr");
+> externalplot("./externalplotexample",absolute,exp(x),[-1/2;1/2],12,perturb);
+\end{Verbatim}
+\end{minipage}\end{center}
+See also: \textbf{externalplot} (\ref{labexternalplot}), \textbf{fpminimax} (\ref{labfpminimax}), \textbf{relative} (\ref{labrelative}), \textbf{bashexecute} (\ref{labbashexecute}), \textbf{supnorm} (\ref{labsupnorm})

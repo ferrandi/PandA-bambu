@@ -1,0 +1,89 @@
+\subsection{void}
+\label{labvoid}
+\noindent Name: \textbf{void}\\
+the functional result of a side-effect or empty argument resp. the corresponding type\\
+\noindent Usage: 
+\begin{center}
+\textbf{void} : \textsf{void} $|$ \textsf{type type}\\
+\end{center}
+\noindent Description: \begin{itemize}
+
+\item The variable \textbf{void} represents the functional result of a
+   side-effect or an empty argument.  It is used only in combination with
+   the applications of procedures or identifiers bound through
+   \textbf{externalproc} to external procedures.
+    
+   The \textbf{void} result produced by a procedure or an external procedure
+   is not printed at the prompt. However, it is possible to print it out
+   in a print statement or in complex data types such as lists.
+    
+   The \textbf{void} argument is implicit when giving no argument to a
+   procedure or an external procedure when applied. It can nevertheless be given
+   explicitly.  For example, suppose that foo is a procedure or an
+   external procedure with a void argument. Then foo() and foo(void) are
+   correct calls to foo. Here, a distinction must be made for procedures having an
+   arbitrary number of arguments. In this case, an implicit \textbf{void}
+   as the only parameter to a call of such a procedure gets converted into 
+   an empty list of arguments, an explicit \textbf{void} gets passed as-is in the
+   formal list of parameters the procedure receives.
+
+\item \textbf{void} is used also as a type identifier for
+   \textbf{externalproc}. Typically, an external procedure taking \textbf{void} as an
+   argument or returning \textbf{void} is bound with a signature \textbf{void} $->$
+   some type or some type $->$ \textbf{void}. See \textbf{externalproc} for more
+   details.
+\end{itemize}
+\noindent Example 1: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> print(void);
+void
+> void;
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 2: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> hey = proc() { print("Hello world."); };
+> hey;
+proc()
+{
+print("Hello world.");
+return void;
+}
+> hey();
+Hello world.
+> hey(void);
+Hello world.
+> print(hey());
+Hello world.
+void
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 3: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> bashexecute("gcc -fPIC -Wall -c externalprocvoidexample.c");
+> bashexecute("gcc -fPIC -shared -o externalprocvoidexample externalprocvoidexam
+ple.o");
+> externalproc(foo, "./externalprocvoidexample", void -> void);
+> foo;
+foo(void) -> void
+> foo();
+Hello from the external world.
+> foo(void);
+Hello from the external world.
+> print(foo());
+Hello from the external world.
+void
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 4: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> procedure blub(L = ...) { print("Argument list:", L); };
+> blub(1);
+Argument list: [|1|]
+> blub();
+Argument list: [| |]
+> blub(void); 
+Argument list: [|void|]
+\end{Verbatim}
+\end{minipage}\end{center}
+See also: \textbf{error} (\ref{laberror}), \textbf{proc} (\ref{labproc}), \textbf{externalproc} (\ref{labexternalproc})

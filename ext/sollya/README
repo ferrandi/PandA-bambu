@@ -1,0 +1,64 @@
+Sollya is a computer program whose purpose is to provide an
+environment for safe floating-point code development. It is
+particularily targeted to the automatized implementation of
+mathematical floating-point libraries (libm). Amongst other features,
+it offers a certified infinity norm, an automatic polynomial
+implementer and a fast Remez algorithm.
+
+
+In order to compile the software you will need the following packages
+installed:
+
+- gcc
+- g++
+- gnuplot
+- gmp
+- mpfr 2.2.0 or later
+- mpfi
+- libxml2-dev
+- fplll (available at url http://perso.ens-lyon.fr/damien.stehle/english.html#software)
+- libtool
+
+In order to compile, use the makefile by invoking it using the
+following command:
+
+./configure
+make
+
+The configure script coming with this distribution of Sollya supports
+several --with-*** switches. These switches, as usual, enable the libraries
+Sollya depends on to be installed in non-standard directories.
+Please use
+
+./configure --help
+
+to get an overview over the different switches.
+
+
+You can finally use the software typing
+
+./sollya
+
+or install it with:
+
+make install
+
+The use of the readline-wrapper rlwrap is highly recommended for
+interactive work with sollya.
+
+
+If you wish to compile and install Sollya from a fresh svn checkout,
+you further need:
+
+- bison version 2.3 or later
+- flex version 2.5.33 or later
+
+Bison and flex are really needed if you compile a fresh svn checkout
+or if you modify the grammar files contained in the
+distribution. Otherwise, precompiled versions are found in the
+distribution and can be used.
+
+When compiling a fresh svn checkout, launch first the autogen.sh shell
+script before executing the two steps indicated above.
+Users compiling fresh svn checkouts are recommanded to use the
+--enable-strict-lexer-parser-check option of the configure script.

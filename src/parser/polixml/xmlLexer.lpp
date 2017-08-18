@@ -1,0 +1,132 @@
+/*
+ *
+ *                   _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
+ *                  _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
+ *                 _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
+ *                _/      _/    _/ _/    _/ _/   _/ _/    _/
+ *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
+ *
+ *             ***********************************************
+ *                              PandA Project 
+ *                     URL: http://panda.dei.polimi.it
+ *                       Politecnico di Milano - DEIB
+ *                        System Architectures Group
+ *             ***********************************************
+ *              Copyright (c) 2004-2017 Politecnico di Milano
+ *
+ *   This file is part of the PandA framework.
+ *
+ *   The PandA framework is free software; you can redistribute it and/or modify
+ *   it under the terms of the GNU General Public License as published by
+ *   the Free Software Foundation; either version 3 of the License, or
+ *   (at your option) any later version.
+ *
+ *   This program is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU General Public License for more details.
+ *
+ *   You should have received a copy of the GNU General Public License
+ *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+*/
+/**
+ * @file xmlLexer.lpp
+ *
+ * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
+ * $Revision$
+ * $Date$
+ * Last modified by $Author$
+ *
+*/
+%option yylineno
+%option never-interactive
+/*%option noyywrap*/
+%option 8bit nodefault
+
+
+%{
+
+#include <iosfwd>
+#include <fstream>
+#include <string>
+
+///Utility include
+#include "refcount.hpp"
+#include "config_HAVE_BISON_2_7_OR_GREATER.hpp"
+
+///NOTE: forward declaration of XmlBisonParserData, xml_document, XmlFlexLexer are in this point since they will be used in xmlParser.h
+REF_FORWARD_DECL(XmlBisonParserData);
+REF_FORWARD_DECL(XmlFlexLexer);
+REF_FORWARD_DECL(xml_document);
+
+
+#if HAVE_BISON_2_7_OR_GREATER
+#include "xmlParser.hpp"
+#else
+#include "xmlParser.h"
+#endif
+#include "xmlLexer.hpp"
+#include "exceptions.hpp"
+using namespace std;
+
+///Skipping warnings due to flex
+#pragma GCC diagnostic ignored "-Wconversion"
+#pragma GCC diagnostic ignored "-Wsign-conversion"
+#pragma GCC diagnostic ignored "-Wsign-compare"
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+#pragma GCC diagnostic ignored "-Wredundant-decls"
+#pragma GCC diagnostic ignored "-Wold-style-cast"
+#pragma GCC diagnostic ignored "-Wswitch-default"
+#if (__GNUC__ > 4) || (__GNUC__ == 4 && __GNUC_MINOR__ >= 7)
+#pragma GCC diagnostic ignored "-Wzero-as-null-pointer-constant"
+#endif
+%}
+
+
+nl                (\r\n|\r|\n)
+ws                [ \t\r\n]+
+open              "<"
+close             ">"
+namestart         [A-Za-z\200-\377_]
+namechar          [A-Za-z\200-\377_0-9:]
+esc               "&#"[0-9]+";"|"&#x"[0-9a-fA-F]+";"|"&amp;"|"&gt;"|"&lt;"|"&apos;"|"&quot;"|\n
+name              {namestart}{namechar}*
+data              ([^<&]|{esc})+
+comment           {open}"!--"([^-]|"-"[^-])*"--"{close}
+string            \"([^"&]|{esc})*\"|\'([^'&]|{esc})*\'
+internal_doctype  {open}"!DOCTYPE"{ws}{name}{ws}"["([^\]])*"]"{close}
+external_doctype  {open}"!DOCTYPE"{ws}{name}{ws}"SYSTEM"{ws}{string}{close}
+xmltok            {open}"?xml"
+attdef            {open}"?XML-ATT"
+
+/*
+ * The CONTENT mode is used for the content of elements, i.e.,
+ * between the ">" and "<" of element tags.
+ * The INITIAL mode is used outside the top level element
+ * and inside markup.
+ */
+
+%s CONTENT
+
+%%
+
+<INITIAL>{ws}       {/* skip */}
+<INITIAL>"/"        {return SLASH;}
+<INITIAL>"="        {return EQ;}
+<INITIAL>{close}    {BEGIN(CONTENT); return CLOSE;}
+<INITIAL>{name}     {lvalp->text = YYText(); return NAME;}
+<INITIAL>{string}   {lvalp->text = YYText(); return VALUE;}
+<INITIAL>"?"{close} {BEGIN(keep); return ENDDEF;}
+
+{xmltok}            {keep = YY_START; BEGIN(INITIAL); return XML_TOKEN;}
+{attdef}            {keep = YY_START; BEGIN(INITIAL); return ATTDEF;}
+{open}{ws}?{name}   {BEGIN(INITIAL); lvalp->text = YYText(); return POLIXML_START;}
+{open}{ws}?"/"      {BEGIN(INITIAL); return END;}
+{comment}           {lvalp->text = YYText(); return COMMENT;}
+{internal_doctype}  {return DOCTYPE;}
+{external_doctype}  {return DOCTYPE;}
+<CONTENT>{data}     {lvalp->text = YYText(); return DATA;}
+
+.                   {LexerError("Lexical Error");}
+%%

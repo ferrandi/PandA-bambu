@@ -1,0 +1,31 @@
+\subsection{default}
+\label{labdefault}
+\noindent Name: \textbf{default}\\
+default value for some commands.\\
+\noindent Description: \begin{itemize}
+
+\item \textbf{default} is a special value and is replaced by something depending on the 
+   context where it is used. It can often be used as a joker, when you want to 
+   specify one of the optional parameters of a command and not the others: set 
+   the value of uninteresting parameters to \textbf{default}.
+
+\item Global variables can be reset by affecting them the special value \textbf{default}.
+\end{itemize}
+\noindent Example 1: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> p = remez(exp(x),5,[0;1],default,1e-5);
+> q = remez(exp(x),5,[0;1],1,1e-5);
+> p==q;
+true
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 2: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> prec;
+165
+> prec=200;
+The precision has been set to 200 bits.
+> prec=default;
+The precision has been set to 165 bits.
+\end{Verbatim}
+\end{minipage}\end{center}

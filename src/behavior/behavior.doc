@@ -1,0 +1,635 @@
+/*
+ *
+ *                   _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
+ *                  _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
+ *                 _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
+ *                _/      _/    _/ _/    _/ _/   _/ _/    _/
+ *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
+ *
+ *             ***********************************************
+ *                              PandA Project 
+ *                     URL: http://panda.dei.polimi.it
+ *                       Politecnico di Milano - DEIB
+ *                        System Architectures Group
+ *             ***********************************************
+ *              Copyright (c) 2004-2017 Politecnico di Milano
+ *
+ *   This file is part of the PandA framework.
+ *
+ *   The PandA framework is free software; you can redistribute it and/or modify
+ *   it under the terms of the GNU General Public License as published by
+ *   the Free Software Foundation; either version 3 of the License, or
+ *   (at your option) any later version.
+ *
+ *   This program is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU General Public License for more details.
+ *
+ *   You should have received a copy of the GNU General Public License
+ *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+*/
+/*!
+
+\page src_behavior_page Intermediate representation
+
+TODO: add a part about graph created starting from c short circuits
+
+
+Language based specification usually are translated into intermediate representations to efficiently manage and analyze the design specification. Panda as intermediate representation uses different types of graph. They can be divided into two main class:
+
+- Representation at operation level: in these types of graphs every vertex corresponds to an operation and every edge corresponds to a precedence or a dependence (all graphs in this class are directed). There are also two nodes which doesn't correspond to any real operation: ENTRY and EXIT. The first represents the specification begining, the second the specification ending. In all graphs there all vertices are directed connected to node ENTRY. The graphs which belongs to this class are:
+ - Control-Flow Graph (CFG): it represents the control constructs of a description, like loops, branches, jumps, etc.
+ - Control Dependence Graph (CDG): it represents the control dependence of the description, i. e. by which operations the execution of every one is controlled
+ - Data-Flow Graph (DFG): since it is based of data dependency, it is the most parallel representation of the description. It Nevertheless it is not sufficient to fully represent control intensive representations.
+ - Anti-dependencies (ADG) represents data dependences of type write after write and write after read
+ - System Dependence Graph (SDG): essentialy it's equal to the merge of CDG and DFG
+ - System Dependence and Antidependence Graph (SADG): System Dependence Graph plus Anti-Dependencies
+ - Speculation Graph: System Dependence where some control dependences are eliminated in order to enable speculation in scheduling; there are also some edges added in order to reduce the possible speculation
+ - Transitive reducted system dependence graph with feedback edges (RFSDG) (graph without feedback edges does not exist because it is not used)
+ - Helping Graph (HG): representation used by ILP scheduler
+- Representation at basic block level: in these types of graphs every vertex corresponds to a set of control equivalent operations (basic block):
+ - Basic Block Control-Flow Graph (BB): it represents the control constructs of a description at basic block level
+ - Dominator Tree (DT): dominator tree built on Basic Block Control-Flow Graph
+ - Post-Dominator Tree (PDT): post-dominator tree built on Basic Block Control-Flow Graph
+
+For many of these types of graphs there are two different version: the first hasn't feedback edges, the second does.
+An edge is of feedback type if it closes a cycle in some path starting from ENTRY.
+
+In following subsection all types will be more accurately described and it will be given the correspondent graph of the following example:
+\verbatim
+ 1  a = 1;
+ 2  b = 2;
+ 3  c = 3;
+ 4  d = 0;
+ 5  a = a + b;
+ 6  e = a == b;
+ 7  if (e)
+    {
+ 8    c = a + b;
+      do
+      {
+ 9      h = c + d;
+10      c = c + 1;
+11      d = d + 1;
+12      g = c + d;
+13      f = d !=c ;
+      }
+14    while(f);
+    }
+15  c = c + d;
+16  c = c + 1;
+\endverbatim
+
+\subsection IR_CFG Control-Flow Graph (CFG)
+
+The control flow graph represents the sequencing of the operations as described in the language specification. The CFG is a directed graph whose vertexes are represented by set V = {\f$v_i\f$ ; i = 1, 2, ... , \f$no_p\f$ }. The set of edges is E = {(\f$v_i\f$ , \f$v_j\f$ ); i , j = 1, 2, ... , \f$no_p\f$ }. It takes into account all constructs that cause a re-direction of the computational flow, such as branch statements, loop statements, jump statements, etc. The advantages of this representation is that it is quite simple to extract from the system specification even if it does not express the potential parallelism of the operations.
+
+On the other side one of the main disadvantages is that CFG generation for multi-process systems specifications does not appear to be simple, since a CFG has to manage at the same time all the flows of control of all the processes that compose the system. Thus the CFG model results intrinsically suitable just for single-process descriptions.
+
+Some of the algorithms and tools which work on graph in PandA assume that the only type of cycle construct present in specification is the repeat-until. So if in specification some while-construct is present, it will be transformed into a "if repeat until" structure.
+
+An example of CFG is:
+\dot
+digraph CFG_op {
+  0[color=blue,shape=Msquare, label="ENTRY"];
+  1[color=burlywood,shape=box,label="a = 1"];
+  2[color=burlywood,shape=box,label="b = 2"];
+  3[color=burlywood,shape=box,label="c = 3"];
+  4[color=burlywood,shape=box,label="d = 0"];
+  5[label = "a = a + b"];
+  6[label = "e = a == b"];
+  7[color=red,shape=diamond,label="if (e)"];
+  8[label = "c = a + b"];
+  9[label = "h = c + d"];
+  10[label = "c = c + 1"];
+  11[label = "d = d + 1"];
+  12[label = "g = c + d"];
+  13[label = "f = d != c"];
+  14[color=red,shape=diamond,label="while (f)"];
+  15[label = "c = c + d"];
+  16[label = "c = c + 1"];
+  17[color=blue,shape=Msquare, label="EXIT"];
+  0->1 [color = red3];
+  1->2 [color = red3];
+  2->3 [color = red3];
+  3->4 [color = red3];
+  4->5 [color = red3];
+  5->6 [color = red3];
+  6->7 [color = red3];
+  7->8 [color = red3];
+  8->9 [color = red3];
+  9->10 [color = red3];
+  10->11 [color = red3];
+  11->12 [color = red3];
+  12->13 [color = red3];
+  13->14 [color = red3];
+  14->9 [color = gold];
+  7->15 [color = red3];
+  14->15 [color = red3];
+  15->16 [color = red3];
+  16->17 [color = red3];
+  0->17 [color = red3];
+}
+\enddot
+As you can see diamond nodes represent selection operations (e.g. TYPE_IF nodes), box nodes represent assignmente operations and square boxes represent special operations (ENTRY, EXIT and functions call which are not present in the given simple example)
+
+\subsection IR_CDG Control-Dependence Graph (CDG)
+The Control-Dependence graph represents control dependencies within operations, e. g. from which operation the excution of a single operation is controlled. We say that a node y is control-dependent on x if in CFG (for the moment we do not consider control flow feedback edges) from x we can branch to u or v; from u there is a path to exit that avoids y, and from v every path to exit hists y:
+\dot
+digraph CDG_example {
+   0[label = "x"];
+   1[label = "u"];
+   2[label = "v"];
+   3[label = "y"];
+   4[label = "exit"];
+   0->1 [color = red3, style=dashed];
+   0->2 [color = red3, style=dashed];
+   1->3 [color = red3, style=dashed];
+   2->3 [color = red3, style=dashed];
+   2->3 [color = red3, style=dashed];
+   1->4 [color = red3, style=dashed];
+   3->4 [color = red3, style=dashed];
+   3->4 [color = red3, style=dashed];
+}
+\enddot
+The CDG used in PandA has not only an edge between every pair (x,y) where y is control-dependent on x, but also from every node belonging to a cycle to ifs at the end of that cycle. In this mode we forced the check of the condition of the loop to be executed after all the operation of the cycles.
+
+Moreover the in case of loop we also add some control dependence feedback edges: there is a control dependence feedback edge from every if which ends the loop to all operation which starts a new flow in the loop body, e. g. each operation which has control or data dependence only from operations external to loop body.
+An example of CDG is:
+\dot
+digraph CDG_op {
+  0[color=blue,shape=Msquare, label="ENTRY"];
+  1[color=burlywood,shape=box,label="a = 1"];
+  2[color=burlywood,shape=box,label="b = 2"];
+  3[color=burlywood,shape=box,label="c = 3"];
+  4[color=burlywood,shape=box,label="d = 0"];
+  5[label = "a = a + b"];
+  6[label = "e = a == b"];
+  7[color=red,shape=diamond,label="if (e)"];
+  8[label = "c = a + b"];
+  9[label = "h = c + d"];
+  10[label = "c = c + 1"];
+  11[label = "d = d + 1"];
+  12[label = "g = c + d"];
+  13[label = "f = d != c"];
+  14[color=red,shape=diamond,label="while (f)"];
+  15[label = "c = c + d"];
+  16[label = "c = c + 1"];
+  17[color=blue,shape=Msquare, label="EXIT"];
+  0->1 [color=red3];
+  0->2 [color=red3];
+  0->3 [color=red3];
+  0->4 [color=red3];
+  0->5 [color=red3];
+  0->6 [color=red3];
+  0->7 [color=red3];
+  0->15 [color=red3];
+  0->16 [color=red3];
+  0->17 [color=red3];
+  7->8 [color=red3];
+  7->9 [color=red3];
+  7->10 [color=red3];
+  7->11 [color=red3];
+  7->12 [color=red3];
+  7->13 [color=red3];
+  7->14 [color=red3];
+  9->14 [color=red3];
+  10->14 [color=red3];
+  11->14 [color=red3];
+  12->14 [color=red3];
+  13->14 [color=red3];
+  14->9 [color=gold];
+  14->10 [color=gold];
+  14->11 [color=gold];
+}
+\enddot
+
+
+\subsection IR_DFG Data-Flow Graph (DFG)
+
+The data flow graph represents operations and data dependencies only of type read after write. A DFG is a directed graph whose vertexes are represented by the set   V = {\f$v_i\f$ ; i = 1, 2, ... , \f$no_p\f$ }, where \f$no_p\f$ is the number of operations. The set of edges E = {(\f$v_i\f$ , \f$v_j\f$ ); i , j = 1, 2, ... , \f$no_p\f$ } represents the data transfer from an operation to another one. The DFG model implicitly assumes the existence of variables, that store the information required and generated by the operations. Each variable has a lifetime and the model assumes that the values of the variables are preserved during their lifetime. The lifetime of a variable is the interval from the birth and the death of the variable. The birth is the time at which the value is generated as output of an operation, the death is the latest time at which the variable is used as input to an operation.
+An Example of DFG is:
+\dot 
+digraph DFG_op {
+  0[color=blue,shape=Msquare, label="ENTRY"];
+  1[color=burlywood,shape=box,label="a = 1"];
+  2[color=burlywood,shape=box,label="b = 2"];
+  3[color=burlywood,shape=box,label="c = 3"];
+  4[color=burlywood,shape=box,label="d = 0"];
+  5[label = "a = a + b"];
+  6[label = "e = a == b"];
+  7[color=red,shape=diamond,label="if (e)"];
+  8[label = "c = a + b"];
+  9[label = "h = c + d"];
+  10[label = "c = c + 1"];
+  11[label = "d = d + 1"];
+  12[label = "g = c + d"];
+  13[label = "f = d != c"];
+  14[color=red,shape=diamond,label="while (f)"];
+  15[label = "c = c + d"];
+  16[label = "c = c + 1"];
+  17[color=blue,shape=Msquare, label="EXIT"];
+  0->1 [color = blue, label = "1"];
+  0->2 [color = blue, label = "2"];
+  0->3 [color = blue, label = "3"];
+  0->4 [color = blue, label = "0"];
+  1->5 [color = blue, label = "a"];
+  2->5 [color = blue, label = "b"];
+  5->6 [color = blue, label = "a"];
+  2->6 [color = blue, label = "b"];
+  6->7 [color = blue, label = "e"];
+  5->8 [color = blue, label = "a"];
+  2->8 [color = blue, label = "b"];
+  8->9 [color = blue, label = "c"];
+  4->9 [color = blue, label = "d"];
+  8->10 [color = blue, label = "c"];
+  4->11 [color = blue, label = "d"];
+  10->12 [color = blue, label = "c"];
+  11->12 [color = blue, label = "d"];
+  10->13 [color = blue, label = "c"];
+  11->13 [color = blue, label = "d"];
+  13->14 [color = blue, label = "f"];
+  10->15 [color = blue, label = "c"];
+  11->15 [color = blue, label = "d"];
+  15->16 [color = blue, label = "c"];
+  10->9 [color = lightblue, label = "c"];
+  11->9 [color = lightblue, label = "d"];
+  10->10 [color = lightblue, label = "c"];
+  11->11 [color = lightblue, label = "d"];
+}
+\enddot
+
+\subsection IR_ADG Anti-dependence-graph (ADG)
+The Anti-dependence-graph represents operations and data dependencies of type write after write and write after read. These dependencies assure that variable reading and writing follows strict consistency model. Note that if in the original specification there are two writes (definitions) of the same variable and there isn't a use of the first definition, in the PandA representation the first operation does not write the variable, so in this case the Anti-dependence will not be added. The problem of variable consistency model and then the problem of Anti-dependencies are present only in case of not using SSA (Static Single Assingment) form: if we use it there are no more anti-dependencies.
+\dot
+digraph ADG_op {
+  0[color=blue,shape=Msquare, label="ENTRY"];
+  1[color=burlywood,shape=box,label="a = 1"];
+  2[color=burlywood,shape=box,label="b = 2"];
+  3[color=burlywood,shape=box,label="c = 3"];
+  4[color=burlywood,shape=box,label="d = 0"];
+  5[label = "a = a + b"];
+  6[label = "e = a == b"];
+  7[color=red,shape=diamond,label="if (e)"];
+  8[label = "c = a + b"];
+  9[label = "h = c + d"];
+  10[label = "c = c + 1"];
+  11[label = "d = d + 1"];
+  12[label = "g = c + d"];
+  13[label = "f = d != c"];
+  14[color=red,shape=diamond,label="while (f)"];
+  15[label = "c = c + d"];
+  16[label = "c = c + 1"];
+  17[color=blue,shape=Msquare, label="EXIT"];
+  1->5 [color=green4, label = "a"];
+  3->8 [color=green4, label = "c"];
+  8->10 [color=green4, label = "c"];
+  10->15 [color=green4, label = "c"];
+  15->16 [color=green4, label = "c"];
+  4->11 [color=green4, label = "d"];
+}
+\enddot
+
+\subsection IR_SDG System dependence graph (SDG)
+The System dependence graph is the fusion of two graphs: Control-dependence graph and Data-flow graph. It's useful because it represents both data and control dependence in an unique graph, but it does not contain futher precedences which are not real like control flow graph ones. It doesn't no represent Anti-dependencies so it can be used by scheduling algorithms only if we are using SSA form.
+An example of SDG is:
+\dot
+digraph SDG_op {
+  0[color=blue,shape=Msquare, label="ENTRY"];
+  1[color=burlywood,shape=box,label="a = 1"];
+  2[color=burlywood,shape=box,label="b = 2"];
+  3[color=burlywood,shape=box,label="c = 3"];
+  4[color=burlywood,shape=box,label="d = 0"];
+  5[label = "a = a + b"];
+  6[label = "e = a == b"];
+  7[color=red,shape=diamond,label="if (e)"];
+  8[label = "c = a + b"];
+  9[label = "h = c + d"];
+  10[label = "c = c + 1"];
+  11[label = "d = d + 1"];
+  12[label = "g = c + d"];
+  13[label = "f = d != c"];
+  14[color=red,shape=diamond,label="while (f)"];
+  15[label = "c = c + d"];
+  16[label = "c = c + 1"];
+  17[color=blue,shape=Msquare, label="EXIT"];
+  0->1 [color=red3];
+  0->2 [color=red3];
+  0->3 [color=red3];
+  0->4 [color=red3];
+  0->5 [color=red3];
+  0->6 [color=red3];
+  0->7 [color=red3];
+  0->15 [color=red3];
+  0->16 [color=red3];
+  0->17 [color=red3];
+  7->8 [color=red3];
+  7->9 [color=red3];
+  7->10 [color=red3];
+  7->11 [color=red3];
+  7->12 [color=red3];
+  7->13 [color=red3];
+  7->14 [color=red3];
+  9->14 [color=red3];
+  10->14 [color=red3];
+  11->14 [color=red3];
+  12->14 [color=red3];
+  13->14 [color=red3];
+  14->9 [color=gold];
+  14->10 [color=gold];
+  14->11 [color=gold];
+  0->1 [color = blue, label = "1"];
+  0->2 [color = blue, label = "2"];
+  0->3 [color = blue, label = "3"];
+  0->4 [color = blue, label = "0"];
+  1->5 [color = blue, label = "a"];
+  2->5 [color = blue, label = "b"];
+  5->6 [color = blue, label = "a"];
+  2->6 [color = blue, label = "b"];
+  6->7 [color = blue, label = "e"];
+  5->8 [color = blue, label = "a"];
+  2->8 [color = blue, label = "b"];
+  8->9 [color = blue, label = "c"];
+  4->9 [color = blue, label = "d"];
+  8->10 [color = blue, label = "c"];
+  4->11 [color = blue, label = "d"];
+  10->12 [color = blue, label = "c"];
+  11->12 [color = blue, label = "d"];
+  10->13 [color = blue, label = "c"];
+  11->13 [color = blue, label = "d"];
+  13->14 [color = blue, label = "f"];
+  10->15 [color = blue, label = "c"];
+  11->15 [color = blue, label = "d"];
+  15->16 [color = blue, label = "c"];
+  10->9 [color = lightblue, label = "c"];
+  11->9 [color = lightblue, label = "d"];
+  10->10 [color = lightblue, label = "c"];
+  11->11 [color = lightblue, label = "d"];
+}
+\enddot
+
+\subsection IR_SADG System Dependence and Anti-dependence Graph (SADG)
+The System dependence and anti-dependence graph is the fusion of three different graph: control dependence graph, data flow graph and Anti-dependence graph. For this reason it reperesents all type of dependence and precedence between operations and it can be used by scheduling alghorithm in order to compute scheduling.
+An example of SADG is:
+\dot
+digraph SADG_op {
+  0[color=blue,shape=Msquare, label="ENTRY"];
+  1[color=burlywood,shape=box,label="a = 1"];
+  2[color=burlywood,shape=box,label="b = 2"];
+  3[color=burlywood,shape=box,label="c = 3"];
+  4[color=burlywood,shape=box,label="d = 0"];
+  5[label = "a = a + b"];
+  6[label = "e = a == b"];
+  7[color=red,shape=diamond,label="if (e)"];
+  8[label = "c = a + b"];
+  9[label = "h = c + d"];
+  10[label = "c = c + 1"];
+  11[label = "d = d + 1"];
+  12[label = "g = c + d"];
+  13[label = "f = d != c"];
+  14[color=red,shape=diamond,label="while (f)"];
+  15[label = "c = c + d"];
+  16[label = "c = c + 1"];
+  17[color=blue,shape=Msquare, label="EXIT"];
+  0->1 [color=red3];
+  0->2 [color=red3];
+  0->3 [color=red3];
+  0->4 [color=red3];
+  0->5 [color=red3];
+  0->6 [color=red3];
+  0->7 [color=red3];
+  0->15 [color=red3];
+  0->16 [color=red3];
+  0->17 [color=red3];
+  7->8 [color=red3];
+  7->9 [color=red3];
+  7->10 [color=red3];
+  7->11 [color=red3];
+  7->12 [color=red3];
+  7->13 [color=red3];
+  7->14 [color=red3];
+  9->14 [color=red3];
+  10->14 [color=red3];
+  11->14 [color=red3];
+  12->14 [color=red3];
+  13->14 [color=red3];
+  14->9 [color=gold];
+  14->10 [color=gold];
+  14->11 [color=gold];
+  0->1 [color = blue, label = "1"];
+  0->2 [color = blue, label = "2"];
+  0->3 [color = blue, label = "3"];
+  0->4 [color = blue, label = "0"];
+  1->5 [color = blue, label = "a"];
+  2->5 [color = blue, label = "b"];
+  5->6 [color = blue, label = "a"];
+  2->6 [color = blue, label = "b"];
+  6->7 [color = blue, label = "e"];
+  5->8 [color = blue, label = "a"];
+  2->8 [color = blue, label = "b"];
+  8->9 [color = blue, label = "c"];
+  4->9 [color = blue, label = "d"];
+  8->10 [color = blue, label = "c"];
+  4->11 [color = blue, label = "d"];
+  10->12 [color = blue, label = "c"];
+  11->12 [color = blue, label = "d"];
+  10->13 [color = blue, label = "c"];
+  11->13 [color = blue, label = "d"];
+  13->14 [color = blue, label = "f"];
+  10->15 [color = blue, label = "c"];
+  11->15 [color = blue, label = "d"];
+  15->16 [color = blue, label = "c"];
+  10->9 [color = lightblue, label = "c"];
+  11->9 [color = lightblue, label = "d"];
+  10->10 [color = lightblue, label = "c"];
+  11->11 [color = lightblue, label = "d"];
+  1->5 [color=green4, label = "a"];
+  3->8 [color=green4, label = "c"];
+  8->10 [color=green4, label = "c"];
+  10->15 [color=green4, label = "c"];
+  15->16 [color=green4, label = "c"];
+  4->11 [color=green4, label = "d"];
+}
+\enddot
+
+\subsection IR_SG Speculation Graph
+Speculation graph is a modified version of SADG where some control constraints are relaxed in order to permit control speculation in scheduling. This type of speculation consists in executing operations controlled by a controll construct like an if before that if condition and so the target of the control flow execution is computed. Doing this it is possible executing the specification in less time but it is also possible that more functional unit and a more complex controller is required in order to permit this techinique. In order to limitate the depth of speculation, it's possible only to anticipate the execution of operations which directly dependes by a control construct but it is not possible to anticipate the execution of operation which depends inderectly by a chain control dependence plus other type of dependence (data or anti-dependence).
+An example of SG is:
+\dot
+digraph SG_op {
+  0[color=blue,shape=Msquare, label="ENTRY"];
+  1[color=burlywood,shape=box,label="a = 1"];
+  2[color=burlywood,shape=box,label="b = 2"];
+  3[color=burlywood,shape=box,label="c = 3"];
+  4[color=burlywood,shape=box,label="d = 0"];
+  5[label = "a = a + b"];
+  6[label = "e = a == b"];
+  7[color=red,shape=diamond,label="if (e)"];
+  8[label = "c = a + b"];
+  9[label = "h = c + d"];
+  10[label = "c = c + 1"];
+  11[label = "d = d + 1"];
+  12[label = "g = c + d"];
+  13[label = "f = d != c"];
+  14[color=red,shape=diamond,label="while (f)"];
+  15[label = "c = c + d"];
+  16[label = "c = c + 1"];
+  17[color=blue,shape=Msquare, label="EXIT"];
+  0->1 [color = blue, label = "1"];
+  0->2 [color = blue, label = "2"];
+  0->3 [color = blue, label = "3"];
+  0->4 [color = blue, label = "0"];
+  1->5 [color = blue, label = "a"];
+  2->5 [color = blue, label = "b"];
+  5->6 [color = blue, label = "a"];
+  2->6 [color = blue, label = "b"];
+  6->7 [color = blue, label = "e"];
+  5->8 [color = blue, label = "a"];
+  2->8 [color = blue, label = "b"];
+  8->9 [color = blue, label = "c"];
+  4->9 [color = blue, label = "d"];
+  8->10 [color = blue, label = "c"];
+  4->11 [color = blue, label = "d"];
+  10->12 [color = blue, label = "c"];
+  11->12 [color = blue, label = "d"];
+  10->13 [color = blue, label = "c"];
+  11->13 [color = blue, label = "d"];
+  13->14 [color = blue, label = "f"];
+  10->15 [color = blue, label = "c"];
+  11->15 [color = blue, label = "d"];
+  15->16 [color = blue, label = "c"];
+  10->9 [color = lightblue, label = "c"];
+  11->9 [color = lightblue, label = "d"];
+  10->10 [color = lightblue, label = "c"];
+  11->11 [color = lightblue, label = "d"];
+  7->15 [color = red3];
+  7->16 [color = red3]
+}
+\enddot
+
+\subsection IR_BASIC_BLOCK Basic Block control flow graph
+A Basic Block is a sequence of operations that is always entered at the beginning and exited at the end, that is:
+-the first statement is a Label, e. g. a possible target of a jump;
+-the last statement is a conditional jump, e. g. a control construct;
+-there are no other labels or jumps. 
+Basic blocks are usually the basic unit to which compiler optimizations are applied in compiler theory, because if during the execution the first operation of basic block is executed, all operations belonging to the same basic block will be executed.
+
+Instructions which begin a new basic block include:
+- Procedure entry points
+- Targets of jumps or branches
+- "Fall-through" instructions following some conditional branches
+
+Instructions that end a basic block include:
+- Unconditional and conditional branches, both direct and indirect.
+- Returns to a calling procedure.
+- Function calls can be at the end of a basic block if they may not return, such as functions which throw exceptions.
+
+The Control flow graph of Basic Block is like previously described Control flow graph but the vertices instead of single operation are basic blocks. So in the version with feedback edges of this particular type of graphs it is not possible that a vertex has only one edge ingoing and a vertex has only one edge outgoing. The blocks to which control may transfer after reaching the end of a block are called that block's successors, while the blocks from which control may have come when entering a block are called that block's predecessors.
+
+The algorithm for generating basic blocks from a listing of code is simple: you scan over the code, marking block boundaries, which are instructions which may either begin or end a block because they either transfer control or accept control from another point. Then, the listing is   simply "cut" at each of these points, and basic blocks remain. Note that this method does not always generate maximal basic blocks, by the formal definition, but they are usually sufficient.
+
+
+An example of BB Control Flow Graph is:
+\dot
+digraph CFG_BB {
+  subgraph cluster1 {
+    0;
+    label = "BB0";
+  }
+  subgraph cluster2 {
+    1->2->3->4->5->6->7[color = red3];
+    label = "BB2";
+  }
+  subgraph cluster3 {
+    8;
+    label = "BB3";
+  }
+  subgraph cluster4 {
+    9->10->11->12->13->14[color = red3];
+    label = "BB4";
+  }
+  subgraph cluster5 {
+    15->16[color = red3];
+    label = "BB5";
+  }
+  subgraph cluster7 {
+    17;
+    label = "BB1";
+  }
+  0 -> 1 [ltail = cluster1, lhead = cluster2, color=red3];
+  7 -> 8 [ltail = cluster2, lhead = cluster3, color=red3, label = "T"];
+  8 -> 9 [ltail = cluster3, lhead = cluster4, color=red3];
+  14 -> 8 [ltail = cluster4, lhead = cluster3, color=gold, label = "T"];
+  14 -> 15 [ltail = cluster4, lhead = cluster5, color=red3, label = "F"];
+  7 -> 15 [ltail = cluster2, lhead = cluster5, color=red3, label = "F"];
+  16 -> 17 [ltail = cluster6, lhead = cluster7, color=red3];
+  0 -> 17 [ltail = cluster1, lhead = cluster7, color=red3];
+  0[color=blue,shape=Msquare, label="ENTRY"];
+  1[color=burlywood,shape=box,label="a = 1"];
+  2[color=burlywood,shape=box,label="b = 2"];
+  3[color=burlywood,shape=box,label="c = 3"];
+  4[color=burlywood,shape=box,label="d = 0"];
+  5[label = "a = a + b"];
+  6[label = "e = a == b"];
+  7[color=red,shape=diamond,label="if (e)"];
+  8[label = "c = a + b"];
+  9[label = "h = c + d"];
+  10[label = "c = c + 1"];
+  11[label = "d = d + 1"];
+  12[label = "g = c + d"];
+  13[label = "f = d != c"];
+  14[color=red,shape=diamond,label="while (f)"];
+  15[label = "c = c + d"];
+  16[label = "c = c + 1"];
+  17[color=blue,shape=Msquare, label="EXIT"];
+}
+\enddot
+
+\subsection IR_Dominator Dominator
+
+In computer science, in compilers, a dominator is an object which is always executed before another object, where the object is typically either a statement or a basic block. By definition an object dominates itself as well. A block M dominates a block N if every path from the entry that reaches block N has to pass through block M. The entry block dominates all blocks. Note that an object may have many dominators. Sometimes more useful is the concept of an immediate dominator, which is the unique object that dominates an object, while not dominating any other dominator of the object. A block M immediately dominates a block N if M dominates N, and there is no intervening block P such that M dominates P and P dominates N . In other words, M is the last dominator on any path from entry to N . Each block has a unique immediate dominator, if it has any at all. In the Basic Block Control flow graph used in Panda every blocks but ENTRY has an immediate dominator.
+
+\subsection IR_Dominator_tree Dominators tree
+The dominator tree is an ancillary data structure where each object's parent is its immediate dominator. There is an arc from block M to block N if M is an immediate dominator of N. This graph is a tree, since each block has a unique immediate dominator. This tree is rooted at the entry block. 
+
+The dominators tree can be performed by using the Cooper algorithm [Keith D. Cooper, Timothy J. Harvey, Ken Kennedy, A Simple, Fast Dominance Algorithm, Software Practice and Experience, 2001.], which is basically an iterative algorithm adopting some refinements in the data structures used. At a later stage it could be substituted with a more efficient one, like the algorithm of Lengauer and Tarjan.
+
+An example of dominator tree built from the Basic Block CFG is:
+\dot
+digraph Dom_Tree {
+  0[color=blue,shape=Msquare, label= "BB0\n ENTRY"];
+  1[color=blue,shape=Msquare, label= "BB1\n EXIT"];
+  2[shape=box, label = "BB2\n a = 1, b = 2, c = 3, d = 0, a = a + b,\n e = a == b, if (e)"];
+  3[shape=box, label = "BB3\n c = a + b"];
+  4[shape=box, label = "BB4\n h = c + d, c = c + 1, d = d + 1, g = c + d, f = d != c,\n while (f)"];
+  5[shape=box, label = "BB5\n c = c + d, c = c + 1"];
+  0->1;
+  0->2;
+  2->3;
+  2->5;
+  3->4;
+}
+\enddot
+\subsection IR_Post_Dominator_tree Post Dominators tree
+The relationship of post-dominance is the dual of dominance relation: we say that y postdominates v when y is on every path fro v to EXIT. Following the dualism with dominance relationship it is possible to define the immediate post-dominance relationship and then to build the Post Dominator tree. 
+
+An example of Post-dominator tree built from Basic Block CFG is:
+\dot
+digraph Dom_Tree {
+  0[color=blue,shape=Msquare, label= "BB0\n ENTRY"];
+  1[color=blue,shape=Msquare, label= "BB1\n EXIT"];
+  2[shape=box, label = "BB2\n a = 1, b = 2, c = 3, d = 0, a = a + b,\n e = a == b, if (e)"];
+  3[shape=box, label = "BB3\n c = a + b"];
+  4[shape=box, label = "BB4\n h = c + d, c = c + 1, d = d + 1, g = c + d, f = d != c,\n while (f)"];
+  5[shape=box, label = "BB5\n c = c + d, c = c + 1"];
+  1->5;
+  1->0;
+  5->2;
+  5->4;
+  4->3;
+}
+\enddot
+
+*/

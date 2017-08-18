@@ -1,0 +1,31 @@
+\subsection{precision}
+\label{labprecision}
+\noindent Name: \textbf{precision}\\
+returns the precision necessary to represent a number.\\
+\noindent Usage: 
+\begin{center}
+\textbf{precision}(\emph{x}) : \textsf{constant} $\rightarrow$ \textsf{integer}\\
+\end{center}
+Parameters: 
+\begin{itemize}
+\item \emph{x} is a dyadic number.
+\end{itemize}
+\noindent Description: \begin{itemize}
+
+\item \textbf{precision}(x) is by definition $\vert x \vert$ if x equals 0, NaN, or Inf.
+
+\item If \emph{x} is not zero, it can be uniquely written as $x = m \cdot 2^e$ where
+   $m$ is an odd integer and $e$ is an integer. \textbf{precision}(x) returns the number
+   of bits necessary to write $m$ in binary (i.e. $\lceil \log_2(m) \rceil$).
+\end{itemize}
+\noindent Example 1: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> a=round(Pi,20,RN);
+> precision(a);
+19
+> m=mantissa(a);
+> ceil(log2(m));
+19
+\end{Verbatim}
+\end{minipage}\end{center}
+See also: \textbf{mantissa} (\ref{labmantissa}), \textbf{exponent} (\ref{labexponent}), \textbf{round} (\ref{labround})

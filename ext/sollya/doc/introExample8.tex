@@ -1,0 +1,22 @@
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> restart;
+The tool has been restarted.
+> prec=50;
+The precision has been set to 50 bits.
+> f=cos(2*exp(x));
+> d=[-1/8;1/8];
+> p=remez(f,2,d);
+> derivativeZeros = dirtyfindzeros(diff(p-f),d);
+> derivativeZeros = inf(d).:derivativeZeros:.sup(d);
+> maximum=0;
+> for t in derivativeZeros do {
+     r = evaluate(abs(p-f), t);
+     if r > maximum then { maximum=r; argmaximum=t; };
+  };
+> print("The infinity norm of", p-f, "is", maximum, "and is reached at", argmaxi
+mum);
+The infinity norm of -0.416265572875373 + x * (-1.798067209218835 + x * (-3.8971
+0727747639e-2)) - cos(2 * exp(x)) is 8.630659443624325e-4 and is reached at -5.8
+01672331417684e-2
+\end{Verbatim}
+\end{minipage}\end{center}

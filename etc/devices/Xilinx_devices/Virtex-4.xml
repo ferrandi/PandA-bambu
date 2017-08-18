@@ -1,0 +1,147 @@
+<?xml version="1.0"?>
+<synthesis>
+   <flow name="Synthesis">
+      <step id="xst" config="Synthesis"/>
+      <step id="ngdbuild" config="Synthesis"/>
+      <step id="map" config="Synthesis"/>
+      <step id="par" config="Synthesis"/>
+      <step id="trce" config="post_layout"/>
+   </flow>
+   <flow name="Characterization">
+      <step id="xst" config="Characterization"/>
+      <step id="ngdbuild" config="Synthesis"/>
+      <step id="map" config="Characterization"/>
+      <step id="par" config="Characterization"/>
+      <step id="trce" config="post_layout"/>
+   </flow>
+   <xst config="Characterization">
+      <param name="intstyle" value="${__ise_style__}"/>
+      <param name="ofn" value="${__xst_log_file__}"/>
+      <set name="tmpdir" value="${__xst_tmpdir__}"/>
+      <set name="xsthdpdir" value="${__xst_hdpdir__}"/>
+      <cmd name="run">
+        <param name="ifn" value="${__xst_prj_file__}"/>
+        <param name="ifmt" value="mixed"/>
+        <param name="ofn" value="${__xst_tmpdir__}/${__top_id__}"/>
+        <param name="ofmt" value="NGC"/>
+        <param name="p" value="${__target_device__}"/>
+        <param name="top" value="${__top_id__}"/>
+        <param name="opt_mode" value="SPEED"/>
+        <param name="opt_level" value="0"/>
+        <param name="optimize_primitives" value="Yes"/>
+        <param name="auto_bram_packing" value="Yes"/>
+        <param name="register_duplication" value="Yes"/>
+        <param name="register_balancing" value="Yes"/>
+        <param name="equivalent_register_removal" value="Yes"/>
+        <param name="move_first_stage" value="No"/>
+        <param name="move_last_stage" value="No"/>
+        <param name="iob" value="FALSE"/>
+        <param name="iobuf yes" condition="${__connect_iob__}"/>
+        <param name="iobuf no" condition="!${__connect_iob__}">Avoid connection for IOBs</param>
+        <param name="uc" value="${__xcf_file__}"/>
+        <param name="write_timing_constraints" value="Yes"/>
+        <param name="power YES" condition="${__power_optimization__}">Power Optimization</param>
+      </cmd>
+      <cmd name="quit"/>
+   </xst>
+   <map config="Characterization">
+      <param name="w">Always overwrite any existing output files</param>
+      <param name="u" condition="!${__connect_iob__}">keep unused logic</param>
+      <param name="detail">Print a more verbose map report.</param>
+      <param name="ol std">Effort level</param>
+      <param name="register_duplication off"/> 
+      <param name="logic_opt off">Perform post-placement physical synthesis combinatorial logic optimizations during timing driven packing (default is off).</param>
+      <param name="pr off">Pack internal flops/latches into input IOBs (i), output IOBs (o), both types of IOBs (b), or internal fabric such as slices, BRAMs, or DSP blocks (off). (default is off).</param>
+      <param name="bp"/> 
+      <param name="timing"/> 
+      <param name="power on" condition="${__power_optimization__}">Power optimizations.</param>
+      <param name="x" condition="!${__time_constrained__}">Enable Performance Evaluation Mode. In this mode, the tools will ignore any timing constraints specified in a constraints file and auto-generate timing constraints to drive tool performance.</param>
+      <param name="p" value="${__target_device__}">Use specified part type to implement the design</param>
+      <param name="o" value="${__map_tmpdir__}/${__top_id__}.ncd"/>
+      <param value="${__ngdbuild_tmpdir__}/${__top_id__}.ngd"/>
+      <param value="${__map_tmpdir__}/${__top_id__}.pcf"/>
+   </map>
+   <par config="Characterization">
+      <param name="w">Always overwrite any existing output files</param>
+      <param name="ol std">Overall effort level. high is maximum effort. Default: std (standard) for older architectures high for Virtex5, Virtex6 and Spartan6</param>
+      <param name="x" condition="!${__time_constrained__}">Ignore user timing constraints in physical constraints file and generate timing constraints automatically for all internal clocks to increase performance. Note: the level of performance achieved will be dictated by the effort level (-ol std|high) chosen.</param>
+      <param name="power on" condition="${__power_optimization__}">Power Aware Par.  Optimizes the capacitance of non-timing-driven design signals.</param>
+      <param name="nopad">Turns off generation of the pad report.</param>
+      <param value="${__map_tmpdir__}/${__top_id__}.ncd"/>
+      <param value="${__par_tmpdir__}/${__top_id__}.ncd"/>
+      <param value="${__map_tmpdir__}/${__top_id__}.pcf"/>
+   </par>
+   <xst config="Synthesis">
+      <param name="intstyle" value="${__ise_style__}"/>
+      <param name="ofn" value="${__xst_log_file__}"/>
+      <set name="tmpdir" value="${__xst_tmpdir__}"/>
+      <set name="xsthdpdir" value="${__xst_hdpdir__}"/>
+      <cmd name="run">
+        <param name="ifn" value="${__xst_prj_file__}"/>
+        <param name="ifmt" value="mixed"/>
+        <param name="ofn" value="${__xst_tmpdir__}/${__top_id__}"/>
+        <param name="ofmt" value="NGC"/>
+        <param name="p" value="${__target_device__}"/>
+        <param name="top" value="${__top_id__}"/>
+        <param name="opt_mode" value="SPEED"/>
+        <param name="opt_level" value="2"/>
+        <param name="auto_bram_packing" value="Yes"/>
+        <param name="register_duplication" value="Yes"/>
+        <param name="register_balancing" value="Yes"/>
+        <param name="equivalent_register_removal" value="Yes"/>
+        <param name="iobuf yes" condition="${__connect_iob__}"/>
+        <param name="iobuf no" condition="!${__connect_iob__}">Avoid connection for IOBs</param>
+        <param name="uc" value="${__xcf_file__}"/>
+        <param name="write_timing_constraints" value="Yes"/>
+        <param name="power YES" condition="${__power_optimization__}">Power Optimization</param>
+      </cmd>
+      <cmd name="quit"/>
+   </xst>
+   <ngdbuild config="Synthesis">
+      <param name="intstyle" value="${__ise_style__}"/>
+      <param name="dd" value="${__ngdbuild_tmpdir__}">Directory to place intermediate .ngo files</param>
+      <param name="nt" value="timestamp">Regenerate NGO only when source netlist is newer than existing NGO file (default)</param>
+      <param name="p" value="${__target_device__}">Use specified part type to implement the design</param>
+      <param value="${__xst_tmpdir__}/${__top_id__}.ngc"/>
+      <param value="${__ngdbuild_tmpdir__}/${__top_id__}.ngd"/>
+   </ngdbuild>
+   <map config="Synthesis">
+      <param name="w">Always overwrite any existing output files</param>
+      <param name="u" condition="!${__connect_iob__}">keep unused logic</param>
+      <param name="detail">Print a more verbose map report.</param>
+      <param name="logic_opt on">Perform post-placement physical synthesis combinatorial logic optimizations during timing driven packing (default is off).</param>
+      <param name="ol high">Effort level</param>
+      <param name="global_opt speed" condition="${__connect_iob__}">Perform global optimization before mapping (default is off)</param>
+      <param name="equivalent_register_removal on" condition="${__connect_iob__}">Remove redundant registers during global optimization (default is on)-[need -global_opt].</param>-
+      <param name="cm area">Cover mode.  Default is "area".  Synthesis based designs are not likely to see improvement by changing the default.</param>
+      <param name="ir off">Do not use RLOC constraints to generate RPMs. Default is "off". Use RLOCs to group logic together within a Slice, but not to control the relative placement of Slices with respect to each other.</param>
+      <param name="pr off">Pack internal flops/latches into input IOBs (i), output IOBs (o), both types of IOBs (b), or internal fabric such as slices, BRAMs, or DSP blocks (off). (default is off).</param>
+      <param name="lc auto">LUT Combining.  Merges pairs of Look Up Tables (LUTs) with common inputs into single dual output LUT6s in order to improve area.</param>
+      <param name="power on" condition="${__power_optimization__}">Power optimizations.</param>
+      <param name="x" condition="!${__time_constrained__}">Enable Performance Evaluation Mode. In this mode, the tools will ignore any timing constraints specified in a constraints file and auto-generate timing constraints to drive tool performance.</param>
+      <param name="p" value="${__target_device__}">Use specified part type to implement the design</param>
+      <param name="o" value="${__map_tmpdir__}/${__top_id__}.ncd"/>
+      <param value="${__ngdbuild_tmpdir__}/${__top_id__}.ngd"/>
+      <param value="${__map_tmpdir__}/${__top_id__}.pcf"/>
+   </map>
+   <par config="Synthesis">
+      <param name="w">Always overwrite any existing output files</param>
+      <param name="ol high">Overall effort level. high is maximum effort. Default: std (standard) for older architectures high for Virtex5, Virtex6 and Spartan6</param>
+      <param name="x" condition="!${__time_constrained__}">Ignore user timing constraints in physical constraints file and generate timing constraints automatically for all internal clocks to increase performance. Note: the level of performance achieved will be dictated by the effort level (-ol std|high) chosen.</param>
+      <param name="power on" condition="${__power_optimization__}">Power Aware Par.  Optimizes the capacitance of non-timing-driven design signals.</param>
+      <param name="nopad">Turns off generation of the pad report.</param>
+      <param value="${__map_tmpdir__}/${__top_id__}.ncd"/>
+      <param value="${__par_tmpdir__}/${__top_id__}.ncd"/>
+      <param value="${__map_tmpdir__}/${__top_id__}.pcf"/>
+   </par>
+   <trce config="post_layout">
+      <param name="xml ${__trce_report_post__}"/>
+      <param name="o ${__trce_tmpdir__}/post_${__top_id__}.twr"/>
+      <param name="e" value="1"/>
+      <param name="u"/>
+      <param name="a"/>
+      <param name="ucf ${__ucf_file__}">Synthesis Constraint File</param>
+      <param value="${__par_tmpdir__}/${__top_id__}.ncd"/>
+      <param value="${__map_tmpdir__}/${__top_id__}.pcf"/>
+   </trce>
+</synthesis>

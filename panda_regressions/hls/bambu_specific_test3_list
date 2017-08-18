@@ -1,0 +1,3 @@
+gcc_regression_simple/arith-rand.c
+gcc_regression_simple/arith-rand-ll.c
+gcc_regression_simple/arith-rand-6432.c

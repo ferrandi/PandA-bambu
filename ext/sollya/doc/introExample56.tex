@@ -1,0 +1,43 @@
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> procedure detector(obj) {
+      match obj with 
+          exp(a * x)            : { "Exponential of ", a, " times x"; }
+          [ a; 17 ]             : { "An interval from ", a, " to 17"; }
+          [| |]                 : { "Empty list"; }
+          [| a, b, 2, exp(c) |] : { "A list of ", a, ", ", b, ", 2 and ",
+                                    "exponential of ", c; }
+          a @ [| 2, 3 |]        : { "Concatenation of the list ", a, " and ",
+                                    "the list of 2 and 3"; }
+          a .: [| 9 ... |]      : { a, " prepended to all integers >= 9"; }
+          "Hello" @ w           : { "Hello concatenated with ", w; }
+          { .a = sin(b); 
+            .b = [c;d] }        : { "A structure containing as .a the ",
+                                    "sine of ", b,
+                                    " and as .b the range from ", c, 
+                                    " to ", d; }
+          perturb               : { "The special object perturb"; }
+          default               : { "Something else"; };
+  };
+> 
+> detector(exp(5 * x));
+Exponential of 5 times x
+> detector([3.25;17]);
+An interval from 3.25 to 17
+> detector([||]);
+Empty list
+> detector([| sin(x), nearestint(x), 2, exp(5 * atan(x)) |]);
+A list of sin(x), nearestint(x), 2 and exponential of 5 * atan(x)
+> detector([| sin(x), cos(5 * x), "foo", 2, 3 |]);
+Concatenation of the list [|sin(x), cos(x * 5), "foo"|] and the list of 2 and 3
+> detector([| DE, 9... |]);
+doubleextended prepended to all integers >= 9
+> detector("Hello world");
+Hello concatenated with  world
+> detector({ .a = sin(x); .c = "Hello"; .b = [9;10] });
+A structure containing as .a the sine of x and as .b the range from 9 to 10
+> detector(perturb);
+The special object perturb
+> detector([13;19]);
+Something else
+\end{Verbatim}
+\end{minipage}\end{center}

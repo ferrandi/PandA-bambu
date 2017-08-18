@@ -1,0 +1,89 @@
+\subsection{plot}
+\label{labplot}
+\noindent Name: \textbf{plot}\\
+plots one or several functions\\
+\noindent Usage: 
+\begin{center}
+\textbf{plot}(\emph{f1}, ... ,\emph{fn}, \emph{I}) : (\textsf{function}, ... ,\textsf{function}, \textsf{range}) $\rightarrow$ \textsf{void}\\
+\textbf{plot}(\emph{f1}, ... ,\emph{fn}, \emph{I}, \textbf{file}, \emph{name}) : (\textsf{function}, ... ,\textsf{function}, \textsf{range}, \textbf{file}, \textsf{string}) $\rightarrow$ \textsf{void}\\
+\textbf{plot}(\emph{f1}, ... ,\emph{fn}, \emph{I}, \textbf{postscript}, \emph{name}) : (\textsf{function}, ... ,\textsf{function}, \textsf{range}, \textbf{postscript}, \textsf{string}) $\rightarrow$ \textsf{void}\\
+\textbf{plot}(\emph{f1}, ... ,\emph{fn}, \emph{I}, \textbf{postscriptfile}, \emph{name}) : (\textsf{function}, ... ,\textsf{function}, \textsf{range}, \textbf{postscriptfile}, \textsf{string}) $\rightarrow$ \textsf{void}\\
+\textbf{plot}(\emph{L}, \emph{I}) : (\textsf{list}, \textsf{range}) $\rightarrow$ \textsf{void}\\
+\textbf{plot}(\emph{L}, \emph{I}, \textbf{file}, \emph{name}) : (\textsf{list}, \textsf{range}, \textbf{file}, \textsf{string}) $\rightarrow$ \textsf{void}\\
+\textbf{plot}(\emph{L}, \emph{I}, \textbf{postscript}, \emph{name}) : (\textsf{list}, \textsf{range}, \textbf{postscript}, \textsf{string}) $\rightarrow$ \textsf{void}\\
+\textbf{plot}(\emph{L}, \emph{I}, \textbf{postscriptfile}, \emph{name}) : (\textsf{list}, \textsf{range}, \textbf{postscriptfile}, \textsf{string}) $\rightarrow$ \textsf{void}\\
+\end{center}
+Parameters: 
+\begin{itemize}
+\item \emph{f1}, ..., \emph{fn} are functions to be plotted.
+\item \emph{L} is a list of functions to be plotted.
+\item \emph{I} is the interval where the functions have to be plotted.
+\item \emph{name} is a string representing the name of a file.
+\end{itemize}
+\noindent Description: \begin{itemize}
+
+\item This command plots one or several functions \emph{f1}, ... ,\emph{fn} on an interval \emph{I}.
+   Functions can be either given as parameters of \textbf{plot} or as a list \emph{L}
+   which elements are functions.
+   The functions are drawn on the same plot with different colors.
+
+\item If \emph{L} contains an element that is not a function (or a constant), an error
+   occurs.
+
+\item \textbf{plot} relies on the value of global variable \textbf{points}. Let $n$ be the 
+   value of this variable. The algorithm is the following: each function is 
+   evaluated at $n$ evenly distributed points in \emph{I}. At each point, the 
+   computed value is a faithful rounding of the exact value with a sufficiently
+   high precision. Each point is finally plotted.
+   This should avoid numerical artefacts such as critical cancellations.
+
+\item You can save the function plot either as a data file or as a postscript file.
+
+\item If you use argument \textbf{file} with a string \emph{name}, \sollya will save a data file
+   called name.dat and a gnuplot directives file called name.p. Invoking gnuplot
+   on name.p will plot the data stored in name.dat.
+
+\item If you use argument \textbf{postscript} with a string \emph{name}, \sollya will save a 
+   postscript file called name.eps representing your plot.
+
+\item If you use argument \textbf{postscriptfile} with a string \emph{name}, \sollya will 
+   produce the corresponding name.dat, name.p and name.eps.
+
+\item This command uses gnuplot to produce the final plot.
+   If your terminal is not graphic (typically if you use \sollya through 
+   ssh without -X)
+   gnuplot should be able to detect that and produce an ASCII-art version on the
+   standard output. If it is not the case, you can either store the plot in a
+   postscript file to view it locally, or use \textbf{asciiplot} command.
+
+\item If every function is constant, \textbf{plot} will not plot them but just display
+   their value.
+
+\item If the interval is reduced to a single point, \textbf{plot} will just display the
+   value of the functions at this point.
+\end{itemize}
+\noindent Example 1: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> plot(sin(x),0,cos(x),[-Pi,Pi]);
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 2: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> plot(sin(x),0,cos(x),[-Pi,Pi],postscriptfile,"plotSinCos");
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 3: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> plot(exp(0), sin(1), [0;1]);
+1
+0.84147098480789650665250232163029899962256306079837
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 4: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> plot(sin(x), cos(x), [1;1]);
+0.84147098480789650665250232163029899962256306079837
+0.54030230586813971740093660744297660373231042061792
+\end{Verbatim}
+\end{minipage}\end{center}
+See also: \textbf{externalplot} (\ref{labexternalplot}), \textbf{asciiplot} (\ref{labasciiplot}), \textbf{file} (\ref{labfile}), \textbf{postscript} (\ref{labpostscript}), \textbf{postscriptfile} (\ref{labpostscriptfile}), \textbf{points} (\ref{labpoints})

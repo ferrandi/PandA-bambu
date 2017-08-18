@@ -1,0 +1,27 @@
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> a = { .f = exp(x), .a = -1, .b = 1 };
+> a;
+{ .f = exp(x), .a = -1, .b = 1 }
+> a.info = "My function";
+> a;
+{ .info = "My function", .f = exp(x), .a = -1, .b = 1 }
+> 
+> b = { .a = -1, .f = exp(x), .info = "My function", .b = 1 };
+> b;
+{ .a = -1, .f = exp(x), .info = "My function", .b = 1 }
+> 
+> a == b;
+true
+> 
+> b.info = "My other function";
+> a == b;
+false
+> 
+> b.info = "My function";
+> a == b;
+true
+> b.something = true;
+> a == b;
+false
+\end{Verbatim}
+\end{minipage}\end{center}

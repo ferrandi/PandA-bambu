@@ -1,0 +1,95 @@
+\subsection{$\mathbf{\hat{~}}$}
+\label{labpower}
+\noindent Name: \textbf{$\mathbf{\hat{~}}$}\\
+power function\\
+\noindent Usage: 
+\begin{center}
+\emph{function1} \textbf{$\mathbf{\hat{~}}$} \emph{function2} : (\textsf{function}, \textsf{function}) $\rightarrow$ \textsf{function}\\
+\emph{interval1} \textbf{$\mathbf{\hat{~}}$} \emph{interval2} : (\textsf{range}, \textsf{range}) $\rightarrow$ \textsf{range}\\
+\emph{interval1} \textbf{$\mathbf{\hat{~}}$} \emph{constant} : (\textsf{range}, \textsf{constant}) $\rightarrow$ \textsf{range}\\
+\emph{interval1} \textbf{$\mathbf{\hat{~}}$} \emph{constant} : (\textsf{constant}, \textsf{range}) $\rightarrow$ \textsf{range}\\
+\end{center}
+Parameters: 
+\begin{itemize}
+\item \emph{function1} and \emph{function2} represent functions
+\item \emph{interval1} and \emph{interval2} represent intervals (ranges)
+\item \emph{constant} represents a constant or constant expression
+\end{itemize}
+\noindent Description: \begin{itemize}
+
+\item \textbf{$\mathbf{\hat{~}}$} represents the power (function) on reals. 
+   The expression \emph{function1} \textbf{$\mathbf{\hat{~}}$} \emph{function2} stands for
+   the function composed of the power function and the two
+   functions \emph{function1} and \emph{function2}, where \emph{function1} is
+   the base and \emph{function2} the exponent.
+   If \emph{function2} is a constant integer, \textbf{$\mathbf{\hat{~}}$} is defined
+   on negative values of \emph{function1}. Otherwise \textbf{$\mathbf{\hat{~}}$}
+   is defined as $e^{y \cdot \ln x}$.
+
+\item Note that whenever several \textbf{$\mathbf{\hat{~}}$} are composed, the priority goes
+   to the last \textbf{$\mathbf{\hat{~}}$}. This corresponds to the natural way of
+   thinking when a tower of powers is written on a paper.
+   Thus, \verb|2^3^5| is read as $2^{3^5}$ and is interpreted as $2^{(3^5)}$.
+
+\item \textbf{$\mathbf{\hat{~}}$} can be used for interval arithmetic on intervals
+   (ranges). \textbf{$\mathbf{\hat{~}}$} will evaluate to an interval that safely
+   encompasses all images of the power function with arguments
+   varying in the given intervals. If the intervals given contain points
+   where the power function is not defined, infinities and NaNs will be
+   produced in the output interval.  Any combination of intervals with
+   intervals or constants (resp. constant expressions) is
+   supported. However, it is not possible to represent families of
+   functions using an interval as one argument and a function (varying in
+   the free variable) as the other one.
+\end{itemize}
+\noindent Example 1: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> 5 ^ 2;
+25
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 2: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> x ^ 2;
+x^2
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 3: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> 3 ^ (-5);
+4.1152263374485596707818930041152263374485596707818e-3
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 4: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> (-3) ^ (-2.5);
+@NaN@
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 5: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> diff(sin(x) ^ exp(x));
+sin(x)^exp(x) * ((cos(x) * exp(x)) / sin(x) + exp(x) * log(sin(x)))
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 6: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> 2^3^5;
+1.4134776518227074636666380005943348126619871175005e73
+> (2^3)^5;
+32768
+> 2^(3^5);
+1.4134776518227074636666380005943348126619871175005e73
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 7: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> [1;2] ^ [3;4];
+[1;1.60000000000000000000000000000000000000000000000007e1]
+> [1;2] ^ 17;
+[1;131072]
+> 13 ^ [-4;17];
+[3.501277966457757081334687160813696999404782745702e-5;8650415919381337933]
+\end{Verbatim}
+\end{minipage}\end{center}
+See also: \textbf{$+$} (\ref{labplus}), \textbf{$-$} (\ref{labminus}), \textbf{$*$} (\ref{labmult}), \textbf{/} (\ref{labdivide})

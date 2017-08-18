@@ -1,0 +1,63 @@
+\subsection{checkinfnorm}
+\label{labcheckinfnorm}
+\noindent Name: \textbf{checkinfnorm}\\
+checks whether the infinity norm of a function is bounded by a value\\
+\noindent Usage: 
+\begin{center}
+\textbf{checkinfnorm}(\emph{function},\emph{range},\emph{constant}) : (\textsf{function}, \textsf{range}, \textsf{constant}) $\rightarrow$ \textsf{boolean}\\
+\end{center}
+Parameters: 
+\begin{itemize}
+\item \emph{function} represents the function whose infinity norm is to be checked
+\item \emph{range} represents the infinity norm is to be considered on
+\item \emph{constant} represents the upper bound the infinity norm is to be checked to
+\end{itemize}
+\noindent Description: \begin{itemize}
+
+\item The command \textbf{checkinfnorm} checks whether the infinity norm of the given
+   function \emph{function} in the range \emph{range} can be proven (by \sollya) to
+   be less than the given bound \emph{bound}. This means, if \textbf{checkinfnorm}
+   evaluates to \textbf{true}, the infinity norm has been proven (by \sollya's
+   interval arithmetic) to be less than the bound. If \textbf{checkinfnorm} evaluates
+   to \textbf{false}, there are two possibilities: either the bound is less than
+   or equal to the infinity norm of the function or the bound is greater
+   than the infinity norm but \sollya could not conclude using its
+   internal interval arithmetic.
+    
+   \textbf{checkinfnorm} is sensitive to the global variable \textbf{diam}. The smaller \textbf{diam},
+   the more time \sollya will spend on the evaluation of \textbf{checkinfnorm} in
+   order to prove the bound before returning \textbf{false} although the infinity
+   norm is bounded by the bound. If \textbf{diam} is equal to $0$, \sollya will
+   eventually spend infinite time on instances where the given bound
+   \emph{bound} is less or equal to the infinity norm of the function
+   \emph{function} in range \emph{range}. In contrast, with \textbf{diam} being zero,
+   \textbf{checkinfnorm} evaluates to \textbf{true} iff the infinity norm of the function in
+   the range is bounded by the given bound.
+\end{itemize}
+\noindent Example 1: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> checkinfnorm(sin(x),[0;1.75], 1);
+true
+> checkinfnorm(sin(x),[0;1.75], 1/2); checkinfnorm(sin(x),[0;20/39],1/2);
+false
+true
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 2: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> p = remez(exp(x), 5, [-1;1]);
+> b = dirtyinfnorm(p - exp(x), [-1;1]);
+> checkinfnorm(p - exp(x), [-1;1], b);
+false
+> b1 = round(b, 15, RU);
+> checkinfnorm(p - exp(x), [-1;1], b1);
+true
+> b2 = round(b, 25, RU);
+> checkinfnorm(p - exp(x), [-1;1], b2);
+false
+> diam = 1b-20!;
+> checkinfnorm(p - exp(x), [-1;1], b2);
+true
+\end{Verbatim}
+\end{minipage}\end{center}
+See also: \textbf{infnorm} (\ref{labinfnorm}), \textbf{dirtyinfnorm} (\ref{labdirtyinfnorm}), \textbf{supnorm} (\ref{labsupnorm}), \textbf{accurateinfnorm} (\ref{labaccurateinfnorm}), \textbf{remez} (\ref{labremez}), \textbf{diam} (\ref{labdiam})

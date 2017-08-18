@@ -1,0 +1,68 @@
+\subsection{dirtyinfnorm}
+\label{labdirtyinfnorm}
+\noindent Name: \textbf{dirtyinfnorm}\\
+computes a numerical approximation of the infinity norm of a function on an interval.\\
+\noindent Usage: 
+\begin{center}
+\textbf{dirtyinfnorm}(\emph{f},\emph{I}) : (\textsf{function}, \textsf{range}) $\rightarrow$ \textsf{constant}\\
+\end{center}
+Parameters: 
+\begin{itemize}
+\item \emph{f} is a function.
+\item \emph{I} is an interval.
+\end{itemize}
+\noindent Description: \begin{itemize}
+
+\item \textbf{dirtyinfnorm}(\emph{f},\emph{I}) computes an approximation of the infinity norm of the 
+   given function $f$ on the interval $I$, e.g. $\max_{x \in I} \{|f(x)|\}$.
+
+\item The interval must be bound. If the interval contains one of -Inf or +Inf, the 
+   result of \textbf{dirtyinfnorm} is NaN.
+
+\item The result of this command depends on the global variables \textbf{prec} and \textbf{points}.
+   Therefore, the returned result is generally a good approximation of the exact
+   infinity norm, with precision \textbf{prec}. However, the result is generally 
+   underestimated and should not be used when safety is critical.
+   Use \textbf{infnorm} instead.
+
+\item The following algorithm is used: let $n$ be the value of variable \textbf{points}
+   and $t$ be the value of variable \textbf{prec}.
+   \begin{itemize}
+   \item Evaluate $|f|$ at $n$ evenly distributed points in the
+     interval $I$. The evaluation are faithful roundings of the exact
+     results at precision $t$.
+   \item Whenever the derivative of $f$ changes its sign for two consecutive 
+     points, find an approximation $x$ of its zero with precision $t$.
+     Then compute a faithful rounding of $|f(x)|$ at precision $t$.
+   \item Return the maximum of all computed values.
+   \end{itemize}
+\end{itemize}
+\noindent Example 1: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> dirtyinfnorm(sin(x),[-10;10]);
+1
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 2: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> prec=15!;
+> dirtyinfnorm(exp(cos(x))*sin(x),[0;5]);
+1.45856
+> prec=40!;
+> dirtyinfnorm(exp(cos(x))*sin(x),[0;5]);
+1.458528537135
+> prec=100!;
+> dirtyinfnorm(exp(cos(x))*sin(x),[0;5]);
+1.458528537136237644438147455024
+> prec=200!;
+> dirtyinfnorm(exp(cos(x))*sin(x),[0;5]);
+1.458528537136237644438147455023841718299214087993682374094153
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 3: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> dirtyinfnorm(x^2, [log(0);log(1)]);
+@NaN@
+\end{Verbatim}
+\end{minipage}\end{center}
+See also: \textbf{prec} (\ref{labprec}), \textbf{points} (\ref{labpoints}), \textbf{infnorm} (\ref{labinfnorm}), \textbf{checkinfnorm} (\ref{labcheckinfnorm}), \textbf{supnorm} (\ref{labsupnorm})

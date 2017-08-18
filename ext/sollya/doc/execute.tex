@@ -1,0 +1,60 @@
+\subsection{execute}
+\label{labexecute}
+\noindent Name: \textbf{execute}\\
+executes the content of a file\\
+\noindent Usage: 
+\begin{center}
+\textbf{execute}(\emph{filename}) : \textsf{string} $\rightarrow$ \textsf{void}\\
+\end{center}
+Parameters: 
+\begin{itemize}
+\item \emph{filename} is a string representing a file name
+\end{itemize}
+\noindent Description: \begin{itemize}
+
+\item \textbf{execute} opens the file indicated by \emph{filename}, and executes the sequence of 
+   commands it contains. This command is evaluated at execution time: this way you
+   can modify the file \emph{filename} (for instance using \textbf{bashexecute}) and execute it
+   just after.
+
+\item If \emph{filename} contains a command \textbf{execute}, it will be executed recursively.
+
+\item If \emph{filename} contains a call to \textbf{restart}, it will be neglected.
+
+\item If \emph{filename} contains a call to \textbf{quit}, the commands following \textbf{quit}
+   in \emph{filename} will be neglected.
+\end{itemize}
+\noindent Example 1: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> a=2;
+> a;
+2
+> print("a=1;") > "example.sollya";
+> execute("example.sollya"); 
+> a;
+1
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 2: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> verbosity=1!;
+> print("a=1; restart; a=2;") > "example.sollya";
+> execute("example.sollya"); 
+Warning: a restart command has been used in a file read into another.
+This restart command will be neglected.
+> a;
+2
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 3: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> verbosity=1!;
+> print("a=1; quit; a=2;") > "example.sollya";
+> execute("example.sollya"); 
+Warning: the execution of a file read by execute demanded stopping the interpret
+ation but it is not stopped.
+> a;
+1
+\end{Verbatim}
+\end{minipage}\end{center}
+See also: \textbf{parse} (\ref{labparse}), \textbf{readfile} (\ref{labreadfile}), \textbf{write} (\ref{labwrite}), \textbf{print} (\ref{labprint}), \textbf{bashexecute} (\ref{labbashexecute}), \textbf{quit} (\ref{labquit}), \textbf{restart} (\ref{labrestart})

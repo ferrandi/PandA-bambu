@@ -1,0 +1,37 @@
+\subsection{horner}
+\label{labhorner}
+\noindent Name: \textbf{horner}\\
+brings all polynomial subexpressions of an expression to Horner form\\
+\noindent Usage: 
+\begin{center}
+\textbf{horner}(\emph{function}) : \textsf{function} $\rightarrow$ \textsf{function}\\
+\end{center}
+Parameters: 
+\begin{itemize}
+\item \emph{function} represents the expression to be rewritten in Horner form
+\end{itemize}
+\noindent Description: \begin{itemize}
+
+\item The command \textbf{horner} rewrites the expression representing the function
+   \emph{function} in a way such that all polynomial subexpressions (or the
+   whole expression itself, if it is a polynomial) are written in Horner
+   form.  The command \textbf{horner} does not endanger the safety of
+   computations even in \sollya's floating-point environment: the
+   function returned is mathematically equal to the function \emph{function}.
+\end{itemize}
+\noindent Example 1: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> print(horner(1 + 2 * x + 3 * x^2));
+1 + x * (2 + x * 3)
+> print(horner((x + 1)^7));
+1 + x * (7 + x * (21 + x * (35 + x * (35 + x * (21 + x * (7 + x))))))
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 2: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> print(horner(exp((x + 1)^5) - log(asin(x + x^3) + x)));
+exp(1 + x * (5 + x * (10 + x * (10 + x * (5 + x))))) - log(asin(x * (1 + x^2)) +
+ x)
+\end{Verbatim}
+\end{minipage}\end{center}
+See also: \textbf{canonical} (\ref{labcanonical}), \textbf{print} (\ref{labprint}), \textbf{coeff} (\ref{labcoeff}), \textbf{degree} (\ref{labdegree}), \textbf{autosimplify} (\ref{labautosimplify}), \textbf{simplifysafe} (\ref{labsimplifysafe})

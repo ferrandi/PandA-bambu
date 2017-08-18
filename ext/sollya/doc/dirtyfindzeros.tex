@@ -1,0 +1,55 @@
+\subsection{dirtyfindzeros}
+\label{labdirtyfindzeros}
+\noindent Name: \textbf{dirtyfindzeros}\\
+gives a list of numerical values listing the zeros of a function on an interval.\\
+\noindent Usage: 
+\begin{center}
+\textbf{dirtyfindzeros}(\emph{f},\emph{I}) : (\textsf{function}, \textsf{range}) $\rightarrow$ \textsf{list}\\
+\end{center}
+Parameters: 
+\begin{itemize}
+\item \emph{f} is a function.
+\item \emph{I} is an interval.
+\end{itemize}
+\noindent Description: \begin{itemize}
+
+\item \textbf{dirtyfindzeros}(\emph{f},\emph{I}) returns a list containing some zeros of \emph{f} in the
+   interval \emph{I}. The values in the list are numerical approximation of the exact
+   zeros. The precision of these approximations is approximately the precision
+   stored in \textbf{prec}. If \emph{f} does not have two zeros very close to each other, it 
+   can be expected that all zeros are listed. However, some zeros may be
+   forgotten. This command should be considered as a numerical algorithm and
+   should not be used if safety is critical.
+
+\item More precisely, the algorithm relies on global variables \textbf{prec} and \textbf{points} and it performs the following steps: 
+   let $n$ be the value of variable \textbf{points} and $t$ be the value
+   of variable \textbf{prec}.
+   \begin{itemize}
+   \item Evaluate $|f|$ at $n$ evenly distributed points in the interval $I$.
+     The working precision to be used is automatically chosen in order to ensure that the sign
+     is correct.
+   \item Whenever $f$ changes its sign for two consecutive points,
+     find an approximation $x$ of its zero with precision $t$ using
+     Newton's algorithm. The number of steps in Newton's iteration depends on $t$:
+     the precision of the approximation is supposed to be doubled at each step.
+   \item Add this value to the list.
+   \end{itemize}
+\end{itemize}
+\noindent Example 1: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> dirtyfindzeros(sin(x),[-5;5]);
+[|-3.14159265358979323846264338327950288419716939937508, 0, 3.141592653589793238
+46264338327950288419716939937508|]
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 2: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> L1=dirtyfindzeros(x^2*sin(1/x),[0;1]);
+> points=1000!;
+> L2=dirtyfindzeros(x^2*sin(1/x),[0;1]);
+> length(L1); length(L2);
+18
+25
+\end{Verbatim}
+\end{minipage}\end{center}
+See also: \textbf{prec} (\ref{labprec}), \textbf{points} (\ref{labpoints}), \textbf{findzeros} (\ref{labfindzeros}), \textbf{dirtyinfnorm} (\ref{labdirtyinfnorm}), \textbf{numberroots} (\ref{labnumberroots})

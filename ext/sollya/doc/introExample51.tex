@@ -1,0 +1,60 @@
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> match exp(sin(x)) with
+      exp(a)  : { 
+                   write("Exponential of ", a, "\n");
+                   return a;
+                }
+      sin(x)  : {
+                   var foo;
+                   foo = 17;
+                   write("Sine of x\n");
+                   return foo;
+                }
+      default : {
+                   write("Something else\n");
+                   bashexecute("LANG=C date");
+                   return true;
+                };
+Exponential of sin(x)
+sin(x)
+> 
+> match sin(x) with
+      exp(a)  : { 
+                   write("Exponential of ", a, "\n");
+                   return a;
+                }
+      sin(x)  : {
+                   var foo;
+                   foo = 17;
+                   write("Sine of x\n");
+                   return foo;
+                }
+      default : {
+                   write("Something else\n");
+                   bashexecute("LANG=C date");
+                   return true;
+                };
+Sine of x
+17
+> 
+> match acos(17 * pi * x) with
+      exp(a)  : { 
+                   write("Exponential of ", a, "\n");
+                   return a;
+                }
+      sin(x)  : {
+                   var foo;
+                   foo = 17;
+                   write("Sine of x\n");
+                   return foo;
+                }
+      default : {
+                   write("Something else\n");
+                   bashexecute("LANG=C date");
+                   return true;
+                };
+Something else
+Mon May  2 10:36:35 CEST 2011
+true
+\end{Verbatim}
+\end{minipage}\end{center}

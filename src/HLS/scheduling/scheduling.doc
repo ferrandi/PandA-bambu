@@ -1,0 +1,66 @@
+/*
+ *
+ *                   _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
+ *                  _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
+ *                 _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
+ *                _/      _/    _/ _/    _/ _/   _/ _/    _/
+ *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
+ *
+ *             ***********************************************
+ *                              PandA Project 
+ *                     URL: http://panda.dei.polimi.it
+ *                       Politecnico di Milano - DEIB
+ *                        System Architectures Group
+ *             ***********************************************
+ *              Copyright (c) 2004-2017 Politecnico di Milano
+ *
+ *   This file is part of the PandA framework.
+ *
+ *   The PandA framework is free software; you can redistribute it and/or modify
+ *   it under the terms of the GNU General Public License as published by
+ *   the Free Software Foundation; either version 3 of the License, or
+ *   (at your option) any later version.
+ *
+ *   This program is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU General Public License for more details.
+ *
+ *   You should have received a copy of the GNU General Public License
+ *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+*/
+/*!
+  \page src_HLS_scheduling_general Scheduling
+
+\section scheduling_definition Scheduling problem definition
+
+The scheduling problem is the problem of determining the order in which the operations in the behavioral description will be executed. Within a control step, a separated functional unit is required to execute each operation assigned to that step. Thus, the total number of functional units required in a control step directly corresponds to the number of operations scheduled into it. If more operations are scheduled into each control step, more functional units are necessary, which results in fewer control steps for the design implementation. On the other hand, if fewer operations are scheduled into each control step, fewer functional units are sufficient, but more control steps are needed. Thus, scheduling determines the tradeoff between design cost and performance.
+A <i>scheduling function</i> \f$\theta : V_0 \rightarrow \Pi(N^n)\f$ assigns to each DFG node \f$v \in V_0\f$ a sequence of cycle steps in which the node is executed. If these cycle steps are continuous, this will be called the <i>execution interval</i> of the operation \e v. A schedule will be called a \e simple schedule if all operations have an execution interval of length one. In this work, only execution in continuous cycle steps will be considered.
+
+\section mutual_exclusion Mutual exclusion
+
+<b>Mutual exclusion</b>: two operations will be called mutually exclusive if they are executed under mutually exclusive conditions. A <i>mutual exclusive function</i> \f$m : V_0 \rightarrow \Pi(N)\f$ is defined such that:
+\f$m(v_i) \wedge m(v_j) = 0\f$
+ when operations \f$v_i\f$ and operation \f$v_j\f$ are executed under mutually exclusive conditions.
+
+\section scheduling_approach Scheduling common approaches
+
+There are two classes of scheduling problems: <i>time-constrained</i> scheduling and <i>resource-constrained</i> scheduling. Time-constrained scheduling minimizes the hardware cost when all operations are to be scheduled into a fixed number of control steps. Resource-constrained scheduling, instead, minimizes the number of control steps needed for executing all operations given a fixed amount of hardware.
+
+The simplest constructive approach is the as soon as possible (ASAP) scheduling. First, operations are sorted into a list according to their topological order. Then, operations are taken from the list one at a time and placed into the earliest possible control step. The other simple approach is the as late as possible (ALAP) scheduling. The ALAP value for an operation defines the latest control step into which an operation can possibly be scheduled. In this approach, given a time constraint in terms of the number of control steps, the algorithm determines the latest possible control step in which an operation must begin its execution. The <b>critical paths</b> within the flow graph can be found by taking the intersection of the ASAP and ALAP schedules such that the operations that appear in the same control steps in both schedules are on the critical paths.
+
+\section scheduling_algorithm Implemented algorithms for scheduling
+
+  There are different algorithms implemented to solve the scheduling problem:
+  - \ref src_HLS_scheduling_list_based_page solve scheduling using list based algorithm.
+  - \ref src_HLS_scheduling_ilp_scheduling_page solve scheduling exploting an ILP formulation of the scheduling problem.
+  - \ref src_HLS_scheduling_ilp_scheduling_new_page solve scheduling exploting a new ILP formulation of the scheduling problem.
+  - \ref src_HLS_scheduling_silp_scheduling_page solve scheduling exploting a SILP formulation of the scheduling problem.
+  - \ref src_HLS_scheduling_force_directed_page solve scheduling using a new formulation of force directed algorithm
+  - \ref src_HLS_path_based_page solve scheduling using a path based approach.
+
+An operation can be potentially executed if all its inputs have been already computed. Then the operation is selected to be executed if there is a free resource that is able to execute the type of the operation. If the operation has a partial binding (see \ref src_HLS_binding_constraints_page) to a specific functional unit instance, the algorithm will have simply to check if the specific instance which the operation is bounded is free (not a generic one). If it is free, the operation can be assigned to its functional unit instance and scheduled in the current control step; if the resource is busy, the operation will be kept in the list and the next one is tested. When a partial binding has not been specified before for some operations, the algorithm performs the usual methodology to associate them to free resources.
+
+	
+*/

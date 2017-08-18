@@ -1,0 +1,7 @@
+default: all
+
+all:
+	autoreconf -m -iv
+
+clean:
+	rm -rf configure.scan depcomp ltmain.sh missing mkinstalldirs autom4te.cache auxdir autoscan.log configure

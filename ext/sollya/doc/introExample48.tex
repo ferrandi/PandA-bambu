@@ -1,0 +1,27 @@
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> restart;
+The tool has been restarted.
+> a.f = exp(x);
+> a.dom = [-1;1];
+> a.info.text = "My akrnoximation problem";
+> a;
+{ .info = { .text = "My akrnoximation problem" }, .dom = [-1;1], .f = exp(x) }
+> 
+> a.info.text = "My approximation problem";
+> a;
+{ .info = { .text = "My approximation problem" }, .dom = [-1;1], .f = exp(x) }
+> 
+> b = exp(x);
+> b.a = 5;
+Warning: cannot modify an element of something that is not a structure.
+Warning: the last assignment will have no effect.
+> b;
+exp(x)
+> 
+> a.dom.a = -1;
+Warning: cannot modify an element of something that is not a structure.
+Warning: the last assignment will have no effect.
+> a;
+{ .info = { .text = "My approximation problem" }, .dom = [-1;1], .f = exp(x) }
+\end{Verbatim}
+\end{minipage}\end{center}

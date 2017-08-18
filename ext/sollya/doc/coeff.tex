@@ -1,0 +1,33 @@
+\subsection{coeff}
+\label{labcoeff}
+\noindent Name: \textbf{coeff}\\
+gives the coefficient of degree $n$ of a polynomial\\
+\noindent Usage: 
+\begin{center}
+\textbf{coeff}(\emph{f},\emph{n}) : (\textsf{function}, \textsf{integer}) $\rightarrow$ \textsf{constant}\\
+\end{center}
+Parameters: 
+\begin{itemize}
+\item \emph{f} is a function (usually a polynomial).
+\item \emph{n} is an integer
+\end{itemize}
+\noindent Description: \begin{itemize}
+
+\item If \emph{f} is a polynomial, \textbf{coeff}(\emph{f}, \emph{n}) returns the coefficient of
+   degree \emph{n} in \emph{f}.
+
+\item If \emph{f} is a function that is not a polynomial, \textbf{coeff}(\emph{f}, \emph{n}) returns 0.
+\end{itemize}
+\noindent Example 1: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> coeff((1+x)^5,3);
+10
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 2: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> coeff(sin(x),0);
+0
+\end{Verbatim}
+\end{minipage}\end{center}
+See also: \textbf{degree} (\ref{labdegree}), \textbf{roundcoefficients} (\ref{labroundcoefficients}), \textbf{subpoly} (\ref{labsubpoly})

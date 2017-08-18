@@ -1,0 +1,17 @@
+\subsection{RN}
+\label{labrn}
+\noindent Name: \textbf{RN}\\
+constant representing rounding-to-nearest mode.\\
+\noindent Description: \begin{itemize}
+
+\item \textbf{RN} is used in command \textbf{round} to specify that the value must be rounded
+   to the nearest representable floating-point number.
+\end{itemize}
+\noindent Example 1: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> display=binary!;
+> round(Pi,20,RN);
+1.100100100001111111_2 * 2^(1)
+\end{Verbatim}
+\end{minipage}\end{center}
+See also: \textbf{RD} (\ref{labrd}), \textbf{RU} (\ref{labru}), \textbf{RZ} (\ref{labrz}), \textbf{round} (\ref{labround}), \textbf{nearestint} (\ref{labnearestint})

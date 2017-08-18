@@ -1,0 +1,716 @@
+/*
+ *
+ *                   _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
+ *                  _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
+ *                 _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
+ *                _/      _/    _/ _/    _/ _/   _/ _/    _/
+ *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
+ *
+ *             ***********************************************
+ *                              PandA Project
+ *                     URL: http://panda.dei.polimi.it
+ *                       Politecnico di Milano - DEIB
+ *                        System Architectures Group
+ *             ***********************************************
+ *              Copyright (c) 2015 Politecnico di Milano
+ *
+ *   This file is part of the PandA framework.
+ *
+ *   The PandA framework is free software; you can redistribute it and/or modify
+ *   it under the terms of the GNU General Public License as published by
+ *   the Free Software Foundation; either version 3 of the License, or
+ *   (at your option) any later version.
+ *
+ *   This program is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU General Public License for more details.
+ *
+ *   You should have received a copy of the GNU General Public License
+ *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+*/
+/**
+ * @file aadl_yparser.ypp
+ * @brief BISON based parser for aadl
+ *
+ * @author Marco Lattuada <marco.lattuada@polimi.it>
+ *
+*/
+
+%{
+
+/**
+* Includes
+*/
+///Autoheader include
+#include "config_HAVE_BISON_2_7_OR_GREATER.hpp"
+
+///constants include
+#include "aadl_constants.hpp"
+
+///parser/aadl include
+#include "aadl_parser.hpp"
+#include "aadl_parser_node.hpp"
+
+///utility include
+#include "refcount.hpp"
+
+
+#define YYLTYPE_IS_TRIVIAL 0
+
+#define YYSTYPE AadlParserNode
+
+///NOTE: forward declarations of AadlParserData and AadlFlexLexer are in this point since they will be used in rtlParser.h
+REF_FORWARD_DECL(AadlParserData);
+REF_FORWARD_DECL(AadlFlexLexer);
+
+///Included after vector for the definition of YYSTYPE
+///Parser include
+#if HAVE_BISON_2_7_OR_GREATER
+#include "aadl_yparser.hpp"
+#else
+#include "aadl_yparser.h"
+#endif
+#include "aadl_lexer.hpp"
+
+///Skipping warnings due to bison
+#pragma GCC diagnostic ignored "-Wconversion"
+#pragma GCC diagnostic ignored "-Wsign-conversion"
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+#pragma GCC diagnostic ignored "-Wwrite-strings"
+#pragma GCC diagnostic ignored "-Wold-style-cast"
+#pragma GCC diagnostic ignored "-Wredundant-decls"
+#pragma GCC diagnostic ignored "-Wzero-as-null-pointer-constant"
+
+/**
+* Class declarations
+*/
+
+/**
+* Local Data Structures
+*/
+
+
+/**
+* Global Data Structures
+*/
+
+/**
+* Function Prototypes
+*/
+extern int yylex(YYSTYPE *lvalp, const AadlFlexLexerRef lexer);
+extern void yyerror(const AadlParserDataRef data, const AadlFlexLexerRef lexer, const char *msg);
+
+%}
+/**
+* BISON DECLARATIONS
+*/
+
+%token ABSTRACT ACCESS AND ANNEX APPLIES ARROW BINDING BUS CALLS CLASSIFIER CLOSE CLOSE_CURLY CLOSE_SQUARE COLON COMA COMPUTE CONNECTIONS CONSTANT DATA DELTA DEVICE DOT DOUBLE_ARROW END EVENT EXTENDS FALSE FEATURE FEATURES FEATURE_GROUP FLOW FLOWS GROUP IDENTIFIER_END IMPLEMENTATION IN INVERSE IS MEMORY MINUS MODES NONE NOT NUMBER OF OPEN OPEN_CURLY OPEN_SQUARE OR OUT PACKAGE PARAMETER PATH PLUS PORT PORTPRIVATE PRIVATE PROCESS PROCESSOR PROPERTY_SET PROPERTIES PROTOTYPES PROVIDES PUBLIC QUOTAS REFERENCE RENAMES REQUIRES SEMICOLON SINK SOURCE SUBCOMPONENTS SUBPROGRAM SUBPROGRAM_GROUP SYSTEM THREAD THREAD_GROUP TO TRUE VIRTUAL_BUS VIRTUAL_PROCESSOR WITH WORD
+
+%parse-param {const AadlParserDataRef data}
+%parse-param {const AadlFlexLexerRef lexer}
+%lex-param {const AadlFlexLexerRef lexer}
+
+///There are a lot of conflicts in the grammar as it has been written, but we want to use the same grammar of syntax card
+///%expect 0
+
+%pure-parser
+%start aadl_specification
+
+%%
+
+aadl_declarations : /* empty */
+             | aadl_decleration aadl_declarations
+             ;
+
+aadl_decleration : classifier_declaration
+                 | annex_library
+                 ;
+
+aadl_specification : package_spec
+                   | package_spec aadl_specification
+                   | property_set
+                   | property_set aadl_specification
+                   ;
+
+abstract_component_category : ABSTRACT;
+
+abstract_feature_spec : identifier COLON in_out_opt FEATURE identifier_opt;
+
+access_connection : bus_or_subprogram_subprogram_group_or_data_opt ACCESS identifier connection_symbol identifier;
+
+alias_declaration : identifier RENAMES text
+                  | RENAMES text
+                  ;
+
+annex_library : ANNEX text;
+
+array_dimension : OPEN_SQUARE NUMBER CLOSE_SQUARE
+                | OPEN_SQUARE identifier CLOSE_SQUARE
+                ;
+
+array_dimension_opt : /* empty */
+                    | array_dimension
+                    ;
+
+arrow_identifier : ARROW identifier;
+
+arrow_identifier_opt : /* empty */
+                     | arrow_identifier;
+
+arrow_indentifer_arrow_identifier : arrow_identifier arrow_identifier; 
+
+arrow_indentifer_arrow_identifier_list : arrow_indentifer_arrow_identifier
+                                      | arrow_indentifer_arrow_identifier arrow_indentifer_arrow_identifier_list
+                                      ;
+
+arrow_indentifer_arrow_identifier_list_opt : /*empty*/
+                                          | arrow_indentifer_arrow_identifier_list
+                                          ;
+
+assignment : property_value {$$ = AadlParserNode(); $$.strg = $1.strg;}
+           | modal_property_value
+           ;
+
+bus_access_spec : identifier COLON provides_requires BUS ACCESS identifier;
+
+bus_or_subprogram_subprogram_group_or_data_opt : /* empty */
+                                               | BUS
+                                               | SUBPROGRAM
+                                               | SUBPROGRAM_GROUP
+                                               | DATA
+                                               ;
+
+called_program : identifier;
+
+calls : CALLS subprogram_call_sequence_list
+      | CALLS NONE
+      ;
+
+calls_opt : /* empty */
+          | calls
+          ;
+
+classifier_declaration : component_classifier_declaration
+                       | feature_group_classifier_declaration
+                       ;
+
+close_square_opt : /* empty */
+                 | CLOSE_SQUARE
+                 ;
+
+component_classifier_declaration : component_type
+                                 | component_type_extension
+                                 | component_implementation
+                                 | component_implementation_extension
+
+component_category : abstract_component_category
+                   | software_category {$$ = $1;}
+                   | execution_platform_category
+                   | composite_category {$$ = $1;}
+                   ;
+
+component_classifier_term : CLASSIFIER OPEN text CLOSE;
+
+component_implementation : component_category IMPLEMENTATION identifier prototypes_opt subcomponents_opt calls_opt connections_opt flows_opt optional_modes_subclause properties_opt END identifier SEMICOLON;
+
+component_implementation_extension : component_category IMPLEMENTATION identifier EXTENDS text END identifier SEMICOLON;
+
+component_in_modes : IN MODES OPEN mode_name_list CLOSE
+
+component_in_modes_opt : /* empty */
+                       | component_in_modes
+                       ;
+
+component_prototype : component_category identifier_opt open_square_opt close_square_opt;
+
+component_type : component_category identifier optional_prototypes features_opt optional_flows optional_modes_subclause properties_opt optional_annex_subclasses END identifier SEMICOLON
+               {
+                  if($1.strg == "SUBPROGRAM")
+                  {
+                     data->subprogram_features[$2.strg] = $4.features;
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, data->debug_level, "Features of subprogram " + $2.strg + " are " + STR($4));
+                  }
+                  if($1.strg == "SYSTEM")
+                  {
+                     data->system_features[$2.strg] = $4.features;
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, data->debug_level, "Features of system " + $2.strg + " are " + STR($4));
+                     data->system_properties[$2.strg] = $7.property_associations;
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, data->debug_level, "Properties of system " + $2.strg + " are " + STR($7));
+                  }
+                  if($1.strg == "DATA")
+                  {
+                     data->data_properties[$2.strg] = $7.property_associations;
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, data->debug_level, "Properties of data " + $2.strg + " are " + STR($7));
+                  }
+               }
+               ;
+
+component_type_extension : component_category identifier EXTENDS text END IDENTIFIER_END;
+
+composite_category : SYSTEM {$$ = AadlParserNode(); $$.strg = "SYSTEM";};
+
+connection : identifier COLON feature_connection enclosed_contained_property_associations_opt in_modes_and_transition_opt SEMICOLON
+           | identifier COLON port_connection enclosed_contained_property_associations_opt in_modes_and_transition_opt SEMICOLON
+           | identifier COLON parameter_connection enclosed_contained_property_associations_opt in_modes_and_transition_opt SEMICOLON
+           | identifier COLON access_connection enclosed_contained_property_associations_opt in_modes_and_transition_opt SEMICOLON
+           | identifier COLON feature_group_connection enclosed_contained_property_associations_opt in_modes_and_transition_opt SEMICOLON
+           ;
+
+connection_symbol : ARROW
+                  | DOUBLE_ARROW
+                  ;
+
+connections : CONNECTIONS connections_list
+            | CONNECTIONS NONE
+            ;
+
+connections_list : connection
+                 | connection connections_list
+                 ;
+
+connections_opt : /* empty */
+                | connections
+                ;
+
+contained_property_association : identifier ARROW constant_opt assignment APPLIES TO identifier_list in_binding_opt SEMICOLON;
+
+contained_property_associations : contained_property_association
+                                | contained_property_association contained_property_associations
+                                ;
+
+contained_property_associations_opt : /* empty */
+                                    | contained_property_associations
+                                    ;
+
+data_access_spec : identifier COLON provides_requires DATA ACCESS identifier_opt;
+
+enclosed_contained_property_associations_opt : /* empty */
+                                             | OPEN_CURLY property_associations CLOSE_CURLY /*NOTE: property_associations instead of enclosed_contained_property_associations_opt */ {$$ = AadlParserNode(); $$.property_associations = $2.property_associations;}
+                                             ;
+
+end_to_end_flow_spec_list : identifier END TO END FLOW identifier arrow_indentifer_arrow_identifier_list enclosed_contained_property_associations_opt in_modes_and_transition_opt;
+
+execution_platform_category : MEMORY
+                            | PROCESSOR
+                            | BUS
+                            | DEVICE
+                            | VIRTUAL_PROCESSOR
+                            | VIRTUAL_BUS
+                            ;
+
+feature : abstract_feature_spec array_dimension_opt enclosed_contained_property_associations_opt SEMICOLON
+        | port_spec array_dimension_opt enclosed_contained_property_associations_opt SEMICOLON
+        | feature_group_spec array_dimension_opt enclosed_contained_property_associations_opt SEMICOLON
+        | subcomponent_access_spec array_dimension_opt enclosed_contained_property_associations_opt SEMICOLON
+        {
+            $$ = AadlParserNode();
+            $$.features.push_back(std::pair<std::string, CustomMap<std::string, std::string> >($1.strg, $3.property_associations));
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, data->debug_level, "Read feature " + STR($$));
+        }
+        | parameter_spec array_dimension_opt enclosed_contained_property_associations_opt SEMICOLON
+        {
+            $$ = AadlParserNode();
+            CustomMap<std::string, std::string> property_associations = $3.property_associations;
+            property_associations.insert($1.property_associations.begin(), $1.property_associations.end());
+            $$.features.push_back(std::pair<std::string, CustomMap<std::string, std::string> >($1.strg, property_associations));
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, data->debug_level, "Read feature " + STR($$));
+        }
+        ;
+
+feature_connection : FEATURE identifier connection_symbol identifier;
+
+feature_group_connection : FEATURE GROUP identifier connection_symbol identifier;
+
+feature_group_spec : identifier COLON in_out_opt FEATURE GROUP inverse_of_opt identifier_opt;
+
+feature_group_type_prototype : FEATURE_GROUP identifier_opt;
+
+features_opt : /* empty */ {$$ = AadlParserNode();}
+             | FEATURES features {INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, data->debug_level, "Read features: " + STR($2)); $$ = $2;}
+             ;
+
+feature_prototype : in_out_opt FEATURE identifier_opt;
+
+features : NONE
+         | feature {$$ = AadlParserNode(); $$ = $1;}
+         | feature features
+         {
+            $$ = AadlParserNode();
+            $$ = $2;
+            for(const auto feature : $1.features)
+               $$.features.push_front(feature);
+         }
+         ;
+
+flow_implementation : flow_source_implementation enclosed_contained_property_associations_opt in_modes_and_transition_opt
+                    | flow_sink_implementation enclosed_contained_property_associations_opt in_modes_and_transition_opt
+                    | flow_path_implmentation enclosed_contained_property_associations_opt in_modes_and_transition_opt
+                    ;
+
+flow_implementation_or_end_to_end_flow_spec_list : flow_implementation flow_implementation_or_end_to_end_flow_spec_list
+                                                 | end_to_end_flow_spec_list flow_implementation_or_end_to_end_flow_spec_list
+                                                 ;
+
+flow_path_implmentation : identifier COLON FLOW PATH identifier arrow_indentifer_arrow_identifier_list arrow_identifier_opt arrow_identifier;
+
+flow_sink_implementation : identifier COLON FLOW SINK identifier arrow_indentifer_arrow_identifier_list_opt;
+
+flow_source_implementation : identifier COLON FLOW SOURCE arrow_indentifer_arrow_identifier_list_opt identifier;
+
+flows : FLOWS flow_implementation_or_end_to_end_flow_spec_list
+      | FLOWS NONE
+      ;
+
+flows_opt : /* empty */
+          | flows
+          ;
+
+identifier : WORD {$$ = AadlParserNode(); $$.strg = $1.strg;};
+
+identifier_opt : /* Empty */
+               | identifier
+               ;
+
+import_declaration : WITH text SEMICOLON;
+
+in_binding_opt : /* empty */
+               | IN BINDING OPEN text CLOSE
+               ;
+
+in_modes : IN MODES OPEN identifier_list CLOSE
+         | IN MODES OPEN NONE CLOSE
+         ;
+
+in_modes_and_transition : IN MODES OPEN mode_or_transitions_list CLOSE;
+
+in_modes_and_transition_opt : /*empty*/
+                            | in_modes_and_transition
+                            ;
+
+in_modes_opt : /* empty */
+             | in_modes
+             ;
+
+in_out_inout : IN {$$ = AadlParserNode(); $$.strg = "IN";}
+             | OUT {$$ = AadlParserNode(); $$.strg = "OUT";}
+             | IN OUT {$$ = AadlParserNode(); $$.strg = "IN OUT";}
+             ;
+
+in_out_opt : /* empty */
+           | IN
+           | OUT
+           ;
+
+inverse_of_opt : /* empty */
+               | INVERSE OF
+               ;
+
+modal_property_value  : OPEN property_value_in_modes_list CLOSE ;
+
+mode_name : identifier
+          | identifier ARROW identifier
+          ;
+
+mode_name_list : mode_name
+               | mode_name COMA mode_name_list
+               ;
+
+mode_or_transition : identifier;
+
+mode_or_transitions_list : mode_or_transition
+                         | mode_or_transition mode_or_transitions_list
+                         ;
+
+name_visibility_declarations : /* empty */
+                             | name_visibility_declaration name_visibility_declarations
+                             ;
+
+name_visibility_declaration : import_declaration
+                            | alias_declaration
+                            ;
+
+open_square_opt : /* empty */
+                | OPEN_SQUARE
+                ;
+
+optional_annex_subclasses : /* empty */
+                          | ANNEX text
+                          ;
+
+optional_flows : /* empty */
+               |FLOWS text
+               ;
+
+optional_modes_subclause : /* empty */
+                         | MODES text
+                         ;
+
+optional_prototypes : /* empty */
+                    | PROTOTYPES text
+                    ;
+
+package_declarations : name_visibility_declarations aadl_declarations;
+
+package_spec : PACKAGE identifier scoped_declarations properties_opt END identifier SEMICOLON
+             {
+                data->package_properties[$2.strg] = $4.property_associations;
+             }
+             ;
+
+parameter_connection : PARAMETER identifier connection_symbol identifier;
+
+parameter_spec : identifier COLON in_out_inout PARAMETER identifier_opt
+               {
+                  $$ = AadlParserNode();
+                  $$.property_associations[STR_CST_aadl_parameter_direction] = $3.strg;
+                  $$.property_associations[STR_CST_aadl_parameter_type] = $5.strg;
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, data->debug_level, "Read feature (parameter" + $1.strg + ") " + STR($$));
+                  $$.strg = $1.strg;
+               };
+
+port_connection : PORT identifier connection_symbol identifier;
+
+port_spec : identifier COLON in_out_inout port_type;
+
+port_type : DATA PORT identifier_opt
+          | EVENT DATA PORT identifier_opt
+          | EVENT PORT
+          ;
+
+private_declarations : PRIVATE package_declarations ;
+
+properties: PROPERTIES property_list {$$ = $2;};
+
+
+properties_opt : /* empty */ {$$ = AadlParserNode();}
+               | properties {$$ = $1;}
+               ;
+
+property : property_association {$$ = $1;}
+         | contained_property_association
+         ;
+
+property_association : identifier ARROW constant_opt assignment in_binding_opt SEMICOLON {$$ = AadlParserNode(); $$.property_associations[$1.strg] = $4.strg; INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, data->debug_level, "Read property association: " + STR($$));};
+
+property_associations : property_association {$$ = $1;}
+                      | property_association property_associations {$$ = $2; $$.property_associations.insert($1.property_associations.begin(), $1.property_associations.end());}
+                      ;
+
+property_list : /* empty */
+              | property property_list {$$ = $2; $$.property_associations.insert($1.property_associations.begin(), $1.property_associations.end());}
+              ;
+
+property_set : PROPERTY_SET identifier IS text END IDENTIFIER_END;
+
+prototype : identifier component_prototype enclosed_contained_property_associations_opt SEMICOLON
+          | identifier feature_group_type_prototype enclosed_contained_property_associations_opt SEMICOLON
+          | identifier feature_prototype enclosed_contained_property_associations_opt SEMICOLON
+          ;
+
+prototypes : PROTOTYPES prototypes_list
+           | PROTOTYPES NONE
+           ;
+
+prototypes_list : prototype
+                | prototype prototypes_list
+                ;
+
+prototypes_opt : /* empty */
+               | prototypes
+               ;
+
+provides_requires : PROVIDES
+                  | REQUIRES
+                  ;
+
+public_declarations : PUBLIC package_declarations;
+
+scoped_declarations : public_declarations
+                    | public_declarations private_declarations
+                    | private_declarations
+                    ;
+
+sign : /* empty */ {$$ = AadlParserNode();}
+     | PLUS {$$ = AadlParserNode(); $$.strg = "+";}
+     | MINUS {$$ = AadlParserNode(); $$.strg = "-";}
+     ;
+
+signed_aadlinteger_or_constant : sign NUMBER unit_identifier_opt {$$ = AadlParserNode(); $$.strg = $1.strg + $2.strg + " " + $3.strg;}
+                               | sign property_constant_term {$$ = AadlParserNode(); $$.strg = $1.strg + $2.strg;}
+                               ;
+
+software_category : DATA {$$ = AadlParserNode(); $$.strg = "DATA";}
+                  | SUBPROGRAM {$$ = AadlParserNode(); $$.strg = "SUBPROGRAM";}
+                  | SUBPROGRAM_GROUP
+                  | THREAD
+                  | THREAD_GROUP
+                  | PROCESS
+                  ;
+
+string_literal : QUOTAS text QUOTAS {$$ = AadlParserNode(); $$.strg = "\"" + $2.strg + "\"";};
+
+string_term : string_literal {$$ = $1; }
+            | property_constant_term {$$ = $1;}
+            ;
+
+subcomponent : identifier COLON component_category identifier array_dimension_opt enclosed_contained_property_associations_opt component_in_modes_opt SEMICOLON;
+
+subcomponents : SUBCOMPONENTS subcomponents_list
+              | SUBCOMPONENTS NONE
+              ;
+
+subcomponents_list : subcomponent
+                   | subcomponent subcomponents_list
+                   ;
+
+subcomponents_opt : /* empty */
+                  | subcomponents
+                  ;
+
+subcomponent_access_spec : subprogram_access_spec
+                         | subprogram_group_access_spec
+                         | data_access_spec
+                         | bus_access_spec
+                         ;
+
+subprogram_access_spec : identifier COLON provides_requires SUBPROGRAM ACCESS identifier_opt;
+
+subprogram_call : identifier SUBPROGRAM called_program enclosed_contained_property_associations_opt SEMICOLON;
+
+subprogram_call_list : subprogram_call
+                     | subprogram_call subprogram_call_list
+                     ;
+
+subprogram_call_sequence : identifier OPEN_CURLY subprogram_call_list CLOSE_CURLY enclosed_contained_property_associations_opt in_modes_opt;
+
+subprogram_call_sequence_list : subprogram_call_sequence
+                              | subprogram_call_sequence subprogram_call_sequence_list
+                              ;
+
+subprogram_group_access_spec : identifier COLON provides_requires SUBPROGRAM GROUP ACCESS identifier_opt;
+
+text : /* empty */ {$$ = AadlParserNode();}
+     | NUMBER text {$$ = AadlParserNode(); $$.strg = $1.strg + ($2.strg != "" ? " " + $2.strg : "");}
+     | WORD text {$$ = AadlParserNode(); $$.strg = $1.strg + ($2.strg != "" ? " " + $2.strg : "");}
+     | text COMA text {$$ = AadlParserNode(); $$.strg = $1.strg + ($2.strg != "" ? "," + $2.strg : "");}
+     ;
+
+unit_identifier_opt : /* empty */ {$$ = AadlParserNode();}
+                    | identifier {$$ = AadlParserNode(); $$ = $1;}
+                    ;
+
+property_value_in_modes_list : property_value in_modes
+                             | property_value in_modes COMA property_value_in_modes_list
+                             ;
+
+property_value : property_expression {$$ = AadlParserNode(); $$.strg = $1.strg;}
+               | OPEN property_expression_list CLOSE {$$ = AadlParserNode(); $$ = $2; INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, data->debug_level, "Read list of property_expression " + STR($$)); }
+               ;
+
+property_expression_list : property_expression {$$ = AadlParserNode(); $$.strg = $1.strg; }
+                         | property_expression COMA property_expression_list {$$ = AadlParserNode(); $$.strg = $1.strg + ", " + $3.strg;}
+                         ;
+
+property_expression : boolean_term
+                    | real_term
+                    | integer_term
+                    | string_term {$$ = $1; }
+                    | enumeration_term {$$ = $1; }
+                    | real_range_term
+                    | integer_range_term
+                    | property_term
+                    | component_classifier_term
+                    | reference_term
+                    | record_term
+                    | computed_term
+                    ;
+
+boolean_term : boolean_value
+             | NOT boolean_term
+             | boolean_term AND boolean_term
+             | boolean_term OR boolean_term
+             | OPEN boolean_term CLOSE
+             ;
+
+boolean_value : TRUE
+              | FALSE
+              ;
+
+real_term : signed_aadlreal_or_constant;
+
+integer_term : signed_aadlinteger_or_constant;
+
+enumeration_term : identifier {$$ = $1;}
+                 | property_constant_term {$$ = $1;}
+                 ;
+
+integer_range_term : integer_term DOT DOT integer_term
+                   | integer_term DOT DOT integer_term DELTA integer_term
+                   | property_constant_term
+                   ;
+
+real_range_term : real_term DOT DOT real_term
+                | real_term DOT DOT real_term DELTA real_term
+                | property_constant_term
+                ;
+
+property_term : identifier;
+
+property_constant_term : identifier;
+
+reference_term : REFERENCE OPEN text CLOSE;
+
+record_term : OPEN record_term_content_list CLOSE
+
+record_term_content_list : identifier ARROW property_value SEMICOLON
+                         | identifier ARROW property_value SEMICOLON record_term_content_list
+                         ;
+
+computed_term : COMPUTE OPEN text CLOSE;
+
+constant_opt : /* empty */
+             | CONSTANT
+             ;
+
+identifier_list : identifier
+                | identifier DOT identifier_list
+                ;
+
+feature_group_classifier_declaration : FEATURE_GROUP text;
+
+none_statement : NONE;
+
+signed_aadlreal_or_constant : sign NUMBER unit_identifier_opt
+                            | sign property_constant_term
+                            ;
+
+
+/* End of Grammar */
+
+%%
+/**
+* EPILOGUE
+*/
+
+void AadlParser::YYParse(const AadlParserDataRef data, const AadlFlexLexerRef lexer) const
+{
+#if YYDEBUG
+   yydebug = 1;
+#endif
+   yyparse(data, lexer);
+}
+
+void yyerror(const AadlParserDataRef data, const AadlFlexLexerRef lexer, const char *msg)
+{
+   lexer->yyerror(msg);
+}
+
+int yylex(YYSTYPE *lvalp, const AadlFlexLexerRef lexer)
+{
+   lexer->lvalp=lvalp;
+   return lexer->yylex();
+}
+

@@ -1,0 +1,1604 @@
+<?xml version="1.0"?>
+<technology>
+  <library>
+    <name>STD_FU</name>
+    <template>
+      <name>vec_cond_expr_FU</name>
+      <operation operation_name="vec_cond_expr" supported_types="VECTOR_INT:*" />
+      <circuit>
+        <component_o id="vec_cond_expr_FU">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="vec_cond_expr_FU"/>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="in2" dir="IN">
+            <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="in3" dir="IN">
+            <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="vec_cond_expr_FU in1 in2 in3 out1" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)\n  begin  : vec_expr\n    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1] != 0 ? in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2] : in3[o1*BITSIZE_in3+BITSIZE_in3-1:o1*BITSIZE_in3];\n  end\nendgenerate"/>
+        </component_o>
+      </circuit>
+    </template>
+    <template>
+      <name>ui_vec_cond_expr_FU</name>
+      <operation operation_name="vec_cond_expr" supported_types="VECTOR_UINT:*" />
+      <circuit>
+        <component_o id="ui_vec_cond_expr_FU">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="ui_vec_cond_expr_FU"/>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="in2" dir="IN">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="in3" dir="IN">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="ui_vec_cond_expr_FU in1 in2 in3 out1" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)\n  begin  : vec_expr\n    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1] != 0 ? in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2] : in3[o1*BITSIZE_in3+BITSIZE_in3-1:o1*BITSIZE_in3];\n  end\nendgenerate"/>
+        </component_o>
+      </circuit>
+    </template>
+    <template>
+      <name>vec_single_cond_expr_FU</name>
+      <operation operation_name="vec_cond_expr" supported_types="VECTOR_INT:*" />
+      <circuit>
+        <component_o id="vec_single_cond_expr_FU">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="vec_single_cond_expr_FU"/>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="in2" dir="IN">
+            <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="in3" dir="IN">
+            <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="vec_single_cond_expr_FU in1 in2 in3 out1" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)\n  begin  : vec_expr\n    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = in1[0] != 0 ? in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2] : in3[o1*BITSIZE_in3+BITSIZE_in3-1:o1*BITSIZE_in3];\n  end\nendgenerate"/>
+        </component_o>
+      </circuit>
+    </template>
+    <template>
+      <name>vec_min_expr_FU</name>
+      <operation operation_name="min_expr" supported_types="VECTOR_INT:*" commutative="1"/>
+      <circuit>
+        <component_o id="vec_min_expr_FU">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="vec_min_expr_FU"/>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="in2" dir="IN">
+            <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="vec_min_expr_FU in1 in2 out1" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)\n  begin  : vec_expr\n    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = $signed(in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1]) &lt; $signed(in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2]) ? in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1] : in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2];\n  end\nendgenerate"/>
+        </component_o>
+      </circuit>
+    </template>
+    <template>
+      <name>ui_vec_min_expr_FU</name>
+      <operation operation_name="min_expr" supported_types="VECTOR_UINT:*"  commutative="1"/>
+      <circuit>
+        <component_o id="ui_vec_min_expr_FU">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="ui_vec_min_expr_FU"/>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="in2" dir="IN">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="ui_vec_min_expr_FU in1 in2 out1" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)\n  begin  : vec_expr\n    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1] &lt; in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2] ? in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1] : in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2];\n  end\nendgenerate"/>
+        </component_o>
+      </circuit>
+    </template>
+    <template>
+      <name>vec_max_expr_FU</name>
+      <operation operation_name="max_expr" supported_types="VECTOR_INT:*"  commutative="1"/>
+      <circuit>
+        <component_o id="vec_max_expr_FU">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="vec_max_expr_FU"/>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="in2" dir="IN">
+            <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="vec_max_expr_FU in1 in2 out1" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)\n  begin  : vec_expr\n    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = $signed(in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1]) &gt; $signed(in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2]) ? in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1] : in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2];\n  end\nendgenerate"/>
+        </component_o>
+      </circuit>
+    </template>
+    <template>
+      <name>ui_vec_max_expr_FU</name>
+      <operation operation_name="max_expr" supported_types="VECTOR_UINT:*" commutative="1" />
+      <circuit>
+        <component_o id="ui_vec_max_expr_FU">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="ui_vec_max_expr_FU"/>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="in2" dir="IN">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="ui_vec_max_expr_FU in1 in2 out1" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)\n  begin  : vec_expr\n    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1] &gt; in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2] ? in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1] : in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2];\n  end\nendgenerate"/>
+        </component_o>
+      </circuit>
+    </template>
+    <template>
+      <name>ui_vec_truth_not_expr_FU</name>
+      <operation operation_name="truth_not_expr" supported_types="VECTOR_UINT:*" commutative="0" />
+      <circuit>
+        <component_o id="ui_vec_truth_not_expr_FU">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <authors>Marco Lattuada &lt;marco.lattuada@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="ui_vec_truth_not_expr_FU"/>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="ui_vec_truth_not_expr_FU in1 out1" VERILOG_PROVIDED=
+"generate
+genvar o1;
+  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)
+  begin  : vec_expr
+    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = !in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1];
+  end
+  endgenerate
+"/>
+        </component_o>
+      </circuit>
+    </template>
+    <template>
+      <name>vec_plus_expr_FU</name>
+      <operation operation_name="plus_expr" supported_types="VECTOR_INT:*" commutative="1" />
+      <circuit>
+        <component_o id="vec_plus_expr_FU">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="vec_plus_expr_FU"/>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="in2" dir="IN">
+            <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="vec_plus_expr_FU in1 in2 out1" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)\n  begin  : vec_expr\n    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1] + in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2];\n  end\nendgenerate"/>
+        </component_o>
+      </circuit>
+    </template>
+    <template>
+      <name>ui_vec_plus_expr_FU</name>
+      <operation operation_name="plus_expr" supported_types="VECTOR_UINT:*" commutative="1" />
+      <circuit>
+        <component_o id="ui_vec_plus_expr_FU">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="ui_vec_plus_expr_FU"/>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="in2" dir="IN">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="ui_vec_plus_expr_FU in1 in2 out1" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)\n  begin  : vec_expr\n    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1] + in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2];\n  end\nendgenerate"/>
+        </component_o>
+      </circuit>
+    </template>
+    <template>
+      <name>vec_negate_expr_FU</name>
+      <operation operation_name="negate_expr" supported_types="VECTOR_INT:*" />
+      <circuit>
+        <component_o id="vec_negate_expr_FU">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="vec_negate_expr_FU"/>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="vec_negate_expr_FU in1 out1" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)\n  begin  : vec_expr\n    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = -in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1];\n  end\nendgenerate"/>
+        </component_o>
+      </circuit>
+    </template>
+    <template>
+      <name>ui_vec_negate_expr_FU</name>
+      <operation operation_name="negate_expr" supported_types="VECTOR_UINT:*" />
+      <circuit>
+        <component_o id="ui_vec_negate_expr_FU">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="ui_vec_negate_expr_FU"/>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="ui_vec_negate_expr_FU in1 out1" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)\n  begin  : vec_expr\n    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = -in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1];\n  end\nendgenerate"/>
+        </component_o>
+      </circuit>
+    </template>
+    <template>
+      <name>vec_minus_expr_FU</name>
+      <operation operation_name="minus_expr" supported_types="VECTOR_INT:*" />
+      <circuit>
+        <component_o id="vec_minus_expr_FU">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="vec_minus_expr_FU"/>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="in2" dir="IN">
+            <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="vec_minus_expr_FU in1 in2 out1" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)\n  begin  : vec_expr\n    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1] - in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2];\n  end\nendgenerate"/>
+        </component_o>
+      </circuit>
+    </template>
+    <template>
+      <name>ui_vec_minus_expr_FU</name>
+      <operation operation_name="minus_expr" supported_types="VECTOR_UINT:*" />
+      <circuit>
+        <component_o id="ui_vec_minus_expr_FU">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="ui_vec_minus_expr_FU"/>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="in2" dir="IN">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="ui_vec_minus_expr_FU in1 in2 out1" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)\n  begin  : vec_expr\n    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1] - in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2];\n  end\nendgenerate"/>
+        </component_o>
+      </circuit>
+    </template>
+    <template>
+      <name>vec_mult_expr_FU</name>
+      <operation operation_name="mult_expr" supported_types="VECTOR_INT:*" pipe_parameters="*:0,1,2,3,4,5,6" commutative="1"/>
+      <circuit>
+        <component_o id="vec_mult_expr_FU">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="vec_mult_expr_FU"/>
+          <parameter name="PIPE_PARAMETER">0</parameter>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="in2" dir="IN">
+            <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="vec_mult_expr_FU in1 in2 out1 PIPE_PARAMETER" IP_COMPONENT="mult_expr_FU" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)\n  begin  : vec_expr\n    mult_expr_FU #(.BITSIZE_in1(BITSIZE_in1), .BITSIZE_in2(BITSIZE_in2), .BITSIZE_out1(BITSIZE_out1), .PIPE_PARAMETER(PIPE_PARAMETER)) m1 (.out1(out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1]), .clock(clock), .in1(in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1]), .in2(in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2]));\n  end\nendgenerate"/>
+        </component_o>
+      </circuit>
+    </template>
+    <template>
+      <name>ui_vec_mult_expr_FU</name>
+      <operation operation_name="mult_expr" supported_types="VECTOR_UINT:*" pipe_parameters="*:0,1,2,3,4,5,6" commutative="1"/>
+      <circuit>
+        <component_o id="ui_vec_mult_expr_FU">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="ui_vec_mult_expr_FU"/>
+          <parameter name="PIPE_PARAMETER">0</parameter>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="in2" dir="IN">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="ui_vec_mult_expr_FU in1 in2 out1 PIPE_PARAMETER" IP_COMPONENT="ui_mult_expr_FU" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)\n  begin  : vec_expr\n    ui_mult_expr_FU #(.BITSIZE_in1(BITSIZE_in1), .BITSIZE_in2(BITSIZE_in2), .BITSIZE_out1(BITSIZE_out1), .PIPE_PARAMETER(PIPE_PARAMETER)) m1 (.out1(out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1]), .clock(clock), .in1(in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1]), .in2(in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2]));\n  end\nendgenerate"/>
+        </component_o>
+      </circuit>
+    </template>
+    <template>
+      <name>vec_widen_mult_hi_expr_FU</name>
+      <operation operation_name="widen_mult_hi_expr" supported_types="VECTOR_INT:*" pipe_parameters="*:0,1,2,3,4,5,6" commutative="1"/>
+      <circuit>
+        <component_o id="vec_widen_mult_hi_expr_FU">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="vec_widen_mult_hi_expr_FU"/>
+          <parameter name="PIPE_PARAMETER">0</parameter>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="in2" dir="IN">
+            <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT" is_doubled="1">
+            <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="vec_widen_mult_hi_expr_FU in1 in2 out1 PIPE_PARAMETER" IP_COMPONENT="mult_expr_FU,widen_mult_expr_FU" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)\n  begin  : vec_expr\n    widen_mult_expr_FU #(.BITSIZE_in1(BITSIZE_in1), .BITSIZE_in2(BITSIZE_in2), .BITSIZE_out1(BITSIZE_out1), .PIPE_PARAMETER(PIPE_PARAMETER)) m1 (.out1(out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1]), .clock(clock), .in1(in1[(o1+NUM_ELEM_out1)*BITSIZE_in1+BITSIZE_in1-1:(o1+NUM_ELEM_out1)*BITSIZE_in1]), .in2(in2[(o1+NUM_ELEM_out1)*BITSIZE_in2+BITSIZE_in2-1:(o1+NUM_ELEM_out1)*BITSIZE_in2]));\n  end\nendgenerate"/>
+        </component_o>
+      </circuit>
+    </template>
+    <template>
+      <name>ui_vec_widen_mult_hi_expr_FU</name>
+      <operation operation_name="widen_mult_hi_expr" supported_types="VECTOR_UINT:*" pipe_parameters="*:0,1,2,3,4,5,6" commutative="1"/>
+      <circuit>
+        <component_o id="ui_vec_widen_mult_hi_expr_FU">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="ui_vec_widen_mult_hi_expr_FU"/>
+          <parameter name="PIPE_PARAMETER">0</parameter>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="in2" dir="IN">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT" is_doubled="1">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="ui_vec_widen_mult_hi_expr_FU in1 in2 out1 PIPE_PARAMETER" IP_COMPONENT="ui_mult_expr_FU,ui_widen_mult_expr_FU" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)\n  begin  : vec_expr\n    ui_widen_mult_expr_FU #(.BITSIZE_in1(BITSIZE_in1), .BITSIZE_in2(BITSIZE_in2), .BITSIZE_out1(BITSIZE_out1), .PIPE_PARAMETER(PIPE_PARAMETER)) m1 (.out1(out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1]), .clock(clock), .in1(in1[(o1+NUM_ELEM_out1)*BITSIZE_in1+BITSIZE_in1-1:(o1+NUM_ELEM_out1)*BITSIZE_in1]), .in2(in2[(o1+NUM_ELEM_out1)*BITSIZE_in2+BITSIZE_in2-1:(o1+NUM_ELEM_out1)*BITSIZE_in2]));\n  end\nendgenerate"/>
+        </component_o>
+      </circuit>
+    </template>
+    <template>
+      <name>vec_widen_mult_lo_expr_FU</name>
+      <operation operation_name="widen_mult_lo_expr" supported_types="VECTOR_INT:*" pipe_parameters="*:0,1,2,3,4,5,6" commutative="1"/>
+      <circuit>
+        <component_o id="vec_widen_mult_lo_expr_FU">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="vec_widen_mult_lo_expr_FU"/>
+          <parameter name="PIPE_PARAMETER">0</parameter>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="in2" dir="IN">
+            <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT" is_doubled="1">
+            <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="vec_widen_mult_lo_expr_FU in1 in2 out1 PIPE_PARAMETER" IP_COMPONENT="mult_expr_FU,widen_mult_expr_FU" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)\n  begin  : vec_expr\n    widen_mult_expr_FU #(.BITSIZE_in1(BITSIZE_in1), .BITSIZE_in2(BITSIZE_in2), .BITSIZE_out1(BITSIZE_out1), .PIPE_PARAMETER(PIPE_PARAMETER)) m1 (.out1(out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1]), .clock(clock), .in1(in1[(o1)*BITSIZE_in1+BITSIZE_in1-1:(o1)*BITSIZE_in1]), .in2(in2[(o1)*BITSIZE_in2+BITSIZE_in2-1:(o1)*BITSIZE_in2]));\n  end\nendgenerate"/>
+        </component_o>
+      </circuit>
+    </template>
+    <template>
+      <name>ui_vec_widen_mult_lo_expr_FU</name>
+      <operation operation_name="widen_mult_lo_expr" supported_types="VECTOR_UINT:*" pipe_parameters="*:0,1,2,3,4,5,6" commutative="1"/>
+      <circuit>
+        <component_o id="ui_vec_widen_mult_lo_expr_FU">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="ui_vec_widen_mult_lo_expr_FU"/>
+          <parameter name="PIPE_PARAMETER">0</parameter>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="in2" dir="IN">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT" is_doubled="1">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="ui_vec_widen_mult_lo_expr_FU in1 in2 out1 PIPE_PARAMETER" IP_COMPONENT="ui_mult_expr_FU,ui_widen_mult_expr_FU" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)\n  begin  : vec_expr\n    ui_widen_mult_expr_FU #(.BITSIZE_in1(BITSIZE_in1), .BITSIZE_in2(BITSIZE_in2), .BITSIZE_out1(BITSIZE_out1), .PIPE_PARAMETER(PIPE_PARAMETER)) m1 (.out1(out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1]), .clock(clock), .in1(in1[(o1)*BITSIZE_in1+BITSIZE_in1-1:(o1)*BITSIZE_in1]), .in2(in2[(o1)*BITSIZE_in2+BITSIZE_in2-1:(o1)*BITSIZE_in2]));\n  end\nendgenerate"/>
+        </component_o>
+      </circuit>
+    </template>
+    <template>
+      <name>vec_rshift_expr_FU</name>
+      <operation operation_name="vec_rshift_expr" supported_types="VECTOR_INT:*" />
+      <circuit>
+        <component_o id="vec_rshift_expr_FU">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="vec_rshift_expr_FU"/>
+          <parameter name="PRECISION">32</parameter>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="in2" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="vec_rshift_expr_FU in1 in2 out1 PRECISION" VERILOG_PROVIDED="`ifndef _SIM_HAVE_CLOG2\n  function integer log2;\n     input integer value;\n     integer temp_value;\n    begin\n      temp_value = value-1;\n      for (log2=0; temp_value&gt;0; log2=log2+1)\n        temp_value = temp_value&gt;&gt;1;\n    end\n  endfunction\n`endif\n`ifdef _SIM_HAVE_CLOG2\n  parameter arg2_bitsize = $clog2(PRECISION);\n`else\n  parameter arg2_bitsize = log2(PRECISION);\n`endif\ngenerate\n  if(BITSIZE_in2 &gt; arg2_bitsize)\n    assign out1 = in1 &gt;&gt;&gt; (in2[arg2_bitsize-1:0]);\n  else\n    assign out1 = in1 &gt;&gt;&gt; in2;\nendgenerate"/>
+        </component_o>
+      </circuit>
+    </template>
+    <template>
+      <name>ui_vec_rshift_expr_FU</name>
+      <operation operation_name="vec_rshift_expr" supported_types="VECTOR_UINT:*" />
+      <circuit>
+        <component_o id="ui_vec_rshift_expr_FU">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="ui_vec_rshift_expr_FU"/>
+          <parameter name="PRECISION">128</parameter>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="in2" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="ui_vec_rshift_expr_FU in1 in2 out1 PRECISION" VERILOG_PROVIDED=
+"`ifndef _SIM_HAVE_CLOG2
+  function integer log2;
+     input integer value;
+     integer temp_value;
+    begin
+      temp_value = value-1;
+      for (log2=0; temp_value&gt;0; log2=log2+1)
+        temp_value = temp_value&gt;&gt;1;
+    end
+  endfunction
+`endif
+`ifdef _SIM_HAVE_CLOG2
+  parameter arg2_bitsize = $clog2(PRECISION);
+`else
+  parameter arg2_bitsize = log2(PRECISION);
+`endif
+generate
+  if(BITSIZE_in2 &gt; arg2_bitsize)
+    assign out1 = in1 &gt;&gt; (in2[arg2_bitsize-1:0]);
+  else
+    assign out1 = in1 &gt;&gt; in2;
+endgenerate
+"/>
+        </component_o>
+      </circuit>
+    </template>
+    <template>
+      <name>vec_lshift_expr_FU</name>
+      <operation operation_name="vec_lshift_expr" supported_types="VECTOR_INT:*" />
+      <circuit>
+        <component_o id="vec_lshift_expr_FU">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="vec_lshift_expr_FU"/>
+          <parameter name="PRECISION">32</parameter>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="in2" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="vec_lshift_expr_FU in1 in2 out1 PRECISION" VERILOG_PROVIDED="`ifndef _SIM_HAVE_CLOG2\n  function integer log2;\n     input integer value;\n     integer temp_value;\n    begin\n      temp_value = value-1;\n      for (log2=0; temp_value&gt;0; log2=log2+1)\n        temp_value = temp_value&gt;&gt;1;\n    end\n  endfunction\n`endif\n`ifdef _SIM_HAVE_CLOG2\n  parameter arg2_bitsize = $clog2(PRECISION);\n`else\n  parameter arg2_bitsize = log2(PRECISION);\n`endif\ngenerate\n  if(BITSIZE_in2 &gt; arg2_bitsize)\n    assign out1 = in1 &lt;&lt;&lt; in2[arg2_bitsize-1:0];\n  else\n    assign out1 = in1 &lt;&lt;&lt; in2;\nendgenerate"/>
+        </component_o>
+      </circuit>
+    </template>
+    <template>
+      <name>ui_vec_lshift_expr_FU</name>
+      <operation operation_name="vec_lshift_expr" supported_types="VECTOR_UINT:*" />
+      <circuit>
+        <component_o id="ui_vec_lshift_expr_FU">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="ui_vec_lshift_expr_FU"/>
+          <parameter name="PRECISION">128</parameter>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="in2" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="ui_vec_lshift_expr_FU in1 in2 out1 PRECISION" VERILOG_PROVIDED="`ifndef _SIM_HAVE_CLOG2\n  function integer log2;\n     input integer value;\n     integer temp_value;\n    begin\n      temp_value = value-1;\n      for (log2=0; temp_value&gt;0; log2=log2+1)\n        temp_value = temp_value&gt;&gt;1;\n    end\n  endfunction\n`endif\n`ifdef _SIM_HAVE_CLOG2\n  parameter arg2_bitsize = $clog2(PRECISION);\n`else\n  parameter arg2_bitsize = log2(PRECISION);\n`endif\ngenerate\n  if(BITSIZE_in2 &gt; arg2_bitsize)\n    assign out1 = in1 &lt;&lt; in2[arg2_bitsize-1:0];\n  else\n    assign out1 = in1 &lt;&lt; in2;\nendgenerate"/>
+        </component_o>
+      </circuit>
+    </template>
+    <template>
+      <name>vec_ne_expr_FU</name>
+      <operation operation_name="ne_expr" supported_types="VECTOR_INT:*"  commutative="1"/>
+      <circuit>
+        <component_o id="vec_ne_expr_FU">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="vec_ne_expr_FU"/>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="in2" dir="IN">
+            <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="vec_ne_expr_FU in1 in2 out1" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)\n  begin  : vec_expr\n    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1] != in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2];\n  end\nendgenerate"/>
+        </component_o>
+      </circuit>
+    </template>
+    <template>
+      <name>ui_vec_ne_expr_FU</name>
+      <operation operation_name="ne_expr" supported_types="VECTOR_UINT:*"  commutative="1"/>
+      <circuit>
+        <component_o id="ui_vec_ne_expr_FU">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="ui_vec_ne_expr_FU"/>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="in2" dir="IN">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="ui_vec_ne_expr_FU in1 in2 out1" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)\n  begin  : vec_expr\n    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1] != in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2];\n  end\nendgenerate"/>
+        </component_o>
+      </circuit>
+    </template>
+    <template>
+      <name>vec_lt_expr_FU</name>
+      <operation operation_name="lt_expr" supported_types="VECTOR_INT:*" />
+      <circuit>
+        <component_o id="vec_lt_expr_FU">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="vec_lt_expr_FU"/>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="in2" dir="IN">
+            <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="vec_lt_expr_FU in1 in2 out1" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)\n  begin  : vec_expr\n    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = $signed(in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1]) &lt; $signed(in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2]);\n  end\nendgenerate"/>
+        </component_o>
+      </circuit>
+    </template>
+    <template>
+      <name>ui_vec_lt_expr_FU</name>
+      <operation operation_name="lt_expr" supported_types="VECTOR_UINT:*" />
+      <circuit>
+        <component_o id="ui_vec_lt_expr_FU">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="ui_vec_lt_expr_FU"/>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="in2" dir="IN">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="ui_vec_lt_expr_FU in1 in2 out1" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)\n  begin  : vec_expr\n    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1] &lt; in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2];\n  end\nendgenerate"/>
+        </component_o>
+      </circuit>
+    </template>
+    <template>
+      <name>vec_gt_expr_FU</name>
+      <operation operation_name="gt_expr" supported_types="VECTOR_INT:*" />
+      <circuit>
+        <component_o id="vec_gt_expr_FU">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="vec_gt_expr_FU"/>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="in2" dir="IN">
+            <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="vec_gt_expr_FU in1 in2 out1" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)\n  begin  : vec_expr\n    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = $signed(in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1]) &gt; $signed(in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2]);\n  end\nendgenerate"/>
+        </component_o>
+      </circuit>
+    </template>
+    <template>
+      <name>ui_vec_gt_expr_FU</name>
+      <operation operation_name="gt_expr" supported_types="VECTOR_UINT:*" />
+      <circuit>
+        <component_o id="ui_vec_gt_expr_FU">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="ui_vec_gt_expr_FU"/>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="in2" dir="IN">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="ui_vec_gt_expr_FU in1 in2 out1" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)\n  begin  : vec_expr\n    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1] &gt; in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2];\n  end\nendgenerate"/>
+        </component_o>
+      </circuit>
+    </template>
+    <template>
+      <name>vec_le_expr_FU</name>
+      <operation operation_name="le_expr" supported_types="VECTOR_INT:*" />
+      <circuit>
+        <component_o id="vec_le_expr_FU">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="vec_le_expr_FU"/>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="in2" dir="IN">
+            <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="vec_le_expr_FU in1 in2 out1" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)\n  begin  : vec_expr\n    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = $signed(in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1]) &lt;= $signed(in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2]);\n  end\nendgenerate"/>
+        </component_o>
+      </circuit>
+    </template>
+    <template>
+      <name>ui_vec_le_expr_FU</name>
+      <operation operation_name="le_expr" supported_types="VECTOR_UINT:*" />
+      <circuit>
+        <component_o id="ui_vec_le_expr_FU">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="ui_vec_le_expr_FU"/>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="in2" dir="IN">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="ui_vec_le_expr_FU in1 in2 out1" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)\n  begin  : vec_expr\n    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1] &lt;= in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2];\n  end\nendgenerate"/>
+        </component_o>
+      </circuit>
+    </template>
+    <template>
+      <name>vec_ge_expr_FU</name>
+      <operation operation_name="ge_expr" supported_types="VECTOR_INT:*" />
+      <circuit>
+        <component_o id="vec_ge_expr_FU">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="vec_ge_expr_FU"/>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="in2" dir="IN">
+            <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="vec_ge_expr_FU in1 in2 out1" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)\n  begin  : vec_expr\n    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = $signed(in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1]) &gt;= $signed(in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2]);\n  end\nendgenerate"/>
+        </component_o>
+      </circuit>
+    </template>
+    <template>
+      <name>ui_vec_ge_expr_FU</name>
+      <operation operation_name="ge_expr" supported_types="VECTOR_UINT:*" />
+      <circuit>
+        <component_o id="ui_vec_ge_expr_FU">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="ui_vec_ge_expr_FU"/>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="in2" dir="IN">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="ui_vec_ge_expr_FU in1 in2 out1" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)\n  begin  : vec_expr\n    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1] &gt;= in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2];\n  end\nendgenerate"/>
+        </component_o>
+      </circuit>
+    </template>
+    <template>
+      <name>vec_perm_expr_FU</name>
+      <operation operation_name="vec_perm_expr" supported_types="VECTOR_INT:*" />
+      <component_timing_alias>ASSIGN_VECTOR_BOOL_FU</component_timing_alias>
+      <circuit>
+        <component_o id="vec_perm_expr_FU">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="vec_perm_expr_FU"/>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="in2" dir="IN">
+            <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="in3" dir="IN">
+            <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="vec_perm_expr_FU in1 in2 in3 out1" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)\n  begin  : vec_expr\n    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = (in3[o1*BITSIZE_in3+BITSIZE_in3-1:o1*BITSIZE_in3] % (2*NUM_ELEM_out1)) &lt; NUM_ELEM_out1 ? (in1 >> (in3[o1*BITSIZE_in3+BITSIZE_in3-1:o1*BITSIZE_in3]*BITSIZE_out1)) : (in2 >> ((in3[o1*BITSIZE_in3+BITSIZE_in3-1:o1*BITSIZE_in3]-NUM_ELEM_out1)*BITSIZE_out1));\n  end\nendgenerate"/>
+        </component_o>
+      </circuit>
+    </template>
+    <template>
+      <name>ui_vec_perm_expr_FU</name>
+      <operation operation_name="vec_perm_expr" supported_types="VECTOR_UINT:*" />
+      <circuit>
+        <component_o id="ui_vec_perm_expr_FU">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="ui_vec_perm_expr_FU"/>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="in2" dir="IN">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="in3" dir="IN">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="ui_vec_perm_expr_FU in1 in2 in3 out1" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)\n  begin  : vec_expr\n    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = (in3[o1*BITSIZE_in3+BITSIZE_in3-1:o1*BITSIZE_in3] % (2*NUM_ELEM_out1)) &lt; NUM_ELEM_out1 ? (in1 >> (in3[o1*BITSIZE_in3+BITSIZE_in3-1:o1*BITSIZE_in3]*BITSIZE_out1)) : (in2 >> ((in3[o1*BITSIZE_in3+BITSIZE_in3-1:o1*BITSIZE_in3]-NUM_ELEM_out1)*BITSIZE_out1));\n  end\nendgenerate"/>
+        </component_o>
+      </circuit>
+    </template>
+    <template>
+      <name>vec_bit_xor_expr_FU</name>
+      <operation operation_name="bit_xor_expr" supported_types="VECTOR_INT:*"  commutative="1"/>
+      <circuit>
+        <component_o id="vec_bit_xor_expr_FU">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="vec_bit_xor_expr_FU"/>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="in2" dir="IN">
+            <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="vec_bit_xor_expr_FU in1 in2 out1" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)\n  begin  : vec_expr\n    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1] ^ in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2];\n  end\nendgenerate"/>
+        </component_o>
+      </circuit>
+    </template>
+    <template>
+      <name>ui_vec_bit_xor_expr_FU</name>
+      <operation operation_name="bit_xor_expr" supported_types="VECTOR_UINT:*" commutative="1" />
+      <circuit>
+        <component_o id="ui_vec_bit_xor_expr_FU">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="ui_vec_bit_xor_expr_FU"/>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="in2" dir="IN">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="ui_vec_bit_xor_expr_FU in1 in2 out1" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)\n  begin  : vec_expr\n    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1] ^ in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2];\n  end\nendgenerate"/>
+        </component_o>
+      </circuit>
+    </template>
+    <template>
+      <name>vec_bit_ior_expr_FU</name>
+      <operation operation_name="bit_ior_expr" supported_types="VECTOR_INT:*" commutative="1" />
+      <circuit>
+        <component_o id="vec_bit_ior_expr_FU">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="vec_bit_ior_expr_FU"/>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="in2" dir="IN">
+            <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="vec_bit_ior_expr_FU in1 in2 out1" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)\n  begin  : vec_expr\n    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1] | in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2];\n  end\nendgenerate"/>
+        </component_o>
+      </circuit>
+    </template>
+    <template>
+      <name>ui_vec_bit_ior_expr_FU</name>
+      <operation operation_name="bit_ior_expr" supported_types="VECTOR_UINT:*" commutative="1" />
+      <circuit>
+        <component_o id="ui_vec_bit_ior_expr_FU">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="ui_vec_bit_ior_expr_FU"/>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="in2" dir="IN">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="ui_vec_bit_ior_expr_FU in1 in2 out1" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)\n  begin  : vec_expr\n    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1] | in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2];\n  end\nendgenerate"/>
+        </component_o>
+      </circuit>
+    </template>
+    <template>
+      <name>vec_bit_and_expr_FU</name>
+      <operation operation_name="bit_and_expr" supported_types="VECTOR_INT:*" commutative="1" />
+      <circuit>
+        <component_o id="vec_bit_and_expr_FU">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="vec_bit_and_expr_FU"/>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="in2" dir="IN">
+            <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="vec_bit_and_expr_FU in1 in2 out1" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)\n  begin  : vec_expr\n    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1] &amp; in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2];\n  end\nendgenerate"/>
+        </component_o>
+      </circuit>
+    </template>
+    <template>
+      <name>ui_vec_bit_and_expr_FU</name>
+      <operation operation_name="bit_and_expr" supported_types="VECTOR_UINT:*" commutative="1" />
+      <circuit>
+        <component_o id="ui_vec_bit_and_expr_FU">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="ui_vec_bit_and_expr_FU"/>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="in2" dir="IN">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="ui_vec_bit_and_expr_FU in1 in2 out1" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)\n  begin  : vec_expr\n    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1] &amp; in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2];\n  end\nendgenerate"/>
+        </component_o>
+      </circuit>
+    </template>
+    <template>
+      <name>vec_bit_not_expr_FU</name>
+      <operation operation_name="bit_not_expr" supported_types="VECTOR_INT:*" />
+      <circuit>
+        <component_o id="vec_bit_not_expr_FU">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="vec_bit_not_expr_FU"/>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="vec_bit_not_expr_FU in1 out1" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)\n  begin  : vec_expr\n    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = ~in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1];\n  end\nendgenerate"/>
+        </component_o>
+      </circuit>
+    </template>
+    <template>
+      <name>ui_vec_bit_not_expr_FU</name>
+      <operation operation_name="bit_not_expr" supported_types="VECTOR_UINT:*" />
+      <circuit>
+        <component_o id="ui_vec_bit_not_expr_FU">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="ui_vec_bit_not_expr_FU"/>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="ui_vec_bit_not_expr_FU in1 out1" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)\n  begin  : vec_expr\n    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = ~in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1];\n  end\nendgenerate"/>
+        </component_o>
+      </circuit>
+    </template>
+    <template>
+      <name>vec_eq_expr_FU</name>
+      <operation operation_name="eq_expr" supported_types="VECTOR_INT:*" commutative="1" />
+      <circuit>
+        <component_o id="vec_eq_expr_FU">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="vec_eq_expr_FU"/>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="in2" dir="IN">
+            <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="vec_eq_expr_FU in1 in2 out1" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)\n  begin  : vec_expr\n    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1] == in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2];\n  end\nendgenerate"/>
+        </component_o>
+      </circuit>
+    </template>
+    <template>
+      <name>ui_vec_eq_expr_FU</name>
+      <operation operation_name="eq_expr" supported_types="VECTOR_UINT:*" commutative="1" />
+      <circuit>
+        <component_o id="ui_vec_eq_expr_FU">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="ui_vec_eq_expr_FU"/>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="in2" dir="IN">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="ui_vec_eq_expr_FU in1 in2 out1" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)\n  begin  : vec_expr\n    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1] == in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2];\n  end\nendgenerate"/>
+        </component_o>
+      </circuit>
+    </template>
+    <template>
+      <name>vec1_rshift_expr_FU</name>
+      <operation operation_name="rshift_expr" supported_types="VECTOR_INT:*" />
+      <circuit>
+        <component_o id="vec1_rshift_expr_FU">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="vec1_rshift_expr_FU"/>
+          <parameter name="PRECISION">32</parameter>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="in2" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="vec1_rshift_expr_FU in1 in2 out1 PRECISION" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)\n  begin  : vec_expr\n    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = $signed(in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1]) &gt;&gt;&gt; (in2%PRECISION);\n  end\nendgenerate"/>
+        </component_o>
+      </circuit>
+    </template>
+    <template>
+      <name>ui_vec1_rshift_expr_FU</name>
+      <operation operation_name="rshift_expr" supported_types="VECTOR_UINT:*" />
+      <circuit>
+        <component_o id="ui_vec1_rshift_expr_FU">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="ui_vec1_rshift_expr_FU"/>
+          <parameter name="PRECISION">32</parameter>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="in2" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="ui_vec1_rshift_expr_FU in1 in2 out1 PRECISION" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)\n  begin  : vec_expr\n    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1]  &gt;&gt; (in2%PRECISION);\n  end\nendgenerate"/>
+        </component_o>
+      </circuit>
+    </template>
+    <template>
+      <name>vec1_lshift_expr_FU</name>
+      <operation operation_name="lshift_expr" supported_types="VECTOR_INT:*" />
+      <circuit>
+        <component_o id="vec1_lshift_expr_FU">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="vec1_lshift_expr_FU"/>
+          <parameter name="PRECISION">32</parameter>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="in2" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="vec1_lshift_expr_FU in1 in2 out1 PRECISION" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)\n  begin  : vec_expr\n    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = $signed(in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1]) &lt;&lt;&lt; (in2%PRECISION);\n  end\nendgenerate"/>
+        </component_o>
+      </circuit>
+    </template>
+    <template>
+      <name>ui_vec1_lshift_expr_FU</name>
+      <operation operation_name="lshift_expr" supported_types="VECTOR_UINT:*" />
+      <circuit>
+        <component_o id="ui_vec1_lshift_expr_FU">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="ui_vec1_lshift_expr_FU"/>
+          <parameter name="PRECISION">32</parameter>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="in2" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="ui_vec1_lshift_expr_FU in1 in2 out1 PRECISION" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)\n  begin  : vec_expr\n    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1]  &lt;&lt; (in2%PRECISION);\n  end\nendgenerate"/>
+        </component_o>
+      </circuit>
+    </template>
+    <template>
+      <name>vec_pack_trunc_expr_FU</name>
+      <operation operation_name="vec_pack_trunc_expr" supported_types="VECTOR_INT:*"/>
+      <circuit>
+        <component_o id="vec_pack_trunc_expr_FU">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="vec_pack_trunc_expr_FU"/>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="in2" dir="IN">
+            <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
+            <connected_objects/>
+          </port_o>
+          <NP_functionality LIBRARY="vec_pack_trunc_expr_FU in1 in2 out1" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1/2; o1=o1+1)\n  begin  : packing_lo\n    assign out1[(o1+1)*BITSIZE_out1-1:o1*BITSIZE_out1] = in1[o1*BITSIZE_in1+BITSIZE_out1-1:o1*BITSIZE_in1];\n  end\nendgenerate\ngenerate\ngenvar o2;\n  for (o2=0; o2&lt;NUM_ELEM_out1/2; o2=o2+1)\n  begin  : packing_hi\n    assign out1[(NUM_ELEM_out1/2+o2+1)*BITSIZE_out1-1:(NUM_ELEM_out1/2+o2)*BITSIZE_out1] = in2[o2*BITSIZE_in2+BITSIZE_out1-1:o2*BITSIZE_in2];\n  end\nendgenerate"/>
+        </component_o>
+      </circuit>
+    </template>
+    <template>
+      <name>ui_vec_pack_trunc_expr_FU</name>
+      <operation operation_name="vec_pack_trunc_expr" supported_types="VECTOR_UINT:*"/>
+      <circuit>
+        <component_o id="ui_vec_pack_trunc_expr_FU">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="ui_vec_pack_trunc_expr_FU"/>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="in2" dir="IN">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+            <connected_objects/>
+          </port_o>
+          <NP_functionality LIBRARY="ui_vec_pack_trunc_expr_FU in1 in2 out1" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1/2; o1=o1+1)\n  begin  : packing_lo\n    assign out1[(o1+1)*BITSIZE_out1-1:o1*BITSIZE_out1] = in1[o1*BITSIZE_in1+BITSIZE_out1-1:o1*BITSIZE_in1];\n  end\nendgenerate\ngenerate\ngenvar o2;\n  for (o2=0; o2&lt;NUM_ELEM_out1/2; o2=o2+1)\n  begin  : packing_hi\n    assign out1[(NUM_ELEM_out1/2+o2+1)*BITSIZE_out1-1:(NUM_ELEM_out1/2+o2)*BITSIZE_out1] = in2[o2*BITSIZE_in2+BITSIZE_out1-1:o2*BITSIZE_in2];\n  end\nendgenerate"/>
+        </component_o>
+      </circuit>
+    </template>
+    <template>
+      <name>vec_unpack_hi_expr_FU</name>
+      <operation operation_name="vec_unpack_hi_expr" supported_types="VECTOR_INT:*"/>
+      <circuit>
+        <component_o id="vec_unpack_hi_expr_FU">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="vec_unpack_hi_expr_FU"/>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="out1" dir="OUT" is_doubled="1">
+            <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
+            <connected_objects/>
+          </port_o>
+          <NP_functionality LIBRARY="vec_unpack_hi_expr_FU in1 out1" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)\n  begin  : unpacking_hi\n    assign out1[(o1+1)*BITSIZE_out1-1:o1*BITSIZE_out1] = { {BITSIZE_out1-BITSIZE_in1{in1[(NUM_ELEM_out1+o1+1)*BITSIZE_in1-1]}}, in1[(NUM_ELEM_out1+o1+1)*BITSIZE_in1-1:(NUM_ELEM_out1+o1)*BITSIZE_in1]};\n  end\nendgenerate"/>
+        </component_o>
+      </circuit>
+    </template>
+    <template>
+      <name>ui_vec_unpack_hi_expr_FU</name>
+      <operation operation_name="vec_unpack_hi_expr" supported_types="VECTOR_UINT:*"/>
+      <circuit>
+        <component_o id="ui_vec_unpack_hi_expr_FU">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="ui_vec_unpack_hi_expr_FU"/>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="out1" dir="OUT" is_doubled="1">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+            <connected_objects/>
+          </port_o>
+          <NP_functionality LIBRARY="ui_vec_unpack_hi_expr_FU in1 out1" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)\n  begin  : unpacking_hi\n    assign out1[(o1+1)*BITSIZE_out1-1:o1*BITSIZE_out1] = { {BITSIZE_out1-BITSIZE_in1{1&apos;b0}}, in1[(NUM_ELEM_out1+o1+1)*BITSIZE_in1-1:(NUM_ELEM_out1+o1)*BITSIZE_in1]};\n  end\nendgenerate"/>
+        </component_o>
+      </circuit>
+    </template>
+    <template>
+      <name>vec_unpack_lo_expr_FU</name>
+      <operation operation_name="vec_unpack_lo_expr" supported_types="VECTOR_INT:*"/>
+      <circuit>
+        <component_o id="vec_unpack_lo_expr_FU">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="vec_unpack_lo_expr_FU"/>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="out1" dir="OUT" is_doubled="1">
+            <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
+            <connected_objects/>
+          </port_o>
+          <NP_functionality LIBRARY="vec_unpack_lo_expr_FU in1 out1" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)\n  begin  : unpacking_lo\n    assign out1[(o1+1)*BITSIZE_out1-1:o1*BITSIZE_out1] = { {BITSIZE_out1-BITSIZE_in1{in1[(o1+1)*BITSIZE_in1-1]}}, in1[(o1+1)*BITSIZE_in1-1:o1*BITSIZE_in1]};\n  end\nendgenerate"/>
+        </component_o>
+      </circuit>
+    </template>
+    <template>
+      <name>ui_vec_unpack_lo_expr_FU</name>
+      <operation operation_name="vec_unpack_lo_expr" supported_types="VECTOR_UINT:*"/>
+      <circuit>
+        <component_o id="ui_vec_unpack_lo_expr_FU">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="ui_vec_unpack_lo_expr_FU"/>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="out1" dir="OUT" is_doubled="1">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+            <connected_objects/>
+          </port_o>
+          <NP_functionality LIBRARY="ui_vec_unpack_lo_expr_FU in1 out1" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)\n  begin  : unpacking_lo\n    assign out1[(o1+1)*BITSIZE_out1-1:o1*BITSIZE_out1] = { {BITSIZE_out1-BITSIZE_in1{1&apos;b0}}, in1[(o1+1)*BITSIZE_in1-1:o1*BITSIZE_in1]};\n  end\nendgenerate"/>
+        </component_o>
+      </circuit>
+    </template>
+    <template>
+      <name>vec_dot_prod_expr_FU</name>
+      <operation operation_name="dot_prod_expr" supported_types="VECTOR_INT:*" pipe_parameters="*:0,1,2,3,4,5,6"/>
+      <circuit>
+        <component_o id="vec_dot_prod_expr_FU">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="vec_dot_prod_expr_FU"/>
+          <parameter name="PIPE_PARAMETER">0</parameter>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="in2" dir="IN">
+            <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="in3" dir="IN" is_doubled="1">
+            <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT" is_doubled="1">
+            <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="vec_dot_prod_expr_FU in1 in2 in3 out1 PIPE_PARAMETER" IP_COMPONENT="mult_expr_FU,widen_mult_expr_FU,dot_prod_expr_FU" VERILOG_PROVIDED="wire signed [BITSIZE_out1*NUM_ELEM_out1-1:0] tmp_mult;\nwire signed [BITSIZE_out1*NUM_ELEM_out1-1:0] tmp_dotprod;\ngenerate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)\n  begin  : vec_expr\n    dot_prod_expr_FU #(.BITSIZE_in1(BITSIZE_in1), .BITSIZE_in2(BITSIZE_in2), .BITSIZE_in3(BITSIZE_in3), .BITSIZE_out1(BITSIZE_out1), .PIPE_PARAMETER(PIPE_PARAMETER)) dp1 (.out1(tmp_dotprod[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1]), .clock(clock), .in1(in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1]), .in2(in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2]), .in3(in3[o1*BITSIZE_in3+BITSIZE_in3-1:o1*BITSIZE_in3]));\n    widen_mult_expr_FU #(.BITSIZE_in1(BITSIZE_in1), .BITSIZE_in2(BITSIZE_in2), .BITSIZE_out1(BITSIZE_out1), .PIPE_PARAMETER(PIPE_PARAMETER)) m1 (.out1(tmp_mult[(o1)*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1]), .clock(clock), .in1(in1[(o1+NUM_ELEM_out1)*BITSIZE_in1+BITSIZE_in1-1:(o1+NUM_ELEM_out1)*BITSIZE_in1]), .in2(in2[(o1+NUM_ELEM_out1)*BITSIZE_in2+BITSIZE_in2-1:(o1+NUM_ELEM_out1)*BITSIZE_in2]));\n    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = tmp_mult[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] + tmp_dotprod[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1];\n  end\nendgenerate"/>
+        </component_o>
+      </circuit>
+    </template>
+    <template>
+      <name>ui_vec_dot_prod_expr_FU</name>
+      <operation operation_name="dot_prod_expr" supported_types="VECTOR_UINT:*" pipe_parameters="*:0,1,2,3,4,5,6"/>
+      <circuit>
+        <component_o id="ui_vec_dot_prod_expr_FU">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="ui_vec_dot_prod_expr_FU"/>
+          <parameter name="PIPE_PARAMETER">0</parameter>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="in2" dir="IN">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="in3" dir="IN" is_doubled="1">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT" is_doubled="1">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="ui_vec_dot_prod_expr_FU in1 in2 in3 out1 PIPE_PARAMETER" IP_COMPONENT="ui_mult_expr_FU,ui_widen_mult_expr_FU,ui_dot_prod_expr_FU" VERILOG_PROVIDED="wire [BITSIZE_out1*NUM_ELEM_out1-1:0] tmp_mult;\nwire [BITSIZE_out1*NUM_ELEM_out1-1:0] tmp_dotprod;\ngenerate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)\n  begin  : vec_expr\n    ui_dot_prod_expr_FU #(.BITSIZE_in1(BITSIZE_in1), .BITSIZE_in2(BITSIZE_in2), .BITSIZE_in3(BITSIZE_in3), .BITSIZE_out1(BITSIZE_out1), .PIPE_PARAMETER(PIPE_PARAMETER)) dp1 (.out1(tmp_dotprod[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1]), .clock(clock), .in1(in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1]), .in2(in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2]), .in3(in3[o1*BITSIZE_in3+BITSIZE_in3-1:o1*BITSIZE_in3]));\n    ui_widen_mult_expr_FU #(.BITSIZE_in1(BITSIZE_in1), .BITSIZE_in2(BITSIZE_in2), .BITSIZE_out1(BITSIZE_out1), .PIPE_PARAMETER(PIPE_PARAMETER)) m1 (.out1(tmp_mult[(o1)*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1]), .clock(clock), .in1(in1[(o1+NUM_ELEM_out1)*BITSIZE_in1+BITSIZE_in1-1:(o1+NUM_ELEM_out1)*BITSIZE_in1]), .in2(in2[(o1+NUM_ELEM_out1)*BITSIZE_in2+BITSIZE_in2-1:(o1+NUM_ELEM_out1)*BITSIZE_in2]));\n    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = tmp_mult[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] + tmp_dotprod[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1];\n  end\nendgenerate"/>
+        </component_o>
+      </circuit>
+    </template>
+    <template>
+      <name>vec_extracteven_expr_FU</name>
+      <operation operation_name="vec_extracteven_expr" supported_types="VECTOR_INT:*" />
+      <circuit>
+        <component_o id="vec_extracteven_expr_FU">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="vec_extracteven_expr_FU"/>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="in2" dir="IN">
+            <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="vec_extracteven_expr_FU in1 in2 out1" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1/2; o1=o1+1)\n  begin  : vec_expr\n    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = in1[(o1*2)*BITSIZE_in1+BITSIZE_in1-1:(o1*2)*BITSIZE_in1];\n    assign out1[(o1+NUM_ELEM_out1/2)*BITSIZE_out1+BITSIZE_out1-1:(o1+NUM_ELEM_out1/2)*BITSIZE_out1] = in2[(o1*2)*BITSIZE_in2+BITSIZE_in2-1:(o1*2)*BITSIZE_in2];\n  end\nendgenerate"/>
+        </component_o>
+      </circuit>
+    </template>
+    <template>
+      <name>ui_vec_extracteven_expr_FU</name>
+      <operation operation_name="vec_extracteven_expr" supported_types="VECTOR_UINT:*" />
+      <circuit>
+        <component_o id="ui_vec_extracteven_expr_FU">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="ui_vec_extracteven_expr_FU"/>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="in2" dir="IN">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="ui_vec_extracteven_expr_FU in1 in2 out1" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1/2; o1=o1+1)\n  begin  : vec_expr\n    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = in1[(o1*2)*BITSIZE_in1+BITSIZE_in1-1:(o1*2)*BITSIZE_in1];\n    assign out1[(o1+NUM_ELEM_out1/2)*BITSIZE_out1+BITSIZE_out1-1:(o1+NUM_ELEM_out1/2)*BITSIZE_out1] = in2[(o1*2)*BITSIZE_in2+BITSIZE_in2-1:(o1*2)*BITSIZE_in2];\n  end\nendgenerate"/>
+        </component_o>
+      </circuit>
+    </template>
+    <template>
+      <name>vec_extractodd_expr_FU</name>
+      <operation operation_name="vec_extractodd_expr" supported_types="VECTOR_INT:*" />
+      <circuit>
+        <component_o id="vec_extractodd_expr_FU">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="vec_extractodd_expr_FU"/>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="in2" dir="IN">
+            <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="vec_extractodd_expr_FU in1 in2 out1" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1/2; o1=o1+1)\n  begin  : vec_expr\n    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = in1[(o1*2+1)*BITSIZE_in1+BITSIZE_in1-1:(o1*2+1)*BITSIZE_in1];\n    assign out1[(o1+NUM_ELEM_out1/2)*BITSIZE_out1+BITSIZE_out1-1:(o1+NUM_ELEM_out1/2)*BITSIZE_out1] = in2[(o1*2+1)*BITSIZE_in2+BITSIZE_in2-1:(o1*2+1)*BITSIZE_in2];\n  end\nendgenerate"/>
+        </component_o>
+      </circuit>
+    </template>
+    <template>
+      <name>ui_vec_extractodd_expr_FU</name>
+      <operation operation_name="vec_extractodd_expr" supported_types="VECTOR_UINT:*" />
+      <circuit>
+        <component_o id="ui_vec_extractodd_expr_FU">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="ui_vec_extractodd_expr_FU"/>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="in2" dir="IN">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="ui_vec_extractodd_expr_FU in1 in2 out1" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1/2; o1=o1+1)\n  begin  : vec_expr\n    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = in1[(o1*2+1)*BITSIZE_in1+BITSIZE_in1-1:(o1*2+1)*BITSIZE_in1];\n    assign out1[(o1+NUM_ELEM_out1/2)*BITSIZE_out1+BITSIZE_out1-1:(o1+NUM_ELEM_out1/2)*BITSIZE_out1] = in2[(o1*2+1)*BITSIZE_in2+BITSIZE_in2-1:(o1*2+1)*BITSIZE_in2];\n  end\nendgenerate"/>
+        </component_o>
+      </circuit>
+    </template>
+    <template>
+      <name>vec_interleavehigh_expr_FU</name>
+      <operation operation_name="vec_interleavehigh_expr" supported_types="VECTOR_INT:*" />
+      <circuit>
+        <component_o id="vec_interleavehigh_expr_FU">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="vec_interleavehigh_expr_FU"/>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="in2" dir="IN">
+            <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="vec_interleavehigh_expr_FU in1 in2 out1" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+2)\n  begin  : vec_expr\n    assign out1[(o1)*BITSIZE_out1+BITSIZE_out1-1:(o1)*BITSIZE_out1] = in1[(o1/2+NUM_ELEM_out1/2)*BITSIZE_in1+BITSIZE_in1-1:(o1/2+NUM_ELEM_out1/2)*BITSIZE_in1];\n    assign out1[(o1+1)*BITSIZE_out1+BITSIZE_out1-1:(o1+1)*BITSIZE_out1] = in2[(o1/2+NUM_ELEM_out1/2)*BITSIZE_in2+BITSIZE_in2-1:(o1/2+NUM_ELEM_out1/2)*BITSIZE_in2];\n  end\nendgenerate"/>
+        </component_o>
+      </circuit>
+    </template>
+    <template>
+      <name>ui_vec_interleavehigh_expr_FU</name>
+      <operation operation_name="vec_interleavehigh_expr" supported_types="VECTOR_UINT:*" />
+      <circuit>
+        <component_o id="ui_vec_interleavehigh_expr_FU">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="ui_vec_interleavehigh_expr_FU"/>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="in2" dir="IN">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="ui_vec_interleavehigh_expr_FU in1 in2 out1" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+2)\n  begin  : vec_expr\n    assign out1[(o1)*BITSIZE_out1+BITSIZE_out1-1:(o1)*BITSIZE_out1] = in1[(o1/2+NUM_ELEM_out1/2)*BITSIZE_in1+BITSIZE_in1-1:(o1/2+NUM_ELEM_out1/2)*BITSIZE_in1];\n    assign out1[(o1+1)*BITSIZE_out1+BITSIZE_out1-1:(o1+1)*BITSIZE_out1] = in2[(o1/2+NUM_ELEM_out1/2)*BITSIZE_in2+BITSIZE_in2-1:(o1/2+NUM_ELEM_out1/2)*BITSIZE_in2];\n  end\nendgenerate"/>
+        </component_o>
+      </circuit>
+    </template>
+    <template>
+      <name>vec_interleavelow_expr_FU</name>
+      <operation operation_name="vec_interleavelow_expr" supported_types="VECTOR_INT:*" />
+      <circuit>
+        <component_o id="vec_interleavelow_expr_FU">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="vec_interleavelow_expr_FU"/>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="in2" dir="IN">
+            <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="vec_interleavelow_expr_FU in1 in2 out1" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+2)\n  begin  : vec_expr\n    assign out1[(o1)*BITSIZE_out1+BITSIZE_out1-1:(o1)*BITSIZE_out1] = in1[(o1/2)*BITSIZE_in1+BITSIZE_in1-1:(o1/2)*BITSIZE_in1];\n    assign out1[(o1+1)*BITSIZE_out1+BITSIZE_out1-1:(o1+1)*BITSIZE_out1] = in2[(o1/2)*BITSIZE_in2+BITSIZE_in2-1:(o1/2)*BITSIZE_in2];\n  end\nendgenerate"/>
+        </component_o>
+      </circuit>
+    </template>
+    <template>
+      <name>ui_vec_interleavelow_expr_FU</name>
+      <operation operation_name="vec_interleavelow_expr" supported_types="VECTOR_UINT:*" />
+      <circuit>
+        <component_o id="ui_vec_interleavelow_expr_FU">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="ui_vec_interleavelow_expr_FU"/>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="in2" dir="IN">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="ui_vec_interleavelow_expr_FU in1 in2 out1" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+2)\n  begin  : vec_expr\n    assign out1[(o1)*BITSIZE_out1+BITSIZE_out1-1:(o1)*BITSIZE_out1] = in1[(o1/2)*BITSIZE_in1+BITSIZE_in1-1:(o1/2)*BITSIZE_in1];\n    assign out1[(o1+1)*BITSIZE_out1+BITSIZE_out1-1:(o1+1)*BITSIZE_out1] = in2[(o1/2)*BITSIZE_in2+BITSIZE_in2-1:(o1/2)*BITSIZE_in2];\n  end\nendgenerate"/>
+        </component_o>
+      </circuit>
+    </template>
+  </library>
+</technology>

@@ -1,0 +1,161 @@
+restart;
+print("=============== Test number 161 ================");
+procedure succ(n) { return n + 1; };
+succ(5);
+3 + succ(0);
+succ;
+
+/*********************************************************************************/
+restart;
+print("=============== Test number 162 ================");
+succ = proc(n) { return n + 1; };
+succ(5);
+3 + succ(0);
+succ;
+
+/*********************************************************************************/
+restart;
+print("=============== Test number 163 ================");
+add = proc(m,n) { var res; res := m + n; return res; };
+add(5,6);
+add;
+verbosity = 1!;
+add(3);
+add(true,false);
+
+
+/*********************************************************************************/
+restart;
+print("=============== Test number 164 ================");
+succ = proc(n) { return n + 1; };
+succ(5);
+succ(x);
+
+/*********************************************************************************/
+restart;
+print("=============== Test number 165 ================");
+hey = proc() { print("Hello world."); };
+hey();
+print(hey());
+hey;
+
+
+/*********************************************************************************/
+restart;
+print("=============== Test number 166 ================");
+fac = proc(n) { var res; if (n == 0) then res := 1 else res := n * fac(n - 1); return res; };
+fac(5);
+fac(11);
+fac;
+
+/*********************************************************************************/
+restart;
+print("=============== Test number 167 ================");
+myprocs = [| proc(m,n) { return m + n; }, proc(m,n) { return m - n; } |];
+(myprocs[0])(5,6);
+(myprocs[1])(5,6);
+succ = proc(n) { return n + 1; };
+pred = proc(n) { return n - 1; };
+applier = proc(p,n) { return p(n); };
+applier(succ,5);
+applier(pred,5);
+
+/*********************************************************************************/
+restart;
+print("=============== Test number 168 ================");
+verbosity = 1!;
+myquit = proc(n) { print(n); quit; };
+myquit;
+myquit(5);
+
+/*********************************************************************************/
+restart;
+print("=============== Test number 169 ================");
+printsucc = proc(n) { var succ; succ = proc(n) { return n + 1; }; print("Successor of",n,"is",succ(n)); };
+printsucc(5);
+
+/*********************************************************************************/
+restart;
+print("=============== Test number 170 ================");
+makeadd = proc(n) { var add; print("n =",n); add = proc(m,n) { return n + m; }; return add; };
+makeadd(4);
+(makeadd(4))(5,6);
+
+/*********************************************************************************/
+/* restart; */
+/* print("=============== Test number 171 ================"); */
+/* quit; */
+
+/*********************************************************************************/
+restart;
+print("=============== Test number 172 ================");
+pi10 = rationalapprox(Pi,10);
+pi50 = rationalapprox(Pi,50);
+pi100 = rationalapprox(Pi,100);
+print( pi10, ": ", simplify(floor(-log2(abs(pi10-Pi)/Pi))), "bits." );
+print( pi50, ": ", simplify(floor(-log2(abs(pi50-Pi)/Pi))), "bits." );
+print( pi100, ": ", simplify(floor(-log2(abs(pi100-Pi)/Pi))), "bits." );
+
+/*********************************************************************************/
+restart;
+print("=============== Test number 173 ================");
+a=0.1;
+b=rationalapprox(a,4);
+numerator(b); denominator(b);
+print(simplify(floor(-log2(abs((b-a)/a)))), "bits.");
+
+/*********************************************************************************/
+restart;
+print("=============== Test number 174 ================");
+display=binary!;
+round(Pi,20,RD);
+
+
+/*********************************************************************************/
+restart;
+print("=============== Test number 175 ================");
+verbosity=1!;
+p = remez((2^x-1)/x, 9, [-1/16;1/16]);
+p;
+
+/*********************************************************************************/
+restart;
+print("=============== Test number 176 ================");
+p = remez(exp(x),5,[0;1]);
+degree(p);
+dirtyinfnorm(p-exp(x),[0;1]);
+
+/*********************************************************************************/
+restart;
+print("=============== Test number 177 ================");
+p = remez(1,[|0,2,4,6,8|],[0,Pi/4],1/cos(x));
+canonical=on!;
+p;
+
+/*********************************************************************************/
+restart;
+print("=============== Test number 178 ================");
+p1 = remez(exp(x),5,[0;1],default,1e-5);
+p2 = remez(exp(x),5,[0;1],default,1e-10);
+p3 = remez(exp(x),5,[0;1],default,1e-15);
+dirtyinfnorm(p1-exp(x),[0;1]);
+dirtyinfnorm(p2-exp(x),[0;1]);
+dirtyinfnorm(p3-exp(x),[0;1]);
+
+
+/*********************************************************************************/
+restart;
+print("=============== Test number 179 ================");
+f=sin(x);
+f;
+rename(x,y);
+f;
+
+/*********************************************************************************/
+restart;
+print("=============== Test number 180 ================");
+a=1;
+f=sin(x);
+rename(x,a);
+a;
+f;

@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<constraints>
+   <HLS_constraints>
+      <tech_constraints fu_name="plot" fu_library="STD_FU" n="1"/>
+      <tech_constraints fu_name="leds_ctrl" fu_library="STD_FU" n="1"/>
+   </HLS_constraints>
+</constraints>

@@ -1,0 +1,78 @@
+The tool has been restarted.
+=============== Test number 101 ================
+false
+true
+true
+false
+true
+The tool has been restarted.
+=============== Test number 102 ================
+The precision has been set to 12 bits.
+false
+The tool has been restarted.
+=============== Test number 103 ================
+false
+false
+true
+false
+true
+The tool has been restarted.
+=============== Test number 104 ================
+The precision has been set to 12 bits.
+true
+The tool has been restarted.
+=============== Test number 105 ================
+411775
+0
+The tool has been restarted.
+=============== Test number 106 ================
+[3.1415926516056060791015625;3.1415926553308963775634765625]
+0.314159265~1/6~e1
+The tool has been restarted.
+=============== Test number 107 ================
+2
+17
+The tool has been restarted.
+=============== Test number 108 ================
+3
+The tool has been restarted.
+=============== Test number 109 ================
+-2 + x
+The tool has been restarted.
+=============== Test number 110 ================
+0
+The tool has been restarted.
+=============== Test number 111 ================
+cos(x) - exp(x)
+The tool has been restarted.
+=============== Test number 112 ================
+10
+The tool has been restarted.
+=============== Test number 113 ================
+x * 2
+The tool has been restarted.
+=============== Test number 114 ================
+x^2
+The tool has been restarted.
+=============== Test number 115 ================
+sin(x) * exp(x) + exp(x) * cos(x)
+The tool has been restarted.
+=============== Test number 116 ================
+false
+true
+true
+false
+The tool has been restarted.
+=============== Test number 117 ================
+false
+false
+true
+The tool has been restarted.
+=============== Test number 118 ================
+The precision has been set to 12 bits.
+true
+The tool has been restarted.
+=============== Test number 119 ================
+false
+The tool has been restarted.
+=============== Test number 120 ================

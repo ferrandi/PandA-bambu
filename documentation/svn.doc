@@ -1,0 +1,315 @@
+/*
+ *
+ *                   _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
+ *                  _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
+ *                 _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
+ *                _/      _/    _/ _/    _/ _/   _/ _/    _/
+ *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
+ *
+ *             ***********************************************
+ *                              PandA Project 
+ *                     URL: http://panda.dei.polimi.it
+ *                       Politecnico di Milano - DEIB
+ *                        System Architectures Group
+ *             ***********************************************
+ *              Copyright (c) 2004-2016 Politecnico di Milano
+ *
+ *   This file is part of the PandA framework.
+ *
+ *   The PandA framework is free software; you can redistribute it and/or modify
+ *   it under the terms of the GNU General Public License as published by
+ *   the Free Software Foundation; either version 3 of the License, or
+ *   (at your option) any later version.
+ *
+ *   This program is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU General Public License for more details.
+ *
+ *   You should have received a copy of the GNU General Public License
+ *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+*/
+/*!
+  \page svn How to download PandA through Subversion
+
+  This document aims at defining the list of steps that a PandA developer has to follow in order to:
+  - \ref trac_howTo
+  - \ref sec_svn_int
+  - \ref sec_svn_Compiling
+  - \ref sec_svn_gui
+  - \ref sec_svn_Editing 
+  - \ref sec_svn_resolve
+  - \ref sec_svn_ChangeLogUsage
+
+  \section trac_howTo Subversion project
+
+Subversion is an open source application for revision control. A complete manual of subversion can be downloaded at http://svnbook.red-bean.com/.
+
+Before being able to access the SVN you need to register on https://trac.elet.polimi.it/panda. After the registration step please send an email to ferrandi@elet.polimi.it to acknowledge of your registration. The source code can be accessed only after a successfull registration. Currently, there is no anonymous access to our subversion repository. Older version of PandA framework can be downloaded from the download section of PandA.
+
+  \section sec_svn_int PandA checkout (only for developers)
+
+To check out the PandA repository, you do the following:
+\verbatim
+     $ svn co https://svn.elet.polimi.it/panda --username <membername>
+\endverbatim
+
+That will check out the whole PandA trunk, which is probably not what you want, unless you want to build all PandA modules, etc, which requires downloading several megabytes of code. To selectively checkout what you want, you can do (example for checking out only extra examples follows):
+\verbatim
+     $ svn co https://svn.elet.polimi.it/panda/trunk/extra_ex --username <membername>
+\endverbatim
+
+This will create a new directory extra_ex in your current working directory. In the same fashion, you can download all the other modules. Possible checkout are:
+
+- Panda source code of trunk version
+\verbatim
+      $ svn co https://svn.elet.polimi.it/panda/trunk/panda --username <membername>
+\endverbatim
+
+- Panda source code of branch version
+\verbatim
+      $ svn co https://svn.elet.polimi.it/panda/branches/panda-ssa/panda --username <membername>
+\endverbatim
+
+- extra benchmarks
+\verbatim
+      $ svn co https://svn.elet.polimi.it/panda/trunk/extra_ex --username <membername>
+\endverbatim
+
+
+To update your working dir, all you have to do is run
+\verbatim
+$ svn up
+\endverbatim
+
+from inside it, just as you did with CVS.
+
+\subsection  sec_svn_Compiling Compiling the first time (for developers and final users)
+
+  Finally, if the files have been downloaded by the SVN repository (for developers), they should be completed by adding all the files automatically created (since the SVN repository 
+  should store only hand-made files). The command to be prompted is:
+\verbatim
+     $ make -f Makefile.init
+\endverbatim
+  Note that, this command is automatically performed by \ref kdevelop_tag the first time a compilation is performed and it has <b>not</b> to be performed if the files has been downloaded by final users (as they download them from the Download section into the website).
+  A more detailed description is explained into \ref panda_install.
+
+
+\subsection sec_svn_gui Using a GUI tool to get PandA from SVN
+
+There are some GUI frontends to Subversion. Google for the following applications:
+
+    - kdesvn: KDE SVN client (UNIX)
+    - eSvn: Qt SVN client (UNIX)
+    - tortoise: SVN client (WINDOWS)
+
+Cervisia, the previously used CVS client will also have subersion support in the near future. 
+
+
+\subsection sec_svn_Editing Editing files and committing
+
+PandA requires ChangeLog entries for each code changes. This means that each time a commit is performed the message provided to subversion should also inserted in the ChangeLog file. The policy adopted is quite strict in this case. If a developer do not provide the message or the ChangeLog entry the subversion server does not successfully commit the submitted changes.
+
+The message should be short and complete. If you think that a change calls for explanation, you're probably right. Please do explain it - but please put the explanation in comments in the code and in the ticket the entry refert to.
+
+For example, "New function" is enough for the change log when you add a function, because there should be a comment before the function definition to explain what it does.
+
+Morever, "A checkin must always refer to an open ticket."
+
+The subversion server searches commit messages for text in the form of:
+
+    - command #1
+    - command #1, #2
+    - command #1 & #2
+    - command #1 and #2 
+
+You can have more then one command in a message. The following commands are supported. There is more then one spelling for each command, to make this as user-friendly as possible.
+
+    - closes, fixes 
+
+        The specified issue numbers are closed with the contents of this commit message being added to it.
+
+    - references, refs, addresses, re 
+
+        The specified issue numbers are left in their current status, but the contents of this commit message are added to their notes.
+
+Here is a simple examples of change log entries, starting with the header line that says who made the change and when it was installed, followed by descriptions of specific changes.
+
+2005-06-23  Author's Name  <name@email.me.it>
+
+   * Fixed an incorrect support of goto_expr in tree_to_graph_manager. Fixes #10 and #12, and refs #12.
+
+
+This will close ticket #10 and #12, and add a note to #12.
+
+- \b Editing \b files.
+  Editing files with Subversion is no different than doing so with CVS.
+- \b Committing \b changes.
+  The only difference you should know about is that Subversion does atomic commits, and you are encouraged to make your commits complete.
+In other words, suppose you add a new file to Subversion and you update Makefile.am to include in compilation. 
+You should first svn add the new file, and then commit both it and Makefile.am, in one go. That way, anyone doing a checkout cannot possibly get a revision in which one change had happened but not the other.
+Moreover, each time a revision is commited you has to describe the changes by adding few lines into the ChangeLog file (\b Important \b Step). For further details please check section \ref sec_svn_ChangeLogUsage.
+- \b Reverting \b changes.
+If you want to undo some changes you've made but not yet committed, try this command:
+\verbatim
+     $ svn revert
+\endverbatim
+If you did commit your changes, you can do this:
+\verbatim
+     $ svn merge -r COMMITTED:PREV
+\endverbatim
+(type COMMITTED and PREV, in capitals, as shown)
+- \b Resolve \b conflict
+The changes from the server directly overlap your own changes to the file. No need to panic, though. This overlap needs to be resolved by a human (you); we discuss this situation later in section \ref sec_svn_resolve.
+
+
+\subsection sec_svn_resolve Resolve conflict (Merging Others' Changes)
+
+Suppose you run svn update and some interesting things occur:
+\verbatim
+      $ svn update
+      U  INSTALL
+      G  README
+      C  bar.c
+      Updated to revision 46.
+\endverbatim
+
+The \c U and \c G codes are no cause for concern; those files cleanly absorbed changes from the repository. The files marked with \c U contained no local changes but were <tt>U</tt>pdated with changes 
+from the repository. The \c G stands for mer<tt>G</tt>ed, which means that the file had local changes to begin with, but the changes coming from the repository didn't overlap with the local changes.
+But the \c C stands for conflict. This means that the changes from the server overlapped with your own, and now you have to manually choose between them.
+Whenever a conflict occurs, three things typically occur to assist you in noticing and resolving that conflict:
+
+- Subversion prints a \c C during the update, and remembers that the file is in a state of conflict.
+
+- If Subversion considers the file to be of a mergable type, it places <em>conflict markers</em> -- special strings of text which delimit the "sides2 of the conflict -- into the file to visibly 
+demonstrate the overlapping areas.
+
+- For every conflicted file, Subversion places up to three extra unversioned files in your working copy:
+  - filename.mine\n
+  This is your file as it existed in your working copy before you updated your working copy -- that is, without conflict markers. 
+  This file has your latest changes in it and nothing else. (If Subversion considers the file to be unmergeable, then the \em .mine file isn't created, since it would be identical to the working file.)
+  - filename.rOLDREV\n
+  This is the file that was the BASE revision before you updated your working copy. That is, the file that you checked out before you made your latest edits.
+  - filename.rNEWREV\n
+  This is the file that your Subversion client just received from the server when you updated your working copy. This file corresponds to the \c HEAD revision of the repository.
+  Here \c OLDREV is the revision number of the file in your .svn directory and \c NEWREV is the revision number of the repository \c HEAD.
+
+For example, Sally makes changes to the file \em sandwich.txt in the repository. Harry has just changed the file in his working copy and checked it in. 
+Sally updates her working copy before checking in and she gets a conflict:
+\verbatim
+       $ svn update
+       C  sandwich.txt
+       Updated to revision 2.
+       $ ls -1
+       sandwich.txt
+       sandwich.txt.mine
+       sandwich.txt.r1
+       sandwich.txt.r2
+\endverbatim
+
+At this point, Subversion will not allow you to commit the file \em sandwich.txt until the three temporary files are removed.
+
+\verbatim
+      $ svn commit --message "Add a few more things"
+      svn: Commit failed (details follow):
+      svn: Aborting commit: '/home/sally/svn-work/sandwich.txt' remains in conflict
+\endverbatim
+
+If you get a conflict, you need to do one of three things:
+- Merge the conflicted text "by hand" (by examining and editing the conflict markers within the file).
+- Copy one of the temporary files on top of your working file.
+- Run <tt>svn revert \<filename\> </tt> to throw away all of your local changes.
+
+Once you've resolved the conflict, you need to let Subversion know by running svn resolved. This removes the three temporary files and Subversion no longer considers the file to be in a state of conflict.
+\verbatim
+      $ svn resolved sandwich.txt
+      Resolved conflicted state of 'sandwich.txt'
+\endverbatim
+
+<b>Merging Conflicts by Hand</b>
+
+Merging conflicts by hand can be quite intimidating the first time you attempt it, but with a little practice, it can become as easy as falling off a bike.
+Here's an example. Due to a miscommunication, you and Sally, your collaborator, both edit the file \em sandwich.txt at the same time. 
+Sally commits her changes, and when you go to update your working copy, you get a conflict and we're going to have to edit \em sandwich.txt to resolve the conflicts. First, let's take a look at the file:
+
+\verbatim
+      $ cat sandwich.txt
+      Top piece of bread
+      Mayonnaise
+      Lettuce
+      Tomato
+      Provolone
+      <<<<<<< .mine
+      Salami
+      Mortadella
+      Prosciutto
+      =======
+      Sauerkraut
+      Grilled Chicken
+      >>>>>>> .r2
+      Creole Mustard
+      Bottom piece of bread
+\endverbatim
+
+The strings of less-than signs, equal signs, and greater-than signs are conflict markers, and are not part of the actual data in conflict. 
+You generally want to ensure that those are removed from the file before your next commit. 
+The text between the first two sets of markers is composed of the changes you made in the conflicting area:
+\verbatim
+      <<<<<<< .mine
+      Salami
+      Mortadella
+      Prosciutto
+      =======
+\endverbatim
+
+The text between the second and third sets of conflict markers is the text from Sally's commit:
+\verbatim
+      =======
+      Sauerkraut
+      Grilled Chicken
+      >>>>>>> .r2
+\endverbatim
+
+Usually you won't want to just delete the conflict markers and Sally's changes--she's going to be awfully surprised when the sandwich arrives and it's not what she wanted. 
+So this is where you pick up the phone or walk across the office and explain to Sally that you can't get sauerkraut from an Italian deli.
+Once you've agreed on the changes you will check in, edit your file and remove the conflict markers.
+\verbatim
+      Top piece of bread
+      Mayonnaise
+      Lettuce
+      Tomato
+      Provolone
+      Salami
+      Mortadella
+      Prosciutto
+      Creole Mustard
+      Bottom piece of bread
+\endverbatim
+
+Now run <tt>svn resolved</tt>, and you're ready to commit your changes:
+\verbatim
+      $ svn resolved sandwich.txt
+      $ svn commit -m "Go ahead and use my sandwich, discarding Sally's edits."
+\endverbatim
+
+Remember, if you ever get confused while editing the conflicted file, you can always consult the three files that Subversion creates for you in your working copy--including your file as it was before you updated. 
+You can even use a third-party interactive merging tool to examine those three files.
+
+\subsection sec_svn_ChangeLogUsage ChangeLog conventions
+
+PandA requires \c ChangeLog entries for each code changes. This means that each time a commit is performed the message provided to subversion should also inserted in the \c ChangeLog file.
+There's no need to describe the full purpose of the changes or how they work together. 
+If you think that a change calls for explanation, you're probably right. Please do explain it--but please put the explanation in comments in the code, where people will see it whenever they see the code. 
+For example, "New function" is enough for the change log when you add a function, because there should be a comment before the function definition to explain what it does.
+
+Here are some simple examples of change log entries, starting with the header line that says who made the change and when it was installed, followed by descriptions of specific changes.
+\verbatim
+2005-06-23  Fabrizio Ferrandi  <ferrandi@elet.polimi.it>
+
+   * Removed the -m option from bambu. Now, optimization of the CFG is automatically done.
+   * Cleaned CFG and CDG from wrong labels. Now CFG and CDG have only T or F label.
+   * Fixed an incorrect support of goto_expr in tree_to_graph_manager.
+\endverbatim
+
+*/

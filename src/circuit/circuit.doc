@@ -1,0 +1,534 @@
+/*
+ *
+ *                   _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
+ *                  _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
+ *                 _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
+ *                _/      _/    _/ _/    _/ _/   _/ _/    _/
+ *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
+ *
+ *             ***********************************************
+ *                              PandA Project 
+ *                     URL: http://panda.dei.polimi.it
+ *                       Politecnico di Milano - DEIB
+ *                        System Architectures Group
+ *             ***********************************************
+ *              Copyright (c) 2004-2017 Politecnico di Milano
+ *
+ *   This file is part of the PandA framework.
+ *
+ *   The PandA framework is free software; you can redistribute it and/or modify
+ *   it under the terms of the GNU General Public License as published by
+ *   the Free Software Foundation; either version 3 of the License, or
+ *   (at your option) any later version.
+ *
+ *   This program is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU General Public License for more details.
+ *
+ *   You should have received a copy of the GNU General Public License
+ *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+*/
+/*!
+  \page src_circuit_page Circuit Representation
+
+  This page is an introduction to the class structural_manager that is used to create or explore an abstract representation
+  of a structural circuit. The page is organized as follow:
+  - \ref circuit_overview
+  - \ref circuit_parameters
+  - \ref circuit_creation_how_to
+  - \ref circuit_exploration_how_to
+
+  \section circuit_overview An overview about structural representation of a generic circuit
+
+  The structural_manager class allows to create or explore a generic and hierarcally circuit representation. This kind of circuit is composed by structural objects (see \ref structural_object_description) that can be used to represent the functionality. Objects can represent items at different level of abstraction: logic, RTL and TLM, it is used to mask different kinds of objects and it can contains more structural objects itself. For example, if you want to create a structural_object that perform operation A + ( B * C), you can create a structural_object that will contains structural_object that perform mult between B * C and then the structural_object that that will perform the addition between A and the result of mult and then connect them together. A structural_object can be also used to mask the implementation of a functionality. You can create a module to perform communication with inputs and outputs defined and connected outside and, only after, this object is specialized, for instance with a technology builtin component. Now we shortly describe this structural_object component and then we could see how structural_manager class can use these objects. Before doing this, an important component has to be introduced: the structural_type_descriptor (see \ref structural_type_description). It is used to identify a particular kind of component and all components with the same type descriptor will be considered in the same way. For example if you declare two modules A and B with the same type descriptor, it simply means that are two different instances of the same object, so when you specialize object, both modules will be affected by this modification. If instead you declare them with different type descriptors, they can be specialized in different ways.
+  So there will be a documentation about:
+  - \ref structural_type_description_doc
+  - \ref structural_object_description
+
+  \subsection structural_type_description_doc Structural type descriptor
+
+  This structure represents the most relevant information about the type of a structural object. In case the structural object is a signal or a port all member has a real meaning (type of the carried data), while when the structural object is a channel, component, event, data or an action the only relevant information stored into the descriptor is the id_type and treenode when available. You can create the structural_type_descriptor associated to a variable, and it returns the
+  type descriptor associated to it (so into field \em size you can retrive information about real variable size); to create it you have to declare it as:
+\code
+   structural_type_descriptorRef data_type;
+   data_type = structural_type_descriptorRef(new structural_type_descriptor(id,TM);
+\endcode
+  where <B>id</B> is the identifier (unsigned int) associated to the variable and TM is the reference to tree manager. After that <B>data_type</B> will contain the type descriptor associated to the variable. So, for example with
+\code
+   unsigned int dim = data_type->size;
+\endcode
+  you can store into variable <B>dim</B> the size of the variable identified by <B>id</B>.
+  For a standard type you simple declare it as:
+\code
+   structural_type_descriptorRef data_type;
+   data_type = structural_type_descriptorRef(new structural_type_descriptor("int",0);
+\endcode
+  for and 32-bit integer variable ("bool" type for instance is widely used) and \em 0 number represents the vector size.
+  In case vector_size is zero the descriptor type represents a scalar object, otherwise an array.
+  If you want to declare a module, you have to declare it as:
+\code
+   structural_type_descriptorRef module_type;
+   module_type = structural_type_descriptorRef(new structural_type_descriptor("adder"));
+\endcode
+  where \em adder is a name chosen for this specific kind of object.
+  Once you declared all needed type descriptor you are able to create any kind of structural object. To have more details, see structural_type_descriptor class documentation.
+
+
+  \subsection structural_object_description Structural object
+
+  A structural_object class is a base object for all objects. It provides a common interface for each structural object present in a design. So it contains informations about name, type descriptor associated with the object and the owner of the object (informations common to all kind of objects). A structural_object can be specialized into different kind of object that are:
+  - \ref s_o_module
+  - \ref s_o_component
+  - \ref s_o_channel
+  - \ref s_o_port
+  - \ref s_o_portvector
+  - \ref s_o_bus_connection
+  - \ref s_o_event
+  - \ref s_o_data
+  - \ref s_o_action
+  - \ref s_o_signal
+
+  \subsubsection s_o_module Module
+
+  This class describes a generic module. A module can be futher specialized in a channel or in a component. This class should be not instantiated. Only channels and components can be instantiated.
+  To obtain reference to this kind of object, having the structural object associated, just:
+\code
+  module *desidered_module;
+  desidered_module = get_pointer<module>(object);
+\endcode
+  By this way, you try to cast structural_objectRef <B>object</B> to module type. If <B>object</B> is really a module object, into <B>desidered_module</B> will be pointer to it. So you can access to specific method implemented for module objects, such as:
+  - <B>add_in_port(s)</B> where \em s is the port_o object to be added as input port to module.
+  - <B>get_in_port_size()</B> that returns number of input ports.
+  - <B>get_in_port(n)</B> that returns the \em n-th input port into the module.
+  - <B>remove_port(id)</B> where \em id is the name of the port to be removed.
+  - <B>get_internal_object(n)</B> is one of the most important function to provide hierarchy. It returns the \em n-th object internal to this one. So you can go down and navigate through levels.
+  - <B>set_NP_functionality</B> that sets the alternative module behavior descriptions (Non SystemC based) and \em f is the reference to alternative functionalities.
+  - <B>find_member(id,type,owner)</B> that returns the reference to structural_object having \em id name, the \em type is which given as parameter and \em owner is the owner of \em id object.
+
+  To obtain more details or descriptions of other methods, see module class documentation.
+
+  \subsubsection s_o_component Component
+
+  This class describes a generic component and it is a specialization of module object. To obtain reference to this kind of object, having the structural object associated, just:
+\code
+  component_o *desidered_component;
+  desidered_component = get_pointer<component_o>(object);
+\endcode
+  By this way, you try to cast structural_objectRef <B>object</B> to component type. If <B>object</B> is really a component object, into <B>desidered_component</B> will be pointer to it. So you can access to specific method implemented for component objects. To get informations about them, see \ref s_o_module documentation or see component_o class documentation.
+
+  \subsubsection s_o_channel Channel
+
+  This class describes a generic channel and it is a specialization of module object. To obtain reference to this kind of object, having the structural object associated, just:
+\code
+  channel_o *desidered_channel;
+  desidered_channel = get_pointer<channel_o>(object);
+\endcode
+  By this way, you try to cast structural_objectRef <B>object</B> to channel type. If <B>object</B> is really a channel object, into <B>desidered_channel</B> will be pointer to it. So you can access to specific method implemented for channel objects. To get informations about them, see \ref s_o_module documentation or see channel_o class documentation.
+
+
+  \subsubsection s_o_port Port
+
+  This kind of object is called <B>port_o</B> and it describes a port associated with a component or a channel. A port can be in relation with:
+   - another standard port (e.g., primary input/output connections);
+   - a signal (e.g., standard internal connections):
+   - a port of a channel (e.g, when a channel is used as a connection).
+
+  A fundamental information associated with port is direction. It can be IN (input port), OUT (output port), IO (input/output port), GEN () and UNKNOWN (not specified).
+  To obtain reference to this kind of object, having the structural object associated, just:
+\code
+  port_o *desidered_port;
+  desidered_port = get_pointer<port_o>(object);
+\endcode
+  By this way, you try to cast structural_objectRef <B>object</B> to port_o type. If <B>object</B> is really a port_o object, into <B>desidered_port</B> will be pointer to it. So you can access to specific method implemented for port objects, such as:
+  - <B>add_connection(s)</B> where \em s is the object to be connected with this port.
+  - <B>get_connection(n)</B> return the \em n-th connected object.
+  - <B>get_connection_size()</B> returns number of connected component.
+  - <B>get_owner()</B> returns reference to the owner of the port.
+
+  To obtain more details or descriptions of other methods, see port_o class documentation.
+
+  \subsubsection s_o_portvector Port Vector
+
+  This class describes a vector of ports associated with a component or a channel. A port_vector can be in relation with: 
+   - another standard port (e.g., primary input/output connections);
+   - a signal (e.g., standard internal connections):
+   - a port of a channel (e.g, when a channel is used as a connection).
+
+  The port vector is simply a vector of port_o object. There are only additional method to deal with multiple objects. So, to obtain reference to this kind of object, having the structural object associated, just:
+\code
+  port_vector_o *desidered_port_vectors;
+  desidered_port_vector = get_pointer<port_vector_o>(object);
+\endcode
+
+  By this way, you try to cast structural_objectRef <B>object</B> to port_vector_o type. If <B>object</B> is really a port_vector_o object, into <B>desidered_port_vector</B> will be pointer to it. So you can access to specific method implemented for port vector objects, such as:
+  - <B>add_n_ports(n)</B> creates \em n ports and resize the vector to contain these.
+  - <B>get_port_size()</B> returns the number of ports that the vector is made with.
+  - <B>get_port(n)</B> returns the \em n-th port into the vector.
+
+  To obtain more details or descriptions of other methods, see port_vector_o class documentation.
+
+  \subsubsection s_o_bus_connection Bus connection
+
+  This class describes a generic bus connection. A bus_connection_o is a a vector of signals or channels [1..n]. To obtain reference to this kind of object, having the structural object associated, just:
+\code
+  bus_connection_o *desidered_bus;
+  desidered_bus = get_pointer<bus_connection_o>(object);
+\endcode
+  By this way, you try to cast structural_objectRef <B>object</B> to bus connection type. If <B>object</B> is really a bus connection object, into <B>desidered_bus</B> will be pointer to it. So you can access to specific method implemented for bus connection objects. To get informations about them, see bus_connection_o class documentation.
+
+  \subsubsection s_o_event Event
+
+  This class describes a generic event. To obtain reference to this kind of object, having the structural object associated, just:
+\code
+  event_o *desidered_event;
+  desidered_event = get_pointer<event_o>(object);
+\endcode
+  By this way, you try to cast structural_objectRef <B>object</B> to event type. If <B>object</B> is really a event object, into <B>desidered_event</B> will be pointer to it. So you can access to specific method implemented for event objects. To get informations about them, see event_o class documentation.
+
+  \subsubsection s_o_data Data
+
+  This class describes a generic data declaration object. To obtain reference to this kind of object, having the structural object associated, just:
+\code
+  data_o *desidered_data;
+  desidered_data = get_pointer<data_o>(object);
+\endcode
+  By this way, you try to cast structural_objectRef <B>object</B> to data type. If <B>object</B> is really a data object, into <B>desidered_data</B> will be pointer to it. So you can access to specific method implemented for data objects. To get informations about them, see data_o class documentation.
+
+  \subsubsection s_o_action Action
+
+  This class describes a generic systemC action. An action can be a SystemC process or a standard service (aka a member function of a class)
+  You can associate the graph_manager reference associated to this action (e.g. the graph_manager representing the function associated to action). To obtain reference to this kind of object, having the structural object associated, just:
+\code
+  action_o *desidered_action;
+  desidered_action = get_pointer<action_o>(object);
+\endcode
+  By this way, you try to cast structural_objectRef <B>object</B> to action type. If <B>object</B> is really a action object, into <B>desidered_action</B> will be pointer to it. So you can access to specific method implemented for action objects. To get informations about them, see action_o class documentation.
+
+  \subsubsection s_o_signal Signal
+
+  This class describes a generic data declaration object. This class describes a simple logic/RTL signal. A signal can be an array of bit but it cannot be sliced or partially accessed. In case of partial access or slicing the bus_connection_o object should be used. To obtain reference to this kind of object, having the structural object associated, just:
+\code
+  signal_o *desidered_signal;
+  desidered_signal = get_pointer<signal_o>(object);
+\endcode
+  By this way, you try to cast structural_objectRef <B>object</B> to signal type. If <B>object</B> is really a signal object, into <B>desidered_signal</B> will be pointer to it. So you can access to specific method implemented for signal objects. Using these methods you can get informations about ports bounded to this signal object. To get informations about them, see signal_o class documentation.
+
+
+  \section circuit_parameters Technology library and parameter specialization
+
+  Some components can be defined as parameters. This is useful when you could have the same module that can be declared in a different way, for instance, with a different number of inputs. This situation can happen quite often: think at a AND gate that can have a different number of input. Cannot be declared all possible different implementation, so the component can be declared with some parameters. Into technology_builtin.hpp file are declared all builtin functional unit. For example, there is the line:
+\code
+  #define AND_GATE_STD       "AND_GATE"
+\endcode
+  it means that you try to add a component from technology library that match \e AND_GATE_STD (so "AND_GATE" string), there will be added a component defined so (into technology_builtin.cpp):
+\code
+    //AND
+ 1: CM = structural_managerRef(new structural_manager);
+ 2: fu_name = AND_GATE_STD;
+ 3: module_type = structural_type_descriptorRef(new structural_type_descriptor(fu_name));
+ 4: CM->set_top_info(fu_name, module_type);
+ 5: top = CM->get_circ();
+ 6: CM->add_port_vector("in",port_o::IN,port_vector_o::PARAMETRIC_PORT,top,b_type);
+ 7: CM->add_port("out1",port_o::OUT,top,b_type);
+ 8: NP_parameters = fu_name + " in";
+ 9: CM->add_NP_functionality(top, NP_functionality::LIBRARY, NP_parameters);
+10: TM->fill_resource(fu_name, fu_name, CM, LIBRARY_STD, 0, 0, 0.1,  0.1);
+11: builtin_verilog_gates::add_builtin(AND_GATE_STD, "and");
+\endcode
+  Let analyse each row in order to understand a own parametric component.
+  -# A structural_manager CM is created to be associated to component
+  -# the name of the unit is that defined above into header file.
+  -# a structural_type_descriptor is created to be associated to this functional unit.
+  -# the top info of the circuit in creation with unit name and type descriptor
+  -# get the top of the circuit in order to add or retrive components
+  -# add a port vector as input to module. Note the parameter port_vector_o::PARAMETRIC_PORT that explain to structural_manager that parameters will have to be specified.
+  -# add a usual output port.
+  -# define the string <B>NP_functionality</B> composed by name of the unit and then name of parameters. The parameters are identified by \e id of the components are associated with. So in this case, the parameter is the name of the incoming port. If there are not any parameter, the NP_functionality string will contain only the unit name.
+  -# the NP_functionality is added to the component.
+  -# unit is added to a specific technology library (into LIBRARY_STD library in this case). A set of values are then specified; there are, in order, execution_time, initialization time, power consumption and area.
+  -# add gate also to builtin verilog gates
+
+  When you will need to create an instance of these variable, you will have to specialize parameters listed into line (8);
+  in this case, for instance, when you add module, you will have to do something similar to this:
+\code
+  structural_objectRef obj;
+  // where TM is the technology_manager where have be stored information about modules listed above
+  obj = structManager->add_module_from_technology("AND_GATE_1",AND_GATE_STD,LIBRARY_STD,owner,TM);
+  structural_objectRef port_obj = obj->find_member("in",port_o_K,obj);
+  port_o *in_port = get_pointer<port_o>(port_obj);
+  // where num is number of ports that you need
+  in_port->add_n_ports(num,port_obj);
+\endcode
+  So parameters has been specialized (it can specialized only once for each instance, e.g. in this case you cannot specialize obj anymore). 
+  Now let consider a systemC implementation of this component in order to understand what we have done. It will be something similar to:
+\code
+#define AND_GATE_DECL(size_in_)\
+class AND_GATE_##size_in_ : public sc_module \
+{\
+public:\
+  sc_in< bool > in[size_in_];\
+  sc_out< bool > out1;\
+\
+  SC_CTOR(AND_GATE_##size_in_)    //constructor is parametric to size, e.g. parameter just set\
+  {\
+    SC_METHOD(action);\
+    for(int i = 0; i< size_in_; i++)\
+      sensitive << in[i];            //sensitive to each bit change\
+  }\
+  void action()\
+  {\
+    bool value = true;\
+    for (int i = 0; i < size_in_; i++)\
+	value = value & in[i].read();\
+    out1.write(value);\
+  }\
+}
+
+#ifdef SCC_SYNTHESIS_DEBUG
+AND_GATE_DECL(1);                     //it's default value
+#endif
+
+\endcode
+  So when backend will create a component where parameters will be set to <B>num = 3</B>, the macro 
+\code
+  AND_GATE_DECL(3);
+\endcode
+ will be expand by preprocessor into something similar to this:
+\code
+class AND_GATE_3 : public sc_module
+{
+public:
+  sc_in< bool > in[3];
+  sc_out< bool > out1;
+  SC_CTOR(AND_GATE_3)                //constructor is customized to size 3
+  {
+    SC_METHOD(action);
+    for(int i = 0; i < 3; i++)
+      sensitive << in[i];                   //sensitive to each bit change
+  }
+  void action()
+  {
+    bool value = true;
+    for (int i = 0; i < 3; i++)
+	value = value & in[i].read();
+    out1.write(value);
+  }
+}
+\endcode  
+ that is the implementation of a 3-input AND_GATE.
+ So we have seen how to implement a parametric port vector and how to use it.
+ It can be done something similar also for port size. You have to declare the port in the usual way, but the name has to be listed into NP_functionality string:
+\code
+  // think this unit called TRY_GATE
+  CM->add_port("in",port_o::IN,top,int_type);
+  CM->add_port("out1",port_o::OUT,top,int_type);
+  NP_parameters = fu_name + " in";
+\endcode
+ In this case only input port \e in is listed as a parameters. So size can be changed on fly during computation. Once you declared port, you can define a size different from 32-bit usual integer one.
+\code
+  structural_objectRef obj;
+  // where TM is the technology_manager where have be stored information about modules listed above
+  obj = structManager->add_module_from_technology("GATE",TRY_GATE,LIBRARY_STD,owner,TM);
+  structural_objectRef port_obj = obj->find_member("in",port_o_K,obj);
+  port_o *in_port = get_pointer<port_o>(obj);
+  // where num is number of ports that you need
+  in_port->set_port_size(num);
+\endcode
+  where \e num is the new port size (in bit). The systemC module will be something similar to which seen for AND_GATE, with a define like these:
+\code
+  #define TRY_GATE(size_in_) \
+  class TRY_GATE_##size_in_ : public sc_module \
+  ....
+  sc_in< sc_int<#size_in_> > in;
+  ...
+\endcode
+
+  So you are now able to create you own functional unit and relative modules. Then you are able to specify them and create relative code to be used by you favourite backend writer.
+
+  \section circuit_creation_how_to Brief tutorial on the creation of a new generic structural representation
+
+  Now that all basic components have been described, they can be used to create the generic representation of the circuit. In this section I plan to present a brief tutorial on how to build a new circuit using the API of the structural_manager class.
+
+  A circuit is internally represented by a graph (which can be accessed with the CGetOpGraph method of the structural manager class), but it can be built using the methods of the structural_manager class. The rest of this section will be devoted to the description of the behavior of this class using also some pratical examples.
+
+  - When creating a new circuit first of all we must assign it a name and a type descriptor using the structural_manager::set_top_info <B>(id, type)</B> method: the structural_type_descriptor associated (create as a generic one, so only with an \em id string) will be the module name.
+  - Once you top informations, you can get the structural_object associated to this new \em top component with method structural_manager::get_circ <B>()</B>. It will be the main owner for all objects that will be created
+  - Afterwards we can start building the circuit: first of all we should insert primary input and output ports: this can be achieved with the structural_manager::add_port method: there are different variation of this function, but all of them have a similar aim: adding an input or output port to a circuit member. In this step we use the structural_manager:: <B>(id, portType, owner, signalType)</B> method: the \e id parameter represents the name of the port (note: if we are adding the port to a library component this function has not to be used, use structural_manager::find_member (id,portType,owner)</B> insted. This is because the port has been already created); the \e portType is used to specify whether this port will be used for INPUT, OUTPUT or INPUT-OUTPUT. The \e owner parameter is very important: it specifies the circuit element we have to add this port to; finally the \e signalType parameter defines the structural_type_descriptor of the signal this port will carry; this parameter has to be compatible with other structural_type_descriptor of objects the port will be bounded with.
+  - Once we've added the primary input and outputs we can start filling the circuit with components: they can either be custom components (and I will later show how it is possible to create them) or library ones; The structural_manager::create <B>(id,ctype,owner,obj_type,treenode)</B> method is used for this purpose and it allows the insertion of a new element in the circuit: if we want to create a new component (which is why this method is used more often) the \e category parameter must be set to "component_o_K" and set to "port_o_K" if you create a port; the \e name parameter specifies the name which will be given to the particular component instance, \e owner is a reference to the circuit which will contain the element. The parameter \e obj_type, as I've already said, it is very important and it determines if the object if similar to other object into circuit or it's a new one to be specialized in a custom way. You can also insert module directly from technology library. To do this, use structural_manager::add_module_from_technology function. So use structural_manager::add_module_from_technology <B>(id,fu_name,library_name,owner,TM)</B>: \e id is the name of this functional unit instance; \e fu_name has to match the name of the library module that has to be added, \e library_name is the name of the library where to retrieve information about modules; \e owner is the component where the object has to be inserted in and \e TM is the reference to technology_manager where all informations about libraries are stored.
+  I will now insert a short example which shows how it is possible to insert both a custom and a library component in a circuit; I will also present the resulting SystemC code.
+  \code
+  //... at this point of the code consider to have TM reference to technology_manager class.
+  //I get a reference to an instance of the structural_manager class
+  structural_managerRef structManager(new structural_manager(TM));
+  //I set all the propeties of the main circuit
+  structural_type_descriptorRef circuit_type;
+  circuit_type = structural_type_descriptorRef(new structural_type_descriptor("MainCircType"));
+  structManager->set_top_info("MainCircuit",circuit_type);
+  //Now I read the reference to the object which represents the main circuit
+  structural_objectRef circuit = structManager->get_circ(); 
+  //I create a custom component 
+  structural_type_descriptorRef customGate1;
+  customGate1 = structural_type_descriptorRef(new structural_type_descriptor("CustomGate1"));
+  structural_objectRef customComp = structManager->create("Internal1", component_c_K, circuit, customGate1);
+  //And one whose type is present in the technology library
+  structural_objectRef libraryComp;
+  libraryComp = structManager->add_module_from_technology("Internal2","OR_GATE",LIBRARY_STD,TM);
+\endcode
+  The corresponding SystemC code is:
+\code
+  #include "OR_GATE.hpp"
+
+  //This class represent the custom component
+  SC_MODULE( CustomGate1 ){
+    public:
+      SC_CTOR( CustomGate1 ){}
+  }
+
+  //This finally represents the main circuit
+  SC_MODULE( MainCircType ){
+    public:
+      OR_GATE* Internal2;
+      CustomGate1* Internal1;
+
+      SC_CTOR( MainCircType ){
+        Internal2 = new OR_GATE(Internal2);
+        Internal1 = new CustomGate1(Internal1);
+      }
+  }
+\endcode
+  As it possible to see two classes are created: \e MainCircType, which represents the whole circuit and \e CustomGate1, which contains the implementation of our custom component; no class is created for the OR_GATE component since its description is already contained in the library file OR_GATE.hpp.
+  - Ok, we've almost created out first complete circuit: we just have to connect together the components; so we need to insert some signals: this can be accomplished by the use of the structural_manager::add_sign <B>(name, owner, data_type)</B> method. It is very simple to use it: it adds to the \e owner circuit a signal called \e name, with \e data_type descriptor;
+  - Finally we have to make the connection either attaching signals with ports or directly connecting the ports together: with the structural_manager::add_connection <B>(port, signal)</B> we connect together ports and signals. Note that, unfortunaltely, it is not possible to connect signals to the primary inputs/outputs of the circuit containing the signal itself; I will try to explain it better: suppose that we have component A with ports portA1 and portA2 which contains 2 other component, B and C respectively with ports portB1 and portC1; suppose also that A contains a signal, sigA: it is possible to use sigA to connect portB1 and portC1, but not, for example, portA1 with portB1, since A1 is a port of the component owning the signal.
+  - The only thing we can explain in order to connect port is to use the same method explained above: structural_manager::add_connection <B>(srcPort, destPort)</B>; of course in connection the first port will be \e srcPort and the second one will be \e destPort. It's simple, isn't it?
+
+  As you can see, creating a circuit with the API of the structural_manager class is a pretty easy operation; I will anyway present now a conclusive example which shows how to create a circuit with 2 components: an OR gate (taken from the component library) and custom gate which in turn is formed by an AND gate and a NOR one (again taken from the component library); the overall functionality of the circuit (given that A, B, C are its primary inputs and D the output) is D = !(AB) + C
+
+  \code
+  //... at this point of the code consider to have TM reference to technology_manager class.
+  //I get a reference to an instance of the structural_manager class
+  structural_managerRef structManager(new structural_manager(TM));
+  //I set all the propeties of the main circuit
+  structural_type_descriptorRef circuit_type;
+  circuit_type = structural_type_descriptorRef(new structural_type_descriptor("MainCircType"));
+  structManager->set_top_info("MainCircuit",circuit_type);
+  //Now I read the reference to the object which represents the main circuit
+  structural_objectRef circuit = structManager->get_circ(); 
+
+
+  //I add the primary inputs/outputs to the top level component
+  structural_type_descriptorRef bool_type;
+  customGate1 = structural_type_descriptorRef(new structural_type_descriptor("bool",0));
+  structural_objectRef portA = structManager->add_port("portA", port_o::IN, circuit, bool_type);
+  structural_objectRef portB = structManager->add_port("portB", port_o::IN, circuit, bool_type);
+  structural_objectRef portC = structManager->add_port("portC", port_o::IN, circuit, bool_type);
+  structural_objectRef portD = structManager->add_port("portD", port_o::IN, circuit, bool_type);
+
+  //I create the NAND custom component and its primary inputs/outputs; note that now
+  //the owner of the ports is not the top component anymore, but the NANDComp one.
+  structural_type_descriptorRef NAND_type;
+  NAND_type = structural_type_descriptorRef(new structural_type_descriptor("NAND_type"));
+  structural_objectRef customComp = structManager->create("Internal1", component_o_K, circuit, NAND_type);
+  structural_objectRef portInNAND1 = structManager->add_port("in1", IN_PORT, NANDComp, bool_type);
+  structural_objectRef portInNAND2 = structManager->add_port("in2", IN_PORT, NANDComp, bool_type);
+  structural_objectRef portOutNAND = structManager->add_port("out", OUT_PORT, NANDComp, bool_type);
+  structManager->add_connection(portA,portInNAND1);
+  structManager->add_connection(portB,portInNAND2);
+
+  //the OR is present in the technology library
+  structural_objectRef ORComp;
+  ORComp = structManager->add_module_from_technology_library("ORInstance",OR_GATE_STD,LIBRARY_STD,circuit,TM);
+  structural_objectRef portIn1OR = ORComp->find_member("in1",port_o_K,ORComp);
+  structural_objectRef portIn2OR = ORComp->find_member("in2",port_o_K,ORComp);
+  structural_objectRef portOutOR = ORComp->find_member("out1",port_o_K,ORComp);
+
+  //Finally we have to define the behavior of the custom NAND component: note that,
+  //of course, the owner of the component we will add now is NANDComp
+  structural_objectRef ANDComp;
+  ANDComp = structManager->add_module_from_technology_library("ANDinstance",AND_GATE_STD,LIBRARY_STD,customComp,TM);
+  structural_objectRef portIn1AND = ANDComp->find_member("in1",port_o_K,ANDComp);
+  structural_objectRef portIn2AND = ANDComp->find_member("in2",port_o_K,ANDComp);
+  structural_objectRef portOutAND = ANDComp->find_member("out1",port_o_K,ANDComp);
+  structManager->add_connection(portInNAND1,portIn1AND);
+  structManager->add_connection(portInNAND2,portIn2AND);
+
+  structural_objectRef NOTComp;
+  NOTComp = structManager->add_module_from_technology_library("NOTinstance",NOT_GATE_STD,LIBRARY_STD,customComp,TM);
+  structural_objectRef portIn1NOT = NOTComp->find_member("in1",port_o_K,NOTComp);
+  structural_objectRef portOutNOT = NOTComp->find_member("ou1t",port_o_K,NOTComp);
+
+  structManager->add_connection(portOutAND,portIn1NOT);
+
+  // and finally connect out of NOT gate to out of NAND component
+  structManager->add_connection(portOutNOT,portOutNAND);
+  //so NAND component is complete and can be connected to OR gate
+  structManager->add_connection(portOutNAND,portIn1OR);
+  // portC is other input to OR gate
+  structManager->add_connection(portC,portIn2OR);
+
+  //Up to now can connect OR gate to output
+  structManager->add_connection(portOutOR,portD);
+
+\endcode
+
+  If you then need to print the SystemC description of the just created, you have only to call the backend and give the dedicated writer as parameter (see \ref src_backend_ToHDL_page to more details)
+
+  \note this description is not complete and considers only the most important features and functionalities. To obtaint more informations, please refer directly to classes documentation.
+
+  \section circuit_exploration_how_to Brief tutorial on the exploration of a generic structural representation
+
+  Now that you know how to create a structural representation, you could be interested into explore it or to retrieve information about one that has already been created (e.g.: with tree_to_structural_manager class).
+  As explained above, structural objects allow a hierarcally organization. 
+  Description of methods can be retrived into structural_manager class documentation, so the better way to understand how to explore the circuit is to give an example.
+  Now we want to explore and print component name of the circuit just created. So we have the structural_manager structManager resulting from adding and connecting components.
+  First of all we have to get the structural_object associated to main circuit:
+\code
+  structural_objectRef explorer = structManager->get_circ();
+  module *top = get_pointer<module>(explorer);
+\endcode
+  We have to recast them to module class in order to use specific methods implemented for this kind of object.
+  Then we have to get the number of all internal components:
+\code
+  unsigned int num_component = top->get_internal_objects_size();
+\endcode
+  Take into account that internal object are only channel, module, component, bus_connection or signal. Ports are not considered internal object and so they are managed into a different way:
+\code
+  unsigned int num_in_port = top->get_in_port_size();
+  unsigned int num_out_port = top->get_out_port_size();
+\endcode
+  In this way we can retrieve informations about number of all internal components. So we can simple iterate all over them:
+\code
+  for (unsigned int n = 0; n < num_in_port; n++)
+  {
+     // so we have a reference to structural object associated with port
+     structural_objectRef obj = top->get_in_port(n);
+     // and then we cast it to specific type
+     port_o *port_ref = get_pointer<port_o>(obj);
+     // so we can print informations about name and number of connected objects for example
+     // name can be retrieved from port_o object or structural_object both because is a general method
+     std::cout << "Name: " << port_ref->get_id() << " that is the same of " << obj->get_id() << std::endl;
+     std::cout << "Number of connected objects: " << port->get_connections_size() << std::endl;
+  }
+\endcode
+  For outcoming ports is the same. It's quite different about internal objects, because they can also contains internal objects themselves. You have to choose the depth you want to go on. The better way to analyse all internal objects of a component is to call a recursive function on all internal objects and it returns only when get_internal_objecs_size of the component return 0 (there is no internal component). Now I give a simple example about a recursive function, you can use and customize it in order to obtain what you are interested in:
+\code
+  void analyse_component(structural_objectRef &obj)
+  {
+     module *module_obj = get_pointer<module>(obj);
+     // check if it's really return a valid pointer to an module object
+     if (module_obj)
+     {
+       // print name of this module
+       std::cout << module_obj->get_id() << std::endl;
+       unsigned int num_int_components;
+       for (unsigned int n = 0; n < num_int_components; n++)
+       {
+          analyse_component(module_obj->get_internal_object(n));
+       }
+     }
+  }
+\endcode
+  Where now it prints name of the module, you can do anything you need on this module before going into each internal component. Note the check <B>if (module_obj)</B>: it's used to be safe that object is really a module, otherwise specific methods (e.g. <B>get_internal_object</B> one) cannot be used.
+
+*/

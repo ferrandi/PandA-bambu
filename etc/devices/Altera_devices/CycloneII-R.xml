@@ -1,0 +1,165 @@
+<?xml version="1.0"?>
+<synthesis>
+   <flow name="Synthesis">
+      <step id="quartus_setup" config="quartus_setup"/>
+      <step id="quartus_flow" config="quartus_flow"/>
+      <step id="quartus_sta" config="quartus_sta"/>
+   </flow>
+   <flow name="Characterization">
+      <step id="quartus_setup" config="quartus_setupC"/>
+      <step id="quartus_flow" config="quartus_flow"/>
+      <step id="quartus_sta" config="quartus_sta"/>
+   </flow>
+   <quartus_sh config="quartus_setupC">
+      <!--Create the design setup -->
+      <cmd name="project_new ${__top_id__} -overwrite"/>
+      <cmd name="set_global_assignment -name FAMILY ${__target_family__}"/>
+      <cmd name="set_global_assignment -name DEVICE ${__target_device__}"/>
+      <cmd name="set_global_assignment -name SDC_FILE ${__sdc_file__}"/>
+      <cmd name="set_global_assignment -name TIMEQUEST_DO_REPORT_TIMING On"/>
+      <!--<cmd name="set_global_assignment -name INI_VARS &quot;fit_pack_for_density_light=on; fit_report_lab_usage_stats=on&quot;"/>-->
+
+      <!--<cmd name="set_global_assignment -name SMART_RECOMPILE ON"/>-->
+      <cmd name="set_global_assignment -name REMOVE_REDUNDANT_LOGIC_CELLS ON"/>
+      <cmd name="set_global_assignment -name CYCLONEII_OPTIMIZATION_TECHNIQUE SPEED"/>
+      <cmd name="set_global_assignment -name SYNTH_TIMING_DRIVEN_SYNTHESIS ON"/>
+      <cmd name="set_global_assignment -name PHYSICAL_SYNTHESIS_REGISTER_RETIMING ON"/>
+      <cmd name="set_global_assignment -name PHYSICAL_SYNTHESIS_COMBO_LOGIC ON"/>
+      <cmd name="set_global_assignment -name PHYSICAL_SYNTHESIS_COMBO_LOGIC_FOR_AREA ON"/>
+      <cmd name="set_global_assignment -name PHYSICAL_SYNTHESIS_REGISTER_DUPLICATION ON"/>
+      <cmd name="set_global_assignment -name PHYSICAL_SYNTHESIS_MAP_LOGIC_TO_MEMORY_FOR_AREA ON"/>
+      <cmd name="set_global_assignment -name PHYSICAL_SYNTHESIS_ASYNCHRONOUS_SIGNAL_PIPELINING ON"/>
+      <cmd name="set_global_assignment -name ADV_NETLIST_OPT_SYNTH_WYSIWYG_REMAP ON"/>
+      <cmd name="set_global_assignment -name PRE_MAPPING_RESYNTHESIS ON"/>
+      <cmd name="set_global_assignment -name OPTIMIZE_MULTI_CORNER_TIMING ON"/>
+      <cmd name="set_global_assignment -name AUTO_RAM_TO_LCELL_CONVERSION ON"/>
+      <cmd name="set_global_assignment -name SYNCHRONIZATION_REGISTER_CHAIN_LENGTH 10"/>
+
+      <!--
+      <cmd name="# extra synthesis options"/>
+      <cmd name="set_global_assignment -name PHYSICAL_SYNTHESIS_MAP_LOGIC_TO_MEMORY_FOR_AREA OFF"/>
+      <cmd name="set_global_assignment -name PHYSICAL_SYNTHESIS_EFFORT EXTRA"/>
+      <cmd name="set_global_assignment -name NUM_PARALLEL_PROCESSORS ALL"/>
+      <cmd name="set_global_assignment -name FLOW_ENABLE_IO_ASSIGNMENT_ANALYSIS ON"/>
+      <cmd name="set_global_assignment -name OPTIMIZE_POWER_DURING_FITTING &quot;NORMAL COMPILATION&quot;"/>
+      <cmd name="set_global_assignment -name ROUTER_TIMING_OPTIMIZATION_LEVEL MAXIMUM"/>
+      <cmd name="set_global_assignment -name PLACEMENT_EFFORT_MULTIPLIER 4"/>
+      <cmd name="set_global_assignment -name ROUTER_EFFORT_MULTIPLIER 4"/>
+      <cmd name="set_global_assignment -name FINAL_PLACEMENT_OPTIMIZATION ALWAYS"/>
+      <cmd name="set_global_assignment -name FITTER_AGGRESSIVE_ROUTABILITY_OPTIMIZATION AUTOMATICALLY"/>
+      <cmd name="set_global_assignment -name ENABLE_DRC_SETTINGS ON"/>
+      <cmd name="set_global_assignment -name SAVE_DISK_SPACE OFF"/>
+      <cmd name="set_global_assignment -name MUX_RESTRUCTURE OFF"/>
+      <cmd name="set_global_assignment -name OPTIMIZE_POWER_DURING_SYNTHESIS &quot;NORMAL COMPILATION&quot;"/>
+      <cmd name="set_global_assignment -name STATE_MACHINE_PROCESSING AUTO"/>
+      <cmd name="set_global_assignment -name PARALLEL_SYNTHESIS ON"/>
+      <cmd name="set_global_assignment -name AUTO_PACKED_REGISTERS_STRATIXII NORMAL"/>
+      <cmd name="set_global_assignment -name AUTO_PACKED_REGISTERS_MAXII NORMAL"/>
+      <cmd name="set_global_assignment -name AUTO_PACKED_REGISTERS_CYCLONE NORMAL"/>
+      <cmd name="set_global_assignment -name AUTO_PACKED_REGISTERS NORMAL"/>
+      <cmd name="set_global_assignment -name AUTO_PACKED_REGISTERS_STRATIX NORMAL"/>
+      -->
+
+      <cmd name="set_global_assignment -name NUMBER_OF_PATHS_TO_REPORT 100000"/>
+      <cmd name="create_base_clock -fmax ${__clk_freq__} -target ${__clk_name__} ${__clk_name__}"/>
+      <cmd name="${__sources_macro_list__}"/>
+      <cmd name="source ${__backend_script_extensions__}" condition="${__has_script_extensions__}"/>
+      <cmd name="project_close"/>
+   </quartus_sh>
+   <quartus_sh config="quartus_setup">
+      <!--Create the design setup -->
+      <cmd name="project_new ${__top_id__} -overwrite"/>
+      <cmd name="set_global_assignment -name FAMILY ${__target_family__}"/>
+      <cmd name="set_global_assignment -name DEVICE ${__target_device__}"/>
+      <!--<cmd name="set_global_assignment -name DEVICE AUTO"/>-->
+      <cmd name="set_global_assignment -name SDC_FILE ${__sdc_file__}"/>
+      <cmd name="set_global_assignment -name NUMBER_OF_PATHS_TO_REPORT 100000"/>
+      <cmd name="set_global_assignment -name TIMEQUEST_DO_REPORT_TIMING On"/>
+      <cmd name="set_global_assignment -name DSP_BLOCK_BALANCING Auto"/>
+
+      <cmd name="set_global_assignment -name REMOVE_REDUNDANT_LOGIC_CELLS ON"/>
+      <cmd name="set_global_assignment -name CYCLONEII_OPTIMIZATION_TECHNIQUE SPEED"/>
+      <cmd name="set_global_assignment -name SYNTH_TIMING_DRIVEN_SYNTHESIS ON"/>
+      <cmd name="set_global_assignment -name PHYSICAL_SYNTHESIS_REGISTER_RETIMING ON"/>
+      <cmd name="set_global_assignment -name PHYSICAL_SYNTHESIS_COMBO_LOGIC ON"/>
+      <cmd name="set_global_assignment -name PHYSICAL_SYNTHESIS_COMBO_LOGIC_FOR_AREA ON"/>
+      <cmd name="set_global_assignment -name PHYSICAL_SYNTHESIS_REGISTER_DUPLICATION ON"/>
+      <cmd name="set_global_assignment -name PHYSICAL_SYNTHESIS_MAP_LOGIC_TO_MEMORY_FOR_AREA ON"/>
+      <cmd name="set_global_assignment -name PHYSICAL_SYNTHESIS_ASYNCHRONOUS_SIGNAL_PIPELINING ON"/>
+      <cmd name="set_global_assignment -name ADV_NETLIST_OPT_SYNTH_WYSIWYG_REMAP ON"/>
+      <cmd name="set_global_assignment -name AUTO_RESOURCE_SHARING ON"/>
+      <cmd name="set_global_assignment -name PRE_MAPPING_RESYNTHESIS ON"/>
+      <cmd name="set_global_assignment -name OPTIMIZE_MULTI_CORNER_TIMING ON"/>
+      <cmd name="set_global_assignment -name AUTO_RAM_TO_LCELL_CONVERSION ON"/>
+      <cmd name="set_global_assignment -name SYNCHRONIZATION_REGISTER_CHAIN_LENGTH 10"/>
+      <cmd name="set_global_assignment -name PHYSICAL_SYNTHESIS_EFFORT EXTRA"/>
+      <cmd name="set_global_assignment -name OPTIMIZE_HOLD_TIMING &quot;IO PATHS AND MINIMUM TPD PATHS&quot;"/>
+
+      <cmd name="set_global_assignment -name ENABLE_DRC_SETTINGS ON"/>
+      <cmd name="create_base_clock -fmax ${__clk_freq__} -target ${__clk_name__} ${__clk_name__}"/>
+      <cmd name="${__sources_macro_list__}"/>
+      <cmd name="source ${__backend_script_extensions__}" condition="${__has_script_extensions__}"/>
+      <cmd name="project_close"/>
+   </quartus_sh>
+   <quartus_sh config="quartus_flow">
+      <!--run the flow -->
+      <cmd name="load_package flow"/>
+      <cmd name="project_open ${__top_id__}"/>
+      <cmd name="proc make_all_pins_virtual {} {" condition="!${__connect_iob__}"/>
+      <cmd name="   execute_module -tool map" condition="!${__connect_iob__}"/>
+      <cmd name="   set name_ids [get_names -filter * -node_type pin]" condition="!${__connect_iob__}"/>
+      <cmd name="   foreach_in_collection name_id $name_ids {" condition="!${__connect_iob__}"/>
+      <cmd name="      set pin_name [get_name_info -info full_path $name_id]" condition="!${__connect_iob__}"/>
+      <cmd name="      post_message &quot;Making VIRTUAL_PIN assignment to $pin_name&quot;" condition="!${__connect_iob__}"/>
+      <cmd name="      set_instance_assignment -to $pin_name -name VIRTUAL_PIN ON" condition="!${__connect_iob__}"/>
+      <cmd name="   }" condition="!${__connect_iob__}"/>
+      <cmd name="   export_assignments" condition="!${__connect_iob__}"/>
+      <cmd name="}" condition="!${__connect_iob__}"/>
+      <cmd name="make_all_pins_virtual" condition="!${__connect_iob__}"/>
+      <cmd name="execute_flow -compile"/>
+      <cmd name="project_close"/>
+   </quartus_sh>
+   <quartus_sta config="quartus_sta">
+      <!--report all the info of the design by using quartus_sta-->
+      <cmd name="load_package report"/>
+      <cmd name="project_open ${__top_id__}"/>
+      <cmd name="load_report"/>
+      <cmd name="create_timing_netlist"/>
+      <cmd name="read_sdc ${__sdc_file__}"/>
+      <cmd name="update_timing_netlist"/>
+      <cmd name="file delete -force ${__quartus_report__}"/>
+      <cmd name="set ofile_report [open ${__quartus_report__} w]"/>
+      <cmd name="puts $ofile_report &quot;&lt;?xml version=\\&quot;1.0\\&quot;?&gt;&quot;"/>
+      <cmd name="puts $ofile_report &quot;&lt;document&gt;&quot;"/>
+      <cmd name="puts $ofile_report &quot;  &lt;application&gt;&quot;"/>
+      <cmd name="puts $ofile_report &quot;    &lt;section stringID=\\&quot;QUARTUS_SYNTHESIS_SUMMARY\\&quot;&gt;&quot;"/>
+      <cmd name="set le_usage [get_fitter_resource_usage -le -used]"/>
+      <cmd name="puts $ofile_report &quot;      &lt;item stringID=\\&quot;ALTERA_LE\\&quot; value=\\&quot;$le_usage\\&quot;/&gt;&quot;"/>
+      <cmd name="set lab_usage [get_fitter_resource_usage -lab -used]"/>
+      <cmd name="puts $ofile_report &quot;      &lt;item stringID=\\&quot;ALTERA_LAB\\&quot; value=\\&quot;$lab_usage\\&quot;/&gt;&quot;"/>
+      <cmd name="set reg_usage_string [get_fitter_resource_usage -resource &quot;Total registers*&quot;]"/>
+      <cmd name="set reg_usage_array [split $reg_usage_string /]"/>
+      <cmd name="set reg_usage [string trim [lindex $reg_usage_array 0]]"/>
+      <cmd name="puts $ofile_report &quot;      &lt;item stringID=\\&quot;ALTERA_REGISTERS\\&quot; value=\\&quot;$reg_usage\\&quot;/&gt;&quot;"/>
+      <cmd name="set mem_usage [get_fitter_resource_usage -mem_bit -used]"/>
+      <cmd name="puts $ofile_report &quot;      &lt;item stringID=\\&quot;ALTERA_MEM\\&quot; value=\\&quot;$mem_usage\\&quot;/&gt;&quot;"/>
+      <cmd name="set iopin_usage [get_fitter_resource_usage -io_pin -used]"/>
+      <cmd name="puts $ofile_report &quot;      &lt;item stringID=\\&quot;ALTERA_IOPIN\\&quot; value=\\&quot;$iopin_usage\\&quot;/&gt;&quot;"/>
+      <cmd name="set alut_usage [get_fitter_resource_usage -alut -used]"/>
+      <cmd name="puts $ofile_report &quot;      &lt;item stringID=\\&quot;ALTERA_ALUT\\&quot; value=\\&quot;$alut_usage\\&quot;/&gt;&quot;"/>
+      <cmd name="set dsp_usage_string [get_fitter_resource_usage -resource &quot;Embedded*&quot;]"/>
+      <cmd name="set dsp_usage_array [split $dsp_usage_string /]"/>
+      <cmd name="set dsp_usage [string trim [lindex $dsp_usage_array 0]]"/>
+      <cmd name="puts $ofile_report &quot;      &lt;item stringID=\\&quot;ALTERA_DSP\\&quot; value=\\&quot;$dsp_usage\\&quot;/&gt;&quot;"/>
+      <cmd name="set alm_usage [get_fitter_resource_usage -alm -used]"/>
+      <cmd name="puts $ofile_report &quot;      &lt;item stringID=\\&quot;ALTERA_ALM\\&quot; value=\\&quot;$alm_usage\\&quot;/&gt;&quot;"/>
+      <cmd name="set domain_list [get_clock_fmax_info]\nforeach domain $domain_list {\n  set name [lindex $domain 0]\n  set fmax [lindex $domain 1]\n  set restricted_fmax [lindex $domain 2]\n  puts $ofile_report &quot;      &lt;item stringID=\\&quot;ALTERA_FMAX\\&quot; value=\\&quot;$fmax\\&quot;/&gt;&quot;\n  puts $ofile_report &quot;      &lt;item stringID=\\&quot;ALTERA_FMAX_RESTRICTED\\&quot; value=\\&quot;$restricted_fmax\\&quot;/&gt;&quot;\n}"/>
+      <cmd name="puts $ofile_report &quot;    &lt;/section&gt;&quot;"/>
+      <cmd name="puts $ofile_report &quot;  &lt;/application&gt;&quot;"/>
+      <cmd name="puts $ofile_report &quot;&lt;/document&gt;&quot;"/>
+      <cmd name="close $ofile_report"/>
+      <cmd name="unload_report"/>
+      <cmd name="delete_timing_netlist"/>
+      <cmd name="project_close"/>
+   </quartus_sta>
+</synthesis>

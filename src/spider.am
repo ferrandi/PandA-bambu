@@ -1,0 +1,149 @@
+########## spider tool ##########
+bin_PROGRAMS += spider
+
+noinst_HEADERS += SpiderParameter.hpp
+
+spider_SOURCES = spider.cpp SpiderParameter.cpp Parameter.cpp
+
+noinst_LTLIBRARIES += lib_spider.la
+
+lib_spider_la_LIBADD =
+lib_spider_la_SOURCES =
+
+
+spider_CPPFLAGS = \
+   -I$(top_srcdir)/src/constants \
+   -I$(top_srcdir)/src/design_flows \
+   -I$(top_srcdir)/src/design_flows/backend/ToDataFile \
+   -I$(top_srcdir)/src/ilp \
+   -I$(top_srcdir)/src/parser/csv \
+   -I$(top_srcdir)/src/parser/data_xml \
+   -I$(top_srcdir)/src/parser/polixml \
+   -I$(top_srcdir)/src/parser/profiling_analysis \
+   -I$(top_srcdir)/src/rtl \
+   -I$(top_srcdir)/src/tree \
+   $(AM_CPPFLAGS)
+
+if BUILD_LIB_EVALUATION
+   spider_CPPFLAGS += \
+      -I$(top_srcdir)/src/algorithms/evaluation
+endif
+
+if BUILD_LIB_FROM_C
+   spider_CPPFLAGS += \
+      -I$(top_srcdir)/src/wrapper/treegcc
+endif
+
+if BUILD_LIB_REGRESSORS
+   spider_CPPFLAGS += \
+      -I$(top_srcdir)/src/algorithms/regressors \
+      -I$(top_srcdir)/src/algorithms/regressors/preprocessing
+endif
+
+if BUILD_LIBERTY_PARSER
+   spider_CPPFLAGS += \
+      -I$(top_srcdir)/src/technology/physical_library/models
+endif
+
+if BUILD_LIB_CODE_ESTIMATION
+   spider_CPPFLAGS += \
+      -I$(top_srcdir)/src/design_flows/codesign/estimation \
+      -I$(top_srcdir)/src/utility/probability_distribution
+endif
+
+if BUILD_LIB_TECHNOLOGY
+   spider_CPPFLAGS += \
+      -I$(top_srcdir)/src/design_flows/technology \
+      -I$(top_srcdir)/src/technology \
+      -I$(top_srcdir)/src/technology/physical_library \
+      -I$(top_srcdir)/src/technology/target_device \
+      -I$(top_srcdir)/src/technology/target_technology
+endif
+
+lib_spider_la_LIBADD += \
+      $(top_builddir)/src/design_flows/lib_design_flows.la \
+      $(top_builddir)/src/design_flows/backend/lib_backend.la \
+      $(top_builddir)/src/graph/lib_graph.la \
+      $(top_builddir)/src/parser/lib_parser.la \
+      $(top_builddir)/src/polixml/lib_polixml.la \
+      $(top_builddir)/src/parser/polixml/lib_xml_dom_parser.la \
+      $(top_builddir)/src/utility/lib_utility.la \
+      $(BOOST_REGEX_LIB) \
+      $(GSL_LIBS) $(BOOST_FILESYSTEM_LIB) $(BOOST_SYSTEM_LIB) $(BOOST_DATE_TIME_LIB)
+
+if BUILD_LIB_ALGORITHMS
+   lib_spider_la_LIBADD += \
+      $(top_builddir)/src/algorithms/lib_algorithms.la
+endif
+
+if BUILD_LIB_ARCH
+   lib_spider_la_LIBADD += \
+      $(top_builddir)/src/machine/lib_machine.la
+endif
+
+if BUILD_LIB_BEHAVIOR
+   lib_spider_la_LIBADD += \
+      $(top_builddir)/src/behavior/lib_behavior.la
+endif
+
+if BUILD_LIB_CIRCUIT
+   lib_spider_la_LIBADD += \
+      $(top_builddir)/src/circuit/lib_circuit.la
+endif
+
+if BUILD_LIB_FROM_BOOLEAN
+   lib_spider_la_LIBADD += \
+      $(top_builddir)/src/parser/boolean/lib_boolean_parser.la
+endif
+if BUILD_LIB_FROM_C
+   lib_spider_la_LIBADD += \
+      $(top_builddir)/src/tree/lib_tree_manipulation.la
+endif
+
+if BUILD_LIB_FROM_PRAGMA
+   lib_spider_la_LIBADD += \
+      $(top_builddir)/src/pragma/libpragma.la
+endif
+
+if BUILD_LIB_HLS
+   lib_spider_la_LIBADD += \
+      $(top_builddir)/src/HLS/lib_HLS.la
+endif
+
+if BUILD_LIB_INTERMEDIATE_REPRESENTATIONS
+   lib_spider_la_LIBADD += \
+      $(top_builddir)/src/intermediate_representations/lib_intermediate_representations.la
+endif
+
+if BUILD_LIB_RTL
+   lib_spider_la_LIBADD += \
+      $(top_builddir)/src/rtl/lib_rtl.la
+endif
+
+if BUILD_LIB_TECHNOLOGY
+   lib_spider_la_LIBADD += \
+      $(top_builddir)/src/technology/lib_technology.la
+endif
+
+if BUILD_LIB_TREE
+   lib_spider_la_LIBADD += \
+      $(top_builddir)/src/tree/lib_tree.la
+endif
+
+if BUILD_LIB_WRAPPER
+   lib_spider_la_LIBADD += \
+      $(top_builddir)/src/wrapper/lib_wrapper.la
+endif
+
+if BUILD_R
+   lib_spider_la_LIBADD += \
+     $(RLOCALPACKAGEDIR)/RInside/lib/libRInside.a  -lR
+endif
+
+spider_LDADD = lib_spider.la
+if BUILD_R
+   spider_LDADD += \
+     $(RLOCALPACKAGEDIR)/RInside/lib/libRInside.a  -lR
+endif
+
+

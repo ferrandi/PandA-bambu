@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<target>
+   <device>
+      <vendor value="Xilinx"/>
+      <family value="Virtex-6"/>
+      <model value="xc6vlx240t"/>
+      <package value="ff1156"/>
+      <speed_grade value="-1"/>
+      <BRAM_bitsize_min value="32"/>
+      <BRAM_bitsize_max value="128"/>
+      <DSPs_x_sizes value="18"/>
+      <DSPs_y_sizes value="25"/>
+      <DSPs_rx_sizes value="16"/>
+      <DSPs_ry_sizes value="16"/>
+      <max_lut_size value="6"/>
+   </device>
+</target>

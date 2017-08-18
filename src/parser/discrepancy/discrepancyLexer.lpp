@@ -1,0 +1,239 @@
+/*
+ *
+ *                   _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
+ *                  _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
+ *                 _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
+ *                _/      _/    _/ _/    _/ _/   _/ _/    _/
+ *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
+ *
+ *             ***********************************************
+ *                              PandA Project
+ *                     URL: http://panda.dei.polimi.it
+ *                       Politecnico di Milano - DEIB
+ *                        System Architectures Group
+ *             ***********************************************
+ *              Copyright (c) 2004-2017 Politecnico di Milano
+ *
+ *   This file is part of the PandA framework.
+ *
+ *   The PandA framework is free software; you can redistribute it and/or modify
+ *   it under the terms of the GNU General Public License as published by
+ *   the Free Software Foundation; either version 3 of the License, or
+ *   (at your option) any later version.
+ *
+ *   This program is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU General Public License for more details.
+ *
+ *   You should have received a copy of the GNU General Public License
+ *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+*/
+/**
+ * @author Pietro Fezzardi <pietrofezzardi@gmail.com>
+ * @author Michele Castellana <michele.castellana@mail.polimi.it>
+ */
+
+/*
+ * Generate a C++ scanner class
+ * %option c++
+ */
+
+/* 
+ * Directs flex to write the scanner to the specified
+ * file instead of "lex.yy.c".
+ * %option outfile="discrepancyLexer.cpp" 
+ */
+
+/* 
+ * Makes the scanner not call `yywrap()' upon an
+ * end-of-file, but simply assume that there are
+ * no more files to scan.
+ */
+%option noyywrap
+
+/* 
+ * Causes the default rule (that unmatched scanner
+ * input is echoed to stdout) to be suppressed.
+ * If the scanner encounters input that does not
+ * match any of its rules, it aborts with an error.
+ * This option is useful for finding holes in a
+ * scanner's rule set.
+ */
+%option nodefault
+
+/*
+ * Instructs flex to generate an 8-bit scanner,
+ * i.e., one which can recognize 8-bit characters.
+ */
+%option 8bit
+
+/*
+ * Makes the generated scanner run in debug mode.
+ * Whenever a pattern is recognized and the global
+ * variable yy_flex_debug is non-zero (which is the
+ * default), the scanner will write to stderr a line.
+ * %option debug
+ */
+
+
+/*
+ * Warn about certain things. In particular, if the
+ * default rule can be matched but no default rule
+ * has been given, the flex will warn you. We
+ * recommend using this option always.
+ * %option warn
+ */
+
+
+/*
+ * Instructs flex to generate a batch scanner.
+ * In general, you use it when you are certain that
+ * your scanner will never be used interactively, and
+ * you want to squeeze a little more performance out
+ * of it.
+ */
+%option batch
+
+/*
+ * Instructs flex to generate a scanner which never
+ * considers its input interactive.
+ */
+%option never-interactive
+
+/*
+ * Directs flex to generate a scanner that maintains
+ * the number of the current line read from its input
+ * in the global variable yylineno
+ */
+%option yylineno
+
+/*
+ * Tells the scanner to use 64 bits to hold the offset inthe scanned file.
+ * This is necessary when parsing large files, i. e. larger than ~2GB.
+ */
+%top{
+#define _FILE_OFFSET_BITS 64
+}
+
+%{
+
+#include <iosfwd>
+#include <fstream>
+#include <stdint.h>
+#include <inttypes.h>
+#include <set>
+#include <string>
+#include <vector>
+#include <list>
+
+// include from utility/
+#include "refcount.hpp"
+#include "config_HAVE_BISON_2_7_OR_GREATER.hpp"
+
+// this is here because it is used in discrepancyParser.h
+REF_FORWARD_DECL(DiscrepancyFlexLexer);
+
+// include from parser/discrepancy/
+#include "DiscrepancyOpInfo.hpp"
+
+#if HAVE_BISON_2_7_OR_GREATER
+#include "discrepancyParser.hpp"
+#else
+#include "discrepancyParser.h"
+#endif
+#include "discrepancyLexer.hpp"
+using namespace std;
+
+#include "string_manipulation.hpp"
+
+// Skipping warnings due to flex
+#pragma GCC diagnostic ignored "-Wconversion"
+#pragma GCC diagnostic ignored "-Wsign-conversion"
+#pragma GCC diagnostic ignored "-Wsign-compare"
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+#pragma GCC diagnostic ignored "-Wredundant-decls"
+#pragma GCC diagnostic ignored "-Wold-style-cast"
+#pragma GCC diagnostic ignored "-Wswitch-default"
+#if (__GNUC__ > 4) || (__GNUC__ == 4 && __GNUC_MINOR__ >= 7)
+#pragma GCC diagnostic ignored "-Wzero-as-null-pointer-constant"
+#endif
+
+DiscrepancyFlexLexer::DiscrepancyFlexLexer
+(std::istream* argin = 0, std::ostream* argout = 0) : yyFlexLexer(argin, argout)
+{}
+
+DiscrepancyFlexLexer::~DiscrepancyFlexLexer()
+{}
+%}
+
+
+/*=========================================================================
+                          TOKEN DEFINITIONS
+=========================================================================*/
+
+DECDIGIT    [0-9]
+BINDIGIT    [01]
+ID          [a-z_A-Z][a-zA-Z_0-9]*
+
+%%
+
+"val"          { return VALUE; }
+"btsz"         { return BITSIZE; }
+"start"        { return STARTSTATE; }
+"exec"         { return EXSTATE; }
+"end"          { return ENDSTATE; }
+"stg_id"       { return STGFUNID; }
+"op_id"        { return OPID; }
+"B"            { lvalp->boolval = true; return BOOLEAN; }
+"BB"           { return BB; }
+"U"            { lvalp->boolval = false; return BOOLEAN; }
+"type"         { return TYPE; }
+"V"            { lvalp->boolval = true; return BOOLEAN; }
+"NV"           { lvalp->boolval = false; return BOOLEAN; }
+"C"            { lvalp->boolval = true; return BOOLEAN; }
+"NC"           { lvalp->boolval = false; return BOOLEAN; }
+"R"            { lvalp->boolval = true; return BOOLEAN; }
+"NR"           { lvalp->boolval = false; return BOOLEAN; }
+"A"            { lvalp->boolval = true; return BOOLEAN; }
+"NA"           { lvalp->boolval = false; return BOOLEAN; }
+"ssa"          { return SSA; }
+"ssa_id"       { return SSA_ID; }
+"CONTEXT"      { return CONTEXT; }
+"CONTEXT_END"  { return CONTEXT_END; }
+"CALL_ID"      { return CALL_ID; }
+"CALLED_ID"    { return CALLED_ID; }
+"VARDECL_ID"   { return VARDECL_ID; }
+"VAR_ADDR"     { return VAR_ADDR; }
+"ASSIGN"       { return ASSIGNMENT; }
+"SCHED"        { return SCHEDULE; }
+"INSTR"        { return INSTRUCTION; }
+";"            { return SEMI; }
+
+[ \t\r\n]+      { }
+
+"LL_"{DECDIGIT}+  {
+                     int n_scan = std::sscanf(YYText()+3,"%llu", &lvalp->lluintval);
+                     if (n_scan != 1)
+                     {
+                        std::cerr << YYText() << " " << lvalp->lluintval << std::endl;
+                        LexerError("Lexical Error: cannot be parsed as uint64_t");
+                     }
+                     return LL_UNUMBER;
+                  }
+{DECDIGIT}+       {
+                     int n_scan = std::sscanf(YYText(),"%u", &lvalp->uintval);
+                     if (n_scan != 1)
+                     {
+                        LexerError("Lexical Error: cannot be parsed as unsigned integer");
+                     }
+                     return UNUMBER;
+                  }
+
+"#"{BINDIGIT}+  { lvalp->svalue = strdup(YYText() + 1); return BINVALUE; }
+
+{ID}            { lvalp->svalue = strdup(YYText()); return IDENTIFIER; }
+
+.               { LexerError("Lexical Error"); }
+%%

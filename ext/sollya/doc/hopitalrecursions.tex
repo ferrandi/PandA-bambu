@@ -1,0 +1,47 @@
+\subsection{hopitalrecursions}
+\label{labhopitalrecursions}
+\noindent Name: \textbf{hopitalrecursions}\\
+controls the number of recursion steps when applying L'Hopital's rule.\\
+\noindent Usage: 
+\begin{center}
+\textbf{hopitalrecursions} = \emph{n} : \textsf{integer} $\rightarrow$ \textsf{void}\\
+\textbf{hopitalrecursions} = \emph{n} ! : \textsf{integer} $\rightarrow$ \textsf{void}\\
+\textbf{hopitalrecursions} : \textsf{integer}\\
+\end{center}
+Parameters: 
+\begin{itemize}
+\item \emph{n} represents the number of recursions
+\end{itemize}
+\noindent Description: \begin{itemize}
+
+\item \textbf{hopitalrecursions} is a global variable. Its value represents the number of steps of
+   recursion that are tried when applying L'Hopital's rule. This rule is applied
+   by the interval evaluator present in the core of \sollya (and particularly
+   visible in commands like \textbf{infnorm}).
+
+\item If an expression of the form $f/g$ has to be evaluated by interval 
+   arithmetic on an interval $I$ and if $f$ and $g$ have a common zero
+   in $I$, a direct evaluation leads to NaN.
+   \sollya implements a safe heuristic to avoid this, based on L'Hopital's rule: in 
+   such a case, it can be shown that $(f/g)(I) \subseteq (f'/g')(I)$. Since
+   the same problem may exist for $f'/g'$, the rule is applied recursively.
+   The number of step in this recursion process is controlled by \textbf{hopitalrecursions}.
+
+\item Setting \textbf{hopitalrecursions} to 0 makes \sollya use this rule only once;
+   setting it to 1 makes \sollya use the rule twice, and so on.
+   In particular: the rule is always applied at least once, if necessary.
+\end{itemize}
+\noindent Example 1: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> hopitalrecursions=0;
+The number of recursions for Hopital's rule has been set to 0.
+> evaluate(log(1+x)^2/x^2,[-1/2; 1]);
+[-@Inf@;@Inf@]
+> hopitalrecursions=1;
+The number of recursions for Hopital's rule has been set to 1.
+> evaluate(log(1+x)^2/x^2,[-1/2; 1]);
+[-2.52258872223978123766892848583270627230200053744108;6.77258872223978123766892
+84858327062723020005374411]
+\end{Verbatim}
+\end{minipage}\end{center}
+See also: \textbf{taylorrecursions} (\ref{labtaylorrecursions}), \textbf{infnorm} (\ref{labinfnorm}), \textbf{findzeros} (\ref{labfindzeros}), \textbf{evaluate} (\ref{labevaluate})

@@ -1,0 +1,196 @@
+---------------------------------------------------
+-- AADL2.0
+-- TASTE
+-- (c)Ellidiss Technologies
+-- 
+---------------------------------------------------
+
+PACKAGE interfaceview::FV::cyclic_function
+PUBLIC
+
+WITH Taste;
+WITH DataView,DataView,DataView;
+WITH TASTE_IV_Properties;
+SUBPROGRAM PI_cyclic_activation
+PROPERTIES
+  Taste::Associated_Queue_Size => 1;
+END PI_cyclic_activation;
+
+SUBPROGRAM IMPLEMENTATION PI_cyclic_activation.others
+END PI_cyclic_activation.others;
+
+SUBPROGRAM RI_first_function
+FEATURES
+  my_in : IN PARAMETER DataView::T_Int32 {
+    Taste::encoding => UPER;
+  };
+  result : OUT PARAMETER DataView::T_UInt32 {
+    Taste::encoding => NATIVE;
+  };
+END RI_first_function;
+
+SUBPROGRAM IMPLEMENTATION RI_first_function.others
+END RI_first_function.others;
+
+SUBPROGRAM RI_second_function
+FEATURES
+  output : OUT PARAMETER DataView::MyIntegerPair {
+    Taste::encoding => NATIVE;
+  };
+  param : IN PARAMETER DataView::T_Int32 {
+    Taste::encoding => NATIVE;
+  };
+END RI_second_function;
+
+SUBPROGRAM IMPLEMENTATION RI_second_function.others
+END RI_second_function.others;
+
+END interfaceview::FV::cyclic_function;
+
+PACKAGE interfaceview::FV::passive_function
+PUBLIC
+
+WITH Taste;
+WITH DataView,DataView,DataView;
+WITH TASTE_IV_Properties;
+SUBPROGRAM PI_first_function
+FEATURES
+  my_in : IN PARAMETER DataView::T_Int32 {
+    Taste::encoding => UPER;
+  };
+  result : OUT PARAMETER DataView::T_UInt32 {
+    Taste::encoding => NATIVE;
+  };
+END PI_first_function;
+
+SUBPROGRAM IMPLEMENTATION PI_first_function.others
+END PI_first_function.others;
+
+SUBPROGRAM PI_second_function
+FEATURES
+  output : OUT PARAMETER DataView::MyIntegerPair {
+    Taste::encoding => NATIVE;
+  };
+  param : IN PARAMETER DataView::T_Int32 {
+    Taste::encoding => NATIVE;
+  };
+END PI_second_function;
+
+SUBPROGRAM IMPLEMENTATION PI_second_function.others
+END PI_second_function.others;
+
+END interfaceview::FV::passive_function;
+
+PACKAGE interfaceview::IV
+PUBLIC
+
+WITH interfaceview::FV::cyclic_function;
+WITH interfaceview::FV::passive_function;
+WITH interfaceview::FV;
+WITH Taste;
+WITH DataView,DataView,DataView;
+WITH TASTE_IV_Properties;
+SYSTEM cyclic_function
+FEATURES
+  PI_cyclic_activation : PROVIDES SUBPROGRAM ACCESS interfaceview::FV::cyclic_function::PI_cyclic_activation.others {
+    Taste::coordinates => "382 493";
+    Taste::RCMoperationKind => cyclic;
+    Taste::RCMperiod => 500 ms;
+    Taste::Deadline => 500 ms;
+    Taste::InterfaceName => "cyclic_activation";
+  };
+  RI_first_function : REQUIRES SUBPROGRAM ACCESS interfaceview::FV::passive_function::PI_first_function.others {
+    Taste::coordinates => "1456 503";
+    Taste::RCMoperationKind => any;
+    Taste::InterfaceName => "first_function";
+    Taste::labelInheritance => "true";
+  };
+  RI_second_function : REQUIRES SUBPROGRAM ACCESS interfaceview::FV::passive_function::PI_second_function.others {
+    Taste::coordinates => "1456 913";
+    Taste::RCMoperationKind => any;
+    Taste::InterfaceName => "second_function";
+    Taste::labelInheritance => "true";
+  };
+PROPERTIES
+  Source_Language => (C);
+END cyclic_function;
+
+SYSTEM IMPLEMENTATION cyclic_function.others
+SUBCOMPONENTS
+  cyclic_activation_impl : SUBPROGRAM interfaceview::FV::cyclic_function::PI_cyclic_activation.others {
+    Compute_Execution_Time => 0 ms .. 500 ms;
+  };
+CONNECTIONS
+  OpToPICnx_cyclic_activation_impl : SUBPROGRAM ACCESS cyclic_activation_impl -> PI_cyclic_activation;
+END cyclic_function.others;
+
+SYSTEM passive_function
+FEATURES
+  PI_first_function : PROVIDES SUBPROGRAM ACCESS interfaceview::FV::passive_function::PI_first_function.others {
+    Taste::coordinates => "2129 511";
+    Taste::RCMoperationKind => unprotected;
+    Taste::Deadline => 0 ms;
+    Taste::InterfaceName => "first_function";
+  };
+  PI_second_function : PROVIDES SUBPROGRAM ACCESS interfaceview::FV::passive_function::PI_second_function.others {
+    Taste::coordinates => "2129 846";
+    Taste::RCMoperationKind => unprotected;
+    Taste::Deadline => 0 ms;
+    Taste::InterfaceName => "second_function";
+  };
+PROPERTIES
+  Source_Language => (VHDL);
+  Source_Text => ("source_file.c");
+END passive_function;
+
+SYSTEM IMPLEMENTATION passive_function.others
+SUBCOMPONENTS
+  first_function_impl : SUBPROGRAM interfaceview::FV::passive_function::PI_first_function.others {
+    Compute_Execution_Time => 0 ms .. 0 ms;
+  };
+  second_function_impl : SUBPROGRAM interfaceview::FV::passive_function::PI_second_function.others {
+    Compute_Execution_Time => 0 ms .. 0 ms;
+  };
+CONNECTIONS
+  OpToPICnx_first_function_impl : SUBPROGRAM ACCESS first_function_impl -> PI_first_function;
+  OpToPICnx_second_function_impl : SUBPROGRAM ACCESS second_function_impl -> PI_second_function;
+END passive_function.others;
+
+SYSTEM interfaceview
+END interfaceview;
+
+SYSTEM IMPLEMENTATION interfaceview.others
+SUBCOMPONENTS
+  cyclic_function : SYSTEM interfaceview::IV::cyclic_function.others {
+    Taste::coordinates => "382 323 1456 2100";
+  };
+-- { interfaceview::IV::interfaceview.others.passive_function - 2221 1077 2421 1380 
+--text 
+--}
+  passive_function : SYSTEM interfaceview::IV::passive_function.others {
+    Taste::coordinates => "2129 283 2937 2011";
+  };
+CONNECTIONS
+  passive_function_first_function_cyclic_function_first_function : SUBPROGRAM ACCESS passive_function.PI_first_function -> cyclic_function.RI_first_function {
+    Taste::coordinates => "1456 503 1792 503 1792 511 2129 511";
+  };
+  passive_function_second_function_cyclic_function_second_function : SUBPROGRAM ACCESS passive_function.PI_second_function -> cyclic_function.RI_second_function {
+    Taste::coordinates => "1456 913 1792 913 1792 846 2129 846";
+  };
+END interfaceview.others;
+
+PROPERTIES
+  Taste::dataView => ("DataView");
+  Taste::dataViewPath => ("DataView.aadl");
+  Taste::coordinates => "0 0 2970 2100";
+  Taste::version => "1.3.16";
+END interfaceview::IV;
+
+PACKAGE interfaceview::FV
+PUBLIC
+
+WITH Taste;
+WITH DataView,DataView,DataView;
+WITH TASTE_IV_Properties;
+END interfaceview::FV;
+

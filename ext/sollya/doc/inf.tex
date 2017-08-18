@@ -1,0 +1,43 @@
+\subsection{inf}
+\label{labinf}
+\noindent Name: \textbf{inf}\\
+gives the lower bound of an interval.\\
+\noindent Usage: 
+\begin{center}
+\textbf{inf}(\emph{I}) : \textsf{range} $\rightarrow$ \textsf{constant}\\
+\textbf{inf}(\emph{x}) : \textsf{constant} $\rightarrow$ \textsf{constant}\\
+\end{center}
+Parameters: 
+\begin{itemize}
+\item \emph{I} is an interval.
+\item \emph{x} is a real number.
+\end{itemize}
+\noindent Description: \begin{itemize}
+
+\item Returns the lower bound of the interval \emph{I}. Each bound of an interval has its 
+   own precision, so this command is exact, even if the current precision is too 
+   small to represent the bound.
+
+\item When called on a real number \emph{x}, \textbf{inf} considers it as an interval formed
+   of a single point: $\left[ x, x \right]$. In other words, \textbf{inf} behaves like the identity.
+\end{itemize}
+\noindent Example 1: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> inf([1;3]);
+1
+> inf(0);
+0
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 2: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> display=binary!;
+> I=[0.111110000011111_2; 1];
+> inf(I);
+1.11110000011111_2 * 2^(-1)
+> prec=12!;
+> inf(I);
+1.11110000011111_2 * 2^(-1)
+\end{Verbatim}
+\end{minipage}\end{center}
+See also: \textbf{mid} (\ref{labmid}), \textbf{sup} (\ref{labsup}), \textbf{max} (\ref{labmax}), \textbf{min} (\ref{labmin})

@@ -1,0 +1,412 @@
+/*
+ *
+ *                   _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
+ *                  _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
+ *                 _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
+ *                _/      _/    _/ _/    _/ _/   _/ _/    _/
+ *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
+ *
+ *             ***********************************************
+ *                              PandA Project
+ *                     URL: http://panda.dei.polimi.it
+ *                       Politecnico di Milano - DEIB
+ *                        System Architectures Group
+ *             ***********************************************
+ *              Copyright (c) 2004-2017 Politecnico di Milano
+ *
+ *   This file is part of the PandA framework.
+ *
+ *   The PandA framework is free software; you can redistribute it and/or modify
+ *   it under the terms of the GNU General Public License as published by
+ *   the Free Software Foundation; either version 3 of the License, or
+ *   (at your option) any later version.
+ *
+ *   This program is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU General Public License for more details.
+ *
+ *   You should have received a copy of the GNU General Public License
+ *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
+/**
+ * @author Pietro Fezzardi <pietrofezzardi@gmail.com>
+ * @author Michele Castellana <michele.castellana@mail.polimi.it>
+ */
+
+/*
+ * The following lines result in the signature
+ * (
+ *    DiscrepancyRef Discr,
+ *    const DiscrepancyFlexLexerRef lexer
+ * );
+ */
+%parse-param {DiscrepancyRef Discr}
+%parse-param {const DiscrepancyFlexLexerRef lexer}
+
+/*
+ * The following line results in the signature
+ * int yylex (YYSTYPE *lvalp, const DiscrepancyFlexLexerRef lexer);
+ */
+%lex-param {const DiscrepancyFlexLexerRef lexer}
+
+/*
+ * Control the kind of error messages passed to the error
+ * %define parse.error verbose
+ * reporting function.
+ */
+
+%code requires
+{
+// include from utility/
+#include "refcount.hpp"
+
+REF_FORWARD_DECL(DiscrepancyFlexLexer);
+REF_FORWARD_DECL(Discrepancy);
+#include "DiscrepancyOpInfo.hpp"
+
+#include <set>
+#include <string>
+#include <map>
+#include <list>
+#include <climits>
+}
+
+%{
+// Uncomment the following line for the debug mode
+// #define YYDEBUG 1
+
+// Autoheader include
+#include "config_HAVE_BISON_2_7_OR_GREATER.hpp"
+
+#define YYLTYPE_IS_TRIVIAL 0
+
+#if HAVE_BISON_2_7_OR_GREATER
+#include "discrepancyParser.hpp"
+#else
+#include "discrepancyParser.h"
+#endif
+#include "discrepancyLexer.hpp"
+#include "Discrepancy.hpp"
+
+#include <iosfwd>
+#include <vector>
+
+#include "fileIO.hpp"
+#include "exceptions.hpp"
+
+// Skipping warnings due to bison
+#pragma GCC diagnostic ignored "-Wconversion"
+#pragma GCC diagnostic ignored "-Wredundant-decls"
+#pragma GCC diagnostic ignored "-Wsign-conversion"
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+#pragma GCC diagnostic ignored "-Wwrite-strings"
+#pragma GCC diagnostic ignored "-Wswitch-default"
+#pragma GCC diagnostic ignored "-Wold-style-cast"
+#if (__GNUC__ > 4) || (__GNUC__ == 4 && __GNUC_MINOR__ >= 7)
+#pragma GCC diagnostic ignored "-Wzero-as-null-pointer-constant"
+#endif
+
+static std::stack<unsigned int> context_stack;
+static std::stack<UnfoldedVertexDescriptor> vertex_stack;
+
+int yylex(YYSTYPE *lvalp, const DiscrepancyFlexLexerRef lexer);
+void yyerror
+(
+   DiscrepancyRef Discr,
+   const DiscrepancyFlexLexerRef lexer,
+   const char *s
+);
+
+%}
+
+/*=========================================================================
+                          SEMANTIC RECORDS
+=========================================================================*/
+
+%union {
+   long long unsigned int lluintval;
+   char * svalue;
+   unsigned int uintval;
+   bool boolval;
+   std::set<unsigned int> *uintSet;
+   std::pair<unsigned int, uint64_t> * addr_table_line_val;
+   struct {
+      unsigned long n_cycles;
+      unsigned int stg_fun_id;
+      unsigned int op_id;
+      bool is_bounded_op;
+   } op_info;
+   struct {
+      std::set<unsigned int> *start;
+      std::set<unsigned int> *exec;
+      std::set<unsigned int> *end;
+   } sched_info;
+   struct {
+      char * ssa_name;
+      char * value;
+      unsigned int ssa_name_node_id;
+      unsigned int bitsize;
+      enum discrepancy_type_mask type;
+      unsigned int vec_base_bitsize;
+   } assign_info;
+}
+
+/*=========================================================================
+                               TOKENS
+=========================================================================*/
+
+%token SSA_ID CALL_ID CALLED_ID CONTEXT CONTEXT_END VARDECL_ID VAR_ADDR VALUE BITSIZE STARTSTATE EXSTATE ENDSTATE STGFUNID OPID SSA ASSIGNMENT SCHEDULE INSTRUCTION SEMI TYPE BB;
+
+%token <uintval> UNUMBER;
+%token <lluintval> LL_UNUMBER;
+%token <svalue> BINVALUE;
+%token <svalue> IDENTIFIER;
+%token <boolval> BOOLEAN;
+
+// types for rules
+%type <uintSet> statelist;
+%type <op_info> instr_data;
+%type <sched_info> sched_data;
+%type <assign_info> assign_data;
+%type <uintval> context_id;
+%type <addr_table_line_val> addr_table_line;
+
+// There should be no shift/reduce nor reduce/reduce conflicts
+%expect 0
+
+%pure-parser
+%start root
+
+%%
+
+root  :
+      | initial_context infos
+      | initial_context addr_table infos;
+
+infos : infos info
+      | info;
+
+info  : context
+      | control_flow_trace
+      | optrace
+      | CONTEXT_END
+      {
+         if (context_stack.empty())
+            yyerror(Discr, lexer, "malformed call stack trace\n");
+         context_stack.pop();
+         vertex_stack.pop();
+      };
+
+initial_context   : CONTEXT LL_UNUMBER
+                  {
+                     uint64_t context = $2;
+                     THROW_ASSERT(context_stack.empty(), "initial_context = " + STR(context));
+                     // create a new address map for the new context
+                     Discr->c_addr_map[context];
+                     // push the new context on the stack
+                     context_stack.push(context);
+                     THROW_ASSERT(vertex_stack.empty(), "initial_context = " + STR(context));
+                  };
+
+context  : context_id
+         | context_id addr_table;
+
+context_id  : CALL_ID UNUMBER CONTEXT LL_UNUMBER CALLED_ID UNUMBER
+            {
+               uint64_t new_context = $4;
+               THROW_ASSERT(not context_stack.empty(), "context = " + STR(new_context));
+               // create a new address map for the new context
+               Discr->c_addr_map[new_context];
+               // store the local address map of the previous context
+               THROW_ASSERT(Discr->c_addr_map.find(context_stack.top()) != Discr->c_addr_map.end(),
+                     "cant find address map for context " + STR(context_stack.top()));
+               for (const auto & a : Discr->c_addr_map.at(context_stack.top()))
+                  Discr->c_addr_map[new_context].insert(a);
+               // push the new context on the stack
+               context_stack.push(new_context);
+               if (vertex_stack.empty())
+               {
+                     // the initial context is the root function
+                     vertex_stack.push(Discr->unfolded_root_v);
+               }
+               else
+               {
+                  // find the new vertex corresponding to the new context
+                  UnfoldedCallGraph & ufcg = Discr->DiscrepancyCallGraph;
+                  unsigned int call_id = $2;
+                  unsigned int called_id = $6;
+#if HAVE_ASSERTS
+                  bool found = false;
+#endif
+                  // to update the vertex stack look for an edge with the same
+                  // call_id going to a vertex with the same called_id.
+                  // it is guaranteed that there is one if the unfolded call
+                  // graph in Discr was built correctly
+                  UnfoldedOutEdgeIterator oe_it, oe_end;
+                  boost::tie(oe_it, oe_end) = boost::out_edges(vertex_stack.top(), ufcg);
+                  for (; oe_it != oe_end; oe_it++)
+                  {
+                     if (Cget_raw_edge_info<UnfoldedCallInfo>(*oe_it, ufcg)->call_id == call_id)
+                     {
+                        UnfoldedVertexDescriptor tgt = boost::target(*oe_it, ufcg);
+                        if (Cget_node_info<UnfoldedFunctionInfo>(tgt, ufcg)->f_id == called_id)
+                        {
+                           vertex_stack.push(tgt);
+#if HAVE_ASSERTS
+                           found = true;
+#endif
+                           break;
+                        }
+                     }
+                  }
+                  THROW_ASSERT(found, "new target vertex not found");
+               }
+
+               THROW_ASSERT(Discr->unfolded_v_to_scope.find(vertex_stack.top()) !=
+                     Discr->unfolded_v_to_scope.end(),
+                     "can't find scope for new vertex " +
+                     Cget_node_info<UnfoldedFunctionInfo>(vertex_stack.top(), Discr->DiscrepancyCallGraph)->f_id);
+
+               Discr->context_to_scope[new_context] = Discr->unfolded_v_to_scope.at(vertex_stack.top());
+            };
+
+addr_table  : addr_table addr_table_line
+            {
+               if (context_stack.empty())
+                  yyerror(Discr, lexer, "context stack is empty\n");
+               Discr->c_addr_map[context_stack.top()][($2)->first] = ($2)->second;
+               delete($2);
+            }
+            | addr_table_line
+            {
+               if (context_stack.empty())
+                  yyerror(Discr, lexer, "context stack is empty\n");
+               Discr->c_addr_map[context_stack.top()][($1)->first] = ($1)->second;
+               delete($1);
+            };
+
+addr_table_line   : VARDECL_ID UNUMBER VAR_ADDR LL_UNUMBER
+                  {
+                     $$ = new std::pair<unsigned int, uint64_t> ($2, $4);
+                  };
+
+control_flow_trace   : BB UNUMBER
+                     {
+                     ;
+                     };
+
+optrace  : instr_data sched_data assign_data
+         {
+            if (context_stack.empty())
+               yyerror(Discr, lexer, "malformed call stack trace\n");
+
+            DiscrepancyOpInfo di;
+
+            di.n_cycles = $1.n_cycles;
+            di.stg_fun_id = $1.stg_fun_id;
+            di.op_id = $1.op_id;
+            di.is_bounded_op = $1.is_bounded_op;
+
+            di.start_states.swap(*($2.start));
+            di.exec_states.swap(*($2.exec));
+            di.end_states.swap(*($2.end));
+            delete $2.start;
+            delete $2.exec;
+            delete $2.end;
+
+            di.ssa_name_node_id = $3.ssa_name_node_id;
+            di.ssa_name = std::string($3.ssa_name);
+            di.bitsize = $3.bitsize;
+            di.type = $3.type;
+            di.vec_base_bitsize = $3.vec_base_bitsize;
+
+            Discr->c_op_trace[di].emplace_back(context_stack.top(), std::string($3.value));
+
+            free($3.ssa_name);
+            free($3.value);
+         };
+
+instr_data  : INSTRUCTION STGFUNID UNUMBER OPID UNUMBER BOOLEAN UNUMBER
+            {
+               $$ = {$7 /* n_cycles*/,
+                     $3/*fun_id*/,
+                     $5/*op_id*/,
+                     $6/*is_bounded_op*/};
+            }
+            | INSTRUCTION STGFUNID UNUMBER OPID UNUMBER BOOLEAN
+            {
+               $$ = {0 /* n_cycles*/,
+                     $3/*fun_id*/,
+                     $5/*op_id*/,
+                     $6/*is_bounded_op*/};
+            };
+
+sched_data  : SCHEDULE STARTSTATE statelist SEMI EXSTATE statelist SEMI ENDSTATE statelist SEMI
+            {
+               $$ = {$3, $6, $9};
+            };
+
+statelist   : UNUMBER
+            {
+               $$ = new std::set<unsigned int>();
+               $$->insert($1);
+            }
+            | statelist UNUMBER
+            {
+               $1->insert($2);
+               $$ = $1;
+            };
+
+assign_data : ASSIGNMENT SSA_ID UNUMBER SEMI SSA IDENTIFIER SEMI BITSIZE UNUMBER SEMI VALUE BINVALUE SEMI TYPE BOOLEAN UNUMBER BOOLEAN BOOLEAN BOOLEAN
+            {
+               $$ = {
+                  $6          /*ssa name*/,
+                  $12         /*binary string value*/,
+                  $3          /*ssa node id*/,
+                  $9          /*bitsize*/,
+                  DISCR_NONE  /*type*/,
+                  $16         /*vec_base_bitsize*/,
+               };
+               if ($15)
+                  $$.type |= DISCR_VECTOR;
+
+               if ($17)
+                  $$.type |= DISCR_COMPLEX;
+
+               if ($18)
+                  $$.type |= DISCR_REAL;
+
+               if ($19)
+                  $$.type |= DISCR_ADDR;
+            };
+%%
+
+void discrepancy_parseY(const std::string & fname, DiscrepancyRef Discr)
+{
+   fileIO_istreamRef in_f = fileIO_istream_open(fname);
+   if(in_f->fail())
+      THROW_ERROR(std::string("Failed opening discrepancy data file: ") + fname);
+   const DiscrepancyFlexLexerRef lexer(new DiscrepancyFlexLexer(in_f.get(), 0));
+#if YYDEBUG
+    yydebug = 1;
+#endif
+    yyparse(Discr, lexer);
+}
+
+int yylex(YYSTYPE *lvalp, const DiscrepancyFlexLexerRef lexer)
+{
+   lexer->lvalp = lvalp;
+   return lexer->yylex();
+}
+
+void yyerror
+(
+   DiscrepancyRef Discr,
+   const DiscrepancyFlexLexerRef lexer,
+   const char *s
+)
+{
+   lexer->yyerror(s);
+}

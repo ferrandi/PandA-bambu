@@ -1,0 +1,103 @@
+/*
+ *
+ *                   _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
+ *                  _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
+ *                 _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
+ *                _/      _/    _/ _/    _/ _/   _/ _/    _/
+ *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
+ *
+ *             ***********************************************
+ *                              PandA Project 
+ *                     URL: http://panda.dei.polimi.it
+ *                       Politecnico di Milano - DEIB
+ *                        System Architectures Group
+ *             ***********************************************
+ *              Copyright (c) 2004-2017 Politecnico di Milano
+ *
+ *   This file is part of the PandA framework.
+ *
+ *   The PandA framework is free software; you can redistribute it and/or modify
+ *   it under the terms of the GNU General Public License as published by
+ *   the Free Software Foundation; either version 3 of the License, or
+ *   (at your option) any later version.
+ *
+ *   This program is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU General Public License for more details.
+ *
+ *   You should have received a copy of the GNU General Public License
+ *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+*/
+/**
+ * @file SpiderParameter.hpp
+ * @brief 
+ *
+ * @author Marco Lattuada <lattuada@elet.polimi.it>
+ * $Revision$
+ * $Date$
+ * Last modified by $Author$
+ *
+*/
+#ifndef SPIDERPARAMETER_HPP
+#define SPIDERPARAMETER_HPP
+
+/// Superclass include
+#include "Parameter.hpp"
+
+///STD include
+#include <list>
+
+///utility include
+#include "refcount.hpp"
+
+class SpiderParameter : public Parameter
+{
+   private :
+      /**
+       * Check the compatibility among the different parameters
+       * and compute implicated parameters
+       */
+      void CheckParameters();
+
+      /**
+       * Print the usage of this tool
+       * @param os is the stream where the message has to be printed
+       */
+      void PrintHelp(std::ostream &os) const;
+
+      /**
+       * Print the name of the program to be included in the header
+       * @param os is the stream on which the program name has to be printed
+       */
+      void PrintProgramName(std::ostream & os) const;
+
+      /**
+       * Sets the default values for the Zebu tool
+       */
+      virtual void SetDefaults();
+
+   public:
+      /**
+       * Constructor
+       * @param program_name is the name of the executable
+       * @param argc is the number of arguments
+       * @param argv is the array of arguments passed to program.
+       */
+      SpiderParameter(const std::string program_name, int argc, char ** const argv);
+
+     /**
+       * Destructor
+       */
+      virtual ~SpiderParameter() {}
+
+      /**
+       * Execute parameter parsing
+       */
+      virtual int Exec();
+};
+
+typedef refcount<SpiderParameter> SpiederParameterRef;
+
+#endif

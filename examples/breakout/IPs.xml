@@ -1,0 +1,198 @@
+<?xml version="1.0"?>
+<technology>
+  <library>
+    <name>STD_FU</name>
+    <cell>
+      <name>plot</name>
+      <operation operation_name="plot"/>
+      <operation operation_name="__plot"/>
+      <circuit>
+        <component_o id="plot">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2016 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="plot"/>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+	  <port_o id="reset" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="start_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="color" dir="IN">
+            <structural_type_descriptor type="UINT" size="3"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="x" dir="IN">
+            <structural_type_descriptor type="UINT" size="19"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="y" dir="IN">
+            <structural_type_descriptor type="UINT" size="19"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="sel_plot" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="sel___plot" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="done_port" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="VGA_R" dir="OUT" is_global="1" is_extern="1">
+            <structural_type_descriptor type="UINT" size="4" />
+            <connected_objects/>
+          </port_o>
+          <port_o id="VGA_G" dir="OUT" is_global="1" is_extern="1">
+            <structural_type_descriptor type="UINT" size="4" />
+            <connected_objects/>
+          </port_o>
+          <port_o id="VGA_B" dir="OUT" is_global="1" is_extern="1">
+            <structural_type_descriptor type="UINT" size="4" />
+            <connected_objects/>
+          </port_o>
+        <port_o id="VGA_HS" dir="OUT" is_global="1" is_extern="1">
+            <structural_type_descriptor type="BOOL" size="1" />
+            <connected_objects/>
+          </port_o>
+        <port_o id="VGA_VS" dir="OUT" is_global="1" is_extern="1">
+            <structural_type_descriptor type="BOOL" size="1" />
+            <connected_objects/>
+          </port_o>
+        <NP_functionality LIBRARY="plot " VERILOG_FILE_PROVIDED="plot.v"/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>sw_ctrl</name>
+      <operation operation_name="sw_ctrl" bounded="1" cycles="2" initiation_time="1" stage_period="1.2"/>
+      <circuit>
+        <component_o id="sw_ctrl">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2016 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="sw_ctrl"/>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+	  <port_o id="reset" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="start_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="sw" dir="IN" is_global="1" is_extern="1">
+            <structural_type_descriptor type="UINT" size="16"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="UINT" size="16" />
+          </port_o>
+          <NP_functionality LIBRARY="sw_ctrl " VERILOG_FILE_PROVIDED="sw_ctrl.v"/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>btn_ctrl</name>
+      <operation operation_name="btn_ctrl"  bounded="1" cycles="2" initiation_time="1" stage_period="1.2"/>
+      <circuit>
+        <component_o id="btn_ctrl">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2016 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="btn_ctrl"/>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+	  <port_o id="reset" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="start_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="btn" dir="IN" is_global="1" is_extern="1">
+            <structural_type_descriptor type="UINT" size="4"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="UINT" size="4" />
+          </port_o>
+          <NP_functionality LIBRARY="btn_ctrl " VERILOG_FILE_PROVIDED="btn_ctrl.v"/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>sevensegments_ctrl</name>
+      <operation operation_name="sevensegments_ctrl" bounded="1" cycles="1" execution_time="1.2"/>
+      <circuit>
+        <component_o id="sevensegments_ctrl">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2016 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="sevensegments_ctrl"/>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+	  <port_o id="reset" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="start_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="val" dir="IN">
+            <structural_type_descriptor type="UINT" size="64"/>
+          </port_o>
+          <port_o id="mask" dir="IN">
+            <structural_type_descriptor type="UINT" size="64"/>
+          </port_o>
+          <port_o id="sseg_ca" dir="OUT" is_global="1" is_extern="1">
+            <structural_type_descriptor type="UINT" size="8" />
+          </port_o>
+          <port_o id="sseg_an" dir="OUT" is_global="1" is_extern="1">
+            <structural_type_descriptor type="UINT" size="8" />
+          </port_o>
+          <NP_functionality LIBRARY="sevensegments_ctrl " VERILOG_FILE_PROVIDED="sevensegments_ctrl.v"/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>get_ticks</name>
+      <operation operation_name="get_ticks" bounded="1" cycles="1" execution_time="1.2"/>
+      <circuit>
+        <component_o id="get_ticks">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2016 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="get_ticks"/>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+	  <port_o id="reset" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="start_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="restart_value" dir="IN" >
+            <structural_type_descriptor type="UINT" size="8"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="UINT" size="32" />
+          </port_o>
+          <NP_functionality LIBRARY="get_ticks " VERILOG_FILE_PROVIDED="get_ticks.v"/>
+        </component_o>
+      </circuit>
+    </cell>
+
+  </library>
+</technology>

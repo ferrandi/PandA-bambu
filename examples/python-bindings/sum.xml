@@ -1,0 +1,41 @@
+<?xml version="1.0"?>
+<technology>
+  <library>
+    <name>work</name>
+    <cell>
+      <name>sum</name>
+      <operation bounded="0" operation_name="sum" />
+      <circuit>
+        <component_o id="sum">
+          <description>sum IP</description>
+          <copyright>foo</copyright>
+          <authors>foo</authors>
+          <license>foo</license>
+          <structural_type_descriptor id_type="sum" />
+          <port_o dir="IN" id="clock" is_clock="1">
+            <structural_type_descriptor size="1" type="BOOL" />
+          </port_o>
+          <port_o dir="IN" id="start_port">
+            <structural_type_descriptor size="1" type="BOOL" />
+            <connected_objects />
+          </port_o>
+          <port_o dir="IN" id="a">
+            <structural_type_descriptor size="32" type="INT" />
+          </port_o>
+          <port_o dir="IN" id="b">
+            <structural_type_descriptor size="32" type="INT" />
+          </port_o>
+          <port_o dir="OUT" id="done_port">
+            <structural_type_descriptor size="1" type="BOOL" />
+            <connected_objects />
+          </port_o>
+          <port_o dir="OUT" id="return_port">
+            <structural_type_descriptor size="32" type="INT" />
+            <connected_objects />
+          </port_o>
+          <NP_functionality LIBRARY="sum" VERILOG_FILE_PROVIDED="sum.v" />
+        </component_o>
+      </circuit>
+    </cell>
+  </library>
+</technology>

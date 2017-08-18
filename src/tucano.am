@@ -1,0 +1,127 @@
+########## tucano tool ##########
+bin_PROGRAMS += tucano
+
+noinst_HEADERS += TucanoParameter.hpp
+
+tucano_SOURCES = tucano.cpp TucanoParameter.cpp Parameter.cpp  
+
+PRJ_DOC += tucano.doc
+
+tucano_CPPFLAGS = \
+   -I$(top_srcdir)/src/behavior \
+   -I$(top_srcdir)/src/circuit \
+   -I$(top_srcdir)/src/constants \
+   -I$(top_srcdir)/src/design_flows/codesign/Metrics/TLM \
+   -I$(top_srcdir)/src/frontend_analysis \
+   -I$(top_srcdir)/src/technology \
+   -I$(top_srcdir)/src/technology/physical_library \
+   -I$(top_srcdir)/src/wrapper/treegcc \
+   -I$(top_srcdir)/src/tree \
+   $(AM_CPPFLAGS)
+
+if BUILD_LIB_RTL_METRICS
+  tucano_CPPFLAGS += -I$(top_srcdir)/src/design_flows/codesign/Metrics/RTL
+endif
+
+if BUILD_LIB_METRIC_PARTITIONING
+  tucano_CPPFLAGS += -I$(top_srcdir)/src/design_flows/codesign/partitioning/metric_partitioning
+endif
+
+tucano_LDADD = \
+       $(top_builddir)/src/circuit/lib_structuralIO.la \
+       $(top_builddir)/src/circuit/lib_circuit.la \
+       $(top_builddir)/src/frontend_analysis/lib_frontend_analysis.la \
+       $(top_builddir)/src/design_flows/codesign/lib_codesign.la \
+       $(top_builddir)/src/design_flows/lib_design_flows.la
+
+if BUILD_LIB_PRAGMA
+  tucano_LDADD += \
+          $(top_builddir)/src/pragma/libpragma.la
+
+if BUILD_LIB_ARCH
+  tucano_LDADD += $(top_builddir)/src/machine/lib_machine.la
+endif
+
+if BUILD_LIB_CODE_ESTIMATION
+  tucano_LDADD += \
+          $(top_builddir)/src/task_graph/Estimation/lib_taskgraphEstimation.la
+endif
+
+endif
+
+if BUILD_LIB_TECHNOLOGY
+  tucano_LDADD += \
+          $(top_builddir)/src/technology/lib_technology.la
+endif
+
+if BUILD_LIB_FROM_BOOLEAN
+   tucano_LDADD += \
+          $(top_builddir)/src/parser/boolean/lib_booleanparser.la
+endif
+
+if BUILD_LIB_AIG
+  tucano_LDADD += \
+          $(top_builddir)/src/circuit/aig/lib_aig.la
+endif
+
+if BUILD_LIB_CODESIGN
+  tucano_LDADD += $(top_builddir)/src/design_flows/codesign/lib_codesign.la
+endif
+
+  tucano_LDADD += \
+          $(top_builddir)/src/behavior/lib_behavior.la \
+          $(top_builddir)/src/algorithms/lib_algorithms.la \
+          $(top_builddir)/src/graph/lib_graph.la
+if BUILD_LIB_RTL
+  tucano_LDADD += $(top_builddir)/src/rtl/lib_rtl.la
+endif
+
+  tucano_LDADD += \
+          $(top_builddir)/src/wrapper/lib_wrapper.la \
+          $(top_builddir)/src/parser/lib_parser.la \
+          $(top_builddir)/src/polixml/lib_polixml.la \
+          $(top_builddir)/src/parser/polixml/lib_xml_dom_parser.la \
+          $(BOOST_DATE_TIME_LIB)
+
+if BUILD_LIB_BACKEND
+  tucano_LDADD += \
+         $(top_builddir)/src/design_flows/backend/lib_backend.la
+endif
+
+  tucano_LDADD += \
+          $(top_builddir)/src/tree/lib_tree.la \
+          $(top_builddir)/src/tree/lib_tree_manipulation.la
+
+if BUILD_LIB_CODE_ESTIMATION
+  tucano_LDADD += $(top_builddir)/src/utility/probability_distribution/lib_ProbabilityDistribution.la
+endif
+
+if BUILD_LIB_BDD
+  tucano_LDADD += \
+    $(top_builddir)/src/bdd/lib_bdd.la
+endif
+
+if BUILD_LIB_2LEV
+  tucano_LDADD += \
+    $(top_builddir)/src/logic_synthesis/lib_logic_synthesis.la
+endif
+
+if BUILD_LIB_BDD
+  tucano_LDADD += \
+    $(CUDD_LIBS)
+endif
+
+if BUILD_LIB_FROM_PRAGMA
+  tucano_LDADD += $(BOOST_REGEX_LIB)
+endif
+  tucano_LDADD += \
+  $(BOOST_SYSTEM_LIB)
+
+  tucano_LDADD += \
+          $(top_builddir)/src/utility/lib_utility.la
+
+if BUILD_LIB_OBJECT_CODE_WRAPPER
+   tucano_LDADD += -lbfd
+
+endif
+

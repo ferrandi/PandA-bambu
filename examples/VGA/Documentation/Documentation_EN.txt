@@ -1,0 +1,86 @@
+Vga Adapter on Altera DE1 Cyclone II (EP2C20F484C7N)
+
+Author: Edoardo Giacomello (edoardo.giacomello@mail.polimi.it)
+Referrer: Fabrizio Ferrandi (fabrizio.ferrandi@polimi.it)
+
+
+*************************Introduction*************************
+The main aim of the project is to develop an application written in C which drives a VGA-compatible screen connected to a DE1 Altera FPGA.
+The design includes some Verilog IPs which controls the VGA ports and show how bambu can manage existing IPs described by using hardware description languages.
+These Verilog IPs are included in file PLOT_IPs.xml.
+Software used:
+- Panda 0.9.4
+- Altera Quartus II 13.0.1 Build 232 (64 bit)
+
+*************************VGA Adapter**************************
+You can refer to the schematics found into folder Documentation/Schematics.
+Due to the memory limits of the used FPGA, the resolution has been set to a maximum of 160x120@50Hz with a 3 bit RGB color depth.
+However the adapter is able to support up to 7 bit RGB at 160x120 or 3bit RGB at 320x240.
+To support the use of 640x480 mode the VGA controller works with "super-pixels", that is 4x4 actual pixels, furthermore the colors are brightened by the VGA-controller itself.
+The VGA-adapter inputs concern the clock (50MHz) reset  (active low) signals, the coordinate X and Y of the drawn pixel, the color and and a "plot" signal which enables the memory write-in. Once the pixel data is received it is immediately written on memory and plotted on screen during the following clock cycle.
+
+**************************VGA adapter IPs*********************
+
+The VGA controller and its memory is associated with a component named "plot" included in file PLOT_IPs.xml. This component can implement any call to the C function
+void plot (int color, int x, int y);
+where "color" is the encoding referring to the RGB color while x and y represent the coordinates of the pixel to be drawn. 
+
+**************************Constraints*************************
+To allow the correct synthesis of the VGA adapter it is necessary to bound the number of instances of component "plot" to 1.
+The file "constraints_STD.xml"  specifies this constraint.
+
+*************************Pin Assignment***********************
+The assignment of pins on FPGA can be found into file pin_assignments.qsf.
+In particular, the following changes were made to the standard DE1 pin assignment file:
+PIN_L1 -to clock
+	//Set the input clock to 50MHz
+PIN_L22 -to reset
+	//Set the reset signal to SW[0] (active-low)
+PIN_U22 -to done_port	
+	//Set the done port to LEDG[0] (not used)	
+PIN_R20 -to return_port[0]
+PIN_R19 -to return_port[1]
+PIN_U19 -to return_port[2]
+PIN_Y19 -to return_port[3]
+	//Set the return value of the top function to LEDR[3:0]
+PIN_L21 -to start_port
+	//Set the start port to SW[1] (active-high)
+
+*******************C functions********************************
+
+*****In "vgatest.c" file**************************************
+-void line(int x1, int y1, int x2, int y2, unsigned int color)
+	//Plot a line from (x1,y1) to (x2,y2) using Bresenham algorithm.
+	
+-void rect(int left,int top, int right, int bottom, unsigned int color) 
+	//Plot a rectangle in which (left, top) are the coordinates of the upper-left vertex while (right, bottom) are the ones of the opposed vertex. It calls "line" function.
+	
+-void RectFill(int left,int top, int right, int bottom, unsigned int color)
+	//Plot a rectangle and fills it. It calls "line" function.
+
+-void Circle(int x0, int y0, int radius, unsigned int color)
+	//Plot a circumference of center (x0,y0) and radius "radius". It implements a Bresenham's algorithm variant for the circumferences.
+
+-void CircleFill(int x0, int y0, int radius, unsigned int color)
+	//Plot a circle of center (x0,y0) and radius "radius". It's a variant of Circle function and calls the "line" function.
+
+-int plot_test()
+	//Some test functions. Please refer to comments for further informations.
+
+
+**************************Demo Example**************************
+An example script and an example C file are included.
+The file script.sh runs the HLS, the RTL backend synthesis and the final FPGA bitstream load.
+
+It has been tested on Ubuntu 14.04 LTS with Quartus II 13.0.1.
+
+****************************CREDITS***************************
+  -line, Rect, RectFill functions are based on David Brackeen's VGA Tutorial http://www.brackeen.com/vga/
+  -Circle, CircleFill functions are based on Bresenham's Algorithm.
+  -VGA adapter schematics and Pin assignments are based on the VGA project by the Edward S. Rogers Sr. Department of Electrical and Computer Engineering, University of Toronto.
+
+
+****************************LICENSES**************************
+This project is released under the GNU General Public License version 3 and being 
+developed at Politecnico di Milano (Italy). 
+Please refer to COPYING file included into this project.

@@ -1,0 +1,186 @@
+/* Set of tests for QD */
+
+w=15; p=113;
+infinity = 2^(2^(w-1)); /* smallest power of two not representable */
+largest =  ( (2^p-1)/2^(p-1) )*infinity/2; /* largest representable number */
+smallest = 2^(2-2^(w-1)); /* smallest normalized number */
+smallestdenorm = smallest*2^(1-p); /* smallest denormalized number */
+
+round(smallestdenorm/2, QD, RD) == 0;
+round(smallestdenorm/2, QD, RZ) == 0;
+round(smallestdenorm/2, QD, RN) == 0;
+round(smallestdenorm/2, QD, RU) == smallestdenorm;
+
+round(-smallestdenorm/2, QD, RD) == -smallestdenorm;
+round(-smallestdenorm/2, QD, RZ) == 0;
+round(-smallestdenorm/2, QD, RN) == 0;
+round(-smallestdenorm/2, QD, RU) == 0;
+
+round(smallestdenorm/2*(1+1b-164), QD, RN) == smallestdenorm;
+round(-smallestdenorm/2*(1+1b-164), QD, RN) == -smallestdenorm;
+
+round(smallestdenorm, QD, RD) == smallestdenorm;
+round(smallestdenorm, QD, RZ) == smallestdenorm;
+round(smallestdenorm, QD, RN) == smallestdenorm;
+round(smallestdenorm, QD, RU) == smallestdenorm;
+
+round(-smallestdenorm, QD, RD) == -smallestdenorm;
+round(-smallestdenorm, QD, RZ) == -smallestdenorm;
+round(-smallestdenorm, QD, RN) == -smallestdenorm;
+round(-smallestdenorm, QD, RU) == -smallestdenorm;
+
+round(0, QD, RD) == 0;
+round(0, QD, RZ) == 0;
+round(0, QD, RN) == 0;
+round(0, QD, RU) == 0;
+
+round(smallestdenorm/1024, QD, RU) == smallestdenorm;
+round(-smallestdenorm/1024, QD, RD) == -smallestdenorm;
+
+round(round(1873489789623786986976897912387b-137, QD, RN), QD, RN) == round(1873489789623786986976897912387b-137, p, RN);
+
+
+round(infinity, QD, RD) == largest;
+round(infinity, QD, RZ) == largest;
+round(infinity, QD, RN) == @Inf@;
+round(infinity, QD, RU) == @Inf@;
+
+round(-infinity, QD, RD) == -@Inf@;
+round(-infinity, QD, RZ) == -largest;
+round(-infinity, QD, RN) == -@Inf@;
+round(-infinity, QD, RU) == -largest;
+
+round(largest, QD, RD) == largest;
+round(largest, QD, RZ) == largest;
+round(largest, QD, RN) == largest;
+round(largest, QD, RU) == largest;
+
+round(-largest, QD, RD) == -largest;
+round(-largest, QD, RZ) == -largest;
+round(-largest, QD, RN) == -largest;
+round(-largest, QD, RU) == -largest;
+
+round((largest+infinity)/2, QD, RD) == largest;
+round((largest+infinity)/2, QD, RZ) == largest;
+round((largest+infinity)/2, QD, RN) == @Inf@;
+round((largest+infinity)/2, QD, RU) == @Inf@;
+
+round(-(largest+infinity)/2, QD, RD) == -@Inf@;
+round(-(largest+infinity)/2, QD, RZ) == -largest;
+round(-(largest+infinity)/2, QD, RN) == -@Inf@;
+round(-(largest+infinity)/2, QD, RU) == -largest;
+
+round((largest+infinity)/2*(1+1b-164), QD, RD) == largest;
+round((largest+infinity)/2*(1+1b-164), QD, RZ) == largest;
+round((largest+infinity)/2*(1+1b-164), QD, RN) == @Inf@;
+round((largest+infinity)/2*(1+1b-164), QD, RU) == @Inf@;
+
+round(-(largest+infinity)/2*(1+1b-164), QD, RD) == -@Inf@;
+round(-(largest+infinity)/2*(1+1b-164), QD, RZ) == -largest;
+round(-(largest+infinity)/2*(1+1b-164), QD, RN) == -@Inf@;
+round(-(largest+infinity)/2*(1+1b-164), QD, RU) == -largest;
+
+round((largest+infinity)/2*(1-1b-164), QD, RD) == largest;
+round((largest+infinity)/2*(1-1b-164), QD, RZ) == largest;
+round((largest+infinity)/2*(1-1b-164), QD, RN) == largest;
+round((largest+infinity)/2*(1-1b-164), QD, RU) == @Inf@;
+
+round(-(largest+infinity)/2*(1-1b-164), QD, RD) == -@Inf@;
+round(-(largest+infinity)/2*(1-1b-164), QD, RZ) == -largest;
+round(-(largest+infinity)/2*(1-1b-164), QD, RN) == -largest;
+round(-(largest+infinity)/2*(1-1b-164), QD, RU) == -largest;
+
+
+
+
+/* Set of tests for HP */
+
+w=5; p=11;
+infinity = 2^(2^(w-1)); /* smallest power of two not representable */
+largest =  ( (2^p-1)/2^(p-1) )*infinity/2; /* largest representable number */
+smallest = 2^(2-2^(w-1)); /* smallest normalized number */
+smallestdenorm = smallest*2^(1-p); /* smallest denormalized number */
+
+round(smallestdenorm/2, HP, RD) == 0;
+round(smallestdenorm/2, HP, RZ) == 0;
+round(smallestdenorm/2, HP, RN) == 0;
+round(smallestdenorm/2, HP, RU) == smallestdenorm;
+
+round(-smallestdenorm/2, HP, RD) == -smallestdenorm;
+round(-smallestdenorm/2, HP, RZ) == 0;
+round(-smallestdenorm/2, HP, RN) == 0;
+round(-smallestdenorm/2, HP, RU) == 0;
+
+round(smallestdenorm/2*(1+1b-164), HP, RN) == smallestdenorm;
+round(-smallestdenorm/2*(1+1b-164), HP, RN) == -smallestdenorm;
+
+round(smallestdenorm, HP, RD) == smallestdenorm;
+round(smallestdenorm, HP, RZ) == smallestdenorm;
+round(smallestdenorm, HP, RN) == smallestdenorm;
+round(smallestdenorm, HP, RU) == smallestdenorm;
+
+round(-smallestdenorm, HP, RD) == -smallestdenorm;
+round(-smallestdenorm, HP, RZ) == -smallestdenorm;
+round(-smallestdenorm, HP, RN) == -smallestdenorm;
+round(-smallestdenorm, HP, RU) == -smallestdenorm;
+
+round(0, HP, RD) == 0;
+round(0, HP, RZ) == 0;
+round(0, HP, RN) == 0;
+round(0, HP, RU) == 0;
+
+round(smallestdenorm/1024, HP, RU) == smallestdenorm;
+round(-smallestdenorm/1024, HP, RD) == -smallestdenorm;
+
+round(round(1873b-12, HP, RN), HP, RN) == round(1873b-12, p, RN);
+
+
+round(infinity, HP, RD) == largest;
+round(infinity, HP, RZ) == largest;
+round(infinity, HP, RN) == @Inf@;
+round(infinity, HP, RU) == @Inf@;
+
+round(-infinity, HP, RD) == -@Inf@;
+round(-infinity, HP, RZ) == -largest;
+round(-infinity, HP, RN) == -@Inf@;
+round(-infinity, HP, RU) == -largest;
+
+round(largest, HP, RD) == largest;
+round(largest, HP, RZ) == largest;
+round(largest, HP, RN) == largest;
+round(largest, HP, RU) == largest;
+
+round(-largest, HP, RD) == -largest;
+round(-largest, HP, RZ) == -largest;
+round(-largest, HP, RN) == -largest;
+round(-largest, HP, RU) == -largest;
+
+round((largest+infinity)/2, HP, RD) == largest;
+round((largest+infinity)/2, HP, RZ) == largest;
+round((largest+infinity)/2, HP, RN) == @Inf@;
+round((largest+infinity)/2, HP, RU) == @Inf@;
+
+round(-(largest+infinity)/2, HP, RD) == -@Inf@;
+round(-(largest+infinity)/2, HP, RZ) == -largest;
+round(-(largest+infinity)/2, HP, RN) == -@Inf@;
+round(-(largest+infinity)/2, HP, RU) == -largest;
+
+round((largest+infinity)/2*(1+1b-164), HP, RD) == largest;
+round((largest+infinity)/2*(1+1b-164), HP, RZ) == largest;
+round((largest+infinity)/2*(1+1b-164), HP, RN) == @Inf@;
+round((largest+infinity)/2*(1+1b-164), HP, RU) == @Inf@;
+
+round(-(largest+infinity)/2*(1+1b-164), HP, RD) == -@Inf@;
+round(-(largest+infinity)/2*(1+1b-164), HP, RZ) == -largest;
+round(-(largest+infinity)/2*(1+1b-164), HP, RN) == -@Inf@;
+round(-(largest+infinity)/2*(1+1b-164), HP, RU) == -largest;
+
+round((largest+infinity)/2*(1-1b-164), HP, RD) == largest;
+round((largest+infinity)/2*(1-1b-164), HP, RZ) == largest;
+round((largest+infinity)/2*(1-1b-164), HP, RN) == largest;
+round((largest+infinity)/2*(1-1b-164), HP, RU) == @Inf@;
+
+round(-(largest+infinity)/2*(1-1b-164), HP, RD) == -@Inf@;
+round(-(largest+infinity)/2*(1-1b-164), HP, RZ) == -largest;
+round(-(largest+infinity)/2*(1-1b-164), HP, RN) == -largest;
+round(-(largest+infinity)/2*(1-1b-164), HP, RU) == -largest;

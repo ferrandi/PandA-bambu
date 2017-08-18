@@ -1,0 +1,143 @@
+/*
+ *
+ *                   _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
+ *                  _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
+ *                 _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
+ *                _/      _/    _/ _/    _/ _/   _/ _/    _/
+ *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
+ *
+ *             ***********************************************
+ *                              PandA Project 
+ *                     URL: http://panda.dei.polimi.it
+ *                       Politecnico di Milano - DEIB
+ *                        System Architectures Group
+ *             ***********************************************
+ *              Copyright (c) 2004-2016 Politecnico di Milano
+ *
+ *   This file is part of the PandA framework.
+ *
+ *   The PandA framework is free software; you can redistribute it and/or modify
+ *   it under the terms of the GNU General Public License as published by
+ *   the Free Software Foundation; either version 3 of the License, or
+ *   (at your option) any later version.
+ *
+ *   This program is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU General Public License for more details.
+ *
+ *   You should have received a copy of the GNU General Public License
+ *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+*/
+/*!
+  \page panda_sdk Development Tools
+
+  This document provides information on:
+  - \ref graphviz_tag
+  - \ref doxygen_tag
+
+  \section graphviz_tag GraphViz
+  
+  The GraphViz package consists of a variety of software for drawing attributed graphs. 
+  The package was designed to rely on the "program-as-filter" model of 
+  software, in which distinct graph operations or transformations are embodied as programs. 
+  Graph drawing and manipulation are achieved by using the output of one filter as the input 
+  of another, with each filter recognizing a common graph format [GAN00].
+  Despite the simplicity and utility of this approach, some applications need or desire to 
+  use the software as a library with bindings in a non-scripting language, rather than as 
+  primitives composed by a scripting language. The GraphViz software provides a variety of 
+  ways to achieve this, running a spectrum from very simple but somewhat inflexible 
+  to fairly complex but offering a good deal of application control [ERG03].
+
+  \subsection graphviz_dot GraphViz tools and DOT language
+  One of the tools provided by GraphViz tool set is \c dot.
+  The \c dot tool draws directed graphs as hierarchies. It runs as a command line program.
+  Its features include well-tuned layout algorithms for placing nodes and edge splines, 
+  edge labels, "record" shapes with "ports" for drawing data structures; cluster layouts; 
+  and an underlying file language for stream-oriented graph tools.
+
+  \c dot reads attributed graph text files and writes drawings, either as graph files or in a 
+  graphics format such as GIF, PNG, SVG or PostScript (which can be converted to PDF).
+  \c dot accepts input in the \c DOT language. An example of graph description based on \c DOT
+  language is the following:
+  \verbatim
+  digraph G {
+      main -> parse -> execute;
+      main -> init;
+      main -> cleanup;
+      execute -> make_string;
+      execute ->printf;
+      init -> make_string;
+      main -> printf;
+      execute -> compare;
+  }
+  \endverbatim
+  A node is created when its name first appears in the file. An edge is created when nodes 
+  are joined by the edge operator ->.
+  In the following line is described an edge between node main and node init.
+  \verbatim
+      main -> init;
+  \endverbatim
+  It is quite simple to create the postscript file from the above text file. In fact, it is 
+  only required to run the following command provided the name of file is small_graph.dot:
+  \verbatim
+  dot -Tps small_graph.dot -o small_graph.ps
+  \endverbatim
+  The graph produced is:
+  \dot  
+  digraph G {
+      main -> parse -> execute;
+      main -> init;
+      main -> cleanup;
+      execute -> make_string;
+      execute ->printf;
+      init -> make_string;
+      main -> printf;
+      execute -> compare;
+  }
+  \enddot
+  The command line option \c -Tps selects PostScript (EPSF) output. \c small_graph.ps may be 
+  printed, displayed by a PostScript viewer, or embedded in another document.  
+
+  Another useful tool based on \c dot is \c dotty which is a graph editor for the X Window System.
+
+  \subsection graphviz_documentation Documentation
+  Documentation about GraphViz and the DOT language can be found at http://www.research.att.com/sw/tools/graphviz/refs.html .
+
+  \subsection graphviz_download Download
+  It is possible to download the last version of the GraphViz tool both for Windows and Linux 
+  from the official website: http://www.graphviz.org/pub/graphviz/CURRENT/.
+  \subsection graphviz_bibliography Bibliography
+  - [ERG03] Emden R. Gansner, Drawing graphs with GraphViz, 15 Aprile 2003.
+  - [GNA00] E.R. Gansner and S.C. North. An open graph visualization system and its applications to software engineering. Software - Practice and Experience, 30:1203-1233, 2000.
+
+  \section doxygen_tag Doxygen
+
+  \c Doxygen is a documentation system for C++, C, Java, Objective-C, IDL (Corba and Microsoft 
+  flavors) and to some extent PHP, C# and D. 
+  It can help you in three ways: 
+  - It can generate an on-line documentation browser (in HTML) and/or an off-line reference 
+    manual (in LateX) from a set of documented source files. There is also support for 
+    generating output in RTF (MS-Word), PostScript, hyperlinked PDF, compressed HTML, and 
+    Unix man pages. The documentation is extracted directly from the sources, which makes it 
+    much easier to keep the documentation consistent with the source code. 
+  - You can configure \c doxygen to extract the code structure from undocumented source files. 
+    This is very useful to quickly find your way in large source distributions. You can also 
+    visualize the relations between the various elements by means of include dependency graphs, 
+    inheritance diagrams, and collaboration diagrams, which are all generated automatically. 
+  - You can even `abuse' \c doxygen for creating normal documentation. 
+
+  Doxygen is developed under Linux, but is set-up to be highly portable. As a result, it runs on most other Unix flavors as well. Furthermore, executables for Windows 9x/NT and Mac OS X are available.
+
+  \subsection doxygen_download Download
+  Each Linux distribution provides Doxygen as developing tool, therefore before download it please check the web site check 
+  your distribution. The official WEB site is http://www.doxygen.org/.
+
+  \subsection doxygen_documentation Documentation
+  Official documentation can be found at http://www.doxygen.org/manual.html .
+  
+  \subsection doxygen_panda_doc Documenting code in PandA
+  To know how to write a good documentation into PandA project, please see \ref documentation_how_to.
+  
+*/

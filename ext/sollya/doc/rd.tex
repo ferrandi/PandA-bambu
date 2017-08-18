@@ -1,0 +1,17 @@
+\subsection{RD}
+\label{labrd}
+\noindent Name: \textbf{RD}\\
+constant representing rounding-downwards mode.\\
+\noindent Description: \begin{itemize}
+
+\item \textbf{RD} is used in command \textbf{round} to specify that the value $x$ must be rounded
+   to the greatest floating-point number $y$ such that $y \le x$.
+\end{itemize}
+\noindent Example 1: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> display=binary!;
+> round(Pi,20,RD);
+1.1001001000011111101_2 * 2^(1)
+\end{Verbatim}
+\end{minipage}\end{center}
+See also: \textbf{RZ} (\ref{labrz}), \textbf{RU} (\ref{labru}), \textbf{RN} (\ref{labrn}), \textbf{round} (\ref{labround}), \textbf{floor} (\ref{labfloor})

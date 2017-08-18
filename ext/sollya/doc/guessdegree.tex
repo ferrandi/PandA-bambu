@@ -1,0 +1,56 @@
+\subsection{guessdegree}
+\label{labguessdegree}
+\noindent Name: \textbf{guessdegree}\\
+returns the minimal degree needed for a polynomial to approximate a function with a certain error on an interval.\\
+\noindent Usage: 
+\begin{center}
+\textbf{guessdegree}(\emph{f},\emph{I},\emph{eps},\emph{w},\emph{bound}) : (\textsf{function}, \textsf{range}, \textsf{constant}, \textsf{function}, \textsf{constant}) $\rightarrow$ \textsf{range}\\
+\end{center}
+Parameters: 
+\begin{itemize}
+\item \emph{f} is the function to be approximated.
+\item \emph{I} is the interval where the function must be approximated.
+\item \emph{eps} is the maximal acceptable error.
+\item \emph{w} (optional) is a weight function. Default is 1.
+\item \emph{bound} (optional) is a bound on the degree. Default is currently 128.
+\end{itemize}
+\noindent Description: \begin{itemize}
+
+\item \textbf{guessdegree} tries to find the minimal degree needed to approximate \emph{f}
+   on \emph{I} by a polynomial with an error $\epsilon=p w - f$ whose infinity norm not
+   greater than \emph{eps}. More precisely, it finds $n$ minimal such that there exists
+   a polynomial $p$ of degree $n$ such that $\|p w-f\|_{\infty} < \mathrm{eps}$.
+
+\item \textbf{guessdegree} returns an interval: for common cases, this interval is reduced
+   to a single number (i.e. the minimal degree). But in certain cases,
+   \textbf{guessdegree} does not succeed in finding the minimal degree. In such cases the
+   returned interval is of the form $[n,\,p]$ such that:
+   \begin{itemize}
+   \item no polynomial of degree $n-1$ gives an error less than \emph{eps}.
+   \item there exists a polynomial of degree $p$ giving an error less than \emph{eps}.
+   \end{itemize}
+
+\item The fifth optional argument \emph{bound} is used to prevent \textbf{guessdegree} from
+   trying to find too large degrees. If \textbf{guessdegree} does not manage to find a
+   degree $n$ satisfying the error and such that $n \le \textrm{bound}$, an interval of the
+   form $[\cdot,\,+\infty]$ is returned. Note that \emph{bound} must be a positive integer.
+\end{itemize}
+\noindent Example 1: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> guessdegree(exp(x),[-1;1],1e-10);
+[10;10]
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 2: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> guessdegree(exp(x),[-1;1],1e-10,default, 9);
+[10;@Inf@]
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 3: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> guessdegree(1, [-1;1], 1e-8, 1/exp(x));
+[8;9]
+\end{Verbatim}
+\end{minipage}\end{center}
+See also: \textbf{dirtyinfnorm} (\ref{labdirtyinfnorm}), \textbf{remez} (\ref{labremez}), \textbf{fpminimax} (\ref{labfpminimax}), \textbf{degree} (\ref{labdegree})

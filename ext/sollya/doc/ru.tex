@@ -1,0 +1,17 @@
+\subsection{RU}
+\label{labru}
+\noindent Name: \textbf{RU}\\
+constant representing rounding-upwards mode.\\
+\noindent Description: \begin{itemize}
+
+\item \textbf{RU} is used in command \textbf{round} to specify that the value $x$ must be rounded
+   to the smallest floating-point number $y$ such that $x \le y$.
+\end{itemize}
+\noindent Example 1: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> display=binary!;
+> round(Pi,20,RU);
+1.100100100001111111_2 * 2^(1)
+\end{Verbatim}
+\end{minipage}\end{center}
+See also: \textbf{RZ} (\ref{labrz}), \textbf{RD} (\ref{labrd}), \textbf{RN} (\ref{labrn}), \textbf{round} (\ref{labround}), \textbf{ceil} (\ref{labceil})

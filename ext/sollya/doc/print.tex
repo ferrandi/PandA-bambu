@@ -1,0 +1,131 @@
+\subsection{print}
+\label{labprint}
+\noindent Name: \textbf{print}\\
+prints an expression\\
+\noindent Usage: 
+\begin{center}
+\textbf{print}(\emph{expr1},...,\emph{exprn}) : (\textsf{any type},..., \textsf{any type}) $\rightarrow$ \textsf{void}\\
+\textbf{print}(\emph{expr1},...,\emph{exprn}) $>$ \emph{filename} : (\textsf{any type},..., \textsf{any type}, \textsf{string}) $\rightarrow$ \textsf{void}\\
+\textbf{print}(\emph{expr1},...,\emph{exprn}) $>>$ \emph{filename} : (\textsf{any type},...,\textsf{any type}, \textsf{string}) $\rightarrow$ \textsf{void}\\
+\end{center}
+Parameters: 
+\begin{itemize}
+\item \emph{expr} represents an expression
+\item \emph{filename} represents a character sequence indicating a file name
+\end{itemize}
+\noindent Description: \begin{itemize}
+
+\item \textbf{print}(\emph{expr1},...,\emph{exprn}) prints the expressions \emph{expr1} through
+   \emph{exprn} separated by spaces and followed by a newline.
+    
+   If a second argument \emph{filename} is given after a single  "$>$", the
+   displaying is not output on the standard output of \sollya but if in
+   the file \emph{filename} that get newly created or overwritten. If a double
+    "$>>$" is given, the output will be appended to the file \emph{filename}.
+    
+   The global variables \textbf{display}, \textbf{midpointmode} and \textbf{fullparentheses} have
+   some influence on the formatting of the output (see \textbf{display},
+   \textbf{midpointmode} and \textbf{fullparentheses}).
+    
+   Remark that if one of the expressions \emph{expri} given in argument is of
+   type \textsf{string}, the character sequence \emph{expri} evaluates to is
+   displayed. However, if \emph{expri} is of type \textsf{list} and this list
+   contains a variable of type \textsf{string}, the expression for the list
+   is displayed, i.e.  all character sequences get displayed surrounded
+   by double quotes ("). Nevertheless, escape sequences used upon defining
+   character sequences are interpreted immediately.
+\end{itemize}
+\noindent Example 1: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> print(x + 2 + exp(sin(x))); 
+x + 2 + exp(sin(x))
+> print("Hello","world");
+Hello world
+> print("Hello","you", 4 + 3, "other persons.");
+Hello you 7 other persons.
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 2: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> print("Hello");
+Hello
+> print([|"Hello"|]);
+[|"Hello"|]
+> s = "Hello";
+> print(s,[|s|]);
+Hello [|"Hello"|]
+> t = "Hello\tyou";
+> print(t,[|t|]);
+Hello    you [|"Hello\tyou"|]
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 3: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> print(x + 2 + exp(sin(x))) > "foo.sol";
+> readfile("foo.sol");
+x + 2 + exp(sin(x))
+
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 4: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> print(x + 2 + exp(sin(x))) >> "foo.sol";
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 5: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> display = decimal;
+Display mode is decimal numbers.
+> a = evaluate(sin(pi * x), 0.25);
+> b = evaluate(sin(pi * x), [0.25; 0.25 + 1b-50]);
+> print(a);
+0.70710678118654752440084436210484903928483593768847
+> display = binary;
+Display mode is binary numbers.
+> print(a);
+1.011010100000100111100110011001111111001110111100110010010000100010110010111110
+11000100110110011011101010100101010111110100111110001110101101111011000001011101
+010001_2 * 2^(-1)
+> display = hexadecimal;
+Display mode is hexadecimal numbers.
+> print(a);
+0xb.504f333f9de6484597d89b3754abe9f1d6f60ba88p-4
+> display = dyadic;
+Display mode is dyadic numbers.
+> print(a);
+33070006991101558613323983488220944360067107133265b-165
+> display = powers;
+Display mode is dyadic numbers in integer-power-of-2 notation.
+> print(a);
+33070006991101558613323983488220944360067107133265 * 2^(-165)
+> display = decimal;
+Display mode is decimal numbers.
+> midpointmode = off;
+Midpoint mode has been deactivated.
+> print(b);
+[0.70710678118654752440084436210484903928483593768844;0.707106781186549497437217
+82517557347782646274417048]
+> midpointmode = on;
+Midpoint mode has been activated.
+> print(b);
+0.7071067811865~4/5~
+> display = dyadic;
+Display mode is dyadic numbers.
+> print(b);
+[2066875436943847413332748968013809022504194195829b-161;165350034955508254441962
+37019385936414432675156571b-164]
+> display = decimal;
+Display mode is decimal numbers.
+> autosimplify = off;
+Automatic pure tree simplification has been deactivated.
+> fullparentheses = off;
+Full parentheses mode has been deactivated.
+> print(x + x * ((x + 1) + 1));
+x + x * (x + 1 + 1)
+> fullparentheses = on;
+Full parentheses mode has been activated.
+> print(x + x * ((x + 1) + 1));
+x + (x * ((x + 1) + 1))
+\end{Verbatim}
+\end{minipage}\end{center}
+See also: \textbf{write} (\ref{labwrite}), \textbf{printexpansion} (\ref{labprintexpansion}), \textbf{printdouble} (\ref{labprintdouble}), \textbf{printsingle} (\ref{labprintsingle}), \textbf{printxml} (\ref{labprintxml}), \textbf{readfile} (\ref{labreadfile}), \textbf{autosimplify} (\ref{labautosimplify}), \textbf{display} (\ref{labdisplay}), \textbf{midpointmode} (\ref{labmidpointmode}), \textbf{fullparentheses} (\ref{labfullparentheses}), \textbf{evaluate} (\ref{labevaluate}), \textbf{rationalmode} (\ref{labrationalmode})

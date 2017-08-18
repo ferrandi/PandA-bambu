@@ -1,0 +1,48 @@
+\subsection{taylor}
+\label{labtaylor}
+\noindent Name: \textbf{taylor}\\
+computes a Taylor expansion of a function in a point\\
+\noindent Usage: 
+\begin{center}
+\textbf{taylor}(\emph{function}, \emph{degree}, \emph{point}) : (\textsf{function}, \textsf{integer}, \textsf{constant}) $\rightarrow$ \textsf{function}\\
+\end{center}
+Parameters: 
+\begin{itemize}
+\item \emph{function} represents the function to be expanded
+\item \emph{degree} represents the degree of the expansion to be delivered
+\item \emph{point} represents the point in which the function is to be developped
+\end{itemize}
+\noindent Description: \begin{itemize}
+
+\item The command \textbf{taylor} returns an expression that is a Taylor expansion
+   of function \emph{function} in point \emph{point} having the degree \emph{degree}.
+    
+   Let $f$ be the function \emph{function}, $t$ be the point \emph{point} and
+   $n$ be the degree \emph{degree}. Then, \textbf{taylor}(\emph{function},\emph{degree},\emph{point}) 
+   evaluates to an expression mathematically equal to
+   $$\sum\limits_{i=0}^n \frac{f^{(i)}\left(t\right)}{i!}\,x^i.$$
+   In other words, if $p(x)$ denotes the polynomial returned by \textbf{taylor},
+   $p(x-t)$ is the Taylor polynomial of degree $n$ of $f$ developped at point $t$.
+    
+   Remark that \textbf{taylor} evaluates to $0$ if the degree \emph{degree} is negative.
+\end{itemize}
+\noindent Example 1: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> print(taylor(exp(x),3,1));
+exp(1) + x * (exp(1) + x * (0.5 * exp(1) + x * exp(1) / 6))
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 2: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> print(taylor(asin(x),7,0));
+x * (1 + x^2 * (1 / 6 + x^2 * (9 / 120 + x^2 * 225 / 5040)))
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 3: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> print(taylor(erf(x),6,0));
+x * (1 / sqrt((pi) / 4) + x^2 * ((sqrt((pi) / 4) * 4 / (pi) * (-2)) / 6 + x^2 * 
+(sqrt((pi) / 4) * 4 / (pi) * 12) / 120))
+\end{Verbatim}
+\end{minipage}\end{center}
+See also: \textbf{remez} (\ref{labremez}), \textbf{fpminimax} (\ref{labfpminimax}), \textbf{taylorform} (\ref{labtaylorform})

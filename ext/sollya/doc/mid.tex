@@ -1,0 +1,32 @@
+\subsection{mid}
+\label{labmid}
+\noindent Name: \textbf{mid}\\
+gives the middle of an interval.\\
+\noindent Usage: 
+\begin{center}
+\textbf{mid}(\emph{I}) : \textsf{range} $\rightarrow$ \textsf{constant}\\
+\textbf{mid}(\emph{x}) : \textsf{constant} $\rightarrow$ \textsf{constant}\\
+\end{center}
+Parameters: 
+\begin{itemize}
+\item \emph{I} is an interval.
+\item \emph{x} is a real number.
+\end{itemize}
+\noindent Description: \begin{itemize}
+
+\item Returns the middle of the interval \emph{I}. If the middle is not exactly
+   representable at the current precision, the value is returned as an
+   unevaluated expression.
+
+\item When called on a real number \emph{x}, \textbf{mid} considers it as an interval formed
+   of a single point: $\left[ x, x\right]$. In other words, \textbf{mid} behaves like the identity.
+\end{itemize}
+\noindent Example 1: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> mid([1;3]);
+2
+> mid(17);
+17
+\end{Verbatim}
+\end{minipage}\end{center}
+See also: \textbf{inf} (\ref{labinf}), \textbf{sup} (\ref{labsup})

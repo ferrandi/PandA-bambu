@@ -1,0 +1,23 @@
+default: all
+
+all:configure.ac Makefile.am src/Makefile.am
+	@mkdir -p m4
+	@autoreconf --install
+	
+distclean: clean
+	@rm -rf ylwrap configure.ac Makefile.am src/Makefile.am aclocal.m4 autom4te.cache config.guess config.h.in config.sub configure depcomp install-sh ltmain.sh m4 missing Makefile.in src/Makefile.in
+	@rm -rf config.h config.log config.status libtool stamp-h1 Makefile src/Makefile
+	@echo "- FloPoCo: cleared configuration files -"
+
+clean:
+	@rm -rf libflopoco* .deps src/libflopoco_src* *o src/*o src/.deps src/.libs
+	@echo "- FloPoCo: cleared object files --------"
+
+configure.ac :autotools/configure.ac
+	@cp autotools/configure.ac .
+
+Makefile.am:autotools/Makefile.am
+	@cp autotools/Makefile.am .
+
+src/Makefile.am:autotools/src/Makefile.am
+	@cp autotools/src/Makefile.am src

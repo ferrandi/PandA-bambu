@@ -1,0 +1,78 @@
+\subsection{/}
+\label{labdivide}
+\noindent Name: \textbf{/}\\
+division function\\
+\noindent Usage: 
+\begin{center}
+\emph{function1} \textbf{/} \emph{function2} : (\textsf{function}, \textsf{function}) $\rightarrow$ \textsf{function}\\
+\emph{interval1} \textbf{/} \emph{interval2} : (\textsf{range}, \textsf{range}) $\rightarrow$ \textsf{range}\\
+\emph{interval1} \textbf{/} \emph{constant} : (\textsf{range}, \textsf{constant}) $\rightarrow$ \textsf{range}\\
+\emph{interval1} \textbf{/} \emph{constant} : (\textsf{constant}, \textsf{range}) $\rightarrow$ \textsf{range}\\
+\end{center}
+Parameters: 
+\begin{itemize}
+\item \emph{function1} and \emph{function2} represent functions
+\item \emph{interval1} and \emph{interval2} represent intervals (ranges)
+\item \emph{constant} represents a constant or constant expression
+\end{itemize}
+\noindent Description: \begin{itemize}
+
+\item \textbf{/} represents the division (function) on reals. 
+   The expression \emph{function1} \textbf{/} \emph{function2} stands for
+   the function composed of the division function and the two
+   functions \emph{function1} and \emph{function2}, where \emph{function1} is
+   the numerator and \emph{function2} the denominator.
+
+\item \textbf{/} can be used for interval arithmetic on intervals
+   (ranges). \textbf{/} will evaluate to an interval that safely
+   encompasses all images of the division function with arguments
+   varying in the given intervals. If the intervals given contain points
+   where the division function is not defined, infinities and NaNs will be
+   produced in the output interval.  Any combination of intervals with
+   intervals or constants (resp. constant expressions) is
+   supported. However, it is not possible to represent families of
+   functions using an interval as one argument and a function (varying in
+   the free variable) as the other one.
+\end{itemize}
+\noindent Example 1: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> 5 / 2;
+2.5
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 2: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> x / 2;
+x * 0.5
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 3: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> x / x;
+1
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 4: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> 3 / 0;
+@NaN@
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 5: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> diff(sin(x) / exp(x));
+(exp(x) * cos(x) - sin(x) * exp(x)) / exp(x)^2
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 6: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> [1;2] / [3;4];
+[0.25;0.66666666666666666666666666666666666666666666666668]
+> [1;2] / 17;
+[5.8823529411764705882352941176470588235294117647058e-2;0.1176470588235294117647
+0588235294117647058823529412]
+> -13 / [4;17];
+[-3.25;-0.76470588235294117647058823529411764705882352941175]
+\end{Verbatim}
+\end{minipage}\end{center}
+See also: \textbf{$+$} (\ref{labplus}), \textbf{$-$} (\ref{labminus}), \textbf{$*$} (\ref{labmult}), \textbf{$\mathbf{\hat{~}}$} (\ref{labpower})

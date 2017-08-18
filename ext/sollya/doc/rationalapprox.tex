@@ -1,0 +1,61 @@
+\subsection{rationalapprox}
+\label{labrationalapprox}
+\noindent Name: \textbf{rationalapprox}\\
+returns a fraction close to a given number.\\
+\noindent Usage: 
+\begin{center}
+\textbf{rationalapprox}(\emph{x},\emph{n}) : (\textsf{constant}, \textsf{integer}) $\rightarrow$ \textsf{function}\\
+\end{center}
+Parameters: 
+\begin{itemize}
+\item \emph{x} is a number to approximate.
+\item \emph{n} is a integer (representing a format).
+\end{itemize}
+\noindent Description: \begin{itemize}
+
+\item \textbf{rationalapprox}(\emph{x},\emph{n}) returns a constant function of the form $a/b$ where $a$ and $b$ are
+   integers. The value $a/b$ is an approximation of \emph{x}. The quality of this 
+   approximation is determined by the parameter \emph{n} that indicates the number of
+   correct bits that $a/b$ should have.
+
+\item The command is not safe in the sense that it is not ensured that the error 
+   between $a/b$ and \emph{x} is less than $2^{-n}$.
+
+\item The following algorithm is used: \emph{x} is first rounded downwards and upwards to
+   a format of \emph{n} bits, thus obtaining an interval $[x_l,\,x_u]$. This interval is then
+   developped into a continued fraction as far as the representation is the same
+   for every elements of $[x_l,\,x_u]$. The corresponding fraction is returned.
+
+\item Since rational numbers are not a primitive object of \sollya, the fraction is
+   returned as a constant function. This can be quite amazing, because \sollya
+   immediately simplifies a constant function by evaluating it when the constant
+   has to be displayed.
+   To avoid this, you can use \textbf{print} (that displays the expression representing
+   the constant and not the constant itself) or the commands \textbf{numerator} 
+   and \textbf{denominator}.
+\end{itemize}
+\noindent Example 1: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> pi10 = rationalapprox(Pi,10);
+> pi50 = rationalapprox(Pi,50);
+> pi100 = rationalapprox(Pi,100);
+> print( pi10, ": ", simplify(floor(-log2(abs(pi10-Pi)/Pi))), "bits." );
+22 / 7 :  11 bits.
+> print( pi50, ": ", simplify(floor(-log2(abs(pi50-Pi)/Pi))), "bits." );
+90982559 / 28960648 :  50 bits.
+> print( pi100, ": ", simplify(floor(-log2(abs(pi100-Pi)/Pi))), "bits." );
+4850225745369133 / 1543874804974140 :  101 bits.
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 2: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> a=0.1;
+> b=rationalapprox(a,4);
+> numerator(b); denominator(b);
+1
+10
+> print(simplify(floor(-log2(abs((b-a)/a)))), "bits.");
+166 bits.
+\end{Verbatim}
+\end{minipage}\end{center}
+See also: \textbf{print} (\ref{labprint}), \textbf{numerator} (\ref{labnumerator}), \textbf{denominator} (\ref{labdenominator}), \textbf{rationalmode} (\ref{labrationalmode})

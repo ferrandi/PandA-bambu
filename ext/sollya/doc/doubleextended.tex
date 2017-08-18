@@ -1,0 +1,57 @@
+\subsection{doubleextended}
+\label{labdoubleextended}
+\noindent Names: \textbf{doubleextended}, \textbf{DE}\\
+computes the nearest number with 64 bits of mantissa.\\
+\noindent Description: \begin{itemize}
+
+\item \textbf{doubleextended} is a function that computes the nearest floating-point number with
+   64 bits of mantissa to a given number. Since it is a function, it can be
+   composed with other \sollya functions such as \textbf{exp}, \textbf{sin}, etc.
+
+\item \textbf{doubleextended} now does handle subnormal numbers for a presumed exponent width
+   of the double-extended format of 15 bits. This means, with respect to 
+   rounding, \textbf{doubleextended} behaves as a IEEE 754-2008 binary79 with a 64 bit 
+   significand (with a hidden bit normal range), one sign bit and a 
+   15 bit exponent field would behave. This behavior may be different
+   from the one observed on Intel-based IA32/Intel64 processors (or compatible
+   versions from other vendors). However it is the one seen on HP/Intel 
+   Itanium when the precision specifier is double-extended and pseudo-denormals
+   are activated.
+
+\item Since it is a function and not a command, its behavior is a bit different from 
+   the behavior of \textbf{round}(x,64,RN) even if the result is exactly the same.
+   \textbf{round}(x,64,RN) is immediately evaluated whereas \textbf{doubleextended}(x) can be composed 
+   with other functions (and thus be plotted and so on).
+\end{itemize}
+\noindent Example 1: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> display=binary!;
+> DE(0.1);
+1.100110011001100110011001100110011001100110011001100110011001101_2 * 2^(-4)
+> round(0.1,64,RN);
+1.100110011001100110011001100110011001100110011001100110011001101_2 * 2^(-4)
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 2: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> D(2^(-2000));
+0
+> DE(2^(-20000));
+0
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 3: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> verbosity=1!;
+> f = sin(DE(x));
+> f(pi);
+Warning: rounding has happened. The value displayed is a faithful rounding of th
+e true result.
+-5.0165576126683320235573270803307570138315616702549e-20
+> g = sin(round(x,64,RN));
+Warning: at least one of the given expressions or a subexpression is not correct
+ly typed
+or its evaluation has failed because of some error on a side-effect.
+\end{Verbatim}
+\end{minipage}\end{center}
+See also: \textbf{roundcoefficients} (\ref{labroundcoefficients}), \textbf{halfprecision} (\ref{labhalfprecision}), \textbf{single} (\ref{labsingle}), \textbf{double} (\ref{labdouble}), \textbf{doubledouble} (\ref{labdoubledouble}), \textbf{quad} (\ref{labquad}), \textbf{tripledouble} (\ref{labtripledouble}), \textbf{round} (\ref{labround})

@@ -1,0 +1,33 @@
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> match 5 + 1 with 
+      1 + 5 : ("One plus five")
+      6     : ("Six")
+      5 + 1 : ("Five plus one");
+Five plus one
+> 
+> match 6 with 
+      1 + 5 : ("One plus five")
+      6     : ("Six")
+      5 + 1 : ("Five plus one");
+Six
+>   
+> match 1 + 5 with 
+      1 + 5 : ("One plus five")
+      6     : ("Six")
+      5 + 1 : ("Five plus one");
+One plus five
+> 
+> match [1; 5 + 1] with
+      [1; 1 + 5] : ("Interval from one to one plus five")
+      [1; 6]     : ("Interval from one to six")
+      [1; 5 + 1] : ("Interval from one to five plus one");
+Interval from one to one plus five
+> 
+> match [1; 6] with
+      [1; 1 + 5] : ("Interval from one to one plus five")
+      [1; 6]     : ("Interval from one to six")
+      [1; 5 + 1] : ("Interval from one to five plus one");
+Interval from one to one plus five
+> 
+\end{Verbatim}
+\end{minipage}\end{center}

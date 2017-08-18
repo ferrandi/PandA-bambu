@@ -1,0 +1,91 @@
+The tool has been restarted.
+=============== Test number 81 ================
+Warning: a coefficient is not at least 2 times greater than a already evaluated sub-polynomial.
+This procedure is not able to implement the polynomial correctly in this case.
+Warning: the infered precision of the 13th coefficient of the polynomial is greater than
+the necessary precision computed for this step. This may make the automatic determination
+of precisions useless.
+Warning: a problem has been encountered during the determination of the precisions needed.
+The produced implementation may be incorrect.
+Polynomial implemented as given.
+The tool has been restarted.
+=============== Test number 82 ================
+[2.00855369231876677409285296545817178969879078385537e1;2.00855369231876677409285296545817178969879078385544e1]
+The tool has been restarted.
+=============== Test number 83 ================
+[2.00855369231876677409285296545817178969879078385537e1;2.00855369231876677409285296545817178969879078385544e1]
+The tool has been restarted.
+=============== Test number 84 ================
+[2.00855369231876677409285296545817178969879078385537e1;2.00855369231876677409285296545817178969879078385544e1]
+The tool has been restarted.
+=============== Test number 85 ================
+[2.71828182845904523536028747135266249775724709369989;2.71828182845904523536028747135266249775724709369998]
+The tool has been restarted.
+=============== Test number 86 ================
+Warning: the bounds of the range an infinity norm is to be computed on are not numbers.
+[0;@Inf@]
+The tool has been restarted.
+=============== Test number 87 ================
+1
+0
+The tool has been restarted.
+=============== Test number 88 ================
+1.11110000011111_2 * 2^(-1)
+1.11110000011111_2 * 2^(-1)
+The tool has been restarted.
+=============== Test number 89 ================
+-0.54402111088936981340474766185137728168364301291621
+[-0.54710197983579690224097637163525943075698599257332;-0.54094015130013183848150540881373370744053741191728]
+[-0.54432915685955427101857780295936956775293876382777;-0.54371306401249969508039644221927489010425803173555]
+The tool has been restarted.
+=============== Test number 90 ================
+false
+false
+false
+true
+true
+false
+The tool has been restarted.
+=============== Test number 91 ================
+false
+true
+false
+The tool has been restarted.
+=============== Test number 92 ================
+true
+Information: the free variable has been renamed from "x" to "y".
+false
+The tool has been restarted.
+=============== Test number 93 ================
+Information: the free variable has been renamed from "y" to "x".
+sin(x)
+x
+true
+Information: the free variable has been renamed from "x" to "y".
+true
+1
+The tool has been restarted.
+=============== Test number 94 ================
+true
+-0.86602540378443864676372317075293618347140262690518
+The tool has been restarted.
+=============== Test number 95 ================
+true
+[-1.72986452514381269516508615031098129542836767991679e-12715;7.5941198201187963145069564314525661706039084390067e-12716]
+The tool has been restarted.
+=============== Test number 96 ================
+false
+[@NaN@;@NaN@]
+The tool has been restarted.
+=============== Test number 97 ================
+12
+The tool has been restarted.
+=============== Test number 98 ================
+5
+The tool has been restarted.
+=============== Test number 99 ================
+The character " " cannot be recognized. Will ignore it.
+1
+The tool has been restarted.
+=============== Test number 100 ================
+@Inf@

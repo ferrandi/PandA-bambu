@@ -1,0 +1,43 @@
+\subsection{integral}
+\label{labintegral}
+\noindent Name: \textbf{integral}\\
+computes an interval bounding the integral of a function on an interval.\\
+\noindent Usage: 
+\begin{center}
+\textbf{integral}(\emph{f},\emph{I}) : (\textsf{function}, \textsf{range}) $\rightarrow$ \textsf{range}\\
+\end{center}
+Parameters: 
+\begin{itemize}
+\item \emph{f} is a function.
+\item \emph{I} is an interval.
+\end{itemize}
+\noindent Description: \begin{itemize}
+
+\item \textbf{integral}(\emph{f},\emph{I}) returns an interval $J$ such that the exact value of 
+   the integral of \emph{f} on \emph{I} lies in $J$.
+
+\item This command is safe but very inefficient. Use \textbf{dirtyintegral} if you just want
+   an approximate value.
+
+\item The result of this command depends on the global variable \textbf{diam}.
+   The method used is the following: \emph{I} is cut into intervals of length not 
+   greater then $\delta \cdot |I|$ where $\delta$ is the value
+   of global variable \textbf{diam}.
+   On each small interval \emph{J}, an evaluation of \emph{f} by interval is
+   performed. The result is multiplied by the length of \emph{J}. Finally all values 
+   are summed.
+\end{itemize}
+\noindent Example 1: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> sin(10);
+-0.54402111088936981340474766185137728168364301291621
+> integral(cos(x),[0;10]);
+[-0.54710197983579690224097637163525943075698599257332;-0.5409401513001318384815
+0540881373370744053741191728]
+> diam=1e-5!;
+> integral(cos(x),[0;10]);
+[-0.54432915685955427101857780295936956775293876382777;-0.5437130640124996950803
+9644221927489010425803173555]
+\end{Verbatim}
+\end{minipage}\end{center}
+See also: \textbf{diam} (\ref{labdiam}), \textbf{dirtyintegral} (\ref{labdirtyintegral}), \textbf{prec} (\ref{labprec})

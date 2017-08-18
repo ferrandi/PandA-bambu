@@ -1,0 +1,1888 @@
+/*
+ *
+ *                   _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
+ *                  _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
+ *                 _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
+ *                _/      _/    _/ _/    _/ _/   _/ _/    _/
+ *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
+ *
+ *             ***********************************************
+ *                              PandA Project 
+ *                     URL: http://panda.dei.polimi.it
+ *                       Politecnico di Milano - DEIB
+ *                        System Architectures Group
+ *             ***********************************************
+ *              Copyright (c) 2004-2017 Politecnico di Milano
+ *
+ *   This file is part of the PandA framework.
+ *
+ *   The PandA framework is free software; you can redistribute it and/or modify
+ *   it under the terms of the GNU General Public License as published by
+ *   the Free Software Foundation; either version 3 of the License, or
+ *   (at your option) any later version.
+ *
+ *   This program is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU General Public License for more details.
+ *
+ *   You should have received a copy of the GNU General Public License
+ *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+*/
+/**
+ * @file gcc_wrapper.hpp
+ * @brief Implementation of the wrapper to Gcc for C sources.
+ *
+ * Implementation of the methods for the object for invoke the GCC compiler from sources and create the dump.
+ *
+ * @author Christian Pilato <pilato@elet.polimi.it>
+ * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
+ * @author Marco Lattuada <lattuada@elet.polimi.it>
+ * $Date$
+ * Last modified by $Author$
+ *
+*/
+
+///Autoheader include
+#include "config_ARM_CPP_EXE.hpp"
+#include "config_ARM_EMPTY_PLUGIN.hpp"
+#include "config_ARM_GCC_EXE.hpp"
+#include "config_ARM_RTL_PLUGIN.hpp"
+#include "config_ARM_SSA_PLUGIN.hpp"
+#include "config_HAVE_ARM_COMPILER.hpp"
+#include "config_HAVE_I386_GCC45_COMPILER.hpp"
+#include "config_HAVE_I386_GCC46_COMPILER.hpp"
+#include "config_HAVE_I386_GCC47_COMPILER.hpp"
+#include "config_HAVE_I386_GCC48_COMPILER.hpp"
+#include "config_HAVE_I386_GCC49_COMPILER.hpp"
+#include "config_HAVE_I386_GCC5_COMPILER.hpp"
+#include "config_HAVE_I386_GCC6_COMPILER.hpp"
+#include "config_HAVE_I386_GCC7_COMPILER.hpp"
+#include "config_HAVE_SPARC_COMPILER.hpp"
+#include "config_HAVE_SPARC_ELF_GCC.hpp"
+#include "config_HAVE_FROM_RTL_BUILT.hpp"
+#include "config_I386_CPP45_EXE.hpp"
+#include "config_I386_GCC45_EMPTY_PLUGIN.hpp"
+#include "config_I386_GCC45_EXE.hpp"
+#include "config_I386_GPP45_EXE.hpp"
+#include "config_I386_GCC45_SSA_PLUGIN.hpp"
+#include "config_I386_GCC45_SSAVRP_PLUGIN.hpp"
+#include "config_I386_GCC45_TOPFNAME_PLUGIN.hpp"
+#include "config_I386_CPP46_EXE.hpp"
+#include "config_I386_GCC46_EMPTY_PLUGIN.hpp"
+#include "config_I386_GCC46_EXE.hpp"
+#include "config_I386_GPP46_EXE.hpp"
+#include "config_I386_GCC46_SSA_PLUGIN.hpp"
+#include "config_I386_GCC46_SSAVRP_PLUGIN.hpp"
+#include "config_I386_GCC46_TOPFNAME_PLUGIN.hpp"
+#include "config_I386_CPP47_EXE.hpp"
+#include "config_I386_GCC47_EMPTY_PLUGIN.hpp"
+#include "config_I386_GCC47_EXE.hpp"
+#include "config_I386_GPP47_EXE.hpp"
+#include "config_I386_GCC47_SSA_PLUGIN.hpp"
+#include "config_I386_GCC47_SSAVRP_PLUGIN.hpp"
+#include "config_I386_GCC47_TOPFNAME_PLUGIN.hpp"
+#include "config_I386_CPP48_EXE.hpp"
+#include "config_I386_GCC48_EMPTY_PLUGIN.hpp"
+#include "config_I386_GCC48_EXE.hpp"
+#include "config_I386_GPP48_EXE.hpp"
+#include "config_I386_GCC48_SSA_PLUGIN.hpp"
+#include "config_I386_GCC48_SSAVRP_PLUGIN.hpp"
+#include "config_I386_GCC48_TOPFNAME_PLUGIN.hpp"
+#include "config_I386_CPP49_EXE.hpp"
+#include "config_I386_GCC49_EMPTY_PLUGIN.hpp"
+#include "config_I386_GCC49_EXE.hpp"
+#include "config_I386_GPP49_EXE.hpp"
+#include "config_I386_GCC49_SSA_PLUGIN.hpp"
+#include "config_I386_GCC49_TOPFNAME_PLUGIN.hpp"
+#include "config_I386_CPP5_EXE.hpp"
+#include "config_I386_GCC5_EMPTY_PLUGIN.hpp"
+#include "config_I386_GCC5_EXE.hpp"
+#include "config_I386_GPP5_EXE.hpp"
+#include "config_I386_GCC5_SSA_PLUGIN.hpp"
+#include "config_I386_GCC5_TOPFNAME_PLUGIN.hpp"
+#include "config_I386_CPP6_EXE.hpp"
+#include "config_I386_GCC6_EMPTY_PLUGIN.hpp"
+#include "config_I386_GCC6_EXE.hpp"
+#include "config_I386_GPP6_EXE.hpp"
+#include "config_I386_GCC6_SSA_PLUGIN.hpp"
+#include "config_I386_GCC6_TOPFNAME_PLUGIN.hpp"
+#include "config_I386_CPP7_EXE.hpp"
+#include "config_I386_GCC7_EMPTY_PLUGIN.hpp"
+#include "config_I386_GCC7_EXE.hpp"
+#include "config_I386_GPP7_EXE.hpp"
+#include "config_I386_GCC7_SSA_PLUGIN.hpp"
+#include "config_I386_GCC7_TOPFNAME_PLUGIN.hpp"
+#include "config_HAVE_I386_GCC47_MX32.hpp"
+#include "config_HAVE_I386_GCC48_MX32.hpp"
+#include "config_HAVE_I386_GCC49_MX32.hpp"
+#include "config_HAVE_I386_GCC5_MX32.hpp"
+#include "config_HAVE_I386_GCC6_MX32.hpp"
+#include "config_HAVE_I386_GCC7_MX32.hpp"
+#include "config_NPROFILE.hpp"
+#include "config_PANDA_INCLUDE_INSTALLDIR.hpp"
+#include "config_SPARC_CPP_EXE.hpp"
+#include "config_SPARC_ELF_CPP.hpp"
+#include "config_SPARC_ELF_GCC.hpp"
+#include "config_SPARC_EMPTY_PLUGIN.hpp"
+#include "config_SPARC_GCC_EXE.hpp"
+#include "config_SPARC_RTL_PLUGIN.hpp"
+#include "config_SPARC_SSA_PLUGIN.hpp"
+#include "config_PLUGIN_DIR.hpp"
+
+/// Header include
+#include "gcc_wrapper.hpp"
+
+///Behavior include
+#include "application_manager.hpp"
+
+/// Constants include
+#include "file_IO_constants.hpp"
+#include "treegcc_constants.hpp"
+#include "treegcc_xml.hpp"
+
+/// Frontend include
+#include "Parameter.hpp"
+
+///HLS include
+#include "hls_step.hpp"
+
+///RTL include
+#if HAVE_FROM_RTL_BUILT
+#include "parse_rtl.hpp"
+#endif
+/// STD include
+#include <cerrno>
+#include <unistd.h>
+
+/// Tree includes
+#include "parse_tree.hpp"
+#include "tree_manager.hpp"
+#include "tree_node.hpp"
+#include "tree_reindex.hpp"
+
+/// Utility include
+#include <boost/algorithm/string/split.hpp>
+#include <boost/algorithm/string/classification.hpp>
+#include <boost/regex.hpp>
+#include "cpu_stats.hpp"
+#include "cpu_time.hpp"
+#include "dbgPrintHelper.hpp"
+#include "exceptions.hpp"
+#include "fileIO.hpp"
+#include "string_manipulation.hpp"
+#include "treegcc_constants.hpp"
+#include "utility.hpp"
+
+/// XML includes used for writing and reading the configuration file
+#include "xml_helper.hpp"
+#include "polixml.hpp"
+#include "xml_dom_parser.hpp"
+
+std::string GccWrapper::current_gcc_version;
+
+std::string GccWrapper::current_plugin_version;
+
+GccWrapper::GccWrapper(const ParameterConstRef _Param, const GccWrapper_CompilerTarget _compiler_target, const GccWrapper_OptimizationSet _OS):
+   Param(_Param),
+   compiler_target(_compiler_target),
+   OS(_OS),
+   file_name_counter(0),
+   output_level(_Param->getOption<int>(OPT_output_level)),
+   debug_level(_Param->get_class_debug_level("GccWrapper"))
+{
+   InitializeGccParameters();
+   if(Param->isOption(OPT_gcc_write_xml))
+   {
+      WriteXml(Param->getOption<std::string>(OPT_gcc_write_xml));
+   }
+}
+
+// destructor
+GccWrapper::~GccWrapper()
+{
+}
+
+void GccWrapper::CompileFile(const std::string & original_file_name, std::string & real_file_name, const std::string & parameters_line, bool empty_file)
+{
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Compiling " + original_file_name + "(transformed in " + real_file_name);
+
+   ///The gcc output
+   const std::string gcc_output_file_name = Param->getOption<std::string>(OPT_output_temporary_directory) + STR_CST_gcc_output;
+
+   std::string opt;// = " -O1";
+   const Compiler compiler = GetCompiler();
+   std::string command = compiler.gcc.string();
+   command += " -D__NO_INLINE__ "; ///needed to avoid problem with glibc inlines
+   if (Param->isOption(OPT_discrepancy) and Param->getOption<bool>(OPT_discrepancy))
+   {
+      command += " -D__BAMBU_DISCREPANCY__ ";
+   }
+
+   ///Adding source code includes
+   if(original_file_name != "-" and original_file_name != real_file_name)
+   {
+      std::list<std::string> source_files;
+      source_files.push_back(original_file_name);
+      command += AddSourceCodeIncludes(source_files) + " ";
+   }
+   command += " " + compiler.extra_options + " ";
+   if(empty_file)
+   {
+      if(original_file_name == "-")
+         THROW_ERROR("Reading from standard input which does not contain any function definition");
+      static int empty_counter = 0;
+      const std::string temp_file_name = Param->getOption<std::string>(OPT_output_temporary_directory) + "/empty_" + boost::lexical_cast<std::string>(empty_counter++) + ".c";
+      CopyFile(original_file_name, temp_file_name);
+      const std::string append_command = "`echo -e \"\\nvoid __empty_function__(){}\" >> " + temp_file_name + "`";
+      int ret = PandaSystem(Param, append_command);
+      if(IsError(ret))
+      {
+         THROW_ERROR("Error in appending empty function");
+      }
+      real_file_name = temp_file_name;
+      command += opt + " -c -fplugin=" + compiler.empty_plugin_obj + " -fplugin-arg-"+compiler.empty_plugin_name+"-outputdir="+Param->getOption<std::string>(OPT_output_temporary_directory);
+   }
+   else if((Param->isOption(OPT_gcc_E) and Param->getOption<bool>(OPT_gcc_E)) or (Param->isOption(OPT_gcc_S) and Param->getOption<bool>(OPT_gcc_S)))
+      command += opt;
+   else
+#if HAVE_FROM_RTL_BUILT
+   if(Param->getOption<bool>(OPT_use_rtl))
+   {
+      command += opt + " -c -fplugin=" + compiler.rtl_plugin;
+   }
+   else
+#endif
+      command += opt + " -c -fplugin=" + compiler.ssa_plugin_obj + " -fplugin-arg-"+compiler.ssa_plugin_name+"-outputdir="+Param->getOption<std::string>(OPT_output_temporary_directory);
+   if(Param->isOption(OPT_top_functions_names) && Param->getOption<bool>(OPT_do_not_expose_globals))
+   {
+      const auto top_functions_names = Param->getOption<const std::list<std::string> >(OPT_top_functions_names);
+      if(top_functions_names.size()==1)
+      {
+         if(top_functions_names.front() != "main")
+         {
+            command += " -fplugin=" + compiler.topfname_plugin_obj + " -fplugin-arg-"+compiler.topfname_plugin_name+"-topfname="+top_functions_names.front();
+         }
+      }
+   }
+
+   if((Param->isOption(OPT_gcc_E) and Param->getOption<bool>(OPT_gcc_E)) or (Param->isOption(OPT_gcc_S) and Param->getOption<bool>(OPT_gcc_S)))
+   {
+      if(Param->isOption(OPT_output_file))
+         command += " -o " + Param->getOption<std::string>(OPT_output_file);
+   }
+   else
+      command += " -o " + std::string(STR_CST_gcc_obj_file);
+
+   if(!(Param->getOption<bool>(OPT_compute_size_of)))
+      command += " -D\"" + std::string(STR_CST_panda_sizeof) + "(arg)=" + STR_CST_string_sizeof + "(#arg)\"";
+   command += " " + parameters_line;
+   if(original_file_name == "-" or original_file_name == "/dev/null")
+   {
+      command += real_file_name;
+   }
+   else
+   {
+      boost::filesystem::path file_path(original_file_name);
+      std::string extension = GetExtension(file_path);
+      /// assembler files are not allowed so in some cases we pass a C file renamed with extension .S
+      if(extension == "S")
+         command += "-x c ";
+      command += "\"" + real_file_name + "\"";
+   }
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "---Invoke: " + command);
+#if !NPROFILE
+   long int gcc_compilation_time = 0;
+   START_TIME(gcc_compilation_time);
+#endif
+   int ret = PandaSystem(Param, command, gcc_output_file_name);
+#if !NPROFILE
+   STOP_TIME(gcc_compilation_time);
+   if(output_level >= OUTPUT_LEVEL_VERBOSE)
+   {
+      dump_exec_time("Compilation time", gcc_compilation_time);
+   }
+#endif
+
+   if(!((Param->isOption(OPT_gcc_E) and Param->getOption<bool>(OPT_gcc_E)) or (Param->isOption(OPT_gcc_S) and Param->getOption<bool>(OPT_gcc_S))))
+      std::remove(STR_CST_gcc_obj_file);
+   if(IsError(ret))
+   {
+      PRINT_OUT_MEX(OUTPUT_LEVEL_NONE, 0, "Error in compilation");
+      if(boost::filesystem::exists(boost::filesystem::path(gcc_output_file_name)))
+      {
+         CopyStdout(gcc_output_file_name);
+         THROW_ERROR_CODE(COMPILING_EC, "GCC returns an error during compilation "+boost::lexical_cast<std::string>(errno));
+         THROW_ERROR("GCC returns an error during compilation "+boost::lexical_cast<std::string>(errno));
+      }
+      else
+      {
+         THROW_ERROR("Error in GCC invocation");
+      }
+   }
+
+   else
+   {
+      if(output_level >= OUTPUT_LEVEL_VERBOSE)
+         CopyStdout(gcc_output_file_name);
+   }
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Compiled file");
+}
+
+void GccWrapper::FillTreeManager(const tree_managerRef TM, CustomMap<std::string, std::string> & source_files)
+{
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Invoking GCC");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
+   const std::string output_temporary_directory = Param->getOption<std::string>(OPT_output_temporary_directory);
+   if (source_files.size() == 0)
+      THROW_ERROR("No files specified for parsing");
+
+   /// check for aligned option
+   const GccWrapper_OptimizationSet optimization_level = Param->getOption<GccWrapper_OptimizationSet>(OPT_gcc_opt_level);
+   if(optimization_level == GccWrapper_OptimizationSet::O3 ||
+         optimization_level == GccWrapper_OptimizationSet::O4 ||
+         optimization_level == GccWrapper_OptimizationSet::O5 )
+   {
+      if(optimization_flags.find("tree-vectorize") == optimization_flags.end() || optimization_flags.find("tree-vectorize")->second)
+      {
+         bool assume_aligned_access_p = Param->isOption(OPT_aligned_access) && Param->getOption<bool>(OPT_aligned_access);
+         if(assume_aligned_access_p)
+            THROW_ERROR("Option --aligned-access cannot be used with -O3 or -ftree-vectorize");
+      }
+   }
+
+
+
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Starting compilation of single files");
+   for(auto & source_file : source_files)
+   {
+      if(already_processed_files.find(source_file.first) != already_processed_files.end())
+      {
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Already processed " + source_file.first);
+         continue;
+      }
+      else
+      {
+         already_processed_files.insert(source_file.first);
+      }
+      std::string leaf_name = source_file.second == "-" ? "stdin-" : GetLeafFileName(source_file.second);
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Compiling file " + source_file.second);
+      ///create obj
+      CompileFile(source_file.first, source_file.second, gcc_compiling_parameters, false);
+      if(!Param->isOption(OPT_gcc_E) and !Param->isOption(OPT_gcc_S))
+      {
+         if(!(boost::filesystem::exists(boost::filesystem::path(output_temporary_directory+ "/"+ leaf_name + STR_CST_gcc_tree_suffix))))
+         {
+            THROW_WARNING("Raw not created for file " + output_temporary_directory + "/"+ leaf_name);
+            CompileFile(source_file.first, source_file.second, gcc_compiling_parameters, true);
+            ///Recomputing leaf_name since source_file.second should be modified in the previous call
+            leaf_name = source_file.second == "-" ? "stdin-" : GetLeafFileName(source_file.second);
+            if(not(boost::filesystem::exists(boost::filesystem::path(output_temporary_directory + "/"+ leaf_name + STR_CST_gcc_empty_suffix))))
+               THROW_ERROR(output_temporary_directory + "/"+ leaf_name + STR_CST_gcc_empty_suffix + " not found: impossible to create raw file for " + source_file.second);
+            rename_file(output_temporary_directory + "/"+ leaf_name + STR_CST_gcc_empty_suffix, output_temporary_directory + "/"+ leaf_name + STR_CST_gcc_tree_suffix);
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Renaming " + source_file.second + STR_CST_gcc_empty_suffix + " in " + source_file.second + STR_CST_gcc_tree_suffix);
+         }
+         boost::filesystem::path obj = boost::filesystem::path(output_temporary_directory + "/"+ leaf_name + STR_CST_gcc_tree_suffix);
+         tree_managerRef TreeM = ParseTreeFile(Param, obj.string());
+
+#if HAVE_FROM_RTL_BUILT
+         if((Param->getOption<bool>(OPT_use_rtl)) and boost::filesystem::exists(boost::filesystem::path(leaf_name + STR_CST_gcc_rtl_suffix)))
+         {
+            obj = boost::filesystem::path(leaf_name+ STR_CST_gcc_rtl_suffix);
+            parse_rtl_File(obj.string(), TreeM, debug_level);
+            rename_file(obj, boost::filesystem::path(output_temporary_directory + leaf_name+ STR_CST_gcc_rtl_suffix));
+         }
+#endif
+#if ! NPROFILE
+         long int merge_time = 0;
+         START_TIME(merge_time);
+#endif
+         TM->merge_tree_managers(TreeM);
+#if ! NPROFILE
+         STOP_TIME(merge_time);
+         if(output_level >= OUTPUT_LEVEL_VERBOSE)
+         {
+            dump_exec_time("Tree merging time", merge_time);
+         }
+#endif
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
+      }
+   }
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Ended compilation of single files");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Finished GCC invoking");
+}
+
+void GccWrapper::InitializeGccParameters()
+{
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Initializing gcc parameters");
+   GccWrapper_OptimizationSet optimization_set = OS;
+   ///If we are compiling with sparc-elf-gcc
+#if HAVE_SPARC_COMPILER
+   if(compiler_target == GccWrapper_CompilerTarget::CT_SPARC_ELF_GCC)
+   {
+      optimization_set = Param->getOption<GccWrapper_OptimizationSet>(OPT_gcc_opt_level);
+   }
+#endif
+
+   if(Param->isOption(OPT_gcc_read_xml))
+   {
+      ReadXml(Param->getOption<std::string>(OPT_gcc_read_xml));
+   }
+   else
+   {
+      switch(optimization_set)
+      {
+         case(GccWrapper_OptimizationSet::O0):
+         case(GccWrapper_OptimizationSet::O1):
+         case(GccWrapper_OptimizationSet::O2):
+         case(GccWrapper_OptimizationSet::O3):
+         case(GccWrapper_OptimizationSet::O4):
+         case(GccWrapper_OptimizationSet::O5):
+         case(GccWrapper_OptimizationSet::Og):
+         case(GccWrapper_OptimizationSet::Os):
+            gcc_compiling_parameters += (" -O" + WriteOptimizationLevel(optimization_set) + " ");
+            break;
+#if HAVE_BAMBU_BUILT
+         case GccWrapper_OptimizationSet::OSF:
+            gcc_compiling_parameters += (" -O3 -finline-limit=10000 --param inline-unit-growth=100000 ");
+            break;
+         case(GccWrapper_OptimizationSet::OBAMBU):
+#endif
+#if HAVE_TUCANO_BUILT
+         case(GccWrapper_OptimizationSet::OTUCANO):
+#endif
+#if HAVE_ZEBU_BUILT
+         case(GccWrapper_OptimizationSet::OZEBU):
+#endif
+            ///Filling optimizations map
+            SetGccDefault();
+
+            switch(OS)
+            {
+#if HAVE_BAMBU_BUILT
+               case(GccWrapper_OptimizationSet::OBAMBU):
+                  SetBambuDefault();
+                  break;
+#endif
+#if HAVE_TUCANO_BUILT
+               case(GccWrapper_OptimizationSet::OTUCANO):
+                  break;
+#endif
+#if HAVE_ZEBU_BUILT
+               case(GccWrapper_OptimizationSet::OZEBU):
+                  SetZebuDefault();
+                  break;
+#endif
+               case(GccWrapper_OptimizationSet::O0):
+               case(GccWrapper_OptimizationSet::O1):
+               case(GccWrapper_OptimizationSet::O2):
+               case(GccWrapper_OptimizationSet::O3):
+               case(GccWrapper_OptimizationSet::O4):
+               case(GccWrapper_OptimizationSet::O5):
+               case(GccWrapper_OptimizationSet::Og):
+               case(GccWrapper_OptimizationSet::Os):
+#if HAVE_BAMBU_BUILT
+               case(GccWrapper_OptimizationSet::OSF):
+#endif
+                  {
+                     THROW_UNREACHABLE("Unsupported optimization level " + WriteOptimizationLevel(OS));
+                     break;
+                  }
+               default:
+                  {
+                     THROW_UNREACHABLE("");
+                  }
+            }
+            ReadParameters();
+
+            gcc_compiling_parameters += (" " + WriteOptimizationsString() + " ");
+
+            break;
+         default:
+            {
+               THROW_UNREACHABLE("Unexpected optimization level");
+            }
+      }
+   }
+
+   ///Adding standard
+   if(Param->isOption(OPT_gcc_standard))
+   {
+      std::string standard = Param->getOption<std::string>(OPT_gcc_standard);
+      gcc_compiling_parameters += "--std=" + standard + " ";
+   }
+
+   if(Param->isOption(OPT_gcc_E) and Param->getOption<bool>(OPT_gcc_E))
+         gcc_compiling_parameters += "-E ";
+   if(Param->isOption(OPT_gcc_S) and Param->getOption<bool>(OPT_gcc_S))
+         gcc_compiling_parameters += "-S ";
+   ///Adding defines
+   if(Param->isOption(OPT_gcc_defines))
+   {
+      const auto defines = Param->getOption<const CustomSet<std::string> >(OPT_gcc_defines);
+      for(const auto define : defines)
+      {
+         std::string escaped_string = define;
+         //add_escape(escaped_string, "\"");
+         gcc_compiling_parameters += "-D" + escaped_string + " ";
+      }
+   }
+
+   ///Adding undefines
+   if(Param->isOption(OPT_gcc_undefines))
+   {
+      const auto undefines = Param->getOption<const CustomSet<std::string> >(OPT_gcc_undefines);
+      for(const auto undefine : undefines)
+      {
+         std::string escaped_string = undefine;
+         //add_escape(escaped_string, "\"");
+         gcc_compiling_parameters += "-U" + escaped_string + " ";
+      }
+   }
+
+   ///Adding warnings
+   if(Param->isOption(OPT_gcc_warnings))
+   {
+      const auto warnings = Param->getOption<const CustomSet<std::string> >(OPT_gcc_warnings);
+      for(const auto warning : warnings)
+      {
+         gcc_compiling_parameters += "-W" + warning + " ";
+      }
+   }
+#if HAVE_BAMBU_BUILT
+   if(OS == GccWrapper_OptimizationSet::OBAMBU)
+   {
+      gcc_compiling_parameters += "-Wuninitialized ";
+   }
+#endif
+
+
+   ///Adding includes
+   if(Param->isOption(OPT_gcc_includes))
+   {
+      gcc_compiling_parameters += Param->getOption<std::string>(OPT_gcc_includes) + " ";
+   }
+
+   ///Adding libraries
+   if(Param->isOption(OPT_gcc_libraries))
+   {
+      const auto libraries = Param->getOption<const CustomSet<std::string> >(OPT_gcc_libraries);
+      for(const auto library : libraries)
+      {
+         gcc_linking_parameters += "-l" + library + " ";
+      }
+   }
+
+   ///Adding library directories
+   if(Param->isOption(OPT_gcc_library_directories))
+   {
+      const auto library_directories = Param->getOption<const CustomSet<std::string> >(OPT_gcc_library_directories);
+      for(const auto library_directory : library_directories)
+      {
+         gcc_linking_parameters += "-L" + library_directory + " ";
+      }
+   }
+
+   ///Adding no parse
+   if(Param->isOption(OPT_no_parse_files))
+   {
+      const auto no_parse_files = Param->getOption<const CustomSet<std::string> >(OPT_no_parse_files);
+      for(const auto no_parse_file : no_parse_files)
+      {
+         gcc_linking_parameters += no_parse_file + " ";
+      }
+   }
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Initialized gcc parameters");
+}
+
+#if HAVE_ZEBU_BUILT
+void GccWrapper::SetZebuDefault()
+{
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "-->Setting parameters for Zebu tool...");
+   const GccWrapper_OptimizationSet opt_level = Param->getOption<GccWrapper_OptimizationSet>(OPT_gcc_opt_level);
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "-->Optimization level: " + WriteOptimizationLevel(opt_level));
+
+   ///parameters with enable
+   optimization_flags["ivopts"] = false; ///introduce target_memory_ref as gimple_assign operands. The default GCC value is true
+   optimization_flags["tree-loop-im"] = false;///Execution error in 20040307-1.c example. The default GCC value is true
+   optimization_flags["tree-loop-ivcanon"] = false; ///this is requested for rebuild while and for
+   optimization_flags["tree-sink"] = true; ///this is requested for rebuild while and for
+   optimization_flags["trapping-math"] = true;///-fno-trapping-math compiles code assuming that floating-point operations cannot generate user-visible traps.  These traps include division by zero, overflow, underflow, inexact result and invalid operation.  This option implies -fno-signaling-nans.  Setting this option may allow faster code if one relies on "non-stop" IEEE arithmetic, for example. This option should never be turned on by any -O option since it can result in incorrect output for programs which depend on an exact implementation of IEEE or ISO rules/specifications for math functions.
+   optimization_flags["signed-zeros"] = true;///-fno-signed-zeros allows optimizations for floating point arithmetic that ignore the signedness of zero. IEEE arithmetic specifies the behavior of distinct +0.0 and -0.0 values, which then prohibits simplification of expressions such as x+0.0 or 0.0*x (even with -ffinite-math-only).
+   optimization_flags["rename-registers"] = false; ///cross compilation problems
+
+   ///builtin function;
+   optimization_flags["builtin"] = false;
+
+   //optimization_flags["openmp"] = true;
+
+   ///parameters with values
+//FIXME: to be replaced with plugin; deactivated since it does not work with sparc-elf-gcc
+//   optimization_values["tree-parallelize-loops"]=1;///requires tree-loop-optimize
+
+   if(opt_level == GccWrapper_OptimizationSet::O1 or opt_level == GccWrapper_OptimizationSet::O2 or opt_level == GccWrapper_OptimizationSet::O3)
+   {
+      optimization_flags["guess-branch-probability"] = false;///error in declaration of structure used probably by profiling.
+      optimization_flags["tree-ch"] = false;
+      optimization_flags["tree-copy-prop"] = false; ///va_list undeclared - problem with split of phi nodes
+      optimization_flags["tree-dominator-opts"] = false; ///va_list undeclared
+      optimization_flags["tree-sra"] = false; ///Introduces conversion from struct to scalar
+      optimization_flags["rename-registers"]  = false; ///cross compilation problems
+   }
+   if(opt_level == GccWrapper_OptimizationSet::O2 or opt_level == GccWrapper_OptimizationSet::O3)
+   {
+      optimization_flags["optimize-sibling-calls"] = false; ///Execution error on 20020406-1.c
+      optimization_flags["tree-pre"] = false; ///some loop are incorrecty identified
+      optimization_flags["tree-vrp"] = false; ///create several irriducible loops
+   }
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--Set parameters for Zebu tool");
+}
+#endif
+
+#if HAVE_BAMBU_BUILT
+void GccWrapper::SetBambuDefault()
+{
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "-->Setting parameters for Bambu tool...");
+   const GccWrapper_OptimizationSet opt_level = Param->getOption<GccWrapper_OptimizationSet>(OPT_gcc_opt_level);
+
+   ///parameters with enable
+
+   ///builtin function;
+   //optimization_flags["builtin"] = false;
+   //optimization_flags["ipa-type-escape"] = true; /// no more supported starting from gcc 4.6.1
+   optimization_flags["wrapv"] = true; /// bambu assumes twos complement arithmetic
+   optimization_flags["tree-copy-prop"] = true; ///FIXME: this has been always active with gcc >= 4.6; produced c code in bambu for example gcc_regression_simple/20040307-1.c when disabled
+   optimization_flags["ipa-pta"] = true;
+
+#if HAVE_I386_GCC46_COMPILER || HAVE_I386_GCC47_COMPILER || HAVE_I386_GCC48_COMPILER || HAVE_I386_GCC49_COMPILER || HAVE_I386_GCC5_COMPILER || HAVE_I386_GCC6_COMPILER || HAVE_I386_GCC7_COMPILER
+   GccWrapper_CompilerTarget compiler = Param->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler);
+   ///NOTE: the false here is used to be sure that the first operand of the first or always exists 
+   if(false
+#if HAVE_I386_GCC46_COMPILER
+      || compiler == GccWrapper_CompilerTarget::CT_I386_GCC46
+#endif
+#if HAVE_I386_GCC47_COMPILER
+      || compiler == GccWrapper_CompilerTarget::CT_I386_GCC47
+#endif
+#if HAVE_I386_GCC48_COMPILER
+      || compiler == GccWrapper_CompilerTarget::CT_I386_GCC48
+#endif
+#if HAVE_I386_GCC49_COMPILER
+      || compiler == GccWrapper_CompilerTarget::CT_I386_GCC49
+#endif
+#if HAVE_I386_GCC5_COMPILER
+      || compiler == GccWrapper_CompilerTarget::CT_I386_GCC5
+#endif
+#if HAVE_I386_GCC6_COMPILER
+      || compiler == GccWrapper_CompilerTarget::CT_I386_GCC6
+#endif
+#if HAVE_I386_GCC7_COMPILER
+      || compiler == GccWrapper_CompilerTarget::CT_I386_GCC7
+#endif
+      )
+   {
+      optimization_flags["tree-loop-if-convert"] = true;
+      optimization_flags["tree-loop-if-convert-stores"] = true;
+      optimization_flags["tree-loop-distribute-patterns"] = false;
+      optimization_flags["partial-inlining"] = false; /// artificial functions are not analyzed by the plugin
+   }
+#endif
+   if(false
+#if HAVE_I386_GCC5_COMPILER
+         || compiler == GccWrapper_CompilerTarget::CT_I386_GCC5
+#endif
+#if HAVE_I386_GCC6_COMPILER
+         || compiler == GccWrapper_CompilerTarget::CT_I386_GCC6
+#endif
+#if HAVE_I386_GCC7_COMPILER
+         || compiler == GccWrapper_CompilerTarget::CT_I386_GCC7
+#endif
+         )
+   {
+      optimization_flags["tree-builtin-call-dce"] = false;
+
+   }
+   if(opt_level == GccWrapper_OptimizationSet::O4)
+   {
+      optimization_flags["ivopts"] = true;
+      optimization_flags["tree-loop-ivcanon"] = true;
+      optimization_flags["tree-loop-im"] = true;
+      optimization_flags["vect-cost-model"] = false;
+      optimization_flags["fast-math"] = true;
+   }
+   if(opt_level == GccWrapper_OptimizationSet::O4 or opt_level == GccWrapper_OptimizationSet::O5)
+   {
+      if(true 
+#if HAVE_I386_GCC49_COMPILER
+            and compiler != GccWrapper_CompilerTarget::CT_I386_GCC49
+#endif
+        )
+      {
+         optimization_flags["tree-loop-linear"] = true;
+         optimization_flags["graphite-identity"] = true;
+      }
+   }
+   ///-f option with values
+   //optimization_values["tree-parallelize-loops"]=1;///requires tree-loop-optimize
+   ///-param option with with values
+   if(false
+#if HAVE_I386_GCC47_COMPILER
+      or compiler == GccWrapper_CompilerTarget::CT_I386_GCC47
+#endif
+#if HAVE_I386_GCC48_COMPILER
+      or compiler == GccWrapper_CompilerTarget::CT_I386_GCC48
+#endif
+#if HAVE_I386_GCC49_COMPILER
+      or compiler == GccWrapper_CompilerTarget::CT_I386_GCC49
+#endif
+#if HAVE_I386_GCC5_COMPILER
+      or compiler == GccWrapper_CompilerTarget::CT_I386_GCC5
+#endif
+#if HAVE_I386_GCC6_COMPILER
+      or compiler == GccWrapper_CompilerTarget::CT_I386_GCC6
+#endif
+#if HAVE_I386_GCC7_COMPILER
+      or compiler == GccWrapper_CompilerTarget::CT_I386_GCC7
+#endif
+     )
+   {
+      parameter_values["tree-reassoc-width"]=128;//Set the maximum number of instructions executed in parallel in reassociated tree.
+   }
+   if(false
+#if HAVE_I386_GCC48_COMPILER
+         or compiler == GccWrapper_CompilerTarget::CT_I386_GCC48
+#endif
+#if HAVE_I386_GCC49_COMPILER
+         or compiler == GccWrapper_CompilerTarget::CT_I386_GCC49
+#endif
+         )
+   {
+      parameter_values["max-completely-peeled-insns"]=250;//Set the maximum number of insns of a peeled loop.
+   }
+
+   if(Param->getOption<bool>(OPT_parse_pragma))
+   {
+      ///Disable duplication of loop headers to preserve openmp for structure
+      optimization_flags["tree-ch"] = false;
+   }
+
+   if(Param->getOption<int>(OPT_gcc_openmp_simd))
+   {
+      ///Disable optimizations which break loops patterns
+      optimization_flags["tree-pre"] = false;
+      optimization_flags["tree-vrp"] = false;
+      optimization_flags["ivopts"] = false;
+      optimization_flags["tree-dominator-opts"] = false;
+   }
+
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--Set parameters for bambu tool");
+}
+#endif
+
+void GccWrapper::SetGccDefault()
+{
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "-->Setting GCC defaults");
+   const GccWrapper_OptimizationSet optimization_level = Param->getOption<GccWrapper_OptimizationSet>(OPT_gcc_opt_level);
+   optimization_flags["stack-protector"] = false;//In Ubuntu 6.10 and later versions this option is enabled by default for C, C++, ObjC, ObjC++
+
+   switch(optimization_level)
+   {
+      case(GccWrapper_OptimizationSet::Os) :
+      case(GccWrapper_OptimizationSet::Og) :
+      case(GccWrapper_OptimizationSet::O1) :
+      case(GccWrapper_OptimizationSet::O2) :
+      case(GccWrapper_OptimizationSet::O3) :
+      case(GccWrapper_OptimizationSet::O4):
+      case(GccWrapper_OptimizationSet::O5):
+         {
+            gcc_compiling_parameters += (" -O" + WriteOptimizationLevel(optimization_level) + " ");
+            break;
+         }
+#if HAVE_BAMBU_BUILT
+      case GccWrapper_OptimizationSet::OSF:
+         gcc_compiling_parameters += (" -O3 -finline-limit=10000");
+         break;
+#endif
+      case(GccWrapper_OptimizationSet::O0) :
+         {
+            gcc_compiling_parameters += " -O1 ";
+
+            optimization_flags["auto-inc-dec"] = false;
+            optimization_flags["cprop-registers"] = false;
+            optimization_flags["dce"] = false;
+            optimization_flags["defer-pop"] = false;
+            optimization_flags["delayed-branch"] = false;
+            optimization_flags["dse"] = false;
+            optimization_flags["guess-branch-probability"] = false;
+            optimization_flags["if-conversion"] = false;
+            optimization_flags["if-conversion2"] = false;
+            optimization_flags["ipa-pure-const"] = false;
+            optimization_flags["ipa-reference"] = false;
+            optimization_flags["merge-constants"] = false;
+            optimization_flags["split-wide-types"] = false;
+            optimization_flags["tree-builtin-call-dce"] = false;
+            optimization_flags["tree-ccp"] = false;
+            optimization_flags["tree-ch"] = false;
+            optimization_flags["tree-dce"] = false;
+            optimization_flags["tree-dominator-opts"] = false;
+            optimization_flags["tree-dse"] = false;
+            optimization_flags["tree-forwprop"] = false;
+            optimization_flags["tree-fre"] = false;
+            optimization_flags["tree-phiprop"] = false;
+            optimization_flags["tree-pta"] = false;
+            optimization_flags["tree-sra"] = false;
+            optimization_flags["tree-ter"] = false;
+            /**
+             * In the gcc documentation is not clear if unit-at-a-time is activated or not at O0;
+             * However it has to be activated to manage empty files
+             */
+            ///optimization_flags["unit-at-a-time"] = false;
+            switch(compiler_target)
+            {
+#if HAVE_I386_GCC45_COMPILER
+               case(GccWrapper_CompilerTarget::CT_I386_GCC45) :
+                  {
+                     optimization_flags["tree-copy-prop"] = false;
+                     break;
+                  }
+#endif
+#if HAVE_I386_GCC46_COMPILER
+               case(GccWrapper_CompilerTarget::CT_I386_GCC46) :
+                  {
+                     optimization_flags["compare-elim"] = false;
+                     optimization_flags["ipa-profile"] = false;
+                     optimization_flags["tree-copy-prop"] = false;
+                     optimization_flags["tree-copyrename"] = false;
+                     break;
+                  }
+#endif
+#if HAVE_I386_GCC47_COMPILER
+               case(GccWrapper_CompilerTarget::CT_I386_GCC47) :
+                  {
+                     optimization_flags["compare-elim"] = false;
+                     optimization_flags["ipa-profile"] = false;
+                     optimization_flags["tree-copy-prop"] = false;
+                     optimization_flags["tree-copyrename"] = false;
+                     break;
+                  }
+#endif
+#if HAVE_I386_GCC48_COMPILER
+               case(GccWrapper_CompilerTarget::CT_I386_GCC48) :
+                  {
+                     optimization_flags["compare-elim"] = false;
+                     optimization_flags["ipa-profile"] = false;
+                     optimization_flags["tree-bit-ccp"] = false;
+                     optimization_flags["tree-copy-prop"] = false;
+                     optimization_flags["tree-copyrename"] = false;
+                     optimization_flags["tree-slsr"] = false;
+                     break;
+                  }
+#endif
+#if HAVE_I386_GCC49_COMPILER
+               case(GccWrapper_CompilerTarget::CT_I386_GCC49) :
+                  {
+                     optimization_flags["compare-elim"] = false;
+                     optimization_flags["ipa-profile"] = false;
+                     optimization_flags["tree-bit-ccp"] = false;
+                     optimization_flags["tree-copy-prop"] = false;
+                     optimization_flags["tree-copyrename"] = false;
+                     optimization_flags["tree-slsr"] = false;
+                     break;
+                  }
+#endif
+#if HAVE_I386_GCC5_COMPILER
+               case(GccWrapper_CompilerTarget::CT_I386_GCC5) :
+                  {
+                     optimization_flags["compare-elim"] = false;
+                     optimization_flags["ipa-profile"] = false;
+                     optimization_flags["tree-bit-ccp"] = false;
+                     optimization_flags["tree-copy-prop"] = false;
+                     optimization_flags["tree-copyrename"] = false;
+                     optimization_flags["tree-slsr"] = false;
+                     break;
+                  }
+#endif
+#if HAVE_I386_GCC6_COMPILER
+               case(GccWrapper_CompilerTarget::CT_I386_GCC6) :
+                  {
+                     optimization_flags["compare-elim"] = false;
+                     optimization_flags["ipa-profile"] = false;
+                     optimization_flags["tree-bit-ccp"] = false;
+                     optimization_flags["tree-copy-prop"] = false;
+                     optimization_flags["tree-copyrename"] = false;
+                     optimization_flags["tree-slsr"] = false;
+                     break;
+                  }
+#endif
+#if HAVE_I386_GCC7_COMPILER
+               case(GccWrapper_CompilerTarget::CT_I386_GCC7) :
+                  {
+                     optimization_flags["compare-elim"] = false;
+                     optimization_flags["ipa-profile"] = false;
+                     optimization_flags["tree-bit-ccp"] = false;
+                     optimization_flags["tree-copy-prop"] = false;
+                     optimization_flags["tree-copyrename"] = false;
+                     optimization_flags["tree-slsr"] = false;
+                     break;
+                  }
+#endif
+#if HAVE_ARM_COMPILER
+               case(GccWrapper_CompilerTarget::CT_ARM_GCC):
+                  {
+                     optimization_flags["tree-copy-prop"] = false;
+                     break;
+                  }
+#endif
+#if HAVE_SPARC_COMPILER
+               case(GccWrapper_CompilerTarget::CT_SPARC_GCC):
+               case(GccWrapper_CompilerTarget::CT_SPARC_ELF_GCC):
+                  {
+                     optimization_flags["tree-copy-prop"] = false;
+                     break;
+                  }
+#endif
+               case(GccWrapper_CompilerTarget::CT_NO_GCC):
+                  {
+                     THROW_UNREACHABLE("Unexpected gcc target");
+                     break;
+                  }
+               default:
+                  {
+                     THROW_UNREACHABLE("");
+                  }
+            }
+            break;
+         }
+#if HAVE_BAMBU_BUILT
+         case(GccWrapper_OptimizationSet::OBAMBU):
+#endif
+#if HAVE_TUCANO_BUILT
+         case(GccWrapper_OptimizationSet::OTUCANO):
+#endif
+#if HAVE_ZEBU_BUILT
+         case(GccWrapper_OptimizationSet::OZEBU):
+#endif
+            {
+               THROW_UNREACHABLE("Unepected optimization level: " + WriteOptimizationLevel(optimization_level));
+               break;
+            }
+         default:
+            {
+               THROW_UNREACHABLE("");
+            }
+   }
+   /// required by PandA
+   optimization_flags["ipa-pure-const"] = true; ///needed to correctly manage global variables
+   optimization_flags["tree-dce"] = true; ///needed to remove unnecessary computations
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--Set GCC defaults");
+}
+
+GccWrapper::Compiler GccWrapper::GetCompiler() const
+{
+   Compiler compiler;
+#ifndef NDEBUG
+   GccWrapper_CompilerTarget compatible_compilers = Param->getOption<GccWrapper_CompilerTarget>(OPT_compatible_compilers);
+#endif
+
+   bool flag_cpp;
+   if(Param->isOption(OPT_input_format) &&
+         Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_CPP &&
+         !Param->isOption(OPT_pretty_print))
+      flag_cpp = true;
+   else
+      flag_cpp = false;
+
+   std::string gcc_extra_options;
+   if(Param->isOption(OPT_gcc_extra_options))
+      gcc_extra_options = Param->getOption<std::string>(OPT_gcc_extra_options);
+
+   GccWrapper_CompilerTarget preferred_compiler;
+   if(compiler_target == GccWrapper_CompilerTarget::CT_NO_GCC)
+   {
+      preferred_compiler = Param->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler);
+   }
+   else
+   {
+#ifndef NDEBUG
+      const bool debug_condition =
+#if HAVE_SPARC_COMPILER
+         (compiler_target == GccWrapper_CompilerTarget::CT_SPARC_ELF_GCC) or
+#endif
+         (static_cast<int>(compiler_target) & static_cast<int>(compatible_compilers));
+      THROW_ASSERT(debug_condition, "Required compiler is not among the compatible one: " + STR(static_cast<int>(compiler_target)) + " vs " + STR(static_cast<int>(compatible_compilers)) );
+#endif
+      preferred_compiler = compiler_target;
+   }
+   const std::string plugin_dir = (Param->isOption(OPT_gcc_plugindir) ? Param->getOption<std::string>(OPT_gcc_plugindir) : STR(PLUGIN_DIR)) + "/";
+   const std::string plugin_ext = ".so";
+
+#if HAVE_I386_GCC45_COMPILER
+   if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC45))
+   {
+      compiler.gcc = flag_cpp ? I386_GPP45_EXE : I386_GCC45_EXE;
+      compiler.cpp = I386_CPP45_EXE;
+      compiler.extra_options = Param->getOption<std::string>(OPT_gcc_m32_mx32) + " -D_FORTIFY_SOURCE=0 " + gcc_extra_options;
+      if(optimization_flags.find("tree-vectorize") != optimization_flags.end() && optimization_flags.find("tree-vectorize")->second)
+         compiler.extra_options += " -msse2 -mfpmath=sse ";
+      else
+         compiler.extra_options += " -mno-sse2 ";
+      compiler.empty_plugin_obj = plugin_dir + I386_GCC45_EMPTY_PLUGIN + plugin_ext;
+      compiler.empty_plugin_name = I386_GCC45_EMPTY_PLUGIN;
+      if(optimization_flags.find("tree-vrp") != optimization_flags.end() && optimization_flags.find("tree-vrp")->second)
+      {
+         compiler.ssa_plugin_obj = plugin_dir + I386_GCC45_SSAVRP_PLUGIN + plugin_ext;
+         compiler.ssa_plugin_name = I386_GCC45_SSAVRP_PLUGIN;
+      }
+      else
+      {
+         compiler.ssa_plugin_obj = plugin_dir + I386_GCC45_SSA_PLUGIN + plugin_ext;
+         compiler.ssa_plugin_name = I386_GCC45_SSA_PLUGIN;
+      }
+      compiler.topfname_plugin_obj = plugin_dir + I386_GCC45_TOPFNAME_PLUGIN + plugin_ext;
+      compiler.topfname_plugin_name = I386_GCC45_TOPFNAME_PLUGIN;
+#if HAVE_FROM_RTL_BUILT
+      compiler.rtl_plugin = plugin_dir + "";
+#endif
+   }
+#endif
+#if HAVE_I386_GCC46_COMPILER
+   if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC46))
+   {
+      compiler.gcc = flag_cpp ? I386_GPP46_EXE : I386_GCC46_EXE;
+      compiler.cpp = I386_CPP46_EXE;
+      compiler.extra_options = Param->getOption<std::string>(OPT_gcc_m32_mx32) + " -D_FORTIFY_SOURCE=0 " + gcc_extra_options;
+      if(optimization_flags.find("tree-vectorize") != optimization_flags.end() && optimization_flags.find("tree-vectorize")->second)
+         compiler.extra_options += " -msse2 -mfpmath=sse ";
+      else
+         compiler.extra_options += " -mno-sse2 ";
+      compiler.empty_plugin_obj = plugin_dir + I386_GCC46_EMPTY_PLUGIN + plugin_ext;
+      compiler.empty_plugin_name = I386_GCC46_EMPTY_PLUGIN;
+      if(optimization_flags.find("tree-vrp") != optimization_flags.end() && optimization_flags.find("tree-vrp")->second)
+      {
+         compiler.ssa_plugin_obj = plugin_dir + I386_GCC46_SSAVRP_PLUGIN + plugin_ext;
+         compiler.ssa_plugin_name = I386_GCC46_SSAVRP_PLUGIN;
+      }
+      else
+      {
+         compiler.ssa_plugin_obj = plugin_dir + I386_GCC46_SSA_PLUGIN + plugin_ext;
+         compiler.ssa_plugin_name = I386_GCC46_SSA_PLUGIN;
+      }
+      compiler.topfname_plugin_obj = plugin_dir + I386_GCC46_TOPFNAME_PLUGIN + plugin_ext;
+      compiler.topfname_plugin_name = I386_GCC46_TOPFNAME_PLUGIN;
+#if HAVE_FROM_RTL_BUILT
+      compiler.rtl_plugin = plugin_dir + "";
+#endif
+   }
+#endif
+#if HAVE_I386_GCC47_COMPILER
+   if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC47))
+   {
+      compiler.gcc = flag_cpp ? I386_GPP47_EXE : I386_GCC47_EXE;
+      compiler.cpp = I386_CPP47_EXE;
+      compiler.extra_options = " -D_FORTIFY_SOURCE=0 " + gcc_extra_options;
+      if(optimization_flags.find("tree-vectorize") != optimization_flags.end() && optimization_flags.find("tree-vectorize")->second)
+      {
+#if HAVE_I386_GCC47_MX32
+         compiler.extra_options += " -mx32";
+#else
+         compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m32_mx32);
+#endif
+         compiler.extra_options += " -msse2 -mfpmath=sse ";
+      }
+      else
+         compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m32_mx32);
+      compiler.empty_plugin_obj = plugin_dir + I386_GCC47_EMPTY_PLUGIN + plugin_ext;
+      compiler.empty_plugin_name = I386_GCC47_EMPTY_PLUGIN;
+      if(optimization_flags.find("tree-vrp") != optimization_flags.end() && optimization_flags.find("tree-vrp")->second)
+      {
+         compiler.ssa_plugin_obj = plugin_dir + I386_GCC47_SSAVRP_PLUGIN + plugin_ext;
+         compiler.ssa_plugin_name = I386_GCC47_SSAVRP_PLUGIN;
+      }
+      else
+      {
+         compiler.ssa_plugin_obj = plugin_dir + I386_GCC47_SSA_PLUGIN + plugin_ext;
+         compiler.ssa_plugin_name = I386_GCC47_SSA_PLUGIN;
+      }
+      compiler.topfname_plugin_obj = plugin_dir + I386_GCC47_TOPFNAME_PLUGIN + plugin_ext;
+      compiler.topfname_plugin_name = I386_GCC47_TOPFNAME_PLUGIN;
+#if HAVE_FROM_RTL_BUILT
+      compiler.rtl_plugin = plugin_dir + "";
+#endif
+   }
+#endif
+#if HAVE_I386_GCC48_COMPILER
+   if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC48))
+   {
+      compiler.gcc = flag_cpp ? I386_GPP48_EXE : I386_GCC48_EXE;
+      compiler.cpp = I386_CPP48_EXE;
+      compiler.extra_options = " -mlong-double-64 -D_FORTIFY_SOURCE=0 " + gcc_extra_options;
+      if(optimization_flags.find("tree-vectorize") != optimization_flags.end() && optimization_flags.find("tree-vectorize")->second)
+      {
+#if HAVE_I386_GCC48_MX32
+         compiler.extra_options += " -mx32";
+#else
+         compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m32_mx32);
+#endif
+         compiler.extra_options += " -msse2 -mfpmath=sse ";
+      }
+      else
+         compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m32_mx32);
+      compiler.empty_plugin_obj = plugin_dir + I386_GCC48_EMPTY_PLUGIN + plugin_ext;
+      compiler.empty_plugin_name = I386_GCC48_EMPTY_PLUGIN;
+      if(optimization_flags.find("tree-vrp") != optimization_flags.end() && optimization_flags.find("tree-vrp")->second)
+      {
+         compiler.ssa_plugin_obj = plugin_dir + I386_GCC48_SSAVRP_PLUGIN + plugin_ext;
+         compiler.ssa_plugin_name = I386_GCC48_SSAVRP_PLUGIN;
+      }
+      else
+      {
+         compiler.ssa_plugin_obj = plugin_dir + I386_GCC48_SSA_PLUGIN + plugin_ext;
+         compiler.ssa_plugin_name = I386_GCC48_SSA_PLUGIN;
+      }
+      compiler.topfname_plugin_obj = plugin_dir + I386_GCC48_TOPFNAME_PLUGIN + plugin_ext;
+      compiler.topfname_plugin_name = I386_GCC48_TOPFNAME_PLUGIN;
+#if HAVE_FROM_RTL_BUILT
+      compiler.rtl_plugin = plugin_dir + "";
+#endif
+   }
+#endif
+#if HAVE_I386_GCC49_COMPILER
+   if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC49))
+   {
+      compiler.gcc = flag_cpp ? I386_GPP49_EXE : I386_GCC49_EXE;
+      compiler.cpp = I386_CPP49_EXE;
+      compiler.extra_options = " -mlong-double-64 -D_FORTIFY_SOURCE=0 " + gcc_extra_options;
+      if(optimization_flags.find("tree-vectorize") != optimization_flags.end() && optimization_flags.find("tree-vectorize")->second)
+      {
+#if HAVE_I386_GCC49_MX32
+         compiler.extra_options += " -mx32";
+#else
+         compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m32_mx32);
+#endif
+         compiler.extra_options += " -msse2 -mfpmath=sse ";
+      }
+      else
+         compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m32_mx32);
+      compiler.empty_plugin_obj = plugin_dir + I386_GCC49_EMPTY_PLUGIN + plugin_ext;
+      compiler.empty_plugin_name = I386_GCC49_EMPTY_PLUGIN;
+      compiler.ssa_plugin_obj = plugin_dir + I386_GCC49_SSA_PLUGIN + plugin_ext;
+      compiler.ssa_plugin_name = I386_GCC49_SSA_PLUGIN;
+      compiler.topfname_plugin_obj = plugin_dir + I386_GCC49_TOPFNAME_PLUGIN + plugin_ext;
+      compiler.topfname_plugin_name = I386_GCC49_TOPFNAME_PLUGIN;
+#if HAVE_FROM_RTL_BUILT
+      compiler.rtl_plugin = plugin_dir + "";
+#endif
+   }
+#endif
+#if HAVE_I386_GCC5_COMPILER
+   if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC5))
+   {
+      compiler.gcc = flag_cpp ? I386_GPP5_EXE : I386_GCC5_EXE;
+      compiler.cpp = I386_CPP5_EXE;
+      compiler.extra_options = Param->getOption<std::string>(OPT_gcc_m32_mx32) + " -mlong-double-64 -D_FORTIFY_SOURCE=0 " + gcc_extra_options;
+      if(optimization_flags.find("tree-vectorize") != optimization_flags.end() && optimization_flags.find("tree-vectorize")->second)
+      {
+#if HAVE_I386_GCC5_MX32
+         compiler.extra_options += " -mx32";
+#else
+         compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m32_mx32);
+#endif
+         compiler.extra_options += " -msse2 -mfpmath=sse ";
+      }
+      else
+         compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m32_mx32);
+      compiler.empty_plugin_obj = plugin_dir + I386_GCC5_EMPTY_PLUGIN + plugin_ext;
+      compiler.empty_plugin_name = I386_GCC5_EMPTY_PLUGIN;
+      compiler.ssa_plugin_obj = plugin_dir + I386_GCC5_SSA_PLUGIN + plugin_ext;
+      compiler.ssa_plugin_name = I386_GCC5_SSA_PLUGIN;
+      compiler.topfname_plugin_obj = plugin_dir + I386_GCC5_TOPFNAME_PLUGIN + plugin_ext;
+      compiler.topfname_plugin_name = I386_GCC5_TOPFNAME_PLUGIN;
+#if HAVE_FROM_RTL_BUILT
+      compiler.rtl_plugin = plugin_dir + "";
+#endif
+   }
+#endif
+
+#if HAVE_I386_GCC6_COMPILER
+   if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC6))
+   {
+      compiler.gcc = flag_cpp ? I386_GPP6_EXE : I386_GCC6_EXE;
+      compiler.cpp = I386_CPP6_EXE;
+      compiler.extra_options = Param->getOption<std::string>(OPT_gcc_m32_mx32) + " -mlong-double-64 -D_FORTIFY_SOURCE=0 " + gcc_extra_options;
+      if(optimization_flags.find("tree-vectorize") != optimization_flags.end() && optimization_flags.find("tree-vectorize")->second)
+      {
+#if HAVE_I386_GCC6_MX32
+         compiler.extra_options += " -mx32";
+#else
+         compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m32_mx32);
+#endif
+         compiler.extra_options += " -msse2 -mfpmath=sse ";
+      }
+      else
+         compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m32_mx32);
+      compiler.empty_plugin_obj = plugin_dir + I386_GCC6_EMPTY_PLUGIN + plugin_ext;
+      compiler.empty_plugin_name = I386_GCC6_EMPTY_PLUGIN;
+      compiler.ssa_plugin_obj = plugin_dir + I386_GCC6_SSA_PLUGIN + plugin_ext;
+      compiler.ssa_plugin_name = I386_GCC6_SSA_PLUGIN;
+      compiler.topfname_plugin_obj = plugin_dir + I386_GCC6_TOPFNAME_PLUGIN + plugin_ext;
+      compiler.topfname_plugin_name = I386_GCC6_TOPFNAME_PLUGIN;
+
+#if HAVE_FROM_RTL_BUILT
+      compiler.rtl_plugin = plugin_dir + "";
+#endif
+   }
+#endif
+
+#if HAVE_I386_GCC7_COMPILER
+   if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC7))
+   {
+      compiler.gcc = flag_cpp ? I386_GPP7_EXE : I386_GCC7_EXE;
+      compiler.cpp = I386_CPP7_EXE;
+      compiler.extra_options = Param->getOption<std::string>(OPT_gcc_m32_mx32) + " -mlong-double-64 -D_FORTIFY_SOURCE=0 " + gcc_extra_options;
+      if(optimization_flags.find("tree-vectorize") != optimization_flags.end() && optimization_flags.find("tree-vectorize")->second)
+      {
+#if HAVE_I386_GCC7_MX32
+         compiler.extra_options += " -mx32";
+#else
+         compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m32_mx32);
+#endif
+         compiler.extra_options += " -msse2 -mfpmath=sse ";
+      }
+      else
+         compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m32_mx32);
+      compiler.empty_plugin_obj = plugin_dir + I386_GCC7_EMPTY_PLUGIN + plugin_ext;
+      compiler.empty_plugin_name = I386_GCC7_EMPTY_PLUGIN;
+      compiler.ssa_plugin_obj = plugin_dir + I386_GCC7_SSA_PLUGIN + plugin_ext;
+      compiler.ssa_plugin_name = I386_GCC7_SSA_PLUGIN;
+      compiler.topfname_plugin_obj = plugin_dir + I386_GCC7_TOPFNAME_PLUGIN + plugin_ext;
+      compiler.topfname_plugin_name = I386_GCC7_TOPFNAME_PLUGIN;
+
+#if HAVE_FROM_RTL_BUILT
+      compiler.rtl_plugin = plugin_dir + "";
+#endif
+   }
+#endif
+
+#if HAVE_SPARC_COMPILER
+   if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_SPARC_GCC))
+   {
+      compiler.gcc = SPARC_GCC_EXE;
+      compiler.cpp = SPARC_CPP_EXE;
+      compiler.extra_options = gcc_extra_options;
+      compiler.empty_plugin_obj = plugin_dir + SPARC_EMPTY_PLUGIN;
+      compiler.empty_plugin_name = SPARC_EMPTY_PLUGIN;
+      compiler.ssa_plugin_obj = plugin_dir + SPARC_SSA_PLUGIN;
+      compiler.ssa_plugin_name = SPARC_SSA_PLUGIN;
+#if HAVE_FROM_RTL_BUILT
+      compiler.rtl_plugin = plugin_dir + SPARC_RTL_PLUGIN;
+#endif
+   }
+#endif
+#if HAVE_SPARC_ELF_GCC
+   if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_SPARC_ELF_GCC))
+   {
+      compiler.gcc = SPARC_ELF_GCC;
+      compiler.cpp = SPARC_ELF_CPP;
+      compiler.extra_options = gcc_extra_options;
+   }
+#endif
+#if HAVE_ARM_COMPILER
+   if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_ARM_GCC))
+   {
+      compiler.gcc = ARM_GCC_EXE;
+      compiler.cpp = ARM_CPP_EXE;
+      compiler.extra_options = gcc_extra_options + " -mlittle-endian -fsigned-char";
+      compiler.empty_plugin_obj = plugin_dir + ARM_EMPTY_PLUGIN;
+      compiler.empty_plugin_name = ARM_EMPTY_PLUGIN;
+      compiler.ssa_plugin_obj = plugin_dir + ARM_SSA_PLUGIN;
+      compiler.ssa_plugin_name = ARM_SSA_PLUGIN;
+#if HAVE_FROM_RTL_BUILT
+      compiler.rtl_plugin = plugin_dir + ARM_RTL_PLUGIN;
+#endif
+   }
+#endif
+   if(compiler.gcc == "")
+   {
+      THROW_ERROR("Not found any compatible compiler");
+   }
+   return compiler;
+}
+
+void GccWrapper::GetSystemIncludes(std::vector<std::string> & includes) const
+{
+   /// This string contains the path and name of the compiler to be invoked
+   const std::string cpp = GetCompiler().cpp.string();
+
+   std::string command = cpp + " -v  < /dev/null 2>&1 | grep -v -E \"(#|Configured with|Using built-in|Target|Thread model|gcc version|End of search list|ignoring nonexistent directory|cc1 -E -quiet|cc1.exe -E -quiet|COLLECT_GCC_OPTIONS|COMPILER_PATH|LIBRARY_PATH|COLLECT_GCC_OPTIONS|ignoring duplicate directory)\" | tr '\\n' ' ' | tr '\\r' ' '  | sed 's/\\\\/\\//g'";
+   int ret = PandaSystem(Param, command, STR_CST_gcc_include);
+   PRINT_OUT_MEX(OUTPUT_LEVEL_PEDANTIC, output_level, "");
+   if(IsError(ret))
+   {
+      util_print_cpu_stats(std::cerr);
+      THROW_ERROR("Error in retrieving gcc system include. Error is " + boost::lexical_cast<std::string>(ret));
+   }
+
+   std::string list_of_dirs;
+
+   std::ifstream includefile(STR_CST_gcc_include);
+   if (includefile.is_open())
+   {
+      std::string line;
+      while (!includefile.eof())
+      {
+         getline (includefile,line);
+         if (line.size())
+         {
+            list_of_dirs += line;
+         }
+      }
+   }
+   else 
+      THROW_ERROR("Error in retrieving gcc system include");
+
+   std::remove(STR_CST_gcc_include);
+
+   //Ok, now here there are the list of the system paths in which
+   //the system includes are found
+   boost::algorithm::split(includes, list_of_dirs, boost::algorithm::is_any_of(" "));
+}
+
+void GccWrapper::GetGccConfig() const
+{
+   QueryGccConfig("-v");
+}
+
+void GccWrapper::QueryGccConfig(std::string gcc_option) const
+{
+   const std::string gcc = GetCompiler().gcc.string();
+   const std::string command = gcc + " " + gcc_option;
+   const std::string output_file_name = Param->getOption<std::string>(OPT_output_temporary_directory) + STR_CST_file_IO_shell_output_file;
+   int ret = PandaSystem(Param, command, output_file_name);
+   if(IsError(ret))
+   {
+      THROW_ERROR("Error in retrieving gcc configuration");
+   }
+   CopyStdout(output_file_name);
+}
+
+size_t GccWrapper::GetSourceCodeLines(const ParameterConstRef Param)
+{
+#ifndef NDEBUG
+   const int debug_level = Param->get_class_debug_level("GccWrapper");
+#endif
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Getting source code lines number");
+   ///The output file
+   const std::string output_file_name = Param->getOption<std::string>(OPT_output_temporary_directory) + STR_CST_file_IO_shell_output_file;
+
+   std::string command = "cat ";
+   const auto source_files = Param->getOption<const CustomSet<std::string> >(OPT_input_file);
+   for(const auto source_file : source_files)
+   {
+      boost::filesystem::path absolute_path = boost::filesystem::system_complete(source_file);
+      command += absolute_path.branch_path().string() + "/*\\.h ";
+      command += source_file + " ";
+   }
+   command += std::string(" 2> /dev/null | wc -l");
+   int ret = PandaSystem(Param, command, output_file_name);
+   if(IsError(ret))
+   {
+      THROW_ERROR("Error during execution of computing word lines");
+   }
+
+   std::ifstream output_file(output_file_name.c_str());
+   if (output_file.is_open() and !output_file.eof())
+   {
+      std::string line;
+      getline (output_file, line);
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Got " + line);
+      return boost::lexical_cast<size_t>(line);
+   }
+   else
+   {
+      THROW_ERROR("Error in opening " + output_file_name);
+   }
+   return 0;
+}
+
+void GccWrapper::CreateExecutable(const CustomSet<std::string> & file_names, const std::string & executable_name, const std::string & extra_gcc_options) const
+{
+   std::list<std::string> sorted_file_names;
+   for(const auto file_name : file_names)
+      sorted_file_names.push_back(file_name);
+   CreateExecutable(sorted_file_names, executable_name, extra_gcc_options);
+}
+void GccWrapper::CreateExecutable(const std::list<std::string> & file_names, const std::string & executable_name, const std::string & extra_gcc_options) const
+{
+   std::string file_names_string;
+   for(const auto file_name : file_names)
+   {
+      file_names_string += file_name + " ";
+   }
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Creating executable " + executable_name + " from " + file_names_string);
+   std::string command;
+
+   Compiler compiler = GetCompiler();
+   command = compiler.gcc.string() + " ";
+
+   command += file_names_string + " ";
+
+   command += gcc_compiling_parameters + " " + AddSourceCodeIncludes(file_names) + " " + gcc_linking_parameters + " ";
+
+   command += "-D__NO_INLINE__ "; ///needed to avoid problem with glibc inlines
+
+   std::string local_compiler_extra_options = compiler.extra_options;
+   if(extra_gcc_options.find("-m32") != std::string::npos)
+      boost::replace_all(local_compiler_extra_options, "-mx32", "");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Extra options are " + local_compiler_extra_options);
+   command += local_compiler_extra_options + " " + extra_gcc_options + " ";
+
+   command += "-o " + executable_name + " ";
+
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Compilation command is " + command);
+   const std::string gcc_output_file_name = Param->getOption<std::string>(OPT_output_temporary_directory) + STR_CST_gcc_output;
+
+   int ret = PandaSystem(Param, command, gcc_output_file_name);
+   if(IsError(ret))
+   {
+      CopyStdout(gcc_output_file_name);
+      THROW_ERROR_CODE(COMPILING_EC, "GCC returns an error during compilation " + boost::lexical_cast<std::string>(errno) + " - Command is " + command);
+   }
+   else
+   {
+      if(output_level >= OUTPUT_LEVEL_VERBOSE)
+         CopyStdout(gcc_output_file_name);
+   }
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
+}
+
+void GccWrapper::ReadParameters()
+{
+   if(Param->isOption(OPT_gcc_optimizations))
+   {
+      const auto parameters = Param->getOption<const CustomSet<std::string> >(OPT_gcc_optimizations);
+      for (const auto parameter : parameters)
+      {
+         THROW_ASSERT(parameter != "", "unexpected condition:"+Param->getOption<std::string>(OPT_gcc_optimizations));
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining parameter " + parameter);
+         const size_t found  = parameter.find("no-");
+         // if the token starts with "no-", the optimization has to be disabled
+         if (found != std::string::npos and found == 0)
+         {
+            std::string str = parameter.substr (found + std::string("no-").size());
+            optimization_flags[str] = false;
+         }
+         else
+         {
+            optimization_flags[parameter] = true;
+         }
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
+      }
+   }
+   if(Param->isOption(OPT_gcc_parameters))
+   {
+      const auto parameters = Param->getOption<const CustomSet<std::string> >(OPT_gcc_parameters);
+      for (const auto parameter : parameters)
+      {
+         const size_t equal_size = parameter.find("=");
+         if(equal_size == std::string::npos)
+         {
+            THROW_ERROR("--param argument without value " + parameter);
+         }
+         const std::string key = parameter.substr(0, equal_size);
+         const std::string value = parameter.substr(equal_size+1, parameter.size() - equal_size + 1);
+         parameter_values[key] = boost::lexical_cast<int>(value);
+      }
+   }
+}
+
+std::string GccWrapper::WriteOptimizationLevel(const GccWrapper_OptimizationSet optimization_level)
+{
+   switch(optimization_level)
+   {
+      case(GccWrapper_OptimizationSet::O0) :
+         return "0";
+      case(GccWrapper_OptimizationSet::O1) :
+         return "1";
+      case(GccWrapper_OptimizationSet::O2) :
+         return "2";
+      case(GccWrapper_OptimizationSet::O3):
+         return "3";
+      case(GccWrapper_OptimizationSet::O4) :
+         return "4";
+      case(GccWrapper_OptimizationSet::O5):
+         return "5";
+      case(GccWrapper_OptimizationSet::Og):
+         return "g";
+      case(GccWrapper_OptimizationSet::Os):
+         return "s";
+#if HAVE_BAMBU_BUILT
+      case(GccWrapper_OptimizationSet::OBAMBU) :
+         return "bambu";
+      case(GccWrapper_OptimizationSet::OSF) :
+         return "softfloat";
+#endif
+#if HAVE_TUCANO_BUILT
+      case(GccWrapper_OptimizationSet::OTUCANO) :
+         return "tucano";
+#endif
+#if HAVE_ZEBU_BUILT
+      case(GccWrapper_OptimizationSet::OZEBU) :
+         return "zebu";
+#endif
+      default:
+      {
+         THROW_UNREACHABLE("");
+      }
+   }
+   return "";
+}
+
+std::string GccWrapper::WriteOptimizationsString()
+{
+   std::string optimizations;
+   ///Preparing optimizations string
+   bool argument_noalias = optimization_flags.find("argument-noalias") != optimization_flags.end() and optimization_flags.find("argument-noalias")->second;
+   bool argument_noalias_global = optimization_flags.find("argument-noalias-global") != optimization_flags.end() and optimization_flags.find("argument-noalias-global")->second;
+   bool argument_noalias_anything = optimization_flags.find("argument-noalias-anything") != optimization_flags.end() and optimization_flags.find("argument-noalias-anything")->second;
+   bool strict_aliasing = optimization_flags.find("strict-aliasing") != optimization_flags.end() and optimization_flags.find("strict-aliasing")->second;
+   std::map<std::string, bool>::const_iterator it, it_end = optimization_flags.end();
+   if(strict_aliasing)
+      optimizations += std::string("-Wstrict-aliasing ");
+   for (it = optimization_flags.begin(); it != it_end; it++)
+   {
+      /*argument aliasing should be treated in a different way*/
+      if (it->first == "argument-alias" and (argument_noalias or argument_noalias_global or argument_noalias_anything))
+         continue;
+      if (it->first == "argument-noalias" and (argument_noalias_global or argument_noalias_anything))
+         continue;
+      else if (it->first == "argument-noalias" and (argument_noalias_global or argument_noalias_anything))
+         continue;
+      else if (it->first == "argument-noalias-global" and (argument_noalias_anything))
+         continue;
+      THROW_ASSERT(it->first != "", "unexpected contition");
+      if (it->second)
+         optimizations += std::string("-f") + it->first + " ";  // enable optimizations set to true
+      else
+         optimizations += std::string("-fno-") + it->first + " "; // disable optimizations set to false
+   }
+   std::map<std::string, int>::const_iterator it2, it2_end = optimization_values.end();
+   for (it2 = optimization_values.begin(); it2 != it2_end; it2++)
+   {
+      optimizations += std::string("-f") + it2->first + "=" + boost::lexical_cast<std::string>(it2->second) + " ";
+   }
+   std::map<std::string, int>::const_iterator it3, it3_end = parameter_values.end();
+   for(it3 = parameter_values.begin(); it3 != it3_end; it3++)
+   {
+      optimizations += "--param " + it3->first + "=" + boost::lexical_cast<std::string>(it3->second) + " ";
+   }
+   return optimizations;
+}
+
+void GccWrapper::ReadXml(const std::string file_name)
+{
+   try
+   {
+      XMLDomParser parser(file_name);
+      parser.Exec();
+      if (parser)
+      {
+         const xml_element * root = parser.get_document()->get_root_node();
+
+         const xml_node::node_list root_children = root->get_children();
+         xml_node::node_list::const_iterator root_child, root_child_end = root_children.end();
+         for(root_child = root_children.begin(); root_child != root_child_end; root_child++)
+         {
+            const xml_element * root_child_element = GetPointer<const xml_element>(*root_child);
+            if(not root_child_element)
+               continue;
+            if(root_child_element->get_name() == STR_XML_gcc_optimizations)
+            {
+               const xml_node::node_list optimizations_children = root_child_element->get_children();
+               xml_node::node_list::const_iterator optimizations_child, optimizations_child_end = optimizations_children.end();
+               for(optimizations_child = optimizations_children.begin(); optimizations_child != optimizations_child_end; optimizations_child++)
+               {
+                  const xml_element * optimizations_child_element = GetPointer<const xml_element>(*optimizations_child);
+                  if(not optimizations_child_element)
+                     continue;
+                  if(optimizations_child_element->get_name() == STR_XML_gcc_parameter_values)
+                  {
+                     const xml_node::node_list parameter_values_children = optimizations_child_element->get_children();
+                     xml_node::node_list::const_iterator parameter_value, parameter_value_end = parameter_values_children.end();
+                     for(parameter_value = parameter_values_children.begin(); parameter_value != parameter_value_end; parameter_value++)
+                     {
+                        const xml_element * parameter_value_element = GetPointer<const xml_element>(*parameter_value);
+                        if(not parameter_value_element)
+                           continue;
+                        if(not (parameter_value_element->get_attribute(STR_XML_gcc_name) and parameter_value_element->get_attribute(STR_XML_gcc_value)))
+                        {
+                           THROW_ERROR("Parameter value node without name or value");
+                        }
+                        parameter_values[parameter_value_element->get_attribute(STR_XML_gcc_name)->get_value()] = boost::lexical_cast<int>(parameter_value_element->get_attribute(STR_XML_gcc_value));
+                     }
+                  }
+                  else if(optimizations_child_element->get_name() == STR_XML_gcc_optimization_flags)
+                  {
+                     const xml_node::node_list optimization_flags_children = optimizations_child_element->get_children();
+                     xml_node::node_list::const_iterator optimization_flag, optimization_flag_end = optimization_flags_children.end();
+                     for(optimization_flag = optimization_flags_children.begin(); optimization_flag != optimization_flag_end; optimization_flag++)
+                     {
+                        const xml_element * optimization_flag_element = GetPointer<const xml_element>(*optimization_flag);
+                        if(not optimization_flag_element)
+                           continue;
+                        if(not (optimization_flag_element->get_attribute(STR_XML_gcc_name) and optimization_flag_element->get_attribute(STR_XML_gcc_value)))
+                        {
+                           THROW_ERROR("Optimization flag node without name or value");
+                        }
+                        optimization_flags[optimization_flag_element->get_attribute(STR_XML_gcc_name)->get_value()] = boost::lexical_cast<bool>(optimization_flag_element->get_attribute(STR_XML_gcc_value));
+                     }
+                  }
+                  else if(optimizations_child_element->get_name() == STR_XML_gcc_optimization_values)
+                  {
+                     const xml_node::node_list optimization_value_children = optimizations_child_element->get_children();
+                     xml_node::node_list::const_iterator optimization_value, optimization_value_end = optimization_value_children.end();
+                     for(optimization_value = optimization_value_children.begin(); optimization_value != optimization_value_end; optimization_value++)
+                     {
+                        const xml_element * optimization_value_element = GetPointer<const xml_element>(*optimization_value);
+                        if(not optimization_value_element)
+                           continue;
+                        if(not (optimization_value_element->get_attribute(STR_XML_gcc_name) and optimization_value_element->get_attribute(STR_XML_gcc_value)))
+                        {
+                           THROW_ERROR("Optimization value node without name or value");
+                        }
+                        optimization_values[optimization_value_element->get_attribute(STR_XML_gcc_name)->get_value()] = boost::lexical_cast<int>(optimization_value_element->get_attribute(STR_XML_gcc_value));
+                     }
+                  }
+               }
+               gcc_compiling_parameters += (" " + WriteOptimizationsString() + " ");
+            }
+            else if(root_child_element->get_name() == STR_XML_gcc_standard)
+            {
+               const xml_element * standard = root_child_element;
+               if(not standard->get_attribute(STR_XML_gcc_value))
+               {
+                  THROW_ERROR("Standard node without value");
+               }
+               gcc_compiling_parameters += "--std=" + standard->get_attribute(STR_XML_gcc_value)->get_value() + " ";
+            }
+            else if(root_child_element->get_name() == STR_XML_gcc_defines)
+            {
+               const xml_node::node_list defines = root_child_element->get_children();
+               xml_node::node_list::const_iterator define, define_end = defines.end();
+               for(define = defines.begin(); define != define_end; define++)
+               {
+                  const xml_element * define_element = GetPointer<const xml_element>(*define);
+                  if(not define_element)
+                     continue;
+                  if(not define_element->get_attribute(STR_XML_gcc_value))
+                  {
+                     THROW_ERROR("Optimization value node without name or value");
+                  }
+                  gcc_compiling_parameters += "-D" + define_element->get_attribute(STR_XML_gcc_value)->get_value() + " ";
+               }
+            }
+            else if(root_child_element->get_name() == STR_XML_gcc_undefines)
+            {
+               const xml_node::node_list undefines = root_child_element->get_children();
+               xml_node::node_list::const_iterator undefine, undefine_end = undefines.end();
+               for(undefine = undefines.begin(); undefine != undefine_end; undefine++)
+               {
+                  const xml_element * undefine_element = GetPointer<const xml_element>(*undefine);
+                  if(not undefine_element)
+                     continue;
+                  if(not undefine_element->get_attribute(STR_XML_gcc_value))
+                  {
+                     THROW_ERROR("Optimization value node without name or value");
+                  }
+                  gcc_compiling_parameters += "-U" + undefine_element->get_attribute(STR_XML_gcc_value)->get_value() + " ";
+               }
+            }
+            else if(root_child_element->get_name() == STR_XML_gcc_warnings)
+            {
+               const xml_node::node_list warnings = root_child_element->get_children();
+               xml_node::node_list::const_iterator warning, warning_end = warnings.end();
+               for(warning = warnings.begin(); warning != warning_end; warning++)
+               {
+                  const xml_element * warning_element = GetPointer<const xml_element>(*warning);
+                  if(not warning_element)
+                     continue;
+                  if(not warning_element->get_attribute(STR_XML_gcc_value))
+                  {
+                     THROW_ERROR("Optimization value node without name or value");
+                  }
+                  gcc_compiling_parameters += "-W" + warning_element->get_attribute(STR_XML_gcc_value)->get_value() + " ";
+               }
+            }
+            else if(root_child_element->get_name() == STR_XML_gcc_includes)
+            {
+               const xml_node::node_list includes = root_child_element->get_children();
+               xml_node::node_list::const_iterator include, include_end = includes.end();
+               for(include = includes.begin(); include != include_end; include++)
+               {
+                  const xml_element * include_element = GetPointer<const xml_element>(*include);
+                  if(not include_element)
+                     continue;
+                  if(not include_element->get_attribute(STR_XML_gcc_value))
+                  {
+                     THROW_ERROR("Optimization value node without name or value");
+                  }
+                  gcc_compiling_parameters += "-I" + include_element->get_attribute(STR_XML_gcc_value)->get_value() + " ";
+               }
+            }
+            else if(root_child_element->get_name() == STR_XML_gcc_libraries)
+            {
+               const xml_node::node_list libraries = root_child_element->get_children();
+               xml_node::node_list::const_iterator library, library_end = libraries.end();
+               for(library = libraries.begin(); library != library_end; library++)
+               {
+                  const xml_element * library_element = GetPointer<const xml_element>(*library);
+                  if(not library_element)
+                     continue;
+                  if(not library_element->get_attribute(STR_XML_gcc_value))
+                  {
+                     THROW_ERROR("Optimization value node without name or value");
+                  }
+                  gcc_linking_parameters += "-l" + library_element->get_attribute(STR_XML_gcc_value)->get_value() + " ";
+               }
+            }
+            else if(root_child_element->get_name() == STR_XML_gcc_library_directories)
+            {
+               const xml_node::node_list library_directories = root_child_element->get_children();
+               xml_node::node_list::const_iterator library_directory, library_directory_end = library_directories.end();
+               for(library_directory = library_directories.begin(); library_directory != library_directory_end; library_directory++)
+               {
+                  const xml_element * library_directory_element = GetPointer<const xml_element>(*library_directory);
+                  if(not library_directory_element)
+                     continue;
+                  if(not library_directory_element->get_attribute(STR_XML_gcc_value))
+                  {
+                     THROW_ERROR("Optimization value node without name or value");
+                  }
+                  gcc_compiling_parameters += "-L" + library_directory_element->get_attribute(STR_XML_gcc_value)->get_value() + " ";
+               }
+            }
+         }
+      }
+   }
+   catch (const char * msg)
+   {
+      THROW_ERROR("Error " + std::string(msg) + " during reading of gcc configuration from " + file_name);
+   }
+   catch (const std::string & msg)
+   {
+      THROW_ERROR("Error " + msg + " during reading of gcc configuration from " + file_name);
+   }
+   catch (const std::exception& ex)
+   {
+      THROW_ERROR("Error " + std::string(ex.what()) + " during reading of gcc configuration from " + file_name);
+   }
+   catch ( ... )
+   {
+      THROW_ERROR("Unknown exception during reading of gcc configuration from " + file_name);
+   }
+
+}
+
+void GccWrapper::WriteXml(const std::string file_name) const
+{
+   xml_document document;
+   xml_element * root = document.create_root_node(STR_XML_gcc_root);
+   xml_element * optimizations = root->add_child_element(STR_XML_gcc_optimizations);
+   xml_element * parameter_values_xml = optimizations->add_child_element(STR_XML_gcc_parameter_values);
+   std::map<std::string, int>::const_iterator parameter_value, parameter_value_end = this->parameter_values.end();
+   for(parameter_value = this->parameter_values.begin(); parameter_value != parameter_value_end; parameter_value++)
+   {
+      xml_element * parameter_value_xml = parameter_values_xml->add_child_element(STR_XML_gcc_parameter_value);
+      parameter_value_xml->set_attribute(STR_XML_gcc_name, parameter_value->first);
+      parameter_value_xml->set_attribute(STR_XML_gcc_value, boost::lexical_cast<std::string>(parameter_value->second));
+   }
+   xml_element * optimization_flags_xml = optimizations->add_child_element(STR_XML_gcc_parameter_values);
+   std::map<std::string, bool>::const_iterator optimization_flag, optimization_flag_end = this->optimization_flags.end();
+   for(optimization_flag = this->optimization_flags.begin(); optimization_flag != optimization_flag_end; optimization_flag++)
+   {
+      xml_element * optimization_flag_xml = optimization_flags_xml->add_child_element(STR_XML_gcc_optimization_flag);
+      optimization_flag_xml->set_attribute(STR_XML_gcc_name, optimization_flag->first);
+      optimization_flag_xml->set_attribute(STR_XML_gcc_value, boost::lexical_cast<std::string>(optimization_flag->second));
+   }
+   xml_element * optimization_values_xml = optimizations->add_child_element(STR_XML_gcc_parameter_values);
+   std::map<std::string, int>::const_iterator optimization_value, optimization_value_end = this->optimization_values.end();
+   for(optimization_value = this->optimization_values.begin(); optimization_value != optimization_value_end; optimization_value++)
+   {
+      xml_element * optimization_value_xml = optimization_values_xml->add_child_element(STR_XML_gcc_optimization_value);
+      optimization_value_xml->set_attribute(STR_XML_gcc_name, optimization_value->first);
+      optimization_value_xml->set_attribute(STR_XML_gcc_value, boost::lexical_cast<std::string>(optimization_value->second));
+   }
+   document.write_to_file_formatted(file_name);
+}
+
+const std::string GccWrapper::AddSourceCodeIncludes(const std::list<std::string> & source_files) const
+{
+   std::string includes;
+   ///Adding includes of original source code files
+   for(const auto source_file : source_files)
+   {
+      boost::filesystem::path absolute_path = boost::filesystem::system_complete(source_file);
+      std::string new_path =  "-iquote " + absolute_path.branch_path().string() + " ";
+      if(gcc_compiling_parameters.find(new_path) == std::string::npos and includes.find(new_path) == std::string::npos)
+         includes += new_path;
+   }
+   return includes;
+}
+
+size_t GccWrapper::ConvertVersion(const std::string version)
+{
+   size_t ret_value = 0;
+   std::vector<std::string> version_tokens;
+   boost::algorithm::split(version_tokens, version, boost::algorithm::is_any_of("."));
+   for(size_t index = version_tokens.size(); index > 0; index--)
+   {
+      const size_t shifter = static_cast<size_t>(pow(100, static_cast<double>(version_tokens.size() - index)));
+      const size_t value = boost::lexical_cast<size_t>(version_tokens[index-1]);
+      ret_value += (value * shifter);
+   }
+   return ret_value;
+}
+
+void GccWrapper::CheckGccCompatibleVersion(const std::string gcc_version, const std::string plugin_version)
+{
+   current_gcc_version = gcc_version;
+   current_plugin_version = plugin_version;
+   const size_t gcc_version_number = ConvertVersion(gcc_version);
+   const size_t plugin_version_number = ConvertVersion(plugin_version);
+   const size_t minimum_plugin_version_number = ConvertVersion(STR_CST_gcc_min_plugin_version);
+   const size_t maximum_plugin_version_number = ConvertVersion(STR_CST_gcc_max_plugin_version);
+   if(plugin_version_number < minimum_plugin_version_number or plugin_version_number > maximum_plugin_version_number)
+   {
+      THROW_ERROR("Plugin version not correct. Plugin version supported has to be in this range: [" + std::string(STR_CST_gcc_min_plugin_version) + "-"+ std::string(STR_CST_gcc_max_plugin_version) + "]");
+   }
+   if(std::string(STR_CST_gcc_supported_versions).find(gcc_version) != std::string::npos)
+      return;
+   if(gcc_version_number < ConvertVersion(STR_CST_gcc_first_not_supported))
+   {
+      THROW_WARNING("GCC " + gcc_version + " has not been tested with the PandA framework");
+      return;
+   }
+   THROW_ERROR("GCC " + gcc_version + " is not supported by this version of the PandA framework");
+}
+
+size_t GccWrapper::CGetPointerSize(const ParameterConstRef parameters)
+{
+   const std::string  gcc_m32_mx32 = parameters->getOption<std::string>(OPT_gcc_m32_mx32);
+   if(gcc_m32_mx32 == "-m32" or gcc_m32_mx32 == "-m32 -mno-sse2 ")
+   {
+      return 32;
+   }
+   else if(gcc_m32_mx32 == "-mx32")
+   {
+      return 32;
+   }
+   else
+   {
+      THROW_ERROR("-m parameter not supported: " + gcc_m32_mx32);
+   }
+   return 0;
+}
+
+

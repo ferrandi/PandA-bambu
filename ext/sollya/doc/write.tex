@@ -1,0 +1,78 @@
+\subsection{write}
+\label{labwrite}
+\noindent Name: \textbf{write}\\
+prints an expression without separators\\
+\noindent Usage: 
+\begin{center}
+\textbf{write}(\emph{expr1},...,\emph{exprn}) : (\textsf{any type},..., \textsf{any type}) $\rightarrow$ \textsf{void}\\
+\textbf{write}(\emph{expr1},...,\emph{exprn}) $>$ \emph{filename} : (\textsf{any type},..., \textsf{any type}, \textsf{string}) $\rightarrow$ \textsf{void}\\
+\textbf{write}(\emph{expr1},...,\emph{exprn}) $>>$ \emph{filename} : (\textsf{any type},...,\textsf{any type}, \textsf{string}) $\rightarrow$ \textsf{void}\\
+\end{center}
+Parameters: 
+\begin{itemize}
+\item \emph{expr} represents an expression
+\item \emph{filename} represents a character sequence indicating a file name
+\end{itemize}
+\noindent Description: \begin{itemize}
+
+\item \textbf{write}(\emph{expr1},...,\emph{exprn}) prints the expressions \emph{expr1} through
+   \emph{exprn}. The character sequences corresponding to the expressions are
+   concatenated without any separator. No newline is displayed at the
+   end.  In contrast to \textbf{print}, \textbf{write} expects the user to give all
+   separators and newlines explicitly.
+    
+   If a second argument \emph{filename} is given after a single "$>$", the
+   displaying is not output on the standard output of \sollya but if in
+   the file \emph{filename} that get newly created or overwritten. If a double
+    "$>>$" is given, the output will be appended to the file \emph{filename}.
+    
+   The global variables \textbf{display}, \textbf{midpointmode} and \textbf{fullparentheses} have
+   some influence on the formatting of the output (see \textbf{display},
+   \textbf{midpointmode} and \textbf{fullparentheses}).
+    
+   Remark that if one of the expressions \emph{expri} given in argument is of
+   type \textsf{string}, the character sequence \emph{expri} evaluates to is
+   displayed. However, if \emph{expri} is of type \textsf{list} and this list
+   contains a variable of type \textsf{string}, the expression for the list
+   is displayed, i.e.  all character sequences get displayed surrounded
+   by quotes ("). Nevertheless, escape sequences used upon defining
+   character sequences are interpreted immediately.
+\end{itemize}
+\noindent Example 1: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> write(x + 2 + exp(sin(x))); 
+> write("Hello\n");
+x + 2 + exp(sin(x))Hello
+> write("Hello","world\n");
+Helloworld
+> write("Hello","you", 4 + 3, "other persons.\n");
+Helloyou7other persons.
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 2: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> write("Hello","\n");
+Hello
+> write([|"Hello"|],"\n");
+[|"Hello"|]
+> s = "Hello";
+> write(s,[|s|],"\n");
+Hello[|"Hello"|]
+> t = "Hello\tyou";
+> write(t,[|t|],"\n");
+Hello    you[|"Hello\tyou"|]
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 3: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> write(x + 2 + exp(sin(x))) > "foo.sol";
+> readfile("foo.sol");
+x + 2 + exp(sin(x))
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 4: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> write(x + 2 + exp(sin(x))) >> "foo.sol";
+\end{Verbatim}
+\end{minipage}\end{center}
+See also: \textbf{print} (\ref{labprint}), \textbf{printexpansion} (\ref{labprintexpansion}), \textbf{printdouble} (\ref{labprintdouble}), \textbf{printsingle} (\ref{labprintsingle}), \textbf{printxml} (\ref{labprintxml}), \textbf{readfile} (\ref{labreadfile}), \textbf{autosimplify} (\ref{labautosimplify}), \textbf{display} (\ref{labdisplay}), \textbf{midpointmode} (\ref{labmidpointmode}), \textbf{fullparentheses} (\ref{labfullparentheses}), \textbf{evaluate} (\ref{labevaluate}), \textbf{roundingwarnings} (\ref{labroundingwarnings}), \textbf{autosimplify} (\ref{labautosimplify})

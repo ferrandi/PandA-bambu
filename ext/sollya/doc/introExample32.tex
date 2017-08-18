@@ -1,0 +1,27 @@
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> f = exp(x) + 5;
+> f(-infty);
+5
+> evaluate(f,[-infty;infty]);
+[5;@Inf@]
+> f(infty);
+Warning: the given expression is undefined or numerically unstable.
+@NaN@
+> [-infty;5] * [3;4];
+[-@Inf@;20]
+> -infty < 5;
+true
+> log(0);
+Warning: the given expression is undefined or numerically unstable.
+@NaN@
+> [log(0);17];
+Warning: the given expression is not a constant but an expression to evaluate
+and a faithful evaluation is not possible.
+Will use a plain floating-point evaluation, which might yield a completely wrong
+ value.
+Warning: inclusion property is satisfied but the diameter may be greater than th
+e least possible.
+[-@Inf@;17]
+> 
+\end{Verbatim}
+\end{minipage}\end{center}

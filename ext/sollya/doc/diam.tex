@@ -1,0 +1,26 @@
+\subsection{diam}
+\label{labdiam}
+\noindent Name: \textbf{diam}\\
+parameter used in safe algorithms of \sollya and controlling the maximal length of the involved intervals.\\
+\noindent Usage: 
+\begin{center}
+\textbf{diam} = \emph{width} : \textsf{constant} $\rightarrow$ \textsf{void}\\
+\textbf{diam} = \emph{width} ! : \textsf{constant} $\rightarrow$ \textsf{void}\\
+\textbf{diam} : \textsf{constant}\\
+\end{center}
+Parameters: 
+\begin{itemize}
+\item \emph{width} represents the maximal relative width of the intervals used
+\end{itemize}
+\noindent Description: \begin{itemize}
+
+\item \textbf{diam} is a global variable. Its value represents the maximal width allowed
+   for intervals involved in safe algorithms of \sollya (namely \textbf{infnorm},
+   \textbf{checkinfnorm}, \textbf{accurateinfnorm}, \textbf{integral}, \textbf{findzeros}, \textbf{supnorm}).
+
+\item More precisely, \textbf{diam} is relative to the width of the input interval of
+   the command. For instance, suppose that \textbf{diam}=1e-5: if \textbf{infnorm} is called
+   on interval $[0,\,1]$, the maximal width of an interval will be 1e-5. But if it
+   is called on interval $[0,\,1\mathrm{e}{-3}]$, the maximal width will be 1e-8.
+\end{itemize}
+See also: \textbf{infnorm} (\ref{labinfnorm}), \textbf{checkinfnorm} (\ref{labcheckinfnorm}), \textbf{accurateinfnorm} (\ref{labaccurateinfnorm}), \textbf{integral} (\ref{labintegral}), \textbf{findzeros} (\ref{labfindzeros}), \textbf{supnorm} (\ref{labsupnorm})

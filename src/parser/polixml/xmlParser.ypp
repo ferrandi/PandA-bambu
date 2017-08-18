@@ -1,0 +1,263 @@
+/*
+ *
+ *                   _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
+ *                  _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
+ *                 _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
+ *                _/      _/    _/ _/    _/ _/   _/ _/    _/
+ *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
+ *
+ *             ***********************************************
+ *                              PandA Project 
+ *                     URL: http://panda.dei.polimi.it
+ *                       Politecnico di Milano - DEIB
+ *                        System Architectures Group
+ *             ***********************************************
+ *              Copyright (c) 2004-2017 Politecnico di Milano
+ *
+ *   This file is part of the PandA framework.
+ *
+ *   The PandA framework is free software; you can redistribute it and/or modify
+ *   it under the terms of the GNU General Public License as published by
+ *   the Free Software Foundation; either version 3 of the License, or
+ *   (at your option) any later version.
+ *
+ *   This program is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU General Public License for more details.
+ *
+ *   You should have received a copy of the GNU General Public License
+ *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+*/
+/**
+ * @file xmlParser.ypp
+ * @brief BISON based parser for xml.
+ *
+ * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
+ * $Revision$
+ * $Date$
+ * Last modified by $Author$
+ *
+*/
+%{
+/**
+* Includes
+*/
+///Autoheader include
+#include "config_HAVE_BISON_2_7_OR_GREATER.hpp"
+
+#define YYLTYPE_IS_TRIVIAL 0
+
+///Utility include
+#include "refcount.hpp"
+
+///NOTE: forward declaration of XmlBisonParserData, xml_document, XmlFlexLexer are in this point since they will be used in xmlParser.h
+REF_FORWARD_DECL(XmlBisonParserData);
+REF_FORWARD_DECL(XmlFlexLexer);
+REF_FORWARD_DECL(xml_document);
+
+#include <string>
+#include <cstdio>
+#include <cstring>
+#include <iosfwd>
+#include <fstream>
+#include <vector>
+#include "exceptions.hpp"
+#if HAVE_BISON_2_7_OR_GREATER
+#include "xmlParser.hpp"
+#else
+#include "xmlParser.h"
+#endif
+#include "xmlLexer.hpp"
+#include "polixml.hpp"
+#include "fileIO.hpp"
+#include "xml_dom_parser.hpp"
+
+REF_FORWARD_DECL(xml_document);
+/**
+* Defines
+*/
+//#define YYDEBUG 1
+///Skipping warnings due to bison
+#pragma GCC diagnostic ignored "-Wconversion"
+#pragma GCC diagnostic ignored "-Wsign-conversion"
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+#pragma GCC diagnostic ignored "-Wwrite-strings"
+#pragma GCC diagnostic ignored "-Wold-style-cast"
+#pragma GCC diagnostic ignored "-Wredundant-decls"
+#if (__GNUC__ > 4) || (__GNUC__ == 4 && __GNUC_MINOR__ >= 7)
+#pragma GCC diagnostic ignored "-Wzero-as-null-pointer-constant"
+#endif
+/**
+* MACROS
+*/
+
+/**
+* Class declarations
+*/
+/// data structure used to store parsing data
+struct XmlBisonParserData
+{
+   ///store the stack of nodes under analysis
+   std::vector<xml_element*> stack_of_nodes;
+   ///current name;
+   std::string curr_name;
+   /**
+    * remove the parsed double quote
+   */
+   std::string remove_quotes(const char * str)
+   {
+      size_t len = strlen(str);
+      THROW_ASSERT(str[0]=='"'||str[0]=='\'', "expected a (double) quote as first character");
+      THROW_ASSERT(str[len-1]=='"'||str[len-1]=='\'', "expected a (double) quote as last character");
+      std::string ioString(str+1, len-2);
+      xml_node::convert_escaped(ioString);
+      return ioString;
+   }
+};
+
+/**
+* Local Data Structures
+*/
+
+/**
+* Global Data Structures
+*/
+
+/** 
+* Function Prototypes
+*/
+extern int yylex(YYSTYPE *lvalp, const XmlFlexLexerRef lexer);
+extern void yyerror(const xml_documentRef Root, const XmlBisonParserDataRef data, const XmlFlexLexerRef lexer, const char* s);
+%}
+
+%union {const char* text;}
+
+%token XML_TOKEN ATTDEF ENDDEF EQ SLASH CLOSE END DOCTYPE
+%token <text> NAME VALUE DATA COMMENT POLIXML_START
+%type <text> name_opt
+
+%parse-param {const xml_documentRef Root}
+%parse-param {const XmlBisonParserDataRef data}
+%parse-param {const XmlFlexLexerRef lexer}
+%lex-param {const XmlFlexLexerRef lexer}
+%expect 0
+
+%pure-parser
+%start root_parser
+
+%%
+
+root_parser
+   : prolog element misc_seq_opt closing_data_opt
+ ;
+
+prolog
+ : version_opt misc_seq_opt doctype_misc_opt
+ ;
+version_opt
+   : XML_TOKEN NAME {if(std::string($2) != std::string("version")) lexer->yyerror("expected \"version\" keyword");} EQ VALUE {if(data->remove_quotes($5) !="1.0") lexer->yyerror("expected version 1.0");} encoding_or_sddecl_opt ENDDEF
+ | /*empty*/
+ ;
+encoding_or_sddecl_opt
+ : NAME EQ VALUE NAME EQ VALUE
+ | NAME EQ VALUE
+ | /*empty*/
+ ;
+
+misc_seq_opt
+ : misc_seq_opt misc
+ | /*empty*/
+ ;
+misc
+ : COMMENT
+ | attribute_decl
+ ;
+attribute_decl
+ : ATTDEF NAME
+   attribute_seq_opt ENDDEF
+ ;
+doctype_misc_opt
+ : doctypedecl misc_seq_opt
+ | /*empty*/
+ ;
+doctypedecl
+ : DOCTYPE
+ ;
+element
+ : POLIXML_START
+      {
+         const char * start = $1+1;
+         while(*start == ' ' || *start == '\t' || *start == '\r' || *start == '\n') start++;
+         if(data->stack_of_nodes.empty())
+            data->stack_of_nodes.push_back(Root->create_root_node(start));
+         else
+            data->stack_of_nodes.push_back(data->stack_of_nodes.back()->add_child_element(start));
+         data->stack_of_nodes.back()->set_line(lexer->lineno());
+      }
+   attribute_seq_opt
+   empty_or_content
+ ;
+empty_or_content
+ : SLASH CLOSE {data->stack_of_nodes.pop_back();}
+ | CLOSE
+   content END name_opt CLOSE {data->stack_of_nodes.pop_back();}
+ ;
+content
+   : content DATA {assert(!data->stack_of_nodes.empty()); data->stack_of_nodes.back()->add_child_text($2);}
+ | content misc
+ | content element
+ | /*empty*/
+ ;
+name_opt
+ : NAME				{$$ = $1;}
+ | /*empty*/			{$$ = 0;}
+ ;
+attribute_seq_opt
+   : attribute_seq_opt attribute
+ | /*empty*/
+ ;
+attribute
+   : NAME{data->curr_name=$1;} EQ VALUE {data->stack_of_nodes.back()->set_attribute(data->curr_name,data->remove_quotes($4));}
+ ;
+closing_data_opt
+ : DATA
+ | /*empty*/
+ ;
+
+%%
+/**
+* EPILOGUE
+*/
+void XMLDomParser::Exec()
+{
+   fileIO_istreamRef parsed_stream;
+   if(name == to_be_parsed)
+   {
+      ///File
+      parsed_stream = fileIO_istreamRef(fileIO_istream_open(to_be_parsed));
+   }
+   else
+   {
+      ///String
+      parsed_stream = fileIO_istream_open_from_string(to_be_parsed);
+   }
+   const XmlFlexLexerRef lexer(new XmlFlexLexer(name, parsed_stream.get(), 0));
+   doc = xml_documentRef(new xml_document());
+   const XmlBisonParserDataRef data(new XmlBisonParserData());
+#if YYDEBUG
+   yydebug = 1;
+#endif
+   yyparse(doc, data, lexer);
+}
+
+void yyerror(const xml_documentRef Root, const XmlBisonParserDataRef data, const XmlFlexLexerRef lexer, const char* msg)
+{
+  lexer->yyerror(msg);
+}
+int yylex(YYSTYPE *lvalp, const XmlFlexLexerRef lexer)
+{
+  lexer->lvalp=lvalp;
+  return lexer->yylex();
+}

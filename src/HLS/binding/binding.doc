@@ -1,0 +1,45 @@
+/*
+ *
+ *                   _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
+ *                  _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
+ *                 _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
+ *                _/      _/    _/ _/    _/ _/   _/ _/    _/
+ *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
+ *
+ *             ***********************************************
+ *                              PandA Project 
+ *                     URL: http://panda.dei.polimi.it
+ *                       Politecnico di Milano - DEIB
+ *                        System Architectures Group
+ *             ***********************************************
+ *              Copyright (c) 2004-2017 Politecnico di Milano
+ *
+ *   This file is part of the PandA framework.
+ *
+ *   The PandA framework is free software; you can redistribute it and/or modify
+ *   it under the terms of the GNU General Public License as published by
+ *   the Free Software Foundation; either version 3 of the License, or
+ *   (at your option) any later version.
+ *
+ *   This program is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU General Public License for more details.
+ *
+ *   You should have received a copy of the GNU General Public License
+ *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+*/
+/*!
+  \page src_HLS_binding_page Binding
+
+The data path describes a register transfer level design analogous to a schematic diagram. The data path is described in terms of modules and their interconnections.
+
+<b>Datapath</B>: The datapath (\f$DP\f$) is a graph \f$DP(M_o\cup M_s \cup M_i,I)\f$ where
+ - a set \f$M = M_o\cup M_s\cup M_i\f$, whose elements, called modules, are the nodes of the graph, with
+   - a set \fM_o\f of <i>operational</I> modules like adders, multipliers and ALUs (see \ref src_HLS_module_binding_page),
+   - a set \fM_s\f of <i>storage</I> modules like registers and register files (see \ref src_HLS_registerAllocation_page),
+   - a set \f$M_i\f$ of <i>interconnection</I> modules like multiplexers, demultiplexers busses and bus drivers (see \ref src_HLS_datapath_connection_binding_page);
+ - an interconnection relation \f$I\subseteq M\times M\f$, whose elements are interconnection links. These are the edges of the datapath graph.
+
+*/

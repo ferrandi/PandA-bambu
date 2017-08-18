@@ -1,0 +1,40 @@
+\subsection{points}
+\label{labpoints}
+\noindent Name: \textbf{points}\\
+controls the number of points chosen by \sollya in certain commands.\\
+\noindent Usage: 
+\begin{center}
+\textbf{points} = \emph{n} : \textsf{integer} $\rightarrow$ \textsf{void}\\
+\textbf{points} = \emph{n} ! : \textsf{integer} $\rightarrow$ \textsf{void}\\
+\textbf{points} : \textsf{constant}\\
+\end{center}
+Parameters: 
+\begin{itemize}
+\item \emph{n} represents the number of points
+\end{itemize}
+\noindent Description: \begin{itemize}
+
+\item \textbf{points} is a global variable. Its value represents the number of points
+   used in numerical algorithms of \sollya (namely \textbf{dirtyinfnorm},
+   \textbf{dirtyintegral}, \textbf{dirtyfindzeros}, \textbf{plot}).
+\end{itemize}
+\noindent Example 1: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> f=x^2*sin(1/x);
+> points=10;
+The number of points has been set to 10.
+> dirtyfindzeros(f, [0;1]);
+[|0, 0.318309886183790671537767526745028724068919291480918|]
+> points=100;
+The number of points has been set to 100.
+> dirtyfindzeros(f, [0;1]);
+[|0, 2.4485375860291590118289809749617594159147637806224e-2, 3.97887357729738339
+422209408431285905086149114351147e-2, 4.5472840883398667362538218106432674866988
+4702115589e-2, 5.3051647697298445256294587790838120678153215246819e-2, 6.3661977
+236758134307553505349005744813783858296183e-2, 7.9577471545947667884441881686257
+181017229822870229e-2, 0.106103295394596890512589175581676241356306430493638, 0.
+159154943091895335768883763372514362034459645740459, 0.3183098861837906715377675
+26745028724068919291480918|]
+\end{Verbatim}
+\end{minipage}\end{center}
+See also: \textbf{dirtyinfnorm} (\ref{labdirtyinfnorm}), \textbf{dirtyintegral} (\ref{labdirtyintegral}), \textbf{dirtyfindzeros} (\ref{labdirtyfindzeros}), \textbf{plot} (\ref{labplot}), \textbf{diam} (\ref{labdiam}), \textbf{prec} (\ref{labprec})

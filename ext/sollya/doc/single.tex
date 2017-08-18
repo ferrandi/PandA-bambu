@@ -1,0 +1,29 @@
+\subsection{single}
+\label{labsingle}
+\noindent Names: \textbf{single}, \textbf{SG}\\
+rounding to the nearest IEEE 754 single (binary32).\\
+\noindent Description: \begin{itemize}
+
+\item \textbf{single} is both a function and a constant.
+
+\item As a function, it rounds its argument to the nearest IEEE 754 single precision (i.e. IEEE754-2008 binary32) number.
+   Subnormal numbers are supported as well as standard numbers: it is the real
+   rounding described in the standard.
+
+\item As a constant, it symbolizes the single precision format. It is used in 
+   contexts when a precision format is necessary, e.g. in the commands 
+   \textbf{round} and \textbf{roundcoefficients}. In is not supported for \textbf{implementpoly}.
+   See the corresponding help pages for examples.
+\end{itemize}
+\noindent Example 1: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> display=binary!;
+> SG(0.1);
+1.10011001100110011001101_2 * 2^(-4)
+> SG(4.17);
+1.000010101110000101001_2 * 2^(2)
+> SG(1.011_2 * 2^(-1073));
+0
+\end{Verbatim}
+\end{minipage}\end{center}
+See also: \textbf{halfprecision} (\ref{labhalfprecision}), \textbf{double} (\ref{labdouble}), \textbf{doubleextended} (\ref{labdoubleextended}), \textbf{doubledouble} (\ref{labdoubledouble}), \textbf{quad} (\ref{labquad}), \textbf{tripledouble} (\ref{labtripledouble}), \textbf{roundcoefficients} (\ref{labroundcoefficients}), \textbf{implementpoly} (\ref{labimplementpoly}), \textbf{round} (\ref{labround}), \textbf{printsingle} (\ref{labprintsingle})

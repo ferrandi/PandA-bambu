@@ -1,0 +1,46 @@
+%Generated at 2017-08-03 21:02:42.605537 with bambu Version: PandA 0.9.5-dev - Revision 469156688a49ec04d84c336f346c1c0612ab8319-non_restoring_sdiv
+\begin{tabular}{|l|c|HHc|c|c|c|cH|}
+\hline
+Benchmark     & Cycles       & Period                 & Slack     & Fmax       & Wall-clock              & ALMs      & Membits    & DSPs    & HLS Time(s) \\
+\hline
+adpcm\_encode & $ 16728    $ & $ 2.860 \cdot 10^{0} $ & $ -0.36 $ & $ 349.65 $ & $ 4.784 \cdot 10^{1}  $ & $ 2395  $ & $ 768    $ & $ 24  $ & $ 11.21   $ \\
+aes\_decrypt  & $ 4025     $ & $ 2.236 \cdot 10^{0} $ & $ 0.26  $ & $ 447.23 $ & $ 9.000 \cdot 10^{0}  $ & $ 4825  $ & $ 1024   $ & $ 5   $ & $ 64.24   $ \\
+aes\_encrypt  & $ 2442     $ & $ 2.214 \cdot 10^{0} $ & $ 0.29  $ & $ 451.67 $ & $ 5.407 \cdot 10^{0}  $ & $ 4441  $ & $ 1024   $ & $ 0   $ & $ 63.87   $ \\
+bellmanford   & $ 4485     $ & $ 2.169 \cdot 10^{0} $ & $ 0.33  $ & $ 461.04 $ & $ 9.728 \cdot 10^{0}  $ & $ 666   $ & $ 0      $ & $ 0   $ & $ 1.44    $ \\
+blowfish      & $ 83070    $ & $ 2.677 \cdot 10^{0} $ & $ -0.18 $ & $ 373.55 $ & $ 2.224 \cdot 10^{2}  $ & $ 3178  $ & $ 0      $ & $ 0   $ & $ 59.13   $ \\
+dfadd         & $ 332      $ & $ 2.351 \cdot 10^{0} $ & $ 0.15  $ & $ 425.35 $ & $ 7.805 \cdot 10^{-1} $ & $ 3815  $ & $ 0      $ & $ 0   $ & $ 31.52   $ \\
+dfdiv         & $ 3519     $ & $ 2.644 \cdot 10^{0} $ & $ -0.14 $ & $ 378.21 $ & $ 9.304 \cdot 10^{0}  $ & $ 3083  $ & $ 0      $ & $ 12  $ & $ 12.34   $ \\
+dfmul         & $ 143      $ & $ 2.537 \cdot 10^{0} $ & $ -0.04 $ & $ 394.17 $ & $ 3.628 \cdot 10^{-1} $ & $ 1566  $ & $ 0      $ & $ 7   $ & $ 8.14    $ \\
+dfsin         & $ 92080    $ & $ 2.862 \cdot 10^{0} $ & $ -0.36 $ & $ 349.41 $ & $ 2.635 \cdot 10^{2}  $ & $ 8834  $ & $ 0      $ & $ 28  $ & $ 137.29  $ \\
+gsm           & $ 3381     $ & $ 3.236 \cdot 10^{0} $ & $ -0.74 $ & $ 309.02 $ & $ 1.094 \cdot 10^{1}  $ & $ 2952  $ & $ 944    $ & $ 48  $ & $ 17.32   $ \\
+jpeg          & $ 803284   $ & $ 3.425 \cdot 10^{0} $ & $ -0.93 $ & $ 291.97 $ & $ 2.751 \cdot 10^{3}  $ & $ 10002 $ & $ 460040 $ & $ 28  $ & $ 32.55   $ \\
+matrix        & $ 199713   $ & $ 2.107 \cdot 10^{0} $ & $ 0.39  $ & $ 474.61 $ & $ 4.208 \cdot 10^{2}  $ & $ 278   $ & $ 0      $ & $ 2   $ & $ 1.21    $ \\
+mips          & $ 5172     $ & $ 2.342 \cdot 10^{0} $ & $ 0.16  $ & $ 426.99 $ & $ 1.211 \cdot 10^{1}  $ & $ 1151  $ & $ 0      $ & $ 4   $ & $ 11.64   $ \\
+motion        & $ 183      $ & $ 2.123 \cdot 10^{0} $ & $ 0.38  $ & $ 471.03 $ & $ 3.885 \cdot 10^{-1} $ & $ 984   $ & $ 0      $ & $ 0   $ & $ 5.30    $ \\
+satd          & $ 31       $ & $ 2.336 \cdot 10^{0} $ & $ 0.16  $ & $ 428.08 $ & $ 7.242 \cdot 10^{-2} $ & $ 2402  $ & $ 0      $ & $ 0   $ & $ 14.02   $ \\
+sha           & $ 224838   $ & $ 2.225 \cdot 10^{0} $ & $ 0.28  $ & $ 449.44 $ & $ 5.003 \cdot 10^{2}  $ & $ 1620  $ & $ 117760 $ & $ 0   $ & $ 6.91    $ \\
+sobel         & $ 18468122 $ & $ 2.218 \cdot 10^{0} $ & $ 0.28  $ & $ 450.86 $ & $ 4.096 \cdot 10^{4}  $ & $ 597   $ & $ 0      $ & $ 2   $ & $ 1.96    $ \\
+\hline
+Average       & $          $ & $ 2.504 \cdot 10^{0} $ & $ -0.00 $ & $ 407.78 $ & $                     $ & $       $ & $        $ & $     $ & $         $ \\
+\hline
+Overall       & $ 19911548 $ & $                    $ & $       $ & $        $ & $ 4.523 \cdot 10^{4}  $ & $ 52789 $ & $ 581560 $ & $ 160 $ & $ 480.09  $ \\
+\hline
+\end{tabular}
+%Benchmarks:
+%adpcm_encode/not-optimized/adpcm.c --benchmark-name=adpcm_encode --generate-tb=BENCHMARKS_ROOT/adpcm_encode/not-optimized/encode.xml -DINITIALIZATIONS --top-fname=encode
+%aes_decrypt/not-optimized/aes.c --benchmark-name=aes_decrypt --generate-tb=BENCHMARKS_ROOT/aes_decrypt/not-optimized/decrypt.xml --top-fname=main --top-rtldesign-name=decrypt
+%aes_encrypt/not-optimized/aes.c --benchmark-name=aes_encrypt --generate-tb=BENCHMARKS_ROOT/aes_encrypt/not-optimized/main.xml --top-fname=main --top-rtldesign-name=encrypt
+%bellmanford/not-optimized/bellmanford.c --benchmark-name=bellmanford --generate-tb=BENCHMARKS_ROOT/bellmanford/not-optimized/test_ext_dataset.xml --top-fname=bellmanford
+%blowfish-BF_cfb64_encrypt/not-optimized/bf.c --benchmark-name=blowfish --generate-tb=BENCHMARKS_ROOT/blowfish-BF_cfb64_encrypt/not-optimized/main.xml --top-fname=main --top-rtldesign-name=BF_cfb64_encrypt
+%dfadd/not-optimized/dfadd.c --benchmark-name=dfadd --generate-tb=BENCHMARKS_ROOT/dfadd/not-optimized/float64_add.xml --top-fname=float64_add
+%dfdiv/not-optimized/dfdiv.c --benchmark-name=dfdiv --generate-tb=BENCHMARKS_ROOT/dfdiv/not-optimized/float64_div.xml --top-fname=float64_div
+%dfmul/not-optimized/dfmul.c --benchmark-name=dfmul --generate-tb=BENCHMARKS_ROOT/dfmul/not-optimized/float64_mul.xml --top-fname=float64_mul
+%dfsin/not-optimized/dfsin.c --benchmark-name=dfsin --generate-tb=BENCHMARKS_ROOT/dfsin/not-optimized/local_sin.xml --top-fname=local_sin
+%gsm/not-optimized/gsm.c --benchmark-name=gsm --generate-tb=BENCHMARKS_ROOT/gsm/not-optimized/Gsm_LPC_Analysis.xml --top-fname=Gsm_LPC_Analysis
+%jpeg/not-optimized/main.c --benchmark-name=jpeg --generate-tb=BENCHMARKS_ROOT/jpeg/not-optimized/jpeg2bmp_main.xml --top-fname=jpeg2bmp_main
+%mips/not-optimized/mips.c --benchmark-name=mips --generate-tb=BENCHMARKS_ROOT/mips/not-optimized/main.xml --top-fname=main --top-rtldesign-name=mips_call
+%mm/not-optimized/module.c --benchmark-name=matrix --generate-tb=BENCHMARKS_ROOT/mm/not-optimized/test.xml --top-fname=mm
+%motion/not-optimized/mpeg2.c --benchmark-name=motion --generate-tb=BENCHMARKS_ROOT/motion/not-optimized/main.xml --top-fname=main --top-rtldesign-name=motion_vectors
+%satd/not-optimized/main.c --benchmark-name=satd --generate-tb=BENCHMARKS_ROOT/satd/not-optimized/test.xml --top-fname=satd -fpeel-loops --compiler=I386_GCC6
+%sha/not-optimized/sha_driver.c --benchmark-name=sha --generate-tb=BENCHMARKS_ROOT/sha/not-optimized/main.xml --top-fname=main --top-rtldesign-name=sha_stream
+%sobel/not-optimized/sobel.c --benchmark-name=sobel --generate-tb=BENCHMARKS_ROOT/sobel/not-optimized/test.xml --std=c99 --top-fname=sobel

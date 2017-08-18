@@ -1,0 +1,45 @@
+\subsection{roundingwarnings}
+\label{labroundingwarnings}
+\noindent Name: \textbf{roundingwarnings}\\
+global variable controlling whether or not a warning is displayed when roundings occur.\\
+\noindent Usage: 
+\begin{center}
+\textbf{roundingwarnings} = \emph{activation value} : \textsf{on$|$off} $\rightarrow$ \textsf{void}\\
+\textbf{roundingwarnings} = \emph{activation value} ! : \textsf{on$|$off} $\rightarrow$ \textsf{void}\\
+\textbf{roundingwarnings} : \textsf{on$|$off}\\
+\end{center}
+Parameters: 
+\begin{itemize}
+\item \emph{activation value} controls if warnings should be shown or not
+\end{itemize}
+\noindent Description: \begin{itemize}
+
+\item \textbf{roundingwarnings} is a global variable. When its value is \textbf{on}, warnings are
+   emitted in appropriate verbosity modes (see \textbf{verbosity}) when roundings
+   occur.  When its value is \textbf{off}, these warnings are suppressed.
+
+\item This mode depends on a verbosity of at least 1. See
+   \textbf{verbosity} for more details.
+
+\item Default is \textbf{on} when the standard input is a terminal and
+   \textbf{off} when \sollya input is read from a file.
+\end{itemize}
+\noindent Example 1: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> verbosity=1!;
+> roundingwarnings = on;
+Rounding warning mode has been activated.
+> exp(0.1);
+Warning: Rounding occurred when converting the constant "0.1" to floating-point 
+with 165 bits.
+If safe computation is needed, try to increase the precision.
+Warning: rounding has happened. The value displayed is a faithful rounding of th
+e true result.
+1.1051709180756476248117078264902466682245471947375
+> roundingwarnings = off;
+Rounding warning mode has been deactivated.
+> exp(0.1);
+1.1051709180756476248117078264902466682245471947375
+\end{Verbatim}
+\end{minipage}\end{center}
+See also: \textbf{on} (\ref{labon}), \textbf{off} (\ref{laboff}), \textbf{verbosity} (\ref{labverbosity}), \textbf{midpointmode} (\ref{labmidpointmode}), \textbf{rationalmode} (\ref{labrationalmode})

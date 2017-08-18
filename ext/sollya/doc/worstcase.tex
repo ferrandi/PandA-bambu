@@ -1,0 +1,35 @@
+\subsection{worstcase}
+\label{labworstcase}
+\noindent Name: \textbf{worstcase}\\
+searches for hard-to-round cases of a function\\
+\noindent Usage: 
+\begin{center}
+\textbf{worstcase}(\emph{function}, \emph{preimage precision}, \emph{preimage exponent range}, \emph{image precision}, \emph{error bound}) : (\textsf{function}, \textsf{integer}, \textsf{range}, \textsf{integer}, \textsf{constant}) $\rightarrow$ \textsf{void}\\
+\textbf{worstcase}(\emph{function}, \emph{preimage precision}, \emph{preimage exponent range}, \emph{image precision}, \emph{error bound}, \emph{filename}) : (\textsf{function}, \textsf{integer}, \textsf{range}, \textsf{integer}, \textsf{constant}, \textsf{string}) $\rightarrow$ \textsf{void}\\
+\end{center}
+Parameters: 
+\begin{itemize}
+\item \emph{function} represents the function to be considered
+\item \emph{preimage precision} represents the precision of the preimages
+\item \emph{preimage exponent range} represents the exponents in the preimage format
+\item \emph{image precision} represents the precision of the format the images are to be rounded to
+\item \emph{error bound} represents the upper bound for the search w.r.t. the relative rounding error
+\item \emph{filename} represents a character sequence containing a filename
+\end{itemize}
+\noindent Description: \begin{itemize}
+
+\item The \textbf{worstcase} command is deprecated. It searches for hard-to-round cases of
+   a function. The command \textbf{searchgal} has a comparable functionality.
+\end{itemize}
+\noindent Example 1: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> worstcase(exp(x),24,[1,2],24,1b-26);
+prec = 165
+x = 1.99999988079071044921875        f(x) = 7.3890552520751953125        eps = 4
+.5998601423446695596184695493764120138001954979037e-9 = 2^(-27.695763) 
+x = 2        f(x) = 7.38905620574951171875        eps = 1.4456360874967301812222
+8379395533417878125150587072e-8 = 2^(-26.043720) 
+
+\end{Verbatim}
+\end{minipage}\end{center}
+See also: \textbf{round} (\ref{labround}), \textbf{searchgal} (\ref{labsearchgal}), \textbf{evaluate} (\ref{labevaluate})

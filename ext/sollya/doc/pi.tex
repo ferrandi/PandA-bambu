@@ -1,0 +1,48 @@
+\subsection{pi}
+\label{labpi}
+\noindent Name: \textbf{pi}\\
+the constant $\pi$.\\
+\noindent Description: \begin{itemize}
+
+\item \textbf{pi} is the constant $\pi$, defined as half the period of sine and cosine.
+
+\item In \sollya, \textbf{pi} is considered a 0-ary function. This way, the constant 
+   is not evaluated at the time of its definition but at the time of its use. For 
+   instance, when you define a constant or a function relating to $\pi$, the current
+   precision at the time of the definition does not matter. What is important is 
+   the current precision when you evaluate the function or the constant value.
+
+\item Remark that when you define an interval, the bounds are first evaluated and 
+   then the interval is defined. In this case, \textbf{pi} will be evaluated as any 
+   other constant value at the definition time of the interval, thus using the 
+   current precision at this time.
+\end{itemize}
+\noindent Example 1: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> verbosity=1!; prec=12!;
+> a = 2*pi;
+> a;
+Warning: rounding has happened. The value displayed is a faithful rounding of th
+e true result.
+6.283
+> prec=20!;
+> a;
+Warning: rounding has happened. The value displayed is a faithful rounding of th
+e true result.
+6.283187
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 2: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> display=binary;
+Display mode is binary numbers.
+> prec=12!;
+> d = [pi; 5];
+> d;
+[1.1001001_2 * 2^(1);1.01_2 * 2^(2)]
+> prec=20!;
+> d;
+[1.1001001_2 * 2^(1);1.01_2 * 2^(2)]
+\end{Verbatim}
+\end{minipage}\end{center}
+See also: \textbf{cos} (\ref{labcos}), \textbf{sin} (\ref{labsin}), \textbf{tan} (\ref{labtan}), \textbf{asin} (\ref{labasin}), \textbf{acos} (\ref{labacos}), \textbf{atan} (\ref{labatan}), \textbf{evaluate} (\ref{labevaluate}), \textbf{prec} (\ref{labprec}), \textbf{libraryconstant} (\ref{lablibraryconstant})

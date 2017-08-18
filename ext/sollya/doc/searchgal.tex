@@ -1,0 +1,67 @@
+\subsection{searchgal}
+\label{labsearchgal}
+\noindent Name: \textbf{searchgal}\\
+searches for a preimage of a function such that the rounding the image yields an error smaller than a constant\\
+\noindent Usage: 
+\begin{center}
+\textbf{searchgal}(\emph{function}, \emph{start}, \emph{preimage precision}, \emph{steps}, \emph{format}, \emph{error bound}) : (\textsf{function}, \textsf{constant}, \textsf{integer}, \textsf{integer}, \textsf{HP$|$halfprecision$|$SG$|$single$|$D$|$double$|$DE$|$doubleextended$|$DD$|$doubledouble$|$QD$|$quad$|$TD$|$tripledouble}, \textsf{constant}) $\rightarrow$ \textsf{list}\\
+\textbf{searchgal}(\emph{list of functions}, \emph{start}, \emph{preimage precision}, \emph{steps}, \emph{list of format}, \emph{list of error bounds}) : (\textsf{list}, \textsf{constant}, \textsf{integer}, \textsf{integer}, \textsf{list}, \textsf{list}) $\rightarrow$ \textsf{list}\\
+\end{center}
+Parameters: 
+\begin{itemize}
+\item \emph{function} represents the function to be considered
+\item \emph{start} represents a value around which the search is to be performed
+\item \emph{preimage precision} represents the precision (discretization) for the eligible preimage values
+\item \emph{steps} represents the binary logarithm ($\log_2$) of the number of search steps to be performed
+\item \emph{format} represents the format the image of the function is to be rounded to
+\item \emph{error bound} represents a upper bound on the relative rounding error when rounding the image
+\item \emph{list of functions} represents the functions to be considered
+\item \emph{list of formats} represents the respective formats the images of the functions are to be rounded to
+\item \emph{list of error bounds} represents a upper bound on the relative rounding error when rounding the image
+\end{itemize}
+\noindent Description: \begin{itemize}
+
+\item The command \textbf{searchgal} searches for a preimage $z$ of function
+   \emph{function} or a list of functions \emph{list of functions} such that
+   $z$ is a floating-point number with \emph{preimage precision}
+   significant mantissa bits and the image $y$ of the function,
+   respectively each image $y_i$ of the functions, rounds to
+   format \emph{format} respectively to the corresponding format in \emph{list of format} 
+   with a relative rounding error less than \emph{error bound}
+   respectively the corresponding value in \emph{list of error bounds}. During
+   this search, at most $2^{steps}$ attempts are made. The search
+   starts with a preimage value equal to \emph{start}. This value is then
+   increased and decreased by $1$ ulp in precision \emph{preimage precision} 
+   until a value is found or the step limit is reached.
+    
+   If the search finds an appropriate preimage $z$, \textbf{searchgal}
+   evaluates to a list containing this value. Otherwise, \textbf{searchgal}
+   evaluates to an empty list.
+\end{itemize}
+\noindent Example 1: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> searchgal(log(x),2,53,15,DD,1b-112);
+[| |]
+> searchgal(log(x),2,53,18,DD,1b-112);
+[|2.0000000000384972054234822280704975128173828125|]
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 2: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> f = exp(x);
+> s = searchgal(f,2,53,18,DD,1b-112);
+> if (s != [||]) then {
+     v = s[0];
+     print("The rounding error is 2^(",evaluate(log2(abs(DD(f)/f - 1)),v),")");
+  } else print("No value found");
+The rounding error is 2^( -1.12106878438809380148206984258358542322113874177832e
+2 )
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 3: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> searchgal([|sin(x),cos(x)|],1,53,15,[|D,D|],[|1b-62,1b-60|]);
+[|1.00000000000159494639717649988597258925437927246094|]
+\end{Verbatim}
+\end{minipage}\end{center}
+See also: \textbf{round} (\ref{labround}), \textbf{double} (\ref{labdouble}), \textbf{doubledouble} (\ref{labdoubledouble}), \textbf{tripledouble} (\ref{labtripledouble}), \textbf{evaluate} (\ref{labevaluate}), \textbf{worstcase} (\ref{labworstcase})

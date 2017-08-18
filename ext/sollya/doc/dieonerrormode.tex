@@ -1,0 +1,90 @@
+\subsection{dieonerrormode}
+\label{labdieonerrormode}
+\noindent Name: \textbf{dieonerrormode}\\
+global variable controlling if \sollya is exited on an error or not.\\
+\noindent Usage: 
+\begin{center}
+\textbf{dieonerrormode} = \emph{activation value} : \textsf{on$|$off} $\rightarrow$ \textsf{void}\\
+\textbf{dieonerrormode} = \emph{activation value} ! : \textsf{on$|$off} $\rightarrow$ \textsf{void}\\
+\textbf{dieonerrormode} : \textsf{on$|$off}\\
+\end{center}
+Parameters: 
+\begin{itemize}
+\item \emph{activation value} controls if \sollya is exited on an error or not.
+\end{itemize}
+\noindent Description: \begin{itemize}
+
+\item \textbf{dieonerrormode} is a global variable. When its value is \textbf{off}, which is the default,
+   \sollya will not exit on any syntax, typing, side-effect errors. These
+   errors will be caught by the tool, even if a memory might be leaked at 
+   that point. On evaluation, the \textbf{error} special value will be produced.
+
+\item When the value of the \textbf{dieonerrormode} variable is \textbf{on}, \sollya will exit
+   on any syntax, typing, side-effect errors. A warning message will
+   be printed in these cases at appropriate \textbf{verbosity} levels. 
+\end{itemize}
+\noindent Example 1: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> verbosity = 1!;
+> dieonerrormode = off;
+Die-on-error mode has been deactivated.
+> for i from true to false do i + "Salut";
+Warning: one of the arguments of the for loop does not evaluate to a constant.
+The for loop will not be executed.
+> exp(17);
+Warning: rounding has happened. The value displayed is a faithful rounding of th
+e true result.
+2.41549527535752982147754351803858238798675673527224e7
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 2: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> verbosity = 1!;
+> dieonerrormode = off!;
+> 5 */  4;
+Warning: syntax error, unexpected DIVTOKEN.
+The last symbol read has been "/".
+Will skip input until next semicolon after the unexpected token. May leak memory
+.
+  exp(17);
+Warning: rounding has happened. The value displayed is a faithful rounding of th
+e true result.
+2.41549527535752982147754351803858238798675673527224e7
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 3: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> verbosity = 1!;
+> dieonerrormode;
+off
+> dieonerrormode = on!;
+> dieonerrormode;
+on
+> for i from true to false do i + "Salut";
+Warning: one of the arguments of the for loop does not evaluate to a constant.
+The for loop will not be executed.
+Warning: some syntax, typing or side-effect error has occurred.
+As the die-on-error mode is activated, the tool will be exited.
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 4: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> verbosity = 1!;
+> dieonerrormode = on!;
+> 5 */  4;
+Warning: syntax error, unexpected DIVTOKEN.
+The last symbol read has been "/".
+Will skip input until next semicolon after the unexpected token. May leak memory
+.
+Warning: some syntax, typing or side-effect error has occurred.
+As the die-on-error mode is activated, the tool will be exited.
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 5: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> verbosity = 0!;
+> dieonerrormode = on!;
+> 5 */  4;
+\end{Verbatim}
+\end{minipage}\end{center}
+See also: \textbf{on} (\ref{labon}), \textbf{off} (\ref{laboff}), \textbf{verbosity} (\ref{labverbosity}), \textbf{error} (\ref{laberror})

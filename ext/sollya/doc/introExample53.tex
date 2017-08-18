@@ -1,0 +1,31 @@
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> match exp(sin(x)) + sin(x) with
+        exp(a) + a : {
+                        print("Winner");
+                        print("a = ", a);
+                     }
+        default    : {
+                        print("Loser");
+                     };
+Winner
+a =  sin(x)
+> 
+> match exp(sin(x)) + sin(3 * x) with
+        exp(a) + a : {
+                        print("Winner");
+                        print("a = ", a);
+                     }
+        default    : {
+                        print("Loser");
+                     };
+Loser
+> 
+> f = exp(x);
+> match f with
+        sin(x) : (1)
+        cos(x) : (2)
+        exp(x) : (3)
+        default : (4);
+3
+\end{Verbatim}
+\end{minipage}\end{center}

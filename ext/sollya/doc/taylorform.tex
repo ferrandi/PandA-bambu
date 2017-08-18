@@ -1,0 +1,172 @@
+\subsection{taylorform}
+\label{labtaylorform}
+\noindent Name: \textbf{taylorform}\\
+computes a rigorous polynomial approximation (polynomial, interval error bound) for a function, based on Taylor expansions.\\
+\noindent Usage: 
+\begin{center}
+\textbf{taylorform}(\emph{f}, \emph{n}, \emph{$x_0$}, \emph{I}, \emph{errorType}) : (\textsf{function}, \textsf{integer}, \textsf{constant}, \textsf{range}, \textsf{absolute$|$relative}) $\rightarrow$ \textsf{list}\\
+\textbf{taylorform}(\emph{f}, \emph{n}, \emph{$x_0$}, \emph{I}, \emph{errorType}) : (\textsf{function}, \textsf{integer}, \textsf{range}, \textsf{range}, \textsf{absolute$|$relative}) $\rightarrow$ \textsf{list}\\
+\textbf{taylorform}(\emph{f}, \emph{n}, \emph{$x_0$}, \emph{errorType}) : (\textsf{function}, \textsf{integer}, \textsf{constant}, \textsf{absolute$|$relative}) $\rightarrow$ \textsf{list}\\
+\textbf{taylorform}(\emph{f}, \emph{n}, \emph{$x_0$}, \emph{errorType}) : (\textsf{function}, \textsf{integer}, \textsf{range}, \textsf{absolute$|$relative}) $\rightarrow$ \textsf{list}\\
+\end{center}
+Parameters: 
+\begin{itemize}
+\item \emph{f} is the function to be approximated.
+\item \emph{n} is the degree of the polynomial that must approximate \emph{f}.
+\item \emph{$x_0$} is the point (it can be a real number or an interval) where the Taylor exansion of the function is to be considered.
+\item \emph{I} is the interval over which the function is to be approximated. If this parameter is omitted, the behavior is changed (see detailed description below).
+\item \emph{errorType} (optional) is the type of error to be considered. See the detailed description below. Default is \textbf{absolute}.
+\end{itemize}
+\noindent Description: \begin{itemize}
+
+\item \textbf{taylorform} computes an approximation polynomial and an interval error bound
+   for function $f$. More precisely, it returns a list $L = \left[p, \textrm{coeffErrors},\Delta \right]$
+   where:
+   \begin{itemize}
+   \item $p$ is an approximation polynomial of degree $n$ which is roughly speaking
+   a numerical Taylor expansion of $f$ at the point $x_0$.
+   \item coeffsErrors is a list of $n+1$ intervals. Each interval coeffsErrors[$i$]
+   contains an enclosure of all the errors accumulated when computing the $i$-th
+   coefficient of $p$.
+   \item $\Delta$ is an interval that provides a bound for the approximation error
+   between $p$ and $f$. Its significance depends on the \emph{errorType} considered.
+   \end{itemize}
+
+\item The polynomial $p$ and the bound  $\Delta$ are obtained using Taylor Models
+   principles.
+
+\item Please note that $x_0$ can be an interval. In general, it is meant to be a
+   small interval approximating a non representable value. If $x_0$ is given as a
+   constant expression, it is first numerically evaluated (leading to a faithful
+   rounding $\tilde{x_0}$ at precision \textbf{prec}), and it is then replaced by the (exactly
+   representable) point-interval $[\tilde{x_0},\,\tilde{x_0}]$. In particular, it is not
+   the same to call \textbf{taylorform} with $x_0 = \textbf{pi}$ and with $x_0 = [\textbf{pi}]$, for instance.
+   In general, if the point around which one desires to compute the polynomial
+   is not exactly representable, one should preferably use a small interval
+   for~$x_0$.
+
+\item More formally, the mathematical property ensured by the algorithm may be
+   stated as follows. For all $\csi_0$ in $x_0$, there exist (small) values
+   $\varepsilon_i \in \textrm{coeffsErrors}[i]$ such that:
+   \\
+   If \emph{errorType} is \textbf{absolute}, $\forall x \in I, \exists \delta \in \Delta,\,$
+   $f(x)-p(x-\csi_0) = \sum\limits_{i=0}^{n} \varepsilon_i\, (x-\csi_0)^i + \delta$.
+   \\
+   If \emph{errorType} is \textbf{relative}, $\forall x \in I, \exists \delta \in \Delta,\,$
+   $f(x)-p(x-\csi_0) = \sum\limits_{i=0}^{n} \varepsilon_i\, (x-\csi_0)^i + \delta\,(x-\csi_0)^{n+1}$.
+
+\item It is also possible to use a large interval for $x_0$, though it is not
+   obvious to give an intuitive sense to the result of \textbf{taylorform} in that case.
+   A particular case that might be interesting is when $x_0 = I$ in relative mode.
+   In that case, denoting by $p_i$ the coefficient of $p$ of order $i$, the interval
+   $p_i + \textrm{coeffsError}[i]$ gives an enclosure of $f^{(i)}(I)/i!$.
+   However, the command \textbf{autodiff} is more convenient for computing such
+   enclosures.
+
+\item When the interval $I$ is not given, the approximated Taylor polynomial is
+   computed but no remainder is produced. In that case the returned list
+   is $L = \left[p, \textrm{coeffErrors}\right]$.
+
+\item The relative case is especially useful when functions with removable
+   singularities are considered. In such a case, this routine is able to compute
+   a finite remainder bound, provided that the expansion point given is the
+   problematic removable singularity point.
+
+\item The algorithm does not guarantee that by increasing the degree of the
+   approximation, the remainder bound will become smaller. Moreover, it may 
+   even become larger due to the dependecy phenomenon present with interval
+   arithmetic. In order to reduce this phenomenon, a possible solution is to
+   split the definition domain $I$ into several smaller intervals. 
+
+\item The command \textbf{taylor} also computes a Taylor polynomial of a function. However
+   it does not provide a bound on the remainder. Besides, \textbf{taylor} is a somehow
+   symbolic command: each coefficient of the Taylor polynomial is computed
+   exactly and returned as an expression tree exactly equal to theoretical
+   value. It is henceforth much more inefficient than \textbf{taylorform} and \textbf{taylorform}
+   should be prefered if only numercial (yet safe) computations are required.
+   The same difference exists between commands \textbf{diff} and \textbf{autodiff}.
+\end{itemize}
+\noindent Example 1: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> TL=taylorform(sin(x)/x, 10, 0, [-1,1], relative);
+> p=TL[0];
+> Delta=TL[2];
+> errors=TL[1];
+> for epsi in errors do epsi;
+[0;0]
+[0;0]
+[0;5.3455294201843912922810729343029637576303937602101e-51]
+[0;0]
+[-3.3409558876152445576756705839393523485189961001313e-52;3.34095588761524455767
+56705839393523485189961001313e-52]
+[0;0]
+[-1.04404871487976392427364705748104760891218628129103e-53;1.0440487148797639242
+7364705748104760891218628129103e-53]
+[0;0]
+[-1.63132611699963113167757352731413688892529106451724e-55;1.6313261169996311316
+7757352731413688892529106451724e-55]
+[0;0]
+[-1.91171029335894273243465647732125416670932546623114e-57;1.9117102933589427324
+3465647732125416670932546623114e-57]
+> p; Delta;
+1 + x^2 * (-0.16666666666666666666666666666666666666666666666667 + x^2 * (8.3333
+333333333333333333333333333333333333333333333e-3 + x^2 * (-1.9841269841269841269
+8412698412698412698412698412698e-4 + x^2 * (2.7557319223985890652557319223985890
+6525573192239859e-6 + x^2 * (-2.505210838544171877505210838544171877505210838544
+19e-8)))))
+[-1.6135797443886066084999806203254010793747502812764e-10;1.61357974438860660849
+99806203254010793747502812764e-10]
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 2: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> TL=taylorform(exp(x), 10, 0, [-1,1], absolute);
+> p=TL[0];
+> Delta=TL[2];
+> p; Delta;
+1 + x * (1 + x * (0.5 + x * (0.1666666666666666666666666666666666666666666666666
+7 + x * (4.1666666666666666666666666666666666666666666666667e-2 + x * (8.3333333
+333333333333333333333333333333333333333333e-3 + x * (1.3888888888888888888888888
+8888888888888888888888889e-3 + x * (1.984126984126984126984126984126984126984126
+98412698e-4 + x * (2.4801587301587301587301587301587301587301587301587e-5 + x * 
+(2.75573192239858906525573192239858906525573192239859e-6 + x * 2.755731922398589
+0652557319223985890652557319223986e-7)))))))))
+[-2.31142719641187619441242534182684745832539555102969e-8;2.73126607556424744202
+06278018039434042553645532164e-8]
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 3: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> TL1 = taylorform(exp(x), 10, log2(10), [-1,1], absolute);
+> TL2 = taylorform(exp(x), 10, [log2(10)], [-1,1], absolute);
+> TL1==TL2;
+false
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 4: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> TL1 = taylorform(exp(x), 3, 0, [0,1], relative);
+> TL2 = taylorform(exp(x), 3, 0, relative);
+> TL1[0]==TL2[0];
+true
+> TL1[1]==TL2[1];
+true
+> length(TL1);
+3
+> length(TL2);
+2
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 5: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> f = exp(cos(x)); x0 = 0;
+> TL = taylorform(f, 3, x0);
+> T1 = TL[0];
+> T2 = taylor(f, 3, x0);
+> print(coeff(T1, 2));
+-1.35914091422952261768014373567633124887862354684999
+> print(coeff(T2, 2));
+-(0.5 * exp(1))
+\end{Verbatim}
+\end{minipage}\end{center}
+See also: \textbf{diff} (\ref{labdiff}), \textbf{autodiff} (\ref{labautodiff}), \textbf{taylor} (\ref{labtaylor}), \textbf{remez} (\ref{labremez})

@@ -1,0 +1,28 @@
+\subsection{bashexecute}
+\label{labbashexecute}
+\noindent Name: \textbf{bashexecute}\\
+executes a shell command.\\
+\noindent Usage: 
+\begin{center}
+\textbf{bashexecute}(\emph{command}) : \textsf{string} $\rightarrow$ \textsf{void}\\
+\end{center}
+Parameters: 
+\begin{itemize}
+\item \emph{command} is a command to be interpreted by the shell.
+\end{itemize}
+\noindent Description: \begin{itemize}
+
+\item \textbf{bashexecute}(\emph{command}) lets the shell interpret \emph{command}. It is useful to execute
+   some external code within \sollya.
+
+\item \textbf{bashexecute} does not return anything. It just executes its argument. However, if
+   \emph{command} produces an output in a file, this result can be imported in \sollya
+   with help of commands like \textbf{execute}, \textbf{readfile} and \textbf{parse}.
+\end{itemize}
+\noindent Example 1: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> bashexecute("LANG=C date");
+Mon May 23 17:36:53 CEST 2011
+\end{Verbatim}
+\end{minipage}\end{center}
+See also: \textbf{execute} (\ref{labexecute}), \textbf{readfile} (\ref{labreadfile}), \textbf{parse} (\ref{labparse}), \textbf{bashevaluate} (\ref{labbashevaluate})

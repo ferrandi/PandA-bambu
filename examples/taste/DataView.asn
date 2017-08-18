@@ -1,0 +1,32 @@
+TASTE-Dataview DEFINITIONS ::=
+BEGIN
+IMPORTS T-Int32, T-UInt32, T-Int8, T-UInt8, T-Boolean FROM TASTE-BasicTypes;
+
+-- A few simple types to start with ASN.1
+MyInteger   ::= T-UInt8
+
+MyReal	    ::= REAL (0.0 .. 1000.0)
+
+MyEnum	    ::= ENUMERATED { hello, world, howareyou }
+
+MySeq	    ::= SEQUENCE {
+		    a MyInteger,
+		    b ENUMERATED { taste(1), welcomes(2), you(3) }
+}
+
+MyChoice    ::= CHOICE {
+		    a BOOLEAN,
+		    b MySeq
+}
+
+MySeqOf	    ::= SEQUENCE (SIZE (2)) OF MyEnum
+
+MyIntegerPair ::= SEQUENCE (SIZE (2)) OF T-Int32
+
+MyOctStr    ::= OCTET STRING (SIZE (3))
+
+-- You can also declare variables (they will be visible in C, Ada and SDL)
+myVar	    MySeqOf	::= { hello, world }
+
+END
+

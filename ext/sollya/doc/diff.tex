@@ -1,0 +1,40 @@
+\subsection{diff}
+\label{labdiff}
+\noindent Name: \textbf{diff}\\
+differentiation operator\\
+\noindent Usage: 
+\begin{center}
+\textbf{diff}(\emph{function}) : \textsf{function} $\rightarrow$ \textsf{function}\\
+\end{center}
+Parameters: 
+\begin{itemize}
+\item \emph{function} represents a function
+\end{itemize}
+\noindent Description: \begin{itemize}
+
+\item \textbf{diff}(\emph{function}) returns the symbolic derivative of the function
+   \emph{function} by the global free variable.
+    
+   If \emph{function} represents a function symbol that is externally bound
+   to some code by \textbf{library}, the derivative is performed as a symbolic
+   annotation to the returned expression tree.
+\end{itemize}
+\noindent Example 1: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> diff(sin(x));
+cos(x)
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 2: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> diff(x);
+1
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 3: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> diff(x^x);
+x^x * (1 + log(x))
+\end{Verbatim}
+\end{minipage}\end{center}
+See also: \textbf{library} (\ref{lablibrary}), \textbf{autodiff} (\ref{labautodiff}), \textbf{taylor} (\ref{labtaylor}), \textbf{taylorform} (\ref{labtaylorform})

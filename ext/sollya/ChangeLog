@@ -1,0 +1,6170 @@
+2010-04-20 17:01  clauter
+
+	* NEWS: Changed NEWS
+
+2010-04-20 16:57  schevill
+
+	* INSTALL, NEWS: Updated NEWS.
+
+2010-04-20 16:23  clauter
+
+	* README: Slightly changed the READMe
+
+2010-04-20 16:22  schevill
+
+	* README, tests/Makefile.am: * Removed timecheck from Makefile.am
+	  for the release
+	  * Updated README
+
+2010-04-20 16:09  clauter
+
+	* README: Updated README
+
+2010-04-20 15:58  clauter
+
+	* autogen.sh: Changed autogen.sh to get new situation supported
+
+2010-04-20 15:21  schevill
+
+	* tests/Makefile.am: Added the file for testing autodiff and
+	  taylorform into Makefile.am
+
+2010-04-20 15:20  schevill
+
+	* doc/bashexecute.tex, doc/introExample33.tex,
+	  doc/introExample38.tex, doc/introExample40.tex,
+	  doc/introExample8.tex, doc/numberroots.tex, doc/sollya.pdf,
+	  doc/sollya.php, doc/time.tex, doc/timing.tex, help.h,
+	  tests/check.sollya: * changed "read" to execute in check.sollya
+	  * Recompiled all the doc
+
+2010-04-20 13:47  schevill
+
+	* tests/check.sollya.output: Updated output for the tests.
+
+2010-04-20 13:32  schevill
+
+	* tests/check.sollya, tests/checkTMandAD.sollya: Added test cases
+	  for taylorform and autodiff
+
+2010-04-20 10:59  schevill
+
+	* autodiff.c, taylorform.c: * Corrected typos
+	  * Added missing cases.
+
+2010-04-20 09:06  schevill
+
+	* configure.ac, doc/sollya.php, doc/sollya.tex: Changed the
+	  '2.0alpha' into '2.0'. The release is on the way.
+
+2010-04-19 16:48  schevill
+
+	* tests/timecheck.sollya, tests/timecheck.sollya.output: Added
+	  timing tests related to bug #10069
+
+2010-04-19 15:45  clauter
+
+	* tests/timecheck.sollya, tests/timecheck.sollya.output: Time test
+	  for "[#9120] dirtyinfnorm is unexpectedly slow"
+
+2010-04-19 15:21  clauter
+
+	* execute.c, expression.c: Possible fix for "[#10069] Remez
+	  algorithm is too slow"
+
+2010-04-19 09:48  jmio17
+
+	* tests/check.sollya, tests/check.sollya.output: added test #253
+	  for bug #8079 - NaN behaviour
+
+2010-04-18 23:23  clauter
+
+	* doc/error.shlp, doc/error.tex, doc/sollya.pdf, help.h,
+	  tests/check.sollya, tests/check.sollya.output: Worked again on
+	  "[#8079] Testing if something is NaN is impossible/ NaN behaviour
+	  is not IEEE 754 compliant" and added a test case for numberrots
+	  where the fall-back MPQ code is getting used.
+
+2010-04-18 19:51  clauter
+
+	* execute.c: Final (?) patch for "[#8079] Testing if something is
+	  NaN is impossible/ NaN behaviour is not IEEE 754 compliant"
+
+2010-04-18 12:38  jmio17
+
+	* tests/check.sollya, tests/check.sollya.output: added test for bug
+	  #9859
+
+2010-04-16 19:25  clauter
+
+	* expression.c, sturm.c: Tried to fix issues with NaNs simplified
+	  to ones.
+
+2010-04-16 16:18  schevill
+
+	* taylorform.c: * library functions should now work in taylorform.
+
+2010-04-16 16:00  schevill
+
+	* autodiff.c, autodiff.h, doc/CommandsAndFunctions.tex,
+	  doc/autodiff.tex, doc/bashexecute.tex, doc/diff.tex,
+	  doc/double.shlp, doc/double.tex, doc/evaluate.tex,
+	  doc/keywords.def, doc/numberroots.tex, doc/print.shlp,
+	  doc/print.tex, doc/printdouble.shlp, doc/printdouble.tex,
+	  doc/printexpansion.shlp, doc/printexpansion.tex,
+	  doc/printfloat.shlp, doc/printfloat.tex, doc/printhexa.shlp,
+	  doc/printhexa.tex, doc/printsingle.shlp, doc/printsingle.tex,
+	  doc/remez.tex, doc/round.shlp, doc/round.tex, doc/single.shlp,
+	  doc/single.tex, doc/sollya.pdf, doc/time.tex, doc/timing.tex,
+	  doc/write.shlp, doc/write.tex, help.h, taylorform.c: * Changed
+	  printhexa and printfloat in keywords.def etc.
+	  * Recompiled the doc.
+	  * Patched a bug in taylorform that caused it to print the same
+	  warning message many times.
+
+2010-04-16 13:45  schevill
+
+	* doc/sollya.php: * Added file sollya.php (it corresponds to the
+	  introduction of the documentation in html).
+	  * The content of sollya.php is a direct translation of the
+	  current version of sollya.tex.
+
+2010-04-16 12:09  schevill
+
+	* doc/sollya.pdf, doc/taylorform.shlp, doc/taylorform.tex, help.h:
+	  Improved help on taylorform.
+
+2010-04-16 11:56  schevill
+
+	* doc/autodiff.shlp, doc/autodiff.tex, doc/sollya.pdf, help.h: *
+	  Documented autodiff.
+
+2010-04-16 09:58  schevill
+
+	* INSTALL, doc/autodiff.shlp, doc/diff.shlp, doc/evaluate.shlp,
+	  doc/numberroots.shlp, doc/numberroots.tex, doc/remez.shlp,
+	  doc/sollya.pdf, doc/taylorform.shlp, doc/taylorform.tex, help.h:
+	  Improved help of taylorform a little bit (it renders now well in
+	  text mode)
+	  
+	  Proposed a complete documentation for numberroots.
+
+2010-04-16 04:06  clauter
+
+	* doc/autodiff.tex, doc/bashexecute.tex, doc/diff.tex,
+	  doc/dirtyfindzeros.tex, doc/evaluate.tex, doc/findzeros.tex,
+	  doc/infnorm.tex, doc/remez.tex, doc/sollya.pdf, doc/taylor.tex,
+	  doc/taylorform.tex, doc/time.tex, doc/timing.tex, help.h: Updated
+	  doc
+
+2010-04-16 02:08  clauter
+
+	* doc/CommandsAndFunctions.tex, doc/autodiff.shlp, doc/diff.shlp,
+	  doc/dirtyfindzeros.shlp, doc/evaluate.shlp, doc/findzeros.shlp,
+	  doc/infnorm.shlp, doc/keywords.def, doc/numberroots.shlp,
+	  doc/numberroots.tex, doc/remez.shlp, doc/sollya.pdf,
+	  doc/taylor.shlp, doc/taylorform.shlp: Added placeholders for
+	  documentation of numberroots
+
+2010-04-16 01:53  clauter
+
+	* doc/autodiff.tex: Added file forgotten by Sylvain
+
+2010-04-16 00:43  clauter
+
+	* doc/CommandsAndFunctions.tex, doc/bashexecute.tex,
+	  doc/sollya.pdf, doc/time.tex, doc/timing.tex, help.h: Recompiled
+	  the doc
+
+2010-04-15 22:41  schevill
+
+	* doc/autodiff.shlp, doc/keywords.def, doc/sollya.pdf,
+	  doc/sollya.tex, doc/taylorform.shlp, doc/taylorform.tex: *
+	  Improved the doc of taylorform a little bit. It may still look
+	  bad in text mode.
+
+2010-04-15 22:12  clauter
+
+	* configure.ac: Tried again to do something for '[#9349] libmpfi.so
+	  is not found by configure'
+
+2010-04-15 22:09  schevill
+
+	* configure.ac: Changed an error message into a warning, regarding
+	  the availability of fplll on strange systems.
+
+2010-04-15 21:46  clauter
+
+	* configure.ac: Tried to do something for '[#9349] libmpfi.so is
+	  not found by configure'
+
+2010-04-15 20:14  clauter
+
+	* configure.ac: Small change in configure.
+
+2010-04-15 19:51  clauter
+
+	* plot.c: Made Sollya compile under Cygwin again
+
+2010-04-15 19:30  schevill
+
+	* fpminimax.cpp: Patched the second bug mentioned in bug report
+	  #10073.
+	  This is not completely satisfying though, since fplll will use a
+	  non-GNU version of malloc and realloc in some cases.
+	  However, taken into account what mess libfplll is, the patch can
+	  be considered as quite good.
+
+2010-04-15 18:33  clauter
+
+	* general.h: Again trying to patch bug Nr 1 in '[#10073] Sollya
+	  fails to compile in some cases.'
+
+2010-04-15 18:19  clauter
+
+	* general.c: Trying to patch bug Nr 1 in '[#10073] Sollya fails to
+	  compile in some cases.'
+
+2010-04-15 16:18  schevill
+
+	* tests/check.sollya, tests/check.sollya.output: Added test cases
+	  for bug #10062.
+
+2010-04-15 15:32  jmio17
+
+	* tests/check.sollya, tests/check.sollya.output: added tests #247,
+	  #248, #249 for bug [#7216]. Testing was ok.
+
+2010-04-15 05:04  clauter
+
+	* INSTALL, sturm.c: Patched memory leaks in sturm
+
+2010-04-15 03:27  clauter
+
+	* expression.c, plot.c, worstcase.c: Made Sollya compile with tcc
+	  as the C compiler - g++ is used for the C++ part
+
+2010-04-15 02:11  clauter
+
+	* external.c, fpminimax.cpp, general.h, parser.y, plot.c, xml.c:
+	  Final (?) patch for "[#9782] Configure should detect if include
+	  file structure of libfplll follows tarball releases or Debian" -
+	  Sylvain to double-check
+
+2010-04-14 23:57  clauter
+
+	* doc/bashexecute.tex, doc/sollya.pdf, doc/time.tex,
+	  doc/timing.tex, help.h: Recompiled the doc
+
+2010-04-14 21:52  schevill
+
+	* INSTALL, configure.ac: * Removed a bug that used to prevent one
+	  to perform a "make dist"
+
+2010-04-14 21:08  clauter
+
+	* configure.ac, fpminimax.cpp: Some kind of fix for '[#9782]
+	  Configure should detect if include file structure of libfplll
+	  follows tarball releases or Debian' (untested)
+
+2010-04-14 20:31  clauter
+
+	* execute.c: Fix for '[#10062] A test gives a wrond result without
+	  printing any warning.'
+
+2010-04-14 19:50  jmio17
+
+	* taylorform.c: removed function ConstructPoly, now we use
+	  makePolynomial from
+	  expression.c (its header is available in sollya.h)
+
+2010-04-14 17:54  clauter
+
+	* INSTALL, execute.c, taylorform.c: Corrected a type error and
+	  patched a memory leak
+
+2010-04-14 16:59  schevill
+
+	* doc/CommandsAndFunctions.tex, doc/sollya.pdf,
+	  doc/taylorform.shlp, doc/taylorform.tex, help.h: Slightly
+	  modified the documentation of taylorform, in order to make it
+	  more complete.
+
+2010-04-14 16:20  schevill
+
+	* taylorform.c: Patched a memory leak.
+
+2010-04-14 13:24  schevill
+
+	* INSTALL, Makefile.am, autodiff.c, autodiff.h, configure.ac,
+	  doc/keywords.def, doc/taylorform.shlp, execute.c, execute.h,
+	  expression.h, infnorm.c, infnorm.h, internlexer.l,
+	  internparser.y, lexer.l, minilexer.l, miniparser.y, parser.y,
+	  sturm.c, sturm.h, taylorModel.c, taylorform.c, taylorform.h,
+	  tests/check.sollya, tests/check.sollya.output: Merge the branch
+	  taylorform back into the trunk (817:1002) (note that nothing
+	  happened in the trunk between rev 994 and 2002)
+
+2010-04-11 21:04  clauter
+
+	* execute.c: Corrected an error in a moved freeThing
+
+2010-04-09 23:14  clauter
+
+	* execute.c: Patched a memory leak in fpminimax with list of
+	  degrees and not a degree
+
+2010-04-09 15:45  clauter
+
+	* expression.c: Patched a memory leak
+
+2010-04-09 03:27  clauter
+
+	* expression.c: Patched a memory leak
+
+2010-04-08 20:34  clauter
+
+	* execute.c: Patched yet another memory leak
+
+2010-04-08 20:23  clauter
+
+	* execute.c: Patched a memory leak
+
+2010-04-08 19:57  clauter
+
+	* doc/asciiplot.shlp, doc/asciiplot.tex, doc/bashexecute.tex,
+	  doc/binary.shlp, doc/binary.tex, doc/canonical.shlp,
+	  doc/canonical.tex, doc/ceil.shlp, doc/ceil.tex, doc/coeff.shlp,
+	  doc/coeff.tex, doc/decimal.shlp, doc/decimal.tex,
+	  doc/degree.shlp, doc/degree.tex, doc/denominator.shlp,
+	  doc/denominator.tex, doc/dirtyfindzeros.shlp,
+	  doc/dirtyfindzeros.tex, doc/dyadic.shlp, doc/dyadic.tex,
+	  doc/error.shlp, doc/error.tex, doc/execute.shlp, doc/execute.tex,
+	  doc/expand.shlp, doc/expand.tex, doc/floor.shlp, doc/floor.tex,
+	  doc/fpminimax.shlp, doc/fpminimax.tex, doc/guessdegree.shlp,
+	  doc/guessdegree.tex, doc/hexadecimal.shlp, doc/hexadecimal.tex,
+	  doc/honorcoeffprec.shlp, doc/honorcoeffprec.tex,
+	  doc/hopitalrecursions.shlp, doc/hopitalrecursions.tex,
+	  doc/horner.shlp, doc/horner.tex, doc/implementpoly.shlp,
+	  doc/implementpoly.tex, doc/infnorm.shlp, doc/infnorm.tex,
+	  doc/integral.shlp, doc/integral.tex, doc/library.shlp,
+	  doc/library.tex, doc/midpointmode.shlp, doc/midpointmode.tex,
+	  doc/nearestint.shlp, doc/nearestint.tex, doc/nop.shlp,
+	  doc/nop.tex, doc/numerator.shlp, doc/numerator.tex,
+	  doc/parse.shlp, doc/parse.tex, doc/pi.shlp, doc/pi.tex,
+	  doc/points.shlp, doc/points.tex, doc/powers.shlp, doc/powers.tex,
+	  doc/prec.shlp, doc/prec.tex, doc/precision.shlp,
+	  doc/precision.tex, doc/print.shlp, doc/print.tex,
+	  doc/printexpansion.shlp, doc/printexpansion.tex,
+	  doc/printfloat.shlp, doc/printfloat.tex, doc/printhexa.shlp,
+	  doc/printhexa.tex, doc/printxml.tex, doc/proc.shlp, doc/proc.tex,
+	  doc/quit.shlp, doc/quit.tex, doc/rationalapprox.shlp,
+	  doc/rationalapprox.tex, doc/rationalmode.shlp,
+	  doc/rationalmode.tex, doc/rd.shlp, doc/rd.tex, doc/readfile.shlp,
+	  doc/readfile.tex, doc/readxml.shlp, doc/readxml.tex,
+	  doc/remez.shlp, doc/remez.tex, doc/rn.shlp, doc/rn.tex,
+	  doc/round.shlp, doc/round.tex, doc/roundcoefficients.shlp,
+	  doc/roundcoefficients.tex, doc/roundcorrectly.shlp,
+	  doc/roundcorrectly.tex, doc/ru.shlp, doc/ru.tex, doc/rz.shlp,
+	  doc/rz.tex, doc/simplify.shlp, doc/simplify.tex,
+	  doc/simplifysafe.shlp, doc/simplifysafe.tex, doc/sollya.pdf,
+	  doc/subpoly.shlp, doc/subpoly.tex, doc/substitute.shlp,
+	  doc/substitute.tex, doc/taylor.shlp, doc/taylor.tex,
+	  doc/taylorrecursions.shlp, doc/taylorrecursions.tex,
+	  doc/time.shlp, doc/time.tex, doc/timing.tex,
+	  doc/tripledouble.shlp, doc/tripledouble.tex, doc/var.shlp,
+	  doc/var.tex, doc/write.shlp, doc/write.tex, help.h: Added
+	  seealsos in the help files and recompiled the doc
+
+2010-04-08 17:01  clauter
+
+	* execute.h: Prepared trunk
+
+2010-04-08 01:56  clauter
+
+	* doc/sollya.pdf, doc/sollya.tex, general.c, parser.y: Updated
+	  copyright year in generally displayed versions
+
+2010-04-07 21:07  clauter
+
+	* assignment.c, assignment.h, chain.c, chain.h, double.c, double.h,
+	  execute.c, execute.h, expansion.c, expression.c, expression.h,
+	  external.c, external.h, externalfun.c, externalproc.c,
+	  fpminimax.h, general.c, general.h, help.h, implement.c,
+	  implement.h, infnorm.c, infnorm.h, integral.c, integral.h,
+	  internlexer.l, internparser.y, lexer.l, library.c, library.h,
+	  libsollyaexample.c, main.c, main.h, minilexer.l, miniparser.y,
+	  parser.y, plot.c, plot.h, proof.c, proof.h, remez.c, remez.h,
+	  sollya.h, taylor.c, taylor.h, worstcase.c, worstcase.h, xml.c,
+	  xml.h: Updated copyright notices
+
+2010-04-07 04:32  clauter
+
+	* INSTALL, tests/check.sollya.output, tests/timecheck.sollya:
+	  Corrected tests to make them pass again
+
+2010-04-07 04:01  clauter
+
+	* configure.ac, tests/Makefile.am, tests/timecheck.sollya,
+	  tests/timecheck.sollya.output: Added beginning of a timing check
+	  and run autoscan
+
+2010-04-07 02:56  clauter
+
+	* configure.ac: Corrected a small bug in configure
+
+2010-04-07 02:47  clauter
+
+	* configure.ac: Tried to patch '[#9349] libmpfi.so is not found by
+	  configure' and '[#9350] configure option --with-xml2 is broken'
+
+2010-04-07 02:12  clauter
+
+	* configure.ac, plot.c: Changed precision in plot to 64 bits. This
+	  patches '[#9720] The plot command has a strange choice of
+	  precision' somehow...
+
+2010-04-07 01:36  clauter
+
+	* INSTALL, doc/CommandsAndFunctions.tex, doc/equal.shlp,
+	  doc/equal.tex, doc/ge.shlp, doc/ge.tex, doc/gt.shlp, doc/gt.tex,
+	  doc/in.shlp, doc/in.tex, doc/keywords.def, doc/le.shlp,
+	  doc/le.tex, doc/lt.shlp, doc/lt.tex, doc/neq.shlp, doc/neq.tex,
+	  doc/sollya.pdf, execute.c, execute.h, help.h, internparser.y,
+	  miniparser.y, parser.y: Added containment operator (in)
+
+2010-04-06 20:01  clauter
+
+	* doc/bashexecute.tex, doc/sollya.pdf, doc/time.tex,
+	  doc/timing.tex, help.h: Recompiled the doc
+
+2010-04-06 18:33  clauter
+
+	* configure.ac, general.c, parser.y: Reworked and updated copyright
+	  messages
+
+2010-04-06 18:17  clauter
+
+	* doc/bashexecute.tex, doc/double.tex, doc/introExample11.tex,
+	  doc/keywords.def, doc/print.tex, doc/printexpansion.tex,
+	  doc/printfloat.shlp, doc/printfloat.tex, doc/printhexa.shlp,
+	  doc/printhexa.tex, doc/round.tex, doc/single.tex, doc/sollya.pdf,
+	  doc/time.tex, doc/timing.tex, doc/write.tex, help.h: Recompiled
+	  teh doc with new names for printdouble and printsingle
+
+2010-04-06 17:22  clauter
+
+	* parser.y: Updated list of supported keywords. To be updated again
+	  when new functionality is ported from the branch to the trunk.
+
+2010-04-06 16:42  clauter
+
+	* ChangeLog, doc/introExample11.sollya, doc/sollya.pdf,
+	  doc/sollya.tex: Corrected some small mistakes in the introductory
+	  doc.
+
+2010-03-26 17:04  schevill
+
+	* execute.c, help.h, remez.c: Corrected a few typos in warning
+	  messages.
+	  Recompiled the doc.
+
+2010-03-26 13:59  schevill
+
+	* doc/concat.shlp, doc/concat.tex, doc/introExample14.sollya,
+	  doc/introExample14.tex, doc/introExample16.sollya,
+	  doc/introExample16.tex, doc/introExample21.sollya,
+	  doc/introExample21.tex, doc/introExample22.sollya,
+	  doc/introExample22.tex, doc/introExample24.sollya,
+	  doc/introExample24.tex, doc/introExample25.sollya,
+	  doc/introExample25.tex, doc/introExample29.sollya,
+	  doc/introExample29.tex, doc/introExample32.tex,
+	  doc/introExample39.tex, doc/introExample41.sollya,
+	  doc/introExample41.tex, doc/introExample45.sollya,
+	  doc/introExample45.tex, doc/proc.shlp, doc/proc.tex,
+	  doc/procedure.shlp, doc/procedure.tex, doc/sollya.pdf,
+	  doc/sollya.tex, doc/void.shlp, doc/void.tex: * Some modifications
+	  in the introduction of the doc (in particular, I added a new
+	  example).
+
+2010-03-25 22:47  clauter
+
+	* doc/introExample44.sollya, doc/introExample44.tex,
+	  doc/sollya.pdf: Finished the example on % notation with the fix
+	  in compileExamples.sh that Sylvain just committed and recompiled
+	  the doc
+
+2010-03-25 22:09  schevill
+
+	* doc/compileExamples.sh, doc/introExample44.tex: Corrected a bug
+	  in compileExamples.sh when the example contains the character "%"
+
+2010-03-25 17:31  clauter
+
+	* doc/introExample41.sollya, doc/introExample41.tex,
+	  doc/introExample44.sollya, doc/introExample44.tex,
+	  doc/sollya.pdf, doc/sollya.tex: Worked on doc. New example usign
+	  % does not compile
+
+2010-03-25 02:49  clauter
+
+	* doc/bashexecute.tex, doc/introExample31.tex,
+	  doc/introExample35.tex, doc/introExample36.tex,
+	  doc/introExample37.tex, doc/nop.tex, doc/proc.tex,
+	  doc/procedure.tex, doc/return.tex, doc/sollya.pdf, doc/time.tex,
+	  doc/timing.tex, doc/void.tex, execute.c, help.h, internlexer.l,
+	  lexer.l, minilexer.l: Changed syntax printed back and recompiled
+	  doc
+
+2010-03-24 23:33  clauter
+
+	* ChangeLog: Got latest ChangeLog
+
+2010-03-24 22:54  clauter
+
+	* doc/CommandsAndFunctions.tex, doc/dieonerrormode.shlp,
+	  doc/dieonerrormode.tex, doc/off.shlp, doc/off.tex, doc/on.shlp,
+	  doc/on.tex, doc/sollya.pdf, help.h: Corrected and recompiled the
+	  doc for dieonerrormode and the attached help files
+
+2010-03-24 22:27  clauter
+
+	* doc/dieonerrormode.shlp, doc/dieonerrormode.tex,
+	  doc/keywords.def, execute.c, execute.h, general.c, general.h,
+	  internlexer.l, internparser.y, lexer.l, minilexer.l,
+	  miniparser.y, parser.y: Implemented dieonerrormode
+
+2010-03-24 17:02  schevill
+
+	* doc/sollya.pdf, doc/sollya.tex, help.h: Corrected a few typos in
+	  sollya.tex.
+	  
+	  Recompiled the doc.
+
+2010-03-24 15:07  schevill
+
+	* doc/midpointmode.shlp, doc/midpointmode.tex, doc/off.shlp,
+	  doc/off.tex, doc/on.shlp, doc/on.tex, doc/sollya.pdf: Added
+	  missing SEEALSO about on/off modes.
+
+2010-03-24 14:50  schevill
+
+	* doc/bashexecute.tex, doc/divide.tex, doc/shlp2html.sh,
+	  doc/shlp2tex.sh, doc/shlp2txt.sh, doc/sollya.pdf, doc/time.tex,
+	  doc/timing.tex: * Replaced all occurences to printf "%s" by
+	  printf "%b"in shlp2*.sh
+	  
+	  * Corrected the bug with the name of the section for the division
+	  in LaTeX mode.
+
+2010-03-24 00:04  clauter
+
+	* sollya.h: Added extern "C" stuff into sollya.h for the C++
+	  people.
+
+2010-03-20 10:17  schevill
+
+	* doc/shlp2html.sh: Corrected a bug when updating
+	  ListOfCommands.php: the trailing commas used to disappear.
+
+2010-03-19 21:08  clauter
+
+	* expression.c, internlexer.l, lexer.l, minilexer.l: Patched bug
+	  [#9859] Sollya hexadecimal input not fully C99/IEEE 754-2008
+	  compliant.
+
+2010-03-19 18:04  clauter
+
+	* doc/bashexecute.tex, doc/sollya.pdf, doc/time.tex,
+	  doc/timing.tex, help.h: Recompiled doc with patched shlp2*
+	  scripts.
+
+2010-03-19 13:31  schevill
+
+	* doc/bashexecute.tex, doc/concat.tex, doc/print.tex,
+	  doc/shlp2html.sh, doc/shlp2tex.sh, doc/shlp2txt.sh,
+	  doc/sollya.pdf, doc/time.tex, doc/timing.tex, doc/write.tex: The
+	  previous commits reintroduced a bug when "\n" are present in the
+	  code of examples.
+	  This is now patched.
+	  
+	  Doc is up to date.
+
+2010-03-19 02:27  clauter
+
+	* doc/abs.tex, doc/absolute.tex, doc/accurateinfnorm.tex,
+	  doc/acos.tex, doc/acosh.tex, doc/and.tex, doc/append.tex,
+	  doc/approx.tex, doc/asciiplot.tex, doc/asin.tex, doc/asinh.tex,
+	  doc/atan.tex, doc/atanh.tex, doc/autosimplify.tex,
+	  doc/bashexecute.tex, doc/binary.tex, doc/boolean.tex,
+	  doc/canonical.tex, doc/ceil.tex, doc/checkinfnorm.tex,
+	  doc/coeff.tex, doc/concat.tex, doc/constant.tex, doc/cos.tex,
+	  doc/cosh.tex, doc/decimal.tex, doc/default.tex, doc/degree.tex,
+	  doc/denominator.tex, doc/diam.tex, doc/diff.tex,
+	  doc/dirtyfindzeros.tex, doc/dirtyinfnorm.tex,
+	  doc/dirtyintegral.tex, doc/display.tex, doc/divide.tex,
+	  doc/double.tex, doc/doubledouble.tex, doc/doubleextended.tex,
+	  doc/dyadic.tex, doc/equal.tex, doc/erf.tex, doc/erfc.tex,
+	  doc/error.tex, doc/evaluate.tex, doc/execute.tex, doc/exp.tex,
+	  doc/expand.tex, doc/expm1.tex, doc/exponent.tex,
+	  doc/externalplot.tex, doc/externalproc.tex, doc/false.tex,
+	  doc/file.tex, doc/findzeros.tex, doc/fixed.tex, doc/floating.tex,
+	  doc/floor.tex, doc/fpminimax.tex, doc/fullparentheses.tex,
+	  doc/function.tex, doc/ge.tex, doc/gt.tex, doc/guessdegree.tex,
+	  doc/head.tex, doc/hexadecimal.tex, doc/honorcoeffprec.tex,
+	  doc/hopitalrecursions.tex, doc/horner.tex, doc/implementpoly.tex,
+	  doc/inf.tex, doc/infnorm.tex, doc/integer.tex, doc/integral.tex,
+	  doc/isbound.tex, doc/isevaluable.tex, doc/le.tex, doc/length.tex,
+	  doc/library.tex, doc/listof.tex, doc/log.tex, doc/log10.tex,
+	  doc/log1p.tex, doc/log2.tex, doc/lt.tex, doc/mantissa.tex,
+	  doc/mid.tex, doc/midpointmode.tex, doc/minus.tex, doc/mult.tex,
+	  doc/nearestint.tex, doc/neq.tex, doc/nop.tex, doc/not.tex,
+	  doc/numerator.tex, doc/off.tex, doc/on.tex, doc/or.tex,
+	  doc/parse.tex, doc/perturb.tex, doc/pi.tex, doc/plot.tex,
+	  doc/plus.tex, doc/points.tex, doc/postscript.tex,
+	  doc/postscriptfile.tex, doc/power.tex, doc/powers.tex,
+	  doc/prec.tex, doc/precision.tex, doc/prepend.tex, doc/print.tex,
+	  doc/printexpansion.tex, doc/printfloat.tex, doc/printhexa.tex,
+	  doc/printxml.tex, doc/proc.tex, doc/procedure.tex, doc/quit.tex,
+	  doc/range.tex, doc/rationalapprox.tex, doc/rationalmode.tex,
+	  doc/rd.tex, doc/readfile.tex, doc/readxml.tex, doc/relative.tex,
+	  doc/remez.tex, doc/rename.tex, doc/restart.tex, doc/return.tex,
+	  doc/revert.tex, doc/rn.tex, doc/round.tex,
+	  doc/roundcoefficients.tex, doc/roundcorrectly.tex,
+	  doc/roundingwarnings.tex, doc/ru.tex, doc/rz.tex,
+	  doc/searchgal.tex, doc/shlp2html.sh, doc/shlp2tex.sh,
+	  doc/shlp2txt.sh, doc/simplify.tex, doc/simplifysafe.tex,
+	  doc/sin.tex, doc/single.tex, doc/sinh.tex, doc/sollya.pdf,
+	  doc/sort.tex, doc/sqrt.tex, doc/string.tex, doc/subpoly.tex,
+	  doc/substitute.tex, doc/sup.tex, doc/tail.tex, doc/tan.tex,
+	  doc/tanh.tex, doc/taylor.tex, doc/taylorrecursions.tex,
+	  doc/time.tex, doc/timing.tex, doc/tripledouble.tex, doc/true.tex,
+	  doc/var.tex, doc/verbosity.tex, doc/void.tex, doc/worstcase.tex,
+	  doc/write.tex, help.h: Repared doc somehow. We have again
+	  problems with examples containing backslash sequences
+
+2010-03-19 00:43  clauter
+
+	* doc/abs.tex, doc/absolute.tex, doc/accurateinfnorm.tex,
+	  doc/acos.tex, doc/acosh.tex, doc/and.tex, doc/append.tex,
+	  doc/approx.tex, doc/asciiplot.tex, doc/asin.tex, doc/asinh.tex,
+	  doc/atan.tex, doc/atanh.tex, doc/autosimplify.tex,
+	  doc/bashexecute.tex, doc/binary.tex, doc/boolean.tex,
+	  doc/canonical.tex, doc/ceil.tex, doc/checkinfnorm.tex,
+	  doc/coeff.tex, doc/concat.tex, doc/constant.tex, doc/cos.tex,
+	  doc/cosh.tex, doc/decimal.tex, doc/default.tex, doc/degree.tex,
+	  doc/denominator.tex, doc/diam.tex, doc/diff.tex,
+	  doc/dirtyfindzeros.tex, doc/dirtyinfnorm.tex,
+	  doc/dirtyintegral.tex, doc/display.tex, doc/divide.tex,
+	  doc/double.tex, doc/doubledouble.tex, doc/doubleextended.tex,
+	  doc/dyadic.tex, doc/equal.tex, doc/erf.tex, doc/erfc.tex,
+	  doc/error.tex, doc/evaluate.tex, doc/execute.tex, doc/exp.tex,
+	  doc/expand.tex, doc/expm1.tex, doc/exponent.tex,
+	  doc/externalplot.tex, doc/externalproc.tex, doc/false.tex,
+	  doc/file.tex, doc/findzeros.tex, doc/fixed.tex, doc/floating.tex,
+	  doc/floor.tex, doc/fpminimax.tex, doc/fullparentheses.tex,
+	  doc/function.tex, doc/ge.tex, doc/gt.tex, doc/guessdegree.tex,
+	  doc/head.tex, doc/hexadecimal.tex, doc/honorcoeffprec.tex,
+	  doc/hopitalrecursions.tex, doc/horner.tex, doc/implementpoly.tex,
+	  doc/inf.tex, doc/infnorm.tex, doc/integer.tex, doc/integral.tex,
+	  doc/isbound.tex, doc/isevaluable.tex, doc/le.tex, doc/length.tex,
+	  doc/library.tex, doc/listof.tex, doc/log.tex, doc/log10.tex,
+	  doc/log1p.tex, doc/log2.tex, doc/lt.tex, doc/mantissa.tex,
+	  doc/mid.tex, doc/midpointmode.tex, doc/minus.tex, doc/mult.tex,
+	  doc/nearestint.tex, doc/neq.tex, doc/nop.tex, doc/not.tex,
+	  doc/numerator.tex, doc/off.tex, doc/on.tex, doc/or.tex,
+	  doc/parse.tex, doc/perturb.tex, doc/pi.tex, doc/plot.tex,
+	  doc/plus.tex, doc/points.tex, doc/postscript.tex,
+	  doc/postscriptfile.tex, doc/power.tex, doc/powers.tex,
+	  doc/prec.tex, doc/precision.tex, doc/prepend.tex, doc/print.tex,
+	  doc/printexpansion.tex, doc/printfloat.tex, doc/printhexa.tex,
+	  doc/printxml.tex, doc/proc.tex, doc/procedure.tex, doc/quit.tex,
+	  doc/range.tex, doc/rationalapprox.tex, doc/rationalmode.tex,
+	  doc/rd.tex, doc/readfile.tex, doc/readxml.tex, doc/relative.tex,
+	  doc/remez.tex, doc/rename.tex, doc/restart.tex, doc/return.tex,
+	  doc/revert.tex, doc/rn.tex, doc/round.tex,
+	  doc/roundcoefficients.tex, doc/roundcorrectly.tex,
+	  doc/roundingwarnings.tex, doc/ru.tex, doc/rz.tex,
+	  doc/searchgal.tex, doc/simplify.tex, doc/simplifysafe.tex,
+	  doc/sin.tex, doc/single.tex, doc/sinh.tex, doc/sort.tex,
+	  doc/sqrt.tex, doc/string.tex, doc/subpoly.tex,
+	  doc/substitute.tex, doc/sup.tex, doc/tail.tex, doc/tan.tex,
+	  doc/tanh.tex, doc/taylor.tex, doc/taylorrecursions.tex,
+	  doc/time.tex, doc/timing.tex, doc/tripledouble.tex, doc/true.tex,
+	  doc/var.tex, doc/verbosity.tex, doc/void.tex, doc/worstcase.tex,
+	  doc/write.tex, help.h: Recompiled the shlp - does not compile
+	  completely
+
+2010-03-18 23:33  schevill
+
+	* doc/shlp2html.sh, doc/shlp2tex.sh, doc/shlp2txt.sh: Bug of printf
+	  "$line" should be completely removed.
+
+2010-03-18 23:22  schevill
+
+	* doc/shlp2html.sh: Finally corrected the bug of printf "$ligne"
+	  (thanks to Christoph)
+
+2010-03-18 22:51  schevill
+
+	* doc/shlp2html.sh, doc/shlp2tex.sh: Corrected the bug mentioned in
+	  the commit log of revision 946.
+
+2010-03-18 18:43  clauter
+
+	* doc/bashexecute.tex, doc/divide.shlp, doc/divide.tex,
+	  doc/floor.shlp, doc/floor.tex, doc/introExample38.tex,
+	  doc/introExample40.tex, doc/minus.shlp, doc/minus.tex,
+	  doc/mult.shlp, doc/mult.tex, doc/off.shlp, doc/off.tex,
+	  doc/on.shlp, doc/on.tex, doc/plus.shlp, doc/plus.tex,
+	  doc/power.shlp, doc/power.tex, doc/sollya.pdf, doc/time.tex,
+	  doc/timing.tex, help.h: Reworked some help topics and recompiled
+	  the doc. There is a compilation error
+
+2010-03-16 17:01  schevill
+
+	* doc/sollya.pdf, doc/sollya.tex: Corrected a few typos in the
+	  introduction.
+
+2010-03-16 16:33  schevill
+
+	* doc/bashexecute.tex, doc/compileExamples.sh,
+	  doc/introExample38.tex, doc/introExample40.tex, doc/listof.tex,
+	  doc/shlp2html.sh, doc/shlp2tex.sh, doc/shlp2txt.sh,
+	  doc/sollya.pdf, doc/time.tex, doc/timing.tex: * All scripts
+	  should now be fully compatible with standard sh (at least, they
+	  behave the same way with dash and bash)
+	  
+	  * Many bugs corrected in shlp2*
+	  
+	  * recompiled all the doc
+
+2010-03-16 00:44  clauter
+
+	* doc/introExample32.sollya, doc/introExample32.tex,
+	  doc/sollya.pdf, doc/sollya.tex: Final corrections to introductory
+	  doc by Christoph before release
+
+2010-03-15 23:12  clauter
+
+	* doc/bashexecute.tex, doc/sollya.pdf, doc/time.tex,
+	  doc/timing.tex, help.h: Recompiled the whole documentation after
+	  change in code
+
+2010-03-15 21:56  clauter
+
+	* doc/introExample38.sollya, doc/introExample38.tex,
+	  doc/introExample39.sollya, doc/introExample39.tex,
+	  doc/introExample40.sollya, doc/introExample40.tex,
+	  doc/introExample41.sollya, doc/introExample41.tex,
+	  doc/introExample42.sollya, doc/introExample42.tex,
+	  doc/introExample43.sollya, doc/introExample43.tex,
+	  doc/sollya.pdf, doc/sollya.tex, execute.c: Worked on doc, fixed a
+	  small problem in interval evaluation
+
+2010-03-15 05:30  clauter
+
+	* ChangeLog, doc/introExample31.sollya, doc/introExample31.tex,
+	  doc/introExample34.sollya, doc/introExample34.tex,
+	  doc/introExample35.sollya, doc/introExample35.tex,
+	  doc/introExample36.sollya, doc/introExample36.tex,
+	  doc/introExample37.sollya, doc/introExample37.tex,
+	  doc/sollya.pdf, doc/sollya.tex: Worked on introductory
+	  documentation.
+
+2010-03-13 23:08  clauter
+
+	* doc/bashexecute.tex, doc/floor.shlp, doc/floor.tex,
+	  doc/sollya.pdf, doc/time.tex, doc/timing.tex, help.h: Recompiled
+	  the doc
+
+2010-03-13 02:16  clauter
+
+	* doc/introExample32.sollya, doc/introExample32.tex,
+	  doc/introExample33.sollya, doc/introExample33.tex,
+	  doc/sollya.pdf, doc/sollya.tex: Added a section on infinities and
+	  NaNs in general doc.
+
+2010-03-12 20:57  clauter
+
+	* doc/sollya.pdf, doc/tripledouble.shlp, help.h: Corrected
+	  tripledouble
+
+2010-03-12 18:55  clauter
+
+	* doc/sollya.pdf: Recompiled sollya.pdf
+
+2010-03-12 18:54  clauter
+
+	* doc/nearestint.tex, doc/rationalmode.tex, doc/single.tex,
+	  doc/time.tex, help.h: Added forgotten tex file
+
+2010-03-12 18:25  schevill
+
+	* doc/bashexecute.shlp, doc/bashexecute.tex, help.h: Changed 'ls'
+	  to 'date' in the example of bashexecute.
+
+2010-03-12 18:21  schevill
+
+	* doc/bashexecute.tex, doc/library.shlp, doc/library.tex,
+	  doc/sollya.pdf, doc/timing.tex, help.h: Recompiled the doc
+
+2010-03-12 04:15  clauter
+
+	* doc/sollya.pdf, doc/time.shlp, help.h: Recompiled time
+
+2010-03-12 03:55  clauter
+
+	* doc/CommandsAndFunctions.tex, doc/ceil.shlp, doc/ceil.tex,
+	  doc/checkinfnorm.tex, doc/double.shlp, doc/double.tex,
+	  doc/doubledouble.shlp, doc/doubledouble.tex,
+	  doc/doubleextended.shlp, doc/doubleextended.tex, doc/floor.shlp,
+	  doc/floor.tex, doc/hopitalrecursions.shlp,
+	  doc/hopitalrecursions.tex, doc/keywords.def, doc/nearestint.shlp,
+	  doc/rationalmode.shlp, doc/round.shlp, doc/round.tex,
+	  doc/roundcoefficients.shlp, doc/roundcoefficients.tex,
+	  doc/roundingwarnings.shlp, doc/roundingwarnings.tex,
+	  doc/simplifysafe.shlp, doc/simplifysafe.tex, doc/single.shlp,
+	  doc/sollya.pdf, doc/taylorrecursions.shlp,
+	  doc/taylorrecursions.tex, doc/time.shlp, doc/timing.shlp,
+	  doc/timing.tex, doc/tripledouble.shlp, doc/tripledouble.tex,
+	  doc/types.def, doc/verbosity.shlp, doc/verbosity.tex, help.h:
+	  Recompiled the doc
+
+2010-03-12 01:27  clauter
+
+	* parser.y: Added a way to find out which help texts are missing
+	  (#define in parser.y)
+
+2010-03-11 15:24  schevill
+
+	* doc/checkinfnorm.shlp, doc/compileExamples.sh,
+	  doc/conversionIntro.sh, doc/shlp2html.sh: * Added support for
+	  help on a multiple pages.
+	  * Corrected the bug when displaying the help of printxml in html
+	  mode
+	  * Modified compileExamples.sh in order to generate php files as
+	  well
+	  * Wrote a small tool called conversionIntro.sh. Its purpose it to
+	  help us translating the introduction of the help to HTML
+	  THIS IS NOT an automatic conversion tool. It just simplifies the
+	  work.
+
+2010-03-11 01:57  clauter
+
+	* doc/sollya.pdf: Recompiled the doc.
+
+2010-03-11 01:52  clauter
+
+	* doc/introExample6.sollya, doc/introExample6.tex, doc/sollya.pdf,
+	  doc/sollya.tex: Worked a little on the introductory doc.
+
+2010-03-11 01:02  clauter
+
+	* doc/autosimplify.shlp, doc/autosimplify.tex, doc/binary.shlp,
+	  doc/binary.tex, doc/diam.shlp, doc/diam.tex,
+	  doc/dirtyfindzeros.shlp, doc/dirtyfindzeros.tex,
+	  doc/display.shlp, doc/display.tex, doc/externalplot.shlp,
+	  doc/externalplot.tex, doc/fpminimax.shlp, doc/fpminimax.tex,
+	  doc/guessdegree.shlp, doc/guessdegree.tex,
+	  doc/hopitalrecursions.shlp, doc/hopitalrecursions.tex,
+	  doc/infnorm.shlp, doc/infnorm.tex, doc/integral.shlp,
+	  doc/integral.tex, doc/library.shlp, doc/library.tex, doc/pi.shlp,
+	  doc/pi.tex, doc/plot.shlp, doc/plot.tex, doc/points.shlp,
+	  doc/points.tex, doc/proc.shlp, doc/proc.tex, doc/procedure.shlp,
+	  doc/procedure.tex, doc/round.shlp, doc/round.tex,
+	  doc/searchgal.shlp, doc/searchgal.tex, doc/simplify.shlp,
+	  doc/simplify.tex, doc/sollya.pdf, doc/sort.shlp, doc/sort.tex,
+	  doc/taylorrecursions.shlp, doc/taylorrecursions.tex,
+	  doc/timing.tex, doc/tripledouble.shlp, doc/tripledouble.tex,
+	  doc/verbosity.shlp, doc/verbosity.tex, doc/void.shlp,
+	  doc/void.tex, help.h: Corrected and recompiled the doc
+
+2010-03-10 21:03  clauter
+
+	* doc/sollya.pdf, doc/timing.tex: Recompiled the doc
+
+2010-03-10 21:02  clauter
+
+	* doc/bashexecute.tex, doc/library.tex: Recompiled the doc
+
+2010-03-10 19:09  schevill
+
+	* doc/absolute.tex, doc/accurateinfnorm.tex, doc/and.tex,
+	  doc/append.tex, doc/approx.tex, doc/asciiplot.tex,
+	  doc/autosimplify.tex, doc/bashexecute.tex, doc/binary.tex,
+	  doc/boolean.tex, doc/canonical.tex, doc/checkinfnorm.tex,
+	  doc/coeff.tex, doc/concat.tex, doc/constant.tex, doc/degree.tex,
+	  doc/denominator.tex, doc/diff.tex, doc/dirtyfindzeros.tex,
+	  doc/dirtyinfnorm.tex, doc/dirtyintegral.tex, doc/display.tex,
+	  doc/divide.tex, doc/equal.tex, doc/error.tex, doc/evaluate.tex,
+	  doc/execute.tex, doc/expand.tex, doc/exponent.tex,
+	  doc/externalplot.tex, doc/externalproc.tex, doc/findzeros.tex,
+	  doc/fixed.tex, doc/floating.tex, doc/fpminimax.tex,
+	  doc/fullparentheses.tex, doc/function.tex, doc/ge.tex,
+	  doc/gt.tex, doc/guessdegree.tex, doc/head.tex,
+	  doc/honorcoeffprec.tex, doc/horner.tex, doc/implementpoly.tex,
+	  doc/inf.tex, doc/infnorm.tex, doc/integer.tex, doc/integral.tex,
+	  doc/isbound.tex, doc/isevaluable.tex, doc/le.tex, doc/length.tex,
+	  doc/library.tex, doc/listof.tex, doc/lt.tex, doc/mantissa.tex,
+	  doc/mid.tex, doc/minus.tex, doc/mult.tex, doc/neq.tex,
+	  doc/nop.tex, doc/not.tex, doc/numerator.tex, doc/or.tex,
+	  doc/parse.tex, doc/perturb.tex, doc/plot.tex, doc/plus.tex,
+	  doc/power.tex, doc/precision.tex, doc/prepend.tex, doc/print.tex,
+	  doc/printexpansion.tex, doc/printfloat.tex, doc/printhexa.tex,
+	  doc/printxml.tex, doc/proc.tex, doc/procedure.tex, doc/quit.tex,
+	  doc/range.tex, doc/rationalapprox.tex, doc/rd.tex,
+	  doc/readfile.tex, doc/readxml.tex, doc/relative.tex,
+	  doc/remez.tex, doc/rename.tex, doc/restart.tex, doc/return.tex,
+	  doc/revert.tex, doc/rn.tex, doc/round.tex,
+	  doc/roundcoefficients.tex, doc/roundcorrectly.tex, doc/ru.tex,
+	  doc/rz.tex, doc/searchgal.tex, doc/simplify.tex,
+	  doc/simplifysafe.tex, doc/sollya.pdf, doc/sort.tex,
+	  doc/string.tex, doc/subpoly.tex, doc/substitute.tex, doc/sup.tex,
+	  doc/tail.tex, doc/taylor.tex, doc/timing.tex, doc/var.tex,
+	  doc/void.tex, doc/worstcase.tex, doc/write.tex: Doc in LaTeX is
+	  up to date.
+
+2010-03-10 18:51  schevill
+
+	* doc/keywords.def, doc/shlp2html.sh, doc/shlp2tex.sh: Patched bugs
+	  concerning the backslashes.
+	  
+	  Now commands such as "+" are listed at "+" in sollya.pdf and not
+	  at "plus" any more.
+
+2010-03-10 13:22  schevill
+
+	* doc/shlp2tex.sh: Good news: shlp2tex.sh seems to be fully
+	  portable (i.e. has the same behavior with dash and bash).
+	  
+	  It does not seem to remain bugs.
+
+2010-03-10 08:01  clauter
+
+	* doc/prec.shlp, doc/prec.tex, doc/precision.shlp,
+	  doc/precision.tex, doc/print.shlp, doc/print.tex,
+	  doc/printexpansion.shlp, doc/printexpansion.tex,
+	  doc/printfloat.shlp, doc/printfloat.tex, doc/proc.shlp,
+	  doc/proc.tex, doc/procedure.shlp, doc/procedure.tex,
+	  doc/quit.shlp, doc/quit.tex, doc/rationalapprox.shlp,
+	  doc/rationalapprox.tex, doc/rename.shlp, doc/rename.tex,
+	  doc/restart.shlp, doc/restart.tex, doc/round.shlp, doc/round.tex,
+	  doc/roundcoefficients.shlp, doc/roundcoefficients.tex,
+	  doc/roundingwarnings.shlp, doc/roundingwarnings.tex, doc/rz.shlp,
+	  doc/rz.tex, doc/searchgal.shlp, doc/searchgal.tex, doc/sin.shlp,
+	  doc/sin.tex, doc/sinh.shlp, doc/sinh.tex, doc/sollya.pdf,
+	  doc/subpoly.shlp, doc/subpoly.tex, doc/substitute.shlp,
+	  doc/substitute.tex, doc/sup.shlp, doc/sup.tex, doc/tan.shlp,
+	  doc/tan.tex, doc/tanh.shlp, doc/tanh.tex,
+	  doc/taylorrecursions.shlp, doc/taylorrecursions.tex,
+	  doc/timing.tex, doc/tripledouble.shlp, doc/tripledouble.tex,
+	  doc/verbosity.shlp, doc/verbosity.tex, doc/void.shlp,
+	  doc/void.tex, doc/worstcase.shlp, doc/worstcase.tex,
+	  doc/write.shlp, doc/write.tex, help.h: Corrected and recompiled
+	  the doc
+
+2010-03-10 07:31  clauter
+
+	* general.c: Made Sollya return the error status of the last
+	  parsing attempt as a process return value.
+
+2010-03-10 02:18  clauter
+
+	* doc/externalproc.shlp, doc/externalproc.tex, doc/findzeros.shlp,
+	  doc/findzeros.tex, doc/fixed.shlp, doc/fixed.tex,
+	  doc/floating.shlp, doc/floating.tex, doc/floor.shlp,
+	  doc/floor.tex, doc/fpminimax.shlp, doc/fpminimax.tex,
+	  doc/hexadecimal.shlp, doc/hexadecimal.tex,
+	  doc/hopitalrecursions.shlp, doc/hopitalrecursions.tex,
+	  doc/implementpoly.shlp, doc/implementpoly.tex, doc/inf.shlp,
+	  doc/inf.tex, doc/infnorm.shlp, doc/infnorm.tex, doc/integer.shlp,
+	  doc/integer.tex, doc/isevaluable.shlp, doc/isevaluable.tex,
+	  doc/library.shlp, doc/library.tex, doc/mantissa.shlp,
+	  doc/mantissa.tex, doc/mid.shlp, doc/mid.tex,
+	  doc/midpointmode.shlp, doc/midpointmode.tex, doc/nop.shlp,
+	  doc/nop.tex, doc/or.shlp, doc/or.tex, doc/parse.shlp,
+	  doc/parse.tex, doc/plot.shlp, doc/plot.tex, doc/sollya.pdf,
+	  doc/timing.tex, help.h: Reworked and recompiled agian some part
+	  of the doc
+
+2010-03-10 00:09  clauter
+
+	* doc/absolute.shlp, doc/absolute.tex, doc/acos.shlp, doc/acos.tex,
+	  doc/append.shlp, doc/append.tex, doc/asciiplot.shlp,
+	  doc/asciiplot.tex, doc/asin.shlp, doc/asin.tex, doc/asinh.shlp,
+	  doc/asinh.tex, doc/atan.shlp, doc/atan.tex, doc/atanh.shlp,
+	  doc/atanh.tex, doc/autosimplify.shlp, doc/autosimplify.tex,
+	  doc/ceil.shlp, doc/ceil.tex, doc/coeff.shlp, doc/coeff.tex,
+	  doc/concat.shlp, doc/concat.tex, doc/constant.shlp,
+	  doc/constant.tex, doc/cos.shlp, doc/cos.tex, doc/cosh.shlp,
+	  doc/cosh.tex, doc/diam.shlp, doc/diam.tex,
+	  doc/dirtyfindzeros.shlp, doc/dirtyfindzeros.tex,
+	  doc/dirtyintegral.shlp, doc/dirtyintegral.tex, doc/display.shlp,
+	  doc/display.tex, doc/double.shlp, doc/double.tex,
+	  doc/doubledouble.shlp, doc/doubledouble.tex,
+	  doc/doubleextended.shlp, doc/doubleextended.tex, doc/equal.shlp,
+	  doc/equal.tex, doc/erfc.shlp, doc/erfc.tex, doc/error.shlp,
+	  doc/error.tex, doc/evaluate.shlp, doc/evaluate.tex, doc/exp.shlp,
+	  doc/exp.tex, doc/expm1.shlp, doc/expm1.tex, doc/exponent.shlp,
+	  doc/exponent.tex, doc/externalplot.shlp, doc/externalplot.tex,
+	  doc/externalproc.shlp, doc/externalproc.tex, doc/sollya.pdf,
+	  doc/timing.tex, help.h: Recompiled doc. Corrected some mistakes.
+
+2010-03-06 07:31  clauter
+
+	* doc/absolute.tex, doc/accurateinfnorm.tex, doc/and.tex,
+	  doc/append.tex, doc/approx.tex, doc/asciiplot.tex,
+	  doc/autosimplify.tex, doc/bashexecute.tex, doc/binary.tex,
+	  doc/boolean.tex, doc/canonical.tex, doc/checkinfnorm.tex,
+	  doc/coeff.tex, doc/concat.tex, doc/constant.tex, doc/decimal.tex,
+	  doc/degree.tex, doc/denominator.tex, doc/diff.tex,
+	  doc/dirtyfindzeros.tex, doc/dirtyinfnorm.tex,
+	  doc/dirtyintegral.tex, doc/display.tex, doc/divide.tex,
+	  doc/dyadic.tex, doc/equal.tex, doc/error.tex, doc/evaluate.tex,
+	  doc/execute.tex, doc/expand.tex, doc/exponent.tex,
+	  doc/externalplot.tex, doc/externalproc.tex, doc/file.tex,
+	  doc/findzeros.tex, doc/fixed.tex, doc/floating.tex,
+	  doc/fpminimax.tex, doc/fullparentheses.tex, doc/function.tex,
+	  doc/ge.tex, doc/gt.tex, doc/guessdegree.tex, doc/head.tex,
+	  doc/hexadecimal.tex, doc/honorcoeffprec.tex, doc/horner.tex,
+	  doc/implementpoly.tex, doc/inf.tex, doc/infnorm.tex,
+	  doc/integer.tex, doc/integral.tex, doc/isbound.tex,
+	  doc/isevaluable.tex, doc/le.tex, doc/length.tex, doc/library.tex,
+	  doc/lt.tex, doc/mantissa.tex, doc/mid.tex, doc/minus.tex,
+	  doc/mult.tex, doc/neq.tex, doc/nop.tex, doc/not.tex,
+	  doc/numerator.tex, doc/or.tex, doc/parse.tex, doc/perturb.tex,
+	  doc/plot.tex, doc/plus.tex, doc/postscript.tex,
+	  doc/postscriptfile.tex, doc/power.tex, doc/powers.tex,
+	  doc/precision.tex, doc/prepend.tex, doc/print.tex,
+	  doc/printexpansion.tex, doc/printfloat.tex, doc/printhexa.tex,
+	  doc/printxml.tex, doc/proc.tex, doc/procedure.tex, doc/quit.tex,
+	  doc/range.tex, doc/rationalapprox.tex, doc/readfile.tex,
+	  doc/readxml.tex, doc/relative.tex, doc/remez.tex, doc/rename.tex,
+	  doc/restart.tex, doc/return.tex, doc/revert.tex, doc/round.tex,
+	  doc/roundcoefficients.tex, doc/roundcorrectly.tex,
+	  doc/searchgal.tex, doc/simplify.tex, doc/simplifysafe.tex,
+	  doc/sollya.pdf, doc/sort.tex, doc/string.tex, doc/subpoly.tex,
+	  doc/substitute.tex, doc/sup.tex, doc/tail.tex, doc/taylor.tex,
+	  doc/timing.tex, doc/var.tex, doc/void.tex, doc/worstcase.tex,
+	  doc/write.tex: Recompiled doc, new shlp2tex.sh
+
+2010-03-06 02:48  clauter
+
+	* doc/shlp2tex.sh: Patched some compilation errors
+
+2010-03-06 01:00  clauter
+
+	* doc/dirtyinfnorm.tex, doc/introExample17.tex, doc/sollya.pdf,
+	  doc/timing.tex, help.h: Recompiled doc
+
+2010-03-05 19:25  schevill
+
+	* doc/dirtyinfnorm.shlp, doc/shlp2html.sh: * Patched a bug when the
+	  file ListOfCommands.php does not exist.
+
+2010-03-04 23:04  clauter
+
+	* INSTALL, doc/accurateinfnorm.tex, doc/asciiplot.tex,
+	  doc/bashexecute.tex, doc/dirtyfindzeros.tex, doc/fpminimax.tex,
+	  doc/points.tex, doc/printexpansion.tex, doc/proc.tex,
+	  doc/remez.tex, doc/sollya.pdf, doc/subpoly.tex, doc/timing.tex,
+	  help.h: Recompiled the doc.
+
+2010-03-01 18:16  clauter
+
+	* general.c: Worked around a bug in setrlimit under Cygwin. The
+	  workaround may happen not to work at all.
+
+2010-02-28 11:26  clauter
+
+	* execute.c, expression.c, general.c, general.h: Some kind of fix
+	  for "[#7549] Deep recursion causes segfault on Cygwin"
+
+2010-02-26 23:36  clauter
+
+	* execute.c: Fix for "[#8079] Testing if something is NaN is
+	  impossible/ NaN behaviour is not IEEE 754 compliant"
+
+2010-02-26 22:52  clauter
+
+	* execute.c, expression.c, expression.h, infnorm.c,
+	  tests/check.sollya.output: Fix for [#8078] Infinity and minus
+	  infinity do not behave the same
+
+2010-02-26 18:21  clauter
+
+	* execute.c: Patch for "[#7370] Warning is displayed twice where it
+	  should be displayed once "
+
+2010-02-01 07:47  clauter
+
+	* autodiff.c, execute.c, expression.c, expression.h, infnorm.c,
+	  infnorm.h, internlexer.l, internparser.y, lexer.l, minilexer.l,
+	  miniparser.y, parser.y, sollya.h, tadiff.c, taylorModel.c, xml.c:
+	  Corrected bug #9530 "A test hides a warning message".
+	  
+	  Added nearestint function.
+
+2010-01-29 04:46  clauter
+
+	* execute.c, execute.h, internparser.y, miniparser.y, parser.y:
+	  Added support for procedures with an arbitrary number of
+	  arguments
+
+2009-10-15 08:03  schevill
+
+	* doc/remez.shlp: Corrected bug #8774 relative to a phrase not
+	  completely clear in the doc of remez algorithm.
+
+2009-10-13 18:41  clauter
+
+	* general.c, general.h: Added flushing option in order to be able
+	  to use Sollya over nameless pipes.
+
+2009-10-09 22:08  clauter
+
+	* execute.c: Removed annoying warning about floating-point
+	  evaluation for ~
+	  operator, which is known to do a floating-point evaluation.
+
+2009-10-06 09:53  schevill
+
+	* proof.c, remez.c: Corrected conflict between two functions named
+	  doNothing.
+
+2009-10-06 02:55  clauter
+
+	* execute.c, execute.h, internparser.y, miniparser.y, parser.y:
+	  Implemented nop(integer) for relative timing purposes.
+
+2009-10-04 18:02  clauter
+
+	* infnorm.c, tests/check.sollya.output: rewrote evaluateFaithful
+	  and speeded it up by 50%
+
+2009-10-04 13:42  schevill
+
+	* plot.c: Patched asciiplot to make it use random sampling.
+
+2009-10-04 13:08  schevill
+
+	* infnorm.c, plot.c: Partially corrected bug #8666 by randomizing a
+	  little bit the sampling in plot.
+	  
+	  Note that the same issue as the one described in bug #8666 can be
+	  observed with dirtyinfnorm, e.g.:
+	  
+	  > f = sin(x * 2 * pi * points) + 3;
+	  > dirtyinfnorm(f,[1;2]);
+	  3.0000000000000000000000000000000000000000000167935
+	  
+	  (example proposed by Christoph).
+	  I applied the same randomization strategy to dirtyinfnorm as
+	  well.
+
+2009-10-02 14:39  schevill
+
+	* infnorm.c: Patched dirtyinfnorm in order to take rigorously into
+	  account cases such as
+	  f = log(x)/log(2) - log10(x)/log10(2) + 3
+	  where the function is constant but f' cannot be proven to be 0.
+
+2009-10-02 11:33  schevill
+
+	* infnorm.c: Reverted a modification by Christoph which introduced
+	  a possible bug when computing ||f|| where f is almost constant.
+	  This a is a short-term patch, while we are thinkning of a way of
+	  dealing with examples such as:
+	  
+	  f = log(x)/log(2) - log10(x)/log10(2) + 3;
+	  dirtyinfnorm(f,[1;2]);
+	  
+	  I also corrected a small mistake: there is no need to run
+	  Newton's algorithm where either f'(x1) or f'(x3)=0 since it means
+	  that either x1 or x3 is the local extremum. These points are tken
+	  into account anyway.
+
+2009-10-01 17:38  clauter
+
+	* compile.sh, configure.ac: Reverted back the wrong commit on
+	  compile.sh and configure.ac
+
+2009-10-01 17:34  clauter
+
+	* compile.sh, configure.ac, infnorm.c: Reviewed Sylvain's
+	  reimplementation of dirtyinfnorm and performed two patches.
+
+2009-10-01 16:22  clauter
+
+	* execute.c: Patched execute.c in order to get Sollya build under
+	  Cygwin
+
+2009-10-01 15:11  schevill
+
+	* infnorm.c, remez.c, tests/check.sollya,
+	  tests/check.sollya.output: * This is an attempt to patch bug
+	  #8330 about the accuracy of dirtyinfnorm.
+	  I propose a new implementation of uncertifiedInfnorm. This
+	  implementation does mainly
+	  the same as before but avoid evaluating the derivative of f as
+	  much as possible.
+	  It uses evaluateFaithfulWithCutOffFast and my implementation of
+	  Newton's algorithm.
+	  
+	  * I made some modifications to evaluateFaithfulWithCutOffFast:
+	  startprec is now really used
+	  as the initial precision. This code should be read carefully by
+	  someone else than me since it
+	  is a critical code for Sollya. However, the tests of check.sollya
+	  all pass.
+	  
+	  * I modified check.sollya: I corrected some syntax errors and
+	  added a test case for the byg #8330.
+
+2009-10-01 02:21  clauter
+
+	* execute.c, execute.h, internlexer.l, internparser.y, lexer.l,
+	  minilexer.l, miniparser.y, parser.y: Added high-level time
+	  command
+
+2009-09-25 10:12  schevill
+
+	* infnorm.c, remez.c, tests/check.sollya,
+	  tests/check.sollya.output: * Patched Newton's algorithm: except
+	  if there is a bug in the patch, the algorithm should be more
+	  stable now.
+	  In particular, there was a bug when searching for the zero of f
+	  in [a,b] where a<0<b and f(0) = NaN. This bug is now solved.
+	  This bug had been introduced in revision 783 and was observed for
+	  instance when calling remez((2^x-1)/x,9,[-1/16,1/16])
+	  that had become very slow due to the bug.
+	  Christoph also observed the bug when trying to improve
+	  dirtyinform.
+	  
+	  * I added a new possible returned value to
+	  evaluateFaithfulWithCutOffFast. In fact, I used to believe that 0
+	  was returned if
+	  and only if the algorithm was unable to find a precision
+	  guaranteeing the faithful rounding. It appears that 0 was also
+	  returned
+	  when the algorithm does not manage to evaluate the expression
+	  into a real number (e.g. it evaluates to Inf or NaN).
+	  Now, evaluateFaithfulWithcutOffFast returns 3 in this case. This
+	  allows one to see the difference between a problem of accuracy
+	  (i.e. f(x) is too small) and a problem of evaluation (i.e. f(x)
+	  is not defined or has a false singularity that cannot be
+	  detected).
+	  I modified every functions that use the returned value of
+	  evaluateFaithfulWithCutOffFast, in order to keep the
+	  compatibility.
+	  
+	  * I added a test case for remez((2^x-1)/x,9,[-1/16,1/16]) in
+	  check.sollya
+	  I also numbered the test cases because it was really a mess to
+	  find out where a problem came from when somthing changed
+	  in check.sollya.output.
+	  I also discovered some bugs in check.sollya (syntax errors) that
+	  I corrected.
+	  Finally, the test case number 171 invoked 'quit' which prevented
+	  to run the following tests. I guess it was a mistake, so
+	  I commented it. If it was intended, please uncomment it, but put
+	  this test case as the last one.
+
+2009-08-28 17:00  schevill
+
+	* help.h: Recompiled doc.
+
+2009-08-28 16:58  schevill
+
+	* doc/abs.tex, doc/absolute.shlp, doc/absolute.tex,
+	  doc/accurateinfnorm.tex, doc/acos.tex, doc/acosh.tex,
+	  doc/and.tex, doc/append.tex, doc/approx.tex, doc/asciiplot.tex,
+	  doc/asin.tex, doc/asinh.tex, doc/atan.tex, doc/atanh.tex,
+	  doc/autosimplify.tex, doc/bashexecute.tex, doc/binary.tex,
+	  doc/boolean.tex, doc/canonical.tex, doc/ceil.tex,
+	  doc/checkinfnorm.tex, doc/coeff.tex, doc/concat.tex,
+	  doc/constant.tex, doc/cos.tex, doc/cosh.tex, doc/decimal.tex,
+	  doc/default.tex, doc/degree.tex, doc/denominator.tex,
+	  doc/diam.tex, doc/diff.tex, doc/dirtyfindzeros.shlp,
+	  doc/dirtyfindzeros.tex, doc/dirtyinfnorm.tex,
+	  doc/dirtyintegral.tex, doc/display.tex, doc/divide.tex,
+	  doc/double.tex, doc/doubledouble.tex, doc/doubleextended.tex,
+	  doc/dyadic.tex, doc/equal.tex, doc/erf.tex, doc/erfc.tex,
+	  doc/error.tex, doc/evaluate.tex, doc/execute.tex, doc/exp.tex,
+	  doc/expand.tex, doc/expm1.tex, doc/exponent.tex,
+	  doc/externalplot.tex, doc/externalproc.tex, doc/false.tex,
+	  doc/file.tex, doc/findzeros.tex, doc/fixed.tex, doc/floating.tex,
+	  doc/floor.tex, doc/fpminimax.tex, doc/fullparentheses.tex,
+	  doc/function.tex, doc/ge.tex, doc/gt.tex, doc/guessdegree.tex,
+	  doc/head.tex, doc/hexadecimal.tex, doc/honorcoeffprec.tex,
+	  doc/hopitalrecursions.tex, doc/horner.tex, doc/implementpoly.tex,
+	  doc/inf.tex, doc/infnorm.tex, doc/integer.tex, doc/integral.tex,
+	  doc/isbound.tex, doc/isevaluable.tex, doc/le.tex, doc/length.tex,
+	  doc/library.tex, doc/listof.tex, doc/log.tex, doc/log10.tex,
+	  doc/log1p.tex, doc/log2.tex, doc/lt.tex, doc/mantissa.tex,
+	  doc/mid.tex, doc/midpointmode.tex, doc/minus.tex, doc/mult.tex,
+	  doc/neq.tex, doc/nop.tex, doc/not.tex, doc/numerator.tex,
+	  doc/off.tex, doc/on.tex, doc/or.tex, doc/parse.tex,
+	  doc/perturb.tex, doc/pi.tex, doc/plot.tex, doc/plus.tex,
+	  doc/points.tex, doc/postscript.tex, doc/postscriptfile.tex,
+	  doc/power.tex, doc/powers.tex, doc/prec.tex, doc/precision.tex,
+	  doc/prepend.tex, doc/print.tex, doc/printexpansion.tex,
+	  doc/printfloat.tex, doc/printhexa.tex, doc/printxml.tex,
+	  doc/proc.tex, doc/procedure.tex, doc/quit.tex, doc/range.tex,
+	  doc/rationalapprox.tex, doc/rd.tex, doc/readfile.tex,
+	  doc/readxml.tex, doc/relative.shlp, doc/relative.tex,
+	  doc/remez.tex, doc/rename.tex, doc/restart.tex, doc/return.tex,
+	  doc/revert.tex, doc/rn.tex, doc/round.tex,
+	  doc/roundcoefficients.tex, doc/roundcorrectly.tex,
+	  doc/roundingwarnings.tex, doc/ru.tex, doc/rz.tex,
+	  doc/searchgal.tex, doc/simplify.tex, doc/simplifysafe.tex,
+	  doc/sin.tex, doc/sinh.tex, doc/sollya.pdf, doc/sort.tex,
+	  doc/sqrt.tex, doc/string.tex, doc/subpoly.tex,
+	  doc/substitute.tex, doc/sup.tex, doc/tail.tex, doc/tan.tex,
+	  doc/tanh.tex, doc/taylor.tex, doc/taylorrecursions.tex,
+	  doc/timing.tex, doc/tripledouble.tex, doc/true.tex, doc/var.tex,
+	  doc/verbosity.tex, doc/void.tex, doc/worstcase.tex,
+	  doc/write.tex: Recompiled the doc. Minor patches in some .shlp
+	  files.
+
+2009-08-28 16:57  schevill
+
+	* doc/shlp2html.sh: Improved version of shlp2html. Many bugs
+	  patched. It is almost completely functional.
+
+2009-08-28 10:54  schevill
+
+	* doc/shlp2tex.sh, doc/shlp2txt.sh: The scripts were bugged for
+	  architectures where sh is a link to dash. This is now corrected.
+	  They are proven to work with both dash and bash.
+
+2009-08-27 16:38  schevill
+
+	* doc/absolute.shlp, doc/relative.shlp: The help text in
+	  relative.shlp was wrong from the first version of the doc: it was
+	  just copied-pasted from perturb.shlp.
+	  I corrected it and updated absolute.shlp in the same time.
+
+2009-07-30 19:50  clauter
+
+	* infnorm.c, remez.c, remez.h: Tried to improve the accuracy of
+	  dirtyinfnorm.
+
+2009-07-29 21:28  schevill
+
+	* execute.c: this version really compiles. I am affraid execute.c
+	  is a mess between r851 in trunk and taylorform
+
+2009-07-29 21:21  schevill
+
+	* INSTALL, execute.c, expression.c: reported patch of bug #8312
+	  (that was initially commited in the branch taylorform) into the
+	  trunk
+
+2009-07-28 14:35  clauter
+
+	* compile.sh, configure.ac: Fixed wrong commit just one revision
+	  ago.
+
+2009-07-28 14:27  clauter
+
+	* INSTALL, compile.sh, configure.ac, execute.c, library.c: Patched
+	  a segfault on parse
+
+2009-07-27 20:18  clauter
+
+	* execute.c, tests/check.sollya.output: Patched bug #8306 Parsing
+	  of non-representable decimal constants in point-interval notation
+	  may give FP point intervals.
+	  
+	  The patch still has to be confirmed.
+
+2009-07-01 01:55  clauter
+
+	* execute.c, external.c: Patched bug tracker [#8199] options file,
+	  postscript and postscriptfile do not work in externalplot
+	  All old checks pass. No new checks have been added (I can't think
+	  of any).
+	  Code needs confirmation for the tracker to be closed.
+
+2009-06-18 17:03  clauter
+
+	* expression.c: Patched performance bug #8093 "Dirtyinfnorm is slow
+	  on some instance"
+
+2009-06-18 12:59  schevill
+
+	* doc/shlp2html.sh: shlp2html not yet finished but in a good way.
+
+2009-06-16 19:52  clauter
+
+	* execute.c: Patched parse: a segfault could be seen only under
+	  Cygwin
+
+2009-06-16 19:17  clauter
+
+	* configure.ac: Made Sollya build as a statically linked program
+	  under Cygwin
+
+2009-06-08 04:47  clauter
+
+	* configure.ac: Added -Xlinker --allow-multiple-definition to
+	  configure/ makefile where supported
+
+2009-06-07 22:53  clauter
+
+	* double.c, double.h, execute.c, execute.h, expression.c,
+	  expression.h, infnorm.c, internlexer.l, internparser.y, lexer.l,
+	  minilexer.l, miniparser.y, parser.y, sollya.h, xml.c: Added
+	  single precision support.
+	  Extended syntax of roundcoefficients command.
+	  Extended syntax of round command.
+
+2009-06-07 19:01  clauter
+
+	* execute.c, general.c, general.h: Made Sollya accept an input file
+	  as a command line argument
+
+2009-06-07 06:26  clauter
+
+	* doc/introExample17.tex, doc/printfloat.tex, doc/printhexa.tex,
+	  doc/sollya.pdf, doc/timing.tex, help.h: Recompiled docc
+
+2009-06-07 05:32  schevill
+
+	* AUTHORS, assignment.c, assignment.h, chain.c, chain.h,
+	  configure.ac, doc/dirtyintegral.shlp, doc/dirtyintegral.tex,
+	  doc/sollya.tex, double.c, double.h, execute.c, execute.h,
+	  expansion.c, expansion.h, expression.c, expression.h, external.c,
+	  external.h, externalfun.c, externalproc.c, fpminimax.cpp,
+	  fpminimax.h, general.c, general.h, help.h, implement.c,
+	  implement.h, infnorm.c, infnorm.h, integral.c, integral.h,
+	  internlexer.l, internparser.y, lexer.l, library.c, library.h,
+	  libsollyaexample.c, main.c, main.h, minilexer.l, miniparser.y,
+	  parser.y, plot.c, plot.h, proof.c, proof.h, remez.c, remez.h,
+	  sollya.h, taylor.c, taylor.h, worstcase.c, worstcase.h, xml.c,
+	  xml.h: changed addresses @ens-lyon.fr to @ens-lyon.org
+
+2009-06-07 05:15  clauter
+
+	* Makefile.am, configure.ac: Added newly needed AC indications
+
+2009-06-06 22:37  clauter
+
+	* execute.c, execute.h, expression.c, expression.h, minilexer.l,
+	  miniparser.y: Eventually updated miniparser (for parse()) to the
+	  Sollya-age
+
+2009-06-06 02:43  clauter
+
+	* execute.c: Changed a verbosity back because of Sylvain.
+
+2009-06-03 06:06  clauter
+
+	* expression.c: Patched bug #7883
+
+2009-04-25 03:14  clauter
+
+	* doc/sollya.pdf: Recompiled pdf
+
+2009-04-25 03:09  clauter
+
+	* doc/introExample6.tex, doc/sollya.pdf, doc/timing.tex, help.h:
+	  Recompiled documentation and help
+
+2009-04-23 18:20  clauter
+
+	* Makefile.am, configure.ac, doc/Makefile.am, doc/sollya.pdf,
+	  doc/sollya.tex, tests/Makefile.am: Tried to correct bug #7696
+	  "Makefile does not launch recompilation on
+	  make check if sources changed"
+	  
+	  The bug has gone on Cygwin.
+	  
+	  ATTENTION: The help files should be recompiled.
+
+2009-04-22 04:25  clauter
+
+	* execute.c, expression.c, infnorm.c, infnorm.h,
+	  tests/check.sollya.output: Added smart sign test that can be used
+	  for proving that some constant term is constant zero.
+
+2009-04-17 04:34  clauter
+
+	* ChangeLog, doc/CommandsAndFunctions.tex, doc/accurateinfnorm.tex,
+	  doc/approx.tex, doc/bashexecute.tex, doc/divide.tex,
+	  doc/doubledouble.tex, doc/fpminimax.tex, doc/introExample17.tex,
+	  doc/introExample6.tex, doc/introExample8.tex, doc/points.tex,
+	  doc/printexpansion.tex, doc/round.tex, doc/roundcoefficients.tex,
+	  doc/roundcorrectly.tex, doc/sollya.pdf, doc/timing.tex,
+	  doc/tripledouble.tex, help.h: Updated help texts and texts for
+	  introduction in the
+	  documentation. The update is obtained through recompilation.
+	  
+	  New Changelog text also available.
+
+2009-04-16 21:14  clauter
+
+	* execute.c: Adapted evaluation to a constant (when a constant is
+	  needed for a
+	  subsequent command) to the new behaviour w.r.t. not-faithful
+	  values
+	  that might be zero.
+	  
+	  ATTENTION:
+	  
+	  MUST STILL UPDATE HELP TEXTS AND DOCUMENTATION.
+
+2009-04-16 20:46  clauter
+
+	* double.c, execute.c, expression.c, general.c, tests/check.sollya,
+	  tests/check.sollya.output: (1)
+	  
+	  Corrected a bug in reproducibility of the displaying of values:
+	  
+	  For precisions prec set between 32 and 64, integer values between
+	  2^31
+	  and 2^63-1 were displayed differently on machines for which
+	  sizeof(int) = 8 than for those for which sizeof(int) = 16.
+	  
+	  (2)
+	  
+	  Degraded 4 warnings on D, DD, TD, DE
+	  
+	  "Warning: rounding a value computed on less than 53 bits to
+	  double
+	  precision."
+	  
+	  to an information.
+	  
+	  (3)
+	  
+	  Changed the behaviour of the tool on automatic printing (on the
+	  prompt) if no faithful rounding can be determined for a constant
+	  expression.
+	  
+	  For constant expressions f(c) for which it can be proved that it
+	  exists two reals (not including infinity) a and b such that
+	  
+	  a <= f(c) <= b
+	  
+	  and a * b < 0, 0 is displayed instead of some FP-determined value
+	  if
+	  no faithful rounding for f(c) can be determined.
+	  
+	  The warning texts have significantly been changed, hence an
+	  update of
+	  the check files.
+	  
+	  The change might involve issue with backward compatibility.
+	  
+	  ATTENTION:
+	  
+	  The help text and documentation files have not been updated yet.
+	  
+	  THIS MUST BE DONE AS SOON AS POSSIBLE.
+	  
+	  
+	  (4)
+	  
+	  Corrected a bug concerning rationalmode. The value of that global
+	  constant did not get reset to its default value on restart.
+
+2009-04-13 05:35  clauter
+
+	* execute.c, execute.h, expression.c, expression.h, general.c,
+	  general.h, internlexer.l, internparser.y, lexer.l, parser.y:
+	  Added a rational computations mode.
+	  
+	  Still needs documentation.
+	  
+	  No expected changes in behaviour unless rationalmode = on; is
+	  issued.
+
+2009-04-06 06:50  clauter
+
+	* expression.c: Corrected a bug
+
+2009-04-06 06:32  clauter
+
+	* expression.c: Made exact simplifier *finally* simplify things
+	  like D(sin(3)), DD(exp(3)), TD(const), DE(const), floor(const),
+	  ceil(const) - where possible with a little more than the working
+	  precision
+
+2009-03-30 19:19  clauter
+
+	* expression.c, infnorm.c: Synchonization after debugging
+
+2009-03-28 00:06  clauter
+
+	* execute.c: Corrected a bug
+
+2009-02-27 21:14  clauter
+
+	* doc/CommandsAndFunctions.tex, doc/printfloat.tex,
+	  doc/printhexa.tex, doc/sollya.pdf, doc/sollya.tex, execute.c,
+	  help.h: Moved verbosity of annoying message "the given expression
+	  is not a
+	  constant but an expression to evaluate" from warning to
+	  information -
+	  at least if the evaluation is a faithful rounding.
+	  
+	  Recompiled documentation in order to reflect the change.
+
+2009-02-26 07:15  clauter
+
+	* configure.ac, doc/concat.shlp, doc/concat.tex, doc/sollya.pdf,
+	  doc/sollya.tex, execute.c, help.h: Started working on support of
+	  procedures with varying arity.
+
+2009-02-24 13:19  jmio17
+
+	* taylorModel.c: Corrected polynomial bounding for initial
+	  polynomial found. Improved
+	  remainder for log.
+
+2009-02-23 22:09  clauter
+
+	* double.c, tests/check.sollya, tests/check.sollya.output: Second
+	  and hopefully final version of the patch for bug
+	  #7085 Rounding to simplie value with infinity overflow is wrong.
+	  
+	  The bug (and several bugs hidden by the bug [un bogue peut en
+	  cacher
+	  un autre]) was due to double rounding issues. The double
+	  roundings
+	  either occurred because of:
+	  
+	  - a first rounding to double precision or
+	  
+	  - a rounding to 24 bits with unbounded exponent range or
+	  
+	  - a rounding to 24 bits with unbounded exponent range followed by
+	  a
+	  rounding to double precision followed by a rounding to single
+	  precision.
+	  
+	  Everthing's should be fine now.
+
+2009-02-23 21:00  clauter
+
+	* double.c: First version of patch for bug #7085 Rounding to simple
+	  value with
+	  infinity overflow is wrong.
+	  
+	  The bug submitted is patched. Code shows now a double rounding
+	  issue
+	  the single precision subnormal range.
+
+2009-02-23 19:23  clauter
+
+	* infnorm.c, tests/check.sollya, tests/check.sollya.output: Small
+	  changes for #6844 "0/0 not evaluated to NaN in all cases"
+	  
+	  Checks for #6844 "0/0 not evaluated to NaN in all cases"
+
+2009-02-23 18:41  clauter
+
+	* execute.c, infnorm.c, tests/check.sollya.output: Tried to correct
+	  bug #6844 "0/0 not evaluated to NaN in all cases".
+	  
+	  Need check file needed because patch induces a change in over-all
+	  behaviour.
+	  
+	  Remark: the new check file does not include checks for that bug.
+
+2009-02-18 10:08  schevill
+
+	* expression.c: Fixed the typo "a integer" (see bug #7312)
+
+2009-02-18 07:29  clauter
+
+	* expression.c: Patched bug 7216, No parentheses when displaying
+	  numbers in binary format leads to an incorrect value when parsed
+	  again
+
+2009-02-18 07:00  clauter
+
+	* expression.c: Patched bug #7312, Colouring and English grammar
+	  are wrong in warning message
+
+2009-02-18 06:46  clauter
+
+	* expression.c: Correct bug with tracker #7215, Binary display
+	  prints numbers in a way that cannot be read again
+
+2009-02-12 14:42  schevill
+
+	* doc/length.shlp, doc/length.tex, doc/sollya.pdf, help.h:
+	  Corrected a typo in an example of the documentation of length
+
+2009-02-11 09:09  jmio17
+
+	* tadiff.c: added f^ctPower case.
+
+2009-02-10 17:50  jmio17
+
+	* tadiff.c, tadiff.h: TADIFF formulas implemented for: sin, cos,
+	  exp, log, ct, var,
+	  mul,add,div - (not completely tested).
+
+2009-02-09 14:53  jmio17
+
+	* taylorModel.h: Demo version of Taylor Models.
+
+2009-02-09 14:52  jmio17
+
+	* taylorModel.c: Demo version of Taylor Models.
+
+2009-01-21 16:36  schevill
+
+	* fpminimax.cpp: Bug of infinite loop (see bug report #7217)
+	  temporarily patched. If fpminimax has too many loops it fails.
+
+2009-01-21 13:51  schevill
+
+	* README, fpminimax.cpp: Fpminimax exhibitted an infinite loop in a
+	  particular case.
+	  When the coefficients are floating-point numbers, the algorithm
+	  has to guess the exponents of the coefficients first.
+	  Then, fpminimax is launched and we check afterwards that the
+	  coefficients have the same exponent as we guessed.
+	  If it is not the case, we correct the exponents and loop.
+	  
+	  I knew that it could lead theoretically to an infinite loop. Yet,
+	  it was never oberved in practice.
+	  Mioara found the following instance that effectively leads to an
+	  infinite loop:
+	  f=sqrt(x); d=[1+12/512, 1+13/512]; fpminimax(f, 2, [|18, 10,
+	  14|], d);
+	  
+	  It turns out that the algorithm loops over the two polynomials
+	  p=-1.00100001000101_2 * 2^(-3) * x^2 + 1.10010001_2 * 2^(-1) * x
+	  + 1.0110111010000111_2 * 2^(-2)
+	  q=-1.100110000101_2 * 2^(-4) * x^2 + 1.011001011_2 * 2^(-1) * x +
+	  1.10011011000101111_2 * 2^(-2)
+	  
+	  Surprinsingly, the coefficients of x^2 is not the same at all in
+	  both polynomials.
+	  
+	  I patched the algorithm with the following trick: when more than
+	  MAXLOOP trials have been performed, we stop as soon as a
+	  polynomial fits in the formats.
+	  This still ensures that the result of the algorithm has the good
+	  form. This avoids the previous infinite loop but the theoretical
+	  possibility of an infinite loop stays.
+
+2008-11-17 17:34  clauter
+
+	* execute.c, infnorm.c, infnorm.h, tests/check.sollya,
+	  tests/check.sollya.output: Changed 0 * infty behaviour --
+	  behaviour was due to MPFI - discussion needed - bug 0/0 remains
+
+2008-10-15 15:26  schevill
+
+	* autodiff.c, sturm.c: Removed a useless line in autodiff.c and
+	  sturm.c
+
+2008-10-07 10:00  schevill
+
+	* remez.c, tests/check.sollya.output: Rewrote Newton's algorithm
+	  making it more readable.
+
+2008-10-06 12:11  schevill
+
+	* INSTALL, remez.c, tests/check.sollya, tests/check.sollya.output:
+	  Corrected a bug in dirtyfindzeros: in the case of a second order
+	  zero, the convergence is only linear. It lead to an
+	  overestimation of the precision by a factor ~= 2
+
+2008-10-05 20:07  clauter
+
+	* execute.c: Patched bug when external procedure was renamed
+
+2008-10-03 16:05  clauter
+
+	* INSTALL, configure.ac: Changed required version of automake for
+	  overcoming a problem on Guillaume's machine
+
+2008-10-02 16:12  clauter
+
+	* expression.c: Changed simplification size in differentiation
+
+2008-10-01 15:15  clauter
+
+	* tests/check.sollya.output: New test cases
+
+2008-10-01 14:57  clauter
+
+	* execute.c, execute.h, expression.c, internparser.y, parser.y,
+	  tests/check.sollya, tests/check.sollya.output: Patched midpoint
+	  mode and range -- added mixed mode mpfi like interval arithmetic
+
+2008-10-01 09:45  schevill
+
+	* autodiff.c, library.c: Added expm1 base case in autodiff.
+	  Set a warning mode for the error messages of library.c
+
+2008-10-01 09:05  schevill
+
+	* remez.c: In guessdegree: even (or odd) functions on symetrical
+	  intervals used to disturb the algorithm. As a result, it was
+	  quite slow and returned poor intervals such as [0;14] or [27;43].
+	  I corrected it by adding a small random pertubation in the points
+	  used for the interpolation (the same trick was already used for a
+	  while in Remez algorithm with good results).
+
+2008-09-30 09:44  schevill
+
+	* fpminimax.cpp, remez.c, tests/check.sollya,
+	  tests/check.sollya.output: Corrected two bugs (comparison between
+	  a signed and an unsigned int). Added a test case for the bug.
+
+2008-09-29 01:06  clauter
+
+	* tests/check.sollya.output: New test cases
+
+2008-09-29 01:01  clauter
+
+	* execute.c, infnorm.h: Added simple MPFI-like interval arithmetic
+	  to Sollya language
+
+2008-09-25 14:12  schevill
+
+	* remez.c: Corrected a typo.
+
+2008-09-25 14:02  schevill
+
+	* INSTALL, README, assignment.c, assignment.h, chain.c, chain.h,
+	  doc/accurateinfnorm.shlp, doc/accurateinfnorm.tex,
+	  doc/checkinfnorm.shlp, doc/checkinfnorm.tex,
+	  doc/dirtyinfnorm.shlp, doc/dirtyinfnorm.tex,
+	  doc/guessdegree.shlp, doc/guessdegree.tex, doc/infnorm.shlp,
+	  doc/infnorm.tex, doc/introExample8.sollya, doc/introExample8.tex,
+	  doc/remez.shlp, doc/remez.tex, doc/sollya.pdf, doc/sollya.tex,
+	  double.c, double.h, execute.c, execute.h, expansion.c,
+	  expression.c, expression.h, external.c, external.h,
+	  externalfun.c, externalproc.c, fpminimax.cpp, fpminimax.h,
+	  general.c, general.h, help.h, implement.c, implement.h,
+	  infnorm.c, infnorm.h, integral.c, integral.h, internlexer.l,
+	  internparser.y, lexer.l, library.c, library.h,
+	  libsollyaexample.c, main.c, main.h, minilexer.l, miniparser.y,
+	  parser.y, plot.c, plot.h, proof.c, proof.h, remez.c, remez.h,
+	  sollya.h, taylor.c, taylor.h, worstcase.c, worstcase.h, xml.c,
+	  xml.h: Changed "infinite norm" to "infinity norm" everywhere.
+
+2008-09-25 08:33  clauter
+
+	* tests/check.sollya, tests/check.sollya.output: New test cases
+
+2008-09-24 17:29  clauter
+
+	* execute.c: Patched new evaluate behaviour
+
+2008-09-24 15:56  clauter
+
+	* INSTALL, configure.ac, doc/sollya.pdf, doc/sollya.tex: Patched
+	  affiliation, changed revision version number
+
+2008-09-24 12:30  schevill
+
+	* doc/evaluate.shlp, doc/evaluate.tex, doc/sollya.pdf, help.h:
+	  Updated the documentation of evaluate with the new feature
+	  evaluate(f,[a;a]).
+
+2008-09-24 11:33  clauter
+
+	* tests/check.sollya, tests/check.sollya.output: New test cases
+
+2008-09-24 11:26  clauter
+
+	* execute.c: Patched midpoint mode parsing if bounds are inverted
+
+2008-09-24 10:58  clauter
+
+	* execute.c, internlexer.l, lexer.l: Patched midpoint mode, changed
+	  slightly the behaviour of evaluate
+
+2008-09-23 18:01  clauter
+
+	* execute.c: Made inequality test finally safe - warnings are
+	  displayed iff floating-point evaluation changes a result
+
+2008-09-23 13:05  clauter
+
+	* tests/check.sollya, tests/check.sollya.output: New check files
+
+2008-09-23 12:59  schevill
+
+	* tests/check.sollya.output: Nothing
+
+2008-09-23 12:42  clauter
+
+	* execute.c, expression.c, internlexer.l, lexer.l: Patched
+	  displaying of decimal constants having a decimal exponent
+	  different from 0 and only one decimal to be displayed.
+	  
+	  Added %precision%constant parsing capability for numerical point
+	  constants.
+
+2008-09-23 12:30  schevill
+
+	* remez.c, tests/check.sollya: Patched a case of infinite looping
+	  in Newton's algorithm.
+
+2008-09-23 10:39  schevill
+
+	* doc/sollya.pdf, help.h: Nothing
+
+2008-09-23 10:36  schevill
+
+	* INSTALL, doc/sollya.pdf, doc/tail.shlp, doc/tail.tex, help.h,
+	  tests/check.sollya.output: corrected a type error in tail
+	  documentation. Updated check file.
+
+2008-09-23 09:36  clauter
+
+	* lexer.l, tests/Makefile.am: Made shebangs possible
+
+2008-09-22 12:23  schevill
+
+	* remez.c: Patched a bug about the estimation of the precision
+	  given by a numerical root in Newton's algorithm
+
+2008-09-21 15:27  clauter
+
+	* execute.c: Some changes for testing (2)
+
+2008-09-21 15:25  clauter
+
+	* execute.c: Some changes for testing
+
+2008-09-21 14:54  clauter
+
+	* expression.c, tests/check.sollya, tests/check.sollya.output:
+	  Patched bugs in midpointmode
+
+2008-09-18 14:25  clauter
+
+	* ChangeLog: New Changelog
+
+2008-09-18 14:23  schevill
+
+	* sollya.h: Added defined constant FLOATING, FIXED, ABSOLUTESYM,
+	  and RELATIVESYM for fpminimax
+
+2008-09-18 13:36  clauter
+
+	* doc/equal.shlp, doc/equal.tex, doc/ge.shlp, doc/ge.tex,
+	  doc/gt.shlp, doc/gt.tex, doc/le.shlp, doc/le.tex, doc/lt.shlp,
+	  doc/lt.tex, doc/neq.shlp, doc/neq.tex, doc/prec.shlp,
+	  doc/prec.tex, doc/sollya.pdf, doc/sollya.tex, execute.c, help.h:
+	  Changes in documentation
+
+2008-09-18 13:05  clauter
+
+	* ChangeLog, NEWS, README, doc/log.shlp, doc/log.tex,
+	  doc/minus.shlp, doc/minus.tex, doc/searchgal.shlp,
+	  doc/searchgal.tex, doc/sollya.pdf, doc/sollya.tex, help.h: New
+	  NEWS and Changlog files
+
+2008-09-18 12:01  clauter
+
+	* doc/sollya.pdf: Recompiled whole help
+
+2008-09-18 11:24  clauter
+
+	* doc/autosimplify.tex, doc/bashexecute.tex, doc/canonical.tex,
+	  doc/checkinfnorm.tex, doc/degree.tex, doc/diam.tex,
+	  doc/display.tex, doc/doubleextended.tex, doc/error.tex,
+	  doc/externalproc.tex, doc/fpminimax.tex, doc/fullparentheses.tex,
+	  doc/hopitalrecursions.tex, doc/horner.tex, doc/library.tex,
+	  doc/nop.tex, doc/off.tex, doc/on.tex, doc/pi.tex, doc/plot.tex,
+	  doc/points.tex, doc/print.tex, doc/printxml.tex, doc/proc.tex,
+	  doc/procedure.tex, doc/quit.tex, doc/rationalapprox.tex,
+	  doc/readxml.tex, doc/rename.tex, doc/restart.tex, doc/return.tex,
+	  doc/round.tex, doc/roundingwarnings.tex, doc/simplifysafe.tex,
+	  doc/sollya.pdf, doc/taylorrecursions.tex, doc/timing.tex,
+	  doc/write.tex, help.h: Updated recompiled documentation
+
+2008-09-18 10:41  schevill
+
+	* doc/asciiplot.tex, doc/fpminimax.shlp, doc/fpminimax.tex,
+	  doc/shlp2tex.sh, doc/sollya.pdf, help.h: several things
+
+2008-09-18 10:35  clauter
+
+	* doc/sollya.pdf, doc/sollya.tex: Forgot one thing
+
+2008-09-18 10:34  clauter
+
+	* doc/implementpoly.tex, doc/infnorm.tex, doc/sollya.pdf, help.h:
+	  Forgot to compile the changed help texts
+
+2008-09-18 10:31  clauter
+
+	* doc/implementpoly.shlp, doc/infnorm.shlp, doc/sollya.pdf,
+	  doc/sollya.tex: Some updates in the documentation
+
+2008-09-18 09:21  clauter
+
+	* doc/sollya.pdf, doc/sollya.tex: Slight change in sollya.tex main
+	  document
+
+2008-09-18 09:17  clauter
+
+	* doc/approx.tex, doc/sollya.pdf, help.h, internparser.y, parser.y:
+	  Patched a parsing bug for ~ operator
+
+2008-09-18 09:14  schevill
+
+	* doc/shlp2tex.sh, doc/sollya.pdf, help.h: Unified \sollya and
+	  Sollya in the generated documentation
+
+2008-09-18 09:09  schevill
+
+	* doc/approx.shlp, doc/approx.tex: Added two examples in the
+	  documentation of approx
+
+2008-09-17 21:31  clauter
+
+	* ChangeLog, tests/check.sollya.output: New check output file
+	  because errors corrected
+
+2008-09-17 20:48  clauter
+
+	* doc/approx.shlp, doc/approx.tex, doc/autosimplify.shlp,
+	  doc/autosimplify.tex, doc/default.shlp, doc/default.tex,
+	  doc/display.shlp, doc/display.tex, doc/evaluate.shlp,
+	  doc/evaluate.tex, doc/externalplot.shlp, doc/externalplot.tex,
+	  doc/externalproc.shlp, doc/externalproc.tex, doc/findzeros.shlp,
+	  doc/findzeros.tex, doc/fpminimax.shlp, doc/fpminimax.tex,
+	  doc/fullparentheses.shlp, doc/fullparentheses.tex,
+	  doc/honorcoeffprec.shlp, doc/honorcoeffprec.tex,
+	  doc/implementpoly.shlp, doc/implementpoly.tex, doc/infnorm.shlp,
+	  doc/infnorm.tex, doc/integral.shlp, doc/integral.tex,
+	  doc/isbound.shlp, doc/isbound.tex, doc/log.shlp, doc/log.tex,
+	  doc/minus.shlp, doc/minus.tex, doc/printxml.tex, doc/proc.shlp,
+	  doc/proc.tex, doc/readxml.shlp, doc/readxml.tex, doc/remez.shlp,
+	  doc/remez.tex, doc/restart.tex, doc/return.shlp, doc/return.tex,
+	  doc/searchgal.shlp, doc/searchgal.tex, doc/sollya.pdf,
+	  doc/sollya.tex, doc/subpoly.shlp, doc/subpoly.tex,
+	  doc/substitute.shlp, doc/substitute.tex, doc/timing.tex,
+	  doc/verbosity.shlp, doc/verbosity.tex, doc/void.shlp,
+	  doc/void.tex, doc/write.shlp, doc/write.tex, execute.c, help.h,
+	  xml.c: Some changes
+
+2008-09-17 17:55  jmio17
+
+	* autodiff.c: added POW case (f^g, f^ct, ct^f, ct^ct)
+
+2008-09-17 17:52  jmio17
+
+	* sollya.h: added extern node* simplifyTreeErrorfree(node *tree);
+
+2008-09-17 16:11  schevill
+
+	* doc/fpminimax.shlp, doc/fpminimax.tex, help.h: Some explanations
+	  in the documentation of fpminimax
+
+2008-09-17 14:43  clauter
+
+	* doc/approx.shlp, doc/approx.tex, doc/introExample1.tex,
+	  doc/keywords.def, doc/sollya.pdf, execute.c: Corrected a warning
+	  text
+
+2008-09-17 14:24  clauter
+
+	* doc/CommandsAndFunctions.tex, doc/shlp2tex.sh: Added help for ~
+
+2008-09-17 14:13  clauter
+
+	* doc/approx.shlp, doc/approx.tex: Updated documentation -- 2
+
+2008-09-17 14:12  clauter
+
+	* doc/keywords.def, doc/sollya.pdf, help.h: Updated documentation
+
+2008-09-17 13:15  clauter
+
+	* ChangeLog: Updated Changelog file
+
+2008-09-17 13:13  clauter
+
+	* execute.c, library.c: Patched some memory leaks
+
+2008-09-17 11:59  clauter
+
+	* sturm.c: Speeded up getNrRoots on typical examples by a factor of
+	  500
+
+2008-09-15 14:07  clauter
+
+	* sollya.h, sturm.c: Improved handling of rational coefficients in
+	  Sturm
+
+2008-09-15 12:30  clauter
+
+	* INSTALL: Patching the 'a changé de statut spécial de façon
+	  inattendue' error - step 2
+
+2008-09-15 12:27  clauter
+
+	* INSTALL: Patching the 'a changé de statut spécial de façon
+	  inattendue' error - step 1
+
+2008-09-15 12:26  clauter
+
+	* sturm.c: Slightly changed FP coefficient handling in sturm
+	  external procedure
+
+2008-09-15 11:51  clauter
+
+	* doc/sollya.pdf, doc/sollya.tex: Reedited documentation
+
+2008-09-15 11:40  clauter
+
+	* doc/asciiplot.shlp, doc/asciiplot.tex, doc/sollya.pdf,
+	  doc/sollya.tex, general.c, help.h: Updated documentation, changed
+	  slightly the --help option behaviour
+
+2008-09-15 10:49  clauter
+
+	* general.c: Changed option syntax and added --help option
+
+2008-09-12 13:15  jmio17
+
+	* sollya.h: changed signature of evaluateFaithful
+
+2008-09-12 11:54  jmio17
+
+	* sturm.c: modified to find all distinct roots in the closed
+	  interval [a,b], a<=b.
+
+2008-09-12 11:45  schevill
+
+	* fpminimax.cpp: Added a dummy wrapper for printing FPLLL matrices
+
+2008-09-12 07:11  jmio17
+
+	* sturm.c: Added sturm algo for obtaining the number of distinct
+	  roots of a
+	  polynomial.
+
+2008-09-08 17:01  clauter
+
+	* Makefile.am, configure.ac, tests, tests/Makefile.am,
+	  tests/check.proto, tests/check.sollya, tests/check.sollya.output:
+	  Added first check environment
+
+2008-09-08 15:51  clauter
+
+	* AUTHORS, configure.ac, doc/fixed.tex, doc/floating.tex,
+	  doc/fpminimax.tex, doc/implementpoly.tex, doc/introExample1.tex,
+	  doc/introExample8.tex, doc/minus.tex, doc/remez.tex,
+	  doc/sollya.pdf, doc/sollya.tex, doc/subpoly.tex, doc/timing.tex,
+	  help.h, lexer.l: Patched failures in read when file did not exist
+
+2008-09-08 10:16  clauter
+
+	* lexer.l: Patched memory leak in lexer
+
+2008-09-05 17:23  clauter
+
+	* general.c: Patched color handling behaviour -- if colors do not
+	  work with your rlwrap, update our rlwrap or use the
+	  -oldrlwrapcompatible option
+
+2008-09-03 15:43  clauter
+
+	* internparser.y: Patched once again parser for unary plus and
+	  minus -- 2nd step
+
+2008-09-03 15:34  clauter
+
+	* general.c, general.h, parser.y: Patched once again parser for
+	  unary plus and minus -- 1st step
+
+2008-09-03 11:55  clauter
+
+	* internparser.y: Patched display and parsing of negation -- 2nd
+	  step
+
+2008-09-03 11:51  clauter
+
+	* expression.c, parser.y: Patched display and parsing of negation
+	  -- 1st step
+
+2008-09-01 13:39  schevill
+
+	* configure.ac, fpminimax.cpp: Minor changes for compatibility with
+	  fplll 3
+
+2008-08-30 13:37  clauter
+
+	* ChangeLog: New changelog
+
+2008-08-30 13:30  clauter
+
+	* general.c, library.c, plot.c: Made Sollya compile under Cygwin, a
+	  warning persists under compilatio, Sollya library untested,
+	  externalproc, externalplot and library function untested,
+	  asciiplot plots always for a 77x24 character terminal because
+	  ioctrl impossible.
+
+2008-08-29 18:43  clauter
+
+	* doc/sollya.pdf, parser.y: New version
+
+2008-08-29 17:04  schevill
+
+	* sollya.h: updated sollya.h with the signature of FPminimax
+
+2008-08-29 16:58  schevill
+
+	* doc/introExample11.sollya, doc/introExample2.sollya,
+	  doc/introExample3.sollya, doc/introExample3.tex,
+	  doc/introExample4.sollya, doc/introExample5.sollya,
+	  doc/introExample6.sollya, doc/introExample6.tex, doc/sollya.pdf,
+	  doc/sollya.tex: updated the examples in introduction of the
+	  manual.
+
+2008-08-29 16:46  clauter
+
+	* doc/Makefile.am, doc/introExample1.tex: Some updates
+
+2008-08-29 16:38  schevill
+
+	* doc/compileExamples.sh, doc/example1.tex, doc/example1.txt,
+	  doc/example10.tex, doc/example10.txt, doc/example11.tex,
+	  doc/example11.txt, doc/example12.tex, doc/example12.txt,
+	  doc/example13.tex, doc/example13.txt, doc/example14.tex,
+	  doc/example14.txt, doc/example15.tex, doc/example15.txt,
+	  doc/example16.tex, doc/example16.txt, doc/example17.tex,
+	  doc/example17.txt, doc/example18.tex, doc/example18.txt,
+	  doc/example19.tex, doc/example19.txt, doc/example2.tex,
+	  doc/example2.txt, doc/example20.tex, doc/example20.txt,
+	  doc/example21.tex, doc/example21.txt, doc/example22.tex,
+	  doc/example22.txt, doc/example23.tex, doc/example23.txt,
+	  doc/example24.tex, doc/example24.txt, doc/example25.tex,
+	  doc/example25.txt, doc/example26.tex, doc/example26.txt,
+	  doc/example27.tex, doc/example27.txt, doc/example28.tex,
+	  doc/example28.txt, doc/example29.tex, doc/example29.txt,
+	  doc/example3.tex, doc/example3.txt, doc/example30.tex,
+	  doc/example30.txt, doc/example31.tex, doc/example31.txt,
+	  doc/example4.tex, doc/example4.txt, doc/example5.tex,
+	  doc/example5.txt, doc/example6.tex, doc/example6.txt,
+	  doc/example7.tex, doc/example7.txt, doc/example8.tex,
+	  doc/example8.txt, doc/example9.tex, doc/example9.txt,
+	  doc/introExample1.sollya, doc/introExample1.tex,
+	  doc/introExample10.sollya, doc/introExample10.tex,
+	  doc/introExample11.sollya, doc/introExample11.tex,
+	  doc/introExample12.sollya, doc/introExample12.tex,
+	  doc/introExample13.sollya, doc/introExample13.tex,
+	  doc/introExample14.sollya, doc/introExample14.tex,
+	  doc/introExample15.sollya, doc/introExample15.tex,
+	  doc/introExample16.sollya, doc/introExample16.tex,
+	  doc/introExample17.sollya, doc/introExample17.tex,
+	  doc/introExample18.sollya, doc/introExample18.tex,
+	  doc/introExample19.sollya, doc/introExample19.tex,
+	  doc/introExample2.sollya, doc/introExample2.tex,
+	  doc/introExample20.sollya, doc/introExample20.tex,
+	  doc/introExample21.sollya, doc/introExample21.tex,
+	  doc/introExample22.sollya, doc/introExample22.tex,
+	  doc/introExample23.sollya, doc/introExample23.tex,
+	  doc/introExample24.sollya, doc/introExample24.tex,
+	  doc/introExample25.sollya, doc/introExample25.tex,
+	  doc/introExample26.sollya, doc/introExample26.tex,
+	  doc/introExample27.sollya, doc/introExample27.tex,
+	  doc/introExample28.sollya, doc/introExample28.tex,
+	  doc/introExample29.sollya, doc/introExample29.tex,
+	  doc/introExample3.sollya, doc/introExample3.tex,
+	  doc/introExample30.sollya, doc/introExample30.tex,
+	  doc/introExample31.sollya, doc/introExample31.tex,
+	  doc/introExample4.sollya, doc/introExample4.tex,
+	  doc/introExample5.sollya, doc/introExample5.tex,
+	  doc/introExample6.sollya, doc/introExample6.tex,
+	  doc/introExample7.sollya, doc/introExample7.tex,
+	  doc/introExample8.sollya, doc/introExample8.tex,
+	  doc/introExample9.sollya, doc/introExample9.tex: Changed names of
+	  example files for the introduction. Updated compileExamples.sh
+
+2008-08-29 16:30  clauter
+
+	* doc/grammar.tex, doc/sollya.pdf, doc/sollya.tex: Removed grammar
+	  from help
+
+2008-08-29 16:24  clauter
+
+	* lexer.l: Made prompt come back after a comment started by //
+
+2008-08-29 16:12  clauter
+
+	* doc/accurateinfnorm.tex, doc/asciiplot.tex, doc/bashexecute.tex,
+	  doc/dirtyfindzeros.tex, doc/dirtyinfnorm.tex, doc/divide.tex,
+	  doc/doubledouble.tex, doc/doubleextended.tex, doc/evaluate.tex,
+	  doc/findzeros.tex, doc/fpminimax.tex, doc/hopitalrecursions.tex,
+	  doc/implementpoly.tex, doc/isevaluable.tex, doc/length.tex,
+	  doc/midpointmode.tex, doc/pi.tex, doc/points.tex, doc/print.tex,
+	  doc/printexpansion.tex, doc/remez.tex, doc/roundingwarnings.tex,
+	  doc/searchgal.tex, doc/simplify.tex, doc/sollya.pdf,
+	  doc/subpoly.tex, doc/timing.tex, doc/tripledouble.tex,
+	  doc/verbosity.tex, doc/worstcase.tex, help.h: New help text
+	  example compilation
+
+2008-08-29 15:31  clauter
+
+	* Makefile.am, configure.ac: Added fpminimax to libsollya
+
+2008-08-29 15:14  schevill
+
+	* execute.c, fpminimax.cpp, sollya.h: FPminimax does not construct
+	  an node of type error anymore. Now, it returns NULL and the error
+	  is generated in execute.c
+	  
+	  FPminimax does not handle singular matrices but does not crash on
+	  such matrices: it just returns an error
+	  
+	  Memory leak corrected in FPminimax.
+
+2008-08-29 12:49  clauter
+
+	* configure.ac, general.c: Colored SIGNAL handler messages
+
+2008-08-29 12:13  schevill
+
+	* general.c, plot.c, remez.c: removed some warnings
+
+2008-08-29 12:00  schevill
+
+	* README: Added information about how to configure sollya for
+	  compiling with g++-4.2
+
+2008-08-29 11:58  schevill
+
+	* README: Updated README to include a warning about the version of
+	  g++ used to compile Sollya.
+
+2008-08-29 11:44  clauter
+
+	* configure.ac: New version of configure.ac for fplll (final)
+
+2008-08-29 11:38  clauter
+
+	* configure.ac: New version of configure.ac for fplll
+	  (communication version)
+
+2008-08-29 11:28  clauter
+
+	* configure.ac: New version of configure.ac for fplll (2)
+
+2008-08-29 11:26  clauter
+
+	* configure.ac: New version of configure.ac for fplll
+
+2008-08-29 10:03  clauter
+
+	* configure.ac, fpminimax.cpp: Added test for fplll in configure
+
+2008-08-28 14:48  clauter
+
+	* expression.c: Patched a very dangerous bug in binomial expression
+	  expansion
+	  affecting the sign of the monomials in the expansion.
+	  
+	  THIS CODE IS CALLED FROM EVERYWHERE EACH TIME A POLYNOMIAL IS
+	  HANDLED!
+	  
+	  Please re-check all results previously obtained using Sollya.
+
+2008-08-28 13:56  schevill
+
+	* doc/sollya.pdf: corrected a typo.
+
+2008-08-28 13:52  schevill
+
+	* doc/fpminimax.shlp, doc/fpminimax.tex, help.h: corrected a typo.
+
+2008-08-28 13:00  clauter
+
+	* execute.c: Really speeded up conversion of decimal constants
+
+2008-08-28 12:45  clauter
+
+	* doc/sollya.pdf, general.c: Patched coloring on timing information
+	  - I do not why it was blue
+
+2008-08-28 12:28  schevill
+
+	* fpminimax.cpp: Updated the message relative to the installation
+	  of fplll
+
+2008-08-19 17:11  schevill
+
+	* remez.c: New version of guessdegree much *much* more efficient.
+
+2008-08-12 14:56  schevill
+
+	* fpminimax.cpp: The dummy wrapper is more easy to comment now.
+
+2008-08-12 14:49  schevill
+
+	* fpminimax.cpp: Now sollya compiles with recent versions of g++.
+
+2008-08-12 14:16  schevill
+
+	* fpminimax.cpp, fpminimax.h: New files for fpminimax
+
+2008-08-12 14:16  schevill
+
+	* Makefile.am, README, assignment.c, assignment.h, chain.c,
+	  chain.h, double.c, double.h, execute.c, execute.h, expression.c,
+	  expression.h, external.c, fpminimax.c, fpminimax.h, general.h,
+	  help.h, infnorm.c, infnorm.h, internlexer.l, internparser.y,
+	  lexer.l, parser.y, plot.c, remez.c, remez.h, sollya.h: * Added:
+	  fixed, floating, and fpminimax.
+	  * Corrected a memory leak in function sprintValue of file
+	  expression.c
+	  * Corrected a bug in the informations displayed by plot and
+	  externalplot (buffer was badly flushed)
+	  * Updated help
+	  * Moved rationapprox code in file double.c
+	  * Moved a lot of useful functions that were in several files all
+	  together in chain.c (freeMpfiPtr, freeIntPtr, etc.)
+	  * Added useful declarations in sollya.h
+	  * Enhanced Newton's algorithm used by remez and dirtyfindzeros:
+	  an exact zero is detected more quickly now.
+
+2008-08-12 12:44  schevill
+
+	* doc/checkinfnorm.shlp, doc/checkinfnorm.tex, doc/equal.shlp,
+	  doc/equal.tex, doc/infnorm.shlp, doc/infnorm.tex, doc/parse.shlp,
+	  doc/parse.tex, doc/power.shlp, doc/power.tex,
+	  doc/printexpansion.tex, doc/remez.tex, doc/sollya.pdf,
+	  doc/subpoly.tex: Corrected a few things and updated the examples
+	  with current version of sollya.
+
+2008-08-12 10:14  schevill
+
+	* doc/fixed.tex, doc/floating.tex, doc/fpminimax.shlp,
+	  doc/fpminimax.tex: I forgot to add tex files
+
+2008-08-12 09:57  schevill
+
+	* doc/CommandsAndFunctions.tex, doc/compileExamples.sh,
+	  doc/example.sollya, doc/example1.tex, doc/example1.txt,
+	  doc/example10.tex, doc/example10.txt, doc/example11.tex,
+	  doc/example11.txt, doc/example12.tex, doc/example12.txt,
+	  doc/example13.tex, doc/example13.txt, doc/example14.tex,
+	  doc/example14.txt, doc/example15.tex, doc/example15.txt,
+	  doc/example16.tex, doc/example16.txt, doc/example17.tex,
+	  doc/example17.txt, doc/example18.tex, doc/example18.txt,
+	  doc/example19.tex, doc/example19.txt, doc/example2.tex,
+	  doc/example2.txt, doc/example20.tex, doc/example20.txt,
+	  doc/example21.tex, doc/example21.txt, doc/example22.tex,
+	  doc/example22.txt, doc/example23.tex, doc/example23.txt,
+	  doc/example24.tex, doc/example24.txt, doc/example25.tex,
+	  doc/example25.txt, doc/example26.tex, doc/example26.txt,
+	  doc/example27.tex, doc/example27.txt, doc/example28.tex,
+	  doc/example28.txt, doc/example29.tex, doc/example29.txt,
+	  doc/example3.tex, doc/example3.txt, doc/example30.tex,
+	  doc/example30.txt, doc/example31.tex, doc/example31.txt,
+	  doc/example4.tex, doc/example4.txt, doc/example5.tex,
+	  doc/example5.txt, doc/example6.tex, doc/example6.txt,
+	  doc/example7.tex, doc/example7.txt, doc/example8.tex,
+	  doc/example8.txt, doc/example9.tex, doc/example9.txt,
+	  doc/fixed.shlp, doc/floating.shlp, doc/infnorm.shlp,
+	  doc/infnorm.tex, doc/keywords.def, doc/plot.shlp, doc/plot.tex,
+	  doc/sollya.pdf, doc/sollya.tex, doc/types.def: * Added a script
+	  compileExamples.sh that lets one write easily an example for the
+	  documentation of sollya, out of a .shlp file.
+	  The examples in the first sections of the documentation are now
+	  written in separate files and may be recompiled at any time with
+	  compileExamples.
+	  
+	  * Added documentation for fixed, floating and fpminimax.
+	  
+	  * Corrected a few things in other documentation files.
+
+2008-08-01 09:28  clauter
+
+	* sollya.h: Added printInterval to sollya.h
+
+2008-07-29 13:36  jmio17
+
+	* autodiff.c: added auto diff base functions: tan,asin, acos ...
+	  modified pow
+
+2008-07-25 18:21  schevill
+
+	* internparser.y, parser.y: I forgot to suppress references to
+	  pari.h in these internparser.y and parser.y
+
+2008-07-25 18:10  schevill
+
+	* autodiff.c: Implementation of base_diffs for sin, cos, sinh,
+	  cosh, log, log2, log10, exp and sqrt.
+
+2008-07-25 17:31  schevill
+
+	* autodiff.c: Implementation of exp. Note that I rewrote the base
+	  case for x^p : p may be any value (not only integer) and the
+	  results should be more accurate when the input interval is large.
+
+2008-07-25 17:23  schevill
+
+	* autodiff.c: First implementation of the multiplication.
+
+2008-07-25 14:34  schevill
+
+	* autodiff.c: Incomplete version of autodiff. For working purpose
+
+2008-07-25 07:58  schevill
+
+	* Makefile.am, README, configure.ac, doc/sollya.pdf,
+	  doc/sollya.tex, fpminimax.c, general.c, pari_utils.c,
+	  pari_utils.h: Removed dependance to PARI/GP.
+
+2008-07-24 16:09  clauter
+
+	* parser.y: Added Mioara
+
+2008-07-24 14:23  clauter
+
+	* ChangeLog, configure.ac: Applied patch provided by Christophe
+	  Mouilleron
+
+2008-07-24 14:16  schevill
+
+	* sollya.h: update of sollya.h in order to allow more possibilities
+
+2008-07-16 22:08  clauter
+
+	* internlexer.l, internparser.y: Added floating-point approximation
+	  mode (forgot something)
+
+2008-07-16 22:03  clauter
+
+	* execute.c, execute.h, lexer.l, parser.y: Added floating-point
+	  approximation mode
+
+2008-07-08 07:58  clauter
+
+	* infnorm.c: Patched color handling on a warning message in infnorm
+
+2008-07-03 10:00  schevill
+
+	* remez.c: Christoph introduced a bug in the printing of the line
+	  "A slower algorithm is used for this step (pseudo-alternating
+	  condition changed)" when he introduced the coloring. It is
+	  corrected.
+
+2008-06-27 16:28  schevill
+
+	* remez.c: Avoid infinite looping when reaching the maximum allowed
+	  iterations of the algorithm
+
+2008-06-24 10:28  schevill
+
+	* remez.c: I forgot the initialization of variable HaarCompliant
+
+2008-06-24 10:25  clauter
+
+	* expression.c, expression.h: Improved precision management on
+	  constants
+
+2008-06-24 10:07  schevill
+
+	* remez.c: When there is too many oscillations, the algorithm
+	  should use the exchange algorithm. In the particular case when
+	  the algorithm did not use the slower algorithm, this error was
+	  caught at the end by a call to dirtyinfnorm but nothing was done
+	  to solve the problem. Now, the main loop is relaunched forcing an
+	  exchange step. Hopefully, this will introduce the maximum and
+	  converge. The convergence should not be taken for sure.
+
+2008-06-18 08:59  schevill
+
+	* remez.c: A quality less than ~ 2^(-53) used to lead to an error.
+	  However, the polynomial was correctly computed: it was a bug
+	  affecting the final test. It is now corrected
+
+2008-06-17 14:17  schevill
+
+	* double.c, execute.c, expression.c, expression.h, external.c,
+	  fpminimax.c, infnorm.c, plot.c, remez.c, worstcase.c: suppressed
+	  useless argument prec of printValue
+
+2008-06-10 15:57  schevill
+
+	* execute.c, expression.c, remez.c, worstcase.c: suppressed some
+	  warnings
+
+2008-06-09 15:31  schevill
+
+	* double.c, execute.c: suppressed some warnings
+
+2008-06-09 15:31  schevill
+
+	* xml.c: suppressed some warnings
+
+2008-06-09 15:30  schevill
+
+	* assignment.c, expression.c, expression.h, general.c, general.h,
+	  proof.c: suppressed some warnings
+
+2008-06-09 13:09  schevill
+
+	* double.c, execute.c, xml.c: suppressed some warnings
+
+2008-06-09 10:51  schevill
+
+	* fpminimax.c, general.h, infnorm.c, remez.c: suppressed some
+	  warnings
+
+2008-06-09 08:50  clauter
+
+	* integral.c: Added faithful rounded evaluation to dirtyintegral
+
+2008-06-06 18:12  clauter
+
+	* internlexer.l, lexer.l: reduced once again list of special
+	  characters in identifiers
+
+2008-06-06 16:01  schevill
+
+	* doc/autosimplify.tex, doc/midpointmode.tex, doc/print.tex,
+	  doc/sollya.pdf, help.h: changed doc
+
+2008-06-06 15:54  schevill
+
+	* doc/accurateinfnorm.tex, doc/autosimplify.shlp,
+	  doc/autosimplify.tex, doc/canonical.shlp, doc/canonical.tex,
+	  doc/default.shlp, doc/default.tex, doc/display.shlp,
+	  doc/display.tex, doc/fullparentheses.shlp,
+	  doc/fullparentheses.tex, doc/midpointmode.tex, doc/print.tex,
+	  doc/sollya.pdf, doc/sollya.tex: updated some doc files
+
+2008-06-06 15:47  clauter
+
+	* internlexer.l, lexer.l: Patched special character set in
+	  identifiers
+
+2008-06-05 07:59  clauter
+
+	* execute.c, execute.h, expression.c, general.c, general.h,
+	  internlexer.l, internparser.y, lexer.l, parser.y: Correct
+	  midpoint mode on display and parsing
+
+2008-06-04 14:54  clauter
+
+	* execute.c, general.c, internlexer.l, internparser.y, lexer.l,
+	  parser.y: Some additional features
+
+2008-06-02 21:07  clauter
+
+	* doc/accurateinfnorm.tex, doc/asciiplot.tex, doc/bashexecute.tex,
+	  doc/dirtyfindzeros.tex, doc/dirtyinfnorm.tex,
+	  doc/dirtyintegral.tex, doc/display.tex, doc/doubleextended.tex,
+	  doc/evaluate.tex, doc/hopitalrecursions.tex,
+	  doc/implementpoly.tex, doc/infnorm.tex, doc/integral.tex,
+	  doc/isevaluable.tex, doc/pi.tex, doc/points.tex, doc/print.tex,
+	  doc/remez.tex, doc/roundingwarnings.tex, doc/searchgal.tex,
+	  doc/simplify.tex, doc/sollya.pdf, doc/subpoly.tex,
+	  doc/taylorrecursions.tex, doc/timing.tex, doc/tripledouble.tex,
+	  doc/verbosity.tex, doc/worstcase.tex, help.h: Recompiled doc
+	  after patching bugs
+
+2008-06-02 20:17  clauter
+
+	* expression.c, infnorm.c: Patched a lot of bugs
+
+2008-06-02 14:34  clauter
+
+	* doc/canonical.tex, doc/doubledouble.tex, doc/doubleextended.tex,
+	  doc/honorcoeffprec.tex, doc/implementpoly.tex, doc/pi.tex,
+	  doc/printexpansion.tex, doc/printfloat.tex, doc/printhexa.tex,
+	  doc/roundcoefficients.tex, doc/sollya.pdf, doc/timing.tex,
+	  doc/tripledouble.tex, doc/verbosity.tex, help.h: Recompiled once
+	  again the documentation
+
+2008-06-02 14:00  schevill
+
+	* doc/canonical.shlp, doc/shlp2tex.sh, doc/shlp2txt.sh: activated
+	  roundingwarnings by default in the examples of the documentation.
+	  Minor patch in canonical.shlp
+
+2008-06-02 13:46  clauter
+
+	* doc/roundingwarnings.tex, doc/sollya.pdf: Transfer commit
+
+2008-06-02 13:28  clauter
+
+	* doc/sollya.pdf, help.h: recompiled parts of docu
+
+2008-06-02 13:25  schevill
+
+	* doc/roundingwarnings.tex, doc/suppresswarnings.tex: moved
+	  suppresswarnings.tex into roundindwarnings.tex
+
+2008-06-02 12:42  clauter
+
+	* configure.ac, doc/canonical.tex, doc/sollya.pdf, doc/sollya.tex,
+	  doc/timing.tex, help.h: Recompiled once again help texts, adapted
+	  manual documentation to new behaviour
+
+2008-06-02 11:49  clauter
+
+	* expression.c: Patched a real big bug in coefficient extraction on
+	  multiplicative horner terms
+
+2008-06-02 11:18  clauter
+
+	* doc/accurateinfnorm.tex, doc/asciiplot.tex, doc/canonical.tex,
+	  doc/checkinfnorm.tex, doc/dirtyfindzeros.tex,
+	  doc/dirtyinfnorm.tex, doc/dirtyintegral.tex, doc/display.tex,
+	  doc/doubledouble.tex, doc/doubleextended.tex, doc/equal.tex,
+	  doc/evaluate.tex, doc/ge.tex, doc/honorcoeffprec.tex,
+	  doc/hopitalrecursions.tex, doc/implementpoly.tex,
+	  doc/infnorm.tex, doc/integral.tex, doc/isevaluable.tex,
+	  doc/le.tex, doc/library.tex, doc/lt.tex, doc/neq.tex,
+	  doc/parse.tex, doc/pi.tex, doc/plot.tex, doc/points.tex,
+	  doc/power.tex, doc/print.tex, doc/printexpansion.tex,
+	  doc/printfloat.tex, doc/printhexa.tex, doc/remez.tex,
+	  doc/roundcoefficients.tex, doc/roundcorrectly.tex,
+	  doc/searchgal.tex, doc/simplify.tex, doc/sollya.pdf,
+	  doc/subpoly.tex, doc/substitute.tex, doc/taylorrecursions.tex,
+	  doc/timing.tex, doc/tripledouble.tex, doc/worstcase.tex, help.h:
+	  Recompiled help texts
+
+2008-06-02 10:37  schevill
+
+	* execute.c, help.h, internlexer.l, lexer.l, parser.y: Changed
+	  suppressroundingwarnings into roundingwarnings
+
+2008-06-02 10:34  schevill
+
+	* doc/roundingwarnings.shlp, doc/suppresswarnings.shlp: Changed
+	  suppresswarnings.shlp into roundingwarnings.shlp
+
+2008-06-02 10:34  schevill
+
+	* doc/CommandsAndFunctions.tex, doc/keywords.def,
+	  doc/midpointmode.shlp, doc/midpointmode.tex, doc/sollya.pdf,
+	  doc/suppresswarnings.shlp, doc/verbosity.shlp, doc/verbosity.tex:
+	  Changed suppressroundingwarnings into roundingwarnings
+
+2008-06-01 18:08  clauter
+
+	* general.c: Still better rlwrap compatibility
+
+2008-05-30 14:33  clauter
+
+	* execute.c, plot.c: Still better rlwrap and color compatibility
+
+2008-05-30 14:22  clauter
+
+	* execute.c: Better rlwrap compatiblity for color mode
+
+2008-05-29 13:25  clauter
+
+	* general.c: Restore color mode upon recovering from error
+
+2008-05-29 11:35  clauter
+
+	* general.c: Speeded up color mode switching
+
+2008-05-29 09:03  clauter
+
+	* general.c: Improved color mode handling in scripts and added
+	  compatibility flags '-nocolor' and '-noprompt'
+
+2008-05-28 20:44  clauter
+
+	* doc/CommandsAndFunctions.tex, doc/keywords.def,
+	  doc/midpointmode.shlp, doc/midpointmode.tex, doc/sollya.pdf,
+	  doc/suppresswarnings.shlp, doc/suppresswarnings.tex,
+	  doc/verbosity.shlp, doc/verbosity.tex, help.h, parser.y: Added
+	  suppressroundingwarnings to docu
+
+2008-05-28 20:17  clauter
+
+	* general.c, general.h, plot.c: Added still more colors
+
+2008-05-28 18:00  clauter
+
+	* execute.c, expression.c, external.c, general.c, general.h,
+	  implement.c, infnorm.c, parser.y, plot.c, remez.c, worstcase.c:
+	  Added coloring
+
+2008-05-28 14:42  clauter
+
+	* internparser.y, miniparser.y, parser.y: Changed implicit
+	  parenthesation order for power operator ^
+
+2008-05-23 09:48  schevill
+
+	* infnorm.c: Patched evaluate in order to handle correctly
+	  intervals containing NaN
+
+2008-05-22 10:24  clauter
+
+	* execute.c, expression.c: Patched small bug concerning precision
+	  handling on autoprint display of negative, unevaluated values
+
+2008-05-21 07:57  clauter
+
+	* expression.c: Patched new expression handling behaviour
+
+2008-05-20 22:35  clauter
+
+	* expression.c: Some optimizations to expression tree handling
+
+2008-05-20 15:20  clauter
+
+	* expression.c, infnorm.c: Changed slightly the heuristics for
+	  differentiating polynomials
+
+2008-05-20 12:04  clauter
+
+	* expression.c: Changed verbosity levels in expression handling
+
+2008-05-19 19:53  clauter
+
+	* execute.c, expression.c: Changed behaviour in converting literal
+	  constants to internal binary floating-point format - less
+	  rounding occurs
+
+2008-05-19 08:10  clauter
+
+	* infnorm.c: Changed behaviour of 1/x in 0 to [-infty;infty]
+
+2008-05-18 22:28  clauter
+
+	* internlexer.l, lexer.l, minilexer.l: Added infty, @Inf@, nan,
+	  NaN, NAN, @NaN@ lexing/ parsing capability
+
+2008-05-18 22:17  clauter
+
+	* infnorm.c: Patched behaviour on divison by only value 0
+
+2008-05-17 13:06  clauter
+
+	* execute.c: Improved code size in execute, patched a bug in
+	  autoprint
+
+2008-05-15 15:31  schevill
+
+	* expression.c: Corrected frenglish "Remplacing" expression.
+
+2008-05-12 16:17  schevill
+
+	* remez.c: Corrected a bug leading to segfault when remez was
+	  called with only one monomial.
+	  
+
+2008-04-29 13:23  schevill
+
+	* remez.c: patched a big bug with the random perturbation
+
+2008-04-29 13:09  schevill
+
+	* remez.c: The initial set of points is now randomly perturbed in
+	  order to avoid singular matrices. It seems to enhance
+	  considerably the behavior of the algorithm in the bad cases.
+
+2008-04-29 11:34  clauter
+
+	* expression.c: Patched bug in printing NaNs and Infs
+
+2008-04-29 09:32  clauter
+
+	* infnorm.c: Patched evaluate(1/x,[-1;1]) behaviour
+
+2008-04-28 10:32  clauter
+
+	* expression.c: Changed information level
+
+2008-04-28 10:24  schevill
+
+	* remez.c: Corrected some bugs, in particular one in guessdegee
+	  that lead to a segfault.
+
+2008-04-27 20:09  clauter
+
+	* expression.c: Corrected precision handling in displaying of
+	  decimal values
+
+2008-04-25 21:17  schevill
+
+	* remez.c: Added heuristics to make the algorithm more robust.
+	  Corrected few bugs as well. The code is still not perfect. It
+	  seems to perform too much exchange steps. However this does not
+	  compromise the algorithm.
+
+2008-04-25 14:58  schevill
+
+	* remez.c: Changed temporarily the maximal number of loops in remez
+	  algorithm
+
+2008-04-25 14:03  schevill
+
+	* infnorm.c: patched a bug leading to an infinite loop in
+	  dirtyinfnorm
+
+2008-04-25 13:35  schevill
+
+	* remez.c: MAJOR MODIFICATION: this is a first try to integrate the
+	  exchange algorithm into the current implementation of remez
+	  command.
+	  Since it merges two different algorithms (second algorithm and
+	  exchange algorithm) into a single program, I am completely unsure
+	  of the stability of this new implementation.
+	  However, the new implementation should always give a correct
+	  minimax when it finishes normally. In the case when the Haar
+	  condition is fulfilled, the algorithm should be at most twice
+	  slower than the old implementation.
+	  
+	  This is provided as a temporary and experimental implementation
+	  before a safer and faster one in the next few weeks.
+
+2008-03-30 13:05  clauter
+
+	* double.c, execute.c, execute.h, expression.c, general.c,
+	  general.h, implement.c, internlexer.l, internparser.y, lexer.l,
+	  miniparser.y, parser.y, taylor.c, xml.c: Added warning
+	  suppression for rounding warnings.
+
+2008-03-17 09:26  clauter
+
+	* expansion.c: Added timing support for external polynomial
+	  evaluation codes.
+
+2008-02-29 05:53  schevill
+
+	* remez.c: Corrected a bug in Remez' algorithm. More precisely,
+	  when there is only
+	  n+1 oscillations in the interval, we have to choose one of the
+	  bounds.
+	  The way it was done did not check if the alternation property was
+	  fulfilled. It is now the case.
+
+2008-02-19 01:24  schevill
+
+	* remez.c: added a message that prints the norm of the current
+	  polynomial whenever Remez' algorithm crashes because there are
+	  not enough oscillations.
+
+2008-01-16 16:26  schevill
+
+	* execute.c: Same bug as in plot corrected for externalplot
+
+2008-01-16 16:20  schevill
+
+	* ChangeLog, execute.c: bug in default case of plot command
+	  corrected
+
+2008-01-16 14:03  clauter
+
+	* doc/Makefile.am, doc/sollya.pdf: Patched Makefile error in
+	  distribution
+
+2008-01-16 11:38  clauter
+
+	* general.c: Added mpfr_free_cache call at the end of the tool
+
+2008-01-16 11:12  clauter
+
+	* doc/Makefile.am, pari_utils.c: Corrected svn
+
+2008-01-16 11:02  clauter
+
+	* Makefile.am, configure.ac, doc/sollya.pdf, doc/sollya.tex: Added
+	  sollya.pdf build to make dist
+
+2008-01-16 10:49  clauter
+
+	* README, autogen.sh, configure.ac: Patched build files for
+	  overcoming the bug encountered on John Harrison's
+	  computer. Work in progress.
+
+2008-01-09 16:09  schevill
+
+	* remez.c: More explicits message when the curve fails to oscillate
+	  sufficiently.
+
+2008-01-09 16:01  clauter
+
+	* execute.c: Patched error message on guessdegree failure
+
+2008-01-09 15:52  schevill
+
+	* remez.c: corrected a bug concerning the verbosity and
+	  defaultpoints in guessdegree
+
+2008-01-09 09:28  clauter
+
+	* execute.c: Patched guessdegree behaviour in interpreter
+
+2008-01-08 12:47  schevill
+
+	* doc/externalproc.shlp, doc/externalproc.tex, doc/sollya.pdf,
+	  help.h: Corrected a bug in the doc
+
+2008-01-08 09:40  clauter
+
+	* README, configure.ac: Added MPFR version checking to configure
+	  script -- following mail exchange with N. Brisebarre
+
+2008-01-07 10:40  schevill
+
+	* README: Added a mention about the necessity of GMP
+
+2008-01-07 10:40  schevill
+
+	* doc/sollya.tex: Added a mention about the necessity of GMP
+
+2008-01-05 13:05  clauter
+
+	* ChangeLog, doc/proc.tex, doc/sollya.pdf, doc/taylor.tex, help.h:
+	  Compiled versions of new help texts
+
+2008-01-05 12:58  clauter
+
+	* doc/proc.shlp, doc/sollya.tex, doc/taylor.shlp: Patched some
+	  documentation files
+
+2008-01-04 13:32  clauter
+
+	* parser.y: Improved help help command
+
+2008-01-04 13:28  clauter
+
+	* assignment.c, assignment.h, chain.c, chain.h, doc/sollya.pdf,
+	  doc/sollya.tex, doc/timing.tex, double.c, double.h, execute.c,
+	  execute.h, expansion.c, expression.c, expression.h, external.c,
+	  external.h, externalfun.c, externalproc.c, fpminimax.c,
+	  fpminimax.h, general.c, general.h, help.h, implement.c,
+	  implement.h, infnorm.c, infnorm.h, integral.c, integral.h,
+	  internlexer.l, internparser.y, lexer.l, library.c, library.h,
+	  libsollyaexample.c, main.c, main.h, minilexer.l, miniparser.y,
+	  pari_utils.c, pari_utils.h, parser.y, plot.c, plot.h, proof.c,
+	  proof.h, remez.c, remez.h, sollya.h, taylor.c, taylor.h,
+	  worstcase.c, worstcase.h, xml.c, xml.h: Small changes in
+	  documentation
+
+2008-01-04 12:27  clauter
+
+	* doc/absolute.shlp, doc/absolute.tex, doc/accurateinfnorm.shlp,
+	  doc/accurateinfnorm.tex, doc/autosimplify.shlp,
+	  doc/autosimplify.tex, doc/bashexecute.tex, doc/binary.shlp,
+	  doc/binary.tex, doc/boolean.shlp, doc/boolean.tex,
+	  doc/canonical.shlp, doc/canonical.tex, doc/checkinfnorm.shlp,
+	  doc/checkinfnorm.tex, doc/constant.shlp, doc/constant.tex,
+	  doc/decimal.shlp, doc/decimal.tex, doc/denominator.shlp,
+	  doc/denominator.tex, doc/diff.shlp, doc/diff.tex,
+	  doc/display.shlp, doc/display.tex, doc/dyadic.shlp,
+	  doc/dyadic.tex, doc/error.shlp, doc/error.tex,
+	  doc/externalplot.shlp, doc/externalplot.tex,
+	  doc/externalproc.shlp, doc/externalproc.tex,
+	  doc/fullparentheses.shlp, doc/fullparentheses.tex,
+	  doc/function.shlp, doc/function.tex, doc/hexadecimal.shlp,
+	  doc/hexadecimal.tex, doc/implementpoly.shlp,
+	  doc/implementpoly.tex, doc/integer.shlp, doc/integer.tex,
+	  doc/neq.shlp, doc/neq.tex, doc/numerator.shlp, doc/numerator.tex,
+	  doc/parse.shlp, doc/parse.tex, doc/perturb.shlp, doc/perturb.tex,
+	  doc/powers.shlp, doc/powers.tex, doc/print.shlp, doc/print.tex,
+	  doc/printexpansion.shlp, doc/printexpansion.tex,
+	  doc/printfloat.shlp, doc/printfloat.tex, doc/printhexa.shlp,
+	  doc/printhexa.tex, doc/printxml.shlp, doc/printxml.tex,
+	  doc/proc.shlp, doc/proc.tex, doc/quit.shlp, doc/quit.tex,
+	  doc/range.shlp, doc/range.tex, doc/readfile.shlp,
+	  doc/readfile.tex, doc/readxml.shlp, doc/readxml.tex,
+	  doc/relative.shlp, doc/relative.tex, doc/restart.shlp,
+	  doc/restart.tex, doc/return.shlp, doc/return.tex,
+	  doc/roundcorrectly.shlp, doc/roundcorrectly.tex,
+	  doc/searchgal.shlp, doc/searchgal.tex, doc/simplifysafe.shlp,
+	  doc/simplifysafe.tex, doc/sollya.pdf, doc/string.shlp,
+	  doc/string.tex, doc/subpoly.shlp, doc/subpoly.tex,
+	  doc/taylor.shlp, doc/taylor.tex, doc/timing.tex, doc/var.shlp,
+	  doc/var.tex, doc/void.shlp, doc/void.tex, doc/write.shlp,
+	  doc/write.tex, execute.c, help.h: Corrected a bug in autoprint
+	  displaying of strings contained in lists
+
+2008-01-04 10:33  clauter
+
+	* infnorm.c: Patched a memory leak in infnorm
+
+2007-12-21 08:41  clauter
+
+	* infnorm.c: Patched a memory leak
+
+2007-12-20 14:41  clauter
+
+	* README, doc/sollya.pdf, doc/sollya.tex: Finished working on
+	  documentation
+
+2007-12-20 13:58  schevill
+
+	* execute.c, fpminimax.c, infnorm.c: * patched leaks.
+	  
+
+2007-12-19 23:11  clauter
+
+	* configure.ac: Changed Sollya version number
+
+2007-12-19 23:01  clauter
+
+	* doc/implementpoly.shlp, doc/implementpoly.tex, doc/sollya.pdf,
+	  help.h: Patched a small error in the documentation
+
+2007-12-19 22:01  clauter
+
+	* doc/CommandsAndFunctions.tex, doc/RD.shlp, doc/RD.tex,
+	  doc/RN.shlp, doc/RN.tex, doc/RU.shlp, doc/RU.tex, doc/RZ.shlp,
+	  doc/RZ.tex, doc/bashexecute.tex, doc/evaluate.shlp,
+	  doc/evaluate.tex, doc/implementpoly.shlp, doc/implementpoly.tex,
+	  doc/parse.shlp, doc/parse.tex, doc/pi.shlp, doc/pi.tex,
+	  doc/rd.shlp, doc/rd.tex, doc/readxml.shlp, doc/readxml.tex,
+	  doc/restart.shlp, doc/restart.tex, doc/rn.shlp, doc/rn.tex,
+	  doc/ru.shlp, doc/ru.tex, doc/rz.shlp, doc/rz.tex,
+	  doc/searchgal.shlp, doc/searchgal.tex, doc/sollya.pdf,
+	  doc/timing.tex, doc/void.shlp, doc/void.tex, help.h: Continued
+	  work on help texts.
+
+2007-12-19 18:50  clauter
+
+	* infnorm.c: Patched memory leak in infnorm with proof generation.
+
+2007-12-19 15:50  clauter
+
+	* doc/RD.tex, doc/RN.tex, doc/RU.tex, doc/RZ.tex, doc/abs.tex,
+	  doc/absolute.tex, doc/accurateinfnorm.tex, doc/acos.tex,
+	  doc/acosh.tex, doc/and.tex, doc/append.tex, doc/asciiplot.tex,
+	  doc/asin.tex, doc/asinh.tex, doc/atan.tex, doc/atanh.tex,
+	  doc/autosimplify.tex, doc/bashexecute.tex, doc/binary.tex,
+	  doc/boolean.tex, doc/canonical.tex, doc/ceil.tex,
+	  doc/checkinfnorm.tex, doc/coeff.tex, doc/concat.tex,
+	  doc/constant.tex, doc/cos.tex, doc/cosh.tex, doc/decimal.tex,
+	  doc/default.tex, doc/degree.tex, doc/denominator.tex,
+	  doc/diam.tex, doc/diff.tex, doc/dirtyfindzeros.tex,
+	  doc/dirtyinfnorm.tex, doc/dirtyintegral.tex, doc/display.tex,
+	  doc/divide.tex, doc/double.shlp, doc/double.tex,
+	  doc/doubledouble.tex, doc/doubleextended.tex, doc/dyadic.tex,
+	  doc/equal.tex, doc/erf.tex, doc/erfc.tex, doc/error.tex,
+	  doc/evaluate.tex, doc/execute.tex, doc/exp.tex, doc/expand.shlp,
+	  doc/expand.tex, doc/expm1.tex, doc/exponent.tex,
+	  doc/externalplot.tex, doc/externalproc.tex, doc/false.tex,
+	  doc/file.tex, doc/findzeros.tex, doc/floor.tex,
+	  doc/fullparentheses.tex, doc/function.tex, doc/ge.tex,
+	  doc/gt.tex, doc/guessdegree.tex, doc/head.tex,
+	  doc/hexadecimal.tex, doc/honorcoeffprec.tex,
+	  doc/hopitalrecursions.tex, doc/horner.tex,
+	  doc/implementpoly.shlp, doc/implementpoly.tex, doc/inf.tex,
+	  doc/infnorm.tex, doc/integer.tex, doc/integral.tex,
+	  doc/isbound.tex, doc/isevaluable.tex, doc/le.tex,
+	  doc/length.shlp, doc/length.tex, doc/library.tex, doc/listof.tex,
+	  doc/log.tex, doc/log10.tex, doc/log1p.tex, doc/log2.tex,
+	  doc/lt.tex, doc/mantissa.tex, doc/mid.shlp, doc/mid.tex,
+	  doc/midpointmode.tex, doc/minus.tex, doc/mult.tex, doc/neq.tex,
+	  doc/nop.tex, doc/not.tex, doc/numerator.tex, doc/off.tex,
+	  doc/on.tex, doc/or.tex, doc/parse.tex, doc/perturb.tex,
+	  doc/pi.shlp, doc/pi.tex, doc/plot.tex, doc/points.tex,
+	  doc/postscript.tex, doc/postscriptfile.tex, doc/power.shlp,
+	  doc/power.tex, doc/powers.tex, doc/prec.tex, doc/precision.shlp,
+	  doc/precision.tex, doc/prepend.tex, doc/print.tex,
+	  doc/printexpansion.tex, doc/printfloat.tex, doc/printhexa.tex,
+	  doc/printxml.shlp, doc/printxml.tex, doc/proc.tex,
+	  doc/procedure.tex, doc/quit.tex, doc/range.tex,
+	  doc/rationalapprox.tex, doc/readfile.tex, doc/readxml.tex,
+	  doc/relative.tex, doc/remez.tex, doc/rename.tex, doc/restart.tex,
+	  doc/return.tex, doc/revert.tex, doc/round.shlp, doc/round.tex,
+	  doc/roundcoefficients.shlp, doc/roundcoefficients.tex,
+	  doc/roundcorrectly.tex, doc/searchgal.shlp, doc/searchgal.tex,
+	  doc/simplify.tex, doc/simplifysafe.tex, doc/sin.tex,
+	  doc/sinh.tex, doc/sollya.pdf, doc/sort.tex, doc/sqrt.shlp,
+	  doc/sqrt.tex, doc/string.tex, doc/subpoly.tex,
+	  doc/substitute.tex, doc/sup.tex, doc/tail.tex, doc/tan.shlp,
+	  doc/tan.tex, doc/tanh.shlp, doc/tanh.tex, doc/taylor.tex,
+	  doc/taylorrecursions.tex, doc/timing.tex, doc/tripledouble.tex,
+	  doc/true.tex, doc/var.shlp, doc/var.tex, doc/verbosity.tex,
+	  doc/void.shlp, doc/void.tex, doc/write.tex: Continued working on
+	  documentation
+
+2007-12-19 13:57  clauter
+
+	* doc/abs.shlp, doc/absolute.shlp, doc/externalproc.shlp,
+	  doc/grammar.tex, doc/sollya.pdf, doc/sollya.tex, doc/types.def:
+	  Continued working on documentation
+
+2007-12-19 13:13  schevill
+
+	* double.c, execute.c, expression.c, remez.c: * Corrected memory
+	  leaks
+	  * Added a test in Remez algorithm that prevents the command to
+	  return a false result when there is too many oscillations.
+
+2007-12-19 10:18  schevill
+
+	* doc/externalplot.tex, doc/shlp2tex.sh: patched version for
+	  handling pipes.
+
+2007-12-18 14:27  schevill
+
+	* doc/shlp2tex.sh, doc/worstcase.tex: patched shlp2tex in order to
+	  handle correctly tabulations in examples.
+
+2007-12-18 14:22  schevill
+
+	* doc/log.tex, doc/log2.tex, doc/plus.tex, doc/remez.tex,
+	  doc/shlp2tex.sh: patched shlp2tex in order to handle correctly
+	  labels of special function
+	  such as + etc.
+
+2007-12-18 11:30  schevill
+
+	* doc/remez.tex, doc/shlp2tex.sh: small bug fix
+
+2007-12-18 11:29  schevill
+
+	* doc/shlp2tex.sh: small bug fix.
+
+2007-12-18 11:27  schevill
+
+	* doc/remez.tex, doc/shlp2tex.sh: added hyperlink in seealso
+
+2007-12-18 10:32  schevill
+
+	* doc/remez.tex, doc/shlp2tex.sh: Now, labels work
+
+2007-12-18 10:28  schevill
+
+	* doc/remez.tex, doc/shlp2tex.sh: Added labels for each subsection
+	  in LaTeX mode.
+
+2007-12-17 18:18  schevill
+
+	* assignment.c, execute.c, expression.c, infnorm.c, plot.c,
+	  remez.c: Corrected memory leaks.
+
+2007-12-17 13:31  clauter
+
+	* general.c: Patched memory leak for timing
+
+2007-12-17 13:05  clauter
+
+	* execute.c, infnorm.c: Patched a memory leak.
+
+2007-12-14 16:11  schevill
+
+	* README: Added a comment explaining briefly what is Sollya.
+
+2007-12-14 15:59  schevill
+
+	* doc/sollya.tex: sollya.tex compatible with new shlp2tex
+
+2007-12-14 15:56  schevill
+
+	* doc/CommandsAndFunctions.tex, doc/RD.tex, doc/RN.tex, doc/RU.tex,
+	  doc/RZ.tex, doc/absolute.tex, doc/accurateinfnorm.tex,
+	  doc/and.tex, doc/append.tex, doc/asciiplot.tex,
+	  doc/autosimplify.tex, doc/bashexecute.tex, doc/canonical.tex,
+	  doc/checkinfnorm.tex, doc/coeff.tex, doc/concat.tex,
+	  doc/default.tex, doc/degree.tex, doc/denominator.tex,
+	  doc/diff.tex, doc/dirtyfindzeros.tex, doc/dirtyinfnorm.tex,
+	  doc/dirtyintegral.tex, doc/display.tex, doc/divide.tex,
+	  doc/double.tex, doc/doubledouble.tex, doc/doubleextended.tex,
+	  doc/equal.tex, doc/error.tex, doc/evaluate.tex, doc/execute.tex,
+	  doc/expand.tex, doc/exponent.tex, doc/externalplot.tex,
+	  doc/externalproc.tex, doc/false.tex, doc/file.tex,
+	  doc/findzeros.tex, doc/fullparentheses.tex, doc/ge.tex,
+	  doc/gt.tex, doc/guessdegree.tex, doc/head.tex,
+	  doc/honorcoeffprec.tex, doc/hopitalrecursions.tex,
+	  doc/horner.tex, doc/implementpoly.tex, doc/inf.tex,
+	  doc/infnorm.tex, doc/integral.tex, doc/isbound.tex,
+	  doc/isevaluable.tex, doc/keywords.def, doc/le.tex,
+	  doc/length.tex, doc/library.tex, doc/lt.tex, doc/mantissa.tex,
+	  doc/mid.tex, doc/midpointmode.tex, doc/minus.tex, doc/mult.tex,
+	  doc/neq.tex, doc/nop.tex, doc/not.tex, doc/numerator.tex,
+	  doc/off.tex, doc/on.tex, doc/or.tex, doc/parse.tex,
+	  doc/perturb.tex, doc/pi.tex, doc/plot.tex, doc/plus.tex,
+	  doc/points.tex, doc/postscript.tex, doc/postscriptfile.tex,
+	  doc/power.tex, doc/prec.tex, doc/precision.tex, doc/prepend.tex,
+	  doc/print.tex, doc/printexpansion.tex, doc/printfloat.tex,
+	  doc/printhexa.tex, doc/printxml.tex, doc/proc.tex,
+	  doc/procedure.tex, doc/quit.tex, doc/rationalapprox.tex,
+	  doc/readfile.tex, doc/readxml.tex, doc/relative.tex,
+	  doc/remez.tex, doc/rename.tex, doc/restart.tex, doc/return.tex,
+	  doc/revert.tex, doc/round.tex, doc/roundcoefficients.tex,
+	  doc/roundcorrectly.tex, doc/searchgal.tex, doc/shlp2tex.sh,
+	  doc/shlp2txt.sh, doc/simplify.tex, doc/simplifysafe.tex,
+	  doc/sort.tex, doc/subpoly.tex, doc/substitute.tex, doc/sup.tex,
+	  doc/tail.tex, doc/taylor.tex, doc/taylorrecursions.tex,
+	  doc/timing.tex, doc/tripledouble.tex, doc/true.tex, doc/var.tex,
+	  doc/verbosity.tex, doc/void.tex, doc/worstcase.tex,
+	  doc/write.tex: Upgrade of shlp2txt and shlp2tex. Examples are now
+	  correctly handled by
+	  shlp2tex.
+
+2007-12-14 14:47  clauter
+
+	* assignment.c, execute.c, expression.c, general.c, implement.c,
+	  proof.c: Patched *some* memory leaks.
+
+2007-12-13 13:42  clauter
+
+	* help.h, internlexer.l, internparser.y, lexer.l, minilexer.l,
+	  miniparser.y, parser.y: Added licensing information to lexer and
+	  parser files
+
+2007-12-13 13:36  clauter
+
+	* COPYING, parser.y: Adapted version command.
+
+2007-12-13 13:26  clauter
+
+	* COPYING, assignment.c, assignment.h, chain.c, chain.h, double.c,
+	  double.h, execute.c, execute.h, expansion.c, expansion.h,
+	  expression.c, expression.h, external.c, external.h,
+	  externalfun.c, externalproc.c, fpminimax.c, fpminimax.h,
+	  general.c, general.h, implement.c, implement.h, infnorm.c,
+	  infnorm.h, integral.c, integral.h, library.c, library.h,
+	  libsollyaexample.c, main.c, main.h, pari_utils.c, pari_utils.h,
+	  plot.c, plot.h, proof.c, proof.h, remez.c, remez.h, sollya.h,
+	  taylor.c, taylor.h, worstcase.c, worstcase.h, xml.c, xml.h:
+	  Passed everything to CeCILL-C
+
+2007-12-13 11:48  clauter
+
+	* COPYING, assignment.c, assignment.h, chain.c, chain.h,
+	  doc/sollya.tex, double.c, double.h, execute.c, execute.h,
+	  expansion.c, expansion.h, expression.c, expression.h, external.c,
+	  external.h, externalfun.c, externalproc.c, fpminimax.c,
+	  fpminimax.h, general.c, general.h, implement.c, implement.h,
+	  infnorm.c, infnorm.h, integral.c, integral.h, library.c,
+	  library.h, libsollyaexample.c, main.c, main.h, pari_utils.c,
+	  pari_utils.h, plot.c, plot.h, proof.c, proof.h, remez.c, remez.h,
+	  sollya.h, taylor.c, taylor.h, worstcase.c, worstcase.h, xml.c,
+	  xml.h: Added CeCILL headers where appropriate. To be verified for
+	  legal reasons.
+
+2007-12-12 14:20  clauter
+
+	* doc/sollya.pdf: Compiled version of sollya.pdf
+
+2007-12-12 12:18  schevill
+
+	* doc/shlp2tex.sh:
+
+2007-12-12 12:10  schevill
+
+	* doc/RD.tex, doc/RN.tex, doc/RU.tex, doc/RZ.tex, doc/abs.tex,
+	  doc/absolute.tex, doc/accurateinfnorm.tex, doc/acos.tex,
+	  doc/acosh.tex, doc/and.tex, doc/append.tex, doc/asciiplot.tex,
+	  doc/asin.tex, doc/asinh.tex, doc/atan.tex, doc/atanh.tex,
+	  doc/autosimplify.tex, doc/bashexecute.tex, doc/binary.tex,
+	  doc/boolean.tex, doc/canonical.tex, doc/ceil.tex,
+	  doc/checkinfnorm.tex, doc/coeff.tex, doc/concat.tex,
+	  doc/constant.tex, doc/cos.tex, doc/cosh.tex, doc/decimal.tex,
+	  doc/default.tex, doc/degree.tex, doc/denominator.tex,
+	  doc/diam.tex, doc/diff.tex, doc/dirtyfindzeros.tex,
+	  doc/dirtyinfnorm.tex, doc/dirtyintegral.tex, doc/display.tex,
+	  doc/divide.tex, doc/double.tex, doc/doubledouble.tex,
+	  doc/doubleextended.tex, doc/dyadic.tex, doc/equal.tex,
+	  doc/erf.tex, doc/erfc.tex, doc/error.tex, doc/evaluate.tex,
+	  doc/execute.tex, doc/exp.tex, doc/expand.tex, doc/expm1.tex,
+	  doc/exponent.tex, doc/externalplot.tex, doc/externalproc.tex,
+	  doc/false.tex, doc/file.tex, doc/findzeros.tex, doc/floor.tex,
+	  doc/fullparentheses.tex, doc/function.tex, doc/ge.tex,
+	  doc/gt.tex, doc/guessdegree.tex, doc/head.tex,
+	  doc/hexadecimal.tex, doc/honorcoeffprec.tex,
+	  doc/hopitalrecursions.tex, doc/horner.tex, doc/implementpoly.tex,
+	  doc/inf.tex, doc/infnorm.tex, doc/integer.tex, doc/integral.tex,
+	  doc/isbound.tex, doc/isevaluable.tex, doc/le.tex, doc/length.tex,
+	  doc/library.tex, doc/listof.tex, doc/log.tex, doc/log10.tex,
+	  doc/log1p.tex, doc/log2.tex, doc/lt.tex, doc/mantissa.tex,
+	  doc/mid.tex, doc/midpointmode.tex, doc/minus.tex, doc/mult.tex,
+	  doc/neq.tex, doc/nop.tex, doc/not.tex, doc/numerator.tex,
+	  doc/off.tex, doc/on.tex, doc/or.tex, doc/parse.tex,
+	  doc/perturb.tex, doc/pi.tex, doc/plot.tex, doc/plus.tex,
+	  doc/points.tex, doc/postscript.tex, doc/postscriptfile.tex,
+	  doc/power.tex, doc/powers.tex, doc/prec.tex, doc/precision.tex,
+	  doc/prepend.tex, doc/print.shlp, doc/print.tex,
+	  doc/printexpansion.tex, doc/printfloat.tex, doc/printhexa.tex,
+	  doc/printxml.tex, doc/proc.tex, doc/procedure.tex, doc/quit.tex,
+	  doc/range.tex, doc/rationalapprox.tex, doc/readfile.tex,
+	  doc/readxml.tex, doc/relative.tex, doc/remez.tex, doc/rename.tex,
+	  doc/restart.tex, doc/return.tex, doc/revert.tex, doc/round.tex,
+	  doc/roundcoefficients.tex, doc/roundcorrectly.tex,
+	  doc/searchgal.tex, doc/simplify.tex, doc/simplifysafe.tex,
+	  doc/sin.tex, doc/sinh.tex, doc/sollya.tex, doc/sort.tex,
+	  doc/sqrt.tex, doc/string.tex, doc/subpoly.tex,
+	  doc/substitute.tex, doc/sup.tex, doc/tail.tex, doc/tan.tex,
+	  doc/tanh.tex, doc/taylor.tex, doc/taylorrecursions.tex,
+	  doc/timing.tex, doc/tripledouble.tex, doc/true.tex, doc/var.tex,
+	  doc/verbosity.tex, doc/void.tex, doc/worstcase.tex,
+	  doc/write.shlp, doc/write.tex, help.h: Added tex help files
+
+2007-12-12 12:01  clauter
+
+	* help.h: Corrected help for void keyword.
+
+2007-12-12 12:00  clauter
+
+	* doc/keywords.def, doc/nop.shlp, doc/proc.shlp,
+	  doc/procedure.shlp, doc/return.shlp, doc/types.def,
+	  doc/void.shlp, execute.c, help.h, parser.y: Corrected a small bug
+	  in procedure evaluation (consistancy check for restart statements
+	  in procedures read out of files included by #include).
+	  Corrected small bugs in help invokation. Added new help texts.
+
+2007-12-12 10:44  schevill
+
+	* doc/exp.shlp, doc/externalproc.shlp, doc/keywords.def,
+	  doc/quit.shlp, doc/relative.shlp, doc/remez.shlp,
+	  doc/restart.shlp, doc/shlp2txt.sh, doc/sqrt.shlp, help.h: * Help
+	  files patched in order to compile in TeX mode
+	  * Definitions of keywords modified to take in account that +, -,
+	  *, ^, &
+	  and | are special characters for LaTeX
+	  * shlp2txt patched for handling new keywords definitions.
+	  Moreover,
+	  shlp2txt supports now "-v" option which prints its output in
+	  stdout.
+	  Usage: ./shlp2txt -v list_of_shlp_files
+	  Note: it keeps updating help.h even when -v option is activated.
+
+2007-12-10 15:17  schevill
+
+	* doc/degree.shlp, doc/diam.shlp, doc/dirtyfindzeros.shlp,
+	  doc/doubledouble.shlp, doc/doubleextended.shlp,
+	  doc/findzeros.shlp, doc/isbound.shlp, doc/library.shlp,
+	  doc/libraryexample.c, doc/pi.shlp, doc/plot.shlp,
+	  doc/rationalapprox.shlp, doc/substitute.shlp,
+	  doc/taylorrecursions.shlp, doc/tripledouble.shlp, help.h: Added
+	  the two last example files.
+
+2007-11-27 15:36  clauter
+
+	* infnorm.c: Corrected a bug in findzeros: findzeros looped to
+	  infinity if the precision
+	  needed to represent intervals of size smaller than diam was not
+	  available.
+
+2007-11-25 19:23  clauter
+
+	* execute.c, execute.h, internlexer.l, internparser.y, lexer.l,
+	  parser.y: Added floating-point evaluated assignment operator :=.
+	  Corrected a small bug in procedure evaluation concerning void as
+	  an argument.
+
+2007-11-25 18:21  clauter
+
+	* execute.c, execute.h, internlexer.l, internparser.y, lexer.l,
+	  parser.y: Added support for procedures.
+
+2007-11-21 09:50  clauter
+
+	* proof.c: Corrected UTF-8 issue
+
+2007-11-21 06:58  clauter
+
+	* ChangeLog: New ChangeLog
+
+2007-11-21 06:57  clauter
+
+	* execute.c: Corrected 3 small bugs
+
+2007-11-20 20:05  clauter
+
+	* execute.c, internparser.y, parser.y: Corrected a bug in the
+	  parser. Made @ work on any type as long as the
+	  other argument is a string. Corrected a strange bug if verbosity
+	  = 2;
+	  an external library function is bound and a type error occurs
+	  with a
+	  subexpression of an expression having an usage of the library
+	  function
+	  as a head function.
+
+2007-11-20 15:21  clauter
+
+	* ChangeLog, execute.c, parser.y: Changed @ behaviour. Corrected a
+	  bug.
+
+2007-11-20 13:09  schevill
+
+	* doc/shlp2txt.sh, help.h, parser.y: shlp2txt modified in order to
+	  take in account commands that have a
+	  prefix that is also a command (like taylor and taylorrecursions).
+	  
+	  help.h modified accordingly
+
+2007-11-20 11:53  clauter
+
+	* parser.y: Corrected an error in help invokation for ^.
+
+2007-11-20 11:44  schevill
+
+	* configure.ac, help.h: First version of help.h
+
+2007-11-20 11:30  clauter
+
+	* doc/absolute.shlp, doc/externalplot.shlp, doc/perturb.shlp,
+	  doc/relative.shlp: Corrected some bugs in help texts.
+
+2007-11-20 11:27  schevill
+
+	* doc/shlp2txt.sh: shlp2txt modified in order to patch
+	  automatically help.h
+
+2007-11-19 15:02  clauter
+
+	* doc/readxmlexample.xml: Made help for readxml work.
+
+2007-11-19 14:59  clauter
+
+	* doc/absolute.shlp, doc/externalplot.shlp, doc/numerator.shlp,
+	  doc/searchgal.shlp, doc/void.shlp: Corrected some errors in help
+	  texts.
+
+2007-11-19 13:36  clauter
+
+	* ChangeLog: New ChangeLog
+
+2007-11-19 13:29  schevill
+
+	* doc/RD.shlp, doc/RN.shlp, doc/RU.shlp, doc/RZ.shlp, doc/abs.shlp,
+	  doc/acos.shlp, doc/acosh.shlp, doc/append.shlp, doc/asin.shlp,
+	  doc/asinh.shlp, doc/atan.shlp, doc/atanh.shlp,
+	  doc/bashexecute.shlp, doc/ceil.shlp, doc/coeff.shlp,
+	  doc/concat.shlp, doc/cos.shlp, doc/cosh.shlp, doc/default.shlp,
+	  doc/degree.shlp, doc/diam.shlp, doc/dirtyfindzeros.shlp,
+	  doc/dirtyinfnorm.shlp, doc/dirtyintegral.shlp, doc/double.shlp,
+	  doc/doubledouble.shlp, doc/doubleextended.shlp, doc/erf.shlp,
+	  doc/erfc.shlp, doc/execute.shlp, doc/exp.shlp, doc/expm1.shlp,
+	  doc/exponent.shlp, doc/false.shlp, doc/file.shlp,
+	  doc/findzeros.shlp, doc/floor.shlp, doc/guessdegree.shlp,
+	  doc/head.shlp, doc/hopitalrecursions.shlp, doc/inf.shlp,
+	  doc/infnorm.shlp, doc/integral.shlp, doc/length.shlp,
+	  doc/log.shlp, doc/log10.shlp, doc/log1p.shlp, doc/log2.shlp,
+	  doc/mantissa.shlp, doc/mid.shlp, doc/midpointmode.shlp,
+	  doc/off.shlp, doc/pi.shlp, doc/plot.shlp, doc/points.shlp,
+	  doc/postscript.shlp, doc/postscriptfile.shlp, doc/prec.shlp,
+	  doc/precision.shlp, doc/prepend.shlp, doc/rationalapprox.shlp,
+	  doc/remez.shlp, doc/rename.shlp, doc/revert.shlp, doc/round.shlp,
+	  doc/roundcoefficients.shlp, doc/sin.shlp, doc/sinh.shlp,
+	  doc/sort.shlp, doc/sqrt.shlp, doc/substitute.shlp, doc/sup.shlp,
+	  doc/tail.shlp, doc/tan.shlp, doc/tanh.shlp,
+	  doc/taylorrecursions.shlp, doc/timing.shlp,
+	  doc/tripledouble.shlp, doc/true.shlp, doc/verbosity.shlp: New
+	  help texts.
+
+2007-11-19 13:22  clauter
+
+	* Makefile.am, help.h, parser.y: Added support for help system in
+	  the parser.
+
+2007-11-19 12:28  clauter
+
+	* execute.c, parser.y: Corrected a huge bug in loud assignments to
+	  the global variable
+	  taylorrecursions.
+
+2007-11-19 10:22  clauter
+
+	* doc/keywords.def, doc/var.shlp: New help text for var.
+
+2007-11-19 09:53  clauter
+
+	* ChangeLog: Nouveau ChangeLog.
+
+2007-11-18 23:31  clauter
+
+	* assignment.c, assignment.h, execute.c, execute.h, general.c,
+	  general.h, internlexer.l, internparser.y, lexer.l, parser.y:
+	  Added support for declared variables living in definition frames,
+	  shadowing each other.
+	  This is work towards internal procedure support.
+	  
+	  Syntax: begin ... end ({...]) - blocks may start with commands
+	  like
+	  var a, b, c;
+	  var d;
+	  
+	  Once other commands are given, no variable declarations are
+	  possible.
+
+2007-11-16 16:31  clauter
+
+	* doc/fullparentheses.shlp: New help text.
+
+2007-11-16 16:18  clauter
+
+	* doc/absolute.shlp, doc/relative.shlp: New help texts.
+
+2007-11-16 16:05  clauter
+
+	* execute.c: Corrected a bug in printing with midpointmode and
+	  display != decimal.
+
+2007-11-16 15:57  clauter
+
+	* doc/binary.shlp, doc/decimal.shlp, doc/display.shlp,
+	  doc/dyadic.shlp, doc/hexadecimal.shlp, doc/powers.shlp: New help
+	  texts.
+
+2007-11-16 15:35  schevill
+
+	* doc/keywords.def, doc/on.shlp: Added hexadecimal in keywords.def
+
+2007-11-16 15:22  clauter
+
+	* doc/print.shlp, doc/write.shlp: New help texts.
+
+2007-11-16 14:34  clauter
+
+	* internparser.y: Changed behaviour of quit in execute.
+
+2007-11-16 14:27  clauter
+
+	* doc/autosimplify.shlp, doc/canonical.shlp, doc/horner.shlp,
+	  doc/simplify.shlp, doc/simplifysafe.shlp: New help texts/
+	  corrected help texts.
+
+2007-11-16 13:32  schevill
+
+	* integral.c, remez.c: Added a warning in remez when the input
+	  interval is reduced to a single point.
+
+2007-11-16 13:31  clauter
+
+	* doc/printexpansion.shlp, doc/taylor.shlp: Added new help files.
+
+2007-11-16 13:09  clauter
+
+	* expression.c: Added some simplifications to
+	  simplifyTreeErrorfree.
+
+2007-11-16 12:15  clauter
+
+	* doc/equal.shlp, doc/ge.shlp, doc/gt.shlp, doc/le.shlp,
+	  doc/lt.shlp, doc/neq.shlp: Some new help texts.
+
+2007-11-15 14:16  schevill
+
+	* remez.c: Bug fix in dirtyfindzeros when a=b
+	  Another bug fix: when f(a)=0 there used to be some value of
+	  points that
+	  make the algorithm ignore a. This is now fixed
+
+2007-11-15 13:23  clauter
+
+	* infnorm.c: Correcting a bug in dirtyinfnorm had introduced a new
+	  one. Corrected that one.
+
+2007-11-15 13:02  clauter
+
+	* infnorm.c: Corrected a slight bug in dirtyinfnorm (NaN handling
+	  for evaluateFaithful).
+
+2007-11-14 13:24  clauter
+
+	* double.c, expression.c: Corrected a bug in isSyntacticallyEqual.
+	  Corrected a bug in
+	  printexpansion. Adapted roundPolynomialCoefficients to a more
+	  sensible behaviour on lists of incorrect length.
+
+2007-11-13 10:08  clauter
+
+	* general.c, general.h, parser.y: Improved help system for
+	  neophytes.
+
+2007-11-12 17:25  clauter
+
+	* doc/honorcoeffprec.shlp, doc/implementpoly.shlp,
+	  doc/searchgal.shlp, implement.c: Added new documentation.
+	  Corrected a subtile bug in implementpoly.
+
+2007-11-12 17:03  schevill
+
+	* configure.ac: patch from Guillaume Melquiond
+
+2007-11-12 14:29  clauter
+
+	* infnorm.c: Corrected some bug with infinities and NaNs in input
+	  to evaluateI and infnorm.
+
+2007-11-12 13:58  schevill
+
+	* infnorm.c: Fixed a bug in dirtyinfnorm when the interval contains
+	  an Inf. Now
+	  returns NaN and prints a warning.
+
+2007-11-12 13:58  clauter
+
+	* doc/accurateinfnorm.shlp, doc/autosimplify.shlp,
+	  doc/boolean.shlp, doc/checkinfnorm.shlp, doc/constant.shlp,
+	  doc/denominator.shlp, doc/diff.shlp, doc/error.shlp,
+	  doc/externalplot.shlp, doc/externalplotexample.c,
+	  doc/externalproc.shlp, doc/function.shlp, doc/integer.shlp,
+	  doc/numerator.shlp, doc/parse.shlp, doc/perturb.shlp,
+	  doc/printfloat.shlp, doc/printhexa.shlp, doc/printxml.shlp,
+	  doc/quit.shlp, doc/range.shlp, doc/readfile.shlp,
+	  doc/readxml.shlp, doc/restart.shlp, doc/roundcorrectly.shlp,
+	  doc/searchgal.shlp, doc/string.shlp, doc/subpoly.shlp,
+	  doc/types.def, doc/void.shlp, doc/worstcase.shlp, external.c:
+	  Added/ changed documentation.
+	  Corrected a bug in externalplot.
+
+2007-11-12 10:43  schevill
+
+	* fpminimax.c: Fixed a bug in rationalapprox(x,n) when x is exactly
+	  representable with n bits
+
+2007-11-08 17:00  clauter
+
+	* doc/boolean.shlp, doc/constant.shlp, doc/function.shlp,
+	  doc/integer.shlp, doc/listof.shlp, doc/range.shlp,
+	  doc/readfile.shlp, doc/roundcorrectly.shlp, doc/string.shlp: New
+	  help files.
+
+2007-11-08 11:22  schevill
+
+	* doc/shlp2txt.sh: Changed "Function name" into "Name"
+
+2007-11-07 22:28  clauter
+
+	* ChangeLog, doc/parse.shlp, internlexer.l, internparser.y,
+	  lexer.l, minilexer.l, miniparser.y, parser.y: Slight changes.
+
+2007-11-07 22:05  clauter
+
+	* doc/externalprocvoidexample.c: Forgotten file for doc.
+
+2007-11-07 16:58  clauter
+
+	* doc/and.shlp, doc/denominator.shlp, doc/diff.shlp,
+	  doc/divide.shlp, doc/error.shlp, doc/evaluate.shlp,
+	  doc/expand.shlp, doc/externalproc.shlp,
+	  doc/externalprocexample.c, doc/isevaluable.shlp,
+	  doc/keywords.def, doc/minus.shlp, doc/mult.shlp, doc/not.shlp,
+	  doc/numerator.shlp, doc/or.shlp, doc/parse.shlp, doc/plus.shlp,
+	  doc/power.shlp, doc/printfloat.shlp, doc/printhexa.shlp,
+	  doc/printxml.shlp, doc/quit.shlp, doc/readxml.shlp,
+	  doc/restart.shlp, doc/void.shlp, parser.y: Added help texts and
+	  corrected a bug in the parser.
+
+2007-11-07 15:05  clauter
+
+	* ChangeLog, doc/asciiplot.shlp, doc/externalproc.shlp,
+	  doc/types.def, execute.c: Corrected som inconsistencies in tail
+	  and indexing concerning finally elliptic lists.
+	  
+	  Added some documentation.
+
+2007-11-07 12:34  schevill
+
+	* doc/keywords.def: Fixed a big with &&
+
+2007-11-07 12:21  schevill
+
+	* doc/shlp2txt.sh: Fixed a bug with the use of the symbol "*"
+	  Now the output txt file write "Function name" or "Function names"
+	  depending of the number of names for the function
+
+2007-11-07 11:44  clauter
+
+	* doc/asciiplot.shlp, doc/externalproc.shlp,
+	  doc/externalprocexample.c, doc/types.def: Made externalproc work
+	  in the doc.
+
+2007-11-06 16:20  schevill
+
+	* doc/shlp2txt.sh, doc/types.def: types.def: type "ANY_TYPE" added
+	  shlp2txt.sh: bug fixes. Notation for LaTeX/text added
+
+2007-11-06 12:49  clauter
+
+	* execute.c: Provided inclusion property for range evaluation if
+	  result cannot be
+	  faithfully evalauted.
+
+2007-11-06 12:49  schevill
+
+	* doc/keywords.def, doc/shlp2txt.sh: shlp2txt should now be plainly
+	  functional
+
+2007-11-06 12:20  clauter
+
+	* execute.c: Patched a bug in range bound evaluation on not
+	  constant range bounds.
+
+2007-11-05 15:50  clauter
+
+	* ChangeLog, configure.ac, external.c, general.h, parser.y, plot.c,
+	  xml.c: Applied patch proposed by Guillaume Melquiond for
+	  resolving a bug with CPPFLAGS.
+
+2007-10-31 12:56  clauter
+
+	* external.c: Corrected a bug in externalplot.
+
+2007-10-31 12:35  clauter
+
+	* doc/asciiplot.shlp, doc/externalproc.shlp, doc/keywords.def,
+	  doc/subpoly.shlp: New help files.
+
+2007-10-31 10:22  schevill
+
+	* doc/keywords.def, doc/types.def, execute.c, parser.y: small
+	  changes in parser (corrected a bug). Added definitions for help
+	  system
+
+2007-10-30 14:52  clauter
+
+	* ChangeLog: New ChangeLog
+
+2007-10-30 14:24  clauter
+
+	* Makefile.am: Added installation of the sollya.h header file for
+	  usage of libsollya.
+
+2007-10-30 14:01  schevill
+
+	* configure.ac: autoconf was complaining about AM_PROG_CC_C_O. It
+	  is now fixed
+
+2007-10-30 13:50  clauter
+
+	* README, doc/sollya.pdf, doc/tools_manual.pdf, sollya.h: Some name
+	  changes.
+
+2007-10-30 13:41  clauter
+
+	* arenairetoolsexample.c, libsollyaexample.c: Changed name of
+	  arenairetoolsexample.c.
+
+2007-10-30 13:41  clauter
+
+	* Makefile.am, arenaireplot.h, arenairetoolsexample.c, external.c,
+	  externalfun.c, externalproc.c, plot.c, sollya.h, xml.c: Renamed
+	  occurrences of arenaireplot/tools to sollya.
+
+2007-10-29 15:18  clauter
+
+	* execute.c, externalproc.c, parser.y: Finished work on external
+	  procedures. Principally working.
+	  Not all combinations of types in argument and result have been
+	  tested, yet.
+	  
+	  Added example file for implementing an external C procedure.
+
+2007-10-28 22:08  clauter
+
+	* ChangeLog, arenaireplot.h, execute.c, execute.h, expression.h,
+	  general.c, general.h, internlexer.l, internparser.y, lexer.l,
+	  library.c, library.h, parser.y: Started adding support for
+	  binding identifiers to external procedures.
+	  Work in progress. Compiles, old functionalities work, usage of
+	  external procedure may segfault.
+
+2007-10-25 15:33  clauter
+
+	* Makefile.am: Switched back to tools for philosophical reasons.
+
+2007-10-25 15:22  clauter
+
+	* ChangeLog, Makefile.am, configure.ac, execute.c, execute.h,
+	  expression.c, expression.h, internlexer.l, internparser.y,
+	  lexer.l, parser.y: Added hexadecimal IEEE754R printing and
+	  parsing mode.
+	  Corrected a memory leak for dyadic constants.
+	  Changed name to sollya.
+
+2007-10-25 13:25  njourdan
+
+	* configure.ac: FIX: gmp test
+
+2007-10-25 12:06  clauter
+
+	* configure.ac: Brought configure.ac back to first version
+
+2007-10-25 12:00  njourdan
+
+	* configure.ac: FIX: gmp test
+
+2007-10-23 16:29  clauter
+
+	* ChangeLog, double.c, double.h, execute.c, execute.h,
+	  internlexer.l, internparser.y, lexer.l, parser.y: Added simple
+	  precision hexadecimal parsing capability.
+	  Added printfloat(constant) for print out in simple precision.
+
+2007-10-23 12:00  clauter
+
+	* ChangeLog, double.c: Added a wraning for sNaN
+
+2007-10-22 16:11  clauter
+
+	* ChangeLog, execute.c, execute.h, internlexer.l, internparser.y,
+	  lexer.l, parser.y: Added .: and :. in addition to ::
+	  Added #include as a replacement to read without removing read in
+	  the moment.
+
+2007-10-17 14:20  clauter
+
+	* ChangeLog, parser.y: Added help for isbound.
+
+2007-10-17 13:36  clauter
+
+	* ChangeLog, execute.c, execute.h, internlexer.l, internparser.y,
+	  lexer.l, parser.y: Added isbound.
+
+2007-10-15 13:05  schevill
+
+	* arenairetoolsexample.c, double.c, execute.c, expression.c,
+	  external.c, general.c, implement.c, infnorm.c, miniparser.y,
+	  pari_utils.c, plot.c, taylor.c, worstcase.c: changed *occured*
+	  into *occurred* everywhere
+
+2007-10-08 11:58  clauter
+
+	* expression.c: Corrected a bug in string length computation that
+	  could generate a segmentation fault.
+
+2007-10-08 10:47  clauter
+
+	* ChangeLog, execute.c, expression.c: Slight changes.
+
+2007-10-08 10:32  clauter
+
+	* ChangeLog: New Changelog.
+
+2007-10-08 10:20  clauter
+
+	* general.c: Changed slightly malloc.
+
+2007-10-08 10:19  clauter
+
+	* general.c, general.h, xml.c: Changed slightly malloc use.
+
+2007-10-08 08:17  clauter
+
+	* ChangeLog, configure.ac: Temporarily remove test for malloc and
+	  realloc in configure.ac for compatibility issues.
+
+2007-10-06 17:31  clauter
+
+	* execute.c: Constants (or constant expressions once evaluate to a
+	  constant) retain their
+	  precisions even on range constructions. Nevertheless, complex
+	  types as lists
+	  and ranges may be rounded down at their last evaluation.
+
+2007-10-04 13:32  clauter
+
+	* ChangeLog: New Changelog.
+
+2007-10-04 13:31  clauter
+
+	* expression.c: Patched a bug introduced when patching a bug (2).
+
+2007-10-04 12:33  clauter
+
+	* ChangeLog: New Changelog
+
+2007-10-04 12:00  clauter
+
+	* execute.c: Expressions are constant only if they can be proven
+	  constant by safe means.
+
+2007-10-04 11:34  clauter
+
+	* execute.c: Improved syntax error handling on constant
+	  expressions.
+
+2007-10-04 09:11  clauter
+
+	* execute.c, general.c: In range bounds and comparisons,
+	  expressions that are not detected to
+	  be constant are considered as a type error.
+
+2007-10-03 17:00  schevill
+
+	* remez.c: Newton's algorithm used to fail when a point x where
+	  f'(x)=0 is met during the algorithm. This bug is fixed. I also
+	  patched the code to be more confident when a step of bisection is
+	  performed. The final result is that the algorithm should be now
+	  more robust. Eventually, we cannot avoid cases where the
+	  algorithm loops infinitely and this implementation claims nothing
+	  but being a heuristic
+
+2007-10-03 14:26  clauter
+
+	* expression.c: Corrected a bug in expand.
+
+2007-10-03 11:56  clauter
+
+	* ChangeLog, configure.ac: Changed configure for disabling building
+	  a shared library by default.
+
+2007-10-02 09:00  njourdan
+
+	* xml.c: Add: variable name check, unknown markup check, error
+	  recovery
+
+2007-10-01 16:13  njourdan
+
+	* configure.ac: *** empty log message ***
+
+2007-10-01 16:02  njourdan
+
+	* configure.ac: Upd: version autoconf
+
+2007-10-01 16:00  njourdan
+
+	* configure.ac: Upd: version autoconf
+
+2007-10-01 15:08  clauter
+
+	* parser.y: Adapted help.
+
+2007-10-01 13:25  schevill
+
+	* configure.ac: configure.ac checks correctly export-dynamic
+
+2007-10-01 12:14  clauter
+
+	* configure.ac, general.c: Added check for backtrace.
+
+2007-10-01 12:07  schevill
+
+	* configure.ac: configure.ac compatible with a Mac OS X
+	  architecture
+
+2007-10-01 09:26  clauter
+
+	* ChangeLog, Makefile.am, arenairetoolsexample.c: Corrected
+	  compilation indication in libary example.
+
+2007-10-01 09:20  clauter
+
+	* Makefile.am, lexer.l, parser.y: Removed convenience library
+	  support because it did not work.
+	  Added version.
+
+2007-10-01 09:10  clauter
+
+	* ChangeLog, Makefile.am: Added support for a convenience library
+	  libtools2.
+
+2007-10-01 08:49  clauter
+
+	* internlexer.l, lexer.l, minilexer.l: Forgotten files.
+
+2007-10-01 08:45  clauter
+
+	* Manuel_fr.tex: Removing french Manual.
+
+2007-10-01 08:44  clauter
+
+	* AUTHORS, COPYING, ChangeLog, INSTALL, Makefile.am, NEWS,
+	  autogen.sh, configure.ac, doc, doc/tools_manual.pdf,
+	  expression.c, externalfun.c, general.c, internlexer.lex,
+	  internparser.y, lexer.lex, makefile, minilexer.lex, miniparser.y,
+	  parser.y: Catapulted arenaireplot to the configure - age.
+
+2007-09-27 15:08  clauter
+
+	* makefile: Modified makefile and XML parser.
+
+2007-09-27 12:57  clauter
+
+	* general.c, makefile: Removed the annoying old version of PARI
+	  Improved makefile.
+
+2007-09-27 12:34  clauter
+
+	* execute.c, execute.h, general.c, general.h, internlexer.lex,
+	  internparser.y, lexer.lex, makefile, minilexer.lex, miniparser.y,
+	  parser.y: Added execute.
+	  Allowed for empty blocks.
+	  Allowed for error recovery to the last command not leaving the
+	  outest block.
+	  Improved makefile.
+
+2007-09-26 09:30  schevill
+
+	* remez.c: correct verbosity level in guessdegree
+
+2007-09-26 09:29  schevill
+
+	* remez.c: intervals should now be correct as output of guessdegree
+
+2007-09-25 08:51  clauter
+
+	* compile.sh, execute.c: Changed a verbosity.
+
+2007-09-24 14:08  schevill
+
+	* remez.c: A major bug affecting the construction of the matrix
+	  when w(x)=0 for some x has been corrected
+
+2007-09-24 13:19  schevill
+
+	* remez.c: an important warning is displayed even if verbosity=0,
+	  but it is now displayed as a commentar
+
+2007-09-20 17:17  schevill
+
+	* remez.c: minor fixes in remez
+
+2007-09-20 12:10  schevill
+
+	* remez.c: A bug corrected in Remez
+
+2007-09-20 11:19  clauter
+
+	* execute.c, general.c: Added backtrace display upon SIGSEGV.
+
+2007-09-19 12:55  clauter
+
+	* compile.sh, execute.c: Changed slightly compiling script.
+	  Corrected a bug in externalplot execution.
+
+2007-09-19 09:32  clauter
+
+	* general.c, parser.y: Changed a bug in the demasking of strings.
+
+2007-09-19 09:00  clauter
+
+	* lexer.lex, parser.y: Modifier user output upon syntax error.
+
+2007-09-18 12:48  clauter
+
+	* double.c, execute.c, parser.y: Corrected two bugs.
+
+2007-09-18 12:15  clauter
+
+	* double.c, double.h, execute.c, execute.h, lexer.lex, parser.y:
+	  Added roundcorrectly.
+
+2007-09-18 11:13  clauter
+
+	* execute.c: Changed behaviour of comparisons on expressions that
+	  are not constants.
+
+2007-09-17 14:27  clauter
+
+	* expression.c: Added printing of small integers as integers.
+
+2007-09-17 13:15  clauter
+
+	* execute.c, execute.h, lexer.lex, parser.y: Added readfile.
+
+2007-09-17 12:30  clauter
+
+	* execute.c: corrected two bugs.
+
+2007-09-14 14:37  njourdan
+
+	* xml.c: Upd: add file://./mathmlc2p-web.xsl
+
+2007-09-14 14:32  clauter
+
+	* arenaireplot.h, arenairetoolsexample.c, assignment.c, chain.c,
+	  double.c, execute.c, execute.h, expression.c, external.c,
+	  fpminimax.c, general.c, general.h, implement.c, implement.h,
+	  infnorm.c, integral.c, lexer.lex, library.c, main.c, main.h,
+	  makefile, minilexer.lex, miniparser.y, pari_utils.c,
+	  pari_utils.h, parser.y, plot.c, proof.c, remez.c, taylor.c,
+	  worstcase.c, xml.c, xml.h: Allowed for and added compilation of a
+	  library version of arenaireplot.
+	  Added an example usage file to the repository.
+
+2007-09-14 13:06  njourdan
+
+	* xml.c: Upd: XML header files
+
+2007-09-14 12:57  njourdan
+
+	* xml.c: Upd: XML header files
+
+2007-09-13 14:45  njourdan
+
+	* xml.c: Simplify parsing code (FSM)
+
+2007-09-13 14:42  njourdan
+
+	* xml.c: Simplify parsing code (FSM)
+
+2007-09-13 14:41  njourdan
+
+	* xml.c: Simplify parsing code (FSM)
+
+2007-09-12 15:39  clauter
+
+	* double.c, double.h, execute.c, execute.h, lexer.lex, parser.y:
+	  Added functionalities mantissa, exponent and precision to user
+	  interface.
+
+2007-09-11 14:20  clauter
+
+	* xml.c: Removed a printf to have a printMessage.
+
+2007-09-11 14:14  clauter
+
+	* xml.c: Removed a displayed line in readxml.
+
+2007-09-11 14:11  clauter
+
+	* xml.c: Removed some warnings in xml.c
+
+2007-09-11 14:07  njourdan
+
+	* xml.c: Less warning?
+
+2007-09-11 13:54  clauter
+
+	* lexer.lex, main.c, parser.y: Removed trailing newlines in
+	  non-interactive mode.
+
+2007-09-11 12:40  clauter
+
+	* expression.c, main.c: Added fullparentheses mode support to
+	  printing/ writing to files.
+
+2007-09-11 08:58  njourdan
+
+	* xml.c: Add support for <annotation encoding='arenaireplot/text'>
+
+2007-09-10 14:59  njourdan
+
+	* makefile: no dependance with xml2-dev
+
+2007-09-10 14:31  schevill
+
+	* README, remez.c: update README with libxml2
+
+2007-09-10 14:25  njourdan
+
+	* makefile: ca doit compiler avec ca... (xml lib)
+
+2007-09-10 13:52  clauter
+
+	* expression.c, expression.h: Added
+	  
+	  int readDecimalConstant(mpfr_t result, char *str)
+	  
+	  for internal usage.
+
+2007-09-10 13:19  clauter
+
+	* execute.c: Added faithful simplifications of constant expressions
+	  to user interface.
+
+2007-09-10 12:33  clauter
+
+	* execute.c, lexer.lex: Changed rounding modes to RN, RU, RD, RZ.
+	  Changed output of things inf, sup, mid from *< >*, ... to inf,
+	  sup, mid.
+
+2007-09-10 12:20  njourdan
+
+	* xml.c: simplify reader xml
+
+2007-09-10 11:21  njourdan
+
+	* xml.c: Merge with reader1.c example
+
+2007-09-10 10:59  clauter
+
+	* execute.c: Added automatic binding to free variable on XML
+	  parsing.
+
+2007-09-10 09:48  clauter
+
+	* execute.c, expression.c, expression.h: Changed functionality in
+	  printing/ writing to files (on user
+	  interface). Values are displayed in the current display mode.
+
+2007-09-06 13:07  clauter
+
+	* execute.c, execute.h, lexer.lex, parser.y, xml.c, xml.h: Added
+	  framework for readxml.
+	  Added support for list of functions in first argument of plot.
+
+2007-09-06 08:18  clauter
+
+	* expression.c: Slight change in output for differentiate.
+
+2007-09-05 15:15  clauter
+
+	* execute.c, lexer.lex, parser.y: Added sup, inf, mid and their
+	  handling on constants.
+
+2007-09-05 14:58  clauter
+
+	* execute.c, parser.y: Added help. Corrected a bug.
+
+2007-09-04 15:22  clauter
+
+	* arenaireplot.h, parser.y: Added some help texts.
+
+2007-09-04 14:14  clauter
+
+	* xml.c: Corrected a bug in xml generation.
+
+2007-09-04 13:22  clauter
+
+	* expression.c, xml.c: Updated xml output.
+
+2007-09-04 12:21  clauter
+
+	* execute.c, execute.h, expression.c, expression.h, lexer.lex,
+	  makefile, parser.y, xml.c, xml.h: Added xml output functionality.
+
+2007-09-04 08:08  clauter
+
+	* lexer.lex: Added { and } as a replacement for begin and end.
+
+2007-09-02 21:16  clauter
+
+	* arenaireplot.h, chain.c, chain.h, execute.c, execute.h,
+	  expression.c, expression.h, infnorm.c, infnorm.h, lexer.lex,
+	  main.c, main.h, makefile, minilexer.lex, miniparser.y, parser.y:
+	  First version of the Turing-complete brand-new arenaireplot 0.2
+
+2007-07-11 09:36  clauter
+
+	* arenaireplot.h, infnorm.c: Slight changes for having a Newton
+	  with start value.
+
+2007-07-05 12:33  clauter
+
+	* arenaireplot.h, externalfun.c: Added some functionalities to
+	  arenaireplot.h
+	  Added an example for an external function to the CVS.
+
+2007-07-05 12:23  clauter
+
+	* arenaireplot.h: Added header file for using arenaireplot
+	  functionalities in dynamic
+	  libraries that can dynamically be linked to arenaireplot function
+	  symbols.
+
+2007-07-05 12:03  clauter
+
+	* makefile: Allowed using symbols in arenaireplot in external
+	  libraries.
+
+2007-06-14 13:40  schevill
+
+	* remez.c: The list returned by dirtyfindzeros is now sorted by
+	  increasing values
+
+2007-06-14 13:40  schevill
+
+	* remez.c: The list returned by dirtyfindzeros is now sorted by
+	  increasing values
+
+2007-06-14 11:04  clauter
+
+	* infnorm.c, lexer.lex, parser.y: Added dirtyfindzeros to user
+	  interface.
+	  
+	  Added additionally
+	  
+	  fpfindzeros f in d, evaluate g at;
+	  
+	  and
+	  
+	  dirtyfindzeros f in d, evaluate g at;
+
+2007-06-14 10:38  schevill
+
+	* remez.c, remez.h: a first version of uncertifiedFindZeros
+
+2007-06-14 09:53  schevill
+
+	* parser.y: added help support for guessdegree
+
+2007-06-07 10:58  clauter
+
+	* expression.c, infnorm.c: Patched Horner
+	  Patched evaluateI.
+
+2007-06-07 10:42  clauter
+
+	* parser.y: Changed midpoint mode display.
+
+2007-06-06 14:21  clauter
+
+	* expression.c, infnorm.c, lexer.lex, main.h, parser.y: Corrected
+	  use of Hopital's rule for recursion. Recursion is a allowed if
+	  the zero point is the same for each derivative.
+	  
+	  Added simple help functionality.
+
+2007-05-30 13:40  clauter
+
+	* infnorm.c, lexer.lex, main.c, main.h, parser.y: Changed Hopital's
+	  rule recursion behaviour to be consistant with the
+	  current state of mathematics behind it.
+
+2007-05-22 13:04  clauter
+
+	* plot.c: Patched an overflow bug in plot.
+
+2007-05-16 09:27  clauter
+
+	* parser.y: Allowed concatenation of strings using the + operator.
+
+2007-05-15 16:08  clauter
+
+	* parser.y: Corrected a bug on restart.
+
+2007-05-14 21:42  clauter
+
+	* makefile: Corrected again a bug in makefile
+
+2007-05-14 21:40  clauter
+
+	* makefile: Corrected bug in makefile
+
+2007-05-14 21:38  clauter
+
+	* Manuel_fr.tex: Corrected error in doc.
+
+2007-05-14 21:36  clauter
+
+	* Manuel_fr.tex: Corrected a orthography bug.
+
+2007-05-14 21:13  clauter
+
+	* Manuel_fr.tex, README: Changed doc.
+
+2007-04-18 08:31  clauter
+
+	* library.c: Patched a little the library system.
+
+2007-04-16 15:26  schevill
+
+	* chain.c, chain.h, remez.c: transition between PARI and my own
+	  gauss is finished. I have made the basic set of tests on this
+	  version but it can still contain some bugs
+
+2007-04-16 08:44  schevill
+
+	* chain.c, remez.c: functional testing version of remez with my own
+	  gauss elimination
+
+2007-04-15 22:06  clauter
+
+	* expression.c, expression.h, infnorm.c, lexer.lex, library.c,
+	  library.h, main.c, main.h, makefile, parser.y: Added handling of
+	  functions bound to external code.
+
+2007-04-13 12:49  schevill
+
+	* chain.c, chain.h, remez.c: Testing version before replacing PARI
+	  by my own Gauss elimination
+
+2007-04-13 12:21  clauter
+
+	* infnorm.c: Patched differentiate on evaluate rule in
+	  evaluateFaithfulWithCutOff.
+
+2007-04-13 12:12  clauter
+
+	* infnorm.c: Patched version of evaluateITaylor.
+
+2007-04-13 11:46  clauter
+
+	* expression.c, main.h, parser.y: Corrected some bugs in Horner
+	  form handling.
+
+2007-04-13 10:20  clauter
+
+	* expression.c, expression.h, lexer.lex, main.c, main.h, parser.y:
+	  Intermediate version with new features.
+
+2007-04-12 18:06  clauter
+
+	* expression.c, main.c, main.h: Intermediate version.
+
+2007-04-11 16:28  schevill
+
+	* main.c, remez.c: timer is now displayed even if verbosity=0
+
+2007-04-06 11:29  clauter
+
+	* infnorm.c: Added a test for preventing decorrelation trials on
+	  addition and
+	  substraction evaluation on point intervals.
+
+2007-04-05 15:59  clauter
+
+	* expression.c: Some new high verbosity display code.
+
+2007-04-05 14:58  clauter
+
+	* lexer.lex: Added warning for cases when read macros do not form
+	  complete expressions.
+
+2007-04-05 14:49  schevill
+
+	* main.c: corrected version of the timer
+
+2007-04-05 14:32  clauter
+
+	* lexer.lex, main.c, parser.y: Added timing functionality.
+
+2007-04-05 13:49  schevill
+
+	* main.c: time counter with a new message
+
+2007-04-05 13:47  schevill
+
+	* infnorm.c, main.c, main.h: time counter added
+
+2007-04-02 16:28  clauter
+
+	* infnorm.c: Added interval handling count in dirtyinform for
+	  verbosity >= 2;
+
+2007-04-02 08:37  clauter
+
+	* parser.y: Added quality parameter in remez function to
+	  user-interface.
+
+2007-04-02 08:33  schevill
+
+	* parser.y, remez.c, remez.h: added user support for quality in
+	  Remez
+
+2007-03-30 14:07  schevill
+
+	* remez.c: guessdegree uses now the new optimizations of Remez.
+	  Better handling of the differentiation of the polynomial in Remez
+
+2007-03-30 13:51  clauter
+
+	* expression.h: Made isHorner and isCanonical available for other
+	  parts of the tool.
+
+2007-03-30 11:19  schevill
+
+	* remez.c: Optimized construction of the Remez' matrix
+
+2007-03-29 13:01  schevill
+
+	* remez.c: new message when resovig the system in Remez
+
+2007-03-28 12:07  schevill
+
+	* remez.c: normal version
+
+2007-03-28 12:04  schevill
+
+	* remez.c: debugging version
+
+2007-03-28 11:48  schevill
+
+	* remez.c: synchronization
+
+2007-03-28 11:37  clauter
+
+	* expression.c, lexer.lex, main.c, main.h, parser.y: Speeded up
+	  differentiation of horner polynomials.
+	  Added speed-up code to autoprint.
+	  Added autosimplify switch in the user interface.
+
+2007-03-27 14:28  schevill
+
+	* remez.c: More adapted messages in level 3
+
+2007-03-27 12:53  clauter
+
+	* expression.c: Speeded up autoprint by speeding up horner,
+	  makeCanonical and getCoefficients
+	  for horner and canonical polynomials.
+
+2007-03-27 09:00  schevill
+
+	* main.c, remez.c: More messages in Remez with verbosity levet set
+	  to 3
+
+2007-03-26 12:07  clauter
+
+	* infnorm.c: Speeded up plot by speeding up evaluateFaithful
+	  family.
+
+2007-03-26 11:11  clauter
+
+	* infnorm.c, main.c: Speeded up evaluateFaithulWithCutOff.
+
+2007-03-26 10:49  schevill
+
+	* remez.c: Corrected a bug in Newton's algorithm when binary search
+	  must be used
+
+2007-03-13 14:53  clauter
+
+	* infnorm.c: Slightly changed evaluateFaithful
+
+2007-03-13 14:40  clauter
+
+	* expression.c, expression.h, lexer.lex, main.c, main.h, makefile,
+	  minilexer.lex, miniparser.y, parser.y: Added a miniparser for
+	  parsing strings of simple expressions.
+	  Added tree manipulation functions.
+	  Added miniparser parse functionality in the main parser.
+
+2007-03-02 17:24  clauter
+
+	* README: README
+
+2007-03-02 17:20  schevill
+
+	* remez.c: corrected a memory leak in guessdegree
+
+2007-03-02 17:14  schevill
+
+	* remez.c: Final version of Remez
+
+2007-03-01 16:26  clauter
+
+	* lexer.lex, main.c, main.h, parser.y: Corrected Ctrl-C behaviour
+	  for avoiding contact loss with Houston.
+
+2007-02-28 17:19  clauter
+
+	* lexer.lex: Corrected a SIGSEV on syntax error.
+
+2007-02-28 17:15  clauter
+
+	* lexer.lex, main.c, main.h, parser.y: Corrected memory leaks in
+	  lexer/ parser structure.
+
+2007-02-28 15:51  schevill
+
+	* pari_utils.c, remez.c: faster Remez
+
+2007-02-28 13:28  clauter
+
+	* expression.c: Patched a memory leak in simplifyTreeErrorfree.
+
+2007-02-28 12:17  clauter
+
+	* parser.y: autoprint accepts comma separated lists of elements.
+
+2007-02-28 12:05  clauter
+
+	* lexer.lex: Corrected omission of newlines in comments.
+
+2007-02-28 10:00  schevill
+
+	* infnorm.h, remez.c: an unfinished version of Remez but already
+	  fully functional in normal cases
+
+2007-02-27 14:33  clauter
+
+	* infnorm.c: evaluateFaithfulWithCutOffFast accepts NULL as an
+	  argument for the derivative,
+	  avoiding in this case Taylor evaluation.
+
+2007-02-25 19:14  clauter
+
+	* expression.c, parser.y: Improved quality of results obtained with
+	  simplifyTreeErrorfree.
+
+2007-02-23 13:20  clauter
+
+	* expression.c: Corrected a bug introduced by the modification of
+	  simplifyTreeErrorfree.
+
+2007-02-23 11:49  schevill
+
+	* remez.c: minor changes : a counter limits the number of
+	  iterations, NaN and Inf should now be avoided as often as
+	  possible.
+
+2007-02-23 10:13  clauter
+
+	* expression.c: Added simplification of expressions f(x) * (1/g(x))
+	  = f(x)/g(x) in simplifysafe.
+
+2007-02-22 13:46  clauter
+
+	* parser.y: Corrected a memory leak in degree definition.
+
+2007-02-22 13:22  schevill
+
+	* remez.c: remez is now fully functional but still not so quick as
+	  it could be
+
+2007-02-22 11:17  clauter
+
+	* parser.y: Added weight function functionality to remez.
+
+2007-02-22 11:10  schevill
+
+	* pari_utils.c, remez.c, remez.h: beta of new remez
+
+2007-02-16 12:15  schevill
+
+	* Manuel_fr.tex: updated the doc with guessdegree, printbinary and
+	  round
+
+2007-02-16 10:36  clauter
+
+	* double.c, implement.c, parser.y: Corrected a bug in printbinary
+	  and printexpansion.
+
+2007-02-09 14:08  clauter
+
+	* implement.c: Corrected a slight bug in implementpoly.
+
+2007-02-09 10:50  schevill
+
+	* infnorm.c, remez.c: memory leaks corrected
+
+2007-02-09 10:18  clauter
+
+	* remez.c: Corrected some bugs in guessdegree.
+
+2007-02-08 18:32  schevill
+
+	* remez.c: alternative function ton find zeros
+
+2007-02-08 18:02  schevill
+
+	* remez.c: guessDegree finished but not alleyooped
+
+2007-02-08 15:19  schevill
+
+	* remez.c: dummy guessDegree for checking
+
+2007-02-08 15:17  clauter
+
+	* lexer.lex, parser.y, remez.h: Added guessDegree to user
+	  interface.
+
+2007-02-08 13:54  clauter
+
+	* expansion.h, parser.y: Slight change in the parser.
+
+2007-02-07 12:06  clauter
+
+	* Manuel_fr.tex: Rajout de certaines fonctionalites dans la doc.
+
+2007-02-07 10:25  clauter
+
+	* fpminimax.h, parser.y, worstcase.c, worstcase.h: Added multiple
+	  function Gal value search.
+
+2007-02-06 13:22  clauter
+
+	* external.c, infnorm.c: Corrected the evaluate abs(x) at 0
+	  infinite recursion bug.
+	  Optimized interval evaluation on point intervals.
+
+2007-01-18 16:20  clauter
+
+	* infnorm.c: Improved dirtyinfnorm performance.
+
+2007-01-18 16:03  clauter
+
+	* infnorm.c, infnorm.h: Improved dirtyinfnorm performance.
+
+2007-01-18 15:49  clauter
+
+	* infnorm.c, lexer.lex, main.c: Improved Houston loss.
+
+2007-01-18 15:06  clauter
+
+	* main.c: Patch again Houston.
+
+2007-01-18 14:56  clauter
+
+	* lexer.lex, main.c, parser.y: Debugged Houston.
+
+2007-01-18 12:44  clauter
+
+	* expression.c, infnorm.c, plot.c: Changed dirtyinfnorm for using
+	  evaluateFaithfulWithCutOff.
+	  Corrected precision handling in plot.
+
+2007-01-18 10:52  schevill
+
+	* lexer.lex: corrected a bug in the function read: the allocated
+	  size for the temporary string was not sufficient
+
+2007-01-18 09:56  clauter
+
+	* lexer.lex, parser.y: Added
+	  round(constantfunction,integer,[N,M,P,Z]) to user interface.
+
+2007-01-18 09:41  schevill
+
+	* double.c, double.h, fpminimax.c: added the function
+	  round_to_format
+
+2007-01-17 17:09  clauter
+
+	* infnorm.c, infnorm.h, plot.c: Implemented
+	  evaluateFaithfulWithCutoff and plot using it
+
+2007-01-17 13:58  clauter
+
+	* expression.c, lexer.lex, parser.y: Added dyadic = binary to user
+	  interface.
+
+2007-01-17 13:21  clauter
+
+	* expression.c: Corrected a bug in simplifysafe.
+
+2007-01-12 17:59  clauter
+
+	* double.c: Corrected a bug in double precision hexadecimal parser
+	  for 32 bit machines.
+
+2007-01-12 17:08  clauter
+
+	* double.c, parser.y: Patch
+
+2007-01-12 16:37  clauter
+
+	* parser.y: DEBUG VERSION
+
+2007-01-12 16:31  clauter
+
+	* parser.y: Don't know.
+
+2007-01-12 16:12  clauter
+
+	* expression.c: Corrected a bug in doubledouble simplification.
+
+2007-01-11 14:31  clauter
+
+	* expression.c, lexer.lex, parser.y: Added parsing capability for
+	  binary constants: 1.1_2 = 1.5
+	  Adapted printbinary output.
+
+2007-01-11 12:11  clauter
+
+	* expression.c, expression.h, lexer.lex, parser.y: Added
+	  printbinary constant;
+
+2006-12-19 21:04  clauter
+
+	* infnorm.c: Corrected a bug in Warning display in certified
+	  infnorm.
+
+2006-12-19 20:52  clauter
+
+	* expression.c, parser.y: Corrected a display error in print
+	  functions for repeated substraction and division trees.
+
+2006-12-18 15:35  schevill
+
+	* fpminimax.c, makefile, remez.c, remez.h: A rare bug in Remez
+	  corrected : when the optimal error doesn't reach its extrema at
+	  any of the two bounds
+
+2006-12-06 16:04  clauter
+
+	* infnorm.c: Corrected a memory leak.
+
+2006-12-06 16:00  clauter
+
+	* infnorm.c: Improved infnorm on functions that are fractions on
+	  the first level.
+
+2006-12-04 13:02  clauter
+
+	* parser.y: Corrected unary -.
+
+2006-12-04 12:40  clauter
+
+	* chain.c, parser.y: Changed parsing order for fpminimax.
+
+2006-12-03 22:12  clauter
+
+	* assignment.c, assignment.h, lexer.lex, main.c, main.h, parser.y:
+	  Added assignments of strings to variables. If syntax does not
+	  allow
+	  unique typing, $a must be used for accessing to variable a
+	  containing
+	  a string.
+
+2006-12-03 21:16  clauter
+
+	* lexer.lex, parser.y, plot.c, plot.h: Added asciiplot
+
+2006-12-03 16:16  clauter
+
+	* expression.c, expression.h, lexer.lex, main.c, main.h, parser.y:
+	  Added lexing and parsing capability for GP/PARI scientific
+	  notation:
+	  1.24 (spaces)E+2
+	  
+	  Attention: no spaces are permitted for cases where no exponent
+	  (e/E)
+	  is given. If the exponent sign (e/E) is given, the exponent value
+	  becomes obligatory. The feature is *not* available for dyadic
+	  notation:
+	  1232b-5 is correct 1234 b-5 is not.
+	  
+	  Added write command to user interface: the same as print but no
+	  spaces or
+	  newlines are added. Special syntax for writing/ appending to a
+	  file is
+	  available:
+	  
+	  write 1, 2; -> prints 12 on stdout
+	  write > "toto" 1, 2 -> prints 12 in file "toto", erasing an old
+	  file "toto"
+	  write >> "toto" 1, 2 -> prints 12 in file "toto", appending to
+	  its content.
+	  
+	  Attention: on writing to files, strings to print a first created
+	  in
+	  memory and then printed. High memory usage may follow.
+	  
+	  Added trailing zero removal in scientific notation output.
+
+2006-12-02 15:24  schevill
+
+	* Manuel_fr.tex, pari_utils.c: updated the doc about reassignment ;
+	  mpfr->pari produces now an exact zero when called on 0. ;
+	  pari->mpfr checks now first if its argument is an int and deal
+	  with
+
+2006-11-29 15:20  clauter
+
+	* implement.c: Corrected a bug in implementpoly.
+
+2006-11-29 12:58  schevill
+
+	* pari_utils.c, remez.c: Again the cray feature about floating 0 in
+	  PARI
+
+2006-11-29 11:59  schevill
+
+	* remez.c: Oops
+
+2006-11-29 11:58  schevill
+
+	* remez.c: Again the bug with PARI handling the floating point 0
+
+2006-11-29 11:47  schevill
+
+	* remez.c: Again the bug with PARI handling the floating point 0
+
+2006-11-29 11:28  schevill
+
+	* pari_utils.c, remez.c: A bug due to PARI handling 0 in a
+	  subtraction corrected
+
+2006-11-29 10:28  clauter
+
+	* lexer.lex, parser.y: Changed reassignment behaviour.
+	  Added // \n and /* */ comments.
+
+2006-11-29 10:15  schevill
+
+	* pari_utils.c, remez.c: A bug in the conversion function
+	  PARI->mpfr affecting the exponents corrected
+
+2006-11-29 09:03  clauter
+
+	* lexer.lex: Added errno.h to lexer.lex in order to overcome a
+	  compile error on Mac OS X
+
+2006-11-28 19:32  schevill
+
+	* remez.c: The bug affecting remez algorithm near the bounds is
+	  corrected
+
+2006-11-28 17:06  clauter
+
+	* lexer.lex, main.c, main.h, parser.y: Added read "file"
+	  functionality.
+
+2006-11-28 14:37  clauter
+
+	* expression.c, infnorm.c: Corrected a bug.
+
+2006-11-27 14:06  clauter
+
+	* expression.c: Corrected a bug in expandPowerInPolynomialUnsafe.
+
+2006-11-24 10:24  schevill
+
+	* remez.c: bug affecting precision in Remez really corrected
+
+2006-11-24 10:10  clauter
+
+	* parser.y: Corrected an error with a pointer.
+
+2006-11-24 09:46  schevill
+
+	* remez.c: corrected the rounding of the bounds in remez
+
+2006-11-24 09:45  schevill
+
+	* remez.c: corrected a bug affecting the precision in Remez
+
+2006-11-24 09:25  schevill
+
+	* Manuel_fr.tex: Added the doc part for rationalapprox
+
+2006-11-22 16:41  schevill
+
+	* fpminimax.c, fpminimax.h: rationalApprox is implemented
+
+2006-11-22 15:00  clauter
+
+	* main.c: Plot files are not removed when in a scripted.
+
+2006-11-22 14:46  clauter
+
+	* lexer.lex, parser.y: Added rationalapprox
+
+2006-11-22 14:45  schevill
+
+	* fpminimax.c: *** empty log message ***
+
+2006-11-22 14:44  schevill
+
+	* fpminimax.c, fpminimax.h: Dummy version of rationalApprox
+
+2006-11-22 14:02  schevill
+
+	* external.c, plot.c, plot.h: Now handles filenames in /tmp
+
+2006-11-22 13:35  clauter
+
+	* double.c, double.h, lexer.lex, parser.y, worstcase.c,
+	  worstcase.h: Added Gal searches.
+
+2006-11-22 13:12  schevill
+
+	* external.c: external plot handles file, postscript and
+	  postscriptfiles options
+
+2006-11-22 12:57  schevill
+
+	* Manuel_fr.tex: Doc up to date
+
+2006-11-22 09:55  clauter
+
+	* parser.y: Corrected elliptic lists.
+
+2006-11-21 23:33  clauter
+
+	* double.c, expression.c, lexer.lex, main.c, main.h, parser.y,
+	  plot.c: - Checked correct implementation of elliptic monomial
+	  definition in Remez: remez(exp(x),[4...6],[-1;1]) works.
+	  - Implemented elliptic monomial definition in subpoly:
+	  subpoly(poly,[4...6]) works
+	  - Implemented final elliptic monomial definition in subpoly:
+	  subpoly(poly,[4,5,...]) works
+	  - Adapted final elliptic format definition in roundcoefficients:
+	  roundcoefficients(poly,[DD,D,...]) works
+	  - Implemented DE support in roundcoefficients (no correct
+	  exponent range check, no subnormal support)
+	  - Implemented forced assignment of a new name to the bound free
+	  variable:
+	  
+	  > x + 1;
+	  1 + x
+	  > a = x + 5;
+	  > a;
+	  5 + x;
+	  > x = b!;
+	  > a;
+	  5 + b;
+
+2006-11-21 19:30  clauter
+
+	* expression.c, expression.h: Intermediate version
+
+2006-11-20 15:50  clauter
+
+	* external.c, external.h, main.c, parser.y, plot.c, plot.h: Started
+	  implementing file numbering for (external)plot and file saving
+	  for externalplot.
+
+2006-11-20 15:36  clauter
+
+	* implement.c, proof.c: Finished implementpoly with proof
+	  generation.
+
+2006-11-20 12:34  clauter
+
+	* implement.c, proof.c: Finished automatic generation of code and
+	  proof in implementpoly.
+
+2006-11-17 15:36  clauter
+
+	* proof.c: Improved Gappa generation.
+
+2006-11-17 14:51  clauter
+
+	* implement.c, proof.c: Finished first version of Gappa generation.
+	  Untested. Will test now.
+
+2006-11-17 10:53  clauter
+
+	* implement.c, main.c, parser.y, proof.c, proof.h: Continued
+	  working on Gappa proof generation.
+	  Implemented Ctrl-C as exit(0) in scripts.
+	  Implemented <[ commandfunction ]> for recovering interval
+	  results.
+
+2006-11-16 13:50  clauter
+
+	* double.c, expansion.h, implement.c, makefile, proof.c: Improved
+	  printexpansion
+	  Continued working on Gappa proof generation for implementpoly.
+
+2006-11-14 17:03  clauter
+
+	* implement.c, proof.c, proof.h: Continued working on Gappa proof
+	  generation for implementpoly.
+
+2006-11-14 10:12  clauter
+
+	* chain.c, infnorm.c, parser.y: Improved fpfindzeros.
+
+2006-11-13 17:33  clauter
+
+	* chain.c, chain.h, implement.c, implement.h, infnorm.c, parser.y,
+	  proof.c, proof.h: Continued working on Gappa proof generation for
+	  implementpoly.
+	  Improved fpfindzeros.
+
+2006-11-13 13:07  clauter
+
+	* assignment.c, assignment.h, expression.c, expression.h,
+	  lexer.lex, parser.y: Added additional functionalities to the user
+	  interface:
+	  
+	  - querying environnement variables: prec = ?, verbosity = ?...
+	  - forcing reassignment of already assigned variables: a = 4; a =
+	  5!;
+	  - printing (and autoprinting) of domains: print [-1;1]; print
+	  [a];
+
+2006-11-10 17:10  clauter
+
+	* expression.c, expression.h, lexer.lex, parser.y: Added subpoly
+	  support.
+
+2006-11-10 16:09  clauter
+
+	* implement.c: Finished generation of SSA code for implementpoly.
+
+2006-11-10 15:12  clauter
+
+	* implement.c, infnorm.c: Improved fpfindzeros.
+	  Continued on working on SSA generation for implementpoly
+
+2006-11-10 14:08  clauter
+
+	* implement.c, infnorm.c: Improved fpfindzeros
+	  Started implementing SSA in implement.c
+
+2006-11-09 10:26  clauter
+
+	* lexer.lex, parser.y: Corrected a mistake in the parser.
+
+2006-11-09 10:22  clauter
+
+	* expression.c, expression.h, lexer.lex, parser.y: Added
+	  coeff(poly,i);
+
+2006-11-09 09:42  clauter
+
+	* infnorm.c: Improved fpfindzeros.
+
+2006-11-08 15:27  clauter
+
+	* parser.y: Corrected a bug in <evaluateaccurate ... >
+
+2006-11-08 13:06  clauter
+
+	* compile.sh, expansion.c, expansion.h, external.c: Completed
+	  helper functions for implementpoly and externalplot.
+
+2006-11-07 17:19  schevill
+
+	* external.c: bug of the man page corrected
+
+2006-11-07 17:13  schevill
+
+	* external.c: corrected a bug where x looped around 0
+
+2006-11-07 17:02  clauter
+
+	* expansion.c, expansion.h: Added expansion handling default files.
+
+2006-11-07 16:38  schevill
+
+	* external.c, makefile, plot.c, plot.h: external plot
+
+2006-11-07 15:23  clauter
+
+	* lexer.lex, parser.y: Added externalplot to parser.
+
+2006-11-07 15:08  schevill
+
+	* external.c, makefile: updated makefile
+
+2006-11-07 15:06  schevill
+
+	* external.c, external.h: signatures for external.c
+
+2006-11-07 15:02  clauter
+
+	* lexer.lex, parser.y: Added bashexecute.
+
+2006-11-07 14:37  schevill
+
+	* external.c: bashExecute implemented
+
+2006-11-07 14:33  clauter
+
+	* external.c, external.h: Added externals.
+
+2006-11-07 14:32  clauter
+
+	* makefile: Changed makefile
+
+2006-11-07 12:38  clauter
+
+	* double.c: Corrected a bug on printing expansions of non real
+	  numbers.
+
+2006-11-07 12:21  clauter
+
+	* parser.y: Corrected a bug.
+
+2006-11-07 12:19  clauter
+
+	* double.c, double.h, lexer.lex, parser.y, plot.c: Added
+	  printexpansion.
+	  Corrected precision in plot to 64 bits.
+
+2006-11-06 15:09  clauter
+
+	* infnorm.c, main.h: Changed a constant for fpfindzeros.
+
+2006-11-06 14:57  clauter
+
+	* infnorm.c: Speeded up plot through more clever evaluateFaithful.
+
+2006-10-26 11:44  clauter
+
+	* implement.c: Adapted implement to new operators in crlibm.
+
+2006-10-25 15:58  clauter
+
+	* lexer.lex, main.c: Added Ctrl-C handling. Ctrl-D works only on a
+	  fresh prompt.
+
+2006-10-25 13:35  clauter
+
+	* infnorm.c: Slightly changed newton.
+
+2006-10-25 13:28  clauter
+
+	* infnorm.c, main.h, parser.y, plot.c: Slightly changed newton,
+	  fpfindzeros and plot.
+
+2006-10-25 09:04  schevill
+
+	* plot.c: A bug corrected in plot when using file option
+
+2006-10-24 15:52  schevill
+
+	* makefile, remez.c: enhanced makefile
+
+2006-10-24 15:51  clauter
+
+	* expression.c: Corrected a bug in getDegree
+
+2006-10-23 15:38  schevill
+
+	* Manuel_fr.tex: Doc updated to take in account the new syntax of
+	  plot
+
+2006-10-23 13:39  schevill
+
+	* lexer.lex, parser.y, plot.c, plot.h: plot can now manage output
+	  files
+
+2006-10-23 12:43  clauter
+
+	* lexer.lex, parser.y: User interface handling for plotting into
+	  files.
+
+2006-10-23 12:16  schevill
+
+	* expression.h, plot.c, plot.h: header for postscipt output and so
+	  on
+
+2006-10-23 11:58  clauter
+
+	* parser.y: Lists of things can be framed by brackets.
+
+2006-10-23 11:37  clauter
+
+	* parser.y: Modified the parser for multiplot.
+
+2006-10-23 11:19  clauter
+
+	* expression.c, plot.c: Plot uses evaluateFaithful.
+
+2006-10-23 10:44  clauter
+
+	* expression.c: Added a bugfix.
+
+2006-10-23 09:23  clauter
+
+	* expression.c, lexer.lex, parser.y: Added dyadic power of 2
+	  support.
+
+2006-10-23 08:25  clauter
+
+	* expression.c: Added bugfix.
+
+2006-10-23 08:20  clauter
+
+	* lexer.lex: Added Pi.
+
+2006-10-20 15:46  clauter
+
+	* implement.c: Added information output to implementpoly
+
+2006-10-20 15:30  clauter
+
+	* expression.c: Corrected a bug in expand sequences.
+
+2006-10-20 15:07  clauter
+
+	* infnorm.c, parser.y: Made some modifications
+
+2006-10-20 15:06  schevill
+
+	* infnorm.c: corrected a bug in mpfi_erfc
+
+2006-10-20 13:17  clauter
+
+	* expression.c, infnorm.c: Slightly changed things.
+
+2006-10-19 16:05  clauter
+
+	* double.c, double.h, expression.c, expression.h, infnorm.c,
+	  lexer.lex, parser.y: Added erf, erfc, log1p, expm1,
+	  doubleextended.
+	  Currently untested.
+
+2006-10-19 14:38  clauter
+
+	* infnorm.c: Changed slightly accurateinfnorm constants.
+
+2006-10-19 14:37  schevill
+
+	* infnorm.c, pari_utils.c, pari_utils.h, remez.c, remez.h: Faithful
+	  evaluation in Remez
+
+2006-10-19 14:02  clauter
+
+	* infnorm.c: Modified constants for automatic accurateinfnorm
+
+2006-10-19 12:17  clauter
+
+	* expression.c, expression.h, infnorm.c: Completed accurateinfnorm
+	  Syntax:
+	  
+	  accurateinfnorm function in range [without rangelist] with number
+	  bits;
+
+2006-10-19 11:34  clauter
+
+	* expression.c, main.c: Added #define for Pari version.
+
+2006-10-19 10:50  clauter
+
+	* infnorm.c, infnorm.h, lexer.lex, main.c, parser.y: Added
+	  accurateinfnorm support.
+
+2006-10-18 11:07  clauter
+
+	* infnorm.c: Added an information in evaluateFaithful.
+
+2006-10-18 09:37  clauter
+
+	* infnorm.c, infnorm.h: evaluateFaithful
+
+2006-10-17 16:13  clauter
+
+	* expression.c, infnorm.c, proof.c, proof.h: Added monotonicity
+	  clou.
+
+2006-10-17 11:39  clauter
+
+	* infnorm.c, infnorm.h, parser.y: Added evaluateFaithfulOrFail
+
+2006-10-17 10:12  clauter
+
+	* infnorm.c: Slightly modified accurate evaluate.
+
+2006-10-17 09:27  clauter
+
+	* infnorm.c, infnorm.h, lexer.lex, main.c, main.h, parser.y:
+	  Changed slightly evaluateAccurate
+
+2006-10-16 16:38  clauter
+
+	* infnorm.c, infnorm.h, lexer.lex, parser.y: First trial for
+	  evaluateaccurate.
+
+2006-10-16 15:32  clauter
+
+	* infnorm.c, infnorm.h, lexer.lex, parser.y: Added isevaluable
+
+2006-10-16 14:13  clauter
+
+	* infnorm.c: Improved dirtyinfnorm.
+
+2006-10-16 14:11  clauter
+
+	* infnorm.c: improved dirtyInfnorm in NaNs occur.
+
+2006-10-16 13:43  clauter
+
+	* expression.c, expression.h, infnorm.c, infnorm.h, lexer.lex,
+	  parser.y: Some modifications.
+
+2006-10-11 10:56  clauter
+
+	* expression.c: Changed slightly printMpfr.
+
+2006-10-11 10:45  clauter
+
+	* expression.c, expression.h: Added a printMpfr function for
+	  debugging and develloping purposes.
+
+2006-10-06 09:32  clauter
+
+	* main.c, main.h: Made parser scripting capable.
+
+2006-10-05 13:26  clauter
+
+	* parser.y: Slightly modified the autoprint functionality.
+
+2006-10-04 13:21  schevill
+
+	* plot.c: small modification for the names of file stored in /tmp
+	  when plotting
+
+2006-10-02 11:50  clauter
+
+	* expression.h, infnorm.c, infnorm.h, main.c, main.h, parser.y:
+	  Modified automatic displaying of values on the prompt user
+	  interface.
+
+2006-09-22 11:54  clauter
+
+	* expression.c: Corrected a bug in expand and diff.
+
+2006-09-22 11:33  clauter
+
+	* main.c, parser.y, plot.c: Added automatic printing of simplified
+	  expressions.
+
+2006-09-20 13:03  schevill
+
+	* infnorm.c, plot.c: modified version of plot to deal with overflow
+	  in conversions into double values
+
+2006-09-15 08:51  clauter
+
+	* main.c: Correctly frees memory on SIGINT
+
+2006-09-13 16:06  clauter
+
+	* implement.c: Corrected a bug in implementpoly when the polynomial
+	  to implement ends
+	  on a multiplication.
+
+2006-09-13 09:27  schevill
+
+	* pari_utils.c: declaration of variable j moved
+
+2006-09-13 09:17  schevill
+
+	* pari_utils.c: Test procedure finished
+
+2006-09-13 09:13  schevill
+
+	* pari_utils.c: tests enhanced
+
+2006-09-12 16:32  schevill
+
+	* pari_utils.c: Fixed a cast with sizeof
+
+2006-09-12 16:30  clauter
+
+	* pari_utils.c: Changed minimal exponent value for AMD64 machines.
+
+2006-09-12 16:21  schevill
+
+	* pari_utils.c: Fixed a cast with sizeof
+
+2006-09-12 16:18  clauter
+
+	* pari_utils.c: Added a letter (l)
+
+2006-09-12 16:14  clauter
+
+	* main.c: Added safeRealloc and made PARI compatible to GMP in
+	  Debian.
+
+2006-09-12 16:12  schevill
+
+	* pari_utils.c: tests function implemented
+
+2006-09-12 15:35  schevill
+
+	* pari_utils.c: modified conversion functions
+
+2006-09-12 14:49  schevill
+
+	* pari_utils.c: modified conversion functions
+
+2006-09-12 09:07  clauter
+
+	* lexer.lex, pari_utils.c, pari_utils.h, parser.y: Added testpari
+	  functionality to the user interface.
+
+2006-09-12 08:34  clauter
+
+	* main.c, worstcase.c: Don't know what we are comitting ;-(
+
+2006-09-07 16:06  schevill
+
+	* Manuel_fr.tex, main.c: Adapted version for PARI 2.3.0
+
+2006-09-07 15:14  clauter
+
+	* pari_utils.c, remez.c: Brought pari_utils.c and remez.c over to
+	  safeMalloc and printMessage.
+
+2006-09-07 09:17  clauter
+
+	* expression.c, expression.h, infnorm.c: Added an additional end
+	  case for recursive Taylor recursion: the
+	  expression becomes too big.
+
+2006-09-06 13:38  clauter
+
+	* implement.c: Finished implementing the first version of
+	  implementpoly.
+
+2006-09-05 15:20  clauter
+
+	* Manuel_fr.tex, parser.y: Documented restart feature. Corrected it
+	  for dyadic display and verbosity.
+
+2006-09-05 15:12  clauter
+
+	* assignment.c, implement.c, lexer.lex, main.c, parser.y: Corrected
+	  a memory lack in assignment.
+	  Added renormalize3 functionality to implementpoly (unfinished)
+	  Added restart functionality to the user interface.
+	  "Corrected" a memory lack of PARI
+
+2006-09-01 12:08  clauter
+
+	* Manuel_fr.tex, makefile: Added documentation for the new
+	  fonctionalities.
+
+2006-08-14 15:00  clauter
+
+	* implement.c, implement.h, infnorm.c, lexer.lex, parser.y:
+	  Improved implementpoly. Coefficient precisions are now rounded
+	  automatically by default. An option (honorcoeffprec) allows to
+	  get no
+	  rounding on the coefficients.
+	  It is now possible to get the implemented polynomial back using
+	  p = <implementpoly ...>
+	  There is an additional check that the additions in the Horner
+	  steps
+	  do not cancellate.
+
+2006-08-14 13:22  clauter
+
+	* double.c, double.h, expression.c, expression.h, implement.c,
+	  lexer.lex, parser.y: Added a functionality to round the
+	  coefficients of a polynomial to TD, DD or D:
+	  
+	  print roundcoefficients(simplify(t),[TD,TD,TD,DD,DD,D...]);
+
+2006-08-14 09:58  clauter
+
+	* double.c, double.h, lexer.lex, parser.y: Added hexadecimal double
+	  precision printing and parsing capabilities.
+	  
+	  printhexa 2;
+	  0x4000000000000000
+	  
+	  print 1 + 0x3ff0000000000000;
+	  2
+
+2006-08-11 22:27  clauter
+
+	* implement.c, implement.h: Added the forgotten files to the CVS.
+
+2006-08-11 16:17  clauter
+
+	* assignment.c, assignment.h, expression.c, expression.h, main.c,
+	  main.h, parser.y: Added assignment functionality for ranges: for
+	  example
+	  
+	  a = [-1;2];
+	  
+	  print <a>;
+	  2
+	  print <a>_;
+	  -1
+	  
+	  infnorm x in a;
+	  ...
+	  
+	  Dereferencing ranges while assigning them is not possible. This
+	  stays
+	  possible for (normal) expression assignments.
+
+2006-08-11 14:52  clauter
+
+	* infnorm.c, infnorm.h, lexer.lex, main.c, main.h, makefile,
+	  parser.y: Added a functionality to check an infinite norm on a
+	  function by
+	  interval arithmetic. The corresponding command is:
+	  
+	  checkinfnorm <function> in <range> bounded by <constant
+	  expression> [, diam = <diameter>];
+	  
+	  Highly improved the quality of Taylor interval evaluations and
+	  thus
+	  improved the quality of the certified infinite norm by allowing
+	  the
+	  Taylor evaluation to recurse on the linear term up to a certain
+	  level. The default level is 0, so by default, nothing changes.
+	  The
+	  command for setting the recursion level is
+	  
+	  taylorrecursions = <positive or zero integer>;
+
+2006-08-10 15:24  clauter
+
+	* infnorm.c, main.h: Improved infnorm performance.
+
+2006-08-10 13:21  clauter
+
+	* expression.c, infnorm.c: Added information printouts at high
+	  verbosity levels.
+	  Slightly increased performance of isPolynomial() function.
+
+2006-08-10 10:57  clauter
+
+	* main.h: Slight change in main.
+
+2006-08-10 09:57  clauter
+
+	* expression.c, infnorm.c: Corrected a bug in isPolynomial(node
+	  *tree) introduced when correcting another bug ;-)
+
+2006-08-10 09:42  clauter
+
+	* double.c, expression.c, expression.h, infnorm.c, lexer.lex,
+	  main.h, makefile, parser.y: Added the first version of a
+	  functionality for the automatic implementation of
+	  a polynomial (function).
+
+2006-07-23 21:56  schevill
+
+	* makefile, pari_utils.c, pari_utils.h, remez.c: Restructured a bit
+	  the file remez.c, moving some code into a new file pari_utils.c.
+	  Changed makefile to compile on OS X with Fink. May not compile
+	  any more on Linux. We should quickly begin to use
+	  automake/autoconf
+
+2006-06-30 09:03  schevill
+
+	* Manuel_fr.tex, makefile: Documentation (in french at the moment)
+
+2006-06-28 15:24  schevill
+
+	* main.c, parser.y: memory leaks filled
+
+2006-06-28 14:54  clauter
+
+	* parser.y: Added relative integers to user interface.
+
+2006-06-28 14:50  schevill
+
+	* fpminimax.c, parser.y: debugged fpminimax and parser
+
+2006-06-28 13:53  clauter
+
+	* chain.c, chain.h, expression.c, expression.h, fpminimax.c,
+	  fpminimax.h, lexer.lex, main.c, main.h, parser.y, taylor.c: Added
+	  user interface for fpminimax. Corrected syntax of
+	  commandfunctions as expressions using angles. Added < >.
+	  Corrected
+	  Taylor: added a check that the development point is a constant
+	  expression. Patched differentiate on double, doubledouble and
+	  tripledouble rounding functions.
+	  
+	  The fpminimax interface must still be checked.
+
+2006-06-27 15:51  clauter
+
+	* lexer.lex, main.h, parser.y: Started implementing angles instead
+	  of parentheses for command functions.
+
+2006-06-27 14:29  clauter
+
+	* fpminimax.c, fpminimax.h, makefile, parser.y, remez.c: Started
+	  working on fpminimax
+	  Corrected silly syntax of plot
+
+2006-06-15 14:53  clauter
+
+	* infnorm.c, main.c, parser.y: Corrected a segfault in infnorm.
+	  Added support in user-interface for
+	  being able to consider infnorm, dirtyinfnorm, integral and
+	  dirtyintegral as a constant in another expression. The syntax is
+	  e.g. like follows:
+	  
+	  print 1+(infnorm x in [-1;1]);
+
+2006-06-15 10:30  clauter
+
+	* lexer.lex, parser.y, proof.h, worstcase.c, worstcase.h: Added
+	  file output support to worst case search.
+
+2006-06-14 16:04  clauter
+
+	* lexer.lex, makefile, parser.y, worstcase.c, worstcase.h: Added
+	  worstcase search.
+
+2006-06-13 17:17  schevill
+
+	* integral.c, remez.c: Remez is supposed to function with
+	  polynomials with holes
+
+2006-06-13 15:30  clauter
+
+	* double.c, expression.c, infnorm.c, integral.c, main.c, parser.y,
+	  plot.c, taylor.c: Changed all warnings and errors for proper
+	  support of verbosity and
+	  stderr output. It remain some occurences in Remez.
+
+2006-06-13 14:29  clauter
+
+	* infnorm.c, lexer.lex, main.c, main.h, parser.y: Added verbosity
+	  support.
+
+2006-06-13 13:31  clauter
+
+	* chain.c, chain.h, main.c, main.h, parser.y, remez.c, remez.h:
+	  Added user interface support for remez with holes.
+
+2006-06-09 16:13  clauter
+
+	* assignment.c, chain.c, expression.c, expression.h, infnorm.c,
+	  lexer.lex, main.c, main.h, parser.y, proof.c, proof.h, taylor.c:
+	  Added safeMalloc and safeCalloc.
+	  Completed the generation of a proof for infnorm.
+
+2006-06-07 16:07  clauter
+
+	* expression.c, expression.h, infnorm.c, infnorm.h, proof.c,
+	  proof.h: Continued working on the generation of a proof for the
+	  certified infnorm.
+
+2006-06-07 10:30  clauter
+
+	* infnorm.c, infnorm.h, lexer.lex, main.c, main.h, parser.y,
+	  proof.c, proof.h: Implemented first version of proof generation
+	  for certified infnorm.
+
+2006-06-05 15:56  clauter
+
+	* expression.c, expression.h, infnorm.c, infnorm.h, makefile,
+	  proof.c, proof.h: Started implementing the generation of a proof
+	  for an infinite norm.
+
+2006-05-29 12:28  clauter
+
+	* infnorm.c, parser.y: Corrected a bug in user interface displaying
+	  of certified integral result.
+
+2006-05-29 12:02  clauter
+
+	* integral.c, lexer.lex, parser.y: Added dirtyinfnorm to user
+	  interface.
+
+2006-05-29 10:09  schevill
+
+	* integral.c, integral.h: added an uncertified (but hopefully
+	  faster) integral
+
+2006-05-29 09:30  clauter
+
+	* infnorm.c, infnorm.h: Implemented
+	  void evaluateRangeFunctionFast(rangetype yrange, node *func, node
+	  *deriv, rangetype xrange, mp_prec_t prec)
+
+2006-05-29 09:26  clauter
+
+	* integral.c, integral.h, lexer.lex, makefile, parser.y: Added
+	  integral support to user-interface.
+
+2006-05-29 09:09  schevill
+
+	* integral.c, integral.h: Added files to compute integrals
+
+2006-05-27 02:22  clauter
+
+	* chain.h, expression.c, expression.h, infnorm.c, infnorm.h,
+	  lexer.lex, main.c, main.h, parser.y: Added support for excluding
+	  intervals in certified infnorm:
+	  
+	  infnorm exp(x) in [-1;1] without [-2^(-12);2^(12)], diam=2^(-10);
+	  
+	  Added support for dyadic numbers:
+	  
+	  - Input: always supported; <m>b<+/->e = m * 2^(+/-e)
+	  - Output: supported only when
+	  dyadic=on;
+	  and number is not an integer representable on machine int.
+	  The displaying is <+/-><m>b<+/->e = +/- * m * 2^(+/-e) where m is
+	  odd.
+
+2006-05-26 16:59  clauter
+
+	* parser.y: Corrected a bug in parser file that made segfault bison
+
+2006-05-26 15:24  clauter
+
+	* plot.c: Improved plot printout.
+
+2006-05-26 14:28  clauter
+
+	* plot.c: Improved precision in plot files.
+
+2006-05-26 14:00  clauter
+
+	* expression.c, lexer.lex, parser.y: Added numerator(func) support
+	  to user-interface
+	  Improved safety of printing values.
+
+2006-05-26 12:44  clauter
+
+	* parser.y: Improved evaluate on user-interface
+	  when the function evaluates to a point interval.
+
+2006-05-26 12:40  clauter
+
+	* infnorm.c, infnorm.h, lexer.lex, main.c, main.h, parser.y: Added
+	  interval evaluation of a function to the user-interface:
+	  
+	  evaluate exp(x) in [-1;1];
+	  
+	  or
+	  
+	  evaluate exp(x) at 5;
+
+2006-05-22 14:50  clauter
+
+	* main.c: Added error recovering for PARI.
+
+2006-05-19 15:14  clauter
+
+	* main.c, remez.c: Remez fully debugged relatively to the *flows
+
+2006-05-19 14:56  clauter
+
+	* remez.c: Denormalized and Inf are OK on Itanium
+
+2006-05-19 14:10  clauter
+
+	* makefile: *** empty log message ***
+
+2006-05-19 13:11  clauter
+
+	* remez.c: Test version of mpfr_2_PARI
+
+2006-05-19 10:00  schevill
+
+	* remez.c: Bug fixed with underflow
+
+2006-05-19 08:57  clauter
+
+	* parser.y: Corrected a bug in the parser.
+
+2006-05-16 09:17  clauter
+
+	* expression.c, expression.h, infnorm.c: Added pole detection to
+	  infnorm to correct the 1/x flaw.
+
+2006-05-15 15:54  clauter
+
+	* infnorm.c: Improved dirty infnorm.
+
+2006-05-15 15:37  schevill
+
+	* remez.c: I began to implement a more careful version of
+	  mpfr_to_PARI which takes care of denormalized numbers
+
+2006-05-15 12:21  schevill
+
+	* remez.c: Fixed bug in Remez algorithm when the function fails to
+	  oscillate enough
+
+2006-05-12 15:32  clauter
+
+	* expression.c, expression.h, infnorm.c, infnorm.h, lexer.lex,
+	  main.c, main.h, parser.y, taylor.c: Added dirty infnorm.
+	  Added substitutions in assigned variables: t(x+1)
+
+2006-05-12 13:27  clauter
+
+	* infnorm.c: Improved infnorm.
+
+2006-05-11 15:22  clauter
+
+	* chain.c, infnorm.c: Corrected a bug in infnorm (segfault).
+
+2006-05-11 14:27  clauter
+
+	* expression.c, infnorm.c, parser.y: Improved infnorm to produced
+	  results different from +infty on ill-conditionned
+	  problems.
+
+2006-05-11 12:04  clauter
+
+	* infnorm.c: Started working on infnorm with excluded domains.
+
+2006-05-11 09:16  clauter
+
+	* infnorm.c: Improved infnorm by improving Newton. No more division
+	  by zero possible.
+
+2006-05-11 08:44  clauter
+
+	* infnorm.c: Improved application of Horner's rule in infnorm.
+
+2006-05-10 21:40  clauter
+
+	* expression.c: Improved still horner code.
+
+2006-05-10 14:54  schevill
+
+	* remez.c: Bug in Newton's algorithm fixed
+
+2006-05-10 14:02  clauter
+
+	* infnorm.c: Added additional safety warnings in infnorm
+	  (contourning NaN).
+
+2006-05-10 13:31  clauter
+
+	* infnorm.c: Corrected bug in Newton zero search.
+
+2006-05-10 13:00  clauter
+
+	* expression.c, infnorm.c: Improved infnorm on function with false
+	  poles which are representable in FP.
+
+2006-05-10 09:21  clauter
+
+	* expression.c, expression.h, infnorm.c, infnorm.h, lexer.lex,
+	  main.c, main.h, parser.y, taylor.c: Corrected bugs in expand.
+	  Improved infnorm, work in progress
+	  Improved Taylor
+
+2006-05-09 10:19  clauter
+
+	* expression.c: Corrected a bug still remaining in Horner scheme
+	  horner() function.
+
+2006-05-09 09:17  clauter
+
+	* parser.y: A small combat with the bison versions...
+
+2006-05-08 20:14  clauter
+
+	* expression.c: Corrected a slight bug in Horner scheme function
+	  horner()
+
+2006-05-08 19:53  clauter
+
+	* expression.c, lexer.lex, makefile, parser.y, taylor.c, taylor.h:
+	  Added Taylor support.
+
+2006-05-08 15:41  clauter
+
+	* assignment.c, assignment.h, chain.c, chain.h, infnorm.c,
+	  lexer.lex, main.c, main.h, makefile, parser.y: Added assignment
+	  support.
+
+2006-05-08 13:45  clauter
+
+	* expression.c, infnorm.c, lexer.lex, main.c, main.h, makefile,
+	  parser.y: Committing merged versions.
+
+2006-05-05 15:02  schevill
+
+	* remez.c: Remez without all the windows at each step of the
+	  algorithm
+
+2006-05-05 14:20  schevill
+
+	* main.c, remez.c: Clean catch of Remez when not oscillating.
+
+2006-05-05 14:17  clauter
+
+	* infnorm.c: Debug version of infnorm.
+
+2006-05-05 13:09  clauter
+
+	* expression.c: Corrected differentiate.
+
+2006-05-05 11:27  clauter
+
+	* expression.c: Corrected derivative of a polynomial.
+
+2006-05-04 16:13  schevill
+
+	* remez.c: Better management of the memory and less use of the
+	  differnetiate function which increases the speed of computation.
+	  There is now a warning if the precision is not sufficient and the
+	  remez function returns then its argument as a result
+
+2006-05-04 14:35  schevill
+
+	* remez.c: Without plotting all intermediate results of Remez
+
+2006-05-04 14:26  schevill
+
+	* remez.c: Nothing ?
+
+2006-05-04 14:11  clauter
+
+	* expression.c, parser.y: Corrected expand. Added special code for
+	  differentiating polynomials.
+	  Avoided useless warnings.
+
+2006-05-04 12:57  schevill
+
+	* parser.y: Memory leaks corrected
+
+2006-05-04 12:29  schevill
+
+	* remez.c: Debug messages removed and commentaries translated in
+	  english
+
+2006-05-04 12:00  schevill
+
+	* remez.c: Remez fully functional. There is still the dirty
+	  handling of the memory but it seems to not affect the efficiency
+	  of the algorithm. And yes, there is still the debug logs
+
+2006-05-04 11:50  clauter
+
+	* double.c, double.h, expression.c, expression.h, lexer.lex,
+	  parser.y: Added simplifysafe support.
+
+2006-05-04 10:33  clauter
+
+	* expression.c, infnorm.c, main.c, main.h, parser.y: Completed
+	  horner support.
+
+2006-05-03 18:08  schevill
+
+	* remez.c: Bug sur le exponent overflow corrigé. Ça déconne
+	  toujours pour de grands degrés. Il s'agit plus d'un protoype pour
+	  faire joujou que le fonction définitive
+
+2006-05-03 17:43  schevill
+
+	* remez.c: Remez fonctionnel. Je n'ai pas implémenté Newton, mais
+	  ça marche déjà vachement bien comme ça. Nombreuses optimisations
+	  mémoires sur les arbres possibles. Si on augmente trop le degré,
+	  on un une exponent overflow de PARI ; il s'agit d'un bug MINEUR.
+
+2006-05-03 15:51  schevill
+
+	* remez.c: Compilation sans warnings. Remez toujours pas
+	  fonctionnel mais il faut une étape de la boucle principale et
+	  devrait dores et déjà être exempt de fuite de mémoire.
+
+2006-05-03 13:43  schevill
+
+	* expression.c, main.c, main.h, parser.y, remez.c: Changement de la
+	  variable precision en la variable tools_precision pour cause de
+	  PARI fait chier. J'espère ne pas avoir trop gaffé dans le lexer
+	  et le parser. Remez toujours réduit à l'identité
+
+2006-05-03 09:27  schevill
+
+	* expression.c, expression.h, infnorm.c, makefile, parser.y,
+	  remez.c: Modification des noms LOG2, LOG10 et simplify. Ajout de
+	  la lib PARI dans le Makefile. Quelques fonctionnalités dans
+	  remez.c : ne pas utiliser pour l'instant.
+
+2006-05-03 09:16  clauter
+
+	* expression.c, expression.h, lexer.lex, parser.y: Added expand
+	  support and continued working on horner scheme rewriting.
+
+2006-05-02 15:22  clauter
+
+	* expression.c, expression.h, lexer.lex, parser.y: Started working
+	  on horner-rewrite support.
+
+2006-05-02 12:18  clauter
+
+	* double.c, double.h, expression.c, expression.h, infnorm.c,
+	  lexer.lex, makefile, parser.y: Added double, double-double and
+	  triple-double support.
+
+2006-05-02 08:47  clauter
+
+	* results.txt, scratch.txt: Removed files that had been added by
+	  error.
+
+2006-05-02 08:45  clauter
+
+	* chain.c, chain.h, expression.c, expression.h, infnorm.c,
+	  infnorm.h, lexer.lex, main.c, main.h, makefile, parser.y, plot.c,
+	  plot.h, remez.c, remez.h, results.txt, scratch.txt: Initial
+	  revision
+
+2006-05-02 08:45  
+
+	* .: New repository initialized by cvs2svn.
+

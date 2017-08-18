@@ -1,0 +1,33 @@
+\subsection{readxml}
+\label{labreadxml}
+\noindent Name: \textbf{readxml}\\
+reads an expression written as a MathML-Content-Tree in a file\\
+\noindent Usage: 
+\begin{center}
+\textbf{readxml}(\emph{filename}) : \textsf{string} $\rightarrow$ \textsf{function} $|$ \textsf{error}\\
+\end{center}
+Parameters: 
+\begin{itemize}
+\item \emph{filename} represents a character sequence indicating a file name
+\end{itemize}
+\noindent Description: \begin{itemize}
+
+\item \textbf{readxml}(\emph{filename}) reads the first occurrence of a lambda
+   application with one bounded variable on applications of the supported
+   basic functions in file \emph{filename} and returns it as a \sollya
+   functional expression.
+    
+   If the file \emph{filename} does not contain a valid MathML-Content tree,
+   \textbf{readxml} tries to find an "annotation encoding" markup of type
+   "sollya/text". If this annotation contains a character sequence
+   that can be parsed by \textbf{parse}, \textbf{readxml} returns that expression.  Otherwise
+   \textbf{readxml} displays a warning and returns an \textbf{error} variable of type
+   \textsf{error}.
+\end{itemize}
+\noindent Example 1: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> readxml("readxmlexample.xml");
+2 + x + exp(sin(x))
+\end{Verbatim}
+\end{minipage}\end{center}
+See also: \textbf{printxml} (\ref{labprintxml}), \textbf{readfile} (\ref{labreadfile}), \textbf{parse} (\ref{labparse}), \textbf{error} (\ref{laberror})

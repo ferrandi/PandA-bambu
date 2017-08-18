@@ -1,0 +1,60 @@
+\subsection{accurateinfnorm}
+\label{labaccurateinfnorm}
+\noindent Name: \textbf{accurateinfnorm}\\
+computes a faithful rounding of the infinity norm of a function \\
+\noindent Usage: 
+\begin{center}
+\textbf{accurateinfnorm}(\emph{function},\emph{range},\emph{constant}) : (\textsf{function}, \textsf{range}, \textsf{constant}) $\rightarrow$ \textsf{constant}\\
+\textbf{accurateinfnorm}(\emph{function},\emph{range},\emph{constant},\emph{exclusion range 1},...,\emph{exclusion range n}) : (\textsf{function}, \textsf{range}, \textsf{constant}, \textsf{range}, ..., \textsf{range}) $\rightarrow$ \textsf{constant}\\
+\end{center}
+Parameters: 
+\begin{itemize}
+\item \emph{function} represents the function whose infinity norm is to be computed
+\item \emph{range} represents the infinity norm is to be considered on
+\item \emph{constant} represents the number of bits in the significant of the result
+\item \emph{exclusion range 1} through \emph{exclusion range n} represent ranges to be excluded 
+\end{itemize}
+\noindent Description: \begin{itemize}
+
+\item The command \textbf{accurateinfnorm} computes an upper bound to the infinity norm of
+   function \emph{function} in \emph{range}. This upper bound is the least
+   floating-point number greater than the value of the infinity norm that
+   lies in the set of dyadic floating point numbers having \emph{constant}
+   significant mantissa bits. This means the value \textbf{accurateinfnorm} evaluates to
+   is at the time an upper bound and a faithful rounding to \emph{constant}
+   bits of the infinity norm of function \emph{function} on range \emph{range}.
+    
+   If given, the fourth and further arguments of the command \textbf{accurateinfnorm},
+   \emph{exclusion range 1} through \emph{exclusion range n} the infinity norm of
+   the function \emph{function} is not to be considered on.
+
+\item Users should be aware about the fact that the algorithm behind
+   \textbf{accurateinfnorm} is highly inefficient and that other, better suited
+   algorithms, such as \textbf{supnorm}, are available inside \sollya. As a
+   matter of fact, while \textbf{accurateinfnorm} is maintained for compatibility reasons
+   with legacy \sollya codes, users are advised to avoid using \textbf{accurateinfnorm}
+   in new \sollya scripts and to replace it, where possible, by the
+   \textbf{supnorm} command.
+\end{itemize}
+\noindent Example 1: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> p = remez(exp(x), 5, [-1;1]);
+> accurateinfnorm(p - exp(x), [-1;1], 20);
+4.52055246569216251373291015625e-5
+> accurateinfnorm(p - exp(x), [-1;1], 30);
+4.520552107578623690642416477203369140625e-5
+> accurateinfnorm(p - exp(x), [-1;1], 40);
+4.5205521043867324948450914234854280948638916015625e-5
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 2: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> p = remez(exp(x), 5, [-1;1]);
+> midpointmode = on!;
+> infnorm(p - exp(x), [-1;1]);
+0.45205~5/7~e-4
+> accurateinfnorm(p - exp(x), [-1;1], 40);
+4.5205521043867324948450914234854280948638916015625e-5
+\end{Verbatim}
+\end{minipage}\end{center}
+See also: \textbf{infnorm} (\ref{labinfnorm}), \textbf{dirtyinfnorm} (\ref{labdirtyinfnorm}), \textbf{supnorm} (\ref{labsupnorm}), \textbf{checkinfnorm} (\ref{labcheckinfnorm}), \textbf{remez} (\ref{labremez}), \textbf{diam} (\ref{labdiam})

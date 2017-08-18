@@ -1,0 +1,58 @@
+/*
+ *
+ *                   _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
+ *                  _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
+ *                 _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
+ *                _/      _/    _/ _/    _/ _/   _/ _/    _/
+ *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
+ *
+ *             ***********************************************
+ *                              PandA Project 
+ *                     URL: http://panda.dei.polimi.it
+ *                       Politecnico di Milano - DEIB
+ *                        System Architectures Group
+ *             ***********************************************
+ *              Copyright (c) 2004-2017 Politecnico di Milano
+ *
+ *   This file is part of the PandA framework.
+ *
+ *   The PandA framework is free software; you can redistribute it and/or modify
+ *   it under the terms of the GNU General Public License as published by
+ *   the Free Software Foundation; either version 3 of the License, or
+ *   (at your option) any later version.
+ *
+ *   This program is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU General Public License for more details.
+ *
+ *   You should have received a copy of the GNU General Public License
+ *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+*/
+/*!
+  \page src_HLS_controller_fsm Controller Synthesis
+
+\section finite_state_machine Finite State Machine definition
+
+The behavioral view of sequential circuits at the logic level can be expressed by
+finite-state machine transition diagrams. A finite-state machine can be described
+by:
+- A set of primary input patterns, \f$X\f$.
+- A set of primary output patterns, \f$Y\f$.
+- A set of states, \f$S\f$.
+- A state transition function, \f$\delta : X\times S\rightarrow S\f$.
+- An output function, \f$\lambda : X\times S\rightarrow Y\f$ for Mealy models or \f$\lambda : S \rightarrow Y\f$ for Moore models.
+- An initial state.
+
+The state transition table is a tabulation of the state transition and output functions. Its corresponding graph-based representation is the state transition diagram. The state transition diagram (see \ref src_HLS_controller_stg) is a labeled directed multi-graph \f$G_t(V,E)\f$, where the vertex set $V$ is in one-to-one correspondence with the state set \f$S\f$ and the directed edge set \f$E\f$ is in one-to-one correspondence with the transitions specified by \f$\delta\f$. In particular, there is an edge \f$(v_i,v_j)\f$ if there is an input pattern \f$x\in X\f$ such that \f$\delta(x,s_i)=s_j, \forall i,j = 1,2,\ldots ,\vert S\vert\f$. In the Mealy model, such an edge is labeled by \f$x/\lambda(x,s_i)\f$. In the Moore model, that edge is labeled by \f$x\f$ only; each vertex \f$v_i\in S\f$ is labeled by the corresponding output function \f$\lambda(s_i)\f$.
+
+
+\section controller_definition Controller problem definition
+
+The controller is defined as the part of the circuit that compute the evolution of the control flow, based on conditional inputs coming from the evaluation of the control constructs present in the initial specification. So the controller is created by the translation of the finite state machine graph in a structural representation of a finite state machine, where the states are the vertices of the graphs, the inputs are the control condition evaluations coming from datapath computations and the outputs are the enables to operations to be executed at each steps by the datapath. To help the construction of the decoding logic of the multiplexers, also informations about actual conditions have been provided as output directed to the datapath.
+
+
+
+
+*/

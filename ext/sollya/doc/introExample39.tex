@@ -1,0 +1,20 @@
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> evaluate(exp(x),[-infty;0]);
+[0;1]
+> dirtyinfnorm(exp(x),[-infty;0]);
+Warning: a bound of the interval is infinite or NaN.
+This command cannot handle such intervals.
+@NaN@
+> 
+> f = log(x);
+> [f(0); f(1)];
+Warning: the given expression is not a constant but an expression to evaluate
+and a faithful evaluation is not possible.
+Will use a plain floating-point evaluation, which might yield a completely wrong
+ value.
+Warning: inclusion property is satisfied but the diameter may be greater than th
+e least possible.
+[-@Inf@;0]
+> 
+\end{Verbatim}
+\end{minipage}\end{center}

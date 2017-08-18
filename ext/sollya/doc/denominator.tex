@@ -1,0 +1,56 @@
+\subsection{denominator}
+\label{labdenominator}
+\noindent Name: \textbf{denominator}\\
+gives the denominator of an expression\\
+\noindent Usage: 
+\begin{center}
+\textbf{denominator}(\emph{expr}) : \textsf{function} $\rightarrow$ \textsf{function}\\
+\end{center}
+Parameters: 
+\begin{itemize}
+\item \emph{expr} represents an expression
+\end{itemize}
+\noindent Description: \begin{itemize}
+
+\item If \emph{expr} represents a fraction \emph{expr1}/\emph{expr2}, \textbf{denominator}(\emph{expr})
+   returns the denominator of this fraction, i.e. \emph{expr2}.
+    
+   If \emph{expr} represents something else, \textbf{denominator}(\emph{expr}) 
+   returns 1.
+    
+   Note that for all expressions \emph{expr}, \textbf{numerator}(\emph{expr}) \textbf{/} \textbf{denominator}(\emph{expr})
+   is equal to \emph{expr}.
+\end{itemize}
+\noindent Example 1: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> denominator(5/3);
+3
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 2: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> denominator(exp(x));
+1
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 3: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> a = 5/3;
+> b = numerator(a)/denominator(a);
+> print(a);
+5 / 3
+> print(b);
+5 / 3
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 4: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> a = exp(x/3);
+> b = numerator(a)/denominator(a);
+> print(a);
+exp(x / 3)
+> print(b);
+exp(x / 3)
+\end{Verbatim}
+\end{minipage}\end{center}
+See also: \textbf{numerator} (\ref{labnumerator}), \textbf{rationalmode} (\ref{labrationalmode})

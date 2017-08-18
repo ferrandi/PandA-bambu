@@ -1,0 +1,47 @@
+\subsection{findzeros}
+\label{labfindzeros}
+\noindent Name: \textbf{findzeros}\\
+gives a list of intervals containing all zeros of a function on an interval.\\
+\noindent Usage: 
+\begin{center}
+\textbf{findzeros}(\emph{f},\emph{I}) : (\textsf{function}, \textsf{range}) $\rightarrow$ \textsf{list}\\
+\end{center}
+Parameters: 
+\begin{itemize}
+\item \emph{f} is a function.
+\item \emph{I} is an interval.
+\end{itemize}
+\noindent Description: \begin{itemize}
+
+\item \textbf{findzeros}(\emph{f},\emph{I}) returns a list of intervals $I_1, \dots, I_n$ such that, for 
+   every zero $z$ of $f$, there exists some $k$ such that $z \in I_k$.
+
+\item The list may contain intervals $I_k$ that do not contain any zero of \emph{f}.
+   An interval \emph{Ik} may contain many zeros of \emph{f}.
+
+\item This command is meant for cases when safety is critical. If you want to be sure
+   not to forget any zero, use \textbf{findzeros}. However, if you just want to know 
+   numerical values for the zeros of \emph{f}, \textbf{dirtyfindzeros} should be quite 
+   satisfactory and a lot faster.
+
+\item If $\delta$ denotes the value of global variable \textbf{diam}, the algorithm ensures
+   that for each $k$, $|I_k| \le \delta \cdot |I|$.
+
+\item The algorithm used is basically a bisection algorithm. It is the same algorithm
+   that the one used for \textbf{infnorm}. See the help page of this command for more 
+   details. In short, the behavior of the algorithm depends on global variables
+   \textbf{prec}, \textbf{diam}, \textbf{taylorrecursions} and \textbf{hopitalrecursions}.
+\end{itemize}
+\noindent Example 1: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> findzeros(sin(x),[-5;5]);
+[|[-3.14208984375;-3.140869140625], [-1.220703125e-3;1.220703125e-3], [3.1408691
+40625;3.14208984375]|]
+> diam=1e-10!;
+> findzeros(sin(x),[-5;5]);
+[|[-3.14159265370108187198638916015625;-3.141592652536928653717041015625], [-1.1
+6415321826934814453125e-9;1.16415321826934814453125e-9], [3.14159265253692865371
+7041015625;3.14159265370108187198638916015625]|]
+\end{Verbatim}
+\end{minipage}\end{center}
+See also: \textbf{dirtyfindzeros} (\ref{labdirtyfindzeros}), \textbf{infnorm} (\ref{labinfnorm}), \textbf{prec} (\ref{labprec}), \textbf{diam} (\ref{labdiam}), \textbf{taylorrecursions} (\ref{labtaylorrecursions}), \textbf{hopitalrecursions} (\ref{labhopitalrecursions}), \textbf{numberroots} (\ref{labnumberroots})

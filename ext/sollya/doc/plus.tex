@@ -1,0 +1,68 @@
+\subsection{$+$}
+\label{labplus}
+\noindent Name: \textbf{$+$}\\
+addition function\\
+\noindent Usage: 
+\begin{center}
+\emph{function1} \textbf{$+$} \emph{function2} : (\textsf{function}, \textsf{function}) $\rightarrow$ \textsf{function}\\
+\emph{interval1} \textbf{$+$} \emph{interval2} : (\textsf{range}, \textsf{range}) $\rightarrow$ \textsf{range}\\
+\emph{interval1} \textbf{$+$} \emph{constant} : (\textsf{range}, \textsf{constant}) $\rightarrow$ \textsf{range}\\
+\emph{interval1} \textbf{$+$} \emph{constant} : (\textsf{constant}, \textsf{range}) $\rightarrow$ \textsf{range}\\
+\end{center}
+Parameters: 
+\begin{itemize}
+\item \emph{function1} and \emph{function2} represent functions
+\item \emph{interval1} and \emph{interval2} represent intervals (ranges)
+\item \emph{constant} represents a constant or constant expression
+\end{itemize}
+\noindent Description: \begin{itemize}
+
+\item \textbf{$+$} represents the addition (function) on reals. 
+   The expression \emph{function1} \textbf{$+$} \emph{function2} stands for
+   the function composed of the addition function and the two
+   functions \emph{function1} and \emph{function2}.
+
+\item \textbf{$+$} can be used for interval arithmetic on intervals
+   (ranges). \textbf{$+$} will evaluate to an interval that safely
+   encompasses all images of the addition function with arguments varying
+   in the given intervals.  Any combination of intervals with intervals
+   or constants (resp. constant expressions) is supported. However, it is
+   not possible to represent families of functions using an interval as
+   one argument and a function (varying in the free variable) as the
+   other one.
+\end{itemize}
+\noindent Example 1: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> 1 + 2;
+3
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 2: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> x + 2;
+2 + x
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 3: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> x + x;
+x * 2
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 4: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> diff(sin(x) + exp(x));
+cos(x) + exp(x)
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 5: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> [1;2] + [3;4];
+[4;6]
+> [1;2] + 17;
+[18;19]
+> 13 + [-4;17];
+[9;30]
+\end{Verbatim}
+\end{minipage}\end{center}
+See also: \textbf{$-$} (\ref{labminus}), \textbf{$*$} (\ref{labmult}), \textbf{/} (\ref{labdivide}), \textbf{$\mathbf{\hat{~}}$} (\ref{labpower})

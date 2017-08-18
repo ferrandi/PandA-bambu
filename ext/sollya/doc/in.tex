@@ -1,0 +1,58 @@
+\subsection{in}
+\label{labin}
+\noindent Name: \textbf{in}\\
+containment test operator\\
+\noindent Usage: 
+\begin{center}
+\emph{expr} \textbf{in} \emph{range1} : (\textsf{constant}, \textsf{range}) $\rightarrow$ \textsf{boolean}\\
+\emph{range1} \textbf{in} \emph{range2} : (\textsf{range}, \textsf{range}) $\rightarrow$ \textsf{boolean}\\
+\end{center}
+Parameters: 
+\begin{itemize}
+\item \emph{expr} represents a constant expression
+\item \emph{range1} and \emph{range2} represent ranges (intervals)
+\end{itemize}
+\noindent Description: \begin{itemize}
+
+\item When its first operand is a constant expression \emph{expr},
+   the operator \textbf{in} evaluates to true iff the constant value
+   of the expression \emph{expr} is contained in the interval \emph{range1}.
+
+\item When both its operands are ranges (intervals), 
+   the operator \textbf{in} evaluates to true iff all values
+   in \emph{range1} are contained in the interval \emph{range2}.
+
+\item \textbf{in} is also used as a keyword for loops over the different
+   elements of a list.
+\end{itemize}
+\noindent Example 1: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> 5 in [-4;7];
+true
+> 4 in [-1;1];
+false
+> 0 in sin([-17;17]);
+true
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 2: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> [5;7] in [2;8];
+true
+> [2;3] in [4;5];
+false
+> [2;3] in [2.5;5];
+false
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 3: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> for i in [|1,...,5|] do print(i);
+1
+2
+3
+4
+5
+\end{Verbatim}
+\end{minipage}\end{center}
+See also: \textbf{$==$} (\ref{labequal}), \textbf{!$=$} (\ref{labneq}), \textbf{$>=$} (\ref{labge}), \textbf{$>$} (\ref{labgt}), \textbf{$<=$} (\ref{lable}), \textbf{$<$} (\ref{lablt}), \textbf{!} (\ref{labnot}), \textbf{$\&\&$} (\ref{laband}), \textbf{$||$} (\ref{labor}), \textbf{prec} (\ref{labprec}), \textbf{print} (\ref{labprint})

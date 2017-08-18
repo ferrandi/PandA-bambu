@@ -1,0 +1,29 @@
+\subsection{double}
+\label{labdouble}
+\noindent Names: \textbf{double}, \textbf{D}\\
+rounding to the nearest IEEE 754 double (binary64).\\
+\noindent Description: \begin{itemize}
+
+\item \textbf{double} is both a function and a constant.
+
+\item As a function, it rounds its argument to the nearest IEEE 754 double precision (i.e. IEEE754-2008 binary64) number.
+   Subnormal numbers are supported as well as standard numbers: it is the real
+   rounding described in the standard.
+
+\item As a constant, it symbolizes the double precision format. It is used in 
+   contexts when a precision format is necessary, e.g. in the commands 
+   \textbf{round}, \textbf{roundcoefficients} and \textbf{implementpoly}.
+   See the corresponding help pages for examples.
+\end{itemize}
+\noindent Example 1: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> display=binary!;
+> D(0.1);
+1.100110011001100110011001100110011001100110011001101_2 * 2^(-4)
+> D(4.17);
+1.000010101110000101000111101011100001010001111010111_2 * 2^(2)
+> D(1.011_2 * 2^(-1073));
+1.1_2 * 2^(-1073)
+\end{Verbatim}
+\end{minipage}\end{center}
+See also: \textbf{halfprecision} (\ref{labhalfprecision}), \textbf{single} (\ref{labsingle}), \textbf{doubleextended} (\ref{labdoubleextended}), \textbf{doubledouble} (\ref{labdoubledouble}), \textbf{quad} (\ref{labquad}), \textbf{tripledouble} (\ref{labtripledouble}), \textbf{roundcoefficients} (\ref{labroundcoefficients}), \textbf{implementpoly} (\ref{labimplementpoly}), \textbf{round} (\ref{labround}), \textbf{printdouble} (\ref{labprintdouble})

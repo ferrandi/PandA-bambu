@@ -1,0 +1,85 @@
+\subsection{numberroots}
+\label{labnumberroots}
+\noindent Name: \textbf{numberroots}\\
+Computes the number of roots of a polynomial in a given range.\\
+\noindent Usage: 
+\begin{center}
+\textbf{numberroots}(\emph{p}, \emph{I}) : (\textsf{function}, \textsf{range}) $\rightarrow$ \textsf{integer}\\
+\end{center}
+Parameters: 
+\begin{itemize}
+\item \emph{p} is a polynomial.
+\item \emph{I} is an interval.
+\end{itemize}
+\noindent Description: \begin{itemize}
+
+\item \textbf{numberroots} rigorously computes the number of roots of polynomial the $p$ in
+   the interval $I$. The technique used is Sturm's algorithm. The value returned
+   is not just a numerical estimation of the number of roots of $p$ in $I$: it is
+   the exact number of roots.
+
+\item The command \textbf{findzeros} computes safe enclosures of all the zeros of a
+   function, without forgetting any, but it is not guaranteed to separate them
+   all in distinct intervals. \textbf{numberroots} is more accurate since it guarantees 
+   the exact number of roots. However, it does not compute them. It may be used,
+   for instance, to certify that \textbf{findzeros} did not put two distinct roots in 
+   the same interval.
+
+\item Multiple roots are counted only once.
+
+\item The interval $I$ must be bounded. The algorithm cannot handle unbounded
+   intervals. Moreover, the interval is considered as a closed interval: if one
+   (or both) of the endpoints of $I$ are roots of $p$, they are counted.
+
+\item The argument $p$ can be any expression, but if \sollya fails to prove that
+   it is a polynomial an error is produced. Also, please note that if the
+   coefficients of $p$ or the endpoints of $I$ are not exactly representable,
+   they are first numerically evaluated, before the algorithm is used. In that
+   case, the counted number of roots corresponds to the rounded polynomial on
+   the rounded interval \textbf{and not} to the exact parameters given by the user.
+   A warning is displayed to inform the user.
+\end{itemize}
+\noindent Example 1: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> numberroots(1+x-x^2, [1,2]);
+1
+> findzeros(1+x-x^2, [1,2]);
+[|[1.617919921875;1.6180419921875]|]
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 2: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> numberroots((1+x)*(1-x), [-1,1]);
+2
+> numberroots(x^2, [-1,1]);
+1
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 3: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> verbosity = 1!;
+> numberroots(x-pi, [0,4]);
+Warning: the 0th coefficient of the polynomial is neither a floating point
+constant nor can be evaluated without rounding to a floating point constant.
+Will faithfully evaluate it with the current precision (165 bits) 
+1
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 4: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> verbosity = 1!;
+> numberroots(1+x-x^2, [0, @Inf@]);
+Warning: the given interval must have finite bounds.
+Warning: at least one of the given expressions or a subexpression is not correct
+ly typed
+or its evaluation has failed because of some error on a side-effect.
+error
+> numberroots(exp(x), [0, 1]);
+Warning: the given function must be a polynomial in this context.
+Warning: at least one of the given expressions or a subexpression is not correct
+ly typed
+or its evaluation has failed because of some error on a side-effect.
+error
+\end{Verbatim}
+\end{minipage}\end{center}
+See also: \textbf{dirtyfindzeros} (\ref{labdirtyfindzeros}), \textbf{findzeros} (\ref{labfindzeros})

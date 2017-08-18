@@ -1,0 +1,44 @@
+\subsection{dirtyintegral}
+\label{labdirtyintegral}
+\noindent Name: \textbf{dirtyintegral}\\
+computes a numerical approximation of the integral of a function on an interval.\\
+\noindent Usage: 
+\begin{center}
+\textbf{dirtyintegral}(\emph{f},\emph{I}) : (\textsf{function}, \textsf{range}) $\rightarrow$ \textsf{constant}\\
+\end{center}
+Parameters: 
+\begin{itemize}
+\item \emph{f} is a function.
+\item \emph{I} is an interval.
+\end{itemize}
+\noindent Description: \begin{itemize}
+
+\item \textbf{dirtyintegral}(\emph{f},\emph{I}) computes an approximation of the integral of \emph{f} on \emph{I}.
+
+\item The interval must be bound. If the interval contains one of -Inf or +Inf, the 
+   result of \textbf{dirtyintegral} is NaN, even if the integral has a meaning.
+
+\item The result of this command depends on the global variables \textbf{prec} and \textbf{points}.
+   The method used is the trapezium rule applied at $n$ evenly distributed
+   points in the interval, where $n$ is the value of global variable \textbf{points}.
+
+\item This command computes a numerical approximation of the exact value of the 
+   integral. It should not be used if safety is critical. In this case, use
+   command \textbf{integral} instead.
+
+\item Warning: this command is currently known to be unsatisfactory. If you really
+   need to compute integrals, think of using an other tool or report a feature
+   request to sylvain.chevillard@ens-lyon.org.
+\end{itemize}
+\noindent Example 1: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> sin(10);
+-0.54402111088936981340474766185137728168364301291621
+> dirtyintegral(cos(x),[0;10]);
+-0.54400304905152629822448058882475382036536298356281
+> points=2000!;
+> dirtyintegral(cos(x),[0;10]);
+-0.54401997751158321972222697312583199035995837926892
+\end{Verbatim}
+\end{minipage}\end{center}
+See also: \textbf{prec} (\ref{labprec}), \textbf{points} (\ref{labpoints}), \textbf{integral} (\ref{labintegral})

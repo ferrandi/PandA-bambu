@@ -1,0 +1,200 @@
+
+Changes from version 2.9 to 3.0:
+================================
+Major new functionnalities:
+  * Added expression matching support to the Sollya language. It is
+    now possible to perform pattern matching on the objects of the
+    Sollya language (expressions, lists, intervals, etc.). This is
+    documented in a new section called "Pattern matching" in the
+    User's Manual.
+  * Added bashevaluate command.
+  * Added operators halfprecision (or equivalently HP) and quad (or
+    equivalently QD).
+
+Minor new functionnalities:
+  * The Sollya executable now returns a meaningful error code:
+      0 - the tool has been quit with a "quit;"
+      1 - the tool has died because of an internal error that should
+          never happen
+      2 - the tool has died because it was in "dieonerrormode = on"
+          and an error has occurred
+      3 - the tool has been quit without a "quit;" but the last
+          command was syntactically correct and got correctly executed
+      4 - the tool has been quit on an incomplete input
+  * Added a fitfth optional argument to guessdegree that is used as a
+    maximal allowed degree.
+  * Changed behavior of doubleextended (resp. DE) with respect to
+    subnormal rounding. Now, doubleextended correctly performs
+    subnormal rounding for an exponent width of 15 bits.
+    (see documentation on doubleextended for details).
+
+Improvements in internal handling:
+  * A new technique gives sharper remainder bounds when taylorform
+    is used in relative mode.
+
+Others:
+  * Sollya was not compatible with FPLLL 3.0 or later. This is now
+    fixed.
+  * Two important bugs fixed in taylorform. Results obtained with an older
+    version of taylorform often were incorrect.
+
+And some bugs fixed.
+
+----------------------------------------------------------------------
+
+Changes from version 2.0 to 2.9:
+================================
+Changes of syntax and output:
+  * The addition of the min and max commands (see below) reserves the
+    identifiers min and max as Sollya keywords, impacting legacy
+    scripts which might have used these identifiers as variable names
+
+Major new functionnalities:
+  * Added supnorm command
+  * Added libraryconstant command
+  * Added implementconstant command
+  * Added function command for turning procedures into functions
+  * Added support for user-defined structures into the Sollya language
+  * Added min and max commands
+
+Minor new functionnalities:
+  * Added --warnonstderr, --warninfile and --warninfileappend options
+    to Sollya
+  * Added MPFR, GMP and MPFI version printing to version and --help
+
+Improvements in internal handling:
+
+  * Equality and inequality tests optimized when simple interval
+    evaluation allows the result to be immediately decided upon.
+  * Added a wrapper around MPFI for interval arithmetic computations
+    within Sollya. As a consequence, the behaviors of Sollya and MPFI
+    on some operations may now be different. See the new Appendix in
+    the user's manual.
+  * For the users of libsollya: new sollya_mpfi_t type must now be
+    used instead of mpfi_t. Currently, they are exactly the same type,
+    but they might differ in future versions.
+  * The performance of Sollya's internal algorithms used for shifting
+    a polynomial have been greatly improved. There is still headroom,
+    though.
+
+Others:
+  * Multiplications, divisions or powers involving infinities, zeros,
+    or NaNs now produce different results, compared to older versions
+    of Sollya. This is documented in the new Appendix of the user's
+    manual.
+
+And some bugs fixed.
+
+----------------------------------------------------------------------
+
+Changes from version 1.1 to version 2.0:
+========================================
+Changes of syntax and output:
+
+  * When the evaluation of an expression seems to be zero but cannot
+    be proven to be exactly zero, the value zero is now returned
+    (instead of a very small value as before)
+  * Added %precision%constant parsing capability for numerical point
+    constants
+  * printhexa, printfloat are now deprecated. They should be replaced
+    by printdouble and printsingle
+  * Syntax like prec = ? is still supported but deprecated. It should
+    be replaced by prec (or any other global variable).
+  * The syntax *< interval >*, *< interval >_, *<interval>. is
+    deprecated. It should be replaced by sup(), inf() and mid()
+  * The read keyword is deprecated. It should be replaced by #include
+    or even execute()
+  * The begin and end keywords are deprecated. They should be replaced
+    by { and }
+  * Polymorphic prepend :: is now deprecated. It should be replaced by
+    .: and :.
+
+Major new functionnalities:
+  * Added nearestint function
+  * Added single precision rounding function
+  * Added taylorform command
+  * Added autodiff command
+  * Added numberroots command
+  * Added support for procedures with an arbitrary number of arguments
+  * Added time command
+  * Made Sollya accept an input file as a command line argument (in
+    particular, it makes shebangs possible)
+  * Updated parse command with all new functionnalities
+  * Added rationalmode mode
+  * Added support for interval arithmetic
+  * Added "in" operator for testing if a value belongs to an interval
+  * Equality and inequality tests now automatically adapt the
+    precision for guaranteeing safe results whenever possible (or
+    display a warning)
+
+Minor new functionnalities:
+  * Added dieonerror mode
+  * Added --flush option to Sollya
+  * Added support for integer arguments in nop
+  * Extended syntax of roundcoefficients command
+  * Extended syntax of round command
+
+Improvements in internal handling:
+
+  * Added smart sign test used for proving that some constant
+    expressions are constant zero
+  * Made exact simplifier simplify things like D(sin(3)),
+    ceil(log(pi)), etc. where possible with a little more than the
+    working precision
+  * Improvement of fpminimax (some infinite loops are now avoided)
+  * Infinities and NaN behavior is now IEEE 754-like
+  * Rewrote dirtyinfnorm command and remez command for better
+    performance
+  * Randomized sampling in plot in order to avoid regular patterns
+
+Others:
+  * Enable linkage of sollya.h with C++
+  * Added -Xlinker --allow-multiple-definition for CygWin users
+  * Added --help option
+  * Slight changes in the behavior of autoprint. Introduced new option
+    --oldautoprint for recovering the old behavior
+  * The option --oldrlwrapcompatible is now deprecated. Users should
+    use a recent version of rlwrap supporting "-A" option.
+
+And many bugs fixed.
+
+----------------------------------------------------------------------
+
+Changes from version 1.0 to version 1.1:
+========================================
+Critical bug fixes:
+  * Patched expansion of polynomial terms. Signs and coefficient
+    values could be completely wrong All results previously obtained
+    using Sollya should be re-checked
+
+Changes of syntax and output:
+  * Unary + and - are now correctly parsed
+  * Changes in midpointmode. In particular, midpoint values are now
+    parsed back as ranges.
+  * Changed implicit parenthesation order for power operator ^: 2^3^4
+    is now understood as 2^(3^4)
+  * Integers and binary representations are now read without rounding
+    (see documentation for details)
+  * Added infty, @Inf@, nan, NaN, NAN, @NaN@ lexing/parsing capability
+
+Major new functionnalities:
+  * Remez' algorithm is now able to correctly handle cases where the
+    Haar condition is not fulfilled
+  * Added fpminimax command (see documentation for details)
+  * Added ~ operator for evaluating constant expressions
+  * Added roundingwarnings mode (see documentation for details)
+
+Improvements in internal handling:
+  * Speeded up dirtyfindzeros when 0 is a zero of the function
+  * Improvement in execution speed of guessdegree
+
+Others:
+  * Fixes of many slight bugs and memory leaks
+  * Made Sollya compile under Cygwin (Sollya library untested)
+  * Removed dependance to PARI/GP
+  * New dependency to Damien Stehle's fplll library
+  * Added --help, --oldrlwrapcompatible, --nocolor and --noprompt
+    command-line options
+  * Added check environment
+  * Added color printing
+

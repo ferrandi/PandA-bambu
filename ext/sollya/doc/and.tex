@@ -1,0 +1,31 @@
+\subsection{$\&\&$}
+\label{laband}
+\noindent Name: \textbf{$\&\&$}\\
+boolean AND operator\\
+\noindent Usage: 
+\begin{center}
+\emph{expr1} \textbf{$\&\&$} \emph{expr2} : (\textsf{boolean}, \textsf{boolean}) $\rightarrow$ \textsf{boolean}\\
+\end{center}
+Parameters: 
+\begin{itemize}
+\item \emph{expr1} and \emph{expr2} represent boolean expressions
+\end{itemize}
+\noindent Description: \begin{itemize}
+
+\item \textbf{$\&\&$} evaluates to the boolean AND of the two
+   boolean expressions \emph{expr1} and \emph{expr2}. \textbf{$\&\&$} evaluates to 
+   true iff both \emph{expr1} and \emph{expr2} evaluate to true.
+\end{itemize}
+\noindent Example 1: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> true && false;
+false
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 2: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> (1 == exp(0)) && (0 == log(1));
+true
+\end{Verbatim}
+\end{minipage}\end{center}
+See also: \textbf{$||$} (\ref{labor}), \textbf{!} (\ref{labnot})

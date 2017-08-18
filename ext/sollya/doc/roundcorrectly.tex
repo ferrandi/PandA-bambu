@@ -1,0 +1,38 @@
+\subsection{roundcorrectly}
+\label{labroundcorrectly}
+\noindent Name: \textbf{roundcorrectly}\\
+rounds an approximation range correctly to some precision\\
+\noindent Usage: 
+\begin{center}
+\textbf{roundcorrectly}(\emph{range}) : \textsf{range} $\rightarrow$ \textsf{constant}\\
+\end{center}
+Parameters: 
+\begin{itemize}
+\item \emph{range} represents a range in which an exact value lies
+\end{itemize}
+\noindent Description: \begin{itemize}
+
+\item Let \emph{range} be a range of values, determined by some approximation
+   process, safely bounding an unknown value $v$. The command
+   \textbf{roundcorrectly}(\emph{range}) determines a precision such that for this precision,
+   rounding to the nearest any value in \emph{range} yields to the same
+   result, i.e. to the correct rounding of $v$.
+    
+   If no such precision exists, a warning is displayed and \textbf{roundcorrectly}
+   evaluates to NaN.
+\end{itemize}
+\noindent Example 1: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> printbinary(roundcorrectly([1.010001_2; 1.0101_2]));
+1.01_2
+> printbinary(roundcorrectly([1.00001_2; 1.001_2]));
+1_2
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 2: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> roundcorrectly([-1; 1]);
+@NaN@
+\end{Verbatim}
+\end{minipage}\end{center}
+See also: \textbf{round} (\ref{labround}), \textbf{mantissa} (\ref{labmantissa}), \textbf{exponent} (\ref{labexponent}), \textbf{precision} (\ref{labprecision})

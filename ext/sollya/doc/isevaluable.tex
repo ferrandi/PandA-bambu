@@ -1,0 +1,46 @@
+\subsection{isevaluable}
+\label{labisevaluable}
+\noindent Name: \textbf{isevaluable}\\
+tests whether a function can be evaluated at a point \\
+\noindent Usage: 
+\begin{center}
+\textbf{isevaluable}(\emph{function}, \emph{constant}) : (\textsf{function}, \textsf{constant}) $\rightarrow$ \textsf{boolean}\\
+\end{center}
+Parameters: 
+\begin{itemize}
+\item \emph{function} represents a function
+\item \emph{constant} represents a constant point
+\end{itemize}
+\noindent Description: \begin{itemize}
+
+\item \textbf{isevaluable} applied to function \emph{function} and a constant \emph{constant} returns
+   a boolean indicating whether or not a subsequent call to \textbf{evaluate} on the
+   same function \emph{function} and constant \emph{constant} will produce a numerical
+   result or NaN. This means \textbf{isevaluable} returns false iff \textbf{evaluate} will return NaN.
+\end{itemize}
+\noindent Example 1: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> isevaluable(sin(pi * 1/x), 0.75);
+true
+> print(evaluate(sin(pi * 1/x), 0.75));
+-0.86602540378443864676372317075293618347140262690518
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 2: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> isevaluable(sin(pi * 1/x), 0.5);
+true
+> print(evaluate(sin(pi * 1/x), 0.5));
+[-1.72986452514381269516508615031098129542836767991679e-12715;7.5941198201187963
+145069564314525661706039084390067e-12716]
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 3: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> isevaluable(sin(pi * 1/x), 0);
+false
+> print(evaluate(sin(pi * 1/x), 0));
+[@NaN@;@NaN@]
+\end{Verbatim}
+\end{minipage}\end{center}
+See also: \textbf{evaluate} (\ref{labevaluate})

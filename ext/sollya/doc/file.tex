@@ -1,0 +1,19 @@
+\subsection{file}
+\label{labfile}
+\noindent Name: \textbf{file}\\
+special value for commands \textbf{plot} and \textbf{externalplot}\\
+\noindent Description: \begin{itemize}
+
+\item \textbf{file} is a special value used in commands \textbf{plot} and \textbf{externalplot} to save
+   the result of the command in a data file.
+
+\item As any value it can be affected to a variable and stored in lists.
+\end{itemize}
+\noindent Example 1: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> savemode=file;
+> name="plotSinCos";
+> plot(sin(x),0,cos(x),[-Pi,Pi],savemode, name);
+\end{Verbatim}
+\end{minipage}\end{center}
+See also: \textbf{externalplot} (\ref{labexternalplot}), \textbf{plot} (\ref{labplot}), \textbf{postscript} (\ref{labpostscript}), \textbf{postscriptfile} (\ref{labpostscriptfile})

@@ -1,0 +1,41 @@
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> a = 5;
+> b = 6;
+> match exp(x + 3) with 
+        exp(a + b) : {
+                        print("Exponential");
+                        print("a = ", a);
+                        print("b = ", b);
+                     }
+        sin(x)     : {
+                        print("Sine of x");
+                     };
+Exponential
+a =  x
+b =  3
+> print("a = ", a, ", b = ", b);
+a =  5 , b =  6
+> 
+> a = 5;
+> b = 6;
+> match exp(x + 3) with 
+        exp(a + b) : {
+                        var a, c;
+                        a = 17;
+                        c = "Hallo";
+                        print("Exponential");
+                        print("a = ", a);
+                        print("b = ", b);
+                        print("c = ", c);
+                     }
+        sin(x)     : {
+                        print("Sine of x");
+                     };
+Exponential
+a =  17
+b =  3
+c =  Hallo
+> print("a = ", a, ", b = ", b);
+a =  5 , b =  6
+\end{Verbatim}
+\end{minipage}\end{center}

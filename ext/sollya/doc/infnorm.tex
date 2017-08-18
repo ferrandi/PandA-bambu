@@ -1,0 +1,123 @@
+\subsection{infnorm}
+\label{labinfnorm}
+\noindent Name: \textbf{infnorm}\\
+computes an interval bounding the infinity norm of a function on an interval.\\
+\noindent Usage: 
+\begin{center}
+\textbf{infnorm}(\emph{f},\emph{I},\emph{filename},\emph{Ilist}) : (\textsf{function}, \textsf{range}, \textsf{string}, \textsf{list}) $\rightarrow$ \textsf{range}\\
+\end{center}
+Parameters: 
+\begin{itemize}
+\item \emph{f} is a function.
+\item \emph{I} is an interval.
+\item \emph{filename} (optional) is the name of the file into a proof will be saved.
+\item \emph{IList} (optional) is a list of intervals to be excluded.
+\end{itemize}
+\noindent Description: \begin{itemize}
+
+\item \textbf{infnorm}(\emph{f},\emph{range}) computes an interval bounding the infinity norm of the 
+   given function $f$ on the interval $I$, e.g. computes an interval $J$
+   such that $\max_{x \in I} \{|f(x)|\} \subseteq J$.
+
+\item If \emph{filename} is given, a proof in English will be produced (and stored in file
+   called \emph{filename}) proving that  $\max_{x \in I} \{|f(x)|\} \subseteq J$.
+
+\item If a list \emph{IList} of intervals $I_1, \dots, I_n$ is given, the infinity norm will
+   be computed on $I \backslash (I_1 \cup \dots \cup I_n)$.
+
+\item The function \emph{f} is assumed to be at least twice continuous on \emph{I}. More 
+   generally, if \emph{f} is $\mathcal{C}^k$, global variables \textbf{hopitalrecursions} and
+   \textbf{taylorrecursions} must have values not greater than $k$.  
+
+\item If the interval is reduced to a single point, the result of \textbf{infnorm} is an 
+   interval containing the exact absolute value of \emph{f} at this point.
+
+\item If the interval is not bound, the result will be $[0,\,+\infty]$ 
+   which is correct but perfectly useless. \textbf{infnorm} is not meant to be used with 
+   infinite intervals.
+
+\item The result of this command depends on the global variables \textbf{prec}, \textbf{diam},
+   \textbf{taylorrecursions} and \textbf{hopitalrecursions}. The contribution of each variable is 
+   not easy even to analyse.
+   \begin{itemize}
+   \item The algorithm uses interval arithmetic with precision \textbf{prec}. The
+     precision should thus be set high enough to ensure that no critical
+     cancellation will occur.
+   \item When an evaluation is performed on an interval $[a,\,b]$, if the result
+     is considered being too large, the interval is split into $[a,\,\frac{a+b}{2}]$
+     and $[\frac{a+b}{2},\,b]$ and so on recursively. This recursion step
+     is  not performed if the $(b-a) < \delta \cdot |I|$ where $\delta$ is the value
+     of variable \textbf{diam}. In other words, \textbf{diam} controls the minimum length of an
+     interval during the algorithm.
+   \item To perform the evaluation of a function on an interval, Taylor's rule is
+     applied, e.g. $f([a,b]) \subseteq f(m) + [a-m,\,b-m] \cdot f'([a,\,b])$
+     where $m=\frac{a+b}{2}$. This rule is recursively applied $n$ times
+     where $n$ is the value of variable \textbf{taylorrecursions}. Roughly speaking,
+     the evaluations will avoid decorrelation up to order $n$.
+   \item When a function of the form $\frac{g}{h}$ has to be evaluated on an
+     interval $[a,\,b]$ and when $g$ and $h$ vanish at a same point
+     $z$ of the interval, the ratio may be defined even if the expression
+     $\frac{g(z)}{h(z)}=\frac{0}{0}$ does not make any sense. In this case, L'Hopital's rule
+     may be used and $\left(\frac{g}{h}\right)([a,\,b]) \subseteq \left(\frac{g'}{h'}\right)([a,\,b])$.
+     Since the same can occur with the ratio $\frac{g'}{h'}$, the rule is applied
+     recursively. The variable \textbf{hopitalrecursions} controls the number of 
+     recursion steps.
+   \end{itemize}
+
+\item The algorithm used for this command is quite complex to be explained here. 
+   Please find a complete description in the following article:\\
+        S. Chevillard and C. Lauter\\
+        A certified infinity norm for the implementation of elementary functions\\
+        LIP Research Report number RR2007-26\\
+        http://prunel.ccsd.cnrs.fr/ensl-00119810\\
+
+\item Users should be aware about the fact that the algorithm behind
+   \textbf{infnorm} is inefficient in most cases and that other, better suited
+   algorithms, such as \textbf{supnorm}, are available inside \sollya. As a
+   matter of fact, while \textbf{infnorm} is maintained for compatibility reasons
+   with legacy \sollya codes, users are advised to avoid using \textbf{infnorm}
+   in new \sollya scripts and to replace it, where possible, by the
+   \textbf{supnorm} command.
+\end{itemize}
+\noindent Example 1: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> infnorm(exp(x),[-2;3]);
+[2.00855369231876677409285296545817178969879078385537e1;2.0085536923187667740928
+5296545817178969879078385544e1]
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 2: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> infnorm(exp(x),[-2;3],"proof.txt");
+[2.00855369231876677409285296545817178969879078385537e1;2.0085536923187667740928
+5296545817178969879078385544e1]
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 3: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> infnorm(exp(x),[-2;3],[| [0;1], [2;2.5] |]);
+[2.00855369231876677409285296545817178969879078385537e1;2.0085536923187667740928
+5296545817178969879078385544e1]
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 4: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> infnorm(exp(x),[-2;3],"proof.txt", [| [0;1], [2;2.5] |]);
+[2.00855369231876677409285296545817178969879078385537e1;2.0085536923187667740928
+5296545817178969879078385544e1]
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 5: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> infnorm(exp(x),[1;1]);
+[2.71828182845904523536028747135266249775724709369989;2.718281828459045235360287
+47135266249775724709369998]
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 6: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> infnorm(exp(x), [log(0);log(1)]);
+[0;@Inf@]
+\end{Verbatim}
+\end{minipage}\end{center}
+See also: \textbf{prec} (\ref{labprec}), \textbf{diam} (\ref{labdiam}), \textbf{hopitalrecursions} (\ref{labhopitalrecursions}), \textbf{dirtyinfnorm} (\ref{labdirtyinfnorm}), \textbf{checkinfnorm} (\ref{labcheckinfnorm}), \textbf{supnorm} (\ref{labsupnorm}), \textbf{findzeros} (\ref{labfindzeros}), \textbf{diff} (\ref{labdiff}), \textbf{taylorrecursions} (\ref{labtaylorrecursions}), \textbf{autodiff} (\ref{labautodiff}), \textbf{numberroots} (\ref{labnumberroots}), \textbf{taylorform} (\ref{labtaylorform})

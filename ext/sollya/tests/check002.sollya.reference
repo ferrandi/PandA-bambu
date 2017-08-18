@@ -1,0 +1,85 @@
+The tool has been restarted.
+=============== Test number 21 ================
+-1
+The tool has been restarted.
+=============== Test number 22 ================
+3
+The tool has been restarted.
+=============== Test number 23 ================
+Warning: the expression given is not a fraction. Will consider it as a fraction with denominator 1.
+1
+The tool has been restarted.
+=============== Test number 24 ================
+5 / 3
+5 / 3
+The tool has been restarted.
+=============== Test number 25 ================
+Warning: the expression given is not a fraction. Will consider it as a fraction with denominator 1.
+Warning: the expression given is not a fraction. Will consider it as a fraction with denominator 1.
+exp(x / 3)
+exp(x / 3)
+The tool has been restarted.
+=============== Test number 26 ================
+cos(x)
+The tool has been restarted.
+=============== Test number 27 ================
+1
+The tool has been restarted.
+=============== Test number 28 ================
+x^x * (1 + log(x))
+The tool has been restarted.
+=============== Test number 29 ================
+[|-3.14159265358979323846264338327950288419716939937508, 0, 3.14159265358979323846264338327950288419716939937508|]
+The tool has been restarted.
+=============== Test number 30 ================
+The number of points has been set to 24.
+The precision has been set to 175 bits.
+[|-0.27620731976955658969395873271160757157430613176756617, -0.153375369093314463053373856415089923845367286245662016, -7.2413340732922773413542792091584567576119297088359629e-2, -7.2413340732922771569268803462173581357399245626850214e-2, -6.8562001979847336855782392874984841492976000520805575e-36, 0.128689155821175459633681956885012876056916941810415057|]
+The tool has been restarted.
+=============== Test number 31 ================
+The number of points has been set to 8.
+[|-0.24713873073113257661364344444399504026877021645667, 0.497137020823132125546169158238197457990224652371707|]
+The tool has been restarted.
+=============== Test number 32 ================
+18
+25
+The tool has been restarted.
+=============== Test number 33 ================
+[|-0.246756950422783934750095412599447800673624489505993218, -0.19164513063974640135742136011628031325527988804464345, -0.145554248149418271721764550500169153912092301037746583, -0.107570572806048700953690068019994092347508577747527385, -7.486357314193808712365882447978637403239106362227434e-2, -4.74208600873400748168760545821767713387443757233258829e-2, -2.55695395119733016712657419380827041411195950253078279e-2, -9.6658829670910164628561398290543577718523826925691488e-3, -1.73030828251178554354835171964347180155527776809239316e-10|]
+The tool has been restarted.
+=============== Test number 34 ================
+1
+The tool has been restarted.
+=============== Test number 35 ================
+1.45856
+1.458528537135
+1.458528537136237644438147455024
+1.458528537136237644438147455023841718299214087993682374094153
+The tool has been restarted.
+=============== Test number 36 ================
+Warning: a bound of the interval is infinite or NaN.
+This command cannot handle such intervals.
+@NaN@
+The tool has been restarted.
+=============== Test number 37 ================
+-0.54402111088936981340474766185137728168364301291621
+-0.54400304905152629822448058882475382036536298356281
+-0.54401997751158321972222697312583199035995837926892
+The tool has been restarted.
+=============== Test number 38 ================
+Display mode is decimal numbers.
+0.70710678118654752440084436210484903928483593768847
+Display mode is binary numbers.
+1.01101010000010011110011001100111111100111011110011001001000010001011001011111011000100110110011011101010100101010111110100111110001110101101111011000001011101010001_2 * 2^(-1)
+Display mode is hexadecimal numbers.
+0xb.504f333f9de6484597d89b3754abe9f1d6f60ba88p-4
+Display mode is dyadic numbers.
+33070006991101558613323983488220944360067107133265b-165
+Display mode is dyadic numbers in integer-power-of-2 notation.
+33070006991101558613323983488220944360067107133265 * 2^(-165)
+The tool has been restarted.
+=============== Test number 39 ================
+2.5
+The tool has been restarted.
+=============== Test number 40 ================
+x * 0.5

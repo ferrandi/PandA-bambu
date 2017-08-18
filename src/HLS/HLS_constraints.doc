@@ -1,0 +1,79 @@
+/*
+ *
+ *                   _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
+ *                  _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
+ *                 _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
+ *                _/      _/    _/ _/    _/ _/   _/ _/    _/
+ *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
+ *
+ *             ***********************************************
+ *                              PandA Project
+ *                     URL: http://panda.dei.polimi.it
+ *                       Politecnico di Milano - DEIB
+ *                        System Architectures Group
+ *             ***********************************************
+ *              Copyright (c) 2004-2017 Politecnico di Milano
+ *
+ *   This file is part of the PandA framework.
+ *
+ *   The PandA framework is free software; you can redistribute it and/or modify
+ *   it under the terms of the GNU General Public License as published by
+ *   the Free Software Foundation; either version 3 of the License, or
+ *   (at your option) any later version.
+ *
+ *   This program is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU General Public License for more details.
+ *
+ *   You should have received a copy of the GNU General Public License
+ *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+*/
+/*!
+
+  \page src_HLS_constraints_page High-Level Synthesis constraints
+
+  The distinction between constraints and objectives is straightforward: a <B>constraint</B>
+  is a design target that must be met in order for the design to be considered 
+  successful. For example, a chip may be required to run at a specific frequency in 
+  order to interface with other components in a system. In contrast, an <B>objective</B> is a 
+  design target where more (or less) is better. For example, yield is generally an 
+  objective, which is maximized to lower manufacturing cost. 
+  Constraints in architectural synthesis can be classified into two major groups: <i>interface
+  constraints</I> and <I>implementation constraints</I>.
+
+  Interface constraints are additional specifications to ensure that the circuit can
+  be embedded in a given environment. They relate to the format and timing of the I/O
+  data transfers. The data format is often specified by the interface of the model. The
+  timing separation of I/O operations can be specified by timing constraints that can
+  ensure that a synchronous I/O operation follows/precedes another one by a defined
+  number of cycles in a given interval. Timing constraints can also specify data rates for pipelined systems. 
+
+  Implementation constraints reflect the desire of the designer to achieve a structure with some properties. 
+  Examples are area constraints and performance constraints, e.g., cycle-time and/or latency bounds. 
+
+  A different kind of implementation constraint is a <i>resource binding constraint</I> (see 
+  \ref src_HLS_binding_constraints_page). In this case, a particular operation is required to be implemented
+  by a given resource. These constraints are motivated by the designer's previous knowledge, or intuition,
+  that one particular choice is the best and that other choices do not need investigation.
+  Architectural synthesis with resource binding constraints is often referred to as synthesis from 
+  partial structure. Design systems that support such a feature allow a designer to specify a circuit in a 
+  wide spectrum of ways, ranging from a full behavioral model to a structural one. This modeling capability 
+  may be useful to leverage previously designed components.
+
+  Design constraints are formulated as equalities or inequalities. For example, design constraints can be:
+  - \f$Area(x) \leq Area_{max}\f$; where \f$Area(x)\f$ is area occupied by the design solution 
+    \f$x\f$ and \f$Area_{max}\f$ is the maximum allowed for total occupied area;
+  - \f$Time(x) \leq Time_{max}\f$; where \f$Time(x)\f$ is latency of the solution \f$x\f$ and 
+    \f$Time_{max}\f$ is maximum latency allowed to consider the solution admissible.
+
+  A solution that doesn't meet all design constraints is not considered feasible and will have to be discarded.
+
+ \section sec_constraints_bambu Design constraints in the Bambu tool
+
+The <i>design constraints</I> represent the constraints imposed by the designer (or by the architecture of the target devices) to the final design. For instance, for FPGA designs, a constraint that can be imposed is the maximum number of area units that can be used by the final RTL design, e.g. maximum number of Configurable Logic Blocks (CLBs) to be used. Further constraints can be the maximum number of instances that can be allocated for a resource type (e.g. the maximum number of ALUs or registers).
+
+
+
+*/

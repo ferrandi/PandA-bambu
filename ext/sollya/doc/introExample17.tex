@@ -1,0 +1,23 @@
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> prec = 300!;
+> a = 4097.1;
+Warning: Rounding occurred when converting the constant "4097.1" to floating-poi
+nt with 300 bits.
+If safe computation is needed, try to increase the precision.
+> prec = 12!;
+> d = [4097.1; a];
+Warning: Rounding occurred when converting the constant "4097.1" to floating-poi
+nt with 12 bits.
+If safe computation is needed, try to increase the precision.
+> prec = 300!;
+> d;
+[4096;4.0971e3]
+> prec = 30!;
+> [-pi;pi];
+Warning: the given expression is not a constant but an expression to evaluate. A
+ faithful evaluation will be used.
+Warning: the given expression is not a constant but an expression to evaluate. A
+ faithful evaluation will be used.
+[-3.141592659;3.141592659]
+\end{Verbatim}
+\end{minipage}\end{center}

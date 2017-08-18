@@ -1,0 +1,58 @@
+\subsection{parse}
+\label{labparse}
+\noindent Name: \textbf{parse}\\
+parses an expression contained in a string\\
+\noindent Usage: 
+\begin{center}
+\textbf{parse}(\emph{string}) : \textsf{string} $\rightarrow$ \textsf{function} $|$ \textsf{error}\\
+\end{center}
+Parameters: 
+\begin{itemize}
+\item \emph{string} represents a character sequence
+\end{itemize}
+\noindent Description: \begin{itemize}
+
+\item \textbf{parse}(\emph{string}) parses the character sequence \emph{string} containing
+   an expression built on constants and base functions.
+    
+   If the character sequence does not contain a well-defined expression,
+   a warning is displayed indicating a syntax error and \textbf{parse} returns
+   a \textbf{error} of type \textsf{error}.
+
+\item The character sequence to be parsed by \textbf{parse} may contain commands that 
+   return expressions, including \textbf{parse} itself. Those commands get executed after the string has been parsed.
+   \textbf{parse}(\emph{string}) will return the expression computed by the commands contained in the character 
+   sequence \emph{string}.
+\end{itemize}
+\noindent Example 1: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> parse("exp(x)");
+exp(x)
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 2: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> text = "remez(exp(x),5,[-1;1])";
+> print("The string", text, "gives", parse(text));
+The string remez(exp(x),5,[-1;1]) gives 1.00004475029055070643077052482053398765
+426158966754 + x * (1.00003834652983970735244541124504033817544233075356 + x * (
+0.49919698262882986492168824494240374771969012861297 + x * (0.166424656075155194
+415920597322727380932279602909199 + x * (4.3793696387328047027125756620718349665
+9575464236489e-2 + x * 8.7381910388065551140158420278330960479960476713376e-3)))
+)
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 3: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> verbosity = 1!;
+> parse("5 + * 3");
+Warning: syntax error, unexpected MULTOKEN. Will try to continue parsing (expect
+ing ";"). May leak memory.
+Warning: the string "5 + * 3" could not be parsed by the miniparser.
+Warning: at least one of the given expressions or a subexpression is not correct
+ly typed
+or its evaluation has failed because of some error on a side-effect.
+error
+\end{Verbatim}
+\end{minipage}\end{center}
+See also: \textbf{execute} (\ref{labexecute}), \textbf{readfile} (\ref{labreadfile}), \textbf{print} (\ref{labprint}), \textbf{error} (\ref{laberror}), \textbf{dieonerrormode} (\ref{labdieonerrormode})

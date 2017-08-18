@@ -1,0 +1,498 @@
+/*
+ *
+ *                   _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
+ *                  _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
+ *                 _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
+ *                _/      _/    _/ _/    _/ _/   _/ _/    _/
+ *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
+ *
+ *             ***********************************************
+ *                              PandA Project 
+ *                     URL: http://panda.dei.polimi.it
+ *                       Politecnico di Milano - DEIB
+ *                        System Architectures Group
+ *             ***********************************************
+ *              Copyright (c) 2004-2017 Politecnico di Milano
+ *
+ *   This file is part of the PandA framework.
+ *
+ *   The PandA framework is free software; you can redistribute it and/or modify
+ *   it under the terms of the GNU General Public License as published by
+ *   the Free Software Foundation; either version 3 of the License, or
+ *   (at your option) any later version.
+ *
+ *   This program is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU General Public License for more details.
+ *
+ *   You should have received a copy of the GNU General Public License
+ *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+*/
+/*!
+  \page src_HLS_module_binding_page Module binding
+
+Given a data path \f$DP(M_o\cup M_s \cup M_i,I)\f$, a scheduled DFG \f$G(V_o\cup V_s,E,C)\f$ and a module library \f$\Lambda(T,L)\f$:
+
+<b>Module allocation</b>: the <i>module allocation</i> function \f$\mu :V_o\rightarrow \Pi(M_o)\f$, determines which module performs a given operation.
+
+Note that a module allocation \f$\mu(v_i)=m, m\in M_o, v_i\in V_o\f$ can only be a valid allocation if \f$m\in \lambda(\tau (v_i))\f$, i.e. the module \f$m\f$ is capable of execution of operation type of \f$v_i\f$. 
+
+<b>Module binding</b>: a <i>resource binding</i> is a mapping \f$\beta : V_o\rightarrow M_o \times N\f$, where \f$\beta(v_o) = (t,r)\f$ denotes that the operation corresponding to \f$v_o \in V_o\f$, with type \f$\tau(v_o)\in \lambda^{-1}(t)\f$ (i.e. component \f$t\in L\f$ can execute the operation represented by vertex \f$v_o\f$), is executed on the component \f$t = \mu(v_o)\f$ and \f$r< \sigma(t)\f$ (i.e. the operation is implemented by the <i>r-th</i> instance of resource type \f$t\f$ and this instance is available into datapath).
+
+A simple case of binding is a dedicated resource. Each operation is bound to one resource, and the resource binding \f$\beta\f$ is a one-to-one function.
+
+A resource binding may associate one instance of a resource type to more than one operation. In this case, that particular resource is shared and binding is a many-to-one function. A necessary condition for a resource binding to produce a valid circuit implementation is that the operations corresponding to a shared resource do not execute concurrently, i.e. they are in mutual exclusion.
+
+When binding constraints are specified, a resource binding must be compatible with them. In particular, a partial binding may be part of the original specification, as described in \ref src_HLS_binding_constraints_page. This corresponds to specifying a binding for a subset of the operations \f$U\subseteq V_o\f$. A resource binding is compatible with a partial binding when its restriction to the operations \f$U\f$ is identical to the partial binding itself.
+
+
+
+  \section intro Introduction
+  The \e module \e allocation is one of subproblems which \e high \e level \e synthesis \e problem is decomposed in. Here you focus on assignement of modules to all operations into data path.\n\n
+  First, it's fundamental to give some general definition about module allocation problem and then analyse this and corresponding algorithms implemented.\n\n
+  
+  \section def_module Module allocation problem definition
+
+  Given a data path DP \f$(M_o\cup M_s\cup M_i,I)\f$, a scheduled DFG \f$G(V_o\cup V_s,E,C)\f$ and a module library \f$\Lambda (T,L)\f$: \n 
+  - The \e module \e allocation function: \f$ \mu :V_o \rightarrow \Pi (M_o)\f$ determines which module performs a given operation.
+  
+  Note that a module allocation \f$\mu (v_i)=m, m\in M_o, v_i\in V_o\f$ can only be a valid allocation if \f$m\in \lambda (\tau (v_i)),\f$ i.e. the module \e m is capable of execution the operation type of \f$v_i\f$.
+  
+  \subsection comp_graph Compatibility graph definition
+  
+  Module allocation problem can be modeled using a module allocation graph. A compatibility graph \f$G_o(V_o,Y)\f$ is defined where:\n\n
+  \f$Y={ \lbrace (v_i,v_j)\mid (\theta (v_i)\cap \theta (v_j)=\emptyset )\vee (m(v_i) \wedge m(v_j)=[0])\wedge \lambda (\tau (v_i)) \cap  \lambda (\tau (v_j)) \neq \emptyset \rbrace } \f$\n\n
+  An edge \f$ y\in Y\f$ is added between two nodes if the two operations they represents can be combined in a single module, i.e. the operations do not have to be executed concurrently (they are scheduled into different steps) or are mutually exclusive and there exists a module that can perform both operations.\n
+  \n Despite the fact that the register allocation and module allocation look fairy similar there are some differences. In the register allocation it was quietly assumed that all values could be merged in a register. This may not be the case if registers of different bitwidth are considered. But even in this case the transitivity property remains. If value \e a and \e b can be fit into a register and so do \e b and \e c, also \e a and \e c will fit since there has to be a register of size at least the maximum width of \e a, \e b and \e c. In module allocation this is not necessary the case.
+  \nIf certain restrictions are imposed on the schedule, module allocation can become considerable simpler. If the schedule does not contain operations that are scheduled over multiple cycle steps (multicycling), this will be called a \e simple schedule. A data flow graph that does not contain conditional branches will be called an \e unconditional data flow graph.
+  
+  \subsection library Library definitions and properties
+  
+  First, some library definitions and proprieties on high level synthesies problem can be given.\n
+  The data flow graph (graph_manager::DFG) describes the input design to a high level synthesis system. A system needs also information on which modules can be used during the synthesis. A collection of these modules are represented by a \e library. It is common to use a set of modules each of which can only execute a limited set of operations. The \e library provides a way to describe the relation between the types of operations and the modules.\n\n
+  The \e library \f$ \Lambda (T,L) \f$ is definited by a set of operation types \e T and the set of components \e L. The \e library \e function \f$ \lambda : T \rightarrow \Pi (L) \f$, determines for each operation type \f$ t \in T \f$ by which components it can be performed. So the function \f$ \lambda ^ {-1}: L \rightarrow \Pi (T) \f$ describes for each component which types of operations it can execute. The set \f$ \lambda ^ {-1}(i) \f$ will be called \e operation \e type \e set of \e l. Operations whose type belong to the same operation type set can share a module (there is a module that can perform both).\n\n
+  The \e operation \e type \e set \e function \f$ \Omega : L \rightarrow \Pi (O) \f$, gives for each library component \f$ l \in L\f$, which operation types it can execute. The sets \f$ \Omega (l),l \in L \f$ will be called the \e operation \e type \e sets of the library \f$ \lambda (O,L) \f$.\n\n
+  A library \f$ \Lambda (O,L) \f$ is called a \e ordered library, if the operation type sets of \f$ \Lambda (O,L) \f$ form a partial ordering by the set inclusion relation, where all maximal sets are disjunct, which means that all the maximal sets have not a operation type that can be performed by two different maximal components.\n\n
+  An ordered set can be depicted conveniently by a Hasse diagram (performed in technology_manager::check_library), in which each element is represented by a point, so placed that if \f$ X \subset Y \f$, the point representing X lies below the point representing Y. Lines are drawn to connect sets of \e X and \e Y such that \e Y \e covers \e X, i.e. \f$ X \subset Y \f$ and there is not set \e Z such that \f$ X \subset Z \subset Y \f$; this is implemented by a directed (covering) edge in a look-like Hasse diagram. A subset is maximal if it's not covered by any other and so it's maximal if it hasn't any incoming edge.\n\n
+  A library is called \e complete if the library is ordered and has only \e one maximal set.\n\n
+  A library is called \e ordered with respect to a DFG, if all the operation types in DFG are an element of one of the maximal operation type sets. Similary, a library is called \e complete with respect to a DFG, if the maximal operation type set (it's only one) contains all operation types in the DFG. In the remainder of this description the terms complete and ordered libreries will always be used with respect to a DFG.
+  
+   \subsection lib_impact Impact of libraries on compatibility graphs: comparability graphs
+   
+   Now, how a library can impact on module allocation graphs should be analysed.\n\n
+   First, it could be useful to remember most important properties of \e comparability \e graphs.\n
+   An undirected graph \f$G(V,E)\f$ is called a \e comparability graph if each edge can be assigned a one way direction, in such a way that the resulting oriented graph \f$G(V,T)\f$ satisfies the following condition:\n\n
+  \f$[v_i,v_j]\in T \wedge [v_j,v_k]\in T \Rightarrow [v_i,v_k]\in T\f$ \f$\forall v_i,v_j,v_k \in V\f$\n\n
+  Comparability graphs are often called \e transitivity \e orientable \e graphs. A relation is called a \e partial \e ordering of a set \e A, when it is reflexive, anti-symmetric and transitive. The relation \e T is a partial ordering defined on a set \e V, called the \e transitive \e orientation of \e G.\n\n
+   A module allocation graph derived from an unconditional DFG with a simple schedule and a complete library is a comparability graph (and so it's transitive and orientable).\n\n
+   A module allocation graph derived from and unconditional DFG with a simple schedule and an ordered library is a comparability graph.\n
+   Since the library is ordered the composition will result in a module allocation graph consisting of \e m disjoint comparability graphs, where \e m is the number of maximal operation types sets in the library of which elements are present in the data flow graphs. In fact flow_allocation can be applied to separated flow network, one for each operation type sets (module_binding::net_flow, passing operation type as a parameter)\n\n
+   A module allocation graphs derived from a DFG with a schedule with property the when operations from a branch are scheduled in the same cycle steps with operations from at most one of its successors branches, and an ordered library, is a comparability graphs.\n
+   That's why in module_binding::create_graph has been performed a check is DFG contains or not only nested conditional operations; in fact, these algorithms can operate also with conditional operations, only if there are not nested.\n\n
+    
+   
+ \section weighted_allocation Weighted module allocation
+  
+  We start from a schedule applied before and then operations are been pre-allocated by algorithms choosen before. The result is a sequence of scheduled operations, with an initial allocation to operation type sets representing functional units that are in technology library.\n
+  Module allocation in isolation deals with minimizing the number of operational modules. Now the problem is to improve this module allocation with algorithms  exploiting some operation proprieties or considering other aspects of data path allocation. Examples are cost modules or their interconnections. For example, operations can be combined with similar inputs and outputs to reduce the interconnections. Source and destinations of values therefore have to be known. If \ref src_HLS_registerAllocation_page has been performed most inputs and outputs values to the operations are known. So operations can be relocated if results are stored in (or inputs come from) same registers and put in the same functional unit module: this has been implemented in module_binding::weighted_allocation (\ref threshold) and module_binding::flow_allocation (\ref flow_net) with different algorithms.\n
+  To model preferences in sharing of operations, weight categories can be assigned to edges in the comparability graph. The edge weight is a measure for the number of common inputs and outputs two operations have (performed in module_binding::create_graph while it's going to create graph). Since the operation nodes are not yet allocated, only the inputs and outputs that have the same operation as origin and destination can be counted. That's been implemented in two different version of module_binding::get_reg_op, one for inputs (reading GET_VAR_READ list) and one for outputs (reading GET_VAR_WRITTEN list).
+ 
+  \subsection threshold an algorithm based on progressive thresholds
+  
+  An heuristic algorithm can be used to find the cliques in a weighted graph. The heuristic presented in module_binding::minimal_clique can be extended. Let \f$ G_{th}(V_{o},Y,W) \f$ be a graph induced by the edges with weight larger than or equal to the threshold value \e th. A clique covering is done on this \f$ G_{th} \f$. Vertices which form a clique in \f$ G_{th} \f$ will be combined in \e G. Appropriate edges are removed and the weights are update. A new graph is induced with a lower value for the threshold. This process iterates until no new cliques are found and the threshold is low enough to include all remaining edges. \n
+  This algorithm has been implemented in module_binding::clique_cover as follow\n
+  
+  The allocation graph is \f$ G(V,E)\f$ (where \e V is set of clique-vertices and \e E is set of edges) and \f$ C(T,R)\f$ is comparability graph (where \e T is his set of operation-vertices and \e R is his set of edges):\n\n
+  \f$\\.find\_maximum\_threshold(C); \\ 
+  .\mathbf{foreach}\ op \in T\ \ \mathbf{do} \\
+  .\ \ \ \ \ v=\lbrace op \rbrace \ \ \textrm{ / / create a vertex-clique with only operation op } \\
+  .\ \ \ \ \ V=V \cup \lbrace v \rbrace\ \\
+  .\mathbf{endfor}\\ 
+  .\mathbf{foreach}\ ed \in R\ \ \mathbf{do} \\
+  .\ \ \ \ \ e=\lbrace (s,t)\ \mid s=\lbrace source(ed) \rbrace\ \ \wedge\ \ t=\lbrace target(ed) \rbrace  \rbrace\ \ \textrm{ / / populate E } \\
+  .\ \ \ \ \ E=E \cup \lbrace e \rbrace\ \\
+  .\mathbf{endfor}\\ 
+  .\mathbf{repeat}\\
+  .\ \ \ \ \ G_{th}=G; \\
+  .\ \ \ \ \ th=compute\_max\_threshold(G_{th}); \\
+  .\ \ \ \ \ \mathbf{foreach}\ \ e \in E_{th}\ \ \mathbf{do} \\
+  .\ \ \ \ \ \ \ \ \ \ \mathbf{if}\ \ weight(e) < th\ \ \mathbf{then} \\
+  .\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ E_{th} = E_{th} \setminus e \\
+  .\ \ \ \ \ \ \ \ \ \ \mathbf{endif} \\
+  .\ \ \ \ \ \mathbf{endfor}\\ 
+  .\ \ \ \ \ \ L=compute\_clique\_cover\_on\_G_{th}\ \ \textrm{ / / create a list of clique } \\
+  .\ \ \ \ \ \mathbf{foreach}\ \ l \in L\ \ \mathbf{do} \\
+  .\ \ \ \ \ \ \ \ \ \ \ \ n = \emptyset \\
+  .\ \ \ \ \ \ \ \ \ \ \ \mathbf{foreach}\ \ v \in l\ \ \mathbf{do} \\
+  .\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ G=G \setminus \lbrace v \rbrace \\
+  .\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ n=n \cup \lbrace v \rbrace \\ 
+  .\ \ \ \ \ \ \ \ \ \ \ \mathbf{endfor}\\ 
+  .\ \ \ \ \ \ \ \ \ \ \ \ G = G \cup \lbrace n \rbrace \\
+  .\ \ \ \ \ \ \ \ \ \ \ \ update\_edges\_and\_weights(E) \ \ \textrm{ / / collapse vertices in G graph in a unique clique and update edges } \\
+  .\ \ \ \ \ \mathbf{endfor}\\ 
+  .\mathbf{until}\ \ th>1\f$\n
+  
+  See \ref Example and corresponding \ref example_threshold
+  
+  This heuristic will give no guarantee for optimality of the results. In the case of comparability graphs another technique can be employed.
+   
+  \subsection flow_net flow networks to resolve module allocation problem
+  
+  Comparability graphs are per definition transitively orientable. If a path \f$ \langle \ a,b,c\ \rangle \f$ exists, the edge \f$ (a,c) \f$ is guaranteed to exist as well. Each path in the graph will therefore be a clique. So the reminder of this section will describe how to transform the weighted module allocation problem to network flow problem. The transformation to the network flow is a transformation generally valid for comparability graphs. It can therefore be used in the other allocation phases as well.\n\n
+  Consider the weighted module allocation graph \f$ G_{o}(V_{o},T,W) \f$. Furthermore, a source node \e a, a sink node \e z, edges from source node to all nodes, edges from all nodes to the sink node and an edge from the sink to the source are added. The edge from the sink to the source is called the \e return edge, The weight of all these additional edges is zero.\n
+  Formally, a network \f$ N_{G}=(V_n,E_n,a,z,C,K) \f$ corresponding to the module allocation graph is constructed, where:\n
+  - \f$ V_n=V_o \cup \lbrace a,z \rbrace \f$.
+  - \f$ E_n=T \cup \lbrace [a,v],[v,z] \mid v \in V_o \rbrace \cup \lbrace [z,a] \rbrace \f$.
+  - \f$ w(a,v)=w(v,z)=0\ \ \forall v \in V_o,\ \ \ \ \ \ \ \ \ w(z,a)=0 \f$.
+  
+  For each edge \f$ e \in E_n \f$ a cost function \f$ C: E_n \rightarrow \aleph \f$ is defined, which assigns to each edge a non-negative integer. The cost will be equal to the weight of the edges: \f$ C([u,v])=w(u,c) \f$ for all \f$ [u,v] \in E_n \f$.\n
+  For each edge \f$ e \in E_n \f$ a capacity function \f$ K:E_n \rightarrow \aleph \f$ is defined, which assigns to each edge a non-negative integer. The capacity of all edges is one, except for the return edge which has capacity \e k:\n
+  
+  \f$ K([z,a])=k, \ \ \ \ \ \ \ \ \ \ \ K([u,v])=1 \ \ \ \ \forall [u,v] \in E_n \setminus \lbrace [z,a] \rbrace \f$.\n\n
+  A flow in the network \f$ N_G \f$ is a function \f$ f:E_n \rightarrow \aleph ^{+} \f$, which assigns to each edge a non-negative integer, such that for \f$ e \in E_n,O \leq f(e) \leq K(e) \f$ and for any node \f$ u \in V_n \f$\n
+  
+  \f$ \sum _{[u,v]\in E_n} f(u,v) - \sum _{[v,u]\in E_n} f(v,u) \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \f$ balancing equation \n\n
+  The amount of flow in the return edge \f$ [z,a] \f$ is denoted as \f$ F=f([z,a]) \f$. The total cost of the flow is: \f$ k(F)=\Sigma _{e\in E_n} C(e) \cdot f(e) \f$.\n\n
+  A flow \f$ f:E_n \rightarrow \aleph \f$, in the network \f$ N_G \f$ corresponds to a set of cliques \f$ X_1,...,X_k \f$ in G_o where \f$ k=F \f$ .\n\n
+  The paths \f$ P_1,...,P_k \f$ will be edge disjoint (each edge has only capacity=1), but not necessarily go through different nodes (in a node can enter/exit more than one edge). Thus the sets \f$ X_1,...,X_k \f$ are not necessarily node disjoint (a node can be in different cliques, so can be allocated into different modules).\n To enforce node disjoint paths, a node separation technique can be used. In the node separation, all nodes \f$ v \in V_o \f$ are duplicated. The duplicate of a node \f$ v \f$ is called \f$ v' \f$. All edges outgoing from \f$ v \f$, obtain the node \f$ v' \f$ as their origin. The node \f$ v \f$ and its duplicate are connected by an edge with capacity \f$ K([v,v'])=1 \f$ (only one unit flow can go through) and a cost \f$ C([v,v'])=0 \f$ (no additional solution cost). This node separation results in a network \f$ N'_G=(V'_n,E'_n,a,z,C',K') \f$, where:\n
+  - \f$ V'_n=V_n \cup V'_o \f$
+  - \f$ \exists v',v'\in V'_o \f$ for each vertex \f$ v \in V_o \f$
+  - \f$ E'_n=T \cup \lbrace [a,v],[v',z] \mid v \in V_o \rbrace \ \ \cup \ \ \lbrace [z,a] \rbrace \cup \lbrace [v,v']\mid v\in V_o \rbrace \f$
+  - \f$ T' = \lbrace [v',u]\mid [v,u] \in T\rbrace \f$
+  - \f$ C'([z,a])=C'([v,v']) = 0 \ \ \ \ \ \forall v \in V_o \ \ \ \ \f$ (no additional cost for support edges)
+  - \f$ C'([v',u])=C([v,u]) \ \ \ \ \forall [v,v'] \in T' \cup \lbrace [a,v],[v',z]\mid v \in V_o \f$
+  - \f$ K'([z,a])=k \ \ \ \ \ \ \ \ \ K'([u,v])=1 \ \ \ \ \ \ \forall u \neq z \wedge v \neq a \f$
+  
+  Since the capacity of \f$ K([v,v'])=1 \f$ at most one unit of flow can go through the edge [v,v']. This leads to the following theorem:\n\n
+  A flow \f$ f:E'_n \rightarrow \aleph \f$, in the network \f$ N'_G \f$ corresponds to a set of node disjoint cliques \f$ X_1,...,X_k \f$ in \f$ G_o \f$ where \f$ k=F \f$.\n\n
+  The maximal cost network flow problem finds among all possible flows with amount \e k the one with maximum cost. This has been implemented in module_binding::maxcost_minflow function, where you can find a way to resolve maxcost flow with a positive cycles elimination. In fact, whenever you can find a positive cycle in the residual network flow, the solution can be incremented over this one and the new solution will be always better. So, if no positive cycles can be found, a better the solution cannot be found and the flow obtained is the maxcost one.\n\n
+  In this situation, a triple \f$ (G,s,l) \f$ is given where \f$ G=(V,E) \f$ is a directed graph with \e n vertices and \e m edges, \f$ l:E \rightarrow R \f$ is a \e lenght \e function mapping edges to integer lenghts and \f$ s \in V \f$ in the \e root vertex. The \e lenght of the path \f$ \rho = \langle v_0,v_1,...,v_k \rangle \f$ is the sum of lenghts of its constituent edges (take it negative if the edge is a flow edge due to residual definition graph). So \e positive \e cycle is a cycle \f$ \rho = \langle v_0,v_1,...,v_k,v_o \rangle \f$ with lenght \f$ l(\rho )>0 \f$. Algorithms for PCD (positive cycle detection) that use the adjacency-list representation of the graph construct a longest-path tree \f$ G_s=(V_s,E_s) \f$, where \f$ V_s \f$  is the set of all vertices reachable from the root \e s, \f$ E_s \subseteq E \f$, \e s is the root of \f$ G_s \f$ and for every vertex \f$ v \in V_s \f$ the path from \e s to \e v in \f$ G_s \f$ is a longest path from \e s to \e v in \e G.\n
+  The \e labeling \e method maintains for every vertex \e v its \e distance \e label \f$ d(v) \f$ and parent \f$ p(v) \f$. Initially \f$ d(v)=0 \f$ and \f$ p(v)=root \f$. The method is based on the \e scan \e operation. During scanning a vertex \e v, all edges \f$ (v,u) \f$ out-going from \e v are relaxed which means that if \f$ d(u) < d(v) + l(v,u) \f$ then \f$ d(u) \f$ is set to \f$ d(v)+l(v,u) \f$  and \f$ p(u) \f$ is set to \e v. If all vertices have been scanned then \e d gives the longest path lenghts and \f$ G_p \f$ (parent graph induced by edges \f$ (p(v),v) \f$) is the longest path tree. So, if there is a cycle, after a finite number of scan operations (\f$ \mid V_g \mid \f$ is upper bound) you can detect it; in fact, starting from a vertex \f$ v_o \f$, if the same vertex \f$ v_o \f$ is in parent tree, it means that there is a (positive) path from \f$ v_o \f$ to \f$ v_o \f$, so there is a cycle.\n
+  Once detected a positive cycle, the flow on positive edges is increased and the flow on negative ones is decremented. So cycle is eliminated and solution cost will be better. If any positive cycle can be detected, there is no way to improve solution and this will be the best one (maximum cost solution).
+  \n\n
+  See \ref Example and corresponding \ref example_flow \n\n
+  When the maximal cost network flow is solved for the network \f$ N'_G \f$, a solution to the module allocation problem is found, which takes into account the first order effects of interconnection weights. These first order effects describe the result of combining each pair of operations. Taking into account the influence of this combination on the weights with a third operation, would require a dynamic update of the edge weights due to the cumulative nature of the costs. This aspect has not been implemeted yet in this project.\n
+  
+  \section Example
+  
+  For example, having this DFG:
+  
+  \dot  
+  digraph DFG_op {
+        subgraph { rank=same 0 1 2 3 4 13}
+        subgraph { rank=same 5 6 7 14}
+	subgraph { rank=same 9 10 8 15}
+	subgraph { rank=same 11 12 16}
+        0[label="g"];
+        1[label="g"];
+        2[label="g"];
+        3[label="g"];
+        4[label="g"];
+        5[label="+1"];
+        6[label="*"];
+        7[label="-"];
+        8[label="/"];
+        9[label="+2"];
+        10[label="+3"];
+        11[label="&"];
+        12[label="|"];
+        0->8[label="e"];
+        1->6[label="d"] ;
+        2->7[label="c"];
+        3->5[label="a"];
+        4->5[label="b"];
+        5->6 ;
+        5->7 ;
+        6->10[label="d"];
+        7->8[label="c"];
+        7->9[label="c"];
+        4->10[label="b"];
+        4->12[label="b"];
+        5->9[label="a"];
+        10->12[label="d"];
+        8->11[label="e"];
+        9->11[label="a"];
+	
+	13[shape="rectangle",label="sO"];
+	14[shape="rectangle",label="s1"];
+	15[shape="rectangle",label="s2"];
+	16[shape="rectangle",label="s3"];
+	13->14;
+	14->15;
+	15->16;
+  }
+  \enddot
+  where egde label is register name where variable is stored and \e g are inputs.\n
+  Assuming a library with two functional unit types, one that can implement \f$ \lbrace +,-,\&,\mid \rbrace \f$ and the other that implements \f$ \lbrace *,/ \rbrace \f$, comparability graph has to be created, according to definition given above (they are scheduled into different steps or they are in exclusive paths, they can be executed by same functional unit type).
+  \dot  
+  digraph comp_graph {
+        model="circuit";
+        5[label="+1"];
+        6[label="*"];
+        7[label="-"];
+        8[label="/"];
+        9[label="+2"];
+        10[label="+3"];
+        11[label="&"];
+        12[label="|"];
+        6->8[dir=none,label="1"];
+        7->10[dir=none,label="1"];
+        7->11[dir=none,label="1"];
+        7->12[dir=none,label="1"];
+        7->9[dir=none,label="3"];
+        5->10[dir=none,label="2"];
+        5->11[dir=none,label="3"];
+        5->12[dir=none,label="2"];
+        5->9[dir=none,label="3"];
+        10->11[dir=none,label="1"];
+        10->12[dir=none,label="3"];
+        9->11[dir=none,label="3"];
+        9->12[dir=none,label="1"];
+  }
+  \enddot
+  Edge label is weight value: number of commun inputs and outputs. For example, edge \f$ ('+1','+3') \f$ has \f$ w(e)=2 \f$. In fact, assuming \f$ w(e)=1 \f$ as base, that means only one common input or output: that is register \f$ b \f$ that is a common input: both read from this one. Edge \f$ ('+1','+2') \f$ has a common input (they read both from register \f$ a \f$) and a common output (they write both to register \f$ a \f$); so it has \f$ w(e)=3 \f$. Now, cliques have to be found in this (weighted) graph. It's important to notice that to do this a schedule and an assignement to functional units types have to be provided. These are provided by HLS class.
+  
+  \subsection example_threshold resolution with threshold algorithm
+  
+  On the example above, threshold algorithm can be applied as described.\n
+  First maximum threshold is \f$ th=3 \f$ and so graph induced is:
+  \dot 
+  digraph{
+        5[label="+1"];
+        7[label="-"];
+        9[label="+2"];
+        10[label="+3"];
+        11[label="&"];
+        12[label="|"];
+        7->9[dir=none,label="3"];
+        5->11[dir=none,label="3"];
+        5->9[dir=none,label="3"];
+        10->12[dir=none,label="3"];
+        9->11[dir=none,label="3"];
+  }
+  \enddot
+  where, applying clique covering, three clique can be found: \f$ \lbrace +1,+2,\& \rbrace \f$, \f$ \lbrace +3,| \rbrace \f$ and \f$ \lbrace - \rbrace \f$. So the comparability graph modified collapsing nodes and updating egdes (an edge remains if there was an edge beetween the node and each node in the new clique)
+   is:\n
+  \dot
+  digraph second{
+  	node [style=rounded]
+  	0 [shape=record, label="{ +3 | &#166; }"];
+	1 [shape=record, label="{ +2 | +1 | & }"];
+	2 [label="-"];
+	4 [label="*"];
+	5 [label="/"];
+	0->2[dir=none,label="1"];
+	4->5[dir=none,label="1"];      
+  }
+  \enddot
+  Now the choose to compute maximum threshold is shown to be efficent. In fact, there is not any edge \f$ w(e)=2 \f$ so the computation is applied with \f$ th=1 \f$. The graph induced is the same (no edge is eliminated):
+  \dot
+  digraph second{
+  	node [style=rounded]
+  	0 [shape=record, label="{ +3 | &#166; }"];
+	1 [shape=record, label="{ +2 | +1 | & }"];
+	2 [label="-"];
+	4 [label="*"];
+	5 [label="/"];
+	0->2[dir=none,label="1"];
+	4->5[dir=none,label="1"];      
+  }
+  \enddot
+  and two new clique are found: \f$ \lbrace \lbrace +3, | \rbrace , - \rbrace \f$ and \f$ \lbrace *,/ \rbrace \f$. So, the new (and final) comparability graph is:
+  \dot
+  digraph second{
+  	node [style=rounded]
+  	0 [shape=record, label="{ +3 | &#166; | - }"];
+	1 [shape=record, label="{ +2 | +1 | & }"];
+	2 [shape=record, label="{ * | / }"];
+  }
+  \enddot
+  No edge is left and so vertices are definitive cliques. Each clique can be assigned to a module. So, operations with weighter edges are prefered to be assigned to same module.
+  
+    
+  \subsection example_flow resolution with flow network
+  
+  On example above, there is not any nested conditional operation and so the compatility graph is orientable (it becomes a comparability graph). Thus a flow network for each FU type can be created as well. In according to definition given in subsection \ref flow_net, the flow network for FU type \f$ \lbrace +,-,\&,\mid \rbrace \f$ for resulting is:
+  
+  \dot
+  digraph net {
+      rankdir=LR;
+      model="circuit";
+      subgraph { rank=same 1 3}
+      subgraph { rank=same 2 4}
+      subgraph { rank=same 5 7}
+      subgraph { rank=same 6 8}
+      subgraph { rank=same 9 11}
+      subgraph { rank=same 10 12}
+      0[label="a"];
+      1[label="+1"];
+      2[label="+1'"];
+      3[label="-"];
+      4[label="-'"];
+      5[label="+2"];
+      6[label="+2'"];
+      7[label="+3"];
+      8[label="+3'"];
+      9[label="|"];
+      10[label="|'"];
+      11[label="&"];
+      12[label="&'"];
+      13[label="z"];
+      0->1[label="0"];
+      0->3[label="0"];
+      0->5[label="0"];
+      0->7[label="0"];
+      0->9[label="0"];
+      0->11[label="0"];
+      1->2[label="0"];
+      3->4[label="0"];
+      5->6[label="0"];
+      7->8[label="0"];
+      9->10[label="0"];
+      11->12[label="0"];
+      2->13[label="0"];
+      4->13[label="0"];
+      6->13[label="0"];
+      8->13[label="0"];
+      10->13[label="0"];
+      12->13[label="0"];
+      2->5[label="3"];
+      4->5[label="3"];
+      2->7[label="2"];
+      4->7[label="1"];
+      2->9[label="2"];
+      4->9[label="1"];
+      2->11[label="3"];
+      4->11[label="1"];
+      6->9[label="1"];
+      6->11[label="3"];
+      8->9[label="3"];
+      8->11[label="1"];
+  }
+  \enddot
+  
+  A dummy initial flow can be applied and corresponding residual graph will be:
+  
+  \dot
+  digraph net1 {
+      rankdir=LR;
+      model="subset";
+      subgraph { rank=source 0}
+      subgraph { rank=sink 13}
+      subgraph { rank=same 1 3}
+      subgraph { rank=same 2 4}
+      subgraph { rank=same 5 7}
+      subgraph { rank=same 6 8}
+      subgraph { rank=same 9 11}
+      subgraph { rank=same 10 12}
+      0[label="a"];
+      1[label="+1"];
+      2[label="+1'"];
+      3[label="-"];
+      4[label="-'"];
+      5[label="+2"];
+      6[label="+2'"];
+      7[label="+3"];
+      8[label="+3'"];
+      9[label="|"];
+      10[label="|'"];
+      11[label="&"];
+      12[label="&'"];
+      13[label="z"];
+      0->1[label="0",color=red,dir=back];
+      0->3[label="0",color=red,dir=back];
+      0->5[label="0"];
+      0->7[label="0"];
+      0->9[label="0"];
+      0->11[label="0"];
+      1->2[label="0",color=red,dir=back];
+      3->4[label="0",color=red,dir=back];
+      5->6[label="0"];
+      7->8[label="0"];
+      9->10[label="0"];
+      11->12[label="0"];
+      2->13[label="0",color=red,dir=back];
+      4->13[label="0",color=red,dir=back];
+      6->13[label="0"];
+      8->13[label="0"];
+      10->13[label="0"];
+      12->13[label="0"];
+      2->5[label="3"];
+      4->5[label="3"];
+      2->7[label="2"];
+      4->7[label="1"];
+      2->9[label="2"];
+      4->9[label="1"];
+      2->11[label="3"];
+      4->11[label="1"];
+      6->9[label="1"];
+      6->11[label="3"];
+      8->9[label="3"];
+      8->11[label="1"];
+  }
+  \enddot
+  
+  In this way, it's simple to find a better solution. When a positive cycle has been found (for example \f$ \rho= <-',+2,+2',z,-'> \f$ and \f$ l(\rho )=3) \f$, the flow can be increased on direct edge and decreased in return edge. Thus solution would be better (from \f$ C=0 \f$ to \f$ C=3 \f$): 
+  \dot
+  digraph net2 {
+      rankdir=LR;
+      model="subset";
+      subgraph { rank=source 0}
+      subgraph { rank=sink 13}
+      subgraph { rank=same 1 3}
+      subgraph { rank=same 2 4}
+      subgraph { rank=same 5 7}
+      subgraph { rank=same 6 8}
+      subgraph { rank=same 9 11}
+      subgraph { rank=same 10 12}
+      0[label="a"];
+      1[label="+1"];
+      2[label="+1'"];
+      3[label="-"];
+      4[label="-'"];
+      5[label="+2"];
+      6[label="+2'"];
+      7[label="+3"];
+      8[label="+3'"];
+      9[label="|"];
+      10[label="|'"];
+      11[label="&"];
+      12[label="&'"];
+      13[label="z"];
+      0->1[label="0",color=red,dir=back];
+      0->3[label="0",color=red,dir=back];
+      0->5[label="0"];
+      0->7[label="0"];
+      0->9[label="0"];
+      0->11[label="0"];
+      1->2[label="0",color=red,dir=back];
+      3->4[label="0",color=red,dir=back];
+      5->6[label="0",color=red,dir=back];
+      7->8[label="0"];
+      9->10[label="0"];
+      11->12[label="0"];
+      2->13[label="0",color=red,dir=back];
+      4->13[label="0"];
+      6->13[label="0",color=red,dir=back];
+      8->13[label="0"];
+      10->13[label="0"];
+      12->13[label="0"];
+      2->5[label="3"];
+      4->5[label="3",color=red,dir=back];
+      2->7[label="2"];
+      4->7[label="1"];
+      2->9[label="2"];
+      4->9[label="1"];
+      2->11[label="3"];
+      4->11[label="1"];
+      6->9[label="1"];
+      6->11[label="3"];
+      8->9[label="3"];
+      8->11[label="1"];
+  }
+  \enddot
+  
+  When no more positive cycles can be found, the solution is optimal for this network and the paths from source to sink will be the max cost partitioning for operation vertices present in this graph. This algorithm have to be applied to all functional units type the library consists in.
+*/

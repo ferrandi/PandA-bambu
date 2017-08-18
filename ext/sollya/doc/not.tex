@@ -1,0 +1,31 @@
+\subsection{!}
+\label{labnot}
+\noindent Name: \textbf{!}\\
+boolean NOT operator\\
+\noindent Usage: 
+\begin{center}
+\textbf{!} \emph{expr} : \textsf{boolean} $\rightarrow$ \textsf{boolean}\\
+\end{center}
+Parameters: 
+\begin{itemize}
+\item \emph{expr} represents a boolean expression
+\end{itemize}
+\noindent Description: \begin{itemize}
+
+\item \textbf{!} evaluates to the boolean NOT of the boolean expression
+   \emph{expr}. \textbf{!} \emph{expr} evaluates to true iff \emph{expr} does not evaluate
+   to true.
+\end{itemize}
+\noindent Example 1: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> ! false;
+true
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 2: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> ! (1 == exp(0));
+false
+\end{Verbatim}
+\end{minipage}\end{center}
+See also: \textbf{$\&\&$} (\ref{laband}), \textbf{$||$} (\ref{labor})

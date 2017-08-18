@@ -1,0 +1,20 @@
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> prec = 50!;
+> a = 4097.1;
+Warning: Rounding occurred when converting the constant "4097.1" to floating-poi
+nt with 50 bits.
+If safe computation is needed, try to increase the precision.
+> prec = 12!;
+> f = x + a;
+> g = x + 4097.1;
+Warning: Rounding occurred when converting the constant "4097.1" to floating-poi
+nt with 12 bits.
+If safe computation is needed, try to increase the precision.
+> prec = 120;
+The precision has been set to 120 bits.
+> f;
+4.097099999999998544808477163314819335e3 + x
+> g;
+4098 + x
+\end{Verbatim}
+\end{minipage}\end{center}

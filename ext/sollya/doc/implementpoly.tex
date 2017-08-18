@@ -1,0 +1,169 @@
+\subsection{implementpoly}
+\label{labimplementpoly}
+\noindent Name: \textbf{implementpoly}\\
+implements a polynomial using double, double-double and triple-double arithmetic and generates a Gappa proof\\
+\noindent Usage: 
+\begin{center}
+\textbf{implementpoly}(\emph{polynomial}, \emph{range}, \emph{error bound}, \emph{format}, \emph{functionname}, \emph{filename}) : (\textsf{function}, \textsf{range}, \textsf{constant}, \textsf{D$|$double$|$DD$|$doubledouble$|$TD$|$tripledouble}, \textsf{string}, \textsf{string}) $\rightarrow$ \textsf{function}\\
+\textbf{implementpoly}(\emph{polynomial}, \emph{range}, \emph{error bound}, \emph{format}, \emph{functionname}, \emph{filename}, \emph{honor coefficient precisions}) : (\textsf{function}, \textsf{range}, \textsf{constant}, \textsf{D$|$double$|$DD$|$doubledouble$|$TD$|$tripledouble}, \textsf{string}, \textsf{string}, \textsf{honorcoeffprec}) $\rightarrow$ \textsf{function}\\
+\textbf{implementpoly}(\emph{polynomial}, \emph{range}, \emph{error bound}, \emph{format}, \emph{functionname}, \emph{filename}, \emph{proof filename}) : (\textsf{function}, \textsf{range}, \textsf{constant}, \textsf{D$|$double$|$DD$|$doubledouble$|$TD$|$tripledouble}, \textsf{string}, \textsf{string}, \textsf{string}) $\rightarrow$ \textsf{function}\\
+\textbf{implementpoly}(\emph{polynomial}, \emph{range}, \emph{error bound}, \emph{format}, \emph{functionname}, \emph{filename}, \emph{honor coefficient precisions}, \emph{proof filename}) : (\textsf{function}, \textsf{range}, \textsf{constant}, \textsf{D$|$double$|$DD$|$doubledouble$|$TD$|$tripledouble}, \textsf{string}, \textsf{string}, \textsf{honorcoeffprec}, \textsf{string}) $\rightarrow$ \textsf{function}\\
+\end{center}
+\noindent Description: \begin{itemize}
+
+\item The command \textbf{implementpoly} implements the polynomial \emph{polynomial} in range
+   \emph{range} as a function called \emph{functionname} in \texttt{C} code
+   using double, double-double and triple-double arithmetic in a way that
+   the rounding error (estimated at its first order) is bounded by \emph{error bound}. 
+   The produced code is output in a file named \emph{filename}. The
+   argument \emph{format} indicates the double, double-double or triple-double
+   format of the variable in which the polynomial varies, influencing
+   also in the signature of the \texttt{C} function.
+    
+   If a seventh or eighth argument \emph{proof filename} is given and if this
+   argument evaluates to a variable of type \textsf{string}, the command
+   \textbf{implementpoly} will produce a \texttt{Gappa} proof that the
+   rounding error is less than the given bound. This proof will be output
+   in \texttt{Gappa} syntax in a file name \emph{proof filename}.
+    
+   The command \textbf{implementpoly} returns the polynomial that has been
+   implemented. As the command \textbf{implementpoly} tries to adapt the precision
+   needed in each evaluation step to its strict minimum and as it applies
+   renormalization to double-double and triple-double precision
+   coefficients to bring them to a round-to-nearest expansion form, the
+   returned polynomial may differ from the polynomial
+   \emph{polynomial}. Nevertheless the difference will be small enough that
+   the rounding error bound with regard to the polynomial \emph{polynomial}
+   (estimated at its first order) will be less than the given error
+   bound.
+    
+   If a seventh argument \emph{honor coefficient precisions} is given and
+   evaluates to a variable \textbf{honorcoeffprec} of type \textsf{honorcoeffprec},
+   \textbf{implementpoly} will honor the precision of the given polynomial
+   \emph{polynomials}. This means if a coefficient needs a double-double or a
+   triple-double to be exactly stored, \textbf{implementpoly} will allocate appropriate
+   space and use a double-double or triple-double operation even if the
+   automatic (heuristic) determination implemented in command \textbf{implementpoly}
+   indicates that the coefficient could be stored on less precision or,
+   respectively, the operation could be performed with less
+   precision. The use of \textbf{honorcoeffprec} has advantages and
+   disadvantages. If the polynomial \emph{polynomial} given has not been
+   determined by a process considering directly polynomials with
+   floating-point coefficients, \textbf{honorcoeffprec} should not be
+   indicated. The \textbf{implementpoly} command can then determine the needed
+   precision using the same error estimation as used for the
+   determination of the precisions of the operations. Generally, the
+   coefficients will get rounded to double, double-double and
+   triple-double precision in a way that minimizes their number and
+   respects the rounding error bound \emph{error bound}.  Indicating
+   \textbf{honorcoeffprec} may in this case short-circuit most precision
+   estimations leading to sub-optimal code. On the other hand, if the
+   polynomial \emph{polynomial} has been determined with floating-point
+   precisions in mind, \textbf{honorcoeffprec} should be indicated because such
+   polynomials often are very sensitive in terms of error propagation with
+   regard to their coefficients' values. Indicating \textbf{honorcoeffprec}
+   prevents the \textbf{implementpoly} command from rounding the coefficients and
+   altering by many orders of magnitude the approximation error of the
+   polynomial with regard to the function it approximates.
+    
+   The implementer behind the \textbf{implementpoly} command makes some assumptions on
+   its input and verifies them. If some assumption cannot be verified,
+   the implementation will not succeed and \textbf{implementpoly} will evaluate to a
+   variable \textbf{error} of type \textsf{error}. The same behaviour is observed if
+   some file is not writable or some other side-effect fails, e.g. if
+   the implementer runs out of memory.
+    
+   As error estimation is performed only on the first order, the code
+   produced by the \textbf{implementpoly} command should be considered valid iff a
+   \texttt{Gappa} proof has been produced and successfully run
+   in \texttt{Gappa}.
+\end{itemize}
+\noindent Example 1: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> implementpoly(1 - 1/6 * x^2 + 1/120 * x^4, [-1b-10;1b-10], 1b-30, D, "p","impl
+ementation.c");
+1 + x^2 * (-0.166666666666666657414808128123695496469736099243164 + x^2 * 8.3333
+333333333332176851016015461937058717012405395e-3)
+> readfile("implementation.c");
+#define p_coeff_0h 1.00000000000000000000000000000000000000000000000000000000000
+000000000000000000000e+00
+#define p_coeff_2h -1.6666666666666665741480812812369549646973609924316406250000
+0000000000000000000000e-01
+#define p_coeff_4h 8.33333333333333321768510160154619370587170124053955078125000
+000000000000000000000e-03
+
+
+void p(double *p_resh, double x) {
+double p_x_0_pow2h;
+
+
+p_x_0_pow2h = x * x;
+
+
+double p_t_1_0h;
+double p_t_2_0h;
+double p_t_3_0h;
+double p_t_4_0h;
+double p_t_5_0h;
+ 
+
+
+p_t_1_0h = p_coeff_4h;
+p_t_2_0h = p_t_1_0h * p_x_0_pow2h;
+p_t_3_0h = p_coeff_2h + p_t_2_0h;
+p_t_4_0h = p_t_3_0h * p_x_0_pow2h;
+p_t_5_0h = p_coeff_0h + p_t_4_0h;
+*p_resh = p_t_5_0h;
+
+
+}
+
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 2: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> implementpoly(1 - 1/6 * x^2 + 1/120 * x^4, [-1b-10;1b-10], 1b-30, D, "p","impl
+ementation.c","implementation.gappa");
+1 + x^2 * (-0.166666666666666657414808128123695496469736099243164 + x^2 * 8.3333
+333333333332176851016015461937058717012405395e-3)
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 3: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> verbosity = 1!;
+> q = implementpoly(1 - simplify(TD(1/6)) * x^2,[-1b-10;1b-10],1b-60,DD,"p","imp
+lementation.c");
+Warning: at least one of the coefficients of the given polynomial has been round
+ed in a way
+that the target precision can be achieved at lower cost. Nevertheless, the imple
+mented polynomial
+is different from the given one.
+> printexpansion(q);
+0x3ff0000000000000 + x^2 * 0xbfc5555555555555
+> r = implementpoly(1 - simplify(TD(1/6)) * x^2,[-1b-10;1b-10],1b-60,DD,"p","imp
+lementation.c",honorcoeffprec);
+Warning: the infered precision of the 2th coefficient of the polynomial is great
+er than
+the necessary precision computed for this step. This may make the automatic dete
+rmination
+of precisions useless.
+> printexpansion(r);
+0x3ff0000000000000 + x^2 * (0xbfc5555555555555 + 0xbc65555555555555 + 0xb9055555
+55555555)
+\end{Verbatim}
+\end{minipage}\end{center}
+\noindent Example 4: 
+\begin{center}\begin{minipage}{15cm}\begin{Verbatim}[frame=single]
+> p = 0x3ff0000000000000 + x * (0x3ff0000000000000 + x * (0x3fe0000000000000 + x
+ * (0x3fc5555555555559 + x * (0x3fa55555555555bd + x * (0x3f811111111106e2 + x
+ * (0x3f56c16c16bf5eb7 + x * (0x3f2a01a01a292dcd + x * (0x3efa01a0218a016a + x
+ * (0x3ec71de360331aad + x * (0x3e927e42e3823bf3 + x * (0x3e5ae6b2710c2c9a + x
+ * (0x3e2203730c0a7c1d + x * 0x3de5da557e0781df))))))))))));
+> q = implementpoly(p,[-1/2;1/2],1b-60,D,"p","implementation.c",honorcoeffprec,"
+implementation.gappa");
+> if (q != p) then print("During implementation, rounding has happened.") else p
+rint("Polynomial implemented as given.");    
+Polynomial implemented as given.
+\end{Verbatim}
+\end{minipage}\end{center}
+See also: \textbf{honorcoeffprec} (\ref{labhonorcoeffprec}), \textbf{roundcoefficients} (\ref{labroundcoefficients}), \textbf{double} (\ref{labdouble}), \textbf{doubledouble} (\ref{labdoubledouble}), \textbf{tripledouble} (\ref{labtripledouble}), \textbf{readfile} (\ref{labreadfile}), \textbf{printexpansion} (\ref{labprintexpansion}), \textbf{error} (\ref{laberror}), \textbf{remez} (\ref{labremez}), \textbf{fpminimax} (\ref{labfpminimax}), \textbf{taylor} (\ref{labtaylor}), \textbf{implementconstant} (\ref{labimplementconstant})

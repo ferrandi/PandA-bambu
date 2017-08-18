@@ -1,0 +1,89 @@
+The tool has been restarted.
+=============== Test number 61 ================
+[@NaN@;@NaN@]
+The tool has been restarted.
+=============== Test number 62 ================
+x * x * x
+The tool has been restarted.
+=============== Test number 63 ================
+8 + 12 * x + 6 * x * x + x * x * x + 2 * x
+The tool has been restarted.
+=============== Test number 64 ================
+exp(243 + 405 * x + 270 * x * x + 90 * x * x * x + 15 * x * x * x * x + x * x * x * x * x + x * 405 + 108 * x * 5 * x + 54 * x * x * 5 * x + 12 * x * x * x * 5 * x + x * x * x * x * 5 * x + x * x * 270 + 27 * x * x * x * 10 + 9 * x * x * x * x * 10 + x * x * x * x * x * 10 + x * x * x * 90 + 6 * x * x * x * x * 10 + x * x * x * x * x * 10 + x * x * x * x * 5 * x + 15 * x * x * x * x + x * x * x * x * x)
+The tool has been restarted.
+=============== Test number 65 ================
+-17
+0
+The tool has been restarted.
+=============== Test number 66 ================
+false
+false
+The tool has been restarted.
+=============== Test number 67 ================
+[|[-3.14208984375;-3.140869140625], [-1.220703125e-3;1.220703125e-3], [3.140869140625;3.14208984375]|]
+[|[-3.14159265370108187198638916015625;-3.141592652536928653717041015625], [-1.16415321826934814453125e-9;1.16415321826934814453125e-9], [3.141592652536928653717041015625;3.14159265370108187198638916015625]|]
+The tool has been restarted.
+=============== Test number 68 ================
+Full parentheses mode has been deactivated.
+1 + 2 + 3
+Full parentheses mode has been activated.
+(1 + 2) + 3
+The tool has been restarted.
+=============== Test number 69 ================
+true
+true
+false
+true
+false
+The tool has been restarted.
+=============== Test number 70 ================
+The precision has been set to 12 bits.
+false
+The tool has been restarted.
+=============== Test number 71 ================
+true
+false
+false
+true
+false
+The tool has been restarted.
+=============== Test number 72 ================
+The precision has been set to 12 bits.
+false
+The tool has been restarted.
+=============== Test number 73 ================
+[10;10]
+The tool has been restarted.
+=============== Test number 74 ================
+[8;9]
+The tool has been restarted.
+=============== Test number 75 ================
+1
+1
+The tool has been restarted.
+=============== Test number 76 ================
+0x3ff0000000000000 + x^2 * 0xbfc5555555555555
+Warning: the infered precision of the 2th coefficient of the polynomial is greater than
+the necessary precision computed for this step. This may make the automatic determination
+of precisions useless.
+0x3ff0000000000000 + x^2 * (0xbfc5555555555555 + 0xbc65555555555555 + 0xb905555555555555)
+The tool has been restarted.
+=============== Test number 77 ================
+The number of recursions for Hopital's rule has been set to 0.
+[-@Inf@;@Inf@]
+The number of recursions for Hopital's rule has been set to 1.
+[-2.52258872223978123766892848583270627230200053744108;6.7725887222397812376689284858327062723020005374411]
+The tool has been restarted.
+=============== Test number 78 ================
+1 + x * (2 + x * 3)
+1 + x * (7 + x * (21 + x * (35 + x * (35 + x * (21 + x * (7 + x))))))
+The tool has been restarted.
+=============== Test number 79 ================
+exp(1 + x * (5 + x * (10 + x * (10 + x * (5 + x))))) - log(asin(x * (1 + x^2)) + x)
+The tool has been restarted.
+=============== Test number 80 ================
+0x3ff0000000000000 + x^2 * 0xbfc5555555555555
+Warning: the infered precision of the 2th coefficient of the polynomial is greater than
+the necessary precision computed for this step. This may make the automatic determination
+of precisions useless.
+0x3ff0000000000000 + x^2 * (0xbfc5555555555555 + 0xbc65555555555555 + 0xb905555555555555)
