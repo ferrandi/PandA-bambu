@@ -7,7 +7,7 @@ install: make -f Makefile.init
 
 before_script: mkdir build
 
-script: cd build && ../configure --prefix=$HOME/panda --enable-icarus --enable-verilator --enable-glpk --enable-opt --with-opt-level=3 && make -j4
+script: cd build && ../configure --prefix=$HOME/panda --enable-icarus --enable-verilator --enable-glpk --enable-opt && make -j4
 
 addons:
   apt:
@@ -17,18 +17,10 @@ addons:
     - automake
     - libtool
     - g++
-    - gcc-4.6
-    - g++-4.6
-    - gcc-4.7
-    - g++-4.7
-    - gcc-4.8
-    - g++-4.8
+    - gcc
+    - gcc-plugin-dev
     - gcc-4.8-plugin-dev
-    - gcc-4.7-plugin-dev
-    - gcc-4.6-plugin-dev
-    - gcc-4.8-multilib
-    - gcc-4.7-multilib
-    - gcc-4.6-multilib
+    - gcc-multilib
     - libboost-all-dev
     - libmpc-dev
     - libmpfi-dev
