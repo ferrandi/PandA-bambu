@@ -7,7 +7,7 @@ install: make -f Makefile.init
 
 before_script: mkdir build
 
-script: cd build && ../configure --prefix=$HOME/panda --enable-flopoco --enable-icarus --enable-verilator --enable-glpk --enable-opt --with-opt-level=3 && make
+script: cd build && ../configure --prefix=$HOME/panda --enable-icarus --enable-verilator --enable-glpk --enable-opt --with-opt-level=3 && make -j4
 
 addons:
   apt:
@@ -31,6 +31,7 @@ addons:
     - gcc-4.6-multilib
     - libboost-all-dev
     - libmpc-dev
+    - libmpfi-dev
     - libmpfr-dev
     - libxml2-dev
     - liblzma-dev
@@ -47,6 +48,3 @@ addons:
     - libglpk-dev
     - make
 
-env:
-  global:
-    - MAKEFLAGS="-j 4"
