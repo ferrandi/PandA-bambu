@@ -117,16 +117,22 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
    return relationships;
 }
 
-bool fanout_opt::is_dest_relevant(tree_nodeRef t, bool is_phi)
+bool fanout_opt::is_dest_relevant(tree_nodeRef t, bool )
 {
    THROW_ASSERT(t->get_kind() == tree_reindex_K, "t is not a tree_reindex node");
-   if(is_phi)   return GET_NODE(t)->get_kind() != gimple_phi_K;
-   return true;
+   if(GET_NODE(t)->get_kind() == gimple_assign_K)
+   {
+       gimple_assign * temp_assign = GetPointer<gimple_assign>(GET_NODE(t));
+       if(GET_NODE(temp_assign->op1)->get_kind() == mult_expr_K || GET_NODE(temp_assign->op1)->get_kind() == widen_mult_expr_K)
+          return true;
+   }
+   return false;
 }
 
 DesignFlowStep_Status
 fanout_opt::InternalExec ()
 {
+   if(parameters->IsParameter("disable-fanout_opt")) return DesignFlowStep_Status::SKIPPED;
    bool IR_changed = false;
 
    tree_nodeRef temp = TM->get_tree_node_const(function_id);
@@ -189,7 +195,7 @@ fanout_opt::InternalExec ()
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Statement examined " + GET_NODE(stmt)->ToString());
 
       }
-#if 0
+#if 1
       for(auto phi : block.second->CGetPhiList())
       {
          auto gp = GetPointer<gimple_phi>(GET_NODE(phi));
