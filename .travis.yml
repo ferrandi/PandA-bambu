@@ -5,7 +5,8 @@ compiler:
  - gcc
 install: make -f Makefile.init
 
-before_script: mkdir -f build
+before_script: mkdir build
+
 script: cd build && ../configure --enable-flopoco --enable-icarus --enable-verilator --enable-glpk --enable-opt --with-opt-level=3 && make
 
 addons:
