@@ -1,0 +1,65 @@
+language: cpp
+dist: trusty
+sudo: required
+compiler:
+ - gcc
+install: make -f Makefile.init
+
+before_script: mkdir -f build
+script: cd build && ../configure --enable-flopoco --enable-icarus --enable-verilator --enable-glpk --enable-opt --with-opt-level=3 && make
+
+addons:
+  apt:
+    packages:
+    - autoconf
+    - autoconf-archive
+    - automake
+    - libtool
+    - g++
+    - gcc-4.5
+    - g++-4.5
+    - gcc-4.6
+    - g++-4.6
+    - gcc-4.7
+    - g++-4.7
+    - gcc-4.8
+    - g++-4.8
+    - gcc-5
+    - g++-5
+    - gcc-6
+    - g++-6
+    - gcc-6-plugin-dev
+    - gcc-5-plugin-dev
+    - gcc-4.9-plugin-dev
+    - gcc-4.8-plugin-dev
+    - gcc-4.7-plugin-dev
+    - gcc-4.6-plugin-dev
+    - gcc-4.5-plugin-dev
+    - gcc-6-multilib
+    - gcc-5-multilib
+    - gcc-4.9-multilib
+    - gcc-4.8-multilib
+    - gcc-4.7-multilib
+    - gcc-4.6-multilib
+    - gcc-4.5-multilib
+    - libboost-all-dev
+    - libmpc-dev
+    - libmpfr-dev
+    - libxml2-dev
+    - liblzma-dev
+    - zlib1g-dev
+    - libicu-dev
+    - bison
+    - doxygen
+    - flex
+    - graphviz
+    - iverilog
+    - verilator
+    - pkg-config
+    - libsuitesparse-dev
+    - libglpk-dev
+    - make
+
+env:
+  global:
+    - MAKEFLAGS="-j 4"
