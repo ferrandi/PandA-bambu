@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/ferrandi/PandA-bambu.svg)](https://travis-ci.org/ferrandi/PandA-bambu)
+[![CircleCI](https://circleci.com/gh/ferrandi/PandA-bambu.svg?style=svg)](https://circleci.com/gh/ferrandi/PandA-bambu)
 The primary objective of the PandA project is to develop a usable framework
 that will enable the research of new ideas in the HW-SW Co-Design field.
 
