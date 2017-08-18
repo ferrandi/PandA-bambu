@@ -18,7 +18,6 @@ addons:
     - libtool
     - g++
     - gcc
-    - gcc-plugin-dev
     - gcc-4.8-plugin-dev
     - gcc-multilib
     - libboost-all-dev
