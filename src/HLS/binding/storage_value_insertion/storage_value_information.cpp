@@ -57,6 +57,7 @@
 ///tree includes
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
+#include "math_function.hpp"
 
 StorageValueInformation::StorageValueInformation(const HLS_managerConstRef _HLS_mgr, const unsigned int _function_id) :
    number_of_storage_values(0),
@@ -166,45 +167,63 @@ int StorageValueInformation::get_compatibility_weight(unsigned int storage_value
    const auto it_succ_v2 = boost::adjacent_vertices(v2, *data);
 
    // Verifico se v1 e v2 pilotano moltiplicazioni
-   std::set<unsigned int> mult_succ_of_v1;
+   std::set<unsigned int> mult_succ_of_v1_port0, mult_succ_of_v1_port1;
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, DEBUG_LEVEL_VERY_PEDANTIC,
                   "-->[D]Statement with USE first variable");
    std::for_each(it_succ_v1.first, it_succ_v1.second,
-                 [this, &mult_succ_of_v1] (const vertex succ) {
+                 [this, &mult_succ_of_v1_port0, &mult_succ_of_v1_port1, &var1] (const vertex succ) {
                    const std::string op_label = data->CGetOpNodeInfo(succ)->GetOperation();
                    const unsigned int succ_id = data->CGetOpNodeInfo(succ)->GetNodeId();
                    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, DEBUG_LEVEL_VERY_PEDANTIC,
                                   "---[D][" + STR(succ_id) + "] type: " + STR(op_label));
-                   if (op_label == "mult_expr"||op_label == "widen_mult_expr") {
-                     mult_succ_of_v1.insert(succ_id);
+                   if ((op_label == "mult_expr"||op_label == "widen_mult_expr"))
+                   {
+                      std::vector<HLS_manager::io_binding_type> var_read = HLS_mgr->get_required_values(function_id, succ);
+                      if(std::get<0>(var_read[0]) == var1)
+                         mult_succ_of_v1_port0.insert(succ_id);
+                      else if(std::get<0>(var_read[1]) == var1)
+                         mult_succ_of_v1_port1.insert(succ_id);
+                      else
+                         THROW_ERROR("unexpected case:" + STR(succ_id) + "|" + STR(std::get<0>(var_read[0])) + ":" + STR(std::get<0>(var_read[1])));
                    }
                  });
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, DEBUG_LEVEL_VERY_PEDANTIC, "<--");
 
-   std::set<unsigned int> mult_succ_of_v2;
+   std::set<unsigned int> mult_succ_of_v2_port0, mult_succ_of_v2_port1;
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, DEBUG_LEVEL_VERY_PEDANTIC,
                   "-->[D]Statement with USE second variable");
    std::for_each(it_succ_v2.first, it_succ_v2.second,
-                 [this, &mult_succ_of_v2] (const vertex succ) {
+                 [this, &mult_succ_of_v2_port0, &mult_succ_of_v2_port1, &var2] (const vertex succ) {
                    const std::string op_label = data->CGetOpNodeInfo(succ)->GetOperation();
                    const unsigned int succ_id = data->CGetOpNodeInfo(succ)->GetNodeId();
                    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, DEBUG_LEVEL_VERY_PEDANTIC,
                                   "---[D][" + STR(succ_id) + "] type: " + STR(op_label));
-                   if (op_label == "mult_expr"||op_label == "widen_mult_expr") {
-                     mult_succ_of_v2.insert(succ_id);
+                   if (op_label == "mult_expr"||op_label == "widen_mult_expr")
+                   {
+                      std::vector<HLS_manager::io_binding_type> var_read = HLS_mgr->get_required_values(function_id, succ);
+                      if(std::get<0>(var_read[0]) == var2)
+                         mult_succ_of_v2_port0.insert(succ_id);
+                      else if(std::get<0>(var_read[1]) == var2)
+                         mult_succ_of_v2_port1.insert(succ_id);
+                      else
+                         THROW_ERROR("unexpected case");
                    }
                  });
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, DEBUG_LEVEL_VERY_PEDANTIC, "<--");
 
    // Check both pilot mult
-   const bool both_pilot_mult = mult_succ_of_v1.empty() == false &&
-       mult_succ_of_v2.empty() == false;
+   const bool both_pilot_mult =
+         (mult_succ_of_v1_port0.empty() == false &&
+          mult_succ_of_v2_port0.empty() == false) ||
+         (mult_succ_of_v1_port1.empty() == false &&
+          mult_succ_of_v2_port1.empty() == false);
+
 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, DEBUG_LEVEL_VERY_PEDANTIC,
                   "Both pilot mult_expr: " + STR(both_pilot_mult));
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, DEBUG_LEVEL_VERY_PEDANTIC, "<--");
    if (both_pilot_mult) {
-     return 5;
+     return 6;
    }
    // ------------
 
@@ -278,5 +297,5 @@ int StorageValueInformation::get_compatibility_weight(unsigned int storage_value
 
 unsigned int StorageValueInformation::get_storage_value_bitsize(unsigned int storage_value_index) const
 {
-   return tree_helper::size(HLS_mgr->get_tree_manager(), get_variable_index(storage_value_index));
+   return /*resize_to_1_8_16_32_64_128_256_512*/(tree_helper::size(HLS_mgr->get_tree_manager(), get_variable_index(storage_value_index)));
 }
