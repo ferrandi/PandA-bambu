@@ -31,3 +31,21 @@ Makefile.in
 # http://www.gnu.org/software/texinfo
 
 /texinfo.tex
+
+autoreconf_log
+etc/aclocal.m4
+etc/autom4te.cache/
+etc/autoreconf_log
+etc/config.h.in
+etc/configure
+etc/macros/libtool.m4
+etc/macros/ltoptions.m4
+etc/macros/ltsugar.m4
+etc/macros/ltversion.m4
+etc/macros/lt~obsolete.m4
+ext/aclocal.m4
+ext/autom4te.cache/
+ext/autoreconf_log
+ext/config.h.in
+ext/configure
+
