@@ -1,3 +1,4 @@
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/ff8e7dcac46d4117a3adf12b7fb8e50e)](https://www.codacy.com/app/fabrizio.ferrandi/PandA-bambu?utm_source=github.com&utm_medium=referral&utm_content=ferrandi/PandA-bambu&utm_campaign=badger)
 [![Build Status](https://travis-ci.org/ferrandi/PandA-bambu.svg)](https://travis-ci.org/ferrandi/PandA-bambu)
 [![CircleCI](https://circleci.com/gh/ferrandi/PandA-bambu.svg?style=svg)](https://circleci.com/gh/ferrandi/PandA-bambu)
 The primary objective of the PandA project is to develop a usable framework
