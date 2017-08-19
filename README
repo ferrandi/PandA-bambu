@@ -11,8 +11,8 @@ released under the GNU General Public License version 3 and being
 developed at Politecnico di Milano (Italy).
 
 The source files currently distributed mainly cover the high-level synthesis 
-of C based descriptions and are available for download through this 
-page http://panda.dei.polimi.it/?page_id=81.
+of C based descriptions. Patches and pull request could be submitted at https://github.com/ferrandi/PandA-bambu while stable releases are available for download through this 
+page http://panda.dei.polimi.it/?page_id=81. Documentation and Install instructions could be found on this website: http://panda.dei.polimi.it/ .
 
 For further information send an e-mail to panda-info@polimi.it or visit the google
 group page (https://groups.google.com/forum/#!forum/panda-project-discussions-questions) 
