@@ -37,6 +37,7 @@ EXTRA_DIST = \
 ./mandelbrot/modified\
 ./mandelbrot/modified/mandelbrot.c\
 ./5SGXEA7N2F45C1_10.0_O2.sh\
+./omp_simd_5SGXEA7N2F45C1_10.0_O2.tex\
 ./dotproduct\
 ./dotproduct/original\
 ./dotproduct/original/dotproduct.h\
@@ -64,6 +65,7 @@ EXTRA_DIST = \
 ./add/modified/add.c\
 ./all.sh\
 ./xc7vx690t-3ffg1930-VVD_10.0_O2.sh\
+./omp_simd_xc7vx690t-3ffg1930-VVD_10.0_O2.tex\
 ./perfecthash\
 ./perfecthash/original\
 ./perfecthash/original/perfecthash.c\
