@@ -331,7 +331,6 @@ DesignFlowStep_Status LoopsAnalysisBambu::InternalExec()
          return tree_nodeRef();
       }();
       loop->main_iv = first_operand->index;
-      std::cerr << "Setting main_iv " << loop->main_iv << std::endl;
       loop->initialization_tree_node_id = init->index;
       loop->init_gimple_id = def2->index;
       loop->inc_id = ga->index;
