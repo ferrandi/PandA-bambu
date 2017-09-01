@@ -1,0 +1,50 @@
+%Generated at 2016-11-15 09:33:34.079730 with bambu Version: PandA 0.9.5-dev - Revision 1d2dfda747517f8cdc54159258294f400c2ca4da-fixing_master
+\begin{tabular}{|l|c|c|c|c|c|c|c|c|c|c|c|}
+\hline
+Benchmark Name         & Tot. Latency           & Num Cycles   & LUT pairs & LUTs       & Slices    & Registers & DSPs    & BRAMs    & Clock Frequency & Clock Slack & HLS Time(s) \\
+\hline
+aes:main\_0            & $ 1.513 \cdot 10^{1} $ & $ 2158     $ & $ 2400  $ & $ 7283   $ & $ 2128  $ & $ 3555  $ & $ 0   $ & $ 9    $ & $ 142.59      $ & $ 2.99    $ & $ 23.69   $ \\
+backprop:main\_0       & $ 9.800 \cdot 10^{5} $ & $ 87052377 $ & $ 2665  $ & $ 17927  $ & $ 6375  $ & $ 10237 $ & $ 59  $ & $ 384  $ & $ 88.83       $ & $ -1.26   $ & $ 64.31   $ \\
+bfs\_bulk:main\_0      & $ 9.425 \cdot 10^{1} $ & $ 24261    $ & $ 162   $ & $ 515    $ & $ 251   $ & $ 596   $ & $ 0   $ & $ 0    $ & $ 257.40      $ & $ 6.12    $ & $ 6.51    $ \\
+bfs\_queue:main\_0     & $ 9.066 \cdot 10^{1} $ & $ 23265    $ & $ 198   $ & $ 673    $ & $ 306   $ & $ 570   $ & $ 0   $ & $ 2    $ & $ 256.61      $ & $ 6.10    $ & $ 6.14    $ \\
+fft\_strided:main\_0   & $ 1.209 \cdot 10^{3} $ & $ 121881   $ & $ 1836  $ & $ 6642   $ & $ 2094  $ & $ 2911  $ & $ 40  $ & $ 0    $ & $ 100.82      $ & $ 0.08    $ & $ 30.27   $ \\
+fft\_transpose:main\_0 & $ 1.479 \cdot 10^{3} $ & $ 150719   $ & $ 6966  $ & $ 43842  $ & $ 13410 $ & $ 19634 $ & $ 12  $ & $ 928  $ & $ 101.87      $ & $ 0.18    $ & $ 85.65   $ \\
+gemm\_blocked:main\_0  & $ 7.296 \cdot 10^{3} $ & $ 888907   $ & $ 433   $ & $ 1141   $ & $ 480   $ & $ 1279  $ & $ 3   $ & $ 0    $ & $ 121.83      $ & $ 1.79    $ & $ 7.20    $ \\
+gemm\_ncubed:main\_0   & $ 1.861 \cdot 10^{3} $ & $ 532547   $ & $ 167   $ & $ 314    $ & $ 143   $ & $ 322   $ & $ 3   $ & $ 0    $ & $ 286.20      $ & $ 6.51    $ & $ 8.49    $ \\
+kmp:main\_0            & $ 9.915 \cdot 10^{2} $ & $ 195762   $ & $ 498   $ & $ 1243   $ & $ 383   $ & $ 840   $ & $ 0   $ & $ 0    $ & $ 197.43      $ & $ 4.93    $ & $ 6.83    $ \\
+md\_grid:main\_0       & $ 9.328 \cdot 10^{3} $ & $ 860166   $ & $ 3823  $ & $ 14577  $ & $ 4611  $ & $ 7427  $ & $ 79  $ & $ 0    $ & $ 92.22       $ & $ -0.84   $ & $ 37.30   $ \\
+md\_knn:main\_0        & $ 2.268 \cdot 10^{3} $ & $ 210438   $ & $ 3468  $ & $ 13345  $ & $ 4287  $ & $ 6504  $ & $ 79  $ & $ 0    $ & $ 92.77       $ & $ -0.78   $ & $ 39.60   $ \\
+merge:main\_0          & $ 1.962 \cdot 10^{3} $ & $ 311307   $ & $ 636   $ & $ 1947   $ & $ 584   $ & $ 1055  $ & $ 0   $ & $ 8    $ & $ 158.63      $ & $ 3.70    $ & $ 7.60    $ \\
+nw:main\_0             & $ 5.343 \cdot 10^{2} $ & $ 116230   $ & $ 609   $ & $ 1373   $ & $ 455   $ & $ 1023  $ & $ 0   $ & $ 0    $ & $ 217.53      $ & $ 5.40    $ & $ 7.24    $ \\
+radix:main\_0          & $ 4.422 \cdot 10^{3} $ & $ 608261   $ & $ 2508  $ & $ 5343   $ & $ 1773  $ & $ 4363  $ & $ 0   $ & $ 0    $ & $ 137.55      $ & $ 2.73    $ & $ 17.08   $ \\
+spmv\_crs:main\_0      & $ 1.549 \cdot 10^{2} $ & $ 16480    $ & $ 535   $ & $ 2426   $ & $ 803   $ & $ 1118  $ & $ 10  $ & $ 0    $ & $ 106.36      $ & $ 0.60    $ & $ 18.55   $ \\
+spmv\_ellpack:main\_0  & $ 2.679 \cdot 10^{2} $ & $ 27173    $ & $ 1922  $ & $ 6829   $ & $ 2396  $ & $ 4535  $ & $ 60  $ & $ 0    $ & $ 101.44      $ & $ 0.14    $ & $ 17.87   $ \\
+stencil2d:main\_0      & $ 6.079 \cdot 10^{2} $ & $ 63885    $ & $ 735   $ & $ 2252   $ & $ 905   $ & $ 1873  $ & $ 12  $ & $ 0    $ & $ 105.10      $ & $ 0.48    $ & $ 8.25    $ \\
+stencil3d:main\_0      & $ 6.114 \cdot 10^{2} $ & $ 76536    $ & $ 259   $ & $ 636    $ & $ 248   $ & $ 493   $ & $ 3   $ & $ 0    $ & $ 125.19      $ & $ 2.01    $ & $ 6.34    $ \\
+viterbi:main\_0        & $ 9.653 \cdot 10^{3} $ & $ 1201248  $ & $ 295   $ & $ 800    $ & $ 321   $ & $ 669   $ & $ 2   $ & $ 0    $ & $ 124.44      $ & $ 1.96    $ & $ 8.77    $ \\
+\hline
+Average                & $                    $ & $          $ & $       $ & $        $ & $       $ & $       $ & $     $ & $      $ & $ 148.15      $ & $ 2.26    $ & $         $ \\
+\hline
+Overall                & $ 1.023 \cdot 10^{6} $ & $ 92483601 $ & $ 30115 $ & $ 129108 $ & $ 41953 $ & $ 69004 $ & $ 362 $ & $ 1331 $ & $             $ & $         $ & $ 407.69  $ \\
+\hline
+\end{tabular}
+%Benchmarks:
+%aes/aes/aes.c common/harness.c --benchmark-name=aes --file-input-data=BENCHMARKS_ROOT/aes/aes/input.data\\\,BENCHMARKS_ROOT/aes/aes/check.data
+%backprop/backprop/net.c common/harness.c -lm --benchmark-name=backprop --file-input-data=BENCHMARKS_ROOT/backprop/backprop/input.data\\\,BENCHMARKS_ROOT/backprop/backprop/check.data -DNO_FINAL_MEMCMP_CHECK
+%bfs/bulk/bulk.c common/harness.c --benchmark-name=bfs_bulk --file-input-data=BENCHMARKS_ROOT/bfs/bulk/input.data\\\,BENCHMARKS_ROOT/bfs/bulk/check.data
+%bfs/queue/queue.c common/harness.c --benchmark-name=bfs_queue --file-input-data=BENCHMARKS_ROOT/bfs/queue/input.data\\\,BENCHMARKS_ROOT/bfs/queue/check.data
+%fft/strided/fft.c common/harness.c -lm --benchmark-name=fft_strided --file-input-data=BENCHMARKS_ROOT/fft/strided/input.data\\\,BENCHMARKS_ROOT/fft/strided/check.data
+%fft/transpose/fft.c common/harness.c -lm --benchmark-name=fft_transpose --file-input-data=BENCHMARKS_ROOT/fft/transpose/input.data\\\,BENCHMARKS_ROOT/fft/transpose/check.data -DNO_FINAL_MEMCMP_CHECK
+%gemm/ncubed/gemm.c common/harness.c --benchmark-name=gemm_ncubed --file-input-data=BENCHMARKS_ROOT/gemm/ncubed/input.data\\\,BENCHMARKS_ROOT/gemm/ncubed/check.data
+%gemm/blocked/bbgemm.c common/harness.c --benchmark-name=gemm_blocked --file-input-data=BENCHMARKS_ROOT/gemm/blocked/input.data\\\,BENCHMARKS_ROOT/gemm/blocked/check.data
+%kmp/kmp/kmp.c common/harness.c --benchmark-name=kmp --file-input-data=BENCHMARKS_ROOT/kmp/kmp/input.data\\\,BENCHMARKS_ROOT/kmp/kmp/check.data
+%md/knn/md.c common/harness.c --benchmark-name=md_knn --file-input-data=BENCHMARKS_ROOT/md/knn/input.data\\\,BENCHMARKS_ROOT/md/knn/check.data
+%md/grid/md.c common/harness.c --benchmark-name=md_grid --file-input-data=BENCHMARKS_ROOT/md/grid/input.data\\\,BENCHMARKS_ROOT/md/grid/check.data
+%nw/nw/needwun.c common/harness.c --benchmark-name=nw --file-input-data=BENCHMARKS_ROOT/nw/nw/input.data\\\,BENCHMARKS_ROOT/nw/nw/check.data
+%sort/merge/merge.c common/harness.c --benchmark-name=merge --file-input-data=BENCHMARKS_ROOT/sort/merge/input.data\\\,BENCHMARKS_ROOT/sort/merge/check.data
+%sort/radix/radix.c common/harness.c --benchmark-name=radix --file-input-data=BENCHMARKS_ROOT/sort/radix/input.data\\\,BENCHMARKS_ROOT/sort/radix/check.data
+%spmv/crs/crs.c common/harness.c --benchmark-name=spmv_crs --file-input-data=BENCHMARKS_ROOT/spmv/crs/input.data\\\,BENCHMARKS_ROOT/spmv/crs/check.data
+%spmv/ellpack/ellpack.c common/harness.c --benchmark-name=spmv_ellpack --file-input-data=BENCHMARKS_ROOT/spmv/ellpack/input.data\\\,BENCHMARKS_ROOT/spmv/ellpack/check.data
+%stencil/stencil2d/stencil.c common/harness.c --benchmark-name=stencil2d --file-input-data=BENCHMARKS_ROOT/stencil/stencil2d/input.data\\\,BENCHMARKS_ROOT/stencil/stencil2d/check.data
+%stencil/stencil3d/stencil3d.c common/harness.c --benchmark-name=stencil3d --file-input-data=BENCHMARKS_ROOT/stencil/stencil3d/input.data\\\,BENCHMARKS_ROOT/stencil/stencil3d/check.data
+%viterbi/viterbi/viterbi.c common/harness.c --benchmark-name=viterbi --file-input-data=BENCHMARKS_ROOT/viterbi/viterbi/input.data\\\,BENCHMARKS_ROOT/viterbi/viterbi/check.data
