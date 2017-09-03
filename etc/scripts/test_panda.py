@@ -187,7 +187,7 @@ def SearchCFiles(directory):
     for element in os.listdir(directory):
         if os.path.isdir(os.path.join(directory, element)):
             files = files.union(SearchCFiles(os.path.join(directory, element)))
-        elif element[-2:] == ".c":
+        elif (element[-2:] == ".c")  or (element[-2:] == ".C") or (element[-4:] == ".CPP") or (element[-4:] == ".cpp") or (element[-4:] == ".cxx") or (element[-3:] == ".cc") or (element[-4:] == ".c++"):
             files.add(os.path.join(directory, element))
     return files
 
@@ -323,8 +323,8 @@ modified_argv.append(sys.argv[0])
 abs_configuration_dir=""
 for arg in sys.argv[1:]:
     if arg in args.files[0]:
-        #.c file
-        if arg[-2:] == ".c":
+        #.c/c++ file
+        if (arg[-2:] == ".c") or (arg[-2:] == ".C") or (arg[-4:] == ".CPP") or (arg[-4:] == ".cpp") or (arg[-4:] == ".cxx") or (arg[-3:] == ".cc") or (arg[-4:] == ".c++"):
             modified_argv.append(arg)
         #Check if it is a directory
         elif os.path.exists(arg) and os.path.isdir(arg):
@@ -502,8 +502,8 @@ if not args.restart:
     files_list = []
     #Create temp list with arg
     for arg in args.files[0]:
-        #.c file
-        if arg[-2:] == ".c":
+        #.c/.c++ file
+        if (arg[-2:] == ".c") or (arg[-2:] == ".C") or (arg[-4:] == ".CPP") or (arg[-4:] == ".cpp") or (arg[-4:] == ".cxx") or (arg[-3:] == ".cc") or (arg[-4:] == ".c++"):
             files_list.append(arg)
         #Check if it is a directory
         elif os.path.exists(arg) and os.path.isdir(arg):
@@ -598,7 +598,7 @@ if not args.restart:
         else:
             expanded_list.write(first_parameter)
             for other_parameter in other_parameters:
-                if (other_parameter[-2:] == ".c" or other_parameter[-4:] == ".xml") and other_parameter[0] != '\\':
+                if ((other_parameter[-2:] == ".c") or (other_parameter[-2:] == ".C") or (other_parameter[-4:] == ".CPP") or (other_parameter[-4:] == ".cpp") or (other_parameter[-4:] == ".cxx") or (other_parameter[-3:] == ".cc") or (other_parameter[-4:] == ".c++") or other_parameter[-4:] == ".xml") and other_parameter[0] != '\\':
                     if other_parameter[0] == '/':
                         expanded_list.write(" " + other_parameter)
                     else:
