@@ -3,5 +3,5 @@ EXTRA_DIST = btn_ctrl.c btn_ctrl.h btn_ctrl.v constraints_STD.xml COPYING IPs.xm
 TESTS=synthesize_NEXYS4.sh
 
 #do not touch the following line
-include $(top_srcdir)/panda.am
+
 

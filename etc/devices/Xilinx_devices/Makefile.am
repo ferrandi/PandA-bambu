@@ -13,5 +13,5 @@ EXTRA_DIST = Virtex-4.xml Virtex-4-Taste.xml xc4vlx100-10ff1513-seed.xml xc4vlx1
              characterize.sh characterize-vivado.sh
 
 #do not touch the following line
-include $(top_srcdir)/panda.am
+
 

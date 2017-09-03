@@ -42,4 +42,4 @@ lib_vcd_la_SOURCES = vcd_trace_head.cpp VcdSignalSelection.cpp \
 	vcd_utility.cpp HWCallPathCalculator.cpp
 
 #do not touch the following line
-include $(top_srcdir)/panda.am
+

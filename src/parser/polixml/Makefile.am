@@ -32,5 +32,5 @@ PRJ_DOC =
 EXTRA_DIST = $(PRJ_DOC)
 
 #do not touch the following line
-include $(top_srcdir)/panda.am
+
 

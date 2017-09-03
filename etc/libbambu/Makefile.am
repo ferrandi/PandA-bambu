@@ -74,5 +74,5 @@ libbambu_gcc7_a_AR =../$(top_builddir)/src/tree-panda-gcc $(common_treegccflags)
 endif
 
 #do not touch the following line
- include $(top_srcdir)/panda.am
+ 
 

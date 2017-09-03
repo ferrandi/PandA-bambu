@@ -49,7 +49,7 @@ ACLOCAL_AMFLAGS = -I etc/macros
 
 
 #do not touch the following line
-include $(top_srcdir)/panda.am
+
 
 dist-hook:
 	$(top_srcdir)/etc/scripts/clean_configure.py $(top_srcdir)/configure.ac  | grep -v "#no_release_tag" > $(distdir)/configure.ac

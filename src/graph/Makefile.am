@@ -16,4 +16,4 @@ lib_graph_la_SOURCES = \
    typed_node_info.cpp
 
 #do not touch the following line
-include $(top_srcdir)/panda.am
+

@@ -38,4 +38,4 @@ noinst_HEADERS = LatticeBackendFlow.hpp LatticeWrapper.hpp lattice_flow_wrapper.
 lib_Latticewrapper_la_SOURCES = LatticeBackendFlow.cpp LatticeWrapper.cpp lattice_flow_wrapper.cpp 
 
 #do not touch the following line
-include $(top_srcdir)/panda.am
+

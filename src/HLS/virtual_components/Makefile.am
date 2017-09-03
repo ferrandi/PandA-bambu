@@ -22,4 +22,4 @@ lib_virtual_components_la_SOURCES = \
    mux_obj.cpp
 
 #do not touch the following line
-include $(top_srcdir)/panda.am
+

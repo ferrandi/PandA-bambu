@@ -20,4 +20,4 @@ noinst_HEADERS = IcarusWrapper.hpp
 lib_icaruswrapper_la_SOURCES = IcarusWrapper.cpp 
 
 #do not touch the following line
-include $(top_srcdir)/panda.am
+

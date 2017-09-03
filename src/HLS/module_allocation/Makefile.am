@@ -60,5 +60,5 @@ PRJ_DOC = main_allocation.doc allocation.doc binding_constraints.doc
 EXTRA_DIST = $(PRJ_DOC)
 
 #do not touch the following line
-include $(top_srcdir)/panda.am
+
 

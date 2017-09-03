@@ -495,5 +495,5 @@ install: all
 	if test "`ls *so`" != ""; then cp *.so $(PLUGIN_DIR) -v; fi
 
 #do not touch the following line
-include $(top_srcdir)/panda.am
+
 

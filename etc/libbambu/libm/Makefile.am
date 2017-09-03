@@ -183,5 +183,5 @@ libm_gcc7_subnormals_std_a_AR = ../$(top_builddir)/src/tree-panda-gcc --compiler
 endif
 
 #do not touch the following line
-include $(top_srcdir)/panda.am
+
 

@@ -75,4 +75,4 @@ libsoftfloat_subnormals_gcc7_a_CFLAGS = -O3 -fno-tree-loop-distribute-patterns -
 endif
 
 #do not touch the following line
- include $(top_srcdir)/panda.am
+ 

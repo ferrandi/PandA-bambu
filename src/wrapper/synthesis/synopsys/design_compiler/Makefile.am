@@ -32,4 +32,4 @@ lib_designcompiler_la_CPPFLAGS += -I$(top_srcdir)/src/circuit/aig\
 endif
 
 #do not touch the following line
-include $(top_srcdir)/panda.am
+

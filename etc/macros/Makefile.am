@@ -15,6 +15,6 @@ uintmax_t.m4 ulonglong.m4 verilator_compiler.m4 ax_openmp.m4 w32.m4\
 xilinx.m4
 
 #do not touch the following line
-include $(top_srcdir)/panda.am
+
 
 

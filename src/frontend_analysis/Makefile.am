@@ -90,4 +90,4 @@ if BUILD_SOURCE_CODE_MANIPULATION
 endif
 
 #do not touch the following line
-include $(top_srcdir)/panda.am
+

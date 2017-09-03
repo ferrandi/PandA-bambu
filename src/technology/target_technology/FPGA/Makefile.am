@@ -17,5 +17,5 @@ noinst_HEADERS = FPGA_technology.hpp
 lib_target_technology_FPGA_la_SOURCES = FPGA_technology.cpp
 
 #do not touch the following line
-include $(top_srcdir)/panda.am
+
 

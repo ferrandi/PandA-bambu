@@ -67,9 +67,6 @@ DOX_TAGFILES=
 
 PRJ_DOC = fold1.doc
 EXTRA_DIST = $(PRJ_DOC)
-
-#do not touch the following line
-include $(top_srcdir)/panda.am
 \endverbatim
 
 The first contains the name (or names in case we are need to produce more than one library) of the library we want to produce. *_CPPFLAGS is a variable containing all the flags we want to pass to the compiler; most likely here you will put the path to the files your project includes (the path to the files you specify in you project using the directive \#include "...."): usually you include at least files in utility (refcount.hpp and exceptions.hpp are almost in every project) the files of the boost library (refcounts are now implemented using boost facilities); other includes may anyway be present here. pkginclude_HEADERS contains the header files of out this folder which we may need to distribute with our library (usually these are all the *.hpp and  *.h files whose correspondent *.cpp or *.c are compiled to create the library). *_SOURCES lists the source file used to which will compose the library. Finally there are a few lines used to create the documentation, you don't usually need to change them.
@@ -92,9 +89,6 @@ DOX_TAGFILES = src/newProj/fold1/ src/newProj/fold2/
 
 PRJ_DOC = newProj.doc
 EXTRA_DIST = $(PRJ_DOC)
-
-#do not touch the following line
-include $(top_srcdir)/panda.am
 \endverbatim
 
 This file is similar to the preceding one; there are some new instructions anyway. SUBDIRS instructs the make command to first of all inspect fold1 and fold2: this way the Makefiles seen above are parsed and lib_fold1.la and lib_fold2.la are created. *_LIBADD tells to litool that lib_newProj.la must contain not only the result of the compilation of mainProj.cpp but also the content of the two sublibraries lib_fold1.la and lib_fold2.la. Finally DOX_TAGFILES is a variable used to instruct Doxygen (the program used to create the documentation) to look in fold1 and fold2 for possible documentation links (i.e. the documentation file newProj.doc may contain links to other doc files: doxygen looks for these files in the directories specified by the DOX_TAGFILES variable).

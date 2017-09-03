@@ -32,5 +32,5 @@ EXTRA_DIST = $(PRJ_DOC) test_degree_coloring.cpp test_dsatur2_coloring.cpp test_
 
 
 #do not touch the following line
-include $(top_srcdir)/panda.am
+
 

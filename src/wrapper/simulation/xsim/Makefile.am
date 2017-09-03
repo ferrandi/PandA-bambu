@@ -20,4 +20,4 @@ noinst_HEADERS = VIVADO_xsim_wrapper.hpp
 lib_xsimwrapper_la_SOURCES = VIVADO_xsim_wrapper.cpp
 
 #do not touch the following line
-include $(top_srcdir)/panda.am
+

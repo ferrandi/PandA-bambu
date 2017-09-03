@@ -6,6 +6,6 @@ EXTRA_DIST = \
    test.xml
 
 #do not touch the following line
-include $(top_srcdir)/panda.am
+
 TESTS = \
    bambu.sh

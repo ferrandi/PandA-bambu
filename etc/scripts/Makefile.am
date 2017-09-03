@@ -11,5 +11,5 @@ DOX_TAGFILES =
 EXTRA_DIST = add_escape.sh test_panda.py test_installation.sh
 
 #do not touch the following line
-include $(top_srcdir)/panda.am
+
 

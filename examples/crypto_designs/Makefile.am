@@ -28,6 +28,6 @@ EXTRA_DIST= \
   README.txt
 
 #do not touch the following line
-include $(top_srcdir)/panda.am
+
 
 TESTS=multi.sh keccak_CycloneII_10ns.sh keccak_CycloneII_4ns.sh keccak_ECP3_9ns.sh keccak_V5_4ns.sh keccak_V7_2ns.sh

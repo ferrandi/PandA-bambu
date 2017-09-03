@@ -288,4 +288,4 @@ tree_weights_symbolic.data: $(top_srcdir)/etc/weight-models/tree_weights_symboli
 CLEANFILES = $(BUILT_SOURCES)
 
 #do not touch the following line
-include $(top_srcdir)/panda.am
+

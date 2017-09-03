@@ -20,4 +20,4 @@ noinst_HEADERS = ISE_isim_wrapper.hpp
 lib_isimwrapper_la_SOURCES = ISE_isim_wrapper.cpp
 
 #do not touch the following line
-include $(top_srcdir)/panda.am
+

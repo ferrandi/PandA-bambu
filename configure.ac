@@ -8,7 +8,7 @@ AC_INIT(PandA, 0.9.5, panda-info@polimi.it)
 AC_CANONICAL_SYSTEM
 AM_INIT_AUTOMAKE([-Wno-portability 1.9 tar-pax])
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
-AC_CONFIG_SRCDIR([panda.am])
+AC_CONFIG_SRCDIR([configure.ac])
 
 AC_DISABLE_SHARED
 #AC_DISABLE_STATIC

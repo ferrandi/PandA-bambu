@@ -42,4 +42,4 @@ lib_architecture_creation_la_LIBADD = \
                         $(top_builddir)/src/HLS/architecture_creation/controller_creation/lib_controller_creation.la
 
 #do not touch the following line
-include $(top_srcdir)/panda.am
+

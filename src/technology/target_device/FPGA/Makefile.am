@@ -100,5 +100,5 @@ LFE335EA8FN484C.data: $(top_srcdir)/etc/devices/Lattice_devices/LFE335EA8FN484C.
 
 
 #do not touch the following line
-include $(top_srcdir)/panda.am
+
 

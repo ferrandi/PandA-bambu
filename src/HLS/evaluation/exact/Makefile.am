@@ -57,4 +57,4 @@ if BUILD_LIB_RTL_CHARACTERIZATION
 endif
 
 #do not touch the following line
-include $(top_srcdir)/panda.am
+

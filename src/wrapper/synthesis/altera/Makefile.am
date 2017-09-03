@@ -62,4 +62,4 @@ lib_Alterawrapper_la_SOURCES = \
    quartus_wrapper.cpp
 
 #do not touch the following line
-include $(top_srcdir)/panda.am
+

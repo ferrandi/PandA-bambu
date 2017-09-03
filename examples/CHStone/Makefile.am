@@ -134,7 +134,7 @@ CHStone_xc7z020-1clg484-VVD_15.0_O3_sdc.tex
 
 
 #do not touch the following line
-include $(top_srcdir)/panda.am
+
 
 TESTS = \
    bambu_dfadd_sdc.sh

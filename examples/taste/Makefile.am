@@ -10,6 +10,6 @@ EXTRA_DIST = \
    taste-types.asn
 
 #do not touch the following line
-include $(top_srcdir)/panda.am
+
 TESTS = \
    bambu.sh

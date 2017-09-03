@@ -63,4 +63,4 @@ libm_LFE335EA8FN484C_10.0_OSF_sdc.tex\
 libm_LFE335EA8FN484C_10.0_OSF_sdc_flopoco.tex
 
 #do not touch the following line
-include $(top_srcdir)/panda.am
+

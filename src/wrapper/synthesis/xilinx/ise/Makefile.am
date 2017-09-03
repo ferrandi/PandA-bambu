@@ -38,4 +38,4 @@ lib_xilinx_ise_la_SOURCES = \
                            par_wrapper.cpp
 
 #do not touch the following line
-include $(top_srcdir)/panda.am
+

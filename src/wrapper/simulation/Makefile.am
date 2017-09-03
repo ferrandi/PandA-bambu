@@ -28,4 +28,4 @@ lib_simulation_la_LIBADD = \
    $(top_builddir)/src/wrapper/simulation/icarus/lib_icaruswrapper.la
 
 #do not touch the following line
-include $(top_srcdir)/panda.am
+

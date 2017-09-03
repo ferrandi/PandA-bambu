@@ -156,4 +156,4 @@ if BUILD_LIB_VCD_PARSER
 endif
 
 #do not touch the following line
-include $(top_srcdir)/panda.am
+

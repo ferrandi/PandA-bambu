@@ -3,4 +3,4 @@ DIST_SUBDIRS = add_device_simple arf arf_res_sharing crc crc_yosys crypto_design
 EXTRA_DIST = example.sh
 
 #do not touch the following line
-include $(top_srcdir)/panda.am
+

@@ -25,5 +25,5 @@ CMOS_technology.data: $(top_srcdir)/etc/lib/technology/Nangate_technology.xml
 endif
 
 #do not touch the following line
-include $(top_srcdir)/panda.am
+
 

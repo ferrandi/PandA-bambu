@@ -20,4 +20,4 @@ if BUILD_LIB_CMOS
    lib_time_models_la_SOURCES += liberty_model.cpp timing_group.cpp
 endif
 #do not touch the following line
-include $(top_srcdir)/panda.am
+

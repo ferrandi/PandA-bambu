@@ -58,4 +58,4 @@ lib_simulation_la_SOURCES = \
 #DOCUMENTATION STUFF
 
 #do not touch the following line
-include $(top_srcdir)/panda.am
+

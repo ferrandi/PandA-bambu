@@ -17,4 +17,4 @@ noinst_HEADERS = modelsimWrapper.hpp
 lib_modelsimwrapper_la_SOURCES = modelsimWrapper.cpp
 
 #do not touch the following line
-include $(top_srcdir)/panda.am
+

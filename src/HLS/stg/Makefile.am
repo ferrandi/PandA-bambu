@@ -38,4 +38,4 @@ noinst_HEADERS = state_transition_graph.hpp state_transition_graph_manager.hpp S
 lib_stg_la_SOURCES = state_transition_graph.cpp state_transition_graph_manager.cpp StateTransitionGraph_constructor.cpp STG_creator.cpp BB_based_stg.cpp
 
 #do not touch the following line
-include $(top_srcdir)/panda.am
+

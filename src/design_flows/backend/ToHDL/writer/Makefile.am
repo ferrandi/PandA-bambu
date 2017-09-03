@@ -31,4 +31,4 @@ endif
 DOX_TAGFILES= src/design_flows/backend/ src/circuit
 
 #do not touch the following line
-include $(top_srcdir)/panda.am
+

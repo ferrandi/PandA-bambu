@@ -53,4 +53,4 @@ if BUILD_TASTE
 endif
 
 #do not touch the following line
-include $(top_srcdir)/panda.am
+

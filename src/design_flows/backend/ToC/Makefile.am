@@ -55,4 +55,4 @@ lib_ToC_la_LIBADD = \
    $(top_builddir)/src/design_flows/backend/ToC/source_code_writers/lib_source_code_writers.la
 
 #do not touch the following line
-include $(top_srcdir)/panda.am
+

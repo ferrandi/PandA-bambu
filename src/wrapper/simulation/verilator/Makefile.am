@@ -20,4 +20,4 @@ noinst_HEADERS = VerilatorWrapper.hpp
 lib_verilatorwrapper_la_SOURCES = VerilatorWrapper.cpp 
 
 #do not touch the following line
-include $(top_srcdir)/panda.am
+

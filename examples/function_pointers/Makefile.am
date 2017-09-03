@@ -4,6 +4,6 @@ DIST_SUBDIRS = bsearch_glibc  bsearch_musl  bsearch_newlib  bsearch_uclibc  filt
 EXTRA_DIST = bambu.sh  filtering_pipeline.sh function_pointers.sh  list  list_pipeline
 
 #do not touch the following line
-include $(top_srcdir)/panda.am
+
 TESTS=bambu.sh
 

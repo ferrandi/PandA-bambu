@@ -222,4 +222,4 @@ DOX_TAGFILES = src/tree src/graph src/behavior src/technology src/utility src/pa
 EXTRA_DIST = $(PRJ_DOC) bambu.am
 
 #do not touch the following line
-include $(top_srcdir)/panda.am
+

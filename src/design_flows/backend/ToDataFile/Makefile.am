@@ -79,5 +79,5 @@ latex_format_stat.data: $(top_srcdir)/etc/latex_table_format/latex_format_stat.x
 
 
 #do not touch the following line
-include $(top_srcdir)/panda.am
+
 

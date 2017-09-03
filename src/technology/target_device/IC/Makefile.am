@@ -28,5 +28,5 @@ Nangate.data: $(top_srcdir)/etc/devices/ASIC_devices/Nangate_device.xml
 	$(top_srcdir)/etc/scripts/add_escape.sh $(top_srcdir)/etc/devices/ASIC_devices/Nangate_device.xml Nangate.data
 
 #do not touch the following line
-include $(top_srcdir)/panda.am
+
 

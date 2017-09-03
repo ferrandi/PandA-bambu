@@ -6,4 +6,4 @@ EXTRA_DIST = spec.c \
              test_icrc.xml  test.xml README.txt
 
 #do not touch the following line
-include $(top_srcdir)/panda.am
+

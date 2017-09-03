@@ -12,4 +12,4 @@ noinst_HEADERS = sig_variation.hpp vcd_parser.hpp
 lib_vcdparser_la_SOURCES = sig_variation.cpp vcd_parser.cpp
 
 #do not touch the following line
-include $(top_srcdir)/panda.am
+

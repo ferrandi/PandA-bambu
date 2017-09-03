@@ -42,4 +42,4 @@ lib_module_generator_la_SOURCES = moduleGenerator.cpp
 #DOCUMENTATION STUFF
 
 #do not touch the following line
-include $(top_srcdir)/panda.am
+

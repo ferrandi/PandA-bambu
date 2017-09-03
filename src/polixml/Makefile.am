@@ -12,4 +12,4 @@ lib_polixml_la_CPPFLAGS = \
    -I$(BOOST_DIR) $(all_includes)
 
 #do not touch the following line
-include $(top_srcdir)/panda.am
+

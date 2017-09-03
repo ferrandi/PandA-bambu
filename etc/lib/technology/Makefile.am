@@ -20,5 +20,5 @@ EXTRA_DIST = \
   NC_wishbone_IPs.xml
 
 #do not touch the following line
-include $(top_srcdir)/panda.am
+
 

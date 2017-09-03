@@ -202,6 +202,6 @@ libhls_cdiv_gcc7_a_AR = ../$(top_builddir)/src/tree-panda-gcc --compiler=I386_GC
 endif
 
 #do not touch the following line
-include $(top_srcdir)/panda.am
+
 
 

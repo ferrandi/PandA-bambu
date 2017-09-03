@@ -15,6 +15,6 @@ lib_aadl_asn_la_SOURCES = \
    asn_type.cpp
 
 #do not touch the following line
-include $(top_srcdir)/panda.am
+
 
 

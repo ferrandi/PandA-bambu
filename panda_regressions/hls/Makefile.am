@@ -1177,4 +1177,4 @@ gcc_regression_simple/zero-struct-1.c\
 ./discrepancy_list
 
 #do not touch the following line
-include $(top_srcdir)/panda.am
+

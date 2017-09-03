@@ -40,7 +40,7 @@ EXTRA_DIST = \
    unconstrained_synth_altera_stratix5.sh
 
 #do not touch the following line
-include $(top_srcdir)/panda.am
+
 TESTS = \
    constrained_synth_altera.sh \
    unconstrained_synth_altera.sh \
