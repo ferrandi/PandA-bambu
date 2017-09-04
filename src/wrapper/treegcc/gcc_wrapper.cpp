@@ -987,6 +987,22 @@ void GccWrapper::SetGccDefault()
    /// required by PandA
    optimization_flags["ipa-pure-const"] = true; ///needed to correctly manage global variables
    optimization_flags["tree-dce"] = true; ///needed to remove unnecessary computations
+
+   bool flag_cpp;
+   if(Param->isOption(OPT_input_format) &&
+         Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_CPP &&
+         !Param->isOption(OPT_pretty_print))
+      flag_cpp = true;
+   else
+      flag_cpp = false;
+   /// in case we are compiling C++ code
+   if(flag_cpp)
+   {
+      optimization_flags["exceptions"] = false;
+      optimization_flags["threadsafe-statics"] = false; 
+      optimization_flags["use-cxa-atexit"] = false; 
+   }
+
    INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--Set GCC defaults");
 }
 
