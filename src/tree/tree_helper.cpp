@@ -235,8 +235,8 @@ unsigned int tree_helper::Size(const tree_nodeConstRef t)
       }
       case reference_type_K:
       {
-         THROW_ASSERT(GetPointer<const reference_type>(t)->refd, "expected a reference declaration");
-         return_value = Size(GET_NODE((GetPointer<const reference_type>(t))->refd));
+         const integer_cst * ic = GetPointer<const integer_cst>(GET_NODE(GetPointer<const reference_type>(t)->size));
+         return_value = static_cast<unsigned int>(get_integer_cst_value(ic));
          break;
       }
       case array_type_K:
@@ -4692,19 +4692,26 @@ void tree_helper::get_array_dim_and_bitsize
    tree_nodeRef node = TM->get_tree_node_const(index);
    THROW_ASSERT(node->get_kind() == array_type_K, "array_type expected: @" + STR(index));
    array_type * at = GetPointer<array_type>(node);
-   tree_nodeRef domn = GET_NODE(at->domn);
-   THROW_ASSERT(domn->get_kind() == integer_type_K, "expected an integer type as domain");
-   integer_type *it = GetPointer<integer_type>(domn);
-   unsigned int min_value = 0;
-   unsigned int max_value = 0;
-   if(it->min)
-      min_value = static_cast<unsigned int>
-	      (get_integer_cst_value(GetPointer<integer_cst>(GET_NODE(it->min))));
-   if(it->max)
-      max_value = static_cast<unsigned int>
-	      (get_integer_cst_value(GetPointer<integer_cst>(GET_NODE(it->max))));
-   unsigned int range_domain = max_value - min_value + 1;
-   dims.push_back(range_domain);
+   if(!at->domn)
+   {
+      dims.push_back(1);//at least one element is expected
+   }
+   else
+   {
+      tree_nodeRef domn = GET_NODE(at->domn);
+      THROW_ASSERT(domn->get_kind() == integer_type_K, "expected an integer type as domain");
+      integer_type *it = GetPointer<integer_type>(domn);
+      unsigned int min_value = 0;
+      unsigned int max_value = 0;
+      if(it->min)
+         min_value = static_cast<unsigned int>
+   	      (get_integer_cst_value(GetPointer<integer_cst>(GET_NODE(it->min))));
+      if(it->max)
+         max_value = static_cast<unsigned int>
+   	      (get_integer_cst_value(GetPointer<integer_cst>(GET_NODE(it->max))));
+      unsigned int range_domain = max_value - min_value + 1;
+      dims.push_back(range_domain);
+   }
    THROW_ASSERT(at->elts, "elements type expected");
    tree_nodeRef elts = GET_NODE(at->elts);
    if(elts->get_kind() == array_type_K)
