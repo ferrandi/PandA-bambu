@@ -2264,7 +2264,7 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
                   // fix the element precision to pass to write_init
                   element_precision = tree_helper::size(TreeM, size_type_index);
                }
-               write_init(TreeM, GET_NODE(i->first), GET_NODE(i->second), init_file, mem, element_precision);
+               write_init(TreeM, i->first ? GET_NODE(i->first) : tree_nodeRef(), GET_NODE(i->second), init_file, mem, element_precision);
                if(is_struct and GetPointer<field_decl>(GET_NODE(i->first))->is_bitfield())
                {
                   // reset the element_precision to the main value
@@ -2427,8 +2427,15 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
          {
             write_init(TreeM, GET_NODE(ne->op), GET_NODE(ne->op), init_file, mem, element_precision);
          }
+         else if(GetPointer<integer_cst>(GET_NODE(ne->op)))
+         {
+            unsigned int type_index;
+            tree_helper::get_type_node(init_node,type_index);
+            unsigned int precision = std::max(std::max(8u,element_precision), tree_helper::size(TreeM, type_index));
+            write_init(TreeM, GET_NODE(ne->op), GET_NODE(ne->op), init_file, mem, precision);
+         }
          else
-            THROW_ERROR("Something of unexpected happened: " + GET_NODE(ne->op)->get_kind_text());
+            THROW_ERROR("Something of unexpected happened: " + STR(init_node->index) + " | "+ GET_NODE(ne->op)->get_kind_text());
          break;
       }
       case addr_expr_K:
