@@ -6,5 +6,4 @@ keccak_SOURCES = keccak_coproc.c
 keccak_CPPFLAGS = -I$(top_srcdir)/include
 keccak_LDADD = chi/libchi.a iota/libiota.a pi/libpi.a rho/librho.a theta/libtheta.a
 
-TESTS = synth.sh
-EXTRA_DIST = synth.sh test.xml
+
