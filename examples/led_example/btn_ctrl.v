@@ -57,5 +57,25 @@ parameter number_of_clocks = 4096;
       if(start_port) out1<=stble;
     end
   end
+	 // synthesis translate_off 
+reg [4:0] button_press_countdown = 5'b11111; 
+wire [4:0] next_button_press_countdown; 
+assign next_button_press_countdown = button_press_countdown - 1; 
+ 
+always @(posedge clock) 
+begin 
+  button_press_countdown <= next_button_press_countdown; 
+end 
+ 
+always @(posedge clock) 
+begin 
+  if (button_press_countdown == 0) 
+  begin 
+  out1 <= 1; 
+  sigTmp <= 1; 
+  stble <= 1; 
+  end 
+end 
+// synthesis translate_on
 endmodule
 
