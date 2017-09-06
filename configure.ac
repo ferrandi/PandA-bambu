@@ -1372,6 +1372,7 @@ AC_CONFIG_FILES(
                  examples/fft_example/Makefile
                  examples/CHStone/Makefile
                  examples/crypto_designs/Makefile
+                 examples/fortran/Makefile
                  examples/function_pointers/Makefile
                  examples/function_pointers/bsearch_glibc/Makefile
                  examples/function_pointers/bsearch_musl/Makefile
