@@ -11,11 +11,11 @@ if test $return_value != 0; then
    exit $return_value
 fi
 cd $current_dir
-if test -d multi-keccak; then
-   rm multi-keccak -rf
+if test -d multi-keccak-build; then
+   rm multi-keccak-build -rf
 fi
-mkdir -p multi-keccak
-cd multi-keccak
+mkdir -p multi-keccak-build
+cd multi-keccak-build
 $root_dir/multi-keccak/configure
 return_value=$?
 if test $return_value != 0; then
