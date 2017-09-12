@@ -1,5 +1,5 @@
 SUBDIRS = devices macros scripts
-DIST_SUBDIRS = devices macros scripts
+DIST_SUBDIRS = devices macros scripts 
 
 if BUILD_GCC_PLUGIN
    SUBDIRS += gcc_plugin
@@ -16,7 +16,7 @@ if BUILD_LATEX_TABLE_FORMAT
    DIST_SUBDIRS += latex_table_format
 endif
 
-EXTRA_DIST = Doxyfile
+EXTRA_DIST = Doxyfile VMs/FPL_tutorial_2017_32bit/Vagrantfile VMs/FPL_tutorial_2017_64bit/Vagrantfile
 #Replace acinclude.m4
 ACLOCAL_AMFLAGS = -I ../etc/macros
 
