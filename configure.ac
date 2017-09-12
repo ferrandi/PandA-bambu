@@ -2904,6 +2904,7 @@ AC_ARG_WITH(opt-level, [  --with-opt-level=<level> set the optimization level wi
 
 if test "x$optlevel" != x; then
   CXXFLAGS+=" -O$optlevel "
+  CFLAGS+=" -O$optlevel "
 else
   if test "x$panda_OPT" = xyes; then
     CXXFLAGS+=" -Ofast -march=native -mtune=native "
