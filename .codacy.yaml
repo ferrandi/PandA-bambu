@@ -1,0 +1,2 @@
+exclude_paths:
+  - ./documentation/tutorial_fpl_2017/*/*/*/*.c
