@@ -1397,7 +1397,9 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
             res += "{";
             for(unsigned int ind = 0; ind < vector_size; ++ind)
             {
-               res += "(" + print_node(GET_INDEX_NODE(be->op0), v, vppf) + ")[" + STR(ind)+ "] " + op + " (" + print_node(GET_INDEX_NODE(be->op1), v, vppf) + ")[" + STR(ind)+ "]";
+               res += "(" + print_node(GET_INDEX_NODE(be->op0), v, vppf) + ")[" + STR(ind)+ "] " + op + " (" + print_node(GET_INDEX_NODE(be->op1), v, vppf) + ")";
+               if(GET_CONST_NODE(be->op1)->get_kind() != integer_cst_K)
+                  res += "[" + STR(ind)+ "]";
                if(ind!=vector_size-1)
                   res += ", ";
             }
