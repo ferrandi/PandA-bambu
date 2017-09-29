@@ -247,7 +247,7 @@ AC_ETC_ARGS
 
 #aid stuff
 AC_ARG_ENABLE(release,             [  --enable-release             compile the source code for release (default enabled)],                                  [panda_RELEASE="$enableval"], [panda_RELEASE="yes"])
-AC_ARG_ENABLE(unordered,           [  --enable-unordered           compile the source code with unordered data structure (default enabled)],                [panda_UNORDERED="$enableval"], [panda_UNORDERED="yes"])
+AC_ARG_ENABLE(unordered,           [  --enable-unordered           compile the source code with unordered data structure (default disabled)],               [panda_UNORDERED="$enableval"], [panda_UNORDERED="no"])
 AC_ARG_ENABLE(Werror,              [  --enable-Werror              compile the source code with Werror option; a subset of possible warning is considered], [panda_WERROR="$enableval"])
 AC_ARG_ENABLE(asserts,             [  --disable-asserts            disable most of the runtime check (default enabled)],                                    [panda_ASSERTS="$enableval"], [panda_ASSERTS="yes"])
 AC_ARG_ENABLE(debug,               [  --enable-debug               compile the source code with debug symbols (default disabled)],                          [panda_DEBUG="$enableval"], [panda_DEBUG="no"])
