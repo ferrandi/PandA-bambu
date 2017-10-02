@@ -2068,6 +2068,7 @@ void fu_binding::fill_array_ref_memory(std::ostream &init_file_a, std::ostream &
 void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_node, tree_nodeRef init_node, std::vector<std::string>& init_file, const memoryRef mem, unsigned int element_precision)
 {
    std::string trimmed_value;
+
    switch (init_node->get_kind())
    {
       case real_cst_K:
@@ -2190,8 +2191,12 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
             i = co->list_of_idx_valu.begin();
             for (; fli != flend; fli++)
             {
+               if(!GetPointer<field_decl>(GET_NODE(*fli))) continue;
                inext = fli;
                ++inext;
+               while(inext != flend && !GetPointer<field_decl>(GET_NODE(*inext)))
+                  ++inext;
+
                if (GetPointer<field_decl>(GET_NODE(*fli))->is_bitfield())
                {
                   unsigned int size_type_index = tree_helper::get_type_index(TreeM, GET_INDEX_NODE(*fli));
@@ -2256,8 +2261,11 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
             std::vector<std::pair< tree_nodeRef, tree_nodeRef> >::const_iterator inext;
             for(i = co->list_of_idx_valu.begin(); i != vend; i++)
             {
+               if(is_struct and !GetPointer<field_decl>(GET_NODE(i->first))) continue;
                inext = i;
                ++inext;
+               while(inext != vend && is_struct && !GetPointer<field_decl>(GET_NODE(inext->first)))
+                  ++inext;
                if(is_struct and GetPointer<field_decl>(GET_NODE(i->first))->is_bitfield())
                {
                   unsigned int size_type_index = tree_helper::get_type_index(TreeM, GET_INDEX_NODE(i->first));
