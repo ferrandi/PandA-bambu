@@ -70,7 +70,7 @@ cd ..
 if [ ! -d output_CHStoneMemArch_high_latency4 ]; then
    mkdir output_CHStoneMemArch_high_latency4
 fi
-cd output_CHStoneMemArch_high_latency
+cd output_CHStoneMemArch_high_latency4
 $dir_script/CHStone_memarch.sh -c="--bram-high-latency=4" --name="_BramHighLatency4" $@
 return_value=$?
 cat */bambu_failed_output > bambu_failed_output
