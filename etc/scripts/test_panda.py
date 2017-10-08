@@ -324,12 +324,18 @@ def CreateJunitBody(directory,ju_file):
                 if return_value == "124":
                     ju_file.write("    <testcase classname=\"\" name=\"" + command_args.replace("\\", "") + "\">\n")
                     ju_file.write("      <failure type=\"FAILURE(Timeout)\">\n")
+                    ju_file.write("        <system-out>\n")
+                    ju_file.write("<![CDATA[\n")
                 else:
                     ju_file.write("    <testcase classname=\"\" name=\"" + command_args.replace("\\", "") + "\">\n")
                     ju_file.write("      <failure type=\"FAILURE\">\n")
+                    ju_file.write("        <system-out>\n")
+                    ju_file.write("<![CDATA[\n")
                 with open(os.path.join(directory, args.tool + "_failed_output")) as f:
                     for line in deque(f, maxlen=15):
                         ju_file.write(line)
+                ju_file.write("]]>\n")
+                ju_file.write("        </system-out>\n")
                 ju_file.write("      </failure>\n")
             ju_file.write("    </testcase>\n")
     if print_testsuite and len(subdirs) > 0:
