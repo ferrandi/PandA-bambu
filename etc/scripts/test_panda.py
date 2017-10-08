@@ -16,6 +16,7 @@ import subprocess
 import sys
 import threading
 import xml.dom.minidom
+from collections import deque
 
 def positive_integer(value):
     pos_int = int(value)
@@ -287,6 +288,54 @@ def CollectResults(directory):
             return_value = subprocess.call(local_command)
         logging.info("Collected results of " + directory)
 
+
+#Create JunitBody
+def CreateJunitBody(directory,ju_file):
+    #Skip if this is a leaf directory
+    if os.path.exists(os.path.join(directory, args.tool + "_return_value")) or os.listdir(directory) == []:
+        return
+    subdirs = [s for s in sorted(os.listdir(directory)) if os.path.isdir(os.path.join(directory,s)) and s != "panda-temp" and s != "HLS_output"]
+    print_testsuite = False
+    for subdir in subdirs:
+        if os.path.exists(os.path.join(directory, subdir, args.tool + "_return_value")):
+            print_testsuite = True
+        CreateJunitBody(os.path.join(directory, subdir),ju_file)
+    failed_counter_file_name = os.path.join(abs_path, "failed_counter")
+    failed_counter = "0"
+    if os.path.exists(failed_counter_file_name):
+        failed_counter_file = open(failed_counter_file_name)
+        failed_counter = failed_counter_file.read()
+
+    if print_testsuite and len(subdirs) > 0:
+        ju_file.write("  <testsuite disabled=\"0\" errors=\"0\" failures=\""+failed_counter+"\" name=\""+directory+"\" tests=\""+ str(len(subdirs)) + "\" timestamp=\"" + str(datetime.datetime.now()) + "\">\n")
+    for subdir in subdirs:
+        if os.path.exists(os.path.join(directory, subdir, args.tool + "_return_value")):
+            return_value_file_name = os.path.join(directory, subdir, args.tool + "_return_value")
+            return_value_file = open(return_value_file_name)
+            return_value = return_value_file.read()
+            return_value_file.close()
+            args_file = open(os.path.join(directory, subdir, "args"))
+            command_args = args_file.readlines()[0]
+            command_args = command_args.replace(abs_benchmarks_root + "/", "")
+            args_file.close()
+            if return_value == "0":
+                ju_file.write("    <testcase classname=\"\" name=\"" + command_args.replace("\\", "") + "\">\n")
+            else:
+                if return_value == "124":
+                    ju_file.write("    <testcase classname=\"\" name=\"" + command_args.replace("\\", "") + "\">\n")
+                    ju_file.write("      <failure type=\"FAILURE(Timeout)\">\n")
+                else:
+                    ju_file.write("    <testcase classname=\"\" name=\"" + command_args.replace("\\", "") + "\">\n")
+                    ju_file.write("      <failure type=\"FAILURE\">\n")
+                with open(os.path.join(directory, args.tool + "_failed_output")) as f:
+                    for line in deque(f, maxlen=15):
+                        ju_file.write(line)
+                ju_file.write("      </failure>\n")
+            ju_file.write("    </testcase>\n")
+    if print_testsuite and len(subdirs) > 0:
+        ju_file.write("  </testsuite>\n")
+
+
 parser = argparse.ArgumentParser(description="Performs panda tests", fromfile_prefix_chars='@')
 parser.add_argument("files", help="The files to be tested: they can be configuration files, directories containing benchmarks or source code files.", nargs='*', action="append")
 parser.add_argument('-l', "--benchmarks_list", help="The file containing the list of tests to be performed", nargs='*', action="append")
@@ -309,6 +358,7 @@ parser.add_argument("--name", help="Set the name of this regression (default=Bam
 parser.add_argument("--no-clean", help="Do not clean produced files", default=False, action="store_true")
 parser.add_argument("--restart", help="Restart last execution (default=false)", default=False, action="store_true")
 parser.add_argument("--script", help="Set the bash script in the generated tex", default="")
+parser.add_argument("--junitdir", help="Set the JUnit directory", default="")
 
 args = parser.parse_args()
 n_jobs = args.j # set this, because it will be overwritten by the parse of modified_argv
@@ -348,6 +398,18 @@ table = os.path.abspath(args.table)
 if os.path.exists(args.output) and not args.restart:
     logging.error("Output directory " + args.output + " already exists. Please remove it or specify a different one with -o")
     sys.exit(1)
+
+#Check if JUnit dir exist
+if args.junitdir != "" and not os.path.exists(args.junitdir):
+    os.mkdir(args.junitdir)
+#compute JUnit file name
+junit_file_name =  ""
+if args.junitdir != None:
+    junit_index = 0
+    junit_file_name = os.path.abspath(os.path.join(args.junitdir, "Junit_report"+str(junit_index)+".xml"))
+    while os.path.isfile(junit_file_name) :
+        junit_index = junit_index + 1
+        junit_file_name = os.path.abspath(os.path.join(args.junitdir, "Junit_report"+str(junit_index)+".xml"))
 
 #Create the folder and enter in it
 abs_path = os.path.abspath(args.output)
@@ -714,6 +776,15 @@ except KeyboardInterrupt:
 
 #Collect results
 CollectResults(abs_path)
+
+#In case, it create the JUnit file
+if args.junitdir != None:
+     junit_file = open(junit_file_name, "w")
+     junit_file.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
+     junit_file.write("<testsuites disabled=\"0\" errors=\"0\" failures=\""+str(total_benchmark - passed_benchmark)+"\" name=\"" + abs_path + "\" tests=\"" + str(total_benchmark) + "\">\n")
+
+     CreateJunitBody(abs_path,junit_file)
+     junit_file.write("</testsuites>\n")
 
 #Prepare final report
 if args.tool == "bambu" or args.tool == "zebu":
