@@ -6,7 +6,7 @@
 AC_PREREQ(2.57)
 AC_INIT(PandA, 0.9.6-dev, panda-info@polimi.it)
 AC_CANONICAL_SYSTEM
-AM_INIT_AUTOMAKE([-Wno-portability 1.9 tar-pax])
+AM_INIT_AUTOMAKE([-Wno-portability 1.9 tar-pax subdir-objects])
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 AC_CONFIG_SRCDIR([configure.ac])
 
@@ -255,12 +255,18 @@ AC_ARG_ENABLE(opt,                 [  --enable-opt                 compile the s
 AC_ARG_ENABLE(allstatic,           [  --enable-allstatic           create static binaries ],                                                                [panda_ALLSTATIC="$enableval"])
 AC_ARG_ENABLE(32bits,              [  --enable-32bits              create 32bits binaries ],                                                                [panda_32BITS="$enableval"])
 
+
+#etc stuff
+AC_ARG_ENABLE(flopoco,             [  --enable-flopoco             compile FloPoCo external library],                     [panda_USE_FLOPOCO="$enableval"])
+
+
 ################################################################################
 #                                                                              #
 #                          Variable initialization                             #
 #                                                                              #
 ################################################################################
 panda_USE_FRACTIONS=no;
+panda_USE_I386_GCC=no;
 panda_USE_LIB_AIG=no;
 panda_USE_LIB_ALGORITHMS=no;
 panda_USE_LIB_ARCH=no;
@@ -302,6 +308,7 @@ panda_USE_LIB_GSL=no;
 panda_USE_LIB_HLS=no;
 panda_USE_LIB_HOST_PROFILING=no;
 panda_USE_LIB_LIBRARY_CHARACTERIZATION=no;
+panda_USE_LIBBAMBU=no;
 panda_USE_LIB_LOGIC_SYNTHESIS=no;
 panda_USE_LIB_LOGIC_SYNTHESIS_FLOW=no;
 panda_USE_LIB_LOOPS=no;
@@ -401,6 +408,7 @@ if test "x$panda_USE_BAMBU" = xyes; then
   panda_USE_GLPK=yes;
   panda_USE_LIB_GRAPH=yes;
   panda_USE_LIB_FROM_C=yes;
+  panda_USE_I386_GCC=yes;
   AS_VERSION_COMPARE($MIN_GCC_VERSION, [4.5.0], [MIN_GCC_VERSION=4.5.0],,)
   AS_VERSION_COMPARE($MAX_GCC_VERSION, [8.0.0],,,[MAX_GCC_VERSION=8.0.0])
   panda_USE_LIB_HLS=yes;
@@ -416,6 +424,7 @@ if test "x$panda_USE_BAMBU" = xyes; then
   panda_USE_LIB_SYNTHESIS_WRAPPER=yes;
   panda_USE_LIB_VCD_PARSER=yes;
   panda_USE_LIB_VCD=yes;
+  panda_USE_LIBBAMBU=yes;
   panda_USE_TREE_PANDA_GCC=yes;
   panda_USE_SPIDER=yes;
   panda_USE_TASTE=yes;
@@ -637,6 +646,7 @@ if test "x$panda_USE_TUCANO" = xyes; then
 
   panda_USE_LIB_GRAPH=yes;
   panda_USE_LIB_FROM_SYSTEMC=yes;
+  panda_USE_I386_GCC=yes;
   AS_VERSION_COMPARE($MIN_GCC_VERSION, [4.5.0], [MIN_GCC_VERSION=4.5.0],,)
   AS_VERSION_COMPARE($MAX_GCC_VERSION, [4.6.0],,,[MAX_GCC_VERSION=4.6.0])
   panda_USE_LIB_FROM_C=yes;
@@ -659,6 +669,7 @@ if test "x$panda_USE_ZEBU" = xyes; then
   panda_USE_LIB_COMPARE_MODELS=yes;
   panda_USE_LIB_DYNAMIC_METRICS=yes;
   panda_USE_LIB_FROM_C=yes;
+  panda_USE_I386_GCC=yes;
   AS_VERSION_COMPARE($MIN_GCC_VERSION, [4.5.0], [MIN_GCC_VERSION=4.5.0],,)
   AS_VERSION_COMPARE($MAX_GCC_VERSION, [4.9.0],,,[MAX_GCC_VERSION=4.9.0])
   panda_USE_LIB_FROM_PRAGMA=yes;
@@ -1284,71 +1295,6 @@ if test "x$panda_USE_ABC" = xyes || test "x$panda_USE_BEAGLE" = xyes || test "x$
   panda_USE_LIB_EXT=yes;
 fi
 AM_CONDITIONAL(BUILD_EXT, test "x$panda_USE_LIB_EXT" = xyes)
-
-
-
-################################################################################
-#                                                                              #
-#                               etc directory                                  #
-#                                                                              #
-################################################################################
-
-
-################################### Configure ##################################
-
-if test ! -d etc ; then
-   mkdir etc;
-fi
-
-CONFIGURE_ETC_ARGS=$ac_configure_args
-if test "x$panda_USE_ARM_GCC" = xyes; then
-   CONFIGURE_ETC_ARGS+=" --enable-arm-gcc"
-fi
-
-if test "x$panda_USE_BAMBU" = xyes; then
-   CONFIGURE_ETC_ARGS+=" --enable-libbambu"
-fi
-
-if test "x$panda_USE_I386_GCC" = xyes; then
-   CONFIGURE_ETC_ARGS+=" --enable-I386-gcc"
-   CONFIGURE_ETC_ARGS+=" --with-min-I386-gcc=$MIN_GCC_VERSION"
-   CONFIGURE_ETC_ARGS+=" --with-max-I386-gcc=$MAX_GCC_VERSION"
-fi
-
-if test "x$panda_USE_SPARC_GCC" = xyes; then
-   CONFIGURE_ETC_ARGS+=" --enable-SPARC-gcc"
-fi
-
-if test "x$panda_USE_FLOPOCO" = xyes; then
-   CONFIGURE_ETC_ARGS+=" --enable-flopoco"
-fi
-if test "x$panda_USE_LIB_TO_DATAFILE" = xyes; then
-   CONFIGURE_ETC_ARGS+=" --enable-latex-table-format"
-fi
-if test "x$panda_WERROR" = xyes; then
-   CONFIGURE_ETC_ARGS+=" --enable-Werror"
-fi
-echo ""
-echo ""
-echo ""
-echo "Configure etc with $CONFIGURE_ETC_ARGS"
-echo ""
-echo ""
-echo ""
-cd etc
-eval "bash $TOPSRCDIR/etc/configure $CONFIGURE_ETC_ARGS"
-if test $? != 0; then
-   AC_MSG_ERROR("Error in etc configuration")
-fi
-cd $BUILDDIR
-echo ""
-echo ""
-echo ""
-echo "Configured etc"
-echo ""
-echo ""
-echo ""
-
 
 
 
@@ -2817,7 +2763,219 @@ if test "x$panda_USE_LIB_VCD" = xyes; then
 fi
 AM_CONDITIONAL(BUILD_LIB_VCD, test "x$panda_USE_LIB_VCD" = xyes)
 
+################################################################################
+#                                                                              #
+#                              ETC files                                       #
+#                                                                              #
+################################################################################
+  AC_CONFIG_FILES(
+                  etc/Makefile
+                 )
 
+################################################################################
+#                                                                              #
+#                                 devices                                      #
+#                                                                              #
+################################################################################
+
+AC_CONFIG_FILES(
+   etc/devices/Makefile
+   etc/devices/Altera_devices/Makefile
+   etc/devices/Xilinx_devices/Makefile
+   etc/devices/ASIC_devices/Makefile
+   etc/devices/Lattice_devices/Makefile
+   )
+
+
+
+################################################################################
+#                                                                              #
+#                           latex_table_format                                 #
+#                                                                              #
+################################################################################
+
+if test "x$panda_USE_LIB_TO_DATAFILE" = xyes; then
+  AC_CONFIG_FILES(
+                  etc/latex_table_format/Makefile
+                 )
+fi
+AM_CONDITIONAL(BUILD_LATEX_TABLE_FORMAT, test "x$panda_USE_LIB_TO_DATAFILE" = xyes)
+
+################################################################################
+#                                                                              #
+#                                gcc_plugin                                    #
+#                                                                              #
+################################################################################
+
+################################# ARM Check ####################################
+AM_CONDITIONAL(BUILD_ARM_GCC, test "x$build_ARM_GCC" = xyes)
+AM_CONDITIONAL(BUILD_ARM_EMPTY_PLUGIN, test "x$build_ARM_EMPTY_PLUGIN" = xyes)
+AM_CONDITIONAL(BUILD_ARM_RTL_PLUGIN, test "x$build_ARM_RTL_PLUGIN" = xyes)
+AM_CONDITIONAL(BUILD_ARM_SSA_PLUGIN, test "x$build_ARM_SSA_PLUGIN" = xyes)
+AM_CONDITIONAL(BUILD_ARM_SSA_PLUGINCPP, test "x$build_ARM_SSA_PLUGINCPP" = xyes)
+AC_SUBST(ARM_EMPTY_PLUGIN)
+AC_SUBST(ARM_SSA_PLUGIN)
+AC_SUBST(ARM_RTL_PLUGIN)
+AC_SUBST(ARM_GCC_PLUGIN_DIR)
+AC_SUBST(ARM_GCC_EXE)
+AC_SUBST(ARM_GCC_SRC_DIR)
+AC_SUBST(ARM_PLUGIN_DIR)
+AC_SUBST(ARM_GCC_VERSION)
+AC_SUBST(ARM_GCC_BUILT_DIR)
+AC_SUBST(ARM_HOST_PLUGIN_COMPILER)
+
+
+
+################################# I386 Check ###################################
+if test "x$panda_USE_I386_GCC" = xyes; then
+   if test "x$MAX_GCC_VERSION" = "x"; then
+      AC_MSG_ERROR("Oldest not supported version of I386 gcc not set")
+   fi
+   if test "x$MIN_GCC_VERSION" = "x"; then
+      AC_MSG_ERROR("Oldest supported version of I386 gcc not set")
+   fi
+   AC_CHECK_PLUGIN_DIR
+   AC_CHECK_GCC45_I386_VERSION($MIN_GCC_VERSION,$MAX_GCC_VERSION)
+   AC_CHECK_GCC46_I386_VERSION($MIN_GCC_VERSION,$MAX_GCC_VERSION)
+   AC_CHECK_GCC47_I386_VERSION($MIN_GCC_VERSION,$MAX_GCC_VERSION)
+   AC_CHECK_GCC48_I386_VERSION($MIN_GCC_VERSION,$MAX_GCC_VERSION)
+   AC_CHECK_GCC49_I386_VERSION($MIN_GCC_VERSION,$MAX_GCC_VERSION)
+   AC_CHECK_GCC5_I386_VERSION($MIN_GCC_VERSION,$MAX_GCC_VERSION)
+   AC_CHECK_GCC6_I386_VERSION($MIN_GCC_VERSION,$MAX_GCC_VERSION)
+   AC_CHECK_GCC7_I386_VERSION($MIN_GCC_VERSION,$MAX_GCC_VERSION)
+   if test "x$I386_GCC45_PLUGIN_COMPILER" = x && test "x$I386_GCC46_PLUGIN_COMPILER" = x && test "x$I386_GCC47_PLUGIN_COMPILER" = x && test "x$I386_GCC48_PLUGIN_COMPILER" = x && test "x$I386_GCC49_PLUGIN_COMPILER" = x && test "x$I386_GCC5_PLUGIN_COMPILER" = x && test "x$I386_GCC6_PLUGIN_COMPILER" = x && test "x$I386_GCC7_PLUGIN_COMPILER" = x; then
+      AC_MSG_ERROR("gcc with support to -m32 and plugin not found")
+   fi
+fi
+
+AM_CONDITIONAL(BUILD_I386_GCC45, test "x$build_I386_GCC45" = xyes)
+AM_CONDITIONAL(BUILD_I386_GCC45_EMPTY_PLUGIN, test "x$build_I386_GCC45_EMPTY_PLUGIN" = xyes)
+AM_CONDITIONAL(BUILD_I386_GCC45_SSA_PLUGIN, test "x$build_I386_GCC45_SSA_PLUGIN" = xyes)
+AM_CONDITIONAL(BUILD_I386_GCC45_SSA_PLUGINCPP, test "x$build_I386_GCC45_SSA_PLUGINCPP" = xyes)
+AM_CONDITIONAL(BUILD_I386_GCC45_SSAVRP_PLUGIN, test "x$build_I386_GCC45_SSAVRP_PLUGIN" = xyes)
+AM_CONDITIONAL(BUILD_I386_GCC45_TOPFNAME_PLUGIN, test "x$build_I386_GCC45_TOPFNAME_PLUGIN" = xyes)
+
+AM_CONDITIONAL(BUILD_I386_GCC46, test "x$build_I386_GCC46" = xyes)
+AM_CONDITIONAL(BUILD_I386_GCC46_EMPTY_PLUGIN, test "x$build_I386_GCC46_EMPTY_PLUGIN" = xyes)
+AM_CONDITIONAL(BUILD_I386_GCC46_SSA_PLUGIN, test "x$build_I386_GCC46_SSA_PLUGIN" = xyes)
+AM_CONDITIONAL(BUILD_I386_GCC46_SSA_PLUGINCPP, test "x$build_I386_GCC46_SSA_PLUGINCPP" = xyes)
+AM_CONDITIONAL(BUILD_I386_GCC46_SSAVRP_PLUGIN, test "x$build_I386_GCC46_SSAVRP_PLUGIN" = xyes)
+AM_CONDITIONAL(BUILD_I386_GCC46_TOPFNAME_PLUGIN, test "x$build_I386_GCC46_TOPFNAME_PLUGIN" = xyes)
+
+AM_CONDITIONAL(BUILD_I386_GCC47, test "x$build_I386_GCC47" = xyes)
+AM_CONDITIONAL(BUILD_I386_GCC47_EMPTY_PLUGIN, test "x$build_I386_GCC47_EMPTY_PLUGIN" = xyes)
+AM_CONDITIONAL(BUILD_I386_GCC47_SSA_PLUGIN, test "x$build_I386_GCC47_SSA_PLUGIN" = xyes)
+AM_CONDITIONAL(BUILD_I386_GCC47_SSA_PLUGINCPP, test "x$build_I386_GCC47_SSA_PLUGINCPP" = xyes)
+AM_CONDITIONAL(BUILD_I386_GCC47_SSAVRP_PLUGIN, test "x$build_I386_GCC47_SSAVRP_PLUGIN" = xyes)
+AM_CONDITIONAL(BUILD_I386_GCC47_TOPFNAME_PLUGIN, test "x$build_I386_GCC47_TOPFNAME_PLUGIN" = xyes)
+
+AM_CONDITIONAL(BUILD_I386_GCC48, test "x$build_I386_GCC48" = xyes)
+AM_CONDITIONAL(BUILD_I386_GCC48_EMPTY_PLUGIN, test "x$build_I386_GCC48_EMPTY_PLUGIN" = xyes)
+AM_CONDITIONAL(BUILD_I386_GCC48_SSA_PLUGIN, test "x$build_I386_GCC48_SSA_PLUGIN" = xyes)
+AM_CONDITIONAL(BUILD_I386_GCC48_SSA_PLUGINCPP, test "x$build_I386_GCC48_SSA_PLUGINCPP" = xyes)
+AM_CONDITIONAL(BUILD_I386_GCC48_SSAVRP_PLUGIN, test "x$build_I386_GCC48_SSAVRP_PLUGIN" = xyes)
+AM_CONDITIONAL(BUILD_I386_GCC48_TOPFNAME_PLUGIN, test "x$build_I386_GCC48_TOPFNAME_PLUGIN" = xyes)
+
+AM_CONDITIONAL(BUILD_I386_GCC49, test "x$build_I386_GCC49" = xyes)
+AM_CONDITIONAL(BUILD_I386_GCC49_EMPTY_PLUGIN, test "x$build_I386_GCC49_EMPTY_PLUGIN" = xyes)
+AM_CONDITIONAL(BUILD_I386_GCC49_SSA_PLUGIN, test "x$build_I386_GCC49_SSA_PLUGIN" = xyes)
+AM_CONDITIONAL(BUILD_I386_GCC49_SSA_PLUGINCPP, test "x$build_I386_GCC49_SSA_PLUGINCPP" = xyes)
+AM_CONDITIONAL(BUILD_I386_GCC49_TOPFNAME_PLUGIN, test "x$build_I386_GCC49_TOPFNAME_PLUGIN" = xyes)
+
+AM_CONDITIONAL(BUILD_I386_GCC5, test "x$build_I386_GCC5" = xyes)
+AM_CONDITIONAL(BUILD_I386_GCC5_EMPTY_PLUGIN, test "x$build_I386_GCC5_EMPTY_PLUGIN" = xyes)
+AM_CONDITIONAL(BUILD_I386_GCC5_SSA_PLUGIN, test "x$build_I386_GCC5_SSA_PLUGIN" = xyes)
+AM_CONDITIONAL(BUILD_I386_GCC5_SSA_PLUGINCPP, test "x$build_I386_GCC5_SSA_PLUGINCPP" = xyes)
+AM_CONDITIONAL(BUILD_I386_GCC5_TOPFNAME_PLUGIN, test "x$build_I386_GCC5_TOPFNAME_PLUGIN" = xyes)
+
+AM_CONDITIONAL(BUILD_I386_GCC6, test "x$build_I386_GCC6" = xyes)
+AM_CONDITIONAL(BUILD_I386_GCC6_EMPTY_PLUGIN, test "x$build_I386_GCC6_EMPTY_PLUGIN" = xyes)
+AM_CONDITIONAL(BUILD_I386_GCC6_SSA_PLUGIN, test "x$build_I386_GCC6_SSA_PLUGIN" = xyes)
+AM_CONDITIONAL(BUILD_I386_GCC6_SSA_PLUGINCPP, test "x$build_I386_GCC6_SSA_PLUGINCPP" = xyes)
+AM_CONDITIONAL(BUILD_I386_GCC6_TOPFNAME_PLUGIN, test "x$build_I386_GCC6_TOPFNAME_PLUGIN" = xyes)
+
+AM_CONDITIONAL(BUILD_I386_GCC7, test "x$build_I386_GCC7" = xyes)
+AM_CONDITIONAL(BUILD_I386_GCC7_EMPTY_PLUGIN, test "x$build_I386_GCC7_EMPTY_PLUGIN" = xyes)
+AM_CONDITIONAL(BUILD_I386_GCC7_SSA_PLUGIN, test "x$build_I386_GCC7_SSA_PLUGIN" = xyes)
+AM_CONDITIONAL(BUILD_I386_GCC7_SSA_PLUGINCPP, test "x$build_I386_GCC7_SSA_PLUGINCPP" = xyes)
+AM_CONDITIONAL(BUILD_I386_GCC7_TOPFNAME_PLUGIN, test "x$build_I386_GCC7_TOPFNAME_PLUGIN" = xyes)
+
+############################### SPARC Check ####################################
+AM_CONDITIONAL(BUILD_SPARC_GCC, test "x$build_SPARC_GCC" = xyes)
+AM_CONDITIONAL(BUILD_SPARC_EMPTY_PLUGIN, test "x$build_SPARC_EMPTY_PLUGIN" = xyes)
+AM_CONDITIONAL(BUILD_SPARC_RTL_PLUGIN, test "x$build_SPARC_RTL_PLUGIN" = xyes)
+AM_CONDITIONAL(BUILD_SPARC_SSA_PLUGIN, test "x$build_SPARC_SSA_PLUGIN" = xyes)
+AM_CONDITIONAL(BUILD_SPARC_SSA_PLUGINCPP, test "x$build_SPARC_SSA_PLUGINCPP" = xyes)
+AC_SUBST(SPARC_EMPTY_PLUGIN)
+AC_SUBST(SPARC_SSA_PLUGIN)
+AC_SUBST(SPARC_RTL_PLUGIN)
+AC_SUBST(SPARC_GCC_PLUGIN_DIR)
+AC_SUBST(SPARC_GCC_EXE)
+AC_SUBST(SPARC_GCC_SRC_DIR)
+AC_SUBST(SPARC_PLUGIN_DIR)
+AC_SUBST(SPARC_GCC_VERSION)
+AC_SUBST(SPARC_GCC_BUILT_DIR)
+AC_SUBST(SPARC_HOST_PLUGIN_COMPILER)
+
+
+
+
+if test "x$panda_USE_ARM_GCC" = xyes || test "x$panda_USE_I386_GCC" = xyes || test "x$panda_USE_SPARC_GCC" = xyes; then
+   AC_CONFIG_FILES(
+      etc/gcc_plugin/Makefile
+   )
+fi
+AM_CONDITIONAL(BUILD_GCC_PLUGIN, test "x$panda_USE_ARM_GCC" = xyes || test "x$panda_USE_I386_GCC" = xyes || test "x$panda_USE_SPARC_GCC" = xyes)
+AM_CONDITIONAL(ENABLE_WERROR, test "x$panda_WERROR" = xyes)
+
+
+
+################################################################################
+#                                                                              #
+#                                   libbambu                                   #
+#                                                                              #
+################################################################################
+if test "x$panda_USE_LIBBAMBU" = xyes; then
+   LIBBAMBU_SRCDIR="$TOPSRCDIR/libbambu"
+   AC_DEFINE_UNQUOTED(LIBBAMBU_SRCDIR, "${LIBBAMBU_SRCDIR}", "Define the directory where the libbambu files are")
+
+   AC_CONFIG_FILES(
+      etc/lib/Makefile
+      etc/lib/technology/Makefile
+      etc/lib/technology/dynamic_generators/Makefile
+      etc/libbambu/Makefile
+      etc/libbambu/libm/Makefile
+      etc/libbambu/pthread/Makefile
+      etc/libbambu/softfloat/Makefile
+      etc/libbambu/soft-fp/Makefile
+   )
+fi
+AM_CONDITIONAL(BUILD_LIBBAMBU, test "x$panda_USE_LIBBAMBU" = "xyes")
+
+################################################################################
+#                                                                              #
+#                                  macros                                      #
+#                                                                              #
+################################################################################
+
+AC_CONFIG_FILES(etc/macros/Makefile)
+
+
+
+################################################################################
+#                                                                              #
+#                                 scripts                                      #
+#                                                                              #
+################################################################################
+
+################################### MPPB #######################################
+if test "x$panda_USE_MPPB" = xyes; then
+   AC_CONFIG_FILES(
+                  )
+fi
+AM_CONDITIONAL(BUILD_MPPB, test "x$panda_USE_MPPB" = xyes)
+
+AC_CONFIG_FILES(etc/scripts/Makefile)
 
 ################################################################################
 #                                                                              #
@@ -2941,7 +3099,7 @@ if test ! -d config_headers ; then
 fi
 for file in `find $BUILDDIR/config_headers -name *hpp`; do
    keyword=`grep define $file | awk '{print $2}'`
-   found=`grep $keyword $BUILDDIR/config.h.in $BUILDDIR/ext/config.h.in $BUILDDIR/etc/config.h.in`
+   found=`grep $keyword $BUILDDIR/config.h.in $BUILDDIR/ext/config.h.in `
    if test "x$found" = x; then
       echo "removing $file"
       rm $file
@@ -2962,10 +3120,6 @@ all_includes+=" -I$BUILDDIR/config_headers"
 
 if test -d ext/config_headers; then
    cp ext/config_headers/*hpp config_headers --preserve=timestamp
-fi
-
-if test -d etc/config_headers; then
-   cp etc/config_headers/*hpp config_headers --preserve=timestamp
 fi
 
 
