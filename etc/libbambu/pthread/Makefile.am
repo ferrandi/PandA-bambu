@@ -1,9 +1,9 @@
 #this file is libbambu/pthread/Makefile.am
 METASOURCES = AUTO
-CC=../$(top_builddir)/src/tree-panda-gcc
+CC=$(top_builddir)/src/tree-panda-gcc
 CFLAGS=
 pkglib_LIBRARIES =
-common_treegccflags = --output-temporary-directory=/tmp -iplugindir=$(top_builddir)/gcc_plugin -finline-limit=10000 -O3 -I$(BOOST_DIR)
+common_treegccflags = --output-temporary-directory=/tmp -iplugindir=$(top_builddir)/etc/gcc_plugin -finline-limit=10000 -O3 -I$(BOOST_DIR)
 
 if BUILD_I386_GCC45
 pkglib_LIBRARIES += libpthread_gcc45.a

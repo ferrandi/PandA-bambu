@@ -17,14 +17,9 @@ if BUILD_LATEX_TABLE_FORMAT
 endif
 
 EXTRA_DIST = Doxyfile VMs/FPL_tutorial_2017_32bit/Vagrantfile VMs/FPL_tutorial_2017_64bit/Vagrantfile
-#Replace acinclude.m4
-ACLOCAL_AMFLAGS = -I ../etc/macros
 
 .PHONY documentation: documentation-recursive
 .PHONY documentation-tag:documentation-tag-recursive
 documentation:
 documentation-tag:
-
-dist-hook:
-	$(top_srcdir)/scripts/clean_configure.py $(top_srcdir)/configure.ac  | grep -v "#no_release_tag" > $(distdir)/configure.ac
 
