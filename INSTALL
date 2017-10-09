@@ -106,10 +106,14 @@ Ubuntu 17.04 64bit and Ubuntu 17.04 32bit:
 - gcc-4.9-plugin-dev
 - gcc-5-plugin-dev
 - gcc-6-plugin-dev
-- gcc-4.8-multiplib
-- gcc-4.9-multiplib
-- gcc-5-multiplib
-- gcc-6-multiplib
+- gcc-4.8-multilib
+- gcc-4.9-multilib
+- gcc-5-multilib
+- gcc-6-multilib
+- g++-4.8-multilib
+- g++-4.9-multilib
+- g++-5-multilib
+- g++-6-multilib
 - libboost-all-dev
 - libmpc-dev
 - libmpfr-dev
@@ -131,7 +135,7 @@ Ubuntu 17.04 64bit and Ubuntu 17.04 32bit:
 
 
 In a single line:
-sudo apt install autoconf autoconf-archive automake libtool g++ gcc-4.8 g++-4.8 gcc-4.9 g++-4.9 gcc-5 g++-5 gcc-6 g++-6 gcc-4.8-plugin-dev gcc-4.9-plugin-dev gcc-5-plugin-dev gcc-6-plugin-dev gcc-4.8-multilib gcc-4.9-multilib gcc-5-multilib gcc-6-multilib libboost-all-dev libmpc-dev libmpfr-dev libxml2-dev liblzma-dev libmpfi-dev zlib1g-dev libicu-dev bison doxygen flex graphviz iverilog verilator make libsuitesparse-dev libglpk-dev
+sudo apt install autoconf autoconf-archive automake libtool g++ gcc-4.8 g++-4.8 gcc-4.9 g++-4.9 gcc-5 g++-5 gcc-6 g++-6 gcc-4.8-plugin-dev gcc-4.9-plugin-dev gcc-5-plugin-dev gcc-6-plugin-dev gcc-4.8-multilib gcc-4.9-multilib gcc-5-multilib gcc-6-multilib g++-4.8-multilib g++-4.9-multilib g++-5-multilib g++-6-multilib libboost-all-dev libmpc-dev libmpfr-dev libxml2-dev liblzma-dev libmpfi-dev zlib1g-dev libicu-dev bison doxygen flex graphviz iverilog verilator make libsuitesparse-dev libglpk-dev
 
 Ubuntu 16.10 64bit:
 - autoconf
@@ -147,10 +151,14 @@ Ubuntu 16.10 64bit:
 - gcc-4.9-plugin-dev
 - gcc-5-plugin-dev
 - gcc-6-plugin-dev
-- gcc-4.8-multiplib
-- gcc-4.9-multiplib
-- gcc-5-multiplib
-- gcc-6-multiplib
+- gcc-4.8-multilib
+- gcc-4.9-multilib
+- gcc-5-multilib
+- gcc-6-multilib
+- g++-4.8-multilib
+- g++-4.9-multilib
+- g++-5-multilib
+- g++-6-multilib
 - libboost-all-dev
 - libmpc-dev
 - libmpfr-dev
@@ -172,7 +180,7 @@ Ubuntu 16.10 64bit:
 
 
 In a single line:
-sudo apt install autoconf autoconf-archive automake libtool g++ gcc-4.8 g++-4.8 gcc-4.9 g++-4.9 gcc-5 g++-5 gcc-6 g++-6 gcc-4.8-plugin-dev gcc-4.9-plugin-dev gcc-5-plugin-dev gcc-6-plugin-dev gcc-4.8-multilib gcc-4.9-multilib gcc-5-multilib gcc-6-multilib libboost-all-dev libmpc-dev libmpfr-dev libxml2-dev liblzma-dev libmpfi-dev zlib1g-dev libicu-dev bison doxygen flex graphviz iverilog verilator make libsuitesparse-dev libglpk-dev
+sudo apt install autoconf autoconf-archive automake libtool g++ gcc-4.8 g++-4.8 gcc-4.9 g++-4.9 gcc-5 g++-5 gcc-6 g++-6 gcc-4.8-plugin-dev gcc-4.9-plugin-dev gcc-5-plugin-dev gcc-6-plugin-dev gcc-4.8-multilib gcc-4.9-multilib gcc-5-multilib gcc-6-multilib g++-4.8-multilib g++-4.9-multilib g++-5-multilib g++-6-multilib libboost-all-dev libmpc-dev libmpfr-dev libxml2-dev liblzma-dev libmpfi-dev zlib1g-dev libicu-dev bison doxygen flex graphviz iverilog verilator make libsuitesparse-dev libglpk-dev
 
 Ubuntu 16.04 64bit:
 - autoconf
@@ -190,7 +198,10 @@ Ubuntu 16.04 64bit:
 - gcc-5-plugin-dev
 - gcc-4.8-multilib
 - gcc-4.9-multilib
-- gcc-5-multiplib
+- gcc-5-multilib
+- g++-4.8-multilib
+- g++-4.9-multilib
+- g++-5-multilib
 - libboost-all-dev
 - libmpc-dev
 - libmpfr-dev
@@ -212,7 +223,7 @@ Ubuntu 16.04 64bit:
 
 
 In a single line:
-sudo apt-get install autoconf autoconf-archive automake libtool g++ gcc-4.8 g++-4.8 gcc-4.9 g++-4.9 gcc-5 g++-5 gcc-4.8-plugin-dev gcc-4.9-plugin-dev gcc-5-plugin-dev  gcc-4.8-multilib gcc-4.9-multilib gcc-5-multilib libboost-all-dev libmpc-dev libmpfr-dev libxml2-dev liblzma-dev libmpfi-dev zlib1g-dev libicu-dev bison doxygen flex graphviz iverilog verilator make libsuitesparse-dev libglpk-dev
+sudo apt-get install autoconf autoconf-archive automake libtool g++ gcc-4.8 g++-4.8 gcc-4.9 g++-4.9 gcc-5 g++-5 gcc-4.8-plugin-dev gcc-4.9-plugin-dev gcc-5-plugin-dev  gcc-4.8-multilib gcc-4.9-multilib gcc-5-multilib g++-4.8-multilib g++-4.9-multilib g++-5-multilib libboost-all-dev libmpc-dev libmpfr-dev libxml2-dev liblzma-dev libmpfi-dev zlib1g-dev libicu-dev bison doxygen flex graphviz iverilog verilator make libsuitesparse-dev libglpk-dev
 
 
 Ubuntu 14.04 LTS 64bit and Ubuntu 14.04 LTS 32bit:
@@ -231,6 +242,7 @@ Ubuntu 14.04 LTS 64bit and Ubuntu 14.04 LTS 32bit:
 - gcc-4.8-multilib
 - gcc-4.7-multilib
 - gcc-4.6-multilib
+- g++-4.8-multilib
 - libboost-all-dev
 - libmpc-dev
 - libmpfr-dev
@@ -252,7 +264,7 @@ Ubuntu 14.04 LTS 64bit and Ubuntu 14.04 LTS 32bit:
 
 
 In a single line:
-sudo apt-get install autoconf autoconf-archive automake libtool g++ gcc-4.6 g++-4.6 gcc-4.6-plugin-dev gcc-4.6-plugin-dev gcc-4.7 g++-4.7 gcc-4.8-plugin-dev gcc-4.7-plugin-dev gcc-4.8-multilib gcc-4.7-multilib  gcc-4.6-multilib libboost-all-dev libmpc-dev libmpfr-dev libxml2-dev liblzma-dev libmpfi-dev zlib1g-dev libicu-dev bison doxygen flex graphviz iverilog verilator libsuitesparse-dev libglpk-dev make
+sudo apt-get install autoconf autoconf-archive automake libtool g++ gcc-4.6 g++-4.6 gcc-4.6-plugin-dev gcc-4.6-plugin-dev gcc-4.7 g++-4.7 gcc-4.8-plugin-dev gcc-4.7-plugin-dev gcc-4.8-multilib gcc-4.7-multilib  gcc-4.6-multilib g++-4.8-multilib libboost-all-dev libmpc-dev libmpfr-dev libxml2-dev liblzma-dev libmpfi-dev zlib1g-dev libicu-dev bison doxygen flex graphviz iverilog verilator libsuitesparse-dev libglpk-dev make
 
 Debian packages
 ***************
