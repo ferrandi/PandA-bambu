@@ -63,4 +63,10 @@ ext/sollya/config.h.in
 ext/sollya/configure
 ext/sollya/m4/
 build
+ext/flopoco/Makefile.am
+ext/flopoco/configure.ac
+ext/flopoco/src/FPExpressions/ExpressionParser.h
+ext/flopoco/src/FPExpressions/FlopocoScanner.h
+ext/flopoco/src/Makefile.am
+QTCreator-PandA-GitHub.creator.user
 
