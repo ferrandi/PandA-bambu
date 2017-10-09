@@ -2,8 +2,7 @@
 SUBDIRS = 
 DIST_SUBDIRS =
 
-EXTRA_DIST = VHDLLexerRule.l FPExpressions/ExpressionScanner.l FPExpressions/ExpressionParser.y $(top_srcdir)/src/FPExpressions/ExpressionParser.h \
-                $(top_srcdir)/src/FPExpressions/FlopocoScanner.h
+EXTRA_DIST = VHDLLexerRule.l FPExpressions/ExpressionScanner.l FPExpressions/ExpressionParser.y
 ACLOCAL_AMFLAGS = -I ../m4
 
 BUILT_SOURCES = VHDLLexer.cpp \
@@ -341,12 +340,12 @@ VHDLLexer.cpp:$(top_srcdir)/src/VHDLLexerRule.l
 
 VHDLLexer.hpp:VHDLLexer.cpp
 
-ExpressionParser.cpp: $(top_srcdir)/src/FPExpressions/ExpressionParser.y ExpressionScanner.cpp
+ExpressionParser.cpp: $(top_srcdir)/src/FPExpressions/ExpressionParser.y
 	${YACC} -y -d --defines=$(top_srcdir)/src/FPExpressions/ExpressionParser.h --output=ExpressionParser.cpp --name-prefix=FlopocoExpression $(top_srcdir)/src/FPExpressions/ExpressionParser.y
 
-ExpressionScanner.cpp:$(top_srcdir)/src/FPExpressions/ExpressionScanner.l
+ExpressionScanner.cpp:$(top_srcdir)/src/FPExpressions/ExpressionScanner.l $(top_srcdir)/src/FPExpressions/ExpressionParser.h
 	${LEX} --prefix=FlopocoExpression --header-file=$(top_srcdir)/src/FPExpressions/FlopocoScanner.h -o ExpressionScanner.cpp  $(top_srcdir)/src/FPExpressions/ExpressionScanner.l
 
-$(top_srcdir)/src/FPExpressions/FlopocoScanner.h:ExpressionScanner.cpp ExpressionParser.cpp
-
 $(top_srcdir)/src/FPExpressions/ExpressionParser.h:ExpressionParser.cpp
+$(top_srcdir)/src/FPPipeline.cpp.cpp:$(top_srcdir)/src/FPExpressions/ExpressionParser.h
+
