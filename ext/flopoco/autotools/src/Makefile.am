@@ -347,5 +347,5 @@ ExpressionScanner.cpp:$(top_srcdir)/src/FPExpressions/ExpressionScanner.l $(top_
 	${LEX} --prefix=FlopocoExpression --header-file=$(top_srcdir)/src/FPExpressions/FlopocoScanner.h -o ExpressionScanner.cpp  $(top_srcdir)/src/FPExpressions/ExpressionScanner.l
 
 $(top_srcdir)/src/FPExpressions/ExpressionParser.h:ExpressionParser.cpp
-$(top_srcdir)/src/FPPipeline.cpp.cpp:$(top_srcdir)/src/FPExpressions/ExpressionParser.h
+$(top_srcdir)/src/FPPipeline.cpp:$(top_srcdir)/src/FPExpressions/ExpressionParser.h
 
