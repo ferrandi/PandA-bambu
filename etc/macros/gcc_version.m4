@@ -307,7 +307,7 @@ PLUGIN_TEST
          if test "x$I386_GCC46_PLUGIN_COMPILER" = x; then
             continue
          fi
-         #Look for gengtype
+         echo "Looking for gengtype"
          I386_GCC46_GENGTYPE=`$I386_GCC46_EXE -print-file-name=gengtype`
          if test "x$I386_GCC46_GENGTYPE" = "xgengtype"; then
             I386_GCC46_GENGTYPE=`$I386_GCC46_EXE -print-file-name=plugin/gengtype`
@@ -320,7 +320,7 @@ PLUGIN_TEST
                fi
             fi
          fi
-         #Look for gtype.state
+         echo "Looking for gtype.state"
          I386_GCC46_GTYPESTATE=`$I386_GCC46_EXE -print-file-name=gtype.state`
          if test "x$I386_GCC46_GTYPESTATE" = "xgtype.state"; then
             I386_GCC46_GTYPESTATE=`$I386_GCC46_EXE -print-file-name=plugin/gtype.state`
@@ -329,7 +329,7 @@ PLUGIN_TEST
                continue
             fi
          fi
-         #OK, we have found the compiler
+         echo "OK, we have found the compiler"
          build_I386_GCC46=yes;
          build_I386_GCC46_EMPTY_PLUGIN=yes;
          build_I386_GCC46_SSA_PLUGIN=yes;
@@ -533,7 +533,7 @@ PLUGIN_TEST
          if test "x$I386_GCC47_PLUGIN_COMPILER" = x; then
             continue
          fi
-         #Look for gengtype
+         echo "Looking for gengtype"
          I386_GCC47_GENGTYPE=`$I386_GCC47_EXE -print-file-name=gengtype`
          if test "x$I386_GCC47_GENGTYPE" = "xgengtype"; then
             I386_GCC47_GENGTYPE=`$I386_GCC47_EXE -print-file-name=plugin/gengtype`
@@ -546,7 +546,7 @@ PLUGIN_TEST
                fi
             fi
          fi
-         #Look for gtype.state
+         echo "Looking for gtype.state"
          I386_GCC47_GTYPESTATE=`$I386_GCC47_EXE -print-file-name=gtype.state`
          if test "x$I386_GCC47_GTYPESTATE" = "xgtype.state"; then
             I386_GCC47_GTYPESTATE=`$I386_GCC47_EXE -print-file-name=plugin/gtype.state`
@@ -555,7 +555,7 @@ PLUGIN_TEST
                continue
             fi
          fi
-         #OK, we have found the compiler
+         echo "OK, we have found the compiler"
          build_I386_GCC47=yes;
          build_I386_GCC47_EMPTY_PLUGIN=yes;
          build_I386_GCC47_SSA_PLUGIN=yes;
@@ -760,7 +760,7 @@ PLUGIN_TEST
          if test "x$I386_GCC48_PLUGIN_COMPILER" = x; then
             continue
          fi
-         #Look for gengtype
+         echo "Looking for gengtype"
          I386_GCC48_GENGTYPE=`$I386_GCC48_EXE -print-file-name=gengtype`
          if test "x$I386_GCC48_GENGTYPE" = "xgengtype"; then
             I386_GCC48_GENGTYPE=`$I386_GCC48_EXE -print-file-name=plugin/gengtype`
@@ -773,7 +773,7 @@ PLUGIN_TEST
                fi
             fi
          fi
-         #Look for gtype.state
+         echo "Looking for gtype.state"
          I386_GCC48_GTYPESTATE=`$I386_GCC48_EXE -print-file-name=gtype.state`
          if test "x$I386_GCC48_GTYPESTATE" = "xgtype.state"; then
             I386_GCC48_GTYPESTATE=`$I386_GCC48_EXE -print-file-name=plugin/gtype.state`
@@ -782,7 +782,7 @@ PLUGIN_TEST
                continue
             fi
          fi
-         #OK, we have found the compiler
+         echo "OK, we have found the compiler"
          build_I386_GCC48=yes;
          build_I386_GCC48_EMPTY_PLUGIN=yes;
          build_I386_GCC48_SSA_PLUGIN=yes;
@@ -987,7 +987,7 @@ PLUGIN_TEST
          if test "x$I386_GCC49_PLUGIN_COMPILER" = x; then
             continue
          fi
-         #Look for gengtype
+         echo "Looking for gengtype"
          I386_GCC49_GENGTYPE=`$I386_GCC49_EXE -print-file-name=gengtype`
          if test "x$I386_GCC49_GENGTYPE" = "xgengtype"; then
             I386_GCC49_GENGTYPE=`$I386_GCC49_EXE -print-file-name=plugin/gengtype`
@@ -1000,7 +1000,7 @@ PLUGIN_TEST
                fi
             fi
          fi
-         #Look for gtype.state
+         echo "Looking for gtype.state"
          I386_GCC49_GTYPESTATE=`$I386_GCC49_EXE -print-file-name=gtype.state`
          if test "x$I386_GCC49_GTYPESTATE" = "xgtype.state"; then
             I386_GCC49_GTYPESTATE=`$I386_GCC49_EXE -print-file-name=plugin/gtype.state`
@@ -1009,7 +1009,7 @@ PLUGIN_TEST
                continue
             fi
          fi
-         #OK, we have found the compiler
+         echo "OK, we have found the compiler"
          build_I386_GCC49=yes;
          build_I386_GCC49_EMPTY_PLUGIN=yes;
          build_I386_GCC49_SSA_PLUGIN=yes;
@@ -1209,7 +1209,7 @@ PLUGIN_TEST
          if test "x$I386_GCC5_PLUGIN_COMPILER" = x; then
             continue
          fi
-         #Look for gengtype
+         echo "Looking for gengtype"
          I386_GCC5_GENGTYPE=`$I386_GCC5_EXE -print-file-name=gengtype`
          if test "x$I386_GCC5_GENGTYPE" = "xgengtype"; then
             I386_GCC5_GENGTYPE=`$I386_GCC5_EXE -print-file-name=plugin/gengtype`
@@ -1222,7 +1222,7 @@ PLUGIN_TEST
                fi
             fi
          fi
-         #Look for gtype.state
+         echo "Looking for gtype.state"
          I386_GCC5_GTYPESTATE=`$I386_GCC5_EXE -print-file-name=gtype.state`
          if test "x$I386_GCC5_GTYPESTATE" = "xgtype.state"; then
             I386_GCC5_GTYPESTATE=`$I386_GCC5_EXE -print-file-name=plugin/gtype.state`
@@ -1231,7 +1231,7 @@ PLUGIN_TEST
                continue
             fi
          fi
-         #OK, we have found the compiler
+         echo "OK, we have found the compiler" 
          build_I386_GCC5=yes;
          build_I386_GCC5_EMPTY_PLUGIN=yes;
          build_I386_GCC5_SSA_PLUGIN=yes;
@@ -1431,7 +1431,7 @@ PLUGIN_TEST
          if test "x$I386_GCC6_PLUGIN_COMPILER" = x; then
             continue
          fi
-         #Look for gengtype
+         echo "Looking for gengtype"
          I386_GCC6_GENGTYPE=`$I386_GCC6_EXE -print-file-name=gengtype`
          if test "x$I386_GCC6_GENGTYPE" = "xgengtype"; then
             I386_GCC6_GENGTYPE=`$I386_GCC6_EXE -print-file-name=plugin/gengtype`
@@ -1444,7 +1444,7 @@ PLUGIN_TEST
                fi
             fi
          fi
-         #Look for gtype.state
+         echo "Looking for gtype.state"
          I386_GCC6_GTYPESTATE=`$I386_GCC6_EXE -print-file-name=gtype.state`
          if test "x$I386_GCC6_GTYPESTATE" = "xgtype.state"; then
             I386_GCC6_GTYPESTATE=`$I386_GCC6_EXE -print-file-name=plugin/gtype.state`
@@ -1453,7 +1453,7 @@ PLUGIN_TEST
                continue
             fi
          fi
-         #OK, we have found the compiler
+         echo "OK, we have found the compiler" 
          build_I386_GCC6=yes;
          build_I386_GCC6_EMPTY_PLUGIN=yes;
          build_I386_GCC6_SSA_PLUGIN=yes;
@@ -1653,7 +1653,7 @@ PLUGIN_TEST
          if test "x$I386_GCC7_PLUGIN_COMPILER" = x; then
             continue
          fi
-         #Look for gengtype
+         echo "Looking for gengtype"
          I386_GCC7_GENGTYPE=`$I386_GCC7_EXE -print-file-name=gengtype`
          if test "x$I386_GCC7_GENGTYPE" = "xgengtype"; then
             I386_GCC7_GENGTYPE=`$I386_GCC7_EXE -print-file-name=plugin/gengtype`
@@ -1666,7 +1666,7 @@ PLUGIN_TEST
                fi
             fi
          fi
-         #Look for gtype.state
+         echo "Looking for gtype.state"
          I386_GCC7_GTYPESTATE=`$I386_GCC7_EXE -print-file-name=gtype.state`
          if test "x$I386_GCC7_GTYPESTATE" = "xgtype.state"; then
             I386_GCC7_GTYPESTATE=`$I386_GCC7_EXE -print-file-name=plugin/gtype.state`
@@ -1675,7 +1675,7 @@ PLUGIN_TEST
                continue
             fi
          fi
-         #OK, we have found the compiler
+         echo "OK, we have found the compiler"
          build_I386_GCC7=yes;
          build_I386_GCC7_EMPTY_PLUGIN=yes;
          build_I386_GCC7_SSA_PLUGIN=yes;

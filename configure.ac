@@ -186,12 +186,6 @@ if test $TOPSRCDIR = $PWD; then
    exit 1;
 fi
 
-if test ! -d $TOPSRCDIR/ext; then 
-  echo "";
-  echo "      ERROR: ext directory not found. Run 'make -f Makefile.init EXT_DIR=<ext_path>'"
-  echo "";
-  exit 1;
-fi
 if test "$prefix" = "NONE"; then
    PREFIX=$ac_default_prefix
 else
@@ -230,9 +224,6 @@ AC_ARG_ENABLE(bambu,                 [  --enable-bambu               compile bam
 AC_ARG_ENABLE(eucalyptus,            [  --enable-eucalyptus          compile eucalyptus tool for RTL characterization],      [panda_USE_EUCALYPTUS="$enableval"])
 AC_ARG_ENABLE(treegcc,               [  --enable-treegcc             compile tree-panda-gcc tool for gimple compilation],    [panda_USE_TREE_PANDA_GCC="$enableval"])
 
-#ext libraries
-AC_EXT_ARGS
-
 #Ext libraries tools
 AC_ARG_ENABLE(modelsim,               [  --enable-modelsim            enable modelsim simulator],                               [panda_USE_MODELSIM="$enableval"])
 
@@ -242,8 +233,6 @@ AC_ARG_ENABLE(altera,                 [  --enable-altera              compile th
 AC_ARG_ENABLE(lattice,                [  --enable-lattice             compile the wrapper for interfacing with Lattice tools],[panda_USE_WRAPPER_LATTICE="$enableval"])
 AC_ARG_ENABLE(verilator,              [  --disable-verilator          disable the/ wrapper to Verilator Verilog compiler],   [panda_USE_VERILATOR="$enableval"], [panda_USE_VERILATOR="yes"])
 
-#etc libraries
-AC_ETC_ARGS
 
 #aid stuff
 AC_ARG_ENABLE(release,             [  --enable-release             compile the source code for release (default enabled)],                                  [panda_RELEASE="$enableval"], [panda_RELEASE="yes"])
@@ -256,9 +245,11 @@ AC_ARG_ENABLE(allstatic,           [  --enable-allstatic           create static
 AC_ARG_ENABLE(32bits,              [  --enable-32bits              create 32bits binaries ],                                                                [panda_32BITS="$enableval"])
 
 
-#etc stuff
+#etc/ext stuff
 AC_ARG_ENABLE(flopoco,             [  --enable-flopoco             compile FloPoCo external library],                     [panda_USE_FLOPOCO="$enableval"])
-
+AC_ARG_ENABLE(icarus,              [  --enable-icarus              compile Icarus Verilog compiler],                      [panda_USE_ICARUS="$enableval"])
+AC_ARG_ENABLE(verilator,           [  --enable-verilator           compile Verilator Verilog compiler],                   [panda_USE_VERILATOR="$enableval"])
+AC_ARG_ENABLE(grlib,               [  --enable-grlib               use GRLIB],                                             [panda_USE_GRLIB="$enableval"])
 
 ################################################################################
 #                                                                              #
@@ -1071,6 +1062,7 @@ fi
 if test "x$panda_USE_R" = xyes; then
    AC_CHECK_R
 fi
+AM_CONDITIONAL(BUILD_R, test "x$panda_USE_R" = xyes)
 
 
 
@@ -1115,105 +1107,180 @@ fi
 #                                                                              #
 ################################################################################
 
-################################### Configure ##################################
+################################### 32bits #####################################
+if test "x$panda_32BITS" != x; then
+   CXXFLAGS+=" -m32 "
+   CFLAGS+=" -m32 "
+   LDFLAGS+=" -m32 "
+fi
+
 if test ! -d ext ; then
    mkdir ext;
 fi
 
-CONFIGURE_EXT_ARGS=$ac_configure_args
-
-if test "x$panda_32BITS" != x; then
-   CONFIGURE_EXT_ARGS+=" --enable-32bits"
-fi
-
-if test "x$panda_USE_ABC" = xyes; then
-   CONFIGURE_EXT_ARGS+=" --enable-abc"
-fi
-
-if test "x$panda_USE_ARM_GCC" = xyes; then
-   CONFIGURE_EXT_ARGS+=" --enable-arm-gcc"
-   CONFIGURE_EXT_ARGS+=" --with-min-ARM-gcc=4.5.0"
-   CONFIGURE_EXT_ARGS+=" --with-max-ARM-gcc=4.6.0"
-fi
-
-if test "x$panda_USE_CUDD" = xyes; then
-   CONFIGURE_EXT_ARGS+=" --enable-cudd"
-fi
-
-if test "x$panda_USE_FLOPOCO" = xyes; then
-   CONFIGURE_EXT_ARGS+=" --enable-flopoco"
-fi
-
-if test "x$panda_USE_METSLIB" = xyes; then
-   CONFIGURE_EXT_ARGS+=" --enable-metslib"
-fi
-
-if test "x$panda_USE_TRNG" = xyes; then
-   CONFIGURE_EXT_ARGS+=" --enable-trng"
-fi
-
-if test "x$panda_USE_LIB_FROM_LIBERTY" = xyes; then
-   CONFIGURE_EXT_ARGS+=" --enable-liberty"
-fi
-
-if test "x$panda_USE_SPARC_GCC" = xyes; then
-   CONFIGURE_EXT_ARGS+=" --enable-sparc-gcc"
-   CONFIGURE_EXT_ARGS+=" --with-min-SPARC-gcc=4.5.0"
-   CONFIGURE_EXT_ARGS+=" --with-max-SPARC-gcc=4.6.0"
-fi
-
-if test "x$panda_USE_TASTE" = xyes; then
-   CONFIGURE_EXT_ARGS+=" --enable-grlib"
-fi
-
-echo ""
-echo ""
-echo ""
-echo "Configure ext with $CONFIGURE_EXT_ARGS"
-echo ""
-echo ""
-echo ""
-cd ext
-eval "bash $TOPSRCDIR/ext/configure $CONFIGURE_EXT_ARGS"
-if test $? != 0; then
-   AC_MSG_ERROR("Error in ext configuration")
-fi
-cd $BUILDDIR
-echo ""
-echo ""
-echo ""
-echo "Configured ext"
-echo ""
-echo ""
-echo ""
-
-
-
-
-################################# Load ext dir #################################
-. $BUILDDIR/ext/set_variable.sh
-
-##################################### 2lev #####################################
-if test "x$panda_USE_LIB_2LEV" = xyes; then
-   $TOPSRCDIR/./etc/macros/panda_config_subdir.sh src/logic_synthesis/2lev $ac_configure_args "'CXXFLAGS=${CXXFLAGS}'" "'CFLAGS=${CFLAGS}'" "'LDFLAGS=$LDFLAGS'" "'CUDD_CPPFLAGS=$CUDD_CPPFLAGS'" "'CUDD_LIBS=$CUDD_LIBS'"
-fi
-AM_CONDITIONAL(BUILD_LIB_2LEV, test "x$panda_USE_LIB_2LEV" = xyes)
-
-
-
-################################### ABC stuff ##################################
-AM_CONDITIONAL(BUILD_ABC,  test "x$panda_USE_ABC" = xyes )
-
-
-
 ############################### OpenBeagle stuff ###############################
+if test "x$panda_USE_BEAGLE" = xyes; then
+   AC_APPEND(ENABLE_DOC,"BEAGLE")
+   $TOPSRCDIR/etc/macros/panda_config_subdir.sh ext/beagle $ac_configure_args "'CXXFLAGS=${CXXFLAGS}'" "'CFLAGS=${CFLAGS}'" "'LDFLAGS=$LDFLAGS'"
+   if test $? != 0; then
+      AC_MSG_ERROR("Error in beagle configuration")
+   fi
+   AC_DEFINE(HAVE_BEAGLE, 1, "Define if beagle is used")
+   BEAGLE_DIR="$TOPSRCDIR/ext/beagle"
+fi
 AC_SUBST(BEAGLE_DIR)
 AM_CONDITIONAL(BUILD_BEAGLE, test "x$panda_USE_BEAGLE" = xyes)
 
+################################## ARM Check ###################################
+if test "x$panda_USE_ARM_GCC" = xyes; then
+   AC_CHECK_GCC_ARM_VERSION([4.5.0],[4.6.0])
+   AC_DEFINE(HAVE_ARM_COMPILER, 1, "Define if ARM-treegcc is used")
+fi
+AM_CONDITIONAL(BUILD_ARM_GCC, test "x$build_ARM_GCC" = xyes)
+AM_CONDITIONAL(BUILD_ARM_EMPTY_PLUGIN, test "x$build_ARM_EMPTY_PLUGIN" = xyes)
+AM_CONDITIONAL(BUILD_ARM_RTL_PLUGIN, test "x$build_ARM_RTL_PLUGIN" = xyes)
+AM_CONDITIONAL(BUILD_ARM_SSA_PLUGIN, test "x$build_ARM_SSA_PLUGIN" = xyes)
+AM_CONDITIONAL(BUILD_ARM_SSA_PLUGINCPP, test "x$build_ARM_SSA_PLUGINCPP" = xyes)
+AC_SUBST(ARM_EMPTY_PLUGIN)
+AC_SUBST(ARM_SSA_PLUGIN)
+AC_SUBST(ARM_RTL_PLUGIN)
+AC_SUBST(ARM_GCC_PLUGIN_DIR)
+AC_SUBST(ARM_GCC_EXE)
+AC_SUBST(ARM_GCC_SRC_DIR)
+AC_SUBST(ARM_PLUGIN_DIR)
+AC_SUBST(ARM_GCC_VERSION)
+AC_SUBST(ARM_GCC_BUILT_DIR)
+AC_SUBST(ARM_HOST_PLUGIN_COMPILER)
 
+
+################################# SPARC Check ##################################
+if test "x$panda_USE_SPARC_GCC" = xyes; then
+   AC_CHECK_SPARC_ELF
+   AC_CHECK_GCC_SPARC_VERSION([4.5.0],[4.6.0])
+   AC_DEFINE(HAVE_SPARC_COMPILER, 1, "Define if SPARC-treegcc is used")
+fi
+AM_CONDITIONAL(BUILD_SPARC_GCC, test "x$build_SPARC_GCC" = xyes)
+AM_CONDITIONAL(BUILD_SPARC_EMPTY_PLUGIN, test "x$build_SPARC_EMPTY_PLUGIN" = xyes)
+AM_CONDITIONAL(BUILD_SPARC_RTL_PLUGIN, test "x$build_SPARC_RTL_PLUGIN" = xyes)
+AM_CONDITIONAL(BUILD_SPARC_SSA_PLUGIN, test "x$build_SPARC_SSA_PLUGIN" = xyes)
+AM_CONDITIONAL(BUILD_SPARC_SSA_PLUGINCPP, test "x$build_SPARC_SSA_PLUGINCPP" = xyes)
+AC_SUBST(SPARC_EMPTY_PLUGIN)
+AC_SUBST(SPARC_SSA_PLUGIN)
+AC_SUBST(SPARC_RTL_PLUGIN)
+AC_SUBST(SPARC_GCC_PLUGIN_DIR)
+AC_SUBST(SPARC_GCC_EXE)
+AC_SUBST(SPARC_GCC_SRC_DIR)
+AC_SUBST(SPARC_PLUGIN_DIR)
+AC_SUBST(SPARC_GCC_VERSION)
+AC_SUBST(SPARC_GCC_BUILT_DIR)
+AC_SUBST(SPARC_HOST_PLUGIN_COMPILER)
+
+
+
+################################## CUDD stuff ##################################
+if test "x$panda_USE_CUDD" = xyes; then
+   AC_APPEND(ENABLE_DOC,"CUDD")
+
+   AC_DEFINE(HAVE_CUDD, 1, "Define if CUDD is used")
+   $TOPSRCDIR/etc/macros/panda_config_subdir.sh ext/cudd $ac_configure_args "'CXXFLAGS=${CXXFLAGS}'" "'CFLAGS=${CFLAGS}'" "'LDFLAGS=$LDFLAGS'"
+   CUDD_CPPFLAGS="-I$TOPSRCDIR/ext/cudd/cudd -I$TOPSRCDIR/ext/cudd/nanotrav -I$TOPSRCDIR/ext/cudd/mtr -I$TOPSRCDIR/ext/cudd/epd -I$TOPSRCDIR/ext/cudd/st -I$TOPSRCDIR/ext/cudd/util -I$TOPSRCDIR/ext/cudd/cplusplus"
+   CUDD_LIBS="$BUILDDIR/ext/cudd/cplusplus/libobj.la $BUILDDIR/ext/cudd/cudd/libcudd.la"
+fi
+AC_SUBST(CUDD_CPPFLAGS)
+AC_SUBST(CUDD_LIBS)
+AM_CONDITIONAL(BUILD_LIB_CUDD, test "x$panda_USE_CUDD" = xyes)
+
+
+################ FloPoCo stuff #############################
+if test "x$panda_USE_FLOPOCO" = xyes; then
+   AC_CHECK_LIB([gmpxx], [main], [HAVE_LIBGMPXX=yes], [])
+   AC_CHECK_LIB([gmp], [main], [HAVE_LIBGMP=yes], [])
+   AC_CHECK_LIB([mpfr], [main], [HAVE_LIBMPFR=yes], [])
+   if test "x$panda_32BITS" != x; then
+      LIBS="-L/usr/lib32/ $LIBS";
+   fi
+   AC_CHECK_HEADERS([gmpxx.h gmp.h mpfr.h])
+   if test -z $HAVE_LIBMPFR || test -z $HAVE_LIBGMP || test -z $HAVE_LIBGMPXX; then
+      AC_MSG_ERROR(either libmpfr, libgmp or libgmpxx is missing)
+   fi
+   $TOPSRCDIR/etc/macros/panda_config_subdir.sh ext/libfplll-4.0.3 $ac_configure_args "'CXXFLAGS=${CXXFLAGS}'" "'CFLAGS=${CFLAGS}'" "'LDFLAGS=$LDFLAGS'" --prefix=${prefix}
+   if test $? != 0; then
+      AC_MSG_ERROR("Error in fplll configuration")
+   fi
+   cd ext/libfplll-4.0.3
+   make
+   make install
+   if test $? != 0; then
+      AC_MSG_ERROR("Error in fplll compilation")
+   fi
+   cd ../..
+
+   AC_DEFINE(HAVE_SOLLYA, 1, "Define if Sollya is used")
+   AC_DEFINE(HAVE_HOTBM, 1, "")
+   AC_DEFINE(HAVE_LNS, 1, "LNS available")
+   $TOPSRCDIR/etc/macros/panda_config_subdir.sh ext/sollya $ac_configure_args "'CFLAGS=${CFLAGS}'" "'CXXFLAGS=${CXXFLAGS} -I${prefix}/include'" "'LDFLAGS=${LDFLAGS} -L${prefix}/lib'";
+   if test $? != 0; then
+      AC_MSG_ERROR("Error in sollya configuration")
+   fi
+   cd ext/sollya
+   make
+   if test $? != 0; then
+      AC_MSG_ERROR("Error in sollya compilation")
+   fi
+   cd ../..
+   $TOPSRCDIR/etc/macros/panda_config_subdir.sh ext/flopoco $ac_configure_args "'CXXFLAGS=${CXXFLAGS}'" "'CFLAGS=${CFLAGS}'" "'LDFLAGS=${LDFLAGS} -L$BUILDDIR/ext/sollya/.libs'"
+   if test $? != 0; then
+      AC_MSG_ERROR("Error in flopoco configuration")
+   fi
+   AC_DEFINE(HAVE_FLOPOCO, 1, "Define if flopoco is used")
+   FLOPOCO_DIR="$TOPSRCDIR/ext/flopoco"
+fi
+AM_CONDITIONAL(BUILD_FLOPOCO, test "x$panda_USE_FLOPOCO" = xyes)
+AC_SUBST(FLOPOCO_DIR)
+
+
+################################# METSlib stuff ################################
+if test "x$panda_USE_METSLIB" = xyes; then
+   $TOPSRCDIR/etc/macros/panda_config_subdir.sh ext/metslib-0.5.3 $ac_configure_args "'CXXFLAGS=${CXXFLAGS}'" "'CFLAGS=${CFLAGS}'" "'LDFLAGS=$LDFLAGS'"
+   if test $? != 0; then
+      AC_MSG_ERROR("Error in metslib configuration")
+   fi
+   AC_DEFINE(HAVE_METSLIB, 1, "Define if metslib is used")
+   METSLIB_DIR="$TOPSRCDIR/metslib-0.5.3"
+   METSLIB_OBJDIR="ext/metslib-0.5.3"
+fi
+AM_CONDITIONAL(BUILD_METSLIB, test "x$panda_USE_METSLIB" = xyes)
+
+
+################ TRNG stuff #############################
+if test "x$panda_USE_TRNG" = xyes; then
+   $TOPSRCDIR/etc/macros/panda_config_subdir.sh ext/trng-4.17 $ac_configure_args "'CXXFLAGS=${CXXFLAGS}'" "'CFLAGS=${CFLAGS}'" "'LDFLAGS=$LDFLAGS'"
+   if test $? != 0; then
+      AC_MSG_ERROR("Error in trng configuration")
+   fi
+   AC_DEFINE(HAVE_TRNG, 1, "Define if trng is used")
+   TRNG_DIR="$TOPSRCDIR/ext/trng-4.17"
+   TRNG_OBJDIR="ext/trng-4.17"
+fi
+AM_CONDITIONAL(BUILD_TRNG, test "x$panda_USE_TRNG" = xyes)
 
 
 ################################# Coin-Or stuff ################################
+if test "x$panda_USE_COIN_OR" = xyes; then
+   # Checks for libraries.
+   AX_BLAS()
+   BLAS_LIBS="$BLAS_LIBS"
+   AX_LAPACK()
+   LAPACK_LIBS="$LAPACK_LIBS"
+   AC_CHECK_LIB([bz2],[BZ2_bzReadOpen], [echo "Checking for libbz2... yes"], [echo "Checking for libbz2... no"; AC_MSG_ERROR("libbz2 not found")])
+   $TOPSRCDIR/etc/macros/panda_config_subdir.sh ext/Coin-Cbc $ac_configure_args "'CXXFLAGS=${CXXFLAGS}'" "'CFLAGS=${CFLAGS}'" "'LDFLAGS=$LDFLAGS'"
+   if test $? != 0; then
+      AC_MSG_ERROR("Error in Coin-Cbc configuration")
+   fi
+   AC_DEFINE(HAVE_COIN_OR, 1, "Define if coin-or is used")
+   COIN_OR_DIR="$TOPSRCDIR/Coin-Cbc"
+   COIN_OR_OBJDIR="ext/Coin-Cbc"
+fi
 AC_SUBST(COIN_OR_DIR)
 AC_SUBST(COIN_OR_OBJDIR)
 AC_SUBST(BLAS_LIBS)
@@ -1222,11 +1289,35 @@ AC_SUBST(LAPACK_LIBS)
 AM_CONDITIONAL(BUILD_COIN_OR, test "x$panda_USE_COIN_OR" = xyes)
 
 
+################################# Liberty stuff ################################
+if test "x$panda_USE_LIB_FROM_LIBERTY" = xyes; then
+   $TOPSRCDIR/etc/macros/panda_config_subdir.sh ext/liberty_parser $ac_configure_args "'CXXFLAGS=${CXXFLAGS}'" "'CFLAGS=${CFLAGS}'" "'LDFLAGS=$LDFLAGS'"
+   if test $? != 0; then
+      AC_MSG_ERROR("Error in liberty parser configuration")
+   fi
+   AC_DEFINE(HAVE_FROM_LIBERTY, 1, "Define if liberty parser is used")
+fi
+AM_CONDITIONAL(BUILD_LIBERTY_PARSER, test "x$panda_USE_LIB_FROM_LIBERTY" = xyes)
 
-################################## CUDD stuff ##################################
-AC_SUBST(CUDD_CPPFLAGS)
-AC_SUBST(CUDD_LIBS)
-AM_CONDITIONAL(BUILD_LIB_CUDD, test "x$panda_USE_CUDD" = xyes)
+
+################################# TASTE ################################
+if test "x$panda_USE_TASTE" = xyes; then
+   AC_DEFINE(HAVE_TASTE, 1, "Define if TASTE has to be used")
+   AC_DEFINE_UNQUOTED(GRLIB_DIR, "${prefix}/lib/GRLIB", "Define the GRLIB directory")
+fi
+AM_CONDITIONAL(BUILD_TASTE, test "x$panda_USE_TASTE" = xyes)
+AM_CONDITIONAL(USE_GRLIB, test "x$panda_USE_TASTE" = xyes)
+
+
+##################################### 2lev #####################################
+if test "x$panda_USE_LIB_2LEV" = xyes; then
+   $TOPSRCDIR/etc/macros/panda_config_subdir.sh src/logic_synthesis/2lev $ac_configure_args "'CXXFLAGS=${CXXFLAGS}'" "'CFLAGS=${CFLAGS}'" "'LDFLAGS=$LDFLAGS'" "'CUDD_CPPFLAGS=$CUDD_CPPFLAGS'" "'CUDD_LIBS=$CUDD_LIBS'"
+fi
+AM_CONDITIONAL(BUILD_LIB_2LEV, test "x$panda_USE_LIB_2LEV" = xyes)
+
+
+################################### ABC stuff ##################################
+AM_CONDITIONAL(BUILD_ABC,  test "x$panda_USE_ABC" = xyes )
 
 
 ################################## GLPK stuff ##################################
@@ -1252,12 +1343,32 @@ AC_SUBST(LIB_SUITESPARSECONFIG)
 
 
 
-################################# Liberty stuff ################################
-AM_CONDITIONAL(BUILD_LIBERTY_PARSER, test "x$panda_USE_LIB_FROM_LIBERTY" = xyes)
-
 
 
 ################################ LP-SOLVE stuff ################################
+if test "x$panda_USE_LP_SOLVE" = xyes; then
+  USE_BFP_NAME=LUSOL
+  #etaPFI
+  #etaPFI2
+  #GLPK
+  #LUSOL
+  if test ! -f $TOPSRCDIR/ext/lpsolve5/lp_solve_USE_$USE_BFP_NAME; then
+     rm -f $TOPSRCDIR/ext/lpsolve5/lp_solve_USE_*
+     touch $TOPSRCDIR/ext/lpsolve5/lp_solve_USE_$USE_BFP_NAME
+     if test -d  ext/lpsolve5/bfp; then
+       (cd ext/lpsolve5/bfp; make clean;)
+     fi
+     touch $TOPSRCDIR/ext/lpsolve5/configure.in
+   fi
+   if test $USE_BFP_NAME == etaPFI2; then
+      BFP_NAME="bfp_etaPFI"
+   else
+      BFP_NAME="bfp_$USE_BFP_NAME"
+   fi
+   $TOPSRCDIR/etc/macros/panda_config_subdir.sh ext/lpsolve5 $ac_configure_args "'CXXFLAGS=${CXXFLAGS}'" "'CFLAGS=${CFLAGS}'" "'LDFLAGS=$LDFLAGS'"
+   AC_DEFINE(HAVE_LP_SOLVE, 1, "Define if lp solver is used")
+   LP_SOLVE_DIR="$TOPSRCDIR/lpsolve5"
+fi
 AC_SUBST(BFP_NAME)
 AC_SUBST(LP_SOLVE_DIR)
 AM_CONDITIONAL(BUILD_LP_SOLVE, test "x$panda_USE_LP_SOLVE" = xyes)
@@ -1268,15 +1379,8 @@ AM_CONDITIONAL(BUILD_LP_SOLVE, test "x$panda_USE_LP_SOLVE" = xyes)
 AM_CONDITIONAL(BUILD_NODELIB, test "x$panda_USE_NODELIB" = xyes)
 
 
-
-####################################### R ######################################
-AM_CONDITIONAL(BUILD_R, test "x$panda_USE_R" = xyes)
-
-
-
 ############################### RapidMiner stuff ###############################
 AM_CONDITIONAL(BUILD_RAPIDMINER, test "x$panda_USE_RAPIDMINER" = xyes)
-
 
 
 ################################## SimIt stuff #################################
@@ -1285,8 +1389,12 @@ AM_CONDITIONAL(BUILD_SIMIT, test "x$panda_USE_SIMIT" = xyes)
 
 
 ############################## VFlib library stuff #############################
-AC_SUBST(VFLIB_DIR)
+if test "x$panda_USE_VFLIB" = xyes; then
+   $TOPSRCDIR/etc/macros/panda_config_subdir.sh ext/vflib $ac_configure_args "'CXXFLAGS=${CXXFLAGS}'" "'CFLAGS=${CFLAGS}'" "'LDFLAGS=$LDFLAGS'"
+   VFLIB_DIR="$TOPSRCDIR/ext/vflib"
+fi
 AM_CONDITIONAL(BUILD_VFLIB, test "x$panda_USE_VFLIB" = xyes)
+AC_SUBST(VFLIB_DIR)
 
 
 
@@ -1363,15 +1471,11 @@ AC_CONFIG_FILES(
 ################################################################################
 
 if test "x$panda_USE_LIB_BOOLEAN" = xyes; then
-  AC_CONFIG_FILES(
-                 )
   AC_DEFINE(HAVE_BOOLEAN_BUILT, 1, "")
 fi
 AM_CONDITIONAL(BUILD_LIB_BOOLEAN,  test "x$panda_USE_LIB_BOOLEAN" = xyes)
 
 if test "x$panda_USE_LIB_BSG_HELPERS" = xyes; then
-  AC_CONFIG_FILES(
-                 )
   AC_DEFINE(HAVE_BSG_HELPERS_BUILT, 1, "Define if bsg_helpers library is built")
 fi
 AM_CONDITIONAL(BUILD_LIB_BSG_HELPERS, test "x$panda_USE_LIB_BSG_HELPERS" = xyes)
@@ -1384,10 +1488,6 @@ if test "x$panda_USE_LIB_CLIQUECOVER" = xyes; then
 fi
 AM_CONDITIONAL(BUILD_LIB_CLIQUECOVER,  test "x$panda_USE_LIB_CLIQUECOVER" = xyes)
 
-if test "x$panda_USE_LIB_CLUSTERING" = xyes; then
-  AC_CONFIG_FILES(
-                 )
-fi
 AM_CONDITIONAL(BUILD_LIB_CLUSTERING,  test "x$panda_USE_LIB_CLUSTERING" = xyes)
 
 if test "x$panda_USE_LIB_DOMINANCE" = xyes; then
@@ -1397,10 +1497,6 @@ if test "x$panda_USE_LIB_DOMINANCE" = xyes; then
 fi
 AM_CONDITIONAL(BUILD_LIB_DOMINANCE,  test "x$panda_USE_LIB_DOMINANCE" = xyes)
 
-if test "x$panda_USE_LIB_EVALUATION" = xyes; then
-  AC_CONFIG_FILES(
-                 )
-fi
 AM_CONDITIONAL(BUILD_LIB_EVALUATION,  test "x$panda_USE_LIB_EVALUATION" = xyes)
 
 ############################# transitive reduction #############################
@@ -1423,24 +1519,13 @@ if test "x$panda_USE_LIB_LOOPS" = xyes; then
 fi
 AM_CONDITIONAL(BUILD_LIB_LOOPS,  test "x$panda_USE_LIB_LOOPS" = xyes)
 
-if test "x$panda_USE_LIB_SETHELPER" = xyes; then
-  AC_CONFIG_FILES(
-                 )
-fi
 AM_CONDITIONAL(BUILD_LIB_SETHELPER,  test "x$panda_USE_LIB_SETHELPER" = xyes)
 
 if test "x$panda_USE_LIB_REGRESSORS" = xyes; then
-
-  AC_CONFIG_FILES(
-                  )
   AC_DEFINE(HAVE_REGRESSORS_BUILT, 1, "Define if regressors library is built")
 fi
 AM_CONDITIONAL(BUILD_LIB_REGRESSORS,  test "x$panda_USE_LIB_REGRESSORS" = xyes)
 
-if test "x$panda_USE_VFLIB" = xyes; then
- AC_CONFIG_FILES(
-                )
-fi
 
 ############################### algorithm stuff ################################
 if test "x$panda_USE_LIB_CLIQUECOVER" = xyes || test "x$panda_USE_LIB_CLUSTERING" = xyes || test "x$panda_USE_LIB_DOMINANCE" = xyes || test "x$panda_USE_LIB_SETHELPER" = xyes || test "x$panda_USE_LIB_GRAPHHELPER" = xyes || test "x$panda_USE_LIB_BOOLEAN" = xyes || test "x$panda_USE_LIB_LOOPS" = xyes || test "x$panda_USE_LIB_EVALUATION" = xyes || test "x$panda_USE_VFLIB" = xyes; then
@@ -1463,8 +1548,6 @@ AM_CONDITIONAL(BUILD_LIB_ALGORITHMS,  test "x$panda_USE_LIB_ALGORITHMS" = xyes)
 ################ CUDD stuff ####################################################
 if test "x$panda_USE_LIB_BDD" = xyes; then
     AC_DEFINE(HAVE_BDD_BUILT, 1, "Define if BBD library is built")
-    AC_CONFIG_FILES(
-                   )
 fi;
 AM_CONDITIONAL(BUILD_LIB_BDD, test "x$panda_USE_LIB_BDD" = xyes)
 
@@ -1500,25 +1583,15 @@ AM_CONDITIONAL(BUILD_LIB_HOST_PROFILING, test "x$panda_USE_LIB_HOST_PROFILING" =
 
 ################ AIG stuff #########################
 if test "x$panda_USE_LIB_AIG" = xyes; then
-
-  AC_CONFIG_FILES(
-                  )
-
   AC_DEFINE(HAVE_AIG_BUILT, 1, "Define if AIG library is built")
 fi
 AM_CONDITIONAL(BUILD_LIB_AIG,  test "x$panda_USE_LIB_AIG" = xyes)
 
 ################ Edif stuff #########################
-if test "x$panda_USE_LIB_EDIF" = xyes; then
-
-  AC_CONFIG_FILES(
-                  )
-fi
 AM_CONDITIONAL(BUILD_LIB_EDIF,  test "x$panda_USE_LIB_EDIF" = xyes)
 
 ################ Circuit stuff #########################
 if test "x$panda_USE_LIB_CIRCUIT" = xyes; then
-
   AC_CONFIG_FILES(
                    src/circuit/Makefile
                  )
@@ -1529,9 +1602,6 @@ AM_CONDITIONAL(BUILD_LIB_CIRCUIT,  test "x$panda_USE_LIB_CIRCUIT" = xyes)
 
 ################ CudaFaultSim stuff #########################
 if test "x$panda_USE_LIB_CUDA_FAULT_SIMULATION" = xyes; then
-
-  AC_CONFIG_FILES(
-                 )
   AC_DEFINE(HAVE_CUDA_FAULT_SIMULATION_BUILT, 1, "Define if cuda fault simulator library is built")
 fi
 AM_CONDITIONAL(BUILD_LIB_CUDA_FAULT_SIMULATION,  test "x$panda_USE_LIB_CUDA_FAULT_SIMULATION" = xyes)
@@ -1580,8 +1650,6 @@ AM_CONDITIONAL(USE_CONSTANTS, test "x$panda_USE_CONSTANTS" = xyes)
 if test "x$panda_USE_LIB_DESIGN_ANALYSIS" = xyes; then
 
   AC_DEFINE(HAVE_DESIGN_ANALYSIS_BUILT, 1, "Define if design analysis library is built")
-  AC_CONFIG_FILES(
-                 )
 fi
 AM_CONDITIONAL(BUILD_LIB_DESIGN_ANALYSIS, test "x$panda_USE_LIB_DESIGN_ANALYSIS" = xyes)
 
@@ -1649,33 +1717,17 @@ AM_CONDITIONAL(BUILD_LIB_BACKEND,  test "x$panda_USE_LIB_BACKEND" = xyes)
 ################################################################################
 
 ############################# TaskGraph estimation #############################
-if test "x$panda_USE_LIB_CODE_ESTIMATION" = xyes; then
-  AC_CONFIG_FILES(
-                 )
-fi
 AM_CONDITIONAL(BUILD_LIB_CODE_ESTIMATION, test "x$panda_USE_LIB_CODE_ESTIMATION" = xyes)
 
 ################ Mapping stuff #########################
 if test "x$panda_USE_LIB_MAPPING" = xyes; then
   AC_DEFINE(HAVE_MAPPING_BUILT, 1, "Define if mapping library is built")
-  AC_CONFIG_FILES(
-                 )
-  if test "x$panda_USE_BEAGLE" = xyes; then
-    AC_CONFIG_FILES(
-                 )
-  fi
-  if test "x$panda_USE_LIB_ILP" = xyes; then
-    AC_CONFIG_FILES(
-                   )
-  fi
 fi
 AM_CONDITIONAL(BUILD_LIB_MAPPING,  test "x$panda_USE_LIB_MAPPING" = xyes)
 
 ################ Compare Models Metric stuff ######################
 if test "x$panda_USE_LIB_COMPARE_MODELS" = xyes; then
   AC_DEFINE(HAVE_COMPARE_MODELS_BUILT, 1, "Define if compare models library is built")
-  AC_CONFIG_FILES( 
-                 )
 fi
 AM_CONDITIONAL(BUILD_LIB_COMPARE_MODELS,  test "x$panda_USE_LIB_COMPARE_MODELS" = xyes)
 
@@ -1687,87 +1739,50 @@ AM_CONDITIONAL(USE_WEIGHT_MODELS_XML, test "x$panda_USE_WEIGHT_MODELS_XML" = xye
 
 ################ Dynamic Metric stuff #########################
 if test "x$panda_USE_LIB_DYNAMIC_METRICS" = xyes; then
-
   AC_DEFINE(HAVE_DYN_METRIC_BUILT, 1, "Define if dynamic metric library is built")
-  AC_CONFIG_FILES(
-                 )
 fi
 AM_CONDITIONAL(BUILD_LIB_DYN_METRIC,  test "x$panda_USE_LIB_DYNAMIC_METRICS" = xyes)
 
 
 ################ RTL Metric stuff #########################
-if test "x$panda_USE_LIB_RTL_METRICS" = xyes; then
-  AC_CONFIG_FILES(
-                 )
-fi
 AM_CONDITIONAL(BUILD_LIB_RTL_METRICS,  test "x$panda_USE_LIB_RTL_METRICS" = xyes)
 
 ################ Static Metric stuff #########################
-if test "x$panda_USE_LIB_STATIC_METRICS" = xyes; then
-  AC_CONFIG_FILES(
-                 )
-fi
 AM_CONDITIONAL(BUILD_LIB_STATIC_METRIC,  test "x$panda_USE_LIB_STATIC_METRICS" = xyes)
 
 ################ TLM Metric stuff #########################
-if test "x$panda_USE_LIB_TLM" = xyes; then
-  AC_CONFIG_FILES(
-                 )
-fi
 AM_CONDITIONAL(BUILD_LIB_TLM,  test "x$panda_USE_LIB_TLM" = xyes)
 
 ################ Metrics stuff #########################
 if test "x$panda_USE_LIB_COMPARE_MODELS" = xyes || test "x$panda_USE_LIB_STATIC_METRICS" = xyes || test "x$panda_USE_LIB_DYNAMIC_METRICS" = xyes || test "x$panda_USE_LIB_RTL_METRICS" = xyes || test "x$panda_USE_LIB_TLM" = xyes; then
    panda_USE_LIB_METRICS=yes;
 fi
-if test "x$panda_USE_LIB_METRICS" = xyes; then
-  AC_CONFIG_FILES(
-                 )
-fi
 AM_CONDITIONAL(BUILD_LIB_METRICS,  test "x$panda_USE_LIB_METRICS" = xyes)
 
 ################################## Algorithm Partitioning stuff ################
-if test "x$panda_USE_LIB_FROM_C" = xyes && test "x$panda_USE_LIB_GRAPH_PARTITIONING" = xyes; then
-   AC_CONFIG_FILES(
-   )
-fi
 
 ############################### SDF graph stuff ################################
-if test "x$panda_USE_LIB_SDF_GRAPHS" = xyes && test "x$panda_USE_LIB_GRAPH_PARTITIONING" = xyes; then
-   AC_CONFIG_FILES(
-   )
-fi
 
 ################ Graph Partitioning checking ###########################
 if test "x$panda_USE_LIB_GRAPH_PARTITIONING" = xyes; then
-
-  AC_CONFIG_FILES(
-                 )
    AC_DEFINE(HAVE_GRAPH_PARTITIONING_BUILT, 1, "Define if graph partitioning library is built")
 fi
 AM_CONDITIONAL(BUILD_LIB_GRAPH_PARTITIONING,    test "x$panda_USE_LIB_GRAPH_PARTITIONING" = xyes)
 
 ################ Metric Partitioning checking ###########################
 if test "x$panda_USE_LIB_METRIC_PARTITIONING" = xyes; then
-
-  AC_CONFIG_FILES(
-  )
   AC_DEFINE(HAVE_METRIC_PARTITIONING_BUILT, 1, "Define if metric partitioning library is built")
 fi
 AM_CONDITIONAL(BUILD_LIB_METRIC_PARTITIONING,   test "x$panda_USE_LIB_METRIC_PARTITIONING" = xyes)
 
 ################ Partitioning checking ###########################
 if test "x$panda_USE_LIB_PARTITIONING" = xyes; then
-  AC_CONFIG_FILES(
-                 )
   AC_DEFINE(HAVE_PARTITIONING_BUILT, 1, "Define if partitioning library is built")
 fi
 AM_CONDITIONAL(BUILD_LIB_PARTITIONING,    test "x$panda_USE_LIB_PARTITIONING" = xyes)
 
 ############################# Codesign checking ################################
 if test "x$panda_USE_LIB_CODESIGN" = xyes; then
-  AC_CONFIG_FILES(
-  )
   AC_DEFINE(HAVE_CODESIGN, 1, "Define if design_flows/codesign features are added")
 fi
 AM_CONDITIONAL(BUILD_LIB_CODESIGN,    test "x$panda_USE_LIB_CODESIGN" = xyes)
@@ -1815,10 +1830,6 @@ if test "x$panda_USE_LIB_FRONTEND_ANALYSIS" = xyes; then
                      )
    fi
 fi
-if test "x$panda_USE_EXPERIMENTAL" = xyes; then
-    AC_CONFIG_FILES(
-                   )
-fi
 AM_CONDITIONAL(BUILD_SOURCE_CODE_MANIPULATION, test "x$panda_USE_SOURCE_CODE_MANIPULATION" = xyes)
 AM_CONDITIONAL(BUILD_LIB_FRONTEND_ANALYSIS, test "x$panda_USE_LIB_FRONTEND_ANALYSIS" = xyes)
 
@@ -1848,16 +1859,8 @@ AM_CONDITIONAL(BUILD_LIB_GRAPH,  test "x$panda_USE_LIB_GRAPH" = xyes)
 ################################################################################
 
 #################################### HLS/backend ###############################
-if test "x$panda_USE_TASTE" = xyes; then
-   AC_DEFINE(HAVE_TASTE, 1, "Define if TASTE has to be used")
-fi
-AM_CONDITIONAL(BUILD_TASTE, test "x$panda_USE_TASTE" = xyes)
 
 ############### Bambu ##########################################################
-if test "x$panda_USE_BAMBU" = xyes && test "x$panda_USE_BEAGLE" = xyes && test "x$panda_USE_EXPERIMENTAL" = xyes;  then
-    AC_CONFIG_FILES(
-                   )
-fi
 AM_CONDITIONAL(BUILD_DSE,   test "x$panda_USE_BAMBU" = xyes && test "x$panda_USE_BEAGLE" = xyes)
 
 ################ HLS stuff #########################
@@ -1892,17 +1895,6 @@ if test "x$panda_USE_LIB_HLS" = xyes; then
                    src/HLS/module_generator/Makefile
                  )
 
-  if test "x$panda_USE_EXPERIMENTAL" = xyes; then
-    AC_CONFIG_FILES(
-                 )
-  if test "x$panda_USE_LIB_ILP" = xyes; then
-    AC_CONFIG_FILES(
-                 )
-  fi
-
-  fi
-
-
 fi
 AM_CONDITIONAL(BUILD_LIB_HLS,  test "x$panda_USE_LIB_HLS" = xyes)
 
@@ -1930,60 +1922,33 @@ AM_CONDITIONAL(BUILD_LIB_ILP,  test "x$panda_USE_LIB_ILP" = xyes)
 ################################################################################
 
 ################ Regularity Extraction stuff #########################
-if test "x$panda_USE_LIB_REGULARITY" = xyes; then
-
-  AC_CONFIG_FILES(
-                 )
-fi
 AM_CONDITIONAL(BUILD_LIB_REGULARITY,  test "x$panda_USE_LIB_REGULARITY" = xyes)
 
 ################ Technology mapping stuff #########################
 if test "x$panda_USE_LIB_TECHNOLOGY_MAPPING" = xyes; then
   AC_DEFINE(HAVE_TECHNOLOGY_MAPPING_BUILT, 1, "Define if technology mapping library is built")
-  AC_CONFIG_FILES(
-                  )
-
-if test "x$panda_USE_BEAGLE" = xyes; then
-  AC_CONFIG_FILES(
-                  )
-fi
-
 fi
 
 AM_CONDITIONAL(BUILD_LIB_TECHNOLOGY_MAPPING, test "x$panda_USE_LIB_TECHNOLOGY_MAPPING" = xyes)
 
 ############################### testing stuff ##################################
-if test "x$panda_USE_LIB_FAULTS" = xyes || test "x$panda_USE_LIB_CUDA_FAULT_SIMULATION" = xyes; then
-
-  AC_CONFIG_FILES(
-                 )
-fi
 AM_CONDITIONAL(BUILD_LIB_FAULTS,           test "x$panda_USE_LIB_FAULTS" = xyes)
 
 ################ Logic factoring #########################
 if test "x$panda_USE_LIB_LOGIC_FACTORING" = xyes; then
-
-  AC_CONFIG_FILES(
-                  )
   AC_DEFINE(HAVE_LOGIC_FACTORING, 1, "Define if the logic factoring package has to be built")
 fi
 AM_CONDITIONAL(BUILD_LIB_LOGIC_FACTORING, test "x$panda_USE_LIB_LOGIC_FACTORING" = xyes)
 
 ################ Logic synthesis stuff #########################
 if test "x$panda_USE_LIB_LOGIC_SYNTHESIS_FLOW" = xyes; then
-
   AC_DEFINE(HAVE_LOGIC_SYNTHESIS_FLOW_BUILT, 1, "Define if logic synthesis flow is built")
-
-  AC_CONFIG_FILES(
-                 )
 fi
 AM_CONDITIONAL(BUILD_LIB_LOGIC_SYNTHESIS_FLOW,  test "x$panda_USE_LIB_LOGIC_SYNTHESIS_FLOW" = xyes)
 
 ################################ Logic Synthesis ###############################
 if test "x$panda_USE_LIB_2LEV" = xyes || test "x$panda_USE_LIB_LOGIC_SYNTHESIS_FLOW" = xyes; then
    AC_DEFINE(HAVE_LOGIC_SYNTHESIS_BUILT, 1, "Define if logic synthesis package is built")
-   AC_CONFIG_FILES(
-                  )
 fi
 AM_CONDITIONAL(BUILD_LIB_LOGIC_SYNTHESIS, test "x$panda_USE_LIB_LOGIC_SYNTHESIS" = xyes)
 
@@ -2005,16 +1970,12 @@ fi
 ################################## sdf_graphs ##################################
 if test "x$panda_USE_LIB_SDF_GRAPHS" = xyes; then
    AC_DEFINE(HAVE_SDF_GRAPHS_BUILT, 1, "Define if sdf graph library is built")
-   AC_CONFIG_FILES(
-                 )
 fi
 AM_CONDITIONAL(BUILD_LIB_SDF_GRAPHS, test "x$panda_USE_LIB_SDF_GRAPHS" = xyes)
 
 ################################# task_graphs ##################################
 if test "x$panda_USE_LIB_TASK_GRAPHS" = xyes; then
    AC_DEFINE(HAVE_TASK_GRAPHS_BUILT, 1, "Define if taskgraph library is built")
-   AC_CONFIG_FILES(
-                 )
 fi
 AM_CONDITIONAL(BUILD_LIB_TASK_GRAPHS, test "x$panda_USE_LIB_TASK_GRAPHS" = xyes)
 
@@ -2024,8 +1985,6 @@ if test "x$panda_USE_LIB_TASK_GRAPHS" = xyes || test "x$panda_USE_LIB_SDF_GRAPHS
 fi
 if test "x$panda_USE_LIB_ACTOR_GRAPHS" = xyes; then
    AC_DEFINE(HAVE_ACTOR_GRAPHS_BUILT, 1, "Define if actor graphs library is built")
-   AC_CONFIG_FILES(
-   )
 fi
 AM_CONDITIONAL(BUILD_LIB_ACTOR_GRAPHS, test "x$panda_USE_LIB_ACTOR_GRAPHS" = xyes)
 
@@ -2037,10 +1996,6 @@ if test "x$panda_USE_LIB_HLS" = xyes; then
 fi
 
 ############################## mapping annotations #############################
-if test "x$panda_USE_LIB_MAPPING" = xyes; then
-   AC_CONFIG_FILES(
-   )
-fi
 
 ####################### intermediate_representations  ##########################
 if test "x$panda_USE_LIB_FROM_AADL_ASN" = xyes || test "x$panda_USE_LIB_ACTOR_GRAPHS" = xyes || test "x$panda_USE_LIB_MAPPING" = xyes || test "x$panda_USE_LIB_HLS" = xyes; then
@@ -2065,8 +2020,6 @@ AM_CONDITIONAL(BUILD_LIB_INTERMEDIATE_REPRESENTATIONS, test "x$panda_USE_LIB_INT
 ############### ip_xact ########################################################
 if test "x$panda_USE_LIB_FROM_IPXACT" = xyes; then
   AC_DEFINE(HAVE_IPXACT_BUILT, 1, "Define if ip-xact library is built")
-  AC_CONFIG_FILES(
-                 )
 fi
 
 
@@ -2080,8 +2033,6 @@ fi
 ################ Machine stuff #########################
 if test "x$panda_USE_LIB_ARCH" = xyes; then
   AC_DEFINE(HAVE_ARCH_BUILT, 1, "Define if architecture library is built")
-  AC_CONFIG_FILES(
-                 )
 fi
 AM_CONDITIONAL(BUILD_LIB_ARCH,  test "x$panda_USE_LIB_ARCH" = xyes)
 
@@ -2106,40 +2057,30 @@ AM_CONDITIONAL(BUILD_LIB_FROM_AADL_ASN,  test "x$panda_USE_LIB_FROM_AADL_ASN" = 
 ################################## AIGER stuff #################################
 if test "x$panda_USE_LIB_FROM_AIGER" = xyes; then
   AC_DEFINE(HAVE_FROM_AIGER_BUILT, 1, "Define if from aiger library is built")
-  AC_CONFIG_FILES(
-                 )
 fi
 AM_CONDITIONAL(BUILD_LIB_FROM_AIGER,  test "x$panda_USE_LIB_FROM_AIGER" = xyes)
 
 ################ bench stuff #########################
 if test "x$panda_USE_LIB_FROM_BENCH" = xyes; then
   AC_DEFINE(HAVE_FROM_BENCH_BUILT, 1, "Define if from bench library is built")
-  AC_CONFIG_FILES(
-                  )
 fi
 AM_CONDITIONAL(BUILD_LIB_FROM_BENCH,  test "x$panda_USE_LIB_FROM_BENCH" = xyes)
 
 ################ Blif stuff #########################
 if test "x$panda_USE_LIB_FROM_BLIF" = xyes; then
    AC_DEFINE(HAVE_FROM_BLIF_BUILT, 1, "Define if from blif library is built")
-  AC_CONFIG_FILES(
-                  )
 fi
 AM_CONDITIONAL(BUILD_LIB_FROM_BLIF,  test "x$panda_USE_LIB_FROM_BLIF" = xyes)
 
 ################ Boolean stuff #########################
 if test "x$panda_USE_LIB_FROM_BOOLEAN" = xyes; then
   AC_DEFINE(HAVE_BOOLEAN_PARSER_BUILT, 1, "Define if from boolean library is built")
-  AC_CONFIG_FILES(
-                  )
 fi
 AM_CONDITIONAL(BUILD_LIB_FROM_BOOLEAN,  test "x$panda_USE_LIB_FROM_BOOLEAN" = xyes)
 
 ################################### From CSV ##################################
 if test "x$panda_USE_LIB_FROM_CSV" = xyes; then
   AC_DEFINE(HAVE_FROM_CSV_BUILT, 1, "Define if from csv library is built")
-  AC_CONFIG_FILES(
-                  )
 fi
 AM_CONDITIONAL(BUILD_LIB_FROM_CSV,  test "x$panda_USE_LIB_FROM_CSV" = xyes)
 
@@ -2155,32 +2096,24 @@ AM_CONDITIONAL(BUILD_LIB_FROM_DISCREPANCY,  test "x$panda_USE_LIB_FROM_DISCREPAN
 ################ From Edif stuff #########################
 if test "x$panda_USE_LIB_FROM_EDIF" = xyes; then
   AC_DEFINE(HAVE_FROM_EDIF_BUILT, 1, "Define from edif library is built")
-  AC_CONFIG_FILES(
-                  )
 fi
 AM_CONDITIONAL(BUILD_LIB_FROM_EDIF,  test "x$panda_USE_LIB_FROM_EDIF" = xyes)
 
 ################ Estimation stuff #########################
 if test "x$panda_USE_LIB_FROM_ESTIMATION" = xyes; then
   AC_DEFINE(HAVE_FROM_ESTIMATION_BUILT, 1, "Define from estimation library is built")
-  AC_CONFIG_FILES(
-                  )
 fi
 AM_CONDITIONAL(BUILD_LIB_FROM_ESTIMATION,  test "x$panda_USE_LIB_FROM_ESTIMATION" = xyes)
 
 ############################# From IP-XACT stuff ##############################ù
 if test "x$panda_USE_LIB_FROM_IPXACT" = xyes; then
   AC_DEFINE(HAVE_FROM_IPXACT_BUILT, 1, "Define if from ipxact library is built")
-  AC_CONFIG_FILES(
-                 )
 fi
 AM_CONDITIONAL(BUILD_LIB_FROM_IPXACT,  test "x$panda_USE_LIB_FROM_IPXACT" = xyes)
 
 ################ architecture stuff #########################
 if test "x$panda_USE_LIB_FROM_ARCH" = xyes; then
   AC_DEFINE(HAVE_FROM_ARCH_BUILT, 1, "Define if from architecture library is built")
-  AC_CONFIG_FILES(
-                 )
 fi
 AM_CONDITIONAL(BUILD_LIB_FROM_ARCH,  test "x$panda_USE_LIB_FROM_ARCH" = xyes)
 
@@ -2205,16 +2138,12 @@ AM_CONDITIONAL(BUILD_LIB_FROM_PRAGMA,  test "x$panda_USE_LIB_FROM_PRAGMA" = xyes
 ################ Deep Profiling stuff #########################
 if test "x$panda_USE_LIB_FROM_DEEP_PROFILING" = xyes; then
    AC_DEFINE(HAVE_FROM_PROFILING_ANALYIS_BUILT, 1, "Define if from profiling analysis library is built")
-  AC_CONFIG_FILES(
-                 )
 fi
 AM_CONDITIONAL(BUILD_LIB_FROM_DEEP_PROFILING,  test "x$panda_USE_LIB_FROM_DEEP_PROFILING" = xyes)
 
 ################################## PSPLIB stuff ################################
 if test "x$panda_USE_LIB_FROM_PSPLIB" = xyes; then
    AC_DEFINE(HAVE_FROM_PSPLIB_BUILT, 1, "Define if psplib parser is built")
-   AC_CONFIG_FILES(
-   )
 fi
 
 AM_CONDITIONAL(BUILD_LIB_FROM_PSPLIB,  test "x$panda_USE_LIB_FROM_PSPLIB" = xyes)
@@ -2222,16 +2151,12 @@ AM_CONDITIONAL(BUILD_LIB_FROM_PSPLIB,  test "x$panda_USE_LIB_FROM_PSPLIB" = xyes
 ################ From RTL #########################
 if test "x$panda_USE_LIB_FROM_RTL" = xyes; then
    AC_DEFINE(HAVE_FROM_RTL_BUILT, 1, "Define if from rtl library is built")
-   AC_CONFIG_FILES(
-                 )
 fi
 AM_CONDITIONAL(BUILD_LIB_FROM_RTL, test "x$panda_USE_LIB_FROM_RTL" = xyes)
 
 ################################## sdf3 stuff ##################################
 if test "x$panda_USE_LIB_FROM_SDF3" = xyes; then
    AC_DEFINE(HAVE_FROM_SDF3_BUILT, 1, "Define if sdf3 parser is built")
-   AC_CONFIG_FILES(
-   )
 fi
 AM_CONDITIONAL(BUILD_LIB_FROM_SDF3, test "x$panda_USE_LIB_FROM_SDF3" = xyes)
 
@@ -2247,8 +2172,6 @@ AM_CONDITIONAL(BUILD_LIB_FROM_DATA_XML, test "x$panda_USE_LIB_FROM_DATA_XML" = x
 ################ TGFF stuff #########################
 if test "x$panda_USE_LIB_FROM_TGFF" = xyes; then
   AC_DEFINE(HAVE_FROM_TGFF_BUILT, 1, "Define if from tgff library is built")
-  AC_CONFIG_FILES(
-                 )
 fi
 AM_CONDITIONAL(BUILD_LIB_FROM_TGFF,  test "x$panda_USE_LIB_FROM_TGFF" = xyes)
 
@@ -2327,8 +2250,6 @@ AM_CONDITIONAL(BUILD_LIB_PRAGMA,  test "x$panda_USE_LIB_PRAGMA" = xyes)
 ################ RTL #########################
 if test "x$panda_USE_LIB_RTL" = xyes; then
   AC_DEFINE(HAVE_RTL_BUILT, 1, "Define if rtl library is built")
-  AC_CONFIG_FILES(
-                 )
 fi
 AM_CONDITIONAL(BUILD_LIB_RTL,         test "x$panda_USE_LIB_RTL" = xyes)
 
@@ -2350,12 +2271,6 @@ if test "x$panda_USE_LIB_LIBRARY_CHARACTERIZATION" = xyes; then
                  )
 fi
 
-if test "x$panda_USE_LIB_TECHNOLOGY_CHARACTERIZATION" = xyes; then
-if test "x$panda_USE_EXPERIMENTAL" = xyes; then
-   AC_CONFIG_FILES(
-                 )
-fi
-fi
 AM_CONDITIONAL(BUILD_LIB_LIBRARY_CHARACTERIZATION, test "x$panda_USE_LIB_LIBRARY_CHARACTERIZATION" = xyes)
 AM_CONDITIONAL(BUILD_LIB_RTL_CHARACTERIZATION, test "x$panda_USE_LIB_RTL_CHARACTERIZATION" = xyes)
 AM_CONDITIONAL(BUILD_LIB_TECHNOLOGY_CHARACTERIZATION, test "x$panda_USE_LIB_TECHNOLOGY_CHARACTERIZATION" = xyes)
@@ -2369,10 +2284,6 @@ if test "x$panda_USE_LIB_PHYSICAL_LIBRARY_MODELS" = xyes; then
                    src/technology/physical_library/models/time/Makefile
                   )
 
-if test "x$panda_USE_EXPERIMENTAL" = xyes; then
-   AC_CONFIG_FILES(
-                  )
-fi
 fi
 AM_CONDITIONAL(BUILD_LIB_PHYSICAL_LIBRARY_MODELS,  test "x$panda_USE_LIB_PHYSICAL_LIBRARY_MODELS" = xyes)
 
@@ -2413,9 +2324,6 @@ AM_CONDITIONAL(BUILD_LIB_TARGET, test "x$panda_USE_LIB_TARGET" = xyes)
 
 ################ AIG stuff #########################
 if test "x$panda_USE_LIB_VIRTUAL_LIBRARY" = xyes; then
-
-  AC_CONFIG_FILES(
-                  )
   AC_DEFINE(HAVE_VIRTUAL_LIBRARY_BUILT, 1, "Define if virtual library is built")
 fi
 AM_CONDITIONAL(BUILD_LIB_VIRTUAL_LIBRARY,  test "x$panda_USE_LIB_VIRTUAL_LIBRARY" = xyes)
@@ -2429,11 +2337,6 @@ if test "x$panda_USE_LIB_TECHNOLOGY" = xyes; then
   AC_CONFIG_FILES(
                    src/technology/Makefile
                  )
-  
-if test "x$panda_USE_EXPERIMENTAL" = xyes; then
-   AC_CONFIG_FILES(
-                 )
-fi
 
 fi
 AM_CONDITIONAL(BUILD_LIB_TECHNOLOGY,  test "x$panda_USE_LIB_TECHNOLOGY" = xyes)
@@ -2478,8 +2381,6 @@ AM_CONDITIONAL(BUILD_LIB_TREE, test "x$panda_USE_LIB_TREE" = xyes)
 ######################## Probability Distribution Stuff ########################
 if test "x$panda_USE_LIB_PROBABILITY_DISTRIBUTION" = xyes; then
    AC_DEFINE(HAVE_PROBABILITY_DISTRIBUTION_BUILT, 1, "Define if probability distribution library is built")
-   AC_CONFIG_FILES(
-                  )
 fi
 AM_CONDITIONAL(BUILD_LIB_PROBABILITY_DISTRIBUTION,  test "x$panda_USE_LIB_PROBABILITY_DISTRIBUTION" = xyes)
 
@@ -2519,11 +2420,6 @@ if test "x$panda_USE_LIB_SYNTHESIS_WRAPPER" = xyes; then
                    src/wrapper/synthesis/xilinx/ise/Makefile
                   )
 
-if test "x$panda_USE_EXPERIMENTAL" = xyes; then
-   AC_CONFIG_FILES(
-                  )
-fi
-
 fi
 AM_CONDITIONAL(BUILD_SYNTHESIS, test "x$panda_USE_LIB_SYNTHESIS_WRAPPER" = xyes)
 #Synopsys - fundamental tools for the synthesis flow
@@ -2537,8 +2433,6 @@ AM_CONDITIONAL(BUILD_NANGATE, test "x$panda_USE_DESIGN_OPTIMIZER" = xyes || test
 ############################# coreAssembler stuff ##############################
 if test "x$panda_USE_CORE_TOOLS" = xyes; then
   AC_DEFINE(HAVE_CORE_TOOLS, 1, "Define if the wrappers to Synopsys core tools are built")
-  AC_CONFIG_FILES(
-                 )
 fi
 AM_CONDITIONAL(BUILD_CORE_TOOLS, test "x$panda_USE_CORE_TOOLS" = xyes)
 
@@ -2585,13 +2479,6 @@ if test "x$panda_USE_PRIME_TIME" = xyes; then
 fi
 AM_CONDITIONAL(BUILD_PRIME_TIME, test "x$panda_USE_PRIME_TIME" = xyes)
 
-################################## ABC stuff ###################################
-if test "x$panda_USE_ABC" = xyes; then
-  AC_CONFIG_FILES(
-                 )
-fi
-AM_CONDITIONAL(BUILD_ABC, test "x$panda_USE_ABC" = xyes)
-
 ########################### Library Creator stuff #############################
 if test "x$panda_USE_LIBRARY_CREATOR" = xyes; then
   AC_DEFINE(HAVE_LIBRARY_CREATOR, 1, "Define if Nangate Library Creator is correctly configured")
@@ -2616,14 +2503,8 @@ if test "x$panda_USE_FLOPOCO" = xyes; then
                   src/wrapper/flopoco/Makefile
                  )
 fi
-AM_CONDITIONAL(BUILD_FLOPOCO, test "x$panda_USE_FLOPOCO" = xyes)
-AC_SUBST(SOLLYA_DIR)
-AC_SUBST(SOLLYA_OBJDIR)
-AC_SUBST(FLOPOCO_DIR)
 
 
-################ TRNG stuff #############################
-AM_CONDITIONAL(BUILD_TRNG, test "x$panda_USE_TRNG" = xyes)
 
 ################ Check for simulation ########################
 if test "x$panda_USE_LIB_SIMULATION_WRAPPER" = xyes; then
@@ -2655,25 +2536,9 @@ if test "x$panda_USE_MODELSIM" = xyes; then
 fi
 AM_CONDITIONAL(BUILD_MODELSIM, test "x$panda_USE_MODELSIM" = xyes)
 
-################ NODELIB stuff #############################
-if test "x$panda_USE_NODELIB" = xyes; then
-  AC_CONFIG_FILES(
-                 )
-fi
-AM_CONDITIONAL(BUILD_NODELIB, test "x$panda_USE_NODELIB" = xyes)
-
-################################## R stuff #####################################
-if test "x$panda_USE_R" = xyes; then
-   AC_CONFIG_FILES(
-                  )
-fi
-AM_CONDITIONAL(BUILD_R, test "x$panda_USE_R" = xyes)
-
 #################################### A3 stuff ####################################
 if test "x$panda_USE_A3" = xyes; then
   AC_DEFINE(HAVE_A3, 1, "Define if a3 wrapper library is built")
-  AC_CONFIG_FILES(
-                 )
 fi
 AM_CONDITIONAL(BUILD_A3, test "x$panda_USE_A3" = xyes)
 
@@ -2681,39 +2546,26 @@ AM_CONDITIONAL(BUILD_A3, test "x$panda_USE_A3" = xyes)
 if test "x$panda_USE_DIOPSIS" = xyes; then
 
    AC_DEFINE(HAVE_DIOPSIS, 1, "Define if diopsis wrapper library is built")
-   AC_CONFIG_FILES(
-                 )
 fi
 AM_CONDITIONAL(BUILD_DIOPSIS,       test "x$panda_USE_DIOPSIS" = xyes)
 
 ################ LEON3 stuff #########################
 if test "x$panda_USE_LEON3" = xyes; then
-
   AC_DEFINE(HAVE_LEON3, 1, "Define if leon3 wrapper library is built")
-  AC_CONFIG_FILES(
-                 )
 fi
 AM_CONDITIONAL(BUILD_LEON3,       test "x$panda_USE_LEON3" = xyes)
 
 ################################## MPPB stuff ##################################
 if test "x$panda_USE_MPPB" = xyes; then
    AC_DEFINE(HAVE_MPPB, 1, "Define if MPPB wrapper library is built")
-   AC_CONFIG_FILES(
-                  )
 fi
 AM_CONDITIONAL(BUILD_MPPB, test "x$panda_USE_MPPB" = xyes)
 
 ################ SimIt stuff #########################
-if test "x$panda_USE_SIMIT" = xyes; then
-  AC_CONFIG_FILES(
-                 )
-fi
 
 ################################## TSIM stuff ##################################
 if test "x$panda_USE_TSIM" = xyes; then
   AC_DEFINE(HAVE_TSIM, 1, "Define if tsim wrapper library is built")
-  AC_CONFIG_FILES(
-                 )
 fi
 AM_CONDITIONAL(BUILD_TSIM,       test "x$panda_USE_TSIM" = xyes)
 
@@ -2721,8 +2573,6 @@ AM_CONDITIONAL(BUILD_TSIM,       test "x$panda_USE_TSIM" = xyes)
 
 if test "x$panda_USE_LIB_TARGET_PROFILING" = xyes; then
   AC_DEFINE(HAVE_TARGET_PROFILING, 1, "Define if target profiling library is built")
-  AC_CONFIG_FILES(
-                 )
 fi
 AM_CONDITIONAL(BUILD_LIB_TARGET_PROFILING, test "x$panda_USE_LIB_TARGET_PROFILING" = xyes)
 
@@ -2730,7 +2580,6 @@ AM_CONDITIONAL(BUILD_LIB_TARGET_PROFILING, test "x$panda_USE_LIB_TARGET_PROFILIN
 ################ Treegcc wrapper #########################
 if test "x$panda_USE_LIB_FROM_C" = xyes; then
   AC_DEFINE(HAVE_FROM_C_BUILT, 1, "Define if gcc wrapper library is built")
-
   AC_CONFIG_FILES(
                  src/wrapper/treegcc/Makefile
                  )
@@ -2806,23 +2655,6 @@ AM_CONDITIONAL(BUILD_LATEX_TABLE_FORMAT, test "x$panda_USE_LIB_TO_DATAFILE" = xy
 #                                gcc_plugin                                    #
 #                                                                              #
 ################################################################################
-
-################################# ARM Check ####################################
-AM_CONDITIONAL(BUILD_ARM_GCC, test "x$build_ARM_GCC" = xyes)
-AM_CONDITIONAL(BUILD_ARM_EMPTY_PLUGIN, test "x$build_ARM_EMPTY_PLUGIN" = xyes)
-AM_CONDITIONAL(BUILD_ARM_RTL_PLUGIN, test "x$build_ARM_RTL_PLUGIN" = xyes)
-AM_CONDITIONAL(BUILD_ARM_SSA_PLUGIN, test "x$build_ARM_SSA_PLUGIN" = xyes)
-AM_CONDITIONAL(BUILD_ARM_SSA_PLUGINCPP, test "x$build_ARM_SSA_PLUGINCPP" = xyes)
-AC_SUBST(ARM_EMPTY_PLUGIN)
-AC_SUBST(ARM_SSA_PLUGIN)
-AC_SUBST(ARM_RTL_PLUGIN)
-AC_SUBST(ARM_GCC_PLUGIN_DIR)
-AC_SUBST(ARM_GCC_EXE)
-AC_SUBST(ARM_GCC_SRC_DIR)
-AC_SUBST(ARM_PLUGIN_DIR)
-AC_SUBST(ARM_GCC_VERSION)
-AC_SUBST(ARM_GCC_BUILT_DIR)
-AC_SUBST(ARM_HOST_PLUGIN_COMPILER)
 
 
 
@@ -2900,23 +2732,6 @@ AM_CONDITIONAL(BUILD_I386_GCC7_SSA_PLUGIN, test "x$build_I386_GCC7_SSA_PLUGIN" =
 AM_CONDITIONAL(BUILD_I386_GCC7_SSA_PLUGINCPP, test "x$build_I386_GCC7_SSA_PLUGINCPP" = xyes)
 AM_CONDITIONAL(BUILD_I386_GCC7_TOPFNAME_PLUGIN, test "x$build_I386_GCC7_TOPFNAME_PLUGIN" = xyes)
 
-############################### SPARC Check ####################################
-AM_CONDITIONAL(BUILD_SPARC_GCC, test "x$build_SPARC_GCC" = xyes)
-AM_CONDITIONAL(BUILD_SPARC_EMPTY_PLUGIN, test "x$build_SPARC_EMPTY_PLUGIN" = xyes)
-AM_CONDITIONAL(BUILD_SPARC_RTL_PLUGIN, test "x$build_SPARC_RTL_PLUGIN" = xyes)
-AM_CONDITIONAL(BUILD_SPARC_SSA_PLUGIN, test "x$build_SPARC_SSA_PLUGIN" = xyes)
-AM_CONDITIONAL(BUILD_SPARC_SSA_PLUGINCPP, test "x$build_SPARC_SSA_PLUGINCPP" = xyes)
-AC_SUBST(SPARC_EMPTY_PLUGIN)
-AC_SUBST(SPARC_SSA_PLUGIN)
-AC_SUBST(SPARC_RTL_PLUGIN)
-AC_SUBST(SPARC_GCC_PLUGIN_DIR)
-AC_SUBST(SPARC_GCC_EXE)
-AC_SUBST(SPARC_GCC_SRC_DIR)
-AC_SUBST(SPARC_PLUGIN_DIR)
-AC_SUBST(SPARC_GCC_VERSION)
-AC_SUBST(SPARC_GCC_BUILT_DIR)
-AC_SUBST(SPARC_HOST_PLUGIN_COMPILER)
-
 
 
 
@@ -2928,6 +2743,66 @@ fi
 AM_CONDITIONAL(BUILD_GCC_PLUGIN, test "x$panda_USE_ARM_GCC" = xyes || test "x$panda_USE_I386_GCC" = xyes || test "x$panda_USE_SPARC_GCC" = xyes)
 AM_CONDITIONAL(ENABLE_WERROR, test "x$panda_WERROR" = xyes)
 
+################################# crosstool-ng #################################
+if test "x$build_ARM_GCC" = xyes || test "x$build_SPARC_GCC" = xyes; then
+   panda_USE_CROSSTOOL_NG=yes
+   AC_DEFINE(HAVE_CROSSTOOL_NG, 1, "Define if crostool-ng is used")
+   AC_CHECK_PROG(have_cvs, cvs, yes, no)
+   if test "x$have_cvs" = "xno"; then
+      AC_MSG_ERROR(cvs command not found)
+   fi
+   AC_CHECK_PROG(have_gawk, gawk, yes, no)
+   if test "x$have_gawk" = "xno"; then
+      AC_MSG_ERROR(gawk command not found)
+   fi
+   AC_CHECK_PROG(have_makeinfo, makeinfo, yes, no)
+   if test "x$have_makeinfo" = "xno"; then
+      AC_MSG_ERROR(makeinfo command not found)
+   fi
+   AC_CHECK_HEADER([ncurses.h], have_ncurses=yes, have_ncurses=no)
+   if test "x$have_ncurses" = "xno"; then
+      AC_MSG_ERROR(ncurses header not found)
+   fi
+   panda_USE_CROSSTOOL_NG=yes;
+   if test -d /opt/x-tools; then
+     echo "checking /opx/x-tools... yes"
+   else
+     echo "checking /opt/x-tools...no - creating"
+     mkdir /opt/x-tools || AC_MSG_ERROR(Can not create /opt/x-tools)
+   fi
+   if test "x$build_ARM_GCC" = xyes; then
+      if test -d /opt/x-tools/build_arm; then
+         echo "checking /opx/x-tools/build_arm... yes"
+      else
+         echo "checking /opx/x-tools/build_arm... no - creating"
+         mkdir /opt/x-tools/build_arm || AC_MSG_ERROR(Can not create /opt/x-tools/build_arm)
+      fi
+      if test -d /opt/x-tools/arm; then
+         echo "checking /opx/x-tools/arm... yes"
+      else
+         echo "checking /opx/x-tools/arm... no - creating"
+         mkdir /opt/x-tools/arm || AC_MSG_ERROR(Can not create /opt/x-tools/arm)
+      fi
+   fi
+   if test "x$build_SPARC_GCC" = xyes; then
+      if test -d /opt/x-tools/build_sparc; then
+         echo "checking /opx/x-tools/build_sparc... yes"
+      else
+         echo "checking /opx/x-tools/build_sparc... no - creating"
+         mkdir /opt/x-tools/build_sparc || AC_MSG_ERROR(Can not create /opt/x-tools/build_sparc)
+      fi
+      if test -d /opt/x-tools/sparc; then
+         echo "checking /opx/x-tools/sparc... yes"
+      else
+         echo "checking /opx/x-tools/sparc... no - creating"
+         mkdir /opt/x-tools/sparc || AC_MSG_ERROR(Can not create /opt/x-tools/sparc)
+      fi
+   fi
+   #AC_CONFIG_FILES(
+   #                crosstool-ng/Makefile
+   #               )
+fi
+AM_CONDITIONAL(BUILD_CROSSTOOL_NG, test "x$panda_USE_CROSSTOOL_NG" = xyes)
 
 
 ################################################################################
@@ -2969,13 +2844,17 @@ AC_CONFIG_FILES(etc/macros/Makefile)
 ################################################################################
 
 ################################### MPPB #######################################
-if test "x$panda_USE_MPPB" = xyes; then
-   AC_CONFIG_FILES(
-                  )
-fi
 AM_CONDITIONAL(BUILD_MPPB, test "x$panda_USE_MPPB" = xyes)
 
 AC_CONFIG_FILES(etc/scripts/Makefile)
+
+################################################################################
+#                                                                              #
+#                              EXT files                                       #
+#                                                                              #
+################################################################################
+AC_CONFIG_FILES(ext/Makefile)
+
 
 ################################################################################
 #                                                                              #
@@ -3076,15 +2955,6 @@ else
   fi
 fi
 
-################################### 32bits #####################################
-
-if test "x$panda_32BITS" != x; then
-   CXXFLAGS+=" -m32 "
-   CFLAGS+=" -m32 "
-   LDFLAGS+=" -m32 "
-fi
-
-
 
 ################################################################################
 #                                                                              #
@@ -3092,14 +2962,14 @@ fi
 #                                                                              #
 ################################################################################
 
-cd $TOPSRCDIR && autoheader configure.ac && cp config.h.in $BUILDDIR && cd $BUILDDIR
+autoheader $TOPSRCDIR/configure.ac
 AC_CONFIG_HEADERS(config.h:config.h.in)
 if test ! -d config_headers ; then
    mkdir config_headers
 fi
 for file in `find $BUILDDIR/config_headers -name *hpp`; do
    keyword=`grep define $file | awk '{print $2}'`
-   found=`grep $keyword $BUILDDIR/config.h.in $BUILDDIR/ext/config.h.in `
+   found=`grep $keyword $BUILDDIR/config.h.in `
    if test "x$found" = x; then
       echo "removing $file"
       rm $file
@@ -3117,10 +2987,6 @@ for keyword in `grep undef $BUILDDIR/config.h.in | awk '{print $2}'`; do
    AC_CONFIG_HEADERS([config_headers/config_"$keyword".hpp:config_headers/config_"$keyword".hpp.in])
 done;
 all_includes+=" -I$BUILDDIR/config_headers"
-
-if test -d ext/config_headers; then
-   cp ext/config_headers/*hpp config_headers --preserve=timestamp
-fi
 
 
 
