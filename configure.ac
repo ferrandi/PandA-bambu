@@ -2962,7 +2962,7 @@ fi
 #                                                                              #
 ################################################################################
 
-autoheader $TOPSRCDIR/configure.ac
+cd $TOPSRCDIR && autoheader configure.ac && cp config.h.in $BUILDDIR && cd $BUILDDIR
 AC_CONFIG_HEADERS(config.h:config.h.in)
 if test ! -d config_headers ; then
    mkdir config_headers
