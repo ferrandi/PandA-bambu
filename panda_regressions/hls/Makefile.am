@@ -1174,7 +1174,14 @@ gcc_regression_simple/zero-struct-1.c\
 ./test_libm_expf.sh\
 ./test_libm_sqrtf.sh \
 ./discrepancy.sh \
-./discrepancy_list
-
-#do not touch the following line
-
+./discrepancy_list\
+./panda_regression_hls1.sh\
+./panda_regression_hls_long1.sh\
+./panda_regression_hls_release1.sh\
+./CHStone_frontend1.sh\
+./CHStone_memarch_core1.sh\
+./discrepancy1.sh\
+./gcc_regression_simple1.sh\
+./panda_regression_hls_all_gcc1.sh\
+./panda_regression_hls_no_gcc1.sh\
+./softfloat-tests1.sh
