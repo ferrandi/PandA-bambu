@@ -110,6 +110,8 @@ def execute_tests(named_list,thread_index):
         except:
             pass
         with lock_creation_destruction:
+            if return_value != 0 and args.returnfail:
+                killing = True
             if return_value != 0 and args.stop:
                 killing = True
                 for local_thread_index in range(n_jobs):
@@ -140,7 +142,7 @@ def execute_tests(named_list,thread_index):
                 tool_results_string = tool_results_string + " *** " + slack_tag.attributes["value"].value + "ns"
             tool_results_file.write(tool_results_string)
             tool_results_file.close()
-        if not killing or (return_value != -9 and return_value != 0):
+        if not (killing and args.stop) or (return_value != -9 and return_value != 0):
             if return_value != 0:
                 shutil.copy(output_file_name, str(os.path.join(os.path.dirname(output_file_name), args.tool + "_failed_output")))
             with lock:
@@ -358,6 +360,7 @@ parser.add_argument("--table", help="Print the results in tex format", default="
 parser.add_argument("--tool", help="The tool to be tested", default="bambu")
 parser.add_argument("--ulimit", help="The ulimit options", default="-f 2097152 -v 8388608 -s 16384")
 parser.add_argument("--stop", help="Stop the execution on first error (default=false)", default=False, action="store_true")
+parser.add_argument("--returnfail", help="Return FAILURE in case at least one test fails (default=false)", default=False, action="store_true")
 parser.add_argument("--mail", help="Send a mail with the result")
 parser.add_argument("--name", help="Set the name of this regression (default=Bambu regression)", nargs='*', action='append')
 parser.add_argument("--no-clean", help="Do not clean produced files", default=False, action="store_true")
