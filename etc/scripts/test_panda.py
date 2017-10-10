@@ -56,12 +56,12 @@ def execute_tests(named_list,thread_index):
     global total_benchmark
     global line_index
     global children
-    global killing
+    global failure
     lines = open(named_list).readlines()
     with lock:
         local_index = line_index
         line_index += 1
-    while local_index < len(lines) and not killing:
+    while local_index < len(lines) and not (failure and args.stop):
         cwd = ComputeDirectory(lines[local_index])
         failed_output_file_name = os.path.join(cwd, args.tool + "_failed_output")
         if os.path.exists(failed_output_file_name):
@@ -103,17 +103,16 @@ def execute_tests(named_list,thread_index):
         output_file.flush()
         return_value = -1
         with lock_creation_destruction:
-            if not killing:
+            if not (failure and args.stop):
                 children[thread_index] = subprocess.Popen(local_command, stderr=output_file, stdout=output_file, cwd=cwd, shell=True, executable="/bin/bash")
         try:
             return_value = children[thread_index].wait()
         except:
             pass
         with lock_creation_destruction:
-            if return_value != 0 and args.returnfail:
-                killing = True
-            if return_value != 0 and args.stop:
-                killing = True
+            if return_value != 0 and (args.stop or args.returnfail):
+                failure = True
+            if failure and args.stop:
                 for local_thread_index in range(n_jobs):
                     if children[local_thread_index] != None:
                         if children[local_thread_index].poll() == None:
@@ -142,7 +141,7 @@ def execute_tests(named_list,thread_index):
                 tool_results_string = tool_results_string + " *** " + slack_tag.attributes["value"].value + "ns"
             tool_results_file.write(tool_results_string)
             tool_results_file.close()
-        if not (killing and args.stop) or (return_value != -9 and return_value != 0):
+        if not (failure and args.stop) or (return_value != -9 and return_value != 0):
             if return_value != 0:
                 shutil.copy(output_file_name, str(os.path.join(os.path.dirname(output_file_name), args.tool + "_failed_output")))
             with lock:
@@ -760,7 +759,7 @@ total_benchmark = 0
 line_index = 0
 threads = []
 children = [None] * n_jobs
-killing = False
+failure = False
 for thread_index in range(n_jobs):
     threads.insert(thread_index, threading.Thread(target=execute_tests, args=(named_list_name, thread_index)))
     threads[thread_index].daemon=True
@@ -773,7 +772,7 @@ try:
             threads[thread_index].join(100)
 except KeyboardInterrupt:
     logging.error("SIGINT received")
-    killing = True
+    failure = True
     for local_thread_index in range(n_jobs):
         if children[local_thread_index] != None:
            if children[local_thread_index].poll() == None:
@@ -826,7 +825,7 @@ if args.tool == "bambu" or args.tool == "zebu":
 if args.mail != None:
     outcome = ""
     if args.stop:
-        if killing:
+        if failure:
             outcome = "FAILURE"
         else:
             outcome = "SUCCESS"
@@ -840,6 +839,6 @@ if args.mail != None:
         full_name = "Bambu"
     local_command = "cat " + report_file_name + " | mutt -s \"" + full_name + ": " + outcome + "\" " + args.mail
     subprocess.call(local_command, shell=True)
-if killing:
+if failure:
     sys.exit(1)
 sys.exit(0)
