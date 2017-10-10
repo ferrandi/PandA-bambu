@@ -228,7 +228,8 @@ plugin_init (struct plugin_name_args *plugin_info,
                      &pass_info);
 #endif
 
-#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ == 9)
+//#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ == 9)
+#if 0
   extern  gimple_opt_pass * make_pass_sra_earlyAggressive (gcc::context *ctxt);
   pass_info.pass = make_pass_sra_earlyAggressive(g);
   pass_info.reference_pass_name = "esra";
