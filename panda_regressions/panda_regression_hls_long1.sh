@@ -11,8 +11,8 @@ if test $return_value != 0; then
    exit $return_value
 fi
 cd ..
-if [ ! -d lb_test ]; then
-   mkdir lb_test
+if [ ! -d vhdl_test ]; then
+   mkdir vhdl_test
 fi
 cd vhdl_test
 $dir_script/panda_regression_hls1.sh $@ -c="-wH" --name="_VHDL"
