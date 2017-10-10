@@ -29,6 +29,8 @@ AC_PROG_F77
 #Flags have to be emptied since AC_PROG_CXX and AC_PROG_CC set them to "-g -O2"
 CFLAGS=
 CXXFLAGS=
+CFLAGS_EXT=-O2
+CXXFLAGS_EXT=-O2
 
 # Check if compiler support c++11
 AC_COMPILE_STDCXX_11
@@ -926,6 +928,8 @@ if test "x$panda_RELEASE" = xyes; then
   AC_DEFINE(NPROFILE, 1, "Define if profile is disabled") 
   CXXFLAGS+=" -DNDEBUG "
   CFLAGS+=" -DNDEBUG "
+  CXXFLAGS_EXT+=" -DNDEBUG "
+  CFLAGS_EXT+=" -DNDEBUG "
   panda_USE_LIB_METRIC_PARTITIONING=no;
   panda_USE_SIMIT=no;
   panda_USE_DIOPSIS=no;
@@ -1111,6 +1115,8 @@ fi
 if test "x$panda_32BITS" != x; then
    CXXFLAGS+=" -m32 "
    CFLAGS+=" -m32 "
+   CXXFLAGS_EXT+=" -m32 "
+   CFLAGS_EXT+=" -m32 "
    LDFLAGS+=" -m32 "
 fi
 
@@ -1118,10 +1124,11 @@ if test ! -d ext ; then
    mkdir ext;
 fi
 
+
 ############################### OpenBeagle stuff ###############################
 if test "x$panda_USE_BEAGLE" = xyes; then
    AC_APPEND(ENABLE_DOC,"BEAGLE")
-   $TOPSRCDIR/etc/macros/panda_config_subdir.sh ext/beagle $ac_configure_args "'CXXFLAGS=${CXXFLAGS}'" "'CFLAGS=${CFLAGS}'" "'LDFLAGS=$LDFLAGS'"
+   $TOPSRCDIR/etc/macros/panda_config_subdir.sh ext/beagle $ac_configure_args "'CXXFLAGS=${CXXFLAGS_EXT}'" "'CFLAGS=${CFLAGS_EXT}'" "'LDFLAGS=$LDFLAGS'"
    if test $? != 0; then
       AC_MSG_ERROR("Error in beagle configuration")
    fi
@@ -1182,7 +1189,7 @@ if test "x$panda_USE_CUDD" = xyes; then
    AC_APPEND(ENABLE_DOC,"CUDD")
 
    AC_DEFINE(HAVE_CUDD, 1, "Define if CUDD is used")
-   $TOPSRCDIR/etc/macros/panda_config_subdir.sh ext/cudd $ac_configure_args "'CXXFLAGS=${CXXFLAGS}'" "'CFLAGS=${CFLAGS}'" "'LDFLAGS=$LDFLAGS'"
+   $TOPSRCDIR/etc/macros/panda_config_subdir.sh ext/cudd $ac_configure_args "'CXXFLAGS=${CXXFLAGS_EXT}'" "'CFLAGS=${CFLAGS_EXT}'" "'LDFLAGS=$LDFLAGS'"
    CUDD_CPPFLAGS="-I$TOPSRCDIR/ext/cudd/cudd -I$TOPSRCDIR/ext/cudd/nanotrav -I$TOPSRCDIR/ext/cudd/mtr -I$TOPSRCDIR/ext/cudd/epd -I$TOPSRCDIR/ext/cudd/st -I$TOPSRCDIR/ext/cudd/util -I$TOPSRCDIR/ext/cudd/cplusplus"
    CUDD_LIBS="$BUILDDIR/ext/cudd/cplusplus/libobj.la $BUILDDIR/ext/cudd/cudd/libcudd.la"
 fi
@@ -1203,7 +1210,7 @@ if test "x$panda_USE_FLOPOCO" = xyes; then
    if test -z $HAVE_LIBMPFR || test -z $HAVE_LIBGMP || test -z $HAVE_LIBGMPXX; then
       AC_MSG_ERROR(either libmpfr, libgmp or libgmpxx is missing)
    fi
-   $TOPSRCDIR/etc/macros/panda_config_subdir.sh ext/libfplll-4.0.3 $ac_configure_args "'CXXFLAGS=${CXXFLAGS}'" "'CFLAGS=${CFLAGS}'" "'LDFLAGS=$LDFLAGS'" --prefix=${prefix}
+   $TOPSRCDIR/etc/macros/panda_config_subdir.sh ext/libfplll-4.0.3 $ac_configure_args "'CXXFLAGS=${CXXFLAGS_EXT}'" "'CFLAGS=${CFLAGS_EXT}'" "'LDFLAGS=$LDFLAGS'" --prefix=${prefix}
    if test $? != 0; then
       AC_MSG_ERROR("Error in fplll configuration")
    fi
@@ -1218,7 +1225,7 @@ if test "x$panda_USE_FLOPOCO" = xyes; then
    AC_DEFINE(HAVE_SOLLYA, 1, "Define if Sollya is used")
    AC_DEFINE(HAVE_HOTBM, 1, "")
    AC_DEFINE(HAVE_LNS, 1, "LNS available")
-   $TOPSRCDIR/etc/macros/panda_config_subdir.sh ext/sollya $ac_configure_args "'CFLAGS=${CFLAGS}'" "'CXXFLAGS=${CXXFLAGS} -I${prefix}/include'" "'LDFLAGS=${LDFLAGS} -L${prefix}/lib'";
+   $TOPSRCDIR/etc/macros/panda_config_subdir.sh ext/sollya $ac_configure_args "'CFLAGS=${CFLAGS_EXT}'" "'CXXFLAGS=${CXXFLAGS_EXT} -I${prefix}/include'" "'LDFLAGS=${LDFLAGS} -L${prefix}/lib'";
    if test $? != 0; then
       AC_MSG_ERROR("Error in sollya configuration")
    fi
@@ -1228,7 +1235,7 @@ if test "x$panda_USE_FLOPOCO" = xyes; then
       AC_MSG_ERROR("Error in sollya compilation")
    fi
    cd ../..
-   $TOPSRCDIR/etc/macros/panda_config_subdir.sh ext/flopoco $ac_configure_args "'CXXFLAGS=${CXXFLAGS}'" "'CFLAGS=${CFLAGS}'" "'LDFLAGS=${LDFLAGS} -L$BUILDDIR/ext/sollya/.libs'"
+   $TOPSRCDIR/etc/macros/panda_config_subdir.sh ext/flopoco $ac_configure_args "'CXXFLAGS=${CXXFLAGS_EXT}'" "'CFLAGS=${CFLAGS_EXT}'" "'LDFLAGS=${LDFLAGS} -L$BUILDDIR/ext/sollya/.libs'"
    if test $? != 0; then
       AC_MSG_ERROR("Error in flopoco configuration")
    fi
@@ -1241,7 +1248,7 @@ AC_SUBST(FLOPOCO_DIR)
 
 ################################# METSlib stuff ################################
 if test "x$panda_USE_METSLIB" = xyes; then
-   $TOPSRCDIR/etc/macros/panda_config_subdir.sh ext/metslib-0.5.3 $ac_configure_args "'CXXFLAGS=${CXXFLAGS}'" "'CFLAGS=${CFLAGS}'" "'LDFLAGS=$LDFLAGS'"
+   $TOPSRCDIR/etc/macros/panda_config_subdir.sh ext/metslib-0.5.3 $ac_configure_args "'CXXFLAGS=${CXXFLAGS_EXT}'" "'CFLAGS=${CFLAGS_EXT}'" "'LDFLAGS=$LDFLAGS'"
    if test $? != 0; then
       AC_MSG_ERROR("Error in metslib configuration")
    fi
@@ -1254,7 +1261,7 @@ AM_CONDITIONAL(BUILD_METSLIB, test "x$panda_USE_METSLIB" = xyes)
 
 ################ TRNG stuff #############################
 if test "x$panda_USE_TRNG" = xyes; then
-   $TOPSRCDIR/etc/macros/panda_config_subdir.sh ext/trng-4.17 $ac_configure_args "'CXXFLAGS=${CXXFLAGS}'" "'CFLAGS=${CFLAGS}'" "'LDFLAGS=$LDFLAGS'"
+   $TOPSRCDIR/etc/macros/panda_config_subdir.sh ext/trng-4.17 $ac_configure_args "'CXXFLAGS=${CXXFLAGS_EXT}'" "'CFLAGS=${CFLAGS_EXT}'" "'LDFLAGS=$LDFLAGS'"
    if test $? != 0; then
       AC_MSG_ERROR("Error in trng configuration")
    fi
@@ -1273,7 +1280,7 @@ if test "x$panda_USE_COIN_OR" = xyes; then
    AX_LAPACK()
    LAPACK_LIBS="$LAPACK_LIBS"
    AC_CHECK_LIB([bz2],[BZ2_bzReadOpen], [echo "Checking for libbz2... yes"], [echo "Checking for libbz2... no"; AC_MSG_ERROR("libbz2 not found")])
-   $TOPSRCDIR/etc/macros/panda_config_subdir.sh ext/Coin-Cbc $ac_configure_args "'CXXFLAGS=${CXXFLAGS}'" "'CFLAGS=${CFLAGS}'" "'LDFLAGS=$LDFLAGS'"
+   $TOPSRCDIR/etc/macros/panda_config_subdir.sh ext/Coin-Cbc $ac_configure_args "'CXXFLAGS=${CXXFLAGS_EXT}'" "'CFLAGS=${CFLAGS_EXT}'" "'LDFLAGS=$LDFLAGS'"
    if test $? != 0; then
       AC_MSG_ERROR("Error in Coin-Cbc configuration")
    fi
@@ -1291,7 +1298,7 @@ AM_CONDITIONAL(BUILD_COIN_OR, test "x$panda_USE_COIN_OR" = xyes)
 
 ################################# Liberty stuff ################################
 if test "x$panda_USE_LIB_FROM_LIBERTY" = xyes; then
-   $TOPSRCDIR/etc/macros/panda_config_subdir.sh ext/liberty_parser $ac_configure_args "'CXXFLAGS=${CXXFLAGS}'" "'CFLAGS=${CFLAGS}'" "'LDFLAGS=$LDFLAGS'"
+   $TOPSRCDIR/etc/macros/panda_config_subdir.sh ext/liberty_parser $ac_configure_args "'CXXFLAGS=${CXXFLAGS_EXT}'" "'CFLAGS=${CFLAGS_EXT}'" "'LDFLAGS=$LDFLAGS'"
    if test $? != 0; then
       AC_MSG_ERROR("Error in liberty parser configuration")
    fi
@@ -1311,7 +1318,7 @@ AM_CONDITIONAL(USE_GRLIB, test "x$panda_USE_TASTE" = xyes)
 
 ##################################### 2lev #####################################
 if test "x$panda_USE_LIB_2LEV" = xyes; then
-   $TOPSRCDIR/etc/macros/panda_config_subdir.sh src/logic_synthesis/2lev $ac_configure_args "'CXXFLAGS=${CXXFLAGS}'" "'CFLAGS=${CFLAGS}'" "'LDFLAGS=$LDFLAGS'" "'CUDD_CPPFLAGS=$CUDD_CPPFLAGS'" "'CUDD_LIBS=$CUDD_LIBS'"
+   $TOPSRCDIR/etc/macros/panda_config_subdir.sh src/logic_synthesis/2lev $ac_configure_args "'CXXFLAGS=${CXXFLAGS_EXT}'" "'CFLAGS=${CFLAGS_EXT}'" "'LDFLAGS=$LDFLAGS'" "'CUDD_CPPFLAGS=$CUDD_CPPFLAGS'" "'CUDD_LIBS=$CUDD_LIBS'"
 fi
 AM_CONDITIONAL(BUILD_LIB_2LEV, test "x$panda_USE_LIB_2LEV" = xyes)
 
@@ -1365,7 +1372,7 @@ if test "x$panda_USE_LP_SOLVE" = xyes; then
    else
       BFP_NAME="bfp_$USE_BFP_NAME"
    fi
-   $TOPSRCDIR/etc/macros/panda_config_subdir.sh ext/lpsolve5 $ac_configure_args "'CXXFLAGS=${CXXFLAGS}'" "'CFLAGS=${CFLAGS}'" "'LDFLAGS=$LDFLAGS'"
+   $TOPSRCDIR/etc/macros/panda_config_subdir.sh ext/lpsolve5 $ac_configure_args "'CXXFLAGS=${CXXFLAGS_EXT}'" "'CFLAGS=${CFLAGS_EXT}'" "'LDFLAGS=$LDFLAGS'"
    AC_DEFINE(HAVE_LP_SOLVE, 1, "Define if lp solver is used")
    LP_SOLVE_DIR="$TOPSRCDIR/lpsolve5"
 fi
@@ -1390,7 +1397,7 @@ AM_CONDITIONAL(BUILD_SIMIT, test "x$panda_USE_SIMIT" = xyes)
 
 ############################## VFlib library stuff #############################
 if test "x$panda_USE_VFLIB" = xyes; then
-   $TOPSRCDIR/etc/macros/panda_config_subdir.sh ext/vflib $ac_configure_args "'CXXFLAGS=${CXXFLAGS}'" "'CFLAGS=${CFLAGS}'" "'LDFLAGS=$LDFLAGS'"
+   $TOPSRCDIR/etc/macros/panda_config_subdir.sh ext/vflib $ac_configure_args "'CXXFLAGS=${CXXFLAGS_EXT}'" "'CFLAGS=${CFLAGS_EXT}'" "'LDFLAGS=$LDFLAGS'"
    VFLIB_DIR="$TOPSRCDIR/ext/vflib"
 fi
 AM_CONDITIONAL(BUILD_VFLIB, test "x$panda_USE_VFLIB" = xyes)
