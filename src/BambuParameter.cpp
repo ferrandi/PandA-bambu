@@ -3280,7 +3280,7 @@ void BambuParameter::SetDefaults()
 
    /// backend HDL
    setOption(OPT_writer_language, static_cast<int>(HDLWriter_Language::VERILOG));
-   setOption("dynamic_generators_dir", PANDA_DATA_INSTALLDIR "/panda-etc");
+   setOption("dynamic_generators_dir", PANDA_DATA_INSTALLDIR "/panda");
 
    /// -- Module Interfaces -- //
    setOption(OPT_interface, true);
@@ -3512,49 +3512,49 @@ void BambuParameter::add_bambu_library(std::string lib)
 #if HAVE_I386_GCC45_COMPILER
    if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC45))
    {
-      setOption(OPT_archive_files, archive_files + mingw_prefix+PANDA_LIB_INSTALLDIR "/panda-etc/lib"+lib+"_gcc45" + VSuffix + ".a");
+      setOption(OPT_archive_files, archive_files + mingw_prefix+PANDA_LIB_INSTALLDIR "/panda/lib"+lib+"_gcc45" + VSuffix + ".a");
    }
 #endif
 #if HAVE_I386_GCC46_COMPILER
    if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC46))
    {
-      setOption(OPT_archive_files, archive_files + mingw_prefix+PANDA_LIB_INSTALLDIR "/panda-etc/lib"+lib+"_gcc46" + VSuffix + ".a");
+      setOption(OPT_archive_files, archive_files + mingw_prefix+PANDA_LIB_INSTALLDIR "/panda/lib"+lib+"_gcc46" + VSuffix + ".a");
    }
 #endif
 #if HAVE_I386_GCC47_COMPILER
    if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC47))
    {
-      setOption(OPT_archive_files, archive_files + mingw_prefix+PANDA_LIB_INSTALLDIR "/panda-etc/lib"+lib+"_gcc47" + VSuffix + ".a");
+      setOption(OPT_archive_files, archive_files + mingw_prefix+PANDA_LIB_INSTALLDIR "/panda/lib"+lib+"_gcc47" + VSuffix + ".a");
    }
 #endif
 #if HAVE_I386_GCC48_COMPILER
    if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC48))
    {
-      setOption(OPT_archive_files, archive_files + mingw_prefix+PANDA_LIB_INSTALLDIR "/panda-etc/lib"+lib+"_gcc48" + VSuffix + ".a");
+      setOption(OPT_archive_files, archive_files + mingw_prefix+PANDA_LIB_INSTALLDIR "/panda/lib"+lib+"_gcc48" + VSuffix + ".a");
    }
 #endif
 #if HAVE_I386_GCC49_COMPILER
    if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC49))
    {
-      setOption(OPT_archive_files, archive_files + mingw_prefix+PANDA_LIB_INSTALLDIR "/panda-etc/lib"+lib+"_gcc49" + VSuffix + ".a");
+      setOption(OPT_archive_files, archive_files + mingw_prefix+PANDA_LIB_INSTALLDIR "/panda/lib"+lib+"_gcc49" + VSuffix + ".a");
    }
 #endif
 #if HAVE_I386_GCC5_COMPILER
    if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC5))
    {
-      setOption(OPT_archive_files, archive_files + mingw_prefix+PANDA_LIB_INSTALLDIR "/panda-etc/lib"+lib+"_gcc5" + VSuffix + ".a");
+      setOption(OPT_archive_files, archive_files + mingw_prefix+PANDA_LIB_INSTALLDIR "/panda/lib"+lib+"_gcc5" + VSuffix + ".a");
    }
 #endif
 #if HAVE_I386_GCC6_COMPILER
    if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC6))
    {
-      setOption(OPT_archive_files, archive_files + PANDA_LIB_INSTALLDIR "/panda-etc/lib"+lib+"_gcc6" + VSuffix + ".a");
+      setOption(OPT_archive_files, archive_files + PANDA_LIB_INSTALLDIR "/panda/lib"+lib+"_gcc6" + VSuffix + ".a");
    }
 #endif
 #if HAVE_I386_GCC7_COMPILER
    if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC7))
    {
-      setOption(OPT_archive_files, archive_files + mingw_prefix+PANDA_LIB_INSTALLDIR "/panda-etc/lib"+lib+"_gcc7" + VSuffix + ".a");
+      setOption(OPT_archive_files, archive_files + mingw_prefix+PANDA_LIB_INSTALLDIR "/panda/lib"+lib+"_gcc7" + VSuffix + ".a");
    }
 #endif
 }
