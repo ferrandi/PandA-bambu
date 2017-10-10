@@ -10,7 +10,7 @@ if test $return_value != 0; then
    exit $return_value
 fi
 if [[ "$@" != *"-wH"* ]] && [[ "$@" != *"--speculative-sdc-scheduling"* ]] ;  then
-   $(dirname $0)/discrepancy.sh $@
+   $(dirname $0)/discrepancy1.sh $@
    return_value=$?
    if test $return_value != 0; then
       exit $return_value
