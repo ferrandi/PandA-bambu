@@ -1,30 +1,30 @@
 #!/bin/bash
-`dirname $0`/test_softfloat_addsub32.sh $@
+$(dirname $0)/test_softfloat_addsub32.sh $@
 return_value=$?
 if test $return_value != 0; then
    exit $return_value
 fi
-`dirname $0`/test_libm_sinecosine.sh $@
+$(dirname $0)/test_libm_sinecosine.sh $@
 return_value=$?
 if test $return_value != 0; then
    exit $return_value
 fi
-`dirname $0`/test_libm_logf.sh $@
+$(dirname $0)/test_libm_logf.sh $@
 return_value=$?
 if test $return_value != 0; then
    exit $return_value
 fi
-`dirname $0`/test_libm_expf.sh $@
+$(dirname $0)/test_libm_expf.sh $@
 return_value=$?
 if test $return_value != 0; then
    exit $return_value
 fi
-`dirname $0`/test_libm_sqrtf.sh $@
+$(dirname $0)/test_libm_sqrtf.sh $@
 return_value=$?
 if test $return_value != 0; then
    exit $return_value
 fi
-`dirname $0`/../../etc/scripts/test_panda.py --tool=bambu \
+$(dirname $0)/../../etc/scripts/test_panda.py --tool=bambu \
              --args="--configuration-name=softfloat-tests-GCC45  --soft-float --compiler=I386_GCC45 --max-ulp=0 --experimental-setup=BAMBU-PERFORMANCE-MP"\
              --args="--configuration-name=softfloat-tests-GCC46  --soft-float --compiler=I386_GCC46 --max-ulp=0 --experimental-setup=BAMBU-PERFORMANCE-MP"\
              --args="--configuration-name=softfloat-tests-GCC47  --soft-float --compiler=I386_GCC47 --max-ulp=0 --experimental-setup=BAMBU-PERFORMANCE-MP"\
@@ -33,7 +33,7 @@ fi
              --args="--configuration-name=softfloat-tests-GCC5  --soft-float --compiler=I386_GCC5 --max-ulp=0 --experimental-setup=BAMBU-PERFORMANCE-MP"\
              --args="--configuration-name=softfloat-tests-GCC6  --soft-float --compiler=I386_GCC6 --max-ulp=0 --experimental-setup=BAMBU-PERFORMANCE-MP"\
              --args="--configuration-name=softfloat-tests-GCC7  --soft-float --compiler=I386_GCC7 --max-ulp=0 --experimental-setup=BAMBU-PERFORMANCE-MP"\
-             -lsoftfloat-tests_list -o output_softfloat-tests -b`dirname $0` --table=softfloat-tests.tex --name="softfloat-tests" $@
+             -lsoftfloat-tests_list -o output_softfloat-tests -b$(dirname $0) --table=softfloat-tests.tex --name="softfloat-tests" $@
 return_value=$?
 if test $return_value != 0; then
    exit $return_value

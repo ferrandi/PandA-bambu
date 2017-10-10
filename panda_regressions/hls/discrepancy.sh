@@ -1,6 +1,6 @@
 #!/bin/bash
-abs_script=`readlink -e $0`
-dir_script=`dirname $abs_script`
+abs_script=$(readlink -e $0)
+dir_script=$(dirname $abs_script)
 $dir_script/../../etc/scripts/test_panda.py --tool=bambu \
    --args="--configuration-name=GCC5_O0 -O0 -lm --simulate --experimental-setup=BAMBU --compiler=I386_GCC5" \
    --args="--configuration-name=GCC5_O1 -O1 -lm --simulate --experimental-setup=BAMBU --compiler=I386_GCC5" \

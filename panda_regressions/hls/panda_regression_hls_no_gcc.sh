@@ -1,6 +1,6 @@
 #!/bin/bash
-abs_script=`readlink -e $0`
-dir_script=`dirname $abs_script`
+abs_script=$(readlink -e $0)
+dir_script=$(dirname $abs_script)
 $dir_script/libm-tests.sh $@
 return_value=$?
 if test $return_value != 0; then
