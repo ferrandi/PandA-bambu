@@ -21,6 +21,7 @@ addons:
     - gcc
     - gcc-4.8-plugin-dev
     - gcc-multilib
+    - g++-4.8-multilib
     - libboost-all-dev
     - libmpc-dev
     - libmpfi-dev
