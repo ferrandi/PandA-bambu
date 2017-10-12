@@ -4851,8 +4851,11 @@ std::string tree_helper::print_type(const tree_managerConstRef TM, unsigned int 
       case function_decl_K:
       {
          function_decl *fd = GetPointer<function_decl>(node_type);
+         std::string function_name = tree_helper::print_function_name(TM, fd);
          if (fd->undefined_flag)
             res = "extern ";
+         else if (!fd->static_flag && TM->is_CPP() && !fd->mngl && function_name != "main")
+             res = "extern \"C\" ";
          if (fd->static_flag)
             res = "static ";
          decl_node *dn = GetPointer<decl_node>(node_type);
@@ -4870,7 +4873,7 @@ std::string tree_helper::print_type(const tree_managerConstRef TM, unsigned int 
 
          /* Print function name.  */
          THROW_ASSERT(dn->name, "expected a name");
-         res += tree_helper::print_function_name(TM, fd);
+         res += function_name;
          res += "(";
          if (fd->list_of_args.size())
          {

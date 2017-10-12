@@ -2276,3 +2276,12 @@ tree_nodeRef tree_manager::CreateUniqueIntegerCst(long long int value, unsigned 
       return cost_node;
    }
 }
+
+ bool tree_manager::is_CPP() const
+ {
+     if(Param->isOption(OPT_input_format) &&
+             Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_CPP)
+         return true;
+     else
+         return false;
+ }

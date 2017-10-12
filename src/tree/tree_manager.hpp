@@ -442,6 +442,13 @@ class tree_manager
        * @return a tree reindex node for the integer value with as type type_index
        */
       tree_nodeRef CreateUniqueIntegerCst(long long int value, unsigned int type_index);
+
+      /**
+       * @brief is_CPP return true in case we have at least one CPP source code
+       * @return true when at least one translation unit is written in C++
+       */
+      bool is_CPP() const;
+
 };
 typedef refcount<tree_manager> tree_managerRef;
 typedef refcount<const tree_manager> tree_managerConstRef;
