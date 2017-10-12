@@ -1427,6 +1427,7 @@ AC_CONFIG_FILES(
                  examples/add_device_simple/Makefile
                  examples/arf/Makefile
                  examples/arf_res_sharing/Makefile
+                 examples/cpp_examples/Makefile
                  examples/crc/Makefile
                  examples/crc_yosys/Makefile
                  examples/fft_example/Makefile

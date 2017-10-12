@@ -102,6 +102,9 @@ constexpr const ::std::array<short int,filter_len> firFixedClass<filter_len>::co
 
 
 // the FIR filter function
+#ifdef WITH_EXTERNC
+extern "C" 
+#endif
 short int 
 __attribute__ ((noinline))  
 firFixed( short int input)
