@@ -268,7 +268,7 @@ unsigned int tree_helper::Size(const tree_nodeConstRef t)
       case enumeral_type_K:
       {
          const enumeral_type* et = GetPointer<const enumeral_type>(t);
-         if(et->min &&& et->max && GET_NODE(et->min)->get_kind() == integer_cst_K && GET_NODE(et->max)->get_kind() == integer_cst_K)
+         if(et->min && et->max && GET_NODE(et->min)->get_kind() == integer_cst_K && GET_NODE(et->max)->get_kind() == integer_cst_K)
          {
             long long max = get_integer_cst_value(GetPointer<integer_cst>(GET_NODE(et->max)));
             long long min = get_integer_cst_value(GetPointer<integer_cst>(GET_NODE(et->min)));
@@ -807,6 +807,8 @@ std::string tree_helper::print_function_name(const tree_managerConstRef TM, cons
    tree_nodeRef name;
    if(fd->builtin_flag)
       name = GET_NODE(fd->name);
+   else if(TM->is_CPP() && TM->is_top_function(fd))
+       name = GET_NODE(fd->name);
    else if(fd->mngl)
       name = GET_NODE(fd->mngl);
    else

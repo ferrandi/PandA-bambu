@@ -449,6 +449,12 @@ class tree_manager
        */
       bool is_CPP() const;
 
+      /**
+       * @brief is_top_function checks if a function is one of the application top functions.
+       * @param fd is the function decl
+       * @return true in case fd is a top function
+       */
+      bool is_top_function(const function_decl *fd) const;
 };
 typedef refcount<tree_manager> tree_managerRef;
 typedef refcount<const tree_manager> tree_managerConstRef;

@@ -2277,11 +2277,45 @@ tree_nodeRef tree_manager::CreateUniqueIntegerCst(long long int value, unsigned 
    }
 }
 
- bool tree_manager::is_CPP() const
- {
-     if(Param->isOption(OPT_input_format) &&
-             Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_CPP)
-         return true;
-     else
-         return false;
- }
+bool tree_manager::is_CPP() const
+{
+   if(Param->isOption(OPT_input_format) &&
+         Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_CPP)
+      return true;
+   else
+      return false;
+}
+
+bool tree_manager::is_top_function(const function_decl *fd) const
+{
+   if(fd->name)
+   {
+      tree_nodeRef id_name = GET_NODE(fd->name);
+      std::string simple_name;
+      if (id_name->get_kind() == identifier_node_K)
+      {
+         identifier_node *in = GetPointer<identifier_node>(id_name);
+         if(!in->operator_flag)
+            simple_name = in->strg;
+         if(simple_name != "")
+         {
+            if(Param->isOption(OPT_top_functions_names))
+            {
+               const auto top_functions_names = Param->getOption<const std::list<std::string> >(OPT_top_functions_names);
+               for(const auto& top_function_name : top_functions_names)
+               {
+                  if (simple_name == top_function_name)
+                     return true;
+               }
+            }
+            if (Param->isOption(OPT_top_design_name))
+            {
+               const auto top_rtldesign_function = Param->getOption<std::string>(OPT_top_design_name);
+               if (simple_name == top_rtldesign_function)
+                  return true;
+            }
+         }
+      }
+   }
+   return false;
+}
