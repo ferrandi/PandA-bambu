@@ -180,7 +180,7 @@ DesignFlowStep_Status call_graph_computation::Exec()
          {
             for (const auto & b : sl->list_of_bloc)
             {
-               for (const auto stmt : b.second->CGetStmtList())
+               for (const auto& stmt : b.second->CGetStmtList())
                {
                   call_graph_computation_recursive(TM, stmt, stmt->index, FunctionEdgeInfo::CallType::function_address);
                }
