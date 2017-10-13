@@ -442,6 +442,19 @@ class tree_manager
        * @return a tree reindex node for the integer value with as type type_index
        */
       tree_nodeRef CreateUniqueIntegerCst(long long int value, unsigned int type_index);
+
+      /**
+       * @brief is_CPP return true in case we have at least one CPP source code
+       * @return true when at least one translation unit is written in C++
+       */
+      bool is_CPP() const;
+
+      /**
+       * @brief is_top_function checks if a function is one of the application top functions.
+       * @param fd is the function decl
+       * @return true in case fd is a top function
+       */
+      bool is_top_function(const function_decl *fd) const;
 };
 typedef refcount<tree_manager> tree_managerRef;
 typedef refcount<const tree_manager> tree_managerConstRef;

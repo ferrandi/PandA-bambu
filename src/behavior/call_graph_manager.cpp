@@ -468,7 +468,7 @@ void CallGraphManager::ComputeRootAndReachedFunctions()
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Top functions passed by user");
       const auto top_functions_names = Param->getOption<const std::list<std::string> >(OPT_top_functions_names);
-      for(const auto top_function_name : top_functions_names)
+      for(const auto& top_function_name : top_functions_names)
       {
          const unsigned int top_function_index = tree_manager->function_index(top_function_name);
          if(top_function_index == 0)

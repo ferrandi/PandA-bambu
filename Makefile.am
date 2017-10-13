@@ -6,8 +6,8 @@ if BUILD_EXT
    DIST_SUBDIRS += ext
 endif
 
-SUBDIRS += panda_regressions examples src etc style
-DIST_SUBDIRS += panda_regressions examples src etc style documentation
+SUBDIRS += panda_regressions src etc examples style
+DIST_SUBDIRS += panda_regressions src etc examples style documentation
 
 #########################################################
 # Documentation section and rules
