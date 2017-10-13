@@ -28,6 +28,8 @@ endif
 
 FORCE:
 
+check:all
+
 ###### gcc 4.5
 if BUILD_I386_GCC45_EMPTY_PLUGIN
 all: $(I386_GCC45_EMPTY_PLUGIN)
