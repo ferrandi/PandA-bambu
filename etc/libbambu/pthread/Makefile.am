@@ -53,5 +53,3 @@ libpthread_gcc7_a_SOURCES = pthread.c
 libpthread_gcc7_a_CFLAGS = -fno-tree-loop-distribute-patterns --compiler=I386_GCC7  $(common_treegccflags)
 endif
 
-check:install 
-

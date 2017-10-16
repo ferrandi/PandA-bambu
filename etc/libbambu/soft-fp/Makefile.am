@@ -201,5 +201,3 @@ libhls_cdiv_gcc7_a_CFLAGS = -finline-limit=10000 --compiler=I386_GCC7  $(common_
 libhls_cdiv_gcc7_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_GCC7 $(common_treegccflags) -C
 endif
 
-check:install 
-

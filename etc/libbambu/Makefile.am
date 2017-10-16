@@ -73,5 +73,3 @@ libbambu_gcc7_a_CFLAGS =$(common_cflags) -fno-tree-loop-distribute-patterns --co
 libbambu_gcc7_a_AR =$(top_builddir)/src/tree-panda-gcc $(common_treegccflags)--compiler=I386_GCC7 -C
 endif
 
-check:install 
-

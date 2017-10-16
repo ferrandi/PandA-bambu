@@ -74,5 +74,3 @@ libsoftfloat_subnormals_gcc7_a_SOURCES = softfloat.c
 libsoftfloat_subnormals_gcc7_a_CFLAGS = -O3 -fno-tree-loop-distribute-patterns --compiler=I386_GCC7 -finline-limit=10000 $(common_cflags_subnormals) -I$(BOOST_DIR)
 endif
 
-check:install 
-

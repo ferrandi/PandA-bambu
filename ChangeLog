@@ -2,6 +2,7 @@
 Seventh public release of PandA framework.
 
 New features introduced:
+- Added an initial support to C++/fortran high-level synthesis. Now, Ubuntu distributions require the installation of g++-multilib package.
 
 
 =========== PANDA 0.9.5 ===========

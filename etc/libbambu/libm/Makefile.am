@@ -182,5 +182,3 @@ libm_gcc7_subnormals_std_a_CFLAGS = $(compiler_flags) -ftree-partial-pre --compi
 libm_gcc7_subnormals_std_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_GCC7 $(common_treegccflags) -C
 endif
 
-check:install 
-
