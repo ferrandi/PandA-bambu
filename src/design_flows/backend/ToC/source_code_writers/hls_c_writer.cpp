@@ -166,6 +166,79 @@ void HLSCWriter::WriteTestbenchHelperFunctions()
    indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"%c\", (((1LLU << (8 - j - 1)) & value) ? '1' : '0'));\n");
    indented_output_stream->Append("}\n");
    indented_output_stream->Append("}\n\n");
+   // Builtin floating point checkers
+   indented_output_stream->Append("_Bool _FPs32Mismatch_(float c, float e, float max_ulp)\n");
+   indented_output_stream->Append("{\n");
+   indented_output_stream->Append("unsigned int binary_c = *((unsigned int*)&c);\n");
+   indented_output_stream->Append("unsigned int binary_e = *((unsigned int*)&e);\n");
+   indented_output_stream->Append("unsigned int binary_abs_c = binary_c&(~(1U<<31));\n");
+   indented_output_stream->Append("unsigned int binary_abs_e = binary_e&(~(1U<<31));\n");
+   indented_output_stream->Append("unsigned int denom_0 = 0x34000000;\n");
+   indented_output_stream->Append("unsigned int denom_e = ((binary_abs_e>> 23)-23)<<23;\n");
+   indented_output_stream->Append("extern double fabs(double x);\n");
+   indented_output_stream->Append("float ulp = 0.0;\n");
+   indented_output_stream->Append("if (binary_abs_c>0X7F800000 && binary_abs_c>0X7F800000) return 0;\n");
+   indented_output_stream->Append("else if (binary_abs_c==0X7F800000 && binary_abs_e==0X7F800000)\n");
+   indented_output_stream->Append("{\n");
+   indented_output_stream->Append("if ((binary_c>>31) != (binary_e>>31))\n");
+   indented_output_stream->Append("return 1;\n");
+   indented_output_stream->Append("else\n");
+   indented_output_stream->Append("return 0;\n");
+   indented_output_stream->Append("}\n");
+   indented_output_stream->Append("else if (binary_abs_c==0X7F800000 || binary_abs_e==0X7F800000 || binary_abs_c>0X7F800000 || binary_abs_e==0X7F800000) return 0;\n");
+   indented_output_stream->Append("else\n");
+   indented_output_stream->Append("{\n");
+   indented_output_stream->Append("if (binary_abs_e == 0)\n");
+   indented_output_stream->Append("ulp = fabs(c - e) / (*((float *)&denom_0));\n");
+   indented_output_stream->Append("else\n");
+   indented_output_stream->Append("ulp = fabs(c - e) / (*((float *)&denom_e));\n");
+   indented_output_stream->Append("return ulp > max_ulp;\n");
+   indented_output_stream->Append("}\n");
+   indented_output_stream->Append("}\n\n");
+   indented_output_stream->Append("_Bool _FPs64Mismatch_(double c, double e, double max_ulp)\n");
+   indented_output_stream->Append("{\n");
+   indented_output_stream->Append("unsigned long long int binary_c = *((unsigned long long int*)&c);\n");
+   indented_output_stream->Append("unsigned long long int binary_e = *((unsigned long long int*)&e);\n");
+   indented_output_stream->Append("unsigned long long int binary_abs_c = binary_c&(~(1ULL<<63));\n");
+   indented_output_stream->Append("unsigned long long int binary_abs_e = binary_e&(~(1ULL<<63));\n");
+   indented_output_stream->Append("unsigned long long int denom_0 = 0x3CB0000000000000;\n");
+   indented_output_stream->Append("unsigned long long int denom_e = ((binary_abs_e>> 52)-52)<<52;\n");
+   indented_output_stream->Append("extern double fabs(double x);\n");
+   indented_output_stream->Append("double ulp = 0.0;\n");
+   indented_output_stream->Append("if (binary_abs_c>0X7FF0000000000000 && binary_abs_c>0X7FF0000000000000) return 0;\n");
+   indented_output_stream->Append("else if (binary_abs_c==0X7FF0000000000000 && binary_abs_e==0X7FF0000000000000)\n");
+   indented_output_stream->Append("{\n");
+   indented_output_stream->Append("if ((binary_c>>63) != (binary_e>>63))\n");
+   indented_output_stream->Append("return 1;\n");
+   indented_output_stream->Append("else\n");
+   indented_output_stream->Append("return 0;\n");
+   indented_output_stream->Append("}\n");
+   indented_output_stream->Append("else if (binary_abs_c==0X7FF0000000000000 || binary_abs_e==0X7FF0000000000000 || binary_abs_c>0X7FF0000000000000 || binary_abs_e==0X7FF0000000000000) return 0;\n");
+   indented_output_stream->Append("else\n");
+   indented_output_stream->Append("{\n");
+   indented_output_stream->Append("if (binary_abs_e == 0)\n");
+   indented_output_stream->Append("ulp = fabs(c - e) / (*((double *)&denom_0));\n");
+   indented_output_stream->Append("else\n");
+   indented_output_stream->Append("ulp = fabs(c - e) / (*((double *)&denom_e));\n");
+   indented_output_stream->Append("return ulp > max_ulp;\n");
+   indented_output_stream->Append("}\n");
+   indented_output_stream->Append("}\n\n");
+   indented_output_stream->Append("void _CheckBuiltinFPs32_(char * chk_str, _Bool neq, float par_expected, float par_res, float par_a, float par_b)\n");
+   indented_output_stream->Append("{\n");
+   indented_output_stream->Append("if(neq)\n");
+   indented_output_stream->Append("{\n");
+   indented_output_stream->Append("printf(\"\\n\\n***********************************************************\\nERROR ON A BASIC FLOATING POINT OPERATION : %s : expected=%a res=%a a=%a b=%a\\n***********************************************************\\n\\n\", chk_str, par_expected, par_res, par_a, par_b);\n");
+   indented_output_stream->Append("exit(1);\n");
+   indented_output_stream->Append("}\n");
+   indented_output_stream->Append("}\n\n");
+   indented_output_stream->Append("void _CheckBuiltinFPs64_(char * chk_str, _Bool neq, double par_expected, double par_res, double par_a, double par_b)\n");
+   indented_output_stream->Append("{\n");
+   indented_output_stream->Append("if(neq)\n");
+   indented_output_stream->Append("{\n");
+   indented_output_stream->Append("printf(\"\\n\\n***********************************************************\\nERROR ON A BASIC FLOATING POINT OPERATION : %s : expected=%a res=%a a=%a b=%a\\n***********************************************************\\n\\n\", chk_str, par_expected, par_res, par_a, par_b);\n");
+   indented_output_stream->Append("exit(1);\n");
+   indented_output_stream->Append("}\n");
+   indented_output_stream->Append("}\n\n");
 }
 
 void HLSCWriter::WriteParamDecl
@@ -196,7 +269,7 @@ void HLSCWriter::WriteParamDecl
          std::string type_declaration = tree_helper::print_type(TM, type_id, false, false,  false,  p, var_functor);
          if(flag_cpp)
          {
-            bool reference_type_p;
+            bool reference_type_p=false;
             tree_nodeRef pt_node = TM->get_tree_node_const(type_id);
             if(pt_node->get_kind() == pointer_type_K)
             {
@@ -237,7 +310,7 @@ void HLSCWriter::WriteParamInitialization
       std::string param = behavioral_helper->PrintVariable(p);
       if (behavioral_helper->is_a_pointer(p))
       {
-         bool reference_type_p;
+         bool reference_type_p=false;
          unsigned int base_type = tree_helper::get_type_index(TM, p);
          tree_nodeRef pt_node = TM->get_tree_node_const(base_type);
          if(pt_node->get_kind() == pointer_type_K)
@@ -509,7 +582,7 @@ void HLSCWriter::WriteExpectedResults
       std::string param = behavioral_helper->PrintVariable(p);
       if (behavioral_helper->is_a_pointer(p))
       {
-         bool reference_type_p;
+         bool reference_type_p=false;
          std::string test_v = "0";
          if (curr_test_vector.find(param) != curr_test_vector.end())
             test_v = curr_test_vector.find(param)->second;
@@ -709,13 +782,13 @@ void HLSCWriter::WriteSimulatorInitMemory(const unsigned int function_id)
             reserved_mem_bytes = 1;
 
          unsigned int base_type = tree_helper::get_type_index(TM, l);
-         unsigned int base_type_bytesize;
+         unsigned int base_type_bytesize=1;
          std::vector<std::string> splitted;
          boost::algorithm::split(splitted, test_v , boost::algorithm::is_any_of(","));
          if (tree_helper::is_a_pointer(TM, l) && !is_memory)
          {
             tree_nodeRef pt_node = TM->get_tree_node_const(base_type);
-            unsigned int ptd_base_type;
+            unsigned int ptd_base_type=0;
             if(pt_node->get_kind() == pointer_type_K)
                ptd_base_type = GET_INDEX_NODE(GetPointer<pointer_type>(pt_node)->ptd);
             else if(pt_node->get_kind() == reference_type_K)
@@ -778,7 +851,7 @@ void HLSCWriter::WriteSimulatorInitMemory(const unsigned int function_id)
                if (output_level > OUTPUT_LEVEL_MINIMUM)
                   indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"//memory initialization for variable " + param + " value: "  + init_value_copy + "\\n\");\n");
                tree_nodeRef pt_node = TM->get_tree_node_const(base_type);
-               unsigned int ptd_base_type;
+               unsigned int ptd_base_type=0;
                if(pt_node->get_kind() == pointer_type_K)
                   ptd_base_type = GET_INDEX_NODE(GetPointer<pointer_type>(pt_node)->ptd);
                else if(pt_node->get_kind() == reference_type_K)
