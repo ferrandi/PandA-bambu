@@ -320,15 +320,15 @@ def CreateJunitBody(directory,ju_file):
             command_args = command_args.replace(abs_benchmarks_root + "/", "")
             args_file.close()
             if return_value == "0":
-                ju_file.write("    <testcase classname=\"\" name=\"" + command_args.replace("\\", "") + "\">\n")
+                ju_file.write("    <testcase classname=\"PandA-bambu-tests\" name=\"" + command_args.replace("\\", "") + "\">\n")
             else:
                 if return_value == "124":
-                    ju_file.write("    <testcase classname=\"\" name=\"" + command_args.replace("\\", "") + "\">\n")
+                    ju_file.write("    <testcase classname=\"PandA-bambu-tests\" name=\"" + command_args.replace("\\", "") + "\">\n")
                     ju_file.write("      <failure type=\"FAILURE(Timeout)\"></failure>\n")
                     ju_file.write("      <system-out>\n")
                     ju_file.write("<![CDATA[\n")
                 else:
-                    ju_file.write("    <testcase classname=\"\" name=\"" + command_args.replace("\\", "") + "\">\n")
+                    ju_file.write("    <testcase classname=\"PandA-bambu-tests\" name=\"" + command_args.replace("\\", "") + "\">\n")
                     ju_file.write("      <failure type=\"FAILURE\"></failure>\n")
                     ju_file.write("      <system-out>\n")
                     ju_file.write("<![CDATA[\n")
@@ -411,7 +411,7 @@ if args.junitdir != "" and not os.path.exists(args.junitdir):
     os.mkdir(args.junitdir)
 #compute JUnit file name
 junit_file_name =  ""
-if args.junitdir != None:
+if args.junitdir != "":
     junit_index = 0
     junit_file_name = os.path.abspath(os.path.join(args.junitdir, "Junit_report"+str(junit_index)+".xml"))
     while os.path.isfile(junit_file_name) :
@@ -786,7 +786,7 @@ except KeyboardInterrupt:
 CollectResults(abs_path)
 
 #In case, it create the JUnit file
-if args.junitdir != None:
+if args.junitdir != "":
      junit_file = open(junit_file_name, "w")
      junit_file.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
      junit_file.write("<testsuites disabled=\"0\" errors=\"0\" failures=\""+str(total_benchmark - passed_benchmark)+"\" name=\"" + abs_path + "\" tests=\"" + str(total_benchmark) + "\">\n")
