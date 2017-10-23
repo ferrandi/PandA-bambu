@@ -91,7 +91,7 @@
 ///SoftFloat functions include
 #include "config_PANDA_INCLUDE_INSTALLDIR.hpp"
 
-std::set<std::string> functions = {"__float32_addif", "__float32_subif", "__float32_mulif", "__float32_divif", "__float64_addif", "__float64_subif", "__float64_mulif", "__float64_divif"};
+static std::set<std::string> functions = {"__float32_addif", "__float32_subif", "__float32_mulif", "__float32_divif", "__float64_addif", "__float64_subif", "__float64_mulif", "__float64_divif"};
 
 std::set<std::string> constant_flop_wrapper::operations;
 
