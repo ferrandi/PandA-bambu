@@ -124,7 +124,7 @@ struct Discrepancy
 
       unsigned long long n_checked_operations = 0;
 
-      Discrepancy(void) : DiscrepancyCallGraph(GraphInfoRef(new GraphInfo())) {};
+      Discrepancy(void) : DiscrepancyCallGraph(GraphInfoRef(new GraphInfo())) {}
 };
 
 typedef refcount<Discrepancy> DiscrepancyRef;
