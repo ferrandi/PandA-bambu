@@ -50,6 +50,7 @@ libm-tests/test-float.c --top-fname=rint_test --benchmark-name=rint
 libm-tests/test-float.c --top-fname=fmod_test --benchmark-name=fmod
 libm-tests/test-float.c --top-fname=remainder_test --benchmark-name=remainder
 libm-tests/test-float.c --top-fname=copysign_test --benchmark-name=copysign
+libm-tests/test-float.c --top-fname=sincos_test --benchmark-name=sincos
 libm-tests/test-double.c --top-fname=fpclassify_test --benchmark-name=fpclassify_double
 libm-tests/test-double.c --top-fname=isfinite_test --benchmark-name=isfinite_double
 libm-tests/test-double.c --top-fname=isnormal_test --benchmark-name=isnormal_double
@@ -95,4 +96,5 @@ libm-tests/test-double.c --top-fname=rint_test --benchmark-name=rint_double
 libm-tests/test-double.c --top-fname=fmod_test --benchmark-name=fmod_double
 libm-tests/test-double.c --top-fname=remainder_test --benchmark-name=remainder_double
 libm-tests/test-double.c --top-fname=copysign_test --benchmark-name=copysign_double
+libm-tests/test-double.c --top-fname=sincos_test --benchmark-name=sincos_double
 
