@@ -109,6 +109,7 @@ void HLSCWriter::WriteHeader()
    indented_output_stream->Append("#ifdef __cplusplus\n");
    indented_output_stream->Append("#include <cstdio>\n\n");
    indented_output_stream->Append("#include <cstdlib>\n\n");
+   indented_output_stream->Append("typedef bool _Bool;\n\n");
    indented_output_stream->Append("#else\n");
    indented_output_stream->Append("#include <stdio.h>\n\n");
    indented_output_stream->Append("extern void exit(int status);\n");
