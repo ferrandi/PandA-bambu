@@ -131,8 +131,8 @@ void HWCallPathCalculator::start_vertex(
       else if (parameters->getOption<std::string>(OPT_simulator) == "VERILATOR")
       {
          simulator_scope =
-            "TOP" + STR(HIERARCHY_SEPARATOR) +
-            top_interface_name + "_tb" + STR(HIERARCHY_SEPARATOR);
+               "TOP" + STR(HIERARCHY_SEPARATOR) +
+               "v" + STR(HIERARCHY_SEPARATOR);
       }
    }
    else

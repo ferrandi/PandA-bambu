@@ -4707,10 +4707,10 @@ void tree_helper::get_array_dim_and_bitsize
       unsigned int max_value = 0;
       if(it->min)
          min_value = static_cast<unsigned int>
-   	      (get_integer_cst_value(GetPointer<integer_cst>(GET_NODE(it->min))));
+          (get_integer_cst_value(GetPointer<integer_cst>(GET_NODE(it->min))));
       if(it->max)
          max_value = static_cast<unsigned int>
-   	      (get_integer_cst_value(GetPointer<integer_cst>(GET_NODE(it->max))));
+          (get_integer_cst_value(GetPointer<integer_cst>(GET_NODE(it->max))));
       unsigned int range_domain = max_value - min_value + 1;
       dims.push_back(range_domain);
    }
@@ -4743,10 +4743,10 @@ void tree_helper::get_array_dimensions
    unsigned int max_value = 0;
    if(it->min)
       min_value = static_cast<unsigned int>
-	      (get_integer_cst_value(GetPointer<integer_cst>(GET_NODE(it->min))));
+          (get_integer_cst_value(GetPointer<integer_cst>(GET_NODE(it->min))));
    if(it->max)
       max_value = static_cast<unsigned int>
-	      (get_integer_cst_value(GetPointer<integer_cst>(GET_NODE(it->max))));
+          (get_integer_cst_value(GetPointer<integer_cst>(GET_NODE(it->max))));
    unsigned int range_domain = max_value - min_value + 1;
    dims.push_back(range_domain);
    THROW_ASSERT(at->elts, "elements type expected");
@@ -4857,7 +4857,7 @@ std::string tree_helper::print_type(const tree_managerConstRef TM, unsigned int 
          if (fd->undefined_flag)
             res = "extern ";
          else if (!fd->static_flag && TM->is_CPP() && !fd->mngl && function_name != "main")
-             res = "extern \"C\" ";
+             res = "\n#ifdef __cplusplus\n  extern \"C\"\n#else\n  extern\n#endif\n";
          if (fd->static_flag)
             res = "static ";
          decl_node *dn = GetPointer<decl_node>(node_type);
@@ -5007,7 +5007,7 @@ std::string tree_helper::print_type(const tree_managerConstRef TM, unsigned int 
                res += tree_helper::normalized_ID(in->strg);
             }
             else if (name->get_kind() == type_decl_K)
-            {               
+            {
                res += print_type(TM, GET_INDEX_NODE(tn->name), global);
             }
             else

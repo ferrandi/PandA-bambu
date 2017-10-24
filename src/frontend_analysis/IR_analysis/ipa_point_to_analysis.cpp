@@ -267,7 +267,7 @@ DesignFlowStep_Status ipa_point_to_analysis::Exec()
             {
                function_information_map[function]->preserving &= false;//check if this is actually equal to true
             }
-            else if(fun_name != "__builtin_signbit" &&
+            else if(fun_name != "__builtin_signbit" && fun_name != "__builtin_signbitf" &&
                     fun_name != "__builtin_fabs" &&
                     fun_name != "__builtin_fabsf" &&
                     fun_name != "__builtin_llabs" &&
@@ -391,7 +391,7 @@ DesignFlowStep_Status ipa_point_to_analysis::Exec()
                            THROW_ASSERT(GET_NODE(ce->args.at(0))->get_kind() == ssa_name_K, "unexpected pattern");
                            pointing_to_ssa_vars.insert(GET_INDEX_NODE(ce->args.at(0)));
                         }
-                        else if(fun_name != "__builtin_signbit" &&
+                        else if(fun_name != "__builtin_signbit" && fun_name != "__builtin_signbitf" &&
                               fun_name != "__builtin_fabs" &&
                               fun_name != "__builtin_fabsf" &&
                               fun_name != "__builtin_llabs" &&
