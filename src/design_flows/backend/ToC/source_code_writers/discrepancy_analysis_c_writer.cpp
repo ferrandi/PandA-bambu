@@ -693,7 +693,17 @@ void DiscrepancyAnalysisCWriter::DeclareLocalVariables
 
 void DiscrepancyAnalysisCWriter::WriteFunctionImplementation(unsigned int function_index)
 {
+   const FunctionBehaviorConstRef FB = AppM->CGetFunctionBehavior(function_index);
+   const BehavioralHelperConstRef behavioral_helper = FB->CGetBehavioralHelper();
+   const std::string & funName = behavioral_helper->get_function_name();
+   tree_nodeRef node_fun = TM->GetTreeNode(function_index);
+   THROW_ASSERT(GetPointer<function_decl>(node_fun), "expected a function decl");
+   bool prepend_static = not tree_helper::is_static(TM, function_index) and not tree_helper::is_extern(TM, function_index) and (funName != "main");
+   if (prepend_static)
+      GetPointer<function_decl>(node_fun)->static_flag = true;
    CWriter::WriteFunctionImplementation(function_index);
+   if (prepend_static)
+      GetPointer<function_decl>(node_fun)->static_flag = false;
 }
 
 void DiscrepancyAnalysisCWriter::WriteBBHeader(unsigned int bb_number)
@@ -707,9 +717,15 @@ void DiscrepancyAnalysisCWriter::WriteFunctionDeclaration(const unsigned int fun
    const FunctionBehaviorConstRef FB = AppM->CGetFunctionBehavior(funId);
    const BehavioralHelperConstRef behavioral_helper = FB->CGetBehavioralHelper();
    const std::string & funName = behavioral_helper->get_function_name();
-   if (not tree_helper::is_static(TM, funId) and not tree_helper::is_extern(TM, funId) and (funName != "main"))
-      indented_output_stream->Append("static ");
+   tree_nodeRef node_fun = TM->GetTreeNode(funId);
+   THROW_ASSERT(GetPointer<function_decl>(node_fun), "expected a function decl");
+   bool prepend_static = not tree_helper::is_static(TM, funId) and not tree_helper::is_extern(TM, funId) and (funName != "main");
+   if (prepend_static)
+      GetPointer<function_decl>(node_fun)->static_flag = true;
    HLSCWriter::WriteFunctionDeclaration(funId);
+   if (prepend_static)
+      GetPointer<function_decl>(node_fun)->static_flag = false;
+
 }
 
 void DiscrepancyAnalysisCWriter::WriteBuiltinWaitCall()
