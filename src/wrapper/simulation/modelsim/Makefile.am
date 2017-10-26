@@ -5,6 +5,7 @@ lib_modelsimwrapper_la_CPPFLAGS = \
     -I$(top_srcdir)/src \
     -I$(top_srcdir)/src/constants \
     -I$(top_srcdir)/src/wrapper/simulation \
+    -I$(top_srcdir)/src/design_flows/backend/ToHDL \
     -I$(top_srcdir)/src/utility \
     -I$(BOOST_DIR) $(all_includes)
 
