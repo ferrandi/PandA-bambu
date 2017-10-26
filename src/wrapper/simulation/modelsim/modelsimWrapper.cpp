@@ -63,6 +63,10 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>
 
+/// include to understand which backend is used
+#include "language_writer.hpp"
+
+
 #include <fstream>
 #include <unistd.h>
 #include <cerrno>
@@ -117,7 +121,7 @@ void modelsimWrapper::GenerateScript(std::ostringstream& script, const std::stri
    THROW_ASSERT(file_list.size(), "File list is empty");
    std::string MODELSIM_OPTIMIZER_FLAGS_DEF;
 
-   if(STR(MODELSIM_OPTIMIZER_FLAGS) != "0")
+   if(STR(MODELSIM_OPTIMIZER_FLAGS) != "0" && (!Param->isOption(OPT_writer_language) || static_cast<HDLWriter_Language>(Param->getOption<unsigned int>(OPT_writer_language)) != HDLWriter_Language::VHDL))
       MODELSIM_OPTIMIZER_FLAGS_DEF = STR(MODELSIM_OPTIMIZER_FLAGS);
    else
       MODELSIM_OPTIMIZER_FLAGS_DEF = "";
