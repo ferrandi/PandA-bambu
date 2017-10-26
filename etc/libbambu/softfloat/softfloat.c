@@ -2390,7 +2390,224 @@ static __float32 __float32_mul( __float32 a, __float32 b )
 | by the corresponding value `b'.  The operation is performed according to the
 | IEC/IEEE Standard for Binary Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
+#if 1
 
+#ifndef UNROLL_FACTOR_F32_DIV
+#define UNROLL_FACTOR_F32_DIV 1
+#endif
+
+#define LOOP_BODY_F32_DIV(z,n,data) \
+   current_sel = (((current >> 22) & 15) << 1) | MsbB;\
+   q_i0 = (0xF1FFFF6C >> current_sel)&1;\
+   q_i1 = (0xFE00FFD0 >> current_sel)&1;\
+   q_i2 = SELECT_BIT(current_sel, 4);\
+   nq_i2 = !q_i2;\
+   /*q_i = tableR4[current_sel];*/\
+   q_i = (q_i2<<2)|(q_i1<<1)|q_i0;\
+   positive |= (q_i1<<1)|q_i0;\
+   positive <<= 2;\
+   negative |= q_i2 << 1;\
+   negative <<= 2;\
+   switch(q_i)\
+   {\
+      case 1:\
+         w = nbSig;\
+         break;\
+      case 7:\
+         w = bSig;\
+         break;\
+      case 2:\
+         w = nbSigx2;\
+         break;\
+      case 6:\
+         w = bSigx2;\
+         break;\
+      case 3:\
+         w = nbSigx3;\
+         break;\
+      case 5:\
+         w = bSigx3;\
+         break;\
+      default: /*case 0: case 4:*/\
+         w = 0;\
+         break;\
+   }\
+   current = (current << 1)+w;\
+   BIT_RESIZE(current,25);\
+   current <<= 1;
+
+
+static __float32 __float32_div( __float32 a, __float32 b )
+{
+    //static const __bits8 tableR4[]= {0, 0, 1, 1, 2, 1, 3, 2, 3, 3, 3, 3, 3, 3, 3, 3, 5, 5, 5, 5, 5, 5, 5, 5, 5, 6, 6, 6, 7, 7, 7, 7};
+    VOLATILE_DEF _Bool aSign, bSign, zSign, q_i2, q_i1, q_i0, nq_i2;
+    VOLATILE_DEF _Bool MsbB=SELECT_BIT(b,22), correction;
+    VOLATILE_DEF __int16 aExp, bExp, zExp;
+    VOLATILE_DEF __bits32 aSig, bSig, nbSig, bSigx2, nbSigx2, zSig1, zSig0;
+    VOLATILE_DEF __bits64 zExpSig;
+    VOLATILE_DEF __bits32 bSigx3, nbSigx3, current, w, positive=0, negative=0;
+    VOLATILE_DEF __bits8 current_sel, q_i, index;
+    VOLATILE_DEF _Bool LSB_bit, Guard_bit, Round_bit, round;
+
+
+    aSig = __extractFloat32Frac( a );
+    aExp = __extractFloat32Exp( a );
+    aSign = __extractFloat32Sign( a );
+    bSig = __extractFloat32Frac( b );
+    bExp = __extractFloat32Exp( b );
+    bSign = __extractFloat32Sign( b );
+    zSign = aSign ^ bSign;
+    __bits8 a_c, b_c, z_c;
+    _Bool a_c_zero, b_c_zero, a_c_inf, b_c_inf, a_c_nan, b_c_nan, a_c_normal, b_c_normal;
+    a_c_zero = aExp==0 /*&& aSig==0*/;
+    a_c_inf = aExp==0xFF && aSig==0;
+    a_c_nan = aExp==0xFF && aSig!=0;
+    a_c_normal = aExp!=0 && aExp!=0xFF;
+    a_c = ((a_c_zero<<1|a_c_zero) & FP_CLS_ZERO)|((a_c_normal<<1|a_c_normal) & FP_CLS_NORMAL)|((a_c_inf<<1|a_c_inf) & FP_CLS_INF)|((a_c_nan<<1|a_c_nan) & FP_CLS_NAN);
+
+    b_c_zero = bExp==0 && bSig==0;
+    b_c_inf = bExp==0xFF && bSig==0;
+    b_c_nan = bExp==0xFF && bSig!=0;
+    b_c_normal = bExp!=0 && bExp!=0xFF;
+    b_c = ((b_c_zero<<1|b_c_zero) & FP_CLS_ZERO)|((b_c_normal<<1|b_c_normal) & FP_CLS_NORMAL)|((b_c_inf<<1|b_c_inf) & FP_CLS_INF)|((b_c_nan<<1|b_c_nan) & FP_CLS_NAN);
+    /*
+    00 00 11
+    00 01 00
+    00 10 00
+    00 11 11
+    01 00 10
+    01 01 01
+    01 10 00
+    01 11 11
+    10 00 10
+    10 01 10
+    10 10 11
+    10 11 11
+    11 00 11
+    11 01 11
+    11 10 11
+    11 11 11
+
+     0  1  3  2
+     4  5  7  6
+    12 13 15 14
+     8  9 11 10
+
+       00 01 11 10
+    00 1  0  1  0
+    01 1  0  1  0
+    11 1  1  1  1
+    10 1  1  1  1
+    I1 = a + c'd' + cd
+
+       00 01 11 10
+    00 1  0  1  0
+    01 0  1  1  0
+    11 1  1  1  1
+    10 0  0  1  1
+    I0 = ab + cd + ac + bd + a'b'c'd'
+    */
+    z_c = ((a_c>>1|(1&(~(b_c>>1))&(~(b_c&1)))|(1&(b_c>>1)&b_c))<<1)|
+          ((1&(a_c>>1)&a_c)|(1&(b_c>>1)&b_c)|(1&(a_c>>1)&(b_c>>1))|(1&a_c&b_c)|(1&(~(a_c>>1))&(~(a_c&1))&(~(b_c>>1))&(~(b_c&1))));
+
+    aSig = aSig | 0x00800000U;
+    bSig = bSig | 0x00800000U;
+    nbSig = -bSig;
+    bSigx2 = bSig * 2;
+    nbSigx2 = -bSigx2;
+    bSigx3 = bSigx2 + bSig;
+    nbSigx3 = -bSigx3;
+    current = aSig;
+    for(index=0; index<(13/UNROLL_FACTOR_F32_DIV); ++index)
+    {
+      BOOST_PP_REPEAT(UNROLL_FACTOR_F32_DIV, LOOP_BODY_F32_DIV, index);
+    }
+    BOOST_PP_REPEAT(BOOST_PP_MOD(13,UNROLL_FACTOR_F32_DIV), LOOP_BODY_F32_DIV, index);
+#if 0
+    for(index=0; index < 13; ++index)
+    {
+        current_sel = (((current >> 22) & 15) << 1) | MsbB;
+        q_i0 = (0xF1FFFF6C >> current_sel)&1;
+        q_i1 = (0xFE00FFD0 >> current_sel)&1;
+        q_i2 = SELECT_BIT(current_sel, 4);
+        nq_i2 = !q_i2;
+        //q_i = tableR4[current_sel];
+        q_i = (q_i2<<2)|(q_i1<<1)|q_i0;
+        positive |= (q_i1<<1)|q_i0;
+        positive <<= 2;
+        negative |= q_i2 << 1;
+        negative <<= 2;
+        switch(q_i)
+        {
+           case 1:
+              w = nbSig;
+              break;
+           case 7:
+              w = bSig;
+              break;
+           case 2:
+              w = nbSigx2;
+              break;
+           case 6:
+              w = bSigx2;
+              break;
+           case 3:
+              w = nbSigx3;
+              break;
+           case 5:
+              w = bSigx3;
+              break;
+           default: /*case 0: case 4:*/
+              w = 0;
+              break;
+        }
+        current = (current << 1)+w;
+        BIT_RESIZE(current,25);
+        current <<= 1;
+    }
+#endif
+    if(current != 0)
+    {
+      positive |= 2;
+      negative |= SELECT_BIT(current,25)<<1;
+    }
+    negative <<=1;
+    BIT_RESIZE(negative,28);
+    zSig0 = positive - negative;
+    zSig0 >>= 1;
+    BIT_RESIZE(zSig0,27);
+    correction = SELECT_BIT(zSig0, 26);
+    if(correction)
+      zSig1 = SELECT_RANGE(zSig0, 25, 2)<<1|(SELECT_BIT(zSig0, 1))|(SELECT_BIT(zSig0, 0));
+    else
+      zSig1 = SELECT_RANGE(zSig0, 24, 0);
+    LSB_bit = SELECT_BIT(zSig1, 2);
+    Guard_bit = SELECT_BIT(zSig1, 1);
+    Round_bit = SELECT_BIT(zSig1, 0);
+    round = Guard_bit & (LSB_bit | Round_bit);
+    zExp = aExp - bExp + (0x7E|correction);
+    BIT_RESIZE(zExp,10);
+    zExpSig = ((zExp<<23) | (zSig1>>2))+round;
+    BIT_RESIZE(zExpSig,33);
+
+    if(z_c == FP_CLS_NORMAL)
+    {
+       if(SELECT_BIT(zExpSig,32))
+           return __packFloat32( zSign, 0, 0 );
+       else if(SELECT_BIT(zExpSig,31) || zExp==255)
+           return __packFloat32( zSign, 0xFF, 0 );
+       else
+          return (zSign<<31)| SELECT_RANGE(zExpSig, 30, 0);
+    }
+    else if(z_c == FP_CLS_ZERO)
+         return __packFloat32( zSign, 0, 0 );
+    else if(z_c == FP_CLS_NAN)
+         return (zSign | (a_c_inf&b_c_inf) | (a_c_zero&b_c_zero))<<31|0x7FC00000 | (a_c_nan ? aSig : (b_c_nan ? bSig : 0));
+    else
+         return __packFloat32( zSign, 0xFF, 0 );
+
+}
+#else
 static __float32 __float32_div( __float32 a, __float32 b )
 {
     __flag aSign, bSign, zSign;
@@ -2531,6 +2748,7 @@ I0 = ab + cd + ac + bd + a'b'c'd'
     return __roundAndPackFloat32( zSign, zExp, zSig );
 #endif
 }
+#endif
 
 /*----------------------------------------------------------------------------
 | Returns the remainder of the single-precision floating-point value `a'
