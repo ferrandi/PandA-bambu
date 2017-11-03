@@ -90,7 +90,7 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
       case(INVALIDATION_RELATIONSHIP) :
       {
          ///Not executed
-         if(GetStatus() == DesignFlowStep_Status::SUCCESS)
+         if(GetStatus() != DesignFlowStep_Status::SUCCESS)
          {
             if(GetPointer<const HLS_manager>(AppM) and GetPointer<const HLS_manager>(AppM)->get_HLS(function_id) and GetPointer<const HLS_manager>(AppM)->get_HLS(function_id)->Rsch)
             {
