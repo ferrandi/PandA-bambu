@@ -530,7 +530,7 @@ void DiscrepancyAnalysisCWriter::writePostInstructionInfo
                         {
                            std::string check_string1 = (basic_unary_operations_relation.find(oper->get_name())->second.first ? "_FPs64Mismatch_" : "_FPs32Mismatch_") +
                                                        std::string("(") + computation + ", " + var_name + "," + STR(Param->getOption<double>(OPT_max_ulp)) + ")";
-                           indented_output_stream->Append((basic_unary_operations_relation.find(oper->get_name())->second.first ? "_CheckBuiltinFPs32_" : "_CheckBuiltinFPs32_") +
+                           indented_output_stream->Append((basic_unary_operations_relation.find(oper->get_name())->second.first ? "_CheckBuiltinFPs64_" : "_CheckBuiltinFPs32_") +
                                                           std::string("(\"") + check_string0 + "\", " + check_string1 + "," + computation + "," + var_name + "," + var1 + ",0);\n");
                         }
                         else
@@ -546,7 +546,7 @@ void DiscrepancyAnalysisCWriter::writePostInstructionInfo
                         std::string check_string0 = var_name + "==" + computation;
                         std::string check_string1 = (basic_binary_operations_relation.find(oper->get_name())->second.first ? "_FPs64Mismatch_" : "_FPs32Mismatch_") +
                                                     std::string("(") + computation + ", " + var_name + "," + STR(Param->getOption<double>(OPT_max_ulp)) + ")";
-                        indented_output_stream->Append((basic_binary_operations_relation.find(oper->get_name())->second.first ? "_CheckBuiltinFPs32_" : "_CheckBuiltinFPs32_") +
+                        indented_output_stream->Append((basic_binary_operations_relation.find(oper->get_name())->second.first ? "_CheckBuiltinFPs64_" : "_CheckBuiltinFPs32_") +
                                                        std::string("(\"") + check_string0 + "\", " + check_string1 + "," + computation + "," + var_name + "," + var1 + "," + var2 + ");\n");
                      }
                   }
