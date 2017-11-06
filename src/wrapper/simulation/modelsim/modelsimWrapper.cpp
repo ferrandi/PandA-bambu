@@ -121,8 +121,8 @@ void modelsimWrapper::GenerateScript(std::ostringstream& script, const std::stri
    THROW_ASSERT(file_list.size(), "File list is empty");
    std::string MODELSIM_OPTIMIZER_FLAGS_DEF;
 
-   if(STR(MODELSIM_OPTIMIZER_FLAGS) != "0" && (!Param->isOption(OPT_writer_language) || static_cast<HDLWriter_Language>(Param->getOption<unsigned int>(OPT_writer_language)) != HDLWriter_Language::VHDL))
-      MODELSIM_OPTIMIZER_FLAGS_DEF = STR(MODELSIM_OPTIMIZER_FLAGS);
+   if(STR(MODELSIM_OPTIMIZER_FLAGS) != "0")
+         MODELSIM_OPTIMIZER_FLAGS_DEF = STR(MODELSIM_OPTIMIZER_FLAGS);
    else
       MODELSIM_OPTIMIZER_FLAGS_DEF = "";
    script << "if [ ! -d " << SIM_SUBDIR + suffix << " ]; then" << std::endl;
@@ -150,42 +150,37 @@ void modelsimWrapper::GenerateScript(std::ostringstream& script, const std::stri
    script << "sed -i 's/; AssertionFailAction = 1/AssertionFailAction = 2/g' modelsim.ini" << std::endl << std::endl;
 
    ///prepare input files
-   std::string vlog_list, vhdl_list;
    for(const auto file : file_list)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Examining " + file);
       boost::filesystem::path file_path(file);
       std::string extension = GetExtension(file_path);
       if(extension == "vhd" || extension == "vhdl" || extension == "HD" || extension == "VHDL")
-         vhdl_list += " " + file;
+      {
+         script << MODELSIM_VCOM;
+         if(Param->isOption(OPT_assert_debug) && Param->getOption<bool>(OPT_assert_debug))
+            script << std::string(" ") + MODELSIM_OPTIMIZER_FLAGS_DEF + " -lint -check_synthesis -fsmsingle -fsmverbose w -work work -2008 " << file;
+         else
+            script << std::string(" ") + " " + MODELSIM_OPTIMIZER_FLAGS_DEF + " -work work -2008 " << file;
+         script << std::endl << std::endl;
+         script << "if [ $? -ne 0 ]; then" << std::endl;
+         script << "   exit 1;" << std::endl;
+         script << "fi" << std::endl;
+      }
       else if(extension == "v" || extension == "V" || extension == "sv")
-         vlog_list += " " + file;
+      {
+         script << MODELSIM_VLOG;
+         if(Param->isOption(OPT_assert_debug) && Param->getOption<bool>(OPT_assert_debug))
+            script << std::string(" ") + MODELSIM_OPTIMIZER_FLAGS_DEF + " -lint -fsmsingle -hazards -pedanticerrors -fsmverbose w -work work " + file;
+         else
+            script << std::string(" ") + MODELSIM_OPTIMIZER_FLAGS_DEF + " -work work " + file;
+         script << std::endl << std::endl;
+         script << "if [ $? -ne 0 ]; then" << std::endl;
+         script << "   exit 1;" << std::endl;
+         script << "fi" << std::endl;
+      }
       else
          THROW_UNREACHABLE("Extension not recognized! " + file_path.string());
-   }
-   if(vhdl_list != "")
-   {
-      script << MODELSIM_VCOM;
-      if(Param->isOption(OPT_assert_debug) && Param->getOption<bool>(OPT_assert_debug))
-         script << std::string(" ") + MODELSIM_OPTIMIZER_FLAGS_DEF + " -lint -check_synthesis -fsmsingle -fsmverbose w -work work -2008 " << vhdl_list;
-      else
-         script << std::string(" ") + " " + MODELSIM_OPTIMIZER_FLAGS_DEF + " -work work -2008 " << vhdl_list;
-      script << std::endl << std::endl;
-      script << "if [ $? -ne 0 ]; then" << std::endl;
-      script << "   exit 1;" << std::endl;
-      script << "fi" << std::endl;
-   }
-   if(vlog_list != "")
-   {
-      script << MODELSIM_VLOG;
-      if(Param->isOption(OPT_assert_debug) && Param->getOption<bool>(OPT_assert_debug))
-         script << std::string(" ") + MODELSIM_OPTIMIZER_FLAGS_DEF + " -lint -fsmsingle -hazards -pedanticerrors -fsmverbose w -work work " + vlog_list;
-      else
-         script << std::string(" ") + MODELSIM_OPTIMIZER_FLAGS_DEF + " -work work " + vlog_list;
-      script << std::endl << std::endl;
-      script << "if [ $? -ne 0 ]; then" << std::endl;
-      script << "   exit 1;" << std::endl;
-      script << "fi" << std::endl;
    }
 
    /// add modelsim license variable
