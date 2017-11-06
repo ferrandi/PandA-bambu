@@ -1,13 +1,10 @@
 #!/usr/bin/python
 
 import argparse
-import array
 import datetime
 import distutils.spawn
-import fnmatch
 import logging
 import os
-import pickle
 import re
 import shlex
 import shutil
@@ -16,6 +13,10 @@ import subprocess
 import sys
 import threading
 import xml.dom.minidom
+from collections import deque
+
+line_index = 0
+failure = False
 
 def positive_integer(value):
     pos_int = int(value)
@@ -38,7 +39,7 @@ def GetChildren(parent_pid):
     ret = set()
     ps_command = subprocess.Popen("ps -o pid --ppid %d --noheaders" % parent_pid, shell=True, stdout=subprocess.PIPE)
     ps_output = ps_command.stdout.read()
-    retcode = ps_command.wait()
+    ps_command.wait()
     for pid_str in ps_output.split("\n")[:-1]:
         ret.add(int(pid_str))
     return ret
@@ -55,12 +56,12 @@ def execute_tests(named_list,thread_index):
     global total_benchmark
     global line_index
     global children
-    global killing
+    global failure
     lines = open(named_list).readlines()
     with lock:
         local_index = line_index
         line_index += 1
-    while local_index < len(lines) and not killing:
+    while local_index < len(lines) and not (failure and args.stop):
         cwd = ComputeDirectory(lines[local_index])
         failed_output_file_name = os.path.join(cwd, args.tool + "_failed_output")
         if os.path.exists(failed_output_file_name):
@@ -102,15 +103,16 @@ def execute_tests(named_list,thread_index):
         output_file.flush()
         return_value = -1
         with lock_creation_destruction:
-            if not killing:
+            if not (failure and args.stop):
                 children[thread_index] = subprocess.Popen(local_command, stderr=output_file, stdout=output_file, cwd=cwd, shell=True, executable="/bin/bash")
         try:
             return_value = children[thread_index].wait()
         except:
             pass
         with lock_creation_destruction:
-            if return_value != 0 and args.stop:
-                killing = True
+            if return_value != 0 and (args.stop or args.returnfail):
+                failure = True
+            if failure and args.stop:
                 for local_thread_index in range(n_jobs):
                     if children[local_thread_index] != None:
                         if children[local_thread_index].poll() == None:
@@ -139,7 +141,7 @@ def execute_tests(named_list,thread_index):
                 tool_results_string = tool_results_string + " *** " + slack_tag.attributes["value"].value + "ns"
             tool_results_file.write(tool_results_string)
             tool_results_file.close()
-        if not killing or (return_value != -9 and return_value != 0):
+        if not (failure and args.stop) or (return_value != -9 and return_value != 0):
             if return_value != 0:
                 shutil.copy(output_file_name, str(os.path.join(os.path.dirname(output_file_name), args.tool + "_failed_output")))
             with lock:
@@ -187,7 +189,7 @@ def SearchCFiles(directory):
     for element in os.listdir(directory):
         if os.path.isdir(os.path.join(directory, element)):
             files = files.union(SearchCFiles(os.path.join(directory, element)))
-        elif element[-2:] == ".c":
+        elif (element[-2:] == ".c")  or (element[-2:] == ".C") or (element[-4:] == ".CPP") or (element[-4:] == ".cpp") or (element[-4:] == ".cxx") or (element[-3:] == ".cc") or (element[-4:] == ".c++"):
             files.add(os.path.join(directory, element))
     return files
 
@@ -287,6 +289,156 @@ def CollectResults(directory):
             return_value = subprocess.call(local_command)
         logging.info("Collected results of " + directory)
 
+
+#Create Junit Body
+def CreateJunitBody(directory,ju_file):
+    #Skip if this is a leaf directory
+    if os.path.exists(os.path.join(directory, args.tool + "_return_value")) or os.listdir(directory) == []:
+        return
+    subdirs = [s for s in sorted(os.listdir(directory)) if os.path.isdir(os.path.join(directory,s)) and s != "panda-temp" and s != "HLS_output"]
+    print_testsuite = False
+    for subdir in subdirs:
+        if os.path.exists(os.path.join(directory, subdir, args.tool + "_return_value")):
+            print_testsuite = True
+        CreateJunitBody(os.path.join(directory, subdir),ju_file)
+    failed_counter_file_name = os.path.join(abs_path, "failed_counter")
+    failed_counter = "0"
+    if os.path.exists(failed_counter_file_name):
+        failed_counter_file = open(failed_counter_file_name)
+        failed_counter = failed_counter_file.read()
+
+    if print_testsuite and len(subdirs) > 0:
+        ju_file.write("  <testsuite disabled=\"0\" errors=\"0\" failures=\""+failed_counter+"\" name=\""+directory+"\" tests=\""+ str(len(subdirs)) + "\" timestamp=\"" + str(datetime.datetime.now()) + "\">\n")
+    for subdir in subdirs:
+        if os.path.exists(os.path.join(directory, subdir, args.tool + "_return_value")):
+            return_value_file_name = os.path.join(directory, subdir, args.tool + "_return_value")
+            return_value_file = open(return_value_file_name)
+            return_value = return_value_file.read()
+            return_value_file.close()
+            args_file = open(os.path.join(directory, subdir, "args"))
+            command_args = args_file.readlines()[0]
+            command_args = command_args.replace(abs_benchmarks_root + "/", "")
+            args_file.close()
+            if return_value == "0":
+                ju_file.write("    <testcase classname=\"PandA-bambu-tests\" name=\"" + command_args.replace("\\", "") + "\">\n")
+            else:
+                if return_value == "124":
+                    ju_file.write("    <testcase classname=\"PandA-bambu-tests\" name=\"" + command_args.replace("\\", "") + "\">\n")
+                    ju_file.write("      <failure type=\"FAILURE(Timeout)\"></failure>\n")
+                    ju_file.write("      <system-out>\n")
+                    ju_file.write("<![CDATA[\n")
+                else:
+                    ju_file.write("    <testcase classname=\"PandA-bambu-tests\" name=\"" + command_args.replace("\\", "") + "\">\n")
+                    ju_file.write("      <failure type=\"FAILURE\"></failure>\n")
+                    ju_file.write("      <system-out>\n")
+                    ju_file.write("<![CDATA[\n")
+                with open(os.path.join(directory, args.tool + "_failed_output")) as f:
+                    for line in deque(f, maxlen=15):
+                        ju_file.write(line)
+                ju_file.write("]]>\n")
+                ju_file.write("      </system-out>\n")
+            ju_file.write("    </testcase>\n")
+    if print_testsuite and len(subdirs) > 0:
+        ju_file.write("  </testsuite>\n")
+
+
+#Create PerfPublisher Body
+def CreatePerfPublisherBody(directory,pp_file):
+    #Skip if this is a leaf directory
+    if os.path.exists(os.path.join(directory, args.tool + "_return_value")) or os.listdir(directory) == []:
+        return
+    subdirs = [s for s in sorted(os.listdir(directory)) if os.path.isdir(os.path.join(directory,s)) and s != "panda-temp" and s != "HLS_output"]
+    print_testsuite = False
+    for subdir in subdirs:
+        if os.path.exists(os.path.join(directory, subdir, args.tool + "_return_value")):
+            print_testsuite = True
+        CreatePerfPublisherBody(os.path.join(directory, subdir),pp_file)
+
+    for subdir in subdirs:
+        if os.path.exists(os.path.join(directory, subdir, args.tool + "_return_value")):
+            pp_file.write("  <test name=\""+ str(directory)+"/"+ str(subdir) +"\" executed=\"yes\">\n")
+            pp_file.write("    <result>\n")
+            return_value_file_name = os.path.join(directory, subdir, args.tool + "_return_value")
+            return_value_file = open(return_value_file_name)
+            return_value = return_value_file.read()
+            return_value_file.close()
+            args_file = open(os.path.join(directory, subdir, "args"))
+            command_args = args_file.readlines()[0]
+            command_args = command_args.replace(abs_benchmarks_root + "/", "")
+            args_file.close()
+            if return_value == "0":
+                pp_file.write("      <success passed=\"yes\" state=\"100\" hasTimedOut=\"false\"/>\n")
+                cycles_tag = ""
+                areatime_tag = ""
+                slice_tag = ""
+                sliceluts_tag = ""
+                registers_tag = ""
+                dsps_tag = ""
+                brams_tag = ""
+                period_tag = ""
+                dsps_tag = ""
+                slack_tag = ""
+                frequency_tag = ""
+                HLS_execution_time_tag = ""
+                if os.path.exists(os.path.join(directory, subdir, args.tool + "_results_0.xml")):
+                    xml_document = xml.dom.minidom.parse(os.path.join(directory, subdir, args.tool + "_results_0.xml"))
+                    if len(xml_document.getElementsByTagName("CYCLES")) > 0:
+                        cycles_tag = str(xml_document.getElementsByTagName("CYCLES")[0].attributes["value"].value)
+                    if len(xml_document.getElementsByTagName("AREAxTIME")) > 0:
+                        areatime_tag = str(xml_document.getElementsByTagName("AREAxTIME")[0].attributes["value"].value)
+                    if len(xml_document.getElementsByTagName("SLICE")) > 0:
+                        slice_tag = str(xml_document.getElementsByTagName("SLICE")[0].attributes["value"].value)
+                    if len(xml_document.getElementsByTagName("SLICE_LUTS")) > 0:
+                        sliceluts_tag = str(xml_document.getElementsByTagName("SLICE_LUTS")[0].attributes["value"].value)
+                    if len(xml_document.getElementsByTagName("REGISTERS")) > 0:
+                        registers_tag = str(xml_document.getElementsByTagName("REGISTERS")[0].attributes["value"].value)
+                    if len(xml_document.getElementsByTagName("DSPS")) > 0:
+                        dsps_tag = str(xml_document.getElementsByTagName("DSPS")[0].attributes["value"].value)
+                    if len(xml_document.getElementsByTagName("BRAMS")) > 0:
+                        brams_tag = str(xml_document.getElementsByTagName("BRAMS")[0].attributes["value"].value)
+                    if len(xml_document.getElementsByTagName("PERIOD")) > 0:
+                        period_tag = str(xml_document.getElementsByTagName("PERIOD")[0].attributes["value"].value)
+                    if len(xml_document.getElementsByTagName("CLOCK_SLACK")) > 0:
+                        slack_tag = str(xml_document.getElementsByTagName("CLOCK_SLACK")[0].attributes["value"].value)
+                    if len(xml_document.getElementsByTagName("FREQUENCY")) > 0:
+                        frequency_tag = str(xml_document.getElementsByTagName("FREQUENCY")[0].attributes["value"].value)
+                    if len(xml_document.getElementsByTagName("HLS_execution_time")) > 0:
+                        HLS_execution_time_tag = str(xml_document.getElementsByTagName("HLS_execution_time")[0].attributes["value"].value)
+
+                if cycles_tag != "":
+                    pp_file.write("      <performance unit=\"cycles\" mesure=\""+ cycles_tag + "\" isRelevant=\"true\"/>\n")
+                if HLS_execution_time_tag != "":
+                    pp_file.write("      <executiontime unit=\"s\" mesure=\""+ HLS_execution_time_tag + "\" isRelevant=\"true\"/>\n")
+
+                if areatime_tag != "" or slice_tag != "" or sliceluts_tag != "" or registers_tag != "" or dsps_tag != "" or brams_tag != "" or period_tag != "" or  dsps_tag != "" or slack_tag != "" or frequency_tag != "":
+                    pp_file.write("      <metrics>\n")
+                    if areatime_tag != "":
+                        pp_file.write("        <areatime unit=\"lutxns\" mesure=\""+ areatime_tag + "\" isRelevant=\"true\"/>\n")
+                    if slice_tag != "":
+                        pp_file.write("        <slices unit=\"ns\" mesure=\""+ slice_tag + "\" isRelevant=\"true\"/>\n")
+                    if sliceluts_tag != "":
+                        pp_file.write("        <sliceluts unit=\"slice\" mesure=\""+ sliceluts_tag + "\" isRelevant=\"true\"/>\n")
+                    if registers_tag != "":
+                        pp_file.write("        <registers unit=\"registers\" mesure=\""+ registers_tag + "\" isRelevant=\"true\"/>\n")
+                    if dsps_tag != "":
+                        pp_file.write("        <dsps unit=\"dsp\" mesure=\""+ dsps_tag + "\" isRelevant=\"true\"/>\n")
+                    if brams_tag != "":
+                        pp_file.write("        <brams unit=\"bram\" mesure=\""+ brams_tag + "\" isRelevant=\"true\"/>\n")
+                    if period_tag != "":
+                        pp_file.write("        <period unit=\"ns\" mesure=\""+ period_tag + "\" isRelevant=\"true\"/>\n")
+                    if slack_tag != "":
+                        pp_file.write("        <slack unit=\"ns\" mesure=\""+ slack_tag + "\" isRelevant=\"true\"/>\n")
+                    if frequency_tag != "":
+                        pp_file.write("        <frequency unit=\"MHz\" mesure=\""+ frequency_tag + "\" isRelevant=\"true\"/>\n")
+                    pp_file.write("      </metrics>\n")
+            else:
+                if return_value == "124":
+                    pp_file.write("      <success passed=\"no\" state=\"0\" hasTimedOut=\"true\"/>\n")
+                else:
+                    pp_file.write("      <success passed=\"no\" state=\"0\" hasTimedOut=\"false\"/>\n")
+            pp_file.write("    </result>\n")
+            pp_file.write("  </test>\n")
+
 parser = argparse.ArgumentParser(description="Performs panda tests", fromfile_prefix_chars='@')
 parser.add_argument("files", help="The files to be tested: they can be configuration files, directories containing benchmarks or source code files.", nargs='*', action="append")
 parser.add_argument('-l', "--benchmarks_list", help="The file containing the list of tests to be performed", nargs='*', action="append")
@@ -304,11 +456,14 @@ parser.add_argument("--table", help="Print the results in tex format", default="
 parser.add_argument("--tool", help="The tool to be tested", default="bambu")
 parser.add_argument("--ulimit", help="The ulimit options", default="-f 2097152 -v 8388608 -s 16384")
 parser.add_argument("--stop", help="Stop the execution on first error (default=false)", default=False, action="store_true")
+parser.add_argument("--returnfail", help="Return FAILURE in case at least one test fails (default=false)", default=False, action="store_true")
 parser.add_argument("--mail", help="Send a mail with the result")
 parser.add_argument("--name", help="Set the name of this regression (default=Bambu regression)", nargs='*', action='append')
 parser.add_argument("--no-clean", help="Do not clean produced files", default=False, action="store_true")
 parser.add_argument("--restart", help="Restart last execution (default=false)", default=False, action="store_true")
 parser.add_argument("--script", help="Set the bash script in the generated tex", default="")
+parser.add_argument("--junitdir", help="Set the JUnit directory", default="")
+parser.add_argument("--perfpublisherdir", help="Set the PerfPublisher directory", default="")
 
 args = parser.parse_args()
 n_jobs = args.j # set this, because it will be overwritten by the parse of modified_argv
@@ -323,8 +478,8 @@ modified_argv.append(sys.argv[0])
 abs_configuration_dir=""
 for arg in sys.argv[1:]:
     if arg in args.files[0]:
-        #.c file
-        if arg[-2:] == ".c":
+        #.c/c++ file
+        if (arg[-2:] == ".c") or (arg[-2:] == ".C") or (arg[-4:] == ".CPP") or (arg[-4:] == ".cpp") or (arg[-4:] == ".cxx") or (arg[-3:] == ".cc") or (arg[-4:] == ".c++"):
             modified_argv.append(arg)
         #Check if it is a directory
         elif os.path.exists(arg) and os.path.isdir(arg):
@@ -349,6 +504,32 @@ if os.path.exists(args.output) and not args.restart:
     logging.error("Output directory " + args.output + " already exists. Please remove it or specify a different one with -o")
     sys.exit(1)
 
+#Check if JUnit dir exist
+if args.junitdir != "" and not os.path.exists(args.junitdir):
+    os.mkdir(args.junitdir)
+#Check if PerfPublisher dir exist
+if args.perfpublisherdir != "" and not os.path.exists(args.perfpublisherdir):
+    os.mkdir(args.perfpublisherdir)
+#compute JUnit file name
+junit_file_name =  ""
+if args.junitdir != "":
+    junit_index = 0
+    junit_file_name = os.path.abspath(os.path.join(args.junitdir, "Junit_report"+str(junit_index)+".xml"))
+    while os.path.isfile(junit_file_name) :
+        junit_index = junit_index + 1
+        junit_file_name = os.path.abspath(os.path.join(args.junitdir, "Junit_report"+str(junit_index)+".xml"))
+#compute PerfPublisher file name
+perfpublisher_name =  ""
+perfpublisher_file_name =  ""
+if args.perfpublisherdir != "":
+    perfpublisher_index = 0
+    perfpublisher_name =  "PerfPublisher_report"+str(perfpublisher_index)
+    perfpublisher_file_name = os.path.abspath(os.path.join(args.perfpublisherdir, perfpublisher_name+".xml"))
+    while os.path.isfile(perfpublisher_file_name) :
+        perfpublisher_index = perfpublisher_index + 1
+        perfpublisher_name =  "PerfPublisher_report"+str(perfpublisher_index)
+        perfpublisher_file_name = os.path.abspath(os.path.join(args.perfpublisherdir, perfpublisher_name+".xml"))
+
 #Create the folder and enter in it
 abs_path = os.path.abspath(args.output)
 
@@ -359,13 +540,14 @@ if not args.restart:
     os.mkdir(abs_path)
 os.chdir(abs_path)
 
+
 #Skipping if all benchmarks already pass
 if args.restart:
     failed_counter_file_name = os.path.join(abs_path, "failed_counter")
     if os.path.exists(failed_counter_file_name):
         failed_counter_file = open(failed_counter_file_name)
         failed_counter = failed_counter_file.read()
-        if failed_counter == "0":
+        if failed_counter == "0" and args.junitdir == "" and args.perfpublisherdir == "":
             logging.info("Already pass")
             sys.exit(0)
 
@@ -502,8 +684,8 @@ if not args.restart:
     files_list = []
     #Create temp list with arg
     for arg in args.files[0]:
-        #.c file
-        if arg[-2:] == ".c":
+        #.c/.c++ file
+        if (arg[-2:] == ".c") or (arg[-2:] == ".C") or (arg[-4:] == ".CPP") or (arg[-4:] == ".cpp") or (arg[-4:] == ".cxx") or (arg[-3:] == ".cc") or (arg[-4:] == ".c++"):
             files_list.append(arg)
         #Check if it is a directory
         elif os.path.exists(arg) and os.path.isdir(arg):
@@ -598,7 +780,7 @@ if not args.restart:
         else:
             expanded_list.write(first_parameter)
             for other_parameter in other_parameters:
-                if (other_parameter[-2:] == ".c" or other_parameter[-4:] == ".xml") and other_parameter[0] != '\\':
+                if ((other_parameter[-2:] == ".c") or (other_parameter[-2:] == ".C") or (other_parameter[-4:] == ".CPP") or (other_parameter[-4:] == ".cpp") or (other_parameter[-4:] == ".cxx") or (other_parameter[-3:] == ".cc") or (other_parameter[-4:] == ".c++") or other_parameter[-4:] == ".xml") and other_parameter[0] != '\\':
                     if other_parameter[0] == '/':
                         expanded_list.write(" " + other_parameter)
                     else:
@@ -686,10 +868,8 @@ lock = threading.RLock()
 lock_creation_destruction = threading.RLock()
 passed_benchmark = 0
 total_benchmark = 0
-line_index = 0
 threads = []
 children = [None] * n_jobs
-killing = False
 for thread_index in range(n_jobs):
     threads.insert(thread_index, threading.Thread(target=execute_tests, args=(named_list_name, thread_index)))
     threads[thread_index].daemon=True
@@ -702,7 +882,7 @@ try:
             threads[thread_index].join(100)
 except KeyboardInterrupt:
     logging.error("SIGINT received")
-    killing = True
+    failure = True
     for local_thread_index in range(n_jobs):
         if children[local_thread_index] != None:
            if children[local_thread_index].poll() == None:
@@ -714,6 +894,22 @@ except KeyboardInterrupt:
 
 #Collect results
 CollectResults(abs_path)
+
+#In case, it create the JUnit file
+if args.junitdir != "":
+     junit_file = open(junit_file_name, "w")
+     junit_file.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
+     junit_file.write("<testsuites disabled=\"0\" errors=\"0\" failures=\""+str(total_benchmark - passed_benchmark)+"\" name=\"" + abs_path + "\" tests=\"" + str(total_benchmark) + "\">\n")
+     CreateJunitBody(abs_path,junit_file)
+     junit_file.write("</testsuites>\n")
+
+#In case, it create the PerfPublisher file
+if args.perfpublisherdir != "":
+     perfpublisher_file = open(perfpublisher_file_name, "w")
+     perfpublisher_file.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
+     perfpublisher_file.write("<report name=\""+ perfpublisher_name + "\" categ=\"PandA-Report\">\n")
+     CreatePerfPublisherBody(abs_path,perfpublisher_file)
+     perfpublisher_file.write("</report>\n")
 
 #Prepare final report
 if args.tool == "bambu" or args.tool == "zebu":
@@ -746,7 +942,7 @@ if args.tool == "bambu" or args.tool == "zebu":
 if args.mail != None:
     outcome = ""
     if args.stop:
-        if killing:
+        if failure:
             outcome = "FAILURE"
         else:
             outcome = "SUCCESS"
@@ -760,6 +956,6 @@ if args.mail != None:
         full_name = "Bambu"
     local_command = "cat " + report_file_name + " | mutt -s \"" + full_name + ": " + outcome + "\" " + args.mail
     subprocess.call(local_command, shell=True)
-if killing:
+if failure:
     sys.exit(1)
 sys.exit(0)

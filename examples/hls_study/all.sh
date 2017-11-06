@@ -1,6 +1,6 @@
 #!/bin/bash
-script=`readlink -e $0`
-root_dir=`dirname $script`
+script=$(readlink -e $0)
+root_dir=$(dirname $script)
 $root_dir/5SGXEA7N2F45C1_custom.sh $@
 return_value=$?
 if test $return_value != 0; then
