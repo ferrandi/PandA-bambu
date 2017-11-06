@@ -2952,11 +2952,6 @@ void BambuParameter::CheckParameters()
       THROW_ERROR("Experimental setup not recognized: " + getOption<std::string>(OPT_experimental_setup));
    }
 
-   if(getOption<HLSFlowStep_Type>(OPT_scheduling_algorithm) == HLSFlowStep_Type::SDC_SCHEDULING)
-   {
-      setOption(OPT_estimate_logic_and_connections, true);
-   }
-
    add_bambu_library("bambu");
 
    if(isOption(OPT_soft_float) && getOption<bool>(OPT_soft_float))

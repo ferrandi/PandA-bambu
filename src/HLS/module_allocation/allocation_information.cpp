@@ -1692,7 +1692,6 @@ std::pair<double,double> AllocationInformation::GetTimeLatency(const unsigned in
          fu_type = GetFuType(time_operation_index);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Functional unit name is " + get_fu_name(fu_type).first);
       double connection_contribute = 0;
-      bool estimate_net_logic_delays = parameters->getOption<bool>(OPT_estimate_logic_and_connections);
       ///The operation execution  time
       double actual_execution_time = get_execution_time(fu_type, time_operation_index);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Initial execution time " + STR(actual_execution_time));
@@ -1703,10 +1702,6 @@ std::pair<double,double> AllocationInformation::GetTimeLatency(const unsigned in
          op_execution_time = epsilon;
       /// try to take into account the controller delay
       const auto tn = TreeM->get_tree_node_const(time_operation_index);
-      if(not ignore_connection and estimate_net_logic_delays and (GetPointer<const gimple_multi_way_if>(tn) || GetPointer<const gimple_switch>(tn) || GetPointer<const gimple_cond>(tn)))
-      {
-         op_execution_time += estimate_controller_delay_fb();
-      }
 
       ///The stage period
       double actual_stage_period;
@@ -2798,17 +2793,33 @@ double AllocationInformation::GetConnectionTime(const vertex first_operation, co
 
 double AllocationInformation::GetConnectionTime(const unsigned int first_operation, const unsigned int second_operation, const AbsControlStep cs) const
 {
-
+   bool estimate_net_logic_delays = parameters->getOption<bool>(OPT_estimate_logic_and_connections);
+   if(not estimate_net_logic_delays)
+   {
+      return 0;
+   }
    if(second_operation == 0)
    {
+      if(first_operation == ENTRY_ID or first_operation == EXIT_ID)
+      {
+         return 0.0;
+      }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Get end delay of " + STR(first_operation));
       double end_delay = 0.0;
-      double phi_delay = GetPhiConnectionLatency(first_operation);
-      if(phi_delay > end_delay)
-         end_delay = phi_delay;
-      double to_dsp_register_delay = GetToDspRegisterDelay(first_operation);
-      if(to_dsp_register_delay > end_delay)
-         end_delay = to_dsp_register_delay;
+      const auto first_operation_tn = TreeM->CGetTreeNode(first_operation);
+      if(GetPointer<const gimple_multi_way_if>(first_operation_tn) or GetPointer<const gimple_switch>(first_operation_tn) or GetPointer<const gimple_cond>(first_operation_tn))
+      {
+         end_delay = estimate_controller_delay_fb();
+      }
+      else
+      {
+         double phi_delay = GetPhiConnectionLatency(first_operation);
+         if(phi_delay > end_delay)
+            end_delay = phi_delay;
+         double to_dsp_register_delay = GetToDspRegisterDelay(first_operation);
+         if(to_dsp_register_delay > end_delay)
+            end_delay = to_dsp_register_delay;
+      }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Got end delay of " + STR(first_operation) + ": " + STR(end_delay));
       return end_delay;
    }
