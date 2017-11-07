@@ -1,6 +1,6 @@
 #!/bin/bash
-script=`readlink -e $0`
-root_dir=`dirname $script`
+script=$(readlink -e $0)
+root_dir=$(dirname $script)
 export PATH=../../src:../../../src:/opt/panda/bin:$PATH
 
 BAMBU_OPTION="-v4 -lm -fsingle-precision-constant --evaluation -Os --device-name=EP2C70F896C6-R -ffast-math --experimental-setup=BAMBU"

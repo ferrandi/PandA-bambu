@@ -1,6 +1,6 @@
 #!/bin/bash
-script=`readlink -e $0`
-root_dir=`dirname $script`
+script=$(readlink -e $0)
+root_dir=$(dirname $script)
 export PATH=../../src:../../../src:/opt/panda/bin:$PATH
 
 rm -rf unconstrained_synth_xilinx_v5110_ise

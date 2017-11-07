@@ -56,7 +56,7 @@ fi
 AM_PO_SUBDIRS
 
 # we need bison instead of yacc
-YACC_TRIMMED=`echo ${YACC}| sed 's/-y//;s/ //'`
+YACC_TRIMMED=$(echo ${YACC}| sed 's/-y//;s/ //')
 if test ${YACC_TRIMMED} != bison; then
   AC_MSG_ERROR(bison is required)
 fi
@@ -66,7 +66,7 @@ if test "$LEX" != flex; then
 fi
 #now we take care of the different versions of bison
 bison_27=no
-BISON_VERSION=`${YACC} -V | head -n1 | awk '{print $4}'`
+BISON_VERSION=$(${YACC} -V | head -n1 | awk '{print $4}')
 AS_VERSION_COMPARE(${BISON_VERSION}, "2.7", bison_27=no, bison_27=yes, bison_27=yes)
 if test "$bison_27" = yes; then
   AC_DEFINE(HAVE_BISON_2_7_OR_GREATER, 1, "Define yacc greater or equal than 2.7")
@@ -74,7 +74,7 @@ fi
 AM_CONDITIONAL(BISON_2_7_OR_GREATER, test "x$bison_27" = xyes)
 
 #now we take care of the different versions of flex
-LEX_VERSION=`${LEX} -V`
+LEX_VERSION=$(${LEX} -V)
 AS_VERSION_COMPARE($LEX_VERSION, "2.5.34", flex_2_5_34=no, flex_2_5_34=yex, flex_2_5_34=yes)
 if test "$flex_2_5_34" = yes; then
   # This is flex >= 2.5.34
@@ -156,12 +156,12 @@ PANDA_CHECK_RPATH_FLAVOR
 
 AC_LINUX_DISTRO
 
-TOPSRCDIR=`cd $srcdir; pwd`
-BUILDDIR=`pwd`
+TOPSRCDIR=$(cd $srcdir; pwd)
+BUILDDIR=$(pwd)
 LAST_DIRECTORY=`echo "$TOPSRCDIR" | awk -F/ '{print $NF}'`
 
 
-GIT_WORKTREE_PATH=`echo $TOPSRCDIR/.git`
+GIT_WORKTREE_PATH=$(echo $TOPSRCDIR/.git)
 AC_MSG_CHECKING([if directory is a git repository])
 if test -d $GIT_WORKTREE_PATH && test -f $GIT_WORKTREE_PATH/HEAD && test -f $GIT_WORKTREE_PATH/index; then
    AC_MSG_RESULT([yes])
@@ -169,7 +169,7 @@ else
    AC_MSG_RESULT([no])
    AC_MSG_CHECKING([if directory is a git worktree])
    if test -f $TOPSRCDIR/.git; then
-      GIT_WORKTREE_PATH=`head -1 $TOPSRCDIR/.git | sed -e 's/^gitdir://g'`
+      GIT_WORKTREE_PATH=$(head -1 $TOPSRCDIR/.git | sed -e 's/^gitdir://g')
       if test -d $GIT_WORKTREE_PATH && test -f $GIT_WORKTREE_PATH/HEAD && test -f $GIT_WORKTREE_PATH/index; then
          AC_MSG_RESULT([yes])
       fi
@@ -2975,8 +2975,8 @@ if test ! -d config_headers ; then
    mkdir config_headers
 fi
 for file in `find $BUILDDIR/config_headers -name *hpp`; do
-   keyword=`grep define $file | awk '{print $2}'`
-   found=`grep $keyword $BUILDDIR/config.h.in `
+   keyword=$(grep define $file | awk '{print $2}')
+   found=$(grep $keyword $BUILDDIR/config.h.in )
    if test "x$found" = x; then
       echo "removing $file"
       rm $file

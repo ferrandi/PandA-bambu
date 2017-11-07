@@ -163,9 +163,9 @@ install :
 	  export CC=/opt/centos/devtoolset-1.1/root/usr/bin/gcc;\
 	fi;\
 	if test `cat /etc/debian_chroot` = centos_6_64; then\
-	  ../configure $(CONFIGURE_OPTIONS) --with-boost=/opt/boost/1.48.0 --with-gcc47=/opt/centos/devtoolset-1.1/root/usr/bin/gcc --prefix=`pwd`/panda_installation; \
+	  ../configure $(CONFIGURE_OPTIONS) --with-boost=/opt/boost/1.48.0 --with-gcc47=/opt/centos/devtoolset-1.1/root/usr/bin/gcc --prefix=$(pwd)/panda_installation; \
 	else\
-	  ../configure $(CONFIGURE_OPTIONS) --prefix=`pwd`/panda_installations; \
+	  ../configure $(CONFIGURE_OPTIONS) --prefix=$(pwd)/panda_installations; \
 	fi;\
 	if [ $$? != 0 ]; then\
 	  false; \

@@ -1,13 +1,10 @@
 #!/usr/bin/python
 
 import argparse
-import array
 import datetime
 import distutils.spawn
-import fnmatch
 import logging
 import os
-import pickle
 import re
 import shlex
 import shutil
@@ -17,6 +14,9 @@ import sys
 import threading
 import xml.dom.minidom
 from collections import deque
+
+line_index = 0
+failure = False
 
 def positive_integer(value):
     pos_int = int(value)
@@ -39,7 +39,7 @@ def GetChildren(parent_pid):
     ret = set()
     ps_command = subprocess.Popen("ps -o pid --ppid %d --noheaders" % parent_pid, shell=True, stdout=subprocess.PIPE)
     ps_output = ps_command.stdout.read()
-    retcode = ps_command.wait()
+    ps_command.wait()
     for pid_str in ps_output.split("\n")[:-1]:
         ret.add(int(pid_str))
     return ret
@@ -868,10 +868,8 @@ lock = threading.RLock()
 lock_creation_destruction = threading.RLock()
 passed_benchmark = 0
 total_benchmark = 0
-line_index = 0
 threads = []
 children = [None] * n_jobs
-failure = False
 for thread_index in range(n_jobs):
     threads.insert(thread_index, threading.Thread(target=execute_tests, args=(named_list_name, thread_index)))
     threads[thread_index].daemon=True
