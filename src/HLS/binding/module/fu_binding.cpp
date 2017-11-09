@@ -741,7 +741,7 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Specializing functional units");
 
    std::set<unsigned int> fu_list = this->get_allocation_list();
-   for (std::set<unsigned int>::iterator i = fu_list.begin(); i != fu_list.end(); i++)
+   for (std::set<unsigned int>::iterator i = fu_list.begin(); i != fu_list.end(); ++i)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Functional Unit: " + allocation_information->get_string_name(*i));
       if (allocation_information->is_return(*i))
@@ -1075,7 +1075,7 @@ void fu_binding::manage_memory_ports_chained(const structural_managerRef SM, con
    std::map<std::string, structural_objectRef> primary_outs;
    structural_objectRef cir_port;
    unsigned int sign_id = 0;
-   for (std::set<structural_objectRef>::iterator i = memory_modules.begin(); i != memory_modules.end(); i++)
+   for (std::set<structural_objectRef>::iterator i = memory_modules.begin(); i != memory_modules.end(); ++i)
    {
       for(unsigned int j = 0; j < GetPointer<module>(*i)->get_in_port_size(); j++)
       {
@@ -1257,9 +1257,9 @@ void fu_binding::manage_memory_ports_parallel_chained(const structural_managerRe
 {
    std::map<structural_objectRef, std::set<structural_objectRef> > primary_outs;
    structural_objectRef cir_port;
-   for (std::set<structural_objectRef>::iterator i = memory_modules.begin(); i != memory_modules.end(); i++)
+   for (std::set<structural_objectRef>::iterator i = memory_modules.begin(); i != memory_modules.end(); ++i)
    {
-      for(unsigned int j = 0; j < GetPointer<module>(*i)->get_in_port_size(); j++)
+      for(unsigned int j = 0; j < GetPointer<module>(*i)->get_in_port_size(); ++j)
       {
          structural_objectRef port_i = GetPointer<module>(*i)->get_in_port(j);
          if(GetPointer<port_o>(port_i)->get_is_memory() && (!GetPointer<port_o>(port_i)->get_is_global()) && (!GetPointer<port_o>(port_i)->get_is_extern()))
@@ -1401,7 +1401,7 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
       else
          THROW_ERROR("Unit currently not supported: " + allocation_information->get_fu_name(fu).first);
       const OpGraphConstRef data = FB->CGetOpGraph(FunctionBehavior::CFG);
-      for(std::set<vertex>::iterator op = mapped_operations.begin(); op != mapped_operations.end(); op++)
+      for(std::set<vertex>::iterator op = mapped_operations.begin(); op != mapped_operations.end(); ++op)
       {
          PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "  on BRAM = " + data->CGetOpNodeInfo(*op)->GetOperation() + " " + GET_NAME(data, *op));
          const std::vector<HLS_manager::io_binding_type>& vars = HLSMgr->get_required_values(HLS->functionId, *op);
@@ -1469,7 +1469,7 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
    {
       const OpGraphConstRef data = FB->CGetOpGraph(FunctionBehavior::CFG);
 
-      for(std::set<vertex>::iterator op = mapped_operations.begin(); op != mapped_operations.end(); op++)
+      for(std::set<vertex>::iterator op = mapped_operations.begin(); op != mapped_operations.end(); ++op)
       {
          const std::vector<HLS_manager::io_binding_type>& vars = HLSMgr->get_required_values(HLS->functionId, *op);
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Considering operation " + HLSMgr->get_tree_manager()->get_tree_node_const(data->CGetOpNodeInfo(*op)->GetNodeId())->ToString());
@@ -1711,7 +1711,7 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Resized input ports");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Resizing variables");
-   for(std::map<unsigned int, unsigned int>::iterator l = required_variables.begin(); l != required_variables.end() && !is_multi_read_cond; l++)
+   for(std::map<unsigned int, unsigned int>::iterator l = required_variables.begin(); l != required_variables.end() && !is_multi_read_cond; ++l)
    {
       unsigned int bitsize_variable = l->second;
       structural_objectRef port = fu_module->get_in_port(l->first+offset);
@@ -1750,7 +1750,7 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
    {
       const functional_unit::operation_vec & Ops = fun_unit->get_operations();
       functional_unit::operation_vec::const_iterator ops_end = Ops.end();
-      for (functional_unit::operation_vec::const_iterator ops = Ops.begin(); ops != ops_end; ops++)
+      for (functional_unit::operation_vec::const_iterator ops = Ops.begin(); ops != ops_end; ++ops)
       {
          operation* curr_op = GetPointer<operation>(*ops);
          std::string pipe_parameters_str = curr_op->pipe_parameters;
@@ -2171,7 +2171,7 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
                THROW_ERROR("expected a record_type or a union_type");
             std::vector<tree_nodeRef>::const_iterator flend = field_list->end();
             std::vector<tree_nodeRef>::const_iterator fli = field_list->begin();
-            for (; fli != flend && i != vend; i++, fli++)
+            for (; fli != flend && i != vend; ++i, ++fli)
             {
                if (i->first && GET_INDEX_NODE(i->first) != GET_INDEX_NODE(*fli))
                   break;
@@ -2189,7 +2189,7 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
             std::vector<tree_nodeRef>::const_iterator fli = field_list->begin();
             std::vector<tree_nodeRef>::const_iterator inext;
             i = co->list_of_idx_valu.begin();
-            for (; fli != flend; fli++)
+            for (; fli != flend; ++fli)
             {
                if(!GetPointer<field_decl>(GET_NODE(*fli))) continue;
                inext = fli;
@@ -2207,7 +2207,7 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
                if (i != vend && GET_INDEX_NODE(i->first) == GET_INDEX_NODE(*fli))
                {
                   write_init(TreeM, GET_NODE(i->first), GET_NODE(i->second), init_file, mem, element_precision);
-                  i++;
+                  ++i;
                }
                else
                {
@@ -2259,7 +2259,7 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
          else
          {
             std::vector<std::pair< tree_nodeRef, tree_nodeRef> >::const_iterator inext;
-            for(i = co->list_of_idx_valu.begin(); i != vend; i++)
+            for(i = co->list_of_idx_valu.begin(); i != vend; ++i)
             {
                if(is_struct and !GetPointer<field_decl>(GET_NODE(i->first))) continue;
                inext = i;

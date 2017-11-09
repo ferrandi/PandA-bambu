@@ -250,7 +250,7 @@ DesignFlowStep_Status DataDependenceComputation::ComputeDependences(const int df
    {
       THROW_UNREACHABLE("dfg graph of function " + function_name + " is not acyclic");
    }
-   catch (const std::string & msg)
+   catch (const std::string& msg)
    {
       THROW_UNREACHABLE("dfg graph of function " + function_name + " is not acyclic");
    }

@@ -105,14 +105,14 @@ void NP_functionality::xwrite(xml_element* rootnode)
 {
   xml_element* Enode = rootnode->add_child_element(get_kind_text());
   std::map< NP_functionaly_type, std::string >::const_iterator it_end = descriptions.end();
-  for(std::map< NP_functionaly_type, std::string >::const_iterator it = descriptions.begin(); it != it_end; it++)
+  for(std::map< NP_functionaly_type, std::string >::const_iterator it = descriptions.begin(); it != it_end; ++it)
     WRITE_XNVM2(NP_functionaly_typeNames[it->first], it->second, Enode);
 }
 
 void NP_functionality::print(std::ostream& os) const
 {
   std::map< NP_functionaly_type, std::string >::const_iterator it_end = descriptions.end();
-  for(std::map< NP_functionaly_type, std::string >::const_iterator it = descriptions.begin(); it != it_end; it++)
+  for(std::map< NP_functionaly_type, std::string >::const_iterator it = descriptions.begin(); it != it_end; ++it)
   {
     os << NP_functionaly_typeNames[it->first] << " " << it->second << std::endl;
   }

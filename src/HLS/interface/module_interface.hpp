@@ -70,7 +70,7 @@ class module_interface : public HLSFunctionStep
        * @param port2 is the name of the second port
        * @param sig_name is the name of the signal to be added
        */
-      void AddSignal(const structural_managerRef SM, const structural_objectRef component1, const std::string port1, const structural_objectRef component2, const std::string port2, const std::string signal_name);
+      void AddSignal(const structural_managerRef SM, const structural_objectRef component1, const std::string&port1, const structural_objectRef component2, const std::string&port2, const std::string&signal_name);
 
       /**
        * Connects two ports by adding a signal
@@ -80,7 +80,7 @@ class module_interface : public HLSFunctionStep
        * @param component2 is the second component
        * @param port2 is the name of the second port
        */
-      void AddConnection(const structural_managerRef SM, const structural_objectRef component1, const std::string port1, const structural_objectRef component2, const std::string port2);
+      void AddConnection(const structural_managerRef SM, const structural_objectRef component1, const std::string&port1, const structural_objectRef component2, const std::string&port2);
 
       /**
        * Connects a constant to a port
@@ -90,7 +90,7 @@ class module_interface : public HLSFunctionStep
        * @param constant is the value of the constant
        * @param size is the size of the port
        */
-      void AddConstant(const structural_managerRef SM, const structural_objectRef component, const std::string port, const std::string constant, const unsigned int size);
+      void AddConstant(const structural_managerRef SM, const structural_objectRef component, const std::string&port, const std::string&constant, const unsigned int size);
 
       /**
        * Connects two ports by adding a vector signal (i.e., wire)

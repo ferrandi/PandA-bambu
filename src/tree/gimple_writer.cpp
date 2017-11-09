@@ -683,7 +683,7 @@ void GimpleWriter::operator()(const call_expr* obj, unsigned int & mask)
          os << " (";
          const std::vector<tree_nodeRef> & args = obj->args;
          std::vector<tree_nodeRef>::const_iterator arg, arg_end = args.end();
-         for(arg = args.begin(); arg != arg_end; arg++)
+         for(arg = args.begin(); arg != arg_end; ++arg)
          {
             if(arg != args.begin())
                os << ", ";
@@ -701,7 +701,7 @@ void GimpleWriter::operator()(const call_expr* obj, unsigned int & mask)
          os << " (";
          const std::vector<tree_nodeRef> & args = obj->args;
          std::vector<tree_nodeRef>::const_iterator arg, arg_end = args.end();
-         for(arg = args.begin(); arg != arg_end; arg++)
+         for(arg = args.begin(); arg != arg_end; ++arg)
          {
             if(arg != args.begin())
                os << ", ";
@@ -725,7 +725,7 @@ void GimpleWriter::operator()(const aggr_init_expr* obj, unsigned int & mask)
          os << " (";
          const std::vector<tree_nodeRef> & args = obj->args;
          std::vector<tree_nodeRef>::const_iterator arg, arg_end = args.end();
-         for(arg = args.begin(); arg != arg_end; arg++)
+         for(arg = args.begin(); arg != arg_end; ++arg)
          {
             if(arg != args.begin())
                os << ", ";
@@ -743,7 +743,7 @@ void GimpleWriter::operator()(const aggr_init_expr* obj, unsigned int & mask)
          os << " (";
          const std::vector<tree_nodeRef> & args = obj->args;
          std::vector<tree_nodeRef>::const_iterator arg, arg_end = args.end();
-         for(arg = args.begin(); arg != arg_end; arg++)
+         for(arg = args.begin(); arg != arg_end; ++arg)
          {
             if(arg != args.begin())
                os << ", ";
@@ -770,7 +770,7 @@ void GimpleWriter::operator()(const gimple_call* obj, unsigned int & mask)
          os << " (";
          const std::vector<tree_nodeRef> & args = obj->args;
          std::vector<tree_nodeRef>::const_iterator arg, arg_end = args.end();
-         for(arg = args.begin(); arg != arg_end; arg++)
+         for(arg = args.begin(); arg != arg_end; ++arg)
          {
             if(arg != args.begin())
                os << ", ";
@@ -886,7 +886,7 @@ void GimpleWriter::operator()(const function_decl* obj, unsigned int & mask)
    os << " (";
    const std::vector<tree_nodeRef> & list_of_args = obj->list_of_args;
    std::vector<tree_nodeRef>::const_iterator arg, arg_end = list_of_args.end();
-   for(arg = list_of_args.begin(); arg != arg_end; arg++)
+   for(arg = list_of_args.begin(); arg != arg_end; ++arg)
    {
       if(arg != list_of_args.begin())
          os << ", ";
@@ -1106,7 +1106,7 @@ void GimpleWriter::operator()(const statement_list* obj, unsigned int & mask)
    mask = NO_VISIT;
    const std::map<unsigned int, blocRef> & list_of_block = obj->list_of_bloc;
    std::map<unsigned int, blocRef>::const_iterator block, block_end = list_of_block.end();
-   for(block = list_of_block.begin(); block != block_end; block++)
+   for(block = list_of_block.begin(); block != block_end; ++block)
    {
       if(block->first == BB_ENTRY or block->first == BB_EXIT)
       {
@@ -1251,7 +1251,7 @@ void GimpleWriter::operator()(const tree_vec* obj, unsigned int & mask)
 {
    mask = NO_VISIT;
    std::vector<tree_nodeRef>::const_iterator op, op_end = obj->list_of_op.end();
-   for(op = obj->list_of_op.begin(); op != op_end; op++)
+   for(op = obj->list_of_op.begin(); op != op_end; ++op)
    {
       if(op != obj->list_of_op.begin())
          os << ", ";
@@ -1486,7 +1486,7 @@ void GimpleWriter::operator()(const omp_for_pragma * obj, unsigned int & mask)
    os << " parallel for";
    const std::unordered_map<std::string, std::string> & clauses = obj->clauses;
    std::unordered_map<std::string, std::string>::const_iterator clause, clause_end = clauses.end();
-   for(clause = clauses.begin(); clause != clause_end; clause++)
+   for(clause = clauses.begin(); clause != clause_end; ++clause)
    {
       os << " " + clause->first + (clause->second != "" ? "(" + clause->second + ")" : "");
    }
@@ -1498,7 +1498,7 @@ void GimpleWriter::operator()(const omp_simd_pragma * obj, unsigned int & mask)
    os << " simd";
    const std::unordered_map<std::string, std::string> & clauses = obj->clauses;
    std::unordered_map<std::string, std::string>::const_iterator clause, clause_end = clauses.end();
-   for(clause = clauses.begin(); clause != clause_end; clause++)
+   for(clause = clauses.begin(); clause != clause_end; ++clause)
    {
       os << " " + clause->first + (clause->second != "" ? "(" + clause->second + ")" : "");
    }
@@ -1510,7 +1510,7 @@ void GimpleWriter::operator()(const omp_declare_simd_pragma * obj, unsigned int 
    os << " declare simd";
    const std::unordered_map<std::string, std::string> & clauses = obj->clauses;
    std::unordered_map<std::string, std::string>::const_iterator clause, clause_end = clauses.end();
-   for(clause = clauses.begin(); clause != clause_end; clause++)
+   for(clause = clauses.begin(); clause != clause_end; ++clause)
    {
       os << " " + clause->first + (clause->second != "" ? "(" + clause->second + ")" : "");
    }
@@ -1522,7 +1522,7 @@ void GimpleWriter::operator()(const omp_target_pragma * obj, unsigned int & mask
    os << " target";
    const std::unordered_map<std::string, std::string> & clauses = obj->clauses;
    std::unordered_map<std::string, std::string>::const_iterator clause, clause_end = clauses.end();
-   for(clause = clauses.begin(); clause != clause_end; clause++)
+   for(clause = clauses.begin(); clause != clause_end; ++clause)
    {
       os << " " + clause->first + (clause->second != "" ? "(" + clause->second + ")" : "");
    }
@@ -1535,7 +1535,7 @@ void GimpleWriter::operator()(const omp_critical_pragma * obj, unsigned int & ma
    os << " critical";
    const std::unordered_map<std::string, std::string> & clauses = obj->clauses;
    std::unordered_map<std::string, std::string>::const_iterator clause, clause_end = clauses.end();
-   for(clause = clauses.begin(); clause != clause_end; clause++)
+   for(clause = clauses.begin(); clause != clause_end; ++clause)
    {
       os << " " + clause->first + (clause->second != "" ? "(" + clause->second + ")" : "");
    }
@@ -1548,7 +1548,7 @@ void GimpleWriter::operator()(const omp_task_pragma * obj, unsigned int & mask)
    os << " task";
    const std::unordered_map<std::string, std::string> & clauses = obj->clauses;
    std::unordered_map<std::string, std::string>::const_iterator clause, clause_end = clauses.end();
-   for(clause = clauses.begin(); clause != clause_end; clause++)
+   for(clause = clauses.begin(); clause != clause_end; ++clause)
    {
       os << " " + clause->first + (clause->second != "" ? "(" + clause->second + ")" : "");
    }

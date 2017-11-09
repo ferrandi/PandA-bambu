@@ -163,7 +163,7 @@ class CallGraph : public graph
        * @param selector is the selector of the view
        * @param vertices is the set of vertices to be considered
        */
-      CallGraph(const CallGraphsCollectionRef call_graphs_collection, const int selector, const std::unordered_set<vertex> vertices);
+      CallGraph(const CallGraphsCollectionRef call_graphs_collection, const int selector, const std::unordered_set<vertex> &vertices);
 
       /**
        * Destructor
@@ -204,7 +204,7 @@ class CallGraph : public graph
        * Write the call graph in dot format
        * @param file_name is the name of the file to create
        */
-      void WriteDot(const std::string & file_name) const;
+      void WriteDot(const std::string& file_name) const;
 };
 ///The refcount definition for CallGraph
 typedef refcount<CallGraph> CallGraphRef;

@@ -77,13 +77,13 @@ class XMLDomParser
        * @param name is the name of the string
        * @param string_to_be_parsed is the string to be parsed
        */
-      XMLDomParser(const std::string &name, const std::string & string_to_be_parsed);
+      XMLDomParser(const std::string&name, const std::string& string_to_be_parsed);
 
       /**
        * Constructor from file
        * @param filename is the file to be parsed
        */
-      XMLDomParser(const std::string filename);
+      XMLDomParser(const std::string&filename);
 
       /** Parse an XML document from a file.
        * @param filename The path to the file.

@@ -261,7 +261,7 @@ void Loop::ComputeLandingPadExits()
 
    std::unordered_set<vertex>::iterator source, source_end;
    source_end  = belonging.end();
-   for (source = belonging.begin(); source != source_end; source++)
+   for (source = belonging.begin(); source != source_end; ++source)
    {
       vertex block = *source;
       graph::out_edge_iterator e_out_iter, e_out_iter_end;
@@ -297,7 +297,7 @@ void Loop::get_recursively_bb(std::unordered_set<vertex> & ret) const
 {
    ret.insert(blocks.begin(), blocks.end());
    std::set<LoopConstRef>::const_iterator child, child_end = children.end();
-   for (child = children.begin(); child != child_end; child++)
+   for (child = children.begin(); child != child_end; ++child)
       (*child)->get_recursively_bb(ret);
 }
 
@@ -308,7 +308,7 @@ OpVertexSet Loop::GetRecursivelyOps(const OpGraphConstRef op_graph) const
    std::unordered_set<vertex> bb_vertices;
    get_recursively_bb(bb_vertices);
    std::unordered_set<vertex>::const_iterator it, it_end = bb_vertices.end();
-   for(it = bb_vertices.begin(); it != it_end; it++)
+   for(it = bb_vertices.begin(); it != it_end; ++it)
    {
       const BBNodeInfoConstRef bb_node_info = g->CGetBBNodeInfo(*it);
       ret.insert(bb_node_info->statements_list.begin(), bb_node_info->statements_list.end());

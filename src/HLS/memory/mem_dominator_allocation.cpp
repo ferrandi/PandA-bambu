@@ -234,7 +234,7 @@ DesignFlowStep_Status mem_dominator_allocation::Exec()
       }
 
       const std::set<unsigned int>& function_mem = function_behavior->get_function_mem();
-      for(std::set<unsigned int>::const_iterator v = function_mem.begin(); v != function_mem.end(); v++)
+      for(std::set<unsigned int>::const_iterator v = function_mem.begin(); v != function_mem.end(); ++v)
       {
          if(function_behavior->is_a_state_variable(*v))
 	 {

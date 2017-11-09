@@ -177,7 +177,7 @@ DesignFlowStep_Status BasicBlocksCfgComputation::InternalExec()
    statement_list * sl = GetPointer<statement_list>(GET_NODE(fd->body));
    THROW_ASSERT(sl, "Body is not a statement_list");
    std::map<unsigned int, blocRef>::iterator it_bb, it_bb_end = sl->list_of_bloc.end();
-   for(it_bb = sl->list_of_bloc.begin(); it_bb != it_bb_end ; it_bb++)
+   for(it_bb = sl->list_of_bloc.begin(); it_bb != it_bb_end ; ++it_bb)
    {
       if (it_bb->second->number != BB_ENTRY and it_bb->second->number != BB_EXIT)
          continue;
@@ -189,7 +189,7 @@ DesignFlowStep_Status BasicBlocksCfgComputation::InternalExec()
          bbgc->connect_to_entry(exit);
       }
    }
-   for(it_bb = sl->list_of_bloc.begin(); it_bb != it_bb_end ; it_bb++)
+   for(it_bb = sl->list_of_bloc.begin(); it_bb != it_bb_end ; ++it_bb)
    {
       if (it_bb->second->number == BB_ENTRY || it_bb->second->number == BB_EXIT)
          continue;
@@ -197,7 +197,7 @@ DesignFlowStep_Status BasicBlocksCfgComputation::InternalExec()
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Added basic block with index " + boost::lexical_cast<std::string>(it_bb->second->number));
    }
    std::map<unsigned int, blocRef>::const_iterator b_end = sl->list_of_bloc.end();
-   for(std::map<unsigned int, blocRef>::const_iterator b = sl->list_of_bloc.begin(); b != b_end; b++)
+   for(std::map<unsigned int, blocRef>::const_iterator b = sl->list_of_bloc.begin(); b != b_end; ++b)
    {
       if (b->second->number == BB_ENTRY || b->second->number == BB_EXIT)
          continue;
@@ -216,7 +216,7 @@ DesignFlowStep_Status BasicBlocksCfgComputation::InternalExec()
       else
       {
          std::vector<unsigned int>::const_iterator su_end = b->second->list_of_succ.end();
-         for(std::vector<unsigned int>::const_iterator su = b->second->list_of_succ.begin(); su != su_end; su++)
+         for(std::vector<unsigned int>::const_iterator su = b->second->list_of_succ.begin(); su != su_end; ++su)
          {
             if((*su)== bloc::EXIT_BLOCK_ID)
             {
@@ -249,7 +249,7 @@ DesignFlowStep_Status BasicBlocksCfgComputation::InternalExec()
                //Map between gimple_label and index of basic block
                std::map<tree_nodeRef, unsigned int> label_to_bb;
                su_end = b->second->list_of_succ.end();
-               for(std::vector<unsigned int>::const_iterator su = b->second->list_of_succ.begin(); su != su_end; su++)
+               for(std::vector<unsigned int>::const_iterator su = b->second->list_of_succ.begin(); su != su_end; ++su)
                {
                   THROW_ASSERT(sl->list_of_bloc[*su]->CGetStmtList().size(), "Empty Basic Block");
                   const auto first = sl->list_of_bloc[*su]->CGetStmtList().front();
@@ -262,7 +262,7 @@ DesignFlowStep_Status BasicBlocksCfgComputation::InternalExec()
                THROW_ASSERT(se->op1, "case_label_exprs not found");
                tree_vec * tv = GetPointer<tree_vec>(GET_NODE(se->op1));
                std::vector<tree_nodeRef>::iterator it_end = tv->list_of_op.end();
-               for(std::vector<tree_nodeRef>::iterator it = tv->list_of_op.begin(); it != it_end; it++)
+               for(std::vector<tree_nodeRef>::iterator it = tv->list_of_op.begin(); it != it_end; ++it)
                {
                   case_label_expr * cl = GetPointer<case_label_expr>(GET_NODE(*it));
                   THROW_ASSERT(label_to_bb.find(GET_NODE(cl->got)) != label_to_bb.end(), "There is not corresponding case_label_exprs with index " + boost::lexical_cast<std::string>(GET_INDEX_NODE(cl->got)));
@@ -282,7 +282,7 @@ DesignFlowStep_Status BasicBlocksCfgComputation::InternalExec()
             {
                //Map between gimple_label and index of basic block
                su_end = b->second->list_of_succ.end();
-               for(std::vector<unsigned int>::const_iterator su = b->second->list_of_succ.begin(); su != su_end; su++)
+               for(std::vector<unsigned int>::const_iterator su = b->second->list_of_succ.begin(); su != su_end; ++su)
                {
                   bbgc->add_bb_edge_info(current, bbgc->Cget_vertex(*su), CFG_SELECTOR, *su);
                }

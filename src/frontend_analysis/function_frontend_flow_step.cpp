@@ -143,7 +143,7 @@ void FunctionFrontendFlowStep::ComputeRelationships(DesignFlowStepSet & relation
       }
    }
    std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> >::const_iterator frontend_relationship, frontend_relationship_end = frontend_relationships.end();
-   for(frontend_relationship = frontend_relationships.begin(); frontend_relationship != frontend_relationship_end; frontend_relationship++)
+   for(frontend_relationship = frontend_relationships.begin(); frontend_relationship != frontend_relationship_end; ++frontend_relationship)
    {
       switch(frontend_relationship->second)
       {
@@ -251,7 +251,7 @@ bool FunctionFrontendFlowStep::HasToBeExecuted() const
    return bb_version != function_behavior->GetBBVersion();
 }
 
-void FunctionFrontendFlowStep::WriteBBGraphDot(const std::string filename) const
+void FunctionFrontendFlowStep::WriteBBGraphDot(const std::string&filename) const
 {
    auto bb_graph_info = BBGraphInfoRef(new BBGraphInfo(AppM, function_id));
    BBGraphsCollectionRef GCC_bb_graphs_collection(new BBGraphsCollection(bb_graph_info, parameters));

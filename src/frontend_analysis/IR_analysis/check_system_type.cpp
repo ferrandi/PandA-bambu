@@ -157,7 +157,7 @@ DesignFlowStep_Status CheckSystemType::InternalExec()
    std::map<unsigned int, blocRef> &blocks = sl->list_of_bloc;
    std::map<unsigned int, blocRef>::iterator it, it_end;
    it_end = blocks.end();
-   for(it = blocks.begin(); it != it_end; it++)
+   for(it = blocks.begin(); it != it_end; ++it)
    {
       if(it->second)
       {
@@ -201,7 +201,7 @@ void CheckSystemType::recursive_examinate(const tree_nodeRef & curr_tn, const un
          recursive_examinate(ce->fn);
          const std::vector<tree_nodeRef> & args = ce->args;
          std::vector<tree_nodeRef>::const_iterator arg, arg_end = args.end();
-         for(arg = args.begin(); arg != arg_end; arg++)
+         for(arg = args.begin(); arg != arg_end; ++arg)
          {
             recursive_examinate(*arg);
          }
@@ -213,7 +213,7 @@ void CheckSystemType::recursive_examinate(const tree_nodeRef & curr_tn, const un
          recursive_examinate(ce->fn);
          const std::vector<tree_nodeRef> & args = ce->args;
          std::vector<tree_nodeRef>::const_iterator arg, arg_end = args.end();
-         for(arg = args.begin(); arg != arg_end; arg++)
+         for(arg = args.begin(); arg != arg_end; ++arg)
          {
             recursive_examinate(*arg);
          }
@@ -255,24 +255,23 @@ void CheckSystemType::recursive_examinate(const tree_nodeRef & curr_tn, const un
                getRealInclName(include, new_include);
                sr->include_name = new_include;
             }
-            std::string include_name = sr->include_name;
             fd = GetPointer<function_decl>(curr_tn);
             if(fd)
             {
-               std::string function_name = tree_helper::print_function_name(TM, fd);
-               if(library_system_includes.find(include_name) != library_system_includes.end())
+               if(sr)
                {
-                  dn->library_system_flag = true;
+                  std::string include_name = sr->include_name;
+                  std::string function_name = tree_helper::print_function_name(TM, fd);
+                  if(library_system_includes.find(include_name) != library_system_includes.end())
+                     dn->library_system_flag = true;
+                  else
+                     dn->operating_system_flag = true;
                }
                else
-               {
                   dn->operating_system_flag = true;
-               }
             }
             else
-            {
                dn->operating_system_flag = true;
-            }
          }
          else if(fd and undefined_library_function_include.count(tree_helper::print_function_name(TM, fd)))
          {
@@ -424,7 +423,7 @@ void CheckSystemType::recursive_examinate(const tree_nodeRef & curr_tn, const un
          {
             const std::vector<std::pair< tree_nodeRef, tree_nodeRef> > & list_of_idx_valu = co->list_of_idx_valu;
             std::vector<std::pair< tree_nodeRef, tree_nodeRef> >::const_iterator it, it_end = list_of_idx_valu.end();
-            for(it = list_of_idx_valu.begin(); it != it_end; it++)
+            for(it = list_of_idx_valu.begin(); it != it_end; ++it)
             {
                recursive_examinate(it->second);
             }
@@ -523,7 +522,7 @@ void CheckSystemType::recursive_examinate(const tree_nodeRef & curr_tn, const un
                const std::vector<tree_nodeRef> & list_of_flds = rt->list_of_flds;
                std::vector<tree_nodeRef>::const_iterator it, it_end = list_of_flds.end();
 #if HAVE_BAMBU_BUILT
-               for(it = list_of_flds.begin(); it != it_end; it++)
+               for(it = list_of_flds.begin(); it != it_end; ++it)
                {
                   recursive_examinate(*it);
 #if HAVE_BAMBU_BUILT
@@ -536,7 +535,7 @@ void CheckSystemType::recursive_examinate(const tree_nodeRef & curr_tn, const un
 #endif
                const std::vector<tree_nodeRef> & list_of_fncs = rt->list_of_fncs;
                std::vector<tree_nodeRef>::const_iterator it_f, it_f_end = list_of_fncs.end();
-               for(it_f = list_of_fncs.begin(); it_f != it_f_end; it_f++)
+               for(it_f = list_of_fncs.begin(); it_f != it_f_end; ++it_f)
                   recursive_examinate(*it_f);
                break;
             }
@@ -546,7 +545,7 @@ void CheckSystemType::recursive_examinate(const tree_nodeRef & curr_tn, const un
                const std::vector<tree_nodeRef> & list_of_flds = ut->list_of_flds;
                std::vector<tree_nodeRef>::const_iterator it, it_end = list_of_flds.end();
 #if HAVE_BAMBU_BUILT
-               for(it = list_of_flds.begin(); it != it_end; it++)
+               for(it = list_of_flds.begin(); it != it_end; ++it)
                {
                   recursive_examinate(*it);
                   if(not ut->libbambu_flag and tree_helper::IsInLibbambu(TM, (*it)->index))
@@ -557,7 +556,7 @@ void CheckSystemType::recursive_examinate(const tree_nodeRef & curr_tn, const un
 #endif
                const std::vector<tree_nodeRef> & list_of_fncs = ut->list_of_fncs;
                std::vector<tree_nodeRef>::const_iterator it_f, it_f_end = list_of_fncs.end();
-               for(it_f = list_of_fncs.begin(); it_f != it_f_end; it_f++)
+               for(it_f = list_of_fncs.begin(); it_f != it_f_end; ++it_f)
                   recursive_examinate(*it_f);
                break;
             }
@@ -919,7 +918,7 @@ void CheckSystemType::build_include_structures()
    undefined_library_function_include["__builtin_lgammaf_r"] = "math.h";
 }
 
-void CheckSystemType::getRealInclName(const std::string include, std::string & real_name) const
+void CheckSystemType::getRealInclName(const std::string&include, std::string & real_name) const
 {
    //Now I have to see if one of the elements in systemIncPath is the start of the include:
    //in case I eliminate it and look the remaining part of the string in the map

@@ -72,7 +72,7 @@
 #define LATTICE_DSP              "LATTICE_DSPS"
 #define LATTICE_MEM              "LATTICE_MEM"
 
-LatticeBackendFlow::LatticeBackendFlow(const ParameterConstRef _Param, const std::string & _flow_name, const target_managerRef _target) :
+LatticeBackendFlow::LatticeBackendFlow(const ParameterConstRef _Param, const std::string& _flow_name, const target_managerRef _target) :
    BackendFlow(_Param, _flow_name, _target)
 {
    PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, " .:: Creating Lattice Backend Flow ::.");
@@ -170,7 +170,7 @@ void LatticeBackendFlow::xparse_utilization(const std::string& fn)
    {
       std::cerr << msg << std::endl;
    }
-   catch (const std::string & msg)
+   catch (const std::string& msg)
    {
       std::cerr << msg << std::endl;
    }

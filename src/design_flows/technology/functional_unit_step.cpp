@@ -76,7 +76,8 @@
 FunctionalUnitStep::FunctionalUnitStep(const target_managerRef _target, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters) :
    DesignFlowStep(_design_flow_manager, _parameters),
    TM(_target->get_technology_manager()),
-   target(_target)
+   target(_target),
+   has_first_synthesis_id(0)
 {}
 
 FunctionalUnitStep::~FunctionalUnitStep()
@@ -111,7 +112,7 @@ void FunctionalUnitStep::AnalyzeFu(const technology_nodeRef f_unit)
    if(fu_base_name == READ_COND_STD)
       precision.insert(1);
    else
-      for (functional_unit::operation_vec::const_iterator ops = Ops.begin(); ops != ops_end; ops++)
+      for (functional_unit::operation_vec::const_iterator ops = Ops.begin(); ops != ops_end; ++ops)
       {
          operation* curr_op = GetPointer<operation>(*ops);
          is_commutative = is_commutative && curr_op->commutative;

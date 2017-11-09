@@ -245,7 +245,7 @@ void SynthesisTool::xload_scripts(const xml_element* child)
 
    bool nodes_found = false;
    const xml_node::node_list lines = child->get_children();
-   for (xml_node::node_list::const_iterator ln = lines.begin(); ln != lines.end(); ln++)
+   for (xml_node::node_list::const_iterator ln = lines.begin(); ln != lines.end(); ++ln)
    {
       const xml_element* script_element = GetPointer<xml_element>(*ln);
       if (!script_element) continue;
@@ -269,7 +269,7 @@ void SynthesisTool::xload(const xml_element* node, const std::string& tool_confi
 {
    bool node_found = false;
    const xml_node::node_list list = node->get_children();
-   for (xml_node::node_list::const_iterator l = list.begin(); l != list.end(); l++)
+   for (xml_node::node_list::const_iterator l = list.begin(); l != list.end(); ++l)
    {
       const xml_element* child = GetPointer<xml_element>(*l);
       if (!child) continue;
@@ -290,12 +290,12 @@ void SynthesisTool::xload(const xml_element* node, const std::string& tool_confi
 xml_nodeRef SynthesisTool::xwrite() const
 {
    xml_elementRef root = xml_elementRef(new xml_element(get_tool_exec()));
-   for (std::vector<xml_parameter_tRef>::const_iterator i = xml_tool_options.begin(); i != xml_tool_options.end(); i++)
+   for (std::vector<xml_parameter_tRef>::const_iterator i = xml_tool_options.begin(); i != xml_tool_options.end(); ++i)
    {
       const xml_parameter_tRef & node = *i;
       root->add_child_element(node->create_xml_node());
    }
-   for (std::vector<xml_script_node_tRef>::const_iterator i = xml_script_nodes.begin(); i != xml_script_nodes.end(); i++)
+   for (std::vector<xml_script_node_tRef>::const_iterator i = xml_script_nodes.begin(); i != xml_script_nodes.end(); ++i)
    {
       const xml_script_node_tRef & node = *i;
       root->add_child_element(node->create_xml_node());
@@ -306,7 +306,7 @@ xml_nodeRef SynthesisTool::xwrite() const
 std::string SynthesisTool::generate_bare_script(const std::vector<xml_script_node_tRef>& nodes, const DesignParametersRef& dp)
 {
    std::string script = "";
-   for (std::vector<xml_script_node_tRef>::const_iterator it = nodes.begin(); it != nodes.end(); it++)
+   for (std::vector<xml_script_node_tRef>::const_iterator it = nodes.begin(); it != nodes.end(); ++it)
    {
       const xml_script_node_tRef node = *it;
       if (node->checkCondition(dp) || node->nodeType == NODE_ITE_BLOCK)
@@ -320,7 +320,7 @@ std::string SynthesisTool::generate_bare_script(const std::vector<xml_script_nod
 
 xml_set_variable_tRef SynthesisTool::get_reserved_parameter(const std::string& name)
 {
-   for (std::vector<xml_set_variable_tRef>::const_iterator i = xml_reserved_vars.begin(); i != xml_reserved_vars.end(); i++)
+   for (std::vector<xml_set_variable_tRef>::const_iterator i = xml_reserved_vars.begin(); i != xml_reserved_vars.end(); ++i)
    {
       const xml_set_variable_tRef & node = *i;
       if (name == node->name)
@@ -333,7 +333,7 @@ xml_set_variable_tRef SynthesisTool::get_reserved_parameter(const std::string& n
 void SynthesisTool::replace_parameters(const DesignParametersRef& dp, std::string& script) const
 {
    const DesignParameters::map_t map = dp->parameter_values;
-   for (DesignParameters::map_t::const_iterator it = map.begin(); it != map.end(); it++)
+   for (DesignParameters::map_t::const_iterator it = map.begin(); it != map.end(); ++it)
    {
       const std::string& name = (*it).first;
       const std::string& value = (*it).second;

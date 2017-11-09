@@ -114,7 +114,7 @@ void read_technology_File(const std::string& fn, const technology_managerRef TM,
    {
       THROW_ERROR("Error during technology file parsing: " + std::string(msg));
    }
-   catch (const std::string & msg)
+   catch (const std::string& msg)
    {
       THROW_ERROR("Error during technology file parsing: " + msg);
    }
@@ -312,7 +312,7 @@ void read_genlib_technology_File(const std::string& fn, const technology_manager
    {
       THROW_ERROR("Error during technology file parsing: " + std::string(msg));
    }
-   catch (const std::string & msg)
+   catch (const std::string& msg)
    {
       THROW_ERROR("Error during technology file parsing: " + msg);
    }
@@ -383,7 +383,7 @@ void write_xml_technology_File(const std::string& f, library_manager* LM, Target
    {
       std::cerr << msg << std::endl;
    }
-   catch (const std::string & msg)
+   catch (const std::string& msg)
    {
       std::cerr << msg << std::endl;
    }
@@ -404,7 +404,7 @@ void write_lib_technology_File(const std::string& f, technology_managerRef const
    try
    {
       size_t count_cells = 0;
-      for (std::set<std::string>::const_iterator n = libraries.begin(); n != libraries.end(); n++)
+      for (std::set<std::string>::const_iterator n = libraries.begin(); n != libraries.end(); ++n)
       {
          if (WORK_LIBRARY == *n or DESIGN == *n or PROXY_LIBRARY == *n) continue;
          count_cells += TM->get_library_count(*n);
@@ -423,7 +423,7 @@ void write_lib_technology_File(const std::string& f, technology_managerRef const
    {
       std::cerr << msg << std::endl;
    }
-   catch (const std::string & msg)
+   catch (const std::string& msg)
    {
       std::cerr << msg << std::endl;
    }
@@ -453,7 +453,7 @@ void write_lef_technology_File(const std::string& f, technology_managerRef const
    try
    {
       size_t count_cells = 0;
-      for (std::set<std::string>::const_iterator n = libraries.begin(); n != libraries.end(); n++)
+      for (std::set<std::string>::const_iterator n = libraries.begin(); n != libraries.end(); ++n)
       {
          if (WORK_LIBRARY == *n) continue;
          count_cells += TM->get_library_count(*n);
@@ -469,7 +469,7 @@ void write_lef_technology_File(const std::string& f, technology_managerRef const
    {
       std::cerr << msg << std::endl;
    }
-   catch (const std::string & msg)
+   catch (const std::string& msg)
    {
       std::cerr << msg << std::endl;
    }

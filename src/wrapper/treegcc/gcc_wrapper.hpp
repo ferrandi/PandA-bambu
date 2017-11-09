@@ -227,7 +227,7 @@ class GccWrapper
        * @param parameters_line are the parameters to be passed to gcc
        * @param empty_file tells if .001.tu tree has to be produced
        */
-      void CompileFile(const std::string & original_file_name, std::string & real_file_name, const std::string & parameters_line, bool empty_file = false);
+      void CompileFile(const std::string& original_file_name, std::string & real_file_name, const std::string& parameters_line, bool empty_file = false);
 
       /**
        * Return the compiler for a given target
@@ -285,7 +285,7 @@ class GccWrapper
        * @return the corresponding number
        */
       static
-      size_t ConvertVersion(const std::string version);
+      size_t ConvertVersion(const std::string&version);
 
    public:
       ///The version of the gcc
@@ -346,7 +346,7 @@ class GccWrapper
        * @param executable_name is the name of the executable
        * @param extra_gcc_options is extra options to be used only for this compilation
        */
-      void CreateExecutable(const std::list<std::string> & file_names, const std::string & executable_name, const std::string & extra_gcc_options) const;
+      void CreateExecutable(const std::list<std::string> & file_names, const std::string& executable_name, const std::string& extra_gcc_options) const;
 
       /**
        * Create an executable starting from source code
@@ -354,19 +354,19 @@ class GccWrapper
        * @param executable_name is the name of the executable
        * @param extra_gcc_options is extra options to be used only for this compilation
        */
-      void CreateExecutable(const CustomSet<std::string> & file_names, const std::string & executable_name, const std::string & extra_gcc_options) const;
+      void CreateExecutable(const CustomSet<std::string> & file_names, const std::string& executable_name, const std::string& extra_gcc_options) const;
 
       /**
        * Read gcc configuration from file
        * @param file_name is the name of the file
        */
-      void ReadXml(const std::string file_name);
+      void ReadXml(const std::string&file_name);
 
       /**
        * Write gcc configuration on file
        * @param file_name is the name of the file
        */
-      void WriteXml(const std::string file_name) const;
+      void WriteXml(const std::string&file_name) const;
 
       /**
        * Writes the optimization level as a string
@@ -382,7 +382,7 @@ class GccWrapper
        * @param plugin_version is the plugin version in form x.x
        */
       static
-         void CheckGccCompatibleVersion(const std::string gcc_version, const std::string plugin_version);
+         void CheckGccCompatibleVersion(const std::string&gcc_version, const std::string&plugin_version);
 
       /**
        * Return the size of the pointer in bit

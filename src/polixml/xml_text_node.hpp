@@ -52,7 +52,7 @@
 class xml_text_node : public xml_node
 {
    public:
-      xml_text_node(const std::string & content) : xml_node(content){}
+      xml_text_node(const std::string& content) : xml_node(content){}
 
       /**
        * Print the class.

@@ -149,7 +149,7 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
 }
 
 static tree_nodeRef
-create_ga(const tree_manipulationRef IRman, tree_nodeRef, tree_nodeRef &type, tree_nodeRef& op, unsigned int bb_index, const std::string & srcp_default)
+create_ga(const tree_manipulationRef IRman, tree_nodeRef, tree_nodeRef &type, tree_nodeRef& op, unsigned int bb_index, const std::string& srcp_default)
 {
    tree_nodeRef ssa_vd = IRman->create_ssa_name(tree_nodeRef(), type);
    return IRman->create_gimple_modify_stmt(ssa_vd, op, srcp_default, bb_index);
@@ -214,7 +214,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                unsigned int type_index = tree_helper::get_type_index(TM, GET_INDEX_NODE(ga->op0));
                tree_nodeRef ga_op_type = TM->GetTreeReindex(type_index);
                tree_nodeRef Scpe = TM->GetTreeReindex(function_id);
-               const std::string & bit_values = ssa->bit_values;
+               const std::string& bit_values = ssa->bit_values;
                bool is_constant=bit_values.size()!=0;
                for(auto current_el : bit_values)
                {
@@ -331,7 +331,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                   unsigned int trailing_zero_op1 = 0;
                   if(GetPointer<ssa_name>(op0))
                   {
-                     const std::string & bit_values_op0 = GetPointer<ssa_name>(op0)->bit_values;
+                     const std::string& bit_values_op0 = GetPointer<ssa_name>(op0)->bit_values;
                      for(auto current_el : boost::adaptors::reverse(bit_values_op0))
                      {
                         if(current_el == '0' || current_el == 'X')
@@ -354,7 +354,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                   }
                   if(GetPointer<ssa_name>(op1))
                   {
-                     const std::string & bit_values_op1 = GetPointer<ssa_name>(op1)->bit_values;
+                     const std::string& bit_values_op1 = GetPointer<ssa_name>(op1)->bit_values;
                      for(auto current_el : boost::adaptors::reverse(bit_values_op1))
                      {
                         if(current_el == '0' || current_el == 'X')
@@ -453,7 +453,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
 
                   if(GetPointer<ssa_name>(op0) && GET_NODE(ga->op1)->get_kind() == plus_expr_K)
                   {
-                     const std::string & bit_values_op0 = GetPointer<ssa_name>(op0)->bit_values;
+                     const std::string& bit_values_op0 = GetPointer<ssa_name>(op0)->bit_values;
                      PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Var_uid: "+ AppM->CGetFunctionBehavior(function_id)->CGetBehavioralHelper()->PrintVariable(GET_INDEX_NODE(me->op0)) +" bitstring: " + bit_values_op0);
                      for(auto current_el : boost::adaptors::reverse(bit_values_op0))
                      {
@@ -483,7 +483,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
 
                   if(GetPointer<ssa_name>(op1))
                   {
-                     const std::string & bit_values_op1 = GetPointer<ssa_name>(op1)->bit_values;
+                     const std::string& bit_values_op1 = GetPointer<ssa_name>(op1)->bit_values;
                      PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Var_uid: "+ AppM->CGetFunctionBehavior(function_id)->CGetBehavioralHelper()->PrintVariable(GET_INDEX_NODE(me->op1)) +" bitstring: " + bit_values_op1);
                      for(auto current_el : boost::adaptors::reverse(bit_values_op1))
                      {

@@ -187,7 +187,7 @@ VHDL_writer::~VHDL_writer()
 
 }
 
-void VHDL_writer::write_comment(const std::string &comment_string)
+void VHDL_writer::write_comment(const std::string&comment_string)
 {
    indented_output_stream->Append("-- " + comment_string);
 }
@@ -199,22 +199,18 @@ std::string VHDL_writer::type_converter(structural_type_descriptorRef Type)
       case structural_type_descriptor::BOOL:
          {
             return "std_logic";
-            break;
          }
       case structural_type_descriptor::INT:
          {
             return "signed";
-            break;
          }
       case structural_type_descriptor::UINT:
          {
             return "unsigned";
-            break;
          }
       case structural_type_descriptor::REAL:
          {
             return "std_logic_vector";
-            break;
          }
       case structural_type_descriptor::USER:
          {
@@ -224,14 +220,12 @@ std::string VHDL_writer::type_converter(structural_type_descriptorRef Type)
       case structural_type_descriptor::VECTOR_BOOL:
          {
             return "std_logic_vector";
-            break;
          }
       case structural_type_descriptor::VECTOR_INT:
       case structural_type_descriptor::VECTOR_UINT:
       case structural_type_descriptor::VECTOR_REAL:
          {
             return "std_logic_vector";
-            break;
          }
       case structural_type_descriptor::VECTOR_USER:
          {
@@ -241,7 +235,6 @@ std::string VHDL_writer::type_converter(structural_type_descriptorRef Type)
       case structural_type_descriptor::OTHER:
          {
             return Type->id_type;
-            break;
          }
       case structural_type_descriptor::UNKNOWN:
       default:
@@ -571,7 +564,7 @@ void VHDL_writer::write_module_definition_begin(const structural_objectRef &)
 }
 
 
-void VHDL_writer::write_module_instance_begin(const structural_objectRef &cir, const std::string & module_name, bool write_parametrization)
+void VHDL_writer::write_module_instance_begin(const structural_objectRef &cir, const std::string& module_name, bool write_parametrization)
 {
    THROW_ASSERT(cir->get_kind() == component_o_K || cir->get_kind() == channel_o_K, "Expected a component or a channel got something of different");
    indented_output_stream->Append(HDL_manager::convert_to_identifier(this, cir->get_id()) + " : " + module_name);
@@ -911,7 +904,7 @@ void VHDL_writer::write_module_parametrization(const structural_objectRef &cir)
          }
          else
             indented_output_stream->Append(", ");
-         const std::string &name = library_parameter.first;
+         const std::string&name = library_parameter.first;
          structural_objectRef obj = library_parameter.second;
          if(obj)
          {
@@ -1075,7 +1068,7 @@ void VHDL_writer::write_tail(const structural_objectRef &)
 
 }
 
-void VHDL_writer::write_state_declaration(const structural_objectRef &, const std::list<std::string> &list_of_states, const std::string &, const std::string &, bool one_hot)
+void VHDL_writer::write_state_declaration(const structural_objectRef &, const std::list<std::string> &list_of_states, const std::string&, const std::string&, bool one_hot)
 {
    std::list<std::string>::const_iterator it_end = list_of_states.end();
    size_t n_states = list_of_states.size();
@@ -1083,7 +1076,7 @@ void VHDL_writer::write_state_declaration(const structural_objectRef &, const st
    unsigned int bitsnumber = language_writer::bitnumber(static_cast<unsigned int>(n_states-1));
    /// adjust in case states are not consecutives
    unsigned max_value = 0;
-   for(std::list<std::string>::const_iterator it = list_of_states.begin(); it != it_end; it++)
+   for(std::list<std::string>::const_iterator it = list_of_states.begin(); it != it_end; ++it)
    {
       max_value = std::max(max_value, boost::lexical_cast<unsigned int>(it->substr(strlen(STATE_NAME_PREFIX))));
    }
@@ -1109,7 +1102,7 @@ void VHDL_writer::write_state_declaration(const structural_objectRef &, const st
    else
    {
       indented_output_stream->Append("type state_type is (");
-      for(std::list<std::string>::const_iterator it = list_of_states.begin(); it != it_end; it++)
+      for(std::list<std::string>::const_iterator it = list_of_states.begin(); it != it_end; ++it)
       {
          indented_output_stream->Append(*it);
          count++;
@@ -1121,7 +1114,7 @@ void VHDL_writer::write_state_declaration(const structural_objectRef &, const st
    }
 }
 
-void VHDL_writer::write_present_state_update(const std::string &reset_state, const std::string &reset_port, const std::string &clock_port, const std::string &reset_type)
+void VHDL_writer::write_present_state_update(const std::string&reset_state, const std::string&reset_port, const std::string&clock_port, const std::string&reset_type)
 {
    write_comment("concurrent process#1: state registers\n");
    if(reset_type == "no" || reset_type == "sync")
@@ -1166,7 +1159,7 @@ void VHDL_writer::write_present_state_update(const std::string &reset_state, con
    indented_output_stream->Append("end process;\n");
 }
 
-void VHDL_writer::write_transition_output_functions(bool single_proc, unsigned int output_index, const structural_objectRef &cir, const std::string &reset_state, const std::string &reset_port, const std::string & start_port, const std::string &clock_port, std::vector<std::string>::const_iterator &first, std::vector<std::string>::const_iterator &end)
+void VHDL_writer::write_transition_output_functions(bool single_proc, unsigned int output_index, const structural_objectRef &cir, const std::string&reset_state, const std::string&reset_port, const std::string& start_port, const std::string&clock_port, std::vector<std::string>::const_iterator &first, std::vector<std::string>::const_iterator &end)
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Writing transition output function");
    module * mod = GetPointer<module>(cir);
@@ -1207,7 +1200,7 @@ void VHDL_writer::write_transition_output_functions(bool single_proc, unsigned i
    indented_output_stream->Append(  "case present_state is\n");
    indented_output_stream->Indent();
 
-   for(std::vector<std::string>::const_iterator first_it = first; first_it != end; first_it++)
+   for(std::vector<std::string>::const_iterator first_it = first; first_it != end; ++first_it)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Writing " + *first_it);
       tokenizer state_tokens_first(*first_it, state_sep);
@@ -1215,10 +1208,10 @@ void VHDL_writer::write_transition_output_functions(bool single_proc, unsigned i
       tokenizer::const_iterator its = state_tokens_first.begin();
 
       std::string state_description = *its;
-      its++;
+      ++its;
 
       std::vector<std::string> state_transitions;
-      for(; its != state_tokens_first.end(); its++)
+      for(; its != state_tokens_first.end(); ++its)
       {
          state_transitions.push_back(*its);
       }
@@ -1228,7 +1221,7 @@ void VHDL_writer::write_transition_output_functions(bool single_proc, unsigned i
       its = tokens_curr.begin();
       std::string present_state = HDL_manager::convert_to_identifier(this, *its);
       ///get the current output
-      its++;
+      ++its;
       std::string current_output = *its;
 
       indented_output_stream->Append("when " + present_state + " =>\n");
@@ -1273,7 +1266,7 @@ void VHDL_writer::write_transition_output_functions(bool single_proc, unsigned i
             boost::char_separator<char> comma_sep(",", nullptr);
             tokenizer current_input_tokens(input_string, comma_sep);
             current_input_it = current_input_tokens.begin();
-            itt++;
+            ++itt;
          }
          THROW_ASSERT(itt != transition_tokens.end(), "");
          std::string next_state = HDL_manager::convert_to_identifier(this, *itt);
@@ -1358,7 +1351,7 @@ void VHDL_writer::write_transition_output_functions(bool single_proc, unsigned i
                            res_or_conditions = "(" + res_or_conditions + ")";
                         indented_output_stream->Append(res_or_conditions);
                      }
-                     current_input_it++;
+                     ++current_input_it;
                   }
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Considered port " + port_name);
                }
@@ -1498,7 +1491,7 @@ void VHDL_writer::write_module_parametrization_decl(const structural_objectRef &
          else
             indented_output_stream->Append(";");
          indented_output_stream->Append("\n");
-         const std::string &name = library_parameter.first;
+         const std::string&name = library_parameter.first;
          structural_objectRef obj = library_parameter.second;
          if(obj)
          {

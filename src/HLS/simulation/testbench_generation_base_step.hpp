@@ -152,7 +152,7 @@ class TestbenchGenerationBaseStep : public HLS_step
 
       void memory_initialization_from_file() const;
 
-      void read_input_value_from_file(const std::string &input_name, bool &first_valid_input) const;
+      void read_input_value_from_file(const std::string&input_name, bool &first_valid_input) const;
 
       void end_file_reading_operation() const;
 
@@ -174,7 +174,7 @@ class TestbenchGenerationBaseStep : public HLS_step
          const;
 
       void write_initial_block(
-            const std::string simulation_values_path,
+            const std::string& simulation_values_path,
 	    bool withMemory,
             const tree_managerConstRef TreeM,
             bool generate_vcd_output)
@@ -230,7 +230,7 @@ class TestbenchGenerationBaseStep : public HLS_step
        * Declared protected to prevent direct instantiation. Use
        * Create() factory methods instead.
        */
-      TestbenchGenerationBaseStep(const ParameterConstRef Param, const HLS_managerRef AppM, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type, const std::string c_testbench_basename = "values");
+      TestbenchGenerationBaseStep(const ParameterConstRef Param, const HLS_managerRef AppM, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type, const std::string&c_testbench_basename = "values");
 
    public:
       /**

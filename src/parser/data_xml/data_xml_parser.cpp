@@ -106,7 +106,7 @@ void DataXmlParser::Parse(const CustomSet<std::string> & file_names, std::map<st
    {
       THROW_ERROR("Error during parsing of data xml file: " + std::string(msg));
    }
-   catch (const std::string & msg)
+   catch (const std::string& msg)
    {
       THROW_ERROR("Error during parsing of data xml file: " + msg);
    }

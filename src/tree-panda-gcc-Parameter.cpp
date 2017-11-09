@@ -102,7 +102,7 @@
 #define OPT_GC_SECTIONS 270
 
 
-tree_panda_gcc_parameter::tree_panda_gcc_parameter(const std::string _program_name, int _argc, char ** const _argv) :
+tree_panda_gcc_parameter::tree_panda_gcc_parameter(const std::string&_program_name, int _argc, char ** const _argv) :
    Parameter(_program_name, _argc, _argv)
 {
    SetDefaults();
@@ -288,7 +288,6 @@ int tree_panda_gcc_parameter::Exec()
             GccWrapperRef Wrap = GccWrapperRef(new GccWrapper(param, GccWrapper_CompilerTarget::CT_NO_GCC, optimization_set));
             Wrap->QueryGccConfig("--print-file-name=" + std::string(optarg));
             return EXIT_SUCCESS;
-            break;
          }
          case OPT_START_GROUP:
          case OPT_END_GROUP:

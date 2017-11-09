@@ -216,7 +216,7 @@ class clique_covering
        * Writes a dotty representation of the actual graph
        * @param filename is the output filename
        */
-      virtual void writeDot(const std::string &filename) const  = 0;
+      virtual void writeDot(const std::string&filename) const  = 0;
 
       /**
        * add subpartitions over which bipartite matching can start on
@@ -472,7 +472,7 @@ class TTT_maximal_weighted_clique
 
    /// return the last weight of the maximum clique
    int get_last_W_Q_max() {return W_Q_max;}
-   TTT_maximal_weighted_clique(std::map<C_vertex, std::string> &_names) : names(_names) {}
+   TTT_maximal_weighted_clique(std::map<C_vertex, std::string> &_names) : W_Q(0), W_Q_max(std::numeric_limits<int>::min()), names(_names) {}
 };
 
 /**
@@ -644,7 +644,7 @@ class TTT_maximal_weighted_clique_fast
       return Q_max;
    }
 
-   TTT_maximal_weighted_clique_fast(std::map<typename boost::graph_traits<Graph>::vertex_descriptor, std::string> &_names) : names(_names) {}
+   TTT_maximal_weighted_clique_fast(std::map<typename boost::graph_traits<Graph>::vertex_descriptor, std::string> &_names) : W_Q(0), W_Q_max(std::numeric_limits<int>::min()), names(_names) {}
 };
 
 
@@ -945,7 +945,7 @@ class coloring_based_clique_covering : public clique_covering<vertex_type>
       }
    }
 
-   void writeDot(const std::string &filename) const
+   void writeDot(const std::string&filename) const
    {
       std::ofstream f(filename.c_str());
       boost::write_graphviz(f, clique_covering_graph_bulk, compatibility_node_info_writer(names), compatibility_edge_writer(clique_covering_graph_bulk));
@@ -1765,7 +1765,7 @@ class bipartite_matching_clique_covering : public clique_covering<vertex_type>
          }
       }
 
-      void writeDot(const std::string &filename) const
+      void writeDot(const std::string&filename) const
       {
          std::ofstream f(filename.c_str());
          boost::write_graphviz(f, clique_covering_graph_bulk, compatibility_node_info_writer(names), compatibility_edge_writer(clique_covering_graph_bulk));
@@ -1908,7 +1908,7 @@ class randomized_clique_covering : public clique_covering<vertex_type>
     * Writes a dotty representation of the actual graph
     * @param filename is the output filename
     */
-   void writeDot(const std::string &filename) const
+   void writeDot(const std::string&filename) const
    {
       //THROW_WARNING("randomized_clique_covering::writeDot not yet implemented");
 

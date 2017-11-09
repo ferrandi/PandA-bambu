@@ -68,7 +68,7 @@
 
 
 static
-std::string GetFile(const std::string directory, const std::string file)
+std::string GetFile(const std::string&directory, const std::string&file)
 {
    std::string ret = file;
    ret = ret.at(0) == '"' ? ret.substr(1, ret.size() - 2) : ret;
@@ -97,7 +97,7 @@ AadlParserData::AadlParserData(const ParameterConstRef _parameters) :
    debug_level(_parameters->get_class_debug_level("AadlParser"))
 {}
 
-AadlParser::AadlParser(const DesignFlowManagerConstRef _design_flow_manager, const std::string _file_name, const application_managerRef _AppM, const ParameterConstRef _parameters) :
+AadlParser::AadlParser(const DesignFlowManagerConstRef _design_flow_manager, const std::string&_file_name, const application_managerRef _AppM, const ParameterConstRef _parameters) :
    ParserFlowStep(_design_flow_manager, ParserFlowStep_Type::AADL, _file_name, _parameters),
    AppM(_AppM)
 {

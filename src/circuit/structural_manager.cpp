@@ -871,7 +871,7 @@ void structural_manager::add_connection(structural_objectRef src, structural_obj
    } // switch src kind
 }
 
-void structural_manager::WriteDot(const std::string & file_name, circuit_graph_type gt, graph * g) const
+void structural_manager::WriteDot(const std::string& file_name, circuit_graph_type gt, graph * g) const
 {
    const std::string output_directory = Param->getOption<std::string>(OPT_dot_directory);
    std::ofstream f((output_directory + file_name).c_str());
@@ -1083,9 +1083,9 @@ void structural_manager::INIT(bool permissive)
 
 #if HAVE_BAMBU_BUILT || HAVE_KOALA_BUILT || HAVE_EUCALYPTUS_BUILT
 structural_objectRef structural_manager::add_module_from_technology_library(
-      const std::string & id,
-      const std::string & fu_name,
-      const std::string & library_name,
+      const std::string& id,
+      const std::string& fu_name,
+      const std::string& library_name,
       const structural_objectRef owner,
       const technology_managerConstRef TM)
 {
@@ -1740,7 +1740,7 @@ void structural_manager::remove_module(structural_objectRef obj)
    //std::cerr << "removing signals" << std::endl;
    module* top = GetPointer<module>(top_obj);
    top->remove_internal_object(obj);
-   for(std::set<structural_objectRef>::iterator k = remove.begin(); k != remove.end(); k++)
+   for(std::set<structural_objectRef>::iterator k = remove.begin(); k != remove.end(); ++k)
       top->remove_internal_object(*k);
 }
 

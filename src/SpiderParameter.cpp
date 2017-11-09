@@ -169,7 +169,7 @@ void SpiderParameter::PrintProgramName(std::ostream & os) const
    os << "********************************************************************************" << std::endl;
 }
 
-SpiderParameter::SpiderParameter(const std::string _program_name, int _argc, char ** const _argv) :
+SpiderParameter::SpiderParameter(const std::string&_program_name, int _argc, char ** const _argv) :
    Parameter(_program_name, _argc, _argv)
 {
    SetDefaults();
@@ -178,7 +178,6 @@ SpiderParameter::SpiderParameter(const std::string _program_name, int _argc, cha
 int SpiderParameter::Exec()
 {
    exit_code = PARAMETER_NOTPARSED;
-   const std::string program_name = argv[0];
 
    /// variable used into option parsing
    int option_index;

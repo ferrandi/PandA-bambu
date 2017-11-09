@@ -140,7 +140,7 @@ DesignFlowStep_Status SwitchFix::InternalExec()
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
 
          std::unordered_set<unsigned int>::iterator multiple_labels_block, multiple_labels_block_end = multiple_labels_blocks.end();
-         for(multiple_labels_block = multiple_labels_blocks.begin(); multiple_labels_block != multiple_labels_block_end; multiple_labels_block++)
+         for(multiple_labels_block = multiple_labels_blocks.begin(); multiple_labels_block != multiple_labels_block_end; ++multiple_labels_block)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Splitting BB" + boost::lexical_cast<std::string>(*multiple_labels_block));
             ///Compute the case labels of the switch
@@ -148,7 +148,7 @@ DesignFlowStep_Status SwitchFix::InternalExec()
             std::unordered_set<tree_nodeRef> cases;
             const tree_vec * tv = GetPointer<tree_vec>(GET_NODE(gs->op1));
             std::vector<tree_nodeRef>::const_iterator it, it_end = tv->list_of_op.end();
-            for(it = tv->list_of_op.begin(); it != it_end; it++)
+            for(it = tv->list_of_op.begin(); it != it_end; ++it)
             {
                cases.insert(GET_NODE(GetPointer<case_label_expr>(GET_NODE(*it))->got));
             }
@@ -269,7 +269,7 @@ DesignFlowStep_Status SwitchFix::InternalExec()
                to_be_fixed.insert(succ);
          }
          std::unordered_set<unsigned int>::const_iterator t, t_end = to_be_fixed.end();
-         for(t = to_be_fixed.begin(); t != t_end; t++)
+         for(t = to_be_fixed.begin(); t != t_end; ++t)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Fixing BB" + STR(*t));
             //Creating new basic block

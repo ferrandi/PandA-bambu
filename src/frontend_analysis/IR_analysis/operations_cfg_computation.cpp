@@ -338,7 +338,7 @@ DesignFlowStep_Status operations_cfg_computation::InternalExec()
       if(block->list_of_succ.size() == 0 and root_functions.find(function_id) != root_functions.end())
       {
          std::list<std::string>::iterator operation, operation_end = start_nodes.end();
-         for(operation = start_nodes.begin(); operation != operation_end; operation++)
+         for(operation = start_nodes.begin(); operation != operation_end; ++operation)
          {
             ogc->add_type(*operation, TYPE_LAST_OP);
          }
@@ -354,7 +354,7 @@ DesignFlowStep_Status operations_cfg_computation::InternalExec()
                if(root_functions.find(function_id) != root_functions.end())
                {
                   std::list<std::string>::iterator operation, operation_end = start_nodes.end();
-                  for(operation = start_nodes.begin(); operation != operation_end; operation++)
+                  for(operation = start_nodes.begin(); operation != operation_end; ++operation)
                   {
                      ogc->add_type(*operation, TYPE_LAST_OP);
                   }
@@ -392,7 +392,7 @@ DesignFlowStep_Status operations_cfg_computation::InternalExec()
    return DesignFlowStep_Status::SUCCESS;
 }
 
-std::string operations_cfg_computation::get_first_node(const tree_nodeRef &tn, const std::string & f_name) const
+std::string operations_cfg_computation::get_first_node(const tree_nodeRef &tn, const std::string& f_name) const
 {
    tree_nodeRef curr_tn;
    if (tn->get_kind() == tree_reindex_K)
@@ -448,7 +448,7 @@ std::string operations_cfg_computation::get_first_node(const tree_nodeRef &tn, c
    return "";
 }
 
-void operations_cfg_computation::insert_start_node(const std::string &start_node)
+void operations_cfg_computation::insert_start_node(const std::string&start_node)
 {
    start_nodes.push_back(start_node);
 }
@@ -463,18 +463,18 @@ bool operations_cfg_computation::empty_start_nodes() const
    return start_nodes.empty();
 }
 
-void operations_cfg_computation::init_start_nodes(const std::string &start_node)
+void operations_cfg_computation::init_start_nodes(const std::string&start_node)
 {
    start_nodes.clear();
    start_nodes.push_back(start_node);
 }
 
-void operations_cfg_computation::connect_start_nodes(const operations_graph_constructorRef ogc, const std::string & next, bool true_edge, bool false_edge, unsigned int nodeid)
+void operations_cfg_computation::connect_start_nodes(const operations_graph_constructorRef ogc, const std::string& next, bool true_edge, bool false_edge, unsigned int nodeid)
 {
    const auto root_functions = AppM->CGetCallGraphManager()->GetRootFunctions();
    std::string Start_node;
    std::list<std::string>::iterator s_end = start_nodes.end();
-   for(std::list<std::string>::iterator s = start_nodes.begin(); s != s_end; s++)
+   for(std::list<std::string>::iterator s = start_nodes.begin(); s != s_end; ++s)
    {
       Start_node = *s;
       ///Mark first operation of the application
@@ -496,7 +496,7 @@ void operations_cfg_computation::connect_start_nodes(const operations_graph_cons
    }
 }
 
-void operations_cfg_computation::build_operation_recursive(const tree_managerRef TM, const operations_graph_constructorRef ogc, const tree_nodeRef tn, const std::string &f_name, unsigned int bb_index)
+void operations_cfg_computation::build_operation_recursive(const tree_managerRef TM, const operations_graph_constructorRef ogc, const tree_nodeRef tn, const std::string&f_name, unsigned int bb_index)
 {
    const tree_nodeRef &curr_tn = GET_NODE(tn);
    unsigned int ind = GET_INDEX_NODE(tn);
@@ -800,7 +800,7 @@ void operations_cfg_computation::build_operation_recursive(const tree_managerRef
          {
             tree_vec* tv = GetPointer<tree_vec>(case_label_exprs);
             std::vector<tree_nodeRef>::iterator end = tv->list_of_op.end();
-            for(std::vector<tree_nodeRef>::iterator i = tv->list_of_op.begin(); i != end; i++)
+            for(std::vector<tree_nodeRef>::iterator i = tv->list_of_op.begin(); i != end; ++i)
             {
                std::string res = get_first_node(*i, f_name);
                THROW_ASSERT(res != "", "Impossible to find first operation of case " + boost::lexical_cast<std::string>(GET_INDEX_NODE(*i)));

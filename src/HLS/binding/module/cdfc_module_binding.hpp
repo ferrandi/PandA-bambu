@@ -301,7 +301,7 @@ class CdfcGraph : public graph
        * @param selector is the selector which identifies the edges of this graph
        * @param vertices is the set of vertexes on which the graph is filtered.
        */
-      CdfcGraph(const CdfcGraphsCollectionRef cdfc_graphs_collection, const int selector, const std::unordered_set<vertex> vertices);
+      CdfcGraph(const CdfcGraphsCollectionRef cdfc_graphs_collection, const int selector, const std::unordered_set<vertex> &vertices);
 
       /**
        * Destructor
@@ -322,7 +322,7 @@ class CdfcGraph : public graph
        * @param file_name is the file where the graph has to be printed
        * @param detail_level is the detail level of the printed graph
        */
-      void WriteDot(const std::string & file_name, const int detail_level = 0) const;
+      void WriteDot(const std::string& file_name, const int detail_level = 0) const;
 };
 typedef refcount<CdfcGraph> CdfcGraphRef;
 typedef refcount<const CdfcGraph> CdfcGraphConstRef;

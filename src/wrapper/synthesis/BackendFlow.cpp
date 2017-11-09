@@ -132,7 +132,7 @@ void DesignParameters::xload_design_configuration(const ParameterConstRef DEBUG_
    {
       const xml_element* node = parser.get_document()->get_root_node(); //deleted by DomParser.
       const xml_node::node_list list = node->get_children();
-      for (xml_node::node_list::const_iterator l = list.begin(); l != list.end(); l++)
+      for (xml_node::node_list::const_iterator l = list.begin(); l != list.end(); ++l)
       {
          const xml_element* child = GetPointer<xml_element>(*l);
          if (!child) continue;
@@ -150,7 +150,7 @@ void DesignParameters::xload_design_configuration(const ParameterConstRef DEBUG_
          if (child->get_name() == STR_XML_ip_xact_generator_chain_configuration)
          {
             const xml_node::node_list list_gen = child->get_children();
-            for (xml_node::node_list::const_iterator g = list_gen.begin(); g != list_gen.end(); g++)
+            for (xml_node::node_list::const_iterator g = list_gen.begin(); g != list_gen.end(); ++g)
             {
                const xml_element* child_gen = GetPointer<xml_element>(*g);
                if (!child_gen) continue;
@@ -165,7 +165,7 @@ void DesignParameters::xload_design_configuration(const ParameterConstRef DEBUG_
                if (child_gen->get_name() == STR_XML_ip_xact_configurable_element_values)
                {
                   const xml_node::node_list list_values = child_gen->get_children();
-                  for (xml_node::node_list::const_iterator v = list_values.begin(); v != list_values.end(); v++)
+                  for (xml_node::node_list::const_iterator v = list_values.begin(); v != list_values.end(); ++v)
                   {
                      const xml_element* child_value = GetPointer<xml_element>(*v);
                      if (!child_value) continue;
@@ -359,7 +359,7 @@ void BackendFlow::parse_flow(const XMLDomParserRef parser)
    root = parser->get_document()->get_root_node(); //deleted by DomParser.
 
    const xml_node::node_list list = root->get_children();
-   for (xml_node::node_list::const_iterator l = list.begin(); l != list.end(); l++)
+   for (xml_node::node_list::const_iterator l = list.begin(); l != list.end(); ++l)
    {
       const xml_element* child = GetPointer<xml_element>(*l);
       if (!child || child->get_name() != "flow") continue;
@@ -376,7 +376,7 @@ void BackendFlow::xload(const xml_element* node)
    THROW_ASSERT(default_flow_parameters->chain_name == flow_name, "wrong values: " + default_flow_parameters->chain_name + " vs. " + flow_name);
 
    const xml_node::node_list list = node->get_children();
-   for (xml_node::node_list::const_iterator l = list.begin(); l != list.end(); l++)
+   for (xml_node::node_list::const_iterator l = list.begin(); l != list.end(); ++l)
    {
       const xml_element* child = GetPointer<xml_element>(*l);
       if (!child) continue;
@@ -504,7 +504,7 @@ std::string BackendFlow::CreateScripts(const DesignParametersRef dp)
    exec_params->component_name = dp->component_name;
    THROW_ASSERT(exec_params->chain_name == dp->chain_name, "Mismatching!! exec = \"" + exec_params->chain_name + "\" vs. dp = \"" + dp->chain_name + "\"");
 
-   for(DesignParameters::map_t::iterator p = dp->parameter_values.begin(); p != dp->parameter_values.end(); p++)
+   for(DesignParameters::map_t::iterator p = dp->parameter_values.begin(); p != dp->parameter_values.end(); ++p)
    {
       exec_params->parameter_values[p->first] = p->second;
       INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "-->setting parameter \"" + p->first + "\" to value \"" + p->second + "\"");
@@ -518,7 +518,7 @@ std::string BackendFlow::CreateScripts(const DesignParametersRef dp)
 
    if (module_undefined_parameters.size() > 0)
    {
-      for(std::set<std::string>::iterator p = module_undefined_parameters.begin(); p != module_undefined_parameters.end(); p++)
+      for(std::set<std::string>::iterator p = module_undefined_parameters.begin(); p != module_undefined_parameters.end(); ++p)
       {
          INDENT_DBG_MEX(0,0, "missing definition for parameter " + *p);
       }

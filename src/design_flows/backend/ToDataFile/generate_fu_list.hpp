@@ -119,6 +119,6 @@ class GenerateFuList : public ToDataFileStep, public FunctionalUnitStep
        * @param stage_index
        * @param constPort is the index of the constant port
        */
-      virtual void AnalyzeCell(functional_unit * fu, const unsigned int prec, const std::vector<std::string >portsize_parameters, const size_t portsize_index, const std::vector<std::string> pipe_parameters, const size_t stage_index, const unsigned int constPort, const bool is_commutative);
+      virtual void AnalyzeCell(functional_unit * fu, const unsigned int prec, const std::vector<std::string >& portsize_parameters, const size_t portsize_index, const std::vector<std::string>& pipe_parameters, const size_t stage_index, const unsigned int constPort, const bool is_commutative);
 };
 #endif

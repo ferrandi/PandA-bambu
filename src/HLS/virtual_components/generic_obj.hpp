@@ -109,7 +109,7 @@ class generic_obj
       /**
        * This is the constructor of the object class.
        */
-      generic_obj(const resource_type t, const std::string &_name) : type(t), name(_name) {}
+      generic_obj(const resource_type t, const std::string&_name) : type(t), name(_name) {}
 
       /**
        * Destructor.
@@ -221,7 +221,7 @@ class GenericObjUnsignedIntSorter : std::binary_function<std::pair<generic_objRe
        * @param y is the second generic_obj-int
        * @return true if index of x is less than y
        */
-      bool operator()(const std::pair<generic_objRef,int> x, const std::pair<generic_objRef,int> y) const;
+      bool operator()(const std::pair<generic_objRef,int> &x, const std::pair<generic_objRef,int> &y) const;
 
 };
 #endif

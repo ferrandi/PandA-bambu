@@ -40,8 +40,12 @@
 ///Header include
 #include "intermediate_representation.hpp"
 
+///. include
+#include "Parameter.hpp"
+
 IntermediateRepresentation::IntermediateRepresentation(const ParameterConstRef _parameters) :
-   parameters(_parameters)
+   parameters(_parameters),
+   debug_level(_parameters->getOption<int>(OPT_debug_level))
 {}
 
 IntermediateRepresentation::~IntermediateRepresentation()

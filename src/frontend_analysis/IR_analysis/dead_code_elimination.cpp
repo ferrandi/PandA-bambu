@@ -121,7 +121,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
    do
    {
       restart_analysis = false;
-      for (block_it = blocks.begin();block_it != block_it_end;block_it++)
+      for (block_it = blocks.begin();block_it != block_it_end; ++block_it)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Analyzing BB" + boost::lexical_cast<std::string>(block_it->second->number));
          ///Retrive the list of statement of the block

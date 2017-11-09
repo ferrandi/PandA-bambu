@@ -416,7 +416,7 @@ void parametric_list_based::exec(const OpVertexSet & operations, ControlStep cur
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "   Computing free input vertices...");
    ///compute the set of vertices without input edges.
    /// At least one vertex is expected
-   for(OpVertexSet::const_iterator vi = operations.begin(); vi != operations.end(); vi++)
+   for(OpVertexSet::const_iterator vi = operations.begin(); vi != operations.end(); ++vi)
    {
       ///Skip vertex if it is not in the current subgraph
       if(!flow_graph->is_in_subset(*vi))
@@ -498,7 +498,7 @@ void parametric_list_based::exec(const OpVertexSet & operations, ControlStep cur
 
    OpVertexSet::const_iterator rv, rv_end = ready_vertices.end();
 
-   for(rv = ready_vertices.begin(); rv != rv_end; rv++)
+   for(rv = ready_vertices.begin(); rv != rv_end; ++rv)
       add_to_priority_queues(priority_queues, ready_resources, *rv);
 
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "   Starting scheduling...");
@@ -547,11 +547,11 @@ void parametric_list_based::exec(const OpVertexSet & operations, ControlStep cur
                   THROW_ERROR("Unfeasible scheduling");
             }
             PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "            Vertex " + GET_NAME(flow_graph, *live_vertex_it) + " lives until " + STR(ending_time.find(*live_vertex_it)->second));
-            live_vertex_it++;
+            ++live_vertex_it;
          }
       }
 
-      for(unsigned int fu_type = 0; fu_type < n_resources; fu_type++)
+      for(unsigned int fu_type = 0; fu_type < n_resources; ++fu_type)
       {
          if(priority_queues[fu_type].size())
             ready_resources.insert(fu_type);
@@ -872,7 +872,7 @@ void parametric_list_based::exec(const OpVertexSet & operations, ControlStep cur
                   }
                   //successors.sort();
 
-                  for(std::list<std::pair<std::string, vertex> >::iterator s = successors.begin(); s != successors.end(); s++)
+                  for(std::list<std::pair<std::string, vertex> >::iterator s = successors.begin(); s != successors.end(); ++s)
                   {
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Considering successor " + s->first);
                      scheduled_predecessors[s->second]++;
@@ -1225,7 +1225,7 @@ void parametric_list_based::add_to_priority_queues(PriorityQueues & priority_que
    {
       const std::set<unsigned int> & fu_set = HLS->allocation_information->can_implement_set(v);
       const std::set<unsigned int>::const_iterator fu_set_it_end = fu_set.end();
-      for(std::set<unsigned int>::const_iterator fu_set_it = fu_set.begin(); fu_set_it != fu_set_it_end; fu_set_it++)
+      for(std::set<unsigned int>::const_iterator fu_set_it = fu_set.begin(); fu_set_it != fu_set_it_end; ++fu_set_it)
       {
 #if HAVE_UNORDERED
          priority_queue[*fu_set_it].push(v);
@@ -1249,11 +1249,11 @@ DesignFlowStep_Status parametric_list_based::InternalExec()
    boost::topological_sort(*bbg, std::front_inserter(vertices));
    std::deque<vertex>::const_iterator viend = vertices.end();
    ControlStep ctrl_steps = ControlStep(0u);
-   for(std::deque<vertex>::const_iterator vi = vertices.begin(); vi != viend; vi++)
+   for(std::deque<vertex>::const_iterator vi = vertices.begin(); vi != viend; ++vi)
    {
       OpVertexSet operations(op_graph);
       std::list<vertex> bb_operations = bbg->CGetBBNodeInfo(*vi)->statements_list;
-      for(std::list<vertex>::iterator l = bb_operations.begin(); l != bb_operations.end(); l++)
+      for(std::list<vertex>::iterator l = bb_operations.begin(); l != bb_operations.end(); ++l)
       {
          if(HLS->operations.find(*l) != HLS->operations.end())
             operations.insert(*l);
@@ -1558,7 +1558,7 @@ void parametric_list_based::do_balanced_scheduling(std::deque<vertex> &sub_level
    ControlStep min_cycle = ControlStep(std::numeric_limits<unsigned int>::max());
    ControlStep max_cycle = ControlStep(0u);
    double total_resource_area = 0;
-   for(std::deque<vertex>::const_iterator vi = sub_levels.begin(); vi != sub_levels.end(); vi++)
+   for(std::deque<vertex>::const_iterator vi = sub_levels.begin(); vi != sub_levels.end(); ++vi)
    {
       vertex current_op = *vi;
       const auto curr_cs = schedule->get_cstep(current_op).second;
@@ -1756,7 +1756,7 @@ void parametric_list_based::do_balanced_scheduling1(std::deque<vertex> &sub_leve
    std::map<unsigned int, std::map<ControlStep, double > > T_obj;
    ControlStep min_cycle = ControlStep(std::numeric_limits<unsigned int>::max());
    ControlStep max_cycle = ControlStep(0u);
-   for(std::deque<vertex>::const_iterator vi = sub_levels.begin(); vi != sub_levels.end(); vi++)
+   for(std::deque<vertex>::const_iterator vi = sub_levels.begin(); vi != sub_levels.end(); ++vi)
    {
       vertex current_op = *vi;
       const auto curr_cs = schedule->get_cstep(current_op).second;

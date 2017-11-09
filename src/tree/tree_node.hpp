@@ -186,7 +186,7 @@ class tree_node
       * @return the corresponding kind
       */
       static
-      enum kind get_kind(const std::string name);
+      enum kind get_kind(const std::string&name);
 
       /**
        * Given a kind, return the corresponding string
@@ -1020,7 +1020,7 @@ struct PointToSolution
     * Add a symbolic variable to this point to set
     * @param variable is the symbolic variable to be added
     */
-   void Add(const std::string variable);
+   void Add(const std::string&variable);
 
    /**
     * Add a variable to this point to set
@@ -3436,7 +3436,7 @@ struct gimple_phi : public gimple_node
        * @param def_edge is the def edge to be removed
        * @param update_uses specifies if the uses have to be updated
        */
-      void RemoveDefEdge(const tree_managerRef TM, const DefEdge def_edge);
+      void RemoveDefEdge(const tree_managerRef TM, const DefEdge& def_edge);
 
       /**
        * Add a defedge
@@ -3444,7 +3444,7 @@ struct gimple_phi : public gimple_node
        * @param def_edge is the def edge to be added
        * @param update_uses specifies if the uses have to be updated
        */
-      void AddDefEdge(const tree_managerRef TM, const DefEdge def_edge);
+      void AddDefEdge(const tree_managerRef TM, const DefEdge& def_edge);
 
       /**
        * Replace a defedge
@@ -3452,7 +3452,7 @@ struct gimple_phi : public gimple_node
        * @param new_def_edge is the def edge to be added
        * @param update_uses specifies if the uses have to be updated
        */
-      void ReplaceDefEdge(const tree_managerRef TM, const DefEdge old_def_edge, const DefEdge new_def_edge);
+      void ReplaceDefEdge(const tree_managerRef TM, const DefEdge& old_def_edge, const DefEdge& new_def_edge);
 
       /**
        * Set the def edge list removing the ond one
@@ -3955,7 +3955,7 @@ struct gimple_resx :  public gimple_node
 struct gimple_return : public gimple_node
 {
    /// constructor
-   gimple_return(unsigned int i) : gimple_node(i) {}
+   explicit gimple_return(unsigned int i) : gimple_node(i) {}
 
    /// op field is the operand of this node
    tree_nodeRef op;
@@ -3983,7 +3983,7 @@ struct gimple_return : public gimple_node
 struct return_stmt : public tree_node
 {
    /// constructor
-   return_stmt(unsigned int i): tree_node(i), line (-1) {}
+   explicit return_stmt(unsigned int i): tree_node(i), line (-1) {}
 
    /// line is the line number where the compound_stmt is defined.
    int line;

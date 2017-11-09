@@ -90,7 +90,7 @@ DesignFlowStep_Status WriteTechnology::Exec()
    {
       PRINT_OUT_MEX(0,0, msg);
    }
-   catch (const std::string & msg)
+   catch (const std::string& msg)
    {
       PRINT_OUT_MEX(0,0, msg);
    }

@@ -79,7 +79,7 @@ extern bool error_on_warning;
  * @param  line is the line where throw_error is called
 */
 template<class T>
-inline T& throw_error(const T& t, const std::string &expression, const char * DEBUG_PARAMETER(pp), const char * DEBUG_PARAMETER(file), int DEBUG_PARAMETER(line), int code = EXIT_FAILURE)
+inline T& throw_error(const T& t, const std::string&expression, const char * DEBUG_PARAMETER(pp), const char * DEBUG_PARAMETER(file), int DEBUG_PARAMETER(line), int code = EXIT_FAILURE)
 {
    exit_code = code;
 #ifdef NDEBUG
@@ -96,7 +96,7 @@ inline T& throw_error(const T& t, const std::string &expression, const char * DE
 /**
  * Prints a warning, along with information about the source code
 */
-inline void throw_warning(const std::string &expression, const char * DEBUG_PARAMETER(pp), const char * DEBUG_PARAMETER(file), int DEBUG_PARAMETER(line))
+inline void throw_warning(const std::string&expression, const char * DEBUG_PARAMETER(pp), const char * DEBUG_PARAMETER(file), int DEBUG_PARAMETER(line))
 {
 #ifdef NDEBUG
    throw std::string (std::string("warning -> ") + expression + std::string("\n"));

@@ -148,13 +148,13 @@ class RTLCharacterization : public FunctionalUnitStep
        * Extract the component name from list of cells
        * @param input is the input string
        */
-      const std::string ComputeComponent(const std::string input) const;
+      const std::string ComputeComponent(const std::string&input) const;
 
       /**
        * Extract the cell lists
        * @param input is the input string
        */
-      const CustomSet<std::string> ComputeCells(const std::string input) const;
+      const CustomSet<std::string> ComputeCells(const std::string&input) const;
 
       /**
        * Analyze the single cell
@@ -166,7 +166,7 @@ class RTLCharacterization : public FunctionalUnitStep
        * @param constPort is the index of the constant port
        * @param is_commutative is true if all the operations are commutative
        */
-      virtual void AnalyzeCell(functional_unit * fu, const unsigned int prec, const std::vector<std::string > portsize_parameters, const size_t portsize_index, const std::vector<std::string> pipe_parameters, const size_t stage_index, const unsigned int constPort, const bool is_commutative);
+      virtual void AnalyzeCell(functional_unit * fu, const unsigned int prec, const std::vector<std::string> &portsize_parameters, const size_t portsize_index, const std::vector<std::string> &pipe_parameters, const size_t stage_index, const unsigned int constPort, const bool is_commutative);
 
    public:
       /**
@@ -176,7 +176,7 @@ class RTLCharacterization : public FunctionalUnitStep
        * @param design_flow_manager is the design flow manager
        * @param parameters is the set of input parameters
        */
-      RTLCharacterization(const target_managerRef target, const std::string component, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
+      RTLCharacterization(const target_managerRef target, const std::string&component, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
 
       /**
        * Destructor

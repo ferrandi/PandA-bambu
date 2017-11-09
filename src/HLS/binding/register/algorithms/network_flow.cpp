@@ -119,7 +119,7 @@ bool network_flow::successive_shortest_path_algorithm()
       print_graph();
 
    //from (i,j) adding (j,i), cji = -cij, ruji = 0, flow_ji = 0, pseudo_flow_ji = 0, rcji = cji, uji = 0
-   for (inserted_edges_iterator = inserted_edges.begin(); inserted_edges_iterator != inserted_edges.end(); inserted_edges_iterator++)
+   for (inserted_edges_iterator = inserted_edges.begin(); inserted_edges_iterator != inserted_edges.end(); ++inserted_edges_iterator)
    {
       network_flow_graph_type::edge_descriptor original, reverse;
       vertex_pair vertices;
@@ -146,12 +146,12 @@ bool network_flow::successive_shortest_path_algorithm()
       network_flow_graph_type::vertex_descriptor k, I;
 
       k = *(E.begin());
-      for (EDi = E.begin(); EDi != E.end(); EDi++)
+      for (EDi = E.begin(); EDi != E.end(); ++EDi)
          if (p_nf_balance[*EDi] > p_nf_balance[k])
             k = *EDi;
 
       I = *(D.begin());
-      for (EDi = D.begin(); EDi != D.end(); EDi++)
+      for (EDi = D.begin(); EDi != D.end(); ++EDi)
          if (p_nf_balance[*EDi] < p_nf_balance[k])
             I = *EDi;
       /*---------------------------------------------------------------------------*/
@@ -191,7 +191,7 @@ bool network_flow::successive_shortest_path_algorithm()
 
       sigma = initial_value;
 
-      for (P_iterator = P.begin(); P_iterator != P.end(); P_iterator++)//min{rij: (i,j) in P}
+      for (P_iterator = P.begin(); P_iterator != P.end(); ++P_iterator)//min{rij: (i,j) in P}
          if ( p_nf_residual_capacity[*P_iterator] < sigma )
             sigma = p_nf_residual_capacity[*P_iterator];
       if ( p_nf_imbalance[k] < sigma )
@@ -204,7 +204,7 @@ bool network_flow::successive_shortest_path_algorithm()
       PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "network_flow: sigma computated");
 
       /*augment sigma units of pseudo flow along the path P, updating flows, residual capacity and imbalance*/
-      for (P_iterator = P.begin(); P_iterator != P.end(); P_iterator++)
+      for (P_iterator = P.begin(); P_iterator != P.end(); ++P_iterator)
       {
          network_flow_graph_type::vertex_descriptor source, target;
          network_flow_graph_type::out_edge_iterator  oei, oei_end;

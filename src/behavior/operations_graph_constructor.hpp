@@ -88,14 +88,14 @@ class operations_graph_constructor
        * @param source is the name of the vertex.
        * @return the index associatet with the source.
        */
-      vertex getIndex(const std::string &source);
+      vertex getIndex(const std::string&source);
 
       /**
        * Return the vertex index given the id of the vertex node.
        * @param source is the name of the vertex.
        * @return the index associatet with the source.
        */
-      vertex CgetIndex(const std::string & source) const;
+      vertex CgetIndex(const std::string& source) const;
 
       /**
        * add an edge between vertex source and vertex dest
@@ -142,14 +142,14 @@ class operations_graph_constructor
        * @param bb_index is the basic block index associated with the operation.
        * @param node_id is the index of the tree node
       */
-      void AddOperation(const tree_managerRef TM, const std::string &source, const std::string &oper, unsigned int bb_index, const unsigned int node_id);
+      void AddOperation(const tree_managerRef TM, const std::string&source, const std::string&oper, unsigned int bb_index, const unsigned int node_id);
 
       /**
        * Add the type associated with a vertex.
        * @param source is the vertex name at which the type is associated.
        * @param type is an unsigned int representing the type associated with source.
        */
-      void add_type(const std::string &source, unsigned int type);
+      void add_type(const std::string&source, unsigned int type);
 
       /**
        * Constructor.
@@ -200,7 +200,7 @@ class operations_graph_constructor
        * @param source is the vertex name at which the type is associated.
        * @param called is the called function
        */
-      void add_called_function(const std::string &source, unsigned int called_function);
+      void add_called_function(const std::string&source, unsigned int called_function);
 };
 
 #endif

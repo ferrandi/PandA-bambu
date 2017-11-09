@@ -175,7 +175,7 @@ const std::string revision_hash =
 
 #define OPTION_NAME(r, data, elem) option_name[BOOST_PP_CAT(OPT_, elem)] = #elem;
 
-Parameter::Parameter(const std::string _program_name, int _argc, char * * const _argv, int _debug_level) :
+Parameter::Parameter(const std::string&_program_name, int _argc, char * * const _argv, int _debug_level) :
    argc(_argc),
    argv(_argv),
    debug_level(_debug_level)
@@ -207,7 +207,8 @@ Parameter::Parameter(const Parameter & other) :
    Options(other.Options),
    enum_options(other.enum_options),
    option_name(other.option_name),
-   debug_classes(other.debug_classes)
+   debug_classes(other.debug_classes),
+   debug_level(other.debug_level)
 {
 }
 
@@ -285,7 +286,7 @@ void Parameter::load_xml_configuration_file(const std::string& filename)
    {
       std::cerr << msg << std::endl;
    }
-   catch (const std::string & msg)
+   catch (const std::string& msg)
    {
       std::cerr << msg << std::endl;
    }
@@ -306,7 +307,7 @@ void Parameter::write_xml_configuration_file(const std::string& filename)
 
    xml_element* parameters = document.create_root_node("parameters");
 
-   for (OptionMap::const_iterator Op = Options.begin(); Op != Options.end(); Op++)
+   for (OptionMap::const_iterator Op = Options.begin(); Op != Options.end(); ++Op)
    {
       xml_element* node = parameters->add_child_element(Op->first);
       WRITE_XNVM2("value", Op->second, node);
@@ -338,19 +339,19 @@ void Parameter::SetCommonDefaults()
 void Parameter::print(std::ostream& os) const
 {
    os << "List of parameters: " << std::endl;
-   for(OptionMap::const_iterator i = Options.begin(); i != Options.end(); i++)
+   for(OptionMap::const_iterator i = Options.begin(); i != Options.end(); ++i)
    {
       os << i->first << ": " << i->second << std::endl;
    }
    std::map<enum enum_option, std::string>::const_iterator option, option_end = enum_options.end();
-   for(option = enum_options.begin(); option != option_end; option++)
+   for(option = enum_options.begin(); option != option_end; ++option)
    {
       os << option_name.find(option->first)->second << ": " << option->second << std::endl;
    }
    os << " === " << std::endl;
 }
 
-int Parameter::get_class_debug_level(const std::string class_name, int _debug_level) const
+int Parameter::get_class_debug_level(const std::string&class_name, int _debug_level) const
 {
    auto temp = class_name;
    temp.erase(std::remove(temp.begin(), temp.end(), '_'), temp.end());
@@ -362,7 +363,7 @@ int Parameter::get_class_debug_level(const std::string class_name, int _debug_le
       return _debug_level;
 }
 
-int Parameter::GetFunctionDebugLevel(const std::string class_name, const std::string function_name) const
+int Parameter::GetFunctionDebugLevel(const std::string&class_name, const std::string&function_name) const
 {
    auto canonic_class_name = class_name;
    canonic_class_name.erase(std::remove(canonic_class_name.begin(), canonic_class_name.end(), '_'), canonic_class_name.end());
@@ -380,7 +381,7 @@ int Parameter::GetFunctionDebugLevel(const std::string class_name, const std::st
 
 }
 
-void Parameter::add_debug_class(const std::string & class_name)
+void Parameter::add_debug_class(const std::string& class_name)
 {
    auto temp = class_name;
    temp.erase(std::remove(temp.begin(), temp.end(), '_'), temp.end());
@@ -968,7 +969,7 @@ bool Parameter::ManageGccOptions(int next_option, char * optarg_param)
 }
 #endif
 
-Parameters_FileFormat Parameter::GetFileFormat(const std::string & file_name, const bool check_xml_root_node) const
+Parameters_FileFormat Parameter::GetFileFormat(const std::string& file_name, const bool check_xml_root_node) const
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Getting file format of file " + file_name);
    std::string extension = GetExtension(file_name);
@@ -1702,7 +1703,7 @@ void Parameter::setOption(const enum enum_option name, const SDCScheduling_Algor
 }
 
 #endif
-bool Parameter::IsParameter(const std::string & name) const
+bool Parameter::IsParameter(const std::string& name) const
 {
    return panda_parameters.find(name) != panda_parameters.end();
 }

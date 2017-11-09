@@ -134,7 +134,7 @@ DesignFlowStep_Status AddOpLoopFlowEdges::InternalExec()
 
    ///Adding edges from last operation of header to all operations of the loop
    std::list<LoopConstRef>::const_iterator loop, loop_end = loops.end();
-   for(loop = loops.begin(); loop != loop_end; loop++)
+   for(loop = loops.begin(); loop != loop_end; ++loop)
    {
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Considering loop " + boost::lexical_cast<std::string>((*loop)->GetId()));
       if (!(*loop)->IsReducible())
@@ -145,13 +145,13 @@ DesignFlowStep_Status AddOpLoopFlowEdges::InternalExec()
       ///Operations which belong to the loop
       const std::unordered_set<vertex> & loop_bb = (*loop)->get_blocks();
       std::unordered_set<vertex>::const_iterator it, it_end = loop_bb.end();
-      for(it = loop_bb.begin(); it != it_end; it++)
+      for(it = loop_bb.begin(); it != it_end; ++it)
       {
          const BBNodeInfoConstRef bb_node_info = fbb->CGetBBNodeInfo(*it);
          ///Skip operation belonging to the header itself
          const std::list<vertex>  & statements_list = bb_node_info->statements_list;
          std::list<vertex>::const_iterator it2, it2_end = statements_list.end();
-         for(it2 = statements_list.begin(); it2 != it2_end; it2++)
+         for(it2 = statements_list.begin(); it2 != it2_end; ++it2)
          {
             if(bb_node_info->block->number != bb_node_info->loop_id)
             {
@@ -171,14 +171,14 @@ DesignFlowStep_Status AddOpLoopFlowEdges::InternalExec()
       /// add a flow edge from the last operation of the header and the operations of the loop
       /// useful only for the speculation graph
       std::unordered_set<vertex>::const_iterator it3, it3_end = loop_operations[(*loop)->GetId()].end();
-      for(it3 = loop_operations[(*loop)->GetId()].begin(); it3 != it3_end; it3++)
+      for(it3 = loop_operations[(*loop)->GetId()].begin(); it3 != it3_end; ++it3)
       {
          PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Adding flow edge from " + GET_NAME(fcfg, last_statement) + " to " + GET_NAME(fcfg, *it3));
          function_behavior->ogc->AddEdge(last_statement, *it3, FLG_SELECTOR);
       }
       /// add a feedback flow edge from the operations of the loop to the first statement of the header
       const vertex first_statement = *(statements_list.begin());
-      for(it3 = loop_operations[(*loop)->GetId()].begin(); it3 != it3_end; it3++)
+      for(it3 = loop_operations[(*loop)->GetId()].begin(); it3 != it3_end; ++it3)
       {
          PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Adding a feedback flow edge from " + GET_NAME(fcfg, *it3) + " to " + GET_NAME(fcfg, first_statement));
          function_behavior->ogc->AddEdge(*it3, first_statement, FB_FLG_SELECTOR);
@@ -202,7 +202,7 @@ DesignFlowStep_Status AddOpLoopFlowEdges::InternalExec()
    {
       THROW_UNREACHABLE("flsaodg graph of function " + function_name + " is not acyclic");
    }
-   catch (const std::string & msg)
+   catch (const std::string& msg)
    {
       THROW_UNREACHABLE("flsaodg graph of function " + function_name + " is not acyclic");
    }

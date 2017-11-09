@@ -225,7 +225,7 @@ Loops::Loops(const FunctionBehaviorRef _FB, const ParameterConstRef parameters) 
    computeDepth(GetLoop(0));
    /// compute landing pads
    std::list<LoopRef>::const_iterator loop, loop_end = modifiable_loops_list.end();
-   for(loop = modifiable_loops_list.begin(); loop != loop_end; loop++)
+   for(loop = modifiable_loops_list.begin(); loop != loop_end; ++loop)
    {
       (*loop)->ComputeLandingPadExits();
    }
@@ -591,7 +591,7 @@ void Loops::tarjan_scc(const BBGraphRef djg, vertex v,
             l->add_block(body_loop_vertex);
             block_to_loop[body_loop_vertex] = l;
          }
-         for(const auto nested_loop : nested_loops)
+         for(const auto& nested_loop : nested_loops)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Setting " + STR(l->GetId()) + " as parent of " + STR(nested_loop->GetId()));
             nested_loop->SetParent(l);
@@ -623,7 +623,7 @@ const LoopConstRef Loops::CGetLoop(unsigned int id) const
 {
    std::list<LoopConstRef>::const_iterator it, it_end;
    it_end = const_loops_list.end();
-   for(it = const_loops_list.begin(); it != it_end; it++)
+   for(it = const_loops_list.begin(); it != it_end; ++it)
       if((*it)->GetId() == id)
          return *it;
    THROW_UNREACHABLE("Loop with id " + boost::lexical_cast<std::string>(id) + " doesn't exist");
@@ -634,7 +634,7 @@ const LoopRef Loops::GetLoop(unsigned int id)
 {
    std::list<LoopRef>::const_iterator it, it_end;
    it_end = modifiable_loops_list.end();
-   for(it = modifiable_loops_list.begin(); it != it_end; it++)
+   for(it = modifiable_loops_list.begin(); it != it_end; ++it)
       if((*it)->GetId() == id)
          return *it;
    THROW_UNREACHABLE("Loop with id " + boost::lexical_cast<std::string>(id) + " doesn't exist");
@@ -646,7 +646,7 @@ size_t Loops::NumLoops() const
    return const_loops_list.size();
 }
 
-void Loops::WriteDot(const std::string & file_name
+void Loops::WriteDot(const std::string& file_name
 #if HAVE_HOST_PROFILING_BUILT
    ,const ProfilingInformationConstRef profiling_information
 #endif
@@ -657,7 +657,7 @@ void Loops::WriteDot(const std::string & file_name
    const BBGraphRef  cfg = FB->GetBBGraph(FunctionBehavior::BB);
    std::ofstream dot((output_directory + file_name).c_str());
    dot << "digraph LoopForest {" << std::endl;
-   for(const auto loop : const_loops_list)
+   for(const auto& loop : const_loops_list)
    {
       dot << loop->GetId() << " [label=\"LoopId=" << loop->GetId() << " - Depth: " << loop->depth;
 #if HAVE_HOST_PROFILING_BUILT
@@ -686,15 +686,15 @@ void Loops::WriteDot(const std::string & file_name
       dot << "\\nBlocks:";
       const std::unordered_set<vertex> & blocks = loop->get_blocks();
       std::unordered_set<vertex>::const_iterator bb, bb_end = blocks.end();
-      for(bb = blocks.begin(); bb != bb_end; bb++)
+      for(bb = blocks.begin(); bb != bb_end; ++bb)
       {
          dot << " BB" + boost::lexical_cast<std::string>(cfg->CGetBBNodeInfo(*bb)->block->number);
       }
       dot << "\\n\"];" << std::endl;
    }
-   for(const auto loop : const_loops_list)
+   for(const auto& loop : const_loops_list)
    {
-      for(const auto child : loop->GetChildren())
+      for(const auto& child : loop->GetChildren())
       {
          dot << loop->GetId() << "->" << child->GetId() << ";" << std::endl;
       }
@@ -706,7 +706,7 @@ void Loops::computeDepth(const LoopConstRef loop)
 {
    const std::set<LoopConstRef> children = loop->GetChildren();
    std::set<LoopConstRef>::const_iterator child, child_end = children.end();
-   for(child = children.begin(); child != child_end; child++)
+   for(child = children.begin(); child != child_end; ++child)
    {
       Loop * child_loop = const_cast<Loop *>(child->get());
       child_loop->depth = loop->depth + 1;
@@ -731,7 +731,7 @@ void Loops::BuildZeroLoop()
       zero_loop->is_innermost_loop = true;
 
    std::list<LoopRef>::iterator loop, loop_end = modifiable_loops_list.end();
-   for(loop = modifiable_loops_list.begin(); loop != loop_end; loop++)
+   for(loop = modifiable_loops_list.begin(); loop != loop_end; ++loop)
    {
       if(not (*loop)->Parent())
       {
@@ -740,7 +740,7 @@ void Loops::BuildZeroLoop()
          std::unordered_set<vertex> children_blocks;
          (*loop)->get_recursively_bb(children_blocks);
          std::unordered_set<vertex>::const_iterator child_block, child_block_end = children_blocks.end();
-         for(child_block = children_blocks.begin(); child_block != child_block_end; child_block++)
+         for(child_block = children_blocks.begin(); child_block != child_block_end; ++child_block)
          {
             if(zero_loop->blocks.find(*child_block) != zero_loop->blocks.end())
                zero_loop->blocks.erase(zero_loop->blocks.find(*child_block));

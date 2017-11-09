@@ -207,20 +207,20 @@ class DesignFlowManager
        * Return the vertex associated with a design step if exists, NULL_VERTEX otherwise
        * @param signature is the signature of the design step
        */
-      vertex GetDesignFlowStep(const std::string signature) const;
+      vertex GetDesignFlowStep(const std::string&signature) const;
 
       /**
        * Return the status of a design step (if it does not exist return NONEXISTENT)
        * @param signature is the signature of the design step
        */
-      DesignFlowStep_Status GetStatus(const std::string signature) const;
+      DesignFlowStep_Status GetStatus(const std::string&signature) const;
 
       /**
        * Return the factory which can create design flow step with signature beginning with prefix
        * @param prefix is the beginning of the steps that the factory should be created
        * @return the corresponding factory
        */
-      const DesignFlowStepFactoryConstRef CGetDesignFlowStepFactory(const std::string prefix) const;
+      const DesignFlowStepFactoryConstRef CGetDesignFlowStepFactory(const std::string&prefix) const;
 
       /**
        * Register a design flow step factory
@@ -233,7 +233,7 @@ class DesignFlowManager
        * @param signature is the signature of the step to be created
        * @return the created design flow step
        */
-      const DesignFlowStepRef CreateFlowStep(const std::string signature) const;
+      const DesignFlowStepRef CreateFlowStep(const std::string&signature) const;
 };
 
 typedef refcount<DesignFlowManager> DesignFlowManagerRef;

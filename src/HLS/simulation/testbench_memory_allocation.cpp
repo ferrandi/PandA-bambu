@@ -115,7 +115,7 @@ void TestbenchMemoryAllocation::AllocTestbenchMemory(void) const
    for (const auto & curr_test_vector : HLSMgr->RSim->test_vectors)
    {
       // loop on the variables in memory
-      for (std::list<unsigned int>::const_iterator l = mem.begin(); l != mem.end(); l++)
+      for (std::list<unsigned int>::const_iterator l = mem.begin(); l != mem.end(); ++l)
       {
          std::string param = behavioral_helper->PrintVariable(*l);
          if (param[0] == '"')

@@ -117,7 +117,7 @@ struct AbsControlStep : std::pair<unsigned int, ControlStep>
        * @param other is the second step
        * @return true if this  is before other
        */
-      bool operator<(const AbsControlStep other) const;
+      bool operator<(const AbsControlStep &other) const;
 };
 
 /**

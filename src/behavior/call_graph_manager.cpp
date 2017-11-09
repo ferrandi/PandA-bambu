@@ -420,7 +420,7 @@ const CallGraphConstRef CallGraphManager::CGetCallGraph() const
    return call_graph;
 }
 
-const CallGraphConstRef CallGraphManager::CGetCallSubGraph(const std::unordered_set<vertex> vertices) const
+const CallGraphConstRef CallGraphManager::CGetCallSubGraph(const std::unordered_set<vertex> &vertices) const
 {
    return CallGraphConstRef(new CallGraph(call_graphs_collection, STD_SELECTOR | FEEDBACK_SELECTOR, vertices));
 }

@@ -145,7 +145,7 @@ DesignFlowStep_Status compute_implicit_calls::InternalExec()
    statement_list * sl = GetPointer<statement_list>(GET_NODE(fd->body));
    THROW_ASSERT(sl, "Body is not a statement_list");
    std::map<unsigned int, blocRef>::iterator it_bb, it_bb_end = sl->list_of_bloc.end();
-   for(it_bb = sl->list_of_bloc.begin(); it_bb != it_bb_end ; it_bb++)
+   for(it_bb = sl->list_of_bloc.begin(); it_bb != it_bb_end ; ++it_bb)
    {
       if (it_bb->second->number == BB_ENTRY || it_bb->second->number == BB_EXIT)
          continue;

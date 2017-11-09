@@ -141,7 +141,7 @@ std::unordered_map<std::string, Translator::LatexColumnFormat::ComparisonOperato
 
 std::unordered_map<std::string, Translator::LatexColumnFormat::TotalFormat> Translator::LatexColumnFormat::string_to_TOF;
 
-Translator::LatexColumnFormat::TextFormat Translator::LatexColumnFormat::LatexColumnFormat::get_TF(const std::string string)
+Translator::LatexColumnFormat::TextFormat Translator::LatexColumnFormat::LatexColumnFormat::get_TF(const std::string&string)
 {
    if(string_to_TF.empty())
    {
@@ -152,7 +152,7 @@ Translator::LatexColumnFormat::TextFormat Translator::LatexColumnFormat::LatexCo
    return string_to_TF.find(string)->second;
 }
 
-Translator::LatexColumnFormat::ComparisonOperator Translator::LatexColumnFormat::LatexColumnFormat::get_CO(const std::string string)
+Translator::LatexColumnFormat::ComparisonOperator Translator::LatexColumnFormat::LatexColumnFormat::get_CO(const std::string&string)
 {
    if(string_to_CO.empty())
    {
@@ -163,7 +163,7 @@ Translator::LatexColumnFormat::ComparisonOperator Translator::LatexColumnFormat:
    return string_to_CO.find(string)->second;
 }
 
-Translator::LatexColumnFormat::TotalFormat Translator::LatexColumnFormat::LatexColumnFormat::GetTotalFormat(const std::string string)
+Translator::LatexColumnFormat::TotalFormat Translator::LatexColumnFormat::LatexColumnFormat::GetTotalFormat(const std::string&string)
 {
    if(string_to_TOF.empty())
    {
@@ -214,13 +214,13 @@ void Translator::Translate(const std::unordered_map<std::string, long double> in
    std::unordered_map<std::string, long double>::const_iterator it, it_end = input.end();
 
    long double base = 0.0;
-   for(it = input.begin(); it != it_end; it++)
+   for(it = input.begin(); it != it_end; ++it)
    {
       if (it->first == rtl_node::GetString(base_R))
          base = it->second;
    }
 
-   for(it = input.begin(); it != it_end; it++)
+   for(it = input.begin(); it != it_end; ++it)
    {
       long double normalization_value = 1.0;
       if(normalization.find(it->first) != normalization.end())
@@ -281,7 +281,7 @@ void Translator::Translate(const std::unordered_map<std::string, long double> in
       else if (it->first == "Dynamic_operations_plusminus_int_expr")
       {
          it2_end = int_type.end();
-         for(it2 = int_type.begin(); it2 != it2_end; it2++)
+         for(it2 = int_type.begin(); it2 != it2_end; ++it2)
          {
             output[abs_R][*it2] = it->second*normalization_value + base*normalization_value;
             output[minus_R][*it2] = it->second*normalization_value + base*normalization_value;
@@ -293,7 +293,7 @@ void Translator::Translate(const std::unordered_map<std::string, long double> in
       else if (it->first == "Dynamic_operations_plusminus_float_expr")
       {
          it2_end = float_type.end();
-         for(it2 = float_type.begin(); it2 != it2_end; it2++)
+         for(it2 = float_type.begin(); it2 != it2_end; ++it2)
          {
             output[abs_R][*it2] = it->second*normalization_value + base*normalization_value;
             output[minus_R][*it2] = it->second*normalization_value + base*normalization_value;
@@ -304,7 +304,7 @@ void Translator::Translate(const std::unordered_map<std::string, long double> in
       else if (it->first == "Dynamic_operations_mult_int_expr")
       {
          it2_end = int_type.end();
-         for(it2 = int_type.begin(); it2 != it2_end; it2++)
+         for(it2 = int_type.begin(); it2 != it2_end; ++it2)
          {
             output[mult_R][*it2] = it->second*normalization_value + base*normalization_value;
          }
@@ -312,7 +312,7 @@ void Translator::Translate(const std::unordered_map<std::string, long double> in
       else if (it->first == "Dynamic_operations_mult_float_expr")
       {
          it2_end = float_type.end();
-         for(it2 = float_type.begin(); it2 != it2_end; it2++)
+         for(it2 = float_type.begin(); it2 != it2_end; ++it2)
          {
             output[mult_R][*it2] = it->second*normalization_value + base*normalization_value;
          }
@@ -320,7 +320,7 @@ void Translator::Translate(const std::unordered_map<std::string, long double> in
       else if (it->first == "Dynamic_operations_bit_int_expr")
       {
          it2_end = int_type.end();
-         for(it2 = int_type.begin(); it2 != it2_end; it2++)
+         for(it2 = int_type.begin(); it2 != it2_end; ++it2)
          {
             output[and_R][*it2] = it->second*normalization_value + base*normalization_value;
             output[ashift_R][*it2] = it->second*normalization_value + base*normalization_value;
@@ -349,7 +349,7 @@ void Translator::Translate(const std::unordered_map<std::string, long double> in
       else if (it->first == "Dynamic_operations_bit_float_expr")
       {
          it2_end = float_type.end();
-         for(it2 = float_type.begin(); it2 != it2_end; it2++)
+         for(it2 = float_type.begin(); it2 != it2_end; ++it2)
          {
             output[and_R][*it2] = it->second*normalization_value + base*normalization_value;
             output[ashiftrt_R][*it2] = it->second*normalization_value + base*normalization_value;
@@ -377,7 +377,7 @@ void Translator::Translate(const std::unordered_map<std::string, long double> in
       else if (it->first == "Dynamic_operations_div_int_expr")
       {
          it2_end = int_type.end();
-         for(it2 = int_type.begin(); it2 != it2_end; it2++)
+         for(it2 = int_type.begin(); it2 != it2_end; ++it2)
          {
             output[div_R][*it2] = it->second*normalization_value + base*normalization_value;
             output[udiv_R][*it2] = it->second*normalization_value + base*normalization_value;
@@ -386,7 +386,7 @@ void Translator::Translate(const std::unordered_map<std::string, long double> in
       else if (it->first == "Dynamic_operations_div_float_expr")
       {
          it2_end = float_type.end();
-         for(it2 = float_type.begin(); it2 != it2_end; it2++)
+         for(it2 = float_type.begin(); it2 != it2_end; ++it2)
          {
             output[div_R][*it2] = it->second*normalization_value + base*normalization_value;
             output[udiv_R][*it2] = it->second*normalization_value + base*normalization_value;
@@ -395,7 +395,7 @@ void Translator::Translate(const std::unordered_map<std::string, long double> in
       else if (it->first == "Dynamic_operations_integer_register_writing")
       {
          it2_end = int_type.end();
-         for(it2 = int_type.begin(); it2 != it2_end; it2++)
+         for(it2 = int_type.begin(); it2 != it2_end; ++it2)
          {
             output[set_R][*it2] = it->second*normalization_value + base*normalization_value;
          }
@@ -403,7 +403,7 @@ void Translator::Translate(const std::unordered_map<std::string, long double> in
       else if (it->first == "Dynamic_operations_float_register_writing")
       {
          it2_end = float_type.end();
-         for(it2 = float_type.begin(); it2 != it2_end; it2++)
+         for(it2 = float_type.begin(); it2 != it2_end; ++it2)
          {
             output[set_R][*it2] = it->second*normalization_value + base*normalization_value;
          }
@@ -411,7 +411,7 @@ void Translator::Translate(const std::unordered_map<std::string, long double> in
       else if (it->first == "Dynamic_operations_integer_register_accesses")
       {
          it2_end = int_type.end();
-         for(it2 = int_type.begin(); it2 != it2_end; it2++)
+         for(it2 = int_type.begin(); it2 != it2_end; ++it2)
          {
             output[reg_R][*it2] = it->second*normalization_value + base*normalization_value;
          }
@@ -419,7 +419,7 @@ void Translator::Translate(const std::unordered_map<std::string, long double> in
       else if (it->first == "Dynamic_operations_float_register_accesses")
       {
          it2_end = float_type.end();
-         for(it2 = float_type.begin(); it2 != it2_end; it2++)
+         for(it2 = float_type.begin(); it2 != it2_end; ++it2)
          {
             output[reg_R][*it2] = it->second*normalization_value + base*normalization_value;
          }
@@ -427,7 +427,7 @@ void Translator::Translate(const std::unordered_map<std::string, long double> in
       else if (it->first == "Dynamic_operations_integer_memory_readings")
       {
          it2_end = int_type.end();
-         for(it2 = int_type.begin(); it2 != it2_end; it2++)
+         for(it2 = int_type.begin(); it2 != it2_end; ++it2)
          {
             output[read_mem_R][*it2] = it->second*normalization_value + base*normalization_value;
          }
@@ -435,7 +435,7 @@ void Translator::Translate(const std::unordered_map<std::string, long double> in
       else if (it->first == "Dynamic_operations_float_memory_readings")
       {
          it2_end = float_type.end();
-         for(it2 = float_type.begin(); it2 != it2_end; it2++)
+         for(it2 = float_type.begin(); it2 != it2_end; ++it2)
          {
             output[read_mem_R][*it2] = it->second*normalization_value + base*normalization_value;
          }
@@ -443,7 +443,7 @@ void Translator::Translate(const std::unordered_map<std::string, long double> in
       else if (it->first == "Dynamic_operations_integer_memory_writings")
       {
          it2_end = int_type.end();
-         for(it2 = int_type.begin(); it2 != it2_end; it2++)
+         for(it2 = int_type.begin(); it2 != it2_end; ++it2)
          {
             output[write_mem_R][*it2] = it->second*normalization_value + base*normalization_value;
          }
@@ -451,7 +451,7 @@ void Translator::Translate(const std::unordered_map<std::string, long double> in
       else if (it->first == "Dynamic_operations_float_memory_writings")
       {
          it2_end = float_type.end();
-         for(it2 = float_type.begin(); it2 != it2_end; it2++)
+         for(it2 = float_type.begin(); it2 != it2_end; ++it2)
          {
             output[write_mem_R][*it2] = it->second*normalization_value + base*normalization_value;
          }
@@ -503,13 +503,13 @@ void Translator::write_to_xml(const std::map<enum rtl_kind, std::map<enum mode_k
       WRITE_XNVM2(STR_XML_weights_cycles, boost::lexical_cast<std::string>(data.find(backward_branches_R)->second.find(none_R)->second), backward_branches);
    }
    std::map<enum rtl_kind, std::map<enum mode_kind, long double> >::const_iterator it, it_end = data.end();
-   for(it = data.begin(); it != it_end; it++)
+   for(it = data.begin(); it != it_end; ++it)
    {
       xml_element * node = rtl_weights->add_child_element(STR_XML_weights_rtx);
       WRITE_XNVM2("name", rtl_node::GetString(it->first), node);
       const std::map<enum mode_kind, long double> & internal_weights = it->second;
       std::map<enum mode_kind, long double>::const_iterator it2, it2_end = internal_weights.end();
-      for(it2 = internal_weights.begin(); it2 != it2_end; it2++)
+      for(it2 = internal_weights.begin(); it2 != it2_end; ++it2)
       {
          if(it2->first == none_R)
          {
@@ -528,7 +528,7 @@ void Translator::write_to_xml(const std::map<enum rtl_kind, std::map<enum mode_k
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Ended writing to xml");
 }
 
-void Translator::write_to_csv(const std::map<std::string, std::set<std::string> > & tags, const std::unordered_map<std::string, std::unordered_map<std::string, std::unordered_map<std::string, long double> > > & results, const std::string file_name) const
+void Translator::write_to_csv(const std::map<std::string, std::set<std::string> > & tags, const std::unordered_map<std::string, std::unordered_map<std::string, std::unordered_map<std::string, long double> > > & results, const std::string&file_name) const
 {
    std::unordered_set<std::string> skipping;
    BOOST_PP_SEQ_FOR_EACH(SKIPPING_MACRO, BOOST_PP_EMPTY, SKIPPED_COLUMN);
@@ -545,11 +545,11 @@ void Translator::write_to_csv(const std::map<std::string, std::set<std::string> 
    }
 
    std::map<std::string, std::set<std::string> >::const_iterator it2, it2_end = tags.end();
-   for(it2 = tags.begin(); it2 != it2_end; it2++)
+   for(it2 = tags.begin(); it2 != it2_end; ++it2)
    {
       const std::set<std::string> & cat_tags = it2->second;
       std::set<std::string>::const_iterator it4, it4_end = cat_tags.end();
-      for(it4 = cat_tags.begin(); it4 != it4_end; it4++)
+      for(it4 = cat_tags.begin(); it4 != it4_end; ++it4)
       {
          if(skipping.find(*it4) == skipping.end())
             out << ", " << it2->first << "_" << *it4;
@@ -559,12 +559,12 @@ void Translator::write_to_csv(const std::map<std::string, std::set<std::string> 
    }
    out << std::endl;
    std::unordered_map<std::string, std::unordered_map<std::string, std::unordered_map<std::string, long double> > >::const_iterator it, it_end = results.end();
-   for(it = results.begin(); it != it_end; it++)
+   for(it = results.begin(); it != it_end; ++it)
    {
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "   Analyzing line " + it->first);
       out << it->first;
       std::map<std::string, std::set<std::string> >::const_iterator tag, tag_end = tags.end();
-      for(tag = tags.begin(); tag != tag_end; tag++)
+      for(tag = tags.begin(); tag != tag_end; ++tag)
       {
          long double operations = 0.0;
          const std::unordered_map<std::string, std::unordered_map<std::string, long double> > & bench_counters = it->second;
@@ -574,7 +574,7 @@ void Translator::write_to_csv(const std::map<std::string, std::set<std::string> 
             const std::set<std::string> & cat_tags = tag->second;
             const std::unordered_map<std::string, long double> & cat_counters = bench_counters.find(tag->first)->second;
             std::set<std::string>::const_iterator it4, it4_end = cat_tags.end();
-            for(it4 = cat_tags.begin(); it4 != it4_end; it4++)
+            for(it4 = cat_tags.begin(); it4 != it4_end; ++it4)
             {
                PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "         Tag " + *it4);
                if(skipping.find(*it4) == skipping.end() && *it4 != "Average_cycles")
@@ -600,7 +600,7 @@ void Translator::write_to_csv(const std::map<std::string, std::set<std::string> 
                PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "      Operations " + boost::lexical_cast<std::string>(operations));
                out << " - Operations " << operations << " ";
             }
-            for(it4 = cat_tags.begin(); it4 != it4_end; it4++)
+            for(it4 = cat_tags.begin(); it4 != it4_end; ++it4)
             {
                PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "         Tag " + *it4);
                if(skipping.find(*it4) == skipping.end())
@@ -627,27 +627,27 @@ void Translator::write_to_csv(const std::map<std::string, std::set<std::string> 
 }
 #endif
 
-void Translator::write_to_csv(const std::unordered_map<std::string, std::list<std::pair<std::string, std::string> > > & results, const std::string & file_name) const
+void Translator::write_to_csv(const std::unordered_map<std::string, std::list<std::pair<std::string, std::string> > > & results, const std::string& file_name) const
 {
    std::ofstream out(file_name.c_str());
    THROW_ASSERT(out, "Error in opening output file " + file_name);
    std::list<std::pair<std::string, std::string> > first_line = results.begin()->second;
    std::list<std::pair<std::string, std::string> >::const_iterator tag, tag_end = first_line.end();
    out << "Benchmark, ";
-   for(tag = first_line.begin(); tag != tag_end; tag++)
+   for(tag = first_line.begin(); tag != tag_end; ++tag)
    {
       out << tag->first << ", ";
    }
    out << std::endl;
    std::unordered_map<std::string, std::list<std::pair<std::string, std::string> > >::const_iterator line, line_end = results.end();
-   for(line = results.begin(); line != line_end; line++)
+   for(line = results.begin(); line != line_end; ++line)
    {
       THROW_ASSERT(line->second.size() ==  first_line.size(), "Lines with different number of fields "+ boost::lexical_cast<std::string>(line->second.size()) + " vs " + boost::lexical_cast<std::string>(first_line.size()));
       out << line->first << ", ";
       std::list<std::pair<std::string, std::string> >::const_iterator first_line_tag = first_line.begin();
       std::list<std::pair<std::string, std::string> > current_line = line->second;
       std::list<std::pair<std::string, std::string> >::const_iterator current_tag, current_tag_end = current_line.end();
-      for(current_tag = current_line.begin(); current_tag != current_tag_end; current_tag++, first_line_tag++)
+      for(current_tag = current_line.begin(); current_tag != current_tag_end; ++current_tag, ++first_line_tag)
       {
           THROW_ASSERT(current_tag->first == first_line_tag->first, "Line with different column name: " + current_tag->first + " vs " + first_line_tag->first);
           out << current_tag->second << ", ";
@@ -656,16 +656,16 @@ void Translator::write_to_csv(const std::unordered_map<std::string, std::list<st
    }
 }
 
-void Translator::write_to_pa(const std::map<std::string, std::set<std::string> > & tags, const std::unordered_map<std::string, std::unordered_map<std::string, std::unordered_map<std::string, long double> > > & results, const std::string file_name) const
+void Translator::write_to_pa(const std::map<std::string, std::set<std::string> > & tags, const std::unordered_map<std::string, std::unordered_map<std::string, std::unordered_map<std::string, long double> > > & results, const std::string&file_name) const
 {
    std::ofstream out(file_name.c_str());
    THROW_ASSERT(out, "Error in opening output file " + file_name);
    std::unordered_map<std::string, std::unordered_map<std::string, std::unordered_map<std::string, long double> > >::const_iterator it, it_end = results.end();
-   for(it = results.begin(); it != it_end; it++)
+   for(it = results.begin(); it != it_end; ++it)
    {
       out << "#Benchmark " << it->first << "# ";
       std::map<std::string, std::set<std::string> >::const_iterator it2, it2_end = tags.end();
-      for(it2 = tags.begin(); it2 != it2_end; it2++)
+      for(it2 = tags.begin(); it2 != it2_end; ++it2)
       {
          out << "#" << it2->first << "# ";
          const std::unordered_map<std::string, std::unordered_map<std::string, long double> > & bench_counters = it->second;
@@ -674,7 +674,7 @@ void Translator::write_to_pa(const std::map<std::string, std::set<std::string> >
             const std::set<std::string> & cat_tags = it2->second;
             const std::unordered_map<std::string, long double> & cat_counters = bench_counters.find(it2->first)->second;
             std::set<std::string>::const_iterator it4, it4_end = cat_tags.end();
-            for(it4 = cat_tags.begin(); it4 != it4_end; it4++)
+            for(it4 = cat_tags.begin(); it4 != it4_end; ++it4)
             {
                out << "#" << *it4 << "# ";
                if(cat_counters.find(*it4) != cat_counters.end())
@@ -693,7 +693,7 @@ void Translator::write_to_latex(std::map<std::string, CustomMap<std::string, std
 #if HAVE_SOURCE_CODE_STATISTICS_XML
    ASSERT_PARAMETER(input_format)
 #endif
-   , const std::string & file_name) const
+   , const std::string& file_name) const
 {
    if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC)
    {
@@ -773,7 +773,7 @@ void Translator::write_to_latex(std::map<std::string, CustomMap<std::string, std
          std::cerr << msg << std::endl;
          THROW_ERROR("Error during parsing of experimental setup");
       }
-      catch (const std::string & msg)
+      catch (const std::string& msg)
       {
          std::cerr << msg << std::endl;
          THROW_ERROR("Error during parsing of experimental setup");
@@ -935,7 +935,7 @@ void Translator::write_to_latex(std::map<std::string, CustomMap<std::string, std
             bool bold = true;
             const std::unordered_set<std::string> columns_to_be_compared = column.compared_columns;
             std::unordered_set<std::string>::const_iterator column_to_be_compared, column_to_be_compared_end = columns_to_be_compared.end();
-            for(column_to_be_compared = columns_to_be_compared.begin(); column_to_be_compared != column_to_be_compared_end; column_to_be_compared++)
+            for(column_to_be_compared = columns_to_be_compared.begin(); column_to_be_compared != column_to_be_compared_end; ++column_to_be_compared)
             {
                if(not LatexColumnFormat::Compare(boost::lexical_cast<long double>(line.second[column.source_name]), column.comparison_operator, boost::lexical_cast<long double>(line.second[*column_to_be_compared])))
                {
@@ -1031,11 +1031,11 @@ void Translator::write_to_latex(std::map<std::string, CustomMap<std::string, std
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Checked exponential notation");
 
-   for(auto const bold_line : bold_cells)
+   for(auto const& bold_line : bold_cells)
    {
       const std::unordered_map<std::string, bool> current_bold_line = bold_line.second;
       std::unordered_map<std::string, bool>::const_iterator bold_cell, bold_cell_end = current_bold_line.end();
-      for(bold_cell = current_bold_line.begin(); bold_cell != bold_cell_end; bold_cell++)
+      for(bold_cell = current_bold_line.begin(); bold_cell != bold_cell_end; ++bold_cell)
       {
          std::string before_bold = results[bold_line.first][bold_cell->first];
          results[bold_line.first][bold_cell->first] = "\\textbf{" + before_bold + "}";
@@ -1044,7 +1044,7 @@ void Translator::write_to_latex(std::map<std::string, CustomMap<std::string, std
 
    ///Recomputing column width
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Recomputing column width");
-   for(auto const column : latex_column_formats)
+   for(auto const& column : latex_column_formats)
    {
       if(column.text_format == LatexColumnFormat::TF_exponential or column.compared_columns.size())
       {
@@ -1258,18 +1258,18 @@ void Translator::merge_pa
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Starting merging");
    output_data = input_data;
    std::unordered_map<std::string, std::unordered_map<std::string, std::unordered_map<std::string, long double> > > ::const_iterator it, it_end = input_data.end();
-   for(it = input_data.begin(); it != it_end; it++)
+   for(it = input_data.begin(); it != it_end; ++it)
    {
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Considering input " + it->first);
       const std::unordered_map<std::string, std::unordered_map<std::string, long double> > & cat = it->second;
       std::unordered_map<std::string, std::unordered_map<std::string, long double> >::const_iterator it2, it2_end = cat.end();
-      for(it2 = cat.begin(); it2 != it2_end; it2++)
+      for(it2 = cat.begin(); it2 != it2_end; ++it2)
       {
          PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Considering category " + it2->first);
          if(tags.find(it2->first) != tags.end())
          {
             std::set<std::string>::const_iterator it3, it3_end = tags.find(it2->first)->second.end();
-            for(it3 = tags.find(it2->first)->second.begin(); it3 != it3_end; it3++)
+            for(it3 = tags.find(it2->first)->second.begin(); it3 != it3_end; ++it3)
             {
                PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Considering tag " + *it3);
                if(keys.find(it2->first) != keys.end())
@@ -1334,7 +1334,7 @@ void Translator::get_normalization(std::unordered_map<std::string, long double> 
       std::cerr << msg << std::endl;
       THROW_ERROR("Error during parsing of normalization file");
    }
-   catch (const std::string & msg)
+   catch (const std::string& msg)
    {
       std::cerr << msg << std::endl;
       THROW_ERROR("Error during parsing of normalization file");
@@ -1356,7 +1356,7 @@ void Translator::replace_underscore(std::string& ioString)
    boost::algorithm::replace_all(ioString, "_", " ");
 }
 
-std::string Translator::get_exponential_notation(const std::string & input) const
+std::string Translator::get_exponential_notation(const std::string& input) const
 {
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "   Get exponential notation of " + input);
    std::ostringstream output;
@@ -1391,7 +1391,7 @@ void Translator::read_column_formats(const XMLDomParserRef parser, std::list<Lat
       max_column_size = boost::lexical_cast<size_t>(LOAD_XVM(max_column_size, root));
    const xml_node::node_list list = root->get_children();
    xml_node::node_list::const_iterator child, child_end = list.end();
-   for (child = list.begin(); child != child_end; child++)
+   for (child = list.begin(); child != child_end; ++child)
    {
       const xml_element * child_element = GetPointer<const xml_element>(*child);
       if (!child_element)
@@ -1403,7 +1403,7 @@ void Translator::read_column_formats(const XMLDomParserRef parser, std::list<Lat
       latex_column_format.column_name = column_name;
       const xml_node::node_list fields = child_element->get_children();
       xml_node::node_list::const_iterator field, field_end = fields.end();
-      for (field = fields.begin(); field != field_end; field++)
+      for (field = fields.begin(); field != field_end; ++field)
       {
          const xml_element * field_element = GetPointer<const xml_element>(*field);
          if(!field_element)

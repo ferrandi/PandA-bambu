@@ -116,7 +116,7 @@
 ///wrapper/treegcc include
 #include "gcc_wrapper.hpp"
 
-TestbenchGenerationBaseStep::TestbenchGenerationBaseStep(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type, const std::string _c_testbench_basename) :
+TestbenchGenerationBaseStep::TestbenchGenerationBaseStep(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type, const std::string& _c_testbench_basename) :
    HLS_step(_parameters, _HLSMgr, _design_flow_manager, _hls_flow_step_type),
    writer(language_writer::create_writer(HDLWriter_Language::VERILOG, _HLSMgr->get_HLS_target()->get_technology_manager(), _parameters)),
    mod(nullptr),
@@ -604,8 +604,7 @@ void TestbenchGenerationBaseStep::write_hdl_testbench(std::string simulation_val
    writer->write("endmodule\n");
 }
 
-void TestbenchGenerationBaseStep::write_initial_block(
-      const std::string simulation_values_path,
+void TestbenchGenerationBaseStep::write_initial_block(const std::string& simulation_values_path,
       bool withMemory,
       const tree_managerConstRef TreeM,
       bool generate_vcd_output)
@@ -653,7 +652,7 @@ void TestbenchGenerationBaseStep::write_initial_block(
              */
             std::string sigscope = sig_scope.first;
             boost::replace_all(sigscope, STR(HIERARCHY_SEPARATOR), ".");
-            for (const std::string & signame : sig_scope.second)
+            for (const std::string& signame : sig_scope.second)
                writer->write("$dumpvars(1, " + sigscope + signame + ");\n");
          }
       }
@@ -1567,7 +1566,7 @@ void TestbenchGenerationBaseStep::write_sim_time_calc() const
    writer->write("end\n");
 }
 
-void TestbenchGenerationBaseStep::read_input_value_from_file(const std::string &input_name, bool &first_valid_input) const
+void TestbenchGenerationBaseStep::read_input_value_from_file(const std::string&input_name, bool &first_valid_input) const
 {
    if(input_name != CLOCK_PORT_NAME && input_name != RESET_PORT_NAME && input_name != START_PORT_NAME)
    {

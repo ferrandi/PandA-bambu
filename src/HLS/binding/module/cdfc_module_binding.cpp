@@ -678,14 +678,14 @@ CdfcGraph::CdfcGraph(const CdfcGraphsCollectionRef  cdfc_graphs_collection, cons
    graph(cdfc_graphs_collection.get(), _selector)
 {}
 
-CdfcGraph::CdfcGraph(const CdfcGraphsCollectionRef  cdfc_graphs_collection, const int _selector, const std::unordered_set<vertex> vertices) :
+CdfcGraph::CdfcGraph(const CdfcGraphsCollectionRef  cdfc_graphs_collection, const int _selector, const std::unordered_set<vertex> &vertices) :
    graph(cdfc_graphs_collection.get(), _selector, vertices)
 {}
 
 CdfcGraph::~CdfcGraph()
 {}
 
-void CdfcGraph::WriteDot(const std::string & file_name, const int) const
+void CdfcGraph::WriteDot(const std::string& file_name, const int) const
 {
    const CdfcGraphInfo * cdfc_graph_info = GetPointer<const CdfcGraphInfo>(CGetGraphInfo());
    const BehavioralHelperConstRef behavioral_helper = cdfc_graph_info->operation_graph->CGetOpGraphInfo()->BH;

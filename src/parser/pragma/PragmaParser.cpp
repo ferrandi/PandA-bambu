@@ -78,6 +78,7 @@ PragmaParser::PragmaParser(const pragma_managerRef _PM, const ParameterConstRef 
    PM(_PM),
    debug_level(_Param->get_class_debug_level(GET_CLASS(*this))),
    Param(_Param),
+   level(0),
    search_function(false)
 {
    THROW_ASSERT(PM, "Pragma manager not initialized");
@@ -168,7 +169,7 @@ std::string PragmaParser::substitutePragmas(const std::string& OldFile)
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Found {: Current level " + boost::lexical_cast<std::string>(level));
             if (!found)
             {
-               for(std::list<std::string>::iterator it = FloatingPragmas.begin(); it != FloatingPragmas.end(); it++)
+               for(std::list<std::string>::iterator it = FloatingPragmas.begin(); it != FloatingPragmas.end(); ++it)
                   OpenPragmas[level].push_back(*it);
                FloatingPragmas.clear();
             }
@@ -178,7 +179,7 @@ std::string PragmaParser::substitutePragmas(const std::string& OldFile)
          {
             if (OpenPragmas.count(level))
             {
-               for(std::list<std::string>::iterator open_pragma = OpenPragmas[level].begin(); open_pragma != OpenPragmas[level].end(); open_pragma++)
+               for(std::list<std::string>::iterator open_pragma = OpenPragmas[level].begin(); open_pragma != OpenPragmas[level].end(); ++open_pragma)
                   fileOutput << std::string(STR_CST_pragma_function_end) + "(\"" << *open_pragma << "\");" << std::endl;
                OpenPragmas[level].clear();
             }

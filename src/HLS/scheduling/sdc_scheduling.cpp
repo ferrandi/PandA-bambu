@@ -425,7 +425,7 @@ void SDCScheduling::AddDelayConstraints(const meilp_solverRef solver, const OpGr
                   debug_filtered_op_graph->WriteDot("Error.dot");
                   THROW_UNREACHABLE("Edge " + GET_NAME(op_graph, constraint.first) + "-->" + GET_NAME(op_graph, second));
                }
-               catch (const std::string & msg)
+               catch (const std::string& msg)
                {
                   debug_filtered_op_graph->WriteDot("Error.dot");
                   THROW_UNREACHABLE("Edge " + GET_NAME(op_graph, constraint.first) + "-->" + GET_NAME(op_graph, second));
@@ -769,7 +769,7 @@ DesignFlowStep_Status SDCScheduling::InternalExec()
                               debug_filtered_op_graph->WriteDot("Error.dot");
                               THROW_UNREACHABLE("Edge " + GET_NAME(op_graph, other_unbounded_operation) + "-->" + GET_NAME(op_graph, operation));
                            }
-                           catch (const std::string & msg)
+                           catch (const std::string& msg)
                            {
                               debug_filtered_op_graph->WriteDot("Error.dot");
                               THROW_UNREACHABLE("Edge " + GET_NAME(op_graph, other_unbounded_operation) + "-->" + GET_NAME(op_graph, operation));
@@ -812,7 +812,7 @@ DesignFlowStep_Status SDCScheduling::InternalExec()
                               debug_filtered_op_graph->WriteDot("Error.dot");
                               THROW_UNREACHABLE("Edge " + GET_NAME(op_graph, operation) + "-->" + GET_NAME(op_graph, other_unbounded_operation));
                            }
-                           catch (const std::string & msg)
+                           catch (const std::string& msg)
                            {
                               debug_filtered_op_graph->WriteDot("Error.dot");
                               THROW_UNREACHABLE("Edge " + GET_NAME(op_graph, operation) + "-->" + GET_NAME(op_graph, other_unbounded_operation));
@@ -860,7 +860,7 @@ DesignFlowStep_Status SDCScheduling::InternalExec()
                               debug_filtered_op_graph->WriteDot("Error.dot");
                               THROW_UNREACHABLE("Edge " + GET_NAME(op_graph, loop_pipelined_operation) + "-->" + GET_NAME(op_graph, operation));
                            }
-                           catch (const std::string & msg)
+                           catch (const std::string& msg)
                            {
                               debug_filtered_op_graph->WriteDot("Error.dot");
                               THROW_UNREACHABLE("Edge " + GET_NAME(op_graph, loop_pipelined_operation) + "-->" + GET_NAME(op_graph, operation));
@@ -903,7 +903,7 @@ DesignFlowStep_Status SDCScheduling::InternalExec()
                               debug_filtered_op_graph->WriteDot("Error.dot");
                               THROW_UNREACHABLE("Edge " + GET_NAME(op_graph, operation) + "-->" + GET_NAME(op_graph, loop_pipelined_operation));
                            }
-                           catch (const std::string & msg)
+                           catch (const std::string& msg)
                            {
                               debug_filtered_op_graph->WriteDot("Error.dot");
                               THROW_UNREACHABLE("Edge " + GET_NAME(op_graph, operation) + "-->" + GET_NAME(op_graph, loop_pipelined_operation));
@@ -955,7 +955,7 @@ DesignFlowStep_Status SDCScheduling::InternalExec()
                               debug_filtered_op_graph->WriteDot("Error.dot");
                               THROW_UNREACHABLE("Edge " + GET_NAME(op_graph, loop_unbounded_operation) + "-->" + GET_NAME(op_graph, operation));
                            }
-                           catch (const std::string & msg)
+                           catch (const std::string& msg)
                            {
                               debug_filtered_op_graph->WriteDot("Error.dot");
                               THROW_UNREACHABLE("Edge " + GET_NAME(op_graph, loop_unbounded_operation) + "-->" + GET_NAME(op_graph, operation));
@@ -998,7 +998,7 @@ DesignFlowStep_Status SDCScheduling::InternalExec()
                               debug_filtered_op_graph->WriteDot("Error.dot");
                               THROW_UNREACHABLE("Edge " + GET_NAME(op_graph, operation) + "-->" + GET_NAME(op_graph, loop_unbounded_operation));
                            }
-                           catch (const std::string & msg)
+                           catch (const std::string& msg)
                            {
                               debug_filtered_op_graph->WriteDot("Error.dot");
                               THROW_UNREACHABLE("Edge " + GET_NAME(op_graph, operation) + "-->" + GET_NAME(op_graph, loop_unbounded_operation));
@@ -1067,7 +1067,7 @@ DesignFlowStep_Status SDCScheduling::InternalExec()
                                  debug_filtered_op_graph->WriteDot("Error.dot");
                                  THROW_UNREACHABLE("Edge " + GET_NAME(op_graph, front) + "-->" + GET_NAME(op_graph, operation));
                               }
-                              catch (const std::string & msg)
+                              catch (const std::string& msg)
                               {
                                  debug_filtered_op_graph->WriteDot("Error.dot");
                                  THROW_UNREACHABLE("Edge " + GET_NAME(op_graph, front) + "-->" + GET_NAME(op_graph, operation));

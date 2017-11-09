@@ -60,13 +60,13 @@ class HLSCWriter : public CWriter
       /**
        * Print the binary representation of a number
        */
-      std::string convert_in_binary(const BehavioralHelperConstRef behavioral_helper, unsigned int base_type, const std::string &C_value, unsigned int precision);
+      std::string convert_in_binary(const BehavioralHelperConstRef behavioral_helper, unsigned int base_type, const std::string&C_value, unsigned int precision);
 
       /**
        * Check if a binary string is a sequence of zeros with
        * length multiple of 8
        */
-      bool is_all_8zeros(const std::string & str);
+      bool is_all_8zeros(const std::string& str);
 
       /**
        * Write printf statements to write n_bytes bytes initialized to 0 for the
@@ -81,7 +81,7 @@ class HLSCWriter : public CWriter
        * simulator
        */
       size_t WriteBinaryMemoryInit
-      (const std::string & binary_string, const size_t data_size, std::string &bits_offset);
+      (const std::string& binary_string, const size_t data_size, std::string &bits_offset);
 
       /**
        * Write global variables needed by the tesbench
@@ -199,7 +199,7 @@ class HLSCWriter : public CWriter
        * Writes the final C file
        * @param file_name is the name of the file to be generated
        */
-      virtual void WriteFile(const std::string & file_name);
+      virtual void WriteFile(const std::string& file_name);
 
       /**
        * Writes the header of the file

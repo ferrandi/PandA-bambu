@@ -91,7 +91,7 @@ class IR_lowering : public FunctionFrontendFlowStep
        * @param bb_index is the index of the basic block index
        * @param srcp_default is the srcp to be assigned
        */
-      tree_nodeRef CreateGimpleAssign(const tree_nodeRef type, const tree_nodeRef op, const unsigned int bb_index, const std::string & srcp_default);
+      tree_nodeRef CreateGimpleAssign(const tree_nodeRef type, const tree_nodeRef op, const unsigned int bb_index, const std::string& srcp_default);
 
       /**
        * A subroutine of expand_mult, used for constant multiplications.
@@ -99,24 +99,24 @@ class IR_lowering : public FunctionFrontendFlowStep
        * convenient.  Use the shift/add sequence described by ALG and apply
        * the final fixup specified by VARIANT.
        */
-      tree_nodeRef expand_mult_const (tree_nodeRef op0, unsigned long long int val, const struct algorithm &alg, enum mult_variant &variant, const tree_nodeRef stmt, const blocRef block, tree_nodeRef &type,  const std::string srcp_default);
+      tree_nodeRef expand_mult_const (tree_nodeRef op0, unsigned long long int val, const struct algorithm &alg, enum mult_variant &variant, const tree_nodeRef stmt, const blocRef block, tree_nodeRef &type,  const std::string&srcp_default);
 
       /**
        * Expand signed modulus of OP0 by a power of two D in mode MODE.
        */
-      tree_nodeRef expand_smod_pow2 (tree_nodeRef op0, unsigned long long int d, const tree_nodeRef stmt, const blocRef block, tree_nodeRef &type, const std::string srcp_default);
+      tree_nodeRef expand_smod_pow2 (tree_nodeRef op0, unsigned long long int d, const tree_nodeRef stmt, const blocRef block, tree_nodeRef &type, const std::string&srcp_default);
 
       /**
        * Expand signed division of OP0 by a power of two D in mode MODE.
        * This routine is only called for positive values of D.
        */
-      tree_nodeRef expand_sdiv_pow2 (tree_nodeRef op0, unsigned long long int d, const tree_nodeRef stmt, const blocRef block, tree_nodeRef &type, const std::string srcp_default);
+      tree_nodeRef expand_sdiv_pow2 (tree_nodeRef op0, unsigned long long int d, const tree_nodeRef stmt, const blocRef block, tree_nodeRef &type, const std::string&srcp_default);
 
-      tree_nodeRef expand_MC(tree_nodeRef op0, integer_cst* ic_node, tree_nodeRef old_target, const tree_nodeRef stmt, const blocRef block, tree_nodeRef &type_expr, const std::string & srcp_default);
+      tree_nodeRef expand_MC(tree_nodeRef op0, integer_cst* ic_node, tree_nodeRef old_target, const tree_nodeRef stmt, const blocRef block, tree_nodeRef &type_expr, const std::string& srcp_default);
 
-      bool expand_target_mem_ref(target_mem_ref461 * tmr, const tree_nodeRef stmt, const blocRef block, const std::string srcp_default, bool temp_addr);
+      bool expand_target_mem_ref(target_mem_ref461 * tmr, const tree_nodeRef stmt, const blocRef block, const std::string&srcp_default, bool temp_addr);
 
-      tree_nodeRef expand_mult_highpart(tree_nodeRef op0, unsigned long long int ml, tree_nodeRef type_expr, int data_bitsize, const std::list<tree_nodeRef>::const_iterator it_los, const blocRef block, const std::string srcp_default);
+      tree_nodeRef expand_mult_highpart(tree_nodeRef op0, unsigned long long int ml, tree_nodeRef type_expr, int data_bitsize, const std::list<tree_nodeRef>::const_iterator it_los, const blocRef block, const std::string&srcp_default);
 
       /**
        * Return the set of analyses in relationship with this design step
@@ -124,7 +124,7 @@ class IR_lowering : public FunctionFrontendFlowStep
        */
       const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const;
 
-      tree_nodeRef array_ref_lowering(array_ref * AR, const std::string srcp_default, std::pair<unsigned int, blocRef> block, std::list<tree_nodeRef>::const_iterator it_los, bool temp_addr);
+      tree_nodeRef array_ref_lowering(array_ref * AR, const std::string&srcp_default, std::pair<unsigned int, blocRef> block, std::list<tree_nodeRef>::const_iterator it_los, bool temp_addr);
 
       /**
        * @brief check if the max transformation limit has been reached

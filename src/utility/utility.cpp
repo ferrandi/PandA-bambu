@@ -49,7 +49,7 @@ TimeStamp::TimeStamp(boost::posix_time::ptime timestamp) :
    boost::posix_time::ptime(timestamp)
 {}
 
-TimeStamp::TimeStamp(const std::string timestamp) :
+TimeStamp::TimeStamp(const std::string&timestamp) :
    boost::posix_time::ptime(boost::date_time::parse_delimited_time<boost::posix_time::ptime>(timestamp, 'T'))
 {}
 

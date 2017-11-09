@@ -48,7 +48,7 @@
 ///Boost include
 #include <boost/algorithm/string.hpp>
 
-xml_element* xml_child::add_child_element(const std::string & _name)
+xml_element* xml_child::add_child_element(const std::string& _name)
 {
    xml_element* new_el = new xml_element(_name);
    xml_nodeRef new_ref(new_el);
@@ -99,7 +99,7 @@ int xml_node::get_line() const
    return line;
 }
 
-const CustomSet<xml_nodeRef> xml_child::CGetDescendants(const std::string & path) const
+const CustomSet<xml_nodeRef> xml_child::CGetDescendants(const std::string& path) const
 {
    CustomSet<xml_nodeRef> ret;
    std::vector<std::string> splitted;

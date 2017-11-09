@@ -102,12 +102,12 @@ static bool is_a_skip_operation(std::string op_name)
       return false;
 }
 
-static inline std::string encode_op_type(const std::string & op_name, const std::string & fu_supported_types)
+static inline std::string encode_op_type(const std::string& op_name, const std::string& fu_supported_types)
 {
    return op_name + ":" + fu_supported_types;
 }
 
-static inline std::string encode_op_type_prec(const std::string & op_name, const std::string & fu_supported_types, node_kind_prec_infoRef node_info)
+static inline std::string encode_op_type_prec(const std::string& op_name, const std::string& fu_supported_types, node_kind_prec_infoRef node_info)
 {
    std::string op_type = encode_op_type(op_name, fu_supported_types);
    const size_t n_ins = node_info->input_prec.size();
@@ -180,9 +180,9 @@ const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
 }
 
 technology_nodeRef allocation::extract_bambu_provided(
-      const std::string & library_name,
+      const std::string& library_name,
       operation* curr_op,
-      const std::string & bambu_provided_resource)
+      const std::string& bambu_provided_resource)
 {
    technology_nodeRef current_fu;
    std::string function_name;
@@ -282,7 +282,7 @@ static void connectClockAndReset(
       SM->add_connection(port_rst, reset);
 }
 
-void allocation::BuildProxyWrapper(functional_unit* current_fu, const std::string & orig_fun_name, const std::string & orig_library_name)
+void allocation::BuildProxyWrapper(functional_unit* current_fu, const std::string& orig_fun_name, const std::string& orig_library_name)
 {
    const library_managerRef orig_libraryManager = TM->get_library_manager(orig_library_name);
    THROW_ASSERT(orig_libraryManager->is_fu(orig_fun_name), "functional unit not yet synthesized: " + orig_fun_name + "(" + orig_library_name + ")");
@@ -419,9 +419,9 @@ void allocation::BuildProxyWrapper(functional_unit* current_fu, const std::strin
 
 void allocation::add_proxy_function_wrapper(
       technology_nodeRef wrapper_tn,
-      const std::string & library_name,
+      const std::string& library_name,
       technology_nodeRef techNode_obj,
-      const std::string & orig_fun_name)
+      const std::string& orig_fun_name)
 {
    const std::string wrapped_fu_name = WRAPPED_PROXY_PREFIX + orig_fun_name;
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - adding proxy function wrapper " + wrapped_fu_name);
@@ -707,7 +707,7 @@ void allocation::add_proxy_function_module(
       technology_nodeRef proxy_tn,
       const HLS_constraintsRef HLS_C,
       technology_nodeRef techNode_obj,
-      const std::string & orig_fun_name)
+      const std::string& orig_fun_name)
 {
    const std::string proxied_fu_name = PROXY_PREFIX + orig_fun_name;
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - adding proxied function " + proxied_fu_name);
@@ -1152,9 +1152,10 @@ DesignFlowStep_Status allocation::InternalExec()
                                      parameters->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) != MemoryAllocation_Policy::EXT_PIPELINED_BRAM);
    IntegrateTechnologyLibraries();
 
+#if HAVE_FLOPOCO
    bool skip_flopoco_resources = false;
-#if !HAVE_FLOPOCO
-   skip_flopoco_resources = true;
+#else
+   bool skip_flopoco_resources = true;
 #endif
    bool skip_softfloat_resources = true;
    if(parameters->isOption(OPT_soft_float) && parameters->getOption<bool>(OPT_soft_float))
@@ -1811,7 +1812,7 @@ DesignFlowStep_Status allocation::InternalExec()
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Considered functional unit: " + current_fu->get_name());
       }
-      for(std::map<std::string,technology_nodeRef>::iterator iter_new_fu=new_fu.begin(); iter_new_fu!=new_fu.end(); iter_new_fu++)
+      for(std::map<std::string,technology_nodeRef>::iterator iter_new_fu=new_fu.begin(); iter_new_fu!=new_fu.end(); ++iter_new_fu)
       {
          PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Adding functional unit: "+iter_new_fu->first+" in "+ lib_name);
          TM->add(iter_new_fu->second, lib_name);
@@ -1909,7 +1910,7 @@ DesignFlowStep_Status allocation::InternalExec()
    return DesignFlowStep_Status::SUCCESS;
 }
 
-std::string allocation::get_compliant_pipelined_unit(double clock, const std::string pipe_parameter, const technology_nodeRef current_fu, const std::string curr_op, const std::string library_name, const std::string template_suffix, unsigned int module_prec)
+std::string allocation::get_compliant_pipelined_unit(double clock, const std::string&pipe_parameter, const technology_nodeRef current_fu, const std::string&curr_op, const std::string&library_name, const std::string&template_suffix, unsigned int module_prec)
 {
    if(pipe_parameter=="") return "";
    THROW_ASSERT(GetPointer<functional_unit>(current_fu), "expected a functional unit object");

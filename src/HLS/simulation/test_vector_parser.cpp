@@ -194,7 +194,7 @@ void TestVectorParser::ParseXMLFile(
    {
       std::cerr << msg << std::endl;
    }
-   catch (const std::string & msg)
+   catch (const std::string& msg)
    {
       std::cerr << msg << std::endl;
    }

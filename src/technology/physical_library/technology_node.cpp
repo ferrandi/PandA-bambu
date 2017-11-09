@@ -125,7 +125,7 @@ void operation::xload(const xml_element* Enode, const technology_nodeRef fu, con
       LOAD_XVFM(supported_types_string, Enode, supported_types);
       std::vector<std::string> types;
       boost::algorithm::split(types, supported_types_string, boost::algorithm::is_any_of("|"));
-      for(std::vector<std::string>::const_iterator type = types.begin(); type != types.end(); type++)
+      for(std::vector<std::string>::const_iterator type = types.begin(); type != types.end(); ++type)
       {
          if(*type == "")
             THROW_ERROR("wrong XML syntax for supported_types attribute: null type description in \"" + supported_types_string + "\" [" + operation_name + "]");
@@ -143,7 +143,7 @@ void operation::xload(const xml_element* Enode, const technology_nodeRef fu, con
          {
             std::vector<std::string> precs;
             boost::algorithm::split(precs, type_name_to_precs[1], boost::algorithm::is_any_of(","));
-            for(std::vector<std::string>::const_iterator single_prec = precs.begin(); single_prec != precs.end() && *single_prec != ""; single_prec++)
+            for(std::vector<std::string>::const_iterator single_prec = precs.begin(); single_prec != precs.end() && *single_prec != ""; ++single_prec)
             {
                unsigned int type_uint = boost::lexical_cast<unsigned int>(*single_prec);
                type_precs.push_back(type_uint);
@@ -431,7 +431,7 @@ void functional_unit::gload(const std::string& definition, const std::string& fu
    //std::map<std::string, std::map<std::string, TimingModelRef> > pin_models;
 
    unsigned int n = 0;
-   for(std::list<std::string>::iterator s = splitted.begin(); s != splitted.end(); s++)
+   for(std::list<std::string>::iterator s = splitted.begin(); s != splitted.end(); ++s)
    {
       if (s->size() == 0) continue;
       switch(n)
@@ -485,7 +485,7 @@ void functional_unit::gload(const std::string& definition, const std::string& fu
             p->set_id(output);
             p->set_type(bool_type);
             mobj->add_out_port(p);
-            for(std::set<std::string>::iterator i = inputs.begin(); i != inputs.end(); i++)
+            for(std::set<std::string>::iterator i = inputs.begin(); i != inputs.end(); ++i)
             {
                if (i->find("CONST") != std::string::npos) continue;
 
@@ -940,7 +940,7 @@ void functional_unit::xload(const xml_element* Enode, const technology_nodeRef f
    }
 
 #if HAVE_CIRCUIT_BUILT
-   for(std::map<unsigned int, std::string>::iterator m = NP_functionalities.begin(); m != NP_functionalities.end(); m++)
+   for(std::map<unsigned int, std::string>::iterator m = NP_functionalities.begin(); m != NP_functionalities.end(); ++m)
    {
       CM->add_NP_functionality(CM->get_circ(), static_cast<NP_functionality::NP_functionaly_type>(m->first), m->second);
    }
@@ -972,7 +972,7 @@ void functional_unit::xload(const xml_element* Enode, const technology_nodeRef f
          GetPointer<operation>(curr_op)->operation_name = functional_unit_name;
          add(curr_op);
       }
-      for (operation_vec::iterator v = list_of_operation.begin(); v != list_of_operation.end(); v++)
+      for (operation_vec::iterator v = list_of_operation.begin(); v != list_of_operation.end(); ++v)
       {
          if (!GetPointer<operation>(*v)->time_m)
          {
@@ -1250,7 +1250,7 @@ void functional_unit::xwrite(xml_element* rootnode, const technology_nodeRef tn,
    xml_characterization_timestamp->add_child_text(STR(characterization_timestamp));
    ///operation stuff
    operation_vec::iterator it_end = list_of_operation.end();
-   for(operation_vec::iterator it = list_of_operation.begin(); it != it_end; it++)
+   for(operation_vec::iterator it = list_of_operation.begin(); it != it_end; ++it)
    {
       GetPointer<operation>(*it)->xwrite(rootnode, tn, Param, dv_type);
    }

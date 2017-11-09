@@ -356,7 +356,7 @@ struct BBGraph : public graph
        * @param file_name is the file where the graph has to be printed
        * @param detail_level is the detail level of the printed graph
        */
-      void WriteDot(const std::string & file_name, const int detail_level = 0) const;
+      void WriteDot(const std::string& file_name, const int detail_level = 0) const;
 
       /**
        * Write this graph in dot format with some basic blocks highlightened
@@ -364,7 +364,7 @@ struct BBGraph : public graph
        * @param detail_level is the detail level of the printed graph
        * @param annotated is the set of the vertices to be annotated
        */
-      void WriteDot(const std::string & file_name, const std::unordered_set<vertex> & annotated, const int detail_level = 0) const;
+      void WriteDot(const std::string& file_name, const std::unordered_set<vertex> & annotated, const int detail_level = 0) const;
 
       /**
        * Returns the number of basic blocks contained into the graph

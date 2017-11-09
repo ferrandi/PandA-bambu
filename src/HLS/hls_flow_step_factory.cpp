@@ -733,7 +733,7 @@ DesignFlowStepRef HLSFlowStepFactory::CreateHLSFlowStep(const HLSFlowStep_Type t
    return design_flow_step;
 }
 
-const DesignFlowStepSet HLSFlowStepFactory::CreateHLSFlowSteps(const std::unordered_set<std::pair<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef> > hls_flow_steps) const
+const DesignFlowStepSet HLSFlowStepFactory::CreateHLSFlowSteps(const std::unordered_set<std::pair<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef> > &hls_flow_steps) const
 {
    const CallGraphManagerConstRef call_graph_manager = HLS_mgr->CGetCallGraphManager();
    DesignFlowStepSet ret;
@@ -892,7 +892,7 @@ const DesignFlowStepSet HLSFlowStepFactory::CreateHLSFlowSteps(const std::unorde
    return ret;
 }
 
-const DesignFlowStepSet HLSFlowStepFactory::CreateHLSFlowSteps(const std::pair<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef> hls_flow_step) const
+const DesignFlowStepSet HLSFlowStepFactory::CreateHLSFlowSteps(const std::pair<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef> &hls_flow_step) const
 {
    std::unordered_set<std::pair<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef> > hls_flow_steps;
    hls_flow_steps.insert(hls_flow_step);
@@ -905,7 +905,7 @@ const DesignFlowStepSet HLSFlowStepFactory::CreateHLSFlowSteps(const HLSFlowStep
    return CreateHLSFlowSteps(hls_flow_step);
 }
 
-const DesignFlowStepRef HLSFlowStepFactory::CreateHLSFlowStep(const std::pair<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef> hls_flow_step) const
+const DesignFlowStepRef HLSFlowStepFactory::CreateHLSFlowStep(const std::pair<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef> &hls_flow_step) const
 {
    return *CreateHLSFlowSteps(hls_flow_step).cbegin();
 }

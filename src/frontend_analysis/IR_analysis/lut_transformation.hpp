@@ -89,12 +89,12 @@ class lut_transformation : public FunctionFrontendFlowStep
        * @param bb_index is the index of the basic block index
        * @param srcp_default is the srcp to be assigned
        */
-      tree_nodeRef CreateGimpleAssign(const tree_nodeRef type, const tree_nodeRef op, const unsigned int bb_index, const std::string & srcp_default);
+      tree_nodeRef CreateGimpleAssign(const tree_nodeRef type, const tree_nodeRef op, const unsigned int bb_index, const std::string& srcp_default);
       std::vector<tree_nodeRef> GetInputs(const tree_nodeRef node);
       std::string DecToBin(unsigned long long int number);
-      unsigned long long int BinToDec(const std::string number);
-      unsigned long long int GenerateIndexOfLutValue(const std::string binString,const std::vector<std::size_t> indexesSet);
-      std::string AddZeroes(const std::string bitString,const double setSize);
+      unsigned long long int BinToDec(const std::string& number);
+      unsigned long long int GenerateIndexOfLutValue(const std::string& binString,const std::vector<std::size_t>& indexesSet);
+      std::string AddZeroes(const std::string& bitString,const double setSize);
       std::vector<std::size_t> CreateLutIndexSet( std::vector<tree_nodeRef> nodeSet, std::vector<tree_nodeRef> values);
       void MergeLut( std::list<tree_nodeRef> gimpleLutList,std::pair<const unsigned int, boost::shared_ptr<bloc>> bb);
       std::vector<tree_nodeRef> GetLutList( std::vector<tree_nodeRef> list_of_stmt);

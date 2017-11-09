@@ -175,7 +175,7 @@ class TreeNodesPairSorter : public std::binary_function<std::pair<tree_nodeRef, 
        * @param y is the second pair
        * @return true if x is less than y
        */
-      bool operator()(const std::pair<tree_nodeRef, tree_nodeRef> x, const std::pair<tree_nodeRef, tree_nodeRef>  y) const
+      bool operator()(const std::pair<tree_nodeRef, tree_nodeRef> &x, const std::pair<tree_nodeRef, tree_nodeRef>  &y) const
       {
          if(x.first->index ==y.first->index)
          {
@@ -433,7 +433,7 @@ void CWriter::WriteGlobalDeclarations()
    //Write the declarations for the global variables
    var_pp_functorRef variableFunctor(new std_var_pp_functor(behavioral_helper));
    CustomSet<unsigned int>::const_iterator gblVars, gblVarsEnd;
-   for (gblVars = gblVariables.begin(), gblVarsEnd = gblVariables.end(); gblVars != gblVarsEnd; gblVars++)
+   for (gblVars = gblVariables.begin(), gblVarsEnd = gblVariables.end(); gblVars != gblVarsEnd; ++gblVars)
    {
       DeclareVariable(*gblVars, globallyDeclVars, globally_declared_types, behavioral_helper, variableFunctor);
    }
@@ -457,7 +457,7 @@ void CWriter::DeclareFunctionTypes(const unsigned int funId)
 
    const std::unordered_set<unsigned int> parameter_types = behavioral_helper->GetParameterTypes();
    std::unordered_set<unsigned int>::const_iterator parameter_type, parameter_type_end = parameter_types.end();
-   for(parameter_type = parameter_types.begin(); parameter_type != parameter_type_end; parameter_type++)
+   for(parameter_type = parameter_types.begin(); parameter_type != parameter_type_end; ++parameter_type)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Parameter type " + STR(*parameter_type));
       DeclareType(*parameter_type, behavioral_helper, globally_declared_types);
@@ -521,14 +521,14 @@ void CWriter::StartFunctionBody(const unsigned int function_id)
    CustomSet<unsigned int> vars = GetLocalVariables(function_id);
 
    const std::list<unsigned int>& funParams = behavioral_helper->get_parameters();
-   for (std::list<unsigned int>::const_iterator i = funParams.begin(); i != funParams.end(); i++)
+   for (std::list<unsigned int>::const_iterator i = funParams.begin(); i != funParams.end(); ++i)
    {
       if (vars.find(*i) != vars.end())
          vars.erase(*i);
    }
 
    const CustomSet<unsigned int> &gblVariables = AppM->get_global_variables();
-   for (CustomSet<unsigned int>::const_iterator i = gblVariables.begin(); i != gblVariables.end(); i++)
+   for (CustomSet<unsigned int>::const_iterator i = gblVariables.begin(); i != gblVariables.end(); ++i)
    {
       if (vars.find(*i) != vars.end())
          vars.erase(*i);
@@ -953,7 +953,7 @@ void CWriter::writeRoutineInstructions_rec
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Examining successor " + STR(bb_number_next_bb));
                std::set<unsigned int>::const_iterator eIdBeg, eIdEnd;
                std::set<unsigned int> Set = local_rec_bb_fcfgGraph->CGetBBEdgeInfo(*oE)->get_labels(CFG_SELECTOR);
-               for (eIdBeg = Set.begin(), eIdEnd = Set.end(); eIdBeg != eIdEnd; eIdBeg++)
+               for (eIdBeg = Set.begin(), eIdEnd = Set.end(); eIdBeg != eIdEnd; ++eIdBeg)
                {
                   if (*eIdBeg == default_COND)
                   {
@@ -1353,7 +1353,7 @@ void CWriter::DeclareVariable
    std::unordered_set<unsigned int>::const_iterator initVarsIter, initVarsIterEnd;
    if(behavioral_helper->GetInit(curVar, initVars))
    {
-      for (initVarsIter = initVars.begin(), initVarsIterEnd = initVars.end(); initVarsIter != initVarsIterEnd; initVarsIter++)
+      for (initVarsIter = initVars.begin(), initVarsIterEnd = initVars.end(); initVarsIter != initVarsIterEnd; ++initVarsIter)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "For variable " + STR(curVar) + " recursing on " + STR(*initVarsIter));
          if (already_declared_variables.find(*initVarsIter) == already_declared_variables.end() && globallyDeclVars.find(*initVarsIter) == globallyDeclVars.end())
@@ -1870,7 +1870,7 @@ void CWriter::WriteHashTableImplementation()
    indented_output_stream->Append("#define st_foreach_item_int(table, gen, key, value) for(gen=st_init_gen(table); st_gen_int(gen,key,value) || (st_free_gen(gen),0);)\n");
 }
 
-void CWriter::WriteFile(const std::string & file_name)
+void CWriter::WriteFile(const std::string& file_name)
 {
    indented_output_stream->WriteFile(file_name);
 }

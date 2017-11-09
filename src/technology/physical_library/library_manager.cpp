@@ -73,9 +73,8 @@ attribute::attribute(const std::vector<attributeRef>& _content)
    content_list = _content;
 }
 
-attribute::attribute(const std::string& _value_type, const std::string& _content)
+attribute::attribute(const std::string& _value_type, const std::string& _content) : content(_content)
 {
-   content = _content;
    xml_node::convert_escaped(content);
    if (_value_type == "float64")
       value_type = FLOAT64;
@@ -89,7 +88,7 @@ attribute::attribute(const std::string& _value_type, const std::string& _content
       THROW_ERROR("Not supported attribute type: " + _value_type);
 }
 
-attribute::attribute(const value_t  _value_type, const std::string & _content) :
+attribute::attribute(const value_t  _value_type, const std::string& _content) :
    content(_content),
    value_type(_value_type)
 {
@@ -242,7 +241,7 @@ void library_manager::xload(const xml_element* node, const library_managerRef LM
       {
 #if HAVE_FROM_LIBERTY
          const attribute_sequence::attribute_list& attr_list = EnodeC->get_attributes();
-         for(attribute_sequence::attribute_list::const_iterator a = attr_list.begin(); a != attr_list.end(); a++)
+         for(attribute_sequence::attribute_list::const_iterator a = attr_list.begin(); a != attr_list.end(); ++a)
          {
             std::string key = (*a)->get_name();
             std::string value = (*a)->get_value();
@@ -279,10 +278,6 @@ void library_manager::xload(const xml_element* node, const library_managerRef LM
       {
 
       }
-      else if (EnodeC->get_name() == "power_lut_template")
-      {
-
-      }
       else if (EnodeC->get_name() == "cell")
       {
          technology_nodeRef fu_curr = technology_nodeRef(new functional_unit(*iter_int));
@@ -311,7 +306,7 @@ void library_manager::xload(const xml_element* node, const library_managerRef LM
       unsigned int combinational = 0;
       unsigned int others = 0;
       unsigned int total = 0;
-      for(fu_map_type::iterator l = LM->fu_map.begin(); l != LM->fu_map.end(); l++)
+      for(fu_map_type::iterator l = LM->fu_map.begin(); l != LM->fu_map.end(); ++l)
       {
          /*
           * If the functional unit is a template skip the counting.
@@ -336,7 +331,7 @@ void library_manager::xwrite(xml_element* node, TargetDevice_Type dv_type)
 
 #if HAVE_FROM_LIBERTY
    xml_element* info_xml = library->add_child_element("information");
-   for(std::map<unsigned int, std::string>::iterator i = info.begin(); i != info.end(); i++)
+   for(std::map<unsigned int, std::string>::iterator i = info.begin(); i != info.end(); ++i)
    {
       if (i->first == LIBERTY)
          info_xml->set_attribute("liberty_file", i->second);
@@ -352,7 +347,7 @@ void library_manager::xwrite(xml_element* node, TargetDevice_Type dv_type)
       attr->xwrite(library, ordered_attributes[o]);
    }
 
-   for(fu_map_type::const_iterator f = fu_map.begin(); f != fu_map.end(); f++)
+   for(fu_map_type::const_iterator f = fu_map.begin(); f != fu_map.end(); ++f)
    {
       xml_element* xml_cell;
       if(GetPointer<functional_unit>(f->second))
@@ -401,7 +396,7 @@ void library_manager::update(const technology_nodeRef& fu_node)
    if (GetPointer<functional_unit>(node)->layout_m) current_fu->layout_m = GetPointer<functional_unit>(node)->layout_m;
 #endif
    const functional_unit::operation_vec& operations = GetPointer<functional_unit>(node)->get_operations();
-   for(functional_unit::operation_vec::const_iterator o = operations.begin(); o != operations.end(); o++)
+   for(functional_unit::operation_vec::const_iterator o = operations.begin(); o != operations.end(); ++o)
    {
       const operation* op = GetPointer<operation>(*o);
       const technology_nodeRef op_fu = current_fu->get_operation(op->operation_name);

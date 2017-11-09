@@ -291,7 +291,7 @@ DesignFlowStep_Status ipa_point_to_analysis::Exec()
       std::map<unsigned int, blocRef> &blocks = sl->list_of_bloc;
       std::map<unsigned int, blocRef>::iterator it, it_end;
       it_end = blocks.end();
-      for(it = blocks.begin(); it != it_end; it++)
+      for(it = blocks.begin(); it != it_end; ++it)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining BB" + boost::lexical_cast<std::string>(it->first));
          for(auto stmt : it->second->CGetStmtList())

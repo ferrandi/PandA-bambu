@@ -169,13 +169,13 @@ BBGraph::BBGraph(const BBGraphsCollectionRef _g, int _selector, std::unordered_s
    graph(_g.get(), _selector, sub)
 {}
 
-void BBGraph::WriteDot(const std::string & file_name, const int detail_level) const
+void BBGraph::WriteDot(const std::string& file_name, const int detail_level) const
 {
    const std::unordered_set<vertex> annotated;
    WriteDot(file_name, annotated, detail_level);
 }
 
-void BBGraph::WriteDot(const std::string & file_name, const std::unordered_set<vertex> & annotated, const int) const
+void BBGraph::WriteDot(const std::string& file_name, const std::unordered_set<vertex> & annotated, const int) const
 {
    const auto bb_graph_info = CGetBBGraphInfo();
    const auto function_name = bb_graph_info->AppM->CGetFunctionBehavior(bb_graph_info->function_index)->CGetBehavioralHelper()->get_function_name();

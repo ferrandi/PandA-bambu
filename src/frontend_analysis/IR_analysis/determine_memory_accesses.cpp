@@ -140,7 +140,7 @@ DesignFlowStep_Status determine_memory_accesses::InternalExec()
    statement_list * sl = GetPointer<statement_list>(GET_NODE(fd->body));
    THROW_ASSERT(sl, "Body is not a statement_list");
    std::map<unsigned int, blocRef>::iterator it_bb, it_bb_end = sl->list_of_bloc.end();
-   for(it_bb = sl->list_of_bloc.begin(); it_bb != it_bb_end ; it_bb++)
+   for(it_bb = sl->list_of_bloc.begin(); it_bb != it_bb_end ; ++it_bb)
    {
       if (it_bb->second->number == BB_ENTRY || it_bb->second->number == BB_EXIT)
          continue;
@@ -1119,7 +1119,7 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
       {
          constructor* con = GetPointer<constructor>(tn);
          std::vector<std::pair< tree_nodeRef, tree_nodeRef> > &list_of_idx_valu = con->list_of_idx_valu;
-         for(std::vector<std::pair< tree_nodeRef, tree_nodeRef> >::iterator el = list_of_idx_valu.begin(); el != list_of_idx_valu.end(); el++)
+         for(std::vector<std::pair< tree_nodeRef, tree_nodeRef> >::iterator el = list_of_idx_valu.begin(); el != list_of_idx_valu.end(); ++el)
          {
             if (el->first) analyze_node(GET_INDEX_NODE(el->first), left_p, dynamic_address, no_dynamic_address);
             if (el->second) analyze_node(GET_INDEX_NODE(el->second), left_p, dynamic_address, no_dynamic_address);

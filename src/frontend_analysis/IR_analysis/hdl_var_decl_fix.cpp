@@ -104,7 +104,7 @@ DesignFlowStep_Status HDLVarDeclFix::InternalExec()
    return DesignFlowStep_Status::SUCCESS;
 }
 
-const std::string HDLVarDeclFix::Normalize(const std::string identifier) const
+const std::string HDLVarDeclFix::Normalize(const std::string&identifier) const
 {
    return hdl_writer_type == HDLWriter_Language::VHDL  ? boost::to_upper_copy<std::string>(identifier) : identifier;
 }

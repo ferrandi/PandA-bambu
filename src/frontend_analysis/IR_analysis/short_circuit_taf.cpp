@@ -155,7 +155,7 @@ DesignFlowStep_Status short_circuit_taf::InternalExec()
 
    ///compute merging candidates
    std::unordered_set<unsigned int> merging_candidates;
-   for(it = list_of_bloc.begin(); it != it_end; it++)
+   for(it = list_of_bloc.begin(); it != it_end; ++it)
    {
       if(it->first == bloc::ENTRY_BLOCK_ID || it->first == bloc::EXIT_BLOCK_ID)
          continue;
@@ -203,7 +203,7 @@ DesignFlowStep_Status short_circuit_taf::InternalExec()
    {
       mergeable_pair_found = false;
       std::unordered_set<unsigned int>::const_iterator it_mc_end = merging_candidates.end();
-      for(std::unordered_set<unsigned int>::const_iterator it_mc = merging_candidates.begin(); !mergeable_pair_found && it_mc != it_mc_end; it_mc++)
+      for(std::unordered_set<unsigned int>::const_iterator it_mc = merging_candidates.begin(); !mergeable_pair_found && it_mc != it_mc_end; ++it_mc)
       {
          merging_candidate = *it_mc;
          mergeable_pair_found = check_merging_candidate(bb1, bb2, merging_candidate, bb1_true, bb2_true, list_of_bloc);
@@ -555,7 +555,7 @@ void short_circuit_taf::restructure_CFG(unsigned int bb1, unsigned int bb2, unsi
    ///fix bb2 predecessor
    std::vector<unsigned int>::iterator pos;
    std::vector<unsigned int>::const_iterator it_bb1_pred_end = list_of_bloc[bb1]->list_of_pred.end();
-   for(std::vector<unsigned int>::const_iterator it_bb1_pred = list_of_bloc[bb1]->list_of_pred.begin(); it_bb1_pred_end != it_bb1_pred; it_bb1_pred++)
+   for(std::vector<unsigned int>::const_iterator it_bb1_pred = list_of_bloc[bb1]->list_of_pred.begin(); it_bb1_pred_end != it_bb1_pred; ++it_bb1_pred)
    {
       list_of_bloc[bb2]->list_of_pred.push_back(*it_bb1_pred);
       pos = std::find(list_of_bloc[*it_bb1_pred]->list_of_succ.begin(), list_of_bloc[*it_bb1_pred]->list_of_succ.end(), bb1);

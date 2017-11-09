@@ -481,7 +481,7 @@ class structural_object
           * @param type is the type of the object we are looking for.
           * @param owner is the owner of the object named id.
          */
-      virtual structural_objectRef find_member(const std::string &id, so_kind type, const structural_objectRef owner) const = 0;
+      virtual structural_objectRef find_member(const std::string&id, so_kind type, const structural_objectRef owner) const = 0;
 
       /**
           * Find key in this object.
@@ -837,7 +837,7 @@ struct port_o : public structural_object
        * @param type is the type of the object we are looking for.
        * @param owner is the owner of the object named id.
       */
-      structural_objectRef find_member(const std::string &id, so_kind type, const structural_objectRef owner) const;
+      structural_objectRef find_member(const std::string&id, so_kind type, const structural_objectRef owner) const;
 
       /**
        * Find key in this object.
@@ -1054,7 +1054,7 @@ class event_o : public structural_object
           * @param type is the type of the object we are looking for.
           * @param owner is the owner of the object named id.
          */
-      structural_objectRef find_member(const std::string &id, so_kind type, const structural_objectRef owner) const;
+      structural_objectRef find_member(const std::string&id, so_kind type, const structural_objectRef owner) const;
 
       /**
           * Find key in this object.
@@ -1120,7 +1120,7 @@ class data_o : public structural_object
           * @param type is the type of the object we are looking for.
           * @param owner is the owner of the object named id.
          */
-      structural_objectRef find_member(const std::string &id, so_kind type, const structural_objectRef owner) const;
+      structural_objectRef find_member(const std::string&id, so_kind type, const structural_objectRef owner) const;
 
       /**
           * Find key in this object.
@@ -1286,7 +1286,7 @@ class action_o : public structural_object
           * @param type is the type of the object we are looking for.
           * @param owner is the owner of the object named id.
          */
-      structural_objectRef find_member(const std::string &id, so_kind type, const structural_objectRef owner) const;
+      structural_objectRef find_member(const std::string&id, so_kind type, const structural_objectRef owner) const;
 
       /**
           * Find key in this object.
@@ -1399,7 +1399,7 @@ class constant_o : public structural_object
           * @param type is the type of the object we are looking for.
           * @param owner is the owner of the object named id.
          */
-      structural_objectRef find_member(const std::string &id, so_kind type, const structural_objectRef owner) const;
+      structural_objectRef find_member(const std::string&id, so_kind type, const structural_objectRef owner) const;
 
       /**
           * Find key in this object.
@@ -1551,7 +1551,7 @@ class signal_o : public structural_object
           * @param type is the type of the object we are looking for.
           * @param owner is the owner of the object named id.
          */
-      structural_objectRef find_member(const std::string &id, so_kind type, const structural_objectRef owner) const;
+      structural_objectRef find_member(const std::string&id, so_kind type, const structural_objectRef owner) const;
 
       /**
           * Find key in this object.
@@ -1904,7 +1904,7 @@ class module : public structural_object
           * @param type is the type of the object we are looking for.
           * @param owner is the owner of the object named id.
          */
-      virtual structural_objectRef find_member(const std::string &id, so_kind type, const structural_objectRef owner) const;
+      virtual structural_objectRef find_member(const std::string&id, so_kind type, const structural_objectRef owner) const;
 
       /**
           * Find key in this object.
@@ -1980,7 +1980,7 @@ class module : public structural_object
       /**
           * Set the description associated with the module
          */
-      void set_description(const std::string &d) {description = d;}
+      void set_description(const std::string&d) {description = d;}
 
       /**
           * Return the copyright associated with the module
@@ -1990,7 +1990,7 @@ class module : public structural_object
       /**
           * Set the copyright associated with the module
          */
-      void set_copyright(const std::string &c) {copyright = c;}
+      void set_copyright(const std::string&c) {copyright = c;}
 
       /**
           * Return the authors of the functional description of the module
@@ -2000,7 +2000,7 @@ class module : public structural_object
       /**
           * Set the authors associated with the module
          */
-      void set_authors(const std::string &a) {authors = a;}
+      void set_authors(const std::string&a) {authors = a;}
 
       /**
           * Return the license of the functional description of the module
@@ -2010,7 +2010,7 @@ class module : public structural_object
       /**
           * Set the license associated with the module
          */
-      void set_license(const std::string &l) {license = l;}
+      void set_license(const std::string&l) {license = l;}
 
       /**
           * Return a non-empty string when the component has been specialized.
@@ -2030,7 +2030,7 @@ class module : public structural_object
        * @param name is the name of the parameter
        * @return the type of the parameter
        */
-      structural_type_descriptor::s_type get_parameter_type(const technology_managerConstRef TM, const std::string name) const;
+      structural_type_descriptor::s_type get_parameter_type(const technology_managerConstRef TM, const std::string&name) const;
 
       /**
        * Return the generic type of a module instance
@@ -2069,7 +2069,7 @@ class component_o : public module
           * @param type is the type of the object we are looking for.
           * @param owner is the owner of the object named id.
          */
-      structural_objectRef find_member(const std::string &id, so_kind type, const structural_objectRef owner) const;
+      structural_objectRef find_member(const std::string&id, so_kind type, const structural_objectRef owner) const;
 
       /**
           * Find key in this object.
@@ -2147,7 +2147,7 @@ class channel_o : public module
           * Return the interface with a given treenode
           * @param n is the treenode of the interface
          */
-      const std::string &get_interface(unsigned int t) const;
+      const std::string&get_interface(unsigned int t) const;
 
       /**
           * Bind the connection object with a port.
@@ -2178,7 +2178,7 @@ class channel_o : public module
           * @param type is the type of the object we are looking for.
           * @param owner is the owner of the object named id.
          */
-      structural_objectRef find_member(const std::string &id, so_kind type, const structural_objectRef owner) const;
+      structural_objectRef find_member(const std::string&id, so_kind type, const structural_objectRef owner) const;
 
       /**
           * Find key in this object.
@@ -2273,7 +2273,7 @@ class bus_connection_o : public structural_object
           * @param type is the type of the object we are looking for.
           * @param owner is the owner of the object named id.
          */
-      structural_objectRef find_member(const std::string &id, so_kind type, const structural_objectRef owner) const;
+      structural_objectRef find_member(const std::string&id, so_kind type, const structural_objectRef owner) const;
 
       /**
           * Find key in this object.

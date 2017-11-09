@@ -155,7 +155,7 @@ struct xml_set_entry_t : public xml_script_node_t
    std::string *  condition;
 
    xml_set_entry_t(
-      const std::string    _value,
+      const std::string &    _value,
       const std::string *  _condition
    );
    xml_set_entry_t(const xml_element *element);
@@ -183,7 +183,7 @@ struct xml_set_variable_t : public xml_script_node_t
    std::string *                    condition;
 
    xml_set_variable_t(
-      const std::string    _name,
+      const std::string&    _name,
       const std::string *  _singleValue,
       const std::string *  _condition
    );
@@ -218,7 +218,7 @@ struct xml_parameter_t : public xml_script_node_t
       const std::string *  _name,
       const std::string *  _singleValue,
       const std::string *  _condition,
-      const std::string    _separator,
+      const std::string&    _separator,
       bool                 _curlyBrackets
    );
    xml_parameter_t(const xml_element * element);

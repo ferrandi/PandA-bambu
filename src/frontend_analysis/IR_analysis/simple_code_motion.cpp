@@ -681,10 +681,10 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Looking for openmp simd pragma");
       CustomSet<vertex> return_value;
-      for(const auto block : list_of_bloc)
+      for(const auto& block : list_of_bloc)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing BB" + STR(block.first));
-         for(const auto statement : block.second->CGetStmtList())
+         for(const auto& statement : block.second->CGetStmtList())
          {
             const gimple_pragma * gp = GetPointer<const gimple_pragma>(GET_NODE(statement));
             if(gp and GetPointer<const omp_pragma>(GET_NODE(gp->scope)) and GetPointer<const omp_simd_pragma>(GET_NODE(gp->directive)))
@@ -1012,17 +1012,17 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Moved in BB" + STR(dest_bb_index));
          }
 
-         for(const auto removing : to_be_removed)
+         for(const auto& removing : to_be_removed)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Removing " + removing->ToString() + " from BB" + STR(curr_bb));
             list_of_bloc[curr_bb]->RemoveStmt(removing);
          }
-         for(const auto adding_back : to_be_added_back)
+         for(const auto& adding_back : to_be_added_back)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Adding back " + adding_back->ToString() + " from BB" + STR(curr_bb));
             list_of_bloc[curr_bb]->PushBack(adding_back);
          }
-         for(const auto adding_front : to_be_added_front)
+         for(const auto& adding_front : to_be_added_front)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Adding front " + adding_front->ToString() + " from BB" + STR(curr_bb));
             list_of_bloc[curr_bb]->PushFront(adding_front);

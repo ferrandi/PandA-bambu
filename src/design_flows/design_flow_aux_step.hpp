@@ -74,7 +74,7 @@ class AuxDesignFlowStep : public DesignFlowStep
        * @param design_flow_manager is the design flow manager
        * @param paramters is the set of input parameters
        */
-      AuxDesignFlowStep(const std::string name, const AuxDesignFlowStepType type, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
+      AuxDesignFlowStep(const std::string&name, const AuxDesignFlowStepType type, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
 
       /**
        * Destructor
@@ -120,7 +120,7 @@ class AuxDesignFlowStep : public DesignFlowStep
        * @return the signature corresponding to the analysis/transformation
        */
       static
-      const std::string ComputeSignature(const std::string name, const AuxDesignFlowStepType type);
+      const std::string ComputeSignature(const std::string&name, const AuxDesignFlowStepType type);
 
       /**
        * Write the label for a dot graph

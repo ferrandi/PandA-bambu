@@ -352,7 +352,7 @@ void constant_flop_wrapper::SoftFloatWriter(CustomSet<std::pair<std::string, tre
    }
 }
 
-std::string constant_flop_wrapper::GenerateFunctionName(const std::string function_name, const tree_nodeConstRef constant)
+std::string constant_flop_wrapper::GenerateFunctionName(const std::string& function_name, const tree_nodeConstRef constant)
 {
    const real_cst * rc = GetPointer<const real_cst>(constant);
 

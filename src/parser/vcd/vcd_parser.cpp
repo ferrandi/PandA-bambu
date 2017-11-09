@@ -42,12 +42,14 @@
 
 #include "structural_objects.hpp"
 
-vcd_parser::vcd_parser(const ParameterConstRef & param)
-   : debug_level(param->get_class_debug_level(GET_CLASS(*this)))
+vcd_parser::vcd_parser(const ParameterConstRef & param) :
+   debug_level(param->get_class_debug_level(GET_CLASS(*this))),
+   vcd_fp(0),
+   sig_n(0)
 {}
 
 vcd_parser::vcd_trace_t vcd_parser::parse_vcd(
-      const std::string & vcd_file_to_parse,
+      const std::string& vcd_file_to_parse,
       const vcd_parser::vcd_filter_t & selected_signals)
 {
    // ---- initialization ----
@@ -131,7 +133,7 @@ int vcd_parser::vcd_parse_skip_to_end()
 /**
  * Parses definition $var keyword line until $end keyword is seen.
  */
-int vcd_parser::vcd_parse_def_var(const std::string & scope)
+int vcd_parser::vcd_parse_def_var(const std::string& scope)
 {
    char type[256];         /* Variable type */
    unsigned int size;      /* Bit width of specified variable */
@@ -447,7 +449,7 @@ int vcd_parser::vcd_parse_sim()
    return 0;     
 }
 
-bool vcd_parser::check_filter_list(const std::string & scope_str, const std::string & name)
+bool vcd_parser::check_filter_list(const std::string& scope_str, const std::string& name)
 {
    if (filtered_signals.empty())
       return false;
@@ -461,10 +463,10 @@ bool vcd_parser::check_filter_list(const std::string & scope_str, const std::str
 
 void vcd_parser::vcd_add_signal
 (
-   const std::string & scope,
-   const std::string & name,
-   const std::string & vcd_id,
-   const std::string & type,
+   const std::string& scope,
+   const std::string& name,
+   const std::string& vcd_id,
+   const std::string& type,
    const bool isvect,
    const unsigned int msb,
    const unsigned int lsb
@@ -529,8 +531,8 @@ void vcd_parser::init_variations()
 }
 
 void vcd_parser::add_variation(
-      const std::string & sig_id,
-      const std::string & value,
+      const std::string& sig_id,
+      const std::string& value,
       unsigned long long ts)
 {
    THROW_ASSERT(value.size(), "trying to add an empty variation for vcd id " +

@@ -411,7 +411,7 @@ class string_separator
        * Constructor
        * @param delimiter is the string used to divide the string
        */
-      string_separator(const std::string & _delimiter) :
+      string_separator(const std::string& _delimiter) :
          delimiter(_delimiter)
       {
       }
@@ -563,7 +563,7 @@ struct TimeStamp : public boost::posix_time::ptime
     * Constructor from string
     * @param timestamp is the string containing the timestamp
     */
-   TimeStamp(const std::string timestamp);
+   TimeStamp(const std::string&timestamp);
 
    /**
     * Return a timestamp of the current time

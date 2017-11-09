@@ -99,7 +99,7 @@
 
 #define PORT_VECTOR_N_PORTS 2
 
-RTLCharacterization::RTLCharacterization(const target_managerRef _target, const std::string _cells, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters) :
+RTLCharacterization::RTLCharacterization(const target_managerRef _target, const std::string&_cells, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters) :
    DesignFlowStep(_design_flow_manager, _parameters),
    FunctionalUnitStep(_target, _design_flow_manager, _parameters),
    output_level(_parameters->getOption<int>(OPT_output_level)),
@@ -328,7 +328,7 @@ void RTLCharacterization::xwrite_device_file(const target_deviceRef device)
    {
       THROW_ERROR(std::string(msg));
    }
-   catch (const std::string & msg)
+   catch (const std::string& msg)
    {
       THROW_ERROR(msg);
    }
@@ -642,7 +642,7 @@ const DesignFlowStepFactoryConstRef RTLCharacterization::CGetDesignFlowStepFacto
    return DesignFlowStepFactoryConstRef();
 }
 
-void RTLCharacterization::AnalyzeCell(functional_unit * fu, const unsigned int prec, const std::vector<std::string >portsize_parameters, const size_t portsize_index, const std::vector<std::string> pipe_parameters, const size_t stage_index, const unsigned int constPort, const bool is_commutative)
+void RTLCharacterization::AnalyzeCell(functional_unit * fu, const unsigned int prec, const std::vector<std::string >& portsize_parameters, const size_t portsize_index, const std::vector<std::string>& pipe_parameters, const size_t stage_index, const unsigned int constPort, const bool is_commutative)
 {
    const auto fu_name = fu->get_name();
    const auto fu_base_name = fu->fu_template_name != "" ? fu->fu_template_name : fu_name;
@@ -1073,7 +1073,7 @@ void RTLCharacterization::AnalyzeCell(functional_unit * fu, const unsigned int p
    }
 }
 
-const std::string RTLCharacterization::ComputeComponent(const std::string input) const
+const std::string RTLCharacterization::ComputeComponent(const std::string&input) const
 {
    std::vector<std::string> component_cell;
    boost::algorithm::split(component_cell, input, boost::algorithm::is_any_of(","));
@@ -1084,7 +1084,7 @@ const std::string RTLCharacterization::ComputeComponent(const std::string input)
    return component_or_cell[0];
 }
 
-const CustomSet<std::string> RTLCharacterization::ComputeCells(const std::string input) const
+const CustomSet<std::string> RTLCharacterization::ComputeCells(const std::string&input) const
 {
    CustomSet<std::string> ret;
    std::vector<std::string> component_cells;

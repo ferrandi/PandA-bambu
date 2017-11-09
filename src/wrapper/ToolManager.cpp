@@ -77,7 +77,7 @@ ToolManager::~ToolManager()
       boost::filesystem::remove(OUTPUT_FILE);
 }
 
-int ToolManager::execute_command(const std::string& _command_, const std::string & error_message, const std::string log_file, bool permissive, bool throw_message)
+int ToolManager::execute_command(const std::string& _command_, const std::string& error_message, const std::string&log_file, bool permissive, bool throw_message)
 {
    /// on Ubuntu sh is different from bash so we enforce it
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Executing command: " + _command_);
@@ -107,7 +107,7 @@ int ToolManager::execute_command(const std::string& _command_, const std::string
    }
 }
 
-int ToolManager::check_command(const std::string& _tool_, const std::string & setupscr, const std::string& _host_, bool permissive)
+int ToolManager::check_command(const std::string& _tool_, const std::string& setupscr, const std::string& _host_, bool permissive)
 {
    std::string command="";
    if (_host_.size())
@@ -142,7 +142,7 @@ int ToolManager::check_command(const std::string& _tool_, const std::string & se
    return ret;
 }
 
-void ToolManager::configure(const std::string& _tool_, const std::string & setupscr, const std::string& _host_, const std::string& _remote_path_, bool force_remote)
+void ToolManager::configure(const std::string& _tool_, const std::string& setupscr, const std::string& _host_, const std::string& _remote_path_, bool force_remote)
 {
    setup_script = setupscr;
    /// check if the command is locally available
@@ -282,7 +282,7 @@ void ToolManager::prepare_input_files(const std::vector<std::string>& files)
 }
 
 
-int ToolManager::execute(const std::vector<std::string>& parameters, const std::vector<std::string>& input_files, const std::vector<std::string>& output_files, const std::string log_file, bool permissive)
+int ToolManager::execute(const std::vector<std::string>& parameters, const std::vector<std::string>& input_files, const std::vector<std::string>& output_files, const std::string&log_file, bool permissive)
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Invoking tool execution");
    THROW_ASSERT(log_file != "", "Log file is empty");

@@ -185,26 +185,26 @@ class technology_manager
        * Add the given functional_unit to the specified library.
        * @param curr is the added element
        */
-      void add(const technology_nodeRef curr, const std::string &Library);
+      void add(const technology_nodeRef curr, const std::string&Library);
 
 #if HAVE_CIRCUIT_BUILT
       /**
        * Build a resource based on the given characteristics and structural representation.
        * @param is_builtin specifies if the resource is builtin or not
        */
-      void add_resource(const std::string &Library, const std::string &fu_name, const structural_managerRef CM = structural_managerRef(), const bool is_builtin = false);
+      void add_resource(const std::string&Library, const std::string&fu_name, const structural_managerRef CM = structural_managerRef(), const bool is_builtin = false);
 #endif
 
       /**
        * Add an operation to the specified functional unit
        */
-      void add_operation(const std::string &Library, const std::string &fu_name, const std::string &operation_name);
+      void add_operation(const std::string&Library, const std::string&fu_name, const std::string&operation_name);
 
 #if HAVE_CIRCUIT_BUILT
       /**
        * Add a storage unit to the library
        */
-      void add_storage(const std::string &s_name, const structural_managerRef CM, const std::string& Library, const unsigned int bits = 32, const unsigned int words = 1024, const unsigned int readinputs = 2, const unsigned int writeinputs = 2, const unsigned int readwriteinputs = 2);
+      void add_storage(const std::string&s_name, const structural_managerRef CM, const std::string& Library, const unsigned int bits = 32, const unsigned int words = 1024, const unsigned int readinputs = 2, const unsigned int writeinputs = 2, const unsigned int readwriteinputs = 2);
 #endif
       //@}
 
@@ -226,7 +226,7 @@ class technology_manager
        * @param Library is library name where the unit is stored
        * @return true when the operation can be implemented, false otherwise.
        */
-      bool can_implement(const std::string &fu_name, const std::string &op_name, const std::string &Library) const;
+      bool can_implement(const std::string&fu_name, const std::string&op_name, const std::string&Library) const;
 
       /**
        * Return the reference to a component given its name.
@@ -234,7 +234,7 @@ class technology_manager
        * @param Library is library name where the unit is stored
        * @return the reference to a component
        */
-      technology_nodeRef get_fu(const std::string &fu_name, const std::string &Library) const;
+      technology_nodeRef get_fu(const std::string&fu_name, const std::string&Library) const;
 
       /**
        * Return the higher priority library where the given component is stored
@@ -279,7 +279,7 @@ class technology_manager
        * @param Library is library name where the unit is stored
        * @return the initiation_time for (fu_name, op_name).
        */
-      ControlStep get_initiation_time(const std::string &fu_name, const std::string &op_name, const std::string &Library) const;
+      ControlStep get_initiation_time(const std::string&fu_name, const std::string&op_name, const std::string&Library) const;
 
       /**
        * Return the execution time for a given operation type and a given component.
@@ -289,7 +289,7 @@ class technology_manager
        * @param Library is library name where the unit is stored
        * @return the execution time for (fu_name, op_name)
        */
-      double get_execution_time(const std::string &fu_name, const std::string &op_name, const std::string &Library) const;
+      double get_execution_time(const std::string&fu_name, const std::string&op_name, const std::string&Library) const;
 
       /**
        * Return the area for a given component.
@@ -297,14 +297,14 @@ class technology_manager
        * @param Library is library name where the unit is stored
        * @return the area for the library component
        */
-      double get_area(const std::string &fu_name, const std::string &Library) const;
+      double get_area(const std::string&fu_name, const std::string&Library) const;
 
       /**
        * Return true if a component is builtin
        * @param component_name is the name of the component
        * @return true if the component is builtin
        */
-      bool IsBuiltin(const std::string & component_name) const;
+      bool IsBuiltin(const std::string& component_name) const;
 
       //@}
 

@@ -90,11 +90,11 @@ DesignFlowStep_Status unique_binding::InternalExec()
       if (black_list.find(fu) == black_list.end()) black_list[fu] = std::set<unsigned int>();
 
    }
-   for(std::map<unsigned int, std::list<std::pair<std::string, vertex> > >::iterator k = fu_ops.begin(); k != fu_ops.end(); k++)
+   for(std::map<unsigned int, std::list<std::pair<std::string, vertex> > >::iterator k = fu_ops.begin(); k != fu_ops.end(); ++k)
    {
       unsigned int fu = k->first;
       k->second.sort();
-      for(std::list<std::pair<std::string, vertex> >::iterator op = k->second.begin(); op != k->second.end(); op++)
+      for(std::list<std::pair<std::string, vertex> >::iterator op = k->second.begin(); op != k->second.end(); ++op)
       {
          unsigned int idx = 0;
          while (black_list[fu].find(idx) != black_list[fu].end())

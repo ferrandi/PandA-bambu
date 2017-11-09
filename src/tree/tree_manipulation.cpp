@@ -805,7 +805,7 @@ tree_nodeRef tree_manipulation::CreateIntegerCst(const tree_nodeConstRef type, c
 ///IDENTIFIER_TREE_NODE
 
 ///Create an identifier node
-tree_nodeRef tree_manipulation::create_identifier_node(const std::string strg)
+tree_nodeRef tree_manipulation::create_identifier_node(const std::string&strg)
 {
    THROW_ASSERT(!strg.empty(), "It requires a non empty string");
 
@@ -852,7 +852,7 @@ tree_nodeRef tree_manipulation::create_var_decl(
       bool static_flag,
       bool register_flag,
       bool readonly_flag,
-      const std::string bit_values)
+      const std::string&bit_values)
 {
    ///Check if the tree_node given are tree_reindex
    THROW_ASSERT(type->get_kind() == tree_reindex_K, "Node is not a tree reindex");
@@ -1625,7 +1625,7 @@ tree_nodeRef tree_manipulation::create_ssa_name(const tree_nodeConstRef var, con
 ///GIMPLE_ASSIGN
 
 ///Create a gimple_assign
-tree_nodeRef tree_manipulation::create_gimple_modify_stmt(const tree_nodeRef op0, const tree_nodeRef op1, const std::string & srcp, const unsigned int bb_index)
+tree_nodeRef tree_manipulation::create_gimple_modify_stmt(const tree_nodeRef op0, const tree_nodeRef op1, const std::string& srcp, const unsigned int bb_index)
 {
    THROW_ASSERT(op0->get_kind() == tree_reindex_K, "Node is not a tree reindex");
    THROW_ASSERT(op1->get_kind() == tree_reindex_K, "Node is not a tree reindex");
@@ -1645,14 +1645,14 @@ tree_nodeRef tree_manipulation::create_gimple_modify_stmt(const tree_nodeRef op0
 }
 
 tree_nodeRef tree_manipulation::CreateGimpleAssign(const tree_nodeRef type,
-      const tree_nodeRef op, unsigned int bb_index, const std::string & srcp)
+      const tree_nodeRef op, unsigned int bb_index, const std::string& srcp)
 {
    tree_nodeRef ssa_vd = create_ssa_name(tree_nodeRef(), type);
    return create_gimple_modify_stmt(ssa_vd, op, srcp, bb_index);
 }
 
 /// GIMPLE_CALL
-tree_nodeRef tree_manipulation::create_gimple_call(const tree_nodeConstRef called_function, const std::vector<tree_nodeRef> args, const std::string srcp, const unsigned int bb_index)
+tree_nodeRef tree_manipulation::create_gimple_call(const tree_nodeConstRef called_function, const std::vector<tree_nodeRef> &args, const std::string&srcp, const unsigned int bb_index)
 {
    THROW_ASSERT(!srcp.empty(), "It requires a non empty string");
    std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> ae_IR_schema, gc_IR_schema;
@@ -1764,7 +1764,7 @@ tree_nodeRef tree_manipulation::create_phi_node(tree_nodeRef & ssa_res, const st
    ssa_name * sn_ref = GetPointer<ssa_name>(GET_NODE(ssa_ref));
    THROW_ASSERT(ssa_ref->get_kind() == tree_reindex_K, "ssa_name res is not a tree_reindex node");
    THROW_ASSERT(GET_NODE(ssa_ref)->get_kind() == ssa_name_K, "ssa_name res is not a ssa_name node");
-   for (iterator++; iterator != list_of_def_edge.end(); iterator++)
+   for (++iterator; iterator != list_of_def_edge.end(); ++iterator)
    {
       tree_nodeRef tn=iterator->first;
 #ifndef NDEBUG
@@ -2579,7 +2579,7 @@ tree_nodeRef tree_manipulation::CreateEqExpr(const tree_nodeConstRef first_opera
    return TreeM->GetTreeReindex(ssa_node_nid);
 }
 
-tree_nodeRef tree_manipulation::CreateCallExpr(const tree_nodeConstRef called_function, const std::vector<tree_nodeRef> args, const std::string & srcp)
+tree_nodeRef tree_manipulation::CreateCallExpr(const tree_nodeConstRef called_function, const std::vector<tree_nodeRef> &args, const std::string& srcp)
 {
    std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> ae_IR_schema, ce_IR_schema;
    ae_IR_schema[TOK(TOK_OP)] = STR(called_function->index);
@@ -2607,7 +2607,7 @@ tree_nodeRef tree_manipulation::CreateCallExpr(const tree_nodeConstRef called_fu
    return TreeM->GetTreeReindex(ce_id);
 }
 
-tree_nodeRef tree_manipulation::CreateAddrExpr(const tree_nodeConstRef tn, const std::string & srcp)
+tree_nodeRef tree_manipulation::CreateAddrExpr(const tree_nodeConstRef tn, const std::string& srcp)
 {
    std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> ae_IR_schema;
    const auto type_node = tree_helper::CGetType(tn);
@@ -2620,7 +2620,7 @@ tree_nodeRef tree_manipulation::CreateAddrExpr(const tree_nodeConstRef tn, const
    return TreeM->CGetTreeReindex(ae_id);
 }
 
-tree_nodeRef tree_manipulation::CreateGimpleAssignAddrExpr(const tree_nodeConstRef tn, const unsigned int bb_index, const std::string & srcp)
+tree_nodeRef tree_manipulation::CreateGimpleAssignAddrExpr(const tree_nodeConstRef tn, const unsigned int bb_index, const std::string& srcp)
 {
    auto addr_tn = CreateAddrExpr(tn, srcp);
    const auto type_node = tree_helper::CGetType(tn);

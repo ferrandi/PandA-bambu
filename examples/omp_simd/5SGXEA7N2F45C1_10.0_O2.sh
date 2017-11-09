@@ -1,4 +1,4 @@
-
+#!/bin/bash
 ARGS="--compiler=I386_GCC49 --device-name=5SGXEA7N2F45C1 --evaluation -fwhole-program -fno-delete-null-pointer-checks --clock-period=10 --experimental-setup=BAMBU-BALANCED-MP --no-iob"
 script=$(readlink -e $0)
 root_dir=$(dirname $script)

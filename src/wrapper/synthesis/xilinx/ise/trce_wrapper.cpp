@@ -83,7 +83,7 @@ std::string trce_wrapper::get_command_line(const DesignParametersRef& dp) const
 {
    std::ostringstream s;
    s << get_tool_exec();
-   for (std::vector<xml_parameter_tRef>::const_iterator it = xml_tool_options.begin(); it != xml_tool_options.end(); it++)
+   for (std::vector<xml_parameter_tRef>::const_iterator it = xml_tool_options.begin(); it != xml_tool_options.end(); ++it)
    {
       const xml_parameter_tRef & option = *it;
       if (option->checkCondition(dp))

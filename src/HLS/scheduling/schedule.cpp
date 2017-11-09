@@ -93,7 +93,7 @@ AbsControlStep::AbsControlStep(const unsigned int basic_block_index, const Contr
 
 const ControlStep AbsControlStep::UNKNOWN = ControlStep(std::numeric_limits<unsigned int>::max());
 
-bool AbsControlStep::operator<(const AbsControlStep other) const
+bool AbsControlStep::operator<(const AbsControlStep &other) const
 {
    if(this->second != other.second)
       return this->second < other.second;
@@ -185,7 +185,7 @@ class ScheduleWriter : public GraphWriter
 
 };
 
-void Schedule::WriteDot(const std::string & file_name) const
+void Schedule::WriteDot(const std::string& file_name) const
 {
    const BehavioralHelperConstRef helper = op_graph->CGetOpGraphInfo()->BH;
    std::string output_directory = parameters->getOption<std::string>(OPT_dot_directory) + "/" + helper->get_function_name() + "/";

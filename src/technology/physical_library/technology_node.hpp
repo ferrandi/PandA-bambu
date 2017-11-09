@@ -617,7 +617,7 @@ struct functional_unit: public technology_node
    /**
     * Return the name of the operation.
     */
-   const std::string & get_name() const {return functional_unit_name;}
+   const std::string& get_name() const {return functional_unit_name;}
 
    /**
     * Load a functional unit starting from an xml file.
@@ -722,7 +722,7 @@ struct functional_unit: public technology_node
    /**
     * Return the name of the operation.
     */
-   const std::string & get_name() const {return FU->get_name();}
+   const std::string& get_name() const {return FU->get_name();}
 
    /**
     * Load a functional unit starting from an xml file.
@@ -793,25 +793,25 @@ struct functional_unit: public technology_node
 #endif
 
    /// Constructor
-   storage_unit() {}
+   storage_unit() : bits(0), words(0), read_ports(0), read_latency(0), write_ports(0), write_latency(0), readwrite_ports(0), readwrite_latency(0), area(0) {}
 
    /// Destructor
    ~storage_unit() {}
 
-   const std::string & get_name() const {return storage_unit_name;}
+   const std::string& get_name() const {return storage_unit_name;}
    /**
     * Load a storage_unit starting from an xml file.
     * @param node is a node of the xml tree.
     * @param owner is the refcount version of this.
     * @param TM is the technology manager.
     */
-   virtual void xload(const xml_element*, const technology_nodeRef, const ParameterConstRef, const target_deviceRef) { abort(); }
+   void xload(const xml_element*, const technology_nodeRef, const ParameterConstRef, const target_deviceRef) { abort(); }
 
    /**
     * Add a storage_unit to an xml tree.
     * @param rootnode is the root node at which the xml representation of the storage_unit unit is attached.
     */
-   virtual void xwrite(xml_element*, const technology_nodeRef, const ParameterConstRef, TargetDevice_Type) { abort(); }
+   void xwrite(xml_element*, const technology_nodeRef, const ParameterConstRef, TargetDevice_Type) { abort(); }
    /**
     * Append a technology_node to a liberty file.
     */

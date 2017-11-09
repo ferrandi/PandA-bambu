@@ -210,7 +210,7 @@ const std::set<vertex>& liveness::get_state_where_run(vertex op) const
    return running_operations.find(op)->second;
 }
 
-const std::string & liveness::get_name(vertex v) const
+const std::string& liveness::get_name(vertex v) const
 {
    if(v == NULL_VERTEX) return null_vertex_string;
    THROW_ASSERT(names.find(v) != names.end(), "state without a name");

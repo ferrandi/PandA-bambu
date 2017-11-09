@@ -115,14 +115,13 @@ DesignFlowStep_Status BlockFix::InternalExec()
    blocRef entry_bloc = blocRef(new bloc(BB_ENTRY));
    //Set of successor of entry
    std::vector<unsigned int>& succ_entry = entry_bloc->list_of_succ;
-   it3_end = list_of_bloc.end();
-   for(it3 = list_of_bloc.begin(); it3 != it3_end; it3++)
+   for(it3 = list_of_bloc.begin(); it3 != it3_end; ++it3)
    {
       std::vector<unsigned int>::iterator it2, it2_end;
       if(it3->second)
       {
          it2_end = it3->second->list_of_pred.end();
-         for(it2 = it3->second->list_of_pred.begin(); it2 != it2_end; it2++)
+         for(it2 = it3->second->list_of_pred.begin(); it2 != it2_end; ++it2)
          {
             if(*it2 == BB_ENTRY)
                succ_entry.push_back(it3->second->number);

@@ -98,13 +98,13 @@ struct raw_writer : public tree_node_visitor
        * @param str is the string key associated to t
        * @param t is the tree_nodeRef
        */
-      void write_when_not_null(const std::string str, const tree_nodeRef & t) const;
+      void write_when_not_null(const std::string&str, const tree_nodeRef & t) const;
       /**
        * Write the field when t is not null
        * @param str is the string key associated to t
        * @param t is the blocRef
        */
-      void write_when_not_null_bloc(const std::string str, const blocRef & t);
+      void write_when_not_null_bloc(const std::string&str, const blocRef & t);
 
 #if HAVE_RTL_BUILT
       /**
@@ -119,7 +119,7 @@ struct raw_writer : public tree_node_visitor
        * @param type is the type of point to solution (i.e., use or clb)
        * @param solution is the solution to be printed
        */
-      void write_when_not_null_point_to(const std::string type, const PointToSolutionRef solution) const;
+      void write_when_not_null_point_to(const std::string&type, const PointToSolutionRef solution) const;
 };
 
 #endif

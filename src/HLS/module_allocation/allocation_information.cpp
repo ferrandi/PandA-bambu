@@ -402,7 +402,7 @@ double AllocationInformation::get_attribute_of_fu_per_op(const vertex v, const O
    std::set<unsigned int>::const_iterator f_i = fu_set.begin();
    double double_value;
    flag = false;
-   while (CF && f_i != f_end && ((*CF)(*f_i) <= 0 || (binding.find(node_id) != binding.end()  && binding.find(node_id)->second.second != *f_i))) f_i++;
+   while (CF && f_i != f_end && ((*CF)(*f_i) <= 0 || (binding.find(node_id) != binding.end()  && binding.find(node_id)->second.second != *f_i))) ++f_i;
    if (f_i == f_end) return -1.0;
    flag = true;
 
@@ -420,9 +420,9 @@ double AllocationInformation::get_attribute_of_fu_per_op(const vertex v, const O
 
          if(binding.find(node_id) != binding.end() && binding.find(node_id)->second.second == fu_name)
             return from_strongtype_cast<double>(int_value);
-         f_i++;
+         ++f_i;
 
-         for (; f_i != f_end; f_i++)
+         for (; f_i != f_end; ++f_i)
          {
             if (CF && (*CF)(*f_i) <= 0) continue;
             switch (allocation_min_max)
@@ -447,7 +447,6 @@ double AllocationInformation::get_attribute_of_fu_per_op(const vertex v, const O
             }
          }
          return from_strongtype_cast<double>(int_value);
-         break;
       }
       case execution_time:
       {
@@ -465,8 +464,8 @@ double AllocationInformation::get_attribute_of_fu_per_op(const vertex v, const O
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Got Execution time: " + STR(double_value));
             return double_value;
          }
-         f_i++;
-         for (; f_i != f_end; f_i++)
+         ++f_i;
+         for (; f_i != f_end; ++f_i)
          {
             if (CF && (*CF)(*f_i) <= 0) continue;
             switch (allocation_min_max)
@@ -492,7 +491,6 @@ double AllocationInformation::get_attribute_of_fu_per_op(const vertex v, const O
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Got Execution time: " + STR(double_value));
          return double_value;
-         break;
       }
       case(power_consumption):
       default:
@@ -511,7 +509,7 @@ unsigned int AllocationInformation::min_number_of_resources(const vertex v) cons
    unsigned int min_num_res = INFINITE_UINT, num_res;
    const std::set<unsigned int>::const_iterator f_end = fu_set.end();
 
-   for (std::set<unsigned int>::const_iterator f_i = fu_set.begin(); f_i != f_end; f_i++)
+   for (std::set<unsigned int>::const_iterator f_i = fu_set.begin(); f_i != f_end; ++f_i)
    {
       num_res = tech_constraints[*f_i];
       THROW_ASSERT(num_res != 0, "something of wrong happen");
@@ -1054,7 +1052,7 @@ unsigned int AllocationInformation::max_number_of_resources(const vertex v) cons
    unsigned int tot_num_res = 0, num_res;
    const std::set<unsigned int>::const_iterator f_end = fu_set.end();
 
-   for (std::set<unsigned int>::const_iterator f_i = fu_set.begin(); f_i != f_end; f_i++)
+   for (std::set<unsigned int>::const_iterator f_i = fu_set.begin(); f_i != f_end; ++f_i)
    {
       num_res = tech_constraints[*f_i];
       THROW_ASSERT(num_res != 0, "something of wrong happen");
@@ -1542,7 +1540,7 @@ void AllocationInformation::print(std::ostream& os) const
 {
    std::vector<technology_nodeRef>::const_iterator fu_end = list_of_FU.end();
    unsigned int index = 0;
-   for (std::vector<technology_nodeRef>::const_iterator fu =  list_of_FU.begin(); fu != fu_end; fu++)
+   for (std::vector<technology_nodeRef>::const_iterator fu =  list_of_FU.begin(); fu != fu_end; ++fu)
    {
       os << index << " ";
       index++;
@@ -2158,7 +2156,7 @@ std::string AllocationInformation::get_latency_string(std::string lat) const
 }
 
 #define ARRAY_CORRECTION 0
-double AllocationInformation::get_correction_time(unsigned int fu, const std::string &operation_name) const
+double AllocationInformation::get_correction_time(unsigned int fu, const std::string&operation_name) const
 {
    double res_value = get_setup_hold_time();
    technology_nodeRef current_fu = get_fu(fu);

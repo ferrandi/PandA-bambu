@@ -89,7 +89,7 @@ class ToDataFileStepFactory : public DesignFlowStepFactory
        * @param signature is the signature of the step to be created
        * @return the created step
        */
-      const DesignFlowStepRef CreateStep(const std::string signature) const;
+      const DesignFlowStepRef CreateStep(const std::string&signature) const;
 };
 #endif
 

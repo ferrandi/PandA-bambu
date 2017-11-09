@@ -523,7 +523,7 @@ std::deque<bit_lattice> Bit_Value::backward_transfer(
       for(;
           it_output_bitstring!=  se_output_bitstring.rend() &&
           it_arg1_bitstring != arg1_bitstring.rend();
-          it_output_bitstring++, it_arg1_bitstring++, it_arg2_bitstring++)
+          ++it_output_bitstring, ++it_arg1_bitstring, ++it_arg2_bitstring)
       {
          if ( *it_output_bitstring == bit_lattice::X)
          {
@@ -595,7 +595,7 @@ std::deque<bit_lattice> Bit_Value::backward_transfer(
       for(;
           it_output_bitstring!=  se_output_bitstring.rend() &&
           it_arg1_bitstring != arg1_bitstring.rend();
-          it_output_bitstring++, it_arg1_bitstring++, it_arg2_bitstring++)
+          ++it_output_bitstring, ++it_arg1_bitstring, ++it_arg2_bitstring)
       {
          if ( *it_output_bitstring == bit_lattice::X)
          {
@@ -666,7 +666,7 @@ std::deque<bit_lattice> Bit_Value::backward_transfer(
           for(;
               it_output_bitstring!=  se_output_bitstring.rend() &&
               it_arg1_bitstring != arg1_bitstring.rend() && index < offset;
-              it_output_bitstring++, it_arg1_bitstring++, ++index)
+              ++it_output_bitstring, ++it_arg1_bitstring, ++index)
           {
              res_input1.push_front(*it_output_bitstring);
           }
@@ -678,7 +678,7 @@ std::deque<bit_lattice> Bit_Value::backward_transfer(
           for(;
               it_output_bitstring!=  se_output_bitstring.rend() &&
               it_arg1_bitstring != arg1_bitstring.rend();
-              it_output_bitstring++, it_arg1_bitstring++, ++index)
+              ++it_output_bitstring, ++it_arg1_bitstring, ++index)
           {
              if(index < offset)
                 res_input1.push_front(bit_lattice::ZERO);
@@ -738,7 +738,7 @@ std::deque<bit_lattice> Bit_Value::backward_transfer(
 
       std::deque<bit_lattice> res_input1;
 
-      for(;it_output_bitstring!=  se_output_bitstring.rend() && it_arg1_bitstring != arg1_bitstring.rend(); it_output_bitstring++, it_arg1_bitstring++)
+      for(;it_output_bitstring!=  se_output_bitstring.rend() && it_arg1_bitstring != arg1_bitstring.rend(); ++it_output_bitstring, ++it_arg1_bitstring)
       {
          if ( *it_output_bitstring == bit_lattice::X)
          {
@@ -786,7 +786,7 @@ std::deque<bit_lattice> Bit_Value::backward_transfer(
 
       for(;
           it_output_bitstring !=  se_output_bitstring.rend() && it_arg1_bitstring != arg1_bitstring.rend();
-          it_output_bitstring++, it_arg1_bitstring++)
+          ++it_output_bitstring, ++it_arg1_bitstring)
       {
          if ( *it_output_bitstring == bit_lattice::X)
          {
@@ -1071,7 +1071,7 @@ std::deque<bit_lattice> Bit_Value::backward_transfer(
 
       for(;
           it_output_bitstring !=  output_bitstring.rend() && it_arg1_bitstring != arg1_bitstring.rend();
-          it_output_bitstring++, it_arg1_bitstring++)
+          ++it_output_bitstring, ++it_arg1_bitstring)
       {
          if ( *it_output_bitstring == bit_lattice::X)
          {

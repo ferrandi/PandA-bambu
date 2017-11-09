@@ -75,7 +75,7 @@ class tree_panda_gcc_parameter : public Parameter
        * @param argc is the number of arguments
        * @param argv is the array of arguments passed to program.
        */
-      tree_panda_gcc_parameter(const std::string program_name, int argc, char ** const argv);
+      tree_panda_gcc_parameter(const std::string&program_name, int argc, char ** const argv);
 
       /**
        * Destructor

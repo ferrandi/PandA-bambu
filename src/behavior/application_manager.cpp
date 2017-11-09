@@ -348,7 +348,7 @@ bool application_manager::ApplyNewTransformation() const
    return cfg_transformations < Param->getOption<size_t>(OPT_cfg_max_transformations);
 }
 
-void application_manager::RegisterTransformation(const std::string step, const tree_nodeConstRef new_tn)
+void application_manager::RegisterTransformation(const std::string&step, const tree_nodeConstRef new_tn)
 {
    THROW_ASSERT(cfg_transformations < Param->getOption<size_t>(OPT_cfg_max_transformations), step + " - " + (new_tn ? new_tn->ToString() : ""));
    cfg_transformations++;

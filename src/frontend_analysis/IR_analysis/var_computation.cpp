@@ -168,7 +168,7 @@ DesignFlowStep_Status VarComputation::InternalExec()
          Vertices.erase(curr_Ver);
       }
    }
-   for(std::list<vertex>::iterator Ver = Vertices.begin(); Ver != Vertices.end(); Ver++)
+   for(std::list<vertex>::iterator Ver = Vertices.begin(); Ver != Vertices.end(); ++Ver)
    {
       const unsigned int node_id = cfg->CGetOpNodeInfo(*Ver)->GetNodeId();
       if(node_id != ENTRY_ID and node_id != EXIT_ID)
@@ -176,7 +176,7 @@ DesignFlowStep_Status VarComputation::InternalExec()
          RecursivelyAnalyze(*Ver, tree_manager->CGetTreeNode(node_id), FunctionBehavior_VariableAccessType::UNKNOWN);
       }
    }
-   for(std::list<vertex>::iterator Ver = PhiNodes.begin(); Ver != PhiNodes.end(); Ver++)
+   for(std::list<vertex>::iterator Ver = PhiNodes.begin(); Ver != PhiNodes.end(); ++Ver)
    {
       const unsigned int node_id = cfg->CGetOpNodeInfo(*Ver)->GetNodeId();
       if(node_id != ENTRY_ID and node_id != EXIT_ID)
@@ -251,7 +251,7 @@ void VarComputation::RecursivelyAnalyze(const vertex op_vertex, const tree_nodeC
          }
          const std::vector<tree_nodeRef> & args = ce->args;
          std::vector<tree_nodeRef>::const_iterator arg, arg_end = args.end();
-         for(arg = args.begin(); arg != arg_end; arg++)
+         for(arg = args.begin(); arg != arg_end; ++arg)
          {
             ///add parameter to the vertex
             ogc->add_parameter(op_vertex, GET_CONST_NODE(*arg)->index);
@@ -271,7 +271,7 @@ void VarComputation::RecursivelyAnalyze(const vertex op_vertex, const tree_nodeC
          }
          const std::vector<tree_nodeRef> & args = gc->args;
          std::vector<tree_nodeRef>::const_iterator arg, arg_end = args.end();
-         for(arg = args.begin(); arg != arg_end; arg++)
+         for(arg = args.begin(); arg != arg_end; ++arg)
          {
             ///add parameter to the vertex
             ogc->add_parameter(op_vertex, GET_CONST_NODE(*arg)->index);
@@ -448,7 +448,7 @@ void VarComputation::RecursivelyAnalyze(const vertex op_vertex, const tree_nodeC
          const tree_vec * tv = GetPointer<const tree_vec>(tree_node);
          const std::vector<tree_nodeRef> & list_of_op = tv->list_of_op;
          const std::vector<tree_nodeRef>::const_iterator op_end = list_of_op.end();
-         for(std::vector<tree_nodeRef>::const_iterator op = list_of_op.begin(); op != op_end; op++)
+         for(std::vector<tree_nodeRef>::const_iterator op = list_of_op.begin(); op != op_end; ++op)
          {
             RecursivelyAnalyze(op_vertex, GET_CONST_NODE(*op), access_type);
          }
@@ -547,7 +547,7 @@ void VarComputation::RecursivelyAnalyze(const vertex op_vertex, const tree_nodeC
          const constructor * constr = GetPointer<const constructor>(tree_node);
          const std::vector<std::pair< tree_nodeRef, tree_nodeRef> > & list_of_idx_valu = constr->list_of_idx_valu;
          std::vector<std::pair< tree_nodeRef, tree_nodeRef> >::const_iterator valu, valu_end = list_of_idx_valu.end();
-         for(valu = list_of_idx_valu.begin(); valu != valu_end; valu++)
+         for(valu = list_of_idx_valu.begin(); valu != valu_end; ++valu)
          {
             RecursivelyAnalyze(op_vertex, GET_CONST_NODE(valu->second), FunctionBehavior_VariableAccessType::USE);
          }

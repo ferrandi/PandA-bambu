@@ -44,7 +44,7 @@
 ///Header include
 #include "design_flow_aux_step.hpp"
 
-AuxDesignFlowStep::AuxDesignFlowStep(const std::string _name, const AuxDesignFlowStepType _type, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters) :
+AuxDesignFlowStep::AuxDesignFlowStep(const std::string&_name, const AuxDesignFlowStepType _type, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters) :
    DesignFlowStep(_design_flow_manager, _parameters),
    type(_type),
    name(_name)
@@ -56,7 +56,7 @@ AuxDesignFlowStep::~AuxDesignFlowStep()
 void AuxDesignFlowStep::ComputeRelationships(DesignFlowStepSet &, const DesignFlowStep::RelationshipType)
 {}
 
-const std::string AuxDesignFlowStep::ComputeSignature(const std::string name, const AuxDesignFlowStepType type)
+const std::string AuxDesignFlowStep::ComputeSignature(const std::string&name, const AuxDesignFlowStepType type)
 {
    return "AUX::" + boost::lexical_cast<std::string>(type) + "::" + name;
 }

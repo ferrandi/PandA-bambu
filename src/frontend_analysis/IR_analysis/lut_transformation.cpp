@@ -109,7 +109,7 @@ std::string lut_transformation::DecToBin(unsigned long long int number)
    }
 }
 
-unsigned long long int lut_transformation::BinToDec(std::string number)
+unsigned long long int lut_transformation::BinToDec(const std::string& number)
 {
    size_t * endptr = NULL;
    unsigned long long int i_bin = 0;
@@ -187,10 +187,10 @@ tree_nodeRef lut_transformation::CreateMultiConcat( std::vector<tree_nodeRef> se
 * @param binString string of bit
 * @param indexesSet vector of indexes
 */
-unsigned long long int lut_transformation::GenerateIndexOfLutValue(std::string binString, std::vector<std::size_t> indexesSet)
+unsigned long long int lut_transformation::GenerateIndexOfLutValue(const std::string& binString, const std::vector<std::size_t>& indexesSet)
 {
    std::string result("");
-   for (std::vector<std::size_t>::iterator it=indexesSet.begin(); it != indexesSet.end(); ++it){
+   for (std::vector<std::size_t>::const_iterator it=indexesSet.begin(); it != indexesSet.end(); ++it){
       result+=(binString.substr(*it,1));
    }
    return BinToDec(result);
@@ -226,8 +226,9 @@ std::vector<tree_nodeRef> lut_transformation::CreateSetFromVector( std::vector<t
 * @param binString string of bit
 * @param sizeOfTheSet num of bit required
 */
-std::string lut_transformation::AddZeroes(std::string bitString,double sizeOfTheSet)
+std::string lut_transformation::AddZeroes(const std::string& _bitString,double sizeOfTheSet)
 {
+   std::string bitString=_bitString;
    while(bitString.size() < static_cast<std::size_t>(sizeOfTheSet)){
       bitString = "0"+ bitString;
    }
@@ -235,7 +236,7 @@ std::string lut_transformation::AddZeroes(std::string bitString,double sizeOfThe
 }
 
 
-tree_nodeRef lut_transformation::CreateGimpleAssign(const tree_nodeRef type, const tree_nodeRef op, const unsigned int bb_index, const std::string & srcp_default)
+tree_nodeRef lut_transformation::CreateGimpleAssign(const tree_nodeRef type, const tree_nodeRef op, const unsigned int bb_index, const std::string& srcp_default)
 {
    tree_nodeRef ssa_vd = tree_man->create_ssa_name(tree_nodeRef(), type);
    auto ret_value = tree_man->create_gimple_modify_stmt(ssa_vd, op, srcp_default, bb_index);
@@ -422,7 +423,7 @@ void lut_transformation::MergeLut(std::list<tree_nodeRef> gimpleLutList,std::pai
       std::vector<tree_nodeRef> expansionSet = GetInputs(consideredLut->op0);
       std::vector<tree_nodeRef>::iterator nodeToExpand  = expansionSet.begin();
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Starting analysis of: " + STR(stmt));
-      for (std::vector<tree_nodeRef>::iterator i3=expansionSet.begin(); i3 != expansionSet.end(); i3++)
+      for (std::vector<tree_nodeRef>::iterator i3=expansionSet.begin(); i3 != expansionSet.end(); ++i3)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Initial LUT support : "+STR(*i3));
 
@@ -469,10 +470,10 @@ void lut_transformation::MergeLut(std::list<tree_nodeRef> gimpleLutList,std::pai
          if(inputsOfToMerge.size() == 0)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipping becasue no more inputs");
-            nodeToExpand++;
+            ++nodeToExpand;
             continue;
          }
-         for (std::vector<tree_nodeRef>::iterator i3=inputsOfToMerge.begin(); i3 != inputsOfToMerge.end(); i3++)
+         for (std::vector<tree_nodeRef>::iterator i3=inputsOfToMerge.begin(); i3 != inputsOfToMerge.end(); ++i3)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Merging LUT support : "+STR(*i3));
 
@@ -492,7 +493,7 @@ void lut_transformation::MergeLut(std::list<tree_nodeRef> gimpleLutList,std::pai
          if(mergedSet.size() > max_lut_size)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipping becasue too many inputs");
-            nodeToExpand++;
+            ++nodeToExpand;
             continue;
          }
          expansionSet = temp_expansionSet;
@@ -536,7 +537,7 @@ void lut_transformation::MergeLut(std::list<tree_nodeRef> gimpleLutList,std::pai
          std::reverse(newLutValue.begin(),newLutValue.end());
          auto newLutNumber = BinToDec(newLutValue);
          // create new concat
-         for (std::vector<tree_nodeRef>::iterator i3=mergedSet.begin(); i3 != mergedSet.end(); i3++)
+         for (std::vector<tree_nodeRef>::iterator i3=mergedSet.begin(); i3 != mergedSet.end(); ++i3)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Merged LUT support : "+STR(*i3));
 

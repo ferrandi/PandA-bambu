@@ -71,7 +71,7 @@ void weak_dominance::calculate_weak_dominance_info(graphs_collection * output, s
    boost::topological_sort(*input, std::front_inserter(levels));
    std::unordered_map<vertex, unsigned int> sorted_nodes;
    unsigned int counter = 0;
-   for(std::list<vertex>::iterator it = levels.begin(); it != levels.end(); it++)
+   for(std::list<vertex>::iterator it = levels.begin(); it != levels.end(); ++it)
       sorted_nodes[*it] = ++counter;
 
    dominance<graph> dm(*input, start, end, param);

@@ -79,7 +79,7 @@
 #define ALTERA_DSP              "ALTERA_DSP"
 #define ALTERA_MEM              "ALTERA_MEM"
 
-AlteraBackendFlow::AlteraBackendFlow(const ParameterConstRef _Param, const std::string & _flow_name, const target_managerRef _target) :
+AlteraBackendFlow::AlteraBackendFlow(const ParameterConstRef _Param, const std::string& _flow_name, const target_managerRef _target) :
    BackendFlow(_Param, _flow_name, _target)
 {
    debug_level = _Param->get_class_debug_level(GET_CLASS(*this));
@@ -191,7 +191,7 @@ void AlteraBackendFlow::xparse_utilization(const std::string& fn)
    {
       std::cerr << msg << std::endl;
    }
-   catch (const std::string & msg)
+   catch (const std::string& msg)
    {
       std::cerr << msg << std::endl;
    }

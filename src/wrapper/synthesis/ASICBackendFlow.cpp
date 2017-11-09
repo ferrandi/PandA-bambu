@@ -56,7 +56,7 @@
 #include "Parameter.hpp"
 #include "fileIO.hpp"
 
-ASICBackendFlow::ASICBackendFlow(const ParameterConstRef _Param, const std::string & _flow_name, const target_managerRef _target) :
+ASICBackendFlow::ASICBackendFlow(const ParameterConstRef _Param, const std::string& _flow_name, const target_managerRef _target) :
    BackendFlow(_Param, _flow_name, _target)
 {
    PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, " .:: Creating ASIC Backend Flow ::.");

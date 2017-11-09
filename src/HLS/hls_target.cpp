@@ -116,7 +116,7 @@ HLS_targetRef HLS_target::create_target(const ParameterRef Param)
       {
          THROW_ERROR("Error during technology file parsing: " + std::string(msg));
       }
-      catch (const std::string & msg)
+      catch (const std::string& msg)
       {
          THROW_ERROR("Error during technology file parsing: " + msg);
       }

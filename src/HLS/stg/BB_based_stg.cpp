@@ -151,7 +151,7 @@ void add_in_sched_order(std::list<vertex>& statement_list, vertex stmt, const Sc
    std::list<vertex>::iterator it;
    THROW_ASSERT(std::find(statement_list.begin(), statement_list.end(), stmt) == statement_list.end(), "Statement already ordered: "+ GET_NAME(dfg,stmt));
 
-   for(it = statement_list.begin(); it != it_end; it++)
+   for(it = statement_list.begin(); it != it_end; ++it)
    {
       THROW_ASSERT(sch->is_scheduled(*it), "Second vertex is not scheduled");
       if(sch->get_cstep(*it) > sch->get_cstep(stmt))
@@ -505,7 +505,7 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
          global_ending_ops[s_cur] = end_ops;
          global_onfly_ops.insert({s_cur, onf_ops});
 
-         for(std::list<vertex>::iterator op = exec_ops.begin(); op != exec_ops.end(); op++)
+         for(std::list<vertex>::iterator op = exec_ops.begin(); op != exec_ops.end(); ++op)
          {
             technology_nodeRef tn = HLS->allocation_information->get_fu(HLS->Rfu->get_assign(*op));
             technology_nodeRef op_tn = GetPointer<functional_unit>(tn)->get_operation(tree_helper::normalized_ID(dfgRef->CGetOpNodeInfo(*op)->GetOperation()));
@@ -541,7 +541,7 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
                THROW_ASSERT(call_operations.find(previous) != call_operations.end() && call_operations.find(previous)->second.begin() != call_operations.find(previous)->second.end(), "unexpected condition");
                vertex call = call_operations.find(previous)->second.front();
                THROW_ASSERT(call_states.find(previous) != call_states.end(), "unexpected condition");
-               for(std::list<vertex>::iterator s = call_states.find(previous)->second.begin(); s != call_states.find(previous)->second.end(); s++)
+               for(std::list<vertex>::iterator s = call_states.find(previous)->second.begin(); s != call_states.find(previous)->second.end(); ++s)
                {
                   EdgeDescriptor s_e = STG_builder->connect_state(*s, s_cur, ST_EDGE_NORMAL_T);
 
@@ -648,7 +648,7 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
                OutCondition.insert(std::make_pair(call_operations[s_src].front(), T_COND));
                STG_builder->set_condition(s_e, OutCondition);
             }
-            for(std::list<vertex>::iterator s = call_states.find(s_src)->second.begin(); s != call_states.find(s_src)->second.end(); s++)
+            for(std::list<vertex>::iterator s = call_states.find(s_src)->second.begin(); s != call_states.find(s_src)->second.end(); ++s)
             {
                EdgeDescriptor s_e1 = STG_builder->connect_state(*s, s_tgt, ST_EDGE_FEEDBACK_T);
                std::set<std::pair<vertex, unsigned int> > OutCondition;
@@ -665,7 +665,7 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
          {
             THROW_ASSERT(call_operations.find(s_src) != call_operations.end() && call_operations.find(s_src)->second.size() != 0, "State " + HLS->STG->get_state_name(s_src) + " does not contain any call expression");
             vertex operation =  call_operations.find(s_src)->second.front();
-            for(std::list<vertex>::iterator s = call_states.find(s_src)->second.begin(); s != call_states.find(s_src)->second.end(); s++)
+            for(std::list<vertex>::iterator s = call_states.find(s_src)->second.begin(); s != call_states.find(s_src)->second.end(); ++s)
             {
                EdgeDescriptor s_edge = STG_builder->connect_state(*s, s_tgt, ST_EDGE_NORMAL_T);
 
@@ -690,7 +690,7 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
       if(cfg_edge_ids.size())
       {
          const std::set<unsigned int>::const_iterator ei_end = cfg_edge_ids.end();
-         for(std::set<unsigned int>::const_iterator ei = cfg_edge_ids.begin(); ei!= ei_end; ei++)
+         for(std::set<unsigned int>::const_iterator ei = cfg_edge_ids.begin(); ei!= ei_end; ++ei)
          {
             out_conditions.insert(std::make_pair(last_operation, *ei));
          }
@@ -712,7 +712,7 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
          vertex controlling_vertex = *(operations->statements_list.rbegin());
          const std::set<unsigned int>& edge_ids = fbb->CGetBBEdgeInfo(*ein)->get_labels(CFG_SELECTOR);
          const std::set<unsigned int>::const_iterator ei_end = edge_ids.end();
-         for(std::set<unsigned int>::const_iterator ei=edge_ids.begin(); ei!= ei_end; ei++)
+         for(std::set<unsigned int>::const_iterator ei=edge_ids.begin(); ei!= ei_end; ++ei)
          {
             OutCondition.insert(std::make_pair(controlling_vertex, *ei));
          }

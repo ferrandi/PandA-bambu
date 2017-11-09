@@ -674,7 +674,7 @@ void tree_node_factory::operator()(const srcp* obj, unsigned int & mask)
    THROW_ASSERT(obj==dynamic_cast<srcp*>(curr_tree_node_ptr), "wrong factory setup");
    tree_node_mask::operator()(obj,mask);
    THROW_ASSERT(tree_node_schema.find(TOK(TOK_SRCP)) != tree_node_schema.end(), "tree_node_schema must have TOK_SRCP value");
-   const std::string & srcp_str = tree_node_schema.find(TOK(TOK_SRCP))->second;
+   const std::string& srcp_str = tree_node_schema.find(TOK(TOK_SRCP))->second;
    std::string::size_type colon_pos2 = srcp_str.rfind(':');
    std::string::size_type colon_pos = srcp_str.rfind(':', colon_pos2 - 1);
    dynamic_cast<srcp*>(curr_tree_node_ptr)->include_name = srcp_str.substr(0, colon_pos);

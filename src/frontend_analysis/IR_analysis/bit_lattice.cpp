@@ -500,7 +500,7 @@ std::string bitstring_to_string(const std::deque<bit_lattice> & bitstring)
    return res;
 }
 
-std::deque<bit_lattice> string_to_bitstring(const std::string & s)
+std::deque<bit_lattice> string_to_bitstring(const std::string& s)
 {
    std::deque<bit_lattice> res;
    for (const auto bit : s)

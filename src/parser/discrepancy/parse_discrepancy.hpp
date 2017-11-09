@@ -42,6 +42,6 @@
 
 REF_FORWARD_DECL(Discrepancy);
 
-void parse_discrepancy (const std::string & c_trace_filename, DiscrepancyRef Discrepancy);
+void parse_discrepancy (const std::string& c_trace_filename, DiscrepancyRef Discrepancy);
 
 #endif

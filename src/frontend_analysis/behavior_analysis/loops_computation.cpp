@@ -108,14 +108,14 @@ DesignFlowStep_Status loops_computation::InternalExec()
    }
    std::list<LoopConstRef> loops = function_behavior->CGetLoops()->GetList();
    std::list<LoopConstRef>::const_iterator loop_end = loops.end();
-   for(std::list<LoopConstRef>::const_iterator loop = loops.begin(); loop != loop_end; loop++)
+   for(std::list<LoopConstRef>::const_iterator loop = loops.begin(); loop != loop_end; ++loop)
    {
       ///FIXME: zero loop
       if((*loop)->GetId() == 0)
          continue;
       const std::unordered_set<vertex> blocks = (*loop)->get_blocks();
       std::unordered_set<vertex>::const_iterator bb_it, bb_it_end = blocks.end();
-      for(bb_it = blocks.begin(); bb_it != bb_it_end; bb_it++)
+      for(bb_it = blocks.begin(); bb_it != bb_it_end; ++bb_it)
       {
          const BBNodeInfoRef bb_node_info = fbb->GetBBNodeInfo(*bb_it);
          bb_node_info->loop_id = (*loop)->GetId();

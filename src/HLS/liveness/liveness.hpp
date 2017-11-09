@@ -332,7 +332,7 @@ class liveness
        * return the name of the given state
        * @param v is the state
        */
-      const std::string & get_name(vertex v) const;
+      const std::string& get_name(vertex v) const;
 
       /**
        * add a support state

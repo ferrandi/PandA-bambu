@@ -353,12 +353,12 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj,
             unsigned int counter=0;
             bool is_even = true;
             std::list<std::pair<unsigned int, memory_symbolRef> > mem_variables;
-            for(std::map<unsigned int, memory_symbolRef>::const_iterator m = mem_vars.begin(); m != mem_vars.end(); m++)
+            for(std::map<unsigned int, memory_symbolRef>::const_iterator m = mem_vars.begin(); m != mem_vars.end(); ++m)
                mem_variables.push_back(std::make_pair(m->first, m->second));
             mem_variables.sort(compareMemVarsPair);
 
             std::list<std::pair<unsigned int, memory_symbolRef> >::const_iterator m_next;
-            for(std::list<std::pair<unsigned int, memory_symbolRef> >::const_iterator m = mem_variables.begin(); m != mem_variables.end(); m++)
+            for(std::list<std::pair<unsigned int, memory_symbolRef> >::const_iterator m = mem_variables.begin(); m != mem_variables.end(); ++m)
             {
                init_v = TestbenchGenerationBaseStep::print_var_init(HLSMgr->get_tree_manager(), m->first, HLSMgr->Rmem);
                boost::algorithm::split(splitted, init_v , boost::algorithm::is_any_of(","));

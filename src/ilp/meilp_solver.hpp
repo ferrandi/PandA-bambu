@@ -200,7 +200,7 @@ class meilp_solver
        * @param i_sign is the operator in the constraints
        * @param name is the name of the constraint
        */
-      virtual void add_row(std::map<int,double> &i_coeffs, double i_rhs, ilp_sign i_sign, const std::string name) = 0;
+      virtual void add_row(std::map<int,double> &i_coeffs, double i_rhs, ilp_sign i_sign, const std::string&name) = 0;
 
       /**
        * Set the objective function
@@ -266,7 +266,7 @@ class meilp_solver
        * @param var is the index of the variables
        * @param name is the name of the variable
        */
-      virtual void set_col_name(int var, std::string name) = 0;
+      virtual void set_col_name(int var, const std::string& name) = 0;
 
       /**
        * Get name of a variable (column)
@@ -308,7 +308,7 @@ class meilp_solver
        * Print the problem
        * @param file_name is the name of the file to be written
        */
-      virtual void print_to_file(const std::string file_name) = 0;
+      virtual void print_to_file(const std::string&file_name) = 0;
 
 };
 

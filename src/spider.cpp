@@ -611,7 +611,7 @@ int main(int argc, char *argv[])
                   std::string benchmark_to_be_removed;
                   const std::unordered_map<std::string, long double> & training_errors = results->training_errors;
                   std::unordered_map<std::string, long double>::const_iterator training_error, training_error_end = training_errors.end();
-                  for(training_error = training_errors.begin(); training_error != training_error_end; training_error++)
+                  for(training_error = training_errors.begin(); training_error != training_error_end; ++training_error)
                   {
                      long double current_training_error = training_error->second;
                      if(current_training_error < 0.0)

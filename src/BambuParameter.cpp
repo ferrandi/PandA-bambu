@@ -275,14 +275,14 @@
 
 static bool is_evaluation_objective_string(
       const std::vector<std::string> & obj_vec,
-      const std::string & s)
+      const std::string& s)
 {
    return std::find(obj_vec.begin(), obj_vec.end(), s) != obj_vec.end();
 }
 
 static void add_evaluation_objective_string(
       std::string & obj_string,
-      const std::string & obj_to_add)
+      const std::string& obj_to_add)
 {
    if (obj_string.empty())
    {
@@ -293,7 +293,6 @@ static void add_evaluation_objective_string(
       convert_string_to_vector<std::string>(obj_string, ",");
    const std::vector<std::string> obj_vec_to_add =
       convert_string_to_vector<std::string>(obj_to_add, ",");
-   std::unordered_set<std::string> objs;
 
    for (const auto & s : obj_vec_to_add)
    {
@@ -989,7 +988,7 @@ void BambuParameter::PrintProgramName(std::ostream & os) const
    os << std::endl;
 }
 
-BambuParameter::BambuParameter(const std::string _program_name, int _argc, char ** const _argv) :
+BambuParameter::BambuParameter(const std::string& _program_name, int _argc, char ** const _argv) :
    Parameter(_program_name, _argc, _argv)
 {
    SetDefaults();
@@ -1601,13 +1600,13 @@ int BambuParameter::Exec()
             std::string objective_string = getOption<std::string>(OPT_evaluation_objectives);
             std::vector<std::string> objective_vector = convert_string_to_vector<std::string>(objective_string, ",");
             objective_string = "";
-            for(const auto objective : objective_vector)
+            for(const auto& objective : objective_vector)
             {
                if(objective == "CYCLES")
                {
                   objective_string += ",CYCLES";
                }
-               else if(objective == "CYCLES")
+               else if(objective == "TOTAL_CYCLES")
                {
                   objective_string += ",TOTAL_CYCLES";
                }
@@ -2539,7 +2538,6 @@ int BambuParameter::Exec()
       else if(file_type == Parameters_FileFormat::FF_C ||
               file_type == Parameters_FileFormat::FF_OBJECTIVEC ||
               file_type == Parameters_FileFormat::FF_CPP ||
-              file_type == Parameters_FileFormat::FF_FORTRAN ||
               file_type == Parameters_FileFormat::FF_FORTRAN)
       {
          const auto input_file = isOption(OPT_input_file) ? getOption<std::string>(OPT_input_file) + STR_CST_string_separator : "";
@@ -2710,7 +2708,7 @@ void BambuParameter::CheckParameters()
                setOption(OPT_testbench_input_xml, "test.xml");
             }
          }
-         const auto is_valid_evaluation_mode = [](const std::string & s) -> bool
+         const auto is_valid_evaluation_mode = [](const std::string& s) -> bool
          {
             return s == "AREA" or
                s == "AREAxTIME" or
@@ -2740,7 +2738,7 @@ void BambuParameter::CheckParameters()
       else if (getOption<Evaluation_Mode>(OPT_evaluation_mode) ==
             Evaluation_Mode::ESTIMATION)
       {
-         const auto is_valid_evaluation_mode = [](const std::string & s) -> bool
+         const auto is_valid_evaluation_mode = [](const std::string& s) -> bool
          {
             return s == "AREA" or s == "TIME" or s == "CLOCK_SLACK";
          };

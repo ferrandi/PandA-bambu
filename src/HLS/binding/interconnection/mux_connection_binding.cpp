@@ -1598,7 +1598,7 @@ void mux_connection_binding::create_connections()
       GetPointer<register_obj>(reg_obj)->set_wr_enable(sel_port);
    }
    std::set<unsigned int> setFu = HLS->Rfu->get_allocation_list();
-   for (std::set<unsigned int>::iterator i = setFu.begin(); i!= setFu.end(); i++)
+   for (std::set<unsigned int>::iterator i = setFu.begin(); i!= setFu.end(); ++i)
    {
       //number of istance functional unit i
       unsigned int num = HLS->Rfu->get_number(*i);
@@ -2616,7 +2616,7 @@ unsigned int mux_connection_binding::input_logic(const conn_binding::ConnectionS
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "     * Source: " + src.first->get_string() + " ");
       const std::set<data_transfer>& vars = src.second;
       THROW_ASSERT(vars.size(), "A connection should contain at least one data-transfer");
-      for(std::set<data_transfer>::iterator v = vars.begin(); v != vars.end(); v++)
+      for(std::set<data_transfer>::iterator v = vars.begin(); v != vars.end(); ++v)
       {
          if (std::get<0>(*v) == INFINITE_UINT)
             PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "       - var: (bool) from. " + HLS->Rliv->get_name(std::get<2>(*v)) + " to " + HLS->Rliv->get_name(std::get<3>(*v)));
@@ -2674,7 +2674,7 @@ unsigned int mux_connection_binding::input_logic(const conn_binding::ConnectionS
          std::list<data_transfer>::iterator v;
 
          ///stuff for the first input
-         for (v = obj2var[first].begin(); v != obj2var[first].end(); v++)
+         for (v = obj2var[first].begin(); v != obj2var[first].end(); ++v)
          {
             if (GetPointer<mux_obj>(var2obj[*v])) GetPointer<mux_obj>(var2obj[*v])->set_target(mux);
 
@@ -2693,7 +2693,7 @@ unsigned int mux_connection_binding::input_logic(const conn_binding::ConnectionS
 
          }
          ///stuff for the second input
-         for (v = obj2var[second].begin(); v != obj2var[second].end(); v++)
+         for (v = obj2var[second].begin(); v != obj2var[second].end(); ++v)
          {
             if (GetPointer<mux_obj>(var2obj[*v])) GetPointer<mux_obj>(var2obj[*v])->set_target(mux);
 

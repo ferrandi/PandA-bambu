@@ -824,7 +824,7 @@ struct graph : public boost::filtered_graph<boost_graphs_collection, SelectEdge<
        * @param graph_writer is the functor used to print the graph properties
        */
       template <typename VertexWriterTemplate, typename EdgeWriterTemplate, typename GraphWriterTemplate>
-      void InternalWriteDot(const std::string & file_name, const VertexWriterConstRef vertex_writer, const EdgeWriterConstRef edge_writer, const GraphWriterConstRef graph_writer) const
+      void InternalWriteDot(const std::string& file_name, const VertexWriterConstRef vertex_writer, const EdgeWriterConstRef edge_writer, const GraphWriterConstRef graph_writer) const
       {
          std::ofstream file_stream(file_name.c_str());
          boost::write_graphviz(file_stream, *this, *(GetPointer<VertexWriterTemplate>(vertex_writer)), *(GetPointer<EdgeWriterTemplate>(edge_writer)), *(GetPointer<GraphWriterTemplate>(graph_writer)));
@@ -1023,7 +1023,7 @@ struct graph : public boost::filtered_graph<boost_graphs_collection, SelectEdge<
        * @param edge_writer is the functor used to print the edge labels
        */
       template <typename VertexWriterTemplate, typename EdgeWriterTemplate>
-      void InternalWriteDot(const std::string & file_name, const VertexWriterConstRef vertex_writer, const EdgeWriterConstRef edge_writer) const
+      void InternalWriteDot(const std::string& file_name, const VertexWriterConstRef vertex_writer, const EdgeWriterConstRef edge_writer) const
       {
          std::ofstream file_stream(file_name.c_str());
          boost::write_graphviz(file_stream, *this, *(GetPointer<VertexWriterTemplate>(vertex_writer)), *(GetPointer<EdgeWriterTemplate>(edge_writer)));
@@ -1115,7 +1115,7 @@ struct ugraph : public  boost::filtered_graph<undirected_boost_graphs_collection
        * @param edge_writer is the functor used to print the edge labels
        */
       template <typename UVertexWriterTemplate, typename UEdgeWriterTemplate>
-      void InternalWriteDot(const std::string & file_name, const UVertexWriterConstRef uvertex_writer, const UEdgeWriterConstRef uedge_writer) const
+      void InternalWriteDot(const std::string& file_name, const UVertexWriterConstRef uvertex_writer, const UEdgeWriterConstRef uedge_writer) const
       {
          std::ofstream file_stream(file_name.c_str());
          boost::write_graphviz(file_stream, *this, *(GetPointer<UVertexWriterTemplate>(uvertex_writer)), *(GetPointer<UEdgeWriterTemplate>(uedge_writer)));

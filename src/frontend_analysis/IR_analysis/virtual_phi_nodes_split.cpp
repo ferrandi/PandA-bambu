@@ -121,7 +121,7 @@ DesignFlowStep_Status virtual_phi_nodes_split::InternalExec()
    std::map<unsigned int, blocRef> & list_of_bloc = sl->list_of_bloc;
 
    std::map<unsigned int, blocRef>::iterator iit, iit_end = list_of_bloc.end();
-   for(iit = list_of_bloc.begin(); iit != iit_end ; iit++)
+   for(iit = list_of_bloc.begin(); iit != iit_end ; ++iit)
    {
       blocRef& bb_block = iit->second;
       for(const auto phi : bb_block->CGetPhiList())
@@ -181,7 +181,7 @@ void virtual_phi_nodes_split::virtual_split_phi(tree_nodeRef tree_phi, blocRef& 
       unsigned int bb_source = def_edge.second;
       blocRef source_bb;
       std::map<unsigned int, blocRef>::iterator it, it_end = list_of_bloc.end();
-      for(it = list_of_bloc.begin(); it != it_end ; it++)
+      for(it = list_of_bloc.begin(); it != it_end ; ++it)
       {
          source_bb = it->second;
          if (source_bb->number != bb_source) continue;

@@ -130,9 +130,9 @@ class allocation : public HLSFunctionStep
        * In case the current functional unit has pipelined operations
        * then it return an id identifying the most compliant functional unit given the current clock period
        */
-      std::string get_compliant_pipelined_unit(double clock, const std::string pipe_parameter, const technology_nodeRef current_fu, const std::string curr_op, const std::string library_name, const std::string template_suffix, unsigned int module_prec);
+      std::string get_compliant_pipelined_unit(double clock, const std::string&pipe_parameter, const technology_nodeRef current_fu, const std::string&curr_op, const std::string&library_name, const std::string&template_suffix, unsigned int module_prec);
 
-      technology_nodeRef extract_bambu_provided(const std::string & library_name, operation* curr_op, const std::string & bambu_provided_resource);
+      technology_nodeRef extract_bambu_provided(const std::string& library_name, operation* curr_op, const std::string& bambu_provided_resource);
 
       /**
        * set the number of ports associated with the functional unit
@@ -148,17 +148,17 @@ class allocation : public HLSFunctionStep
       /**
        * Add a proxy function to the WORK library.
       */
-      void add_proxy_function_module(technology_nodeRef tn, const HLS_constraintsRef HLS_C, technology_nodeRef techNode_obj, const std::string & orig_fun_name);
+      void add_proxy_function_module(technology_nodeRef tn, const HLS_constraintsRef HLS_C, technology_nodeRef techNode_obj, const std::string& orig_fun_name);
 
       /**
        *  Add a proxy wrapper to the WORK library
       */
-      void add_proxy_function_wrapper(technology_nodeRef tn, const std::string & library_name, technology_nodeRef techNode_obj, const std::string & orig_fun_name);
+      void add_proxy_function_wrapper(technology_nodeRef tn, const std::string& library_name, technology_nodeRef techNode_obj, const std::string& orig_fun_name);
 
       /**
        * Build the proxy wrapper
        */
-      void BuildProxyWrapper(functional_unit* current_fu, const std::string & orig_fun_name, const std::string & orig_library_name);
+      void BuildProxyWrapper(functional_unit* current_fu, const std::string& orig_fun_name, const std::string& orig_library_name);
 
       /**
        * Build the proxy function in Verilog
