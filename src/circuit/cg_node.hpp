@@ -223,7 +223,7 @@ struct cg_graph_info : public GraphInfo
 class cg_edge_writer
 {
    public:
-      cg_edge_writer(const graph * _g);
+      explicit cg_edge_writer(const graph * _g);
       void operator()(std::ostream& out, const EdgeDescriptor& e) const;
 
    private:
@@ -233,7 +233,7 @@ class cg_edge_writer
 class cg_label_writer
 {
    public:
-      cg_label_writer(const graph *_g);
+      explicit cg_label_writer(const graph *_g);
 
       void operator()(std::ostream& out, const vertex& v) const;
    private:

@@ -99,7 +99,7 @@ class target_technology
       /**
        * Constructor.
        */
-      target_technology(const ParameterConstRef param);
+      explicit target_technology(const ParameterConstRef param);
 
       /**
        * Destructor.

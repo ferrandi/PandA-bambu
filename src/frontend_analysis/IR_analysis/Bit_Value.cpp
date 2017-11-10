@@ -474,12 +474,8 @@ void Bit_Value::print_bitstring_map(
 {
    const BehavioralHelperConstRef BH =
       AppM->CGetFunctionBehavior(function_id)->CGetBehavioralHelper();
-   std::string var_name;
    for (const auto & m : map)
    {
-      var_name = (m.first == function_id) ?
-         BH->get_function_name() :
-         BH->PrintVariable(m.first);
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
             "var_uid: " + STR(m.first)+ ":" + BH->PrintVariable(m.first) +
             " bitstring: " + bitstring_to_string(m.second));

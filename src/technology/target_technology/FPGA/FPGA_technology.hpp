@@ -56,7 +56,7 @@ class FPGA_technology : public target_technology
       /**
        * Constructor of the class
        */
-      FPGA_technology(const ParameterConstRef param);
+      explicit FPGA_technology(const ParameterConstRef param);
 
       /**
        * Destructor of the class

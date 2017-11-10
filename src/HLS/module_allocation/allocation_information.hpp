@@ -1039,7 +1039,7 @@ struct updatecopy_HLS_constraints_functor
        * Constructor
        * @param ALL is the reference to allocation class where technology constraints are stored
        */
-      updatecopy_HLS_constraints_functor(const AllocationInformationRef allocation_information);
+      explicit updatecopy_HLS_constraints_functor(const AllocationInformationRef allocation_information);
 
       /**
        * Destructor

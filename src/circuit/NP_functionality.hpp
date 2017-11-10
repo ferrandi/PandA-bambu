@@ -137,7 +137,7 @@ class NP_functionality
     NP_functionality() {}
 
     /// Constructor.
-    NP_functionality(const NP_functionalityRef& obj);
+    explicit NP_functionality(const NP_functionalityRef& obj);
 
     /// Destructor.
     ~NP_functionality() {}

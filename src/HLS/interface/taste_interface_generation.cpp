@@ -377,7 +377,7 @@ DesignFlowStep_Status TasteInterfaceGeneration::InternalExec()
       unsigned int bus_data_bytesize = HLSMgr->Rmem->get_bus_data_bitsize()/8;
 
 
-      const unsigned int n_elements = aadl_information->internal_memory_sizes[function_name]/bus_data_bytesize + (aadl_information->internal_memory_sizes[function_name]%bus_data_bytesize ? 1 : 0);
+      const unsigned int n_elements = aadl_information->internal_memory_sizes[function_name]/bus_data_bytesize + ((aadl_information->internal_memory_sizes[function_name]%bus_data_bytesize) ? 1 : 0);
 
       memory->set_parameter("n_elements", STR(n_elements));
 

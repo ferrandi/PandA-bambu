@@ -261,7 +261,6 @@ void CheckSystemType::recursive_examinate(const tree_nodeRef & curr_tn, const un
                if(sr)
                {
                   std::string include_name = sr->include_name;
-                  std::string function_name = tree_helper::print_function_name(TM, fd);
                   if(library_system_includes.find(include_name) != library_system_includes.end())
                      dn->library_system_flag = true;
                   else
@@ -519,18 +518,16 @@ void CheckSystemType::recursive_examinate(const tree_nodeRef & curr_tn, const un
             case record_type_K:
             {
                record_type * rt = GetPointer<record_type>(curr_tn);
+#if HAVE_BAMBU_BUILT
                const std::vector<tree_nodeRef> & list_of_flds = rt->list_of_flds;
                std::vector<tree_nodeRef>::const_iterator it, it_end = list_of_flds.end();
-#if HAVE_BAMBU_BUILT
                for(it = list_of_flds.begin(); it != it_end; ++it)
                {
                   recursive_examinate(*it);
-#if HAVE_BAMBU_BUILT
                   if(not rt->libbambu_flag and tree_helper::IsInLibbambu(TM, (*it)->index))
                   {
                      rt->libbambu_flag = true;
                   }
-#endif
                }
 #endif
                const std::vector<tree_nodeRef> & list_of_fncs = rt->list_of_fncs;
@@ -542,9 +539,9 @@ void CheckSystemType::recursive_examinate(const tree_nodeRef & curr_tn, const un
             case union_type_K:
             {
                union_type * ut = GetPointer<union_type>(curr_tn);
+#if HAVE_BAMBU_BUILT
                const std::vector<tree_nodeRef> & list_of_flds = ut->list_of_flds;
                std::vector<tree_nodeRef>::const_iterator it, it_end = list_of_flds.end();
-#if HAVE_BAMBU_BUILT
                for(it = list_of_flds.begin(); it != it_end; ++it)
                {
                   recursive_examinate(*it);
@@ -872,7 +869,7 @@ void CheckSystemType::build_include_structures()
          {
             std::string mingw_prefix = getenv("MINGW_INST_DIR");
             temp = *tok_iter;
-            if (temp.find("z:/mingw") == 0)
+            if (boost::algorithm::starts_with(temp,"z:/mingw"))
                temp = temp.replace(0, 8, FILENAME_NORM(mingw_prefix)); ///replace z:/mingw at the beginning of the string
             temp = FILENAME_NORM(temp);
             systemIncPath.push_back(temp);
@@ -931,7 +928,7 @@ void CheckSystemType::getRealInclName(const std::string&include, std::string & r
          if (inclNameToPath.find(trimmed) != inclNameToPath.end())
             real_name = inclNameToPath.find(trimmed)->second;
 #if HAVE_BAMBU_BUILT
-         else if(LIBBAMBU_SRCDIR == systemIncPath[i] && trimmed.find("libm/") == 0)
+         else if(LIBBAMBU_SRCDIR == systemIncPath[i] && boost::algorithm::starts_with(trimmed,"libm/"))
             real_name = FILENAME_NORM("math.h");
 #endif
          else

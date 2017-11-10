@@ -181,7 +181,7 @@ class BitLatticeManipulator
       /**
        * Constructor
        */
-      BitLatticeManipulator(const tree_managerConstRef _TM);
+      explicit BitLatticeManipulator(const tree_managerConstRef _TM);
 
       /**
        * Destructor

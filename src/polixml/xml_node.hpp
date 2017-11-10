@@ -79,7 +79,7 @@ class xml_node
       /**
        * constructor
       */
-      xml_node(const std::string&_name) : name(_name), line(0) {}
+      explicit xml_node(const std::string&_name) : name(_name), line(0) {}
       ///destructor
       virtual ~xml_node() {}
 
@@ -214,7 +214,7 @@ class xml_child : public xml_node
       /**
        * constructor
        */
-      xml_child(const std::string&_name) : xml_node(_name), first_text(nullptr) {}
+      explicit xml_child(const std::string&_name) : xml_node(_name), first_text(nullptr) {}
 
       /**
        * Print the class.

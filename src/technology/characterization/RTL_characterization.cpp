@@ -1030,6 +1030,7 @@ void RTLCharacterization::AnalyzeCell(functional_unit * fu, const unsigned int p
                new_op->time_m->set_stage_period(exec_time);
                const ControlStep ii(1u);
                new_op->time_m->set_initiation_time(ii);
+               // cppcheck-suppress knownConditionTrueFalse
                if(PipelineDepth==-1)
                   new_op->time_m->set_execution_time(exec_time, n_cycles+1);
                else

@@ -76,7 +76,7 @@ struct AadlParserData
    /**
     * Constructor
     */
-   AadlParserData(const ParameterConstRef parameters);
+   explicit AadlParserData(const ParameterConstRef parameters);
 };
 typedef refcount<AadlParserData> AadlParserDataRef;
 

@@ -154,7 +154,7 @@ void read_technology_library(technology_managerRef TM, const ParameterConstRef P
          boost::trim(SplittedLibs[i]);
          std::vector<std::string> SplittedLib;
          boost::algorithm::split(SplittedLib, SplittedLibs[i], boost::algorithm::is_any_of(":"));
-         std::string LibraryFile, LibraryName;
+         std::string LibraryFile;
          if (SplittedLib.size() < 1 or SplittedLib.size() > 2)
             THROW_ERROR("Malformed input liberty description: \"" + SplittedLibs[i] + "\"");
          if (SplittedLib.size() == 1)
@@ -163,7 +163,6 @@ void read_technology_library(technology_managerRef TM, const ParameterConstRef P
          }
          else
          {
-            LibraryName = SplittedLib[0];
             LibraryFile = SplittedLib[1];
          }
          if (!boost::filesystem::exists(LibraryFile))
@@ -224,9 +223,9 @@ void read_technology_library(technology_managerRef TM, const ParameterConstRef P
 #if HAVE_BOOLEAN_PARSER_BUILT
       if (Param->getOption<bool>(OPT_dump_genlib))
       {
+#if HAVE_CIRCUIT_BUILT
          std::string genlib_name(LibraryName.substr(0, LibraryName.find_last_of('.')) + ".genlib");
          PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "(koala) Dumping the technology library in genlib format");
-#if HAVE_CIRCUIT_BUILT
          dump_genlib(genlib_name, TM);
 #endif
       }
@@ -332,7 +331,9 @@ void write_technology_File(unsigned int type, const std::string& f, const techno
    if ((type & technology_manager::XML) != 0)
    {
       THROW_UNREACHABLE("Unexpected case");
+#if HAVE_EXPERIMENTAL
       write_lef_technology_File(f + ".lef", TM, dv_type, libraries);
+#endif
    }
 #if HAVE_FROM_LIBERTY
    if ((type & technology_manager::LIB) != 0)

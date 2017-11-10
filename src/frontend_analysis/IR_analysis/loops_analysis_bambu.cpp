@@ -227,7 +227,17 @@ DesignFlowStep_Status LoopsAnalysisBambu::InternalExec()
       }
       const tree_nodeRef cond = GET_NODE(GetPointer<const gimple_assign>(cond_def)->op1);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Condition variable is assigned in " + STR(cond));
-      if(cond->get_kind() != eq_expr_K and cond->get_kind() != ge_expr_K and cond->get_kind() != gt_expr_K and cond->get_kind() != le_expr_K and cond->get_kind() != lt_expr_K and cond->get_kind() != ne_expr_K and cond->get_kind() != uneq_expr_K and cond->get_kind() != ungt_expr_K and cond->get_kind() != unge_expr_K and cond->get_kind() != ungt_expr_K and cond->get_kind() != unle_expr_K and cond->get_kind() != unlt_expr_K)
+      if(cond->get_kind() != eq_expr_K and
+            cond->get_kind() != ge_expr_K and
+            cond->get_kind() != gt_expr_K and
+            cond->get_kind() != le_expr_K and
+            cond->get_kind() != lt_expr_K and
+            cond->get_kind() != ne_expr_K and
+            cond->get_kind() != uneq_expr_K and
+            cond->get_kind() != ungt_expr_K and
+            cond->get_kind() != unge_expr_K and
+            cond->get_kind() != unle_expr_K and
+            cond->get_kind() != unlt_expr_K)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Condition is not a comparison");
          continue;

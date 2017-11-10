@@ -128,7 +128,7 @@ DesignFlowStep_Status call_graph_computation::Exec()
             "---Adding function " + STR(f_id) + " " + fu_name + " to call graph");
       if (fu_name == "__start_pragma__" or
             fu_name == "__close_pragma__" or
-            fu_name.find("__pragma__") == 0)
+            boost::algorithm::starts_with(fu_name,"__pragma__"))
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Skipped...");
          continue;

@@ -102,7 +102,7 @@ struct priority_static_mobility : public priority_data<int>
    /**
     * Constructor.
    */
-   priority_static_mobility(const ASLAPRef &aslap);
+   explicit priority_static_mobility(const ASLAPRef &aslap);
    
    /**
     * This specialization does not update the priorities at the end of the control step.
@@ -143,7 +143,7 @@ struct priority_fixed : public priority_data<int>
    /**
     * Constructor.
    */
-   priority_fixed(const std::unordered_map<vertex,int>& priority_value);
+   explicit priority_fixed(const std::unordered_map<vertex,int>& priority_value);
    
    /**
     * This specialization does not update the priorities at the end of the control step.

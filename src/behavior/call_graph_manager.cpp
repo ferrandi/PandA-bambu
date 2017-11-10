@@ -275,10 +275,10 @@ bool CallGraphManager::IsCallPoint(
       case FunctionEdgeInfo::CallType::call_any:
          res = functionEdgeInfo->direct_call_points.find(call_id) !=
             functionEdgeInfo->direct_call_points.end() or
-            functionEdgeInfo->direct_call_points.find(call_id) !=
-            functionEdgeInfo->direct_call_points.end() or
-            functionEdgeInfo->direct_call_points.find(call_id) !=
-            functionEdgeInfo->direct_call_points.end();
+            functionEdgeInfo->indirect_call_points.find(call_id) !=
+            functionEdgeInfo->indirect_call_points.end() or
+            functionEdgeInfo->function_addresses.find(call_id) !=
+            functionEdgeInfo->function_addresses.end();
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "any call! present? "+ STR(res));
          break;
       default:

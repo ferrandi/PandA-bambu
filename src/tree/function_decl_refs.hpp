@@ -61,7 +61,7 @@ REF_FORWARD_DECL(function_decl_refs);
 struct function_decl_refs : public tree_node_visitor
 {
       ///default constructor
-      function_decl_refs(std::unordered_set<unsigned int> & _function_decl_set) : function_decl_set(_function_decl_set){ }
+      explicit function_decl_refs(std::unordered_set<unsigned int> & _function_decl_set) : function_decl_set(_function_decl_set){ }
 
       ///tree_node visitors
       BOOST_PP_SEQ_FOR_EACH(OPERATOR_MACRO_DECL, BOOST_PP_EMPTY, OBJ_SPECIALIZED_SEQ)

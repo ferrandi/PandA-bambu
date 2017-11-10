@@ -92,7 +92,7 @@ private:
 
 public:
    ///Constructor
-   std_var_pp_functor(const BehavioralHelperConstRef _BH): BH(_BH) {}
+   explicit std_var_pp_functor(const BehavioralHelperConstRef _BH): BH(_BH) {}
 
    ///Destructor
    ~std_var_pp_functor() {}

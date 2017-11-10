@@ -139,15 +139,16 @@ DesignFlowStep_Status FixCharacterization::Exec()
                }
             }
             /// vectorize shift ops
-            if(template_name == "vec1_rshift_expr_FU" ||
-               template_name == "ui_vec1_rshift_expr_FU" ||
-               template_name == "vec1_lshift_expr_FU" ||
-               template_name == "ui_vec1_rshift_expr_FU" ||
-               template_name == "vec_rshift_expr_FU" ||
-               template_name == "ui_vec_rshift_expr_FU" ||
-               template_name == "vec_lshift_expr_FU" ||
-               template_name == "ui_vec_rshift_expr_FU"
-                    )
+            if(
+                  template_name == "vec_rshift_expr_FU" ||
+                  template_name == "ui_vec_rshift_expr_FU" ||
+                  template_name == "vec1_rshift_expr_FU" ||
+                  template_name == "ui_vec1_rshift_expr_FU" ||
+                  template_name == "vec_lshift_expr_FU" ||
+                  template_name == "ui_vec_lshift_expr_FU" ||
+                  template_name == "vec1_lshift_expr_FU" ||
+                  template_name == "ui_vec1_lshift_expr_FU"
+                  )
             {
                std::vector<std::string> template_parameters;
                boost::algorithm::split(template_parameters, single_fu->fu_template_parameters, boost::algorithm::is_any_of(" "));
@@ -327,11 +328,11 @@ DesignFlowStep_Status FixCharacterization::Exec()
       }
    }
    ///Second iteration of fixing
-   for(const auto library : libraries)
+   for(const auto& library : libraries)
    {
       const auto LM = TM->get_library_manager(library);
       const auto fus = LM->get_library_fu();
-      for(const auto fu : fus)
+      for(const auto& fu : fus)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing " + fu.first);
          auto single_fu = GetPointer<functional_unit>(fu.second);
@@ -341,7 +342,20 @@ DesignFlowStep_Status FixCharacterization::Exec()
          if(single_fu)
          {
             ///64 bits plus/minus
-            if(template_name == "plus_expr_FU" or template_name == "ui_plus_expr_FU" or template_name == "minus_expr_FU" or template_name == "ui_minus_expr_FU" or template_name == "ui_minus_expr_FU" or template_name == "ternary_alu_expr_FU" or template_name == "ui_ternary_alu_expr_FU" or template_name == "ternary_mm_expr_FU" or template_name == "ui_ternary_mm_expr_FU" or template_name == "ternary_mp_expr_FU" or template_name == "ui_ternary_mp_expr_FU" or template_name == "ternary_pm_expr_FU" or template_name == "ui_ternary_pm_expr_FU" or template_name == "ternary_plus_expr_FU" or template_name == "ui_ternary_plus_expr_FU")
+            if(template_name == "plus_expr_FU" or
+                  template_name == "ui_plus_expr_FU" or
+                  template_name == "minus_expr_FU" or
+                  template_name == "ui_minus_expr_FU" or
+                  template_name == "ternary_alu_expr_FU" or
+                  template_name == "ui_ternary_alu_expr_FU" or
+                  template_name == "ternary_mm_expr_FU" or
+                  template_name == "ui_ternary_mm_expr_FU" or
+                  template_name == "ternary_mp_expr_FU" or
+                  template_name == "ui_ternary_mp_expr_FU" or
+                  template_name == "ternary_pm_expr_FU" or
+                  template_name == "ui_ternary_pm_expr_FU" or
+                  template_name == "ternary_plus_expr_FU" or
+                  template_name == "ui_ternary_plus_expr_FU")
             {
                if(single_fu->fu_template_parameters.find(" 0") != std::string::npos or (single_fu->fu_template_parameters.size() >= 2 and single_fu->fu_template_parameters.substr(0, 2) == "0 "))
                {

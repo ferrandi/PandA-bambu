@@ -94,7 +94,7 @@ class SimulationTool
       /**
        * Constructor
        */
-      SimulationTool(const ParameterConstRef Param);
+      explicit SimulationTool(const ParameterConstRef Param);
 
       /**
        * Destructor

@@ -727,9 +727,9 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
       HLS->STG->CGetStg()->WriteDot("HLS_STGraph-pre-opt.dot");
    }
    ///Call optimize_cycles for every cycle in the stg
-   unsigned int istance = 0;
    if(not parameters->IsParameter("no-fsm-duplication") or not parameters->GetParameter<bool>("no-fsm-duplication"))
    {
+      unsigned int istance = 0;
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing cycles");
       BOOST_FOREACH(EdgeDescriptor fbbei, boost::edges(*fbb))
       {
@@ -1285,9 +1285,6 @@ vertex BB_based_stg::check_data_dependency(vertex operation, vertex state,
     std::list<vertex> ExecutingOpList = global_executing_ops[state];
     std::list<vertex>::iterator it;
     vertex dependentOperation;
-    vertex dependingInstantaneous;
-
-    dependingInstantaneous = nullptr;
 
     for(it = StartingOpList.begin();
         it != StartingOpList.end(); ++it){
@@ -1297,7 +1294,6 @@ vertex BB_based_stg::check_data_dependency(vertex operation, vertex state,
                 dependentOperation = check_data_dependency(*it, state, global_starting_ops, global_executing_ops);
                 if(dependentOperation != nullptr)
                     return dependentOperation;
-                dependingInstantaneous = *it;
             }
             return *it;
         }
@@ -1311,14 +1307,10 @@ vertex BB_based_stg::check_data_dependency(vertex operation, vertex state,
                 dependentOperation = check_data_dependency(*it, state, global_starting_ops, global_executing_ops);
                 if(dependentOperation != nullptr)
                     return dependentOperation;
-                dependingInstantaneous = *it;
             }
             return *it;
         }
     }
-
-    if(dependingInstantaneous != nullptr)
-        return dependingInstantaneous;
 
     return nullptr;
 }

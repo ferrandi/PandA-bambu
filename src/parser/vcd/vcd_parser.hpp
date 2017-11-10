@@ -88,7 +88,7 @@ class vcd_parser
     * constructor
     * @param [in] params: is the class holding bambu parameters
     */
-   vcd_parser(const ParameterConstRef & params);
+   explicit vcd_parser(const ParameterConstRef & params);
 
    /**
     * this is the type used to select which signals have to be filtered during

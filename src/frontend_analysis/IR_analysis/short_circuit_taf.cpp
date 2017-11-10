@@ -192,7 +192,7 @@ DesignFlowStep_Status short_circuit_taf::InternalExec()
       return DesignFlowStep_Status::UNCHANGED;
 
    ///find the first to merge
-   unsigned int bb1, bb2, merging_candidate = 0;
+   unsigned int bb1=static_cast<unsigned int>(-1), bb2=static_cast<unsigned int>(-1), merging_candidate = 0;
    bool bb1_true = false;
    bool bb2_true = false;
    bool mergeable_pair_found;
@@ -223,8 +223,7 @@ DesignFlowStep_Status short_circuit_taf::InternalExec()
          {
             something_change = true;
             restructure_CFG(bb1, bb2, merging_candidate, list_of_bloc);
-            if(merging_candidates.find(bb1) != merging_candidates.end())
-               merging_candidates.erase(bb1);
+            merging_candidates.erase(bb1);
             if(!check_merging_candidate(bb1, bb2, merging_candidate, bb1_true, bb2_true, list_of_bloc))
                merging_candidates.erase(merging_candidate);
             if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC)

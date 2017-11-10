@@ -108,8 +108,9 @@ DesignFlowStep_Status AddBbEcfgEdges::InternalExec()
    const BehavioralHelperConstRef behavioral_helper = function_behavior->CGetBehavioralHelper();
 
    ///The function name
+#ifndef NDEBUG
    const std::string function_name = behavioral_helper->get_function_name();
-
+#endif
    ///The control flow graph with feedback of basic blocks
    const BBGraphRef  fbb = function_behavior->GetBBGraph(FunctionBehavior::FBB);
 

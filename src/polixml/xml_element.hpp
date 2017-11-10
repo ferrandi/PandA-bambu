@@ -61,7 +61,7 @@ class xml_element : public xml_child, public attribute_sequence
       /**
        * constructor
        */
-      xml_element(const std::string&_name) : xml_child(_name)
+      explicit xml_element(const std::string&_name) : xml_child(_name)
       {}
 
       /**

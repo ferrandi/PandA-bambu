@@ -400,7 +400,6 @@ double AllocationInformation::get_attribute_of_fu_per_op(const vertex v, const O
    std::string op_name = tree_helper::normalized_ID(g->CGetOpNodeInfo(v)->GetOperation());
    const std::set<unsigned int>::const_iterator f_end = fu_set.end();
    std::set<unsigned int>::const_iterator f_i = fu_set.begin();
-   double double_value;
    flag = false;
    while (CF && f_i != f_end && ((*CF)(*f_i) <= 0 || (binding.find(node_id) != binding.end()  && binding.find(node_id)->second.second != *f_i))) ++f_i;
    if (f_i == f_end) return -1.0;
@@ -458,7 +457,7 @@ double AllocationInformation::get_attribute_of_fu_per_op(const vertex v, const O
          THROW_ASSERT(GetPointer<functional_unit>(list_of_FU[fu_name]), "");
          THROW_ASSERT(GetPointer<operation>(GetPointer<functional_unit>(list_of_FU[fu_name])->get_operation(op_name)), op_name + " not provided by " + list_of_FU[fu_name]->get_name());
          THROW_ASSERT(GetPointer<operation>(GetPointer<functional_unit>(list_of_FU[fu_name])->get_operation(op_name))->time_m, "Timing information not specified for operation " + op_name + " on unit " + id_to_fu_names.find(fu_name)->second.first);
-         double_value = get_execution_time_dsp_modified(fu_name, GetPointer<functional_unit>(list_of_FU[fu_name])->get_operation(op_name));
+         double double_value = get_execution_time_dsp_modified(fu_name, GetPointer<functional_unit>(list_of_FU[fu_name])->get_operation(op_name));
          if(binding.find(node_id) != binding.end() && binding.find(node_id)->second.second == fu_name)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Got Execution time: " + STR(double_value));
@@ -506,12 +505,12 @@ unsigned int AllocationInformation::min_number_of_resources(const vertex v) cons
    const auto node_id = op_graph->CGetOpNodeInfo(v)->GetNodeId();
    const std::set<unsigned int> & fu_set = node_id_to_fus.find(std::pair<unsigned int, std::string>(node_id, operation))->second;
 
-   unsigned int min_num_res = INFINITE_UINT, num_res;
+   unsigned int min_num_res = INFINITE_UINT;
    const std::set<unsigned int>::const_iterator f_end = fu_set.end();
 
    for (std::set<unsigned int>::const_iterator f_i = fu_set.begin(); f_i != f_end; ++f_i)
    {
-      num_res = tech_constraints[*f_i];
+      unsigned int num_res = tech_constraints[*f_i];
       THROW_ASSERT(num_res != 0, "something of wrong happen");
       min_num_res = min_num_res > num_res ? num_res : min_num_res;
    }
@@ -740,14 +739,21 @@ bool AllocationInformation::is_operation_bounded(const unsigned int index) const
    const auto ga = GetPointer<const gimple_assign>(TreeM->get_tree_node_const(index));
    if(ga && ga->orig)
       return is_operation_bounded(ga->orig->index);
+
    ///currently all the operations introduced after the allocation has been performed are bounded
-   return true;
    if(ga)
    {
       const auto right = GET_NODE(ga->op1);
-      if(right->get_kind() == truth_and_expr_K or right->get_kind() == truth_or_expr_K or right->get_kind() == truth_not_expr_K or right->get_kind() == cond_expr_K or right->get_kind() == ternary_plus_expr_K or right->get_kind() == ternary_mp_expr_K or right->get_kind() == ternary_pm_expr_K or right->get_kind() == ternary_mm_expr_K or right->get_kind() == ssa_name_K)
-         return true;
+      ///currently all the operations introduced after the allocation has been performed are bounded
+      THROW_ASSERT(right->get_kind() == truth_and_expr_K or right->get_kind() ==
+                   truth_or_expr_K or right->get_kind() == truth_not_expr_K or
+                   right->get_kind() == cond_expr_K or right->get_kind() ==
+                   ternary_plus_expr_K or right->get_kind() == ternary_mp_expr_K or
+                   right->get_kind() == ternary_pm_expr_K or right->get_kind() ==
+                   ternary_mm_expr_K or right->get_kind() == ssa_name_K, "Unexpected right part: " + right->get_kind_text());
+      return true;
    }
+   THROW_ERROR("Unexpected condition");
    return false;
 }
 
@@ -1049,12 +1055,12 @@ unsigned int AllocationInformation::max_number_of_resources(const vertex v) cons
    const auto node_id = op_graph->CGetOpNodeInfo(v)->GetNodeId();
    const std::set<unsigned int> & fu_set = node_id_to_fus.find(std::pair<unsigned int, std::string>(node_id, operation))->second;
 
-   unsigned int tot_num_res = 0, num_res;
+   unsigned int tot_num_res = 0;
    const std::set<unsigned int>::const_iterator f_end = fu_set.end();
 
    for (std::set<unsigned int>::const_iterator f_i = fu_set.begin(); f_i != f_end; ++f_i)
    {
-      num_res = tech_constraints[*f_i];
+      unsigned int num_res = tech_constraints[*f_i];
       THROW_ASSERT(num_res != 0, "something of wrong happen");
       if (num_res == INFINITE_UINT)
          return num_res;
@@ -1088,9 +1094,7 @@ void AllocationInformation::GetNodeTypePrec(const vertex node, const OpGraphCons
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Getting node type precision of " + GET_NAME(g, node));
    std::string current_op = tree_helper::normalized_ID(g->CGetOpNodeInfo(node)->GetOperation());
 
-   long long int vec_size = 0;
    bool is_a_pointer = false;
-   bool is_a_function = false;
    unsigned int type_index = 0;
    bool is_second_constant = false;
    bool has_formal_parameter = false;
@@ -1184,8 +1188,11 @@ void AllocationInformation::GetNodeTypePrec(const vertex node, const OpGraphCons
       type_index = formal_parameter_type;
    }
    else
+   {
+      long long int vec_size = 0;
+      bool is_a_function = false;
       type_index = tree_helper::get_type_index(TreeM, first_valid_id, vec_size, is_a_pointer, is_a_function);
-
+   }
    if(is_a_pointer || tree_helper::is_an_array(TreeM, type_index) || tree_helper::is_a_struct(TreeM, type_index) || tree_helper::is_an_union(TreeM, type_index) || tree_helper::is_a_complex(TreeM, type_index))
    {
       info->node_kind = "VECTOR_BOOL";
@@ -1327,8 +1334,8 @@ void AllocationInformation::GetNodeTypePrec(const vertex node, const OpGraphCons
           info->real_output_nelem = info->base128_output_nelem = 0;
       }
    }
-   else if(current_op.find( "float_expr_") == 0 ||
-         current_op.find("fix_trunc_expr_") == 0 ||
+   else if(boost::algorithm::starts_with(current_op,"float_expr_") ||
+         boost::algorithm::starts_with(current_op,"fix_trunc_expr_") ||
          current_op == "dot_prod_expr" ||
          current_op == "widen_sum_expr" ||
          current_op == "widen_mult_hi_expr" ||
@@ -1338,7 +1345,7 @@ void AllocationInformation::GetNodeTypePrec(const vertex node, const OpGraphCons
          )
    {
       /// ad hoc correction for float_expr conversion
-      if(current_op.find( "float_expr_") == 0 && max_size_in < 32)
+      if(boost::algorithm::starts_with(current_op,"float_expr_") && max_size_in < 32)
          max_size_in = 32;
       unsigned int nodeOutput_id = hls_manager->get_produced_value(function_index, node);
       if (nodeOutput_id)
@@ -1370,7 +1377,7 @@ void AllocationInformation::GetNodeTypePrec(const vertex node, const OpGraphCons
          }
 
          /// ad hoc correction for fix_trunc_expr
-         if (current_op.find( "fix_trunc_expr_") == 0 && info->output_prec < 32)
+         if (boost::algorithm::starts_with(current_op,"fix_trunc_expr_") && info->output_prec < 32)
            info->output_prec = 32;
       }
       if(current_op == "dot_prod_expr")

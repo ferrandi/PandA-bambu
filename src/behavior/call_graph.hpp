@@ -224,7 +224,7 @@ class FunctionWriter : public VertexWriter
        * constructor
        * @param call_graph is the graph to be printed
        */
-      FunctionWriter(const CallGraph * call_graph);
+      explicit FunctionWriter(const CallGraph * call_graph);
 
       /**
        * operator function returning the label of the vertex
@@ -248,7 +248,7 @@ class FunctionEdgeWriter : public EdgeWriter
        * constructor
        * @param g is the graph to be printed
       */
-      FunctionEdgeWriter(const CallGraph * call_graph);
+      explicit FunctionEdgeWriter(const CallGraph * call_graph);
 
       /**
        * Destructor

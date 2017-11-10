@@ -677,6 +677,7 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
    std::unordered_map<vertex, vertex> bb_dominator_map = bb_dominators->get_dominator_map();
 
    ///If we are performing simd transformation, look for simd pragma
+   // cppcheck-suppress uninitvar
    const CustomSet<vertex> simd_loop_headers = parameters->getOption<int>(OPT_gcc_openmp_simd) == 0 ? CustomSet<vertex>() : [&] () -> CustomSet<vertex> const
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Looking for openmp simd pragma");
@@ -825,7 +826,7 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
             for(std::set<ssa_name*>::const_iterator ssu_it = stmt_ssa_uses.begin(); ssu_it != ssu_it_end; ++ssu_it)
             {
                ssa_name* sn = *ssu_it;
-               for(auto const def_stmt : sn->CGetDefStmts())
+               for(auto const& def_stmt : sn->CGetDefStmts())
                {
                   gimple_node * def_gn = GetPointer<gimple_node>(GET_NODE(def_stmt));
                   THROW_ASSERT(def_gn->get_kind() == gimple_nop_K or def_gn->index, sn->ToString() + " is defined in entry");
@@ -970,7 +971,7 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
             for(auto sn : stmt_ssa_uses)
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Checking definition of " + sn->ToString());
-               for(auto const def_stmt : sn->CGetDefStmts())
+               for(auto const& def_stmt : sn->CGetDefStmts())
                {
                   gimple_node * def_gn = GetPointer<gimple_node>(GET_NODE(def_stmt));
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Checked definition " + def_gn->ToString());
@@ -1003,12 +1004,14 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
 
             const auto temp_statement = *statement;
             ///Going one step step forward to avoid invalidation of the pointer
-            statement++;
+            auto tmp_it = statement;
+            ++tmp_it;
             ///Moving statement
             list_of_bloc[curr_bb]->RemoveStmt(temp_statement);
             list_of_bloc[dest_bb_index]->PushBack(temp_statement);
             ///Going one step back since pointer is already increment in for loop
-            statement--;
+            --tmp_it;
+            statement = tmp_it;
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Moved in BB" + STR(dest_bb_index));
          }
 

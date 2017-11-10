@@ -181,7 +181,6 @@ int SpiderParameter::Exec()
 
    /// variable used into option parsing
    int option_index;
-   int next_option;
 
    const char* const short_options = COMMON_SHORT_OPTIONS_STRING"I:O:p:";
 
@@ -216,7 +215,7 @@ int SpiderParameter::Exec()
    }
    while (1)
    {
-      next_option = getopt_long(argc, argv, short_options, long_options, &option_index);
+      int next_option = getopt_long(argc, argv, short_options, long_options, &option_index);
 
       // no more options are available
       if (next_option == -1)

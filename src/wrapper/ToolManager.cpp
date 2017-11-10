@@ -118,7 +118,7 @@ int ToolManager::check_command(const std::string& _tool_, const std::string& set
    /// add setup script execution
    if(setupscr.size())
    {
-      if(setupscr.find("export") == 0)
+      if(boost::algorithm::starts_with(setupscr,"export"))
          command += setupscr + " >& /dev/null; ";
       else
          command += ". " + setupscr + " >& /dev/null; ";

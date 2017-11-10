@@ -4252,7 +4252,7 @@ std::string structural_object::get_equation(const structural_objectRef out_obj, 
             boost::algorithm::split(tokens, tmp, boost::algorithm::is_any_of(";"));
             for(unsigned int i = 0; i < tokens.size(); i++)
             {
-               if (tokens[i].find(out_obj->get_id()) == 0)
+               if (boost::algorithm::starts_with(tokens[i],out_obj->get_id()))
                   EQ = tokens[i].substr(tokens[i].find("=") + 1, tokens[i].size());
             }
             //EQ = NPF->get_NP_functionality(NP_functionality::EQUATION);

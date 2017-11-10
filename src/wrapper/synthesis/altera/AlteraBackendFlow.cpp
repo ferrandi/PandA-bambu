@@ -254,7 +254,7 @@ void AlteraBackendFlow::WriteFlowConfiguration(std::ostream& script)
    if(setupscr.size())
    {
       script << "#configuration" << std::endl;
-      if(setupscr.find("export") == 0)
+      if(boost::algorithm::starts_with(setupscr,"export"))
          script << setupscr + " >& /dev/null; ";
       else
          script << ". " << setupscr << " >& /dev/null; ";

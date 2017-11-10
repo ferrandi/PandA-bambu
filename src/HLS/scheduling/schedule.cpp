@@ -940,7 +940,7 @@ class StartingTimeSorter : std::binary_function<unsigned int, unsigned int, bool
        * The constructor
        * @param starting_time is the starting time of each operation
        */
-      StartingTimeSorter(const CustomMap<unsigned int, double> & _starting_times) :
+      explicit StartingTimeSorter(const CustomMap<unsigned int, double> & _starting_times) :
          starting_times(_starting_times)
       {}
 

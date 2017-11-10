@@ -249,7 +249,6 @@ std::string verilog_writer::type_converter_size(const structural_objectRef &cir)
       case structural_type_descriptor::OTHER:
       {
          return Type->id_type;
-         break;
       }
       case structural_type_descriptor::UNKNOWN:
       default:
@@ -272,7 +271,7 @@ std::string verilog_writer::may_slice_string(const structural_objectRef &cir)
       {
          std::vector<std::pair<std::string, structural_objectRef> > library_parameters;
          mod->get_NP_library_parameters(Owner, library_parameters);
-         for(const auto library_parameter : library_parameters)
+         for(const auto& library_parameter : library_parameters)
             if(port_name == library_parameter.first)
                specialization_string=true;
       }
@@ -584,10 +583,9 @@ void verilog_writer::write_vector_port_binding(const structural_objectRef &port,
       structural_objectRef slice;
       structural_objectRef null_object;
       unsigned int n_ports = pv->get_ports_size();
-      unsigned int index;
       for (unsigned int j =  0; j < n_ports; ++j)
       {
-         index = n_ports - j - 1;
+         unsigned int index = n_ports - j - 1;
          structural_objectRef object_bounded = GetPointer<port_o>(pv->get_port(index))->find_bounded_object();
          if (!object_bounded) THROW_ERROR("not bounded: " + pv->get_port(index)->get_path());
 
@@ -1384,7 +1382,7 @@ void verilog_writer::write_module_parametrization_decl(const structural_objectRe
       ///writing other library parameters
       std::vector<std::pair<std::string, structural_objectRef> > library_parameters;
       mod->get_NP_library_parameters(cir, library_parameters);
-      for(const auto library_parameter : library_parameters)
+      for(const auto& library_parameter : library_parameters)
       {
          if(first_it)
          {

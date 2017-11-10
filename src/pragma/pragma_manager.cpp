@@ -248,7 +248,6 @@ void pragma_manager::AddFunctionDefinitionPragmas(const std::string& function_na
          continue;
       }
 #endif
-      const std::string trimmed_spaces = TrimSpaces(pragma);
       if(pragma.find("#pragma omp declare simd") == 0)
       {
          function_definition_pragmas[function_name].push_back(pragma);

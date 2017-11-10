@@ -125,7 +125,7 @@ class ParametricListBasedSpecialization : public HLSFlowStepSpecialization
        * Constructor
        * @param parametric_list_based_metric is the metric used in list based
        */
-      ParametricListBasedSpecialization(const ParametricListBased_Metric parametric_list_based_metric);
+      explicit ParametricListBasedSpecialization(const ParametricListBased_Metric parametric_list_based_metric);
 
       /**
        * Return the string representation of this

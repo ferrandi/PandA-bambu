@@ -553,7 +553,7 @@ struct functional_unit: public technology_node
       /**
        * Constructor
        */
-   functional_unit(const xml_nodeRef XML_description);
+   explicit functional_unit(const xml_nodeRef XML_description);
 
    /**
     * Destructor
@@ -716,7 +716,7 @@ struct functional_unit: public technology_node
    //@{
    functional_unit_template();
 
-   functional_unit_template(const xml_nodeRef XML_description);
+   explicit functional_unit_template(const xml_nodeRef XML_description);
    //@}
 
    /**

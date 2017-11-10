@@ -87,7 +87,7 @@ namespace boost
          {
             return out_degree(v1, G) < out_degree(v2, G);
          }
-         degree_compare_functor(const VertexListGraph& _G) : G(_G)
+         explicit degree_compare_functor(const VertexListGraph& _G) : G(_G)
          {}
       private:
          const VertexListGraph& G;

@@ -325,7 +325,8 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
       loops->CGetLoop(loop_id)->get_recursively_bb(loop_basic_blocks);
 
       ///Set of basic blocks to be analyzed
-      std::set<vertex, bb_vertex_order_by_map> to_be_processed(function_behavior->get_bb_map_levels());
+      const bb_vertex_order_by_map comp_i(function_behavior->get_bb_map_levels());
+      std::set<vertex, bb_vertex_order_by_map> to_be_processed(comp_i);
 
       ///Loop 0 must be managed in a different way
       if(loop_id == 0)

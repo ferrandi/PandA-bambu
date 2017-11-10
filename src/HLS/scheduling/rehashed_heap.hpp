@@ -75,7 +75,7 @@ struct rehashed_heap : public std::priority_queue<vertex,
     * Constructor
     * @param pri is the priority functor.
    */
-   rehashed_heap(const priority_compare_functor<_Type>& _comp) : 
+   explicit rehashed_heap(const priority_compare_functor<_Type>& _comp) :
          std::priority_queue<vertex, std::vector<vertex>, priority_compare_functor<_Type> >(_comp) {}
    /**
     * Rehash the heap associated with the priority queue.

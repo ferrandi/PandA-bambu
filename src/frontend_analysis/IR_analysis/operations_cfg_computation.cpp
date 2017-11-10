@@ -212,7 +212,9 @@ DesignFlowStep_Status operations_cfg_computation::InternalExec()
       const BBNodeInfoConstRef bb_node_info = fbb->CGetBBNodeInfo(*v_iter);
       const auto block = bb_node_info->block;
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Examining BB" + STR(block->number));
-      if(block->CGetStmtList().empty() and block->CGetStmtList().empty() and *v_iter != fbb->CGetBBGraphInfo()->entry_vertex and *v_iter != fbb->CGetBBGraphInfo()->exit_vertex)
+      if(block->CGetStmtList().empty() and
+            *v_iter != fbb->CGetBBGraphInfo()->entry_vertex and
+            *v_iter != fbb->CGetBBGraphInfo()->exit_vertex)
       {
          std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> gimple_nop_schema;
          const auto new_tree_node_id = TM->new_tree_node_id();
@@ -404,7 +406,7 @@ std::string operations_cfg_computation::get_first_node(const tree_nodeRef &tn, c
       curr_tn = tn;
    }
    unsigned int ind = GET_INDEX_NODE(tn);
-   std::string src, res = "";
+   std::string src;
    src = f_name + "_" + boost::lexical_cast<std::string>(ind);
 
    switch (curr_tn->get_kind())
@@ -625,7 +627,6 @@ void operations_cfg_computation::build_operation_recursive(const tree_managerRef
                ogc->add_type(actual_name, TYPE_WAS_GIMPLE_PHI);
             build_operation_recursive(TM, ogc, me->op1, f_name, bb_index);
          }
-         break;
          if(me->predicate)
             ogc->add_type(actual_name, TYPE_PREDICATED);
          break;

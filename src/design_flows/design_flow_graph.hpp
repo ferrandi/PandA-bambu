@@ -118,7 +118,7 @@ class DesignFlowGraphsCollection : public graphs_collection
       /**
        * Constructor
        */
-      DesignFlowGraphsCollection(const ParameterConstRef parameters);
+      explicit DesignFlowGraphsCollection(const ParameterConstRef parameters);
 
       /**
        * Destructor

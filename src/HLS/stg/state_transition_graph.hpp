@@ -221,7 +221,7 @@ struct StateTransitionGraphInfo : public GraphInfo
    /**
     * Constructor
     */
-   StateTransitionGraphInfo(const OpGraphConstRef op_function_graph);
+   explicit StateTransitionGraphInfo(const OpGraphConstRef op_function_graph);
 
    friend class StateTransitionGraph_constructor;
 };

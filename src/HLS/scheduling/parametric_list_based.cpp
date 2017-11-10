@@ -145,15 +145,15 @@ struct resource_ordering_functor
 
    public:
       /**
-       * functor function used to compare two resources with respect their performances
+       * functor function used to compare two resources with respect to their performances
        * @param a is the first vertex
        * @param bis the second vertex
        * @return true when a is faster than b
        */
       bool operator() (const unsigned int & a, const unsigned int & b) const
       {
-         unsigned char wm_a = (all->is_indirect_access_memory_unit(a) || all->is_indirect_access_memory_unit(a)) ? 1 : 0;
-         unsigned char wm_b = (all->is_indirect_access_memory_unit(b) || all->is_indirect_access_memory_unit(b)) ? 1 : 0;
+         unsigned char wm_a = all->is_indirect_access_memory_unit(a) ? 1 : 0;
+         unsigned char wm_b = all->is_indirect_access_memory_unit(b) ? 1 : 0;
          double we_a = all->get_worst_execution_time(a);
          double we_b = all->get_worst_execution_time(b);
          double wa_a = all->get_area(a)+all->get_DSPs(a);
@@ -177,7 +177,7 @@ struct resource_ordering_functor
        * Constructor
        * @param o is the order.
        */
-      resource_ordering_functor(const AllocationInformationConstRef _all) : all(_all) {}
+      explicit resource_ordering_functor(const AllocationInformationConstRef _all) : all(_all) {}
 
       /**
        * Destructor
@@ -199,7 +199,7 @@ class compare_vertex_by_name : std::binary_function<vertex, vertex, bool>
     *
     * @param G is the operation graph.
     */
-   compare_vertex_by_name(const OpGraphConstRef & G) : op_graph(G) {}
+   explicit compare_vertex_by_name(const OpGraphConstRef & G) : op_graph(G) {}
 
    bool operator()(const vertex & a, const vertex & b)
    {
@@ -503,12 +503,10 @@ void parametric_list_based::exec(const OpVertexSet & operations, ControlStep cur
 
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "   Starting scheduling...");
    unsigned int already_sch = schedule->num_scheduled();
-   bool unbounded = false;
-   bool store_unbounded_check = false;
    while((schedule->num_scheduled() - already_sch) != operations_number)
    {
-      unbounded = false;
-      store_unbounded_check = false;
+      bool unbounded = false;
+      bool store_unbounded_check = false;
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "      schedule->num_scheduled() " + boost::lexical_cast<std::string>(schedule->num_scheduled()));
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "      already_sch " + boost::lexical_cast<std::string>(already_sch));
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "      operations_number " + boost::lexical_cast<std::string>(operations_number));
@@ -1005,18 +1003,10 @@ void parametric_list_based::compute_starting_ending_time_asap(const vertex v, co
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Computing starting and ending time " + GET_NAME(flow_graph, v));
    current_starting_time = from_strongtype_cast<double>(cs) * clock_cycle;
-#ifdef COMPRESS_CHAINED_OPS
-   double actual_op_execution_time = HLS->allocation_information->get_execution_time(fu_type, v, flow_graph);
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Actual execution time of " + GET_NAME(flow_graph, v) + ": " + STR(actual_op_execution_time));
-#endif
    bool is_load_store = GET_TYPE(flow_graph, v) & (TYPE_LOAD | TYPE_STORE);
    bool no_chaining_of_load_and_store = HLS->Param->getOption<bool>(OPT_do_not_chain_memories) && (check_LOAD_chaining(v, cs, schedule)|| is_load_store);
    cannot_be_chained = is_load_store && check_non_direct_operation_chaining(v, fu_type, cs, schedule, res_binding);
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "                  Initial value of cannot_be_chained="+(cannot_be_chained?std::string("T"):std::string("F")));
-#ifdef COMPRESS_CHAINED_OPS
-   double max_chained_prev = 0.0;
-   bool is_comprimibile = HLS->allocation_information->compute_normalized_area(fu_type) < 1.0 && actual_op_execution_time < clock_cycle;
-#endif
    InEdgeIterator ei, ei_end;
    for(boost::tie(ei, ei_end) = boost::in_edges(v, *flow_graph); ei != ei_end; ei++)
    {
@@ -1024,17 +1014,6 @@ void parametric_list_based::compute_starting_ending_time_asap(const vertex v, co
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering predecessor " + GET_NAME(flow_graph, from_vertex));
       unsigned int from_fu_type = res_binding->get_assign(from_vertex);
       const auto cs_prev = schedule->get_cstep(from_vertex).second;
-#ifdef COMPRESS_CHAINED_OPS
-      if(is_comprimibile && cs_prev == cs)
-      {
-         double current_exec_time = HLS->allocation_information->get_execution_time(from_fu_type, from_vertex, flow_graph);
-         if(HLS->allocation_information->compute_normalized_area(from_fu_type) < 1.0 &&  current_exec_time < clock_cycle)
-         {
-            if(max_chained_prev < current_exec_time)
-               max_chained_prev = current_exec_time;
-         }
-      }
-#endif
       const double fsm_correction = [&]() -> double
       {
          if(HLS->Param->getOption<double>(OPT_scheduling_mux_margins) != 0.0)
@@ -1063,15 +1042,6 @@ void parametric_list_based::compute_starting_ending_time_asap(const vertex v, co
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
    }
-#ifdef COMPRESS_CHAINED_OPS
-   if(max_chained_prev != 0.0)
-   {
-      if(actual_op_execution_time > max_chained_prev)
-         actual_op_execution_time = actual_op_execution_time - max_chained_prev;
-      else
-         actual_op_execution_time = 0.0;
-   }
-#endif
 
    double op_execution_time;
    compute_exec_stage_time(fu_type, stage_period, cs, flow_graph, v, op_execution_time, phi_extra_time, current_starting_time, setup_hold_time);

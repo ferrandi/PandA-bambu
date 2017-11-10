@@ -128,7 +128,7 @@ struct BBNodeInfo : public NodeInfo
        * Constructor which uses gcc information
        * @param _block is the block in the gcc dump
        */
-      BBNodeInfo(blocRef _block);
+      explicit BBNodeInfo(blocRef _block);
 
       /**
        * Adds an operation to the list of the statements
@@ -448,7 +448,7 @@ class BBVertexSorter : std::binary_function<vertex, vertex, bool>
        * Constructor
        * @param bb_graph is the basic block graph to which vertices belong
        */
-      BBVertexSorter(const BBGraphConstRef bb_graph);
+      explicit BBVertexSorter(const BBGraphConstRef bb_graph);
 
       /**
        * Compare position of two vertices
@@ -474,7 +474,7 @@ class BBEdgeSorter : std::binary_function<EdgeDescriptor, EdgeDescriptor, bool>
        * Constructor
        * @param bb_graph is the basic block graph to which edges belong
        */
-      BBEdgeSorter(const BBGraphConstRef bb_graph);
+      explicit BBEdgeSorter(const BBGraphConstRef bb_graph);
 
       /**
        * Compare position of two edges
@@ -502,7 +502,7 @@ class bb_vertex_order_by_map : std::binary_function<vertex, vertex, bool>
        * Constructor
        * @param ref_ is the map with the topological sort of vertices
        */
-      bb_vertex_order_by_map(const std::map<vertex, unsigned int> & _ref) :
+      explicit bb_vertex_order_by_map(const std::map<vertex, unsigned int> & _ref) :
          ref(_ref)
          {}
 

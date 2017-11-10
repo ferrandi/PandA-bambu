@@ -74,7 +74,7 @@ struct raw_writer : public tree_node_visitor
 {
 
       ///default constructor
-      raw_writer(
+      explicit raw_writer(
 #if HAVE_MAPPING_BUILT
          const ComponentTypeRef & _driving_component,
 #endif

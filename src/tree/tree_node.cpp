@@ -97,6 +97,7 @@ enum kind tree_node::get_kind(const std::string&input_name)
 {
    if(string_to_kind.empty())
    {
+      // cppcheck-suppress unusedVariable
       std::string name;
       BOOST_PP_SEQ_FOR_EACH(NAME_KIND, BOOST_PP_EMPTY, TREE_NODE_LIST);
    }

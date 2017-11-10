@@ -241,7 +241,7 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec ()
       }
       const bool vdef_op = [&] () -> bool
       {
-         for(const auto stmt : block->CGetStmtList())
+         for(const auto& stmt : block->CGetStmtList())
          {
             const auto ga = GetPointer<const gimple_assign>(GET_NODE(stmt));
             if(ga and ga->temporary_address)
@@ -350,19 +350,19 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec ()
          auto target_block = bb_cfg->CGetBBNodeInfo(target)->block;
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Fixing phis of BB" + STR(target_block->number));
          ///Fixing phi: duplicating def_edge of ssa name which are not defined in the current bb
-         for(const auto phi : target_block->CGetPhiList())
+         for(const auto& phi : target_block->CGetPhiList())
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Initial phi " + STR(phi));
             auto gp = GetPointer<gimple_phi>(GET_NODE(phi));
             gimple_phi::DefEdgeList def_edge_list;
-            for(const auto def_edge : gp->CGetDefEdgesList())
+            for(const auto& def_edge : gp->CGetDefEdgesList())
             {
                if(def_edge.second == block->number)
                {
                   const auto sn = GetPointer<const ssa_name>(GET_NODE(def_edge.first));
                   if(not sn or GetPointer<const gimple_node>(GET_NODE(sn->CGetDefStmt()))->bb_index != block->number)
                   {
-                     for(const auto copy_id : copy_ids)
+                     for(const auto& copy_id : copy_ids)
                      {
                         def_edge_list.push_back(gimple_phi::DefEdge(def_edge.first, copy_id.second));
                      }
@@ -389,7 +389,7 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec ()
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Fixed phis");
       CustomMap<unsigned int, std::unordered_map<unsigned int, unsigned int> > remaps;
       CustomMap<unsigned int, tree_node_dupRef> tree_node_dups;
-      for(const auto copy : copy_ids)
+      for(const auto& copy : copy_ids)
       {
          tree_node_dups[copy.second] = tree_node_dupRef(new tree_node_dup(remaps[copy.second], TM));
       }
@@ -397,15 +397,15 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec ()
 
       ///Build list of phis + gimple_nodes
       std::list<tree_nodeRef> gimples;
-      for(const auto phi : block->CGetPhiList())
+      for(const auto& phi : block->CGetPhiList())
       {
          gimples.push_back(phi);
       }
-      for(const auto stmt : block->CGetStmtList())
+      for(const auto& stmt : block->CGetStmtList())
       {
          gimples.push_back(stmt);
       }
-      for(const auto gimple : gimples)
+      for(const auto& gimple : gimples)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering gimple " + STR(gimple));
          ///The ssa defined by the statement (left part of gimple assignment and vdef)
@@ -529,13 +529,13 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec ()
          {
             THROW_UNREACHABLE(STR(gimple));
          }
-         for(const auto defined_sn : defined_sns)
+         for(const auto& defined_sn : defined_sns)
          {
             auto sn = GetPointer<ssa_name>(GET_NODE(defined_sn));
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Updating uses of " + sn->ToString());
             ///The old ssa
             TreeNodeSet uses_to_be_removed;
-            for(const auto use_stmt : sn->CGetUseStmts())
+            for(const auto& use_stmt : sn->CGetUseStmts())
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering use in " + STR(use_stmt.first->index) + " " + STR(use_stmt.first));
                const auto use_bb_index = GetPointer<const gimple_node>(GET_NODE(use_stmt.first))->bb_index;
@@ -563,7 +563,7 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec ()
                   gn->vuses.erase(defined_sn);
                   uses_to_be_removed.insert(use_stmt.first);
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Removing " + STR(defined_sn) + " from vuses of " + gn->ToString());
-                  for(const auto copy : copy_ids)
+                  for(const auto& copy : copy_ids)
                   {
                      gn->vuses.insert(TM->GetTreeReindex(remaps[copy.second][sn->index]));
                      GetPointer<ssa_name>(TM->get_tree_node_const(remaps[copy.second][sn->index]))->AddUseStmt(use_stmt.first);
@@ -597,7 +597,7 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec ()
                }
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Loop to be considered updated to " + STR(loop_id));
             }
-            for(const auto use_to_be_removed : uses_to_be_removed)
+            for(const auto& use_to_be_removed : uses_to_be_removed)
             {
                sn->RemoveUse(use_to_be_removed);
             }
@@ -656,7 +656,7 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec ()
             }
 
             ///Set of basic blocks to be analyzed
-            std::set<vertex, bb_vertex_order_by_map> to_be_processed(function_behavior->get_bb_map_levels());
+            std::set<vertex, bb_vertex_order_by_map> to_be_processed(bb_vertex_order_by_map(function_behavior->get_bb_map_levels()));
             OutEdgeIterator oe_basic_block, oe_basic_block_end;
             for(boost::tie(oe_basic_block, oe_basic_block_end) = boost::out_edges(*basic_block, *bb_cfg); oe_basic_block != oe_basic_block_end; oe_basic_block++)
             {
@@ -676,8 +676,6 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec ()
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Checking BB" + STR(current_id));
 
                ///True if different definitions reach this bb from all the bbs
-               bool build_phi = true;
-
 
                if(current_block->list_of_pred.size() == 1)
                {
@@ -690,6 +688,7 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec ()
                }
                else
                {
+                  bool build_phi = true;
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Multiple entries BB");
                   TreeNodeSet local_reaching_defs;
                   InEdgeIterator ie, ie_end;
@@ -832,7 +831,7 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec ()
                if(use_bbs.find(current) != use_bbs.end())
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->There is a use in BB" + STR(current_id));
-                  for(const auto stmt : bb_cfg->CGetBBNodeInfo(current)->block->CGetStmtList())
+                  for(const auto& stmt : bb_cfg->CGetBBNodeInfo(current)->block->CGetStmtList())
                   {
                      if(use_stmts.find(stmt) != use_stmts.end())
                      {
@@ -853,11 +852,11 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec ()
                      if((bb_fcfg->GetSelector(*oe) & FB_CFG_SELECTOR) != 0)
                      {
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Connected by feedback edge");
-                        for(const auto target_phi : bb_fcfg->CGetBBNodeInfo(target)->block->CGetPhiList())
+                        for(const auto& target_phi : bb_fcfg->CGetBBNodeInfo(target)->block->CGetPhiList())
                         {
                            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Analyzing " + STR(target_phi));
                            auto gp = GetPointer<gimple_phi>(GET_NODE(target_phi));
-                           for(const auto def_edge : gp->CGetDefEdgesList())
+                           for(const auto& def_edge : gp->CGetDefEdgesList())
                            {
                               if(def_edge.first->index == sn->index and def_edge.second == current_id)
                               {
@@ -964,7 +963,7 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec ()
 double MultipleEntryIfReduction::GetAreaCost(const std::list<tree_nodeRef> & list_of_stmt) const
 {
    double ret_value = 0.0;
-   for(const auto temp_stmt : list_of_stmt)
+   for(const auto& temp_stmt : list_of_stmt)
    {
       const auto area = allocation_information->GetStatementArea(temp_stmt->index);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Area of " + STR(temp_stmt) + " is " + STR(area));

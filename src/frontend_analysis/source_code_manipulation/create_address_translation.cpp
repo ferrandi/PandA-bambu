@@ -224,7 +224,7 @@ void CreateAddressTranslation::ComputeAddress(const AsnTypeRef asn_type, const u
          {
             const auto octet_string = GetPointer<const OctetStringAsnType>(asn_type);
             const auto byte_size = octet_string->size;
-            const auto word_size = byte_size%4 ? ((byte_size/4)+1)*4 : byte_size/4;
+            const auto word_size = (byte_size%4) ? ((byte_size/4)+1)*4 : byte_size/4;
             for(unsigned int word = 0; word < word_size; word++)
             {
                address_translation->Append("," + STR(bambu_address));
@@ -438,8 +438,8 @@ DesignFlowStep_Status CreateAddressTranslation::Exec()
       for(auto & parameter : function_parameters)
       {
          const auto parameter_name = parameter.name;
-         bambu_address = bambu_address % 8 ? ((bambu_address/8)+1)*8 : bambu_address;
-         taste_address = taste_address % 8 ? ((taste_address/8)+1)*8 : taste_address;
+         bambu_address = (bambu_address % 8) ? ((bambu_address/8)+1)*8 : bambu_address;
+         taste_address = (taste_address % 8) ? ((taste_address/8)+1)*8 : taste_address;
 
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing parameter " + parameter_name);
          const auto tree_parameter_index = [&] () -> unsigned int

@@ -260,7 +260,7 @@ std::string VHDL_writer::type_converter_size(const structural_objectRef &cir)
       {
          std::vector<std::pair<std::string, structural_objectRef> > library_parameters;
          mod->get_NP_library_parameters(Owner, library_parameters);
-         for(const auto library_parameter : library_parameters)
+         for(const auto& library_parameter : library_parameters)
             if(port_name == library_parameter.first)
                specialization_string=true;
       }
@@ -277,7 +277,7 @@ std::string VHDL_writer::type_converter_size(const structural_objectRef &cir)
                }
                else
                {
-                  const auto port_vector = GetPointer<port_o>(cir);
+                  const auto& port_vector = GetPointer<port_o>(cir);
                   return " (" + STR(port_vector->get_ports_size()-1) + " downto 0)";
                }
             }
@@ -381,7 +381,6 @@ std::string VHDL_writer::type_converter_size(const structural_objectRef &cir)
       case structural_type_descriptor::OTHER:
          {
             return Type->id_type;
-            break;
          }
       case structural_type_descriptor::UNKNOWN:
       default:
@@ -860,10 +859,10 @@ void VHDL_writer::write_module_parametrization(const structural_objectRef &cir)
    THROW_ASSERT(cir->get_kind() == component_o_K || cir->get_kind() == channel_o_K, "Expected a component or a channel got something of different");
    module * mod = GetPointer<module>(cir);
    ///writing memory-related parameters
-   bool first_it = true;
 #if 0
    if (mod->is_parameter(MEMORY_PARAMETER))
    {
+      bool first_it = true;
       std::string memory_str = mod->get_parameter(MEMORY_PARAMETER);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Memory parameters are " + memory_str);
       std::vector<std::string> mem_tag = convert_string_to_vector<std::string>(memory_str, ";");
@@ -892,11 +891,11 @@ void VHDL_writer::write_module_parametrization(const structural_objectRef &cir)
    {
       std::vector<std::pair<std::string, structural_objectRef> > library_parameters;
       mod->get_NP_library_parameters(cir, library_parameters);
-      first_it = true;
+      bool first_it = true;
       if(library_parameters.size())
          indented_output_stream->Append(" generic map(");
 
-      for(const auto library_parameter : library_parameters)
+      for(const auto& library_parameter : library_parameters)
       {
          if(first_it)
          {
@@ -1010,10 +1009,10 @@ void VHDL_writer::write_module_parametrization(const structural_objectRef &cir)
                   }
                case structural_type_descriptor::INT:
                   {
-                     long long int value = 0;
-                     long long int mult = 1;
                      if(parameter.front() == '\"' and parameter.back() == '\"')
                      {
+                        long long int value = 0;
+                        long long int mult = 1;
                         for(const auto digit : boost::adaptors::reverse(parameter.substr(1, parameter.size() -2)))
                         {
                            if(digit == '1')
@@ -1072,7 +1071,6 @@ void VHDL_writer::write_state_declaration(const structural_objectRef &, const st
 {
    std::list<std::string>::const_iterator it_end = list_of_states.end();
    size_t n_states = list_of_states.size();
-   unsigned int count = 0;
    unsigned int bitsnumber = language_writer::bitnumber(static_cast<unsigned int>(n_states-1));
    /// adjust in case states are not consecutives
    unsigned max_value = 0;
@@ -1087,7 +1085,7 @@ void VHDL_writer::write_state_declaration(const structural_objectRef &, const st
    if (one_hot or ((parameters->isOption(OPT_generate_vcd) and parameters->getOption<bool>(OPT_generate_vcd)) or
       (parameters->isOption(OPT_discrepancy) and parameters->getOption<bool>(OPT_discrepancy))))
    {
-      for(const auto state : list_of_states)
+      for(const auto& state : list_of_states)
       {
          if(one_hot)
             indented_output_stream->Append("constant " + state + ": std_logic_vector(" + STR(max_value ) + " downto 0) := \"" + encode_one_hot(1+max_value, boost::lexical_cast<unsigned int>(state.substr(strlen(STATE_NAME_PREFIX)))) + "\";\n");
@@ -1102,6 +1100,7 @@ void VHDL_writer::write_state_declaration(const structural_objectRef &, const st
    else
    {
       indented_output_stream->Append("type state_type is (");
+      unsigned int count = 0;
       for(std::list<std::string>::const_iterator it = list_of_states.begin(); it != it_end; ++it)
       {
          indented_output_stream->Append(*it);
@@ -1481,7 +1480,7 @@ void VHDL_writer::write_module_parametrization_decl(const structural_objectRef &
       if(library_parameters.size() and first_it)
          indented_output_stream->Append("generic(");
 
-      for(const auto library_parameter : library_parameters)
+      for(const auto& library_parameter : library_parameters)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering parameter " + library_parameter.first);
          if(first_it)
@@ -1509,9 +1508,6 @@ void VHDL_writer::write_module_parametrization_decl(const structural_objectRef &
                indented_output_stream->Append(std::string(" ") + HDL_manager::convert_to_identifier(this, BITSIZE_PREFIX+name) + ": integer");
                if(obj->get_kind() == port_vector_o_K)
                {
-                  unsigned int ports_size = GetPointer<port_o>(obj)->get_ports_size();
-                  if(ports_size == 0)
-                     ports_size = 2;
                   indented_output_stream->Append(";\n " + HDL_manager::convert_to_identifier(this, PORTSIZE_PREFIX + name) + ": integer");
                }
             }

@@ -185,9 +185,9 @@ class SDCSorter : std::binary_function<vertex, vertex, bool>
             }
 
             ///For each cluster
-            for(const auto alap_cluster : alap_asap_cluster)
+            for(const auto& alap_cluster : alap_asap_cluster)
             {
-               for(const auto asap_cluster : alap_cluster.second)
+               for(const auto& asap_cluster : alap_cluster.second)
                {
                   std::set<vertex, op_vertex_order_by_map> to_process = std::set<vertex, op_vertex_order_by_map> (op_vertex_order_by_map(function_behavior->get_map_levels(), op_graph.get()));
                   for(const auto cluster_op : asap_cluster.second)
@@ -398,7 +398,7 @@ void SDCScheduling::AddDelayConstraints(const meilp_solverRef solver, const OpGr
          }
       }
    }
-   for(const auto constraint : constraints)
+   for(const auto& constraint : constraints)
    {
       for(const auto second : constraint.second)
       {
@@ -544,14 +544,15 @@ DesignFlowStep_Status SDCScheduling::InternalExec()
    const LoopsConstRef loops = FB->CGetLoops();
    const std::map<vertex, unsigned int> & bb_map_levels = FB->get_bb_map_levels();
    ControlStep initial_ctrl_step = ControlStep(0u);
-   for(const auto loop : loops->GetList())
+   for(const auto& loop : loops->GetList())
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Scheduling loop " + STR(loop->GetId()));
       operation_to_varindex.clear();
       const unsigned int loop_id = loop->GetId();
 
       ///Vertices not yet added to any tree
-      std::set<vertex, bb_vertex_order_by_map> loop_bbs(bb_map_levels);
+      const bb_vertex_order_by_map comp_i(bb_map_levels);
+      std::set<vertex, bb_vertex_order_by_map> loop_bbs(comp_i);
       OpVertexSet loop_operations(op_graph);
       VertexIterator bb, bb_end;
       for(boost::tie(bb, bb_end) = boost::vertices(*basic_block_graph); bb != bb_end; bb++)
@@ -705,7 +706,7 @@ DesignFlowStep_Status SDCScheduling::InternalExec()
             {
                loop_unbounded_operations.find(basic_block)->second.insert(loop_unbounded_operations.find(source)->second.begin(), loop_unbounded_operations.find(source)->second.end());
                loop_pipelined_operations.find(basic_block)->second.insert(loop_pipelined_operations.find(source)->second.begin(), loop_pipelined_operations.find(source)->second.end());
-               for(const auto fu_type : constrained_operations_sequences[source])
+               for(const auto& fu_type : constrained_operations_sequences[source])
                {
                   constrained_operations_sequences[basic_block][fu_type.first].insert(fu_type.second.begin(), fu_type.second.end());
                }
@@ -1198,7 +1199,7 @@ DesignFlowStep_Status SDCScheduling::InternalExec()
       ///Setting objective function
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Setting objective function");
       std::map<int, double> objective_coeffs;
-      for(auto const path_end : path_end_to_varindex)
+      for(auto const& path_end : path_end_to_varindex)
       {
          objective_coeffs[static_cast<int>(path_end.second)] += 1.0;
       }
@@ -1217,7 +1218,7 @@ DesignFlowStep_Status SDCScheduling::InternalExec()
          THROW_ERROR("Error in finding ilp solution");
 
 #ifndef NDEBUG
-      for(auto const temp_edge : temp_edges)
+      for(auto const& temp_edge : temp_edges)
       {
          FB->ogc->RemoveSelector(temp_edge, DEBUG_SELECTOR);
       }
@@ -1499,7 +1500,7 @@ void SDCScheduling::Initialize()
    if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Shared resources:");
-      for(const auto shared_resource :sharing_operations)
+      for(const auto& shared_resource :sharing_operations)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->" + STR(allocation_information->get_number_fu(shared_resource.first)) + " " + allocation_information->get_fu_name(shared_resource.first).first);
          for(const auto operation : shared_resource.second)

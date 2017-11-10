@@ -1002,7 +1002,6 @@ int BambuParameter::Exec()
    bool scheduling_set_p = false;
    /// variable used into option parsing
    int option_index;
-   int next_option;
 
    // Bambu short option. An option character in this string can be followed by a colon (`:') to indicate that it
    // takes a required argument. If an option character is followed by two colons (`::'), its argument is optional;
@@ -1214,7 +1213,7 @@ int BambuParameter::Exec()
 
    while (1)
    {
-      next_option = getopt_long(argc, argv, short_options, long_options, &option_index);
+      int next_option = getopt_long(argc, argv, short_options, long_options, &option_index);
 
       // no more options are available
       if (next_option == -1)
@@ -2868,10 +2867,10 @@ void BambuParameter::CheckParameters()
       optimizations += tuning_optimizations;
       if(optimizations != "")
          setOption(OPT_gcc_optimizations, optimizations);
+#if 0
       std::string parameters;
       if(isOption(OPT_gcc_parameters))
          parameters = getOption<std::string>(OPT_gcc_parameters) + STR_CST_string_separator;
-#if 0
       setOption(OPT_gcc_parameters, parameters + "max-inline-insns-auto=25");
 #endif
       if(getOption<std::string>(OPT_experimental_setup) == "BAMBU-BALANCED-MP")
@@ -2982,7 +2981,7 @@ void BambuParameter::CheckParameters()
    if(isOption(OPT_gcc_libraries))
    {
       const auto libraries = getOption<const CustomSet<std::string> >(OPT_gcc_libraries);
-      for(const auto library : libraries)
+      for(const auto& library : libraries)
       {
          add_bambu_library(library);
       }
@@ -3481,6 +3480,7 @@ void BambuParameter::SetDefaults()
 
 void BambuParameter::add_bambu_library(std::string lib)
 {
+#if HAVE_I386_GCC45_COMPILER || HAVE_I386_GCC46_COMPILER || HAVE_I386_GCC47_COMPILER || HAVE_I386_GCC48_COMPILER || HAVE_I386_GCC49_COMPILER || HAVE_I386_GCC5_COMPILER || HAVE_I386_GCC6_COMPILER || HAVE_I386_GCC7_COMPILER
    unsigned int preferred_compiler = getOption<unsigned int>(OPT_default_compiler);
    std::string archive_files;
    bool is_subnormals =
@@ -3507,6 +3507,8 @@ void BambuParameter::add_bambu_library(std::string lib)
    else
       mingw_prefix = "c:/msys64/";
 #endif
+#endif
+
 #if HAVE_I386_GCC45_COMPILER
    if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC45))
    {

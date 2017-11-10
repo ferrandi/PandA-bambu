@@ -64,7 +64,7 @@ struct ChainingSet
       pred_pmap_type pred_pmap;
       boost::disjoint_sets<rank_pmap_type,pred_pmap_type> ds;
 
-      ChainingSet(const OpGraphConstRef flow_graph) :
+      explicit ChainingSet(const OpGraphConstRef flow_graph) :
          cindex_pmap(boost::get(boost::vertex_index_t(), *flow_graph)),
          n_vert(boost::num_vertices(*flow_graph)),
          rank_map(2*n_vert), pred_map(2*n_vert),

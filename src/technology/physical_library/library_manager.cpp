@@ -539,7 +539,6 @@ size_t library_manager::get_dont_use_num() const
 
 void library_manager::remove_dont_use(const std::string& _name)
 {
-   if (dont_use.find(_name) != dont_use.end())
-      dont_use.erase(_name);
+   dont_use.erase(_name);
 }
 

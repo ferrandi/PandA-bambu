@@ -188,7 +188,7 @@ class tree_manager
        * This is the constructor of the tree_manager which initializes the vector of functions.
        * @param Param is the set of input parameters
       */
-      tree_manager(const ParameterConstRef Param);
+      explicit tree_manager(const ParameterConstRef Param);
 
       ~tree_manager();
 

@@ -127,7 +127,7 @@ void ISE_isim_wrapper::GenerateScript(std::ostringstream& script, const std::str
    std::string setupscr = STR(XILINX_SETTINGS);
    if(setupscr.size() && setupscr != "0")
    {
-      if(setupscr.find("export") == 0)
+      if(boost::algorithm::starts_with(setupscr,"export"))
          script << setupscr + " >& /dev/null; ";
       else
          script << ". " << setupscr << " >& /dev/null;";

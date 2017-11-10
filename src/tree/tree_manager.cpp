@@ -304,10 +304,9 @@ unsigned int tree_manager::find(enum kind tree_node_type, const std::map<TreeVoc
    if(find_cache.find(key) != find_cache.end())
       return find_cache.find(key)->second;
    tree_node_finder TNF(tree_node_schema);
-   unsigned int node_id;
-   for(const auto ti : tree_nodes)
+   for(const auto& ti : tree_nodes)
    {
-      node_id = ti.first;
+      unsigned int node_id = ti.first;
       ///check if the corresponding tree node has been already created or not
       if (!ti.second)
          continue;
@@ -462,7 +461,7 @@ void tree_manager::collapse_into(const unsigned int & funID, std::unordered_map<
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Definition of " + STR(GET_INDEX_NODE(tn)) + ":");
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---" + STR(GET_INDEX_NODE(sn->CGetDefStmt())) + " (" + std::string(GET_NODE(sn->CGetDefStmt())->get_kind_text()) + ")");
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Uses of " + STR(GET_INDEX_NODE(tn)) + " - " + STR(sn->CGetNumberUses()) + ":");
-            for(const auto use : sn->CGetUseStmts())
+            for(const auto& use : sn->CGetUseStmts())
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---" + use.first->ToString());
             }
@@ -517,7 +516,7 @@ void tree_manager::collapse_into(const unsigned int & funID, std::unordered_map<
                // collapsing procedure stops.
                bool in_between = false;
                bool memdef_found = false;
-               for(const auto stmt : curr_block->CGetStmtList())
+               for(const auto& stmt : curr_block->CGetStmtList())
                {
                   if(in_between and GET_NODE(stmt)->get_kind() == gimple_assign_K)
                   {
@@ -579,7 +578,7 @@ void tree_manager::collapse_into(const unsigned int & funID, std::unordered_map<
                         create_tree_node(sn_index, ssa_name_K, IR_schema);
                         tree_nodeRef tree_reindexRef_sn = GetTreeReindex(sn_index);
                         ssa_name * new_sn = GetPointer<ssa_name>(GET_NODE(tree_reindexRef_sn));
-                        for(const auto use_stmt : sn->CGetUseStmts())
+                        for(const auto& use_stmt : sn->CGetUseStmts())
                         {
                            for(decltype(use_stmt.second) repetition = 0; repetition < use_stmt.second; repetition++)
                            {
@@ -628,7 +627,7 @@ void tree_manager::collapse_into(const unsigned int & funID, std::unordered_map<
                         new_gm->vovers = gm->vovers;
                         // Need to control whether there are labels at the beginning of the block
                         // In such case, copy the statement after the labels
-                        for(const auto copy_block_stmt : copy_block->CGetStmtList())
+                        for(const auto& copy_block_stmt : copy_block->CGetStmtList())
                         {
                            if(GET_NODE(copy_block_stmt)->get_kind() != gimple_label_K)
                            {
@@ -674,7 +673,7 @@ void tree_manager::collapse_into(const unsigned int & funID, std::unordered_map<
             // Change the operand into every statement in the curr_block which uses the considered ssa_name
             if(def_block == curr_block)
             {
-               for(const auto use : sn->CGetUseStmts())
+               for(const auto& use : sn->CGetUseStmts())
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Checking for operation " + STR(use.first->index));
                   THROW_ASSERT(stmt_to_bloc.find(use.first->index) != stmt_to_bloc.end(), "Statement not found in stmt_to_bloc map: " + STR(use.first->index));
@@ -708,7 +707,7 @@ void tree_manager::collapse_into(const unsigned int & funID, std::unordered_map<
 #endif
             GetPointer<WeightedNode>(GET_NODE(stack.front()))->weight_information->instruction_size += gm->weight_information->instruction_size;
 #endif
-            for(const auto stmt : curr_block->CGetStmtList())
+            for(const auto& stmt : curr_block->CGetStmtList())
             {
                // Remove the definition statements contained in curr_block
                if(GET_INDEX_NODE(stmt) == GET_INDEX_NODE(sn->CGetDefStmt()))
@@ -1214,7 +1213,7 @@ void tree_manager::erase_usage_info(tree_nodeRef tn, tree_nodeRef stmt)
       case ssa_name_K:
       {
          ssa_name * sn = GetPointer<ssa_name>(curr_tn);
-         for(const auto use_stmt : sn->CGetUseStmts())
+         for(const auto& use_stmt : sn->CGetUseStmts())
          {
             if(GET_INDEX_NODE(use_stmt.first) == GET_INDEX_NODE(stmt))
             {
@@ -1529,7 +1528,7 @@ void tree_manager::merge_tree_managers(const tree_managerRef source_tree_manager
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Checked types");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Checking declarations");
-   for(const auto ti : tree_nodes)
+   for(const auto& ti : tree_nodes)
    {
       ///check for decl_node
       const tree_nodeRef tn = ti.second;
@@ -1651,7 +1650,7 @@ void tree_manager::merge_tree_managers(const tree_managerRef source_tree_manager
    ///remap tree_node from source_tree_manager to this tree_manager
    ///first remap the types and then decl
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing " + STR(source_tree_nodes.size()) + " tree nodes of second tree manager");
-   for(const auto ti_source : source_tree_nodes)
+   for(const auto& ti_source : source_tree_nodes)
    {
       const tree_nodeRef tn = ti_source.second;
       ///check for decl_node
@@ -1740,7 +1739,6 @@ void tree_manager::merge_tree_managers(const tree_managerRef source_tree_manager
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "other " + STR(GET_INDEX_NODE(GetPointer<union_type>(tn)->unql)) + "-nutype>" + symbol_name);
                }
             }
-            std::string symbol_name_with_qualifier = symbol_name+"-"+symbol_scope;
             std::unordered_map<std::string, unsigned int>::const_iterator gst_it = global_type_symbol_table.find(symbol_name);
             if(gst_it == global_type_symbol_table.end())
             {
@@ -2199,7 +2197,7 @@ unsigned int tree_manager::get_next_vers()
 {
    if(next_vers == 0)
    {
-      for(const auto ti : tree_nodes)
+      for(const auto& ti : tree_nodes)
       {
          if(ti.second)
          {

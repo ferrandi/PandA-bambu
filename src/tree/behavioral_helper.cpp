@@ -2735,7 +2735,6 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
             {
                const auto dest_type = get_type(ms->op1->index);
                const auto source_type = get_type(vce->op->index);
-               std::string temp;
                res = "{union {" + print_type(dest_type) + " dest; " + print_type(source_type) + " source;} __panda_union; __panda_union.source = " + print_node(vce->op->index, v, vppf) + "; " + res;
             }
          }

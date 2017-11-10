@@ -512,7 +512,7 @@ DesignFlowStep_Status PragmaAnalysis::Exec()
                      tree_node_schema[TOK(TOK_SRCP)] = include_name + ":" + boost::lexical_cast<std::string>(line_number)+":"+boost::lexical_cast<std::string>(column_number);
 
                      //unsigned int scope, directive;
-                     if (function_name.find(STR_CST_pragma_function_generic) != 0)
+                     if (!boost::algorithm::starts_with(function_name,STR_CST_pragma_function_generic))
                      {
                         std::string scope = get_call_parameter(GET_INDEX_NODE(*it2), 0);
                         if (scope == STR_CST_pragma_keyword_omp)

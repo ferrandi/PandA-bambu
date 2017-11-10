@@ -99,7 +99,7 @@ struct RawGraph : public boost_raw_graph
        * Constructor
        * @param g_info is the property associated with the graph
        */
-      RawGraph(GraphInfoRef g_info)
+      explicit RawGraph(GraphInfoRef g_info)
       {
          (*this)[boost::graph_bundle] = g_info;
       }
@@ -232,7 +232,7 @@ struct EdgeProperty
        * Constructor with selector
        * @param _selector is the selector to be associated with the edge
        */
-      EdgeProperty(int _selector) :
+      explicit EdgeProperty(int _selector) :
          selector(_selector)
       {}
 
@@ -644,7 +644,7 @@ struct SelectVertex
        * Constructor
        * @param _subset is the set of vertices to be considered
        */
-      SelectVertex(const std::unordered_set<typename boost::graph_traits<Graph>::vertex_descriptor > & _subset) :
+      explicit SelectVertex(const std::unordered_set<typename boost::graph_traits<Graph>::vertex_descriptor > & _subset) :
          all(false),
          subset(_subset)
       {}
@@ -1205,7 +1205,7 @@ struct ltedge
       /** 
        * The constructors
        */
-      ltedge(const Graph * _g):
+      explicit ltedge(const Graph * _g):
          g(_g)
          {}
 

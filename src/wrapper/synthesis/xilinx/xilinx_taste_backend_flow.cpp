@@ -73,7 +73,7 @@ std::string XilinxTasteBackendFlow::GenerateSynthesisScripts(const std::string& 
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Generating synthesis scripts");
    std::string synthesis_file_list;
-   for(const auto hdl_file : hdl_files)
+   for(const auto& hdl_file : hdl_files)
    {
       synthesis_file_list += hdl_file + ";";
    }
@@ -82,14 +82,13 @@ std::string XilinxTasteBackendFlow::GenerateSynthesisScripts(const std::string& 
    if (flow_name.size())
       actual_parameters->chain_name = flow_name;
 
-   for(const auto aux_file : aux_files)
+   for(const auto& aux_file : aux_files)
    {
       synthesis_file_list += aux_file + ";";
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---List of synthesis files: " + synthesis_file_list);
    actual_parameters->parameter_values[PARAM_HDL_files] = synthesis_file_list;
    const technology_managerRef TM = target->get_technology_manager();
-   std::string library = TM->get_library(fu_name);
    actual_parameters->parameter_values[PARAM_is_combinational] = STR(false);
    actual_parameters->parameter_values[PARAM_time_constrained] = STR(true);
 

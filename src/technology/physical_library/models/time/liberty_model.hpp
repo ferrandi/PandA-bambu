@@ -66,7 +66,7 @@ class liberty_model : public time_model
       /**
        * Constructor
        */
-      liberty_model(const ParameterConstRef Param);
+      explicit liberty_model(const ParameterConstRef Param);
 
       /**
        * Destructor

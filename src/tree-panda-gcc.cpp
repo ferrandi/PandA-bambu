@@ -152,10 +152,10 @@ int main( int argc, char* argv_orig[] )
 {
 
    char** argv = alloc_argv(argc, argv_orig);
-   long int total_time;
    ParameterRef Param;
    try
    {
+      long int total_time;
       START_TIME(total_time);
       // ---------- Parameter parsing ------------ //
       Param = ParameterRef(new tree_panda_gcc_parameter(argv[0], argc, argv));

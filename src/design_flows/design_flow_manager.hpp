@@ -82,7 +82,7 @@ class DesignFlowStepNecessitySorter : std::binary_function<vertex, vertex, bool>
        * Constructor
        * @param design_flow_graph is the graph to which design flow steps belong
        */
-      DesignFlowStepNecessitySorter(const DesignFlowGraphConstRef design_flow_graph_);
+      explicit DesignFlowStepNecessitySorter(const DesignFlowGraphConstRef design_flow_graph_);
 
       /**
        * Compare position of two vertices
@@ -169,7 +169,7 @@ class DesignFlowManager
       /**
        * Constructor
        */
-      DesignFlowManager(const ParameterConstRef parameters);
+      explicit DesignFlowManager(const ParameterConstRef parameters);
 
       /**
        * Destructor

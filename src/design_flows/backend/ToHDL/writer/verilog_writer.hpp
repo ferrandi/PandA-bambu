@@ -226,7 +226,7 @@ class verilog_writer : public language_writer
       /**
        * Constructor
        */
-      verilog_writer(const ParameterConstRef parameters);
+      explicit verilog_writer(const ParameterConstRef parameters);
 
       /**
        * Destructor

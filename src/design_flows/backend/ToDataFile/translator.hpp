@@ -236,7 +236,7 @@ class Translator
        * Constructor
        * @param Param is the set of the parameters
        */
-      Translator(const ParameterConstRef Param);
+      explicit Translator(const ParameterConstRef Param);
 
 #if HAVE_RTL_BUILT
       /**

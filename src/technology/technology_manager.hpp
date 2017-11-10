@@ -162,7 +162,7 @@ class technology_manager
        */
       //@{
       ///Constructor.
-      technology_manager(const ParameterConstRef Param);
+      explicit technology_manager(const ParameterConstRef Param);
 
       ///Destructor.
       ~technology_manager();

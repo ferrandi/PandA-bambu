@@ -1671,10 +1671,10 @@ void mux_connection_binding::create_connections()
             const tree_nodeRef node = TreeM->get_tree_node_const(node_id);
             gimple_assign * gm = GetPointer<gimple_assign>(node);
             THROW_ASSERT(gm, "only gimple_assign's are allowed as memory operations");
-            unsigned int alignment = 0;
 
             if (HLS->allocation_information->is_direct_access_memory_unit(fu) || HLS->allocation_information->is_indirect_access_memory_unit(fu)) ///MEMORY REFERENCES
             {
+               unsigned int alignment = 0;
                tree_nodeRef var_node;
                unsigned int size_var;
                tree_nodeRef tn;

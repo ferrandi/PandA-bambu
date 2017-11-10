@@ -456,7 +456,7 @@ void DesignCompilerWrapper::parse_cell_reports()
             reading = !reading;
             continue;
          }
-         if (reading and line.size() and line.find(" ") != 0)
+         if (reading and line.size() and !boost::algorithm::starts_with(line," "))
          {
             std::string tk = line.substr(line.find_first_of(' '), line.size());
             boost::trim(tk);
@@ -496,7 +496,6 @@ time_modelRef DesignCompilerWrapper::parse_time_reports()
       bool is_path_element = false;
       unsigned int l = 0;
       std::vector<std::string> timing_path, critical_cell;
-      std::string design_name;
       while (!output_file.eof())
       {
          std::string line;
@@ -507,7 +506,6 @@ time_modelRef DesignCompilerWrapper::parse_time_reports()
             std::string token("Design :");
             std::string tk = line.substr(line.find(token) + token.size() + 1, line.size());
             boost::trim(tk);
-            design_name = tk;
          }
          if (line.size() and line.find("data arrival time") != std::string::npos)
          {
@@ -584,7 +582,7 @@ time_modelRef DesignCompilerWrapper::parse_time_reports()
       PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "*****************");
 
       ///saving the value in the time model
-      if (max_arrival_time)
+      if (max_arrival_time != 0.0)
       {
          time_m = time_model::create_model(device->get_type(), Param);
          time_m->set_execution_time(max_arrival_time, 1);

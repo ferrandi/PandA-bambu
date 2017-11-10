@@ -1695,7 +1695,7 @@ PhiOpt_PatternType PhiOpt::IdentifyPattern(const unsigned int bb_index) const
                   second_value = def_edge.first->index;
                }
             }
-            std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> cond_expr_schema, gimple_assign_schema, ssa_schema;
+            std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> cond_expr_schema, gimple_assign_schema;
 
             ///Create the cond expr
             const auto cond_expr_id = TM->new_tree_node_id();

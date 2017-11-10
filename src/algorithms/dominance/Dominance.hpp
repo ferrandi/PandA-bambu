@@ -452,7 +452,7 @@ class dom_info
       void calc_idoms (bool reverse)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Computing immediate dominators");
-         TBB v, w, k, par;
+         TBB v, w;
          typename boost::graph_traits<GraphObj>::in_edge_iterator ei, einext, ei_end, einext_end;
 
          /* Go backwards in DFS order, to first look at the leafs.  */
@@ -465,8 +465,8 @@ class dom_info
             bool do_fake_exit_edge = false;
 
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Parent is " + boost::lexical_cast<std::string>(dfs_parent[v])); 
-            par = dfs_parent[v];
-            k = v;
+            TBB par = dfs_parent[v];
+            TBB k = v;
 
             boost::tie(ei, ei_end) = boost::in_edges(bb, g);
 

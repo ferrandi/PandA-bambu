@@ -70,7 +70,7 @@ class xml_attribute : public xml_node
 
    public:
       /// constructor
-      xml_attribute(const std::string&_name) : xml_node(_name)
+      explicit xml_attribute(const std::string&_name) : xml_node(_name)
       {}
 
       /**

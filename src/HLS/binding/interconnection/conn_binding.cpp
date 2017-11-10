@@ -686,7 +686,6 @@ void conn_binding::add_sparse_logic_dp(const hlsRef HLS, const structural_manage
    std::string resource_name, resource_instance_name;
    unsigned int resource_index = 0;
    unsigned int bitsize=0;
-   module* sparse_module;
    for(const auto component : sparse_logic)
    {
       switch(component->get_type())
@@ -789,7 +788,7 @@ void conn_binding::add_sparse_logic_dp(const hlsRef HLS, const structural_manage
       ++resource_index;
       sparse_component = SM->add_module_from_technology_library(resource_instance_name, resource_name, HLS->HLS_T->get_technology_manager()->get_library(resource_name), circuit, HLS->HLS_T->get_technology_manager());
       component->set_structural_obj(sparse_component);
-      sparse_module = GetPointer<module>(sparse_component);
+      module* sparse_module = GetPointer<module>(sparse_component);
 
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Specialising " +  sparse_component->get_path() + ": " + STR(bitsize));
       ///specializing sparse module ports

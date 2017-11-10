@@ -1381,6 +1381,7 @@ void tree_node_index_factory::operator()(const attr* obj, unsigned int & mask)
 {
    THROW_ASSERT(obj==dynamic_cast<attr*>(curr_tree_node_ptr), "wrong factory setup");
    tree_node_mask::operator()(obj,mask);
+   // cppcheck-suppress unusedVariable
    bool attr_p;
 
 #define ATTR_SEQ (TOK_NEW) (TOK_DELETE) (TOK_ASSIGN) (TOK_MEMBER) (TOK_PUBLIC) (TOK_PROTECTED) (TOK_PRIVATE) (TOK_NORETURN)\

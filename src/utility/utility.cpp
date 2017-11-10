@@ -55,7 +55,7 @@ TimeStamp::TimeStamp(const std::string&timestamp) :
 
 TimeStamp TimeStamp::GetCurrentTimeStamp()
 {
-   return boost::posix_time::second_clock::local_time();
+   return TimeStamp(boost::posix_time::second_clock::local_time());
 }
 
 std::ostream & operator<<(std::ostream & os, const TimeStamp & timestamp)

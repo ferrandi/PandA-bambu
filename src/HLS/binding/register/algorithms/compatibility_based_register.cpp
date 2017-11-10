@@ -113,11 +113,11 @@ void compatibility_based_register::create_compatibility_graph()
          if(!conflict_map(vi,vj) && HLS->storage_value_information->get_storage_value_bitsize(vi) == HLS->storage_value_information->get_storage_value_bitsize(vj))
          {
             boost::graph_traits<compatibility_graph>::edge_descriptor e1;
-            bool in1;
             int edge_weight = HLS->storage_value_information->get_compatibility_weight(vi,vj);
             /// we consider only valuable sharing between registers
             if(edge_weight>1)
             {
+               bool in1;
                tie(e1, in1) = boost::add_edge(verts[vi], verts[vj], edge_compatibility_property(edge_weight), CG);
                THROW_ASSERT(in1, "unable to add edge");
             }

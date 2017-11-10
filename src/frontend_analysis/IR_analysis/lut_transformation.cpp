@@ -111,19 +111,21 @@ std::string lut_transformation::DecToBin(unsigned long long int number)
 
 unsigned long long int lut_transformation::BinToDec(const std::string& number)
 {
-   size_t * endptr = NULL;
    unsigned long long int i_bin = 0;
    try
    {
+      size_t * endptr = NULL;
       i_bin = std::stoull(number,endptr,2);
    }
-   catch( std::invalid_argument e )
+   catch( const std::invalid_argument &e )
    {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Invalid Argument");
+      std::string reasonWhy = e.what();
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Invalid Argument" + reasonWhy);
    }
-   catch ( std::out_of_range  e )
+   catch ( const std::out_of_range & e )
    {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Out Of Range");
+      std::string reasonWhy = e.what();
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Out Of Range" + reasonWhy);
    }
    return i_bin;
 }
@@ -499,8 +501,6 @@ void lut_transformation::MergeLut(std::list<tree_nodeRef> gimpleLutList,std::pai
          expansionSet = temp_expansionSet;
          // Now create the index sets
          std::vector<std::size_t> firstOpIndexes = CreateLutIndexSet(mergedSet,inputsOfToMerge);
-         std::vector<std::size_t> secondOpIndexes = CreateLutIndexSet(mergedSet,expansionSet);
-
 
          // Get the lut values
          integer_cst* considered_lut_cost = GetPointer<integer_cst>(GET_NODE(consideredLut->op1));
@@ -511,7 +511,6 @@ void lut_transformation::MergeLut(std::list<tree_nodeRef> gimpleLutList,std::pai
          std::reverse(currentLutValueInBit.begin(),currentLutValueInBit.end());  
 
          std::string firstOpValueInBit;
-         std::string secondOpValueInBit;
 
          integer_cst* expand_lut_cost = GetPointer<integer_cst>(GET_NODE(lutToExpand->op1));
          THROW_ASSERT(expand_lut_cost, STR(lutToExpand->op1));

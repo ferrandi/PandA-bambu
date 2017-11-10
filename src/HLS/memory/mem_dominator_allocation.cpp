@@ -615,7 +615,6 @@ DesignFlowStep_Status mem_dominator_allocation::Exec()
          unsigned int var_index = mem_map.first;
          THROW_ASSERT(var_index, "null var index unexpected");
          bool is_internal = mem_map.second;
-         std::string var_index_string;
          bool is_dynamic_address_used = false;
 
          if (is_internal)
@@ -623,7 +622,6 @@ DesignFlowStep_Status mem_dominator_allocation::Exec()
             THROW_ASSERT(where_used[var_index].size() > 0, "variable not used anywhere");
             const FunctionBehaviorConstRef function_behavior = HLSMgr->CGetFunctionBehavior(*(where_used[var_index].begin()));
             const BehavioralHelperConstRef BH = function_behavior->CGetBehavioralHelper();
-            var_index_string = BH->PrintVariable(var_index);
             ///check dynamic address use
             std::set<unsigned int>::const_iterator wiu_it_end = where_used[var_index].end();
             for(std::set<unsigned int>::const_iterator wiu_it = where_used[var_index].begin(); wiu_it != wiu_it_end && !is_dynamic_address_used; ++wiu_it)
@@ -674,7 +672,6 @@ DesignFlowStep_Status mem_dominator_allocation::Exec()
          {
             const FunctionBehaviorConstRef function_behavior = HLSMgr->CGetFunctionBehavior(funID);
             const BehavioralHelperConstRef BH = function_behavior->CGetBehavioralHelper();
-            var_index_string = BH->PrintVariable(var_index);
             is_dynamic_address_used = true;
             if(assume_aligned_access_p)
                HLSMgr->Rmem->set_sds_var(var_index, true);

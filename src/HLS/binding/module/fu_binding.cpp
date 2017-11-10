@@ -304,7 +304,7 @@ void fu_binding::kill_proxy_function_units(std::map<unsigned int, std::string> &
          structural_objectRef curr_port = GetPointer<module>(curr_gate)->get_in_port(currentPort);
          if(!GetPointer<port_o>(curr_port)->get_is_memory()) continue;
          std::string port_name=curr_port->get_id();
-         if(port_name.find(PROXY_PREFIX) == 0)
+         if(boost::algorithm::starts_with(port_name,PROXY_PREFIX))
          {
             size_t found = port_name.rfind(fun_name);
             if(found != std::string::npos && found+fun_name.size() == port_name.size())
@@ -409,7 +409,7 @@ void fu_binding::manage_killing_function_proxies(std::map<unsigned int, structur
       {
          structural_objectRef curr_port = GetPointer<module>(wrapped_fu_unit)->get_in_port(currentPort);
          std::string port_name=curr_port->get_id();
-         if(port_name.find(PROXY_PREFIX) == 0)
+         if(boost::algorithm::starts_with(port_name,PROXY_PREFIX))
          {
             for(std::set<structural_objectRef>::iterator proxied_unit_it = fcsr_it->second.begin(); proxied_unit_it != proxied_unit_it_end; ++proxied_unit_it)
             {
@@ -425,7 +425,7 @@ void fu_binding::manage_killing_function_proxies(std::map<unsigned int, structur
       {
          structural_objectRef wrapped_port_proxy_out_i = GetPointer<module>(wrapped_fu_unit)->get_out_port(currentPort);
          std::string port_name=wrapped_port_proxy_out_i->get_id();
-         if(port_name.find(PROXY_PREFIX) == 0)
+         if(boost::algorithm::starts_with(port_name,PROXY_PREFIX) == 0)
          {
             structural_objectRef wrapped_port_proxy_out_i_sign;
             for(std::set<structural_objectRef>::iterator proxied_unit_it = fcsr_it->second.begin(); proxied_unit_it != proxied_unit_it_end; ++proxied_unit_it)
@@ -843,7 +843,7 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
                   structural_objectRef curr_port = GetPointer<module>(curr_gate)->get_in_port(currentPort);
                   if(!GetPointer<port_o>(curr_port)->get_is_memory()) continue;
                   std::string port_name=curr_port->get_id();
-                  if(port_name.find(PROXY_PREFIX) == 0)
+                  if(boost::algorithm::starts_with(port_name,PROXY_PREFIX))
                   {
                      GetPointer<port_o>(curr_port)->set_id(port_name+fun_name);
                   }
@@ -854,7 +854,7 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
                   structural_objectRef curr_port = GetPointer<module>(curr_gate)->get_out_port(currentPort);
                   if(!GetPointer<port_o>(curr_port)->get_is_memory()) continue;
                   std::string port_name=curr_port->get_id();
-                  if(port_name.find(PROXY_PREFIX) == 0)
+                  if(boost::algorithm::starts_with(port_name,PROXY_PREFIX))
                   {
                      GetPointer<port_o>(curr_port)->set_id(port_name+fun_name);
                   }
@@ -996,7 +996,7 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
       {
          structural_objectRef curr_port = GetPointer<module>(curr_gate)->get_in_port(currentPort);
          std::string port_name=curr_port->get_id();
-         if(port_name.find(PROXY_PREFIX) == 0)
+         if(boost::algorithm::starts_with(port_name,PROXY_PREFIX))
          {
             size_t found = port_name.rfind(fun_name);
             if(found != std::string::npos)
@@ -1011,7 +1011,7 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
       {
          structural_objectRef curr_port = GetPointer<module>(curr_gate)->get_out_port(currentPort);
          std::string port_name=curr_port->get_id();
-         if(port_name.find(PROXY_PREFIX) == 0)
+         if(boost::algorithm::starts_with(port_name,PROXY_PREFIX))
          {
             size_t found = port_name.rfind(fun_name);
             if(found != std::string::npos)
@@ -1376,10 +1376,10 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
    unsigned int produced_variables = 1;
    bool is_multiport =  allocation_information->get_number_channels(fu) >1;
    size_t max_n_ports = is_multiport ? allocation_information->get_number_channels(fu) : 0;
-   bool has_misaligned_indirect_ref = false;
 
    if (ar)
    {
+      bool has_misaligned_indirect_ref = false;
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Ar is true");
       unsigned int elmt_bitsize=1;
       unsigned int type_index = tree_helper::get_type_index(TreeM, ar);
@@ -1974,7 +1974,6 @@ void fu_binding::fill_array_ref_memory(std::ostream &init_file_a, std::ostream &
             for(auto tail_padding_ind=bits_offset.size(); tail_padding_ind < 8;  ++tail_padding_ind)
                tail_padding += "0";
             tail_padding = tail_padding + bits_offset;
-            bits_offset = "";
             eightbit_string.push_back(tail_padding);
          }
          if(eightbit_string.size()%nbyte_on_memory != 0)
@@ -2730,7 +2729,7 @@ fu_binding::set_ports_are_swapped(vertex v, bool condition)
 {
    if(condition)
       ports_are_swapped.insert(v);
-   else if(ports_are_swapped.find(v) != ports_are_swapped.end())
+   else
       ports_are_swapped.erase(v);
 }
 

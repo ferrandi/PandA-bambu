@@ -155,7 +155,7 @@ class operations_graph_constructor
        * Constructor.
        * @param og is the collection of operations graph 
        */
-      operations_graph_constructor(OpGraphsCollectionRef _og);
+      explicit operations_graph_constructor(OpGraphsCollectionRef _og);
 
       /**
        * Destructor.

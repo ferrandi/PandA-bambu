@@ -83,6 +83,8 @@ class xml_element;
 */
 class structural_manager
 {
+      //no copy constructor
+      structural_manager(const structural_manager& inst) = delete;
    public :
 
       enum circuit_graph_type { DATA_G, COMPLETE_G};
@@ -144,7 +146,7 @@ class structural_manager
       * This is the constructor of the structural_manager which initializes the data field.
        * @param Param is the reference to the class containing all parameters
       */
-      structural_manager(const ParameterConstRef Param);
+      explicit structural_manager(const ParameterConstRef Param);
 
 #if HAVE_BAMBU_BUILT || HAVE_KOALA_BUILT
       void set_top_info(const std::string& id, const technology_managerRef& TM, const std::string& Library = "");

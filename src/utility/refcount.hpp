@@ -93,7 +93,7 @@ private:
       T* const ptr;
       unsigned int count : 31;
       unsigned int deleter :1 ;
-
+      // cppcheck-suppress noExplicitConstructor
       Ref(T* p) : ptr(p), count(1), deleter(1) {}
       template<class null_deleter>
          Ref(T* p, null_deleter &d) : ptr(p), count(1), deleter(0) {}
@@ -111,6 +111,7 @@ public:
       explicit refcount(T* p, null_deleter &d)
       : ref(p ? new Ref(p, d) : 0)
    {}
+   // cppcheck-suppress noExplicitConstructor
    refcount(const refcount<T>& other)
    : ref(other.ref ? other.ref->increment() : 0)
    {}
@@ -163,9 +164,11 @@ public:
    Wrefcount()
       : ptr(0)
    {}
+   // cppcheck-suppress noExplicitConstructor
    Wrefcount(Wrefcount<T>const & other)
       : ptr(other.ptr)
    {}
+   // cppcheck-suppress noExplicitConstructor
    Wrefcount(refcount<T>const & other)
       : ptr(other.get())
    {}

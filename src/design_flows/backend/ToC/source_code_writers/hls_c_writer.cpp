@@ -250,7 +250,6 @@ void HLSCWriter::WriteTestbenchHelperFunctions()
 void HLSCWriter::WriteParamDecl
 (const BehavioralHelperConstRef behavioral_helper)
 {
-   unsigned int type_id;
    std::string type;
    std::string param;
    bool flag_cpp = TM->is_CPP() && !Param->isOption(OPT_pretty_print);
@@ -258,7 +257,7 @@ void HLSCWriter::WriteParamDecl
    indented_output_stream->Append("// parameters declaration\n");
    for (const auto & p : behavioral_helper->get_parameters())
    {
-      type_id = behavioral_helper->get_type(p);
+      unsigned int type_id = behavioral_helper->get_type(p);
       type = behavioral_helper->print_type(type_id);
       param = behavioral_helper->PrintVariable(p);
 
@@ -880,11 +879,10 @@ void HLSCWriter::WriteSimulatorInitMemory(const unsigned int function_id)
                   const std::list<tree_nodeConstRef> fields = tree_helper::CGetFieldTypes(TM->CGetTreeNode(ptd_base_type));
                   size_t n_values = splitted_fields.size();
                   unsigned int index=0;
-                  unsigned int field_size;
                   for (std::list<tree_nodeConstRef>::const_iterator it=fields.begin(); it != fields.end(); ++it, ++index)
                   {
                      const tree_nodeConstRef field_type = *it;
-                     field_size = tree_helper::Size(field_type);
+                     unsigned int field_size = tree_helper::Size(field_type);
                      if (index < n_values)
                      {
                         binary_string = convert_in_binary

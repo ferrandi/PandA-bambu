@@ -210,7 +210,6 @@ DesignFlowStep_Status multi_way_if::InternalExec()
       PrintTreeManager(true);
    }
    std::unordered_map<unsigned int, vertex> inverse_vertex_map;
-   std::unordered_map<vertex, unsigned int> direct_vertex_map;
    BBGraphsCollectionRef GCC_bb_graphs_collection(new BBGraphsCollection(BBGraphInfoRef(new BBGraphInfo(AppM, function_id)), parameters));
    BBGraphRef GCC_bb_graph(new BBGraph(GCC_bb_graphs_collection, CFG_SELECTOR));
 
@@ -218,7 +217,6 @@ DesignFlowStep_Status multi_way_if::InternalExec()
    for(auto block : sl->list_of_bloc)
    {
       inverse_vertex_map[block.first] = GCC_bb_graphs_collection->AddVertex(BBNodeInfoRef(new BBNodeInfo(block.second)));
-      direct_vertex_map[inverse_vertex_map[block.first]]=block.first;
    }
    /// add edges
    for(auto bb : sl->list_of_bloc)

@@ -305,7 +305,7 @@ void allocation::BuildProxyWrapper(functional_unit* current_fu, const std::strin
    for (const auto & o : ops)
    {
       const std::string op_name = GetPointer<operation>(o)->get_name();
-      if (op_name.find(WRAPPED_PROXY_PREFIX) != 0)
+      if (!boost::algorithm::starts_with(op_name,WRAPPED_PROXY_PREFIX))
       {
          const std::string sel_port_name = "sel_" + op_name;
          structural_objectRef new_sel_port = wrapper_obj->find_member(sel_port_name, port_o_K, wrapper_obj);
@@ -570,7 +570,7 @@ void allocation::BuildProxyFunctionVerilog(functional_unit* current_fu)
    {
       operation * current_op = GetPointer<operation>(ops[o]);
       std::string op_name = current_op->get_name();
-      if(op_name.find(PROXY_PREFIX) == 0) continue;
+      if(boost::algorithm::starts_with(op_name,PROXY_PREFIX)) continue;
       std::string sel_port_name = "sel_"+op_name;
       structural_objectRef sel_port = fu_module->find_member(sel_port_name, port_o_K, top);
       if(!sel_port)
@@ -630,7 +630,7 @@ void allocation::BuildProxyFunctionVHDL(functional_unit* current_fu)
    {
       operation * current_op = GetPointer<operation>(ops[o]);
       std::string op_name = current_op->get_name();
-      if(op_name.find(PROXY_PREFIX) == 0) continue;
+      if(boost::algorithm::starts_with(op_name,PROXY_PREFIX)) continue;
       std::string sel_port_name = "sel_"+op_name;
       structural_objectRef sel_port = fu_module->find_member(sel_port_name, port_o_K, top);
       if(!sel_port)
@@ -946,7 +946,7 @@ bool allocation::check_templated_units(double clock_period, node_kind_prec_infoR
       template_suffix += STR(node_info->output_prec) + "_" + STR(node_info->base128_output_nelem);
    }
    std::string fu_template_parameters = GetPointer<functional_unit>(current_fu)->fu_template_parameters;
-   if(fu_template_parameters.find(required_prec) != 0)
+   if(!boost::algorithm::starts_with(fu_template_parameters,required_prec))
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Not support required precision " + STR(required_prec) + "(" + fu_template_parameters + ")");
       return true;
@@ -1073,7 +1073,7 @@ bool allocation::check_proxies(const library_managerRef library, std::string fu_
    if(HLSMgr->Rfuns->is_a_proxied_function(fu_name)) return true;
    if(library->get_library_name() == PROXY_LIBRARY)
    {
-      if(fu_name.find(WRAPPED_PROXY_PREFIX) == 0)
+      if(boost::algorithm::starts_with(fu_name,WRAPPED_PROXY_PREFIX))
       {
          std::string original_function_name = fu_name.substr(std::string(WRAPPED_PROXY_PREFIX).size());
          if(!HLSMgr->Rfuns->is_a_shared_function(funId, original_function_name)) return true;
@@ -1794,7 +1794,7 @@ DesignFlowStep_Status allocation::InternalExec()
                if(node_info->is_simple_pointer_plus_expr) allocation_information->simple_pointer_plus_expr.insert(specializedId);
                if(library_name == PROXY_LIBRARY)
                {
-                  if(functionalUnitName.find(WRAPPED_PROXY_PREFIX) == 0)
+                  if(boost::algorithm::starts_with(functionalUnitName,WRAPPED_PROXY_PREFIX))
                   {
                      std::string original_function_name = functionalUnitName.substr(std::string(WRAPPED_PROXY_PREFIX).size());
                      allocation_information->proxy_wrapped_units[specializedId] = original_function_name;

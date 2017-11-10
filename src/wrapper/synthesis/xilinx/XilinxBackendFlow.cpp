@@ -725,7 +725,7 @@ void XilinxBackendFlow::WriteFlowConfiguration(std::ostream& script)
    if(setupscr.size() and setupscr != "0")
    {
       script << "#configuration" << std::endl;
-      if(setupscr.find("export") == 0)
+      if(boost::algorithm::starts_with(setupscr,"export"))
          script << setupscr + " >& /dev/null; ";
       else
          script << ". " << setupscr << " >& /dev/null; ";

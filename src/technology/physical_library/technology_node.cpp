@@ -425,9 +425,10 @@ void functional_unit::gload(const std::string& definition, const std::string& fu
    std::list<std::string> splitted;
    boost::algorithm::split(splitted, definition, boost::algorithm::is_any_of(" ;\t"));
 
+#if HAVE_CIRCUIT_BUILT
    std::set<std::string> inputs;
    std::string output;
-
+#endif
    //std::map<std::string, std::map<std::string, TimingModelRef> > pin_models;
 
    unsigned int n = 0;
@@ -666,14 +667,14 @@ void functional_unit::xload(const xml_element* Enode, const technology_nodeRef f
 #ifndef NDEBUG
    int debug_level = Param->getOption<int>(OPT_circuit_debug_level);
 #endif
-#if HAVE_CMOS_BUILT
+#if HAVE_TECHNOLOGY_BUILT && HAVE_CMOS_BUILT
    int output_pin_counter = 0;
 #endif
 #if HAVE_CIRCUIT_BUILT
    structural_type_descriptorRef bool_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 0));
 #endif
 
-#if HAVE_TECHNOLOGY_BUILT
+#if HAVE_TECHNOLOGY_BUILT && HAVE_CMOS_BUILT
    std::map<std::string, std::vector<std::string> > attribute_list;
    std::map<std::string, std::map<std::string, attributeRef> > attribute_map;
    std::map<unsigned int, std::string> NP_functionalities;

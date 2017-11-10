@@ -467,6 +467,7 @@ void GccWrapper::InitializeGccParameters()
          case(GccWrapper_OptimizationSet::OZEBU):
 #endif
             ///Filling optimizations map
+#if HAVE_BAMBU_BUILT || HAVE_TUCANO_BUILT || HAVE_ZEBU_BUILT
             SetGccDefault();
 
             switch(OS)
@@ -510,6 +511,7 @@ void GccWrapper::InitializeGccParameters()
             gcc_compiling_parameters += (" " + WriteOptimizationsString() + " ");
 
             break;
+#endif
          default:
             {
                THROW_UNREACHABLE("Unexpected optimization level");
@@ -532,7 +534,7 @@ void GccWrapper::InitializeGccParameters()
    if(Param->isOption(OPT_gcc_defines))
    {
       const auto defines = Param->getOption<const CustomSet<std::string> >(OPT_gcc_defines);
-      for(const auto define : defines)
+      for(const auto& define : defines)
       {
          std::string escaped_string = define;
          //add_escape(escaped_string, "\"");
@@ -544,7 +546,7 @@ void GccWrapper::InitializeGccParameters()
    if(Param->isOption(OPT_gcc_undefines))
    {
       const auto undefines = Param->getOption<const CustomSet<std::string> >(OPT_gcc_undefines);
-      for(const auto undefine : undefines)
+      for(const auto& undefine : undefines)
       {
          std::string escaped_string = undefine;
          //add_escape(escaped_string, "\"");
@@ -556,7 +558,7 @@ void GccWrapper::InitializeGccParameters()
    if(Param->isOption(OPT_gcc_warnings))
    {
       const auto warnings = Param->getOption<const CustomSet<std::string> >(OPT_gcc_warnings);
-      for(const auto warning : warnings)
+      for(const auto& warning : warnings)
       {
          gcc_compiling_parameters += "-W" + warning + " ";
       }
@@ -579,7 +581,7 @@ void GccWrapper::InitializeGccParameters()
    if(Param->isOption(OPT_gcc_libraries))
    {
       const auto libraries = Param->getOption<const CustomSet<std::string> >(OPT_gcc_libraries);
-      for(const auto library : libraries)
+      for(const auto& library : libraries)
       {
          gcc_linking_parameters += "-l" + library + " ";
       }
@@ -589,7 +591,7 @@ void GccWrapper::InitializeGccParameters()
    if(Param->isOption(OPT_gcc_library_directories))
    {
       const auto library_directories = Param->getOption<const CustomSet<std::string> >(OPT_gcc_library_directories);
-      for(const auto library_directory : library_directories)
+      for(const auto& library_directory : library_directories)
       {
          gcc_linking_parameters += "-L" + library_directory + " ";
       }
@@ -599,7 +601,7 @@ void GccWrapper::InitializeGccParameters()
    if(Param->isOption(OPT_no_parse_files))
    {
       const auto no_parse_files = Param->getOption<const CustomSet<std::string> >(OPT_no_parse_files);
-      for(const auto no_parse_file : no_parse_files)
+      for(const auto& no_parse_file : no_parse_files)
       {
          gcc_linking_parameters += no_parse_file + " ";
       }
@@ -1009,10 +1011,13 @@ void GccWrapper::SetGccDefault()
 GccWrapper::Compiler GccWrapper::GetCompiler() const
 {
    Compiler compiler;
+#if HAVE_I386_GCC45_COMPILER || HAVE_I386_GCC46_COMPILER || HAVE_I386_GCC47_COMPILER || HAVE_I386_GCC48_COMPILER || HAVE_I386_GCC49_COMPILER || HAVE_I386_GCC5_COMPILER || HAVE_I386_GCC6_COMPILER || HAVE_I386_GCC7_COMPILER || HAVE_SPARC_COMPILER || HAVE_ARM_COMPILER
 #ifndef NDEBUG
    GccWrapper_CompilerTarget compatible_compilers = Param->getOption<GccWrapper_CompilerTarget>(OPT_compatible_compilers);
 #endif
+#endif
 
+#if HAVE_I386_GCC45_COMPILER || HAVE_I386_GCC46_COMPILER || HAVE_I386_GCC47_COMPILER || HAVE_I386_GCC48_COMPILER || HAVE_I386_GCC49_COMPILER || HAVE_I386_GCC5_COMPILER || HAVE_I386_GCC6_COMPILER || HAVE_I386_GCC7_COMPILER || HAVE_SPARC_COMPILER || HAVE_ARM_COMPILER
    bool flag_cpp;
    if(Param->isOption(OPT_input_format) &&
          Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_CPP &&
@@ -1020,11 +1025,15 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
       flag_cpp = true;
    else
       flag_cpp = false;
+#endif
 
+#if HAVE_I386_GCC45_COMPILER || HAVE_I386_GCC46_COMPILER || HAVE_I386_GCC47_COMPILER || HAVE_I386_GCC48_COMPILER || HAVE_I386_GCC49_COMPILER || HAVE_I386_GCC5_COMPILER || HAVE_I386_GCC6_COMPILER || HAVE_I386_GCC7_COMPILER || HAVE_SPARC_COMPILER || HAVE_ARM_COMPILER || HAVE_SPARC_ELF_GCC
    std::string gcc_extra_options;
    if(Param->isOption(OPT_gcc_extra_options))
       gcc_extra_options = Param->getOption<std::string>(OPT_gcc_extra_options);
+#endif
 
+#if HAVE_I386_GCC45_COMPILER || HAVE_I386_GCC46_COMPILER || HAVE_I386_GCC47_COMPILER || HAVE_I386_GCC48_COMPILER || HAVE_I386_GCC49_COMPILER || HAVE_I386_GCC5_COMPILER || HAVE_I386_GCC6_COMPILER || HAVE_I386_GCC7_COMPILER || HAVE_SPARC_COMPILER || HAVE_ARM_COMPILER
    GccWrapper_CompilerTarget preferred_compiler;
    if(compiler_target == GccWrapper_CompilerTarget::CT_NO_GCC)
    {
@@ -1044,6 +1053,7 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
    }
    const std::string plugin_dir = (Param->isOption(OPT_gcc_plugindir) ? Param->getOption<std::string>(OPT_gcc_plugindir) : STR(PLUGIN_DIR)) + "/";
    const std::string plugin_ext = ".so";
+#endif
 
 #if HAVE_I386_GCC45_COMPILER
    if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC45))
@@ -1405,7 +1415,7 @@ size_t GccWrapper::GetSourceCodeLines(const ParameterConstRef Param)
 
    std::string command = "cat ";
    const auto source_files = Param->getOption<const CustomSet<std::string> >(OPT_input_file);
-   for(const auto source_file : source_files)
+   for(const auto& source_file : source_files)
    {
       boost::filesystem::path absolute_path = boost::filesystem::system_complete(source_file);
       command += absolute_path.branch_path().string() + "/*\\.h ";
@@ -1436,14 +1446,14 @@ size_t GccWrapper::GetSourceCodeLines(const ParameterConstRef Param)
 void GccWrapper::CreateExecutable(const CustomSet<std::string> & file_names, const std::string& executable_name, const std::string& extra_gcc_options) const
 {
    std::list<std::string> sorted_file_names;
-   for(const auto file_name : file_names)
+   for(const auto& file_name : file_names)
       sorted_file_names.push_back(file_name);
    CreateExecutable(sorted_file_names, executable_name, extra_gcc_options);
 }
 void GccWrapper::CreateExecutable(const std::list<std::string> & file_names, const std::string& executable_name, const std::string& extra_gcc_options) const
 {
    std::string file_names_string;
-   for(const auto file_name : file_names)
+   for(const auto& file_name : file_names)
    {
       file_names_string += file_name + " ";
    }
@@ -1845,7 +1855,7 @@ const std::string GccWrapper::AddSourceCodeIncludes(const std::list<std::string>
 {
    std::string includes;
    ///Adding includes of original source code files
-   for(const auto source_file : source_files)
+   for(const auto& source_file : source_files)
    {
       boost::filesystem::path absolute_path = boost::filesystem::system_complete(source_file);
       std::string new_path =  "-iquote " + absolute_path.branch_path().string() + " ";

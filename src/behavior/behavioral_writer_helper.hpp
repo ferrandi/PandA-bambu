@@ -91,7 +91,7 @@ class OpEdgeWriter : public EdgeWriter
        * Constructor
        * @param _g is the operation graph
        */
-      OpEdgeWriter(const OpGraph * operation_graph);
+      explicit OpEdgeWriter(const OpGraph * operation_graph);
 
       /**
        * Operator which print label of an EdgeDescriptor
@@ -115,7 +115,7 @@ class BBEdgeWriter : public EdgeWriter
        * Constructor
        * @param g is the bb_graph to be printed
        */
-      BBEdgeWriter(const BBGraph * g);
+      explicit BBEdgeWriter(const BBGraph * g);
 
       /**
        * Operator used to print an edge

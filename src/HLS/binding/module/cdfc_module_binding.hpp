@@ -71,7 +71,7 @@ class CDFCModuleBindingSpecialization : public HLSFlowStepSpecialization
        * Constructor
        * @param cdfc_module_binding_algorithm is the algorithm to be used
        */
-      CDFCModuleBindingSpecialization(const CliqueCovering_Algorithm clique_covering_algorithm);
+      explicit CDFCModuleBindingSpecialization(const CliqueCovering_Algorithm clique_covering_algorithm);
 
       /**
        * Return the string representation of this
@@ -94,7 +94,7 @@ public:
     /// constructor
     cdfc_graph_vertex_selector() : all(true), support(nullptr) {}
     /// constructor
-    cdfc_graph_vertex_selector(const SET_container * _support) : all(false), support(_support) {}
+    explicit cdfc_graph_vertex_selector(const SET_container * _support) : all(false), support(_support) {}
     /// selector operator
     bool operator()(const vertex_descriptor &v) const
     {
@@ -164,7 +164,7 @@ public:
      * Constructor with selector only
      * @param _selector is the selector to be associated with the edge
      */
-    edge_cdfc_selector(int _selector) : selector(_selector), weight(0) {}
+    explicit edge_cdfc_selector(int _selector) : selector(_selector), weight(0) {}
 
     /**
      * Constructor with selector
@@ -207,7 +207,7 @@ struct CdfcEdgeInfo : public EdgeInfo
     * Constructor
     * @param edge_weight is the weight to be set
     */
-   CdfcEdgeInfo(const int edge_weight);
+   explicit CdfcEdgeInfo(const int edge_weight);
 };
 typedef refcount<CdfcEdgeInfo> CdfcEdgeInfoRef;
 typedef refcount<const CdfcEdgeInfo> CdfcEdgeInfoConstRef;

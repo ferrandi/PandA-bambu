@@ -589,7 +589,7 @@ struct OpGraphInfo : public GraphInfo
     * Constructor
     * @param BH is the helper of the function associated with this graph
     */
-   OpGraphInfo(const BehavioralHelperConstRef BH);
+   explicit OpGraphInfo(const BehavioralHelperConstRef BH);
 };
 
 ///Refcount definition for OpGraphInfo
@@ -606,7 +606,7 @@ class OpVertexSet : public std::unordered_set<vertex>
       /**
        * Constructor
        */
-      OpVertexSet(const OpGraphConstRef op_graph);
+      explicit OpVertexSet(const OpGraphConstRef op_graph);
 };
 
 /**
@@ -619,7 +619,7 @@ class OpVertexMap : public std::unordered_map<vertex, value>
       /**
        * Constructor
        */
-      OpVertexMap(const OpGraphConstRef) :
+      explicit OpVertexMap(const OpGraphConstRef) :
          std::unordered_map<vertex, value>()
       {}
 };
@@ -630,7 +630,7 @@ class OpEdgeSet : public std::unordered_set<EdgeDescriptor>
       /**
        * Constructor
        */
-      OpEdgeSet(const OpGraphConstRef op_graph);
+      explicit OpEdgeSet(const OpGraphConstRef op_graph);
 };
 #else
 class OpVertexSorter : std::binary_function<vertex, vertex, bool>
@@ -645,7 +645,7 @@ class OpVertexSorter : std::binary_function<vertex, vertex, bool>
        * Constructor
        * @param op_graph is the operation graph to which vertices belong
        */
-      OpVertexSorter(const OpGraphConstRef op_graph);
+      explicit OpVertexSorter(const OpGraphConstRef op_graph);
 
       /**
        * Compare position of two vertices
@@ -665,7 +665,7 @@ class OpVertexSet : public std::set<vertex, OpVertexSorter>
       /**
        * Constructor
        */
-      OpVertexSet(const OpGraphConstRef op_graph);
+      explicit OpVertexSet(const OpGraphConstRef op_graph);
 };
 
 /**
@@ -678,7 +678,7 @@ class OpVertexMap : public std::map<vertex, value, OpVertexSorter>
       /**
        * Constructor
        */
-      OpVertexMap(const OpGraphConstRef op_graph) :
+      explicit OpVertexMap(const OpGraphConstRef op_graph) :
          std::map<vertex, value, OpVertexSorter>(OpVertexSorter(op_graph))
       {}
 };
@@ -695,7 +695,7 @@ class OpEdgeSorter : std::binary_function<EdgeDescriptor, EdgeDescriptor, bool>
        * Constructor
        * @param op_graph is the operation graph to which vertices belong
        */
-      OpEdgeSorter(const OpGraphConstRef op_graph);
+      explicit OpEdgeSorter(const OpGraphConstRef op_graph);
 
       /**
        * Compare position of two edges
@@ -712,7 +712,7 @@ class OpEdgeSet : public std::set<EdgeDescriptor, OpEdgeSorter>
       /**
        * Constructor
        */
-      OpEdgeSet(const OpGraphConstRef op_graph);
+      explicit OpEdgeSet(const OpGraphConstRef op_graph);
 };
 #endif
 

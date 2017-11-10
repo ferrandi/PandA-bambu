@@ -83,7 +83,7 @@ class area_model
        */
       //@{
       ///Constructor.
-      area_model(const ParameterConstRef _Param_);
+      explicit area_model(const ParameterConstRef _Param_);
 
       ///Destructor.
       virtual ~area_model();

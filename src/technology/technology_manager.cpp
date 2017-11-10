@@ -292,7 +292,7 @@ void technology_manager::xload(const xml_element* node, const target_deviceRef d
    }
    for(auto temp_library : temp_libraries)
    {
-      for(const auto temp_info : info)
+      for(const auto& temp_info : info)
       {
          temp_library->set_info(temp_info.first, temp_info.second);
       }
@@ -312,7 +312,7 @@ void technology_manager::gload(const std::string& file_name, const fileIO_istrea
       char tmp[255];
       file->getline(tmp, 255);  // delim defaults to '\n'
       std::string line = tmp;
-      if(!file or line.size() == 0 or line.find("#") == 0) continue;
+      if(!file or line.size() == 0 or boost::algorithm::starts_with(line,"#")) continue;
 
       std::vector<std::string> splitted;
       boost::algorithm::split(splitted, line, boost::algorithm::is_any_of(" ;\t"));
@@ -341,11 +341,11 @@ void technology_manager::xwrite(xml_element *rootnode, TargetDevice_Type dv_type
 {
    ///Set of libraries sorted by name
    std::set<std::string> sorted_libraries;
-   for(const auto library : library_map)
+   for(const auto& library : library_map)
    {
       sorted_libraries.insert(library.first);
    }
-   for(const auto library : sorted_libraries)
+   for(const auto& library : sorted_libraries)
    {
       if (library == "design")
          continue;
@@ -474,8 +474,7 @@ bool technology_manager::is_library_manager(const std::string& Name) const
 
 void technology_manager::erase_library(const std::string& Name)
 {
-   if (library_map.find(Name) != library_map.end())
-      library_map.erase(Name);
+   library_map.erase(Name);
    if (std::find(libraries.begin(), libraries.end(), Name) != libraries.end())
       libraries.erase(std::find(libraries.begin(), libraries.end(), Name));
 }

@@ -92,7 +92,8 @@ namespace flopoco { class Operator; class Target;}
 class flopoco_wrapper
 {
    private:
-
+      //no copy constructor
+      flopoco_wrapper(const flopoco_wrapper& inst) = delete;
       /// Current debug level
       int debug_level;
       /// Generated Functional Units

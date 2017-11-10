@@ -219,7 +219,7 @@ void CBackend::WriteGlobalDeclarations()
       if (parameters->isOption(OPT_pretty_print))
       {
          std::string f_name = BH->get_function_name();
-         if(f_name.find("__builtin_") == 0)
+         if(boost::algorithm::starts_with(f_name,"__builtin_"))
          {
             indented_output_stream->Append("#define " + f_name + " _bambu_"+f_name + "\n");
          }
@@ -365,7 +365,6 @@ void CBackend::compute_variables(const OpGraphConstRef inGraph, const std::unord
    }
 
    //I have to take out the variables global to the whole program and the function parameters
-   std::set<unsigned int> varsTemp;
    std::unordered_set<unsigned int>::const_iterator it, it_end = gblVariables.end();
    for(it = gblVariables.begin(); it != it_end; ++it)
    {

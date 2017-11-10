@@ -99,8 +99,9 @@ DesignFlowStep_Status DataDependenceComputation::ComputeDependences(const int df
    const auto TM = AppM->get_tree_manager();
    const OpGraphConstRef cfg = function_behavior->CGetOpGraph(FunctionBehavior::CFG);
    const BehavioralHelperConstRef behavioral_helper = function_behavior->CGetBehavioralHelper();
+#ifndef NDEBUG
    const std::string function_name = behavioral_helper->get_function_name();
-
+#endif
    //Maps between a variable and its definitions
    std::map<type, std::set<vertex> > defs, overs;
    VertexIterator vi, vi_end;

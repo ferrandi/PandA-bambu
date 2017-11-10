@@ -58,6 +58,7 @@
 ///Boost include
 #include <boost/algorithm/string/split.hpp>
 #include <boost/algorithm/string/classification.hpp>
+#include <boost/algorithm/string/predicate.hpp>
 #include <boost/filesystem/convenience.hpp>
 #include <boost/filesystem/path.hpp>
 
@@ -118,7 +119,6 @@ int tree_panda_gcc_parameter::Exec()
 
    /// variable used into option parsing
    int option_index;
-   int next_option;
 
    const char* const short_options = COMMON_SHORT_OPTIONS_STRING "o:Ss::x:tn:cM::i:C:ru:e:T:" GCC_SHORT_OPTIONS_STRING;
 
@@ -138,7 +138,6 @@ int tree_panda_gcc_parameter::Exec()
          GCC_LONG_OPTIONS,
          {nullptr , 0, nullptr, 0}
       };
-   const std::string program_name = argv[0];
 
    if (argc == 1)
    {
@@ -148,7 +147,7 @@ int tree_panda_gcc_parameter::Exec()
 
    while (1)
    {
-      next_option = getopt_long_only(argc, argv, short_options, long_options, &option_index);
+      int next_option = getopt_long_only(argc, argv, short_options, long_options, &option_index);
 
       // no more options are available
       if (next_option == -1)
@@ -181,7 +180,7 @@ int tree_panda_gcc_parameter::Exec()
             {
                ///
                std::string parameter(optarg);
-               if(parameter.find("td=") == 0)
+               if(boost::algorithm::starts_with(parameter,"td="))
                   setOption(OPT_gcc_standard, parameter.substr(parameter.find("=")+1));
                else
                   THROW_ERROR("unexpected parameter: " + parameter);

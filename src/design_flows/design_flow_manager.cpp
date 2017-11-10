@@ -183,9 +183,10 @@ void DesignFlowManager::RecursivelyAddSteps(const DesignFlowStepSet & steps, con
             {
                ///The step already exists and it was unnecessary; now we are switching to necessary; note that computation of relationships of this node is performed to propagate the necessity
                ///If design flow step was ready I have to reinsert it into the set because of the ordering; so the setting of the unnecessary flag can not be factorized
-               if(possibly_ready.find(step_vertex) != possibly_ready.end())
+               bool it_belongs = possibly_ready.find(step_vertex) != possibly_ready.end();
+               possibly_ready.erase(step_vertex);
+               if(it_belongs)
                {
-                  possibly_ready.erase(step_vertex);
                   design_flow_step_info->status = DesignFlowStep_Status::UNEXECUTED;
                   possibly_ready.insert(step_vertex);
                }

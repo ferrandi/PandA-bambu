@@ -185,7 +185,9 @@ DesignFlowStep_Status AddOpLoopFlowEdges::InternalExec()
       }
    }
 
+#ifndef NDEBUG
    const std::string function_name = function_behavior->CGetBehavioralHelper()->get_function_name();
+#endif
    if(parameters->getOption<bool>(OPT_print_dot))
    {
       function_behavior->CGetOpGraph(FunctionBehavior::FLG)->WriteDot("OP_FL.dot");

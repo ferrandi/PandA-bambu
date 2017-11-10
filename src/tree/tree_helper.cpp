@@ -595,7 +595,6 @@ std::string tree_helper::name_type(const tree_managerConstRef tm, int unsigned i
       case array_type_K:
       {
          array_type* at = GetPointer<array_type>(t);
-         long long int vec_size = 0;
          std::string vec_size_string;
          if(at->domn)
          {
@@ -607,7 +606,7 @@ std::string tree_helper::name_type(const tree_managerConstRef tm, int unsigned i
                integer_cst *ic = GetPointer<integer_cst>(GET_NODE(it->max));
                if(ic)
                {
-                  vec_size =  static_cast<unsigned int>(get_integer_cst_value(ic))+ 1;
+                  long long int vec_size =  static_cast<unsigned int>(get_integer_cst_value(ic))+ 1;
                   vec_size_string = "[" + boost::lexical_cast<std::string>(vec_size) + "]";
                }
                else
@@ -1184,7 +1183,6 @@ void tree_helper::get_used_variables(bool first_level_only, const tree_nodeRef t
 
 bool tree_helper::look_for_binfo_inheritance(binfo* b, std::string bcs)
 {
-   bool found = false;
    if (b)
    {
       if (b->type)
@@ -1197,7 +1195,7 @@ bool tree_helper::look_for_binfo_inheritance(binfo* b, std::string bcs)
       {
          tree_nodeRef binf = b->get_base(i);
          binfo* bnf = GetPointer<binfo>(GET_NODE(binf));
-         found = look_for_binfo_inheritance(bnf, bcs);
+         bool found = look_for_binfo_inheritance(bnf, bcs);
          if (found)
             return true;
       }

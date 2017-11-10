@@ -139,7 +139,7 @@ class tree_node
       /**
        * Constructor
        */
-      tree_node(unsigned int i) : index(i){}
+      explicit tree_node(unsigned int i) : index(i){}
 
       /// Destructor
       virtual ~tree_node() {}
@@ -699,7 +699,7 @@ struct class_name : public superclass                \
    GET_KIND(class_name);                              \
    virtual void visit(tree_node_visitor * const v) const;\
    enum {GETID(superclass)=0};                       \
-   class_name(unsigned int i) : superclass(i) {}\
+   explicit class_name(unsigned int i) : superclass(i) {}\
 }
 
 /**
@@ -716,7 +716,7 @@ struct WeightedNode : public tree_node
    /**
     * Constructor
     */
-   WeightedNode(unsigned int i);
+   explicit WeightedNode(unsigned int i);
 
    /**
     * virtual function used to traverse the tree_node data structure.
@@ -917,7 +917,7 @@ struct decl_node : public srcp, public tree_node
    /**
     * Constructor
     */
-   decl_node(unsigned int i);
+   explicit decl_node(unsigned int i);
 
    /**
     * virtual function used to traverse the tree_node data structure.
@@ -967,7 +967,7 @@ typedef refcount<PointToInformation> PointToInformationRef;
 struct expr_node : public srcp, public WeightedNode
 {
    /// constructor
-   expr_node(unsigned int i) : WeightedNode(i) {}
+   explicit expr_node(unsigned int i) : WeightedNode(i) {}
 
    /// type of the expression
    tree_nodeRef type;
@@ -1066,7 +1066,7 @@ struct gimple_node : public srcp, public WeightedNode
     * Constructor
     * @param i is the index of the node
     */
-   gimple_node(unsigned int i);
+   explicit gimple_node(unsigned int i);
 
    /// whole memory operand use
    tree_nodeRef memuse;
@@ -1147,7 +1147,7 @@ struct gimple_node : public srcp, public WeightedNode
 struct unary_expr : public expr_node
 {
    /// constructor
-   unary_expr(unsigned int i) : expr_node(i) {}
+   explicit unary_expr(unsigned int i) : expr_node(i) {}
 
    /// op field is the operand of the unary expression
    tree_nodeRef op;
@@ -1170,7 +1170,7 @@ struct unary_expr : public expr_node
 struct binary_expr : public expr_node
 {
    /// constructor
-   binary_expr(unsigned int i) : expr_node(i) {}
+   explicit binary_expr(unsigned int i) : expr_node(i) {}
 
    /// The first operand of the binary expression
    tree_nodeRef op0;
@@ -1196,7 +1196,7 @@ struct binary_expr : public expr_node
 struct ternary_expr : public expr_node
 {
    /// constructor
-   ternary_expr(unsigned int i) : expr_node(i) {}
+   explicit ternary_expr(unsigned int i) : expr_node(i) {}
 
    /// The first operand of the ternary expression
    tree_nodeRef op0;
@@ -1225,7 +1225,7 @@ struct ternary_expr : public expr_node
 struct quaternary_expr : public expr_node
 {
    /// constructor
-   quaternary_expr(unsigned int i) : expr_node(i) {}
+   explicit quaternary_expr(unsigned int i) : expr_node(i) {}
 
    /// The first operand of the quaternary expression
    tree_nodeRef op0;
@@ -1258,7 +1258,7 @@ struct quaternary_expr : public expr_node
 struct type_node : public tree_node
 {
    /// constructor
-   type_node(unsigned int i);
+   explicit type_node(unsigned int i);
 
    /**
     * qual is the set of type qualifiers for this type.
@@ -1329,7 +1329,7 @@ struct type_node : public tree_node
 struct memory_tag : public decl_node
 {
    /// constructor
-   memory_tag(unsigned int i) : decl_node(i) {}
+   explicit memory_tag(unsigned int i) : decl_node(i) {}
 
    /**
     * list of aliases associated with the memory tag.
@@ -1361,7 +1361,7 @@ struct memory_tag : public decl_node
 struct cst_node : tree_node
 {
    /// constructor
-   cst_node(unsigned int i) : tree_node(i) {}
+   explicit cst_node(unsigned int i) : tree_node(i) {}
 
    /// type field is the type of the node
    tree_nodeRef type;
@@ -1387,7 +1387,7 @@ struct cst_node : tree_node
 struct error_mark : tree_node
 {
    /// constructor
-   error_mark(unsigned int i) : tree_node(i) {}
+   explicit error_mark(unsigned int i) : tree_node(i) {}
 
    /// Redefinition of get_kind_text.
    GET_KIND_TEXT(error_mark)
@@ -1441,7 +1441,7 @@ CREATE_TREE_NODE_CLASS(array_ref,quaternary_expr);
 struct array_type : public type_node
 {
    /// constructor
-   array_type(unsigned int i) : type_node(i) {}
+   explicit array_type(unsigned int i) : type_node(i) {}
 
    /*type_node fields are in the parent class: type_node*/
 
@@ -1483,7 +1483,7 @@ CREATE_TREE_NODE_CLASS(arrow_expr,unary_expr);
 struct gimple_asm : public gimple_node
 {
    /// constructor
-   gimple_asm(unsigned int i) : gimple_node(i), volatile_flag(false) {}
+   explicit gimple_asm(unsigned int i) : gimple_node(i), volatile_flag(false) {}
 
    /// volatile_flag is true if the node is public: it means that the name is accessible from outside.
    bool volatile_flag;
@@ -1528,7 +1528,7 @@ CREATE_TREE_NODE_CLASS(assert_expr,binary_expr);
 struct baselink : public tree_node
 {
    /// constructor
-   baselink(unsigned int i) : tree_node(i) {}
+   explicit baselink(unsigned int i) : tree_node(i) {}
 
    /// is the type of the baselink
    tree_nodeRef type;
@@ -1559,7 +1559,7 @@ struct baselink : public tree_node
 struct gimple_bind : public expr_node
 {
    /// constructor
-   gimple_bind(unsigned int i) : expr_node(i) {}
+   explicit gimple_bind(unsigned int i) : expr_node(i) {}
 
    /// vars is the operand 0 (GIMPLE_BIND_VARS), this is a chain of VAR_DECL nodes for the variables.
    std::vector<tree_nodeRef> list_of_vars;
@@ -1600,7 +1600,7 @@ struct gimple_bind : public expr_node
 struct binfo : public tree_node
 {
    /// constructor
-      binfo(unsigned int i) : tree_node(i), virt_flag(false), bases(0) {}
+   explicit binfo(unsigned int i) : tree_node(i), virt_flag(false), bases(0) {}
 
    /// type field is the actual data type node being inherited in this basetype.(BINFO_TYPE)
    tree_nodeRef type;
@@ -1702,7 +1702,7 @@ CREATE_TREE_NODE_CLASS(bit_xor_expr,binary_expr);
 struct block : public tree_node
 {
    /// constructor
-   block(unsigned int i) : tree_node(i), bl_flag(false) {}
+   explicit block(unsigned int i) : tree_node(i), bl_flag(false) {}
 
    /// used to know if bl string is set
    bool bl_flag;
@@ -1751,7 +1751,7 @@ CREATE_TREE_NODE_CLASS(buffer_ref,unary_expr);
 struct call_expr : public expr_node
 {
    /// constructor
-   call_expr(unsigned int i);
+   explicit call_expr(unsigned int i);
 
    /// fn is the operand 0 of the call expression: this is the function
    tree_nodeRef fn;
@@ -1791,7 +1791,7 @@ struct call_expr : public expr_node
 struct aggr_init_expr : public call_expr
 {
       /// constructor
-      aggr_init_expr(unsigned int i);
+      explicit aggr_init_expr(unsigned int i);
 
       /// operand count
       int ctor;
@@ -1826,7 +1826,7 @@ struct aggr_init_expr : public call_expr
 struct gimple_call : public gimple_node
 {
    /// constructor
-   gimple_call(unsigned int i);
+   explicit gimple_call(unsigned int i);
 
    /// fn is the operand 0 of the call expression: this is the function
    tree_nodeRef fn;
@@ -1872,7 +1872,7 @@ CREATE_TREE_NODE_CLASS(card_expr,unary_expr);
 struct case_label_expr : public expr_node
 {
    /// constructor
-   case_label_expr(unsigned int i) : expr_node(i), default_flag(false) {}
+   explicit case_label_expr(unsigned int i) : expr_node(i), default_flag(false) {}
 
    /// op0 is the operand 0 (macro CASE_LOW) of the case label expression
    tree_nodeRef op0;
@@ -1911,7 +1911,7 @@ struct case_label_expr : public expr_node
 struct cast_expr : public expr_node
 {
       /// constructor
-      cast_expr(unsigned int i) : expr_node(i) {}
+      explicit cast_expr(unsigned int i) : expr_node(i) {}
 
       /// op is casted node
       tree_nodeRef op;
@@ -1999,7 +1999,7 @@ CREATE_TREE_NODE_CLASS(type_pack_expansion,type_node);
 struct expr_pack_expansion : public expr_node
 {
   /// constructor
-  expr_pack_expansion(unsigned int i) : expr_node(i) {}
+  explicit expr_pack_expansion(unsigned int i) : expr_node(i) {}
 
   /// PACK_EXPANSION_PATTERN
   tree_nodeRef op;
@@ -2042,7 +2042,7 @@ CREATE_TREE_NODE_CLASS(cleanup_point_expr,unary_expr);
 struct complex_cst : public cst_node
 {
    /// constructor
-   complex_cst(unsigned int i) : cst_node(i) {}
+   explicit complex_cst(unsigned int i) : cst_node(i) {}
 
    /// real is the TREE_REALPART which content is other constant node.
    tree_nodeRef real;
@@ -2081,7 +2081,7 @@ CREATE_TREE_NODE_CLASS(complex_expr,binary_expr);
 struct complex_type : public type_node
 {
    /// constructor
-   complex_type(unsigned int i) : type_node(i), unsigned_flag(false), real_flag(false) {}
+   explicit complex_type(unsigned int i) : type_node(i), unsigned_flag(false), real_flag(false) {}
 
    /**
     * unsigned means an unsigned type
@@ -2140,7 +2140,7 @@ CREATE_TREE_NODE_CLASS(cond_expr,ternary_expr);
 struct gimple_cond : public gimple_node
 {
    /// constructor
-   gimple_cond(unsigned int i) : gimple_node(i) {}
+   explicit gimple_cond(unsigned int i) : gimple_node(i) {}
 
    /// The first operand of the ternary expression
    tree_nodeRef op0;
@@ -2176,7 +2176,7 @@ CREATE_TREE_NODE_CLASS(conj_expr,unary_expr);
 struct const_decl : public decl_node
 {
    /// constructor
-   const_decl(unsigned int i) : decl_node(i) {}
+   explicit const_decl(unsigned int i) : decl_node(i) {}
 
    /*decl_node fields are in the parent class*/
 
@@ -2219,7 +2219,7 @@ struct const_decl : public decl_node
 struct constructor : public tree_node
 {
    /// constructor
-   constructor(unsigned int i) : tree_node(i) {}
+   explicit constructor(unsigned int i) : tree_node(i) {}
 
    /// type field is the type of the node
    tree_nodeRef type;
@@ -2292,7 +2292,7 @@ CREATE_TREE_NODE_CLASS(eh_filter_expr,binary_expr);
 struct enumeral_type : public type_node
 {
    /// constructor
-   enumeral_type(unsigned int i) : type_node(i), prec(0), unsigned_flag(false) {}
+   explicit enumeral_type(unsigned int i) : type_node(i), prec(0), unsigned_flag(false) {}
 
    /*type_node fields are in the parent class*/
 
@@ -2364,7 +2364,7 @@ CREATE_TREE_NODE_CLASS(exit_expr,unary_expr);
 struct expr_stmt : public tree_node
 {
    /// constructor
-   expr_stmt(unsigned int i) : tree_node(i), line (-1) {}
+   explicit expr_stmt(unsigned int i) : tree_node(i), line (-1) {}
 
    /// line is the line number where the compound_stmt is defined.
    int line;
@@ -2406,7 +2406,7 @@ CREATE_TREE_NODE_CLASS(fdesc_expr,binary_expr);
 struct field_decl : public decl_node, public attr
 {
    /// constructor
-   field_decl(unsigned int i): decl_node(i), algn(0) {}
+   explicit field_decl(unsigned int i): decl_node(i), algn(0) {}
 
    /*decl_node fields are in the parent class: decl_node*/
    /*attr fields are in the parent class: attr*/
@@ -2515,7 +2515,7 @@ CREATE_TREE_NODE_CLASS(floor_mod_expr,binary_expr);
 struct function_decl : public decl_node, public attr
 {
    /// constructor
-   function_decl(unsigned int i);
+   explicit function_decl(unsigned int i);
 
    /// it is true when the function_decl is an operator
    bool operator_flag;
@@ -2676,7 +2676,7 @@ struct function_decl : public decl_node, public attr
 struct function_type : public type_node
 {
    /// constructor
-   function_type(unsigned int i) : type_node(i), varargs_flag(false) {}
+   explicit function_type(unsigned int i) : type_node(i), varargs_flag(false) {}
 
    /// varargs flag: tells if function is of varargs type
    bool varargs_flag;
@@ -2725,7 +2725,7 @@ CREATE_TREE_NODE_CLASS(ge_expr,binary_expr);
 struct gimple_assign :  public gimple_node
 {
    /// constructor
-   gimple_assign(unsigned int i);
+   explicit gimple_assign(unsigned int i);
 
    /// The first operand of the binary expression
    tree_nodeRef op0;
@@ -2764,7 +2764,7 @@ struct gimple_assign :  public gimple_node
 struct gimple_nop :  public gimple_node
 {
    /// constructor
-   gimple_nop(unsigned int i) : gimple_node(i) {}
+   explicit gimple_nop(unsigned int i) : gimple_node(i) {}
 
     /// Redefinition of get_kind_text.
    GET_KIND_TEXT(gimple_nop)
@@ -2790,7 +2790,7 @@ struct gimple_nop :  public gimple_node
 struct gimple_goto : public gimple_node
 {
    /// constructor
-   gimple_goto(unsigned int i) : gimple_node(i) {}
+   explicit gimple_goto(unsigned int i) : gimple_node(i) {}
 
    /// the label
    tree_nodeRef op;
@@ -2837,7 +2837,7 @@ CREATE_TREE_NODE_CLASS(gt_expr,binary_expr);
 struct handler : public tree_node
 {
    /// constructor
-   handler(unsigned int i) : tree_node(i), line(-1) {}
+   explicit handler(unsigned int i) : tree_node(i), line(-1) {}
 
    /// line is the line number where the compound_stmt is defined.
    int line;
@@ -2930,7 +2930,7 @@ CREATE_TREE_NODE_CLASS(init_expr,binary_expr);
 struct integer_cst : public cst_node
 {
    /// constructor
-      integer_cst(unsigned int i): cst_node(i), value(0) {}
+   explicit integer_cst(unsigned int i): cst_node(i), value(0) {}
 
    ///The value of the integer cast
    long long int value;
@@ -2960,7 +2960,7 @@ struct integer_cst : public cst_node
 struct integer_type : public type_node
 {
    /// constructor
-   integer_type(unsigned int i) : type_node(i), prec(0), unsigned_flag(false) {}
+   explicit integer_type(unsigned int i) : type_node(i), prec(0), unsigned_flag(false) {}
 
    /*type_node fields are in the parent class: type_node*/
 
@@ -3018,7 +3018,7 @@ CREATE_TREE_NODE_CLASS(label_decl,decl_node);
 struct gimple_label : public gimple_node
 {
    /// constructor
-   gimple_label(unsigned int i) : gimple_node(i) {}
+   explicit gimple_label(unsigned int i) : gimple_node(i) {}
 
    /// the label
    tree_nodeRef op;
@@ -3121,7 +3121,7 @@ CREATE_TREE_NODE_CLASS(mem_ref,binary_expr);
 struct method_type : public function_type
 {
    /// constructor
-   method_type(unsigned int i) : function_type(i) {}
+   explicit method_type(unsigned int i) : function_type(i) {}
 
    //type_node fields are in the parent class: type_node
    //return type and parameters are in the parent class function_type
@@ -3193,7 +3193,7 @@ CREATE_TREE_NODE_CLASS(mult_highpart_expr,binary_expr);
 struct namespace_decl : public decl_node
 {
    /// constructor
-   namespace_decl(unsigned int i) : decl_node(i) {}
+   explicit namespace_decl(unsigned int i) : decl_node(i) {}
 
    /*decl_node fields are in the parent class*/
 
@@ -3280,7 +3280,7 @@ CREATE_TREE_NODE_CLASS(ordered_expr,binary_expr);
 struct overload : public tree_node
 {
    /// constructor
-   overload(unsigned int i) : tree_node(i) {}
+   explicit overload(unsigned int i) : tree_node(i) {}
 
    /// Is the current function declaration
    tree_nodeRef crnt;
@@ -3313,7 +3313,7 @@ struct overload : public tree_node
 struct parm_decl : public decl_node
 {
    /// constructor
-   parm_decl(unsigned int i);
+   explicit parm_decl(unsigned int i);
 
    /*decl_node fields are in the parent class: decl_node*/
 
@@ -3416,7 +3416,7 @@ struct gimple_phi : public gimple_node
        * Constructor
        * @param i is the index of the node to be created
        */
-      gimple_phi(unsigned int i);
+      explicit gimple_phi(unsigned int i);
 
       /// res is the new SSA_NAME node created by the PHI node.
       tree_nodeRef res;
@@ -3491,7 +3491,7 @@ struct gimple_phi : public gimple_node
 struct gimple_predict : public gimple_node
 {
    ///Constructor
-   gimple_predict(unsigned int index);
+   explicit gimple_predict(unsigned int index);
 
    /// Redefinition of get_kind_text.
    GET_KIND_TEXT(gimple_predict)
@@ -3538,7 +3538,7 @@ CREATE_TREE_NODE_CLASS(pointer_plus_expr,binary_expr);
 struct pointer_type : public type_node
 {
    /// constructor
-   pointer_type(unsigned int i) : type_node(i) {}
+   explicit pointer_type(unsigned int i) : type_node(i) {}
 
    /*type_node fields are in the parent class*/
 
@@ -3628,7 +3628,7 @@ CREATE_TREE_NODE_CLASS(rdiv_expr,binary_expr);
 struct real_cst : public cst_node
 {
    /// constructor
-   real_cst(unsigned int i) : cst_node(i), overflow_flag(false) {}
+   explicit real_cst(unsigned int i) : cst_node(i), overflow_flag(false) {}
 
    /**
     * overflow_flag  means there was an overflow in folding, and no warning has been issued for this subexpression.  
@@ -3673,7 +3673,7 @@ CREATE_TREE_NODE_CLASS(realpart_expr,unary_expr);
 struct real_type : public type_node
 {
    /// constructor
-   real_type(unsigned int i) : type_node(i), prec(0) {}
+   explicit real_type(unsigned int i) : type_node(i), prec(0) {}
 
    /*type_node fields are in the parent class*/
 
@@ -3708,7 +3708,7 @@ struct real_type : public type_node
 struct record_type :  public type_node
 {
    /// constructor
-   record_type(unsigned int i): type_node(i), spec_flag(false) , ptrmem_flag(false), struct_flag(false) {}
+   explicit record_type(unsigned int i): type_node(i), spec_flag(false) , ptrmem_flag(false), struct_flag(false) {}
 
    /**
     * list_of_flds is a chain of field_decl for the fields of the struct,
@@ -3837,7 +3837,7 @@ CREATE_TREE_NODE_CLASS(reference_expr,unary_expr);
 struct reference_type : public type_node
 {
    /// constructor
-   reference_type(unsigned int i) : type_node(i) {}
+   explicit reference_type(unsigned int i) : type_node(i) {}
 
    /*type_node fields are in the parent class*/
 
@@ -3878,7 +3878,7 @@ CREATE_TREE_NODE_CLASS(reinterpret_cast_expr,unary_expr);
 struct result_decl : public decl_node
 {
    /// constructor
-   result_decl(unsigned int i): decl_node(i), algn(0) {}
+   explicit result_decl(unsigned int i): decl_node(i), algn(0) {}
 
    /*decl_node fields are in the parent class*/
 
@@ -3925,7 +3925,7 @@ struct result_decl : public decl_node
 struct gimple_resx :  public gimple_node
 {
    /// constructor
-   gimple_resx(unsigned int i) :
+   explicit gimple_resx(unsigned int i) :
       gimple_node(i) {}
 
     /// Redefinition of get_kind_text.
@@ -4054,7 +4054,7 @@ CREATE_TREE_NODE_CLASS(save_expr,ternary_expr);
 struct scope_ref : public expr_node
 {
    /// constructor
-   scope_ref(unsigned int i) : expr_node(i) {}
+   explicit scope_ref(unsigned int i) : expr_node(i) {}
 
    /// The first operand of the binary expression
    tree_nodeRef op0;
@@ -4118,7 +4118,7 @@ struct ssa_name : public tree_node
 
    public:
       /// constructor
-      ssa_name(unsigned int i);
+      explicit ssa_name(unsigned int i);
 
       /// starting from gcc 4.7.2 ssa_name has a type
       tree_nodeRef type;
@@ -4237,7 +4237,7 @@ struct ssa_name : public tree_node
 struct statement_list : public tree_node
 {
    /// constructor
-   statement_list(unsigned int i) : tree_node(i) {}
+   explicit statement_list(unsigned int i) : tree_node(i) {}
 
    /// list_of_stmt field is the list of statements. If this field is null then the list_of_bloc field is not null.
    std::list<tree_nodeRef> list_of_stmt;
@@ -4293,7 +4293,7 @@ CREATE_TREE_NODE_CLASS(static_cast_expr,unary_expr);
 struct string_cst : public cst_node
 {
    /// constructor
-   string_cst(unsigned int i): cst_node(i), lngt(-1) {}
+   explicit string_cst(unsigned int i): cst_node(i), lngt(-1) {}
 
    /// strg is the TREE_STRING_POINTER.
    std::string strg;
@@ -4337,7 +4337,7 @@ struct string_cst : public cst_node
 struct gimple_switch : public gimple_node
 {
    /// constructor
-   gimple_switch(unsigned int i) : gimple_node(i) {}
+   explicit gimple_switch(unsigned int i) : gimple_node(i) {}
 
    /// the branch var
    tree_nodeRef op0;
@@ -4372,7 +4372,7 @@ struct gimple_switch : public gimple_node
 
  struct target_expr : public expr_node
 {
-       target_expr(unsigned int i) : expr_node(i) {}
+       explicit target_expr(unsigned int i) : expr_node(i) {}
 
        /// it is the target of an initialization
        tree_nodeRef decl;
@@ -4416,7 +4416,7 @@ struct gimple_switch : public gimple_node
 struct target_mem_ref : public WeightedNode
 {
    /// constructor
-   target_mem_ref(unsigned int i) : WeightedNode(i) {}
+   explicit target_mem_ref(unsigned int i) : WeightedNode(i) {}
 
    /// type of the expression
    tree_nodeRef type;
@@ -4476,7 +4476,7 @@ struct target_mem_ref : public WeightedNode
 struct target_mem_ref461 : public WeightedNode
 {
    /// constructor
-   target_mem_ref461(unsigned int i) : WeightedNode(i) {}
+   explicit target_mem_ref461(unsigned int i) : WeightedNode(i) {}
 
    /// type of the expression
    tree_nodeRef type;
@@ -4520,7 +4520,7 @@ struct target_mem_ref461 : public WeightedNode
 struct template_decl : public decl_node
 {
    /// constructor
-   template_decl(unsigned int i) : decl_node(i) {}
+   explicit template_decl(unsigned int i) : decl_node(i) {}
 
    /*decl_node fields are in the parent class: decl_node*/
 
@@ -4602,7 +4602,7 @@ struct template_parm_index : public tree_node
       int orig_level;
 
       /// constructor
-      template_parm_index(unsigned int i) : tree_node(i), constant_flag(false), readonly_flag(false), idx(0), level(0), orig_level(0)  {}
+      explicit template_parm_index(unsigned int i) : tree_node(i), constant_flag(false), readonly_flag(false), idx(0), level(0), orig_level(0)  {}
 
       /// Redefinition of get_kind_text.
       GET_KIND_TEXT(template_parm_index)
@@ -4650,7 +4650,7 @@ CREATE_TREE_NODE_CLASS(template_type_parm,type_node);
 struct type_argument_pack : public type_node
 {
    /// constructor
-   type_argument_pack(unsigned int i) : type_node(i) {}
+   explicit type_argument_pack(unsigned int i) : type_node(i) {}
 
    /// arguments stored in the argument pack
    tree_nodeRef arg;
@@ -4682,7 +4682,7 @@ struct type_argument_pack : public type_node
 struct nontype_argument_pack : public expr_node
 {
    /// constructor
-   nontype_argument_pack(unsigned int i) : expr_node(i) {}
+   explicit nontype_argument_pack(unsigned int i) : expr_node(i) {}
 
    /// arguments stored in the argument pack
    tree_nodeRef arg;
@@ -4754,7 +4754,7 @@ CREATE_TREE_NODE_CLASS(translation_unit_decl,decl_node);
 struct tree_list : public WeightedNode
 {
    /// constructor
-   tree_list(unsigned int i) : WeightedNode(i) {}
+   explicit tree_list(unsigned int i) : WeightedNode(i) {}
 
    /// purp is the TREE_PURPOSE field occasionally used as well to get the effect of Lisp association lists.
    tree_nodeRef purp;
@@ -4791,7 +4791,7 @@ struct tree_list : public WeightedNode
 struct tree_vec : public tree_node
 {
    /// constructor
-   tree_vec(unsigned int i): tree_node(i), lngt(0) {}
+   explicit tree_vec(unsigned int i): tree_node(i), lngt(0) {}
 
    /// lngt is the lenght of the array (list_of_op) stored in tree_vec node.(macro TREE_VEC_LENGTH)
    size_t lngt;
@@ -4896,7 +4896,7 @@ CREATE_TREE_NODE_CLASS(truth_xor_expr,binary_expr);
 struct try_block : public tree_node
 {
    /// constructor
-   try_block(unsigned int i) : tree_node(i), line(-1) {}
+   explicit try_block(unsigned int i) : tree_node(i), line(-1) {}
 
    /// line is the line number where the compound_stmt is defined.
    int line;
@@ -4948,7 +4948,7 @@ CREATE_TREE_NODE_CLASS(try_finally,binary_expr);
 struct type_decl : public decl_node
 {
    /// constructor
-   type_decl(unsigned int i) : decl_node(i) {}
+   explicit type_decl(unsigned int i) : decl_node(i) {}
 
    /** tmpl_parms holds template parameters
     * It is a TREE_LIST, his VALU field is a TREE_VEC whose LIST_OF_OP holds template parameters. 
@@ -5012,7 +5012,7 @@ CREATE_TREE_NODE_CLASS(ungt_expr,binary_expr);
 struct union_type : public type_node
 {
    /// constructor
-   union_type(unsigned int i) : type_node(i) {}
+   explicit union_type(unsigned int i) : type_node(i) {}
 
    /*type_node fields are in the parent class*/
 
@@ -5124,7 +5124,7 @@ CREATE_TREE_NODE_CLASS(va_arg_expr,unary_expr);
 struct var_decl : public decl_node, public attr
 {
    /// constructor
-   var_decl(unsigned int i);
+   explicit var_decl(unsigned int i);
 
    /*decl_node fields are in the parent class: decl_node*/
 
@@ -5340,7 +5340,7 @@ CREATE_TREE_NODE_CLASS(vec_new_expr,expr_node);
 struct vector_cst : public cst_node
 {
    /// constructor
-   vector_cst(unsigned int i) : cst_node(i) {}
+   explicit vector_cst(unsigned int i) : cst_node(i) {}
 
    /// list_of_valu is a list of value of the TREE_VECTOR_CST_ELTS vector elements.
    std::vector<tree_nodeRef> list_of_valu;
@@ -5384,7 +5384,7 @@ CREATE_TREE_NODE_CLASS(void_cst,cst_node);
 struct vector_type : public type_node
 {
    /// constructor
-   vector_type(unsigned int i) : type_node(i) {}
+   explicit vector_type(unsigned int i) : type_node(i) {}
 
    /// field elts is the type of an vector element (tree-dump.c use the macro TREE_TYPE)
    tree_nodeRef elts;
@@ -5483,7 +5483,7 @@ struct lut_expr : public binary_expr
    GET_KIND(lut_expr);
    virtual void visit(tree_node_visitor * const v) const;
    enum {GETID(binary_expr)=0};
-   lut_expr(unsigned int i) : binary_expr(i) {}
+   explicit lut_expr(unsigned int i) : binary_expr(i) {}
 };
 
 #endif

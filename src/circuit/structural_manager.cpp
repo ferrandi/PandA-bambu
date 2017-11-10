@@ -218,15 +218,15 @@ structural_objectRef structural_manager::add_port(std::string id, port_o::port_d
                   NP_functionalityRef NPF = GetPointer<module>(owner)->get_NP_functionality();
                   if (NPF)
                   {
+#if HAVE_TECHNOLOGY_BUILT
                      std::string equation = NPF->get_NP_functionality(NP_functionality::EQUATION);
                      std::vector<std::string> tokens;
                      boost::algorithm::split(tokens, equation, boost::algorithm::is_any_of(";"));
                      for(unsigned int i = 0; i < tokens.size(); i++)
                      {
-                        if (tokens[i].find(id) == 0)
+                        if (boost::algorithm::starts_with(tokens[i],id))
                            equation = tokens[i].substr(tokens[i].find("=") + 1, tokens[i].size());
                      }
-#if HAVE_TECHNOLOGY_BUILT
                      attributeRef function(new attribute(attribute::STRING, equation));
                      cp->add_attribute("function", function);
 #endif

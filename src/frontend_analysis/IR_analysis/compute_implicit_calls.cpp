@@ -422,24 +422,28 @@ DesignFlowStep_Status compute_implicit_calls::InternalExec()
             found_memset_statement = true;
             const auto temp_statement = *statement;
             ///Going one step step forward to avoid invalidation of the pointer
-            statement++;
+            auto tmp_it = statement;
+            ++tmp_it;
             ///Moving statement
             BB1_block->RemoveStmt(temp_statement);
             BBN1_block->PushBack(temp_statement);
             ///Going one step back since pointer is already increment in for loop
-            statement--;
+            --tmp_it;
+            statement = tmp_it;
          }
          else if(found_memset_statement)
          {
             /// move (xxxxb)* to BBN2
             const auto temp_statement = *statement;
             ///Going one step step forward to avoid invalidation of the pointer
-            statement++;
+            auto tmp_it = statement;
+            ++tmp_it;
             ///Moving statement
             BB1_block->RemoveStmt(temp_statement);
             BBN2_block->PushBack(temp_statement);
             ///Going one step back since pointer is already increment in for loop
-            statement--;
+            --tmp_it;
+            statement = tmp_it;
          }
       }
       THROW_ASSERT(found_memset_statement, "unexpected condition");

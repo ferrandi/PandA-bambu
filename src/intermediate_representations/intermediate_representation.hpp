@@ -59,7 +59,7 @@ class IntermediateRepresentation
        * Constructor
        * @param parameters is the set of input parameters
        */
-      IntermediateRepresentation(const ParameterConstRef parameters);
+      explicit IntermediateRepresentation(const ParameterConstRef parameters);
 
       /**
        * Destructor

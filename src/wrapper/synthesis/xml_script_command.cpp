@@ -121,7 +121,7 @@ bool xml_script_node_t::evaluate_condition(const std::string * condition)
       return false;
 
    ///represent a variable that has not been substituted/defined
-   if (trimmed.find("${__") == 0)
+   if (boost::algorithm::starts_with(trimmed,"${__"))
       return false;
 
    unsigned int length = static_cast<unsigned int>(trimmed.length());
@@ -180,17 +180,15 @@ bool xml_script_node_t::evaluate_condition(const std::string * condition, const 
 
 xml_set_entry_t::xml_set_entry_t(const std::string &_value,
    const std::string *  _condition
-) : value(_value)
+) : xml_script_node_t(NODE_ENTRY), value(_value)
 {
-   nodeType = NODE_ENTRY;
    condition = _condition ? new std::string(*_condition) : nullptr;
 }
 
-xml_set_entry_t::xml_set_entry_t(const xml_element *element)
+xml_set_entry_t::xml_set_entry_t(const xml_element *element) : xml_script_node_t(NODE_ENTRY)
 {
    xml_attribute * a;
 
-   nodeType = NODE_ENTRY;
    condition = nullptr;
 
    a = element->get_attribute("value");
@@ -235,9 +233,8 @@ bool xml_set_entry_t::checkCondition(const DesignParametersRef& dp) const
 xml_set_variable_t::xml_set_variable_t(const std::string &_name,
    const std::string *  _singleValue,
    const std::string *  _condition
-) : name(_name)
+) : xml_script_node_t(NODE_VARIABLE), name(_name)
 {
-   nodeType = NODE_VARIABLE;
    singleValue = _singleValue ? new std::string(*_singleValue) : nullptr;
    multiValues.clear();
    condition = _condition ? new std::string(*_condition) : nullptr;
@@ -245,11 +242,10 @@ xml_set_variable_t::xml_set_variable_t(const std::string &_name,
 
 xml_set_variable_t::xml_set_variable_t(
    const xml_element *  element
-)
+) : xml_script_node_t(NODE_VARIABLE)
 {
    xml_attribute * a;
 
-   nodeType = NODE_VARIABLE;
    singleValue = nullptr;
    multiValues.clear();
    condition = nullptr;
@@ -325,9 +321,8 @@ xml_parameter_t::xml_parameter_t(const std::string *  _name,
    const std::string *  _condition,
    const std::string &_separator,
    bool                 _curlyBrackets
-)
+) :  xml_script_node_t(NODE_PARAMETER)
 {
-   nodeType = NODE_PARAMETER;
    name = name ? new std::string(*_name) : nullptr;
    singleValue = _singleValue ? new std::string(*_singleValue) : nullptr;
    multiValues.clear();
@@ -336,11 +331,10 @@ xml_parameter_t::xml_parameter_t(const std::string *  _name,
    curlyBrackets = _curlyBrackets;
 }
 
-xml_parameter_t::xml_parameter_t(const xml_element * element)
+xml_parameter_t::xml_parameter_t(const xml_element * element) : xml_script_node_t(NODE_PARAMETER)
 {
    xml_attribute * a;
 
-   nodeType = NODE_PARAMETER;
    name = nullptr;
    singleValue = nullptr;
    multiValues.clear();
@@ -432,9 +426,8 @@ xml_command_t::xml_command_t(
    const std::string *  _value,
    const std::string *  _condition,
    const std::string *  _output
-)
+) : xml_script_node_t(NODE_COMMAND)
 {
-   nodeType = NODE_COMMAND;
    name = _name ? new std::string(*_name) : nullptr;
    value = _value ? new std::string(*_value) : nullptr;
    parameters.clear();
@@ -442,11 +435,10 @@ xml_command_t::xml_command_t(
    output = _output ? new std::string(*_output) : nullptr;
 }
 
-xml_command_t::xml_command_t(const xml_element * element)
+xml_command_t::xml_command_t(const xml_element * element) : xml_script_node_t(NODE_COMMAND)
 {
    xml_attribute * a;
 
-   nodeType = NODE_COMMAND;
    name = nullptr;
    value = nullptr;
    parameters.clear();
@@ -531,9 +523,8 @@ xml_shell_t::xml_shell_t(
    const std::string *  _value,
    const std::string *  _condition,
    const std::string *  _output
-)
+) : xml_script_node_t(NODE_SHELL)
 {
-   nodeType = NODE_SHELL;
    name = _name ? new std::string(*_name) : nullptr;
    value = _value ? new std::string(*_value) : nullptr;
    parameters.clear();
@@ -541,11 +532,10 @@ xml_shell_t::xml_shell_t(
    output = _output ? new std::string(*_output) : nullptr;
 }
 
-xml_shell_t::xml_shell_t(const xml_element * element)
+xml_shell_t::xml_shell_t(const xml_element * element) : xml_script_node_t(NODE_SHELL)
 {
    xml_attribute * a;
 
-   nodeType = NODE_SHELL;
    name = nullptr;
    value = nullptr;
    parameters.clear();
@@ -627,16 +617,14 @@ bool xml_shell_t::checkCondition(const DesignParametersRef& dp) const
 
 xml_ite_block_t::xml_ite_block_t(
    const std::string *  _condition
-) : condition(_condition ? *_condition : "")
+) : xml_script_node_t(NODE_ITE_BLOCK), condition(_condition ? *_condition : "")
 {
-   nodeType = NODE_ITE_BLOCK;
    this->thenNodes.clear();
    this->elseNodes.clear();
 }
 
-xml_ite_block_t::xml_ite_block_t(const xml_element * element) : condition (element->get_attribute("condition") ? element->get_attribute("condition")->get_value() : "")
+xml_ite_block_t::xml_ite_block_t(const xml_element * element) : xml_script_node_t(NODE_ITE_BLOCK), condition (element->get_attribute("condition") ? element->get_attribute("condition")->get_value() : "")
 {
-   nodeType = NODE_ITE_BLOCK;
    thenNodes.clear();
    elseNodes.clear();
 
@@ -724,15 +712,12 @@ bool xml_ite_block_t::checkCondition(const DesignParametersRef& dp) const
 
 xml_foreach_t::xml_foreach_t(
    std::string                        _variable
-) :
-   variable(_variable)
+) : xml_script_node_t(NODE_FOREACH), variable(_variable)
 {
-   nodeType = NODE_FOREACH;
 }
 
-xml_foreach_t::xml_foreach_t(const xml_element * element)
+xml_foreach_t::xml_foreach_t(const xml_element * element) : xml_script_node_t(NODE_FOREACH)
 {
-   nodeType = NODE_FOREACH;
    Nodes.clear();
 
    xml_attribute *a = element->get_attribute("variable");

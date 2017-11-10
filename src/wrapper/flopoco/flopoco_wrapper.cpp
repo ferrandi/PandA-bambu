@@ -886,7 +886,7 @@ int flopoco_wrapper::InternalWriteVHDL(const std::string& FU_name, const unsigne
    {
       try {
          flopoco::Operator::outputVHDLToFile(OPLIST, file);
-      } catch (std::string s) {
+      } catch (const std::string& s) {
          cerr << "Exception while generating '" << s <<endl;
       }
    }
@@ -925,7 +925,7 @@ std::string flopoco_wrapper::writeVHDLcommon()
       {
          flopoco::Operator::outputVHDLToFile(*common_oplist, file);
       }
-      catch (std::string s)
+      catch (const std::string& s)
       {
          THROW_UNREACHABLE("Exception while generating " + s);
       }

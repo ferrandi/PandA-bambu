@@ -114,7 +114,7 @@ int vcd_parser::vcd_parse_skip_to_end()
    char token[256];        /* String value of current token */
    int chars_read = -1;    /* Number of characters scanned in */
 
-   while (fscanf(vcd_fp, "%s%n", token, &chars_read) != EOF)
+   while (fscanf(vcd_fp, "%255s%n", token, &chars_read) != EOF)
    {
       if (chars_read < 0)
          continue;
@@ -139,14 +139,13 @@ int vcd_parser::vcd_parse_def_var(const std::string& scope)
    unsigned int size;      /* Bit width of specified variable */
    char id_code[256];      /* Unique variable identifier_code */
    char ref[256];          /* Name of variable in design */
-   char reftmp[256];       /* Temporary variable name */
    char tmp[15];           /* Temporary string holder */
    unsigned int msb = 0;   /* Most significant bit */
    unsigned int lsb = 0;   /* Least significant bit */
-   bool isvect = false;    /* check if the signal is a vector */
 
-   if( fscanf( vcd_fp, "%s %u %s %s %s", type, &size, id_code, ref, tmp ) == 5 )
+   if( fscanf( vcd_fp, "%255s %u %255s %255s %14s", type, &size, id_code, ref, tmp ) == 5 )
    {
+      bool isvect = false;    /* check if the signal is a vector */
       /* Make sure that we have not exceeded array boundaries */
       if(strlen( type ) > 256)
          THROW_ERROR("Overflow. Read token too long (type var)");
@@ -168,6 +167,7 @@ int vcd_parser::vcd_parse_def_var(const std::string& scope)
       }
       else
       {
+         char reftmp[256];       /* Temporary variable name */
          if( strncmp( "$end", tmp, 4 ) != 0 )
          {
             /* A bit select was specified for this signal, get the size */
@@ -180,7 +180,7 @@ int vcd_parser::vcd_parse_def_var(const std::string& scope)
             }
             isvect = true;
 
-            if( (fscanf( vcd_fp, "%s", tmp ) != 1) || (strncmp( "$end", tmp, 4 ) != 0) )
+            if( (fscanf( vcd_fp, "%14s", tmp ) != 1) || (strncmp( "$end", tmp, 4 ) != 0) )
                THROW_ERROR("Unrecognized $var format");
          }
          else if( sscanf( ref, "%*[a-zA-Z0-9_][%*s].") == 2 )
@@ -192,7 +192,7 @@ int vcd_parser::vcd_parse_def_var(const std::string& scope)
             if (msb > 0)
                isvect = true;
          }
-         else if( sscanf( ref, "%[a-zA-Z0-9_][%s]", reftmp, tmp ) == 2 )
+         else if( sscanf( ref, "%255[a-zA-Z0-9_][%14s]", reftmp, tmp ) == 2 )
          {  
             strcpy( ref, reftmp );
 
@@ -238,7 +238,7 @@ void vcd_parser::vcd_push_def_scope(std::stack<std::string> & scope)
 {
    char new_scope[256]; /* scope name */
 
-   if (fscanf(vcd_fp, " %*s %s $end ", new_scope) == 1)
+   if (fscanf(vcd_fp, " %*s %255s $end ", new_scope) == 1)
    {
       /* Make sure that we have not exceeded any array boundaries */
       if (strlen(new_scope) > 256)
@@ -257,7 +257,7 @@ void vcd_parser::vcd_pop_def_scope(std::stack<std::string> & scope)
 {
    char token[256];
 
-   if (fscanf(vcd_fp, " %s ", token) == 1)
+   if (fscanf(vcd_fp, " %255s ", token) == 1)
    {
       /* Make sure that we have not exceeded any array boundaries */
       if (strlen(token) > 256)
@@ -294,7 +294,7 @@ int vcd_parser::vcd_parse_def()
    char keyword[256];          /* Holds keyword value */
    int  chars_read;            /* Number of characters scanned in */
 
-   while( !enddef_found && (fscanf( vcd_fp, "%s%n", keyword, &chars_read ) == 1) )
+   while( !enddef_found && (fscanf( vcd_fp, "%255s%n", keyword, &chars_read ) == 1) )
    {
       if(chars_read > 256)
          THROW_ERROR("Overflow. Read token too long");
@@ -348,7 +348,7 @@ int vcd_parser::vcd_parse_sim_vector(char* value, unsigned long timestamp)
    char sym[256];    /* String value of signal symbol */
    int  chars_read;  /* Number of characters scanned in */
 
-   if( fscanf( vcd_fp, "%s%n", sym, &chars_read ) == 1 )
+   if( fscanf( vcd_fp, "%255s%n", sym, &chars_read ) == 1 )
    {
       if(chars_read > 256)
          THROW_ERROR("Overflow. Read token too long");
@@ -372,7 +372,7 @@ int vcd_parser::vcd_parse_sim_real(char* value, unsigned long timestamp)
    char sym[256];    /* String value of signal symbol */
    int  chars_read;  /* Number of characters scanned in */
 
-   if( fscanf( vcd_fp, "%s%n", sym, &chars_read ) == 1 )
+   if( fscanf( vcd_fp, "%255s%n", sym, &chars_read ) == 1 )
    {
       if(chars_read > 256)
           THROW_ERROR("Overflow. Read token too long");

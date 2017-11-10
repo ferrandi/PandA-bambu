@@ -87,9 +87,9 @@ HLS_constraints::HLS_constraints(const ParameterConstRef _Param, const std::stri
    {
       PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "parsing the configuration file for constraints...");
       std::string fn = parameters->getOption<std::string>(OPT_xml_input_configuration);
-      xml_element* constraint_node = nullptr;
       try
       {
+         xml_element* constraint_node = nullptr;
          XMLDomParser parser(fn);
          parser.Exec();
          if (parser)

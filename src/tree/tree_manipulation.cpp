@@ -1663,7 +1663,7 @@ tree_nodeRef tree_manipulation::create_gimple_call(const tree_nodeConstRef calle
    ae_IR_schema[TOK(TOK_SRCP)] = srcp;
 
    std::string args_string;
-   for(const auto arg : args)
+   for(const auto& arg : args)
    {
       if(args_string != "")
       {
@@ -1790,7 +1790,7 @@ tree_nodeRef tree_manipulation::create_phi_node(tree_nodeRef & ssa_res, const st
    gimple_phi * pn = GetPointer<gimple_phi> (GET_NODE(phi_stmt));
    pn->virtual_flag = virtual_flag;
 
-   for(const auto def_edge : list_of_def_edge)
+   for(const auto& def_edge : list_of_def_edge)
    {
       pn->AddDefEdge(TreeM, def_edge);
    }
@@ -2165,7 +2165,7 @@ tree_nodeRef tree_manipulation::CreateOrExpr(const tree_nodeConstRef first_condi
 {
    if(block and reuse)
    {
-      for(const auto statement : block->CGetStmtList())
+      for(const auto& statement : block->CGetStmtList())
       {
          const auto ga = GetPointer<const gimple_assign>(GET_NODE(statement));
          if(ga)
@@ -2220,7 +2220,7 @@ tree_nodeRef tree_manipulation::CreateAndExpr(const tree_nodeConstRef first_cond
 {
    if(block and reuse)
    {
-      for(const auto statement : block->CGetStmtList())
+      for(const auto& statement : block->CGetStmtList())
       {
          const auto ga = GetPointer<const gimple_assign>(GET_NODE(statement));
          if(ga)
@@ -2274,7 +2274,7 @@ tree_nodeRef tree_manipulation::CreateNotExpr(const tree_nodeConstRef condition,
 {
    if(block and reuse)
    {
-      for(const auto statement : block->CGetStmtList())
+      for(const auto& statement : block->CGetStmtList())
       {
          const auto ga = GetPointer<const gimple_assign>(GET_NODE(statement));
          if(ga)
@@ -2326,7 +2326,7 @@ tree_nodeRef tree_manipulation::CreateNotExpr(const tree_nodeConstRef condition,
 tree_nodeRef tree_manipulation::ExtractCondition(const tree_nodeRef condition, const blocRef block) const
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Extracting condition from " + condition->ToString());
-   unsigned int ret;
+
    const auto gc = GetPointer<const gimple_cond>(GET_NODE(condition));
    THROW_ASSERT(gc, "Trying to extract condition from " + condition->ToString());
    if(GET_NODE(gc->op0)->get_kind() == ssa_name_K || GetPointer<cst_node>(GET_NODE(gc->op0)) != nullptr)
@@ -2338,7 +2338,7 @@ tree_nodeRef tree_manipulation::ExtractCondition(const tree_nodeRef condition, c
    {
       if(block and reuse)
       {
-         for(const auto statement : block->CGetStmtList())
+         for(const auto& statement : block->CGetStmtList())
          {
             const auto ga = GetPointer<const gimple_assign>(GET_NODE(statement));
             if(ga and ga->op1->index == condition->index)
@@ -2350,7 +2350,7 @@ tree_nodeRef tree_manipulation::ExtractCondition(const tree_nodeRef condition, c
       const auto type_index = (tree_helper::CGetType(GET_NODE(gc->op0)))->index;
       /// create the ssa_var representing the condition for bb1
       unsigned int ssa1_vers = TreeM->get_next_vers();
-      ret = TreeM->new_tree_node_id();
+      unsigned int ret = TreeM->new_tree_node_id();
       std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> IR_schema;
       IR_schema[TOK(TOK_TYPE)] = STR(type_index);
       IR_schema[TOK(TOK_VERS)] = STR(ssa1_vers);
@@ -2532,7 +2532,7 @@ tree_nodeRef tree_manipulation::CreateEqExpr(const tree_nodeConstRef first_opera
 {
    if(block and reuse)
    {
-      for(const auto statement : block->CGetStmtList())
+      for(const auto& statement : block->CGetStmtList())
       {
          const auto ga = GetPointer<const gimple_assign>(GET_NODE(statement));
          if(ga)
@@ -2590,7 +2590,7 @@ tree_nodeRef tree_manipulation::CreateCallExpr(const tree_nodeConstRef called_fu
    TreeM->create_tree_node(ae_id, addr_expr_K, ae_IR_schema);
 
    std::string args_string;
-   for(const auto arg : args)
+   for(const auto& arg : args)
    {
       if(args_string != "")
       {

@@ -152,7 +152,7 @@ struct structural_type_descriptor
        * Object factory for module objects.
        * @param treenode is the treenode descriptor of the type.
       */
-      structural_type_descriptor(std::string module_name) :  type(OTHER), size(size_DEFAULT), vector_size(vector_size_DEFAULT), id_type(module_name), treenode(treenode_DEFAULT) {}
+      explicit structural_type_descriptor(std::string module_name) :  type(OTHER), size(size_DEFAULT), vector_size(vector_size_DEFAULT), id_type(module_name), treenode(treenode_DEFAULT) {}
 
 #if HAVE_TUCANO_BUILT
       /**

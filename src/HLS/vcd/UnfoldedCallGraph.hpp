@@ -45,7 +45,7 @@
 class UnfoldedCallGraph : public RawGraph
 {
    public:
-      UnfoldedCallGraph(GraphInfoRef g_info) : RawGraph(g_info) {};
+      explicit UnfoldedCallGraph(GraphInfoRef g_info) : RawGraph(g_info) {};
 
       ~UnfoldedCallGraph() {};
 };

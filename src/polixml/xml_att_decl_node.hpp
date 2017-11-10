@@ -53,7 +53,7 @@
 struct xml_att_decl_node : public xml_node, attribute_sequence
 {
    ///constructor
-   xml_att_decl_node(const std::string& _name) : xml_node(_name){}
+   explicit xml_att_decl_node(const std::string& _name) : xml_node(_name){}
 
    /**
     * Print the class.

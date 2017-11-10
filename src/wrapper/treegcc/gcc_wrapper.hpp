@@ -242,6 +242,7 @@ class GccWrapper
        */
       void InitializeGccParameters();
 
+#if HAVE_BAMBU_BUILT || HAVE_TUCANO_BUILT || HAVE_ZEBU_BUILT
       /**
        * Analyze the command line options
        */
@@ -251,6 +252,7 @@ class GccWrapper
        * Set the default options for gcc
        */
       void SetGccDefault();
+#endif
 
 #if HAVE_BAMBU_BUILT
       /**
@@ -263,6 +265,7 @@ class GccWrapper
       /**
        * Set the default options for gcc in zebu
        */
+      // cppcheck-suppress unusedPrivateFunction
       void SetZebuDefault();
 #endif
 

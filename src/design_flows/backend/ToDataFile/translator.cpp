@@ -145,6 +145,7 @@ Translator::LatexColumnFormat::TextFormat Translator::LatexColumnFormat::LatexCo
 {
    if(string_to_TF.empty())
    {
+      // cppcheck-suppress unusedVariable
       std::string name;
       BOOST_PP_SEQ_FOR_EACH(TF_NAME, BOOST_PP_EMPTY, TEXT_FORMAT);
    }
@@ -156,6 +157,7 @@ Translator::LatexColumnFormat::ComparisonOperator Translator::LatexColumnFormat:
 {
    if(string_to_CO.empty())
    {
+      // cppcheck-suppress unusedVariable
       std::string name;
       BOOST_PP_SEQ_FOR_EACH(CO_NAME, BOOST_PP_EMPTY, COMPARISON_OPERATOR);
    }
@@ -167,6 +169,7 @@ Translator::LatexColumnFormat::TotalFormat Translator::LatexColumnFormat::LatexC
 {
    if(string_to_TOF.empty())
    {
+      // cppcheck-suppress unusedVariable
       std::string name;
       BOOST_PP_SEQ_FOR_EACH(TOF_NAME, BOOST_PP_EMPTY, TOTAL_FORMAT);
    }
@@ -228,29 +231,29 @@ void Translator::Translate(const std::unordered_map<std::string, long double> in
          normalization_value = normalization[it->first];
       }
       std::string tag = it->first;
-      PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Translating tag " + it->first);
-      if(it->first == "Dynamic_operations_is_main")
+      PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Translating tag " + tag);
+      if(tag == "Dynamic_operations_is_main")
       {
          PRINT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "traslator: translate: dynamic_operation_is_main: getting constant distribution");
          output[is_main_R][none_R] = it->second*normalization_value + base*normalization_value;
          PRINT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "traslator: translate: dynamic_operation_is_main: constant distribution r updated, saved");
       }
-      else if (it->first == "Dynamic_operations_assignment")
+      else if (tag == "Dynamic_operations_assignment")
       {
          output[insn_R][none_R] = it->second*normalization_value + base*normalization_value;
          output[call_insn_R][none_R] = it->second*normalization_value + base*normalization_value;
       }
-      else if (it->first == "Dynamic_operations_comp_int_expr")
+      else if (tag == "Dynamic_operations_comp_int_expr")
       {
          output[compare_R][cc_R] = it->second*normalization_value + base*normalization_value;
          output[compare_R][ccz_R] = it->second*normalization_value + base*normalization_value;
       }
-      else if (it->first == "Dynamic_operations_comp_float_expr")
+      else if (tag == "Dynamic_operations_comp_float_expr")
       {
          output[compare_R][ccfp_R] = it->second*normalization_value + base*normalization_value;
          output[compare_R][ccfpe_R] = it->second*normalization_value + base*normalization_value;
       }
-      else if (it->first == "Dynamic_operations_Backward_branches")
+      else if (tag == "Dynamic_operations_Backward_branches")
       {
          PRINT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "traslator: translate: dynamic_operation_is_Backward_braches: getting constant distribution");
          output[backward_branches_R][none_R] = it->second*normalization_value + base*normalization_value;
@@ -258,16 +261,16 @@ void Translator::Translate(const std::unordered_map<std::string, long double> in
          //OLD VERSION
          //rtl_node::backward_branches[Param->getOption<std::string>(processing_element")] = it->second*normalization_value + base*normalization_value;
       }
-      else if (it->first == "Dynamic_operations_branch_expr")
+      else if (tag == "Dynamic_operations_branch_expr")
       {
          output[jump_insn_R][none_R] = it->second*normalization_value + base*normalization_value;
          output[if_then_else_R][none_R] = it->second*normalization_value + base*normalization_value;
       }
-      else if (it->first == "Dynamic_operations_call_expr")
+      else if (tag == "Dynamic_operations_call_expr")
       {
          output[call_R][none_R] = it->second*normalization_value + base*normalization_value;
       }
-      else if (it->first == "Dynamic_operations_convert_expr")
+      else if (tag == "Dynamic_operations_convert_expr")
       {
          output[fix_R][none_R] = it->second*normalization_value + base*normalization_value;
          output[float_R][none_R] = it->second*normalization_value + base*normalization_value;
@@ -278,7 +281,7 @@ void Translator::Translate(const std::unordered_map<std::string, long double> in
          output[unsigned_fract_convert_R][none_R] = it->second*normalization_value + base*normalization_value;
          output[unsigned_sat_fract_R][none_R] = it->second*normalization_value + base*normalization_value;
       }
-      else if (it->first == "Dynamic_operations_plusminus_int_expr")
+      else if (tag == "Dynamic_operations_plusminus_int_expr")
       {
          it2_end = int_type.end();
          for(it2 = int_type.begin(); it2 != it2_end; ++it2)
@@ -290,7 +293,7 @@ void Translator::Translate(const std::unordered_map<std::string, long double> in
             output[lo_sum_R][*it2] = it->second*normalization_value + base*normalization_value;
          }
       }
-      else if (it->first == "Dynamic_operations_plusminus_float_expr")
+      else if (tag == "Dynamic_operations_plusminus_float_expr")
       {
          it2_end = float_type.end();
          for(it2 = float_type.begin(); it2 != it2_end; ++it2)
@@ -301,7 +304,7 @@ void Translator::Translate(const std::unordered_map<std::string, long double> in
             output[plus_R][*it2] = it->second*normalization_value + base*normalization_value;
          }
       }
-      else if (it->first == "Dynamic_operations_mult_int_expr")
+      else if (tag == "Dynamic_operations_mult_int_expr")
       {
          it2_end = int_type.end();
          for(it2 = int_type.begin(); it2 != it2_end; ++it2)
@@ -309,7 +312,7 @@ void Translator::Translate(const std::unordered_map<std::string, long double> in
             output[mult_R][*it2] = it->second*normalization_value + base*normalization_value;
          }
       }
-      else if (it->first == "Dynamic_operations_mult_float_expr")
+      else if (tag == "Dynamic_operations_mult_float_expr")
       {
          it2_end = float_type.end();
          for(it2 = float_type.begin(); it2 != it2_end; ++it2)
@@ -317,7 +320,7 @@ void Translator::Translate(const std::unordered_map<std::string, long double> in
             output[mult_R][*it2] = it->second*normalization_value + base*normalization_value;
          }
       }
-      else if (it->first == "Dynamic_operations_bit_int_expr")
+      else if (tag == "Dynamic_operations_bit_int_expr")
       {
          it2_end = int_type.end();
          for(it2 = int_type.begin(); it2 != it2_end; ++it2)
@@ -346,7 +349,7 @@ void Translator::Translate(const std::unordered_map<std::string, long double> in
             output[zero_extend_R][*it2] = it->second*normalization_value + base*normalization_value;
          }
       }
-      else if (it->first == "Dynamic_operations_bit_float_expr")
+      else if (tag == "Dynamic_operations_bit_float_expr")
       {
          it2_end = float_type.end();
          for(it2 = float_type.begin(); it2 != it2_end; ++it2)
@@ -374,7 +377,7 @@ void Translator::Translate(const std::unordered_map<std::string, long double> in
             output[zero_extend_R][*it2] = it->second*normalization_value + base*normalization_value;
          }
       }
-      else if (it->first == "Dynamic_operations_div_int_expr")
+      else if (tag == "Dynamic_operations_div_int_expr")
       {
          it2_end = int_type.end();
          for(it2 = int_type.begin(); it2 != it2_end; ++it2)
@@ -383,7 +386,7 @@ void Translator::Translate(const std::unordered_map<std::string, long double> in
             output[udiv_R][*it2] = it->second*normalization_value + base*normalization_value;
          }
       }
-      else if (it->first == "Dynamic_operations_div_float_expr")
+      else if (tag == "Dynamic_operations_div_float_expr")
       {
          it2_end = float_type.end();
          for(it2 = float_type.begin(); it2 != it2_end; ++it2)
@@ -392,7 +395,7 @@ void Translator::Translate(const std::unordered_map<std::string, long double> in
             output[udiv_R][*it2] = it->second*normalization_value + base*normalization_value;
          }
       }
-      else if (it->first == "Dynamic_operations_integer_register_writing")
+      else if (tag == "Dynamic_operations_integer_register_writing")
       {
          it2_end = int_type.end();
          for(it2 = int_type.begin(); it2 != it2_end; ++it2)
@@ -400,7 +403,7 @@ void Translator::Translate(const std::unordered_map<std::string, long double> in
             output[set_R][*it2] = it->second*normalization_value + base*normalization_value;
          }
       }
-      else if (it->first == "Dynamic_operations_float_register_writing")
+      else if (tag == "Dynamic_operations_float_register_writing")
       {
          it2_end = float_type.end();
          for(it2 = float_type.begin(); it2 != it2_end; ++it2)
@@ -408,7 +411,7 @@ void Translator::Translate(const std::unordered_map<std::string, long double> in
             output[set_R][*it2] = it->second*normalization_value + base*normalization_value;
          }
       }
-      else if (it->first == "Dynamic_operations_integer_register_accesses")
+      else if (tag == "Dynamic_operations_integer_register_accesses")
       {
          it2_end = int_type.end();
          for(it2 = int_type.begin(); it2 != it2_end; ++it2)
@@ -416,7 +419,7 @@ void Translator::Translate(const std::unordered_map<std::string, long double> in
             output[reg_R][*it2] = it->second*normalization_value + base*normalization_value;
          }
       }
-      else if (it->first == "Dynamic_operations_float_register_accesses")
+      else if (tag == "Dynamic_operations_float_register_accesses")
       {
          it2_end = float_type.end();
          for(it2 = float_type.begin(); it2 != it2_end; ++it2)
@@ -424,7 +427,7 @@ void Translator::Translate(const std::unordered_map<std::string, long double> in
             output[reg_R][*it2] = it->second*normalization_value + base*normalization_value;
          }
       }
-      else if (it->first == "Dynamic_operations_integer_memory_readings")
+      else if (tag == "Dynamic_operations_integer_memory_readings")
       {
          it2_end = int_type.end();
          for(it2 = int_type.begin(); it2 != it2_end; ++it2)
@@ -432,7 +435,7 @@ void Translator::Translate(const std::unordered_map<std::string, long double> in
             output[read_mem_R][*it2] = it->second*normalization_value + base*normalization_value;
          }
       }
-      else if (it->first == "Dynamic_operations_float_memory_readings")
+      else if (tag == "Dynamic_operations_float_memory_readings")
       {
          it2_end = float_type.end();
          for(it2 = float_type.begin(); it2 != it2_end; ++it2)
@@ -440,7 +443,7 @@ void Translator::Translate(const std::unordered_map<std::string, long double> in
             output[read_mem_R][*it2] = it->second*normalization_value + base*normalization_value;
          }
       }
-      else if (it->first == "Dynamic_operations_integer_memory_writings")
+      else if (tag == "Dynamic_operations_integer_memory_writings")
       {
          it2_end = int_type.end();
          for(it2 = int_type.begin(); it2 != it2_end; ++it2)
@@ -448,7 +451,7 @@ void Translator::Translate(const std::unordered_map<std::string, long double> in
             output[write_mem_R][*it2] = it->second*normalization_value + base*normalization_value;
          }
       }
-      else if (it->first == "Dynamic_operations_float_memory_writings")
+      else if (tag == "Dynamic_operations_float_memory_writings")
       {
          it2_end = float_type.end();
          for(it2 = float_type.begin(); it2 != it2_end; ++it2)
@@ -456,16 +459,16 @@ void Translator::Translate(const std::unordered_map<std::string, long double> in
             output[write_mem_R][*it2] = it->second*normalization_value + base*normalization_value;
          }
       }
-      else if (it->first == "Dynamic_operations_const_int_readings")
+      else if (tag == "Dynamic_operations_const_int_readings")
       {
          output[const_int_R][none_R] = it->second*normalization_value + base*normalization_value;
          output[high_R][none_R] = it->second*normalization_value + base*normalization_value;
       }
-      else if (it->first == "Dynamic_operations_const_double_readings")
+      else if (tag == "Dynamic_operations_const_double_readings")
       {
          output[const_double_R][none_R] = it->second*normalization_value + base*normalization_value;
       }
-      else if (it->first == rtl_node::GetString(base_R))
+      else if (tag == rtl_node::GetString(base_R))
       {
          output[base_R][none_R] = it->second*normalization_value + base*normalization_value;
 
@@ -474,7 +477,7 @@ void Translator::Translate(const std::unordered_map<std::string, long double> in
          //rtl_node::base[Param->getOption<std::string>("processing_element")] = it->second*normalization_value + base*normalization_value;
       }
       else
-         THROW_ERROR("Found tag " + it->first);
+         THROW_ERROR("Found tag " + tag);
    }
 }
 
@@ -486,8 +489,6 @@ void Translator::write_to_xml(const std::map<enum rtl_kind, std::map<enum mode_k
    xml_element* root = document.create_root_node(STR_XML_weights_root);
    xml_element * rtl_weights = root->add_child_element(STR_XML_weights_rtl);
    WRITE_XNVM2("processing_element_type", Param->getOption<std::string>(OPT_processing_element_type), rtl_weights);
-
-   std::unordered_map<std::string, long double> normalization;
 
    if(data.find(is_main_R) != data.end() and data.find(is_main_R)->second.find(none_R) != data.find(is_main_R)->second.end())
    {
@@ -698,10 +699,10 @@ void Translator::write_to_latex(std::map<std::string, CustomMap<std::string, std
    if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Raw data");
-      for(const auto row : results)
+      for(const auto& row : results)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->" + row.first);
-         for(auto const column : row.second)
+         for(auto const& column : row.second)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---" + column.first + ":" + column.second);
          }
@@ -709,8 +710,6 @@ void Translator::write_to_latex(std::map<std::string, CustomMap<std::string, std
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
    }
-   ///The Order of the columns is always the key
-   std::list<std::string> columns;
 
    ///The maximum width of a column
    size_t max_column_width = NUM_CST_latex_table_max_column_width;

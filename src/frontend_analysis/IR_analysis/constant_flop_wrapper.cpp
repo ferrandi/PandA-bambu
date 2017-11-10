@@ -159,7 +159,6 @@ DesignFlowStep_Status constant_flop_wrapper::InternalExec()
          {
             continue;
          }
-         std::string function_header;
          const call_expr * ce = GetPointer<call_expr>(GET_NODE(ga->op1));
          if(not ce)
          {
@@ -213,7 +212,6 @@ DesignFlowStep_Status constant_flop_wrapper::InternalExec()
          {
             continue;
          }
-         std::string function_header;
          const call_expr * ce = GetPointer<call_expr>(GET_NODE(ga->op1));
          if(not ce)
          {

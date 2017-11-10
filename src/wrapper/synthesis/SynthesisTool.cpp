@@ -222,10 +222,10 @@ void SynthesisTool::create_output_directory(const std::string& sub_dir)
    if (sub_dir.size()) general_output_dir += "/" + sub_dir;
    output_dir = general_output_dir + std::string("/") + output_dir;
 
-   unsigned int progressive = 0;
    std::string candidate_dir;
    if (boost::filesystem::exists(output_dir))
    {
+      unsigned int progressive = 0;
       do
       {
          candidate_dir = output_dir + "_" + boost::lexical_cast<std::string>(progressive++);
