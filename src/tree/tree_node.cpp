@@ -771,7 +771,7 @@ bool function_decl::is_destructor()
    return attr::is_destructor();
 }
 
-bool function_decl::is_operator()
+bool function_decl::is_operator() const
 {
    return operator_flag;
 }

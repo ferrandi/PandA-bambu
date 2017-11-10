@@ -345,7 +345,7 @@ class liveness
        * @param op1 is an operation node
        * @param op2 is an operation node
        */
-      bool are_in_conflict (vertex op1, vertex op2);
+      bool are_in_conflict (vertex op1, vertex op2) const;
 
       // activate conflicts with reachability computation
       void compute_conflicts_with_reachability(hlsRef _HLS) {HLS =_HLS;}

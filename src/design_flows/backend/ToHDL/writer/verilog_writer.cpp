@@ -649,7 +649,6 @@ void verilog_writer::write_vector_port_binding(const structural_objectRef &port,
                }
                else if (local_first_port_analyzed)
                   port_binding += ", ";
-               local_first_port_analyzed = true;
                slice = null_object;
                msb = std::numeric_limits<unsigned int>::max();
             }

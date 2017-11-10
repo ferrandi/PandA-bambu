@@ -596,7 +596,7 @@ class FunctionBehavior
        * @param type is the type of the graph to be returned
        * @return the pointer to the corresponding ParallelRegionsGraph.
        */
-      const ParallelRegionsGraphRef GetPrgGraph(ParallelRegionsGraph::Type type);
+      const ParallelRegionsGraphRef GetPrgGraph(ParallelRegionsGraph::Type type) const;
 #endif
 
       /**
@@ -640,7 +640,7 @@ class FunctionBehavior
       /**
        * Return the loops
        */
-      const LoopsRef GetLoops();
+      const LoopsRef GetLoops() const;
 
 #if HAVE_HOST_PROFILING_BUILT
       /**

@@ -689,7 +689,7 @@ void functional_unit::xload(const xml_element* Enode, const technology_nodeRef f
       if (EnodeC->get_name() == "name")
       {
          const xml_text_node* text = EnodeC->get_child_text();
-         if (!text) THROW_WARNING ("name is missing for " + EnodeC->get_name());
+         if (!text) THROW_ERROR("name is missing for " + EnodeC->get_name());
          functional_unit_name = text->get_content();
          PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Started reading the module: " + functional_unit_name);
       }
@@ -1312,14 +1312,14 @@ void functional_unit_template::xload(const xml_element* Enode, const technology_
       if (EnodeC->get_name() == GET_CLASS_NAME(specialized))
       {
          const xml_text_node* text = EnodeC->get_child_text();
-         if (!text) THROW_WARNING ("specialization identifier is missing for " + EnodeC->get_name());
+         if (!text) THROW_ERROR("specialization identifier is missing for " + EnodeC->get_name());
          specialized = text->get_content();
          xml_node::convert_escaped(specialized);
       }
       else if (EnodeC->get_name() == GET_CLASS_NAME(characterizing_constant_value))
       {
          const xml_text_node* text = EnodeC->get_child_text();
-         if (!text) THROW_WARNING ("specialization identifier is missing for " + EnodeC->get_name());
+         if (!text) THROW_ERROR("specialization identifier is missing for " + EnodeC->get_name());
          characterizing_constant_value = text->get_content();
          xml_node::convert_escaped(characterizing_constant_value);
       }
@@ -1333,21 +1333,21 @@ void functional_unit_template::xload(const xml_element* Enode, const technology_
       else if (EnodeC->get_name() == GET_CLASS_NAME(channels_type))
       {
          const xml_text_node* text = EnodeC->get_child_text();
-         if (!text) THROW_WARNING ("specialization identifier is missing for " + EnodeC->get_name());
+         if (!text) THROW_ERROR("specialization identifier is missing for " + EnodeC->get_name());
          channels_type = text->get_content();
          xml_node::convert_escaped(channels_type);
       }
       else if (EnodeC->get_name() == GET_CLASS_NAME(memory_ctrl_type))
       {
          const xml_text_node* text = EnodeC->get_child_text();
-         if (!text) THROW_WARNING ("specialization identifier is missing for " + EnodeC->get_name());
+         if (!text) THROW_ERROR("specialization identifier is missing for " + EnodeC->get_name());
          memory_ctrl_type = text->get_content();
          xml_node::convert_escaped(memory_ctrl_type);
       }
       else if (EnodeC->get_name() == GET_CLASS_NAME(bram_load_latency))
       {
          const xml_text_node* text = EnodeC->get_child_text();
-         if (!text) THROW_WARNING ("specialization identifier is missing for " + EnodeC->get_name());
+         if (!text) THROW_ERROR("specialization identifier is missing for " + EnodeC->get_name());
          bram_load_latency = text->get_content();
          xml_node::convert_escaped(bram_load_latency);
       }

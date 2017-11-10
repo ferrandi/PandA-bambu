@@ -799,7 +799,7 @@ void structural_object::xload(const xml_element* Enode, structural_objectRef, st
          std::string name;
          LOAD_XVM(name, EnodeC);
          const xml_text_node* text = EnodeC->get_child_text();
-         if (!text) THROW_WARNING ("parameter definition is missing");
+         if (!text) THROW_ERROR("parameter definition is missing");
          std::string default_value = text->get_content();
          xml_node::convert_escaped(default_value);
          set_parameter(name, default_value);

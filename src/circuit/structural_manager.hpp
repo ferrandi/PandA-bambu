@@ -397,7 +397,7 @@ class structural_manager
        * Add a component to an xml tree.
        * @param rootnode is the root node at which the xml representation of the operation is attached.
       */
-      void xwrite(xml_element* rootnode, const technology_nodeRef& tn = technology_nodeRef());
+      void xwrite(xml_element* rootnode, const technology_nodeRef& tn = technology_nodeRef()) const;
       //@}
 
       /**

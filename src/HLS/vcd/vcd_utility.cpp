@@ -721,7 +721,7 @@ bool vcd_utility::detect_mismatch_simple(
       const std::string::size_type first_c_bit,
       const std::string::size_type c_size)
 {
-   unsigned int base_index; // this is set when an address mismatch is detected
+   unsigned int base_index=0; // this is set when an address mismatch is detected
 
    const bool resized = c_val.length() != c_size;
    const std::string& resized_c_val = resized ?
@@ -816,7 +816,7 @@ void vcd_utility::update_discr_list(const vcd_trace_head & t,
          }
       }
 
-      for (const auto s : soft_discr_to_remove)
+      for (const auto& s : soft_discr_to_remove)
       {
          soft_discr_list.erase(s);
       }
@@ -1031,7 +1031,7 @@ bool vcd_utility::detect_address_mismatch(
 
          for (const auto & addr : Discr->c_addr_map.at(c_context))
          {
-            if (addr.second > possible_base_address and addr.second <= c_addr)
+            if (addr.second > 0 and addr.second <= c_addr)
             {
                base_index = addr.first;
                possible_base_address = addr.second;

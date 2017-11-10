@@ -526,7 +526,6 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                         block.second->PushBefore(ae_ga, *it_los);
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(ae_ga)->ToString());
                         MR->op0 = ae_vd;
-                        restart_analysis = true;
                      }
 
                      tree_nodeRef op1 = MR->op1;
@@ -534,7 +533,6 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                      if(GET_NODE(MR->op0)->get_kind() == integer_cst_K)
                      {
                         ga->op1 = MR->op0;
-                        restart_analysis = true;
                      }
                      else if(ga->temporary_address)
                      {
@@ -543,12 +541,10 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                            tree_nodeRef offset = TM->CreateUniqueIntegerCst(op1_val, GET_INDEX_NODE(tree_man->create_size_type()));
                            tree_nodeRef mr = tree_man->create_binary_operation(ae->type, MR->op0, offset, srcp_default, pointer_plus_expr_K);
                            ga->op1 = mr;
-                           restart_analysis = true;
                         }
                         else
                         {
                            ga->op1 = MR->op0;
-                           restart_analysis = true;
                         }
                      }
                      else
@@ -564,7 +560,6 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                            block.second->PushBefore(pp_ga, *it_los);
                            MR->op0 = pp_vd;
                            MR->op1 = TM->CreateUniqueIntegerCst(0, GET_INDEX_NODE(ae->type));
-                           restart_analysis = true;
                         }
                         else
                         {
@@ -579,9 +574,9 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                            }
                            else
                               ga->op1 = MR->op0;
-                           restart_analysis = true;
                         }
                      }
+                     restart_analysis = true;
                   }
                   else if(ae_code == array_ref_K)
                   {

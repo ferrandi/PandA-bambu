@@ -340,7 +340,9 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
       bool has_a_controlling_vertex = false;
       std::set<vertex> bb_cur_completely_merged;
 #if HAVE_ASSERTS
+#if 0
       vertex controlling_vertex;
+#endif
 #endif
       std::list<vertex>::const_iterator stmt_it_end = ordered_operations.end();
       for(std::list<vertex>::const_iterator stmt_it = ordered_operations.begin(); stmt_it_end != stmt_it; ++stmt_it)
@@ -364,7 +366,7 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
                {
                   if((GET_TYPE(dfgRef, *obo_it) & TYPE_PHI) != 0)
                   {
-                     for(const auto def_edge : GetPointer<const gimple_phi>(HLSMgr->get_tree_manager()->get_tree_node_const(dfgRef->CGetOpNodeInfo(*obo_it)->GetNodeId()))->CGetDefEdgesList())
+                     for(const auto& def_edge : GetPointer<const gimple_phi>(HLSMgr->get_tree_manager()->get_tree_node_const(dfgRef->CGetOpNodeInfo(*obo_it)->GetNodeId()))->CGetDefEdgesList())
                      {
                         if(not def_edge.first)
                            continue;
@@ -389,7 +391,9 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
          {
             has_a_controlling_vertex = true;
 #if HAVE_ASSERTS
+#if 0
             controlling_vertex = op;
+#endif
 #endif
          }
          const auto cstep = sch->get_cstep(op).second;
@@ -424,7 +428,8 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
       /// the outgoing basic blocks must have only one incoming edge to be considered for the speculation
       /// all the TYPE_IF operations of the outgoing basic blocks could not be speculated
       /// in case all the operations of an outgoing basic blocks OBB are speculated holds the following condition last_state[OBB]= last_state[*vit]
-      if(has_a_controlling_vertex && 0)
+#if 0
+      if(has_a_controlling_vertex)
       {
          THROW_ASSERT(max_cstep == sch->get_cstep(controlling_vertex).second, "mismatch between maximum cstep and controlling vertex cstep");
          OutEdgeIterator oe, oend;
@@ -487,6 +492,7 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
          }
 
       }
+#endif
       vertex s_cur;
       for(auto l = min_cstep; l <= max_cstep; l++)
       {
@@ -833,7 +839,7 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
          bb_length.insert(CustomMap<unsigned int, ControlStep>::value_type(bb_node_info->block->number, bb_ending - bb_begin + 1));
       }
 #ifndef NDEBUG
-      for(const auto basic_block : bb_length)
+      for(const auto& basic_block : bb_length)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---BB" + STR(basic_block.first) + ": " + STR(from_strongtype_cast<unsigned int>(basic_block.second)) + " vs. " + STR(from_strongtype_cast<unsigned int>(stg_length.find(basic_block.first)->second)));
       }

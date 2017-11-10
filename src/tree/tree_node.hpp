@@ -1618,13 +1618,13 @@ struct binfo : public tree_node
     * return the i-th element of baseinfo
     * @param i is the index of baseinfo vector
    */
-   tree_nodeRef get_base(size_t i)
+   tree_nodeRef get_base(size_t i) const
    {
       return list_of_access_binf[i].second;
    }
 
    /// return the size of baseinfo vector
-   size_t get_baseinfo_size()
+   size_t get_baseinfo_size() const
    {
       return list_of_access_binf.size();
    }
@@ -2634,7 +2634,7 @@ struct function_decl : public decl_node, public attr
    bool is_destructor();
 
    /// returns true if is a declaration of an operator
-   bool is_operator();
+   bool is_operator() const;
 
    /// returns true if is a declaration of a public function
    bool is_public();
@@ -4809,13 +4809,13 @@ struct tree_vec : public tree_node
    }
 
    /// returns the number of operands
-   size_t get_number_of_op()
+   size_t get_number_of_op() const
    {
       return list_of_op.size();
    }
 
    /// return the n-th (from 0 to size() -1) operand of tree_vec
-   tree_nodeRef get_op(size_t n)
+   tree_nodeRef get_op(size_t n) const
    {
       return list_of_op[n];
    }

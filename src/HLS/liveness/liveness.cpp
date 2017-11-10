@@ -217,7 +217,7 @@ const std::string& liveness::get_name(vertex v) const
    return names.find(v)->second;
 }
 
-bool liveness::are_in_conflict (vertex op1, vertex op2)
+bool liveness::are_in_conflict (vertex op1, vertex op2) const
 {
    //if(!HLS)
    {

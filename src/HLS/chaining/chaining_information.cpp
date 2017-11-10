@@ -74,11 +74,11 @@ struct ChainingSet
       {
       }
 
-      std::size_t get_index0(vertex v)
+      std::size_t get_index0(vertex v) const
       {
          return cindex_pmap[v]*2;
       }
-      std::size_t get_index1(vertex v)
+      std::size_t get_index1(vertex v) const
       {
          return cindex_pmap[v]*2+1;
       }

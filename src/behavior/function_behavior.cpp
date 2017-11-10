@@ -446,7 +446,7 @@ const EpdGraphRef FunctionBehavior::CGetEpdGraph(EpdGraph::Type type) const
    return EpdGraphRef();
 }
 
-const ParallelRegionsGraphRef FunctionBehavior::GetPrgGraph(ParallelRegionsGraph::Type gt)
+const ParallelRegionsGraphRef FunctionBehavior::GetPrgGraph(ParallelRegionsGraph::Type gt) const
 {
    switch ( gt )
    {
@@ -549,7 +549,7 @@ const LoopsConstRef FunctionBehavior::CGetLoops() const
    return loops;
 }
 
-const LoopsRef FunctionBehavior::GetLoops()
+const LoopsRef FunctionBehavior::GetLoops() const
 {
    return loops;
 }

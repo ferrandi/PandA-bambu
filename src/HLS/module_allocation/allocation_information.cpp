@@ -745,7 +745,12 @@ bool AllocationInformation::is_operation_bounded(const unsigned int index) const
    {
       const auto right = GET_NODE(ga->op1);
       ///currently all the operations introduced after the allocation has been performed are bounded
-      THROW_ASSERT(right->get_kind() == truth_and_expr_K or right->get_kind() ==
+      THROW_ASSERT(right->get_kind() == nop_expr_K or right->get_kind() == lut_expr_K or
+                   right->get_kind() == lshift_expr_K or right->get_kind() == rshift_expr_K or
+                   right->get_kind() == bit_xor_expr_K or  right->get_kind() == bit_not_expr_K or
+                   right->get_kind() == bit_ior_concat_expr_K or right->get_kind() == bit_ior_expr_K or
+                   right->get_kind() == bit_and_expr_K or right->get_kind() == convert_expr_K or
+                   right->get_kind() == truth_and_expr_K or right->get_kind() ==
                    truth_or_expr_K or right->get_kind() == truth_not_expr_K or
                    right->get_kind() == cond_expr_K or right->get_kind() ==
                    ternary_plus_expr_K or right->get_kind() == ternary_mp_expr_K or
@@ -2206,8 +2211,9 @@ double AllocationInformation::get_correction_time(unsigned int fu, const std::st
           is_read_only_correction = true;
 
       elmt_bitsize = Rmem->get_bram_bitsize();
+#if ARRAY_CORRECTION
       unsigned int type_index = tree_helper::get_type_index(TreeM, var);
-      if(ARRAY_CORRECTION && tree_helper::is_an_array(TreeM, type_index))
+      if(tree_helper::is_an_array(TreeM, type_index))
       {
          std::vector<unsigned int> dims;
          tree_helper::get_array_dimensions(TreeM, type_index, dims);
@@ -2232,6 +2238,7 @@ double AllocationInformation::get_correction_time(unsigned int fu, const std::st
             res_value -= (n_levels-1)*delay;
          }
       }
+#endif
    }
    else if (memory_type == MEMORY_TYPE_ASYNCHRONOUS)
    {
@@ -2246,7 +2253,8 @@ double AllocationInformation::get_correction_time(unsigned int fu, const std::st
       unsigned int type_index = tree_helper::get_type_index(TreeM, var);
       tree_nodeRef type_node = TreeM->get_tree_node_const(type_index);
       tree_helper::accessed_greatest_bitsize(TreeM, type_node, type_index, elmt_bitsize);
-      if(ARRAY_CORRECTION && tree_helper::is_an_array(TreeM, type_index))
+#if ARRAY_CORRECTION
+      if(tree_helper::is_an_array(TreeM, type_index))
       {
          std::vector<unsigned int> dims;
          tree_helper::get_array_dimensions(TreeM, type_index, dims);
@@ -2272,6 +2280,7 @@ double AllocationInformation::get_correction_time(unsigned int fu, const std::st
 
          }
       }
+#endif
    }
    else if (memory_type == MEMORY_TYPE_SYNCHRONOUS_SDS || memory_type == MEMORY_TYPE_SYNCHRONOUS_SDS_BUS)
    {
@@ -2282,7 +2291,8 @@ double AllocationInformation::get_correction_time(unsigned int fu, const std::st
       unsigned int type_index = tree_helper::get_type_index(TreeM, var);
       tree_nodeRef type_node = TreeM->get_tree_node_const(type_index);
       tree_helper::accessed_greatest_bitsize(TreeM, type_node, type_index, elmt_bitsize);
-      if(ARRAY_CORRECTION and tree_helper::is_an_array(TreeM, type_index))
+#if ARRAY_CORRECTION
+      if(tree_helper::is_an_array(TreeM, type_index))
       {
          std::vector<unsigned int> dims;
          tree_helper::get_array_dimensions(TreeM, type_index, dims);
@@ -2307,6 +2317,7 @@ double AllocationInformation::get_correction_time(unsigned int fu, const std::st
             res_value -= (n_levels-1)*delay;
          }
       }
+#endif
    }
    else if (memory_ctrl_type == MEMORY_CTRL_TYPE_PROXY || memory_ctrl_type == MEMORY_CTRL_TYPE_PROXYN || memory_ctrl_type == MEMORY_CTRL_TYPE_DPROXY || memory_ctrl_type == MEMORY_CTRL_TYPE_DPROXYN)
    {
@@ -2377,8 +2388,9 @@ double AllocationInformation::get_correction_time(unsigned int fu, const std::st
       cur_exec_delta = cur_exec_time - cur_sds_exec_time;
       res_value = res_value + cur_exec_delta;
 
+#if ARRAY_CORRECTION
       unsigned int type_index = tree_helper::get_type_index(TreeM, var);
-      if(ARRAY_CORRECTION && tree_helper::is_an_array(TreeM, type_index))
+      if(tree_helper::is_an_array(TreeM, type_index))
       {
          std::vector<unsigned int> dims;
          tree_helper::get_array_dimensions(TreeM, type_index, dims);
@@ -2402,6 +2414,7 @@ double AllocationInformation::get_correction_time(unsigned int fu, const std::st
             res_value -= (n_levels-1)*delay;
          }
       }
+#endif
    }
    else if(memory_ctrl_type == MEMORY_CTRL_TYPE_D00)
    {
