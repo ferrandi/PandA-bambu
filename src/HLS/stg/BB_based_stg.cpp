@@ -337,7 +337,9 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
       std::map<ControlStep, std::list<vertex> > executing_ops, starting_ops, ending_ops, onfly_ops;
       ControlStep max_cstep = ControlStep(0u);
       ControlStep min_cstep = ControlStep(std::numeric_limits<unsigned int>::max());
+#if 0
       bool has_a_controlling_vertex = false;
+#endif
       std::set<vertex> bb_cur_completely_merged;
 #if HAVE_ASSERTS
 #if 0
@@ -389,9 +391,9 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
          }
          if(GET_TYPE(dfgRef, op) & (TYPE_IF))
          {
+#if 0
             has_a_controlling_vertex = true;
 #if HAVE_ASSERTS
-#if 0
             controlling_vertex = op;
 #endif
 #endif

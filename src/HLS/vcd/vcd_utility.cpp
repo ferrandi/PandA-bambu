@@ -1025,7 +1025,6 @@ bool vcd_utility::detect_address_mismatch(
       else
       {
          base_index = 0;
-         uint64_t possible_base_address = 0;
          const uint64_t c_addr = static_cast<unsigned int>
             (std::stoull(c_val.c_str(), nullptr, 2));
 
@@ -1034,7 +1033,6 @@ bool vcd_utility::detect_address_mismatch(
             if (addr.second > 0 and addr.second <= c_addr)
             {
                base_index = addr.first;
-               possible_base_address = addr.second;
                break;
             }
          }

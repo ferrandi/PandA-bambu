@@ -849,12 +849,11 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
                bool zero_delay = true;
                if(can_be_pipelined && (gn->vuses.size()|| CheckMovable(curr_bb, GetPointer<gimple_assign>(tn), zero_delay, TM) == FunctionFrontendFlowStep_Movable::MOVABLE))
                {
-                  std::map<std::pair<unsigned int,blocRef>, std::pair<unsigned int,blocRef> > dom_diff;
                   THROW_ASSERT(bb_dominator_map.find(bb_vertex) != bb_dominator_map.end(), "unexpected condition");
-                  vertex curr_dom_bb = bb_dominator_map.find(bb_vertex)->second;
 #if HAVE_EXPERIMENTAL
+                  std::map<std::pair<unsigned int,blocRef>, std::pair<unsigned int,blocRef> > dom_diff;
+                  vertex curr_dom_bb = bb_dominator_map.find(bb_vertex)->second;
                   loop_pipelined(*statement, TM, curr_bb, list_of_bloc[curr_bb]->loop_id, to_be_removed, to_be_added_back, to_be_added_front, list_of_bloc, dom_diff, direct_vertex_map[curr_dom_bb]);
-#endif
                   const std::map<std::pair<unsigned int,blocRef>, std::pair<unsigned int,blocRef> >::const_iterator dd_it_end = dom_diff.end();
                   for(std::map<std::pair<unsigned int,blocRef>, std::pair<unsigned int,blocRef> >::const_iterator dd_it = dom_diff.begin(); dd_it != dd_it_end; ++dd_it)
                   {
@@ -874,6 +873,7 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
                      curr_dom_bb = inverse_vertex_map[dd_it->second.first];
                      bb_dominator_map[dd_curr_vertex] = curr_dom_bb;
                   }
+#endif
                }
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped because uses ssa defined in the same block");
                continue;

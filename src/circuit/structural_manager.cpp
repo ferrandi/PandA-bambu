@@ -1149,7 +1149,7 @@ static void add_directed_edge_single(graphs_collection *bg, const std::map<struc
    structural_objectRef p_obj2 = p2;
 
    //now detect the vertex associated with the ports
-   boost::graph_traits<graphs_collection>::vertex_descriptor src=boost::graph_traits<graphs_collection>::null_vertex(), tgt=boost::graph_traits<graphs_collection>::null_vertex();
+   boost::graph_traits<graphs_collection>::vertex_descriptor src, tgt=boost::graph_traits<graphs_collection>::null_vertex();
 
    structural_objectRef owner1 = p_obj1->get_owner();
    structural_objectRef owner2 = p_obj2->get_owner();

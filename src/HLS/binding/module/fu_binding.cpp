@@ -425,7 +425,7 @@ void fu_binding::manage_killing_function_proxies(std::map<unsigned int, structur
       {
          structural_objectRef wrapped_port_proxy_out_i = GetPointer<module>(wrapped_fu_unit)->get_out_port(currentPort);
          std::string port_name=wrapped_port_proxy_out_i->get_id();
-         if(boost::algorithm::starts_with(port_name,PROXY_PREFIX) == 0)
+         if(boost::algorithm::starts_with(port_name,PROXY_PREFIX))
          {
             structural_objectRef wrapped_port_proxy_out_i_sign;
             for(std::set<structural_objectRef>::iterator proxied_unit_it = fcsr_it->second.begin(); proxied_unit_it != proxied_unit_it_end; ++proxied_unit_it)
