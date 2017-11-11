@@ -736,7 +736,8 @@ bool AllocationInformation::is_operation_bounded(const unsigned int index) const
 {
    if(CanImplementSetNotEmpty(index))
       return is_operation_bounded(index, GetFuType(index));
-   const auto ga = GetPointer<const gimple_assign>(TreeM->get_tree_node_const(index));
+   auto tn = TreeM->get_tree_node_const(index);
+   const auto ga = GetPointer<const gimple_assign>(tn);
    if(ga && ga->orig)
       return is_operation_bounded(ga->orig->index);
 
@@ -758,7 +759,9 @@ bool AllocationInformation::is_operation_bounded(const unsigned int index) const
                    ternary_mm_expr_K or right->get_kind() == ssa_name_K, "Unexpected right part: " + right->get_kind_text());
       return true;
    }
-   THROW_ERROR("Unexpected condition");
+   if(GetPointer<const gimple_nop>(tn))
+      return true;
+   THROW_ERROR("Unexpected operation in AllocationInformation::is_operation_bounded: "+tn->get_kind_text());
    return false;
 }
 
@@ -3098,6 +3101,8 @@ bool AllocationInformation::can_be_asynchronous_ram(tree_managerConstRef TM, uns
          }
          else
             meaningful_bits = elts_size;
+         if(elts_size==0)
+            THROW_ERROR("elts_size cannot be equal to zero");
          if(meaningful_bits != elts_size)
             return ((var_bitsize/elts_size)*meaningful_bits <= threshold) && (is_read_only_variable || var_bitsize/elts_size < 127);
          else

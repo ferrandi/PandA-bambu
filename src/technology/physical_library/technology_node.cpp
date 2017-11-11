@@ -1326,7 +1326,7 @@ void functional_unit_template::xload(const xml_element* Enode, const technology_
       else if (EnodeC->get_name() == GET_CLASS_NAME(memory_type))
       {
          const xml_text_node* text = EnodeC->get_child_text();
-         if (!text) THROW_WARNING ("specialization identifier is missing for " + EnodeC->get_name());
+         if (!text) THROW_ERROR("specialization identifier is missing for " + EnodeC->get_name());
          memory_type = text->get_content();
          xml_node::convert_escaped(memory_type);
       }
