@@ -66,7 +66,7 @@
 #include <fstream>
 
 //constructor
-VIVADO_xsim_wrapper::VIVADO_xsim_wrapper(const ParameterConstRef _Param, std::string _suffix) :
+VIVADO_xsim_wrapper::VIVADO_xsim_wrapper(const ParameterConstRef _Param, const std::string& _suffix) :
    SimulationTool(_Param),
    suffix(_suffix)
 {

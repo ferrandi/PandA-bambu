@@ -340,9 +340,7 @@ struct xml_foreach_t : public xml_script_node_t
       std::string                        variable;
       std::vector<xml_script_node_tRef>  Nodes;
 
-      explicit xml_foreach_t(
-            std::string                        _variable
-            );
+      explicit xml_foreach_t(const std::string &_variable);
       explicit xml_foreach_t(const xml_element * element);
 
       std::string get_xml_name() const;

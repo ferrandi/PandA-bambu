@@ -331,7 +331,7 @@ void call_graph_computation::call_graph_computation_recursive(
       case gimple_multi_way_if_K:
       {
          gimple_multi_way_if* gmwi=GetPointer<gimple_multi_way_if>(curr_tn);
-         for(const auto cond : gmwi->list_of_cond)
+         for(const auto& cond : gmwi->list_of_cond)
             if(cond.first)
                call_graph_computation_recursive(TM, cond.first, node_stmt, call_type);
          break;

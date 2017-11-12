@@ -738,7 +738,7 @@ const DesignFlowStepSet HLSFlowStepFactory::CreateHLSFlowSteps(const std::unorde
    const CallGraphManagerConstRef call_graph_manager = HLS_mgr->CGetCallGraphManager();
    DesignFlowStepSet ret;
 
-   for(const auto hls_flow_step : hls_flow_steps)
+   for(const auto& hls_flow_step : hls_flow_steps)
    {
 
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Creating step " + HLS_step::EnumToName(hls_flow_step.first));

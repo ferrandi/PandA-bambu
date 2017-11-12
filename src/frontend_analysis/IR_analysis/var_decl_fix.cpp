@@ -123,7 +123,7 @@ DesignFlowStep_Status VarDeclFix::InternalExec()
    function_decl * fd = GetPointer<function_decl>(curr_tn);
    statement_list * sl = GetPointer<statement_list>(GET_NODE(fd->body));
 
-   for(const auto arg : fd->list_of_args)
+   for(const auto& arg : fd->list_of_args)
       recursive_examinate(arg);
 
    std::map<unsigned int, blocRef> &blocks = sl->list_of_bloc;
@@ -132,7 +132,7 @@ DesignFlowStep_Status VarDeclFix::InternalExec()
    it_end = blocks.end();
    for(it = blocks.begin(); it != it_end; ++it)
    {
-      for(const auto stmt : it->second->CGetStmtList())
+      for(const auto& stmt : it->second->CGetStmtList())
       {
          recursive_examinate(stmt);
       }
@@ -317,7 +317,7 @@ void VarDeclFix::recursive_examinate(const tree_nodeRef & tn)
       case gimple_multi_way_if_K:
       {
          gimple_multi_way_if* gmwi=GetPointer<gimple_multi_way_if>(curr_tn);
-         for(const auto cond : gmwi->list_of_cond)
+         for(const auto& cond : gmwi->list_of_cond)
             if(cond.first)
                recursive_examinate(cond.first);
          break;

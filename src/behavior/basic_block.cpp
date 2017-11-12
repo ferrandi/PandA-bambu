@@ -165,7 +165,7 @@ BBGraph::BBGraph(const BBGraphsCollectionRef _g, int _selector) :
    graph(_g.get(), _selector)
 {}
 
-BBGraph::BBGraph(const BBGraphsCollectionRef _g, int _selector, std::unordered_set<vertex> sub) :
+BBGraph::BBGraph(const BBGraphsCollectionRef _g, int _selector, std::unordered_set<vertex>& sub) :
    graph(_g.get(), _selector, sub)
 {}
 

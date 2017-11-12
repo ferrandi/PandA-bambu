@@ -176,12 +176,19 @@ struct priority_compare_functor
       priority_compare_functor(const priority_data<Type> & pri, const OpGraphConstRef d) : priority_values(pri), data(d) {}
 
       /**
-       * Copy constructor
+       * Copy assignment
       */
       priority_compare_functor& operator=(const priority_compare_functor&in)
       {
          priority_values = in.priority_values;
          return *this;
+      }
+      /**
+       * Copy constructor
+      */
+      priority_compare_functor(const priority_compare_functor&in)
+      {
+         priority_values = in.priority_values;
       }
 
       /**

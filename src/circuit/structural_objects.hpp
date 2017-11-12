@@ -146,13 +146,13 @@ struct structural_type_descriptor
        *        In case vector_size is zero the descriptor type represents a scalar object,
        *        otherwise an array.
       */
-      structural_type_descriptor(std::string type_name, unsigned int vector_size);
+      structural_type_descriptor(const std::string& type_name, unsigned int vector_size);
 
       /**
        * Object factory for module objects.
        * @param treenode is the treenode descriptor of the type.
       */
-      explicit structural_type_descriptor(std::string module_name) :  type(OTHER), size(size_DEFAULT), vector_size(vector_size_DEFAULT), id_type(module_name), treenode(treenode_DEFAULT) {}
+      explicit structural_type_descriptor(const std::string& module_name) :  type(OTHER), size(size_DEFAULT), vector_size(vector_size_DEFAULT), id_type(module_name), treenode(treenode_DEFAULT) {}
 
 #if HAVE_TUCANO_BUILT
       /**
@@ -585,7 +585,7 @@ struct port_o : public structural_object
           * Convert a string into the corresponding port_direction enumerative type
           * @param val is the string version of the enum.
           */
-      static port_direction to_port_direction(std::string val);
+      static port_direction to_port_direction(const std::string &val);
 
       /**
           * Constructor.
@@ -1262,7 +1262,7 @@ class action_o : public structural_object
           * Set the scope of the action.
           * @param sc is the actual scope.
          */
-      void set_scope(std::string sc);
+      void set_scope(const std::string &sc);
 
       /**
           * Return the scope of the action.
@@ -1355,7 +1355,7 @@ class constant_o : public structural_object
          * @param o is the owner of the value
          * @param value is the constant value
          */
-      constant_o(int debug_level, const structural_objectRef o, std::string value);
+      constant_o(int debug_level, const structural_objectRef o, const std::string &value);
 
       /// Destructor
       ~constant_o() {}
@@ -1785,7 +1785,7 @@ class module : public structural_object
           * remove a port from the module
           * @param id is the name of the port
          */
-      void remove_port(std::string id);
+      void remove_port(const std::string &id);
 
       /**
           * Add an internal component/channel/signal/bus_connection_o.
@@ -2141,7 +2141,7 @@ class channel_o : public module
       /**
           * Add an interface to the object.
          */
-      void add_interface(unsigned int t, std::string _interface);
+      void add_interface(unsigned int t, const std::string &_interface);
 
       /**
           * Return the interface with a given treenode

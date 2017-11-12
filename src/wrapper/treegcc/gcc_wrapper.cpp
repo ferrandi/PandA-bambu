@@ -1391,7 +1391,7 @@ void GccWrapper::GetGccConfig() const
    QueryGccConfig("-v");
 }
 
-void GccWrapper::QueryGccConfig(std::string gcc_option) const
+void GccWrapper::QueryGccConfig(const std::string& gcc_option) const
 {
    const std::string gcc = GetCompiler().gcc.string();
    const std::string command = gcc + " " + gcc_option;

@@ -291,7 +291,7 @@ DesignFlowStep_Status BasicBlocksCfgComputation::InternalExec()
             else if(GET_NODE(last)->get_kind() == gimple_multi_way_if_K)
             {
                gimple_multi_way_if* gmwi = GetPointer<gimple_multi_way_if>(GET_NODE(last));
-               for(const auto cond : gmwi->list_of_cond)
+               for(const auto& cond : gmwi->list_of_cond)
                {
                   bbgc->add_bb_edge_info(current, bbgc->Cget_vertex(cond.second), CFG_SELECTOR, cond.first ? cond.first->index : default_COND);
                }
@@ -321,7 +321,7 @@ DesignFlowStep_Status BasicBlocksCfgComputation::InternalExec()
       const auto bb_index_map = bb_graph->CGetBBGraphInfo()->bb_index_map;
       bbgc->add_operation_to_bb(op_graph->CGetOpGraphInfo()->entry_vertex, BB_ENTRY);
       bbgc->add_operation_to_bb(op_graph->CGetOpGraphInfo()->exit_vertex, BB_EXIT);
-      for(const auto block : sl->list_of_bloc)
+      for(const auto& block : sl->list_of_bloc)
       {
          const auto bb_index = block.first;
          THROW_ASSERT(bb_index_map.find(bb_index) != bb_index_map.end(), "BB" + STR(bb_index) + " is not in the graph");
@@ -330,14 +330,14 @@ DesignFlowStep_Status BasicBlocksCfgComputation::InternalExec()
          if (block.second->number == BB_ENTRY or block.second->number == BB_EXIT)
             continue;
          THROW_ASSERT(!(block.second->CGetStmtList().empty() && block.second->CGetPhiList().empty()), "unexpected condition: BB"+ STR(bb_index));
-         for(const auto phi : block.second->CGetPhiList())
+         for(const auto& phi : block.second->CGetPhiList())
          {
             const auto op_index = phi->index;
             THROW_ASSERT(tree_node_to_operation.find(op_index) != tree_node_to_operation.end(), "Vertex of statement " + STR(op_index) + " not found");
             const auto op_vertex = tree_node_to_operation.find(op_index)->second;
             bb_node_info->statements_list.push_back(op_vertex);
          }
-         for(const auto stmt : block.second->CGetStmtList())
+         for(const auto& stmt : block.second->CGetStmtList())
          {
             const auto op_index = stmt->index;
             THROW_ASSERT(tree_node_to_operation.find(op_index) != tree_node_to_operation.end(), "Vertex of statement " + STR(op_index) + " not found");

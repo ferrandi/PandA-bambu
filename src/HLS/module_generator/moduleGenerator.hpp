@@ -98,7 +98,7 @@ class moduleGenerator
 
       void add_port_parameters(structural_objectRef generated_port, structural_objectRef currentPort);
 
-      std::string GenerateHDL(std::string hdl_template, std::vector<std::tuple<unsigned int,unsigned int> >& required_variables, const std::string&specializing_string, const FunctionBehaviorConstRef FB, std::string path_dynamic_generators, HDLWriter_Language);
+      std::string GenerateHDL(const std::string& hdl_template, std::vector<std::tuple<unsigned int,unsigned int> >& required_variables, const std::string& specializing_string, const FunctionBehaviorConstRef FB, const std::string& path_dynamic_generators, HDLWriter_Language);
 
       std::string get_specialized_name(std::vector<std::tuple<unsigned int,unsigned int> >& required_variables, const FunctionBehaviorConstRef FB) const;
 

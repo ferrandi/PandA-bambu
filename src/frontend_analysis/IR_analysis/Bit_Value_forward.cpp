@@ -2149,7 +2149,7 @@ void Bit_Value::forward()
       {
          blocRef B = B_it.second;
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing BB" + STR(B->number));
-         for(const auto stmt : B->CGetStmtList())
+         for(const auto& stmt : B->CGetStmtList())
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing " + STR(stmt));
             const auto stmt_node = GET_NODE(stmt);
@@ -2182,7 +2182,7 @@ void Bit_Value::forward()
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed " + STR(stmt));
          }
 
-         for(const auto phi : B->CGetPhiList())
+         for(const auto& phi : B->CGetPhiList())
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing Phi " + STR(phi));
             gimple_phi * pn = GetPointer<gimple_phi>(GET_NODE(phi));
@@ -2211,7 +2211,7 @@ void Bit_Value::forward()
 
                INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "res id: " + STR(output_uid));
                std::deque<bit_lattice>res = create_x_bitstring(1);
-               for(const auto def_edge : pn->CGetDefEdgesList())
+               for(const auto& def_edge : pn->CGetDefEdgesList())
                {
                   if(def_edge.first->index == pn->res->index)
                   {

@@ -447,7 +447,7 @@ void tree_node_reached::operator()(const gimple_phi* obj, unsigned int & mask)
    tree_node_mask::operator()(obj,mask);
 
    CHECK_AND_ADD(obj->res,gimple_phi::res);
-   for(const auto def_edge : obj->CGetDefEdgesList())
+   for(const auto& def_edge : obj->CGetDefEdgesList())
       CHECK_AND_ADD(def_edge.first, gimple_phi::list_of_def_edge);
 
 }
@@ -705,9 +705,9 @@ void tree_node_reached::operator()(const target_mem_ref461* obj, unsigned int & 
 void tree_node_reached::operator()(const bloc* obj, unsigned int & mask)
 {
    tree_node_mask::operator()(obj,mask);
-   for(const auto phi : obj->CGetPhiList())
+   for(const auto& phi : obj->CGetPhiList())
       CHECK_AND_ADD(phi, bloc::list_of_phi);
-   for(const auto stmt : obj->CGetStmtList())
+   for(const auto& stmt : obj->CGetStmtList())
       CHECK_AND_ADD(stmt, bloc::list_of_stmt);
 }
 
@@ -727,7 +727,7 @@ void tree_node_reached::operator()(const gimple_for * obj, unsigned int & mask)
 void tree_node_reached::operator()(const gimple_multi_way_if* obj, unsigned int & mask)
 {
    tree_node_mask::operator()(obj,mask);
-   for(const auto cond : obj->list_of_cond)
+   for(const auto& cond : obj->list_of_cond)
       CHECK_AND_ADD(cond.first, gimple_multi_way_if::list_of_cond);
 }
 
@@ -1932,7 +1932,7 @@ void tree_node_index_factory::operator()(const gimple_phi* obj, unsigned int & m
    tree_node_mask::operator()(obj,mask);
 
    SET_NODE_ID(res,gimple_phi);
-   for(const auto def_edge : GetPointer<gimple_phi>(source_tn)->CGetDefEdgesList())
+   for(const auto& def_edge : GetPointer<gimple_phi>(source_tn)->CGetDefEdgesList())
    {
       unsigned int node_id = GET_INDEX_NODE(def_edge.first);
       THROW_ASSERT(remap.find(node_id) != remap.end(), "missing an index");
@@ -2044,7 +2044,7 @@ void tree_node_index_factory::operator()(const ssa_name* obj, unsigned int & mas
    SET_VALUE(volatile_flag,ssa_name);
    SET_VALUE(virtual_flag,ssa_name);
    SET_VALUE(default_flag,ssa_name);
-   for(const auto def_stmt : GetPointer<const ssa_name>(source_tn)->CGetDefStmts())
+   for(const auto& def_stmt : GetPointer<const ssa_name>(source_tn)->CGetDefStmts())
    {
       unsigned int node_id = def_stmt->index;
       THROW_ASSERT(remap.find(node_id) != remap.end(), "missing an index: "+boost::lexical_cast<std::string>(node_id));
@@ -2261,14 +2261,14 @@ void tree_node_index_factory::operator()(const bloc* obj, unsigned int & mask)
    curr_bloc->list_of_succ = source_bloc->list_of_succ;
    curr_bloc->true_edge = source_bloc->true_edge;
    curr_bloc->false_edge = source_bloc->false_edge;
-   for(const auto phi : source_bloc->CGetPhiList())
+   for(const auto& phi : source_bloc->CGetPhiList())
    {
       unsigned int node_id = GET_INDEX_NODE(phi);
       THROW_ASSERT(remap.find(node_id) != remap.end(), "missing an index");
       node_id = remap.find(node_id)->second;
       curr_bloc->AddPhi(TM->GetTreeReindex(node_id));
    }
-   for(const auto stmt : source_bloc->CGetStmtList())
+   for(const auto& stmt : source_bloc->CGetStmtList())
    {
       unsigned int node_id = GET_INDEX_NODE(stmt);
       THROW_ASSERT(remap.find(node_id) != remap.end(), "missing an index");
@@ -2298,7 +2298,7 @@ void tree_node_index_factory::operator()(const gimple_multi_way_if* obj, unsigne
    tree_node_mask::operator()(obj,mask);
    if(!GetPointer<gimple_multi_way_if>(source_tn)->list_of_cond.empty())
    {
-      for(const auto cond : GetPointer<gimple_multi_way_if>(source_tn)->list_of_cond)
+      for(const auto& cond : GetPointer<gimple_multi_way_if>(source_tn)->list_of_cond)
       {
          unsigned int node_id = cond.first->index;
          THROW_ASSERT(remap.find(node_id) != remap.end(), "missing an index");

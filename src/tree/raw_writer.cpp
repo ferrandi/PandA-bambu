@@ -727,7 +727,7 @@ void raw_writer::operator()(const gimple_phi* obj, unsigned int & mask)
    mask = NO_VISIT;
    obj->gimple_node::visit(this);
    write_when_not_null(STOK(TOK_RES), obj->res);
-   for(const auto def_edge : obj->CGetDefEdgesList())
+   for(const auto& def_edge : obj->CGetDefEdgesList())
    {
       write_when_not_null(STOK(TOK_DEF), def_edge.first);
       WRITE_NFIELD(os, STOK(TOK_EDGE), def_edge.second);
@@ -848,10 +848,10 @@ void raw_writer::operator()(const ssa_name* obj, unsigned int & mask)
       WRITE_TOKEN(os, TOK_VOLATILE);
    else
    {
-      for(auto const def_stmt : obj->CGetDefStmts())
+      for(const auto& def_stmt : obj->CGetDefStmts())
          write_when_not_null(STOK(TOK_DEF_STMT), def_stmt);
    }
-   for(const auto use_stmt : obj->CGetUseStmts())
+   for(const auto& use_stmt : obj->CGetUseStmts())
    {
       for(size_t counter = 0; counter < use_stmt.second; counter++)
          write_when_not_null(STOK(TOK_USE_STMT), use_stmt.first);
@@ -1143,7 +1143,7 @@ void raw_writer::operator()(const gimple_multi_way_if* obj, unsigned int & mask)
 {
    mask = NO_VISIT;
    obj->gimple_node::visit(this);
-   for(const auto cond : obj->list_of_cond)
+   for(const auto& cond : obj->list_of_cond)
    {
       write_when_not_null(STOK(TOK_OP), cond.first);
       WRITE_NFIELD(os, STOK(TOK_BLOC), cond.second);

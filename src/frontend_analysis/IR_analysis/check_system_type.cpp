@@ -161,7 +161,7 @@ DesignFlowStep_Status CheckSystemType::InternalExec()
    {
       if(it->second)
       {
-         for(const auto stmt : it->second->CGetStmtList())
+         for(const auto& stmt : it->second->CGetStmtList())
          {
             recursive_examinate(stmt);
          }

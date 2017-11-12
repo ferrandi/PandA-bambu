@@ -333,7 +333,7 @@ class GccWrapper
       /**
        * Function that print of stdout some useful information passing the given option
        */
-      void QueryGccConfig(std::string gcc_option) const;
+      void QueryGccConfig(const std::string& gcc_option) const;
 
       /**
        * Return the total number of lines of the benchmark

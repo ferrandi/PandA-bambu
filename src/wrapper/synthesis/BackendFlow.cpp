@@ -277,7 +277,7 @@ std::string BackendFlow::GenerateSynthesisScripts(const std::string& fu_name, co
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Generating synthesis scripts");
    std::string fu_base_name = fu_name;
    std::string synthesis_file_list;
-   for(const auto hdl_file : hdl_files)
+   for(const auto& hdl_file : hdl_files)
    {
       synthesis_file_list += hdl_file + ";";
    }
@@ -287,7 +287,7 @@ std::string BackendFlow::GenerateSynthesisScripts(const std::string& fu_name, co
    actual_parameters->component_name = obj->get_id();
    if (flow_name.size()) actual_parameters->chain_name = flow_name;
 
-   for(const auto aux_file : aux_files)
+   for(const auto& aux_file : aux_files)
    {
       synthesis_file_list += aux_file + ";";
    }

@@ -223,7 +223,7 @@ StateTransitionGraph::StateTransitionGraph(const StateTransitionGraphsCollection
    graph(state_transition_graphs_collection.get(), _selector)
 {}
 
-StateTransitionGraph::StateTransitionGraph(const StateTransitionGraphsCollectionRef state_transition_graphs_collection, int _selector, std::unordered_set<vertex> _sub) :
+StateTransitionGraph::StateTransitionGraph(const StateTransitionGraphsCollectionRef state_transition_graphs_collection, int _selector, std::unordered_set<vertex>& _sub) :
    graph(state_transition_graphs_collection.get(), _selector, _sub)
 {}
 

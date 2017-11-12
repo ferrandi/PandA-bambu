@@ -132,13 +132,13 @@ class TestbenchGenerationBaseStep : public HLS_step
 
       void begin_initial_block() const;
 
-      void open_result_file(std::string result_file) const;
+      void open_result_file(const std::string &result_file) const;
 
       void initialize_auxiliary_variables() const;
 
       void initialize_input_signals(const tree_managerConstRef TreeM) const;
 
-      void open_value_file(std::string input_values_filename) const;
+      void open_value_file(const std::string &input_values_filename) const;
 
       void memory_initialization() const;
 

@@ -68,7 +68,7 @@
 #include <fstream>
 
 //constructor
-ISE_isim_wrapper::ISE_isim_wrapper(const ParameterConstRef _Param, std::string _suffix) :
+ISE_isim_wrapper::ISE_isim_wrapper(const ParameterConstRef _Param, const std::string& _suffix) :
    SimulationTool(_Param),
    suffix(_suffix)
 {
@@ -94,7 +94,7 @@ std::string ISE_isim_wrapper::create_project_script(const std::string& top_filen
 {
    std::string project_filename = ISIM_SUBDIR + suffix + "/" + top_filename + ".prj";
    std::ofstream prj_file(project_filename.c_str());
-   for(const auto file : file_list)
+   for(const auto& file : file_list)
    {
       boost::filesystem::path file_path(file);
       std::string extension = GetExtension(file_path);

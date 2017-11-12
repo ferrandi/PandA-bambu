@@ -433,7 +433,7 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec ()
          {
             const auto old_gp = GetPointer<const gimple_phi>(GET_NODE(gimple));
             defined_sns.insert(old_gp->res);
-            for(const auto def_edge : old_gp->CGetDefEdgesList())
+            for(const auto& def_edge : old_gp->CGetDefEdgesList())
             {
                THROW_ASSERT(copy_ids.find(def_edge.second) != copy_ids.end(), "Copy BB connected to BB" + STR(def_edge.second) + " not found");
                reaching_defs[copy_ids[def_edge.second]] = def_edge.first;
@@ -463,7 +463,7 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec ()
          {
             const auto ga = GetPointer<const gimple_assign>(GET_NODE(gimple));
             const auto ssa_uses = tree_helper::ComputeSsaUses(ga->op1);
-            for(const auto ssa_use : ssa_uses)
+            for(const auto& ssa_use : ssa_uses)
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering use " + STR(ssa_use.first));
                if(GetPointer<gimple_node>(GET_NODE(GetPointer<ssa_name>(GET_NODE(ssa_use.first))->CGetDefStmt()))->bb_index == block->number)
@@ -500,7 +500,7 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec ()
          else if(GET_NODE(gimple)->get_kind() == gimple_multi_way_if_K or GET_NODE(gimple)->get_kind() == gimple_cond_K or GET_NODE(gimple)->get_kind() == gimple_return_K)
          {
             const auto ssa_uses = tree_helper::ComputeSsaUses(gimple);
-            for(const auto ssa_use : ssa_uses)
+            for(const auto& ssa_use : ssa_uses)
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering use " + STR(ssa_use.first));
                for(auto copy : copy_ids)
@@ -702,7 +702,7 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec ()
                      }
                      else if(source_id == block->number)
                      {
-                        for(const auto copy_id : copy_ids)
+                        for(const auto& copy_id : copy_ids)
                         {
                            THROW_ASSERT(reaching_defs.find(copy_id.second) != reaching_defs.end(), "Definition coming from BB" + STR(copy_id.second) + " not found");
                            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---" + STR(reaching_defs.find(copy_id.second)->second) + " from BB" + STR(copy_id.second));
@@ -759,7 +759,7 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec ()
                            const auto source_id = bb_fcfg->CGetBBNodeInfo(source)->block->number;
                            if(source_id == block->number)
                            {
-                              for(const auto copy_id : copy_ids)
+                              for(const auto& copy_id : copy_ids)
                               {
                                  THROW_ASSERT(reaching_defs.find(copy_id.second) != reaching_defs.end(),"");
                                  THROW_ASSERT(reaching_defs.find(copy_id.second)->second, "");
@@ -797,14 +797,14 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec ()
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Uses the ssa");
                         gimple_phi::DefEdgeList new_def_edge_list;
                         auto local_gp = GetPointer<gimple_phi>(GET_NODE(local_phi));
-                        for(const auto def_edge : local_gp->CGetDefEdgesList())
+                        for(const auto& def_edge : local_gp->CGetDefEdgesList())
                         {
                            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---" + STR(def_edge.first) + " comes from BB" + STR(def_edge.second));
                            if(def_edge.first->index == sn->index)
                            {
                               if(def_edge.second == block->number)
                               {
-                                 for(const auto copy_id : copy_ids)
+                                 for(const auto& copy_id : copy_ids)
                                  {
                                     const auto new_source_id = copy_id.second;
                                     THROW_ASSERT(reaching_defs.find(new_source_id) != reaching_defs.end(), "Defintion coming from " + STR(new_source_id) + " not found");
@@ -897,7 +897,7 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec ()
                   auto gp = GetPointer<gimple_phi>(GET_NODE(phi));
                   const auto old_def_edge_list = gp->CGetDefEdgesList();
                   gimple_phi::DefEdgeList new_def_edge_list;
-                  for(const auto old_def_edge : old_def_edge_list)
+                  for(const auto& old_def_edge : old_def_edge_list)
                   {
                      if(old_def_edge.second != block->number)
                      {

@@ -119,7 +119,7 @@ DesignFlowStep_Status SynthesisEvaluation::InternalExec()
    std::string objective_string = parameters->getOption<std::string>(OPT_evaluation_objectives);
    std::vector<std::string> objective_vector = convert_string_to_vector<std::string>(objective_string, ",");
    bool printed_area = false;
-   for(const auto objective : objective_vector)
+   for(const auto& objective : objective_vector)
    {
       if ((objective == "AREA" or objective == "AREAxTIME") and printed_area == false)
       {

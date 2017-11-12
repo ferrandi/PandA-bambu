@@ -71,7 +71,7 @@ void DataXmlParser::Parse(const CustomSet<std::string> & file_names, std::map<st
 {
    try
    {
-      for(const auto file_name : file_names)
+      for(const auto& file_name : file_names)
       {
          XMLDomParser parser(file_name);
          parser.Exec();

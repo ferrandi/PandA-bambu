@@ -738,7 +738,7 @@ void Translator::write_to_latex(std::map<std::string, CustomMap<std::string, std
 
          const xml_element* node = parser.get_document()->get_root_node(); //deleted by DomParser.
 
-         for(const auto root_child : node->get_children())
+         for(const auto& root_child : node->get_children())
          {
             const xml_element * child = GetPointer<const xml_element>(root_child);
             if (not child)
@@ -757,7 +757,7 @@ void Translator::write_to_latex(std::map<std::string, CustomMap<std::string, std
             }
             else if(child->get_name() == STR_XML_experimental_setup_benchmarks)
             {
-               for(const auto benchmark : child->get_children())
+               for(const auto& benchmark : child->get_children())
                {
                   const xml_element * benchmark_xml = GetPointer<const xml_element>(benchmark);
                   if(not benchmark_xml)
@@ -894,7 +894,7 @@ void Translator::write_to_latex(std::map<std::string, CustomMap<std::string, std
 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Adjusting precision");
    ///Adjusting precision
-   for(const auto column : latex_column_formats)
+   for(const auto& column : latex_column_formats)
    {
       if(column.text_format == LatexColumnFormat::TF_number and column.precision != 0)
       {
@@ -956,7 +956,7 @@ void Translator::write_to_latex(std::map<std::string, CustomMap<std::string, std
 
    //Computing data_width
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Computing column width");
-   for(const auto line : results)
+   for(const auto& line : results)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Reading benchmark " + line.first);
       std::string escaped_index = line.first;
@@ -968,7 +968,7 @@ void Translator::write_to_latex(std::map<std::string, CustomMap<std::string, std
       }
 
       const auto & current_line = line.second;
-      for(const auto current_tag : current_line)
+      for(const auto& current_tag : current_line)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Reading column " + current_tag.first);
          if(current_tag.second.size() > data_width[current_tag.first])
@@ -980,7 +980,7 @@ void Translator::write_to_latex(std::map<std::string, CustomMap<std::string, std
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Read benchmark " + line.first);
    }
-   for(const auto total : totals)
+   for(const auto& total : totals)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering width total for column " + total.first + ": " + STR(total.second.size()) + " vs " + STR(data_width[total.first]));
       if(total.second.size() > data_width[total.first])
@@ -1061,7 +1061,7 @@ void Translator::write_to_latex(std::map<std::string, CustomMap<std::string, std
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---New size of " + std::string(column.source_name) + ": " + boost::lexical_cast<std::string>(data_width[column.source_name]));
       }
    }
-   for(auto const column : latex_column_formats)
+   for(auto const& column : latex_column_formats)
    {
       if(column.column_name.size() > data_width[column.source_name])
          data_width[column.source_name] = column.column_name.size();
@@ -1088,7 +1088,7 @@ void Translator::write_to_latex(std::map<std::string, CustomMap<std::string, std
       out << std::endl;
    }
    out << "\\begin{tabular}{|";
-   for(auto const column : latex_column_formats)
+   for(auto const& column : latex_column_formats)
    {
       out << column.column_alignment;
    }
@@ -1153,7 +1153,7 @@ void Translator::write_to_latex(std::map<std::string, CustomMap<std::string, std
    std::set<LatexColumnFormat::TotalFormat> totals_to_be_written;
 
    ///Checking if we have to print average line
-   for(const auto latex_column_format : latex_column_formats)
+   for(const auto& latex_column_format : latex_column_formats)
    {
       switch(latex_column_format.total_format)
       {
@@ -1173,11 +1173,11 @@ void Translator::write_to_latex(std::map<std::string, CustomMap<std::string, std
             }
       }
    }
-   for(const auto line_to_be_written : totals_to_be_written)
+   for(const auto& line_to_be_written : totals_to_be_written)
    {
       out << "\\hline" << std::endl;
       first_column = true;
-      for(const auto column : latex_column_formats)
+      for(const auto& column : latex_column_formats)
       {
          if(not first_column)
             out << " & ";
@@ -1238,7 +1238,7 @@ void Translator::write_to_latex(std::map<std::string, CustomMap<std::string, std
    if(benchmarks.size())
    {
       out << "%Benchmarks:" << std::endl;
-      for(const auto benchmark : benchmarks)
+      for(const auto& benchmark : benchmarks)
       {
          out << "%" << benchmark << std::endl;
       }

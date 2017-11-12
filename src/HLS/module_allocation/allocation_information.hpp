@@ -246,7 +246,7 @@ class AllocationInformation : public HLSFunctionIR
       /// put into relation variable and their latency when they are mapped on a private synchronous ram
       std::map<unsigned int, std::string> sync_ram_var_latency;
 
-      std::string get_latency_string(std::string lat) const;
+      std::string get_latency_string(const std::string &lat) const;
 
       /// return the execution time of the operation corrected by time_multiplier factor
       double time_m_execution_time(operation* op) const;

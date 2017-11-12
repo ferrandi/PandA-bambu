@@ -124,7 +124,7 @@ DesignFlowStep_Status virtual_phi_nodes_split::InternalExec()
    for(iit = list_of_bloc.begin(); iit != iit_end ; ++iit)
    {
       blocRef& bb_block = iit->second;
-      for(const auto phi : bb_block->CGetPhiList())
+      for(const auto& phi : bb_block->CGetPhiList())
       {
          virtual_split_phi(phi, bb_block, list_of_bloc, TM);
       }
@@ -153,7 +153,7 @@ void virtual_phi_nodes_split::virtual_split_phi(tree_nodeRef tree_phi, blocRef& 
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Phi node is virtual so no splitting is performed");
       return ;
    }
-   for(const auto def_edge : phi->CGetDefEdgesList())
+   for(const auto& def_edge : phi->CGetDefEdgesList())
    {
       tree_nodeRef def = def_edge.first;
 

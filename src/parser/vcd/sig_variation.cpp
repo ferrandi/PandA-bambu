@@ -37,7 +37,7 @@
 #include "sig_variation.hpp"
 
 sig_variation::sig_variation(
-      unsigned long long ts, std::string val, unsigned long long d)
+      unsigned long long ts, const std::string& val, unsigned long long d)
    : time_stamp(ts), value(val), duration(d)
 {}
 

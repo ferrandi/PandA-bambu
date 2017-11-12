@@ -326,7 +326,7 @@ class liveness
        * @param v is state
        * @param name is a string associated with the vertex v
        */
-      void add_name(vertex v, std::string name) {names[v] = name;}
+      void add_name(vertex v, const std::string& name) {names[v] = name;}
 
       /**
        * return the name of the given state

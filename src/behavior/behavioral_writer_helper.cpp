@@ -84,7 +84,7 @@
 #include "simple_indent.hpp"
 #include "var_pp_functor.hpp"
 
-BBWriter::BBWriter(const BBGraph * _g, std::unordered_set<vertex> _annotated) :
+BBWriter::BBWriter(const BBGraph * _g, const std::unordered_set<vertex> &_annotated) :
    VertexWriter(_g, 0),
    function_behavior(_g->CGetBBGraphInfo()->AppM->CGetFunctionBehavior(_g->CGetBBGraphInfo()->function_index)),
    helper(function_behavior->CGetBehavioralHelper()),
@@ -130,7 +130,7 @@ void BBWriter::operator()(std::ostream& out, const vertex& v) const
       if(bb_node_info and bb_node_info->block->CGetPhiList().size() and helper)
       {
          out << "\\l";
-         for(const auto phi : bb_node_info->block->CGetPhiList())
+         for(const auto& phi : bb_node_info->block->CGetPhiList())
          {
             const var_pp_functorConstRef svpf(new std_var_pp_functor(helper));
             std::string res = STR(phi->index);
@@ -154,7 +154,7 @@ void BBWriter::operator()(std::ostream& out, const vertex& v) const
       {
          if(bb_node_info->block->CGetPhiList().empty())
             out << "\\n";
-         for(const auto statement : bb_node_info->block->CGetStmtList())
+         for(const auto& statement : bb_node_info->block->CGetStmtList())
          {
             const var_pp_functorConstRef svpf(new std_var_pp_functor(helper));
             std::string res = STR(GET_INDEX_NODE(statement));

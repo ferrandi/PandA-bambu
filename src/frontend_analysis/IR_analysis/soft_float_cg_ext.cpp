@@ -130,10 +130,10 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
    statement_list * sl = GetPointer<statement_list>(GET_NODE(fd->body));
    modified = false;
 
-   for(const auto block : sl->list_of_bloc)
+   for(const auto& block : sl->list_of_bloc)
    {  
       
-      for(const auto stmt : block.second->CGetStmtList())
+      for(const auto& stmt : block.second->CGetStmtList())
       {
          RecursiveExaminate(stmt, stmt);
       }
@@ -663,7 +663,7 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef current_statement,
       case gimple_multi_way_if_K:
       {
          gimple_multi_way_if* gmwi=GetPointer<gimple_multi_way_if>(curr_tn);
-         for(const auto cond : gmwi->list_of_cond)
+         for(const auto& cond : gmwi->list_of_cond)
             if(cond.first)
                RecursiveExaminate(current_statement, cond.first);
          break;

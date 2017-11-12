@@ -120,7 +120,7 @@ HDL_manager::~HDL_manager()
 
 }
 
-std::string HDL_manager::write_components(std::string filename, HDLWriter_Language language, const std::list<structural_objectRef>& components, bool equation, std::list<std::string> & aux_files) const
+std::string HDL_manager::write_components(const std::string& filename, HDLWriter_Language language, const std::list<structural_objectRef>& components, bool equation, std::list<std::string> & aux_files) const
 {
    language_writerRef writer = language_writer::create_writer(language, TM, parameters);
 

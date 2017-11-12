@@ -207,7 +207,7 @@ struct cg_graph_info : public GraphInfo
    /**
     * Constructor
     */
-   cg_graph_info(vertex en, std::string en_name, vertex ex, std::string ex_name) : Entry(en), Exit(ex), Entry_name(en_name), Exit_name(ex_name) {}
+   cg_graph_info(vertex en, const std::string& en_name, vertex ex, const std::string& ex_name) : Entry(en), Exit(ex), Entry_name(en_name), Exit_name(ex_name) {}
 
    /**
     * Empty constructor

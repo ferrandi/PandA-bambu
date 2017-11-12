@@ -377,7 +377,7 @@ void SpiderParameter::CheckParameters()
    {
       Parameters_FileFormat input_format = Parameters_FileFormat::FF_UNKNOWN, temp = Parameters_FileFormat::FF_UNKNOWN;
       const auto input_files = getOption<const CustomSet<std::string> >(OPT_input_file);
-      for(const auto input_file : input_files)
+      for(const auto& input_file : input_files)
       {
          temp = GetFileFormat(input_file, true);
          switch(temp)
@@ -494,7 +494,7 @@ void SpiderParameter::CheckParameters()
    setOption(OPT_circuit_debug_level, getOption<int>(OPT_debug_level));
 #endif
 #if HAVE_TECHNOLOGY_BUILT
-   for(const auto input_file : getOption<const CustomSet<std::string> >(OPT_input_file))
+   for(const auto& input_file : getOption<const CustomSet<std::string> >(OPT_input_file))
    {
       if(GetFileFormat(input_file, true) == Parameters_FileFormat::FF_XML_TEC)
       {

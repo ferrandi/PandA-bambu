@@ -321,6 +321,7 @@ void library_manager::xload(const xml_element* node, const library_managerRef LM
       PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "Library Name     : " << LM->name);
       PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "  Total cells    : " << total);
       PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "  - combinational: " << combinational);
+      PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "  - others: " << others);
       PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "");
    }
 }

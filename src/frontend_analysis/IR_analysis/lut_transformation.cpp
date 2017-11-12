@@ -137,7 +137,7 @@ unsigned long long int lut_transformation::BinToDec(const std::string& number)
 * @param op0size size for shifting
 * @param bb_index index of bb where to append the concatenation
 */
-tree_nodeRef lut_transformation::CreateConcat(tree_nodeRef op0,tree_nodeRef op1, std::pair<const unsigned int, boost::shared_ptr<bloc>> bb,tree_nodeRef stm_to_append)
+tree_nodeRef lut_transformation::CreateConcat(tree_nodeRef op0,tree_nodeRef op1, std::pair<const unsigned int, blocRef> bb,tree_nodeRef stm_to_append)
 {
 
    const auto type = tree_man->CreateDefaultUnsignedLongLongInt();
@@ -160,7 +160,7 @@ tree_nodeRef lut_transformation::CreateConcat(tree_nodeRef op0,tree_nodeRef op1,
 * @param set_of_nodes set of nodes to concatenate
 * @param bb_index index of bb where to append the concatenation
 */
-tree_nodeRef lut_transformation::CreateMultiConcat( std::vector<tree_nodeRef> set_of_nodes,std::pair<const unsigned int, boost::shared_ptr<bloc>> bb, tree_nodeRef stm_to_append)
+tree_nodeRef lut_transformation::CreateMultiConcat( std::vector<tree_nodeRef> set_of_nodes, const std::pair<const unsigned int, blocRef>& bb, tree_nodeRef stm_to_append)
 {
    // Create the first concat
    std::vector<tree_nodeRef>::iterator it = set_of_nodes.begin();
@@ -364,13 +364,13 @@ std::vector<std::size_t> lut_transformation::FindIndex( std::vector<tree_nodeRef
 * @param binaryString binary string where to find the inputs 
 * @param unmergedSet original set not merged
 * @param mergedSet merged set
-* @mergingValue value of the lut table we are mergin with the input combination of binaryString
+* @param mergingValue value of the lut table we are mergin with the input combination of binaryString
 */
-std::string lut_transformation::CreateFinalString( std::string binaryString, std::vector<tree_nodeRef> unmergedSet,std::vector<tree_nodeRef> mergedSet, std::string mergingValue )
+std::string lut_transformation::CreateFinalString(const std::string& binaryString, const std::vector<tree_nodeRef>& unmergedSet,std::vector<tree_nodeRef>& mergedSet, const std::string& mergingValue )
 {
    std::string finalString;
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Computing value of final LUT");
-   for (std::vector<tree_nodeRef>::iterator it= unmergedSet.begin(); it != unmergedSet.end(); ++it)
+   for (std::vector<tree_nodeRef>::const_iterator it= unmergedSet.begin(); it != unmergedSet.end(); ++it)
    {
       std::vector<std::size_t> indexList = FindIndex(mergedSet,*it);
       if(indexList.size() != 0)
@@ -414,9 +414,9 @@ std::vector<tree_nodeRef> lut_transformation::GetLutList(const std::vector<tree_
 * @param gimpleLutList list of gimple where the right part is a lut_expr
 * @param bb_index index of the bb to add the lut
 */
-void lut_transformation::MergeLut(std::list<tree_nodeRef> gimpleLutList,std::pair<const unsigned int, boost::shared_ptr<bloc>> bb)
+void lut_transformation::MergeLut(const std::list<tree_nodeRef>& gimpleLutList, const std::pair<const unsigned int, blocRef>& bb)
 {
-   for(const auto stmt : gimpleLutList)
+   for(const auto& stmt : gimpleLutList)
    {
       gimple_assign* consideredLutGa = GetPointer<gimple_assign>(GET_NODE(stmt));
       THROW_ASSERT(consideredLutGa, STR(stmt));

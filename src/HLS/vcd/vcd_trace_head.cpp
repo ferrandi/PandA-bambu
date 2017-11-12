@@ -355,7 +355,7 @@ void vcd_trace_head::update()
             HLSMgr->get_HLS(op_info.stg_fun_id)->STG->CGetStg()->CGetStateInfo(state_id);
          if (state_info->is_duplicated and not state_info->isOriginalState and not state_info->all_paths)
          {
-            for(const auto def_edge : gp->CGetDefEdgesList())
+            for(const auto& def_edge : gp->CGetDefEdgesList())
             {
                if (state_info->moved_op_def_set.find(def_edge.first->index) !=
                      state_info->moved_op_def_set.end()

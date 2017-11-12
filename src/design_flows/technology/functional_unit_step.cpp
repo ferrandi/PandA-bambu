@@ -177,9 +177,9 @@ void FunctionalUnitStep::AnalyzeFu(const technology_nodeRef f_unit)
                }
                else if(precision_pipe_param_pair[0] == "DSPs_y_sizes")
                {
-                  for(const auto DSP_y : DSP_y_to_DSP_x)
+                  for(const auto& DSP_y : DSP_y_to_DSP_x)
                   {
-                     for(const auto pipe_param : pipe_params)
+                     for(const auto& pipe_param : pipe_params)
                      {
                         pipe_parameters[boost::lexical_cast<unsigned int>(DSP_y.first)].push_back(pipe_param);
                         precision.insert(boost::lexical_cast<unsigned int>(DSP_y.first));

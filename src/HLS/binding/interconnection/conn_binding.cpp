@@ -686,7 +686,7 @@ void conn_binding::add_sparse_logic_dp(const hlsRef HLS, const structural_manage
    std::string resource_name, resource_instance_name;
    unsigned int resource_index = 0;
    unsigned int bitsize=0;
-   for(const auto component : sparse_logic)
+   for(const auto& component : sparse_logic)
    {
       switch(component->get_type())
       {
@@ -840,7 +840,7 @@ void conn_binding::add_sparse_logic_dp(const hlsRef HLS, const structural_manage
 
 void conn_binding::print() const
 {
-   for(const auto conn : conn_implementation)
+   for(const auto& conn : conn_implementation)
    {
       generic_objRef src = std::get<0>(conn.first);
       generic_objRef tgt = std::get<1>(conn.first);
@@ -908,7 +908,8 @@ void conn_binding::add_command_ports(const HLS_managerRef HLSMgr, const hlsRef H
    std::map<structural_objectRef, std::list<structural_objectRef> > calls;
    if (selectors.find(conn_binding::IN) != selectors.end())
    {
-      for(std::map<std::pair<generic_objRef, unsigned int>, generic_objRef>::const_iterator j = selectors.find(conn_binding::IN)->second.begin(); j != selectors.find(conn_binding::IN)->second.end(); ++j)
+      auto connection_binding_sets = selectors.find(conn_binding::IN)->second;
+      for(std::map<std::pair<generic_objRef, unsigned int>, generic_objRef>::const_iterator j = connection_binding_sets.begin(); j != connection_binding_sets.end(); ++j)
       {
          //unit associate with selector
          const generic_objRef elem = j->first.first;
@@ -1012,7 +1013,8 @@ void conn_binding::add_command_ports(const HLS_managerRef HLSMgr, const hlsRef H
    ///output signals to the controller for condition evaluation
    if (selectors.find(conn_binding::OUT) != selectors.end())
    {
-      for(std::map<std::pair<generic_objRef, unsigned int>, generic_objRef>::const_iterator j = selectors.find(conn_binding::OUT)->second.begin(); j != selectors.find(conn_binding::OUT)->second.end(); ++j)
+      auto connection_binding_sets = selectors.find(conn_binding::OUT)->second;
+      for(std::map<std::pair<generic_objRef, unsigned int>, generic_objRef>::const_iterator j = connection_binding_sets.begin(); j != connection_binding_sets.end(); ++j)
       {
          THROW_ASSERT(GetPointer<commandport_obj>(j->second), "Not valid command port");
          if(GetPointer<commandport_obj>(j->second)->get_command_type() == commandport_obj::SWITCH)

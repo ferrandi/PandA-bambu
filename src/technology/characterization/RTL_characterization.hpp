@@ -140,9 +140,9 @@ class RTLCharacterization : public FunctionalUnitStep
        */
       void fix_muxes();
 
-      void add_input_register(structural_objectRef port_in, std::string register_library, std::string port_prefix, structural_objectRef reset_port, structural_objectRef circuit, structural_objectRef clock_port, structural_objectRef e_port, structural_managerRef SM);
+      void add_input_register(structural_objectRef port_in, const std::string& register_library, const std::string& port_prefix, structural_objectRef reset_port, structural_objectRef circuit, structural_objectRef clock_port, structural_objectRef e_port, structural_managerRef SM);
 
-      void add_output_register(structural_managerRef SM, structural_objectRef e_port, structural_objectRef circuit, structural_objectRef reset_port, structural_objectRef port_out, std::string port_prefix, structural_objectRef clock_port, std::string register_library);
+      void add_output_register(structural_managerRef SM, structural_objectRef e_port, structural_objectRef circuit, structural_objectRef reset_port, structural_objectRef port_out, const std::string &port_prefix, structural_objectRef clock_port, const std::string &register_library);
 
       /**
        * Extract the component name from list of cells

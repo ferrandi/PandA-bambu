@@ -313,7 +313,7 @@ bool operation::is_type_supported(std::string type_name, unsigned int type_prec)
    return true;
 }
 
-bool operation::is_type_supported(std::string type_name, const std::vector<unsigned int>& type_prec, const std::vector<unsigned int> &/*type_n_element*/) const
+bool operation::is_type_supported(const std::string& type_name, const std::vector<unsigned int>& type_prec, const std::vector<unsigned int> &/*type_n_element*/) const
 {
    unsigned int max_prec = type_prec.begin() == type_prec.end() ? 0 : *max_element(type_prec.begin(), type_prec.end());
 

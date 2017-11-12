@@ -410,7 +410,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
    for(auto block : sl->list_of_bloc)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining PHI of BB" + STR(block.first));
-      for(const auto phi : block.second->CGetPhiList())
+      for(const auto& phi : block.second->CGetPhiList())
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---phi operation");
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---phi index: "+ STR(GET_INDEX_NODE(phi)));
@@ -421,14 +421,14 @@ DesignFlowStep_Status IR_lowering::InternalExec()
          if(!is_virtual)
          {
             gimple_phi::DefEdgeList to_be_replaced;
-            for(const auto def_edge : pn->CGetDefEdgesList())
+            for(const auto& def_edge : pn->CGetDefEdgesList())
             {
                if(GET_NODE(def_edge.first)->get_kind() == addr_expr_K)
                {
                   to_be_replaced.push_back(def_edge);
                }
             }
-            for(const auto def_edge : to_be_replaced)
+            for(const auto& def_edge : to_be_replaced)
             {
                addr_expr* ae = GetPointer<addr_expr>(GET_NODE(def_edge.first));
                tree_nodeRef ae_expr = tree_man->create_unary_operation(ae->type,ae->op, srcp_default, addr_expr_K);///It is required to de-share some IR nodes

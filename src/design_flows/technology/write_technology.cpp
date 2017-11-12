@@ -81,7 +81,7 @@ DesignFlowStep_Status WriteTechnology::Exec()
       TM->xwrite(tmRoot, target->get_type());
       document.write_to_file_formatted(output_file);
       INDENT_OUT_MEX(OUTPUT_LEVEL_VERY_PEDANTIC, output_level, "---Writing " + output_file);
-      for(const auto library : libraries)
+      for(const auto& library : libraries)
       {
          TM->get_library_manager(library)->set_info(library_manager::XML, output_file);
       }

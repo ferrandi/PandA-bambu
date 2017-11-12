@@ -151,7 +151,7 @@ DesignFlowStep_Status BlockFix::InternalExec()
          const auto gs = GetPointer<const gimple_switch>(GET_NODE(statement));
          if(gs)
          {
-            for(const auto vec_op: GetPointer<const tree_vec>(GET_NODE(gs->op1))->list_of_op)
+            for(const auto& vec_op: GetPointer<const tree_vec>(GET_NODE(gs->op1))->list_of_op)
             {
                const auto cle = GetPointer<const case_label_expr>(GET_NODE(vec_op));
                if(cle->got and GetPointer<const label_decl>(GET_NODE(cle->got)))

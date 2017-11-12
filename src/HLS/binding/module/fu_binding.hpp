@@ -191,6 +191,8 @@ class fu_binding
 
       fu_binding(const fu_binding &original);
 
+      fu_binding & operator=(const fu_binding&) = delete;
+
       /**
        * Destructor.
        */

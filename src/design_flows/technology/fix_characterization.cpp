@@ -81,11 +81,11 @@ void FixCharacterization::Initialize()
 DesignFlowStep_Status FixCharacterization::Exec()
 {
    const auto libraries = TM->get_library_list();
-   for(const auto library : libraries)
+   for(const auto& library : libraries)
    {
       const auto LM = TM->get_library_manager(library);
       const auto fus = LM->get_library_fu();
-      for(const auto fu : fus)
+      for(const auto& fu : fus)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing " + fu.first);
          auto single_fu = GetPointer<functional_unit>(fu.second);
@@ -364,7 +364,7 @@ DesignFlowStep_Status FixCharacterization::Exec()
                   boost::algorithm::split(template_parameters, single_fu->fu_template_parameters, boost::algorithm::is_any_of(" "));
                   const auto output_size = boost::lexical_cast<size_t>(template_parameters.back());
                   std::string cell_name = template_name;
-                  for(const auto template_parameter : template_parameters)
+                  for(const auto& template_parameter : template_parameters)
                   {
                      cell_name += "_";
                      if(template_parameter == "0")
@@ -379,11 +379,11 @@ DesignFlowStep_Status FixCharacterization::Exec()
                   const technology_nodeConstRef nc_f_unit = TM->get_fu(cell_name, TM->get_library(cell_name));
                   THROW_ASSERT(nc_f_unit, "Library miss component: " + std::string(cell_name));
                   CustomMap<std::string, double> non_constant_execution_times;
-                  for(const auto op : GetPointer<const functional_unit>(nc_f_unit)->get_operations())
+                  for(const auto& op : GetPointer<const functional_unit>(nc_f_unit)->get_operations())
                   {
                      non_constant_execution_times[op->get_name()] = GetPointer<operation>(op)->time_m->get_execution_time();
                   }
-                  for(const auto op : single_fu->get_operations())
+                  for(const auto& op : single_fu->get_operations())
                   {
                      const std::string operation_name = op->get_name();
                      THROW_ASSERT(non_constant_execution_times.find(operation_name) != non_constant_execution_times.end(), operation_name);

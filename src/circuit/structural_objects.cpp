@@ -249,7 +249,7 @@ void structural_type_descriptor::print(std::ostream& os) const
    }
 }
 
-structural_type_descriptor::structural_type_descriptor(std::string type_name, unsigned int _vector_size) : vector_size(_vector_size), id_type(type_name), treenode(structural_type_descriptor::treenode_DEFAULT)
+structural_type_descriptor::structural_type_descriptor(const std::string& type_name, unsigned int _vector_size) : vector_size(_vector_size), id_type(type_name), treenode(structural_type_descriptor::treenode_DEFAULT)
 {
    /// first set defaults
    type=UNKNOWN;
@@ -1370,7 +1370,7 @@ void port_o::xload(const xml_element* Enode, structural_objectRef _owner, struct
    ///the field connected_objects has to be updated outside!!!
 }
 
-port_o::port_direction port_o::to_port_direction(std::string val)
+port_o::port_direction port_o::to_port_direction(const std::string& val)
 {
    unsigned int i;
    for (i = 0; i < UNKNOWN; i++)
@@ -1608,7 +1608,7 @@ const structural_objectRef  action_o::get_sensitivity(unsigned int n) const
    return action_sensitivity[n];
 }
 
-void action_o::set_scope(std::string sc)
+void action_o::set_scope(const std::string& sc)
 {
    scope = sc;
 }
@@ -1768,7 +1768,7 @@ constant_o::constant_o(int _debug_level, const structural_objectRef o)
       : structural_object(_debug_level, o)
 {}
 
-constant_o::constant_o(int _debug_level, const structural_objectRef o, std::string _value) :
+constant_o::constant_o(int _debug_level, const structural_objectRef o, const std::string& _value) :
    structural_object(_debug_level, o),
    value(_value)
 {}
@@ -2388,7 +2388,7 @@ unsigned int module::get_gen_port_size() const
    return static_cast<unsigned int>(gen_ports.size());
 }
 
-void module::remove_port(std::string _id)
+void module::remove_port(const std::string& _id)
 {
    unsigned int num_port = static_cast<unsigned int>(positional_map.size());
    structural_objectRef port;
@@ -3825,7 +3825,7 @@ channel_o::channel_o(int _debug_level, const structural_objectRef o) :
       module(_debug_level, o)
 {}
 
-void channel_o::add_interface(unsigned int t, std::string _interface)
+void channel_o::add_interface(unsigned int t, const std::string& _interface)
 {
    impl_interfaces[t] = _interface;
 }

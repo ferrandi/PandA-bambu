@@ -143,7 +143,7 @@ DesignFlowStep_Status hls_div_cg_ext::InternalExec()
    it_end = blocks.end();
    for(it = blocks.begin(); it != it_end; ++it)
    {
-      for(const auto stmt : it->second->CGetStmtList())
+      for(const auto& stmt : it->second->CGetStmtList())
       {
          recursive_examinate(stmt, stmt);
       }

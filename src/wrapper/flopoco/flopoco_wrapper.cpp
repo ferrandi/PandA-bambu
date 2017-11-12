@@ -214,7 +214,7 @@ flopoco_wrapper::~flopoco_wrapper()
    //finishTool();
 }
 
-void flopoco_wrapper::add_FU(const std::string& FU_type, unsigned int FU_prec_in, unsigned int FU_prec_out, const std::string& FU_name, std::string pipe_parameter)
+void flopoco_wrapper::add_FU(const std::string& FU_type, unsigned int FU_prec_in, unsigned int FU_prec_out, const std::string& FU_name, const std::string& pipe_parameter)
 {
    // Get the number of bits for the number representation
    unsigned int n_mant_in, n_exp_in;
@@ -470,7 +470,7 @@ void flopoco_wrapper::add_FU(const std::string& FU_type, unsigned int FU_prec_in
 
 }
 
-unsigned int flopoco_wrapper::get_FUPipelineDepth(const std::string& FU_name, const unsigned int FU_prec_in, const unsigned int FU_prec_out, std::string pipe_parameter) const
+unsigned int flopoco_wrapper::get_FUPipelineDepth(const std::string& FU_name, const unsigned int FU_prec_in, const unsigned int FU_prec_out, const std::string& pipe_parameter) const
 {
    std::string FU_name_stored = ENCODE_NAME(FU_name, FU_prec_in, FU_prec_out, pipe_parameter);
    unsigned int fu_pipe_depth = static_cast<unsigned int>(get_FU(WRAPPED_PREFIX+FU_name_stored)->getPipelineDepth());
@@ -488,7 +488,7 @@ flopoco::Operator * flopoco_wrapper::get_FU(std::string FU_name_stored) const
    return op_found->second;
 }
 
-void flopoco_wrapper::outputWrapVHDL(std::string & FU_name_stored, std::ostream & os, std::string pipe_parameter)
+void flopoco_wrapper::outputWrapVHDL(const std::string & FU_name_stored, std::ostream & os, const std::string& pipe_parameter)
 {
    outputHeaderVHDL(FU_name_stored, os);
    // Write library declaration
@@ -572,7 +572,7 @@ void flopoco_wrapper::outputWrapVHDL(std::string & FU_name_stored, std::ostream 
    PP(os, "\n");
 }
 
-void flopoco_wrapper::outputPortMap(std::string & FU_name_stored, std::ostream & os, std::string pipe_parameter)
+void flopoco_wrapper::outputPortMap(const std::string & FU_name_stored, std::ostream & os, const std::string& pipe_parameter)
 {
    std::string mapping;
    const std::vector<std::string> p_wrapped_in = get_ports(WRAPPED_PREFIX+FU_name_stored, 0, port_in, false);
@@ -683,7 +683,7 @@ void flopoco_wrapper::outputPortMap(std::string & FU_name_stored, std::ostream &
    }
 }
 
-void flopoco_wrapper::outputSignals(std::string & FU_name_stored, std::ostream & os)
+void flopoco_wrapper::outputSignals(const std::string & FU_name_stored, std::ostream & os)
 {
    std::string Signals = "";
    const std::vector<std::string> p_in = get_ports(WRAPPED_PREFIX+FU_name_stored, 0, port_in, false);
@@ -731,7 +731,7 @@ void flopoco_wrapper::outputSignals(std::string & FU_name_stored, std::ostream &
    }
 }
 
-void flopoco_wrapper::outputPortDeclaration(std::string FU_prefix, std::string & FU_name_stored, std::ostream & os, component_type c_type, std::string pipe_parameter)
+void flopoco_wrapper::outputPortDeclaration(const std::string& FU_prefix, const std::string & FU_name_stored, std::ostream & os, component_type c_type, const std::string& pipe_parameter)
 {
    // Compute offsets for addition bits' handling
    int in_offset, out_offset;
@@ -857,7 +857,7 @@ void flopoco_wrapper::outputPortDeclaration(std::string FU_prefix, std::string &
    }
 }
 
-void flopoco_wrapper::outputHeaderVHDL(std::string & FU_name_stored, std::ostream & os) const
+void flopoco_wrapper::outputHeaderVHDL(const std::string & FU_name_stored, std::ostream & os) const
 {
    os << "--------------------------------------------------------------------------------" << endl;
    os << "--                              " << FU_name_stored << endl;
@@ -867,7 +867,7 @@ void flopoco_wrapper::outputHeaderVHDL(std::string & FU_name_stored, std::ostrea
    os << "--------------------------------------------------------------------------------" << endl;
 }
 
-int flopoco_wrapper::InternalWriteVHDL(const std::string& FU_name, const unsigned int FU_prec_in, const unsigned int FU_prec_out, const std::string& filename, std::string pipe_parameter)
+int flopoco_wrapper::InternalWriteVHDL(const std::string& FU_name, const unsigned int FU_prec_in, const unsigned int FU_prec_out, const std::string& filename, const std::string& pipe_parameter)
 {
    std::string FU_name_stored = ENCODE_NAME(FU_name, FU_prec_in, FU_prec_out, pipe_parameter);
    PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Writing VHDL code for unit " + FU_name_stored + " to file " + filename);

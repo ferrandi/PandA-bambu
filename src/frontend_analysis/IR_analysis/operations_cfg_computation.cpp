@@ -280,7 +280,7 @@ DesignFlowStep_Status operations_cfg_computation::InternalExec()
             skip_first_stmt = true;
          }
       }
-      for(const auto phi : block->CGetPhiList())
+      for(const auto& phi : block->CGetPhiList())
       {
          actual_name = get_first_node(phi, f_name);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing phi " + actual_name);

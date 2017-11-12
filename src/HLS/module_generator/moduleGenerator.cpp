@@ -134,7 +134,7 @@ std::string moduleGenerator::get_specialized_name(std::vector<std::tuple<unsigne
    return fuName;
 }
 
-std::string moduleGenerator::GenerateHDL(std::string hdl_template, std::vector<std::tuple<unsigned int,unsigned int> >& required_variables, const std::string&specializing_string, const FunctionBehaviorConstRef FB, std::string path_dynamic_generators, const HDLWriter_Language language)
+std::string moduleGenerator::GenerateHDL(const std::string& hdl_template, std::vector<std::tuple<unsigned int,unsigned int> >& required_variables, const std::string& specializing_string, const FunctionBehaviorConstRef FB, const std::string& path_dynamic_generators, const HDLWriter_Language language)
 {
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "dynamic_generators @ Reading cpp-template input file '" << (path_dynamic_generators+"/"+hdl_template).c_str() << "'...");
 

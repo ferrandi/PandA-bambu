@@ -172,7 +172,7 @@ class BBWriter : public VertexWriter
        * @param g is the graph to be printed
        * @param annotated is the set of the vertices to be annotated
        */
-      BBWriter(const BBGraph * g, std::unordered_set<vertex> annotated = std::unordered_set<vertex>());
+      BBWriter(const BBGraph * g, const std::unordered_set<vertex> &annotated = std::unordered_set<vertex>());
 
       /**
        * Operator used to print the label of a vertex

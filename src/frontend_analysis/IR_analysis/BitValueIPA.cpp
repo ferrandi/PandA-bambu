@@ -463,7 +463,7 @@ DesignFlowStep_Status BitValueIPA::Exec()
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                      "-->Analyzing BB" + STR(B->number));
                bool hard_break = false;
-               for(const auto stmt : B->CGetStmtList())
+               for(const auto& stmt : B->CGetStmtList())
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                         "-->Analyzing " + STR(stmt));

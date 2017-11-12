@@ -442,10 +442,6 @@ class string_separator
             return true;
          }
       }
-      string_separator operator=(string_separator other)
-      {
-         return string_separator(other.delimiter);
-      }
 
       /**
        * Reset function (required to implement boost tokenizerFunction model

@@ -351,7 +351,7 @@ void RTLCharacterization::xwrite_characterization(const target_deviceRef device,
    name_el->add_child_text(LM->get_library_name());
 
    const library_manager::fu_map_type& fus = LM->get_library_fu();
-   for(const auto cell : cells)
+   for(const auto& cell : cells)
    {
       if(fus.find(cell) == fus.end())
       {
@@ -550,7 +550,7 @@ void RTLCharacterization::specialize_fu(const module* mod, unsigned int prec, un
    }
 }
 
-void RTLCharacterization::add_input_register(structural_objectRef port_in, std::string register_library, std::string port_prefix, structural_objectRef reset_port, structural_objectRef circuit, structural_objectRef clock_port, structural_objectRef e_port, structural_managerRef SM)
+void RTLCharacterization::add_input_register(structural_objectRef port_in, const std::string& register_library, const std::string& port_prefix, structural_objectRef reset_port, structural_objectRef circuit, structural_objectRef clock_port, structural_objectRef e_port, structural_managerRef SM)
 {
    structural_objectRef r_signal;
    structural_objectRef reg_mod = SM->add_module_from_technology_library(port_prefix+"_REG", register_AR_NORETIME, register_library, circuit, TM);
@@ -573,7 +573,7 @@ void RTLCharacterization::add_input_register(structural_objectRef port_in, std::
    SM->add_connection(port_in, r_signal);
 }
 
-void RTLCharacterization::add_output_register(structural_managerRef SM, structural_objectRef e_port, structural_objectRef circuit, structural_objectRef reset_port, structural_objectRef port_out, std::string port_prefix, structural_objectRef clock_port, std::string register_library)
+void RTLCharacterization::add_output_register(structural_managerRef SM, structural_objectRef e_port, structural_objectRef circuit, structural_objectRef reset_port, structural_objectRef port_out, const std::string& port_prefix, structural_objectRef clock_port, const std::string& register_library)
 {
    structural_objectRef r_signal;
    structural_objectRef reg_mod = SM->add_module_from_technology_library(port_prefix+"_REG", register_AR_NORETIME, register_library, circuit, TM);
@@ -1030,7 +1030,6 @@ void RTLCharacterization::AnalyzeCell(functional_unit * fu, const unsigned int p
                new_op->time_m->set_stage_period(exec_time);
                const ControlStep ii(1u);
                new_op->time_m->set_initiation_time(ii);
-               // cppcheck-suppress knownConditionTrueFalse
                if(PipelineDepth==-1)
                   new_op->time_m->set_execution_time(exec_time, n_cycles+1);
                else
@@ -1090,7 +1089,7 @@ const CustomSet<std::string> RTLCharacterization::ComputeCells(const std::string
    CustomSet<std::string> ret;
    std::vector<std::string> component_cells;
    boost::algorithm::split(component_cells, input, boost::algorithm::is_any_of(","));
-   for(const auto component_cell : component_cells)
+   for(const auto& component_cell : component_cells)
    {
       std::vector<std::string> component_or_cell;
       boost::algorithm::split(component_or_cell, component_cell, boost::algorithm::is_any_of("-"));

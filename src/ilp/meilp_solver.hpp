@@ -132,7 +132,7 @@ class meilp_solver
        * 
        * @param i_coeffs
        */
-      virtual void copy(std::map<int,double> &i_coeffs);
+      virtual void copy(const std::map<int, double> &i_coeffs);
 
       /**
        * Set the lower and upper of the variables using lower_bounds and upper_bounds
@@ -294,7 +294,7 @@ class meilp_solver
        * Set the variable priority
        * @param _priority is mapping between index variable and priority
        */
-      void set_priority(std::map<int, int> _priority);
+      void set_priority(const std::map<int, int> &_priority);
 
       /**
       * Factory static member function.

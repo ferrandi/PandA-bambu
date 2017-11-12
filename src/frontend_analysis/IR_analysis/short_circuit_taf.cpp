@@ -134,7 +134,7 @@ void short_circuit_taf::Initialize()
 
 bool short_circuit_taf::check_phis(unsigned int curr_bb, std::map<unsigned int, blocRef> & list_of_bloc)
 {
-   for(const auto phi : list_of_bloc[curr_bb]->CGetPhiList())
+   for(const auto& phi : list_of_bloc[curr_bb]->CGetPhiList())
    {
       gimple_phi *cb_phi = GetPointer<gimple_phi>(GET_NODE(phi));
       if(cb_phi->virtual_flag)
@@ -370,12 +370,12 @@ bool short_circuit_taf::create_gimple_cond(unsigned int bb1, unsigned int bb2, b
    /// fix merging_candidate phis
    if(list_of_bloc[merging_candidate]->CGetPhiList().size())
    {
-      for(const auto phi : list_of_bloc[merging_candidate]->CGetPhiList())
+      for(const auto& phi : list_of_bloc[merging_candidate]->CGetPhiList())
       {
          gimple_phi *mc_phi = GetPointer<gimple_phi>(GET_NODE(phi));
          std::pair<tree_nodeRef, unsigned int> def_edge_to_be_removed(tree_nodeRef(), 0);
          std::pair<tree_nodeRef, unsigned int> def_edge_to_be_updated(tree_nodeRef(), 0);
-         for(const auto def_edge : mc_phi->CGetDefEdgesList())
+         for(const auto& def_edge : mc_phi->CGetDefEdgesList())
          {
             if(def_edge.second == bb1)
                def_edge_to_be_removed = def_edge;

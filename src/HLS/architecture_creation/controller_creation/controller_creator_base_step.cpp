@@ -37,16 +37,10 @@
  * @author Christian Pilato <pilato@elet.polimi.it>
  *
 */
-///Autoheader include
-#include "config_HAVE_EXPERIMENTAL.hpp"
-
 #include "controller_creator_base_step.hpp"
 
 ///implemented controllers
 #include "fsm_controller.hpp"
-#if HAVE_EXPERIMENTAL
-#include "ParallelController.hpp"
-#endif
 
 #include "hls.hpp"
 #include "hls_manager.hpp"
@@ -192,9 +186,9 @@ void ControllerCreatorBaseStep::add_command_ports(structural_objectRef circuit)
    in_num = 0;
    const auto & selectors = HLS->Rconn->GetSelectors();
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Adding " + boost::lexical_cast<std::string>(selectors.size()) + " selectors");
-   for(const auto selector : selectors)
+   for(const auto& selector : selectors)
    {
-      for(const auto j : selector.second)
+      for(const auto& j : selector.second)
       {
          ///connections from controller to datapath
          if (selector.first == conn_binding::IN)

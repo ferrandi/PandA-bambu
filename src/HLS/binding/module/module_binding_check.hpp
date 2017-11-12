@@ -165,6 +165,9 @@ struct module_binding_check : public check_clique<vertex_type>
 
     module_binding_check* clone() const {return new module_binding_check(*this);}
 
+    module_binding_check & operator=(const module_binding_check&) = delete;
+
+
     virtual ~module_binding_check() {}
 
 

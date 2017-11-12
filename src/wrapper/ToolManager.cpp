@@ -151,7 +151,7 @@ void ToolManager::configure(const std::string& _tool_, const std::string& setups
    {
       if(setupscr.size())
       {
-         if(setupscr.find("export") == 0)
+         if(boost::algorithm::starts_with(setupscr,"export"))
             executable += setupscr + " >& /dev/null; ";
          else
             executable += ". " + setupscr + " >& /dev/null; ";
@@ -171,7 +171,7 @@ void ToolManager::configure(const std::string& _tool_, const std::string& setups
       local = false;
       if(setupscr.size())
       {
-         if(setupscr.find("export") == 0)
+         if(boost::algorithm::starts_with(setupscr,"export"))
             executable += setupscr + "; ";
          else
             executable += ". " + setupscr + "; ";

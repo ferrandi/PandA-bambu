@@ -48,7 +48,7 @@ std::ostream & operator<<(std::ostream & os, const AadlParserNode & aadl_parser_
    if(aadl_parser_node.property_associations.size())
    {
       bool first = true;
-      for(const auto property_association : aadl_parser_node.property_associations)
+      for(const auto& property_association : aadl_parser_node.property_associations)
       {
          if(not first)
             os << ", ";
@@ -59,13 +59,13 @@ std::ostream & operator<<(std::ostream & os, const AadlParserNode & aadl_parser_
    if(aadl_parser_node.features.size())
    {
       bool first_feature = true;
-      for(const auto feature : aadl_parser_node.features)
+      for(const auto& feature : aadl_parser_node.features)
       {
          if(not first_feature)
             os << " -- ";
          os << feature.first << ": ";
          bool first_property = true;
-         for(const auto property : feature.second)
+         for(const auto& property : feature.second)
          {
             if(not first_property)
                os << ",";

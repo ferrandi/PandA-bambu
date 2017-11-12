@@ -710,9 +710,7 @@ bool xml_ite_block_t::checkCondition(const DesignParametersRef& dp) const
    return evaluate_condition(&condition, dp);
 }
 
-xml_foreach_t::xml_foreach_t(
-   std::string                        _variable
-) : xml_script_node_t(NODE_FOREACH), variable(_variable)
+xml_foreach_t::xml_foreach_t(const std::string &_variable) : xml_script_node_t(NODE_FOREACH), variable(_variable)
 {
 }
 

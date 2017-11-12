@@ -99,7 +99,7 @@ application_manager::application_manager(const FunctionExpanderConstRef function
 #endif
 {
    const auto original_file_names = Param->getOption<const CustomSet<std::string> >(OPT_input_file);
-   for(const auto original_file_name : original_file_names)
+   for(const auto& original_file_name : original_file_names)
    {
       //At the beginning the file to be processed is the original one, so keys and values of the map are the same
       input_files[original_file_name] = original_file_name;

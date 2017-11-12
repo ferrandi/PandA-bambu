@@ -94,7 +94,7 @@ void TechnologyFlowStep::ComputeRelationships(DesignFlowStepSet & steps, const D
    const auto design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
    const auto step_factory = GetPointer<const TechnologyFlowStepFactory>(CGetDesignFlowStepFactory());
    const auto step_types = ComputeTechnologyRelationships(relationship_type);
-   for(const auto step_type : step_types)
+   for(const auto& step_type : step_types)
    {
       vertex technology_flow_step = design_flow_manager.lock()->GetDesignFlowStep(ComputeSignature(step_type));
       const DesignFlowStepRef design_flow_step = technology_flow_step ? design_flow_graph->CGetDesignFlowStepInfo(technology_flow_step)->design_flow_step : step_factory->CreateTechnologyFlowStep(step_type);

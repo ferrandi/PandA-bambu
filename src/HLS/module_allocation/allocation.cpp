@@ -90,7 +90,7 @@ static bool is_memory_port (const structural_objectRef & port)
    return p->get_is_memory() or p->get_is_global() or p->get_is_extern();
 }
 
-static bool is_a_skip_operation(std::string op_name)
+static bool is_a_skip_operation(const std::string& op_name)
 {
    if(
          op_name == "mult_expr" ||
@@ -972,7 +972,7 @@ bool allocation::check_templated_units(double clock_period, node_kind_prec_infoR
    return false;
 }
 
-bool allocation::check_for_memory_compliancy(bool Has_extern_allocated_data, technology_nodeRef current_fu, std::string memory_ctrl_type, std::string channels_type)
+bool allocation::check_for_memory_compliancy(bool Has_extern_allocated_data, technology_nodeRef current_fu, const std::string& memory_ctrl_type, std::string channels_type)
 {
    std::string memory_type = GetPointer<functional_unit>(current_fu)->memory_type;
    std::string bram_load_latency = GetPointer<functional_unit>(current_fu)->bram_load_latency;
@@ -1854,7 +1854,7 @@ DesignFlowStep_Status allocation::InternalExec()
    ///These data struture are filled only once
    if (!allocation_information->node_id_to_fus.empty())
    {
-      for(const auto op : allocation_information->node_id_to_fus)
+      for(const auto& op : allocation_information->node_id_to_fus)
       {
          for(auto fu_unit : op.second)
          {
@@ -1866,7 +1866,7 @@ DesignFlowStep_Status allocation::InternalExec()
    }
    if (!allocation_information->node_id_to_fus.empty() and bb_version == 0)
    {
-      for(const auto op : allocation_information->node_id_to_fus)
+      for(const auto& op : allocation_information->node_id_to_fus)
       {
          for(auto fu_unit : op.second)
          {
@@ -2068,7 +2068,7 @@ bool allocation::is_ram_not_timing_compliant(const HLS_constraintsRef HLS_C, uns
    return  n_ref/n_channels > 1 &&  (controller_delay+ex_time+mux_delay+setup)>clock_period;
 }
 
-std::string allocation::get_synch_ram_latency(std::string ram_template, std::string latency_postfix, const HLS_constraintsRef HLS_C, unsigned int var)
+std::string allocation::get_synch_ram_latency(const std::string& ram_template, const std::string& latency_postfix, const HLS_constraintsRef HLS_C, unsigned int var)
 {
    std::string new_lat;
    technology_nodeRef current_fu = get_fu(ram_template+latency_postfix);

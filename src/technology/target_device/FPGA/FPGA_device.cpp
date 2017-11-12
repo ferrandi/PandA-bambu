@@ -156,7 +156,7 @@ void FPGA_device::load_devices(const target_deviceRef device)
          if (Param->isOption(OPT_target_device_file))
          {
             const auto file_devices = Param->getOption<const std::list<std::string> >(OPT_target_device_file);
-            for(const auto file_device : file_devices)
+            for(const auto& file_device : file_devices)
             {
                PRINT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "Imported user data from file " + file_device);
                ret.insert(XMLDomParserRef(new XMLDomParser(file_device)));
@@ -177,7 +177,7 @@ void FPGA_device::load_devices(const target_deviceRef device)
          return ret;
       }();
 
-      for(const auto parser : parsers)
+      for(const auto& parser : parsers)
       {
          parser->Exec();
          if (parser and *parser)

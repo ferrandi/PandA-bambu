@@ -419,7 +419,7 @@ void estimate_muxes(const connection_relation &con_rel, unsigned int mux_prec, d
             }
          }
       }
-      for(const auto oe : data->CGetOutEdges(current_v))
+      for(const auto& oe : data->CGetOutEdges(current_v))
       {
          if((data->GetSelector(oe) & (DFG_SCA_SELECTOR|FB_DFG_SCA_SELECTOR)))
          {
@@ -720,7 +720,7 @@ void cdfc_module_binding::update_slack_starting_time(const OpGraphConstRef fdfg,
       double new_current_budget = current_budget;
       if(!only_forward)
       {
-         for(const auto ie : fdfg->CGetInEdges(curr_vertex))
+         for(const auto& ie : fdfg->CGetInEdges(curr_vertex))
          {
             if(fdfg->GetSelector(ie) & DFG_SCA_SELECTOR)
             {
@@ -741,7 +741,7 @@ void cdfc_module_binding::update_slack_starting_time(const OpGraphConstRef fdfg,
       }
       if(!only_backward)
       {
-         for(const auto oe : fdfg->CGetOutEdges(curr_vertex))
+         for(const auto& oe : fdfg->CGetOutEdges(curr_vertex))
          {
             if(fdfg->GetSelector(oe) & DFG_SCA_SELECTOR)
             {
@@ -793,7 +793,7 @@ static vertex get_src_vertex(unsigned int var_written, vertex tgt, const HLS_man
 #endif
 
 static inline
-bool compute_condition1(std::string lib_name, const AllocationInformationConstRef allocation_information, double local_mux_time, unsigned int fu_s1)
+bool compute_condition1(const std::string& lib_name, const AllocationInformationConstRef allocation_information, double local_mux_time, unsigned int fu_s1)
 {
    bool cond1 = local_mux_time > 0 &&
                 lib_name != WORK_LIBRARY &&
@@ -1442,7 +1442,7 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
       /// partition vertices for clique covering or bind the easy functional units
       std::map<unsigned int, unsigned int> numModule;
       std::map<unsigned int, std::unordered_set<cdfc_vertex>, cdfc_resource_ordering_functor > partitions(r_functor);
-      for(const auto fu_cv : candidate_vertices)
+      for(const auto& fu_cv : candidate_vertices)
       {
          fu_unit = fu_cv.first;
          for(const auto cv : fu_cv.second)
@@ -1882,7 +1882,7 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
       {
          INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "---Clique covering computation:");
          INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "-->");
-         for(const auto iteration : clique_iteration_cputime)
+         for(const auto& iteration : clique_iteration_cputime)
          {
             INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "---Iteration " + STR(iteration.first) + " completed in " + print_cpu_time(iteration.second) + " seconds");
          }

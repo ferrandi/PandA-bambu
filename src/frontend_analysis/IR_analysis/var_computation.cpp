@@ -223,7 +223,7 @@ void VarComputation::RecursivelyAnalyze(const vertex op_vertex, const tree_nodeC
       case gimple_phi_K:
       {
          const gimple_phi * pn = GetPointer<const gimple_phi>(tree_node);
-         for(const auto def_edge : pn->CGetDefEdgesList())
+         for(const auto& def_edge : pn->CGetDefEdgesList())
          {
             RecursivelyAnalyze(op_vertex, GET_CONST_NODE(def_edge.first), FunctionBehavior_VariableAccessType::USE);
          }
@@ -301,7 +301,7 @@ void VarComputation::RecursivelyAnalyze(const vertex op_vertex, const tree_nodeC
       case gimple_multi_way_if_K:
       {
          const gimple_multi_way_if * gmwi = GetPointer<const gimple_multi_way_if>(tree_node);
-         for(const auto cond : gmwi->list_of_cond)
+         for(const auto& cond : gmwi->list_of_cond)
          {
             if(cond.first)
             {

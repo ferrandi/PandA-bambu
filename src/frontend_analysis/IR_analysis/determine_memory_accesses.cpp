@@ -144,11 +144,11 @@ DesignFlowStep_Status determine_memory_accesses::InternalExec()
    {
       if (it_bb->second->number == BB_ENTRY || it_bb->second->number == BB_EXIT)
          continue;
-      for(const auto phi : it_bb->second->CGetPhiList())
+      for(const auto& phi : it_bb->second->CGetPhiList())
       {
          analyze_node(phi->index, false, false, false);
       }
-      for(const auto stmt : it_bb->second->CGetStmtList())
+      for(const auto& stmt : it_bb->second->CGetStmtList())
       {
          analyze_node(stmt->index, false, false, false);
       }
@@ -521,7 +521,7 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
       case gimple_phi_K:
       {
          gimple_phi * gp = GetPointer<gimple_phi>(tn);
-         for(const auto def_edge : gp->CGetDefEdgesList())
+         for(const auto& def_edge : gp->CGetDefEdgesList())
          {
             analyze_node(GET_INDEX_NODE(def_edge.first), left_p, dynamic_address, no_dynamic_address);
          }

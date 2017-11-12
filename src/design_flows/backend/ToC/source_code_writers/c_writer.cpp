@@ -886,7 +886,7 @@ void CWriter::writeRoutineInstructions_rec
             THROW_ASSERT(node->get_kind()== gimple_multi_way_if_K, "unexpected node");
             gimple_multi_way_if* gmwi = GetPointer<gimple_multi_way_if>(node);
             std::map<unsigned int, bool> add_elseif_to_goto;
-            for(const auto cond : gmwi->list_of_cond)
+            for(const auto& cond : gmwi->list_of_cond)
             {
                unsigned int bb_index_num = cond.second;
                const vertex bb_vertex = bb_graph_info->bb_index_map.find(bb_index_num)->second;
@@ -900,7 +900,7 @@ void CWriter::writeRoutineInstructions_rec
                else
                   add_elseif_to_goto[bb_index_num] = false;
             }
-            for(const auto cond : gmwi->list_of_cond)
+            for(const auto& cond : gmwi->list_of_cond)
             {
                unsigned int bb_index_num = cond.second;
                const vertex bb_vertex = bb_graph_info->bb_index_map.find(bb_index_num)->second;
@@ -1464,7 +1464,7 @@ void CWriter::schedule_copies(vertex b, const BBGraphConstRef bb_domGraph, const
    {
       vertex s = boost::target(*oi, *bb_fcfgGraph);
       const BBNodeInfoConstRef si = bb_fcfgGraph->CGetBBNodeInfo(s);
-      for(const auto phi_op : si->block->CGetPhiList())
+      for(const auto& phi_op : si->block->CGetPhiList())
       {
          if(phi_instructions.find(GET_INDEX_NODE(phi_op)) == phi_instructions.end())
             continue;
@@ -1475,7 +1475,7 @@ void CWriter::schedule_copies(vertex b, const BBGraphConstRef bb_domGraph, const
          if(!is_virtual)
          {
             bb_dest_definition[dest_i] = si->block->number;
-            for(const auto def_edge : pn->CGetDefEdgesList())
+            for(const auto& def_edge : pn->CGetDefEdgesList())
             {
                if(def_edge.second == bi_id)
                {

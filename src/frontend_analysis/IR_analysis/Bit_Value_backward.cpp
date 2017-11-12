@@ -227,7 +227,7 @@ void Bit_Value::backward()
       {
          blocRef B = B_it.second;
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing BB" + STR(B->number));
-         for(const auto stmt : boost::adaptors::reverse(B->CGetStmtList()))
+         for(const auto& stmt : boost::adaptors::reverse(B->CGetStmtList()))
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing statement " + STR(stmt));
             const tree_nodeRef s = GET_NODE(stmt);
@@ -268,7 +268,7 @@ void Bit_Value::backward()
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed statement " + STR(stmt));
          }
 
-         for(const auto stmt : boost::adaptors::reverse(B->CGetPhiList()))
+         for(const auto& stmt : boost::adaptors::reverse(B->CGetPhiList()))
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing Phi " + STR(stmt));
             gimple_phi * gp = GetPointer<gimple_phi> (GET_NODE(stmt));

@@ -344,7 +344,7 @@ struct BBGraph : public graph
        * @param selector is the selector used to filter the bulk graph.
        * @param sub is the set of vertices on which the graph is filtered.
        */
-      BBGraph(const BBGraphsCollectionRef bb_graphs_collection, int selector, std::unordered_set<vertex> sub);
+      BBGraph(const BBGraphsCollectionRef bb_graphs_collection, int selector, std::unordered_set<vertex> &sub);
 
       /**
        * Destructor

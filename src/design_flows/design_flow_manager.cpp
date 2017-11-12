@@ -725,7 +725,7 @@ void DesignFlowManager::Exec()
             to_be_removeds.insert(*ie);
          }
       }
-      for(const auto to_be_removed : to_be_removeds)
+      for(const auto& to_be_removed : to_be_removeds)
       {
          design_flow_graphs_collection->RemoveSelector(to_be_removed, DesignFlowGraph::AUX_SELECTOR);
       }

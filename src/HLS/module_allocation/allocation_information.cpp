@@ -1564,7 +1564,7 @@ void AllocationInformation::print(std::ostream& os) const
    if (!node_id_to_fus.empty())
    {
       os << "Op_name relation with functional unit name and operations.\n";
-      for(const auto node_id : node_id_to_fus)
+      for(const auto& node_id : node_id_to_fus)
       {
          for(const auto fu : node_id.second)
             os << "  [" << STR(node_id.first.first) << ", <" << list_of_FU[fu]->get_name() << ">]" << std::endl;
@@ -1578,7 +1578,7 @@ void AllocationInformation::print_allocated_resources() const
    if (debug_level >= DEBUG_LEVEL_VERBOSE)
    {
       PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "\nDumping the list of all the fixed bindings FU <-> node");
-      for(const auto bind : binding)
+      for(const auto& bind : binding)
       {
          if(bind.first == ENTRY_ID or bind.first == EXIT_ID)
             continue;
@@ -1589,7 +1589,7 @@ void AllocationInformation::print_allocated_resources() const
       }
 
       PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Dumping the list of all the possible bindings FU <-> node");
-      for(const auto bind : node_id_to_fus)
+      for(const auto& bind : node_id_to_fus)
       {
          if(bind.first.first == ENTRY_ID or bind.first.first == EXIT_ID or bind.first.first)
             continue;
@@ -2025,7 +2025,7 @@ double AllocationInformation::GetPhiConnectionLatency(const unsigned int stateme
          return 0;
       const auto sn = GetPointer<const ssa_name>(GET_NODE(ga->op0));
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Analyzing uses of " + sn->ToString());
-      for(const auto use : sn->CGetUseStmts())
+      for(const auto& use : sn->CGetUseStmts())
       {
          const auto target = GET_NODE(use.first);
          if(target->get_kind() == gimple_phi_K)
@@ -2033,7 +2033,7 @@ double AllocationInformation::GetPhiConnectionLatency(const unsigned int stateme
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Phi: " + target->ToString());
             const auto gp = GetPointer<const gimple_phi>(target);
             std::set<unsigned int> phi_inputs;
-            for(const auto def_edge : gp->CGetDefEdgesList())
+            for(const auto& def_edge : gp->CGetDefEdgesList())
             {
                if(def_edge.first->index && !behavioral_helper->is_a_constant(def_edge.first->index))
                   phi_inputs.insert(def_edge.first->index);
@@ -2082,8 +2082,7 @@ unsigned int AllocationInformation::GetFuType(const vertex operation) const
 unsigned int AllocationInformation::GetFuType(const unsigned int operation) const
 {
    unsigned int fu_type = 0;
-   bool single_fu_type = is_vertex_bounded_with(operation, fu_type);
-   if(not single_fu_type)
+   if(not is_vertex_bounded_with(operation, fu_type))
    {
       const std::set<unsigned int> & fu_set = can_implement_set(operation);
       if(fu_set.size() > 1)
@@ -2157,7 +2156,7 @@ double AllocationInformation::EstimateControllerDelay() const
    return delay;
 }
 
-std::string AllocationInformation::get_latency_string(std::string lat) const
+std::string AllocationInformation::get_latency_string(const std::string& lat) const
 {
    if(lat == "2")
       return std::string("");
@@ -2736,7 +2735,7 @@ CustomSet<unsigned int> AllocationInformation::ComputeDrivenCondExpr(const unsig
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Ignored since not ssa");
             continue;
          }
-         for(const auto use_stmt : current_sn->CGetUseStmts())
+         for(const auto& use_stmt : current_sn->CGetUseStmts())
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering use in " + STR(use_stmt.first));
             if(GET_NODE(use_stmt.first)->get_kind() != gimple_assign_K)
@@ -2860,7 +2859,7 @@ double AllocationInformation::GetConnectionTime(const unsigned int first_operati
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Computing overall connection time " + STR(first_operation) + "-->" + STR(second_operation));
 
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Computing connection time due to fanout " + STR(first_operation) + "-->" + STR(second_operation));
-      for(const auto used_ssa : tree_helper::ComputeSsaUses(TreeM->CGetTreeReindex(second_operation)))
+      for(const auto& used_ssa : tree_helper::ComputeSsaUses(TreeM->CGetTreeReindex(second_operation)))
       {
          const auto used_ssa_sn = GetPointer<const ssa_name>(GET_NODE(used_ssa.first));
          if(used_ssa_sn and  used_ssa_sn->CGetDefStmt()->index == first_operation)
@@ -3403,7 +3402,7 @@ CustomSet<unsigned int> AllocationInformation::GetZeroDistanceOperations(const u
                continue;
             }
          }
-         for(const auto use_stmt : current_sn->CGetUseStmts())
+         for(const auto& use_stmt : current_sn->CGetUseStmts())
          {
             const auto use_stmt_index = use_stmt.first->index;
             if(already_analyzed.find(use_stmt_index) != already_analyzed.end())

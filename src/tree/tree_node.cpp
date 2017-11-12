@@ -959,7 +959,7 @@ void gimple_phi::visit(tree_node_visitor * const v) const
    (*v)(this, mask);
    VISIT_SC(mask,gimple_node,visit(v));
    VISIT_MEMBER(mask,res,visit(v));
-   for(const auto def_edge : list_of_def_edge)
+   for(const auto& def_edge : list_of_def_edge)
       VISIT_MEMBER_NAMED(list_of_def_edge,mask, def_edge.first, visit(v));
 }
 
@@ -1009,7 +1009,7 @@ void gimple_phi::SetDefEdgeList(const tree_managerRef TM, DefEdgeList new_list_o
 {
    while(list_of_def_edge.size())
       RemoveDefEdge(TM, list_of_def_edge.front());
-   for(const auto def_edge : new_list_of_def_edge)
+   for(const auto& def_edge : new_list_of_def_edge)
       AddDefEdge(TM, def_edge);
 }
 
@@ -1206,7 +1206,7 @@ const tree_nodeRef ssa_name::CGetDefStmt() const
    {
       std::string error_message;
       error_message += "There are " + STR(def_stmts.size()) + " definitions for " + ToString() + ":";
-      for(const auto def_stmt : def_stmts)
+      for(const auto& def_stmt : def_stmts)
       {
          error_message += "\n" + STR(def_stmt);
       }
@@ -1246,7 +1246,7 @@ const TreeNodeMap<size_t> & ssa_name::CGetUseStmts() const
 size_t ssa_name::CGetNumberUses() const
 {
    size_t ret_value = 0;
-   for(const auto use_stmt : use_stmts)
+   for(const auto& use_stmt : use_stmts)
       ret_value += use_stmt.second;
    return ret_value;
 }
@@ -1257,7 +1257,7 @@ void ssa_name::RemoveUse(const tree_nodeRef use_stmt)
    if(use_stmts.find(use_stmt) == use_stmts.end() or use_stmts.find(use_stmt)->second == 0)
    {
       INDENT_DBG_MEX(0,0, use_stmt->ToString() + " is not in the use_stmts of " + ToString());
-      for(const auto current_use_stmt : use_stmts)
+      for(const auto& current_use_stmt : use_stmts)
       {
          INDENT_DBG_MEX(0,0, STR(current_use_stmt.second) + " uses in (" + STR(current_use_stmt.first->index) + ") " + STR(current_use_stmt.first));
       }

@@ -102,7 +102,7 @@ void TestbenchMemoryAllocation::AllocTestbenchMemory(void) const
 
    const std::list<unsigned int>& func_parameters =
       behavioral_helper->get_parameters();
-   for(const auto & p : func_parameters)
+   for(const auto& p : func_parameters)
    {
       // if the function has some pointer func_parameters some memory needs to be
       // reserved for the place where they point to

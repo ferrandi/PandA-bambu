@@ -294,7 +294,7 @@ struct StateTransitionGraph : public graph
        * @param selector is the selector used to filter the bulk graph.
        * @param sub is the set of vertices on which the graph is filtered.
        */
-      StateTransitionGraph(const StateTransitionGraphsCollectionRef state_transition_graphs_collection, int selector, std::unordered_set<vertex> sub);
+      StateTransitionGraph(const StateTransitionGraphsCollectionRef state_transition_graphs_collection, int selector, std::unordered_set<vertex> &sub);
 
       /**
        * Destructor

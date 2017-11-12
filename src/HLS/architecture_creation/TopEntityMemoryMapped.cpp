@@ -251,7 +251,7 @@ TopEntityMemoryMapped::insertMemoryMappedRegister(
       interfaceObj->find_member("ControlSignal", signal_o_K, interfaceObj);
    bool multi_channel_bus = HLS->Param->getOption<MemoryAllocation_ChannelsType>(OPT_channels_type) == MemoryAllocation_ChannelsType::MEM_ACC_NN;
 
-   for(const auto function_parameter : function_parameters)
+   for(const auto& function_parameter : function_parameters)
    {
       // Do not consider return register and status register here.
       if (function_parameter.first == BH->GetFunctionReturnType(HLS->functionId) ||

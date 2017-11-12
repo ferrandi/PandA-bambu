@@ -130,7 +130,7 @@ void Schedule::print(fu_bindingRef Rfu) const
       auto & control_step_ops = csteps_partitions.at(control_step);
       control_step_ops.insert(*sch_i);
    }
-   for(const auto control_step : csteps_partitions)
+   for(const auto& control_step : csteps_partitions)
    {
       for(const auto op : control_step.second)
       {
@@ -456,7 +456,7 @@ void Schedule::UpdateTime(const unsigned int operation_index, bool update_cs)
          const auto current_cs = op_starting_cycle.at(operation_index);
          const auto fd = GetPointer<const function_decl>(TM->CGetTreeNode(function_index));
          const auto sl = GetPointer<const statement_list>(GET_NODE(fd->body));
-         for(const auto stmt : sl->list_of_bloc.at(gn->bb_index)->CGetStmtList())
+         for(const auto& stmt : sl->list_of_bloc.at(gn->bb_index)->CGetStmtList())
          {
             if(op_starting_cycle.at(stmt->index) >= current_cs and stmt->index != operation_index and starting_times.find(stmt->index) != starting_times.end())
             {
@@ -702,7 +702,7 @@ bool Schedule::EvaluateMultiWayIfsMerging(const unsigned int first_statement_ind
             const auto first_gc_input_delay = GetReadyTime(first_gc_op->index, first_gc->bb_index);
             auto current_condition = first_gc_op;
             auto current_ending_time = first_gc_input_delay;
-            for(const auto cond : second_gmwi->list_of_cond)
+            for(const auto& cond : second_gmwi->list_of_cond)
             {
                if(cond.first)
                {
@@ -723,7 +723,7 @@ bool Schedule::EvaluateMultiWayIfsMerging(const unsigned int first_statement_ind
             auto current_ending_time = 0.0;
             const auto not_operation = tree_man->CreateNotExpr(first_gc_op, blocRef());
             const auto not_ending_time = GetReadyTime(first_gc_op->index, first_basic_block) + allocation_information->GetTimeLatency(not_operation->index, AbsControlStep(first_basic_block, first_statement_cs), fu_binding::UNKNOWN).first;
-            for(const auto cond : second_gmwi->list_of_cond)
+            for(const auto& cond : second_gmwi->list_of_cond)
             {
                const auto and_operation = tree_man->CreateAndExpr(GetPointer<const gimple_assign>(GET_NODE(not_operation))->op0, cond.first, blocRef());
                const auto and_ending_time = std::max(not_ending_time, GetReadyTime(cond.first->index, first_basic_block)) + allocation_information->GetTimeLatency(and_operation->index, AbsControlStep(first_basic_block, first_statement_cs), fu_binding::UNKNOWN).first;
@@ -746,7 +746,7 @@ bool Schedule::EvaluateMultiWayIfsMerging(const unsigned int first_statement_ind
          const auto default_basic_block = first_gmwi->list_of_cond.back().second;
          if(default_basic_block != second_basic_block)
          {
-            for(const auto cond : first_gmwi->list_of_cond)
+            for(const auto& cond : first_gmwi->list_of_cond)
             {
                if(cond.second == second_basic_block)
                {
@@ -763,7 +763,7 @@ bool Schedule::EvaluateMultiWayIfsMerging(const unsigned int first_statement_ind
          {
             auto current_condition = tree_nodeRef();
             auto current_ending_time = 0.0;
-            for(const auto cond : first_gmwi->list_of_cond)
+            for(const auto& cond : first_gmwi->list_of_cond)
             {
                if(cond.first)
                {
@@ -788,13 +788,13 @@ bool Schedule::EvaluateMultiWayIfsMerging(const unsigned int first_statement_ind
          const auto default_basic_block = first_gmwi->list_of_cond.back().second;
          if(default_basic_block != second_basic_block)
          {
-            for(const auto first_cond : first_gmwi->list_of_cond)
+            for(const auto& first_cond : first_gmwi->list_of_cond)
             {
                if(first_cond.second == second_basic_block)
                {
                   auto current_condition = first_cond.first;
                   auto current_ending_time = GetReadyTime(first_cond.first->index, first_basic_block);
-                  for(const auto second_cond : second_gmwi->list_of_cond)
+                  for(const auto& second_cond : second_gmwi->list_of_cond)
                   {
                      if(second_cond.first)
                      {
@@ -815,7 +815,7 @@ bool Schedule::EvaluateMultiWayIfsMerging(const unsigned int first_statement_ind
          {
             auto current_condition = tree_nodeRef();
             auto current_ending_time = 0.0;
-            for(const auto cond : first_gmwi->list_of_cond)
+            for(const auto& cond : first_gmwi->list_of_cond)
             {
                if(cond.first)
                {
@@ -827,7 +827,7 @@ bool Schedule::EvaluateMultiWayIfsMerging(const unsigned int first_statement_ind
                   current_ending_time = and_ending_time;
                }
             }
-            for(const auto cond : second_gmwi->list_of_cond)
+            for(const auto& cond : second_gmwi->list_of_cond)
             {
                if(cond.first)
                {

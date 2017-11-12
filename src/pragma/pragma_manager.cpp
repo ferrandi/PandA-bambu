@@ -148,7 +148,7 @@ pragma_manager::pragma_manager(const application_managerRef _application_manager
    if (param->isOption(OPT_blackbox))
    {
       const auto black_box_functions = param->getOption<const CustomSet<std::string> >(OPT_blackbox);
-      for(const auto black_box_function : black_box_functions)
+      for(const auto& black_box_function : black_box_functions)
       {
          PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, param->getOption<int>(OPT_output_level), "Function \"" + black_box_function + "\" is a blackbox");
          BlackBoxFunctions.insert(black_box_function);
@@ -384,7 +384,7 @@ bool pragma_manager::CheckOmpFor(const application_managerConstRef app_man, cons
    while(boost::in_degree(current, *bb_cfg) == 1)
    {
       const BBNodeInfoConstRef info = bb_cfg->CGetBBNodeInfo(current);
-      for(const auto stmt : info->block->CGetStmtList())
+      for(const auto& stmt : info->block->CGetStmtList())
       {
          if (GET_NODE(stmt)->get_kind() == gimple_pragma_K)
          {
@@ -416,7 +416,7 @@ void pragma_manager::CheckAddOmpFor(const unsigned int function_index, const ver
    {
       const BBNodeInfoConstRef info = bb_cfg->CGetBBNodeInfo(current);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Analyzing BB" + STR(info->block->number));
-      for(const auto stmt : info->block->CGetStmtList())
+      for(const auto& stmt : info->block->CGetStmtList())
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Analzying " + STR(stmt));
          if (GET_NODE(stmt)->get_kind() == gimple_pragma_K)
@@ -459,7 +459,7 @@ void pragma_manager::CheckAddOmpSimd(const unsigned int function_index, const ve
    {
       const BBNodeInfoRef info = bb_cfg->GetBBNodeInfo(current);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Analyzing BB" + STR(info->block->number));
-      for(const auto stmt : info->block->CGetStmtList())
+      for(const auto& stmt : info->block->CGetStmtList())
       {
          if (GET_NODE(stmt)->get_kind() == gimple_pragma_K)
          {

@@ -92,11 +92,11 @@ MinimalInterfaceTestbench::~MinimalInterfaceTestbench()
 void MinimalInterfaceTestbench::cond_load(
       long long int Mout_addr_ram_bitsize,
       std::string,
-      std::string post_slice2,
-      std::string res_string,
+      const std::string& post_slice2,
+      const std::string& res_string,
       unsigned int i,
-      std::string in_else,
-      std::string mem_aggregate)
+      const std::string& in_else,
+      const std::string& mem_aggregate)
    const
 {
    writer->write("assign " + res_string + post_slice2 + " = ((base_addr <= Mout_addr_ram["+boost::lexical_cast<std::string>((i+1)*Mout_addr_ram_bitsize-1)+ ":"+boost::lexical_cast<std::string>(i*Mout_addr_ram_bitsize)+"] && Mout_addr_ram["+boost::lexical_cast<std::string>((i+1)*Mout_addr_ram_bitsize-1)+ ":"+boost::lexical_cast<std::string>(i*Mout_addr_ram_bitsize)+"] < (base_addr + MEMSIZE)))" + " ? " + mem_aggregate + " : " + in_else + ";\n");

@@ -2588,7 +2588,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
          gimple_multi_way_if *gmwi = GetPointer<gimple_multi_way_if>(node);
          res = "if (";
          bool first = true;
-         for(const auto cond : gmwi->list_of_cond)
+         for(const auto& cond : gmwi->list_of_cond)
          {
             if(first)
             {
@@ -3397,7 +3397,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
       {
          gimple_phi * pn = GetPointer<gimple_phi>(node);
          res += "/* " + print_node(GET_INDEX_NODE(pn->res), v, vppf) +" = gimple_phi(";
-         for(const auto def_edge : pn->CGetDefEdgesList())
+         for(const auto& def_edge : pn->CGetDefEdgesList())
          {
             if(def_edge != pn->CGetDefEdgesList().front())
                res += ", ";
@@ -3588,7 +3588,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
       {
          res += "critical";
          const auto * ocp = GetPointer<const omp_critical_pragma>(node);
-         for(const auto clause : ocp->clauses)
+         for(const auto& clause : ocp->clauses)
          {
             res += " " + clause.first + "(" + clause.second + ")";
          }

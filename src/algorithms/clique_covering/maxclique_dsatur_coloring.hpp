@@ -178,6 +178,7 @@ namespace boost
       {
          support = sv.support;
       }
+      select_vertex & operator=(const select_vertex&) = delete;
       void init(SET_container * _support) { support=_support;}
       template <typename Vertex>
       bool operator()(const Vertex &v) const

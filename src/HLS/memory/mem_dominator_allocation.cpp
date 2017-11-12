@@ -220,7 +220,7 @@ DesignFlowStep_Status mem_dominator_allocation::Exec()
 
       if(projection_in_degree != 1)
       {
-         for(const auto top_function : cg_dominator_map)
+         for(const auto& top_function : cg_dominator_map)
          {
             if(top_function.second.find(current_vertex) != top_function.second.end())
             {
@@ -455,7 +455,7 @@ DesignFlowStep_Status mem_dominator_allocation::Exec()
       THROW_ASSERT(var_index, "null var index unexpected");
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Finding common dominator for variable " + STR(var_index));
       CustomSet<unsigned int> filtered_top_functions;
-      for(const auto reachable_vertex : reachable_vertices)
+      for(const auto& reachable_vertex : reachable_vertices)
       {
          for(const auto use_vertex : it->second)
          {

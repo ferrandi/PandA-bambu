@@ -158,7 +158,7 @@ class port_swapping : public HLSFunctionStep
        * @param operation name
        * @return true if it is a commutative binary operation, false otherwise
        */
-      bool is_commutative_op(std::string operation);
+      bool is_commutative_op(const std::string &operation);
 
       /**
        * This function returns the belonging set of a given vertex

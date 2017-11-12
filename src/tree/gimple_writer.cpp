@@ -1000,7 +1000,7 @@ void GimpleWriter::operator()(const gimple_phi* obj, unsigned int & mask)
    os << "  # ";
    obj->res->visit(this);
    os << " = PHI <";
-   for(const auto def_edge : obj->CGetDefEdgesList())
+   for(const auto& def_edge : obj->CGetDefEdgesList())
    {
       if(def_edge != obj->CGetDefEdgesList().front())
          os << ", ";
@@ -1116,12 +1116,12 @@ void GimpleWriter::operator()(const statement_list* obj, unsigned int & mask)
       {
          os << "<bb " << block->first << ">:" << std::endl;
       }
-      for(const auto phi : block->second->CGetPhiList())
+      for(const auto& phi : block->second->CGetPhiList())
       {
          phi->visit(this);
          os << std::endl;
       }
-      for(const auto stmt : block->second->CGetStmtList())
+      for(const auto& stmt : block->second->CGetStmtList())
       {
          const tree_nodeConstRef statement = GET_NODE(stmt);
          ///We print only MEMUSE and MEMDEF as VUSE and VDEF like gcc -fdump-tree-all
@@ -1623,7 +1623,7 @@ void GimpleWriter::operator()(const gimple_multi_way_if * obj, unsigned int & ma
 {
    mask = NO_VISIT;
    os << "multi_way_if (";
-   for(const auto cond : obj->list_of_cond)
+   for(const auto& cond : obj->list_of_cond)
    {
       if(cond.first)
          cond.first->visit(this);

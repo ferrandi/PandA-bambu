@@ -71,7 +71,7 @@ class top_entity : public HLSFunctionStep
        */
       virtual const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const;
 
-      void add_input_register(structural_objectRef port_in, std::string port_prefix, structural_objectRef circuit, structural_objectRef clock_port, structural_objectRef reset_port, structural_objectRef e_port);
+      void add_input_register(structural_objectRef port_in, const std::string &port_prefix, structural_objectRef circuit, structural_objectRef clock_port, structural_objectRef reset_port, structural_objectRef e_port);
 
    public:
       /**

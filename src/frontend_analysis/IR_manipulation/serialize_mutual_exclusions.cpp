@@ -139,7 +139,7 @@ DesignFlowStep_Status SerializeMutualExclusions::InternalExec()
    }
 
    ///Analyzing basic blocks starting from the leaves
-   for(const auto basic_block : basic_blocks)
+   for(const auto& basic_block : basic_blocks)
    {
       if(bb_modified)
          break;
@@ -233,7 +233,7 @@ DesignFlowStep_Status SerializeMutualExclusions::InternalExec()
             bb_node_info->list_of_succ.erase(std::find(bb_node_info->list_of_succ.begin(), bb_node_info->list_of_succ.end(), false_bb_id));
             bb_node_info->list_of_succ.push_back(new_block->number);
             bb_node_info->false_edge = new_block->number;
-            for(const auto true_bb_end : true_bb_ends)
+            for(const auto& true_bb_end : true_bb_ends)
             {
                auto true_bb_block = cfg_bb_graph->CGetBBNodeInfo(true_bb_end)->block;
                true_bb_block->list_of_succ.erase(std::find(true_bb_block->list_of_succ.begin(), true_bb_block->list_of_succ.end(), end_if_id));
@@ -272,7 +272,7 @@ DesignFlowStep_Status SerializeMutualExclusions::InternalExec()
 
 
             ///Fix the phi in end if and create the phi in new block
-            for(const auto phi : end_if_block->CGetPhiList())
+            for(const auto& phi : end_if_block->CGetPhiList())
             {
                auto gp = GetPointer<gimple_phi>(GET_NODE(phi));
                gimple_phi::DefEdgeList end_if_new_def_edge_list;
@@ -313,7 +313,7 @@ DesignFlowStep_Status SerializeMutualExclusions::InternalExec()
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Fixing phis");
                new_gp->AddDefEdge(TM, gimple_phi::DefEdge(zero, basic_block_id));
                end_if_new_def_edge_list.push_back(gimple_phi::DefEdge(new_gp->res, new_block->number));
-               for(const auto def_edge : gp->CGetDefEdgesList())
+               for(const auto& def_edge : gp->CGetDefEdgesList())
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Considering source BB" + STR(def_edge.second));
                   const auto source_bb = bb_index_map.find(def_edge.second)->second;
@@ -350,7 +350,7 @@ DesignFlowStep_Status SerializeMutualExclusions::InternalExec()
          const auto gmwi = GetPointer<const gimple_multi_way_if>(last_stmt);
          THROW_ASSERT(gmwi, last_stmt->get_kind_text());
          vertex previous_basic_block = NULL_VERTEX;
-         for(const auto cond : gmwi->list_of_cond)
+         for(const auto& cond : gmwi->list_of_cond)
          {
             const auto current_basic_block_index = cond.second;
             const auto current_basic_block = bb_index_map.at(current_basic_block_index);

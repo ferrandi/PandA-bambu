@@ -817,7 +817,7 @@ std::string tree_helper::print_function_name(const tree_managerConstRef TM, cons
       if (in->operator_flag)
       {
          res = "operator ";
-         for(const auto attr : fd->list_attr)
+         for(const auto& attr : fd->list_attr)
          {
             if (attr == TreeVocabularyTokenTypes_TokenEnum::TOK_PUBLIC || attr == TreeVocabularyTokenTypes_TokenEnum::TOK_PRIVATE || attr
                   == TreeVocabularyTokenTypes_TokenEnum::TOK_PROTECTED || attr == TreeVocabularyTokenTypes_TokenEnum::TOK_OPERATOR ||attr
@@ -1363,7 +1363,7 @@ const std::unordered_set<unsigned int> tree_helper::RecursiveGetTypesToBeDeclare
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Record type without named unqualified");
                const std::list<tree_nodeConstRef> field_types = CGetFieldTypes(TM->CGetTreeNode(index));
-               for(const auto field_type : field_types)
+               for(const auto& field_type : field_types)
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering field type (" + STR(field_type->index) + ") " + STR(field_type));
                   bool pointer_to_unnamed_structure = [&] ()
@@ -1434,7 +1434,7 @@ const std::unordered_set<unsigned int> tree_helper::RecursiveGetTypesToBeDeclare
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Union type without named unqualified");
                const std::list<tree_nodeConstRef> field_types = CGetFieldTypes(TM->CGetTreeNode(index));
-               for(const auto field_type : field_types)
+               for(const auto& field_type : field_types)
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering field type (" + STR(field_type->index) + ") " + STR(field_type));
                   bool pointer_to_unnamed_structure = [&] ()
@@ -7339,10 +7339,11 @@ void tree_helper::ComputeSsaUses(const tree_nodeRef tn, TreeNodeMap<size_t> & ss
       case gimple_phi_K:
       {
          gimple_phi * gp = GetPointer<gimple_phi>(curr_tn);
-         for(const auto def_edge : gp->CGetDefEdgesList())
+         for(const auto& def_edge : gp->CGetDefEdgesList())
          {
             ComputeSsaUses(def_edge.first, ssa_uses);
          }
+         break;
       }
       case result_decl_K:
       case parm_decl_K:
@@ -7684,7 +7685,7 @@ void tree_helper::get_required_values(const tree_managerConstRef TM, std::vector
       case gimple_phi_K:
       {
          gimple_phi* gp = GetPointer<gimple_phi>(tn);
-         for(const auto def_edge : gp->CGetDefEdgesList())
+         for(const auto& def_edge : gp->CGetDefEdgesList())
             required.push_back(std::tuple<unsigned int, unsigned int> (GET_INDEX_NODE(def_edge.first),0));
          break;
       }
@@ -7893,7 +7894,7 @@ size_t tree_helper::GetFunctionSize(const tree_managerConstRef TM, const unsigne
    THROW_ASSERT(fd->body, "Function " + fd->ToString() + " is without body");
    const auto sl = GetPointer<const statement_list>(GET_NODE(fd->body));
    size_t ret_value = 0;
-   for(const auto block : sl->list_of_bloc)
+   for(const auto& block : sl->list_of_bloc)
    {
       ret_value += block.second->CGetStmtList().size();
       ret_value += block.second->CGetPhiList().size();

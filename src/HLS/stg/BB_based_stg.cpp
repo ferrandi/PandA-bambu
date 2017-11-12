@@ -549,7 +549,8 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
                THROW_ASSERT(call_operations.find(previous) != call_operations.end() && call_operations.find(previous)->second.begin() != call_operations.find(previous)->second.end(), "unexpected condition");
                vertex call = call_operations.find(previous)->second.front();
                THROW_ASSERT(call_states.find(previous) != call_states.end(), "unexpected condition");
-               for(std::list<vertex>::iterator s = call_states.find(previous)->second.begin(); s != call_states.find(previous)->second.end(); ++s)
+               auto call_sets = call_states.find(previous)->second;
+               for(std::list<vertex>::iterator s = call_sets.begin(); s != call_sets.end(); ++s)
                {
                   EdgeDescriptor s_e = STG_builder->connect_state(*s, s_cur, ST_EDGE_NORMAL_T);
 
@@ -650,13 +651,14 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
          s_e = STG_builder->connect_state(s_src, s_tgt, ST_EDGE_FEEDBACK_T);
          if(call_states.find(s_src) !=  call_states.end())
          {
-            if(call_states.find(s_src)->second.begin() != call_states.find(s_src)->second.end())
+            auto call_sets = call_states.find(s_src)->second;
+            if(call_sets.begin() != call_sets.end())
             {
                std::set<std::pair<vertex, unsigned int> > OutCondition;
                OutCondition.insert(std::make_pair(call_operations[s_src].front(), T_COND));
                STG_builder->set_condition(s_e, OutCondition);
             }
-            for(std::list<vertex>::iterator s = call_states.find(s_src)->second.begin(); s != call_states.find(s_src)->second.end(); ++s)
+            for(std::list<vertex>::iterator s = call_sets.begin(); s != call_sets.end(); ++s)
             {
                EdgeDescriptor s_e1 = STG_builder->connect_state(*s, s_tgt, ST_EDGE_FEEDBACK_T);
                std::set<std::pair<vertex, unsigned int> > OutCondition;
@@ -673,7 +675,8 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
          {
             THROW_ASSERT(call_operations.find(s_src) != call_operations.end() && call_operations.find(s_src)->second.size() != 0, "State " + HLS->STG->get_state_name(s_src) + " does not contain any call expression");
             vertex operation =  call_operations.find(s_src)->second.front();
-            for(std::list<vertex>::iterator s = call_states.find(s_src)->second.begin(); s != call_states.find(s_src)->second.end(); ++s)
+            auto call_sets = call_states.find(s_src)->second;
+            for(std::list<vertex>::iterator s = call_sets.begin(); s != call_sets.end(); ++s)
             {
                EdgeDescriptor s_edge = STG_builder->connect_state(*s, s_tgt, ST_EDGE_NORMAL_T);
 

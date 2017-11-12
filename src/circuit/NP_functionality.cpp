@@ -52,7 +52,7 @@
 #include <boost/algorithm/string/classification.hpp>
 
 
-NP_functionality::NP_functionaly_type NP_functionality::to_NP_functionaly_type(std::string val)
+NP_functionality::NP_functionaly_type NP_functionality::to_NP_functionaly_type(const std::string& val)
 {
   unsigned int i;
   for(i = 0; i < UNKNOWN; i++)
@@ -87,7 +87,7 @@ const char* NP_functionality::NP_functionaly_typeNames[] =
    "UNKNOWN"
 };
 
-void NP_functionality::add_NP_functionality(NP_functionaly_type type, std::string functionality_description)
+void NP_functionality::add_NP_functionality(NP_functionaly_type type, const std::string& functionality_description)
 {
    descriptions[type] = functionality_description;
 }

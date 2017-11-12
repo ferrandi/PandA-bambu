@@ -112,7 +112,7 @@ class HDL_manager
       /**
        * Generates the HDL description for the given components in the specified language
        */
-      std::string write_components(std::string filename, const HDLWriter_Language language, const std::list<structural_objectRef>& components, bool equation, std::list<std::string> & aux_files) const;
+      std::string write_components(const std::string& filename, const HDLWriter_Language language, const std::list<structural_objectRef>& components, bool equation, std::list<std::string> & aux_files) const;
 
       /**
        * Determines the proper language for each component and generates the corresponding HDL descriptions

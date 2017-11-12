@@ -107,7 +107,7 @@ void bloc::PushFront(const tree_nodeRef statement)
    if(updated_ssa_uses)
    {
       const auto uses = tree_helper::ComputeSsaUses(statement);
-      for(const auto use : uses)
+      for(const auto& use : uses)
       {
          for(size_t counter = 0; counter < use.second; counter ++)
          {
@@ -179,7 +179,7 @@ void bloc::PushBack(const tree_nodeRef statement)
    if(updated_ssa_uses)
    {
       const auto uses = tree_helper::ComputeSsaUses(statement);
-      for(const auto use : uses)
+      for(const auto& use : uses)
       {
          for(size_t counter = 0; counter < use.second; counter ++)
          {
@@ -275,7 +275,7 @@ void bloc::PushBefore(const tree_nodeRef new_stmt, const tree_nodeRef existing_s
    if(updated_ssa_uses)
    {
       const auto uses = tree_helper::ComputeSsaUses(new_stmt);
-      for(const auto use : uses)
+      for(const auto& use : uses)
       {
          for(size_t counter = 0; counter < use.second; counter ++)
          {
@@ -323,7 +323,7 @@ void bloc::PushAfter(const tree_nodeRef new_stmt, const tree_nodeRef existing_st
    if(updated_ssa_uses)
    {
       const auto uses = tree_helper::ComputeSsaUses(new_stmt);
-      for(const auto use : uses)
+      for(const auto& use : uses)
       {
          for(size_t counter = 0; counter < use.second; counter ++)
          {
@@ -347,7 +347,7 @@ void bloc::AddPhi(const tree_nodeRef phi)
    if(updated_ssa_uses)
    {
       const auto uses = tree_helper::ComputeSsaUses(phi);
-      for(const auto use : uses)
+      for(const auto& use : uses)
       {
          for(size_t counter = 0; counter < use.second; counter ++)
          {
@@ -401,7 +401,7 @@ void bloc::RemoveStmt(const tree_nodeRef statement)
    if(updated_ssa_uses)
    {
       const auto uses = tree_helper::ComputeSsaUses(statement);
-      for(const auto use : uses)
+      for(const auto& use : uses)
       {
          for(size_t counter = 0; counter < use.second; counter ++)
          {
@@ -430,7 +430,7 @@ void bloc::RemovePhi(const tree_nodeRef phi)
    if(updated_ssa_uses)
    {
       const auto uses = tree_helper::ComputeSsaUses(phi);
-      for(const auto use : uses)
+      for(const auto& use : uses)
       {
          for(size_t counter = 0; counter < use.second; counter ++)
          {

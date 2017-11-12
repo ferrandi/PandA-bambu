@@ -150,7 +150,7 @@ DesignFlowStep_Status compute_implicit_calls::InternalExec()
       if (it_bb->second->number == BB_ENTRY || it_bb->second->number == BB_EXIT)
          continue;
       max_loop_id = std::max(max_loop_id, it_bb->second->loop_id);
-      for(const auto stmt : it_bb->second->CGetStmtList())
+      for(const auto& stmt : it_bb->second->CGetStmtList())
       {
          tree_nodeRef tn = GET_NODE(stmt);
          if(tn->get_kind() == gimple_assign_K)

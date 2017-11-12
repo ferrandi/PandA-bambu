@@ -107,7 +107,7 @@ DesignFlowStep_Status ExtractGimpleCondOp::InternalExec()
    const auto tree_man = tree_manipulationConstRef(new tree_manipulation(TM, parameters));
    const auto fd = GetPointer<function_decl>(TM->get_tree_node_const(function_id));
    const auto sl = GetPointer<statement_list>(GET_NODE(fd->body));
-   for(const auto block : sl->list_of_bloc)
+   for(const auto& block : sl->list_of_bloc)
    {
       const auto & stmt_list = block.second->CGetStmtList();
       if(stmt_list.size())

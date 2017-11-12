@@ -530,12 +530,12 @@ synth_mult (struct algorithm &alg_out, unsigned long long t,
           hardware the shift may be executed concurrently with the
           earlier steps in the algorithm.  */
          op_cost = 1/*add_cost[speed][mode]*/ + 0/*shift_cost[speed][mode][m]*/;
-         if (1/*shiftadd_cost[speed][mode][m]*/ < op_cost)
-         {
-            op_cost = 1/*shiftadd_cost[speed][mode][m]*/;
-            op_latency = op_cost;
-         }
-         else
+         //if (1/*shiftadd_cost[speed][mode][m]*/ < op_cost)
+         //{
+         //   op_cost = 1/*shiftadd_cost[speed][mode][m]*/;
+         //   op_latency = op_cost;
+         //}
+         //else
             op_latency = 1/*add_cost[speed][mode]*/;
 
          new_limit.cost = static_cast<short>(best_cost.cost - op_cost);
@@ -568,12 +568,12 @@ synth_mult (struct algorithm &alg_out, unsigned long long t,
           hardware the shift may be executed concurrently with the
           earlier steps in the algorithm.  */
          op_cost = 1/*add_cost[speed][mode]*/ + 0/*shift_cost[speed][mode][m]*/;
-         if (1/*shiftsub0_cost[speed][mode][m]*/ < op_cost)
-         {
-            op_cost = 1/*shiftsub0_cost[speed][mode][m]*/;
-            op_latency = op_cost;
-         }
-         else
+         //if (1/*shiftsub0_cost[speed][mode][m]*/ < op_cost)
+         //{
+         //   op_cost = 1/*shiftsub0_cost[speed][mode][m]*/;
+         //   op_latency = op_cost;
+         //}
+         //else
             op_latency = 1/*add_cost[speed][mode]*/;
 
          new_limit.cost = static_cast<short>(best_cost.cost - op_cost);

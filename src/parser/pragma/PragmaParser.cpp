@@ -101,7 +101,7 @@ std::string PragmaParser::substitutePragmas(const std::string& OldFile)
 
    file_counter++;
    level = 0;
-   unsigned line_number = 0;
+   //unsigned line_number = 0;
 
    // Get a stream from the input file
    std::ifstream instream(OldFile.c_str());
@@ -189,7 +189,7 @@ std::string PragmaParser::substitutePragmas(const std::string& OldFile)
       }
 
       /// increment line number
-      line_number++;
+      //line_number++;
    }
 
    fileOutput.close();
@@ -347,7 +347,6 @@ bool PragmaParser::recognize_mapping_pragma(std::string& Line)
       number++;
       return false;
    }
-   return true;
 }
 
 bool PragmaParser::recognize_issue_pragma(std::string& Line)

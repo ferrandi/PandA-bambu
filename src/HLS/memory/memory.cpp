@@ -639,7 +639,8 @@ void memory::xwrite(xml_element* node)
          }
          if (parameter.find(iIt->first) != parameter.end())
          {
-            for(std::map<unsigned int, memory_symbolRef>::iterator vIt = parameter.find(iIt->first)->second.begin(); vIt != parameter.find(iIt->first)->second.end(); ++vIt)
+            auto params = parameter.find(iIt->first)->second;
+            for(std::map<unsigned int, memory_symbolRef>::iterator vIt = params.begin(); vIt != params.end(); ++vIt)
             {
                xml_element* VarNode = ScopeNode->add_child_element("parameter");
                std::string variable = "@" + STR(vIt->second->get_variable());
@@ -661,7 +662,8 @@ void memory::xwrite(xml_element* node)
             WRITE_XVM(id, ScopeNode);
             std::string name = tree_helper::name_function(TreeM, iIt->first);
             WRITE_XVM(name, ScopeNode);
-            for(std::map<unsigned int, memory_symbolRef>::iterator vIt = parameter.find(iIt->first)->second.begin(); vIt != parameter.find(iIt->first)->second.end(); ++vIt)
+            auto params = parameter.find(iIt->first)->second;
+            for(std::map<unsigned int, memory_symbolRef>::iterator vIt = params.begin(); vIt != params.end(); ++vIt)
             {
                xml_element* VarNode = ScopeNode->add_child_element("parameter");
                std::string variable = "@" + STR(vIt->second->get_variable());

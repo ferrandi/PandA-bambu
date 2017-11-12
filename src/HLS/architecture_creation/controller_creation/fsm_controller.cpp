@@ -186,7 +186,8 @@ void fsm_controller::create_state_machine(std::string &parse)
       present_state[*v] = std::vector<long long int>(out_num, 0);
       if(selectors.find(conn_binding::IN) != selectors.end())
       {
-         for(std::map<std::pair<generic_objRef, unsigned int>, generic_objRef>::const_iterator s = selectors.find(conn_binding::IN)->second.begin(); s != selectors.find(conn_binding::IN)->second.end(); ++s)
+         auto connection_binding_sets = selectors.find(conn_binding::IN)->second;
+         for(std::map<std::pair<generic_objRef, unsigned int>, generic_objRef>::const_iterator s = connection_binding_sets.begin(); s != connection_binding_sets.end(); ++s)
          {
    #ifndef NDEBUG
             std::map<vertex, std::set<vertex> > activations_check;
@@ -367,7 +368,8 @@ void fsm_controller::create_state_machine(std::string &parse)
          }
          if(selectors.find(conn_binding::IN) != selectors.end())
          {
-            for(std::map<std::pair<generic_objRef, unsigned int>, generic_objRef>::const_iterator s = selectors.find(conn_binding::IN)->second.begin(); s != selectors.find(conn_binding::IN)->second.end(); ++s)
+            auto connection_binding_sets = selectors.find(conn_binding::IN)->second;
+            for(std::map<std::pair<generic_objRef, unsigned int>, generic_objRef>::const_iterator s = connection_binding_sets.begin(); s != connection_binding_sets.end(); ++s)
             {
                //std::cerr << jt->second->get_string() << std::endl;
                const std::set<commandport_obj::transition >& activations = GetPointer<commandport_obj>(s->second)->get_activations();

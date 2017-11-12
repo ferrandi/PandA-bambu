@@ -303,7 +303,7 @@ void CreateAddressTranslation::ComputeAddress(const AsnTypeRef asn_type, const u
             const auto tree_record_type = GetPointer<const record_type>(TreeM->get_tree_node_const(tree_parameter_type));
             const auto tree_fields = tree_record_type->list_of_flds;
             size_t tree_field_index = 0;
-            for(const auto field : sequence->fields)
+            for(const auto& field : sequence->fields)
             {
                ComputeAddress(field.second, tree_helper::CGetType(GET_NODE(tree_fields[tree_field_index]))->index, bambu_address, taste_address, registers, false, little_endianess);
                const auto field_bpos = tree_helper::get_integer_cst_value(GetPointer<integer_cst>(GET_NODE(GetPointer<const field_decl>(GET_NODE(tree_fields[tree_field_index]))->bpos)));
@@ -344,7 +344,7 @@ void CreateAddressTranslation::ComputeAddress(const AsnTypeRef asn_type, const u
             const auto tree_record_type = GetPointer<const record_type>(TreeM->get_tree_node_const(tree_parameter_type));
             const auto tree_fields = tree_record_type->list_of_flds;
             size_t tree_field_index = 0;
-            for(const auto field : set->fields)
+            for(const auto& field : set->fields)
             {
                ComputeAddress(field.second, tree_helper::CGetType(GET_NODE(tree_fields[tree_field_index]))->index, bambu_address, taste_address, registers, false, little_endianess);
                const auto field_bpos = tree_helper::get_integer_cst_value(GetPointer<integer_cst>(GET_NODE(GetPointer<const field_decl>(GET_NODE(tree_fields[tree_field_index]))->bpos)));
@@ -390,7 +390,7 @@ DesignFlowStep_Status CreateAddressTranslation::Exec()
    const auto top_functions = parameters->getOption<std::string>(OPT_top_functions_names);
    auto new_top_functions = top_functions;
    THROW_ASSERT(aadl_information->top_functions_names.size(), "");
-   for(const auto top_function_name : aadl_information->top_functions_names)
+   for(const auto& top_function_name : aadl_information->top_functions_names)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing function " + top_function_name);
       ///The taste address of return (if any)
@@ -422,7 +422,7 @@ DesignFlowStep_Status CreateAddressTranslation::Exec()
       CustomMap<std::string, unsigned int> parameter_to_type;
       THROW_ASSERT(function_id, "Function " + top_function_name + " not found in tree");
       const auto fd = GetPointer<const function_decl>(TreeM->CGetTreeNode(function_id));
-      for(const auto arg : fd->list_of_args)
+      for(const auto& arg : fd->list_of_args)
       {
          const auto pd = GetPointer<const parm_decl>(GET_NODE(arg));
          const auto id = GetPointer<const identifier_node>(GET_NODE(pd->name));

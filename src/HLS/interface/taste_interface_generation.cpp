@@ -288,7 +288,7 @@ DesignFlowStep_Status TasteInterfaceGeneration::InternalExec()
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Creating parameter registers");
    ///Creating parameter registers
    THROW_ASSERT(aadl_information->function_parameters.find("PI_" + function_name) != aadl_information->function_parameters.end(), "Parameters information of PI_" + function_name + " not found");
-   for(const auto function_parameter : aadl_information->function_parameters.find("PI_" + function_name)->second)
+   for(const auto& function_parameter : aadl_information->function_parameters.find("PI_" + function_name)->second)
    {
       if(function_parameter.num_registers)
       {
@@ -436,7 +436,7 @@ DesignFlowStep_Status TasteInterfaceGeneration::InternalExec()
       mem_signals.insert(std::pair<std::string, std::string>("Mout_we_ram", "S_we_ram"));
       mem_signals.insert(std::pair<std::string, std::string>("Mout_Wdata_ram", "S_Wdata_ram"));
 
-      for(const auto mem_signal : mem_signals)
+      for(const auto& mem_signal : mem_signals)
       {
          const auto port1 = minimal_interface->find_member(mem_signal.first, port_vector_o_K, minimal_interface);
          THROW_ASSERT(port1, mem_signal.first + " not found in " + minimal_interface->get_path());

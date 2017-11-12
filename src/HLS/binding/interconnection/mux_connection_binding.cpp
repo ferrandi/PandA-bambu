@@ -315,7 +315,7 @@ void mux_connection_binding::create_single_conn(const OpGraphConstRef data, cons
             bool found_branch = false;
             const tree_managerRef TreeM = HLSMgr->get_tree_manager();
             const auto gp = GetPointer<const gimple_phi>(TreeM->get_tree_node_const(data->CGetOpNodeInfo(op)->GetNodeId()));
-            for(const auto def_edge : gp->CGetDefEdgesList())
+            for(const auto& def_edge : gp->CGetDefEdgesList())
             {
                unsigned int bbID = def_edge.second;
                if(!state_info->isOriginalState && bbID != state_info->sourceBb) continue;
@@ -1313,7 +1313,7 @@ void mux_connection_binding::connect_to_registers(vertex op, const OpGraphConstR
 
             bool found_branch = false;
             const auto gp = GetPointer<const gimple_phi>(TreeM->get_tree_node_const(data->CGetOpNodeInfo(op)->GetNodeId()));
-            for(const auto def_edge : gp->CGetDefEdgesList())
+            for(const auto& def_edge : gp->CGetDefEdgesList())
             {
                unsigned int bbID = def_edge.second; 
                if(!state_info->isOriginalState && bbID != state_info->sourceBb) continue;
@@ -1451,7 +1451,7 @@ void mux_connection_binding::connect_to_registers(vertex op, const OpGraphConstR
                   const auto gp = GetPointer<const gimple_phi>(TreeM->get_tree_node_const(data->CGetOpNodeInfo(def_op)->GetNodeId()));
                   bool phi_postponed = false;
                   unsigned int tree_temp = 0;
-                  for(const auto def_edge : gp->CGetDefEdgesList())
+                  for(const auto& def_edge : gp->CGetDefEdgesList())
                   {
                      unsigned int bbID = def_edge.second;
                      tree_temp = def_edge.first->index;
@@ -1631,9 +1631,9 @@ void mux_connection_binding::create_connections()
       unsigned int fu = HLS->Rfu->get_assign(*op);
       unsigned int idx = HLS->Rfu->get_index(*op);
       unsigned int n_channels = HLS->allocation_information->get_number_channels(fu);
-      unsigned int port_index = n_channels < 2 ? 0 : idx%n_channels;
       if((GET_TYPE(data,*op) & TYPE_PHI)==0) /// phis are skipped
       {
+         unsigned int port_index = n_channels < 2 ? 0 : idx%n_channels;
          PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "  * Operation: " + GET_NAME(data, *op) << " " + data->CGetOpNodeInfo(*op)->GetOperation());
          HLS->Rconn->bind_command_port(*op, conn_binding::IN, commandport_obj::OPERATION, data);
 
@@ -2217,7 +2217,7 @@ void mux_connection_binding::create_connections()
          {
             const StateInfoConstRef state_info = is_PC ? StateInfoConstRef() : HLS->STG->GetStg()->CGetStateInfo(*e_it);
             const auto gp = GetPointer<const gimple_phi>(TreeM->get_tree_node_const(data->CGetOpNodeInfo(*op)->GetNodeId()));
-            for(const auto def_edge : gp->CGetDefEdgesList())
+            for(const auto& def_edge : gp->CGetDefEdgesList())
             {
                unsigned int tree_temp = def_edge.first->index; 
                PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Pre-Managing phi operation "  + GET_NAME(data, *op) + " ending in state " + HLS->Rliv->get_name(*e_it) + (tree_temp ? " for variable " + def_edge.first->ToString() : ""));
@@ -2564,7 +2564,7 @@ unsigned int mux_connection_binding::mux_interconnection()
    unsigned int iteration=0;
 
    const auto & connection_to_unit = HLS->Rconn->get_data_transfers();
-   for(const auto connection : connection_to_unit)
+   for(const auto& connection : connection_to_unit)
    {
       const generic_objRef unit = std::get<0>(connection.first);
       unsigned int operand = std::get<1>(connection.first);
@@ -2611,7 +2611,7 @@ unsigned int mux_connection_binding::input_logic(const conn_binding::ConnectionS
 
    std::list<generic_objRef> to_allocate;
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "  - Connection from: ");
-   for(const auto src : srcs)
+   for(const auto& src : srcs)
    {
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "     * Source: " + src.first->get_string() + " ");
       const std::set<data_transfer>& vars = src.second;
@@ -2712,7 +2712,7 @@ unsigned int mux_connection_binding::input_logic(const conn_binding::ConnectionS
       while (to_allocate.size() > 1);
 
       /// specialize connections between sources and target
-      for(const auto src : srcs)
+      for(const auto& src : srcs)
       {
          connection_objRef conn_obj = connection_objRef(new mux_conn(src.second, src_mux_tree[src.first]));
          HLS->Rconn->add_connection(src.first, tgt, op, port_index, conn_obj);
