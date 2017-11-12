@@ -45,6 +45,7 @@
 
 ///Super class include
 #include "function_frontend_flow_step.hpp"
+#include "tree_common.hpp"
 
 ///STD include
 #include <string>
@@ -64,6 +65,7 @@ REF_FORWARD_DECL(IR_lowering);
 REF_FORWARD_DECL(tree_manager);
 REF_FORWARD_DECL(tree_manipulation);
 REF_FORWARD_DECL(tree_node);
+struct gimple_assign;
 //@}
 
 /** Indicates the type of fixup needed after a constant multiplication.
@@ -133,6 +135,7 @@ class IR_lowering : public FunctionFrontendFlowStep
        */
       bool reached_max_transformation_limit(tree_nodeRef stmt);
 
+      void division_by_a_constant(const std::pair<unsigned int, blocRef>& block, std::list<tree_nodeRef>::const_iterator& it_los, gimple_assign *ga, tree_nodeRef op1, enum kind code1, bool& restart_analysis, const std::string &srcp_default, const std::string& step_name);
 
    public:
       /**
