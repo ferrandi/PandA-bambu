@@ -97,7 +97,7 @@ class FunctionFrontendFlowStep : public FrontendFlowStep
        * Write the current version of statement list in dot format
        * @param filename is the file name to be written
        */
-      void WriteBBGraphDot(const std::string filename) const;
+      void WriteBBGraphDot(const std::string&filename) const;
 
    public:
       /**

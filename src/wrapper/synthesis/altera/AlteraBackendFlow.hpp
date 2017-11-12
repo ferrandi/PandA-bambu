@@ -77,7 +77,7 @@ class AlteraBackendFlow : public BackendFlow
       /**
        * Constructor
        */
-      AlteraBackendFlow(const ParameterConstRef Param, const std::string & flow_name, const target_managerRef target);
+      AlteraBackendFlow(const ParameterConstRef Param, const std::string& flow_name, const target_managerRef target);
 
       /**
        * Destructor

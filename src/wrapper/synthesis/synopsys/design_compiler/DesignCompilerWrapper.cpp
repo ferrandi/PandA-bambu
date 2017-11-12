@@ -251,7 +251,7 @@ void DesignCompilerWrapper::set_search_path(const DesignParametersRef)
 {
    xml_set_variable_tRef var_search_path = get_reserved_parameter(dc_search_path);
    var_search_path->clean();
-   for (std::vector<std::string>::iterator l = search_path.begin(); l != search_path.end(); l++)
+   for (std::vector<std::string>::iterator l = search_path.begin(); l != search_path.end(); ++l)
    {
       xml_set_entry_tRef entry = xml_set_entry_tRef(new xml_set_entry_t(*l, nullptr));
       var_search_path->multiValues.push_back(entry);
@@ -262,7 +262,7 @@ void DesignCompilerWrapper::set_link_libraries(const DesignParametersRef)
 {
    xml_set_variable_tRef var_link_library = get_reserved_parameter(dc_link_library);
    var_link_library->clean();
-   for (std::vector<std::string>::iterator l = link_libs.begin(); l != link_libs.end(); l++)
+   for (std::vector<std::string>::iterator l = link_libs.begin(); l != link_libs.end(); ++l)
    {
       xml_set_entry_tRef entry = xml_set_entry_tRef(new xml_set_entry_t(*l, nullptr));
       var_link_library->multiValues.push_back(entry);
@@ -279,7 +279,7 @@ void DesignCompilerWrapper::set_target_libraries(const DesignParametersRef)
 
    xml_set_variable_tRef var_target_library = get_reserved_parameter(dc_target_library);
    var_target_library->clean();
-   for (std::vector<std::string>::iterator l = target_libs.begin(); l != target_libs.end(); l++)
+   for (std::vector<std::string>::iterator l = target_libs.begin(); l != target_libs.end(); ++l)
    {
       xml_set_entry_tRef entry = xml_set_entry_tRef(new xml_set_entry_t(*l, nullptr));
       var_target_library->multiValues.push_back(entry);
@@ -294,7 +294,7 @@ std::string DesignCompilerWrapper::import_input_design(const DesignParametersRef
    std::string target = top + "_synth.v";
    xml_set_variable_tRef var_file_set = get_reserved_parameter(dc_HDL_file);
    var_file_set->clean();
-   for (unsigned int v = 0; v < file_list.size(); v++)
+   for (unsigned int v = 0; v < file_list.size(); ++v)
    {
       xml_set_entry_tRef entry = xml_set_entry_tRef(new xml_set_entry_t(file_list[v], nullptr));
       var_file_set->multiValues.push_back(entry);
@@ -456,7 +456,7 @@ void DesignCompilerWrapper::parse_cell_reports()
             reading = !reading;
             continue;
          }
-         if (reading and line.size() and line.find(" ") != 0)
+         if (reading and line.size() and !boost::algorithm::starts_with(line," "))
          {
             std::string tk = line.substr(line.find_first_of(' '), line.size());
             boost::trim(tk);
@@ -470,7 +470,7 @@ void DesignCompilerWrapper::parse_cell_reports()
    {
       PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "** Cell Report **");
       unsigned int cell_count = 0;
-      for (std::map<std::string, unsigned int>::iterator c = cell_frequency.begin(); c != cell_frequency.end(); c++)
+      for (std::map<std::string, unsigned int>::iterator c = cell_frequency.begin(); c != cell_frequency.end(); ++c)
       {
          PRINT_OUT_MEX(OUTPUT_LEVEL_PEDANTIC, output_level, "  * Cell: " << c->first << " - Frequency: " << c->second);
          cell_count += c->second;
@@ -496,7 +496,6 @@ time_modelRef DesignCompilerWrapper::parse_time_reports()
       bool is_path_element = false;
       unsigned int l = 0;
       std::vector<std::string> timing_path, critical_cell;
-      std::string design_name;
       while (!output_file.eof())
       {
          std::string line;
@@ -507,7 +506,6 @@ time_modelRef DesignCompilerWrapper::parse_time_reports()
             std::string token("Design :");
             std::string tk = line.substr(line.find(token) + token.size() + 1, line.size());
             boost::trim(tk);
-            design_name = tk;
          }
          if (line.size() and line.find("data arrival time") != std::string::npos)
          {
@@ -584,7 +582,7 @@ time_modelRef DesignCompilerWrapper::parse_time_reports()
       PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "*****************");
 
       ///saving the value in the time model
-      if (max_arrival_time)
+      if (max_arrival_time != 0.0)
       {
          time_m = time_model::create_model(device->get_type(), Param);
          time_m->set_execution_time(max_arrival_time, 1);
@@ -779,7 +777,7 @@ std::string DesignCompilerWrapper::write_timing_paths(const std::string& design_
    {
       std::cerr << msg << std::endl;
    }
-   catch (const std::string & msg)
+   catch (const std::string& msg)
    {
       std::cerr << msg << std::endl;
    }

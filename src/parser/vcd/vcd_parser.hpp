@@ -75,9 +75,9 @@ class vcd_sig_info
        */
       std::unordered_map<std::string, size_t> vcd_id_to_bit;
 
-      vcd_sig_info(const std::string _type, const bool _is_vec, const size_t _msb, const size_t _lsb) :
+      vcd_sig_info(const std::string&_type, const bool _is_vec, const size_t _msb, const size_t _lsb) :
          type(_type), is_vec(_is_vec), msb(_msb), lsb(_lsb)
-      {};
+      {}
 };
 
 class vcd_parser
@@ -88,7 +88,7 @@ class vcd_parser
     * constructor
     * @param [in] params: is the class holding bambu parameters
     */
-   vcd_parser(const ParameterConstRef & params);
+   explicit vcd_parser(const ParameterConstRef & params);
 
    /**
     * this is the type used to select which signals have to be filtered during
@@ -119,7 +119,7 @@ class vcd_parser
     * @return: the traces of the selected vcd signals
     */
    vcd_trace_t parse_vcd(
-      const std::string & vcd_file_to_parse,
+      const std::string& vcd_file_to_parse,
       const vcd_filter_t & selected_signals);
 
    private:
@@ -180,7 +180,7 @@ class vcd_parser
    int vcd_parse_skip_to_end();
 
    /* Parses $var token */
-   int vcd_parse_def_var(const std::string & scope);
+   int vcd_parse_def_var(const std::string& scope);
 
    void vcd_push_def_scope(std::stack<std::string> & scope);
 
@@ -202,7 +202,7 @@ class vcd_parser
     * simulator-dependent path names. After this change the remaining part of
     * the path starts from the top functional unit
     */
-   bool check_filter_list(const std::string & scope_str, const std::string & name);
+   bool check_filter_list(const std::string& scope_str, const std::string& name);
 
    /**
     * insert a signal in the maps needed for selecting the vcd data and for
@@ -216,10 +216,10 @@ class vcd_parser
     * @param [in] lsb: less significant bit of the signal
     */
    void vcd_add_signal(
-         const std::string & scope,
-         const std::string & name,
-         const std::string & vcd_id,
-         const std::string & type,
+         const std::string& scope,
+         const std::string& name,
+         const std::string& vcd_id,
+         const std::string& type,
          const bool isvect,
          const unsigned int msb,
          const unsigned int lsb);
@@ -233,8 +233,8 @@ class vcd_parser
    void init_variations();
 
    /* add the parsed variation to the proper signal */
-   void add_variation(const std::string & id,
-         const std::string & value,
+   void add_variation(const std::string& id,
+         const std::string& value,
          unsigned long long ts);
 
 };

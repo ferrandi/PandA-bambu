@@ -59,7 +59,7 @@ struct XmlFlexLexer : public yyFlexLexer
    ///The name of the parsed file/string
    const std::string name;
 
-   XmlFlexLexer(const std::string _name,  std::istream* argin=nullptr, std::ostream* argout=nullptr) :
+   XmlFlexLexer(const std::string&_name,  std::istream* argin=nullptr, std::ostream* argout=nullptr) :
       yyFlexLexer(argin, argout),
       name(_name)
    {

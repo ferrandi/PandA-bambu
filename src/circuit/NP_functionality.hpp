@@ -130,14 +130,14 @@ class NP_functionality
      * Convert a string into the corresponding NP_functionaly_type enumerative type
      * @param val is the string version of the enum.
     */
-    NP_functionaly_type to_NP_functionaly_type(std::string val);
+    NP_functionaly_type to_NP_functionaly_type(const std::string &val);
 
   public:
     /// Constructor.
     NP_functionality() {}
 
     /// Constructor.
-    NP_functionality(const NP_functionalityRef& obj);
+    explicit NP_functionality(const NP_functionalityRef& obj);
 
     /// Destructor.
     ~NP_functionality() {}
@@ -145,7 +145,7 @@ class NP_functionality
     /**
      * Add a non SystemC based description.
     */
-    void add_NP_functionality(NP_functionaly_type type, std::string functionality_description);
+    void add_NP_functionality(NP_functionaly_type type, const std::string &functionality_description);
     
     /**
      * Return the description provided the type

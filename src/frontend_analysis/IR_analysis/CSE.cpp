@@ -258,7 +258,7 @@ tree_nodeRef CSE::hash_check(tree_nodeRef tn, vertex bb)
       {
          ///If there are virtual uses, not only they must be the same, but also the basic block must be the same
          ins.push_back(ga->bb_index);
-         for(const auto vuse : ga->vuses)
+         for(const auto& vuse : ga->vuses)
          {
             ///Check if the virtual is defined in the same basic block
             const auto virtual_sn = GetPointer<const ssa_name>(GET_CONST_NODE(vuse));
@@ -267,7 +267,7 @@ tree_nodeRef CSE::hash_check(tree_nodeRef tn, vertex bb)
             ins.push_back(vuse->index);
             if(virtual_sn_gn->bb_index == ga->bb_index)
             {
-               for(const auto stmt : sl->list_of_bloc[ga->bb_index]->CGetStmtList())
+               for(const auto& stmt : sl->list_of_bloc[ga->bb_index]->CGetStmtList())
                {
                   const auto gn = GetPointer<const gimple_node>(GET_CONST_NODE(stmt));
                   if(gn->index == ga->index)
@@ -334,9 +334,9 @@ tree_nodeRef CSE::hash_check(tree_nodeRef tn, vertex bb)
       }
 #ifndef NDEBUG
       std::string signature_message = "Signature of " + STR(tn->index) + " is ";
-      for(const auto temp_sign : ins)
+      for(const auto& temp_sign : ins)
       {
-         signature_message += temp_sign + "-";
+         signature_message += STR(temp_sign) + "-";
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, signature_message);
 #endif
@@ -369,13 +369,11 @@ CSE::InternalExec ()
    /// store the GCC BB graph ala boost::graph
    BBGraphsCollectionRef GCC_bb_graphs_collection(new BBGraphsCollection(BBGraphInfoRef(new BBGraphInfo(AppM, function_id)), parameters));
    BBGraphRef GCC_bb_graph(new BBGraph(GCC_bb_graphs_collection, CFG_SELECTOR));
-   std::unordered_map<vertex, unsigned int> direct_vertex_map;
    std::unordered_map<unsigned int, vertex> inverse_vertex_map;
    /// add vertices
    for(auto block : sl->list_of_bloc)
    {
       inverse_vertex_map[block.first] = GCC_bb_graphs_collection->AddVertex(BBNodeInfoRef(new BBNodeInfo(block.second)));
-      direct_vertex_map[inverse_vertex_map[block.first]]=block.first;
    }
    /// add edges
    for(auto curr_bb_pair : sl->list_of_bloc )
@@ -406,7 +404,7 @@ CSE::InternalExec ()
    const std::unordered_map<vertex, vertex>& bb_dominator_map = bb_dominators->get_dominator_map();
 
    BBGraphRef bb_domGraph(new BBGraph(GCC_bb_graphs_collection, D_SELECTOR));
-   for(std::unordered_map<vertex, vertex>::const_iterator it = bb_dominator_map.begin(); it != bb_dominator_map.end(); it++)
+   for(std::unordered_map<vertex, vertex>::const_iterator it = bb_dominator_map.begin(); it != bb_dominator_map.end(); ++it)
    {
       if(it->first != inverse_vertex_map[bloc::ENTRY_BLOCK_ID])
       {
@@ -432,7 +430,7 @@ CSE::InternalExec ()
             unique_table.find(bb)->second[key_value_pair.first] = key_value_pair.second;
       }
       TreeNodeSet to_be_removed;
-      for(const auto stmt : B->CGetStmtList())
+      for(const auto& stmt : B->CGetStmtList())
       {
 #ifndef NDEBUG
          if(not AppM->ApplyNewTransformation())
@@ -498,7 +496,7 @@ CSE::InternalExec ()
                }
             }
             const TreeNodeMap<size_t> StmtUses = dead_ssa->CGetUseStmts();
-            for(const auto use : StmtUses)
+            for(const auto& use : StmtUses)
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace equivalent statement before: "+ use.first->ToString());
                TM->ReplaceTreeNode(use.first, dead_ga->op0, ref_ga->op0);
@@ -513,7 +511,7 @@ CSE::InternalExec ()
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Replaced use of " + STR(dead_ga->op0));
          }
       }
-      for(const auto stmt : to_be_removed)
+      for(const auto& stmt : to_be_removed)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Removing " + STR(stmt));
          B->RemoveStmt(stmt);
@@ -522,7 +520,7 @@ CSE::InternalExec ()
          restart_phi_opt = true;
       if(!to_be_removed.empty() && schedule)
       {
-         for(const auto stmt : B->CGetStmtList())
+         for(const auto& stmt : B->CGetStmtList())
           schedule->UpdateTime(GET_INDEX_NODE(stmt));
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Considered BB" + STR(B->number));

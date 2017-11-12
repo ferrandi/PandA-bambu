@@ -114,7 +114,7 @@ DesignFlowStep_Status LoadDeviceTechnology::Exec()
       {
          THROW_ERROR("Error during technology file parsing: " + std::string(msg));
       }
-      catch (const std::string & msg)
+      catch (const std::string& msg)
       {
          THROW_ERROR("Error during technology file parsing: " + msg);
       }

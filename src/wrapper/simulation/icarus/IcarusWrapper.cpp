@@ -104,7 +104,7 @@ void IcarusWrapper::GenerateScript(std::ostringstream& script, const std::string
    log_file = SIM_SUBDIR + suffix + "/" + top_filename + "_icarus.log";
    script << "#IVERILOG" << std::endl; //-gstrict-expr-width
    script << IVERILOG;
-   for(const auto file : file_list)
+   for(const auto& file : file_list)
       script << " " << file;
    script << " -g2001-noconfig";
    script << " -gstrict-ca-eval";

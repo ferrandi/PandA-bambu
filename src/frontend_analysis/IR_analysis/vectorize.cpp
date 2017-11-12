@@ -373,7 +373,7 @@ void Vectorize::ClassifyTreeNode(const unsigned int loop_id, const tree_nodeCons
       case gimple_phi_K:
          {
             const gimple_phi * gp = GetPointer<const gimple_phi>(tree_node);
-            for(const auto & def_edge : gp->CGetDefEdgesList())
+            for(const auto& def_edge : gp->CGetDefEdgesList())
             {
                ClassifyTreeNode(loop_id, GET_NODE(def_edge.first));
                THROW_ASSERT(GET_NODE(def_edge.first)->get_kind() != var_decl_K, "Unsupported pattern - Phi is" + STR(tree_node));
@@ -410,7 +410,7 @@ void Vectorize::ClassifyTreeNode(const unsigned int loop_id, const tree_nodeCons
                   boost::tie(ie, ie_end) = boost::in_edges(header, *bb_graph);
                   const vertex previous = boost::source(*ie, *bb_graph);
                   const unsigned int previous_id = bb_graph->CGetBBNodeInfo(previous)->block->number;
-                  for(const auto & def_edge : gp->CGetDefEdgesList())
+                  for(const auto& def_edge : gp->CGetDefEdgesList())
                   {
                      if(def_edge.second != previous_id)
                      {
@@ -677,7 +677,7 @@ unsigned int Vectorize::DuplicateIncrement(const unsigned int loop_id, const tre
    LoopRef loop = function_behavior->GetLoops()->GetLoop(loop_id);
    THROW_ASSERT(loop->IsReducible(), "Loop is not reducible");
    ///Replace uses
-   for(const auto phi : bb_graph->GetBBNodeInfo(loop->GetHeader())->block->CGetPhiList())
+   for(const auto& phi : bb_graph->GetBBNodeInfo(loop->GetHeader())->block->CGetPhiList())
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Replacing " + ga->op0->ToString() + " with " + TM->get_tree_node_const(ssa_tree_node_index)->ToString() + " in " + phi->ToString());
       TM->ReplaceTreeNode(phi, ga->op0, TM->GetTreeReindex(ssa_tree_node_index));
@@ -713,7 +713,8 @@ unsigned int Vectorize::DuplicateIncrement(const unsigned int loop_id, const tre
       if(cond_op->min)
          dup_op_cond_tn_schema[TOK(TOK_MIN)] = STR(cond_op->min->index);
       unsigned int dup_op_cond_index = TM->new_tree_node_id();
-      remapping[cond_op->index] = dup_op_cond_index ;
+      // cppcheck-suppress unreadVariable
+      remapping[cond_op->index] = dup_op_cond_index;
       TM->create_tree_node(dup_op_cond_index, ssa_name_K, dup_op_cond_tn_schema);
       ///Duplicate computation of condition
       const unsigned int new_cond_computation = tnd.create_tree_node(GET_NODE(def_statement));
@@ -734,7 +735,7 @@ unsigned int Vectorize::DuplicateIncrement(const unsigned int loop_id, const tre
          THROW_ASSERT(header_guard_gp, STR(header_guard_stmt_tn));
          const auto feedback_condition = [&] () -> tree_nodeRef
          {
-            for(const auto def_edge : header_guard_gp->CGetDefEdgesList())
+            for(const auto& def_edge : header_guard_gp->CGetDefEdgesList())
             {
                if(def_edge.second == gc->bb_index)
                {
@@ -1028,7 +1029,7 @@ void Vectorize::AddGuards()
 #ifndef NDEBUG
    if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC)
    {
-      for(const auto guard : guards)
+      for(const auto& guard : guards)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Guard of BB" + STR(guard.first) + " is " + STR(guard.second));
       }
@@ -1089,14 +1090,15 @@ void Vectorize::FixPhis()
       vertex whole_dominator = boost::source(*ie, *dom_graph);
       THROW_ASSERT(fcfg_bb_graph->ExistsEdge(whole_dominator, *basic_block), "");
       const std::map<vertex, unsigned int> & bb_map_levels = function_behavior->get_bb_map_levels();
-      std::set<vertex, bb_vertex_order_by_map> phi_inputs(bb_map_levels);
+      const bb_vertex_order_by_map comp_i(bb_map_levels);
+      std::set<vertex, bb_vertex_order_by_map> phi_inputs(comp_i);
       for(boost::tie(ie, ie_end) = boost::in_edges(*basic_block, *fcfg_bb_graph); ie != ie_end; ie++)
       {
          const auto source = boost::source(*ie, *fcfg_bb_graph);
          if(source != whole_dominator)
             phi_inputs.insert(source);
       }
-      for(const auto phi : bb_node_info->block->CGetPhiList())
+      for(const auto& phi : bb_node_info->block->CGetPhiList())
       {
          CustomMap<unsigned int, tree_nodeRef> new_defs;
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Fixing phi " + STR(phi));
@@ -1116,7 +1118,7 @@ void Vectorize::FixPhis()
             {
                if(local_dominator == whole_dominator)
                {
-                  for(const auto def_edge : gp->CGetDefEdgesList())
+                  for(const auto& def_edge : gp->CGetDefEdgesList())
                   {
                      if(def_edge.second == local_dominator_index)
                      {
@@ -1134,7 +1136,7 @@ void Vectorize::FixPhis()
             }();
             const auto from_source = [&]() -> gimple_phi::DefEdge
             {
-               for(const auto def_edge : gp->CGetDefEdgesList())
+               for(const auto& def_edge : gp->CGetDefEdgesList())
             {
                if(def_edge.second == source_id)
                   {
@@ -1208,7 +1210,7 @@ void Vectorize::SetPredication()
       if(basic_block_divergence.find(basic_block_index) != basic_block_divergence.end() and basic_block_divergence.find(basic_block_index)->second == true)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering statements of BB" + STR(basic_block_index));
-         for(const auto stmt : bb_node_info->block->CGetStmtList())
+         for(const auto& stmt : bb_node_info->block->CGetStmtList())
          {
             auto ga = GetPointer<gimple_assign>(GET_NODE(stmt));
             if(ga and ga->predicate)
@@ -1243,9 +1245,9 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
          {
             const auto sl = GetPointer<const statement_list>(GET_NODE(GetPointer<const function_decl>(TM->CGetTreeNode(function_id))->body));
             THROW_ASSERT(sl, "");
-            for(const auto block : sl->list_of_bloc)
+            for(const auto& block : sl->list_of_bloc)
             {
-               for(const auto stmt : block.second->CGetStmtList())
+               for(const auto& stmt : block.second->CGetStmtList())
                {
                   const auto gp = GetPointer<const gimple_pragma>(GET_NODE(stmt));
                   if (gp and gp->scope and GetPointer<const omp_pragma>(GET_NODE(gp->scope)))
@@ -1340,11 +1342,11 @@ DesignFlowStep_Status Vectorize::InternalExec()
       {
          const blocRef block = bb_node_info->block;
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Classifying statement of BB" + STR(block->number));
-         for(const auto statement : block->CGetStmtList())
+         for(const auto& statement : block->CGetStmtList())
          {
             ClassifyTreeNode(bb_node_info->loop_id, GET_CONST_NODE(statement));
          }
-         for(const auto phi : block->CGetPhiList())
+         for(const auto& phi : block->CGetPhiList())
          {
             ClassifyTreeNode(bb_node_info->loop_id, GET_CONST_NODE(phi));
          }
@@ -1359,9 +1361,8 @@ DesignFlowStep_Status Vectorize::InternalExec()
       if(simd_loop_type[bb_node_info->loop_id] != SIMD_NONE)
       {
          const blocRef block = bb_node_info->block;
-         std::list<tree_nodeRef> new_statement_list;
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Transforming increment statement of BB" + STR(block->number));
-         for(const auto statement : block->CGetStmtList())
+         for(const auto& statement : block->CGetStmtList())
          {
             if(transformations.find(statement->index)->second == INC)
             {
@@ -1406,11 +1407,11 @@ DesignFlowStep_Status Vectorize::InternalExec()
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Transforming statement of BB" + STR(block->number) + " - Loop " + STR(bb_node_info->loop_id) + " - Parallel degree " + STR(loop_parallel_degree[bb_node_info->loop_id]));
          std::list<tree_nodeRef> new_statement_list;
          std::vector<tree_nodeRef> new_phi_list;
-         for(const auto statement : block->CGetStmtList())
+         for(const auto& statement : block->CGetStmtList())
          {
             TM->GetTreeReindex(Transform(statement->index, loop_parallel_degree[bb_node_info->loop_id], 0, new_statement_list, new_phi_list));
          }
-         for(const auto phi : block->CGetPhiList())
+         for(const auto& phi : block->CGetPhiList())
          {
             TM->GetTreeReindex(Transform(phi->index, loop_parallel_degree[bb_node_info->loop_id], 0, new_statement_list, new_phi_list));
          }
@@ -1423,12 +1424,12 @@ DesignFlowStep_Status Vectorize::InternalExec()
          while(old_phi_list.size())
             block->RemovePhi(old_phi_list.front());
          ///Add new statements
-         for(const auto new_stmt : new_statement_list)
+         for(const auto& new_stmt : new_statement_list)
          {
             block->PushBack(new_stmt);
          }
          ///Add new phis
-         for(const auto new_phi : new_phi_list)
+         for(const auto& new_phi : new_phi_list)
          {
             block->AddPhi(new_phi);
          }
@@ -1483,7 +1484,7 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
             gimple_cond * new_gc = GetPointer<gimple_cond>(TM->get_tree_node_const(new_tree_node_index));
             new_gc->memuse = gc->memuse;
             new_gc->memdef = gc->memdef;
-            for(const auto vuse : gc->vuses)
+            for(const auto& vuse : gc->vuses)
             {
                new_gc->vuses.insert(TM->GetTreeReindex(Transform(vuse->index, parallel_degree, 1, new_stmt_list, new_phi_list)));
             }
@@ -1550,7 +1551,7 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
             const unsigned int previous_id = bb_graph->CGetBBNodeInfo(previous)->block->number;
             const auto previous_block = bb_graph->GetBBNodeInfo(previous)->block;
             const auto previous_list_of_stmt = previous_block->CGetStmtList();
-            for(const auto def_edge : gp->CGetDefEdgesList())
+            for(const auto& def_edge : gp->CGetDefEdgesList())
             {
                if(def_edge.second == previous_id)
                {
@@ -1743,7 +1744,7 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
             be->op1 = TM->GetTreeReindex(Transform(new_ic->index, parallel_degree, 0, new_stmt_list, new_phi_list));
             new_ga->memuse = ga->memuse;
             new_ga->memdef = ga->memdef;
-            for(const auto vuse : ga->vuses)
+            for(const auto& vuse : ga->vuses)
             {
                new_ga->vuses.insert(TM->GetTreeReindex(Transform(vuse->index, parallel_degree, 0, new_stmt_list, new_phi_list)));
             }
@@ -1852,7 +1853,7 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
                         gimple_assign * new_ga = GetPointer<gimple_assign>(TM->get_tree_node_const(new_tree_node_index));
                         new_ga->memuse = ga->memuse;
                         new_ga->memdef = ga->memdef;
-                        for(const auto vuse : ga->vuses)
+                        for(const auto& vuse : ga->vuses)
                         {
                            new_ga->vuses.insert(TM->GetTreeReindex(Transform(vuse->index, parallel_degree, scalar, new_stmt_list, new_phi_list)));
                         }
@@ -1860,7 +1861,7 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
                         {
                            new_ga->vdef = TM->GetTreeReindex(Transform(ga->vdef->index, parallel_degree, scalar, new_stmt_list, new_phi_list));
                            const auto old_vdef = GetPointer<const ssa_name>(GET_NODE(ga->vdef));
-                           for(const auto use_stmt : old_vdef->CGetUseStmts())
+                           for(const auto& use_stmt : old_vdef->CGetUseStmts())
                            {
                               const auto stmt = use_stmt.first;
                               if(transformations.find(stmt->index) == transformations.end())
@@ -2071,7 +2072,7 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
                      unsigned int call_expr_tree_node_index = TM->new_tree_node_id();
                      TM->create_tree_node(call_expr_tree_node_index, call_expr_K, tree_node_schema);
                      call_expr * new_ce = GetPointer<call_expr>(TM->get_tree_node_const(call_expr_tree_node_index));
-                     for(const auto & arg : ce->args)
+                     for(const auto& arg : ce->args)
                      {
                         new_ce->AddArg(TM->GetTreeReindex(Transform(arg->index, parallel_degree, scalar_index, new_stmt_list, new_phi_list)));
                      }
@@ -2164,7 +2165,7 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
                      gimple_assign * new_ga = GetPointer<gimple_assign>(TM->get_tree_node_const(new_tree_node_index));
                      new_ga->memuse = ga->memuse;
                      new_ga->memdef = ga->memdef;
-                     for(const auto vuse : ga->vuses)
+                     for(const auto& vuse : ga->vuses)
                      {
                         new_ga->vuses.insert(TM->GetTreeReindex(Transform(vuse->index, parallel_degree, 0, new_stmt_list, new_phi_list)));
                      }
@@ -2182,7 +2183,7 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
                      for(size_t scalar = 1; scalar <= parallel_degree; scalar++)
                      {
                         ///Build bit_field_ref to extract the scalar
-                        std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> bit_field_ref_tree_node_schema, ssa_tree_node_schema, gimple_assign_tree_node_schema;
+                        std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> bit_field_ref_tree_node_schema, gimple_assign_tree_node_schema;
                         unsigned int bit_field_ref_index = TM->new_tree_node_id();
                         const auto element_type = tree_helper::CGetType(GET_NODE(ga->op0));
                         ///vector of boolean types are mapped on vector of integer
@@ -2619,7 +2620,7 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
                      TM->create_tree_node(new_tree_node_id, gimple_phi_K, tree_node_schema);
                      gimple_phi * new_gp = GetPointer<gimple_phi>(TM->get_tree_node_const(new_tree_node_id));
                      new_gp->SetSSAUsesComputed();
-                     for(const auto def_edge : gp->CGetDefEdgesList())
+                     for(const auto& def_edge : gp->CGetDefEdgesList())
                      {
                         THROW_ASSERT(gp->virtual_flag or transformations.find(def_edge.first->index) == transformations.end() or transformations.find(def_edge.first->index)->second != SCALAR, "");
                         if(transformations.find(def_edge.first->index) == transformations.end() or transformations.find(def_edge.first->index)->second == SIMD)
@@ -2787,7 +2788,7 @@ bool Vectorize::HasToBeExecuted() const
    }
    if(function_behavior->CGetLoops())
    {
-      for(const auto loop : function_behavior->CGetLoops()->GetList())
+      for(const auto& loop : function_behavior->CGetLoops()->GetList())
       {
          if(loop->loop_type & DOALL_LOOP)
          {

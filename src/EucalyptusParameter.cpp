@@ -100,7 +100,7 @@ void EucalyptusParameter::PrintHelp(std::ostream &os) const
    << std::endl;
 }
 
-EucalyptusParameter::EucalyptusParameter(const std::string _program_name, int _argc, char * * const _argv) :
+EucalyptusParameter::EucalyptusParameter(const std::string&_program_name, int _argc, char * * const _argv) :
    Parameter(_program_name, _argc, _argv)
 {
    SetDefaults();
@@ -112,7 +112,6 @@ int EucalyptusParameter::Exec()
 
    /// variable used into option parsing
    int option_index;
-   int next_option;
 
    // Short option. An option character in this string can be followed by a colon (`:') to indicate that it
    // takes a required argument. If an option character is followed by two colons (`::'), its argument is optional;
@@ -135,8 +134,6 @@ int EucalyptusParameter::Exec()
       {nullptr, 0, nullptr, 0}
    };
 
-   const std::string program_name = argv[0];
-
    if (argc == 1)   // Bambu called without arguments, it simple prints help message
    {
       PrintUsage(std::cout);
@@ -145,7 +142,7 @@ int EucalyptusParameter::Exec()
 
    while (1)
    {
-      next_option = getopt_long(argc, argv, short_options, long_options, &option_index);
+      int next_option = getopt_long(argc, argv, short_options, long_options, &option_index);
 
       // no more options are available
       if (next_option == -1)

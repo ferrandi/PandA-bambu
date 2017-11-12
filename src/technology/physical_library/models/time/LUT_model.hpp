@@ -79,7 +79,7 @@ class LUT_model : public time_model
       /**
        * Constructor
        */
-      LUT_model(const ParameterConstRef Param);
+      explicit LUT_model(const ParameterConstRef Param);
 
       /**
        * Destructor

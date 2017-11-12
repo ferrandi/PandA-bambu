@@ -400,9 +400,8 @@ double AllocationInformation::get_attribute_of_fu_per_op(const vertex v, const O
    std::string op_name = tree_helper::normalized_ID(g->CGetOpNodeInfo(v)->GetOperation());
    const std::set<unsigned int>::const_iterator f_end = fu_set.end();
    std::set<unsigned int>::const_iterator f_i = fu_set.begin();
-   double double_value;
    flag = false;
-   while (CF && f_i != f_end && ((*CF)(*f_i) <= 0 || (binding.find(node_id) != binding.end()  && binding.find(node_id)->second.second != *f_i))) f_i++;
+   while (CF && f_i != f_end && ((*CF)(*f_i) <= 0 || (binding.find(node_id) != binding.end()  && binding.find(node_id)->second.second != *f_i))) ++f_i;
    if (f_i == f_end) return -1.0;
    flag = true;
 
@@ -420,9 +419,9 @@ double AllocationInformation::get_attribute_of_fu_per_op(const vertex v, const O
 
          if(binding.find(node_id) != binding.end() && binding.find(node_id)->second.second == fu_name)
             return from_strongtype_cast<double>(int_value);
-         f_i++;
+         ++f_i;
 
-         for (; f_i != f_end; f_i++)
+         for (; f_i != f_end; ++f_i)
          {
             if (CF && (*CF)(*f_i) <= 0) continue;
             switch (allocation_min_max)
@@ -447,7 +446,6 @@ double AllocationInformation::get_attribute_of_fu_per_op(const vertex v, const O
             }
          }
          return from_strongtype_cast<double>(int_value);
-         break;
       }
       case execution_time:
       {
@@ -459,14 +457,14 @@ double AllocationInformation::get_attribute_of_fu_per_op(const vertex v, const O
          THROW_ASSERT(GetPointer<functional_unit>(list_of_FU[fu_name]), "");
          THROW_ASSERT(GetPointer<operation>(GetPointer<functional_unit>(list_of_FU[fu_name])->get_operation(op_name)), op_name + " not provided by " + list_of_FU[fu_name]->get_name());
          THROW_ASSERT(GetPointer<operation>(GetPointer<functional_unit>(list_of_FU[fu_name])->get_operation(op_name))->time_m, "Timing information not specified for operation " + op_name + " on unit " + id_to_fu_names.find(fu_name)->second.first);
-         double_value = get_execution_time_dsp_modified(fu_name, GetPointer<functional_unit>(list_of_FU[fu_name])->get_operation(op_name));
+         double double_value = get_execution_time_dsp_modified(fu_name, GetPointer<functional_unit>(list_of_FU[fu_name])->get_operation(op_name));
          if(binding.find(node_id) != binding.end() && binding.find(node_id)->second.second == fu_name)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Got Execution time: " + STR(double_value));
             return double_value;
          }
-         f_i++;
-         for (; f_i != f_end; f_i++)
+         ++f_i;
+         for (; f_i != f_end; ++f_i)
          {
             if (CF && (*CF)(*f_i) <= 0) continue;
             switch (allocation_min_max)
@@ -492,7 +490,6 @@ double AllocationInformation::get_attribute_of_fu_per_op(const vertex v, const O
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Got Execution time: " + STR(double_value));
          return double_value;
-         break;
       }
       case(power_consumption):
       default:
@@ -508,12 +505,12 @@ unsigned int AllocationInformation::min_number_of_resources(const vertex v) cons
    const auto node_id = op_graph->CGetOpNodeInfo(v)->GetNodeId();
    const std::set<unsigned int> & fu_set = node_id_to_fus.find(std::pair<unsigned int, std::string>(node_id, operation))->second;
 
-   unsigned int min_num_res = INFINITE_UINT, num_res;
+   unsigned int min_num_res = INFINITE_UINT;
    const std::set<unsigned int>::const_iterator f_end = fu_set.end();
 
-   for (std::set<unsigned int>::const_iterator f_i = fu_set.begin(); f_i != f_end; f_i++)
+   for (std::set<unsigned int>::const_iterator f_i = fu_set.begin(); f_i != f_end; ++f_i)
    {
-      num_res = tech_constraints[*f_i];
+      unsigned int num_res = tech_constraints[*f_i];
       THROW_ASSERT(num_res != 0, "something of wrong happen");
       min_num_res = min_num_res > num_res ? num_res : min_num_res;
    }
@@ -739,17 +736,32 @@ bool AllocationInformation::is_operation_bounded(const unsigned int index) const
 {
    if(CanImplementSetNotEmpty(index))
       return is_operation_bounded(index, GetFuType(index));
-   const auto ga = GetPointer<const gimple_assign>(TreeM->get_tree_node_const(index));
+   auto tn = TreeM->get_tree_node_const(index);
+   const auto ga = GetPointer<const gimple_assign>(tn);
    if(ga && ga->orig)
       return is_operation_bounded(ga->orig->index);
+
    ///currently all the operations introduced after the allocation has been performed are bounded
-   return true;
    if(ga)
    {
       const auto right = GET_NODE(ga->op1);
-      if(right->get_kind() == truth_and_expr_K or right->get_kind() == truth_or_expr_K or right->get_kind() == truth_not_expr_K or right->get_kind() == cond_expr_K or right->get_kind() == ternary_plus_expr_K or right->get_kind() == ternary_mp_expr_K or right->get_kind() == ternary_pm_expr_K or right->get_kind() == ternary_mm_expr_K or right->get_kind() == ssa_name_K)
-         return true;
+      ///currently all the operations introduced after the allocation has been performed are bounded
+      THROW_ASSERT(right->get_kind() == nop_expr_K or right->get_kind() == lut_expr_K or
+                   right->get_kind() == lshift_expr_K or right->get_kind() == rshift_expr_K or
+                   right->get_kind() == bit_xor_expr_K or  right->get_kind() == bit_not_expr_K or
+                   right->get_kind() == bit_ior_concat_expr_K or right->get_kind() == bit_ior_expr_K or
+                   right->get_kind() == bit_and_expr_K or right->get_kind() == convert_expr_K or
+                   right->get_kind() == truth_and_expr_K or right->get_kind() ==
+                   truth_or_expr_K or right->get_kind() == truth_not_expr_K or
+                   right->get_kind() == cond_expr_K or right->get_kind() ==
+                   ternary_plus_expr_K or right->get_kind() == ternary_mp_expr_K or
+                   right->get_kind() == ternary_pm_expr_K or right->get_kind() ==
+                   ternary_mm_expr_K or right->get_kind() == ssa_name_K, "Unexpected right part: " + right->get_kind_text());
+      return true;
    }
+   if(GetPointer<const gimple_nop>(tn))
+      return true;
+   THROW_ERROR("Unexpected operation in AllocationInformation::is_operation_bounded: "+tn->get_kind_text());
    return false;
 }
 
@@ -1051,12 +1063,12 @@ unsigned int AllocationInformation::max_number_of_resources(const vertex v) cons
    const auto node_id = op_graph->CGetOpNodeInfo(v)->GetNodeId();
    const std::set<unsigned int> & fu_set = node_id_to_fus.find(std::pair<unsigned int, std::string>(node_id, operation))->second;
 
-   unsigned int tot_num_res = 0, num_res;
+   unsigned int tot_num_res = 0;
    const std::set<unsigned int>::const_iterator f_end = fu_set.end();
 
-   for (std::set<unsigned int>::const_iterator f_i = fu_set.begin(); f_i != f_end; f_i++)
+   for (std::set<unsigned int>::const_iterator f_i = fu_set.begin(); f_i != f_end; ++f_i)
    {
-      num_res = tech_constraints[*f_i];
+      unsigned int num_res = tech_constraints[*f_i];
       THROW_ASSERT(num_res != 0, "something of wrong happen");
       if (num_res == INFINITE_UINT)
          return num_res;
@@ -1090,9 +1102,7 @@ void AllocationInformation::GetNodeTypePrec(const vertex node, const OpGraphCons
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Getting node type precision of " + GET_NAME(g, node));
    std::string current_op = tree_helper::normalized_ID(g->CGetOpNodeInfo(node)->GetOperation());
 
-   long long int vec_size = 0;
    bool is_a_pointer = false;
-   bool is_a_function = false;
    unsigned int type_index = 0;
    bool is_second_constant = false;
    bool has_formal_parameter = false;
@@ -1186,8 +1196,11 @@ void AllocationInformation::GetNodeTypePrec(const vertex node, const OpGraphCons
       type_index = formal_parameter_type;
    }
    else
+   {
+      long long int vec_size = 0;
+      bool is_a_function = false;
       type_index = tree_helper::get_type_index(TreeM, first_valid_id, vec_size, is_a_pointer, is_a_function);
-
+   }
    if(is_a_pointer || tree_helper::is_an_array(TreeM, type_index) || tree_helper::is_a_struct(TreeM, type_index) || tree_helper::is_an_union(TreeM, type_index) || tree_helper::is_a_complex(TreeM, type_index))
    {
       info->node_kind = "VECTOR_BOOL";
@@ -1329,8 +1342,8 @@ void AllocationInformation::GetNodeTypePrec(const vertex node, const OpGraphCons
           info->real_output_nelem = info->base128_output_nelem = 0;
       }
    }
-   else if(current_op.find( "float_expr_") == 0 ||
-         current_op.find("fix_trunc_expr_") == 0 ||
+   else if(boost::algorithm::starts_with(current_op,"float_expr_") ||
+         boost::algorithm::starts_with(current_op,"fix_trunc_expr_") ||
          current_op == "dot_prod_expr" ||
          current_op == "widen_sum_expr" ||
          current_op == "widen_mult_hi_expr" ||
@@ -1340,7 +1353,7 @@ void AllocationInformation::GetNodeTypePrec(const vertex node, const OpGraphCons
          )
    {
       /// ad hoc correction for float_expr conversion
-      if(current_op.find( "float_expr_") == 0 && max_size_in < 32)
+      if(boost::algorithm::starts_with(current_op,"float_expr_") && max_size_in < 32)
          max_size_in = 32;
       unsigned int nodeOutput_id = hls_manager->get_produced_value(function_index, node);
       if (nodeOutput_id)
@@ -1372,7 +1385,7 @@ void AllocationInformation::GetNodeTypePrec(const vertex node, const OpGraphCons
          }
 
          /// ad hoc correction for fix_trunc_expr
-         if (current_op.find( "fix_trunc_expr_") == 0 && info->output_prec < 32)
+         if (boost::algorithm::starts_with(current_op,"fix_trunc_expr_") && info->output_prec < 32)
            info->output_prec = 32;
       }
       if(current_op == "dot_prod_expr")
@@ -1542,7 +1555,7 @@ void AllocationInformation::print(std::ostream& os) const
 {
    std::vector<technology_nodeRef>::const_iterator fu_end = list_of_FU.end();
    unsigned int index = 0;
-   for (std::vector<technology_nodeRef>::const_iterator fu =  list_of_FU.begin(); fu != fu_end; fu++)
+   for (std::vector<technology_nodeRef>::const_iterator fu =  list_of_FU.begin(); fu != fu_end; ++fu)
    {
       os << index << " ";
       index++;
@@ -1551,7 +1564,7 @@ void AllocationInformation::print(std::ostream& os) const
    if (!node_id_to_fus.empty())
    {
       os << "Op_name relation with functional unit name and operations.\n";
-      for(const auto node_id : node_id_to_fus)
+      for(const auto& node_id : node_id_to_fus)
       {
          for(const auto fu : node_id.second)
             os << "  [" << STR(node_id.first.first) << ", <" << list_of_FU[fu]->get_name() << ">]" << std::endl;
@@ -1565,7 +1578,7 @@ void AllocationInformation::print_allocated_resources() const
    if (debug_level >= DEBUG_LEVEL_VERBOSE)
    {
       PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "\nDumping the list of all the fixed bindings FU <-> node");
-      for(const auto bind : binding)
+      for(const auto& bind : binding)
       {
          if(bind.first == ENTRY_ID or bind.first == EXIT_ID)
             continue;
@@ -1576,7 +1589,7 @@ void AllocationInformation::print_allocated_resources() const
       }
 
       PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Dumping the list of all the possible bindings FU <-> node");
-      for(const auto bind : node_id_to_fus)
+      for(const auto& bind : node_id_to_fus)
       {
          if(bind.first.first == ENTRY_ID or bind.first.first == EXIT_ID or bind.first.first)
             continue;
@@ -2012,7 +2025,7 @@ double AllocationInformation::GetPhiConnectionLatency(const unsigned int stateme
          return 0;
       const auto sn = GetPointer<const ssa_name>(GET_NODE(ga->op0));
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Analyzing uses of " + sn->ToString());
-      for(const auto use : sn->CGetUseStmts())
+      for(const auto& use : sn->CGetUseStmts())
       {
          const auto target = GET_NODE(use.first);
          if(target->get_kind() == gimple_phi_K)
@@ -2020,7 +2033,7 @@ double AllocationInformation::GetPhiConnectionLatency(const unsigned int stateme
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Phi: " + target->ToString());
             const auto gp = GetPointer<const gimple_phi>(target);
             std::set<unsigned int> phi_inputs;
-            for(const auto def_edge : gp->CGetDefEdgesList())
+            for(const auto& def_edge : gp->CGetDefEdgesList())
             {
                if(def_edge.first->index && !behavioral_helper->is_a_constant(def_edge.first->index))
                   phi_inputs.insert(def_edge.first->index);
@@ -2069,8 +2082,7 @@ unsigned int AllocationInformation::GetFuType(const vertex operation) const
 unsigned int AllocationInformation::GetFuType(const unsigned int operation) const
 {
    unsigned int fu_type = 0;
-   bool single_fu_type = is_vertex_bounded_with(operation, fu_type);
-   if(not single_fu_type)
+   if(not is_vertex_bounded_with(operation, fu_type))
    {
       const std::set<unsigned int> & fu_set = can_implement_set(operation);
       if(fu_set.size() > 1)
@@ -2144,7 +2156,7 @@ double AllocationInformation::EstimateControllerDelay() const
    return delay;
 }
 
-std::string AllocationInformation::get_latency_string(std::string lat) const
+std::string AllocationInformation::get_latency_string(const std::string& lat) const
 {
    if(lat == "2")
       return std::string("");
@@ -2158,7 +2170,7 @@ std::string AllocationInformation::get_latency_string(std::string lat) const
 }
 
 #define ARRAY_CORRECTION 0
-double AllocationInformation::get_correction_time(unsigned int fu, const std::string &operation_name) const
+double AllocationInformation::get_correction_time(unsigned int fu, const std::string&operation_name) const
 {
    double res_value = get_setup_hold_time();
    technology_nodeRef current_fu = get_fu(fu);
@@ -2201,8 +2213,9 @@ double AllocationInformation::get_correction_time(unsigned int fu, const std::st
           is_read_only_correction = true;
 
       elmt_bitsize = Rmem->get_bram_bitsize();
+#if ARRAY_CORRECTION
       unsigned int type_index = tree_helper::get_type_index(TreeM, var);
-      if(ARRAY_CORRECTION && tree_helper::is_an_array(TreeM, type_index))
+      if(tree_helper::is_an_array(TreeM, type_index))
       {
          std::vector<unsigned int> dims;
          tree_helper::get_array_dimensions(TreeM, type_index, dims);
@@ -2227,6 +2240,7 @@ double AllocationInformation::get_correction_time(unsigned int fu, const std::st
             res_value -= (n_levels-1)*delay;
          }
       }
+#endif
    }
    else if (memory_type == MEMORY_TYPE_ASYNCHRONOUS)
    {
@@ -2241,7 +2255,8 @@ double AllocationInformation::get_correction_time(unsigned int fu, const std::st
       unsigned int type_index = tree_helper::get_type_index(TreeM, var);
       tree_nodeRef type_node = TreeM->get_tree_node_const(type_index);
       tree_helper::accessed_greatest_bitsize(TreeM, type_node, type_index, elmt_bitsize);
-      if(ARRAY_CORRECTION && tree_helper::is_an_array(TreeM, type_index))
+#if ARRAY_CORRECTION
+      if(tree_helper::is_an_array(TreeM, type_index))
       {
          std::vector<unsigned int> dims;
          tree_helper::get_array_dimensions(TreeM, type_index, dims);
@@ -2267,6 +2282,7 @@ double AllocationInformation::get_correction_time(unsigned int fu, const std::st
 
          }
       }
+#endif
    }
    else if (memory_type == MEMORY_TYPE_SYNCHRONOUS_SDS || memory_type == MEMORY_TYPE_SYNCHRONOUS_SDS_BUS)
    {
@@ -2277,7 +2293,8 @@ double AllocationInformation::get_correction_time(unsigned int fu, const std::st
       unsigned int type_index = tree_helper::get_type_index(TreeM, var);
       tree_nodeRef type_node = TreeM->get_tree_node_const(type_index);
       tree_helper::accessed_greatest_bitsize(TreeM, type_node, type_index, elmt_bitsize);
-      if(ARRAY_CORRECTION and tree_helper::is_an_array(TreeM, type_index))
+#if ARRAY_CORRECTION
+      if(tree_helper::is_an_array(TreeM, type_index))
       {
          std::vector<unsigned int> dims;
          tree_helper::get_array_dimensions(TreeM, type_index, dims);
@@ -2302,6 +2319,7 @@ double AllocationInformation::get_correction_time(unsigned int fu, const std::st
             res_value -= (n_levels-1)*delay;
          }
       }
+#endif
    }
    else if (memory_ctrl_type == MEMORY_CTRL_TYPE_PROXY || memory_ctrl_type == MEMORY_CTRL_TYPE_PROXYN || memory_ctrl_type == MEMORY_CTRL_TYPE_DPROXY || memory_ctrl_type == MEMORY_CTRL_TYPE_DPROXYN)
    {
@@ -2372,8 +2390,9 @@ double AllocationInformation::get_correction_time(unsigned int fu, const std::st
       cur_exec_delta = cur_exec_time - cur_sds_exec_time;
       res_value = res_value + cur_exec_delta;
 
+#if ARRAY_CORRECTION
       unsigned int type_index = tree_helper::get_type_index(TreeM, var);
-      if(ARRAY_CORRECTION && tree_helper::is_an_array(TreeM, type_index))
+      if(tree_helper::is_an_array(TreeM, type_index))
       {
          std::vector<unsigned int> dims;
          tree_helper::get_array_dimensions(TreeM, type_index, dims);
@@ -2397,6 +2416,7 @@ double AllocationInformation::get_correction_time(unsigned int fu, const std::st
             res_value -= (n_levels-1)*delay;
          }
       }
+#endif
    }
    else if(memory_ctrl_type == MEMORY_CTRL_TYPE_D00)
    {
@@ -2715,7 +2735,7 @@ CustomSet<unsigned int> AllocationInformation::ComputeDrivenCondExpr(const unsig
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Ignored since not ssa");
             continue;
          }
-         for(const auto use_stmt : current_sn->CGetUseStmts())
+         for(const auto& use_stmt : current_sn->CGetUseStmts())
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering use in " + STR(use_stmt.first));
             if(GET_NODE(use_stmt.first)->get_kind() != gimple_assign_K)
@@ -2839,7 +2859,7 @@ double AllocationInformation::GetConnectionTime(const unsigned int first_operati
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Computing overall connection time " + STR(first_operation) + "-->" + STR(second_operation));
 
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Computing connection time due to fanout " + STR(first_operation) + "-->" + STR(second_operation));
-      for(const auto used_ssa : tree_helper::ComputeSsaUses(TreeM->CGetTreeReindex(second_operation)))
+      for(const auto& used_ssa : tree_helper::ComputeSsaUses(TreeM->CGetTreeReindex(second_operation)))
       {
          const auto used_ssa_sn = GetPointer<const ssa_name>(GET_NODE(used_ssa.first));
          if(used_ssa_sn and  used_ssa_sn->CGetDefStmt()->index == first_operation)
@@ -3080,6 +3100,8 @@ bool AllocationInformation::can_be_asynchronous_ram(tree_managerConstRef TM, uns
          }
          else
             meaningful_bits = elts_size;
+         if(elts_size==0)
+            THROW_ERROR("elts_size cannot be equal to zero");
          if(meaningful_bits != elts_size)
             return ((var_bitsize/elts_size)*meaningful_bits <= threshold) && (is_read_only_variable || var_bitsize/elts_size < 127);
          else
@@ -3380,7 +3402,7 @@ CustomSet<unsigned int> AllocationInformation::GetZeroDistanceOperations(const u
                continue;
             }
          }
-         for(const auto use_stmt : current_sn->CGetUseStmts())
+         for(const auto& use_stmt : current_sn->CGetUseStmts())
          {
             const auto use_stmt_index = use_stmt.first->index;
             if(already_analyzed.find(use_stmt_index) != already_analyzed.end())

@@ -93,6 +93,6 @@ class CBackendStepFactory : public DesignFlowStepFactory
        * @param file_name is the name of the file to be written
        * @param c_backend_information is the information about the frontend to be generated
        */
-      const DesignFlowStepRef CreateCBackendStep(const CBackend::Type c_backend_type, const std::string file_name, const CBackendInformationConstRef c_backend_information) const;
+      const DesignFlowStepRef CreateCBackendStep(const CBackend::Type c_backend_type, const std::string&file_name, const CBackendInformationConstRef c_backend_information) const;
 };
 #endif

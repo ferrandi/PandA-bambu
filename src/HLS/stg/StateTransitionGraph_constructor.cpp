@@ -146,7 +146,7 @@ void StateTransitionGraph_constructor::set_condition(const EdgeDescriptor& e, co
 
 void StateTransitionGraph_constructor::add_conditions(const std::set<std::pair<vertex, unsigned int> > & EdgeConditions, std::set<std::pair<vertex, unsigned int> > & Conditions)
 {
-   for (std::set<std::pair<vertex, unsigned int> >::iterator Cond = EdgeConditions.begin(); Cond != EdgeConditions.end(); Cond++)
+   for (std::set<std::pair<vertex, unsigned int> >::iterator Cond = EdgeConditions.begin(); Cond != EdgeConditions.end(); ++Cond)
    {
       if (Conditions.find(std::make_pair(Cond->first, TransitionInfo::DONTCARE)) != Conditions.end())
       {

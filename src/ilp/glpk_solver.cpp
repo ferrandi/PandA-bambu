@@ -592,7 +592,7 @@ int glpk_solver::solve_ilp()
 }
 
 
-void glpk_solver::add_row(std::map<int, double> &i_coeffs, double i_rhs, ilp_sign i_sign, const std::string name)
+void glpk_solver::add_row(std::map<int, double> &i_coeffs, double i_rhs, ilp_sign i_sign, const std::string&name)
 {
    if (i_coeffs.size() == 0)
       return;
@@ -643,7 +643,7 @@ void glpk_solver::objective_add(std::map<int, double> &i_coeffs, ilp_dir dir)
    }
 
    std::map<int, double>::const_iterator i_end = i_coeffs.end();
-   for (std::map<int, double>::const_iterator i = i_coeffs.begin(); i != i_end; i++)
+   for (std::map<int, double>::const_iterator i = i_coeffs.begin(); i != i_end; ++i)
    {
       glp_set_obj_coef(lp, i->first + 1, i->second);
    }
@@ -660,7 +660,7 @@ void glpk_solver::print(std::ostream& os __attribute__ ((unused)))
    glp_write_lp(lp, nullptr, "glpk.lp");
 }
 
-void glpk_solver::print_to_file(const std::string file_name)
+void glpk_solver::print_to_file(const std::string&file_name)
 {
    ///Setting the bounds
    set_all_bounds();
@@ -689,7 +689,7 @@ void glpk_solver::get_vars_solution(std::map<int, double>& vars) const
    }
 }
 
-void glpk_solver::set_col_name(int var, const std::string name)
+void glpk_solver::set_col_name(int var, const std::string& name)
 {
    std::string ost = name + "_" + boost::lexical_cast<std::string>(var);
    glp_set_col_name(lp, var + 1, const_cast<char *>(ost.c_str()));

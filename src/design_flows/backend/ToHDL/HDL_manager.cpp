@@ -120,7 +120,7 @@ HDL_manager::~HDL_manager()
 
 }
 
-std::string HDL_manager::write_components(std::string filename, HDLWriter_Language language, const std::list<structural_objectRef>& components, bool equation, std::list<std::string> & aux_files) const
+std::string HDL_manager::write_components(const std::string& filename, HDLWriter_Language language, const std::list<structural_objectRef>& components, bool equation, std::list<std::string> & aux_files) const
 {
    language_writerRef writer = language_writer::create_writer(language, TM, parameters);
 
@@ -236,7 +236,7 @@ void HDL_manager::write_components(std::string filename,  const std::list<struct
 
    ///determine the proper language for each component
    std::map<HDLWriter_Language, std::list<structural_objectRef> > component_language;
-   for (std::list<structural_objectRef>::const_iterator cit = components.begin(); cit != components.end(); cit++)
+   for (std::list<structural_objectRef>::const_iterator cit = components.begin(); cit != components.end(); ++cit)
    {
       module* mod = GetPointer<module>(*cit);
       THROW_ASSERT(mod, "Expected a component object");
@@ -298,7 +298,7 @@ void HDL_manager::write_components(std::string filename,  const std::list<struct
    }
 
    ///generate the auxiliary files
-   for(std::map<HDLWriter_Language, std::list<structural_objectRef> >::iterator l = component_language.begin(); l != component_language.end(); l++)
+   for(std::map<HDLWriter_Language, std::list<structural_objectRef> >::iterator l = component_language.begin(); l != component_language.end(); ++l)
    {
       if (language == l->first) continue;
       std::string generated_filename = write_components(filename, l->first, component_language[l->first], equation, aux_files);
@@ -317,17 +317,17 @@ void HDL_manager::write_components(std::string filename,  const std::list<struct
 #endif
 }
 
-void HDL_manager::hdl_gen(std::string filename, const std::unordered_set<structural_objectRef> cirs, bool equation, std::list<std::string> & hdl_files, std::list<std::string> & aux_files)
+void HDL_manager::hdl_gen(const std::string& filename, const std::unordered_set<structural_objectRef>& cirs, bool equation, std::list<std::string> & hdl_files, std::list<std::string> & aux_files)
 {
 
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "  compute the list of components for which a structural description exists");
    ///compute the list of components for which a structural description exist.
    std::list<structural_objectRef> list_of_com;
-   for(const auto cir : cirs)
+   for(const auto& cir : cirs)
       get_post_order_structural_components(cir, list_of_com);
    if (list_of_com.empty())
    {
-      for(const auto cir : cirs)
+      for(const auto& cir : cirs)
       {
          THROW_ASSERT(GetPointer<module>(cir), "Expected a component or a channel");
          THROW_ASSERT(GetPointer<module>(cir)->get_NP_functionality(), "Structural empty description received");
@@ -644,7 +644,7 @@ void HDL_manager::write_module(const language_writerRef writer, const structural
          }
          cs.sort();
 
-         for(std::list<std::pair<std::string, structural_objectRef> >::iterator c = cs.begin(); c != cs.end(); c++)
+         for(std::list<std::pair<std::string, structural_objectRef> >::iterator c = cs.begin(); c != cs.end(); ++c)
          {
             writer->write_signal_declaration(c->second);
          }
@@ -681,7 +681,7 @@ void HDL_manager::write_module(const language_writerRef writer, const structural
          }
          cs.sort();
 
-         for(std::list<std::pair<std::string, structural_objectRef> >::iterator c = cs.begin(); c != cs.end(); c++)
+         for(std::list<std::pair<std::string, structural_objectRef> >::iterator c = cs.begin(); c != cs.end(); ++c)
          {
             structural_objectRef obj = c->second;
             if(TM->IsBuiltin(GET_TYPE_NAME(obj)))
@@ -947,7 +947,7 @@ void HDL_manager::write_flopoco_module(const structural_objectRef &cir, std::lis
 #endif
 }
 
-void HDL_manager::write_behavioral(const language_writerRef writer, const structural_objectRef &, const std::string &behav) const
+void HDL_manager::write_behavioral(const language_writerRef writer, const structural_objectRef &, const std::string&behav) const
 {
    std::vector<std::string> SplitVec;
    boost::algorithm::split( SplitVec, behav, boost::algorithm::is_any_of(";"));
@@ -962,7 +962,7 @@ void HDL_manager::write_behavioral(const language_writerRef writer, const struct
    }
 }
 
-void HDL_manager::write_fsm(const language_writerRef writer, const structural_objectRef &cir, const std::string &fsm_desc_i) const
+void HDL_manager::write_fsm(const language_writerRef writer, const structural_objectRef &cir, const std::string&fsm_desc_i) const
 {
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Start writing the FSM...");
 
@@ -985,24 +985,24 @@ void HDL_manager::write_fsm(const language_writerRef writer, const structural_ob
    tokenizer::iterator tok_iter = first_line_tokens.begin();
    std::string reset_state = convert_to_identifier(writer.get(), *tok_iter);
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Reset state: '" << reset_state << "'");
-   tok_iter++;
+   ++tok_iter;
    THROW_ASSERT(tok_iter != first_line_tokens.end(), "Wrong fsm description: expected the reset port name");
    std::string reset_port = convert_to_identifier(writer.get(), *tok_iter);
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Reset port: '" << reset_port << "'");
-   tok_iter++;
+   ++tok_iter;
    THROW_ASSERT(tok_iter != first_line_tokens.end(), "Wrong fsm description: expected the start port name");
    std::string start_port = convert_to_identifier(writer.get(), *tok_iter);
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Start port: '" << start_port << "'");
-   tok_iter++;
+   ++tok_iter;
    THROW_ASSERT(tok_iter != first_line_tokens.end(), "Wrong fsm description: expected the clock port name");
    std::string clock_port = convert_to_identifier(writer.get(), *tok_iter);
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Clock port: '" << clock_port << "'");
-   tok_iter++;
+   ++tok_iter;
    THROW_ASSERT(tok_iter == first_line_tokens.end(), "Wrong fsm description: unexpetcted tokens"+*tok_iter);
 
-   it++;
+   ++it;
    std::vector<std::string>::const_iterator first = it;
-   for(; it+1 != it_end; it++)
+   for(; it+1 != it_end; ++it)
    {
       tokenizer tokens(*it, sep);
       list_of_states.push_back(convert_to_identifier(writer.get(), *tokens.begin()));
@@ -1049,7 +1049,7 @@ void HDL_manager::write_fsm(const language_writerRef writer, const structural_ob
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "FSM writing completed!");
 }
 
-std::string HDL_manager::convert_to_identifier(const language_writer* writer, const std::string &id)
+std::string HDL_manager::convert_to_identifier(const language_writer* writer, const std::string&id)
 {
    auto ret = id;
    if(dynamic_cast<const VHDL_writer *>(writer))
@@ -1082,7 +1082,7 @@ std::string HDL_manager::convert_to_identifier(const language_writer* writer, co
    return ret;
 }
 
-std::string HDL_manager::convert_to_identifier(const std::string & id)
+std::string HDL_manager::convert_to_identifier(const std::string& id)
 {
    const language_writer* lan = nullptr;
    return convert_to_identifier(lan, id);

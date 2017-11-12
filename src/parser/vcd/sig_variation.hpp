@@ -65,9 +65,8 @@ struct sig_variation
    /**
     * constructor
     */
-   sig_variation(
-      unsigned long long ts = 0,
-      std::string val = "",
+   sig_variation(unsigned long long ts = 0,
+      const std::string &val = "",
       unsigned long long d = std::numeric_limits<decltype(sig_variation::duration)>::max()
    );
 };

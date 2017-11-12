@@ -1965,6 +1965,8 @@ src/parser/treegcc/parse_tree.hpp
 src/parser/treegcc/token_interface.cpp
 src/parser/treegcc/token_interface.hpp
 src/parser/treegcc/treeLexer.hpp
+src/parser/treegcc/treeLexer.lpp
+src/parser/treegcc/treeParser.ypp
 src/parser/vcd/sig_variation.cpp
 src/parser/vcd/sig_variation.hpp
 src/parser/vcd/vcd_parser.cpp

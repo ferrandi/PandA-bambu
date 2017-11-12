@@ -126,7 +126,7 @@ DesignFlowStep_Status dom_post_dom_computation::InternalExec()
    function_behavior->dominators = new dominance<BBGraph>(*fbb, bbentry, bbexit, parameters);
    function_behavior->dominators->calculate_dominance_info(dominance<BBGraph>::CDI_DOMINATORS);
    std::unordered_map<vertex, vertex> dominator_map = function_behavior->dominators->get_dominator_map();
-   for(std::unordered_map<vertex, vertex>::iterator it = dominator_map.begin(); it != dominator_map.end(); it++)
+   for(std::unordered_map<vertex, vertex>::iterator it = dominator_map.begin(); it != dominator_map.end(); ++it)
    {
       if(it->first != bbentry)
       {
@@ -143,7 +143,7 @@ DesignFlowStep_Status dom_post_dom_computation::InternalExec()
    function_behavior->post_dominators = new dominance<BBGraph>(*fbb, bbentry, bbexit, parameters);
    function_behavior->post_dominators->calculate_dominance_info(dominance<BBGraph>::CDI_POST_DOMINATORS);
    std::unordered_map<vertex, vertex> post_dominator_map = function_behavior->post_dominators->get_dominator_map();
-   for(std::unordered_map<vertex, vertex>::iterator it = post_dominator_map.begin(); it != post_dominator_map.end(); it++)
+   for(std::unordered_map<vertex, vertex>::iterator it = post_dominator_map.begin(); it != post_dominator_map.end(); ++it)
    {
       if(it->first != bbexit)
       {

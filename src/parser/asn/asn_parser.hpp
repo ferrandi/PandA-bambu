@@ -90,7 +90,7 @@ class AsnParser : public ParserFlowStep
        * @param AppM is the application manager
        * @param parameters is the set of input parameters
        */
-      AsnParser(const DesignFlowManagerConstRef design_flow_manager, const std::string file_name, const application_managerRef AppM, const ParameterConstRef parameters);
+      AsnParser(const DesignFlowManagerConstRef design_flow_manager, const std::string&file_name, const application_managerRef AppM, const ParameterConstRef parameters);
 
       /**
        * Destuctor

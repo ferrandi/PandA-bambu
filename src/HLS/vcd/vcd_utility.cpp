@@ -105,7 +105,7 @@ DiscrepancyLog::DiscrepancyLog(
       const HLS_managerConstRef HLSMgr,
       const vcd_trace_head & t,
       const uint64_t c_context,
-      const std::string & _c_val,
+      const std::string& _c_val,
       const unsigned int _el_idx,
       const std::string::size_type _first_c_bit,
       const std::string::size_type _c_size,
@@ -235,8 +235,8 @@ vcd_utility::ComputeHLSRelationships(const DesignFlowStep::RelationshipType rela
 
 static const std::list<sig_variation> & get_signal_variations(
       const vcd_parser::vcd_trace_t & vcd_trace,
-      const std::string & scope,
-      const std::string & signal_name)
+      const std::string& scope,
+      const std::string& signal_name)
 {
    const auto scopes_end = vcd_trace.end();
    const auto scopes_it = vcd_trace.find(scope);
@@ -387,7 +387,7 @@ DesignFlowStep_Status vcd_utility::Exec()
       const auto & scope_set = Discr->f_id_to_scope.at(op_info.stg_fun_id);
       if (not scope_set.empty())
          op_id_to_scope_to_vcd_head[op_info.op_id];
-      for (const std::string & scope : scope_set)
+      for (const std::string& scope : scope_set)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing scope " + scope);
          const std::string controller_scope = scope + "Controller_i" + STR(HIERARCHY_SEPARATOR);
@@ -611,9 +611,9 @@ bool vcd_utility::HasToBeExecuted() const
 bool vcd_utility::detect_mismatch(
       const vcd_trace_head & t,
       const uint64_t c_context,
-      const std::string & c_val)
+      const std::string& c_val)
 {
-   const std::string & vcd_val = t.out_var_it->value;
+   const std::string& vcd_val = t.out_var_it->value;
    bool is_mismatch = false;
    if (parameters->isOption(OPT_discrepancy_force) and
          parameters->getOption<bool>(OPT_discrepancy_force) and
@@ -661,11 +661,11 @@ bool vcd_utility::detect_mismatch(
 bool vcd_utility::detect_mismatch_element(
       const vcd_trace_head & t,
       const uint64_t c_context,
-      const std::string & c_val,
+      const std::string& c_val,
       const unsigned int el_idx)
 {
 #if HAVE_ASSERTS
-   const std::string & vcd_val = t.out_var_it->value;
+   const std::string& vcd_val = t.out_var_it->value;
 #endif
 
    std::string::size_type first_c_bit = el_idx * t.op_info.vec_base_bitsize;
@@ -716,15 +716,15 @@ bool vcd_utility::detect_mismatch_element(
 bool vcd_utility::detect_mismatch_simple(
       const vcd_trace_head & t,
       const uint64_t c_context,
-      const std::string & c_val,
+      const std::string& c_val,
       const unsigned int el_idx,
       const std::string::size_type first_c_bit,
       const std::string::size_type c_size)
 {
-   unsigned int base_index; // this is set when an address mismatch is detected
+   unsigned int base_index=0; // this is set when an address mismatch is detected
 
    const bool resized = c_val.length() != c_size;
-   const std::string & resized_c_val = resized ?
+   const std::string& resized_c_val = resized ?
       c_val.substr(first_c_bit, c_size) :
       c_val;
 
@@ -732,13 +732,13 @@ bool vcd_utility::detect_mismatch_simple(
          "operation " + STR(t.op_info.op_id) + " assigns ssa " + STR(t.op_info.ssa_name) +
          ": only complex or vectors are supposed to be resized for discrepancy analysis");
 
-   const std::string & vcd = t.out_var_it->value;
+   const std::string& vcd = t.out_var_it->value;
 
    auto vcd_first_bit = first_c_bit;
    if (vcd.size() > c_val.size())
       vcd_first_bit += vcd.size() - c_val.size();
 
-   const std::string & resized_vcd_val = resized ?
+   const std::string& resized_vcd_val = resized ?
       vcd.substr(vcd_first_bit, c_size) :
       vcd;
 
@@ -770,7 +770,7 @@ bool vcd_utility::detect_mismatch_simple(
 
 void vcd_utility::update_discr_list(const vcd_trace_head & t,
       const uint64_t c_context,
-      const std::string & c_val,
+      const std::string& c_val,
       const unsigned int el_idx,
       const std::string::size_type first_c_bit,
       const std::string::size_type c_size,
@@ -816,7 +816,7 @@ void vcd_utility::update_discr_list(const vcd_trace_head & t,
          }
       }
 
-      for (const auto s : soft_discr_to_remove)
+      for (const auto& s : soft_discr_to_remove)
       {
          soft_discr_list.erase(s);
       }
@@ -832,8 +832,8 @@ void vcd_utility::update_discr_list(const vcd_trace_head & t,
 }
 
 bool vcd_utility::detect_binary_float_mismatch(
-      const std::string & c_val,
-      const std::string & resized_vcd_val)
+      const std::string& c_val,
+      const std::string& resized_vcd_val)
    const
 {
    THROW_ASSERT(c_val.length() == resized_vcd_val.length(),
@@ -881,8 +881,8 @@ bool vcd_utility::detect_binary_float_mismatch(
 }
 
 bool vcd_utility::detect_binary_double_mismatch(
-      const std::string & c_val,
-      const std::string & resized_vcd_val)
+      const std::string& c_val,
+      const std::string& resized_vcd_val)
    const
 {
    THROW_ASSERT(c_val.length() == resized_vcd_val.length(),
@@ -932,8 +932,8 @@ bool vcd_utility::detect_binary_double_mismatch(
 bool vcd_utility::detect_fixed_address_mismatch(
       const DiscrepancyOpInfo & op_info,
       const uint64_t c_context,
-      const std::string & c_val,
-      const std::string & vcd_val,
+      const std::string& c_val,
+      const std::string& vcd_val,
       const unsigned int base_index)
    const
 {
@@ -961,7 +961,7 @@ bool vcd_utility::detect_fixed_address_mismatch(
     * representing the pointer can be wider than 32 bits. in that case we take
     * the lowest 32 bits
     */
-   const std::string & resized_vcd_val = c_val.length() < vcd_val.length() ?
+   const std::string& resized_vcd_val = c_val.length() < vcd_val.length() ?
       vcd_val.substr(vcd_val.length() - c_val.length()) :
       vcd_val;
    /*
@@ -985,8 +985,8 @@ bool vcd_utility::detect_fixed_address_mismatch(
 bool vcd_utility::detect_address_mismatch(
       const DiscrepancyOpInfo & op_info,
       const uint64_t c_context,
-      const std::string & c_val,
-      const std::string & vcd_val,
+      const std::string& c_val,
+      const std::string& vcd_val,
       unsigned int & base_index)
 {
    const ssa_name * ssa = GetPointer<const ssa_name>(TM->get_tree_node_const(op_info.ssa_name_node_id));
@@ -1025,16 +1025,14 @@ bool vcd_utility::detect_address_mismatch(
       else
       {
          base_index = 0;
-         uint64_t possible_base_address = 0;
          const uint64_t c_addr = static_cast<unsigned int>
             (std::stoull(c_val.c_str(), nullptr, 2));
 
          for (const auto & addr : Discr->c_addr_map.at(c_context))
          {
-            if (addr.second > possible_base_address and addr.second <= c_addr)
+            if (addr.second > 0 and addr.second <= c_addr)
             {
                base_index = addr.first;
-               possible_base_address = addr.second;
                break;
             }
          }
@@ -1055,8 +1053,8 @@ bool vcd_utility::detect_address_mismatch(
 
 bool vcd_utility::detect_regular_mismatch(
       const vcd_trace_head & t,
-      const std::string & c_val,
-      const std::string & vcd_val)
+      const std::string& c_val,
+      const std::string& vcd_val)
    const
 {
    if (t.op_info.type & DISCR_REAL)
@@ -1068,7 +1066,7 @@ bool vcd_utility::detect_regular_mismatch(
             "vcd_val.length() = " + STR(vcd_val.length()) + "\n");
 
       const bool to_resize = c_val.length() < vcd_val.length();
-      const std::string & resized_vcd_val = to_resize ?
+      const std::string& resized_vcd_val = to_resize ?
          vcd_val.substr(vcd_val.length() - c_val.length()) :
          vcd_val;
 
@@ -1100,9 +1098,9 @@ bool vcd_utility::detect_regular_mismatch(
       if (first_not_x_pos == std::string::npos)
          return false;
       const std::string vcd_trimmed_val = vcd_val.substr(first_not_x_pos);
-      const std::string & longer =
+      const std::string& longer =
          (vcd_trimmed_val.length() <= c_val.length()) ? c_val : vcd_trimmed_val;
-      const std::string & shorter =
+      const std::string& shorter =
          (vcd_trimmed_val.length() <= c_val.length()) ? vcd_trimmed_val : c_val;
       if (longer.find_first_not_of("01") != std::string::npos or
             shorter.find_first_not_of("01") != std::string::npos)
@@ -1165,7 +1163,7 @@ void vcd_utility::print_discrepancy(const DiscrepancyLog & l, const int verbosit
       std::string resized_vcd_val;
       if (l.c_val.length() < l.vcd_val.length())
          resized_vcd_val = l.vcd_val.substr(l.vcd_val.length() - l.c_val.length());
-      const std::string & vcd = resized_vcd_val.empty() ? l.vcd_val : resized_vcd_val;
+      const std::string& vcd = resized_vcd_val.empty() ? l.vcd_val : resized_vcd_val;
       if (vcd.find_first_not_of("01") == std::string::npos)
       {
          uint64_t vcd_base_addr = HLSMgr->Rmem->get_base_address(l.base_index, l.fun_id);
@@ -1243,7 +1241,7 @@ void vcd_utility::print_failed_vcd_head(const vcd_trace_head & t, const int verb
    INDENT_OUT_MEX(verbosity, output_level, out_msg);
 }
 
-std::string vcd_utility::compute_fsm_state_from_vcd_string(const std::string & vcd_state_string) const
+std::string vcd_utility::compute_fsm_state_from_vcd_string(const std::string& vcd_state_string) const
 {
    if (vcd_state_string.find_first_not_of("01") != std::string::npos)
    {

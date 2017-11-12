@@ -206,7 +206,7 @@ class BehavioralHelper
        * @param prefix is the string to be appended at the begining of the printing
        * @return the printed string
        */
-      virtual std::string print_type(unsigned int type, bool global = false, bool print_qualifiers = false, bool print_storage = false, unsigned int var = 0, const var_pp_functorConstRef vppf = var_pp_functorConstRef(), const std::string prefix = "", const std::string tail = "") const;
+      virtual std::string print_type(unsigned int type, bool global = false, bool print_qualifiers = false, bool print_storage = false, unsigned int var = 0, const var_pp_functorConstRef vppf = var_pp_functorConstRef(), const std::string&prefix = "", const std::string&tail = "") const;
 
       /**
        * Print the declaration of a non built-in type.
@@ -662,7 +662,7 @@ class BehavioralHelper
        * @param var is the index of the variable renamed
        * @param new_name is the new variable name
        */
-      static void rename_a_variable(unsigned int var, const std::string & new_name);
+      static void rename_a_variable(unsigned int var, const std::string& new_name);
 
       /**
        * remove all the entries from the renaming table

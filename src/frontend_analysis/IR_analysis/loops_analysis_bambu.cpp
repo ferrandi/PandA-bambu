@@ -90,9 +90,9 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
          {
             const auto sl = GetPointer<const statement_list>(GET_NODE(GetPointer<const function_decl>(AppM->get_tree_manager()->CGetTreeNode(function_id))->body));
             THROW_ASSERT(sl, "");
-            for(const auto block : sl->list_of_bloc)
+            for(const auto& block : sl->list_of_bloc)
             {
-               for(const auto stmt : block.second->CGetStmtList())
+               for(const auto& stmt : block.second->CGetStmtList())
                {
                   const auto gp = GetPointer<const gimple_pragma>(GET_NODE(stmt));
                   if (gp and gp->scope and GetPointer<const omp_pragma>(GET_NODE(gp->scope)))
@@ -227,7 +227,17 @@ DesignFlowStep_Status LoopsAnalysisBambu::InternalExec()
       }
       const tree_nodeRef cond = GET_NODE(GetPointer<const gimple_assign>(cond_def)->op1);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Condition variable is assigned in " + STR(cond));
-      if(cond->get_kind() != eq_expr_K and cond->get_kind() != ge_expr_K and cond->get_kind() != gt_expr_K and cond->get_kind() != le_expr_K and cond->get_kind() != lt_expr_K and cond->get_kind() != ne_expr_K and cond->get_kind() != uneq_expr_K and cond->get_kind() != ungt_expr_K and cond->get_kind() != unge_expr_K and cond->get_kind() != ungt_expr_K and cond->get_kind() != unle_expr_K and cond->get_kind() != unlt_expr_K)
+      if(cond->get_kind() != eq_expr_K and
+            cond->get_kind() != ge_expr_K and
+            cond->get_kind() != gt_expr_K and
+            cond->get_kind() != le_expr_K and
+            cond->get_kind() != lt_expr_K and
+            cond->get_kind() != ne_expr_K and
+            cond->get_kind() != uneq_expr_K and
+            cond->get_kind() != ungt_expr_K and
+            cond->get_kind() != unge_expr_K and
+            cond->get_kind() != unle_expr_K and
+            cond->get_kind() != unlt_expr_K)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Condition is not a comparison");
          continue;
@@ -258,7 +268,7 @@ DesignFlowStep_Status LoopsAnalysisBambu::InternalExec()
          const auto gp = GetPointer<const gimple_phi>(temp_def);
          if(not gp)
             return tree_nodeRef();
-         for(const auto def_edge : gp->CGetDefEdgesList())
+         for(const auto& def_edge : gp->CGetDefEdgesList())
          {
             if(def_edge.second == last_bb_index)
             {
@@ -320,7 +330,7 @@ DesignFlowStep_Status LoopsAnalysisBambu::InternalExec()
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Init phi is " + gp->ToString());
       const tree_nodeRef init = [&]() -> tree_nodeRef
       {
-         for(const auto def_edge : gp->CGetDefEdgesList())
+         for(const auto& def_edge : gp->CGetDefEdgesList())
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---" + def_edge.first->ToString() + " comes from " + STR(def_edge.second));
             if(def_edge.second!= last_bb_index)

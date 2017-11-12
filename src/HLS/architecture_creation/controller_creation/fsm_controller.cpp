@@ -180,19 +180,20 @@ void fsm_controller::create_state_machine(std::string &parse)
    THROW_ASSERT(std::find(working_list.begin(), working_list.end(), first_state) != working_list.end(), "unexpected case");
    working_list.erase(std::find(working_list.begin(), working_list.end(), first_state));
    working_list.push_front(first_state); /// ensure that first_state is the really first one...
-   for(std::list<vertex>::iterator v = working_list.begin(); v != working_list.end(); v++)
+   for(std::list<vertex>::iterator v = working_list.begin(); v != working_list.end(); ++v)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Analyzing state " + astg->CGetStateInfo(*v)->name);
       present_state[*v] = std::vector<long long int>(out_num, 0);
       if(selectors.find(conn_binding::IN) != selectors.end())
       {
-         for(std::map<std::pair<generic_objRef, unsigned int>, generic_objRef>::const_iterator s = selectors.find(conn_binding::IN)->second.begin(); s != selectors.find(conn_binding::IN)->second.end(); s++)
+         auto connection_binding_sets = selectors.find(conn_binding::IN)->second;
+         for(std::map<std::pair<generic_objRef, unsigned int>, generic_objRef>::const_iterator s = connection_binding_sets.begin(); s != connection_binding_sets.end(); ++s)
          {
    #ifndef NDEBUG
             std::map<vertex, std::set<vertex> > activations_check;
    #endif
             const std::set<commandport_obj::transition >& activations = GetPointer<commandport_obj>(s->second)->get_activations();
-            for(std::set<commandport_obj::transition >::const_iterator a = activations.begin(); a != activations.end(); a++)
+            for(std::set<commandport_obj::transition >::const_iterator a = activations.begin(); a != activations.end(); ++a)
             {
    #ifndef NDEBUG
                if(activations_check.find(std::get<0>(*a)) != activations_check.end())
@@ -225,7 +226,7 @@ void fsm_controller::create_state_machine(std::string &parse)
       }
 
       const std::list<vertex>& operations = astg->CGetStateInfo(*v)->executing_operations;
-      for (std::list<vertex>::const_iterator op = operations.begin(); op != operations.end(); op++)
+      for (std::list<vertex>::const_iterator op = operations.begin(); op != operations.end(); ++op)
       {
          technology_nodeRef tn = HLS->allocation_information->get_fu(HLS->Rfu->get_assign(*op));
          technology_nodeRef op_tn = GetPointer<functional_unit>(tn)->get_operation(tree_helper::normalized_ID(data->CGetOpNodeInfo(*op)->GetOperation()));
@@ -258,7 +259,7 @@ void fsm_controller::create_state_machine(std::string &parse)
    parse += "\n";
 
    const tree_managerRef TreeM = HLSMgr->get_tree_manager();
-   for(std::list<vertex>::iterator v = working_list.begin(); v != working_list.end(); v++)
+   for(std::list<vertex>::iterator v = working_list.begin(); v != working_list.end(); ++v)
    {
       if (HLS->STG->get_entry_state() == *v or HLS->STG->get_exit_state() == *v)
          continue;
@@ -275,7 +276,7 @@ void fsm_controller::create_state_machine(std::string &parse)
          if(!found_default)
          {
             const std::set<std::pair<vertex,unsigned int> >& cond = stg->CGetTransitionInfo(*oe)->conditions;
-            for(std::set<std::pair<vertex,unsigned int> >::const_iterator cond_it = cond.begin(); cond_it != cond.end(); cond_it++)
+            for(std::set<std::pair<vertex,unsigned int> >::const_iterator cond_it = cond.begin(); cond_it != cond.end(); ++cond_it)
             {
                if(cond_it->second == default_COND)
                {
@@ -297,14 +298,14 @@ void fsm_controller::create_state_machine(std::string &parse)
       unsigned int j = 0;
       bool done_port_is_registered = HLS->registered_done_port;
       std::list<EdgeDescriptor>::const_iterator e_it_end = sorted.end();
-      for(std::list<EdgeDescriptor>::const_iterator e_it = sorted.begin(); e_it != e_it_end; e_it++, j++)
+      for(std::list<EdgeDescriptor>::const_iterator e_it = sorted.begin(); e_it != e_it_end; ++e_it, ++j)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Considering successor state " + stg->CGetStateInfo(boost::target(*e_it, *stg))->name);
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Number of inputs is " + boost::lexical_cast<std::string>(in_num));
          std::vector<std::string> in(in_num, "-");
 
          const std::set<std::pair<vertex,unsigned int> >& cond = stg->CGetTransitionInfo(*e_it)->conditions;;
-         for(std::set<std::pair<vertex,unsigned int> >::const_iterator cond_it = cond.begin(); cond_it != cond.end(); cond_it++)
+         for(std::set<std::pair<vertex,unsigned int> >::const_iterator cond_it = cond.begin(); cond_it != cond.end(); ++cond_it)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing condition");
             std::string value;
@@ -367,11 +368,12 @@ void fsm_controller::create_state_machine(std::string &parse)
          }
          if(selectors.find(conn_binding::IN) != selectors.end())
          {
-            for(std::map<std::pair<generic_objRef, unsigned int>, generic_objRef>::const_iterator s = selectors.find(conn_binding::IN)->second.begin(); s != selectors.find(conn_binding::IN)->second.end(); s++)
+            auto connection_binding_sets = selectors.find(conn_binding::IN)->second;
+            for(std::map<std::pair<generic_objRef, unsigned int>, generic_objRef>::const_iterator s = connection_binding_sets.begin(); s != connection_binding_sets.end(); ++s)
             {
                //std::cerr << jt->second->get_string() << std::endl;
                const std::set<commandport_obj::transition >& activations = GetPointer<commandport_obj>(s->second)->get_activations();
-               for(std::set<commandport_obj::transition>::const_iterator it = activations.begin(); it != activations.end(); it++)
+               for(std::set<commandport_obj::transition>::const_iterator it = activations.begin(); it != activations.end(); ++it)
                {
                   THROW_ASSERT(*v != NULL_VERTEX && std::get<0>(*it) != NULL_VERTEX, "error on source vertex");
                   if (std::get<0>(*it) == *v && (std::get<1>(*it) == tgt || std::get<1>(*it) == NULL_VERTEX))

@@ -61,7 +61,7 @@ class xml_element : public xml_child, public attribute_sequence
       /**
        * constructor
        */
-      xml_element(const std::string &_name) : xml_child(_name)
+      explicit xml_element(const std::string&_name) : xml_child(_name)
       {}
 
       /**
@@ -69,7 +69,8 @@ class xml_element : public xml_child, public attribute_sequence
        */
       void print(std::ostream& os, bool formatted, simple_indent* pp) const
       {
-         if(formatted && pp)
+         THROW_ASSERT(pp, "Null indenter object: unexpected condition");
+         if(formatted)
          {
             (*pp)(os, "\n");
          }
@@ -81,12 +82,12 @@ class xml_element : public xml_child, public attribute_sequence
             const char soc[2] = {STD_OPENING_CHAR, '\0'};
             const char scc[2] = {STD_CLOSING_CHAR, '\0'};
             (*pp)(os, ">");
-            if(formatted && pp)
+            if(formatted)
             {
                (*pp)(os, soc);
             }
             xml_child::print(os,formatted, pp);
-            if(formatted && pp)
+            if(formatted)
             {
                (*pp)(os, scc);
                if (get_children().size() > 1 || !get_child_text())

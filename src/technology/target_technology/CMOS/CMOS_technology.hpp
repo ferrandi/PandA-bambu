@@ -61,7 +61,7 @@ class CMOS_technology : public target_technology
       /**
        * Constructor of the class
        */
-      CMOS_technology(const ParameterConstRef param);
+      explicit CMOS_technology(const ParameterConstRef param);
 
       /**
        * Destructor of the class

@@ -80,12 +80,12 @@ class string_cst_fix: public ApplicationFrontendFlowStep
        * @param identifier is the identifier to be normalized
        * @return the normalized identifier
        */
-      virtual const std::string Normalize(const std::string identifier) const;
+      virtual const std::string Normalize(const std::string&identifier) const;
 
       /**
       * Recursive examinate tree node
       */
-      void recursive_examinate(tree_nodeRef & tn, const std::string & srcp);
+      void recursive_examinate(tree_nodeRef & tn, const std::string& srcp);
 
       /**
        * Return the set of analyses in relationship with this design step

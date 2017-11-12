@@ -145,7 +145,6 @@ DesignFlowStep_Status AddOpExitFlowEdges::InternalExec()
 #endif
       }
    }
-   const std::string function_name = function_behavior->CGetBehavioralHelper()->get_function_name();
    if(parameters->getOption<bool>(OPT_print_dot))
    {
       function_behavior->CGetOpGraph(FunctionBehavior::FLG)->WriteDot("OP_FL.dot");

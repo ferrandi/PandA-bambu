@@ -105,7 +105,7 @@ CMOS_technology::CMOS_technology(const ParameterConstRef param) :
       std::cerr << msg << std::endl;
       THROW_ERROR("Error during parsing of technology file");
    }
-   catch (const std::string & msg)
+   catch (const std::string& msg)
    {
       std::cerr << msg << std::endl;
       THROW_ERROR("Error during parsing of technology file");

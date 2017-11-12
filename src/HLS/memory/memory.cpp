@@ -84,6 +84,7 @@ memory::memory(const tree_managerRef _TreeM, unsigned int _off_base_address, uns
    intern_shared_data(false),
    use_unknown_addresses(false),
    pointer_conversion(false),
+   unaligned_accesses(false),
    all_pointers_resolved(false),
    implicit_memcpy(false),
    parameter_alignment(16),
@@ -580,7 +581,7 @@ void memory::propagate_memory_parameters(const structural_objectRef src, const s
       return;
 
    std::string memory_parameters;
-   for(std::map<std::string, std::string>::iterator it = res_parameters.begin(); it != res_parameters.end(); it++)
+   for(std::map<std::string, std::string>::iterator it = res_parameters.begin(); it != res_parameters.end(); ++it)
    {
       if (memory_parameters.size()) memory_parameters += ";";
       memory_parameters += it->first +"="+it->second;
@@ -619,14 +620,14 @@ void memory::xwrite(xml_element* node)
    if (internal.size() or parameter.size())
    {
       xml_element* IntNode = Enode->add_child_element("internal_memory");
-      for(std::map<unsigned int, std::map<unsigned int, memory_symbolRef> >::iterator iIt = internal.begin(); iIt != internal.end(); iIt++)
+      for(std::map<unsigned int, std::map<unsigned int, memory_symbolRef> >::iterator iIt = internal.begin(); iIt != internal.end(); ++iIt)
       {
          xml_element* ScopeNode = IntNode->add_child_element("scope");
          std::string id = "@" + STR(iIt->first);
          WRITE_XVM(id, ScopeNode);
          std::string name = tree_helper::name_function(TreeM, iIt->first);
          WRITE_XVM(name, ScopeNode);
-         for(std::map<unsigned int, memory_symbolRef>::iterator vIt = iIt->second.begin(); vIt != iIt->second.end(); vIt++)
+         for(std::map<unsigned int, memory_symbolRef>::iterator vIt = iIt->second.begin(); vIt != iIt->second.end(); ++vIt)
          {
             xml_element* VarNode = ScopeNode->add_child_element("variable");
             std::string variable = "@" + STR(vIt->second->get_variable());
@@ -638,7 +639,8 @@ void memory::xwrite(xml_element* node)
          }
          if (parameter.find(iIt->first) != parameter.end())
          {
-            for(std::map<unsigned int, memory_symbolRef>::iterator vIt = parameter.find(iIt->first)->second.begin(); vIt != parameter.find(iIt->first)->second.end(); vIt++)
+            auto params = parameter.find(iIt->first)->second;
+            for(std::map<unsigned int, memory_symbolRef>::iterator vIt = params.begin(); vIt != params.end(); ++vIt)
             {
                xml_element* VarNode = ScopeNode->add_child_element("parameter");
                std::string variable = "@" + STR(vIt->second->get_variable());
@@ -652,7 +654,7 @@ void memory::xwrite(xml_element* node)
       }
       if (parameter.size())
       {
-         for(std::map<unsigned int, std::map<unsigned int, memory_symbolRef> >::iterator iIt = internal.begin(); iIt != internal.end(); iIt++)
+         for(std::map<unsigned int, std::map<unsigned int, memory_symbolRef> >::iterator iIt = internal.begin(); iIt != internal.end(); ++iIt)
          {
             if (internal.find(iIt->first) != internal.end()) continue;
             xml_element* ScopeNode = IntNode->add_child_element("scope");
@@ -660,7 +662,8 @@ void memory::xwrite(xml_element* node)
             WRITE_XVM(id, ScopeNode);
             std::string name = tree_helper::name_function(TreeM, iIt->first);
             WRITE_XVM(name, ScopeNode);
-            for(std::map<unsigned int, memory_symbolRef>::iterator vIt = parameter.find(iIt->first)->second.begin(); vIt != parameter.find(iIt->first)->second.end(); vIt++)
+            auto params = parameter.find(iIt->first)->second;
+            for(std::map<unsigned int, memory_symbolRef>::iterator vIt = params.begin(); vIt != params.end(); ++vIt)
             {
                xml_element* VarNode = ScopeNode->add_child_element("parameter");
                std::string variable = "@" + STR(vIt->second->get_variable());
@@ -676,7 +679,7 @@ void memory::xwrite(xml_element* node)
    if (external.size())
    {
       xml_element* ExtNode = Enode->add_child_element("external_memory");
-      for(std::map<unsigned int, memory_symbolRef>::iterator eIt = external.begin(); eIt != external.end(); eIt++)
+      for(std::map<unsigned int, memory_symbolRef>::iterator eIt = external.begin(); eIt != external.end(); ++eIt)
       {
          xml_element* VarNode = ExtNode->add_child_element("variable");
          std::string variable = "@" + STR(eIt->second->get_variable());

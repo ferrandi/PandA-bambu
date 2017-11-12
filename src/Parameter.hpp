@@ -762,7 +762,7 @@ class Parameter
        * @param argv is the array of arguments passed to program.
        * @param debug_level is the debug level
        */
-      Parameter(const std::string program_name, int argc, char * * const argv, int debug_level = 0);
+      Parameter(const std::string&program_name, int argc, char * * const argv, int debug_level = 0);
 
       /**
        * Copy Constructor
@@ -871,7 +871,7 @@ class Parameter
        * @param value is the value of the option to be saved
        */
       template<typename G>
-      void setOption(const std::string name, const G value)
+      void setOption(const std::string& name, const G value)
       {
          Options[name] = boost::lexical_cast<std::string>(value);
       }
@@ -967,7 +967,7 @@ class Parameter
        * @param name is the name the class
        * @return the corresponding level
        */
-      int get_class_debug_level(const std::string class_name, int debug_level = -1) const;
+      int get_class_debug_level(const std::string&class_name, int debug_level = -1) const;
 
       /**
        * Return the debug_level of a function
@@ -975,14 +975,14 @@ class Parameter
        * @param function_name is the name of the function
        * @return the debug_level
        */
-      int GetFunctionDebugLevel(const std::string class_name, const std::string function_name) const;
+      int GetFunctionDebugLevel(const std::string&class_name, const std::string&function_name) const;
 
       void print(std::ostream& os) const;
 
       /**
        * Add a class to be debugged
        */
-      void add_debug_class(const std::string & class_name);
+      void add_debug_class(const std::string& class_name);
 
       /**
        * Print the usage of this tool = PrintHeader() + PrintHelp()
@@ -1012,7 +1012,7 @@ class Parameter
        * @param check_cml_root_node tells xml file has to be analyzed
        * @return the type of the file format
        */
-      Parameters_FileFormat GetFileFormat(const std::string & file, bool check_cml_root_node = false) const;
+      Parameters_FileFormat GetFileFormat(const std::string& file, bool check_cml_root_node = false) const;
 
       /**
        * Returns the value of a parameter
@@ -1031,7 +1031,7 @@ class Parameter
        * @param name is the name of the parameter
        * @return true if the parameter has been set
        */
-      bool IsParameter(const std::string & name) const;
+      bool IsParameter(const std::string& name) const;
 
       /**
        * Return argv

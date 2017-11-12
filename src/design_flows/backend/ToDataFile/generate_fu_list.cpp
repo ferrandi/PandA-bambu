@@ -76,7 +76,7 @@ GenerateFuList::GenerateFuList(const target_managerRef _target, const DesignFlow
       std::vector<std::string> splitted;
       std::string to_be_splitted(parameters->getOption<std::string>(OPT_component_name));
       boost::algorithm::split(splitted, to_be_splitted, boost::algorithm::is_any_of(","));
-      for(const auto component_to_be_characterized : splitted)
+      for(const auto& component_to_be_characterized : splitted)
       {
          components_to_be_characterized.insert(component_to_be_characterized);
       }
@@ -86,11 +86,11 @@ GenerateFuList::GenerateFuList(const target_managerRef _target, const DesignFlow
 DesignFlowStep_Status GenerateFuList::Exec()
 {
    const auto libraries = TM->get_library_list();
-   for(const auto library : libraries)
+   for(const auto& library : libraries)
    {
       const auto LM = TM->get_library_manager(library);
       const auto fus = LM->get_library_fu();
-      for(const auto fu : fus)
+      for(const auto& fu : fus)
       {
          component = fu.first;
          if(components_to_be_characterized.empty() or components_to_be_characterized.find(component) != components_to_be_characterized.end())
@@ -104,7 +104,7 @@ DesignFlowStep_Status GenerateFuList::Exec()
       cells.insert(current_list);
    }
    std::ofstream file_out(parameters->getOption<std::string>(OPT_output_file).c_str(), std::ios::out);
-   for(const auto cell : cells)
+   for(const auto& cell : cells)
    {
       file_out << cell << std::endl;
    }
@@ -174,7 +174,7 @@ const DesignFlowStepFactoryConstRef GenerateFuList::CGetDesignFlowStepFactory() 
    return ToDataFileStep::CGetDesignFlowStepFactory();
 }
 
-void GenerateFuList::AnalyzeCell(functional_unit * fu, const unsigned int, const std::vector<std::string >, const size_t, const std::vector<std::string>, const size_t, const unsigned int constPort, const bool is_commutative)
+void GenerateFuList::AnalyzeCell(functional_unit * fu, const unsigned int, const std::vector<std::string> &, const size_t, const std::vector<std::string> &, const size_t, const unsigned int constPort, const bool is_commutative)
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing " + fu->get_name());
    const structural_objectRef obj = fu->CM->get_circ();

@@ -112,7 +112,7 @@ class HDL_manager
       /**
        * Generates the HDL description for the given components in the specified language
        */
-      std::string write_components(std::string filename, const HDLWriter_Language language, const std::list<structural_objectRef>& components, bool equation, std::list<std::string> & aux_files) const;
+      std::string write_components(const std::string& filename, const HDLWriter_Language language, const std::list<structural_objectRef>& components, bool equation, std::list<std::string> & aux_files) const;
 
       /**
        * Determines the proper language for each component and generates the corresponding HDL descriptions
@@ -152,7 +152,7 @@ class HDL_manager
        * @param cir is the module.
        * @param fsm_desc is the string-based FSM description.
        */
-      void write_fsm(const language_writerRef writer, const structural_objectRef &cir, const std::string &fsm_desc) const;
+      void write_fsm(const language_writerRef writer, const structural_objectRef &cir, const std::string&fsm_desc) const;
 
       /**
        * Writes the behavioral description associated with the component
@@ -160,7 +160,7 @@ class HDL_manager
        * @param cir is the module.
        * @param behav is the string-based behavioral description.
        */
-      void write_behavioral(const language_writerRef writer, const structural_objectRef &cir, const std::string &behav) const;
+      void write_behavioral(const language_writerRef writer, const structural_objectRef &cir, const std::string&behav) const;
 
    public:
       /**
@@ -193,19 +193,19 @@ class HDL_manager
        * @param the created files (file_name + other files)
        * @param the created aux files
        */
-      void hdl_gen(const std::string file_name, const std::unordered_set<structural_objectRef> cirs, bool equation, std::list<std::string> & hdl_files, std::list<std::string> & aux_files);
+      void hdl_gen(const std::string&file_name, const std::unordered_set<structural_objectRef>& cirs, bool equation, std::list<std::string> & hdl_files, std::list<std::string> & aux_files);
 
       /**
        * Converts a generic string to a language compliant identifier
        */
       static
-      std::string convert_to_identifier(const language_writer* lan, const std::string &id);
+      std::string convert_to_identifier(const language_writer* lan, const std::string&id);
 
       /**
        * Converts a generic string to a language compliant identifier
        */
       static
-      std::string convert_to_identifier(const std::string &id);
+      std::string convert_to_identifier(const std::string&id);
 
       /**
        * Returns the module typename taking into account even the flopoco customizations

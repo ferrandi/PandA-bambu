@@ -46,7 +46,7 @@
 
 HLSCBackendInformation::HLSCBackendInformation
 (
-   const std::string _results_filename,
+   const std::string& _results_filename,
    const HLS_managerConstRef _HLSMgr
 ) :
    results_filename(_results_filename),

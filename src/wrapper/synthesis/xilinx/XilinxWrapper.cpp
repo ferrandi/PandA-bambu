@@ -72,7 +72,7 @@ void XilinxWrapper::generate_synthesis_script(const DesignParametersRef& dp, con
    if (xml_script_nodes.size() == 0) return;
 
    // Export reserved (constant) values to design parameters
-   for (std::vector<xml_set_variable_tRef>::const_iterator it = xml_reserved_vars.begin(); it != xml_reserved_vars.end(); it++)
+   for (std::vector<xml_set_variable_tRef>::const_iterator it = xml_reserved_vars.begin(); it != xml_reserved_vars.end(); ++it)
    {
       const xml_set_variable_tRef& var = (*it);
       std::cerr << "setting = " << var->name << " #" << getStringValue(var, dp) << "#" << std::endl;
@@ -111,7 +111,7 @@ std::string XilinxWrapper::getStringValue(const xml_script_node_tRef node, const
          else if (var->multiValues.size())
          {
             result += "{";
-            for (std::vector<xml_set_entry_tRef>::const_iterator it = var->multiValues.begin(); it != var->multiValues.end(); it++)
+            for (std::vector<xml_set_entry_tRef>::const_iterator it = var->multiValues.begin(); it != var->multiValues.end(); ++it)
             {
                const xml_set_entry_tRef e = *it;
                if (it != var->multiValues.begin())
@@ -175,7 +175,7 @@ std::string XilinxWrapper::toString(const xml_script_node_tRef node, const Desig
          if (comm->name)
             result += *(comm->name);
          if (comm->parameters.size())
-            for (std::vector<xml_parameter_tRef>::const_iterator it = comm->parameters.begin(); it != comm->parameters.end(); it++)
+            for (std::vector<xml_parameter_tRef>::const_iterator it = comm->parameters.begin(); it != comm->parameters.end(); ++it)
             {
                const xml_parameter_tRef p = *it;
                if (p->condition && !xml_script_node_t::evaluate_condition(p->condition, dp)) continue;

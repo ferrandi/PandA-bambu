@@ -688,7 +688,7 @@ class memory
       /**
        * return the parameter alignment
        */
-      unsigned int get_parameter_alignment() { return parameter_alignment;}
+      unsigned int get_parameter_alignment() const { return parameter_alignment;}
 
       /**
        * set the internal base address alignment

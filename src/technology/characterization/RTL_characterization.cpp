@@ -99,7 +99,7 @@
 
 #define PORT_VECTOR_N_PORTS 2
 
-RTLCharacterization::RTLCharacterization(const target_managerRef _target, const std::string _cells, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters) :
+RTLCharacterization::RTLCharacterization(const target_managerRef _target, const std::string&_cells, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters) :
    DesignFlowStep(_design_flow_manager, _parameters),
    FunctionalUnitStep(_target, _design_flow_manager, _parameters),
    output_level(_parameters->getOption<int>(OPT_output_level)),
@@ -328,7 +328,7 @@ void RTLCharacterization::xwrite_device_file(const target_deviceRef device)
    {
       THROW_ERROR(std::string(msg));
    }
-   catch (const std::string & msg)
+   catch (const std::string& msg)
    {
       THROW_ERROR(msg);
    }
@@ -351,7 +351,7 @@ void RTLCharacterization::xwrite_characterization(const target_deviceRef device,
    name_el->add_child_text(LM->get_library_name());
 
    const library_manager::fu_map_type& fus = LM->get_library_fu();
-   for(const auto cell : cells)
+   for(const auto& cell : cells)
    {
       if(fus.find(cell) == fus.end())
       {
@@ -550,7 +550,7 @@ void RTLCharacterization::specialize_fu(const module* mod, unsigned int prec, un
    }
 }
 
-void RTLCharacterization::add_input_register(structural_objectRef port_in, std::string register_library, std::string port_prefix, structural_objectRef reset_port, structural_objectRef circuit, structural_objectRef clock_port, structural_objectRef e_port, structural_managerRef SM)
+void RTLCharacterization::add_input_register(structural_objectRef port_in, const std::string& register_library, const std::string& port_prefix, structural_objectRef reset_port, structural_objectRef circuit, structural_objectRef clock_port, structural_objectRef e_port, structural_managerRef SM)
 {
    structural_objectRef r_signal;
    structural_objectRef reg_mod = SM->add_module_from_technology_library(port_prefix+"_REG", register_AR_NORETIME, register_library, circuit, TM);
@@ -573,7 +573,7 @@ void RTLCharacterization::add_input_register(structural_objectRef port_in, std::
    SM->add_connection(port_in, r_signal);
 }
 
-void RTLCharacterization::add_output_register(structural_managerRef SM, structural_objectRef e_port, structural_objectRef circuit, structural_objectRef reset_port, structural_objectRef port_out, std::string port_prefix, structural_objectRef clock_port, std::string register_library)
+void RTLCharacterization::add_output_register(structural_managerRef SM, structural_objectRef e_port, structural_objectRef circuit, structural_objectRef reset_port, structural_objectRef port_out, const std::string& port_prefix, structural_objectRef clock_port, const std::string& register_library)
 {
    structural_objectRef r_signal;
    structural_objectRef reg_mod = SM->add_module_from_technology_library(port_prefix+"_REG", register_AR_NORETIME, register_library, circuit, TM);
@@ -642,7 +642,7 @@ const DesignFlowStepFactoryConstRef RTLCharacterization::CGetDesignFlowStepFacto
    return DesignFlowStepFactoryConstRef();
 }
 
-void RTLCharacterization::AnalyzeCell(functional_unit * fu, const unsigned int prec, const std::vector<std::string >portsize_parameters, const size_t portsize_index, const std::vector<std::string> pipe_parameters, const size_t stage_index, const unsigned int constPort, const bool is_commutative)
+void RTLCharacterization::AnalyzeCell(functional_unit * fu, const unsigned int prec, const std::vector<std::string >& portsize_parameters, const size_t portsize_index, const std::vector<std::string>& pipe_parameters, const size_t stage_index, const unsigned int constPort, const bool is_commutative)
 {
    const auto fu_name = fu->get_name();
    const auto fu_base_name = fu->fu_template_name != "" ? fu->fu_template_name : fu_name;
@@ -1073,7 +1073,7 @@ void RTLCharacterization::AnalyzeCell(functional_unit * fu, const unsigned int p
    }
 }
 
-const std::string RTLCharacterization::ComputeComponent(const std::string input) const
+const std::string RTLCharacterization::ComputeComponent(const std::string&input) const
 {
    std::vector<std::string> component_cell;
    boost::algorithm::split(component_cell, input, boost::algorithm::is_any_of(","));
@@ -1084,12 +1084,12 @@ const std::string RTLCharacterization::ComputeComponent(const std::string input)
    return component_or_cell[0];
 }
 
-const CustomSet<std::string> RTLCharacterization::ComputeCells(const std::string input) const
+const CustomSet<std::string> RTLCharacterization::ComputeCells(const std::string&input) const
 {
    CustomSet<std::string> ret;
    std::vector<std::string> component_cells;
    boost::algorithm::split(component_cells, input, boost::algorithm::is_any_of(","));
-   for(const auto component_cell : component_cells)
+   for(const auto& component_cell : component_cells)
    {
       std::vector<std::string> component_or_cell;
       boost::algorithm::split(component_or_cell, component_cell, boost::algorithm::is_any_of("-"));

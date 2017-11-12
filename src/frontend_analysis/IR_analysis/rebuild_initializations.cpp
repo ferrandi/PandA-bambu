@@ -176,7 +176,7 @@ DesignFlowStep_Status rebuild_initializations::InternalExec()
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Examining BB" + STR(B->number));
    }
    const auto integer_type = tree_man->create_default_integer_type();
-   for(const auto init : inits)
+   for(const auto& init : inits)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Rebuilding init of " + STR(init.first));
       std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> constructor_tree_node_schema;

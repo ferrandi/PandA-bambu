@@ -79,7 +79,7 @@ structural_managerRef read_structural_File(const std::string& fn, const Paramete
    {
       std::cerr << msg << std::endl;
    }
-   catch (const std::string & msg)
+   catch (const std::string& msg)
    {
       std::cerr << msg << std::endl;
    }
@@ -107,7 +107,7 @@ void write_structural_File(const std::string& f, structural_managerRef const & C
    {
       std::cerr << msg << std::endl;
    }
-   catch (const std::string & msg)
+   catch (const std::string& msg)
    {
       std::cerr << msg << std::endl;
    }

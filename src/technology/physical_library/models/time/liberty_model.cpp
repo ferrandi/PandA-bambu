@@ -60,7 +60,7 @@ void liberty_model::xwrite(xml_element* pin_node, const std::string& output_pin)
 {
    if (timing_groups.find(output_pin) != timing_groups.end())
    {
-      for(std::map<std::set<std::string>, timing_groupRef>::iterator g = timing_groups[output_pin].begin(); g != timing_groups[output_pin].end(); g++)
+      for(std::map<std::set<std::string>, timing_groupRef>::iterator g = timing_groups[output_pin].begin(); g != timing_groups[output_pin].end(); ++g)
       {
           xml_element* group = pin_node->add_child_element("timing");
           g->second->xwrite(group, g->first);

@@ -695,7 +695,7 @@ void DiscrepancyAnalysisCWriter::WriteFunctionImplementation(unsigned int functi
 {
    const FunctionBehaviorConstRef FB = AppM->CGetFunctionBehavior(function_index);
    const BehavioralHelperConstRef behavioral_helper = FB->CGetBehavioralHelper();
-   const std::string & funName = behavioral_helper->get_function_name();
+   const std::string& funName = behavioral_helper->get_function_name();
    tree_nodeRef node_fun = TM->GetTreeNode(function_index);
    THROW_ASSERT(GetPointer<function_decl>(node_fun), "expected a function decl");
    bool prepend_static = not tree_helper::is_static(TM, function_index) and not tree_helper::is_extern(TM, function_index) and (funName != "main");
@@ -716,7 +716,7 @@ void DiscrepancyAnalysisCWriter::WriteFunctionDeclaration(const unsigned int fun
 {
    const FunctionBehaviorConstRef FB = AppM->CGetFunctionBehavior(funId);
    const BehavioralHelperConstRef behavioral_helper = FB->CGetBehavioralHelper();
-   const std::string & funName = behavioral_helper->get_function_name();
+   const std::string& funName = behavioral_helper->get_function_name();
    tree_nodeRef node_fun = TM->GetTreeNode(funId);
    THROW_ASSERT(GetPointer<function_decl>(node_fun), "expected a function decl");
    bool prepend_static = not tree_helper::is_static(TM, funId) and not tree_helper::is_extern(TM, funId) and (funName != "main");

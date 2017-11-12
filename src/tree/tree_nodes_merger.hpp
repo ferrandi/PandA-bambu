@@ -82,7 +82,7 @@ struct tree_node_reached : public tree_node_mask
 struct tree_node_index_factory : public tree_node_mask
 {
       ///default constructor
-      tree_node_index_factory(std::unordered_map<unsigned int, unsigned int> &_remap, const tree_managerRef _TM) : remap(_remap), TM(_TM), curr_tree_node_ptr(nullptr) {}
+      tree_node_index_factory(std::unordered_map<unsigned int, unsigned int> &_remap, const tree_managerRef _TM) : remap(_remap), TM(_TM), curr_tree_node_ptr(nullptr), curr_bloc(nullptr) {}
       ///tree_node visitors
       BOOST_PP_SEQ_FOR_EACH(OPERATOR_MACRO_DECL, BOOST_PP_EMPTY, OBJ_SPECIALIZED_SEQ)
       BOOST_PP_SEQ_FOR_EACH(OPERATOR_MACRO, BOOST_PP_EMPTY, OBJ_NOT_SPECIALIZED_SEQ)

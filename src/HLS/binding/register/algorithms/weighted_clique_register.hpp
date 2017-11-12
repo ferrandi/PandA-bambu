@@ -56,7 +56,7 @@ class WeightedCliqueRegisterBindingSpecialization : public HLSFlowStepSpecializa
       /**
        * Constructor
        */
-      WeightedCliqueRegisterBindingSpecialization(const CliqueCovering_Algorithm clique_covering_algorithm);
+      explicit WeightedCliqueRegisterBindingSpecialization(const CliqueCovering_Algorithm clique_covering_algorithm);
 
       /**
        * Return the string representation of this

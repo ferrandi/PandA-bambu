@@ -98,6 +98,6 @@ bool priority_dynamic_mobility::update()
 priority_fixed::priority_fixed(const std::unordered_map<vertex,int>& priority_value)
 {
    std::unordered_map<vertex,int>::const_iterator it_end = priority_value.end();
-   for(std::unordered_map<vertex,int>::const_iterator it = priority_value.begin(); it != it_end; it++)
+   for(std::unordered_map<vertex,int>::const_iterator it = priority_value.begin(); it != it_end; ++it)
       operator[](it->first) = it->second;
 }

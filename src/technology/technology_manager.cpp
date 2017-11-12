@@ -111,7 +111,7 @@ void technology_manager::print(std::ostream& os) const
 }
 
 
-bool technology_manager::can_implement(const std::string &fu_name, const std::string &op_name, const std::string &Library) const
+bool technology_manager::can_implement(const std::string&fu_name, const std::string&op_name, const std::string&Library) const
 {
    technology_nodeRef node = get_fu(fu_name,Library);
    if(!node) return false;
@@ -119,7 +119,7 @@ bool technology_manager::can_implement(const std::string &fu_name, const std::st
 }
 
 
-technology_nodeRef technology_manager::get_fu(const std::string &fu_name, const std::string &Library) const
+technology_nodeRef technology_manager::get_fu(const std::string&fu_name, const std::string&Library) const
 {
    THROW_ASSERT(Library.size(), "Library not specified for component " + fu_name);
    if (library_map.find(Library) != library_map.end() and library_map.find(Library)->second->is_fu(fu_name))
@@ -128,7 +128,7 @@ technology_nodeRef technology_manager::get_fu(const std::string &fu_name, const 
 }
 
 
-ControlStep technology_manager::get_initiation_time(const std::string &fu_name, const std::string &op_name, const std::string &Library) const
+ControlStep technology_manager::get_initiation_time(const std::string&fu_name, const std::string&op_name, const std::string&Library) const
 {
    technology_nodeRef node = get_fu(fu_name,Library);
    THROW_ASSERT(GetPointer<functional_unit>(node),"Unit " + fu_name + " not stored into library ("+Library+")");
@@ -138,7 +138,7 @@ ControlStep technology_manager::get_initiation_time(const std::string &fu_name, 
    return GetPointer<operation>(node_op)->time_m->get_initiation_time();
 }
 
-double technology_manager::get_execution_time(const std::string &fu_name, const std::string &op_name, const std::string &Library) const
+double technology_manager::get_execution_time(const std::string&fu_name, const std::string&op_name, const std::string&Library) const
 {
    technology_nodeRef node = get_fu(fu_name,Library);
    THROW_ASSERT(GetPointer<functional_unit>(node),"Unit " + fu_name + " not stored into library ("+Library+")");
@@ -148,7 +148,7 @@ double technology_manager::get_execution_time(const std::string &fu_name, const 
    return GetPointer<operation>(node_op)->time_m->get_execution_time();
 }
 
-double technology_manager::get_area(const std::string &fu_name, const std::string &Library) const
+double technology_manager::get_area(const std::string&fu_name, const std::string&Library) const
 {
    technology_nodeRef node = get_fu(fu_name,Library);
    THROW_ASSERT(GetPointer<functional_unit>(node),"Unit " + fu_name + " not stored into library ("+Library+")");
@@ -157,7 +157,7 @@ double technology_manager::get_area(const std::string &fu_name, const std::strin
 }
 
 #if 0
-double technology_manager::get_height(const std::string &fu_name, const std::string &Library) const
+double technology_manager::get_height(const std::string&fu_name, const std::string&Library) const
 {
    technology_nodeRef node = get_fu(fu_name,Library);
    THROW_ASSERT(GetPointer<functional_unit>(node),"Unit " + fu_name + " not stored into library ("+Library+")");
@@ -165,7 +165,7 @@ double technology_manager::get_height(const std::string &fu_name, const std::str
    return GetPointer<cell_model>(GetPointer<functional_unit>(node)->area)->get_height_value();
 }
 
-double technology_manager::get_width(const std::string &fu_name, const std::string &Library) const
+double technology_manager::get_width(const std::string&fu_name, const std::string&Library) const
 {
    technology_nodeRef node = get_fu(fu_name,Library);
    THROW_ASSERT(GetPointer<functional_unit>(node),"Unit " + fu_name + " not stored into library ("+Library+")");
@@ -175,7 +175,7 @@ double technology_manager::get_width(const std::string &fu_name, const std::stri
 #endif
 
 #if HAVE_CIRCUIT_BUILT
-void technology_manager::add_resource(const std::string &Library, const std::string &fu_name, const structural_managerRef CM, const bool is_builtin)
+void technology_manager::add_resource(const std::string&Library, const std::string&fu_name, const structural_managerRef CM, const bool is_builtin)
 {
    technology_nodeRef curr = get_fu(fu_name, Library);
    if (!curr)
@@ -196,7 +196,7 @@ void technology_manager::add_resource(const std::string &Library, const std::str
 }
 #endif
 
-void technology_manager::add_operation(const std::string &Library, const std::string &fu_name, const std::string &operation_name)
+void technology_manager::add_operation(const std::string&Library, const std::string&fu_name, const std::string&operation_name)
 {
    THROW_ASSERT(library_map.find(Library) != library_map.end(), "Library \"" + Library + "\" not found");
    THROW_ASSERT(library_map[Library]->is_fu(fu_name), "Unit \"" + fu_name + "\" not found in library \"" + Library);
@@ -207,7 +207,7 @@ void technology_manager::add_operation(const std::string &Library, const std::st
    GetPointer<functional_unit>(curr)->add(curr_op);
 }
 
-void technology_manager::add(const technology_nodeRef curr, const std::string &Library)
+void technology_manager::add(const technology_nodeRef curr, const std::string&Library)
 {
    std::vector<std::string>::iterator it = std::find(libraries.begin(), libraries.end(), Library);
    if (it == libraries.end())
@@ -235,7 +235,7 @@ void technology_manager::xload(const xml_element* node, const target_deviceRef d
       if(Enode->get_name() == "information")
       {
          const attribute_sequence::attribute_list& attr_list = Enode->get_attributes();
-         for(attribute_sequence::attribute_list::const_iterator a = attr_list.begin(); a != attr_list.end(); a++)
+         for(attribute_sequence::attribute_list::const_iterator a = attr_list.begin(); a != attr_list.end(); ++a)
          {
 #if HAVE_FROM_LIBERTY
             std::string key = (*a)->get_name();
@@ -263,7 +263,7 @@ void technology_manager::xload(const xml_element* node, const target_deviceRef d
          {
             const library_manager::fu_map_type& fus = LM->get_library_fu();
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Updating library " + library_name);
-            for(library_manager::fu_map_type::const_iterator f = fus.begin(); f != fus.end(); f++)
+            for(library_manager::fu_map_type::const_iterator f = fus.begin(); f != fus.end(); ++f)
             {
                if (library_map[library_name]->is_fu(f->first))
                {
@@ -292,7 +292,7 @@ void technology_manager::xload(const xml_element* node, const target_deviceRef d
    }
    for(auto temp_library : temp_libraries)
    {
-      for(const auto temp_info : info)
+      for(const auto& temp_info : info)
       {
          temp_library->set_info(temp_info.first, temp_info.second);
       }
@@ -312,7 +312,7 @@ void technology_manager::gload(const std::string& file_name, const fileIO_istrea
       char tmp[255];
       file->getline(tmp, 255);  // delim defaults to '\n'
       std::string line = tmp;
-      if(!file or line.size() == 0 or line.find("#") == 0) continue;
+      if(!file or line.size() == 0 or boost::algorithm::starts_with(line,"#")) continue;
 
       std::vector<std::string> splitted;
       boost::algorithm::split(splitted, line, boost::algorithm::is_any_of(" ;\t"));
@@ -341,11 +341,11 @@ void technology_manager::xwrite(xml_element *rootnode, TargetDevice_Type dv_type
 {
    ///Set of libraries sorted by name
    std::set<std::string> sorted_libraries;
-   for(const auto library : library_map)
+   for(const auto& library : library_map)
    {
       sorted_libraries.insert(library.first);
    }
-   for(const auto library : sorted_libraries)
+   for(const auto& library : sorted_libraries)
    {
       if (library == "design")
          continue;
@@ -372,7 +372,7 @@ void technology_manager::lib_write(const std::string& filename, TargetDevice_Typ
 
       xml2lib("__library__.xml", filename, output_level, debug_level);
       if (debug_level < DEBUG_LEVEL_PEDANTIC) boost::filesystem::remove("__library__.xml");
-      for(std::set<std::string>::const_iterator l = local_libraries.begin(); l != local_libraries.end(); l++)
+      for(std::set<std::string>::const_iterator l = local_libraries.begin(); l != local_libraries.end(); ++l)
       {
          if (!is_library_manager(*l)) continue;
          const library_managerRef LM = get_library_manager(*l);
@@ -383,7 +383,7 @@ void technology_manager::lib_write(const std::string& filename, TargetDevice_Typ
    {
       std::cerr << msg << std::endl;
    }
-   catch (const std::string & msg)
+   catch (const std::string& msg)
    {
       std::cerr << msg << std::endl;
    }
@@ -411,7 +411,7 @@ void technology_manager::lef_write(const std::string& filename, TargetDevice_Typ
 
       xml2lef("__library__.xml", filename, output_level, debug_level);
       boost::filesystem::remove("__library__.xml");
-      for(std::set<std::string>::const_iterator l = _libraries.begin(); l != _libraries.end(); l++)
+      for(std::set<std::string>::const_iterator l = _libraries.begin(); l != _libraries.end(); ++l)
       {
          if (!is_library_manager(*l)) continue;
          const library_managerRef LM = get_library_manager(*l);
@@ -422,7 +422,7 @@ void technology_manager::lef_write(const std::string& filename, TargetDevice_Typ
    {
       std::cerr << msg << std::endl;
    }
-   catch (const std::string & msg)
+   catch (const std::string& msg)
    {
       std::cerr << msg << std::endl;
    }
@@ -474,14 +474,13 @@ bool technology_manager::is_library_manager(const std::string& Name) const
 
 void technology_manager::erase_library(const std::string& Name)
 {
-   if (library_map.find(Name) != library_map.end())
-      library_map.erase(Name);
+   library_map.erase(Name);
    if (std::find(libraries.begin(), libraries.end(), Name) != libraries.end())
       libraries.erase(std::find(libraries.begin(), libraries.end(), Name));
 }
 
 #if HAVE_CIRCUIT_BUILT
-void technology_manager::add_storage(const std::string &s_name, const structural_managerRef CM, const std::string& Library, const unsigned int bits, const unsigned int words, const unsigned int readinputs, const unsigned int writeinputs, const unsigned int readwriteinputs)
+void technology_manager::add_storage(const std::string&s_name, const structural_managerRef CM, const std::string& Library, const unsigned int bits, const unsigned int words, const unsigned int readinputs, const unsigned int writeinputs, const unsigned int readwriteinputs)
 {
    technology_nodeRef curr_storage = technology_nodeRef(new storage_unit);
    GetPointer<storage_unit>(curr_storage)->storage_unit_name = s_name;
@@ -495,7 +494,7 @@ void technology_manager::add_storage(const std::string &s_name, const structural
 }
 #endif
 
-bool technology_manager::IsBuiltin(const std::string & component_name) const
+bool technology_manager::IsBuiltin(const std::string& component_name) const
 {
    return builtins.find(component_name) != builtins.end();
 }

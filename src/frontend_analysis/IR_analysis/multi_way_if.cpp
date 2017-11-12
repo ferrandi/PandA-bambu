@@ -154,7 +154,7 @@ void multi_way_if::Initialize()
 #if HAVE_ILP_BUILT
    if(parameters->getOption<HLSFlowStep_Type>(OPT_scheduling_algorithm) == HLSFlowStep_Type::SDC_SCHEDULING and GetPointer<const HLS_manager>(AppM) and GetPointer<const HLS_manager>(AppM)->get_HLS(function_id) and GetPointer<const HLS_manager>(AppM)->get_HLS(function_id)->Rsch)
    {
-      for(const auto block : sl->list_of_bloc)
+      for(const auto& block : sl->list_of_bloc)
       {
          block.second->schedule = GetPointer<const HLS_manager>(AppM)->get_HLS(function_id)->Rsch;
       }
@@ -188,11 +188,11 @@ void multi_way_if::UpdateCfg(unsigned int pred_bb, unsigned int curr_bb)
          sl->list_of_bloc[pred_bb]->list_of_succ.push_back(succ);
 
       ///Update phi information
-      for(const auto phi : sl->list_of_bloc[succ]->CGetPhiList())
+      for(const auto& phi : sl->list_of_bloc[succ]->CGetPhiList())
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Original phi " + phi->ToString());
          gimple_phi * current_phi = GetPointer<gimple_phi>(GET_NODE(phi));
-         for(const auto def_edge : current_phi->CGetDefEdgesList())
+         for(const auto& def_edge : current_phi->CGetDefEdgesList())
          {
             if(def_edge.second == curr_bb)
                current_phi->ReplaceDefEdge(TM, def_edge, gimple_phi::DefEdge(def_edge.first, pred_bb));
@@ -210,7 +210,6 @@ DesignFlowStep_Status multi_way_if::InternalExec()
       PrintTreeManager(true);
    }
    std::unordered_map<unsigned int, vertex> inverse_vertex_map;
-   std::unordered_map<vertex, unsigned int> direct_vertex_map;
    BBGraphsCollectionRef GCC_bb_graphs_collection(new BBGraphsCollection(BBGraphInfoRef(new BBGraphInfo(AppM, function_id)), parameters));
    BBGraphRef GCC_bb_graph(new BBGraph(GCC_bb_graphs_collection, CFG_SELECTOR));
 
@@ -218,7 +217,6 @@ DesignFlowStep_Status multi_way_if::InternalExec()
    for(auto block : sl->list_of_bloc)
    {
       inverse_vertex_map[block.first] = GCC_bb_graphs_collection->AddVertex(BBNodeInfoRef(new BBNodeInfo(block.second)));
-      direct_vertex_map[inverse_vertex_map[block.first]]=block.first;
    }
    /// add edges
    for(auto bb : sl->list_of_bloc)

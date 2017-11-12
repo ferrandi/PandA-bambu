@@ -67,7 +67,7 @@ const std::string ParserFlowStepFactory::GetPrefix() const
    return "Parser";
 }
 
-DesignFlowStepRef ParserFlowStepFactory::CreateFlowStep(const std::string signature) const
+DesignFlowStepRef ParserFlowStepFactory::CreateFlowStep(const std::string&signature) const
 {
    THROW_ASSERT(signature.find(GetPrefix() + "::") == 0, signature);
    const auto step_to_be_created = signature.substr(GetPrefix().size() + 2);

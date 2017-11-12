@@ -53,7 +53,7 @@ struct vcd_trace_head
    public:
       vcd_trace_head(
             const DiscrepancyOpInfo & op_info,
-            const std::string & signame,
+            const std::string& signame,
             const std::list<sig_variation> & fv,
             const std::list<sig_variation> & ov, 
             const std::list<sig_variation> & sv,
@@ -63,18 +63,18 @@ struct vcd_trace_head
             const tree_managerConstRef _TM,
             const bool one_hot_fsm_encoding);
 
-      ~vcd_trace_head(){};
+      ~vcd_trace_head(){}
 
       void advance();
 
       bool starts_after(unsigned long long t) const
-      {return op_start_time > t;};
+      {return op_start_time > t;}
 
       bool ends_after(unsigned long long t) const
-      {return op_end_time > t;};
+      {return op_end_time > t;}
 
       bool more_executions_in_this_hw_state() const
-      {return exec_times_in_current_state < consecutive_state_executions;};
+      {return exec_times_in_current_state < consecutive_state_executions;}
 
       enum vcd_head_state {
          uninitialized,

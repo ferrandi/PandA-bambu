@@ -51,7 +51,7 @@ const std::string NonDeterministicFlows::ComputeArgString(const size_t seed) con
 {
    const auto argv = parameters->CGetArgv();
    std::string arg_string;
-   for(const auto arg : argv)
+   for(const auto& arg : argv)
    {
       ///Executable
       if(arg_string == "")

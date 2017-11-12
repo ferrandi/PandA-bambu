@@ -410,7 +410,7 @@ std::vector<std::pair<port_swapping::PSVertex, unsigned int> > port_swapping::p_
    return return_values;
 }
 
-bool port_swapping::is_commutative_op(std::string operation)
+bool port_swapping::is_commutative_op(const std::string& operation)
 {
    return operation == STOK(TOK_PLUS_EXPR)
           || operation == STOK(TOK_POINTER_PLUS_EXPR)
@@ -475,11 +475,11 @@ DesignFlowStep_Status port_swapping::InternalExec()
       }
    }
 
-   for(const auto fu : fu_map)
+   for(const auto& fu : fu_map)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Functional Unit ID: " + HLS->allocation_information->get_string_name(fu.first.first));
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Functional Unit INDEX: " + STR(fu.first.second));
-      for(const auto fu_operation : fu.second)
+      for(const auto& fu_operation : fu.second)
       {
 
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Operation: " + GET_NAME(data,fu_operation) + " (" + data->CGetOpNodeInfo(fu_operation)->GetOperation() + ")");
@@ -583,10 +583,10 @@ DesignFlowStep_Status port_swapping::InternalExec()
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
 
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Printing Results");
-      unsigned int op1, op2;
 
       for(auto opt : operands)
       {
+         unsigned int op1, op2;
          op1 = get_results(opt.first_op, results);
          op2 = get_results(opt.second_op, results);
          if((op1 == op2)  &&  (op1 == SET_B || op1 == SET_A))

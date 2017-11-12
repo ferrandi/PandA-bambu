@@ -58,7 +58,7 @@
 // include from STL
 #include <functional>
 
-static bool is_valid_state_string(const std::string & s, bool one_hot_fsm_encoding)
+static bool is_valid_state_string(const std::string& s, bool one_hot_fsm_encoding)
 {
    if (s.find_first_not_of("10") != std::string::npos)
    {
@@ -84,7 +84,7 @@ static bool is_valid_state_string(const std::string & s, bool one_hot_fsm_encodi
    return true;
 }
 
-static size_t compute_state_id(const std::string & s, bool one_hot_fsm_encoding)
+static size_t compute_state_id(const std::string& s, bool one_hot_fsm_encoding)
 {
    if (not is_valid_state_string(s, one_hot_fsm_encoding))
       THROW_ERROR("invalid state_string: " + s);
@@ -100,7 +100,7 @@ static size_t compute_state_id(const std::string & s, bool one_hot_fsm_encoding)
    }
 }
 
-static bool is_binary_string_repr(const std::string & s, unsigned int id, bool one_hot_fsm_encoding)
+static bool is_binary_string_repr(const std::string& s, unsigned int id, bool one_hot_fsm_encoding)
 {
    if (not is_valid_state_string(s, one_hot_fsm_encoding))
       THROW_ERROR("invalid state_string: " + s);
@@ -108,7 +108,7 @@ static bool is_binary_string_repr(const std::string & s, unsigned int id, bool o
    return compute_state_id(s, one_hot_fsm_encoding) == id;
 }
 
-static bool string_represents_one_of_the_states(const std::string & val,
+static bool string_represents_one_of_the_states(const std::string& val,
       const std::set<unsigned int> & state_ids,
       bool one_hot_fsm_encoding)
 {
@@ -144,7 +144,7 @@ static bool is_end(const sig_variation & state_var, const DiscrepancyOpInfo & i,
 }
 #endif
 
-static bool all_ones(const std::string & s)
+static bool all_ones(const std::string& s)
 {
    return std::all_of(s.begin(), s.end(), [](const char c) {return c == '1';});
 }
@@ -161,7 +161,7 @@ static bool var_is_later_or_equal(const sig_variation & v, const unsigned long l
 
 vcd_trace_head::vcd_trace_head(
       const DiscrepancyOpInfo & op,
-      const std::string & signame,
+      const std::string& signame,
       const std::list<sig_variation> & fv,
       const std::list<sig_variation> & ov,
       const std::list<sig_variation> & sv,
@@ -183,7 +183,8 @@ vcd_trace_head::vcd_trace_head(
    op_start_time(0), op_end_time(0), clock_period(clock_p),
    exec_times_in_current_state(0), consecutive_state_executions(0),
    has_been_initialized(false),
-   fsm_has_a_single_state(boost::num_vertices(*_HLSMgr->get_HLS(op.stg_fun_id)->STG->CGetStg()) == 3)
+   fsm_has_a_single_state(boost::num_vertices(*_HLSMgr->get_HLS(op.stg_fun_id)->STG->CGetStg()) == 3),
+   start_state_is_initial(false)
 {}
 
 void vcd_trace_head::set_consecutive_state_executions()
@@ -268,7 +269,7 @@ void vcd_trace_head::update()
    /* find the next starting state for an execution of this operation */
    if (has_been_initialized and not fsm_has_a_single_state)
    {
-      fsm_ss_it++;
+      ++fsm_ss_it;
    }
    const DiscrepancyOpInfo & i = op_info;
    const bool onehot = one_hot_fsm_encoding;
@@ -315,7 +316,7 @@ void vcd_trace_head::update()
          return;
       }
       op_start_time = sp_var_it->time_stamp;
-      sp_var_it++;
+      ++sp_var_it;
    }
    THROW_ASSERT(op_start_time >= fsm_ss_it->time_stamp, "operation start time is before starting state\n");
    /*
@@ -354,7 +355,7 @@ void vcd_trace_head::update()
             HLSMgr->get_HLS(op_info.stg_fun_id)->STG->CGetStg()->CGetStateInfo(state_id);
          if (state_info->is_duplicated and not state_info->isOriginalState and not state_info->all_paths)
          {
-            for(const auto def_edge : gp->CGetDefEdgesList())
+            for(const auto& def_edge : gp->CGetDefEdgesList())
             {
                if (state_info->moved_op_def_set.find(def_edge.first->index) !=
                      state_info->moved_op_def_set.end()
@@ -434,6 +435,6 @@ void vcd_trace_head::advance()
       return var_is_later_or_equal(s, end);
    };
    out_var_it = std::find_if(out_var_it, out_var_end, var_later_or_equal_than_end);
-   out_var_it--;
+   --out_var_it;
    state = initialized;
 }

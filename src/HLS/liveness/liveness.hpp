@@ -326,13 +326,13 @@ class liveness
        * @param v is state
        * @param name is a string associated with the vertex v
        */
-      void add_name(vertex v, std::string name) {names[v] = name;}
+      void add_name(vertex v, const std::string& name) {names[v] = name;}
 
       /**
        * return the name of the given state
        * @param v is the state
        */
-      const std::string & get_name(vertex v) const;
+      const std::string& get_name(vertex v) const;
 
       /**
        * add a support state
@@ -345,7 +345,7 @@ class liveness
        * @param op1 is an operation node
        * @param op2 is an operation node
        */
-      bool are_in_conflict (vertex op1, vertex op2);
+      bool are_in_conflict (vertex op1, vertex op2) const;
 
       // activate conflicts with reachability computation
       void compute_conflicts_with_reachability(hlsRef _HLS) {HLS =_HLS;}

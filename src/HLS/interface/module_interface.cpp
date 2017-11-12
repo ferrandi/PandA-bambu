@@ -130,7 +130,7 @@ void module_interface::add_sign_vector(const structural_managerRef SM, const str
    SM->add_connection(sig, sig2);
 }
 
-void module_interface::AddSignal(const structural_managerRef SM, const structural_objectRef component1, const std::string port1_name, const structural_objectRef component2, const std::string port2_name, const std::string signal_name)
+void module_interface::AddSignal(const structural_managerRef SM, const structural_objectRef component1, const std::string&port1_name, const structural_objectRef component2, const std::string&port2_name, const std::string&signal_name)
 {
    structural_objectRef port1;
    unsigned int size1;
@@ -188,7 +188,7 @@ void module_interface::AddSignal(const structural_managerRef SM, const structura
    }
 }
 
-void module_interface::AddConnection(const structural_managerRef SM, const structural_objectRef component1, const std::string port1_name, const structural_objectRef component2, const std::string port2_name)
+void module_interface::AddConnection(const structural_managerRef SM, const structural_objectRef component1, const std::string&port1_name, const structural_objectRef component2, const std::string&port2_name)
 {
    structural_objectRef port1;
    unsigned int size1;
@@ -236,7 +236,7 @@ void module_interface::AddConnection(const structural_managerRef SM, const struc
    SM->add_connection(port1, port2);
 }
 
-void module_interface::AddConstant(const structural_managerRef SM, const structural_objectRef component, const std::string port_name, const std::string constant_value, const unsigned int constant_size)
+void module_interface::AddConstant(const structural_managerRef SM, const structural_objectRef component, const std::string&port_name, const std::string&constant_value, const unsigned int constant_size)
 {
    structural_objectRef port;
    unsigned int size;

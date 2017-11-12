@@ -155,7 +155,7 @@ struct StateInfo : public NodeInfo
    /**
     * Constructor
     */
-   StateInfo(): is_dummy(false), is_duplicated(false), sourceBb(0), isOriginalState(false), clonedState(NULL_VERTEX), all_paths(false) {}
+   StateInfo(): funId(0), is_dummy(false), is_duplicated(false), sourceBb(0), isOriginalState(false), clonedState(NULL_VERTEX), all_paths(false) {}
 
 };
 /// refcount definition
@@ -221,7 +221,7 @@ struct StateTransitionGraphInfo : public GraphInfo
    /**
     * Constructor
     */
-   StateTransitionGraphInfo(const OpGraphConstRef op_function_graph);
+   explicit StateTransitionGraphInfo(const OpGraphConstRef op_function_graph);
 
    friend class StateTransitionGraph_constructor;
 };
@@ -294,7 +294,7 @@ struct StateTransitionGraph : public graph
        * @param selector is the selector used to filter the bulk graph.
        * @param sub is the set of vertices on which the graph is filtered.
        */
-      StateTransitionGraph(const StateTransitionGraphsCollectionRef state_transition_graphs_collection, int selector, std::unordered_set<vertex> sub);
+      StateTransitionGraph(const StateTransitionGraphsCollectionRef state_transition_graphs_collection, int selector, std::unordered_set<vertex> &sub);
 
       /**
        * Destructor
@@ -388,7 +388,7 @@ struct StateTransitionGraph : public graph
        * @param file_name is the file where the graph has to be printed
        * @param detail_level is the detail level of the printed graph
        */
-      void WriteDot(const std::string & file_name, const int detail_level = 0) const;
+      void WriteDot(const std::string& file_name, const int detail_level = 0) const;
 };
 ///refcount definition of the class
 typedef refcount<StateTransitionGraph> StateTransitionGraphRef;

@@ -102,7 +102,7 @@ class FrontendFlowStepFactory : public DesignFlowStepFactory
        * Create the frontend design flow steps
        * @param frontend_flow_step_types is the set of frontend flow transformation to be considered
        */
-      const DesignFlowStepSet GenerateFrontendSteps(const std::unordered_set<FrontendFlowStepType> frontend_flow_step_types) const;
+      const DesignFlowStepSet GenerateFrontendSteps(const std::unordered_set<FrontendFlowStepType>& frontend_flow_step_types) const;
 
       /**
        * Create the frontend design flow step

@@ -805,7 +805,7 @@ tree_nodeRef tree_manipulation::CreateIntegerCst(const tree_nodeConstRef type, c
 ///IDENTIFIER_TREE_NODE
 
 ///Create an identifier node
-tree_nodeRef tree_manipulation::create_identifier_node(const std::string strg)
+tree_nodeRef tree_manipulation::create_identifier_node(const std::string&strg)
 {
    THROW_ASSERT(!strg.empty(), "It requires a non empty string");
 
@@ -852,7 +852,7 @@ tree_nodeRef tree_manipulation::create_var_decl(
       bool static_flag,
       bool register_flag,
       bool readonly_flag,
-      const std::string bit_values)
+      const std::string&bit_values)
 {
    ///Check if the tree_node given are tree_reindex
    THROW_ASSERT(type->get_kind() == tree_reindex_K, "Node is not a tree reindex");
@@ -1625,7 +1625,7 @@ tree_nodeRef tree_manipulation::create_ssa_name(const tree_nodeConstRef var, con
 ///GIMPLE_ASSIGN
 
 ///Create a gimple_assign
-tree_nodeRef tree_manipulation::create_gimple_modify_stmt(const tree_nodeRef op0, const tree_nodeRef op1, const std::string & srcp, const unsigned int bb_index)
+tree_nodeRef tree_manipulation::create_gimple_modify_stmt(const tree_nodeRef op0, const tree_nodeRef op1, const std::string& srcp, const unsigned int bb_index)
 {
    THROW_ASSERT(op0->get_kind() == tree_reindex_K, "Node is not a tree reindex");
    THROW_ASSERT(op1->get_kind() == tree_reindex_K, "Node is not a tree reindex");
@@ -1645,14 +1645,14 @@ tree_nodeRef tree_manipulation::create_gimple_modify_stmt(const tree_nodeRef op0
 }
 
 tree_nodeRef tree_manipulation::CreateGimpleAssign(const tree_nodeRef type,
-      const tree_nodeRef op, unsigned int bb_index, const std::string & srcp)
+      const tree_nodeRef op, unsigned int bb_index, const std::string& srcp)
 {
    tree_nodeRef ssa_vd = create_ssa_name(tree_nodeRef(), type);
    return create_gimple_modify_stmt(ssa_vd, op, srcp, bb_index);
 }
 
 /// GIMPLE_CALL
-tree_nodeRef tree_manipulation::create_gimple_call(const tree_nodeConstRef called_function, const std::vector<tree_nodeRef> args, const std::string srcp, const unsigned int bb_index)
+tree_nodeRef tree_manipulation::create_gimple_call(const tree_nodeConstRef called_function, const std::vector<tree_nodeRef> &args, const std::string&srcp, const unsigned int bb_index)
 {
    THROW_ASSERT(!srcp.empty(), "It requires a non empty string");
    std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> ae_IR_schema, gc_IR_schema;
@@ -1663,7 +1663,7 @@ tree_nodeRef tree_manipulation::create_gimple_call(const tree_nodeConstRef calle
    ae_IR_schema[TOK(TOK_SRCP)] = srcp;
 
    std::string args_string;
-   for(const auto arg : args)
+   for(const auto& arg : args)
    {
       if(args_string != "")
       {
@@ -1764,7 +1764,7 @@ tree_nodeRef tree_manipulation::create_phi_node(tree_nodeRef & ssa_res, const st
    ssa_name * sn_ref = GetPointer<ssa_name>(GET_NODE(ssa_ref));
    THROW_ASSERT(ssa_ref->get_kind() == tree_reindex_K, "ssa_name res is not a tree_reindex node");
    THROW_ASSERT(GET_NODE(ssa_ref)->get_kind() == ssa_name_K, "ssa_name res is not a ssa_name node");
-   for (iterator++; iterator != list_of_def_edge.end(); iterator++)
+   for (++iterator; iterator != list_of_def_edge.end(); ++iterator)
    {
       tree_nodeRef tn=iterator->first;
 #ifndef NDEBUG
@@ -1790,7 +1790,7 @@ tree_nodeRef tree_manipulation::create_phi_node(tree_nodeRef & ssa_res, const st
    gimple_phi * pn = GetPointer<gimple_phi> (GET_NODE(phi_stmt));
    pn->virtual_flag = virtual_flag;
 
-   for(const auto def_edge : list_of_def_edge)
+   for(const auto& def_edge : list_of_def_edge)
    {
       pn->AddDefEdge(TreeM, def_edge);
    }
@@ -2165,7 +2165,7 @@ tree_nodeRef tree_manipulation::CreateOrExpr(const tree_nodeConstRef first_condi
 {
    if(block and reuse)
    {
-      for(const auto statement : block->CGetStmtList())
+      for(const auto& statement : block->CGetStmtList())
       {
          const auto ga = GetPointer<const gimple_assign>(GET_NODE(statement));
          if(ga)
@@ -2220,7 +2220,7 @@ tree_nodeRef tree_manipulation::CreateAndExpr(const tree_nodeConstRef first_cond
 {
    if(block and reuse)
    {
-      for(const auto statement : block->CGetStmtList())
+      for(const auto& statement : block->CGetStmtList())
       {
          const auto ga = GetPointer<const gimple_assign>(GET_NODE(statement));
          if(ga)
@@ -2274,7 +2274,7 @@ tree_nodeRef tree_manipulation::CreateNotExpr(const tree_nodeConstRef condition,
 {
    if(block and reuse)
    {
-      for(const auto statement : block->CGetStmtList())
+      for(const auto& statement : block->CGetStmtList())
       {
          const auto ga = GetPointer<const gimple_assign>(GET_NODE(statement));
          if(ga)
@@ -2326,7 +2326,7 @@ tree_nodeRef tree_manipulation::CreateNotExpr(const tree_nodeConstRef condition,
 tree_nodeRef tree_manipulation::ExtractCondition(const tree_nodeRef condition, const blocRef block) const
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Extracting condition from " + condition->ToString());
-   unsigned int ret;
+
    const auto gc = GetPointer<const gimple_cond>(GET_NODE(condition));
    THROW_ASSERT(gc, "Trying to extract condition from " + condition->ToString());
    if(GET_NODE(gc->op0)->get_kind() == ssa_name_K || GetPointer<cst_node>(GET_NODE(gc->op0)) != nullptr)
@@ -2338,7 +2338,7 @@ tree_nodeRef tree_manipulation::ExtractCondition(const tree_nodeRef condition, c
    {
       if(block and reuse)
       {
-         for(const auto statement : block->CGetStmtList())
+         for(const auto& statement : block->CGetStmtList())
          {
             const auto ga = GetPointer<const gimple_assign>(GET_NODE(statement));
             if(ga and ga->op1->index == condition->index)
@@ -2350,7 +2350,7 @@ tree_nodeRef tree_manipulation::ExtractCondition(const tree_nodeRef condition, c
       const auto type_index = (tree_helper::CGetType(GET_NODE(gc->op0)))->index;
       /// create the ssa_var representing the condition for bb1
       unsigned int ssa1_vers = TreeM->get_next_vers();
-      ret = TreeM->new_tree_node_id();
+      unsigned int ret = TreeM->new_tree_node_id();
       std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> IR_schema;
       IR_schema[TOK(TOK_TYPE)] = STR(type_index);
       IR_schema[TOK(TOK_VERS)] = STR(ssa1_vers);
@@ -2532,7 +2532,7 @@ tree_nodeRef tree_manipulation::CreateEqExpr(const tree_nodeConstRef first_opera
 {
    if(block and reuse)
    {
-      for(const auto statement : block->CGetStmtList())
+      for(const auto& statement : block->CGetStmtList())
       {
          const auto ga = GetPointer<const gimple_assign>(GET_NODE(statement));
          if(ga)
@@ -2579,7 +2579,7 @@ tree_nodeRef tree_manipulation::CreateEqExpr(const tree_nodeConstRef first_opera
    return TreeM->GetTreeReindex(ssa_node_nid);
 }
 
-tree_nodeRef tree_manipulation::CreateCallExpr(const tree_nodeConstRef called_function, const std::vector<tree_nodeRef> args, const std::string & srcp)
+tree_nodeRef tree_manipulation::CreateCallExpr(const tree_nodeConstRef called_function, const std::vector<tree_nodeRef> &args, const std::string& srcp)
 {
    std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> ae_IR_schema, ce_IR_schema;
    ae_IR_schema[TOK(TOK_OP)] = STR(called_function->index);
@@ -2590,7 +2590,7 @@ tree_nodeRef tree_manipulation::CreateCallExpr(const tree_nodeConstRef called_fu
    TreeM->create_tree_node(ae_id, addr_expr_K, ae_IR_schema);
 
    std::string args_string;
-   for(const auto arg : args)
+   for(const auto& arg : args)
    {
       if(args_string != "")
       {
@@ -2607,7 +2607,7 @@ tree_nodeRef tree_manipulation::CreateCallExpr(const tree_nodeConstRef called_fu
    return TreeM->GetTreeReindex(ce_id);
 }
 
-tree_nodeRef tree_manipulation::CreateAddrExpr(const tree_nodeConstRef tn, const std::string & srcp)
+tree_nodeRef tree_manipulation::CreateAddrExpr(const tree_nodeConstRef tn, const std::string& srcp)
 {
    std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> ae_IR_schema;
    const auto type_node = tree_helper::CGetType(tn);
@@ -2620,7 +2620,7 @@ tree_nodeRef tree_manipulation::CreateAddrExpr(const tree_nodeConstRef tn, const
    return TreeM->CGetTreeReindex(ae_id);
 }
 
-tree_nodeRef tree_manipulation::CreateGimpleAssignAddrExpr(const tree_nodeConstRef tn, const unsigned int bb_index, const std::string & srcp)
+tree_nodeRef tree_manipulation::CreateGimpleAssignAddrExpr(const tree_nodeConstRef tn, const unsigned int bb_index, const std::string& srcp)
 {
    auto addr_tn = CreateAddrExpr(tn, srcp);
    const auto type_node = tree_helper::CGetType(tn);

@@ -177,7 +177,7 @@ DesignFlowStep_Status BasicBlocksCfgComputation::InternalExec()
    statement_list * sl = GetPointer<statement_list>(GET_NODE(fd->body));
    THROW_ASSERT(sl, "Body is not a statement_list");
    std::map<unsigned int, blocRef>::iterator it_bb, it_bb_end = sl->list_of_bloc.end();
-   for(it_bb = sl->list_of_bloc.begin(); it_bb != it_bb_end ; it_bb++)
+   for(it_bb = sl->list_of_bloc.begin(); it_bb != it_bb_end ; ++it_bb)
    {
       if (it_bb->second->number != BB_ENTRY and it_bb->second->number != BB_EXIT)
          continue;
@@ -189,7 +189,7 @@ DesignFlowStep_Status BasicBlocksCfgComputation::InternalExec()
          bbgc->connect_to_entry(exit);
       }
    }
-   for(it_bb = sl->list_of_bloc.begin(); it_bb != it_bb_end ; it_bb++)
+   for(it_bb = sl->list_of_bloc.begin(); it_bb != it_bb_end ; ++it_bb)
    {
       if (it_bb->second->number == BB_ENTRY || it_bb->second->number == BB_EXIT)
          continue;
@@ -197,7 +197,7 @@ DesignFlowStep_Status BasicBlocksCfgComputation::InternalExec()
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Added basic block with index " + boost::lexical_cast<std::string>(it_bb->second->number));
    }
    std::map<unsigned int, blocRef>::const_iterator b_end = sl->list_of_bloc.end();
-   for(std::map<unsigned int, blocRef>::const_iterator b = sl->list_of_bloc.begin(); b != b_end; b++)
+   for(std::map<unsigned int, blocRef>::const_iterator b = sl->list_of_bloc.begin(); b != b_end; ++b)
    {
       if (b->second->number == BB_ENTRY || b->second->number == BB_EXIT)
          continue;
@@ -216,7 +216,7 @@ DesignFlowStep_Status BasicBlocksCfgComputation::InternalExec()
       else
       {
          std::vector<unsigned int>::const_iterator su_end = b->second->list_of_succ.end();
-         for(std::vector<unsigned int>::const_iterator su = b->second->list_of_succ.begin(); su != su_end; su++)
+         for(std::vector<unsigned int>::const_iterator su = b->second->list_of_succ.begin(); su != su_end; ++su)
          {
             if((*su)== bloc::EXIT_BLOCK_ID)
             {
@@ -249,7 +249,7 @@ DesignFlowStep_Status BasicBlocksCfgComputation::InternalExec()
                //Map between gimple_label and index of basic block
                std::map<tree_nodeRef, unsigned int> label_to_bb;
                su_end = b->second->list_of_succ.end();
-               for(std::vector<unsigned int>::const_iterator su = b->second->list_of_succ.begin(); su != su_end; su++)
+               for(std::vector<unsigned int>::const_iterator su = b->second->list_of_succ.begin(); su != su_end; ++su)
                {
                   THROW_ASSERT(sl->list_of_bloc[*su]->CGetStmtList().size(), "Empty Basic Block");
                   const auto first = sl->list_of_bloc[*su]->CGetStmtList().front();
@@ -262,7 +262,7 @@ DesignFlowStep_Status BasicBlocksCfgComputation::InternalExec()
                THROW_ASSERT(se->op1, "case_label_exprs not found");
                tree_vec * tv = GetPointer<tree_vec>(GET_NODE(se->op1));
                std::vector<tree_nodeRef>::iterator it_end = tv->list_of_op.end();
-               for(std::vector<tree_nodeRef>::iterator it = tv->list_of_op.begin(); it != it_end; it++)
+               for(std::vector<tree_nodeRef>::iterator it = tv->list_of_op.begin(); it != it_end; ++it)
                {
                   case_label_expr * cl = GetPointer<case_label_expr>(GET_NODE(*it));
                   THROW_ASSERT(label_to_bb.find(GET_NODE(cl->got)) != label_to_bb.end(), "There is not corresponding case_label_exprs with index " + boost::lexical_cast<std::string>(GET_INDEX_NODE(cl->got)));
@@ -282,7 +282,7 @@ DesignFlowStep_Status BasicBlocksCfgComputation::InternalExec()
             {
                //Map between gimple_label and index of basic block
                su_end = b->second->list_of_succ.end();
-               for(std::vector<unsigned int>::const_iterator su = b->second->list_of_succ.begin(); su != su_end; su++)
+               for(std::vector<unsigned int>::const_iterator su = b->second->list_of_succ.begin(); su != su_end; ++su)
                {
                   bbgc->add_bb_edge_info(current, bbgc->Cget_vertex(*su), CFG_SELECTOR, *su);
                }
@@ -291,7 +291,7 @@ DesignFlowStep_Status BasicBlocksCfgComputation::InternalExec()
             else if(GET_NODE(last)->get_kind() == gimple_multi_way_if_K)
             {
                gimple_multi_way_if* gmwi = GetPointer<gimple_multi_way_if>(GET_NODE(last));
-               for(const auto cond : gmwi->list_of_cond)
+               for(const auto& cond : gmwi->list_of_cond)
                {
                   bbgc->add_bb_edge_info(current, bbgc->Cget_vertex(cond.second), CFG_SELECTOR, cond.first ? cond.first->index : default_COND);
                }
@@ -321,7 +321,7 @@ DesignFlowStep_Status BasicBlocksCfgComputation::InternalExec()
       const auto bb_index_map = bb_graph->CGetBBGraphInfo()->bb_index_map;
       bbgc->add_operation_to_bb(op_graph->CGetOpGraphInfo()->entry_vertex, BB_ENTRY);
       bbgc->add_operation_to_bb(op_graph->CGetOpGraphInfo()->exit_vertex, BB_EXIT);
-      for(const auto block : sl->list_of_bloc)
+      for(const auto& block : sl->list_of_bloc)
       {
          const auto bb_index = block.first;
          THROW_ASSERT(bb_index_map.find(bb_index) != bb_index_map.end(), "BB" + STR(bb_index) + " is not in the graph");
@@ -330,14 +330,14 @@ DesignFlowStep_Status BasicBlocksCfgComputation::InternalExec()
          if (block.second->number == BB_ENTRY or block.second->number == BB_EXIT)
             continue;
          THROW_ASSERT(!(block.second->CGetStmtList().empty() && block.second->CGetPhiList().empty()), "unexpected condition: BB"+ STR(bb_index));
-         for(const auto phi : block.second->CGetPhiList())
+         for(const auto& phi : block.second->CGetPhiList())
          {
             const auto op_index = phi->index;
             THROW_ASSERT(tree_node_to_operation.find(op_index) != tree_node_to_operation.end(), "Vertex of statement " + STR(op_index) + " not found");
             const auto op_vertex = tree_node_to_operation.find(op_index)->second;
             bb_node_info->statements_list.push_back(op_vertex);
          }
-         for(const auto stmt : block.second->CGetStmtList())
+         for(const auto& stmt : block.second->CGetStmtList())
          {
             const auto op_index = stmt->index;
             THROW_ASSERT(tree_node_to_operation.find(op_index) != tree_node_to_operation.end(), "Vertex of statement " + STR(op_index) + " not found");

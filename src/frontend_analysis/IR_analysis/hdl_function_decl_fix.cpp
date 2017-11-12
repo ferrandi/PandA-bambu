@@ -84,7 +84,7 @@ DesignFlowStep_Status HDLFunctionDeclFix::Exec()
    std::remove_const<decltype(hdl_reserved_names)>::type found_names;
    if(hdl_writer_type == HDLWriter_Language::VHDL)
    {
-      for(const auto hdl_reserved_name : hdl_reserved_names)
+      for(const auto& hdl_reserved_name : hdl_reserved_names)
       {
          found_names.insert(boost::to_upper_copy<std::string>(hdl_reserved_name));
       }

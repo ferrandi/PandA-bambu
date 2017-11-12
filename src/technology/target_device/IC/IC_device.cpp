@@ -79,7 +79,7 @@ void IC_device::xwrite(xml_element* nodeRoot)
 {
    xml_element* tmRoot = nodeRoot->add_child_element("device");
 
-   for(std::map<std::string, std::string>::iterator p = parameters.begin(); p != parameters.end(); p++)
+   for(std::map<std::string, std::string>::iterator p = parameters.begin(); p != parameters.end(); ++p)
    {
       xml_element* elRoot = tmRoot->add_child_element(p->first);
       WRITE_XNVM2("value", p->second, elRoot);
@@ -183,7 +183,7 @@ void IC_device::load_devices(const target_deviceRef device)
       std::cerr << msg << std::endl;
       THROW_ERROR("Error during parsing of technology file");
    }
-   catch (const std::string & msg)
+   catch (const std::string& msg)
    {
       std::cerr << msg << std::endl;
       THROW_ERROR("Error during parsing of technology file");

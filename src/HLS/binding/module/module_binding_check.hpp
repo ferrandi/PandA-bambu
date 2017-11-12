@@ -165,6 +165,9 @@ struct module_binding_check : public check_clique<vertex_type>
 
     module_binding_check* clone() const {return new module_binding_check(*this);}
 
+    module_binding_check & operator=(const module_binding_check&) = delete;
+
+
     virtual ~module_binding_check() {}
 
 
@@ -269,7 +272,6 @@ struct module_binding_check : public check_clique<vertex_type>
     bool check_edge_compatibility(C_vertex& rep, C_vertex& other)
     {
        double minSlack = std::min(opSlacks[rep], opSlacks[other]);
-       size_t n_mux_inputs;
        THROW_ASSERT(input_variables.find(rep) != input_variables.end(), "unexpected case");
 
        size_t port_number = input_variables[rep].size();
@@ -291,7 +293,7 @@ struct module_binding_check : public check_clique<vertex_type>
              port_inputs.insert(temp_var);
              port_inputs_other.insert(temp_var);
           }
-          n_mux_inputs = port_inputs.size();
+          size_t n_mux_inputs = port_inputs.size();
 
           total_area_muxes += HLS->allocation_information->estimate_muxNto1_area(fu_prec, static_cast<unsigned int>(n_mux_inputs));
           total_area_muxes_rep += HLS->allocation_information->estimate_muxNto1_area(fu_prec, static_cast<unsigned int>(port_inputs_rep.size()));

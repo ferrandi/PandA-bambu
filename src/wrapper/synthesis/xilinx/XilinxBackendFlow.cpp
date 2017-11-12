@@ -395,7 +395,7 @@ void XilinxBackendFlow::xparse_xst_utilization(const std::string& fn)
    {
       std::cerr << msg << std::endl;
    }
-   catch (const std::string & msg)
+   catch (const std::string& msg)
    {
       std::cerr << msg << std::endl;
    }
@@ -548,7 +548,7 @@ void XilinxBackendFlow::xparse_timing(const std::string& fn, bool post)
    {
       THROW_ERROR("Error during TRCE report (" + fn + ") :" + *msg);
    }
-   catch (const std::string & msg)
+   catch (const std::string& msg)
    {
       THROW_ERROR("Error during TRCE report (" + fn + ") :" + msg);
    }
@@ -697,7 +697,7 @@ void XilinxBackendFlow::vivado_xparse_utilization(const std::string& fn)
    {
       std::cerr << msg << std::endl;
    }
-   catch (const std::string & msg)
+   catch (const std::string& msg)
    {
       std::cerr << msg << std::endl;
    }
@@ -725,7 +725,7 @@ void XilinxBackendFlow::WriteFlowConfiguration(std::ostream& script)
    if(setupscr.size() and setupscr != "0")
    {
       script << "#configuration" << std::endl;
-      if(setupscr.find("export") == 0)
+      if(boost::algorithm::starts_with(setupscr,"export"))
          script << setupscr + " >& /dev/null; ";
       else
          script << ". " << setupscr << " >& /dev/null; ";

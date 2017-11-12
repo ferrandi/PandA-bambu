@@ -145,12 +145,12 @@ DesignFlowStep_Status compute_implicit_calls::InternalExec()
    statement_list * sl = GetPointer<statement_list>(GET_NODE(fd->body));
    THROW_ASSERT(sl, "Body is not a statement_list");
    std::map<unsigned int, blocRef>::iterator it_bb, it_bb_end = sl->list_of_bloc.end();
-   for(it_bb = sl->list_of_bloc.begin(); it_bb != it_bb_end ; it_bb++)
+   for(it_bb = sl->list_of_bloc.begin(); it_bb != it_bb_end ; ++it_bb)
    {
       if (it_bb->second->number == BB_ENTRY || it_bb->second->number == BB_EXIT)
          continue;
       max_loop_id = std::max(max_loop_id, it_bb->second->loop_id);
-      for(const auto stmt : it_bb->second->CGetStmtList())
+      for(const auto& stmt : it_bb->second->CGetStmtList())
       {
          tree_nodeRef tn = GET_NODE(stmt);
          if(tn->get_kind() == gimple_assign_K)
@@ -422,24 +422,28 @@ DesignFlowStep_Status compute_implicit_calls::InternalExec()
             found_memset_statement = true;
             const auto temp_statement = *statement;
             ///Going one step step forward to avoid invalidation of the pointer
-            statement++;
+            auto tmp_it = statement;
+            ++tmp_it;
             ///Moving statement
             BB1_block->RemoveStmt(temp_statement);
             BBN1_block->PushBack(temp_statement);
             ///Going one step back since pointer is already increment in for loop
-            statement--;
+            --tmp_it;
+            statement = tmp_it;
          }
          else if(found_memset_statement)
          {
             /// move (xxxxb)* to BBN2
             const auto temp_statement = *statement;
             ///Going one step step forward to avoid invalidation of the pointer
-            statement++;
+            auto tmp_it = statement;
+            ++tmp_it;
             ///Moving statement
             BB1_block->RemoveStmt(temp_statement);
             BBN2_block->PushBack(temp_statement);
             ///Going one step back since pointer is already increment in for loop
-            statement--;
+            --tmp_it;
+            statement = tmp_it;
          }
       }
       THROW_ASSERT(found_memset_statement, "unexpected condition");

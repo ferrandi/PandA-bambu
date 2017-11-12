@@ -85,7 +85,7 @@ const DesignFlowStepFactoryConstRef DesignFlow::CGetDesignFlowStepFactory() cons
    return design_flow_manager.lock()->CGetDesignFlowStepFactory("DF");
 }
 
-DesignFlow_Type DesignFlow::KindTextToEnum(const std::string name)
+DesignFlow_Type DesignFlow::KindTextToEnum(const std::string&name)
 {
    if(name == "NonDeterministicFlows")
    {

@@ -156,7 +156,7 @@ class BasicBlocksGraphConstructor
        * Constructor.
        * @param _og is the reference to the bulk operations graph.
        */
-      BasicBlocksGraphConstructor(BBGraphsCollectionRef _bg);
+      explicit BasicBlocksGraphConstructor(BBGraphsCollectionRef _bg);
 
       /**
        * Destructor.

@@ -73,7 +73,7 @@ std::string QuartusReportWrapper::get_command_line(const DesignParametersRef& dp
 {
    std::ostringstream s;
    s << get_tool_exec() << " -t " << script_name;
-   for (std::vector<xml_parameter_tRef>::const_iterator it = xml_tool_options.begin(); it != xml_tool_options.end(); it++)
+   for (std::vector<xml_parameter_tRef>::const_iterator it = xml_tool_options.begin(); it != xml_tool_options.end(); ++it)
    {
       const xml_parameter_tRef & option = *it;
       if (option->checkCondition(dp))

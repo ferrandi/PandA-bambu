@@ -145,7 +145,7 @@ struct bloc
       /**
        * constructor
        */
-      bloc(unsigned int _number);
+      explicit bloc(unsigned int _number);
 
       /**
        * Destructor

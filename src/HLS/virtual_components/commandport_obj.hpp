@@ -113,7 +113,7 @@ class commandport_obj : public generic_obj
        * @param signal_ is vertex associated to port
        * @param mode is command type
        */
-      commandport_obj(const vertex& signal_, unsigned int _mode, const std::string &_name) : generic_obj(COMMAND_PORT, _name), signal(signal_),  mode(_mode), is_a_phi_write_enable(false)
+      commandport_obj(const vertex& signal_, unsigned int _mode, const std::string&_name) : generic_obj(COMMAND_PORT, _name), signal(signal_),  mode(_mode), is_a_phi_write_enable(false)
       {
          THROW_ASSERT (mode == OPERATION
                or mode == CONDITION
@@ -122,7 +122,7 @@ class commandport_obj : public generic_obj
                or mode == UNBOUNDED,
                "Command mode not allowed into this constructor"); }
 
-      commandport_obj(const generic_objRef& _elem, unsigned int _mode, const std::string &_name) : generic_obj(COMMAND_PORT, _name), elem(_elem), mode(_mode), is_a_phi_write_enable(false)
+      commandport_obj(const generic_objRef& _elem, unsigned int _mode, const std::string&_name) : generic_obj(COMMAND_PORT, _name), elem(_elem), mode(_mode), is_a_phi_write_enable(false)
       {
          THROW_ASSERT (mode == SELECTOR || mode == WRENABLE || mode == ALUSELECTOR, "Selector port is wrong");
       }

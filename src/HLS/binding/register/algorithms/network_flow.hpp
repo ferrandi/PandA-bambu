@@ -217,7 +217,7 @@ class network_flow
 
    public:
       /**Network flow graph pointer*/
-      network_flow_graph_type   *network_flow_graph;
+      network_flow_graph_type   network_flow_graph;
 
 
       /**Vertex maps variables*/
@@ -259,12 +259,12 @@ class network_flow
        * Constructor of the class.
        * @param debug_level_ is the debug level
        */
-      network_flow(int debug_level_);
+      explicit network_flow(int debug_level_);
 
       /**
       * Destructor of the class.
       */
-      ~network_flow() { if(network_flow_graph) delete network_flow_graph;}
+      ~network_flow() {}
 	
       /**
        * Computes the solution for the min cost flow problem with successive shortest path algorithm
