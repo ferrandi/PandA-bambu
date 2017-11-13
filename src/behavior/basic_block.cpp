@@ -171,7 +171,7 @@ BBGraph::BBGraph(const BBGraphsCollectionRef _g, int _selector, std::unordered_s
 
 void BBGraph::WriteDot(const std::string& file_name, const int detail_level) const
 {
-   const std::unordered_set<vertex> annotated;
+   const std::unordered_set<vertex> annotated = std::unordered_set<vertex>();
    WriteDot(file_name, annotated, detail_level);
 }
 

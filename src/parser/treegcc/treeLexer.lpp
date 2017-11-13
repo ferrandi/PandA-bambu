@@ -81,7 +81,7 @@ using namespace std;
 #pragma GCC diagnostic ignored "-Wzero-as-null-pointer-constant"
 #endif
 
-TreeFlexLexer::TreeFlexLexer( std::istream* argin = 0, std::ostream* argout = 0 ) : yyFlexLexer(argin, argout)
+TreeFlexLexer::TreeFlexLexer( std::istream* argin, std::ostream* argout) : yyFlexLexer(argin, argout)
 {
    tokens = new treeVocabularyTokenTypes;
 }

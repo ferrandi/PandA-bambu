@@ -161,7 +161,7 @@ using namespace std;
 #endif
 
 DiscrepancyFlexLexer::DiscrepancyFlexLexer
-(std::istream* argin = 0, std::ostream* argout = 0) : yyFlexLexer(argin, argout)
+(std::istream* argin, std::ostream* argout) : yyFlexLexer(argin, argout)
 {}
 
 DiscrepancyFlexLexer::~DiscrepancyFlexLexer()

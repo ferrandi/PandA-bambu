@@ -753,7 +753,7 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
       return return_value;
    }();
 #else
-   const CustomSet<vertex> to_be_parallelized;
+   const CustomSet<vertex> to_be_parallelized = CustomSet<vertex>();
 #endif
 
    for(const auto bb_vertex: bb_sorted_vertices)
