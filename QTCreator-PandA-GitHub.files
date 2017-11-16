@@ -34,6 +34,7 @@ build/config_headers/config_HAVE_BLAS.hpp
 build/config_headers/config_HAVE_BOOLEAN_BUILT.hpp
 build/config_headers/config_HAVE_BOOLEAN_PARSER_BUILT.hpp
 build/config_headers/config_HAVE_BOOST.hpp
+build/config_headers/config_HAVE_BOOST.hpp.in
 build/config_headers/config_HAVE_BOOST_DATE_TIME.hpp
 build/config_headers/config_HAVE_BOOST_FILESYSTEM.hpp
 build/config_headers/config_HAVE_BOOST_REGEX.hpp
@@ -97,6 +98,10 @@ build/config_headers/config_HAVE_GRIZZLY_BUILT.hpp
 build/config_headers/config_HAVE_HLS_BUILT.hpp
 build/config_headers/config_HAVE_HOST_PROFILING_BUILT.hpp
 build/config_headers/config_HAVE_HOTBM.hpp
+build/config_headers/config_HAVE_I386_CLANG40_COMPILER.hpp
+build/config_headers/config_HAVE_I386_CLANG40_COMPILER.hpp.in
+build/config_headers/config_HAVE_I386_CLANG40_MX32.hpp
+build/config_headers/config_HAVE_I386_CLANG40_MX32.hpp.in
 build/config_headers/config_HAVE_I386_GCC45_COMPILER.hpp
 build/config_headers/config_HAVE_I386_GCC46_COMPILER.hpp
 build/config_headers/config_HAVE_I386_GCC47_COMPILER.hpp
@@ -224,6 +229,15 @@ build/config_headers/config_HAVE_ZEBU_BUILT.hpp
 build/config_headers/config_HAVE_ZLIB_H.hpp
 build/config_headers/config_HAVE__BOOL.hpp
 build/config_headers/config_HOST_GCC.hpp
+build/config_headers/config_I386_CLANG40_EMPTY_PLUGIN.hpp
+build/config_headers/config_I386_CLANG40_EXE.hpp
+build/config_headers/config_I386_CLANG40_PLUGIN_COMPILER.hpp
+build/config_headers/config_I386_CLANG40_SSA_PLUGIN.hpp
+build/config_headers/config_I386_CLANG40_SSA_PLUGINCPP.hpp
+build/config_headers/config_I386_CLANG40_TOPFNAME_PLUGIN.hpp
+build/config_headers/config_I386_CLANG40_VERSION.hpp
+build/config_headers/config_I386_CLANGPP40_EXE.hpp
+build/config_headers/config_I386_CLANG_CPP40_EXE.hpp
 build/config_headers/config_I386_CPP45_EXE.hpp
 build/config_headers/config_I386_CPP46_EXE.hpp
 build/config_headers/config_I386_CPP47_EXE.hpp
@@ -626,6 +640,11 @@ build/src/parser/treegcc/treeLexer.cpp
 build/src/parser/treegcc/treeParser.cpp
 build/src/parser/treegcc/treeParser.hpp
 build/src/revision_hash.hpp
+etc/clang_plugin/dumpGimple.cpp
+etc/clang_plugin/plugin_dumpGimpleEmpty.cpp
+etc/clang_plugin/plugin_dumpGimpleSSA.cpp
+etc/clang_plugin/plugin_includes.hpp
+etc/clang_plugin/plugin_topfname.cpp
 etc/gcc_plugin/VRP_data.h
 etc/gcc_plugin/cfgexpand_4_5_2.c
 etc/gcc_plugin/dumpGimple.c

@@ -57,6 +57,7 @@
 #include "config_HAVE_I386_GCC5_COMPILER.hpp"
 #include "config_HAVE_I386_GCC6_COMPILER.hpp"
 #include "config_HAVE_I386_GCC7_COMPILER.hpp"
+#include "config_HAVE_I386_CLANG40_COMPILER.hpp"
 #include "config_HAVE_SPARC_COMPILER.hpp"
 #include "config_HAVE_TUCANO_BUILT.hpp"
 #include "config_HAVE_ZEBU_BUILT.hpp"
@@ -136,12 +137,15 @@ enum class GccWrapper_CompilerTarget
 #if HAVE_I386_GCC7_COMPILER
    CT_I386_GCC7 = 128,
 #endif
+#if HAVE_I386_CLANG40_COMPILER
+   CT_I386_CLANG40 = 256,
+#endif
 #if HAVE_ARM_COMPILER
-   CT_ARM_GCC = 256,
+   CT_ARM_GCC = 512,
 #endif
 #if HAVE_SPARC_COMPILER
-   CT_SPARC_GCC = 512,
-   CT_SPARC_ELF_GCC = 1024
+   CT_SPARC_GCC = 1024,
+   CT_SPARC_ELF_GCC = 2048
 #endif
 };
 
@@ -182,6 +186,9 @@ class GccWrapper
             ///The plugin to dump gimple and rtl
             std::string rtl_plugin;
 #endif
+            ///true when compiler is based on clang/llvm
+            bool is_clang;
+            Compiler() : is_clang(false) {}
       };
 
       /// The set of input parameters

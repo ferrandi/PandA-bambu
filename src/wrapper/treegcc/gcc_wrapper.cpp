@@ -60,6 +60,7 @@
 #include "config_HAVE_I386_GCC5_COMPILER.hpp"
 #include "config_HAVE_I386_GCC6_COMPILER.hpp"
 #include "config_HAVE_I386_GCC7_COMPILER.hpp"
+#include "config_HAVE_I386_CLANG40_COMPILER.hpp"
 #include "config_HAVE_SPARC_COMPILER.hpp"
 #include "config_HAVE_SPARC_ELF_GCC.hpp"
 #include "config_HAVE_FROM_RTL_BUILT.hpp"
@@ -123,12 +124,20 @@
 #include "config_I386_GCC7_SSA_PLUGIN.hpp"
 #include "config_I386_GCC7_SSA_PLUGINCPP.hpp"
 #include "config_I386_GCC7_TOPFNAME_PLUGIN.hpp"
+#include "config_I386_CLANG_CPP40_EXE.hpp"
+#include "config_I386_CLANG40_EMPTY_PLUGIN.hpp"
+#include "config_I386_CLANG40_EXE.hpp"
+#include "config_I386_CLANGPP40_EXE.hpp"
+#include "config_I386_CLANG40_SSA_PLUGIN.hpp"
+#include "config_I386_CLANG40_SSA_PLUGINCPP.hpp"
+#include "config_I386_CLANG40_TOPFNAME_PLUGIN.hpp"
 #include "config_HAVE_I386_GCC47_MX32.hpp"
 #include "config_HAVE_I386_GCC48_MX32.hpp"
 #include "config_HAVE_I386_GCC49_MX32.hpp"
 #include "config_HAVE_I386_GCC5_MX32.hpp"
 #include "config_HAVE_I386_GCC6_MX32.hpp"
 #include "config_HAVE_I386_GCC7_MX32.hpp"
+#include "config_HAVE_I386_CLANG40_MX32.hpp"
 #include "config_NPROFILE.hpp"
 #include "config_PANDA_INCLUDE_INSTALLDIR.hpp"
 #include "config_SPARC_CPP_EXE.hpp"
@@ -252,7 +261,10 @@ void GccWrapper::CompileFile(const std::string& original_file_name, std::string 
          THROW_ERROR("Error in appending empty function");
       }
       real_file_name = temp_file_name;
-      command += opt + " -c -fplugin=" + compiler.empty_plugin_obj + " -fplugin-arg-"+compiler.empty_plugin_name+"-outputdir="+Param->getOption<std::string>(OPT_output_temporary_directory);
+      if(compiler.is_clang)
+         command += opt + " -c -fplugin=" + compiler.empty_plugin_obj + " -Xclang -add-plugin -Xclang " + compiler.empty_plugin_name + " -Xclang -plugin-arg-"+compiler.empty_plugin_name+" -Xclang -outputdir -Xclang -plugin-arg-"+compiler.empty_plugin_name+" -Xclang "+Param->getOption<std::string>(OPT_output_temporary_directory);
+      else
+         command += opt + " -c -fplugin=" + compiler.empty_plugin_obj + " -fplugin-arg-"+compiler.empty_plugin_name+"-outputdir="+Param->getOption<std::string>(OPT_output_temporary_directory);
    }
    else if((Param->isOption(OPT_gcc_E) and Param->getOption<bool>(OPT_gcc_E)) or (Param->isOption(OPT_gcc_S) and Param->getOption<bool>(OPT_gcc_S)))
       command += opt;
@@ -264,7 +276,12 @@ void GccWrapper::CompileFile(const std::string& original_file_name, std::string 
    }
    else
 #endif
-      command += opt + " -c -fplugin=" + compiler.ssa_plugin_obj + " -fplugin-arg-"+compiler.ssa_plugin_name+"-outputdir="+Param->getOption<std::string>(OPT_output_temporary_directory);
+   {
+      if(compiler.is_clang)
+         command += opt + " -c -fplugin=" + compiler.ssa_plugin_obj + " -Xclang -add-plugin -Xclang " + compiler.ssa_plugin_name + " -Xclang -plugin-arg-"+compiler.ssa_plugin_name+" -Xclang -outputdir -Xclang -plugin-arg-"+compiler.ssa_plugin_name+" -Xclang "+Param->getOption<std::string>(OPT_output_temporary_directory);
+      else
+         command += opt + " -c -fplugin=" + compiler.ssa_plugin_obj + " -fplugin-arg-"+compiler.ssa_plugin_name+"-outputdir="+Param->getOption<std::string>(OPT_output_temporary_directory);
+   }
    if(Param->isOption(OPT_top_functions_names) && Param->getOption<bool>(OPT_do_not_expose_globals))
    {
       const auto top_functions_names = Param->getOption<const std::list<std::string> >(OPT_top_functions_names);
@@ -272,7 +289,10 @@ void GccWrapper::CompileFile(const std::string& original_file_name, std::string 
       {
          if(top_functions_names.front() != "main")
          {
-            command += " -fplugin=" + compiler.topfname_plugin_obj + " -fplugin-arg-"+compiler.topfname_plugin_name+"-topfname="+top_functions_names.front();
+            if(compiler.is_clang)
+               command += " -fplugin=" + compiler.topfname_plugin_obj + " -Xclang -add-plugin -Xclang " + compiler.topfname_plugin_obj + " -Xclang -plugin-arg-"+compiler.topfname_plugin_name+" -Xclang -topfname -Xclang -plugin-arg-"+compiler.topfname_plugin_name+" -Xclang "+top_functions_names.front();
+            else
+               command += " -fplugin=" + compiler.topfname_plugin_obj + " -fplugin-arg-"+compiler.topfname_plugin_name+"-topfname="+top_functions_names.front();
          }
       }
    }
@@ -659,6 +679,16 @@ void GccWrapper::SetBambuDefault()
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "-->Setting parameters for Bambu tool...");
    const GccWrapper_OptimizationSet opt_level = Param->getOption<GccWrapper_OptimizationSet>(OPT_gcc_opt_level);
+#if HAVE_I386_GCC46_COMPILER || HAVE_I386_GCC47_COMPILER || HAVE_I386_GCC48_COMPILER || HAVE_I386_GCC49_COMPILER || HAVE_I386_GCC5_COMPILER || HAVE_I386_GCC6_COMPILER || HAVE_I386_GCC7_COMPILER || HAVE_I386_CLANG40_COMPILER
+   GccWrapper_CompilerTarget compiler = Param->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler);
+#endif
+#if HAVE_I386_CLANG40_COMPILER
+   if(compiler == GccWrapper_CompilerTarget::CT_I386_CLANG40)
+   {
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--Set parameters for bambu tool");
+      return;
+   }
+#endif
 
    ///parameters with enable
 
@@ -669,8 +699,7 @@ void GccWrapper::SetBambuDefault()
    optimization_flags["tree-copy-prop"] = true; ///FIXME: this has been always active with gcc >= 4.6; produced c code in bambu for example gcc_regression_simple/20040307-1.c when disabled
    optimization_flags["ipa-pta"] = true;
 
-#if HAVE_I386_GCC46_COMPILER || HAVE_I386_GCC47_COMPILER || HAVE_I386_GCC48_COMPILER || HAVE_I386_GCC49_COMPILER || HAVE_I386_GCC5_COMPILER || HAVE_I386_GCC6_COMPILER || HAVE_I386_GCC7_COMPILER
-   GccWrapper_CompilerTarget compiler = Param->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler);
+#if HAVE_I386_GCC46_COMPILER || HAVE_I386_GCC47_COMPILER || HAVE_I386_GCC48_COMPILER || HAVE_I386_GCC49_COMPILER || HAVE_I386_GCC5_COMPILER || HAVE_I386_GCC6_COMPILER || HAVE_I386_GCC7_COMPILER || HAVE_I386_CLANG40_COMPILER
    ///NOTE: the false here is used to be sure that the first operand of the first or always exists 
    if(false
 #if HAVE_I386_GCC46_COMPILER
@@ -798,6 +827,9 @@ void GccWrapper::SetGccDefault()
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "-->Setting GCC defaults");
    const GccWrapper_OptimizationSet optimization_level = Param->getOption<GccWrapper_OptimizationSet>(OPT_gcc_opt_level);
+#if HAVE_I386_CLANG40_COMPILER
+   GccWrapper_CompilerTarget compiler = Param->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler);
+#endif
    optimization_flags["stack-protector"] = false;//In Ubuntu 6.10 and later versions this option is enabled by default for C, C++, ObjC, ObjC++
 
    switch(optimization_level)
@@ -822,47 +854,51 @@ void GccWrapper::SetGccDefault()
          {
             gcc_compiling_parameters += " -O1 ";
 
-            optimization_flags["auto-inc-dec"] = false;
-            optimization_flags["cprop-registers"] = false;
-            optimization_flags["dce"] = false;
-            optimization_flags["defer-pop"] = false;
-            optimization_flags["delayed-branch"] = false;
-            optimization_flags["dse"] = false;
-            optimization_flags["guess-branch-probability"] = false;
-            optimization_flags["if-conversion"] = false;
-            optimization_flags["if-conversion2"] = false;
-            optimization_flags["ipa-pure-const"] = false;
-            optimization_flags["ipa-reference"] = false;
-            optimization_flags["merge-constants"] = false;
-            optimization_flags["split-wide-types"] = false;
-            optimization_flags["tree-builtin-call-dce"] = false;
-            optimization_flags["tree-ccp"] = false;
-            optimization_flags["tree-ch"] = false;
-            optimization_flags["tree-dce"] = false;
-            optimization_flags["tree-dominator-opts"] = false;
-            optimization_flags["tree-dse"] = false;
-            optimization_flags["tree-forwprop"] = false;
-            optimization_flags["tree-fre"] = false;
-            optimization_flags["tree-phiprop"] = false;
-            optimization_flags["tree-pta"] = false;
-            optimization_flags["tree-sra"] = false;
-            optimization_flags["tree-ter"] = false;
-            /**
+#if HAVE_I386_CLANG40_COMPILER
+            if(compiler != GccWrapper_CompilerTarget::CT_I386_CLANG40)
+#endif
+            {
+               optimization_flags["auto-inc-dec"] = false;
+               optimization_flags["cprop-registers"] = false;
+               optimization_flags["dce"] = false;
+               optimization_flags["defer-pop"] = false;
+               optimization_flags["delayed-branch"] = false;
+               optimization_flags["dse"] = false;
+               optimization_flags["guess-branch-probability"] = false;
+               optimization_flags["if-conversion"] = false;
+               optimization_flags["if-conversion2"] = false;
+               optimization_flags["ipa-pure-const"] = false;
+               optimization_flags["ipa-reference"] = false;
+               optimization_flags["merge-constants"] = false;
+               optimization_flags["split-wide-types"] = false;
+               optimization_flags["tree-builtin-call-dce"] = false;
+               optimization_flags["tree-ccp"] = false;
+               optimization_flags["tree-ch"] = false;
+               optimization_flags["tree-dce"] = false;
+               optimization_flags["tree-dominator-opts"] = false;
+               optimization_flags["tree-dse"] = false;
+               optimization_flags["tree-forwprop"] = false;
+               optimization_flags["tree-fre"] = false;
+               optimization_flags["tree-phiprop"] = false;
+               optimization_flags["tree-pta"] = false;
+               optimization_flags["tree-sra"] = false;
+               optimization_flags["tree-ter"] = false;
+               /**
              * In the gcc documentation is not clear if unit-at-a-time is activated or not at O0;
              * However it has to be activated to manage empty files
              */
-            ///optimization_flags["unit-at-a-time"] = false;
-            switch(compiler_target)
-            {
+               ///optimization_flags["unit-at-a-time"] = false;
+               switch(compiler_target)
+               {
 #if HAVE_I386_GCC45_COMPILER
-               case(GccWrapper_CompilerTarget::CT_I386_GCC45) :
+                  case(GccWrapper_CompilerTarget::CT_I386_GCC45) :
                   {
                      optimization_flags["tree-copy-prop"] = false;
                      break;
                   }
 #endif
 #if HAVE_I386_GCC46_COMPILER
-               case(GccWrapper_CompilerTarget::CT_I386_GCC46) :
+                  case(GccWrapper_CompilerTarget::CT_I386_GCC46) :
                   {
                      optimization_flags["compare-elim"] = false;
                      optimization_flags["ipa-profile"] = false;
@@ -872,7 +908,7 @@ void GccWrapper::SetGccDefault()
                   }
 #endif
 #if HAVE_I386_GCC47_COMPILER
-               case(GccWrapper_CompilerTarget::CT_I386_GCC47) :
+                  case(GccWrapper_CompilerTarget::CT_I386_GCC47) :
                   {
                      optimization_flags["compare-elim"] = false;
                      optimization_flags["ipa-profile"] = false;
@@ -882,7 +918,7 @@ void GccWrapper::SetGccDefault()
                   }
 #endif
 #if HAVE_I386_GCC48_COMPILER
-               case(GccWrapper_CompilerTarget::CT_I386_GCC48) :
+                  case(GccWrapper_CompilerTarget::CT_I386_GCC48) :
                   {
                      optimization_flags["compare-elim"] = false;
                      optimization_flags["ipa-profile"] = false;
@@ -894,7 +930,7 @@ void GccWrapper::SetGccDefault()
                   }
 #endif
 #if HAVE_I386_GCC49_COMPILER
-               case(GccWrapper_CompilerTarget::CT_I386_GCC49) :
+                  case(GccWrapper_CompilerTarget::CT_I386_GCC49) :
                   {
                      optimization_flags["compare-elim"] = false;
                      optimization_flags["ipa-profile"] = false;
@@ -906,7 +942,7 @@ void GccWrapper::SetGccDefault()
                   }
 #endif
 #if HAVE_I386_GCC5_COMPILER
-               case(GccWrapper_CompilerTarget::CT_I386_GCC5) :
+                  case(GccWrapper_CompilerTarget::CT_I386_GCC5) :
                   {
                      optimization_flags["compare-elim"] = false;
                      optimization_flags["ipa-profile"] = false;
@@ -918,7 +954,7 @@ void GccWrapper::SetGccDefault()
                   }
 #endif
 #if HAVE_I386_GCC6_COMPILER
-               case(GccWrapper_CompilerTarget::CT_I386_GCC6) :
+                  case(GccWrapper_CompilerTarget::CT_I386_GCC6) :
                   {
                      optimization_flags["compare-elim"] = false;
                      optimization_flags["ipa-profile"] = false;
@@ -930,7 +966,7 @@ void GccWrapper::SetGccDefault()
                   }
 #endif
 #if HAVE_I386_GCC7_COMPILER
-               case(GccWrapper_CompilerTarget::CT_I386_GCC7) :
+                  case(GccWrapper_CompilerTarget::CT_I386_GCC7) :
                   {
                      optimization_flags["compare-elim"] = false;
                      optimization_flags["ipa-profile"] = false;
@@ -942,29 +978,30 @@ void GccWrapper::SetGccDefault()
                   }
 #endif
 #if HAVE_ARM_COMPILER
-               case(GccWrapper_CompilerTarget::CT_ARM_GCC):
+                  case(GccWrapper_CompilerTarget::CT_ARM_GCC):
                   {
                      optimization_flags["tree-copy-prop"] = false;
                      break;
                   }
 #endif
 #if HAVE_SPARC_COMPILER
-               case(GccWrapper_CompilerTarget::CT_SPARC_GCC):
-               case(GccWrapper_CompilerTarget::CT_SPARC_ELF_GCC):
+                  case(GccWrapper_CompilerTarget::CT_SPARC_GCC):
+                  case(GccWrapper_CompilerTarget::CT_SPARC_ELF_GCC):
                   {
                      optimization_flags["tree-copy-prop"] = false;
                      break;
                   }
 #endif
-               case(GccWrapper_CompilerTarget::CT_NO_GCC):
+                  case(GccWrapper_CompilerTarget::CT_NO_GCC):
                   {
                      THROW_UNREACHABLE("Unexpected gcc target");
                      break;
                   }
-               default:
+                  default:
                   {
                      THROW_UNREACHABLE("");
                   }
+               }
             }
             break;
          }
@@ -987,9 +1024,13 @@ void GccWrapper::SetGccDefault()
             }
    }
    /// required by PandA
-   optimization_flags["ipa-pure-const"] = true; ///needed to correctly manage global variables
-   optimization_flags["tree-dce"] = true; ///needed to remove unnecessary computations
-
+#if HAVE_I386_CLANG40_COMPILER
+   if(compiler != GccWrapper_CompilerTarget::CT_I386_CLANG40)
+#endif
+   {
+      optimization_flags["ipa-pure-const"] = true; ///needed to correctly manage global variables
+      optimization_flags["tree-dce"] = true; ///needed to remove unnecessary computations
+   }
    bool flag_cpp;
    if(Param->isOption(OPT_input_format) &&
          Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_CPP &&
@@ -1011,13 +1052,13 @@ void GccWrapper::SetGccDefault()
 GccWrapper::Compiler GccWrapper::GetCompiler() const
 {
    Compiler compiler;
-#if HAVE_I386_GCC45_COMPILER || HAVE_I386_GCC46_COMPILER || HAVE_I386_GCC47_COMPILER || HAVE_I386_GCC48_COMPILER || HAVE_I386_GCC49_COMPILER || HAVE_I386_GCC5_COMPILER || HAVE_I386_GCC6_COMPILER || HAVE_I386_GCC7_COMPILER || HAVE_SPARC_COMPILER || HAVE_ARM_COMPILER
+#if HAVE_I386_GCC45_COMPILER || HAVE_I386_GCC46_COMPILER || HAVE_I386_GCC47_COMPILER || HAVE_I386_GCC48_COMPILER || HAVE_I386_GCC49_COMPILER || HAVE_I386_GCC5_COMPILER || HAVE_I386_GCC6_COMPILER || HAVE_I386_GCC7_COMPILER || HAVE_I386_CLANG40_COMPILER || HAVE_SPARC_COMPILER || HAVE_ARM_COMPILER
 #ifndef NDEBUG
    GccWrapper_CompilerTarget compatible_compilers = Param->getOption<GccWrapper_CompilerTarget>(OPT_compatible_compilers);
 #endif
 #endif
 
-#if HAVE_I386_GCC45_COMPILER || HAVE_I386_GCC46_COMPILER || HAVE_I386_GCC47_COMPILER || HAVE_I386_GCC48_COMPILER || HAVE_I386_GCC49_COMPILER || HAVE_I386_GCC5_COMPILER || HAVE_I386_GCC6_COMPILER || HAVE_I386_GCC7_COMPILER || HAVE_SPARC_COMPILER || HAVE_ARM_COMPILER
+#if HAVE_I386_GCC45_COMPILER || HAVE_I386_GCC46_COMPILER || HAVE_I386_GCC47_COMPILER || HAVE_I386_GCC48_COMPILER || HAVE_I386_GCC49_COMPILER || HAVE_I386_GCC5_COMPILER || HAVE_I386_GCC6_COMPILER || HAVE_I386_GCC7_COMPILER || HAVE_I386_CLANG40_COMPILER || HAVE_SPARC_COMPILER || HAVE_ARM_COMPILER
    bool flag_cpp;
    if(Param->isOption(OPT_input_format) &&
          Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_CPP &&
@@ -1027,13 +1068,13 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
       flag_cpp = false;
 #endif
 
-#if HAVE_I386_GCC45_COMPILER || HAVE_I386_GCC46_COMPILER || HAVE_I386_GCC47_COMPILER || HAVE_I386_GCC48_COMPILER || HAVE_I386_GCC49_COMPILER || HAVE_I386_GCC5_COMPILER || HAVE_I386_GCC6_COMPILER || HAVE_I386_GCC7_COMPILER || HAVE_SPARC_COMPILER || HAVE_ARM_COMPILER || HAVE_SPARC_ELF_GCC
+#if HAVE_I386_GCC45_COMPILER || HAVE_I386_GCC46_COMPILER || HAVE_I386_GCC47_COMPILER || HAVE_I386_GCC48_COMPILER || HAVE_I386_GCC49_COMPILER || HAVE_I386_GCC5_COMPILER || HAVE_I386_GCC6_COMPILER || HAVE_I386_GCC7_COMPILER || HAVE_I386_CLANG40_COMPILER || HAVE_SPARC_COMPILER || HAVE_ARM_COMPILER || HAVE_SPARC_ELF_GCC
    std::string gcc_extra_options;
    if(Param->isOption(OPT_gcc_extra_options))
       gcc_extra_options = Param->getOption<std::string>(OPT_gcc_extra_options);
 #endif
 
-#if HAVE_I386_GCC45_COMPILER || HAVE_I386_GCC46_COMPILER || HAVE_I386_GCC47_COMPILER || HAVE_I386_GCC48_COMPILER || HAVE_I386_GCC49_COMPILER || HAVE_I386_GCC5_COMPILER || HAVE_I386_GCC6_COMPILER || HAVE_I386_GCC7_COMPILER || HAVE_SPARC_COMPILER || HAVE_ARM_COMPILER
+#if HAVE_I386_GCC45_COMPILER || HAVE_I386_GCC46_COMPILER || HAVE_I386_GCC47_COMPILER || HAVE_I386_GCC48_COMPILER || HAVE_I386_GCC49_COMPILER || HAVE_I386_GCC5_COMPILER || HAVE_I386_GCC6_COMPILER || HAVE_I386_GCC7_COMPILER || HAVE_I386_CLANG40_COMPILER || HAVE_SPARC_COMPILER || HAVE_ARM_COMPILER
    GccWrapper_CompilerTarget preferred_compiler;
    if(compiler_target == GccWrapper_CompilerTarget::CT_NO_GCC)
    {
@@ -1218,7 +1259,7 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
    {
       compiler.gcc = flag_cpp ? I386_GPP5_EXE : I386_GCC5_EXE;
       compiler.cpp = I386_CPP5_EXE;
-      compiler.extra_options = Param->getOption<std::string>(OPT_gcc_m32_mx32) + " -mlong-double-64 -D_FORTIFY_SOURCE=0 " + gcc_extra_options;
+      compiler.extra_options = " -mlong-double-64 -D_FORTIFY_SOURCE=0 " + gcc_extra_options;
       if(optimization_flags.find("tree-vectorize") != optimization_flags.end() && optimization_flags.find("tree-vectorize")->second)
       {
 #if HAVE_I386_GCC5_MX32
@@ -1247,7 +1288,7 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
    {
       compiler.gcc = flag_cpp ? I386_GPP6_EXE : I386_GCC6_EXE;
       compiler.cpp = I386_CPP6_EXE;
-      compiler.extra_options = Param->getOption<std::string>(OPT_gcc_m32_mx32) + " -mlong-double-64 -D_FORTIFY_SOURCE=0 " + gcc_extra_options;
+      compiler.extra_options = " -mlong-double-64 -D_FORTIFY_SOURCE=0 " + gcc_extra_options;
       if(optimization_flags.find("tree-vectorize") != optimization_flags.end() && optimization_flags.find("tree-vectorize")->second)
       {
 #if HAVE_I386_GCC6_MX32
@@ -1277,7 +1318,7 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
    {
       compiler.gcc = flag_cpp ? I386_GPP7_EXE : I386_GCC7_EXE;
       compiler.cpp = I386_CPP7_EXE;
-      compiler.extra_options = Param->getOption<std::string>(OPT_gcc_m32_mx32) + " -mlong-double-64 -D_FORTIFY_SOURCE=0 " + gcc_extra_options;
+      compiler.extra_options = " -mlong-double-64 -D_FORTIFY_SOURCE=0 " + gcc_extra_options;
       if(optimization_flags.find("tree-vectorize") != optimization_flags.end() && optimization_flags.find("tree-vectorize")->second)
       {
 #if HAVE_I386_GCC7_MX32
@@ -1301,6 +1342,28 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
 #endif
    }
 #endif
+
+#if HAVE_I386_CLANG40_COMPILER
+   if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG40))
+   {
+      compiler.is_clang = true;
+      compiler.gcc = flag_cpp ? I386_CLANGPP40_EXE : I386_CLANG40_EXE;
+      compiler.cpp = I386_CLANG_CPP40_EXE;
+      compiler.extra_options = " -D_FORTIFY_SOURCE=0 " + gcc_extra_options;
+      compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m32_mx32);
+      compiler.empty_plugin_obj = plugin_dir + I386_CLANG40_EMPTY_PLUGIN + plugin_ext;
+      compiler.empty_plugin_name = I386_CLANG40_EMPTY_PLUGIN;
+      compiler.ssa_plugin_obj = plugin_dir + (flag_cpp ? I386_CLANG40_SSA_PLUGINCPP : I386_CLANG40_SSA_PLUGIN) + plugin_ext;
+      compiler.ssa_plugin_name = (flag_cpp ? I386_CLANG40_SSA_PLUGINCPP : I386_CLANG40_SSA_PLUGIN);
+      compiler.topfname_plugin_obj = plugin_dir + I386_CLANG40_TOPFNAME_PLUGIN + plugin_ext;
+      compiler.topfname_plugin_name = I386_CLANG40_TOPFNAME_PLUGIN;
+
+#if HAVE_FROM_RTL_BUILT
+      compiler.rtl_plugin = plugin_dir + "";
+#endif
+   }
+#endif
+
 
 #if HAVE_SPARC_COMPILER
    if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_SPARC_GCC))

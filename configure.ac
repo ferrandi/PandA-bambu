@@ -350,6 +350,9 @@ panda_USE_LIB_ILP=no;
 MIN_GCC_VERSION=0.0.0
 MAX_GCC_VERSION=9.9.9
 
+MIN_CLANG_VERSION=0.0.0
+MAX_CLANG_VERSION=9.9.9
+
 
 ################################################################################
 #                                                                              #
@@ -403,6 +406,8 @@ if test "x$panda_USE_BAMBU" = xyes; then
   panda_USE_I386_GCC=yes;
   AS_VERSION_COMPARE($MIN_GCC_VERSION, [4.5.0], [MIN_GCC_VERSION=4.5.0],,)
   AS_VERSION_COMPARE($MAX_GCC_VERSION, [8.0.0],,,[MAX_GCC_VERSION=8.0.0])
+  AS_VERSION_COMPARE($MIN_CLANG_VERSION, [4.0.0], [MIN_CLANG_VERSION=4.0.0],,)
+  AS_VERSION_COMPARE($MAX_CLANG_VERSION, [5.0.0],,,[MAX_CLANG_VERSION=5.0.0])
   panda_USE_LIB_HLS=yes;
   panda_USE_LIB_TECHNOLOGY=yes;
   panda_USE_LIB_TO_C=yes;
@@ -2682,7 +2687,9 @@ if test "x$panda_USE_I386_GCC" = xyes; then
    AC_CHECK_GCC5_I386_VERSION($MIN_GCC_VERSION,$MAX_GCC_VERSION)
    AC_CHECK_GCC6_I386_VERSION($MIN_GCC_VERSION,$MAX_GCC_VERSION)
    AC_CHECK_GCC7_I386_VERSION($MIN_GCC_VERSION,$MAX_GCC_VERSION)
-   if test "x$I386_GCC45_PLUGIN_COMPILER" = x && test "x$I386_GCC46_PLUGIN_COMPILER" = x && test "x$I386_GCC47_PLUGIN_COMPILER" = x && test "x$I386_GCC48_PLUGIN_COMPILER" = x && test "x$I386_GCC49_PLUGIN_COMPILER" = x && test "x$I386_GCC5_PLUGIN_COMPILER" = x && test "x$I386_GCC6_PLUGIN_COMPILER" = x && test "x$I386_GCC7_PLUGIN_COMPILER" = x; then
+   AC_CHECK_CLANG40_I386_VERSION($MIN_CLANG_VERSION,$MAX_CLANG_VERSION)
+
+   if test "x$I386_GCC45_PLUGIN_COMPILER" = x && test "x$I386_GCC46_PLUGIN_COMPILER" = x && test "x$I386_GCC47_PLUGIN_COMPILER" = x && test "x$I386_GCC48_PLUGIN_COMPILER" = x && test "x$I386_GCC49_PLUGIN_COMPILER" = x && test "x$I386_GCC5_PLUGIN_COMPILER" = x && test "x$I386_GCC6_PLUGIN_COMPILER" = x && test "x$I386_GCC7_PLUGIN_COMPILER" = x && test "x$I386_CLANG40_PLUGIN_COMPILER" = x; then
       AC_MSG_ERROR("gcc with support to -m32 and plugin not found")
    fi
 fi
@@ -2739,12 +2746,17 @@ AM_CONDITIONAL(BUILD_I386_GCC7_SSA_PLUGIN, test "x$build_I386_GCC7_SSA_PLUGIN" =
 AM_CONDITIONAL(BUILD_I386_GCC7_SSA_PLUGINCPP, test "x$build_I386_GCC7_SSA_PLUGINCPP" = xyes)
 AM_CONDITIONAL(BUILD_I386_GCC7_TOPFNAME_PLUGIN, test "x$build_I386_GCC7_TOPFNAME_PLUGIN" = xyes)
 
-
+AM_CONDITIONAL(BUILD_I386_CLANG40, test "x$build_I386_CLANG40" = xyes)
+AM_CONDITIONAL(BUILD_I386_CLANG40_EMPTY_PLUGIN, test "x$build_I386_CLANG40_EMPTY_PLUGIN" = xyes)
+AM_CONDITIONAL(BUILD_I386_CLANG40_SSA_PLUGIN, test "x$build_I386_CLANG40_SSA_PLUGIN" = xyes)
+AM_CONDITIONAL(BUILD_I386_CLANG40_SSA_PLUGINCPP, test "x$build_I386_CLANG40_SSA_PLUGINCPP" = xyes)
+AM_CONDITIONAL(BUILD_I386_CLANG40_TOPFNAME_PLUGIN, test "x$build_I386_CLANG40_TOPFNAME_PLUGIN" = xyes)
 
 
 if test "x$panda_USE_ARM_GCC" = xyes || test "x$panda_USE_I386_GCC" = xyes || test "x$panda_USE_SPARC_GCC" = xyes; then
    AC_CONFIG_FILES(
       etc/gcc_plugin/Makefile
+      etc/clang_plugin/Makefile
    )
 fi
 AM_CONDITIONAL(BUILD_GCC_PLUGIN, test "x$panda_USE_ARM_GCC" = xyes || test "x$panda_USE_I386_GCC" = xyes || test "x$panda_USE_SPARC_GCC" = xyes)
