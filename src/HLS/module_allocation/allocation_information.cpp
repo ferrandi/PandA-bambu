@@ -1641,7 +1641,8 @@ unsigned int AllocationInformation::GetCycleLatency(const unsigned int operation
                  right->get_kind() == ternary_pm_expr_K or right->get_kind() == ternary_mm_expr_K or right->get_kind() == ssa_name_K or
                  right->get_kind() == integer_cst_K or right->get_kind() == rshift_expr_K  or right->get_kind() == lshift_expr_K or
                  right->get_kind() == plus_expr_K or right->get_kind() == minus_expr_K or right->get_kind() == bit_and_expr_K or
-                 right->get_kind() == bit_ior_concat_expr_K or right->get_kind() == lut_expr_K or right->get_kind() == convert_expr_K or right->get_kind() == nop_expr_K)
+                 right->get_kind() == bit_ior_concat_expr_K or right->get_kind() == lut_expr_K or right->get_kind() == convert_expr_K or right->get_kind() == nop_expr_K or
+               right->get_kind() == vec_cond_expr_K)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Latency of not allocated fu is 1");
             return 1;
