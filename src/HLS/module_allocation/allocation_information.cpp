@@ -746,7 +746,8 @@ bool AllocationInformation::is_operation_bounded(const unsigned int index) const
    {
       const auto right = GET_NODE(ga->op1);
       ///currently all the operations introduced after the allocation has been performed are bounded
-      THROW_ASSERT(right->get_kind() == nop_expr_K or right->get_kind() == lut_expr_K or
+      THROW_ASSERT(right->get_kind() == vec_cond_expr_K or
+                   right->get_kind() == nop_expr_K or right->get_kind() == lut_expr_K or
                    right->get_kind() == lshift_expr_K or right->get_kind() == rshift_expr_K or
                    right->get_kind() == bit_xor_expr_K or  right->get_kind() == bit_not_expr_K or
                    right->get_kind() == bit_ior_concat_expr_K or right->get_kind() == bit_ior_expr_K or
