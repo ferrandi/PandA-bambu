@@ -67,11 +67,9 @@ namespace clang {
          bool ParseArgs(const CompilerInstance &CI,
                         const std::vector<std::string> &args) override
          {
+            DiagnosticsEngine &D = CI.getDiagnostics();
             for (size_t i = 0, e = args.size(); i != e; ++i)
             {
-
-               // Example error handling.
-               DiagnosticsEngine &D = CI.getDiagnostics();
                if (args.at(i) == "-outputdir")
                {
                   if (i + 1 >= e) {
@@ -86,6 +84,9 @@ namespace clang {
             if (!args.empty() && args.at(0) == "-help")
                PrintHelp(llvm::errs());
 
+            if(outdir_name=="")
+               D.Report(D.getCustomDiagID(DiagnosticsEngine::Error,
+                                          "outputdir not specified"));
             return true;
          }
          void PrintHelp(llvm::raw_ostream& ros)

@@ -60,18 +60,16 @@ namespace clang {
             DiagnosticsEngine &D = CI.getDiagnostics();
             if(outdir_name=="")
                D.Report(D.getCustomDiagID(DiagnosticsEngine::Error,
-                                          "outputdir not specified"));
+                                       "outputdir argument not specified"));
             return llvm::make_unique<DumpGimpleRaw>(CI, outdir_name, InFile, false);
          }
 
          bool ParseArgs(const CompilerInstance &CI,
                         const std::vector<std::string> &args) override
          {
+            DiagnosticsEngine &D = CI.getDiagnostics();
             for (size_t i = 0, e = args.size(); i != e; ++i)
             {
-
-               // Example error handling.
-               DiagnosticsEngine &D = CI.getDiagnostics();
                if (args.at(i) == "-outputdir")
                {
                   if (i + 1 >= e) {
@@ -86,6 +84,9 @@ namespace clang {
             if (!args.empty() && args.at(0) == "-help")
                PrintHelp(llvm::errs());
 
+            if(outdir_name=="")
+               D.Report(D.getCustomDiagID(DiagnosticsEngine::Error,
+                                       "outputdir not specified"));
             return true;
          }
          void PrintHelp(llvm::raw_ostream& ros)
@@ -99,13 +100,22 @@ namespace clang {
          {
             return AddAfterMainAction;
          }
+
+      public:
+
+         clang40_plugin_dumpGimpleSSA() {}
+         clang40_plugin_dumpGimpleSSA(const clang40_plugin_dumpGimpleSSA& step) = delete;
+         clang40_plugin_dumpGimpleSSA & operator=(const clang40_plugin_dumpGimpleSSA&) = delete;
+
    };
 
 }
 
-static clang::FrontendPluginRegistry::Add<clang::clang40_plugin_dumpGimpleSSA>
-X("clang40_plugin_dumpGimpleSSA", "Dump gimple ssa raw format starting from LLVM IR");
-
 /// Currently there is no difference between c++ or c serialization
+#if CPP_LANGUAGE
 static clang::FrontendPluginRegistry::Add<clang::clang40_plugin_dumpGimpleSSA>
 Y("clang40_plugin_dumpGimpleSSACpp", "Dump gimple ssa raw format starting from LLVM IR when c++ is processed");
+#else
+static clang::FrontendPluginRegistry::Add<clang::clang40_plugin_dumpGimpleSSA>
+X("clang40_plugin_dumpGimpleSSA", "Dump gimple ssa raw format starting from LLVM IR");
+#endif

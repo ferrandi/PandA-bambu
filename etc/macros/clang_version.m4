@@ -268,10 +268,10 @@ PLUGIN_TEST
          fi
          echo "OK, we have found the compiler"
          build_I386_CLANG40=yes;
-         build_I386_CLANG40_EMPTY_PLUGIN=no;
+         build_I386_CLANG40_EMPTY_PLUGIN=yes;
          build_I386_CLANG40_SSA_PLUGIN=yes;
-         build_I386_CLANG40_SSA_PLUGINCPP=no;
-         build_I386_CLANG40_TOPFNAME_PLUGIN=no;
+         build_I386_CLANG40_SSA_PLUGINCPP=yes;
+         build_I386_CLANG40_TOPFNAME_PLUGIN=yes;
       done
       if test "x$I386_CLANG40_PLUGIN_COMPILER" != x; then
          break;

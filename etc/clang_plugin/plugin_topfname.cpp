@@ -49,29 +49,36 @@
 
 namespace clang {
 
+   class dummytopfnameConsumer : public ASTConsumer
+   {
+        const  std::string topfname;
+        const std::string InFile;
+        CompilerInstance &Instance;
+
+      public:
+         dummytopfnameConsumer(CompilerInstance &_Instance,
+                               const std::string& _topfname, const std::string& _InFile) : topfname(_topfname), InFile(_InFile), Instance(_Instance) {}
+
+
+   };
+
 
    class clang40_plugin_topfname : public PluginASTAction
    {
-         std::string outdir_name;
+         std::string topfname;
       protected:
          std::unique_ptr<ASTConsumer> CreateASTConsumer(CompilerInstance &CI,
                                                         llvm::StringRef InFile) override
          {
-            DiagnosticsEngine &D = CI.getDiagnostics();
-            if(outdir_name=="")
-               D.Report(D.getCustomDiagID(DiagnosticsEngine::Error,
-                                          "outputdir not specified"));
-            return llvm::make_unique<DumpGimpleRaw>(CI, outdir_name, InFile, false);
+            return llvm::make_unique<dummytopfnameConsumer>(CI, topfname, InFile);
          }
 
          bool ParseArgs(const CompilerInstance &CI,
                         const std::vector<std::string> &args) override
          {
+            DiagnosticsEngine &D = CI.getDiagnostics();
             for (size_t i = 0, e = args.size(); i != e; ++i)
             {
-
-               // Example error handling.
-               DiagnosticsEngine &D = CI.getDiagnostics();
                if (args.at(i) == "-topfname")
                {
                   if (i + 1 >= e) {
@@ -80,19 +87,22 @@ namespace clang {
                      return false;
                   }
                   ++i;
-                  outdir_name = args.at(i);
+                  topfname = args.at(i);
                }
             }
             if (!args.empty() && args.at(0) == "-help")
                PrintHelp(llvm::errs());
 
+            if(topfname=="")
+               D.Report(D.getCustomDiagID(DiagnosticsEngine::Error,
+                                          "topfname not specified"));
             return true;
          }
          void PrintHelp(llvm::raw_ostream& ros)
          {
             ros << "Help for clang40_plugin_topfname plugin\n";
-            ros << "-outputdir <directory>\n";
-            ros << "  Directory where the raw file will be written\n";
+            ros << "-topfname <topfunctionname>\n";
+            ros << "  name of the top function\n";
          }
 
          PluginASTAction::ActionType getActionType() override
