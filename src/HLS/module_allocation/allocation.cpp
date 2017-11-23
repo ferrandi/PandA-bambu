@@ -1080,7 +1080,7 @@ bool allocation::check_proxies(const library_managerRef library, std::string fu_
       }
       else
       {
-         THROW_ASSERT(fu_name.find(PROXY_PREFIX) == 0, "expected a proxy module");
+         THROW_ASSERT(fu_name.compare(0, sizeof(PROXY_PREFIX), PROXY_PREFIX) == 0, "expected a proxy module");
          std::string original_function_name = fu_name.substr(std::string(PROXY_PREFIX).size());
          if(!HLSMgr->Rfuns->is_a_proxied_shared_function(funId, original_function_name)) return true;
       }
@@ -1801,7 +1801,7 @@ DesignFlowStep_Status allocation::InternalExec()
                   }
                   else
                   {
-                     THROW_ASSERT(functionalUnitName.find(PROXY_PREFIX) == 0, "expected a proxy module");
+                     THROW_ASSERT(functionalUnitName.compare(0, sizeof(PROXY_PREFIX), PROXY_PREFIX) == 0, "expected a proxy module");
                      std::string original_function_name = functionalUnitName.substr(std::string(PROXY_PREFIX).size());
                      allocation_information->proxy_function_units[specializedId] = original_function_name;
                   }

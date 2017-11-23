@@ -1070,6 +1070,7 @@ void Translator::write_to_latex(std::map<std::string, CustomMap<std::string, std
 
    //Writing file
    //Opening tabular
+   // cppcheck-suppress duplicateExpression
    if(bambu_version != "" or timestamp != "" or bambu_arguments != "")
    {
       out << "%Generated";
@@ -1235,7 +1236,7 @@ void Translator::write_to_latex(std::map<std::string, CustomMap<std::string, std
    //Closing tabular
    out << "\\hline" << std::endl;
    out << "\\end{tabular}\n";
-   if(benchmarks.size())
+   if(not benchmarks.empty())
    {
       out << "%Benchmarks:" << std::endl;
       for(const auto& benchmark : benchmarks)

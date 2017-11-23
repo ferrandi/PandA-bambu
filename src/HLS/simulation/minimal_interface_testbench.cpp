@@ -561,6 +561,7 @@ void MinimalInterfaceTestbench::write_signals(
 void MinimalInterfaceTestbench::write_file_reading_operations() const
 {
    /// file reading operations
+   // cppcheck-suppress variableScope
    bool first_valid_input = true;
    /// iterate over all input ports
    if (mod->get_in_port_size())

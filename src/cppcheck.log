@@ -1,0 +1,2 @@
+cppcheck: unusedFunction check can't be used with '-j' option. Disabling unusedFunction check.
+cppcheck: error: could not find or open any of the paths given.

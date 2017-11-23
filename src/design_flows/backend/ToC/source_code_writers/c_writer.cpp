@@ -200,7 +200,9 @@ CWriter::CWriter(const application_managerConstRef _AppM, const InstructionWrite
    Param(_Param),
    debug_level(_Param->get_class_debug_level("CWriter")),
    output_level(_Param->getOption<int>(OPT_output_level)),
-   fake_max_tree_node_id(0)
+   fake_max_tree_node_id(0),
+   dominators(nullptr),
+   post_dominators(nullptr)
 {
 }
 

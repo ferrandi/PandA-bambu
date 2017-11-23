@@ -311,24 +311,32 @@ void CallGraphManager::RemoveCallPoint(EdgeDescriptor e, const unsigned int call
    auto & indirect_calls = edge_info->indirect_call_points;
    auto & function_addresses = edge_info->function_addresses;
 
+#if HAVE_ASSERTS
    int found_calls = 0;
+#endif
    const auto dir_it = direct_calls.find(callid);
    if (dir_it != direct_calls.end())
    {
       direct_calls.erase(callid);
+#if HAVE_ASSERTS
       found_calls++;
+#endif
    }
    const auto indir_it = indirect_calls.find(callid);
    if (indir_it != indirect_calls.end())
    {
       indirect_calls.erase(callid);
+#if HAVE_ASSERTS
       found_calls++;
+#endif
    }
    const auto addr_it = function_addresses.find(callid);
    if (addr_it != function_addresses.end())
    {
       function_addresses.erase(callid);
+#if HAVE_ASSERTS
       found_calls++;
+#endif
    }
 
    THROW_ASSERT(found_calls, "call id " + STR(callid) + " is not a call point in function " + STR(caller_id) + " for function " + STR(called_id));
