@@ -404,6 +404,7 @@ if test "x$panda_USE_BAMBU" = xyes; then
   AS_VERSION_COMPARE($MIN_GCC_VERSION, [4.5.0], [MIN_GCC_VERSION=4.5.0],,)
   AS_VERSION_COMPARE($MAX_GCC_VERSION, [8.0.0],,,[MAX_GCC_VERSION=8.0.0])
   panda_USE_LIB_HLS=yes;
+  panda_USE_LIB_HOST_PROFILING=yes;
   panda_USE_LIB_TECHNOLOGY=yes;
   panda_USE_LIB_TO_C=yes;
   panda_USE_LIB_TO_HDL=yes;
@@ -434,7 +435,6 @@ if test "x$panda_USE_BAMBU" = xyes; then
     panda_USE_LIB_TO_DATAFILE=yes;
     panda_USE_LIB_2LEV=yes;
     panda_USE_LIB_FROM_ESTIMATION=yes;
-    panda_USE_LIB_HOST_PROFILING=yes;
     ### panda_USE_METSLIB=yes;
     panda_USE_TRNG=yes;
     #in experimental mode, the FloPoCo library is activated by default

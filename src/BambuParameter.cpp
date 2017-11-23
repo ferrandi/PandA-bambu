@@ -84,7 +84,7 @@
 
 #if HAVE_HOST_PROFILING_BUILT
 ///frontend_flow/behavior_analysis
-#include "profiling.hpp"
+#include "host_profiling.hpp"
 #endif
 
 ///HLS/binding/module
