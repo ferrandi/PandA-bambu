@@ -29,7 +29,6 @@ class firFixedClass
         {
             // parameters and simulation options
             float        fc    = 0.20;  // normalized cutoff frequency
-            unsigned int nfft  =  800;  // 'FFT' size (actually DFT)
             // generate time vector, centered at zero
             float t = (float)index + 0.5f - 0.5f*(float)filter_len;
             // generate sinc function (time offset in 't' prevents divide by zero)
@@ -91,6 +90,7 @@ class firFixedClass
 
             return output;
         }
+        firFixedClass() {}
 };
 
 template <int filter_len>
@@ -148,7 +148,6 @@ int main( void )
 #endif
         return 1;
     }
-    unsigned int index = 0;
 
     // process all of the samples
     do {

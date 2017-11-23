@@ -224,7 +224,7 @@ void HLS_manager::xwrite(const std::string& filename)
    {
       std::cerr << msg << std::endl;
    }
-   catch (const std::string & msg)
+   catch (const std::string& msg)
    {
       std::cerr << msg << std::endl;
    }

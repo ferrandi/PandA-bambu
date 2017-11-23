@@ -52,7 +52,7 @@
 struct null_node : public tree_node
 {
    /// constructor
-   null_node(unsigned int i) : tree_node(i) {}
+   explicit null_node(unsigned int i) : tree_node(i) {}
 
    /// Redefinition of get_kind_text.
    GET_KIND_TEXT(null_node)
@@ -73,7 +73,7 @@ struct null_node : public tree_node
 struct gimple_pragma : public gimple_node
 {
    /// constructor
-   gimple_pragma(unsigned int i) : gimple_node(i), is_block(false), is_opening(true) {}
+   explicit gimple_pragma(unsigned int i) : gimple_node(i), is_block(false), is_opening(true) {}
 
    /// attribute for pragma: true when the pragma refers to a block
    bool is_block;
@@ -110,7 +110,7 @@ struct gimple_pragma : public gimple_node
 struct profiling_pragma : public tree_node
 {
    /// constructor
-   profiling_pragma(unsigned int i) : tree_node(i) {}
+   explicit profiling_pragma(unsigned int i) : tree_node(i) {}
 
    /// Redefinition of get_kind_text.
    GET_KIND_TEXT(profiling_pragma)
@@ -131,7 +131,7 @@ struct profiling_pragma : public tree_node
 struct statistical_profiling : public profiling_pragma
 {
    /// constructor
-   statistical_profiling(unsigned int i) : profiling_pragma(i) {}
+   explicit statistical_profiling(unsigned int i) : profiling_pragma(i) {}
 
    /// Redefinition of get_kind_text.
    GET_KIND_TEXT(statistical_profiling)
@@ -152,7 +152,7 @@ struct statistical_profiling : public profiling_pragma
 struct map_pragma : public tree_node
 {
    /// constructor
-   map_pragma(unsigned int i) : tree_node(i) {}
+   explicit map_pragma(unsigned int i) : tree_node(i) {}
 
    /// Redefinition of get_kind_text.
    GET_KIND_TEXT(map_pragma)
@@ -176,7 +176,7 @@ struct map_pragma : public tree_node
 struct call_hw_pragma : public map_pragma
 {
    /// constructor
-   call_hw_pragma(unsigned int i) : map_pragma(i) {}
+   explicit call_hw_pragma(unsigned int i) : map_pragma(i) {}
 
    /// The name of the component
    std::string HW_component;
@@ -206,7 +206,7 @@ struct call_hw_pragma : public map_pragma
 struct call_point_hw_pragma : public map_pragma
 {
    /// constructor
-   call_point_hw_pragma(unsigned int i) : map_pragma(i), recursive(false) {}
+   explicit call_point_hw_pragma(unsigned int i) : map_pragma(i), recursive(false) {}
 
    /// The name of the component
    std::string HW_component;
@@ -236,7 +236,7 @@ struct call_point_hw_pragma : public map_pragma
 struct issue_pragma : public tree_node
 {
    /// constructor
-   issue_pragma(unsigned int i) : tree_node(i) {}
+   explicit issue_pragma(unsigned int i) : tree_node(i) {}
 
    /// Redefinition of get_kind_text.
    GET_KIND_TEXT(issue_pragma)
@@ -257,7 +257,7 @@ struct issue_pragma : public tree_node
 struct blackbox_pragma : public issue_pragma
 {
    /// constructor
-   blackbox_pragma(unsigned int i) : issue_pragma(i) {}
+   explicit blackbox_pragma(unsigned int i) : issue_pragma(i) {}
 
    /// Redefinition of get_kind_text.
    GET_KIND_TEXT(blackbox_pragma)
@@ -279,7 +279,7 @@ struct blackbox_pragma : public issue_pragma
 struct omp_pragma : public tree_node
 {
    /// constructor
-   omp_pragma(unsigned int i) : tree_node(i) {}
+   explicit omp_pragma(unsigned int i) : tree_node(i) {}
 
    /// Redefinition of get_kind_text.
    GET_KIND_TEXT(omp_pragma)
@@ -300,7 +300,7 @@ struct omp_pragma : public tree_node
 struct omp_parallel_pragma : public omp_pragma
 {
    /// constructor
-   omp_parallel_pragma(unsigned int i) : omp_pragma(i), is_shortcut(false) {}
+   explicit omp_parallel_pragma(unsigned int i) : omp_pragma(i), is_shortcut(false) {}
 
    /// map between the clauses that can be associated with the OpenMP parallel pragma and their value (e.g. number of threads)
    std::unordered_map<std::string, std::string> clauses;
@@ -327,7 +327,7 @@ struct omp_parallel_pragma : public omp_pragma
 struct omp_sections_pragma : public omp_pragma
 {
    /// constructor
-   omp_sections_pragma(unsigned int i) : omp_pragma(i), is_shortcut(false) {}
+   explicit omp_sections_pragma(unsigned int i) : omp_pragma(i), is_shortcut(false) {}
 
    /// flag to check if this pragma is shortcut with a OpenMP parallel pragma
    bool is_shortcut;
@@ -351,7 +351,7 @@ struct omp_sections_pragma : public omp_pragma
 struct omp_parallel_sections_pragma : public omp_pragma
 {
    /// constructor
-   omp_parallel_sections_pragma(unsigned int i) : omp_pragma(i) {}
+   explicit omp_parallel_sections_pragma(unsigned int i) : omp_pragma(i) {}
 
    /// The parallel part (the tree_node is a omp_parallel_pragma one)
    tree_nodeRef op0;
@@ -378,7 +378,7 @@ struct omp_parallel_sections_pragma : public omp_pragma
 struct omp_section_pragma : public omp_pragma
 {
    /// constructor
-   omp_section_pragma(unsigned int i) : omp_pragma(i) {}
+   explicit omp_section_pragma(unsigned int i) : omp_pragma(i) {}
 
    /// Redefinition of get_kind_text.
    GET_KIND_TEXT(omp_section_pragma)
@@ -402,7 +402,7 @@ struct omp_target_pragma : public omp_pragma
    std::unordered_map<std::string, std::string> clauses;
 
    /// constructor
-   omp_target_pragma(unsigned int i);
+   explicit omp_target_pragma(unsigned int i);
 
    /// Redefinition of get_kind_text.
    GET_KIND_TEXT(omp_target_pragma)
@@ -426,7 +426,7 @@ struct omp_task_pragma : public omp_pragma
    std::unordered_map<std::string, std::string> clauses;
 
    /// constructor
-   omp_task_pragma(unsigned int i);
+   explicit omp_task_pragma(unsigned int i);
 
    /// Redefinition of get_kind_text.
    GET_KIND_TEXT(omp_task_pragma)
@@ -450,7 +450,7 @@ struct omp_critical_pragma : public omp_pragma
    std::unordered_map<std::string, std::string> clauses;
 
    /// constructor
-   omp_critical_pragma(unsigned int i);
+   explicit omp_critical_pragma(unsigned int i);
 
    /// Redefinition of get_kind_text.
    GET_KIND_TEXT(omp_critical_pragma)
@@ -471,7 +471,7 @@ struct omp_critical_pragma : public omp_pragma
 struct omp_atomic_pragma : public omp_pragma
 {
    /// constructor
-   omp_atomic_pragma(unsigned int i) : omp_pragma(i) {}
+   explicit omp_atomic_pragma(unsigned int i) : omp_pragma(i) {}
 
    /// Redefinition of get_kind_text.
    GET_KIND_TEXT(omp_atomic_pragma)
@@ -492,7 +492,7 @@ struct omp_atomic_pragma : public omp_pragma
 struct omp_for_pragma : public omp_pragma
 {
    /// constructor
-   omp_for_pragma(unsigned int i) : omp_pragma(i) {}
+   explicit omp_for_pragma(unsigned int i) : omp_pragma(i) {}
 
    /// map between the clauses that can be associated with the OpenMP parallel pragma and their value (e.g. number of threads)
    std::unordered_map<std::string, std::string> clauses;
@@ -516,7 +516,7 @@ struct omp_for_pragma : public omp_pragma
 struct omp_simd_pragma : public omp_pragma
 {
    /// constructor
-   omp_simd_pragma(unsigned int i) : omp_pragma(i) {}
+   explicit omp_simd_pragma(unsigned int i) : omp_pragma(i) {}
 
    /// map between the clauses that can be associated with the OpenMP parallel pragma and their value (e.g. number of threads)
    std::unordered_map<std::string, std::string> clauses;
@@ -540,7 +540,7 @@ struct omp_simd_pragma : public omp_pragma
 struct omp_declare_simd_pragma : public omp_pragma
 {
    /// constructor
-   omp_declare_simd_pragma(unsigned int i) : omp_pragma(i) {}
+   explicit omp_declare_simd_pragma(unsigned int i) : omp_pragma(i) {}
 
    /// map between the clauses that can be associated with the OpenMP parallel pragma and their value (e.g. number of threads)
    std::unordered_map<std::string, std::string> clauses;
@@ -568,7 +568,7 @@ struct omp_declare_simd_pragma : public omp_pragma
 struct gimple_while :public gimple_node
 {
    /// constructor
-   gimple_while(unsigned int i) : gimple_node(i) {}
+   explicit gimple_while(unsigned int i) : gimple_node(i) {}
 
    /// The boolean condition
    tree_nodeRef op0;
@@ -596,7 +596,7 @@ struct gimple_while :public gimple_node
 struct gimple_for :public gimple_while
 {
    /// constructor
-   gimple_for(unsigned int i) : gimple_while(i) {}
+   explicit gimple_for(unsigned int i) : gimple_while(i) {}
 
    /// initialization
    tree_nodeRef op1;
@@ -629,7 +629,7 @@ struct gimple_for :public gimple_while
 struct gimple_multi_way_if :public gimple_node
 {
    /// constructor
-   gimple_multi_way_if(unsigned int i) : gimple_node(i) {}
+   explicit gimple_multi_way_if(unsigned int i) : gimple_node(i) {}
 
    /// The list of pair condition basic block
    std::list<std::pair< tree_nodeRef, unsigned int> > list_of_cond;

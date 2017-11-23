@@ -97,7 +97,7 @@ void VerilatorWrapper::CheckExecution()
 
 void VerilatorWrapper::GenerateScript(std::ostringstream& script, const std::string& top_filename, const std::list<std::string> & file_list)
 {
-   for(const auto file : file_list)
+   for(const auto& file : file_list)
       if(file.find(".vhd") != std::string::npos)
          THROW_ERROR_CODE(NODE_NOT_YET_SUPPORTED_EC, "Mixed simulation not supported by Verilator");
    bool generate_vcd_output = (Param->isOption(OPT_generate_vcd) && Param->getOption<bool>(OPT_generate_vcd)) ||
@@ -112,7 +112,7 @@ void VerilatorWrapper::GenerateScript(std::ostringstream& script, const std::str
 #endif
    if(generate_vcd_output)
       script << " --trace --trace-underscore"; // --trace-params
-   for(auto const file : file_list)
+   for(const auto& file : file_list)
       script << " " << file;
    script << " " << output_directory + "/simulation/testbench_" + top_filename << "_tb.v";
    script << " --top-module " << top_filename << "_tb";

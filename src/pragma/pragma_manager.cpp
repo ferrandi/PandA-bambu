@@ -148,7 +148,7 @@ pragma_manager::pragma_manager(const application_managerRef _application_manager
    if (param->isOption(OPT_blackbox))
    {
       const auto black_box_functions = param->getOption<const CustomSet<std::string> >(OPT_blackbox);
-      for(const auto black_box_function : black_box_functions)
+      for(const auto& black_box_function : black_box_functions)
       {
          PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, param->getOption<int>(OPT_output_level), "Function \"" + black_box_function + "\" is a blackbox");
          BlackBoxFunctions.insert(black_box_function);
@@ -175,7 +175,7 @@ bool pragma_manager::isBlackBox(const std::string& name) const
    return BlackBoxFunctions.find(name) != BlackBoxFunctions.end();
 }
 
-const std::list<std::string> pragma_manager::GetFunctionDefinitionPragmas(const std::string & function_name) const
+const std::list<std::string> pragma_manager::GetFunctionDefinitionPragmas(const std::string& function_name) const
 {
    if(function_definition_pragmas.find(function_name) != function_definition_pragmas.end())
    {
@@ -192,7 +192,7 @@ std::unordered_set<std::string> pragma_manager::getFunctionCallPragmas(const std
       return std::unordered_set<std::string>();
 }
 
-void pragma_manager::AddFunctionDefinitionPragmas(const std::string & function_name, const std::unordered_set<std::string> & pragmas)
+void pragma_manager::AddFunctionDefinitionPragmas(const std::string& function_name, const std::unordered_set<std::string> & pragmas)
 {
    for(auto pragma : pragmas)
    {
@@ -210,14 +210,14 @@ void pragma_manager::AddFunctionDefinitionPragmas(const std::string & function_n
          THROW_ASSERT(it != splitted.end(), "Something wrong");
          do
          {
-            it++;
+            ++it;
          }
          while(it != splitted.end() and it->size() == 0);
          THROW_ASSERT(it != splitted.end(), "Something wrong");
          std::string HW_component = *it;
          do
          {
-            it++;
+            ++it;
          }
          while(it != splitted.end() and it->size() == 0 );
          const MappingAnnotationRef mapping_annotation = MappingAnnotationRef(new UnimodalMappingAnnotation(GetPointer<PartitioningManager>(application_manager)->CGetArchitectureManager()->get_machineRef_by_name(HW_component), param));
@@ -248,7 +248,6 @@ void pragma_manager::AddFunctionDefinitionPragmas(const std::string & function_n
          continue;
       }
 #endif
-      const std::string trimmed_spaces = TrimSpaces(pragma);
       if(pragma.find("#pragma omp declare simd") == 0)
       {
          function_definition_pragmas[function_name].push_back(pragma);
@@ -261,13 +260,13 @@ void pragma_manager::AddFunctionDefinitionPragmas(const std::string & function_n
 void pragma_manager::addFunctionCallPragmas(const std::string& Name, const std::unordered_set<std::string>& Pragmas)
 {
    std::unordered_set<std::string>::const_iterator k, k_end = Pragmas.end();
-   for(k = Pragmas.begin(); k != k_end; k++)
+   for(k = Pragmas.begin(); k != k_end; ++k)
    {
       FunctionCallPragmas[Name].insert(*k);
    }
 }
 
-unsigned int pragma_manager::addBlackBoxPragma(const std::string function_name)
+unsigned int pragma_manager::addBlackBoxPragma(const std::string&function_name)
 {
    unsigned int scope = TM->new_tree_node_id();
    std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> tree_node_schema;
@@ -290,7 +289,7 @@ unsigned int pragma_manager::addBlackBoxPragma(const std::string function_name)
    return final_id;
 }
 
-unsigned int pragma_manager::AddOmpSimdPragma(const std::string line) const
+unsigned int pragma_manager::AddOmpSimdPragma(const std::string&line) const
 {
    std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> simd_tree_node_schema, omp_pragma_tree_node_schema, tree_node_schema;
    unsigned int scope_id = TM->new_tree_node_id();
@@ -385,7 +384,7 @@ bool pragma_manager::CheckOmpFor(const application_managerConstRef app_man, cons
    while(boost::in_degree(current, *bb_cfg) == 1)
    {
       const BBNodeInfoConstRef info = bb_cfg->CGetBBNodeInfo(current);
-      for(const auto stmt : info->block->CGetStmtList())
+      for(const auto& stmt : info->block->CGetStmtList())
       {
          if (GET_NODE(stmt)->get_kind() == gimple_pragma_K)
          {
@@ -417,7 +416,7 @@ void pragma_manager::CheckAddOmpFor(const unsigned int function_index, const ver
    {
       const BBNodeInfoConstRef info = bb_cfg->CGetBBNodeInfo(current);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Analyzing BB" + STR(info->block->number));
-      for(const auto stmt : info->block->CGetStmtList())
+      for(const auto& stmt : info->block->CGetStmtList())
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Analzying " + STR(stmt));
          if (GET_NODE(stmt)->get_kind() == gimple_pragma_K)
@@ -460,7 +459,7 @@ void pragma_manager::CheckAddOmpSimd(const unsigned int function_index, const ve
    {
       const BBNodeInfoRef info = bb_cfg->GetBBNodeInfo(current);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Analyzing BB" + STR(info->block->number));
-      for(const auto stmt : info->block->CGetStmtList())
+      for(const auto& stmt : info->block->CGetStmtList())
       {
          if (GET_NODE(stmt)->get_kind() == gimple_pragma_K)
          {
@@ -498,7 +497,7 @@ void pragma_manager::CheckAddOmpSimd(const unsigned int function_index, const ve
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Not found");
 }
 
-pragma_manager::OmpPragmaType pragma_manager::GetOmpPragmaType(const std::string & directive)
+pragma_manager::OmpPragmaType pragma_manager::GetOmpPragmaType(const std::string& directive)
 {
    OmpPragmaType omp_pragma_type = OMP_UNKNOWN;
    size_t index = 0;

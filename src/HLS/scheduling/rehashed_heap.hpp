@@ -75,7 +75,7 @@ struct rehashed_heap : public std::priority_queue<vertex,
     * Constructor
     * @param pri is the priority functor.
    */
-   rehashed_heap(const priority_compare_functor<_Type>& _comp) : 
+   explicit rehashed_heap(const priority_compare_functor<_Type>& _comp) :
          std::priority_queue<vertex, std::vector<vertex>, priority_compare_functor<_Type> >(_comp) {}
    /**
     * Rehash the heap associated with the priority queue.
@@ -109,12 +109,12 @@ struct tree_rehashed_heap : public std::unordered_map<vertex, std::vector< rehas
       found = false;
       typename std::vector< rehashed_heap<_Type> >::iterator res;
       typename tree_rehashed_heap::const_iterator it_end = this->end();
-      for(typename tree_rehashed_heap::iterator it = this->begin(); it != it_end; it++)
+      for(typename tree_rehashed_heap::iterator it = this->begin(); it != it_end; ++it)
       {
          typename std::vector< rehashed_heap<_Type> >::const_iterator vit_end = it->second.end();
          unsigned int i = 0;
          bool cv_not_in_bl = curren_black_list.find(it->first) == curren_black_list.end();
-         for(typename std::vector< rehashed_heap<_Type> >::iterator vit = it->second.begin(); vit != vit_end; vit++, i++)
+         for(typename std::vector< rehashed_heap<_Type> >::iterator vit = it->second.begin(); vit != vit_end; ++vit, ++i)
          {
             if(!vit->empty() && (cv_not_in_bl ||  curren_black_list.find(it->first)->second.find(i) == curren_black_list.find(it->first)->second.end()))
             {
@@ -144,10 +144,10 @@ struct tree_rehashed_heap : public std::unordered_map<vertex, std::vector< rehas
    void rehash()
    {
       typename tree_rehashed_heap::iterator it_end = this->end();
-      for(typename tree_rehashed_heap::iterator it = this->begin(); it != it_end; it++)
+      for(typename tree_rehashed_heap::iterator it = this->begin(); it != it_end; ++it)
       {
          typename std::vector< rehashed_heap<_Type> >::iterator vit_end = it->second.end();
-         for(typename std::vector< rehashed_heap<_Type> >::iterator vit = it->second.begin(); vit != vit_end; vit++)
+         for(typename std::vector< rehashed_heap<_Type> >::iterator vit = it->second.begin(); vit != vit_end; ++vit)
          {
             vit->rehash();
          }

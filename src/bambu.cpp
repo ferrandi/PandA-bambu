@@ -149,7 +149,6 @@ int main(int argc, char *argv[])
                   boost::filesystem::remove_all(parameters->getOption<std::string>(OPT_output_temporary_directory));
                }
                return EXIT_SUCCESS;
-               break;
             }
          case PARAMETER_PARSED:
             {
@@ -173,7 +172,7 @@ int main(int argc, char *argv[])
          std::vector<std::string> system_includes;
          gcc_wrapper->GetSystemIncludes(system_includes);
          std::vector<std::string>::const_iterator system_include, system_include_end = system_includes.end();
-         for(system_include = system_includes.begin(); system_include != system_include_end; system_include++)
+         for(system_include = system_includes.begin(); system_include != system_include_end; ++system_include)
          {
             INDENT_OUT_MEX(0, 0, *system_include);
          }

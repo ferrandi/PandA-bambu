@@ -217,7 +217,7 @@ class BackendFlow
       /**
        * Executes the synthesis with the implemented flow
        */
-      void Execute(const std::string& top_id, const std::string& top_normalized, const std::string& filestring, const std::string &filename_bench, const std::string &clock, double clk_period, bool syntax_check);
+      void Execute(const std::string& top_id, const std::string& top_normalized, const std::string& filestring, const std::string&filename_bench, const std::string&clock, double clk_period, bool syntax_check);
 
       /**
        * Creates the scripts for the specified tools in the right order, along with the overall configuration.

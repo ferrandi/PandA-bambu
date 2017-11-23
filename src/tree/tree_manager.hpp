@@ -188,7 +188,7 @@ class tree_manager
        * This is the constructor of the tree_manager which initializes the vector of functions.
        * @param Param is the set of input parameters
       */
-      tree_manager(const ParameterConstRef Param);
+      explicit tree_manager(const ParameterConstRef Param);
 
       ~tree_manager();
 
@@ -411,14 +411,14 @@ class tree_manager
        * In case there is not that identifier_node it returns 0.
        * @param str is the identifier we are looking for.
        */
-      unsigned int find_identifier_nodeID(const std::string &str) const;
+      unsigned int find_identifier_nodeID(const std::string&str) const;
 
       /**
        * Add an identifier_node to the corresponding unique table
        * @param nodeID is the node id.
        * @param str is the string.
        */
-      void add_identifier_node(unsigned int nodeID, const std::string &str) {identifiers_unique_table[str]=nodeID;}
+      void add_identifier_node(unsigned int nodeID, const std::string&str) {identifiers_unique_table[str]=nodeID;}
       void add_identifier_node(unsigned int nodeID, const bool &op);
 
       /**

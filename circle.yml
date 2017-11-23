@@ -1,6 +1,6 @@
 dependencies:
     pre:
-        - sudo apt-get install autoconf autoconf-archive automake libtool g++ gcc gcc-4.8-plugin-dev gcc-multilib g++-4.8-multilib libboost-all-dev libmpc-dev libmpfi-dev libmpfr-dev libxml2-dev liblzma-dev zlib1g-dev libicu-dev bison doxygen flex graphviz iverilog verilator pkg-config libsuitesparse-dev libglpk-dev make
+        - sudo apt-get install autoconf autoconf-archive automake libtool g++ gcc gcc-4.8-plugin-dev gcc-multilib g++-4.8-multilib gfortran-4.8 gfortran-4.8-multilib libboost-all-dev libmpc-dev libmpfi-dev libmpfr-dev libxml2-dev liblzma-dev zlib1g-dev libicu-dev bison doxygen flex graphviz iverilog verilator pkg-config libsuitesparse-dev libglpk-dev make
 test:
     pre:
         - make -f Makefile.init

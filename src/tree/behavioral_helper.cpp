@@ -260,7 +260,7 @@ std::string BehavioralHelper::print_init(unsigned int var, const var_pp_functorC
                THROW_ERROR("expected a record_type or a union_type");
             std::vector<tree_nodeRef>::const_iterator flend = field_list.end();
             std::vector<tree_nodeRef>::const_iterator fli = field_list.begin();
-            for (; fli != flend && i != vend; i++, fli++)
+            for (; fli != flend && i != vend; ++i, ++fli)
             {
                if (i->first && GET_INDEX_NODE(i->first) != GET_INDEX_NODE(*fli))
                   break;
@@ -313,7 +313,7 @@ std::string BehavioralHelper::print_init(unsigned int var, const var_pp_functorC
             {
                current += print_node(GET_INDEX_NODE(i->second), vertex(), vppf);
             }
-            i++;
+            ++i;
             if (i != vend)
                current += ", ";
             if((current.size() + current_length) > MAX_ROW_LENGTH)
@@ -2576,7 +2576,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
          gimple_cond *gc = GetPointer<gimple_cond>(node);
          std::vector<tree_nodeRef> pragmas = gc->pragmas;
          std::vector<tree_nodeRef>::const_iterator pragma, pragma_end = pragmas.end();
-         for(pragma = pragmas.begin(); pragma != pragma_end; pragma++)
+         for(pragma = pragmas.begin(); pragma != pragma_end; ++pragma)
          {
             res += print_node(GET_INDEX_NODE(*pragma), v, vppf) + "\n";
          }
@@ -2588,7 +2588,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
          gimple_multi_way_if *gmwi = GetPointer<gimple_multi_way_if>(node);
          res = "if (";
          bool first = true;
-         for(const auto cond : gmwi->list_of_cond)
+         for(const auto& cond : gmwi->list_of_cond)
          {
             if(first)
             {
@@ -2636,7 +2636,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
          {
             std::vector<tree_nodeRef> pragmas = ms->pragmas;
             std::vector<tree_nodeRef>::const_iterator pragma, pragma_end = pragmas.end();
-            for(pragma = pragmas.begin(); pragma != pragma_end; pragma++)
+            for(pragma = pragmas.begin(); pragma != pragma_end; ++pragma)
             {
                res += print_node(GET_INDEX_NODE(*pragma), v, vppf) + "\n";
             }
@@ -2735,7 +2735,6 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
             {
                const auto dest_type = get_type(ms->op1->index);
                const auto source_type = get_type(vce->op->index);
-               std::string temp;
                res = "{union {" + print_type(dest_type) + " dest; " + print_type(source_type) + " source;} __panda_union; __panda_union.source = " + print_node(vce->op->index, v, vppf) + "; " + res;
             }
          }
@@ -2843,7 +2842,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
          gimple_return *re = GetPointer<gimple_return>(node);
          std::vector<tree_nodeRef> pragmas = re->pragmas;
          std::vector<tree_nodeRef>::const_iterator pragma, pragma_end = pragmas.end();
-         for(pragma = pragmas.begin(); pragma != pragma_end; pragma++)
+         for(pragma = pragmas.begin(); pragma != pragma_end; ++pragma)
          {
             res += print_node(GET_INDEX_NODE(*pragma), v, vppf) + "\n";
          }
@@ -3095,7 +3094,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
                   formal_args = fd->list_of_args;
                std::vector<tree_nodeRef>::const_iterator actual_arg, actual_arg_end = actual_args.end();
                std::vector<tree_nodeRef>::const_iterator formal_arg, formal_arg_end = formal_args.end();
-               for(actual_arg = actual_args.begin(), formal_arg = formal_args.begin(); actual_arg != actual_arg_end; actual_arg++)
+               for(actual_arg = actual_args.begin(), formal_arg = formal_args.begin(); actual_arg != actual_arg_end; ++actual_arg)
                {
                   if(formal_arg != formal_arg_end and (is_a_struct(GET_INDEX_NODE(*actual_arg)) or is_an_union(GET_INDEX_NODE(*actual_arg))) and (is_a_struct(GET_INDEX_NODE(*formal_arg)) or is_an_union(GET_INDEX_NODE(*formal_arg))) and (tree_helper::GetRealType(TM, tree_helper::get_type_index(TM, GET_INDEX_NODE(*actual_arg))) != tree_helper::GetRealType(TM, tree_helper::get_type_index(TM, GET_INDEX_NODE(*formal_arg)))))
                   {
@@ -3106,7 +3105,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
                   res += print_node(GET_INDEX_NODE(*actual_arg), v, vppf);
                   if(formal_arg != formal_arg_end)
                   {
-                     formal_arg++;
+                     ++formal_arg;
                   }
                }
             }
@@ -3120,7 +3119,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
          function_decl * fd = nullptr;
          std::vector<tree_nodeRef> pragmas = ce->pragmas;
          std::vector<tree_nodeRef>::const_iterator pragma, pragma_end = pragmas.end();
-         for(pragma = pragmas.begin(); pragma != pragma_end; pragma++)
+         for(pragma = pragmas.begin(); pragma != pragma_end; ++pragma)
          {
             res += print_node(GET_INDEX_NODE(*pragma), v, vppf) + "\n";
          }
@@ -3269,7 +3268,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
                   formal_args = fd->list_of_args;
                std::vector<tree_nodeRef>::const_iterator actual_arg, actual_arg_end = actual_args.end();
                std::vector<tree_nodeRef>::const_iterator formal_arg, formal_arg_end = formal_args.end();
-               for(actual_arg = actual_args.begin(), formal_arg = formal_args.begin(); actual_arg != actual_arg_end; actual_arg++)
+               for(actual_arg = actual_args.begin(), formal_arg = formal_args.begin(); actual_arg != actual_arg_end; ++actual_arg)
                {
                   if(formal_arg != formal_arg_end and (is_a_struct(GET_INDEX_NODE(*actual_arg)) or is_an_union(GET_INDEX_NODE(*actual_arg))) and (is_a_struct(GET_INDEX_NODE(*formal_arg)) or is_an_union(GET_INDEX_NODE(*formal_arg))) and (tree_helper::GetRealType(TM, tree_helper::get_type_index(TM, GET_INDEX_NODE(*actual_arg))) != tree_helper::GetRealType(TM, tree_helper::get_type_index(TM, GET_INDEX_NODE(*formal_arg)))))
                   {
@@ -3280,7 +3279,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
                   res += print_node(GET_INDEX_NODE(*actual_arg), v, vppf);
                   if(formal_arg != formal_arg_end)
                   {
-                     formal_arg++;
+                     ++formal_arg;
                   }
                }
             }
@@ -3298,7 +3297,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
          gimple_asm *ae = GetPointer<gimple_asm>(node);
          std::vector<tree_nodeRef> pragmas = ae->pragmas;
          std::vector<tree_nodeRef>::const_iterator pragma, pragma_end = pragmas.end();
-         for(pragma = pragmas.begin(); pragma != pragma_end; pragma++)
+         for(pragma = pragmas.begin(); pragma != pragma_end; ++pragma)
          {
             res += print_node(GET_INDEX_NODE(*pragma), v, vppf);
          }
@@ -3398,7 +3397,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
       {
          gimple_phi * pn = GetPointer<gimple_phi>(node);
          res += "/* " + print_node(GET_INDEX_NODE(pn->res), v, vppf) +" = gimple_phi(";
-         for(const auto def_edge : pn->CGetDefEdgesList())
+         for(const auto& def_edge : pn->CGetDefEdgesList())
          {
             if(def_edge != pn->CGetDefEdgesList().front())
                res += ", ";
@@ -3528,7 +3527,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
          omp_for_pragma * fp = GetPointer<omp_for_pragma>(node);
          res += "for ";
          /// now print clauses
-         for (std::unordered_map<std::string, std::string>::iterator i = fp->clauses.begin(); i != fp->clauses.end(); i++)
+         for (std::unordered_map<std::string, std::string>::iterator i = fp->clauses.begin(); i != fp->clauses.end(); ++i)
             res += " " + i->first + "(" + i->second + ")";
          break;
       }
@@ -3540,7 +3539,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
             res += "parallel";
          }
          /// now print clauses
-         for (std::unordered_map<std::string, std::string>::iterator i = pn->clauses.begin(); i != pn->clauses.end(); i++)
+         for (std::unordered_map<std::string, std::string>::iterator i = pn->clauses.begin(); i != pn->clauses.end(); ++i)
             res += " " + i->first + "(" + i->second + ")";
          break;
       }
@@ -3572,7 +3571,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
          omp_declare_simd_pragma * fp = GetPointer<omp_declare_simd_pragma>(node);
          res += "declare simd ";
          /// now print clauses
-         for (std::unordered_map<std::string, std::string>::iterator i = fp->clauses.begin(); i != fp->clauses.end(); i++)
+         for (std::unordered_map<std::string, std::string>::iterator i = fp->clauses.begin(); i != fp->clauses.end(); ++i)
             res += " " + i->first + "(" + i->second + ")";
          break;
       }
@@ -3581,7 +3580,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
          omp_simd_pragma * fp = GetPointer<omp_simd_pragma>(node);
          res += "simd ";
          /// now print clauses
-         for (std::unordered_map<std::string, std::string>::iterator i = fp->clauses.begin(); i != fp->clauses.end(); i++)
+         for (std::unordered_map<std::string, std::string>::iterator i = fp->clauses.begin(); i != fp->clauses.end(); ++i)
             res += " " + i->first + "(" + i->second + ")";
          break;
       }
@@ -3589,7 +3588,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
       {
          res += "critical";
          const auto * ocp = GetPointer<const omp_critical_pragma>(node);
-         for(const auto clause : ocp->clauses)
+         for(const auto& clause : ocp->clauses)
          {
             res += " " + clause.first + "(" + clause.second + ")";
          }
@@ -3601,7 +3600,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
          const omp_target_pragma * otp = GetPointer<const omp_target_pragma>(node);
          const std::unordered_map<std::string, std::string> & clauses = otp->clauses;
          std::unordered_map<std::string, std::string>::const_iterator clause, clause_end = clauses.end();
-         for(clause = clauses.begin(); clause != clause_end; clause++)
+         for(clause = clauses.begin(); clause != clause_end; ++clause)
          {
             res += " " + clause->first + "(" + clause->second + ")";
          }
@@ -3613,7 +3612,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
          const omp_task_pragma * otp = GetPointer<const omp_task_pragma>(node);
          const std::unordered_map<std::string, std::string> & clauses = otp->clauses;
          std::unordered_map<std::string, std::string>::const_iterator clause, clause_end = clauses.end();
-         for(clause = clauses.begin(); clause != clause_end; clause++)
+         for(clause = clauses.begin(); clause != clause_end; ++clause)
          {
             res += " " + clause->first + "(" + clause->second + ")";
          }
@@ -4971,7 +4970,7 @@ const std::unordered_set<unsigned int> BehavioralHelper::GetParameterTypes() con
       return ret;
    const std::vector<tree_nodeRef> & list_of_args = fd->list_of_args;
    std::vector<tree_nodeRef>::const_iterator it, it_end = list_of_args.end();
-   for(it = list_of_args.begin(); it != it_end; it++)
+   for(it = list_of_args.begin(); it != it_end; ++it)
    {
       const parm_decl * pd = GetPointer<parm_decl>(GET_NODE(*it));
       ret.insert(GET_INDEX_NODE(pd->type));
@@ -5168,7 +5167,7 @@ unsigned int BehavioralHelper::GetInit(unsigned int var, std::unordered_set<unsi
       {
          constructor * co = GetPointer<constructor>(TM->get_tree_node_const(var));
          std::vector<std::pair< tree_nodeRef, tree_nodeRef> >::const_iterator vend = co->list_of_idx_valu.end();
-         for (std::vector<std::pair< tree_nodeRef, tree_nodeRef> >::const_iterator i = co->list_of_idx_valu.begin(); i != vend; i++)
+         for (std::vector<std::pair< tree_nodeRef, tree_nodeRef> >::const_iterator i = co->list_of_idx_valu.begin(); i != vend; ++i)
          {
             tree_helper::get_used_variables(true, i->second, list_of_variables);
          }
@@ -5384,12 +5383,12 @@ unsigned int BehavioralHelper::GetUnqualified(const unsigned int index) const
    return tree_helper::GetUnqualified(TM, index);
 }
 
-std::string BehavioralHelper::print_type(unsigned int type, bool global, bool print_qualifiers, bool print_storage, unsigned int var, const var_pp_functorConstRef vppf, const std::string prefix, const std::string tail) const
+std::string BehavioralHelper::print_type(unsigned int type, bool global, bool print_qualifiers, bool print_storage, unsigned int var, const var_pp_functorConstRef vppf, const std::string&prefix, const std::string&tail) const
 {
    return tree_helper::print_type(TM, type, global, print_qualifiers, print_storage, var, vppf, prefix, tail);
 }
 
-void BehavioralHelper::rename_a_variable(unsigned int var, const std::string & new_name)
+void BehavioralHelper::rename_a_variable(unsigned int var, const std::string& new_name)
 {
    vars_renaming_table[var] = new_name;
 }

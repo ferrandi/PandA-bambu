@@ -361,7 +361,7 @@ void conn_binding::mux_connection(const hlsRef HLS, const structural_managerRef 
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Datapath interconnection using mux architecture");
 
    //std::set<std::pair<std::string, std::string> > already_considered;
-   for (std::map<std::tuple<generic_objRef, generic_objRef, unsigned int, unsigned int>, connection_objRef>::const_iterator i = conn_implementation.begin(); i != conn_implementation.end(); i++)
+   for (std::map<std::tuple<generic_objRef, generic_objRef, unsigned int, unsigned int>, connection_objRef>::const_iterator i = conn_implementation.begin(); i != conn_implementation.end(); ++i)
    {
       generic_objRef src = std::get<0>(i->first);
       generic_objRef tgt = std::get<1>(i->first);
@@ -686,8 +686,7 @@ void conn_binding::add_sparse_logic_dp(const hlsRef HLS, const structural_manage
    std::string resource_name, resource_instance_name;
    unsigned int resource_index = 0;
    unsigned int bitsize=0;
-   module* sparse_module;
-   for(const auto component : sparse_logic)
+   for(const auto& component : sparse_logic)
    {
       switch(component->get_type())
       {
@@ -789,7 +788,7 @@ void conn_binding::add_sparse_logic_dp(const hlsRef HLS, const structural_manage
       ++resource_index;
       sparse_component = SM->add_module_from_technology_library(resource_instance_name, resource_name, HLS->HLS_T->get_technology_manager()->get_library(resource_name), circuit, HLS->HLS_T->get_technology_manager());
       component->set_structural_obj(sparse_component);
-      sparse_module = GetPointer<module>(sparse_component);
+      module* sparse_module = GetPointer<module>(sparse_component);
 
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Specialising " +  sparse_component->get_path() + ": " + STR(bitsize));
       ///specializing sparse module ports
@@ -841,7 +840,7 @@ void conn_binding::add_sparse_logic_dp(const hlsRef HLS, const structural_manage
 
 void conn_binding::print() const
 {
-   for(const auto conn : conn_implementation)
+   for(const auto& conn : conn_implementation)
    {
       generic_objRef src = std::get<0>(conn.first);
       generic_objRef tgt = std::get<1>(conn.first);
@@ -858,7 +857,7 @@ void conn_binding::print() const
 unsigned int conn_binding::determine_bit_level_mux() const
 {
    std::set<generic_objRef> mux;
-   for(conn_implementation_map::const_iterator it = conn_implementation.begin(); it != conn_implementation.end(); it++)
+   for(conn_implementation_map::const_iterator it = conn_implementation.begin(); it != conn_implementation.end(); ++it)
    {
       if (!GetPointer<mux_conn>(it->second)) continue;
       const std::vector<std::pair<generic_objRef,unsigned int> >& tree = GetPointer<mux_conn>(it->second)->get_mux_tree();
@@ -866,7 +865,7 @@ unsigned int conn_binding::determine_bit_level_mux() const
          mux.insert(tree[v].first);
    }
    unsigned int bit_mux = 0;
-   for(std::set<generic_objRef>::iterator m = mux.begin(); m != mux.end(); m++)
+   for(std::set<generic_objRef>::iterator m = mux.begin(); m != mux.end(); ++m)
       bit_mux += GetPointer<mux_obj>(*m)->get_bitsize();
    return bit_mux;
 }
@@ -884,7 +883,7 @@ void conn_binding::add_command_ports(const HLS_managerRef HLSMgr, const hlsRef H
 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Adding starting ports");
    const OpVertexSet & operations = HLS->operations;
-   for (OpVertexSet::const_iterator j = operations.begin(); j != operations.end(); j++)
+   for (OpVertexSet::const_iterator j = operations.begin(); j != operations.end(); ++j)
    {
       technology_nodeRef tn = HLS->allocation_information->get_fu(HLS->Rfu->get_assign(*j));
       technology_nodeRef op_tn = GetPointer<functional_unit>(tn)->get_operation(tree_helper::normalized_ID(data->CGetOpNodeInfo(*j)->GetOperation()));
@@ -909,7 +908,8 @@ void conn_binding::add_command_ports(const HLS_managerRef HLSMgr, const hlsRef H
    std::map<structural_objectRef, std::list<structural_objectRef> > calls;
    if (selectors.find(conn_binding::IN) != selectors.end())
    {
-      for(std::map<std::pair<generic_objRef, unsigned int>, generic_objRef>::const_iterator j = selectors.find(conn_binding::IN)->second.begin(); j != selectors.find(conn_binding::IN)->second.end(); j++)
+      auto connection_binding_sets = selectors.find(conn_binding::IN)->second;
+      for(std::map<std::pair<generic_objRef, unsigned int>, generic_objRef>::const_iterator j = connection_binding_sets.begin(); j != connection_binding_sets.end(); ++j)
       {
          //unit associate with selector
          const generic_objRef elem = j->first.first;
@@ -980,7 +980,7 @@ void conn_binding::add_command_ports(const HLS_managerRef HLSMgr, const hlsRef H
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Added inputs");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Adding calls connections");
-   for (std::map<structural_objectRef, std::list<structural_objectRef> >::iterator c = calls.begin(); c != calls.end(); c++)
+   for (std::map<structural_objectRef, std::list<structural_objectRef> >::iterator c = calls.begin(); c != calls.end(); ++c)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Adding connections of " + c->first->get_path());
       if (c->second.size() == 1)
@@ -999,7 +999,7 @@ void conn_binding::add_command_ports(const HLS_managerRef HLSMgr, const hlsRef H
          port_o *port = GetPointer<port_o>(in);
          port->add_n_ports(static_cast<unsigned int>(c->second.size()), in);
          unsigned int num = 0;
-         for(std::list<structural_objectRef>::iterator a = c->second.begin(); a != c->second.end(); a++, num++)
+         for(std::list<structural_objectRef>::iterator a = c->second.begin(); a != c->second.end(); ++a, ++num)
          {
             SM->add_connection(*a, port->get_port(num));
          }
@@ -1013,7 +1013,8 @@ void conn_binding::add_command_ports(const HLS_managerRef HLSMgr, const hlsRef H
    ///output signals to the controller for condition evaluation
    if (selectors.find(conn_binding::OUT) != selectors.end())
    {
-      for(std::map<std::pair<generic_objRef, unsigned int>, generic_objRef>::const_iterator j = selectors.find(conn_binding::OUT)->second.begin(); j != selectors.find(conn_binding::OUT)->second.end(); j++)
+      auto connection_binding_sets = selectors.find(conn_binding::OUT)->second;
+      for(std::map<std::pair<generic_objRef, unsigned int>, generic_objRef>::const_iterator j = connection_binding_sets.begin(); j != connection_binding_sets.end(); ++j)
       {
          THROW_ASSERT(GetPointer<commandport_obj>(j->second), "Not valid command port");
          if(GetPointer<commandport_obj>(j->second)->get_command_type() == commandport_obj::SWITCH)
@@ -1089,7 +1090,7 @@ bool conn_binding::ConnectionTarget::operator < (const ConnectionTarget & other)
    return false;
 }
 
-bool conn_binding::ConnectionSorter::operator()(const connection x, const connection y) const
+bool conn_binding::ConnectionSorter::operator()(const connection &x, const connection &y) const
 {
    if(*(std::get<0>(x)) < *(std::get<0>(y)))
       return true;

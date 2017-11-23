@@ -65,7 +65,7 @@ class AddLibrarySpecialization : public HLSFlowStepSpecialization
        * Constructor
        * @param interfaced is true if we are adding module with interface
        */
-      AddLibrarySpecialization(const bool interfaced);
+      explicit AddLibrarySpecialization(const bool interfaced);
 
       /**
        * Return the string representation of this

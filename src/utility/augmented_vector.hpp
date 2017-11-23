@@ -64,7 +64,7 @@ class AugmentedVector
        * Empty Constructor
        */
       AugmentedVector<T>()
-      {};
+      {}
 
       /**
        * Construct a vector composed by size element
@@ -73,23 +73,23 @@ class AugmentedVector
        */
       AugmentedVector<T>(const size_t _size, T element) :
          internal_vector(_size, element)
-      {};
+      {}
 
       /**
        * Construct a vector of size size
        * @param size is the size of the vector
        */
-      AugmentedVector<T>(const size_t _size) :
+      explicit AugmentedVector<T>(const size_t _size) :
          internal_vector(_size)
-      {};
+      {}
 
       /**
        * Constructor from std::vector
        * @param vector is the starting vector
        */
-      AugmentedVector<T>(const std::vector<T> vector) :
+      explicit AugmentedVector<T>(const std::vector<T>& vector) :
          internal_vector(vector)
-      {};
+      {}
 
       /**
        * Redefinition of [] operator
@@ -98,7 +98,7 @@ class AugmentedVector
       T & operator [](size_t position)
       {
          return internal_vector[position];
-      };
+      }
 
       /**
        * Redefinition of [] operator
@@ -107,7 +107,7 @@ class AugmentedVector
       const T & operator [](size_t position) const
       {
          return internal_vector[position];
-      };
+      }
 
       /**
        * Redefinition of * operator as scalar multiplication
@@ -124,7 +124,7 @@ class AugmentedVector
             return_value += internal_vector[i] * other[i];
          }
          return return_value;
-      };
+      }
 
       /**
        * Redefinition of - operator as the difference of the single element
@@ -140,7 +140,7 @@ class AugmentedVector
             return_value.internal_vector[i] = internal_vector[i] - other.internal_vector[i];
          }
          return return_value;
-      };
+      }
 
       /**
        * Return the size of the vector
@@ -149,7 +149,7 @@ class AugmentedVector
       size_t size() const
       {
          return internal_vector.size();
-      };
+      }
 
       /**
        * Return the 2-norm of the vector
@@ -164,7 +164,7 @@ class AugmentedVector
             return_value += internal_vector[i] * internal_vector[i];
          }
          return sqrtl(return_value);
-      };
+      }
 
       /**
        * Return the index of mininum element of the vector
@@ -198,7 +198,7 @@ class AugmentedVector
             if(this->internal_vector[index] < this->internal_vector[min])
                min = index;
          }
-      };
+      }
 
       /**
        * Return the sum of a row
@@ -213,7 +213,7 @@ class AugmentedVector
             return_value += this->internal_vector[index];
          }
          return return_value;
-      };
+      }
 
       /**
        * Return the mean of the vector
@@ -222,7 +222,7 @@ class AugmentedVector
       T get_mean() const
       {
          return this->get_sum()/this->size();
-      };
+      }
 
       /**
        * Remove an element
@@ -234,7 +234,7 @@ class AugmentedVector
          ///To avoid the cast, we should use a for with ++
          it += static_cast<ptrdiff_t>(index);
          internal_vector.erase(it);
-      };
+      }
 
       /**
        * Erase all the elements
@@ -242,7 +242,7 @@ class AugmentedVector
       void clear()
       {
          this->internal_vector.clear();
-      };
+      }
 
       /**
        * Inserts a new elment at the end
@@ -251,7 +251,7 @@ class AugmentedVector
       void push_back(const T & elem)
       {
          this->internal_vector.push_back(elem);
-      };
+      }
 
       /**
        * Inserts or erases elements at the end such that the size becomes n

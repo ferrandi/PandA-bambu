@@ -75,7 +75,7 @@ class cell_model : public area_model
       /**
        * Constructor
        */
-      cell_model(const ParameterConstRef Param);
+      explicit cell_model(const ParameterConstRef Param);
 
       /**
        * Constructor with initial area value

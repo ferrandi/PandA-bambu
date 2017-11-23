@@ -89,19 +89,19 @@ class lut_transformation : public FunctionFrontendFlowStep
        * @param bb_index is the index of the basic block index
        * @param srcp_default is the srcp to be assigned
        */
-      tree_nodeRef CreateGimpleAssign(const tree_nodeRef type, const tree_nodeRef op, const unsigned int bb_index, const std::string & srcp_default);
+      tree_nodeRef CreateGimpleAssign(const tree_nodeRef type, const tree_nodeRef op, const unsigned int bb_index, const std::string& srcp_default);
       std::vector<tree_nodeRef> GetInputs(const tree_nodeRef node);
       std::string DecToBin(unsigned long long int number);
-      unsigned long long int BinToDec(const std::string number);
-      unsigned long long int GenerateIndexOfLutValue(const std::string binString,const std::vector<std::size_t> indexesSet);
-      std::string AddZeroes(const std::string bitString,const double setSize);
+      unsigned long long int BinToDec(const std::string& number);
+      unsigned long long int GenerateIndexOfLutValue(const std::string& binString,const std::vector<std::size_t>& indexesSet);
+      std::string AddZeroes(const std::string& bitString,const double setSize);
       std::vector<std::size_t> CreateLutIndexSet( std::vector<tree_nodeRef> nodeSet, std::vector<tree_nodeRef> values);
-      void MergeLut( std::list<tree_nodeRef> gimpleLutList,std::pair<const unsigned int, boost::shared_ptr<bloc>> bb);
+      void MergeLut(const std::list<tree_nodeRef> &gimpleLutList, const std::pair<const unsigned int, blocRef > &bb);
       std::vector<tree_nodeRef> GetLutList( std::vector<tree_nodeRef> list_of_stmt);
-      tree_nodeRef CreateConcat(const tree_nodeRef op0, const tree_nodeRef op1, std::pair<const unsigned int, boost::shared_ptr<bloc>> bb, tree_nodeRef stm_to_append);
-      tree_nodeRef CreateMultiConcat( std::vector<tree_nodeRef> set_of_nodes,std::pair<const unsigned int, boost::shared_ptr<bloc>> bb,tree_nodeRef stm_to_append);
+      tree_nodeRef CreateConcat(const tree_nodeRef op0, const tree_nodeRef op1, std::pair<const unsigned int, blocRef> bb, tree_nodeRef stm_to_append);
+      tree_nodeRef CreateMultiConcat(std::vector<tree_nodeRef> set_of_nodes, const std::pair<const unsigned int, blocRef > &bb, tree_nodeRef stm_to_append);
       std::vector<tree_nodeRef> CreateSetFromVector( std::vector<tree_nodeRef> firstSet, std::vector<tree_nodeRef> secondSet);
-      std::string CreateFinalString(std::string binaryString, std::vector<tree_nodeRef> unmergedSet,std::vector<tree_nodeRef> mergedSet, std::string mergingValue );
+      std::string CreateFinalString(const std::string &binaryString, const std::vector<tree_nodeRef> &unmergedSet, std::vector<tree_nodeRef> &mergedSet, const std::string &mergingValue );
       std::vector<std::size_t> FindIndex( std::vector<tree_nodeRef> mergedSet, tree_nodeRef node);
       /**
        * Return the set of analyses in relationship with this design step

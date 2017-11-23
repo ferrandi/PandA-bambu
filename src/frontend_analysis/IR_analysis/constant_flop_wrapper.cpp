@@ -144,9 +144,9 @@ DesignFlowStep_Status constant_flop_wrapper::InternalExec()
    function_decl * this_fd = GetPointer<function_decl>(curr_tn);
    statement_list * sl = GetPointer<statement_list>(GET_NODE(this_fd->body));
    CustomSet<std::pair<std::string, tree_nodeConstRef> > functions_to_be_created;
-   for(const auto block : sl->list_of_bloc)
+   for(const auto& block : sl->list_of_bloc)
    {
-      for(const auto stmt : block.second->CGetStmtList())
+      for(const auto& stmt : block.second->CGetStmtList())
       {
 #ifndef NDEBUG
          if(not AppM->ApplyNewTransformation())
@@ -159,7 +159,6 @@ DesignFlowStep_Status constant_flop_wrapper::InternalExec()
          {
             continue;
          }
-         std::string function_header;
          const call_expr * ce = GetPointer<call_expr>(GET_NODE(ga->op1));
          if(not ce)
          {
@@ -198,9 +197,9 @@ DesignFlowStep_Status constant_flop_wrapper::InternalExec()
       }
    }
    SoftFloatWriter(functions_to_be_created);
-   for(const auto block : sl->list_of_bloc)
+   for(const auto& block : sl->list_of_bloc)
    {
-      for(const auto stmt : block.second->CGetStmtList())
+      for(const auto& stmt : block.second->CGetStmtList())
       {
 #ifndef NDEBUG
          if(not AppM->ApplyNewTransformation())
@@ -213,7 +212,6 @@ DesignFlowStep_Status constant_flop_wrapper::InternalExec()
          {
             continue;
          }
-         std::string function_header;
          const call_expr * ce = GetPointer<call_expr>(GET_NODE(ga->op1));
          if(not ce)
          {
@@ -253,6 +251,7 @@ DesignFlowStep_Status constant_flop_wrapper::InternalExec()
             std::vector<tree_nodeRef> argvs;
             argvs.push_back(TreeM->GetTreeReindex(arg0->index));
             TreeM->ReplaceTreeNode(stmt, ga->op1, tree_man->CreateCallExpr(TreeM->GetTreeReindex(called_function_id), argvs, ce->include_name + ":" + STR(ce->line_number) + ":" + STR(ce->column_number)));
+            changed = true;
             bool body = true;
             if(TreeM->get_implementation_node(called_function_id))
                called_function_id = TreeM->get_implementation_node(called_function_id);
@@ -315,7 +314,7 @@ void constant_flop_wrapper::SoftFloatWriter(CustomSet<std::pair<std::string, tre
 
    new_file.open(full_path, boost::filesystem::ofstream::app);
    new_file << "#include \"" << PANDA_INCLUDE_INSTALLDIR  << "/softfloat.c\"" << std::endl;
-   for(const auto function_to_be_generated : function_to_be_generateds)
+   for(const auto& function_to_be_generated : function_to_be_generateds)
    {
       const std::string function_header = GenerateFunctionName(function_to_be_generated.first, function_to_be_generated.second);
       if(operations.find(function_header) == operations.end())
@@ -352,7 +351,7 @@ void constant_flop_wrapper::SoftFloatWriter(CustomSet<std::pair<std::string, tre
    }
 }
 
-std::string constant_flop_wrapper::GenerateFunctionName(const std::string function_name, const tree_nodeConstRef constant)
+std::string constant_flop_wrapper::GenerateFunctionName(const std::string& function_name, const tree_nodeConstRef constant)
 {
    const real_cst * rc = GetPointer<const real_cst>(constant);
 

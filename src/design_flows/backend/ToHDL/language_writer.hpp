@@ -156,7 +156,7 @@ class language_writer
        * Writes a raw string into the stream.
        * @param rawString is the string to be written.
        */
-      virtual void write(const std::string &rawString);
+      virtual void write(const std::string&rawString);
 
       /**
        * Writes the header part of the file. Write some lines of comments and possibly global libraries.
@@ -167,7 +167,7 @@ class language_writer
        * Prints a comment.
        * @param comment_string is the string to be printed as a comment.
       */
-      virtual void write_comment(const std::string &comment_string) = 0;
+      virtual void write_comment(const std::string&comment_string) = 0;
 
       /**
        * Return a language based type string given a structural_type_descriptor.
@@ -221,7 +221,7 @@ class language_writer
        * @param cir is the module to be instanced.
        * @param component_name is the name of the module to be instanced. It has to be specified since VHDL and verilog can print in different ways
       */
-      virtual void write_module_instance_begin(const structural_objectRef &cir, const std::string & module_name,  bool write_parametrization) = 0;
+      virtual void write_module_instance_begin(const structural_objectRef &cir, const std::string& module_name,  bool write_parametrization) = 0;
       /**
        * Write the ending part of the instance of a module.
        * @param cir is the module to be instanced.
@@ -271,7 +271,7 @@ class language_writer
        * write the declaration of all the states of the finite state machine.
        * @param list_of_states is the list of all the states.
        */
-      virtual void write_state_declaration(const structural_objectRef &cir, const std::list<std::string> &list_of_states, const std::string &reset_port, const std::string &reset_state, bool one_hot) = 0;
+      virtual void write_state_declaration(const structural_objectRef &cir, const std::list<std::string> &list_of_states, const std::string&reset_port, const std::string&reset_state, bool one_hot) = 0;
       /**
        * write the present_state update process
        * @param reset_state is the reset state.
@@ -279,7 +279,7 @@ class language_writer
        * @param clock_port is the clock port.
        * @param synch_reset when true the FSM will have an synchronous reset
        */
-      virtual void write_present_state_update(const std::string &reset_state, const std::string &reset_port, const std::string &clock_port, const std::string & reset_type) = 0;
+      virtual void write_present_state_update(const std::string&reset_state, const std::string&reset_port, const std::string&clock_port, const std::string& reset_type) = 0;
       /**
        * Write the transition and output functions.
        * @param cir is the component.
@@ -289,7 +289,7 @@ class language_writer
        * @param end if the end iterator of the state table.
        * @param n_states is the number of states.
       */
-      virtual void write_transition_output_functions(bool single_proc, unsigned int output_index, const structural_objectRef &cir, const std::string &reset_state, const std::string &reset_port, const std::string &start_port, const std::string &clock_port, std::vector<std::string>::const_iterator &first, std::vector<std::string>::const_iterator &end) = 0;
+      virtual void write_transition_output_functions(bool single_proc, unsigned int output_index, const structural_objectRef &cir, const std::string&reset_state, const std::string&reset_port, const std::string&start_port, const std::string&clock_port, std::vector<std::string>::const_iterator &first, std::vector<std::string>::const_iterator &end) = 0;
 
       /**
        * Write in the proper language the behavioral description of the module described in "Not Parsed" form.
@@ -342,7 +342,7 @@ class language_writer
        * Write content to a file
        * @param std::stringg filename;
        */
-      void WriteFile(const std::string filename) const;
+      void WriteFile(const std::string&filename) const;
 
       /**
        * Return the names of auxiliary signals which will be used by backend

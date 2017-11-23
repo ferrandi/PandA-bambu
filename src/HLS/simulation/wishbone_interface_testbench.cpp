@@ -594,11 +594,10 @@ void WishboneInterfaceTestbench::write_signals(
 }
 
 void WishboneInterfaceTestbench::write_slave_initializations(
-      bool with_memory)
+      bool )
    const
 {
-    if(with_memory) return;
-    else return;
+   return;
 }
 
 
@@ -613,7 +612,7 @@ void WishboneInterfaceTestbench::write_file_reading_operations() const
    const std::map<unsigned int, memory_symbolRef> & function_parameters =
       mem->get_function_parameters(topFunctionId);
    std::vector<std::string> parameterNames;
-   for (auto const function_parameter : function_parameters)
+   for (auto const& function_parameter : function_parameters)
    {
       unsigned int var = function_parameter.first;
       std::string variableName =

@@ -72,7 +72,7 @@ static bool cannot_have_struct_parameters(
       TM
 #endif
       ,
-      const std::string &
+      const std::string&
 #if HAVE_ASSERTS
       fu_name
 #endif

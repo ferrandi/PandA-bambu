@@ -140,21 +140,21 @@ class RTLCharacterization : public FunctionalUnitStep
        */
       void fix_muxes();
 
-      void add_input_register(structural_objectRef port_in, std::string register_library, std::string port_prefix, structural_objectRef reset_port, structural_objectRef circuit, structural_objectRef clock_port, structural_objectRef e_port, structural_managerRef SM);
+      void add_input_register(structural_objectRef port_in, const std::string& register_library, const std::string& port_prefix, structural_objectRef reset_port, structural_objectRef circuit, structural_objectRef clock_port, structural_objectRef e_port, structural_managerRef SM);
 
-      void add_output_register(structural_managerRef SM, structural_objectRef e_port, structural_objectRef circuit, structural_objectRef reset_port, structural_objectRef port_out, std::string port_prefix, structural_objectRef clock_port, std::string register_library);
+      void add_output_register(structural_managerRef SM, structural_objectRef e_port, structural_objectRef circuit, structural_objectRef reset_port, structural_objectRef port_out, const std::string &port_prefix, structural_objectRef clock_port, const std::string &register_library);
 
       /**
        * Extract the component name from list of cells
        * @param input is the input string
        */
-      const std::string ComputeComponent(const std::string input) const;
+      const std::string ComputeComponent(const std::string&input) const;
 
       /**
        * Extract the cell lists
        * @param input is the input string
        */
-      const CustomSet<std::string> ComputeCells(const std::string input) const;
+      const CustomSet<std::string> ComputeCells(const std::string&input) const;
 
       /**
        * Analyze the single cell
@@ -166,7 +166,7 @@ class RTLCharacterization : public FunctionalUnitStep
        * @param constPort is the index of the constant port
        * @param is_commutative is true if all the operations are commutative
        */
-      virtual void AnalyzeCell(functional_unit * fu, const unsigned int prec, const std::vector<std::string > portsize_parameters, const size_t portsize_index, const std::vector<std::string> pipe_parameters, const size_t stage_index, const unsigned int constPort, const bool is_commutative);
+      virtual void AnalyzeCell(functional_unit * fu, const unsigned int prec, const std::vector<std::string> &portsize_parameters, const size_t portsize_index, const std::vector<std::string> &pipe_parameters, const size_t stage_index, const unsigned int constPort, const bool is_commutative);
 
    public:
       /**
@@ -176,7 +176,7 @@ class RTLCharacterization : public FunctionalUnitStep
        * @param design_flow_manager is the design flow manager
        * @param parameters is the set of input parameters
        */
-      RTLCharacterization(const target_managerRef target, const std::string component, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
+      RTLCharacterization(const target_managerRef target, const std::string&component, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
 
       /**
        * Destructor

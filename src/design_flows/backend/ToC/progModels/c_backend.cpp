@@ -117,7 +117,7 @@
 #include "indented_output_stream.hpp"
 #include "refcount.hpp"
 
-CBackend::CBackend(const Type _c_backend_type, const CBackendInformationConstRef c_backend_information, const DesignFlowManagerConstRef _design_flow_manager, const application_managerConstRef _AppM, const std::string _file_name, const ParameterConstRef _parameters) :
+CBackend::CBackend(const Type _c_backend_type, const CBackendInformationConstRef c_backend_information, const DesignFlowManagerConstRef _design_flow_manager, const application_managerConstRef _AppM, const std::string&_file_name, const ParameterConstRef _parameters) :
    DesignFlowStep(_design_flow_manager, _parameters),
    indented_output_stream(new IndentedOutputStream()),
    writer(CWriter::CreateCWriter(_c_backend_type, c_backend_information, _AppM, indented_output_stream, _parameters, _parameters->getOption<int>(OPT_debug_level) >= DEBUG_LEVEL_VERBOSE)),
@@ -219,7 +219,7 @@ void CBackend::WriteGlobalDeclarations()
       if (parameters->isOption(OPT_pretty_print))
       {
          std::string f_name = BH->get_function_name();
-         if(f_name.find("__builtin_") == 0)
+         if(boost::algorithm::starts_with(f_name,"__builtin_"))
          {
             indented_output_stream->Append("#define " + f_name + " _bambu_"+f_name + "\n");
          }
@@ -365,14 +365,13 @@ void CBackend::compute_variables(const OpGraphConstRef inGraph, const std::unord
    }
 
    //I have to take out the variables global to the whole program and the function parameters
-   std::set<unsigned int> varsTemp;
    std::unordered_set<unsigned int>::const_iterator it, it_end = gblVariables.end();
-   for(it = gblVariables.begin(); it != it_end; it++)
+   for(it = gblVariables.begin(); it != it_end; ++it)
    {
       vars.erase(*it);
    }
    std::list<unsigned int>::const_iterator it2, it2_end = funParams.end();
-   for(it2 = funParams.begin(); it2 != it2_end; it2++)
+   for(it2 = funParams.begin(); it2 != it2_end; ++it2)
    {
       vars.erase(*it2);
    }

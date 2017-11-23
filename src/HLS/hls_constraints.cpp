@@ -64,7 +64,7 @@
 const double HLS_constraints::clock_period_resource_fraction_DEFAULT = 1.0;
 
 /// function used to extract the functional unit name and its library from a string.
-void DECODE_FU_LIB(std::string & fu_name, std::string & fu_library, const std::string &combined)
+void DECODE_FU_LIB(std::string & fu_name, std::string & fu_library, const std::string&combined)
 {
   std::vector<std::string> splitted;
   boost::algorithm::split(splitted, combined, boost::algorithm::is_any_of(":"));
@@ -87,9 +87,9 @@ HLS_constraints::HLS_constraints(const ParameterConstRef _Param, const std::stri
    {
       PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "parsing the configuration file for constraints...");
       std::string fn = parameters->getOption<std::string>(OPT_xml_input_configuration);
-      xml_element* constraint_node = nullptr;
       try
       {
+         xml_element* constraint_node = nullptr;
          XMLDomParser parser(fn);
          parser.Exec();
          if (parser)
@@ -119,7 +119,7 @@ HLS_constraints::HLS_constraints(const ParameterConstRef _Param, const std::stri
       {
          THROW_ERROR("Error during constraints file parsing: " + std::string(msg));
       }
-      catch (const std::string & msg)
+      catch (const std::string& msg)
       {
          THROW_ERROR("Error during constraints file parsing: " + msg);
       }
@@ -171,12 +171,12 @@ std::string HLS_constraints::get_function_name() const
    return fun_name;
 }
 
-void HLS_constraints::set_number_fu(const std::string &name, const std::string & library, unsigned int n_resources)
+void HLS_constraints::set_number_fu(const std::string&name, const std::string& library, unsigned int n_resources)
 {
    tech_constraints[ENCODE_FU_LIB(name,library)] = n_resources;
 }
 
-unsigned int HLS_constraints::get_number_fu(const std::string &name, const std::string & library) const
+unsigned int HLS_constraints::get_number_fu(const std::string&name, const std::string& library) const
 {
    if (tech_constraints.find(ENCODE_FU_LIB(name,library)) == tech_constraints.end())
       return INFINITE_UINT;
@@ -184,7 +184,7 @@ unsigned int HLS_constraints::get_number_fu(const std::string &name, const std::
       return tech_constraints.find(ENCODE_FU_LIB(name,library))->second;
 }
 
-unsigned int HLS_constraints::get_number_fu(const std::string &combined) const
+unsigned int HLS_constraints::get_number_fu(const std::string&combined) const
 {
    std::string fu_name;
    std::string lib_name;
@@ -192,12 +192,12 @@ unsigned int HLS_constraints::get_number_fu(const std::string &combined) const
    return get_number_fu(fu_name,lib_name);
 }
 
-void HLS_constraints::bind_vertex_to_fu(const std::string &vertex_name, const std::string & fu_name, const std::string & fu_library, const unsigned int fu_index)
+void HLS_constraints::bind_vertex_to_fu(const std::string&vertex_name, const std::string& fu_name, const std::string& fu_library, const unsigned int fu_index)
 {
    binding_constraints[vertex_name] = std::make_pair(fu_name, std::make_pair(fu_library, fu_index));
 }
 
-bool HLS_constraints::has_binding_to_fu(const std::string &vertex_name) const
+bool HLS_constraints::has_binding_to_fu(const std::string&vertex_name) const
 {
    return binding_constraints.find(vertex_name) != binding_constraints.end();
 }
@@ -432,7 +432,7 @@ void HLS_constraints::add_builtin_constraints()
       std::cerr << msg << std::endl;
       THROW_ERROR("Error during parsing of constraint file");
    }
-   catch (const std::string & msg)
+   catch (const std::string& msg)
    {
       std::cerr << msg << std::endl;
       THROW_ERROR("Error during parsing of constraint file");
@@ -474,7 +474,7 @@ void HLS_constraints::read_HLS_constraints_File(const std::string& fn)
    {
       std::cerr << msg << std::endl;
    }
-   catch (const std::string & msg)
+   catch (const std::string& msg)
    {
       std::cerr << msg << std::endl;
    }
@@ -501,7 +501,7 @@ void HLS_constraints::write_HLS_constraints_File(const std::string& f)
    {
       std::cerr << msg << std::endl;
    }
-   catch (const std::string & msg)
+   catch (const std::string& msg)
    {
       std::cerr << msg << std::endl;
    }

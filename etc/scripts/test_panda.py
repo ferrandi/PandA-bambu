@@ -1,13 +1,10 @@
 #!/usr/bin/python
 
 import argparse
-import array
 import datetime
 import distutils.spawn
-import fnmatch
 import logging
 import os
-import pickle
 import re
 import shlex
 import shutil
@@ -15,8 +12,16 @@ import signal
 import subprocess
 import sys
 import threading
-import xml.dom.minidom
+try:
+    from defusedxml import minidom
+except ImportError:
+    print>>sys.stderr, 'WARNING: pyhon-defusedxml not available, falling back to unsafe standard libraries...'
+    from xml.dom import minidom
+
 from collections import deque
+
+line_index = 0
+failure = False
 
 def positive_integer(value):
     pos_int = int(value)
@@ -39,7 +44,7 @@ def GetChildren(parent_pid):
     ret = set()
     ps_command = subprocess.Popen("ps -o pid --ppid %d --noheaders" % parent_pid, shell=True, stdout=subprocess.PIPE)
     ps_output = ps_command.stdout.read()
-    retcode = ps_command.wait()
+    ps_command.wait()
     for pid_str in ps_output.split("\n")[:-1]:
         ret.add(int(pid_str))
     return ret
@@ -132,7 +137,7 @@ def execute_tests(named_list,thread_index):
             tool_results_file_name = os.path.join(cwd, args.tool + "_results")
             tool_results_file = open(tool_results_file_name, "w")
             tool_results_string = ""
-            xml_document = xml.dom.minidom.parse(os.path.join(cwd, args.tool + "_results_0.xml"))
+            xml_document = minidom.parse(os.path.join(cwd, args.tool + "_results_0.xml"))
             if len(xml_document.getElementsByTagName("CYCLES")) > 0:
                 cycles_tag = xml_document.getElementsByTagName("CYCLES")[0]
                 tool_results_string = tool_results_string + cycles_tag.attributes["value"].value + " CYCLES"
@@ -348,10 +353,7 @@ def CreatePerfPublisherBody(directory,pp_file):
     if os.path.exists(os.path.join(directory, args.tool + "_return_value")) or os.listdir(directory) == []:
         return
     subdirs = [s for s in sorted(os.listdir(directory)) if os.path.isdir(os.path.join(directory,s)) and s != "panda-temp" and s != "HLS_output"]
-    print_testsuite = False
     for subdir in subdirs:
-        if os.path.exists(os.path.join(directory, subdir, args.tool + "_return_value")):
-            print_testsuite = True
         CreatePerfPublisherBody(os.path.join(directory, subdir),pp_file)
 
     for subdir in subdirs:
@@ -381,7 +383,7 @@ def CreatePerfPublisherBody(directory,pp_file):
                 frequency_tag = ""
                 HLS_execution_time_tag = ""
                 if os.path.exists(os.path.join(directory, subdir, args.tool + "_results_0.xml")):
-                    xml_document = xml.dom.minidom.parse(os.path.join(directory, subdir, args.tool + "_results_0.xml"))
+                    xml_document = minidom.parse(os.path.join(directory, subdir, args.tool + "_results_0.xml"))
                     if len(xml_document.getElementsByTagName("CYCLES")) > 0:
                         cycles_tag = str(xml_document.getElementsByTagName("CYCLES")[0].attributes["value"].value)
                     if len(xml_document.getElementsByTagName("AREAxTIME")) > 0:
@@ -868,10 +870,8 @@ lock = threading.RLock()
 lock_creation_destruction = threading.RLock()
 passed_benchmark = 0
 total_benchmark = 0
-line_index = 0
 threads = []
 children = [None] * n_jobs
-failure = False
 for thread_index in range(n_jobs):
     threads.insert(thread_index, threading.Thread(target=execute_tests, args=(named_list_name, thread_index)))
     threads[thread_index].daemon=True

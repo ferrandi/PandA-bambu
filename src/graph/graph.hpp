@@ -99,7 +99,7 @@ struct RawGraph : public boost_raw_graph
        * Constructor
        * @param g_info is the property associated with the graph
        */
-      RawGraph(GraphInfoRef g_info)
+      explicit RawGraph(GraphInfoRef g_info)
       {
          (*this)[boost::graph_bundle] = g_info;
       }
@@ -232,7 +232,7 @@ struct EdgeProperty
        * Constructor with selector
        * @param _selector is the selector to be associated with the edge
        */
-      EdgeProperty(int _selector) :
+      explicit EdgeProperty(int _selector) :
          selector(_selector)
       {}
 
@@ -644,7 +644,7 @@ struct SelectVertex
        * Constructor
        * @param _subset is the set of vertices to be considered
        */
-      SelectVertex(const std::unordered_set<typename boost::graph_traits<Graph>::vertex_descriptor > & _subset) :
+      explicit SelectVertex(const std::unordered_set<typename boost::graph_traits<Graph>::vertex_descriptor > & _subset) :
          all(false),
          subset(_subset)
       {}
@@ -824,7 +824,7 @@ struct graph : public boost::filtered_graph<boost_graphs_collection, SelectEdge<
        * @param graph_writer is the functor used to print the graph properties
        */
       template <typename VertexWriterTemplate, typename EdgeWriterTemplate, typename GraphWriterTemplate>
-      void InternalWriteDot(const std::string & file_name, const VertexWriterConstRef vertex_writer, const EdgeWriterConstRef edge_writer, const GraphWriterConstRef graph_writer) const
+      void InternalWriteDot(const std::string& file_name, const VertexWriterConstRef vertex_writer, const EdgeWriterConstRef edge_writer, const GraphWriterConstRef graph_writer) const
       {
          std::ofstream file_stream(file_name.c_str());
          boost::write_graphviz(file_stream, *this, *(GetPointer<VertexWriterTemplate>(vertex_writer)), *(GetPointer<EdgeWriterTemplate>(edge_writer)), *(GetPointer<GraphWriterTemplate>(graph_writer)));
@@ -1023,7 +1023,7 @@ struct graph : public boost::filtered_graph<boost_graphs_collection, SelectEdge<
        * @param edge_writer is the functor used to print the edge labels
        */
       template <typename VertexWriterTemplate, typename EdgeWriterTemplate>
-      void InternalWriteDot(const std::string & file_name, const VertexWriterConstRef vertex_writer, const EdgeWriterConstRef edge_writer) const
+      void InternalWriteDot(const std::string& file_name, const VertexWriterConstRef vertex_writer, const EdgeWriterConstRef edge_writer) const
       {
          std::ofstream file_stream(file_name.c_str());
          boost::write_graphviz(file_stream, *this, *(GetPointer<VertexWriterTemplate>(vertex_writer)), *(GetPointer<EdgeWriterTemplate>(edge_writer)));
@@ -1115,7 +1115,7 @@ struct ugraph : public  boost::filtered_graph<undirected_boost_graphs_collection
        * @param edge_writer is the functor used to print the edge labels
        */
       template <typename UVertexWriterTemplate, typename UEdgeWriterTemplate>
-      void InternalWriteDot(const std::string & file_name, const UVertexWriterConstRef uvertex_writer, const UEdgeWriterConstRef uedge_writer) const
+      void InternalWriteDot(const std::string& file_name, const UVertexWriterConstRef uvertex_writer, const UEdgeWriterConstRef uedge_writer) const
       {
          std::ofstream file_stream(file_name.c_str());
          boost::write_graphviz(file_stream, *this, *(GetPointer<UVertexWriterTemplate>(uvertex_writer)), *(GetPointer<UEdgeWriterTemplate>(uedge_writer)));
@@ -1205,7 +1205,7 @@ struct ltedge
       /** 
        * The constructors
        */
-      ltedge(const Graph * _g):
+      explicit ltedge(const Graph * _g):
          g(_g)
          {}
 

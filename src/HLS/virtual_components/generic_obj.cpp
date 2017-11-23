@@ -62,7 +62,7 @@ bool GenericObjSorter::operator()(const generic_objRef x, const generic_objRef y
 GenericObjUnsignedIntSorter::GenericObjUnsignedIntSorter()
 {}
 
-bool GenericObjUnsignedIntSorter::operator()(const std::pair<generic_objRef,int> x, const std::pair<generic_objRef,int> y) const
+bool GenericObjUnsignedIntSorter::operator()(const std::pair<generic_objRef,int> &x, const std::pair<generic_objRef,int> &y) const
 {
    if(x.first == y.first)
       return x.second < y.second; 

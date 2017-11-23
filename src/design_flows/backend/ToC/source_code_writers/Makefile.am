@@ -108,8 +108,16 @@ if BUILD_LEON3
 endif
 
 if BUILD_LIB_HOST_PROFILING
-   noinst_HEADERS += basic_blocks_profiling_c_writer.hpp data_memory_profiling_instruction_writer.hpp data_memory_profiling_c_writer.hpp edge_c_writer.hpp efficient_path_profiling_c_writer.hpp hierarchical_path_profiling_c_writer.hpp tree_path_profiling_c_writer.hpp loops_profiling_c_writer.hpp
-   lib_source_code_writers_la_SOURCES += basic_blocks_profiling_c_writer.cpp data_memory_profiling_c_writer.cpp data_memory_profiling_instruction_writer.cpp edge_c_writer.cpp efficient_path_profiling_c_writer.cpp hierarchical_path_profiling_c_writer.cpp tree_path_profiling_c_writer.cpp loops_profiling_c_writer.cpp
+   noinst_HEADERS += \
+      basic_blocks_profiling_c_writer.hpp \
+      edge_c_writer.hpp
+   lib_source_code_writers_la_SOURCES += \
+      basic_blocks_profiling_c_writer.cpp \
+      edge_c_writer.cpp
+if BUILD_LIB_EXPERIMENTAL
+   noinst_HEADERS += data_memory_profiling_instruction_writer.hpp data_memory_profiling_c_writer.hpp efficient_path_profiling_c_writer.hpp hierarchical_path_profiling_c_writer.hpp tree_path_profiling_c_writer.hpp loops_profiling_c_writer.hpp
+   lib_source_code_writers_la_SOURCES += data_memory_profiling_c_writer.cpp data_memory_profiling_instruction_writer.cpp efficient_path_profiling_c_writer.cpp hierarchical_path_profiling_c_writer.cpp tree_path_profiling_c_writer.cpp loops_profiling_c_writer.cpp
+endif
 endif
 
 if BUILD_LIB_MAPPING

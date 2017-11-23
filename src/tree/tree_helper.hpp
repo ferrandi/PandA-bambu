@@ -850,7 +850,7 @@ class tree_helper
        * @param id is the initial ID
        */
       static
-      std::string normalized_ID(const std::string &id);
+      std::string normalized_ID(const std::string&id);
 
       /**
        * Return the name of the function in a string
@@ -871,7 +871,7 @@ class tree_helper
        * @return the printed string
        */
       static
-      std::string print_type(const tree_managerConstRef TM, unsigned int type, bool global = false, bool print_qualifiers = false, bool print_storage = false, unsigned int var = 0, const var_pp_functorConstRef vppf = var_pp_functorConstRef(), const std::string prefix = "", const std::string tail = "");
+      std::string print_type(const tree_managerConstRef TM, unsigned int type, bool global = false, bool print_qualifiers = false, bool print_storage = false, unsigned int var = 0, const var_pp_functorConstRef vppf = var_pp_functorConstRef(), const std::string&prefix = "", const std::string&tail = "");
 
       /**
        * return the type of the ith formal parameter in case index_obj is a call_expr

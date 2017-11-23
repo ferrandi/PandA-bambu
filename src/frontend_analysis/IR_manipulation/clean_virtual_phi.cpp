@@ -114,10 +114,12 @@ DesignFlowStep_Status CleanVirtualPhi::InternalExec()
          {
             auto phi_to_be_removed = *phi;
             ///Moving iterator to avoid its invalidation
-            phi++;
+             auto tmp_it = phi;
+            ++tmp_it;
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Removing " + phi_to_be_removed->ToString());
             block.second->RemovePhi(phi_to_be_removed);
-            phi--;
+            --tmp_it;
+            phi = tmp_it;
          }
       }
       for(auto & stmt : block.second->CGetStmtList())

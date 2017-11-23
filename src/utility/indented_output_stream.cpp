@@ -72,7 +72,7 @@ IndentedOutputStream::~IndentedOutputStream()
 #endif
 }
 
-void IndentedOutputStream::Append(const std::string &str)
+void IndentedOutputStream::Append(const std::string&str)
 {
    std::string::const_iterator it_end = str.end();
    ///Specified whether the first character of the string
@@ -94,7 +94,7 @@ void IndentedOutputStream::Append(const std::string &str)
    if (is_line_start)
       AppendIndent();
 
-   for (std::string::const_iterator it = str.begin(); it != it_end; it++)
+   for (std::string::const_iterator it = str.begin(); it != it_end; ++it)
    {
       is_line_start = false;
       if (*it == '\n')
@@ -166,7 +166,7 @@ const std::string IndentedOutputStream::WriteString()
    return ret;
 }
 
-void IndentedOutputStream::WriteFile(const std::string file_name)
+void IndentedOutputStream::WriteFile(const std::string&file_name)
 {
    std::ofstream file_out(file_name.c_str(), std::ios::out);
    file_out << output_stream.str() << std::endl;

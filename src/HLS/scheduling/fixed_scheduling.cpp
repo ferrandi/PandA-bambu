@@ -93,7 +93,7 @@ DesignFlowStep_Status fixed_scheduling::InternalExec()
       std::cerr << msg << std::endl;
       THROW_ERROR("Error in fixed_scheduling");
    }
-   catch (const std::string & msg)
+   catch (const std::string& msg)
    {
       std::cerr << msg << std::endl;
       THROW_ERROR("Error in fixed_scheduling");

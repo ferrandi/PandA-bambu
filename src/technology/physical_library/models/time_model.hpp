@@ -117,7 +117,7 @@ class time_model
       /**
        * Constructor.
        */
-      time_model(const ParameterConstRef Param);
+      explicit time_model(const ParameterConstRef Param);
 
       /**
        * Destructor.

@@ -417,7 +417,7 @@ void PragmaAnalysis::create_map_pragma(const unsigned int node_id) const
    const tree_nodeRef & tn = GET_NODE(gc->fn);
    const tree_nodeRef & fn = GET_NODE(GetPointer<addr_expr>(tn)->op);
    const tree_nodeRef & name = GET_NODE(GetPointer<function_decl>(fn)->name);
-   const std::string & function_name = GetPointer<identifier_node>(name)->strg;
+   const std::string& function_name = GetPointer<identifier_node>(name)->strg;
 #endif
 
    std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> tree_node_schema;
@@ -479,7 +479,7 @@ DesignFlowStep_Status PragmaAnalysis::Exec()
       std::map<unsigned int, blocRef> &blocks = sl->list_of_bloc;
       std::map<unsigned int, blocRef>::iterator it, it_end;
       it_end = blocks.end();
-      for(it = blocks.begin(); it != it_end; it++)
+      for(it = blocks.begin(); it != it_end; ++it)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining BB" + boost::lexical_cast<std::string>(it->first));
          const auto list_of_stmt = it->second->CGetStmtList();
@@ -512,7 +512,7 @@ DesignFlowStep_Status PragmaAnalysis::Exec()
                      tree_node_schema[TOK(TOK_SRCP)] = include_name + ":" + boost::lexical_cast<std::string>(line_number)+":"+boost::lexical_cast<std::string>(column_number);
 
                      //unsigned int scope, directive;
-                     if (function_name.find(STR_CST_pragma_function_generic) != 0)
+                     if (!boost::algorithm::starts_with(function_name,STR_CST_pragma_function_generic))
                      {
                         std::string scope = get_call_parameter(GET_INDEX_NODE(*it2), 0);
                         if (scope == STR_CST_pragma_keyword_omp)

@@ -123,16 +123,16 @@ DesignFlowStep_Status VarDeclFix::InternalExec()
    function_decl * fd = GetPointer<function_decl>(curr_tn);
    statement_list * sl = GetPointer<statement_list>(GET_NODE(fd->body));
 
-   for(const auto arg : fd->list_of_args)
+   for(const auto& arg : fd->list_of_args)
       recursive_examinate(arg);
 
    std::map<unsigned int, blocRef> &blocks = sl->list_of_bloc;
    std::map<unsigned int, blocRef>::iterator it, it_end;
 
    it_end = blocks.end();
-   for(it = blocks.begin(); it != it_end; it++)
+   for(it = blocks.begin(); it != it_end; ++it)
    {
-      for(const auto stmt : it->second->CGetStmtList())
+      for(const auto& stmt : it->second->CGetStmtList())
       {
          recursive_examinate(stmt);
       }
@@ -154,7 +154,7 @@ void VarDeclFix::recursive_examinate(const tree_nodeRef & tn)
          const call_expr * ce = GetPointer<call_expr>(curr_tn);
          const std::vector<tree_nodeRef> & args = ce->args;
          std::vector<tree_nodeRef>::const_iterator arg, arg_end = args.end();
-         for(arg = args.begin(); arg != arg_end; arg++)
+         for(arg = args.begin(); arg != arg_end; ++arg)
          {
             recursive_examinate(*arg);
          }
@@ -165,7 +165,7 @@ void VarDeclFix::recursive_examinate(const tree_nodeRef & tn)
          const gimple_call * ce = GetPointer<gimple_call>(curr_tn);
          const std::vector<tree_nodeRef> & args = ce->args;
          std::vector<tree_nodeRef>::const_iterator arg, arg_end = args.end();
-         for(arg = args.begin(); arg != arg_end; arg++)
+         for(arg = args.begin(); arg != arg_end; ++arg)
          {
             recursive_examinate(*arg);
          }
@@ -192,7 +192,7 @@ void VarDeclFix::recursive_examinate(const tree_nodeRef & tn)
             already_examinated_decls.insert(GET_INDEX_NODE(tn));
             decl_node * dn = GetPointer<decl_node>(GET_NODE(tn));
             recursive_examinate(dn->type);
-            if(dn && dn->name)
+            if(dn->name)
             {
                //check if the var_decl
                if(curr_tn->get_kind() == var_decl_K)
@@ -296,7 +296,7 @@ void VarDeclFix::recursive_examinate(const tree_nodeRef & tn)
          const constructor * co = GetPointer<constructor>(curr_tn);
          const std::vector<std::pair< tree_nodeRef, tree_nodeRef> > & list_of_idx_valu = co->list_of_idx_valu;
          std::vector<std::pair< tree_nodeRef, tree_nodeRef> >::const_iterator it, it_end = list_of_idx_valu.end();
-         for(it = list_of_idx_valu.begin(); it != it_end; it++)
+         for(it = list_of_idx_valu.begin(); it != it_end; ++it)
          {
             recursive_examinate(it->second);
          }
@@ -317,7 +317,7 @@ void VarDeclFix::recursive_examinate(const tree_nodeRef & tn)
       case gimple_multi_way_if_K:
       {
          gimple_multi_way_if* gmwi=GetPointer<gimple_multi_way_if>(curr_tn);
-         for(const auto cond : gmwi->list_of_cond)
+         for(const auto& cond : gmwi->list_of_cond)
             if(cond.first)
                recursive_examinate(cond.first);
          break;
@@ -482,7 +482,7 @@ void VarDeclFix::recursive_examinate(const tree_nodeRef & tn)
    return;
 }
 
-const std::string VarDeclFix::Normalize(const std::string identifier) const
+const std::string VarDeclFix::Normalize(const std::string&identifier) const
 {
    return identifier;
 }

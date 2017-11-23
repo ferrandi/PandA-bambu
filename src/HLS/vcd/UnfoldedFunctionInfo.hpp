@@ -51,9 +51,9 @@ class UnfoldedFunctionInfo : public NodeInfo
 
       FunctionBehaviorConstRef behavior;
 
-      UnfoldedFunctionInfo(unsigned int _f_id = 0) : f_id(_f_id) {};
+      explicit UnfoldedFunctionInfo(unsigned int _f_id = 0) : f_id(_f_id) {}
 
-      ~UnfoldedFunctionInfo() {};
+      ~UnfoldedFunctionInfo() {}
 };
 
 typedef refcount<UnfoldedFunctionInfo> UnfoldedFunctionInfoRef;

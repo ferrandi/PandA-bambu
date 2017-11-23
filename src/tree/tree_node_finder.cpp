@@ -64,7 +64,7 @@ static bool check_value_opt(const std::map<TreeVocabularyTokenTypes_TokenEnum, s
    check_value_opt(tree_node_schema.find(TOK(token)), tree_node_schema.end(), value)
 
 static
-bool check_tree_node_opt(const std::map<TreeVocabularyTokenTypes_TokenEnum, std::string>::const_iterator &it_element, const std::map<TreeVocabularyTokenTypes_TokenEnum, std::string>::const_iterator &it_end, const tree_nodeRef& tn, const std::string &)
+bool check_tree_node_opt(const std::map<TreeVocabularyTokenTypes_TokenEnum, std::string>::const_iterator &it_element, const std::map<TreeVocabularyTokenTypes_TokenEnum, std::string>::const_iterator &it_end, const tree_nodeRef& tn, const std::string&)
 {
    return it_element == it_end || (tn && GET_INDEX_NODE(tn) == boost::lexical_cast<unsigned int>(it_element->second));
 }

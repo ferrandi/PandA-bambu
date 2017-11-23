@@ -75,7 +75,7 @@ tree_managerRef ParseTreeFile(const ParameterConstRef Param, const std::string& 
    {
       std::cerr << msg << std::endl;
    }
-   catch (const std::string & msg)
+   catch (const std::string& msg)
    {
       std::cerr << msg << std::endl;
    }

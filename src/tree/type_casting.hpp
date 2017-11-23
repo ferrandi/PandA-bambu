@@ -178,7 +178,7 @@ REF_FORWARD_DECL(type_casting);
 struct type_casting : public tree_node_visitor
 {
       ///default constructor
-      type_casting(std::unordered_set<unsigned int> & _types) : types(_types){ }
+      explicit type_casting(std::unordered_set<unsigned int> & _types) : types(_types){ }
 
       void operator()(const mem_ref* obj, unsigned int & mask);
 

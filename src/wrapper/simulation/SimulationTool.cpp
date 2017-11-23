@@ -249,11 +249,11 @@ unsigned long long int SimulationTool::DetermineCycles(unsigned long long int &a
          THROW_ERROR("Result file not correctly created");
       }
       std::ifstream profiling_res_file(profiling_result_file.c_str());
-      double time_stamp = 0.0 ;
       if (profiling_res_file.is_open())
       {
          PRINT_OUT_MEX(OUTPUT_LEVEL_PEDANTIC, output_level, "File \"" + profiling_result_file + "\" opened");
          double clock_period = Param->isOption(OPT_clock_period) ? Param->getOption<double>(OPT_clock_period) : 10;
+         double time_stamp = 0.0 ;
 
          while(!profiling_res_file.eof())
          {

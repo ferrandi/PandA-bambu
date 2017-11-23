@@ -77,7 +77,7 @@ class LatticeBackendFlow : public BackendFlow
       /**
        * Constructor
        */
-      LatticeBackendFlow(const ParameterConstRef Param, const std::string & flow_name, const target_managerRef target);
+      LatticeBackendFlow(const ParameterConstRef Param, const std::string& flow_name, const target_managerRef target);
 
       /**
        * Destructor

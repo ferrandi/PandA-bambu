@@ -463,7 +463,7 @@ DesignFlowStep_Status BitValueIPA::Exec()
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                      "-->Analyzing BB" + STR(B->number));
                bool hard_break = false;
-               for(const auto stmt : B->CGetStmtList())
+               for(const auto& stmt : B->CGetStmtList())
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                         "-->Analyzing " + STR(stmt));
@@ -986,7 +986,7 @@ DesignFlowStep_Status BitValueIPA::Exec()
    for (const auto & b : best)
    {
       const unsigned int tn_id = b.first;
-      const std::string & new_bitvalue = bitstring_to_string(b.second);
+      const std::string& new_bitvalue = bitstring_to_string(b.second);
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
             "---updating node id: " + STR(tn_id) + " bitstring: " + new_bitvalue);
       tree_nodeRef tn = TM->get_tree_node_const(tn_id);

@@ -51,9 +51,9 @@
 REF_FORWARD_DECL(Discrepancy);
 
 extern void discrepancy_parseY
-(const std::string & fname, DiscrepancyRef Discrepancy);
+(const std::string& fname, DiscrepancyRef Discrepancy);
 
-void parse_discrepancy (const std::string & c_trace_filename, DiscrepancyRef Discrepancy)
+void parse_discrepancy (const std::string& c_trace_filename, DiscrepancyRef Discrepancy)
 {
    try
    {
@@ -64,7 +64,7 @@ void parse_discrepancy (const std::string & c_trace_filename, DiscrepancyRef Dis
    {
       std::cerr << msg << std::endl;
    }
-   catch (const std::string & msg)
+   catch (const std::string& msg)
    {
       std::cerr << msg << std::endl;
    }

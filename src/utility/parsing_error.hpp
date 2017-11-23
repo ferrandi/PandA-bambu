@@ -68,7 +68,7 @@ std::ostream& operator<<(std::ostream& out, boost::spirit::file_position const& 
  * @param class_name is the name of the calling class
 */
 template <class info_t>
-void print_parsing_error(info_t &info, const std::string &class_name)
+void print_parsing_error(info_t &info, const std::string&class_name)
 {
    std::string curr_string = std::string(info.stop, info.stop + STRING_LENGTH);
    typedef boost::tokenizer<boost::char_separator<char> > tokenizer;

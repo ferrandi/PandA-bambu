@@ -89,7 +89,7 @@ class simple_indent
        * @param is the output stream
        * @param is the string to be printed
        */
-      void operator() (std::ostream& os, const std::string &str);
+      void operator() (std::ostream& os, const std::string&str);
 
       /**
        * constructor

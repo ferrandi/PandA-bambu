@@ -68,7 +68,7 @@
 
 
 static
-std::string GetFile(const std::string directory, const std::string file)
+std::string GetFile(const std::string&directory, const std::string&file)
 {
    std::string ret = file;
    ret = ret.at(0) == '"' ? ret.substr(1, ret.size() - 2) : ret;
@@ -97,7 +97,7 @@ AadlParserData::AadlParserData(const ParameterConstRef _parameters) :
    debug_level(_parameters->get_class_debug_level("AadlParser"))
 {}
 
-AadlParser::AadlParser(const DesignFlowManagerConstRef _design_flow_manager, const std::string _file_name, const application_managerRef _AppM, const ParameterConstRef _parameters) :
+AadlParser::AadlParser(const DesignFlowManagerConstRef _design_flow_manager, const std::string&_file_name, const application_managerRef _AppM, const ParameterConstRef _parameters) :
    ParserFlowStep(_design_flow_manager, ParserFlowStep_Type::AADL, _file_name, _parameters),
    AppM(_AppM)
 {
@@ -118,7 +118,7 @@ DesignFlowStep_Status AadlParser::Exec()
    YYParse(data, lexer);
    AppM->input_files.erase(file_name);
    const auto aadl_information = GetPointer<HLS_manager>(AppM)->aadl_information;
-   for(const auto system : data->system_properties)
+   for(const auto& system : data->system_properties)
    {
       if(system.second.find("Source_Language") != system.second.end() and system.second.find("Source_Language")->second == "VHDL")
       {
@@ -130,7 +130,7 @@ DesignFlowStep_Status AadlParser::Exec()
          if(data->system_features.find(system.first) != data->system_features.end())
          {
             const auto features = data->system_features.find(system.first)->second;
-            for(const auto feature : features)
+            for(const auto& feature : features)
             {
                if(feature.second.find("Taste::InterfaceName") != feature.second.end())
                {
@@ -145,7 +145,7 @@ DesignFlowStep_Status AadlParser::Exec()
          }
       }
    }
-   for(const auto property : data->package_properties)
+   for(const auto& property : data->package_properties)
    {
       if(property.second.find("Taste::dataViewPath") != property.second.end())
       {
@@ -154,7 +154,7 @@ DesignFlowStep_Status AadlParser::Exec()
          AppM->input_files[data_view_file] = data_view_file;
       }
    }
-   for(const auto property : data->data_properties)
+   for(const auto& property : data->data_properties)
    {
       if(property.second.find("Source_Text") != property.second.end())
       {
@@ -163,10 +163,10 @@ DesignFlowStep_Status AadlParser::Exec()
          AppM->input_files[data_view_file] = data_view_file;
       }
    }
-   for(const auto subprogram : data->subprogram_features)
+   for(const auto& subprogram : data->subprogram_features)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC,debug_level, "-->Analyzing subprogram " + subprogram.first);
-      for(const auto feature : subprogram.second)
+      for(const auto& feature : subprogram.second)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing feature " + feature.first);
          if(feature.second.find(STR_CST_aadl_parameter_type) != feature.second.end())

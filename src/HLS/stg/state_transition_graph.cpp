@@ -190,7 +190,7 @@ const unsigned int TransitionInfo::DONTCARE  = 1 << 0;
 void TransitionInfo::print(std::ostream& os) const
 {
    const BehavioralHelperConstRef BH = op_function_graph->CGetOpGraphInfo()->BH;
-   for (std::set<std::pair<vertex, unsigned int> >::const_iterator it = conditions.begin(); it != conditions.end(); it++)
+   for (std::set<std::pair<vertex, unsigned int> >::const_iterator it = conditions.begin(); it != conditions.end(); ++it)
    {
       if (it->second == T_COND)
          os << GET_NAME(op_function_graph, it->first) << "(T)\\n";
@@ -223,14 +223,14 @@ StateTransitionGraph::StateTransitionGraph(const StateTransitionGraphsCollection
    graph(state_transition_graphs_collection.get(), _selector)
 {}
 
-StateTransitionGraph::StateTransitionGraph(const StateTransitionGraphsCollectionRef state_transition_graphs_collection, int _selector, std::unordered_set<vertex> _sub) :
+StateTransitionGraph::StateTransitionGraph(const StateTransitionGraphsCollectionRef state_transition_graphs_collection, int _selector, std::unordered_set<vertex>& _sub) :
    graph(state_transition_graphs_collection.get(), _selector, _sub)
 {}
 
 StateTransitionGraph::~StateTransitionGraph()
 {}
 
-void StateTransitionGraph::WriteDot(const std::string & file_name, const int) const
+void StateTransitionGraph::WriteDot(const std::string& file_name, const int) const
 {
    const std::string output_directory = collection->parameters->getOption<std::string>(OPT_dot_directory);
    CustomSet<unsigned int> critical_paths;

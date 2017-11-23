@@ -85,7 +85,7 @@ class SpiderParameter : public Parameter
        * @param argc is the number of arguments
        * @param argv is the array of arguments passed to program.
        */
-      SpiderParameter(const std::string program_name, int argc, char ** const argv);
+      SpiderParameter(const std::string&program_name, int argc, char ** const argv);
 
      /**
        * Destructor

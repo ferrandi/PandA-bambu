@@ -62,7 +62,8 @@
 #include "exceptions.hpp"
 
 target_technology::target_technology(const ParameterConstRef param) :
-   Param(param)
+   Param(param),
+   type(FPGA)
 {
 
 }
@@ -97,7 +98,7 @@ target_technology::target_t target_technology::get_type() const
 void target_technology::xload(const xml_element* node)
 {
    const xml_node::node_list c_list = node->get_children();
-   for(xml_node::node_list::const_iterator n = c_list.begin(); n != c_list.end(); n++)
+   for(xml_node::node_list::const_iterator n = c_list.begin(); n != c_list.end(); ++n)
    {
       if ((*n)->get_name() == "technology")
       {
@@ -111,7 +112,7 @@ void target_technology::xload(const xml_element* node)
 void target_technology::xload_technology_parameters(const xml_element* tech_xml)
 {
    const xml_node::node_list t_list = tech_xml->get_children();
-   for(xml_node::node_list::const_iterator t = t_list.begin(); t != t_list.end(); t++)
+   for(xml_node::node_list::const_iterator t = t_list.begin(); t != t_list.end(); ++t)
    {
       const xml_element* t_elem = GetPointer<const xml_element>(*t);
       if (!t_elem) continue;

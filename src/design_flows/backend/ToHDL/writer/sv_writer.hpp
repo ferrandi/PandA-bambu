@@ -67,7 +67,7 @@ class system_verilog_writer : public verilog_writer
       /**
        * Constructor
        */
-      system_verilog_writer(const ParameterConstRef parameters);
+      explicit system_verilog_writer(const ParameterConstRef parameters);
 
       /**
        * Destructor

@@ -79,7 +79,7 @@ class xml_node
       /**
        * constructor
       */
-      xml_node(const std::string &_name) : name(_name), line(0) {}
+      explicit xml_node(const std::string&_name) : name(_name), line(0) {}
       ///destructor
       virtual ~xml_node() {}
 
@@ -214,7 +214,7 @@ class xml_child : public xml_node
       /**
        * constructor
        */
-      xml_child(const std::string &_name) : xml_node(_name), first_text(nullptr) {}
+      explicit xml_child(const std::string&_name) : xml_node(_name), first_text(nullptr) {}
 
       /**
        * Print the class.
@@ -222,7 +222,7 @@ class xml_child : public xml_node
       virtual void print(std::ostream& os, bool formatted, simple_indent* pp) const
       {
          node_list::const_iterator it_end =  child_list.end();
-         for(node_list::const_iterator it =  child_list.begin(); it != it_end; it++)
+         for(node_list::const_iterator it =  child_list.begin(); it != it_end; ++it)
          {
             (*it)->print(os, formatted, pp);
          }
@@ -232,7 +232,7 @@ class xml_child : public xml_node
        * @param name The new node name
        * @returns The newly-created element
        */
-      xml_element* add_child_element(const std::string & name);
+      xml_element* add_child_element(const std::string& name);
 
       /** Add a child element to this node starting from a given node
        * @param node is the given datastructure to be added
@@ -295,7 +295,7 @@ class xml_child : public xml_node
        * @param path is the / separated list of the tags to be crossed from the current node to the ancestor
        * @return the set of xml nodes
        */
-      const CustomSet<xml_nodeRef> CGetDescendants(const std::string & path) const;
+      const CustomSet<xml_nodeRef> CGetDescendants(const std::string& path) const;
 
    private:
       node_list child_list;

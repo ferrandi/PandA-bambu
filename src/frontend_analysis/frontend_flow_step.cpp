@@ -80,7 +80,7 @@ void FrontendFlowStep::CreateSteps(const DesignFlowManagerConstRef design_flow_m
    const DesignFlowGraphConstRef design_flow_graph = design_flow_manager->CGetDesignFlowGraph();
    const FrontendFlowStepFactory * frontend_flow_step_factory = GetPointer<const FrontendFlowStepFactory>(design_flow_manager->CGetDesignFlowStepFactory("Frontend"));
    std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> >::const_iterator frontend_relationship, frontend_relationship_end = frontend_relationships.end();
-   for(frontend_relationship = frontend_relationships.begin(); frontend_relationship != frontend_relationship_end; frontend_relationship++)
+   for(frontend_relationship = frontend_relationships.begin(); frontend_relationship != frontend_relationship_end; ++frontend_relationship)
    {
       switch(frontend_relationship->second)
       {

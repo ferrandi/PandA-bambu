@@ -124,7 +124,7 @@ language_writerRef language_writer::create_writer(const HDLWriter_Language langu
    return language_writerRef();
 }
 
-void language_writer::write(const std::string &rawString)
+void language_writer::write(const std::string&rawString)
 {
    indented_output_stream->Append(rawString);
 }
@@ -144,7 +144,7 @@ const std::string language_writer::WriteString() const
    return indented_output_stream->WriteString();
 }
 
-void language_writer::WriteFile(const std::string filename) const
+void language_writer::WriteFile(const std::string&filename) const
 {
    indented_output_stream->WriteFile(filename);
 }

@@ -112,7 +112,7 @@ class ToDataFileStep : public virtual DesignFlowStep
        * @return the name of the type
        */
       static
-      ToDataFileStep_Type NameToEnum(const std::string to_data_file_step);
+      ToDataFileStep_Type NameToEnum(const std::string&to_data_file_step);
 
       /**
        * Compute the signature of a to data file step

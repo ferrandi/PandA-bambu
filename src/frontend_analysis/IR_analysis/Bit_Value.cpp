@@ -474,12 +474,8 @@ void Bit_Value::print_bitstring_map(
 {
    const BehavioralHelperConstRef BH =
       AppM->CGetFunctionBehavior(function_id)->CGetBehavioralHelper();
-   std::string var_name;
    for (const auto & m : map)
    {
-      var_name = (m.first == function_id) ?
-         BH->get_function_name() :
-         BH->PrintVariable(m.first);
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
             "var_uid: " + STR(m.first)+ ":" + BH->PrintVariable(m.first) +
             " bitstring: " + bitstring_to_string(m.second));
@@ -704,7 +700,7 @@ void Bit_Value::initialize()
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                "analyzing BB: "+ STR(B->number));
 
-         for(const auto stmt : B->CGetStmtList())
+         for(const auto& stmt : B->CGetStmtList())
          {
             const auto stmt_node = GET_NODE(stmt);
             INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
@@ -938,7 +934,7 @@ void Bit_Value::initialize()
 
       // first analyze statements
       int statement_num = 1 ;
-      for(const auto stmt : B->CGetStmtList())
+      for(const auto& stmt : B->CGetStmtList())
       {
          // ga->op1 is equal to var_decl when it binds a newly declared variable to an ssa variable. ie. int a;
          // we can skip this assignment and focus on the ssa variable
@@ -1198,7 +1194,7 @@ void Bit_Value::initialize()
       }
 
       // then analyze phis
-      for(const auto phi : B->CGetPhiList())
+      for(const auto& phi : B->CGetPhiList())
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Phi operation");
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
@@ -1228,7 +1224,7 @@ void Bit_Value::initialize()
 
             best[GET_INDEX_NODE(pn->res)] = create_u_bitstring(tree_helper::Size(GET_NODE(pn->res)));
 
-            for(const auto def_edge : pn->CGetDefEdgesList())
+            for(const auto& def_edge : pn->CGetDefEdgesList())
             {
                if(GET_NODE(def_edge.first)->get_kind() == integer_cst_K)
                {

@@ -113,7 +113,7 @@ class conn_binding
           * @param y is the second connection
           * @return true if index of x is less than y
           */
-         bool operator()(const connection x, const connection y) const;
+         bool operator()(const connection &x, const connection &y) const;
       };
 
       typedef std::map<connection, connection_objRef, ConnectionSorter> conn_implementation_map;

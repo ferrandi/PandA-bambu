@@ -150,7 +150,7 @@ void modelsimWrapper::GenerateScript(std::ostringstream& script, const std::stri
    script << "sed -i 's/; AssertionFailAction = 1/AssertionFailAction = 2/g' modelsim.ini" << std::endl << std::endl;
 
    ///prepare input files
-   for(const auto file : file_list)
+   for(const auto& file : file_list)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Examining " + file);
       boost::filesystem::path file_path(file);

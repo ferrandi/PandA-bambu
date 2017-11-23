@@ -556,7 +556,6 @@ std::string tree_helper::name_type(const tree_managerConstRef tm, int unsigned i
          else
             THROW_ERROR("Unexpected template parameter pattern");
          return "";//unreachable code
-         break;
       }
       case union_type_K:
       {
@@ -592,12 +591,10 @@ std::string tree_helper::name_type(const tree_managerConstRef tm, int unsigned i
          else
             THROW_ERROR("Unexpected template parameter pattern");
          return "";//unreachable code
-         break;
       }
       case array_type_K:
       {
          array_type* at = GetPointer<array_type>(t);
-         long long int vec_size = 0;
          std::string vec_size_string;
          if(at->domn)
          {
@@ -609,7 +606,7 @@ std::string tree_helper::name_type(const tree_managerConstRef tm, int unsigned i
                integer_cst *ic = GetPointer<integer_cst>(GET_NODE(it->max));
                if(ic)
                {
-                  vec_size =  static_cast<unsigned int>(get_integer_cst_value(ic))+ 1;
+                  long long int vec_size =  static_cast<unsigned int>(get_integer_cst_value(ic))+ 1;
                   vec_size_string = "[" + boost::lexical_cast<std::string>(vec_size) + "]";
                }
                else
@@ -820,7 +817,7 @@ std::string tree_helper::print_function_name(const tree_managerConstRef TM, cons
       if (in->operator_flag)
       {
          res = "operator ";
-         for(const auto attr : fd->list_attr)
+         for(const auto& attr : fd->list_attr)
          {
             if (attr == TreeVocabularyTokenTypes_TokenEnum::TOK_PUBLIC || attr == TreeVocabularyTokenTypes_TokenEnum::TOK_PRIVATE || attr
                   == TreeVocabularyTokenTypes_TokenEnum::TOK_PROTECTED || attr == TreeVocabularyTokenTypes_TokenEnum::TOK_OPERATOR ||attr
@@ -923,9 +920,8 @@ void tree_helper::get_used_variables(bool first_level_only, const tree_nodeRef t
 {
    if (!tRI)
       return;
-   tree_nodeRef t = tRI;
    THROW_ASSERT(tRI->get_kind() == tree_reindex_K, "Node is not a tree reindex");
-   t = GET_NODE(tRI);
+   tree_nodeRef t = GET_NODE(tRI);
    switch (t->get_kind())
    {
       case result_decl_K://tree_to_graph considers this object as particular type of variable
@@ -968,7 +964,7 @@ void tree_helper::get_used_variables(bool first_level_only, const tree_nodeRef t
          list_of_variable.insert(GET_INDEX_NODE(tRI));
          if (fd->body && expand_p)
          {
-            for (std::vector<tree_nodeRef>::const_iterator i = fd->list_of_args.begin(); i != vend; i++)
+            for (std::vector<tree_nodeRef>::const_iterator i = fd->list_of_args.begin(); i != vend; ++i)
             {
                get_used_variables(first_level_only, *i, list_of_variable);
             }
@@ -983,14 +979,14 @@ void tree_helper::get_used_variables(bool first_level_only, const tree_nodeRef t
          std::list<tree_nodeRef>::iterator end = sl->list_of_stmt.end();
          std::list<tree_nodeRef>::iterator i = sl->list_of_stmt.begin();
          if(i != end)
-            for (; i != end; i++)
+            for (; i != end; ++i)
                get_used_variables(first_level_only, *i, list_of_variable);
          else
          {
             std::map<unsigned int, blocRef>::iterator ib_end = sl->list_of_bloc.end();
-            for(std::map<unsigned int, blocRef>::iterator ib = sl->list_of_bloc.begin(); ib != ib_end; ib++)
+            for(std::map<unsigned int, blocRef>::iterator ib = sl->list_of_bloc.begin(); ib != ib_end; ++ib)
             {
-               for(const auto stmt : ib->second->CGetStmtList())
+               for(const auto& stmt : ib->second->CGetStmtList())
                   get_used_variables(first_level_only, stmt, list_of_variable);
             }
          }
@@ -1000,7 +996,7 @@ void tree_helper::get_used_variables(bool first_level_only, const tree_nodeRef t
       {
          tree_vec* tv = GetPointer<tree_vec>(t);
          std::vector<tree_nodeRef>::iterator end = tv->list_of_op.end();
-         for (std::vector<tree_nodeRef>::iterator i = tv->list_of_op.begin(); i != end; i++)
+         for (std::vector<tree_nodeRef>::iterator i = tv->list_of_op.begin(); i != end; ++i)
          {
             get_used_variables(first_level_only, *i, list_of_variable);
          }
@@ -1092,7 +1088,7 @@ void tree_helper::get_used_variables(bool first_level_only, const tree_nodeRef t
       case constructor_K:
       {
          constructor* co = GetPointer<constructor>(t);
-         for(std::vector<std::pair< tree_nodeRef, tree_nodeRef> >::const_iterator i = co->list_of_idx_valu.begin(); i != co->list_of_idx_valu.end(); i++)
+         for(std::vector<std::pair< tree_nodeRef, tree_nodeRef> >::const_iterator i = co->list_of_idx_valu.begin(); i != co->list_of_idx_valu.end(); ++i)
             get_used_variables(first_level_only, i->second, list_of_variable);
          break;
       }
@@ -1102,7 +1098,7 @@ void tree_helper::get_used_variables(bool first_level_only, const tree_nodeRef t
          call_expr*ce = GetPointer<call_expr>(t);
          const std::vector<tree_nodeRef> args = ce->args;
          std::vector<tree_nodeRef>::const_iterator arg, arg_end = args.end();
-         for(arg = args.begin(); arg != arg_end; arg++)
+         for(arg = args.begin(); arg != arg_end; ++arg)
          {
             get_used_variables(first_level_only, *arg, list_of_variable);
          }
@@ -1113,7 +1109,7 @@ void tree_helper::get_used_variables(bool first_level_only, const tree_nodeRef t
          gimple_call*ce = GetPointer<gimple_call>(t);
          const std::vector<tree_nodeRef> args = ce->args;
          std::vector<tree_nodeRef>::const_iterator arg, arg_end = args.end();
-         for(arg = args.begin(); arg != arg_end; arg++)
+         for(arg = args.begin(); arg != arg_end; ++arg)
          {
             get_used_variables(first_level_only, *arg, list_of_variable);
          }
@@ -1187,7 +1183,6 @@ void tree_helper::get_used_variables(bool first_level_only, const tree_nodeRef t
 
 bool tree_helper::look_for_binfo_inheritance(binfo* b, std::string bcs)
 {
-   bool found = false;
    if (b)
    {
       if (b->type)
@@ -1200,7 +1195,7 @@ bool tree_helper::look_for_binfo_inheritance(binfo* b, std::string bcs)
       {
          tree_nodeRef binf = b->get_base(i);
          binfo* bnf = GetPointer<binfo>(GET_NODE(binf));
-         found = look_for_binfo_inheritance(bnf, bcs);
+         bool found = look_for_binfo_inheritance(bnf, bcs);
          if (found)
             return true;
       }
@@ -1254,7 +1249,7 @@ tree_nodeRef tree_helper::find_obj_type_ref_function(const tree_nodeRef tn)
 #endif
       if(rt)
       {
-         for(std::vector<tree_nodeRef>::const_iterator x = rt->list_of_fncs.begin(); x != rt->list_of_fncs.end(); x++)
+         for(std::vector<tree_nodeRef>::const_iterator x = rt->list_of_fncs.begin(); x != rt->list_of_fncs.end(); ++x)
          {
             THROW_ASSERT(GET_NODE(*x)->get_kind() == function_decl_K || GET_NODE(*x)->get_kind() == template_decl_K, "expected a function decl or a template_decl");
             function_decl* fd = GetPointer<function_decl>(GET_NODE(*x));
@@ -1368,7 +1363,7 @@ const std::unordered_set<unsigned int> tree_helper::RecursiveGetTypesToBeDeclare
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Record type without named unqualified");
                const std::list<tree_nodeConstRef> field_types = CGetFieldTypes(TM->CGetTreeNode(index));
-               for(const auto field_type : field_types)
+               for(const auto& field_type : field_types)
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering field type (" + STR(field_type->index) + ") " + STR(field_type));
                   bool pointer_to_unnamed_structure = [&] ()
@@ -1439,7 +1434,7 @@ const std::unordered_set<unsigned int> tree_helper::RecursiveGetTypesToBeDeclare
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Union type without named unqualified");
                const std::list<tree_nodeConstRef> field_types = CGetFieldTypes(TM->CGetTreeNode(index));
-               for(const auto field_type : field_types)
+               for(const auto& field_type : field_types)
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering field type (" + STR(field_type->index) + ") " + STR(field_type));
                   bool pointer_to_unnamed_structure = [&] ()
@@ -1543,7 +1538,7 @@ const std::unordered_set<unsigned int> tree_helper::RecursiveGetTypesToBeDeclare
             std::list<unsigned int> parameters;
             get_parameter_types(TM, index, parameters);
             std::list<unsigned int>::const_iterator parameter, parameter_end = parameters.end();
-            for (parameter = parameters.begin(); parameter != parameter_end; parameter++)
+            for (parameter = parameters.begin(); parameter != parameter_end; ++parameter)
             {
                const std::unordered_set<unsigned int> local_types = RecursiveGetTypesToBeDeclared(TM, *parameter, true, without_transformation, true);
                returned_types.insert(local_types.begin(), local_types.end());
@@ -2022,7 +2017,7 @@ const std::list<tree_nodeConstRef> tree_helper::CGetFieldTypes(const tree_nodeCo
    if (type->get_kind() == record_type_K)
    {
       const record_type * rt = GetPointer<const record_type>(type);
-      for(std::vector<tree_nodeRef>::const_iterator it = rt->list_of_flds.begin(); it != rt->list_of_flds.end(); it++)
+      for(std::vector<tree_nodeRef>::const_iterator it = rt->list_of_flds.begin(); it != rt->list_of_flds.end(); ++it)
       {
          if(GET_CONST_NODE(*it)->get_kind() == type_decl_K) continue;
          if(GET_CONST_NODE(*it)->get_kind() == function_decl_K) continue;
@@ -2032,7 +2027,7 @@ const std::list<tree_nodeConstRef> tree_helper::CGetFieldTypes(const tree_nodeCo
    else if (type->get_kind() == union_type_K)
    {
       const union_type * ut = GetPointer<const union_type>(type);
-      for(std::vector<tree_nodeRef>::const_iterator it = ut->list_of_flds.begin(); it != ut->list_of_flds.end(); it++)
+      for(std::vector<tree_nodeRef>::const_iterator it = ut->list_of_flds.begin(); it != ut->list_of_flds.end(); ++it)
       {
          ret.push_back(CGetType(GET_CONST_NODE(*it)));
       }
@@ -3471,7 +3466,6 @@ unsigned int tree_helper::get_base_index(const tree_managerConstRef TM, const un
             case result_decl_K:
             {
                return GET_INDEX_NODE(ae->op);
-               break;
             }
             case array_ref_K:
             {
@@ -3487,7 +3481,6 @@ unsigned int tree_helper::get_base_index(const tree_managerConstRef TM, const un
                      case string_cst_K:
                      {
                         return GET_INDEX_NODE(ar->op0);
-                        break;
                      }
                      case binfo_K:
                      case block_K:
@@ -3896,13 +3889,11 @@ bool tree_helper::is_fully_resolved(const tree_managerConstRef TM, const unsigne
       {
          addr_expr * ae = GetPointer<addr_expr>(node);
          return is_fully_resolved(TM, GET_INDEX_NODE(ae->op), res_set);
-         break;
       }
       case view_convert_expr_K:
       {
          view_convert_expr * vc = GetPointer<view_convert_expr>(node);
          return is_fully_resolved(TM, GET_INDEX_NODE(vc->op), res_set);
-         break;
       }
       case binfo_K:
       case block_K:
@@ -4814,7 +4805,7 @@ bool tree_helper::IsAligned (const tree_managerConstRef TM, unsigned int type)
       return false;
 }
 
-std::string tree_helper::normalized_ID(const std::string &id)
+std::string tree_helper::normalized_ID(const std::string&id)
 {
    std::string strg = id;
    for (unsigned int i = 0;i < strg.size();i++)
@@ -4829,7 +4820,7 @@ std::string tree_helper::normalized_ID(const std::string &id)
    return strg;
 }
 
-std::string tree_helper::print_type(const tree_managerConstRef TM, unsigned int original_type, bool global, bool print_qualifiers, bool print_storage, unsigned int var, const var_pp_functorConstRef vppf, const std::string prefix, const std::string tail)
+std::string tree_helper::print_type(const tree_managerConstRef TM, unsigned int original_type, bool global, bool print_qualifiers, bool print_storage, unsigned int var, const var_pp_functorConstRef vppf, const std::string&prefix, const std::string&tail)
 {
    bool skip_var_printing = false;
    const unsigned int type = tree_helper::GetRealType(TM, original_type);
@@ -5595,7 +5586,7 @@ void FunctionExpander::check_lib_type(const tree_nodeRef var)
    decl_node * dn = GetPointer<decl_node>(curr_tn);
    std::string include_name = dn->include_name;
    std::set<std::string>::iterator it_end = headers.end();
-   for(std::set<std::string>::iterator it = headers.begin(); it != it_end; it++)
+   for(std::set<std::string>::iterator it = headers.begin(); it != it_end; ++it)
    {
       if(include_name.find(*it) != std::string::npos && dn->type)
       {
@@ -5638,7 +5629,7 @@ bool FunctionExpander::operator() (const tree_nodeRef &tn) const
       {
          std::string include_name = td->include_name;
          std::set<std::string>::iterator it_end = headers.end();
-         for(std::set<std::string>::iterator it = headers.begin(); it != it_end; it++)
+         for(std::set<std::string>::iterator it = headers.begin(); it != it_end; ++it)
             if(include_name.find(*it) != std::string::npos)
             {
                return false;
@@ -6122,7 +6113,7 @@ void tree_helper::accessed_greatest_bitsize(const tree_managerConstRef TreeM, tr
          record_type * rt =GetPointer<record_type>(type_node);
          std::vector<tree_nodeRef>field_list = rt->list_of_flds;
          std::vector<tree_nodeRef>::const_iterator flend = field_list.end();
-         for (std::vector<tree_nodeRef>::const_iterator fli = field_list.begin(); fli != flend; fli++)
+         for (std::vector<tree_nodeRef>::const_iterator fli = field_list.begin(); fli != flend; ++fli)
          {
             if(GET_NODE(*fli)->get_kind() == type_decl_K) continue;
             if(GET_NODE(*fli)->get_kind() == const_decl_K) continue;
@@ -6140,7 +6131,7 @@ void tree_helper::accessed_greatest_bitsize(const tree_managerConstRef TreeM, tr
          union_type * ut =GetPointer<union_type>(type_node);
          std::vector<tree_nodeRef>field_list = ut->list_of_flds;
          std::vector<tree_nodeRef>::const_iterator flend = field_list.end();
-         for (std::vector<tree_nodeRef>::const_iterator fli = field_list.begin(); fli != flend; fli++)
+         for (std::vector<tree_nodeRef>::const_iterator fli = field_list.begin(); fli != flend; ++fli)
          {
             accessed_greatest_bitsize(TreeM, GET_NODE(*fli), GET_INDEX_NODE(*fli), bitsize);
          }
@@ -6246,7 +6237,7 @@ void tree_helper::accessed_minimum_bitsize(const tree_managerConstRef TreeM, tre
          record_type * rt =GetPointer<record_type>(type_node);
          std::vector<tree_nodeRef>field_list = rt->list_of_flds;
          std::vector<tree_nodeRef>::const_iterator flend = field_list.end();
-         for (std::vector<tree_nodeRef>::const_iterator fli = field_list.begin(); fli != flend; fli++)
+         for (std::vector<tree_nodeRef>::const_iterator fli = field_list.begin(); fli != flend; ++fli)
          {
             if(GET_NODE(*fli)->get_kind() == type_decl_K) continue;
             if(GET_NODE(*fli)->get_kind() == const_decl_K) continue;
@@ -6264,7 +6255,7 @@ void tree_helper::accessed_minimum_bitsize(const tree_managerConstRef TreeM, tre
          union_type * ut =GetPointer<union_type>(type_node);
          std::vector<tree_nodeRef>field_list = ut->list_of_flds;
          std::vector<tree_nodeRef>::const_iterator flend = field_list.end();
-         for (std::vector<tree_nodeRef>::const_iterator fli = field_list.begin(); fli != flend; fli++)
+         for (std::vector<tree_nodeRef>::const_iterator fli = field_list.begin(); fli != flend; ++fli)
          {
             accessed_minimum_bitsize(TreeM, GET_NODE(*fli), GET_INDEX_NODE(*fli), bitsize);
          }
@@ -6532,7 +6523,7 @@ size_t tree_helper::AllocatedMemorySize(const tree_nodeConstRef parameter)
             const std::vector<tree_nodeRef> & list_of_fields = rt->list_of_flds;
             ///This calls check if we can perform deep copy of the single element
             std::vector<tree_nodeRef>::const_iterator field, field_end = list_of_fields.end();
-            for(field = list_of_fields.begin(); field != field_end; field++)
+            for(field = list_of_fields.begin(); field != field_end; ++field)
             {
                if(GET_NODE(*field)->get_kind() == type_decl_K) continue;
                if(GET_NODE(*field)->get_kind() == function_decl_K) continue;
@@ -6580,7 +6571,6 @@ size_t tree_helper::AllocatedMemorySize(const tree_nodeConstRef parameter)
             const size_t byte_parameter_size = AllocatedMemorySize(GET_NODE(mr->op0));
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed " + parameter->ToString() + " - Size is " + boost::lexical_cast<std::string>(byte_parameter_size));
             return byte_parameter_size;
-            break;
          }
       case(parm_decl_K):
       case(ssa_name_K):
@@ -6812,7 +6802,6 @@ size_t tree_helper::CountPointers(const tree_nodeConstRef tn)
       case parm_decl_K:
          {
             return CountPointers(tree_helper::CGetType(tn));
-            break;
          }
       case reference_type_K:
       case pointer_type_K:
@@ -6824,7 +6813,7 @@ size_t tree_helper::CountPointers(const tree_nodeConstRef tn)
             const record_type * rt = GetPointer<const record_type>(tn);
             const std::vector<tree_nodeRef> list_of_fields = rt->list_of_flds;
             std::vector<tree_nodeRef>::const_iterator field, field_end = list_of_fields.end();
-            for(field = list_of_fields.begin(); field != field_end; field++)
+            for(field = list_of_fields.begin(); field != field_end; ++field)
             {
                if(GET_NODE(*field)->get_kind() == type_decl_K) continue;
                if(GET_NODE(*field)->get_kind() == function_decl_K) continue;
@@ -6963,7 +6952,7 @@ void tree_helper::compute_ssa_uses_rec_ptr(const tree_nodeRef curr_tn, std::set<
          compute_ssa_uses_rec_ptr(ce->fn, ssa_uses);
          std::vector<tree_nodeRef> & args = ce->args;
          std::vector<tree_nodeRef>::iterator arg, arg_end = args.end();
-         for(arg = args.begin(); arg != arg_end; arg++)
+         for(arg = args.begin(); arg != arg_end; ++arg)
          {
             compute_ssa_uses_rec_ptr(*arg, ssa_uses);
          }
@@ -6975,7 +6964,7 @@ void tree_helper::compute_ssa_uses_rec_ptr(const tree_nodeRef curr_tn, std::set<
          compute_ssa_uses_rec_ptr(ce->fn, ssa_uses);
          std::vector<tree_nodeRef> & args = ce->args;
          std::vector<tree_nodeRef>::iterator arg, arg_end = args.end();
-         for(arg = args.begin(); arg != arg_end; arg++)
+         for(arg = args.begin(); arg != arg_end; ++arg)
          {
             compute_ssa_uses_rec_ptr(*arg, ssa_uses);
          }
@@ -7033,7 +7022,7 @@ void tree_helper::compute_ssa_uses_rec_ptr(const tree_nodeRef curr_tn, std::set<
          constructor * c = GetPointer<constructor>(curr_tn);
          std::vector<std::pair< tree_nodeRef, tree_nodeRef> > &list_of_idx_valu = c->list_of_idx_valu;
          std::vector<std::pair< tree_nodeRef, tree_nodeRef> >::const_iterator vend = list_of_idx_valu.end();
-         for (std::vector<std::pair< tree_nodeRef, tree_nodeRef> >::iterator i = list_of_idx_valu.begin(); i != vend; i++)
+         for (std::vector<std::pair< tree_nodeRef, tree_nodeRef> >::iterator i = list_of_idx_valu.begin(); i != vend; ++i)
          {
             compute_ssa_uses_rec_ptr(i->second, ssa_uses);
          }
@@ -7227,7 +7216,7 @@ void tree_helper::ComputeSsaUses(const tree_nodeRef tn, TreeNodeMap<size_t> & ss
          ComputeSsaUses(ce->fn, ssa_uses);
          std::vector<tree_nodeRef> & args = ce->args;
          std::vector<tree_nodeRef>::iterator arg, arg_end = args.end();
-         for(arg = args.begin(); arg != arg_end; arg++)
+         for(arg = args.begin(); arg != arg_end; ++arg)
          {
             ComputeSsaUses(*arg, ssa_uses);
          }
@@ -7239,7 +7228,7 @@ void tree_helper::ComputeSsaUses(const tree_nodeRef tn, TreeNodeMap<size_t> & ss
          ComputeSsaUses(ce->fn, ssa_uses);
          std::vector<tree_nodeRef> & args = ce->args;
          std::vector<tree_nodeRef>::iterator arg, arg_end = args.end();
-         for(arg = args.begin(); arg != arg_end; arg++)
+         for(arg = args.begin(); arg != arg_end; ++arg)
          {
             ComputeSsaUses(*arg, ssa_uses);
          }
@@ -7297,7 +7286,7 @@ void tree_helper::ComputeSsaUses(const tree_nodeRef tn, TreeNodeMap<size_t> & ss
          constructor * c = GetPointer<constructor>(curr_tn);
          std::vector<std::pair< tree_nodeRef, tree_nodeRef> > &list_of_idx_valu = c->list_of_idx_valu;
          const std::vector<std::pair< tree_nodeRef, tree_nodeRef> >::iterator vend = list_of_idx_valu.end();
-         for (std::vector<std::pair< tree_nodeRef, tree_nodeRef> >::iterator i = list_of_idx_valu.begin(); i != vend; i++)
+         for (std::vector<std::pair< tree_nodeRef, tree_nodeRef> >::iterator i = list_of_idx_valu.begin(); i != vend; ++i)
          {
             ComputeSsaUses(i->second, ssa_uses);
          }
@@ -7350,10 +7339,11 @@ void tree_helper::ComputeSsaUses(const tree_nodeRef tn, TreeNodeMap<size_t> & ss
       case gimple_phi_K:
       {
          gimple_phi * gp = GetPointer<gimple_phi>(curr_tn);
-         for(const auto def_edge : gp->CGetDefEdgesList())
+         for(const auto& def_edge : gp->CGetDefEdgesList())
          {
             ComputeSsaUses(def_edge.first, ssa_uses);
          }
+         break;
       }
       case result_decl_K:
       case parm_decl_K:
@@ -7510,7 +7500,7 @@ void tree_helper::get_required_values(const tree_managerConstRef TM, std::vector
          if(tree_helper::is_a_vector(TM, GET_INDEX_NODE(co->type)))
          {
             std::vector<std::pair< tree_nodeRef, tree_nodeRef> >::const_iterator vend = co->list_of_idx_valu.end();
-            for (std::vector<std::pair< tree_nodeRef, tree_nodeRef> >::const_iterator i = co->list_of_idx_valu.begin(); i != vend; i++)
+            for (std::vector<std::pair< tree_nodeRef, tree_nodeRef> >::const_iterator i = co->list_of_idx_valu.begin(); i != vend; ++i)
                required.push_back(std::tuple<unsigned int, unsigned int> (GET_INDEX_NODE(i->second),0));
          }
          else
@@ -7695,7 +7685,7 @@ void tree_helper::get_required_values(const tree_managerConstRef TM, std::vector
       case gimple_phi_K:
       {
          gimple_phi* gp = GetPointer<gimple_phi>(tn);
-         for(const auto def_edge : gp->CGetDefEdgesList())
+         for(const auto& def_edge : gp->CGetDefEdgesList())
             required.push_back(std::tuple<unsigned int, unsigned int> (GET_INDEX_NODE(def_edge.first),0));
          break;
       }
@@ -7715,7 +7705,7 @@ void tree_helper::get_required_values(const tree_managerConstRef TM, std::vector
          call_expr* ce = GetPointer<call_expr>(tn);
          const std::vector<tree_nodeRef> & args = ce->args;
          std::vector<tree_nodeRef>::const_iterator arg, arg_end = args.end();
-         for(arg = args.begin(); arg != arg_end; arg++)
+         for(arg = args.begin(); arg != arg_end; ++arg)
          {
             required.push_back(std::tuple<unsigned int, unsigned int> (GET_INDEX_NODE(*arg), 0));
          }
@@ -7741,7 +7731,7 @@ void tree_helper::get_required_values(const tree_managerConstRef TM, std::vector
          {
             const std::vector<tree_nodeRef> & args = ce->args;
             std::vector<tree_nodeRef>::const_iterator arg, arg_end = args.end();
-            for(arg = args.begin(); arg != arg_end; arg++)
+            for(arg = args.begin(); arg != arg_end; ++arg)
             {
                required.push_back(std::tuple<unsigned int, unsigned int> (GET_INDEX_NODE(*arg), 0));
             }
@@ -7904,7 +7894,7 @@ size_t tree_helper::GetFunctionSize(const tree_managerConstRef TM, const unsigne
    THROW_ASSERT(fd->body, "Function " + fd->ToString() + " is without body");
    const auto sl = GetPointer<const statement_list>(GET_NODE(fd->body));
    size_t ret_value = 0;
-   for(const auto block : sl->list_of_bloc)
+   for(const auto& block : sl->list_of_bloc)
    {
       ret_value += block.second->CGetStmtList().size();
       ret_value += block.second->CGetPhiList().size();

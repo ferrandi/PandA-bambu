@@ -93,10 +93,11 @@ std::map<std::string, enum kind> tree_node::string_to_kind;
 
 std::map<enum kind, std::string> tree_node::kind_to_string;
 
-enum kind tree_node::get_kind(const std::string input_name)
+enum kind tree_node::get_kind(const std::string&input_name)
 {
    if(string_to_kind.empty())
    {
+      // cppcheck-suppress unusedVariable
       std::string name;
       BOOST_PP_SEQ_FOR_EACH(NAME_KIND, BOOST_PP_EMPTY, TREE_NODE_LIST);
    }
@@ -110,7 +111,7 @@ std::string tree_node::GetString(enum kind k)
       BOOST_PP_SEQ_FOR_EACH(KIND_NAME, BOOST_PP_EMPTY, TREE_NODE_LIST);
       //This part has been added since boost macro does not expand correctly
       std::map<enum kind, std::string>::iterator it, it_end = kind_to_string.end();
-      for(it = kind_to_string.begin(); it != it_end; it++)
+      for(it = kind_to_string.begin(); it != it_end; ++it)
       {
          it->second = it->second.substr(19);
          it->second = it->second.substr(0, it->second.find(')'));
@@ -478,7 +479,7 @@ void binfo::visit(tree_node_visitor * const v) const
    VISIT_SC(mask,tree_node,visit(v));
    VISIT_MEMBER(mask,type,visit(v));
    std::vector<std::pair< TreeVocabularyTokenTypes_TokenEnum, tree_nodeRef> >::const_iterator vend = list_of_access_binf.end();
-   for (std::vector<std::pair< TreeVocabularyTokenTypes_TokenEnum, tree_nodeRef> >::const_iterator i = list_of_access_binf.begin(); i != vend; i++)
+   for (std::vector<std::pair< TreeVocabularyTokenTypes_TokenEnum, tree_nodeRef> >::const_iterator i = list_of_access_binf.begin(); i != vend; ++i)
    {
       VISIT_MEMBER_NAMED(list_of_access_binf,mask,i->second,visit(v));
    }
@@ -508,7 +509,7 @@ PointToSolution::PointToSolution() :
 PointToSolution::~PointToSolution()
 {}
 
-void PointToSolution::Add(const std::string variable)
+void PointToSolution::Add(const std::string&variable)
 {
    if(variable == "anything")
       anything = true;
@@ -593,7 +594,8 @@ void aggr_init_expr::visit(tree_node_visitor * const v) const
 }
 
 aggr_init_expr::aggr_init_expr(const unsigned int i) :
-   call_expr(i)
+   call_expr(i),
+   ctor(0)
 {}
 
 
@@ -672,7 +674,7 @@ void constructor::visit(tree_node_visitor * const v) const
    (*v)(this, mask);
    VISIT_MEMBER(mask,type,visit(v));
    std::vector<std::pair< tree_nodeRef, tree_nodeRef> >::const_iterator vend = list_of_idx_valu.end();
-   for (std::vector<std::pair< tree_nodeRef, tree_nodeRef> >::const_iterator i = list_of_idx_valu.begin(); i != vend; i++)
+   for (std::vector<std::pair< tree_nodeRef, tree_nodeRef> >::const_iterator i = list_of_idx_valu.begin(); i != vend; ++i)
    {
       VISIT_MEMBER_NAMED(list_of_idx_valu,mask,i->first,visit(v));
       VISIT_MEMBER_NAMED(list_of_idx_valu,mask,i->second,visit(v));
@@ -733,6 +735,8 @@ function_decl::function_decl(unsigned int i):
    omp_critical(""),
    omp_atomic(false),
 #endif
+   fixd(0),
+   virt(0),
    undefined_flag(false),
    builtin_flag(false),
    hwcall_flag(false),
@@ -767,7 +771,7 @@ bool function_decl::is_destructor()
    return attr::is_destructor();
 }
 
-bool function_decl::is_operator()
+bool function_decl::is_operator() const
 {
    return operator_flag;
 }
@@ -955,11 +959,11 @@ void gimple_phi::visit(tree_node_visitor * const v) const
    (*v)(this, mask);
    VISIT_SC(mask,gimple_node,visit(v));
    VISIT_MEMBER(mask,res,visit(v));
-   for(const auto def_edge : list_of_def_edge)
+   for(const auto& def_edge : list_of_def_edge)
       VISIT_MEMBER_NAMED(list_of_def_edge,mask, def_edge.first, visit(v));
 }
 
-void gimple_phi::AddDefEdge(const tree_managerRef TM, const DefEdge def_edge)
+void gimple_phi::AddDefEdge(const tree_managerRef TM, const DefEdge& def_edge)
 {
    list_of_def_edge.push_back(def_edge);
    if(updated_ssa_uses and bb_index != 0)
@@ -977,7 +981,7 @@ const gimple_phi::DefEdgeList & gimple_phi::CGetDefEdgesList() const
    return list_of_def_edge;
 }
 
-void gimple_phi::ReplaceDefEdge(const tree_managerRef TM, const DefEdge old_def_edge, const DefEdge new_def_edge)
+void gimple_phi::ReplaceDefEdge(const tree_managerRef TM, const DefEdge& old_def_edge, const DefEdge& new_def_edge)
 {
    for(auto & def_edge : list_of_def_edge)
    {
@@ -1005,11 +1009,11 @@ void gimple_phi::SetDefEdgeList(const tree_managerRef TM, DefEdgeList new_list_o
 {
    while(list_of_def_edge.size())
       RemoveDefEdge(TM, list_of_def_edge.front());
-   for(const auto def_edge : new_list_of_def_edge)
+   for(const auto& def_edge : new_list_of_def_edge)
       AddDefEdge(TM, def_edge);
 }
 
-void gimple_phi::RemoveDefEdge(const tree_managerRef TM, const DefEdge to_be_removed)
+void gimple_phi::RemoveDefEdge(const tree_managerRef TM, const DefEdge& to_be_removed)
 {
 #if HAVE_ASSERTS
    auto initial_size = list_of_def_edge.size();
@@ -1202,7 +1206,7 @@ const tree_nodeRef ssa_name::CGetDefStmt() const
    {
       std::string error_message;
       error_message += "There are " + STR(def_stmts.size()) + " definitions for " + ToString() + ":";
-      for(const auto def_stmt : def_stmts)
+      for(const auto& def_stmt : def_stmts)
       {
          error_message += "\n" + STR(def_stmt);
       }
@@ -1242,7 +1246,7 @@ const TreeNodeMap<size_t> & ssa_name::CGetUseStmts() const
 size_t ssa_name::CGetNumberUses() const
 {
    size_t ret_value = 0;
-   for(const auto use_stmt : use_stmts)
+   for(const auto& use_stmt : use_stmts)
       ret_value += use_stmt.second;
    return ret_value;
 }
@@ -1253,7 +1257,7 @@ void ssa_name::RemoveUse(const tree_nodeRef use_stmt)
    if(use_stmts.find(use_stmt) == use_stmts.end() or use_stmts.find(use_stmt)->second == 0)
    {
       INDENT_DBG_MEX(0,0, use_stmt->ToString() + " is not in the use_stmts of " + ToString());
-      for(const auto current_use_stmt : use_stmts)
+      for(const auto& current_use_stmt : use_stmts)
       {
          INDENT_DBG_MEX(0,0, STR(current_use_stmt.second) + " uses in (" + STR(current_use_stmt.first->index) + ") " + STR(current_use_stmt.first));
       }
@@ -1277,7 +1281,7 @@ void statement_list::visit(tree_node_visitor * const v) const
    VISIT_SC(mask,tree_node,visit(v));
    SEQ_VISIT_MEMBER(mask,list_of_stmt,tree_node,visit,tree_node_visitor,v);
    std::map<unsigned int, blocRef>::const_iterator mend = list_of_bloc.end();
-   for (std::map<unsigned int, blocRef>::const_iterator i = list_of_bloc.begin(); i != mend; i++)
+   for (std::map<unsigned int, blocRef>::const_iterator i = list_of_bloc.begin(); i != mend; ++i)
       VISIT_MEMBER_NAMED(list_of_bloc,mask,i->second,visit(v));
 }
 

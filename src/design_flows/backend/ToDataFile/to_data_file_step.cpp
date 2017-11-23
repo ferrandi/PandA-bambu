@@ -74,7 +74,7 @@ const std::string ToDataFileStep::EnumToName(const ToDataFileStep_Type to_data_f
    return "";
 }
 
-ToDataFileStep_Type ToDataFileStep::NameToEnum(const std::string
+ToDataFileStep_Type ToDataFileStep::NameToEnum(const std::string&
 #if HAVE_CIRCUIT_BUILT
    to_data_file_step
 #endif

@@ -70,7 +70,7 @@ class register_obj : public generic_obj
        * This is the constructor of the object class, with a given id
        * @param new_value is the new value for register entry
        */
-      register_obj(const std::string &_name) : generic_obj(REGISTER, _name) {}
+      register_obj(const std::string&_name) : generic_obj(REGISTER, _name) {}
 
       /**
        * Destructor.

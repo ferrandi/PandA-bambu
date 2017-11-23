@@ -171,7 +171,7 @@ void HWCallPathCalculator::discover_vertex(
     */
    if (HLSMgr->Rfuns->has_shared_functions(f_id))
    {
-      for (const std::string & shared_fu_name : HLSMgr->Rfuns->get_shared_functions(f_id))
+      for (const std::string& shared_fu_name : HLSMgr->Rfuns->get_shared_functions(f_id))
       {
          shared_fun_scope[shared_fu_name] =
             scope.top() + "Datapath_i" + STR(HIERARCHY_SEPARATOR) +

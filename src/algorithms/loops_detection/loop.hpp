@@ -249,7 +249,7 @@ class Loop
        * Constructor for empty loop (used for irreducible)
        * @param g is the basic block control flow grah
        */
-      Loop(const BBGraphRef g);
+      explicit Loop(const BBGraphRef g);
 
       /**
        * Constructor for reducible loop

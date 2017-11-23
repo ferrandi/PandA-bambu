@@ -108,8 +108,9 @@ DesignFlowStep_Status AddBbEcfgEdges::InternalExec()
    const BehavioralHelperConstRef behavioral_helper = function_behavior->CGetBehavioralHelper();
 
    ///The function name
+#ifndef NDEBUG
    const std::string function_name = behavioral_helper->get_function_name();
-
+#endif
    ///The control flow graph with feedback of basic blocks
    const BBGraphRef  fbb = function_behavior->GetBBGraph(FunctionBehavior::FBB);
 
@@ -118,7 +119,7 @@ DesignFlowStep_Status AddBbEcfgEdges::InternalExec()
 
    ///Adding edges in basic block graphs from sources of feedback edges to landing pads
    std::list<LoopConstRef>::const_iterator loop, loop_end = loops.end();
-   for(loop = loops.begin(); loop != loop_end; loop++)
+   for(loop = loops.begin(); loop != loop_end; ++loop)
    {
       if((*loop)->GetId() == 0)
          continue;
@@ -153,7 +154,7 @@ DesignFlowStep_Status AddBbEcfgEdges::InternalExec()
                         {
                            THROW_UNREACHABLE("ecfg graph of function " + function_name + " is not acyclic");
                         }
-                        catch (const std::string & msg)
+                        catch (const std::string& msg)
                         {
                            THROW_UNREACHABLE("ecfg graph of function " + function_name + " is not acyclic");
                         }
@@ -234,9 +235,9 @@ DesignFlowStep_Status AddBbEcfgEdges::InternalExec()
       targets.insert(landing_pads.begin(), landing_pads.end());
 
       std::unordered_set<vertex>::const_iterator s, s_end = sources.end(), t, t_end = targets.end();
-      for(s = sources.begin(); s != s_end; s++)
+      for(s = sources.begin(); s != s_end; ++s)
       {
-         for(t = targets.begin(); t != t_end; t++)
+         for(t = targets.begin(); t != t_end; ++t)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Adding edge from BB" + boost::lexical_cast<std::string>(fbb->CGetBBNodeInfo(*s)->block->number) + " to BB" + boost::lexical_cast<std::string>(fbb->CGetBBNodeInfo(*t)->block->number));
             function_behavior->bbgc->AddEdge(*s, *t, ECFG_SELECTOR);
@@ -253,7 +254,7 @@ DesignFlowStep_Status AddBbEcfgEdges::InternalExec()
                {
                   THROW_UNREACHABLE("ecfg graph of function " + function_name + " is not acyclic");
                }
-               catch (const std::string & msg)
+               catch (const std::string& msg)
                {
                   THROW_UNREACHABLE("ecfg graph of function " + function_name + " is not acyclic");
                }
@@ -288,7 +289,7 @@ DesignFlowStep_Status AddBbEcfgEdges::InternalExec()
    {
       THROW_UNREACHABLE("ecfg graph of function " + function_name + " is not acyclic");
    }
-   catch (const std::string & msg)
+   catch (const std::string& msg)
    {
       THROW_UNREACHABLE("ecfg graph of function " + function_name + " is not acyclic");
    }

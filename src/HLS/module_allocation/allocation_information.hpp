@@ -252,7 +252,7 @@ class AllocationInformation : public HLSFunctionIR
       /// put into relation variable and their latency when they are mapped on a private synchronous ram
       std::map<unsigned int, std::string> sync_ram_var_latency;
 
-      std::string get_latency_string(std::string lat) const;
+      std::string get_latency_string(const std::string &lat) const;
 
       /// return the execution time of the operation corrected by time_multiplier factor
       double time_m_execution_time(operation* op) const;
@@ -716,7 +716,7 @@ class AllocationInformation : public HLSFunctionIR
        * @param operation_name is the operation name
        * @return a correction time
        */
-      double get_correction_time(unsigned int fu, const std::string &operation_name) const;
+      double get_correction_time(unsigned int fu, const std::string&operation_name) const;
 
       /**
        * estimate the delay of a mux that can be uses to mux the input of the given functional unit
@@ -1045,7 +1045,7 @@ struct updatecopy_HLS_constraints_functor
        * Constructor
        * @param ALL is the reference to allocation class where technology constraints are stored
        */
-      updatecopy_HLS_constraints_functor(const AllocationInformationRef allocation_information);
+      explicit updatecopy_HLS_constraints_functor(const AllocationInformationRef allocation_information);
 
       /**
        * Destructor

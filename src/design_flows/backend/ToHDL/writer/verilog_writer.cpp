@@ -80,7 +80,7 @@
 
 #define VERILOG_2001_SUPPORTED
 
-void verilog_writer::write_comment(const std::string &comment_string)
+void verilog_writer::write_comment(const std::string&comment_string)
 {
    indented_output_stream->Append("// " + comment_string);
 }
@@ -113,17 +113,14 @@ std::string verilog_writer::type_converter(structural_type_descriptorRef Type)
       case structural_type_descriptor::VECTOR_BOOL:
       {
          return "";
-         break;
       }
       case structural_type_descriptor::VECTOR_INT:
       {
          return "signed ";
-         break;
       }
       case structural_type_descriptor::VECTOR_UINT:
       {
          return "";
-         break;
       }
       case structural_type_descriptor::VECTOR_REAL:
       {
@@ -137,7 +134,6 @@ std::string verilog_writer::type_converter(structural_type_descriptorRef Type)
       case structural_type_descriptor::OTHER:
       {
          return Type->id_type;
-         break;
       }
       case structural_type_descriptor::UNKNOWN:
       default:
@@ -253,7 +249,6 @@ std::string verilog_writer::type_converter_size(const structural_objectRef &cir)
       case structural_type_descriptor::OTHER:
       {
          return Type->id_type;
-         break;
       }
       case structural_type_descriptor::UNKNOWN:
       default:
@@ -276,7 +271,7 @@ std::string verilog_writer::may_slice_string(const structural_objectRef &cir)
       {
          std::vector<std::pair<std::string, structural_objectRef> > library_parameters;
          mod->get_NP_library_parameters(Owner, library_parameters);
-         for(const auto library_parameter : library_parameters)
+         for(const auto& library_parameter : library_parameters)
             if(port_name == library_parameter.first)
                specialization_string=true;
       }
@@ -526,7 +521,7 @@ void verilog_writer::WriteBuiltin(const structural_objectConstRef component)
    indented_output_stream->Append(");\n");
 }
 
-void verilog_writer::write_module_instance_begin(const structural_objectRef &cir, const std::string & module_name, bool write_parametrization)
+void verilog_writer::write_module_instance_begin(const structural_objectRef &cir, const std::string& module_name, bool write_parametrization)
 {
    THROW_ASSERT(cir->get_kind() == component_o_K || cir->get_kind() == channel_o_K, "Expected a component or a channel got something of different");
 #if 0
@@ -588,10 +583,9 @@ void verilog_writer::write_vector_port_binding(const structural_objectRef &port,
       structural_objectRef slice;
       structural_objectRef null_object;
       unsigned int n_ports = pv->get_ports_size();
-      unsigned int index;
       for (unsigned int j =  0; j < n_ports; ++j)
       {
-         index = n_ports - j - 1;
+         unsigned int index = n_ports - j - 1;
          structural_objectRef object_bounded = GetPointer<port_o>(pv->get_port(index))->find_bounded_object();
          if (!object_bounded) THROW_ERROR("not bounded: " + pv->get_port(index)->get_path());
 
@@ -655,7 +649,6 @@ void verilog_writer::write_vector_port_binding(const structural_objectRef &port,
                }
                else if (local_first_port_analyzed)
                   port_binding += ", ";
-               local_first_port_analyzed = true;
                slice = null_object;
                msb = std::numeric_limits<unsigned int>::max();
             }
@@ -856,7 +849,7 @@ void verilog_writer::write_module_parametrization(const structural_objectRef &ci
          }
          else
             indented_output_stream->Append(", ");
-         const std::string &name = library_parameter.first;
+         const std::string&name = library_parameter.first;
          structural_objectRef obj = library_parameter.second;
 
          if (!mod->is_parameter(std::string(BITSIZE_PREFIX)+name) && obj)
@@ -925,7 +918,7 @@ void verilog_writer::write_tail(const structural_objectRef &)
 {
 }
 
-void verilog_writer::write_state_declaration(const structural_objectRef &cir, const std::list<std::string> &list_of_states, const std::string &, const std::string &/*reset_state*/, bool one_hot)
+void verilog_writer::write_state_declaration(const structural_objectRef &cir, const std::list<std::string> &list_of_states, const std::string&, const std::string&/*reset_state*/, bool one_hot)
 {
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Starting state declaration...");
 
@@ -935,7 +928,7 @@ void verilog_writer::write_state_declaration(const structural_objectRef &cir, co
    unsigned int bitsnumber = language_writer::bitnumber(n_states-1);
    /// adjust in case states are not consecutives
    unsigned max_value = 0;
-   for(std::list<std::string>::const_iterator it = list_of_states.begin(); it != it_end; it++)
+   for(std::list<std::string>::const_iterator it = list_of_states.begin(); it != it_end; ++it)
    {
       max_value = std::max(max_value, boost::lexical_cast<unsigned int>(it->substr(strlen(STATE_NAME_PREFIX))));
    }
@@ -945,7 +938,7 @@ void verilog_writer::write_state_declaration(const structural_objectRef &cir, co
       indented_output_stream->Append("parameter ["+boost::lexical_cast<std::string>(max_value)+":0] ");
    else
       indented_output_stream->Append("parameter ["+boost::lexical_cast<std::string>(bitsnumber-1)+":0] ");
-   for(std::list<std::string>::const_iterator it = list_of_states.begin(); it != it_end; it++)
+   for(std::list<std::string>::const_iterator it = list_of_states.begin(); it != it_end; ++it)
    {
       if(one_hot)
          indented_output_stream->Append(*it+" = "+boost::lexical_cast<std::string>(max_value+1)+"'b"+encode_one_hot(1+max_value, boost::lexical_cast<unsigned int>(it->substr(strlen(STATE_NAME_PREFIX)))));
@@ -986,7 +979,7 @@ void verilog_writer::write_state_declaration(const structural_objectRef &cir, co
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Completed state declaration");
 }
 
-void verilog_writer::write_present_state_update(const std::string &reset_state, const std::string &reset_port, const std::string &clock_port, const std::string &reset_type)
+void verilog_writer::write_present_state_update(const std::string&reset_state, const std::string&reset_port, const std::string&clock_port, const std::string&reset_type)
 {
    if(reset_type == "no" || reset_type == "sync")
       indented_output_stream->Append("always @(posedge "+clock_port+")\n");
@@ -1004,7 +997,7 @@ void verilog_writer::write_present_state_update(const std::string &reset_state, 
    indented_output_stream->Deindent();
 }
 
-void verilog_writer::write_transition_output_functions(bool single_proc, unsigned int output_index, const structural_objectRef &cir, const std::string &reset_state, const std::string &reset_port, const std::string &start_port, const std::string &clock_port, std::vector<std::string>::const_iterator &first, std::vector<std::string>::const_iterator &end)
+void verilog_writer::write_transition_output_functions(bool single_proc, unsigned int output_index, const structural_objectRef &cir, const std::string&reset_state, const std::string&reset_port, const std::string&start_port, const std::string&clock_port, std::vector<std::string>::const_iterator &first, std::vector<std::string>::const_iterator &end)
 {
    typedef boost::tokenizer<boost::char_separator<char> > tokenizer;
    const char soc[3] = {STD_OPENING_CHAR, '\n', '\0'};
@@ -1053,7 +1046,7 @@ void verilog_writer::write_transition_output_functions(bool single_proc, unsigne
    indented_output_stream->Append("case (_present_state)");
    indented_output_stream->Append(soc);
 
-   for(std::vector<std::string>::const_iterator first_it = first; first_it != end; first_it++)
+   for(std::vector<std::string>::const_iterator first_it = first; first_it != end; ++first_it)
    {
       //std::cerr << "writing '" << *first_it << std::endl;
       tokenizer state_tokens_first(*first_it, state_sep);
@@ -1062,10 +1055,10 @@ void verilog_writer::write_transition_output_functions(bool single_proc, unsigne
 
       std::string state_description = *it;
       //std::cerr << "  state: '" << state_description << "'" << std::endl;
-      it++;
+      ++it;
 
       std::vector<std::string> state_transitions;
-      for(; it != state_tokens_first.end(); it++)
+      for(; it != state_tokens_first.end(); ++it)
          state_transitions.push_back(*it);
       //std::cerr << "    number of transitions: '" << state_transitions.size() << "'" << std::endl;
 
@@ -1076,7 +1069,7 @@ void verilog_writer::write_transition_output_functions(bool single_proc, unsigne
       //std::cerr << "    present state: '" << *it << "'" << std::endl;
       std::string present_state = HDL_manager::convert_to_identifier(this, *it);
       ///get the current output
-      it++;
+      ++it;
       std::string current_output = *it;
 
       if(!single_proc && output_index != mod->get_out_port_size() &&
@@ -1098,7 +1091,7 @@ void verilog_writer::write_transition_output_functions(bool single_proc, unsigne
                boost::char_separator<char> comma_sep(",", nullptr);
                tokenizer current_input_tokens(input_string, comma_sep);
                current_input_it = current_input_tokens.begin();
-               itt++;
+               ++itt;
             }
             ++itt;
             std::string transition_outputs = *itt;
@@ -1150,7 +1143,7 @@ void verilog_writer::write_transition_output_functions(bool single_proc, unsigne
             boost::char_separator<char> comma_sep(",", nullptr);
             tokenizer current_input_tokens(input_string, comma_sep);
             current_input_it = current_input_tokens.begin();
-            itt++;
+            ++itt;
          }
          std::string next_state = *itt;
          ++itt;
@@ -1230,7 +1223,7 @@ void verilog_writer::write_transition_output_functions(bool single_proc, unsigne
                            res_or_conditions = "(" + res_or_conditions + ")";
                         indented_output_stream->Append(res_or_conditions);
                      }
-                     current_input_it++;
+                     ++current_input_it;
                   }
                }
                indented_output_stream->Append(")");
@@ -1388,7 +1381,7 @@ void verilog_writer::write_module_parametrization_decl(const structural_objectRe
       ///writing other library parameters
       std::vector<std::pair<std::string, structural_objectRef> > library_parameters;
       mod->get_NP_library_parameters(cir, library_parameters);
-      for(const auto library_parameter : library_parameters)
+      for(const auto& library_parameter : library_parameters)
       {
          if(first_it)
          {
@@ -1397,7 +1390,7 @@ void verilog_writer::write_module_parametrization_decl(const structural_objectRe
          }
          else
             indented_output_stream->Append(", ");
-         const std::string &name = library_parameter.first;
+         const std::string&name = library_parameter.first;
          structural_objectRef obj = library_parameter.second;
          if(obj)
          {
@@ -1807,9 +1800,9 @@ void verilog_writer::write_timing_specification(const technology_managerConstRef
       }
       else
       {
-         for(std::map<std::string, std::map<std::string, double> >::iterator d = delays.begin(); d != delays.end(); d++)
+         for(std::map<std::string, std::map<std::string, double> >::iterator d = delays.begin(); d != delays.end(); ++d)
          {
-            for(std::map<std::string, double>::iterator o = d->second.begin(); o != d->second.end(); o++)
+            for(std::map<std::string, double>::iterator o = d->second.begin(); o != d->second.end(); ++o)
             {
                if (ops.size() > 1) indented_output_stream->Append("if (sel_" + GetPointer<operation>(ops[i])->operation_name + " == 1'b1) ");
                indented_output_stream->Append("(" + d->first + " *> " + o->first + ") = " + STR(o->second) + ";\n");

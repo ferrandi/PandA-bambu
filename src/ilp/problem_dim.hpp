@@ -67,7 +67,7 @@ protected:
 
 public:
 
-  problem_dim(const meilp_solverRef & ms);
+  explicit problem_dim(const meilp_solverRef & ms);
   
   virtual void print(std::ostream& os) const = 0;
   

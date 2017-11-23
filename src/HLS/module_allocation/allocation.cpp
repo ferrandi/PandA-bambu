@@ -90,7 +90,7 @@ static bool is_memory_port (const structural_objectRef & port)
    return p->get_is_memory() or p->get_is_global() or p->get_is_extern();
 }
 
-static bool is_a_skip_operation(std::string op_name)
+static bool is_a_skip_operation(const std::string& op_name)
 {
    if(
          op_name == "mult_expr" ||
@@ -102,12 +102,12 @@ static bool is_a_skip_operation(std::string op_name)
       return false;
 }
 
-static inline std::string encode_op_type(const std::string & op_name, const std::string & fu_supported_types)
+static inline std::string encode_op_type(const std::string& op_name, const std::string& fu_supported_types)
 {
    return op_name + ":" + fu_supported_types;
 }
 
-static inline std::string encode_op_type_prec(const std::string & op_name, const std::string & fu_supported_types, node_kind_prec_infoRef node_info)
+static inline std::string encode_op_type_prec(const std::string& op_name, const std::string& fu_supported_types, node_kind_prec_infoRef node_info)
 {
    std::string op_type = encode_op_type(op_name, fu_supported_types);
    const size_t n_ins = node_info->input_prec.size();
@@ -180,9 +180,9 @@ const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
 }
 
 technology_nodeRef allocation::extract_bambu_provided(
-      const std::string & library_name,
+      const std::string& library_name,
       operation* curr_op,
-      const std::string & bambu_provided_resource)
+      const std::string& bambu_provided_resource)
 {
    technology_nodeRef current_fu;
    std::string function_name;
@@ -282,7 +282,7 @@ static void connectClockAndReset(
       SM->add_connection(port_rst, reset);
 }
 
-void allocation::BuildProxyWrapper(functional_unit* current_fu, const std::string & orig_fun_name, const std::string & orig_library_name)
+void allocation::BuildProxyWrapper(functional_unit* current_fu, const std::string& orig_fun_name, const std::string& orig_library_name)
 {
    const library_managerRef orig_libraryManager = TM->get_library_manager(orig_library_name);
    THROW_ASSERT(orig_libraryManager->is_fu(orig_fun_name), "functional unit not yet synthesized: " + orig_fun_name + "(" + orig_library_name + ")");
@@ -305,7 +305,7 @@ void allocation::BuildProxyWrapper(functional_unit* current_fu, const std::strin
    for (const auto & o : ops)
    {
       const std::string op_name = GetPointer<operation>(o)->get_name();
-      if (op_name.find(WRAPPED_PROXY_PREFIX) != 0)
+      if (!boost::algorithm::starts_with(op_name,WRAPPED_PROXY_PREFIX))
       {
          const std::string sel_port_name = "sel_" + op_name;
          structural_objectRef new_sel_port = wrapper_obj->find_member(sel_port_name, port_o_K, wrapper_obj);
@@ -419,9 +419,9 @@ void allocation::BuildProxyWrapper(functional_unit* current_fu, const std::strin
 
 void allocation::add_proxy_function_wrapper(
       technology_nodeRef wrapper_tn,
-      const std::string & library_name,
+      const std::string& library_name,
       technology_nodeRef techNode_obj,
-      const std::string & orig_fun_name)
+      const std::string& orig_fun_name)
 {
    const std::string wrapped_fu_name = WRAPPED_PROXY_PREFIX + orig_fun_name;
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - adding proxy function wrapper " + wrapped_fu_name);
@@ -570,7 +570,7 @@ void allocation::BuildProxyFunctionVerilog(functional_unit* current_fu)
    {
       operation * current_op = GetPointer<operation>(ops[o]);
       std::string op_name = current_op->get_name();
-      if(op_name.find(PROXY_PREFIX) == 0) continue;
+      if(boost::algorithm::starts_with(op_name,PROXY_PREFIX)) continue;
       std::string sel_port_name = "sel_"+op_name;
       structural_objectRef sel_port = fu_module->find_member(sel_port_name, port_o_K, top);
       if(!sel_port)
@@ -630,7 +630,7 @@ void allocation::BuildProxyFunctionVHDL(functional_unit* current_fu)
    {
       operation * current_op = GetPointer<operation>(ops[o]);
       std::string op_name = current_op->get_name();
-      if(op_name.find(PROXY_PREFIX) == 0) continue;
+      if(boost::algorithm::starts_with(op_name,PROXY_PREFIX)) continue;
       std::string sel_port_name = "sel_"+op_name;
       structural_objectRef sel_port = fu_module->find_member(sel_port_name, port_o_K, top);
       if(!sel_port)
@@ -707,7 +707,7 @@ void allocation::add_proxy_function_module(
       technology_nodeRef proxy_tn,
       const HLS_constraintsRef HLS_C,
       technology_nodeRef techNode_obj,
-      const std::string & orig_fun_name)
+      const std::string& orig_fun_name)
 {
    const std::string proxied_fu_name = PROXY_PREFIX + orig_fun_name;
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - adding proxied function " + proxied_fu_name);
@@ -946,7 +946,7 @@ bool allocation::check_templated_units(double clock_period, node_kind_prec_infoR
       template_suffix += STR(node_info->output_prec) + "_" + STR(node_info->base128_output_nelem);
    }
    std::string fu_template_parameters = GetPointer<functional_unit>(current_fu)->fu_template_parameters;
-   if(fu_template_parameters.find(required_prec) != 0)
+   if(!boost::algorithm::starts_with(fu_template_parameters,required_prec))
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Not support required precision " + STR(required_prec) + "(" + fu_template_parameters + ")");
       return true;
@@ -972,7 +972,7 @@ bool allocation::check_templated_units(double clock_period, node_kind_prec_infoR
    return false;
 }
 
-bool allocation::check_for_memory_compliancy(bool Has_extern_allocated_data, technology_nodeRef current_fu, std::string memory_ctrl_type, std::string channels_type)
+bool allocation::check_for_memory_compliancy(bool Has_extern_allocated_data, technology_nodeRef current_fu, const std::string& memory_ctrl_type, std::string channels_type)
 {
    std::string memory_type = GetPointer<functional_unit>(current_fu)->memory_type;
    std::string bram_load_latency = GetPointer<functional_unit>(current_fu)->bram_load_latency;
@@ -1073,7 +1073,7 @@ bool allocation::check_proxies(const library_managerRef library, std::string fu_
    if(HLSMgr->Rfuns->is_a_proxied_function(fu_name)) return true;
    if(library->get_library_name() == PROXY_LIBRARY)
    {
-      if(fu_name.find(WRAPPED_PROXY_PREFIX) == 0)
+      if(boost::algorithm::starts_with(fu_name,WRAPPED_PROXY_PREFIX))
       {
          std::string original_function_name = fu_name.substr(std::string(WRAPPED_PROXY_PREFIX).size());
          if(!HLSMgr->Rfuns->is_a_shared_function(funId, original_function_name)) return true;
@@ -1152,9 +1152,10 @@ DesignFlowStep_Status allocation::InternalExec()
                                      parameters->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) != MemoryAllocation_Policy::EXT_PIPELINED_BRAM);
    IntegrateTechnologyLibraries();
 
+#if HAVE_FLOPOCO
    bool skip_flopoco_resources = false;
-#if !HAVE_FLOPOCO
-   skip_flopoco_resources = true;
+#else
+   bool skip_flopoco_resources = true;
 #endif
    bool skip_softfloat_resources = true;
    if(parameters->isOption(OPT_soft_float) && parameters->getOption<bool>(OPT_soft_float))
@@ -1793,7 +1794,7 @@ DesignFlowStep_Status allocation::InternalExec()
                if(node_info->is_simple_pointer_plus_expr) allocation_information->simple_pointer_plus_expr.insert(specializedId);
                if(library_name == PROXY_LIBRARY)
                {
-                  if(functionalUnitName.find(WRAPPED_PROXY_PREFIX) == 0)
+                  if(boost::algorithm::starts_with(functionalUnitName,WRAPPED_PROXY_PREFIX))
                   {
                      std::string original_function_name = functionalUnitName.substr(std::string(WRAPPED_PROXY_PREFIX).size());
                      allocation_information->proxy_wrapped_units[specializedId] = original_function_name;
@@ -1811,7 +1812,7 @@ DesignFlowStep_Status allocation::InternalExec()
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Considered functional unit: " + current_fu->get_name());
       }
-      for(std::map<std::string,technology_nodeRef>::iterator iter_new_fu=new_fu.begin(); iter_new_fu!=new_fu.end(); iter_new_fu++)
+      for(std::map<std::string,technology_nodeRef>::iterator iter_new_fu=new_fu.begin(); iter_new_fu!=new_fu.end(); ++iter_new_fu)
       {
          PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Adding functional unit: "+iter_new_fu->first+" in "+ lib_name);
          TM->add(iter_new_fu->second, lib_name);
@@ -1853,7 +1854,7 @@ DesignFlowStep_Status allocation::InternalExec()
    ///These data struture are filled only once
    if (!allocation_information->node_id_to_fus.empty())
    {
-      for(const auto op : allocation_information->node_id_to_fus)
+      for(const auto& op : allocation_information->node_id_to_fus)
       {
          for(auto fu_unit : op.second)
          {
@@ -1865,7 +1866,7 @@ DesignFlowStep_Status allocation::InternalExec()
    }
    if (!allocation_information->node_id_to_fus.empty() and bb_version == 0)
    {
-      for(const auto op : allocation_information->node_id_to_fus)
+      for(const auto& op : allocation_information->node_id_to_fus)
       {
          for(auto fu_unit : op.second)
          {
@@ -1909,7 +1910,7 @@ DesignFlowStep_Status allocation::InternalExec()
    return DesignFlowStep_Status::SUCCESS;
 }
 
-std::string allocation::get_compliant_pipelined_unit(double clock, const std::string pipe_parameter, const technology_nodeRef current_fu, const std::string curr_op, const std::string library_name, const std::string template_suffix, unsigned int module_prec)
+std::string allocation::get_compliant_pipelined_unit(double clock, const std::string&pipe_parameter, const technology_nodeRef current_fu, const std::string&curr_op, const std::string&library_name, const std::string&template_suffix, unsigned int module_prec)
 {
    if(pipe_parameter=="") return "";
    THROW_ASSERT(GetPointer<functional_unit>(current_fu), "expected a functional unit object");
@@ -2067,7 +2068,7 @@ bool allocation::is_ram_not_timing_compliant(const HLS_constraintsRef HLS_C, uns
    return  n_ref/n_channels > 1 &&  (controller_delay+ex_time+mux_delay+setup)>clock_period;
 }
 
-std::string allocation::get_synch_ram_latency(std::string ram_template, std::string latency_postfix, const HLS_constraintsRef HLS_C, unsigned int var)
+std::string allocation::get_synch_ram_latency(const std::string& ram_template, const std::string& latency_postfix, const HLS_constraintsRef HLS_C, unsigned int var)
 {
    std::string new_lat;
    technology_nodeRef current_fu = get_fu(ram_template+latency_postfix);

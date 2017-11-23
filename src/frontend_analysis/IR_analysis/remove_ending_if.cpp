@@ -295,7 +295,7 @@ DesignFlowStep_Status RemoveEndingIf::InternalExec()
                         }
                         double min = std::numeric_limits<double>::max();
                         double max = 0.0;
-                        for(const auto stmt : dep_block->CGetStmtList())
+                        for(const auto& stmt : dep_block->CGetStmtList())
                         {
                            if(schedule->GetStartingTime(stmt->index) < min)
                            {

@@ -79,7 +79,7 @@ class ParserFlowStepFactory : public DesignFlowStepFactory
        * @param signature is the signature of the step to be created
        * @return the created step
        */
-      virtual DesignFlowStepRef CreateFlowStep(const std::string signature) const;
+      virtual DesignFlowStepRef CreateFlowStep(const std::string&signature) const;
 };
 #endif
 
