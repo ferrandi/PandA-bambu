@@ -233,7 +233,7 @@ void AlteraBackendFlow::CheckSynthesisResults()
    if(design_values[ALTERA_FMAX] != 0.0)
       lut_m->set_timing_value(LUT_model::COMBINATIONAL_DELAY, 1000/design_values[ALTERA_FMAX]);
    else if(design_values.find("SLACK") != design_values.end())
-      lut_m->set_timing_value(LUT_model::COMBINATIONAL_DELAY, design_values.find("SLACK")->second);
+      lut_m->set_timing_value(LUT_model::COMBINATIONAL_DELAY, Param->getOption<double>(OPT_clock_period) - design_values.find("SLACK")->second);
    else
       lut_m->set_timing_value(LUT_model::COMBINATIONAL_DELAY, 0);
 }
@@ -272,6 +272,10 @@ void AlteraBackendFlow::create_sdc(const DesignParametersRef dp)
    if(!boost::lexical_cast<bool>(dp->parameter_values[PARAM_is_combinational]))
    {
       sdc_file << "create_clock -period "+ dp->parameter_values[PARAM_clk_period] + " -name "+ clock + " [get_ports " + clock + "]\n";
+      sdc_file << "set_max_delay 10 -from [all_inputs] -to [all_registers]\n";
+      sdc_file << "set_max_delay 10 -from [all_registers] -to [all_outputs]\n";
+      sdc_file << "set_min_delay 0 -from [all_inputs] -to [all_registers]\n";
+      sdc_file << "set_min_delay 0 -from [all_registers] -to [all_outputs]\n";
       sdc_file << "derive_pll_clocks\n";
       sdc_file << "derive_clock_uncertainty\n";
    }
