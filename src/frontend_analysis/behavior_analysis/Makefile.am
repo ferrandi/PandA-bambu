@@ -114,20 +114,26 @@ if BUILD_LIB_HOST_PROFILING
 
    noinst_HEADERS += \
       basic_blocks_profiling.hpp \
+      host_profiling.hpp
+
+   lib_behavior_analysis_la_SOURCES += \
+      basic_blocks_profiling.cpp \
+      host_profiling.cpp
+
+if BUILD_LIB_EXPERIMENTAL
+   noinst_HEADERS += \
       dump_profiling_data.hpp \
       hpp_profiling.hpp \
       loops_profiling.hpp \
-      profiling.hpp \
       read_profiling_data.hpp \
       tp_profiling.hpp
    lib_behavior_analysis_la_SOURCES += \
-      basic_blocks_profiling.cpp \
       dump_profiling_data.cpp \
       hpp_profiling.cpp \
       loops_profiling.cpp \
-      profiling.cpp \
       read_profiling_data.cpp \
       tp_profiling.cpp
+endif
 if BUILD_ZEBU
      noinst_HEADERS += \
         check_pipelinable_loops.hpp \

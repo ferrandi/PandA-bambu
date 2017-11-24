@@ -91,16 +91,16 @@
 ///design_flows/backend/ToC/source_code_writers includes
 #if HAVE_HOST_PROFILING_BUILT
 #include "basic_blocks_profiling_c_writer.hpp"
+#if HAVE_EXPERIMENTAL
 #include "data_memory_profiling_c_writer.hpp"
 #include "data_memory_profiling_instruction_writer.hpp"
-#endif
-#if HAVE_HOST_PROFILING_BUILT
 #include "efficient_path_profiling_c_writer.hpp"
+#endif
 #endif
 #if HAVE_TARGET_PROFILING
 #include "escape_instruction_writer.hpp"
 #endif
-#if HAVE_HOST_PROFILING_BUILT
+#if HAVE_EXPERIMENTAL && HAVE_HOST_PROFILING_BUILT
 #include "hierarchical_path_profiling_c_writer.hpp"
 #endif
 #if HAVE_BAMBU_BUILT
@@ -119,7 +119,7 @@
 #if HAVE_TARGET_PROFILING
 #include "instrument_writer.hpp"
 #endif
-#if HAVE_HOST_PROFILING_BUILT
+#if HAVE_EXPERIMENTAL && HAVE_HOST_PROFILING_BUILT
 #include "loops_profiling_c_writer.hpp"
 #endif
 #if HAVE_TARGET_PROFILING
@@ -132,7 +132,7 @@
 #if HAVE_GRAPH_PARTITIONING_BUILT
 #include "parallel_c_writer.hpp"
 #endif
-#if HAVE_HOST_PROFILING_BUILT
+#if HAVE_EXPERIMENTAL && HAVE_HOST_PROFILING_BUILT
 #include "tree_path_profiling_c_writer.hpp"
 #endif
 
@@ -223,7 +223,7 @@ CWriterRef CWriter::CreateCWriter(const CBackend::Type type, const CBackendInfor
             return CWriterRef(new BasicBlocksProfilingCWriter(app_man, instruction_writer, indented_output_stream, parameters, verbose));
          }
 #endif
-#if HAVE_HOST_PROFILING_BUILT
+#if HAVE_EXPERIMENTAL && HAVE_HOST_PROFILING_BUILT
       case(CBackend::CB_DATA_MEMORY_PROFILING):
          {
             const InstructionWriterRef instruction_writer(new DataMemoryProfilingInstructionWriter(app_man, indented_output_stream, parameters));
@@ -238,7 +238,7 @@ CWriterRef CWriter::CreateCWriter(const CBackend::Type type, const CBackendInfor
             return CWriterRef(new DiscrepancyAnalysisCWriter(RefcountCast<const HLSCBackendInformation>(c_backend_information), app_man, instruction_writer, indented_output_stream, parameters, verbose));
          }
 #endif
-#if HAVE_HOST_PROFILING_BUILT
+#if HAVE_EXPERIMENTAL && HAVE_HOST_PROFILING_BUILT
       case(CBackend::CB_EPP):
          {
             const InstructionWriterRef instruction_writer = InstructionWriter::CreateInstructionWriter(ActorGraphBackend_Type::BA_NONE, app_man, indented_output_stream, parameters);
@@ -261,7 +261,7 @@ CWriterRef CWriter::CreateCWriter(const CBackend::Type type, const CBackendInfor
             return CWriterRef(new HLSCWriter(RefcountCast<const HLSCBackendInformation>(c_backend_information), app_man, instruction_writer, indented_output_stream, parameters, verbose));
          }
 #endif
-#if HAVE_HOST_PROFILING_BUILT
+#if HAVE_EXPERIMENTAL && HAVE_HOST_PROFILING_BUILT
       case(CBackend::CB_HPP):
          {
             const InstructionWriterRef instruction_writer = InstructionWriter::CreateInstructionWriter(ActorGraphBackend_Type::BA_NONE, app_man, indented_output_stream, parameters);
@@ -293,7 +293,7 @@ CWriterRef CWriter::CreateCWriter(const CBackend::Type type, const CBackendInfor
             }
          }
 #endif
-#if HAVE_HOST_PROFILING_BUILT
+#if HAVE_EXPERIMENTAL && HAVE_HOST_PROFILING_BUILT
       case(CBackend::CB_LOOPS_PROFILING):
          {
             const InstructionWriterRef instruction_writer = InstructionWriter::CreateInstructionWriter(ActorGraphBackend_Type::BA_NONE, app_man, indented_output_stream, parameters);
@@ -319,7 +319,7 @@ CWriterRef CWriter::CreateCWriter(const CBackend::Type type, const CBackendInfor
             const InstructionWriterRef instruction_writer = InstructionWriter::CreateInstructionWriter(ActorGraphBackend_Type::BA_NONE, app_man, indented_output_stream, parameters);
             return CWriterRef(new CWriter(app_man, instruction_writer, indented_output_stream, parameters, verbose));
          }
-#if HAVE_HOST_PROFILING_BUILT
+#if HAVE_EXPERIMENTAL && HAVE_HOST_PROFILING_BUILT
       case(CBackend::CB_TPP):
          {
             const InstructionWriterRef instruction_writer = InstructionWriter::CreateInstructionWriter(ActorGraphBackend_Type::BA_NONE, app_man, indented_output_stream, parameters);
