@@ -37,6 +37,7 @@
 * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
 *
 */
+
 #include "plugin_includes.hpp"
 
 #include "clang/Frontend/FrontendPluginRegistry.h"
@@ -45,14 +46,19 @@
 #include "clang/AST/RecursiveASTVisitor.h"
 #include "clang/Frontend/CompilerInstance.h"
 #include "clang/Sema/Sema.h"
-#include "llvm/Support/raw_ostream.h"
+
+namespace llvm {
+   struct clang40_plugin_dumpGimpleSSAPass;
+}
+
+static clang::DumpGimpleRaw *gimpleRawWriter;
 
 namespace clang {
-
 
    class clang40_plugin_dumpGimpleSSA : public PluginASTAction
    {
          std::string outdir_name;
+         friend struct llvm::clang40_plugin_dumpGimpleSSAPass;
       protected:
          std::unique_ptr<ASTConsumer> CreateASTConsumer(CompilerInstance &CI,
                                                         llvm::StringRef InFile) override
@@ -61,7 +67,8 @@ namespace clang {
             if(outdir_name=="")
                D.Report(D.getCustomDiagID(DiagnosticsEngine::Error,
                                        "outputdir argument not specified"));
-            return llvm::make_unique<DumpGimpleRaw>(CI, outdir_name, InFile, false);
+            gimpleRawWriter = new DumpGimpleRaw(CI, outdir_name, InFile, false);
+            return llvm::make_unique<dummyConsumer>();
          }
 
          bool ParseArgs(const CompilerInstance &CI,
@@ -119,3 +126,45 @@ Y("clang40_plugin_dumpGimpleSSACpp", "Dump gimple ssa raw format starting from L
 static clang::FrontendPluginRegistry::Add<clang::clang40_plugin_dumpGimpleSSA>
 X("clang40_plugin_dumpGimpleSSA", "Dump gimple ssa raw format starting from LLVM IR");
 #endif
+
+
+#include "llvm/Pass.h"
+#include "llvm/PassRegistry.h"
+#include "llvm/IR/PassManager.h"
+#include "llvm/IR/LegacyPassManager.h"
+#include "llvm/Transforms/IPO/PassManagerBuilder.h"
+
+namespace llvm {
+
+   class llvm;
+
+   struct clang40_plugin_dumpGimpleSSAPass: public ModulePass
+   {
+         static char ID;
+         clang40_plugin_dumpGimpleSSAPass() : ModulePass(ID){}
+         bool runOnModule(Module &M)
+         {
+            assert(gimpleRawWriter);
+            auto res = gimpleRawWriter->runOnModule(M);
+            delete gimpleRawWriter;
+            gimpleRawWriter = nullptr;
+            return res;
+         }
+         virtual StringRef getPassName() const
+         {
+            return "clang40_plugin_dumpGimpleSSAPass";
+         }
+   };
+
+}
+char llvm::clang40_plugin_dumpGimpleSSAPass::ID = 0;
+static llvm::RegisterPass<llvm::clang40_plugin_dumpGimpleSSAPass> XPass("clang40_plugin_dumpGimpleSSAPass", "Dump gimple ssa raw format starting from LLVM IR: LLVM pass",
+                                false /* Only looks at CFG */,
+                                false /* Analysis Pass */);
+
+// This function is of type PassManagerBuilder::ExtensionFn
+static void loadPass(const llvm::PassManagerBuilder &, llvm::legacy::PassManagerBase &PM) {
+  PM.add(new llvm::clang40_plugin_dumpGimpleSSAPass());
+}
+// These constructors add our pass to a list of global extensions.
+static llvm::RegisterStandardPasses clangtoolLoader_Ox(llvm::PassManagerBuilder::EP_OptimizerLast, loadPass);

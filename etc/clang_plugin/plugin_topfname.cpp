@@ -49,28 +49,15 @@
 
 namespace clang {
 
-   class dummytopfnameConsumer : public ASTConsumer
-   {
-        const  std::string topfname;
-        const std::string InFile;
-        CompilerInstance &Instance;
-
-      public:
-         dummytopfnameConsumer(CompilerInstance &_Instance,
-                               const std::string& _topfname, const std::string& _InFile) : topfname(_topfname), InFile(_InFile), Instance(_Instance) {}
-
-
-   };
-
 
    class clang40_plugin_topfname : public PluginASTAction
    {
          std::string topfname;
       protected:
-         std::unique_ptr<ASTConsumer> CreateASTConsumer(CompilerInstance &CI,
-                                                        llvm::StringRef InFile) override
+         std::unique_ptr<ASTConsumer> CreateASTConsumer(CompilerInstance &,
+                                                        llvm::StringRef ) override
          {
-            return llvm::make_unique<dummytopfnameConsumer>(CI, topfname, InFile);
+            return llvm::make_unique<dummyConsumer>();
          }
 
          bool ParseArgs(const CompilerInstance &CI,

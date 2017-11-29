@@ -47,6 +47,8 @@
 #include "clang/Sema/Sema.h"
 #include "llvm/Support/raw_ostream.h"
 
+static clang::DumpGimpleRaw *gimpleRawWriter;
+
 namespace clang {
 
 
@@ -61,7 +63,8 @@ namespace clang {
             if(outdir_name=="")
                D.Report(D.getCustomDiagID(DiagnosticsEngine::Error,
                                           "outputdir not specified"));
-            return llvm::make_unique<DumpGimpleRaw>(CI, outdir_name, InFile, true);
+            gimpleRawWriter = new DumpGimpleRaw(CI, outdir_name, InFile, true);
+            return llvm::make_unique<dummyConsumer>();
          }
 
          bool ParseArgs(const CompilerInstance &CI,
@@ -108,3 +111,42 @@ static clang::FrontendPluginRegistry::Add<clang::clang40_plugin_dumpGimpleEmpty>
 X("clang40_plugin_dumpGimpleEmpty", "Dump globals in a gimple ssa raw format starting from LLVM IR");
 
 
+
+#include "llvm/Pass.h"
+#include "llvm/IR/Module.h"
+#include "llvm/PassRegistry.h"
+#include "llvm/IR/PassManager.h"
+#include "llvm/IR/LegacyPassManager.h"
+#include "llvm/Transforms/IPO/PassManagerBuilder.h"
+
+namespace llvm {
+   struct clang40_plugin_dumpGimpleEmptyPass: public ModulePass
+   {
+         static char ID;
+         clang40_plugin_dumpGimpleEmptyPass() : ModulePass(ID){}
+         bool runOnModule(Module &M)
+         {
+            assert(gimpleRawWriter);
+            auto res = gimpleRawWriter->runOnModule(M);
+            delete gimpleRawWriter;
+            gimpleRawWriter = nullptr;
+            return res;
+         }
+         virtual StringRef getPassName() const
+         {
+            return "clang40_plugin_dumpGimpleSSAPass";
+         }
+   };
+
+}
+char llvm::clang40_plugin_dumpGimpleEmptyPass::ID = 0;
+static llvm::RegisterPass<llvm::clang40_plugin_dumpGimpleEmptyPass> XPass("clang40_plugin_dumpGimpleEmptyPass", "Dump gimple ssa raw format starting from LLVM IR: LLVM pass",
+                                false /* Only looks at CFG */,
+                                false /* Analysis Pass */);
+
+// This function is of type PassManagerBuilder::ExtensionFn
+static void loadPass(const llvm::PassManagerBuilder &, llvm::legacy::PassManagerBase &PM) {
+  PM.add(new llvm::clang40_plugin_dumpGimpleEmptyPass());
+}
+// These constructors add our pass to a list of global extensions.
+static llvm::RegisterStandardPasses clang40_plugin_dumpGimpleEmptyLoader_Ox(llvm::PassManagerBuilder::EP_OptimizerLast, loadPass);
