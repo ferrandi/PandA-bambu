@@ -49,7 +49,14 @@
 #include "llvm/IR/DebugInfo.h"
 #include "llvm/IR/DebugInfoMetadata.h"
 #include "llvm/IR/Metadata.h"
-
+#include "llvm/IR/CFG.h"
+#include "llvm/Analysis/CFG.h"
+#include "llvm/Pass.h"
+#include "llvm/Analysis/LoopInfo.h"
+#include "llvm/Analysis/LoopPass.h"
+#include "llvm/IR/ModuleSlotTracker.h"
+#include "llvm/IR/InstrTypes.h"
+#include "llvm/IR/Instructions.h"
 #include "llvm/Support/FileSystem.h"
 #include "clang/AST/Mangle.h"
 #include "clang/AST/Stmt.h"
@@ -79,7 +86,7 @@ namespace clang
                           const std::string& _outdir_name, const std::string& _InFile, bool _onlyGlobals)
       : outdir_name(_outdir_name), InFile(_InFile), filename(create_file_name_string(_outdir_name,_InFile)), Instance(_Instance),
         stream(create_file_name_string(_outdir_name,_InFile), EC, llvm::sys::fs::F_RW), onlyGlobals(_onlyGlobals),
-        DL(0),
+        DL(0),modulePass(0),
         last_used_index(0), column(0)
    {
       if( EC)
@@ -93,42 +100,56 @@ namespace clang
    }
 
 #define DEFTREECODE(SYM, STRING, TYPE, NARGS)   SYM,
+#define DEFGSCODE(SYM, NAME, GSSCODE)	SYM,
    enum class DumpGimpleRaw::tree_codes
    {
      #include "gcc/tree.def"
      #include "gcc/c-common.def"
      #include "gcc/cp-tree.def"
+     #include "gcc/gimple.def"
    };
 #undef DEFTREECODE
+#undef DEFGSCODE
 /* Codes of tree nodes.  */
 #define DEFTREECODE(SYM, STRING, TYPE, NARGS)   STRING,
+#define DEFGSCODE(SYM, NAME, GSSCODE)	NAME,
    const char* DumpGimpleRaw::tree_codesNames[] =
    {
      #include "gcc/tree.def"
      #include "gcc/c-common.def"
      #include "gcc/cp-tree.def"
+     #include "gcc/gimple.def"
    };
 #undef DEFTREECODE
+#undef DEFGSCODE
 #define DEFTREECODE(SYM, STRING, TYPE, NARGS)   TYPE,
+#define DEFGSCODE(SYM, NAME, GSSCODE)	tcc_statement,
    const DumpGimpleRaw::tree_codes_class DumpGimpleRaw::tree_codes2tree_codes_class[] =
    {
      #include "gcc/tree.def"
      #include "gcc/c-common.def"
      #include "gcc/cp-tree.def"
+     #include "gcc/gimple.def"
    };
 #undef DEFTREECODE
+#undef DEFGSCODE
 #define DEFTREECODE(SYM, STRING, TYPE, NARGS)   NARGS,
+#define DEFGSCODE(SYM, NAME, GSSCODE)	0,
    const unsigned int DumpGimpleRaw::tree_codes2nargs[] =
    {
      #include "gcc/tree.def"
      #include "gcc/c-common.def"
      #include "gcc/cp-tree.def"
+     #include "gcc/gimple.def"
    };
 #undef DEFTREECODE
+#undef DEFGSCODE
 
    const char* DumpGimpleRaw::ValueTyNames[] = {
- #define HANDLE_VALUE(Name) #Name ,
- #include "llvm/IR/Value.def"
+   #define HANDLE_VALUE(Name) #Name ,
+   #include "llvm/IR/Value.def"
+   #define HANDLE_INST(N, OPC, CLASS) #OPC ,
+   #include "llvm/IR/Instruction.def"
     };
 
    std::string DumpGimpleRaw::getTypeName(const void * t) const
@@ -183,6 +204,8 @@ namespace clang
             return assignCode(t, GT(FUNCTION_DECL));
          case llvm::Value::ConstantIntVal:
             return assignCode(t, GT(INTEGER_CST));
+         case llvm::Value::ConstantFPVal:
+            return assignCode(t, GT(REAL_CST));
          case llvm::Value::ArgumentVal:
             return assignCode(t, GT(PARM_DECL));
          case llvm::Value::ConstantStructVal:
@@ -191,6 +214,15 @@ namespace clang
             return assignCode(t, GT(CONSTRUCTOR));
          case llvm::Value::ConstantDataArrayVal:
             return assignCode(t, GT(CONSTRUCTOR));
+         #define HANDLE_BINARY_INST(N, OPC, CLASS)                   \
+         case llvm::Value::InstructionVal + llvm::Instruction::OPC:  \
+           return assignCode(t, GT(GIMPLE_ASSIGN));
+         #include "llvm/IR/Instruction.def"
+         case llvm::Value::InstructionVal+llvm::Instruction::Store:
+         case llvm::Value::InstructionVal+llvm::Instruction::Load:
+            return assignCode(t, GT(GIMPLE_ASSIGN));
+         case llvm::Value::InstructionVal+llvm::Instruction::Ret:
+            return assignCode(t, GT(GIMPLE_RETURN));
          default:
             llvm::errs() << "assignCodeAuto kind not supported: " << ValueTyNames[vid] << "\n";
             stream.close();
@@ -786,6 +818,8 @@ namespace clang
             uicTable[obj_size] = llvm::ConstantInt::get(llvm::Type::getInt64Ty(llvm_obj->getContext()), obj_size, false);
          return assignCodeAuto(uicTable.find(obj_size)->second);
       }
+      else if (llvm_obj->isVoidTy())
+         return nullptr;
       else
       {
          auto obj_size = DL->getTypeSizeInBits(llvm_obj);
@@ -793,6 +827,7 @@ namespace clang
             uicTable[obj_size] = llvm::ConstantInt::get(llvm::Type::getInt32Ty(llvm_obj->getContext()), obj_size, false);
          return assignCodeAuto(uicTable.find(obj_size)->second);
       }
+
    }
 
    const void* DumpGimpleRaw::TYPE_CONTEXT(const void* t)
@@ -822,6 +857,8 @@ namespace clang
       const llvm::FunctionType* llvm_obj = reinterpret_cast<const llvm::FunctionType*>(t);
       if(llvm_obj->params().empty())
          return nullptr;
+      if(memoization_tree_list.find(t) != memoization_tree_list.end())
+         return memoization_tree_list.find(t)->second;
       bool is_first_element = true;
       void * res=nullptr;
       void * cur=nullptr;
@@ -846,6 +883,7 @@ namespace clang
             reinterpret_cast<tree_list*>(cur)->chan=index;
          cur = &tree_element;
       }
+      memoization_tree_list[t] = res;
       return res;
    }
 
@@ -915,6 +953,8 @@ namespace clang
       const llvm::Function *fd = reinterpret_cast<const llvm::Function *>(t);
       if(fd->getArgumentList().empty())
          return nullptr;
+      if(memoization_tree_list.find(t) != memoization_tree_list.end())
+         return memoization_tree_list.find(t)->second;
       bool is_first_element = true;
       void * res=nullptr;
       void * cur=nullptr;
@@ -940,7 +980,14 @@ namespace clang
             reinterpret_cast<tree_list*>(cur)->chan=index;
          cur = &tree_element;
       }
+      memoization_tree_list[t] = res;
       return res;
+   }
+
+   const void *DumpGimpleRaw::getStatement_list(const void*t)
+   {
+      const llvm::Function *fd = reinterpret_cast<const llvm::Function *>(t);
+      return assignCode(&fd->getBasicBlockList(), GT(STATEMENT_LIST));
    }
 
    const std::list<std::pair<const void *, const void*>> DumpGimpleRaw::CONSTRUCTOR_ELTS (const void*t)
@@ -955,41 +1002,26 @@ namespace clang
          case llvm::Value::ConstantStructVal:
          {
             const llvm::ConstantStruct* val = reinterpret_cast<const llvm::ConstantStruct*>(t);
+            const void * ty = TREE_TYPE(t);
+            for(unsigned index = 0; index < val->getNumOperands(); ++index)
+            {
+               auto op = val->getOperand(index);
+               const void* valu=assignCodeAuto(op);
+               const void* idx =  GET_FIELD_DECL(reinterpret_cast<const llvm::Type*>(TREE_TYPE(assignCodeAuto(op))), index, ty);
+               res.push_back(std::make_pair(idx,valu));
+            }
             return res;
          }
          case llvm::Value::ConstantDataArrayVal:
          case llvm::Value::ConstantDataVectorVal:
          {
-            const void * ty = TREE_TYPE(TREE_TYPE(t));
             const llvm::ConstantDataSequential* val = reinterpret_cast<const llvm::ConstantDataSequential*>(t);
             for(unsigned index = 0; index < val->getNumElements(); ++index)
             {
                if(uicTable.find(index) == uicTable.end())
                   uicTable[index] = llvm::ConstantInt::get(llvm::Type::getInt32Ty(llvm_obj->getContext()), index, false);
                const void* idx =  assignCodeAuto(uicTable.find(index)->second);
-               const void* valu=nullptr;
-               switch(TREE_CODE(ty))
-               {
-                  case GT(INTEGER_TYPE):
-                  {
-                     uint64_t valuV = val->getElementAsInteger(index);
-                     if(uicTable.find(valuV) == uicTable.end())
-                        uicTable[valuV] = llvm::ConstantInt::get(llvm::Type::getInt32Ty(llvm_obj->getContext()), valuV, false);
-                     valu =  assignCodeAuto(uicTable.find(valuV)->second);
-                     break;
-                  }
-                  case GT(REAL_TYPE):
-                  {
-                     llvm::APFloat valuV = val->getElementAsAPFloat(index);
-                     uifTable.insert(valuV);
-                     valu =  assignCode(&(*uifTable.find(valuV)), GT(REAL_CST));
-                     break;
-                  }
-                  default:
-                     llvm::errs() << "CONSTRUCTOR_ELTS kind not supported: " << GET_TREE_CODE_NAME(TREE_CODE(ty)) << "\n";
-                     stream.close();
-                     llvm_unreachable("Plugin Error");
-               }
+               const void* valu=assignCodeAuto(val->getElementAsConstant(index));
                res.push_back(std::make_pair(idx,valu));
             }
             return res;
@@ -1060,10 +1092,74 @@ namespace clang
       column += 21;
    }
 
+   static void real_to_hexadecimal(char * buffer, unsigned size_buff, const llvm::APFloat&val)
+   {
+      llvm::APInt API = val.bitcastToAPInt();
+      llvm::errs() << API << "\n";
+      auto sem = &val.getSemantics();
+      unsigned nbitsExp = 0;
+      unsigned nbitsMan = 0;
+      if(sem == &llvm::APFloat::IEEEhalf())
+      {
+         nbitsExp = 5;
+         nbitsMan = 10;
+      }
+      else if(sem == &llvm::APFloat::IEEEsingle())
+      {
+         nbitsExp = 8;
+         nbitsMan = 23;
+      }
+      else if(sem == &llvm::APFloat::IEEEdouble())
+      {
+         nbitsExp = 11;
+         nbitsMan = 52;
+      }
+      else if(sem == &llvm::APFloat::x87DoubleExtended())
+      {
+         nbitsExp = 16;
+         nbitsMan = 63;
+      }
+      else if(sem == &llvm::APFloat::PPCDoubleDouble())
+      {
+         llvm_unreachable("PPCDoubleDouble format not supported in real_to_hexadecimal");
+      }
+      else if(sem == &llvm::APFloat::IEEEquad())
+      {
+         nbitsExp = 15;
+         nbitsMan = 112;
+      }
+      else
+         llvm_unreachable("unexpected floating point format in real_to_hexadecimal");
+
+      unsigned ExpBiased = API.lshr(nbitsMan).getZExtValue() & ((1U<<nbitsExp)-1);
+      int ExpUnbiased = (llvm::APInt::getNullValue(API.getBitWidth()) == API) ? 0 : (ExpBiased - ((1U << (nbitsExp-1))-2));
+
+      snprintf(buffer, size_buff, "p%+d", ExpUnbiased);
+
+      llvm::APInt Mantissa = API & llvm::APInt::getAllOnesValue(nbitsMan).zext(API.getBitWidth());
+      if(ExpBiased != 0)
+         Mantissa.setBit(nbitsMan);
+
+      size_t digits = size_buff - strlen(buffer) - (val.isNegative()?1:0) - 4 - 1;
+      assert(digits <= size_buff);
+      char * current = buffer;
+      if (val.isNegative())
+         *current++ = '-';
+      *current++ = '0';
+      *current++ = 'x';
+      *current++ = '0';
+      *current++ = '.';
+      for (int index1 = (nbitsMan/4)-!(nbitsMan%4); index1 >= 0 && digits >0; --index1)
+      {
+          *current++ = "0123456789abcdef"[(Mantissa.lshr(index1*4).getLoBits(4).getZExtValue())];
+         --digits;
+      }
+      sprintf (current, "p%+d", ExpUnbiased);
+   }
+
    /* Serialize real r using FIELD to identify it.  */
    void DumpGimpleRaw::serialize_real(const void* t)
    {
-      static char string[1024];
       serialize_maybe_newline();
       /* Code copied from print_node.  */
       /*if(TREE_OVERFLOW(t))
@@ -1071,7 +1167,8 @@ namespace clang
          stream << "overflow ";
          column += 8;
       }*/
-      const llvm::APFloat d = *reinterpret_cast<const llvm::APFloat*>(t);
+      assert(reinterpret_cast<const llvm::ConstantFP*>(t)->getValueID()==llvm::Value::ConstantFPVal);
+      const llvm::APFloat& d = reinterpret_cast<const llvm::ConstantFP*>(t)->getValueAPF();
       if(d.isInfinity())
       {
          snprintf(buffer, LOCAL_BUFFER_LEN, "valr: %-7s ", "\"Inf\"");
@@ -1084,13 +1181,14 @@ namespace clang
       }
       else
       {
-         //real_to_decimal(string, &d, sizeof(string), 0, 1);
-         stream << "valr: \""<< string << "\" ";
+         bool isDouble = &d.getSemantics() == &llvm::APFloat::IEEEdouble();
+         snprintf(buffer, LOCAL_BUFFER_LEN, "%f", (isDouble ? d.convertToDouble():d.convertToFloat()));
+         stream << "valr: \""<< std::string(buffer) << "\" ";
       }
       {
          stream << "valx: \"";
-         //real_to_hexadecimal(string, &d, sizeof(string), 0, 0);
-         stream << string;
+         real_to_hexadecimal(buffer,LOCAL_BUFFER_LEN,d);
+         stream << std::string(buffer);
          stream << "\"";
       }
       column += 21;
@@ -1294,7 +1392,6 @@ namespace clang
       stream << buffer;
       column += 6;
       serialize_index(index);
-
    }
 
    void DumpGimpleRaw::serialize_index(unsigned int index)
@@ -1309,6 +1406,128 @@ namespace clang
      queue_and_serialize_index("type", TREE_TYPE(t));
    }
 
+   static void computeLoopLabels (std::map<const llvm::Loop*, unsigned> &loopLabes, llvm::Loop* curLoop, unsigned int & label)
+   {
+      loopLabes[curLoop] = label;
+      label++;
+      for(auto it = curLoop->begin(); it != curLoop->end(); ++it)
+      {
+         computeLoopLabels (loopLabes, *it, label);
+      }
+   }
+
+   void DumpGimpleRaw::dequeue_and_serialize_gimple(const void* t)
+   {
+      assert(llvm2index.find(t) != llvm2index.end());
+      unsigned int index = llvm2index.find(t)->second;
+
+     const char* code_name = GET_TREE_CODE_NAME(TREE_CODE(t));
+
+     /* Print the node index.  */
+     serialize_index (index);
+
+     snprintf(buffer, LOCAL_BUFFER_LEN, "%-16s ", code_name);
+     stream << buffer;
+     column = 25;
+     /* Terminate the line.  */
+     stream << "\n";
+   }
+
+   void DumpGimpleRaw::dequeue_and_serialize_statement (const void* t)
+   {
+      assert(llvm2index.find(t) != llvm2index.end());
+      unsigned int index = llvm2index.find(t)->second;
+
+     const char* code_name = GET_TREE_CODE_NAME(TREE_CODE(t));
+
+     /* Print the node index.  */
+     serialize_index (index);
+
+     snprintf(buffer, LOCAL_BUFFER_LEN, "%-16s ", code_name);
+     stream << buffer;
+     column = 25;
+
+
+     /* In case of basic blocks the function print:
+                    + first a list of all statements
+                    +  then for each basic block it prints:
+                       - the number of the basic block
+                       - the predecessor basic block
+                       - the successor basic block
+                       - list of statement
+                    + otherwise it prints only the list of statements */
+     const llvm::Function::BasicBlockListType & bblist = *reinterpret_cast<const llvm::Function::BasicBlockListType*>(t);
+     llvm::Function *currentFunction = const_cast<llvm::Function *>(bblist.front().getParent());
+     assert(modulePass);
+     llvm::LoopInfo &LI = modulePass->getAnalysis<llvm::LoopInfoWrapperPass>(*currentFunction).getLoopInfo();
+     std::map<const llvm::Loop*, unsigned> loopLabes;
+     if(!LI.empty())
+     {
+        unsigned int label = 1;
+        for(auto it=LI.begin(); it != LI.end(); ++it)
+           computeLoopLabels(loopLabes, *it, label);
+     }
+
+     llvm::ModuleSlotTracker MST(currentFunction->getParent());
+     MST.incorporateFunction(*currentFunction);
+     for(const auto& BB: bblist)
+     {
+        const char *field;
+        serialize_new_line ();
+        serialize_int ("bloc", MST.getLocalSlot(&BB));
+        if(LI.empty() || !LI.getLoopFor(&BB))
+           serialize_int ("loop_id", 0 );
+        else
+           serialize_int ("loop_id", loopLabes.find(LI.getLoopFor(&BB))->second);
+        if(!LI.empty() && LI.getLoopFor(&BB) && LI.getLoopFor(&BB)->getHeader() == &BB && LI.getLoopFor(&BB)->isAnnotatedParallel())
+           serialize_string("hpl");
+        if(llvm::pred_begin(&BB) == llvm::pred_end(&BB))
+        {
+           serialize_maybe_newline ();
+           field = "pred: ENTRY";
+           snprintf(buffer, LOCAL_BUFFER_LEN, "%-4s ", field);
+           stream << buffer;
+           column += 14;
+        }
+        else
+        {
+           for(const auto pred: llvm::predecessors(&BB))
+              serialize_int ("pred", MST.getLocalSlot(pred));
+        }
+        if(llvm::succ_begin(&BB) == llvm::succ_end(&BB))
+        {
+           serialize_maybe_newline ();
+           field = "succ: EXIT";
+           snprintf(buffer, LOCAL_BUFFER_LEN, "%-4s ", field);
+           stream << buffer;
+           column += 14;
+        }
+        else
+        {
+           for(const auto succ: llvm::successors(&BB))
+              serialize_int ("succ", MST.getLocalSlot(succ));
+        }
+        if(isa<llvm::BranchInst>(BB.getTerminator()))
+        {
+           const llvm::BranchInst* bi = cast<llvm::BranchInst>(BB.getTerminator());
+           if(bi->getNumOperands()==3)
+           {
+              serialize_int ("true_edge", MST.getLocalSlot(bi->getSuccessor(0)));
+              serialize_int ("false_edge", MST.getLocalSlot(bi->getSuccessor(1)));
+           }
+        }
+        for(const auto& inst: BB.getInstList())
+        {
+           if(isa<llvm::PHINode>(inst))
+              serialize_gimple_child("phi", assignCodeAuto(&inst));
+           else
+              serialize_gimple_child("stmt", assignCodeAuto(&inst));
+        }
+
+     }
+     /* Terminate the line.  */
+     stream << "\n";
+   }
 
    void DumpGimpleRaw::dequeue_and_serialize()
    {
@@ -1317,8 +1536,20 @@ namespace clang
       assert(t);
       Queue.pop_front();
 
+      if(setOfGimples.find(t) != setOfGimples.end())
+      {
+         dequeue_and_serialize_gimple(t);
+         return;
+      }
+      else if(setOfStatementsList.find(t) != setOfStatementsList.end())
+      {
+         dequeue_and_serialize_statement(t);
+         return;
+      }
+
       assert(llvm2index.find(t) != llvm2index.end());
       unsigned int index = llvm2index.find(t)->second;
+
 
       /* Print the node index.  */
       serialize_index(index);
@@ -1499,7 +1730,6 @@ namespace clang
            serialize_child("domn", TYPE_DOMAIN(t));
            break;
 
-
          case GT(VECTOR_TYPE):
            serialize_child("elts", TREE_TYPE(t));
            break;
@@ -1579,18 +1809,22 @@ namespace clang
 //              serialize_string("builtin");
             if(!TREE_PUBLIC(t))
               serialize_string("static");
+            if (!DECL_EXTERNAL(t))
+              serialize_statement_child("body", getStatement_list(t));
+
             break;
          }
          case GT(INTEGER_CST):
             serialize_wide_int("value", TREE_INT_CST_LOW(t));
             break;
 
-            //         case GT(STRING_CST):
+         case GT(STRING_CST):
+            llvm_unreachable("Unexpected. Strings should be converted in standard arrays");
 //           if (TREE_TYPE (t))
 //             serialize_string_cst("strg" , TREE_STRING_POINTER (t), TREE_STRING_LENGTH (t), TYPE_ALIGN(TREE_TYPE (t)));
 //           else
 //             serialize_string_cst("strg" , TREE_STRING_POINTER (t), TREE_STRING_LENGTH (t), 8);
-//           break;
+           break;
 
          case GT(REAL_CST):
            serialize_real (t);
@@ -1629,32 +1863,6 @@ namespace clang
       const llvm::Function *fd = reinterpret_cast<const llvm::Function *>(obj);
       stream << "\n;; Function " << fd->getName() << "(" << fd->getName() << ")\n\n";
       stream << ";; " << fd->getName() << "(";
-      bool first_par = true;
-      auto par_index = 0;
-      const void * arg = DECL_ARGUMENTS(obj);
-      while(arg)
-      {
-         auto& par = *reinterpret_cast<const llvm::Argument*>(TREE_VALUE(arg));
-         if(first_par)
-            first_par = false;
-         else
-            stream << ", ";
-         assignCodeAuto(TREE_VALUE(arg));
-         if(TREE_CODE(TREE_TYPE(TREE_VALUE(arg)))==GT(INTEGER_TYPE) && par.hasSExtAttr())
-            stream << getTypeName(AddSignedTag(TREE_TYPE(TREE_VALUE(arg)))) << " ";
-         else
-            stream << getTypeName(TREE_TYPE(TREE_VALUE(arg))) << " ";
-         if(par.hasName())
-            stream << par.getName();
-         else
-         {
-            snprintf(buffer, LOCAL_BUFFER_LEN, "%%%d", par_index);
-            std::string punamed=buffer;
-            stream << punamed;
-         }
-         ++par_index;
-        arg = TREE_CHAIN(arg);
-      }
       stream << ")\n";
    }
 
@@ -1685,9 +1893,10 @@ namespace clang
       }
    }
 
-   bool DumpGimpleRaw::runOnModule(llvm::Module &M)
+   bool DumpGimpleRaw::runOnModule(llvm::Module &M, llvm::ModulePass *_modulePass)
    {
       DL = &M.getDataLayout();
+      modulePass=_modulePass;
       for(const auto& globalVar : M.getGlobalList())
       {
          llvm::errs() << "Found global name: " << globalVar.getName() << "|" << ValueTyNames[globalVar.getValueID()] << "\n";

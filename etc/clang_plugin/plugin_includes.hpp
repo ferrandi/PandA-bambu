@@ -66,27 +66,8 @@ namespace llvm {
    class Type;
    class DataLayout;
    class Constant;
+   class ModulePass;
 }
-
-namespace std
-{
-   template <>
-      struct hash<llvm::APFloat> : public unary_function<llvm::APFloat, size_t>
-      {
-         size_t operator()(const llvm::APFloat& t) const
-         {
-            return llvm::hash_value(t);
-         }
-      };
-      template <>
-      struct equal_to <llvm::APFloat>:
-          binary_function <const llvm::APFloat&, const llvm::APFloat&, bool>
-      {
-          bool operator () (const llvm::APFloat& s1, const llvm::APFloat& s2) const
-              {return s1.bitwiseIsEqual(s2);}
-      };
-}
-
 
 
 namespace clang {
@@ -129,6 +110,8 @@ namespace clang {
                tree_list(): purp(nullptr), valu(nullptr), chan(0) {}
          };
          std::map<unsigned int, tree_list> index2tree_list;
+         /// memoization map used to avoid the recompuation of tree associated with a given node
+         std::map<const void*, const void*> memoization_tree_list;
 
          struct field_decl
          {
@@ -152,6 +135,8 @@ namespace clang {
          ///when true only the global variables are serialized
          bool onlyGlobals;
          const llvm::DataLayout* DL;
+         /// current module pass
+         llvm::ModulePass* modulePass;
 
 
          /// relation between LLVM object and serialization index
@@ -160,6 +145,8 @@ namespace clang {
          std::map<const void*, tree_codes> llvm2tree_code;
          unsigned int last_used_index;
          std::deque<const void*> Queue;
+         std::set<const void*> setOfStatementsList;
+         std::set<const void*> setOfGimples;
 
          /// serialization data
          int column;
@@ -168,8 +155,6 @@ namespace clang {
          std::set<std::string> identifierTable;
          ///unsigned integer constant table
          std::map<uint64_t, llvm::Constant*> uicTable;
-         ///APFloat constant table
-         std::unordered_set<llvm::APFloat> uifTable;
          /// type_integer with specific max value
          std::map<const void*, unsigned int> maxValueITtable;
          std::map<const void*, llvm::LLVMContext*> ArraysContexts;
@@ -285,6 +270,7 @@ namespace clang {
          const void* TYPE_METHOD_BASETYPE(const void* t);
 
          const void * DECL_ARGUMENTS (const void*t);
+         const void* getStatement_list(const void*t);
 
          const std::list<std::pair<const void *, const void*>> CONSTRUCTOR_ELTS (const void*t);
 
@@ -315,10 +301,11 @@ namespace clang {
          void serialize_index (unsigned int index);
 
          void queue_and_serialize_type (const void * t);
-
          void queue_and_serialize_index(const char *field, const void* t);
 
-         void serialize_child(const char * field, const void*child) {queue_and_serialize_index (field, child);}
+         void serialize_child(const char * field, const void*child) {queue_and_serialize_index(field, child);}
+         void serialize_statement_child(const char * field, const void*child) {setOfStatementsList.insert(child);queue_and_serialize_index(field, child);}
+         void serialize_gimple_child(const char * field, const void*child) {setOfGimples.insert(child);queue_and_serialize_index(field, child);}
 
          unsigned int queue (const void* obj);
 
@@ -326,13 +313,15 @@ namespace clang {
 
          void SerializeGimpleGlobalTreeNode(const void*obj);
 
+         void dequeue_and_serialize_gimple(const void* t);
+         void dequeue_and_serialize_statement (const void* t);
          void dequeue_and_serialize();
 
       public:
          DumpGimpleRaw(CompilerInstance &_Instance,
                        const std::string& _outdir_name, const std::string& _InFile, bool onlyGlobals);
 
-         bool runOnModule(llvm::Module &M);
+         bool runOnModule(llvm::Module &M, llvm::ModulePass *modulePass);
 
 
    };

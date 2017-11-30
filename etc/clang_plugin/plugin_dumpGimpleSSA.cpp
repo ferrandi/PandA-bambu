@@ -133,6 +133,8 @@ X("clang40_plugin_dumpGimpleSSA", "Dump gimple ssa raw format starting from LLVM
 #include "llvm/IR/PassManager.h"
 #include "llvm/IR/LegacyPassManager.h"
 #include "llvm/Transforms/IPO/PassManagerBuilder.h"
+#include "llvm/Transforms/Utils/LoopUtils.h"
+#include "llvm/InitializePasses.h"
 
 namespace llvm {
 
@@ -141,11 +143,14 @@ namespace llvm {
    struct clang40_plugin_dumpGimpleSSAPass: public ModulePass
    {
          static char ID;
-         clang40_plugin_dumpGimpleSSAPass() : ModulePass(ID){}
+         clang40_plugin_dumpGimpleSSAPass() : ModulePass(ID)
+         {
+            initializeLoopPassPass(*PassRegistry::getPassRegistry());
+         }
          bool runOnModule(Module &M)
          {
             assert(gimpleRawWriter);
-            auto res = gimpleRawWriter->runOnModule(M);
+            auto res = gimpleRawWriter->runOnModule(M, this);
             delete gimpleRawWriter;
             gimpleRawWriter = nullptr;
             return res;
@@ -154,16 +159,22 @@ namespace llvm {
          {
             return "clang40_plugin_dumpGimpleSSAPass";
          }
+         void getAnalysisUsage(AnalysisUsage &AU) const
+         {
+           AU.setPreservesAll();
+           getLoopAnalysisUsage(AU);
+         }
    };
-
 }
 char llvm::clang40_plugin_dumpGimpleSSAPass::ID = 0;
+
 static llvm::RegisterPass<llvm::clang40_plugin_dumpGimpleSSAPass> XPass("clang40_plugin_dumpGimpleSSAPass", "Dump gimple ssa raw format starting from LLVM IR: LLVM pass",
                                 false /* Only looks at CFG */,
                                 false /* Analysis Pass */);
 
 // This function is of type PassManagerBuilder::ExtensionFn
-static void loadPass(const llvm::PassManagerBuilder &, llvm::legacy::PassManagerBase &PM) {
+static void loadPass(const llvm::PassManagerBuilder &, llvm::legacy::PassManagerBase &PM)
+{
   PM.add(new llvm::clang40_plugin_dumpGimpleSSAPass());
 }
 // These constructors add our pass to a list of global extensions.

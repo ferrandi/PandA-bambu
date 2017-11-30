@@ -118,16 +118,22 @@ X("clang40_plugin_dumpGimpleEmpty", "Dump globals in a gimple ssa raw format sta
 #include "llvm/IR/PassManager.h"
 #include "llvm/IR/LegacyPassManager.h"
 #include "llvm/Transforms/IPO/PassManagerBuilder.h"
+#include "llvm/Transforms/Utils/LoopUtils.h"
+#include "llvm/InitializePasses.h"
+
 
 namespace llvm {
    struct clang40_plugin_dumpGimpleEmptyPass: public ModulePass
    {
          static char ID;
-         clang40_plugin_dumpGimpleEmptyPass() : ModulePass(ID){}
+         clang40_plugin_dumpGimpleEmptyPass() : ModulePass(ID)
+         {
+            initializeLoopPassPass(*PassRegistry::getPassRegistry());
+         }
          bool runOnModule(Module &M)
          {
             assert(gimpleRawWriter);
-            auto res = gimpleRawWriter->runOnModule(M);
+            auto res = gimpleRawWriter->runOnModule(M, this);
             delete gimpleRawWriter;
             gimpleRawWriter = nullptr;
             return res;
@@ -135,6 +141,11 @@ namespace llvm {
          virtual StringRef getPassName() const
          {
             return "clang40_plugin_dumpGimpleSSAPass";
+         }
+         void getAnalysisUsage(AnalysisUsage &AU) const
+         {
+           AU.setPreservesAll();
+           getLoopAnalysisUsage(AU);
          }
    };
 
