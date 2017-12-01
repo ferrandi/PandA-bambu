@@ -110,6 +110,7 @@ if BUILD_TSIM
 endif
 
 if BUILD_SYNTHESIS
+   noinst_HEADERS += synthesis_constants.hpp
 if BUILD_LIB_EXPERIMENTAL
    noinst_HEADERS += design_compiler_constants.hpp
 endif

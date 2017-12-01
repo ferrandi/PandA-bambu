@@ -7,12 +7,12 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2015 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -31,59 +31,11 @@
  *
 */
 /**
- * @file ASICBackendFlow.hpp
- * @brief Wrapper to implement a synthesis tools by Altera
+ * @file synthesis_constants.hpp
+ * @brief constants used in synthesis wrappers 
  *
- * A object used to invoke synthesis tools by Altera
+ * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
- * @author Christian Pilato <pilato@elet.polimi.it>
- * $Date$
- * Last modified by $Author$
- *
-*/
-#ifndef _ASIC_BACKEND_FLOW_HPP_
-#define _ASIC_BACKEND_FLOW_HPP_
-
-///superclass include
-#include "BackendFlow.hpp"
-
-class ASICBackendFlow : public BackendFlow
-{
-
-      /**
-       * Writes the proper flow configuration in the output script
-       */
-      void WriteFlowConfiguration(std::ostream& script);
-
-      /**
-       * Checks the synthesis results and fills the corresponding datastructures
-       */
-      void CheckSynthesisResults();
-
-      /**
-       * Evaluates design variables
-       */
-      void InitDesignParameters();
-
-      /**
-       * Creates the constraint file
-       */
-      void create_sdc(const DesignParametersRef dp);
-
-   public:
-
-      /**
-       * Constructor
-       */
-      ASICBackendFlow(const ParameterConstRef Param, const std::string& flow_name, const target_managerRef target);
-
-      /**
-       * Destructor
-       */
-      virtual ~ASICBackendFlow();
-
-};
-///Refcount definition for the class
-typedef refcount<ASICBackendFlow> ASICBackendFlowRef;
-
-#endif
+ */
+///The file containing the timing violation report
+#define STR_CST_synthesis_timing_violation_report "HLS_output/Synthesis/timing_violation_report"
