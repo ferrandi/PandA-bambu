@@ -134,6 +134,7 @@ X("clang40_plugin_dumpGimpleSSA", "Dump gimple ssa raw format starting from LLVM
 #include "llvm/IR/LegacyPassManager.h"
 #include "llvm/Transforms/IPO/PassManagerBuilder.h"
 #include "llvm/Transforms/Utils/LoopUtils.h"
+#include "llvm/Analysis/LazyValueInfo.h"
 #include "llvm/InitializePasses.h"
 
 namespace llvm {
@@ -146,6 +147,7 @@ namespace llvm {
          clang40_plugin_dumpGimpleSSAPass() : ModulePass(ID)
          {
             initializeLoopPassPass(*PassRegistry::getPassRegistry());
+            initializeLazyValueInfoWrapperPassPass(*PassRegistry::getPassRegistry());
          }
          bool runOnModule(Module &M)
          {
@@ -163,6 +165,7 @@ namespace llvm {
          {
            AU.setPreservesAll();
            getLoopAnalysisUsage(AU);
+           AU.addRequired<LazyValueInfoWrapperPass>();
          }
    };
 }

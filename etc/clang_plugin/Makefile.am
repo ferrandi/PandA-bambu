@@ -69,10 +69,10 @@ clang40_plugin_dumpGimpleSSA.o : $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpl
 clang40_plugin_topfname.o : $(top_srcdir)/etc/clang_plugin/plugin_topfname.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
 	$(I386_CLANG40_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -c $(top_srcdir)/etc/clang_plugin/plugin_topfname.cpp -o clang40_plugin_topfname.o -I$(I386_LLVM40_HEADER_DIR) $(WFLAGS)
 
-clang40_dumpGimple.o : $(top_srcdir)/etc/clang_plugin/dumpGimple.cpp   
+clang40_dumpGimple.o : $(top_srcdir)/etc/clang_plugin/dumpGimple.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp
 	$(I386_CLANG40_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -c $(top_srcdir)/etc/clang_plugin/dumpGimple.cpp -o clang40_dumpGimple.o -I. -I$(I386_LLVM40_HEADER_DIR) -DPANDA_PLUGIN_VERSION=\"$(PANDA_PLUGIN_VERSION)\" $(WFLAGS)
 
-clang40_dumpGimpleCpp.o : $(top_srcdir)/etc/clang_plugin/dumpGimple.cpp   
+clang40_dumpGimpleCpp.o : $(top_srcdir)/etc/clang_plugin/dumpGimple.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
 	$(I386_CLANG40_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -c $(top_srcdir)/etc/clang_plugin/dumpGimple.cpp -DCPP_LANGUAGE -o clang40_dumpGimpleCpp.o -I. -I$(I386_LLVM40_HEADER_DIR) -DPANDA_PLUGIN_VERSION=\"$(PANDA_PLUGIN_VERSION)\" $(WFLAGS)
 
 

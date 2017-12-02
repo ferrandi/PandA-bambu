@@ -67,6 +67,7 @@ namespace llvm {
    class DataLayout;
    class Constant;
    class ModulePass;
+   class Value;
 }
 
 
@@ -96,10 +97,20 @@ namespace clang {
                        variable-length operand vector.  */
            tcc_expression   /* Any other expression.  */
          };
+         enum gimple_rhs_class
+         {
+           GIMPLE_INVALID_RHS,	/* The expression cannot be used on the RHS.  */
+           GIMPLE_TERNARY_RHS,	/* The expression is a ternary operation.  */
+           GIMPLE_BINARY_RHS,	/* The expression is a binary operation.  */
+           GIMPLE_UNARY_RHS,	/* The expression is a unary operation.  */
+           GIMPLE_SINGLE_RHS	/* The expression is a single object (an SSA
+                        name, a _DECL, a _REF, etc.  */
+         };
          enum class tree_codes;
          static const char* tree_codesNames[];
          static const tree_codes_class tree_codes2tree_codes_class[];
          static const unsigned int tree_codes2nargs[];
+         static const gimple_rhs_class gimple_rhs_class_table[];
          static const char* ValueTyNames[];
 
          struct tree_list
@@ -209,6 +220,49 @@ namespace clang {
          };
 
          expanded_location expand_location(const void * i) const;
+         bool gimple_has_location(const void * g) const;
+         const void *gimple_location (const void * t) const;
+         tree_codes gimple_code(const void * g) const {assert(llvm2tree_code.find(g) != llvm2tree_code.end()); return llvm2tree_code.find(g)->second;}
+         struct ssa_name
+         {
+               int vers;
+               const void* var;
+               const void* def_stmts;
+               ssa_name() : vers(-1), var(nullptr), def_stmts(nullptr) {}
+         };
+         std::map<const void*, ssa_name> index2ssa_name;
+         gimple_rhs_class get_gimple_rhs_class (tree_codes code) {return gimple_rhs_class_table[static_cast<unsigned int>(code)];}
+         tree_codes gimple_expr_code (const void *stmt);
+         tree_codes gimple_assign_rhs_code (const void *stmt) {return gimple_expr_code(stmt);}
+         const void* getGimpleNop(const llvm::Value *operand);
+         bool isSSA(const llvm::Value *arg, const llvm::Instruction* inst) const;
+         const void* getSSA(const llvm::Value *operand, const void* def_stmt, const llvm::Instruction* inst);
+         const void* getOperand(const llvm::Value *operand, const llvm::Instruction *inst);
+         const void* gimple_assign_lhs(const void* g);
+         const void* gimple_assign_rhsIndex(const void * g, unsigned index);
+         const void* gimple_assign_rhs1(const void* g) {return gimple_assign_rhsIndex(g,0);}
+         const void* gimple_assign_rhs2(const void* g) {return gimple_assign_rhsIndex(g,1);}
+
+         struct tree_expr
+         {
+               tree_codes tc;
+               const void* type;
+               const void* op1;
+               const void* op2;
+               tree_expr() : tc(), type(nullptr), op1(nullptr), op2(nullptr) {}
+         };
+         std::map<std::tuple<tree_codes,const void*,const void*,const void*>, tree_expr> index2tree_expr;
+
+         struct gimple_nop
+         {
+               const void* parm_decl;
+               gimple_nop() : parm_decl(nullptr) {}
+         };
+         std::map<const void*, gimple_nop> index2gimple_nop;
+
+         const void* build2(tree_codes tc, const void* type, const void* op1, const void* op2);
+         const void* build1(tree_codes tc, const void* type, const void* op1) {return build2(tc, type, op1, nullptr);}
+
          /// currrently expressions do not have source file associated
          bool EXPR_HAS_LOCATION(const void*) const {return false;}
          char * EXPR_FILENAME(const void*) const {return nullptr;}
@@ -269,8 +323,16 @@ namespace clang {
          const void * GET_METHOD_TYPE(const llvm::Type*t, unsigned int pos, const void * scpe);
          const void* TYPE_METHOD_BASETYPE(const void* t);
 
-         const void * DECL_ARGUMENTS (const void*t);
+         const std::list<const void*> DECL_ARGUMENTS (const void*t);
          const void* getStatement_list(const void*t);
+         const void* getGimpleScpe(const void*t);
+         int getGimple_bb_index(const void*t) const;
+
+         const void* SSA_NAME_VAR(const void*t) const;
+         int SSA_NAME_VERSION(const void*t) const;
+         const void* SSA_NAME_DEF_STMT(const void*t) const;
+         const void* getMinValue(const void* t);
+         const void* getMaxValue(const void* t);
 
          const std::list<std::pair<const void *, const void*>> CONSTRUCTOR_ELTS (const void*t);
 
