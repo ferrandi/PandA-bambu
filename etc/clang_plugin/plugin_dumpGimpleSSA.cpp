@@ -135,6 +135,9 @@ X("clang40_plugin_dumpGimpleSSA", "Dump gimple ssa raw format starting from LLVM
 #include "llvm/Transforms/IPO/PassManagerBuilder.h"
 #include "llvm/Transforms/Utils/LoopUtils.h"
 #include "llvm/Analysis/LazyValueInfo.h"
+#include "llvm/Analysis/AliasAnalysis.h"
+#include "llvm/Analysis/MemoryDependenceAnalysis.h"
+#include "llvm/Transforms/Utils/MemorySSA.h"
 #include "llvm/InitializePasses.h"
 
 namespace llvm {
@@ -148,6 +151,10 @@ namespace llvm {
          {
             initializeLoopPassPass(*PassRegistry::getPassRegistry());
             initializeLazyValueInfoWrapperPassPass(*PassRegistry::getPassRegistry());
+            initializeAAResultsWrapperPassPass(*PassRegistry::getPassRegistry());
+            initializeMemoryDependenceWrapperPassPass(*PassRegistry::getPassRegistry());
+            initializeMemorySSAWrapperPassPass(*PassRegistry::getPassRegistry());
+            initializeMemorySSAPrinterLegacyPassPass(*PassRegistry::getPassRegistry());
          }
          bool runOnModule(Module &M)
          {
@@ -166,6 +173,12 @@ namespace llvm {
            AU.setPreservesAll();
            getLoopAnalysisUsage(AU);
            AU.addRequired<LazyValueInfoWrapperPass>();
+           AU.addRequired<AAResultsWrapperPass>();
+           AU.addRequired<MemoryDependenceWrapperPass>();
+           AU.addRequired<MemorySSAWrapperPass>();
+           AU.addRequired<MemorySSAPrinterLegacyPass>();
+           AU.addPreserved<MemorySSAWrapperPass>();
+           AU.addPreserved<MemorySSAPrinterLegacyPass>();
          }
    };
 }

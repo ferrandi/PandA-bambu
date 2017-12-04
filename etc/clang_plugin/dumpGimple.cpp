@@ -54,6 +54,7 @@
 #include "llvm/Pass.h"
 #include "llvm/Analysis/LoopInfo.h"
 #include "llvm/Analysis/LoopPass.h"
+#include "llvm/Transforms/Utils/MemorySSA.h"
 #include "llvm/Analysis/LazyValueInfo.h"
 #include "llvm/IR/ModuleSlotTracker.h"
 #include "llvm/IR/InstrTypes.h"
@@ -88,7 +89,8 @@ namespace clang
       : outdir_name(_outdir_name), InFile(_InFile), filename(create_file_name_string(_outdir_name,_InFile)), Instance(_Instance),
         stream(create_file_name_string(_outdir_name,_InFile), EC, llvm::sys::fs::F_RW), onlyGlobals(_onlyGlobals),
         DL(0),modulePass(0),
-        last_used_index(0), column(0)
+        last_used_index(0), column(0),
+        last_memory_ssa_vers(std::numeric_limits<int>::max())
    {
       if( EC)
       {
@@ -260,9 +262,22 @@ namespace clang
          #include "llvm/IR/Instruction.def"
          case llvm::Value::InstructionVal+llvm::Instruction::Store:
          case llvm::Value::InstructionVal+llvm::Instruction::Load:
+         case llvm::Value::InstructionVal+llvm::Instruction::Select:
+         case llvm::Value::InstructionVal+llvm::Instruction::FCmp:
+         case llvm::Value::InstructionVal+llvm::Instruction::ICmp:
             return assignCode(t, GT(GIMPLE_ASSIGN));
          case llvm::Value::InstructionVal+llvm::Instruction::Ret:
             return assignCode(t, GT(GIMPLE_RETURN));
+         case llvm::Value::InstructionVal+llvm::Instruction::Br:
+         {
+            const llvm::BranchInst* br = reinterpret_cast<const llvm::BranchInst*>(t);
+            if(br->isUnconditional())
+               return assignCode(t, GT(GIMPLE_GOTO));
+            else
+               return assignCode(t, GT(GIMPLE_COND));
+         }
+         case llvm::Value::InstructionVal+llvm::Instruction::PHI:
+            return assignCode(t, GT(GIMPLE_PHI));
          default:
             llvm::errs() << "assignCodeAuto kind not supported: " << ValueTyNames[vid] << "\n";
             stream.close();
@@ -333,6 +348,21 @@ namespace clang
          else
             assert(demangled_outbuffer==nullptr);
 
+         if(identifierTable.find(declname) == identifierTable.end())
+            identifierTable.insert(declname);
+         const void * dn = identifierTable.find(declname)->c_str();
+         return assignCode(dn, GT(IDENTIFIER_NODE));
+      }
+      else if (TREE_CODE(t) == GT(PARM_DECL))
+      {
+         const llvm::Argument *arg = reinterpret_cast<const llvm::Argument*>(t);
+         const llvm::Function *currentFunction = arg->getParent();
+         llvm::ModuleSlotTracker MST(currentFunction->getParent());
+         MST.incorporateFunction(*currentFunction);
+         auto id = MST.getLocalSlot(arg);
+         assert(id>=0);
+         snprintf(buffer, LOCAL_BUFFER_LEN, "P%d", id);
+         std::string declname = buffer;
          if(identifierTable.find(declname) == identifierTable.end())
             identifierTable.insert(declname);
          const void * dn = identifierTable.find(declname)->c_str();
@@ -572,6 +602,69 @@ namespace clang
                return GT(SSA_NAME);
             case llvm::Instruction::Load:
                return GT(MEM_REF);
+
+            case llvm::Instruction::FCmp:
+            case llvm::Instruction::ICmp:
+            {
+               const llvm::CmpInst* icmp = reinterpret_cast<const llvm::CmpInst*>(g);
+               auto predicate = icmp->getPredicate();
+               switch (predicate)
+               {
+                  case llvm::ICmpInst::FCMP_OEQ:
+                  case llvm::ICmpInst::ICMP_EQ:
+                     return GT(EQ_EXPR);
+                  case llvm::ICmpInst::FCMP_ONE:
+                  case llvm::ICmpInst::ICMP_NE:
+                     return GT(NE_EXPR);
+                  case llvm::ICmpInst::FCMP_OGT:
+                  case llvm::ICmpInst::ICMP_UGT:
+                  case llvm::ICmpInst::ICMP_SGT:
+                     return GT(GT_EXPR);
+                  case llvm::ICmpInst::FCMP_OGE:
+                  case llvm::ICmpInst::ICMP_UGE:
+                  case llvm::ICmpInst::ICMP_SGE:
+                     return GT(GE_EXPR);
+                  case llvm::ICmpInst::FCMP_OLT:
+                  case llvm::ICmpInst::ICMP_ULT:
+                  case llvm::ICmpInst::ICMP_SLT:
+                     return GT(LT_EXPR);
+                  case llvm::ICmpInst::FCMP_OLE:
+                  case llvm::ICmpInst::ICMP_ULE:
+                  case llvm::ICmpInst::ICMP_SLE:
+                     return GT(LE_EXPR);
+
+                  case llvm::ICmpInst::FCMP_UEQ:
+                     return GT(UNEQ_EXPR);
+                  case llvm::ICmpInst::FCMP_UNE:
+                     return GT(LTGT_EXPR);
+                  case llvm::ICmpInst::FCMP_UGT:
+                     return GT(UNGT_EXPR);
+                  case llvm::ICmpInst::FCMP_UGE:
+                     return GT(UNGE_EXPR);
+                  case llvm::ICmpInst::FCMP_ULT:
+                     return GT(UNLT_EXPR);
+                  case llvm::ICmpInst::FCMP_ULE:
+                     return GT(UNLE_EXPR);
+                  case llvm::ICmpInst::FCMP_ORD:
+                     return GT(ORDERED_EXPR);
+                  case llvm::ICmpInst::FCMP_UNO:
+                     return GT(UNORDERED_EXPR);
+                  default:
+                     llvm::errs() << "gimple_expr_code::ICmpInst kind not supported: " << predicate << "\n";
+                     stream.close();
+                     llvm_unreachable("Plugin Error");
+               }
+
+            }
+
+            case llvm::Instruction::Select:
+               return GT(COND_EXPR);
+            case llvm::Instruction::Br:
+            {
+               const llvm::BranchInst* br = reinterpret_cast<const llvm::BranchInst*>(g);
+               assert(br->isConditional());
+               return GT(SSA_NAME);
+            }
             default:
                llvm::errs() << "gimple_expr_code kind not supported: " << ValueTyNames[llvm::Value::InstructionVal+opcode] << "\n";
                stream.close();
@@ -588,7 +681,7 @@ namespace clang
    const void * DumpGimpleRaw::gimple_assign_lhs (const void * g)
    {
       const llvm::Instruction* inst = reinterpret_cast<const llvm::Instruction*>(g);
-      if(isa<llvm::StoreInst>(*inst))
+      if(isa<llvm::StoreInst>(inst))
       {
          const llvm::StoreInst& store = cast<const llvm::StoreInst>(*inst);
          if(uicTable.find(0) == uicTable.end())
@@ -598,83 +691,88 @@ namespace clang
          auto type = assignCodeType(store.getValueOperand()->getType());
          return build2(GT(MEM_REF), type, addr, zero);
       }
-      if(index2ssa_name.find(g) == index2ssa_name.end())
-      {
-         const llvm::BasicBlock * BB = inst->getParent();
-         const llvm::Function *currentFunction = BB->getParent();
-         llvm::ModuleSlotTracker MST(currentFunction->getParent());
-         MST.incorporateFunction(*currentFunction);
-         auto ssa_vers = MST.getLocalSlot(inst);
-         assert(ssa_vers>=0);
-         index2ssa_name[g].vers= ssa_vers;
-         index2ssa_name[g].def_stmts=g;
-      }
-      return assignCode(&index2ssa_name.find(g)->second, GT(SSA_NAME));
+      return getSSA(inst,g,inst, false);
    }
 
-   const void * DumpGimpleRaw::getGimpleNop(const llvm::Value *operand)
+   const void * DumpGimpleRaw::getGimpleNop(const llvm::Value *operand, const void* scpe)
    {
-      llvm::errs() << ValueTyNames[operand->getValueID()] << "\n";
-      assert(isa<llvm::Argument>(*operand));
+      llvm::errs() << "|GimpleNop=" << ValueTyNames[operand->getValueID()] << "\n";
       if(index2gimple_nop.find(operand) == index2gimple_nop.end())
       {
-         assignCode(operand, GT(PARM_DECL));
-         index2gimple_nop[operand].parm_decl = operand;
+         index2gimple_nop[operand].scpe =scpe;
       }
       return assignCode(&index2gimple_nop.find(operand)->second, GT(GIMPLE_NOP));
    }
 
-   bool DumpGimpleRaw::isSSA(const llvm::Value* arg, const llvm::Instruction* inst) const
-   {
-      const llvm::BasicBlock * BB = inst->getParent();
-      const llvm::Function *currentFunction = BB->getParent();
-      llvm::ModuleSlotTracker MST(currentFunction->getParent());
-      MST.incorporateFunction(*currentFunction);
-      auto ssa_vers = MST.getLocalSlot(arg);
-      return ssa_vers>=0;
-   }
-
-   const void* DumpGimpleRaw::getSSA(const llvm::Value* operand, const void* def_stmt, const llvm::Instruction* inst)
+   const void* DumpGimpleRaw::getSSA(const llvm::Value* operand, const void* def_stmt, const llvm::Instruction* inst, bool isDefault)
    {
       if(index2ssa_name.find(def_stmt) == index2ssa_name.end())
       {
-         const llvm::BasicBlock * BB = inst->getParent();
-         const llvm::Function *currentFunction = BB->getParent();
-         llvm::ModuleSlotTracker MST(currentFunction->getParent());
-         MST.incorporateFunction(*currentFunction);
-         auto ssa_vers = MST.getLocalSlot(operand);
-         assert(ssa_vers>=0);
+         int ssa_vers;
+         if(operand->getValueID() == llvm::Value::MemoryDefVal || operand->getValueID() == llvm::Value::MemoryUseVal)
+         {
+            if(memoryaccess2ssaindex.find(operand) == memoryaccess2ssaindex.end())
+            {
+               ssa_vers = last_memory_ssa_vers;
+               --last_memory_ssa_vers;
+               memoryaccess2ssaindex[operand] = ssa_vers;
+            }
+            else
+               ssa_vers = memoryaccess2ssaindex.find(operand)->second;
+            index2ssa_name[def_stmt].type = llvm::Type::getVoidTy(inst->getContext());
+            index2ssa_name[def_stmt].isVirtual = true;
+         }
+         else
+         {
+            const llvm::BasicBlock * BB = inst->getParent();
+            const llvm::Function *currentFunction = BB->getParent();
+            llvm::ModuleSlotTracker MST(currentFunction->getParent());
+            MST.incorporateFunction(*currentFunction);
+            ssa_vers = MST.getLocalSlot(operand);
+            assert(ssa_vers>=0);
+            index2ssa_name[def_stmt].type = operand->getType();
+         }
          index2ssa_name[def_stmt].vers= ssa_vers;
          index2ssa_name[def_stmt].def_stmts=def_stmt;
+         index2ssa_name[def_stmt].isDefault = isDefault;
       }
       return assignCode(&index2ssa_name.find(def_stmt)->second, GT(SSA_NAME));
    }
 
-const void * DumpGimpleRaw::getOperand(const llvm::Value *operand, const llvm::Instruction* inst)
-{
-   if(isa<llvm::ConstantInt>(*operand) || isa<llvm::ConstantFP>(*operand))
-      return assignCodeAuto(operand);
-   else if(isa<llvm::Instruction>(*operand))
+   bool DumpGimpleRaw::is_virtual_ssa(const void* t) const
    {
-      return getSSA(operand, operand, inst);
+      const ssa_name* ssa = reinterpret_cast<const ssa_name*>(t);
+      return ssa->isVirtual;
    }
-   else if(isa<llvm::Argument>(*operand))
+
+   bool DumpGimpleRaw::SSA_NAME_IS_DEFAULT_DEF(const void* t) const
    {
-      assert(isSSA(operand, inst));
+      const ssa_name* ssa = reinterpret_cast<const ssa_name*>(t);
+      return ssa->isDefault;
+   }
+
+   const void * DumpGimpleRaw::getOperand(const llvm::Value *operand, const llvm::Instruction* inst)
+   {
+      if(isa<llvm::ConstantInt>(operand) || isa<llvm::ConstantFP>(operand))
+         return assignCodeAuto(operand);
+      else if(isa<llvm::Instruction>(operand))
       {
-         auto def_stmt = getGimpleNop(operand);
-         auto ssa = getSSA(operand, def_stmt, inst);
+         return getSSA(operand, operand, inst, false);
+      }
+      else if(isa<llvm::Argument>(operand))
+      {
+         auto def_stmt = getGimpleNop(operand, dyn_cast<llvm::Argument>(operand)->getParent());
+         auto ssa = getSSA(operand, def_stmt, inst, false);
          index2ssa_name.find(def_stmt)->second.var = operand;
          return ssa;
       }
+      else
+         llvm_unreachable("unexpected condition");
    }
-   else
-      llvm_unreachable("unexpected condition");
-}
    const void * DumpGimpleRaw::gimple_assign_rhsIndex(const void * g, unsigned index)
    {
       const llvm::Instruction* inst = reinterpret_cast<const llvm::Instruction*>(g);
-      if(isa<llvm::LoadInst>(*inst))
+      if(isa<llvm::LoadInst>(inst))
       {
          assert(index ==0);
          const llvm::LoadInst& load = cast<const llvm::LoadInst>(*inst);
@@ -688,18 +786,48 @@ const void * DumpGimpleRaw::getOperand(const llvm::Value *operand, const llvm::I
       return getOperand(inst->getOperand(index), inst);
    }
 
-   const void* DumpGimpleRaw::build2(DumpGimpleRaw::tree_codes tc, const void* type, const void* op1, const void* op2)
+   const void* DumpGimpleRaw::boolean_type_node(const void *g)
    {
-      auto key = std::make_tuple(tc, type, op1, op2);
+      const llvm::Instruction* inst = reinterpret_cast<const llvm::Instruction*>(g);
+      return assignCodeType(inst->getType());
+   }
+
+   unsigned int DumpGimpleRaw::gimple_phi_num_args(const void* g) const
+   {
+      const llvm::PHINode* phi = reinterpret_cast<const llvm::PHINode*>(g);
+      return phi->getNumIncomingValues();
+   }
+
+   const void* DumpGimpleRaw::gimple_phi_arg_def(const void* g, unsigned int index)
+   {
+      const llvm::PHINode* phi = reinterpret_cast<const llvm::PHINode*>(g);
+      return getOperand(phi->getIncomingValue(index), phi);
+   }
+
+   int DumpGimpleRaw::gimple_phi_arg_edgeBBindex(const void* g, unsigned int index)
+   {
+      const llvm::PHINode* phi = reinterpret_cast<const llvm::PHINode*>(g);
+      auto BB = phi->getIncomingBlock(index);
+      const llvm::Function *currentFunction = BB->getParent();
+      llvm::ModuleSlotTracker MST(currentFunction->getParent());
+      MST.incorporateFunction(*currentFunction);
+      return MST.getLocalSlot(BB);
+   }
+
+   const void* DumpGimpleRaw::build3(DumpGimpleRaw::tree_codes tc, const void* type, const void* op1, const void* op2, const void* op3)
+   {
+      auto key = std::make_tuple(tc, type, op1, op2, op3);
       if(index2tree_expr.find(key) == index2tree_expr.end())
       {
          index2tree_expr[key].tc= tc;
          index2tree_expr[key].type=type;
          index2tree_expr[key].op1=op1;
          index2tree_expr[key].op2=op2;
+         index2tree_expr[key].op3=op3;
       }
       return assignCode(&index2tree_expr.find(key)->second, tc);
    }
+
 
    const void* DumpGimpleRaw::DECL_CONTEXT(const void* t)
    {
@@ -834,6 +962,8 @@ const void * DumpGimpleRaw::getOperand(const llvm::Value *operand, const llvm::I
          return te->op1;
       else if(index == 1)
          return te->op2;
+      else if(index == 2)
+         return te->op3;
       else
          llvm_unreachable("unexpected condition");
    }
@@ -901,19 +1031,18 @@ const void * DumpGimpleRaw::getOperand(const llvm::Value *operand, const llvm::I
       else if(code == GT(FIELD_DECL))
       {
          const field_decl* ty = reinterpret_cast<const field_decl*>(t);
-         return ty->type;
+         return assignCodeType(reinterpret_cast<const llvm::Type*>(ty->type));
       }
       else if(code == GT(GIMPLE_NOP))
       {
-         const gimple_nop* gn = reinterpret_cast<const gimple_nop*>(t);
-         return TREE_TYPE(gn->parm_decl);
+         llvm_unreachable("unexpected");
+         //const gimple_nop* gn = reinterpret_cast<const gimple_nop*>(t);
+         //return TREE_TYPE(gn->parm_decl);
       }
       else if(code == GT(SSA_NAME))
       {
          const ssa_name* ssa = reinterpret_cast<const ssa_name*>(t);
-         auto def_stmt = ssa->def_stmts;
-         const llvm::Instruction* inst = reinterpret_cast<const llvm::Instruction*>(def_stmt);
-         return assignCodeType(ssa->var ? reinterpret_cast<const llvm::Value*>(ssa->var)->getType() : inst->getType());
+         return assignCodeType(reinterpret_cast<const llvm::Type*>(ssa->type));
       }
       tree_codes_class code_class = TREE_CODE_CLASS(code);
       if(code_class==tcc_type)
@@ -1110,7 +1239,7 @@ const void * DumpGimpleRaw::getOperand(const llvm::Value *operand, const llvm::I
    const void* DumpGimpleRaw::TYPE_ARG_TYPES(const void* t)
    {
       llvm::Type* ty = const_cast<llvm::Type*>(reinterpret_cast<const llvm::Type*>(t));
-      assert(isa<llvm::FunctionType>(*ty));
+      assert(isa<llvm::FunctionType>(ty));
       const llvm::FunctionType* llvm_obj = reinterpret_cast<const llvm::FunctionType*>(t);
       if(llvm_obj->params().empty())
          return nullptr;
@@ -1161,7 +1290,7 @@ const void * DumpGimpleRaw::getOperand(const llvm::Value *operand, const llvm::I
    bool DumpGimpleRaw::stdarg_p(const void* t) const
    {
       const llvm::Type* ty = reinterpret_cast<const llvm::Type*>(t);
-      assert(isa<llvm::FunctionType>(*ty));
+      assert(isa<llvm::FunctionType>(ty));
       const llvm::FunctionType* llvm_obj = reinterpret_cast<const llvm::FunctionType*>(t);
       return llvm_obj->isVarArg();
    }
@@ -1169,7 +1298,7 @@ const void * DumpGimpleRaw::getOperand(const llvm::Value *operand, const llvm::I
    llvm::ArrayRef<llvm::Type *> DumpGimpleRaw::TYPE_FIELDS(const void*t)
    {
       const llvm::Type* ty = reinterpret_cast<const llvm::Type*>(t);
-      assert(isa<llvm::StructType>(*ty));
+      assert(isa<llvm::StructType>(ty));
       return reinterpret_cast<const llvm::StructType*>(t)->elements();
    }
 
@@ -1227,22 +1356,63 @@ const void * DumpGimpleRaw::getOperand(const llvm::Value *operand, const llvm::I
       if(TREE_CODE(g) == GT(GIMPLE_NOP))
       {
          const gimple_nop* gn = reinterpret_cast<const gimple_nop*>(g);
-         const llvm::Argument *arg = reinterpret_cast<const llvm::Argument *>(gn->parm_decl);
-         return assignCodeAuto(arg->getParent());
+         return assignCodeAuto(gn->scpe);
       }
       const llvm::Instruction *inst = reinterpret_cast<const llvm::Instruction *>(g);
       return assignCodeAuto(inst->getParent()->getParent());
    }
 
-   int DumpGimpleRaw::getGimple_bb_index(const void*t) const
+   int DumpGimpleRaw::getGimple_bb_index(const void* g) const
    {
-      if(TREE_CODE(t) == GT(GIMPLE_NOP)) return 0;
-      const llvm::Instruction *inst = reinterpret_cast<const llvm::Instruction *>(t);
+      if(TREE_CODE(g) == GT(GIMPLE_NOP)) return 0;
+      const llvm::Instruction *inst = reinterpret_cast<const llvm::Instruction *>(g);
       const llvm::BasicBlock * BB = inst->getParent();
       const llvm::Function *currentFunction = BB->getParent();
       llvm::ModuleSlotTracker MST(currentFunction->getParent());
       MST.incorporateFunction(*currentFunction);
       return MST.getLocalSlot(BB);
+   }
+
+   bool DumpGimpleRaw::gimple_has_mem_ops(const void* g) const
+   {
+      if(TREE_CODE(g) == GT(GIMPLE_NOP)) return false;
+      llvm::Instruction *inst = const_cast<llvm::Instruction *>(reinterpret_cast<const llvm::Instruction *>(g));
+      llvm::BasicBlock* BB = inst->getParent();
+      llvm::Function *currentFunction = BB->getParent();
+      auto &MSSA = modulePass->getAnalysis<llvm::MemorySSAWrapperPass>(*currentFunction).getMSSA();
+      return MSSA.getMemoryAccess(inst);
+   }
+
+   void DumpGimpleRaw::serialize_vops(const void* g)
+   {
+      llvm::Instruction *inst = const_cast<llvm::Instruction *>(reinterpret_cast<const llvm::Instruction *>(g));
+      llvm::BasicBlock* BB = inst->getParent();
+      llvm::Function *currentFunction = BB->getParent();
+      auto &MSSA = modulePass->getAnalysis<llvm::MemorySSAWrapperPass>(*currentFunction).getMSSA();
+      const llvm::MemoryUseOrDef* ma = MSSA.getMemoryAccess(inst);
+      if(ma->getValueID()==llvm::Value::MemoryUseVal || ma->getValueID()==llvm::Value::MemoryDefVal)
+      {
+         const void* def_stmt;
+         bool isDefault = false;
+         if(MSSA.isLiveOnEntryDef(ma->getDefiningAccess()))
+         {
+            isDefault = true;
+            def_stmt = getGimpleNop(inst->getParent()->getParent(), inst->getParent()->getParent());
+         }
+         else
+         {
+            auto defAccess = ma->getDefiningAccess();
+            assert(defAccess->getValueID()==llvm::Value::MemoryDefVal);
+            def_stmt = dyn_cast<llvm::MemoryUseOrDef>(defAccess)->getMemoryInst();
+         }
+         const void* vuse=getSSA(ma,def_stmt,inst,isDefault);
+         serialize_child("memuse", vuse);
+      }
+      if(ma->getValueID()==llvm::Value::MemoryDefVal)
+      {
+         const void* vdef=getSSA(ma,g,inst,false);
+         serialize_child("memdef", vdef);
+      }
    }
 
    const void* DumpGimpleRaw::SSA_NAME_VAR(const void*t) const
@@ -1266,7 +1436,7 @@ const void * DumpGimpleRaw::getOperand(const llvm::Value *operand, const llvm::I
    const void* DumpGimpleRaw::getMinValue(const void* t)
    {
       const ssa_name* ssa = reinterpret_cast<const ssa_name*>(t);
-      if(ssa->var)
+      if(ssa->var|| ssa->isVirtual)
          return nullptr;
       llvm::Instruction *inst = const_cast<llvm::Instruction *>(reinterpret_cast<const llvm::Instruction *>(ssa->def_stmts));
       llvm::BasicBlock* BB = inst->getParent();
@@ -1287,7 +1457,7 @@ const void * DumpGimpleRaw::getOperand(const llvm::Value *operand, const llvm::I
    const void* DumpGimpleRaw::getMaxValue(const void* t)
    {
       const ssa_name* ssa = reinterpret_cast<const ssa_name*>(t);
-      if(ssa->var)
+      if(ssa->var|| ssa->isVirtual)
          return nullptr;
       llvm::Instruction *inst = const_cast<llvm::Instruction *>(reinterpret_cast<const llvm::Instruction *>(ssa->def_stmts));
       llvm::BasicBlock* BB = inst->getParent();
@@ -1411,6 +1581,8 @@ const void * DumpGimpleRaw::getOperand(const llvm::Value *operand, const llvm::I
    static void real_to_hexadecimal(char * buffer, unsigned size_buff, const llvm::APFloat&val)
    {
       llvm::APInt API = val.bitcastToAPInt();
+      llvm::APInt APIAbs = API;
+      APIAbs.clearBit(API.getBitWidth()-1);
       llvm::errs() << API << "\n";
       auto sem = &val.getSemantics();
       unsigned nbitsExp = 0;
@@ -1447,8 +1619,9 @@ const void * DumpGimpleRaw::getOperand(const llvm::Value *operand, const llvm::I
       else
          llvm_unreachable("unexpected floating point format in real_to_hexadecimal");
 
+
       unsigned ExpBiased = API.lshr(nbitsMan).getZExtValue() & ((1U<<nbitsExp)-1);
-      int ExpUnbiased = (llvm::APInt::getNullValue(API.getBitWidth()) == API) ? 0 : (ExpBiased - ((1U << (nbitsExp-1))-2));
+      int ExpUnbiased = (llvm::APInt::getNullValue(API.getBitWidth()) == APIAbs) ? 0 : (ExpBiased - ((1U << (nbitsExp-1))-2));
 
       snprintf(buffer, size_buff, "p%+d", ExpUnbiased);
 
@@ -1740,8 +1913,17 @@ const void * DumpGimpleRaw::getOperand(const llvm::Value *operand, const llvm::I
 
       auto code = TREE_CODE(g);
       const char* code_name = GET_TREE_CODE_NAME(code);
-      llvm::errs() << "@" << code_name  << "\n";
-
+      if(code != GT(GIMPLE_NOP))
+      {
+         llvm::Instruction *inst = const_cast<llvm::Instruction *>(reinterpret_cast<const llvm::Instruction *>(g));
+         llvm::BasicBlock* BB = inst->getParent();
+         llvm::Function *currentFunction = BB->getParent();
+         auto &MSSA = modulePass->getAnalysis<llvm::MemorySSAWrapperPass>(*currentFunction).getMSSA();
+         llvm::errs() << "@" << code_name  << "\n";
+         if(MSSA.getMemoryAccess(inst)) llvm::errs() << "| " << *MSSA.getMemoryAccess(inst) <<"\n";
+      }
+      else
+         llvm::errs() << "@" << code_name  << "\n";
       /* Print the node index.  */
       serialize_index (index);
 
@@ -1750,6 +1932,11 @@ const void * DumpGimpleRaw::getOperand(const llvm::Value *operand, const llvm::I
       column = 25;
       serialize_child("scpe", getGimpleScpe(g));
       serialize_int("bb_index", getGimple_bb_index(g));
+
+      if (gimple_has_mem_ops(g))
+        serialize_vops(g);
+
+
       if(gimple_has_location (g))
       {
          expanded_location xloc = expand_location(gimple_location (g));
@@ -1763,16 +1950,21 @@ const void * DumpGimpleRaw::getOperand(const llvm::Value *operand, const llvm::I
       {
          case GT(GIMPLE_ASSIGN):
          {
+            if (get_gimple_rhs_class(gimple_expr_code (g)) == GIMPLE_TERNARY_RHS)
+            {
+               serialize_child ("op", gimple_assign_lhs (g));
+               serialize_child ("op", build3(gimple_assign_rhs_code (g), TREE_TYPE (gimple_assign_lhs (g)), gimple_assign_rhs1 (g), gimple_assign_rhs2 (g), gimple_assign_rhs3 (g)));
+            }
             if (get_gimple_rhs_class(gimple_expr_code (g)) == GIMPLE_BINARY_RHS)
             {
                serialize_child ("op", gimple_assign_lhs (g));
                serialize_child ("op", build2(gimple_assign_rhs_code (g), TREE_TYPE (gimple_assign_lhs (g)), gimple_assign_rhs1 (g), gimple_assign_rhs2 (g)));
             }
-//            else if (get_gimple_rhs_class (gimple_expr_code (g)) == GIMPLE_UNARY_RHS)
-//            {
-//               serialize_child ("op", gimple_assign_lhs (g));
-//               serialize_child ("op", build1 (gimple_assign_rhs_code (g), TREE_TYPE (gimple_assign_lhs (g)), gimple_assign_rhs1 (g)));
-//            }
+            else if (get_gimple_rhs_class (gimple_expr_code (g)) == GIMPLE_UNARY_RHS)
+            {
+               serialize_child ("op", gimple_assign_lhs (g));
+               serialize_child ("op", build1 (gimple_assign_rhs_code (g), TREE_TYPE (gimple_assign_lhs (g)), gimple_assign_rhs1 (g)));
+            }
             else if (get_gimple_rhs_class (gimple_expr_code (g)) == GIMPLE_SINGLE_RHS)
             {
                serialize_child ("op", gimple_assign_lhs (g));
@@ -1780,6 +1972,32 @@ const void * DumpGimpleRaw::getOperand(const llvm::Value *operand, const llvm::I
             }
             break;
          }
+         case GT(GIMPLE_COND):
+           serialize_child ("op", gimple_cond_op (g));
+           break;
+
+         case GT(GIMPLE_GOTO):
+           llvm_unreachable("unexpected GIMPLE_GOTO");/// serialize_child ("op", gimple_goto_dest (g));
+           break;
+
+         case GT(GIMPLE_NOP):
+           break;
+
+         case GT(GIMPLE_RETURN):
+           //serialize_child ("op", gimple_return_retval (PTRCONV(greturn*,g)));
+           break;
+
+         case GT(GIMPLE_PHI):
+           serialize_child ("res", gimple_phi_result (g));
+           for (auto i = 0u; i < gimple_phi_num_args (g); i++)
+           {
+              serialize_child ("def", gimple_phi_arg_def(g, i));
+              serialize_int ("edge", gimple_phi_arg_edgeBBindex(g, i));
+           }
+           //if(!is_gimple_reg (gimple_phi_result (g)))
+           //  serialize_string("virtual");
+           break;
+
 
       }
 
@@ -1813,7 +2031,8 @@ const void * DumpGimpleRaw::getOperand(const llvm::Value *operand, const llvm::I
      const llvm::Function::BasicBlockListType & bblist = *reinterpret_cast<const llvm::Function::BasicBlockListType*>(t);
      llvm::Function *currentFunction = const_cast<llvm::Function *>(bblist.front().getParent());
      assert(modulePass);
-     llvm::LoopInfo &LI = modulePass->getAnalysis<llvm::LoopInfoWrapperPass>(*currentFunction).getLoopInfo();
+     auto &LI = modulePass->getAnalysis<llvm::LoopInfoWrapperPass>(*currentFunction).getLoopInfo();
+     auto &MSSA = modulePass->getAnalysis<llvm::MemorySSAWrapperPass>(*currentFunction).getMSSA();
      std::map<const llvm::Loop*, unsigned> loopLabes;
      if(!LI.empty())
      {
@@ -1829,6 +2048,8 @@ const void * DumpGimpleRaw::getOperand(const llvm::Value *operand, const llvm::I
         const char *field;
         serialize_new_line ();
         serialize_int ("bloc", MST.getLocalSlot(&BB));
+        llvm::errs() << "BB" << MST.getLocalSlot(&BB) << "\n";
+        if(MSSA.getMemoryAccess(&BB)) llvm::errs() << "| " << *MSSA.getMemoryAccess(&BB) <<"\n";
         if(LI.empty() || !LI.getLoopFor(&BB))
            serialize_int ("loop_id", 0 );
         else
@@ -1875,7 +2096,12 @@ const void * DumpGimpleRaw::getOperand(const llvm::Value *operand, const llvm::I
            if(isa<llvm::PHINode>(inst))
               serialize_gimple_child("phi", assignCodeAuto(&inst));
            else
-              serialize_gimple_child("stmt", assignCodeAuto(&inst));
+           {
+              if(isa<llvm::BranchInst>(inst) && cast<llvm::BranchInst>(inst).isUnconditional() && isa<llvm::BasicBlock>(*cast<llvm::BranchInst>(inst).getOperand(0)))
+                 ; /// goto to basic blocks can be skipped
+              else
+                 serialize_gimple_child("stmt", assignCodeAuto(&inst));
+           }
         }
 
      }
@@ -2125,10 +2351,10 @@ const void * DumpGimpleRaw::getOperand(const llvm::Value *operand, const llvm::I
 //              serialize_string("volatile");
 //            else
               serialize_gimple_child("def_stmt", SSA_NAME_DEF_STMT(t));
-//              if (SSA_NAME_VAR (t) && !is_gimple_reg (SSA_NAME_VAR (t)))
-//                serialize_string("virtual");
-//              if (SSA_NAME_IS_DEFAULT_DEF(t))
-//                 serialize_string("default");
+              if (is_virtual_ssa(t))
+                 serialize_string("virtual");
+              if (SSA_NAME_IS_DEFAULT_DEF(t))
+                 serialize_string("default");
               serialize_child("min", getMinValue(t));
               serialize_child("max", getMaxValue(t));
 
@@ -2215,11 +2441,15 @@ const void * DumpGimpleRaw::getOperand(const llvm::Value *operand, const llvm::I
 //           break;
 
          case GT(MEM_REF):
-         {
             serialize_child ("op", TREE_OPERAND (t, 0));
             serialize_child ("op", TREE_OPERAND (t, 1));
             break;
-         }
+
+         case GT(COND_EXPR):
+           serialize_child ("op", TREE_OPERAND (t, 0));
+           serialize_child ("op", TREE_OPERAND (t, 1));
+           serialize_child ("op", TREE_OPERAND (t, 2));
+           break;
 
          case GT(CONSTRUCTOR):
          {

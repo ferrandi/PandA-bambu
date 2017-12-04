@@ -226,22 +226,36 @@ namespace clang {
          struct ssa_name
          {
                int vers;
+               const void* type;
                const void* var;
                const void* def_stmts;
-               ssa_name() : vers(-1), var(nullptr), def_stmts(nullptr) {}
+               bool isVirtual;
+               bool isDefault;
+               ssa_name() : vers(-1), type(nullptr), var(nullptr), def_stmts(nullptr), isVirtual(false), isDefault(false) {}
          };
          std::map<const void*, ssa_name> index2ssa_name;
+         int last_memory_ssa_vers;
+         std::map<const void*, int> memoryaccess2ssaindex;
          gimple_rhs_class get_gimple_rhs_class (tree_codes code) {return gimple_rhs_class_table[static_cast<unsigned int>(code)];}
          tree_codes gimple_expr_code (const void *stmt);
          tree_codes gimple_assign_rhs_code (const void *stmt) {return gimple_expr_code(stmt);}
-         const void* getGimpleNop(const llvm::Value *operand);
-         bool isSSA(const llvm::Value *arg, const llvm::Instruction* inst) const;
-         const void* getSSA(const llvm::Value *operand, const void* def_stmt, const llvm::Instruction* inst);
+         const void* getGimpleNop(const llvm::Value *operand, const void* scpe);
+         const void* getSSA(const llvm::Value *operand, const void* def_stmt, const llvm::Instruction* inst, bool isDefault);
+         bool is_virtual_ssa(const void* t) const;
+         bool SSA_NAME_IS_DEFAULT_DEF(const void* t) const;
          const void* getOperand(const llvm::Value *operand, const llvm::Instruction *inst);
          const void* gimple_assign_lhs(const void* g);
          const void* gimple_assign_rhsIndex(const void * g, unsigned index);
          const void* gimple_assign_rhs1(const void* g) {return gimple_assign_rhsIndex(g,0);}
          const void* gimple_assign_rhs2(const void* g) {return gimple_assign_rhsIndex(g,1);}
+         const void* gimple_assign_rhs3(const void* g) {return gimple_assign_rhsIndex(g,2);}
+         tree_codes gimple_cond_code(const void* g) {return gimple_expr_code(g);}
+         const void* boolean_type_node(const void* g);
+         const void* gimple_cond_op(const void* g) {return gimple_assign_rhsIndex(g,0);}
+         const void* gimple_phi_result(const void* g) {return gimple_assign_lhs(g);}
+         unsigned int gimple_phi_num_args(const void* g) const;
+         const void* gimple_phi_arg_def(const void* g, unsigned int index);
+         int gimple_phi_arg_edgeBBindex(const void* g, unsigned int index);
 
          struct tree_expr
          {
@@ -249,19 +263,21 @@ namespace clang {
                const void* type;
                const void* op1;
                const void* op2;
-               tree_expr() : tc(), type(nullptr), op1(nullptr), op2(nullptr) {}
+               const void* op3;
+               tree_expr() : tc(), type(nullptr), op1(nullptr), op2(nullptr), op3(nullptr) {}
          };
-         std::map<std::tuple<tree_codes,const void*,const void*,const void*>, tree_expr> index2tree_expr;
+         std::map<std::tuple<tree_codes,const void*,const void*,const void*,const void*>, tree_expr> index2tree_expr;
 
          struct gimple_nop
          {
-               const void* parm_decl;
-               gimple_nop() : parm_decl(nullptr) {}
+               const void* scpe;
+               gimple_nop() : scpe(nullptr) {}
          };
          std::map<const void*, gimple_nop> index2gimple_nop;
 
-         const void* build2(tree_codes tc, const void* type, const void* op1, const void* op2);
-         const void* build1(tree_codes tc, const void* type, const void* op1) {return build2(tc, type, op1, nullptr);}
+         const void* build3(tree_codes tc, const void* type, const void* op1, const void* op2, const void* op3);
+         const void* build2(tree_codes tc, const void* type, const void* op1, const void* op2) {return build3(tc, type, op1, op2, nullptr);}
+         const void* build1(tree_codes tc, const void* type, const void* op1) {return build3(tc, type, op1, nullptr, nullptr);}
 
          /// currrently expressions do not have source file associated
          bool EXPR_HAS_LOCATION(const void*) const {return false;}
@@ -300,33 +316,35 @@ namespace clang {
          bool DECL_REGISTER (const void* t) const;
          bool TREE_READONLY(const void* t) const;
          const void* TREE_OPERAND(const void* t, unsigned index);
-         int64_t TREE_INT_CST_LOW(const void*t) const;
+         int64_t TREE_INT_CST_LOW(const void* t) const;
 
-         const void* TREE_TYPE(const void*t);
-         bool TYPE_UNSIGNED(const void*t) const;
-         int TYPE_PRECISION (const void*t) const;
-         bool COMPLEX_FLOAT_TYPE_P(const void*t) const;
-         bool TYPE_SATURATING (const void*t) const;
-         const void* TYPE_MIN_VALUE (const void*t);
-         const void* TYPE_MAX_VALUE (const void*t);
+         const void* TREE_TYPE(const void* t);
+         bool TYPE_UNSIGNED(const void* t) const;
+         int TYPE_PRECISION (const void* t) const;
+         bool COMPLEX_FLOAT_TYPE_P(const void* t) const;
+         bool TYPE_SATURATING (const void* t) const;
+         const void* TYPE_MIN_VALUE (const void* t);
+         const void* TYPE_MAX_VALUE (const void* t);
          const void* TYPE_VALUES (const void* t);
          const void* TYPE_NAME(const void* t);
          const void* TYPE_SIZE (const void* t);
          const void* TYPE_CONTEXT (const void* t);
-         int TYPE_ALIGN (const void*t) const;
-         bool TYPE_PACKED(const void*t) const;
+         int TYPE_ALIGN (const void* t) const;
+         bool TYPE_PACKED(const void* t) const;
          const void* TYPE_ARG_TYPES (const void* t);
-         const void* TYPE_DOMAIN(const void*t);
+         const void* TYPE_DOMAIN(const void* t);
          bool stdarg_p(const void* t) const;
          llvm::ArrayRef<llvm::Type *> TYPE_FIELDS(const void*t);
-         const void * GET_FIELD_DECL(const llvm::Type*t, unsigned int pos, const void * scpe);
-         const void * GET_METHOD_TYPE(const llvm::Type*t, unsigned int pos, const void * scpe);
+         const void * GET_FIELD_DECL(const llvm::Type* t, unsigned int pos, const void * scpe);
+         const void * GET_METHOD_TYPE(const llvm::Type* t, unsigned int pos, const void * scpe);
          const void* TYPE_METHOD_BASETYPE(const void* t);
 
-         const std::list<const void*> DECL_ARGUMENTS (const void*t);
-         const void* getStatement_list(const void*t);
-         const void* getGimpleScpe(const void*t);
-         int getGimple_bb_index(const void*t) const;
+         const std::list<const void*> DECL_ARGUMENTS(const void* t);
+         const void* getStatement_list(const void* t);
+         const void* getGimpleScpe(const void* g);
+         int getGimple_bb_index(const void* g) const;
+         bool gimple_has_mem_ops(const void* g) const;
+         void serialize_vops(const void* g);
 
          const void* SSA_NAME_VAR(const void*t) const;
          int SSA_NAME_VERSION(const void*t) const;
