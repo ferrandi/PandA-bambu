@@ -2950,7 +2950,7 @@ AM_CONDITIONAL(ENABLE_WERROR, test "x$panda_WERROR" = xyes)
 ################ Debug checking ##############################
 if test "x$panda_DEBUG" = xyes; then
   AC_DEFINE(PANDA_DEBUG, 1, "Define if a debug version is built")
-  CXXFLAGS+=" -g3 -rdynamic -fno-omit-pointers"
+  CXXFLAGS+=" -g3 -rdynamic"
   AC_DEFINE(HAVE_PRINT_STACK,1, "Define if call stack is printed on error")
 fi
 
