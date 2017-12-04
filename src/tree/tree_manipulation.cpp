@@ -1251,6 +1251,7 @@ tree_nodeRef tree_manipulation::create_boolean_type()
       unsigned int size_node_nid = this->TreeM->new_tree_node_id();
 
       ///@55 type_decl name: @58 type: @48 srcp: "<built-in>:0:0"
+      IR_schema[TOK(TOK_TYPE)] = STR(boolean_type_nid); //@48
       IR_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
       this->TreeM->create_tree_node(type_decl_nid, type_decl_K, IR_schema);
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Created node " + STR(type_decl_nid) + " (type_decl boolean)" );
