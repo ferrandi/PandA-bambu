@@ -50,26 +50,15 @@ if BUILD_BAMBU
       -I$(top_srcdir)/src/HLS/module_allocation \
       -I$(top_srcdir)/src/technology \
       -I$(top_srcdir)/src/technology/target_device
-if BUILD_LIB_ILP
-if BUILD_LIB_EXPERIMENTAL
-   lib_frontend_analysis_la_CPPFLAGS += \
-      -I$(top_srcdir)/src/HLS/scheduling
-endif
-endif
 endif
 
 if BUILD_BAMBU
-if BUILD_LIB_EXPERIMENTAL
    lib_frontend_analysis_la_CPPFLAGS += \
-     -I$(top_srcdir)/src/constants \
-     -I$(top_srcdir)/src/frontend_analysis/behavior_analysis/reduced_pdg_computation
-   lib_frontend_analysis_la_LIBADD += \
-     $(top_builddir)/src/frontend_analysis/behavior_analysis/reduced_pdg_computation/lib_reduced_pdg_computation.la
+      -I$(top_srcdir)/src/constants
    noinst_HEADERS += \
       find_max_cfg_transformations.hpp
    lib_frontend_analysis_la_SOURCES += \
       find_max_cfg_transformations.cpp
-endif
 endif
 
 if BUILD_LIB_CODE_ESTIMATION

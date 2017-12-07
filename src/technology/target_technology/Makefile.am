@@ -30,12 +30,6 @@ if BUILD_LIB_CMOS
   lib_target_technology_la_CPPFLAGS += \
                  -I$(top_srcdir)/src/technology/target_technology/CMOS
 
-if BUILD_LIB_EXPERIMENTAL
-  lib_target_technology_la_CPPFLAGS += \
-                 -I$(top_srcdir)/src/parser/blif \
-                 -I$(top_srcdir)/src/circuit/aig
-endif
-
   lib_target_technology_la_LIBADD += \
                 $(top_builddir)/src/technology/target_technology/CMOS/lib_target_technology_CMOS.la
 endif

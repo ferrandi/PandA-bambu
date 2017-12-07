@@ -43,12 +43,6 @@ if BUILD_LIB_CODE_ESTIMATION
       -I$(top_srcdir)/src/design_flows/codesign/estimation
 endif
 
-if BUILD_LIB_EXPERIMENTAL
-   lib_behavior_la_CPPFLAGS += -I$(top_srcdir)/src/algorithms/graph_helpers -I$(top_srcdir)/src/machine -I$(top_srcdir)/src/rtl -I$(top_srcdir)/src/wrapper/target_architectures
-   noinst_HEADERS += ActivationFunction.hpp epd_graph.hpp extended_pdg_constructor.hpp parallel_regions_graph.hpp parallel_regions_graph_constructor.hpp
-   lib_behavior_la_SOURCES += ActivationFunction.cpp epd_graph.cpp extended_pdg_constructor.cpp parallel_regions_graph.cpp parallel_regions_graph_constructor.cpp
-endif
-
 if BUILD_LIB_HOST_PROFILING
    lib_behavior_la_SOURCES += profiling_information.cpp
    noinst_HEADERS += profiling_information.hpp

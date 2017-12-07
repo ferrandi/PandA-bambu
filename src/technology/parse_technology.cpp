@@ -326,7 +326,23 @@ void read_genlib_technology_File(const std::string& fn, const technology_manager
 }
 #endif
 
-void write_technology_File(unsigned int type, const std::string& f, const technology_managerRef TM, TargetDevice_Type dv_type, const std::set<std::string> &libraries)
+void write_technology_File(unsigned int type, const std::string& 
+#if HAVE_EXPERIMENTAL || HAVE_FROM_LIBERTY
+f
+#endif
+, const technology_managerRef 
+#if HAVE_EXPERIMENTAL || HAVE_FROM_LIBERTY
+TM
+#endif
+, TargetDevice_Type 
+#if HAVE_EXPERIMENTAL
+dv_type
+#endif
+, const std::set<std::string> &
+#if HAVE_EXPERIMENTAL || HAVE_FROM_LIBERTY
+libraries
+#endif
+)
 {
    if ((type & technology_manager::XML) != 0)
    {

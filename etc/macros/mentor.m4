@@ -24,10 +24,9 @@ else
 fi
 
 if test "x$ac_mentor_license" = x; then
-   AC_MSG_ERROR(MENTOR LICENSE not defined)
-else
-   AC_DEFINE_UNQUOTED(MENTOR_LICENSE, "${ac_mentor_license}", "Define the mentor LICENSE VALUE")
+   echo "MENTOR modelsim license not set. User has to define LM_LICENSE_FILE variable before run a simulation."
 fi
+AC_DEFINE_UNQUOTED(MENTOR_LICENSE, "${ac_mentor_license}", "Define the mentor LICENSE VALUE")
 
 dnl check for the MENTOR configuration setup script: settings32.sh/settings64.sh
    for dirs in $ac_mentor_dirs; do

@@ -37,21 +37,6 @@ noinst_HEADERS = \
 lib_controller_creation_la_SOURCES = \
    controller_creator_base_step.cpp fsm_controller.cpp
 
-if BUILD_LIB_EXPERIMENTAL
-  lib_controller_creation_la_CPPFLAGS += \
-   -I$(top_srcdir)/src/algorithms/boolean_functions \
-   -I$(top_srcdir)/src/algorithms/graph_helpers \
-   -I$(top_srcdir)/src/algorithms/loops_detection \
-   -I$(top_srcdir)/src/bdd \
-   -I$(top_srcdir)/src/circuit/aig \
-   -I$(top_srcdir)/src/HLS/chaining  \
-   -I$(top_srcdir)/src/HLS/liveness
-
-
-   noinst_HEADERS += ParallelController.hpp
-   lib_controller_creation_la_SOURCES += ParallelController.cpp
-endif
-
 #DOCUMENTATION STUFF
 PRJ_DOC = controller.doc fsm.doc
 EXTRA_DIST = $(PRJ_DOC)

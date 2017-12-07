@@ -28,13 +28,6 @@ noinst_HEADERS = gcc_wrapper.hpp
 
 lib_treegccwrapper_la_SOURCES = gcc_wrapper.cpp
 
-if BUILD_LIB_OBJECT_CODE_WRAPPER
-   lib_treegccwrapper_la_SOURCES += bfd_wrapper.cpp obj_code_wrapper.cpp
-   noinst_HEADERS += bfd_wrapper.hpp obj_code_wrapper.hpp
-   lib_treegccwrapper_la_CPPFLAGS += \
-      -I$(top_srcdir)/src/design_flows/backend/ToC/source_code_writers
-endif
-
 #DOCUMENTATION STUFF
 
 DOX_TAGFILES=

@@ -44,15 +44,6 @@ lib_allocation_la_SOURCES = \
    allocation_information.cpp \
    hls_bit_value.cpp
 
-if BUILD_LIB_FROM_PRAGMA
-if BUILD_LIB_EXPERIMENTAL
-   noinst_HEADERS += \
-      omp_allocation.hpp
-   lib_allocation_la_SOURCES += \
-      omp_allocation.cpp
-endif
-endif
-
 #DOCUMENTATION STUFF
 DOX_TAGFILES = src src/graph src/technology src/parser/HLS_constraintsIO src/HLS 
 PRJ_DOC = main_allocation.doc allocation.doc binding_constraints.doc

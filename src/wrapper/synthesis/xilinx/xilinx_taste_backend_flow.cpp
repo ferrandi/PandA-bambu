@@ -69,7 +69,7 @@ XilinxTasteBackendFlow::XilinxTasteBackendFlow(const ParameterConstRef _paramete
    debug_level = _parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
-std::string XilinxTasteBackendFlow::GenerateSynthesisScripts(const std::string& fu_name, const structural_managerRef, const std::list<std::string> & hdl_files, const std::list<std::string> & aux_files)
+std::string XilinxTasteBackendFlow::GenerateSynthesisScripts(const std::string&, const structural_managerRef, const std::list<std::string> & hdl_files, const std::list<std::string> & aux_files)
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Generating synthesis scripts");
    std::string synthesis_file_list;
