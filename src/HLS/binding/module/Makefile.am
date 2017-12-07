@@ -45,17 +45,6 @@ noinst_HEADERS = fu_binding.hpp fu_binding_creator.hpp easy_module_binding.hpp u
 lib_modulebinding_la_SOURCES = fu_binding.cpp fu_binding_creator.cpp easy_module_binding.cpp unique_binding.cpp cdfc_module_binding.cpp
 
 
-if BUILD_LIB_EXPERIMENTAL
-   noinst_HEADERS += \
-      parallel_memory_fu_binding.hpp
-   lib_modulebinding_la_SOURCES += \
-      parallel_memory_fu_binding.cpp
-   lib_modulebinding_la_CPPFLAGS += \
-      -I$(top_srcdir)/src/HLS/architecture_creation/controller_creation \
-      -I$(top_builddir)/ext/trng-4.17/
-
-endif
-
 #DOCUMENTATION STUFF
 
 DOX_TAGFILES= src

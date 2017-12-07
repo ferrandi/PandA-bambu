@@ -34,22 +34,9 @@ if BUILD_LIB_PHYSICAL_LIBRARY_MODELS
   lib_physical_library_la_LIBADD += $(top_builddir)/src/technology/physical_library/models/lib_models.la
 endif
 
-if BUILD_LIB_FROM_BOOLEAN
-if BUILD_LIB_CIRCUIT
-  noinst_HEADERS += dump_genlib.hpp
-  lib_physical_library_la_SOURCES += dump_genlib.cpp
-endif
-endif
-
 if BUILD_LIB_CMOS
   lib_physical_library_la_CPPFLAGS += \
               -I$(top_srcdir)/src/technology/target_technology/CMOS
-if BUILD_LIB_EXPERIMENTAL
-  lib_physical_library_la_CPPFLAGS += \
-              -I$(top_srcdir)/src/technology/characterization/time \
-              -I$(top_srcdir)/src/technology/characterization/time/timing_analysis \
-              -I$(top_srcdir)/src/technology/characterization/time/models
-endif
 endif
 
 if BUILD_LIBRARY_COMPILER

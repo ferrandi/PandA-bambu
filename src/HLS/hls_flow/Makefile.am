@@ -72,14 +72,6 @@ lib_hls_flow_la_SOURCES = \
 lib_hls_flow_la_LIBADD = \
    $(top_builddir)/src/HLS/hls_flow/synthesis/lib_hls_synthesis.la
 
-if BUILD_LIB_EXPERIMENTAL
-  lib_hls_flow_la_CPPFLAGS += \
-    -I$(top_srcdir)/src/HLS/export \
-    -I$(top_srcdir)/src/HLS/evaluation
-  noinst_HEADERS += dump_hls.hpp xml_config_hls.hpp
-  lib_hls_flow_la_SOURCES += dump_hls.cpp xml_config_hls.cpp
-endif
-
 if BUILD_LIB_VCD
    lib_hls_flow_la_CPPFLAGS += \
       -I$(top_srcdir)/src/HLS/vcd \

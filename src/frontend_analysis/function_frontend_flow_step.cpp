@@ -333,16 +333,16 @@ void FunctionFrontendFlowStep::WriteBBGraphDot(const std::string&filename) const
    BBGraph(GCC_bb_graphs_collection, CFG_SELECTOR).WriteDot(filename);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Written " + filename);
    /// add edges
+#ifndef NDEBUG
    for(const auto& block : sl->list_of_bloc)
    {
-#ifndef NDEBUG
       for(const auto& phi : block.second->CGetPhiList())
       {
          const auto gp = GetPointer<const gimple_phi>(GET_CONST_NODE(phi));
          THROW_ASSERT(gp->CGetDefEdgesList().size() == block.second->list_of_pred.size(), "BB" + STR(block.second->number) + " has " + STR(block.second->list_of_pred.size()) + " incoming edges but contains " + STR(phi));
       }
-#endif
    }
+#endif
 }
 
 unsigned int FunctionFrontendFlowStep::CGetBBVersion() const

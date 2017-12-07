@@ -39,21 +39,11 @@ noinst_HEADERS = \
    mem_dominator_allocation.hpp \
    mem_xml_allocation.hpp
 
-if BUILD_LIB_EXPERIMENTAL
-noinst_HEADERS += \
-   memory_conflict_graph.hpp
-endif
-
 lib_HLS_memory_la_SOURCES = \
    memory_allocation.cpp \
    memory_symbol.cpp memory.cpp \
    mem_dominator_allocation.cpp \
    mem_xml_allocation.cpp
-
-if BUILD_LIB_EXPERIMENTAL
-lib_HLS_memory_la_SOURCES += \
-   memory_conflict_graph.cpp
-endif
 
 
 #do not touch the following line

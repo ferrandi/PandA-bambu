@@ -169,13 +169,16 @@ DesignFlowStep_Status GenerateTasteHDLArchitecture::Exec()
    writer->write("constant BOARD_FREQ : integer := 50000;   -- Board frequency in KHz\n");
    writer->write("\n");
    size_t counter = 0;
+#ifndef NDEBUG
    for(const auto& top_function : HLSMgr->aadl_information->top_functions_names)
    {
+      writer->write_comment("-- " + top_function);
       writer->write("constant pconfig_" + STR(counter) + " : apb_config_type := (\n");
       writer->write("   0 => ahb_device_reg ( 16#ff#, 1, 0, 1, 0),\n");
       writer->write("   1 => apb_iobar(" + STR(counter) + ", " + STR(counter) + "));\n\n");
       counter++;
    }
+#endif
    writer->write("\n");
    writer->write("begin\n");
    writer->write("\n");

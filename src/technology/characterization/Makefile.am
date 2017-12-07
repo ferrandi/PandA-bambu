@@ -46,28 +46,6 @@ lib_characterization_la_LIBADD =
 if BUILD_LIB_RTL_CHARACTERIZATION
 noinst_HEADERS += RTL_characterization.hpp
 lib_characterization_la_SOURCES += RTL_characterization.cpp
-if BUILD_LIB_EXPERIMENTAL
-noinst_HEADERS += core_generation.hpp
-lib_characterization_la_SOURCES += core_generation.cpp
-endif
-endif
-
-if BUILD_LIB_TECHNOLOGY_CHARACTERIZATION
-if BUILD_LIB_EXPERIMENTAL
-   SUBDIRS += area time wirelength
-   DIST_SUBDIRS += area time wirelength
-   noinst_HEADERS += AreaCharacterization.hpp TimeCharacterization.hpp WireCharacterization.hpp ModelValidation.hpp
-   lib_characterization_la_SOURCES += AreaCharacterization.cpp TimeCharacterization.cpp WireCharacterization.cpp ModelValidation.cpp
-   lib_characterization_la_CPPFLAGS += \
-       -I$(top_srcdir)/src/technology/characterization/area \
-       -I$(top_srcdir)/src/technology/characterization/time \
-       -I$(top_srcdir)/src/technology/characterization/wirelength \
-       -I$(top_srcdir)/src/technology/utility
-   lib_characterization_la_LIBADD += \
-        $(top_builddir)/src/technology/characterization/area/lib_area_characterization.la \
-        $(top_builddir)/src/technology/characterization/time/lib_time_characterization.la \
-        $(top_builddir)/src/technology/characterization/wirelength/lib_wire_characterization.la
-endif
 endif
 
 #do not touch the following line
