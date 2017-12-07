@@ -442,7 +442,7 @@ void XilinxBackendFlow::parse_timing(const std::string& log_file)
                lut_m->set_timing_value(LUT_model::COMBINATIONAL_DELAY, boost::lexical_cast<double>(tk));
                if(boost::lexical_cast<double>(tk) > Param->getOption<double>(OPT_clock_period))
                {
-                  CopyFile("HLS_output/Synthesis/vivado_flow/post_route_timing_summary.rpt", STR_CST_synthesis_timing_violation_report);
+                  CopyFile("HLS_output/Synthesis/xst/" + actual_parameters->component_name + ".log" , STR_CST_synthesis_timing_violation_report);
                }
             }
          }
