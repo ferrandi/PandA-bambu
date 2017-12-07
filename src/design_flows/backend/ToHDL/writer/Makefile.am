@@ -22,10 +22,6 @@ METASOURCES = AUTO
 noinst_HEADERS = verilog_writer.hpp sv_writer.hpp VHDL_writer.hpp
 lib_HDL_writers_la_SOURCES = verilog_writer.cpp sv_writer.cpp VHDL_writer.cpp
 
-if BUILD_LIB_EXPERIMENTAL
-   noinst_HEADERS += blif_writer.hpp SystemC_writer.hpp edif_writer.hpp
-   lib_HDL_writers_la_SOURCES += blif_writer.cpp SystemC_writer.cpp edif_writer.cpp
-endif
 
 #DOCUMENTATION STUFF
 DOX_TAGFILES= src/design_flows/backend/ src/circuit

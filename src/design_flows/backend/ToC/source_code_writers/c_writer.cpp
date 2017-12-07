@@ -223,26 +223,12 @@ CWriterRef CWriter::CreateCWriter(const CBackend::Type type, const CBackendInfor
             return CWriterRef(new BasicBlocksProfilingCWriter(app_man, instruction_writer, indented_output_stream, parameters, verbose));
          }
 #endif
-#if HAVE_EXPERIMENTAL && HAVE_HOST_PROFILING_BUILT
-      case(CBackend::CB_DATA_MEMORY_PROFILING):
-         {
-            const InstructionWriterRef instruction_writer(new DataMemoryProfilingInstructionWriter(app_man, indented_output_stream, parameters));
-            return CWriterRef(new DataMemoryProfilingCWriter(app_man, instruction_writer, indented_output_stream, parameters, verbose));
-         }
-#endif
 #if HAVE_HLS_BUILT
       case(CBackend::CB_DISCREPANCY_ANALYSIS):
          {
             const InstructionWriterRef instruction_writer(new HLSInstructionWriter(app_man, indented_output_stream, parameters));
 
             return CWriterRef(new DiscrepancyAnalysisCWriter(RefcountCast<const HLSCBackendInformation>(c_backend_information), app_man, instruction_writer, indented_output_stream, parameters, verbose));
-         }
-#endif
-#if HAVE_EXPERIMENTAL && HAVE_HOST_PROFILING_BUILT
-      case(CBackend::CB_EPP):
-         {
-            const InstructionWriterRef instruction_writer = InstructionWriter::CreateInstructionWriter(ActorGraphBackend_Type::BA_NONE, app_man, indented_output_stream, parameters);
-            return CWriterRef(new EfficientPathProfilingCWriter(app_man, instruction_writer, indented_output_stream, parameters, verbose));
          }
 #endif
 #if HAVE_TARGET_PROFILING
@@ -259,13 +245,6 @@ CWriterRef CWriter::CreateCWriter(const CBackend::Type type, const CBackendInfor
          {
             const InstructionWriterRef instruction_writer(new HLSInstructionWriter(app_man, indented_output_stream, parameters));
             return CWriterRef(new HLSCWriter(RefcountCast<const HLSCBackendInformation>(c_backend_information), app_man, instruction_writer, indented_output_stream, parameters, verbose));
-         }
-#endif
-#if HAVE_EXPERIMENTAL && HAVE_HOST_PROFILING_BUILT
-      case(CBackend::CB_HPP):
-         {
-            const InstructionWriterRef instruction_writer = InstructionWriter::CreateInstructionWriter(ActorGraphBackend_Type::BA_NONE, app_man, indented_output_stream, parameters);
-            return CWriterRef(new HierarchicalPathProfilingCWriter(app_man, instruction_writer, indented_output_stream, parameters, verbose));
          }
 #endif
 #if HAVE_GRAPH_PARTITIONING_BUILT && HAVE_TARGET_PROFILING
@@ -293,13 +272,6 @@ CWriterRef CWriter::CreateCWriter(const CBackend::Type type, const CBackendInfor
             }
          }
 #endif
-#if HAVE_EXPERIMENTAL && HAVE_HOST_PROFILING_BUILT
-      case(CBackend::CB_LOOPS_PROFILING):
-         {
-            const InstructionWriterRef instruction_writer = InstructionWriter::CreateInstructionWriter(ActorGraphBackend_Type::BA_NONE, app_man, indented_output_stream, parameters);
-            return CWriterRef(new LoopsProfilingCWriter(app_man, instruction_writer, indented_output_stream, parameters, verbose));
-         }
-#endif
 #if HAVE_ZEBU_BUILT
       case(CBackend::CB_POINTED_DATA_EVALUATION):
          {
@@ -319,13 +291,6 @@ CWriterRef CWriter::CreateCWriter(const CBackend::Type type, const CBackendInfor
             const InstructionWriterRef instruction_writer = InstructionWriter::CreateInstructionWriter(ActorGraphBackend_Type::BA_NONE, app_man, indented_output_stream, parameters);
             return CWriterRef(new CWriter(app_man, instruction_writer, indented_output_stream, parameters, verbose));
          }
-#if HAVE_EXPERIMENTAL && HAVE_HOST_PROFILING_BUILT
-      case(CBackend::CB_TPP):
-         {
-            const InstructionWriterRef instruction_writer = InstructionWriter::CreateInstructionWriter(ActorGraphBackend_Type::BA_NONE, app_man, indented_output_stream, parameters);
-            return CWriterRef(new TreePathProfilingCWriter(app_man, instruction_writer, indented_output_stream, parameters, verbose));
-         }
-#endif
       default:
          {
             THROW_UNREACHABLE("");

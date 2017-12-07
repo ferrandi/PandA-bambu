@@ -395,17 +395,9 @@ const std::string CBackend::ComputeSignature(const CBackend::Type type)
       case(CB_BBP) :
          return "CBackend::BasicBlocksProfiling";
 #endif
-#if HAVE_HOST_PROFILING_BUILT
-      case(CB_DATA_MEMORY_PROFILING) :
-         return "CBackend::DataMemoryProfiling";
-#endif
 #if HAVE_HLS_BUILT
       case(CB_DISCREPANCY_ANALYSIS):
          return "CBackend::DiscrepancyAnalysis";
-#endif
-#if HAVE_HOST_PROFILING_BUILT
-      case(CB_EPP) :
-         return "CBackend::EfficientPathProfiling";
 #endif
 #if HAVE_TARGET_PROFILING
       case(CB_ESCAPED_SEQUENTIAL):
@@ -415,10 +407,6 @@ const std::string CBackend::ComputeSignature(const CBackend::Type type)
       case(CB_HLS):
          return "CBackend::HighLevelSynthesis";
 #endif
-#if HAVE_HOST_PROFILING_BUILT
-      case(CB_HPP):
-         return "CBackend::HierarchicalPathProfiling";
-#endif
 #if HAVE_GRAPH_PARTITIONING_BUILT && HAVE_TARGET_PROFILING
       case(CB_INSTRUMENTED_PARALLEL):
          return "CBackend::InstrumentedParallel";
@@ -426,10 +414,6 @@ const std::string CBackend::ComputeSignature(const CBackend::Type type)
 #if HAVE_TARGET_PROFILING
       case(CB_INSTRUMENTED_SEQUENTIAL):
          return "CBackend::InstrumentedSequential";
-#endif
-#if HAVE_HOST_PROFILING_BUILT
-      case(CB_LOOPS_PROFILING):
-         return "CBackend::LoopsProfiling";
 #endif
 #if HAVE_ZEBU_BUILT
       case(CB_POINTED_DATA_EVALUATION):
@@ -441,10 +425,6 @@ const std::string CBackend::ComputeSignature(const CBackend::Type type)
 #endif
       case(CB_SEQUENTIAL):
          return "CBackend::Sequential";
-#if HAVE_HOST_PROFILING_BUILT
-      case(CB_TPP):
-         return "CBackend::TreePathProfiling";
-#endif
       default:
       {
          THROW_UNREACHABLE("");
@@ -466,13 +446,9 @@ void CBackend::ComputeRelationships(DesignFlowStepSet & relationships, const Des
       {
          switch(c_backend_type)
          {
-#if HAVE_HOST_PROFILING_BUILT
-            case(CB_DATA_MEMORY_PROFILING) :
-#endif
             case CB_SEQUENTIAL:
 #if HAVE_HOST_PROFILING_BUILT
             case(CB_BBP):
-            case(CB_TPP):
 #endif
             {
                std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship> > frontend_relationships;
@@ -534,23 +510,14 @@ void CBackend::ComputeRelationships(DesignFlowStepSet & relationships, const Des
                break;
             }
 #endif
-#if HAVE_HOST_PROFILING_BUILT
-            case(CB_EPP) :
-#endif
 #if HAVE_TARGET_PROFILING
             case(CB_ESCAPED_SEQUENTIAL):
-#endif
-#if HAVE_HOST_PROFILING_BUILT
-            case(CB_HPP):
 #endif
 #if HAVE_GRAPH_PARTITIONING_BUILT && HAVE_TARGET_PROFILING
             case(CB_INSTRUMENTED_PARALLEL):
 #endif
 #if HAVE_TARGET_PROFILING
             case(CB_INSTRUMENTED_SEQUENTIAL):
-#endif
-#if HAVE_HOST_PROFILING_BUILT
-            case(CB_LOOPS_PROFILING):
 #endif
 #if HAVE_ZEBU_BUILT
             case(CB_POINTED_DATA_EVALUATION):
@@ -573,13 +540,9 @@ void CBackend::ComputeRelationships(DesignFlowStepSet & relationships, const Des
       {
          switch(c_backend_type)
          {
-#if HAVE_HOST_PROFILING_BUILT
-            case(CB_DATA_MEMORY_PROFILING) :
-#endif
             case CB_SEQUENTIAL:
 #if HAVE_HOST_PROFILING_BUILT
             case(CB_BBP):
-            case(CB_TPP):
 #endif
             {
 #if HAVE_BAMBU_BUILT
@@ -606,23 +569,14 @@ void CBackend::ComputeRelationships(DesignFlowStepSet & relationships, const Des
                break;
             }
 #endif
-#if HAVE_HOST_PROFILING_BUILT
-            case(CB_EPP) :
-#endif
 #if HAVE_TARGET_PROFILING
             case(CB_ESCAPED_SEQUENTIAL):
-#endif
-#if HAVE_HOST_PROFILING_BUILT
-            case(CB_HPP):
 #endif
 #if HAVE_GRAPH_PARTITIONING_BUILT && HAVE_TARGET_PROFILING
             case(CB_INSTRUMENTED_PARALLEL):
 #endif
 #if HAVE_TARGET_PROFILING
             case(CB_INSTRUMENTED_SEQUENTIAL):
-#endif
-#if HAVE_HOST_PROFILING_BUILT
-            case(CB_LOOPS_PROFILING):
 #endif
 #if HAVE_ZEBU_BUILT
             case(CB_POINTED_DATA_EVALUATION):

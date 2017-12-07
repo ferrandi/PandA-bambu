@@ -3471,8 +3471,8 @@ void BambuParameter::SetDefaults()
 #endif
 #if HAVE_EXPERIMENTAL
    setOption(OPT_memory_banks_number, 1);
-   setOption(OPT_find_max_cfg_transformations, false);
 #endif
+   setOption(OPT_find_max_cfg_transformations, false);
 
    panda_parameters["CSE_size"] = "2";
    panda_parameters["PortSwapping"] = "1";

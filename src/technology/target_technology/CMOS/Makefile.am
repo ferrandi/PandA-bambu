@@ -15,15 +15,6 @@ lib_target_technology_CMOS_la_CPPFLAGS = \
 noinst_HEADERS = CMOS_technology.hpp
 lib_target_technology_CMOS_la_SOURCES = CMOS_technology.cpp
 
-if BUILD_LIB_EXPERIMENTAL
-lib_target_technology_CMOS_la_CPPFLAGS += -I$(top_srcdir)/src/parser/blif
-
-CMOS_technology.cpp : CMOS_technology.data
-#The tab in this rule can't be replaced by blanks
-CMOS_technology.data: $(top_srcdir)/etc/lib/technology/Nangate_technology.xml
-	$(top_srcdir)/etc/scripts/add_escape.sh $(top_srcdir)/etc/lib/technology/Nangate_technology.xml CMOS_technology.data
-endif
-
 #do not touch the following line
 
 
