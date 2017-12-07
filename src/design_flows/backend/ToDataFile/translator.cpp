@@ -698,6 +698,7 @@ void Translator::write_to_latex(std::map<std::string, CustomMap<std::string, std
 {
    if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC)
    {
+#ifndef NDEBUG
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Raw data");
       for(const auto& row : results)
       {
@@ -709,6 +710,7 @@ void Translator::write_to_latex(std::map<std::string, CustomMap<std::string, std
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
+#endif
    }
 
    ///The maximum width of a column

@@ -252,10 +252,6 @@ const std::string FrontendFlowStep::EnumToKindText(const FrontendFlowStepType fr
       case(MULTIPLE_ENTRY_IF_REDUCTION): //modified here
          return "MultipleEntryIfReduction";
 #endif
-#if HAVE_HOST_PROFILING_BUILT
-      case(DUMP_PROFILING_DATA):
-         return "DumpProfilingData";
-#endif
 #if HAVE_ZEBU_BUILT && HAVE_EXPERIMENTAL
       case(DYNAMIC_AGGREGATE_DATA_FLOW_ANALYSIS):
          return "DynamicAggregateDataFlowAnalysis";
@@ -280,7 +276,7 @@ const std::string FrontendFlowStep::EnumToKindText(const FrontendFlowStepType fr
       case(EXTRACT_PATTERNS) :
          return "ExtractPatterns";
 #endif
-#if HAVE_BAMBU_BUILT && HAVE_EXPERIMENTAL
+#if HAVE_BAMBU_BUILT
       case FIND_MAX_CFG_TRANSFORMATIONS:
          return "FindMaxCfgTransformations";
 #endif
@@ -317,8 +313,6 @@ const std::string FrontendFlowStep::EnumToKindText(const FrontendFlowStepType fr
 #if HAVE_HOST_PROFILING_BUILT
       case(HOST_PROFILING) :
          return "HostProfiling";
-      case(HPP_PROFILING) :
-         return "HppProfiling";
 #endif
 #if HAVE_ZEBU_BUILT
       case(INSTRUCTION_SEQUENCES_COMPUTATION) :
@@ -348,10 +342,6 @@ const std::string FrontendFlowStep::EnumToKindText(const FrontendFlowStepType fr
 #endif
       case(LOOPS_IDENTIFICATION) :
          return "LoopsIdentification";
-#if HAVE_HOST_PROFILING_BUILT
-      case(LOOPS_PROFILING) :
-         return "LoopsProfiling";
-#endif
 #if HAVE_ZEBU_BUILT
       case(LOOPS_REBUILDING):
          return "LoopsRebuilding";
@@ -422,10 +412,6 @@ const std::string FrontendFlowStep::EnumToKindText(const FrontendFlowStepType fr
       case (REBUILD_INITIALIZATION):
          return "RebuildInitialization";
 #endif
-#if HAVE_HOST_PROFILING_BUILT
-      case(READ_PROFILING_DATA) :
-         return "ReadProfilingData";
-#endif
 #if HAVE_BAMBU_BUILT && HAVE_EXPERIMENTAL
       case(REDUCED_PDG_COMPUTATION):
          return "ReducedPdgComputation";
@@ -495,10 +481,6 @@ const std::string FrontendFlowStep::EnumToKindText(const FrontendFlowStepType fr
          return "StringCstFix";
       case(SWITCH_FIX):
          return "SwitchFix";
-#if HAVE_HOST_PROFILING_BUILT
-      case(TP_PROFILING):
-         return "TpProfiling";
-#endif
 #if HAVE_BAMBU_BUILT
       case UN_COMPARISON_LOWERING:
          return "UnComparisonLowering";

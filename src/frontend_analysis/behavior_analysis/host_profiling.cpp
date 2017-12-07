@@ -115,22 +115,6 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
             relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(PROBABILITY_PATH, WHOLE_APPLICATION));
          }
 #endif
-         if(static_cast<int>(profiling_method) & static_cast<int>(HostProfiling_Method::PM_HPP))
-         {
-            relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(HPP_PROFILING, WHOLE_APPLICATION));
-         }
-         if(static_cast<int>(profiling_method) & static_cast<int>(HostProfiling_Method::PM_TP))
-         {
-            relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(TP_PROFILING, WHOLE_APPLICATION));
-         }
-         if(static_cast<int>(profiling_method) & static_cast<int>(HostProfiling_Method::PM_MAX_LOOP_ITERATIONS))
-         {
-            relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(LOOPS_PROFILING, WHOLE_APPLICATION));
-         }
-         if(static_cast<int>(profiling_method) & static_cast<int>(HostProfiling_Method::PM_XML_FILE))
-         {
-            relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(READ_PROFILING_DATA, WHOLE_APPLICATION));
-         }
          break;
       }
       case(INVALIDATION_RELATIONSHIP) :

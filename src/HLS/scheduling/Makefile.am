@@ -76,28 +76,9 @@ if BUILD_LIB_ILP
       -I$(top_srcdir)/src/frontend_analysis \
       -I$(top_srcdir)/src/frontend_analysis/IR_analysis \
       -I$(top_srcdir)/src/ilp
-if BUILD_LIB_EXPERIMENTAL
-   lib_scheduling_la_CPPFLAGS += \
-      -I$(top_srcdir)/src/frontend_analysis
-   SUBDIRS += ilp_scheduling silp_scheduling newilp_scheduling
-   DIST_SUBDIRS += ilp_scheduling silp_scheduling newilp_scheduling
-   noinst_HEADERS += ilp_scheduling.hpp ilp_scheduling_new.hpp silp_scheduling.hpp
-   lib_scheduling_la_SOURCES += ilp_scheduling.cpp ilp_scheduling_new.cpp silp_scheduling.cpp
-   lib_scheduling_la_LIBADD += $(top_builddir)/src/HLS/scheduling/ilp_scheduling/lib_ilp_scheduling.la $(top_builddir)/src/HLS/scheduling/silp_scheduling/lib_silp_scheduling.la $(top_builddir)/src/HLS/scheduling/newilp_scheduling/lib_newilp_scheduling.la
-   lib_scheduling_la_CPPFLAGS += \
-      -I$(top_srcdir)/src/HLS/scheduling/ilp_scheduling \
-      -I$(top_srcdir)/src/HLS/scheduling/newilp_scheduling \
-      -I$(top_srcdir)/src/technology/physical_library \
-      -I$(top_srcdir)/src/technology/physical_library/models \
-      -I$(top_srcdir)/src/HLS/scheduling/silp_scheduling
-endif
 endif
 
 PRJ_DOC = scheduling.doc
-if BUILD_LIB_EXPERIMENTAL
-  PRJ_DOC += \
-    path_based.doc ilp_scheduling_new.doc
-endif
 
 EXTRA_DIST = $(PRJ_DOC)
 

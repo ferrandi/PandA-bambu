@@ -18,11 +18,6 @@ lib_clique_covering_la_CPPFLAGS += \
    -I$(top_builddir)/ext/trng-4.17
 endif
 
-if BUILD_LIB_EXPERIMENTAL
-  noinst_HEADERS+= \
-    DawsonRun.hpp
-endif
-
 #DOCUMENTATION STUFF
 
 DOX_TAGFILES= 

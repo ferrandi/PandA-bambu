@@ -155,9 +155,6 @@ class CBackend : public DesignFlowStep
 #if HAVE_HOST_PROFILING_BUILT
          CB_BBP,                     /** Sequential c with instrumentation for basic block profiling */
 #endif
-#if HAVE_HOST_PROFILING_BUILT
-         CB_DATA_MEMORY_PROFILING,   /** Sequential c with instrumentation for data profiling */
-#endif
 #if HAVE_HLS_BUILT
          /**
           * Sequential C code instrumented to dump information on the state
@@ -165,26 +162,17 @@ class CBackend : public DesignFlowStep
           */
          CB_DISCREPANCY_ANALYSIS,
 #endif
-#if HAVE_HOST_PROFILING_BUILT
-         CB_EPP,                     /** Sequential c with instrumentation for efficient path profiling */
-#endif
 #if HAVE_TARGET_PROFILING
          CB_ESCAPED_SEQUENTIAL,      /** Sequential c with instrumentation to escape from execution at arbitrary point */
 #endif
 #if HAVE_BAMBU_BUILT
          CB_HLS,                     /** Sequential c code for HLS testing */
 #endif
-#if HAVE_HOST_PROFILING_BUILT
-         CB_HPP,                     /** Sequential c with instrumentation for hierarchical path profiling */
-#endif
 #if HAVE_GRAPH_PARTITIONING_BUILT && HAVE_TARGET_PROFILING
          CB_INSTRUMENTED_PARALLEL,   /** Parallel instrumented c */
 #endif
 #if HAVE_TARGET_PROFILING
          CB_INSTRUMENTED_SEQUENTIAL, /** Sequential c instrumented for target performance profiling*/
-#endif
-#if HAVE_HOST_PROFILING_BUILT
-         CB_LOOPS_PROFILING,         /** Sequential c instrumented for loop profiling */
 #endif
 #if HAVE_ZEBU_BUILT
          CB_POINTED_DATA_EVALUATION, /** Sequential instrumented for pointed data evaluation*/
@@ -193,9 +181,6 @@ class CBackend : public DesignFlowStep
          CB_PARALLEL,                /**< Parallel c without instrumentation */
 #endif
          CB_SEQUENTIAL,              /**< Sequential c without instrumentation */
-#if HAVE_HOST_PROFILING_BUILT
-         CB_TPP,                     /**< Sequential c with instrumentation for tree path profiling */
-#endif
       } Type;
 
       ///The type of this instance

@@ -45,13 +45,6 @@ lib_circuit_la_SOURCES = structural_objects.cpp structural_manager.cpp cg_node.c
 
 lib_circuit_la_LIBADD =
 
-if BUILD_LIB_FROM_SYSTEMC
-  noinst_HEADERS += SC_structural_manager.hpp tree_to_structural_manager.hpp
-  lib_circuit_la_SOURCES += SC_structural_manager.cpp tree_to_structural_manager.cpp
-  lib_circuit_la_CPPFLAGS += \
-    -I$(top_srcdir)/src/design_flows
-endif
-
 if BUILD_LIB_EDIF
   SUBDIRS += edif
   DIST_SUBDIRS += edif
