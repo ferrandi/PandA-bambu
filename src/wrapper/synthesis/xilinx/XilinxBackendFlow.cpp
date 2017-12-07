@@ -48,6 +48,9 @@
 #include "config_XILINX_SETTINGS.hpp"
 #include "config_XILINX_VIVADO_SETTINGS.hpp"
 
+///constants include
+#include "synthesis_constants.hpp"
+
 #include "target_manager.hpp"
 #include "target_device.hpp"
 #include "area_model.hpp"
@@ -437,6 +440,10 @@ void XilinxBackendFlow::parse_timing(const std::string& log_file)
                time_m = time_model::create_model(TargetDevice_Type::FPGA, Param);
                LUT_model* lut_m = GetPointer<LUT_model>(time_m);
                lut_m->set_timing_value(LUT_model::COMBINATIONAL_DELAY, boost::lexical_cast<double>(tk));
+               if(boost::lexical_cast<double>(tk) > Param->getOption<double>(OPT_clock_period))
+               {
+                  CopyFile("HLS_output/Synthesis/xst/" + actual_parameters->component_name + ".log" , STR_CST_synthesis_timing_violation_report);
+               }
             }
          }
          PRINT_OUT_MEX(OUTPUT_LEVEL_VERY_PEDANTIC, output_level, line);
@@ -627,7 +634,13 @@ void XilinxBackendFlow::CheckSynthesisResults()
       time_m = time_model::create_model(TargetDevice_Type::FPGA, Param);
       LUT_model* lut_m = GetPointer<LUT_model>(time_m);
       if(design_values[VIVADO_XILINX_DESIGN_DELAY] != 0.0)
+      {
          lut_m->set_timing_value(LUT_model::COMBINATIONAL_DELAY, design_values[VIVADO_XILINX_DESIGN_DELAY]);
+         if(design_values[VIVADO_XILINX_DESIGN_DELAY] > Param->getOption<double>(OPT_clock_period))
+         {
+            CopyFile("HLS_output/Synthesis/vivado_flow/post_route_timing_summary.rpt", STR_CST_synthesis_timing_violation_report);
+         }
+      }
       else
          lut_m->set_timing_value(LUT_model::COMBINATIONAL_DELAY, 0);
    }
@@ -742,46 +755,46 @@ void XilinxBackendFlow::ExecuteSynthesis()
 #endif
 }
 
-void XilinxBackendFlow::InitDesignParameters(const DesignParametersRef dp)
+void XilinxBackendFlow::InitDesignParameters()
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->XilinxBackendFlow - Init Design Parameters");
    if(Param->isOption(OPT_top_design_name))
-      dp->parameter_values[PARAM_top_id] = Param->getOption<std::string>(OPT_top_design_name);
+      actual_parameters->parameter_values[PARAM_top_id] = Param->getOption<std::string>(OPT_top_design_name);
    else
-      dp->parameter_values[PARAM_top_id] = dp->component_name;
+      actual_parameters->parameter_values[PARAM_top_id] = actual_parameters->component_name;
 
    std::string ise_style;
    if (output_level >= OUTPUT_LEVEL_VERY_PEDANTIC)
       ise_style =  std::string(INTSTYLE_ISE);
    else
       ise_style =  std::string(INTSTYLE_SILENT);
-   dp->parameter_values[PARAM_ise_style] = ise_style;
+   actual_parameters->parameter_values[PARAM_ise_style] = ise_style;
 
-   dp->parameter_values[PARAM_clk_name] = CLOCK_PORT_NAME;
+   actual_parameters->parameter_values[PARAM_clk_name] = CLOCK_PORT_NAME;
 
    ///determine if power optimization has to be performed
    bool xpwr_enabled = false;
    if(Param->isOption("power_optimization") && Param->getOption<bool>("power_optimization"))
       xpwr_enabled = true;
-   dp->parameter_values[PARAM_power_optimization] = STR(xpwr_enabled);
+   actual_parameters->parameter_values[PARAM_power_optimization] = STR(xpwr_enabled);
    bool connect_iob = false;
    if(Param->isOption(OPT_connect_iob) && Param->getOption<bool>(OPT_connect_iob))
       connect_iob = true;
-   dp->parameter_values[PARAM_connect_iob] = STR(connect_iob);
+   actual_parameters->parameter_values[PARAM_connect_iob] = STR(connect_iob);
    const target_deviceRef device = target->get_target_device();
    std::string device_name = device->get_parameter<std::string>("model");
    std::string package = device->get_parameter<std::string>("package");
    std::string speed_grade = device->get_parameter<std::string>("speed_grade");
    std::string device_string = device_name + package + speed_grade;
-   dp->parameter_values[PARAM_target_device] = device_string;
+   actual_parameters->parameter_values[PARAM_target_device] = device_string;
 
    if(Param->isOption(OPT_backend_script_extensions))
    {
-      dp->parameter_values[PARAM_has_script_extensions] = STR(true);
-      dp->parameter_values[PARAM_backend_script_extensions] = Param->getOption<std::string>(OPT_backend_script_extensions);
+      actual_parameters->parameter_values[PARAM_has_script_extensions] = STR(true);
+      actual_parameters->parameter_values[PARAM_backend_script_extensions] = Param->getOption<std::string>(OPT_backend_script_extensions);
    }
    else
-      dp->parameter_values[PARAM_has_script_extensions] = STR(false);
+      actual_parameters->parameter_values[PARAM_has_script_extensions] = STR(false);
 
 
    bool is_vivado = false;
@@ -813,7 +826,7 @@ void XilinxBackendFlow::InitDesignParameters(const DesignParametersRef dp)
       if(Param->isOption(OPT_backend_sdc_extensions))
          sources_macro_list += "\nread_xdc " + Param->getOption<std::string>(OPT_backend_sdc_extensions);
 
-      dp->parameter_values[PARAM_vivado_sources_macro_list] = sources_macro_list;
+      actual_parameters->parameter_values[PARAM_vivado_sources_macro_list] = sources_macro_list;
 
       if(device->get_parameter<std::string>("family").find("-YOSYS-VVD") != std::string::npos)
       {
@@ -831,18 +844,18 @@ void XilinxBackendFlow::InitDesignParameters(const DesignParametersRef dp)
             else
                THROW_ERROR("Extension not recognized! "+extension);
          }
-         dp->parameter_values[PARAM_yosys_vivado_sources_macro_list] = sources_macro_list;
+         actual_parameters->parameter_values[PARAM_yosys_vivado_sources_macro_list] = sources_macro_list;
       }
    }
    else
    {
-      create_cf(dp, true);
-      create_cf(dp, false);
+      create_cf(actual_parameters, true);
+      create_cf(actual_parameters, false);
    }
    for (unsigned int i = 0; i < steps.size(); i++)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Evaluating variables of step " + steps[i]->name);
-      steps[i]->tool->EvaluateVariables(dp);
+      steps[i]->tool->EvaluateVariables(actual_parameters);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Evaluated variables of step " + steps[i]->name);
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--XilinxBackendFlow - Init Design Parameters");

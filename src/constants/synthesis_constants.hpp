@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2016-2017 Politecnico di Milano
+ *              Copyright (c) 2015 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -31,32 +31,11 @@
  *
 */
 /**
- * @file allocation_constants.hpp
- * @brief constants used by HLS constants
+ * @file synthesis_constants.hpp
+ * @brief constants used in synthesis wrappers 
  *
- * @author Marco Lattuada <lattuada@elet.polimi.it>
+ * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
  */
-///The default value for coefficient of PIPELINE STAGE 0
-#define NUM_CST_allocation_default_allocation_coefficient 1.0
-
-///The default value for connection offset
-#define NUM_CST_allocation_default_connection_offset 0.0
-
-///The default value used in computation of fanout delay
-#define NUM_CST_allocation_default_fanout_coefficent 0.007
-
-///The default value used in computation of fanout delay
-#define NUM_CST_allocation_default_max_fanout_size 200
-
-///The default number of inputs of a lut
-#define NUM_CST_allocation_default_max_lut_size 6
-
-///The default value used in computation of controller delay
-#define NUM_CST_allocation_default_states_number_normalization 30
-
-///The default value for the ratio between the output delay of a DSP and the setup delay
-#define NUM_CST_allocation_default_output_carry_connection_ratio 0.6
-
-///The default value for the ratio between the output delay of a DSP and the setup delay
-#define NUM_CST_allocation_default_output_DSP_connection_ratio 0.6
+///The file containing the timing violation report
+#define STR_CST_synthesis_timing_violation_report "HLS_output/Synthesis/timing_violation_report"

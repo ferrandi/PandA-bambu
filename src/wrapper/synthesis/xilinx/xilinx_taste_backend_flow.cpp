@@ -93,7 +93,7 @@ std::string XilinxTasteBackendFlow::GenerateSynthesisScripts(const std::string&,
    actual_parameters->parameter_values[PARAM_time_constrained] = STR(true);
 
 
-   InitDesignParameters(actual_parameters);
+   InitDesignParameters();
 
    const auto ret = CreateScripts(actual_parameters);
 

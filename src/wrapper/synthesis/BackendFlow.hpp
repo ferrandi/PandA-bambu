@@ -227,7 +227,7 @@ class BackendFlow
       /**
        * Initializes the parameters
        */
-      virtual void InitDesignParameters(const DesignParametersRef dp);
+      virtual void InitDesignParameters();
 
       /**
        * Creates the synthesis flow based on the user's requirements

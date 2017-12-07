@@ -49,6 +49,11 @@ if BUILD_SPIDER
    noinst_HEADERS += experimental_setup_xml.hpp
 endif
 
+
+if BUILD_SYNTHESIS
+   noinst_HEADERS += synthesis_constants.hpp
+endif
+
 if BUILD_TASTE
    noinst_HEADERS += taste_constants.hpp
 endif
