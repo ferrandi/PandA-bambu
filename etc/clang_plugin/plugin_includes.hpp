@@ -46,6 +46,7 @@
 #include "llvm/ADT/Hashing.h"
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/Support/raw_ostream.h"
+#include <vector>
 #include <set>
 #include <unordered_set>
 #include <map>
@@ -68,6 +69,12 @@ namespace llvm {
    class Constant;
    class ModulePass;
    class Value;
+   class BasicBlock;
+   class MemoryUseOrDef;
+   class MemoryPhi;
+   class MemorySSA;
+   class MemoryAccess;
+   class AllocaInst;
 }
 
 
@@ -165,7 +172,7 @@ namespace clang {
          ///internal identifier table
          std::set<std::string> identifierTable;
          ///unsigned integer constant table
-         std::map<uint64_t, llvm::Constant*> uicTable;
+         std::map<uint64_t, const void*> uicTable;
          /// type_integer with specific max value
          std::map<const void*, unsigned int> maxValueITtable;
          std::map<const void*, llvm::LLVMContext*> ArraysContexts;
@@ -177,9 +184,8 @@ namespace clang {
          /// relation helpers
          const void* assignCode(const void*o, tree_codes c)
          {
-            if((llvm2tree_code.find(o) != llvm2tree_code.end()) && (llvm2tree_code.find(o)->second!=c))
-               llvm::errs() << GET_TREE_CODE_NAME(c) << " vs " << GET_TREE_CODE_NAME(llvm2tree_code.find(o)->second) << "\n";
-            //assert((llvm2tree_code.find(o) == llvm2tree_code.end()) || (llvm2tree_code.find(o)->second==c));
+            if(HAS_CODE(o) && (TREE_CODE(o)!=c))
+               llvm::errs() << GET_TREE_CODE_NAME(c) << " vs " << GET_TREE_CODE_NAME(TREE_CODE(o)) << "\n";
             llvm2tree_code[o]=c;
             return o;
          }
@@ -222,10 +228,30 @@ namespace clang {
          expanded_location expand_location(const void * i) const;
          bool gimple_has_location(const void * g) const;
          const void *gimple_location (const void * t) const;
-         tree_codes gimple_code(const void * g) const {assert(llvm2tree_code.find(g) != llvm2tree_code.end()); return llvm2tree_code.find(g)->second;}
+         tree_codes gimple_code(const void * g) const {assert(HAS_CODE(g)); return TREE_CODE(g);}
+         struct pt_solution
+         {
+               bool anything;
+               bool nonlocal;
+               bool escaped;
+               bool ipa_escaped;
+               bool null;
+               std::list<const void*> vars;
+               pt_solution() : anything(false), nonlocal(false), escaped(false), ipa_escaped(false), null(false) {}
+         };
+
+         struct pt_info
+         {
+               bool valid;
+               pt_solution pt;
+               pt_info() : valid(false) {}
+         };
+         const pt_info* SSA_NAME_PTR_INFO (const void* t) const;
+
          struct ssa_name
          {
                int vers;
+               pt_info ptr_info;
                const void* type;
                const void* var;
                const void* def_stmts;
@@ -233,18 +259,33 @@ namespace clang {
                bool isDefault;
                ssa_name() : vers(-1), type(nullptr), var(nullptr), def_stmts(nullptr), isVirtual(false), isDefault(false) {}
          };
+         void dump_pt_solution(const pt_solution *pt, const char * first_tag, const char* second_tag);
+
          std::map<const void*, ssa_name> index2ssa_name;
          int last_memory_ssa_vers;
          std::map<const void*, int> memoryaccess2ssaindex;
+
+         int last_BB_index;
+         std::map<const llvm::BasicBlock *, int> BB_index_map;
+
+         int getBB_index(const llvm::BasicBlock * BB);
+
          gimple_rhs_class get_gimple_rhs_class (tree_codes code) {return gimple_rhs_class_table[static_cast<unsigned int>(code)];}
          tree_codes gimple_expr_code (const void *stmt);
          tree_codes gimple_assign_rhs_code (const void *stmt) {return gimple_expr_code(stmt);}
          const void* getGimpleNop(const llvm::Value *operand, const void* scpe);
-         const void* getSSA(const llvm::Value *operand, const void* def_stmt, const llvm::Instruction* inst, bool isDefault);
+         const void* getSSA(const llvm::Value *operand, const void* def_stmt, const llvm::Function * currentFunction, bool isDefault);
          bool is_virtual_ssa(const void* t) const;
          bool SSA_NAME_IS_DEFAULT_DEF(const void* t) const;
-         const void* getOperand(const llvm::Value *operand, const llvm::Instruction *inst);
+         const void* getOperand(const llvm::Value *operand, const llvm::Function * currentFunction);
          const void* gimple_assign_lhs(const void* g);
+         const void* gimple_assign_rhs_alloca (const void* g);
+         void add_alloca_pt_solution(const void*lhs,const void* rhs);
+         struct alloca_var
+         {
+               const llvm::AllocaInst* alloc_inst;
+         };
+         std::map<const void*, alloca_var> index2alloca_var;
          const void* gimple_assign_rhsIndex(const void * g, unsigned index);
          const void* gimple_assign_rhs1(const void* g) {return gimple_assign_rhsIndex(g,0);}
          const void* gimple_assign_rhs2(const void* g) {return gimple_assign_rhsIndex(g,1);}
@@ -253,9 +294,30 @@ namespace clang {
          const void* boolean_type_node(const void* g);
          const void* gimple_cond_op(const void* g) {return gimple_assign_rhsIndex(g,0);}
          const void* gimple_phi_result(const void* g) {return gimple_assign_lhs(g);}
+         const void* gimple_phi_virtual_result(const void* g) const;
          unsigned int gimple_phi_num_args(const void* g) const;
+         unsigned int gimple_phi_virtual_num_args(const void* g) const;
          const void* gimple_phi_arg_def(const void* g, unsigned int index);
+         const void* gimple_phi_virtual_arg_def(const void* g, unsigned int index);
          int gimple_phi_arg_edgeBBindex(const void* g, unsigned int index);
+         int gimple_phi_virtual_arg_edgeBBindex(const void* g, unsigned int index);
+         const void* gimple_call_fn(const void*g);
+         unsigned int gimple_call_num_args(const void*g);
+         const void* gimple_call_arg(const void*g, unsigned int arg_index);
+         const void* gimple_return_retval(const void* g);
+         const void* build_custom_function_call_expr(const void* g);
+         const void* call_expr_fn(const void* t);
+         unsigned int call_expr_num_args(const void*t);
+         const void* call_expr_arg(const void* t, unsigned int arg_index);
+
+         struct call_expr
+         {
+               const void* type;
+               const void* fn;
+               std::vector<const void*> args;
+               call_expr () : type(nullptr), fn(nullptr) {}
+         };
+         std::map<const void*, call_expr> index2call_expr;
 
          struct tree_expr
          {
@@ -275,6 +337,20 @@ namespace clang {
          };
          std::map<const void*, gimple_nop> index2gimple_nop;
 
+         struct gimple_phi_virtual
+         {
+               const void* scpe;
+               int bb_index;
+               const void* res;
+               std::vector<std::pair<const void*, int>> def_edfe_pairs;
+
+               gimple_phi_virtual() : scpe(nullptr), bb_index(-1), res(nullptr) {}
+         };
+         std::map<const llvm::BasicBlock*, gimple_phi_virtual> index2gimple_phi_virtual;
+
+         const void* getVirtualDefStatement(llvm::MemoryAccess* defAccess, bool& isDefault, const llvm::MemorySSA &MSSA, const llvm::Function *currentFunction);
+         const void* getVirtualGimplePhi(llvm::MemoryPhi *mp, const llvm::MemorySSA &MSSA);
+
          const void* build3(tree_codes tc, const void* type, const void* op1, const void* op2, const void* op3);
          const void* build2(tree_codes tc, const void* type, const void* op1, const void* op2) {return build3(tc, type, op1, op2, nullptr);}
          const void* build1(tree_codes tc, const void* type, const void* op1) {return build3(tc, type, op1, nullptr, nullptr);}
@@ -286,7 +362,8 @@ namespace clang {
          unsigned int EXPR_COLUMNNO(const void*) const {return 0;}
 
          bool IS_EXPR_CODE_CLASS(tree_codes_class CLASS) const {return ((CLASS) >= tcc_reference && (CLASS) <= tcc_expression);}
-         tree_codes TREE_CODE(const void* NODE) const {assert(llvm2tree_code.find(NODE) != llvm2tree_code.end()); return llvm2tree_code.find(NODE)->second;}
+         bool HAS_CODE(const void* NODE) const {return llvm2tree_code.find(NODE) != llvm2tree_code.end();}
+         tree_codes TREE_CODE(const void* NODE) const {assert(HAS_CODE(NODE)); return llvm2tree_code.find(NODE)->second;}
          tree_codes_class TREE_CODE_CLASS(tree_codes CODE) const {return tree_codes2tree_codes_class[static_cast<unsigned int>(CODE)];}
          const char * GET_TREE_CODE_NAME(tree_codes CODE) const {return tree_codesNames[static_cast<unsigned int>(CODE)];}
          bool DECL_P(const void* NODE) const {return (TREE_CODE_CLASS (TREE_CODE (NODE)) == tcc_declaration);}
@@ -319,6 +396,7 @@ namespace clang {
          int64_t TREE_INT_CST_LOW(const void* t) const;
 
          const void* TREE_TYPE(const void* t);
+         bool POINTER_TYPE_P(const void* t) const;
          bool TYPE_UNSIGNED(const void* t) const;
          int TYPE_PRECISION (const void* t) const;
          bool COMPLEX_FLOAT_TYPE_P(const void* t) const;
@@ -342,9 +420,10 @@ namespace clang {
          const std::list<const void*> DECL_ARGUMENTS(const void* t);
          const void* getStatement_list(const void* t);
          const void* getGimpleScpe(const void* g);
-         int getGimple_bb_index(const void* g) const;
+         int getGimple_bb_index(const void* g);
          bool gimple_has_mem_ops(const void* g) const;
          void serialize_vops(const void* g);
+         void serialize_gimple_aliased_reaching_defs(llvm::Instruction *inst, llvm::MemorySSA &MSSA);
 
          const void* SSA_NAME_VAR(const void*t) const;
          int SSA_NAME_VERSION(const void*t) const;

@@ -136,9 +136,12 @@ X("clang40_plugin_dumpGimpleSSA", "Dump gimple ssa raw format starting from LLVM
 #include "llvm/Transforms/Utils/LoopUtils.h"
 #include "llvm/Analysis/LazyValueInfo.h"
 #include "llvm/Analysis/AliasAnalysis.h"
+//#include "llvm/Analysis/TypeBasedAliasAnalysis.h"
+//#include "llvm/Analysis/CFLSteensAliasAnalysis.h"
 #include "llvm/Analysis/MemoryDependenceAnalysis.h"
 #include "llvm/Transforms/Utils/MemorySSA.h"
 #include "llvm/InitializePasses.h"
+#include "llvm-c/Transforms/Scalar.h"
 
 namespace llvm {
 
@@ -151,10 +154,12 @@ namespace llvm {
          {
             initializeLoopPassPass(*PassRegistry::getPassRegistry());
             initializeLazyValueInfoWrapperPassPass(*PassRegistry::getPassRegistry());
-            initializeAAResultsWrapperPassPass(*PassRegistry::getPassRegistry());
             initializeMemoryDependenceWrapperPassPass(*PassRegistry::getPassRegistry());
             initializeMemorySSAWrapperPassPass(*PassRegistry::getPassRegistry());
-            initializeMemorySSAPrinterLegacyPassPass(*PassRegistry::getPassRegistry());
+            //initializeMemorySSAPrinterLegacyPassPass(*PassRegistry::getPassRegistry());
+            initializeAAResultsWrapperPassPass(*PassRegistry::getPassRegistry());
+//            initializeCFLSteensAAWrapperPassPass(*PassRegistry::getPassRegistry());
+//            initializeTypeBasedAAWrapperPassPass(*PassRegistry::getPassRegistry());
          }
          bool runOnModule(Module &M)
          {
@@ -172,13 +177,16 @@ namespace llvm {
          {
            AU.setPreservesAll();
            getLoopAnalysisUsage(AU);
-           AU.addRequired<LazyValueInfoWrapperPass>();
-           AU.addRequired<AAResultsWrapperPass>();
            AU.addRequired<MemoryDependenceWrapperPass>();
            AU.addRequired<MemorySSAWrapperPass>();
-           AU.addRequired<MemorySSAPrinterLegacyPass>();
+//           AU.addRequired<MemorySSAPrinterLegacyPass>();
+           AU.addRequired<LazyValueInfoWrapperPass>();
+           AU.addRequired<AAResultsWrapperPass>();
+//           AU.addRequired<CFLSteensAAWrapperPass>();
+//           AU.addRequired<TypeBasedAAWrapperPass>();
+
            AU.addPreserved<MemorySSAWrapperPass>();
-           AU.addPreserved<MemorySSAPrinterLegacyPass>();
+           //AU.addPreserved<MemorySSAPrinterLegacyPass>();
          }
    };
 }
@@ -191,7 +199,7 @@ static llvm::RegisterPass<llvm::clang40_plugin_dumpGimpleSSAPass> XPass("clang40
 // This function is of type PassManagerBuilder::ExtensionFn
 static void loadPass(const llvm::PassManagerBuilder &, llvm::legacy::PassManagerBase &PM)
 {
-  PM.add(new llvm::clang40_plugin_dumpGimpleSSAPass());
+   PM.add(new llvm::clang40_plugin_dumpGimpleSSAPass());
 }
 // These constructors add our pass to a list of global extensions.
 static llvm::RegisterStandardPasses clangtoolLoader_Ox(llvm::PassManagerBuilder::EP_OptimizerLast, loadPass);
