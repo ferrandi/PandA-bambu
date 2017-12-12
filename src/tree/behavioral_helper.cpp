@@ -611,7 +611,7 @@ std::string BehavioralHelper::PrintVariable(unsigned int var) const
          name = PrintVariable(ssa_index);
       }
       THROW_ASSERT(sa->volatile_flag or sa->CGetDefStmts().size(), sa->ToString() + " has not define statement");
-      if (!sa->volatile_flag && GET_NODE(sa->CGetDefStmt())->get_kind() != gimple_nop_K)
+      if (sa->virtual_flag || (!sa->volatile_flag && GET_NODE(sa->CGetDefStmt())->get_kind() != gimple_nop_K))
       {
          name += ("_" + boost::lexical_cast<std::string>(sa->vers));
       }
