@@ -117,6 +117,7 @@ namespace clang
       DEFGSCODE(GIMPLE_NOPMEM, "gimple_nop", GSS_BASE)
       DEFGSCODE(GETELEMENTPTR, "GetElementPtr", GSS_BASE)
       DEFTREECODE (ALLOCAVAR_DECL, "var_decl", tcc_declaration, 0)
+      DEFTREECODE(POINTERNULL, "integer_cst", tcc_constant, 0)
    };
 #undef DEFTREECODE
 #undef DEFGSCODE
@@ -134,6 +135,7 @@ namespace clang
       DEFGSCODE(GIMPLE_NOPMEM, "gimple_nop", GSS_BASE)
       DEFGSCODE(GETELEMENTPTR, "GetElementPtr", GSS_BASE)
       DEFTREECODE(ALLOCAVAR_DECL, "var_decl", tcc_declaration, 0)
+      DEFTREECODE(POINTERNULL, "integer_cst", tcc_constant, 0)
    };
 #undef DEFTREECODE
 #undef DEFGSCODE
@@ -150,6 +152,7 @@ namespace clang
       DEFGSCODE(GIMPLE_NOPMEM, "gimple_nop", GSS_BASE)
       DEFGSCODE(GETELEMENTPTR, "GetElementPtr", GSS_BASE)
       DEFTREECODE(ALLOCAVAR_DECL, "var_decl", tcc_declaration, 0)
+      DEFTREECODE(POINTERNULL, "integer_cst", tcc_constant, 0)
    };
 #undef DEFTREECODE
 #undef DEFGSCODE
@@ -166,6 +169,7 @@ namespace clang
       DEFGSCODE(GIMPLE_NOPMEM, "gimple_nop", GSS_BASE)
       DEFGSCODE(GETELEMENTPTR, "GetElementPtr", GSS_BASE)
       DEFTREECODE(ALLOCAVAR_DECL, "var_decl", tcc_declaration, 0)
+      DEFTREECODE(POINTERNULL, "integer_cst", tcc_constant, 0)
    };
 #undef DEFTREECODE
 #undef DEFGSCODE
@@ -210,6 +214,7 @@ namespace clang
       DEFGSCODE(GIMPLE_NOPMEM, "gimple_nop", GSS_BASE)
       DEFGSCODE(GETELEMENTPTR, "GetElementPtr", GSS_BASE)
       DEFTREECODE(ALLOCAVAR_DECL, "var_decl", tcc_declaration, 0)
+      DEFTREECODE(POINTERNULL, "integer_cst", tcc_constant, 0)
 };
 #undef DEFTREECODE
 #undef END_OF_BASE_TREE_CODES
@@ -277,6 +282,8 @@ namespace clang
             return assignCode(t, GT(REAL_CST));
          case llvm::Value::ArgumentVal:
             return assignCode(t, GT(PARM_DECL));
+         case llvm::Value::ConstantPointerNullVal:
+            return assignCode(t, GT(INTEGER_CST));
          case llvm::Value::ConstantStructVal:
             return assignCode(t, GT(CONSTRUCTOR));
          case llvm::Value::ConstantAggregateZeroVal:
@@ -339,6 +346,8 @@ namespace clang
          case llvm::Value::InstructionVal+llvm::Instruction::ZExt:
             return assignCode(t, GT(GIMPLE_ASSIGN));
          case llvm::Value::InstructionVal+llvm::Instruction::Trunc:
+            return assignCode(t, GT(GIMPLE_ASSIGN));
+         case llvm::Value::InstructionVal+llvm::Instruction::PtrToInt:
             return assignCode(t, GT(GIMPLE_ASSIGN));
          default:
             llvm::errs() << "assignCodeAuto kind not supported: " << ValueTyNames[vid] << "\n";
@@ -710,6 +719,8 @@ namespace clang
                return GT(NOP_EXPR);
             case llvm::Instruction::Trunc:
                return GT(NOP_EXPR);
+            case llvm::Instruction::PtrToInt:
+               return GT(NOP_EXPR);
 
             case llvm::Instruction::FCmp:
             case llvm::Instruction::ICmp:
@@ -890,7 +901,7 @@ namespace clang
 
    const void * DumpGimpleRaw::getOperand(const llvm::Value *operand, const llvm::Function * currentFunction)
    {
-      if(isa<llvm::ConstantInt>(operand) || isa<llvm::ConstantFP>(operand))
+      if(isa<llvm::ConstantInt>(operand) || isa<llvm::ConstantFP>(operand)|| isa<llvm::ConstantPointerNull>(operand))
          return assignCodeAuto(operand);
       else if(isa<llvm::Instruction>(operand))
       {
@@ -908,8 +919,25 @@ namespace clang
          auto type = assignCodeType(operand->getType());
          return build1(GT(ADDR_EXPR), type, assignCodeAuto(operand));
       }
+      else if(isa<llvm::ConstantExpr>(operand))
+      {
+         auto type = assignCodeType(operand->getType());
+         if(cast<llvm::ConstantExpr>(operand)->getOpcode() == llvm::Instruction::BitCast)
+            return build1(GT(VIEW_CONVERT_EXPR), type, getOperand(cast<llvm::ConstantExpr>(operand)->getOperand(0), currentFunction));
+         else
+         {
+            operand->print(llvm::errs(), true);
+            llvm::errs() << "\n";
+            llvm::errs() << cast<llvm::ConstantExpr>(operand)->getOpcodeName() << "\n";
+            llvm_unreachable((std::string("unexpected condition: ") + std::string(ValueTyNames[operand->getValueID()])).c_str());
+         }
+      }
       else
+      {
+         operand->print(llvm::errs(), true);
+         llvm::errs() << "\n";
          llvm_unreachable((std::string("unexpected condition: ") + std::string(ValueTyNames[operand->getValueID()])).c_str());
+      }
    }
    const void * DumpGimpleRaw::gimple_assign_rhsIndex(const void * g, unsigned index)
    {
@@ -1263,6 +1291,9 @@ namespace clang
 
    int64_t DumpGimpleRaw::TREE_INT_CST_LOW(const void*t) const
    {
+      const llvm::ConstantData* cd = reinterpret_cast<const llvm::ConstantData*>(t);
+      if(isa<llvm::ConstantPointerNull>(cd))
+         return 0;
       const llvm::ConstantInt* llvm_obj = reinterpret_cast<const llvm::ConstantInt*>(t);
       const llvm::APInt & val = llvm_obj->getValue();
       assert(val.getNumWords()==1);
@@ -2498,6 +2529,8 @@ namespace clang
            {
               if(isa<llvm::BranchInst>(inst) && cast<llvm::BranchInst>(inst).isUnconditional() && isa<llvm::BasicBlock>(*cast<llvm::BranchInst>(inst).getOperand(0)))
                  ; /// goto to basic blocks can be skipped
+              else if(isa<llvm::UnreachableInst>(inst))
+                 ; /// unreachable instruction can be skipped
               else
                  serialize_gimple_child("stmt", assignCodeAuto(&inst));
            }
