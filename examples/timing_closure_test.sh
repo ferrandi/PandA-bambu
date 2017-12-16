@@ -1,7 +1,7 @@
 #!/bin/bash
 ARGS=$@
-script=`readlink -e $0`
-root_dir=`dirname $script`
+script=$(readlink -e $0)
+root_dir=$(dirname $script)
 $root_dir/softfloat/xc7z020-1clg484-VVD_10.0_OSF_sdc.sh $ARGS
 return_value=$?
 if test $return_value != 0; then

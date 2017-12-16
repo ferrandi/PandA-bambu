@@ -85,7 +85,7 @@ class BBExecutions : public std::unordered_map<vertex, unsigned long long int>
        * Constructor
        * @param bb_graph is the basic block graph
        */
-      BBExecutions(const BBGraphConstRef bb_graph);
+      explicit BBExecutions(const BBGraphConstRef bb_graph);
 };
 #else
 class BBExecutions : public std::map<vertex, unsigned long long int, BBVertexSorter>
@@ -95,7 +95,7 @@ class BBExecutions : public std::map<vertex, unsigned long long int, BBVertexSor
        * Constructor
        * @param bb_graph is the basic block graph
        */
-      BBExecutions(const BBGraphConstRef bb_graph);
+      explicit BBExecutions(const BBGraphConstRef bb_graph);
 };
 #endif
 
@@ -110,7 +110,7 @@ class BBEdgeExecutions : public std::unordered_map<EdgeDescriptor, unsigned long
        * Constructor
        * @param bb_graph is the basic block graph
        */
-      BBEdgeExecutions(const BBGraphConstRef bb_graph);
+      explicit BBEdgeExecutions(const BBGraphConstRef bb_graph);
 };
 #else
 class BBEdgeExecutions : public std::map<EdgeDescriptor, unsigned long long int, BBEdgeSorter>
@@ -120,7 +120,7 @@ class BBEdgeExecutions : public std::map<EdgeDescriptor, unsigned long long int,
        * Constructor
        * @param bb_graph is the basic block graph
        */
-      BBEdgeExecutions(const BBGraphConstRef bb_graph);
+      explicit BBEdgeExecutions(const BBGraphConstRef bb_graph);
 };
 #endif
 
@@ -185,7 +185,7 @@ class ProfilingInformation
        * Constructor
        * @param bb_graph is the basic block graph
        */
-      ProfilingInformation(const BBGraphConstRef bb_graph);
+      explicit ProfilingInformation(const BBGraphConstRef bb_graph);
 
       /**
        * Destructor

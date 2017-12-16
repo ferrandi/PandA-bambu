@@ -153,7 +153,7 @@ void HostProfiling::normalize(const application_managerRef AppM, const std::unor
       //Normalizing loop number of iteration and frequency
       const std::list<LoopConstRef> & loops = FB->CGetLoops()->GetList();
       std::list<LoopConstRef>::const_iterator loop, loop_end = loops.end();
-      for(loop = loops.begin(); loop != loop_end; loop++)
+      for(loop = loops.begin(); loop != loop_end; ++loop)
       {
          unsigned int loop_id = (*loop)->GetId();
          ///FIXME: zero loop
@@ -165,7 +165,8 @@ void HostProfiling::normalize(const application_managerRef AppM, const std::unor
          if(path_profiling.find(loop_id) == path_profiling.end())
             continue;
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Loop: " + boost::lexical_cast<std::string>(loop_id));
-         for(std::map<std::set<unsigned int>, long double>::const_iterator k = path_profiling.find(loop_id)->second.begin(); k != path_profiling.find(loop_id)->second.end(); k++)
+         const auto& elements = path_profiling.find(loop_id)->second;
+         for(std::map<std::set<unsigned int>, long double>::const_iterator k = elements.begin(); k != elements.end(); ++k)
          {
             abs_execution += k->second;
          }
@@ -183,7 +184,7 @@ void HostProfiling::normalize(const application_managerRef AppM, const std::unor
          FB->profiling_information->avg_iterations[(*loop)->GetId()] = avg_number;
          FB->profiling_information->abs_iterations[(*loop)->GetId()] = static_cast<unsigned long long int>(llroundl(abs_execution));
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Factor: " + boost::lexical_cast<std::string>(abs_execution));
-         for(std::map<std::set<unsigned int>, long double>::iterator k = path_profiling.at(loop_id).begin(); k != path_profiling.at(loop_id).end(); k++)
+         for(std::map<std::set<unsigned int>, long double>::iterator k = path_profiling.at(loop_id).begin(); k != path_profiling.at(loop_id).end(); ++k)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->New path");
             INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Absolute path: " + boost::lexical_cast<std::string>(k->second));

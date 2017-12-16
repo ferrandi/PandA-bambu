@@ -98,7 +98,7 @@ void EdgeCWriter::Initialize()
       const FunctionBehaviorConstRef FB = AppM->CGetFunctionBehavior(f);
       const std::list<LoopConstRef> loops = FB->CGetLoops()->GetList();
       std::list<LoopConstRef>::const_iterator l, l_end = loops.end();
-      for(l = loops.begin(); l != l_end; l++)
+      for(l = loops.begin(); l != l_end; ++l)
       {
          fun_loop_to_index[f][(*l)->GetId()] = counter;
          counter++;
@@ -178,7 +178,7 @@ void EdgeCWriter::writeRoutineInstructions_rec
    const unsigned int bb_number_PD = bb_node_info_pd->block->number;
    std::string frontier_string;
    std::set<vertex>::iterator bb_frontier_begin, bb_frontier_end = bb_frontier.end();
-   for(bb_frontier_begin = bb_frontier.begin(); bb_frontier_begin != bb_frontier_end; bb_frontier_begin++)
+   for(bb_frontier_begin = bb_frontier.begin(); bb_frontier_begin != bb_frontier_end; ++bb_frontier_begin)
    {
       frontier_string += "BB" + boost::lexical_cast<std::string>(bb_fcfgGraph->CGetBBNodeInfo(*bb_frontier_begin)->block->number) + " ";
    }
@@ -202,14 +202,14 @@ void EdgeCWriter::writeRoutineInstructions_rec
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
       OpVertexSet::const_iterator it, it_end;
       it_end = local_rec_instructions.end();
-      for(it = local_rec_instructions.begin(); it != it_end; it++)
+      for(it = local_rec_instructions.begin(); it != it_end; ++it)
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, GET_NAME(cfgGraph, *it));
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
    }
 #endif
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Looking for last statement");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
-   for (vRIter = bb_node_info->statements_list.rbegin(), vRIterEnd = bb_node_info->statements_list.rend(); vRIter != vRIterEnd ; vRIter++)
+   for (vRIter = bb_node_info->statements_list.rbegin(), vRIterEnd = bb_node_info->statements_list.rend(); vRIter != vRIterEnd ; ++vRIter)
    {
       if (local_rec_instructions.find(*vRIter) == local_rec_instructions.end()) continue;
       if (GET_TYPE(cfgGraph, *vRIter) & TYPE_VPHI) continue;
@@ -239,7 +239,7 @@ void EdgeCWriter::writeRoutineInstructions_rec
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Basic block has an indegree > 1 and not associated label");
       InEdgeIterator inE, inEEnd;
-      for (boost::tie(inE, inEEnd) = boost::in_edges(current_vertex, *bb_fcfgGraph); inE != inEEnd; inE++)
+      for (boost::tie(inE, inEEnd) = boost::in_edges(current_vertex, *bb_fcfgGraph); inE != inEEnd; ++inE)
       {
          vertex source = boost::source(*inE, *bb_fcfgGraph);
          const BBNodeInfoConstRef pred_bb_node_info = bb_fcfgGraph->CGetBBNodeInfo(source);
@@ -965,7 +965,7 @@ void EdgeCWriter::writeRoutineInstructions_rec
                }
                std::set<unsigned int>::const_iterator eIdBeg, eIdEnd;
                std::set<unsigned int> Set = bb_fcfgGraph->CGetBBEdgeInfo(*oE)->get_labels(CFG_SELECTOR);
-               for (eIdBeg = Set.begin(), eIdEnd = Set.end(); eIdBeg != eIdEnd; eIdBeg++)
+               for (eIdBeg = Set.begin(), eIdEnd = Set.end(); eIdBeg != eIdEnd; ++eIdBeg)
                {
                   if (*eIdBeg == default_COND)
                   {
