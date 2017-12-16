@@ -1,4 +1,4 @@
- #!/bin/bash
+#!/bin/bash
 script=$(readlink -e $0)
 root_dir=$(dirname $script)
 NAME=$(basename $0 .sh)

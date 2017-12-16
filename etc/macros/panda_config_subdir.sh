@@ -1,7 +1,7 @@
 #!/bin/bash
-tmp1=`echo $0 | awk -F'/[^/]*$' '{print $1}'`
+tmp1=$(echo $0 | awk -F'/[^/]*$' '{print $1}')
 TOPSRCDIR=$tmp1/../..
-BUILDDIR=`pwd`
+BUILDDIR=$(pwd)
 echo ""
 echo ""
 echo "Configuring $TOPSRCDIR/$1/configure" with arguments ${@:2}
