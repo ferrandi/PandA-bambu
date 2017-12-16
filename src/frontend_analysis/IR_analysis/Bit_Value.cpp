@@ -470,16 +470,22 @@ Bit_Value::ComputeFrontendRelationships (const DesignFlowStep::RelationshipType 
 
 //prints the content of a bitstring map
 void Bit_Value::print_bitstring_map(
-      const std::unordered_map<unsigned int, std::deque<bit_lattice>> & map) const
+      const std::unordered_map<unsigned int, std::deque<bit_lattice>> & 
+#ifndef NDEBUG
+map
+#endif
+) const
 {
    const BehavioralHelperConstRef BH =
       AppM->CGetFunctionBehavior(function_id)->CGetBehavioralHelper();
+#ifndef NDEBUG
    for (const auto & m : map)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
             "var_uid: " + STR(m.first)+ ":" + BH->PrintVariable(m.first) +
             " bitstring: " + bitstring_to_string(m.second));
    }
+#endif
 }
 
 bool Bit_Value::update_IR()

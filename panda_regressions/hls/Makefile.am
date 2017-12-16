@@ -1175,9 +1175,6 @@ gcc_regression_simple/zero-struct-1.c\
 ./test_libm_sqrtf.sh \
 ./discrepancy.sh \
 ./discrepancy_list\
-./panda_regression_hls1.sh\
-./panda_regression_hls_long1.sh\
-./panda_regression_hls_release1.sh\
 ./CHStone_frontend1.sh\
 ./CHStone_memarch_core1.sh\
 ./discrepancy1.sh\

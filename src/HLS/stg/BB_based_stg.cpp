@@ -238,6 +238,11 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
                                     parameters->getOption<bool>(OPT_memory_mapped_top);
    bool has_registered_inputs = HLS->registered_inputs && !needMemoryMappedRegisters;
    std::string function_name = HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->get_function_name();
+   const auto top_function_ids = HLSMgr->CGetCallGraphManager()->GetRootFunctions();
+   if(top_function_ids.find(funId) != top_function_ids.end() and parameters->getOption<std::string>(OPT_registered_inputs) == "top")
+   {
+      has_registered_inputs = true;
+   }
    if(HLSMgr->Rfuns->is_a_proxied_function(function_name) && !needMemoryMappedRegisters)
    {
       if(parameters->getOption<std::string>(OPT_registered_inputs) != "no")

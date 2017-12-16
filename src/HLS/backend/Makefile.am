@@ -36,11 +36,6 @@ if BUILD_SYNTHESIS
   lib_hls_backend_la_SOURCES += generate_synthesis_scripts.cpp
 endif
 
-if BUILD_LIB_EXPERIMENTAL
-  noinst_HEADERS += generate_resp.hpp
-  lib_hls_backend_la_SOURCES += generate_resp.cpp
-endif
-
 if BUILD_TASTE
   lib_hls_backend_la_CPPFLAGS += \
      -I$(top_srcdir)/src/intermediate_representations/aadl_asn

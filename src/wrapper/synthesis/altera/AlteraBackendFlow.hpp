@@ -87,7 +87,7 @@ class AlteraBackendFlow : public BackendFlow
       /**
        * Initializes the parameters
        */
-      void InitDesignParameters(const DesignParametersRef dp);
+      void InitDesignParameters();
 
       /**
        * Checks if the execution can be performed and, in case, performs the synthesis

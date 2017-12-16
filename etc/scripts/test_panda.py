@@ -71,6 +71,9 @@ def execute_tests(named_list,thread_index):
         failed_output_file_name = os.path.join(cwd, args.tool + "_failed_output")
         if os.path.exists(failed_output_file_name):
             os.remove(failed_output_file_name)
+        timing_violation_report_file_name = os.path.join(cwd, "HLS_output/Synthesis/timing_violation_report")
+        if os.path.exists(timing_violation_report_file_name):
+            os.remove(timing_violation_report_file_name)
         tool_return_value_file_name = os.path.join(cwd, args.tool + "_return_value")
         if args.restart and os.path.exists(os.path.join(cwd, args.tool + "_return_value")):
             tool_return_value_file = open(tool_return_value_file_name, "r")
@@ -149,6 +152,17 @@ def execute_tests(named_list,thread_index):
         if not (failure and args.stop) or (return_value != -9 and return_value != 0):
             if return_value != 0:
                 shutil.copy(output_file_name, str(os.path.join(os.path.dirname(output_file_name), args.tool + "_failed_output")))
+            if os.path.exists(timing_violation_report_file_name):
+                annotated_timing_violation_report_file = open(os.path.join(cwd, "timing_violation_report"), "w")
+                annotated_timing_violation_report_file.write("#" * 80 + "\n")
+                annotated_timing_violation_report_file.write("cd " + cwd + "; ")
+                annotated_timing_violation_report_file.write(local_command + "\n")
+                annotated_timing_violation_report_file.write("#" * 80 + "\n")
+                annotated_timing_violation_report_file.flush()
+                timing_violation_report_file = open(timing_violation_report_file_name)
+                annotated_timing_violation_report_file.write(timing_violation_report_file.read())
+                timing_violation_report_file.close()
+                annotated_timing_violation_report_file.close()
             with lock:
                 total_benchmark += 1
                 if return_value == 0:
@@ -215,6 +229,15 @@ def CollectResults(directory):
                 tool_failed_output.write("\n")
                 tool_failed_output.write("\n")
     tool_failed_output.close()
+    timing_violation_report = open(os.path.join(directory, "timing_violation_report"), "w")
+    for subdir in subdirs:
+        if os.path.exists(os.path.join(directory, subdir, "timing_violation_report")):
+            timing_violation_report.write(open(os.path.join(directory, subdir, "timing_violation_report")).read())
+            if os.path.exists(os.path.join(directory, subdir, args.tool + "_execution_output")):
+                timing_violation_report.write("\n")
+                timing_violation_report.write("\n")
+                timing_violation_report.write("\n")
+    timing_violation_report.close()
     report_file = open(os.path.join(directory, "report"), "w")
     for subdir in subdirs:
         if os.path.exists(os.path.join(directory, subdir, args.tool + "_return_value")):

@@ -399,7 +399,11 @@ choose_multiplier (unsigned long long int d, int n, int precision,
    }
 }
 
-void IR_lowering::division_by_a_constant(const std::pair<unsigned int, blocRef>& block, std::list<tree_nodeRef>::const_iterator& it_los, gimple_assign *ga, tree_nodeRef op1, enum kind code1, bool& restart_analysis, const std::string &srcp_default, const std::string& step_name)
+void IR_lowering::division_by_a_constant(const std::pair<unsigned int, blocRef>& block, std::list<tree_nodeRef>::const_iterator& it_los, gimple_assign *ga, tree_nodeRef op1, enum kind code1, bool& restart_analysis, const std::string &srcp_default, const std::string& 
+#ifndef NDEBUG
+step_name
+#endif
+)
 {
    cst_node* cn = GetPointer<cst_node>(GET_NODE(op1));
    tree_nodeRef op0 = GetPointer<binary_expr>(GET_NODE(ga->op1))->op0;

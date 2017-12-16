@@ -31,25 +31,6 @@ lib_models_la_LIBADD = \
              $(top_builddir)/src/technology/physical_library/models/area/lib_area_models.la \
              $(top_builddir)/src/technology/physical_library/models/time/lib_time_models.la
 
-if BUILD_LIB_EXPERIMENTAL
-SUBDIRS += layout wire
-DIST_SUBDIRS += layout wire
-
-lib_models_la_CPPFLAGS += \
-   -I$(top_srcdir)/src/logic_node \
-   -I$(top_srcdir)/src/parser/boolean \
-   -I$(top_srcdir)/src/technology/target_device/FPGA \
-   -I$(top_srcdir)/src/technology/target_device/IC \
-   -I$(top_srcdir)/src/technology/physical_library/models/layout \
-   -I$(top_srcdir)/src/technology/physical_library/models/wire
-
-noinst_HEADERS += wire_model.hpp layout_model.hpp features_extractor.hpp
-lib_models_la_SOURCES += wire_model.cpp layout_model.cpp features_extractor.cpp
-
-lib_models_la_LIBADD +=  \
-      $(top_builddir)/src/technology/physical_library/models/layout/lib_layout_models.la \
-      $(top_builddir)/src/technology/physical_library/models/wire/lib_metrics.la
-endif
 
 #do not touch the following line
 

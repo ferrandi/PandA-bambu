@@ -209,34 +209,7 @@ const std::tuple<const std::vector<unsigned int> &, const std::vector<unsigned i
 static const double epsilon = 0.000000001;
 
 AllocationInformation::AllocationInformation(const HLS_managerRef _hls_manager, const unsigned int _function_index, const ParameterConstRef _parameters) :
-   HLSFunctionIR(_hls_manager, _function_index, _parameters),
-   connection_time_ratio(hls->HLS_T->get_target_device()->has_parameter("connection_time_ratio") ? hls->HLS_T->get_target_device()->get_parameter<double>("connection_time_ratio") : 1),
-   controller_delay_multiplier(hls->HLS_T->get_target_device()->has_parameter("controller_delay_multiplier") ? hls->HLS_T->get_target_device()->get_parameter<double>("controller_delay_multiplier") : 1),
-   setup_multiplier(hls->HLS_T->get_target_device()->has_parameter("setup_multiplier") ? hls->HLS_T->get_target_device()->get_parameter<double>("setup_multiplier") : 1.0),
-   time_multiplier(hls->HLS_T->get_target_device()->has_parameter("time_multiplier") ? hls->HLS_T->get_target_device()->get_parameter<double>("time_multiplier") : 1.0),
-   mux_time_multiplier(hls->HLS_T->get_target_device()->has_parameter("mux_time_multiplier") ? hls->HLS_T->get_target_device()->get_parameter<double>("mux_time_multiplier") : 1.0),
-   memory_correction_coefficient(hls->HLS_T->get_target_device()->has_parameter("memory_correction_coefficient") ? hls->HLS_T->get_target_device()->get_parameter<double>("memory_correction_coefficient") : 0.7),
-
-   connection_offset(_parameters->IsParameter("ConnectionOffset")
-      ? _parameters->GetParameter<double>("ConnectionOffset")
-      : _parameters->IsParameter("RelativeConnectionOffset")
-         ? _parameters->GetParameter<double>("RelativeConnectionOffset") * get_setup_hold_time()
-         : hls->HLS_T->get_target_device()->has_parameter("connection_offset")
-           ? hls->HLS_T->get_target_device()->get_parameter<double>("connection_offset")
-           : NUM_CST_allocation_default_connection_offset
-   ),
-
-   fanout_coefficient(_parameters->IsParameter("FanOutCoefficient") ? _parameters->GetParameter<double>("FanOutCoefficient") : NUM_CST_allocation_default_fanout_coefficent),
-   max_fanout_size(_parameters->IsParameter("MaxFanOutSize") ? _parameters->GetParameter<size_t>("MaxFanOutSize") : NUM_CST_allocation_default_max_fanout_size),
-   DSPs_margin(hls->HLS_T->get_target_device()->has_parameter("DSPs_margin") && _parameters->getOption<double>(OPT_DSP_margin_combinational) == 1.0 ? hls->HLS_T->get_target_device()->get_parameter<double>("DSPs_margin") : _parameters->getOption<double>(OPT_DSP_margin_combinational)),
-   DSPs_margin_stage(hls->HLS_T->get_target_device()->has_parameter("DSPs_margin_stage") && _parameters->getOption<double>(OPT_DSP_margin_pipelined) == 1.0 ? hls->HLS_T->get_target_device()->get_parameter<double>("DSPs_margin_stage") : _parameters->getOption<double>(OPT_DSP_margin_pipelined)),
-   DSP_allocation_coefficient(hls->HLS_T->get_target_device()->has_parameter("DSP_allocation_coefficient") && _parameters->getOption<double>(OPT_DSP_allocation_coefficient) == 1.0 ? hls->HLS_T->get_target_device()->get_parameter<double>("DSP_allocation_coefficient") : _parameters->getOption<double>(OPT_DSP_allocation_coefficient)),
-   minimumSlack(std::numeric_limits<double>::max()),
-   n_complex_operations(0),
-   mux_timing_db(InitializeMuxDB(AllocationInformationConstRef(this, null_deleter())).first),
-   mux_area_db(InitializeMuxDB(AllocationInformationConstRef(this, null_deleter())).second),
-   DSP_x_db(std::get<0>(InitializeDSPDB(AllocationInformationConstRef(this, null_deleter())))),
-   DSP_y_db(std::get<1>(InitializeDSPDB(AllocationInformationConstRef(this, null_deleter()))))
+   HLSFunctionIR(_hls_manager, _function_index, _parameters)
 {
    debug_level = _parameters->get_class_debug_level(GET_CLASS(*this));
 }
@@ -746,7 +719,8 @@ bool AllocationInformation::is_operation_bounded(const unsigned int index) const
    {
       const auto right = GET_NODE(ga->op1);
       ///currently all the operations introduced after the allocation has been performed are bounded
-      THROW_ASSERT(right->get_kind() == nop_expr_K or right->get_kind() == lut_expr_K or
+      THROW_ASSERT(right->get_kind() == vec_cond_expr_K or
+                   right->get_kind() == nop_expr_K or right->get_kind() == lut_expr_K or
                    right->get_kind() == lshift_expr_K or right->get_kind() == rshift_expr_K or
                    right->get_kind() == bit_xor_expr_K or  right->get_kind() == bit_not_expr_K or
                    right->get_kind() == bit_ior_concat_expr_K or right->get_kind() == bit_ior_expr_K or
@@ -1705,7 +1679,6 @@ std::pair<double,double> AllocationInformation::GetTimeLatency(const unsigned in
          fu_type = GetFuType(time_operation_index);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Functional unit name is " + get_fu_name(fu_type).first);
       double connection_contribute = 0;
-      bool estimate_net_logic_delays = parameters->getOption<bool>(OPT_estimate_logic_and_connections);
       ///The operation execution  time
       double actual_execution_time = get_execution_time(fu_type, time_operation_index);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Initial execution time " + STR(actual_execution_time));
@@ -1716,10 +1689,6 @@ std::pair<double,double> AllocationInformation::GetTimeLatency(const unsigned in
          op_execution_time = epsilon;
       /// try to take into account the controller delay
       const auto tn = TreeM->get_tree_node_const(time_operation_index);
-      if(not ignore_connection and estimate_net_logic_delays and (GetPointer<const gimple_multi_way_if>(tn) || GetPointer<const gimple_switch>(tn) || GetPointer<const gimple_cond>(tn)))
-      {
-         op_execution_time += estimate_controller_delay_fb();
-      }
 
       ///The stage period
       double actual_stage_period;
@@ -2818,17 +2787,33 @@ double AllocationInformation::GetConnectionTime(const vertex first_operation, co
 
 double AllocationInformation::GetConnectionTime(const unsigned int first_operation, const unsigned int second_operation, const AbsControlStep cs) const
 {
-
+   bool estimate_net_logic_delays = parameters->getOption<bool>(OPT_estimate_logic_and_connections);
+   if(not estimate_net_logic_delays)
+   {
+      return 0;
+   }
    if(second_operation == 0)
    {
+      if(first_operation == ENTRY_ID or first_operation == EXIT_ID)
+      {
+         return 0.0;
+      }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Get end delay of " + STR(first_operation));
       double end_delay = 0.0;
-      double phi_delay = GetPhiConnectionLatency(first_operation);
-      if(phi_delay > end_delay)
-         end_delay = phi_delay;
-      double to_dsp_register_delay = GetToDspRegisterDelay(first_operation);
-      if(to_dsp_register_delay > end_delay)
-         end_delay = to_dsp_register_delay;
+      const auto first_operation_tn = TreeM->CGetTreeNode(first_operation);
+      if(GetPointer<const gimple_multi_way_if>(first_operation_tn) or GetPointer<const gimple_switch>(first_operation_tn) or GetPointer<const gimple_cond>(first_operation_tn))
+      {
+         end_delay = estimate_controller_delay_fb();
+      }
+      else
+      {
+         double phi_delay = GetPhiConnectionLatency(first_operation);
+         if(phi_delay > end_delay)
+            end_delay = phi_delay;
+         double to_dsp_register_delay = GetToDspRegisterDelay(first_operation);
+         if(to_dsp_register_delay > end_delay)
+            end_delay = to_dsp_register_delay;
+      }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Got end delay of " + STR(first_operation) + ": " + STR(end_delay));
       return end_delay;
    }
@@ -2993,9 +2978,8 @@ double AllocationInformation::GetConnectionTime(const unsigned int first_operati
       }
       if(CanImplementSetNotEmpty(first_operation) and get_DSPs(GetFuType(first_operation)))
       {
-         auto dsp_connection_time = ( parameters->IsParameter("DSPConnectionTime") ? parameters->GetParameter<double>("CarryConnectionTime") : 0.6) * get_setup_hold_time();
-         connection_time += dsp_connection_time;
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Connection time due to DSP connection " + STR(dsp_connection_time));
+         connection_time += output_DSP_connection_time;
+         INDENT_DBG_MEX(DEBUG_LEVEL_NONE, debug_level, "---Connection time due to DSP connection " + STR(output_DSP_connection_time));
       }
       if(first_operation != ENTRY_ID and TreeM->CGetTreeNode(first_operation)->get_kind() == gimple_assign_K)
       {
@@ -3025,9 +3009,11 @@ double AllocationInformation::GetConnectionTime(const unsigned int first_operati
                }
                return false;
             }();
-            auto carry_connection_time = adding_connection ? ((parameters->IsParameter("CarryConnectionTime") ? parameters->GetParameter<double>("CarryConnectionTime") : 0.6) * get_setup_hold_time()) : 0.0;
-            connection_time += carry_connection_time;
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Connection time due to carry connection " + STR(carry_connection_time));
+            if(adding_connection)
+            {
+               connection_time += output_carry_connection_time;
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Connection time due to carry connection " + STR(output_carry_connection_time));
+            }
          }
       }
 #if 0
@@ -3268,6 +3254,45 @@ void AllocationInformation::Initialize()
    behavioral_helper = hls_manager->CGetFunctionBehavior(function_index)->CGetBehavioralHelper();
    Rmem = hls_manager->Rmem;
    TreeM = hls_manager->get_tree_manager();
+   connection_time_ratio = HLS_T->get_target_device()->has_parameter("connection_time_ratio") ? HLS_T->get_target_device()->get_parameter<double>("connection_time_ratio") : 1;
+   controller_delay_multiplier = HLS_T->get_target_device()->has_parameter("controller_delay_multiplier") ? HLS_T->get_target_device()->get_parameter<double>("controller_delay_multiplier") : 1;
+   setup_multiplier = HLS_T->get_target_device()->has_parameter("setup_multiplier") ? HLS_T->get_target_device()->get_parameter<double>("setup_multiplier") : 1.0;
+   time_multiplier = HLS_T->get_target_device()->has_parameter("time_multiplier") ? HLS_T->get_target_device()->get_parameter<double>("time_multiplier") : 1.0;
+   mux_time_multiplier = HLS_T->get_target_device()->has_parameter("mux_time_multiplier") ? HLS_T->get_target_device()->get_parameter<double>("mux_time_multiplier") : 1.0;
+   memory_correction_coefficient = HLS_T->get_target_device()->has_parameter("memory_correction_coefficient") ? HLS_T->get_target_device()->get_parameter<double>("memory_correction_coefficient") : 0.7;
+
+   connection_offset = parameters->IsParameter("ConnectionOffset")
+      ? parameters->GetParameter<double>("ConnectionOffset")
+      : parameters->IsParameter("RelativeConnectionOffset")
+         ? parameters->GetParameter<double>("RelativeConnectionOffset") * get_setup_hold_time()
+         : HLS_T->get_target_device()->has_parameter("connection_offset")
+           ? HLS_T->get_target_device()->get_parameter<double>("connection_offset")
+           : NUM_CST_allocation_default_connection_offset
+   ;
+
+   output_DSP_connection_time = parameters->IsParameter("OutputDSPConnectionRatio")
+      ? parameters->GetParameter<double>("OutputDSPConnectionRatio") * get_setup_hold_time()
+      : HLS_T->get_target_device()->has_parameter("OutputDSPConnectionRatio")
+        ? HLS_T->get_target_device()->get_parameter<double>("OutputDSPConnectionRatio") * get_setup_hold_time()
+        : NUM_CST_allocation_default_output_DSP_connection_ratio * get_setup_hold_time()
+   ;
+   output_carry_connection_time = parameters->IsParameter("OutputCarryConnectionRatio")
+      ? parameters->GetParameter<double>("OutputCarryConnectionRatio") * get_setup_hold_time()
+      : HLS_T->get_target_device()->has_parameter("OutputCarryConnectionRatio")
+        ? HLS_T->get_target_device()->get_parameter<double>("OutputCarryConnectionRatio") * get_setup_hold_time()
+        : NUM_CST_allocation_default_output_carry_connection_ratio * get_setup_hold_time()
+   ;
+   fanout_coefficient = parameters->IsParameter("FanOutCoefficient") ? parameters->GetParameter<double>("FanOutCoefficient") : NUM_CST_allocation_default_fanout_coefficent;
+   max_fanout_size = parameters->IsParameter("MaxFanOutSize") ? parameters->GetParameter<size_t>("MaxFanOutSize") : NUM_CST_allocation_default_max_fanout_size;
+   DSPs_margin = HLS_T->get_target_device()->has_parameter("DSPs_margin") && parameters->getOption<double>(OPT_DSP_margin_combinational) == 1.0 ? HLS_T->get_target_device()->get_parameter<double>("DSPs_margin") : parameters->getOption<double>(OPT_DSP_margin_combinational);
+   DSPs_margin_stage = HLS_T->get_target_device()->has_parameter("DSPs_margin_stage") && parameters->getOption<double>(OPT_DSP_margin_pipelined) == 1.0 ? HLS_T->get_target_device()->get_parameter<double>("DSPs_margin_stage") : parameters->getOption<double>(OPT_DSP_margin_pipelined);
+   DSP_allocation_coefficient = HLS_T->get_target_device()->has_parameter("DSP_allocation_coefficient") && parameters->getOption<double>(OPT_DSP_allocation_coefficient) == 1.0 ? HLS_T->get_target_device()->get_parameter<double>("DSP_allocation_coefficient") : parameters->getOption<double>(OPT_DSP_allocation_coefficient);
+   minimumSlack = std::numeric_limits<double>::max();
+   n_complex_operations = 0;
+   mux_timing_db = InitializeMuxDB(AllocationInformationConstRef(this, null_deleter())).first;
+   mux_area_db = InitializeMuxDB(AllocationInformationConstRef(this, null_deleter())).second;
+   DSP_x_db = std::get<0>(InitializeDSPDB(AllocationInformationConstRef(this, null_deleter())));
+   DSP_y_db = std::get<1>(InitializeDSPDB(AllocationInformationConstRef(this, null_deleter())));
 }
 
 void AllocationInformation::Clear()
@@ -3329,6 +3354,22 @@ double AllocationInformation::GetToDspRegisterDelay(const unsigned int statement
    const auto blocks = sl->list_of_bloc;
    const auto statement_bb = blocks.find(statement_bb_index)->second;
 #endif
+   const auto tn = TreeM->CGetTreeNode(statement_index);
+   const bool is_carry = [&] () -> bool 
+   {
+      const auto ga = GetPointer<const gimple_assign>(tn);
+      if(not ga)
+         return false;
+      const auto op1_kind = GET_CONST_NODE(ga->op1)->get_kind();
+      if(op1_kind == plus_expr_K or op1_kind == minus_expr_K or op1_kind == ternary_plus_expr_K or op1_kind == ternary_pm_expr_K or op1_kind == ternary_mp_expr_K or op1_kind == ternary_mm_expr_K or op1_kind == eq_expr_K or op1_kind == ne_expr_K or op1_kind == gt_expr_K or op1_kind == ge_expr_K or op1_kind == lt_expr_K or op1_kind == le_expr_K or op1_kind == pointer_plus_expr_K)
+      {
+         return true;
+      }
+      else
+      {
+         return false;
+      }
+   }();
    for(const auto zero_distance_operation : zero_distance_operations)
    {
       if(CanImplementSetNotEmpty(zero_distance_operation) and get_DSPs(GetFuType(zero_distance_operation)))
@@ -3345,6 +3386,8 @@ double AllocationInformation::GetToDspRegisterDelay(const unsigned int statement
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---" + STR(zero_distance_operation) + " mapped on DSP on same BB");
          }
+         if(is_carry)
+            to_dsp_register_delay += output_carry_connection_time;
          if(to_dsp_register_delay > ret)
             ret = to_dsp_register_delay;
       }

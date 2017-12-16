@@ -101,13 +101,13 @@ void ASICBackendFlow::create_sdc(const DesignParametersRef dp)
    dp->parameter_values[PARAM_sdc_file] = sdc_filename;
 }
 
-void ASICBackendFlow::InitDesignParameters(const DesignParametersRef dp)
+void ASICBackendFlow::InitDesignParameters()
 {
-   create_sdc(dp);
+   create_sdc(actual_parameters);
 
    for (unsigned int i = 0; i < steps.size(); i++)
    {
-      steps[i]->tool->EvaluateVariables(dp);
+      steps[i]->tool->EvaluateVariables(actual_parameters);
    }
 }
 

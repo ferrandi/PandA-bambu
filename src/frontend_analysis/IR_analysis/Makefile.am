@@ -153,44 +153,6 @@ if BUILD_LIB_ILP
          -I$(top_srcdir)/src/HLS/module_allocation
 endif
 
-if BUILD_LIB_EXPERIMENTAL
-      lib_IR_analysis_la_SOURCES += \
-         simple_code_motion_pipelining.cpp
-if BUILD_LIB_FROM_PRAGMA
-      noinst_HEADERS += \
-         check_critical_session.hpp \
-         extract_omp_atomic.hpp \
-         extract_omp_for.hpp
-      lib_IR_analysis_la_SOURCES += \
-         check_critical_session.cpp \
-         extract_omp_atomic.cpp \
-         extract_omp_for.cpp
-endif
-if BUILD_LIB_ILP
-  lib_IR_analysis_la_CPPFLAGS += \
-     -I$(top_srcdir)/src/technology \
-     -I$(top_srcdir)/src/technology/physical_library/models
-endif
-
-endif
-endif
-
-if BUILD_LIB_CODE_ESTIMATION
-   BUILT_SOURCES += tree_weights_symbolic.data tree_weights_constant.data
-   noinst_HEADERS += instruction_sequences_computation.hpp update_tree_weight.hpp
-   lib_IR_analysis_la_SOURCES += instruction_sequences_computation.cpp update_tree_weight.cpp
-   lib_IR_analysis_la_CPPFLAGS += \
-      -I$(top_srcdir)/src/design_flows/codesign/Metrics/Static \
-      -I$(top_srcdir)/src/machine \
-      -I$(top_srcdir)/src/utility/probability_distribution
-if BUILD_LIB_RTL
-   BUILT_SOURCES += rtl_weights_constant.data rtl_weights_symbolic.data
-   lib_IR_analysis_la_CPPFLAGS += \
-      -I$(top_srcdir)/src/parser/rtlgcc \
-      -I$(top_srcdir)/src/rtl
-   noinst_HEADERS += update_rtl_weight.hpp
-   lib_IR_analysis_la_SOURCES += update_rtl_weight.cpp
-endif
 endif
 
 update_rtl_weights.cpp : rtl_weights_constant.data rtl_weights_symbolic.data
@@ -212,69 +174,6 @@ if BUILD_LIB_FROM_PRAGMA
      -I$(top_srcdir)/src/pragma
 endif
 
-
-if BUILD_ZEBU
-   noinst_HEADERS += \
-       array_ref_fix.hpp \
-       call_args_structuring.hpp \
-       dead_code_elimination.hpp \
-       FunctionPointerCallGraphComputation.hpp \
-       global_variables_analysis.hpp \
-       header_structuring.hpp \
-       loops_analysis_zebu.hpp \
-       loop_regions_computation.hpp \
-       pointed_data_computation.hpp \
-       pointed_data_evaluation.hpp \
-       predictability_analysis.hpp \
-       reverse_restrict_computation.hpp \
-       short_circuit_structuring.hpp \
-       source_code_statistics.hpp \
-       split_phi_nodes.hpp
-   lib_IR_analysis_la_SOURCES += \
-       array_ref_fix.cpp \
-       call_args_structuring.cpp \
-       dead_code_elimination.cpp \
-       FunctionPointerCallGraphComputation.cpp \
-       global_variables_analysis.cpp \
-       header_structuring.cpp \
-       loop_regions_computation.cpp \
-       loops_analysis_zebu.cpp \
-       pointed_data_computation.cpp \
-       pointed_data_evaluation.cpp \
-       predictability_analysis.cpp \
-       reverse_restrict_computation.cpp \
-       short_circuit_structuring.cpp \
-       source_code_statistics.cpp \
-       split_phi_nodes.cpp
-   lib_IR_analysis_la_CPPFLAGS += \
-     -I$(top_srcdir)/src/design_flows/backend/ToC \
-     -I$(top_srcdir)/src/design_flows/backend/ToC/progModels \
-     -I$(top_srcdir)/src/design_flows/backend/ToC/source_code_writers \
-     -I$(top_srcdir)/src/design_flows/codesign/partitioning/graph_partitioning
-
-if BUILD_LIB_EXPERIMENTAL
-      noinst_HEADERS += \
-         parallel_loops_analysis.hpp \
-         parallel_loop_swap.hpp \
-         refined_var_computation.hpp
-      lib_IR_analysis_la_SOURCES += \
-         parallel_loops_analysis.cpp \
-         parallel_loop_swap.cpp \
-         refined_var_computation.cpp
-if BUILD_LIB_HOST_PROFILING
-      noinst_HEADERS += \
-         dynamic_aggregate_data_flow_analysis.hpp \
-         dynamic_var_computation.hpp
-      lib_IR_analysis_la_SOURCES += \
-         dynamic_aggregate_data_flow_analysis.cpp \
-         dynamic_var_computation.cpp
-endif
-endif
-if BUILD_MPPB
-      noinst_HEADERS += global_variables_analysis.hpp
-      lib_IR_analysis_la_SOURCES += global_variables_analysis.cpp
-endif
-endif
 
 update_tree_weight.cpp : tree_weights_constant.data tree_weights_symbolic.data
 

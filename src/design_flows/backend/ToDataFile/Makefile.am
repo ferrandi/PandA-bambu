@@ -47,36 +47,12 @@ lib_ToDataFile_la_CPPFLAGS += \
    -I$(top_srcdir)/src/technology/physical_library
 endif
 
-if BUILD_SPIDER
-if BUILD_LIB_EXPERIMENTAL
-   noinst_HEADERS += xml_generator.hpp
-   lib_ToDataFile_la_SOURCES += xml_generator.cpp
-endif
-endif
 DOX_TAGFILES =
-
-if BUILD_LIB_EXPERIMENTAL
-translator.cpp : latex_format_af_edges.data latex_format_edges_reduction.data
-else
 translator.cpp : latex_format_stat.data
-endif
-
 BUILT_SOURCES = latex_format_stat.data
-if BUILD_LIB_EXPERIMENTAL
-BUILT_SOURCES += latex_format_af_edges.data latex_format_edges_reduction.data
-endif
-
-if BUILD_LIB_EXPERIMENTAL
-latex_format_af_edges.data: $(top_srcdir)/etc/latex_table_format/latex_format_af_edges.xml
-	$(top_srcdir)/etc/scripts/add_escape.sh $(top_srcdir)/etc/latex_table_format/latex_format_af_edges.xml latex_format_af_edges.data
-
-latex_format_edges_reduction.data: $(top_srcdir)/etc/latex_table_format/latex_format_edges_reduction.xml
-	$(top_srcdir)/etc/scripts/add_escape.sh $(top_srcdir)/etc/latex_table_format/latex_format_edges_reduction.xml latex_format_edges_reduction.data
-endif
 
 latex_format_stat.data: $(top_srcdir)/etc/latex_table_format/latex_format_stat.xml
 	$(top_srcdir)/etc/scripts/add_escape.sh $(top_srcdir)/etc/latex_table_format/latex_format_stat.xml latex_format_stat.data
-
 
 #do not touch the following line
 
