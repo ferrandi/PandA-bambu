@@ -1,9 +1,9 @@
 #!/bin/bash
-abs_script=`readlink -e $0`
-root_dir=`dirname $abs_script`
+abs_script=$(readlink -e $0)
+root_dir=$(dirname $abs_script)
 device_dir=$root_dir/../devices
-for file in `find  $device_dir -name *-seed.xml*`; do
-   filename=`basename $file`;
+for file in $(find  $device_dir -name *-seed.xml*); do
+   filename=$(basename $file);
    device=${filename::-9}
    echo $device
    if [ "$device" = "Nangate_device" ]; then

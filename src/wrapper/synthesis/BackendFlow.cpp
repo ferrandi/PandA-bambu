@@ -318,7 +318,7 @@ std::string BackendFlow::GenerateSynthesisScripts(const std::string& fu_name, co
 
    actual_parameters->parameter_values[PARAM_fu] = fu_base_name;
 
-   InitDesignParameters(actual_parameters);
+   InitDesignParameters();
 
    const auto ret = CreateScripts(actual_parameters);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Generated synthesis scripts");
@@ -768,7 +768,7 @@ BackendFlowRef BackendFlow::xload_generator_chain(const ParameterConstRef , cons
 }
 #endif
 
-void BackendFlow::InitDesignParameters(const DesignParametersRef /*dp*/)
+void BackendFlow::InitDesignParameters()
 {
    ///nothing to do
 }

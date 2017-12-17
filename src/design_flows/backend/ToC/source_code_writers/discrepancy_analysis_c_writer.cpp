@@ -471,8 +471,8 @@ void DiscrepancyAnalysisCWriter::writePostInstructionInfo
             THROW_ASSERT(node_info->called.size() == 1,
                          "rhs of gimple_assign node " + STR(st_tn_id) + " is a call_expr but calls more than a function");
             const unsigned int called_id = *node_info->called.begin();
-            const BehavioralHelperConstRef BH = AppM->CGetFunctionBehavior(called_id)->CGetBehavioralHelper();
-            if (BH->has_implementation() and BH->function_has_to_be_printed(called_id))
+            const BehavioralHelperConstRef BHC = AppM->CGetFunctionBehavior(called_id)->CGetBehavioralHelper();
+            if (BHC->has_implementation() and BHC->function_has_to_be_printed(called_id))
             {
                call_expr *ce = GetPointer<call_expr>(rhs);
                const std::vector<tree_nodeRef> & actual_args = ce->args;
@@ -521,7 +521,7 @@ void DiscrepancyAnalysisCWriter::writePostInstructionInfo
                                                                {"__float32_gtif", {false, ">"}},
                                                                {"__float64_gtif", {true, ">"}},
                                                               };
-                     std::string var1 = BH->PrintVariable(GET_INDEX_NODE(actual_args.at(0)));
+                     std::string var1 = BHC->PrintVariable(GET_INDEX_NODE(actual_args.at(0)));
                      if(basic_unary_operations_relation.find(oper->get_name()) != basic_unary_operations_relation.end())
                      {
                         std::string computation = "("  + basic_unary_operations_relation.find(oper->get_name())->second.second + var1 + ")";
@@ -541,7 +541,7 @@ void DiscrepancyAnalysisCWriter::writePostInstructionInfo
                      }
                      else if(basic_binary_operations_relation.find(oper->get_name()) != basic_binary_operations_relation.end())
                      {
-                        std::string var2 = BH->PrintVariable(GET_INDEX_NODE(actual_args.at(1)));
+                        std::string var2 = BHC->PrintVariable(GET_INDEX_NODE(actual_args.at(1)));
                         std::string computation = "(" +var1 + basic_binary_operations_relation.find(oper->get_name())->second.second + var2 + ")";
                         std::string check_string0 = var_name + "==" + computation;
                         std::string check_string1 = (basic_binary_operations_relation.find(oper->get_name())->second.first ? "_FPs64Mismatch_" : "_FPs32Mismatch_") +

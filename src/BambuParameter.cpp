@@ -85,7 +85,7 @@
 
 #if HAVE_HOST_PROFILING_BUILT
 ///frontend_flow/behavior_analysis
-#include "profiling.hpp"
+#include "host_profiling.hpp"
 #endif
 
 ///HLS/binding/module
@@ -783,6 +783,7 @@ void BambuParameter::PrintHelp(std::ostream &os) const
    << "    --registered-inputs=value\n"
    << "        Specify if inputs are registered or not:\n"
    << "             auto  - inputs are registered only for proxy functions (default)\n"
+   << "             top   - inputs are registred only for top and proxy functions\n"
    << "             yes   - all inputs are registered\n"
    << "             no    - none of the inputs is registered\n\n"
    << "    --fsm-encoding=value\n"
@@ -2955,11 +2956,6 @@ void BambuParameter::CheckParameters()
       THROW_ERROR("Experimental setup not recognized: " + getOption<std::string>(OPT_experimental_setup));
    }
 
-   if(getOption<HLSFlowStep_Type>(OPT_scheduling_algorithm) == HLSFlowStep_Type::SDC_SCHEDULING)
-   {
-      setOption(OPT_estimate_logic_and_connections, true);
-   }
-
    add_bambu_library("bambu");
 
    if(isOption(OPT_soft_float) && getOption<bool>(OPT_soft_float))
@@ -3136,7 +3132,7 @@ void BambuParameter::CheckParameters()
 #if HAVE_LATTICE
    if(isOption(OPT_evaluation_objectives) and getOption<std::string>(OPT_evaluation_objectives).find("ARE") != std::string::npos and isOption(OPT_device_string) and getOption<std::string>(OPT_device_string) == "LFE335EA8FN484C" and !getOption<bool>(OPT_connect_iob))
    {
-      THROW_ERROR("--no-iob cannot be used when target is a Lattice board");
+      THROW_WARNING("--no-iob cannot be used when target is a Lattice board");
    }
 #endif
    if(isOption(OPT_evaluation_objectives) and getOption<std::string>(OPT_evaluation_objectives).find("CYCLES") != std::string::npos and (not isOption(OPT_simulator) or getOption<std::string>(OPT_simulator) == ""))
@@ -3484,8 +3480,8 @@ void BambuParameter::SetDefaults()
 #endif
 #if HAVE_EXPERIMENTAL
    setOption(OPT_memory_banks_number, 1);
-   setOption(OPT_find_max_cfg_transformations, false);
 #endif
+   setOption(OPT_find_max_cfg_transformations, false);
 
    panda_parameters["CSE_size"] = "2";
    panda_parameters["PortSwapping"] = "1";

@@ -59,12 +59,5 @@ if BUILD_LIB_LIBRARY_CHARACTERIZATION
    lib_technology_la_LIBADD += $(top_builddir)/src/technology/characterization/lib_characterization.la
 endif
 
-if BUILD_LIB_EXPERIMENTAL
-   SUBDIRS += utility
-   DIST_SUBDIRS += utility
-   lib_technology_la_LIBADD += $(top_builddir)/src/technology/utility/lib_utility.la
-   lib_technology_la_CPPFLAGS += -I$(top_srcdir)/src/technology/utility
-endif
-
 #do not touch the following line
 

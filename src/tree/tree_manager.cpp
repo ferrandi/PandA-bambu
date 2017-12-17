@@ -461,11 +461,12 @@ void tree_manager::collapse_into(const unsigned int & funID, std::unordered_map<
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Definition of " + STR(GET_INDEX_NODE(tn)) + ":");
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---" + STR(GET_INDEX_NODE(sn->CGetDefStmt())) + " (" + std::string(GET_NODE(sn->CGetDefStmt())->get_kind_text()) + ")");
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Uses of " + STR(GET_INDEX_NODE(tn)) + " - " + STR(sn->CGetNumberUses()) + ":");
+#ifndef NDEBUG
             for(const auto& use : sn->CGetUseStmts())
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---" + use.first->ToString());
             }
-
+#endif
             // Retrieve curr_block, the block which contains the conditional expression that originated the collapsing
             tree_nodeRef temp = get_tree_node_const(funID);
             function_decl * fd = GetPointer<function_decl>(temp);

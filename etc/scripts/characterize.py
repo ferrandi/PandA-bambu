@@ -1,13 +1,8 @@
 #!/usr/bin/python
 
 import argparse
-import array
-import datetime
-import fnmatch
 import logging
 import os
-import pickle
-import re
 import shlex
 import shutil
 import signal
@@ -21,7 +16,7 @@ def GetChildren(parent_pid):
     ret = set()
     ps_command = subprocess.Popen("ps -o pid --ppid %d --noheaders" % parent_pid, shell=True, stdout=subprocess.PIPE)
     ps_output = ps_command.stdout.read()
-    retcode = ps_command.wait()
+    ps_command.wait()
     for pid_str in ps_output.split("\n")[:-1]:
         ret.add(int(pid_str))
     return ret
@@ -67,7 +62,7 @@ def execute_characterization(device_fu_list, thread_index):
         local_args = lines[local_index]
         if local_args[0] == "\"":
             local_args = local_args[1:-1]
-        local_command = "ulimit " + args.ulimit + "; exec timeout --foreground " + args.timeout + " " + args.eucalyptus 
+        local_command = "ulimit " + args.ulimit + "; exec timeout --foreground " + args.timeout + " " + args.eucalyptus
         local_command = local_command + " " + local_args
         output_file.write("#" * 80 + "\n")
         output_file.write("cd " + cwd + "; ")
@@ -400,7 +395,7 @@ if not killing:
             local_args = local_args + " " + old_characterization
          seed_file = find_file(device + "-seed.xml", os.path.join(abs_panda, "devices"))
          if seed_file != None:
-            local_args = local_args + " " + seed_file 
+            local_args = local_args + " " + seed_file
          local_args = local_args + " " + device + ".xml"
          if args.spiderargs != None and len(args.spiderargs) > 0:
             for spiderarg in args.spiderargs:

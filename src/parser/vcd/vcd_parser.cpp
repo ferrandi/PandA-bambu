@@ -44,7 +44,7 @@
 
 vcd_parser::vcd_parser(const ParameterConstRef & param) :
    debug_level(param->get_class_debug_level(GET_CLASS(*this))),
-   vcd_fp(0),
+   vcd_fp(nullptr),
    sig_n(0)
 {}
 

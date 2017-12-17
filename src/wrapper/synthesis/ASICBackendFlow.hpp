@@ -63,7 +63,7 @@ class ASICBackendFlow : public BackendFlow
       /**
        * Evaluates design variables
        */
-      void InitDesignParameters(const DesignParametersRef dp);
+      void InitDesignParameters();
 
       /**
        * Creates the constraint file

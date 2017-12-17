@@ -211,7 +211,7 @@ std::string HDL_manager::write_components(const std::string& filename, HDLWriter
    return filename + writer->get_extension();
 }
 
-void HDL_manager::write_components(std::string filename,  const std::list<structural_objectRef>& components, bool equation, std::list<std::string> & hdl_files, std::list<std::string> & aux_files)
+void HDL_manager::write_components(const std::string &filename,  const std::list<structural_objectRef>& components, bool equation, std::list<std::string> & hdl_files, std::list<std::string> & aux_files)
 {
    ///default language
    HDLWriter_Language language = static_cast<HDLWriter_Language>(parameters->getOption<unsigned int>(OPT_writer_language));

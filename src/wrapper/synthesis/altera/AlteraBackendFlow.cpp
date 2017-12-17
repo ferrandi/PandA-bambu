@@ -51,6 +51,9 @@
 #include "config_QUARTUS_13_SETTINGS.hpp"
 #include "config_QUARTUS_SETTINGS.hpp"
 
+///constants include
+#include "synthesis_constants.hpp"
+
 #include "AlteraWrapper.hpp"
 
 #include "target_manager.hpp"
@@ -230,12 +233,20 @@ void AlteraBackendFlow::CheckSynthesisResults()
 
    time_m = time_model::create_model(TargetDevice_Type::FPGA, Param);
    LUT_model* lut_m = GetPointer<LUT_model>(time_m);
-   if(design_values[ALTERA_FMAX] != 0.0)
-      lut_m->set_timing_value(LUT_model::COMBINATIONAL_DELAY, 1000/design_values[ALTERA_FMAX]);
-   else if(design_values.find("SLACK") != design_values.end())
-      lut_m->set_timing_value(LUT_model::COMBINATIONAL_DELAY, design_values.find("SLACK")->second);
-   else
-      lut_m->set_timing_value(LUT_model::COMBINATIONAL_DELAY, 0);
+   const auto combinational_delay = [&] () -> double
+   {
+      if(design_values[ALTERA_FMAX] != 0.0)
+         return 1000/design_values[ALTERA_FMAX];
+      else if(design_values.find("SLACK") != design_values.end())
+         return Param->getOption<double>(OPT_clock_period) - design_values.find("SLACK")->second;
+      else
+         return 0.0;
+   }();
+   lut_m->set_timing_value(LUT_model::COMBINATIONAL_DELAY, combinational_delay);
+   if(combinational_delay >  Param->getOption<double>(OPT_clock_period))
+   {
+      CopyFile(actual_parameters->component_name + ".sta.rpt",  STR_CST_synthesis_timing_violation_report);
+   }
 }
 
 void AlteraBackendFlow::WriteFlowConfiguration(std::ostream& script)
@@ -272,6 +283,13 @@ void AlteraBackendFlow::create_sdc(const DesignParametersRef dp)
    if(!boost::lexical_cast<bool>(dp->parameter_values[PARAM_is_combinational]))
    {
       sdc_file << "create_clock -period "+ dp->parameter_values[PARAM_clk_period] + " -name "+ clock + " [get_ports " + clock + "]\n";
+      if(Param->getOption<std::string>(OPT_device_string) == "5CSEMA5F31C6")
+      {
+         sdc_file << "set_max_delay " + dp->parameter_values[PARAM_clk_period] + " -from [all_inputs] -to [all_registers]\n";
+         sdc_file << "set_max_delay " + dp->parameter_values[PARAM_clk_period] + " -from [all_registers] -to [all_outputs]\n";
+         sdc_file << "set_min_delay 0 -from [all_inputs] -to [all_registers]\n";
+         sdc_file << "set_min_delay 0 -from [all_registers] -to [all_outputs]\n";
+      }
       sdc_file << "derive_pll_clocks\n";
       sdc_file << "derive_clock_uncertainty\n";
    }
@@ -284,25 +302,25 @@ void AlteraBackendFlow::create_sdc(const DesignParametersRef dp)
    dp->parameter_values[PARAM_sdc_file] = sdc_filename;
 }
 
-void AlteraBackendFlow::InitDesignParameters(const DesignParametersRef dp)
+void AlteraBackendFlow::InitDesignParameters()
 {
    if(Param->isOption(OPT_top_design_name))
-      dp->parameter_values[PARAM_top_id] = Param->getOption<std::string>(OPT_top_design_name);
+      actual_parameters->parameter_values[PARAM_top_id] = Param->getOption<std::string>(OPT_top_design_name);
    else
-      dp->parameter_values[PARAM_top_id] = dp->component_name;
-   dp->parameter_values[PARAM_clk_name] = CLOCK_PORT_NAME;
+      actual_parameters->parameter_values[PARAM_top_id] = actual_parameters->component_name;
+   actual_parameters->parameter_values[PARAM_clk_name] = CLOCK_PORT_NAME;
 
    bool connect_iob = false;
    if(Param->isOption(OPT_connect_iob) && Param->getOption<bool>(OPT_connect_iob))
       connect_iob = true;
-   dp->parameter_values[PARAM_connect_iob] = STR(connect_iob);
+   actual_parameters->parameter_values[PARAM_connect_iob] = STR(connect_iob);
    
    const target_deviceRef device = target->get_target_device();
-   dp->parameter_values[PARAM_target_device] = device->get_parameter<std::string>("model");
+   actual_parameters->parameter_values[PARAM_target_device] = device->get_parameter<std::string>("model");
    std::string device_family = device->get_parameter<std::string>("family");
    if(device_family.find('-') != std::string::npos)
          device_family = device_family.substr(0, device_family.find('-'));
-   dp->parameter_values[PARAM_target_family] = device_family;
+   actual_parameters->parameter_values[PARAM_target_family] = device_family;
 
    std::string HDL_files = actual_parameters->parameter_values[PARAM_HDL_files];
    std::vector<std::string> file_list = convert_string_to_vector<std::string>(HDL_files, ";");
@@ -311,20 +329,20 @@ void AlteraBackendFlow::InitDesignParameters(const DesignParametersRef dp)
    {
       sources_macro_list += "set_global_assignment -name SOURCE_FILE " + file_list[v] + "\n";
    }
-   dp->parameter_values[PARAM_sources_macro_list] = sources_macro_list;
+   actual_parameters->parameter_values[PARAM_sources_macro_list] = sources_macro_list;
    if(Param->isOption(OPT_backend_script_extensions))
    {
-      dp->parameter_values[PARAM_has_script_extensions] = STR(true);
-      dp->parameter_values[PARAM_backend_script_extensions] = Param->getOption<std::string>(OPT_backend_script_extensions);
+      actual_parameters->parameter_values[PARAM_has_script_extensions] = STR(true);
+      actual_parameters->parameter_values[PARAM_backend_script_extensions] = Param->getOption<std::string>(OPT_backend_script_extensions);
    }
    else
-      dp->parameter_values[PARAM_has_script_extensions] = STR(false);
+      actual_parameters->parameter_values[PARAM_has_script_extensions] = STR(false);
 
-   create_sdc(dp);
+   create_sdc(actual_parameters);
 
    for (unsigned int i = 0; i < steps.size(); i++)
    {
-      steps[i]->tool->EvaluateVariables(dp);
+      steps[i]->tool->EvaluateVariables(actual_parameters);
    }
 }
 

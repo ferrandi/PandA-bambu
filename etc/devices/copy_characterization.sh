@@ -1,5 +1,5 @@
-abs_script=`readlink -e $0`
-root_dir=`dirname $abs_script`
+abs_script=$(readlink -e $0)
+root_dir=$(dirname $abs_script)
 cp 5CSEMA5F31C6/output/5CSEMA5F31C6.xml $root_dir/Altera_devices
 cp 5SGXEA7N2F45C1/output/5SGXEA7N2F45C1.xml $root_dir/Altera_devices
 cp EP2C70F896C6/output/EP2C70F896C6.xml $root_dir/Altera_devices

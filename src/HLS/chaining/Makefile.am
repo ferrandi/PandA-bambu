@@ -22,11 +22,5 @@ lib_hls_chaining_la_CPPFLAGS = \
 noinst_HEADERS =  chaining.hpp sched_based_chaining_computation.hpp chaining_information.hpp
 lib_hls_chaining_la_SOURCES = chaining.cpp sched_based_chaining_computation.cpp chaining_information.cpp
 
-if BUILD_LIB_EXPERIMENTAL
-noinst_HEADERS +=  epdg_sched_based_chaining_computation.hpp
-lib_hls_chaining_la_SOURCES +=  epdg_sched_based_chaining_computation.cpp
-endif
-
-
 #do not touch the following line
 

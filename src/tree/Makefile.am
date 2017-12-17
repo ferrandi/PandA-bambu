@@ -17,12 +17,6 @@ noinst_HEADERS = tree_node.hpp tree_reindex.hpp tree_basic_block.hpp
 #TREE STUFF
 lib_tree_la_SOURCES = tree_node.cpp tree_reindex.cpp tree_basic_block.cpp
 
-if BUILD_LIB_CODE_ESTIMATION
-   lib_tree_la_SOURCES += weight_information.cpp
-   noinst_HEADERS += weight_information.hpp
-   lib_tree_la_CPPFLAGS += \
-     -I$(top_srcdir)/src/utility/probability_distribution
-endif
 if BUILD_BAMBU
    lib_tree_la_CPPFLAGS += \
       -I$(top_srcdir)/src/graph \
