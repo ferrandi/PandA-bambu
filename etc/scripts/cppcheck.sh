@@ -1,7 +1,7 @@
 #/bin/bash
 abs_script=$(readlink -e $0)
 dir_script=$(dirname $abs_script)
-cppcheck --enable=all --force --inline-suppr ${dir_script}/../../src/HLS/chaining/chaining_information.cpp \
+cppcheck --enable=all --force --suppress=unusedFunction --suppress=unmatchedSuppression --inline-suppr ${dir_script}/../../src \
    -I${dir_script}/../../src \
    -I${dir_script}/../../src/algorithms/bipartite_matching/ \
    -I${dir_script}/../../src/algorithms/clique_covering \
@@ -17,4 +17,5 @@ cppcheck --enable=all --force --inline-suppr ${dir_script}/../../src/HLS/chainin
    -I${dir_script}/../../src/ilp \
    -I${dir_script}/../../src/polixml \
    -I${dir_script}/../../src/tree \
-   -I${dir_script}/../../src/utility
+   -I${dir_script}/../../src/utility \
+   $@
