@@ -112,62 +112,6 @@ raw_writer::raw_writer(
 {
 }
 
-void raw_writer::write_when_not_null(const std::string&str, const tree_nodeRef & t) const
-{
-   if (t)
-      os << " " << str << ": @" << GET_INDEX_NODE(t);
-}
-
-void raw_writer::write_when_not_null_bloc(const std::string&str, const blocRef & t)
-{
-   if (t)
-      os << " " << str << ":";
-   t->visit(this);
-}
-
-void raw_writer::write_when_not_null_point_to(const std::string&type, const PointToSolutionRef solution) const
-{
-   if(solution->anything)
-   {
-      os << " " << type << " : \"anything\"";
-   }
-   if(solution->escaped)
-   {
-      os << " " << type << " : \"escaped\"";
-   }
-   if(solution->ipa_escaped)
-   {
-      os << " " << type << " : \"ipa_escaped\"";
-   }
-   if(solution->nonlocal)
-   {
-      os << " " << type << " : \"nonlocal\"";
-   }
-   if(solution->null)
-   {
-      os << " " << type << " : \"null\"";
-   }
-   const std::vector<tree_nodeRef> & variables = solution->variables;
-   std::vector<tree_nodeRef>::const_iterator variable, variable_end = variables.end();
-   for(variable = variables.begin(); variable != variable_end; ++variable)
-   {
-      write_when_not_null(type + "_vars", *variable);
-   }
-}
-
-#if HAVE_RTL_BUILT
-void raw_writer::write_when_not_null_rtl(const std::list<std::pair<enum rtl_kind, enum mode_kind> > & rtl) const
-{
-   std::list<std::pair<enum rtl_kind, enum mode_kind> >::const_iterator it, it_end = rtl.end();
-   for(it = rtl.begin(); it != it_end; ++it)
-   {
-      os << " " << STOK(TOK_RTL) << ": " << rtl_node::GetString(it->first);
-      if(it->second != none_R)
-         os << ":" << rtl_node::GetString(it->second);
-   }
-}
-#endif
-
 void raw_writer::operator()(const tree_node * obj, unsigned int & )
 {
    os << obj->get_kind_text();

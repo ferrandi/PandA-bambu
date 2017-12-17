@@ -209,7 +209,7 @@ class tree_helper
        * @return true if an inheritance is found
        */
       static
-      bool look_for_binfo_inheritance(binfo* b, std::string bcs);
+      bool look_for_binfo_inheritance(binfo* b, const std::string & bcs);
 
       /**
        * Given the tree_node of an obj_type_ref return the tree_node of the called function

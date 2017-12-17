@@ -935,7 +935,7 @@ std::string flopoco_wrapper::writeVHDLcommon()
 }
 
 
-const std::vector<std::string> flopoco_wrapper::get_ports(std::string FU_name_stored, unsigned int ASSERT_PARAMETER(expected_ports), port_type local_type, bool ASSERT_PARAMETER(check_ports)) const
+const std::vector<std::string> flopoco_wrapper::get_ports(const std::string & FU_name_stored, unsigned int ASSERT_PARAMETER(expected_ports), port_type local_type, bool ASSERT_PARAMETER(check_ports)) const
 {
    std::vector<std::string> ports;
    flopoco::Operator * op = get_FU(FU_name_stored);

@@ -122,15 +122,6 @@ class flopoco_wrapper
 
       flopoco::Target * target;
 
-
-      /**
-       * Decode the encoded FU's string
-       * @param encoded_FU is a string representing the FU to be created
-       * @param FU_type, is the type of operand to instantiate
-       * @param FU_prec is the precision of operand to instantiate
-       */
-      void DECODE_FU(std::string & encoded_FU, std::string & FU_type, unsigned int & FU_prec_in, unsigned int & FU_prec_out) const;
-
       /**
        * Returns one of the generated Functional Units
        * @param FU_name_stored is a string representing the stored FU name
@@ -144,7 +135,7 @@ class flopoco_wrapper
        * @param expected_ports is the number of expected ports to be returned
        * @param type is the type of the required ports
        */
-      const std::vector<std::string> get_ports(std::string FU_name_stored, unsigned int expected_ports, port_type type, bool check_ports = true) const;
+      const std::vector<std::string> get_ports(const std::string & FU_name_stored, unsigned int expected_ports, port_type type, bool check_ports = true) const;
       
       /**
        * Returns the name of a port, according to the needed port type (clock or reset)

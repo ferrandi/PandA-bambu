@@ -842,7 +842,7 @@ void handler::visit(tree_node_visitor * const v) const
 }
 
 #if HAVE_TREE_MANIPULATION_BUILT
-identifier_node::identifier_node(unsigned int node_id, std::string _strg, tree_manager* TM):
+identifier_node::identifier_node(unsigned int node_id, const std::string &_strg, tree_manager* TM):
    tree_node(node_id),
    operator_flag(false),
    strg(_strg)
@@ -857,7 +857,7 @@ identifier_node::identifier_node(unsigned int node_id, bool _operator_flag, tree
    TM->add_identifier_node(node_id, operator_flag);
 }
 #else
-identifier_node::identifier_node(unsigned int node_id, std::string _strg, tree_manager*):
+identifier_node::identifier_node(unsigned int node_id, const std::string & _strg, tree_manager*):
    tree_node(node_id),
    operator_flag(false),
    strg(_strg)
@@ -1007,7 +1007,7 @@ void gimple_phi::ReplaceDefEdge(const tree_managerRef TM, const DefEdge& old_def
 
 void gimple_phi::SetDefEdgeList(const tree_managerRef TM, DefEdgeList new_list_of_def_edge)
 {
-   while(list_of_def_edge.size())
+   while(not list_of_def_edge.empty())
       RemoveDefEdge(TM, list_of_def_edge.front());
    for(const auto& def_edge : new_list_of_def_edge)
       AddDefEdge(TM, def_edge);

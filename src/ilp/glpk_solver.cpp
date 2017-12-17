@@ -89,11 +89,7 @@ glpk_solver::~glpk_solver()
  */
 int glpk_print_hook(void* info, const char* DEBUG_PARAMETER(msg))
 {
-   int * verbose_p = static_cast<int *>(info);
-   if (*verbose_p >= DEBUG_LEVEL_VERBOSE)
-   {
-      PRINT_DBG_STRING(0, 0, msg );
-   }
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, *verbose_p, msg);
    // return non-zero so that GLPK does not print stuff on its own.
    return 1;
 }
