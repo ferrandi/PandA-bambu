@@ -70,7 +70,7 @@ const std::string ToDataFileStepFactory::GetPrefix() const
 
 const DesignFlowStepRef ToDataFileStepFactory::CreateStep(const std::string&signature) const
 {
-   THROW_ASSERT(signature.compare(0, sizeof("ToDataFile::"), "ToDataFile::") == 0, "Wrong signature " + signature);
+   THROW_ASSERT(signature.compare(0, std::string("ToDataFile::").size(), "ToDataFile::") == 0, "Wrong signature " + signature);
    const auto to_data_file_step_type = ToDataFileStep::NameToEnum(signature.substr(std::string("ToDataFile::").size()));
    switch(to_data_file_step_type)
    {
