@@ -725,7 +725,7 @@ void Loops::BuildZeroLoop()
       zero_loop->blocks.insert(*v);
    }
 
-   if(const_loops_list.size())
+   if(!const_loops_list.empty())
       zero_loop->is_innermost_loop = false;
    else
       zero_loop->is_innermost_loop = true;

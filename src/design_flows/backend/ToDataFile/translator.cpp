@@ -1237,7 +1237,7 @@ void Translator::write_to_latex(std::map<std::string, CustomMap<std::string, std
    //Closing tabular
    out << "\\hline" << std::endl;
    out << "\\end{tabular}\n";
-   if(benchmarks.size())
+   if(!benchmarks.empty())
    {
       out << "%Benchmarks:" << std::endl;
       for(const auto& benchmark : benchmarks)

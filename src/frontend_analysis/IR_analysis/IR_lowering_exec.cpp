@@ -373,8 +373,8 @@ choose_multiplier (unsigned long long int d, int n, int precision,
    /* Reduce to lowest terms.  */
    for (post_shift = lgup; post_shift > 0; post_shift--)
    {
-      unsigned long long int ml_lo = static_cast<unsigned long long int>(mlow_hi << (64 - 1)) | (mlow_lo >> 1);
-      unsigned long long int mh_lo = static_cast<unsigned long long int>(mhigh_hi << (64 - 1)) | (mhigh_lo >> 1);
+      unsigned long long int ml_lo = static_cast<unsigned long long int>(((unsigned long long int)mlow_hi) << (64 - 1)) | (mlow_lo >> 1);
+      unsigned long long int mh_lo = static_cast<unsigned long long int>(((unsigned long long int)mhigh_hi) << (64 - 1)) | (mhigh_lo >> 1);
       if (ml_lo >= mh_lo)
          break;
 
