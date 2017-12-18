@@ -309,7 +309,7 @@ OpGraph::OpGraph(OpGraphsCollectionRef _op_graphs_collection, int _selector) :
    graph(_op_graphs_collection.get(), _selector)
 {}
 
-OpGraph::OpGraph(OpGraphsCollectionRef _op_graphs_collection, int _selector, const std::unordered_set<boost::graph_traits<OpGraphsCollection>::vertex_descriptor > & _sub) :
+OpGraph::OpGraph(const OpGraphsCollectionRef _op_graphs_collection, int _selector, const std::unordered_set<boost::graph_traits<OpGraphsCollection>::vertex_descriptor > & _sub) :
    graph(_op_graphs_collection.get(), _selector, _sub)
 {}
 
