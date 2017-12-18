@@ -47,6 +47,7 @@
 ///Autoheader include
 #include "config_HAVE_EXPERIMENTAL.hpp"
 #include "config_HAVE_VERILATOR.hpp"
+#include "config_HAVE_L2_NAME.hpp"
 
 ///Constants include
 #include "file_IO_constants.hpp"
@@ -111,7 +112,12 @@ void VerilatorWrapper::GenerateScript(std::ostringstream& script, const std::str
    script << "verilator --cc --exe --Mdir " + SIM_SUBDIR + suffix + "/verilator_obj -Wno-fatal -Wno-lint -Ox -sv";
 #endif
    if(generate_vcd_output)
+   {
       script << " --trace --trace-underscore"; // --trace-params
+#if HAVE_L2_NAME
+      script << " --l2-name v";
+#endif
+   }
    for(const auto& file : file_list)
       script << " " << file;
    script << " " << output_directory + "/simulation/testbench_" + top_filename << "_tb.v";
