@@ -961,16 +961,6 @@ const std::string flopoco_wrapper::get_port(port_type local_type) const
    return "";
 }
 
-void flopoco_wrapper::DECODE_FU(std::string & encoded_FU, std::string & FU_type, unsigned int & FU_prec_in, unsigned int & FU_prec_out) const
-{
-   std::vector<std::string> split;
-   boost::algorithm::split(split, encoded_FU, boost::algorithm::is_any_of(" "));
-   THROW_ASSERT(split.size() == 3, "Malformed FU");
-   FU_type = split[0];
-   FU_prec_in = boost::lexical_cast<unsigned int>(split[1]);
-   FU_prec_out = boost::lexical_cast<unsigned int>(split[2]);
-}
-
 void flopoco_wrapper::DECODE_BITS(unsigned int FU_prec, unsigned int & n_mant, unsigned int & n_exp)
 {
    switch (FU_prec)

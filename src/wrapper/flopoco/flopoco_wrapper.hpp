@@ -122,15 +122,6 @@ class flopoco_wrapper
 
       flopoco::Target * target;
 
-
-      /**
-       * Decode the encoded FU's string
-       * @param encoded_FU is a string representing the FU to be created
-       * @param FU_type, is the type of operand to instantiate
-       * @param FU_prec is the precision of operand to instantiate
-       */
-      void DECODE_FU(std::string & encoded_FU, std::string & FU_type, unsigned int & FU_prec_in, unsigned int & FU_prec_out) const;
-
       /**
        * Returns one of the generated Functional Units
        * @param FU_name_stored is a string representing the stored FU name
