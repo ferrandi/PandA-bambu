@@ -59,7 +59,7 @@ dist:
 	fi; \
 	mkdir panda_dist; \
 	cd panda_dist; \
-	../configure --prefix=/opt/panda $(CONFIGURE_OPTIONS); \
+	../configure --prefix=`pwd`/install $(CONFIGURE_OPTIONS); \
 	if [ $$? != 0 ]; then \
 	   false; \
 	   exit; \
@@ -78,7 +78,7 @@ dist:
 	fi; \
 	mkdir obj_release; \
 	cd obj_release; \
-	../configure --prefix=/opt/panda $(CONFIGURE_OPTIONS) --enable-Werror; \
+	../configure --prefix=`pwd`/install $(CONFIGURE_OPTIONS) --enable-Werror; \
 	if [ $$? != 0 ]; then \
 	   false; \
 	   exit; \
