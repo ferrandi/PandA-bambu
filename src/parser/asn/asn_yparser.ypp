@@ -105,6 +105,7 @@ REF_FORWARD_DECL(AsnFlexLexer);
 */
 extern int yylex(YYSTYPE *lvalp, const AsnFlexLexerRef lexer);
 extern void yyerror(const AsnParserDataRef data, const AsnFlexLexerRef lexer, const char *msg);
+#ifndef __clang_analyzer__
 
 %}
 /**
@@ -460,6 +461,7 @@ value_range_opt : /* empty */ {$$ = AsnParserNode();}
 /* End of Grammar */
 
 %%
+#endif
 /**
 * EPILOGUE
 */
