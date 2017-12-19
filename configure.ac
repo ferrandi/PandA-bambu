@@ -162,9 +162,18 @@ LAST_DIRECTORY=`echo "$TOPSRCDIR" | awk -F/ '{print $NF}'`
 
 
 GIT_WORKTREE_PATH=$(echo $TOPSRCDIR/.git)
+GIT_PRIVATE_PANDA=no
 AC_MSG_CHECKING([if directory is a git repository])
 if test -d $GIT_WORKTREE_PATH && test -f $GIT_WORKTREE_PATH/HEAD && test -f $GIT_WORKTREE_PATH/index; then
    AC_MSG_RESULT([yes])
+   GIT_REMOTE_URL=$(git --git-dir $GIT_WORKTREE_PATH config --get remote.origin.url)
+   AC_MSG_CHECKING([if this is clone of ferrandi/private-PandA-bambu.git])
+   if [[[ $GIT_REMOTE_URL == *"private-PandA-bambu.git"* ]]]; then
+      GIT_PRIVATE_PANDA=yes
+      AC_MSG_RESULT([yes])
+   else
+      AC_MSG_RESULT([no: $GIT_REMOTE_URL])
+   fi
 else
    AC_MSG_RESULT([no])
    AC_MSG_CHECKING([if directory is a git worktree])
@@ -377,7 +386,7 @@ if test "x$panda_USE_TUCANO" != xyes && test "x$panda_USE_GECCO" != xyes && test
   exit 1;
 fi
 
-if test "x$panda_WERROR" != xno && test "x$panda_USE_TUCANO" != xyes && test "x$panda_USE_KOALA" != xyes && test "x$panda_USE_LEMUR" != xyes && test "x$panda_USE_GRIZZLY" != xyes && test -f $TOPSRCDIR/git_polimi_placeholder; then
+if test "x$panda_WERROR" != xno && test "x$panda_USE_TUCANO" != xyes && test "x$panda_USE_KOALA" != xyes && test "x$panda_USE_LEMUR" != xyes && test "x$panda_USE_GRIZZLY" != xyes && test "x$GIT_PRIVATE_PANDA" == xyes; then
   panda_WERROR=yes;
 fi
 
