@@ -130,6 +130,7 @@ struct XmlBisonParserData
 */
 extern int yylex(YYSTYPE *lvalp, const XmlFlexLexerRef lexer);
 extern void yyerror(const xml_documentRef Root, const XmlBisonParserDataRef data, const XmlFlexLexerRef lexer, const char* s);
+#ifndef __clang_analyzer__
 %}
 
 %union {const char* text;}
@@ -227,6 +228,7 @@ closing_data_opt
  ;
 
 %%
+#endif
 /**
 * EPILOGUE
 */

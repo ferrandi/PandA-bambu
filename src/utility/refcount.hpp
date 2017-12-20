@@ -94,7 +94,8 @@ private:
       unsigned int count : 31;
       unsigned int deleter :1 ;
       // cppcheck-suppress noExplicitConstructor
-      Ref(T* p) : ptr(p), count(1), deleter(1) {}
+      Ref(T* p) :
+         ptr(p), count(1), deleter(1) {}
       template<class null_deleter>
          Ref(T* p, null_deleter &d) : ptr(p), count(1), deleter(0) {}
       ~Ref() {if(deleter) delete ptr;}
@@ -120,6 +121,7 @@ public:
       if (ref && ref->decrement())
          delete ref;
    }
+   // cppcheck-suppress operatorEqToSelf
    refcount<T>& operator=(const refcount<T>& other)
    {
       Ref* tmp = other.ref ? other.ref->increment() : 0;
@@ -155,6 +157,7 @@ public:
 };
 
 template<typename T>
+// cppcheck-suppress copyCtorAndEqOperator
 struct Wrefcount
 {
 private:

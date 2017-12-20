@@ -474,6 +474,7 @@ enum class DiopsisInstrumentWriter_Type;
 #define OPTIONS_ENUM(r, data, elem) BOOST_PP_CAT(OPT_, elem),
 
 ///Possible options
+// cppcheck-suppress syntaxError
 enum enum_option {
    BOOST_PP_SEQ_FOR_EACH(OPTIONS_ENUM, BOOST_PP_EMPTY, BAMBU_OPTIONS)
    BOOST_PP_SEQ_FOR_EACH(OPTIONS_ENUM, BOOST_PP_EMPTY, EUCALIPTUS_OPTIONS)

@@ -954,7 +954,7 @@ void parametric_list_based::exec(const OpVertexSet & operations, ControlStep cur
       cstep_vuses_others = cstep_vuses_others > 0 ? cstep_vuses_others-1 : 0;
       cstep_has_RET_conflict = false;
       /// move to the next cycle
-      current_cycle++;
+      ++current_cycle;
    }
 
    if(HLS->Param->isOption(OPT_post_rescheduling) && HLS->Param->getOption<bool>(OPT_post_rescheduling))

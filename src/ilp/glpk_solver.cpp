@@ -87,13 +87,9 @@ glpk_solver::~glpk_solver()
 /*
  * Will be passed as a callback pointer to the GLPK library. The info pointer is used to point to the verbosity field of the current glpk_solver instance.
  */
-int glpk_print_hook(void* info, const char* DEBUG_PARAMETER(msg))
+int glpk_print_hook(void* DEBUG_PARAMETER(info), const char* DEBUG_PARAMETER(msg))
 {
-   int * verbose_p = static_cast<int *>(info);
-   if (*verbose_p >= DEBUG_LEVEL_VERBOSE)
-   {
-      PRINT_DBG_STRING(0, 0, msg );
-   }
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, *(static_cast<int *>(info)), msg);
    // return non-zero so that GLPK does not print stuff on its own.
    return 1;
 }

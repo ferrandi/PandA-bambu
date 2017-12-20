@@ -501,6 +501,7 @@ void do_qual(const tree_nodeRef &curr, const int & value)
     ((dynamic_cast<type_node*>(curr.get()))->qual) = static_cast<TreeVocabularyTokenTypes_TokenEnum>(value);
   }
 
+#ifndef __clang_analyzer__
 
 %}
 /**
@@ -2719,6 +2720,7 @@ bool pred;
   string_id_opt : /*empty*/ {$$ = false;} | string_id {$$ = true;}
 
 %%
+#endif
 /**
 * EPILOGUE
 */

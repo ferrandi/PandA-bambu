@@ -162,7 +162,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed statement");
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed assignments");
-         if(stmts_to_be_removed.size())
+         if(not stmts_to_be_removed.empty())
          {
             modified = true;
             restart_analysis = true;
@@ -236,7 +236,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed phi");
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed phis");
-         if(phis_to_be_removed.size())
+         if(not phis_to_be_removed.empty())
          {
             modified = true;
             restart_analysis = true;

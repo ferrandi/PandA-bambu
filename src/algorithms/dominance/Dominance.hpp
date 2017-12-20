@@ -431,9 +431,11 @@ class dom_info
          nodes = dfsnum - 1;
 
          Vertex_iterator i, i_end;
+#if HAVE_ASSERTS
          unsigned int counter = 0;
          for (boost::tie(i, i_end) = boost::vertices(g); i != i_end; i++)
             ++counter;
+#endif
          /* This aborts e.g. when there is _no_ path from ENTRY to EXIT at all.  */
          THROW_ASSERT(nodes == counter, "there is _no_ path from ENTRY to EXIT at all. Number of vertices in the graph: " + boost::lexical_cast<std::string>(num_vertices(g))+  " Number of reachable from entry vertices " + boost::lexical_cast<std::string>(nodes));
 #ifndef NDEBUG
