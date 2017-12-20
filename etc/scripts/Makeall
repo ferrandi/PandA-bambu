@@ -101,7 +101,7 @@ dist:
 	cd ..; \
 	mkdir obj; \
 	cd obj; \
-	../configure --prefix=/opt/panda $(CONFIGURE_OPTIONS) --enable-Werror --disable-release; \
+	../configure --prefix=`pwd`/panda $(CONFIGURE_OPTIONS) --enable-Werror --disable-release; \
 	if [ $$? != 0 ]; then \
 	   false; \
 	   exit; \
