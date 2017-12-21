@@ -30,12 +30,12 @@ The xml file necessary to integrate the component in the design is IP.xml.
 The xml file necessary for the testbench is example_testbench.xml.
 The command line to generate the design and to simulate it with the provided testbench is:
 
-bambu ../main.c  --C-no-parse=../operations.c ../IP.xml  --file-input-data=../operations.v --std=c11 --simulate --simulator=VERILATOR --generate-tb=example_testbench.xml
+bambu ../main.c  --C-no-parse=../operations.c ./IP.xml  --file-input-data=../operations.v --std=c11 --simulate --simulator=VERILATOR --generate-tb=example_testbench.xml
 
 2)
 
 The command line to run the Discrepancy Analysis is 
 
-bambu ../main.c  --C-no-parse=../operations.c ../IP.xml  --file-input-data=../operations.v --std=c11 --simulate --simulator=VERILATOR --generate-tb=example_testbench.xml --discrepancy
+bambu ../main.c  --C-no-parse=../operations.c ./IP.xml  --file-input-data=../operations.v --std=c11 --simulate --simulator=VERILATOR --generate-tb=example_testbench.xml --discrepancy
 
 Running this command it is possible to see that the wrong module is times2
