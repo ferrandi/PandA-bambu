@@ -26,7 +26,12 @@ jobs:
         - v1-dep-
     - run: sudo apt-get -qq update
     - run: sudo apt-get install ccache autoconf autoconf-archive automake libtool g++ gcc gcc-4.8-plugin-dev gcc-multilib g++-4.8-multilib gfortran-4.8 gfortran-4.8-multilib libboost-all-dev libmpc-dev libmpfi-dev libmpfr-dev libxml2-dev liblzma-dev zlib1g-dev libicu-dev bison doxygen flex graphviz iverilog verilator pkg-config libsuitesparse-dev libglpk-dev make
-
+    - run:
+        name: make -f Makefile.init
+        command: if [ "$CIRCLE_NODE_INDEX" == "0" ]; then make -f Makefile.init; fi
+    - run:
+        name: mkdir build && cd build && ../configure --prefix=$HOME/panda --enable-icarus --enable-verilator --enable-glpk --enable-opt && make -j4
+        command: if [ "$CIRCLE_NODE_INDEX" == "0" ]; then mkdir build && cd build && ../configure --prefix=$HOME/panda --enable-icarus --enable-verilator --enable-glpk --enable-opt && make -j4; fi
     - save_cache:
         key: v1-dep-{{ .Branch }}-{{ epoch }}
         paths:
@@ -35,16 +40,9 @@ jobs:
         - ~/.m2
         - ~/.ivy2
         - ~/.bundle
-        - ~/.go_workspace
         - ~/.gradle
         - ~/.cache/bower
         - ~/.ccache
-    - run:
-        name: make -f Makefile.init
-        command: if [ "$CIRCLE_NODE_INDEX" == "0" ]; then make -f Makefile.init; fi
-    - run:
-        name: mkdir build && cd build && ../configure --prefix=$HOME/panda --enable-icarus --enable-verilator --enable-glpk --enable-opt && make -j4
-        command: if [ "$CIRCLE_NODE_INDEX" == "0" ]; then mkdir build && cd build && ../configure --prefix=$HOME/panda --enable-icarus --enable-verilator --enable-glpk --enable-opt && make -j4; fi
     # Save test results
     - store_test_results:
         path: /tmp/circleci-test-results
