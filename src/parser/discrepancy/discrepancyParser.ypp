@@ -118,6 +118,7 @@ void yyerror
    const DiscrepancyFlexLexerRef lexer,
    const char *s
 );
+#ifndef __clang_analyzer__
 
 %}
 
@@ -382,7 +383,7 @@ assign_data : ASSIGNMENT SSA_ID UNUMBER SEMI SSA IDENTIFIER SEMI BITSIZE UNUMBER
                   $$.type |= DISCR_ADDR;
             };
 %%
-
+#endif
 void discrepancy_parseY(const std::string & fname, DiscrepancyRef Discr)
 {
    fileIO_istreamRef in_f = fileIO_istream_open(fname);

@@ -1181,7 +1181,7 @@ void tree_helper::get_used_variables(bool first_level_only, const tree_nodeRef t
    }
 }
 
-bool tree_helper::look_for_binfo_inheritance(binfo* b, std::string bcs)
+bool tree_helper::look_for_binfo_inheritance(binfo* b, const std::string & bcs)
 {
    if (b)
    {
@@ -7434,11 +7434,11 @@ bool tree_helper::is_a_nop_function_decl(function_decl * fd)
    if(fd->body)
    {
       statement_list * sl = GetPointer<statement_list>(GET_NODE(fd->body));
-      if(sl->list_of_stmt.size())
+      if(not sl->list_of_stmt.empty())
       {
          return false;
       }
-      else if(sl->list_of_bloc.size())
+      else if(not sl->list_of_bloc.empty())
       {
          size_t bb_number = sl->list_of_bloc.size();
          if(sl->list_of_bloc.find(bloc::ENTRY_BLOCK_ID) != sl->list_of_bloc.end())

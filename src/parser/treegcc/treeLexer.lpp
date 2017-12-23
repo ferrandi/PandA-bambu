@@ -94,6 +94,7 @@ TreeVocabularyTokenTypes_TokenEnum TreeFlexLexer::bison2token(int token) const
 {
    return tokens->bison2token(token);
 }
+#ifndef __clang_analyzer__
 %}
 
 alnum_p_ [_a-zA-Z0-9]
@@ -132,3 +133,4 @@ node_lit	"@"{unsigned_lit}
 [ \t\n\r\:]+   /* eat up whitespace */
 .		     { LexerError("Lexical Error"); }
 %%
+#endif

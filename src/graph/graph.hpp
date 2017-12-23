@@ -957,7 +957,7 @@ struct graph : public boost::filtered_graph<boost_graphs_collection, SelectEdge<
          std::unordered_set<boost::graph_traits<graphs_collection>::vertex_descriptor> encountered_vertices;
          running_vertices.push_back(x);
          encountered_vertices.insert(x);
-         while(running_vertices.size())
+         while(not running_vertices.empty())
          {
             const boost::graph_traits<graphs_collection>::vertex_descriptor current = running_vertices.front();
             running_vertices.pop_front();

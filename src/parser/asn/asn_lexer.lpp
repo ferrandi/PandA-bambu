@@ -86,6 +86,7 @@ AsnFlexLexer::AsnFlexLexer(const ParameterConstRef parameters,  std::istream* ar
 
 AsnFlexLexer::~AsnFlexLexer()
 {}
+#ifndef __clang_analyzer__
 
 %}
 letter [_a-zA-Z/]
@@ -130,4 +131,4 @@ char [_a-zA-Z:0-9/\-]
 . {INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, std::string("Read single character: ") + YYText()); THROW_UNREACHABLE(YYText());}
 \n
 %%
-
+#endif

@@ -166,6 +166,8 @@ DiscrepancyFlexLexer::DiscrepancyFlexLexer
 
 DiscrepancyFlexLexer::~DiscrepancyFlexLexer()
 {}
+#ifndef __clang_analyzer__
+
 %}
 
 
@@ -237,3 +239,4 @@ ID          [a-z_A-Z][a-zA-Z_0-9]*
 
 .               { LexerError("Lexical Error"); }
 %%
+#endif

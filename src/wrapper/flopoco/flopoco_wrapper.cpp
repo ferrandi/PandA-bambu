@@ -935,7 +935,7 @@ std::string flopoco_wrapper::writeVHDLcommon()
 }
 
 
-const std::vector<std::string> flopoco_wrapper::get_ports(std::string FU_name_stored, unsigned int ASSERT_PARAMETER(expected_ports), port_type local_type, bool ASSERT_PARAMETER(check_ports)) const
+const std::vector<std::string> flopoco_wrapper::get_ports(const std::string & FU_name_stored, unsigned int ASSERT_PARAMETER(expected_ports), port_type local_type, bool ASSERT_PARAMETER(check_ports)) const
 {
    std::vector<std::string> ports;
    flopoco::Operator * op = get_FU(FU_name_stored);
@@ -959,16 +959,6 @@ const std::string flopoco_wrapper::get_port(port_type local_type) const
       return "clk";
    THROW_UNREACHABLE("Something went wrong!");
    return "";
-}
-
-void flopoco_wrapper::DECODE_FU(std::string & encoded_FU, std::string & FU_type, unsigned int & FU_prec_in, unsigned int & FU_prec_out) const
-{
-   std::vector<std::string> split;
-   boost::algorithm::split(split, encoded_FU, boost::algorithm::is_any_of(" "));
-   THROW_ASSERT(split.size() == 3, "Malformed FU");
-   FU_type = split[0];
-   FU_prec_in = boost::lexical_cast<unsigned int>(split[1]);
-   FU_prec_out = boost::lexical_cast<unsigned int>(split[2]);
 }
 
 void flopoco_wrapper::DECODE_BITS(unsigned int FU_prec, unsigned int & n_mant, unsigned int & n_exp)

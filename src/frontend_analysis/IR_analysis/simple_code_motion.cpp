@@ -1030,7 +1030,7 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Adding front " + adding_front->ToString() + " from BB" + STR(curr_bb));
             list_of_bloc[curr_bb]->PushFront(adding_front);
          }
-         restart_bb_code_motion = to_be_added_back.size() or to_be_added_front.size();
+         restart_bb_code_motion = (!to_be_added_back.empty()) or (!to_be_added_front.empty());
          if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC)
          {
             GCC_bb_graph->WriteDot("BB_simple_code_motion_" + STR(counter) + ".dot");

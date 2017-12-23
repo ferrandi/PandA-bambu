@@ -103,7 +103,7 @@ inline unsigned int resize_to_1_8_16_32_64_128_256_512(unsigned int value)
 
 inline unsigned int compute_n_bytes( unsigned bitsize)
 {
-   return bitsize / 8 + (bitsize % 8 ? 1 : 0);
+   return bitsize / 8 + ((bitsize % 8) ? 1 : 0);
 }
 
 /// Test whether a value is zero of a power of two.

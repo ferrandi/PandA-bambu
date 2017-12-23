@@ -2870,7 +2870,7 @@ struct handler : public tree_node
 struct identifier_node : public tree_node
 {
    /// constructors
-   identifier_node(unsigned int node_id, std::string _strg, tree_manager* TM);
+   identifier_node(unsigned int node_id, const std::string & _strg, tree_manager* TM);
    identifier_node(unsigned int node_id, bool _operator_flag, tree_manager* TM);
 
    /// Store true if the identifier_node is an operator.

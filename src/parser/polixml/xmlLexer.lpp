@@ -81,6 +81,7 @@ using namespace std;
 #if (__GNUC__ > 4) || (__GNUC__ == 4 && __GNUC_MINOR__ >= 7)
 #pragma GCC diagnostic ignored "-Wzero-as-null-pointer-constant"
 #endif
+#ifndef __clang_analyzer__
 %}
 
 
@@ -130,3 +131,4 @@ attdef            {open}"?XML-ATT"
 
 .                   {LexerError("Lexical Error");}
 %%
+#endif

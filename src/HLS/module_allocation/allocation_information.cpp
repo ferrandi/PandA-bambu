@@ -2953,7 +2953,9 @@ double AllocationInformation::GetConnectionTime(const unsigned int first_operati
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Computing connection time due to conversion");
             const auto bool_input_ne = tree_helper::is_int(TreeM, ne->op->index);
+            // cppcheck-suppress variableScope
             double fo_correction = 0.0;
+            // cppcheck-suppress variableScope
             size_t fanout = 0;
             if(bool_input_ne)
             {

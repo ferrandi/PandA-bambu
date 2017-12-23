@@ -3296,7 +3296,7 @@ void module::xload(const xml_element* Enode, structural_objectRef _owner, struct
          GetPointer<module>(_owner)->add_internal_object(obj);
          connections[obj] = get_connections(EnodeC);
       }
-      else if (EnodeC->get_name() == GET_CLASS_NAME(signal_o))
+      else if (EnodeC->get_name() == GET_CLASS_NAME(signal_vector_o))
       {
          PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "   - Signal vector");
          obj = structural_objectRef(new signal_o(debug_level, _owner, signal_vector_o_K));

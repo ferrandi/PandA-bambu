@@ -56,7 +56,7 @@ std::ostream & operator<<(std::ostream & os, const AadlParserNode & aadl_parser_
          first = false;
       }
    }
-   if(aadl_parser_node.features.size())
+   if(not aadl_parser_node.features.empty())
    {
       bool first_feature = true;
       for(const auto& feature : aadl_parser_node.features)

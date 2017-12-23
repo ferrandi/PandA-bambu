@@ -81,6 +81,27 @@ struct raw_writer : public tree_node_visitor
          std::ostream& _os
       );
 
+      /**
+       * Write the field when t is not null
+       * @param str is the string key associated to t
+       * @param t is the tree_nodeRef
+       */
+      void write_when_not_null(const std::string&str, const tree_nodeRef & t) const;
+
+      /**
+       * Write the field when t is not null
+       * @param str is the string key associated to t
+       * @param t is the blocRef
+       */
+      void write_when_not_null_bloc(const std::string&str, const blocRef & t);
+
+      /**
+       * Write a point to solution when is not null
+       * @param type is the type of point to solution (i.e., use or clb)
+       * @param solution is the solution to be printed
+       */
+      void write_when_not_null_point_to(const std::string&type, const PointToSolutionRef solution) const;
+
       ///tree_node visitors
       BOOST_PP_SEQ_FOR_EACH(OPERATOR_MACRO_DECL, BOOST_PP_EMPTY, OBJ_SPECIALIZED_SEQ)
       BOOST_PP_SEQ_FOR_EACH(OPERATOR_MACRO, BOOST_PP_EMPTY, OBJ_NOT_SPECIALIZED_SEQ)
@@ -93,33 +114,6 @@ struct raw_writer : public tree_node_visitor
 
       ///output stream
       std::ostream& os;
-      /**
-       * Write the field when t is not null
-       * @param str is the string key associated to t
-       * @param t is the tree_nodeRef
-       */
-      void write_when_not_null(const std::string&str, const tree_nodeRef & t) const;
-      /**
-       * Write the field when t is not null
-       * @param str is the string key associated to t
-       * @param t is the blocRef
-       */
-      void write_when_not_null_bloc(const std::string&str, const blocRef & t);
-
-#if HAVE_RTL_BUILT
-      /**
-       * Write the field list of rtl when is not empty
-       * @param rtl is the list of rtl
-       */
-      void write_when_not_null_rtl(const std::list<std::pair<enum rtl_kind, enum mode_kind> > & rtl) const;
-#endif
-
-      /**
-       * Write a point to solution when is not null
-       * @param type is the type of point to solution (i.e., use or clb)
-       * @param solution is the solution to be printed
-       */
-      void write_when_not_null_point_to(const std::string&type, const PointToSolutionRef solution) const;
 };
 
 #endif
