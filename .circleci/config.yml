@@ -1,0 +1,56 @@
+version: 2
+jobs:
+  build:
+    working_directory: ~/ferrandi/PandA-bambu
+    parallelism: 4
+    shell: /bin/bash --login
+    environment:
+      CIRCLE_ARTIFACTS: /tmp/circleci-artifacts
+      CIRCLE_TEST_REPORTS: /tmp/circleci-test-results
+      BASH_ENV: ~/.bashrc
+    docker:
+    - image: circleci/build-image:ubuntu-14.04-XXL-upstart-1189-5614f37
+      command: /sbin/init
+    steps:
+    - run: echo 'export PATH=/usr/lib/ccache:$PATH' >> $BASH_ENV 
+    - checkout
+    - run: mkdir -p $CIRCLE_ARTIFACTS $CIRCLE_TEST_REPORTS
+    # Dependencies
+    # Restore the dependency cache
+    - restore_cache:
+        keys:
+        # This branch if available
+        - v1-dep-{{ .Branch }}-
+        # Default branch if not
+        - v1-dep-master-
+        # Any branch if there are none on the default branch - this should be unnecessary if you have your default branch configured correctly
+        - v1-dep-
+    - run: sudo apt-get -qq update
+    - run: sudo apt-get install ccache autoconf autoconf-archive automake libtool g++ gcc gcc-4.8-plugin-dev gcc-multilib g++-4.8-multilib gfortran-4.8 gfortran-4.8-multilib libboost-all-dev libmpc-dev libmpfi-dev libmpfr-dev libxml2-dev liblzma-dev zlib1g-dev libicu-dev bison doxygen flex graphviz iverilog verilator pkg-config libsuitesparse-dev libglpk-dev make
+
+    - save_cache:
+        key: v1-dep-{{ .Branch }}-{{ epoch }}
+        paths:
+        - vendor/bundle
+        - ~/virtualenvs
+        - ~/.m2
+        - ~/.ivy2
+        - ~/.bundle
+        - ~/.go_workspace
+        - ~/.gradle
+        - ~/.cache/bower
+        - ~/.ccache
+    - run:
+        name: make -f Makefile.init
+        command: if [ "$CIRCLE_NODE_INDEX" == "0" ]; then make -f Makefile.init; fi
+    - run:
+        name: mkdir build && cd build && ../configure --prefix=$HOME/panda --enable-icarus --enable-verilator --enable-glpk --enable-opt && make -j4
+        command: if [ "$CIRCLE_NODE_INDEX" == "0" ]; then mkdir build && cd build && ../configure --prefix=$HOME/panda --enable-icarus --enable-verilator --enable-glpk --enable-opt && make -j4; fi
+    # Save test results
+    - store_test_results:
+        path: /tmp/circleci-test-results
+    # Save artifacts
+    - store_artifacts:
+        path: /tmp/circleci-artifacts
+    - store_artifacts:
+        path: /tmp/circleci-test-results
