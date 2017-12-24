@@ -2787,8 +2787,7 @@ double AllocationInformation::GetConnectionTime(const vertex first_operation, co
 
 double AllocationInformation::GetConnectionTime(const unsigned int first_operation, const unsigned int second_operation, const AbsControlStep cs) const
 {
-   bool estimate_net_logic_delays = parameters->getOption<bool>(OPT_estimate_logic_and_connections);
-   if(not estimate_net_logic_delays)
+   if(not parameters->getOption<bool>(OPT_estimate_logic_and_connections))
    {
       return 0;
    }
