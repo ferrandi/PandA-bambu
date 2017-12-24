@@ -1,4 +1,4 @@
-#/bin/bash
+#!/bin/bash
 abs_script=$(readlink -e $0)
 dir_script=$(dirname $abs_script)
 cppcheck --enable=all --force --suppress=unusedFunction --suppress=unmatchedSuppression --inline-suppr ${dir_script}/../../src \
