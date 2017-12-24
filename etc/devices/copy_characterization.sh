@@ -1,3 +1,4 @@
+#!/bin/bash
 abs_script=$(readlink -e $0)
 root_dir=$(dirname $abs_script)
 cp 5CSEMA5F31C6/output/5CSEMA5F31C6.xml $root_dir/Altera_devices
