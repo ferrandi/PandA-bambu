@@ -61,7 +61,8 @@ struct XmlFlexLexer : public yyFlexLexer
 
    XmlFlexLexer(const std::string&_name,  std::istream* argin=nullptr, std::ostream* argout=nullptr) :
       yyFlexLexer(argin, argout),
-      name(_name)
+      name(_name),
+      keep(0)
    {
    }
    ~XmlFlexLexer() {}
