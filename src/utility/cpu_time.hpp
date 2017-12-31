@@ -143,7 +143,7 @@ inline long int p_cpu_wtime()
 #if HAVE_OPENMP
    return static_cast<long int>(1000*omp_get_wtime());
 #else
-   return p_cpu_wtime();
+   return p_cpu_time();
 #endif
 }
 

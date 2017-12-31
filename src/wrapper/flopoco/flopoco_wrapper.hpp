@@ -111,8 +111,6 @@ class flopoco_wrapper
       /// unit type
       typedef enum { UT_ADD, UT_SUB, UT_MULT, UT_DIV, UT_FF_CONV, UT_ADDSUB, UT_UFIX2FP, UT_IFIX2FP, UT_FP2UFIX, UT_FP2IFIX, UT_EXP, UT_SQRT, UT_compare_expr, UT_LOG, UT_POW, UT_UNKNOWN } unit_type;
 
-      double target_frequency;
-
       unit_type type;
 
       bool signed_p;

@@ -2976,7 +2976,7 @@ double AllocationInformation::GetConnectionTime(const unsigned int first_operati
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Computed connection time due to conversion " + STR(first_operation) + "-->" + STR(second_operation) + "(fanout " + STR(fanout) + ") : " + STR(fo_correction));
          }
       }
-      if(CanImplementSetNotEmpty(first_operation) and get_DSPs(GetFuType(first_operation)))
+      if(CanImplementSetNotEmpty(first_operation) and get_DSPs(GetFuType(first_operation)) != 0.0)
       {
          connection_time += output_DSP_connection_time;
          INDENT_DBG_MEX(DEBUG_LEVEL_NONE, debug_level, "---Connection time due to DSP connection " + STR(output_DSP_connection_time));
@@ -3340,7 +3340,7 @@ double AllocationInformation::GetToDspRegisterDelay(const unsigned int statement
    {
       return 0.0;
    }
-   if(CanImplementSetNotEmpty(statement_index) and get_DSPs(GetFuType(statement_index)))
+   if(CanImplementSetNotEmpty(statement_index) and get_DSPs(GetFuType(statement_index)) != 0.0)
    {
       return 0.0;
    }
@@ -3372,7 +3372,7 @@ double AllocationInformation::GetToDspRegisterDelay(const unsigned int statement
    }();
    for(const auto zero_distance_operation : zero_distance_operations)
    {
-      if(CanImplementSetNotEmpty(zero_distance_operation) and get_DSPs(GetFuType(zero_distance_operation)))
+      if(CanImplementSetNotEmpty(zero_distance_operation) and get_DSPs(GetFuType(zero_distance_operation)) != 0.0)
       {
          const auto zero_distance_operation_bb_index = GetPointer<const gimple_node>(TreeM->CGetTreeNode(zero_distance_operation))->bb_index;
          auto to_dsp_register_delay = ( parameters->IsParameter("ToDSPRegisterDelay") ? parameters->GetParameter<double>("ToDSPRegisterDelay") : 0.6) * get_setup_hold_time();

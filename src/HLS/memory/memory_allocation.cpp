@@ -395,7 +395,7 @@ void memory_allocation::finalize_memory_allocation()
 
    const HLS_targetRef HLS_T = HLSMgr->get_HLS_target();
    unsigned int aligned_bitsize;
-   unsigned int bram_bitsize, data_bus_bitsize, addr_bus_bitsize, size_bus_bitsize;
+   unsigned int bram_bitsize=0, data_bus_bitsize, addr_bus_bitsize, size_bus_bitsize;
    unsigned int bram_bitsize_min = HLS_T->get_target_device()->get_parameter<unsigned int>("BRAM_bitsize_min");
    unsigned int bram_bitsize_max = HLS_T->get_target_device()->get_parameter<unsigned int>("BRAM_bitsize_max");
    HLSMgr->Rmem->set_maxbram_bitsize(bram_bitsize_max);

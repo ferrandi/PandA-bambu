@@ -200,9 +200,6 @@ class GccWrapper
       ///The set of optimizations to be applied
       const GccWrapper_OptimizationSet OS;
 
-      ///Counter used to create unique file name for patched files
-      unsigned int file_name_counter;
-
       ///The gcc parameters line for compiling a file
       std::string gcc_compiling_parameters;
 

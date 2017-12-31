@@ -159,8 +159,8 @@ void HostProfiling::normalize(const application_managerRef AppM, const std::unor
          ///FIXME: zero loop
          if(loop_id == 0)
             continue;
-         long double avg_number = 0.0;
-         long double abs_execution = 0.0;
+         long double avg_number = 0.0L;
+         long double abs_execution = 0.0L;
          PathProfilingInformation & path_profiling = FB->profiling_information->path_profiling;
          if(path_profiling.find(loop_id) == path_profiling.end())
             continue;
@@ -170,7 +170,7 @@ void HostProfiling::normalize(const application_managerRef AppM, const std::unor
          {
             abs_execution += k->second;
          }
-         if(abs_execution != 0.0)
+         if(abs_execution != 0.0L)
          {
             if(loop_instances.find(f) == loop_instances.end())
             {

@@ -89,7 +89,7 @@
 
 unsigned int  tree_node_dup::create_tree_node(const tree_nodeRef &tn)
 {
-   unsigned int node_id;
+   unsigned int node_id=0;
    switch(tn->get_kind())
    {
       case abs_expr_K:

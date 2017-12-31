@@ -145,7 +145,7 @@ void TestbenchMemoryAllocation::AllocTestbenchMemory(void) const
          {
             unsigned int base_type = tree_helper::get_type_index(TM, *l);
             tree_nodeRef pt_node = TM->get_tree_node_const(base_type);
-            unsigned int ptd_base_type;
+            unsigned int ptd_base_type=0;
             if(pt_node->get_kind() == pointer_type_K)
                ptd_base_type = GET_INDEX_NODE(GetPointer<pointer_type>(pt_node)->ptd);
             else if(pt_node->get_kind() == reference_type_K)

@@ -207,7 +207,6 @@ GccWrapper::GccWrapper(const ParameterConstRef _Param, const GccWrapper_Compiler
    Param(_Param),
    compiler_target(_compiler_target),
    OS(_OS),
-   file_name_counter(0),
    output_level(_Param->getOption<int>(OPT_output_level)),
    debug_level(_Param->get_class_debug_level("GccWrapper"))
 {
@@ -974,6 +973,12 @@ void GccWrapper::SetGccDefault()
                      optimization_flags["tree-copy-prop"] = false;
                      optimization_flags["tree-copyrename"] = false;
                      optimization_flags["tree-slsr"] = false;
+                     break;
+                  }
+#endif
+#if HAVE_I386_CLANG40_COMPILER
+                  case(GccWrapper_CompilerTarget::CT_I386_CLANG40) :
+                  {
                      break;
                   }
 #endif

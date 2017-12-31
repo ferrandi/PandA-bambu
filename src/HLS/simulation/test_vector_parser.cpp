@@ -259,7 +259,7 @@ DesignFlowStep_Status TestVectorParser::Exec()
    size_t n_vectors =
 #endif
    ParseTestVectors(HLSMgr->RSim->test_vectors);
-   PRINT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "Number of input test vectors: " + n_vectors);
+   PRINT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "Number of input test vectors: " + STR(n_vectors));
    return DesignFlowStep_Status::SUCCESS;
 }
 

@@ -75,7 +75,9 @@ using namespace std;
 #pragma GCC diagnostic ignored "-Wredundant-decls"
 #pragma GCC diagnostic ignored "-Wold-style-cast"
 #pragma GCC diagnostic ignored "-Wswitch-default"
+#if !defined(__clang__)
 #pragma GCC diagnostic ignored "-Wzero-as-null-pointer-constant"
+#endif
 
 AadlFlexLexer::AadlFlexLexer(const ParameterConstRef parameters,  std::istream* argin, std::ostream* argout) :
    yyFlexLexer(argin, argout),

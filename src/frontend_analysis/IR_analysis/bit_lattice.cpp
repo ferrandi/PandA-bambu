@@ -520,7 +520,7 @@ std::deque<bit_lattice> string_to_bitstring(const std::string& s)
             res.push_back(bit_lattice::ONE);
             break;
          default:
-            THROW_ERROR("unexpected char in bitvalue string: " + bit);
+            THROW_ERROR(std::string("unexpected char in bitvalue string: ") + bit);
             break;
       }
    }

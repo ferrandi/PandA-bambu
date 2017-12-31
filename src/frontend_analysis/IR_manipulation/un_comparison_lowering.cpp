@@ -118,7 +118,7 @@ DesignFlowStep_Status UnComparisonLowering::InternalExec()
          if(be->get_kind() == unlt_expr_K or be->get_kind() == unge_expr_K or be->get_kind() == ungt_expr_K or be->get_kind() == unle_expr_K)
          {
             const std::string srcp_string = be->include_name + ":" + STR(be->line_number) + ":" + STR(be->column_number);
-            enum kind new_kind;
+            enum kind new_kind=last_tree_K;
             if(be->get_kind() == unlt_expr_K)
                new_kind = ge_expr_K;
             else if(be->get_kind() == unge_expr_K)

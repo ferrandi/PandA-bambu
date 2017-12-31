@@ -2924,7 +2924,7 @@ if test "x$panda_WERROR" = xyes; then
    -Winit-self \
    -Wsign-conversion \
    -Wredundant-decls \
-   -Wvla -Wshadow -Wctor-dtor-privacy -Wnon-virtual-dtor -Woverloaded-virtual -Wlogical-op \
+   -Wvla -Wshadow -Wctor-dtor-privacy -Wnon-virtual-dtor -Woverloaded-virtual \
    -Wmissing-include-dirs \
    -Winit-self \
    -Wpointer-arith \
@@ -2936,24 +2936,23 @@ if test "x$panda_WERROR" = xyes; then
    -Wswitch-enum \
    -Wswitch-default \
    -Wundef \
-   -fdiagnostics-show-option \
    "
-   AX_CHECK_COMPILE_FLAG("-Wunused-local-typedefs", CXXFLAGS+="-Wunused-local-typedefs ")
-   AX_CHECK_COMPILE_FLAG("-Wzero-as-null-pointer-constant", CXXFLAGS+="-Wzero-as-null-pointer-constant ")
+   AX_CHECK_COMPILE_FLAG("-Wlogical-op", CXXFLAGS+="-Wlogical-op ",,"-Werror")
+   AX_CHECK_COMPILE_FLAG("-Wunused-local-typedefs", CXXFLAGS+="-Wunused-local-typedefs ",,"-Werror")
+   AX_CHECK_COMPILE_FLAG("-Wzero-as-null-pointer-constant", CXXFLAGS+="-Wzero-as-null-pointer-constant ",,"-Werror")
+
    AC_COMPILE_WPEDANTIC
    if test "x$panda_WPEDANTIC" = xyes; then
       CXXFLAGS+="-Wpedantic "
    fi
+   AX_CHECK_COMPILE_FLAG("-Wno-mismatched-tags", CXXFLAGS+="-Wno-mismatched-tags ",,"-Werror")
+   AX_CHECK_COMPILE_FLAG("-Wno-overlength-strings", CXXFLAGS+="-Wno-overlength-strings ",,"-Werror")
 else
    CXXFLAGS+=" -w"
 fi
-case "${target_os}" in
-    darwin*)
-      ;;
-    *)
-      CXXFLAGS+=" -fdiagnostics-show-option"
-      ;;
-esac
+
+AX_CHECK_COMPILE_FLAG("-fdiagnostics-show-option", CXXFLAGS+="-fdiagnostics-show-option ",,"-Werror")
+
 AM_CONDITIONAL(ENABLE_WERROR, test "x$panda_WERROR" = xyes)
 
 ################ Debug checking ##############################

@@ -303,7 +303,7 @@ void WB4_interface::build_WB4_complete_logic(structural_managerRef SM, structura
    structural_objectRef S_oe_ram_port = wrappedObj->find_member("S_oe_ram", port_o_K, wrappedObj);
 
    // check consitency of the interfaces
-   bool is_slave, is_master;
+   bool is_slave=false, is_master=false;
    bool only_mm_parameters_allocated = HLSMgr->Rmem->get_allocated_parameters_memory() == HLSMgr->Rmem->get_allocated_intern_memory();
 
    if (S_data_ram_size_port && S_Wdata_ram_port &&

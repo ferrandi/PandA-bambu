@@ -117,7 +117,7 @@ long double ProfilingInformation::GetLoopAvgIterations(const unsigned int loop_i
 {
    if(avg_iterations.find(loop_id) != avg_iterations.end())
       return avg_iterations.find(loop_id)->second;
-   return 0.0;
+   return 0.0L;
 }
 
 unsigned long long int ProfilingInformation::GetLoopAbsIterations(const unsigned int loop_id) const
