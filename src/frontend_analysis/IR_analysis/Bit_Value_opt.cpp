@@ -258,8 +258,11 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                   {
                      ga->predicate = tree_nodeRef();
                   }
-                  if(not StmtUses.empty())
+                  if(ssa->CGetUseStmts().empty())
+                  {
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Restarted dead code");
                      restart_dead_code = true;
+                  }
 #ifndef NDEBUG
                   AppM->RegisterTransformation(GetName(), stmt);
 #endif
@@ -274,8 +277,11 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace constant usage after: "+ use.first->ToString());
                      modified = true;
                   }
-                  if(not StmtUses.empty())
+                  if(ssa->CGetUseStmts().empty())
+                  {
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Restarted dead code");
                      restart_dead_code = true;
+                  }
 #ifndef NDEBUG
                   AppM->RegisterTransformation(GetName(), stmt);
 #endif
@@ -291,8 +297,11 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace ssa usage after: "+ use.first->ToString());
                      modified = true;
                   }
-                  if(not StmtUses.empty())
+                  if(ssa->CGetUseStmts().empty())
+                  {
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Restarted dead code");
                      restart_dead_code = true;
+                  }
 #ifndef NDEBUG
                   AppM->RegisterTransformation(GetName(), stmt);
 #endif
@@ -521,8 +530,11 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace constant usage after: "+ use.first->ToString());
                         modified = true;
                      }
-                     if(not StmtUses.empty())
+                     if(ssa->CGetUseStmts().empty())
+                     {
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Restarted dead code");
                         restart_dead_code = true;
+                     }
 #ifndef NDEBUG
                      AppM->RegisterTransformation(GetName(), stmt);
 #endif
@@ -537,8 +549,11 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace constant usage after: "+ use.first->ToString());
                         modified = true;
                      }
-                     if(not StmtUses.empty())
+                     if(ssa->CGetUseStmts().empty())
+                     {
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Restarted dead code");
                         restart_dead_code = true;
+                     }
 #ifndef NDEBUG
                      AppM->RegisterTransformation(GetName(), stmt);
 #endif
@@ -836,8 +851,11 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace constant usage after: "+ use.first->ToString());
                          modified = true;
                       }
-                      if(not StmtUses.empty())
+                      if(ssa->CGetUseStmts().empty())
+                      {
+                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Restarted dead code");
                          restart_dead_code = true;
+                      }
 #ifndef NDEBUG
                       AppM->RegisterTransformation(GetName(), stmt);
 #endif
@@ -861,14 +879,15 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                             }
                             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace constant usage after: "+ use.first->ToString());
                          }
-                         if(ssa->CGetUseStmts().size())
+                         if(ssa->CGetUseStmts().empty())
                          {
-                            const std::string srcp_default = ga->include_name + ":" + STR(ga->line_number) + ":" + STR(ga->column_number);
-                            ga->op1 = IRman->create_unary_operation(ga_op_type, me->op0, srcp_default, nop_expr_K);
+                            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Restarted dead code");
+                            restart_dead_code = true;
                          }
                          else
                          {
-                            restart_dead_code = true;
+                            const std::string srcp_default = ga->include_name + ":" + STR(ga->line_number) + ":" + STR(ga->column_number);
+                            ga->op1 = IRman->create_unary_operation(ga_op_type, me->op0, srcp_default, nop_expr_K);
                          }
 
 #ifndef NDEBUG
@@ -895,7 +914,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
 #endif
                          tree_nodeRef nop_ga_var = GetPointer<gimple_assign>(GET_NODE(ga_nop))->op0;
                          TM->ReplaceTreeNode(stmt, ga->op1, nop_ga_var);
-                         restart_dead_code = true;
+                         {INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Restarted dead code"); restart_dead_code = true;}
                       }
                    }
                    else
@@ -1013,8 +1032,11 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace var usage after: "+ use.first->ToString());
                           modified = true;
                        }
-                       if(not StmtUses.empty())
+                       if(ssa->CGetUseStmts().empty())
+                       {
+                          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Restarted dead code");
                           restart_dead_code = true;
+                       }
 #ifndef NDEBUG
                        AppM->RegisterTransformation(GetName(), stmt);
 #endif
@@ -1035,8 +1057,11 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace var usage after: "+ use.first->ToString());
                          modified = true;
                       }
-                      if(not StmtUses.empty())
+                      if(ssa->CGetUseStmts().empty())
+                      {
+                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Restarted dead code");
                          restart_dead_code = true;
+                      }
 #ifndef NDEBUG
                       AppM->RegisterTransformation(GetName(), stmt);
 #endif
@@ -1160,8 +1185,11 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                                 INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace var usage after: "+ use.first->ToString());
                                 modified = true;
                              }
-                             if(not StmtUses.empty())
+                             if(ssa->CGetUseStmts().empty())
+                             {
+                                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Restarted dead code");
                                 restart_dead_code = true;
+                             }
 #ifndef NDEBUG
                              AppM->RegisterTransformation(GetName(), stmt);
 #endif
@@ -1182,8 +1210,11 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                                 INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace var usage after: "+ use.first->ToString());
                                 modified = true;
                              }
-                             if(not StmtUses.empty())
+                             if(ssa->CGetUseStmts().empty())
+                             {
+                                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Restarted dead code");
                                 restart_dead_code = true;
+                             }
 #ifndef NDEBUG
                              AppM->RegisterTransformation(GetName(), stmt);
 #endif
@@ -1226,8 +1257,11 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace constant usage after: "+ use.first->ToString());
                         modified = true;
                      }
-                     if(not StmtUses.empty())
+                     if(ssa->CGetUseStmts().empty())
+                     {
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Restarted dead code");
                         restart_dead_code = true;
+                     }
    #ifndef NDEBUG
                      AppM->RegisterTransformation(GetName(), stmt);
    #endif
@@ -1263,8 +1297,11 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace constant usage after: "+ use.first->ToString());
                         modified = true;
                      }
-                     if(not StmtUses.empty())
+                     if(ssa->CGetUseStmts().empty())
+                     {
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Restarted dead code");
                         restart_dead_code = true;
+                     }
    #ifndef NDEBUG
                      AppM->RegisterTransformation(GetName(), stmt);
    #endif
@@ -1300,8 +1337,11 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace constant usage after: "+ use.first->ToString());
                         modified = true;
                      }
-                     if(not StmtUses.empty())
+                     if(ssa->CGetUseStmts().empty())
+                     {
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Restarted dead code");
                         restart_dead_code = true;
+                     }
    #ifndef NDEBUG
                      AppM->RegisterTransformation(GetName(), stmt);
    #endif
@@ -1335,8 +1375,11 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace constant usage after: "+ use.first->ToString());
                            modified = true;
                         }
-                        if(not StmtUses.empty())
+                        if(ssa->CGetUseStmts().empty())
+                        {
+                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Restarted dead code");
                            restart_dead_code = true;
+                        }
 #ifndef NDEBUG
                         AppM->RegisterTransformation(GetName(), stmt);
 #endif
@@ -1359,8 +1402,11 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace constant usage after: "+ use.first->ToString());
                            modified = true;
                         }
-                        if(not StmtUses.empty())
+                        if(ssa->CGetUseStmts().empty())
+                        {
+                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Restarted dead code");
                            restart_dead_code = true;
+                        }
 #ifndef NDEBUG
                         AppM->RegisterTransformation(GetName(), stmt);
 #endif
@@ -1385,9 +1431,11 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace constant usage before: "+ stmt->ToString());
                                  TM->ReplaceTreeNode(stmt, ppe->op0, prev_ppe->op0);
                                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace constant usage after: "+ stmt->ToString());
-                                 const TreeNodeMap<size_t> StmtUses = ssa_ppe_op0->CGetUseStmts();
-                                 if(not StmtUses.empty())
+                                 if(ssa_ppe_op0->CGetUseStmts().empty())
+                                 {
+                                    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Restarted dead code");
                                     restart_dead_code = true;
+                                 }
                                  modified = true;
 #ifndef NDEBUG
                                  AppM->RegisterTransformation(GetName(), stmt);
@@ -1423,8 +1471,11 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace constant usage after: "+ use.first->ToString());
                                  modified = true;
                               }
-                              if(not StmtUses.empty())
+                              if(ssa->CGetUseStmts().empty())
+                              {
+                                 INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Restarted dead code");
                                  restart_dead_code = true;
+                              }
       #ifndef NDEBUG
                               AppM->RegisterTransformation(GetName(), stmt);
       #endif
