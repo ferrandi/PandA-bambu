@@ -68,6 +68,8 @@ namespace llvm {
    class DataLayout;
    class Constant;
    class ModulePass;
+   class GEPOperator;
+   class User;
    class Value;
    class BasicBlock;
    class MemoryUseOrDef;
@@ -277,6 +279,9 @@ namespace clang {
          const void* getSSA(const llvm::Value *operand, const void* def_stmt, const llvm::Function * currentFunction, bool isDefault);
          bool is_virtual_ssa(const void* t) const;
          bool SSA_NAME_IS_DEFAULT_DEF(const void* t) const;
+         const void* LowerGetElementPtrOffset(const llvm::GEPOperator* gep, const llvm::Function * currentFunction, const void *& base_node);
+         const void* LowerGetElementPtr(const void* type, const llvm::User* gep, const llvm::Function * currentFunction);
+         const void* gimple_assign_rhs_getelementptr(const void* g);
          const void* getOperand(const llvm::Value *operand, const llvm::Function * currentFunction);
          const void* gimple_assign_lhs(const void* g);
          const void* gimple_assign_rhs_alloca (const void* g);

@@ -3,28 +3,28 @@ EXTRA_DIST = $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp $(top_srcdi
 
 LD_LIBRARY_PATH=
 PANDA_PLUGIN_VERSION=0.11
-if ENABLE_WERROR
-WFLAGS=-Wall \
-   -Werror \
-   -Wextra \
-   -Wconversion \
-   -Wno-deprecated \
-   -Winit-self \
-   -Wsign-conversion \
-   -Wredundant-decls \
-   -Wvla -Wshadow -Wlogical-op \
-   -Wmissing-include-dirs \
-   -Winit-self \
-   -Wpointer-arith \
-   -Wcast-qual \
-   -Wcast-align \
-   -Wswitch-enum \
-   -Wswitch-default \
-   -Wno-unused-function \
-   -fdiagnostics-show-option
-else
+#if ENABLE_WERROR
+#WFLAGS=-Wall \
+#   -Werror \
+#   -Wextra \
+#   -Wconversion \
+#   -Wno-deprecated \
+#   -Winit-self \
+#   -Wsign-conversion \
+#   -Wredundant-decls \
+#   -Wvla -Wshadow \
+#   -Wmissing-include-dirs \
+#   -Winit-self \
+#   -Wpointer-arith \
+#   -Wcast-qual \
+#   -Wcast-align \
+#   -Wswitch-enum \
+#   -Wswitch-default \
+#   -Wno-unused-function \
+#   -fdiagnostics-show-option
+#else
 WFLAGS=
-endif
+#endif
 
 FORCE:
 

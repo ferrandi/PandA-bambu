@@ -51,6 +51,8 @@
 #include "llvm/IR/DebugInfoMetadata.h"
 #include "llvm/IR/Metadata.h"
 #include "llvm/IR/CFG.h"
+#include "llvm/IR/Operator.h"
+#include "llvm/IR/GetElementPtrTypeIterator.h"
 #include "llvm/Analysis/CFG.h"
 #include "llvm/Pass.h"
 #include "llvm/Analysis/LoopPass.h"
@@ -115,7 +117,7 @@ namespace clang
       DEFGSCODE(GIMPLE_PHI_VIRTUAL, "gimple_phi", GSS_PHI)
       DEFGSCODE(GIMPLE_ASSIGN_ALLOCA, "gimple_assign", GSS_WITH_MEM_OPS)
       DEFGSCODE(GIMPLE_NOPMEM, "gimple_nop", GSS_BASE)
-      DEFGSCODE(GETELEMENTPTR, "GetElementPtr", GSS_BASE)
+      DEFGSCODE(GETELEMENTPTR, "gimple_assign", GSS_BASE)
       DEFTREECODE (ALLOCAVAR_DECL, "var_decl", tcc_declaration, 0)
       DEFTREECODE(POINTERNULL, "integer_cst", tcc_constant, 0)
    };
@@ -133,7 +135,7 @@ namespace clang
       DEFGSCODE(GIMPLE_PHI_VIRTUAL, "gimple_phi", GSS_PHI)
       DEFGSCODE(GIMPLE_ASSIGN_ALLOCA, "gimple_assign", GSS_WITH_MEM_OPS)
       DEFGSCODE(GIMPLE_NOPMEM, "gimple_nop", GSS_BASE)
-      DEFGSCODE(GETELEMENTPTR, "GetElementPtr", GSS_BASE)
+      DEFGSCODE(GETELEMENTPTR, "gimple_assign", GSS_BASE)
       DEFTREECODE(ALLOCAVAR_DECL, "var_decl", tcc_declaration, 0)
       DEFTREECODE(POINTERNULL, "integer_cst", tcc_constant, 0)
    };
@@ -150,7 +152,7 @@ namespace clang
       DEFGSCODE(GIMPLE_PHI_VIRTUAL, "gimple_phi", GSS_PHI)
       DEFGSCODE(GIMPLE_ASSIGN_ALLOCA, "gimple_assign", GSS_WITH_MEM_OPS)
       DEFGSCODE(GIMPLE_NOPMEM, "gimple_nop", GSS_BASE)
-      DEFGSCODE(GETELEMENTPTR, "GetElementPtr", GSS_BASE)
+      DEFGSCODE(GETELEMENTPTR, "gimple_assign", GSS_BASE)
       DEFTREECODE(ALLOCAVAR_DECL, "var_decl", tcc_declaration, 0)
       DEFTREECODE(POINTERNULL, "integer_cst", tcc_constant, 0)
    };
@@ -167,7 +169,7 @@ namespace clang
       DEFGSCODE(GIMPLE_PHI_VIRTUAL, "gimple_phi", GSS_PHI)
       DEFGSCODE(GIMPLE_ASSIGN_ALLOCA, "gimple_assign", GSS_WITH_MEM_OPS)
       DEFGSCODE(GIMPLE_NOPMEM, "gimple_nop", GSS_BASE)
-      DEFGSCODE(GETELEMENTPTR, "GetElementPtr", GSS_BASE)
+      DEFGSCODE(GETELEMENTPTR, "gimple_assign", GSS_BASE)
       DEFTREECODE(ALLOCAVAR_DECL, "var_decl", tcc_declaration, 0)
       DEFTREECODE(POINTERNULL, "integer_cst", tcc_constant, 0)
    };
@@ -212,7 +214,7 @@ namespace clang
       DEFGSCODE(GIMPLE_PHI_VIRTUAL, "gimple_phi", GSS_PHI)
       DEFGSCODE(GIMPLE_ASSIGN_ALLOCA, "gimple_assign", GSS_WITH_MEM_OPS)
       DEFGSCODE(GIMPLE_NOPMEM, "gimple_nop", GSS_BASE)
-      DEFGSCODE(GETELEMENTPTR, "GetElementPtr", GSS_BASE)
+      DEFGSCODE(GETELEMENTPTR, "gimple_assign", GSS_BASE)
       DEFTREECODE(ALLOCAVAR_DECL, "var_decl", tcc_declaration, 0)
       DEFTREECODE(POINTERNULL, "integer_cst", tcc_constant, 0)
 };
@@ -268,6 +270,9 @@ namespace clang
    const void * DumpGimpleRaw::assignCodeAuto(const void * t)
    {
       assert(t);
+      if (HAS_CODE(t))
+         return t;
+
       const llvm::Value* llvm_obj = reinterpret_cast<const llvm::Value*>(t);
       auto vid = llvm_obj->getValueID();
       switch(vid)
@@ -344,10 +349,13 @@ namespace clang
          case llvm::Value::InstructionVal+llvm::Instruction::GetElementPtr:
             return assignCode(t, GT(GETELEMENTPTR));
          case llvm::Value::InstructionVal+llvm::Instruction::ZExt:
-            return assignCode(t, GT(GIMPLE_ASSIGN));
          case llvm::Value::InstructionVal+llvm::Instruction::Trunc:
-            return assignCode(t, GT(GIMPLE_ASSIGN));
          case llvm::Value::InstructionVal+llvm::Instruction::PtrToInt:
+         case llvm::Value::InstructionVal+llvm::Instruction::IntToPtr:
+         case llvm::Value::InstructionVal+llvm::Instruction::FPExt:
+         case llvm::Value::InstructionVal+llvm::Instruction::FPToSI:
+         case llvm::Value::InstructionVal+llvm::Instruction::FPToUI:
+         case llvm::Value::InstructionVal+llvm::Instruction::FPTrunc:
             return assignCode(t, GT(GIMPLE_ASSIGN));
          default:
             llvm::errs() << "assignCodeAuto kind not supported: " << ValueTyNames[vid] << "\n";
@@ -716,10 +724,13 @@ namespace clang
             case llvm::Instruction::Call:
                return GT(CALL_EXPR);
             case llvm::Instruction::ZExt:
-               return GT(NOP_EXPR);
             case llvm::Instruction::Trunc:
-               return GT(NOP_EXPR);
             case llvm::Instruction::PtrToInt:
+            case llvm::Instruction::IntToPtr:
+            case llvm::Instruction::FPExt:
+            case llvm::Instruction::FPToSI:
+            case llvm::Instruction::FPToUI:
+            case llvm::Instruction::FPTrunc:
                return GT(NOP_EXPR);
 
             case llvm::Instruction::FCmp:
@@ -831,6 +842,14 @@ namespace clang
       return build1(GT(ADDR_EXPR), type, alloca_var);
    }
 
+   const void* DumpGimpleRaw::gimple_assign_rhs_getelementptr(const void* g)
+   {
+      llvm::Instruction *inst = const_cast<llvm::Instruction *>(reinterpret_cast<const llvm::Instruction *>(g));
+      llvm::BasicBlock* BB = inst->getParent();
+      llvm::Function *currentFunction = BB->getParent();
+      return LowerGetElementPtr(inst->getType(), inst, currentFunction);
+   }
+
    void DumpGimpleRaw::add_alloca_pt_solution(const void*lhs,const void* rhs)
    {
       ssa_name* lhs_ssa = const_cast<ssa_name*>(reinterpret_cast<const ssa_name*>(lhs));
@@ -899,9 +918,85 @@ namespace clang
       return ssa->isDefault;
    }
 
+   const void* DumpGimpleRaw::LowerGetElementPtrOffset(const llvm::GEPOperator* gep_op, const llvm::Function * currentFunction, const void *& base_node)
+   {
+      if(gep_op->hasAllConstantIndices())
+      {
+         const llvm::DataLayout & DL = currentFunction->getParent()->getDataLayout();
+         llvm::APInt OffsetAI(DL.getPointerTypeSizeInBits(gep_op->getType()), 0);
+         auto allconstantoffet = gep_op->accumulateConstantOffset(DL, OffsetAI);
+         assert(allconstantoffet);
+         return assignCodeAuto(llvm::ConstantInt::get(gep_op->getContext(), OffsetAI));
+      }
+      else
+      {
+         const llvm::DataLayout & DL = currentFunction->getParent()->getDataLayout();
+         llvm::APInt ConstantIndexOffset(DL.getPointerTypeSizeInBits(gep_op->getType()), 0);
+         for (llvm::gep_type_iterator GTI = llvm::gep_type_begin(gep_op), GTE = llvm::gep_type_end(gep_op);
+              GTI != GTE; ++GTI)
+         {
+           llvm::ConstantInt *OpC = dyn_cast<llvm::ConstantInt>(GTI.getOperand());
+           if (!OpC)
+           {
+              if (llvm::StructType *STy = GTI.getStructTypeOrNull())
+              {
+                 llvm_unreachable("unexpected condition: struct LowerGetElementPtrOffset");
+                 //continue;
+              }
+              // For array or vector indices, scale the index by the size of the type.
+              auto index = getOperand(GTI.getOperand(),currentFunction);
+              auto array_elmt_size = llvm::APInt(ConstantIndexOffset.getBitWidth(),
+                                                 DL.getTypeAllocSize(GTI.getIndexedType()));
+              auto array_elmt_sizeCI = llvm::ConstantInt::get(gep_op->getContext(), array_elmt_size);
+              auto array_elmt_size_node = assignCodeAuto(array_elmt_sizeCI);
+              auto index_times_size = build2(GT(MULT_EXPR), array_elmt_sizeCI->getType(), index, array_elmt_size_node);
+              auto accu = build2(GT(POINTER_PLUS_EXPR), TREE_TYPE(base_node), base_node, index_times_size);
+              base_node = accu;
+              continue;
+           }
+           if (OpC->isZero())
+             continue;
+
+           // Handle a struct index, which adds its field offset to the pointer.
+           if (llvm::StructType *STy = GTI.getStructTypeOrNull())
+           {
+             unsigned ElementIdx = OpC->getZExtValue();
+             const llvm::StructLayout *SL = DL.getStructLayout(STy);
+             ConstantIndexOffset += llvm::APInt(ConstantIndexOffset.getBitWidth(), SL->getElementOffset(ElementIdx));
+             continue;
+           }
+
+           // For array or vector indices, scale the index by the size of the type.
+           llvm::APInt Index = OpC->getValue().sextOrTrunc(ConstantIndexOffset.getBitWidth());
+           ConstantIndexOffset += Index * llvm::APInt(ConstantIndexOffset.getBitWidth(),
+                                   DL.getTypeAllocSize(GTI.getIndexedType()));
+         }
+         return assignCodeAuto(llvm::ConstantInt::get(gep_op->getContext(), ConstantIndexOffset));
+      }
+   }
+
+   const void* DumpGimpleRaw::LowerGetElementPtr(const void* type, const llvm::User* gep, const llvm::Function * currentFunction)
+   {
+      assert(TREE_CODE(type) == GT(POINTER_TYPE));
+      auto mem_ref_type = TREE_TYPE(type);
+      auto base_node = getOperand(gep->getOperand(0), currentFunction);
+      const llvm::GEPOperator* gep_op = dyn_cast<llvm::GEPOperator>(gep);
+      assert(gep_op);
+      auto offset_node = LowerGetElementPtrOffset(gep_op, currentFunction, base_node);
+      if(gep_op->isInBounds())
+      {
+         auto mem_ref_node = build2(GT(MEM_REF), mem_ref_type, base_node, offset_node);
+         return build1(GT(ADDR_EXPR), type, mem_ref_node);
+      }
+      else
+         return build2(GT(POINTER_PLUS_EXPR), type, base_node, offset_node);
+   }
+
    const void * DumpGimpleRaw::getOperand(const llvm::Value *operand, const llvm::Function * currentFunction)
    {
       if(isa<llvm::ConstantInt>(operand) || isa<llvm::ConstantFP>(operand)|| isa<llvm::ConstantPointerNull>(operand))
+         return assignCodeAuto(operand);
+      else if(isa<llvm::ConstantAggregateZero>(operand))
          return assignCodeAuto(operand);
       else if(isa<llvm::Instruction>(operand))
       {
@@ -924,6 +1019,8 @@ namespace clang
          auto type = assignCodeType(operand->getType());
          if(cast<llvm::ConstantExpr>(operand)->getOpcode() == llvm::Instruction::BitCast)
             return build1(GT(VIEW_CONVERT_EXPR), type, getOperand(cast<llvm::ConstantExpr>(operand)->getOperand(0), currentFunction));
+         else if(cast<llvm::ConstantExpr>(operand)->getOpcode() == llvm::Instruction::GetElementPtr)
+            return LowerGetElementPtr(type, cast<llvm::ConstantExpr>(operand), currentFunction);
          else
          {
             operand->print(llvm::errs(), true);
@@ -2350,6 +2447,14 @@ namespace clang
             serialize_child ("op", rhs);
             break;
          }
+         case GT(GETELEMENTPTR):
+         {
+            auto lhs = gimple_assign_lhs (g);
+            auto rhs = gimple_assign_rhs_getelementptr (g);
+            serialize_child ("op", lhs);
+            serialize_child ("op", rhs);
+            break;
+         }
          case GT(GIMPLE_ASSIGN):
          {
             if (get_gimple_rhs_class(gimple_expr_code (g)) == GIMPLE_TERNARY_RHS)
@@ -2357,7 +2462,7 @@ namespace clang
                serialize_child ("op", gimple_assign_lhs (g));
                serialize_child ("op", build3(gimple_assign_rhs_code (g), TREE_TYPE (gimple_assign_lhs (g)), gimple_assign_rhs1 (g), gimple_assign_rhs2 (g), gimple_assign_rhs3 (g)));
             }
-            if (get_gimple_rhs_class(gimple_expr_code (g)) == GIMPLE_BINARY_RHS)
+            else if (get_gimple_rhs_class(gimple_expr_code (g)) == GIMPLE_BINARY_RHS)
             {
                serialize_child ("op", gimple_assign_lhs (g));
                serialize_child ("op", build2(gimple_assign_rhs_code (g), TREE_TYPE (gimple_assign_lhs (g)), gimple_assign_rhs1 (g), gimple_assign_rhs2 (g)));
@@ -2379,7 +2484,7 @@ namespace clang
             }
             else
                llvm_unreachable("unexpected condition");
-               break;
+            break;
          }
          case GT(GIMPLE_COND):
            serialize_child ("op", gimple_cond_op (g));

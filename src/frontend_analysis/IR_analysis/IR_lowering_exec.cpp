@@ -1063,10 +1063,34 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                         addr_expr* ae0 = GetPointer<addr_expr>(GET_NODE(MR->op0));
                         tree_nodeRef ae_expr = tree_man->create_unary_operation(ae0->type,ae0->op, srcp_default, addr_expr_K);///It is required to de-share some IR nodes
                         tree_nodeRef ae_ga = CreateGimpleAssign(ae0->type, ae_expr, block.first, srcp_default);
+                        GetPointer<gimple_assign>(GET_NODE(ae_ga))->temporary_address = true;
                         tree_nodeRef ae_vd = GetPointer<gimple_assign>(GET_NODE(ae_ga))->op0;
                         block.second->PushBefore(ae_ga, *it_los);
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(ae_ga)->ToString());
                         MR->op0 = ae_vd;
+                        restart_analysis = true;
+                     }
+                     else if(GET_NODE(MR->op0)->get_kind() == pointer_plus_expr_K)///required by the CLANG/LLVM plugin
+                     {
+                        pointer_plus_expr* pp0 = GetPointer<pointer_plus_expr>(GET_NODE(MR->op0));
+                        tree_nodeRef pp_ga = CreateGimpleAssign(pp0->type, MR->op0, block.first, srcp_default);
+                        GetPointer<gimple_assign>(GET_NODE(pp_ga))->temporary_address = true;
+                        tree_nodeRef pp_vd = GetPointer<gimple_assign>(GET_NODE(pp_ga))->op0;
+                        block.second->PushBefore(pp_ga, *it_los);
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(pp_ga)->ToString());
+                        MR->op0 = pp_vd;
+                        restart_analysis = true;
+                     }
+                     else if(GET_NODE(MR->op0)->get_kind() == view_convert_expr_K)///required by the CLANG/LLVM plugin
+                     {
+                        view_convert_expr* vc0 = GetPointer<view_convert_expr>(GET_NODE(MR->op0));
+                        tree_nodeRef vc_ga = CreateGimpleAssign(vc0->type, MR->op0, block.first, srcp_default);
+                        GetPointer<gimple_assign>(GET_NODE(vc_ga))->temporary_address = true;
+                        tree_nodeRef vc_vd = GetPointer<gimple_assign>(GET_NODE(vc_ga))->op0;
+                        block.second->PushBefore(vc_ga, *it_los);
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(vc_ga)->ToString());
+                        MR->op0 = vc_vd;
+                        restart_analysis = true;
                      }
 
                      tree_nodeRef op1 = MR->op1;
@@ -1306,7 +1330,30 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                      GetPointer<gimple_assign>(GET_NODE(ae_ga))->temporary_address = true;
                      tree_nodeRef ae_vd = GetPointer<gimple_assign>(GET_NODE(ae_ga))->op0;
                      block.second->PushBefore(ae_ga, *it_los);
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(ae_ga)->ToString());
                      MR->op0 = ae_vd;
+                     restart_analysis = true;
+                  }
+                  else if(GET_NODE(MR->op0)->get_kind() == pointer_plus_expr_K)///required by the CLANG/LLVM plugin
+                  {
+                     pointer_plus_expr* pp0 = GetPointer<pointer_plus_expr>(GET_NODE(MR->op0));
+                     tree_nodeRef pp_ga = CreateGimpleAssign(pp0->type, MR->op0, block.first, srcp_default);
+                     GetPointer<gimple_assign>(GET_NODE(pp_ga))->temporary_address = true;
+                     tree_nodeRef pp_vd = GetPointer<gimple_assign>(GET_NODE(pp_ga))->op0;
+                     block.second->PushBefore(pp_ga, *it_los);
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(pp_ga)->ToString());
+                     MR->op0 = pp_vd;
+                     restart_analysis = true;
+                  }
+                  else if(GET_NODE(MR->op0)->get_kind() == view_convert_expr_K)///required by the CLANG/LLVM plugin
+                  {
+                     view_convert_expr* vc0 = GetPointer<view_convert_expr>(GET_NODE(MR->op0));
+                     tree_nodeRef vc_ga = CreateGimpleAssign(vc0->type, MR->op0, block.first, srcp_default);
+                     GetPointer<gimple_assign>(GET_NODE(vc_ga))->temporary_address = true;
+                     tree_nodeRef vc_vd = GetPointer<gimple_assign>(GET_NODE(vc_ga))->op0;
+                     block.second->PushBefore(vc_ga, *it_los);
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(vc_ga)->ToString());
+                     MR->op0 = vc_vd;
                      restart_analysis = true;
                   }
                   tree_nodeRef op1 = MR->op1;
@@ -1485,6 +1532,27 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                      tree_nodeRef ssa_vd = GetPointer<gimple_assign>(GET_NODE(new_ga))->op0;
                      GetPointer<gimple_assign>(GET_NODE(new_ga))->temporary_address = ga->temporary_address;
                      ppe->op0 = ssa_vd;
+                     block.second->PushBefore(new_ga, *it_los);
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(new_ga)->ToString());
+                     restart_analysis = true;
+                  }
+                  else if(GetPointer<pointer_plus_expr>(GET_NODE(ppe->op0)))/// required by CLANG/LLVM plugin
+                  {
+                     pointer_plus_expr* pp = GetPointer<pointer_plus_expr>(GET_NODE(ppe->op0));
+                     tree_nodeRef new_ga = CreateGimpleAssign(pp->type, ppe->op0, block.first, srcp_default);
+                     tree_nodeRef ssa_vd = GetPointer<gimple_assign>(GET_NODE(new_ga))->op0;
+                     GetPointer<gimple_assign>(GET_NODE(new_ga))->temporary_address = ga->temporary_address;
+                     ppe->op0 = ssa_vd;
+                     block.second->PushBefore(new_ga, *it_los);
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(new_ga)->ToString());
+                     restart_analysis = true;
+                  }
+                  else if(GetPointer<mult_expr>(GET_NODE(ppe->op1)))/// required by CLANG/LLVM plugin
+                  {
+                     mult_expr* me = GetPointer<mult_expr>(GET_NODE(ppe->op1));
+                     tree_nodeRef new_ga = CreateGimpleAssign(me->type, ppe->op1, block.first, srcp_default);
+                     tree_nodeRef ssa_vd = GetPointer<gimple_assign>(GET_NODE(new_ga))->op0;
+                     ppe->op1 = ssa_vd;
                      block.second->PushBefore(new_ga, *it_los);
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(new_ga)->ToString());
                      restart_analysis = true;
@@ -1738,7 +1806,18 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                   else if(code1 == view_convert_expr_K)
                   {
                      unary_expr * ue = GetPointer<unary_expr>(GET_NODE(ga->op1));
-                     if(GET_NODE(ue->op)->get_kind() != ssa_name_K && !GetPointer<cst_node>(GET_NODE(ue->op)))
+                     if(GET_NODE(ue->op)->get_kind() == addr_expr_K)///required by the CLANG/LLVM plugin
+                     {
+                        addr_expr* ae = GetPointer<addr_expr>(GET_NODE(ue->op));
+                        tree_nodeRef ae_ga = CreateGimpleAssign(ae->type, ue->op, block.first, srcp_default);
+                        tree_nodeRef ae_vd = GetPointer<gimple_assign>(GET_NODE(ae_ga))->op0;
+                        block.second->PushBefore(ae_ga, *it_los);
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(ae_ga)->ToString());
+                        ue->op = ae_vd;
+                        restart_analysis = true;
+
+                     }
+                     else if(GET_NODE(ue->op)->get_kind() != ssa_name_K && !GetPointer<cst_node>(GET_NODE(ue->op)))
                      {
                         unsigned int type_index = tree_helper::get_type_index(TM, GET_INDEX_NODE(ue->op));
                         tree_nodeRef op_type= TM->GetTreeReindex(type_index);
@@ -2290,6 +2369,28 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                      block.second->PushBefore(ae_ga, *it_los);
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(ae_ga)->ToString());
                      MR->op0 = ae_vd;
+                     restart_analysis = true;
+                  }
+                  else if(GET_NODE(MR->op0)->get_kind() == pointer_plus_expr_K)///required by the CLANG/LLVM plugin
+                  {
+                     pointer_plus_expr* pp0 = GetPointer<pointer_plus_expr>(GET_NODE(MR->op0));
+                     tree_nodeRef pp_ga = CreateGimpleAssign(pp0->type, MR->op0, block.first, srcp_default);
+                     GetPointer<gimple_assign>(GET_NODE(pp_ga))->temporary_address = true;
+                     tree_nodeRef pp_vd = GetPointer<gimple_assign>(GET_NODE(pp_ga))->op0;
+                     block.second->PushBefore(pp_ga, *it_los);
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(pp_ga)->ToString());
+                     MR->op0 = pp_vd;
+                     restart_analysis = true;
+                  }
+                  else if(GET_NODE(MR->op0)->get_kind() == view_convert_expr_K)///required by the CLANG/LLVM plugin
+                  {
+                     view_convert_expr* vc0 = GetPointer<view_convert_expr>(GET_NODE(MR->op0));
+                     tree_nodeRef vc_ga = CreateGimpleAssign(vc0->type, MR->op0, block.first, srcp_default);
+                     GetPointer<gimple_assign>(GET_NODE(vc_ga))->temporary_address = true;
+                     tree_nodeRef vc_vd = GetPointer<gimple_assign>(GET_NODE(vc_ga))->op0;
+                     block.second->PushBefore(vc_ga, *it_los);
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(vc_ga)->ToString());
+                     MR->op0 = vc_vd;
                      restart_analysis = true;
                   }
 
