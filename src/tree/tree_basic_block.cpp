@@ -106,7 +106,7 @@ void bloc::PushFront(const tree_nodeRef statement)
    }
    if(updated_ssa_uses)
    {
-      const auto uses = tree_helper::ComputeSsaUses(statement);
+      const auto& uses = tree_helper::ComputeSsaUses(statement);
       for(const auto& use : uses)
       {
          for(size_t counter = 0; counter < use.second; counter ++)
@@ -178,7 +178,7 @@ void bloc::PushBack(const tree_nodeRef statement)
    }
    if(updated_ssa_uses)
    {
-      const auto uses = tree_helper::ComputeSsaUses(statement);
+      const auto& uses = tree_helper::ComputeSsaUses(statement);
       for(const auto& use : uses)
       {
          for(size_t counter = 0; counter < use.second; counter ++)
@@ -274,7 +274,7 @@ void bloc::PushBefore(const tree_nodeRef new_stmt, const tree_nodeRef existing_s
    gn->bb_index = number;
    if(updated_ssa_uses)
    {
-      const auto uses = tree_helper::ComputeSsaUses(new_stmt);
+      const auto& uses = tree_helper::ComputeSsaUses(new_stmt);
       for(const auto& use : uses)
       {
          for(size_t counter = 0; counter < use.second; counter ++)
@@ -322,7 +322,7 @@ void bloc::PushAfter(const tree_nodeRef new_stmt, const tree_nodeRef existing_st
    GetPointer<gimple_node>(GET_NODE(new_stmt))->bb_index = number;
    if(updated_ssa_uses)
    {
-      const auto uses = tree_helper::ComputeSsaUses(new_stmt);
+      const auto& uses = tree_helper::ComputeSsaUses(new_stmt);
       for(const auto& use : uses)
       {
          for(size_t counter = 0; counter < use.second; counter ++)
@@ -346,7 +346,7 @@ void bloc::AddPhi(const tree_nodeRef phi)
       GetPointer<gimple_phi>(GET_NODE(phi))->bb_index = number;
    if(updated_ssa_uses)
    {
-      const auto uses = tree_helper::ComputeSsaUses(phi);
+      const auto& uses = tree_helper::ComputeSsaUses(phi);
       for(const auto& use : uses)
       {
          for(size_t counter = 0; counter < use.second; counter ++)
@@ -400,7 +400,7 @@ void bloc::RemoveStmt(const tree_nodeRef statement)
    THROW_ASSERT(original_size != list_of_stmt.size(), "Statement " + statement->ToString() + " not removed from BB" + STR(number));
    if(updated_ssa_uses)
    {
-      const auto uses = tree_helper::ComputeSsaUses(statement);
+      const auto& uses = tree_helper::ComputeSsaUses(statement);
       for(const auto& use : uses)
       {
          for(size_t counter = 0; counter < use.second; counter ++)
@@ -429,7 +429,7 @@ void bloc::RemovePhi(const tree_nodeRef phi)
    THROW_ASSERT(original_size != list_of_phi.size(), "Phi" + phi->ToString() + " not removed");
    if(updated_ssa_uses)
    {
-      const auto uses = tree_helper::ComputeSsaUses(phi);
+      const auto& uses = tree_helper::ComputeSsaUses(phi);
       for(const auto& use : uses)
       {
          for(size_t counter = 0; counter < use.second; counter ++)
