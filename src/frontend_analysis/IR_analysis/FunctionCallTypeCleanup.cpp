@@ -186,7 +186,7 @@ DesignFlowStep_Status FunctionCallTypeCleanup::InternalExec()
                                  if (GET_INDEX_NODE(*arg_it) == GET_INDEX_NODE(*tmp_arg_it) and
                                        tree_helper::get_formal_ith(TM, ce->index, k) == formal_type_id)
                                  {
-                                    TM->RecursiveReplaceTreeNode(*tmp_arg_it, *tmp_arg_it, new_ssa, stmt);
+                                    TM->RecursiveReplaceTreeNode(*tmp_arg_it, *tmp_arg_it, new_ssa, stmt, false);
                                     tmp_arg_it = std::next(ce->args.begin(), static_cast<int>(k));
                                     arg_it = std::next(ce->args.begin(), static_cast<int>(arg_n));
                                     continue;
@@ -219,7 +219,7 @@ DesignFlowStep_Status FunctionCallTypeCleanup::InternalExec()
                               if (GET_INDEX_NODE(*arg_it) == GET_INDEX_NODE(*tmp_arg_it) and
                                   tree_helper::get_formal_ith(TM, ce->index, k) == formal_type_id)
                               {
-                                 TM->RecursiveReplaceTreeNode(*tmp_arg_it, *tmp_arg_it, new_ssa, stmt);
+                                 TM->RecursiveReplaceTreeNode(*tmp_arg_it, *tmp_arg_it, new_ssa, stmt, false);
                                  tmp_arg_it = std::next(ce->args.begin(), static_cast<int>(k));
                                  arg_it = std::next(ce->args.begin(), static_cast<int>(arg_n));
                                  continue;
@@ -282,7 +282,7 @@ DesignFlowStep_Status FunctionCallTypeCleanup::InternalExec()
                               if (GET_INDEX_NODE(*arg_it) == GET_INDEX_NODE(*tmp_arg_it) and
                                     tree_helper::get_formal_ith(TM, gc->index, k) == formal_type_id)
                               {
-                                 TM->RecursiveReplaceTreeNode(*tmp_arg_it, *tmp_arg_it, new_ssa, stmt);
+                                 TM->RecursiveReplaceTreeNode(*tmp_arg_it, *tmp_arg_it, new_ssa, stmt, false);
                                  tmp_arg_it = std::next(gc->args.begin(), static_cast<int>(k));
                                  arg_it = std::next(gc->args.begin(), static_cast<int>(arg_n));
                                  continue;
@@ -316,7 +316,7 @@ DesignFlowStep_Status FunctionCallTypeCleanup::InternalExec()
                            if (GET_INDEX_NODE(*arg_it) == GET_INDEX_NODE(*tmp_arg_it) and
                                tree_helper::get_formal_ith(TM, gc->index, k) == formal_type_id)
                            {
-                              TM->RecursiveReplaceTreeNode(*tmp_arg_it, *tmp_arg_it, new_ssa, stmt);
+                              TM->RecursiveReplaceTreeNode(*tmp_arg_it, *tmp_arg_it, new_ssa, stmt, false);
                               tmp_arg_it = std::next(gc->args.begin(), static_cast<int>(k));
                               arg_it = std::next(gc->args.begin(), static_cast<int>(arg_n));
                               continue;
