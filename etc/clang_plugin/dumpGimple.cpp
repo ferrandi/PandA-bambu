@@ -348,6 +348,7 @@ namespace clang
          }
          case llvm::Value::InstructionVal+llvm::Instruction::GetElementPtr:
             return assignCode(t, GT(GETELEMENTPTR));
+         case llvm::Value::InstructionVal+llvm::Instruction::SExt:
          case llvm::Value::InstructionVal+llvm::Instruction::ZExt:
          case llvm::Value::InstructionVal+llvm::Instruction::Trunc:
          case llvm::Value::InstructionVal+llvm::Instruction::PtrToInt:
@@ -357,6 +358,8 @@ namespace clang
          case llvm::Value::InstructionVal+llvm::Instruction::FPToUI:
          case llvm::Value::InstructionVal+llvm::Instruction::FPTrunc:
             return assignCode(t, GT(GIMPLE_ASSIGN));
+         case llvm::Value::InstructionVal+llvm::Instruction::Switch:
+            return assignCode(t, GT(GIMPLE_SWITCH));
          default:
             llvm::errs() << "assignCodeAuto kind not supported: " << ValueTyNames[vid] << "\n";
             stream.close();
@@ -1139,19 +1142,17 @@ namespace clang
 
    const void* DumpGimpleRaw::build_custom_function_call_expr(const void* g)
    {
-      if(index2call_expr.find(g) == index2call_expr.end())
-      {
-         auto& ce = index2call_expr[g];
-         auto res = assignCode(&ce, GT(CALL_EXPR));
-         ce.type = TREE_TYPE(gimple_assign_lhs(g));
-         ce.fn = gimple_call_fn(g);
-         unsigned int arg_index;
-         for(arg_index = 0; arg_index < gimple_call_num_args(g); arg_index++)
-            ce.args.push_back(gimple_call_arg(g, arg_index));
-         return res;
-      }
-      else
-         return &index2call_expr.find(g)->second;
+      assert(index2call_expr.find(g) == index2call_expr.end());
+      auto& ce = index2call_expr[g];
+      auto res = assignCode(&ce, GT(CALL_EXPR));
+      const llvm::Instruction* inst = reinterpret_cast<const llvm::Instruction*>(g);
+
+      ce.type = TREE_TYPE(assignCodeType(inst->getType()));
+      ce.fn = gimple_call_fn(g);
+      unsigned int arg_index;
+      for(arg_index = 0; arg_index < gimple_call_num_args(g); arg_index++)
+         ce.args.push_back(gimple_call_arg(g, arg_index));
+      return res;
    }
 
    const void* DumpGimpleRaw::call_expr_fn(const void* t)
@@ -1207,23 +1208,19 @@ namespace clang
 
    const void* DumpGimpleRaw::build3(DumpGimpleRaw::tree_codes tc, const void* type, const void* op1, const void* op2, const void* op3)
    {
-      auto key = std::make_tuple(tc, type, op1, op2, op3);
-      if(index2tree_expr.find(key) == index2tree_expr.end())
-      {
-         auto& te = index2tree_expr[key];
-         assignCode(&te, tc);
-         te.tc= tc;
-         te.type=assignCodeType(reinterpret_cast<const llvm::Type*>(type));
-         assert(op1!=nullptr && HAS_CODE(op1));
-         assert(op2==nullptr || HAS_CODE(op2));
-         assert(op3==nullptr || HAS_CODE(op3));
-         te.op1=op1;
-         te.op2=op2;
-         te.op3=op3;
-      }
-      return &index2tree_expr.find(key)->second;
+      index2tree_expr.push_front(tree_expr());
+      auto& te = index2tree_expr.front();
+      assignCode(&te, tc);
+      te.tc= tc;
+      te.type=assignCodeType(reinterpret_cast<const llvm::Type*>(type));
+      assert(op1!=nullptr && HAS_CODE(op1));
+      assert(op2==nullptr || HAS_CODE(op2));
+      assert(op3==nullptr || HAS_CODE(op3));
+      te.op1=op1;
+      te.op2=op2;
+      te.op3=op3;
+      return &te;
    }
-
 
    const void* DumpGimpleRaw::DECL_CONTEXT(const void* t)
    {
@@ -2459,18 +2456,21 @@ namespace clang
          {
             if (get_gimple_rhs_class(gimple_expr_code (g)) == GIMPLE_TERNARY_RHS)
             {
-               serialize_child ("op", gimple_assign_lhs (g));
-               serialize_child ("op", build3(gimple_assign_rhs_code (g), TREE_TYPE (gimple_assign_lhs (g)), gimple_assign_rhs1 (g), gimple_assign_rhs2 (g), gimple_assign_rhs3 (g)));
+               auto lhs = gimple_assign_lhs (g);
+               serialize_child ("op", lhs);
+               serialize_child ("op", build3(gimple_assign_rhs_code (g), TREE_TYPE (lhs), gimple_assign_rhs1 (g), gimple_assign_rhs2 (g), gimple_assign_rhs3 (g)));
             }
             else if (get_gimple_rhs_class(gimple_expr_code (g)) == GIMPLE_BINARY_RHS)
             {
-               serialize_child ("op", gimple_assign_lhs (g));
-               serialize_child ("op", build2(gimple_assign_rhs_code (g), TREE_TYPE (gimple_assign_lhs (g)), gimple_assign_rhs1 (g), gimple_assign_rhs2 (g)));
+               auto lhs = gimple_assign_lhs (g);
+               serialize_child ("op", lhs);
+               serialize_child ("op", build2(gimple_assign_rhs_code (g), TREE_TYPE (lhs), gimple_assign_rhs1 (g), gimple_assign_rhs2 (g)));
             }
             else if (get_gimple_rhs_class (gimple_expr_code (g)) == GIMPLE_UNARY_RHS)
             {
-               serialize_child ("op", gimple_assign_lhs (g));
-               serialize_child ("op", build1 (gimple_assign_rhs_code (g), TREE_TYPE (gimple_assign_lhs (g)), gimple_assign_rhs1 (g)));
+               auto lhs = gimple_assign_lhs (g);
+               serialize_child ("op", lhs);
+               serialize_child ("op", build1 (gimple_assign_rhs_code (g), TREE_TYPE (lhs), gimple_assign_rhs1 (g)));
             }
             else if (get_gimple_rhs_class (gimple_expr_code (g)) == GIMPLE_SINGLE_RHS)
             {

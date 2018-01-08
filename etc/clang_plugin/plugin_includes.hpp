@@ -333,7 +333,7 @@ namespace clang {
                const void* op3;
                tree_expr() : tc(), type(nullptr), op1(nullptr), op2(nullptr), op3(nullptr) {}
          };
-         std::map<std::tuple<tree_codes,const void*,const void*,const void*,const void*>, tree_expr> index2tree_expr;
+         std::list<tree_expr> index2tree_expr;
 
          struct gimple_nop
          {
