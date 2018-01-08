@@ -7244,7 +7244,8 @@ void tree_helper::ComputeSsaUses(const tree_nodeRef tn, TreeNodeMap<size_t> & ss
       case CASE_UNARY_EXPRESSION:
       {
          unary_expr * ue = GetPointer<unary_expr>(curr_tn);
-         ComputeSsaUses(ue->op, ssa_uses);
+         if(GET_NODE(ue->op)->get_kind() != function_decl_K)
+            ComputeSsaUses(ue->op, ssa_uses);
          break;
       }
       case CASE_BINARY_EXPRESSION:
