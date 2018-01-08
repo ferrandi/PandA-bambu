@@ -96,7 +96,7 @@ typedef union
 */
 #define SF_ADAPTER1(fun_name, prec) \
 __Tfloat##prec fun_name##if(__Tfloat##prec a, __Tfloat##prec b);\
-inline __Tfloat##prec fun_name##if(__Tfloat##prec a, __Tfloat##prec b) {\
+__Tfloat##prec fun_name##if(__Tfloat##prec a, __Tfloat##prec b) {\
   __convert##prec a_c, b_c, res_c;\
   a_c.f = a;\
   b_c.f = b;\
@@ -105,7 +105,7 @@ inline __Tfloat##prec fun_name##if(__Tfloat##prec a, __Tfloat##prec b) {\
 }
 #define SF_ADAPTER1_unary(fun_name, prec) \
 __Tfloat##prec fun_name##if(__Tfloat##prec a);\
-inline __Tfloat##prec fun_name##if(__Tfloat##prec a) {\
+__Tfloat##prec fun_name##if(__Tfloat##prec a) {\
   __convert##prec a_c, res_c;\
   a_c.f = a;\
   res_c.b = fun_name(a_c.b);\
@@ -113,7 +113,7 @@ inline __Tfloat##prec fun_name##if(__Tfloat##prec a) {\
 }
 #define SF_ADAPTER2(fun_name, prec) \
 __flag fun_name##if(__Tfloat##prec a, __Tfloat##prec b);\
-inline __flag fun_name##if(__Tfloat##prec a, __Tfloat##prec b) {\
+__flag fun_name##if(__Tfloat##prec a, __Tfloat##prec b) {\
   __convert##prec a_c, b_c, res_c;\
   a_c.f = a;\
   b_c.f = b;\

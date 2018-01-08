@@ -34,9 +34,13 @@ common_libm_src += ew_pow.c\
 common_libm_src += ew_sqrt.c w_log.c w_exp.c
 #endif
 common_treegccflags = --output-temporary-directory=/tmp -iplugindir=$(top_builddir)/etc/gcc_plugin
+common_treegccflags_clang = --output-temporary-directory=/tmp -iplugindir=$(top_builddir)/etc/gcc_plugin
 common_cflags=-DNO_RAISE_EXCEPTIONS -I$(top_srcdir)/etc/libbambu $(common_treegccflags) -I$(BOOST_DIR)
+common_cflags_clang=-DNO_RAISE_EXCEPTIONS -I$(top_srcdir)/etc/libbambu $(common_treegccflags_clang) -I$(BOOST_DIR)
 compiler_flags=-O2 -fipa-pta -fgcse-after-reload -fipa-cp-clone -funswitch-loops -finline-functions -fno-tree-loop-ivcanon $(common_cflags)
+compiler_flags_clang=-O2 -finline-functions $(common_cflags_clang)
 compiler_flags_nosub=-DFLT_NO_DENORMALS -DNO_SUBNORMALS $(compiler_flags)
+compiler_flags_clang_nosub=-DFLT_NO_DENORMALS -DNO_SUBNORMALS $(compiler_flags_clang)
 
 if BUILD_I386_GCC45
 pkglib_LIBRARIES += libm_gcc45.a libm_gcc45_std.a
@@ -180,5 +184,23 @@ libm_gcc7_subnormals_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_G
 libm_gcc7_subnormals_std_a_SOURCES = $(common_libm_src) $(common_libm_src_std)
 libm_gcc7_subnormals_std_a_CFLAGS = $(compiler_flags) -ftree-partial-pre --compiler=I386_GCC7 
 libm_gcc7_subnormals_std_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_GCC7 $(common_treegccflags) -C
+endif
+
+if BUILD_I386_CLANG40
+pkglib_LIBRARIES += libm_clang40.a libm_clang40_std.a
+libm_clang40_a_SOURCES = $(common_libm_src) $(common_libm_src_fr)
+libm_clang40_a_CFLAGS = $(compiler_flags_clang_nosub) --compiler=I386_GCC7 
+libm_clang40_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_GCC7 $(common_treegccflags) -C
+libm_clang40_std_a_SOURCES = $(common_libm_src) $(common_libm_src_std)
+libm_clang40_std_a_CFLAGS = $(compiler_flags_clang_nosub) --compiler=I386_GCC7 
+libm_clang40_std_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_GCC7 $(common_treegccflags) -C
+
+pkglib_LIBRARIES += libm_clang40_subnormals.a libm_clang40_subnormals_std.a
+libm_clang40_subnormals_a_SOURCES = $(common_libm_src) $(common_libm_src_fr)
+libm_clang40_subnormals_a_CFLAGS = $(compiler_flags_clang) --compiler=I386_GCC7 
+libm_clang40_subnormals_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_GCC7 $(common_treegccflags) -C
+libm_clang40_subnormals_std_a_SOURCES = $(common_libm_src) $(common_libm_src_std)
+libm_clang40_subnormals_std_a_CFLAGS = $(compiler_flags_clang) --compiler=I386_GCC7 
+libm_clang40_subnormals_std_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_GCC7 $(common_treegccflags) -C
 endif
 

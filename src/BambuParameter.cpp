@@ -3569,7 +3569,7 @@ void BambuParameter::add_bambu_library(std::string lib)
 #if HAVE_I386_CLANG40_COMPILER
    if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG40))
    {
-      ;//setOption(OPT_archive_files, archive_files + mingw_prefix+PANDA_LIB_INSTALLDIR "/panda/lib"+lib+"_clang40" + VSuffix + ".a");
+      setOption(OPT_archive_files, archive_files + mingw_prefix+PANDA_LIB_INSTALLDIR "/panda/lib"+lib+"_clang40" + VSuffix + ".a");
    }
 #endif
 }

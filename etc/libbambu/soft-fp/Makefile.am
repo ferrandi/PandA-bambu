@@ -1,8 +1,11 @@
 #this file is libbambu/libsoft-fp/Makefile.am
 EXTRA_DIST=bambu-arch.h double.h extended.h longlong.h op-1.h op-2.h op-4.h op-8.h op-common.h quad.h sfp-machine.h single.h soft-fp.h common_core_nonrestoring_sdiv.h README
 common_treegccflags = --output-temporary-directory=/tmp -iplugindir=$(top_builddir)/etc/gcc_plugin
+common_treegccflags_clang = --output-temporary-directory=/tmp -iplugindir=$(top_builddir)/etc/gcc_plugin
 common_cflags= -O3 -D_FLT_NO_DENORMALS -I$(top_srcdir)/etc/libbambu -fipa-pta $(common_treegccflags)
+common_cflags_clang= -O3 -D_FLT_NO_DENORMALS -I$(top_srcdir)/etc/libbambu $(common_treegccflags_clang)
 common_cflags_nr= -O2 -D_FLT_NO_DENORMALS -I$(top_srcdir)/etc/libbambu -fipa-pta -finline-functions $(common_treegccflags)
+common_cflags_nr_clang= -O2 -D_FLT_NO_DENORMALS -I$(top_srcdir)/etc/libbambu -finline-functions $(common_treegccflags_clang)
 
 METASOURCES = AUTO
 CC=$(top_builddir)/src/tree-panda-gcc
@@ -199,5 +202,27 @@ libhls_divas_gcc7_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_GCC7
 libhls_cdiv_gcc7_a_SOURCES = $(common_libhls_cdiv_src)
 libhls_cdiv_gcc7_a_CFLAGS = -finline-limit=10000 --compiler=I386_GCC7  $(common_cflags)  -I$(BOOST_DIR)
 libhls_cdiv_gcc7_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_GCC7 $(common_treegccflags) -C
+endif
+
+if BUILD_I386_CLANG40
+pkglib_LIBRARIES += libsoft-fp_clang40.a libhls-divNR_clang40.a libhls-divnr1_clang40.a libhls-divnr2_clang40.a libhls-divas_clang40.a  libhls-cdiv_clang40.a
+libsoft_fp_clang40_a_SOURCES = $(common_libsoft_fp_src)
+libsoft_fp_clang40_a_CFLAGS = --compiler=I386_GCC7  $(common_cflags_clang)  -I$(BOOST_DIR)
+libsoft_fp_clang40_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_GCC7 $(common_treegccflags_clang) -C
+libhls_divNR_clang40_a_SOURCES = $(common_libhls_div_src)
+libhls_divNR_clang40_a_CFLAGS = -finline-limit=10000 --compiler=I386_GCC7  $(common_cflags_nr_clang)  -I$(BOOST_DIR)
+libhls_divNR_clang40_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_GCC7 $(common_treegccflags_clang) -C
+libhls_divnr1_clang40_a_SOURCES = $(common_libhls_divnr_src)
+libhls_divnr1_clang40_a_CFLAGS = -finline-limit=10000 --compiler=I386_GCC7  $(common_cflags_clang)  -I$(BOOST_DIR) -DUNROLL_FACTOR=1
+libhls_divnr1_clang40_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_GCC7 $(common_treegccflags_clang) -C
+libhls_divnr2_clang40_a_SOURCES = $(common_libhls_divnr_src)
+libhls_divnr2_clang40_a_CFLAGS = -finline-limit=10000 --compiler=I386_GCC7  $(common_cflags_clang)  -I$(BOOST_DIR) -DUNROLL_FACTOR=2
+libhls_divnr2_clang40_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_GCC7 $(common_treegccflags_clang) -C
+libhls_divas_clang40_a_SOURCES = $(common_libhls_divas_src)
+libhls_divas_clang40_a_CFLAGS = -finline-limit=10000 --compiler=I386_GCC7  $(common_cflags_clang)  -I$(BOOST_DIR)
+libhls_divas_clang40_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_GCC7 $(common_treegccflags_clang) -C
+libhls_cdiv_clang40_a_SOURCES = $(common_libhls_cdiv_src)
+libhls_cdiv_clang40_a_CFLAGS = -finline-limit=10000 --compiler=I386_GCC7  $(common_cflags_clang)  -I$(BOOST_DIR)
+libhls_cdiv_clang40_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_GCC7 $(common_treegccflags_clang) -C
 endif
 

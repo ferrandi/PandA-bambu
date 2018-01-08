@@ -907,6 +907,7 @@ etc/libbambu/soft-fp/truncdfsf2.c
 etc/libbambu/soft-fp/unorddf2.c
 etc/libbambu/soft-fp/unordsf2.c
 etc/libbambu/softfloat/bambu.h
+etc/libbambu/softfloat/div_utilities
 etc/libbambu/softfloat/milieu.h
 etc/libbambu/softfloat/softfloat-macros
 etc/libbambu/softfloat/softfloat-specialize

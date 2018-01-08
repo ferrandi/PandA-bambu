@@ -15,7 +15,9 @@ CC=$(top_builddir)/src/tree-panda-gcc
 CFLAGS=
 pkglib_LIBRARIES =
 common_treegccflags = --output-temporary-directory=/tmp -iplugindir=$(top_builddir)/etc/gcc_plugin
+common_treegccflags_clang = --output-temporary-directory=/tmp -iplugindir=$(top_builddir)/etc/gcc_plugin
 common_cflags=-O3 -nostdlib  $(common_treegccflags) $(BOOST_CPPFLAGS)
+common_cflags_clang=-O3 -nostdlib  $(common_treegccflags_clang) $(BOOST_CPPFLAGS)
 
 if BUILD_I386_GCC45
 pkglib_LIBRARIES += libbambu_gcc45.a
@@ -71,5 +73,12 @@ pkglib_LIBRARIES += libbambu_gcc7.a
 libbambu_gcc7_a_SOURCES = $(common_libbambu_src)
 libbambu_gcc7_a_CFLAGS =$(common_cflags) -fno-tree-loop-distribute-patterns --compiler=I386_GCC7 
 libbambu_gcc7_a_AR =$(top_builddir)/src/tree-panda-gcc $(common_treegccflags)--compiler=I386_GCC7 -C
+endif
+
+if BUILD_I386_CLANG40
+pkglib_LIBRARIES += libbambu_clang40.a
+libbambu_clang40_a_SOURCES = $(common_libbambu_src)
+libbambu_clang40_a_CFLAGS =$(common_cflags_clang) --compiler=I386_GCC7 
+libbambu_clang40_a_AR =$(top_builddir)/src/tree-panda-gcc $(common_treegccflags_clang)--compiler=I386_GCC7 -C
 endif
 

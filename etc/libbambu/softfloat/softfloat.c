@@ -2921,7 +2921,7 @@ static __uint32 __float64_to_uint32_round_to_zero( __float64 a )
     __flag aSign;
     __int16 aExp, shiftCount;
     __bits64 aSig, savedASig;
-    __uint32 z;
+    __int32 z;
 
     aSig = __extractFloat64Frac( a );
     aExp = __extractFloat64Exp( a );
@@ -2952,8 +2952,7 @@ static __uint32 __float64_to_uint32_round_to_zero( __float64 a )
         __float_exception_flags |= float_flag_inexact;
 #endif
     }
-    return z;
-
+    return (__uint32)z;
 }
 
 /*----------------------------------------------------------------------------
