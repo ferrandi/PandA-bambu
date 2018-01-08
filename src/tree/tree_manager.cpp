@@ -591,7 +591,7 @@ void tree_manager::collapse_into(const unsigned int & funID, std::unordered_map<
                         std::vector<tree_nodeRef>::iterator copy_block_uses_it;
                         for(copy_block_uses_it = copy_block_use_stmts.begin(); copy_block_uses_it != copy_block_use_stmts.end(); ++copy_block_uses_it)
                         {
-                           RecursiveReplaceTreeNode(*copy_block_uses_it, tn, tree_reindexRef_sn, *copy_block_uses_it);
+                           RecursiveReplaceTreeNode(*copy_block_uses_it, tn, tree_reindexRef_sn, *copy_block_uses_it, false);
                            new_sn->AddUseStmt(*copy_block_uses_it);
                         }
 
@@ -684,7 +684,7 @@ void tree_manager::collapse_into(const unsigned int & funID, std::unordered_map<
                   if(use_block == curr_block)
                   {
                      auto statement = use.first;
-                     RecursiveReplaceTreeNode(statement, tn_old, gm->op1, use.first);
+                     RecursiveReplaceTreeNode(statement, tn_old, gm->op1, use.first, false);
                      // Erase usage information about the definition being erased of the current ssa variable in every ssa variable used in it
                      erase_usage_info(sn->CGetDefStmt(), sn->CGetDefStmt());
                      // Insert usage information about the target statement of the substitution in every ssa variable used in the definition being erased
@@ -803,13 +803,13 @@ void tree_manager::ReplaceTreeNode(const tree_nodeRef stmt, const tree_nodeRef o
 {
    THROW_ASSERT(GetPointer<const gimple_node>(GET_NODE(stmt)), "Replacing ssa name starting from " + stmt->ToString());
    THROW_ASSERT(not GetPointer<const gimple_node>(GET_NODE(new_node)), "new node cannot be a gimple_node");
-   THROW_ASSERT(not GetPointer<const gimple_node>(GET_NODE(old_node)), "old node cannot be a gimple_node");
+   THROW_ASSERT(not GetPointer<const gimple_node>(GET_NODE(old_node)), "old node cannot be a gimple_node: " + STR(old_node));
    ///Temporary variable used to pass first argument of RecursiveReplaceTreeNode by reference. Since it is a gimple_node it has not to be replaced
    tree_nodeRef temp = stmt;
-   RecursiveReplaceTreeNode(temp, old_node, new_node, stmt);
+   RecursiveReplaceTreeNode(temp, old_node, new_node, stmt, false);
 }
 
-void tree_manager::RecursiveReplaceTreeNode(tree_nodeRef & tn, const tree_nodeRef old_node, tree_nodeRef new_node, const tree_nodeRef stmt)
+void tree_manager::RecursiveReplaceTreeNode(tree_nodeRef & tn, const tree_nodeRef old_node, tree_nodeRef new_node, const tree_nodeRef stmt, const bool definition)
 {
 #ifndef NDEBUG
    int function_debug_level = Param->GetFunctionDebugLevel(GET_CLASS(*this), __func__);
@@ -826,7 +826,7 @@ void tree_manager::RecursiveReplaceTreeNode(tree_nodeRef & tn, const tree_nodeRe
          const auto ga = GetPointer<const gimple_assign>(GET_NODE(stmt));
          const auto gp = GetPointer<const gimple_phi>(GET_NODE(stmt));
          //Not in a assign and not in a phi or in right part of a phi or in right part of assign
-         if((not ga and not gp) or (gp and gp->res->index != old_node->index) or (ga and ga->op0->index != old_node->index))
+         if(not definition)
          {
             THROW_ASSERT(gn->bb_index, stmt->ToString() + " is not in a basic block");
             const auto used_ssas = tree_helper::ComputeSsaUses(old_node);
@@ -846,18 +846,22 @@ void tree_manager::RecursiveReplaceTreeNode(tree_nodeRef & tn, const tree_nodeRe
                }
             }
          }
-         if(gn->vdef and gn->vdef->index == old_node->index)
+         else
          {
-            GetPointer<ssa_name>(GET_NODE(new_node))->SetDefStmt(stmt);
-         }
-         if(ga and ga->op0->index == old_node->index and GET_NODE(old_node)->get_kind() == ssa_name_K)
-         {
-            GetPointer<ssa_name>(GET_NODE(new_node))->SetDefStmt(stmt);
-         }
-         if(gp and gp->res->index == old_node->index)
-         {
-            THROW_ASSERT(GET_CONST_NODE(new_node)->get_kind() == ssa_name_K, GET_CONST_NODE(new_node)->get_kind_text());
-            GetPointer<ssa_name>(GET_NODE(new_node))->SetDefStmt(stmt);
+            if(gn->vdef and gn->vdef->index == old_node->index)
+            {
+               GetPointer<ssa_name>(GET_NODE(new_node))->SetDefStmt(stmt);
+            }
+            if(ga and ga->op0->index == old_node->index and GET_NODE(old_node)->get_kind() == ssa_name_K)
+            {
+               GetPointer<ssa_name>(GET_NODE(new_node))->SetDefStmt(stmt);
+            }
+            if(gp and gp->res->index == old_node->index)
+            {
+               THROW_ASSERT(GET_CONST_NODE(new_node)->get_kind() == ssa_name_K, GET_CONST_NODE(new_node)->get_kind_text());
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, function_debug_level, "---Setting " + STR(stmt) + " as new define statement of " + STR(new_node));
+               GetPointer<ssa_name>(GET_NODE(new_node))->SetDefStmt(stmt);
+            }
          }
       }
       tn = new_node;
@@ -869,9 +873,9 @@ void tree_manager::RecursiveReplaceTreeNode(tree_nodeRef & tn, const tree_nodeRe
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, function_debug_level, "-->Checking virtuals");
       if(gn->memdef)
-         RecursiveReplaceTreeNode(gn->memdef, old_node, new_node, stmt);
+         RecursiveReplaceTreeNode(gn->memdef, old_node, new_node, stmt, true);
       if(gn->memuse)
-         RecursiveReplaceTreeNode(gn->memuse, old_node, new_node, stmt);
+         RecursiveReplaceTreeNode(gn->memuse, old_node, new_node, stmt, false);
       if(gn->vuses.find(old_node) != gn->vuses.end())
       {
          gn->vuses.erase(old_node);
@@ -890,23 +894,23 @@ void tree_manager::RecursiveReplaceTreeNode(tree_nodeRef & tn, const tree_nodeRe
       case gimple_assign_K:
       {
          gimple_assign * gm = GetPointer<gimple_assign>(curr_tn);
-         RecursiveReplaceTreeNode(gm->op0, old_node, new_node, stmt);
-         RecursiveReplaceTreeNode(gm->op1, old_node, new_node, stmt);
+         RecursiveReplaceTreeNode(gm->op0, old_node, new_node, stmt, true);
+         RecursiveReplaceTreeNode(gm->op1, old_node, new_node, stmt, false);
          std::vector<tree_nodeRef> & uses = gm->use_set->variables;
          std::vector<tree_nodeRef>::iterator use, use_end = uses.end();
          for(use = uses.begin(); use != use_end; ++use)
          {
-            RecursiveReplaceTreeNode(*use, old_node, new_node, stmt);
+            RecursiveReplaceTreeNode(*use, old_node, new_node, stmt, false);
          }
          std::vector<tree_nodeRef> & clbs = gm->clobbered_set->variables;
          std::vector<tree_nodeRef>::iterator clb, clb_end = clbs.end();
          for(clb = clbs.begin(); clb != clb_end; ++clb)
          {
-            RecursiveReplaceTreeNode(*clb, old_node, new_node, stmt);
+            RecursiveReplaceTreeNode(*clb, old_node, new_node, stmt, false);
          }
          if(gm->predicate)
          {
-            RecursiveReplaceTreeNode(gm->predicate, old_node, new_node, stmt);
+            RecursiveReplaceTreeNode(gm->predicate, old_node, new_node, stmt, false);
          }
          break;
       }
@@ -914,36 +918,36 @@ void tree_manager::RecursiveReplaceTreeNode(tree_nodeRef & tn, const tree_nodeRe
       {
          gimple_asm * gasm = GetPointer<gimple_asm>(curr_tn);
          if(gasm->in)
-            RecursiveReplaceTreeNode(gasm->in, old_node, new_node, stmt);
+            RecursiveReplaceTreeNode(gasm->in, old_node, new_node, stmt, false);
          if(gasm->out)
-            RecursiveReplaceTreeNode(gasm->out, old_node, new_node, stmt);
+            RecursiveReplaceTreeNode(gasm->out, old_node, new_node, stmt, true);
          if(gasm->clob)
-            RecursiveReplaceTreeNode(gasm->clob, old_node, new_node, stmt);
+            RecursiveReplaceTreeNode(gasm->clob, old_node, new_node, stmt, false);
          break;
       }
       case gimple_cond_K:
       {
          gimple_cond* gc = GetPointer<gimple_cond>(curr_tn);
-         RecursiveReplaceTreeNode(gc->op0, old_node, new_node, stmt);
+         RecursiveReplaceTreeNode(gc->op0, old_node, new_node, stmt, false);
          break;
       }
       case CASE_UNARY_EXPRESSION:
       {
          unary_expr * ue = GetPointer<unary_expr>(curr_tn);
-         RecursiveReplaceTreeNode(ue->op, old_node, new_node, stmt);
+         RecursiveReplaceTreeNode(ue->op, old_node, new_node, stmt, false);
          break;
       }
       case CASE_BINARY_EXPRESSION:
       {
          binary_expr* be = GetPointer<binary_expr>(curr_tn);
-         RecursiveReplaceTreeNode(be->op0, old_node, new_node, stmt);
-         RecursiveReplaceTreeNode(be->op1, old_node, new_node, stmt);
+         RecursiveReplaceTreeNode(be->op0, old_node, new_node, stmt, false);
+         RecursiveReplaceTreeNode(be->op1, old_node, new_node, stmt, false);
          break;
       }
       case gimple_switch_K:
       {
          gimple_switch* se = GetPointer<gimple_switch>(curr_tn);
-         RecursiveReplaceTreeNode(se->op0, old_node, new_node, stmt);
+         RecursiveReplaceTreeNode(se->op0, old_node, new_node, stmt, false);
          break;
       }
       case gimple_multi_way_if_K:
@@ -951,57 +955,57 @@ void tree_manager::RecursiveReplaceTreeNode(tree_nodeRef & tn, const tree_nodeRe
          gimple_multi_way_if * gmwi = GetPointer<gimple_multi_way_if>(curr_tn);
          for(auto & cond : gmwi->list_of_cond)
             if(cond.first)
-               RecursiveReplaceTreeNode(cond.first, old_node, new_node, stmt);
+               RecursiveReplaceTreeNode(cond.first, old_node, new_node, stmt, false);
          break;
       }
       case CASE_TERNARY_EXPRESSION:
       {
          ternary_expr * te = GetPointer<ternary_expr>(curr_tn);
-         RecursiveReplaceTreeNode(te->op0, old_node, new_node, stmt);
-         RecursiveReplaceTreeNode(te->op1, old_node, new_node, stmt);
+         RecursiveReplaceTreeNode(te->op0, old_node, new_node, stmt, false);
+         RecursiveReplaceTreeNode(te->op1, old_node, new_node, stmt, false);
          if(te->op2)
-            RecursiveReplaceTreeNode(te->op2, old_node, new_node, stmt);
+            RecursiveReplaceTreeNode(te->op2, old_node, new_node, stmt, false);
          break;
       }
       case CASE_QUATERNARY_EXPRESSION:
       {
          quaternary_expr * qe = GetPointer<quaternary_expr>(curr_tn);
-         RecursiveReplaceTreeNode(qe->op0, old_node, new_node, stmt);
-         RecursiveReplaceTreeNode(qe->op1, old_node, new_node, stmt);
+         RecursiveReplaceTreeNode(qe->op0, old_node, new_node, stmt, false);
+         RecursiveReplaceTreeNode(qe->op1, old_node, new_node, stmt, false);
          if(qe->op2)
-            RecursiveReplaceTreeNode(qe->op2, old_node, new_node, stmt);
+            RecursiveReplaceTreeNode(qe->op2, old_node, new_node, stmt, false);
          if(qe->op3)
-            RecursiveReplaceTreeNode(qe->op3, old_node, new_node, stmt);
+            RecursiveReplaceTreeNode(qe->op3, old_node, new_node, stmt, false);
          break;
       }
       case gimple_phi_K:
       {
          gimple_phi * gp = GetPointer<gimple_phi>(curr_tn);
          for(auto & def_edge : gp->list_of_def_edge)
-            RecursiveReplaceTreeNode(def_edge.first, old_node, new_node, stmt);
-         RecursiveReplaceTreeNode(gp->res, old_node, new_node, stmt);
+            RecursiveReplaceTreeNode(def_edge.first, old_node, new_node, stmt, false);
+         RecursiveReplaceTreeNode(gp->res, old_node, new_node, stmt, true);
          break;
       }
       case target_mem_ref_K:
       {
          auto tmr = GetPointer<target_mem_ref>(curr_tn);
          if(tmr->symbol)
-            RecursiveReplaceTreeNode(tmr->symbol, old_node, new_node, stmt);
+            RecursiveReplaceTreeNode(tmr->symbol, old_node, new_node, stmt, false);
          if(tmr->base)
-            RecursiveReplaceTreeNode(tmr->base, old_node, new_node, stmt);
+            RecursiveReplaceTreeNode(tmr->base, old_node, new_node, stmt, false);
          if(tmr->idx)
-            RecursiveReplaceTreeNode(tmr->idx, old_node, new_node, stmt);
+            RecursiveReplaceTreeNode(tmr->idx, old_node, new_node, stmt, false);
          break;
       }
       case target_mem_ref461_K:
       {
          auto tmr = GetPointer<target_mem_ref461>(curr_tn);
          if(tmr->base)
-            RecursiveReplaceTreeNode(tmr->base, old_node, new_node, stmt);
+            RecursiveReplaceTreeNode(tmr->base, old_node, new_node, stmt, false);
          if(tmr->idx)
-            RecursiveReplaceTreeNode(tmr->idx, old_node, new_node, stmt);
+            RecursiveReplaceTreeNode(tmr->idx, old_node, new_node, stmt, false);
          if(tmr->idx2)
-            RecursiveReplaceTreeNode(tmr->idx2, old_node, new_node, stmt);
+            RecursiveReplaceTreeNode(tmr->idx2, old_node, new_node, stmt, false);
          break;
       }
       case var_decl_K:
@@ -1033,7 +1037,7 @@ void tree_manager::RecursiveReplaceTreeNode(tree_nodeRef & tn, const tree_nodeRe
          std::vector<tree_nodeRef> & args = ce->args;
          for(size_t arg_index = 0; arg_index < args.size(); arg_index++)
          {
-            RecursiveReplaceTreeNode(args[arg_index], old_node, new_node, stmt);
+            RecursiveReplaceTreeNode(args[arg_index], old_node, new_node, stmt, false);
          }
          break;
       }
@@ -1043,19 +1047,19 @@ void tree_manager::RecursiveReplaceTreeNode(tree_nodeRef & tn, const tree_nodeRe
          std::vector<tree_nodeRef> & args = ce->args;
          for(size_t arg_index = 0; arg_index < args.size(); arg_index++)
          {
-            RecursiveReplaceTreeNode(args[arg_index], old_node, new_node, stmt);
+            RecursiveReplaceTreeNode(args[arg_index], old_node, new_node, stmt, false);
          }
          std::vector<tree_nodeRef> & uses = ce->use_set->variables;
          std::vector<tree_nodeRef>::iterator use, use_end = uses.end();
          for(use = uses.begin(); use != use_end; ++use)
          {
-            RecursiveReplaceTreeNode(*use, old_node, new_node, stmt);
+            RecursiveReplaceTreeNode(*use, old_node, new_node, stmt, false);
          }
          std::vector<tree_nodeRef> & clbs = ce->clobbered_set->variables;
          std::vector<tree_nodeRef>::iterator clb, clb_end = clbs.end();
          for(clb = clbs.begin(); clb != clb_end; ++clb)
          {
-            RecursiveReplaceTreeNode(*clb, old_node, new_node, stmt);
+            RecursiveReplaceTreeNode(*clb, old_node, new_node, stmt, false);
          }
          break;
       }
@@ -1063,7 +1067,7 @@ void tree_manager::RecursiveReplaceTreeNode(tree_nodeRef & tn, const tree_nodeRe
       {
          gimple_return * gr = GetPointer<gimple_return>(curr_tn);
          if(gr->op)
-            RecursiveReplaceTreeNode(gr->op, old_node, new_node, stmt);
+            RecursiveReplaceTreeNode(gr->op, old_node, new_node, stmt, false);
          break;
       }
       case constructor_K:
@@ -1071,7 +1075,7 @@ void tree_manager::RecursiveReplaceTreeNode(tree_nodeRef & tn, const tree_nodeRe
          auto * constr = GetPointer<constructor>(curr_tn);
          for(auto & idx_value : constr->list_of_idx_valu)
          {
-            RecursiveReplaceTreeNode(idx_value.second, old_node, new_node, stmt);
+            RecursiveReplaceTreeNode(idx_value.second, old_node, new_node, stmt, false);
          }
          break;
       }
@@ -1079,9 +1083,9 @@ void tree_manager::RecursiveReplaceTreeNode(tree_nodeRef & tn, const tree_nodeRe
       {
          tree_list* tl = GetPointer<tree_list>(curr_tn);
          if(tl->valu)
-            RecursiveReplaceTreeNode(tl->valu, old_node, new_node, stmt);
+            RecursiveReplaceTreeNode(tl->valu, old_node, new_node, stmt, false);
          if (tl->chan)
-            RecursiveReplaceTreeNode(tl->chan, old_node, new_node, stmt);
+            RecursiveReplaceTreeNode(tl->chan, old_node, new_node, stmt, false);
          break;
       }
       case binfo_K:
@@ -2319,4 +2323,53 @@ bool tree_manager::is_top_function(const function_decl *fd) const
       }
    }
    return false;
+}
+
+
+bool tree_manager::check_ssa_uses(unsigned int fun_id) const
+{
+   tree_nodeRef fd_node = get_tree_node_const(fun_id);
+   function_decl * fd = GetPointer<function_decl>(fd_node);
+   statement_list * sl = GetPointer<statement_list>(GET_NODE(fd->body));
+
+   for(const auto& bb : sl->list_of_bloc)
+   {
+      std::list<tree_nodeRef> whole_list = bb.second->CGetStmtList();
+      for(auto& phi: bb.second->CGetPhiList())
+         whole_list.push_back(phi);
+      for(auto& statement_node : whole_list)
+      {
+         auto orig_string =  statement_node->ToString();
+         TreeNodeMap<size_t> ssas = tree_helper::ComputeSsaUses(statement_node);
+         for(auto& ssa: ssas)
+         {
+            tree_nodeRef tn = GET_NODE(ssa.first);
+            if(tn->get_kind() == ssa_name_K)
+            {
+               ssa_name * sn = GetPointer<ssa_name>(tn);
+               bool found = false;
+               for(auto& use: sn->CGetUseStmts())
+               {
+                  const TreeNodeMap<size_t>& used_ssa = tree_helper::ComputeSsaUses(use.first);
+                  if(used_ssa.find(tn) == used_ssa.end())
+                     return false;
+                  if(GET_INDEX_CONST_NODE(use.first) == GET_INDEX_CONST_NODE(statement_node)) found = true;
+               }
+               if(!found)
+               {
+                  std::cerr << "stmt: " << orig_string << " var: " << sn->ToString() << std::endl;
+                  for(auto& stmt : sn->CGetUseStmts())
+                  {
+                     std::cerr << "stmt referred: " << GET_INDEX_CONST_NODE(stmt.first) << std::endl;
+                  }
+                  return false;
+               }
+            }
+            else
+               THROW_ERROR("unexpected node");
+         }
+
+      }
+   }
+   return  true;
 }
