@@ -265,7 +265,7 @@ namespace clang {
          };
          void dump_pt_solution(const pt_solution *pt, const char * first_tag, const char* second_tag);
 
-         std::map<const void*, ssa_name> index2ssa_name;
+         std::map<std::pair<const void*,bool>, ssa_name> index2ssa_name;
          int last_memory_ssa_vers;
          std::map<const void*, int> memoryaccess2ssaindex;
 

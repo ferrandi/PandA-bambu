@@ -935,10 +935,11 @@ namespace clang
 
    const void* DumpGimpleRaw::getSSA(const llvm::Value* operand, const void* def_stmt, const llvm::Function * currentFunction, bool isDefault)
    {
-      if(index2ssa_name.find(def_stmt) == index2ssa_name.end())
+      auto key = std::make_pair(def_stmt,operand->getValueID() == llvm::Value::MemoryDefVal || operand->getValueID() == llvm::Value::MemoryUseVal || operand->getValueID() == llvm::Value::MemoryPhiVal);
+      if(index2ssa_name.find(key) == index2ssa_name.end())
       {
          int ssa_vers;
-         auto& sn = index2ssa_name[def_stmt];
+         auto& sn = index2ssa_name[key];
          assignCode(&sn, GT(SSA_NAME));
          if(operand->getValueID() == llvm::Value::MemoryDefVal || operand->getValueID() == llvm::Value::MemoryUseVal || operand->getValueID() == llvm::Value::MemoryPhiVal)
          {
@@ -966,7 +967,7 @@ namespace clang
          sn.def_stmts=def_stmt;
          sn.isDefault = isDefault;
       }
-      return &index2ssa_name.find(def_stmt)->second;
+      return &index2ssa_name.find(key)->second;
    }
 
    bool DumpGimpleRaw::is_virtual_ssa(const void* t) const
@@ -1069,7 +1070,7 @@ namespace clang
       {
          auto def_stmt = getGimpleNop(operand, dyn_cast<llvm::Argument>(operand)->getParent());
          auto ssa = getSSA(operand, def_stmt, currentFunction, false);
-         index2ssa_name.find(def_stmt)->second.var = assignCodeAuto(operand);
+         index2ssa_name.find(std::make_pair(def_stmt,false))->second.var = assignCodeAuto(operand);
          return ssa;
       }
       else if(isa<llvm::GlobalVariable>(operand))
