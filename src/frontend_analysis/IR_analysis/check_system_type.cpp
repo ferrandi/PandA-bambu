@@ -898,6 +898,8 @@ void CheckSystemType::build_include_structures()
    ///Building library system function
    library_system_includes.insert("math.h");
    library_system_functions.insert("__errno_location");
+   library_system_functions.insert("exit");
+   library_system_functions.insert("abort");
 
 #if HAVE_LEON3
    ///Building not supported function
