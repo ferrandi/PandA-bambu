@@ -188,6 +188,7 @@ namespace clang {
          {
             if(HAS_CODE(o) && (TREE_CODE(o)!=c))
                llvm::errs() << GET_TREE_CODE_NAME(c) << " vs " << GET_TREE_CODE_NAME(TREE_CODE(o)) << "\n";
+            assert(!HAS_CODE(o) || (TREE_CODE(o)==c));
             llvm2tree_code[o]=c;
             return o;
          }
@@ -195,6 +196,7 @@ namespace clang {
          const void* assignCodeType(const llvm::Type *ty);
 
          bool CheckSignedTag(const llvm::Type *t) const {return reinterpret_cast<size_t>(t)&1;}
+         bool CheckSignedTag(const void *t) const {return reinterpret_cast<size_t>(t)&1;}
          const llvm::Type * NormalizeSignedTag(const llvm::Type *t) const {return reinterpret_cast<const llvm::Type*>(reinterpret_cast<size_t>(t)&(~1ULL));}
          const llvm::Type * AddSignedTag(const llvm::Type *t) const {assert(CheckSignedTag(t)==false);return reinterpret_cast<const llvm::Type*>(reinterpret_cast<size_t>(t)|1);}
          const void * AddSignedTag(const void *t) const {return AddSignedTag(reinterpret_cast<const llvm::Type*>(t));}
@@ -276,6 +278,8 @@ namespace clang {
          tree_codes gimple_expr_code (const void *stmt);
          tree_codes gimple_assign_rhs_code (const void *stmt) {return gimple_expr_code(stmt);}
          const void* getGimpleNop(const llvm::Value *operand, const void* scpe);
+         const llvm::Type* getCondSignedResult(const llvm::Value *operand, const llvm::Type * type) const;
+         bool isSignedOperand(const llvm::Instruction* inst, unsigned int index) const;
          const void* getSSA(const llvm::Value *operand, const void* def_stmt, const llvm::Function * currentFunction, bool isDefault);
          bool is_virtual_ssa(const void* t) const;
          bool SSA_NAME_IS_DEFAULT_DEF(const void* t) const;
@@ -398,8 +402,7 @@ namespace clang {
          bool DECL_REGISTER (const void* t) const;
          bool TREE_READONLY(const void* t) const;
          const void* TREE_OPERAND(const void* t, unsigned index);
-         int64_t TREE_INT_CST_LOW(const void* t) const;
-
+         int64_t TREE_INT_CST_LOW(const void* t);
          const void* TREE_TYPE(const void* t);
          bool POINTER_TYPE_P(const void* t) const;
          bool TYPE_UNSIGNED(const void* t) const;
@@ -418,7 +421,7 @@ namespace clang {
          const void* TYPE_DOMAIN(const void* t);
          bool stdarg_p(const void* t) const;
          llvm::ArrayRef<llvm::Type *> TYPE_FIELDS(const void*t);
-         const void * GET_FIELD_DECL(const llvm::Type* t, unsigned int pos, const void * scpe);
+         const void * GET_FIELD_DECL(const void* t, unsigned int pos, const void * scpe);
          const void * GET_METHOD_TYPE(const llvm::Type* t, unsigned int pos, const void * scpe);
          const void* TYPE_METHOD_BASETYPE(const void* t);
 

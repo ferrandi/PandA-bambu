@@ -331,6 +331,7 @@ namespace clang
                {
                   case llvm::Intrinsic::lifetime_start:
                   case llvm::Intrinsic::lifetime_end:
+                  case llvm::Intrinsic::dbg_value:
                      return assignCode(t, GT(GIMPLE_NOPMEM));
                   case llvm::Intrinsic::memset:
                      return assignCode(t, GT(GIMPLE_CALL));
@@ -413,19 +414,19 @@ namespace clang
          return ty->name;
       }
       const llvm::Value* llvm_obj = reinterpret_cast<const llvm::Value*>(t);
-      if(llvm_obj->hasName())
+      if(llvm_obj->hasName() && TREE_CODE(t) == GT(FUNCTION_DECL))
       {
          std::string declname = std::string(llvm_obj->getName());
          int status;
          char * demangled_outbuffer = abi::__cxa_demangle(declname.c_str(), NULL, NULL, &status);
          if(status==0)
          {
-            if(std::string(demangled_outbuffer).find(':') == std::string::npos)
+            if(std::string(demangled_outbuffer).find(':') == std::string::npos && std::string(demangled_outbuffer).find('(') != std::string::npos)
             {
                declname = demangled_outbuffer;
                auto parPos = declname.find('(');
-               if(parPos != std::string::npos)
-                  declname = declname.substr(0,parPos);
+               assert(parPos != std::string::npos);
+               declname = declname.substr(0,parPos);
             }
             free(demangled_outbuffer);
          }
@@ -726,6 +727,7 @@ namespace clang
                return GT(VIEW_CONVERT_EXPR);
             case llvm::Instruction::Call:
                return GT(CALL_EXPR);
+            case llvm::Instruction::SExt:
             case llvm::Instruction::ZExt:
             case llvm::Instruction::Trunc:
             case llvm::Instruction::PtrToInt:
@@ -873,6 +875,64 @@ namespace clang
       return &index2gimple_nop.find(operand)->second;
    }
 
+   const llvm::Type* DumpGimpleRaw::getCondSignedResult(const llvm::Value *operand, const llvm::Type* type) const
+   {
+      if(isa<llvm::Instruction>(operand))
+      {
+         const llvm::Instruction* inst = reinterpret_cast<const llvm::Instruction*>(operand);
+         assert(inst);
+         auto opcode = inst->getOpcode();
+         switch(opcode)
+         {
+            case llvm::Instruction::SDiv :
+            case llvm::Instruction::SRem :
+            case llvm::Instruction::AShr :
+            case llvm::Instruction::FPToSI:
+               return AddSignedTag(type);
+            default:
+               return type;
+         }
+      }
+      else
+         return type;
+   }
+
+   bool DumpGimpleRaw::isSignedOperand(const llvm::Instruction* inst, unsigned int index) const
+   {
+      auto opcode = inst->getOpcode();
+      switch(opcode)
+      {
+         case llvm::Instruction::AShr :
+         {
+            if(index<1)
+               return true;
+            else
+               return false;
+         }
+         case llvm::Instruction::SDiv :
+         case llvm::Instruction::SRem :
+         case llvm::Instruction::SExt :
+            return true;
+         case llvm::Instruction::ICmp:
+         {
+            const llvm::CmpInst* icmp = cast<const llvm::CmpInst>(inst);
+            auto predicate = icmp->getPredicate();
+            switch (predicate)
+            {
+               case llvm::ICmpInst::ICMP_SGT:
+               case llvm::ICmpInst::ICMP_SGE:
+               case llvm::ICmpInst::ICMP_SLT:
+               case llvm::ICmpInst::ICMP_SLE:
+                  return true;
+               default:
+                  return false;
+            }
+         }
+         default:
+            return false;
+      }
+   }
+
    const void* DumpGimpleRaw::getSSA(const llvm::Value* operand, const void* def_stmt, const llvm::Function * currentFunction, bool isDefault)
    {
       if(index2ssa_name.find(def_stmt) == index2ssa_name.end())
@@ -899,7 +959,7 @@ namespace clang
             MST.incorporateFunction(*currentFunction);
             ssa_vers = MST.getLocalSlot(operand);
             assert(ssa_vers>=0);
-            sn.type = assignCodeType(operand->getType());
+            sn.type = assignCodeType(getCondSignedResult(operand, operand->getType()));
          }
          sn.vers= ssa_vers;
          assert(HAS_CODE(def_stmt));
@@ -1055,7 +1115,11 @@ namespace clang
          auto type = assignCodeType(load.getType());
          return build2(GT(MEM_REF), type, addr, zero);
       }
-      return getOperand(inst->getOperand(index), currentFunction);
+      auto op = getOperand(inst->getOperand(index), currentFunction);
+      if(isSignedOperand(inst, index))
+         return build1(GT(NOP_EXPR), AddSignedTag(TREE_TYPE(op)), op);
+      else
+         return op;
    }
 
    const void* DumpGimpleRaw::boolean_type_node(const void *g)
@@ -1383,7 +1447,7 @@ namespace clang
          llvm_unreachable("unexpected condition");
    }
 
-   int64_t DumpGimpleRaw::TREE_INT_CST_LOW(const void*t) const
+   int64_t DumpGimpleRaw::TREE_INT_CST_LOW(const void*t)
    {
       const llvm::ConstantData* cd = reinterpret_cast<const llvm::ConstantData*>(t);
       if(isa<llvm::ConstantPointerNull>(cd))
@@ -1391,7 +1455,7 @@ namespace clang
       const llvm::ConstantInt* llvm_obj = reinterpret_cast<const llvm::ConstantInt*>(t);
       const llvm::APInt & val = llvm_obj->getValue();
       assert(val.getNumWords()==1);
-      if(val.isNegative())
+      if(CheckSignedTag(TREE_TYPE(t)))
          return val.getSExtValue();
       else
          return static_cast<int64_t>(val.getZExtValue());
@@ -1400,8 +1464,7 @@ namespace clang
 
    const void* DumpGimpleRaw::assignCodeType(const llvm::Type*ty)
    {
-      assert(CheckSignedTag(ty)==false);
-      auto typeId = ty->getTypeID();
+      auto typeId = NormalizeSignedTag(ty)->getTypeID();
       switch(typeId)
       {
          case llvm::Type::VoidTyID:
@@ -1539,8 +1602,8 @@ namespace clang
       if(code==GT(COMPLEX_TYPE))
          llvm_unreachable("unexpected call to TYPE_UNSIGNED");
       const llvm::Type* ty = reinterpret_cast<const llvm::Type*>(t);
-      assert(ty->isIntegerTy());
-      return true;///TBF
+      assert(NormalizeSignedTag(ty)->isIntegerTy());
+      return !CheckSignedTag(ty);
    }
 
    bool DumpGimpleRaw::COMPLEX_FLOAT_TYPE_P(const void*t) const
@@ -1556,6 +1619,7 @@ namespace clang
    int DumpGimpleRaw::TYPE_PRECISION(const void*t) const
    {
       const llvm::Type* ty = reinterpret_cast<const llvm::Type*>(t);
+      ty = NormalizeSignedTag(ty);
       auto typeId = ty->getTypeID();
       switch(typeId)
       {
@@ -1589,22 +1653,33 @@ namespace clang
 
    const void* DumpGimpleRaw::TYPE_MIN_VALUE(const void*t)
    {
-      llvm::Type* llvm_obj = const_cast<llvm::Type*>(reinterpret_cast<const llvm::Type*>(t));
-      if(uicTable.find(0) == uicTable.end())
-         uicTable[0] = assignCodeAuto(llvm::ConstantInt::get(llvm::Type::getInt32Ty(llvm_obj->getContext()), 0, false));
-      return uicTable.find(0)->second;
-
+      const llvm::Type* Cty = reinterpret_cast<const llvm::Type*>(t);
+      bool isSigned = CheckSignedTag(Cty);
+      llvm::Type* ty =  const_cast<llvm::Type*>(NormalizeSignedTag(Cty));
+      auto obj_size = DL->getTypeSizeInBits(ty);
+      uint64_t val;
+      if(isSigned)
+      {
+         val = -(1ULL << (obj_size-1));
+      }
+      else
+         val = 0;
+      if(uicTable.find(val) == uicTable.end())
+         uicTable[val] = assignCodeAuto(llvm::ConstantInt::get(llvm::Type::getInt64Ty(ty->getContext()), val, false));
+      return uicTable.find(val)->second;
    }
 
    const void* DumpGimpleRaw::TYPE_MAX_VALUE(const void*t)
    {
-      llvm::Type* llvm_obj = const_cast<llvm::Type*>(reinterpret_cast<const llvm::Type*>(t));
-      auto obj_size = DL->getTypeSizeInBits(llvm_obj);
-      auto maxvalue = llvm::APInt::getMaxValue(obj_size).getZExtValue();
+      const llvm::Type* Cty = reinterpret_cast<const llvm::Type*>(t);
+      bool isSigned = CheckSignedTag(Cty);
+      llvm::Type* ty = const_cast<llvm::Type*>(NormalizeSignedTag(Cty));
+      auto obj_size = DL->getTypeSizeInBits(ty);
+      auto maxvalue = llvm::APInt::getMaxValue(isSigned?obj_size-1:obj_size).getZExtValue();
       if(maxValueITtable.find(t) != maxValueITtable.end())
          maxvalue = maxValueITtable.find(t)->second;
       if(uicTable.find(maxvalue) == uicTable.end())
-         uicTable[maxvalue] = assignCodeAuto(llvm::ConstantInt::get(llvm::Type::getInt32Ty(llvm_obj->getContext()), maxvalue, false));
+         uicTable[maxvalue] = assignCodeAuto(llvm::ConstantInt::get(llvm::Type::getInt64Ty(ty->getContext()), maxvalue, false));
       return uicTable.find(maxvalue)->second;
    }
 
@@ -1615,10 +1690,11 @@ namespace clang
 
    const void* DumpGimpleRaw::TYPE_NAME(const void* t)
    {
-      llvm::Type* llvm_obj = const_cast<llvm::Type*>(reinterpret_cast<const llvm::Type*>(t));
-      if(llvm_obj->isStructTy())
+      const llvm::Type* ty = reinterpret_cast<const llvm::Type*>(t);
+      ty = NormalizeSignedTag(ty);
+      if(ty->isStructTy())
       {
-         auto st = cast<llvm::StructType>(llvm_obj);
+         auto st = cast<llvm::StructType>(ty);
          if(st->hasName())
          {
             std::string declname = st->getName();
@@ -1633,24 +1709,24 @@ namespace clang
 
    const void* DumpGimpleRaw::TYPE_SIZE(const void* t)
    {
-      llvm::Type* llvm_obj = const_cast<llvm::Type*>(reinterpret_cast<const llvm::Type*>(t));
-      if(llvm_obj->isFunctionTy())
+      const llvm::Type* Cty = reinterpret_cast<const llvm::Type*>(t);
+      llvm::Type* ty = const_cast<llvm::Type*>(NormalizeSignedTag(Cty));
+      if(ty->isFunctionTy())
       {
          auto obj_size = 8u;
          if(uicTable.find(obj_size) == uicTable.end())
-            uicTable[obj_size] = assignCodeAuto(llvm::ConstantInt::get(llvm::Type::getInt64Ty(llvm_obj->getContext()), obj_size, false));
+            uicTable[obj_size] = assignCodeAuto(llvm::ConstantInt::get(llvm::Type::getInt32Ty(ty->getContext()), obj_size, false));
          return uicTable.find(obj_size)->second;
       }
-      else if (llvm_obj->isVoidTy())
+      else if (ty->isVoidTy())
          return nullptr;
       else
       {
-         auto obj_size = DL->getTypeSizeInBits(llvm_obj);
+         auto obj_size = DL->getTypeSizeInBits(ty);
          if(uicTable.find(obj_size) == uicTable.end())
-            uicTable[obj_size] = assignCodeAuto(llvm::ConstantInt::get(llvm::Type::getInt32Ty(llvm_obj->getContext()), obj_size, false));
+            uicTable[obj_size] = assignCodeAuto(llvm::ConstantInt::get(llvm::Type::getInt32Ty(ty->getContext()), obj_size, false));
          return uicTable.find(obj_size)->second;
       }
-
    }
 
    const void* DumpGimpleRaw::TYPE_CONTEXT(const void* t)
@@ -1660,22 +1736,25 @@ namespace clang
 
    bool DumpGimpleRaw::TYPE_PACKED(const void*t) const
    {
-      llvm::Type* llvm_obj = const_cast<llvm::Type*>(reinterpret_cast<const llvm::Type*>(t));
-      if(llvm_obj->isStructTy())
-         return cast<llvm::StructType>(llvm_obj)->isPacked();
+      const llvm::Type* ty = reinterpret_cast<const llvm::Type*>(t);
+      ty = NormalizeSignedTag(ty);
+      if(ty->isStructTy())
+         return cast<llvm::StructType>(ty)->isPacked();
       else
          return false;
    }
 
    int DumpGimpleRaw::TYPE_ALIGN(const void*t) const
    {
-      llvm::Type* llvm_obj = const_cast<llvm::Type*>(reinterpret_cast<const llvm::Type*>(t));
-      return  std::max(8u,8*DL->getABITypeAlignment(llvm_obj));
+      const llvm::Type* Cty = reinterpret_cast<const llvm::Type*>(t);
+      llvm::Type* ty = const_cast<llvm::Type*>(NormalizeSignedTag(Cty));
+      return  std::max(8u,8*DL->getABITypeAlignment(ty));
    }
 
    const void* DumpGimpleRaw::TYPE_ARG_TYPES(const void* t)
    {
-      llvm::Type* ty = const_cast<llvm::Type*>(reinterpret_cast<const llvm::Type*>(t));
+      const llvm::Type* ty = reinterpret_cast<const llvm::Type*>(t);
+      assert(CheckSignedTag(ty)==0);
       assert(isa<llvm::FunctionType>(ty));
       const llvm::FunctionType* llvm_obj = reinterpret_cast<const llvm::FunctionType*>(t);
       if(llvm_obj->params().empty())
@@ -1722,6 +1801,7 @@ namespace clang
    bool DumpGimpleRaw::stdarg_p(const void* t) const
    {
       const llvm::Type* ty = reinterpret_cast<const llvm::Type*>(t);
+      assert(CheckSignedTag(ty)==0);
       assert(isa<llvm::FunctionType>(ty));
       const llvm::FunctionType* llvm_obj = reinterpret_cast<const llvm::FunctionType*>(t);
       return llvm_obj->isVarArg();
@@ -1730,13 +1810,14 @@ namespace clang
    llvm::ArrayRef<llvm::Type *> DumpGimpleRaw::TYPE_FIELDS(const void*t)
    {
       const llvm::Type* ty = reinterpret_cast<const llvm::Type*>(t);
+      assert(CheckSignedTag(ty)==0);
       assert(isa<llvm::StructType>(ty));
       return reinterpret_cast<const llvm::StructType*>(t)->elements();
    }
 
-   const void * DumpGimpleRaw::GET_FIELD_DECL(const llvm::Type*t, unsigned int pos, const void * scpe)
+   const void * DumpGimpleRaw::GET_FIELD_DECL(const void*t, unsigned int pos, const void * scpe)
    {
-      const llvm::StructType* ty = reinterpret_cast<const llvm::StructType*>(scpe);
+      const llvm::StructType* scty = reinterpret_cast<const llvm::StructType*>(scpe);
       if(index2field_decl.find(std::make_pair(scpe, pos)) == index2field_decl.end())
       {
          snprintf(buffer, LOCAL_BUFFER_LEN, "fd%d", pos);
@@ -1744,13 +1825,15 @@ namespace clang
          if(identifierTable.find(fdName) == identifierTable.end())
             identifierTable.insert(fdName);
          index2field_decl[std::make_pair(scpe, pos)].name = assignCode(identifierTable.find(fdName)->c_str(), GT(IDENTIFIER_NODE));
-         index2field_decl[std::make_pair(scpe, pos)].type = assignCodeType(t);
+         auto fty = reinterpret_cast<const llvm::Type*>(t);
+         assert(CheckSignedTag(fty)==0);
+         index2field_decl[std::make_pair(scpe, pos)].type = assignCodeType(fty);
          index2field_decl[std::make_pair(scpe, pos)].scpe = assignCodeAuto(scpe);
          index2field_decl[std::make_pair(scpe, pos)].size = TYPE_SIZE(t);
          index2field_decl[std::make_pair(scpe, pos)].algn = TYPE_ALIGN(t);
-         uint64_t  offset = DL->getStructLayout(const_cast<llvm::StructType*>(ty))->getElementOffsetInBits(pos);
+         uint64_t  offset = DL->getStructLayout(const_cast<llvm::StructType*>(scty))->getElementOffsetInBits(pos);
          if(uicTable.find(offset) == uicTable.end())
-            uicTable[offset] = assignCodeAuto(llvm::ConstantInt::get(llvm::Type::getInt32Ty(ty->getContext()), offset, false));
+            uicTable[offset] = assignCodeAuto(llvm::ConstantInt::get(llvm::Type::getInt32Ty(scty->getContext()), offset, false));
          index2field_decl[std::make_pair(scpe, pos)].bpos =  uicTable.find(offset)->second;
       }
       return assignCode(&index2field_decl.find(std::make_pair(scpe, pos))->second, GT(FIELD_DECL));
@@ -1931,7 +2014,20 @@ namespace clang
       {
          llvm::ConstantRange range = LVI.getConstantRange(inst, BB, inst);
          if(!range.isFullSet())
-            return assignCodeAuto(llvm::ConstantInt::get(inst->getContext(), range.getLower()));
+         {
+            auto isSigned = CheckSignedTag(TREE_TYPE(t));
+            auto low = range.getLower();
+            if(low.isNonNegative() || isSigned)
+               return assignCodeAuto(llvm::ConstantInt::get(inst->getContext(), low));
+            else if(!isSigned)
+            {
+               if(uicTable.find(0) == uicTable.end())
+                  uicTable[0] = assignCodeAuto(llvm::ConstantInt::get(llvm::Type::getInt64Ty(inst->getContext()), 0, false));
+               return uicTable[0];
+            }
+            else
+               return nullptr;
+         }
          else
             return nullptr;
       }
@@ -1952,7 +2048,23 @@ namespace clang
       {
          llvm::ConstantRange range = LVI.getConstantRange(inst, BB, inst);
          if(!range.isFullSet())
-            return assignCodeAuto(llvm::ConstantInt::get(inst->getContext(), range.getUpper()-1));
+         {
+            auto isSigned = CheckSignedTag(TREE_TYPE(t));
+            auto low = range.getLower();
+            if(low.isNonNegative() || isSigned)
+               return assignCodeAuto(llvm::ConstantInt::get(inst->getContext(), range.getUpper()-1));
+            else if(!isSigned)
+            {
+               auto obj_size = DL->getTypeSizeInBits(inst->getType());
+               assert(obj_size <= 64);
+               uint64_t maxval = (range.getUpper()-1-range.getLower()).getZExtValue();
+               if(uicTable.find(maxval) == uicTable.end())
+                  uicTable[maxval] = assignCodeAuto(llvm::ConstantInt::get(llvm::Type::getInt64Ty(inst->getContext()), maxval, false));
+               return uicTable[maxval];
+            }
+            else
+               return nullptr;
+         }
          else
             return nullptr;
       }
@@ -1977,7 +2089,7 @@ namespace clang
             {
                auto op = val->getOperand(index);
                const void* valu=assignCodeAuto(op);
-               const void* idx =  GET_FIELD_DECL(reinterpret_cast<const llvm::Type*>(TREE_TYPE(assignCodeAuto(op))), index, ty);
+               const void* idx =  GET_FIELD_DECL(TREE_TYPE(assignCodeAuto(op)), index, ty);
                res.push_back(std::make_pair(idx,valu));
             }
             return res;
@@ -2457,20 +2569,24 @@ namespace clang
             if (get_gimple_rhs_class(gimple_expr_code (g)) == GIMPLE_TERNARY_RHS)
             {
                auto lhs = gimple_assign_lhs (g);
+               auto tc = gimple_assign_rhs_code (g);
                serialize_child ("op", lhs);
-               serialize_child ("op", build3(gimple_assign_rhs_code (g), TREE_TYPE (lhs), gimple_assign_rhs1 (g), gimple_assign_rhs2 (g), gimple_assign_rhs3 (g)));
+               serialize_child ("op", build3(tc, TREE_TYPE (lhs), gimple_assign_rhs1 (g), gimple_assign_rhs2 (g), gimple_assign_rhs3 (g)));
             }
             else if (get_gimple_rhs_class(gimple_expr_code (g)) == GIMPLE_BINARY_RHS)
             {
                auto lhs = gimple_assign_lhs (g);
+               auto tc = gimple_assign_rhs_code (g);
                serialize_child ("op", lhs);
-               serialize_child ("op", build2(gimple_assign_rhs_code (g), TREE_TYPE (lhs), gimple_assign_rhs1 (g), gimple_assign_rhs2 (g)));
+               serialize_child ("op", build2(tc, TREE_TYPE (lhs), gimple_assign_rhs1 (g), gimple_assign_rhs2 (g)));
             }
             else if (get_gimple_rhs_class (gimple_expr_code (g)) == GIMPLE_UNARY_RHS)
             {
                auto lhs = gimple_assign_lhs (g);
+               auto tc = gimple_assign_rhs_code (g);
                serialize_child ("op", lhs);
-               serialize_child ("op", build1 (gimple_assign_rhs_code (g), TREE_TYPE (lhs), gimple_assign_rhs1 (g)));
+               auto rhs = build1 (tc, TREE_TYPE (lhs), gimple_assign_rhs1 (g));
+               serialize_child ("op", rhs);
             }
             else if (get_gimple_rhs_class (gimple_expr_code (g)) == GIMPLE_SINGLE_RHS)
             {

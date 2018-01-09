@@ -1042,6 +1042,29 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                   it_los++;
                   continue;
                }
+               if(GetPointer<binary_expr>(GET_NODE(ga->op1)))/// required by the CLANG/LLVM plugin
+               {
+                  auto be = GetPointer<binary_expr>(GET_NODE(ga->op1));
+                  if(GET_NODE(be->op0)->get_kind() == nop_expr_K)
+                  {
+                     nop_expr * ne = GetPointer<nop_expr>(GET_NODE(be->op0));
+                     tree_nodeRef new_ga = CreateGimpleAssign(ne->type, be->op0, block.first, srcp_default);
+                     tree_nodeRef ssa_vd = GetPointer<gimple_assign>(GET_NODE(new_ga))->op0;
+                     be->op0 = ssa_vd;
+                     block.second->PushBefore(new_ga, *it_los);
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(new_ga)->ToString());
+
+                  }
+                  if(GET_NODE(be->op1)->get_kind() == nop_expr_K)
+                  {
+                     nop_expr * ne = GetPointer<nop_expr>(GET_NODE(be->op1));
+                     tree_nodeRef new_ga = CreateGimpleAssign(ne->type, be->op1, block.first, srcp_default);
+                     tree_nodeRef ssa_vd = GetPointer<gimple_assign>(GET_NODE(new_ga))->op0;
+                     be->op1 = ssa_vd;
+                     block.second->PushBefore(new_ga, *it_los);
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(new_ga)->ToString());
+                  }
+               }
                if(code1 == array_ref_K)
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---expand array_ref 1 " + STR(GET_INDEX_NODE(ga->op1)));
@@ -2037,7 +2060,8 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                   }
                   else if(code1 == trunc_div_expr_K || code1 == trunc_mod_expr_K || code1 == exact_div_expr_K)
                   {
-                     tree_nodeRef op1 = GetPointer<binary_expr>(GET_NODE(ga->op1))->op1;
+                     auto be = GetPointer<binary_expr>(GET_NODE(ga->op1));
+                     tree_nodeRef op1 = be->op1;
                      if(GetPointer<cst_node>(GET_NODE(op1)))
                      {
                         division_by_a_constant(block, it_los, ga, op1, code1, restart_analysis, srcp_default, GetName());
@@ -2066,6 +2090,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
 #endif
                         }
                      }
+                     /// if the previous transformation still give a multiplication let's check if this multiplication is actually widen_mult_expr
                      if(not reached_max_transformation_limit(*it_los) and GET_NODE(ga->op1)->get_kind() == mult_expr_K)
                      {
                         tree_nodeRef type_expr = GetPointer<binary_expr>(GET_NODE(ga->op1))->type;
@@ -2183,11 +2208,12 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                   else if(code1 == lt_expr_K)
                   {
                      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Expanding lt_expr " + STR(GET_INDEX_NODE(ga->op1)));
-                     tree_nodeRef op0 = GetPointer<binary_expr>(GET_NODE(ga->op1))->op0;
+                     auto be = GetPointer<binary_expr>(GET_NODE(ga->op1));
+                     tree_nodeRef op0 = be->op0;
                      bool intp = tree_helper::is_int(TM, GET_INDEX_NODE(op0));
                      if(intp)
                      {
-                        tree_nodeRef op1 = GetPointer<binary_expr>(GET_NODE(ga->op1))->op1;
+                        tree_nodeRef op1 = be->op1;
                         if(GetPointer<integer_cst>(GET_NODE(op1)))
                         {
                            integer_cst* cn = GetPointer<integer_cst>(GET_NODE(op1));
@@ -2208,11 +2234,10 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                               block.second->PushBefore(bitwise_masked_ga, *it_los);
                               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(bitwise_masked_ga)->ToString());
                               tree_nodeRef bitwise_masked_var = GetPointer<gimple_assign>(GET_NODE(bitwise_masked_ga))->op0;
-                              tree_nodeRef ne = tree_man->create_unary_operation(GetPointer<binary_expr>(GET_NODE(ga->op1))->type, bitwise_masked_var, srcp_default, nop_expr_K);
-                              tree_nodeRef ga_nop = CreateGimpleAssign(GetPointer<binary_expr>(GET_NODE(ga->op1))->type, ne, block.first, srcp_default);
+                              tree_nodeRef ne = tree_man->create_unary_operation(be->type, bitwise_masked_var, srcp_default, nop_expr_K);
+                              tree_nodeRef ga_nop = CreateGimpleAssign(be->type, ne, block.first, srcp_default);
                               block.second->PushBefore(ga_nop, *it_los);
                               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(ga_nop)->ToString());
-
 #ifndef NDEBUG
                               AppM->RegisterTransformation(GetName(), ga_nop);
 #endif
