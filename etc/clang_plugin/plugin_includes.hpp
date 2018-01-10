@@ -133,6 +133,14 @@ namespace clang {
          /// memoization map used to avoid the recompuation of tree associated with a given node
          std::map<const void*, const void*> memoization_tree_list;
 
+         struct tree_vec
+         {
+               std::vector<const void*> data;
+         };
+         std::map<unsigned int, tree_vec> index2tree_vec;
+         /// memoization map used to avoid the recompuation of tree associated with a given node
+         std::map<const void*, const void*> memoization_tree_vec;
+
          struct field_decl
          {
                const void* name;
@@ -144,6 +152,14 @@ namespace clang {
                field_decl() : name(nullptr), type(nullptr), scpe(nullptr), size(nullptr), algn(0), bpos(nullptr) {}
          };
          std::map<std::pair<const void*, unsigned int>, field_decl> index2field_decl;
+
+         struct label_decl
+         {
+               const void* type;
+               const void* scpe;
+               label_decl() : type(nullptr), scpe(nullptr) {}
+         };
+         std::map<const llvm::BasicBlock*, label_decl> index2label_decl;
 
          std::error_code EC;
          const std::string outdir_name;
@@ -302,6 +318,7 @@ namespace clang {
          tree_codes gimple_cond_code(const void* g) {return gimple_expr_code(g);}
          const void* boolean_type_node(const void* g);
          const void* gimple_cond_op(const void* g) {return gimple_assign_rhsIndex(g,0);}
+         const void* gimple_label_label(const void* g);
          const void* gimple_phi_result(const void* g) {return gimple_assign_lhs(g);}
          const void* gimple_phi_virtual_result(const void* g) const;
          unsigned int gimple_phi_num_args(const void* g) const;
@@ -314,6 +331,8 @@ namespace clang {
          unsigned int gimple_call_num_args(const void*g);
          const void* gimple_call_arg(const void*g, unsigned int arg_index);
          const void* gimple_return_retval(const void* g);
+         const void* gimple_switch_index(const void* g);
+         const void* gimple_switch_vec(const void* g);
          const void* build_custom_function_call_expr(const void* g);
          const void* call_expr_fn(const void* t);
          unsigned int call_expr_num_args(const void*t);
@@ -357,6 +376,18 @@ namespace clang {
          };
          std::map<const llvm::BasicBlock*, gimple_phi_virtual> index2gimple_phi_virtual;
 
+         struct gimple_label
+         {
+               const void* scpe;
+               int bb_index;
+               const void* op;
+
+               gimple_label() : scpe(nullptr), bb_index(-1), op(nullptr) {}
+         };
+         std::map<const llvm::BasicBlock*, gimple_label> index2gimple_label;
+
+         const void* createGimpleLabelStmt(const llvm::BasicBlock* BB);
+
          const void* getVirtualDefStatement(llvm::MemoryAccess* defAccess, bool& isDefault, const llvm::MemorySSA &MSSA, const llvm::Function *currentFunction);
          const void* getVirtualGimplePhi(llvm::MemoryPhi *mp, const llvm::MemorySSA &MSSA);
 
@@ -381,9 +412,11 @@ namespace clang {
          const void* DECL_NAME(const void* t);
          const char* IDENTIFIER_POINTER (const void* t) const;
          int IDENTIFIER_LENGTH(const void* t) const;
-         const void* TREE_PURPOSE(const void *t);
+         const void* TREE_PURPOSE(const void *t) const;
          const void* TREE_VALUE(const void* t) const;
          const void* TREE_CHAIN(const void* t) const;
+         int TREE_VEC_LENGTH(const void *t) const;
+         const void* TREE_VEC_ELT(const void* t, int i) const;
          const void *DECL_SOURCE_LOCATION(const void*t) const;
          const void* DECL_CONTEXT(const void* t);
          int DECL_UID(const void *t) const;
@@ -440,6 +473,10 @@ namespace clang {
          const void* getMaxValue(const void* t);
 
          const std::list<std::pair<const void *, const void*>> CONSTRUCTOR_ELTS (const void*t);
+
+         const void* CASE_LOW(const void* t);
+         const void* CASE_HIGH(const void* t);
+         const void* CASE_LABEL(const void* t);
 
          void DumpVersion(llvm::raw_fd_ostream &stream);
 

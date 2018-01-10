@@ -334,6 +334,7 @@ namespace clang
                   case llvm::Intrinsic::dbg_value:
                      return assignCode(t, GT(GIMPLE_NOPMEM));
                   case llvm::Intrinsic::memset:
+                  case llvm::Intrinsic::memcpy:
                      return assignCode(t, GT(GIMPLE_CALL));
                   default:
                      llvm::errs() << "assignCodeAuto kind not supported: " << ValueTyNames[vid] << "\n";
@@ -371,6 +372,7 @@ namespace clang
    {
       if(TREE_CODE(t) == GT(TRANSLATION_UNIT_DECL)) return  false;
       if(TREE_CODE(t) == GT(ALLOCAVAR_DECL)) return  false;
+      if(TREE_CODE(t) == GT(LABEL_DECL)) return  false;
       const llvm::GlobalObject* llvm_obj = reinterpret_cast<const llvm::GlobalObject*>(t);
       if(!llvm_obj->getName().empty())
       {
@@ -408,6 +410,7 @@ namespace clang
    {
       if(TREE_CODE(t) == GT(TRANSLATION_UNIT_DECL)) return nullptr;
       if(TREE_CODE(t) == GT(ALLOCAVAR_DECL)) return nullptr;
+      if(TREE_CODE(t) == GT(LABEL_DECL)) return nullptr;
       if(TREE_CODE(t) == GT(FIELD_DECL))
       {
          const field_decl* ty = reinterpret_cast<const field_decl*>(t);
@@ -466,10 +469,10 @@ namespace clang
    int DumpGimpleRaw::IDENTIFIER_LENGTH(const void* t) const
    {
       const char* ii = reinterpret_cast<const char*>(t);
-      return std::strlen(ii);
+      return static_cast<int>(std::strlen(ii));
    }
 
-   const void* DumpGimpleRaw::TREE_PURPOSE(const void *t)
+   const void* DumpGimpleRaw::TREE_PURPOSE(const void *t) const
    {
       const tree_list *tl = reinterpret_cast<const tree_list*>(t);
       return tl->purp;
@@ -493,11 +496,25 @@ namespace clang
          return nullptr;
    }
 
+   int DumpGimpleRaw::TREE_VEC_LENGTH(const void *t) const
+   {
+      const tree_vec *tv = reinterpret_cast<const tree_vec*>(t);
+      return static_cast<int>(tv->data.size());
+   }
+
+   const void* DumpGimpleRaw::TREE_VEC_ELT(const void* t, int i) const
+   {
+      const tree_vec *tv = reinterpret_cast<const tree_vec*>(t);
+      return tv->data.at(static_cast<size_t>(i));
+   }
+
    const void* DumpGimpleRaw::DECL_SOURCE_LOCATION(const void*t) const
    {
       if(TREE_CODE(t) == GT(TRANSLATION_UNIT_DECL))
          return nullptr;
       else if(TREE_CODE(t) == GT(FIELD_DECL))
+         return nullptr;
+      else if(TREE_CODE(t) == GT(LABEL_DECL))
          return nullptr;
       else if(TREE_CODE(t) == GT(ALLOCAVAR_DECL))
          return nullptr;
@@ -622,7 +639,9 @@ namespace clang
 
    bool DumpGimpleRaw::gimple_has_location(const void * g) const
    {
-      if(TREE_CODE(g) == GT(GIMPLE_NOP) || TREE_CODE(g) == GT(GIMPLE_PHI_VIRTUAL)) return false;
+      if(TREE_CODE(g) == GT(GIMPLE_NOP) ||
+            TREE_CODE(g) == GT(GIMPLE_PHI_VIRTUAL) ||
+            TREE_CODE(g) == GT(GIMPLE_LABEL)) return false;
       const llvm::Instruction* inst = reinterpret_cast<const llvm::Instruction*>(g);
       return inst->hasMetadata() && inst->getMetadata(llvm::LLVMContext::MD_dbg) != nullptr;
    }
@@ -1058,7 +1077,7 @@ namespace clang
 
    const void * DumpGimpleRaw::getOperand(const llvm::Value *operand, const llvm::Function * currentFunction)
    {
-      if(isa<llvm::ConstantInt>(operand) || isa<llvm::ConstantFP>(operand)|| isa<llvm::ConstantPointerNull>(operand))
+      if(isa<llvm::ConstantInt>(operand) || isa<llvm::ConstantFP>(operand) || isa<llvm::ConstantPointerNull>(operand))
          return assignCodeAuto(operand);
       else if(isa<llvm::ConstantAggregateZero>(operand))
          return assignCodeAuto(operand);
@@ -1090,6 +1109,24 @@ namespace clang
             operand->print(llvm::errs(), true);
             llvm::errs() << "\n";
             llvm::errs() << cast<llvm::ConstantExpr>(operand)->getOpcodeName() << "\n";
+            llvm_unreachable((std::string("unexpected condition: ") + std::string(ValueTyNames[operand->getValueID()])).c_str());
+         }
+      }
+      else if(isa<llvm::UndefValue>(operand))
+      {
+         auto type = operand->getType();
+         if(type->isAggregateType() || type->isVectorTy())
+            return assignCodeAuto(llvm::ConstantAggregateZero::get(type));
+         else if(type->isPointerTy())
+            return assignCodeAuto(llvm::ConstantPointerNull::get(cast<llvm::PointerType>(type)));
+         else if(type->isIntegerTy())
+            return assignCodeAuto(llvm::ConstantInt::get(type,0,false));
+         else if(type->isFloatingPointTy())
+            return assignCodeAuto(llvm::ConstantFP::getNaN(type));
+         else
+         {
+            operand->print(llvm::errs(), true);
+            llvm::errs() << "\n";
             llvm_unreachable((std::string("unexpected condition: ") + std::string(ValueTyNames[operand->getValueID()])).c_str());
          }
       }
@@ -1127,6 +1164,12 @@ namespace clang
    {
       const llvm::Instruction* inst = reinterpret_cast<const llvm::Instruction*>(g);
       return assignCodeType(inst->getType());
+   }
+
+   const void* DumpGimpleRaw::gimple_label_label(const void* g)
+   {
+      const gimple_label* gl = reinterpret_cast<const gimple_label*>(g);
+      return gl->op;
    }
 
    const void* DumpGimpleRaw::gimple_phi_virtual_result(const void* g) const
@@ -1205,6 +1248,36 @@ namespace clang
       return ri->getReturnValue() ? getOperand(ri->getReturnValue(), ri->getParent()->getParent()): nullptr;
    }
 
+   const void* DumpGimpleRaw::gimple_switch_index(const void* g)
+   {
+      const llvm::SwitchInst* si = reinterpret_cast<const llvm::SwitchInst*>(g);
+      return getOperand(si->getCondition(), si->getParent()->getParent());
+   }
+
+   const void* DumpGimpleRaw::gimple_switch_vec(const void* g)
+   {
+      if(memoization_tree_vec.find(g) != memoization_tree_vec.end())
+         return memoization_tree_vec.find(g)->second;
+      const llvm::SwitchInst* si = reinterpret_cast<const llvm::SwitchInst*>(g);
+      tree_vec &tree_vec_element = index2tree_vec[last_used_index+1];
+      auto res = &tree_vec_element;
+      assignCode(res, GT(TREE_VEC));
+      queue(res);
+      memoization_tree_list[g] = res;
+      for(auto case_expr: si->cases())
+      {
+         const void* op1=assignCodeAuto(case_expr.getCaseValue());
+         const void* op2=nullptr;
+         auto BB = case_expr.getCaseSuccessor();
+         assert(index2label_decl.find(BB) != index2label_decl.end());
+         const void* op3 = &index2label_decl.find(BB)->second;
+         tree_vec_element.data.push_back(build3(GT(CASE_LABEL_EXPR), llvm::Type::getVoidTy(si->getParent()->getParent()->getContext()), op1, op2, op3));
+      }
+      assert(index2label_decl.find(si->getDefaultDest()) != index2label_decl.end());
+      tree_vec_element.data.push_back(build3(GT(CASE_LABEL_EXPR), llvm::Type::getVoidTy(si->getParent()->getParent()->getContext()), nullptr, nullptr, &index2label_decl.find(si->getDefaultDest())->second));
+      return res;
+   }
+
    const void* DumpGimpleRaw::build_custom_function_call_expr(const void* g)
    {
       assert(index2call_expr.find(g) == index2call_expr.end());
@@ -1212,7 +1285,7 @@ namespace clang
       auto res = assignCode(&ce, GT(CALL_EXPR));
       const llvm::Instruction* inst = reinterpret_cast<const llvm::Instruction*>(g);
 
-      ce.type = TREE_TYPE(assignCodeType(inst->getType()));
+      ce.type = assignCodeType(inst->getType());
       ce.fn = gimple_call_fn(g);
       unsigned int arg_index;
       for(arg_index = 0; arg_index < gimple_call_num_args(g); arg_index++)
@@ -1278,7 +1351,8 @@ namespace clang
       assignCode(&te, tc);
       te.tc= tc;
       te.type=assignCodeType(reinterpret_cast<const llvm::Type*>(type));
-      assert(op1!=nullptr && HAS_CODE(op1));
+      assert(op1!=nullptr || op2!=nullptr || op3!=nullptr);
+      assert(op1==nullptr || HAS_CODE(op1));
       assert(op2==nullptr || HAS_CODE(op2));
       assert(op3==nullptr || HAS_CODE(op3));
       te.op1=op1;
@@ -1298,6 +1372,12 @@ namespace clang
       else if(TREE_CODE(t) == GT(FIELD_DECL))
       {
          const field_decl* ty = reinterpret_cast<const field_decl*>(t);
+         assert(HAS_CODE(ty->scpe));
+         return ty->scpe;
+      }
+      else if(TREE_CODE(t) == GT(LABEL_DECL))
+      {
+         const label_decl* ty = reinterpret_cast<const label_decl*>(t);
          assert(HAS_CODE(ty->scpe));
          return ty->scpe;
       }
@@ -1521,6 +1601,12 @@ namespace clang
          assert(HAS_CODE(ty->type));
          return ty->type;
       }
+      else if(code == GT(LABEL_DECL))
+      {
+         const label_decl* ty = reinterpret_cast<const label_decl*>(t);
+         assert(HAS_CODE(ty->type));
+         return ty->type;
+      }
       else if(code == GT(GIMPLE_NOP))
       {
          llvm_unreachable("unexpected");
@@ -1559,7 +1645,7 @@ namespace clang
             case llvm::Type::TokenTyID:
             case llvm::Type::IntegerTyID:
             case llvm::Type::StructTyID:
-               llvm::errs() << "TREE_TYPE kind not supported: type of type\n";
+               llvm::errs() << "TREE_TYPE kind not supported: type of type: " << GET_TREE_CODE_NAME(TREE_CODE(t))<<"\n";
                stream.close();
                llvm_unreachable("Plugin Error");
 
@@ -1881,6 +1967,12 @@ namespace clang
          assert(HAS_CODE(gpv->scpe));
          return gpv->scpe;
       }
+      else if(TREE_CODE(g) == GT(GIMPLE_LABEL))
+      {
+         const gimple_label* gl = reinterpret_cast<const gimple_label*>(g);
+         assert(HAS_CODE(gl->scpe));
+         return gl->scpe;
+      }
       const llvm::Instruction *inst = reinterpret_cast<const llvm::Instruction *>(g);
       return assignCodeAuto(inst->getParent()->getParent());
    }
@@ -1893,6 +1985,11 @@ namespace clang
          const gimple_phi_virtual* gpv = reinterpret_cast<const gimple_phi_virtual*>(g);
          return gpv->bb_index;
       }
+      if(TREE_CODE(g) == GT(GIMPLE_LABEL))
+      {
+         const gimple_label* gl = reinterpret_cast<const gimple_label*>(g);
+         return gl->bb_index;
+      }
       const llvm::Instruction *inst = reinterpret_cast<const llvm::Instruction *>(g);
       const llvm::BasicBlock * BB = inst->getParent();
       return getBB_index(BB);
@@ -1902,6 +1999,7 @@ namespace clang
    {
       if(TREE_CODE(g) == GT(GIMPLE_NOP)) return false;
       if(TREE_CODE(g) == GT(GIMPLE_PHI_VIRTUAL)) return false;
+      if(TREE_CODE(g) == GT(GIMPLE_LABEL)) return false;
       llvm::Instruction *inst = const_cast<llvm::Instruction *>(reinterpret_cast<const llvm::Instruction *>(g));
       llvm::BasicBlock* BB = inst->getParent();
       llvm::Function *currentFunction = BB->getParent();
@@ -2115,6 +2213,25 @@ namespace clang
             llvm_unreachable("Plugin Error");
 
       }
+   }
+
+   const void* DumpGimpleRaw::CASE_LOW(const void* t)
+   {
+      assert(TREE_CODE(t) == GT(CASE_LABEL_EXPR));
+      const tree_expr* te = reinterpret_cast<const tree_expr*>(t);
+      return te->op1;
+   }
+   const void* DumpGimpleRaw::CASE_HIGH(const void* t)
+   {
+      assert(TREE_CODE(t) == GT(CASE_LABEL_EXPR));
+      const tree_expr* te = reinterpret_cast<const tree_expr*>(t);
+      return te->op2;
+   }
+   const void* DumpGimpleRaw::CASE_LABEL(const void* t)
+   {
+      assert(TREE_CODE(t) == GT(CASE_LABEL_EXPR));
+      const tree_expr* te = reinterpret_cast<const tree_expr*>(t);
+      return te->op3;
    }
 
    void DumpGimpleRaw::serialize_new_line()
@@ -2504,6 +2621,28 @@ namespace clang
       }
    }
 
+   const void* DumpGimpleRaw::createGimpleLabelStmt(const llvm::BasicBlock* BB)
+   {
+      if(index2gimple_label.find(BB) == index2gimple_label.end())
+      {
+         auto &gl = index2gimple_label[BB];
+         assignCode(&gl, GT(GIMPLE_LABEL));
+         const llvm::Function *currentFunction = BB->getParent();
+         gl.scpe = assignCodeAuto(currentFunction);
+         gl.bb_index = getBB_index(BB);
+         if(index2label_decl.find(BB) == index2label_decl.end())
+         {
+            auto &ld = index2label_decl[BB];
+            assignCode(&ld, GT(LABEL_DECL));
+            const llvm::Function *currentFunction = BB->getParent();
+            ld.type = assignCodeType(llvm::Type::getVoidTy(currentFunction->getContext()));
+            ld.scpe = assignCodeAuto(currentFunction);
+         }
+         gl.op = &index2label_decl.find(BB)->second;
+      }
+      return &index2gimple_label.find(BB)->second;
+   }
+
    void DumpGimpleRaw::dequeue_and_serialize_gimple(const void* g)
    {
       assert(llvm2index.find(g) != llvm2index.end());
@@ -2511,7 +2650,7 @@ namespace clang
 
       auto code = TREE_CODE(g);
       const char* code_name = GET_TREE_CODE_NAME(code);
-      if(code != GT(GIMPLE_NOP) && code != GT(GIMPLE_PHI_VIRTUAL))
+      if(code != GT(GIMPLE_NOP) && code != GT(GIMPLE_PHI_VIRTUAL) && code != GT(GIMPLE_LABEL))
       {
          llvm::Instruction *inst = const_cast<llvm::Instruction *>(reinterpret_cast<const llvm::Instruction *>(g));
          llvm::BasicBlock* BB = inst->getParent();
@@ -2607,6 +2746,11 @@ namespace clang
            serialize_child ("op", gimple_cond_op (g));
            break;
 
+         case GT(GIMPLE_LABEL):
+           serialize_child ("op", gimple_label_label (g));
+           break;
+
+
          case GT(GIMPLE_GOTO):
            llvm_unreachable("unexpected GIMPLE_GOTO");/// serialize_child ("op", gimple_goto_dest (g));
            break;
@@ -2617,6 +2761,12 @@ namespace clang
          case GT(GIMPLE_RETURN):
            serialize_child ("op", gimple_return_retval(g));
            break;
+
+         case GT(GIMPLE_SWITCH):
+            serialize_child ("op", gimple_switch_index (g));
+            serialize_child ("op", gimple_switch_vec (g));
+            //llvm_unreachable("not yet supported");
+            break;
 
          case GT(GIMPLE_PHI):
             serialize_child ("res", gimple_phi_result (g));
@@ -2689,6 +2839,20 @@ namespace clang
         for(auto it=LI.begin(); it != LI.end(); ++it)
            computeLoopLabels(loopLabes, *it, label);
      }
+     std::set<const llvm::BasicBlock *> BB_with_gimple_label;
+     for(const auto& BB: bblist)
+     {
+        if(isa<llvm::SwitchInst>(BB.getTerminator()))
+        {
+           const llvm::SwitchInst* si = cast<llvm::SwitchInst>(BB.getTerminator());
+           BB_with_gimple_label.insert(si->getDefaultDest());
+           for(auto case_expr: si->cases())
+           {
+              BB_with_gimple_label.insert(case_expr.getCaseSuccessor());
+           }
+        }
+     }
+
 
      for(const auto& BB: bblist)
      {
@@ -2743,6 +2907,7 @@ namespace clang
            /// add virtual phi
            serialize_gimple_child("phi", getVirtualGimplePhi(MSSA.getMemoryAccess(&BB), MSSA));
         }
+        bool firstStmt = BB_with_gimple_label.find(&BB) != BB_with_gimple_label.end();
         for(const auto& inst: BB.getInstList())
         {
            if(isa<llvm::PHINode>(inst))
@@ -2754,7 +2919,12 @@ namespace clang
               else if(isa<llvm::UnreachableInst>(inst))
                  ; /// unreachable instruction can be skipped
               else
+              {
+                 if(firstStmt)
+                    serialize_gimple_child("stmt", createGimpleLabelStmt(&BB));
+                 firstStmt = false;
                  serialize_gimple_child("stmt", assignCodeAuto(&inst));
+              }
            }
         }
 
@@ -2869,8 +3039,8 @@ namespace clang
             }
          }
 
-//         if(llvm_obj->isImplicit())
-//            serialize_string("artificial");
+         if(code == GT(LABEL_DECL))
+            serialize_string("artificial");
          serialize_int("uid", DECL_UID(t));
       }
       else if(code_class == tcc_type)
@@ -2908,6 +3078,15 @@ namespace clang
            serialize_child("valu", TREE_VALUE(t));
            serialize_child("chan", TREE_CHAIN(t));
            break;
+         case GT(TREE_VEC):
+         {
+            serialize_int ("lngt", TREE_VEC_LENGTH (t));
+            for (auto i = 0; i < TREE_VEC_LENGTH (t); ++i)
+            {
+               serialize_child ("op", TREE_VEC_ELT (t, i));
+            }
+           break;
+         }
 
          case GT(INTEGER_TYPE):
          case GT(ENUMERAL_TYPE):
@@ -3127,6 +3306,26 @@ namespace clang
             {
                serialize_child ("idx", el.first);
                serialize_child ("valu", el.second);
+            }
+            break;
+         }
+         case GT(CASE_LABEL_EXPR):
+         {
+            if (CASE_LOW (t) && CASE_HIGH (t))
+            {
+               serialize_child ("op", CASE_LOW (t));
+               serialize_child ("op", CASE_HIGH (t));
+               serialize_child ("goto", CASE_LABEL (t));
+            }
+            else if (CASE_LOW (t))
+            {
+               serialize_child ("op", CASE_LOW (t));
+               serialize_child ("goto", CASE_LABEL (t));
+            }
+            else
+            {
+               serialize_string ("default");
+               serialize_child ("goto", CASE_LABEL (t));
             }
             break;
          }
