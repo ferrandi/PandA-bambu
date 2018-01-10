@@ -2118,12 +2118,6 @@ namespace clang
             auto low = range.getLower();
             if(low.isNonNegative() || isSigned)
                return assignCodeAuto(llvm::ConstantInt::get(inst->getContext(), low));
-            else if(!isSigned)
-            {
-               if(uicTable.find(0) == uicTable.end())
-                  uicTable[0] = assignCodeAuto(llvm::ConstantInt::get(llvm::Type::getInt64Ty(inst->getContext()), 0, false));
-               return uicTable[0];
-            }
             else
                return nullptr;
          }
@@ -2152,15 +2146,6 @@ namespace clang
             auto low = range.getLower();
             if(low.isNonNegative() || isSigned)
                return assignCodeAuto(llvm::ConstantInt::get(inst->getContext(), range.getUpper()-1));
-            else if(!isSigned)
-            {
-               auto obj_size = DL->getTypeSizeInBits(inst->getType());
-               assert(obj_size <= 64);
-               uint64_t maxval = (range.getUpper()-1-range.getLower()).getZExtValue();
-               if(uicTable.find(maxval) == uicTable.end())
-                  uicTable[maxval] = assignCodeAuto(llvm::ConstantInt::get(llvm::Type::getInt64Ty(inst->getContext()), maxval, false));
-               return uicTable[maxval];
-            }
             else
                return nullptr;
          }
