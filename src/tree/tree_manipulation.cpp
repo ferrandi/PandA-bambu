@@ -7,7 +7,7 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
@@ -84,199 +84,6 @@ tree_manipulation::tree_manipulation(const tree_managerRef _TreeM, const Paramet
    parameters(_parameters),
    debug_level(_parameters->get_class_debug_level(GET_CLASS(*this)))
 {
-   ///Remove from here
-   enum2tok[function_decl_K] = TOK(TOK_FUNCTION_DECL);
-   enum2tok[identifier_node_K] = TOK(TOK_IDENTIFIER_NODE);
-   enum2tok[void_type_K] = TOK(TOK_VOID_TYPE);
-   enum2tok[boolean_type_K] = TOK(TOK_BOOLEAN_TYPE);
-   enum2tok[lang_type_K] = TOK(TOK_LANG_TYPE);
-   enum2tok[complex_type_K] = TOK(TOK_COMPLEX_TYPE);
-   enum2tok[type_argument_pack_K] = TOK(TOK_TYPE_ARGUMENT_PACK);
-   enum2tok[nontype_argument_pack_K] = TOK(TOK_NONTYPE_ARGUMENT_PACK);
-   enum2tok[vector_type_K] = TOK(TOK_VECTOR_TYPE);
-   enum2tok[CharType_K] = TOK(TOK_CHAR_TYPE);
-   enum2tok[nullptr_type_K] = TOK(TOK_NULLPTR_TYPE);
-   enum2tok[type_pack_expansion_K] =TOK(TOK_TYPE_PACK_EXPANSION);
-   enum2tok[offset_type_K] = TOK(TOK_OFFSET_TYPE);
-   enum2tok[set_type_K] = TOK(TOK_SET_TYPE);
-   enum2tok[qual_union_type_K] = TOK(TOK_QUAL_UNION_TYPE);
-   enum2tok[real_type_K] = TOK(TOK_REAL_TYPE);
-   enum2tok[integer_type_K] = TOK(TOK_INTEGER_TYPE);
-   enum2tok[enumeral_type_K] = TOK(TOK_ENUMERAL_TYPE);
-   enum2tok[function_type_K] = TOK(TOK_FUNCTION_TYPE);
-   enum2tok[pointer_type_K] = TOK(TOK_POINTER_TYPE);
-   enum2tok[reference_type_K] = TOK(TOK_REFERENCE_TYPE);
-   enum2tok[array_type_K] = TOK(TOK_ARRAY_TYPE);
-   enum2tok[record_type_K] = TOK(TOK_RECORD_TYPE);
-   enum2tok[union_type_K] = TOK(TOK_UNION_TYPE);
-   enum2tok[method_type_K] = TOK(TOK_METHOD_TYPE);
-   enum2tok[type_decl_K] = TOK(TOK_TYPE_DECL);
-   enum2tok[translation_unit_decl_K] = TOK(TOK_TRANSLATION_UNIT_DECL);
-   enum2tok[label_decl_K] = TOK(TOK_LABEL_DECL);
-   enum2tok[const_decl_K] = TOK(TOK_CONST_DECL);
-   enum2tok[namespace_decl_K] = TOK(TOK_NAMESPACE_DECL);
-   enum2tok[result_decl_K] = TOK(TOK_RESULT_DECL);
-   enum2tok[field_decl_K] = TOK(TOK_FIELD_DECL);
-   enum2tok[parm_decl_K] = TOK(TOK_PARM_DECL);
-   enum2tok[var_decl_K] = TOK(TOK_VAR_DECL);
-   enum2tok[gimple_return_K] = TOK(TOK_GIMPLE_RETURN);
-   enum2tok[gimple_goto_K] = TOK(TOK_GIMPLE_GOTO);
-   enum2tok[gimple_label_K] = TOK(TOK_GIMPLE_LABEL);
-   enum2tok[unsave_expr_K] = TOK(TOK_UNSAVE_EXPR);
-   enum2tok[gimple_resx_K] = TOK(TOK_GIMPLE_RESX);
-   enum2tok[va_arg_expr_K] = TOK(TOK_VA_ARG_EXPR);
-   enum2tok[exit_expr_K] = TOK(TOK_EXIT_EXPR);
-   enum2tok[loop_expr_K] = TOK(TOK_LOOP_EXPR);
-   enum2tok[lut_expr_K] = TOK(TOK_LUT_EXPR);
-   enum2tok[nop_expr_K] = TOK(TOK_NOP_EXPR);
-   enum2tok[negate_expr_K] = TOK(TOK_NEGATE_EXPR);
-   enum2tok[truth_not_expr_K] = TOK(TOK_TRUTH_NOT_EXPR);
-   enum2tok[convert_expr_K] = TOK(TOK_CONVERT_EXPR);
-   enum2tok[addr_expr_K] = TOK(TOK_ADDR_EXPR);
-   enum2tok[reference_expr_K] = TOK(TOK_REFERENCE_EXPR);
-   enum2tok[cleanup_point_expr_K] = TOK(TOK_CLEANUP_POINT_EXPR);
-   enum2tok[fix_trunc_expr_K] = TOK(TOK_FIX_TRUNC_EXPR);
-   enum2tok[fix_ceil_expr_K] = TOK(TOK_FIX_CEIL_EXPR);
-   enum2tok[fix_floor_expr_K] = TOK(TOK_FIX_FLOOR_EXPR);
-   enum2tok[fix_round_expr_K] = TOK(TOK_FIX_ROUND_EXPR);
-   enum2tok[float_expr_K] = TOK(TOK_FLOAT_EXPR);
-   enum2tok[abs_expr_K] = TOK(TOK_ABS_EXPR);
-   enum2tok[conj_expr_K] = TOK(TOK_CONJ_EXPR);
-   enum2tok[realpart_expr_K] = TOK(TOK_REALPART_EXPR);
-   enum2tok[imagpart_expr_K] = TOK(TOK_IMAGPART_EXPR);
-   enum2tok[card_expr_K] = TOK(TOK_CARD_EXPR);
-   enum2tok[non_lvalue_expr_K] = TOK(TOK_NON_LVALUE_EXPR);
-   enum2tok[view_convert_expr_K] = TOK(TOK_VIEW_CONVERT_EXPR);
-   enum2tok[indirect_ref_K] = TOK(TOK_INDIRECT_REF);
-   enum2tok[misaligned_indirect_ref_K] = TOK(TOK_MISALIGNED_INDIRECT_REF);
-   enum2tok[modify_expr_K] = TOK(TOK_MODIFY_EXPR);
-   enum2tok[gimple_assign_K] = TOK(TOK_GIMPLE_ASSIGN);
-   enum2tok[gt_expr_K] = TOK(TOK_GT_EXPR);
-   enum2tok[plus_expr_K] = TOK(TOK_PLUS_EXPR);
-   enum2tok[minus_expr_K] = TOK(TOK_MINUS_EXPR);
-   enum2tok[mult_expr_K] = TOK(TOK_MULT_EXPR);
-   enum2tok[trunc_div_expr_K] = TOK(TOK_TRUNC_DIV_EXPR);
-   enum2tok[trunc_mod_expr_K] = TOK(TOK_TRUNC_MOD_EXPR);
-   enum2tok[le_expr_K] = TOK(TOK_LE_EXPR);
-   enum2tok[truth_or_expr_K] = TOK(TOK_TRUTH_OR_EXPR);
-   enum2tok[ne_expr_K] = TOK(TOK_NE_EXPR);
-   enum2tok[eq_expr_K] = TOK(TOK_EQ_EXPR);
-   enum2tok[compound_expr_K] = TOK(TOK_COMPOUND_EXPR);
-   enum2tok[init_expr_K] = TOK(TOK_INIT_EXPR);
-   enum2tok[ceil_div_expr_K] = TOK(TOK_CEIL_DIV_EXPR);
-   enum2tok[floor_div_expr_K] = TOK(TOK_FLOOR_DIV_EXPR);
-   enum2tok[round_div_expr_K] = TOK(TOK_ROUND_DIV_EXPR);
-   enum2tok[ceil_mod_expr_K] = TOK(TOK_CEIL_MOD_EXPR);
-   enum2tok[floor_mod_expr_K] = TOK(TOK_FLOOR_MOD_EXPR);
-   enum2tok[round_mod_expr_K] = TOK(TOK_ROUND_MOD_EXPR);
-   enum2tok[rdiv_expr_K] = TOK(TOK_RDIV_EXPR);
-   enum2tok[exact_div_expr_K] = TOK(TOK_EXACT_DIV_EXPR);
-   enum2tok[min_expr_K] = TOK(TOK_MIN_EXPR);
-   enum2tok[max_expr_K] = TOK(TOK_MAX_EXPR);
-   enum2tok[lshift_expr_K] = TOK(TOK_LSHIFT_EXPR);
-   enum2tok[rshift_expr_K] = TOK(TOK_RSHIFT_EXPR);
-   enum2tok[lrotate_expr_K] = TOK(TOK_LROTATE_EXPR);
-   enum2tok[rrotate_expr_K] = TOK(TOK_RROTATE_EXPR);
-   enum2tok[bit_ior_expr_K] = TOK(TOK_BIT_IOR_EXPR);
-   enum2tok[bit_xor_expr_K] = TOK(TOK_BIT_XOR_EXPR);
-   enum2tok[bit_and_expr_K] = TOK(TOK_BIT_AND_EXPR);
-   enum2tok[bit_not_expr_K] = TOK(TOK_BIT_NOT_EXPR);
-   enum2tok[truth_andif_expr_K] = TOK(TOK_TRUTH_ANDIF_EXPR);
-   enum2tok[truth_orif_expr_K] = TOK(TOK_TRUTH_ORIF_EXPR);
-   enum2tok[truth_and_expr_K] = TOK(TOK_TRUTH_AND_EXPR);
-   enum2tok[truth_xor_expr_K] = TOK(TOK_TRUTH_XOR_EXPR);
-   enum2tok[lt_expr_K] = TOK(TOK_LT_EXPR);
-   enum2tok[ge_expr_K] = TOK(TOK_GE_EXPR);
-   enum2tok[unordered_expr_K] = TOK(TOK_UNORDERED_EXPR);
-   enum2tok[ordered_expr_K] = TOK(TOK_ORDERED_EXPR);
-   enum2tok[unlt_expr_K] = TOK(TOK_UNLT_EXPR);
-   enum2tok[unle_expr_K] = TOK(TOK_UNLE_EXPR);
-   enum2tok[ungt_expr_K] = TOK(TOK_UNGT_EXPR);
-   enum2tok[unge_expr_K] = TOK(TOK_UNGE_EXPR);
-   enum2tok[uneq_expr_K] = TOK(TOK_UNEQ_EXPR);
-   enum2tok[ltgt_expr_K] = TOK(TOK_LTGT_EXPR);
-   enum2tok[in_expr_K] = TOK(TOK_IN_EXPR);
-   enum2tok[set_le_expr_K] = TOK(TOK_SET_LE_EXPR);
-   enum2tok[range_expr_K] = TOK(TOK_RANGE_EXPR);
-   enum2tok[complex_expr_K] = TOK(TOK_COMPLEX_EXPR);
-   enum2tok[predecrement_expr_K] = TOK(TOK_PREDECREMENT_EXPR);
-   enum2tok[preincrement_expr_K] = TOK(TOK_PREINCREMENT_EXPR);
-   enum2tok[postdecrement_expr_K] = TOK(TOK_POSTDECREMENT_EXPR);
-   enum2tok[postincrement_expr_K] = TOK(TOK_POSTINCREMENT_EXPR);
-   enum2tok[component_ref_K] = TOK(TOK_COMPONENT_REF);
-   enum2tok[array_ref_K] = TOK(TOK_ARRAY_REF);
-   enum2tok[fdesc_expr_K] = TOK(TOK_FDESC_EXPR);
-   enum2tok[try_catch_expr_K] = TOK(TOK_TRY_CATCH_EXPR);
-   enum2tok[try_finally_K] = TOK(TOK_TRY_FINALLY);
-   enum2tok[catch_expr_K] = TOK(TOK_CATCH_EXPR);
-   enum2tok[eh_filter_expr_K] = TOK(TOK_EH_FILTER_EXPR);
-   enum2tok[gimple_switch_K] = TOK(TOK_GIMPLE_SWITCH);
-   enum2tok[save_expr_K] = TOK(TOK_SAVE_EXPR);
-   enum2tok[cond_expr_K] = TOK(TOK_COND_EXPR);
-   enum2tok[gimple_cond_K] = TOK(TOK_GIMPLE_COND);
-   enum2tok[bit_field_ref_K] = TOK(TOK_BIT_FIELD_REF);
-   enum2tok[vtable_ref_K] = TOK(TOK_VTABLE_REF);
-   enum2tok[with_cleanup_expr_K] = TOK(TOK_WITH_CLEANUP_EXPR);
-   enum2tok[placeholder_expr_K] = TOK(TOK_PLACEHOLDER_EXPR);
-   enum2tok[goto_subroutine_K] = TOK(TOK_GOTO_SUBROUTINE);
-   enum2tok[buffer_ref_K] = TOK(TOK_BUFFER_REF);
-   enum2tok[array_range_ref_K] = TOK(TOK_ARRAY_RANGE_REF);
-   enum2tok[case_label_expr_K] = TOK(TOK_CASE_LABEL_EXPR);
-   enum2tok[gimple_bind_K] = TOK(TOK_GIMPLE_BIND);
-   enum2tok[call_expr_K] = TOK(TOK_CALL_EXPR);
-   enum2tok[aggr_init_expr_K] = TOK(TOK_AGGR_INIT_EXPR);
-   enum2tok[gimple_call_K] = TOK(TOK_GIMPLE_CALL);
-   enum2tok[target_expr_K] = TOK(TOK_TARGET_EXPR);
-   enum2tok[gimple_asm_K] = TOK(TOK_GIMPLE_ASM);
-   enum2tok[vector_cst_K] = TOK(TOK_VECTOR_CST);
-   enum2tok[void_cst_K] = TOK(TOK_VOID_CST);
-   enum2tok[string_cst_K] = TOK(TOK_STRING_CST);
-   enum2tok[complex_cst_K] = TOK(TOK_COMPLEX_CST);
-   enum2tok[integer_cst_K] = TOK(TOK_INTEGER_CST);
-   enum2tok[real_cst_K] = TOK(TOK_REAL_CST);
-   enum2tok[tree_list_K] = TOK(TOK_TREE_LIST);
-   enum2tok[statement_list_K] = TOK(TOK_STATEMENT_LIST);
-   enum2tok[ssa_name_K] = TOK(TOK_SSA_NAME);
-   enum2tok[tree_vec_K] = TOK(TOK_TREE_VEC);
-   enum2tok[block_K] = TOK(TOK_BLOCK);
-   enum2tok[constructor_K] = TOK(TOK_CONSTRUCTOR);
-   enum2tok[gimple_phi_K] = TOK(TOK_GIMPLE_PHI);
-   enum2tok[binfo_K] = TOK(TOK_BINFO);
-   enum2tok[template_decl_K] = TOK(TOK_TEMPLATE_DECL);
-   enum2tok[template_type_parm_K] = TOK(TOK_TEMPLATE_TYPE_PARM);
-   enum2tok[typename_type_K] = TOK(TOK_TYPENAME_TYPE);
-   enum2tok[cast_expr_K] = TOK(TOK_CAST_EXPR);
-   enum2tok[static_cast_expr_K] = TOK(TOK_STATIC_CAST_EXPR);
-   enum2tok[sizeof_expr_K] = TOK(TOK_SIZEOF_EXPR);
-   enum2tok[scope_ref_K] = TOK(TOK_SCOPE_REF);
-   enum2tok[ctor_initializer_K] = TOK(TOK_CTOR_INITIALIZER);
-   enum2tok[arrow_expr_K] = TOK(TOK_ARROW_EXPR);
-   enum2tok[return_stmt_K] = TOK(TOK_RETURN_STMT);
-   enum2tok[modop_expr_K] = TOK(TOK_MODOP_EXPR);
-   enum2tok[new_expr_K] = TOK(TOK_NEW_EXPR);
-   enum2tok[vec_new_expr_K] = TOK(TOK_VEC_NEW_EXPR);
-   enum2tok[vec_interleavehigh_expr_K] = TOK(TOC_VEC_INTERLEAVEHIGH_EXPR);
-   enum2tok[vec_interleavelow_expr_K] = TOK(TOC_VEC_INTERLEAVELOW_EXPR);
-   enum2tok[overload_K] = TOK(TOK_OVERLOAD);
-   enum2tok[reinterpret_cast_expr_K] = TOK(TOK_REINTERPRET_CAST_EXPR);
-   enum2tok[template_id_expr_K] = TOK(TOK_TEMPLATE_ID_EXPR);
-   enum2tok[throw_expr_K] = TOK(TOK_THROW_EXPR);
-   enum2tok[trait_expr_K] = TOK(TOK_TRAIT_EXPR);
-   enum2tok[try_block_K] = TOK(TOK_TRY_BLOCK);
-   enum2tok[handler_K] = TOK(TOK_HANDLER);
-   enum2tok[baselink_K] = TOK(TOK_BASELINK);
-   enum2tok[template_parm_index_K] = TOK(TOK_TEMPLATE_PARM_INDEX);
-   enum2tok[with_size_expr_K] = TOK(TOK_WITH_SIZE_EXPR);
-   enum2tok[obj_type_ref_K] = TOK(TOK_OBJ_TYPE_REF);
-   enum2tok[pointer_plus_expr_K] = TOK(TOK_POINTER_PLUS_EXPR);
-   enum2tok[target_expr_K] = TOK(TOK_TARGET_EXPR);
-   enum2tok[target_mem_ref_K] = TOK(TOK_TARGET_MEM_REF);
-   enum2tok[target_mem_ref461_K] = TOK(TOK_TARGET_MEM_REF461);
-   enum2tok[mem_ref_K] = TOK(TOK_MEM_REF);
-   enum2tok[widen_sum_expr_K] = TOK(TOK_WIDEN_SUM_EXPR);
-   enum2tok[widen_mult_expr_K] = TOK(TOK_WIDEN_MULT_EXPR);
-   enum2tok[gimple_predict_K] = TOK(TOK_GIMPLE_PREDICT);
-   enum2tok[error_mark_K] = TOK(TOK_ERROR_MARK);
 
 }
 
@@ -292,7 +99,7 @@ tree_manipulation::~tree_manipulation()
 
 ///TODO weight_node to fix in tree_node_factory.cpp
 ///Create an unary operation
-tree_nodeRef tree_manipulation::create_unary_operation(const tree_nodeRef & type,const tree_nodeRef & op, std::string srcp, kind operation_kind)
+tree_nodeRef tree_manipulation::create_unary_operation(const tree_nodeRef & type,const tree_nodeRef & op, std::string srcp, kind operation_kind) const
 {
    ///Check if the tree_node given are tree_reindex
    THROW_ASSERT(type->get_kind() == tree_reindex_K, "Type node is not a tree reindex");
@@ -306,7 +113,7 @@ tree_nodeRef tree_manipulation::create_unary_operation(const tree_nodeRef & type
       {
          break;
       }
-      
+
       case binfo_K:
       case block_K:
       case call_expr_K:
@@ -411,7 +218,7 @@ tree_nodeRef tree_manipulation::create_unary_operation(const tree_nodeRef & type
 
 ///TODO weight_node to fix in tree_node_factory.cpp
 ///Create a binary expression
-tree_nodeRef tree_manipulation::create_binary_operation(const tree_nodeRef & type, const tree_nodeRef & op0, const tree_nodeRef & op1, std::string srcp, kind operation_kind)
+tree_nodeRef tree_manipulation::create_binary_operation(const tree_nodeRef & type, const tree_nodeRef & op0, const tree_nodeRef & op1, std::string srcp, kind operation_kind) const
 {
    ///Check if the tree_node given are tree_reindex
    THROW_ASSERT(type->get_kind() == tree_reindex_K, "Type node is not a tree reindex");
@@ -531,7 +338,7 @@ tree_nodeRef tree_manipulation::create_binary_operation(const tree_nodeRef & typ
 
 ///TODO weight_node to fix in tree_node_factory.cpp
 ///Create a ternary expression
-tree_nodeRef tree_manipulation::create_ternary_operation(const tree_nodeRef & type, const tree_nodeRef & op0, const tree_nodeRef & op1, const tree_nodeRef & op2, std::string srcp, kind operation_kind)
+tree_nodeRef tree_manipulation::create_ternary_operation(const tree_nodeRef & type, const tree_nodeRef & op0, const tree_nodeRef & op1, const tree_nodeRef & op2, std::string srcp, kind operation_kind) const
 {
    ///Check if the tree_node given are tree_reindex
    THROW_ASSERT(type->get_kind() == tree_reindex_K, "Type is not a tree reindex");
@@ -654,7 +461,7 @@ tree_nodeRef tree_manipulation::create_ternary_operation(const tree_nodeRef & ty
 
 ///TODO weight_node to fix in tree_node_factory.cpp
 ///Create a quaternary expression
-tree_nodeRef tree_manipulation::create_quaternary_operation(const tree_nodeRef & type, const tree_nodeRef & op0,const tree_nodeRef & op1,const tree_nodeRef & op2,const tree_nodeRef & op3, std::string srcp, kind operation_kind)
+tree_nodeRef tree_manipulation::create_quaternary_operation(const tree_nodeRef & type, const tree_nodeRef & op0,const tree_nodeRef & op1,const tree_nodeRef & op2,const tree_nodeRef & op3, std::string srcp, kind operation_kind) const
 {
    ///Check if the tree_node given are tree_reindex
    THROW_ASSERT(type->get_kind() == tree_reindex_K, "Type node is not a tree reindex");
@@ -781,7 +588,7 @@ tree_nodeRef tree_manipulation::create_quaternary_operation(const tree_nodeRef &
 ///CONST_OBJ_TREE_NODES
 
 ///Create an integer_cst node
-tree_nodeRef tree_manipulation::CreateIntegerCst(const tree_nodeConstRef type, const long long int value, const unsigned int integer_cst_nid)
+tree_nodeRef tree_manipulation::CreateIntegerCst(const tree_nodeConstRef type, const long long int value, const unsigned int integer_cst_nid) const
 {
    THROW_ASSERT(type->get_kind() == tree_reindex_K, "Type node is not a tree reindex");
 
@@ -805,7 +612,7 @@ tree_nodeRef tree_manipulation::CreateIntegerCst(const tree_nodeConstRef type, c
 ///IDENTIFIER_TREE_NODE
 
 ///Create an identifier node
-tree_nodeRef tree_manipulation::create_identifier_node(const std::string&strg)
+tree_nodeRef tree_manipulation::create_identifier_node(const std::string&strg) const
 {
    THROW_ASSERT(!strg.empty(), "It requires a non empty string");
 
@@ -852,7 +659,7 @@ tree_nodeRef tree_manipulation::create_var_decl(
       bool static_flag,
       bool register_flag,
       bool readonly_flag,
-      const std::string&bit_values)
+      const std::string&bit_values) const
 {
    ///Check if the tree_node given are tree_reindex
    THROW_ASSERT(type->get_kind() == tree_reindex_K, "Node is not a tree reindex");
@@ -914,7 +721,7 @@ tree_nodeRef tree_manipulation::create_var_decl(
 
 }
 
-tree_nodeRef tree_manipulation::create_translation_unit_decl()
+tree_nodeRef tree_manipulation::create_translation_unit_decl() const
 {
    tree_nodeRef translation_unit_decl_node;
    std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> IR_schema;
@@ -937,7 +744,7 @@ tree_nodeRef tree_manipulation::create_translation_unit_decl()
 
 
 ///Create result_decl
-tree_nodeRef tree_manipulation::create_result_decl(const tree_nodeRef & name, const tree_nodeRef & type, const tree_nodeRef & scpe, const tree_nodeRef & size,  const tree_nodeRef &  smt_ann, const tree_nodeRef & init, std::string srcp,  unsigned int algn, bool artificial_flag)
+tree_nodeRef tree_manipulation::create_result_decl(const tree_nodeRef & name, const tree_nodeRef & type, const tree_nodeRef & scpe, const tree_nodeRef & size,  const tree_nodeRef &  smt_ann, const tree_nodeRef & init, std::string srcp,  unsigned int algn, bool artificial_flag) const
 {
 
    ///Check if the tree_node given are tree_reindex
@@ -1066,7 +873,7 @@ tree_nodeRef tree_manipulation::create_parm_decl(
 ///TYPE_OBJ
 
 ///Create a void type
-tree_nodeRef tree_manipulation::create_void_type()
+tree_nodeRef tree_manipulation::create_void_type() const
 {
    ///@41     void_type        name: @58      algn: 8
    ///@58     type_decl        name: @63      type: @41      srcp: "<built-in>:0:0"
@@ -1110,7 +917,7 @@ tree_nodeRef tree_manipulation::create_void_type()
 }
 
 ///Create a bit_size type
-tree_nodeRef tree_manipulation::create_bit_size_type()
+tree_nodeRef tree_manipulation::create_bit_size_type() const
 {
    ///@32    identifier_node  strg: "bitsizetype"  lngt: 13
    ///@18    integer_type   name: @32   size: @33   algn: 64    prec: 64   unsigned   min : @34   max : @35
@@ -1164,7 +971,7 @@ tree_nodeRef tree_manipulation::create_bit_size_type()
 }
 
 ///Create a size type
-tree_nodeRef tree_manipulation::create_size_type()
+tree_nodeRef tree_manipulation::create_size_type() const
 {
    //@124    identifier_node  strg: "sizetype"             lngt: 8
    //@96     integer_type     name: @124     size: @15      algn: 32
@@ -1224,7 +1031,7 @@ tree_nodeRef tree_manipulation::create_size_type()
 }
 
 ///Create a boolean type
-tree_nodeRef tree_manipulation::create_boolean_type()
+tree_nodeRef tree_manipulation::create_boolean_type() const
 {
    ///@48 boolean_type name: @55 size: @7 algn: 8
    ///@55 type_decl name: @58 type: @48 srcp: "<built-in>:0:0"
@@ -1288,7 +1095,7 @@ tree_nodeRef tree_manipulation::create_boolean_type()
 }
 
 ///Create an unsigned integer type
-tree_nodeRef tree_manipulation::create_default_unsigned_integer_type()
+tree_nodeRef tree_manipulation::create_default_unsigned_integer_type() const
 {
    ///@41     identifier_node  strg: "unsigned int"         lngt: 12
    ///@8      integer_type     name: @20      size: @12      algn: 32      prec: 32       unsigned       min : @21    max : @22
@@ -1363,7 +1170,7 @@ tree_nodeRef tree_manipulation::create_default_unsigned_integer_type()
    return integer_type_node;
 }
 
-tree_nodeRef tree_manipulation::CreateDefaultUnsignedLongLongInt()
+tree_nodeRef tree_manipulation::CreateDefaultUnsignedLongLongInt() const
 {
    std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> IR_schema;
    tree_nodeRef integer_type_node;
@@ -1423,7 +1230,7 @@ tree_nodeRef tree_manipulation::CreateDefaultUnsignedLongLongInt()
 }
 
 ///Create an integer type
-tree_nodeRef tree_manipulation::create_default_integer_type()
+tree_nodeRef tree_manipulation::create_default_integer_type() const
 {
    ///@36     identifier_node  strg: "int" lngt: 3
    ///@19     type_decl        name: @36      type: @8       srcp: "<built-in>:0:0"
@@ -1504,7 +1311,7 @@ tree_nodeRef tree_manipulation::create_default_integer_type()
 }
 
 ///Create a pointer type
-tree_nodeRef tree_manipulation::create_pointer_type(const tree_nodeConstRef ptd)
+tree_nodeRef tree_manipulation::create_pointer_type(const tree_nodeConstRef ptd) const
 {
    ///@15     pointer_type     size: @12      algn: 32       ptd : @9     @9 type of the pointer
    ///@12     integer_cst      type: @26      low : 32       @26 is bit_size_type
@@ -1541,7 +1348,7 @@ tree_nodeRef tree_manipulation::create_pointer_type(const tree_nodeConstRef ptd)
 }
 
 
-tree_nodeRef tree_manipulation::create_integer_type_with_prec(unsigned int prec, bool unsigned_p)
+tree_nodeRef tree_manipulation::create_integer_type_with_prec(unsigned int prec, bool unsigned_p) const
 {
    std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> IR_schema;
 
@@ -1586,8 +1393,8 @@ tree_nodeRef tree_manipulation::create_ssa_name(const tree_nodeConstRef var, con
    if (var)
    {
       THROW_ASSERT(GET_CONST_NODE(var)->get_kind() == var_decl_K or
-            GET_CONST_NODE(var)->get_kind() == parm_decl_K,
-            GET_CONST_NODE(var)->get_kind_text());
+                   GET_CONST_NODE(var)->get_kind() == parm_decl_K,
+                   GET_CONST_NODE(var)->get_kind_text());
       IR_schema[TOK(TOK_VAR)] = STR(var->index);
    }
    IR_schema[TOK(TOK_VERS)] = STR(vers);
@@ -1602,13 +1409,13 @@ tree_nodeRef tree_manipulation::create_ssa_name(const tree_nodeConstRef var, con
    if (var and GetPointer<ssa_name>(curr_node)->CGetUseStmts().empty())
    {
       THROW_ASSERT(GET_CONST_NODE(var)->get_kind() == var_decl_K or
-            GET_CONST_NODE(var)->get_kind() == parm_decl_K,
-            GET_CONST_NODE(var)->get_kind_text());
+                   GET_CONST_NODE(var)->get_kind() == parm_decl_K,
+                   GET_CONST_NODE(var)->get_kind_text());
       std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> gimple_nop_IR_schema;
       gimple_nop_IR_schema[TOK(TOK_SRCP)] =
-         GetPointer<const srcp>(GET_CONST_NODE(var))->include_name + ":" +
-         STR(GetPointer<const srcp>(GET_CONST_NODE(var))->line_number) + ":" +
-         STR(GetPointer<const srcp>(GET_CONST_NODE(var))->column_number);
+            GetPointer<const srcp>(GET_CONST_NODE(var))->include_name + ":" +
+            STR(GetPointer<const srcp>(GET_CONST_NODE(var))->line_number) + ":" +
+            STR(GetPointer<const srcp>(GET_CONST_NODE(var))->column_number);
       unsigned int gimple_nop_node_id = this->TreeM->new_tree_node_id();
       this->TreeM->create_tree_node(gimple_nop_node_id, gimple_nop_K, gimple_nop_IR_schema);
       tree_nodeRef gimple_nop_node_ref = TreeM->GetTreeReindex(gimple_nop_node_id);
@@ -1626,7 +1433,7 @@ tree_nodeRef tree_manipulation::create_ssa_name(const tree_nodeConstRef var, con
 ///GIMPLE_ASSIGN
 
 ///Create a gimple_assign
-tree_nodeRef tree_manipulation::create_gimple_modify_stmt(const tree_nodeRef op0, const tree_nodeRef op1, const std::string& srcp, const unsigned int bb_index)
+tree_nodeRef tree_manipulation::create_gimple_modify_stmt(const tree_nodeRef op0, const tree_nodeRef op1, const std::string& srcp, const unsigned int bb_index) const
 {
    THROW_ASSERT(op0->get_kind() == tree_reindex_K, "Node is not a tree reindex");
    THROW_ASSERT(op1->get_kind() == tree_reindex_K, "Node is not a tree reindex");
@@ -1646,14 +1453,14 @@ tree_nodeRef tree_manipulation::create_gimple_modify_stmt(const tree_nodeRef op0
 }
 
 tree_nodeRef tree_manipulation::CreateGimpleAssign(const tree_nodeRef type,
-      const tree_nodeRef op, unsigned int bb_index, const std::string& srcp)
+                                                   const tree_nodeRef op, unsigned int bb_index, const std::string& srcp) const
 {
    tree_nodeRef ssa_vd = create_ssa_name(tree_nodeRef(), type);
    return create_gimple_modify_stmt(ssa_vd, op, srcp, bb_index);
 }
 
 /// GIMPLE_CALL
-tree_nodeRef tree_manipulation::create_gimple_call(const tree_nodeConstRef called_function, const std::vector<tree_nodeRef> &args, const std::string&srcp, const unsigned int bb_index)
+tree_nodeRef tree_manipulation::create_gimple_call(const tree_nodeConstRef called_function, const std::vector<tree_nodeRef> &args, const std::string&srcp, const unsigned int bb_index) const
 {
    THROW_ASSERT(!srcp.empty(), "It requires a non empty string");
    std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> ae_IR_schema, gc_IR_schema;
@@ -1690,7 +1497,7 @@ tree_nodeRef tree_manipulation::create_gimple_call(const tree_nodeConstRef calle
 ///GIMPLE_COND
 
 ///Create a gimple_cond with one operand (type void)
-tree_nodeRef tree_manipulation::create_gimple_cond(const tree_nodeRef & expr, std::string srcp, unsigned int bb_index)
+tree_nodeRef tree_manipulation::create_gimple_cond(const tree_nodeRef & expr, std::string srcp, unsigned int bb_index) const
 {
    THROW_ASSERT(expr->get_kind() == tree_reindex_K, "Node is not a tree reindex");
    THROW_ASSERT(!srcp.empty(), "It requires a non empty string");
@@ -1716,7 +1523,7 @@ tree_nodeRef tree_manipulation::create_gimple_cond(const tree_nodeRef & expr, st
 }
 
 ///Create gimple_return
-tree_nodeRef tree_manipulation::create_return_expr(const tree_nodeRef & decl, tree_nodeRef & op_gimple, std::string srcp, unsigned int bb_index)
+tree_nodeRef tree_manipulation::create_return_expr(const tree_nodeRef & decl, tree_nodeRef & op_gimple, std::string srcp, unsigned int bb_index) const
 {
 
    THROW_ASSERT(decl->get_kind() == tree_reindex_K, "Node is not a tree reindex");
@@ -1751,7 +1558,7 @@ tree_nodeRef tree_manipulation::create_return_expr(const tree_nodeRef & decl, tr
 ///GIMPLE_PHI
 
 ///Create a gimple_phi
-tree_nodeRef tree_manipulation::create_phi_node(tree_nodeRef & ssa_res, const std::vector<std::pair<tree_nodeRef, unsigned int> > & list_of_def_edge, unsigned int bb_index, bool virtual_flag)
+tree_nodeRef tree_manipulation::create_phi_node(tree_nodeRef & ssa_res, const std::vector<std::pair<tree_nodeRef, unsigned int> > & list_of_def_edge, unsigned int bb_index, bool virtual_flag) const
 {
    ///Check if the tree_node given are tree_reindex
    ///THROW_ASSERT(ssa_res->get_kind() == tree_reindex_K, "ssa_name res is not a tree_reindex node");
@@ -1806,7 +1613,7 @@ tree_nodeRef tree_manipulation::create_phi_node(tree_nodeRef & ssa_res, const st
 
 ///Create a basic block
 blocRef tree_manipulation::create_basic_block(std::map<unsigned int, blocRef> & list_of_bloc, std::vector<unsigned int> predecessors, std::vector<unsigned int> successors,
-         std::vector<tree_nodeRef> stmt, unsigned int number, unsigned int true_edge, unsigned int false_edge, std::vector<tree_nodeRef> phi)
+                                              std::vector<tree_nodeRef> stmt, unsigned int number, unsigned int true_edge, unsigned int false_edge, std::vector<tree_nodeRef> phi) const
 {
    ///Create new basic block
    blocRef new_bb = blocRef(new bloc(number));
@@ -1851,7 +1658,7 @@ blocRef tree_manipulation::create_basic_block(std::map<unsigned int, blocRef> & 
 }
 
 ///Add a list of statement in basic block bb
-void tree_manipulation::bb_add_stmts(blocRef & bb, const std::vector<tree_nodeRef> & stmts)
+void tree_manipulation::bb_add_stmts(blocRef & bb, const std::vector<tree_nodeRef> & stmts) const
 {
    ///Insert the list of statement
    for(auto tn : stmts)
@@ -1861,7 +1668,7 @@ void tree_manipulation::bb_add_stmts(blocRef & bb, const std::vector<tree_nodeRe
 }
 
 ///Add a statement in basic block
-void tree_manipulation::bb_add_stmt(blocRef & bb, const tree_nodeRef & stmt)
+void tree_manipulation::bb_add_stmt(blocRef & bb, const tree_nodeRef & stmt) const
 {
    ///Insert the list of statement
    bb->PushBack(stmt);
@@ -1869,7 +1676,7 @@ void tree_manipulation::bb_add_stmt(blocRef & bb, const tree_nodeRef & stmt)
 }
 
 ///Add a list of successors in basic block bb
-void tree_manipulation::bb_add_successors(blocRef & bb, const std::vector<unsigned int> & successors)
+void tree_manipulation::bb_add_successors(blocRef & bb, const std::vector<unsigned int> & successors) const
 {
    for(auto successor : successors)
    {
@@ -1878,13 +1685,13 @@ void tree_manipulation::bb_add_successors(blocRef & bb, const std::vector<unsign
 }
 
 ///Add a successor in basic block bb
-void tree_manipulation::bb_add_successor(blocRef & bb, const unsigned int & successor)
+void tree_manipulation::bb_add_successor(blocRef & bb, const unsigned int & successor) const
 {
    bb->add_succ(successor);
 }
 
 ///Add a list of predecessors in basic block bb
-void tree_manipulation::bb_add_predecessors(blocRef & bb, const std::vector<unsigned int> &  predecessors)
+void tree_manipulation::bb_add_predecessors(blocRef & bb, const std::vector<unsigned int> &  predecessors) const
 {
    for(auto predecessor : predecessors)
    {
@@ -1893,13 +1700,13 @@ void tree_manipulation::bb_add_predecessors(blocRef & bb, const std::vector<unsi
 }
 
 ///Add a predecessor in basic block bb
-void tree_manipulation::bb_add_predecessor(blocRef & bb, const unsigned int & predecessor)
+void tree_manipulation::bb_add_predecessor(blocRef & bb, const unsigned int & predecessor) const
 {
    bb->add_pred(predecessor);
 }
 
 ///Remove a list of successors from basic block bb
-void tree_manipulation::bb_remove_successors(blocRef & bb, const std::vector<unsigned int> & successors)
+void tree_manipulation::bb_remove_successors(blocRef & bb, const std::vector<unsigned int> & successors) const
 {
    for(auto successor : successors)
    {
@@ -1908,7 +1715,7 @@ void tree_manipulation::bb_remove_successors(blocRef & bb, const std::vector<uns
 }
 
 ///Remove a successor from basic block bb
-void tree_manipulation::bb_remove_successor(blocRef & bb, const unsigned int & successor)
+void tree_manipulation::bb_remove_successor(blocRef & bb, const unsigned int & successor) const
 {
    std::vector<unsigned int> & list_of_succ = bb->list_of_succ;
    std::vector<unsigned int>::iterator iterator_stmt = std::find(list_of_succ.begin(), list_of_succ.end(), successor);
@@ -1918,7 +1725,7 @@ void tree_manipulation::bb_remove_successor(blocRef & bb, const unsigned int & s
 }
 
 ///Remove a list of predecessors in basic block bb.
-void tree_manipulation::bb_remove_predecessors(blocRef & bb, const std::vector<unsigned int> & predecessors)
+void tree_manipulation::bb_remove_predecessors(blocRef & bb, const std::vector<unsigned int> & predecessors) const
 {
    for(auto predecessor : predecessors)
    {
@@ -1927,7 +1734,7 @@ void tree_manipulation::bb_remove_predecessors(blocRef & bb, const std::vector<u
 }
 
 ///Remove a predecessors in basic block bb.
-void tree_manipulation::bb_remove_predecessor(blocRef & bb, const unsigned int & predecessor)
+void tree_manipulation::bb_remove_predecessor(blocRef & bb, const unsigned int & predecessor) const
 {
    std::vector<unsigned int> & list_of_pred = bb->list_of_pred;
    std::vector<unsigned int>::iterator iterator_stmt = std::find(list_of_pred.begin(), list_of_pred.end(), predecessor);
@@ -1937,30 +1744,30 @@ void tree_manipulation::bb_remove_predecessor(blocRef & bb, const unsigned int &
 }
 
 ///Remove all the predecessors from basic block bb
-void tree_manipulation::bb_remove_all_predecessors(blocRef & bb)
+void tree_manipulation::bb_remove_all_predecessors(blocRef & bb) const
 {
    bb->list_of_pred.erase(bb->list_of_pred.begin(), bb->list_of_pred.end());
 }
 
 ///Remove all the successors from basic block bb
-void tree_manipulation::bb_remove_all_successors(blocRef & bb)
+void tree_manipulation::bb_remove_all_successors(blocRef & bb) const
 {
    bb->list_of_succ.erase(bb->list_of_succ.begin(), bb->list_of_succ.end());
 }
 
 ///Set the false edge of basic block bb
-void tree_manipulation::bb_set_false_edge(blocRef & bb,const unsigned int & false_edge_index)
+void tree_manipulation::bb_set_false_edge(blocRef & bb,const unsigned int & false_edge_index) const
 {
    bb->false_edge = false_edge_index;
 }
 
 ///Set the true edge of basic block bb
-void tree_manipulation::bb_set_true_edge(blocRef & bb, const unsigned int & true_edge_index)
+void tree_manipulation::bb_set_true_edge(blocRef & bb, const unsigned int & true_edge_index) const
 {
    bb->true_edge = true_edge_index;
 }
 
-void tree_manipulation::create_label(const blocRef block, const unsigned int function_decl_nid)
+void tree_manipulation::create_label(const blocRef block, const unsigned int function_decl_nid) const
 {
    std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> IR_schema;
    ///check if the first statement is a gimple_label but with a unnamed label_decl.
@@ -2086,7 +1893,7 @@ void tree_manipulation::create_label(const blocRef block, const unsigned int fun
 #endif
 }
 
-void tree_manipulation::create_goto(const blocRef block, const unsigned int, const unsigned int label_expr_nid)
+void tree_manipulation::create_goto(const blocRef block, const unsigned int, const unsigned int label_expr_nid) const
 {
    TreeM->add_goto();
    ///compute the label_decl_nid
@@ -2183,7 +1990,7 @@ tree_nodeRef tree_manipulation::CreateOrExpr(const tree_nodeConstRef first_condi
    std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> ssa_schema, truth_or_expr_schema, gimple_assign_schema;
    ///Create the or expr
    const auto truth_or_expr_id = TreeM->new_tree_node_id();
-   const auto type_index = tree_helper::get_type_index(TreeM, first_condition->index);
+   const auto type_index = create_boolean_type()->index;
    truth_or_expr_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
    truth_or_expr_schema[TOK(TOK_TYPE)] = boost::lexical_cast<std::string>(type_index);
    truth_or_expr_schema[TOK(TOK_OP0)] = STR(first_condition->index);
@@ -2237,7 +2044,7 @@ tree_nodeRef tree_manipulation::CreateAndExpr(const tree_nodeConstRef first_cond
    std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> ssa_schema, truth_and_expr_schema, gimple_assign_schema;
    ///Create the and expr
    const auto truth_and_expr_id = TreeM->new_tree_node_id();
-   const auto type_index = tree_helper::get_type_index(TreeM, first_condition->index);
+   const auto type_index = create_boolean_type()->index;
    truth_and_expr_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
    truth_and_expr_schema[TOK(TOK_TYPE)] = boost::lexical_cast<std::string>(type_index);
    truth_and_expr_schema[TOK(TOK_OP0)] = STR(first_condition->index);
@@ -2281,7 +2088,7 @@ tree_nodeRef tree_manipulation::CreateNotExpr(const tree_nodeConstRef condition,
          if(ga)
          {
             const auto tne = GetPointer<const truth_not_expr>(GET_NODE(ga->op1));
-            if(tne and tne->op->index == condition->index) 
+            if(tne and tne->op->index == condition->index)
             {
                return ga->op0;
             }
@@ -2291,7 +2098,7 @@ tree_nodeRef tree_manipulation::CreateNotExpr(const tree_nodeConstRef condition,
    std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> ssa_schema, truth_not_expr_schema, gimple_assign_schema;
    ///Create the not expr
    const auto truth_not_expr_id = TreeM->new_tree_node_id();
-   const auto type_index = tree_helper::get_type_index(TreeM, condition->index);
+   const auto type_index = create_boolean_type()->index;
    truth_not_expr_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
    truth_not_expr_schema[TOK(TOK_TYPE)] = boost::lexical_cast<std::string>(type_index);
    truth_not_expr_schema[TOK(TOK_OP)] = STR(condition->index);
@@ -2480,56 +2287,56 @@ tree_nodeRef tree_manipulation::CreateUnsigned(const tree_nodeConstRef signed_ty
 
    const auto min = [&] () -> tree_nodeRef
    {
-      std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> min_schema;
-         min_schema[TOK(TOK_VALUE)] = STR(0);
-      const auto find = TreeM->find(integer_cst_K, min_schema);
-      if(find)
-         return TreeM->GetTreeReindex(find);
-      const auto min_id = TreeM->new_tree_node_id();
-      TreeM->create_tree_node(min_id, integer_cst_K, min_schema);
-      return TreeM->GetTreeReindex(min_id);
-   }();
-   ut_schema[TOK(TOK_MIN)] = STR(min->index);
-
-   const auto max = [&] () -> tree_nodeRef
-   {
-      std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> max_schema;
-      max_schema[TOK(TOK_VALUE)] = STR((2 * -(tree_helper::get_integer_cst_value(GetPointer<const integer_cst>(GET_NODE(int_signed_type->min))))) - 1);
-      const auto find = TreeM->find(integer_cst_K, max_schema);
-      if(find)
-         return TreeM->GetTreeReindex(find);
-      const auto max_id = TreeM->new_tree_node_id();
-      TreeM->create_tree_node(max_id, integer_cst_K, max_schema);
-      return TreeM->GetTreeReindex(max_id);
-   }();
-   ut_schema[TOK(TOK_MAX)] = STR(max->index);
-   ut_schema[TOK(TOK_PREC)] = STR(int_signed_type->prec);
-   ut_schema[TOK(TOK_UNSIGNED)] = STR(true);
-   const auto find = TreeM->find(integer_type_K, ut_schema);
+                    std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> min_schema;
+                    min_schema[TOK(TOK_VALUE)] = STR(0);
+   const auto find = TreeM->find(integer_cst_K, min_schema);
    if(find)
-   {
       return TreeM->GetTreeReindex(find);
-   }
-   else
-   {
-      std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> in_schema;
-      std::string unsigned_str = "unsigned " + in->strg;
-      in_schema[TOK(TOK_STRG)] = unsigned_str;
-      auto find_in = TreeM->find(identifier_node_K, in_schema);
-      if(not find_in)
-      {
-         find_in = TreeM->new_tree_node_id();
-         TreeM->create_tree_node(find_in, identifier_node_K, in_schema);
-      }
-      ut_schema[TOK(TOK_NAME)] = STR(find_in);
+   const auto min_id = TreeM->new_tree_node_id();
+   TreeM->create_tree_node(min_id, integer_cst_K, min_schema);
+   return TreeM->GetTreeReindex(min_id);
+}();
+ut_schema[TOK(TOK_MIN)] = STR(min->index);
 
-      const auto new_tree_node_id = TreeM->new_tree_node_id();
-      TreeM->create_tree_node(new_tree_node_id, integer_type_K, ut_schema);
-      return TreeM->GetTreeReindex(new_tree_node_id);
-   }
+const auto max = [&] () -> tree_nodeRef
+{
+                 std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> max_schema;
+                 max_schema[TOK(TOK_VALUE)] = STR((2 * -(tree_helper::get_integer_cst_value(GetPointer<const integer_cst>(GET_NODE(int_signed_type->min))))) - 1);
+const auto find = TreeM->find(integer_cst_K, max_schema);
+if(find)
+return TreeM->GetTreeReindex(find);
+const auto max_id = TreeM->new_tree_node_id();
+TreeM->create_tree_node(max_id, integer_cst_K, max_schema);
+return TreeM->GetTreeReindex(max_id);
+}();
+ut_schema[TOK(TOK_MAX)] = STR(max->index);
+ut_schema[TOK(TOK_PREC)] = STR(int_signed_type->prec);
+ut_schema[TOK(TOK_UNSIGNED)] = STR(true);
+const auto find = TreeM->find(integer_type_K, ut_schema);
+if(find)
+{
+   return TreeM->GetTreeReindex(find);
+}
+else
+{
+std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> in_schema;
+std::string unsigned_str = "unsigned " + in->strg;
+in_schema[TOK(TOK_STRG)] = unsigned_str;
+auto find_in = TreeM->find(identifier_node_K, in_schema);
+if(not find_in)
+{
+   find_in = TreeM->new_tree_node_id();
+   TreeM->create_tree_node(find_in, identifier_node_K, in_schema);
+}
+ut_schema[TOK(TOK_NAME)] = STR(find_in);
+
+const auto new_tree_node_id = TreeM->new_tree_node_id();
+TreeM->create_tree_node(new_tree_node_id, integer_type_K, ut_schema);
+return TreeM->GetTreeReindex(new_tree_node_id);
+}
 }
 
-tree_nodeRef tree_manipulation::CreateEqExpr(const tree_nodeConstRef first_operand, const tree_nodeConstRef second_operand, const blocRef block)
+tree_nodeRef tree_manipulation::CreateEqExpr(const tree_nodeConstRef first_operand, const tree_nodeConstRef second_operand, const blocRef block) const
 {
    if(block and reuse)
    {
@@ -2580,7 +2387,7 @@ tree_nodeRef tree_manipulation::CreateEqExpr(const tree_nodeConstRef first_opera
    return TreeM->GetTreeReindex(ssa_node_nid);
 }
 
-tree_nodeRef tree_manipulation::CreateCallExpr(const tree_nodeConstRef called_function, const std::vector<tree_nodeRef> &args, const std::string& srcp)
+tree_nodeRef tree_manipulation::CreateCallExpr(const tree_nodeConstRef called_function, const std::vector<tree_nodeRef> &args, const std::string& srcp) const
 {
    std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> ae_IR_schema, ce_IR_schema;
    ae_IR_schema[TOK(TOK_OP)] = STR(called_function->index);
@@ -2608,7 +2415,7 @@ tree_nodeRef tree_manipulation::CreateCallExpr(const tree_nodeConstRef called_fu
    return TreeM->GetTreeReindex(ce_id);
 }
 
-tree_nodeRef tree_manipulation::CreateAddrExpr(const tree_nodeConstRef tn, const std::string& srcp)
+tree_nodeRef tree_manipulation::CreateAddrExpr(const tree_nodeConstRef tn, const std::string& srcp) const
 {
    std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> ae_IR_schema;
    const auto type_node = tree_helper::CGetType(tn);
@@ -2621,7 +2428,7 @@ tree_nodeRef tree_manipulation::CreateAddrExpr(const tree_nodeConstRef tn, const
    return TreeM->CGetTreeReindex(ae_id);
 }
 
-tree_nodeRef tree_manipulation::CreateGimpleAssignAddrExpr(const tree_nodeConstRef tn, const unsigned int bb_index, const std::string& srcp)
+tree_nodeRef tree_manipulation::CreateGimpleAssignAddrExpr(const tree_nodeConstRef tn, const unsigned int bb_index, const std::string& srcp) const
 {
    auto addr_tn = CreateAddrExpr(tn, srcp);
    const auto type_node = tree_helper::CGetType(tn);
@@ -2629,7 +2436,7 @@ tree_nodeRef tree_manipulation::CreateGimpleAssignAddrExpr(const tree_nodeConstR
    return CreateGimpleAssign(ptr_type, addr_tn, bb_index, srcp);
 }
 
-tree_nodeRef tree_manipulation::CreateVectorBooleanType(const unsigned int number_of_elements)
+tree_nodeRef tree_manipulation::CreateVectorBooleanType(const unsigned int number_of_elements) const
 {
    const auto boolean_type = create_boolean_type();
    const auto size = TreeM->CreateUniqueIntegerCst(number_of_elements, create_size_type()->index);
