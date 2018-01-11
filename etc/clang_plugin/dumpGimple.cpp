@@ -2875,8 +2875,16 @@ namespace clang
         }
         else
         {
+           std::set<int> succ_visited;
            for(const auto succ: llvm::successors(&BB))
-              serialize_int ("succ", getBB_index(succ));
+           {
+              auto bbIndex = getBB_index(succ);
+              if(succ_visited.find(bbIndex) == succ_visited.end())
+              {
+                 succ_visited.insert(bbIndex);
+                 serialize_int ("succ", bbIndex);
+              }
+           }
         }
         if(isa<llvm::BranchInst>(BB.getTerminator()))
         {
