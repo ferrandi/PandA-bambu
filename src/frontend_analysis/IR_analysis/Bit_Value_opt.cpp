@@ -914,7 +914,8 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
 #endif
                          tree_nodeRef nop_ga_var = GetPointer<gimple_assign>(GET_NODE(ga_nop))->op0;
                          TM->ReplaceTreeNode(stmt, ga->op1, nop_ga_var);
-                         {INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Restarted dead code"); restart_dead_code = true;}
+                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Restarted dead code");
+                         restart_dead_code = true;
                       }
                    }
                    else
@@ -1524,7 +1525,6 @@ DesignFlowStep_Status Bit_Value_opt::InternalExec ()
    restart_dead_code = false;
    modified = false;
    optimize(sl, TM);
-   THROW_ASSERT(not restart_dead_code or modified, "");
    modified ? function_behavior->UpdateBBVersion() : 0;
    return modified ? DesignFlowStep_Status::SUCCESS : DesignFlowStep_Status::UNCHANGED;
 
