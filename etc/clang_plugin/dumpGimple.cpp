@@ -433,28 +433,39 @@ namespace clang
             fd->print(llvm::errs());
             llvm_unreachable("Plugin Error");
          case llvm::Intrinsic::memcpy:
-            if(fd->getOperand(2)->getType()->isIntegerTy() && fd->getOperand(2)->getType()->getScalarSizeInBits() == 32)
+         {
+            auto funType = cast<llvm::FunctionType>(fd->getValueType());
+            if(funType->getParamType(2)->isIntegerTy() && funType->getParamType(2)->getScalarSizeInBits() == 32)
                return "_llvm_memcpy_p0i8_p0i8_i32";
-            else if (fd->getOperand(2)->getType()->isIntegerTy() && fd->getOperand(2)->getType()->getScalarSizeInBits() == 64)
+            else if (funType->getParamType(2)->isIntegerTy() && funType->getParamType(2)->getScalarSizeInBits() == 64)
                return "_llvm_memcpy_p0i8_p0i8_i64";
             fd->print(llvm::errs());
             llvm_unreachable("Plugin Error");
+         }
 
          case llvm::Intrinsic::memset:
-            if(fd->getOperand(2)->getType()->isIntegerTy() && fd->getOperand(2)->getType()->getScalarSizeInBits() == 32)
+         {
+            llvm::errs() << "memset intrinsic" << "\n";
+            fd->print(llvm::errs());
+            llvm::errs() << "operands: "<< fd->getNumOperands() << "\n";
+            auto funType = cast<llvm::FunctionType>(fd->getValueType());
+            if(funType->getParamType(2)->isIntegerTy() && funType->getParamType(2)->getScalarSizeInBits() == 32)
                return "_llvm_memset_p0i8_i32";
-            else if (fd->getOperand(2)->getType()->isIntegerTy() && fd->getOperand(2)->getType()->getScalarSizeInBits() == 64)
+            else if (funType->getParamType(2)->isIntegerTy() && funType->getParamType(2)->getScalarSizeInBits() == 64)
                return "_llvm_memset_p0i8_i64";
             fd->print(llvm::errs());
             llvm_unreachable("Plugin Error");
+         }
          case llvm::Intrinsic::memmove:
-            if(fd->getOperand(2)->getType()->isIntegerTy() && fd->getOperand(2)->getType()->getScalarSizeInBits() == 32)
+         {
+            auto funType = cast<llvm::FunctionType>(fd->getValueType());
+            if(funType->getParamType(2)->isIntegerTy() && funType->getParamType(2)->getScalarSizeInBits() == 32)
                return "_llvm_memmove_p0i8_p0i8_i32";
-            else if (fd->getOperand(2)->getType()->isIntegerTy() && fd->getOperand(2)->getType()->getScalarSizeInBits() == 64)
+            else if (funType->getParamType(2)->isIntegerTy() && funType->getParamType(2)->getScalarSizeInBits() == 64)
                return "_llvm_memmove_p0i8_p0i8_i64";
             fd->print(llvm::errs());
             llvm_unreachable("Plugin Error");
-
+         }
          default:
             fd->print(llvm::errs());
             llvm_unreachable("Plugin Error");
