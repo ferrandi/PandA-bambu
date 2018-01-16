@@ -1086,7 +1086,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                         addr_expr* ae0 = GetPointer<addr_expr>(GET_NODE(MR->op0));
                         tree_nodeRef ae_expr = tree_man->create_unary_operation(ae0->type,ae0->op, srcp_default, addr_expr_K);///It is required to de-share some IR nodes
                         tree_nodeRef ae_ga = CreateGimpleAssign(ae0->type, ae_expr, block.first, srcp_default);
-                        GetPointer<gimple_assign>(GET_NODE(ae_ga))->temporary_address = true;
+                        //GetPointer<gimple_assign>(GET_NODE(ae_ga))->temporary_address = true;
                         tree_nodeRef ae_vd = GetPointer<gimple_assign>(GET_NODE(ae_ga))->op0;
                         block.second->PushBefore(ae_ga, *it_los);
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(ae_ga)->ToString());
@@ -1097,7 +1097,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                      {
                         pointer_plus_expr* pp0 = GetPointer<pointer_plus_expr>(GET_NODE(MR->op0));
                         tree_nodeRef pp_ga = CreateGimpleAssign(pp0->type, MR->op0, block.first, srcp_default);
-                        GetPointer<gimple_assign>(GET_NODE(pp_ga))->temporary_address = true;
+                        //GetPointer<gimple_assign>(GET_NODE(pp_ga))->temporary_address = true;
                         tree_nodeRef pp_vd = GetPointer<gimple_assign>(GET_NODE(pp_ga))->op0;
                         block.second->PushBefore(pp_ga, *it_los);
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(pp_ga)->ToString());
@@ -1108,7 +1108,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                      {
                         view_convert_expr* vc0 = GetPointer<view_convert_expr>(GET_NODE(MR->op0));
                         tree_nodeRef vc_ga = CreateGimpleAssign(vc0->type, MR->op0, block.first, srcp_default);
-                        GetPointer<gimple_assign>(GET_NODE(vc_ga))->temporary_address = true;
+                        //GetPointer<gimple_assign>(GET_NODE(vc_ga))->temporary_address = true;
                         tree_nodeRef vc_vd = GetPointer<gimple_assign>(GET_NODE(vc_ga))->op0;
                         block.second->PushBefore(vc_ga, *it_los);
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(vc_ga)->ToString());
