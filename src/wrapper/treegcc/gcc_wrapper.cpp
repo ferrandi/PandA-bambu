@@ -1036,6 +1036,13 @@ void GccWrapper::SetGccDefault()
       optimization_flags["ipa-pure-const"] = true; ///needed to correctly manage global variables
       optimization_flags["tree-dce"] = true; ///needed to remove unnecessary computations
    }
+#if HAVE_I386_CLANG40_COMPILER
+   else
+   {
+      optimization_flags["vectorize"] = false; ///disable vectorization
+      optimization_flags["slp-vectorize"] = false; ///disable superword-level parallelism vectorization
+   }
+#endif
    bool flag_cpp;
    if(Param->isOption(OPT_input_format) &&
          Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_CPP &&
