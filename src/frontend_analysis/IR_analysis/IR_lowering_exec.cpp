@@ -964,21 +964,21 @@ DesignFlowStep_Status IR_lowering::InternalExec()
             gimple_phi::DefEdgeList to_be_replaced;
             for(const auto& def_edge : pn->CGetDefEdgesList())
             {
-               if(GET_NODE(def_edge.first)->get_kind() == addr_expr_K)
+               if(GET_NODE(def_edge.first)->get_kind() == addr_expr_K || GET_NODE(def_edge.first)->get_kind() == view_convert_expr_K)
                {
                   to_be_replaced.push_back(def_edge);
                }
             }
             for(const auto& def_edge : to_be_replaced)
             {
-               addr_expr* ae = GetPointer<addr_expr>(GET_NODE(def_edge.first));
-               tree_nodeRef ae_expr = tree_man->create_unary_operation(ae->type,ae->op, srcp_default, addr_expr_K);///It is required to de-share some IR nodes
-               tree_nodeRef ae_ga = CreateGimpleAssign(ae->type, ae_expr, def_edge.second, srcp_default);
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(ae_ga)->ToString());
-               tree_nodeRef ae_vd = GetPointer<gimple_assign>(GET_NODE(ae_ga))->op0;
+               unary_expr* ue = GetPointer<unary_expr>(GET_NODE(def_edge.first));
+               tree_nodeRef ue_expr = tree_man->create_unary_operation(ue->type,ue->op, srcp_default, GET_NODE(def_edge.first)->get_kind());///It is required to de-share some IR nodes
+               tree_nodeRef ue_ga = CreateGimpleAssign(ue->type, ue_expr, def_edge.second, srcp_default);
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(ue_ga)->ToString());
+               tree_nodeRef ue_vd = GetPointer<gimple_assign>(GET_NODE(ue_ga))->op0;
                auto pred_block = sl->list_of_bloc.find(def_edge.second)->second;
                if(pred_block->CGetStmtList().empty())
-                  pred_block->PushBack(ae_ga);
+                  pred_block->PushBack(ue_ga);
                else
                {
                   auto last_statement = pred_block->CGetStmtList().back();
@@ -987,14 +987,14 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                         GET_NODE(last_statement)->get_kind() == gimple_return_K ||
                         GET_NODE(last_statement)->get_kind() == gimple_switch_K ||
                         GET_NODE(last_statement)->get_kind() == gimple_goto_K)
-                     pred_block->PushBefore(ae_ga, last_statement);
+                     pred_block->PushBefore(ue_ga, last_statement);
                   else
                   {
-                     pred_block->PushAfter(ae_ga, last_statement);
-                     GetPointer<ssa_name>(GET_NODE(ae_vd))->SetDefStmt(ae_ga);
+                     pred_block->PushAfter(ue_ga, last_statement);
+                     GetPointer<ssa_name>(GET_NODE(ue_vd))->SetDefStmt(ue_ga);
                   }
                }
-               pn->ReplaceDefEdge(TM, def_edge, gimple_phi::DefEdge(ae_vd, def_edge.second));
+               pn->ReplaceDefEdge(TM, def_edge, gimple_phi::DefEdge(ue_vd, def_edge.second));
             }
          }
       }
@@ -1045,15 +1045,15 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                if(GetPointer<binary_expr>(GET_NODE(ga->op1)))/// required by the CLANG/LLVM plugin
                {
                   auto be = GetPointer<binary_expr>(GET_NODE(ga->op1));
-                  if(GET_NODE(be->op0)->get_kind() == nop_expr_K)
+                  if(GET_NODE(be->op0)->get_kind() == nop_expr_K || GET_NODE(be->op0)->get_kind() == view_convert_expr_K)
                   {
-                     nop_expr * ne = GetPointer<nop_expr>(GET_NODE(be->op0));
-                     tree_nodeRef new_ga = CreateGimpleAssign(ne->type, be->op0, block.first, srcp_default);
+                     unary_expr * ue = GetPointer<unary_expr>(GET_NODE(be->op0));
+                     tree_nodeRef new_ga = CreateGimpleAssign(ue->type, be->op0, block.first, srcp_default);
                      tree_nodeRef ssa_vd = GetPointer<gimple_assign>(GET_NODE(new_ga))->op0;
                      be->op0 = ssa_vd;
                      block.second->PushBefore(new_ga, *it_los);
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(new_ga)->ToString());
-
+                     restart_analysis = true;
                   }
                   if(GET_NODE(be->op1)->get_kind() == nop_expr_K)
                   {
@@ -1063,6 +1063,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                      be->op1 = ssa_vd;
                      block.second->PushBefore(new_ga, *it_los);
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(new_ga)->ToString());
+                     restart_analysis = true;
                   }
                }
                if(code1 == array_ref_K)
@@ -1838,7 +1839,6 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(ae_ga)->ToString());
                         ue->op = ae_vd;
                         restart_analysis = true;
-
                      }
                      else if(GET_NODE(ue->op)->get_kind() != ssa_name_K && !GetPointer<cst_node>(GET_NODE(ue->op)))
                      {
