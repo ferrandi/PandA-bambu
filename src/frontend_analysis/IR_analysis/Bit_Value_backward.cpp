@@ -357,7 +357,7 @@ std::deque<bit_lattice> Bit_Value::backward_transfer(
    const std::deque<bit_lattice>& output_bitstring = current.at(GET_INDEX_NODE(ga->op0));
    enum kind op_kind = GET_NODE(ga->op1)->get_kind ();
    ///first check if the gimple assign still produces something of relevant and it is not a call_expr
-   if(output_bitstring.size() == 1 && output_bitstring.front() == bit_lattice::X && op_kind != call_expr_K)
+   if(output_bitstring.size() == 1 && output_bitstring.front() == bit_lattice::X && op_kind != call_expr_K  && op_kind != aggr_init_expr_K )
       return output_bitstring;
 
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, GET_NODE(ga->op1)->get_kind_text());
