@@ -41,7 +41,7 @@ double __hide_ieee754_fmod(double x, double y)
     /* purge off exception values */
 	if((hy|ly)==0||(hx>=0x7ff00000)||	/* y=0,or x not finite */
 	  ((hy|((ly|-ly)>>31))>0x7ff00000))	/* or y is NaN */
-	    return __builtin_nan("");
+        return nan("");
 	if(hx<=hy) {
 	    if((hx<hy)||(lx<ly)) return x;	/* |x|<|y| return x */
 	    if(lx==ly) 
@@ -137,14 +137,14 @@ double __hide_ieee754_fmod(double x, double y)
 /* 
  * wrapper fmod(x,y)
  */
-double __builtin_fmod(double x, double y)	/* wrapper fmod */
+double fmod(double x, double y)	/* wrapper fmod */
 {
 #ifdef _IEEE_LIBM
 	return __hide_ieee754_fmod(x,y);
 #else
 	double z;
 	z = __hide_ieee754_fmod(x,y);
-	if(_LIB_VERSION == _IEEE_ ||__builtin_isnan(y)||__builtin_isnan(x)) return z;
+    if(_LIB_VERSION == _IEEE_ ||isnan(y)||isnan(x)) return z;
 	if(y==0.0) {
 	        return __hide_kernel_standard(x,y,27); /* fmod(x,0) */
 	} else

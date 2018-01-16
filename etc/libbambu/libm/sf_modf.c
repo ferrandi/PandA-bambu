@@ -25,7 +25,7 @@
 
 static const float one = 1.0;
 
-float __builtin_modff(float x, float *iptr)
+float modff(float x, float *iptr)
 {
 	int i0,j0;
 	unsigned i;
@@ -53,7 +53,7 @@ float __builtin_modff(float x, float *iptr)
 	    *iptr = x*one;
 	    /* We must handle NaNs separately.  */
 	    if (j0 == 0x80 && (i0 & 0x7fffff))
-	      return __builtin_nanf("");
+          return nanf("");
 	    GET_FLOAT_WORD(ix,x);
 	    SET_FLOAT_WORD(x,ix&0x80000000);	/* return +-0 */
 	    return x;
@@ -62,9 +62,9 @@ float __builtin_modff(float x, float *iptr)
 
 #ifdef _DOUBLE_IS_32BITS
 
-double __builtin_modf(double x, double *iptr)
+double modf(double x, double *iptr)
 {
-	return (double) __builtin_modff((float) x, (float *) iptr);
+    return (double) modff((float) x, (float *) iptr);
 }
 
 #endif /* defined(_DOUBLE_IS_32BITS) */

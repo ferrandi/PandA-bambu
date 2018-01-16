@@ -5,7 +5,7 @@
 */
 #include <stddef.h>
 
-char *__builtin_strstr(const char *haystack, const char *needle)
+char *strstr(const char *haystack, const char *needle)
 {
   const char *s = haystack;
   const char *p = needle;

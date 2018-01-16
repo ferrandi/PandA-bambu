@@ -31,21 +31,21 @@
 #endif
 {
 #ifdef _SCALB_INT
-	return __builtin_scalbnf(x,fn);
+    return scalbnf(x,fn);
 #else
-	if (__builtin_isnan(x)||__builtin_isnan(fn)) return x*fn;
+    if (isnan(x)||isnan(fn)) return x*fn;
 	if (!__finitef(fn)) {
 	    if(fn>(float)0.0) return x*fn;
 	    else       return x/(-fn);
 	}
-	if (__builtin_rintf(fn)!=fn) return (fn-fn)/(fn-fn);
+    if (rintf(fn)!=fn) return (fn-fn)/(fn-fn);
 #if INT_MAX > 65000
-	if ( fn > (float)65000.0) return __builtin_scalbnf(x, 65000);
-	if (-fn > (float)65000.0) return __builtin_scalbnf(x,-65000);
+    if ( fn > (float)65000.0) return scalbnf(x, 65000);
+    if (-fn > (float)65000.0) return scalbnf(x,-65000);
 #else
-	if ( fn > (float)32000.0) return __builtin_scalbnf(x, 32000);
-	if (-fn > (float)32000.0) return __builtin_scalbnf(x,-32000);
+    if ( fn > (float)32000.0) return scalbnf(x, 32000);
+    if (-fn > (float)32000.0) return scalbnf(x,-32000);
 #endif
-	return __builtin_scalbnf(x,(int)fn);
+    return scalbnf(x,(int)fn);
 #endif
 }

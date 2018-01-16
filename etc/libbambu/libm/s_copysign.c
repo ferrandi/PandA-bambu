@@ -25,7 +25,7 @@
  * with the sign bit of y.
  */
 
-double __builtin_copysign(double x, double y)
+double copysign(double x, double y)
 {
 	SET_HIGH_WORD(x, (GET_HI(x)&0x7fffffff)|(GET_HI(y)&0x80000000));
         return x;

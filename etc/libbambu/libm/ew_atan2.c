@@ -58,8 +58,8 @@ double __hide_ieee754_atan2(double y, double x)
 	ly = GET_LO(y);
 	if(((ix|((lx|-lx)>>31))>0x7ff00000)||
 	   ((iy|((ly|-ly)>>31))>0x7ff00000))	/* x or y is NaN */
-	   return __builtin_nan("");
-	if((hx-0x3ff00000|lx)==0) return __builtin_atan(y);   /* x=1.0 */
+       return nan("");
+    if((hx-0x3ff00000|lx)==0) return atan(y);   /* x=1.0 */
 	m = ((hy>>31)&1)|((hx>>30)&2);	/* 2*sign(x)+sign(y) */
 
     /* when y = 0 */
@@ -99,7 +99,7 @@ double __hide_ieee754_atan2(double y, double x)
 	k = (iy-ix)>>20;
 	if(k > 60) z=pi_o_2+0.5*pi_lo; 	/* |y/x| >  2**60 */
 	else if(hx<0&&k<-60) z=0.0; 	/* |y|/x < -2**60 */
-	else z=__builtin_atan(__builtin_fabs(y/x));		/* safe to do y/x */
+    else z=atan(fabs(y/x));		/* safe to do y/x */
 	switch (m) {
 	    case 0: return       z  ;	/* atan(+,+) */
 	    case 1: SET_HIGH_WORD(z, GET_HI(z) ^ 0x80000000);
@@ -113,14 +113,14 @@ double __hide_ieee754_atan2(double y, double x)
 /* 
  * wrapper atan2(y,x)
  */
-double __builtin_atan2(double y, double x)	/* wrapper atan2 */
+double atan2(double y, double x)	/* wrapper atan2 */
 {
 #ifdef _IEEE_LIBM
 	return __hide_ieee754_atan2(y,x);
 #else
 	double z;
 	z = __hide_ieee754_atan2(y,x);
-	if(_LIB_VERSION == _IEEE_||__builtin_isnan(x)||__builtin_isnan(y)) return z;
+    if(_LIB_VERSION == _IEEE_||isnan(x)||isnan(y)) return z;
 	if(x==0.0&&y==0.0) {
 	        return __hide_kernel_standard(y,x,3); /* atan2(+-0,+-0) */
 	} else

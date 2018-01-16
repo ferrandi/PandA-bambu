@@ -8,7 +8,7 @@
 */
 #include "math_privatef.h"
 
-void __builtin_sincosf(float x, float *sinx, float *cosx)
+void sincosf(float x, float *sinx, float *cosx)
 {
   int ix;
 
@@ -25,7 +25,7 @@ void __builtin_sincosf(float x, float *sinx, float *cosx)
   else if (!FLT_UWORD_IS_FINITE(ix))
     {
       /* sin(Inf or NaN) is NaN */
-      *sinx = *cosx =  __builtin_nanf("");
+      *sinx = *cosx =  nanf("");
     }
   else
     {
@@ -59,7 +59,7 @@ void __builtin_sincosf(float x, float *sinx, float *cosx)
 
 #ifdef _DOUBLE_IS_32BITS
 
-void __builtin_sincos(double x, double *sinx, double *cosx)
+void sincos(double x, double *sinx, double *cosx)
 {
   int ix;
 
@@ -76,7 +76,7 @@ void __builtin_sincos(double x, double *sinx, double *cosx)
   else if (!FLT_UWORD_IS_FINITE(ix))
     {
       /* sin(Inf or NaN) is NaN */
-      *sinx = *cosx =  __builtin_nanf("");
+      *sinx = *cosx =  nanf("");
     }
   else
     {
@@ -109,7 +109,7 @@ void __builtin_sincos(double x, double *sinx, double *cosx)
 #endif /* defined(_DOUBLE_IS_32BITS) */
 
 float _Complex
-__builtin_cexpif (float x)
+cexpif (float x)
 {
   float _Complex  Res;
   int ix;
@@ -127,8 +127,8 @@ __builtin_cexpif (float x)
   else if (!FLT_UWORD_IS_FINITE(ix))
     {
       /* sin(Inf or NaN) is NaN */
-      __imag__ Res =  __builtin_nanf("");
-      __real__ Res = __builtin_nanf("");
+      __imag__ Res =  nanf("");
+      __real__ Res = nanf("");
     }
   else
     {
@@ -163,9 +163,9 @@ __builtin_cexpif (float x)
 
 #ifdef _DOUBLE_IS_32BITS
 
-double _Complex __builtin_cexpi (double x)
+double _Complex cexpi (double x)
 {
-  return __builtin_cexpif(x);
+  return cexpif(x);
 }
 #endif /* defined(_DOUBLE_IS_32BITS) */
 

@@ -327,6 +327,39 @@ DesignFlowStep_Status FunctionCallTypeCleanup::InternalExec()
                         THROW_ASSERT(k, "");
                         changed = true;
                      }
+                     else if (GET_NODE(*arg_it)->get_kind() == nop_expr_K)///required by CLANG/LLVM
+                     {
+                        unsigned int formal_type_id = tree_helper::get_formal_ith(TM, gc->index, arg_n);
+                        const tree_nodeRef formal_type_reindex = TM->CGetTreeReindex(formal_type_id);
+                        nop_expr * parm_ne = GetPointer<nop_expr>(GET_NODE(*arg_it));
+                        tree_nodeRef ne_expr = tree_man->create_unary_operation(
+                                 formal_type_reindex, parm_ne->op, srcp_default, nop_expr_K);///It is required to de-share some IR nodes
+                        tree_nodeRef ne_ga = tree_man->CreateGimpleAssign(formal_type_reindex, ne_expr, block.first, srcp_default);
+                        tree_nodeRef ne_vd = GetPointer<gimple_assign>(GET_NODE(ne_ga))->op0;
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                       "---adding statement " + GET_NODE(ne_ga)->ToString());
+                        block.second->PushBefore(ne_ga, stmt);
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                       "---old call statement " + GET_NODE(stmt)->ToString());
+                        unsigned int k = 0;
+                        auto new_ssa = GetPointer<gimple_assign>(GET_NODE(ne_ga))->op0;
+                        auto tmp_arg_it = gc->args.begin();
+                        for (; tmp_arg_it != gc->args.end(); tmp_arg_it++, k++)
+                        {
+                           if (GET_INDEX_NODE(*arg_it) == GET_INDEX_NODE(*tmp_arg_it) and
+                               tree_helper::get_formal_ith(TM, gc->index, k) == formal_type_id)
+                           {
+                              TM->RecursiveReplaceTreeNode(*tmp_arg_it, *tmp_arg_it, new_ssa, stmt, false);
+                              tmp_arg_it = std::next(gc->args.begin(), static_cast<int>(k));
+                              arg_it = std::next(gc->args.begin(), static_cast<int>(arg_n));
+                              continue;
+                           }
+                        }
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                       "---new call statement " + GET_NODE(stmt)->ToString());
+                        THROW_ASSERT(k, "");
+                        changed = true;
+                     }
                   }
                }
             }

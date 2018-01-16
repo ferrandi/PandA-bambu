@@ -21,7 +21,7 @@
 #include "math_privatef.h"
 
 long long int
-__builtin_llroundf(float x)
+llroundf(float x)
 {
   int exponent_less_127;
   unsigned w;
@@ -55,9 +55,9 @@ __builtin_llroundf(float x)
 #ifdef _DOUBLE_IS_32BITS
 
 long long int
-__builtin_llround(double x)
+llround(double x)
 {
-	return __builtin_llroundf((float) x);
+    return llroundf((float) x);
 }
 
 #endif /* defined(_DOUBLE_IS_32BITS) */

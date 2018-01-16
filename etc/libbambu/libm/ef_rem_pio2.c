@@ -128,7 +128,7 @@ int __hide_ieee754_rem_pio2f(float x, float *y)
 	    }
 	}
 	if(ix<=0x43490f80) { /* |x| ~<= 2^7*(pi/2), medium size */
-	    t  = __builtin_fabsf(x);
+        t  = fabsf(x);
 	    n  = (int) (t*invpio2+half);
 	    fn = (float)n;
 	    r  = t-fn*pio2_1;
@@ -166,7 +166,7 @@ int __hide_ieee754_rem_pio2f(float x, float *y)
      * all other (large) arguments
      */
 	if(!FLT_UWORD_IS_FINITE(ix)) {
-	    y[0]=y[1]=__builtin_nanf(""); return 0;
+        y[0]=y[1]=nanf(""); return 0;
 	}
     /* set z = scalbn(|x|,ilogb(x)-7) */
 	e0 	= (int)((ix>>23)-134);	/* e0 = ilogb(z)-7; */

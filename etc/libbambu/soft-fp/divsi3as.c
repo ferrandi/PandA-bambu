@@ -61,7 +61,7 @@ __udivmodsi4(USItype x, USItype y, USItype* res)
     USItype r = x;
     USItype q = 0;
     if (y <= r) {
-        unsigned char k = __builtin_clz(y) - __builtin_clz(r);
+        unsigned char k = clz(y) - clz(r);
         BIT_RESIZE(k,6);
         y = lsl(y,k); // align y
         if (r >= y) {

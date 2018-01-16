@@ -122,7 +122,7 @@ __udivmoddi4 (UDItype x, UDItype y, DItype *res)
      BIT_RESIZE(y,32);
     // table lookup start
 #define W 64
-    unsigned char k32 =__builtin_clz(y);
+    unsigned char k32 =clz(y);
     UDItype lshifted_y = ((UDItype)(((USItype)y) << k32))<<32;
     /// remove the leading 1
     lshifted_y = lshifted_y << 1;

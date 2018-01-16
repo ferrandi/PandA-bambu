@@ -28,16 +28,16 @@
 
 #include "math_privatef.h"
 
-float __builtin_atan2f(float y, float x)		/* wrapper atan2f */
+float atan2f(float y, float x)		/* wrapper atan2f */
 {
 	return __hide_ieee754_atan2f(y,x);
 }
 
 #ifdef _DOUBLE_IS_32BITS
 
-double __builtin_atan2(double y, double x)
+double atan2(double y, double x)
 {
-	return (double) __builtin_atan2f((float) y, (float) x);
+    return (double) atan2f((float) y, (float) x);
 }
 
 #endif /* defined(_DOUBLE_IS_32BITS) */

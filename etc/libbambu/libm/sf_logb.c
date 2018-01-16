@@ -28,7 +28,7 @@
 
 #include "math_privatef.h"
 
-float __builtin_logbf(float x)
+float logbf(float x)
 {
 	int hx,ix;
 
@@ -51,9 +51,9 @@ float __builtin_logbf(float x)
 
 #ifdef _DOUBLE_IS_32BITS
 
-double __builtin_logb(double x)
+double logb(double x)
 {
-	return (double) __builtin_logbf((float) x);
+    return (double) logbf((float) x);
 }
 
 #endif /* defined(_DOUBLE_IS_32BITS) */

@@ -63,6 +63,7 @@
 #include "llvm/IR/InstrTypes.h"
 #include "llvm/IR/Instructions.h"
 #include "llvm/Support/FileSystem.h"
+#include "llvm/CodeGen/IntrinsicLowering.h"
 #include "clang/AST/Mangle.h"
 #include "clang/AST/Stmt.h"
 #include "clang/Lex/Preprocessor.h"
@@ -219,7 +220,7 @@ namespace clang
       DEFTREECODE(POINTERNULL, "integer_cst", tcc_constant, 0)
 };
 #undef DEFTREECODE
-#undef END_OF_BASE_TREE_CODES
+#undef END_OF_BASE_TREE_CODE
 
    const char* DumpGimpleRaw::ValueTyNames[] = {
    #define HANDLE_VALUE(Name) #Name ,
@@ -228,6 +229,12 @@ namespace clang
    #include "llvm/IR/Instruction.def"
     };
 
+#define DEF_BUILTIN(X, N, C, T, LT, B, F, NA, AT, IM, COND) N,
+   const std::set<std::string> DumpGimpleRaw::builtinsNames =
+   {
+     #include "gcc/builtins.def"
+   };
+#undef DEF_BUILTIN
    std::string DumpGimpleRaw::getTypeName(const void * t) const
    {
 
@@ -333,8 +340,10 @@ namespace clang
                   case llvm::Intrinsic::lifetime_end:
                   case llvm::Intrinsic::dbg_value:
                      return assignCode(t, GT(GIMPLE_NOPMEM));
-                  case llvm::Intrinsic::memset:
+                  case llvm::Intrinsic::fabs:
                   case llvm::Intrinsic::memcpy:
+                  case llvm::Intrinsic::memset:
+                  case llvm::Intrinsic::memmove:
                      return assignCode(t, GT(GIMPLE_CALL));
                   default:
                      llvm::errs() << "assignCodeAuto kind not supported: " << ValueTyNames[vid] << "\n";
@@ -359,6 +368,8 @@ namespace clang
          case llvm::Value::InstructionVal+llvm::Instruction::FPToSI:
          case llvm::Value::InstructionVal+llvm::Instruction::FPToUI:
          case llvm::Value::InstructionVal+llvm::Instruction::FPTrunc:
+         case llvm::Value::InstructionVal+llvm::Instruction::UIToFP:
+         case llvm::Value::InstructionVal+llvm::Instruction::SIToFP:
             return assignCode(t, GT(GIMPLE_ASSIGN));
          case llvm::Value::InstructionVal+llvm::Instruction::Switch:
             return assignCode(t, GT(GIMPLE_SWITCH));
@@ -406,6 +417,49 @@ namespace clang
          llvm_unreachable("DECL_ASSEMBLER_NAME: DECL_ASSEMBLER_NAME_SET_P is not true");
    }
 
+   static std::string getIntrinsicName(const llvm::Function *fd)
+   {
+      assert(fd->isIntrinsic());
+      auto intID = fd->getIntrinsicID();
+      switch(intID)
+      {
+         case llvm::Intrinsic::fabs:
+            if(fd->getReturnType()->isFloatTy())
+               return "fabsf";
+            else if(fd->getReturnType()->isDoubleTy())
+               return "fabs";
+            else if(fd->getReturnType()->isFP128Ty())
+               return "fabsl";
+            fd->print(llvm::errs());
+            llvm_unreachable("Plugin Error");
+         case llvm::Intrinsic::memcpy:
+            if(fd->getOperand(2)->getType()->isIntegerTy() && fd->getOperand(2)->getType()->getScalarSizeInBits() == 32)
+               return "_llvm_memcpy_p0i8_p0i8_i32";
+            else if (fd->getOperand(2)->getType()->isIntegerTy() && fd->getOperand(2)->getType()->getScalarSizeInBits() == 64)
+               return "_llvm_memcpy_p0i8_p0i8_i64";
+            fd->print(llvm::errs());
+            llvm_unreachable("Plugin Error");
+
+         case llvm::Intrinsic::memset:
+            if(fd->getOperand(2)->getType()->isIntegerTy() && fd->getOperand(2)->getType()->getScalarSizeInBits() == 32)
+               return "_llvm_memset_p0i8_i32";
+            else if (fd->getOperand(2)->getType()->isIntegerTy() && fd->getOperand(2)->getType()->getScalarSizeInBits() == 64)
+               return "_llvm_memset_p0i8_i64";
+            fd->print(llvm::errs());
+            llvm_unreachable("Plugin Error");
+         case llvm::Intrinsic::memmove:
+            if(fd->getOperand(2)->getType()->isIntegerTy() && fd->getOperand(2)->getType()->getScalarSizeInBits() == 32)
+               return "_llvm_memmove_p0i8_p0i8_i32";
+            else if (fd->getOperand(2)->getType()->isIntegerTy() && fd->getOperand(2)->getType()->getScalarSizeInBits() == 64)
+               return "_llvm_memmove_p0i8_p0i8_i64";
+            fd->print(llvm::errs());
+            llvm_unreachable("Plugin Error");
+
+         default:
+            fd->print(llvm::errs());
+            llvm_unreachable("Plugin Error");
+      }
+   }
    const void* DumpGimpleRaw::DECL_NAME(const void* t)
    {
       if(TREE_CODE(t) == GT(TRANSLATION_UNIT_DECL)) return nullptr;
@@ -419,23 +473,29 @@ namespace clang
       const llvm::Value* llvm_obj = reinterpret_cast<const llvm::Value*>(t);
       if(llvm_obj->hasName() && TREE_CODE(t) == GT(FUNCTION_DECL))
       {
-         std::string declname = std::string(llvm_obj->getName());
-         int status;
-         char * demangled_outbuffer = abi::__cxa_demangle(declname.c_str(), NULL, NULL, &status);
-         if(status==0)
-         {
-            if(std::string(demangled_outbuffer).find(':') == std::string::npos && std::string(demangled_outbuffer).find('(') != std::string::npos)
-            {
-               declname = demangled_outbuffer;
-               auto parPos = declname.find('(');
-               assert(parPos != std::string::npos);
-               declname = declname.substr(0,parPos);
-            }
-            free(demangled_outbuffer);
-         }
+         const llvm::Function *fd = cast<const llvm::Function>(llvm_obj);
+         std::string declname;
+         if(fd->isIntrinsic())
+            declname = getIntrinsicName(fd);
          else
-            assert(demangled_outbuffer==nullptr);
-
+         {
+            declname = std::string(llvm_obj->getName());
+            int status;
+            char * demangled_outbuffer = abi::__cxa_demangle(declname.c_str(), NULL, NULL, &status);
+            if(status==0)
+            {
+               if(std::string(demangled_outbuffer).find(':') == std::string::npos && std::string(demangled_outbuffer).find('(') != std::string::npos)
+               {
+                  declname = demangled_outbuffer;
+                  auto parPos = declname.find('(');
+                  assert(parPos != std::string::npos);
+                  declname = declname.substr(0,parPos);
+               }
+               free(demangled_outbuffer);
+            }
+            else
+               assert(demangled_outbuffer==nullptr);
+         }
          if(identifierTable.find(declname) == identifierTable.end())
             identifierTable.insert(declname);
          const void * dn = identifierTable.find(declname)->c_str();
@@ -755,6 +815,8 @@ namespace clang
             case llvm::Instruction::FPToSI:
             case llvm::Instruction::FPToUI:
             case llvm::Instruction::FPTrunc:
+            case llvm::Instruction::UIToFP:
+            case llvm::Instruction::SIToFP:
                return GT(NOP_EXPR);
 
             case llvm::Instruction::FCmp:
@@ -931,6 +993,7 @@ namespace clang
          case llvm::Instruction::SDiv :
          case llvm::Instruction::SRem :
          case llvm::Instruction::SExt :
+         case llvm::Instruction::SIToFP:
             return true;
          case llvm::Instruction::ICmp:
          {
@@ -1104,6 +1167,11 @@ namespace clang
             return build1(GT(VIEW_CONVERT_EXPR), type, getOperand(cast<llvm::ConstantExpr>(operand)->getOperand(0), currentFunction));
          else if(cast<llvm::ConstantExpr>(operand)->getOpcode() == llvm::Instruction::GetElementPtr)
             return LowerGetElementPtr(type, cast<llvm::ConstantExpr>(operand), currentFunction);
+         if(cast<llvm::ConstantExpr>(operand)->getOpcode() == llvm::Instruction::IntToPtr)
+         {
+            auto op = cast<llvm::ConstantExpr>(operand)->getOperand(0);
+            return build1(GT(NOP_EXPR), type, getOperand(op, currentFunction));
+         }
          else
          {
             operand->print(llvm::errs(), true);
@@ -1226,8 +1294,26 @@ namespace clang
          auto type = assignCodeType(calledFun->getType());
          return build1(GT(ADDR_EXPR), type, assignCodeAuto(calledFun));
       }
-      else
+      else if(isa<llvm::ConstantExpr>(calledFun))
+      {
+         auto type = assignCodeType(calledFun->getType());
+         auto ce = cast<llvm::ConstantExpr>(calledFun);
+         if(ce->getOpcode() == llvm::Instruction::BitCast)
+         {
+            auto op = ce->getOperand(0);
+            if(isa<llvm::Function>(op))
+               return build1(GT(ADDR_EXPR), type, assignCodeAuto(op));
+         }
+         llvm::errs() << ValueTyNames[calledFun->getValueID()] << "\n";
+         calledFun->print(llvm::errs());
          return getOperand(calledFun, ci->getParent()->getParent());
+      }
+      else
+      {
+         llvm::errs() << ValueTyNames[calledFun->getValueID()] << "\n";
+         calledFun->print(llvm::errs());
+         return getOperand(calledFun, ci->getParent()->getParent());
+      }
    }
 
    unsigned int DumpGimpleRaw::gimple_call_num_args(const void*g)
@@ -1424,6 +1510,23 @@ namespace clang
    {
       const llvm::GlobalValue* llvm_obj = reinterpret_cast<const llvm::GlobalValue*>(t);
       return llvm_obj->hasInternalLinkage();
+   }
+
+   bool DumpGimpleRaw::is_builtin_fn (const void* t) const
+   {
+      assert(TREE_CODE(t) == GT(FUNCTION_DECL));
+      const llvm::Function* fd = reinterpret_cast<const llvm::Function*>(t);
+      if(fd->getBasicBlockList().empty() && fd->hasName())
+      {
+         std::string declname;
+         if(fd->isIntrinsic())
+            declname = getIntrinsicName(fd);
+         else
+            declname =  std::string(fd->getName());
+         if(builtinsNames.find(std::string("__builtin_") + declname) != builtinsNames.end() || builtinsNames.find(declname) != builtinsNames.end())
+            return true;
+      }
+      return false;
    }
 
    const void* DumpGimpleRaw::DECL_ARG_TYPE(const void* t)
@@ -1762,7 +1865,7 @@ namespace clang
       bool isSigned = CheckSignedTag(Cty);
       llvm::Type* ty = const_cast<llvm::Type*>(NormalizeSignedTag(Cty));
       auto obj_size = DL->getTypeSizeInBits(ty);
-      auto maxvalue = llvm::APInt::getMaxValue(isSigned?obj_size-1:obj_size).getZExtValue();
+      auto maxvalue = llvm::APInt::getMaxValue(std::max((isSigned?obj_size-1ULL:obj_size),1ULL)).getZExtValue();
       if(maxValueITtable.find(t) != maxValueITtable.end())
          maxvalue = maxValueITtable.find(t)->second;
       if(uicTable.find(maxvalue) == uicTable.end())
@@ -1809,7 +1912,7 @@ namespace clang
          return nullptr;
       else
       {
-         auto obj_size = DL->getTypeSizeInBits(ty);
+         auto obj_size = ty->isSized() ? DL->getTypeAllocSizeInBits(ty) : 8ULL;
          if(uicTable.find(obj_size) == uicTable.end())
             uicTable[obj_size] = assignCodeAuto(llvm::ConstantInt::get(llvm::Type::getInt32Ty(ty->getContext()), obj_size, false));
          return uicTable.find(obj_size)->second;
@@ -2640,10 +2743,10 @@ namespace clang
          llvm::Instruction *inst = const_cast<llvm::Instruction *>(reinterpret_cast<const llvm::Instruction *>(g));
          llvm::BasicBlock* BB = inst->getParent();
          llvm::Function *currentFunction = BB->getParent();
-         auto &MSSA = modulePass->getAnalysis<llvm::MemorySSAWrapperPass>(*currentFunction).getMSSA();
-         llvm::errs() << "@" << code_name  << "\n";
+         llvm::errs() << "@" << code_name  << " @" << index << "\n";
          inst->print(llvm::errs());
          llvm::errs() << "\n";
+         auto &MSSA = modulePass->getAnalysis<llvm::MemorySSAWrapperPass>(*currentFunction).getMSSA();
          if(MSSA.getMemoryAccess(inst)) llvm::errs() << "| " << *MSSA.getMemoryAccess(inst) <<"\n";
       }
       else
@@ -2816,7 +2919,6 @@ namespace clang
      llvm::Function *currentFunction = const_cast<llvm::Function *>(bblist.front().getParent());
      assert(modulePass);
      auto &LI = modulePass->getAnalysis<llvm::LoopInfoWrapperPass>(*currentFunction).getLoopInfo();
-     auto &MSSA = modulePass->getAnalysis<llvm::MemorySSAWrapperPass>(*currentFunction).getMSSA();
      std::map<const llvm::Loop*, unsigned> loopLabes;
      if(!LI.empty())
      {
@@ -2830,13 +2932,18 @@ namespace clang
         if(isa<llvm::SwitchInst>(BB.getTerminator()))
         {
            const llvm::SwitchInst* si = cast<llvm::SwitchInst>(BB.getTerminator());
-           BB_with_gimple_label.insert(si->getDefaultDest());
+           const llvm::BasicBlock* dest = si->getDefaultDest();
+           BB_with_gimple_label.insert(dest);
+           createGimpleLabelStmt(dest);
            for(auto case_expr: si->cases())
            {
-              BB_with_gimple_label.insert(case_expr.getCaseSuccessor());
+              dest = case_expr.getCaseSuccessor();
+              createGimpleLabelStmt(dest);
+              BB_with_gimple_label.insert(dest);
            }
         }
      }
+     auto &MSSA = modulePass->getAnalysis<llvm::MemorySSAWrapperPass>(*currentFunction).getMSSA();
 
 
      for(const auto& BB: bblist)
@@ -3231,8 +3338,8 @@ namespace clang
             }
             if(DECL_EXTERNAL(t))
               serialize_string("undefined");
-//            if(is_builtin_fn(t))
-//              serialize_string("builtin");
+            if(is_builtin_fn(t))
+              serialize_string("builtin");
             if(!TREE_PUBLIC(t))
               serialize_string("static");
             if (!DECL_EXTERNAL(t))
@@ -3366,10 +3473,68 @@ namespace clang
       }
    }
 
+   static bool skipIntrinsic(llvm::Intrinsic::ID id)
+   {
+      switch (id)
+      {
+         case llvm::Intrinsic::fabs:
+         case llvm::Intrinsic::memcpy:
+         case llvm::Intrinsic::memset:
+         case llvm::Intrinsic::memmove:
+            return true;
+         default:
+            return false;
+      }
+   }
+
+   /// Intrinsics lowering
+   void DumpGimpleRaw::lowerIntrinsics(llvm::Module &M)
+   {
+      llvm::IntrinsicLowering *IL = new llvm::IntrinsicLowering(*DL);
+      auto currFuncIterator = M.getFunctionList().begin();
+      while(currFuncIterator != M.getFunctionList().end())
+      {
+         for(auto& BB: currFuncIterator->getBasicBlockList())
+         {
+            auto curInstIterator = BB.getInstList().begin();
+            while( curInstIterator != BB.getInstList().end())
+            {
+               if(isa<llvm::CallInst>(*curInstIterator))
+               {
+                  auto& ci = cast<llvm::CallInst>(*curInstIterator);
+                  llvm::Function *Callee = ci.getCalledFunction();
+                  if(Callee && Callee->isIntrinsic() && !skipIntrinsic(Callee->getIntrinsicID()))
+                  {
+                     auto me = curInstIterator;
+                     bool atBegin(BB.getInstList().begin() == me);
+                     if (!atBegin)
+                        --me;
+                     IL->LowerIntrinsicCall(&ci);
+                     if (atBegin)
+                        curInstIterator = BB.getInstList().begin();
+                     else
+                     {
+                        curInstIterator = me;
+                        ++curInstIterator;
+                     }
+                  }
+                  else
+                     ++curInstIterator;
+               }
+               else
+                  ++curInstIterator;
+            }
+         }
+         ++currFuncIterator;
+      }
+      delete IL;
+   }
+
    bool DumpGimpleRaw::runOnModule(llvm::Module &M, llvm::ModulePass *_modulePass)
    {
       DL = &M.getDataLayout();
       modulePass=_modulePass;
+      lowerIntrinsics(M);
       for(const auto& globalVar : M.getGlobalList())
       {
          llvm::errs() << "Found global name: " << globalVar.getName() << "|" << ValueTyNames[globalVar.getValueID()] << "\n";

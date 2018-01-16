@@ -4,7 +4,7 @@
  *
 */
 
-void *__builtin_rawmemchr(const void *s, int c)
+void *rawmemchr(const void *s, int c)
 {
   const unsigned char *r = s;
   while (*r != ((unsigned char)c)) ++r;

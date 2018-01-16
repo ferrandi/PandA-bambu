@@ -38,7 +38,7 @@ E =  1.4142856598e+00, /* 99/70     = 0x3fb50750 */
 F =  1.6071428061e+00, /* 45/28     = 0x3fcdb6db */
 G =  3.5714286566e-01; /* 5/14      = 0x3eb6db6e */
 
-float __builtin_cbrtf(float x) 
+float cbrtf(float x)
 {
 	int	hx;
 	float r,s,t;
@@ -76,9 +76,9 @@ float __builtin_cbrtf(float x)
 
 #ifdef _DOUBLE_IS_32BITS
 
-double __builtin_cbrt(double x)
+double cbrt(double x)
 {
-	return (double) __builtin_cbrtf((float) x);
+    return (double) cbrtf((float) x);
 }
 
 #endif /* defined(_DOUBLE_IS_32BITS) */

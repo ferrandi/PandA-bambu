@@ -13,7 +13,7 @@
 
 #ifndef _DOUBLE_IS_32BITS
 
-void __builtin_sincos(double x, double *sinx, double *cosx)
+void sincos(double x, double *sinx, double *cosx)
 {
   int ix;
 
@@ -30,8 +30,8 @@ void __builtin_sincos(double x, double *sinx, double *cosx)
   else if (ix>=0x7ff00000)
     {
       /* sin(Inf or NaN) is NaN */
-      *sinx = __builtin_nanf("");
-      *cosx =  __builtin_nanf("");
+      *sinx = nanf("");
+      *cosx =  nanf("");
     }
   else
     {
@@ -64,7 +64,7 @@ void __builtin_sincos(double x, double *sinx, double *cosx)
     }
 }
 
-double _Complex __builtin_cexpi (double x)
+double _Complex cexpi (double x)
 {
   double _Complex  Res;
   int ix;
@@ -82,8 +82,8 @@ double _Complex __builtin_cexpi (double x)
   else if (ix>=0x7ff00000)
     {
       /* sin(Inf or NaN) is NaN */
-      __real__ Res = __builtin_nanf("");
-      __imag__ Res =  __builtin_nanf("");
+      __real__ Res = nanf("");
+      __imag__ Res =  nanf("");
     }
   else
     {

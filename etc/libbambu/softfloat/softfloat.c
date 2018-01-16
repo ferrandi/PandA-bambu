@@ -2374,7 +2374,7 @@ static __float32 __float32_mul( __float32 a, __float32 b )
     zExp = aExp + bExp - 0x7F;
     aSig = ( aSig | 0x00800000 )<<7;
     bSig = ( bSig | 0x00800000 )<<8;
-    zSig = __builtin_umulh32(aSig,bSig);
+    zSig = _umulh32(aSig,bSig);
     //__shift64RightJamming( ( (__bits64) aSig ) * bSig, 32, &zSig64 );
     //zSig = zSig64;
     if ( 0 <= (__sbits32) ( zSig<<1 ) ) {
@@ -3736,7 +3736,7 @@ static __float64 __float64_sub( __float64 a, __float64 b )
 *----------------------------------------------------------------------------*/
 
 static SF_UDItype
-__builtin_umul64(SF_UDItype u, SF_UDItype v)
+_umul64(SF_UDItype u, SF_UDItype v)
 {
      SF_UDItype t;
      SF_USItype u0, u1, v0, v1, k;
@@ -3880,8 +3880,8 @@ static __float64 __float64_mul( __float64 a, __float64 b )
 #endif
 #else
     __bits64 sigProdHigh, sigProdLow;
-    sigProdHigh = __builtin_umulh64(aSig,bSig);
-    sigProdLow = __builtin_umul64(aSig,bSig);
+    sigProdHigh = _umulh64(aSig,bSig);
+    sigProdLow = _umul64(aSig,bSig);
     sigProdLow_54 = sigProdLow & ((1ULL << 54)-1);
     sigProdHigh_52 = ((sigProdHigh << 10) | ((sigProdLow >> 54) & ((1ULL << 10)-1))) & ((1ULL << 52)-1);
 #endif

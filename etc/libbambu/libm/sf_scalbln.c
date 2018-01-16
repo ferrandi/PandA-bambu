@@ -29,7 +29,7 @@ twom25  =  2.9802322388e-08,	/* 0x33000000 */
 huge   = 1.0e+30,
 tiny   = 1.0e-30;
 
-float __builtin_scalblnf (float x, long int n)
+float scalblnf (float x, long int n)
 {
 	int k,ix;
 	GET_FLOAT_WORD(ix,x);
@@ -43,13 +43,13 @@ float __builtin_scalblnf (float x, long int n)
         if (k==0xff) return x;		/* NaN or Inf */
         k = k+n;
         if (n> 50000 || k >  0xfe)
-	  return huge*__builtin_copysignf(huge,x); /* overflow  */
+      return huge*copysignf(huge,x); /* overflow  */
 	if (n< -50000)
-	  return tiny*__builtin_copysignf(tiny,x);	/*underflow*/
+      return tiny*copysignf(tiny,x);	/*underflow*/
         if (k > 0) 				/* normal result */
 	    {SET_FLOAT_WORD(x,(ix&0x807fffff)|(k<<23)); return x;}
         if (k <= -25)
-	    return tiny*__builtin_copysignf(tiny,x);	/*underflow*/
+        return tiny*copysignf(tiny,x);	/*underflow*/
         k += 25;				/* subnormal result */
 	SET_FLOAT_WORD(x,(ix&0x807fffff)|(k<<23));
         return x*twom25;
@@ -57,9 +57,9 @@ float __builtin_scalblnf (float x, long int n)
 
 #ifdef _DOUBLE_IS_32BITS
 
-double __builtin_scalbln (double x, long int n)
+double scalbln (double x, long int n)
 {
-	return (double) __builtin_scalblnf((float) x, n);
+    return (double) scalblnf((float) x, n);
 }
 
 #endif /* defined(_DOUBLE_IS_32BITS) */

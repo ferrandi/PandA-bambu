@@ -36,7 +36,7 @@ int __isnanf(float x)
 	return FLT_UWORD_IS_NAN(ix);
 }
 
-int __builtin_isnanf(float x)
+int isnanf(float x)
 {
    return __isnanf(x);
 }
@@ -44,9 +44,9 @@ int __builtin_isnanf(float x)
 
 #ifdef _DOUBLE_IS_32BITS
 
-int __builtin_isnan(double x)
+int isnan(double x)
 {
-	return __builtin_isnanf((float) x);
+    return isnanf((float) x);
 }
 
 #endif /* defined(_DOUBLE_IS_32BITS) */

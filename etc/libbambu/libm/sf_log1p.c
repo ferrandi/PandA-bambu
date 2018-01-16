@@ -1,4 +1,5 @@
 /** 
+
  * Porting of the libm library to the PandA framework 
  * starting from the original FDLIBM 5.3 (Freely Distributable LIBM) developed by SUN
  * plus the newlib version 1.19 from RedHat and plus uClibc version 0.9.32.1 developed by Erik Andersen.
@@ -37,7 +38,7 @@ Lp7 = 1.4798198640e-01; /* 3E178897 */
 
 static const float zero = 0.0;
 
-float __builtin_log1pf(float x)
+float log1pf(float x)
 {
     float hfsq,f,c,s,z,R,u;
     int k,hx,hu,ax;
@@ -48,8 +49,8 @@ float __builtin_log1pf(float x)
     k = 1;
     if (hx < 0x3ed413d7) {			/* x < 0.41422  */
         if(ax>=0x3f800000) {		/* x <= -1.0 */
-            if(x==(float)-1.0) return -__builtin_inf(); /* log1p(-1)=-inf */
-            else return __builtin_nansf("");	/* log1p(x<-1)=NaN */
+            if(x==(float)-1.0) return -inf(); /* log1p(-1)=-inf */
+            else return nansf("");	/* log1p(x<-1)=NaN */
         }
         if(ax<0x31000000) {			/* |x| < 2**-29 */
             math_force_eval(two25+x);	/* raise inexact */
@@ -105,9 +106,9 @@ float __builtin_log1pf(float x)
 
 #ifdef _DOUBLE_IS_32BITS
 
-double __builtin_log1p(double x)
+double log1p(double x)
 {
-	return (double) __builtin_log1pf((float) x);
+    return (double) log1pf((float) x);
 }
 
 #endif /* defined(_DOUBLE_IS_32BITS) */

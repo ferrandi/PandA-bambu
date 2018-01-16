@@ -235,7 +235,7 @@ void memory_allocation::finalize_memory_allocation()
 
    if(HLSMgr->Rmem->has_implicit_memcpy())
    {
-      unsigned int memcpy_function_id = TreeM->function_index("__builtin_memcpy");
+      unsigned int memcpy_function_id = TreeM->function_index("__internal_bambu_memcpy");
       func_list.insert(memcpy_function_id);
    }
 

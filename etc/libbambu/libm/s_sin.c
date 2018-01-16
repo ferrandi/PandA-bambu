@@ -50,7 +50,7 @@
  *	TRIG(x) returns trig(x) nearly rounded 
  */
 
-double __builtin_sin(double x)
+double sin(double x)
 {
 	double y[2],z=0.0;
 	int n, ix;
@@ -63,7 +63,7 @@ double __builtin_sin(double x)
 	if(ix <= 0x3fe921fb) return __hide_kernel_sin(x,z,0);
 
     /* sin(Inf or NaN) is NaN */
-	else if (ix>=0x7ff00000) return __builtin_nan("");
+    else if (ix>=0x7ff00000) return nan("");
 
     /* argument reduction needed */
 	else {

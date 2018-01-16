@@ -3,9 +3,11 @@
  * October, 3 2014.
  *
 */
+
+#ifndef __llvm__
 unsigned int
 __attribute__((optimize("-O1")))
-__builtin_bswap32(unsigned int x)
+bswap32(unsigned int x)
 {
 	return (
         (x  << 24u) |
@@ -13,4 +15,4 @@ __builtin_bswap32(unsigned int x)
 	((x & 0x00ff0000U) >>  8) |
 	(x >> 24));
 }
-
+#endif

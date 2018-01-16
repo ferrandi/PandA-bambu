@@ -112,13 +112,13 @@ double __hide_ieee754_sqrt(double x)
     if((ix0==0x7ff00000)&&(ix1==0)) return x;
     /* take care of Inf and NaN */
 	if((ix0&0x7ff00000)==0x7ff00000) {			
-	    return __builtin_nan("");		/* sqrt(NaN)=NaN sqrt(-inf)=sNaN */
+        return nan("");		/* sqrt(NaN)=NaN sqrt(-inf)=sNaN */
 	} 
     /* take care of zero */
 	if(ix0<=0) {
 	    if(((ix0&(~sign))|ix1)==0) return x;/* sqrt(+-0) = +-0 */
 	    else if(ix0<0)
-		return __builtin_nan("");		/* sqrt(-ve) = sNaN */
+        return nan("");		/* sqrt(-ve) = sNaN */
 	}
     /* normalize x */
 	m = (ix0>>20);
@@ -456,14 +456,14 @@ B.  sqrt(x) by Reciproot Iteration
 /* 
  * wrapper sqrt(x)
  */
-double __builtin_sqrt(double x)		/* wrapper sqrt */
+double sqrt(double x)		/* wrapper sqrt */
 {
 #ifdef _IEEE_LIBM
 	return __hide_ieee754_sqrt(x);
 #else
 	double z;
 	z = __hide_ieee754_sqrt(x);
-	if(_LIB_VERSION == _IEEE_ || __builtin_isnan(x)) return z;
+    if(_LIB_VERSION == _IEEE_ || isnan(x)) return z;
 	if(x<0.0) {
 	    return __hide_kernel_standard(x,x,26); /* sqrt(negative) */
 	} else

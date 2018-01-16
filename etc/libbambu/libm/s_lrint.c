@@ -83,7 +83,7 @@ TWO52[2]={
 #define SAFE_RIGHT_SHIFT(op,amt)				\
   (((amt) < 8 * sizeof(op)) ? ((op) >> (amt)) : 0)
 
-long int __builtin_lrint(double x)
+long int lrint(double x)
 {
   int i0,j0,sx;
   unsigned int i1;

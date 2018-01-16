@@ -34,7 +34,7 @@
 
 static const float huge = 1.0e30;
 
-long int __builtin_lfloorf(float x)
+long int lfloorf(float x)
 {
 	int i0,j0;
 	unsigned i,ix;
@@ -66,9 +66,9 @@ long int __builtin_lfloorf(float x)
 
 #ifdef _DOUBLE_IS_32BITS
 
-long int __builtin_lfloor(double x)
+long int lfloor(double x)
 {
-	return __builtin_lfloorf((float) x);
+    return lfloorf((float) x);
 }
 
 #endif /* defined(_DOUBLE_IS_32BITS) */

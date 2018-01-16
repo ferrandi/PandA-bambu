@@ -301,17 +301,17 @@ UINT_STRONG_TYPEDEF(MemoryAddress);
 /**
  * constant string identifying the operation performed when two objects are memcopied.
  */
-#define MEMCPY "__builtin_memcpy"
+#define MEMCPY "__internal_bambu_memcpy"
 
 /**
  * constant string identifying the operation performed when two objects are memcompared.
  */
-#define MEMCMP "__builtin_memcmp"
+#define MEMCMP "memcmp"
 
 /**
  * constant string identifying the operation performed when two objects are memsetted.
  */
-#define MEMSET "__builtin_memset"
+#define MEMSET "__internal_bambu_memset"
 
 /**
  * constant string identifying the operation performed when a vector concatenation is considered.

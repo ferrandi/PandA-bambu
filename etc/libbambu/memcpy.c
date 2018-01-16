@@ -7,7 +7,7 @@
 #include <stddef.h>
 
 void *
-__builtin_memcpy (void *dest, const void *src, size_t len)
+memcpy (void *dest, const void *src, size_t len)
 {
   char *d = dest;
   const char *s = src;
@@ -15,3 +15,35 @@ __builtin_memcpy (void *dest, const void *src, size_t len)
     *d++ = *s++;
   return dest;
 }
+
+void *
+__internal_bambu_memcpy (void *dest, const void *src, size_t len)
+{
+  char *d = dest;
+  const char *s = src;
+  while (len--)
+    *d++ = *s++;
+  return dest;
+}
+
+#ifdef __llvm__
+
+void
+_llvm_memcpy_p0i8_p0i8_i32 (void *dest, const void *src, unsigned int len, unsigned int align, _Bool isvolatile)
+{
+  char *d = dest;
+  const char *s = src;
+  while (len--)
+    *d++ = *s++;
+}
+
+void
+_llvm_memcpy_p0i8_p0i8_i64 (void *dest, const void *src, unsigned long long int len, unsigned int align, _Bool isvolatile)
+{
+  char *d = dest;
+  const char *s = src;
+  while (len--)
+    *d++ = *s++;
+}
+
+#endif

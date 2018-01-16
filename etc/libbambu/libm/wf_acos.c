@@ -30,7 +30,7 @@
 #include <errno.h>
 #endif
 
-float __builtin_acosf(float x)		/* wrapper acosf */
+float acosf(float x)		/* wrapper acosf */
 {
 #ifdef _IEEE_LIBM
 	return __hide_ieee754_acosf(x);
@@ -38,8 +38,8 @@ float __builtin_acosf(float x)		/* wrapper acosf */
 	float z;
 	struct exception exc;
 	z = __hide_ieee754_acosf(x);
-	if(_LIB_VERSION == _IEEE_ || __builtin_isnan(x)) return z;
-	if(__builtin_fabsf(x)>(float)1.0) {
+    if(_LIB_VERSION == _IEEE_ || isnan(x)) return z;
+    if(fabsf(x)>(float)1.0) {
 	    /* acosf(|x|>1) */
 	    exc.type = DOMAIN;
 	    exc.name = "acosf";
@@ -48,7 +48,7 @@ float __builtin_acosf(float x)		/* wrapper acosf */
 	    exc.retval = nan("");
 	    if (_LIB_VERSION == _POSIX_)
 	       errno = EDOM;
-	    else if (!__builtin_matherr(&exc)) {
+        else if (!matherr(&exc)) {
 	       errno = EDOM;
             }
             if (exc.err != 0)
@@ -61,9 +61,9 @@ float __builtin_acosf(float x)		/* wrapper acosf */
 
 #ifdef _DOUBLE_IS_32BITS
 
-double __builtin_acos(double x)
+double acos(double x)
 {
-	return (double) __builtin_acosf((float) x);
+    return (double) acosf((float) x);
 }
 
 #endif /* defined(_DOUBLE_IS_32BITS) */

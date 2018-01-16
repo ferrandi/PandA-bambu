@@ -19,7 +19,7 @@
 
 #include "math_privatef.h"
 
-float __builtin_truncf(float x)
+float truncf(float x)
 {
   int signbit, w, exponent_less_127;
 
@@ -56,9 +56,9 @@ float __builtin_truncf(float x)
 
 #ifdef _DOUBLE_IS_32BITS
 
-double __builtin_trunc(double x)
+double trunc(double x)
 {
-	return (double) __builtin_truncf((float) x);
+    return (double) truncf((float) x);
 }
 
 #endif /* defined(_DOUBLE_IS_32BITS) */

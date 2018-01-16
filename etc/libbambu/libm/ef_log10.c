@@ -25,10 +25,10 @@
 
 /* |(log(1+s)-log(1-s))/s - Lg(s)| < 2**-34.24 (~[-4.95e-11, 4.97e-11]). */
 static const float
-Lg1 = 0xaaaaaa.0p-24, /* 0.66666662693 */
-Lg2 = 0xccce13.0p-25, /* 0.40000972152 */
-Lg3 = 0x91e9ee.0p-25, /* 0.28498786688 */
-Lg4 = 0xf89e26.0p-26; /* 0.24279078841 */
+Lg1 = 0xaaaaaa.0p-24f, /* 0.66666662693 */
+Lg2 = 0xccce13.0p-25f, /* 0.40000972152 */
+Lg3 = 0x91e9ee.0p-25f, /* 0.28498786688 */
+Lg4 = 0xf89e26.0p-26f; /* 0.24279078841 */
 
 static inline float __hide_log1pf(float f)
 {
@@ -61,9 +61,9 @@ float __hide_ieee754_log10f(float x)
 	k = 0;
 	if (hx < 0x00800000) {  /* x < 2**-126  */
 		if ((hx&0x7fffffff) == 0)
-			return -__builtin_inff();  /* log(+-0)=-inf */
+            return -inff();  /* log(+-0)=-inf */
 		if (hx < 0)
-			return __builtin_nansf("");   /* log(-#) = NaN */
+            return nansf("");   /* log(-#) = NaN */
 		/* subnormal number, scale up x */
 		k -= 25;
 		x *= two25;

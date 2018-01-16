@@ -6,7 +6,7 @@
 /* Public domain.  */
 #include <stddef.h>
 
-size_t __builtin_strnlen(const char *s, size_t maxlen)
+size_t strnlen(const char *s, size_t maxlen)
 {
   const char *saved = s;
   while (maxlen-- > 0 && *s) s++;

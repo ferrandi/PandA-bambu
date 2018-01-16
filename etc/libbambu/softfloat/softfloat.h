@@ -256,7 +256,7 @@ static __float32 __float32_sub( __float32, __float32 );SF_ADAPTER1(__float32_sub
 static __float32 __float32_mul( __float32, __float32 );SF_ADAPTER1(__float32_mul,32);
 static __float32 __float32_div( __float32, __float32 );SF_ADAPTER1(__float32_div,32);
 static __float32 __float32_rem( __float32, __float32 );
-static __float32 __float32_sqrt( __float32 );SF_ADAPTER1_unary(__float32_sqrt,32); //inline float __builtin_sqrtf(float x) {return float32_sqrtif(x);}
+static __float32 __float32_sqrt( __float32 );SF_ADAPTER1_unary(__float32_sqrt,32); //inline float sqrtf(float x) {return float32_sqrtif(x);}
 static __flag __float32_eq( __float32, __float32 );
 static __flag __float32_le( __float32, __float32 );SF_ADAPTER2(__float32_le,32);
 static __flag __float32_lt( __float32, __float32 );SF_ADAPTER2(__float32_lt,32);
@@ -293,7 +293,7 @@ static __float64 __float64_sub( __float64, __float64 );SF_ADAPTER1(__float64_sub
 static __float64 __float64_mul( __float64, __float64 );SF_ADAPTER1(__float64_mul,64);
 static __float64 __float64_div( __float64, __float64 );SF_ADAPTER1(__float64_div,64);
 static __float64 __float64_rem( __float64, __float64 );
-static __float64 __float64_sqrt( __float64 );SF_ADAPTER1_unary(__float64_sqrt,64); //inline double __builtin_sqrt(double x) {return float64_sqrtif(x);}
+static __float64 __float64_sqrt( __float64 );SF_ADAPTER1_unary(__float64_sqrt,64); //inline double sqrt(double x) {return float64_sqrtif(x);}
 static __flag __float64_eq( __float64, __float64 );
 static __flag __float64_le( __float64, __float64 );SF_ADAPTER2(__float64_le,64);
 static __flag __float64_lt( __float64, __float64 );SF_ADAPTER2(__float64_lt,64);
@@ -334,7 +334,7 @@ static __floatx80 __floatx80_sub( __floatx80, __floatx80 );SF_ADAPTER1(__floatx8
 static __floatx80 __floatx80_mul( __floatx80, __floatx80 );SF_ADAPTER1(__floatx80_mul,x80);
 static __floatx80 __floatx80_div( __floatx80, __floatx80 );SF_ADAPTER1(__floatx80_div,x80);
 static __floatx80 __floatx80_rem( __floatx80, __floatx80 );
-static __floatx80 __floatx80_sqrt( __floatx80 );SF_ADAPTER1_unary(__floatx80_sqrt,x80); //inline long double __builtin_sqrtl(long double x) {return floatx80_sqrtif(x);}
+static __floatx80 __floatx80_sqrt( __floatx80 );SF_ADAPTER1_unary(__floatx80_sqrt,x80); //inline long double sqrtl(long double x) {return floatx80_sqrtif(x);}
 static __flag __floatx80_eq( __floatx80, __floatx80 );
 static __flag __floatx80_le( __floatx80, __floatx80 );SF_ADAPTER2(__floatx80_le,x80);
 static __flag __floatx80_lt( __floatx80, __floatx80 );SF_ADAPTER2(__floatx80_lt,x80);
@@ -371,7 +371,7 @@ static __float128 __float128_sub( __float128, __float128 );SF_ADAPTER1(__float12
 static __float128 __float128_mul( __float128, __float128 );SF_ADAPTER1(__float128_mul,128);
 static __float128 __float128_div( __float128, __float128 );SF_ADAPTER1(__float128_div,128);
 static __float128 __float128_rem( __float128, __float128 );
-static __float128 __float128_sqrt( __float128 );SF_ADAPTER1_unary(__float128_sqrt,128); //inline __float128 __builtin_sqrtl(__float128 x) {return float128_sqrtif(x);}
+static __float128 __float128_sqrt( __float128 );SF_ADAPTER1_unary(__float128_sqrt,128); //inline __float128 sqrtl(__float128 x) {return float128_sqrtif(x);}
 static __flag __float128_eq( __float128, __float128 );
 static __flag __float128_le( __float128, __float128 );SF_ADAPTER2(__float128_le,128);
 static __flag __float128_lt( __float128, __float128 );SF_ADAPTER2(__float128_lt,128);

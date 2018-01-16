@@ -5,7 +5,7 @@
 */
 /* Public domain.  */
 
-char *__builtin_strcat(char *__restrict dest, const char *__restrict src)
+char *strcat(char *__restrict dest, const char *__restrict src)
 {
   char *s = dest;
   while (*s++);

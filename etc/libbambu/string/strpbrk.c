@@ -5,7 +5,7 @@
 */
 /* Public domain.  */
 
-char *__builtin_strpbrk(const char *s, const char *accept)
+char *strpbrk(const char *s, const char *accept)
 {
   for ( ; *s ; s++ )
   {

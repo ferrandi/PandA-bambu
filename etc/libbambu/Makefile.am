@@ -15,7 +15,7 @@ CC=$(top_builddir)/src/tree-panda-gcc
 CFLAGS=
 pkglib_LIBRARIES =
 common_treegccflags = --output-temporary-directory=/tmp -iplugindir=$(top_builddir)/etc/gcc_plugin
-common_treegccflags_clang = --output-temporary-directory=/tmp -iplugindir=$(top_builddir)/etc/gcc_plugin
+common_treegccflags_clang = --output-temporary-directory=/tmp -iplugindir=$(top_builddir)/etc/clang_plugin
 common_cflags=-O3 -nostdlib  $(common_treegccflags) $(BOOST_CPPFLAGS)
 common_cflags_clang=-O3 -nostdlib  $(common_treegccflags_clang) $(BOOST_CPPFLAGS)
 
@@ -23,62 +23,62 @@ if BUILD_I386_GCC45
 pkglib_LIBRARIES += libbambu_gcc45.a
 libbambu_gcc45_a_SOURCES = $(common_libbambu_src)
 libbambu_gcc45_a_CFLAGS =$(common_cflags) --compiler=I386_GCC45 
-libbambu_gcc45_a_AR =$(top_builddir)/src/tree-panda-gcc $(common_treegccflags)--compiler=I386_GCC45 -C
+libbambu_gcc45_a_AR =$(top_builddir)/src/tree-panda-gcc $(common_treegccflags) --compiler=I386_GCC45 -C
 endif
 
 if BUILD_I386_GCC46
 pkglib_LIBRARIES += libbambu_gcc46.a
 libbambu_gcc46_a_SOURCES = $(common_libbambu_src)
 libbambu_gcc46_a_CFLAGS =$(common_cflags) --compiler=I386_GCC46 
-libbambu_gcc46_a_AR =$(top_builddir)/src/tree-panda-gcc $(common_treegccflags)--compiler=I386_GCC46 -C
+libbambu_gcc46_a_AR =$(top_builddir)/src/tree-panda-gcc $(common_treegccflags) --compiler=I386_GCC46 -C
 endif
 
 if BUILD_I386_GCC47
 pkglib_LIBRARIES += libbambu_gcc47.a
 libbambu_gcc47_a_SOURCES = $(common_libbambu_src)
 libbambu_gcc47_a_CFLAGS =$(common_cflags) --compiler=I386_GCC47 
-libbambu_gcc47_a_AR =$(top_builddir)/src/tree-panda-gcc $(common_treegccflags)--compiler=I386_GCC47 -C
+libbambu_gcc47_a_AR =$(top_builddir)/src/tree-panda-gcc $(common_treegccflags) --compiler=I386_GCC47 -C
 endif
 
 if BUILD_I386_GCC48
 pkglib_LIBRARIES += libbambu_gcc48.a
 libbambu_gcc48_a_SOURCES = $(common_libbambu_src)
 libbambu_gcc48_a_CFLAGS =$(common_cflags) -fno-tree-loop-distribute-patterns --compiler=I386_GCC48 
-libbambu_gcc48_a_AR =$(top_builddir)/src/tree-panda-gcc $(common_treegccflags)--compiler=I386_GCC48 -C
+libbambu_gcc48_a_AR =$(top_builddir)/src/tree-panda-gcc $(common_treegccflags) --compiler=I386_GCC48 -C
 endif
 
 if BUILD_I386_GCC49
 pkglib_LIBRARIES += libbambu_gcc49.a
 libbambu_gcc49_a_SOURCES = $(common_libbambu_src)
 libbambu_gcc49_a_CFLAGS =$(common_cflags) -fno-tree-loop-distribute-patterns --compiler=I386_GCC49 
-libbambu_gcc49_a_AR =$(top_builddir)/src/tree-panda-gcc $(common_treegccflags)--compiler=I386_GCC49 -C
+libbambu_gcc49_a_AR =$(top_builddir)/src/tree-panda-gcc $(common_treegccflags) --compiler=I386_GCC49 -C
 endif
 
 if BUILD_I386_GCC5
 pkglib_LIBRARIES += libbambu_gcc5.a
 libbambu_gcc5_a_SOURCES =$(common_libbambu_src)
 libbambu_gcc5_a_CFLAGS =$(common_cflags) -fno-tree-loop-distribute-patterns --compiler=I386_GCC5 
-libbambu_gcc5_a_AR =$(top_builddir)/src/tree-panda-gcc $(common_treegccflags)--compiler=I386_GCC5 -C
+libbambu_gcc5_a_AR =$(top_builddir)/src/tree-panda-gcc $(common_treegccflags) --compiler=I386_GCC5 -C
 endif
 
 if BUILD_I386_GCC6
 pkglib_LIBRARIES += libbambu_gcc6.a
 libbambu_gcc6_a_SOURCES = $(common_libbambu_src)
 libbambu_gcc6_a_CFLAGS =$(common_cflags) -fno-tree-loop-distribute-patterns --compiler=I386_GCC6 
-libbambu_gcc6_a_AR =$(top_builddir)/src/tree-panda-gcc $(common_treegccflags)--compiler=I386_GCC6 -C
+libbambu_gcc6_a_AR =$(top_builddir)/src/tree-panda-gcc $(common_treegccflags) --compiler=I386_GCC6 -C
 endif
 
 if BUILD_I386_GCC7
 pkglib_LIBRARIES += libbambu_gcc7.a
 libbambu_gcc7_a_SOURCES = $(common_libbambu_src)
 libbambu_gcc7_a_CFLAGS =$(common_cflags) -fno-tree-loop-distribute-patterns --compiler=I386_GCC7 
-libbambu_gcc7_a_AR =$(top_builddir)/src/tree-panda-gcc $(common_treegccflags)--compiler=I386_GCC7 -C
+libbambu_gcc7_a_AR =$(top_builddir)/src/tree-panda-gcc $(common_treegccflags) --compiler=I386_GCC7 -C
 endif
 
 if BUILD_I386_CLANG40
 pkglib_LIBRARIES += libbambu_clang40.a
 libbambu_clang40_a_SOURCES = $(common_libbambu_src)
-libbambu_clang40_a_CFLAGS =$(common_cflags_clang) --compiler=I386_GCC7 
-libbambu_clang40_a_AR =$(top_builddir)/src/tree-panda-gcc $(common_treegccflags_clang)--compiler=I386_GCC7 -C
+libbambu_clang40_a_CFLAGS =$(common_cflags_clang) --compiler=I386_CLANG40 
+libbambu_clang40_a_AR =$(top_builddir)/src/tree-panda-gcc $(common_treegccflags_clang) --compiler=I386_CLANG40 -C
 endif
 

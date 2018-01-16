@@ -34,7 +34,7 @@ int __isnan(double x)
 	return ((unsigned)(hx))>>31;
 }
 
-int __builtin_isnan(double x)
+int isnan(double x)
 {
    return __isnan(x);
 }

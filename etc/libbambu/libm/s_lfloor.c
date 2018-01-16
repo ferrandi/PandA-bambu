@@ -30,7 +30,7 @@
 
 //static const double huge = 1.0e300;
 
-long int __builtin_lfloor(double x)
+long int lfloor(double x)
 {
 	int i0,i1,j0;
 	unsigned i,j;

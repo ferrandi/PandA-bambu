@@ -112,7 +112,7 @@
  *         	erfc(0) = 1, erfc(inf) = 0, erfc(-inf) = 2, 
  *	   	erfc/erf(NaN) is NaN
  */
-double __builtin_erf(double x) 
+double erf(double x)
 {
 	int hx,ix,i;
 	double R,S,P,Q,s,y,z,r;
@@ -136,7 +136,7 @@ double __builtin_erf(double x)
 	    return x + x*y;
 	}
 	if(ix < 0x3ff40000) {		/* 0.84375 <= |x| < 1.25 */
-	    s = __builtin_fabs(x)-one;
+        s = fabs(x)-one;
 	    P = pa0+s*(pa1+s*(pa2+s*(pa3+s*(pa4+s*(pa5+s*pa6)))));
 	    Q = one+s*(qa1+s*(qa2+s*(qa3+s*(qa4+s*(qa5+s*qa6)))));
 	    if(hx>=0) return erx + P/Q; else return -erx - P/Q;
@@ -144,7 +144,7 @@ double __builtin_erf(double x)
 	if (ix >= 0x40180000) {		/* inf>|x|>=6 */
 	    if(hx>=0) return one-tiny; else return tiny-one;
 	}
-	x = __builtin_fabs(x);
+    x = fabs(x);
  	s = one/(x*x);
 	if(ix< 0x4006DB6E) {	/* |x| < 1/0.35 */
 	    R=ra0+s*(ra1+s*(ra2+s*(ra3+s*(ra4+s*(
@@ -163,7 +163,7 @@ double __builtin_erf(double x)
 	if(hx>=0) return one-r/x; else return  r/x-one;
 }
 
-double __builtin_erfc(double x) 
+double erfc(double x)
 {
 	int hx,ix;
 	double R,S,P,Q,s,y,z,r;
@@ -190,7 +190,7 @@ double __builtin_erfc(double x)
 	    }
 	}
 	if(ix < 0x3ff40000) {		/* 0.84375 <= |x| < 1.25 */
-	    s = __builtin_fabs(x)-one;
+        s = fabs(x)-one;
 	    P = pa0+s*(pa1+s*(pa2+s*(pa3+s*(pa4+s*(pa5+s*pa6)))));
 	    Q = one+s*(qa1+s*(qa2+s*(qa3+s*(qa4+s*(qa5+s*qa6)))));
 	    if(hx>=0) {
@@ -200,7 +200,7 @@ double __builtin_erfc(double x)
 	    }
 	}
 	if (ix < 0x403c0000) {		/* |x|<28 */
-	    x = __builtin_fabs(x);
+        x = fabs(x);
  	    s = one/(x*x);
 	    if(ix< 0x4006DB6D) {	/* |x| < 1/.35 ~ 2.857143*/
 	        R=ra0+s*(ra1+s*(ra2+s*(ra3+s*(ra4+s*(

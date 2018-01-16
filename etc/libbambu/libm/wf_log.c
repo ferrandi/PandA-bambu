@@ -30,7 +30,7 @@
 #include <errno.h>
 #endif
 
-float __builtin_logf(float x)		/* wrapper logf */
+float logf(float x)		/* wrapper logf */
 {
 #ifdef _IEEE_LIBM
 	return __hide_ieee754_logf(x);
@@ -38,7 +38,7 @@ float __builtin_logf(float x)		/* wrapper logf */
 	float z;
 	struct exception exc;
 	z = __hide_ieee754_logf(x);
-	if(_LIB_VERSION == _IEEE_ || __builtin_isnan(x) || x > (float)0.0) return z;
+    if(_LIB_VERSION == _IEEE_ || isnan(x) || x > (float)0.0) return z;
 #ifndef HUGE_VAL 
 #define HUGE_VAL inf
 	double inf = 0.0;
@@ -57,7 +57,7 @@ float __builtin_logf(float x)		/* wrapper logf */
 	    exc.type = SING;
 	    if (_LIB_VERSION == _POSIX_)
 	       errno = ERANGE;
-	    else if (!__builtin_matherr(&exc)) {
+        else if (!matherr(&exc)) {
 	       errno = ERANGE;
 	    }
 	} else { 
@@ -65,10 +65,10 @@ float __builtin_logf(float x)		/* wrapper logf */
 	    exc.type = DOMAIN;
 	    if (_LIB_VERSION == _POSIX_)
 	       errno = EDOM;
-	    else if (!__builtin_matherr(&exc)) {
+        else if (!matherr(&exc)) {
 	       errno = EDOM;
 	    }
-            exc.retval = __builtin_nan("");
+            exc.retval = nan("");
         }
 	if (exc.err != 0)
            errno = exc.err;
@@ -78,9 +78,9 @@ float __builtin_logf(float x)		/* wrapper logf */
 
 #ifdef _DOUBLE_IS_32BITS
 
-double __builtin_log(double x)
+double log(double x)
 {
-	return (double) __builtin_logf((float) x);
+    return (double) logf((float) x);
 }
 
 #endif /* defined(_DOUBLE_IS_32BITS) */

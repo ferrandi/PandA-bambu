@@ -131,88 +131,88 @@ struct exception {
 /*
  * ANSI/POSIX
  */
-extern double __builtin_acos (double);
-extern double __builtin_asin (double);
-extern double __builtin_atan (double);
-extern double __builtin_atan2 (double, double);
-extern double __builtin_cos (double);
-extern double __builtin_sin (double);
-extern double __builtin_tan (double);
+extern double acos (double);
+extern double asin (double);
+extern double atan (double);
+extern double atan2 (double, double);
+extern double cos (double);
+extern double sin (double);
+extern double tan (double);
 
-extern double __builtin_cosh (double);
-extern double __builtin_sinh (double);
-extern double __builtin_tanh (double);
+extern double cosh (double);
+extern double sinh (double);
+extern double tanh (double);
 
-extern double __builtin_exp (double);
-extern double __builtin_frexp (double, int *);
-extern double __builtin_ldexp (double, int);
-extern double __builtin_log (double);
-extern double __builtin_log10 (double);
-extern double __builtin_modf (double, double *);
+extern double exp (double);
+extern double frexp (double, int *);
+extern double ldexp (double, int);
+extern double log (double);
+extern double log10 (double);
+extern double modf (double, double *);
 
-extern double __builtin_pow (double, double);
-extern double __builtin_sqrt (double);
+extern double pow (double, double);
+extern double sqrt (double);
 
-extern double __builtin_ceil (double);
-extern double __builtin_fabs (double);
-extern double __builtin_floor (double);
-extern double __builtin_fmod (double, double);
+extern double ceil (double);
+extern double fabs (double);
+extern double floor (double);
+extern double fmod (double, double);
 
-extern double __builtin_erf (double);
-extern double __builtin_erfc (double);
-extern double __builtin_gamma (double);
-extern double __builtin_hypot (double, double);
-extern int __builtin_isnan (double);
+extern double erf (double);
+extern double erfc (double);
+extern double gamma (double);
+extern double hypot (double, double);
+extern int isnan (double);
 extern int __finite (double);
-extern double __builtin_j0 (double);
-extern double __builtin_j1 (double);
-extern double __builtin_jn (int, double);
-extern double __builtin_lgamma (double);
-extern double __builtin_y0 (double);
-extern double __builtin_y1 (double);
-extern double __builtin_yn (int, double);
+extern double j0 (double);
+extern double j1 (double);
+extern double jn (int, double);
+extern double lgamma (double);
+extern double y0 (double);
+extern double y1 (double);
+extern double yn (int, double);
 
-extern double __builtin_acosh (double);
-extern double __builtin_asinh (double);
-extern double __builtin_atanh (double);
-extern double __builtin_cbrt (double);
-extern double __builtin_logb (double);
-extern double __builtin_nextafter (double, double);
-extern double __builtin_remainder (double, double);
+extern double acosh (double);
+extern double asinh (double);
+extern double atanh (double);
+extern double cbrt (double);
+extern double logb (double);
+extern double nextafter (double, double);
+extern double remainder (double, double);
 #ifdef _SCALB_INT
-extern double __builtin_scalb (double, int);
+extern double scalb (double, int);
 #else
-extern double __builtin_scalb (double, double);
+extern double scalb (double, double);
 #endif
 
-extern int __builtin_matherr (struct exception *);
+extern int matherr (struct exception *);
 
 /*
  * IEEE Test Vector
  */
-extern double __builtin_significand (double);
+extern double significand (double);
 
 /*
  * Functions callable from C, intended to support IEEE arithmetic.
  */
-extern double __builtin_copysign (double, double);
-extern int __builtin_ilogb (double);
-extern double __builtin_rint (double);
-extern double __builtin_scalbn (double, int);
+extern double copysign (double, double);
+extern int ilogb (double);
+extern double rint (double);
+extern double scalbn (double, int);
 
 /*
  * BSD math library entry points
  */
-extern double __builtin_expm1 (double);
-extern double __builtin_log1p (double);
+extern double expm1 (double);
+extern double log1p (double);
 
 /*
  * Reentrant version of gamma & lgamma; passes signgam back by reference
  * as the second argument; user must allocate space for signgam.
  */
 #ifdef _REENTRANT
-extern double __builtin_gamma_r (double, int *);
-extern double __builtin_lgamma_r (double, int *);
+extern double gamma_r (double, int *);
+extern double lgamma_r (double, int *);
 #endif	/* _REENTRANT */
 
 /* ieee style elementary functions */

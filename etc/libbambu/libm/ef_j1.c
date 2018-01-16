@@ -26,22 +26,22 @@
 static float __hide_ponef(float), __hide_qonef(float);
 
 static const float 
-huge    = 1e30,
-one	= 1.0,
-invsqrtpi=  5.6418961287e-01, /* 0x3f106ebb */
-tpi      =  6.3661974669e-01, /* 0x3f22f983 */
+huge    = 1e30f,
+one	= 1.0f,
+invsqrtpi=  5.6418961287e-01f, /* 0x3f106ebb */
+tpi      =  6.3661974669e-01f, /* 0x3f22f983 */
 	/* R0/S0 on [0,2] */
-r00  = -6.2500000000e-02, /* 0xbd800000 */
-r01  =  1.4070566976e-03, /* 0x3ab86cfd */
-r02  = -1.5995563444e-05, /* 0xb7862e36 */
-r03  =  4.9672799207e-08, /* 0x335557d2 */
-s01  =  1.9153760746e-02, /* 0x3c9ce859 */
-s02  =  1.8594678841e-04, /* 0x3942fab6 */
-s03  =  1.1771846857e-06, /* 0x359dffc2 */
-s04  =  5.0463624390e-09, /* 0x31ad6446 */
-s05  =  1.2354227016e-11; /* 0x2d59567e */
+r00  = -6.2500000000e-02f, /* 0xbd800000 */
+r01  =  1.4070566976e-03f, /* 0x3ab86cfd */
+r02  = -1.5995563444e-05f, /* 0xb7862e36 */
+r03  =  4.9672799207e-08f, /* 0x335557d2 */
+s01  =  1.9153760746e-02f, /* 0x3c9ce859 */
+s02  =  1.8594678841e-04f, /* 0x3942fab6 */
+s03  =  1.1771846857e-06f, /* 0x359dffc2 */
+s04  =  5.0463624390e-09f, /* 0x31ad6446 */
+s05  =  1.2354227016e-11f; /* 0x2d59567e */
 
-static const float zero    = 0.0;
+static const float zero    = 0.0f;
 
 float __hide_ieee754_j1f(float x) 
 {
@@ -51,14 +51,14 @@ float __hide_ieee754_j1f(float x)
 	GET_FLOAT_WORD(hx,x);
 	ix = hx&0x7fffffff;
 	if(!FLT_UWORD_IS_FINITE(ix)) return one/x;
-	y = __builtin_fabsf(x);
+    y = fabsf(x);
 	if(ix >= 0x40000000) {	/* |x| >= 2.0 */
-		s = __builtin_sinf(y);
-		c = __builtin_cosf(y);
+        s = sinf(y);
+        c = cosf(y);
 		ss = -s-c;
 		cc = s-c;
 		if(ix<=FLT_UWORD_HALF_MAX) {  /* make sure y+y not overflow */
-		    z = __builtin_cosf(y+y);
+            z = cosf(y+y);
 		    if ((s*c)>zero) cc = z/ss;
 		    else 	    ss = z/cc;
 		}
@@ -112,12 +112,12 @@ float __hide_ieee754_y1f(float x)
         if(FLT_UWORD_IS_ZERO(ix)) return -one/zero;
         if(hx<0) return zero/zero;
         if(ix >= 0x40000000) {  /* |x| >= 2.0 */
-                s = __builtin_sinf(x);
-                c = __builtin_cosf(x);
+                s = sinf(x);
+                c = cosf(x);
                 ss = -s-c;
                 cc = s-c;
                 if(ix<=FLT_UWORD_HALF_MAX) {  /* make sure x+x not overflow */
-                    z = __builtin_cosf(x+x);
+                    z = cosf(x+x);
                     if ((s*c)>zero) cc = z/ss;
                     else            ss = z/cc;
                 }

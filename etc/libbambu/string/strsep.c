@@ -5,7 +5,7 @@
 */
 /* Public domain.  */
 
-char *__builtin_strsep(char **stringp, const char *delim)
+char *strsep(char **stringp, const char *delim)
 {
   char *s = *stringp;
   char *saved = s;

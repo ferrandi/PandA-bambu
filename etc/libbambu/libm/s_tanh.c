@@ -42,7 +42,7 @@
  *	tanh(NaN) is NaN;
  *	only tanh(0)=0 is exact for finite argument.
  */
-double __builtin_tanh(double x)
+double tanh(double x)
 {
 	double t,z;
 	int jx,ix;
@@ -54,7 +54,7 @@ double __builtin_tanh(double x)
     /* x is INF or NaN */
 	if(ix>=0x7ff00000) { 
 	    if (jx>=0) return one/x+one;    /* tanh(+-inf)=+-1 */
-	    else       return __builtin_nan("");    /* tanh(NaN) = NaN */
+        else       return nan("");    /* tanh(NaN) = NaN */
 	}
 
     /* |x| < 22 */
@@ -62,10 +62,10 @@ double __builtin_tanh(double x)
 	    if (ix<0x3c800000) 		/* |x|<2**-55 */
 		return x*(one+x);    	/* tanh(small) = small */
 	    if (ix>=0x3ff00000) {	/* |x|>=1  */
-		t = __builtin_expm1(two*__builtin_fabs(x));
+        t = expm1(two*fabs(x));
 		z = one - two/(t+two);
 	    } else {
-	        t = __builtin_expm1(-two*__builtin_fabs(x));
+            t = expm1(-two*fabs(x));
 	        z= -t/(t+two);
 	    }
     /* |x| > 22, return +-1 */

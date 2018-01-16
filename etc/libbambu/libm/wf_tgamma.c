@@ -24,7 +24,7 @@
 #include "math_privatef.h"
 #include "erf_lgamma.c"
 
-float __builtin_tgammaf(float x)
+float tgammaf(float x)
 {
         float y;
 	int local_signgam=0;
@@ -36,7 +36,7 @@ float __builtin_tgammaf(float x)
 	if(_LIB_VERSION == _IEEE_) return y;
 
 	if(!__finitef(y)&&__finitef(x)) {
-	  if(__builtin_floorf(x)==x&&x<=(float)0.0)
+      if(floorf(x)==x&&x<=(float)0.0)
 	    /* tgammaf pole */
 	    return (float)__hide_kernel_standard((double)x,(double)x,141);
 	  else

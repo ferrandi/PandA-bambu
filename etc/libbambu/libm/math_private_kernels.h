@@ -90,7 +90,7 @@ int __hide_ieee754_rem_pio2(double x, double *y)
 	    }
 	}
 	if(ix<=0x413921fb) { /* |x| ~<= 2^19*(pi/2), medium size */
-	    t  = __builtin_fabs(x);
+        t  = fabs(x);
 	    n  = (int) (t*invpio2+half);
 	    fn = (double)n;
 	    r  = t-fn*pio2_1;
@@ -125,7 +125,7 @@ int __hide_ieee754_rem_pio2(double x, double *y)
      * all other (large) arguments
      */
 	if(ix>=0x7ff00000) {		/* x is inf or NaN */
-	    y[0]=y[1]=__builtin_nan(""); return 0;
+        y[0]=y[1]=nan(""); return 0;
 	}
     /* set z = scalbn(|x|,ilogb(x)-23) */
 	SET_LOW_WORD(z, GET_LO(x));
@@ -354,8 +354,8 @@ recompute:
 	}
 
     /* compute n */
-	z  = __builtin_scalbn(z,q0);		/* actual value of z */
-	z -= 8.0*__builtin_floor(z*0.125);		/* trim off integer >= 8 */
+    z  = scalbn(z,q0);		/* actual value of z */
+    z -= 8.0*floor(z*0.125);		/* trim off integer >= 8 */
 	n  = (int) z;
 	z -= (double)n;
 	ih = 0;
@@ -387,7 +387,7 @@ recompute:
 	    }
 	    if(ih==2) {
 		z = one - z;
-		if(carry!=0) z -= __builtin_scalbn(one,q0);
+        if(carry!=0) z -= scalbn(one,q0);
 	    }
 	}
 
@@ -413,7 +413,7 @@ recompute:
 	    jz -= 1; q0 -= 24;
 	    while(iq[jz]==0) { jz--; q0-=24;}
 	} else { /* break z into 24-bit if necessary */
-	    z = __builtin_scalbn(z,-q0);
+        z = scalbn(z,-q0);
 	    if(z>=two24) { 
 		fw = (double)((int)(twon24*z));
 		iq[jz] = (int)(z-two24*fw);
@@ -423,7 +423,7 @@ recompute:
 	}
 
     /* convert integer "bit" chunk to floating-point value */
-	fw = __builtin_scalbn(one,q0);
+    fw = scalbn(one,q0);
 	for(i=jz;i>=0;i--) {
 	    q[i] = fw*(double)iq[i]; fw*=twon24;
 	}
@@ -556,7 +556,7 @@ __hide_kernel_tan(double x, double y, int iy) {
 	if (ix < 0x3e300000) {			/* x < 2**-28 */
 		if ((int) x == 0) {		/* generate inexact */
 			if (((ix | GET_LO(x)) | (iy + 1)) == 0)
-				return one / __builtin_fabs(x);
+                return one / fabs(x);
 			else {
 				if (iy == 1)
 					return x;
@@ -803,8 +803,8 @@ double __hide_ieee754_log(double x)
 	k=0;
 	if (hx < 0x00100000) {			/* x < 2**-1022  */
 	    if (((hx&0x7fffffff)|lx)==0) 
-		return -__builtin_inf();		/* log(+-0)=-inf */
-	    if ((hx>>31)&1) return __builtin_nans("");	/* log(-#) = NaN */
+        return -inf();		/* log(+-0)=-inf */
+        if ((hx>>31)&1) return nans("");	/* log(-#) = NaN */
 	    k -= 54; x *= two54; /* subnormal number, scale up x */
 	    hx = GET_HI(x);		/* high word of x */
 	} 
@@ -856,17 +856,17 @@ inline
 #endif
 {
 #ifdef _SCALB_INT
-	return __builtin_scalbn(x,fn);
+    return scalbn(x,fn);
 #else
-	if (__builtin_isnan(x)||__builtin_isnan(fn)) return x*fn;
+    if (isnan(x)||isnan(fn)) return x*fn;
 	if (!__finite(fn)) {
 	    if(fn>0.0) return x*fn;
 	    else       return x/(-fn);
 	}
-	if (__builtin_rint(fn)!=fn) return (fn-fn)/(fn-fn);
-	if ( fn > 65000.0) return __builtin_scalbn(x, 65000);
-	if (-fn > 65000.0) return __builtin_scalbn(x,-65000);
-	return __builtin_scalbn(x,(int)fn);
+    if (rint(fn)!=fn) return (fn-fn)/(fn-fn);
+    if ( fn > 65000.0) return scalbn(x, 65000);
+    if (-fn > 65000.0) return scalbn(x,-65000);
+    return scalbn(x,(int)fn);
 #endif
 }
 

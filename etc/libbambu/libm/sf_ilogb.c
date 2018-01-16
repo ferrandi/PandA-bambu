@@ -24,7 +24,7 @@
 #include <limits.h>
 #include "math_privatef.h"
 
-int __builtin_ilogbf(float x)
+int ilogbf(float x)
 {
 	int hx,ix;
 
@@ -45,9 +45,9 @@ int __builtin_ilogbf(float x)
 
 #ifdef _DOUBLE_IS_32BITS
 
-int __builtin_ilogb(double x)
+int ilogb(double x)
 {
-	return __builtin_ilogbf((float) x);
+    return ilogbf((float) x);
 }
 
 #endif /* defined(_DOUBLE_IS_32BITS) */

@@ -850,8 +850,8 @@ std::string tree_helper::print_function_name(const tree_managerConstRef TM, cons
    }
    else
       THROW_ERROR(std::string("Node not yet supported ") + name->get_kind_text());
-   if(fd && fd->undefined_flag && fd->builtin_flag && res.find("__builtin_") == std::string::npos)
-      res = "__builtin_" + res;
+//   if(fd && fd->undefined_flag && fd->builtin_flag && res.find("__builtin_") == std::string::npos)
+//      res = "__builtin_" + res;
    return res;
 }
 
@@ -3594,6 +3594,15 @@ unsigned int tree_helper::get_base_index(const tree_managerConstRef TM, const un
             {
                return GET_INDEX_NODE(vc->op);
             }
+            case integer_cst_K:
+            {
+               return index;
+            }
+            case complex_cst_K:
+            case real_cst_K:
+            case string_cst_K:
+            case vector_cst_K:
+            case void_cst_K:
             case binfo_K:
             case block_K:
             case call_expr_K:
@@ -3621,7 +3630,6 @@ unsigned int tree_helper::get_base_index(const tree_managerConstRef TM, const un
             case error_mark_K:
             case CASE_BINARY_EXPRESSION:
             case CASE_CPP_NODES:
-            case CASE_CST_NODES:
             case CASE_FAKE_NODES:
             case CASE_GIMPLE_NODES:
             case CASE_PRAGMA_NODES:

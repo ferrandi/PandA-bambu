@@ -1930,12 +1930,12 @@ void tree_manager::merge_tree_managers(const tree_managerRef source_tree_manager
                (
                   (
                      tn->get_kind() == function_decl_K
-                     and
-                     (
-                        !GetPointer<function_decl>(tree_nodes.find(gst_it->second)->second)
-                        ||
-                        !GetPointer<function_decl>(tree_nodes.find(gst_it->second)->second)->body
-                     )
+//                     and
+//                     (
+//                        !GetPointer<function_decl>(tree_nodes.find(gst_it->second)->second)
+//                        ||
+//                        !GetPointer<function_decl>(tree_nodes.find(gst_it->second)->second)->body
+//                     )
                      and
                      GetPointer<function_decl>(tn)->body
                   )
@@ -2067,13 +2067,13 @@ bool tree_manager::check_for_decl(const tree_nodeRef tn, const tree_managerRef T
          THROW_ASSERT(GET_NODE(dn->name)->get_kind() == identifier_node_K, "expected an identifier_node: " + STR(GET_NODE(dn->name)->get_kind_text()) + " " + STR(node_id));
          if(fd)
          {
-            if(fd->builtin_flag)
-            {
-               symbol_name = GetPointer<identifier_node>(GET_NODE(dn->name))->strg;
-               if(fd->undefined_flag && symbol_name.find("__builtin_") == std::string::npos)
-                  symbol_name = "__builtin_" + symbol_name;
-            }
-            else
+//            if(fd->builtin_flag)
+//            {
+//               symbol_name = GetPointer<identifier_node>(GET_NODE(dn->name))->strg;
+//               if(fd->undefined_flag && symbol_name.find("__builtin_") == std::string::npos)
+//                  symbol_name = "__builtin_" + symbol_name;
+//            }
+//            else
                symbol_name = GetPointer<identifier_node>(GET_NODE(dn->mngl))->strg;
          }
          else
@@ -2086,8 +2086,8 @@ bool tree_manager::check_for_decl(const tree_nodeRef tn, const tree_managerRef T
    {
       THROW_ASSERT(GET_NODE(dn->name)->get_kind() == identifier_node_K, "expected an identifier_node: " + STR(GET_NODE(dn->name)->get_kind_text()) + " " + STR(node_id));
       symbol_name = GetPointer<identifier_node>(GET_NODE(dn->name))->strg;
-      if(fd && fd->undefined_flag && fd->builtin_flag && symbol_name.find("__builtin_") == std::string::npos)
-            symbol_name = "__builtin_" + symbol_name;
+//      if(fd && fd->undefined_flag && fd->builtin_flag && symbol_name.find("__builtin_") == std::string::npos)
+//            symbol_name = "__builtin_" + symbol_name;
    }
    if(dn->scpe and GetPointer<type_node>(GET_NODE(dn->scpe)) and GetPointer<type_node>(GET_NODE(dn->scpe))->name)
    {

@@ -103,10 +103,10 @@ static double __hide_sin_pi(double x)
      * argument reduction, make sure inexact flag not raised if input
      * is an integer
      */
-	z = __builtin_floor(y);
+    z = floor(y);
 	if(z!=y) {				/* inexact anyway */
 	    y  *= 0.5;
-	    y   = 2.0*(y - __builtin_floor(y));		/* y = |x| mod 2.0 */
+        y   = 2.0*(y - floor(y));		/* y = |x| mod 2.0 */
 	    n   = (int) (y*4.0);
 	} else {
             if(ix>=0x43400000) {
@@ -142,12 +142,12 @@ static double __hide_ieee754_lgamma_r(double x, int *signgamp)
     /* purge off +-inf, NaN, +-0, and negative arguments */
 	*signgamp = 1;
 	ix = hx&0x7fffffff;
-	if(ix==0x7ff00000 && lx == 0) return __builtin_inf();
-	if(ix>=0x7ff00000) return __builtin_nan("");
+    if(ix==0x7ff00000 && lx == 0) return inf();
+    if(ix>=0x7ff00000) return nan("");
 	if((ix|lx)==0) {
 	    if (hx < 0)
 	      *signgamp = -1;
-	    return __builtin_inf();
+        return inf();
 	}
 	if(ix<0x3b900000) {	/* |x|<2**-70, return -log(|x|) */
 	    if(hx<0) {
@@ -157,10 +157,10 @@ static double __hide_ieee754_lgamma_r(double x, int *signgamp)
 	}
 	if(hx<0) {
 	    if(ix>=0x43300000) 	/* |x|>=2**52, must be -integer */
-		return __builtin_inf();
+        return inf();
 	    t = __hide_sin_pi(x);
 	    if(t==zero) return one/zero; /* -integer */
-	    nadj = __hide_ieee754_log(pi/__builtin_fabs(t*x));
+        nadj = __hide_ieee754_log(pi/fabs(t*x));
 	    if(t<zero) *signgamp = -1;
 	    x = -x;
 	}
@@ -237,7 +237,7 @@ static double __hide_ieee754_lgamma_r(double x, int *signgamp)
  *
  * Method: call gamma_r
  */
-double __builtin_gamma(double x)
+double gamma(double x)
 {
 #ifdef _IEEE_LIBM
 	return __hide_ieee754_lgamma_r(x,&signgam);
@@ -246,7 +246,7 @@ double __builtin_gamma(double x)
         y = __hide_ieee754_lgamma_r(x,&signgam);
         if(_LIB_VERSION == _IEEE_) return y;
         if(!__finite(y)&&__finite(x)) {
-            if(__builtin_floor(x)==x&&x<=0.0)
+            if(floor(x)==x&&x<=0.0)
                 return __hide_kernel_standard(x,x,41); /* gamma pole */
             else
                 return __hide_kernel_standard(x,x,40); /* gamma overflow */
@@ -258,7 +258,7 @@ double __builtin_gamma(double x)
 /* 
  * wrapper double gamma_r(double x, int *signgamp)
  */
-double __builtin_gamma_r(double x, int *signgamp) /* wrapper lgamma_r */
+double gamma_r(double x, int *signgamp) /* wrapper lgamma_r */
 {
 #ifdef _IEEE_LIBM
 	return __hide_ieee754_lgamma_r(x,signgamp);
@@ -267,7 +267,7 @@ double __builtin_gamma_r(double x, int *signgamp) /* wrapper lgamma_r */
         y = __hide_ieee754_lgamma_r(x,signgamp);
         if(_LIB_VERSION == _IEEE_) return y;
         if(!__finite(y)&&__finite(x)) {
-            if(__builtin_floor(x)==x&&x<=0.0)
+            if(floor(x)==x&&x<=0.0)
                 return __hide_kernel_standard(x,x,41); /* gamma pole */
             else
                 return __hide_kernel_standard(x,x,40); /* gamma overflow */
@@ -281,7 +281,7 @@ double __builtin_gamma_r(double x, int *signgamp) /* wrapper lgamma_r */
  *
  * Method: call __ieee754_lgamma_r
  */
-double __builtin_lgamma(double x)
+double lgamma(double x)
 {
 #ifdef _IEEE_LIBM
 	return __hide_ieee754_lgamma_r(x,&signgam);
@@ -290,7 +290,7 @@ double __builtin_lgamma(double x)
         y = __hide_ieee754_lgamma_r(x,&signgam);
         if(_LIB_VERSION == _IEEE_) return y;
         if(!__finite(y)&&__finite(x)) {
-            if(__builtin_floor(x)==x&&x<=0.0)
+            if(floor(x)==x&&x<=0.0)
                 return __hide_kernel_standard(x,x,15); /* lgamma pole */
             else
                 return __hide_kernel_standard(x,x,14); /* lgamma overflow */
@@ -302,7 +302,7 @@ double __builtin_lgamma(double x)
 /* 
  * wrapper double lgamma_r(double x, int *signgamp)
  */
-double __builtin_lgamma_r(double x, int *signgamp) /* wrapper lgamma_r */
+double lgamma_r(double x, int *signgamp) /* wrapper lgamma_r */
 {
 #ifdef _IEEE_LIBM
 	return __hide_ieee754_lgamma_r(x,signgamp);
@@ -311,7 +311,7 @@ double __builtin_lgamma_r(double x, int *signgamp) /* wrapper lgamma_r */
         y = __hide_ieee754_lgamma_r(x,signgamp);
         if(_LIB_VERSION == _IEEE_) return y;
         if(!__finite(y)&&__finite(x)) {
-            if(__builtin_floor(x)==x&&x<=0.0)
+            if(floor(x)==x&&x<=0.0)
                 return __hide_kernel_standard(x,x,15); /* lgamma pole */
             else
                 return __hide_kernel_standard(x,x,14); /* lgamma overflow */
@@ -324,7 +324,7 @@ double __builtin_lgamma_r(double x, int *signgamp) /* wrapper lgamma_r */
  * Return  the logarithm of the Gamma function of x or the Gamma function of x,
  * depending on the library mode.
  */
-double __builtin_tgamma(double x)
+double tgamma(double x)
 {
         double y;
 	int local_signgam=0;
@@ -336,7 +336,7 @@ double __builtin_tgamma(double x)
 	if(_LIB_VERSION == _IEEE_) return y;
 
 	if(!__finite(y)&&__finite(x)) {
-	  if(__builtin_floor(x)==x&&x<=0.0)
+      if(floor(x)==x&&x<=0.0)
 	    return __hide_kernel_standard(x,x,41); /* tgamma pole */
 	  else
 	    return __hide_kernel_standard(x,x,40); /* tgamma overflow */

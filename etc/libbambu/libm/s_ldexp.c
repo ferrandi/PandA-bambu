@@ -22,10 +22,10 @@
 #include <errno.h>
 #endif
 
-double __builtin_ldexp(double value, int exp)
+double ldexp(double value, int exp)
 {
 	if(!__finite(value)||value==0.0) return value;
-	value = __builtin_scalbn(value,exp);
+    value = scalbn(value,exp);
 #ifdef WITH_ERRNO
 	if(!__finite(value)||value==0.0) errno = ERANGE;
 #else

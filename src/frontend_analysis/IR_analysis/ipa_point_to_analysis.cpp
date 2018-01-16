@@ -267,17 +267,18 @@ DesignFlowStep_Status ipa_point_to_analysis::Exec()
             {
                function_information_map[function]->preserving &= false;//check if this is actually equal to true
             }
-            else if(fun_name != "__builtin_signbit" && fun_name != "__builtin_signbitf" &&
-                    fun_name != "__builtin_fabs" &&
-                    fun_name != "__builtin_fabsf" &&
-                    fun_name != "__builtin_llabs" &&
-                    fun_name != "__builtin_labs" &&
-                    fun_name != "__builtin_abs" &&
-                    fun_name != "__builtin_putchar" &&
+            else if(fun_name != "signbit" &&
+                    fun_name != "signbitf" &&
+                    fun_name != "fabs" &&
+                    fun_name != "fabsf" &&
+                    fun_name != "llabs" &&
+                    fun_name != "labs" &&
+                    fun_name != "abs" &&
+                    fun_name != "putchar" &&
                     fun_name != "__bambu_read4c" &&
                     fun_name != "__bambu_readc" &&
-                    fun_name != "__builtin_abort" &&
-                    fun_name != "__builtin_exit")
+                    fun_name != "abort" &&
+                    fun_name != "exit")
                function_information_map[function]->preserving = false;
          }
       }
@@ -391,15 +392,16 @@ DesignFlowStep_Status ipa_point_to_analysis::Exec()
                            THROW_ASSERT(GET_NODE(ce->args.at(0))->get_kind() == ssa_name_K, "unexpected pattern");
                            pointing_to_ssa_vars.insert(GET_INDEX_NODE(ce->args.at(0)));
                         }
-                        else if(fun_name != "__builtin_signbit" && fun_name != "__builtin_signbitf" &&
-                              fun_name != "__builtin_fabs" &&
-                              fun_name != "__builtin_fabsf" &&
-                              fun_name != "__builtin_llabs" &&
-                              fun_name != "__builtin_labs" &&
-                              fun_name != "__builtin_abs" &&
-                              fun_name != "__builtin_putchar" &&
-                              fun_name != "__bambu_read4c" &&
-                              fun_name != "__bambu_readc")
+                        else if(fun_name != "signbit" &&
+                                fun_name != "signbitf" &&
+                                fun_name != "fabs" &&
+                                fun_name != "fabsf" &&
+                                fun_name != "llabs" &&
+                                fun_name != "labs" &&
+                                fun_name != "abs" &&
+                                fun_name != "putchar" &&
+                                fun_name != "__bambu_read4c" &&
+                                fun_name != "__bambu_readc")
                         {
                            if(output_level > OUTPUT_LEVEL_VERBOSE)
                               THROW_WARNING("function " + fun_name + " does not have a source C body so we have to be very restrictive on its parameters and on the usage of the value returned...");

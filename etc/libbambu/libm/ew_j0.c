@@ -87,25 +87,25 @@ double __hide_ieee754_j0(double x)
 	hx = GET_HI(x);
 	ix = hx&0x7fffffff;
 	if(ix>=0x7ff00000) return one/(x*x);
-	x = __builtin_fabs(x);
+    x = fabs(x);
 	if(ix >= 0x40000000) {	/* |x| >= 2.0 */
-		s = __builtin_sin(x);
-		c = __builtin_cos(x);
+        s = sin(x);
+        c = cos(x);
 		ss = s-c;
 		cc = s+c;
 		if(ix<0x7fe00000) {  /* make sure x+x not overflow */
-		    z = -__builtin_cos(x+x);
+            z = -cos(x+x);
 		    if ((s*c)<zero) cc = z/ss;
 		    else 	    ss = z/cc;
 		}
 	/*
-	 * j0(x) = 1/__builtin_sqrt(pi) * (P(0,x)*cc - Q(0,x)*ss) / __builtin_sqrt(x)
-	 * y0(x) = 1/__builtin_sqrt(pi) * (P(0,x)*ss + Q(0,x)*cc) / __builtin_sqrt(x)
+     * j0(x) = 1/sqrt(pi) * (P(0,x)*cc - Q(0,x)*ss) / sqrt(x)
+     * y0(x) = 1/sqrt(pi) * (P(0,x)*ss + Q(0,x)*cc) / sqrt(x)
 	 */
-		if(ix>0x48000000) z = (invsqrtpi*cc)/__builtin_sqrt(x);
+        if(ix>0x48000000) z = (invsqrtpi*cc)/sqrt(x);
 		else {
 		    u = __hide_pzero(x); v = __hide_qzero(x);
-		    z = invsqrtpi*(u*cc-v*ss)/__builtin_sqrt(x);
+            z = invsqrtpi*(u*cc-v*ss)/sqrt(x);
 		}
 		return z;
 	}
@@ -163,8 +163,8 @@ double __hide_ieee754_y0(double x)
          *              sin(x) +- cos(x) = -cos(2x)/(sin(x) -+ cos(x))
          * to compute the worse one.
          */
-                s = __builtin_sin(x);
-                c = __builtin_cos(x);
+                s = sin(x);
+                c = cos(x);
                 ss = s-c;
                 cc = s+c;
 	/*
@@ -172,14 +172,14 @@ double __hide_ieee754_y0(double x)
 	 * y0(x) = 1/sqrt(pi) * (P(0,x)*ss + Q(0,x)*cc) / sqrt(x)
 	 */
                 if(ix<0x7fe00000) {  /* make sure x+x not overflow */
-                    z = -__builtin_cos(x+x);
+                    z = -cos(x+x);
                     if ((s*c)<zero) cc = z/ss;
                     else            ss = z/cc;
                 }
-                if(ix>0x48000000) z = (invsqrtpi*ss)/__builtin_sqrt(x);
+                if(ix>0x48000000) z = (invsqrtpi*ss)/sqrt(x);
                 else {
                     u = __hide_pzero(x); v = __hide_qzero(x);
-                    z = invsqrtpi*(u*ss+v*cc)/__builtin_sqrt(x);
+                    z = invsqrtpi*(u*ss+v*cc)/sqrt(x);
                 }
                 return z;
 	}
@@ -449,14 +449,14 @@ double __hide_ieee754_j1(double x)
 	hx = GET_HI(x);
 	ix = hx&0x7fffffff;
 	if(ix>=0x7ff00000) return one/x;
-	y = __builtin_fabs(x);
+    y = fabs(x);
 	if(ix >= 0x40000000) {	/* |x| >= 2.0 */
-		s = __builtin_sin(y);
-		c = __builtin_cos(y);
+        s = sin(y);
+        c = cos(y);
 		ss = -s-c;
 		cc = s-c;
 		if(ix<0x7fe00000) {  /* make sure y+y not overflow */
-		    z = __builtin_cos(y+y);
+            z = cos(y+y);
 		    if ((s*c)>zero) cc = z/ss;
 		    else 	    ss = z/cc;
 		}
@@ -464,10 +464,10 @@ double __hide_ieee754_j1(double x)
 	 * j1(x) = 1/sqrt(pi) * (P(1,x)*cc - Q(1,x)*ss) / sqrt(x)
 	 * y1(x) = 1/sqrt(pi) * (P(1,x)*ss + Q(1,x)*cc) / sqrt(x)
 	 */
-		if(ix>0x48000000) z = (invsqrtpi*cc)/__builtin_sqrt(y);
+        if(ix>0x48000000) z = (invsqrtpi*cc)/sqrt(y);
 		else {
 		    u = __hide_pone(y); v = __hide_qone(y);
-		    z = invsqrtpi*(u*cc-v*ss)/__builtin_sqrt(y);
+            z = invsqrtpi*(u*cc-v*ss)/sqrt(y);
 		}
 		if(hx<0) return -z;
 		else  	 return  z;
@@ -510,12 +510,12 @@ double __hide_ieee754_y1(double x)
         if((ix|lx)==0) return -one/zero;
         if(hx<0) return zero/zero;
         if(ix >= 0x40000000) {  /* |x| >= 2.0 */
-                s = __builtin_sin(x);
-                c = __builtin_cos(x);
+                s = sin(x);
+                c = cos(x);
                 ss = -s-c;
                 cc = s-c;
                 if(ix<0x7fe00000) {  /* make sure x+x not overflow */
-                    z = __builtin_cos(x+x);
+                    z = cos(x+x);
                     if ((s*c)>zero) cc = z/ss;
                     else            ss = z/cc;
                 }
@@ -530,10 +530,10 @@ double __hide_ieee754_y1(double x)
          *              sin(x) +- cos(x) = -cos(2x)/(sin(x) -+ cos(x))
          * to compute the worse one.
          */
-                if(ix>0x48000000) z = (invsqrtpi*ss)/__builtin_sqrt(x);
+                if(ix>0x48000000) z = (invsqrtpi*ss)/sqrt(x);
                 else {
                     u = __hide_pone(x); v = __hide_qone(x);
-                    z = invsqrtpi*(u*ss+v*cc)/__builtin_sqrt(x);
+                    z = invsqrtpi*(u*ss+v*cc)/sqrt(x);
                 }
                 return z;
         } 
@@ -785,7 +785,7 @@ double __hide_ieee754_jn(int n, double x)
 	if(n==0) return(__hide_ieee754_j0(x));
 	if(n==1) return(__hide_ieee754_j1(x));
 	sgn = (n&1)&(hx>>31);	/* even n -- 0, odd n -- sign(x) */
-	x = __builtin_fabs(x);
+    x = fabs(x);
 	if((ix|lx)==0||ix>=0x7ff00000) 	/* if x is 0 or inf */
 	    b = zero;
 	else if((double)n<=x) {   
@@ -805,12 +805,12 @@ double __hide_ieee754_jn(int n, double x)
      *		   3	 s+c		 c-s
      */
 		switch(n&3) {
-		    case 0: temp =  __builtin_cos(x)+__builtin_sin(x); break;
-		    case 1: temp = -__builtin_cos(x)+__builtin_sin(x); break;
-		    case 2: temp = -__builtin_cos(x)-__builtin_sin(x); break;
-		    case 3: temp =  __builtin_cos(x)-__builtin_sin(x); break;
+            case 0: temp =  cos(x)+sin(x); break;
+            case 1: temp = -cos(x)+sin(x); break;
+            case 2: temp = -cos(x)-sin(x); break;
+            case 3: temp =  cos(x)-sin(x); break;
 		}
-		b = invsqrtpi*temp/__builtin_sqrt(x);
+        b = invsqrtpi*temp/sqrt(x);
 	    } else {	
 	        a = __hide_ieee754_j0(x);
 	        b = __hide_ieee754_j1(x);
@@ -889,7 +889,7 @@ double __hide_ieee754_jn(int n, double x)
 		 */
 		tmp = n;
 		v = two/x;
-		tmp = tmp*__hide_ieee754_log(__builtin_fabs(v*tmp));
+        tmp = tmp*__hide_ieee754_log(fabs(v*tmp));
 		if(tmp<7.09782712893383973096e+02) {
 	    	    for(i=n-1,di=(double)(i+i);i>0;i--){
 		        temp = b;
@@ -955,12 +955,12 @@ double __hide_ieee754_yn(int n, double x)
      *		   3	 s+c		 c-s
      */
 		switch(n&3) {
-		    case 0: temp =  __builtin_sin(x)-__builtin_cos(x); break;
-		    case 1: temp = -__builtin_sin(x)-__builtin_cos(x); break;
-		    case 2: temp = -__builtin_sin(x)+__builtin_cos(x); break;
-		    case 3: temp =  __builtin_sin(x)+__builtin_cos(x); break;
+            case 0: temp =  sin(x)-cos(x); break;
+            case 1: temp = -sin(x)-cos(x); break;
+            case 2: temp = -sin(x)+cos(x); break;
+            case 3: temp =  sin(x)+cos(x); break;
 		}
-		b = invsqrtpi*temp/__builtin_sqrt(x);
+        b = invsqrtpi*temp/sqrt(x);
 	} else {
 	    a = __hide_ieee754_y0(x);
 	    b = __hide_ieee754_y1(x);
@@ -976,28 +976,28 @@ double __hide_ieee754_yn(int n, double x)
 /*
  * wrapper j0(double x), y0(double x)
  */
-double __builtin_j0(double x)		/* wrapper j0 */
+double j0(double x)		/* wrapper j0 */
 {
 #ifdef _IEEE_LIBM
 	return __hide_ieee754_j0(x);
 #else
 	double z = __hide_ieee754_j0(x);
-	if(_LIB_VERSION == _IEEE_ || __builtin_isnan(x)) return z;
-	if(__builtin_fabs(x)>X_TLOSS) {
+    if(_LIB_VERSION == _IEEE_ || isnan(x)) return z;
+    if(fabs(x)>X_TLOSS) {
 	        return __hide_kernel_standard(x,x,34); /* j0(|x|>X_TLOSS) */
 	} else
 	    return z;
 #endif
 }
 
-double __builtin_y0(double x)		/* wrapper y0 */
+double y0(double x)		/* wrapper y0 */
 {
 #ifdef _IEEE_LIBM
 	return __hide_ieee754_y0(x);
 #else
 	double z;
 	z = __hide_ieee754_y0(x);
-	if(_LIB_VERSION == _IEEE_ || __builtin_isnan(x) ) return z;
+    if(_LIB_VERSION == _IEEE_ || isnan(x) ) return z;
         if(x <= 0.0){
                 if(x==0.0)
                     /* d= -one/(x-x); */
@@ -1016,29 +1016,29 @@ double __builtin_y0(double x)		/* wrapper y0 */
 /* 
  * wrapper of j1,y1 
  */
-double __builtin_j1(double x)		/* wrapper j1 */
+double j1(double x)		/* wrapper j1 */
 {
 #ifdef _IEEE_LIBM
 	return __hide_ieee754_j1(x);
 #else
 	double z;
 	z = __hide_ieee754_j1(x);
-	if(_LIB_VERSION == _IEEE_ || __builtin_isnan(x) ) return z;
-	if(__builtin_fabs(x)>X_TLOSS) {
+    if(_LIB_VERSION == _IEEE_ || isnan(x) ) return z;
+    if(fabs(x)>X_TLOSS) {
 	        return __hide_kernel_standard(x,x,36); /* j1(|x|>X_TLOSS) */
 	} else
 	    return z;
 #endif
 }
 
-double __builtin_y1(double x)		/* wrapper y1 */
+double y1(double x)		/* wrapper y1 */
 {
 #ifdef _IEEE_LIBM
 	return __hide_ieee754_y1(x);
 #else
 	double z;
 	z = __hide_ieee754_y1(x);
-	if(_LIB_VERSION == _IEEE_ || __builtin_isnan(x) ) return z;
+    if(_LIB_VERSION == _IEEE_ || isnan(x) ) return z;
         if(x <= 0.0){
                 if(x==0.0)
                     /* d= -one/(x-x); */
@@ -1079,29 +1079,29 @@ double __builtin_y1(double x)		/* wrapper y1 */
  *	values of n>1.
  *	
  */
-double __builtin_jn(int n, double x)	/* wrapper jn */
+double jn(int n, double x)	/* wrapper jn */
 {
 #ifdef _IEEE_LIBM
 	return __hide_ieee754_jn(n,x);
 #else
 	double z;
 	z = __hide_ieee754_jn(n,x);
-	if(_LIB_VERSION == _IEEE_ || __builtin_isnan(x) ) return z;
-	if(__builtin_fabs(x)>X_TLOSS) {
+    if(_LIB_VERSION == _IEEE_ || isnan(x) ) return z;
+    if(fabs(x)>X_TLOSS) {
 	    return __hide_kernel_standard((double)n,x,38); /* jn(|x|>X_TLOSS,n) */
 	} else
 	    return z;
 #endif
 }
 
-double __builtin_yn(int n, double x)	/* wrapper yn */
+double yn(int n, double x)	/* wrapper yn */
 {
 #ifdef _IEEE_LIBM
 	return __hide_ieee754_yn(n,x);
 #else
 	double z;
 	z = __hide_ieee754_yn(n,x);
-	if(_LIB_VERSION == _IEEE_ || __builtin_isnan(x) ) return z;
+    if(_LIB_VERSION == _IEEE_ || isnan(x) ) return z;
         if(x <= 0.0){
                 if(x==0.0)
                     /* d= -one/(x-x); */

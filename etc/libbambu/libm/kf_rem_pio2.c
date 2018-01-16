@@ -82,8 +82,8 @@ recompute:
 	}
 
     /* compute n */
-	z  = __builtin_scalbnf(z,(int)q0);	/* actual value of z */
-	z -= (float)8.0*__builtin_floorf(z*(float)0.125);	/* trim off integer >= 8 */
+    z  = scalbnf(z,(int)q0);	/* actual value of z */
+    z -= (float)8.0*floorf(z*(float)0.125);	/* trim off integer >= 8 */
 	n  = (int) z;
 	z -= (float)n;
 	ih = 0;
@@ -105,7 +105,7 @@ recompute:
 		    }
 		} else  iq[i] = 0xff - j;
 	    }
-        if(__builtin_expect(q0>0, 0)) {		/* rare case: chance is 1 in 12 */
+        if(expect(q0>0, 0)) {		/* rare case: chance is 1 in 12 */
 	        switch(q0) {
 	        case 1:
 	    	   iq[jz-1] &= 0x7f; break;
@@ -115,12 +115,12 @@ recompute:
 	    }
 	    if(ih==2) {
 		z = one - z;
-		if(carry!=0) z -= __builtin_scalbnf(one,(int)q0);
+        if(carry!=0) z -= scalbnf(one,(int)q0);
 	    }
 	}
 
     /* check if recomputation is needed */
-    if(__builtin_expect(z==zero, 0)) {
+    if(expect(z==zero, 0)) {
 	    j = 0;
 	    for (i=jz-1;i>=jk;i--) j |= iq[i];
 	    if(j==0) { /* need recomputation */
@@ -141,7 +141,7 @@ recompute:
 	    jz -= 1; q0 -= 8;
 	    while(iq[jz]==0) { jz--; q0-=8;}
 	} else { /* break z into 8-bit if necessary */
-	    z = __builtin_scalbnf(z,-(int)q0);
+        z = scalbnf(z,-(int)q0);
 	    if(z>=two8) { 
 		fw = (float)((int)(twon8*z));
 		iq[jz] = (int)(z-two8*fw);
@@ -151,7 +151,7 @@ recompute:
 	}
 
     /* convert integer "bit" chunk to floating-point value */
-	fw = __builtin_scalbnf(one,(int)q0);
+    fw = scalbnf(one,(int)q0);
 	for(i=jz;i>=0;i--) {
 	    q[i] = fw*(float)iq[i]; fw*=twon8;
 	}

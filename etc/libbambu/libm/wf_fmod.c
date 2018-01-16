@@ -30,7 +30,7 @@
 #include <errno.h>
 #endif
 
-float __builtin_fmodf(float x, float y)	/* wrapper fmodf */
+float fmodf(float x, float y)	/* wrapper fmodf */
 {
 #ifdef _IEEE_LIBM
 	return __hide_ieee754_fmodf(x,y);
@@ -38,7 +38,7 @@ float __builtin_fmodf(float x, float y)	/* wrapper fmodf */
 	float z;
 	struct exception exc;
 	z = __hide_ieee754_fmodf(x,y);
-	if(_LIB_VERSION == _IEEE_ ||__builtin_isnan(y)||__builtin_isnan(x)) return z;
+    if(_LIB_VERSION == _IEEE_ ||isnan(y)||isnan(x)) return z;
 	if(y==(float)0.0) {
             /* fmodf(x,0) */
             exc.type = DOMAIN;
@@ -52,7 +52,7 @@ float __builtin_fmodf(float x, float y)	/* wrapper fmodf */
 	       exc.retval = 0.0/0.0;
             if (_LIB_VERSION == _POSIX_)
                errno = EDOM;
-            else if (!__builtin_matherr(&exc)) {
+            else if (!matherr(&exc)) {
                   errno = EDOM;
             }
 	    if (exc.err != 0)
@@ -65,9 +65,9 @@ float __builtin_fmodf(float x, float y)	/* wrapper fmodf */
 
 #ifdef _DOUBLE_IS_32BITS
 
-double __builtin_fmod(double x, double y)
+double fmod(double x, double y)
 {
-	return (double) __builtin_fmodf((float) x, (float) y);
+    return (double) fmodf((float) x, (float) y);
 }
 
 #endif /* defined(_DOUBLE_IS_32BITS) */

@@ -628,7 +628,10 @@ DesignFlowStep_Status mem_dominator_allocation::Exec()
             {
                const FunctionBehaviorConstRef cur_function_behavior = HLSMgr->CGetFunctionBehavior(*wiu_it);
                if(cur_function_behavior->get_dynamic_address().find(var_index) != cur_function_behavior->get_dynamic_address().end())
+               {
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Found dynamic use of variable: " + cur_function_behavior->CGetBehavioralHelper()->PrintVariable(var_index) + " - " + STR(var_index) + " - " + BH->PrintVariable(var_index) + " in function " + cur_function_behavior->CGetBehavioralHelper()->get_function_name());
                   is_dynamic_address_used = true;
+               }
             }
 
             if(is_dynamic_address_used && !all_pointers_resolved && !assume_aligned_access_p)

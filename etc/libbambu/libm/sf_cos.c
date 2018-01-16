@@ -35,7 +35,7 @@ float __hide_local_cosf(float x)
 	ix &= 0x7fffffff;
 	if(ix <= 0x3f490fd8) return __hide_kernel_cosf(x,z);
     /* cos(Inf or NaN) is NaN */
-	else if (!FLT_UWORD_IS_FINITE(ix)) return __builtin_nanf("");
+    else if (!FLT_UWORD_IS_FINITE(ix)) return nanf("");
     /* argument reduction needed */
 	else {
 	    n = __hide_ieee754_rem_pio2f(x,y);
@@ -49,15 +49,15 @@ float __hide_local_cosf(float x)
 	}
 }
 
-float __builtin_cosf(float x)
+float cosf(float x)
 {
 	return __hide_local_cosf(x);
 }
 #ifdef _DOUBLE_IS_32BITS
 
-double __builtin_cos(double x)
+double cos(double x)
 {
-	return (double) __builtin_cosf((float) x);
+    return (double) cosf((float) x);
 }
 
 #endif /* defined(_DOUBLE_IS_32BITS) */

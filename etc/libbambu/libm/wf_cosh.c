@@ -30,7 +30,7 @@
 #include <errno.h>
 #endif
 
-float __builtin_coshf(float x)		/* wrapper coshf */
+float coshf(float x)		/* wrapper coshf */
 {
 #ifdef _IEEE_LIBM
 	return __hide_ieee754_coshf(x);
@@ -38,8 +38,8 @@ float __builtin_coshf(float x)		/* wrapper coshf */
 	float z;
 	struct exception exc;
 	z = __hide_ieee754_coshf(x);
-	if(_LIB_VERSION == _IEEE_ || __builtin_isnan(x)) return z;
-	if(__builtin_fabsf(x)>(float)8.9415985107e+01) {	
+    if(_LIB_VERSION == _IEEE_ || isnan(x)) return z;
+    if(fabsf(x)>(float)8.9415985107e+01) {
 	    /* coshf(finite) overflow */
 #ifndef HUGE_VAL
 #define HUGE_VAL inf
@@ -57,7 +57,7 @@ float __builtin_coshf(float x)		/* wrapper coshf */
 	       exc.retval = HUGE_VAL;
 	    if (_LIB_VERSION == _POSIX_)
 	       errno = ERANGE;
-	    else if (!__builtin_matherr(&exc)) {
+        else if (!matherr(&exc)) {
 	       errno = ERANGE;
 	    }
 	    if (exc.err != 0)

@@ -25,7 +25,7 @@
 
 static const float huge = 1.0e30;
 
-float __builtin_ceilf(float x)
+float ceilf(float x)
 {
 	int i0,j0;
 	unsigned i,ix;
@@ -54,9 +54,9 @@ float __builtin_ceilf(float x)
 
 #ifdef _DOUBLE_IS_32BITS
 
-double __builtin_ceil(double x)
+double ceil(double x)
 {
-	return (double) __builtin_ceilf((float) x);
+    return (double) ceilf((float) x);
 }
 
 #endif /* defined(_DOUBLE_IS_32BITS) */

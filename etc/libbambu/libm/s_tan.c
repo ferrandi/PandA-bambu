@@ -49,7 +49,7 @@
  *	TRIG(x) returns trig(x) nearly rounded 
  */
 
-double __builtin_tan(double x)
+double tan(double x)
 {
 	double y[2],z=0.0;
 	int n, ix;
@@ -62,7 +62,7 @@ double __builtin_tan(double x)
 	if(ix <= 0x3fe921fb) return __hide_kernel_tan(x,z,1);
 
     /* tan(Inf or NaN) is NaN */
-	else if (ix>=0x7ff00000) return __builtin_nan("");		/* NaN */
+    else if (ix>=0x7ff00000) return nan("");		/* NaN */
 
     /* argument reduction needed */
 	else {

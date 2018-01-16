@@ -25,7 +25,7 @@
 
 static const float huge = 1.0e30;
 
-long int __builtin_lceilf(float x)
+long int lceilf(float x)
 {
 	int i0,j0;
 	unsigned i,ix;
@@ -56,9 +56,9 @@ long int __builtin_lceilf(float x)
 
 #ifdef _DOUBLE_IS_32BITS
 
-long int __builtin_lceil(double x)
+long int lceil(double x)
 {
-	return __builtin_lceilf((float) x);
+    return lceilf((float) x);
 }
 
 #endif /* defined(_DOUBLE_IS_32BITS) */

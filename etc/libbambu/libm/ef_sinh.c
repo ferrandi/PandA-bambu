@@ -42,17 +42,17 @@ float __hide_ieee754_sinhf(float x)
 	if (ix < 0x41b00000) {		/* |x|<22 */
 	    if (ix<0x31800000) 		/* |x|<2**-28 */
 		if(shuge+x>one) return x;/* sinh(tiny) = tiny with inexact */
-	    t = __builtin_expm1f(__builtin_fabsf(x));
+        t = expm1f(fabsf(x));
 	    if(ix<0x3f800000) return h*((float)2.0*t-t*t/(t+one));
 	    return h*(t+t/(t+one));
 	}
 
     /* |x| in [22, log(maxdouble)] return 0.5*exp(|x|) */
-	if (ix<=FLT_UWORD_LOG_MAX)  return h*__hide_ieee754_expf(__builtin_fabsf(x));
+    if (ix<=FLT_UWORD_LOG_MAX)  return h*__hide_ieee754_expf(fabsf(x));
 
     /* |x| in [log(maxdouble), overflowthresold] */
 	if (ix<=FLT_UWORD_LOG_2MAX) {
-	    w = __hide_ieee754_expf((float)0.5*__builtin_fabsf(x));
+        w = __hide_ieee754_expf((float)0.5*fabsf(x));
 	    t = h*w;
 	    return t*w;
 	}

@@ -21,7 +21,7 @@
 /* 
  * wrapper exp(x)
  */
-double __builtin_exp(double x)		/* wrapper exp */
+double exp(double x)		/* wrapper exp */
 {
 #ifdef _IEEE_LIBM
 	return __hide_ieee754_exp(x);

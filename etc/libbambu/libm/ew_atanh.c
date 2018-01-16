@@ -45,31 +45,31 @@ double __hide_ieee754_atanh(double x)
 	lx = GET_LO(x);		/* low word */
 	ix = hx&0x7fffffff;
 	if ((ix|((lx|(-lx))>>31))>0x3ff00000) /* |x|>1 */
-	    return __builtin_nans("");
+        return nans("");
 	if(ix==0x3ff00000) 
-	    return (hx>>31) ? -__builtin_inf() : __builtin_inf();
+        return (hx>>31) ? -inf() : inf();
 	if(ix<0x3e300000&&(huge+x)>zero) return x;	/* x<2**-28 */
 	SET_HIGH_WORD(x, ix);		/* x <- |x| */
 	if(ix<0x3fe00000) {		/* x < 0.5 */
 	    t = x+x;
-	    t = 0.5*__builtin_log1p(t+t*x/(one-x));
+        t = 0.5*log1p(t+t*x/(one-x));
 	} else 
-	    t = 0.5*__builtin_log1p((x+x)/(one-x));
+        t = 0.5*log1p((x+x)/(one-x));
 	if(hx>>31) return -t; else return t;
 }
  
 /* 
  * wrapper atanh(x)
  */
-double __builtin_atanh(double x)		/* wrapper atanh */
+double atanh(double x)		/* wrapper atanh */
 {
 #ifdef _IEEE_LIBM
 	return __hide_ieee754_atanh(x);
 #else
 	double z,y;
 	z = __hide_ieee754_atanh(x);
-	if(_LIB_VERSION == _IEEE_ || __builtin_isnan(x)) return z;
-	y = __builtin_fabs(x);
+    if(_LIB_VERSION == _IEEE_ || isnan(x)) return z;
+    y = fabs(x);
 	if(y>=1.0) {
 	    if(y>1.0)
 	        return __hide_kernel_standard(x,x,30); /* atanh(|x|>1) */

@@ -121,6 +121,7 @@ namespace clang {
          static const unsigned int tree_codes2nargs[];
          static const gimple_rhs_class gimple_rhs_class_table[];
          static const char* ValueTyNames[];
+         static const std::set<std::string> builtinsNames;
 
          struct tree_list
          {
@@ -214,7 +215,7 @@ namespace clang {
          bool CheckSignedTag(const llvm::Type *t) const {return reinterpret_cast<size_t>(t)&1;}
          bool CheckSignedTag(const void *t) const {return reinterpret_cast<size_t>(t)&1;}
          const llvm::Type * NormalizeSignedTag(const llvm::Type *t) const {return reinterpret_cast<const llvm::Type*>(reinterpret_cast<size_t>(t)&(~1ULL));}
-         const llvm::Type * AddSignedTag(const llvm::Type *t) const {assert(CheckSignedTag(t)==false);return reinterpret_cast<const llvm::Type*>(reinterpret_cast<size_t>(t)|1);}
+         const llvm::Type * AddSignedTag(const llvm::Type *t) const {return reinterpret_cast<const llvm::Type*>(reinterpret_cast<size_t>(t)|1);}
          const void * AddSignedTag(const void *t) const {return AddSignedTag(reinterpret_cast<const llvm::Type*>(t));}
 
 
@@ -424,6 +425,7 @@ namespace clang {
          bool DECL_EXTERNAL (const void* t) const;
          bool TREE_PUBLIC (const void* t) const;
          bool TREE_STATIC (const void* t) const;
+         bool is_builtin_fn (const void* t) const;
          const void* DECL_ARG_TYPE (const void* t);
          const void* DECL_INITIAL (const void*t);
          const void* DECL_SIZE (const void*t);
@@ -520,6 +522,8 @@ namespace clang {
          void dequeue_and_serialize_gimple(const void* t);
          void dequeue_and_serialize_statement (const void* t);
          void dequeue_and_serialize();
+
+         void lowerIntrinsics(llvm::Module &M);
 
       public:
          DumpGimpleRaw(CompilerInstance &_Instance,

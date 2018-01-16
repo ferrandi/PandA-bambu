@@ -100,9 +100,6 @@ HLSCWriter::~HLSCWriter()
 
 void HLSCWriter::WriteHeader()
 {
-   indented_output_stream->Append("#define __builtin___divsc3 __divsc3\n");
-   indented_output_stream->Append("#define __builtin___divdc3 __divdc3\n");
-
    indented_output_stream->Append("#define _FILE_OFFSET_BITS 64\n\n");
    indented_output_stream->Append("#define __Inf (1.0/0.0)\n");
    indented_output_stream->Append("#define __Nan (0.0/0.0)\n\n");

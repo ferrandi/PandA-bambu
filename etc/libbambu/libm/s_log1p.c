@@ -98,7 +98,7 @@ Lp7 = 1.479819860511658591e-01;  /* 3FC2F112 DF3E5244 */
 
 //static double zero = 0.0;
 
-double __builtin_log1p(double x)
+double log1p(double x)
 {
 	double hfsq,f=0,c=0,s,z,R,u;
 	int k,hx,hu=0,ax;
@@ -109,8 +109,8 @@ double __builtin_log1p(double x)
 	k = 1;
 	if (hx < 0x3FDA827A) {			/* x < 0.41422  */
 	    if(ax>=0x3ff00000) {		/* x <= -1.0 */
-		if(x==-1.0) return -__builtin_inf(); /* log1p(-1)=-inf */
-		else return __builtin_nans("");	/* log1p(x<-1)=NaN */
+        if(x==-1.0) return -inf(); /* log1p(-1)=-inf */
+        else return nans("");	/* log1p(x<-1)=NaN */
 	    }
 	    if(ax<0x3e200000) {			/* |x| < 2**-29 */
 		if(two54+x>zero			/* raise inexact */

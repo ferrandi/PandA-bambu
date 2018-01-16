@@ -30,7 +30,7 @@
 #include <errno.h>
 #endif
 
-float __builtin_gammaf_r(float x, int *signgamp) /* wrapper lgammaf_r */
+float gammaf_r(float x, int *signgamp) /* wrapper lgammaf_r */
 {
 #ifdef _IEEE_LIBM
 	return __hide_ieee754_lgammaf_r(x,signgamp);
@@ -53,12 +53,12 @@ float __builtin_gammaf_r(float x, int *signgamp) /* wrapper lgammaf_r */
                 exc.retval = HUGE;
             else
                 exc.retval = HUGE_VAL;
-            if(__builtin_floorf(x)==x&&x<=(float)0.0) {
+            if(floorf(x)==x&&x<=(float)0.0) {
 		/* gammaf(-integer) or gamma(0) */
 		exc.type = SING;
 		if (_LIB_VERSION == _POSIX_)
 		  errno = EDOM;
-		else if (!__builtin_matherr(&exc)) {
+        else if (!matherr(&exc)) {
 		  errno = EDOM;
 		}
             } else {
@@ -66,7 +66,7 @@ float __builtin_gammaf_r(float x, int *signgamp) /* wrapper lgammaf_r */
 		exc.type = OVERFLOW;
                 if (_LIB_VERSION == _POSIX_)
 		  errno = ERANGE;
-                else if (!__builtin_matherr(&exc)) {
+                else if (!matherr(&exc)) {
                   errno = ERANGE;
                 }
             }

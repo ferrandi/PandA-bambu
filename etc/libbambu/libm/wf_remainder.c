@@ -30,7 +30,7 @@
 #include <errno.h>
 #endif
 
-float __builtin_remainderf(float x, float y)	/* wrapper remainder */
+float remainderf(float x, float y)	/* wrapper remainder */
 {
 #ifdef _IEEE_LIBM
 	return __hide_ieee754_remainderf(x,y);
@@ -38,7 +38,7 @@ float __builtin_remainderf(float x, float y)	/* wrapper remainder */
 	float z;
 	struct exception exc;
 	z = __hide_ieee754_remainderf(x,y);
-	if(_LIB_VERSION == _IEEE_ || __builtin_isnan(y)) return z;
+    if(_LIB_VERSION == _IEEE_ || isnan(y)) return z;
 	if(y==(float)0.0) { 
             /* remainderf(x,0) */
             exc.type = DOMAIN;
@@ -49,7 +49,7 @@ float __builtin_remainderf(float x, float y)	/* wrapper remainder */
             exc.retval = 0.0/0.0;
             if (_LIB_VERSION == _POSIX_)
                errno = EDOM;
-            else if (!__builtin_matherr(&exc)) {
+            else if (!matherr(&exc)) {
                errno = EDOM;
             }
 	    if (exc.err != 0)
@@ -62,9 +62,9 @@ float __builtin_remainderf(float x, float y)	/* wrapper remainder */
 
 #ifdef _DOUBLE_IS_32BITS
 
-double __builtin_remainder(double x, double y)
+double remainder(double x, double y)
 {
-	return (double) __builtin_remainderf((float) x, (float) y);
+    return (double) remainderf((float) x, (float) y);
 }
 
 #endif /* defined(_DOUBLE_IS_32BITS) */

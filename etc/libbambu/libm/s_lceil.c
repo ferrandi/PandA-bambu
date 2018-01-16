@@ -30,7 +30,7 @@
 
 //static const double huge = 1.0e300;
 
-long int __builtin_lceil(double x)
+long int lceil(double x)
 {
 	int i0,i1,j0;
 	unsigned i,j;

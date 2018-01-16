@@ -60,7 +60,7 @@ double __hide_ieee754_asin(double x)
 	    if(((ix-0x3ff00000)|GET_LO(x))==0)
 		    /* asin(1)=+-pi/2 with inexact */
 		return x*pio2_hi+x*pio2_lo;	
-	    return __builtin_nan("");		/* asin(|x|>1) is NaN */   
+        return nan("");		/* asin(|x|>1) is NaN */
 	} else if (ix<0x3fe00000) {	/* |x|<0.5 */
 	    if(ix<0x3e400000) {		/* if |x| < 2**-27 */
 		if(huge+x>one) return x;/* return x with inexact if x!=0*/
@@ -72,11 +72,11 @@ double __hide_ieee754_asin(double x)
 		return x+x*w;
 	}
 	/* 1> |x|>= 0.5 */
-	w = one-__builtin_fabs(x);
+    w = one-fabs(x);
 	t = w*0.5;
 	p = t*(pS0+t*(pS1+t*(pS2+t*(pS3+t*(pS4+t*pS5)))));
 	q = one+t*(qS1+t*(qS2+t*(qS3+t*qS4)));
-	s = __builtin_sqrt(t);
+    s = sqrt(t);
 	if(ix>=0x3FEF3333) { 	/* if |x| > 0.975 */
 	    w = p/q;
 	    t = pio2_hi-(2.0*(s+s*w)-pio2_lo);
@@ -95,15 +95,15 @@ double __hide_ieee754_asin(double x)
 /* 
  * wrapper asin(x)
  */
-double __builtin_asin(double x)		/* wrapper asin */
+double asin(double x)		/* wrapper asin */
 {
 #ifdef _IEEE_LIBM
 	return __hide_ieee754_asin(x);
 #else
 	double z;
 	z = __hide_ieee754_asin(x);
-	if(_LIB_VERSION == _IEEE_ || __builtin_isnan(x)) return z;
-	if(__builtin_fabs(x)>1.0) {
+    if(_LIB_VERSION == _IEEE_ || isnan(x)) return z;
+    if(fabs(x)>1.0) {
 	        return __hide_kernel_standard(x,x,2); /* asin(|x|>1) */
 	} else
 	    return z;

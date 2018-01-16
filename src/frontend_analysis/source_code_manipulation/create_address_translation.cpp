@@ -559,7 +559,7 @@ DesignFlowStep_Status CreateAddressTranslation::Exec()
    IndentedOutputStreamRef endianess_inversion(new IndentedOutputStream());
    endianess_inversion->Append("unsigned int " STR_CST_taste_endianess_inversion " (unsigned int input, unsigned int endianess)\n");
    endianess_inversion->Append("{\n");
-   endianess_inversion->Append("const int inverted = __builtin_bswap32(input);\n");
+   endianess_inversion->Append("const int inverted = bswap32(input);\n");
    endianess_inversion->Append("return endianess == 1 ? inverted : input;\n");
    endianess_inversion->Append("}\n");
    const auto endianess_inversion_file = tmp_directory + "/" + STR_CST_taste_endianess_inversion + ".c";

@@ -40,7 +40,7 @@ static const float Zero[] = {0.0, -0.0,};
  * remquo in reduction algorithms.
  */
 float
-__builtin_remquof(float x, float y, int *quo)
+remquof(float x, float y, int *quo)
 {
 	int n,hx,hy,hz,ix,iy,sx,i;
 	unsigned q,sxy;
@@ -118,7 +118,7 @@ __builtin_remquof(float x, float y, int *quo)
 	}
 fixup:
 	SET_FLOAT_WORD(x,hx);
-	y = __builtin_fabsf(y);
+    y = fabsf(y);
 	if (y < 0x1p-125f) {
 	    if (x+x>y || (x+x==y && (q & 1))) {
 		q++;

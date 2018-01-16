@@ -27,16 +27,16 @@
 
 #include "math_privatef.h"
 
-float __builtin_exp10f(float x)		/* wrapper exp10f */
+float exp10f(float x)		/* wrapper exp10f */
 {
-  return __builtin_powf(10.0, x);
+  return powf(10.0, x);
 }
 
 #ifdef _DOUBLE_IS_32BITS
 
-double __builtin_exp10(double x)
+double exp10(double x)
 {
-	return (double) __builtin_exp10f((float) x);
+    return (double) exp10f((float) x);
 }
 
 #endif /* defined(_DOUBLE_IS_32BITS) */

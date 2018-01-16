@@ -4,7 +4,7 @@ CC=$(top_builddir)/src/tree-panda-gcc
 CFLAGS=
 pkglib_LIBRARIES =
 common_treegccflags = --output-temporary-directory=/tmp -iplugindir=$(top_builddir)/etc/gcc_plugin -finline-limit=10000 -O3 -I$(BOOST_DIR)
-common_treegccflags_clang = --output-temporary-directory=/tmp -iplugindir=$(top_builddir)/etc/gcc_plugin -O3 -I$(BOOST_DIR)
+common_treegccflags_clang = --output-temporary-directory=/tmp -iplugindir=$(top_builddir)/etc/clang_plugin -O3 -I$(BOOST_DIR)
 
 if BUILD_I386_GCC45
 pkglib_LIBRARIES += libpthread_gcc45.a
@@ -57,6 +57,6 @@ endif
 if BUILD_I386_CLANG40
 pkglib_LIBRARIES += libpthread_clang40.a
 libpthread_clang40_a_SOURCES = pthread.c
-libpthread_clang40_a_CFLAGS = --compiler=I386_GCC7 $(common_treegccflags_clang)
+libpthread_clang40_a_CFLAGS = --compiler=I386_CLANG40 $(common_treegccflags_clang)
 endif
 

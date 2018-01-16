@@ -57,18 +57,18 @@ double __hide_ieee754_sinh(double x)
 	if (ix < 0x40360000) {		/* |x|<22 */
 	    if (ix<0x3e300000) 		/* |x|<2**-28 */
 		if(shuge+x>one) return x;/* sinh(tiny) = tiny with inexact */
-	    t = __builtin_expm1(__builtin_fabs(x));
+        t = expm1(fabs(x));
 	    if(ix<0x3ff00000) return h*(2.0*t-t*t/(t+one));
 	    return h*(t+t/(t+one));
 	}
 
     /* |x| in [22, log(maxdouble)] return 0.5*exp(|x|) */
-	if (ix < 0x40862E42)  return h*__hide_ieee754_exp(__builtin_fabs(x));
+    if (ix < 0x40862E42)  return h*__hide_ieee754_exp(fabs(x));
 
     /* |x| in [log(maxdouble), overflowthresold] */
 	lx = *( (((*(unsigned*)&one)>>29)) + (unsigned*)&x);
 	if (ix<0x408633CE || (ix==0x408633ce)&&(lx<=(unsigned)0x8fb9f87d)) {
-	    w = __hide_ieee754_exp(0.5*__builtin_fabs(x));
+        w = __hide_ieee754_exp(0.5*fabs(x));
 	    t = h*w;
 	    return t*w;
 	}
@@ -80,7 +80,7 @@ double __hide_ieee754_sinh(double x)
 /* 
  * wrapper sinh(x)
  */
-double __builtin_sinh(double x)		/* wrapper sinh */
+double sinh(double x)		/* wrapper sinh */
 {
 #ifdef _IEEE_LIBM
 	return __hide_ieee754_sinh(x);

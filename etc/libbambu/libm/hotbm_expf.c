@@ -44,7 +44,7 @@
 #ifdef CHECK_EXP_FUNCTION
 #define ADD_BUILTIN_PREFIX(fname) local_ ## fname
 #else
-#define ADD_BUILTIN_PREFIX(fname) __builtin_ ## fname
+#define ADD_BUILTIN_PREFIX(fname) fname
 #endif
 
 typedef union {

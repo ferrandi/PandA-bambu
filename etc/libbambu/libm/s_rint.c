@@ -35,7 +35,7 @@ TWO52[2]={
  -4.50359962737049600000e+15, /* 0xC3300000, 0x00000000 */
 };
 
-double __builtin_rint(double x)
+double rint(double x)
 {
 	int i0,j0,sx;
 	unsigned i,i1;

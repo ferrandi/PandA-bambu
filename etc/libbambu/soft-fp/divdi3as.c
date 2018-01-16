@@ -78,7 +78,7 @@ __udivmoddi4 (UDWtype x, UDWtype y, UDWtype *res)
     UDWtype r = x;
     UDWtype q = 0;
     if (y <= r) {
-        unsigned char k = __builtin_clzll(y) - __builtin_clzll(r);
+        unsigned char k = clzll(y) - clzll(r);
         BIT_RESIZE(k,6);
         y = lsl64(y,k); // align y
         if (r >= y) {

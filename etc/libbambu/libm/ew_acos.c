@@ -53,7 +53,7 @@ double __hide_ieee754_acos(double x)
 		if(hx>0) return 0.0;		/* acos(1) = 0  */
 		else return pi+2.0*pio2_lo;	/* acos(-1)= pi */
 	    }
-	    return __builtin_nan("");		/* acos(|x|>1) is NaN */
+        return nan("");		/* acos(|x|>1) is NaN */
 	}
 	if(ix<0x3fe00000) {	/* |x| < 0.5 */
 	    if(ix<=0x3c600000) return pio2_hi+pio2_lo;/*if|x|<2**-57*/
@@ -66,13 +66,13 @@ double __hide_ieee754_acos(double x)
 	    z = (one+x)*0.5;
 	    p = z*(pS0+z*(pS1+z*(pS2+z*(pS3+z*(pS4+z*pS5)))));
 	    q = one+z*(qS1+z*(qS2+z*(qS3+z*qS4)));
-	    s = __builtin_sqrt(z);
+        s = sqrt(z);
 	    r = p/q;
 	    w = r*s-pio2_lo;
 	    return pi - 2.0*(s+w);
 	} else {			/* x > 0.5 */
 	    z = (one-x)*0.5;
-	    s = __builtin_sqrt(z);
+        s = sqrt(z);
 	    df = s;
 	    SET_LOW_WORD(df, 0);
 	    c  = (z-df*df)/(s+df);
@@ -89,15 +89,15 @@ double __hide_ieee754_acos(double x)
  */
 
 
-double __builtin_acos(double x)		/* wrapper acos */
+double acos(double x)		/* wrapper acos */
 {
 #ifdef _IEEE_LIBM
 	return __hide_ieee754_acos(x);
 #else
 	double z;
 	z = __hide_ieee754_acos(x);
-	if(_LIB_VERSION == _IEEE_ || __builtin_isnan(x)) return z;
-	if(__builtin_fabs(x)>1.0) {
+    if(_LIB_VERSION == _IEEE_ || isnan(x)) return z;
+    if(fabs(x)>1.0) {
 	        return __hide_kernel_standard(x,x,1); /* acos(|x|>1) */
 	} else
 	    return z;

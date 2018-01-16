@@ -32,7 +32,7 @@
 #include <errno.h>
 #endif
 
-float __builtin_asinf(float x)		/* wrapper asinf */
+float asinf(float x)		/* wrapper asinf */
 {
 #ifdef _IEEE_LIBM
 	return __hide_ieee754_asinf(x);
@@ -40,17 +40,17 @@ float __builtin_asinf(float x)		/* wrapper asinf */
 	float z;
 	struct exception exc;
 	z = __hide_ieee754_asinf(x);
-	if(_LIB_VERSION == _IEEE_ || __builtin_isnan(x)) return z;
+    if(_LIB_VERSION == _IEEE_ || isnan(x)) return z;
 	if(fabsf(x)>(float)1.0) {
 	    /* asinf(|x|>1) */
 	    exc.type = DOMAIN;
 	    exc.name = "asinf";
 	    exc.err = 0;
 	    exc.arg1 = exc.arg2 = (double)x;
-	    exc.retval = __builtin_nan("");
+        exc.retval = nan("");
 	    if(_LIB_VERSION == _POSIX_)
 	      errno = EDOM;
-	    else if (!__builtin_matherr(&exc)) {
+        else if (!matherr(&exc)) {
 	      errno = EDOM;
 	    }
 	    if (exc.err != 0)
@@ -63,9 +63,9 @@ float __builtin_asinf(float x)		/* wrapper asinf */
 
 #ifdef _DOUBLE_IS_32BITS
 
-double __builtin_asin(double x)
+double asin(double x)
 {
-	return (double) __builtin_asinf((float) x);
+    return (double) asinf((float) x);
 }
 
 #endif /* defined(_DOUBLE_IS_32BITS) */

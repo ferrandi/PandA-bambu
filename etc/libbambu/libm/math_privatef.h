@@ -211,78 +211,78 @@ extern  _LIB_VERSION_TYPE  _LIB_VERSION;
 /*
  * ANSI/POSIX
  */
-extern float __builtin_acosf (float);
-extern float __builtin_asinf (float);
-extern float __builtin_atanf (float);
-extern float __builtin_atan2f (float, float);
-extern float __builtin_cosf (float);
-extern float __builtin_sinf (float);
-extern float __builtin_tanf (float);
+extern float acosf (float);
+extern float asinf (float);
+extern float atanf (float);
+extern float atan2f (float, float);
+extern float cosf (float);
+extern float sinf (float);
+extern float tanf (float);
 
-extern float __builtin_coshf (float);
-extern float __builtin_sinhf (float);
-extern float __builtin_tanhf (float);
+extern float coshf (float);
+extern float sinhf (float);
+extern float tanhf (float);
 
-extern float __builtin_expf (float);
-extern float __builtin_frexpf (float, int *);
-extern float __builtin_ldexpf (float, int);
-extern float __builtin_logf (float);
-extern float __builtin_log10f (float);
-extern float __builtin_modff (float, float *);
+extern float expf (float);
+extern float frexpf (float, int *);
+extern float ldexpf (float, int);
+extern float logf (float);
+extern float log10f (float);
+extern float modff (float, float *);
 
-extern float __builtin_powf (float, float);
-extern float __builtin_sqrtf (float);
+extern float powf (float, float);
+extern float sqrtf (float);
 
-extern float __builtin_ceilf (float);
-extern float __builtin_fabsf (float);
-extern float __builtin_floorf (float);
-extern float __builtin_fmodf (float, float);
+extern float ceilf (float);
+extern float fabsf (float);
+extern float floorf (float);
+extern float fmodf (float, float);
 
-extern float __builtin_erff (float);
-extern float __builtin_erfcf (float);
-extern float __builtin_gammaf (float);
-extern float __builtin_hypotf (float, float);
-extern int   __builtin_isnanf (float);
+extern float erff (float);
+extern float erfcf (float);
+extern float gammaf (float);
+extern float hypotf (float, float);
+extern int   isnanf (float);
 extern int   __finitef (float);
-extern float __builtin_j0f (float);
-extern float __builtin_j1f (float);
-extern float __builtin_jnf (int, float);
-extern float __builtin_lgammaf (float);
-extern float __builtin_y0f (float);
-extern float __builtin_y1f (float);
-extern float __builtin_ynf (int, float);
+extern float j0f (float);
+extern float j1f (float);
+extern float jnf (int, float);
+extern float lgammaf (float);
+extern float y0f (float);
+extern float y1f (float);
+extern float ynf (int, float);
 
-extern float __builtin_acoshf (float);
-extern float __builtin_asinhf (float);
-extern float __builtin_atanhf (float);
-extern float __builtin_cbrtf (float);
-extern float __builtin_logbf (float);
-extern float __builtin_nextafterf (float, float);
-extern float __builtin_remainderf (float, float);
+extern float acoshf (float);
+extern float asinhf (float);
+extern float atanhf (float);
+extern float cbrtf (float);
+extern float logbf (float);
+extern float nextafterf (float, float);
+extern float remainderf (float, float);
 #ifdef _SCALB_INT
-extern float __builtin_scalbf (float, int);
+extern float scalbf (float, int);
 #else
-extern float __builtin_scalbf (float, float);
+extern float scalbf (float, float);
 #endif
 
 /*
  * IEEE Test Vector
  */
-extern float __builtin_significandf (float);
+extern float significandf (float);
 
 /*
  * Functions callable from C, intended to support IEEE arithmetic.
  */
-extern float __builtin_copysignf (float, float);
-extern int   __builtin_ilogbf (float);
-extern float __builtin_rintf (float);
-extern float __builtin_scalbnf (float, int);
+extern float copysignf (float, float);
+extern int   ilogbf (float);
+extern float rintf (float);
+extern float scalbnf (float, int);
 
 /*
  * BSD math library entry points
  */
-extern float __builtin_expm1f (float);
-extern float __builtin_log1pf (float);
+extern float expm1f (float);
+extern float log1pf (float);
 
 /**
  * kernel functions
@@ -296,8 +296,8 @@ extern float __hide_kernel_tanf(float x, float y, int iy);
  * as the second argument; user must allocate space for signgam.
  */
 #ifdef _REENTRANT
-extern float __builtin_gammaf_r (float, int *);
-extern float __builtin_lgammaf_r (float, int *);
+extern float gammaf_r (float, int *);
+extern float lgammaf_r (float, int *);
 #endif	/* _REENTRANT */
 
 /* ieee style elementary functions */
@@ -345,7 +345,7 @@ typedef double double_t;
 #define FP_NORMAL      4
 
 # ifndef HUGE_VALF
-#  define HUGE_VALF (__builtin_huge_valf())
+#  define HUGE_VALF (huge_valf())
 # endif
 
 #ifndef FP_ILOGB0

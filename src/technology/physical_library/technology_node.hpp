@@ -130,7 +130,7 @@ enum class TargetDevice_Type;
 #define ASSERT_EXPR_REAL_STD "fp_assert_expr_FU"
 #define BMEMORY_STD        "BMEMORY_CTRL"
 #define BMEMORY_STDN       "BMEMORY_CTRLN"
-#define MEMCPY_STD         "__builtin_memcpy"
+#define MEMCPY_STD         "__internal_bambu_memcpy"
 #define ARRAY_1D_STD_BRAM  "ARRAY_1D_STD_BRAM"
 #define ARRAY_1D_STD_BRAM_SDS  "ARRAY_1D_STD_BRAM_SDS"
 #define ARRAY_1D_STD_BRAM_SDS_BUS  "ARRAY_1D_STD_BRAM_SDS_BUS"

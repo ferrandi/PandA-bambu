@@ -26,7 +26,7 @@
 static const float
 two25 =  3.3554432000e+07; /* 0x4c000000 */
 
-float __builtin_frexpf(float x, int *eptr)
+float frexpf(float x, int *eptr)
 {
 	int hx, ix;
 	GET_FLOAT_WORD(hx,x);
@@ -47,9 +47,9 @@ float __builtin_frexpf(float x, int *eptr)
 
 #ifdef _DOUBLE_IS_32BITS
 
-double __builtin_frexp(double x, int *eptr)
+double frexp(double x, int *eptr)
 {
-	return (double) __builtin_frexpf((float) x, eptr);
+    return (double) frexpf((float) x, eptr);
 }
 
 #endif /* defined(_DOUBLE_IS_32BITS) */
