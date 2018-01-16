@@ -190,17 +190,17 @@ if BUILD_I386_CLANG40
 pkglib_LIBRARIES += libm_clang40.a libm_clang40_std.a
 libm_clang40_a_SOURCES = $(common_libm_src) $(common_libm_src_fr)
 libm_clang40_a_CFLAGS = $(compiler_flags_clang_nosub) --compiler=I386_CLANG40 
-libm_clang40_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_CLANG40 $(common_treegccflags) -C
+libm_clang40_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_CLANG40 $(common_treegccflags_clang) -C
 libm_clang40_std_a_SOURCES = $(common_libm_src) $(common_libm_src_std)
 libm_clang40_std_a_CFLAGS = $(compiler_flags_clang_nosub) --compiler=I386_CLANG40 
-libm_clang40_std_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_CLANG40 $(common_treegccflags) -C
+libm_clang40_std_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_CLANG40 $(common_treegccflags_clang) -C
 
 pkglib_LIBRARIES += libm_clang40_subnormals.a libm_clang40_subnormals_std.a
 libm_clang40_subnormals_a_SOURCES = $(common_libm_src) $(common_libm_src_fr)
 libm_clang40_subnormals_a_CFLAGS = $(compiler_flags_clang) --compiler=I386_CLANG40 
-libm_clang40_subnormals_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_CLANG40 $(common_treegccflags) -C
+libm_clang40_subnormals_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_CLANG40 $(common_treegccflags_clang) -C
 libm_clang40_subnormals_std_a_SOURCES = $(common_libm_src) $(common_libm_src_std)
 libm_clang40_subnormals_std_a_CFLAGS = $(compiler_flags_clang) --compiler=I386_CLANG40 
-libm_clang40_subnormals_std_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_CLANG40 $(common_treegccflags) -C
+libm_clang40_subnormals_std_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_CLANG40 $(common_treegccflags_clang) -C
 endif
 
