@@ -302,6 +302,39 @@ namespace clang
             return assignCode(t, GT(CONSTRUCTOR));
          case llvm::Value::ConstantDataArrayVal:
             return assignCode(t, GT(CONSTRUCTOR));
+         case llvm::Value::ConstantArrayVal:
+            return assignCode(t, GT(CONSTRUCTOR));
+         case llvm::Value::UndefValueVal:
+         {
+            auto type = llvm_obj->getType();
+            if(type->isAggregateType() || type->isVectorTy())
+               return assignCodeAuto(llvm::ConstantAggregateZero::get(type));
+            else if(type->isPointerTy())
+               return assignCodeAuto(llvm::ConstantPointerNull::get(cast<llvm::PointerType>(type)));
+            else if(type->isIntegerTy())
+               return assignCodeAuto(llvm::ConstantInt::get(type,0,false));
+            else if(type->isFloatingPointTy())
+               return assignCodeAuto(llvm::ConstantFP::getNaN(type));
+            else
+            {
+               llvm_obj->print(llvm::errs(), true);
+               llvm::errs() << "\n";
+               llvm_unreachable((std::string("unexpected condition: ") + std::string(ValueTyNames[llvm_obj->getValueID()])).c_str());
+            }
+         }
+         case llvm::Value::ConstantExprVal:
+         {
+            auto type = assignCodeType(llvm_obj->getType());
+            if(cast<llvm::ConstantExpr>(llvm_obj)->getOpcode() == llvm::Instruction::GetElementPtr)
+               return LowerGetElementPtr(type, cast<llvm::ConstantExpr>(llvm_obj), nullptr);
+            else
+            {
+               llvm_obj->print(llvm::errs(), true);
+               llvm::errs() << "\n";
+               llvm::errs() << cast<llvm::ConstantExpr>(llvm_obj)->getOpcodeName() << "\n";
+               llvm_unreachable((std::string("unexpected condition: ") + std::string(ValueTyNames[llvm_obj->getValueID()])).c_str());
+            }
+         }
 
          #define HANDLE_BINARY_INST(N, OPC, CLASS)                   \
          case llvm::Value::InstructionVal + llvm::Instruction::OPC:  \
@@ -522,6 +555,14 @@ namespace clang
          assert(id>=0);
          snprintf(buffer, LOCAL_BUFFER_LEN, "P%d", id);
          std::string declname = buffer;
+         if(identifierTable.find(declname) == identifierTable.end())
+            identifierTable.insert(declname);
+         const void * dn = identifierTable.find(declname)->c_str();
+         return assignCode(dn, GT(IDENTIFIER_NODE));
+      }
+      else if(llvm_obj->hasName())
+      {
+         std::string declname = std::string(llvm_obj->getName());
          if(identifierTable.find(declname) == identifierTable.end())
             identifierTable.insert(declname);
          const void * dn = identifierTable.find(declname)->c_str();
@@ -1049,6 +1090,7 @@ namespace clang
          }
          else
          {
+            assert(currentFunction != nullptr);
             llvm::ModuleSlotTracker MST(currentFunction->getParent());
             MST.incorporateFunction(*currentFunction);
             ssa_vers = MST.getLocalSlot(operand);
@@ -1079,16 +1121,14 @@ namespace clang
    {
       if(gep_op->hasAllConstantIndices())
       {
-         const llvm::DataLayout & DL = currentFunction->getParent()->getDataLayout();
-         llvm::APInt OffsetAI(DL.getPointerTypeSizeInBits(gep_op->getType()), 0);
-         auto allconstantoffet = gep_op->accumulateConstantOffset(DL, OffsetAI);
+         llvm::APInt OffsetAI(DL->getPointerTypeSizeInBits(gep_op->getType()), 0);
+         auto allconstantoffet = gep_op->accumulateConstantOffset(*DL, OffsetAI);
          assert(allconstantoffet);
          return assignCodeAuto(llvm::ConstantInt::get(gep_op->getContext(), OffsetAI));
       }
       else
       {
-         const llvm::DataLayout & DL = currentFunction->getParent()->getDataLayout();
-         llvm::APInt ConstantIndexOffset(DL.getPointerTypeSizeInBits(gep_op->getType()), 0);
+         llvm::APInt ConstantIndexOffset(DL->getPointerTypeSizeInBits(gep_op->getType()), 0);
          for (llvm::gep_type_iterator GTI = llvm::gep_type_begin(gep_op), GTE = llvm::gep_type_end(gep_op);
               GTI != GTE; ++GTI)
          {
@@ -1103,7 +1143,7 @@ namespace clang
               // For array or vector indices, scale the index by the size of the type.
               auto index = getOperand(GTI.getOperand(),currentFunction);
               auto array_elmt_size = llvm::APInt(ConstantIndexOffset.getBitWidth(),
-                                                 DL.getTypeAllocSize(GTI.getIndexedType()));
+                                                 DL->getTypeAllocSize(GTI.getIndexedType()));
               auto array_elmt_sizeCI = llvm::ConstantInt::get(gep_op->getContext(), array_elmt_size);
               auto array_elmt_size_node = assignCodeAuto(array_elmt_sizeCI);
               auto index_times_size = build2(GT(MULT_EXPR), array_elmt_sizeCI->getType(), index, array_elmt_size_node);
@@ -1118,7 +1158,7 @@ namespace clang
            if (llvm::StructType *STy = GTI.getStructTypeOrNull())
            {
              unsigned ElementIdx = OpC->getZExtValue();
-             const llvm::StructLayout *SL = DL.getStructLayout(STy);
+             const llvm::StructLayout *SL = DL->getStructLayout(STy);
              ConstantIndexOffset += llvm::APInt(ConstantIndexOffset.getBitWidth(), SL->getElementOffset(ElementIdx));
              continue;
            }
@@ -1126,7 +1166,7 @@ namespace clang
            // For array or vector indices, scale the index by the size of the type.
            llvm::APInt Index = OpC->getValue().sextOrTrunc(ConstantIndexOffset.getBitWidth());
            ConstantIndexOffset += Index * llvm::APInt(ConstantIndexOffset.getBitWidth(),
-                                   DL.getTypeAllocSize(GTI.getIndexedType()));
+                                   DL->getTypeAllocSize(GTI.getIndexedType()));
          }
          return assignCodeAuto(llvm::ConstantInt::get(gep_op->getContext(), ConstantIndexOffset));
       }
@@ -1707,7 +1747,8 @@ namespace clang
       else if(code == GT(ALLOCAVAR_DECL))
       {
          const alloca_var* av = reinterpret_cast<const alloca_var*>(t);
-         return assignCodeType(av->alloc_inst->getType());
+         auto allocType = av->alloc_inst->getAllocatedType();
+         return assignCodeType(allocType);
       }
       else if(code == GT(FIELD_DECL))
       {
@@ -2306,6 +2347,21 @@ namespace clang
             }
             return res;
          }
+         case llvm::Value::ConstantArrayVal:
+         {
+            const llvm::ConstantArray* val = reinterpret_cast<const llvm::ConstantArray*>(t);
+            for(unsigned index = 0; index < val->getNumOperands(); ++index)
+            {
+               if(uicTable.find(index) == uicTable.end())
+                  uicTable[index] = assignCodeAuto(llvm::ConstantInt::get(llvm::Type::getInt32Ty(llvm_obj->getContext()), index, false));
+               const void* idx =  uicTable.find(index)->second;
+               auto elmnt = val->getOperand(index);
+               const void* valu=assignCodeAuto(getOperand(elmnt,nullptr));
+               res.push_back(std::make_pair(idx,valu));
+            }
+            return res;
+         }
+
          default:
             llvm::errs() << "CONSTRUCTOR_ELTS kind not supported: " << ValueTyNames[vid] << "\n";
             stream.close();
@@ -2829,8 +2885,15 @@ namespace clang
             }
             else if (get_gimple_rhs_class (gimple_expr_code (g)) == GIMPLE_SINGLE_RHS)
             {
-               serialize_child ("op", gimple_assign_lhs (g));
-               serialize_child ("op", gimple_assign_rhs1 (g));
+               auto lhs = gimple_assign_lhs (g);
+               serialize_child ("op", lhs);
+               auto ltype = TREE_TYPE(lhs);
+               auto rhs = gimple_assign_rhs1 (g);
+               auto rtype = TREE_TYPE(rhs);
+               if(ltype==rtype)
+                  serialize_child ("op", rhs);
+               else
+                  serialize_child ("op", build1(GT(VIEW_CONVERT_EXPR), ltype, rhs));
             }
             else if(gimple_expr_code (g) == GT(CALL_EXPR))
             {
@@ -3505,6 +3568,7 @@ namespace clang
       auto currFuncIterator = M.getFunctionList().begin();
       while(currFuncIterator != M.getFunctionList().end())
       {
+         auto fname = std::string(currFuncIterator->getName());
          for(auto& BB: currFuncIterator->getBasicBlockList())
          {
             auto curInstIterator = BB.getInstList().begin();
@@ -3514,7 +3578,7 @@ namespace clang
                {
                   auto& ci = cast<llvm::CallInst>(*curInstIterator);
                   llvm::Function *Callee = ci.getCalledFunction();
-                  if(Callee && Callee->isIntrinsic() && !skipIntrinsic(Callee->getIntrinsicID()))
+                  if(Callee && Callee->isIntrinsic() && (!skipIntrinsic(Callee->getIntrinsicID()) || fname == getIntrinsicName(Callee)))
                   {
                      auto me = curInstIterator;
                      bool atBegin(BB.getInstList().begin() == me);
