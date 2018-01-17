@@ -487,8 +487,12 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef current_statement,
                   fu_suffix = "le";
                   break;
                }
-               case uneq_expr_K:
                case ltgt_expr_K:
+               {
+                  fu_suffix = "ltgt_quiet";
+                  break;
+               }
+               case uneq_expr_K:
                case unge_expr_K:
                case ungt_expr_K:
                case unle_expr_K:

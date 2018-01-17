@@ -266,6 +266,7 @@ static __flag __float32_eq_signaling( __float32, __float32 );
 static __flag __float32_le_quiet( __float32, __float32 );
 static __flag __float32_lt_quiet( __float32, __float32 );
 static __flag __float32_is_signaling_nan( __float32 );
+static __flag __float32_ltgt_quiet( __float32 a, __float32 b) {return !__float32_eq(b,a);}SF_ADAPTER2(__float32_ltgt_quiet,32);
 
 /*----------------------------------------------------------------------------
 | Software IEC/IEEE double-precision conversion routines.
@@ -303,6 +304,7 @@ static __flag __float64_eq_signaling( __float64, __float64 );
 static __flag __float64_le_quiet( __float64, __float64 );
 static __flag __float64_lt_quiet( __float64, __float64 );
 static __flag __float64_is_signaling_nan( __float64 );
+static __flag __float64_ltgt_quiet( __float64 a, __float64 b) {return !__float64_eq(b,a);}SF_ADAPTER2(__float64_ltgt_quiet,64);
 
 #ifdef FLOATX80
 
