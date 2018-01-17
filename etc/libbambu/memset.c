@@ -18,7 +18,7 @@ memset (void *dest, int val, size_t len)
 void *
 __internal_bambu_memset (void *dest, int val, size_t len)
 {
-  unsigned char *ptr = dest;
+  volatile unsigned char *ptr = dest;
   while (len-- > 0)
     *ptr++ = val;
   return dest;
@@ -27,17 +27,17 @@ __internal_bambu_memset (void *dest, int val, size_t len)
 #ifdef __llvm__
 
 void
-_llvm_memset_p0i8_i32 (void *dest, int val, size_t len, unsigned int align, _Bool isvolatile)
+_llvm_memset_p0i8_i32 (void *dest, unsigned char val, size_t len, unsigned int align, _Bool isvolatile)
 {
-  unsigned char *ptr = dest;
+  volatile unsigned char *ptr = dest;
   while (len-- > 0)
     *ptr++ = val;
 }
 
 void
-_llvm_memset_p0i8_i64 (void *dest, int val, size_t len, unsigned long long int align, _Bool isvolatile)
+_llvm_memset_p0i8_i64 (void *dest, unsigned char val, unsigned long long int len, unsigned int align, _Bool isvolatile)
 {
-  unsigned char *ptr = dest;
+  volatile unsigned char *ptr = dest;
   while (len-- > 0)
     *ptr++ = val;
 }
