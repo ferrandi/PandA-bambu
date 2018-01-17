@@ -51,8 +51,8 @@ endif
 $(I386_CLANG40_SSA_PLUGIN) : clang40_plugin_dumpGimpleSSA.o clang40_dumpGimple.o  
 	$(I386_CLANG40_PLUGIN_COMPILER) -fPIC -shared -fno-rtti clang40_plugin_dumpGimpleSSA.o clang40_dumpGimple.o  -o clang40_plugin_dumpGimpleSSA.so
 
-$(I386_CLANG40_SSA_PLUGINCPP) : clang40_plugin_dumpGimpleSSA.o clang40_dumpGimpleCpp.o  
-	$(I386_CLANG40_PLUGIN_COMPILER) -fPIC -shared -fno-rtti clang40_plugin_dumpGimpleSSA.o clang40_dumpGimpleCpp.o  -o clang40_plugin_dumpGimpleSSACpp.so
+$(I386_CLANG40_SSA_PLUGINCPP) : clang40_plugin_dumpGimpleSSACpp.o clang40_dumpGimpleCpp.o  
+	$(I386_CLANG40_PLUGIN_COMPILER) -fPIC -shared -fno-rtti clang40_plugin_dumpGimpleSSACpp.o clang40_dumpGimpleCpp.o  -o clang40_plugin_dumpGimpleSSACpp.so
 
 $(I386_CLANG40_EMPTY_PLUGIN) : clang40_plugin_dumpGimpleEmpty.o clang40_dumpGimple.o  
 	$(I386_CLANG40_PLUGIN_COMPILER) -fPIC -shared -fno-rtti clang40_plugin_dumpGimpleEmpty.o clang40_dumpGimple.o  -o clang40_plugin_dumpGimpleEmpty.so
@@ -65,6 +65,9 @@ clang40_plugin_dumpGimpleEmpty.o : $(top_srcdir)/etc/clang_plugin/plugin_dumpGim
 
 clang40_plugin_dumpGimpleSSA.o : $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
 	$(I386_CLANG40_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp -o clang40_plugin_dumpGimpleSSA.o -I$(I386_LLVM40_HEADER_DIR) $(WFLAGS)
+
+clang40_plugin_dumpGimpleSSACpp.o : $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
+	$(I386_CLANG40_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp -DCPP_LANGUAGE -o clang40_plugin_dumpGimpleSSACpp.o -I$(I386_LLVM40_HEADER_DIR) $(WFLAGS)
 
 clang40_plugin_topfname.o : $(top_srcdir)/etc/clang_plugin/plugin_topfname.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
 	$(I386_CLANG40_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -c $(top_srcdir)/etc/clang_plugin/plugin_topfname.cpp -o clang40_plugin_topfname.o -I$(I386_LLVM40_HEADER_DIR) $(WFLAGS)
