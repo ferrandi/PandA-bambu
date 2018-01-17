@@ -304,6 +304,8 @@ namespace clang
             return assignCode(t, GT(CONSTRUCTOR));
          case llvm::Value::ConstantArrayVal:
             return assignCode(t, GT(CONSTRUCTOR));
+         case llvm::Value::ConstantDataVectorVal:
+            return assignCode(t, GT(CONSTRUCTOR));
          case llvm::Value::UndefValueVal:
          {
             auto type = llvm_obj->getType();
@@ -327,6 +329,12 @@ namespace clang
             auto type = assignCodeType(llvm_obj->getType());
             if(cast<llvm::ConstantExpr>(llvm_obj)->getOpcode() == llvm::Instruction::GetElementPtr)
                return LowerGetElementPtr(type, cast<llvm::ConstantExpr>(llvm_obj), nullptr);
+            else if(cast<llvm::ConstantExpr>(llvm_obj)->getOpcode() == llvm::Instruction::IntToPtr ||
+                  cast<llvm::ConstantExpr>(llvm_obj)->getOpcode() == llvm::Instruction::PtrToInt)
+            {
+               auto op = cast<llvm::ConstantExpr>(llvm_obj)->getOperand(0);
+               return build1(GT(NOP_EXPR), type, getOperand(op, nullptr));
+            }
             else
             {
                llvm_obj->print(llvm::errs(), true);
@@ -1218,7 +1226,8 @@ namespace clang
             return build1(GT(VIEW_CONVERT_EXPR), type, getOperand(cast<llvm::ConstantExpr>(operand)->getOperand(0), currentFunction));
          else if(cast<llvm::ConstantExpr>(operand)->getOpcode() == llvm::Instruction::GetElementPtr)
             return LowerGetElementPtr(type, cast<llvm::ConstantExpr>(operand), currentFunction);
-         if(cast<llvm::ConstantExpr>(operand)->getOpcode() == llvm::Instruction::IntToPtr)
+         else if(cast<llvm::ConstantExpr>(operand)->getOpcode() == llvm::Instruction::IntToPtr ||
+               cast<llvm::ConstantExpr>(operand)->getOpcode() == llvm::Instruction::PtrToInt)
          {
             auto op = cast<llvm::ConstantExpr>(operand)->getOperand(0);
             return build1(GT(NOP_EXPR), type, getOperand(op, currentFunction));
@@ -1249,6 +1258,8 @@ namespace clang
             llvm_unreachable((std::string("unexpected condition: ") + std::string(ValueTyNames[operand->getValueID()])).c_str());
          }
       }
+      else if(isa<llvm::ConstantDataArray>(operand) || isa<llvm::ConstantDataVector>(operand) || isa<llvm::ConstantStruct>(operand))
+         return assignCodeAuto(operand);
       else
       {
          operand->print(llvm::errs(), true);
@@ -1800,7 +1811,7 @@ namespace clang
             case llvm::Type::TokenTyID:
             case llvm::Type::IntegerTyID:
             case llvm::Type::StructTyID:
-               llvm::errs() << "TREE_TYPE kind not supported: type of type: " << GET_TREE_CODE_NAME(TREE_CODE(t))<<"\n";
+               llvm::errs() << "TREE_TYPE kind not supported: type of type: " << GET_TREE_CODE_NAME(TREE_CODE(t))<< ":" << typeId << "\n";
                stream.close();
                llvm_unreachable("Plugin Error");
 
