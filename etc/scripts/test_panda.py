@@ -401,7 +401,6 @@ def CreatePerfPublisherBody(directory,pp_file):
                 dsps_tag = ""
                 brams_tag = ""
                 period_tag = ""
-                dsps_tag = ""
                 slack_tag = ""
                 frequency_tag = ""
                 HLS_execution_time_tag = ""
@@ -430,30 +429,30 @@ def CreatePerfPublisherBody(directory,pp_file):
                     if len(xml_document.getElementsByTagName("HLS_execution_time")) > 0:
                         HLS_execution_time_tag = str(xml_document.getElementsByTagName("HLS_execution_time")[0].attributes["value"].value)
 
-                if cycles_tag != "":
+                if cycles_tag != "" and cycles_tag != "inf":
                     pp_file.write("      <performance unit=\"cycles\" mesure=\""+ cycles_tag + "\" isRelevant=\"true\"/>\n")
                 if HLS_execution_time_tag != "":
                     pp_file.write("      <executiontime unit=\"s\" mesure=\""+ HLS_execution_time_tag + "\" isRelevant=\"true\"/>\n")
 
-                if areatime_tag != "" or slice_tag != "" or sliceluts_tag != "" or registers_tag != "" or dsps_tag != "" or brams_tag != "" or period_tag != "" or  dsps_tag != "" or slack_tag != "" or frequency_tag != "":
+                if (areatime_tag != "" and  areatime_tag != "inf") or (slice_tag != "" and slice_tag != "inf") or (sliceluts_tag != "" and sliceluts_tag != "inf") or (registers_tag != "" and registers_tag != "inf") or (dsps_tag != "" and dsps_tag != "inf") or (brams_tag != "" and brams_tag != "inf") or (period_tag != "" and period_tag != "inf") or (slack_tag != "" and slack_tag != "inf") or (frequency_tag != "" and frequency_tag != "inf"):
                     pp_file.write("      <metrics>\n")
-                    if areatime_tag != "":
+                    if areatime_tag != "" and areatime_tag != "inf":
                         pp_file.write("        <areatime unit=\"lutxns\" mesure=\""+ areatime_tag + "\" isRelevant=\"true\"/>\n")
-                    if slice_tag != "":
+                    if slice_tag != "" and slice_tag != "inf":
                         pp_file.write("        <slices unit=\"ns\" mesure=\""+ slice_tag + "\" isRelevant=\"true\"/>\n")
-                    if sliceluts_tag != "":
+                    if sliceluts_tag != "" and sliceluts_tag != "inf":
                         pp_file.write("        <sliceluts unit=\"slice\" mesure=\""+ sliceluts_tag + "\" isRelevant=\"true\"/>\n")
-                    if registers_tag != "":
+                    if registers_tag != "" and registers_tag != "inf":
                         pp_file.write("        <registers unit=\"registers\" mesure=\""+ registers_tag + "\" isRelevant=\"true\"/>\n")
-                    if dsps_tag != "":
+                    if dsps_tag != "" and dsps_tag != "inf":
                         pp_file.write("        <dsps unit=\"dsp\" mesure=\""+ dsps_tag + "\" isRelevant=\"true\"/>\n")
-                    if brams_tag != "":
+                    if brams_tag != "" and brams_tag != "inf":
                         pp_file.write("        <brams unit=\"bram\" mesure=\""+ brams_tag + "\" isRelevant=\"true\"/>\n")
-                    if period_tag != "":
+                    if period_tag != "" and period_tag != "inf":
                         pp_file.write("        <period unit=\"ns\" mesure=\""+ period_tag + "\" isRelevant=\"true\"/>\n")
-                    if slack_tag != "":
+                    if slack_tag != "" and slack_tag != "inf":
                         pp_file.write("        <slack unit=\"ns\" mesure=\""+ slack_tag + "\" isRelevant=\"true\"/>\n")
-                    if frequency_tag != "":
+                    if frequency_tag != "" and frequency_tag != "inf":
                         pp_file.write("        <frequency unit=\"MHz\" mesure=\""+ frequency_tag + "\" isRelevant=\"true\"/>\n")
                     pp_file.write("      </metrics>\n")
             else:
