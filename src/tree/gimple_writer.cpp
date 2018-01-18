@@ -931,6 +931,10 @@ void GimpleWriter::operator()(const gimple_assign* obj, unsigned int & mask)
    obj->op0->visit(this);
    os << " = ";
    obj->op1->visit(this);
+   if(obj->clobber)
+      os << "clobber";
+   if(obj->temporary_address)
+      os << "addr";
    obj->gimple_node::visit(this);
 }
 
