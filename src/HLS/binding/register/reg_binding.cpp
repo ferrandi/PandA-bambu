@@ -253,6 +253,7 @@ void reg_binding::add_to_SM(structural_objectRef clock_port, structural_objectRe
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug, "Allocating register number: " + boost::lexical_cast<std::string>(i));
       generic_objRef regis = get(i);
       std::string name = regis->get_string();
+      bool curr_is_is_without_enable = is_without_enable.find(i) != is_without_enable.end();
       all_regs_without_enable = all_regs_without_enable && curr_is_is_without_enable;
       std::string register_type_name=CalculateRegisterName(i);
       std::string library = HLS->HLS_T->get_technology_manager()->get_library(register_type_name);

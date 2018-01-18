@@ -266,17 +266,29 @@ const std::string HLS_step::EnumToName(const HLSFlowStep_Type hls_flow_step_type
 #if HAVE_EXPERIMENTAL && HAVE_FROM_PRAGMA_BUILT
       case HLSFlowStep_Type::OMP_ALLOCATION:
          return "OmpAllocation";
+#endif
+#endif
+#if HAVE_FROM_PRAGMA_BUILT
       case HLSFlowStep_Type::OMP_BODY_LOOP_SYNTHESIS_FLOW:
          return "OmpBodyLoopSynthesisFlow";
+#endif
+#if HAVE_EXPERIMENTAL && HAVE_FROM_PRAGMA_BUILT
       case HLSFlowStep_Type::OMP_FOR_WRAPPER_SYNTHESIS_FLOW:
          return "OmpForWrapperSynthesisFlow";
+#endif
+#if HAVE_FROM_PRAGMA_BUILT
       case HLSFlowStep_Type::OMP_FOR_WRAPPER_CS_SYNTHESIS_FLOW:
          return "OmpForWrapperCSSynthesisFlow";
+#endif
+#if HAVE_EXPERIMENTAL && HAVE_FROM_PRAGMA_BUILT
       case HLSFlowStep_Type::OMP_FUNCTION_ALLOCATION:
          return "OmpFunctionAllocation";
+#endif
+#if HAVE_FROM_PRAGMA_BUILT
       case HLSFlowStep_Type::OMP_FUNCTION_ALLOCATION_CS:
          return "OmpFunctionAllocationCS";
 #endif
+#if HAVE_EXPERIMENTAL
       case HLSFlowStep_Type::PARALLEL_CONTROLLER_CREATOR:
          return "ParallelControllerCreator";
 #endif

@@ -980,7 +980,7 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
       }
    }
    if(parameters->IsParameter("chained-memory-modules") && parameters->GetParameter<int>("chained-memory-modules") == 1)
-      manage_memory_ports_chained(HLSMgr, SM, memory_modules, circuit);
+      manage_memory_ports_chained(SM, memory_modules, circuit);
    else
       manage_memory_ports_parallel_chained(HLSMgr, SM, memory_modules, circuit, HLS, unique_id);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Managed memory ports");

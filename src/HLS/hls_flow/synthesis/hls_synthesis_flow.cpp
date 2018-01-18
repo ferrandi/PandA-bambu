@@ -72,7 +72,7 @@ const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
    {
       case DEPENDENCE_RELATIONSHIP:
          {
-#if HAVE_EXPERIMENTAL && HAVE_FROM_PRAGMA_BUILT
+#if HAVE_FROM_PRAGMA_BUILT
             const auto function_behavior = HLSMgr->GetFunctionBehavior(funId);
             const auto behavioral_helper = function_behavior->CGetBehavioralHelper();
             if(parameters->isOption(OPT_context_switch))
@@ -90,10 +90,12 @@ const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
                      {
                         ret.insert(std::make_tuple(HLSFlowStep_Type::OMP_FOR_WRAPPER_CS_SYNTHESIS_FLOW, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
                      }
+#if HAVE_EXPERIMENTAL
                      else
                      {
                         ret.insert(std::make_tuple(HLSFlowStep_Type::OMP_FOR_WRAPPER_SYNTHESIS_FLOW, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
                      }
+#endif
                   }
                   else
                   {

@@ -197,7 +197,7 @@ void fsm_controller::create_state_machine(std::string &parse)
                if(activations_check.find(std::get<0>(a)) != activations_check.end())
                {
                   THROW_ASSERT(!activations_check.find(std::get<0>(a))->second.empty(), "empty set not expected here");
-                  if(activations_check.at(std::get<0>(a)).find(std::get<1>(a)) == activations_check.at(std::get<0>(*a))->second.end())
+                  if(activations_check.at(std::get<0>(a)).find(std::get<1>(a)) == activations_check.at(std::get<0>(a)).end())
                   {
                      if(std::get<1>(a) == NULL_VERTEX)
                         THROW_ERROR("non compatible transitions added");
@@ -216,7 +216,7 @@ void fsm_controller::create_state_machine(std::string &parse)
    #endif
                if (std::get<0>(a) == v)
                {
-                  present_state[v][out_ports[s->second]] = 1;
+                  present_state[v][out_ports[s.second]] = 1;
                }
             }
          }
@@ -321,7 +321,7 @@ void fsm_controller::create_state_machine(std::string &parse)
             std::string value;
             if(c.second == T_COND)
             {
-               THROW_ASSERT(in[cond_ports[cond_it->first]]=="-", "two different values for the same condition port");
+               THROW_ASSERT(in[cond_ports[c.first]]=="-", "two different values for the same condition port");
                value = "1";
             }
             else if (c.second == F_COND)
@@ -386,8 +386,8 @@ void fsm_controller::create_state_machine(std::string &parse)
                   THROW_ASSERT(v != NULL_VERTEX && std::get<0>(a) != NULL_VERTEX, "error on source vertex");
                   if (std::get<0>(a) == v && (std::get<1>(a) == tgt || std::get<1>(a) == NULL_VERTEX))
                   {
-                     THROW_ASSERT(present_state[v][out_ports[s->second]] == 1, "unexpected condition");
-                     transition_outputs[out_ports[s->second]] = 1;
+                     THROW_ASSERT(present_state[v][out_ports[s.second]] == 1, "unexpected condition");
+                     transition_outputs[out_ports[s.second]] = 1;
                   }
                }
             }

@@ -834,7 +834,7 @@ void structural_object::xload(const xml_element* Enode, structural_objectRef, st
          if (!text) THROW_ERROR("parameter definition is missing");
          std::string default_value = text->get_content();
          xml_node::convert_escaped(default_value);
-         default_parameter(name, default_value);
+         default_parameters[name] = default_value;
       }
    }
    THROW_ASSERT(has_structural_type_descriptor, "A structural object has to have a type." + boost::lexical_cast<std::string>(Enode->get_line()));

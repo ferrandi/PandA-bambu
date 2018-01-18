@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2016 Politecnico di Milano
+ *              Copyright (c) 2015-2017 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -31,35 +31,35 @@
  *
 */
 /**
- * @file omp_for_wrapper_cs_synthesis.hpp
- * @brief Create the new flow for the parallel component
+ * @file omp_body_loop_synthesis_flow.cpp
+ * @brief Definition of the class to create the structural description for body loop of openmp for
  *
- * @author Nicola Saporetti <nicola.saporetti@gmail.com>
+ * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
 */
-#include "omp_for_wrapper_cs_synthesis_flow.hpp"
-#include "add_library.hpp"
 
-OmpForWrapperCSSynthesisFlow::OmpForWrapperCSSynthesisFlow(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager) :
-   HLSFunctionStep(_parameters, _HLSMgr, _funId, _design_flow_manager, HLSFlowStep_Type::OMP_FOR_WRAPPER_CS_SYNTHESIS_FLOW)
+///Header include
+#include "omp_body_loop_synthesis_flow.hpp"
+
+OmpBodyLoopSynthesisFlow::OmpBodyLoopSynthesisFlow(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager) :
+   HLSFunctionStep(_parameters, _HLSMgr, _funId, _design_flow_manager, HLSFlowStep_Type::OMP_BODY_LOOP_SYNTHESIS_FLOW)
 {
    composed = true;
 }
 
-OmpForWrapperCSSynthesisFlow::~OmpForWrapperCSSynthesisFlow()
+OmpBodyLoopSynthesisFlow::~OmpBodyLoopSynthesisFlow()
 {
 
 }
 
-const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > OmpForWrapperCSSynthesisFlow::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > OmpBodyLoopSynthesisFlow::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > ret;
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:
          {
-            ret.insert(std::make_tuple(HLSFlowStep_Type::TOP_ENTITY_CS_PARALLEL_CREATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
-            ret.insert(std::make_tuple(HLSFlowStep_Type::ADD_LIBRARY, HLSFlowStepSpecializationConstRef(new AddLibrarySpecialization(false)), HLSFlowStep_Relationship::SAME_FUNCTION));
+            ret.insert(std::make_tuple(HLSFlowStep_Type::STANDARD_HLS_FLOW, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
             break;
          }
       case INVALIDATION_RELATIONSHIP:
@@ -76,7 +76,7 @@ const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
    return ret;
 }
 
-DesignFlowStep_Status OmpForWrapperCSSynthesisFlow::InternalExec()
+DesignFlowStep_Status OmpBodyLoopSynthesisFlow::InternalExec()
 {
    return DesignFlowStep_Status::EMPTY;
 }

@@ -135,7 +135,7 @@ DesignFlowStep_Status datapath_parallel_cs::InternalExec()
       memory_modules.insert(kernel_mod);
       connect_module_kernel(kernel_mod,i);
       //setting num of kernel in each scheduler
-      GetPointer<module>(kernel_mod)->set_parameter("NUM_KERN", "2d'"+STR(i));   //add num_kernel to kernel
+      GetPointer<module>(kernel_mod)->SetParameter("NUM_KERN", "2d'"+STR(i));   //add num_kernel to kernel
       std::cerr << "Setting KERN_NUM to " << kernel_mod->get_path() << std::endl;
    }
    manage_extern_global_port_parallel(SM, memory_modules, datapath_cir);

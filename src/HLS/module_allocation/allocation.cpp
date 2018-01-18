@@ -81,8 +81,15 @@
 #include "behavioral_helper.hpp"
 #include "functions.hpp"
 #include "target_device.hpp"
-#include "language_writer.hpp"
+
+///behavior include
 #include "call_graph_manager.hpp"
+
+///design_flows/backend/ToHDL include
+#include "language_writer.hpp"
+
+///HLS/functions_allocation include
+#include "omp_functions.hpp"
 
 static bool is_memory_port (const structural_objectRef & port)
 {
@@ -441,7 +448,7 @@ void allocation::add_proxy_function_wrapper(
    GetPointer<module>(wrapper_top)->set_license(fu_module->get_license());
    if (fu_module->ExistsParameter(MEMORY_PARAMETER))
    {
-      GetPointer<module>(wrapper_top)->set_parameter(MEMORY_PARAMETER, fu_module->GetParameter(MEMORY_PARAMETER));
+      GetPointer<module>(wrapper_top)->SetParameter(MEMORY_PARAMETER, fu_module->GetParameter(MEMORY_PARAMETER));
    }
    // handle input ports
    unsigned int inPortSize = static_cast<unsigned int>(fu_module->get_in_port_size());

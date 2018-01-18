@@ -188,6 +188,7 @@ std::string verilog_writer::type_converter_size(const structural_objectRef &cir)
          {
             return "";
          }
+         break;
       }
       case structural_type_descriptor::USER:
       {

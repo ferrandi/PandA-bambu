@@ -140,6 +140,8 @@
 #include "fun_dominator_allocation.hpp"
 #if HAVE_EXPERIMENTAL && HAVE_FROM_PRAGMA_BUILT
 #include "omp_function_allocation.hpp"
+#endif
+#if HAVE_FROM_PRAGMA_BUILT
 #include "omp_function_allocation_CS.hpp"
 #endif
 
@@ -154,9 +156,13 @@
 #include "fu_reg_binding_hls.hpp"
 #endif
 #include "initialize_hls.hpp"
-#if HAVE_EXPERIMENTAL && HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
+#if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
 #include "omp_body_loop_synthesis_flow.hpp"
+#endif
+#if HAVE_EXPERIMENTAL && HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
 #include "omp_for_wrapper_synthesis_flow.hpp"
+#endif
+#if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
 #include "omp_for_wrapper_cs_synthesis_flow.hpp"
 #endif
 #include "standard_hls.hpp"
@@ -578,38 +584,50 @@ DesignFlowStepRef HLSFlowStepFactory::CreateHLSFlowStep(const HLSFlowStep_Type t
             design_flow_step = DesignFlowStepRef(new NumAFEdgesEvaluation(parameters, HLS_mgr, funId, design_flow_manager.lock()));
             break;
          }
+#endif
 #if HAVE_EXPERIMENTAL && HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
       case HLSFlowStep_Type::OMP_ALLOCATION:
          {
             design_flow_step = DesignFlowStepRef(new OmpAllocation(parameters, HLS_mgr, funId, design_flow_manager.lock()));
             break;
          }
+#endif
+#if  HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
       case HLSFlowStep_Type::OMP_BODY_LOOP_SYNTHESIS_FLOW:
          {
             design_flow_step = DesignFlowStepRef(new OmpBodyLoopSynthesisFlow(parameters, HLS_mgr, funId, design_flow_manager.lock()));
             break;
          }
+#endif
+#if HAVE_EXPERIMENTAL && HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
       case HLSFlowStep_Type::OMP_FOR_WRAPPER_SYNTHESIS_FLOW:
          {
             design_flow_step = DesignFlowStepRef(new OmpForWrapperSynthesisFlow(parameters, HLS_mgr, funId, design_flow_manager.lock()));
             break;
          }
+#endif
+#if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
       case HLSFlowStep_Type::OMP_FOR_WRAPPER_CS_SYNTHESIS_FLOW:
          {
             design_flow_step = DesignFlowStepRef(new OmpForWrapperCSSynthesisFlow(parameters, HLS_mgr, funId, design_flow_manager.lock()));
             break;
          }
+#endif
+#if HAVE_EXPERIMENTAL && HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
       case HLSFlowStep_Type::OMP_FUNCTION_ALLOCATION:
          {
             design_flow_step = DesignFlowStepRef(new OmpFunctionAllocation(parameters, HLS_mgr, design_flow_manager.lock()));
             break;
          }
+#endif
+#if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
       case HLSFlowStep_Type::OMP_FUNCTION_ALLOCATION_CS:
          {
             design_flow_step = DesignFlowStepRef(new OmpFunctionAllocationCS(parameters, HLS_mgr, design_flow_manager.lock()));
             break;
          }
 #endif
+#if HAVE_EXPERIMENTAL
       case HLSFlowStep_Type::PARALLEL_CONTROLLER_CREATOR:
          {
             design_flow_step = DesignFlowStepRef(new ParallelController(parameters, HLS_mgr, funId, design_flow_manager.lock()));
@@ -906,10 +924,20 @@ const DesignFlowStepSet HLSFlowStepFactory::CreateHLSFlowSteps(const std::unorde
 #endif
 #if HAVE_EXPERIMENTAL && HAVE_FROM_PRAGMA_BUILT
          case HLSFlowStep_Type::OMP_ALLOCATION:
+#endif
+#if HAVE_FROM_PRAGMA_BUILT
          case HLSFlowStep_Type::OMP_BODY_LOOP_SYNTHESIS_FLOW:
+#endif
+#if HAVE_EXPERIMENTAL && HAVE_FROM_PRAGMA_BUILT
          case HLSFlowStep_Type::OMP_FOR_WRAPPER_SYNTHESIS_FLOW:
+#endif
+#if HAVE_FROM_PRAGMA_BUILT
          case HLSFlowStep_Type::OMP_FOR_WRAPPER_CS_SYNTHESIS_FLOW:
+#endif
+#if HAVE_EXPERIMENTAL && HAVE_FROM_PRAGMA_BUILT
          case HLSFlowStep_Type::OMP_FUNCTION_ALLOCATION:
+#endif
+#if HAVE_FROM_PRAGMA_BUILT
          case HLSFlowStep_Type::OMP_FUNCTION_ALLOCATION_CS:
 #endif
 #if HAVE_EXPERIMENTAL

@@ -2980,7 +2980,7 @@ void BambuParameter::CheckParameters()
    if(isOption(OPT_hls_div) && getOption<std::string>(OPT_hls_div) != "none")
       add_bambu_library("hls-div"+getOption<std::string>(OPT_hls_div));
    add_bambu_library("hls-cdiv");
-#if HAVE_EXPERIMENTAL && HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
+#if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
    if(getOption<bool>(OPT_parse_pragma))
    {
       setOption(OPT_disable_function_proxy, true);
@@ -2995,7 +2995,14 @@ void BambuParameter::CheckParameters()
          setOption(OPT_controller_architecture, HLSFlowStep_Type::FSM_CS_CONTROLLER_CREATOR);
          setOption(OPT_interface_type, HLSFlowStep_Type::INTERFACE_CS_GENERATION);
       }
-      else setOption(OPT_function_allocation_algorithm, HLSFlowStep_Type::OMP_FUNCTION_ALLOCATION);
+      else
+      {
+#if HAVE_EXPERIMENTAL
+         setOption(OPT_function_allocation_algorithm, HLSFlowStep_Type::OMP_FUNCTION_ALLOCATION);
+#else
+         THROW_UNREACHABLE("");
+      }
+#endif
       add_bambu_library("pthread");
    }
 #endif
