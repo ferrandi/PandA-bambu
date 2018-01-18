@@ -289,7 +289,7 @@ void GccWrapper::CompileFile(const std::string& original_file_name, std::string 
          if(top_functions_names.front() != "main")
          {
             if(compiler.is_clang)
-               command += " -fplugin=" + compiler.topfname_plugin_obj + " -Xclang -add-plugin -Xclang " + compiler.topfname_plugin_obj + " -Xclang -plugin-arg-"+compiler.topfname_plugin_name+" -Xclang -topfname -Xclang -plugin-arg-"+compiler.topfname_plugin_name+" -Xclang "+top_functions_names.front();
+               command += " -fplugin=" + compiler.topfname_plugin_obj + " -Xclang -add-plugin -Xclang " + compiler.topfname_plugin_name + " -Xclang -plugin-arg-"+compiler.topfname_plugin_name+" -Xclang -topfname -Xclang -plugin-arg-"+compiler.topfname_plugin_name+" -Xclang "+top_functions_names.front();
             else
                command += " -fplugin=" + compiler.topfname_plugin_obj + " -fplugin-arg-"+compiler.topfname_plugin_name+"-topfname="+top_functions_names.front();
          }
