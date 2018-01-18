@@ -3005,7 +3005,14 @@ void BambuParameter::CheckParameters()
          setOption(OPT_controller_architecture, HLSFlowStep_Type::FSM_CS_CONTROLLER_CREATOR);
          setOption(OPT_interface_type, HLSFlowStep_Type::INTERFACE_CS_GENERATION);
       }
-      else setOption(OPT_function_allocation_algorithm, HLSFlowStep_Type::OMP_FUNCTION_ALLOCATION);
+      else
+      {
+#if HAVE_EXPERIMENTAL
+         setOption(OPT_function_allocation_algorithm, HLSFlowStep_Type::OMP_FUNCTION_ALLOCATION);
+#else
+         THROW_UNREACHABLE("");
+#endif
+      }
       add_bambu_library("pthread");
    }
 #endif
