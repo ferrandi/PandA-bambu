@@ -47,16 +47,24 @@
 #include "clang/Sema/Sema.h"
 #include "llvm/Support/raw_ostream.h"
 
+namespace llvm {
+   struct clang40_plugin_DoNotExposeGlobalsPass;
+}
+
+static std::string TopFunctionNmae;
+
 namespace clang {
 
 
    class clang40_plugin_topfname : public PluginASTAction
    {
          std::string topfname;
+         friend struct llvm::clang40_plugin_DoNotExposeGlobalsPass;
       protected:
          std::unique_ptr<ASTConsumer> CreateASTConsumer(CompilerInstance &,
                                                         llvm::StringRef ) override
          {
+            TopFunctionNmae = topfname;
             return llvm::make_unique<dummyConsumer>();
          }
 
@@ -104,3 +112,78 @@ static clang::FrontendPluginRegistry::Add<clang::clang40_plugin_topfname>
 X("clang40_plugin_topfname", "Dumy plugin");
 
 
+#include "llvm/Pass.h"
+#include "llvm/IR/Module.h"
+#include "llvm/PassRegistry.h"
+#include "llvm/IR/PassManager.h"
+#include "llvm/IR/LegacyPassManager.h"
+#include "llvm/Transforms/IPO/PassManagerBuilder.h"
+#include "llvm/Transforms/Utils/LoopUtils.h"
+#include "llvm/InitializePasses.h"
+
+
+namespace llvm {
+   struct clang40_plugin_DoNotExposeGlobalsPass: public ModulePass
+   {
+         static char ID;
+         clang40_plugin_DoNotExposeGlobalsPass() : ModulePass(ID)
+         {
+            initializeLoopPassPass(*PassRegistry::getPassRegistry());
+         }
+         bool runOnModule(Module &M)
+         {
+            bool changed = false;
+            llvm::errs() << "Top function name: " << TopFunctionNmae << "\n";
+            for(auto& globalVar : M.getGlobalList())
+            {
+               std::string varName = std::string(globalVar.getName());
+               llvm::errs() << "Found global name: " << varName << "\n";
+               if(varName == "llvm.global_ctors" ||
+                     varName == "llvm.global_dtors" ||
+                     varName == "llvm.used" ||
+                     varName == "llvm.compiler.used")
+                  llvm::errs() << "Global intrinsic skipped: " << globalVar.getName()<< "\n";
+               else
+               if(!globalVar.hasInternalLinkage())
+               {
+                  llvm::errs() << "it becomes internal\n";
+                  changed = true;
+                  globalVar.setLinkage(llvm::GlobalValue::InternalLinkage);
+               }
+            }
+            for(const auto& fun : M.getFunctionList())
+            {
+               if(fun.isIntrinsic())
+                  llvm::errs() << "Function intrinsic skipped: " << fun.getName()<< "\n";
+               else
+               {
+                  llvm::errs() << "Found function: " << fun.getName() << "\n";
+               }
+            }
+            return changed;
+
+         }
+         virtual StringRef getPassName() const
+         {
+            return "clang40_plugin_DoNotExposeGlobalsPass";
+         }
+         void getAnalysisUsage(AnalysisUsage &AU) const
+         {
+           AU.setPreservesAll();
+           getLoopAnalysisUsage(AU);
+         }
+   };
+
+}
+char llvm::clang40_plugin_DoNotExposeGlobalsPass::ID = 0;
+static llvm::RegisterPass<llvm::clang40_plugin_DoNotExposeGlobalsPass> XPass("clang40_plugin_DoNotExposeGlobalsPass",
+                                                                             "Make all private/static but the top function",
+                                false /* Only looks at CFG */,
+                                false /* Analysis Pass */);
+
+// This function is of type PassManagerBuilder::ExtensionFn
+static void loadPass(const llvm::PassManagerBuilder &, llvm::legacy::PassManagerBase &PM) {
+  PM.add(new llvm::clang40_plugin_DoNotExposeGlobalsPass());
+}
+// These constructors add our pass to a list of global extensions.
+static llvm::RegisterStandardPasses clang40_plugin_DoNotExposeGlobalsLoader_Ox(llvm::PassManagerBuilder::EP_ModuleOptimizerEarly, loadPass);
