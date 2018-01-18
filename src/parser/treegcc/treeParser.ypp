@@ -636,7 +636,7 @@ bool pred;
 
 %type<pred> var_opt orig_vers_opt op_opt time_weight_opt size_weight_opt rtl_size_weight_opt
 %type<pred> param_packs_opt name_opt type_opt body_opt size_opt chan_opt prms_opt argt_opt arg_opt retn_opt scpe_opt attrib_opt unql_opt domn_opt dcls_opt mngl_opt ptd_opt vfld_opt bpos_opt fn_opt
-%type<pred> binf_opt init_opt purp_opt cnst_opt clas_opt clob_opt clobber_opt rslt_opt inst_opt spcs_opt cls_opt bfld_opt next_opt expr_opt valu_opt
+%type<pred> binf_opt init_opt purp_opt cnst_opt clas_opt clob_opt clobber_opt temporary_address_opt rslt_opt inst_opt spcs_opt cls_opt bfld_opt next_opt expr_opt valu_opt
 %type<pred> uid_opt algn_opt virt_opt fixd_opt use_tmpl_opt predicate_opt slot_opt clnp_opt decl_opt ctor_opt
 %type<pred> tok_artificial_opt tok_packed_opt tok_operating_system_opt tok_library_system_opt tok_libbambu_opt tok_system_opt tok_virtual_opt tok_default_opt qual_opt string_id_opt
 %type<pred> min_opt max_opt bit_values_opt inline_body_opt out_opt in_opt true_edge_opt false_edge_opt
@@ -1414,6 +1414,7 @@ bool pred;
                     gimple_modify_uses      {;}
                     gimple_modify_clbs      {;}
                     clobber_opt             {OPT($15,GetPointer<gimple_assign>(data->curr_tree_nodeRef)->clobber = true;)}
+                    temporary_address_opt   {OPT($17,GetPointer<gimple_assign>(data->curr_tree_nodeRef)->temporary_address = true;)}
                   ;
 
    gimple_modify_uses : /*empty*/
@@ -2647,6 +2648,8 @@ bool pred;
   clob_opt      : /*empty*/{$$=false;} | TOK_BISON_CLOB  node_id        {$$=true;} ;
 
   clobber_opt   : /*empty*/{$$=false;} | TOK_BISON_CLOBBER            {$$=true;} ;
+
+  temporary_address_opt   : /*empty*/{$$=false;} | TOK_BISON_ADDR {$$=true;} ;
 
   rslt_opt      : /*empty*/{$$=false;} | TOK_BISON_RSLT  node_id        {$$=true;} ;
 
