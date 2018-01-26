@@ -547,10 +547,8 @@ void BambuParameter::PrintHelp(std::ostream &os) const
    << "            D10 - 1 clock cycle extra-delay for LOAD, 0 for STORE\n"
    << "            D11 - 1 clock cycle extra-delay for LOAD, 1 for STORE\n"
    << "            D21 - 2 clock cycle extra-delay for LOAD, 1 for STORE\n\n"
-#if HAVE_EXPERIMENTAL
    << "    --memory-banks-number=<n>\n"
    << "        Define the number of memory banks.\n\n"
-#endif
    << "    --sparse-memory[=on/off]\n"
    << "        Control how the memory allocation happens.\n"
    << "            on - allocate the data in addresses which reduce the decoding logic (default)\n"
@@ -877,13 +875,11 @@ void BambuParameter::PrintHelp(std::ostream &os) const
    os
    << "  Other options:\n\n";
 #endif
-#if HAVE_EXPERIMENTAL
    os
    << "    --pragma-parse\n"
    << "        Perform source code parsing to extract information about pragmas.\n"
    << "        (default=no).\n\n";
-#endif
-#if HAVE_EXPERIMENTAL && HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
+#if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
    os
    << "    --num-threads\n"
    << "        Set the number of threads in parallel sections (default=4).\n\n";
@@ -1153,9 +1149,7 @@ int BambuParameter::Exec()
 #endif
          {"dynamic-generators-dir",     required_argument, nullptr, OPT_DYNAMIC_GENERATORS_DIR},
          {"pretty-print",               required_argument, nullptr, OPT_PRETTY_PRINT},
-#if HAVE_EXPERIMENTAL
-         {"pragma-parse",              no_argument,       nullptr, OPT_PRAGMA_PARSE},
-#endif
+         {"pragma-parse",               no_argument,       nullptr, OPT_PRAGMA_PARSE},
          {"generate-interface",         required_argument, nullptr,  0 },
          {"additional-top",             required_argument, nullptr,  OPT_ADDITIONAL_TOP },
          {"data-bus-bitsize",           required_argument, nullptr,  0 },
@@ -1184,13 +1178,11 @@ int BambuParameter::Exec()
          {"discrepancy-no-load-pointers",    no_argument, nullptr, OPT_DISCREPANCY_NO_LOAD_POINTERS},
          {"discrepancy-only",           required_argument, nullptr, OPT_DISCREPANCY_ONLY},
          {"discrepancy-permissive-ptrs",     no_argument, nullptr, OPT_DISCREPANCY_PERMISSIVE_PTRS},
-#if HAVE_EXPERIMENTAL && HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
+#if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
          {"num-threads",                required_argument, nullptr, OPT_NUM_THREADS},
          {"context_switch",                optional_argument, nullptr, OPT_CONTEXT_SWITCH},
 #endif
-#if HAVE_EXPERIMENTAL
          {"memory-banks-number",        required_argument, nullptr, OPT_MEMORY_BANKS_NUMBER},
-#endif
          { "C-no-parse",                required_argument, nullptr, INPUT_OPT_C_NO_PARSE},
          { "C-python-no-parse",         required_argument, nullptr, INPUT_OPT_C_PYTHON_NO_PARSE},
          {"accept-nonzero-return",      no_argument, nullptr, OPT_ACCEPT_NONZERO_RETURN},
@@ -2011,13 +2003,11 @@ int BambuParameter::Exec()
             setOption(OPT_pretty_print, optarg);
             break;
          }
-#if HAVE_EXPERIMENTAL
          case OPT_PRAGMA_PARSE:
          {
             setOption(OPT_parse_pragma, true);
             break;
          }
-#endif
          case OPT_TESTBENCH:
          {
             setOption(OPT_generate_testbench, true);
@@ -2139,7 +2129,7 @@ int BambuParameter::Exec()
             setOption(OPT_discrepancy_permissive_ptrs, true);
             break;
          }
-#if HAVE_EXPERIMENTAL && HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
+#if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
          case OPT_NUM_THREADS:
          {
             setOption(OPT_num_threads, std::string(optarg));
@@ -2159,13 +2149,11 @@ int BambuParameter::Exec()
             }
          }
 #endif
-#if HAVE_EXPERIMENTAL
          case OPT_MEMORY_BANKS_NUMBER:
          {
             setOption(OPT_memory_banks_number, std::string(optarg));
             break;
          }
-#endif
          case OPT_ACCEPT_NONZERO_RETURN:
          {
             setOption(OPT_no_return_zero, true);

@@ -53,6 +53,7 @@
 cs_interface::cs_interface(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type) :
    module_interface(_Param, _HLSMgr, _funId, _design_flow_manager, _hls_flow_step_type)
 {
+   debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
    THROW_ASSERT(funId, "Function not set in minimal interface");
 }
 
@@ -229,7 +230,8 @@ void cs_interface::manage_extern_global_port_top(const structural_managerRef SM,
    unsigned int num_channel=HLS->Param->getOption<unsigned int>(OPT_channels_number);
    structural_objectRef memory_ctrl = circuit->find_member("memory_ctrl_top", component_o_K, circuit);
    THROW_ASSERT(memory_ctrl, "NULL, memmory_ctrl");
-   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - Connecting memory_port of memory_ctrl");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Connecting memory_port of memory_ctrl");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Connecting memory_ctrl output to module input");
    for(unsigned int j = 0; j < GetPointer<module>(memory_module)->get_in_port_size(); j++)  //from memory_ctrl output to module input
    {
       structural_objectRef port_i = GetPointer<module>(memory_module)->get_in_port(j);
@@ -240,9 +242,12 @@ void cs_interface::manage_extern_global_port_top(const structural_managerRef SM,
          structural_objectRef memory_Sign=SM->add_sign_vector(port_name+"_signal", num_channel, circuit, port_i->get_typeRef());
          THROW_ASSERT(!memory_ctrl_port || GetPointer<port_o>(memory_ctrl_port), "should be a port");
          SM->add_connection(memory_ctrl_port, memory_Sign);
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Connecting " + memory_Sign->get_path() + "(" + memory_Sign->get_kind_text() + ")-->" + port_i->get_path() + "(" + port_i->get_kind_text() + ")");
          SM->add_connection(memory_Sign, port_i);
       }
    }
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Connected memory_ctrl output to module input");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Connecting module output to memory_ctrl input");
    for(unsigned int j = 0; j < GetPointer<module>(memory_module)->get_out_port_size(); j++)    //from module output to memory_ctrl input
    {
       structural_objectRef port_i = GetPointer<module>(memory_module)->get_out_port(j);
@@ -256,6 +261,8 @@ void cs_interface::manage_extern_global_port_top(const structural_managerRef SM,
          SM->add_connection(memory_Sign, memory_ctrl_port);
       }
    }
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Connected module output to memory_ctrl input");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Connecting memory_ctrl input to input");
 
    for(unsigned int j = 0; j < GetPointer<module>(memory_ctrl)->get_in_port_size(); j++)  //connect input memory_ctrl with input circuit
    {
@@ -273,6 +280,8 @@ void cs_interface::manage_extern_global_port_top(const structural_managerRef SM,
          SM->add_connection(cir_port,port_i);
       }
    }
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Connected memory_ctrl input to input");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Connecting memory_ctrl output to output");
    for(unsigned int j = 0; j < GetPointer<module>(memory_ctrl)->get_out_port_size(); j++)    //connect output memory_ctrl with output circuit
    {
       structural_objectRef port_i = GetPointer<module>(memory_ctrl)->get_out_port(j);
@@ -289,4 +298,6 @@ void cs_interface::manage_extern_global_port_top(const structural_managerRef SM,
          SM->add_connection(cir_port,port_i);
       }
    }
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Connected memory_ctrl output to output");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Connected memory_port of memory_ctrl");
 }

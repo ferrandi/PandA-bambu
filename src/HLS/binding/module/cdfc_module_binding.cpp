@@ -75,9 +75,7 @@
 
 ///HLS/binding/module include
 #include "fu_binding.hpp"
-#if HAVE_EXPERIMENTAL
 #include "parallel_memory_fu_binding.hpp"
-#endif
 
 ///HLS/binding/module include
 #include "module_binding_check.hpp"
@@ -1484,13 +1482,11 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
       const std::unordered_map<vertex,double> starting_time_initial = starting_time;
 
       fu_bindingRef fu_best;
-#if HAVE_EXPERIMENTAL
       if(parameters->getOption<int>(OPT_memory_banks_number) > 1 && !parameters->isOption(OPT_context_switch))
       {
          fu_best = fu_bindingRef(new ParallelMemoryFuBinding(HLSMgr, funId, parameters));
       }
       else
-   #endif
       {
          fu_best = fu_bindingRef(fu_binding::create_fu_binding(HLSMgr, funId, parameters));
       }

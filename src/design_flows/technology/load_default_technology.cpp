@@ -88,9 +88,9 @@ DesignFlowStep_Status LoadDefaultTechnology::Exec()
    #if HAVE_EXPERIMENTAL
          ,
       #include "C_PC_IPs.data"
+   #endif
          ,
       #include "CS_COMPONENT.data"
-   #endif
          ,
       #include "C_PROFILING_IPs.data"
          ,
@@ -101,10 +101,8 @@ DesignFlowStep_Status LoadDefaultTechnology::Exec()
       #include "NC_HLS_IPs.data"
          ,
       #include "NC_MEM_IPs.data"
-   #if HAVE_EXPERIMENTAL
          ,
       #include "NC_PC_IPs.data"
-   #endif
           ,
       #include "NC_SF_IPs.data"
          ,

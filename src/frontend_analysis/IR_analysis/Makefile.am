@@ -166,8 +166,12 @@ rtl_weights_symbolic.data: $(top_srcdir)/etc/weight-models/rtl_weights_symbolic.
 
 if BUILD_LIB_FROM_PRAGMA
   noinst_HEADERS += \
+       extract_omp_atomic.hpp \
+       extract_omp_for.hpp \
        pragma_analysis.hpp
   lib_IR_analysis_la_SOURCES += \
+       extract_omp_atomic.cpp \
+       extract_omp_for.cpp \
        pragma_analysis.cpp
   lib_IR_analysis_la_CPPFLAGS += \
      -I$(top_srcdir)/src/parser/pragma \

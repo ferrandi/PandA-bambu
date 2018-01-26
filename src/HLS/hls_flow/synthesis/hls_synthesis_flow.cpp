@@ -72,16 +72,20 @@ const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
    {
       case DEPENDENCE_RELATIONSHIP:
          {
+            std::cerr << "B000" << std::endl;
 #if HAVE_FROM_PRAGMA_BUILT
             const auto function_behavior = HLSMgr->GetFunctionBehavior(funId);
             const auto behavioral_helper = function_behavior->CGetBehavioralHelper();
             if(parameters->isOption(OPT_context_switch))
             {
+               std::cerr << "B001" << std::endl;
                ret.insert(std::make_tuple(HLSFlowStep_Type::OMP_FUNCTION_ALLOCATION_CS, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
                if(design_flow_manager.lock()->GetStatus(HLS_step::ComputeSignature(HLSFlowStep_Type::OMP_FUNCTION_ALLOCATION_CS, HLSFlowStepSpecializationConstRef())) == DesignFlowStep_Status::SUCCESS)
                {
+                  std::cerr << "B002" << std::endl;
                   if(behavioral_helper->IsOmpBodyLoop())
                   {
+                     std::cerr << "B003" << std::endl;
                      ret.insert(std::make_tuple(HLSFlowStep_Type::OMP_BODY_LOOP_SYNTHESIS_FLOW, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
                   }
                   else if(behavioral_helper->GetOmpForDegree())

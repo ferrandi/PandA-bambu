@@ -54,7 +54,6 @@
 REF_FORWARD_DECL(hls_bit_value);
 //@}
 
-#include "config_HAVE_EXPERIMENTAL.hpp"
 #include "graph.hpp"
 #include "utility.hpp"
 

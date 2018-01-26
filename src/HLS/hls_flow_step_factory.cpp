@@ -223,7 +223,7 @@
 #include "add_library.hpp"
 #include "allocation.hpp"
 #include "hls_bit_value.hpp"
-#if HAVE_EXPERIMENTAL && HAVE_FROM_PRAGMA_BUILT
+#if HAVE_FROM_PRAGMA_BUILT
 #include "omp_allocation.hpp"
 #endif
 
@@ -585,7 +585,7 @@ DesignFlowStepRef HLSFlowStepFactory::CreateHLSFlowStep(const HLSFlowStep_Type t
             break;
          }
 #endif
-#if HAVE_EXPERIMENTAL && HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
+#if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
       case HLSFlowStep_Type::OMP_ALLOCATION:
          {
             design_flow_step = DesignFlowStepRef(new OmpAllocation(parameters, HLS_mgr, funId, design_flow_manager.lock()));
@@ -922,7 +922,7 @@ const DesignFlowStepSet HLSFlowStepFactory::CreateHLSFlowSteps(const std::unorde
          case HLSFlowStep_Type::NPI_INTERFACE_GENERATION:
          case HLSFlowStep_Type::NUM_AF_EDGES_EVALUATION:
 #endif
-#if HAVE_EXPERIMENTAL && HAVE_FROM_PRAGMA_BUILT
+#if HAVE_FROM_PRAGMA_BUILT
          case HLSFlowStep_Type::OMP_ALLOCATION:
 #endif
 #if HAVE_FROM_PRAGMA_BUILT

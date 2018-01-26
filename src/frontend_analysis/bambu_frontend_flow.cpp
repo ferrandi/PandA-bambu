@@ -167,9 +167,9 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
                relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(CHECK_CRITICAL_SESSION, WHOLE_APPLICATION));
 #endif
                relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(LOOPS_ANALYSIS_BAMBU, WHOLE_APPLICATION));
-#if HAVE_EXPERIMENTAL
                relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(EXTRACT_OMP_ATOMIC, WHOLE_APPLICATION));
                relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(EXTRACT_OMP_FOR, WHOLE_APPLICATION));
+#if HAVE_EXPERIMENTAL
                if(not parameters->isOption(OPT_context_switch))
                {
                   relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(UNROLL_LOOPS, WHOLE_APPLICATION));

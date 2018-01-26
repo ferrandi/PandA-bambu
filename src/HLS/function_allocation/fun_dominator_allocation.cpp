@@ -42,6 +42,7 @@
 */
 
 ///Autoheader include
+#include "config_HAVE_EXPERIMENTAL.hpp"
 #include "config_HAVE_FROM_PRAGMA_BUILT.hpp"
 #include "config_HAVE_PRAGMA_BUILT.hpp"
 
@@ -122,7 +123,7 @@ void fun_dominator_allocation::ComputeRelationships(DesignFlowStepSet & relation
    {
       case(PRECEDENCE_RELATIONSHIP):
          {
-#if HAVE_PRAGMA_BUILT && HAVE_EXPERIMENTAL
+#if HAVE_EXPERIMENTAL && HAVE_PRAGMA_BUILT
             if(parameters->isOption(OPT_parse_pragma) and parameters->getOption<bool>(OPT_parse_pragma) and relationship_type == PRECEDENCE_RELATIONSHIP)
             {
                for(const auto input_function : HLSMgr->get_functions_with_body())

@@ -42,8 +42,6 @@
  * Last modified by $Author$
  *
 */
-#include "config_HAVE_EXPERIMENTAL.hpp"
-
 #include "liveness_computer.hpp"
 
 #include "memory.hpp"

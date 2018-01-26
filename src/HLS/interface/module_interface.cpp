@@ -43,9 +43,6 @@
  * $State: Exp $
  *
 */
-///Autoheader include
-#include "config_HAVE_EXPERIMENTAL.hpp"
-
 #include "module_interface.hpp"
 
 #include "call_graph_manager.hpp"
@@ -87,6 +84,7 @@ const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
    {
       case DEPENDENCE_RELATIONSHIP:
          {
+            std::cerr << "A000" << std::endl;
             const auto cg_man = HLSMgr->CGetCallGraphManager();
             if (HLSMgr->hasToBeInterfaced(funId) and (cg_man->ExistsAddressedFunction() or hls_flow_step_type == HLSFlowStep_Type::WB4_INTERFACE_GENERATION))
             {
@@ -96,12 +94,15 @@ const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
             }
             else
             {
+               std::cerr << "A001" << std::endl;
                ret.insert(std::make_tuple(parameters->getOption<HLSFlowStep_Type>(OPT_function_allocation_algorithm), HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));     //add dependence to omp_function
                if(HLSMgr->Rfuns)
                {
+                  std::cerr << "A002" << std::endl;
                   bool found=false;
                   if(parameters->isOption(OPT_context_switch))
                   {
+                     std::cerr << "A003" << std::endl;
                      auto omp_functions = GetPointer<OmpFunctions>(HLSMgr->Rfuns);
                      THROW_ASSERT(omp_functions,"OMP_functions must not be null");
                      if(omp_functions->kernel_functions.find(funId) != omp_functions->kernel_functions.end()) found=true;
@@ -109,6 +110,7 @@ const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
                      if(omp_functions->atomic_functions.find(funId) != omp_functions->atomic_functions.end()) found=true;
                      if(found)  //use new top_entity
                      {
+                        std::cerr << "A004" << std::endl;
                         const HLSFlowStep_Type top_entity_type = HLSFlowStep_Type::TOP_ENTITY_CS_CREATION;
                         ret.insert(std::make_tuple(top_entity_type, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
                      }

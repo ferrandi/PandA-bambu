@@ -263,10 +263,10 @@ const std::string HLS_step::EnumToName(const HLSFlowStep_Type hls_flow_step_type
          return "NpiInterfaceGeneration";
       case HLSFlowStep_Type::NUM_AF_EDGES_EVALUATION:
          return "NumAfEdgesEvaluation";
-#if HAVE_EXPERIMENTAL && HAVE_FROM_PRAGMA_BUILT
+#endif
+#if HAVE_FROM_PRAGMA_BUILT
       case HLSFlowStep_Type::OMP_ALLOCATION:
          return "OmpAllocation";
-#endif
 #endif
 #if HAVE_FROM_PRAGMA_BUILT
       case HLSFlowStep_Type::OMP_BODY_LOOP_SYNTHESIS_FLOW:

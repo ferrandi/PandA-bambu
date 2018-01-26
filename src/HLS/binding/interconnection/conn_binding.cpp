@@ -43,9 +43,6 @@
  *
 */
 
-///Autoheader include
-#include "config_HAVE_EXPERIMENTAL.hpp"
-
 #include "conn_binding.hpp"
 #include "conn_binding_cs.hpp"
 
