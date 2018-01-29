@@ -69,7 +69,7 @@ float log10f(float x)		/* wrapper log10f */
             else if (!matherr(&exc)) {
 	           errno = EDOM;
 	        }
-                exc.retval = nan("");
+                exc.retval = __builtin_nan("");
             }
 	    if (exc.err != 0)
                errno = exc.err;

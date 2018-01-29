@@ -54,7 +54,7 @@ double tanh(double x)
     /* x is INF or NaN */
 	if(ix>=0x7ff00000) { 
 	    if (jx>=0) return one/x+one;    /* tanh(+-inf)=+-1 */
-        else       return nan("");    /* tanh(NaN) = NaN */
+        else       return __builtin_nan("");    /* tanh(NaN) = NaN */
 	}
 
     /* |x| < 22 */

@@ -143,7 +143,7 @@ static double __hide_ieee754_lgamma_r(double x, int *signgamp)
 	*signgamp = 1;
 	ix = hx&0x7fffffff;
     if(ix==0x7ff00000 && lx == 0) return inf();
-    if(ix>=0x7ff00000) return nan("");
+    if(ix>=0x7ff00000) return __builtin_nan("");
 	if((ix|lx)==0) {
 	    if (hx < 0)
 	      *signgamp = -1;

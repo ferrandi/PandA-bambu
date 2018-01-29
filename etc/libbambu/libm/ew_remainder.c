@@ -42,11 +42,11 @@ double __hide_ieee754_remainder(double x, double p)
 	hx &= 0x7fffffff;
 
     /* purge off exception values */
-    if((hp|lp)==0) return nan(""); 	/* p = 0 */
+    if((hp|lp)==0) return __builtin_nan(""); 	/* p = 0 */
 	if((hx>=0x7ff00000)||			/* x not finite */
 	  ((hp>=0x7ff00000)&&			/* p is NaN */
 	  (((hp-0x7ff00000)|lp)!=0)))
-        return nan("");
+        return __builtin_nan("");
 
 
 	if (hp<=0x7fdfffff) x = __hide_ieee754_fmod(x,p+p);	/* now x < 2p */

@@ -62,7 +62,7 @@ double tan(double x)
 	if(ix <= 0x3fe921fb) return __hide_kernel_tan(x,z,1);
 
     /* tan(Inf or NaN) is NaN */
-    else if (ix>=0x7ff00000) return nan("");		/* NaN */
+    else if (ix>=0x7ff00000) return __builtin_nan("");		/* NaN */
 
     /* argument reduction needed */
 	else {

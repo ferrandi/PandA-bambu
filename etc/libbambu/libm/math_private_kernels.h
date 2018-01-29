@@ -125,7 +125,7 @@ int __hide_ieee754_rem_pio2(double x, double *y)
      * all other (large) arguments
      */
 	if(ix>=0x7ff00000) {		/* x is inf or NaN */
-        y[0]=y[1]=nan(""); return 0;
+        y[0]=y[1]=__builtin_nan(""); return 0;
 	}
     /* set z = scalbn(|x|,ilogb(x)-23) */
 	SET_LOW_WORD(z, GET_LO(x));

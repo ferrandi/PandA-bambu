@@ -63,7 +63,7 @@ double sin(double x)
 	if(ix <= 0x3fe921fb) return __hide_kernel_sin(x,z,0);
 
     /* sin(Inf or NaN) is NaN */
-    else if (ix>=0x7ff00000) return nan("");
+    else if (ix>=0x7ff00000) return __builtin_nan("");
 
     /* argument reduction needed */
 	else {

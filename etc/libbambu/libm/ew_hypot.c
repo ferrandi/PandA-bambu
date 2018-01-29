@@ -64,7 +64,7 @@ double __hide_ieee754_hypot(double x, double y)
 	k=0;
 	if(ha > 0x5f300000) {	/* a>2**500 */
 	   if(ha >= 0x7ff00000) {	/* Inf or NaN */
-           w = nan("");	/* for sNaN */
+           w = __builtin_nan("");	/* for sNaN */
 	       if(((ha&0xfffff)|GET_LO(a))==0) w = a;
 	       if(((hb^0x7ff00000)|GET_LO(b))==0) w = b;
 	       return w;

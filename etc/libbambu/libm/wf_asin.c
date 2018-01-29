@@ -47,7 +47,7 @@ float asinf(float x)		/* wrapper asinf */
 	    exc.name = "asinf";
 	    exc.err = 0;
 	    exc.arg1 = exc.arg2 = (double)x;
-        exc.retval = nan("");
+        exc.retval = __builtin_nan("");
 	    if(_LIB_VERSION == _POSIX_)
 	      errno = EDOM;
         else if (!matherr(&exc)) {

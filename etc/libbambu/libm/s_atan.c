@@ -82,7 +82,7 @@ double atan(double x)
 	if(ix>=0x44100000) {	/* if |x| >= 2^66 */
 	    if(ix>0x7ff00000||
 		(ix==0x7ff00000&&(GET_LO(x)!=0)))
-        return nan("");		/* NaN */
+        return __builtin_nan("");		/* NaN */
 	    if(hx>0) return  atanhi[3]+atanlo[3];
 	    else     return -atanhi[3]-atanlo[3];
 	} if (ix < 0x3fdc0000) {	/* |x| < 0.4375 */

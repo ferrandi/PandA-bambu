@@ -60,7 +60,7 @@ double __hide_ieee754_asin(double x)
 	    if(((ix-0x3ff00000)|GET_LO(x))==0)
 		    /* asin(1)=+-pi/2 with inexact */
 		return x*pio2_hi+x*pio2_lo;	
-        return nan("");		/* asin(|x|>1) is NaN */
+        return __builtin_nan("");		/* asin(|x|>1) is NaN */
 	} else if (ix<0x3fe00000) {	/* |x|<0.5 */
 	    if(ix<0x3e400000) {		/* if |x| < 2**-27 */
 		if(huge+x>one) return x;/* return x with inexact if x!=0*/

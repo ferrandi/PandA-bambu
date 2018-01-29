@@ -68,7 +68,7 @@ float logf(float x)		/* wrapper logf */
         else if (!matherr(&exc)) {
 	       errno = EDOM;
 	    }
-            exc.retval = nan("");
+            exc.retval = __builtin_nan("");
         }
 	if (exc.err != 0)
            errno = exc.err;

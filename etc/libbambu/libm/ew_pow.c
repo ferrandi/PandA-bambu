@@ -82,7 +82,7 @@ double __attribute__((optimize("-fno-unsafe-math-optimizations"))) __hide_ieee75
     /* +-NaN return x+y */
 	if(ix > 0x7ff00000 || ((ix==0x7ff00000)&&(lx!=0)) ||
 	   iy > 0x7ff00000 || ((iy==0x7ff00000)&&(ly!=0))) 
-        return nan("");
+        return __builtin_nan("");
 
     /* determine if y is an odd int when x < 0
      * yisint = 0	... y is not an integer
@@ -143,7 +143,7 @@ double __attribute__((optimize("-fno-unsafe-math-optimizations"))) __hide_ieee75
 	n = (hx>>31)+1;
 
     /* (x<0)**(non-int) is NaN */
-    if((n|yisint)==0) return nan("");
+    if((n|yisint)==0) return __builtin_nan("");
 
 	s = one; /* s (sign of result -ve**odd) = -1 else = 1 */
 	if((n|(yisint-1))==0) s = -one;/* (-ve)**(odd int) */

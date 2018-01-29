@@ -53,7 +53,7 @@ double __hide_ieee754_acos(double x)
 		if(hx>0) return 0.0;		/* acos(1) = 0  */
 		else return pi+2.0*pio2_lo;	/* acos(-1)= pi */
 	    }
-        return nan("");		/* acos(|x|>1) is NaN */
+        return __builtin_nan("");		/* acos(|x|>1) is NaN */
 	}
 	if(ix<0x3fe00000) {	/* |x| < 0.5 */
 	    if(ix<=0x3c600000) return pio2_hi+pio2_lo;/*if|x|<2**-57*/

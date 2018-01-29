@@ -112,13 +112,13 @@ double __hide_ieee754_sqrt(double x)
     if((ix0==0x7ff00000)&&(ix1==0)) return x;
     /* take care of Inf and NaN */
 	if((ix0&0x7ff00000)==0x7ff00000) {			
-        return nan("");		/* sqrt(NaN)=NaN sqrt(-inf)=sNaN */
+        return __builtin_nan("");		/* sqrt(NaN)=NaN sqrt(-inf)=sNaN */
 	} 
     /* take care of zero */
 	if(ix0<=0) {
 	    if(((ix0&(~sign))|ix1)==0) return x;/* sqrt(+-0) = +-0 */
 	    else if(ix0<0)
-        return nan("");		/* sqrt(-ve) = sNaN */
+        return __builtin_nan("");		/* sqrt(-ve) = sNaN */
 	}
     /* normalize x */
 	m = (ix0>>20);

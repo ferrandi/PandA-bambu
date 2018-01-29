@@ -57,7 +57,7 @@ double modf(double x, double *iptr)
 	    *iptr = x*one;
 	    /* We must handle NaNs separately.  */
 	    if (j0 == 0x400 && ((i0 & 0xfffff) | i1))
-          return nan("");
+          return __builtin_nan("");
 	    INSERT_WORDS(x, GET_HI(x) & 0x80000000, 0);	/* return +-0 */
 	    return x;
 	} else {			/* fraction part in low x */
