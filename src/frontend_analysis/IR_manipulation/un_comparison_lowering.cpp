@@ -129,12 +129,13 @@ DesignFlowStep_Status UnComparisonLowering::InternalExec()
                new_kind = gt_expr_K;
             else
                THROW_UNREACHABLE("");
-            auto new_be = tree_man->create_binary_operation(be->type, be->op0, be->op1, srcp_string, new_kind);
-            auto new_ssa = tree_man->create_ssa_name(sn->var, sn->type);
+            auto booleanType = tree_man->create_boolean_type();
+            auto new_be = tree_man->create_binary_operation(booleanType, be->op0, be->op1, srcp_string, new_kind);
+            auto new_ssa = tree_man->create_ssa_name(sn->var, booleanType);
             auto new_ga = tree_man->create_gimple_modify_stmt(new_ssa, new_be, srcp_string, 0);
             block.second->PushBefore(new_ga, stmt);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created " + STR(new_ga));
-            auto new_not = tree_man->create_unary_operation(be->type, new_ssa, srcp_string, truth_not_expr_K);
+            auto new_not = tree_man->create_unary_operation(booleanType, new_ssa, srcp_string, truth_not_expr_K);
             TreeM->ReplaceTreeNode(stmt, ga->op1, new_not);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Transformed into " + STR(stmt));
             modified = true;

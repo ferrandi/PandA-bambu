@@ -2155,7 +2155,7 @@ tree_nodeRef tree_manipulation::ExtractCondition(const tree_nodeRef condition, c
             }
          }
       }
-      const auto type_index = (tree_helper::CGetType(GET_NODE(gc->op0)))->index;
+      const auto type_index = create_boolean_type()->index;
       /// create the ssa_var representing the condition for bb1
       unsigned int ssa1_vers = TreeM->get_next_vers();
       unsigned int ret = TreeM->new_tree_node_id();

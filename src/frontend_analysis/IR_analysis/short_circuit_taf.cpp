@@ -74,6 +74,7 @@
 #include "ext_tree_node.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
+#include "tree_manipulation.hpp"
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
 #include "tree_basic_block.hpp"
@@ -340,7 +341,8 @@ bool short_circuit_taf::create_gimple_cond(unsigned int bb1, unsigned int bb2, b
    gimple_cond* ce1 = GetPointer<gimple_cond>(GET_NODE(cond_statement));
    unsigned int cond1_index = GET_INDEX_NODE(ce1->op0);
    const auto type_node = tree_helper::CGetType(GET_NODE(ce1->op0));
-   unsigned int type_index = type_node->index;
+   const tree_manipulationConstRef tree_man = tree_manipulationConstRef(new tree_manipulation(TM, parameters));
+   unsigned int type_index = tree_helper::is_bool(TM, type_node->index) ? type_node->index : tree_man->create_boolean_type()->index;
    std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> IR_schema;
 
    /// create the ssa_var representing the condition for bb1
