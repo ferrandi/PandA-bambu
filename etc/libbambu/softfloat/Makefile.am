@@ -4,7 +4,7 @@ EXTRA_DIST=bambu.h milieu.h README.txt softfloat.h SoftFloat-history.txt softflo
 common_treegccflags = --output-temporary-directory=/tmp -iplugindir=$(top_builddir)/etc/gcc_plugin
 common_treegccflags_clang = --output-temporary-directory=/tmp -iplugindir=$(top_builddir)/etc/clang_plugin
 common_cflags=-DNO_PARAMETRIC -DNO_SUBNORMALS -DNO_SIGNALLING -I$(top_srcdir)/etc/libbambu $(common_treegccflags)
-common_cflags_clang=-DNO_PARAMETRIC -DNO_SUBNORMALS -DNO_SIGNALLING -I$(top_srcdir)/etc/libbambu $(common_treegccflags_clang)
+common_cflags_clang=-DNO_PARAMETRIC -DNO_SUBNORMALS -DNO_SIGNALLING -I$(top_srcdir)/etc/libbambu $(common_treegccflags_clang) 
 common_cflags_subnormals=-DNO_PARAMETRIC -DNO_SIGNALLING -I$(top_srcdir)/etc/libbambu $(common_treegccflags)
 common_cflags_subnormals_clang=-DNO_PARAMETRIC -DNO_SIGNALLING -I$(top_srcdir)/etc/libbambu $(common_treegccflags_clang)
 
@@ -80,8 +80,8 @@ endif
 if BUILD_I386_CLANG40
 pkglib_LIBRARIES += libsoftfloat_clang40.a libsoftfloat_subnormals_clang40.a
 libsoftfloat_clang40_a_SOURCES = softfloat.c
-libsoftfloat_clang40_a_CFLAGS = -O3 --compiler=I386_CLANG40 $(common_cflags_clang) -I$(BOOST_DIR)
+libsoftfloat_clang40_a_CFLAGS = -O3 --compiler=I386_CLANG40 $(common_cflags_clang) -I$(BOOST_DIR) -finline-functions --extra-gcc-options="-mllvm -inline-threshold=10000"
 libsoftfloat_subnormals_clang40_a_SOURCES = softfloat.c
-libsoftfloat_subnormals_clang40_a_CFLAGS = -O3 --compiler=I386_CLANG40 $(common_cflags_subnormals_clang) -I$(BOOST_DIR)
-endif
+libsoftfloat_subnormals_clang40_a_CFLAGS = -O3 --compiler=I386_CLANG40 $(common_cflags_subnormals_clang) -I$(BOOST_DIR) -finline-functions --extra-gcc-options="-mllvm -inline-threshold=10000"
+endif 
 

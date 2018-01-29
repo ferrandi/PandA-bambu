@@ -2070,7 +2070,7 @@ static __float32 __addsubFloat32_old( __float32 a, __float32 b, __flag bSign )
 //#define VOLATILE_DEF volatile
 #define VOLATILE_DEF
 
-static __float32 __addsubFloat32(__float32 a, __float32 b, __flag bSign)
+static inline __float32 __addsubFloat32(__float32 a, __float32 b, __flag bSign)
 {
     VOLATILE_DEF __bits32 aSig, bSig, shift_0;
     VOLATILE_DEF __bits8 aExp, bExp, expDiff8;
@@ -3538,7 +3538,7 @@ static __float64 __addsubFloat64_old( __float64 a, __float64 b, __flag bSign)
 }
 
 
-static __float64 __addsubFloat64( __float64 a, __float64 b, __flag bSign)
+static inline __float64 __addsubFloat64( __float64 a, __float64 b, __flag bSign)
 {
     VOLATILE_DEF __bits64 aSig, bSig, shift_0;
     VOLATILE_DEF __bits16 aExp, bExp, expDiff11;
