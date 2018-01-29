@@ -304,7 +304,7 @@ DesignFlowStep_Status mem_dominator_allocation::Exec()
                {
                   unsigned int elmt_bitsize=1;
                   unsigned int type_index = tree_helper::get_type_index(TreeM, var);
-                  bool is_a_struct_union = tree_helper::is_a_struct(TreeM, type_index) || tree_helper::is_an_union(TreeM, type_index) || tree_helper::is_a_complex(TreeM, type_index);
+                  bool is_a_struct_union = ((tree_helper::is_a_struct(TreeM, type_index)) && !tree_helper::is_an_array(TreeM, type_index)) || tree_helper::is_an_union(TreeM, type_index) || tree_helper::is_a_complex(TreeM, type_index);
                   tree_nodeRef type_node = TreeM->get_tree_node_const(type_index);
                   tree_helper::accessed_greatest_bitsize(TreeM, type_node, type_index, elmt_bitsize);
                   unsigned int mim_elmt_bitsize = elmt_bitsize;

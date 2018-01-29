@@ -2463,6 +2463,21 @@ bool tree_helper::is_an_array(const tree_managerConstRef  TM, const unsigned int
    }
    if(Type->get_kind() == array_type_K)
       return true;
+   else if(Type->get_kind() == record_type_K)
+   {
+      record_type * rt = GetPointer<record_type>(Type);
+      if(rt->list_of_flds.size()!=1)
+         return false;
+      auto fd = GET_NODE(rt->list_of_flds[0]);
+      THROW_ASSERT(fd->get_kind() == field_decl_K, "expected a field_decl");
+      auto at_node = GET_NODE(GetPointer<field_decl>(fd)->type);
+      if(at_node->get_kind() == array_type_K)
+         return true;
+      else if(at_node->get_kind() == record_type_K)
+         return is_an_array(TM,  GET_INDEX_NODE(GetPointer<field_decl>(fd)->type));
+      else
+         return false;
+   }
    return false;
 }
 
@@ -4667,6 +4682,14 @@ unsigned int tree_helper::get_array_data_bitsize
 (const tree_managerConstRef TM, const unsigned int index)
 {
    tree_nodeRef node = TM->get_tree_node_const(index);
+   if(node->get_kind() == record_type_K)
+   {
+      record_type* rt = GetPointer<record_type>(node);
+      auto fd = GET_NODE(rt->list_of_flds[0]);
+      THROW_ASSERT(fd->get_kind() == field_decl_K, "expected a field_decl");
+      auto at_index = GET_INDEX_NODE(GetPointer<field_decl>(fd)->type);
+      return get_array_data_bitsize(TM, at_index);
+   }
    THROW_ASSERT(node->get_kind() == array_type_K, "array_type expected: @" + STR(index));
    array_type * at = GetPointer<array_type>(node);
    THROW_ASSERT(at->elts, "elements type expected");
@@ -4691,6 +4714,15 @@ void tree_helper::get_array_dim_and_bitsize
 (const tree_managerConstRef TM, const unsigned int index, std::vector<unsigned int> &dims, unsigned int &elts_bitsize)
 {
    tree_nodeRef node = TM->get_tree_node_const(index);
+   if(node->get_kind() == record_type_K)
+   {
+      record_type* rt = GetPointer<record_type>(node);
+      auto fd = GET_NODE(rt->list_of_flds[0]);
+      THROW_ASSERT(fd->get_kind() == field_decl_K, "expected a field_decl");
+      auto at_index = GET_INDEX_NODE(GetPointer<field_decl>(fd)->type);
+      get_array_dim_and_bitsize(TM, at_index, dims, elts_bitsize);
+      return;
+   }
    THROW_ASSERT(node->get_kind() == array_type_K, "array_type expected: @" + STR(index));
    array_type * at = GetPointer<array_type>(node);
    if(!at->domn)
@@ -4733,6 +4765,15 @@ void tree_helper::get_array_dimensions
 (const tree_managerConstRef TM, const unsigned int index, std::vector<unsigned int> &dims)
 {
    tree_nodeRef node = TM->get_tree_node_const(index);
+   if(node->get_kind() == record_type_K)
+   {
+      record_type* rt = GetPointer<record_type>(node);
+      auto fd = GET_NODE(rt->list_of_flds[0]);
+      THROW_ASSERT(fd->get_kind() == field_decl_K, "expected a field_decl");
+      auto at_index = GET_INDEX_NODE(GetPointer<field_decl>(fd)->type);
+      get_array_dimensions(TM, at_index, dims);
+      return;
+   }
    THROW_ASSERT(node->get_kind() == array_type_K, "array_type expected: @" + STR(index));
    array_type * at = GetPointer<array_type>(node);
    tree_nodeRef domn = GET_NODE(at->domn);
