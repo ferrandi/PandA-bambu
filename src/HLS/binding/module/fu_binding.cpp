@@ -1816,7 +1816,7 @@ void fu_binding::specialize_memory_unit
    else
    {
       fu_module->set_parameter("n_elements", boost::lexical_cast<std::string>(vec_size));
-      fu_module->set_parameter("data_size", boost::lexical_cast<std::string>(elts_size));
+      fu_module->set_parameter("data_size", boost::lexical_cast<std::string>(std::max(elts_size,8u)));
    }
    if(HLSMgr->Rmem->is_private_memory(ar))
       fu_module->set_parameter("PRIVATE_MEMORY", boost::lexical_cast<std::string>(1));
