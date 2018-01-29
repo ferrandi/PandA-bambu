@@ -292,17 +292,23 @@ namespace clang {
          int getBB_index(const llvm::BasicBlock * BB);
 
          gimple_rhs_class get_gimple_rhs_class (tree_codes code) {return gimple_rhs_class_table[static_cast<unsigned int>(code)];}
+         template<class InstructionOrConstantExpr>
+         tree_codes tree_expr_code(const InstructionOrConstantExpr*inst);
          tree_codes gimple_expr_code (const void *stmt);
          tree_codes gimple_assign_rhs_code (const void *stmt) {return gimple_expr_code(stmt);}
          const void* getGimpleNop(const llvm::Value *operand, const void* scpe);
+         template<class InstructionOrConstantExpr>
+         bool isSignedResult(const InstructionOrConstantExpr*inst) const;
          const llvm::Type* getCondSignedResult(const llvm::Value *operand, const llvm::Type * type) const;
-         bool isSignedOperand(const llvm::Instruction* inst, unsigned int index) const;
+         template<class InstructionOrConstantExpr>
+         bool isSignedOperand(const InstructionOrConstantExpr* inst) const;
          const void* getSSA(const llvm::Value *operand, const void* def_stmt, const llvm::Function * currentFunction, bool isDefault);
          bool is_virtual_ssa(const void* t) const;
          bool SSA_NAME_IS_DEFAULT_DEF(const void* t) const;
          const void* LowerGetElementPtrOffset(const llvm::GEPOperator* gep, const llvm::Function * currentFunction, const void *& base_node);
          const void* LowerGetElementPtr(const void* type, const llvm::User* gep, const llvm::Function * currentFunction);
          const void* gimple_assign_rhs_getelementptr(const void* g);
+         bool temporary_addr_check(const llvm::User* inst, std::set<const llvm::User*>& visited);
          const void* getOperand(const llvm::Value *operand, const llvm::Function * currentFunction);
          const void* gimple_assign_lhs(const void* g);
          const void* gimple_assign_rhs_alloca (const void* g);
@@ -312,6 +318,10 @@ namespace clang {
                const llvm::AllocaInst* alloc_inst;
          };
          std::map<const void*, alloca_var> index2alloca_var;
+         template<class InstructionOrConstantExpr>
+         const void* getSignedOperand(const InstructionOrConstantExpr* inst, const void* op);
+         template<class InstructionOrConstantExpr>
+         const void* getSignedOperandIndex(const InstructionOrConstantExpr* inst, unsigned index, const llvm::Function *currentFunction);
          const void* gimple_assign_rhsIndex(const void * g, unsigned index);
          const void* gimple_assign_rhs1(const void* g) {return gimple_assign_rhsIndex(g,0);}
          const void* gimple_assign_rhs2(const void* g) {return gimple_assign_rhsIndex(g,1);}
@@ -523,7 +533,7 @@ namespace clang {
          void dequeue_and_serialize_statement (const void* t);
          void dequeue_and_serialize();
 
-         void lowerIntrinsics(llvm::Module &M);
+         bool lowerIntrinsics(llvm::Module &M);
 
       public:
          DumpGimpleRaw(CompilerInstance &_Instance,
