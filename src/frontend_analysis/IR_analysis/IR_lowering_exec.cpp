@@ -964,7 +964,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
             gimple_phi::DefEdgeList to_be_replaced;
             for(const auto& def_edge : pn->CGetDefEdgesList())
             {
-               if(GET_NODE(def_edge.first)->get_kind() == addr_expr_K || GET_NODE(def_edge.first)->get_kind() == view_convert_expr_K)
+               if(GET_NODE(def_edge.first)->get_kind() == addr_expr_K || GET_NODE(def_edge.first)->get_kind() == view_convert_expr_K || GET_NODE(def_edge.first)->get_kind() == nop_expr_K)
                {
                   to_be_replaced.push_back(def_edge);
                }
@@ -1059,6 +1059,26 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                   {
                      nop_expr * ne = GetPointer<nop_expr>(GET_NODE(be->op1));
                      tree_nodeRef new_ga = CreateGimpleAssign(ne->type, be->op1, block.first, srcp_default);
+                     tree_nodeRef ssa_vd = GetPointer<gimple_assign>(GET_NODE(new_ga))->op0;
+                     be->op1 = ssa_vd;
+                     block.second->PushBefore(new_ga, *it_los);
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(new_ga)->ToString());
+                     restart_analysis = true;
+                  }
+                  if(GetPointer<binary_expr>(GET_NODE(be->op0)))
+                  {
+                     binary_expr * op = GetPointer<binary_expr>(GET_NODE(be->op0));
+                     tree_nodeRef new_ga = CreateGimpleAssign(op->type, be->op0, block.first, srcp_default);
+                     tree_nodeRef ssa_vd = GetPointer<gimple_assign>(GET_NODE(new_ga))->op0;
+                     be->op0 = ssa_vd;
+                     block.second->PushBefore(new_ga, *it_los);
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(new_ga)->ToString());
+                     restart_analysis = true;
+                  }
+                  if(GetPointer<binary_expr>(GET_NODE(be->op1)))
+                  {
+                     binary_expr * op = GetPointer<binary_expr>(GET_NODE(be->op1));
+                     tree_nodeRef new_ga = CreateGimpleAssign(op->type, be->op1, block.first, srcp_default);
                      tree_nodeRef ssa_vd = GetPointer<gimple_assign>(GET_NODE(new_ga))->op0;
                      be->op1 = ssa_vd;
                      block.second->PushBefore(new_ga, *it_los);
@@ -2294,7 +2314,8 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                               block.second->PushBefore(ga_nop, *it_los);
                               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(ga_nop)->ToString());
                               tree_nodeRef ga_nop_var = GetPointer<gimple_assign>(GET_NODE(ga_nop))->op0;
-                              tree_nodeRef not_masked = tree_man->create_unary_operation(GetPointer<binary_expr>(GET_NODE(ga->op1))->type, ga_nop_var, srcp_default, truth_not_expr_K);
+                              auto booleanType = tree_man->create_boolean_type();
+                              tree_nodeRef not_masked = tree_man->create_unary_operation(booleanType, ga_nop_var, srcp_default, truth_not_expr_K);
                               ga->op1 = not_masked;
                               restart_analysis = true;
                            }
@@ -2961,6 +2982,47 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                      tree_nodeRef ae_vd = GetPointer<gimple_assign>(GET_NODE(ae_ga))->op0;
                      block.second->PushBefore(ae_ga, *it_los);
                      be->op1 = ae_vd;
+                     changed = true;
+                  }
+                  if(GetPointer<unary_expr>(GET_NODE(be->op0)) ||
+                        GetPointer<binary_expr>(GET_NODE(be->op0)) ||
+                        GetPointer<ternary_expr>(GET_NODE(be->op0)))/// required by the CLANG/LLVM plugin
+                  {
+                     tree_nodeRef type;
+                     if (GetPointer<unary_expr>(GET_NODE(be->op0)))
+                        type= GetPointer<unary_expr>(GET_NODE(be->op0))->type;
+                     else if(GetPointer<binary_expr>(GET_NODE(be->op0)))
+                        type= GetPointer<binary_expr>(GET_NODE(be->op0))->type;
+                     else if(GetPointer<ternary_expr>(GET_NODE(be->op0)))
+                        type= GetPointer<ternary_expr>(GET_NODE(be->op0))->type;
+                     else
+                        THROW_ERROR("not managed condition");
+
+                     tree_nodeRef new_ga = CreateGimpleAssign(type, be->op0, block.first, srcp_default);
+                     tree_nodeRef ssa_vd = GetPointer<gimple_assign>(GET_NODE(new_ga))->op0;
+                     be->op0 = ssa_vd;
+                     block.second->PushBefore(new_ga, *it_los);
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(new_ga)->ToString());
+                     changed = true;
+                  }
+                  if(GetPointer<unary_expr>(GET_NODE(be->op1)) ||
+                        GetPointer<binary_expr>(GET_NODE(be->op1)) ||
+                        GetPointer<ternary_expr>(GET_NODE(be->op1)))/// required by the CLANG/LLVM plugin
+                  {
+                     tree_nodeRef type;
+                     if (GetPointer<unary_expr>(GET_NODE(be->op1)))
+                        type= GetPointer<unary_expr>(GET_NODE(be->op1))->type;
+                     else if(GetPointer<binary_expr>(GET_NODE(be->op1)))
+                        type= GetPointer<binary_expr>(GET_NODE(be->op1))->type;
+                     else if(GetPointer<ternary_expr>(GET_NODE(be->op1)))
+                        type= GetPointer<ternary_expr>(GET_NODE(be->op1))->type;
+                     else
+                        THROW_ERROR("not managed condition");
+                     tree_nodeRef new_ga = CreateGimpleAssign(type, be->op1, block.first, srcp_default);
+                     tree_nodeRef ssa_vd = GetPointer<gimple_assign>(GET_NODE(new_ga))->op0;
+                     be->op1 = ssa_vd;
+                     block.second->PushBefore(new_ga, *it_los);
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(new_ga)->ToString());
                      changed = true;
                   }
                   if(changed)
