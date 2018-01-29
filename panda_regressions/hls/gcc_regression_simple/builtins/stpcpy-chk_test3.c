@@ -164,7 +164,7 @@ test3 (void)
   chk_calls = 0;
   vx = stpcpy (a.buf1 + 2, s3 + 3);
   vx = stpcpy (r, s3 + 2);
-  r = l1 == 1 ? __builtin_malloc (4) : &a.buf2[7];
+  r = l1 == 1 ? malloc (4) : &a.buf2[7];
   vx = stpcpy (r, s2 + 2);
   vx = stpcpy (r + 2, s3 + 3);
   r = buf3;
@@ -189,7 +189,7 @@ test3 (void)
   chk_calls = 0;
   vx = stpcpy (a.buf1 + 2, "");
   vx = stpcpy (r, "a");
-  r = l1 == 1 ? __builtin_malloc (4) : &a.buf2[7];
+  r = l1 == 1 ? malloc (4) : &a.buf2[7];
   vx = stpcpy (r, s1 + 1);
   r = buf3;
   l = "abc";

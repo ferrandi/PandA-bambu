@@ -357,7 +357,7 @@ test4 (void)
   chk_calls = 0;
   memmove (a.buf1 + 2, s3, l1);
   memmove (r, s3, l1 + 1);
-  r = l1 == 1 ? __builtin_malloc (4) : &a.buf2[7];
+  r = l1 == 1 ? malloc (4) : &a.buf2[7];
   memmove (r, s2, l1 + 2);
   memmove (r + 2, s3, l1);
   r = buf3;
@@ -382,7 +382,7 @@ test4 (void)
   chk_calls = 0;
   memmove (a.buf1 + 2, s3, 1);
   memmove (r, s3, 2);
-  r = l1 == 1 ? __builtin_malloc (4) : &a.buf2[7];
+  r = l1 == 1 ? malloc (4) : &a.buf2[7];
   memmove (r, s2, 3);
   r = buf3;
   l = 4;

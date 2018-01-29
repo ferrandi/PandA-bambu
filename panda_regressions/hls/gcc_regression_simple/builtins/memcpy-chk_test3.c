@@ -259,7 +259,7 @@ test3 (void)
   chk_calls = 0;
   memcpy (a.buf1 + 2, s3, l1);
   memcpy (r, s3, l1 + 1);
-  r = l1 == 1 ? __builtin_malloc (4) : &a.buf2[7];
+  r = l1 == 1 ? malloc (4) : &a.buf2[7];
   memcpy (r, s2, l1 + 2);
   memcpy (r + 2, s3, l1);
   r = buf3;
@@ -284,7 +284,7 @@ test3 (void)
   chk_calls = 0;
   memcpy (a.buf1 + 2, s3, 1);
   memcpy (r, s3, 2);
-  r = l1 == 1 ? __builtin_malloc (4) : &a.buf2[7];
+  r = l1 == 1 ? malloc (4) : &a.buf2[7];
   memcpy (r, s2, 3);
   r = buf3;
   l = 4;

@@ -107,7 +107,7 @@ test2 (void)
   chk_calls = 0;
   strcat (a.buf1 + 2, s3 + 3);
   strcat (r, s3 + 2);
-  r = l1 == 1 ? __builtin_malloc (4) : &a.buf2[7];
+  r = l1 == 1 ? malloc (4) : &a.buf2[7];
   memset (r, '\0', 3);
   __asm __volatile ("{||assign out1 = in1;\nassign done_port = start_port;}" : : "r" (r) : "memory");
   strcat (r, s2 + 2);
@@ -137,7 +137,7 @@ test2 (void)
   __asm __volatile ("{||assign out1 = in1;\nassign done_port = start_port;}" : : "r" (s5) : "memory");
   strcat (a.buf1 + 2, "a");
   strcat (r, "");
-  r = l1 == 1 ? __builtin_malloc (4) : &a.buf2[7];
+  r = l1 == 1 ? malloc (4) : &a.buf2[7];
   memset (r, '\0', 3);
   __asm __volatile ("{||assign out1 = in1;\nassign done_port = start_port;}" : : "r" (r) : "memory");
   strcat (r, s1 + 1);

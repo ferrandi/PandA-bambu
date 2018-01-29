@@ -1,7 +1,7 @@
 int __attribute__((noinline))
 foo(int i)
 {
-  int *p = __builtin_malloc (4 * sizeof(int));
+  int *p = malloc (4 * sizeof(int));
   *p = 0;
   p[i] = 1;
   return *p;

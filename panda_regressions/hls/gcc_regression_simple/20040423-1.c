@@ -1,3 +1,4 @@
+#ifndef __llvm__
 int
 sub1 (int i, int j)
 {
@@ -28,3 +29,9 @@ main ()
 
   return 0;
 }
+#else
+int main()
+{
+  return 0;
+}
+#endif
