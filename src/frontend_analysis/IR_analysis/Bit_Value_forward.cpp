@@ -1504,7 +1504,7 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign * ga) co
    }
    else if (op_kind == truth_not_expr_K)
    {
-      THROW_ASSERT(tree_helper::is_bool(TM, output_uid), "");
+      THROW_ASSERT(tree_helper::is_bool(TM, output_uid) || tree_helper::tree_helper::size(TM, output_uid)==1, "");
       truth_not_expr *operation = GetPointer<truth_not_expr> (GET_NODE(ga->op1));
 
       std::deque<bit_lattice> arg1_bitstring;
