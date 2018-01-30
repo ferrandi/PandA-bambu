@@ -490,8 +490,10 @@ volatile int snprintf_disallowed, vsnprintf_disallowed;
 int main()
 {
   buf2 = (char *) (buf1 + 32);
+#ifndef _llvm_
 #if (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
   main_test();
+#endif
 #endif
   return 0;
 }
