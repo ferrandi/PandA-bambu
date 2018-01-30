@@ -293,7 +293,7 @@ namespace clang {
 
          gimple_rhs_class get_gimple_rhs_class (tree_codes code) {return gimple_rhs_class_table[static_cast<unsigned int>(code)];}
          template<class InstructionOrConstantExpr>
-         tree_codes tree_expr_code(const InstructionOrConstantExpr*inst);
+         tree_codes tree_expr_code(InstructionOrConstantExpr*inst);
          tree_codes gimple_expr_code (const void *stmt);
          tree_codes gimple_assign_rhs_code (const void *stmt) {return gimple_expr_code(stmt);}
          const void* getGimpleNop(const llvm::Value *operand, const void* scpe);
@@ -302,6 +302,8 @@ namespace clang {
          const llvm::Type* getCondSignedResult(const llvm::Value *operand, const llvm::Type * type) const;
          template<class InstructionOrConstantExpr>
          bool isSignedOperand(const InstructionOrConstantExpr* inst) const;
+         template<class InstructionOrConstantExpr>
+         bool isUnsignedOperand(const InstructionOrConstantExpr* inst) const;
          const void* getSSA(const llvm::Value *operand, const void* def_stmt, const llvm::Function * currentFunction, bool isDefault);
          bool is_virtual_ssa(const void* t) const;
          bool SSA_NAME_IS_DEFAULT_DEF(const void* t) const;
@@ -328,6 +330,7 @@ namespace clang {
          const void* gimple_assign_rhs3(const void* g) {return gimple_assign_rhsIndex(g,2);}
          tree_codes gimple_cond_code(const void* g) {return gimple_expr_code(g);}
          const void* boolean_type_node(const void* g);
+         const char* gimple_asm_string(const void* g);
          const void* gimple_cond_op(const void* g) {return gimple_assign_rhsIndex(g,0);}
          const void* gimple_label_label(const void* g);
          const void* gimple_phi_result(const void* g) {return gimple_assign_lhs(g);}

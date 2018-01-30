@@ -62,6 +62,7 @@
 #include "llvm/IR/ModuleSlotTracker.h"
 #include "llvm/IR/InstrTypes.h"
 #include "llvm/IR/Instructions.h"
+#include "llvm/IR/InlineAsm.h"
 #include "llvm/Support/FileSystem.h"
 #include "llvm/CodeGen/IntrinsicLowering.h"
 #include "clang/AST/Mangle.h"
@@ -335,6 +336,11 @@ namespace clang
                auto op = cast<llvm::ConstantExpr>(llvm_obj)->getOperand(0);
                return build1(GT(NOP_EXPR), type, getOperand(op, nullptr));
             }
+            else if(cast<llvm::ConstantExpr>(llvm_obj)->getOpcode() == llvm::Instruction::BitCast)
+            {
+               auto op = cast<llvm::ConstantExpr>(llvm_obj)->getOperand(0);
+               return build1(GT(VIEW_CONVERT_EXPR), type, getOperand(op, nullptr));
+            }
             else
             {
                llvm_obj->print(llvm::errs(), true);
@@ -393,6 +399,9 @@ namespace clang
                      llvm_unreachable("Plugin Error");
                }
             }
+            auto calledFun = ci->getCalledValue();
+            if(isa<llvm::InlineAsm>(calledFun))
+               return assignCode(t, GT(GIMPLE_ASM));
             if(ci->getType()->isVoidTy())
                return assignCode(t, GT(GIMPLE_CALL));
             else
@@ -809,8 +818,18 @@ namespace clang
          return BB_index_map.find(BB)->second;
    }
 
+   static unsigned getPredicateTEC(const llvm::Instruction* inst)
+   {
+      return cast<const llvm::CmpInst>(inst)->getPredicate();
+   }
+
+   static unsigned getPredicateTEC(const llvm::ConstantExpr* ce)
+   {
+      return ce->getPredicate();
+   }
+
    template<class InstructionOrConstantExpr>
-   DumpGimpleRaw::tree_codes DumpGimpleRaw::tree_expr_code(const InstructionOrConstantExpr*inst)
+   DumpGimpleRaw::tree_codes DumpGimpleRaw::tree_expr_code(InstructionOrConstantExpr*inst)
    {
       auto opcode = inst->getOpcode();
       switch(opcode)
@@ -882,8 +901,7 @@ namespace clang
          case llvm::Instruction::FCmp:
          case llvm::Instruction::ICmp:
          {
-            const llvm::CmpInst* icmp = cast<const llvm::CmpInst>(inst);
-            auto predicate = icmp->getPredicate();
+            auto predicate = getPredicateTEC(inst);
             switch (predicate)
             {
                case llvm::ICmpInst::FCMP_OEQ:
@@ -1115,14 +1133,52 @@ namespace clang
             return true;
          case llvm::Instruction::ICmp:
          {
-            const llvm::CmpInst* icmp = cast<const llvm::CmpInst>(inst);
-            auto predicate = icmp->getPredicate();
+            auto predicate = getPredicateTEC(inst);
             switch (predicate)
             {
                case llvm::ICmpInst::ICMP_SGT:
                case llvm::ICmpInst::ICMP_SGE:
                case llvm::ICmpInst::ICMP_SLT:
                case llvm::ICmpInst::ICMP_SLE:
+                  return true;
+               default:
+                  return false;
+            }
+         }
+         default:
+            return false;
+      }
+   }
+
+   template<class InstructionOrConstantExpr>
+   bool DumpGimpleRaw::isUnsignedOperand(const InstructionOrConstantExpr* inst) const
+   {
+      auto opcode = inst->getOpcode();
+      switch(opcode)
+      {
+         case llvm::Instruction::LShr :
+         case llvm::Instruction::UDiv :
+         case llvm::Instruction::URem :
+         case llvm::Instruction::ZExt :
+         case llvm::Instruction::UIToFP:
+         case llvm::Instruction::IntToPtr:
+         case llvm::Instruction::Add  :
+         case llvm::Instruction::Sub  :
+         case llvm::Instruction::Mul  :
+         case llvm::Instruction::And  :
+         case llvm::Instruction::Or   :
+         case llvm::Instruction::Xor  :
+         case llvm::Instruction::PHI :
+            return true;
+         case llvm::Instruction::ICmp:
+         {
+            auto predicate = getPredicateTEC(inst);
+            switch (predicate)
+            {
+               case llvm::ICmpInst::ICMP_UGT:
+               case llvm::ICmpInst::ICMP_UGE:
+               case llvm::ICmpInst::ICMP_ULT:
+               case llvm::ICmpInst::ICMP_ULE:
                   return true;
                default:
                   return false;
@@ -1316,17 +1372,6 @@ namespace clang
             else
                llvm_unreachable("unexpected condition");
          }
-//         auto type = assignCodeType(operand->getType());
-//         if(cast<llvm::ConstantExpr>(operand)->getOpcode() == llvm::Instruction::BitCast)
-//            return build1(GT(VIEW_CONVERT_EXPR), type, getOperand(cast<llvm::ConstantExpr>(operand)->getOperand(0), currentFunction));
-//         else if(cast<llvm::ConstantExpr>(operand)->getOpcode() == llvm::Instruction::GetElementPtr)
-//            return LowerGetElementPtr(type, cast<llvm::ConstantExpr>(operand), currentFunction);
-//         else if(cast<llvm::ConstantExpr>(operand)->getOpcode() == llvm::Instruction::IntToPtr ||
-//               cast<llvm::ConstantExpr>(operand)->getOpcode() == llvm::Instruction::PtrToInt)
-//         {
-//            auto op = cast<llvm::ConstantExpr>(operand)->getOperand(0);
-//            return build1(GT(NOP_EXPR), type, getOperand(op, currentFunction));
-//         }
       }
       else if(isa<llvm::UndefValue>(operand))
       {
@@ -1365,9 +1410,8 @@ namespace clang
       auto isSignedOp = isSignedOperand(inst);
       if(isSignedOp)
          return build1(GT(NOP_EXPR), AddSignedTag(TREE_TYPE(op)), op);
-      else if((inst->getOpcode() != llvm::Instruction::FPToSI) &&
-              (inst->getOpcode() != llvm::Instruction::FPToUI) &&
-              (CheckSignedTag(TREE_TYPE(op)) != isSignedResult(inst)))
+      else if(isUnsignedOperand(inst) &&
+              (CheckSignedTag(TREE_TYPE(op))))
          return build1(GT(NOP_EXPR), TREE_TYPE(inst), op);
       else
          return op;
@@ -1401,6 +1445,15 @@ namespace clang
    {
       const llvm::Instruction* inst = reinterpret_cast<const llvm::Instruction*>(g);
       return assignCodeType(inst->getType());
+   }
+
+   const char* DumpGimpleRaw::gimple_asm_string(const void* g)
+   {
+      const llvm::CallInst* ci = reinterpret_cast<const llvm::CallInst*>(g);
+      auto calledFun = ci->getCalledValue();
+      assert(isa<llvm::InlineAsm>(calledFun));
+      auto ia = cast<llvm::InlineAsm>(calledFun);
+      return ia->getAsmString().c_str();
    }
 
    const void* DumpGimpleRaw::gimple_label_label(const void* g)
@@ -1473,14 +1526,14 @@ namespace clang
             if(isa<llvm::Function>(op))
                return build1(GT(ADDR_EXPR), type, assignCodeAuto(op));
          }
-         llvm::errs() << ValueTyNames[calledFun->getValueID()] << "\n";
-         calledFun->print(llvm::errs());
+//         llvm::errs() << ValueTyNames[calledFun->getValueID()] << "\n";
+//         calledFun->print(llvm::errs());
          return getOperand(calledFun, ci->getFunction());
       }
       else
       {
-         llvm::errs() << ValueTyNames[calledFun->getValueID()] << "\n";
-         calledFun->print(llvm::errs());
+//         llvm::errs() << ValueTyNames[calledFun->getValueID()] << "\n";
+//         calledFun->print(llvm::errs());
          return getOperand(calledFun, ci->getFunction());
       }
    }
@@ -2973,6 +3026,13 @@ namespace clang
       serialize_int ("size_weight", code == GT(GIMPLE_NOP) ? 0 : 1);
       switch (gimple_code(g))
       {
+
+         case GT(GIMPLE_ASM):
+         {
+          serialize_string_field ("str", gimple_asm_string(g));
+          llvm_unreachable("gimple asm unsupported");
+          break;
+         }
          case GT(GIMPLE_ASSIGN_ALLOCA):
          {
             auto lhs = gimple_assign_lhs (g);
@@ -3070,24 +3130,38 @@ namespace clang
             break;
 
          case GT(GIMPLE_PHI):
+         {
             serialize_child ("res", gimple_phi_result (g));
+            std::set<int> bb_visited;
             for (auto i = 0u; i < gimple_phi_num_args (g); i++)
             {
-               serialize_child ("def", gimple_phi_arg_def(g, i));
-               serialize_int ("edge", gimple_phi_arg_edgeBBindex(g, i));
+               auto bbIndex = gimple_phi_arg_edgeBBindex(g, i);
+               if(bb_visited.find(bbIndex) == bb_visited.end())
+               {
+                  bb_visited.insert(bbIndex);
+                  serialize_child ("def", gimple_phi_arg_def(g, i));
+                  serialize_int ("edge", bbIndex);
+               }
             }
-            //if(!is_gimple_reg (gimple_phi_result (g)))
-            //  serialize_string("virtual");
             break;
+         }
          case GT(GIMPLE_PHI_VIRTUAL):
+         {
             serialize_child ("res", gimple_phi_virtual_result (g));
+            std::set<int> bb_visited;
             for (auto i = 0u; i < gimple_phi_virtual_num_args (g); i++)
             {
-               serialize_child ("def", gimple_phi_virtual_arg_def(g, i));
-               serialize_int ("edge", gimple_phi_virtual_arg_edgeBBindex(g, i));
+               auto bbIndex = gimple_phi_virtual_arg_edgeBBindex(g, i);
+               if(bb_visited.find(bbIndex) == bb_visited.end())
+               {
+                  bb_visited.insert(bbIndex);
+                  serialize_child ("def", gimple_phi_virtual_arg_def(g, i));
+                  serialize_int ("edge", bbIndex);
+               }
             }
             serialize_string("virtual");
             break;
+         }
          case GT(GIMPLE_CALL):
          {
             serialize_child ("fn", gimple_call_fn (g));
