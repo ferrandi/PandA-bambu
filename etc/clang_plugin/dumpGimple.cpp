@@ -1039,7 +1039,8 @@ namespace clang
                     isa<llvm::BitCastInst>(U) ||
                     isa<llvm::PtrToIntInst>(U) ||
                     cast<llvm::Instruction>(U)->getOpcode() == llvm::Instruction::Sub ||
-                    cast<llvm::Instruction>(U)->getOpcode() == llvm::Instruction::Add)
+                    cast<llvm::Instruction>(U)->getOpcode() == llvm::Instruction::Add ||
+                    cast<llvm::Instruction>(U)->getOpcode() == llvm::Instruction::AShr)
             {
                return temporary_addr_check(U, visited);
             }
