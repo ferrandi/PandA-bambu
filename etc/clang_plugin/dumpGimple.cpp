@@ -387,11 +387,12 @@ namespace clang
                   case llvm::Intrinsic::lifetime_end:
                   case llvm::Intrinsic::dbg_value:
                      return assignCode(t, GT(GIMPLE_NOPMEM));
-                  case llvm::Intrinsic::fabs:
                   case llvm::Intrinsic::memcpy:
                   case llvm::Intrinsic::memset:
                   case llvm::Intrinsic::memmove:
-                     return assignCode(t, GT(GIMPLE_CALL));
+                     return ci->use_empty() ? assignCode(t, GT(GIMPLE_CALL)) : assignCode(t, GT(GIMPLE_ASSIGN));
+                  case llvm::Intrinsic::fabs:
+                     return assignCode(t, GT(GIMPLE_ASSIGN));
                   default:
                      llvm::errs() << "assignCodeAuto kind not supported: " << ValueTyNames[vid] << "\n";
                      ci->print(llvm::errs(), true);
@@ -402,8 +403,11 @@ namespace clang
             auto calledFun = ci->getCalledValue();
             if(isa<llvm::InlineAsm>(calledFun))
                return assignCode(t, GT(GIMPLE_ASM));
-            if(ci->getType()->isVoidTy())
+            if(ci->getType()->isVoidTy() || ci->use_empty())
+            {
+               assert(ci->use_empty());
                return assignCode(t, GT(GIMPLE_CALL));
+            }
             else
                return assignCode(t, GT(GIMPLE_ASSIGN));
          }
@@ -1042,7 +1046,9 @@ namespace clang
                     cast<llvm::Instruction>(U)->getOpcode() == llvm::Instruction::Add ||
                     cast<llvm::Instruction>(U)->getOpcode() == llvm::Instruction::AShr)
             {
-               return temporary_addr_check(U, visited);
+               auto res = temporary_addr_check(U, visited);
+               if(!res)
+                  return res;
             }
             else if(isa<llvm::CmpInst>(U))
                ;
@@ -1052,7 +1058,11 @@ namespace clang
                if(si->getOperand(0) == inst)
                   ;
                else
-                  return temporary_addr_check(U, visited);
+               {
+                  auto res = temporary_addr_check(U, visited);
+                  if(!res)
+                     return res;
+               }
             }
             else if(isa<llvm::CallInst>(U))
                return false;
