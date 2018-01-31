@@ -390,6 +390,7 @@ namespace clang
                   case llvm::Intrinsic::memcpy:
                   case llvm::Intrinsic::memset:
                   case llvm::Intrinsic::memmove:
+                  case llvm::Intrinsic::trap:
                      return ci->use_empty() ? assignCode(t, GT(GIMPLE_CALL)) : assignCode(t, GT(GIMPLE_ASSIGN));
                   case llvm::Intrinsic::fabs:
                      return assignCode(t, GT(GIMPLE_ASSIGN));
@@ -520,6 +521,8 @@ namespace clang
             fd->print(llvm::errs());
             llvm_unreachable("Plugin Error");
          }
+         case llvm::Intrinsic::trap:
+            return "__builtin_trap";
          default:
             fd->print(llvm::errs());
             llvm_unreachable("Plugin Error");
@@ -1042,9 +1045,12 @@ namespace clang
                     isa<llvm::GetElementPtrInst>(U) ||
                     isa<llvm::BitCastInst>(U) ||
                     isa<llvm::PtrToIntInst>(U) ||
+                    isa<llvm::IntToPtrInst>(U) ||
                     cast<llvm::Instruction>(U)->getOpcode() == llvm::Instruction::Sub ||
                     cast<llvm::Instruction>(U)->getOpcode() == llvm::Instruction::Add ||
-                    cast<llvm::Instruction>(U)->getOpcode() == llvm::Instruction::AShr)
+                    cast<llvm::Instruction>(U)->getOpcode() == llvm::Instruction::AShr ||
+                    cast<llvm::Instruction>(U)->getOpcode() == llvm::Instruction::And ||
+                    cast<llvm::Instruction>(U)->getOpcode() == llvm::Instruction::Or)
             {
                auto res = temporary_addr_check(U, visited);
                if(!res)
@@ -3793,6 +3799,7 @@ namespace clang
          case llvm::Intrinsic::memcpy:
          case llvm::Intrinsic::memset:
          case llvm::Intrinsic::memmove:
+         case llvm::Intrinsic::trap:
             return true;
          default:
             return false;
