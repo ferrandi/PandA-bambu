@@ -33,9 +33,9 @@ float __hide_ieee754_atanhf(float x)
 	GET_FLOAT_WORD(hx,x);
 	ix = hx&0x7fffffff;
 	if (ix>0x3f800000) 		/* |x|>1 */
-        return nansf("");
+        return __builtin_nansf("");
 	if(ix==0x3f800000)
-        return (hx>>31) ? -inff() : inff();
+        return (hx>>31) ? -__builtin_inff() : __builtin_inff();
     if(ix<0x31800000)
     {
         math_force_eval (huge + x);

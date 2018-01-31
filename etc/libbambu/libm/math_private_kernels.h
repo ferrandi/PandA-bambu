@@ -803,8 +803,8 @@ double __hide_ieee754_log(double x)
 	k=0;
 	if (hx < 0x00100000) {			/* x < 2**-1022  */
 	    if (((hx&0x7fffffff)|lx)==0) 
-        return -inf();		/* log(+-0)=-inf */
-        if ((hx>>31)&1) return nans("");	/* log(-#) = NaN */
+        return -__builtin_inf();		/* log(+-0)=-inf */
+        if ((hx>>31)&1) return __builtin_nans("");	/* log(-#) = NaN */
 	    k -= 54; x *= two54; /* subnormal number, scale up x */
 	    hx = GET_HI(x);		/* high word of x */
 	} 

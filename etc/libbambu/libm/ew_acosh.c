@@ -38,7 +38,7 @@ double __hide_ieee754_acosh(double x)
 	int hx;
 	hx = GET_HI(x);
 	if(hx<0x3ff00000) {		/* x < 1 */
-        return nans("");
+        return __builtin_nans("");
 	} else if(hx >=0x41b00000) {	/* x > 2**28 */
 	    if(hx >=0x7ff00000) {	/* x is inf or NaN */
 	        return x;

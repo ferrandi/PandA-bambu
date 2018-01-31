@@ -47,9 +47,9 @@ float __hide_ieee754_logf(float x)
 	k=0;
         if (ix < 0x00800000) {			/* x < 2**-126  */
 	    if (FLT_UWORD_IS_ZERO(ix&0x7fffffff))
-        return -inff();		/* log(+-0)=-inf */
+        return -__builtin_inff();		/* log(+-0)=-inf */
 	    if (ix<0)
-        return nansf("");	/* log(-#) = NaN */
+        return __builtin_nansf("");	/* log(-#) = NaN */
 	    k -= 25; x *= two25; /* subnormal number, scale up x */
 	    GET_FLOAT_WORD(ix,x);
 	}

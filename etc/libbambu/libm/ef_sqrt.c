@@ -41,7 +41,7 @@ float __hide_ieee754_sqrtf(float x)
     if(ix<0) return nanf("");		/* sqrt(-ve) = sNaN */
     /* take care of +Inf  */
 	if(!FLT_UWORD_IS_FINITE(hx))
-        return inff();		/* sqrt(+inf)=+inf */
+        return __builtin_inff();		/* sqrt(+inf)=+inf */
 
     /* normalize x */
 	m = (ix>>23);

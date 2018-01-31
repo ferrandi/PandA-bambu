@@ -61,9 +61,9 @@ float __hide_ieee754_log10f(float x)
 	k = 0;
 	if (hx < 0x00800000) {  /* x < 2**-126  */
 		if ((hx&0x7fffffff) == 0)
-            return -inff();  /* log(+-0)=-inf */
+            return -__builtin_inff();  /* log(+-0)=-inf */
 		if (hx < 0)
-            return nansf("");   /* log(-#) = NaN */
+            return __builtin_nansf("");   /* log(-#) = NaN */
 		/* subnormal number, scale up x */
 		k -= 25;
 		x *= two25;

@@ -34,7 +34,7 @@ float __hide_ieee754_acoshf(float x)
 	int hx;
 	GET_FLOAT_WORD(hx,x);
 	if(hx<0x3f800000) {		/* x < 1 */
-        return nansf("");
+        return __builtin_nansf("");
 	} else if(hx >=0x4d800000) {	/* x > 2**28 */
 	    if(!FLT_UWORD_IS_FINITE(hx)) {	/* x is inf of NaN */
 	        return x;

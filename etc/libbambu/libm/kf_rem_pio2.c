@@ -105,7 +105,7 @@ recompute:
 		    }
 		} else  iq[i] = 0xff - j;
 	    }
-        if(expect(q0>0, 0)) {		/* rare case: chance is 1 in 12 */
+        if(__builtin_expect(q0>0, 0)) {		/* rare case: chance is 1 in 12 */
 	        switch(q0) {
 	        case 1:
 	    	   iq[jz-1] &= 0x7f; break;
@@ -120,7 +120,7 @@ recompute:
 	}
 
     /* check if recomputation is needed */
-    if(expect(z==zero, 0)) {
+    if(__builtin_expect(z==zero, 0)) {
 	    j = 0;
 	    for (i=jz-1;i>=jk;i--) j |= iq[i];
 	    if(j==0) { /* need recomputation */

@@ -345,7 +345,7 @@ typedef double double_t;
 #define FP_NORMAL      4
 
 # ifndef HUGE_VALF
-#  define HUGE_VALF (huge_valf())
+#  define HUGE_VALF (__builtin_huge_valf())
 # endif
 
 #ifndef FP_ILOGB0

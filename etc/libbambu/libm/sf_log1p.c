@@ -49,8 +49,8 @@ float log1pf(float x)
     k = 1;
     if (hx < 0x3ed413d7) {			/* x < 0.41422  */
         if(ax>=0x3f800000) {		/* x <= -1.0 */
-            if(x==(float)-1.0) return -inf(); /* log1p(-1)=-inf */
-            else return nansf("");	/* log1p(x<-1)=NaN */
+            if(x==(float)-1.0) return -__builtin_inff(); /* log1p(-1)=-inf */
+            else return __builtin_nansf("");	/* log1p(x<-1)=NaN */
         }
         if(ax<0x31000000) {			/* |x| < 2**-29 */
             math_force_eval(two25+x);	/* raise inexact */

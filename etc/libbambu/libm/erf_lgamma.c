@@ -150,11 +150,11 @@ float __hide_ieee754_lgammaf_r(float x, int *signgamp)
 	*signgamp = 1;
 	ix = hx&0x7fffffff;
     if(FLT_UWORD_IS_NAN(ix)) return nanf("");
-    if(!FLT_UWORD_IS_FINITE(ix)) return inff();
+    if(!FLT_UWORD_IS_FINITE(ix)) return __builtin_inff();
 	if(FLT_UWORD_IS_ZERO(ix)) {
 	    if (hx < 0)
 	      *signgamp = -1;
-        return inff();
+        return __builtin_inff();
 	}
 	if(ix<0x1c800000) {	/* |x|<2**-70, return -log(|x|) */
 	    if(hx<0) {
@@ -164,9 +164,9 @@ float __hide_ieee754_lgammaf_r(float x, int *signgamp)
 	}
 	if(hx<0) {
 	    if(ix>=0x4b000000) 	/* |x|>=2**23, must be -integer */
-        return inff();
+        return __builtin_inff();
 	    t = __hide_sin_pif(x);
-        if(t==zero) return inff(); /* -integer */
+        if(t==zero) return __builtin_inff(); /* -integer */
         nadj = __hide_ieee754_logf(pi/fabsf(t*x));
 	    if(t<zero) *signgamp = -1;
 	    x = -x;
