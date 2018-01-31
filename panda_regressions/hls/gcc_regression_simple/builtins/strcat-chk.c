@@ -103,13 +103,17 @@ test2 (void)
      - source length is not known, but destination is.  */
   memset (&a, '\0', sizeof (a));
   s5 = (char *) &a;
+#ifndef __clang__
   __asm __volatile ("{||assign out1 = in1;\nassign done_port = start_port;}" : : "r" (s5) : "memory");
+#endif
   chk_calls = 0;
   strcat (a.buf1 + 2, s3 + 3);
   strcat (r, s3 + 2);
   r = l1 == 1 ? malloc (4) : &a.buf2[7];
   memset (r, '\0', 3);
+#ifndef __clang__
   __asm __volatile ("{||assign out1 = in1;\nassign done_port = start_port;}" : : "r" (r) : "memory");
+#endif
   strcat (r, s2 + 2);
   strcat (r + 2, s3 + 3);
   r = buf3;
@@ -134,12 +138,16 @@ test2 (void)
   memset (&a, '\0', sizeof (a));
   chk_calls = 0;
   s5 = (char *) &a;
+#ifndef __clang__
   __asm __volatile ("{||assign out1 = in1;\nassign done_port = start_port;}" : : "r" (s5) : "memory");
+#endif
   strcat (a.buf1 + 2, "a");
   strcat (r, "");
   r = l1 == 1 ? malloc (4) : &a.buf2[7];
   memset (r, '\0', 3);
+#ifndef __clang__
   __asm __volatile ("{||assign out1 = in1;\nassign done_port = start_port;}" : : "r" (r) : "memory");
+#endif
   strcat (r, s1 + 1);
   if (chk_calls != 0)
     abort ();
@@ -201,9 +209,11 @@ main_test (void)
   /* Object size checking is only intended for -O[s123].  */
   return;
 #endif
+#ifndef __clang__
   __asm ("{||assign out1 = in1;\nassign done_port = start_port;}" : "=r" (s2) : "0" (s2));
   __asm ("{||assign out1 = in1;\nassign done_port = start_port;}" : "=r" (s3) : "0" (s3));
   __asm ("{||assign out1 = in1;\nassign done_port = start_port;}" : "=r" (l1) : "0" (l1));
+#endif
   s4 = p;
   test1 ();
   memset (p, '\0', sizeof (p));
@@ -212,7 +222,7 @@ main_test (void)
 }
 int main()
 {
-#ifndef _llvm_
+#ifndef __clang__
 #if (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
   main_test();
 #endif

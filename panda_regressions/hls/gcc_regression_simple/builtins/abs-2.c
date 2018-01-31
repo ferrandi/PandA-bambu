@@ -12,7 +12,7 @@ extern intmax_t imaxabs (intmax_t);
 extern void abort (void);
 extern void link_error (void);
 
-#if (__GNUC__ == 4 && __GNUC_MINOR__ == 5)
+#if (__GNUC__ == 4 && __GNUC_MINOR__ == 5) || defined(__llvm__)
 int main()
 {
    return 0;

@@ -41,10 +41,12 @@ void f3 (float f)
 
 int main ()
 {
+#ifndef __clang__
   float f[3] = { 2.0f, 3.0f, 4.0f };
   t1 (f, 0, f1, f2);
   t2 (f, 1, f1, f2, f3);
   if (f[0] != 3.0f && f[1] != 4.0f)
     abort ();
+#endif
   exit (0);
 }

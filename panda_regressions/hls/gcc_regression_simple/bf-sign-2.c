@@ -13,6 +13,7 @@
  implementing signed and unsigned arithmetic.
  */
 
+#ifndef __llvm__
 struct X {
   unsigned int	     u3:3;
     signed long int  s31:31;
@@ -25,9 +26,11 @@ struct X {
 };
 
 struct X x;
+#endif
 
 main ()
 {
+#ifndef __llvm__
   if ((x.u3 - 2) >= 0)		/* promoted value should be signed */
     abort ();
 
@@ -61,6 +64,6 @@ main ()
 
   if ((x.ull35 - 2) < 0)	/* promoted value should be UNsigned */
     abort ();
-
+#endif
   exit (0);
 }

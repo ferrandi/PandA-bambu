@@ -16,6 +16,7 @@ extern double cimag (double _Complex);
 extern void abort (void);
 extern void link_error (void);
 
+#ifndef __llvm__
 void
 main_test (void)
 {
@@ -102,11 +103,15 @@ main_test (void)
     link_error ();
 #endif
 }
+#endif
 
 int main()
 {
+#ifndef __llvm__
 #if (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
   main_test();
 #endif
+#endif
+
   return 0;
 }
