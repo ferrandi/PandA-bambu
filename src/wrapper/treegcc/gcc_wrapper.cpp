@@ -281,18 +281,32 @@ void GccWrapper::CompileFile(const std::string& original_file_name, std::string 
       else
          command += opt + " -c -fplugin=" + compiler.ssa_plugin_obj + " -fplugin-arg-"+compiler.ssa_plugin_name+"-outputdir="+Param->getOption<std::string>(OPT_output_temporary_directory);
    }
-   if(Param->isOption(OPT_top_functions_names) && Param->getOption<bool>(OPT_do_not_expose_globals))
+   bool isWholeProgram = Param->isOption(OPT_gcc_optimizations) &&
+                         Param->getOption<std::string>(OPT_gcc_optimizations).find("whole-program") != std::string::npos &&
+                         Param->getOption<std::string>(OPT_gcc_optimizations).find("no-whole-program") == std::string::npos;
+   if((Param->isOption(OPT_top_functions_names) && Param->getOption<bool>(OPT_do_not_expose_globals)) ||
+         (isWholeProgram && compiler.is_clang))
    {
-      const auto top_functions_names = Param->getOption<const std::list<std::string> >(OPT_top_functions_names);
-      if(top_functions_names.size()==1)
+      std::string fname;
+      bool addPlugin = false;
+      if(isWholeProgram && compiler.is_clang)
       {
-         if(top_functions_names.front() != "main")
-         {
-            if(compiler.is_clang)
-               command += " -fplugin=" + compiler.topfname_plugin_obj + " -Xclang -add-plugin -Xclang " + compiler.topfname_plugin_name + " -Xclang -plugin-arg-"+compiler.topfname_plugin_name+" -Xclang -topfname -Xclang -plugin-arg-"+compiler.topfname_plugin_name+" -Xclang "+top_functions_names.front();
-            else
-               command += " -fplugin=" + compiler.topfname_plugin_obj + " -fplugin-arg-"+compiler.topfname_plugin_name+"-topfname="+top_functions_names.front();
-         }
+         fname = "main";
+         addPlugin = true;
+      }
+      else
+      {
+         const auto top_functions_names = Param->getOption<const std::list<std::string> >(OPT_top_functions_names);
+         addPlugin = top_functions_names.size()==1;
+         fname = top_functions_names.front();
+      }
+
+      if(addPlugin)
+      {
+         if(compiler.is_clang)
+            command += " -fplugin=" + compiler.topfname_plugin_obj + " -Xclang -add-plugin -Xclang " + compiler.topfname_plugin_name + " -Xclang -plugin-arg-"+compiler.topfname_plugin_name+" -Xclang -topfname -Xclang -plugin-arg-"+compiler.topfname_plugin_name+" -Xclang "+fname;
+         else
+            command += " -fplugin=" + compiler.topfname_plugin_obj + " -fplugin-arg-"+compiler.topfname_plugin_name+"-topfname="+fname;
       }
    }
 
