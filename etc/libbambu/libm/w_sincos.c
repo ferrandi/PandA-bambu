@@ -64,12 +64,8 @@ void sincos(double x, double *sinx, double *cosx)
     }
 }
 
-double _Complex 
 #ifndef _llvm_
-__builtin_cexpi (double x)
-#else
-cexpi (double x)
-#endif
+double _Complex __builtin_cexpi (double x)
 {
   double _Complex  Res;
   int ix;
@@ -122,6 +118,6 @@ cexpi (double x)
 
   return Res;
 }
-
+#endif
 
 #endif /* defined(_DOUBLE_IS_32BITS) */

@@ -108,12 +108,9 @@ void sincos(double x, double *sinx, double *cosx)
 }
 #endif /* defined(_DOUBLE_IS_32BITS) */
 
-float _Complex
 #ifndef _llvm_
+float _Complex
 __builtin_cexpif (float x)
-#else
-cexpif (float x)
-#endif
 {
   float _Complex  Res;
   int ix;
@@ -164,4 +161,4 @@ cexpif (float x)
 
   return Res;
 }
-
+#endif
