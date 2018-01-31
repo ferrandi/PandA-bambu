@@ -2067,13 +2067,13 @@ bool tree_manager::check_for_decl(const tree_nodeRef tn, const tree_managerRef T
          THROW_ASSERT(GET_NODE(dn->name)->get_kind() == identifier_node_K, "expected an identifier_node: " + STR(GET_NODE(dn->name)->get_kind_text()) + " " + STR(node_id));
          if(fd)
          {
-//            if(fd->builtin_flag)
-//            {
-//               symbol_name = GetPointer<identifier_node>(GET_NODE(dn->name))->strg;
+            if(fd->builtin_flag)
+            {
+               symbol_name = GetPointer<identifier_node>(GET_NODE(dn->name))->strg;
 //               if(fd->undefined_flag && symbol_name.find("__builtin_") == std::string::npos)
 //                  symbol_name = "__builtin_" + symbol_name;
-//            }
-//            else
+            }
+            else
                symbol_name = GetPointer<identifier_node>(GET_NODE(dn->mngl))->strg;
          }
          else
