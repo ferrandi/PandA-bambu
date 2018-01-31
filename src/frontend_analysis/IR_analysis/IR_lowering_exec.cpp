@@ -1112,7 +1112,6 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                         block.second->PushBefore(ae_ga, *it_los);
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(ae_ga)->ToString());
                         MR->op0 = ae_vd;
-                        restart_analysis = true;
                      }
                      else if(GET_NODE(MR->op0)->get_kind() == pointer_plus_expr_K)///required by the CLANG/LLVM plugin
                      {
@@ -1123,7 +1122,6 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                         block.second->PushBefore(pp_ga, *it_los);
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(pp_ga)->ToString());
                         MR->op0 = pp_vd;
-                        restart_analysis = true;
                      }
                      else if(GET_NODE(MR->op0)->get_kind() == view_convert_expr_K)///required by the CLANG/LLVM plugin
                      {
@@ -1134,7 +1132,6 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                         block.second->PushBefore(vc_ga, *it_los);
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(vc_ga)->ToString());
                         MR->op0 = vc_vd;
-                        restart_analysis = true;
                      }
 
                      tree_nodeRef op1 = MR->op1;
