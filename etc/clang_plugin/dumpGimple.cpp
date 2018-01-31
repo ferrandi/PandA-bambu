@@ -2530,7 +2530,7 @@ namespace clang
             for(unsigned index = 0; index < val->getNumOperands(); ++index)
             {
                auto op = val->getOperand(index);
-               const void* valu=assignCodeAuto(op);
+               const void* valu=getOperand(op,nullptr);
                const void* idx =  GET_FIELD_DECL(TREE_TYPE(assignCodeAuto(op)), index, ty);
                res.push_back(std::make_pair(idx,valu));
             }
@@ -2545,7 +2545,7 @@ namespace clang
                if(uicTable.find(index) == uicTable.end())
                   uicTable[index] = assignCodeAuto(llvm::ConstantInt::get(llvm::Type::getInt32Ty(llvm_obj->getContext()), index, false));
                const void* idx =  uicTable.find(index)->second;
-               const void* valu=assignCodeAuto(val->getElementAsConstant(index));
+               const void* valu=getOperand(val->getElementAsConstant(index), nullptr);
                res.push_back(std::make_pair(idx,valu));
             }
             return res;
@@ -2559,7 +2559,7 @@ namespace clang
                   uicTable[index] = assignCodeAuto(llvm::ConstantInt::get(llvm::Type::getInt32Ty(llvm_obj->getContext()), index, false));
                const void* idx =  uicTable.find(index)->second;
                auto elmnt = val->getOperand(index);
-               const void* valu=assignCodeAuto(getOperand(elmnt,nullptr));
+               const void* valu=getOperand(elmnt,nullptr);
                res.push_back(std::make_pair(idx,valu));
             }
             return res;
