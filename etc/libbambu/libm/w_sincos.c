@@ -64,7 +64,7 @@ void sincos(double x, double *sinx, double *cosx)
     }
 }
 
-#ifndef _llvm_
+#ifndef __llvm__
 double _Complex __builtin_cexpi (double x)
 {
   double _Complex  Res;

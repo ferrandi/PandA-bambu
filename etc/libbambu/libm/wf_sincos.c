@@ -108,7 +108,7 @@ void sincos(double x, double *sinx, double *cosx)
 }
 #endif /* defined(_DOUBLE_IS_32BITS) */
 
-#ifndef _llvm_
+#ifndef __llvm__
 float _Complex
 __builtin_cexpif (float x)
 {

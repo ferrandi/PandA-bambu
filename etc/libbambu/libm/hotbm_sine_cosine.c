@@ -954,7 +954,7 @@ float ADD_BUILTIN_PREFIX(cosf)(float x)
     }
 }
 
-#ifndef _llvm_
+#ifndef __llvm__
 float _Complex
 __builtin_cexpif(float x)
 {
