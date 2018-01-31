@@ -7526,19 +7526,6 @@ bool tree_helper::is_a_nop_function_decl(function_decl * fd)
       return false;
 }
 
-std::string
-tree_helper::getFunctionTypeString(tree_nodeRef FT)
-{
-  function_type * FunctionType = GetPointer<function_type>(FT);
-  THROW_ASSERT(FunctionType, "Input tree_node is not a function_type");
-
-  std::stringstream SS;
-  SS << FunctionType->retn << " (*)(";
-  if (FunctionType->prms)
-    SS << FunctionType->prms;
-  SS << ")";
-  return SS.str();
-}
 
 void tree_helper::get_required_values(const tree_managerConstRef TM, std::vector<std::tuple<unsigned int, unsigned int> >& required, const tree_nodeRef& tn, unsigned int index)
 {

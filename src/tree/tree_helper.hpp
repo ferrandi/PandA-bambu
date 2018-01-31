@@ -188,12 +188,6 @@ class tree_helper
       bool has_function_return(const tree_managerConstRef tm, const unsigned int index);
 
       /**
-       * Return a string describing the functino type
-       * @param Tree node of the function type
-       */
-      static std::string getFunctionTypeString(tree_nodeRef FT);
-
-      /**
        * Return the list of tree nodes associated with the variable used by the node t.
        * @param first_level_only tells if we are performing inlining
        * @param t is a tree node (usually a function declaration).
