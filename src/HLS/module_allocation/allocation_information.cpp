@@ -2978,7 +2978,7 @@ double AllocationInformation::GetConnectionTime(const unsigned int first_operati
       if(CanImplementSetNotEmpty(first_operation) and get_DSPs(GetFuType(first_operation)) != 0.0)
       {
          connection_time += output_DSP_connection_time;
-         INDENT_DBG_MEX(DEBUG_LEVEL_NONE, debug_level, "---Connection time due to DSP connection " + STR(output_DSP_connection_time));
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Connection time due to DSP connection " + STR(output_DSP_connection_time));
       }
       if(first_operation != ENTRY_ID and TreeM->CGetTreeNode(first_operation)->get_kind() == gimple_assign_K)
       {
