@@ -1206,6 +1206,8 @@ namespace clang
                case llvm::ICmpInst::ICMP_UGE:
                case llvm::ICmpInst::ICMP_ULT:
                case llvm::ICmpInst::ICMP_ULE:
+               case llvm::ICmpInst::ICMP_EQ:
+               case llvm::ICmpInst::ICMP_NE:
                   return true;
                default:
                   return false;
