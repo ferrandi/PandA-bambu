@@ -46,7 +46,8 @@ have such support.
 
 The suggested configuration is
 ../configure --prefix=/opt/panda --enable-flopoco --enable-icarus --enable-verilator --enable-xilinx --enable-modelsim --enable-altera --enable-opt --enable-lattice --enable-release --with-mentor-license=<license-string>
-A subset of such tools is obviously acceptable.
+
+Options --enable-xilinx, --enable-modelsim, --enable-altera, --enable-lattice, and --with-mentor-license=<license-string> require that thirdy-party tools have been installed before PandA is configured. Details on where these thirdy-party tools are searched are provided at the end of this file.
 
 7) Compile the tool:
   $make
