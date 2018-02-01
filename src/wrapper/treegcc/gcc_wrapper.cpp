@@ -699,6 +699,7 @@ void GccWrapper::SetBambuDefault()
    if(compiler == GccWrapper_CompilerTarget::CT_I386_CLANG40)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--Set parameters for bambu tool");
+      optimization_flags["wrapv"] = true; /// bambu assumes twos complement arithmetic
       return;
    }
 #endif
