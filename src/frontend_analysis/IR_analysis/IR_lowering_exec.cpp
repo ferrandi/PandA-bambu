@@ -1045,7 +1045,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                if(GetPointer<binary_expr>(GET_NODE(ga->op1)))/// required by the CLANG/LLVM plugin
                {
                   auto be = GetPointer<binary_expr>(GET_NODE(ga->op1));
-                  if(GET_NODE(be->op0)->get_kind() == nop_expr_K || GET_NODE(be->op0)->get_kind() == view_convert_expr_K)
+                  if(GetPointer<unary_expr>(GET_NODE(be->op0)))
                   {
                      unary_expr * ue = GetPointer<unary_expr>(GET_NODE(be->op0));
                      tree_nodeRef new_ga = CreateGimpleAssign(ue->type, be->op0, block.first, srcp_default);
@@ -1055,10 +1055,10 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(new_ga)->ToString());
                      restart_analysis = true;
                   }
-                  if(GET_NODE(be->op1)->get_kind() == nop_expr_K)
+                  if(GetPointer<unary_expr>(GET_NODE(be->op1)))
                   {
-                     nop_expr * ne = GetPointer<nop_expr>(GET_NODE(be->op1));
-                     tree_nodeRef new_ga = CreateGimpleAssign(ne->type, be->op1, block.first, srcp_default);
+                     unary_expr * ue = GetPointer<unary_expr>(GET_NODE(be->op1));
+                     tree_nodeRef new_ga = CreateGimpleAssign(ue->type, be->op1, block.first, srcp_default);
                      tree_nodeRef ssa_vd = GetPointer<gimple_assign>(GET_NODE(new_ga))->op0;
                      be->op1 = ssa_vd;
                      block.second->PushBefore(new_ga, *it_los);
@@ -3075,6 +3075,21 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                }
                if(changed)
                {
+                  restart_analysis = true;
+               }
+            }
+            else if(GET_NODE(*it_los)->get_kind() == gimple_return_K)
+            {
+               gimple_return * gr =  GetPointer<gimple_return>(GET_NODE(*it_los));
+               const std::string srcp_default = gr->include_name + ":" + STR(gr->line_number) + ":" + STR(gr->column_number);
+               if(gr->op && GET_NODE(gr->op)->get_kind() == nop_expr_K)
+               {
+                  unary_expr * ue = GetPointer<unary_expr>(GET_NODE(gr->op));
+                  tree_nodeRef new_ga = CreateGimpleAssign(ue->type, gr->op, block.first, srcp_default);
+                  tree_nodeRef ssa_vd = GetPointer<gimple_assign>(GET_NODE(new_ga))->op0;
+                  gr->op = ssa_vd;
+                  block.second->PushBefore(new_ga, *it_los);
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(new_ga)->ToString());
                   restart_analysis = true;
                }
             }
