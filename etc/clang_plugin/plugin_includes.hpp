@@ -174,6 +174,7 @@ namespace clang {
          const llvm::DataLayout* DL;
          /// current module pass
          llvm::ModulePass* modulePass;
+         llvm::LLVMContext* moduleContext;
 
 
          /// relation between LLVM object and serialization index
@@ -215,6 +216,7 @@ namespace clang {
          bool CheckSignedTag(const llvm::Type *t) const {return reinterpret_cast<size_t>(t)&1;}
          bool CheckSignedTag(const void *t) const {return reinterpret_cast<size_t>(t)&1;}
          const llvm::Type * NormalizeSignedTag(const llvm::Type *t) const {return reinterpret_cast<const llvm::Type*>(reinterpret_cast<size_t>(t)&(~1ULL));}
+         const void * NormalizeSignedTag(const void *t) const {return reinterpret_cast<const void*>(reinterpret_cast<size_t>(t)&(~1ULL));}
          const llvm::Type * AddSignedTag(const llvm::Type *t) const {return reinterpret_cast<const llvm::Type*>(reinterpret_cast<size_t>(t)|1);}
          const void * AddSignedTag(const void *t) const {return AddSignedTag(reinterpret_cast<const llvm::Type*>(t));}
 
@@ -268,6 +270,8 @@ namespace clang {
                pt_info() : valid(false) {}
          };
          const pt_info* SSA_NAME_PTR_INFO (const void* t) const;
+
+         unsigned int SignedPointerTypeReference;
 
          struct ssa_name
          {

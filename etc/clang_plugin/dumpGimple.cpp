@@ -89,25 +89,6 @@ namespace clang
 
    char DumpGimpleRaw::buffer [LOCAL_BUFFER_LEN];
 
-   DumpGimpleRaw::DumpGimpleRaw(CompilerInstance &_Instance,
-                          const std::string& _outdir_name, const std::string& _InFile, bool _onlyGlobals)
-      : outdir_name(_outdir_name), InFile(_InFile), filename(create_file_name_string(_outdir_name,_InFile)), Instance(_Instance),
-        stream(create_file_name_string(_outdir_name,_InFile), EC, llvm::sys::fs::F_RW), onlyGlobals(_onlyGlobals),
-        DL(0),modulePass(0),
-        last_used_index(0), column(0),
-        last_memory_ssa_vers(std::numeric_limits<int>::max()),
-        last_BB_index(2)
-   {
-      if( EC)
-      {
-         DiagnosticsEngine &D = Instance.getDiagnostics();
-         D.Report(D.getCustomDiagID(DiagnosticsEngine::Error,
-                                    "not able to open the output raw file"));
-
-      }
-      DumpVersion(stream);
-   }
-
 #define DEFTREECODE(SYM, STRING, TYPE, NARGS)   SYM,
 #define DEFGSCODE(SYM, NAME, GSSCODE)	SYM,
    enum class DumpGimpleRaw::tree_codes
@@ -122,6 +103,7 @@ namespace clang
       DEFGSCODE(GETELEMENTPTR, "gimple_assign", GSS_BASE)
       DEFTREECODE (ALLOCAVAR_DECL, "var_decl", tcc_declaration, 0)
       DEFTREECODE(POINTERNULL, "integer_cst", tcc_constant, 0)
+      DEFTREECODE(SIGNEDPOINTERTYPE, "integer_type", tcc_type, 0)
    };
 #undef DEFTREECODE
 #undef DEFGSCODE
@@ -140,6 +122,7 @@ namespace clang
       DEFGSCODE(GETELEMENTPTR, "gimple_assign", GSS_BASE)
       DEFTREECODE(ALLOCAVAR_DECL, "var_decl", tcc_declaration, 0)
       DEFTREECODE(POINTERNULL, "integer_cst", tcc_constant, 0)
+      DEFTREECODE(SIGNEDPOINTERTYPE, "integer_type", tcc_type, 0)
    };
 #undef DEFTREECODE
 #undef DEFGSCODE
@@ -157,6 +140,7 @@ namespace clang
       DEFGSCODE(GETELEMENTPTR, "gimple_assign", GSS_BASE)
       DEFTREECODE(ALLOCAVAR_DECL, "var_decl", tcc_declaration, 0)
       DEFTREECODE(POINTERNULL, "integer_cst", tcc_constant, 0)
+      DEFTREECODE(SIGNEDPOINTERTYPE, "integer_type", tcc_type, 0)
    };
 #undef DEFTREECODE
 #undef DEFGSCODE
@@ -174,6 +158,7 @@ namespace clang
       DEFGSCODE(GETELEMENTPTR, "gimple_assign", GSS_BASE)
       DEFTREECODE(ALLOCAVAR_DECL, "var_decl", tcc_declaration, 0)
       DEFTREECODE(POINTERNULL, "integer_cst", tcc_constant, 0)
+      DEFTREECODE(SIGNEDPOINTERTYPE, "integer_type", tcc_type, 0)
    };
 #undef DEFTREECODE
 #undef DEFGSCODE
@@ -219,6 +204,7 @@ namespace clang
       DEFGSCODE(GETELEMENTPTR, "gimple_assign", GSS_BASE)
       DEFTREECODE(ALLOCAVAR_DECL, "var_decl", tcc_declaration, 0)
       DEFTREECODE(POINTERNULL, "integer_cst", tcc_constant, 0)
+      DEFTREECODE(SIGNEDPOINTERTYPE, "integer_type", tcc_type, 0)
 };
 #undef DEFTREECODE
 #undef END_OF_BASE_TREE_CODE
@@ -236,6 +222,29 @@ namespace clang
      #include "gcc/builtins.def"
    };
 #undef DEF_BUILTIN
+
+
+   DumpGimpleRaw::DumpGimpleRaw(CompilerInstance &_Instance,
+                          const std::string& _outdir_name, const std::string& _InFile, bool _onlyGlobals)
+      : outdir_name(_outdir_name), InFile(_InFile), filename(create_file_name_string(_outdir_name,_InFile)), Instance(_Instance),
+        stream(create_file_name_string(_outdir_name,_InFile), EC, llvm::sys::fs::F_RW), onlyGlobals(_onlyGlobals),
+        DL(0),modulePass(0),
+        last_used_index(0), column(0),
+        SignedPointerTypeReference(0),
+        last_memory_ssa_vers(std::numeric_limits<int>::max()),
+        last_BB_index(2)
+   {
+      if( EC)
+      {
+         DiagnosticsEngine &D = Instance.getDiagnostics();
+         D.Report(D.getCustomDiagID(DiagnosticsEngine::Error,
+                                    "not able to open the output raw file"));
+
+      }
+      DumpVersion(stream);
+      assignCode(&SignedPointerTypeReference, GT(SIGNEDPOINTERTYPE));
+   }
+
    std::string DumpGimpleRaw::getTypeName(const void * t) const
    {
 
@@ -1185,7 +1194,8 @@ namespace clang
          case llvm::Instruction::And  :
          case llvm::Instruction::Or   :
          case llvm::Instruction::Xor  :
-         case llvm::Instruction::PHI :
+         case llvm::Instruction::PHI  :
+         case llvm::Instruction::Ret  :
             return true;
          case llvm::Instruction::ICmp:
          {
@@ -1426,10 +1436,19 @@ namespace clang
    {
       auto isSignedOp = isSignedOperand(inst);
       if(isSignedOp)
-         return build1(GT(NOP_EXPR), AddSignedTag(TREE_TYPE(op)), op);
+      {
+         auto type_operand = TREE_TYPE(op);
+         auto tree_code_op = TREE_CODE(type_operand);
+         if(tree_code_op==GT(POINTER_TYPE))
+         {
+            return build1(GT(NOP_EXPR), &SignedPointerTypeReference, op);
+         }
+         else
+            return build1(GT(NOP_EXPR), AddSignedTag(type_operand), op);
+      }
       else if(isUnsignedOperand(inst) &&
               (CheckSignedTag(TREE_TYPE(op))))
-         return build1(GT(NOP_EXPR), TREE_TYPE(inst), op);
+         return build1(GT(NOP_EXPR), NormalizeSignedTag(TREE_TYPE(op)), op);
       else
          return op;
    }
@@ -1570,7 +1589,13 @@ namespace clang
    const void* DumpGimpleRaw::gimple_return_retval(const void* g)
    {
       const llvm::ReturnInst* ri = reinterpret_cast<const llvm::ReturnInst*>(g);
-      return ri->getReturnValue() ? getOperand(ri->getReturnValue(), ri->getFunction()): nullptr;
+      if(ri->getReturnValue())
+      {
+         auto op = getOperand(ri->getReturnValue(), ri->getFunction());
+         return getSignedOperand(ri, op);
+      }
+      else
+         return nullptr;
    }
 
    const void* DumpGimpleRaw::gimple_switch_index(const void* g)
@@ -1889,6 +1914,8 @@ namespace clang
 
    const void* DumpGimpleRaw::assignCodeType(const llvm::Type*ty)
    {
+      if(reinterpret_cast<const unsigned int*>(ty)==&SignedPointerTypeReference)
+         return ty;
       auto typeId = NormalizeSignedTag(ty)->getTypeID();
       switch(typeId)
       {
@@ -2009,6 +2036,7 @@ namespace clang
       else if(IS_EXPR_CODE_CLASS(code_class))
       {
          const tree_expr* te = reinterpret_cast<const tree_expr*>(t);
+         assert(te->type);
          assert(HAS_CODE(te->type));
          return te->type;
       }
@@ -2031,6 +2059,8 @@ namespace clang
    bool DumpGimpleRaw::TYPE_UNSIGNED(const void*t) const
    {
       tree_codes code = TREE_CODE(t);
+      if(code==GT(SIGNEDPOINTERTYPE))
+         return false;
       if(code==GT(COMPLEX_TYPE))
          llvm_unreachable("unexpected call to TYPE_UNSIGNED");
       const llvm::Type* ty = reinterpret_cast<const llvm::Type*>(t);
@@ -2050,6 +2080,8 @@ namespace clang
 
    int DumpGimpleRaw::TYPE_PRECISION(const void*t) const
    {
+      if( TREE_CODE(t)==GT(SIGNEDPOINTERTYPE))
+         return 32;
       const llvm::Type* ty = reinterpret_cast<const llvm::Type*>(t);
       ty = NormalizeSignedTag(ty);
       auto typeId = ty->getTypeID();
@@ -2086,9 +2118,9 @@ namespace clang
    const void* DumpGimpleRaw::TYPE_MIN_VALUE(const void*t)
    {
       const llvm::Type* Cty = reinterpret_cast<const llvm::Type*>(t);
-      bool isSigned = CheckSignedTag(Cty);
+      bool isSigned = TREE_CODE(t)==GT(SIGNEDPOINTERTYPE) || CheckSignedTag(Cty);
       llvm::Type* ty =  const_cast<llvm::Type*>(NormalizeSignedTag(Cty));
-      auto obj_size = DL->getTypeSizeInBits(ty);
+      auto obj_size = TREE_CODE(t)==GT(SIGNEDPOINTERTYPE) ? 32 : DL->getTypeSizeInBits(ty);
       uint64_t val;
       if(isSigned)
       {
@@ -2096,22 +2128,24 @@ namespace clang
       }
       else
          val = 0;
+      auto context = TREE_CODE(t)==GT(SIGNEDPOINTERTYPE) ? moduleContext : &ty->getContext();
       if(uicTable.find(val) == uicTable.end())
-         uicTable[val] = assignCodeAuto(llvm::ConstantInt::get(llvm::Type::getInt64Ty(ty->getContext()), val, false));
+         uicTable[val] = assignCodeAuto(llvm::ConstantInt::get(llvm::Type::getInt64Ty(*context), val, false));
       return uicTable.find(val)->second;
    }
 
    const void* DumpGimpleRaw::TYPE_MAX_VALUE(const void*t)
    {
       const llvm::Type* Cty = reinterpret_cast<const llvm::Type*>(t);
-      bool isSigned = CheckSignedTag(Cty);
+      bool isSigned = TREE_CODE(t)==GT(SIGNEDPOINTERTYPE) || CheckSignedTag(Cty);
       llvm::Type* ty = const_cast<llvm::Type*>(NormalizeSignedTag(Cty));
-      auto obj_size = DL->getTypeSizeInBits(ty);
+      auto obj_size = TREE_CODE(t)==GT(SIGNEDPOINTERTYPE) ? 32 : DL->getTypeSizeInBits(ty);
       auto maxvalue = llvm::APInt::getMaxValue(std::max((isSigned?obj_size-1ULL:obj_size),1ULL)).getZExtValue();
       if(maxValueITtable.find(t) != maxValueITtable.end())
          maxvalue = maxValueITtable.find(t)->second;
+      auto context = TREE_CODE(t)==GT(SIGNEDPOINTERTYPE) ? moduleContext : &ty->getContext();
       if(uicTable.find(maxvalue) == uicTable.end())
-         uicTable[maxvalue] = assignCodeAuto(llvm::ConstantInt::get(llvm::Type::getInt64Ty(ty->getContext()), maxvalue, false));
+         uicTable[maxvalue] = assignCodeAuto(llvm::ConstantInt::get(llvm::Type::getInt64Ty(*context), maxvalue, false));
       return uicTable.find(maxvalue)->second;
    }
 
@@ -2122,6 +2156,8 @@ namespace clang
 
    const void* DumpGimpleRaw::TYPE_NAME(const void* t)
    {
+      if( TREE_CODE(t)==GT(SIGNEDPOINTERTYPE))
+         return nullptr;
       const llvm::Type* ty = reinterpret_cast<const llvm::Type*>(t);
       ty = NormalizeSignedTag(ty);
       if(ty->isStructTy())
@@ -2143,7 +2179,14 @@ namespace clang
    {
       const llvm::Type* Cty = reinterpret_cast<const llvm::Type*>(t);
       llvm::Type* ty = const_cast<llvm::Type*>(NormalizeSignedTag(Cty));
-      if(ty->isFunctionTy())
+      if( TREE_CODE(t)==GT(SIGNEDPOINTERTYPE))
+      {
+         auto obj_size = 32u;
+         if(uicTable.find(obj_size) == uicTable.end())
+            uicTable[obj_size] = assignCodeAuto(llvm::ConstantInt::get(llvm::Type::getInt32Ty(ty->getContext()), obj_size, false));
+         return uicTable.find(obj_size)->second;
+      }
+      else if(ty->isFunctionTy())
       {
          auto obj_size = 8u;
          if(uicTable.find(obj_size) == uicTable.end())
@@ -2168,6 +2211,8 @@ namespace clang
 
    bool DumpGimpleRaw::TYPE_PACKED(const void*t) const
    {
+      if( TREE_CODE(t)==GT(SIGNEDPOINTERTYPE))
+         return false;
       const llvm::Type* ty = reinterpret_cast<const llvm::Type*>(t);
       ty = NormalizeSignedTag(ty);
       if(ty->isStructTy())
@@ -2178,7 +2223,9 @@ namespace clang
 
    int DumpGimpleRaw::TYPE_ALIGN(const void*t) const
    {
-      const llvm::Type* Cty = reinterpret_cast<const llvm::Type*>(t);
+      if( TREE_CODE(t)==GT(SIGNEDPOINTERTYPE))
+         return 8;
+         const llvm::Type* Cty = reinterpret_cast<const llvm::Type*>(t);
       llvm::Type* ty = const_cast<llvm::Type*>(NormalizeSignedTag(Cty));
       return  std::max(8u,8*DL->getABITypeAlignment(ty));
    }
@@ -3503,6 +3550,7 @@ namespace clang
            break;
          }
 
+         case GT(SIGNEDPOINTERTYPE):
          case GT(INTEGER_TYPE):
          case GT(ENUMERAL_TYPE):
             serialize_int("prec", TYPE_PRECISION(t));
@@ -3858,6 +3906,7 @@ namespace clang
       DL = &M.getDataLayout();
       modulePass=_modulePass;
       auto res = lowerIntrinsics(M);
+      moduleContext = &M.getContext();
       for(const auto& globalVar : M.getGlobalList())
       {
          llvm::errs() << "Found global name: " << globalVar.getName() << "|" << ValueTyNames[globalVar.getValueID()] << "\n";
