@@ -5537,6 +5537,18 @@ std::string tree_helper::print_type(const tree_managerConstRef TM, unsigned int 
          }
          break;
       }
+      case template_type_parm_K:
+      {
+         template_type_parm *ttp = GetPointer<template_type_parm>(node_type);
+         res += print_type(TM, GET_INDEX_NODE(ttp->name), global, print_qualifiers);
+         break;
+      }
+      case typename_type_K:
+      {
+         typename_type *tt = GetPointer<typename_type>(node_type);
+         res += print_type(TM, GET_INDEX_NODE(tt->name), global, print_qualifiers);
+         break;
+      }
       case binfo_K:
       case block_K:
       case call_expr_K:
@@ -5558,13 +5570,11 @@ std::string tree_helper::print_type(const tree_managerConstRef TM, unsigned int 
       case target_expr_K:
       case target_mem_ref_K:
       case target_mem_ref461_K:
-      case template_type_parm_K:
       case type_argument_pack_K:
       case translation_unit_decl_K:
       case template_decl_K:
       case using_decl_K:
       case tree_vec_K:
-      case typename_type_K:
       case var_decl_K:
       case vec_cond_expr_K:
       case vec_perm_expr_K:

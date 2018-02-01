@@ -2070,6 +2070,8 @@ bool tree_manager::check_for_decl(const tree_nodeRef tn, const tree_managerRef T
             if(fd->builtin_flag)
             {
                symbol_name = GetPointer<identifier_node>(GET_NODE(dn->name))->strg;
+               if(boost::algorithm::starts_with(symbol_name, "__builtin_"))
+                  symbol_name = symbol_name.substr(strlen("__builtin_"));
 //               if(fd->undefined_flag && symbol_name.find("__builtin_") == std::string::npos)
 //                  symbol_name = "__builtin_" + symbol_name;
             }

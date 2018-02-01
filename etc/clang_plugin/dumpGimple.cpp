@@ -72,6 +72,8 @@
 #include <iomanip>
 #include <cxxabi.h>
 
+#include <float.h>
+
 static std::string create_file_name_string(const std::string &outdir_name, const std::string & original_filename)
 {
    std::size_t found = original_filename.find_last_of("/\\");
@@ -1188,6 +1190,7 @@ namespace clang
          case llvm::Instruction::ZExt :
          case llvm::Instruction::UIToFP:
          case llvm::Instruction::IntToPtr:
+         case llvm::Instruction::PtrToInt:
          case llvm::Instruction::Add  :
          case llvm::Instruction::Sub  :
          case llvm::Instruction::Mul  :
@@ -1206,6 +1209,8 @@ namespace clang
                case llvm::ICmpInst::ICMP_UGE:
                case llvm::ICmpInst::ICMP_ULT:
                case llvm::ICmpInst::ICMP_ULE:
+               case llvm::ICmpInst::ICMP_EQ:
+               case llvm::ICmpInst::ICMP_NE:
                   return true;
                default:
                   return false;
@@ -2746,7 +2751,9 @@ namespace clang
 
       llvm::APInt Mantissa = API & llvm::APInt::getAllOnesValue(nbitsMan).zext(API.getBitWidth());
       if(ExpBiased != 0)
+      {
          Mantissa.setBit(nbitsMan);
+      }
 
       size_t digits = size_buff - strlen(buffer) - (val.isNegative()?1:0) - 4 - 1;
       assert(digits <= size_buff);
@@ -2757,7 +2764,7 @@ namespace clang
       *current++ = 'x';
       *current++ = '0';
       *current++ = '.';
-      for (int index1 = (nbitsMan/4)-!(nbitsMan%4); index1 >= 0 && digits >0; --index1)
+      for (int index1 = ((nbitsMan+1)/4)-!((nbitsMan+1)%4); index1 >= 0 && digits >0; --index1)
       {
           *current++ = "0123456789abcdef"[(Mantissa.lshr(index1*4).getLoBits(4).getZExtValue())];
          --digits;
@@ -2790,7 +2797,8 @@ namespace clang
       else
       {
          bool isDouble = &d.getSemantics() == &llvm::APFloat::IEEEdouble();
-         snprintf(buffer, LOCAL_BUFFER_LEN, "%f", (isDouble ? d.convertToDouble():d.convertToFloat()));
+         snprintf(buffer, LOCAL_BUFFER_LEN, "%.*g", (isDouble ? __DBL_DECIMAL_DIG__ : __FLT_DECIMAL_DIG__), (isDouble ? d.convertToDouble():d.convertToFloat()));
+         //real_to_hexadecimal(buffer,LOCAL_BUFFER_LEN,d);
          stream << "valr: \""<< std::string(buffer) << "\" ";
       }
       {
