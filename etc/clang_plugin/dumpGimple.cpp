@@ -2096,8 +2096,10 @@ namespace clang
       switch(typeId)
       {
          case llvm::Type::IntegerTyID:
-            return cast<llvm::IntegerType>(ty)->getBitWidth();
-
+         {
+            llvm::Type* casted_ty = const_cast<llvm::Type*>(ty);
+            return DL->getTypeAllocSizeInBits(casted_ty);
+         }
          case llvm::Type::HalfTyID:
          case llvm::Type::FloatTyID:
          case llvm::Type::DoubleTyID:
@@ -2128,7 +2130,7 @@ namespace clang
       const llvm::Type* Cty = reinterpret_cast<const llvm::Type*>(t);
       bool isSigned = TREE_CODE(t)==GT(SIGNEDPOINTERTYPE) || CheckSignedTag(Cty);
       llvm::Type* ty =  const_cast<llvm::Type*>(NormalizeSignedTag(Cty));
-      auto obj_size = TREE_CODE(t)==GT(SIGNEDPOINTERTYPE) ? 32 : DL->getTypeSizeInBits(ty);
+      auto obj_size = TREE_CODE(t)==GT(SIGNEDPOINTERTYPE) ? 32 : DL->getTypeAllocSizeInBits(ty);
       uint64_t val;
       if(isSigned)
       {
@@ -2147,7 +2149,7 @@ namespace clang
       const llvm::Type* Cty = reinterpret_cast<const llvm::Type*>(t);
       bool isSigned = TREE_CODE(t)==GT(SIGNEDPOINTERTYPE) || CheckSignedTag(Cty);
       llvm::Type* ty = const_cast<llvm::Type*>(NormalizeSignedTag(Cty));
-      auto obj_size = TREE_CODE(t)==GT(SIGNEDPOINTERTYPE) ? 32 : DL->getTypeSizeInBits(ty);
+      auto obj_size = TREE_CODE(t)==GT(SIGNEDPOINTERTYPE) ? 32 : DL->getTypeAllocSizeInBits(ty);
       auto maxvalue = llvm::APInt::getMaxValue(std::max((isSigned?obj_size-1ULL:obj_size),1ULL)).getZExtValue();
       if(maxValueITtable.find(t) != maxValueITtable.end())
          maxvalue = maxValueITtable.find(t)->second;
@@ -2509,27 +2511,47 @@ namespace clang
       llvm::LazyValueInfo &LVI = modulePass->getAnalysis<llvm::LazyValueInfoWrapperPass>(*currentFunction).getLVI();
       if(inst->getType()->isIntegerTy())
       {
-         llvm::ConstantRange range = LVI.getConstantRange(inst, BB, inst);
-         if(!range.isFullSet())
+         auto ty = inst->getType();
+         auto obj_size = ty->isSized() ? DL->getTypeAllocSizeInBits(ty) : 8ULL;
+         auto active_size = ty->isSized() ? DL->getTypeSizeInBits(ty) : 8ULL;
+         auto isSigned = CheckSignedTag(TREE_TYPE(t));
+         if(obj_size != active_size)
          {
-            auto isSigned = CheckSignedTag(TREE_TYPE(t));
-//            llvm::errs() << "Range:\n";
-//            range.print(llvm::errs());
-//            llvm::errs() << range.getBitWidth() << "\n";
-            auto low = range.getLower();
-//            llvm::errs() << "Min:\n";
-//            low.print(llvm::errs(), low.isNegative());
-//            llvm::errs() << (isSigned?"T":"F") << "\n";
-            if((!isSigned && range.getUpper().uge(range.getLower())) || (isSigned && range.getUpper().sge(range.getLower())))
+            uint64_t val;
+            if(isSigned)
             {
-//               low.print(llvm::errs(), isSigned);
-               return assignCodeAuto(llvm::ConstantInt::get(inst->getContext(), low));
+               val = -(1ULL << (active_size-1));
+            }
+            else
+               val = 0;
+            auto context = TREE_CODE(t)==GT(SIGNEDPOINTERTYPE) ? moduleContext : &ty->getContext();
+            if(uicTable.find(val) == uicTable.end())
+               uicTable[val] = assignCodeAuto(llvm::ConstantInt::get(llvm::Type::getInt64Ty(*context), val, false));
+            return uicTable.find(val)->second;
+         }
+         else
+         {
+            llvm::ConstantRange range = LVI.getConstantRange(inst, BB, inst);
+            if(!range.isFullSet())
+            {
+               //            llvm::errs() << "Range:\n";
+               //            range.print(llvm::errs());
+               //            llvm::errs() << range.getBitWidth() << "\n";
+               auto low = range.getLower();
+               //            llvm::errs() << "Min:\n";
+               //            low.print(llvm::errs(), low.isNegative());
+               //            llvm::errs() << (isSigned?"T":"F") << "\n";
+               if((!isSigned && range.getUpper().uge(range.getLower())) || (isSigned && range.getUpper().sge(range.getLower())))
+               {
+                  //               low.print(llvm::errs(), isSigned);
+                  return assignCodeAuto(llvm::ConstantInt::get(inst->getContext(), low));
+               }
+               else
+                  return nullptr;
             }
             else
                return nullptr;
          }
-         else
-            return nullptr;
       }
       else
          return nullptr;
@@ -2546,24 +2568,41 @@ namespace clang
       llvm::LazyValueInfo &LVI = modulePass->getAnalysis<llvm::LazyValueInfoWrapperPass>(*currentFunction).getLVI();
       if(inst->getType()->isIntegerTy())
       {
-         llvm::ConstantRange range = LVI.getConstantRange(inst, BB, inst);
-         if(!range.isFullSet())
+         auto ty = inst->getType();
+         auto obj_size = ty->isSized() ? DL->getTypeAllocSizeInBits(ty) : 8ULL;
+         auto active_size = ty->isSized() ? DL->getTypeSizeInBits(ty) : 8ULL;
+         auto isSigned = CheckSignedTag(TREE_TYPE(t));
+         if(obj_size != active_size)
          {
-            auto isSigned = CheckSignedTag(TREE_TYPE(t));
-            auto low = range.getLower();
-//            llvm::errs() << "Max:\n";
-//            range.getUpper().print(llvm::errs(), range.getUpper().isNegative());
-//            llvm::errs() << (isSigned?"T":"F") << "\n";
-            if((!isSigned && range.getUpper().uge(range.getLower())) || (isSigned && range.getUpper().sge(range.getLower())))
+            auto maxvalue = llvm::APInt::getMaxValue(std::max((isSigned?active_size-1ULL:active_size),1ULL)).getZExtValue();
+            if(maxValueITtable.find(t) != maxValueITtable.end())
+               maxvalue = maxValueITtable.find(t)->second;
+            auto context = TREE_CODE(t)==GT(SIGNEDPOINTERTYPE) ? moduleContext : &ty->getContext();
+            if(uicTable.find(maxvalue) == uicTable.end())
+               uicTable[maxvalue] = assignCodeAuto(llvm::ConstantInt::get(llvm::Type::getInt64Ty(*context), maxvalue, false));
+            return uicTable.find(maxvalue)->second;
+         }
+         else
+         {
+            llvm::ConstantRange range = LVI.getConstantRange(inst, BB, inst);
+            if(!range.isFullSet())
             {
-//               range.getUpper().print(llvm::errs(), isSigned);
-               return assignCodeAuto(llvm::ConstantInt::get(inst->getContext(), range.getUpper()-1));
+               auto isSigned = CheckSignedTag(TREE_TYPE(t));
+               auto low = range.getLower();
+               //            llvm::errs() << "Max:\n";
+               //            range.getUpper().print(llvm::errs(), range.getUpper().isNegative());
+               //            llvm::errs() << (isSigned?"T":"F") << "\n";
+               if((!isSigned && range.getUpper().uge(range.getLower())) || (isSigned && range.getUpper().sge(range.getLower())))
+               {
+                  //               range.getUpper().print(llvm::errs(), isSigned);
+                  return assignCodeAuto(llvm::ConstantInt::get(inst->getContext(), range.getUpper()-1));
+               }
+               else
+                  return nullptr;
             }
             else
                return nullptr;
          }
-         else
-            return nullptr;
       }
       else
          return nullptr;
@@ -2602,13 +2641,11 @@ namespace clang
                   res.push_back(std::make_pair(idx,valu));
                }
             }
-            llvm::errs() << "ConstantAggregateZeroVal:" << val->getNumElements()<<"\n";
             return res;
          }
          case llvm::Value::ConstantStructVal:
          {
             const llvm::ConstantStruct* val = reinterpret_cast<const llvm::ConstantStruct*>(t);
-            llvm::errs() << "ConstantStructVal\n";
             const void * ty = TREE_TYPE(t);
             for(unsigned index = 0; index < val->getNumOperands(); ++index)
             {
@@ -2622,7 +2659,6 @@ namespace clang
          case llvm::Value::ConstantDataArrayVal:
          case llvm::Value::ConstantDataVectorVal:
          {
-            llvm::errs() << "ConstantData\n";
             const llvm::ConstantDataSequential* val = reinterpret_cast<const llvm::ConstantDataSequential*>(t);
             for(unsigned index = 0; index < val->getNumElements(); ++index)
             {
@@ -2636,7 +2672,6 @@ namespace clang
          }
          case llvm::Value::ConstantArrayVal:
          {
-            llvm::errs() << "ConstantArrayVal\n";
             const llvm::ConstantArray* val = reinterpret_cast<const llvm::ConstantArray*>(t);
             for(unsigned index = 0; index < val->getNumOperands(); ++index)
             {
