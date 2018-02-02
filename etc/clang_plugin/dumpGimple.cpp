@@ -1148,12 +1148,13 @@ namespace clang
    }
 
    template<class InstructionOrConstantExpr>
-   bool DumpGimpleRaw::isSignedOperand(const InstructionOrConstantExpr* inst) const
+   bool DumpGimpleRaw::isSignedOperand(const InstructionOrConstantExpr* inst, unsigned index) const
    {
       auto opcode = inst->getOpcode();
       switch(opcode)
       {
          case llvm::Instruction::AShr :
+            return index==0;
          case llvm::Instruction::SDiv :
          case llvm::Instruction::SRem :
          case llvm::Instruction::SExt :
@@ -1184,10 +1185,12 @@ namespace clang
       auto opcode = inst->getOpcode();
       switch(opcode)
       {
+         case llvm::Instruction::Shl :
          case llvm::Instruction::LShr :
          case llvm::Instruction::UDiv :
          case llvm::Instruction::URem :
          case llvm::Instruction::ZExt :
+         case llvm::Instruction::Trunc:
          case llvm::Instruction::UIToFP:
          case llvm::Instruction::IntToPtr:
          case llvm::Instruction::PtrToInt:
@@ -1437,9 +1440,9 @@ namespace clang
    }
 
    template<class InstructionOrConstantExpr>
-   const void* DumpGimpleRaw::getSignedOperand(const InstructionOrConstantExpr* inst, const void* op)
+   const void* DumpGimpleRaw::getSignedOperand(const InstructionOrConstantExpr* inst, const void* op, unsigned index)
    {
-      auto isSignedOp = isSignedOperand(inst);
+      auto isSignedOp = isSignedOperand(inst, index);
       if(isSignedOp)
       {
          auto type_operand = TREE_TYPE(op);
@@ -1461,7 +1464,7 @@ namespace clang
    const void * DumpGimpleRaw::getSignedOperandIndex(const InstructionOrConstantExpr* inst, unsigned index, const llvm::Function *currentFunction)
    {
       auto op = getOperand(inst->getOperand(index), currentFunction);
-      return getSignedOperand(inst, op);
+      return getSignedOperand(inst, op, index);
    }
 
    const void * DumpGimpleRaw::gimple_assign_rhsIndex(const void * g, unsigned index)
@@ -1524,7 +1527,7 @@ namespace clang
    const void* DumpGimpleRaw::gimple_phi_arg_def(const void* g, unsigned int index)
    {
       const llvm::PHINode* phi = reinterpret_cast<const llvm::PHINode*>(g);
-      return getSignedOperand(phi, getOperand(phi->getIncomingValue(index), phi->getFunction()));
+      return getSignedOperand(phi, getOperand(phi->getIncomingValue(index), phi->getFunction()), 0);
    }
 
    const void* DumpGimpleRaw::gimple_phi_virtual_arg_def(const void* g, unsigned int index)
@@ -1597,7 +1600,7 @@ namespace clang
       if(ri->getReturnValue())
       {
          auto op = getOperand(ri->getReturnValue(), ri->getFunction());
-         return getSignedOperand(ri, op);
+         return getSignedOperand(ri, op, 0);
       }
       else
          return nullptr;
@@ -2574,10 +2577,38 @@ namespace clang
       switch(vid)
       {
          case llvm::Value::ConstantAggregateZeroVal:
+         {
+            const llvm::ConstantAggregateZero* val = reinterpret_cast<const llvm::ConstantAggregateZero*>(t);
+            auto type = val->getType();
+            if(dyn_cast<llvm::ArrayType>(type) || dyn_cast<llvm::VectorType>(type))
+            {
+               for(unsigned index = 0; index < val->getNumElements(); ++index)
+               {
+                  if(uicTable.find(index) == uicTable.end())
+                     uicTable[index] = assignCodeAuto(llvm::ConstantInt::get(llvm::Type::getInt32Ty(llvm_obj->getContext()), index, false));
+                  const void* idx =  uicTable.find(index)->second;
+                  const void* valu=getOperand(val->getSequentialElement(), nullptr);
+                  res.push_back(std::make_pair(idx,valu));
+               }
+            }
+            else
+            {
+               const void * ty = TREE_TYPE(t);
+               for(unsigned index = 0; index < val->getNumElements(); ++index)
+               {
+                  auto op = val->getSequentialElement();
+                  const void* valu=getOperand(op,nullptr);
+                  const void* idx =  GET_FIELD_DECL(TREE_TYPE(assignCodeAuto(op)), index, ty);
+                  res.push_back(std::make_pair(idx,valu));
+               }
+            }
+            llvm::errs() << "ConstantAggregateZeroVal:" << val->getNumElements()<<"\n";
             return res;
+         }
          case llvm::Value::ConstantStructVal:
          {
             const llvm::ConstantStruct* val = reinterpret_cast<const llvm::ConstantStruct*>(t);
+            llvm::errs() << "ConstantStructVal\n";
             const void * ty = TREE_TYPE(t);
             for(unsigned index = 0; index < val->getNumOperands(); ++index)
             {
@@ -2591,6 +2622,7 @@ namespace clang
          case llvm::Value::ConstantDataArrayVal:
          case llvm::Value::ConstantDataVectorVal:
          {
+            llvm::errs() << "ConstantData\n";
             const llvm::ConstantDataSequential* val = reinterpret_cast<const llvm::ConstantDataSequential*>(t);
             for(unsigned index = 0; index < val->getNumElements(); ++index)
             {
@@ -2604,6 +2636,7 @@ namespace clang
          }
          case llvm::Value::ConstantArrayVal:
          {
+            llvm::errs() << "ConstantArrayVal\n";
             const llvm::ConstantArray* val = reinterpret_cast<const llvm::ConstantArray*>(t);
             for(unsigned index = 0; index < val->getNumOperands(); ++index)
             {

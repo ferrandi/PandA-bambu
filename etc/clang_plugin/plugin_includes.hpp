@@ -305,7 +305,7 @@ namespace clang {
          bool isSignedResult(const InstructionOrConstantExpr*inst) const;
          const llvm::Type* getCondSignedResult(const llvm::Value *operand, const llvm::Type * type) const;
          template<class InstructionOrConstantExpr>
-         bool isSignedOperand(const InstructionOrConstantExpr* inst) const;
+         bool isSignedOperand(const InstructionOrConstantExpr* inst, unsigned index) const;
          template<class InstructionOrConstantExpr>
          bool isUnsignedOperand(const InstructionOrConstantExpr* inst) const;
          const void* getSSA(const llvm::Value *operand, const void* def_stmt, const llvm::Function * currentFunction, bool isDefault);
@@ -325,7 +325,7 @@ namespace clang {
          };
          std::map<const void*, alloca_var> index2alloca_var;
          template<class InstructionOrConstantExpr>
-         const void* getSignedOperand(const InstructionOrConstantExpr* inst, const void* op);
+         const void* getSignedOperand(const InstructionOrConstantExpr* inst, const void* op, unsigned index);
          template<class InstructionOrConstantExpr>
          const void* getSignedOperandIndex(const InstructionOrConstantExpr* inst, unsigned index, const llvm::Function *currentFunction);
          const void* gimple_assign_rhsIndex(const void * g, unsigned index);
