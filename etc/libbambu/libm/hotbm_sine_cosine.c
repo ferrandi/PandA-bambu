@@ -956,7 +956,7 @@ float ADD_BUILTIN_PREFIX(cosf)(float x)
 
 #ifndef __llvm__
 float _Complex
-__builtin_cexpif(float x)
+ADD_BUILTIN_PREFIX(cexpif)(float x)
 {
     unsigned int y;
     float _Complex  Res;
