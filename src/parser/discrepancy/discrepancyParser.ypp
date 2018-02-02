@@ -267,8 +267,8 @@ context_id  : CALL_ID UNUMBER CONTEXT LL_UNUMBER CALLED_ID UNUMBER
 
                THROW_ASSERT(Discr->unfolded_v_to_scope.find(vertex_stack.top()) !=
                      Discr->unfolded_v_to_scope.end(),
-                     "can't find scope for new vertex " +
-                     Cget_node_info<UnfoldedFunctionInfo>(vertex_stack.top(), Discr->DiscrepancyCallGraph)->f_id);
+                     std::string("can't find scope for new vertex ") +
+                     STR(Cget_node_info<UnfoldedFunctionInfo>(vertex_stack.top(), Discr->DiscrepancyCallGraph)->f_id));
 
                Discr->context_to_scope[new_context] = Discr->unfolded_v_to_scope.at(vertex_stack.top());
             };
