@@ -153,7 +153,8 @@
       <cmd name="puts $ofile_report &quot;      &lt;item stringID=\\&quot;ALTERA_DSP\\&quot; value=\\&quot;$dsp_usage\\&quot;/&gt;&quot;"/>
       <cmd name="set alm_usage [get_fitter_resource_usage -alm -used]"/>
       <cmd name="puts $ofile_report &quot;      &lt;item stringID=\\&quot;ALTERA_ALM\\&quot; value=\\&quot;$alm_usage\\&quot;/&gt;&quot;"/>
-      <cmd name="set domain_list [get_clock_fmax_info]\nforeach domain $domain_list {\n  set name [lindex $domain 0]\n  set fmax [lindex $domain 1]\n  set restricted_fmax [lindex $domain 2]\n  puts $ofile_report &quot;      &lt;item stringID=\\&quot;ALTERA_FMAX\\&quot; value=\\&quot;$fmax\\&quot;/&gt;&quot;\n  puts $ofile_report &quot;      &lt;item stringID=\\&quot;ALTERA_FMAX_RESTRICTED\\&quot; value=\\&quot;$restricted_fmax\\&quot;/&gt;&quot;\n}"/>
+      <cmd name="set slack [lindex [report_timing] 1]"/>
+      <cmd name="puts $ofile_report &quot;      &lt;item stringID=\\&quot;SLACK\&quot; value=\\&quot;$slack\\&quot;/&gt;&quot;"/>
       <cmd name="puts $ofile_report &quot;    &lt;/section&gt;&quot;"/>
       <cmd name="puts $ofile_report &quot;  &lt;/application&gt;&quot;"/>
       <cmd name="puts $ofile_report &quot;&lt;/document&gt;&quot;"/>
