@@ -175,7 +175,7 @@ void TestVectorParser::ParseXMLFile(
             for(const auto function_parameter : behavioral_helper->get_parameters())
             {
                std::string param = behavioral_helper->PrintVariable(function_parameter);
-               PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Parameter: " + param + (behavioral_helper->is_a_pointer(function_parameter) ? " (memory access)" : " (input value)"));
+               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Parameter: " + param + (behavioral_helper->is_a_pointer(function_parameter) ? " (memory access)" : " (input value)"));
                if ((Enode)->get_attribute(param))
                {
                   test_vector[param] = boost::lexical_cast<std::string>((Enode)->get_attribute(param)->get_value());
@@ -184,6 +184,12 @@ void TestVectorParser::ParseXMLFile(
                {
                   THROW_ERROR("Missing input value for parameter: " + param);
                }
+            }
+            if(behavioral_helper->GetFunctionReturnType(function_id) and ((Enode)->get_attribute("return")))
+            {
+               HLSMgr->RSim->results_available = true;
+               test_vector["return"] = ((Enode)->get_attribute("return")->get_value());
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Expected return value is " + test_vector["return"]);
             }
             test_vectors.emplace_back(std::move(test_vector));
          }
@@ -259,7 +265,7 @@ DesignFlowStep_Status TestVectorParser::Exec()
    size_t n_vectors =
 #endif
    ParseTestVectors(HLSMgr->RSim->test_vectors);
-   PRINT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "Number of input test vectors: " + n_vectors);
+   INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "Number of input test vectors: " + STR(n_vectors));
    return DesignFlowStep_Status::SUCCESS;
 }
 

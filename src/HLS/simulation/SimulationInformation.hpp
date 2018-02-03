@@ -47,6 +47,9 @@ class SimulationInformation {
 
       /// average number of cycles of the executed simulations
       unsigned long long avg_n_cycles = 0;
+
+      /// results available
+      bool results_available = false;
 };
 
 typedef refcount<SimulationInformation> SimulationInformationRef;

@@ -91,8 +91,6 @@ class TestbenchGenerationBaseStep : public HLS_step
       ///output directory
       const std::string output_directory;
 
-      const std::string c_testbench_basename;
-
       ///testbench basename
       std::string testbench_basename;
 
@@ -230,7 +228,7 @@ class TestbenchGenerationBaseStep : public HLS_step
        * Declared protected to prevent direct instantiation. Use
        * Create() factory methods instead.
        */
-      TestbenchGenerationBaseStep(const ParameterConstRef Param, const HLS_managerRef AppM, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type, const std::string&c_testbench_basename = "values");
+      TestbenchGenerationBaseStep(const ParameterConstRef Param, const HLS_managerRef AppM, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type);
 
    public:
       /**
@@ -238,24 +236,8 @@ class TestbenchGenerationBaseStep : public HLS_step
        */
       virtual ~TestbenchGenerationBaseStep();
 
-      void ComputeRelationships
-      (
-         DesignFlowStepSet & design_flow_step_set,
-         const DesignFlowStep::RelationshipType relationship_type
-      );
-
       static
       std::string print_var_init(const tree_managerConstRef TreeM, unsigned int var, const memoryRef mem);
-
-      /**
-       * Compiles and executes the C testbench, on top of which the hdl
-       * testbench is based. The execution of the C testbench generates a file
-       * containing the results, which is later used to generate the hdl
-       * testbench. The hdl testbench includes checks to match the hdl test
-       * results against the C testbench test results. If they don't match the
-       * simulation fails.
-       */
-      void exec_C_testbench();
 
       /**
        * Execute the step

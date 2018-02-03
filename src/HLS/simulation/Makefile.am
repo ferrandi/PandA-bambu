@@ -44,8 +44,9 @@ noinst_HEADERS = \
    testbench_generation_base_step.hpp \
    wishbone_interface_testbench.hpp \
    test_vector_parser.hpp \
-	testbench_memory_allocation.hpp \
-	SimulationInformation.hpp
+   testbench_memory_allocation.hpp \
+   SimulationInformation.hpp \
+   testbench_values_c_generation.hpp
 
 lib_simulation_la_SOURCES = \
    minimal_interface_testbench.cpp \
@@ -53,7 +54,8 @@ lib_simulation_la_SOURCES = \
    testbench_generation_base_step.cpp \
    wishbone_interface_testbench.cpp \
    test_vector_parser.cpp \
-	testbench_memory_allocation.cpp
+   testbench_memory_allocation.cpp \
+   testbench_values_c_generation.cpp
 
 #DOCUMENTATION STUFF
 
