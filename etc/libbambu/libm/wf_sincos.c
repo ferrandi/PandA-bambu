@@ -110,7 +110,7 @@ void sincos(double x, double *sinx, double *cosx)
 
 #ifndef __llvm__
 float _Complex
-__builtin_cexpif (float x)
+cexpif (float x)
 {
   float _Complex  Res;
   int ix;

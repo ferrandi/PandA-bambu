@@ -7,7 +7,7 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
@@ -512,7 +512,7 @@ void tree_manager::collapse_into(const unsigned int & funID, std::unordered_map<
 
                // This check is needed to avoid situations in which variables are modified internally to the conditional statement
                // An example is the ++ (or --) operator. In such case the collapsing procedure has to be stopped (break).
-               // The control is carried out in the following way: if almost one instruction which is between the conditional 
+               // The control is carried out in the following way: if almost one instruction which is between the conditional
                // expression and the current gimple_modify_statement (ssa_name definition) has virtual operands, then the
                // collapsing procedure stops.
                bool in_between = false;
@@ -2000,7 +2000,7 @@ void tree_manager::merge_tree_managers(const tree_managerRef source_tree_manager
    for(std::unordered_set<unsigned int>::const_iterator it_to_be_visited = to_be_visited.begin(); it_to_be_visited_end != it_to_be_visited; ++it_to_be_visited)
       source_tree_manager->get_tree_node_const(*it_to_be_visited)->visit(&TNR);
 
-   ///compute the vertexes reached from all function_decl of source_tree_manager 
+   ///compute the vertexes reached from all function_decl of source_tree_manager
    for(std::map<unsigned int, tree_nodeRef>::const_iterator it = source_tree_manager->function_decl_nodes.begin(); it != source_tree_manager->function_decl_nodes.end(); ++it)
    {
       tree_nodeRef curr_tn = it->second;
@@ -2088,6 +2088,8 @@ bool tree_manager::check_for_decl(const tree_nodeRef tn, const tree_managerRef T
    {
       THROW_ASSERT(GET_NODE(dn->name)->get_kind() == identifier_node_K, "expected an identifier_node: " + STR(GET_NODE(dn->name)->get_kind_text()) + " " + STR(node_id));
       symbol_name = GetPointer<identifier_node>(GET_NODE(dn->name))->strg;
+      if(boost::algorithm::starts_with(symbol_name, "__builtin_"))
+         symbol_name = symbol_name.substr(strlen("__builtin_"));
 //      if(fd && fd->undefined_flag && fd->builtin_flag && symbol_name.find("__builtin_") == std::string::npos)
 //            symbol_name = "__builtin_" + symbol_name;
    }
