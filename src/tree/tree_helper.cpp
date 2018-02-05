@@ -852,6 +852,8 @@ std::string tree_helper::print_function_name(const tree_managerConstRef TM, cons
       THROW_ERROR(std::string("Node not yet supported ") + name->get_kind_text());
 //   if(fd && fd->undefined_flag && fd->builtin_flag && res.find("__builtin_") == std::string::npos)
 //      res = "__builtin_" + res;
+   if(fd->builtin_flag && fd->body && !TM->is_top_function(fd))
+      res = "__internal_" + res;
    return res;
 }
 
