@@ -47,6 +47,8 @@
 #include "clang/Sema/Sema.h"
 #include "llvm/Support/raw_ostream.h"
 
+#include <cxxabi.h>
+
 namespace llvm {
    struct clang40_plugin_DoNotExposeGlobalsPass;
 }
@@ -130,6 +132,27 @@ namespace llvm {
          {
             initializeLoopPassPass(*PassRegistry::getPassRegistry());
          }
+         std::string getDemangled(const std::string& declname)
+         {
+            int status;
+            char * demangled_outbuffer = abi::__cxa_demangle(declname.c_str(), NULL, NULL, &status);
+            if(status==0)
+            {
+               std::string res=declname;
+               if(std::string(demangled_outbuffer).find_last_of('(') != std::string::npos)
+               {
+                  res = demangled_outbuffer;
+                  auto parPos = res.find('(');
+                  assert(parPos != std::string::npos);
+                  res = res.substr(0,parPos);
+               }
+               free(demangled_outbuffer);
+               return res;
+            }
+            else
+               assert(demangled_outbuffer==nullptr);
+            return declname;
+         }
          bool runOnModule(Module &M)
          {
             bool changed = false;
@@ -151,13 +174,21 @@ namespace llvm {
                   globalVar.setLinkage(llvm::GlobalValue::InternalLinkage);
                }
             }
-            for(const auto& fun : M.getFunctionList())
+            for(auto& fun : M.getFunctionList())
             {
                if(fun.isIntrinsic())
                   llvm::errs() << "Function intrinsic skipped: " << fun.getName()<< "\n";
                else
                {
-                  llvm::errs() << "Found function: " << fun.getName() << "\n";
+                  auto funName = fun.getName();
+                  auto demangled = getDemangled(funName);
+                  llvm::errs() << "Found function: " << funName << "|" << demangled << "\n";
+                  if (!fun.hasInternalLinkage() && funName != TopFunctionNmae && demangled != TopFunctionNmae)
+                  {
+                     llvm::errs() << "it becomes internal\n";
+                     changed = true;
+                     fun.setLinkage(llvm::GlobalValue::InternalLinkage);
+                  }
                }
             }
             return changed;

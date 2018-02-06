@@ -1253,9 +1253,8 @@ tree_nodeRef tree_helper::find_obj_type_ref_function(const tree_nodeRef tn)
       {
          for(std::vector<tree_nodeRef>::const_iterator x = rt->list_of_fncs.begin(); x != rt->list_of_fncs.end(); ++x)
          {
-            THROW_ASSERT(GET_NODE(*x)->get_kind() == function_decl_K || GET_NODE(*x)->get_kind() == template_decl_K, "expected a function decl or a template_decl");
             function_decl* fd = GetPointer<function_decl>(GET_NODE(*x));
-            if(GET_INDEX_NODE(fd->type) == function_type)
+            if(fd && GET_INDEX_NODE(fd->type) == function_type)
                return *x;
          }
       }
