@@ -484,7 +484,8 @@ bool short_circuit_taf::create_gimple_cond(unsigned int bb1, unsigned int bb2, b
          " type_node2: " + STR(type_node2) + " is " + type_node2->get_kind_text());
    unsigned int type_index2;
    tree_helper::get_type_node(GET_NODE(ce2->op0), type_index2);
-   THROW_ASSERT(type_index == type_index2, "Different types " + STR(TM->CGetTreeNode(type_index)) + " vs " + STR(TM->CGetTreeNode(type_index2)) + " in " + ce1->ToString() + " and " + ce2->ToString());
+   //the following condition cannot be guaranteed
+   //THROW_ASSERT(type_index == type_index2, "Different types " + STR(TM->CGetTreeNode(type_index)) + " vs " + STR(TM->CGetTreeNode(type_index2)) + " in " + ce1->ToString() + " and " + ce2->ToString());
    /// create the ssa_var representing the condition for bb2
    unsigned int ssa2_vers = TM->get_next_vers();
    unsigned int ssa2_node_nid = TM->new_tree_node_id();
