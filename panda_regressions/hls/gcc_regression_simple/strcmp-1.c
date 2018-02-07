@@ -25,7 +25,7 @@
 static union {
   unsigned char buf[MAX_LENGTH];
   long long align_int;
-  long double align_fp;
+  double align_fp;
 } u1, u2;
 
 void
