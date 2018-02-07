@@ -402,14 +402,11 @@ void TestbenchGenerationBaseStep::exec_C_testbench()
    THROW_ASSERT(top_function_ids.size() == 1, "Multiple top functions");
    const auto top_function_id= *(top_function_ids.begin());
    const auto top_function_name = HLSMgr->CGetFunctionBehavior(top_function_id)->CGetBehavioralHelper()->get_function_name();
-#if HAVE_HLS_BUILT && HAVE_EXPERIMENTAL
    if (parameters->isOption(OPT_discrepancy) and parameters->getOption<bool>(OPT_discrepancy))
    {
       ///Nothing to do
    }
-   else
-#endif
-   if(top_function_name != "main")
+   else if(top_function_name != "main")
    {
       if(parameters->isOption(OPT_pretty_print))
       {
