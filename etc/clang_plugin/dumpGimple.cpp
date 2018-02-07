@@ -2635,7 +2635,7 @@ namespace clang
                const void * ty = TREE_TYPE(t);
                for(unsigned index = 0; index < val->getNumElements(); ++index)
                {
-                  auto op = val->getSequentialElement();
+                  auto op = val->getStructElement(index);
                   const void* valu=getOperand(op,nullptr);
                   const void* idx =  GET_FIELD_DECL(TREE_TYPE(assignCodeAuto(op)), index, ty);
                   res.push_back(std::make_pair(idx,valu));
@@ -2866,8 +2866,10 @@ namespace clang
       {
          bool isDouble = &d.getSemantics() == &llvm::APFloat::IEEEdouble();
          snprintf(buffer, LOCAL_BUFFER_LEN, "%.*g", (isDouble ? __DBL_DECIMAL_DIG__ : __FLT_DECIMAL_DIG__), (isDouble ? d.convertToDouble():d.convertToFloat()));
-         //real_to_hexadecimal(buffer,LOCAL_BUFFER_LEN,d);
-         stream << "valr: \""<< std::string(buffer) << "\" ";
+         std::string literalReal = std::string(buffer);
+         if(literalReal.find('.') == std::string::npos)
+            literalReal = literalReal + ".";
+         stream << "valr: \""<< literalReal << "\" ";
       }
       {
          stream << "valx: \"";
@@ -3471,6 +3473,197 @@ namespace clang
      stream << "\n";
    }
 
+   std::string DumpGimpleRaw::getHeaderForBuiltin(const void * t)
+   {
+      assert(TREE_CODE(t) == GT(FUNCTION_DECL));
+      assert(is_builtin_fn(t));
+      const llvm::Function* fd = reinterpret_cast<const llvm::Function*>(t);
+      if(fd->getBasicBlockList().empty() && fd->hasName())
+      {
+         std::string declname;
+         if(fd->isIntrinsic())
+            declname = getIntrinsicName(fd);
+         else
+            declname =  std::string(fd->getName());
+         if(
+               declname == "acos" or
+               declname == "acosh" or
+               declname == "asin" or
+               declname == "asinh" or
+               declname == "atan" or
+               declname == "atanh" or
+               declname == "atan2" or
+               declname == "cbrt" or
+               declname == "ceil" or
+               declname == "copysign" or
+               declname == "cos" or
+               declname == "cosh" or
+               declname == "erf" or
+               declname == "erfc" or
+               declname == "exp" or
+               declname == "exp2" or
+               declname == "expm1" or
+               declname == "fabs" or
+               declname == "fdim" or
+               declname == "floor" or
+               declname == "fma" or
+               declname == "fmax" or
+               declname == "fmin" or
+               declname == "fmod" or
+               declname == "frexp" or
+               declname == "hypot" or
+               declname == "ilogb" or
+               declname == "ldexp" or
+               declname == "lgamma" or
+               declname == "llrint" or
+               declname == "llround" or
+               declname == "log" or
+               declname == "log10" or
+               declname == "log1p" or
+               declname == "log2" or
+               declname == "logb" or
+               declname == "lrint" or
+               declname == "lround" or
+               declname == "modf" or
+               declname == "nan" or
+               declname == "nearbyint" or
+               declname == "nextafter" or
+               declname == "nexttoward" or
+               declname == "pow" or
+               declname == "remainder" or
+               declname == "remquo" or
+               declname == "rint" or
+               declname == "round" or
+               declname == "scalbln" or
+               declname == "scalbn" or
+               declname == "sin" or
+               declname == "sinh" or
+               declname == "sincos" or
+               declname == "sqrt" or
+               declname == "tan" or
+               declname == "tanh" or
+               declname == "tgamma" or
+               declname == "trunc" or
+               declname == "isinf" or
+               declname == "isnan")
+            return "/usr/include/math.h";
+         else if(
+                 declname == "cabs" or
+                 declname == "cacos" or
+                 declname == "cacosh" or
+                 declname == "carg" or
+                 declname == "casin" or
+                 declname == "casinh" or
+                 declname == "catan" or
+                 declname == "catanh" or
+                 declname == "ccos" or
+                 declname == "ccosh" or
+                 declname == "cexp" or
+                 declname == "cimag" or
+                 declname == "clog" or
+                 declname == "conj" or
+                 declname == "cpow" or
+                 declname == "cproj" or
+                 declname == "creal" or
+                 declname == "csin" or
+                 declname == "csinh" or
+                 declname == "csqrt" or
+                 declname == "ctan" or
+                 declname == "ctanh")
+            return "/usr/include/complex.h";
+         else if(
+                 declname == "memchr" or
+                 declname == "memcmp" or
+                 declname == "memcpy" or
+                 declname == "memmove" or
+                 declname == "memset" or
+                 declname == "strcat" or
+                 declname == "strchr" or
+                 declname == "strcmp" or
+                 declname == "strcpy" or
+                 declname == "strcspn" or
+                 declname == "strlen" or
+                 declname == "strncat" or
+                 declname == "strncmp" or
+                 declname == "strncpy" or
+                 declname == "strpbrk" or
+                 declname == "strrchr" or
+                 declname == "strspn" or
+                 declname == "strstr")
+            return "/usr/include/string.h";
+         else if(declname == "fprintf" or
+                 declname == "putc" or
+                 declname == "fputc" or
+                 declname == "fputs" or
+                 declname == "fscanf" or
+                 declname == "fwrite" or
+                 declname == "printf" or
+                 declname == "putchar" or
+                 declname == "puts" or
+                 declname == "scanf" or
+                 declname == "snprintf" or
+                 declname == "sprintf" or
+                 declname == "sscanf" or
+                 declname == "vfprintf" or
+                 declname == "vfscanf" or
+                 declname == "vprintf" or
+                 declname == "vscanf" or
+                 declname == "vsnprintf" or
+                 declname == "vsprintf" or
+                 declname == "vsscanf")
+            return "/usr/include/stdio.h";
+         else if(declname == "isalnum" or
+                 declname == "isalpha" or
+                 declname == "isblank" or
+                 declname == "iscntrl" or
+                 declname == "isdigit" or
+                 declname == "isgraph" or
+                 declname == "islower" or
+                 declname == "isprint" or
+                 declname == "ispunct" or
+                 declname == "isspace" or
+                 declname == "isupper" or
+                 declname == "isxdigit" or
+                 declname == "tolower" or
+                 declname == "toupper")
+            return "/usr/include/ctype.h";
+         else if (declname == "iswalnum" or
+                  declname == "iswalpha" or
+                  declname == "iswblank" or
+                  declname == "iswcntrl" or
+                  declname == "iswdigit" or
+                  declname == "iswgraph" or
+                  declname == "iswlower" or
+                  declname == "iswprint" or
+                  declname == "iswpunct" or
+                  declname == "iswspace" or
+                  declname == "iswupper" or
+                  declname == "iswxdigit" or
+                  declname == "towlower" or
+                  declname == "towupper")
+            return "/usr/include/wctype.h";
+         else if(declname == "abort" or
+                 declname == "abs" or
+                 declname == "calloc" or
+                 declname == "exit" or
+                 declname == "free" or
+                 declname == "labs" or
+                 declname == "llabs" or
+                 declname == "malloc" or
+                 declname == "realloc" or
+                 declname == "_exit2" or
+                 declname == "aligned_alloc")
+            return "/usr/include/stdlib.h";
+         else if (declname == "imaxabs")
+            return "/usr/include/inttypes.h";
+         else if (declname == "strftime")
+            return "/usr/include/time.h";
+
+      }
+      return "";
+
+   }
+
    void DumpGimpleRaw::dequeue_and_serialize()
    {
       assert(!Queue.empty());
@@ -3558,7 +3751,16 @@ namespace clang
            ///with clang/llvm there is no type definition
            snprintf(buffer, LOCAL_BUFFER_LEN, "srcp: \"");
            stream << buffer;
-           stream << InFile;
+           if(code==GT(FUNCTION_DECL) && is_builtin_fn(t))
+           {
+              auto headerFile = getHeaderForBuiltin(t);
+              if(headerFile != "")
+                 stream << headerFile;
+              else
+                 stream << "<built-in>";
+           }
+           else
+              stream << InFile;
            snprintf(buffer, LOCAL_BUFFER_LEN, "\":0:0 ");
            stream << buffer;
            column += 12 + InFile.size() + 8;

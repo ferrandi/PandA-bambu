@@ -538,6 +538,7 @@ namespace clang {
 
          void dequeue_and_serialize_gimple(const void* t);
          void dequeue_and_serialize_statement (const void* t);
+         std::string getHeaderForBuiltin(const void * t);
          void dequeue_and_serialize();
 
          bool lowerIntrinsics(llvm::Module &M);
