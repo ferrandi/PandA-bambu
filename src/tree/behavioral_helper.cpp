@@ -2164,7 +2164,10 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
          }
          else
          {
-            res = res + "*((" + tree_helper::print_type(TM, vce->type->index) + " * ) &(" + print_node(vce->op->index, v, vppf)+ "))";
+            if(tree_helper::is_a_pointer(TM, vce->type->index))
+               res = res + "((" + tree_helper::print_type(TM, vce->type->index) + ") (" + print_node(vce->op->index, v, vppf)+ "))";
+            else
+               res = res + "*((" + tree_helper::print_type(TM, vce->type->index) + " * ) &(" + print_node(vce->op->index, v, vppf)+ "))";
          }
          break;
       }
