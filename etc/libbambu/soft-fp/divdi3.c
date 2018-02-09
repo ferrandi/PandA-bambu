@@ -1,5 +1,5 @@
 /* 64-bit division and modulus
-   Copyright (c) 2004-2017 Politecnico di Milano
+   Copyright (c) 2004-2018 Politecnico di Milano
 
    author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
 
