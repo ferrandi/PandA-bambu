@@ -589,6 +589,7 @@ void PhiOpt::ApplyDiffNothing(const unsigned int bb_index)
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Duplicating empty basic block");
    auto curr_block = sl->list_of_bloc[bb_index];
    auto succ_block = sl->list_of_bloc[curr_block->list_of_succ.front()];
+   THROW_ASSERT(std::find(succ_block->list_of_pred.begin(), succ_block->list_of_pred.end(), bb_index) != succ_block->list_of_pred.end(), "bb_index not included in the list of pred: " + STR(bb_index) + " succ: " + STR(succ_block->number));
    succ_block->list_of_pred.erase(std::find(succ_block->list_of_pred.begin(), succ_block->list_of_pred.end(), bb_index));
 
    CustomSet<unsigned int> created_bbs;
