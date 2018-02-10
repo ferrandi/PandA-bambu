@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -97,7 +97,7 @@ namespace flopoco{
       name<<"FPge_expr_" <<wE<<"_"<<wF;
       setName(name.str());
 
-      setCopyrightString("Fabrizio Ferrandi (2011-2017)");
+      setCopyrightString("Fabrizio Ferrandi (2011-2018)");
 
       /* Set up the IO signals */
 

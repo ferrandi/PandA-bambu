@@ -3,7 +3,7 @@
    This specific code has been derived from libgcc from GCC.
    The GCC licence and its exception applies.
 */
-/* Copyright (C) 1989-2016 Free Software Foundation, Inc.
+/* Copyright (C) 1989-2018 Free Software Foundation, Inc.
 
 This file is part of GCC.
 
