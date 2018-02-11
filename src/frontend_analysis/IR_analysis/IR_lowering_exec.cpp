@@ -2491,6 +2491,17 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(new_ga)->ToString());
                      restart_analysis = true;
                   }
+                  if(GET_NODE(ga->op1)->get_kind() != ssa_name_K && !GetPointer<cst_node>(GET_NODE(ga->op1)))
+                  {
+                     unsigned int type_index = tree_helper::get_type_index(TM, GET_INDEX_NODE(ga->op1));
+                     tree_nodeRef op_type= TM->GetTreeReindex(type_index);
+                     tree_nodeRef op_ga = CreateGimpleAssign(op_type, ga->op1, block.first, srcp_default);
+                     tree_nodeRef op_vd = GetPointer<gimple_assign>(GET_NODE(op_ga))->op0;
+                     block.second->PushBefore(op_ga, *it_los);
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(op_ga)->ToString());
+                     ga->op1 = op_vd;
+                     restart_analysis = true;
+                  }
                }
                else if(code0 == component_ref_K)
                {
