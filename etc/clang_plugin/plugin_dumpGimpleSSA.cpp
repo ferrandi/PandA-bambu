@@ -140,8 +140,10 @@ X("clang40_plugin_dumpGimpleSSA", "Dump gimple ssa raw format starting from LLVM
 //#include "llvm/Analysis/CFLSteensAliasAnalysis.h"
 #include "llvm/Analysis/MemoryDependenceAnalysis.h"
 #include "llvm/Transforms/Utils/MemorySSA.h"
+#include "llvm/Transforms/Scalar.h"
 #include "llvm/InitializePasses.h"
 #include "llvm-c/Transforms/Scalar.h"
+#include "llvm/CodeGen/Passes.h"
 
 namespace llvm {
 
@@ -199,6 +201,8 @@ static llvm::RegisterPass<llvm::clang40_plugin_dumpGimpleSSAPass> XPass("clang40
 // This function is of type PassManagerBuilder::ExtensionFn
 static void loadPass(const llvm::PassManagerBuilder &, llvm::legacy::PassManagerBase &PM)
 {
+   //PM.add(llvm::createCodeGenPreparePass());
+   PM.add(llvm::createCFGSimplificationPass());
    PM.add(new llvm::clang40_plugin_dumpGimpleSSAPass());
 }
 // These constructors add our pass to a list of global extensions.
