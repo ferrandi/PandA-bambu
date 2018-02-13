@@ -8,7 +8,6 @@ PRJ_DOC = \
            license.doc \
            install.doc \
            panda_sdk.doc \
-           svn.doc \
            makefiles.doc \
            programming.doc \
            documentation.doc  \
