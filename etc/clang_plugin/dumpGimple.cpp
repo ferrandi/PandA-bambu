@@ -2903,6 +2903,8 @@ namespace clang
          std::string literalReal = std::string(buffer);
          if(literalReal.find('.') == std::string::npos)
             literalReal = literalReal + ".";
+         if(!isDouble)
+            literalReal = literalReal + "f";
          stream << "valr: \""<< literalReal << "\" ";
       }
       {
