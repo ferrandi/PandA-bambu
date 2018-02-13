@@ -486,12 +486,12 @@ void DiscrepancyAnalysisCWriter::writePostInstructionInfo
                   if(fd)
                   {
                      std::map<std::string, std::pair<unsigned int,std::string>>
-                           basic_unary_operations_relation = {{"__int32_to_float32if", {0, "(float)"}},
-                                                              {"__int32_to_float64if", {1, "(double)"}},
+                           basic_unary_operations_relation = {{"__int32_to_float32if", {0, "(float)(int)"}},
+                                                              {"__int32_to_float64if", {1, "(double)(int)"}},
                                                               {"__uint32_to_float32if", {0, "(float)"}},
                                                               {"__uint32_to_float64if", {1, "(double)"}},
-                                                              {"__int64_to_float32if", {0, "(float)"}},
-                                                              {"__int64_to_float64if", {1, "(double)"}},
+                                                              {"__int64_to_float32if", {0, "(float)(long long int)"}},
+                                                              {"__int64_to_float64if", {1, "(double)(long long int)"}},
                                                               {"__uint64_to_float32if", {0, "(float)"}},
                                                               {"__uint64_to_float64if", {1, "(double)"}},
                                                               {"__float32_to_int32_round_to_zeroif", {2, "(int)"}},
