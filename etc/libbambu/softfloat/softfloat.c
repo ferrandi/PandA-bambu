@@ -2921,14 +2921,15 @@ static __uint32 __float64_to_uint32_round_to_zero( __float64 a )
     __flag aSign;
     __int16 aExp, shiftCount;
     __bits64 aSig, savedASig;
-    __int32 z;
+    __uint32 z;
 
     aSig = __extractFloat64Frac( a );
     aExp = __extractFloat64Exp( a );
     aSign = __extractFloat64Sign( a );
     if ( 0x41E < aExp ) {
         if ( ( aExp == 0x7FF ) && aSig ) aSign = 0;
-        goto invalid;
+        __float_raise( float_flag_invalid );
+        return 0x80000000;
     }
     else if ( aExp < 0x3FF ) {
 #ifndef NO_PARAMETRIC
@@ -2942,17 +2943,12 @@ static __uint32 __float64_to_uint32_round_to_zero( __float64 a )
     aSig >>= shiftCount;
     z = aSig;
     if ( aSign ) z = - z;
-    if ( ( z < 0 ) ^ aSign ) {
- invalid:
-        __float_raise( float_flag_invalid );
-        return 0x80000000;
-    }
     if ( ( aSig<<shiftCount ) != savedASig ) {
 #ifndef NO_PARAMETRIC
         __float_exception_flags |= float_flag_inexact;
 #endif
     }
-    return (__uint32)z;
+    return z;
 }
 
 /*----------------------------------------------------------------------------
