@@ -964,7 +964,10 @@ DesignFlowStep_Status IR_lowering::InternalExec()
             gimple_phi::DefEdgeList to_be_replaced;
             for(const auto& def_edge : pn->CGetDefEdgesList())
             {
-               if(GET_NODE(def_edge.first)->get_kind() == addr_expr_K || GET_NODE(def_edge.first)->get_kind() == view_convert_expr_K || GET_NODE(def_edge.first)->get_kind() == nop_expr_K)
+               if(GET_NODE(def_edge.first)->get_kind() == addr_expr_K ||
+                     GET_NODE(def_edge.first)->get_kind() == view_convert_expr_K ||
+                     GET_NODE(def_edge.first)->get_kind() == nop_expr_K ||
+                     GET_NODE(def_edge.first)->get_kind() == pointer_plus_expr_K)
                {
                   to_be_replaced.push_back(def_edge);
                }
@@ -972,13 +975,22 @@ DesignFlowStep_Status IR_lowering::InternalExec()
             for(const auto& def_edge : to_be_replaced)
             {
                unary_expr* ue = GetPointer<unary_expr>(GET_NODE(def_edge.first));
-               tree_nodeRef ue_expr = tree_man->create_unary_operation(ue->type,ue->op, srcp_default, GET_NODE(def_edge.first)->get_kind());///It is required to de-share some IR nodes
-               tree_nodeRef ue_ga = CreateGimpleAssign(ue->type, ue_expr, def_edge.second, srcp_default);
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(ue_ga)->ToString());
-               tree_nodeRef ue_vd = GetPointer<gimple_assign>(GET_NODE(ue_ga))->op0;
+               tree_nodeRef op_ga;
+               if(ue)
+               {
+                  tree_nodeRef ue_expr = tree_man->create_unary_operation(ue->type,ue->op, srcp_default, GET_NODE(def_edge.first)->get_kind());///It is required to de-share some IR nodes
+                  op_ga = CreateGimpleAssign(ue->type, ue_expr, def_edge.second, srcp_default);
+               }
+               else
+               {
+                  binary_expr* be = GetPointer<binary_expr>(GET_NODE(def_edge.first));
+                  op_ga = CreateGimpleAssign(be->type, def_edge.first, def_edge.second, srcp_default);
+               }
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(op_ga)->ToString());
+               tree_nodeRef ue_vd = GetPointer<gimple_assign>(GET_NODE(op_ga))->op0;
                auto pred_block = sl->list_of_bloc.find(def_edge.second)->second;
                if(pred_block->CGetStmtList().empty())
-                  pred_block->PushBack(ue_ga);
+                  pred_block->PushBack(op_ga);
                else
                {
                   auto last_statement = pred_block->CGetStmtList().back();
@@ -987,11 +999,11 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                         GET_NODE(last_statement)->get_kind() == gimple_return_K ||
                         GET_NODE(last_statement)->get_kind() == gimple_switch_K ||
                         GET_NODE(last_statement)->get_kind() == gimple_goto_K)
-                     pred_block->PushBefore(ue_ga, last_statement);
+                     pred_block->PushBefore(op_ga, last_statement);
                   else
                   {
-                     pred_block->PushAfter(ue_ga, last_statement);
-                     GetPointer<ssa_name>(GET_NODE(ue_vd))->SetDefStmt(ue_ga);
+                     pred_block->PushAfter(op_ga, last_statement);
+                     GetPointer<ssa_name>(GET_NODE(ue_vd))->SetDefStmt(op_ga);
                   }
                }
                pn->ReplaceDefEdge(TM, def_edge, gimple_phi::DefEdge(ue_vd, def_edge.second));
@@ -2383,6 +2395,16 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                      ga->op1 = mr;
                      restart_analysis = true;
                   }
+                  else if(code1 == misaligned_indirect_ref_K)
+                  {
+                     misaligned_indirect_ref* MIR = GetPointer<misaligned_indirect_ref>(GET_NODE(ga->op1));
+                     tree_nodeRef type = MIR->type;
+                     tree_nodeRef pt = tree_man->create_pointer_type(type);
+                     tree_nodeRef offset = TM->CreateUniqueIntegerCst(0, GET_INDEX_NODE(pt));
+                     tree_nodeRef mr = tree_man->create_binary_operation(type, MIR->op, offset, srcp_default, mem_ref_K);
+                     ga->op1 = mr;
+                     restart_analysis = true;
+                  }
                   else if(code1 == parm_decl_K)
                   {
                      parm_decl *pd = GetPointer<parm_decl>(GET_NODE(ga->op1));
@@ -2745,6 +2767,17 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                   tree_nodeRef pt = tree_man->create_pointer_type(type);
                   tree_nodeRef offset = TM->CreateUniqueIntegerCst(0, GET_INDEX_NODE(pt));
                   tree_nodeRef mr = tree_man->create_binary_operation(type, ir->op, offset, srcp_default, mem_ref_K);
+                  ga->op0 = mr;
+                  restart_analysis = true;
+               }
+               else if(code0 == misaligned_indirect_ref_K)
+               {
+                  misaligned_indirect_ref * MIR = GetPointer<misaligned_indirect_ref>(GET_NODE(ga->op0));
+                  function_behavior->set_unaligned_accesses(true);
+                  tree_nodeRef type = MIR->type;
+                  tree_nodeRef pt = tree_man->create_pointer_type(type);
+                  tree_nodeRef offset = TM->CreateUniqueIntegerCst(0, GET_INDEX_NODE(pt));
+                  tree_nodeRef mr = tree_man->create_binary_operation(type, MIR->op, offset, srcp_default, mem_ref_K);
                   ga->op0 = mr;
                   restart_analysis = true;
                }

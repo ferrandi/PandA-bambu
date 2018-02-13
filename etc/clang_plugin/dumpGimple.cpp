@@ -106,6 +106,7 @@ namespace clang
       DEFTREECODE (ALLOCAVAR_DECL, "var_decl", tcc_declaration, 0)
       DEFTREECODE(POINTERNULL, "integer_cst", tcc_constant, 0)
       DEFTREECODE(SIGNEDPOINTERTYPE, "integer_type", tcc_type, 0)
+      DEFTREECODE (MISALIGNED_INDIRECT_REF, "misaligned_indirect_ref", tcc_reference, 2)
    };
 #undef DEFTREECODE
 #undef DEFGSCODE
@@ -125,6 +126,7 @@ namespace clang
       DEFTREECODE(ALLOCAVAR_DECL, "var_decl", tcc_declaration, 0)
       DEFTREECODE(POINTERNULL, "integer_cst", tcc_constant, 0)
       DEFTREECODE(SIGNEDPOINTERTYPE, "integer_type", tcc_type, 0)
+      DEFTREECODE (MISALIGNED_INDIRECT_REF, "misaligned_indirect_ref", tcc_reference, 2)
    };
 #undef DEFTREECODE
 #undef DEFGSCODE
@@ -143,6 +145,7 @@ namespace clang
       DEFTREECODE(ALLOCAVAR_DECL, "var_decl", tcc_declaration, 0)
       DEFTREECODE(POINTERNULL, "integer_cst", tcc_constant, 0)
       DEFTREECODE(SIGNEDPOINTERTYPE, "integer_type", tcc_type, 0)
+      DEFTREECODE (MISALIGNED_INDIRECT_REF, "misaligned_indirect_ref", tcc_reference, 2)
    };
 #undef DEFTREECODE
 #undef DEFGSCODE
@@ -161,6 +164,7 @@ namespace clang
       DEFTREECODE(ALLOCAVAR_DECL, "var_decl", tcc_declaration, 0)
       DEFTREECODE(POINTERNULL, "integer_cst", tcc_constant, 0)
       DEFTREECODE(SIGNEDPOINTERTYPE, "integer_type", tcc_type, 0)
+      DEFTREECODE (MISALIGNED_INDIRECT_REF, "misaligned_indirect_ref", tcc_reference, 2)
    };
 #undef DEFTREECODE
 #undef DEFGSCODE
@@ -207,6 +211,7 @@ namespace clang
       DEFTREECODE(ALLOCAVAR_DECL, "var_decl", tcc_declaration, 0)
       DEFTREECODE(POINTERNULL, "integer_cst", tcc_constant, 0)
       DEFTREECODE(SIGNEDPOINTERTYPE, "integer_type", tcc_type, 0)
+      DEFTREECODE (MISALIGNED_INDIRECT_REF, "misaligned_indirect_ref", tcc_reference, 2)
 };
 #undef DEFTREECODE
 #undef END_OF_BASE_TREE_CODE
@@ -1009,8 +1014,13 @@ namespace clang
             uicTable[0] = assignCodeAuto(llvm::ConstantInt::get(llvm::Type::getInt32Ty(inst->getContext()), 0, false));
          const void* zero =  uicTable.find(0)->second;
          auto addr = getOperand(store.getPointerOperand(), currentFunction);
-         auto type = assignCodeType(store.getValueOperand()->getType());
-         return build2(GT(MEM_REF), type, addr, zero);
+         auto ty = store.getValueOperand()->getType();
+         auto type = assignCodeType(ty);
+         auto written_obj_size = ty->isSized() ? DL->getTypeAllocSizeInBits(ty) : 8ULL;
+         if(written_obj_size != (8*store.getAlignment()))
+            return build1(GT(MISALIGNED_INDIRECT_REF), type, addr);
+         else
+            return build2(GT(MEM_REF), type, addr, zero);
       }
       return getSSA(inst,g,currentFunction,false);
    }
@@ -1202,6 +1212,7 @@ namespace clang
          case llvm::Instruction::Xor  :
          case llvm::Instruction::PHI  :
          case llvm::Instruction::Ret  :
+         case llvm::Instruction::Store:
             return true;
          case llvm::Instruction::ICmp:
          {
@@ -1377,8 +1388,8 @@ namespace clang
       {
          auto ce = cast<llvm::ConstantExpr>(operand);
          auto resType = assignCodeType(ce->getType());
-         if(cast<llvm::ConstantExpr>(operand)->getOpcode() == llvm::Instruction::GetElementPtr)
-            return LowerGetElementPtr(assignCodeType(operand->getType()), cast<llvm::ConstantExpr>(operand), currentFunction);
+         if(ce->getOpcode() == llvm::Instruction::GetElementPtr)
+            return LowerGetElementPtr(assignCodeType(operand->getType()), ce, currentFunction);
          else
          {
             auto tec = tree_expr_code (ce);
@@ -1392,6 +1403,7 @@ namespace clang
             }
             else if (get_gimple_rhs_class (tec) == GIMPLE_UNARY_RHS)
             {
+               assert(ce->getOpcode() != llvm::Instruction::SExt);
                return build1 (tec, resType, getSignedOperandIndex(ce, 0, currentFunction));
             }
             else if (get_gimple_rhs_class (tec) == GIMPLE_SINGLE_RHS)
@@ -1479,8 +1491,30 @@ namespace clang
             uicTable[0] =  assignCodeAuto(llvm::ConstantInt::get(llvm::Type::getInt32Ty(inst->getContext()), 0, false));
          const void* zero = uicTable.find(0)->second;
          auto addr = getOperand(load.getPointerOperand(), currentFunction);
-         auto type = assignCodeType(load.getType());
-         return build2(GT(MEM_REF), type, addr, zero);
+         auto ty = load.getType();
+         auto type = assignCodeType(ty);
+         auto read_obj_size = ty->isSized() ? DL->getTypeAllocSizeInBits(ty) : 8ULL;
+         if(read_obj_size != (8*load.getAlignment()))
+            return build1(GT(MISALIGNED_INDIRECT_REF), type, addr);
+         else
+            return build2(GT(MEM_REF), type, addr, zero);
+      }
+      else if(isa<llvm::SExtInst>(inst) &&
+              cast<const llvm::SExtInst>(*inst).getType()->isIntegerTy() &&
+              cast<const llvm::SExtInst>(*inst).getOperand(0)->getType()->isIntegerTy() &&
+              cast<const llvm::SExtInst>(*inst).getOperand(0)->getType()->getIntegerBitWidth() == 1)
+      {
+         assert(index ==0);
+         const llvm::SExtInst& sext = cast<const llvm::SExtInst>(*inst);
+         auto MSB_pos = sext.getType()->getIntegerBitWidth() - 1;
+         assert(MSB_pos>0);
+         if(uicTable.find(MSB_pos) == uicTable.end())
+            uicTable[MSB_pos] =  assignCodeAuto(llvm::ConstantInt::get(llvm::Type::getInt32Ty(inst->getContext()), MSB_pos, false));
+         const void* MSB_posNode = uicTable.find(MSB_pos)->second;
+         auto type = AddSignedTag(TREE_TYPE(g));
+         auto casted = build1(GT(NOP_EXPR), type, getOperand(inst->getOperand(index), currentFunction));
+         auto shiftedLeft = build2(GT(LSHIFT_EXPR), type, casted, MSB_posNode);
+         return build2(GT(RSHIFT_EXPR), type, shiftedLeft, MSB_posNode);
       }
       return getSignedOperandIndex(inst, index, currentFunction);
    }
@@ -4027,6 +4061,9 @@ namespace clang
             serialize_child ("op", TREE_OPERAND (t, 1));
             break;
 
+         case GT(MISALIGNED_INDIRECT_REF):
+            serialize_child ("op", TREE_OPERAND (t, 0));
+            break;
          case GT(COND_EXPR):
            serialize_child ("op", TREE_OPERAND (t, 0));
            serialize_child ("op", TREE_OPERAND (t, 1));
