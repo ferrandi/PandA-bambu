@@ -220,7 +220,7 @@ static __floatx80 __int32_to_floatx80( __int32 );
 static __float128 __int32_to_float128( __int32 );
 #endif
 static __float32 __int64_to_float32( __int64 );SF_ADAPTER3_unary(__int64_to_float32,64,32);
-static __float64 __uint64_to_float32( __uint64 ); SF_UADAPTER3_unary(__uint64_to_float32,64,32);
+static __float32 __uint64_to_float32( __uint64 ); SF_UADAPTER3_unary(__uint64_to_float32,64,32);
 static __float64 __int64_to_float64( __int64 );SF_ADAPTER3_unary(__int64_to_float64,64,64);
 static __float64 __uint64_to_float64( __uint64 a);SF_UADAPTER3_unary(__uint64_to_float64,64,64);
 #ifdef FLOATX80

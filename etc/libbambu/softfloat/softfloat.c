@@ -1096,12 +1096,10 @@ static __float32 __uint32_to_float32( __uint32 a_orig )
     __flag zSign;
     __uint64 absA;
     __int8 shiftCount;
-    __int64 a;
 
     if ( a_orig == 0 ) return 0;
-    a = a_orig;
     zSign = 0;
-    absA = a;
+    absA = a_orig;
     shiftCount = __countLeadingZeros64( absA ) - 40;
     if ( 0 <= shiftCount ) {
         return __packFloat32( zSign, 0x95 - shiftCount, absA<<shiftCount );
@@ -1237,7 +1235,7 @@ static __float32 __int64_to_float32( __int64 a )
 
 }
 
-static __float64 __uint64_to_float32( __uint64 absA)
+static __float32 __uint64_to_float32( __uint64 absA)
 {
     __int8 shiftCount;
 
