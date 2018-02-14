@@ -29,7 +29,10 @@ u2ld(u)
   return u;
 }
 
-float __attribute__((noinline))
+float
+#ifdef __llvm__
+ __attribute__((noinline))
+#endif
 s2f(s)
      int s;
 {
@@ -131,14 +134,20 @@ test_integer_to_float()
 }
 
 #if __GNUC__
-float __attribute__((noinline))
+float
+#ifdef __llvm__
+__attribute__((noinline))
+#endif
 ull2f(u)
      unsigned long long int u;
 {
   return u;
 }
 
-double __attribute__((noinline))
+double 
+#ifdef __llvm__
+__attribute__((noinline))
+#endif
 ull2d(u)
      unsigned long long int u;
 {
@@ -152,7 +161,10 @@ ull2ld(u)
   return u;
 }
 
-float __attribute__((noinline))
+float 
+#ifdef __llvm__
+__attribute__((noinline))
+#endif
 sll2f(s)
      long long int s;
 {
