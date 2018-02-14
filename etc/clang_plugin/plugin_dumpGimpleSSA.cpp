@@ -48,17 +48,17 @@
 #include "clang/Sema/Sema.h"
 
 namespace llvm {
-   struct clang40_plugin_dumpGimpleSSAPass;
+   struct clang4_plugin_dumpGimpleSSAPass;
 }
 
 static clang::DumpGimpleRaw *gimpleRawWriter;
 
 namespace clang {
 
-   class clang40_plugin_dumpGimpleSSA : public PluginASTAction
+   class clang4_plugin_dumpGimpleSSA : public PluginASTAction
    {
          std::string outdir_name;
-         friend struct llvm::clang40_plugin_dumpGimpleSSAPass;
+         friend struct llvm::clang4_plugin_dumpGimpleSSAPass;
       protected:
          std::unique_ptr<ASTConsumer> CreateASTConsumer(CompilerInstance &CI,
                                                         llvm::StringRef InFile) override
@@ -98,7 +98,7 @@ namespace clang {
          }
          void PrintHelp(llvm::raw_ostream& ros)
          {
-            ros << "Help for clang40_plugin_dumpGimpleSSA plugin\n";
+            ros << "Help for clang4_plugin_dumpGimpleSSA plugin\n";
             ros << "-outputdir <directory>\n";
             ros << "  Directory where the raw file will be written\n";
          }
@@ -110,9 +110,9 @@ namespace clang {
 
       public:
 
-         clang40_plugin_dumpGimpleSSA() {}
-         clang40_plugin_dumpGimpleSSA(const clang40_plugin_dumpGimpleSSA& step) = delete;
-         clang40_plugin_dumpGimpleSSA & operator=(const clang40_plugin_dumpGimpleSSA&) = delete;
+         clang4_plugin_dumpGimpleSSA() {}
+         clang4_plugin_dumpGimpleSSA(const clang4_plugin_dumpGimpleSSA& step) = delete;
+         clang4_plugin_dumpGimpleSSA & operator=(const clang4_plugin_dumpGimpleSSA&) = delete;
 
    };
 
@@ -120,11 +120,11 @@ namespace clang {
 
 /// Currently there is no difference between c++ or c serialization
 #if CPP_LANGUAGE
-static clang::FrontendPluginRegistry::Add<clang::clang40_plugin_dumpGimpleSSA>
-Y("clang40_plugin_dumpGimpleSSACpp", "Dump gimple ssa raw format starting from LLVM IR when c++ is processed");
+static clang::FrontendPluginRegistry::Add<clang::clang4_plugin_dumpGimpleSSA>
+Y("clang4_plugin_dumpGimpleSSACpp", "Dump gimple ssa raw format starting from LLVM IR when c++ is processed");
 #else
-static clang::FrontendPluginRegistry::Add<clang::clang40_plugin_dumpGimpleSSA>
-X("clang40_plugin_dumpGimpleSSA", "Dump gimple ssa raw format starting from LLVM IR");
+static clang::FrontendPluginRegistry::Add<clang::clang4_plugin_dumpGimpleSSA>
+X("clang4_plugin_dumpGimpleSSA", "Dump gimple ssa raw format starting from LLVM IR");
 #endif
 
 
@@ -149,10 +149,10 @@ namespace llvm {
 
    class llvm;
 
-   struct clang40_plugin_dumpGimpleSSAPass: public ModulePass
+   struct clang4_plugin_dumpGimpleSSAPass: public ModulePass
    {
          static char ID;
-         clang40_plugin_dumpGimpleSSAPass() : ModulePass(ID)
+         clang4_plugin_dumpGimpleSSAPass() : ModulePass(ID)
          {
             initializeLoopPassPass(*PassRegistry::getPassRegistry());
             initializeLazyValueInfoWrapperPassPass(*PassRegistry::getPassRegistry());
@@ -173,7 +173,7 @@ namespace llvm {
          }
          virtual StringRef getPassName() const
          {
-            return "clang40_plugin_dumpGimpleSSAPass";
+            return "clang4_plugin_dumpGimpleSSAPass";
          }
          void getAnalysisUsage(AnalysisUsage &AU) const
          {
@@ -192,9 +192,9 @@ namespace llvm {
          }
    };
 }
-char llvm::clang40_plugin_dumpGimpleSSAPass::ID = 0;
+char llvm::clang4_plugin_dumpGimpleSSAPass::ID = 0;
 
-static llvm::RegisterPass<llvm::clang40_plugin_dumpGimpleSSAPass> XPass("clang40_plugin_dumpGimpleSSAPass", "Dump gimple ssa raw format starting from LLVM IR: LLVM pass",
+static llvm::RegisterPass<llvm::clang4_plugin_dumpGimpleSSAPass> XPass("clang4_plugin_dumpGimpleSSAPass", "Dump gimple ssa raw format starting from LLVM IR: LLVM pass",
                                 false /* Only looks at CFG */,
                                 false /* Analysis Pass */);
 
@@ -203,7 +203,7 @@ static void loadPass(const llvm::PassManagerBuilder &, llvm::legacy::PassManager
 {
    //PM.add(llvm::createCodeGenPreparePass());
    PM.add(llvm::createCFGSimplificationPass());
-   PM.add(new llvm::clang40_plugin_dumpGimpleSSAPass());
+   PM.add(new llvm::clang4_plugin_dumpGimpleSSAPass());
 }
 // These constructors add our pass to a list of global extensions.
 static llvm::RegisterStandardPasses clangtoolLoader_Ox(llvm::PassManagerBuilder::EP_OptimizerLast, loadPass);

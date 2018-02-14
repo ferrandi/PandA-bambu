@@ -1,19 +1,19 @@
 dnl
 dnl check clang version 
 dnl
-AC_DEFUN([AC_CHECK_CLANG40_I386_VERSION],[
-    AC_ARG_WITH(clang40,
-    [  --with-clang40=executable-path path where the CLANG 4.0 is installed ],
+AC_DEFUN([AC_CHECK_CLANG4_I386_VERSION],[
+    AC_ARG_WITH(clang4,
+    [  --with-clang4=executable-path path where the CLANG 4.0 is installed ],
     [
-       ac_clang40="$withval"
+       ac_clang4="$withval"
     ])
 dnl switch to c
 AC_LANG_PUSH([C])
 
-if test "x$ac_clang40" = x; then
+if test "x$ac_clang4" = x; then
    CLANG_TO_BE_CHECKED="/usr/bin/clang /usr/bin/clang-4.0"
 else
-   CLANG_TO_BE_CHECKED=$ac_clang40;
+   CLANG_TO_BE_CHECKED=$ac_clang4;
 fi
 
 echo "looking for clang 4.0..."
@@ -21,48 +21,48 @@ for compiler in $CLANG_TO_BE_CHECKED; do
    if test -f $compiler; then
       echo "checking $compiler..."
       dnl check for clang
-      I386_CLANG40_VERSION=`$compiler --version | grep "4\.0\."`
-      if test x"$I386_CLANG40_VERSION" = "x"; then
-         I386_CLANG40_VERSION=""
+      I386_CLANG4_VERSION=`$compiler --version | grep "4\.0\."`
+      if test x"$I386_CLANG4_VERSION" = "x"; then
+         I386_CLANG4_VERSION=""
       else
-         I386_CLANG40_VERSION="4.0.0"
+         I386_CLANG4_VERSION="4.0.0"
       fi
 
-      AS_VERSION_COMPARE($1, [4.0.0], MIN_CLANG40=[4.0.0], MIN_CLANG40=$1, MIN_CLANG40=$1)
-      AS_VERSION_COMPARE([5.0.0], $2, MAX_CLANG40=[5.0.0], MAX_CLANG40=$2, MAX_CLANG40=$2)
-      AS_VERSION_COMPARE($I386_CLANG40_VERSION, $MIN_CLANG40, echo "checking $compiler >= $MIN_CLANG40... no"; min=no, echo "checking $compiler >= $MIN_CLANG40... yes"; min=yes, echo "checking $compiler >= $MIN_CLANG40... yes"; min=yes)
+      AS_VERSION_COMPARE($1, [4.0.0], MIN_CLANG4=[4.0.0], MIN_CLANG4=$1, MIN_CLANG4=$1)
+      AS_VERSION_COMPARE([5.0.0], $2, MAX_CLANG4=[5.0.0], MAX_CLANG4=$2, MAX_CLANG4=$2)
+      AS_VERSION_COMPARE($I386_CLANG4_VERSION, $MIN_CLANG4, echo "checking $compiler >= $MIN_CLANG4... no"; min=no, echo "checking $compiler >= $MIN_CLANG4... yes"; min=yes, echo "checking $compiler >= $MIN_CLANG4... yes"; min=yes)
       if test "$min" = "no" ; then
          continue;
       fi
-      AS_VERSION_COMPARE($I386_CLANG40_VERSION, $MAX_CLANG40, echo "checking $compiler < $MAX_CLANG40... yes"; max=yes, echo "checking $compiler < $MAX_CLANG40... no"; max=no, echo "checking $compiler < $MAX_CLANG40... no"; max=no)
+      AS_VERSION_COMPARE($I386_CLANG4_VERSION, $MAX_CLANG4, echo "checking $compiler < $MAX_CLANG4... yes"; max=yes, echo "checking $compiler < $MAX_CLANG4... no"; max=no, echo "checking $compiler < $MAX_CLANG4... no"; max=no)
       if test "$max" = "no" ; then
          continue;
       fi
-      I386_CLANG40_EXE=$compiler;
-      clang_file=`basename $I386_CLANG40_EXE`
-      clang_dir=`dirname $I386_CLANG40_EXE`
+      I386_CLANG4_EXE=$compiler;
+      clang_file=`basename $I386_CLANG4_EXE`
+      clang_dir=`dirname $I386_CLANG4_EXE`
 
       llvm_config=`echo $clang_file | sed s/clang/llvm-config/`
-      I386_LLVM_CONFIG40_EXE=$clang_dir/$llvm_config
-      I386_LLVM40_HEADER_DIR=`$I386_LLVM_CONFIG40_EXE --includedir`
-      if test "x$I386_LLVM40_HEADER_DIR" = "x"; then
+      I386_LLVM_CONFIG4_EXE=$clang_dir/$llvm_config
+      I386_LLVM4_HEADER_DIR=`$I386_LLVM_CONFIG4_EXE --includedir`
+      if test "x$I386_LLVM4_HEADER_DIR" = "x"; then
          echo "checking CLANG/LLVM plugin support... no. Package llvm-4.0 missing?"
          break;
       fi
-      echo "checking plugin directory...$I386_LLVM40_HEADER_DIR"
+      echo "checking plugin directory...$I386_LLVM4_HEADER_DIR"
       cpp=`echo $clang_file | sed s/clang/clang-cpp/`
-      I386_CLANG_CPP40_EXE=$clang_dir/$cpp
-      if test -f $I386_CLANG_CPP40_EXE; then
-         echo "checking cpp...$I386_CLANG_CPP40_EXE"
+      I386_CLANG_CPP4_EXE=$clang_dir/$cpp
+      if test -f $I386_CLANG_CPP4_EXE; then
+         echo "checking cpp...$I386_CLANG_CPP4_EXE"
       else
          echo "checking cpp...no"
-         I386_CLANG40_EXE=""
+         I386_CLANG4_EXE=""
          continue
       fi
       clangpp=`echo $clang_file | sed s/clang/clang\+\+/`
-      I386_CLANGPP40_EXE=$clang_dir/$clangpp
-      if test -f $I386_CLANGPP40_EXE; then
-         echo "checking clang++...$I386_CLANGPP40_EXE"
+      I386_CLANGPP4_EXE=$clang_dir/$clangpp
+      if test -f $I386_CLANGPP4_EXE; then
+         echo "checking clang++...$I386_CLANGPP4_EXE"
       else
          echo "checking clang++...no"
          continue
@@ -71,18 +71,18 @@ for compiler in $CLANG_TO_BE_CHECKED; do
       ac_save_CFLAGS="$CFLAGS"
       ac_save_LDFLAGS="$LDFLAGS"
       ac_save_LIBS="$LIBS"
-      CC=$I386_CLANG40_EXE
+      CC=$I386_CLANG4_EXE
       CFLAGS="-m32"
       LDFLAGS=
       LIBS=
       AC_LANG_PUSH([C])
-      AC_LINK_IFELSE([AC_LANG_SOURCE([int main(void){ return 0;}])],I386_CLANG40_MULTIARCH=yes,I386_CLANG40_MULTIARCH=no)
+      AC_LINK_IFELSE([AC_LANG_SOURCE([int main(void){ return 0;}])],I386_CLANG4_MULTIARCH=yes,I386_CLANG4_MULTIARCH=no)
       AC_LANG_POP([C])
       CC=$ac_save_CC
       CFLAGS=$ac_save_CFLAGS
       LDFLAGS=$ac_save_LDFLAGS
       LIBS=$ac_save_LIBS
-      if test "x$I386_CLANG40_MULTIARCH" != xyes; then
+      if test "x$I386_CLANG4_MULTIARCH" != xyes; then
          echo "checking support to -m32... no"
          continue
       else
@@ -92,19 +92,19 @@ for compiler in $CLANG_TO_BE_CHECKED; do
       ac_save_CFLAGS="$CFLAGS"
       ac_save_LDFLAGS="$LDFLAGS"
       ac_save_LIBS="$LIBS"
-      CC=$I386_CLANG40_EXE
+      CC=$I386_CLANG4_EXE
       CFLAGS="-mx32"
       LDFLAGS=
       LIBS=
       AC_LANG_PUSH([C])
-      AC_LINK_IFELSE([AC_LANG_SOURCE([int main(void){ return 0;}])],I386_CLANG40_MX32=yes,I386_CLANG40_MX32=no)
+      AC_LINK_IFELSE([AC_LANG_SOURCE([int main(void){ return 0;}])],I386_CLANG4_MX32=yes,I386_CLANG4_MX32=no)
       AC_LANG_POP([C])
       CC=$ac_save_CC
       CFLAGS=$ac_save_CFLAGS
       LDFLAGS=$ac_save_LDFLAGS
       LIBS=$ac_save_LIBS
-      if test "x$I386_CLANG40_MX32" == xyes; then
-         AC_DEFINE(HAVE_I386_CLANG40_MX32,1,[Define if clang 4.0 supports -mx32 ])
+      if test "x$I386_CLANG4_MX32" == xyes; then
+         AC_DEFINE(HAVE_I386_CLANG4_MX32,1,[Define if clang 4.0 supports -mx32 ])
          echo "checking support to -mx32... yes"
       else
          echo "checking support to -mx32... no"
@@ -238,42 +238,42 @@ protected:
 static FrontendPluginRegistry::Add<PrintFunctionNamesAction>
 X("print-fns", "print function names");
 PLUGIN_TEST
-      for plugin_compiler in $I386_CLANGPP40_EXE; do
+      for plugin_compiler in $I386_CLANGPP4_EXE; do
          if test -f plugin_test.so; then
             rm plugin_test.so
          fi
-         $plugin_compiler -I$TOPSRCDIR/etc/clang_plugin/ -fPIC -shared plugin_test.cpp -o plugin_test.so -std=c++11 -I$I386_LLVM40_HEADER_DIR 2> /dev/null
+         $plugin_compiler -I$TOPSRCDIR/etc/clang_plugin/ -fPIC -shared plugin_test.cpp -o plugin_test.so -std=c++11 -I$I386_LLVM4_HEADER_DIR 2> /dev/null
          if test ! -f plugin_test.so; then
-            echo "checking $plugin_compiler -I$TOPSRCDIR/etc/clang_plugin/ -fPIC -shared plugin_test.cpp -o plugin_test.so -std=c++11 -I$I386_LLVM40_HEADER_DIR... no... Package libclang-4.0-dev missing?"
+            echo "checking $plugin_compiler -I$TOPSRCDIR/etc/clang_plugin/ -fPIC -shared plugin_test.cpp -o plugin_test.so -std=c++11 -I$I386_LLVM4_HEADER_DIR... no... Package libclang-4.0-dev missing?"
             continue
          fi
-         echo "checking $plugin_compiler -I$TOPSRCDIR/etc/clang_plugin/ -fPIC -shared plugin_test.cpp -o plugin_test.so -std=c++11 -I$I386_LLVM40_HEADER_DIR... yes"
+         echo "checking $plugin_compiler -I$TOPSRCDIR/etc/clang_plugin/ -fPIC -shared plugin_test.cpp -o plugin_test.so -std=c++11 -I$I386_LLVM4_HEADER_DIR... yes"
          ac_save_CC="$CC"
          ac_save_CFLAGS="$CFLAGS"
-         CC=$I386_CLANG40_EXE
+         CC=$I386_CLANG4_EXE
          CFLAGS="-fplugin=$BUILDDIR/plugin_test.so -Xclang -add-plugin -Xclang print-fns"
          AC_LANG_PUSH([C])
          AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
                ]],[[
                   return 0;
                ]])],
-         I386_CLANG40_PLUGIN_COMPILER=$plugin_compiler,I386_CLANG40_PLUGIN_COMPILER=)
+         I386_CLANG4_PLUGIN_COMPILER=$plugin_compiler,I386_CLANG4_PLUGIN_COMPILER=)
          AC_LANG_POP([C])
          CC=$ac_save_CC
          CFLAGS=$ac_save_CFLAGS
          #If plugin compilation fails, skip this executable
-         if test "x$I386_CLANG40_PLUGIN_COMPILER" = x; then
-            echo "plugin compilation does not work... $I386_CLANG40_EXE -fplugin=$BUILDDIR/plugin_test.so -Xclang -add-plugin -Xclang print-fns ?"
+         if test "x$I386_CLANG4_PLUGIN_COMPILER" = x; then
+            echo "plugin compilation does not work... $I386_CLANG4_EXE -fplugin=$BUILDDIR/plugin_test.so -Xclang -add-plugin -Xclang print-fns ?"
             continue
          fi
          echo "OK, we have found the compiler"
-         build_I386_CLANG40=yes;
-         build_I386_CLANG40_EMPTY_PLUGIN=yes;
-         build_I386_CLANG40_SSA_PLUGIN=yes;
-         build_I386_CLANG40_SSA_PLUGINCPP=yes;
-         build_I386_CLANG40_TOPFNAME_PLUGIN=yes;
+         build_I386_CLANG4=yes;
+         build_I386_CLANG4_EMPTY_PLUGIN=yes;
+         build_I386_CLANG4_SSA_PLUGIN=yes;
+         build_I386_CLANG4_SSA_PLUGINCPP=yes;
+         build_I386_CLANG4_TOPFNAME_PLUGIN=yes;
       done
-      if test "x$I386_CLANG40_PLUGIN_COMPILER" != x; then
+      if test "x$I386_CLANG4_PLUGIN_COMPILER" != x; then
          break;
       fi
    else
@@ -281,30 +281,30 @@ PLUGIN_TEST
    fi
 done
 
-if test x$I386_CLANG40_PLUGIN_COMPILER != x; then
+if test x$I386_CLANG4_PLUGIN_COMPILER != x; then
   dnl set configure and makefile variables
-  I386_CLANG40_EMPTY_PLUGIN=clang40_plugin_dumpGimpleEmpty
-  I386_CLANG40_SSA_PLUGIN=clang40_plugin_dumpGimpleSSA
-  I386_CLANG40_SSA_PLUGINCPP=clang40_plugin_dumpGimpleSSACpp
-  I386_CLANG40_TOPFNAME_PLUGIN=clang40_plugin_topfname
-  AC_SUBST(I386_CLANG40_EMPTY_PLUGIN)
-  AC_SUBST(I386_CLANG40_SSA_PLUGIN)
-  AC_SUBST(I386_CLANG40_SSA_PLUGINCPP)
-  AC_SUBST(I386_CLANG40_TOPFNAME_PLUGIN)
-  AC_SUBST(I386_LLVM40_HEADER_DIR)
-  AC_SUBST(I386_CLANG40_EXE)
-  AC_SUBST(I386_CLANG40_VERSION)
-  AC_SUBST(I386_CLANG40_PLUGIN_COMPILER)
-  AC_DEFINE(HAVE_I386_CLANG40_COMPILER, 1, "Define if CLANG 4.0 I386 compiler is compliant")
-  AC_DEFINE_UNQUOTED(I386_CLANG40_EXE, "${I386_CLANG40_EXE}", "Define the plugin clang")
-  AC_DEFINE_UNQUOTED(I386_CLANG_CPP40_EXE, "${I386_CLANG_CPP40_EXE}", "Define the plugin cpp")
-  AC_DEFINE_UNQUOTED(I386_CLANGPP40_EXE, "${I386_CLANGPP40_EXE}", "Define the plugin clang++")
-  AC_DEFINE_UNQUOTED(I386_CLANG40_EMPTY_PLUGIN, "${I386_CLANG40_EMPTY_PLUGIN}", "Define the filename of the CLANG PandA Empty plugin")
-  AC_DEFINE_UNQUOTED(I386_CLANG40_SSA_PLUGIN, "${I386_CLANG40_SSA_PLUGIN}", "Define the filename of the CLANG PandA SSA plugin")
-  AC_DEFINE_UNQUOTED(I386_CLANG40_SSA_PLUGINCPP, "${I386_CLANG40_SSA_PLUGINCPP}", "Define the filename of the CLANG PandA C++ SSA plugin")
-  AC_DEFINE_UNQUOTED(I386_CLANG40_TOPFNAME_PLUGIN, "${I386_CLANG40_TOPFNAME_PLUGIN}", "Define the filename of the CLANG PandA topfname plugin")
-  AC_DEFINE_UNQUOTED(I386_CLANG40_VERSION, "${I386_CLANG40_VERSION}", "Define the clang version")
-  AC_DEFINE_UNQUOTED(I386_CLANG40_PLUGIN_COMPILER, "${I386_CLANG40_PLUGIN_COMPILER}", "Define the plugin compiler")
+  I386_CLANG4_EMPTY_PLUGIN=clang4_plugin_dumpGimpleEmpty
+  I386_CLANG4_SSA_PLUGIN=clang4_plugin_dumpGimpleSSA
+  I386_CLANG4_SSA_PLUGINCPP=clang4_plugin_dumpGimpleSSACpp
+  I386_CLANG4_TOPFNAME_PLUGIN=clang4_plugin_topfname
+  AC_SUBST(I386_CLANG4_EMPTY_PLUGIN)
+  AC_SUBST(I386_CLANG4_SSA_PLUGIN)
+  AC_SUBST(I386_CLANG4_SSA_PLUGINCPP)
+  AC_SUBST(I386_CLANG4_TOPFNAME_PLUGIN)
+  AC_SUBST(I386_LLVM4_HEADER_DIR)
+  AC_SUBST(I386_CLANG4_EXE)
+  AC_SUBST(I386_CLANG4_VERSION)
+  AC_SUBST(I386_CLANG4_PLUGIN_COMPILER)
+  AC_DEFINE(HAVE_I386_CLANG4_COMPILER, 1, "Define if CLANG 4.0 I386 compiler is compliant")
+  AC_DEFINE_UNQUOTED(I386_CLANG4_EXE, "${I386_CLANG4_EXE}", "Define the plugin clang")
+  AC_DEFINE_UNQUOTED(I386_CLANG_CPP4_EXE, "${I386_CLANG_CPP4_EXE}", "Define the plugin cpp")
+  AC_DEFINE_UNQUOTED(I386_CLANGPP4_EXE, "${I386_CLANGPP4_EXE}", "Define the plugin clang++")
+  AC_DEFINE_UNQUOTED(I386_CLANG4_EMPTY_PLUGIN, "${I386_CLANG4_EMPTY_PLUGIN}", "Define the filename of the CLANG PandA Empty plugin")
+  AC_DEFINE_UNQUOTED(I386_CLANG4_SSA_PLUGIN, "${I386_CLANG4_SSA_PLUGIN}", "Define the filename of the CLANG PandA SSA plugin")
+  AC_DEFINE_UNQUOTED(I386_CLANG4_SSA_PLUGINCPP, "${I386_CLANG4_SSA_PLUGINCPP}", "Define the filename of the CLANG PandA C++ SSA plugin")
+  AC_DEFINE_UNQUOTED(I386_CLANG4_TOPFNAME_PLUGIN, "${I386_CLANG4_TOPFNAME_PLUGIN}", "Define the filename of the CLANG PandA topfname plugin")
+  AC_DEFINE_UNQUOTED(I386_CLANG4_VERSION, "${I386_CLANG4_VERSION}", "Define the clang version")
+  AC_DEFINE_UNQUOTED(I386_CLANG4_PLUGIN_COMPILER, "${I386_CLANG4_PLUGIN_COMPILER}", "Define the plugin compiler")
 fi
 
 dnl switch back to old language

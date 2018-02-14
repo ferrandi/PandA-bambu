@@ -54,9 +54,9 @@ libpthread_gcc7_a_SOURCES = pthread.c
 libpthread_gcc7_a_CFLAGS = -fno-tree-loop-distribute-patterns --compiler=I386_GCC7 $(common_treegccflags)
 endif
 
-if BUILD_I386_CLANG40
-pkglib_LIBRARIES += libpthread_clang40.a
-libpthread_clang40_a_SOURCES = pthread.c
-libpthread_clang40_a_CFLAGS = --compiler=I386_CLANG40 $(common_treegccflags_clang)
+if BUILD_I386_CLANG4
+pkglib_LIBRARIES += libpthread_clang4.a
+libpthread_clang4_a_SOURCES = pthread.c
+libpthread_clang4_a_CFLAGS = --compiler=I386_CLANG4 $(common_treegccflags_clang)
 endif
 

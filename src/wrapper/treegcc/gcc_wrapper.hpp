@@ -57,7 +57,7 @@
 #include "config_HAVE_I386_GCC5_COMPILER.hpp"
 #include "config_HAVE_I386_GCC6_COMPILER.hpp"
 #include "config_HAVE_I386_GCC7_COMPILER.hpp"
-#include "config_HAVE_I386_CLANG40_COMPILER.hpp"
+#include "config_HAVE_I386_CLANG4_COMPILER.hpp"
 #include "config_HAVE_SPARC_COMPILER.hpp"
 #include "config_HAVE_TUCANO_BUILT.hpp"
 #include "config_HAVE_ZEBU_BUILT.hpp"
@@ -137,8 +137,8 @@ enum class GccWrapper_CompilerTarget
 #if HAVE_I386_GCC7_COMPILER
    CT_I386_GCC7 = 128,
 #endif
-#if HAVE_I386_CLANG40_COMPILER
-   CT_I386_CLANG40 = 256,
+#if HAVE_I386_CLANG4_COMPILER
+   CT_I386_CLANG4 = 256,
 #endif
 #if HAVE_ARM_COMPILER
    CT_ARM_GCC = 512,

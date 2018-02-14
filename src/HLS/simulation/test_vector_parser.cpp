@@ -36,7 +36,7 @@
  *
 */
 
-#include "config_HAVE_I386_CLANG40_COMPILER.hpp"
+#include "config_HAVE_I386_CLANG4_COMPILER.hpp"
 
 #include "test_vector_parser.hpp"
 
@@ -109,8 +109,8 @@ const
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining " + user_input_string);
    bool ParameterRenaming = false;
-#if HAVE_I386_CLANG40_COMPILER
-   if(parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANG40)
+#if HAVE_I386_CLANG4_COMPILER
+   if(parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANG4)
       ParameterRenaming = true;
 #endif
 
