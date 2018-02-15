@@ -316,7 +316,7 @@ void GccWrapper::CompileFile(const std::string& original_file_name, std::string 
          command += " -o " + Param->getOption<std::string>(OPT_output_file);
    }
    else
-      command += " -o " + std::string(STR_CST_gcc_obj_file);
+      command += " -o " + Param->getOption<std::string>(OPT_output_temporary_directory) + std::string(STR_CST_gcc_obj_file);
 
    if(!(Param->getOption<bool>(OPT_compute_size_of)))
       command += " -D\"" + std::string(STR_CST_panda_sizeof) + "(arg)=" + STR_CST_string_sizeof + "(#arg)\"";
