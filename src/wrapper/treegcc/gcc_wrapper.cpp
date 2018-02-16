@@ -61,6 +61,7 @@
 #include "config_HAVE_I386_GCC6_COMPILER.hpp"
 #include "config_HAVE_I386_GCC7_COMPILER.hpp"
 #include "config_HAVE_I386_CLANG4_COMPILER.hpp"
+#include "config_HAVE_I386_CLANG5_COMPILER.hpp"
 #include "config_HAVE_SPARC_COMPILER.hpp"
 #include "config_HAVE_SPARC_ELF_GCC.hpp"
 #include "config_HAVE_FROM_RTL_BUILT.hpp"
@@ -131,6 +132,13 @@
 #include "config_I386_CLANG4_SSA_PLUGIN.hpp"
 #include "config_I386_CLANG4_SSA_PLUGINCPP.hpp"
 #include "config_I386_CLANG4_TOPFNAME_PLUGIN.hpp"
+#include "config_I386_CLANG_CPP5_EXE.hpp"
+#include "config_I386_CLANG5_EMPTY_PLUGIN.hpp"
+#include "config_I386_CLANG5_EXE.hpp"
+#include "config_I386_CLANGPP5_EXE.hpp"
+#include "config_I386_CLANG5_SSA_PLUGIN.hpp"
+#include "config_I386_CLANG5_SSA_PLUGINCPP.hpp"
+#include "config_I386_CLANG5_TOPFNAME_PLUGIN.hpp"
 #include "config_HAVE_I386_GCC47_MX32.hpp"
 #include "config_HAVE_I386_GCC48_MX32.hpp"
 #include "config_HAVE_I386_GCC49_MX32.hpp"
@@ -138,6 +146,7 @@
 #include "config_HAVE_I386_GCC6_MX32.hpp"
 #include "config_HAVE_I386_GCC7_MX32.hpp"
 #include "config_HAVE_I386_CLANG4_MX32.hpp"
+#include "config_HAVE_I386_CLANG5_MX32.hpp"
 #include "config_NPROFILE.hpp"
 #include "config_PANDA_INCLUDE_INSTALLDIR.hpp"
 #include "config_SPARC_CPP_EXE.hpp"
@@ -310,13 +319,20 @@ void GccWrapper::CompileFile(const std::string& original_file_name, std::string 
       }
    }
 
+   std::string temporary_file_run_o;
    if((Param->isOption(OPT_gcc_E) and Param->getOption<bool>(OPT_gcc_E)) or (Param->isOption(OPT_gcc_S) and Param->getOption<bool>(OPT_gcc_S)))
    {
       if(Param->isOption(OPT_output_file))
-         command += " -o " + Param->getOption<std::string>(OPT_output_file);
+      {
+         temporary_file_run_o = Param->getOption<std::string>(OPT_output_file);
+         command += " -o " + temporary_file_run_o;
+      }
    }
    else
-      command += " -o " + Param->getOption<std::string>(OPT_output_temporary_directory) + std::string(STR_CST_gcc_obj_file);
+   {
+      temporary_file_run_o = boost::filesystem::unique_path(std::string(STR_CST_gcc_obj_file)).c_str();
+      command += " -o " + temporary_file_run_o;
+   }
 
    if(!(Param->getOption<bool>(OPT_compute_size_of)))
       command += " -D\"" + std::string(STR_CST_panda_sizeof) + "(arg)=" + STR_CST_string_sizeof + "(#arg)\"";
@@ -349,7 +365,7 @@ void GccWrapper::CompileFile(const std::string& original_file_name, std::string 
 #endif
 
    if(!((Param->isOption(OPT_gcc_E) and Param->getOption<bool>(OPT_gcc_E)) or (Param->isOption(OPT_gcc_S) and Param->getOption<bool>(OPT_gcc_S))))
-      std::remove(STR_CST_gcc_obj_file);
+      std::remove(temporary_file_run_o.c_str());
    if(IsError(ret))
    {
       PRINT_OUT_MEX(OUTPUT_LEVEL_NONE, 0, "Error in compilation");
@@ -692,11 +708,19 @@ void GccWrapper::SetBambuDefault()
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "-->Setting parameters for Bambu tool...");
    const GccWrapper_OptimizationSet opt_level = Param->getOption<GccWrapper_OptimizationSet>(OPT_gcc_opt_level);
-#if HAVE_I386_GCC46_COMPILER || HAVE_I386_GCC47_COMPILER || HAVE_I386_GCC48_COMPILER || HAVE_I386_GCC49_COMPILER || HAVE_I386_GCC5_COMPILER || HAVE_I386_GCC6_COMPILER || HAVE_I386_GCC7_COMPILER || HAVE_I386_CLANG4_COMPILER
+#if HAVE_I386_GCC46_COMPILER || HAVE_I386_GCC47_COMPILER || HAVE_I386_GCC48_COMPILER || HAVE_I386_GCC49_COMPILER || HAVE_I386_GCC5_COMPILER || HAVE_I386_GCC6_COMPILER || HAVE_I386_GCC7_COMPILER || HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER
    GccWrapper_CompilerTarget compiler = Param->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler);
 #endif
 #if HAVE_I386_CLANG4_COMPILER
    if(compiler == GccWrapper_CompilerTarget::CT_I386_CLANG4)
+   {
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--Set parameters for bambu tool");
+      optimization_flags["wrapv"] = true; /// bambu assumes twos complement arithmetic
+      return;
+   }
+#endif
+#if HAVE_I386_CLANG5_COMPILER
+   if(compiler == GccWrapper_CompilerTarget::CT_I386_CLANG5)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--Set parameters for bambu tool");
       optimization_flags["wrapv"] = true; /// bambu assumes twos complement arithmetic
@@ -713,7 +737,7 @@ void GccWrapper::SetBambuDefault()
    optimization_flags["tree-copy-prop"] = true; ///FIXME: this has been always active with gcc >= 4.6; produced c code in bambu for example gcc_regression_simple/20040307-1.c when disabled
    optimization_flags["ipa-pta"] = true;
 
-#if HAVE_I386_GCC46_COMPILER || HAVE_I386_GCC47_COMPILER || HAVE_I386_GCC48_COMPILER || HAVE_I386_GCC49_COMPILER || HAVE_I386_GCC5_COMPILER || HAVE_I386_GCC6_COMPILER || HAVE_I386_GCC7_COMPILER || HAVE_I386_CLANG4_COMPILER
+#if HAVE_I386_GCC46_COMPILER || HAVE_I386_GCC47_COMPILER || HAVE_I386_GCC48_COMPILER || HAVE_I386_GCC49_COMPILER || HAVE_I386_GCC5_COMPILER || HAVE_I386_GCC6_COMPILER || HAVE_I386_GCC7_COMPILER || HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER
    ///NOTE: the false here is used to be sure that the first operand of the first or always exists 
    if(false
 #if HAVE_I386_GCC46_COMPILER
@@ -841,7 +865,7 @@ void GccWrapper::SetGccDefault()
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "-->Setting GCC defaults");
    const GccWrapper_OptimizationSet optimization_level = Param->getOption<GccWrapper_OptimizationSet>(OPT_gcc_opt_level);
-#if HAVE_I386_CLANG4_COMPILER
+#if HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER
    GccWrapper_CompilerTarget compiler = Param->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler);
 #endif
    optimization_flags["stack-protector"] = false;//In Ubuntu 6.10 and later versions this option is enabled by default for C, C++, ObjC, ObjC++
@@ -868,9 +892,14 @@ void GccWrapper::SetGccDefault()
          {
             gcc_compiling_parameters += " -O1 ";
 
+            if(true
 #if HAVE_I386_CLANG4_COMPILER
-            if(compiler != GccWrapper_CompilerTarget::CT_I386_CLANG4)
+            && compiler != GccWrapper_CompilerTarget::CT_I386_CLANG4
 #endif
+#if HAVE_I386_CLANG5_COMPILER
+            && compiler != GccWrapper_CompilerTarget::CT_I386_CLANG5
+#endif
+            )
             {
                optimization_flags["auto-inc-dec"] = false;
                optimization_flags["cprop-registers"] = false;
@@ -997,6 +1026,12 @@ void GccWrapper::SetGccDefault()
                      break;
                   }
 #endif
+#if HAVE_I386_CLANG5_COMPILER
+                  case(GccWrapper_CompilerTarget::CT_I386_CLANG5) :
+                  {
+                     break;
+                  }
+#endif
 #if HAVE_ARM_COMPILER
                   case(GccWrapper_CompilerTarget::CT_ARM_GCC):
                   {
@@ -1044,14 +1079,19 @@ void GccWrapper::SetGccDefault()
             }
    }
    /// required by PandA
+   if(true
 #if HAVE_I386_CLANG4_COMPILER
-   if(compiler != GccWrapper_CompilerTarget::CT_I386_CLANG4)
+      && compiler != GccWrapper_CompilerTarget::CT_I386_CLANG4
 #endif
+#if HAVE_I386_CLANG5_COMPILER
+      && compiler != GccWrapper_CompilerTarget::CT_I386_CLANG5
+#endif
+   )
    {
       optimization_flags["ipa-pure-const"] = true; ///needed to correctly manage global variables
       optimization_flags["tree-dce"] = true; ///needed to remove unnecessary computations
    }
-#if HAVE_I386_CLANG4_COMPILER
+#if HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER
    else
    {
       optimization_flags["vectorize"] = false; ///disable vectorization
@@ -1079,13 +1119,13 @@ void GccWrapper::SetGccDefault()
 GccWrapper::Compiler GccWrapper::GetCompiler() const
 {
    Compiler compiler;
-#if HAVE_I386_GCC45_COMPILER || HAVE_I386_GCC46_COMPILER || HAVE_I386_GCC47_COMPILER || HAVE_I386_GCC48_COMPILER || HAVE_I386_GCC49_COMPILER || HAVE_I386_GCC5_COMPILER || HAVE_I386_GCC6_COMPILER || HAVE_I386_GCC7_COMPILER || HAVE_I386_CLANG4_COMPILER || HAVE_SPARC_COMPILER || HAVE_ARM_COMPILER
+#if HAVE_I386_GCC45_COMPILER || HAVE_I386_GCC46_COMPILER || HAVE_I386_GCC47_COMPILER || HAVE_I386_GCC48_COMPILER || HAVE_I386_GCC49_COMPILER || HAVE_I386_GCC5_COMPILER || HAVE_I386_GCC6_COMPILER || HAVE_I386_GCC7_COMPILER || HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_SPARC_COMPILER || HAVE_ARM_COMPILER
 #ifndef NDEBUG
    GccWrapper_CompilerTarget compatible_compilers = Param->getOption<GccWrapper_CompilerTarget>(OPT_compatible_compilers);
 #endif
 #endif
 
-#if HAVE_I386_GCC45_COMPILER || HAVE_I386_GCC46_COMPILER || HAVE_I386_GCC47_COMPILER || HAVE_I386_GCC48_COMPILER || HAVE_I386_GCC49_COMPILER || HAVE_I386_GCC5_COMPILER || HAVE_I386_GCC6_COMPILER || HAVE_I386_GCC7_COMPILER || HAVE_I386_CLANG4_COMPILER || HAVE_SPARC_COMPILER || HAVE_ARM_COMPILER
+#if HAVE_I386_GCC45_COMPILER || HAVE_I386_GCC46_COMPILER || HAVE_I386_GCC47_COMPILER || HAVE_I386_GCC48_COMPILER || HAVE_I386_GCC49_COMPILER || HAVE_I386_GCC5_COMPILER || HAVE_I386_GCC6_COMPILER || HAVE_I386_GCC7_COMPILER || HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_SPARC_COMPILER || HAVE_ARM_COMPILER
    bool flag_cpp;
    if(Param->isOption(OPT_input_format) &&
          Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_CPP &&
@@ -1095,13 +1135,13 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
       flag_cpp = false;
 #endif
 
-#if HAVE_I386_GCC45_COMPILER || HAVE_I386_GCC46_COMPILER || HAVE_I386_GCC47_COMPILER || HAVE_I386_GCC48_COMPILER || HAVE_I386_GCC49_COMPILER || HAVE_I386_GCC5_COMPILER || HAVE_I386_GCC6_COMPILER || HAVE_I386_GCC7_COMPILER || HAVE_I386_CLANG4_COMPILER || HAVE_SPARC_COMPILER || HAVE_ARM_COMPILER || HAVE_SPARC_ELF_GCC
+#if HAVE_I386_GCC45_COMPILER || HAVE_I386_GCC46_COMPILER || HAVE_I386_GCC47_COMPILER || HAVE_I386_GCC48_COMPILER || HAVE_I386_GCC49_COMPILER || HAVE_I386_GCC5_COMPILER || HAVE_I386_GCC6_COMPILER || HAVE_I386_GCC7_COMPILER || HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_SPARC_COMPILER || HAVE_ARM_COMPILER || HAVE_SPARC_ELF_GCC
    std::string gcc_extra_options;
    if(Param->isOption(OPT_gcc_extra_options))
       gcc_extra_options = Param->getOption<std::string>(OPT_gcc_extra_options);
 #endif
 
-#if HAVE_I386_GCC45_COMPILER || HAVE_I386_GCC46_COMPILER || HAVE_I386_GCC47_COMPILER || HAVE_I386_GCC48_COMPILER || HAVE_I386_GCC49_COMPILER || HAVE_I386_GCC5_COMPILER || HAVE_I386_GCC6_COMPILER || HAVE_I386_GCC7_COMPILER || HAVE_I386_CLANG4_COMPILER || HAVE_SPARC_COMPILER || HAVE_ARM_COMPILER
+#if HAVE_I386_GCC45_COMPILER || HAVE_I386_GCC46_COMPILER || HAVE_I386_GCC47_COMPILER || HAVE_I386_GCC48_COMPILER || HAVE_I386_GCC49_COMPILER || HAVE_I386_GCC5_COMPILER || HAVE_I386_GCC6_COMPILER || HAVE_I386_GCC7_COMPILER || HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_SPARC_COMPILER || HAVE_ARM_COMPILER
    GccWrapper_CompilerTarget preferred_compiler;
    if(compiler_target == GccWrapper_CompilerTarget::CT_NO_GCC)
    {
@@ -1384,6 +1424,27 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
       compiler.ssa_plugin_name = (flag_cpp ? I386_CLANG4_SSA_PLUGINCPP : I386_CLANG4_SSA_PLUGIN);
       compiler.topfname_plugin_obj = plugin_dir + I386_CLANG4_TOPFNAME_PLUGIN + plugin_ext;
       compiler.topfname_plugin_name = I386_CLANG4_TOPFNAME_PLUGIN;
+
+#if HAVE_FROM_RTL_BUILT
+      compiler.rtl_plugin = plugin_dir + "";
+#endif
+   }
+#endif
+
+#if HAVE_I386_CLANG5_COMPILER
+   if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG5))
+   {
+      compiler.is_clang = true;
+      compiler.gcc = flag_cpp ? I386_CLANGPP5_EXE : I386_CLANG5_EXE;
+      compiler.cpp = I386_CLANG_CPP5_EXE;
+      compiler.extra_options = " -D_FORTIFY_SOURCE=0 " + gcc_extra_options;
+      compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m32_mx32);
+      compiler.empty_plugin_obj = plugin_dir + I386_CLANG5_EMPTY_PLUGIN + plugin_ext;
+      compiler.empty_plugin_name = I386_CLANG5_EMPTY_PLUGIN;
+      compiler.ssa_plugin_obj = plugin_dir + (flag_cpp ? I386_CLANG5_SSA_PLUGINCPP : I386_CLANG5_SSA_PLUGIN) + plugin_ext;
+      compiler.ssa_plugin_name = (flag_cpp ? I386_CLANG5_SSA_PLUGINCPP : I386_CLANG5_SSA_PLUGIN);
+      compiler.topfname_plugin_obj = plugin_dir + I386_CLANG5_TOPFNAME_PLUGIN + plugin_ext;
+      compiler.topfname_plugin_name = I386_CLANG5_TOPFNAME_PLUGIN;
 
 #if HAVE_FROM_RTL_BUILT
       compiler.rtl_plugin = plugin_dir + "";

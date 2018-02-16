@@ -82,3 +82,10 @@ libbambu_clang4_a_CFLAGS =$(common_cflags_clang) --compiler=I386_CLANG4
 libbambu_clang4_a_AR =$(top_builddir)/src/tree-panda-gcc $(common_treegccflags_clang) --compiler=I386_CLANG4 -C
 endif
 
+if BUILD_I386_CLANG5
+pkglib_LIBRARIES += libbambu_clang5.a
+libbambu_clang5_a_SOURCES = $(common_libbambu_src)
+libbambu_clang5_a_CFLAGS =$(common_cflags_clang) --compiler=I386_CLANG5 
+libbambu_clang5_a_AR =$(top_builddir)/src/tree-panda-gcc $(common_treegccflags_clang) --compiler=I386_CLANG5 -C
+endif
+

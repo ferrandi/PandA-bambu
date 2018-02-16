@@ -56,7 +56,14 @@
 #include "llvm/Analysis/CFG.h"
 #include "llvm/Pass.h"
 #include "llvm/Analysis/LoopPass.h"
+
+#if __clang_major__ == 4
 #include "llvm/Transforms/Utils/MemorySSA.h"
+#elif __clang_major__ == 5
+#include "llvm/Analysis/MemorySSA.h"
+#else
+#error
+#endif
 #include "llvm/Analysis/LazyValueInfo.h"
 #include "llvm/Analysis/AliasAnalysis.h"
 #include "llvm/IR/ModuleSlotTracker.h"
@@ -410,6 +417,8 @@ namespace clang
                      return ci->use_empty() ? assignCode(t, GT(GIMPLE_CALL)) : assignCode(t, GT(GIMPLE_ASSIGN));
                   case llvm::Intrinsic::fabs:
                      return assignCode(t, GT(GIMPLE_ASSIGN));
+                  case llvm::Intrinsic::rint:
+                     return assignCode(t, GT(GIMPLE_ASSIGN));
                   default:
                      llvm::errs() << "assignCodeAuto kind not supported: " << ValueTyNames[vid] << "\n";
                      ci->print(llvm::errs(), true);
@@ -539,6 +548,17 @@ namespace clang
          }
          case llvm::Intrinsic::trap:
             return "__builtin_trap";
+         case llvm::Intrinsic::rint:
+         {
+            if(fd->getReturnType()->isFloatTy())
+               return "rintf";
+            else if(fd->getReturnType()->isDoubleTy())
+               return "rint";
+            else if(fd->getReturnType()->isFP128Ty())
+               return "rintl";
+            fd->print(llvm::errs());
+            llvm_unreachable("Plugin Error");
+         }
          default:
             fd->print(llvm::errs());
             llvm_unreachable("Plugin Error");
@@ -769,7 +789,9 @@ namespace clang
       {
          res.filename = di->getFilename();
          res.file = res.filename.c_str();
+#if __clang_major__ == 4
          res.line = di->getLine();
+#endif
       }
       else if(auto * di = dyn_cast<llvm::DIModule>(llvm_obj))
       {
@@ -1511,7 +1533,7 @@ namespace clang
          if(uicTable.find(MSB_pos) == uicTable.end())
             uicTable[MSB_pos] =  assignCodeAuto(llvm::ConstantInt::get(llvm::Type::getInt32Ty(inst->getContext()), MSB_pos, false));
          const void* MSB_posNode = uicTable.find(MSB_pos)->second;
-         auto type = AddSignedTag(TREE_TYPE(g));
+         auto type = AddSignedTag(assignCodeType(sext.getType()));
          auto casted = build1(GT(NOP_EXPR), type, getOperand(inst->getOperand(index), currentFunction));
          auto shiftedLeft = build2(GT(LSHIFT_EXPR), type, casted, MSB_posNode);
          return build2(GT(RSHIFT_EXPR), type, shiftedLeft, MSB_posNode);
@@ -2376,7 +2398,7 @@ namespace clang
    {
       const llvm::Function *fd = reinterpret_cast<const llvm::Function *>(t);
       std::list<const void*> res;
-      for(const auto& par: fd->getArgumentList())
+      for(const auto& par: fd->args())
       {
          res.push_back(assignCodeAuto(&par));
       }
@@ -4165,6 +4187,7 @@ namespace clang
          case llvm::Intrinsic::memset:
          case llvm::Intrinsic::memmove:
          case llvm::Intrinsic::trap:
+         case llvm::Intrinsic::rint:
             return true;
          default:
             return false;

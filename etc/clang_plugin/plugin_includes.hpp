@@ -55,6 +55,17 @@
 #define GT(code) tree_codes::code
 #define LOCAL_BUFFER_LEN 512
 
+#if __clang_major__ == 4
+#define CLANG_VERSION_SYMBOL(SYMBOL) clang4 ## SYMBOL
+#define CLANG_VERSION_STRING(SYMBOL) "clang4" #SYMBOL
+#elif __clang_major__ == 5
+#define CLANG_VERSION_SYMBOL(SYMBOL) clang5 ## SYMBOL
+#define CLANG_VERSION_STRING(SYMBOL) "clang5" #SYMBOL
+#else
+#error
+#endif
+
+
 class dummyConsumer : public clang::ASTConsumer
 {
    public:

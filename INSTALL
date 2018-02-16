@@ -326,6 +326,8 @@ Debian unstable (sid):
 - gfortran-multilib 
 - clang-4.0
 - libclang-4.0-dev
+- clang-5.0
+- libclang-5.0-dev
 - libboost-all-dev
 - libmpc-dev
 - libmpfr-dev
@@ -346,7 +348,7 @@ Debian unstable (sid):
 - make
 
 In a single line (as root user):
-apt install autoconf autoconf-archive libtool make g++ gcc-5 g++-5 gcc-6 g++-6 gcc-5-plugin-dev gcc-6-plugin-dev gcc-7-plugin-dev gcc-5-multilib gcc-6-multilib gcc-7-multilib gfortran gfortran-multilib clang-4.0 libclang-4.0-dev libboost-all-dev libmpc-dev libmpfr-dev libxml2-dev liblzma-dev libmpfi-dev zlib1g-dev libicu-dev bison doxygen flex graphviz iverilog verilator pkg-config
+apt install autoconf autoconf-archive libtool make g++ gcc-5 g++-5 gcc-6 g++-6 gcc-5-plugin-dev gcc-6-plugin-dev gcc-7-plugin-dev gcc-5-multilib gcc-6-multilib gcc-7-multilib gfortran gfortran-multilib clang-4.0 libclang-4.0-dev clang-5.0 libclang-5.0-dev libboost-all-dev libmpc-dev libmpfr-dev libxml2-dev liblzma-dev libmpfi-dev zlib1g-dev libicu-dev bison doxygen flex graphviz iverilog verilator pkg-config
 
 Debian 9 (Stretch):
 - autoconf

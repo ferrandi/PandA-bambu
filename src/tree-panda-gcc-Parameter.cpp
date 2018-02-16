@@ -52,6 +52,7 @@
 #include "config_HAVE_I386_GCC6_COMPILER.hpp"
 #include "config_HAVE_I386_GCC7_COMPILER.hpp"
 #include "config_HAVE_I386_CLANG4_COMPILER.hpp"
+#include "config_HAVE_I386_CLANG5_COMPILER.hpp"
 
 ///Header include
 #include "tree-panda-gcc-Parameter.hpp"
@@ -442,6 +443,8 @@ void tree_panda_gcc_parameter::SetDefaults()
    setOption(OPT_default_compiler, static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC7));
 #elif HAVE_I386_CLANG4_COMPILER
    setOption(OPT_default_compiler, static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG4));
+#elif HAVE_I386_CLANG5_COMPILER
+   setOption(OPT_default_compiler, static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG5));
 #else
    THROW_ERROR("No GCC compiler available");
 #endif
@@ -472,6 +475,9 @@ void tree_panda_gcc_parameter::SetDefaults()
 #endif
 #if HAVE_I386_CLANG4_COMPILER
       | static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG4)
+#endif
+#if HAVE_I386_CLANG5_COMPILER
+      | static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG5)
 #endif
 #if HAVE_ARM_COMPILER
       | static_cast<int>(GccWrapper_CompilerTarget::CT_ARM_GCC)

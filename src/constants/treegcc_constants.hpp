@@ -59,7 +59,7 @@
 #define STR_CST_gcc_min_plugin_version "0.10"
 
 ///The output file for tree-panda-gcc
-#define STR_CST_gcc_obj_file "run.o"
+#define STR_CST_gcc_obj_file "run-%%%%-%%%%-%%%%-%%%%.o"
 
 ///The file where output messages of gcc are saved
 #define STR_CST_gcc_output "__gcc_output"

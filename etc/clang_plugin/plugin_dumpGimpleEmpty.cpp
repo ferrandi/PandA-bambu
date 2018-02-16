@@ -52,7 +52,7 @@ static clang::DumpGimpleRaw *gimpleRawWriter;
 namespace clang {
 
 
-   class clang4_plugin_dumpGimpleEmpty : public PluginASTAction
+   class CLANG_VERSION_SYMBOL(_plugin_dumpGimpleEmpty) : public PluginASTAction
    {
          std::string outdir_name;
       protected:
@@ -94,7 +94,7 @@ namespace clang {
          }
          void PrintHelp(llvm::raw_ostream& ros)
          {
-            ros << "Help for clang4_plugin_dumpGimpleEmpty plugin\n";
+            ros << "Help for " CLANG_VERSION_STRING(_plugin_dumpGimpleEmpty) " plugin\n";
             ros << "-outputdir <directory>\n";
             ros << "  Directory where the raw file will be written\n";
          }
@@ -107,8 +107,8 @@ namespace clang {
 
 }
 
-static clang::FrontendPluginRegistry::Add<clang::clang4_plugin_dumpGimpleEmpty>
-X("clang4_plugin_dumpGimpleEmpty", "Dump globals in a gimple ssa raw format starting from LLVM IR");
+static clang::FrontendPluginRegistry::Add<clang::CLANG_VERSION_SYMBOL(_plugin_dumpGimpleEmpty)>
+X(CLANG_VERSION_STRING(_plugin_dumpGimpleEmpty), "Dump globals in a gimple ssa raw format starting from LLVM IR");
 
 
 
@@ -123,10 +123,10 @@ X("clang4_plugin_dumpGimpleEmpty", "Dump globals in a gimple ssa raw format star
 
 
 namespace llvm {
-   struct clang4_plugin_dumpGimpleEmptyPass: public ModulePass
+   struct CLANG_VERSION_SYMBOL(_plugin_dumpGimpleEmptyPass): public ModulePass
    {
          static char ID;
-         clang4_plugin_dumpGimpleEmptyPass() : ModulePass(ID)
+         CLANG_VERSION_SYMBOL(_plugin_dumpGimpleEmptyPass)() : ModulePass(ID)
          {
             initializeLoopPassPass(*PassRegistry::getPassRegistry());
          }
@@ -140,7 +140,7 @@ namespace llvm {
          }
          virtual StringRef getPassName() const
          {
-            return "clang4_plugin_dumpGimpleSSAPass";
+            return CLANG_VERSION_STRING(_plugin_dumpGimpleSSAPass);
          }
          void getAnalysisUsage(AnalysisUsage &AU) const
          {
@@ -150,14 +150,14 @@ namespace llvm {
    };
 
 }
-char llvm::clang4_plugin_dumpGimpleEmptyPass::ID = 0;
-static llvm::RegisterPass<llvm::clang4_plugin_dumpGimpleEmptyPass> XPass("clang4_plugin_dumpGimpleEmptyPass", "Dump gimple ssa raw format starting from LLVM IR: LLVM pass",
+char llvm::CLANG_VERSION_SYMBOL(_plugin_dumpGimpleEmptyPass)::ID = 0;
+static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_dumpGimpleEmptyPass)> XPass(CLANG_VERSION_STRING(_plugin_dumpGimpleEmptyPass), "Dump gimple ssa raw format starting from LLVM IR: LLVM pass",
                                 false /* Only looks at CFG */,
                                 false /* Analysis Pass */);
 
 // This function is of type PassManagerBuilder::ExtensionFn
 static void loadPass(const llvm::PassManagerBuilder &, llvm::legacy::PassManagerBase &PM) {
-  PM.add(new llvm::clang4_plugin_dumpGimpleEmptyPass());
+  PM.add(new llvm::CLANG_VERSION_SYMBOL(_plugin_dumpGimpleEmptyPass)());
 }
 // These constructors add our pass to a list of global extensions.
-static llvm::RegisterStandardPasses clang4_plugin_dumpGimpleEmptyLoader_Ox(llvm::PassManagerBuilder::EP_OptimizerLast, loadPass);
+static llvm::RegisterStandardPasses CLANG_VERSION_SYMBOL(_plugin_dumpGimpleEmptyLoader_Ox)(llvm::PassManagerBuilder::EP_OptimizerLast, loadPass);

@@ -50,7 +50,7 @@
 #include <cxxabi.h>
 
 namespace llvm {
-   struct clang4_plugin_DoNotExposeGlobalsPass;
+   struct CLANG_VERSION_SYMBOL(_plugin_DoNotExposeGlobalsPass);
 }
 
 static std::string TopFunctionNmae;
@@ -58,10 +58,10 @@ static std::string TopFunctionNmae;
 namespace clang {
 
 
-   class clang4_plugin_topfname : public PluginASTAction
+   class CLANG_VERSION_SYMBOL(_plugin_topfname) : public PluginASTAction
    {
          std::string topfname;
-         friend struct llvm::clang4_plugin_DoNotExposeGlobalsPass;
+         friend struct llvm::CLANG_VERSION_SYMBOL(_plugin_DoNotExposeGlobalsPass);
       protected:
          std::unique_ptr<ASTConsumer> CreateASTConsumer(CompilerInstance &,
                                                         llvm::StringRef ) override
@@ -97,7 +97,7 @@ namespace clang {
          }
          void PrintHelp(llvm::raw_ostream& ros)
          {
-            ros << "Help for clang4_plugin_topfname plugin\n";
+            ros << "Help for " CLANG_VERSION_STRING(_plugin_topfname) "  plugin\n";
             ros << "-topfname <topfunctionname>\n";
             ros << "  name of the top function\n";
          }
@@ -110,8 +110,8 @@ namespace clang {
 
 }
 
-static clang::FrontendPluginRegistry::Add<clang::clang4_plugin_topfname>
-X("clang4_plugin_topfname", "Dumy plugin");
+static clang::FrontendPluginRegistry::Add<clang::CLANG_VERSION_SYMBOL(_plugin_topfname)>
+X(CLANG_VERSION_STRING(_plugin_topfname), "Dumy plugin");
 
 
 #include "llvm/Pass.h"
@@ -125,10 +125,10 @@ X("clang4_plugin_topfname", "Dumy plugin");
 
 
 namespace llvm {
-   struct clang4_plugin_DoNotExposeGlobalsPass: public ModulePass
+   struct CLANG_VERSION_SYMBOL(_plugin_DoNotExposeGlobalsPass): public ModulePass
    {
          static char ID;
-         clang4_plugin_DoNotExposeGlobalsPass() : ModulePass(ID)
+         CLANG_VERSION_SYMBOL(_plugin_DoNotExposeGlobalsPass)() : ModulePass(ID)
          {
             initializeLoopPassPass(*PassRegistry::getPassRegistry());
          }
@@ -196,7 +196,7 @@ namespace llvm {
          }
          virtual StringRef getPassName() const
          {
-            return "clang4_plugin_DoNotExposeGlobalsPass";
+            return CLANG_VERSION_STRING(_plugin_DoNotExposeGlobalsPass);
          }
          void getAnalysisUsage(AnalysisUsage &AU) const
          {
@@ -206,15 +206,15 @@ namespace llvm {
    };
 
 }
-char llvm::clang4_plugin_DoNotExposeGlobalsPass::ID = 0;
-static llvm::RegisterPass<llvm::clang4_plugin_DoNotExposeGlobalsPass> XPass("clang4_plugin_DoNotExposeGlobalsPass",
+char llvm::CLANG_VERSION_SYMBOL(_plugin_DoNotExposeGlobalsPass)::ID = 0;
+static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_DoNotExposeGlobalsPass)> XPass(CLANG_VERSION_STRING(_plugin_DoNotExposeGlobalsPass),
                                                                              "Make all private/static but the top function",
                                 false /* Only looks at CFG */,
                                 false /* Analysis Pass */);
 
 // This function is of type PassManagerBuilder::ExtensionFn
 static void loadPass(const llvm::PassManagerBuilder &, llvm::legacy::PassManagerBase &PM) {
-  PM.add(new llvm::clang4_plugin_DoNotExposeGlobalsPass());
+  PM.add(new llvm::CLANG_VERSION_SYMBOL(_plugin_DoNotExposeGlobalsPass)());
 }
 // These constructors add our pass to a list of global extensions.
-static llvm::RegisterStandardPasses clang4_plugin_DoNotExposeGlobalsLoader_Ox(llvm::PassManagerBuilder::EP_ModuleOptimizerEarly, loadPass);
+static llvm::RegisterStandardPasses CLANG_VERSION_SYMBOL(_plugin_DoNotExposeGlobalsLoader_Ox)(llvm::PassManagerBuilder::EP_ModuleOptimizerEarly, loadPass);
