@@ -3443,12 +3443,12 @@ namespace clang
         serialize_int ("bloc", getBB_index(&BB));
         llvm::errs() << "BB" << getBB_index(&BB) << "\n";
         if(MSSA.getMemoryAccess(&BB)) llvm::errs() << "|!!!!!!!!!!!!!!!!!! " << *MSSA.getMemoryAccess(&BB) <<"\n";
+        if(!LI.empty() && LI.getLoopFor(&BB) && LI.getLoopFor(&BB)->getHeader() == &BB && LI.getLoopFor(&BB)->isAnnotatedParallel())
+           serialize_string("hpl");
         if(LI.empty() || !LI.getLoopFor(&BB))
            serialize_int ("loop_id", 0 );
         else
            serialize_int ("loop_id", loopLabes.find(LI.getLoopFor(&BB))->second);
-        if(!LI.empty() && LI.getLoopFor(&BB) && LI.getLoopFor(&BB)->getHeader() == &BB && LI.getLoopFor(&BB)->isAnnotatedParallel())
-           serialize_string("hpl");
         if(llvm::pred_begin(&BB) == llvm::pred_end(&BB))
         {
            serialize_maybe_newline ();
