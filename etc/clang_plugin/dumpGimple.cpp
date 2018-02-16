@@ -2290,7 +2290,7 @@ namespace clang
 
    int DumpGimpleRaw::TYPE_ALIGN(const void*t) const
    {
-      if( TREE_CODE(t)==GT(SIGNEDPOINTERTYPE) || TREE_CODE(t)==GT(FUNCTION_TYPE))
+      if( TREE_CODE(t)==GT(SIGNEDPOINTERTYPE) || TREE_CODE(t)==GT(FUNCTION_TYPE) ||  || TREE_CODE(t)==GT(VOID_TYPE))
          return 8;
          const llvm::Type* Cty = reinterpret_cast<const llvm::Type*>(t);
       llvm::Type* ty = const_cast<llvm::Type*>(NormalizeSignedTag(Cty));
@@ -4209,18 +4209,7 @@ namespace clang
             auto curInstIterator = BB.getInstList().begin();
             while( curInstIterator != BB.getInstList().end())
             {
-               if (llvm::MemIntrinsic* IntrCall = dyn_cast<llvm::MemIntrinsic>(curInstIterator))
-               {
-                  llvm::errs() << "Found a memIntrinsic Call\n";
-                  if (llvm::MemCpyInst *Memcpy = dyn_cast<llvm::MemCpyInst>(IntrCall))
-                  {
-                     if (llvm::ConstantInt *CI = dyn_cast<llvm::ConstantInt>(Memcpy->getLength()))
-                        llvm::errs() << "Found a memcpy with a constant number of iterations\n";
-                     else
-                        llvm::errs() << "Found a memcpy with an unknown number of iterations\n";
-                  }
-               }
-               if(isa<llvm::CallInst>(*curInstIterator))
+              if(isa<llvm::CallInst>(*curInstIterator))
                {
                   auto& ci = cast<llvm::CallInst>(*curInstIterator);
                   llvm::Function *Callee = ci.getCalledFunction();
