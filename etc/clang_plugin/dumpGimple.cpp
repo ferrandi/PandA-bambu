@@ -2290,7 +2290,7 @@ namespace clang
 
    int DumpGimpleRaw::TYPE_ALIGN(const void*t) const
    {
-      if( TREE_CODE(t)==GT(SIGNEDPOINTERTYPE) || TREE_CODE(t)==GT(FUNCTION_TYPE) ||  || TREE_CODE(t)==GT(VOID_TYPE))
+      if( TREE_CODE(t)==GT(SIGNEDPOINTERTYPE) || TREE_CODE(t)==GT(FUNCTION_TYPE) || TREE_CODE(t)==GT(VOID_TYPE))
          return 8;
          const llvm::Type* Cty = reinterpret_cast<const llvm::Type*>(t);
       llvm::Type* ty = const_cast<llvm::Type*>(NormalizeSignedTag(Cty));
