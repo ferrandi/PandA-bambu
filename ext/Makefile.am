@@ -86,14 +86,7 @@ clean-local:
 documentation: 
 documentation-tag:
 
-#Replace acinclude.m4
-ACLOCAL_AMFLAGS = -I ../etc/macros
-
-dist-hook:
-	$(top_srcdir)/../etc/scripts/clean_configure.py $(top_srcdir)/configure.ac  | grep -v "#no_release_tag" > $(distdir)/configure.ac
-
-
 if USE_GRLIB
 install-exec-hook:
-	cp $(top_srcdir)/GRLIB  $(libdir) -r
+	cp $(top_srcdir)/ext/GRLIB  $(libdir) -r
 endif

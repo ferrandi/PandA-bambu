@@ -1,5 +1,5 @@
 #!/bin/bash
-`dirname $0`/../../etc/scripts/test_panda.py --tool=bambu \
+$(dirname $0)/../../etc/scripts/test_panda.py --tool=bambu \
              --args="--configuration-name=GCC49-O3-wp-11-D00-EXT --simulate -O3 -fwhole-program --compiler=I386_GCC49 --clock-period=15 -D'printf(fmt, ...)=' --memory-allocation-policy=EXT_PIPELINED_BRAM --channels-type=MEM_ACC_11 --memory-ctrl-type=D00 --experimental-setup=BAMBU "\
              --args="--configuration-name=GCC49-O3-wp-N1-D00-EXT --simulate -O3 -fwhole-program --compiler=I386_GCC49 --clock-period=15 -D'printf(fmt, ...)=' --memory-allocation-policy=EXT_PIPELINED_BRAM --channels-type=MEM_ACC_N1 --memory-ctrl-type=D00 --experimental-setup=BAMBU "\
              --args="--configuration-name=GCC49-O3-wp-NN-D00-EXT --simulate -O3 -fwhole-program --compiler=I386_GCC49 --clock-period=15 -D'printf(fmt, ...)=' --memory-allocation-policy=EXT_PIPELINED_BRAM --channels-type=MEM_ACC_NN --memory-ctrl-type=D00 --experimental-setup=BAMBU "\
@@ -24,7 +24,7 @@
              --args="--configuration-name=GCC49-O3-wp-11-D21-ALL --simulate -O3 -fwhole-program --compiler=I386_GCC49 --clock-period=15 -D'printf(fmt, ...)=' --memory-allocation-policy=ALL_BRAM --channels-type=MEM_ACC_11 --memory-ctrl-type=D21 --experimental-setup=BAMBU "\
              --args="--configuration-name=GCC49-O3-wp-N1-D21-ALL --simulate -O3 -fwhole-program --compiler=I386_GCC49 --clock-period=15 -D'printf(fmt, ...)=' --memory-allocation-policy=ALL_BRAM --channels-type=MEM_ACC_N1 --memory-ctrl-type=D21 --experimental-setup=BAMBU "\
              --args="--configuration-name=GCC49-O3-wp-NN-D21-ALL --simulate -O3 -fwhole-program --compiler=I386_GCC49 --clock-period=15 -D'printf(fmt, ...)=' --memory-allocation-policy=ALL_BRAM --channels-type=MEM_ACC_NN --memory-ctrl-type=D21 --experimental-setup=BAMBU "\
-             -lCHStone_memarch_list -b`dirname $0` --name="CHStoneMemArch" $@
+             -lCHStone_memarch_list -b$(dirname $0) --name="CHStoneMemArch" $@
 return_value=$?
 if test $return_value != 0; then
    exit $return_value

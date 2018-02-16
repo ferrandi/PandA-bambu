@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -46,7 +46,7 @@
 
 HLSCBackendInformation::HLSCBackendInformation
 (
-   const std::string _results_filename,
+   const std::string& _results_filename,
    const HLS_managerConstRef _HLSMgr
 ) :
    results_filename(_results_filename),

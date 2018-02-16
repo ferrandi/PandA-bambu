@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -63,7 +63,7 @@ class ASICBackendFlow : public BackendFlow
       /**
        * Evaluates design variables
        */
-      void InitDesignParameters(const DesignParametersRef dp);
+      void InitDesignParameters();
 
       /**
        * Creates the constraint file
@@ -75,7 +75,7 @@ class ASICBackendFlow : public BackendFlow
       /**
        * Constructor
        */
-      ASICBackendFlow(const ParameterConstRef Param, const std::string & flow_name, const target_managerRef target);
+      ASICBackendFlow(const ParameterConstRef Param, const std::string& flow_name, const target_managerRef target);
 
       /**
        * Destructor

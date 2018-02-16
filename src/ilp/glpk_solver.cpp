@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -87,13 +87,9 @@ glpk_solver::~glpk_solver()
 /*
  * Will be passed as a callback pointer to the GLPK library. The info pointer is used to point to the verbosity field of the current glpk_solver instance.
  */
-int glpk_print_hook(void* info, const char* DEBUG_PARAMETER(msg))
+int glpk_print_hook(void* DEBUG_PARAMETER(info), const char* DEBUG_PARAMETER(msg))
 {
-   int * verbose_p = static_cast<int *>(info);
-   if (*verbose_p >= DEBUG_LEVEL_VERBOSE)
-   {
-      PRINT_DBG_STRING(0, 0, msg );
-   }
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, *(static_cast<int *>(info)), msg);
    // return non-zero so that GLPK does not print stuff on its own.
    return 1;
 }
@@ -592,7 +588,7 @@ int glpk_solver::solve_ilp()
 }
 
 
-void glpk_solver::add_row(std::map<int, double> &i_coeffs, double i_rhs, ilp_sign i_sign, const std::string name)
+void glpk_solver::add_row(std::map<int, double> &i_coeffs, double i_rhs, ilp_sign i_sign, const std::string&name)
 {
    if (i_coeffs.size() == 0)
       return;
@@ -643,7 +639,7 @@ void glpk_solver::objective_add(std::map<int, double> &i_coeffs, ilp_dir dir)
    }
 
    std::map<int, double>::const_iterator i_end = i_coeffs.end();
-   for (std::map<int, double>::const_iterator i = i_coeffs.begin(); i != i_end; i++)
+   for (std::map<int, double>::const_iterator i = i_coeffs.begin(); i != i_end; ++i)
    {
       glp_set_obj_coef(lp, i->first + 1, i->second);
    }
@@ -660,7 +656,7 @@ void glpk_solver::print(std::ostream& os __attribute__ ((unused)))
    glp_write_lp(lp, nullptr, "glpk.lp");
 }
 
-void glpk_solver::print_to_file(const std::string file_name)
+void glpk_solver::print_to_file(const std::string&file_name)
 {
    ///Setting the bounds
    set_all_bounds();
@@ -689,7 +685,7 @@ void glpk_solver::get_vars_solution(std::map<int, double>& vars) const
    }
 }
 
-void glpk_solver::set_col_name(int var, const std::string name)
+void glpk_solver::set_col_name(int var, const std::string& name)
 {
    std::string ost = name + "_" + boost::lexical_cast<std::string>(var);
    glp_set_col_name(lp, var + 1, const_cast<char *>(ost.c_str()));

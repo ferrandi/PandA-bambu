@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2015-2017 Politecnico di Milano
+ *              Copyright (c) 2015-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -68,9 +68,9 @@ const std::string ToDataFileStepFactory::GetPrefix() const
    return "ToDataFile";
 }
 
-const DesignFlowStepRef ToDataFileStepFactory::CreateStep(const std::string signature) const
+const DesignFlowStepRef ToDataFileStepFactory::CreateStep(const std::string&signature) const
 {
-   THROW_ASSERT(signature.find("ToDataFile::") == 0, "Wrong signature " + signature);
+   THROW_ASSERT(signature.compare(0, std::string("ToDataFile::").size(), "ToDataFile::") == 0, "Wrong signature " + signature);
    const auto to_data_file_step_type = ToDataFileStep::NameToEnum(signature.substr(std::string("ToDataFile::").size()));
    switch(to_data_file_step_type)
    {

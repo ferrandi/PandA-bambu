@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2015-2017 Politecnico di Milano
+ *              Copyright (c) 2015-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -112,7 +112,7 @@ class ToDataFileStep : public virtual DesignFlowStep
        * @return the name of the type
        */
       static
-      ToDataFileStep_Type NameToEnum(const std::string to_data_file_step);
+      ToDataFileStep_Type NameToEnum(const std::string&to_data_file_step);
 
       /**
        * Compute the signature of a to data file step

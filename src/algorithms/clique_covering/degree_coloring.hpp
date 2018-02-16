@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -87,7 +87,7 @@ namespace boost
          {
             return out_degree(v1, G) < out_degree(v2, G);
          }
-         degree_compare_functor(const VertexListGraph& _G) : G(_G)
+         explicit degree_compare_functor(const VertexListGraph& _G) : G(_G)
          {}
       private:
          const VertexListGraph& G;

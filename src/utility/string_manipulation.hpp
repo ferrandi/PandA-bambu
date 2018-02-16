@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -68,7 +68,7 @@
  * @param to_be_escaped is the list of characters to be escaped
  */
 inline
-void add_escape(std::string& ioString, const std::string to_be_escaped)
+void add_escape(std::string& ioString, const std::string&to_be_escaped)
 {
    for(std::string::size_type lPos = 0; lPos != ioString.size(); lPos++)
    {
@@ -112,7 +112,7 @@ inline void remove_escaped(std::string& ioString)
 }
 
 inline
-std::string TrimSpaces(const std::string & value)
+std::string TrimSpaces(const std::string& value)
 {
    std::string temp;
    std::vector<std::string> splitted;

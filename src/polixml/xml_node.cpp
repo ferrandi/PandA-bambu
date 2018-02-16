@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -48,7 +48,7 @@
 ///Boost include
 #include <boost/algorithm/string.hpp>
 
-xml_element* xml_child::add_child_element(const std::string & _name)
+xml_element* xml_child::add_child_element(const std::string& _name)
 {
    xml_element* new_el = new xml_element(_name);
    xml_nodeRef new_ref(new_el);
@@ -99,13 +99,13 @@ int xml_node::get_line() const
    return line;
 }
 
-const CustomSet<xml_nodeRef> xml_child::CGetDescendants(const std::string & path) const
+const CustomSet<xml_nodeRef> xml_child::CGetDescendants(const std::string& path) const
 {
    CustomSet<xml_nodeRef> ret;
    std::vector<std::string> splitted;
    CustomSet<xml_nodeRef> iteration_input_nodes, iteration_output_nodes;
    boost::algorithm::split(splitted, path, boost::algorithm::is_any_of("/"));
-   for(const auto child : get_children())
+   for(const auto& child : get_children())
    {
       const xml_element* child_xml = GetPointer<const xml_element>(child);
       if(not child_xml)
@@ -115,7 +115,7 @@ const CustomSet<xml_nodeRef> xml_child::CGetDescendants(const std::string & path
    for(size_t level = 0; level < splitted.size(); level++)
    {
       const auto current_level_tag = splitted[level];
-      for(const auto iteration_input_node : iteration_input_nodes)
+      for(const auto& iteration_input_node : iteration_input_nodes)
       {
          if(iteration_input_node->get_name() == current_level_tag)
          {
@@ -125,7 +125,7 @@ const CustomSet<xml_nodeRef> xml_child::CGetDescendants(const std::string & path
             }
             else
             {
-               for(const auto child : GetPointer<xml_child>(iteration_input_node)->get_children())
+               for(const auto& child : GetPointer<xml_child>(iteration_input_node)->get_children())
                {
                   const xml_element * child_xml = GetPointer<const xml_element>(child);
                   if(not child_xml)

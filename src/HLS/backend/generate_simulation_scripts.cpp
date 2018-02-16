@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -116,11 +116,11 @@ DesignFlowStep_Status GenerateSimulationScripts::Exec()
    const std::string suffix = "_beh";
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Generating simulation scripts");
    std::list<std::string> full_list;
-   for(const auto aux_file : HLSMgr->aux_files)
+   for(const auto& aux_file : HLSMgr->aux_files)
    {
       full_list.push_back(aux_file);
    }
-   for(const auto hdl_file : HLSMgr->hdl_files)
+   for(const auto& hdl_file : HLSMgr->hdl_files)
    {
       full_list.push_back(hdl_file);
    }

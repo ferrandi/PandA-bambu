@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -64,7 +64,7 @@ class xml_document : public xml_child
       
       /** constructor
        */
-      xml_document(const std::string& _version = "1.0") : xml_child(std::string("")), root_node(nullptr), version(_version){}
+      explicit xml_document(const std::string& _version = "1.0") : xml_child(std::string("")), root_node(nullptr), version(_version){}
       
       /**
        * Print the class.
@@ -91,7 +91,7 @@ class xml_document : public xml_child
        * @param name The node's name.
        * @return A pointer to the new root node
       */
-      xml_element* create_root_node(const std::string &_name)
+      xml_element* create_root_node(const std::string&_name)
       {
          root_node = add_child_element(_name);
          return root_node;
@@ -125,7 +125,7 @@ class xml_document : public xml_child
 
       /** @return The encoding used in the source from which the document has been loaded.
        */
-      void set_encoding(const std::string & _encoding) {encoding = _encoding;}
+      void set_encoding(const std::string& _encoding) {encoding = _encoding;}
 
 
 };

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -68,7 +68,7 @@ void operations_graph_constructor::Clear()
    index_map.clear();
 }
 
-vertex operations_graph_constructor::getIndex(const std::string &source)
+vertex operations_graph_constructor::getIndex(const std::string&source)
 {
    if (index_map.find(source) != index_map.end())
       return index_map.find(source)->second;
@@ -80,7 +80,7 @@ vertex operations_graph_constructor::getIndex(const std::string &source)
 }
 
 
-vertex operations_graph_constructor::CgetIndex(const std::string &source) const
+vertex operations_graph_constructor::CgetIndex(const std::string&source) const
 {
    THROW_ASSERT(index_map.find(source) != index_map.end(), "Index with name " + source + " doesn't exist");
    return index_map.find(source)->second;
@@ -111,7 +111,7 @@ void operations_graph_constructor::add_edge_info(const vertex src, const vertex 
    get_edge_info<OpEdgeInfo>(e, *(og))->add_nodeID(NodeID, selector);
 }
 
-void operations_graph_constructor::AddOperation(const tree_managerRef TM, const std::string &src, const std::string &
+void operations_graph_constructor::AddOperation(const tree_managerRef TM, const std::string&src, const std::string&
 #if HAVE_BAMBU_BUILT
    operation_t
 #endif
@@ -142,7 +142,7 @@ void operations_graph_constructor::AddOperation(const tree_managerRef TM, const 
    op_graph->GetOpGraphInfo()->tree_node_to_operation[node_id] = current;
 }
 
-void operations_graph_constructor::add_type(const std::string &src, unsigned int type_t)
+void operations_graph_constructor::add_type(const std::string&src, unsigned int type_t)
 {
    THROW_ASSERT(src != "", "Vertex name empty");
    THROW_ASSERT(type_t != 0, "Type of vertex " + src + " is zero");
@@ -170,7 +170,7 @@ void operations_graph_constructor::add_parameter(const vertex& Ver, unsigned int
    op_graph->GetOpNodeInfo(Ver)->actual_parameters.push_back(Var);
 }
 
-void operations_graph_constructor::add_called_function(const std::string &source, unsigned int called_function)
+void operations_graph_constructor::add_called_function(const std::string&source, unsigned int called_function)
 {
    op_graph->GetOpNodeInfo(getIndex(source))->called.insert(called_function);
 }

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -123,7 +123,7 @@ DesignFlowStep_Status BBReachabilityComputation::InternalExec()
    boost::topological_sort(*ecfg, std::back_inserter(container));
    std::deque<vertex>::const_iterator it, it_end;
    it_end = container.end();
-   for(it = container.begin(); it != it_end; it++)
+   for(it = container.begin(); it != it_end; ++it)
    {
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "  Examining basic block " + boost::lexical_cast<std::string>(ecfg->CGetBBNodeInfo(*it)->block->number));
       OutEdgeIterator eo, eo_end;
@@ -141,12 +141,12 @@ DesignFlowStep_Status BBReachabilityComputation::InternalExec()
    const LoopConstRef zero_loop = function_behavior->CGetLoops()->CGetLoop(0);
    const std::set<LoopConstRef> & first_level_loops = zero_loop->GetChildren();
    std::set<LoopConstRef>::const_iterator first_level_loop, first_level_loop_end = first_level_loops.end();
-   for(first_level_loop = first_level_loops.begin(); first_level_loop != first_level_loop_end; first_level_loop++)
+   for(first_level_loop = first_level_loops.begin(); first_level_loop != first_level_loop_end; ++first_level_loop)
    {
       std::unordered_set<vertex> loop_blocks;
       (*first_level_loop)->get_recursively_bb(loop_blocks);
       std::unordered_set<vertex>::const_iterator loop_block, loop_block_end = loop_blocks.end();
-      for(loop_block = loop_blocks.begin(); loop_block != loop_block_end; loop_block++)
+      for(loop_block = loop_blocks.begin(); loop_block != loop_block_end; ++loop_block)
       {
          feedback_bb_reachability[*loop_block].insert(loop_blocks.begin(), loop_blocks.end());
       }

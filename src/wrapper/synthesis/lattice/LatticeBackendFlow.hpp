@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -77,7 +77,7 @@ class LatticeBackendFlow : public BackendFlow
       /**
        * Constructor
        */
-      LatticeBackendFlow(const ParameterConstRef Param, const std::string & flow_name, const target_managerRef target);
+      LatticeBackendFlow(const ParameterConstRef Param, const std::string& flow_name, const target_managerRef target);
 
       /**
        * Destructor
@@ -87,7 +87,7 @@ class LatticeBackendFlow : public BackendFlow
       /**
        * Initializes the parameters
        */
-      void InitDesignParameters(const DesignParametersRef dp);
+      void InitDesignParameters();
 
       /**
        * Checks if the execution can be performed and, in case, performs the synthesis

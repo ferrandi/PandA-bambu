@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -72,7 +72,7 @@ void DesignParameters::xload_design_configuration(const ParameterConstRef DEBUG_
    {
       const xml_element* node = parser.get_document()->get_root_node(); //deleted by DomParser.
       const xml_node::node_list list = node->get_children();
-      for (xml_node::node_list::const_iterator l = list.begin(); l != list.end(); l++)
+      for (xml_node::node_list::const_iterator l = list.begin(); l != list.end(); ++l)
       {
          const xml_element* child = GetPointer<xml_element>(*l);
          if (!child) continue;
@@ -90,7 +90,7 @@ void DesignParameters::xload_design_configuration(const ParameterConstRef DEBUG_
          if (child->get_name() == STR_XML_ip_xact_generator_chain_configuration)
          {
             const xml_node::node_list list_gen = child->get_children();
-            for (xml_node::node_list::const_iterator g = list_gen.begin(); g != list_gen.end(); g++)
+            for (xml_node::node_list::const_iterator g = list_gen.begin(); g != list_gen.end(); ++g)
             {
                const xml_element* child_gen = GetPointer<xml_element>(*g);
                if (!child_gen) continue;
@@ -105,7 +105,7 @@ void DesignParameters::xload_design_configuration(const ParameterConstRef DEBUG_
                if (child_gen->get_name() == STR_XML_ip_xact_configurable_element_values)
                {
                   const xml_node::node_list list_values = child_gen->get_children();
-                  for (xml_node::node_list::const_iterator v = list_values.begin(); v != list_values.end(); v++)
+                  for (xml_node::node_list::const_iterator v = list_values.begin(); v != list_values.end(); ++v)
                   {
                      const xml_element* child_value = GetPointer<xml_element>(*v);
                      if (!child_value) continue;

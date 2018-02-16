@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2017 Politecnico di Milano
+ *              Copyright (c) 2017-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -51,7 +51,7 @@ const std::string NonDeterministicFlows::ComputeArgString(const size_t seed) con
 {
    const auto argv = parameters->CGetArgv();
    std::string arg_string;
-   for(const auto arg : argv)
+   for(const auto& arg : argv)
    {
       ///Executable
       if(arg_string == "")

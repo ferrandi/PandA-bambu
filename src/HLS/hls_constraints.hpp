@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -137,7 +137,7 @@ class HLS_constraints
        * @param library is the library of name.
        * @param n_resources is the maximum number of fu available (default is infinite).
        */
-      void set_number_fu(const std::string &name, const std::string & library, unsigned int n_resources = std::numeric_limits<unsigned int>::max());
+      void set_number_fu(const std::string&name, const std::string& library, unsigned int n_resources = std::numeric_limits<unsigned int>::max());
 
       /**
        * This method returns the maximum number of functional units available for the design.
@@ -145,14 +145,14 @@ class HLS_constraints
        * @param library is the library of name.
        * @return the maximum number of functional units available.
        */
-      unsigned int get_number_fu(const std::string &name, const std::string & library) const;
+      unsigned int get_number_fu(const std::string&name, const std::string& library) const;
 
       /**
        * This method returns the maximum number of functional units available for the design.
        * @param combined is the name of the functional unit in the form <unit_name>:<library_name>
        * @return the maximum number of functional units available.
        */
-      unsigned int get_number_fu(const std::string &combined) const;
+      unsigned int get_number_fu(const std::string&combined) const;
 
       /**
        * Binds a vertex to a functional unit.
@@ -161,20 +161,20 @@ class HLS_constraints
        * @param fu_library is the name of the library where the functional unit fu_name is contained.
        * @param fu_index is the ith functional unit instance.
        */
-      void bind_vertex_to_fu(const std::string &vertex_name, const std::string & fu_name, const std::string & fu_library, const unsigned int fu_index);
+      void bind_vertex_to_fu(const std::string&vertex_name, const std::string& fu_name, const std::string& fu_library, const unsigned int fu_index);
 
       /**
        * Binds a vertex to a functional unit.
        * @param vertex_name is the name of the operation vertex
        */
-      bool has_binding_to_fu(const std::string &vertex_name) const;
+      bool has_binding_to_fu(const std::string&vertex_name) const;
 
       /**
        * Stores the priority value for an operation vertex
        * @param vertex_name is the operation name
        * @param Priority is the priority value related to the operation vertex
        */
-      void set_scheduling_priority(const std::string &vertex_name, int Priority);
+      void set_scheduling_priority(const std::string&vertex_name, int Priority);
 
       /**
        * Returns the datastructure containing scheduling priority constraints

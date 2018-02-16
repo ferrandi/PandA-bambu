@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -66,7 +66,7 @@
 #include <fstream>
 
 //constructor
-VIVADO_xsim_wrapper::VIVADO_xsim_wrapper(const ParameterConstRef _Param, std::string _suffix) :
+VIVADO_xsim_wrapper::VIVADO_xsim_wrapper(const ParameterConstRef _Param, const std::string& _suffix) :
    SimulationTool(_Param),
    suffix(_suffix)
 {
@@ -125,7 +125,7 @@ void VIVADO_xsim_wrapper::GenerateScript(std::ostringstream& script, const std::
    std::string setupscr = STR(XILINX_VIVADO_SETTINGS);
    if(setupscr.size() && setupscr != "0")
    {
-      if(setupscr.find("export") == 0)
+      if(boost::algorithm::starts_with(setupscr,"export"))
          script << setupscr + " >& /dev/null; ";
       else
          script << ". " << setupscr << " >& /dev/null;";

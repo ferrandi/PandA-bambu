@@ -24,34 +24,6 @@ all:
 	       git submodule update --init --recursive; \
 	     fi; \
 	 fi
-	 @cd ext; \
-	 if ! autoreconf -m -iv --warning=none > autoreconf_log 2>&1; then \
-	     if `grep -q"required directory" autoreconf_log`; then \
-	        grep -h "required directory" autoreconf_log | awk -F'directory' {'print $$2'} | awk {'print $$1'} | sort | uniq | while read -r line; do mkdir -v $$line; done; \
-	        if ! autoreconf -m -iv --warning=none; then \
-	           cat autoreconf_log; \
-	           exit 1;\
-	        fi\
-	     else \
-	       cat autoreconf_log; \
-	       exit 1;\
-	     fi \
-	 fi; \
-	 cd ..
-	 @cd etc; \
-	 if ! autoreconf -m -iv --warning=none > autoreconf_log 2>&1; then \
-	     if `grep -q"required directory" autoreconf_log`; then \
-	        grep -h "required directory" autoreconf_log | awk -F'directory' {'print $$2'} | awk {'print $$1'} | sort | uniq | while read -r line; do mkdir -v $$line; done; \
-	        if ! autoreconf -m -iv --warning=none; then \
-	           cat autoreconf_log; \
-	           exit 1;\
-	        fi\
-	     else \
-	       cat autoreconf_log; \
-	       exit 1;\
-	     fi \
-	 fi; \
-	 cd ..
 
 
 clean:
@@ -69,7 +41,7 @@ cleanAll: clean cleanIN cleanOrig
 checkCompile :
 	make -f etc/scripts/Makeall all CHECKS_FILE=./check_compilation
 
-CONFIGURE_OPTIONS=--enable-flopoco --enable-xilinx --enable-modelsim --enable-icarus --enable-verilator --enable-altera --enable-opt --enable-lattice --enable-release --with-mentor-license=2003@lmw-2d.polimi.it
+CONFIGURE_OPTIONS=--enable-flopoco --enable-xilinx --enable-modelsim --enable-icarus --enable-verilator --enable-altera --enable-opt --enable-lattice --enable-release
 export LM_LICENSE_FILE=
 
 dist :
@@ -191,9 +163,9 @@ install :
 	  export CC=/opt/centos/devtoolset-1.1/root/usr/bin/gcc;\
 	fi;\
 	if test `cat /etc/debian_chroot` = centos_6_64; then\
-	  ../configure $(CONFIGURE_OPTIONS) --with-boost=/opt/boost/1.48.0 --with-gcc47=/opt/centos/devtoolset-1.1/root/usr/bin/gcc --prefix=`pwd`/panda_installation; \
+	  ../configure $(CONFIGURE_OPTIONS) --with-boost=/opt/boost/1.48.0 --with-gcc47=/opt/centos/devtoolset-1.1/root/usr/bin/gcc --prefix=$(pwd)/panda_installation; \
 	else\
-	  ../configure $(CONFIGURE_OPTIONS) --prefix=`pwd`/panda_installations; \
+	  ../configure $(CONFIGURE_OPTIONS) --prefix=$(pwd)/panda_installations; \
 	fi;\
 	if [ $$? != 0 ]; then\
 	  false; \

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -81,7 +81,7 @@ DesignFlowStep_Status WriteTechnology::Exec()
       TM->xwrite(tmRoot, target->get_type());
       document.write_to_file_formatted(output_file);
       INDENT_OUT_MEX(OUTPUT_LEVEL_VERY_PEDANTIC, output_level, "---Writing " + output_file);
-      for(const auto library : libraries)
+      for(const auto& library : libraries)
       {
          TM->get_library_manager(library)->set_info(library_manager::XML, output_file);
       }
@@ -90,7 +90,7 @@ DesignFlowStep_Status WriteTechnology::Exec()
    {
       PRINT_OUT_MEX(0,0, msg);
    }
-   catch (const std::string & msg)
+   catch (const std::string& msg)
    {
       PRINT_OUT_MEX(0,0, msg);
    }

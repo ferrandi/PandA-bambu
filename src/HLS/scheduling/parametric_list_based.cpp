@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -145,15 +145,15 @@ struct resource_ordering_functor
 
    public:
       /**
-       * functor function used to compare two resources with respect their performances
+       * functor function used to compare two resources with respect to their performances
        * @param a is the first vertex
        * @param bis the second vertex
        * @return true when a is faster than b
        */
       bool operator() (const unsigned int & a, const unsigned int & b) const
       {
-         unsigned char wm_a = (all->is_indirect_access_memory_unit(a) || all->is_indirect_access_memory_unit(a)) ? 1 : 0;
-         unsigned char wm_b = (all->is_indirect_access_memory_unit(b) || all->is_indirect_access_memory_unit(b)) ? 1 : 0;
+         unsigned char wm_a = all->is_indirect_access_memory_unit(a) ? 1 : 0;
+         unsigned char wm_b = all->is_indirect_access_memory_unit(b) ? 1 : 0;
          double we_a = all->get_worst_execution_time(a);
          double we_b = all->get_worst_execution_time(b);
          double wa_a = all->get_area(a)+all->get_DSPs(a);
@@ -177,7 +177,7 @@ struct resource_ordering_functor
        * Constructor
        * @param o is the order.
        */
-      resource_ordering_functor(const AllocationInformationConstRef _all) : all(_all) {}
+      explicit resource_ordering_functor(const AllocationInformationConstRef _all) : all(_all) {}
 
       /**
        * Destructor
@@ -199,7 +199,7 @@ class compare_vertex_by_name : std::binary_function<vertex, vertex, bool>
     *
     * @param G is the operation graph.
     */
-   compare_vertex_by_name(const OpGraphConstRef & G) : op_graph(G) {}
+   explicit compare_vertex_by_name(const OpGraphConstRef & G) : op_graph(G) {}
 
    bool operator()(const vertex & a, const vertex & b)
    {
@@ -416,7 +416,7 @@ void parametric_list_based::exec(const OpVertexSet & operations, ControlStep cur
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "   Computing free input vertices...");
    ///compute the set of vertices without input edges.
    /// At least one vertex is expected
-   for(OpVertexSet::const_iterator vi = operations.begin(); vi != operations.end(); vi++)
+   for(OpVertexSet::const_iterator vi = operations.begin(); vi != operations.end(); ++vi)
    {
       ///Skip vertex if it is not in the current subgraph
       if(!flow_graph->is_in_subset(*vi))
@@ -498,17 +498,15 @@ void parametric_list_based::exec(const OpVertexSet & operations, ControlStep cur
 
    OpVertexSet::const_iterator rv, rv_end = ready_vertices.end();
 
-   for(rv = ready_vertices.begin(); rv != rv_end; rv++)
+   for(rv = ready_vertices.begin(); rv != rv_end; ++rv)
       add_to_priority_queues(priority_queues, ready_resources, *rv);
 
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "   Starting scheduling...");
    unsigned int already_sch = schedule->num_scheduled();
-   bool unbounded = false;
-   bool store_unbounded_check = false;
    while((schedule->num_scheduled() - already_sch) != operations_number)
    {
-      unbounded = false;
-      store_unbounded_check = false;
+      bool unbounded = false;
+      bool store_unbounded_check = false;
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "      schedule->num_scheduled() " + boost::lexical_cast<std::string>(schedule->num_scheduled()));
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "      already_sch " + boost::lexical_cast<std::string>(already_sch));
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "      operations_number " + boost::lexical_cast<std::string>(operations_number));
@@ -547,11 +545,11 @@ void parametric_list_based::exec(const OpVertexSet & operations, ControlStep cur
                   THROW_ERROR("Unfeasible scheduling");
             }
             PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "            Vertex " + GET_NAME(flow_graph, *live_vertex_it) + " lives until " + STR(ending_time.find(*live_vertex_it)->second));
-            live_vertex_it++;
+            ++live_vertex_it;
          }
       }
 
-      for(unsigned int fu_type = 0; fu_type < n_resources; fu_type++)
+      for(unsigned int fu_type = 0; fu_type < n_resources; ++fu_type)
       {
          if(priority_queues[fu_type].size())
             ready_resources.insert(fu_type);
@@ -872,7 +870,7 @@ void parametric_list_based::exec(const OpVertexSet & operations, ControlStep cur
                   }
                   //successors.sort();
 
-                  for(std::list<std::pair<std::string, vertex> >::iterator s = successors.begin(); s != successors.end(); s++)
+                  for(std::list<std::pair<std::string, vertex> >::iterator s = successors.begin(); s != successors.end(); ++s)
                   {
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Considering successor " + s->first);
                      scheduled_predecessors[s->second]++;
@@ -956,7 +954,7 @@ void parametric_list_based::exec(const OpVertexSet & operations, ControlStep cur
       cstep_vuses_others = cstep_vuses_others > 0 ? cstep_vuses_others-1 : 0;
       cstep_has_RET_conflict = false;
       /// move to the next cycle
-      current_cycle++;
+      ++current_cycle;
    }
 
    if(HLS->Param->isOption(OPT_post_rescheduling) && HLS->Param->getOption<bool>(OPT_post_rescheduling))
@@ -1005,18 +1003,10 @@ void parametric_list_based::compute_starting_ending_time_asap(const vertex v, co
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Computing starting and ending time " + GET_NAME(flow_graph, v));
    current_starting_time = from_strongtype_cast<double>(cs) * clock_cycle;
-#ifdef COMPRESS_CHAINED_OPS
-   double actual_op_execution_time = HLS->allocation_information->get_execution_time(fu_type, v, flow_graph);
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Actual execution time of " + GET_NAME(flow_graph, v) + ": " + STR(actual_op_execution_time));
-#endif
    bool is_load_store = GET_TYPE(flow_graph, v) & (TYPE_LOAD | TYPE_STORE);
    bool no_chaining_of_load_and_store = HLS->Param->getOption<bool>(OPT_do_not_chain_memories) && (check_LOAD_chaining(v, cs, schedule)|| is_load_store);
    cannot_be_chained = is_load_store && check_non_direct_operation_chaining(v, fu_type, cs, schedule, res_binding);
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "                  Initial value of cannot_be_chained="+(cannot_be_chained?std::string("T"):std::string("F")));
-#ifdef COMPRESS_CHAINED_OPS
-   double max_chained_prev = 0.0;
-   bool is_comprimibile = HLS->allocation_information->compute_normalized_area(fu_type) < 1.0 && actual_op_execution_time < clock_cycle;
-#endif
    InEdgeIterator ei, ei_end;
    for(boost::tie(ei, ei_end) = boost::in_edges(v, *flow_graph); ei != ei_end; ei++)
    {
@@ -1024,17 +1014,6 @@ void parametric_list_based::compute_starting_ending_time_asap(const vertex v, co
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering predecessor " + GET_NAME(flow_graph, from_vertex));
       unsigned int from_fu_type = res_binding->get_assign(from_vertex);
       const auto cs_prev = schedule->get_cstep(from_vertex).second;
-#ifdef COMPRESS_CHAINED_OPS
-      if(is_comprimibile && cs_prev == cs)
-      {
-         double current_exec_time = HLS->allocation_information->get_execution_time(from_fu_type, from_vertex, flow_graph);
-         if(HLS->allocation_information->compute_normalized_area(from_fu_type) < 1.0 &&  current_exec_time < clock_cycle)
-         {
-            if(max_chained_prev < current_exec_time)
-               max_chained_prev = current_exec_time;
-         }
-      }
-#endif
       const double fsm_correction = [&]() -> double
       {
          if(HLS->Param->getOption<double>(OPT_scheduling_mux_margins) != 0.0)
@@ -1063,15 +1042,6 @@ void parametric_list_based::compute_starting_ending_time_asap(const vertex v, co
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
    }
-#ifdef COMPRESS_CHAINED_OPS
-   if(max_chained_prev != 0.0)
-   {
-      if(actual_op_execution_time > max_chained_prev)
-         actual_op_execution_time = actual_op_execution_time - max_chained_prev;
-      else
-         actual_op_execution_time = 0.0;
-   }
-#endif
 
    double op_execution_time;
    compute_exec_stage_time(fu_type, stage_period, cs, flow_graph, v, op_execution_time, phi_extra_time, current_starting_time, setup_hold_time);
@@ -1225,7 +1195,7 @@ void parametric_list_based::add_to_priority_queues(PriorityQueues & priority_que
    {
       const std::set<unsigned int> & fu_set = HLS->allocation_information->can_implement_set(v);
       const std::set<unsigned int>::const_iterator fu_set_it_end = fu_set.end();
-      for(std::set<unsigned int>::const_iterator fu_set_it = fu_set.begin(); fu_set_it != fu_set_it_end; fu_set_it++)
+      for(std::set<unsigned int>::const_iterator fu_set_it = fu_set.begin(); fu_set_it != fu_set_it_end; ++fu_set_it)
       {
 #if HAVE_UNORDERED
          priority_queue[*fu_set_it].push(v);
@@ -1249,11 +1219,11 @@ DesignFlowStep_Status parametric_list_based::InternalExec()
    boost::topological_sort(*bbg, std::front_inserter(vertices));
    std::deque<vertex>::const_iterator viend = vertices.end();
    ControlStep ctrl_steps = ControlStep(0u);
-   for(std::deque<vertex>::const_iterator vi = vertices.begin(); vi != viend; vi++)
+   for(std::deque<vertex>::const_iterator vi = vertices.begin(); vi != viend; ++vi)
    {
       OpVertexSet operations(op_graph);
       std::list<vertex> bb_operations = bbg->CGetBBNodeInfo(*vi)->statements_list;
-      for(std::list<vertex>::iterator l = bb_operations.begin(); l != bb_operations.end(); l++)
+      for(std::list<vertex>::iterator l = bb_operations.begin(); l != bb_operations.end(); ++l)
       {
          if(HLS->operations.find(*l) != HLS->operations.end())
             operations.insert(*l);
@@ -1558,7 +1528,7 @@ void parametric_list_based::do_balanced_scheduling(std::deque<vertex> &sub_level
    ControlStep min_cycle = ControlStep(std::numeric_limits<unsigned int>::max());
    ControlStep max_cycle = ControlStep(0u);
    double total_resource_area = 0;
-   for(std::deque<vertex>::const_iterator vi = sub_levels.begin(); vi != sub_levels.end(); vi++)
+   for(std::deque<vertex>::const_iterator vi = sub_levels.begin(); vi != sub_levels.end(); ++vi)
    {
       vertex current_op = *vi;
       const auto curr_cs = schedule->get_cstep(current_op).second;
@@ -1756,7 +1726,7 @@ void parametric_list_based::do_balanced_scheduling1(std::deque<vertex> &sub_leve
    std::map<unsigned int, std::map<ControlStep, double > > T_obj;
    ControlStep min_cycle = ControlStep(std::numeric_limits<unsigned int>::max());
    ControlStep max_cycle = ControlStep(0u);
-   for(std::deque<vertex>::const_iterator vi = sub_levels.begin(); vi != sub_levels.end(); vi++)
+   for(std::deque<vertex>::const_iterator vi = sub_levels.begin(); vi != sub_levels.end(); ++vi)
    {
       vertex current_op = *vi;
       const auto curr_cs = schedule->get_cstep(current_op).second;

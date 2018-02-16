@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -439,7 +439,7 @@ void add_attr_node(const tree_nodeRef &curr, const unsigned int tree_index, cons
 
 template<class function_decl>
 inline
-void add_op_name(const tree_nodeRef &curr, const std::string & token_s)
+void add_op_name(const tree_nodeRef &curr, const std::string& token_s)
   {
     (dynamic_cast<function_decl*>(curr.get()))->add(token_s);
   }
@@ -501,6 +501,7 @@ void do_qual(const tree_nodeRef &curr, const int & value)
     ((dynamic_cast<type_node*>(curr.get()))->qual) = static_cast<TreeVocabularyTokenTypes_TokenEnum>(value);
   }
 
+#ifndef __clang_analyzer__
 
 %}
 /**
@@ -2719,6 +2720,7 @@ bool pred;
   string_id_opt : /*empty*/ {$$ = false;} | string_id {$$ = true;}
 
 %%
+#endif
 /**
 * EPILOGUE
 */

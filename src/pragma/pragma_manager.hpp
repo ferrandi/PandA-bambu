@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -154,7 +154,7 @@ class pragma_manager
        * Return the pragmas associated with a function definition
        * @param function_name is the name of the function to be considered
        */
-      const std::list<std::string> GetFunctionDefinitionPragmas(const std::string & function_name) const;
+      const std::list<std::string> GetFunctionDefinitionPragmas(const std::string& function_name) const;
 
       std::unordered_set<std::string> getFunctionCallPragmas(const std::string& Name) const;
 
@@ -163,11 +163,11 @@ class pragma_manager
        * @param function_name is the name of the function
        * @param is the set of pragmas to be added
        */
-      void AddFunctionDefinitionPragmas(const std::string & name, const std::unordered_set<std::string> & pragmas);
+      void AddFunctionDefinitionPragmas(const std::string& name, const std::unordered_set<std::string> & pragmas);
 
       void addFunctionCallPragmas(const std::string& Name, const std::unordered_set<std::string>& Pragmas);
 
-      unsigned int addBlackBoxPragma(const std::string function_name);
+      unsigned int addBlackBoxPragma(const std::string&function_name);
 
       void setGenericPragma(unsigned int number, const std::string& line);
 
@@ -178,7 +178,7 @@ class pragma_manager
        * @param line is the string containing the pragma
        * @return the index of the created pragma node
        */
-      unsigned int AddOmpSimdPragma(const std::string line) const;
+      unsigned int AddOmpSimdPragma(const std::string&line) const;
 
       /**
        * Check if a omp for pragma is associated with the loop
@@ -207,7 +207,7 @@ class pragma_manager
        * Get mapping of a function given by the pragma
        * @param function_name is the name of the function
        */
-      std::string get_mapping(const std::string & function_name) const;
+      std::string get_mapping(const std::string& function_name) const;
 
       /**
        * Returns the identifier corresponding to an openmp directive
@@ -215,7 +215,7 @@ class pragma_manager
        * @return the corresponding identifier
        */
       static
-      OmpPragmaType GetOmpPragmaType(const std::string & directive);
+      OmpPragmaType GetOmpPragmaType(const std::string& directive);
 
       /**
        * Extract clauses associated with a pragma

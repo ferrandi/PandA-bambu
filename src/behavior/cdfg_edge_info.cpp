@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -87,7 +87,7 @@ const std::string CdfgEdgeInfo::PrintLabels(const int selector, const Behavioral
    std::string ret;
    const std::set<unsigned int> & labels_to_be_printed = labels.find(selector)->second;
    std::set<unsigned int>::const_iterator label, label_end = labels_to_be_printed.end();
-   for(label = labels_to_be_printed.begin(); label != label_end; label++)
+   for(label = labels_to_be_printed.begin(); label != label_end; ++label)
    {
       if(label != labels_to_be_printed.begin())
          ret += ", ";

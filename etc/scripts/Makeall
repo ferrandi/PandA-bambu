@@ -1,0 +1,127 @@
+default: all
+
+CHECKS_FILE="./check_compilation"
+J=1
+SHELL=/bin/bash
+
+all:
+	echo $J; \
+	if [ ! -d build ]; then \
+	  mkdir build; \
+	fi; \
+	cd build; \
+	i=0; \
+	while read line; \
+	do \
+	   echo $$line; \
+	   if [ ! -d build_$$i ]; then \
+	      mkdir build_$$i; \
+	   fi; \
+	   cd build_$$i; \
+	   if [ -f finished ]; then \
+	      echo "compiled"; \
+	      let i+=1; \
+	      cd ..; \
+	      continue; \
+	   fi; \
+	   if [ ! -f config.log ]; then \
+	      ../../configure $$line --prefix=`pwd`/install; \
+	      if [ $$? != 0 ]; then \
+	         false; \
+	         exit; \
+	      fi; \
+	   fi; \
+	   make -j$J; \
+	   if [ $$? != 0 ]; then \
+	      false; \
+	      exit; \
+	   fi; \
+	   make install -j$J; \
+	   if [ $$? != 0 ]; then \
+	      false; \
+	      exit; \
+	   fi; \
+	   touch finished; \
+	   cd ..; \
+	   let i+=1; \
+	done < ../check_compilation
+
+CONFIGURE_OPTIONS="--enable-flopoco --enable-xilinx --enable-modelsim --enable-icarus --enable-verilator --enable-altera --enable-opt --enable-altera-64bit --enable-lattice --enable-release --with-mentor-license=2003@lmw-2d.polimi.it"
+
+dist:
+	make -f Makefile.init; \
+	if [ $$? != 0 ]; then \
+	   false; \
+	   exit; \
+	fi; \
+	if test -d panda_dist; \
+	   then rm panda_dist -r; \
+	fi; \
+	mkdir panda_dist; \
+	cd panda_dist; \
+	../configure --prefix=`pwd`/install $(CONFIGURE_OPTIONS); \
+	if [ $$? != 0 ]; then \
+	   false; \
+	   exit; \
+	fi; \
+	make dist; \
+	if [ $$? != 0 ]; then \
+	   false; \
+	   exit; \
+	fi; \
+	tar xvf panda-0.9.*.tar.gz; \
+	cd panda-0.9.*[^z]; \
+	make -f Makefile.init; \
+	if [ $$? != 0 ]; then \
+	   false; \
+	   exit; \
+	fi; \
+	mkdir obj_release; \
+	cd obj_release; \
+	../configure --prefix=`pwd`/install $(CONFIGURE_OPTIONS) --enable-Werror; \
+	if [ $$? != 0 ]; then \
+	   false; \
+	   exit; \
+	fi; \
+	make -j$J; \
+	if [ $$? != 0 ]; then \
+	   false; \
+	   exit; \
+	fi; \
+	make -j$J documentation; \
+	if [ $$? != 0 ]; then \
+	   false; \
+	   exit; \
+	fi; \
+	make install; \
+	if [ $$? != 0 ]; then \
+	   false; \
+	   exit; \
+	fi; \
+	cd ..; \
+	mkdir obj; \
+	cd obj; \
+	../configure --prefix=`pwd`/panda $(CONFIGURE_OPTIONS) --enable-Werror --disable-release; \
+	if [ $$? != 0 ]; then \
+	   false; \
+	   exit; \
+	fi; \
+	make -j$J; \
+	if [ $$? != 0 ]; then \
+	   false; \
+	   exit; \
+	fi; \
+	make -j$J documentation; \
+	if [ $$? != 0 ]; then \
+	   false; \
+	   exit; \
+	fi; \
+	make install; \
+	if [ $$? != 0 ]; then \
+	   false; \
+	   exit; \
+	fi; \
+	cd ..; \
+	cd ..; \
+	cd ..
+

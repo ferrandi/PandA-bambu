@@ -48,20 +48,6 @@ lib_interface_la_SOURCES = module_interface.cpp \
                            WB4/WB4_interface.cpp \
                            WB4/WB4Intercon_interface.cpp
 
-if BUILD_LIB_EXPERIMENTAL
-lib_interface_la_CPPFLAGS += \
-   -I$(top_srcdir)/src/HLS/interface/AXI \
-   -I$(top_srcdir)/src/HLS/interface/FSL \
-   -I$(top_srcdir)/src/HLS/interface/NPI
-
-noinst_HEADERS += AXI/axi4lite_interface.hpp \
-                  FSL/FSL_interface.hpp \
-                  NPI/NPI_interface.hpp
-
-lib_interface_la_SOURCES += AXI/axi4lite_interface.cpp \
-                            FSL/FSL_interface.cpp \
-                            NPI/NPI_interface.cpp
-endif
 if BUILD_TASTE
 noinst_HEADERS += \
    taste_interface_generation.hpp

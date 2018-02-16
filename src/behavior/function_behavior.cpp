@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -446,7 +446,7 @@ const EpdGraphRef FunctionBehavior::CGetEpdGraph(EpdGraph::Type type) const
    return EpdGraphRef();
 }
 
-const ParallelRegionsGraphRef FunctionBehavior::GetPrgGraph(ParallelRegionsGraph::Type gt)
+const ParallelRegionsGraphRef FunctionBehavior::GetPrgGraph(ParallelRegionsGraph::Type gt) const
 {
    switch ( gt )
    {
@@ -549,7 +549,7 @@ const LoopsConstRef FunctionBehavior::CGetLoops() const
    return loops;
 }
 
-const LoopsRef FunctionBehavior::GetLoops()
+const LoopsRef FunctionBehavior::GetLoops() const
 {
    return loops;
 }
@@ -643,14 +643,14 @@ std::set<unsigned int> FunctionBehavior::get_local_variables(const application_m
       vars.insert(varsTemp.begin(), varsTemp.end());
    }
    const std::list<unsigned int>& funParams = helper->get_parameters();
-   for (std::list<unsigned int>::const_iterator i = funParams.begin(); i != funParams.end(); i++)
+   for (std::list<unsigned int>::const_iterator i = funParams.begin(); i != funParams.end(); ++i)
    {
       if (vars.find(*i) != vars.end())
          vars.erase(*i);
    }
 
    const CustomSet<unsigned int>& gblVariables = AppM->get_global_variables();
-   for (CustomSet<unsigned int>::const_iterator i = gblVariables.begin(); i != gblVariables.end(); i++)
+   for (CustomSet<unsigned int>::const_iterator i = gblVariables.begin(); i != gblVariables.end(); ++i)
    {
       if (vars.find(*i) != vars.end())
          vars.erase(*i);

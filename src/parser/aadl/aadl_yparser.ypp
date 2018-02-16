@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2015 Politecnico di Milano
+ *              Copyright (c) 2015-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -101,6 +101,7 @@ REF_FORWARD_DECL(AadlFlexLexer);
 */
 extern int yylex(YYSTYPE *lvalp, const AadlFlexLexerRef lexer);
 extern void yyerror(const AadlParserDataRef data, const AadlFlexLexerRef lexer, const char *msg);
+#ifndef __clang_analyzer__
 
 %}
 /**
@@ -691,6 +692,7 @@ signed_aadlreal_or_constant : sign NUMBER unit_identifier_opt
 /* End of Grammar */
 
 %%
+#endif
 /**
 * EPILOGUE
 */

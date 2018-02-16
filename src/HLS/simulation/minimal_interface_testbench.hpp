@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -59,14 +59,13 @@ class MinimalInterfaceTestbench : public TestbenchGenerationBaseStep
             long long int Mout_addr_ram_bitsize)
          const;
 
-      void cond_load(
-            long long int Mout_addr_ram_bitsize,
+      void cond_load(long long int Mout_addr_ram_bitsize,
             std::string post_slice1,
-            std::string post_slice2,
-            std::string res_string,
+            const std::string &post_slice2,
+            const std::string &res_string,
             unsigned int i,
-            std::string in_else,
-            std::string mem_aggregate)
+            const std::string &in_else,
+            const std::string &mem_aggregate)
          const;
 
       virtual void write_call(bool hasMultiIrq) const;

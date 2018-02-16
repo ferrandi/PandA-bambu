@@ -1,8 +1,8 @@
 #!/bin/bash
 #!/bin/bash
-script=`readlink -e $0`
-root_dir=`dirname $script`
-current_dir=`pwd`
+script=$(readlink -e $0)
+root_dir=$(dirname $script)
+current_dir=$(pwd)
 export PATH=../../src:../../../src:../../../../src:/opt/panda/bin:$PATH
 cd $root_dir/multi-keccak
 ./autogen.sh
@@ -21,8 +21,8 @@ return_value=$?
 if test $return_value != 0; then
    exit $return_value
 fi
-relative_tree_panda_gcc=`which tree-panda-gcc`
-tree_panda_gcc=`readlink -e $relative_tree_panda_gcc`
+relative_tree_panda_gcc=$(which tree-panda-gcc)
+tree_panda_gcc=$(readlink -e $relative_tree_panda_gcc)
 make CC=$tree_panda_gcc V=1
 return_value=$?
 if test $return_value != 0; then

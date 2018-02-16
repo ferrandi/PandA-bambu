@@ -1,7 +1,7 @@
 /* Scalar Replacement of Aggregates (SRA) converts some structure
    references into scalar references, exposing them to the scalar
    optimizers.
-   Copyright (C) 2008-2016 Free Software Foundation, Inc.
+   Copyright (C) 2008-2018 Free Software Foundation, Inc.
    Contributed by Martin Jambor <mjambor@suse.cz>
 
 This file is part of GCC.
@@ -1890,7 +1890,7 @@ needs_to_live_in_memory_local (const_tree t)
 {
   return (TREE_ADDRESSABLE (t)
 	  || DECL_EXTERNAL (t)
-          || (TREE_STATIC (t) && !aggregate_value_p (t, current_function_decl))
+          || (TREE_STATIC (t) && (!(TREE_READONLY(t) || TREE_CONSTANT(t))))
 	  || (TREE_CODE (t) == RESULT_DECL
 	      && !DECL_BY_REFERENCE (t)
 	      && aggregate_value_p (t, current_function_decl)));

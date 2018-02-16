@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -105,7 +105,7 @@ ASLAP::ASLAP(const HLS_managerConstRef _hls_manager, const hlsRef HLS, const boo
          has_branching_blocks = true;
    }
    const std::deque<vertex>& ls = _hls_manager->CGetFunctionBehavior(HLS->functionId)->get_levels();
-   for(std::deque<vertex>::const_iterator l = ls.begin(); l != ls.end(); l++)
+   for(std::deque<vertex>::const_iterator l = ls.begin(); l != ls.end(); ++l)
    {
       if (operations.find(*l) != operations.end()) levels.push_back(*l);
    }
@@ -143,7 +143,7 @@ private:
    /// vertex
    vertex s;
    /// string that identifies operation name
-   const std::string & op_name;
+   const std::string& op_name;
    /// asap values
    vertex2int & ASAP_p;
    /// behavioral specification in terms of graph
@@ -154,7 +154,7 @@ public:
    /**
     * Constructor
     */
-   p_update_check(vertex v, const std::string &name, vertex2int & A_p, const OpGraphConstRef g) :
+   p_update_check(vertex v, const std::string&name, vertex2int & A_p, const OpGraphConstRef g) :
       s(v),
       op_name(name),
       ASAP_p(A_p),

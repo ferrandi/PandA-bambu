@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -60,7 +60,7 @@
 
 #if HAVE_HOST_PROFILING_BUILT
 ///frontend_flow/behavior_analysis include
-#include "profiling.hpp"
+#include "host_profiling.hpp"
 #endif
 
 ///HLS include

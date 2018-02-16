@@ -2,6 +2,24 @@
 Seventh public release of PandA framework.
 
 New features introduced:
+- Added an initial support to C++/fortran high-level synthesis. Now, Ubuntu distributions require the installation of g++-multilib package.
+- Added FPT tutorial material
+- Improved the virtual machine generation scripts
+- Improved timing constraints and timing reports
+- Added --registered-inputs=top option
+- Improved the support for discrepancy when Verilator is used as simulator, and a better check of basic floating point operations.
+- Added an example using C++14 constexpr declaration and a simple GCD example written in C++.
+- The building system is now based on a single configure.ac.
+- Regressions are now exploiting a Jenkins based infrastructure.
+- Some performance, style, and c++ improvements have been done following the suggestions coming from cppcheck, clang static analyzer, and Codacy.
+
+This release includes a set of fixes:
+    on COND_EXPR_RESTRUCTURING step
+    on omp tests
+    on libm tests
+    on make check and on cpp examples
+    on c++ struct initialization
+    on make dist command under github repository
 
 
 =========== PANDA 0.9.5 ===========

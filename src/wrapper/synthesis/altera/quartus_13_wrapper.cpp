@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2016-2017 Politecnico di Milano
+ *              Copyright (c) 2016-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -49,7 +49,7 @@
 ///wrapper/synthesis include
 #include "xml_script_command.hpp"
 
-Quartus13Wrapper::Quartus13Wrapper(const ParameterConstRef _Param, const std::string & _output_dir, const target_deviceRef _device) :
+Quartus13Wrapper::Quartus13Wrapper(const ParameterConstRef _Param, const std::string& _output_dir, const target_deviceRef _device) :
    AlteraWrapper(_Param, QUARTUS_FLOW_TOOL_EXEC, _device, _output_dir, QUARTUS_FLOW_TOOL_ID)
 {}
 
@@ -65,7 +65,7 @@ std::string Quartus13Wrapper::get_command_line(const DesignParametersRef& dp) co
    s << " --64bit ";
 #endif
    s << script_name;
-   for (std::vector<xml_parameter_tRef>::const_iterator it = xml_tool_options.begin(); it != xml_tool_options.end(); it++)
+   for (std::vector<xml_parameter_tRef>::const_iterator it = xml_tool_options.begin(); it != xml_tool_options.end(); ++it)
    {
       const xml_parameter_tRef & option = *it;
       if (option->checkCondition(dp))

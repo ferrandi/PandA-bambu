@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -107,7 +107,7 @@ std::set<std::pair<vertex, unsigned int> > StateTransitionGraphManager::get_cond
    for (boost::tie(ie, iend) = boost::in_edges(v, *STG_graph); ie != iend; ie++)
    {
       std::set<std::pair<vertex, unsigned int> > EdgeConditions = GET_EDGE_INFO(state_transition_graphs_collection, TransitionInfo, *ie)->conditions;
-      for (std::set<std::pair<vertex, unsigned int> >::const_iterator c = EdgeConditions.begin(); c != EdgeConditions.end(); c++)
+      for (std::set<std::pair<vertex, unsigned int> >::const_iterator c = EdgeConditions.begin(); c != EdgeConditions.end(); ++c)
       {
          if (Conditions.find(*c) != Conditions.end()) continue;
          if (c->second == TransitionInfo::DONTCARE)

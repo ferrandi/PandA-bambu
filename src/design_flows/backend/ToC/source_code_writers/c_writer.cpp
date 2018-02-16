@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -91,16 +91,16 @@
 ///design_flows/backend/ToC/source_code_writers includes
 #if HAVE_HOST_PROFILING_BUILT
 #include "basic_blocks_profiling_c_writer.hpp"
+#if HAVE_EXPERIMENTAL
 #include "data_memory_profiling_c_writer.hpp"
 #include "data_memory_profiling_instruction_writer.hpp"
-#endif
-#if HAVE_HOST_PROFILING_BUILT
 #include "efficient_path_profiling_c_writer.hpp"
+#endif
 #endif
 #if HAVE_TARGET_PROFILING
 #include "escape_instruction_writer.hpp"
 #endif
-#if HAVE_HOST_PROFILING_BUILT
+#if HAVE_EXPERIMENTAL && HAVE_HOST_PROFILING_BUILT
 #include "hierarchical_path_profiling_c_writer.hpp"
 #endif
 #if HAVE_BAMBU_BUILT
@@ -119,7 +119,7 @@
 #if HAVE_TARGET_PROFILING
 #include "instrument_writer.hpp"
 #endif
-#if HAVE_HOST_PROFILING_BUILT
+#if HAVE_EXPERIMENTAL && HAVE_HOST_PROFILING_BUILT
 #include "loops_profiling_c_writer.hpp"
 #endif
 #if HAVE_TARGET_PROFILING
@@ -132,7 +132,7 @@
 #if HAVE_GRAPH_PARTITIONING_BUILT
 #include "parallel_c_writer.hpp"
 #endif
-#if HAVE_HOST_PROFILING_BUILT
+#if HAVE_EXPERIMENTAL && HAVE_HOST_PROFILING_BUILT
 #include "tree_path_profiling_c_writer.hpp"
 #endif
 
@@ -175,7 +175,7 @@ class TreeNodesPairSorter : public std::binary_function<std::pair<tree_nodeRef, 
        * @param y is the second pair
        * @return true if x is less than y
        */
-      bool operator()(const std::pair<tree_nodeRef, tree_nodeRef> x, const std::pair<tree_nodeRef, tree_nodeRef>  y) const
+      bool operator()(const std::pair<tree_nodeRef, tree_nodeRef> &x, const std::pair<tree_nodeRef, tree_nodeRef>  &y) const
       {
          if(x.first->index ==y.first->index)
          {
@@ -200,7 +200,9 @@ CWriter::CWriter(const application_managerConstRef _AppM, const InstructionWrite
    Param(_Param),
    debug_level(_Param->get_class_debug_level("CWriter")),
    output_level(_Param->getOption<int>(OPT_output_level)),
-   fake_max_tree_node_id(0)
+   fake_max_tree_node_id(0),
+   dominators(nullptr),
+   post_dominators(nullptr)
 {
 }
 
@@ -223,26 +225,12 @@ CWriterRef CWriter::CreateCWriter(const CBackend::Type type, const CBackendInfor
             return CWriterRef(new BasicBlocksProfilingCWriter(app_man, instruction_writer, indented_output_stream, parameters, verbose));
          }
 #endif
-#if HAVE_HOST_PROFILING_BUILT
-      case(CBackend::CB_DATA_MEMORY_PROFILING):
-         {
-            const InstructionWriterRef instruction_writer(new DataMemoryProfilingInstructionWriter(app_man, indented_output_stream, parameters));
-            return CWriterRef(new DataMemoryProfilingCWriter(app_man, instruction_writer, indented_output_stream, parameters, verbose));
-         }
-#endif
 #if HAVE_HLS_BUILT
       case(CBackend::CB_DISCREPANCY_ANALYSIS):
          {
             const InstructionWriterRef instruction_writer(new HLSInstructionWriter(app_man, indented_output_stream, parameters));
 
             return CWriterRef(new DiscrepancyAnalysisCWriter(RefcountCast<const HLSCBackendInformation>(c_backend_information), app_man, instruction_writer, indented_output_stream, parameters, verbose));
-         }
-#endif
-#if HAVE_HOST_PROFILING_BUILT
-      case(CBackend::CB_EPP):
-         {
-            const InstructionWriterRef instruction_writer = InstructionWriter::CreateInstructionWriter(ActorGraphBackend_Type::BA_NONE, app_man, indented_output_stream, parameters);
-            return CWriterRef(new EfficientPathProfilingCWriter(app_man, instruction_writer, indented_output_stream, parameters, verbose));
          }
 #endif
 #if HAVE_TARGET_PROFILING
@@ -259,13 +247,6 @@ CWriterRef CWriter::CreateCWriter(const CBackend::Type type, const CBackendInfor
          {
             const InstructionWriterRef instruction_writer(new HLSInstructionWriter(app_man, indented_output_stream, parameters));
             return CWriterRef(new HLSCWriter(RefcountCast<const HLSCBackendInformation>(c_backend_information), app_man, instruction_writer, indented_output_stream, parameters, verbose));
-         }
-#endif
-#if HAVE_HOST_PROFILING_BUILT
-      case(CBackend::CB_HPP):
-         {
-            const InstructionWriterRef instruction_writer = InstructionWriter::CreateInstructionWriter(ActorGraphBackend_Type::BA_NONE, app_man, indented_output_stream, parameters);
-            return CWriterRef(new HierarchicalPathProfilingCWriter(app_man, instruction_writer, indented_output_stream, parameters, verbose));
          }
 #endif
 #if HAVE_GRAPH_PARTITIONING_BUILT && HAVE_TARGET_PROFILING
@@ -293,13 +274,6 @@ CWriterRef CWriter::CreateCWriter(const CBackend::Type type, const CBackendInfor
             }
          }
 #endif
-#if HAVE_HOST_PROFILING_BUILT
-      case(CBackend::CB_LOOPS_PROFILING):
-         {
-            const InstructionWriterRef instruction_writer = InstructionWriter::CreateInstructionWriter(ActorGraphBackend_Type::BA_NONE, app_man, indented_output_stream, parameters);
-            return CWriterRef(new LoopsProfilingCWriter(app_man, instruction_writer, indented_output_stream, parameters, verbose));
-         }
-#endif
 #if HAVE_ZEBU_BUILT
       case(CBackend::CB_POINTED_DATA_EVALUATION):
          {
@@ -319,13 +293,6 @@ CWriterRef CWriter::CreateCWriter(const CBackend::Type type, const CBackendInfor
             const InstructionWriterRef instruction_writer = InstructionWriter::CreateInstructionWriter(ActorGraphBackend_Type::BA_NONE, app_man, indented_output_stream, parameters);
             return CWriterRef(new CWriter(app_man, instruction_writer, indented_output_stream, parameters, verbose));
          }
-#if HAVE_HOST_PROFILING_BUILT
-      case(CBackend::CB_TPP):
-         {
-            const InstructionWriterRef instruction_writer = InstructionWriter::CreateInstructionWriter(ActorGraphBackend_Type::BA_NONE, app_man, indented_output_stream, parameters);
-            return CWriterRef(new TreePathProfilingCWriter(app_man, instruction_writer, indented_output_stream, parameters, verbose));
-         }
-#endif
       default:
          {
             THROW_UNREACHABLE("");
@@ -433,7 +400,7 @@ void CWriter::WriteGlobalDeclarations()
    //Write the declarations for the global variables
    var_pp_functorRef variableFunctor(new std_var_pp_functor(behavioral_helper));
    CustomSet<unsigned int>::const_iterator gblVars, gblVarsEnd;
-   for (gblVars = gblVariables.begin(), gblVarsEnd = gblVariables.end(); gblVars != gblVarsEnd; gblVars++)
+   for (gblVars = gblVariables.begin(), gblVarsEnd = gblVariables.end(); gblVars != gblVarsEnd; ++gblVars)
    {
       DeclareVariable(*gblVars, globallyDeclVars, globally_declared_types, behavioral_helper, variableFunctor);
    }
@@ -457,7 +424,7 @@ void CWriter::DeclareFunctionTypes(const unsigned int funId)
 
    const std::unordered_set<unsigned int> parameter_types = behavioral_helper->GetParameterTypes();
    std::unordered_set<unsigned int>::const_iterator parameter_type, parameter_type_end = parameter_types.end();
-   for(parameter_type = parameter_types.begin(); parameter_type != parameter_type_end; parameter_type++)
+   for(parameter_type = parameter_types.begin(); parameter_type != parameter_type_end; ++parameter_type)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Parameter type " + STR(*parameter_type));
       DeclareType(*parameter_type, behavioral_helper, globally_declared_types);
@@ -521,14 +488,14 @@ void CWriter::StartFunctionBody(const unsigned int function_id)
    CustomSet<unsigned int> vars = GetLocalVariables(function_id);
 
    const std::list<unsigned int>& funParams = behavioral_helper->get_parameters();
-   for (std::list<unsigned int>::const_iterator i = funParams.begin(); i != funParams.end(); i++)
+   for (std::list<unsigned int>::const_iterator i = funParams.begin(); i != funParams.end(); ++i)
    {
       if (vars.find(*i) != vars.end())
          vars.erase(*i);
    }
 
    const CustomSet<unsigned int> &gblVariables = AppM->get_global_variables();
-   for (CustomSet<unsigned int>::const_iterator i = gblVariables.begin(); i != gblVariables.end(); i++)
+   for (CustomSet<unsigned int>::const_iterator i = gblVariables.begin(); i != gblVariables.end(); ++i)
    {
       if (vars.find(*i) != vars.end())
          vars.erase(*i);
@@ -886,7 +853,7 @@ void CWriter::writeRoutineInstructions_rec
             THROW_ASSERT(node->get_kind()== gimple_multi_way_if_K, "unexpected node");
             gimple_multi_way_if* gmwi = GetPointer<gimple_multi_way_if>(node);
             std::map<unsigned int, bool> add_elseif_to_goto;
-            for(const auto cond : gmwi->list_of_cond)
+            for(const auto& cond : gmwi->list_of_cond)
             {
                unsigned int bb_index_num = cond.second;
                const vertex bb_vertex = bb_graph_info->bb_index_map.find(bb_index_num)->second;
@@ -900,7 +867,7 @@ void CWriter::writeRoutineInstructions_rec
                else
                   add_elseif_to_goto[bb_index_num] = false;
             }
-            for(const auto cond : gmwi->list_of_cond)
+            for(const auto& cond : gmwi->list_of_cond)
             {
                unsigned int bb_index_num = cond.second;
                const vertex bb_vertex = bb_graph_info->bb_index_map.find(bb_index_num)->second;
@@ -953,7 +920,7 @@ void CWriter::writeRoutineInstructions_rec
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Examining successor " + STR(bb_number_next_bb));
                std::set<unsigned int>::const_iterator eIdBeg, eIdEnd;
                std::set<unsigned int> Set = local_rec_bb_fcfgGraph->CGetBBEdgeInfo(*oE)->get_labels(CFG_SELECTOR);
-               for (eIdBeg = Set.begin(), eIdEnd = Set.end(); eIdBeg != eIdEnd; eIdBeg++)
+               for (eIdBeg = Set.begin(), eIdEnd = Set.end(); eIdBeg != eIdEnd; ++eIdBeg)
                {
                   if (*eIdBeg == default_COND)
                   {
@@ -1353,7 +1320,7 @@ void CWriter::DeclareVariable
    std::unordered_set<unsigned int>::const_iterator initVarsIter, initVarsIterEnd;
    if(behavioral_helper->GetInit(curVar, initVars))
    {
-      for (initVarsIter = initVars.begin(), initVarsIterEnd = initVars.end(); initVarsIter != initVarsIterEnd; initVarsIter++)
+      for (initVarsIter = initVars.begin(), initVarsIterEnd = initVars.end(); initVarsIter != initVarsIterEnd; ++initVarsIter)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "For variable " + STR(curVar) + " recursing on " + STR(*initVarsIter));
          if (already_declared_variables.find(*initVarsIter) == already_declared_variables.end() && globallyDeclVars.find(*initVarsIter) == globallyDeclVars.end())
@@ -1464,7 +1431,7 @@ void CWriter::schedule_copies(vertex b, const BBGraphConstRef bb_domGraph, const
    {
       vertex s = boost::target(*oi, *bb_fcfgGraph);
       const BBNodeInfoConstRef si = bb_fcfgGraph->CGetBBNodeInfo(s);
-      for(const auto phi_op : si->block->CGetPhiList())
+      for(const auto& phi_op : si->block->CGetPhiList())
       {
          if(phi_instructions.find(GET_INDEX_NODE(phi_op)) == phi_instructions.end())
             continue;
@@ -1475,7 +1442,7 @@ void CWriter::schedule_copies(vertex b, const BBGraphConstRef bb_domGraph, const
          if(!is_virtual)
          {
             bb_dest_definition[dest_i] = si->block->number;
-            for(const auto def_edge : pn->CGetDefEdgesList())
+            for(const auto& def_edge : pn->CGetDefEdgesList())
             {
                if(def_edge.second == bi_id)
                {
@@ -1870,7 +1837,7 @@ void CWriter::WriteHashTableImplementation()
    indented_output_stream->Append("#define st_foreach_item_int(table, gen, key, value) for(gen=st_init_gen(table); st_gen_int(gen,key,value) || (st_free_gen(gen),0);)\n");
 }
 
-void CWriter::WriteFile(const std::string & file_name)
+void CWriter::WriteFile(const std::string& file_name)
 {
    indented_output_stream->WriteFile(file_name);
 }

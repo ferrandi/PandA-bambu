@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -223,7 +223,7 @@ void classic_datapath::add_ports()
 
    std::map<conn_binding::const_param, generic_objRef> const_objs = HLS->Rconn->get_constant_objs();
    unsigned int num = 0;
-   for(std::map<conn_binding::const_param, generic_objRef>::iterator c = const_objs.begin(); c != const_objs.end(); c++)
+   for(std::map<conn_binding::const_param, generic_objRef>::iterator c = const_objs.begin(); c != const_objs.end(); ++c)
    {
       generic_objRef constant_obj = c->second;
       structural_objectRef const_obj = SM->add_module_from_technology_library("const_" + STR(num), CONSTANT_STD, LIBRARY_STD, circuit, HLS->HLS_T->get_technology_manager());

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -214,7 +214,7 @@ GccWrapper::~GccWrapper()
 {
 }
 
-void GccWrapper::CompileFile(const std::string & original_file_name, std::string & real_file_name, const std::string & parameters_line, bool empty_file)
+void GccWrapper::CompileFile(const std::string& original_file_name, std::string & real_file_name, const std::string& parameters_line, bool empty_file)
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Compiling " + original_file_name + "(transformed in " + real_file_name);
 
@@ -467,6 +467,7 @@ void GccWrapper::InitializeGccParameters()
          case(GccWrapper_OptimizationSet::OZEBU):
 #endif
             ///Filling optimizations map
+#if HAVE_BAMBU_BUILT || HAVE_TUCANO_BUILT || HAVE_ZEBU_BUILT
             SetGccDefault();
 
             switch(OS)
@@ -510,6 +511,7 @@ void GccWrapper::InitializeGccParameters()
             gcc_compiling_parameters += (" " + WriteOptimizationsString() + " ");
 
             break;
+#endif
          default:
             {
                THROW_UNREACHABLE("Unexpected optimization level");
@@ -532,7 +534,7 @@ void GccWrapper::InitializeGccParameters()
    if(Param->isOption(OPT_gcc_defines))
    {
       const auto defines = Param->getOption<const CustomSet<std::string> >(OPT_gcc_defines);
-      for(const auto define : defines)
+      for(const auto& define : defines)
       {
          std::string escaped_string = define;
          //add_escape(escaped_string, "\"");
@@ -544,7 +546,7 @@ void GccWrapper::InitializeGccParameters()
    if(Param->isOption(OPT_gcc_undefines))
    {
       const auto undefines = Param->getOption<const CustomSet<std::string> >(OPT_gcc_undefines);
-      for(const auto undefine : undefines)
+      for(const auto& undefine : undefines)
       {
          std::string escaped_string = undefine;
          //add_escape(escaped_string, "\"");
@@ -556,7 +558,7 @@ void GccWrapper::InitializeGccParameters()
    if(Param->isOption(OPT_gcc_warnings))
    {
       const auto warnings = Param->getOption<const CustomSet<std::string> >(OPT_gcc_warnings);
-      for(const auto warning : warnings)
+      for(const auto& warning : warnings)
       {
          gcc_compiling_parameters += "-W" + warning + " ";
       }
@@ -579,7 +581,7 @@ void GccWrapper::InitializeGccParameters()
    if(Param->isOption(OPT_gcc_libraries))
    {
       const auto libraries = Param->getOption<const CustomSet<std::string> >(OPT_gcc_libraries);
-      for(const auto library : libraries)
+      for(const auto& library : libraries)
       {
          gcc_linking_parameters += "-l" + library + " ";
       }
@@ -589,7 +591,7 @@ void GccWrapper::InitializeGccParameters()
    if(Param->isOption(OPT_gcc_library_directories))
    {
       const auto library_directories = Param->getOption<const CustomSet<std::string> >(OPT_gcc_library_directories);
-      for(const auto library_directory : library_directories)
+      for(const auto& library_directory : library_directories)
       {
          gcc_linking_parameters += "-L" + library_directory + " ";
       }
@@ -599,7 +601,7 @@ void GccWrapper::InitializeGccParameters()
    if(Param->isOption(OPT_no_parse_files))
    {
       const auto no_parse_files = Param->getOption<const CustomSet<std::string> >(OPT_no_parse_files);
-      for(const auto no_parse_file : no_parse_files)
+      for(const auto& no_parse_file : no_parse_files)
       {
          gcc_linking_parameters += no_parse_file + " ";
       }
@@ -1009,10 +1011,13 @@ void GccWrapper::SetGccDefault()
 GccWrapper::Compiler GccWrapper::GetCompiler() const
 {
    Compiler compiler;
+#if HAVE_I386_GCC45_COMPILER || HAVE_I386_GCC46_COMPILER || HAVE_I386_GCC47_COMPILER || HAVE_I386_GCC48_COMPILER || HAVE_I386_GCC49_COMPILER || HAVE_I386_GCC5_COMPILER || HAVE_I386_GCC6_COMPILER || HAVE_I386_GCC7_COMPILER || HAVE_SPARC_COMPILER || HAVE_ARM_COMPILER
 #ifndef NDEBUG
    GccWrapper_CompilerTarget compatible_compilers = Param->getOption<GccWrapper_CompilerTarget>(OPT_compatible_compilers);
 #endif
+#endif
 
+#if HAVE_I386_GCC45_COMPILER || HAVE_I386_GCC46_COMPILER || HAVE_I386_GCC47_COMPILER || HAVE_I386_GCC48_COMPILER || HAVE_I386_GCC49_COMPILER || HAVE_I386_GCC5_COMPILER || HAVE_I386_GCC6_COMPILER || HAVE_I386_GCC7_COMPILER || HAVE_SPARC_COMPILER || HAVE_ARM_COMPILER
    bool flag_cpp;
    if(Param->isOption(OPT_input_format) &&
          Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_CPP &&
@@ -1020,11 +1025,15 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
       flag_cpp = true;
    else
       flag_cpp = false;
+#endif
 
+#if HAVE_I386_GCC45_COMPILER || HAVE_I386_GCC46_COMPILER || HAVE_I386_GCC47_COMPILER || HAVE_I386_GCC48_COMPILER || HAVE_I386_GCC49_COMPILER || HAVE_I386_GCC5_COMPILER || HAVE_I386_GCC6_COMPILER || HAVE_I386_GCC7_COMPILER || HAVE_SPARC_COMPILER || HAVE_ARM_COMPILER || HAVE_SPARC_ELF_GCC
    std::string gcc_extra_options;
    if(Param->isOption(OPT_gcc_extra_options))
       gcc_extra_options = Param->getOption<std::string>(OPT_gcc_extra_options);
+#endif
 
+#if HAVE_I386_GCC45_COMPILER || HAVE_I386_GCC46_COMPILER || HAVE_I386_GCC47_COMPILER || HAVE_I386_GCC48_COMPILER || HAVE_I386_GCC49_COMPILER || HAVE_I386_GCC5_COMPILER || HAVE_I386_GCC6_COMPILER || HAVE_I386_GCC7_COMPILER || HAVE_SPARC_COMPILER || HAVE_ARM_COMPILER
    GccWrapper_CompilerTarget preferred_compiler;
    if(compiler_target == GccWrapper_CompilerTarget::CT_NO_GCC)
    {
@@ -1044,6 +1053,7 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
    }
    const std::string plugin_dir = (Param->isOption(OPT_gcc_plugindir) ? Param->getOption<std::string>(OPT_gcc_plugindir) : STR(PLUGIN_DIR)) + "/";
    const std::string plugin_ext = ".so";
+#endif
 
 #if HAVE_I386_GCC45_COMPILER
    if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC45))
@@ -1381,7 +1391,7 @@ void GccWrapper::GetGccConfig() const
    QueryGccConfig("-v");
 }
 
-void GccWrapper::QueryGccConfig(std::string gcc_option) const
+void GccWrapper::QueryGccConfig(const std::string& gcc_option) const
 {
    const std::string gcc = GetCompiler().gcc.string();
    const std::string command = gcc + " " + gcc_option;
@@ -1405,7 +1415,7 @@ size_t GccWrapper::GetSourceCodeLines(const ParameterConstRef Param)
 
    std::string command = "cat ";
    const auto source_files = Param->getOption<const CustomSet<std::string> >(OPT_input_file);
-   for(const auto source_file : source_files)
+   for(const auto& source_file : source_files)
    {
       boost::filesystem::path absolute_path = boost::filesystem::system_complete(source_file);
       command += absolute_path.branch_path().string() + "/*\\.h ";
@@ -1433,17 +1443,17 @@ size_t GccWrapper::GetSourceCodeLines(const ParameterConstRef Param)
    return 0;
 }
 
-void GccWrapper::CreateExecutable(const CustomSet<std::string> & file_names, const std::string & executable_name, const std::string & extra_gcc_options) const
+void GccWrapper::CreateExecutable(const CustomSet<std::string> & file_names, const std::string& executable_name, const std::string& extra_gcc_options) const
 {
    std::list<std::string> sorted_file_names;
-   for(const auto file_name : file_names)
+   for(const auto& file_name : file_names)
       sorted_file_names.push_back(file_name);
    CreateExecutable(sorted_file_names, executable_name, extra_gcc_options);
 }
-void GccWrapper::CreateExecutable(const std::list<std::string> & file_names, const std::string & executable_name, const std::string & extra_gcc_options) const
+void GccWrapper::CreateExecutable(const std::list<std::string> & file_names, const std::string& executable_name, const std::string& extra_gcc_options) const
 {
    std::string file_names_string;
-   for(const auto file_name : file_names)
+   for(const auto& file_name : file_names)
    {
       file_names_string += file_name + " ";
    }
@@ -1577,12 +1587,10 @@ std::string GccWrapper::WriteOptimizationsString()
    std::map<std::string, bool>::const_iterator it, it_end = optimization_flags.end();
    if(strict_aliasing)
       optimizations += std::string("-Wstrict-aliasing ");
-   for (it = optimization_flags.begin(); it != it_end; it++)
+   for (it = optimization_flags.begin(); it != it_end; ++it)
    {
       /*argument aliasing should be treated in a different way*/
       if (it->first == "argument-alias" and (argument_noalias or argument_noalias_global or argument_noalias_anything))
-         continue;
-      if (it->first == "argument-noalias" and (argument_noalias_global or argument_noalias_anything))
          continue;
       else if (it->first == "argument-noalias" and (argument_noalias_global or argument_noalias_anything))
          continue;
@@ -1595,19 +1603,19 @@ std::string GccWrapper::WriteOptimizationsString()
          optimizations += std::string("-fno-") + it->first + " "; // disable optimizations set to false
    }
    std::map<std::string, int>::const_iterator it2, it2_end = optimization_values.end();
-   for (it2 = optimization_values.begin(); it2 != it2_end; it2++)
+   for (it2 = optimization_values.begin(); it2 != it2_end; ++it2)
    {
       optimizations += std::string("-f") + it2->first + "=" + boost::lexical_cast<std::string>(it2->second) + " ";
    }
    std::map<std::string, int>::const_iterator it3, it3_end = parameter_values.end();
-   for(it3 = parameter_values.begin(); it3 != it3_end; it3++)
+   for(it3 = parameter_values.begin(); it3 != it3_end; ++it3)
    {
       optimizations += "--param " + it3->first + "=" + boost::lexical_cast<std::string>(it3->second) + " ";
    }
    return optimizations;
 }
 
-void GccWrapper::ReadXml(const std::string file_name)
+void GccWrapper::ReadXml(const std::string&file_name)
 {
    try
    {
@@ -1619,7 +1627,7 @@ void GccWrapper::ReadXml(const std::string file_name)
 
          const xml_node::node_list root_children = root->get_children();
          xml_node::node_list::const_iterator root_child, root_child_end = root_children.end();
-         for(root_child = root_children.begin(); root_child != root_child_end; root_child++)
+         for(root_child = root_children.begin(); root_child != root_child_end; ++root_child)
          {
             const xml_element * root_child_element = GetPointer<const xml_element>(*root_child);
             if(not root_child_element)
@@ -1628,7 +1636,7 @@ void GccWrapper::ReadXml(const std::string file_name)
             {
                const xml_node::node_list optimizations_children = root_child_element->get_children();
                xml_node::node_list::const_iterator optimizations_child, optimizations_child_end = optimizations_children.end();
-               for(optimizations_child = optimizations_children.begin(); optimizations_child != optimizations_child_end; optimizations_child++)
+               for(optimizations_child = optimizations_children.begin(); optimizations_child != optimizations_child_end; ++optimizations_child)
                {
                   const xml_element * optimizations_child_element = GetPointer<const xml_element>(*optimizations_child);
                   if(not optimizations_child_element)
@@ -1637,7 +1645,7 @@ void GccWrapper::ReadXml(const std::string file_name)
                   {
                      const xml_node::node_list parameter_values_children = optimizations_child_element->get_children();
                      xml_node::node_list::const_iterator parameter_value, parameter_value_end = parameter_values_children.end();
-                     for(parameter_value = parameter_values_children.begin(); parameter_value != parameter_value_end; parameter_value++)
+                     for(parameter_value = parameter_values_children.begin(); parameter_value != parameter_value_end; ++parameter_value)
                      {
                         const xml_element * parameter_value_element = GetPointer<const xml_element>(*parameter_value);
                         if(not parameter_value_element)
@@ -1653,7 +1661,7 @@ void GccWrapper::ReadXml(const std::string file_name)
                   {
                      const xml_node::node_list optimization_flags_children = optimizations_child_element->get_children();
                      xml_node::node_list::const_iterator optimization_flag, optimization_flag_end = optimization_flags_children.end();
-                     for(optimization_flag = optimization_flags_children.begin(); optimization_flag != optimization_flag_end; optimization_flag++)
+                     for(optimization_flag = optimization_flags_children.begin(); optimization_flag != optimization_flag_end; ++optimization_flag)
                      {
                         const xml_element * optimization_flag_element = GetPointer<const xml_element>(*optimization_flag);
                         if(not optimization_flag_element)
@@ -1669,7 +1677,7 @@ void GccWrapper::ReadXml(const std::string file_name)
                   {
                      const xml_node::node_list optimization_value_children = optimizations_child_element->get_children();
                      xml_node::node_list::const_iterator optimization_value, optimization_value_end = optimization_value_children.end();
-                     for(optimization_value = optimization_value_children.begin(); optimization_value != optimization_value_end; optimization_value++)
+                     for(optimization_value = optimization_value_children.begin(); optimization_value != optimization_value_end; ++optimization_value)
                      {
                         const xml_element * optimization_value_element = GetPointer<const xml_element>(*optimization_value);
                         if(not optimization_value_element)
@@ -1697,7 +1705,7 @@ void GccWrapper::ReadXml(const std::string file_name)
             {
                const xml_node::node_list defines = root_child_element->get_children();
                xml_node::node_list::const_iterator define, define_end = defines.end();
-               for(define = defines.begin(); define != define_end; define++)
+               for(define = defines.begin(); define != define_end; ++define)
                {
                   const xml_element * define_element = GetPointer<const xml_element>(*define);
                   if(not define_element)
@@ -1713,7 +1721,7 @@ void GccWrapper::ReadXml(const std::string file_name)
             {
                const xml_node::node_list undefines = root_child_element->get_children();
                xml_node::node_list::const_iterator undefine, undefine_end = undefines.end();
-               for(undefine = undefines.begin(); undefine != undefine_end; undefine++)
+               for(undefine = undefines.begin(); undefine != undefine_end; ++undefine)
                {
                   const xml_element * undefine_element = GetPointer<const xml_element>(*undefine);
                   if(not undefine_element)
@@ -1729,7 +1737,7 @@ void GccWrapper::ReadXml(const std::string file_name)
             {
                const xml_node::node_list warnings = root_child_element->get_children();
                xml_node::node_list::const_iterator warning, warning_end = warnings.end();
-               for(warning = warnings.begin(); warning != warning_end; warning++)
+               for(warning = warnings.begin(); warning != warning_end; ++warning)
                {
                   const xml_element * warning_element = GetPointer<const xml_element>(*warning);
                   if(not warning_element)
@@ -1745,7 +1753,7 @@ void GccWrapper::ReadXml(const std::string file_name)
             {
                const xml_node::node_list includes = root_child_element->get_children();
                xml_node::node_list::const_iterator include, include_end = includes.end();
-               for(include = includes.begin(); include != include_end; include++)
+               for(include = includes.begin(); include != include_end; ++include)
                {
                   const xml_element * include_element = GetPointer<const xml_element>(*include);
                   if(not include_element)
@@ -1761,7 +1769,7 @@ void GccWrapper::ReadXml(const std::string file_name)
             {
                const xml_node::node_list libraries = root_child_element->get_children();
                xml_node::node_list::const_iterator library, library_end = libraries.end();
-               for(library = libraries.begin(); library != library_end; library++)
+               for(library = libraries.begin(); library != library_end; ++library)
                {
                   const xml_element * library_element = GetPointer<const xml_element>(*library);
                   if(not library_element)
@@ -1777,7 +1785,7 @@ void GccWrapper::ReadXml(const std::string file_name)
             {
                const xml_node::node_list library_directories = root_child_element->get_children();
                xml_node::node_list::const_iterator library_directory, library_directory_end = library_directories.end();
-               for(library_directory = library_directories.begin(); library_directory != library_directory_end; library_directory++)
+               for(library_directory = library_directories.begin(); library_directory != library_directory_end; ++library_directory)
                {
                   const xml_element * library_directory_element = GetPointer<const xml_element>(*library_directory);
                   if(not library_directory_element)
@@ -1796,7 +1804,7 @@ void GccWrapper::ReadXml(const std::string file_name)
    {
       THROW_ERROR("Error " + std::string(msg) + " during reading of gcc configuration from " + file_name);
    }
-   catch (const std::string & msg)
+   catch (const std::string& msg)
    {
       THROW_ERROR("Error " + msg + " during reading of gcc configuration from " + file_name);
    }
@@ -1811,14 +1819,14 @@ void GccWrapper::ReadXml(const std::string file_name)
 
 }
 
-void GccWrapper::WriteXml(const std::string file_name) const
+void GccWrapper::WriteXml(const std::string&file_name) const
 {
    xml_document document;
    xml_element * root = document.create_root_node(STR_XML_gcc_root);
    xml_element * optimizations = root->add_child_element(STR_XML_gcc_optimizations);
    xml_element * parameter_values_xml = optimizations->add_child_element(STR_XML_gcc_parameter_values);
    std::map<std::string, int>::const_iterator parameter_value, parameter_value_end = this->parameter_values.end();
-   for(parameter_value = this->parameter_values.begin(); parameter_value != parameter_value_end; parameter_value++)
+   for(parameter_value = this->parameter_values.begin(); parameter_value != parameter_value_end; ++parameter_value)
    {
       xml_element * parameter_value_xml = parameter_values_xml->add_child_element(STR_XML_gcc_parameter_value);
       parameter_value_xml->set_attribute(STR_XML_gcc_name, parameter_value->first);
@@ -1826,7 +1834,7 @@ void GccWrapper::WriteXml(const std::string file_name) const
    }
    xml_element * optimization_flags_xml = optimizations->add_child_element(STR_XML_gcc_parameter_values);
    std::map<std::string, bool>::const_iterator optimization_flag, optimization_flag_end = this->optimization_flags.end();
-   for(optimization_flag = this->optimization_flags.begin(); optimization_flag != optimization_flag_end; optimization_flag++)
+   for(optimization_flag = this->optimization_flags.begin(); optimization_flag != optimization_flag_end; ++optimization_flag)
    {
       xml_element * optimization_flag_xml = optimization_flags_xml->add_child_element(STR_XML_gcc_optimization_flag);
       optimization_flag_xml->set_attribute(STR_XML_gcc_name, optimization_flag->first);
@@ -1834,7 +1842,7 @@ void GccWrapper::WriteXml(const std::string file_name) const
    }
    xml_element * optimization_values_xml = optimizations->add_child_element(STR_XML_gcc_parameter_values);
    std::map<std::string, int>::const_iterator optimization_value, optimization_value_end = this->optimization_values.end();
-   for(optimization_value = this->optimization_values.begin(); optimization_value != optimization_value_end; optimization_value++)
+   for(optimization_value = this->optimization_values.begin(); optimization_value != optimization_value_end; ++optimization_value)
    {
       xml_element * optimization_value_xml = optimization_values_xml->add_child_element(STR_XML_gcc_optimization_value);
       optimization_value_xml->set_attribute(STR_XML_gcc_name, optimization_value->first);
@@ -1847,7 +1855,7 @@ const std::string GccWrapper::AddSourceCodeIncludes(const std::list<std::string>
 {
    std::string includes;
    ///Adding includes of original source code files
-   for(const auto source_file : source_files)
+   for(const auto& source_file : source_files)
    {
       boost::filesystem::path absolute_path = boost::filesystem::system_complete(source_file);
       std::string new_path =  "-iquote " + absolute_path.branch_path().string() + " ";
@@ -1857,7 +1865,7 @@ const std::string GccWrapper::AddSourceCodeIncludes(const std::list<std::string>
    return includes;
 }
 
-size_t GccWrapper::ConvertVersion(const std::string version)
+size_t GccWrapper::ConvertVersion(const std::string&version)
 {
    size_t ret_value = 0;
    std::vector<std::string> version_tokens;
@@ -1871,7 +1879,7 @@ size_t GccWrapper::ConvertVersion(const std::string version)
    return ret_value;
 }
 
-void GccWrapper::CheckGccCompatibleVersion(const std::string gcc_version, const std::string plugin_version)
+void GccWrapper::CheckGccCompatibleVersion(const std::string&gcc_version, const std::string&plugin_version)
 {
    current_gcc_version = gcc_version;
    current_plugin_version = plugin_version;

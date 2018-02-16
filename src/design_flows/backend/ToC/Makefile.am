@@ -40,16 +40,6 @@ if BUILD_LIB_GRAPH_PARTITIONING
       -I$(top_srcdir)/src/design_flows/codesign/partitioning/graph_partitioning
 endif
 
-if BUILD_LIB_TARGET_PROFILING
-   lib_ToC_la_SOURCES += \
-      escape_c_backend_information.cpp \
-      instrument_c_backend_information.cpp
-
-   noinst_HEADERS += \
-      escape_c_backend_information.hpp \
-      instrument_c_backend_information.hpp
-endif
-
 lib_ToC_la_LIBADD = \
    $(top_builddir)/src/design_flows/backend/ToC/progModels/lib_progModel.la \
    $(top_builddir)/src/design_flows/backend/ToC/source_code_writers/lib_source_code_writers.la

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2015-2017 Politecnico di Milano
+ *              Copyright (c) 2015-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -64,7 +64,7 @@ class AadlInformation
        * @param name is the name
        * @return the normalized name
        */
-      std::string Normalize(const std::string name) const;
+      std::string Normalize(const std::string&name) const;
 
    public:
       ///Strucutre containing the characteristics of a parameter
@@ -114,13 +114,13 @@ class AadlInformation
           * Return the endianess
           */
          static
-         EndianessType Endianess(const std::string endianess_string);
+         EndianessType Endianess(const std::string&endianess_string);
 
          /**
           * Return the direction
           */
          static
-         Direction GetDirection(const std::string direction_string);
+         Direction GetDirection(const std::string&direction_string);
       };
 
       ///For each function the list of parameters
@@ -140,13 +140,13 @@ class AadlInformation
        * @param name is the name of the type
        * @param type is the type
        */
-      void AddAsnType(const std::string name, const AsnTypeRef asn_type);
+      void AddAsnType(const std::string&name, const AsnTypeRef asn_type);
 
       /**
        * Get an asn_type
        * @param name is the name of the type
        */
-      AsnTypeRef CGetAsnType(const std::string name) const;
+      AsnTypeRef CGetAsnType(const std::string&name) const;
 };
 typedef refcount<AadlInformation> AadlInformationRef;
 typedef refcount<const AadlInformation> AadlInformationConstRef;

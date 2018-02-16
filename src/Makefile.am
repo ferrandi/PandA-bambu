@@ -157,10 +157,6 @@ if BUILD_LIB_UTILITY
   AM_CPPFLAGS += -I$(top_srcdir)/src/utility
 endif
 
-################################### Mongoose ###################################
-if BUILD_MONGOOSE
-include $(top_srcdir)/src/mongoose.am
-endif
 #################################### Spider ####################################
 if BUILD_SPIDER
 include $(top_srcdir)/src/spider.am
@@ -171,11 +167,6 @@ if BUILD_TREE_PANDA_GCC
 include $(top_srcdir)/src/tree-panda-gcc.am
 endif
 
-#################################### Zebu ######################################
-if BUILD_ZEBU
-include $(top_srcdir)/src/zebu.am
-endif
-
 ########################### EUCALYPTUS SECTION ###########################
 if BUILD_EUCALYPTUS
 include $(top_srcdir)/src/eucalyptus.am
@@ -184,36 +175,6 @@ endif
 ########################### BAMBU SECTION ###########################
 if BUILD_BAMBU
 include $(top_srcdir)/src/bambu.am
-endif
-
-########################### GECCO SECTION ###########################
-if BUILD_GECCO
-include $(top_srcdir)/src/gecco.am
-endif
-
-########################### TUCANO SECTION ###########################	
-if BUILD_TUCANO
-include $(top_srcdir)/src/tucano.am
-endif
-
-########################### KOALA SECTION ###########################
-if BUILD_KOALA
-include $(top_srcdir)/src/koala.am
-endif
-
-########################### GRIZZLY SECTION ###########################	
-if BUILD_GRIZZLY
-include $(top_srcdir)/src/grizzly.am
-endif
-
-########################### TURTLE SECTION ###########################
-if BUILD_SIMIT
-include $(top_srcdir)/src/turtle.am
-endif
-
-########################### LEMUR SECTION ###########################
-if BUILD_LEMUR
-include $(top_srcdir)/src/lemur.am
 endif
 
 ########################### DOC SECTION ###########################	

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -191,7 +191,7 @@ DesignFlowStep_Status use_counting::InternalExec()
    statement_list * sl = GetPointer<statement_list>(GET_NODE(fd->body));
    std::map<unsigned int, blocRef> & list_of_bloc = sl->list_of_bloc;
    std::map<unsigned int, blocRef>::const_iterator it, it_end = list_of_bloc.end();
-   for(it = list_of_bloc.begin(); it != it_end; it++)
+   for(it = list_of_bloc.begin(); it != it_end; ++it)
    {
       for(auto statement_node : it->second->CGetStmtList())
       {
@@ -199,7 +199,7 @@ DesignFlowStep_Status use_counting::InternalExec()
          std::set<tree_nodeRef> ssa_uses;
          analyze_node(statement_node, ssa_uses);
          /// [breadshe] Add current statement to the use_stmts corresponding to the ssa_name nodes contained in ssa_uses
-         for(std::set<tree_nodeRef>::iterator uses_it = ssa_uses.begin(); uses_it != ssa_uses.end(); uses_it++)
+         for(std::set<tree_nodeRef>::iterator uses_it = ssa_uses.begin(); uses_it != ssa_uses.end(); ++uses_it)
          {
             ssa_name * sn = GetPointer<ssa_name>(GET_NODE(*uses_it));
             sn->AddUseStmt(statement_node);
@@ -209,7 +209,7 @@ DesignFlowStep_Status use_counting::InternalExec()
       {
          std::set<tree_nodeRef> ssa_uses;
          analyze_node(phi_node, ssa_uses);
-         for(std::set<tree_nodeRef>::iterator uses_it = ssa_uses.begin(); uses_it != ssa_uses.end(); uses_it++)
+         for(std::set<tree_nodeRef>::iterator uses_it = ssa_uses.begin(); uses_it != ssa_uses.end(); ++uses_it)
          {
             ssa_name * sn = GetPointer<ssa_name>(GET_NODE(*uses_it));
             sn->AddUseStmt(phi_node);
@@ -284,7 +284,7 @@ void use_counting::analyze_node(tree_nodeRef & tn, std::set<tree_nodeRef> & ssa_
          analyze_node(ce->fn, ssa_uses);
          std::vector<tree_nodeRef> & args = ce->args;
          std::vector<tree_nodeRef>::iterator arg, arg_end = args.end();
-         for(arg = args.begin(); arg != arg_end; arg++)
+         for(arg = args.begin(); arg != arg_end; ++arg)
          {
             analyze_node(*arg, ssa_uses);
          }
@@ -296,7 +296,7 @@ void use_counting::analyze_node(tree_nodeRef & tn, std::set<tree_nodeRef> & ssa_
          analyze_node(ce->fn, ssa_uses);
          std::vector<tree_nodeRef> & args = ce->args;
          std::vector<tree_nodeRef>::iterator arg, arg_end = args.end();
-         for(arg = args.begin(); arg != arg_end; arg++)
+         for(arg = args.begin(); arg != arg_end; ++arg)
          {
             analyze_node(*arg, ssa_uses);
          }
@@ -363,7 +363,7 @@ void use_counting::analyze_node(tree_nodeRef & tn, std::set<tree_nodeRef> & ssa_
          constructor * c = GetPointer<constructor>(curr_tn);
          std::vector<std::pair< tree_nodeRef, tree_nodeRef> > &list_of_idx_valu = c->list_of_idx_valu;
          std::vector<std::pair< tree_nodeRef, tree_nodeRef> >::const_iterator vend = list_of_idx_valu.end();
-         for (std::vector<std::pair< tree_nodeRef, tree_nodeRef> >::iterator i = list_of_idx_valu.begin(); i != vend; i++)
+         for (std::vector<std::pair< tree_nodeRef, tree_nodeRef> >::iterator i = list_of_idx_valu.begin(); i != vend; ++i)
          {
             analyze_node(i->second, ssa_uses);
          }

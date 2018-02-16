@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -97,7 +97,7 @@ class FunctionFrontendFlowStep : public FrontendFlowStep
        * Write the current version of statement list in dot format
        * @param filename is the file name to be written
        */
-      void WriteBBGraphDot(const std::string filename) const;
+      void WriteBBGraphDot(const std::string&filename) const;
 
    public:
       /**

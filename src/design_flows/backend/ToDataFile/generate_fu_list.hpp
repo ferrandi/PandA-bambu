@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2015-2017 Politecnico di Milano
+ *              Copyright (c) 2015-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -119,6 +119,6 @@ class GenerateFuList : public ToDataFileStep, public FunctionalUnitStep
        * @param stage_index
        * @param constPort is the index of the constant port
        */
-      virtual void AnalyzeCell(functional_unit * fu, const unsigned int prec, const std::vector<std::string >portsize_parameters, const size_t portsize_index, const std::vector<std::string> pipe_parameters, const size_t stage_index, const unsigned int constPort, const bool is_commutative);
+      virtual void AnalyzeCell(functional_unit * fu, const unsigned int prec, const std::vector<std::string >& portsize_parameters, const size_t portsize_index, const std::vector<std::string>& pipe_parameters, const size_t stage_index, const unsigned int constPort, const bool is_commutative);
 };
 #endif

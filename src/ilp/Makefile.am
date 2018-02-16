@@ -54,23 +54,8 @@ if BUILD_GLPK
    noinst_HEADERS += glpk_solver.hpp
 endif
 lib_ilp_cbc_la_SOURCES=
-if BUILD_COIN_OR
-   lib_ilp_cbc_la_SOURCES += cbc_solver.cpp CbcBranchUser.cpp UserCuts.cpp
-   noinst_HEADERS += cbc_solver.hpp UserCuts.hpp
-endif
-if BUILD_LP_SOLVE
-   lib_ilp_la_SOURCES += lp_solve_solver.cpp 
-   noinst_HEADERS += lp_solve_solver.hpp 
-endif
 
 lib_ilp_la_LIBADD =
-if BUILD_LP_SOLVE
-  lib_ilp_la_LIBADD += $(top_builddir)/ext/lpsolve5/liblpsolve.la \
-      $(top_builddir)/ext/lpsolve5/bfp/$(BFP_NAME)/lib$(BFP_NAME).la 
-endif
-if BUILD_COIN_OR
-  lib_ilp_la_LIBADD += lib_ilp_cbc.la $(top_builddir)/ext/libCoin_Cbc.la $(LAPACK_LIBS) $(BLAS_LIBS) $(LIBS) $(FLIBS) -lbz2
-endif
 if BUILD_GLPK
   lib_ilp_la_LIBADD += -lglpk -lltdl -lamd -lcolamd -lgmp $(LIB_SUITESPARSECONFIG) 
 endif

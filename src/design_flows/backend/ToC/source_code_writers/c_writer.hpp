@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -433,7 +433,7 @@ class CWriter
        * Writes the final C file
        * @param file_name is the name of the file to be generated
        */
-      virtual void WriteFile(const std::string & file_name);
+      virtual void WriteFile(const std::string& file_name);
 
       /**
        * Writes implementation of __builtin_wait_call

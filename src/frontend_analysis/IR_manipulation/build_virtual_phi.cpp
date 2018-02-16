@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -132,7 +132,7 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing BB" + STR(basic_block_graph->CGetBBNodeInfo(*basic_block)->block->number)); 
       const auto block_info = basic_block_graph->CGetBBNodeInfo(*basic_block)->block;
-      for(const auto stmt : block_info->CGetStmtList())
+      for(const auto& stmt : block_info->CGetStmtList())
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing stmt " + STR(stmt));
          auto gn = GetPointer<gimple_node>(GET_NODE(stmt));
@@ -147,7 +147,7 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
             GetPointer<ssa_name>(GET_NODE(gn->memuse))->RemoveUse(stmt);
             gn->memuse = tree_nodeRef();
          }
-         for(const auto vover : gn->vovers)
+         for(const auto& vover : gn->vovers)
          {
             vovers[vover].insert(stmt);
          }
@@ -160,7 +160,7 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Checking uses");
    ///Check uses
-   for(const auto virtual_ssa_definition : virtual_ssa_definitions)
+   for(const auto& virtual_ssa_definition : virtual_ssa_definitions)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering ssa " + virtual_ssa_definition.first->ToString());
       auto sn = GetPointer<ssa_name>(GET_NODE(virtual_ssa_definition.first));
@@ -186,7 +186,7 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
       ///The set of false uses
       TreeNodeMap<size_t> transitive_uses;
 
-      for(const auto use_stmt : sn->CGetUseStmts())
+      for(const auto& use_stmt : sn->CGetUseStmts())
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering use in " + STR(use_stmt.first));
          const auto use_bb_index = GetPointer<const gimple_node>(GET_NODE(use_stmt.first))->bb_index;
@@ -199,7 +199,7 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
          {
             if(vovers.find(virtual_ssa_definition.first) != vovers.end())
             {
-               for(const auto vover_stmt : vovers.find(virtual_ssa_definition.first)->second)
+               for(const auto& vover_stmt : vovers.find(virtual_ssa_definition.first)->second)
                {
                   const auto vover_bb_index = GetPointer<const gimple_node>(GET_NODE(vover_stmt))->bb_index;
                   const auto vover_bb = bb_index_map.find(vover_bb_index)->second;
@@ -209,7 +209,7 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
                   }
                }
             }
-            for(const auto other_use_stmt : sn->CGetUseStmts())
+            for(const auto& other_use_stmt : sn->CGetUseStmts())
             {
                const auto other_use_bb_index = GetPointer<const gimple_node>(GET_NODE(other_use_stmt.first))->bb_index;
                const auto other_use_bb = bb_index_map.find(other_use_bb_index)->second;
@@ -266,7 +266,7 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Loop to be considered updated to " + STR(loop_id));
       }
-      for(const auto transitive_use : transitive_uses)
+      for(const auto& transitive_use : transitive_uses)
       {
          for(size_t number_use = 0; number_use < transitive_use.second; number_use++)
          {
@@ -325,7 +325,8 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
       loops->CGetLoop(loop_id)->get_recursively_bb(loop_basic_blocks);
 
       ///Set of basic blocks to be analyzed
-      std::set<vertex, bb_vertex_order_by_map> to_be_processed(function_behavior->get_bb_map_levels());
+      const bb_vertex_order_by_map comp_i(function_behavior->get_bb_map_levels());
+      std::set<vertex, bb_vertex_order_by_map> to_be_processed(comp_i);
 
       ///Loop 0 must be managed in a different way
       if(loop_id == 0)
@@ -375,7 +376,7 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
       {
          std::unordered_set<vertex> loop_bbs;
          loops->CGetLoop(loop_id)->get_recursively_bb(loop_bbs);
-         for(const auto loop_bb : loop_bbs)
+         for(const auto& loop_bb : loop_bbs)
          {
             InEdgeIterator ei, ei_end;
             for(boost::tie(ei, ei_end) = boost::in_edges(loop_bb, *basic_block_graph); ei != ei_end; ei++)
@@ -387,7 +388,7 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
                }
             }
          }
-         for(const auto feedback_edge : loops->CGetLoop(loop_id)->get_sp_back_edges())
+         for(const auto& feedback_edge : loops->CGetLoop(loop_id)->get_sp_back_edges())
          {
             to_be_processed.insert(feedback_edge.second);
          }
@@ -496,7 +497,7 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
          if(definition_bb == current or use_bbs.find(current) != use_bbs.end())
          {
             bool before_definition = definition_bb == current or function_behavior->CheckBBReachability(current, definition_bb);
-            for(const auto stmt : basic_block_graph->CGetBBNodeInfo(current)->block->CGetStmtList())
+            for(const auto& stmt : basic_block_graph->CGetBBNodeInfo(current)->block->CGetStmtList())
             {
                if(use_stmts.find(stmt) != use_stmts.end() and stmt->index != virtual_ssa_definition.second->index)
                {

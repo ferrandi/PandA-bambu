@@ -1,8 +1,8 @@
 #!/bin/bash
 ARGS="-c=--clock-period=5 -c=--speculative-sdc-scheduling -c=--experimental-setup=BAMBU-BALANCED-MP -c=--device=xc7vx690t-3ffg1930-VVD -c=--aligned-access"
-script=`readlink -e $0`
-root_dir=`dirname $script`
-NAME=`basename $0 .sh`
+script=$(readlink -e $0)
+root_dir=$(dirname $script)
+NAME=$(basename $0 .sh)
 DIRNAME=${root_dir##*/}
 $root_dir/xilinx.sh $ARGS -ooutput_${DIRNAME}_$NAME --name=${DIRNAME}_$NAME --table=${DIRNAME}_$NAME.tex $@
 return_value=$?

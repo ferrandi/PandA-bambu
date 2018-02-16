@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2015 Politecnico di Milano
+ *              Copyright (c) 2015-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -144,7 +144,7 @@ DesignFlowStep_Status GenerateTasteHDLArchitecture::Exec()
    writer->write("\n");
    writer->write("architecture rtl of TASTE_hardware_architecture is\n");
    writer->write("\n");
-   for(const auto top_function : HLSMgr->aadl_information->top_functions_names)
+   for(const auto& top_function : HLSMgr->aadl_information->top_functions_names)
    {
       const auto function_id = TreeM->function_index(top_function);
       const auto SM = HLSMgr->get_HLS(function_id)->top;
@@ -169,8 +169,9 @@ DesignFlowStep_Status GenerateTasteHDLArchitecture::Exec()
    writer->write("constant BOARD_FREQ : integer := 50000;   -- Board frequency in KHz\n");
    writer->write("\n");
    size_t counter = 0;
-   for(const auto top_function : HLSMgr->aadl_information->top_functions_names)
+   for(const auto& top_function : HLSMgr->aadl_information->top_functions_names)
    {
+      writer->write_comment(top_function + "\n");
       writer->write("constant pconfig_" + STR(counter) + " : apb_config_type := (\n");
       writer->write("   0 => ahb_device_reg ( 16#ff#, 1, 0, 1, 0),\n");
       writer->write("   1 => apb_iobar(" + STR(counter) + ", " + STR(counter) + "));\n\n");
@@ -244,7 +245,7 @@ DesignFlowStep_Status GenerateTasteHDLArchitecture::Exec()
    writer->write("\n");
    writer->write("\n");
    counter = 0;
-   for(const auto top_function : HLSMgr->aadl_information->top_functions_names)
+   for(const auto& top_function : HLSMgr->aadl_information->top_functions_names)
    {
       writer->write(top_function + "_instance : " + top_function + "_taste_interface generic map(pindex => "  + STR(counter) + ", paddr => " + STR(counter) + ") port map (clock => clkm, reset => rstn, apbi_psel => apbi.psel(" + STR(counter) + "), apbi_penable => apbi.penable, apbi_pwrite => apbi.pwrite, apbi_pwdata => apbi.pwdata, apbi_paddr => apbi.paddr, apbo_prdata => apbo(" + STR(counter) + ").prdata);\n\n");
       writer->write("apbo(" + STR(counter) + ").pconfig <= pconfig_" + STR(counter) + ";\n\n");

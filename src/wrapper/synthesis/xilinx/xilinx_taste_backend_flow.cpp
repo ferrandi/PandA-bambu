@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2015 Politecnico di Milano
+ *              Copyright (c) 2015-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -69,11 +69,11 @@ XilinxTasteBackendFlow::XilinxTasteBackendFlow(const ParameterConstRef _paramete
    debug_level = _parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
-std::string XilinxTasteBackendFlow::GenerateSynthesisScripts(const std::string& fu_name, const structural_managerRef, const std::list<std::string> & hdl_files, const std::list<std::string> & aux_files)
+std::string XilinxTasteBackendFlow::GenerateSynthesisScripts(const std::string&, const structural_managerRef, const std::list<std::string> & hdl_files, const std::list<std::string> & aux_files)
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Generating synthesis scripts");
    std::string synthesis_file_list;
-   for(const auto hdl_file : hdl_files)
+   for(const auto& hdl_file : hdl_files)
    {
       synthesis_file_list += hdl_file + ";";
    }
@@ -82,19 +82,18 @@ std::string XilinxTasteBackendFlow::GenerateSynthesisScripts(const std::string& 
    if (flow_name.size())
       actual_parameters->chain_name = flow_name;
 
-   for(const auto aux_file : aux_files)
+   for(const auto& aux_file : aux_files)
    {
       synthesis_file_list += aux_file + ";";
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---List of synthesis files: " + synthesis_file_list);
    actual_parameters->parameter_values[PARAM_HDL_files] = synthesis_file_list;
    const technology_managerRef TM = target->get_technology_manager();
-   std::string library = TM->get_library(fu_name);
    actual_parameters->parameter_values[PARAM_is_combinational] = STR(false);
    actual_parameters->parameter_values[PARAM_time_constrained] = STR(true);
 
 
-   InitDesignParameters(actual_parameters);
+   InitDesignParameters();
 
    const auto ret = CreateScripts(actual_parameters);
 

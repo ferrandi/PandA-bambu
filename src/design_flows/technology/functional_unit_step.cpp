@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2015-2017 Politecnico di Milano
+ *              Copyright (c) 2015-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -76,7 +76,8 @@
 FunctionalUnitStep::FunctionalUnitStep(const target_managerRef _target, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters) :
    DesignFlowStep(_design_flow_manager, _parameters),
    TM(_target->get_technology_manager()),
-   target(_target)
+   target(_target),
+   has_first_synthesis_id(0)
 {}
 
 FunctionalUnitStep::~FunctionalUnitStep()
@@ -111,7 +112,7 @@ void FunctionalUnitStep::AnalyzeFu(const technology_nodeRef f_unit)
    if(fu_base_name == READ_COND_STD)
       precision.insert(1);
    else
-      for (functional_unit::operation_vec::const_iterator ops = Ops.begin(); ops != ops_end; ops++)
+      for (functional_unit::operation_vec::const_iterator ops = Ops.begin(); ops != ops_end; ++ops)
       {
          operation* curr_op = GetPointer<operation>(*ops);
          is_commutative = is_commutative && curr_op->commutative;
@@ -176,9 +177,9 @@ void FunctionalUnitStep::AnalyzeFu(const technology_nodeRef f_unit)
                }
                else if(precision_pipe_param_pair[0] == "DSPs_y_sizes")
                {
-                  for(const auto DSP_y : DSP_y_to_DSP_x)
+                  for(const auto& DSP_y : DSP_y_to_DSP_x)
                   {
-                     for(const auto pipe_param : pipe_params)
+                     for(const auto& pipe_param : pipe_params)
                      {
                         pipe_parameters[boost::lexical_cast<unsigned int>(DSP_y.first)].push_back(pipe_param);
                         precision.insert(boost::lexical_cast<unsigned int>(DSP_y.first));

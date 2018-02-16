@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -161,11 +161,13 @@ using namespace std;
 #endif
 
 DiscrepancyFlexLexer::DiscrepancyFlexLexer
-(std::istream* argin = 0, std::ostream* argout = 0) : yyFlexLexer(argin, argout)
+(std::istream* argin, std::ostream* argout) : yyFlexLexer(argin, argout)
 {}
 
 DiscrepancyFlexLexer::~DiscrepancyFlexLexer()
 {}
+#ifndef __clang_analyzer__
+
 %}
 
 
@@ -237,3 +239,4 @@ ID          [a-z_A-Z][a-zA-Z_0-9]*
 
 .               { LexerError("Lexical Error"); }
 %%
+#endif

@@ -1,12 +1,12 @@
 #this file is libbambu/softfloat/Makefile.am
 EXTRA_DIST=bambu.h milieu.h README.txt softfloat.h SoftFloat-history.txt softfloat-macros SoftFloat-source.txt softfloat-specialize SoftFloat.txt timesoftfloat.c timesoftfloat.txt README_PANDA.txt div_utilities
 
-common_treegccflags = --output-temporary-directory=/tmp -iplugindir=$(top_builddir)/gcc_plugin
-common_cflags=-DNO_PARAMETRIC -DNO_SUBNORMALS -DNO_SIGNALLING -I$(top_srcdir)/libbambu $(common_treegccflags)
-common_cflags_subnormals=-DNO_PARAMETRIC -DNO_SIGNALLING -I$(top_srcdir)/libbambu $(common_treegccflags)
+common_treegccflags = --output-temporary-directory=/tmp -iplugindir=$(top_builddir)/etc/gcc_plugin
+common_cflags=-DNO_PARAMETRIC -DNO_SUBNORMALS -DNO_SIGNALLING -I$(top_srcdir)/etc/libbambu $(common_treegccflags)
+common_cflags_subnormals=-DNO_PARAMETRIC -DNO_SIGNALLING -I$(top_srcdir)/etc/libbambu $(common_treegccflags)
 
 METASOURCES = AUTO
-CC=../$(top_builddir)/src/tree-panda-gcc
+CC=$(top_builddir)/src/tree-panda-gcc
 CFLAGS=
 pkglib_LIBRARIES = 
 
@@ -74,5 +74,3 @@ libsoftfloat_subnormals_gcc7_a_SOURCES = softfloat.c
 libsoftfloat_subnormals_gcc7_a_CFLAGS = -O3 -fno-tree-loop-distribute-patterns --compiler=I386_GCC7 -finline-limit=10000 $(common_cflags_subnormals) -I$(BOOST_DIR)
 endif
 
-#do not touch the following line
- 

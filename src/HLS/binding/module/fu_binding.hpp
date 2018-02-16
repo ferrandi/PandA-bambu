@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -191,6 +191,8 @@ class fu_binding
 
       fu_binding(const fu_binding &original);
 
+      fu_binding & operator=(const fu_binding&) = delete;
+
       /**
        * Destructor.
        */
@@ -343,7 +345,7 @@ class fu_binding
          get_ports_are_swapped(vertex v) const {return ports_are_swapped.find(v) != ports_are_swapped.end();}
 
       /// return true in case at least one resource is shared
-      bool has_resource_sharing() {return has_resource_sharing_p;}
+      bool has_resource_sharing() const {return has_resource_sharing_p;}
 };
 
 /**

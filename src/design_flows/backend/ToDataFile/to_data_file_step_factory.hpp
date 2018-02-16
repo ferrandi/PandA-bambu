@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2015-2017 Politecnico di Milano
+ *              Copyright (c) 2015-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -89,7 +89,7 @@ class ToDataFileStepFactory : public DesignFlowStepFactory
        * @param signature is the signature of the step to be created
        * @return the created step
        */
-      const DesignFlowStepRef CreateStep(const std::string signature) const;
+      const DesignFlowStepRef CreateStep(const std::string&signature) const;
 };
 #endif
 

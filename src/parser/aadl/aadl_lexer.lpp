@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2015 Politecnico di Milano
+ *              Copyright (c) 2015-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -86,6 +86,7 @@ AadlFlexLexer::AadlFlexLexer(const ParameterConstRef parameters,  std::istream* 
 
 AadlFlexLexer::~AadlFlexLexer()
 {}
+#ifndef __clang_analyzer__
 
 %}
 letter [\-_a-zA-Z/]
@@ -141,3 +142,4 @@ char [_a-zA-Z:.0-9/\-]
 . {INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, std::string("Read single character: ") + YYText()); THROW_UNREACHABLE();}
 \n
 %%
+#endif

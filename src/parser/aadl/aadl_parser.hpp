@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2015 Politecnico di Milano
+ *              Copyright (c) 2015-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -76,7 +76,7 @@ struct AadlParserData
    /**
     * Constructor
     */
-   AadlParserData(const ParameterConstRef parameters);
+   explicit AadlParserData(const ParameterConstRef parameters);
 };
 typedef refcount<AadlParserData> AadlParserDataRef;
 
@@ -101,7 +101,7 @@ class AadlParser : public ParserFlowStep
        * @param AppM is the application manager
        * @param parameters is the set of input parameters
        */
-      AadlParser(const DesignFlowManagerConstRef design_flow_manager, const std::string file_name, const application_managerRef AppM, const ParameterConstRef parameters);
+      AadlParser(const DesignFlowManagerConstRef design_flow_manager, const std::string&file_name, const application_managerRef AppM, const ParameterConstRef parameters);
 
       /**
        * Destuctor

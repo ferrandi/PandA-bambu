@@ -11,7 +11,7 @@
  *                     Politecnico di Milano - DEIB
  *                      System Architectures Group
  *           ***********************************************
- *            Copyright (c) 2004-2017 Politecnico di Milano
+ *            Copyright (c) 2004-2018 Politecnico di Milano
  *
  * This file is part of the PandA framework.
  *
@@ -343,13 +343,13 @@ DesignFlowStep_Status CallGraphBuiltinCall::InternalExec()
       function_decl * funDecl = GetPointer<function_decl>(function);
       std::string type = tree_helper::getFunctionTypeString(GET_NODE(funDecl->type));
       if(funDecl->body && functionName != "__start_pragma__" && functionName != "__close_pragma__" &&
-              functionName.find("__pragma__") != 0)
+              !boost::algorithm::starts_with(functionName,"__pragma__"))
       typeToDeclaration[type].insert(*Itr);
    }
-   for(const auto block : stmtList->list_of_bloc)
+   for(const auto& block : stmtList->list_of_bloc)
    {
 
-      for(const auto stmt : block.second->CGetStmtList())
+      for(const auto& stmt : block.second->CGetStmtList())
       {
          if(GET_NODE(stmt)->get_kind() == gimple_call_K or GET_NODE(stmt)->get_kind() == gimple_assign_K)
          {

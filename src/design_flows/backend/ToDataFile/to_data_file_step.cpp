@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2015-2017 Politecnico di Milano
+ *              Copyright (c) 2015-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -74,7 +74,7 @@ const std::string ToDataFileStep::EnumToName(const ToDataFileStep_Type to_data_f
    return "";
 }
 
-ToDataFileStep_Type ToDataFileStep::NameToEnum(const std::string
+ToDataFileStep_Type ToDataFileStep::NameToEnum(const std::string&
 #if HAVE_CIRCUIT_BUILT
    to_data_file_step
 #endif

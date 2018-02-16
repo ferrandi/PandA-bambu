@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -131,8 +131,8 @@ void HWCallPathCalculator::start_vertex(
       else if (parameters->getOption<std::string>(OPT_simulator) == "VERILATOR")
       {
          simulator_scope =
-            "TOP" + STR(HIERARCHY_SEPARATOR) +
-            top_interface_name + "_tb" + STR(HIERARCHY_SEPARATOR);
+               "TOP" + STR(HIERARCHY_SEPARATOR) +
+               "v" + STR(HIERARCHY_SEPARATOR);
       }
    }
    else
@@ -171,7 +171,7 @@ void HWCallPathCalculator::discover_vertex(
     */
    if (HLSMgr->Rfuns->has_shared_functions(f_id))
    {
-      for (const std::string & shared_fu_name : HLSMgr->Rfuns->get_shared_functions(f_id))
+      for (const std::string& shared_fu_name : HLSMgr->Rfuns->get_shared_functions(f_id))
       {
          shared_fun_scope[shared_fu_name] =
             scope.top() + "Datapath_i" + STR(HIERARCHY_SEPARATOR) +

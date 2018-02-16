@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2015-2017 Politecnico di Milano
+ *              Copyright (c) 2015-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -124,7 +124,7 @@ struct Discrepancy
 
       unsigned long long n_checked_operations = 0;
 
-      Discrepancy(void) : DiscrepancyCallGraph(GraphInfoRef(new GraphInfo())) {};
+      Discrepancy(void) : DiscrepancyCallGraph(GraphInfoRef(new GraphInfo())) {}
 };
 
 typedef refcount<Discrepancy> DiscrepancyRef;

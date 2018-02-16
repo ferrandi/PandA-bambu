@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -209,7 +209,7 @@ class tree_helper
        * @return true if an inheritance is found
        */
       static
-      bool look_for_binfo_inheritance(binfo* b, std::string bcs);
+      bool look_for_binfo_inheritance(binfo* b, const std::string & bcs);
 
       /**
        * Given the tree_node of an obj_type_ref return the tree_node of the called function
@@ -850,7 +850,7 @@ class tree_helper
        * @param id is the initial ID
        */
       static
-      std::string normalized_ID(const std::string &id);
+      std::string normalized_ID(const std::string&id);
 
       /**
        * Return the name of the function in a string
@@ -871,7 +871,7 @@ class tree_helper
        * @return the printed string
        */
       static
-      std::string print_type(const tree_managerConstRef TM, unsigned int type, bool global = false, bool print_qualifiers = false, bool print_storage = false, unsigned int var = 0, const var_pp_functorConstRef vppf = var_pp_functorConstRef(), const std::string prefix = "", const std::string tail = "");
+      std::string print_type(const tree_managerConstRef TM, unsigned int type, bool global = false, bool print_qualifiers = false, bool print_storage = false, unsigned int var = 0, const var_pp_functorConstRef vppf = var_pp_functorConstRef(), const std::string&prefix = "", const std::string&tail = "");
 
       /**
        * return the type of the ith formal parameter in case index_obj is a call_expr

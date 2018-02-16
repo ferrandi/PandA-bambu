@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -72,9 +72,9 @@ class WB4_interface : public minimal_interface
 
       void connect_with_signal_name(structural_managerRef SM, structural_objectRef portA, structural_objectRef portB, std::string signalName);
 
-      void connect_with_signal_name(structural_managerRef SM, structural_objectRef APort, structural_objectRef B, std::string Bsignal, std::string signalName);
+      void connect_with_signal_name(structural_managerRef SM, structural_objectRef APort, structural_objectRef B, std::string Bsignal, const std::string &signalName);
 
-      void connect_with_signal_name(structural_managerRef SM, structural_objectRef A, std::string Asignal, structural_objectRef B, std::string Bsignal, std::string signalName);
+      void connect_with_signal_name(structural_managerRef SM, structural_objectRef A, std::string Asignal, structural_objectRef B, std::string Bsignal, const std::string &signalName);
 
       void connect_with_signal(structural_managerRef SM, structural_objectRef portA, structural_objectRef portB);
 

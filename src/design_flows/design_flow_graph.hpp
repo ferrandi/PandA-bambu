@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -118,7 +118,7 @@ class DesignFlowGraphsCollection : public graphs_collection
       /**
        * Constructor
        */
-      DesignFlowGraphsCollection(const ParameterConstRef parameters);
+      explicit DesignFlowGraphsCollection(const ParameterConstRef parameters);
 
       /**
        * Destructor
@@ -129,7 +129,7 @@ class DesignFlowGraphsCollection : public graphs_collection
        * Return the vertex associated with a design step if exists, NULL_VERTEX otherwise
        * @param signature is the signature of the design step
        */
-      vertex GetDesignFlowStep(const std::string signature) const;
+      vertex GetDesignFlowStep(const std::string&signature) const;
 
       /**
        * Add a design flow dependence
@@ -194,7 +194,7 @@ class DesignFlowGraph : public graph
        * Return the vertex associated with a design step if exists, NULL_VERTEX otherwise
        * @param signature is the signature of the design step
        */
-      vertex GetDesignFlowStep(const std::string signature) const;
+      vertex GetDesignFlowStep(const std::string&signature) const;
 
       /**
        * @param step is the vertex
@@ -242,7 +242,7 @@ class DesignFlowGraph : public graph
        * @param file_name is the file where the graph has to be printed
        * @param detail_level is the detail level of the printed graph
        */
-      void WriteDot(const std::string & file_name, const int detail_level = 0) const;
+      void WriteDot(const std::string& file_name, const int detail_level = 0) const;
 
 #ifndef NDEBUG
       /**
@@ -252,7 +252,7 @@ class DesignFlowGraph : public graph
        * @param edge_history tells which edges are present in each iteration
        * @param vertex_names is the name of each vertex (name of old vertices could be not more computable)
        */
-      void WriteDot(const std::string & file_name, const CustomMap<size_t, CustomMap<vertex, DesignFlowStep_Status> > & vertex_history, const CustomMap<size_t, std::unordered_map<EdgeDescriptor, int> > & edge_history, const CustomMap<vertex, std::string> & vertex_names, const size_t writing_step_counter) const;
+      void WriteDot(const std::string& file_name, const CustomMap<size_t, CustomMap<vertex, DesignFlowStep_Status> > & vertex_history, const CustomMap<size_t, std::unordered_map<EdgeDescriptor, int> > & edge_history, const CustomMap<vertex, std::string> & vertex_names, const size_t writing_step_counter) const;
 #endif
 };
 typedef refcount<DesignFlowGraph> DesignFlowGraphRef;

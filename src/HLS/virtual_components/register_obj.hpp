@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -70,7 +70,7 @@ class register_obj : public generic_obj
        * This is the constructor of the object class, with a given id
        * @param new_value is the new value for register entry
        */
-      register_obj(const std::string &_name) : generic_obj(REGISTER, _name) {}
+      explicit register_obj(const std::string&_name) : generic_obj(REGISTER, _name) {}
 
       /**
        * Destructor.

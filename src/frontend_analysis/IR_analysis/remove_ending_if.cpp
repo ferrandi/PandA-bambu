@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -295,7 +295,7 @@ DesignFlowStep_Status RemoveEndingIf::InternalExec()
                         }
                         double min = std::numeric_limits<double>::max();
                         double max = 0.0;
-                        for(const auto stmt : dep_block->CGetStmtList())
+                        for(const auto& stmt : dep_block->CGetStmtList())
                         {
                            if(schedule->GetStartingTime(stmt->index) < min)
                            {

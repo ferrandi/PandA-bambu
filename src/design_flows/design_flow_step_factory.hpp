@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -86,7 +86,7 @@ class DesignFlowStepFactory
        * @param signature is the signature of the step to be created
        * @return the created step
        */
-      virtual DesignFlowStepRef CreateFlowStep(const std::string signature) const;
+      virtual DesignFlowStepRef CreateFlowStep(const std::string& signature) const;
 };
 typedef refcount<DesignFlowStepFactory> DesignFlowStepFactoryRef;
 #endif

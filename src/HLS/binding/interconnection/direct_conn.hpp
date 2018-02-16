@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -60,7 +60,7 @@ class direct_conn : public connection_obj
       /**
        * Costructor.
        */
-      direct_conn(const std::set<data_transfer>& _live_variable) :
+      explicit direct_conn(const std::set<data_transfer>& _live_variable) :
          connection_obj(DIRECT_CONN, _live_variable)
       {}
 

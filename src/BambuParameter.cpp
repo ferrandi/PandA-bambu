@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -84,7 +84,7 @@
 
 #if HAVE_HOST_PROFILING_BUILT
 ///frontend_flow/behavior_analysis
-#include "profiling.hpp"
+#include "host_profiling.hpp"
 #endif
 
 ///HLS/binding/module
@@ -275,14 +275,14 @@
 
 static bool is_evaluation_objective_string(
       const std::vector<std::string> & obj_vec,
-      const std::string & s)
+      const std::string& s)
 {
    return std::find(obj_vec.begin(), obj_vec.end(), s) != obj_vec.end();
 }
 
 static void add_evaluation_objective_string(
       std::string & obj_string,
-      const std::string & obj_to_add)
+      const std::string& obj_to_add)
 {
    if (obj_string.empty())
    {
@@ -293,7 +293,6 @@ static void add_evaluation_objective_string(
       convert_string_to_vector<std::string>(obj_string, ",");
    const std::vector<std::string> obj_vec_to_add =
       convert_string_to_vector<std::string>(obj_to_add, ",");
-   std::unordered_set<std::string> objs;
 
    for (const auto & s : obj_vec_to_add)
    {
@@ -783,6 +782,7 @@ void BambuParameter::PrintHelp(std::ostream &os) const
    << "    --registered-inputs=value\n"
    << "        Specify if inputs are registered or not:\n"
    << "             auto  - inputs are registered only for proxy functions (default)\n"
+   << "             top   - inputs are registred only for top and proxy functions\n"
    << "             yes   - all inputs are registered\n"
    << "             no    - none of the inputs is registered\n\n"
    << "    --fsm-encoding=value\n"
@@ -989,7 +989,7 @@ void BambuParameter::PrintProgramName(std::ostream & os) const
    os << std::endl;
 }
 
-BambuParameter::BambuParameter(const std::string _program_name, int _argc, char ** const _argv) :
+BambuParameter::BambuParameter(const std::string& _program_name, int _argc, char ** const _argv) :
    Parameter(_program_name, _argc, _argv)
 {
    SetDefaults();
@@ -1003,7 +1003,6 @@ int BambuParameter::Exec()
    bool scheduling_set_p = false;
    /// variable used into option parsing
    int option_index;
-   int next_option;
 
    // Bambu short option. An option character in this string can be followed by a colon (`:') to indicate that it
    // takes a required argument. If an option character is followed by two colons (`::'), its argument is optional;
@@ -1215,7 +1214,7 @@ int BambuParameter::Exec()
 
    while (1)
    {
-      next_option = getopt_long(argc, argv, short_options, long_options, &option_index);
+      int next_option = getopt_long(argc, argv, short_options, long_options, &option_index);
 
       // no more options are available
       if (next_option == -1)
@@ -1601,13 +1600,13 @@ int BambuParameter::Exec()
             std::string objective_string = getOption<std::string>(OPT_evaluation_objectives);
             std::vector<std::string> objective_vector = convert_string_to_vector<std::string>(objective_string, ",");
             objective_string = "";
-            for(const auto objective : objective_vector)
+            for(const auto& objective : objective_vector)
             {
                if(objective == "CYCLES")
                {
                   objective_string += ",CYCLES";
                }
-               else if(objective == "CYCLES")
+               else if(objective == "TOTAL_CYCLES")
                {
                   objective_string += ",TOTAL_CYCLES";
                }
@@ -2539,7 +2538,6 @@ int BambuParameter::Exec()
       else if(file_type == Parameters_FileFormat::FF_C ||
               file_type == Parameters_FileFormat::FF_OBJECTIVEC ||
               file_type == Parameters_FileFormat::FF_CPP ||
-              file_type == Parameters_FileFormat::FF_FORTRAN ||
               file_type == Parameters_FileFormat::FF_FORTRAN)
       {
          const auto input_file = isOption(OPT_input_file) ? getOption<std::string>(OPT_input_file) + STR_CST_string_separator : "";
@@ -2710,7 +2708,7 @@ void BambuParameter::CheckParameters()
                setOption(OPT_testbench_input_xml, "test.xml");
             }
          }
-         const auto is_valid_evaluation_mode = [](const std::string & s) -> bool
+         const auto is_valid_evaluation_mode = [](const std::string& s) -> bool
          {
             return s == "AREA" or
                s == "AREAxTIME" or
@@ -2740,7 +2738,7 @@ void BambuParameter::CheckParameters()
       else if (getOption<Evaluation_Mode>(OPT_evaluation_mode) ==
             Evaluation_Mode::ESTIMATION)
       {
-         const auto is_valid_evaluation_mode = [](const std::string & s) -> bool
+         const auto is_valid_evaluation_mode = [](const std::string& s) -> bool
          {
             return s == "AREA" or s == "TIME" or s == "CLOCK_SLACK";
          };
@@ -2870,10 +2868,10 @@ void BambuParameter::CheckParameters()
       optimizations += tuning_optimizations;
       if(optimizations != "")
          setOption(OPT_gcc_optimizations, optimizations);
+#if 0
       std::string parameters;
       if(isOption(OPT_gcc_parameters))
          parameters = getOption<std::string>(OPT_gcc_parameters) + STR_CST_string_separator;
-#if 0
       setOption(OPT_gcc_parameters, parameters + "max-inline-insns-auto=25");
 #endif
       if(getOption<std::string>(OPT_experimental_setup) == "BAMBU-BALANCED-MP")
@@ -2952,11 +2950,6 @@ void BambuParameter::CheckParameters()
       THROW_ERROR("Experimental setup not recognized: " + getOption<std::string>(OPT_experimental_setup));
    }
 
-   if(getOption<HLSFlowStep_Type>(OPT_scheduling_algorithm) == HLSFlowStep_Type::SDC_SCHEDULING)
-   {
-      setOption(OPT_estimate_logic_and_connections, true);
-   }
-
    add_bambu_library("bambu");
 
    if(isOption(OPT_soft_float) && getOption<bool>(OPT_soft_float))
@@ -2984,7 +2977,7 @@ void BambuParameter::CheckParameters()
    if(isOption(OPT_gcc_libraries))
    {
       const auto libraries = getOption<const CustomSet<std::string> >(OPT_gcc_libraries);
-      for(const auto library : libraries)
+      for(const auto& library : libraries)
       {
          add_bambu_library(library);
       }
@@ -3133,7 +3126,7 @@ void BambuParameter::CheckParameters()
 #if HAVE_LATTICE
    if(isOption(OPT_evaluation_objectives) and getOption<std::string>(OPT_evaluation_objectives).find("ARE") != std::string::npos and isOption(OPT_device_string) and getOption<std::string>(OPT_device_string) == "LFE335EA8FN484C" and !getOption<bool>(OPT_connect_iob))
    {
-      THROW_ERROR("--no-iob cannot be used when target is a Lattice board");
+      THROW_WARNING("--no-iob cannot be used when target is a Lattice board");
    }
 #endif
    if(isOption(OPT_evaluation_objectives) and getOption<std::string>(OPT_evaluation_objectives).find("CYCLES") != std::string::npos and (not isOption(OPT_simulator) or getOption<std::string>(OPT_simulator) == ""))
@@ -3280,7 +3273,7 @@ void BambuParameter::SetDefaults()
 
    /// backend HDL
    setOption(OPT_writer_language, static_cast<int>(HDLWriter_Language::VERILOG));
-   setOption("dynamic_generators_dir", PANDA_DATA_INSTALLDIR "/panda-etc");
+   setOption("dynamic_generators_dir", PANDA_DATA_INSTALLDIR "/panda");
 
    /// -- Module Interfaces -- //
    setOption(OPT_interface, true);
@@ -3474,8 +3467,8 @@ void BambuParameter::SetDefaults()
 #endif
 #if HAVE_EXPERIMENTAL
    setOption(OPT_memory_banks_number, 1);
-   setOption(OPT_find_max_cfg_transformations, false);
 #endif
+   setOption(OPT_find_max_cfg_transformations, false);
 
    panda_parameters["CSE_size"] = "2";
    panda_parameters["PortSwapping"] = "1";
@@ -3483,6 +3476,7 @@ void BambuParameter::SetDefaults()
 
 void BambuParameter::add_bambu_library(std::string lib)
 {
+#if HAVE_I386_GCC45_COMPILER || HAVE_I386_GCC46_COMPILER || HAVE_I386_GCC47_COMPILER || HAVE_I386_GCC48_COMPILER || HAVE_I386_GCC49_COMPILER || HAVE_I386_GCC5_COMPILER || HAVE_I386_GCC6_COMPILER || HAVE_I386_GCC7_COMPILER
    unsigned int preferred_compiler = getOption<unsigned int>(OPT_default_compiler);
    std::string archive_files;
    bool is_subnormals =
@@ -3509,52 +3503,54 @@ void BambuParameter::add_bambu_library(std::string lib)
    else
       mingw_prefix = "c:/msys64/";
 #endif
+#endif
+
 #if HAVE_I386_GCC45_COMPILER
    if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC45))
    {
-      setOption(OPT_archive_files, archive_files + mingw_prefix+PANDA_LIB_INSTALLDIR "/panda-etc/lib"+lib+"_gcc45" + VSuffix + ".a");
+      setOption(OPT_archive_files, archive_files + mingw_prefix+PANDA_LIB_INSTALLDIR "/panda/lib"+lib+"_gcc45" + VSuffix + ".a");
    }
 #endif
 #if HAVE_I386_GCC46_COMPILER
    if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC46))
    {
-      setOption(OPT_archive_files, archive_files + mingw_prefix+PANDA_LIB_INSTALLDIR "/panda-etc/lib"+lib+"_gcc46" + VSuffix + ".a");
+      setOption(OPT_archive_files, archive_files + mingw_prefix+PANDA_LIB_INSTALLDIR "/panda/lib"+lib+"_gcc46" + VSuffix + ".a");
    }
 #endif
 #if HAVE_I386_GCC47_COMPILER
    if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC47))
    {
-      setOption(OPT_archive_files, archive_files + mingw_prefix+PANDA_LIB_INSTALLDIR "/panda-etc/lib"+lib+"_gcc47" + VSuffix + ".a");
+      setOption(OPT_archive_files, archive_files + mingw_prefix+PANDA_LIB_INSTALLDIR "/panda/lib"+lib+"_gcc47" + VSuffix + ".a");
    }
 #endif
 #if HAVE_I386_GCC48_COMPILER
    if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC48))
    {
-      setOption(OPT_archive_files, archive_files + mingw_prefix+PANDA_LIB_INSTALLDIR "/panda-etc/lib"+lib+"_gcc48" + VSuffix + ".a");
+      setOption(OPT_archive_files, archive_files + mingw_prefix+PANDA_LIB_INSTALLDIR "/panda/lib"+lib+"_gcc48" + VSuffix + ".a");
    }
 #endif
 #if HAVE_I386_GCC49_COMPILER
    if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC49))
    {
-      setOption(OPT_archive_files, archive_files + mingw_prefix+PANDA_LIB_INSTALLDIR "/panda-etc/lib"+lib+"_gcc49" + VSuffix + ".a");
+      setOption(OPT_archive_files, archive_files + mingw_prefix+PANDA_LIB_INSTALLDIR "/panda/lib"+lib+"_gcc49" + VSuffix + ".a");
    }
 #endif
 #if HAVE_I386_GCC5_COMPILER
    if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC5))
    {
-      setOption(OPT_archive_files, archive_files + mingw_prefix+PANDA_LIB_INSTALLDIR "/panda-etc/lib"+lib+"_gcc5" + VSuffix + ".a");
+      setOption(OPT_archive_files, archive_files + mingw_prefix+PANDA_LIB_INSTALLDIR "/panda/lib"+lib+"_gcc5" + VSuffix + ".a");
    }
 #endif
 #if HAVE_I386_GCC6_COMPILER
    if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC6))
    {
-      setOption(OPT_archive_files, archive_files + PANDA_LIB_INSTALLDIR "/panda-etc/lib"+lib+"_gcc6" + VSuffix + ".a");
+      setOption(OPT_archive_files, archive_files + PANDA_LIB_INSTALLDIR "/panda/lib"+lib+"_gcc6" + VSuffix + ".a");
    }
 #endif
 #if HAVE_I386_GCC7_COMPILER
    if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC7))
    {
-      setOption(OPT_archive_files, archive_files + mingw_prefix+PANDA_LIB_INSTALLDIR "/panda-etc/lib"+lib+"_gcc7" + VSuffix + ".a");
+      setOption(OPT_archive_files, archive_files + mingw_prefix+PANDA_LIB_INSTALLDIR "/panda/lib"+lib+"_gcc7" + VSuffix + ".a");
    }
 #endif
 }

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -183,9 +183,10 @@ void DesignFlowManager::RecursivelyAddSteps(const DesignFlowStepSet & steps, con
             {
                ///The step already exists and it was unnecessary; now we are switching to necessary; note that computation of relationships of this node is performed to propagate the necessity
                ///If design flow step was ready I have to reinsert it into the set because of the ordering; so the setting of the unnecessary flag can not be factorized
-               if(possibly_ready.find(step_vertex) != possibly_ready.end())
+               bool it_belongs = possibly_ready.find(step_vertex) != possibly_ready.end();
+               possibly_ready.erase(step_vertex);
+               if(it_belongs)
                {
-                  possibly_ready.erase(step_vertex);
                   design_flow_step_info->status = DesignFlowStep_Status::UNEXECUTED;
                   possibly_ready.insert(step_vertex);
                }
@@ -229,7 +230,7 @@ void DesignFlowManager::RecursivelyAddSteps(const DesignFlowStepSet & steps, con
       design_flow_step->ComputeRelationships(relationships, DesignFlowStep::DEPENDENCE_RELATIONSHIP);
       RecursivelyAddSteps(relationships, unnecessary);
       DesignFlowStepSet::const_iterator relationship, relationship_end = relationships.end();
-      for(relationship = relationships.begin(); relationship != relationship_end; relationship++)
+      for(relationship = relationships.begin(); relationship != relationship_end; ++relationship)
       {
          const std::string relationship_signature = (*relationship)->GetSignature();
          vertex relationship_vertex = GetDesignFlowStep(relationship_signature);
@@ -247,7 +248,7 @@ void DesignFlowManager::RecursivelyAddSteps(const DesignFlowStepSet & steps, con
                feedback_design_flow_graph->WriteDot("Design_Flow_Error" );
                THROW_UNREACHABLE("Design flow graph is not anymore acyclic");
             }
-            catch (const std::string & msg)
+            catch (const std::string& msg)
             {
                feedback_design_flow_graph->WriteDot("Design_Flow_Error" );
                THROW_UNREACHABLE("Design flow graph is not anymore acyclic");
@@ -278,7 +279,7 @@ void DesignFlowManager::RecursivelyAddSteps(const DesignFlowStepSet & steps, con
       design_flow_step->ComputeRelationships(relationships, DesignFlowStep::PRECEDENCE_RELATIONSHIP);
       RecursivelyAddSteps(relationships, true);
       relationship_end = relationships.end();
-      for(relationship = relationships.begin(); relationship != relationship_end; relationship++)
+      for(relationship = relationships.begin(); relationship != relationship_end; ++relationship)
       {
          const std::string relationship_signature = (*relationship)->GetSignature();
          vertex relationship_vertex = GetDesignFlowStep(relationship_signature);
@@ -296,7 +297,7 @@ void DesignFlowManager::RecursivelyAddSteps(const DesignFlowStepSet & steps, con
                feedback_design_flow_graph->WriteDot("Design_Flow_Error" );
                THROW_UNREACHABLE("Design flow graph is not anymore acyclic");
             }
-            catch (const std::string & msg)
+            catch (const std::string& msg)
             {
                feedback_design_flow_graph->WriteDot("Design_Flow_Error" );
                THROW_UNREACHABLE("Design flow graph is not anymore acyclic");
@@ -461,7 +462,7 @@ void DesignFlowManager::Exec()
       RecursivelyAddSteps(pre_dependence_steps, design_flow_step_info->status == DesignFlowStep_Status::UNNECESSARY);
       bool current_ready = true;
       DesignFlowStepSet::const_iterator pre_dependence_step, pre_dependence_step_end = pre_dependence_steps.end();
-      for(pre_dependence_step = pre_dependence_steps.begin(); pre_dependence_step != pre_dependence_step_end; pre_dependence_step++)
+      for(pre_dependence_step = pre_dependence_steps.begin(); pre_dependence_step != pre_dependence_step_end; ++pre_dependence_step)
       {
          const vertex pre_dependence_vertex = design_flow_graph->GetDesignFlowStep((*pre_dependence_step)->GetSignature());
          design_flow_graphs_collection->AddDesignFlowDependence(pre_dependence_vertex, next, DesignFlowGraph::DEPENDENCE_SELECTOR);
@@ -617,7 +618,7 @@ void DesignFlowManager::Exec()
       const bool invalidations = not relationships.empty();
 #endif
       DesignFlowStepSet::const_iterator relationship, relationship_end = relationships.end();
-      for(relationship = relationships.begin(); relationship != relationship_end; relationship++)
+      for(relationship = relationships.begin(); relationship != relationship_end; ++relationship)
       {
          const std::string relationship_signature = (*relationship)->GetSignature();
          vertex relationship_vertex = GetDesignFlowStep(relationship_signature);
@@ -724,7 +725,7 @@ void DesignFlowManager::Exec()
             to_be_removeds.insert(*ie);
          }
       }
-      for(const auto to_be_removed : to_be_removeds)
+      for(const auto& to_be_removed : to_be_removeds)
       {
          design_flow_graphs_collection->RemoveSelector(to_be_removed, DesignFlowGraph::AUX_SELECTOR);
       }
@@ -783,12 +784,12 @@ void DesignFlowManager::Exec()
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Ended execution of design flow");
 }
 
-vertex DesignFlowManager::GetDesignFlowStep(const std::string signature) const
+vertex DesignFlowManager::GetDesignFlowStep(const std::string&signature) const
 {
    return design_flow_graphs_collection->GetDesignFlowStep(signature);
 }
 
-const DesignFlowStepFactoryConstRef DesignFlowManager::CGetDesignFlowStepFactory(const std::string prefix) const
+const DesignFlowStepFactoryConstRef DesignFlowManager::CGetDesignFlowStepFactory(const std::string&prefix) const
 {
    THROW_ASSERT(design_flow_step_factories.find(prefix) != design_flow_step_factories.end(), "No factory to create steps with prefix " + prefix + " found");
    return design_flow_step_factories.find(prefix)->second;
@@ -916,7 +917,7 @@ void DesignFlowManager::DeExecute(const vertex starting_vertex, const bool force
    }
 }
 
-DesignFlowStep_Status DesignFlowManager::GetStatus(const std::string signature) const
+DesignFlowStep_Status DesignFlowManager::GetStatus(const std::string&signature) const
 {
    const vertex step = GetDesignFlowStep(signature);
    if(step == NULL_VERTEX)
@@ -929,7 +930,7 @@ DesignFlowStep_Status DesignFlowManager::GetStatus(const std::string signature) 
    }
 }
 
-const DesignFlowStepRef DesignFlowManager::CreateFlowStep(const std::string signature) const
+const DesignFlowStepRef DesignFlowManager::CreateFlowStep(const std::string&signature) const
 {
    THROW_ASSERT(signature.find("::") != std::string::npos, signature);
    const auto prefix = signature.substr(0, signature.find("::"));

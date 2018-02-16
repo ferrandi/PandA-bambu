@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -218,15 +218,15 @@ structural_objectRef structural_manager::add_port(std::string id, port_o::port_d
                   NP_functionalityRef NPF = GetPointer<module>(owner)->get_NP_functionality();
                   if (NPF)
                   {
+#if HAVE_TECHNOLOGY_BUILT
                      std::string equation = NPF->get_NP_functionality(NP_functionality::EQUATION);
                      std::vector<std::string> tokens;
                      boost::algorithm::split(tokens, equation, boost::algorithm::is_any_of(";"));
                      for(unsigned int i = 0; i < tokens.size(); i++)
                      {
-                        if (tokens[i].find(id) == 0)
+                        if (boost::algorithm::starts_with(tokens[i],id))
                            equation = tokens[i].substr(tokens[i].find("=") + 1, tokens[i].size());
                      }
-#if HAVE_TECHNOLOGY_BUILT
                      attributeRef function(new attribute(attribute::STRING, equation));
                      cp->add_attribute("function", function);
 #endif
@@ -871,7 +871,7 @@ void structural_manager::add_connection(structural_objectRef src, structural_obj
    } // switch src kind
 }
 
-void structural_manager::WriteDot(const std::string & file_name, circuit_graph_type gt, graph * g) const
+void structural_manager::WriteDot(const std::string& file_name, circuit_graph_type gt, graph * g) const
 {
    const std::string output_directory = Param->getOption<std::string>(OPT_dot_directory);
    std::ofstream f((output_directory + file_name).c_str());
@@ -1083,9 +1083,9 @@ void structural_manager::INIT(bool permissive)
 
 #if HAVE_BAMBU_BUILT || HAVE_KOALA_BUILT || HAVE_EUCALYPTUS_BUILT
 structural_objectRef structural_manager::add_module_from_technology_library(
-      const std::string & id,
-      const std::string & fu_name,
-      const std::string & library_name,
+      const std::string& id,
+      const std::string& fu_name,
+      const std::string& library_name,
       const structural_objectRef owner,
       const technology_managerConstRef TM)
 {
@@ -1149,7 +1149,7 @@ static void add_directed_edge_single(graphs_collection *bg, const std::map<struc
    structural_objectRef p_obj2 = p2;
 
    //now detect the vertex associated with the ports
-   boost::graph_traits<graphs_collection>::vertex_descriptor src=boost::graph_traits<graphs_collection>::null_vertex(), tgt=boost::graph_traits<graphs_collection>::null_vertex();
+   boost::graph_traits<graphs_collection>::vertex_descriptor src, tgt=boost::graph_traits<graphs_collection>::null_vertex();
 
    structural_objectRef owner1 = p_obj1->get_owner();
    structural_objectRef owner2 = p_obj2->get_owner();
@@ -1670,10 +1670,10 @@ void structural_manager::xload(const xml_element* node, structural_managerRef co
 void structural_manager::xwrite(xml_element*
                                 rootnode
                                 , const technology_nodeRef&
-                                #if HAVE_KOALA_BUILT
+#if HAVE_KOALA_BUILT
                                 tn
-                                #endif
-                                )
+#endif
+                                ) const
 {
 #if HAVE_KOALA_BUILT
    get_circ()->xwrite_attributes(rootnode, tn);
@@ -1740,7 +1740,7 @@ void structural_manager::remove_module(structural_objectRef obj)
    //std::cerr << "removing signals" << std::endl;
    module* top = GetPointer<module>(top_obj);
    top->remove_internal_object(obj);
-   for(std::set<structural_objectRef>::iterator k = remove.begin(); k != remove.end(); k++)
+   for(std::set<structural_objectRef>::iterator k = remove.begin(); k != remove.end(); ++k)
       top->remove_internal_object(*k);
 }
 

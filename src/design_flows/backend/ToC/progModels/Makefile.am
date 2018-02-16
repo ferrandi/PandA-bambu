@@ -24,29 +24,6 @@ noinst_HEADERS = \
 lib_progModel_la_SOURCES = \
   actor_graph_backend.cpp
 
-if BUILD_LIB_CODESIGN
-  lib_progModel_la_CPPFLAGS += \
-   -I$(top_srcdir)/src/algorithms/graph_helpers \
-   -I$(top_srcdir)/src/design_flows/codesign/mapping \
-   -I$(top_srcdir)/src/design_flows/codesign/partitioning/graph_partitioning \
-   -I$(top_srcdir)/src/design_flows/codesign/partitioning/graph_partitioning/models/Fork_Join \
-   -I$(top_srcdir)/src/intermediate_representations/actor_graphs/ \
-   -I$(top_srcdir)/src/intermediate_representations/actor_graphs/sdf_graphs \
-   -I$(top_srcdir)/src/intermediate_representations/actor_graphs/task_graphs \
-   -I$(top_srcdir)/src/machine \
-   -I$(top_srcdir)/src/pragma \
-   -I$(top_srcdir)/src/utility/probability_distribution
-
-  noinst_HEADERS += \
-     fork_join_flat_backend.hpp \
-     sdf_graph_backend.hpp \
-     scheduled_fork_join_flat_backend.hpp
-  lib_progModel_la_SOURCES += \
-     fork_join_flat_backend.cpp \
-     sdf_graph_backend.cpp \
-     scheduled_fork_join_flat_backend.cpp
-endif
-
 if BUILD_LIB_TO_C
   noinst_HEADERS += c_backend.hpp
   lib_progModel_la_SOURCES += c_backend.cpp

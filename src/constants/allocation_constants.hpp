@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2016-2017 Politecnico di Milano
+ *              Copyright (c) 2016-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -54,3 +54,9 @@
 
 ///The default value used in computation of controller delay
 #define NUM_CST_allocation_default_states_number_normalization 30
+
+///The default value for the ratio between the output delay of a DSP and the setup delay
+#define NUM_CST_allocation_default_output_carry_connection_ratio 0.6
+
+///The default value for the ratio between the output delay of a DSP and the setup delay
+#define NUM_CST_allocation_default_output_DSP_connection_ratio 0.6

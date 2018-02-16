@@ -78,11 +78,5 @@ Zynq-VVD.data: $(top_srcdir)/etc/devices/Xilinx_devices/Zynq-VVD.xml
 Zynq-YOSYS-VVD.data: $(top_srcdir)/etc/devices/Xilinx_devices/Zynq-YOSYS-VVD.xml
 	$(top_srcdir)/etc/scripts/add_escape.sh $(top_srcdir)/etc/devices/Xilinx_devices/Zynq-YOSYS-VVD.xml Zynq-YOSYS-VVD.data
 
-if BUILD_LIB_EXPERIMENTAL
-  SUBDIRS += edk
-  DIST_SUBDIRS += edk
-  lib_Xilinxwrapper_la_LIBADD += $(top_builddir)/src/wrapper/synthesis/xilinx/edk/lib_xilinx_edk.la
-endif
-
 #do not touch the following line
 

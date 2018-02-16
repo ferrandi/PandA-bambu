@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2015 Politecnico di Milano
+ *              Copyright (c) 2015-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -44,7 +44,7 @@
 ///design_flows include
 #include "design_flow_manager.hpp"
 
-ParserFlowStep::ParserFlowStep(const DesignFlowManagerConstRef _design_flow_manager, const ParserFlowStep_Type _parser_step_type, const std::string _file_name, const ParameterConstRef _parameters) :
+ParserFlowStep::ParserFlowStep(const DesignFlowManagerConstRef _design_flow_manager, const ParserFlowStep_Type _parser_step_type, const std::string&_file_name, const ParameterConstRef _parameters) :
    DesignFlowStep(_design_flow_manager, _parameters),
    parser_step_type(_parser_step_type),
    file_name(_file_name)
@@ -63,7 +63,7 @@ const std::string ParserFlowStep::GetName() const
    return "Parser::" + GetKindText() + "::" + file_name;
 }
 
-const std::string ParserFlowStep::ComputeSignature(const ParserFlowStep_Type parser_step_type, const std::string file_name)
+const std::string ParserFlowStep::ComputeSignature(const ParserFlowStep_Type parser_step_type, const std::string&file_name)
 {
    return "Parser::" + STR(parser_step_type) + "::" + file_name;
 }

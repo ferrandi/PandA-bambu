@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -98,6 +98,6 @@ bool priority_dynamic_mobility::update()
 priority_fixed::priority_fixed(const std::unordered_map<vertex,int>& priority_value)
 {
    std::unordered_map<vertex,int>::const_iterator it_end = priority_value.end();
-   for(std::unordered_map<vertex,int>::const_iterator it = priority_value.begin(); it != it_end; it++)
+   for(std::unordered_map<vertex,int>::const_iterator it = priority_value.begin(); it != it_end; ++it)
       operator[](it->first) = it->second;
 }

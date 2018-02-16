@@ -9,7 +9,7 @@ boost_regex.m4 boost_system.m4 boost_time.m4 boost_wave.m4 c++11.m4 codeset.m4 d
 get_configure.sh get_target.sh gettext.m4 glibc21.m4 gsl.m4\
 icarus_compiler.m4 iconv.m4 intdiv0.m4 inttypes_h.m4 inttypes.m4 inttypes-pri.m4 lattice.m4\
 lcmessage.m4 lib-ld.m4 lib-link.m4 lib-prefix.m4 libtool.m4 linux_distribution.m4 lt~obsolete.m4 ltoptions.m4 ltsugar.m4\
-ltversion.m4 mppb.m4 nls.m4 panda_config_subdir.sh panda_etc_args.m4 \
+ltversion.m4 mppb.m4 nls.m4 panda_config_subdir.sh \
 po.m4 progtest.m4 qt3.m4 qt4.m4 rapidminer.m4 R.m4 searchfiles.m4 stdint_h.m4 treegcc.m4 tsim.m4\
 uintmax_t.m4 ulonglong.m4 verilator_compiler.m4 ax_openmp.m4 w32.m4\
 xilinx.m4

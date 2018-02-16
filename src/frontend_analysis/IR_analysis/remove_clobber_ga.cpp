@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -121,7 +121,7 @@ DesignFlowStep_Status remove_clobber_ga::InternalExec()
          continue;
       if(curr_bb == bloc::EXIT_BLOCK_ID)
          continue;
-      for(const auto stmt : block.second->CGetStmtList())
+      for(const auto& stmt : block.second->CGetStmtList())
       {
          /// skip all non-clobber gimple_assign
          tree_nodeRef tn = GET_NODE(stmt);
@@ -144,12 +144,12 @@ DesignFlowStep_Status remove_clobber_ga::InternalExec()
             continue;
          if(curr_bb == bloc::EXIT_BLOCK_ID)
             continue;
-         for(const auto phi : block.second->CGetPhiList())
+         for(const auto& phi : block.second->CGetPhiList())
          {
             gimple_phi * gp = GetPointer<gimple_phi>(GET_NODE(phi));
             if(gp->virtual_flag)
             {
-               for(const auto def_edge : gp->CGetDefEdgesList())
+               for(const auto& def_edge : gp->CGetDefEdgesList())
                {
                   if(var_substitution_table.find(GET_INDEX_NODE(def_edge.first)) != var_substitution_table.end())
                   {
@@ -162,7 +162,7 @@ DesignFlowStep_Status remove_clobber_ga::InternalExec()
                }
             }
          }
-         for(const auto stmt : block.second->CGetStmtList())
+         for(const auto& stmt : block.second->CGetStmtList())
          {
             /// consider only gimple statements using virtual operands
             tree_nodeRef tn = GET_NODE(stmt);
@@ -182,7 +182,7 @@ DesignFlowStep_Status remove_clobber_ga::InternalExec()
    for(std::map<unsigned int, std::set<tree_nodeRef> >::iterator stbr_it = stmt_to_be_removed.begin(); stbr_it != stbr_it_end; ++stbr_it)
    {
       unsigned int curr_bb = stbr_it->first;
-      for(const auto to_be_removed : stbr_it->second)
+      for(const auto& to_be_removed : stbr_it->second)
       {
          sl->list_of_bloc[curr_bb]->RemoveStmt(to_be_removed);
       }

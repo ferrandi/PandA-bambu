@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -173,11 +173,12 @@ namespace boost
    struct select_vertex
    {
       select_vertex() : support(0) {}
-      select_vertex(SET_container * _support) : support(_support) {}
+      explicit select_vertex(SET_container * _support) : support(_support) {}
       select_vertex(const select_vertex & sv) 
       {
          support = sv.support;
       }
+      select_vertex & operator=(const select_vertex&) = delete;
       void init(SET_container * _support) { support=_support;}
       template <typename Vertex>
       bool operator()(const Vertex &v) const
@@ -193,6 +194,9 @@ namespace boost
    class maxclique_dsatur_coloring_helper
    {
       private:
+         //no copy constructor
+         maxclique_dsatur_coloring_helper(const maxclique_dsatur_coloring_helper& inst) = delete;
+
          typedef graph_traits<VertexListGraph> GraphTraits;
          typedef typename GraphTraits::vertex_descriptor Vertex;
          const size_type num_node;
@@ -468,7 +472,7 @@ namespace boost
 
       //size_type best_clique=0;
       //unsigned int num_prob = 0, max_prob = 10000;
-      unsigned int prob_count = 0;
+      //unsigned int prob_count = 0;
       size_type place = 0;
       lb = MDCH.MaxCliqueGreedy();
       //printf("Lower bound is %ld\n", lb);
