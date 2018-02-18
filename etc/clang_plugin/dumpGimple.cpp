@@ -62,9 +62,11 @@
 #include "llvm/Transforms/Utils/MemorySSA.h"
 #elif __clang_major__ == 5
 #include "llvm/Analysis/MemorySSA.h"
+#include "llvm/Transforms/Utils/LowerMemIntrinsics.h"
 #else
 #error
 #endif
+#include "llvm/Analysis/TargetTransformInfo.h"
 #include "llvm/Analysis/LazyValueInfo.h"
 #include "llvm/Analysis/AliasAnalysis.h"
 #include "llvm/IR/ModuleSlotTracker.h"
@@ -1236,6 +1238,7 @@ namespace clang
          case llvm::Instruction::PHI  :
          case llvm::Instruction::Ret  :
          case llvm::Instruction::Store:
+         case llvm::Instruction::Select:
             return true;
          case llvm::Instruction::ICmp:
          {
@@ -4196,6 +4199,65 @@ namespace clang
    }
 
    /// Intrinsics lowering
+   bool DumpGimpleRaw::lowerMemIntrinsics(llvm::Module &M)
+   {
+      auto res = false;
+      auto currFuncIterator = M.getFunctionList().begin();
+      while(currFuncIterator != M.getFunctionList().end())
+      {
+         auto& F = *currFuncIterator;
+         const llvm::TargetTransformInfo &TTI =
+               modulePass->getAnalysis<llvm::TargetTransformInfoWrapperPass>().getTTI(F);
+         auto fname = std::string(currFuncIterator->getName());
+         llvm::SmallVector<llvm::MemIntrinsic *, 4> MemCalls;
+         for (llvm::Function::iterator BI = F.begin(), BE = F.end(); BI != BE; ++BI)
+         {
+            for(llvm::BasicBlock::iterator II = BI->begin(), IE = BI->end(); II != IE; ++II)
+            {
+               if (llvm::MemIntrinsic* IntrCall = dyn_cast<llvm::MemIntrinsic>(II))
+               {
+                  llvm::errs() << "Found a memIntrinsic Call\n";
+                  MemCalls.push_back(IntrCall);
+                  if (llvm::MemCpyInst *Memcpy = dyn_cast<llvm::MemCpyInst>(IntrCall))
+                  {
+                     if (llvm::ConstantInt *CI = dyn_cast<llvm::ConstantInt>(Memcpy->getLength()))
+                        llvm::errs() << "Found a memcpy with a constant number of iterations\n";
+                     else
+                        llvm::errs() << "Found a memcpy with an unknown number of iterations\n";
+                  }
+                  else if (llvm::MemSetInst *Memset = dyn_cast<llvm::MemSetInst>(IntrCall))
+                  {
+                     llvm::errs() << "Found a memset intrinsic\n";
+                  }
+               }
+            }
+         }
+         // Transform mem* intrinsic calls.
+         for (llvm::MemIntrinsic *MemCall : MemCalls) {
+            if (llvm::MemCpyInst *Memcpy = dyn_cast<llvm::MemCpyInst>(MemCall))
+            {
+#if __clang_major__ == 5
+               llvm::expandMemCpyAsLoop(Memcpy, TTI);
+#endif
+            } else if (llvm::MemMoveInst *Memmove = dyn_cast<llvm::MemMoveInst>(MemCall)) {
+#if __clang_major__ == 5
+               llvm::expandMemMoveAsLoop(Memmove);
+#endif
+            } else if (llvm::MemSetInst *Memset = dyn_cast<llvm::MemSetInst>(MemCall)) {
+#if __clang_major__ == 5
+               llvm::expandMemSetAsLoop(Memset);
+#endif
+            }
+#if __clang_major__ == 5
+            MemCall->eraseFromParent();
+#endif
+         }
+         ++currFuncIterator;
+      }
+      return res;
+   }
+
+   /// Intrinsics lowering
    bool DumpGimpleRaw::lowerIntrinsics(llvm::Module &M)
    {
       auto res = false;
@@ -4209,7 +4271,7 @@ namespace clang
             auto curInstIterator = BB.getInstList().begin();
             while( curInstIterator != BB.getInstList().end())
             {
-              if(isa<llvm::CallInst>(*curInstIterator))
+               if(isa<llvm::CallInst>(*curInstIterator))
                {
                   auto& ci = cast<llvm::CallInst>(*curInstIterator);
                   llvm::Function *Callee = ci.getCalledFunction();
@@ -4246,7 +4308,8 @@ namespace clang
    {
       DL = &M.getDataLayout();
       modulePass=_modulePass;
-      auto res = lowerIntrinsics(M);
+      auto res = lowerMemIntrinsics(M);
+      res = res | lowerIntrinsics(M);
       moduleContext = &M.getContext();
       for(const auto& globalVar : M.getGlobalList())
       {
