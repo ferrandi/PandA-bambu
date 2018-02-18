@@ -128,6 +128,7 @@ namespace llvm {
    struct CLANG_VERSION_SYMBOL(_plugin_DoNotExposeGlobalsPass): public ModulePass
    {
          static char ID;
+         static const std::set<std::string> builtinsNames;
          CLANG_VERSION_SYMBOL(_plugin_DoNotExposeGlobalsPass)() : ModulePass(ID)
          {
             initializeLoopPassPass(*PassRegistry::getPassRegistry());
@@ -153,6 +154,15 @@ namespace llvm {
                assert(demangled_outbuffer==nullptr);
             return declname;
          }
+         bool is_builtin_fn (const std::string& declname) const
+         {
+            if(builtinsNames.find(std::string("__builtin_") + declname) != builtinsNames.end() ||
+                  builtinsNames.find(declname) != builtinsNames.end())
+               return true;
+            else
+               return false;
+         }
+
          bool runOnModule(Module &M)
          {
             bool changed = false;
@@ -183,7 +193,11 @@ namespace llvm {
                   auto funName = fun.getName();
                   auto demangled = getDemangled(funName);
                   llvm::errs() << "Found function: " << funName << "|" << demangled << "\n";
-                  if (!fun.hasInternalLinkage() && funName != TopFunctionNmae && demangled != TopFunctionNmae)
+                  if (!fun.hasInternalLinkage() &&
+                      funName != TopFunctionNmae &&
+                      demangled != TopFunctionNmae &&
+                      !is_builtin_fn(funName) &&
+                      !is_builtin_fn(demangled) )
                   {
                      llvm::errs() << "it becomes internal\n";
                      changed = true;
@@ -207,6 +221,15 @@ namespace llvm {
 
 }
 char llvm::CLANG_VERSION_SYMBOL(_plugin_DoNotExposeGlobalsPass)::ID = 0;
+
+
+#define DEF_BUILTIN(X, N, C, T, LT, B, F, NA, AT, IM, COND) N,
+   const std::set<std::string> llvm::CLANG_VERSION_SYMBOL(_plugin_DoNotExposeGlobalsPass)::builtinsNames =
+   {
+     #include "gcc/builtins.def"
+   };
+#undef DEF_BUILTIN
+
 static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_DoNotExposeGlobalsPass)> XPass(CLANG_VERSION_STRING(_plugin_DoNotExposeGlobalsPass),
                                                                              "Make all private/static but the top function",
                                 false /* Only looks at CFG */,
