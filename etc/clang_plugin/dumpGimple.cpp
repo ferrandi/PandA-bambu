@@ -58,13 +58,11 @@
 #include "llvm/Pass.h"
 #include "llvm/Analysis/LoopPass.h"
 
-#if __clang_major__ == 4
-#include "llvm/Transforms/Utils/MemorySSA.h"
-#elif __clang_major__ == 5
+#if __clang_major__ >= 5
 #include "llvm/Analysis/MemorySSA.h"
 #include "llvm/Transforms/Utils/LowerMemIntrinsics.h"
 #else
-#error
+#include "llvm/Transforms/Utils/MemorySSA.h"
 #endif
 #include "llvm/Analysis/TargetTransformInfo.h"
 #include "llvm/Analysis/LazyValueInfo.h"

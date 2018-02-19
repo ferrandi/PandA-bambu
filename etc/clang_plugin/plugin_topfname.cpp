@@ -219,16 +219,17 @@ namespace llvm {
          }
    };
 
-}
-char llvm::CLANG_VERSION_SYMBOL(_plugin_DoNotExposeGlobalsPass)::ID = 0;
+char CLANG_VERSION_SYMBOL(_plugin_DoNotExposeGlobalsPass)::ID = 0;
 
 
 #define DEF_BUILTIN(X, N, C, T, LT, B, F, NA, AT, IM, COND) N,
-   const std::set<std::string> llvm::CLANG_VERSION_SYMBOL(_plugin_DoNotExposeGlobalsPass)::builtinsNames =
+   const std::set<std::string> CLANG_VERSION_SYMBOL(_plugin_DoNotExposeGlobalsPass)::builtinsNames =
    {
      #include "gcc/builtins.def"
    };
 #undef DEF_BUILTIN
+
+}
 
 static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_DoNotExposeGlobalsPass)> XPass(CLANG_VERSION_STRING(_plugin_DoNotExposeGlobalsPass),
                                                                              "Make all private/static but the top function",

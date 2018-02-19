@@ -149,8 +149,10 @@ namespace llvm {
          }
    };
 
+   char CLANG_VERSION_SYMBOL(_plugin_dumpGimpleEmptyPass)::ID = 0;
+
 }
-char llvm::CLANG_VERSION_SYMBOL(_plugin_dumpGimpleEmptyPass)::ID = 0;
+
 static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_dumpGimpleEmptyPass)> XPass(CLANG_VERSION_STRING(_plugin_dumpGimpleEmptyPass), "Dump gimple ssa raw format starting from LLVM IR: LLVM pass",
                                 false /* Only looks at CFG */,
                                 false /* Analysis Pass */);

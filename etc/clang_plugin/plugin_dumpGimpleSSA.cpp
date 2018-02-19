@@ -140,12 +140,10 @@ X(CLANG_VERSION_STRING(_plugin_dumpGimpleSSA), "Dump gimple ssa raw format start
 //#include "llvm/Analysis/CFLSteensAliasAnalysis.h"
 #include "llvm/Analysis/MemoryDependenceAnalysis.h"
 #include "llvm/Analysis/TargetTransformInfo.h"
-#if __clang_major__ == 4
-#include "llvm/Transforms/Utils/MemorySSA.h"
-#elif __clang_major__ == 5
+#if __clang_major__ >= 5
 #include "llvm/Analysis/MemorySSA.h"
 #else
-#error
+#include "llvm/Transforms/Utils/MemorySSA.h"
 #endif
 #include "llvm/Transforms/Scalar.h"
 #include "llvm/InitializePasses.h"
@@ -200,8 +198,9 @@ namespace llvm {
            AU.addRequired<TargetTransformInfoWrapperPass>();
          }
    };
+   char CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSAPass)::ID = 0;
+
 }
-char llvm::CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSAPass)::ID = 0;
 
 static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSAPass)> XPass(CLANG_VERSION_STRING(_plugin_dumpGimpleSSAPass), "Dump gimple ssa raw format starting from LLVM IR: LLVM pass",
                                 false /* Only looks at CFG */,
