@@ -335,6 +335,12 @@ namespace clang {
                const llvm::AllocaInst* alloc_inst;
          };
          std::map<const void*, alloca_var> index2alloca_var;
+         struct integer_cst_signed
+         {
+               const void* type;
+               const void* ic;
+         };
+         std::map<const void*, integer_cst_signed> index2integer_cst_signed;
          template<class InstructionOrConstantExpr>
          const void* getSignedOperand(const InstructionOrConstantExpr* inst, const void* op, unsigned index);
          template<class InstructionOrConstantExpr>

@@ -114,7 +114,7 @@ namespace clang
       DEFGSCODE(GIMPLE_NOPMEM, "gimple_nop", GSS_BASE)
       DEFGSCODE(GETELEMENTPTR, "gimple_assign", GSS_BASE)
       DEFTREECODE (ALLOCAVAR_DECL, "var_decl", tcc_declaration, 0)
-      DEFTREECODE(POINTERNULL, "integer_cst", tcc_constant, 0)
+      DEFTREECODE(INTEGER_CST_SIGNED, "integer_cst", tcc_constant, 0)
       DEFTREECODE(SIGNEDPOINTERTYPE, "integer_type", tcc_type, 0)
       DEFTREECODE (MISALIGNED_INDIRECT_REF, "misaligned_indirect_ref", tcc_reference, 2)
    };
@@ -134,7 +134,7 @@ namespace clang
       DEFGSCODE(GIMPLE_NOPMEM, "gimple_nop", GSS_BASE)
       DEFGSCODE(GETELEMENTPTR, "gimple_assign", GSS_BASE)
       DEFTREECODE(ALLOCAVAR_DECL, "var_decl", tcc_declaration, 0)
-      DEFTREECODE(POINTERNULL, "integer_cst", tcc_constant, 0)
+      DEFTREECODE(INTEGER_CST_SIGNED, "integer_cst", tcc_constant, 0)
       DEFTREECODE(SIGNEDPOINTERTYPE, "integer_type", tcc_type, 0)
       DEFTREECODE (MISALIGNED_INDIRECT_REF, "misaligned_indirect_ref", tcc_reference, 2)
    };
@@ -153,7 +153,7 @@ namespace clang
       DEFGSCODE(GIMPLE_NOPMEM, "gimple_nop", GSS_BASE)
       DEFGSCODE(GETELEMENTPTR, "gimple_assign", GSS_BASE)
       DEFTREECODE(ALLOCAVAR_DECL, "var_decl", tcc_declaration, 0)
-      DEFTREECODE(POINTERNULL, "integer_cst", tcc_constant, 0)
+      DEFTREECODE(INTEGER_CST_SIGNED, "integer_cst", tcc_constant, 0)
       DEFTREECODE(SIGNEDPOINTERTYPE, "integer_type", tcc_type, 0)
       DEFTREECODE (MISALIGNED_INDIRECT_REF, "misaligned_indirect_ref", tcc_reference, 2)
    };
@@ -172,7 +172,7 @@ namespace clang
       DEFGSCODE(GIMPLE_NOPMEM, "gimple_nop", GSS_BASE)
       DEFGSCODE(GETELEMENTPTR, "gimple_assign", GSS_BASE)
       DEFTREECODE(ALLOCAVAR_DECL, "var_decl", tcc_declaration, 0)
-      DEFTREECODE(POINTERNULL, "integer_cst", tcc_constant, 0)
+      DEFTREECODE(INTEGER_CST_SIGNED, "integer_cst", tcc_constant, 0)
       DEFTREECODE(SIGNEDPOINTERTYPE, "integer_type", tcc_type, 0)
       DEFTREECODE (MISALIGNED_INDIRECT_REF, "misaligned_indirect_ref", tcc_reference, 2)
    };
@@ -219,7 +219,7 @@ namespace clang
       DEFGSCODE(GIMPLE_NOPMEM, "gimple_nop", GSS_BASE)
       DEFGSCODE(GETELEMENTPTR, "gimple_assign", GSS_BASE)
       DEFTREECODE(ALLOCAVAR_DECL, "var_decl", tcc_declaration, 0)
-      DEFTREECODE(POINTERNULL, "integer_cst", tcc_constant, 0)
+      DEFTREECODE(INTEGER_CST_SIGNED, "integer_cst", tcc_constant, 0)
       DEFTREECODE(SIGNEDPOINTERTYPE, "integer_type", tcc_type, 0)
       DEFTREECODE (MISALIGNED_INDIRECT_REF, "misaligned_indirect_ref", tcc_reference, 2)
 };
@@ -1489,6 +1489,21 @@ namespace clang
          {
             return build1(GT(NOP_EXPR), &SignedPointerTypeReference, op);
          }
+         else if(TREE_CODE(op) == GT(INTEGER_CST))
+         {
+            const void* ics;
+            if(index2integer_cst_signed.find(op) == index2integer_cst_signed.end())
+            {
+               auto& ics_obj = index2integer_cst_signed[op];
+               AddSignedTag(type_operand);
+               ics_obj.ic = op;
+               ics_obj.type = AddSignedTag(type_operand);
+               ics =assignCode(&ics_obj, GT(INTEGER_CST_SIGNED));
+            }
+            else
+               ics = &index2integer_cst_signed.find(op)->second;
+            return ics;
+         }
          else
             return build1(GT(NOP_EXPR), AddSignedTag(type_operand), op);
       }
@@ -1967,6 +1982,10 @@ namespace clang
 
    int64_t DumpGimpleRaw::TREE_INT_CST_LOW(const void*t)
    {
+      if(TREE_CODE(t) == GT(INTEGER_CST_SIGNED))
+      {
+         return TREE_INT_CST_LOW(reinterpret_cast<const integer_cst_signed*>(t)->ic);
+      }
       const llvm::ConstantData* cd = reinterpret_cast<const llvm::ConstantData*>(t);
       if(isa<llvm::ConstantPointerNull>(cd))
          return 0;
@@ -2064,6 +2083,12 @@ namespace clang
          const call_expr* ce = reinterpret_cast<const call_expr*>(t);
          assert(HAS_CODE(ce->type));
          return ce->type;
+      }
+      else if(code == GT(INTEGER_CST_SIGNED))
+      {
+         const integer_cst_signed* ics = reinterpret_cast<const integer_cst_signed*>(t);
+         assert(HAS_CODE(ics->type));
+         return ics->type;
       }
       tree_codes_class code_class = TREE_CODE_CLASS(code);
       if(code_class==tcc_type)
@@ -4053,6 +4078,7 @@ namespace clang
 
             break;
          }
+         case GT(INTEGER_CST_SIGNED):
          case GT(INTEGER_CST):
             serialize_wide_int("value", TREE_INT_CST_LOW(t));
             break;
