@@ -2536,7 +2536,10 @@ namespace clang
       if(ma->getValueID()==llvm::Value::MemoryUseVal || ma->getValueID()==llvm::Value::MemoryDefVal)
       {
          ///Serialize gimple pairs becuase of use after def chain
-         serialize_gimple_aliased_reaching_defs(inst, MSSA);
+         std::set<llvm::MemoryAccess *>visited;
+         auto startingMA = MSSA.getMemoryAccess(inst);
+         visited.insert(startingMA);
+         serialize_gimple_aliased_reaching_defs(startingMA, MSSA, visited, inst->getFunction());
       }
       if(ma->getValueID()==llvm::Value::MemoryDefVal)
       {
@@ -2547,10 +2550,12 @@ namespace clang
 
    }
 
-   void DumpGimpleRaw::serialize_gimple_aliased_reaching_defs(llvm::Instruction *inst, llvm::MemorySSA &MSSA)
+   void DumpGimpleRaw::serialize_gimple_aliased_reaching_defs(llvm::MemoryAccess *MA, llvm::MemorySSA &MSSA, std::set<llvm::MemoryAccess *>&visited, const llvm::Function *currentFunction)
    {
-      auto defMA = MSSA.getWalker()->getClobberingMemoryAccess(inst);
-      auto currentFunction = inst->getFunction();
+      auto defMA = MSSA.getWalker()->getClobberingMemoryAccess(MA);
+      if(visited.find(defMA) != visited.end())
+         return;
+      visited.insert(defMA);
       if(defMA->getValueID()==llvm::Value::MemoryDefVal)
       {
          bool isDefault = false;
@@ -2560,7 +2565,29 @@ namespace clang
       else
       {
          assert(defMA->getValueID()==llvm::Value::MemoryPhiVal);
-         serialize_child ("vuse", gimple_phi_virtual_result(getVirtualGimplePhi(dyn_cast<llvm::MemoryPhi>(defMA), MSSA)));
+         auto mp = dyn_cast<llvm::MemoryPhi>(defMA);
+         for(auto index=0u; index < mp->getNumIncomingValues(); ++index)
+         {
+            auto val = mp->getIncomingValue(index);
+            assert(val->getValueID()==llvm::Value::MemoryDefVal||val->getValueID()==llvm::Value::MemoryPhiVal);
+            if(MSSA.isLiveOnEntryDef(val))
+            {
+               bool isDefault = false;
+               const void* def_stmt = getVirtualDefStatement(val, isDefault, MSSA, currentFunction);
+               serialize_child ("vuse", getSSA(val, def_stmt, currentFunction, isDefault));
+            }
+            else
+            {
+               if(val->getValueID()==llvm::Value::MemoryDefVal)
+               {
+                  bool isDefault = false;
+                  const void* def_stmt = getVirtualDefStatement(val, isDefault, MSSA, currentFunction);
+                  serialize_child ("vuse", getSSA(val, def_stmt, currentFunction, isDefault));
+               }
+               serialize_gimple_aliased_reaching_defs(val, MSSA, visited, currentFunction);
+            }
+         }
+         //serialize_child ("vuse", gimple_phi_virtual_result(getVirtualGimplePhi(dyn_cast<llvm::MemoryPhi>(defMA), MSSA)));
       }
    }
 
