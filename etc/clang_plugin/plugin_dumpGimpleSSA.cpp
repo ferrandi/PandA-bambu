@@ -207,11 +207,17 @@ static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSAPass)>
                                 false /* Analysis Pass */);
 
 // This function is of type PassManagerBuilder::ExtensionFn
-static void loadPass(const llvm::PassManagerBuilder &, llvm::legacy::PassManagerBase &PM)
+static void loadPass(const llvm::PassManagerBuilder &PMB, llvm::legacy::PassManagerBase &PM)
 {
    //PM.add(llvm::createCodeGenPreparePass());
    PM.add(llvm::createCFGSimplificationPass());
-   PM.add(llvm::createPromoteMemoryToRegisterPass());
+   if(PMB.OptLevel >= 2)
+   {
+      PM.add(llvm::createDeadStoreEliminationPass());
+      PM.add(llvm::createAggressiveDCEPass());
+      PM.add(llvm::createLoopLoadEliminationPass());
+      PM.add(llvm::createPromoteMemoryToRegisterPass());
+   }
    PM.add(new llvm::CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSAPass)());
 }
 // These constructors add our pass to a list of global extensions.
