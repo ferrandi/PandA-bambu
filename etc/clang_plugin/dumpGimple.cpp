@@ -1085,8 +1085,9 @@ namespace clang
                if(U->getOperand(0) == inst)
                   return false;
             }
-            else if(isa<llvm::PHINode>(U) ||
-                    isa<llvm::GetElementPtrInst>(U) ||
+            else if(isa<llvm::PHINode>(U))///PHIs require a PointTo set computed
+               return false;
+            else if(isa<llvm::GetElementPtrInst>(U) ||
                     isa<llvm::BitCastInst>(U) ||
                     isa<llvm::PtrToIntInst>(U) ||
                     isa<llvm::IntToPtrInst>(U) ||
