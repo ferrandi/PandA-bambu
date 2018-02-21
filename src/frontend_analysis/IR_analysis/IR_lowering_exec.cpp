@@ -939,7 +939,6 @@ step_name
       }
    }
 }
-
 DesignFlowStep_Status IR_lowering::InternalExec()
 {
    tree_nodeRef tn = TM->get_tree_node_const(function_id);
@@ -1059,12 +1058,29 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                   auto be = GetPointer<binary_expr>(GET_NODE(ga->op1));
                   if(GetPointer<unary_expr>(GET_NODE(be->op0)))
                   {
-                     unary_expr * ue = GetPointer<unary_expr>(GET_NODE(be->op0));
-                     tree_nodeRef new_ga = CreateGimpleAssign(ue->type, be->op0, block.first, srcp_default);
-                     tree_nodeRef ssa_vd = GetPointer<gimple_assign>(GET_NODE(new_ga))->op0;
-                     be->op0 = ssa_vd;
-                     block.second->PushBefore(new_ga, *it_los);
-                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(new_ga)->ToString());
+                     if (GET_NODE(be->op0)->get_kind() == addr_expr_K)
+                     {
+                        addr_expr* ae = GetPointer<addr_expr>(GET_NODE(be->op0));
+                        tree_nodeRef ae_expr = tree_man->create_unary_operation(ae->type,ae->op, srcp_default, addr_expr_K);///It is required to de-share some IR nodes
+                        tree_nodeRef ae_ga = CreateGimpleAssign(ae->type, ae_expr, block.first, srcp_default);
+                        tree_nodeRef ae_vd = GetPointer<gimple_assign>(GET_NODE(ae_ga))->op0;
+                        if(ga->temporary_address || code1 == mem_ref_K)
+                           GetPointer<gimple_assign>(GET_NODE(ae_ga))->temporary_address = true;
+                        be->op0 = ae_vd;
+                        block.second->PushBefore(ae_ga, *it_los);
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(ae_ga)->ToString());
+                     }
+                     else
+                     {
+                        unary_expr * ue = GetPointer<unary_expr>(GET_NODE(be->op0));
+                        tree_nodeRef new_ga = CreateGimpleAssign(ue->type, be->op0, block.first, srcp_default);
+                        tree_nodeRef ssa_vd = GetPointer<gimple_assign>(GET_NODE(new_ga))->op0;
+                        if(ga->temporary_address || code1 == mem_ref_K)
+                           GetPointer<gimple_assign>(GET_NODE(new_ga))->temporary_address = true;
+                        be->op0 = ssa_vd;
+                        block.second->PushBefore(new_ga, *it_los);
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(new_ga)->ToString());
+                     }
                      restart_analysis = true;
                   }
                   if(GetPointer<unary_expr>(GET_NODE(be->op1)))
@@ -1082,6 +1098,8 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                      binary_expr * op = GetPointer<binary_expr>(GET_NODE(be->op0));
                      tree_nodeRef new_ga = CreateGimpleAssign(op->type, be->op0, block.first, srcp_default);
                      tree_nodeRef ssa_vd = GetPointer<gimple_assign>(GET_NODE(new_ga))->op0;
+                     if(ga->temporary_address || code1 == mem_ref_K)
+                        GetPointer<gimple_assign>(GET_NODE(new_ga))->temporary_address = true;
                      be->op0 = ssa_vd;
                      block.second->PushBefore(new_ga, *it_los);
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(new_ga)->ToString());
@@ -1216,7 +1234,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
 
                      tree_nodeRef op1 = MR->op1;
                      long long int op1_val = tree_helper::get_integer_cst_value(GetPointer<integer_cst>(GET_NODE(op1)));
-                     if(GET_NODE(MR->op0)->get_kind() == integer_cst_K)
+                     if(GET_NODE(MR->op0)->get_kind() == integer_cst_K && op1_val == 0)
                      {
                         ga->op1 = MR->op0;
                      }
@@ -1954,6 +1972,8 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                         tree_nodeRef op_type= TM->GetTreeReindex(type_index);
                         tree_nodeRef op_ga = CreateGimpleAssign(op_type, ue->op, block.first, srcp_default);
                         tree_nodeRef op_vd = GetPointer<gimple_assign>(GET_NODE(op_ga))->op0;
+                        if(ga->temporary_address)
+                           GetPointer<gimple_assign>(GET_NODE(op_ga))->temporary_address = true;
                         block.second->PushBefore(op_ga, *it_los);
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(op_ga)->ToString());
                         ue->op = op_vd;
