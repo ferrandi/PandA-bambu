@@ -93,6 +93,7 @@ namespace llvm {
    class MemoryPhi;
    class MemorySSA;
    class MemoryAccess;
+   class MemoryLocation;
    class AllocaInst;
 }
 
@@ -506,7 +507,7 @@ namespace clang {
          int getGimple_bb_index(const void* g);
          bool gimple_has_mem_ops(const void* g) const;
          void serialize_vops(const void* g);
-         void serialize_gimple_aliased_reaching_defs(llvm::MemoryAccess *MA, llvm::MemorySSA &MSSA, std::set<llvm::MemoryAccess *>&visited,const llvm::Function *currentFunction);
+         void serialize_gimple_aliased_reaching_defs(llvm::MemoryAccess *MA, llvm::MemorySSA &MSSA, std::set<llvm::MemoryAccess *>&visited,const llvm::Function *currentFunction, const llvm::MemoryLocation* OrigLoc, const char* tag);
 
          const void* SSA_NAME_VAR(const void*t) const;
          int SSA_NAME_VERSION(const void*t) const;

@@ -1040,7 +1040,7 @@ namespace clang
          auto ty = store.getValueOperand()->getType();
          auto type = assignCodeType(ty);
          auto written_obj_size = ty->isSized() ? DL->getTypeAllocSizeInBits(ty) : 8ULL;
-         if(written_obj_size != (8*store.getAlignment()))
+         if(written_obj_size > (8*store.getAlignment()))
             return build1(GT(MISALIGNED_INDIRECT_REF), type, addr);
          else
             return build2(GT(MEM_REF), type, addr, zero);
@@ -1262,13 +1262,14 @@ namespace clang
 
    const void* DumpGimpleRaw::getSSA(const llvm::Value* operand, const void* def_stmt, const llvm::Function * currentFunction, bool isDefault)
    {
-      auto key = std::make_pair(def_stmt,operand->getValueID() == llvm::Value::MemoryDefVal || operand->getValueID() == llvm::Value::MemoryUseVal || operand->getValueID() == llvm::Value::MemoryPhiVal);
+      auto isVirtual = operand->getValueID() == llvm::Value::MemoryDefVal || operand->getValueID() == llvm::Value::MemoryUseVal || operand->getValueID() == llvm::Value::MemoryPhiVal;
+      auto key = std::make_pair(def_stmt,isVirtual);
       if(index2ssa_name.find(key) == index2ssa_name.end())
       {
          int ssa_vers;
          auto& sn = index2ssa_name[key];
          assignCode(&sn, GT(SSA_NAME));
-         if(operand->getValueID() == llvm::Value::MemoryDefVal || operand->getValueID() == llvm::Value::MemoryUseVal || operand->getValueID() == llvm::Value::MemoryPhiVal)
+         if(isVirtual)
          {
             if(memoryaccess2ssaindex.find(def_stmt) == memoryaccess2ssaindex.end())
             {
@@ -1534,7 +1535,7 @@ namespace clang
          auto ty = load.getType();
          auto type = assignCodeType(ty);
          auto read_obj_size = ty->isSized() ? DL->getTypeAllocSizeInBits(ty) : 8ULL;
-         if(read_obj_size != (8*load.getAlignment()))
+         if(read_obj_size > (8*load.getAlignment()))
             return build1(GT(MISALIGNED_INDIRECT_REF), type, addr);
          else
             return build2(GT(MEM_REF), type, addr, zero);
@@ -2540,55 +2541,111 @@ namespace clang
          std::set<llvm::MemoryAccess *>visited;
          auto startingMA = MSSA.getMemoryAccess(inst);
          visited.insert(startingMA);
-         serialize_gimple_aliased_reaching_defs(startingMA, MSSA, visited, inst->getFunction());
+         if (llvm::ImmutableCallSite(inst) || isa<llvm::FenceInst>(inst))
+            serialize_gimple_aliased_reaching_defs(startingMA, MSSA, visited, inst->getFunction(), nullptr, "vuse");
+         else
+         {
+            const auto Loc = llvm::MemoryLocation::get(inst);
+            serialize_gimple_aliased_reaching_defs(startingMA, MSSA, visited, inst->getFunction(), &Loc, "vuse");
+         }
       }
       if(ma->getValueID()==llvm::Value::MemoryDefVal)
       {
          const void* vdef=getSSA(ma,g,currentFunction,false);
          serialize_child("vdef", vdef);
          serialize_child("vover", vdef);
+         std::set<llvm::MemoryAccess *>visited;
+         auto startingMA = MSSA.getMemoryAccess(inst);
+         visited.insert(startingMA);
+         if (llvm::ImmutableCallSite(inst) || isa<llvm::FenceInst>(inst))
+            serialize_gimple_aliased_reaching_defs(startingMA, MSSA, visited, inst->getFunction(), nullptr, "vover");
+         else
+         {
+            const auto Loc = llvm::MemoryLocation::get(inst);
+            serialize_gimple_aliased_reaching_defs(startingMA, MSSA, visited, inst->getFunction(), &Loc, "vover");
+         }
       }
 
    }
 
-   void DumpGimpleRaw::serialize_gimple_aliased_reaching_defs(llvm::MemoryAccess *MA, llvm::MemorySSA &MSSA, std::set<llvm::MemoryAccess *>&visited, const llvm::Function *currentFunction)
+   void DumpGimpleRaw::serialize_gimple_aliased_reaching_defs(llvm::MemoryAccess *MA, llvm::MemorySSA &MSSA, std::set<llvm::MemoryAccess *>&visited, const llvm::Function *currentFunction, const llvm::MemoryLocation* OrigLoc, const char* tag)
    {
-      auto defMA = MSSA.getWalker()->getClobberingMemoryAccess(MA);
+      llvm::MemoryAccess * defMA=nullptr;
+      if(MA->getValueID()!=llvm::Value::MemoryPhiVal)
+      {
+         auto immDefAcc = dyn_cast<llvm::MemoryUseOrDef>(MA)->getDefiningAccess();
+         if(MSSA.isLiveOnEntryDef(immDefAcc))
+            defMA = immDefAcc;
+         else if(OrigLoc)
+         {
+            defMA = MSSA.getWalker()->getClobberingMemoryAccess(immDefAcc, *OrigLoc);
+         }
+         else
+         {
+            defMA = immDefAcc;
+         }
+         if(defMA->getValueID()==llvm::Value::MemoryPhiVal)
+            MA = defMA;
+      }
       if(visited.find(defMA) != visited.end())
          return;
       visited.insert(defMA);
-      if(defMA->getValueID()==llvm::Value::MemoryDefVal)
+
+      if(MA->getValueID()==llvm::Value::MemoryUseVal || MA->getValueID()==llvm::Value::MemoryDefVal)
       {
          bool isDefault = false;
          const void* def_stmt = getVirtualDefStatement(defMA, isDefault, MSSA, currentFunction);
-         serialize_child ("vuse", getSSA(defMA, def_stmt, currentFunction, isDefault));
+         serialize_child (tag, getSSA(MA, def_stmt, currentFunction, isDefault));
+         if(!MSSA.isLiveOnEntryDef(defMA) &&
+               !llvm::ImmutableCallSite(dyn_cast<llvm::MemoryUseOrDef>(defMA)->getMemoryInst()) &&
+               !isa<llvm::FenceInst>(dyn_cast<llvm::MemoryUseOrDef>(defMA)->getMemoryInst()))
+            serialize_gimple_aliased_reaching_defs(defMA, MSSA, visited, currentFunction, OrigLoc, tag);
       }
       else
       {
-         assert(defMA->getValueID()==llvm::Value::MemoryPhiVal);
-         auto mp = dyn_cast<llvm::MemoryPhi>(defMA);
+         assert(MA->getValueID()==llvm::Value::MemoryPhiVal);
+         auto mp = dyn_cast<llvm::MemoryPhi>(MA);
          for(auto index=0u; index < mp->getNumIncomingValues(); ++index)
          {
             auto val = mp->getIncomingValue(index);
             assert(val->getValueID()==llvm::Value::MemoryDefVal||val->getValueID()==llvm::Value::MemoryPhiVal);
             if(MSSA.isLiveOnEntryDef(val))
             {
-               bool isDefault = false;
-               const void* def_stmt = getVirtualDefStatement(val, isDefault, MSSA, currentFunction);
-               serialize_child ("vuse", getSSA(val, def_stmt, currentFunction, isDefault));
+               if(visited.find(val) == visited.end())
+               {
+                  bool isDefault = false;
+                  const void* def_stmt = getVirtualDefStatement(val, isDefault, MSSA, currentFunction);
+                  serialize_child (tag, getSSA(val, def_stmt, currentFunction, isDefault));
+                  visited.insert(val);
+               }
             }
             else
             {
                if(val->getValueID()==llvm::Value::MemoryDefVal)
                {
-                  bool isDefault = false;
-                  const void* def_stmt = getVirtualDefStatement(val, isDefault, MSSA, currentFunction);
-                  serialize_child ("vuse", getSSA(val, def_stmt, currentFunction, isDefault));
+                  if(OrigLoc)
+                  {
+                     val = MSSA.getWalker()->getClobberingMemoryAccess(val, *OrigLoc);
+                  }
+                  if(visited.find(val) == visited.end())
+                  {
+                     if(val->getValueID()==llvm::Value::MemoryPhiVal)
+                        serialize_gimple_aliased_reaching_defs(val, MSSA, visited, currentFunction, OrigLoc, tag);
+                     else
+                     {
+                        bool isDefault = false;
+                        const void* def_stmt = getVirtualDefStatement(val, isDefault, MSSA, currentFunction);
+                        serialize_child (tag, getSSA(val, def_stmt, currentFunction, isDefault));
+                        visited.insert(val);
+                        if(!MSSA.isLiveOnEntryDef(val))
+                           serialize_gimple_aliased_reaching_defs(val, MSSA, visited, currentFunction, OrigLoc, tag);
+                     }
+                  }
                }
-               serialize_gimple_aliased_reaching_defs(val, MSSA, visited, currentFunction);
+               else
+                  serialize_gimple_aliased_reaching_defs(val, MSSA, visited, currentFunction, OrigLoc, tag);
             }
          }
-         //serialize_child ("vuse", gimple_phi_virtual_result(getVirtualGimplePhi(dyn_cast<llvm::MemoryPhi>(defMA), MSSA)));
       }
    }
 
@@ -2886,7 +2943,6 @@ namespace clang
       llvm::APInt API = val.bitcastToAPInt();
       llvm::APInt APIAbs = API;
       APIAbs.clearBit(API.getBitWidth()-1);
-      llvm::errs() << API << "\n";
       auto sem = &val.getSemantics();
       unsigned nbitsExp = 0;
       unsigned nbitsMan = 0;
