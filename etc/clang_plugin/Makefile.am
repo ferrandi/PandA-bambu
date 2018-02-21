@@ -60,22 +60,22 @@ $(I386_CLANG4_TOPFNAME_PLUGIN) : clang4_plugin_topfname.o
 	$(I386_CLANG4_PLUGIN_COMPILER) -fPIC -shared -fno-rtti clang4_plugin_topfname.o -o clang4_plugin_topfname.so
 
 clang4_plugin_dumpGimpleEmpty.o : $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleEmpty.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
-	$(I386_CLANG4_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleEmpty.cpp -o clang4_plugin_dumpGimpleEmpty.o -I$(I386_LLVM4_HEADER_DIR) $(WFLAGS) -DCLANG_VERSION4
+	$(I386_CLANG4_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleEmpty.cpp -o clang4_plugin_dumpGimpleEmpty.o -I$(I386_LLVM4_HEADER_DIR) $(WFLAGS)
 
 clang4_plugin_dumpGimpleSSA.o : $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
-	$(I386_CLANG4_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp -o clang4_plugin_dumpGimpleSSA.o -I$(I386_LLVM4_HEADER_DIR) $(WFLAGS) -DCLANG_VERSION4
+	$(I386_CLANG4_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp -o clang4_plugin_dumpGimpleSSA.o -I$(I386_LLVM4_HEADER_DIR) $(WFLAGS)
 
 clang4_plugin_dumpGimpleSSACpp.o : $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
-	$(I386_CLANG4_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp -DCPP_LANGUAGE -o clang4_plugin_dumpGimpleSSACpp.o -I$(I386_LLVM4_HEADER_DIR) $(WFLAGS) -DCLANG_VERSION4
+	$(I386_CLANG4_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp -DCPP_LANGUAGE -o clang4_plugin_dumpGimpleSSACpp.o -I$(I386_LLVM4_HEADER_DIR) $(WFLAGS)
 
 clang4_plugin_topfname.o : $(top_srcdir)/etc/clang_plugin/plugin_topfname.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
-	$(I386_CLANG4_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -c $(top_srcdir)/etc/clang_plugin/plugin_topfname.cpp -o clang4_plugin_topfname.o -I$(I386_LLVM4_HEADER_DIR) $(WFLAGS) -DCLANG_VERSION4
+	$(I386_CLANG4_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -c $(top_srcdir)/etc/clang_plugin/plugin_topfname.cpp -o clang4_plugin_topfname.o -I$(I386_LLVM4_HEADER_DIR) $(WFLAGS)
 
 clang4_dumpGimple.o : $(top_srcdir)/etc/clang_plugin/dumpGimple.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp
-	$(I386_CLANG4_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -c $(top_srcdir)/etc/clang_plugin/dumpGimple.cpp -o clang4_dumpGimple.o -I. -I$(I386_LLVM4_HEADER_DIR) -DPANDA_PLUGIN_VERSION=\"$(PANDA_PLUGIN_VERSION)\" $(WFLAGS) -DCLANG_VERSION4
+	$(I386_CLANG4_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -c $(top_srcdir)/etc/clang_plugin/dumpGimple.cpp -o clang4_dumpGimple.o -I. -I$(I386_LLVM4_HEADER_DIR) -DPANDA_PLUGIN_VERSION=\"$(PANDA_PLUGIN_VERSION)\" $(WFLAGS)
 
 clang4_dumpGimpleCpp.o : $(top_srcdir)/etc/clang_plugin/dumpGimple.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
-	$(I386_CLANG4_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -c $(top_srcdir)/etc/clang_plugin/dumpGimple.cpp -DCPP_LANGUAGE -o clang4_dumpGimpleCpp.o -I. -I$(I386_LLVM4_HEADER_DIR) -DPANDA_PLUGIN_VERSION=\"$(PANDA_PLUGIN_VERSION)\" $(WFLAGS) -DCLANG_VERSION4
+	$(I386_CLANG4_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -c $(top_srcdir)/etc/clang_plugin/dumpGimple.cpp -DCPP_LANGUAGE -o clang4_dumpGimpleCpp.o -I. -I$(I386_LLVM4_HEADER_DIR) -DPANDA_PLUGIN_VERSION=\"$(PANDA_PLUGIN_VERSION)\" $(WFLAGS)
 
 ###### 
 
@@ -109,22 +109,22 @@ $(I386_CLANG5_TOPFNAME_PLUGIN) : clang5_plugin_topfname.o
 	$(I386_CLANG5_PLUGIN_COMPILER) -fPIC -shared -fno-rtti clang5_plugin_topfname.o -o clang5_plugin_topfname.so
 
 clang5_plugin_dumpGimpleEmpty.o : $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleEmpty.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
-	$(I386_CLANG5_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleEmpty.cpp -o clang5_plugin_dumpGimpleEmpty.o -I$(I386_LLVM5_HEADER_DIR) $(WFLAGS) -DCLANG_VERSION5
+	$(I386_CLANG5_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleEmpty.cpp -o clang5_plugin_dumpGimpleEmpty.o -I$(I386_LLVM5_HEADER_DIR) $(WFLAGS)
 
 clang5_plugin_dumpGimpleSSA.o : $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
-	$(I386_CLANG5_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp -o clang5_plugin_dumpGimpleSSA.o -I$(I386_LLVM5_HEADER_DIR) $(WFLAGS) -DCLANG_VERSION5
+	$(I386_CLANG5_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp -o clang5_plugin_dumpGimpleSSA.o -I$(I386_LLVM5_HEADER_DIR) $(WFLAGS)
 
 clang5_plugin_dumpGimpleSSACpp.o : $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
-	$(I386_CLANG5_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp -DCPP_LANGUAGE -o clang5_plugin_dumpGimpleSSACpp.o -I$(I386_LLVM5_HEADER_DIR) $(WFLAGS) -DCLANG_VERSION5
+	$(I386_CLANG5_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp -DCPP_LANGUAGE -o clang5_plugin_dumpGimpleSSACpp.o -I$(I386_LLVM5_HEADER_DIR) $(WFLAGS)
 
 clang5_plugin_topfname.o : $(top_srcdir)/etc/clang_plugin/plugin_topfname.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
-	$(I386_CLANG5_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -c $(top_srcdir)/etc/clang_plugin/plugin_topfname.cpp -o clang5_plugin_topfname.o -I$(I386_LLVM5_HEADER_DIR) $(WFLAGS) -DCLANG_VERSION5
+	$(I386_CLANG5_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -c $(top_srcdir)/etc/clang_plugin/plugin_topfname.cpp -o clang5_plugin_topfname.o -I$(I386_LLVM5_HEADER_DIR) $(WFLAGS)
 
 clang5_dumpGimple.o : $(top_srcdir)/etc/clang_plugin/dumpGimple.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp
-	$(I386_CLANG5_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -c $(top_srcdir)/etc/clang_plugin/dumpGimple.cpp -o clang5_dumpGimple.o -I. -I$(I386_LLVM5_HEADER_DIR) -DPANDA_PLUGIN_VERSION=\"$(PANDA_PLUGIN_VERSION)\" $(WFLAGS) -DCLANG_VERSION5
+	$(I386_CLANG5_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -c $(top_srcdir)/etc/clang_plugin/dumpGimple.cpp -o clang5_dumpGimple.o -I. -I$(I386_LLVM5_HEADER_DIR) -DPANDA_PLUGIN_VERSION=\"$(PANDA_PLUGIN_VERSION)\" $(WFLAGS)
 
 clang5_dumpGimpleCpp.o : $(top_srcdir)/etc/clang_plugin/dumpGimple.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
-	$(I386_CLANG5_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -c $(top_srcdir)/etc/clang_plugin/dumpGimple.cpp -DCPP_LANGUAGE -o clang5_dumpGimpleCpp.o -I. -I$(I386_LLVM5_HEADER_DIR) -DPANDA_PLUGIN_VERSION=\"$(PANDA_PLUGIN_VERSION)\" $(WFLAGS) -DCLANG_VERSION5
+	$(I386_CLANG5_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -c $(top_srcdir)/etc/clang_plugin/dumpGimple.cpp -DCPP_LANGUAGE -o clang5_dumpGimpleCpp.o -I. -I$(I386_LLVM5_HEADER_DIR) -DPANDA_PLUGIN_VERSION=\"$(PANDA_PLUGIN_VERSION)\" $(WFLAGS)
 
 
 ###### 
