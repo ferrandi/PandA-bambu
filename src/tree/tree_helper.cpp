@@ -3102,7 +3102,13 @@ static unsigned int check_for_simple_pointer_arithmetic(tree_nodeRef node)
                   if(ne)
                      return check_for_simple_pointer_arithmetic(ne->op);
                   else
-                     return check_for_simple_pointer_arithmetic(ga->op1);
+                  {
+                     view_convert_expr* vce = GetPointer<view_convert_expr>(GET_NODE(ga->op1));
+                     if(vce)
+                        return check_for_simple_pointer_arithmetic(vce->op);
+                     else
+                        return check_for_simple_pointer_arithmetic(ga->op1);
+                  }
                }
             }
          }
@@ -3112,6 +3118,11 @@ static unsigned int check_for_simple_pointer_arithmetic(tree_nodeRef node)
          {
             nop_expr * ne = GetPointer<nop_expr>(GET_NODE(ga->op1));
             return check_for_simple_pointer_arithmetic(ne->op);
+         }
+         else if(GetPointer<view_convert_expr>(GET_NODE(ga->op1)))
+         {
+            view_convert_expr * vce = GetPointer<view_convert_expr>(GET_NODE(ga->op1));
+            return check_for_simple_pointer_arithmetic(vce->op);
          }
          else
             return 0;
@@ -3149,9 +3160,14 @@ static unsigned int check_for_simple_pointer_arithmetic(tree_nodeRef node)
       case pointer_plus_expr_K:
       {
          pointer_plus_expr * ppe = GetPointer<pointer_plus_expr>(GET_NODE(node));
-         if(GetPointer<addr_expr>(GET_NODE(ppe->op0)))
+         if(GetPointer<addr_expr>(GET_NODE(ppe->op0)) || GetPointer<view_convert_expr>(GET_NODE(ppe->op0)))
             return check_for_simple_pointer_arithmetic(ppe->op0);
          return 0;
+      }
+      case view_convert_expr_K:
+      {
+         view_convert_expr * vce = GetPointer<view_convert_expr>(GET_NODE(node));
+         return check_for_simple_pointer_arithmetic(vce->op);
       }
       case addr_expr_K:
       {
@@ -3325,7 +3341,6 @@ static unsigned int check_for_simple_pointer_arithmetic(tree_nodeRef node)
       case truth_not_expr_K:
       case unsave_expr_K:
       case va_arg_expr_K:
-      case view_convert_expr_K:
       case reduc_max_expr_K:
       case reduc_min_expr_K:
       case reduc_plus_expr_K:
