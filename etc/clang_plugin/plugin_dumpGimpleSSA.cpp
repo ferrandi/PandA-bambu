@@ -211,6 +211,7 @@ static void loadPass(const llvm::PassManagerBuilder &, llvm::legacy::PassManager
 {
    //PM.add(llvm::createCodeGenPreparePass());
    PM.add(llvm::createCFGSimplificationPass());
+   PM.add(llvm::createPromoteMemoryToRegisterPass());
    PM.add(new llvm::CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSAPass)());
 }
 // These constructors add our pass to a list of global extensions.
