@@ -716,6 +716,9 @@ void GccWrapper::SetBambuDefault()
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--Set parameters for bambu tool");
       optimization_flags["wrapv"] = true; /// bambu assumes twos complement arithmetic
+      optimization_flags["builtin-memset"] = false;
+      optimization_flags["builtin-memcpy"] = false;
+      optimization_flags["builtin-memmove"] = false;
       return;
    }
 #endif
@@ -724,6 +727,9 @@ void GccWrapper::SetBambuDefault()
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--Set parameters for bambu tool");
       optimization_flags["wrapv"] = true; /// bambu assumes twos complement arithmetic
+      optimization_flags["builtin-memset"] = false;
+      optimization_flags["builtin-memcpy"] = false;
+      optimization_flags["builtin-memmove"] = false;
       return;
    }
 #endif
