@@ -1764,7 +1764,7 @@ needs_to_live_in_memory_local (const_tree t)
 {
   return (TREE_ADDRESSABLE (t)
 	  || DECL_EXTERNAL (t)
-          || (TREE_STATIC (t) && !aggregate_value_p (t, current_function_decl))
+          || (TREE_STATIC (t) && (!(TREE_READONLY(t) || TREE_CONSTANT(t))))
 	  || (TREE_CODE (t) == RESULT_DECL
 	      && !DECL_BY_REFERENCE (t)
 	      && aggregate_value_p (t, current_function_decl)));

@@ -6,14 +6,14 @@
 /* Maximal error of functions.  */
 #define DELTAacos CHOOSE(622, 0, 0, 622, 0, 0)	/* acos  */
 #define DELTAasin CHOOSE(1, 0, 0, 1, 0, 0)	/* asin  */
-#define DELTAatanh CHOOSE(1, 0, 0, 2, 0, 0)	/* atanh  */
+#define DELTAatanh CHOOSE(1, 0, 1, 2, 0, 0)	/* atanh  */
 #define DELTAcacos CHOOSE(BUILD_COMPLEX (0, 2), 0, BUILD_COMPLEX (0, 1), BUILD_COMPLEX (0, 2), 0, BUILD_COMPLEX (0, 1))	/* cacos  */
 #define DELTAcacosh CHOOSE(BUILD_COMPLEX (6, 1), BUILD_COMPLEX (1, 1), BUILD_COMPLEX (9, 4), BUILD_COMPLEX (6, 1), BUILD_COMPLEX (1, 1), BUILD_COMPLEX (9, 4))	/* cacosh  */
 #define DELTAcasin CHOOSE(BUILD_COMPLEX (2, 2), BUILD_COMPLEX (1, 0), BUILD_COMPLEX (1, 1), BUILD_COMPLEX (2, 2), BUILD_COMPLEX (1, 0), BUILD_COMPLEX (1, 1))	/* casin  */
 #define DELTAcasinh CHOOSE(BUILD_COMPLEX (5, 5), BUILD_COMPLEX (5, 3), BUILD_COMPLEX (1, 6), BUILD_COMPLEX (5, 5), BUILD_COMPLEX (5, 3), BUILD_COMPLEX (1, 6))	/* casinh  */
 #define DELTAcatan CHOOSE(0, BUILD_COMPLEX (0, 1), BUILD_COMPLEX (0, 1), 0, BUILD_COMPLEX (0, 1), BUILD_COMPLEX (0, 1))	/* catan  */
 #define DELTAcatanh CHOOSE(BUILD_COMPLEX (1, 0), BUILD_COMPLEX (2, 0), BUILD_COMPLEX (1, 0), BUILD_COMPLEX (1, 0), BUILD_COMPLEX (2, 0), BUILD_COMPLEX (1, 0))	/* catanh  */
-#define DELTAcbrt CHOOSE(1, 0, 0, 1, 0, 0)	/* cbrt  */
+#define DELTAcbrt CHOOSE(1, 1, 1, 1, 0, 0)	/* cbrt  */
 #define DELTAccos CHOOSE(BUILD_COMPLEX (1, 1), BUILD_COMPLEX (1, 0), BUILD_COMPLEX (0, 1), BUILD_COMPLEX (1, 1), BUILD_COMPLEX (1, 0), BUILD_COMPLEX (0, 1))	/* ccos  */
 #define DELTAccosh CHOOSE(BUILD_COMPLEX (0, 1), BUILD_COMPLEX (1, 1), BUILD_COMPLEX (1, 1), BUILD_COMPLEX (0, 1), BUILD_COMPLEX (1, 1), BUILD_COMPLEX (1, 1))	/* ccosh  */
 #define DELTAcexp CHOOSE(BUILD_COMPLEX (1, 1), 0, 0, BUILD_COMPLEX (1, 1), 0, 0)	/* cexp  */
@@ -28,9 +28,9 @@
 #define DELTActanh CHOOSE(BUILD_COMPLEX (5, 25), BUILD_COMPLEX (1, 1), BUILD_COMPLEX (1, 1), BUILD_COMPLEX (5, 25), BUILD_COMPLEX (1, 1), BUILD_COMPLEX (1, 1))	/* ctanh  */
 #define DELTAerf CHOOSE(0, 1, 0, 0, 1, 0)	/* erf  */
 #define DELTAerfc CHOOSE(1, 1, 1, 1, 1, 1)	/* erfc  */
-#define DELTAexp CHOOSE(0, 0, 0, 754, 0, 0)	/* exp  */
+#define DELTAexp CHOOSE(0, 1, 0, 754, 0, 0)	/* exp  */
 #define DELTAexp10 CHOOSE(8, 0, 0, 8, 0, 0)	/* exp10  */
-#define DELTAexpm1 CHOOSE(0, 0, 0, 1, 0, 0)	/* expm1  */
+#define DELTAexpm1 CHOOSE(0, 1, 1, 1, 0, 0)	/* expm1  */
 #define DELTAgamma CHOOSE(1, 1, 0, 1, 1, 0)	/* gamma  */
 #define DELTAhypot CHOOSE(0, 0, 1, 0, 0, 1)	/* hypot  */
 #define DELTAj0 CHOOSE(1, 3, 2, 1, 3, 2)	/* j0  */
@@ -38,11 +38,11 @@
 #define DELTAjn CHOOSE(2, 5, 2, 2, 5, 2)	/* jn  */
 #define DELTAlgamma CHOOSE(1, 1, 2, 1, 1, 2)	/* lgamma  */
 #define DELTAlog CHOOSE(0, 0, 1, 0, 0, 1)	/* log  */
-#define DELTAlog10 CHOOSE(1, 0, 1, 1, 0, 1)	/* log10  */
+#define DELTAlog10 CHOOSE(1, 1, 2, 1, 0, 1)	/* log10  */
 #define DELTAsin CHOOSE(0, 1, 0, 0, 1, 0)	/* sin  */
 #define DELTAsincos CHOOSE(1, 1, 1, 1, 1, 1)	/* sincos  */
 #define DELTAsinh CHOOSE(0, 1, 0, 1, 0, 0)	/* sinh  */
-#define DELTAtan CHOOSE(0, 1, 0, 0, 1, 0)	/* tan  */
+#define DELTAtan CHOOSE(0, 1, 1, 0, 1, 0)	/* tan  */
 #define DELTAtgamma CHOOSE(1, 2, 1, 1, 2, 1)	/* tgamma  */
 #define DELTAy0 CHOOSE(1, 2, 1, 1, 2, 1)	/* y0  */
 #define DELTAy1 CHOOSE(1, 2, 2, 1, 2, 2)	/* y1  */
@@ -55,7 +55,7 @@
 #define DELTA28 CHOOSE(1, 0, 0, 1, 0, 0)	/* asin (1.0) == pi/2  */
 #define DELTA29 CHOOSE(1, 0, 0, 1, 0, 0)	/* asin (-1.0) == -pi/2  */
 #define DELTA30 CHOOSE(1, 0, 0, 1, 0, 0)	/* asin (0.75) == 0.848062078981481008052944338998418080  */
-#define DELTA52 CHOOSE(1, 0, 0, 2, 0, 0)	/* atanh (0.75) == 0.972955074527656652552676371721589865  */
+#define DELTA52 CHOOSE(1, 0, 1, 2, 0, 0)	/* atanh (0.75) == 0.972955074527656652552676371721589865  */
 #define DELTA133 CHOOSE(BUILD_COMPLEX (0, 2), 0, BUILD_COMPLEX (0, 1), BUILD_COMPLEX (0, 2), 0, BUILD_COMPLEX (0, 1))	/* cacos (0.75 + 1.25 i) == 1.11752014915610270578240049553777969 - 1.13239363160530819522266333696834467 i  */
 #define DELTA168 CHOOSE(BUILD_COMPLEX (1, 0), 0, 0, BUILD_COMPLEX (1, 0), 0, 0)	/* cacosh (0.75 + 1.25 i) == 1.13239363160530819522266333696834467 + 1.11752014915610270578240049553777969 i  */
 #define DELTA169 CHOOSE(BUILD_COMPLEX (6, 1), BUILD_COMPLEX (1, 1), BUILD_COMPLEX (9, 4), BUILD_COMPLEX (6, 1), BUILD_COMPLEX (1, 1), BUILD_COMPLEX (9, 4))	/* cacosh (-2 - 3 i) == 1.9833870299165354323470769028940395 - 2.1414491111159960199416055713254211 i  */
@@ -65,8 +65,8 @@
 #define DELTA305 CHOOSE(0, BUILD_COMPLEX (0, 1), BUILD_COMPLEX (0, 1), 0, BUILD_COMPLEX (0, 1), BUILD_COMPLEX (0, 1))	/* catan (-2 - 3 i) == -1.4099210495965755225306193844604208 - 0.22907268296853876629588180294200276 i  */
 #define DELTA343 CHOOSE(0, BUILD_COMPLEX (1, 0), 0, 0, BUILD_COMPLEX (1, 0), 0)	/* catanh (0.75 + 1.25 i) == 0.261492138795671927078652057366532140 + 0.996825126463918666098902241310446708 i  */
 #define DELTA344 CHOOSE(BUILD_COMPLEX (1, 0), BUILD_COMPLEX (2, 0), BUILD_COMPLEX (1, 0), BUILD_COMPLEX (1, 0), BUILD_COMPLEX (2, 0), BUILD_COMPLEX (1, 0))	/* catanh (-2 - 3 i) == -0.14694666622552975204743278515471595 - 1.3389725222944935611241935759091443 i  */
-#define DELTA352 CHOOSE(1, 0, 0, 1, 0, 0)	/* cbrt (-27.0) == -3.0  */
-#define DELTA354 CHOOSE(1, 0, 0, 1, 0, 0)	/* cbrt (0.75) == 0.908560296416069829445605878163630251  */
+#define DELTA352 CHOOSE(1, 1, 0, 1, 0, 0)	/* cbrt (-27.0) == -3.0  */
+#define DELTA354 CHOOSE(1, 1, 1, 1, 0, 0)	/* cbrt (0.75) == 0.908560296416069829445605878163630251  */
 #define DELTA392 CHOOSE(BUILD_COMPLEX (1, 1), BUILD_COMPLEX (1, 0), 0, BUILD_COMPLEX (1, 1), BUILD_COMPLEX (1, 0), 0)	/* ccos (0.75 + 1.25 i) == 1.38173873063425888530729933139078645 - 1.09193013555397466170919531722024128 i  */
 #define DELTA393 CHOOSE(BUILD_COMPLEX (0, 1), 0, BUILD_COMPLEX (0, 1), BUILD_COMPLEX (0, 1), 0, BUILD_COMPLEX (0, 1))	/* ccos (-2 - 3 i) == -4.18962569096880723013255501961597373 - 9.10922789375533659797919726277886212 i  */
 #define DELTA431 CHOOSE(0, BUILD_COMPLEX (1, 1), BUILD_COMPLEX (1, 1), 0, BUILD_COMPLEX (1, 1), BUILD_COMPLEX (1, 1))	/* ccosh (0.75 + 1.25 i) == 0.408242591877968807788852146397499084 + 0.780365930845853240391326216300863152 i  */
@@ -111,8 +111,8 @@
 #define DELTA848 CHOOSE(BUILD_COMPLEX (5, 25), 0, BUILD_COMPLEX (0, 1), BUILD_COMPLEX (5, 25), 0, BUILD_COMPLEX (0, 1))	/* ctanh (-2 - 3 i) == -0.965385879022133124278480269394560686 + 0.988437503832249372031403430350121098e-2 i  */
 #define DELTA856 CHOOSE(0, 1, 0, 0, 1, 0)	/* erf (1.25) == 0.922900128256458230136523481197281140  */
 #define DELTA866 CHOOSE(0, 0, 1, 0, 0, 1)	/* erfc (0.75) == 0.288844366346484868401062165408589223  */
-#define DELTA867 CHOOSE(1, 0, 0, 1, 0, 0)	/* erfc (1.25) == 0.0770998717435417698634765188027188596  */
-#define DELTA868 CHOOSE(0, 1, 0, 0, 1, 0)	/* erfc (2.0) == 0.00467773498104726583793074363274707139  */
+#define DELTA867 CHOOSE(1, 0, 1, 1, 0, 0)	/* erfc (1.25) == 0.0770998717435417698634765188027188596  */
+#define DELTA868 CHOOSE(0, 1, 1, 0, 1, 0)	/* erfc (2.0) == 0.00467773498104726583793074363274707139  */
 #define DELTA869 CHOOSE(1, 1, 0, 1, 1, 0)	/* erfc (4.125) == 0.542340079956506600531223408575531062e-8  */
 #define DELTA879 CHOOSE(0, 0, 0, 1, 0, 0)	/* exp (0.75) == 2.11700001661267466854536981983709561  */
 #define DELTA880 CHOOSE(0, 0, 0, 16, 0, 0)	/* exp (50.0) == 5184705528587072464087.45332293348538  */
@@ -120,7 +120,7 @@
 #define DELTA887 CHOOSE(8, 0, 0, 8, 0, 0)	/* exp10 (3) == 1000  */
 #define DELTA888 CHOOSE(1, 0, 0, 1, 0, 0)	/* exp10 (-1) == 0.1  */
 #define DELTA891 CHOOSE(2, 0, 0, 2, 0, 0)	/* exp10 (0.75) == 5.62341325190349080394951039776481231  */
-#define DELTA907 CHOOSE(0, 0, 0, 1, 0, 0)	/* expm1 (1) == M_El - 1.0  */
+#define DELTA907 CHOOSE(0, 1, 1, 1, 0, 0)	/* expm1 (1) == M_El - 1.0  */
 #define DELTA1092 CHOOSE(1, 1, 0, 1, 1, 0)	/* gamma (-0.5) == log(2*sqrt(pi))  */
 #define DELTA1101 CHOOSE(0, 0, 1, 0, 0, 1)	/* hypot (0.7, 12.4) == 12.419742348374220601176836866763271  */
 #define DELTA1102 CHOOSE(0, 0, 1, 0, 0, 1)	/* hypot (-0.7, 12.4) == 12.419742348374220601176836866763271  */
@@ -164,13 +164,13 @@
 #define DELTA1222 CHOOSE(1, 1, 2, 1, 1, 2)	/* lgamma (1.2) == -0.853740900033158497197028392998854470e-1  */
 #define DELTA1290 CHOOSE(0, 0, 1, 0, 0, 1)	/* log (e) == 1  */
 #define DELTA1305 CHOOSE(1, 0, 1, 1, 0, 1)	/* log10 (e) == log10(e)  */
-#define DELTA1306 CHOOSE(1, 0, 0, 1, 0, 0)	/* log10 (0.75) == -0.124938736608299953132449886193870744  */
+#define DELTA1306 CHOOSE(1, 1, 2, 1, 0, 0)	/* log10 (0.75) == -0.124938736608299953132449886193870744  */
 #define DELTA1836 CHOOSE(0, 1, 0, 0, 1, 0)	/* sin (0.80190127184058835) == 0.71867942238767868  */
 #define DELTA1848 CHOOSE(1, 1, 1, 1, 1, 1)	/* sincos (pi/2, &sin_res, &cos_res) puts 0 in cos_res  */
 #define DELTA1851 CHOOSE(1, 1, 1, 1, 1, 1)	/* sincos (M_PI_6l*2.0, &sin_res, &cos_res) puts 0.86602540378443864676372317075293616 in sin_res  */
 #define DELTA1852 CHOOSE(0, 1, 1, 0, 1, 1)	/* sincos (M_PI_6l*2.0, &sin_res, &cos_res) puts 0.5 in cos_res  */
 #define DELTA1862 CHOOSE(0, 1, 0, 1, 0, 0)	/* sinh (0.75) == 0.822316731935829980703661634446913849  */
-#define DELTA1883 CHOOSE(0, 1, 0, 0, 1, 0)	/* tan (pi/4) == 1  */
+#define DELTA1883 CHOOSE(0, 1, 1, 0, 1, 0)	/* tan (pi/4) == 1  */
 #define DELTA1901 CHOOSE(0, 0, 1, 0, 0, 1)	/* tgamma (0.5) == sqrt (pi)  */
 #define DELTA1902 CHOOSE(1, 2, 1, 1, 2, 1)	/* tgamma (-0.5) == -2 sqrt (pi)  */
 #define DELTA1904 CHOOSE(1, 0, 0, 1, 0, 0)	/* tgamma (4) == 6  */

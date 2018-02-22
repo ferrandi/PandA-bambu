@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -458,6 +458,103 @@ void DiscrepancyAnalysisCWriter::writePostInstructionInfo
 
       indented_output_stream->Append("\\n\");\n");
 
+      ///check if we need to add a check for floating operation correctness
+      if(g_as_node)
+      {
+         tree_nodeRef rhs = GET_NODE(g_as_node->op1);
+         if (rhs->get_kind() == call_expr_K || rhs->get_kind() == aggr_init_expr_K)
+         {
+            indented_output_stream->Append("//" + oper->get_name() + "\n");
+            const OpNodeInfoConstRef node_info = instrGraph->CGetOpNodeInfo(statement);
+            THROW_ASSERT(not node_info->called.empty(),
+                         "rhs of gimple_assign node " + STR(st_tn_id) + " is a call_expr but does not actually call a function");
+            THROW_ASSERT(node_info->called.size() == 1,
+                         "rhs of gimple_assign node " + STR(st_tn_id) + " is a call_expr but calls more than a function");
+            const unsigned int called_id = *node_info->called.begin();
+            const BehavioralHelperConstRef BHC = AppM->CGetFunctionBehavior(called_id)->CGetBehavioralHelper();
+            if (BHC->has_implementation() and BHC->function_has_to_be_printed(called_id))
+            {
+               call_expr *ce = GetPointer<call_expr>(rhs);
+               const std::vector<tree_nodeRef> & actual_args = ce->args;
+               tree_nodeRef op0 = GET_NODE(ce->fn);
+               if(op0->get_kind() == addr_expr_K && (actual_args.size() == 1 || actual_args.size() == 2))
+               {
+                  unary_expr *ue = GetPointer<unary_expr>(op0);
+                  tree_nodeRef fn = GET_NODE(ue->op);
+                  THROW_ASSERT(fn->get_kind() == function_decl_K, "tree node not currently supported " + fn->get_kind_text());
+                  function_decl *fd = GetPointer<function_decl>(fn);
+                  if(fd)
+                  {
+                     std::map<std::string, std::pair<unsigned int,std::string>>
+                           basic_unary_operations_relation = {{"__int32_to_float32if", {0, "(float)"}},
+                                                              {"__int32_to_float64if", {1, "(double)"}},
+                                                              {"__uint32_to_float32if", {0, "(float)"}},
+                                                              {"__uint32_to_float64if", {1, "(double)"}},
+                                                              {"__int64_to_float32if", {0, "(float)"}},
+                                                              {"__int64_to_float64if", {1, "(double)"}},
+                                                              {"__uint64_to_float32if", {0, "(float)"}},
+                                                              {"__uint64_to_float64if", {1, "(double)"}},
+                                                              {"__float32_to_int32_round_to_zeroif", {2, "(int)"}},
+                                                              {"__float32_to_int64_round_to_zeroif", {2, "(long long int)"}},
+                                                              {"__float32_to_uint32_round_to_zeroif", {2, "(unsigned int)"}},
+                                                              {"__float32_to_uint64_round_to_zeroif", {2, "(unsigned long long int)"}},
+                                                              {"__float64_to_int32_round_to_zeroif", {2, "(int)"}},
+                                                              {"__float64_to_int64_round_to_zeroif", {2, "(long long int)"}},
+                                                              {"__float64_to_uint32_round_to_zeroif", {2, "(unsigned int)"}},
+                                                              {"__float64_to_uint64_round_to_zeroif", {2, "(unsigned long long int)"}},
+                                                             };
+                     std::map<std::string, std::pair<bool,std::string>>
+                           basic_binary_operations_relation = {{"__float32_addif", {false, "+"}},
+                                                               {"__float64_addif", {true, "+"}},
+                                                               {"__float32_subif", {false, "-"}},
+                                                               {"__float64_subif", {true, "-"}},
+                                                               {"__float32_mulif", {false, "*"}},
+                                                               {"__float64_mulif", {true, "*"}},
+                                                               {"__float32_divif", {false, "/"}},
+                                                               {"__float64_divif", {true, "/"}},
+                                                               {"__float32_leif", {false, "<="}},
+                                                               {"__float64_leif", {true, "<="}},
+                                                               {"__float32_ltif", {false, "<"}},
+                                                               {"__float64_ltif", {true, "<"}},
+                                                               {"__float32_geif", {false, ">="}},
+                                                               {"__float64_geif", {true, ">="}},
+                                                               {"__float32_gtif", {false, ">"}},
+                                                               {"__float64_gtif", {true, ">"}},
+                                                              };
+                     std::string var1 = BHC->PrintVariable(GET_INDEX_NODE(actual_args.at(0)));
+                     if(basic_unary_operations_relation.find(oper->get_name()) != basic_unary_operations_relation.end())
+                     {
+                        std::string computation = "("  + basic_unary_operations_relation.find(oper->get_name())->second.second + var1 + ")";
+                        std::string check_string0 = var_name + "==" + computation;
+                        if(basic_unary_operations_relation.find(oper->get_name())->second.first<2)
+                        {
+                           std::string check_string1 = (basic_unary_operations_relation.find(oper->get_name())->second.first ? "_FPs64Mismatch_" : "_FPs32Mismatch_") +
+                                                       std::string("(") + computation + ", " + var_name + "," + STR(Param->getOption<double>(OPT_max_ulp)) + ")";
+                           indented_output_stream->Append((basic_unary_operations_relation.find(oper->get_name())->second.first ? "_CheckBuiltinFPs64_" : "_CheckBuiltinFPs32_") +
+                                                          std::string("(\"") + check_string0 + "\", " + check_string1 + "," + computation + "," + var_name + "," + var1 + ",0);\n");
+                        }
+                        else
+                        {
+                           indented_output_stream->Append("if(" + var_name + "!=" + computation +
+                                                          ") { printf(\"\\n\\n***********************************************************\\nERROR ON A BASIC FLOATING POINT OPERATION : %s : expected=%d res=%d a=%a\\n***********************************************************\\n\\n\", \"" + check_string0 + "\", "+ computation +", " + var_name + ", "+var1+");\nexit(1);\n}\n");
+                        }
+                     }
+                     else if(basic_binary_operations_relation.find(oper->get_name()) != basic_binary_operations_relation.end())
+                     {
+                        std::string var2 = BHC->PrintVariable(GET_INDEX_NODE(actual_args.at(1)));
+                        std::string computation = "(" +var1 + basic_binary_operations_relation.find(oper->get_name())->second.second + var2 + ")";
+                        std::string check_string0 = var_name + "==" + computation;
+                        std::string check_string1 = (basic_binary_operations_relation.find(oper->get_name())->second.first ? "_FPs64Mismatch_" : "_FPs32Mismatch_") +
+                                                    std::string("(") + computation + ", " + var_name + "," + STR(Param->getOption<double>(OPT_max_ulp)) + ")";
+                        indented_output_stream->Append((basic_binary_operations_relation.find(oper->get_name())->second.first ? "_CheckBuiltinFPs64_" : "_CheckBuiltinFPs32_") +
+                                                       std::string("(\"") + check_string0 + "\", " + check_string1 + "," + computation + "," + var_name + "," + var1 + "," + var2 + ");\n");
+                     }
+                  }
+               }
+            }
+         }
+      }
+
    }
    return;
 }
@@ -596,7 +693,17 @@ void DiscrepancyAnalysisCWriter::DeclareLocalVariables
 
 void DiscrepancyAnalysisCWriter::WriteFunctionImplementation(unsigned int function_index)
 {
+   const FunctionBehaviorConstRef FB = AppM->CGetFunctionBehavior(function_index);
+   const BehavioralHelperConstRef behavioral_helper = FB->CGetBehavioralHelper();
+   const std::string& funName = behavioral_helper->get_function_name();
+   tree_nodeRef node_fun = TM->GetTreeNode(function_index);
+   THROW_ASSERT(GetPointer<function_decl>(node_fun), "expected a function decl");
+   bool prepend_static = not tree_helper::is_static(TM, function_index) and not tree_helper::is_extern(TM, function_index) and (funName != "main");
+   if (prepend_static)
+      GetPointer<function_decl>(node_fun)->static_flag = true;
    CWriter::WriteFunctionImplementation(function_index);
+   if (prepend_static)
+      GetPointer<function_decl>(node_fun)->static_flag = false;
 }
 
 void DiscrepancyAnalysisCWriter::WriteBBHeader(unsigned int bb_number)
@@ -609,10 +716,16 @@ void DiscrepancyAnalysisCWriter::WriteFunctionDeclaration(const unsigned int fun
 {
    const FunctionBehaviorConstRef FB = AppM->CGetFunctionBehavior(funId);
    const BehavioralHelperConstRef behavioral_helper = FB->CGetBehavioralHelper();
-   const std::string & funName = behavioral_helper->get_function_name();
-   if (not tree_helper::is_static(TM, funId) and not tree_helper::is_extern(TM, funId) and (funName != "main"))
-      indented_output_stream->Append("static ");
+   const std::string& funName = behavioral_helper->get_function_name();
+   tree_nodeRef node_fun = TM->GetTreeNode(funId);
+   THROW_ASSERT(GetPointer<function_decl>(node_fun), "expected a function decl");
+   bool prepend_static = not tree_helper::is_static(TM, funId) and not tree_helper::is_extern(TM, funId) and (funName != "main");
+   if (prepend_static)
+      GetPointer<function_decl>(node_fun)->static_flag = true;
    HLSCWriter::WriteFunctionDeclaration(funId);
+   if (prepend_static)
+      GetPointer<function_decl>(node_fun)->static_flag = false;
+
 }
 
 void DiscrepancyAnalysisCWriter::WriteBuiltinWaitCall()

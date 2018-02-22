@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -84,12 +84,12 @@ DesignFlowStep_Status values_scheme::InternalExec()
    const std::list<vertex> & support = HLS->Rliv->get_support();
 
    const std::list<vertex>::const_iterator vEnd = support.end();
-   for(std::list<vertex>::const_iterator vIt = support.begin(); vIt != vEnd; vIt++)
+   for(std::list<vertex>::const_iterator vIt = support.begin(); vIt != vEnd; ++vIt)
    {
       //std::cerr << "current state for sv " << HLS->Rliv->get_name(*vIt) << std::endl;
       const std::set<unsigned int>& live = HLS->Rliv->get_live_in(*vIt);
       const std::set<unsigned int>::const_iterator k_end = live.end();
-      for(std::set<unsigned int>::const_iterator k = live.begin(); k != k_end; k++)
+      for(std::set<unsigned int>::const_iterator k = live.begin(); k != k_end; ++k)
       {
          if(HLS->storage_value_information->storage_index_map.find(*k) == HLS->storage_value_information->storage_index_map.end())
          {

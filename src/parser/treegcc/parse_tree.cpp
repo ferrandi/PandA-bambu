@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -75,7 +75,7 @@ tree_managerRef ParseTreeFile(const ParameterConstRef Param, const std::string& 
    {
       std::cerr << msg << std::endl;
    }
-   catch (const std::string & msg)
+   catch (const std::string& msg)
    {
       std::cerr << msg << std::endl;
    }

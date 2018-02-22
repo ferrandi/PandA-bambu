@@ -34,13 +34,6 @@ lib_exact_evaluation_la_CPPFLAGS = \
 noinst_HEADERS =
 lib_exact_evaluation_la_SOURCES =
 
-if BUILD_LIB_EXPERIMENTAL
-   noinst_HEADERS += num_AF_edges_evaluation.hpp edges_reduction_evaluation.hpp
-   lib_exact_evaluation_la_SOURCES += num_AF_edges_evaluation.cpp edges_reduction_evaluation.cpp
-   lib_exact_evaluation_la_CPPFLAGS += \
-      -I$(top_srcdir)/src/design_flows/backend/ToDataFile
-endif
-
 if BUILD_LIB_RTL
    lib_exact_evaluation_la_CPPFLAGS += \
       -I$(top_srcdir)/src/rtl

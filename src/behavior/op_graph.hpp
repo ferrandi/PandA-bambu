@@ -12,7 +12,7 @@
 *                       Politecnico di Milano - DEIB
 *                        System Architectures Group
 *             ***********************************************
-*              Copyright (c) 2004-2017 Politecnico di Milano
+*              Copyright (c) 2004-2018 Politecnico di Milano
 *
 *   This file is part of the PandA framework.
 *
@@ -589,7 +589,7 @@ struct OpGraphInfo : public GraphInfo
     * Constructor
     * @param BH is the helper of the function associated with this graph
     */
-   OpGraphInfo(const BehavioralHelperConstRef BH);
+   explicit OpGraphInfo(const BehavioralHelperConstRef BH);
 };
 
 ///Refcount definition for OpGraphInfo
@@ -606,7 +606,7 @@ class OpVertexSet : public std::unordered_set<vertex>
       /**
        * Constructor
        */
-      OpVertexSet(const OpGraphConstRef op_graph);
+      explicit OpVertexSet(const OpGraphConstRef op_graph);
 };
 
 /**
@@ -619,7 +619,7 @@ class OpVertexMap : public std::unordered_map<vertex, value>
       /**
        * Constructor
        */
-      OpVertexMap(const OpGraphConstRef) :
+      explicit OpVertexMap(const OpGraphConstRef) :
          std::unordered_map<vertex, value>()
       {}
 };
@@ -630,7 +630,7 @@ class OpEdgeSet : public std::unordered_set<EdgeDescriptor>
       /**
        * Constructor
        */
-      OpEdgeSet(const OpGraphConstRef op_graph);
+      explicit OpEdgeSet(const OpGraphConstRef op_graph);
 };
 #else
 class OpVertexSorter : std::binary_function<vertex, vertex, bool>
@@ -645,7 +645,7 @@ class OpVertexSorter : std::binary_function<vertex, vertex, bool>
        * Constructor
        * @param op_graph is the operation graph to which vertices belong
        */
-      OpVertexSorter(const OpGraphConstRef op_graph);
+      explicit OpVertexSorter(const OpGraphConstRef op_graph);
 
       /**
        * Compare position of two vertices
@@ -665,7 +665,7 @@ class OpVertexSet : public std::set<vertex, OpVertexSorter>
       /**
        * Constructor
        */
-      OpVertexSet(const OpGraphConstRef op_graph);
+      explicit OpVertexSet(const OpGraphConstRef op_graph);
 };
 
 /**
@@ -678,7 +678,7 @@ class OpVertexMap : public std::map<vertex, value, OpVertexSorter>
       /**
        * Constructor
        */
-      OpVertexMap(const OpGraphConstRef op_graph) :
+      explicit OpVertexMap(const OpGraphConstRef op_graph) :
          std::map<vertex, value, OpVertexSorter>(OpVertexSorter(op_graph))
       {}
 };
@@ -695,7 +695,7 @@ class OpEdgeSorter : std::binary_function<EdgeDescriptor, EdgeDescriptor, bool>
        * Constructor
        * @param op_graph is the operation graph to which vertices belong
        */
-      OpEdgeSorter(const OpGraphConstRef op_graph);
+      explicit OpEdgeSorter(const OpGraphConstRef op_graph);
 
       /**
        * Compare position of two edges
@@ -712,7 +712,7 @@ class OpEdgeSet : public std::set<EdgeDescriptor, OpEdgeSorter>
       /**
        * Constructor
        */
-      OpEdgeSet(const OpGraphConstRef op_graph);
+      explicit OpEdgeSet(const OpGraphConstRef op_graph);
 };
 #endif
 
@@ -803,7 +803,7 @@ struct OpGraph : public graph
        * @param selector is the selector used to filter the bulk graph.
        * @param sub is the set of vertices on which the graph is filtered.
        */
-      OpGraph(const OpGraphsCollectionRef g, int selector, std::unordered_set<boost::graph_traits<OpGraphsCollection>::vertex_descriptor > sub);
+      OpGraph(const OpGraphsCollectionRef g, int selector, const std::unordered_set<boost::graph_traits<OpGraphsCollection>::vertex_descriptor > & sub);
 
       /**
        * Destructor
@@ -815,7 +815,7 @@ struct OpGraph : public graph
        * @param file_name is the file where the graph has to be printed
        * @param detail_level is the detail level of the printed graph
        */
-      void WriteDot(const std::string & file_name, const int detail_level = 0) const;
+      void WriteDot(const std::string& file_name, const int detail_level = 0) const;
 
 #if HAVE_HLS_BUILT
       /**
@@ -824,7 +824,7 @@ struct OpGraph : public graph
        * @param HLS is the high level synthesis structure
        * @param critical_paths is the set of operations belonging to critical paths
        */
-      void WriteDot(const std::string & file_name, const hlsConstRef HLS, const CustomSet<unsigned int> critical_paths) const;
+      void WriteDot(const std::string& file_name, const hlsConstRef HLS, const CustomSet<unsigned int> critical_paths) const;
 #endif
 
       /**

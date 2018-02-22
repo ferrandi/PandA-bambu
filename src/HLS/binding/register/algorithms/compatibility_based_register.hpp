@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -62,7 +62,7 @@ class compatibility_based_register : public reg_binding_creator
           * Constructor with selector
           * @param _weight is the weight to be associated with the edge
           */
-         edge_compatibility_property(int _weight) :
+         explicit edge_compatibility_property(int _weight) :
             weight(_weight) {}
 
       };

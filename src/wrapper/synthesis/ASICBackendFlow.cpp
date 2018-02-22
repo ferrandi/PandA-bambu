@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -56,7 +56,7 @@
 #include "Parameter.hpp"
 #include "fileIO.hpp"
 
-ASICBackendFlow::ASICBackendFlow(const ParameterConstRef _Param, const std::string & _flow_name, const target_managerRef _target) :
+ASICBackendFlow::ASICBackendFlow(const ParameterConstRef _Param, const std::string& _flow_name, const target_managerRef _target) :
    BackendFlow(_Param, _flow_name, _target)
 {
    PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, " .:: Creating ASIC Backend Flow ::.");
@@ -101,13 +101,13 @@ void ASICBackendFlow::create_sdc(const DesignParametersRef dp)
    dp->parameter_values[PARAM_sdc_file] = sdc_filename;
 }
 
-void ASICBackendFlow::InitDesignParameters(const DesignParametersRef dp)
+void ASICBackendFlow::InitDesignParameters()
 {
-   create_sdc(dp);
+   create_sdc(actual_parameters);
 
    for (unsigned int i = 0; i < steps.size(); i++)
    {
-      steps[i]->tool->EvaluateVariables(dp);
+      steps[i]->tool->EvaluateVariables(actual_parameters);
    }
 }
 

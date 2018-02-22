@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -109,14 +109,14 @@ CallGraph::CallGraph(const CallGraphsCollectionRef call_graphs_collection, const
    graph(call_graphs_collection.get(), _selector)
 {}
 
-CallGraph::CallGraph(const CallGraphsCollectionRef call_graphs_collection, const int _selector, const std::unordered_set<vertex> _vertices) :
+CallGraph::CallGraph(const CallGraphsCollectionRef call_graphs_collection, const int _selector, const std::unordered_set<vertex> &_vertices) :
    graph(call_graphs_collection.get(), _selector, _vertices)
 {}
 
 CallGraph::~CallGraph()
 {}
 
-void CallGraph::WriteDot(const std::string & file_name) const
+void CallGraph::WriteDot(const std::string& file_name) const
 {
    const std::string output_directory = collection->parameters->getOption<std::string>(OPT_dot_directory);
    if (!boost::filesystem::exists(output_directory))
@@ -141,7 +141,7 @@ void FunctionWriter::operator()(std::ostream & out, const vertex & v) const
    if (mem_nodeID.size())
    {
       out << "\\nMEMORY:";
-      for(std::set<unsigned int>::const_iterator l = mem_nodeID.begin(); l != mem_nodeID.end(); l++)
+      for(std::set<unsigned int>::const_iterator l = mem_nodeID.begin(); l != mem_nodeID.end(); ++l)
       {
          std::string label = FB->CGetBehavioralHelper()->PrintVariable(*l);
          add_escape(label, "\"");

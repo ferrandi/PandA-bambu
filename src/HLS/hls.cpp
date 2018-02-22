@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -130,7 +130,7 @@ void hls::xload(const xml_element* node, const OpGraphConstRef data)
    std::map<std::string, vertex> String2Vertex;
    std::map<std::pair<std::string, std::string>, std::list<unsigned int> > String2Id;
 
-   for(OpVertexSet::const_iterator op = operations.begin(); op != operations.end(); op++)
+   for(OpVertexSet::const_iterator op = operations.begin(); op != operations.end(); ++op)
    {
       String2Vertex[GET_NAME(data, *op)] = *op;
    }
@@ -196,7 +196,7 @@ void hls::xwrite(xml_element* rootnode, const OpGraphConstRef data)
 
    xml_element* Enode = rootnode->add_child_element("scheduling");
 
-   for(OpVertexSet::const_iterator op = operations.begin(); op != operations.end(); op++)
+   for(OpVertexSet::const_iterator op = operations.begin(); op != operations.end(); ++op)
    {
       xml_element* EnodeC = Enode->add_child_element("scheduling_constraints");
       std::string vertex_name = GET_NAME(data, *op);
@@ -220,7 +220,7 @@ void hls::xwrite(xml_element* rootnode, const OpGraphConstRef data)
       std::map<std::string, unsigned int> resources;
       const technology_managerRef TM = HLS_T->get_technology_manager();
       computeResources(datapath->get_circ(), TM, resources);
-      for (std::map<std::string, unsigned int>::iterator r = resources.begin(); r != resources.end(); r++)
+      for (std::map<std::string, unsigned int>::iterator r = resources.begin(); r != resources.end(); ++r)
       {
          xml_element* EnodeC = Enode->add_child_element("resource");
          std::string name = r->first;
@@ -258,7 +258,7 @@ void hls::PrintResources() const
    if(output_level <= OUTPUT_LEVEL_PEDANTIC)
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "");
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "-->Summary of resources:");
-   for (std::map<std::string, unsigned int>::iterator r = resources.begin(); r != resources.end(); r++)
+   for (std::map<std::string, unsigned int>::iterator r = resources.begin(); r != resources.end(); ++r)
    {
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "--- - " + r->first + ": " + STR(r->second));
    }

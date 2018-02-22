@@ -1,10 +1,4 @@
 #this file is src/frontend_analysis/behavior_analysis/Makefile.am
-if BUILD_BAMBU
-if BUILD_LIB_EXPERIMENTAL
-   SUBDIRS = reduced_pdg_computation
-   DIST_SUBDIRS = reduced_pdg_computation
-endif
-endif
 METASOURCES = AUTO
 noinst_LTLIBRARIES = lib_behavior_analysis.la
 
@@ -80,31 +74,6 @@ if BUILD_BAMBU
       add_op_phi_flow_edges.cpp
    lib_behavior_analysis_la_CPPFLAGS += \
       -I$(top_srcdir)/src/design_flows/technology
-if BUILD_LIB_EXPERIMENTAL
-   noinst_HEADERS += speculation_edges_computation.hpp
-   lib_behavior_analysis_la_SOURCES += speculation_edges_computation.cpp
-   lib_behavior_analysis_la_CPPFLAGS += \
-      -I$(top_srcdir)/src/algorithms/graph_helpers \
-      -I$(top_srcdir)/src/frontend_analysis/behavior_analysis/reduced_pdg_computation \
-      -I$(top_srcdir)/src/logic_synthesis/2lev/src/c-core \
-      -I$(top_srcdir)/src/logic_synthesis/2lev/src/tigre \
-      -I$(top_srcdir)/src/rtl
-endif
-endif
-
-if BUILD_BAMBU
-if BUILD_LIB_EXPERIMENTAL
-  noinst_HEADERS += extended_pdg_computation.hpp parallel_regions_graph_computation.hpp
-  lib_behavior_analysis_la_SOURCES += extended_pdg_computation.cpp parallel_regions_graph_computation.cpp
-if BUILD_LIB_CUDD
-  noinst_HEADERS += optimized_AF_computation.hpp
-  lib_behavior_analysis_la_CPPFLAGS += $(CUDD_CPPFLAGS) -I$(top_srcdir)/src/bdd \
-                      -I$(top_srcdir)/src/logic_synthesis/2lev/src/c-core \
-                      -I$(top_srcdir)/src/logic_synthesis/2lev/src/tigre
-  lib_behavior_analysis_la_LIBADD += $(CUDD_LIBS)
-  lib_behavior_analysis_la_SOURCES += optimized_AF_computation.cpp
-endif
-endif
 endif
 
 if BUILD_LIB_HOST_PROFILING
@@ -114,46 +83,11 @@ if BUILD_LIB_HOST_PROFILING
 
    noinst_HEADERS += \
       basic_blocks_profiling.hpp \
-      dump_profiling_data.hpp \
-      hpp_profiling.hpp \
-      loops_profiling.hpp \
-      profiling.hpp \
-      read_profiling_data.hpp \
-      tp_profiling.hpp
+      host_profiling.hpp
+
    lib_behavior_analysis_la_SOURCES += \
       basic_blocks_profiling.cpp \
-      dump_profiling_data.cpp \
-      hpp_profiling.cpp \
-      loops_profiling.cpp \
-      profiling.cpp \
-      read_profiling_data.cpp \
-      tp_profiling.cpp
-if BUILD_ZEBU
-     noinst_HEADERS += \
-        check_pipelinable_loops.hpp \
-        probability_path.hpp
-     lib_behavior_analysis_la_SOURCES += \
-        check_pipelinable_loops.cpp \
-        probability_path.cpp
-endif
-endif
-
-if BUILD_ZEBU
-   lib_behavior_analysis_la_CPPFLAGS += \
-      -I$(top_srcdir)/src/design_flows/codesign/partitioning/graph_partitioning \
-      -I$(top_srcdir)/src/pragma
-   noinst_HEADERS += \
-      add_op_ecfg_edges.hpp \
-      loop_regions_flow_computation.hpp
-   lib_behavior_analysis_la_SOURCES += \
-      add_op_ecfg_edges.cpp \
-      loop_regions_flow_computation.cpp
-if BUILD_LIB_EXPERIMENTAL
-      noinst_HEADERS += \
-         refined_aggregate_data_flow_analysis.hpp
-      lib_behavior_analysis_la_SOURCES += \
-         refined_aggregate_data_flow_analysis.cpp
-endif
+      host_profiling.cpp
 endif
 
 DOX_TAGFILES =

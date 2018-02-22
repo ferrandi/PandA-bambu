@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -211,7 +211,7 @@ class tree_manipulation
        * @param  strg is the identifier string associated with the identifier_node.
        * @return the tree_reindex node of the identifier_node created.
        */
-      tree_nodeRef create_identifier_node(const std::string strg);
+      tree_nodeRef create_identifier_node(const std::string&strg);
 
 
       ///DECL_NODES
@@ -302,7 +302,7 @@ class tree_manipulation
             bool static_flag = false,
             bool register_flag = false,
             bool readonly_flag = false,
-            const std::string bit_values="");
+            const std::string&bit_values="");
 
       ///TYPE_OBJ
 
@@ -406,7 +406,7 @@ class tree_manipulation
        * @param  bb_index is the basic block index associated with the gimple statement
        * @return the tree_reindex node of the gimple_assign.
        */
-      tree_nodeRef create_gimple_modify_stmt(const tree_nodeRef op0, const tree_nodeRef op1, const std::string & srcp, const unsigned int bb_index);
+      tree_nodeRef create_gimple_modify_stmt(const tree_nodeRef op0, const tree_nodeRef op1, const std::string& srcp, const unsigned int bb_index);
 
       /**
        * Create gimple assignment
@@ -415,10 +415,10 @@ class tree_manipulation
        * @param bb_index is the index of the basic block index
        * @param srcp is the srcp to be assigned
        */
-      tree_nodeRef CreateGimpleAssign(const tree_nodeRef type, const tree_nodeRef op, unsigned int bb_index, const std::string & srcp);
+      tree_nodeRef CreateGimpleAssign(const tree_nodeRef type, const tree_nodeRef op, unsigned int bb_index, const std::string& srcp);
 
       ///GIMPLE_CALL
-      tree_nodeRef create_gimple_call(const tree_nodeConstRef called_function, const std::vector<tree_nodeRef> args, const std::string srcp, const unsigned int bb_index);
+      tree_nodeRef create_gimple_call(const tree_nodeConstRef called_function, const std::vector<tree_nodeRef>& args, const std::string&srcp, const unsigned int bb_index);
 
       ///GIMPLE_COND
 
@@ -637,7 +637,7 @@ class tree_manipulation
        * @param srcp is the srcp to be associated with the call
        * @return the tree reindex of the created node
        */
-      tree_nodeRef CreateCallExpr(const tree_nodeConstRef called_function, const std::vector<tree_nodeRef> args, const std::string & srcp);
+      tree_nodeRef CreateCallExpr(const tree_nodeConstRef called_function, const std::vector<tree_nodeRef>& args, const std::string& srcp);
 
       /**
        * Create an addr_expr
@@ -645,7 +645,7 @@ class tree_manipulation
        * @param srcp is the srcp to be associated with the call
        * @return the tree reindex of the created node
        */
-      tree_nodeRef CreateAddrExpr(const tree_nodeConstRef tn, const std::string & srcp);
+      tree_nodeRef CreateAddrExpr(const tree_nodeConstRef tn, const std::string& srcp);
 
       /**
        * Create a gimple_assign with op0 a new ssa_name, and op1 an addr_expr
@@ -655,7 +655,7 @@ class tree_manipulation
        * @param srcp is the srcp to be associated with the call
        * @return the tree reindex of the created node
        */
-      tree_nodeRef CreateGimpleAssignAddrExpr(const tree_nodeConstRef tn, const unsigned int bb_index, const std::string & srcp);
+      tree_nodeRef CreateGimpleAssignAddrExpr(const tree_nodeConstRef tn, const unsigned int bb_index, const std::string& srcp);
 
       /**
        * Create a vector bool type

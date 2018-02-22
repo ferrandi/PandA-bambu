@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -131,7 +131,7 @@ DesignFlowStep_Status SDCCodeMotion::InternalExec()
    THROW_ASSERT(sdc_scheduling_step, "SDC scheduling hls step not found");
    const auto sdc_scheduling = GetPointer<const SDCScheduling>(design_flow_graph->CGetDesignFlowStepInfo(sdc_scheduling_step)->design_flow_step);
    const auto & movements_list = sdc_scheduling->movements_list;
-   for(const auto movement : movements_list)
+   for(const auto& movement : movements_list)
    {
       const auto statement_index = movement[0];
       const auto old_basic_block = movement[1];

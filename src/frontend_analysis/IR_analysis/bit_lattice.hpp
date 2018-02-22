@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -181,7 +181,7 @@ class BitLatticeManipulator
       /**
        * Constructor
        */
-      BitLatticeManipulator(const tree_managerConstRef _TM);
+      explicit BitLatticeManipulator(const tree_managerConstRef _TM);
 
       /**
        * Destructor
@@ -224,7 +224,7 @@ std::string bitstring_to_string(const std::deque<bit_lattice> & bitstring);
 /**
  * inverse of bitstring_to_string
  */
-std::deque<bit_lattice> string_to_bitstring(const std::string & s);
+std::deque<bit_lattice> string_to_bitstring(const std::string& s);
 
 /**
  * Checks if a bitstring is constant

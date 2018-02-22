@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -91,7 +91,7 @@ class OpEdgeWriter : public EdgeWriter
        * Constructor
        * @param _g is the operation graph
        */
-      OpEdgeWriter(const OpGraph * operation_graph);
+      explicit OpEdgeWriter(const OpGraph * operation_graph);
 
       /**
        * Operator which print label of an EdgeDescriptor
@@ -115,7 +115,7 @@ class BBEdgeWriter : public EdgeWriter
        * Constructor
        * @param g is the bb_graph to be printed
        */
-      BBEdgeWriter(const BBGraph * g);
+      explicit BBEdgeWriter(const BBGraph * g);
 
       /**
        * Operator used to print an edge
@@ -172,7 +172,7 @@ class BBWriter : public VertexWriter
        * @param g is the graph to be printed
        * @param annotated is the set of the vertices to be annotated
        */
-      BBWriter(const BBGraph * g, std::unordered_set<vertex> annotated = std::unordered_set<vertex>());
+      BBWriter(const BBGraph * g, const std::unordered_set<vertex> &annotated = std::unordered_set<vertex>());
 
       /**
        * Operator used to print the label of a vertex

@@ -11,6 +11,7 @@ lib_intermediate_representations_la_SOURCES = \
 lib_intermediate_representations_la_LIBADD =
 
 lib_intermediate_representations_la_CPPFLAGS = \
+    -I$(top_srcdir)/src/ \
     -I$(top_srcdir)/src/utility \
     -I$(BOOST_DIR) $(all_includes)
 

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -45,13 +45,13 @@
 ///Utility include
 #include "fileIO.hpp"
 
-XMLDomParser::XMLDomParser(const std::string & _name, const std::string & string_to_be_parsed) :
+XMLDomParser::XMLDomParser(const std::string& _name, const std::string& string_to_be_parsed) :
    name(_name),
    to_be_parsed(string_to_be_parsed)
 
 {}
 
-XMLDomParser::XMLDomParser(const std::string filename) :
+XMLDomParser::XMLDomParser(const std::string&filename) :
    name(filename),
    to_be_parsed(filename)
 {}

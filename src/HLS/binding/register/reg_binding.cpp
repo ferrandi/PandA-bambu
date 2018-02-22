@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -95,7 +95,7 @@ unsigned int reg_binding::compute_bitsize(unsigned int r)
 {
    std::set<unsigned int> reg_vars = get_vars(r);
    unsigned int max_bits = 0;
-   for (std::set<unsigned int>::const_iterator var = reg_vars.begin(); var != reg_vars.end(); var++)
+   for (std::set<unsigned int>::const_iterator var = reg_vars.begin(); var != reg_vars.end(); ++var)
    {
       structural_type_descriptorRef node_type = structural_type_descriptorRef(new structural_type_descriptor(*var, HLSMgr->CGetFunctionBehavior(HLS->functionId)->CGetBehavioralHelper()));
       unsigned int node_size = STD_GET_SIZE(node_type);

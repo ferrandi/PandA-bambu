@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -116,10 +116,11 @@
 ///wrapper/treegcc include
 #include "gcc_wrapper.hpp"
 
-TestbenchGenerationBaseStep::TestbenchGenerationBaseStep(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type, const std::string _c_testbench_basename) :
+TestbenchGenerationBaseStep::TestbenchGenerationBaseStep(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type, const std::string& _c_testbench_basename) :
    HLS_step(_parameters, _HLSMgr, _design_flow_manager, _hls_flow_step_type),
    writer(language_writer::create_writer(HDLWriter_Language::VERILOG, _HLSMgr->get_HLS_target()->get_technology_manager(), _parameters)),
    mod(nullptr),
+   target_period(0.0),
    output_directory(parameters->getOption<std::string>(OPT_output_directory) + "/simulation/"),
    c_testbench_basename(_c_testbench_basename)
 {
@@ -376,7 +377,7 @@ void TestbenchGenerationBaseStep::exec_C_testbench()
    if (parameters->isOption(OPT_no_parse_c_python))
    {
       const auto no_parse_files = parameters->getOption<const CustomSet<std::string> >(OPT_no_parse_c_python);
-      for(const auto no_parse_file : no_parse_files)
+      for(const auto& no_parse_file : no_parse_files)
       {
          file_sources.push_back(no_parse_file);
       }
@@ -402,7 +403,7 @@ void TestbenchGenerationBaseStep::exec_C_testbench()
       else
       {
          compiler_flags += " -Wl,--allow-multiple-definition ";
-         for(const auto input_file : parameters->getOption<const CustomSet<std::string> > (OPT_input_file))
+         for(const auto& input_file : parameters->getOption<const CustomSet<std::string> > (OPT_input_file))
          {
             file_sources.push_back(input_file);
          }
@@ -418,7 +419,7 @@ void TestbenchGenerationBaseStep::exec_C_testbench()
       }
       else
       {
-         for(const auto input_file : parameters->getOption<const CustomSet<std::string> > (OPT_input_file))
+         for(const auto& input_file : parameters->getOption<const CustomSet<std::string> > (OPT_input_file))
          {
             main_sources.insert(input_file);
          }
@@ -604,8 +605,7 @@ void TestbenchGenerationBaseStep::write_hdl_testbench(std::string simulation_val
    writer->write("endmodule\n");
 }
 
-void TestbenchGenerationBaseStep::write_initial_block(
-      const std::string simulation_values_path,
+void TestbenchGenerationBaseStep::write_initial_block(const std::string& simulation_values_path,
       bool withMemory,
       const tree_managerConstRef TreeM,
       bool generate_vcd_output)
@@ -653,7 +653,7 @@ void TestbenchGenerationBaseStep::write_initial_block(
              */
             std::string sigscope = sig_scope.first;
             boost::replace_all(sigscope, STR(HIERARCHY_SEPARATOR), ".");
-            for (const std::string & signame : sig_scope.second)
+            for (const std::string& signame : sig_scope.second)
                writer->write("$dumpvars(1, " + sigscope + signame + ");\n");
          }
       }
@@ -1267,7 +1267,7 @@ void TestbenchGenerationBaseStep::end_initial_block() const
    writer->write("end\n");
 }
 
-void TestbenchGenerationBaseStep::open_value_file(std::string input_values_filename) const
+void TestbenchGenerationBaseStep::open_value_file(const std::string& input_values_filename) const
 {
    writer->write_comment("OPEN FILE WITH VALUES FOR SIMULATION\n");
    writer->write("file = $fopen(\"" + input_values_filename + "\",\"r\");\n");
@@ -1283,7 +1283,7 @@ void TestbenchGenerationBaseStep::open_value_file(std::string input_values_filen
    writer->write("end\n");
 }
 
-void TestbenchGenerationBaseStep::open_result_file(std::string result_file) const
+void TestbenchGenerationBaseStep::open_result_file(const std::string& result_file) const
 {
    writer->write_comment("OPEN FILE WHERE results will be written\n");
    writer->write("res_file = $fopen(\"" + result_file + "\",\"w\");\n\n");
@@ -1567,7 +1567,7 @@ void TestbenchGenerationBaseStep::write_sim_time_calc() const
    writer->write("end\n");
 }
 
-void TestbenchGenerationBaseStep::read_input_value_from_file(const std::string &input_name, bool &first_valid_input) const
+void TestbenchGenerationBaseStep::read_input_value_from_file(const std::string&input_name, bool &first_valid_input) const
 {
    if(input_name != CLOCK_PORT_NAME && input_name != RESET_PORT_NAME && input_name != START_PORT_NAME)
    {

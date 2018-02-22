@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2015-2017 Politecnico di Milano
+ *              Copyright (c) 2015-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -61,7 +61,7 @@ class HDLVarDeclFix: public VarDeclFix
        * @param identifier is the identifier to be normalized
        * @return the normalized identifier
        */
-      virtual const std::string Normalize(const std::string identifier) const;
+      virtual const std::string Normalize(const std::string&identifier) const;
 
    public:
       /**

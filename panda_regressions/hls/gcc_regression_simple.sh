@@ -1,150 +1,150 @@
 #!/bin/bash
-`dirname $0`/gcc45_regression_simple_ext_pipelined.sh $@
+$(dirname $0)/gcc45_regression_simple_ext_pipelined.sh $@
 return_value=$?
 if test $return_value != 0; then
    exit $return_value
 fi
-`dirname $0`/gcc46_regression_simple_ext_pipelined.sh $@
+$(dirname $0)/gcc46_regression_simple_ext_pipelined.sh $@
 return_value=$?
 if test $return_value != 0; then
    exit $return_value
 fi
-`dirname $0`/gcc47_regression_simple_ext_pipelined.sh $@
+$(dirname $0)/gcc47_regression_simple_ext_pipelined.sh $@
 return_value=$?
 if test $return_value != 0; then
    exit $return_value
 fi
-`dirname $0`/gcc48_regression_simple_ext_pipelined.sh $@
+$(dirname $0)/gcc48_regression_simple_ext_pipelined.sh $@
 return_value=$?
 if test $return_value != 0; then
    exit $return_value
 fi
-`dirname $0`/gcc49_regression_simple_ext_pipelined.sh $@
+$(dirname $0)/gcc49_regression_simple_ext_pipelined.sh $@
 return_value=$?
 if test $return_value != 0; then
    exit $return_value
 fi
-`dirname $0`/gcc5_regression_simple_ext_pipelined.sh $@
+$(dirname $0)/gcc5_regression_simple_ext_pipelined.sh $@
 return_value=$?
 if test $return_value != 0; then
    exit $return_value
 fi
-`dirname $0`/gcc6_regression_simple_ext_pipelined.sh $@
+$(dirname $0)/gcc6_regression_simple_ext_pipelined.sh $@
 return_value=$?
 if test $return_value != 0; then
    exit $return_value
 fi
-`dirname $0`/gcc7_regression_simple_ext_pipelined.sh $@
+$(dirname $0)/gcc7_regression_simple_ext_pipelined.sh $@
 return_value=$?
 if test $return_value != 0; then
    exit $return_value
 fi
-`dirname $0`/gcc45_regression_simple_default.sh $@
+$(dirname $0)/gcc45_regression_simple_default.sh $@
 return_value=$?
 if test $return_value != 0; then
    exit $return_value
 fi
-`dirname $0`/gcc46_regression_simple_default.sh $@
+$(dirname $0)/gcc46_regression_simple_default.sh $@
 return_value=$?
 if test $return_value != 0; then
    exit $return_value
 fi
-`dirname $0`/gcc47_regression_simple_default.sh $@
+$(dirname $0)/gcc47_regression_simple_default.sh $@
 return_value=$?
 if test $return_value != 0; then
    exit $return_value
 fi
-`dirname $0`/gcc48_regression_simple_default.sh $@
+$(dirname $0)/gcc48_regression_simple_default.sh $@
 return_value=$?
 if test $return_value != 0; then
    exit $return_value
 fi
-`dirname $0`/gcc49_regression_simple_default.sh $@
+$(dirname $0)/gcc49_regression_simple_default.sh $@
 return_value=$?
 if test $return_value != 0; then
    exit $return_value
 fi
-`dirname $0`/gcc5_regression_simple_default.sh $@
+$(dirname $0)/gcc5_regression_simple_default.sh $@
 return_value=$?
 if test $return_value != 0; then
    exit $return_value
 fi
-`dirname $0`/gcc6_regression_simple_default.sh $@
+$(dirname $0)/gcc6_regression_simple_default.sh $@
 return_value=$?
 if test $return_value != 0; then
    exit $return_value
 fi
-`dirname $0`/gcc7_regression_simple_default.sh $@
+$(dirname $0)/gcc7_regression_simple_default.sh $@
 return_value=$?
 if test $return_value != 0; then
    exit $return_value
 fi
-`dirname $0`/gcc45_regression_simple_no_expose_globals.sh $@
+$(dirname $0)/gcc45_regression_simple_no_expose_globals.sh $@
 return_value=$?
 if test $return_value != 0; then
    exit $return_value
 fi
-`dirname $0`/gcc46_regression_simple_no_expose_globals.sh $@
+$(dirname $0)/gcc46_regression_simple_no_expose_globals.sh $@
 return_value=$?
 if test $return_value != 0; then
    exit $return_value
 fi
-`dirname $0`/gcc47_regression_simple_no_expose_globals.sh $@
+$(dirname $0)/gcc47_regression_simple_no_expose_globals.sh $@
 return_value=$?
 if test $return_value != 0; then
    exit $return_value
 fi
-`dirname $0`/gcc48_regression_simple_no_expose_globals.sh $@
+$(dirname $0)/gcc48_regression_simple_no_expose_globals.sh $@
 return_value=$?
 if test $return_value != 0; then
    exit $return_value
 fi
-`dirname $0`/gcc49_regression_simple_no_expose_globals.sh $@
+$(dirname $0)/gcc49_regression_simple_no_expose_globals.sh $@
 return_value=$?
 if test $return_value != 0; then
    exit $return_value
 fi
-`dirname $0`/gcc5_regression_simple_no_expose_globals.sh $@
+$(dirname $0)/gcc5_regression_simple_no_expose_globals.sh $@
 return_value=$?
 if test $return_value != 0; then
    exit $return_value
 fi
-`dirname $0`/gcc6_regression_simple_no_expose_globals.sh $@
+$(dirname $0)/gcc6_regression_simple_no_expose_globals.sh $@
 return_value=$?
 if test $return_value != 0; then
    exit $return_value
 fi
-`dirname $0`/gcc7_regression_simple_no_expose_globals.sh $@
+$(dirname $0)/gcc7_regression_simple_no_expose_globals.sh $@
 return_value=$?
 if test $return_value != 0; then
    exit $return_value
 fi
-`dirname $0`/gcc_regression_simple_Zynq_VVD.sh $@
+$(dirname $0)/gcc_regression_simple_Zynq_VVD.sh $@
 return_value=$?
 if test $return_value != 0; then
    exit $return_value
 fi
-`dirname $0`/gcc_regression_simple_Zynq.sh $@
+$(dirname $0)/gcc_regression_simple_Zynq.sh $@
 return_value=$?
 if test $return_value != 0; then
    exit $return_value
 fi
-`dirname $0`/gcc_regression_simple_CII.sh $@
+$(dirname $0)/gcc_regression_simple_CII.sh $@
 return_value=$?
 if test $return_value != 0; then
    exit $return_value
 fi
-`dirname $0`/gcc_regression_simple_CIIR.sh $@
+$(dirname $0)/gcc_regression_simple_CIIR.sh $@
 return_value=$?
 if test $return_value != 0; then
    exit $return_value
 fi
-`dirname $0`/gcc_regression_simple_ECP3.sh $@
+$(dirname $0)/gcc_regression_simple_ECP3.sh $@
 return_value=$?
 if test $return_value != 0; then
    exit $return_value
 fi
-`dirname $0`/gcc_regression_simple_reset.sh $@
+$(dirname $0)/gcc_regression_simple_reset.sh $@
 return_value=$?
 if test $return_value != 0; then
    exit $return_value

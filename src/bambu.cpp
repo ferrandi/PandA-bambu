@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -149,7 +149,6 @@ int main(int argc, char *argv[])
                   boost::filesystem::remove_all(parameters->getOption<std::string>(OPT_output_temporary_directory));
                }
                return EXIT_SUCCESS;
-               break;
             }
          case PARAMETER_PARSED:
             {
@@ -173,7 +172,7 @@ int main(int argc, char *argv[])
          std::vector<std::string> system_includes;
          gcc_wrapper->GetSystemIncludes(system_includes);
          std::vector<std::string>::const_iterator system_include, system_include_end = system_includes.end();
-         for(system_include = system_includes.begin(); system_include != system_include_end; system_include++)
+         for(system_include = system_includes.begin(); system_include != system_include_end; ++system_include)
          {
             INDENT_OUT_MEX(0, 0, *system_include);
          }
@@ -238,7 +237,6 @@ int main(int argc, char *argv[])
          return EXIT_SUCCESS;
       }
 
-#if HAVE_EXPERIMENTAL
       if(parameters->getOption<bool>(OPT_find_max_cfg_transformations))
       {
          const DesignFlowStepRef find_max_cfg_transformations = GetPointer<const FrontendFlowStepFactory>(frontend_flow_step_factory)->CreateApplicationFrontendFlowStep(FrontendFlowStepType::FIND_MAX_CFG_TRANSFORMATIONS);
@@ -254,7 +252,6 @@ int main(int argc, char *argv[])
          design_flow_manager->Exec();
          return EXIT_SUCCESS;
       }
-#endif
 
       /// pretty printing
       if (parameters->isOption(OPT_pretty_print))

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -125,7 +125,7 @@ void operation::xload(const xml_element* Enode, const technology_nodeRef fu, con
       LOAD_XVFM(supported_types_string, Enode, supported_types);
       std::vector<std::string> types;
       boost::algorithm::split(types, supported_types_string, boost::algorithm::is_any_of("|"));
-      for(std::vector<std::string>::const_iterator type = types.begin(); type != types.end(); type++)
+      for(std::vector<std::string>::const_iterator type = types.begin(); type != types.end(); ++type)
       {
          if(*type == "")
             THROW_ERROR("wrong XML syntax for supported_types attribute: null type description in \"" + supported_types_string + "\" [" + operation_name + "]");
@@ -143,7 +143,7 @@ void operation::xload(const xml_element* Enode, const technology_nodeRef fu, con
          {
             std::vector<std::string> precs;
             boost::algorithm::split(precs, type_name_to_precs[1], boost::algorithm::is_any_of(","));
-            for(std::vector<std::string>::const_iterator single_prec = precs.begin(); single_prec != precs.end() && *single_prec != ""; single_prec++)
+            for(std::vector<std::string>::const_iterator single_prec = precs.begin(); single_prec != precs.end() && *single_prec != ""; ++single_prec)
             {
                unsigned int type_uint = boost::lexical_cast<unsigned int>(*single_prec);
                type_precs.push_back(type_uint);
@@ -313,7 +313,7 @@ bool operation::is_type_supported(std::string type_name, unsigned int type_prec)
    return true;
 }
 
-bool operation::is_type_supported(std::string type_name, const std::vector<unsigned int>& type_prec, const std::vector<unsigned int> &/*type_n_element*/) const
+bool operation::is_type_supported(const std::string& type_name, const std::vector<unsigned int>& type_prec, const std::vector<unsigned int> &/*type_n_element*/) const
 {
    unsigned int max_prec = type_prec.begin() == type_prec.end() ? 0 : *max_element(type_prec.begin(), type_prec.end());
 
@@ -425,13 +425,14 @@ void functional_unit::gload(const std::string& definition, const std::string& fu
    std::list<std::string> splitted;
    boost::algorithm::split(splitted, definition, boost::algorithm::is_any_of(" ;\t"));
 
+#if HAVE_CIRCUIT_BUILT
    std::set<std::string> inputs;
    std::string output;
-
+#endif
    //std::map<std::string, std::map<std::string, TimingModelRef> > pin_models;
 
    unsigned int n = 0;
-   for(std::list<std::string>::iterator s = splitted.begin(); s != splitted.end(); s++)
+   for(std::list<std::string>::iterator s = splitted.begin(); s != splitted.end(); ++s)
    {
       if (s->size() == 0) continue;
       switch(n)
@@ -485,7 +486,7 @@ void functional_unit::gload(const std::string& definition, const std::string& fu
             p->set_id(output);
             p->set_type(bool_type);
             mobj->add_out_port(p);
-            for(std::set<std::string>::iterator i = inputs.begin(); i != inputs.end(); i++)
+            for(std::set<std::string>::iterator i = inputs.begin(); i != inputs.end(); ++i)
             {
                if (i->find("CONST") != std::string::npos) continue;
 
@@ -666,14 +667,14 @@ void functional_unit::xload(const xml_element* Enode, const technology_nodeRef f
 #ifndef NDEBUG
    int debug_level = Param->getOption<int>(OPT_circuit_debug_level);
 #endif
-#if HAVE_CMOS_BUILT
+#if HAVE_TECHNOLOGY_BUILT && HAVE_CMOS_BUILT
    int output_pin_counter = 0;
 #endif
 #if HAVE_CIRCUIT_BUILT
    structural_type_descriptorRef bool_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 0));
 #endif
 
-#if HAVE_TECHNOLOGY_BUILT
+#if HAVE_TECHNOLOGY_BUILT && HAVE_CMOS_BUILT
    std::map<std::string, std::vector<std::string> > attribute_list;
    std::map<std::string, std::map<std::string, attributeRef> > attribute_map;
    std::map<unsigned int, std::string> NP_functionalities;
@@ -688,7 +689,7 @@ void functional_unit::xload(const xml_element* Enode, const technology_nodeRef f
       if (EnodeC->get_name() == "name")
       {
          const xml_text_node* text = EnodeC->get_child_text();
-         if (!text) THROW_WARNING ("name is missing for " + EnodeC->get_name());
+         if (!text) THROW_ERROR("name is missing for " + EnodeC->get_name());
          functional_unit_name = text->get_content();
          PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Started reading the module: " + functional_unit_name);
       }
@@ -940,7 +941,7 @@ void functional_unit::xload(const xml_element* Enode, const technology_nodeRef f
    }
 
 #if HAVE_CIRCUIT_BUILT
-   for(std::map<unsigned int, std::string>::iterator m = NP_functionalities.begin(); m != NP_functionalities.end(); m++)
+   for(std::map<unsigned int, std::string>::iterator m = NP_functionalities.begin(); m != NP_functionalities.end(); ++m)
    {
       CM->add_NP_functionality(CM->get_circ(), static_cast<NP_functionality::NP_functionaly_type>(m->first), m->second);
    }
@@ -972,7 +973,7 @@ void functional_unit::xload(const xml_element* Enode, const technology_nodeRef f
          GetPointer<operation>(curr_op)->operation_name = functional_unit_name;
          add(curr_op);
       }
-      for (operation_vec::iterator v = list_of_operation.begin(); v != list_of_operation.end(); v++)
+      for (operation_vec::iterator v = list_of_operation.begin(); v != list_of_operation.end(); ++v)
       {
          if (!GetPointer<operation>(*v)->time_m)
          {
@@ -1250,7 +1251,7 @@ void functional_unit::xwrite(xml_element* rootnode, const technology_nodeRef tn,
    xml_characterization_timestamp->add_child_text(STR(characterization_timestamp));
    ///operation stuff
    operation_vec::iterator it_end = list_of_operation.end();
-   for(operation_vec::iterator it = list_of_operation.begin(); it != it_end; it++)
+   for(operation_vec::iterator it = list_of_operation.begin(); it != it_end; ++it)
    {
       GetPointer<operation>(*it)->xwrite(rootnode, tn, Param, dv_type);
    }
@@ -1311,42 +1312,42 @@ void functional_unit_template::xload(const xml_element* Enode, const technology_
       if (EnodeC->get_name() == GET_CLASS_NAME(specialized))
       {
          const xml_text_node* text = EnodeC->get_child_text();
-         if (!text) THROW_WARNING ("specialization identifier is missing for " + EnodeC->get_name());
+         if (!text) THROW_ERROR("specialization identifier is missing for " + EnodeC->get_name());
          specialized = text->get_content();
          xml_node::convert_escaped(specialized);
       }
       else if (EnodeC->get_name() == GET_CLASS_NAME(characterizing_constant_value))
       {
          const xml_text_node* text = EnodeC->get_child_text();
-         if (!text) THROW_WARNING ("specialization identifier is missing for " + EnodeC->get_name());
+         if (!text) THROW_ERROR("specialization identifier is missing for " + EnodeC->get_name());
          characterizing_constant_value = text->get_content();
          xml_node::convert_escaped(characterizing_constant_value);
       }
       else if (EnodeC->get_name() == GET_CLASS_NAME(memory_type))
       {
          const xml_text_node* text = EnodeC->get_child_text();
-         if (!text) THROW_WARNING ("specialization identifier is missing for " + EnodeC->get_name());
+         if (!text) THROW_ERROR("specialization identifier is missing for " + EnodeC->get_name());
          memory_type = text->get_content();
          xml_node::convert_escaped(memory_type);
       }
       else if (EnodeC->get_name() == GET_CLASS_NAME(channels_type))
       {
          const xml_text_node* text = EnodeC->get_child_text();
-         if (!text) THROW_WARNING ("specialization identifier is missing for " + EnodeC->get_name());
+         if (!text) THROW_ERROR("specialization identifier is missing for " + EnodeC->get_name());
          channels_type = text->get_content();
          xml_node::convert_escaped(channels_type);
       }
       else if (EnodeC->get_name() == GET_CLASS_NAME(memory_ctrl_type))
       {
          const xml_text_node* text = EnodeC->get_child_text();
-         if (!text) THROW_WARNING ("specialization identifier is missing for " + EnodeC->get_name());
+         if (!text) THROW_ERROR("specialization identifier is missing for " + EnodeC->get_name());
          memory_ctrl_type = text->get_content();
          xml_node::convert_escaped(memory_ctrl_type);
       }
       else if (EnodeC->get_name() == GET_CLASS_NAME(bram_load_latency))
       {
          const xml_text_node* text = EnodeC->get_child_text();
-         if (!text) THROW_WARNING ("specialization identifier is missing for " + EnodeC->get_name());
+         if (!text) THROW_ERROR("specialization identifier is missing for " + EnodeC->get_name());
          bram_load_latency = text->get_content();
          xml_node::convert_escaped(bram_load_latency);
       }

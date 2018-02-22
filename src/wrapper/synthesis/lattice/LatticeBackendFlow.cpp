@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -72,7 +72,7 @@
 #define LATTICE_DSP              "LATTICE_DSPS"
 #define LATTICE_MEM              "LATTICE_MEM"
 
-LatticeBackendFlow::LatticeBackendFlow(const ParameterConstRef _Param, const std::string & _flow_name, const target_managerRef _target) :
+LatticeBackendFlow::LatticeBackendFlow(const ParameterConstRef _Param, const std::string& _flow_name, const target_managerRef _target) :
    BackendFlow(_Param, _flow_name, _target)
 {
    PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, " .:: Creating Lattice Backend Flow ::.");
@@ -170,7 +170,7 @@ void LatticeBackendFlow::xparse_utilization(const std::string& fn)
    {
       std::cerr << msg << std::endl;
    }
-   catch (const std::string & msg)
+   catch (const std::string& msg)
    {
       std::cerr << msg << std::endl;
    }
@@ -215,7 +215,7 @@ void LatticeBackendFlow::WriteFlowConfiguration(std::ostream& script)
    if(setupscr.size() and setupscr != "0")
    {
       script << "#configuration" << std::endl;
-      if(setupscr.find("export") == 0)
+      if(boost::algorithm::starts_with(setupscr,"export"))
          script << setupscr + " >& /dev/null; ";
       else
          script << ". " << setupscr << " >& /dev/null; ";
@@ -240,20 +240,20 @@ void LatticeBackendFlow::create_sdc(const DesignParametersRef dp)
    dp->parameter_values[PARAM_sdc_file] = sdc_filename;
 }
 
-void LatticeBackendFlow::InitDesignParameters(const DesignParametersRef dp)
+void LatticeBackendFlow::InitDesignParameters()
 {
    if(Param->isOption(OPT_top_design_name))
-      dp->parameter_values[PARAM_top_id] = Param->getOption<std::string>(OPT_top_design_name);
+      actual_parameters->parameter_values[PARAM_top_id] = Param->getOption<std::string>(OPT_top_design_name);
    else
-      dp->parameter_values[PARAM_top_id] = dp->component_name;
-   dp->parameter_values[PARAM_clk_name] = CLOCK_PORT_NAME;
+      actual_parameters->parameter_values[PARAM_top_id] = actual_parameters->component_name;
+   actual_parameters->parameter_values[PARAM_clk_name] = CLOCK_PORT_NAME;
 
    const target_deviceRef device = target->get_target_device();
-   dp->parameter_values[PARAM_target_device] = device->get_parameter<std::string>("model");
+   actual_parameters->parameter_values[PARAM_target_device] = device->get_parameter<std::string>("model");
    std::string device_family = device->get_parameter<std::string>("family");
    if(device_family.find('-') != std::string::npos)
          device_family = device_family.substr(0, device_family.find('-'));
-   dp->parameter_values[PARAM_target_family] = device_family;
+   actual_parameters->parameter_values[PARAM_target_family] = device_family;
 
    std::string HDL_files = actual_parameters->parameter_values[PARAM_HDL_files];
    std::vector<std::string> file_list = convert_string_to_vector<std::string>(HDL_files, ";");
@@ -273,21 +273,21 @@ void LatticeBackendFlow::InitDesignParameters(const DesignParametersRef dp)
 #if HAVE_LATTICE
    sources_macro_list += "prj_src add -format VERILOG " + std::string(LATTICE_PMI_DEF) + "\n";
 #endif
-   dp->parameter_values[PARAM_sources_macro_list] = sources_macro_list;
+   actual_parameters->parameter_values[PARAM_sources_macro_list] = sources_macro_list;
 
    if(Param->isOption(OPT_backend_script_extensions))
    {
-      dp->parameter_values[PARAM_has_script_extensions] = STR(true);
-      dp->parameter_values[PARAM_backend_script_extensions] = Param->getOption<std::string>(OPT_backend_script_extensions);
+      actual_parameters->parameter_values[PARAM_has_script_extensions] = STR(true);
+      actual_parameters->parameter_values[PARAM_backend_script_extensions] = Param->getOption<std::string>(OPT_backend_script_extensions);
    }
    else
-      dp->parameter_values[PARAM_has_script_extensions] = STR(false);
+      actual_parameters->parameter_values[PARAM_has_script_extensions] = STR(false);
 
-   create_sdc(dp);
+   create_sdc(actual_parameters);
 
    for (unsigned int i = 0; i < steps.size(); i++)
    {
-      steps[i]->tool->EvaluateVariables(dp);
+      steps[i]->tool->EvaluateVariables(actual_parameters);
    }
 }
 

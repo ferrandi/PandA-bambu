@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -121,10 +121,10 @@ DesignFlowStep_Status virtual_phi_nodes_split::InternalExec()
    std::map<unsigned int, blocRef> & list_of_bloc = sl->list_of_bloc;
 
    std::map<unsigned int, blocRef>::iterator iit, iit_end = list_of_bloc.end();
-   for(iit = list_of_bloc.begin(); iit != iit_end ; iit++)
+   for(iit = list_of_bloc.begin(); iit != iit_end ; ++iit)
    {
       blocRef& bb_block = iit->second;
-      for(const auto phi : bb_block->CGetPhiList())
+      for(const auto& phi : bb_block->CGetPhiList())
       {
          virtual_split_phi(phi, bb_block, list_of_bloc, TM);
       }
@@ -153,7 +153,7 @@ void virtual_phi_nodes_split::virtual_split_phi(tree_nodeRef tree_phi, blocRef& 
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Phi node is virtual so no splitting is performed");
       return ;
    }
-   for(const auto def_edge : phi->CGetDefEdgesList())
+   for(const auto& def_edge : phi->CGetDefEdgesList())
    {
       tree_nodeRef def = def_edge.first;
 
@@ -181,7 +181,7 @@ void virtual_phi_nodes_split::virtual_split_phi(tree_nodeRef tree_phi, blocRef& 
       unsigned int bb_source = def_edge.second;
       blocRef source_bb;
       std::map<unsigned int, blocRef>::iterator it, it_end = list_of_bloc.end();
-      for(it = list_of_bloc.begin(); it != it_end ; it++)
+      for(it = list_of_bloc.begin(); it != it_end ; ++it)
       {
          source_bb = it->second;
          if (source_bb->number != bb_source) continue;

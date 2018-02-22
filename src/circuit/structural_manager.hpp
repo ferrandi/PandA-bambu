@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -83,6 +83,8 @@ class xml_element;
 */
 class structural_manager
 {
+      //no copy constructor
+      structural_manager(const structural_manager& inst) = delete;
    public :
 
       enum circuit_graph_type { DATA_G, COMPLETE_G};
@@ -144,7 +146,7 @@ class structural_manager
       * This is the constructor of the structural_manager which initializes the data field.
        * @param Param is the reference to the class containing all parameters
       */
-      structural_manager(const ParameterConstRef Param);
+      explicit structural_manager(const ParameterConstRef Param);
 
 #if HAVE_BAMBU_BUILT || HAVE_KOALA_BUILT
       void set_top_info(const std::string& id, const technology_managerRef& TM, const std::string& Library = "");
@@ -199,9 +201,9 @@ class structural_manager
        * @return the object created.
       */
       structural_objectRef add_module_from_technology_library(
-            const std::string & id,
-            const std::string & fu_name,
-            const std::string & library_name,
+            const std::string& id,
+            const std::string& fu_name,
+            const std::string& library_name,
             const structural_objectRef owner,
             const technology_managerConstRef TM);
 #endif
@@ -364,7 +366,7 @@ class structural_manager
       /**
        * Function that writes the dot file of the graph by using the AT&T dot format.
       */
-      void WriteDot(const std::string & file_name, circuit_graph_type gt, graph * g = nullptr) const;
+      void WriteDot(const std::string& file_name, circuit_graph_type gt, graph * g = nullptr) const;
 
       /**
        * Get a reference to circ field
@@ -395,7 +397,7 @@ class structural_manager
        * Add a component to an xml tree.
        * @param rootnode is the root node at which the xml representation of the operation is attached.
       */
-      void xwrite(xml_element* rootnode, const technology_nodeRef& tn = technology_nodeRef());
+      void xwrite(xml_element* rootnode, const technology_nodeRef& tn = technology_nodeRef()) const;
       //@}
 
       /**

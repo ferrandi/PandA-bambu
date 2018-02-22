@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -165,17 +165,17 @@ BBGraph::BBGraph(const BBGraphsCollectionRef _g, int _selector) :
    graph(_g.get(), _selector)
 {}
 
-BBGraph::BBGraph(const BBGraphsCollectionRef _g, int _selector, std::unordered_set<vertex> sub) :
+BBGraph::BBGraph(const BBGraphsCollectionRef _g, int _selector, std::unordered_set<vertex>& sub) :
    graph(_g.get(), _selector, sub)
 {}
 
-void BBGraph::WriteDot(const std::string & file_name, const int detail_level) const
+void BBGraph::WriteDot(const std::string& file_name, const int detail_level) const
 {
    const std::unordered_set<vertex> annotated;
    WriteDot(file_name, annotated, detail_level);
 }
 
-void BBGraph::WriteDot(const std::string & file_name, const std::unordered_set<vertex> & annotated, const int) const
+void BBGraph::WriteDot(const std::string& file_name, const std::unordered_set<vertex> & annotated, const int) const
 {
    const auto bb_graph_info = CGetBBGraphInfo();
    const auto function_name = bb_graph_info->AppM->CGetFunctionBehavior(bb_graph_info->function_index)->CGetBehavioralHelper()->get_function_name();

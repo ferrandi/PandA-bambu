@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -52,7 +52,7 @@
 class xml_text_node : public xml_node
 {
    public:
-      xml_text_node(const std::string & content) : xml_node(content){}
+      explicit xml_text_node(const std::string& content) : xml_node(content){}
 
       /**
        * Print the class.
@@ -67,11 +67,11 @@ class xml_text_node : public xml_node
          if(formatted)
          {
             //remove \t \n \r and spaces at the beginning
-            unsigned int index = 0;
             size_t len_index = escaped.length();
             while(len_index > 0 && (escaped[len_index-1] == ' ' || escaped[len_index-1] == '\t' || escaped[len_index-1] == '\r' || escaped[len_index-1] == '\n')) len_index--;
             if(len_index > 0)
             {
+               unsigned int index = 0;
                while(escaped[index] == ' ' || escaped[index] == '\t' || escaped[index] == '\r' || escaped[index] == '\n') index++;
                os << escaped.substr(index, len_index-index);
             }

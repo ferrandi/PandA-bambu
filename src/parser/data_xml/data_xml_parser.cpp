@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -71,7 +71,7 @@ void DataXmlParser::Parse(const CustomSet<std::string> & file_names, std::map<st
 {
    try
    {
-      for(const auto file_name : file_names)
+      for(const auto& file_name : file_names)
       {
          XMLDomParser parser(file_name);
          parser.Exec();
@@ -106,7 +106,7 @@ void DataXmlParser::Parse(const CustomSet<std::string> & file_names, std::map<st
    {
       THROW_ERROR("Error during parsing of data xml file: " + std::string(msg));
    }
-   catch (const std::string & msg)
+   catch (const std::string& msg)
    {
       THROW_ERROR("Error during parsing of data xml file: " + msg);
    }

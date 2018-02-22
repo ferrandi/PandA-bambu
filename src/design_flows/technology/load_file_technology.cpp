@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -64,7 +64,7 @@ LoadFileTechnology::~LoadFileTechnology()
 DesignFlowStep_Status LoadFileTechnology::Exec()
 {
    const auto tech_files = parameters->getOption<const CustomSet<std::string> >(OPT_technology_file);
-   for(const auto tech_file : tech_files)
+   for(const auto& tech_file : tech_files)
    {
       INDENT_OUT_MEX(OUTPUT_LEVEL_VERY_PEDANTIC, output_level, "---Reading file " + tech_file);
       read_technology_File(tech_file, TM, parameters, target);

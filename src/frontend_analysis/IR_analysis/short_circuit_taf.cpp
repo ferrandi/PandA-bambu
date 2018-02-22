@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -134,7 +134,7 @@ void short_circuit_taf::Initialize()
 
 bool short_circuit_taf::check_phis(unsigned int curr_bb, std::map<unsigned int, blocRef> & list_of_bloc)
 {
-   for(const auto phi : list_of_bloc[curr_bb]->CGetPhiList())
+   for(const auto& phi : list_of_bloc[curr_bb]->CGetPhiList())
    {
       gimple_phi *cb_phi = GetPointer<gimple_phi>(GET_NODE(phi));
       if(cb_phi->virtual_flag)
@@ -155,7 +155,7 @@ DesignFlowStep_Status short_circuit_taf::InternalExec()
 
    ///compute merging candidates
    std::unordered_set<unsigned int> merging_candidates;
-   for(it = list_of_bloc.begin(); it != it_end; it++)
+   for(it = list_of_bloc.begin(); it != it_end; ++it)
    {
       if(it->first == bloc::ENTRY_BLOCK_ID || it->first == bloc::EXIT_BLOCK_ID)
          continue;
@@ -192,7 +192,7 @@ DesignFlowStep_Status short_circuit_taf::InternalExec()
       return DesignFlowStep_Status::UNCHANGED;
 
    ///find the first to merge
-   unsigned int bb1, bb2, merging_candidate = 0;
+   unsigned int bb1=static_cast<unsigned int>(-1), bb2=static_cast<unsigned int>(-1), merging_candidate = 0;
    bool bb1_true = false;
    bool bb2_true = false;
    bool mergeable_pair_found;
@@ -203,7 +203,7 @@ DesignFlowStep_Status short_circuit_taf::InternalExec()
    {
       mergeable_pair_found = false;
       std::unordered_set<unsigned int>::const_iterator it_mc_end = merging_candidates.end();
-      for(std::unordered_set<unsigned int>::const_iterator it_mc = merging_candidates.begin(); !mergeable_pair_found && it_mc != it_mc_end; it_mc++)
+      for(std::unordered_set<unsigned int>::const_iterator it_mc = merging_candidates.begin(); !mergeable_pair_found && it_mc != it_mc_end; ++it_mc)
       {
          merging_candidate = *it_mc;
          mergeable_pair_found = check_merging_candidate(bb1, bb2, merging_candidate, bb1_true, bb2_true, list_of_bloc);
@@ -223,8 +223,7 @@ DesignFlowStep_Status short_circuit_taf::InternalExec()
          {
             something_change = true;
             restructure_CFG(bb1, bb2, merging_candidate, list_of_bloc);
-            if(merging_candidates.find(bb1) != merging_candidates.end())
-               merging_candidates.erase(bb1);
+            merging_candidates.erase(bb1);
             if(!check_merging_candidate(bb1, bb2, merging_candidate, bb1_true, bb2_true, list_of_bloc))
                merging_candidates.erase(merging_candidate);
             if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC)
@@ -371,12 +370,12 @@ bool short_circuit_taf::create_gimple_cond(unsigned int bb1, unsigned int bb2, b
    /// fix merging_candidate phis
    if(list_of_bloc[merging_candidate]->CGetPhiList().size())
    {
-      for(const auto phi : list_of_bloc[merging_candidate]->CGetPhiList())
+      for(const auto& phi : list_of_bloc[merging_candidate]->CGetPhiList())
       {
          gimple_phi *mc_phi = GetPointer<gimple_phi>(GET_NODE(phi));
          std::pair<tree_nodeRef, unsigned int> def_edge_to_be_removed(tree_nodeRef(), 0);
          std::pair<tree_nodeRef, unsigned int> def_edge_to_be_updated(tree_nodeRef(), 0);
-         for(const auto def_edge : mc_phi->CGetDefEdgesList())
+         for(const auto& def_edge : mc_phi->CGetDefEdgesList())
          {
             if(def_edge.second == bb1)
                def_edge_to_be_removed = def_edge;
@@ -555,7 +554,7 @@ void short_circuit_taf::restructure_CFG(unsigned int bb1, unsigned int bb2, unsi
    ///fix bb2 predecessor
    std::vector<unsigned int>::iterator pos;
    std::vector<unsigned int>::const_iterator it_bb1_pred_end = list_of_bloc[bb1]->list_of_pred.end();
-   for(std::vector<unsigned int>::const_iterator it_bb1_pred = list_of_bloc[bb1]->list_of_pred.begin(); it_bb1_pred_end != it_bb1_pred; it_bb1_pred++)
+   for(std::vector<unsigned int>::const_iterator it_bb1_pred = list_of_bloc[bb1]->list_of_pred.begin(); it_bb1_pred_end != it_bb1_pred; ++it_bb1_pred)
    {
       list_of_bloc[bb2]->list_of_pred.push_back(*it_bb1_pred);
       pos = std::find(list_of_bloc[*it_bb1_pred]->list_of_succ.begin(), list_of_bloc[*it_bb1_pred]->list_of_succ.end(), bb1);

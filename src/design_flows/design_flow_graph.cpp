@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -79,7 +79,7 @@ vertex DesignFlowGraphsCollection::AddDesignFlowStep(const DesignFlowStepRef des
    return new_vertex;
 }
 
-vertex DesignFlowGraphsCollection::GetDesignFlowStep(const std::string signature) const
+vertex DesignFlowGraphsCollection::GetDesignFlowStep(const std::string&signature) const
 {
    if(signature_to_vertex.find(signature) != signature_to_vertex.end())
    {
@@ -106,12 +106,12 @@ DesignFlowGraph::DesignFlowGraph(const DesignFlowGraphsCollectionRef design_flow
 DesignFlowGraph::~DesignFlowGraph()
 {}
 
-vertex DesignFlowGraph::GetDesignFlowStep(const std::string signature) const
+vertex DesignFlowGraph::GetDesignFlowStep(const std::string&signature) const
 {
    return dynamic_cast<DesignFlowGraphsCollection *>(collection)->GetDesignFlowStep(signature);
 }
 
-void DesignFlowGraph::WriteDot(const std::string & file_name, const int) const
+void DesignFlowGraph::WriteDot(const std::string& file_name, const int) const
 {
    const std::string output_directory = collection->parameters->getOption<std::string>(OPT_dot_directory) + "/design_flow/";
    if (!boost::filesystem::exists(output_directory))
@@ -123,7 +123,7 @@ void DesignFlowGraph::WriteDot(const std::string & file_name, const int) const
 }
 
 #ifndef NDEBUG
-void DesignFlowGraph::WriteDot(const std::string & file_name, const CustomMap<size_t, CustomMap<vertex, DesignFlowStep_Status > > & vertex_history, const CustomMap<size_t, std::unordered_map<EdgeDescriptor, int> > & edge_history, const CustomMap<vertex, std::string> & vertex_names, const size_t writing_step_counter) const
+void DesignFlowGraph::WriteDot(const std::string& file_name, const CustomMap<size_t, CustomMap<vertex, DesignFlowStep_Status > > & vertex_history, const CustomMap<size_t, std::unordered_map<EdgeDescriptor, int> > & edge_history, const CustomMap<vertex, std::string> & vertex_names, const size_t writing_step_counter) const
 {
    const std::string output_directory = collection->parameters->getOption<std::string>(OPT_dot_directory) + "/design_flow/";
    if (!boost::filesystem::exists(output_directory))

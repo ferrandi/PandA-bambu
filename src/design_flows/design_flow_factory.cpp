@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2017 Politecnico di Milano
+ *              Copyright (c) 2017-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -56,7 +56,7 @@ const std::string DesignFlowFactory::GetPrefix() const
    return "DF";
 }
 
-DesignFlowStepRef DesignFlowFactory::CreateFlowStep(const std::string signature) const
+DesignFlowStepRef DesignFlowFactory::CreateFlowStep(const std::string&signature) const
 {
    THROW_ASSERT(signature.substr(0, GetPrefix().size() + 2) == GetPrefix() + "::", signature);
    const auto design_flow_type = DesignFlow::KindTextToEnum(signature.substr(4));

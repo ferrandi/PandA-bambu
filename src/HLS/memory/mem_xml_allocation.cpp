@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -106,7 +106,7 @@ bool mem_xml_allocation::parse_xml_allocation(const std::string& xml_file)
    {
       const xml_element* node = parser.get_document()->get_root_node(); //deleted by DomParser.
       const xml_node::node_list list = node->get_children();
-      for (xml_node::node_list::const_iterator l = list.begin(); l != list.end(); l++)
+      for (xml_node::node_list::const_iterator l = list.begin(); l != list.end(); ++l)
       {
          const xml_element* child = GetPointer<xml_element>(*l);
          if (!child) continue;
@@ -119,7 +119,7 @@ bool mem_xml_allocation::parse_xml_allocation(const std::string& xml_file)
             setup_memory_allocation();
 
             const xml_node::node_list mem_list = child->get_children();
-            for (xml_node::node_list::const_iterator it = mem_list.begin(); it != mem_list.end(); it++)
+            for (xml_node::node_list::const_iterator it = mem_list.begin(); it != mem_list.end(); ++it)
             {
                const xml_element* mem_node = GetPointer<xml_element>(*it);
                if (!mem_node) continue;
@@ -153,7 +153,7 @@ unsigned int get_id(const std::string& var_string)
 void mem_xml_allocation::parse_external_allocation(const xml_element* node)
 {
    const xml_node::node_list mem_list = node->get_children();
-   for (xml_node::node_list::const_iterator it = mem_list.begin(); it != mem_list.end(); it++)
+   for (xml_node::node_list::const_iterator it = mem_list.begin(); it != mem_list.end(); ++it)
    {
       const xml_element* mem_node = GetPointer<xml_element>(*it);
       if (!mem_node) continue;
@@ -178,7 +178,7 @@ void mem_xml_allocation::parse_external_allocation(const xml_element* node)
 void mem_xml_allocation::parse_internal_allocation(const xml_element* node)
 {
    const xml_node::node_list mem_list = node->get_children();
-   for (xml_node::node_list::const_iterator it = mem_list.begin(); it != mem_list.end(); it++)
+   for (xml_node::node_list::const_iterator it = mem_list.begin(); it != mem_list.end(); ++it)
    {
       const xml_element* mem_node = GetPointer<xml_element>(*it);
       if (!mem_node) continue;
@@ -188,7 +188,7 @@ void mem_xml_allocation::parse_internal_allocation(const xml_element* node)
          LOAD_XVFM(scope_id, mem_node, id);
          unsigned int scp_id = get_id(scope_id);
          const xml_node::node_list var_list = mem_node->get_children();
-         for (xml_node::node_list::const_iterator v = var_list.begin(); v != var_list.end(); v++)
+         for (xml_node::node_list::const_iterator v = var_list.begin(); v != var_list.end(); ++v)
          {
             const xml_element* var_node = GetPointer<xml_element>(*v);
             if (!var_node) continue;
@@ -233,20 +233,20 @@ void mem_xml_allocation::parse_internal_allocation(const xml_element* node)
 
 void mem_xml_allocation::finalize_memory_allocation()
 {
-   for(std::map<unsigned int, memory_symbolRef>::iterator eIt = ext_variables.begin(); eIt != ext_variables.end(); eIt++)
+   for(std::map<unsigned int, memory_symbolRef>::iterator eIt = ext_variables.begin(); eIt != ext_variables.end(); ++eIt)
    {
       HLSMgr->Rmem->add_external_symbol(eIt->first, eIt->second);
    }
-   for(std::map<unsigned int, std::map<unsigned int, memory_symbolRef> >::iterator iIt = int_variables.begin(); iIt != int_variables.end(); iIt++)
+   for(std::map<unsigned int, std::map<unsigned int, memory_symbolRef> >::iterator iIt = int_variables.begin(); iIt != int_variables.end(); ++iIt)
    {
-      for(std::map<unsigned int, memory_symbolRef>::iterator vIt = iIt->second.begin(); vIt != iIt->second.end(); vIt++)
+      for(std::map<unsigned int, memory_symbolRef>::iterator vIt = iIt->second.begin(); vIt != iIt->second.end(); ++vIt)
       {
          HLSMgr->Rmem->add_internal_symbol(iIt->first, vIt->first, vIt->second);
       }
    }
-   for(std::map<unsigned int, std::map<unsigned int, memory_symbolRef> >::iterator pIt = param_variables.begin(); pIt != param_variables.end(); pIt++)
+   for(std::map<unsigned int, std::map<unsigned int, memory_symbolRef> >::iterator pIt = param_variables.begin(); pIt != param_variables.end(); ++pIt)
    {
-      for(std::map<unsigned int, memory_symbolRef>::iterator vIt = pIt->second.begin(); vIt != pIt->second.end(); vIt++)
+      for(std::map<unsigned int, memory_symbolRef>::iterator vIt = pIt->second.begin(); vIt != pIt->second.end(); ++vIt)
       {
          HLSMgr->Rmem->add_parameter_symbol(pIt->first, vIt->first, vIt->second);
       }

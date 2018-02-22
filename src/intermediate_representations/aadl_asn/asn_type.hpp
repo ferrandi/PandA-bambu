@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2015-2017 Politecnico di Milano
+ *              Copyright (c) 2015-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -77,7 +77,7 @@ class AsnType
       /**
        * Constructor
        */
-      AsnType(const AsnType_Kind kind);
+      explicit AsnType(const AsnType_Kind kind);
 
       /**
        * Destructor
@@ -109,7 +109,7 @@ class ChoiceAsnType : public AsnType
        * Constructor
        * @param element_type_list is the types composing this choice
        */
-      ChoiceAsnType(const std::list<std::pair<std::string, AsnTypeRef> > element_type_list);
+      explicit ChoiceAsnType(const std::list<std::pair<std::string, AsnTypeRef> >& element_type_list);
 };
 
 class EnumeratedAsnType : public AsnType
@@ -122,7 +122,7 @@ class EnumeratedAsnType : public AsnType
        * Constructor
        * @param the list of enum
        */
-      EnumeratedAsnType(const std::list<std::pair<std::string, unsigned int> > named_number_list);
+      explicit EnumeratedAsnType(const std::list<std::pair<std::string, unsigned int> > &named_number_list);
 };
 
 class IntegerAsnType : public AsnType
@@ -143,7 +143,7 @@ class OctetStringAsnType : public AsnType
       /**
        * Constructor
        */
-      OctetStringAsnType(const std::string size);
+      explicit OctetStringAsnType(const std::string&size);
 
       /**
        * Destructor
@@ -170,7 +170,7 @@ class RedefineAsnType : public AsnType
        * Constructor
        * @param name is the redefined type
        */
-      RedefineAsnType(const std::string name);
+      explicit RedefineAsnType(const std::string&name);
 };
 
 class SequenceAsnType : public AsnType
@@ -182,7 +182,7 @@ class SequenceAsnType : public AsnType
       /**
        * Constructor
        */
-      SequenceAsnType(const std::list<std::pair<std::string, AsnTypeRef> > element_type_list);
+      explicit SequenceAsnType(const std::list<std::pair<std::string, AsnTypeRef> >& element_type_list);
 };
 
 class SequenceOfAsnType : public AsnType
@@ -197,7 +197,7 @@ class SequenceOfAsnType : public AsnType
       /**
        * Constructor
        */
-      SequenceOfAsnType(const std::string element, const std::string size);
+      SequenceOfAsnType(const std::string&element, const std::string&size);
 };
 
 class SetAsnType : public AsnType
@@ -209,7 +209,7 @@ class SetAsnType : public AsnType
       /**
        * Constructor
        */
-      SetAsnType(const std::list<std::pair<std::string, AsnTypeRef> > element_type_list);
+      explicit SetAsnType(const std::list<std::pair<std::string, AsnTypeRef> >& element_type_list);
 };
 
 class SetOfAsnType : public AsnType
@@ -224,7 +224,7 @@ class SetOfAsnType : public AsnType
       /**
        * Constructor
        */
-      SetOfAsnType(const std::string element, const std::string size);
+      SetOfAsnType(const std::string&element, const std::string&size);
 };
 
 typedef refcount<AsnType> AsnTypeRef;

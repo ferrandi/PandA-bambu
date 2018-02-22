@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -83,7 +83,9 @@ void StorageValueInformation::Initialize()
       if(not scalar_defs.empty())
       {
          CustomSet<unsigned int>::const_iterator it_end = scalar_defs.end();
+#if HAVE_ASSERTS
          size_t counter = 0;
+#endif
          for(CustomSet<unsigned int>::const_iterator it = scalar_defs.begin(); it != it_end; ++it)
          {
             if(tree_helper::is_ssa_name(TreeM, *it) &&
@@ -91,7 +93,9 @@ void StorageValueInformation::Initialize()
                   !tree_helper::is_parameter(TreeM, *it))
             {
                HLS->storage_value_information->vw2vertex[*it] = *ki;
+#if HAVE_ASSERTS
                ++counter;
+#endif
             }
          }
 #if HAVE_ASSERTS

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -205,7 +205,7 @@ void Scheduling::init_switch_maps(vertex controlling_vertex, const OpGraphConstR
    {
       const std::set<unsigned int> &switch_set = EDGE_GET_NODEID(cdg, *eo, CDG_SELECTOR);
       const std::set<unsigned int>::const_iterator switch_it_end = switch_set.end();
-      for(std::set<unsigned int>::const_iterator switch_it = switch_set.begin(); switch_it != switch_it_end; switch_it++)
+      for(std::set<unsigned int>::const_iterator switch_it = switch_set.begin(); switch_it != switch_it_end; ++switch_it)
          if(snp_it->second.find(*switch_it) == snp_it->second.end())
             snp_it->second[*switch_it] = curr_b_tag++;
    }
@@ -226,7 +226,7 @@ ControlStep Scheduling::anticipate_operations(const OpGraphConstRef dependence_g
    boost::topological_sort(*dependence_graph, std::front_inserter(operations));
    std::list<vertex>::const_iterator v, v_end = operations.end();
    ///Checking vertex in topological order
-   for(v = operations.begin(); v != v_end; v++)
+   for(v = operations.begin(); v != v_end; ++v)
    {
       ///Checking if operations is time zero
       double execution_time = HLS->allocation_information->get_execution_time(HLS->Rfu->get_assign(*v), *v, dependence_graph);

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -596,7 +596,7 @@ class FunctionBehavior
        * @param type is the type of the graph to be returned
        * @return the pointer to the corresponding ParallelRegionsGraph.
        */
-      const ParallelRegionsGraphRef GetPrgGraph(ParallelRegionsGraph::Type type);
+      const ParallelRegionsGraphRef GetPrgGraph(ParallelRegionsGraph::Type type) const;
 #endif
 
       /**
@@ -640,7 +640,7 @@ class FunctionBehavior
       /**
        * Return the loops
        */
-      const LoopsRef GetLoops();
+      const LoopsRef GetLoops() const;
 
 #if HAVE_HOST_PROFILING_BUILT
       /**

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -53,7 +53,7 @@
 struct xml_att_decl_node : public xml_node, attribute_sequence
 {
    ///constructor
-   xml_att_decl_node(const std::string & _name) : xml_node(_name){}
+   explicit xml_att_decl_node(const std::string& _name) : xml_node(_name){}
 
    /**
     * Print the class.

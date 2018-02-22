@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -56,7 +56,7 @@ class FPGA_technology : public target_technology
       /**
        * Constructor of the class
        */
-      FPGA_technology(const ParameterConstRef param);
+      explicit FPGA_technology(const ParameterConstRef param);
 
       /**
        * Destructor of the class

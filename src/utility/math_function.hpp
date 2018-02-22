@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -52,7 +52,7 @@
 /**
  * Return the distance between a point and a line (represented as a couple of points) in a n-dimensional space
  */
-long double get_point_line_distance(const AugmentedVector<long double> point, AugmentedVector<long double> line_point1, AugmentedVector<long double> line_point2);
+long double get_point_line_distance(const AugmentedVector<long double>& point, AugmentedVector<long double>& line_point1, AugmentedVector<long double>& line_point2);
 
 /**
  * Return the greatest common divisor
@@ -103,7 +103,7 @@ inline unsigned int resize_to_1_8_16_32_64_128_256_512(unsigned int value)
 
 inline unsigned int compute_n_bytes( unsigned bitsize)
 {
-   return bitsize / 8 + (bitsize % 8 ? 1 : 0);
+   return bitsize / 8 + ((bitsize % 8) ? 1 : 0);
 }
 
 /// Test whether a value is zero of a power of two.

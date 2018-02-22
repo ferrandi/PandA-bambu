@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -94,7 +94,7 @@ void TechnologyFlowStep::ComputeRelationships(DesignFlowStepSet & steps, const D
    const auto design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
    const auto step_factory = GetPointer<const TechnologyFlowStepFactory>(CGetDesignFlowStepFactory());
    const auto step_types = ComputeTechnologyRelationships(relationship_type);
-   for(const auto step_type : step_types)
+   for(const auto& step_type : step_types)
    {
       vertex technology_flow_step = design_flow_manager.lock()->GetDesignFlowStep(ComputeSignature(step_type));
       const DesignFlowStepRef design_flow_step = technology_flow_step ? design_flow_graph->CGetDesignFlowStepInfo(technology_flow_step)->design_flow_step : step_factory->CreateTechnologyFlowStep(step_type);

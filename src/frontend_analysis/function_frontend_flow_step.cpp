@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -120,7 +120,7 @@ void FunctionFrontendFlowStep::ComputeRelationships(DesignFlowStepSet & relation
    if(relationship_type == DEPENDENCE_RELATIONSHIP)
    {
       const auto precedence_relationships = ComputeFrontendRelationships(PRECEDENCE_RELATIONSHIP);
-      for(const auto precedence_relationship : precedence_relationships)
+      for(const auto& precedence_relationship : precedence_relationships)
       {
          if(precedence_relationship.second == SAME_FUNCTION)
          {
@@ -143,7 +143,7 @@ void FunctionFrontendFlowStep::ComputeRelationships(DesignFlowStepSet & relation
       }
    }
    std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> >::const_iterator frontend_relationship, frontend_relationship_end = frontend_relationships.end();
-   for(frontend_relationship = frontend_relationships.begin(); frontend_relationship != frontend_relationship_end; frontend_relationship++)
+   for(frontend_relationship = frontend_relationships.begin(); frontend_relationship != frontend_relationship_end; ++frontend_relationship)
    {
       switch(frontend_relationship->second)
       {
@@ -251,12 +251,11 @@ bool FunctionFrontendFlowStep::HasToBeExecuted() const
    return bb_version != function_behavior->GetBBVersion();
 }
 
-void FunctionFrontendFlowStep::WriteBBGraphDot(const std::string filename) const
+void FunctionFrontendFlowStep::WriteBBGraphDot(const std::string&filename) const
 {
    auto bb_graph_info = BBGraphInfoRef(new BBGraphInfo(AppM, function_id));
    BBGraphsCollectionRef GCC_bb_graphs_collection(new BBGraphsCollection(bb_graph_info, parameters));
    BBGraphRef GCC_bb_graph(new BBGraph(GCC_bb_graphs_collection, CFG_SELECTOR));
-   std::unordered_map<vertex, unsigned int> direct_vertex_map;
    std::unordered_map<unsigned int, vertex> inverse_vertex_map;
    const tree_nodeConstRef function_tree_node = AppM->get_tree_manager()->CGetTreeNode(function_id);
    const auto fd = GetPointer<const function_decl>(function_tree_node);
@@ -265,24 +264,21 @@ void FunctionFrontendFlowStep::WriteBBGraphDot(const std::string filename) const
    for(auto block : sl->list_of_bloc)
    {
       inverse_vertex_map[block.first] = GCC_bb_graphs_collection->AddVertex(BBNodeInfoRef(new BBNodeInfo(block.second)));
-      direct_vertex_map[inverse_vertex_map[block.first]]=block.first;
    }
    ///Set entry and exit
    if(inverse_vertex_map.find(bloc::ENTRY_BLOCK_ID) == inverse_vertex_map.end())
    {
       inverse_vertex_map[bloc::ENTRY_BLOCK_ID] = GCC_bb_graphs_collection->AddVertex(BBNodeInfoRef(new BBNodeInfo()));
-      direct_vertex_map[inverse_vertex_map[bloc::ENTRY_BLOCK_ID]]=bloc::ENTRY_BLOCK_ID;
    }
    bb_graph_info->entry_vertex = inverse_vertex_map[bloc::ENTRY_BLOCK_ID];
    if(inverse_vertex_map.find(bloc::EXIT_BLOCK_ID) == inverse_vertex_map.end())
    {
       inverse_vertex_map[bloc::EXIT_BLOCK_ID] = GCC_bb_graphs_collection->AddVertex(BBNodeInfoRef(new BBNodeInfo()));
-      direct_vertex_map[inverse_vertex_map[bloc::EXIT_BLOCK_ID]]=bloc::EXIT_BLOCK_ID;
    }
    bb_graph_info->exit_vertex = inverse_vertex_map[bloc::EXIT_BLOCK_ID];
 
    /// add edges
-   for(const auto block : sl->list_of_bloc)
+   for(const auto& block : sl->list_of_bloc)
    {
       for(const auto pred : block.second->list_of_pred)
       {
@@ -337,16 +333,16 @@ void FunctionFrontendFlowStep::WriteBBGraphDot(const std::string filename) const
    BBGraph(GCC_bb_graphs_collection, CFG_SELECTOR).WriteDot(filename);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Written " + filename);
    /// add edges
-   for(const auto block : sl->list_of_bloc)
-   {
 #ifndef NDEBUG
-      for(const auto phi : block.second->CGetPhiList())
+   for(const auto& block : sl->list_of_bloc)
+   {
+      for(const auto& phi : block.second->CGetPhiList())
       {
          const auto gp = GetPointer<const gimple_phi>(GET_CONST_NODE(phi));
          THROW_ASSERT(gp->CGetDefEdgesList().size() == block.second->list_of_pred.size(), "BB" + STR(block.second->number) + " has " + STR(block.second->list_of_pred.size()) + " incoming edges but contains " + STR(phi));
       }
-#endif
    }
+#endif
 }
 
 unsigned int FunctionFrontendFlowStep::CGetBBVersion() const

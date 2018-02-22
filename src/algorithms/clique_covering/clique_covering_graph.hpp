@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -62,7 +62,7 @@ public:
     /// constructor
     cc_compatibility_graph_vertex_selector() : all(true), support(nullptr) {}
     /// constructor
-    cc_compatibility_graph_vertex_selector(SET_container * _support) : all(false), support(_support) {}
+    explicit cc_compatibility_graph_vertex_selector(SET_container * _support) : all(false), support(_support) {}
     /// selector operator
     bool operator()(const vertex_descriptor &v) const
     {

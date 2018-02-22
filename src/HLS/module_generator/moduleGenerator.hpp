@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -98,7 +98,7 @@ class moduleGenerator
 
       void add_port_parameters(structural_objectRef generated_port, structural_objectRef currentPort);
 
-      std::string GenerateHDL(std::string hdl_template, std::vector<std::tuple<unsigned int,unsigned int> >& required_variables, const std::string &specializing_string, const FunctionBehaviorConstRef FB, std::string path_dynamic_generators, HDLWriter_Language);
+      std::string GenerateHDL(const std::string& hdl_template, std::vector<std::tuple<unsigned int,unsigned int> >& required_variables, const std::string& specializing_string, const FunctionBehaviorConstRef FB, const std::string& path_dynamic_generators, HDLWriter_Language);
 
       std::string get_specialized_name(std::vector<std::tuple<unsigned int,unsigned int> >& required_variables, const FunctionBehaviorConstRef FB) const;
 

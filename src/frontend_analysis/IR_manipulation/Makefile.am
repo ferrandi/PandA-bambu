@@ -42,13 +42,6 @@ lib_IR_manipulation_la_SOURCES = \
    clean_virtual_phi.cpp \
    create_tree_manager.cpp
 
-if BUILD_ZEBU
-   noinst_HEADERS += \
-      loops_rebuilding.hpp
-   lib_IR_manipulation_la_SOURCES += \
-      loops_rebuilding.cpp
-endif
-
 if BUILD_BAMBU
    noinst_HEADERS += \
       cond_expr_restructuring.hpp \
@@ -75,15 +68,6 @@ if BUILD_LIB_ILP
    -I$(top_srcdir)/src/HLS/binding/module \
    -I$(top_srcdir)/src/HLS/module_allocation \
    -I$(top_srcdir)/src/HLS/scheduling
-
-if BUILD_LIB_FROM_PRAGMA
-if BUILD_LIB_EXPERIMENTAL
-   noinst_HEADERS += \
-      unroll_loops.hpp
-   lib_IR_manipulation_la_SOURCES += \
-      unroll_loops.cpp
-endif
-endif
 
 
 if BUILD_LIB_ILP

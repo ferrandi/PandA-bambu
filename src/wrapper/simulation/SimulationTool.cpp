@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -177,6 +177,11 @@ unsigned long long int SimulationTool::DetermineCycles(unsigned long long int &a
                THROW_ERROR("String not valid: " + line);
             }
             unsigned long long int sim_cycles = boost::lexical_cast<unsigned long long int>(filevalues[1]);
+            ///Remove one cycle if primary input are registered
+            if(Param->getOption<std::string>(OPT_registered_inputs) == "top")
+            {
+               sim_cycles -= 1;
+            }
             if(filevalues.size() == 3)
             {
                if(filevalues[2] == "ns")
@@ -249,11 +254,11 @@ unsigned long long int SimulationTool::DetermineCycles(unsigned long long int &a
          THROW_ERROR("Result file not correctly created");
       }
       std::ifstream profiling_res_file(profiling_result_file.c_str());
-      double time_stamp = 0.0 ;
       if (profiling_res_file.is_open())
       {
          PRINT_OUT_MEX(OUTPUT_LEVEL_PEDANTIC, output_level, "File \"" + profiling_result_file + "\" opened");
          double clock_period = Param->isOption(OPT_clock_period) ? Param->getOption<double>(OPT_clock_period) : 10;
+         double time_stamp = 0.0 ;
 
          while(!profiling_res_file.eof())
          {

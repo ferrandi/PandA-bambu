@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -81,15 +81,15 @@ void conflict_based_register::create_conflict_graph()
    const std::list<vertex> & support = HLS->Rliv->get_support();
 
    const std::list<vertex>::const_iterator vEnd = support.end();
-   for(std::list<vertex>::const_iterator vIt = support.begin(); vIt != vEnd; vIt++)
+   for(std::list<vertex>::const_iterator vIt = support.begin(); vIt != vEnd; ++vIt)
    {
       const std::set<unsigned int>& live = HLS->Rliv->get_live_in(*vIt);
       register_lower_bound = std::max(static_cast<unsigned int>(live.size()), register_lower_bound);
       const std::set<unsigned int>::const_iterator k_end = live.end(); 
-      for(std::set<unsigned int>::const_iterator k = live.begin(); k != k_end; k++)
+      for(std::set<unsigned int>::const_iterator k = live.begin(); k != k_end; ++k)
       {
          std::set<unsigned int>::const_iterator k_inner = k;
-         k_inner++;
+         ++k_inner;
          while(k_inner != k_end)
          {
             boost::graph_traits<conflict_graph>::edge_descriptor e1;
@@ -100,7 +100,7 @@ void conflict_based_register::create_conflict_graph()
             THROW_ASSERT(head < cg_num_vertices, "wrong conflict graph index");
             tie(e1, in1) = boost::add_edge(boost::vertex(tail,cg), boost::vertex(head,cg), cg);
             THROW_ASSERT(in1, "unable to add edge");
-            k_inner++;
+            ++k_inner;
          }
       }
    }

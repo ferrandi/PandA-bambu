@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -88,7 +88,7 @@ class ISE_isim_wrapper : public SimulationTool
        * Constructor
        * @param Param is the set of parameters
        */
-      ISE_isim_wrapper(const ParameterConstRef Param, std::string suffix);
+      ISE_isim_wrapper(const ParameterConstRef Param, const std::string &suffix);
 
       /**
        * Destructor

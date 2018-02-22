@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -188,7 +188,7 @@ class tree_manager
        * This is the constructor of the tree_manager which initializes the vector of functions.
        * @param Param is the set of input parameters
       */
-      tree_manager(const ParameterConstRef Param);
+      explicit tree_manager(const ParameterConstRef Param);
 
       ~tree_manager();
 
@@ -411,14 +411,14 @@ class tree_manager
        * In case there is not that identifier_node it returns 0.
        * @param str is the identifier we are looking for.
        */
-      unsigned int find_identifier_nodeID(const std::string &str) const;
+      unsigned int find_identifier_nodeID(const std::string&str) const;
 
       /**
        * Add an identifier_node to the corresponding unique table
        * @param nodeID is the node id.
        * @param str is the string.
        */
-      void add_identifier_node(unsigned int nodeID, const std::string &str) {identifiers_unique_table[str]=nodeID;}
+      void add_identifier_node(unsigned int nodeID, const std::string&str) {identifiers_unique_table[str]=nodeID;}
       void add_identifier_node(unsigned int nodeID, const bool &op);
 
       /**
@@ -442,6 +442,19 @@ class tree_manager
        * @return a tree reindex node for the integer value with as type type_index
        */
       tree_nodeRef CreateUniqueIntegerCst(long long int value, unsigned int type_index);
+
+      /**
+       * @brief is_CPP return true in case we have at least one CPP source code
+       * @return true when at least one translation unit is written in C++
+       */
+      bool is_CPP() const;
+
+      /**
+       * @brief is_top_function checks if a function is one of the application top functions.
+       * @param fd is the function decl
+       * @return true in case fd is a top function
+       */
+      bool is_top_function(const function_decl *fd) const;
 };
 typedef refcount<tree_manager> tree_managerRef;
 typedef refcount<const tree_manager> tree_managerConstRef;

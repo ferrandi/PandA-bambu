@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2016-2017 Politecnico di Milano
+ *              Copyright (c) 2016-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -99,10 +99,10 @@ DesignFlowStep_Status UnComparisonLowering::InternalExec()
    tree_nodeRef Scpe = TreeM->GetTreeReindex(function_id);
    function_decl * fd = GetPointer<function_decl>(curr_tn);
    statement_list * sl = GetPointer<statement_list>(GET_NODE(fd->body));
-   for(const auto block : sl->list_of_bloc)
+   for(const auto& block : sl->list_of_bloc)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing BB" + STR(block.first));
-      for(const auto stmt : block.second->CGetStmtList())
+      for(const auto& stmt : block.second->CGetStmtList())
       {
          auto ga = GetPointer<gimple_assign>(GET_NODE(stmt));
          if(not ga)
@@ -137,6 +137,7 @@ DesignFlowStep_Status UnComparisonLowering::InternalExec()
             auto new_not = tree_man->create_unary_operation(be->type, new_ssa, srcp_string, truth_not_expr_K);
             TreeM->ReplaceTreeNode(stmt, ga->op1, new_not);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Transformed into " + STR(stmt));
+            modified = true;
          }
          else
          {

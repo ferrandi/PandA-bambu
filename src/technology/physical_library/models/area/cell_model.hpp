@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -75,7 +75,7 @@ class cell_model : public area_model
       /**
        * Constructor
        */
-      cell_model(const ParameterConstRef Param);
+      explicit cell_model(const ParameterConstRef Param);
 
       /**
        * Constructor with initial area value

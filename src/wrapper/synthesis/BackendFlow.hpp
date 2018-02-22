@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -217,7 +217,7 @@ class BackendFlow
       /**
        * Executes the synthesis with the implemented flow
        */
-      void Execute(const std::string& top_id, const std::string& top_normalized, const std::string& filestring, const std::string &filename_bench, const std::string &clock, double clk_period, bool syntax_check);
+      void Execute(const std::string& top_id, const std::string& top_normalized, const std::string& filestring, const std::string&filename_bench, const std::string&clock, double clk_period, bool syntax_check);
 
       /**
        * Creates the scripts for the specified tools in the right order, along with the overall configuration.
@@ -227,7 +227,7 @@ class BackendFlow
       /**
        * Initializes the parameters
        */
-      virtual void InitDesignParameters(const DesignParametersRef dp);
+      virtual void InitDesignParameters();
 
       /**
        * Creates the synthesis flow based on the user's requirements

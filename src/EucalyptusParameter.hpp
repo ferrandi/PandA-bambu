@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -82,11 +82,6 @@ class EucalyptusParameter : public Parameter
       void PrintProgramName(std::ostream & os) const;
 
    public:
-      /**
-       * Default Constructor. It sets default values
-       * @param program_name is the name of the executable
-       */
-      EucalyptusParameter(const std::string program_name);
 
       /**
        * Constructor
@@ -94,7 +89,7 @@ class EucalyptusParameter : public Parameter
        * @param argc is the number of arguments
        * @param argv is the array of arguments passed to program.
        */
-      EucalyptusParameter(const std::string program_name, int argc, char * * const argv);
+      EucalyptusParameter(const std::string&program_name, int argc, char * * const argv);
 
       /**
        * Destructor

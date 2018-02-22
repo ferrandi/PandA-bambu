@@ -36,12 +36,5 @@ lib_register_algorithms_la_SOURCES = conflict_based_register.cpp vertex_coloring
                                      chordal_coloring_register.cpp network_flow.cpp unique_binding_register.cpp weighted_clique_register.cpp
 
 
-if BUILD_LIB_EXPERIMENTAL
-  noinst_HEADERS += left_edge_register.hpp conf_comp_based_register.hpp k_cofamily_register.hpp
-  lib_register_algorithms_la_SOURCES += left_edge_register.cpp  conf_comp_based_register.cpp k_cofamily_register.cpp
-  lib_register_algorithms_la_CPPFLAGS += \
-   -I$(top_builddir)/ext/trng-4.17/
-endif
-
 #do not touch the following line
 

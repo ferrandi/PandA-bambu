@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -84,15 +84,15 @@ void compatibility_based_register::create_compatibility_graph()
    /// compatibility graph creation
    const std::list<vertex> & support = HLS->Rliv->get_support();
    const std::list<vertex>::const_iterator vEnd = support.end();
-   for(std::list<vertex>::const_iterator vIt = support.begin(); vIt != vEnd; vIt++)
+   for(std::list<vertex>::const_iterator vIt = support.begin(); vIt != vEnd; ++vIt)
    {
       const std::set<unsigned int>& live = HLS->Rliv->get_live_in(*vIt);
       register_lower_bound = std::max(static_cast<unsigned int>(live.size()), register_lower_bound);
       const std::set<unsigned int>::const_iterator k_end = live.end(); 
-      for(std::set<unsigned int>::const_iterator k = live.begin(); k != k_end; k++)
+      for(std::set<unsigned int>::const_iterator k = live.begin(); k != k_end; ++k)
       {
          std::set<unsigned int>::const_iterator k_inner = k;
-         k_inner++;
+         ++k_inner;
          while(k_inner != k_end)
          {
             unsigned int tail = HLS->storage_value_information->get_storage_value_index(*vIt, *k);
@@ -103,7 +103,7 @@ void compatibility_based_register::create_compatibility_graph()
                conflict_map(tail,head)= true;
             else if(tail>head)
                conflict_map(head,tail)= true;
-            k_inner++;
+            ++k_inner;
          }
       }
    }
@@ -113,11 +113,11 @@ void compatibility_based_register::create_compatibility_graph()
          if(!conflict_map(vi,vj) && HLS->storage_value_information->get_storage_value_bitsize(vi) == HLS->storage_value_information->get_storage_value_bitsize(vj))
          {
             boost::graph_traits<compatibility_graph>::edge_descriptor e1;
-            bool in1;
             int edge_weight = HLS->storage_value_information->get_compatibility_weight(vi,vj);
             /// we consider only valuable sharing between registers
             if(edge_weight>1)
             {
+               bool in1;
                tie(e1, in1) = boost::add_edge(verts[vi], verts[vj], edge_compatibility_property(edge_weight), CG);
                THROW_ASSERT(in1, "unable to add edge");
             }

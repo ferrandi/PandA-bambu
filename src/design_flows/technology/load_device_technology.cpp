@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -114,7 +114,7 @@ DesignFlowStep_Status LoadDeviceTechnology::Exec()
       {
          THROW_ERROR("Error during technology file parsing: " + std::string(msg));
       }
-      catch (const std::string & msg)
+      catch (const std::string& msg)
       {
          THROW_ERROR("Error during technology file parsing: " + msg);
       }

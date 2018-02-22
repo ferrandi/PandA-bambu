@@ -27,22 +27,6 @@ noinst_HEADERS = \
 lib_function_allocation_la_SOURCES = \
    function_allocation.cpp fun_dominator_allocation.cpp functions.cpp
 
-if BUILD_LIB_FROM_PRAGMA
-if BUILD_LIB_EXPERIMENTAL
-   lib_function_allocation_la_CPPFLAGS += \
-      -I$(top_srcdir)/src/design_flows/codesign
-
-   noinst_HEADERS += \
-      omp_function_allocation.hpp \
-      omp_functions.hpp
-
-   lib_function_allocation_la_SOURCES += \
-      omp_function_allocation.cpp \
-      omp_functions.cpp
-endif
-endif
-
-
 #DOCUMENTATION STUFF
 DOX_TAGFILES = 
 PRJ_DOC = 

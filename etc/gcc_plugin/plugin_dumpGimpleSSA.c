@@ -12,7 +12,7 @@
 *                       Politecnico di Milano - DEIB
 *                        System Architectures Group
 *             ***********************************************
-*              Copyright (c) 2004-2017 Politecnico di Milano
+*              Copyright (c) 2004-2018 Politecnico di Milano
 *
 *   This file is part of the PandA framework.
 *
@@ -228,15 +228,16 @@ plugin_init (struct plugin_name_args *plugin_info,
                      &pass_info);
 #endif
 
-#if  __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ == 9)
+//#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ == 9)
+#if 0
   extern  gimple_opt_pass * make_pass_sra_earlyAggressive (gcc::context *ctxt);
   pass_info.pass = make_pass_sra_earlyAggressive(g);
   pass_info.reference_pass_name = "esra";
   pass_info.pos_op = PASS_POS_REPLACE;
   pass_info.ref_pass_instance_number = 1;
-  extern gimple_opt_pass * make_pass_sraAggressive (gcc::context *ctxt);
   register_callback ("esraAggressive", PLUGIN_PASS_MANAGER_SETUP, NULL,
                      &pass_info);
+  extern gimple_opt_pass * make_pass_sraAggressive (gcc::context *ctxt);
   pass_info.pass = make_pass_sraAggressive(g);
   pass_info.reference_pass_name = "sra";
   pass_info.pos_op = PASS_POS_REPLACE;

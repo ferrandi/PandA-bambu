@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -83,7 +83,7 @@ class constant_flop_wrapper : public FunctionFrontendFlowStep
        * @param function_name is the name of the function
        * @param constant is the tree node storing the constant
        */
-      std::string GenerateFunctionName(const std::string function_name, const tree_nodeConstRef constant);
+      std::string GenerateFunctionName(const std::string&function_name, const tree_nodeConstRef constant);
 
       /**
        * Return the set of analyses in relationship with this design step

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -112,7 +112,7 @@ DesignFlowStep_Status BBCdgComputation::InternalExec()
    boost::topological_sort(*bb, std::front_inserter(bb_levels));
    std::map<vertex, unsigned int> bb_sorted;
    unsigned int counter = 0;
-   for(std::list<vertex>::iterator it = bb_levels.begin(); it != bb_levels.end(); it++)
+   for(std::list<vertex>::iterator it = bb_levels.begin(); it != bb_levels.end(); ++it)
       bb_sorted[*it] = ++counter;
    //iterate over outgoing edges of the basic block CFG.
    for (boost::tie(ei, ei_end) = boost::edges(*bb); ei != ei_end ; ++ei )
@@ -130,7 +130,7 @@ DesignFlowStep_Status BBCdgComputation::InternalExec()
             if(labels.size())
             {
                std::set<unsigned int>::iterator it_end = labels.end();
-               for(std::set<unsigned int>::iterator it = labels.begin(); it != it_end; it++)
+               for(std::set<unsigned int>::iterator it = labels.begin(); it != it_end; ++it)
                {
                   function_behavior->bbgc->add_bb_edge_info(A, current_node, CDG_SELECTOR, *it);
                }
@@ -155,7 +155,7 @@ DesignFlowStep_Status BBCdgComputation::InternalExec()
    const std::deque<vertex> & topological_sorted_nodes = function_behavior->get_bb_levels();
    std::deque<vertex>::const_iterator it, it_end;
    it_end = topological_sorted_nodes.end();
-   for(it = topological_sorted_nodes.begin(); it != it_end; it++)
+   for(it = topological_sorted_nodes.begin(); it != it_end; ++it)
    {
       unsigned int cer_index = cer_counter;
       const BBNodeInfoRef bb_node_info = cdg_bb->GetBBNodeInfo(*it);

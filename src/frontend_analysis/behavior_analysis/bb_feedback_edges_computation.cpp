@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -98,7 +98,7 @@ DesignFlowStep_Status bb_feedback_edges_computation::InternalExec()
     ///then consider loops
    std::list<LoopConstRef> loops = function_behavior->CGetLoops()->GetList();
    std::list<LoopConstRef>::const_iterator loop_end = loops.end();
-   for(std::list<LoopConstRef>::const_iterator loop = loops.begin(); loop != loop_end; loop++)
+   for(std::list<LoopConstRef>::const_iterator loop = loops.begin(); loop != loop_end; ++loop)
    {
       if((*loop)->GetId() == 0)
          continue;
@@ -131,7 +131,7 @@ DesignFlowStep_Status bb_feedback_edges_computation::InternalExec()
       function_behavior->GetBBGraph(FunctionBehavior::BB)->WriteDot("Error.dot");
       THROW_ERROR_CODE(IRREDUCIBLE_LOOPS_EC, helper->get_function_name() + " cannot be synthesized: irreducible loops are not yet supported");
    }
-   catch (const std::string & msg)
+   catch (const std::string& msg)
    {
       function_behavior->GetBBGraph(FunctionBehavior::BB)->WriteDot("Error.dot");
       THROW_ERROR_CODE(IRREDUCIBLE_LOOPS_EC, helper->get_function_name() + " cannot be synthesized: irreducible loops are not yet supported");

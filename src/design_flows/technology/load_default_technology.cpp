@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -71,48 +71,48 @@ const std::unordered_set<TechnologyFlowStep_Type> LoadDefaultTechnology::Compute
 
 DesignFlowStep_Status LoadDefaultTechnology::Exec()
 {
-   /// Load default resources
-   const char * builtin_resources_data[] = {
-   #include "C_COMPLEX_IPs.data"
-       ,
-   #include "C_FP_IPs.data"
-      ,
-   #include "C_HLS_IPs.data"
-       ,
-   #include "C_IO_IPs.data"
-      ,
-   #include "C_MEM_IPs.data"
-#if HAVE_EXPERIMENTAL
-      ,
-   #include "C_PC_IPs.data"
-#endif
-      ,
-   #include "C_PROFILING_IPs.data"
-      ,
-   #include "C_STD_IPs.data"
-      ,
-   #include "C_VEC_IPs.data"
-      ,
-   #include "NC_HLS_IPs.data"
-      ,
-   #include "NC_MEM_IPs.data"
-#if HAVE_EXPERIMENTAL
-      ,
-   #include "NC_PC_IPs.data"
-#endif
-       ,
-   #include "NC_SF_IPs.data"
-      ,
-   #include "NC_STD_IPs.data"
-      ,
-   #include "NC_VEC_IPs.data"
-      ,
-   #include "NC_wishbone_IPs.data"
-   };
-
    size_t i = 0;
    try
    {
+      /// Load default resources
+      const char * builtin_resources_data[] = {
+      #include "C_COMPLEX_IPs.data"
+          ,
+      #include "C_FP_IPs.data"
+         ,
+      #include "C_HLS_IPs.data"
+          ,
+      #include "C_IO_IPs.data"
+         ,
+      #include "C_MEM_IPs.data"
+   #if HAVE_EXPERIMENTAL
+         ,
+      #include "C_PC_IPs.data"
+   #endif
+         ,
+      #include "C_PROFILING_IPs.data"
+         ,
+      #include "C_STD_IPs.data"
+         ,
+      #include "C_VEC_IPs.data"
+         ,
+      #include "NC_HLS_IPs.data"
+         ,
+      #include "NC_MEM_IPs.data"
+   #if HAVE_EXPERIMENTAL
+         ,
+      #include "NC_PC_IPs.data"
+   #endif
+          ,
+      #include "NC_SF_IPs.data"
+         ,
+      #include "NC_STD_IPs.data"
+         ,
+      #include "NC_VEC_IPs.data"
+         ,
+      #include "NC_wishbone_IPs.data"
+      };
+
       for (i = 0; i < sizeof(builtin_resources_data)/sizeof(char *); ++i)
       {
          XMLDomParser parser("builtin_resource_data[" + STR(i) + "]", builtin_resources_data[i]);
@@ -129,7 +129,7 @@ DesignFlowStep_Status LoadDefaultTechnology::Exec()
    {
       THROW_ERROR("Error during parsing of technology file: " + std::string(msg));
    }
-   catch (const std::string & msg)
+   catch (const std::string& msg)
    {
       THROW_ERROR("Error during parsing of technology file number " + STR(i) +  " : " + msg);
    }

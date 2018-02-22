@@ -8,10 +8,10 @@ EXTRA_DIST += latex_format_af_edges.xml  latex_format_pdg_reduction.xml latex_fo
 endif
 
 install-exec-hook:
-	cp $(top_srcdir)/latex_table_format/latex_format_bambu_results.xml $(DESTDIR)$(libdir)
-	cp $(top_srcdir)/latex_table_format/latex_format_bambu_results_xilinx.xml $(DESTDIR)$(libdir)
-	cp $(top_srcdir)/latex_table_format/latex_format_bambu_results_altera.xml $(DESTDIR)$(libdir)
-	cp $(top_srcdir)/latex_table_format/latex_format_bambu_results_lattice.xml $(DESTDIR)$(libdir)
+	cp $(top_srcdir)/etc/latex_table_format/latex_format_bambu_results.xml $(DESTDIR)$(libdir)
+	cp $(top_srcdir)/etc/latex_table_format/latex_format_bambu_results_xilinx.xml $(DESTDIR)$(libdir)
+	cp $(top_srcdir)/etc/latex_table_format/latex_format_bambu_results_altera.xml $(DESTDIR)$(libdir)
+	cp $(top_srcdir)/etc/latex_table_format/latex_format_bambu_results_lattice.xml $(DESTDIR)$(libdir)
 
 #do not touch the following line
 

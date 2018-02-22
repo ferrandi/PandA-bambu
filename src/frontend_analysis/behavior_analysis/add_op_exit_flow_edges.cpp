@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -145,7 +145,6 @@ DesignFlowStep_Status AddOpExitFlowEdges::InternalExec()
 #endif
       }
    }
-   const std::string function_name = function_behavior->CGetBehavioralHelper()->get_function_name();
    if(parameters->getOption<bool>(OPT_print_dot))
    {
       function_behavior->CGetOpGraph(FunctionBehavior::FLG)->WriteDot("OP_FL.dot");

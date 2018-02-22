@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -161,7 +161,7 @@ unsigned int OpNodeInfo::GetNodeId() const
    return 0;
 }
 
-void PrintVariablesList(std::ostream & stream, const std::string name, const CustomSet<unsigned int> variables, const BehavioralHelperConstRef behavioral_helper, const bool dotty_format)
+void PrintVariablesList(std::ostream & stream, const std::string&name, const CustomSet<unsigned int> variables, const BehavioralHelperConstRef behavioral_helper, const bool dotty_format)
 {
    if(variables.size())
       stream << name << ":" << (dotty_format ? "\\n" : "\n");
@@ -170,7 +170,7 @@ void PrintVariablesList(std::ostream & stream, const std::string name, const Cus
       stream << behavioral_helper->PrintVariable(variable) << "(" << variable << ")" << (dotty_format ? "\\n" : "\n");
 }
 
-void PrintMemoriesList(std::ostream & stream, const std::string name, const CustomSet<MemoryAddress> variables, const BehavioralHelperConstRef, const bool dotty_format)
+void PrintMemoriesList(std::ostream & stream, const std::string&name, const CustomSet<MemoryAddress> variables, const BehavioralHelperConstRef, const bool dotty_format)
 {
    if(variables.size())
       stream << name << ":" << (dotty_format ? "\\n" : "\n");
@@ -178,7 +178,7 @@ void PrintMemoriesList(std::ostream & stream, const std::string name, const Cust
       stream << from_strongtype_cast<int>(variable) << (dotty_format ? "\\n" : "\n");
 }
 
-void PrintVariablesLists(std::ostream & stream, const std::string name, const CustomMap<FunctionBehavior_VariableAccessType, CustomSet<unsigned int> > variables, const BehavioralHelperConstRef behavioral_helper, const bool dotty_format)
+void PrintVariablesLists(std::ostream & stream, const std::string&name, const CustomMap<FunctionBehavior_VariableAccessType, CustomSet<unsigned int> > variables, const BehavioralHelperConstRef behavioral_helper, const bool dotty_format)
 {
    for (const auto & local_variables : variables)
    {
@@ -194,7 +194,7 @@ void PrintVariablesLists(std::ostream & stream, const std::string name, const Cu
    }
 }
 
-void PrintMemoriesLists(std::ostream & stream, const std::string name, const CustomMap<FunctionBehavior_VariableAccessType, CustomSet<MemoryAddress> > variables, const BehavioralHelperConstRef behavioral_helper, const bool dotty_format)
+void PrintMemoriesLists(std::ostream & stream, const std::string&name, const CustomMap<FunctionBehavior_VariableAccessType, CustomSet<MemoryAddress> > variables, const BehavioralHelperConstRef behavioral_helper, const bool dotty_format)
 {
    for (const auto & local_variables : variables)
    {
@@ -309,14 +309,14 @@ OpGraph::OpGraph(OpGraphsCollectionRef _op_graphs_collection, int _selector) :
    graph(_op_graphs_collection.get(), _selector)
 {}
 
-OpGraph::OpGraph(OpGraphsCollectionRef _op_graphs_collection, int _selector, std::unordered_set<boost::graph_traits<OpGraphsCollection>::vertex_descriptor > _sub) :
+OpGraph::OpGraph(const OpGraphsCollectionRef _op_graphs_collection, int _selector, const std::unordered_set<boost::graph_traits<OpGraphsCollection>::vertex_descriptor > & _sub) :
    graph(_op_graphs_collection.get(), _selector, _sub)
 {}
 
 OpGraph::~OpGraph()
 {}
 
-void OpGraph::WriteDot(const std::string & file_name, const int detail_level) const
+void OpGraph::WriteDot(const std::string& file_name, const int detail_level) const
 {
    const BehavioralHelperConstRef helper = CGetOpGraphInfo()->BH;
    std::string output_directory = collection->parameters->getOption<std::string>(OPT_dot_directory) + "/" + helper->get_function_name() + "/";
@@ -334,7 +334,7 @@ std::unordered_map<vertex, OpVertexSet> OpGraph::GetSrcVertices(const OpVertexSe
    OpGraphConstRef thisRef(this, null);
    std::unordered_map<vertex, OpVertexSet> retVal;
    OpVertexSet::const_iterator vertIter, vertIterEnd;
-   for(vertIter = toCheck.begin(), vertIterEnd = toCheck.end(); vertIter != vertIterEnd; vertIter++)
+   for(vertIter = toCheck.begin(), vertIterEnd = toCheck.end(); vertIter != vertIterEnd; ++vertIter)
    {
       InEdgeIterator inE, inEEnd;
       for(boost::tie(inE, inEEnd) = boost::in_edges(*vertIter, *this); inE != inEEnd; inE++)
@@ -399,7 +399,7 @@ OpEdgeSet OpGraph::CGetOutEdges(const vertex v) const
 #endif
 
 #if HAVE_HLS_BUILT
-void OpGraph::WriteDot(const std::string & file_name, const hlsConstRef HLS, const CustomSet<unsigned int> critical_paths) const
+void OpGraph::WriteDot(const std::string& file_name, const hlsConstRef HLS, const CustomSet<unsigned int> critical_paths) const
 {
    const BehavioralHelperConstRef helper = CGetOpGraphInfo()->BH;
    std::string output_directory = collection->parameters->getOption<std::string>(OPT_dot_directory) + "/" + helper->get_function_name() + "/";

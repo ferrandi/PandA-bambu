@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -88,14 +88,7 @@ void HLSInstructionWriter::declareFunction(const unsigned int function_id)
          0,
          var_pp_functorConstRef(new std_var_pp_functor(behavioral_helper))
       );
-   bool flag_cpp;
-   if(parameters->isOption(OPT_input_format) &&
-         parameters->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_CPP &&
-         !parameters->isOption(OPT_pretty_print))
-      flag_cpp = true;
-   else
-      flag_cpp = false;
-
+   bool flag_cpp = AppM->get_tree_manager()->is_CPP() && !parameters->isOption(OPT_pretty_print);
 
 
    std::string name = AppM->CGetFunctionBehavior(function_id)->CGetBehavioralHelper()->get_function_name();

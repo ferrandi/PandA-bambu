@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -69,7 +69,7 @@ simple_indent::~simple_indent()
 #endif
 }
 
-void simple_indent::operator() (std::ostream& os, const std::string &str)
+void simple_indent::operator() (std::ostream& os, const std::string&str)
 {
    std::string::const_iterator it_end = str.end();
    ///Specified whether the first character of the string
@@ -83,7 +83,7 @@ void simple_indent::operator() (std::ostream& os, const std::string &str)
 
    if (is_line_start) write_indent(os);
 
-   for (std::string::const_iterator it = str.begin(); it != it_end; it++)
+   for (std::string::const_iterator it = str.begin(); it != it_end; ++it)
    {
       is_line_start = false;
       if (*it == '\n')

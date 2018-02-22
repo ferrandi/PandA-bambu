@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -294,13 +294,10 @@ const std::string ApplicationFrontendFlowStep::ComputeSignature(const FrontendFl
       case CREATE_ADDRESS_TRANSLATION:
 #endif
       case(CREATE_TREE_MANAGER) :
-#if HAVE_HOST_PROFILING_BUILT
-      case(DUMP_PROFILING_DATA) :
-#endif
 #if HAVE_ZEBU_BUILT && HAVE_EXPERIMENTAL
       case DYNAMIC_VAR_COMPUTATION:
 #endif
-#if HAVE_BAMBU_BUILT && HAVE_EXPERIMENTAL
+#if HAVE_BAMBU_BUILT
       case FIND_MAX_CFG_TRANSFORMATIONS:
 #endif
       case(FUNCTION_ANALYSIS) :
@@ -312,13 +309,9 @@ const std::string ApplicationFrontendFlowStep::ComputeSignature(const FrontendFl
 #endif
 #if HAVE_HOST_PROFILING_BUILT
       case(HOST_PROFILING):
-      case(HPP_PROFILING):
 #endif
 #if HAVE_BAMBU_BUILT
       case(IPA_POINT_TO_ANALYSIS):
-#endif
-#if HAVE_HOST_PROFILING_BUILT
-      case(LOOPS_PROFILING) :
 #endif
       case MEM_CG_EXT:
 #if HAVE_ZEBU_BUILT
@@ -330,9 +323,6 @@ const std::string ApplicationFrontendFlowStep::ComputeSignature(const FrontendFl
 #if HAVE_FROM_PRAGMA_BUILT
       case(PRAGMA_SUBSTITUTION) :
 #endif
-#if HAVE_HOST_PROFILING_BUILT
-      case(READ_PROFILING_DATA) :
-#endif
 #if HAVE_ZEBU_BUILT
       case(SIZEOF_SUBSTITUTION):
 #endif
@@ -341,9 +331,6 @@ const std::string ApplicationFrontendFlowStep::ComputeSignature(const FrontendFl
 #endif
       case (STRING_CST_FIX):
       case(SYMBOLIC_APPLICATION_FRONTEND_FLOW_STEP) :
-#if HAVE_HOST_PROFILING_BUILT
-      case(TP_PROFILING) :
-#endif
          {
             return "Frontend::" + boost::lexical_cast<std::string>(frontend_flow_step_type);
          }

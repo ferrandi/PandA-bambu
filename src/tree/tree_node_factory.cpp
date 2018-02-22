@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -605,6 +605,7 @@ void tree_node_factory::operator()(const attr* obj, unsigned int & mask)
 {
    THROW_ASSERT(obj==dynamic_cast<attr*>(curr_tree_node_ptr), "wrong factory setup");
    tree_node_mask::operator()(obj,mask);
+   // cppcheck-suppress unusedVariable
    bool attr_p;
 
    #define ATTR_SEQ (TOK_NEW) (TOK_DELETE) (TOK_ASSIGN) (TOK_MEMBER) (TOK_PUBLIC) (TOK_PROTECTED) (TOK_PRIVATE) (TOK_NORETURN)\
@@ -674,7 +675,7 @@ void tree_node_factory::operator()(const srcp* obj, unsigned int & mask)
    THROW_ASSERT(obj==dynamic_cast<srcp*>(curr_tree_node_ptr), "wrong factory setup");
    tree_node_mask::operator()(obj,mask);
    THROW_ASSERT(tree_node_schema.find(TOK(TOK_SRCP)) != tree_node_schema.end(), "tree_node_schema must have TOK_SRCP value");
-   const std::string & srcp_str = tree_node_schema.find(TOK(TOK_SRCP))->second;
+   const std::string& srcp_str = tree_node_schema.find(TOK(TOK_SRCP))->second;
    std::string::size_type colon_pos2 = srcp_str.rfind(':');
    std::string::size_type colon_pos = srcp_str.rfind(':', colon_pos2 - 1);
    dynamic_cast<srcp*>(curr_tree_node_ptr)->include_name = srcp_str.substr(0, colon_pos);

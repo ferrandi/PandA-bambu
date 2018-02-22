@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -140,7 +140,7 @@ DesignFlowStep_Status SwitchFix::InternalExec()
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
 
          std::unordered_set<unsigned int>::iterator multiple_labels_block, multiple_labels_block_end = multiple_labels_blocks.end();
-         for(multiple_labels_block = multiple_labels_blocks.begin(); multiple_labels_block != multiple_labels_block_end; multiple_labels_block++)
+         for(multiple_labels_block = multiple_labels_blocks.begin(); multiple_labels_block != multiple_labels_block_end; ++multiple_labels_block)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Splitting BB" + boost::lexical_cast<std::string>(*multiple_labels_block));
             ///Compute the case labels of the switch
@@ -148,7 +148,7 @@ DesignFlowStep_Status SwitchFix::InternalExec()
             std::unordered_set<tree_nodeRef> cases;
             const tree_vec * tv = GetPointer<tree_vec>(GET_NODE(gs->op1));
             std::vector<tree_nodeRef>::const_iterator it, it_end = tv->list_of_op.end();
-            for(it = tv->list_of_op.begin(); it != it_end; it++)
+            for(it = tv->list_of_op.begin(); it != it_end; ++it)
             {
                cases.insert(GET_NODE(GetPointer<case_label_expr>(GET_NODE(*it))->got));
             }
@@ -269,7 +269,7 @@ DesignFlowStep_Status SwitchFix::InternalExec()
                to_be_fixed.insert(succ);
          }
          std::unordered_set<unsigned int>::const_iterator t, t_end = to_be_fixed.end();
-         for(t = to_be_fixed.begin(); t != t_end; t++)
+         for(t = to_be_fixed.begin(); t != t_end; ++t)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Fixing BB" + STR(*t));
             //Creating new basic block
@@ -297,10 +297,10 @@ DesignFlowStep_Status SwitchFix::InternalExec()
                if(list_of_block.find(*t)->second->list_of_pred[i] == basic_block.first)
                {
                   list_of_block.find(*t)->second->list_of_pred[i] = new_bb->number;
-                  for(const auto phi : list_of_block.find(*t)->second->CGetPhiList())
+                  for(const auto& phi : list_of_block.find(*t)->second->CGetPhiList())
                   {
                      gimple_phi * current_phi = GetPointer<gimple_phi>(GET_NODE(phi));
-                     for(const auto def_edge : current_phi->CGetDefEdgesList())
+                     for(const auto& def_edge : current_phi->CGetDefEdgesList())
                      {
                         if(def_edge.second == basic_block.first)
                         {
@@ -386,7 +386,7 @@ DesignFlowStep_Status SwitchFix::InternalExec()
             ///Map between label decl index and corresponding case value
             std::unordered_map<unsigned int, TreeNodeConstSet> case_labels;
             const auto gotos = GetPointer<const tree_vec>(GET_NODE(gs->op1));
-            for(const auto goto_ : gotos->list_of_op)
+            for(const auto& goto_ : gotos->list_of_op)
             {
                const auto cle = GetPointer<const case_label_expr>(GET_NODE(goto_));
                THROW_ASSERT(cle, STR(goto_));
@@ -405,7 +405,7 @@ DesignFlowStep_Status SwitchFix::InternalExec()
                const auto gl = GetPointer<const gimple_label>(GET_NODE(label));
                THROW_ASSERT(gl, STR(label));
                tree_nodeRef cond = tree_nodeRef();
-               for(const auto case_label : case_labels.find(gl->op->index)->second)
+               for(const auto& case_label : case_labels.find(gl->op->index)->second)
                {
                   const auto cle = GetPointer<const case_label_expr>(GET_CONST_NODE(case_label));
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering case " + cle->ToString());

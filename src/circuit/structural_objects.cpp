@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -249,7 +249,7 @@ void structural_type_descriptor::print(std::ostream& os) const
    }
 }
 
-structural_type_descriptor::structural_type_descriptor(std::string type_name, unsigned int _vector_size) : vector_size(_vector_size), id_type(type_name), treenode(structural_type_descriptor::treenode_DEFAULT)
+structural_type_descriptor::structural_type_descriptor(const std::string& type_name, unsigned int _vector_size) : vector_size(_vector_size), id_type(type_name), treenode(structural_type_descriptor::treenode_DEFAULT)
 {
    /// first set defaults
    type=UNKNOWN;
@@ -382,7 +382,7 @@ structural_type_descriptor::structural_type_descriptor(unsigned int _treenode, t
          else
             type = BOOL;
       }
-      else if (tree_helper::is_bool(tm,treenode))
+      else if (tree_helper::is_int(tm,treenode))
       {
          if (vector_size)
             type = VECTOR_INT;
@@ -734,7 +734,7 @@ structural_objectRef module::get_generic_object(const technology_managerConstRef
    return structural_objectRef();
 }
 
-structural_type_descriptor::s_type module::get_parameter_type(const technology_managerConstRef TM, const std::string name) const
+structural_type_descriptor::s_type module::get_parameter_type(const technology_managerConstRef TM, const std::string&name) const
 {
    const auto module_type = get_generic_object(TM);
    const auto default_value = module_type->get_parameter(name);
@@ -799,7 +799,7 @@ void structural_object::xload(const xml_element* Enode, structural_objectRef, st
          std::string name;
          LOAD_XVM(name, EnodeC);
          const xml_text_node* text = EnodeC->get_child_text();
-         if (!text) THROW_WARNING ("parameter definition is missing");
+         if (!text) THROW_ERROR("parameter definition is missing");
          std::string default_value = text->get_content();
          xml_node::convert_escaped(default_value);
          set_parameter(name, default_value);
@@ -898,7 +898,7 @@ void port_o::remove_connection(structural_objectRef s)
 {
    THROW_ASSERT(s, get_path() + ": NULL object received");
    std::vector<Wrefcount<structural_object> >::iterator del = connected_objects.begin();
-   for(; del != connected_objects.end(); del++)
+   for(; del != connected_objects.end(); ++del)
    {
       if ((*del).lock() == s) break;
    }
@@ -913,7 +913,7 @@ bool port_o::is_connected(structural_objectRef s) const
    THROW_ASSERT(s, "NULL object received");
    if (connected_objects.size() == 0) return false;
    std::vector<Wrefcount<structural_object> >::const_iterator del = connected_objects.begin();
-   for(; del != connected_objects.end(); del++)
+   for(; del != connected_objects.end(); ++del)
    {
       if ((*del).lock() == s) return true;
    }
@@ -1230,7 +1230,7 @@ structural_objectRef port_o::find_isomorphic(const structural_objectRef key) con
    return structural_objectRef();
 }
 
-structural_objectRef port_o::find_member(const std::string &_id, so_kind _type, const structural_objectRef _owner) const
+structural_objectRef port_o::find_member(const std::string&_id, so_kind _type, const structural_objectRef _owner) const
 {
    switch (_type)
    {
@@ -1370,7 +1370,7 @@ void port_o::xload(const xml_element* Enode, structural_objectRef _owner, struct
    ///the field connected_objects has to be updated outside!!!
 }
 
-port_o::port_direction port_o::to_port_direction(std::string val)
+port_o::port_direction port_o::to_port_direction(const std::string& val)
 {
    unsigned int i;
    for (i = 0; i < UNKNOWN; i++)
@@ -1475,7 +1475,7 @@ event_o::event_o(int _debug_level, const structural_objectRef o) :
 {
 }
 
-structural_objectRef event_o::find_member(const std::string &, so_kind, const structural_objectRef ) const
+structural_objectRef event_o::find_member(const std::string&, so_kind, const structural_objectRef ) const
 {
    THROW_ERROR("Events do not have associated any structural object");
    return structural_objectRef();
@@ -1515,7 +1515,7 @@ data_o::data_o(int _debug_level, const structural_objectRef o) :
 {
 }
 
-structural_objectRef data_o::find_member(const std::string &, so_kind, const structural_objectRef ) const
+structural_objectRef data_o::find_member(const std::string&, so_kind, const structural_objectRef ) const
 {
    THROW_ERROR("data objects do not have associated any structural object");
    return structural_objectRef();
@@ -1551,7 +1551,7 @@ void data_o::print(std::ostream& os) const
 }
 
 action_o::action_o(int _debug_level, const structural_objectRef o) :
-      structural_object(_debug_level, o), action_type(UNKNOWN)
+      structural_object(_debug_level, o), function_id(0), action_type(UNKNOWN)
 {}
 
 void action_o::add_parameter(structural_objectRef d)
@@ -1608,12 +1608,12 @@ const structural_objectRef  action_o::get_sensitivity(unsigned int n) const
    return action_sensitivity[n];
 }
 
-void action_o::set_scope(std::string sc)
+void action_o::set_scope(const std::string& sc)
 {
    scope = sc;
 }
 
-const std::string & action_o::get_scope() const
+const std::string& action_o::get_scope() const
 {
    return scope;
 }
@@ -1650,7 +1650,7 @@ structural_objectRef action_o::find_isomorphic(const structural_objectRef) const
    return structural_objectRef();
 }
 
-structural_objectRef action_o::find_member(const std::string &_id, so_kind _type, const structural_objectRef ) const
+structural_objectRef action_o::find_member(const std::string&_id, so_kind _type, const structural_objectRef ) const
 {
    switch (_type)
    {
@@ -1768,7 +1768,7 @@ constant_o::constant_o(int _debug_level, const structural_objectRef o)
       : structural_object(_debug_level, o)
 {}
 
-constant_o::constant_o(int _debug_level, const structural_objectRef o, std::string _value) :
+constant_o::constant_o(int _debug_level, const structural_objectRef o, const std::string& _value) :
    structural_object(_debug_level, o),
    value(_value)
 {}
@@ -1813,7 +1813,7 @@ std::string constant_o::get_value() const
    return value;
 }
 
-structural_objectRef constant_o::find_member(const std::string &_id, so_kind _type, const structural_objectRef _owner) const
+structural_objectRef constant_o::find_member(const std::string&_id, so_kind _type, const structural_objectRef _owner) const
 {
    switch (_type)
    {
@@ -1995,7 +1995,7 @@ bool signal_o::is_full_connected() const
    bool out_port = false;
    std::vector<structural_objectRef>::const_iterator it_end = connected_objects.end();
    std::vector<structural_objectRef>::const_iterator it2_end = connected_objects.end();
-   for(std::vector<structural_objectRef>::const_iterator it = connected_objects.begin(); it != it_end; it++)
+   for(std::vector<structural_objectRef>::const_iterator it = connected_objects.begin(); it != it_end; ++it)
    {
       if(GetPointer<port_o>(*it))
       {
@@ -2007,7 +2007,7 @@ bool signal_o::is_full_connected() const
          }
       }
    }
-   for(std::vector<structural_objectRef>::const_iterator it = connected_objects.begin(); it != it_end; it++)
+   for(std::vector<structural_objectRef>::const_iterator it = connected_objects.begin(); it != it_end; ++it)
    {
       if(GetPointer<port_o>(*it))
       {
@@ -2022,13 +2022,13 @@ bool signal_o::is_full_connected() const
    if(in_port && out_port)
       return true;
    //At this point ports are all input or all output
-   for(std::vector<structural_objectRef>::const_iterator it = connected_objects.begin(); it != it_end; it++)
+   for(std::vector<structural_objectRef>::const_iterator it = connected_objects.begin(); it != it_end; ++it)
    {
       if(GetPointer<port_o>(*it))
       {
          port_o * first_port = GetPointer<port_o>(*it);
          structural_objectRef first_owner = first_port->get_owner();
-         for(std::vector<structural_objectRef>::const_iterator it2 = connected_objects.begin(); it2 != it2_end; it2++)
+         for(std::vector<structural_objectRef>::const_iterator it2 = connected_objects.begin(); it2 != it2_end; ++it2)
          {
             if(GetPointer<port_o>(*it2))
             {
@@ -2043,7 +2043,7 @@ bool signal_o::is_full_connected() const
    return false;
 }
 
-structural_objectRef signal_o::find_member(const std::string &_id, so_kind _type, const structural_objectRef _owner) const
+structural_objectRef signal_o::find_member(const std::string&_id, so_kind _type, const structural_objectRef _owner) const
 {
    switch (_type)
    {
@@ -2246,7 +2246,7 @@ void signal_o::add_n_signals(unsigned int n_signals, structural_objectRef _owner
 
 const structural_objectRef signal_o::get_signal(unsigned int n) const
 {
-   THROW_ASSERT(signals_.size(), "Signals with zero size " + signals_.size());
+   THROW_ASSERT(signals_.size(), "Signals with zero size");
    THROW_ASSERT(n < signals_.size(), "index " + STR(n) + " out of range [0:" + STR(signals_.size()-1) + " in signal " + get_path() );
    return signals_[n];
 }
@@ -2388,11 +2388,11 @@ unsigned int module::get_gen_port_size() const
    return static_cast<unsigned int>(gen_ports.size());
 }
 
-void module::remove_port(std::string _id)
+void module::remove_port(const std::string& _id)
 {
    unsigned int num_port = static_cast<unsigned int>(positional_map.size());
    structural_objectRef port;
-   for(std::map<unsigned int, structural_objectRef>::iterator l = positional_map.begin(); l != positional_map.end(); l++)
+   for(std::map<unsigned int, structural_objectRef>::iterator l = positional_map.begin(); l != positional_map.end(); ++l)
    {
       if (l->second->get_id() == _id)
       {
@@ -2405,7 +2405,7 @@ void module::remove_port(std::string _id)
 
    std::map<unsigned int, structural_objectRef> _positional_map = positional_map;
    positional_map.clear();
-   for(std::map<unsigned int, structural_objectRef>::iterator l = _positional_map.begin(); l != _positional_map.end(); l++)
+   for(std::map<unsigned int, structural_objectRef>::iterator l = _positional_map.begin(); l != _positional_map.end(); ++l)
    {
       if (l->first == num_port) continue;
       if (l->first < num_port) positional_map[l->first] = l->second;
@@ -2678,7 +2678,7 @@ void module::get_NP_library_parameters(structural_objectRef _owner, std::vector<
    }
 }
 
-structural_objectRef module::find_member(const std::string &_id, so_kind _type, const structural_objectRef ASSERT_PARAMETER(_owner)) const
+structural_objectRef module::find_member(const std::string&_id, so_kind _type, const structural_objectRef ASSERT_PARAMETER(_owner)) const
 {
    THROW_ASSERT(_owner && _owner.get() == this, "owner mismatch");
    switch (_type)
@@ -2937,7 +2937,7 @@ void module::copy(structural_objectRef dest) const
       }
    }
 
-   for(std::map<std::string, structural_objectRef>::const_iterator l = index_constants.begin(); l != index_constants.end(); l++)
+   for(std::map<std::string, structural_objectRef>::const_iterator l = index_constants.begin(); l != index_constants.end(); ++l)
    {
       const structural_objectRef int_obj = l->second;
       const structural_objectRef dest_el = dest->find_isomorphic(int_obj);
@@ -2974,7 +2974,7 @@ void module::copy(structural_objectRef dest) const
       }
    }
 
-   for(std::map<std::string, structural_objectRef>::const_iterator l = index_signals.begin(); l != index_signals.end(); l++)
+   for(std::map<std::string, structural_objectRef>::const_iterator l = index_signals.begin(); l != index_signals.end(); ++l)
    {
       const structural_objectRef int_obj = l->second;
       std::vector<structural_objectRef> signal_objs;
@@ -3023,12 +3023,12 @@ void module::copy(structural_objectRef dest) const
       }
    }
 
-   for(std::map<std::string, structural_objectRef>::const_iterator l = index_bus_connections.begin(); l != index_bus_connections.end(); l++)
+   for(std::map<std::string, structural_objectRef>::const_iterator l = index_bus_connections.begin(); l != index_bus_connections.end(); ++l)
    {
       THROW_ERROR("Copy of bus connections is not yet supported");
    }
 
-   for(std::map<std::string, structural_objectRef>::const_iterator l = index_channels.begin(); l != index_channels.end(); l++)
+   for(std::map<std::string, structural_objectRef>::const_iterator l = index_channels.begin(); l != index_channels.end(); ++l)
    {
       THROW_ERROR("Copy of bus connections is not yet supported");
    }
@@ -3193,7 +3193,7 @@ std::vector<std::string> get_connections(const xml_element* node)
       {
          const xml_element::attribute_list Alist = EnodeCC->get_attributes();
          xml_element::attribute_list::const_iterator it_end = Alist.end();
-         for (xml_element::attribute_list::const_iterator it = Alist.begin(); it != it_end; it++)
+         for (xml_element::attribute_list::const_iterator it = Alist.begin(); it != it_end; ++it)
          {
             connections.push_back((*it)->get_value());
          }
@@ -3296,7 +3296,7 @@ void module::xload(const xml_element* Enode, structural_objectRef _owner, struct
          GetPointer<module>(_owner)->add_internal_object(obj);
          connections[obj] = get_connections(EnodeC);
       }
-      else if (EnodeC->get_name() == GET_CLASS_NAME(signal_o))
+      else if (EnodeC->get_name() == GET_CLASS_NAME(signal_vector_o))
       {
          PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "   - Signal vector");
          obj = structural_objectRef(new signal_o(debug_level, _owner, signal_vector_o_K));
@@ -3409,7 +3409,7 @@ void module::xload(const xml_element* Enode, structural_objectRef _owner, struct
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - Loading the interconnetions");
    const std::string& scope = get_path();
    //Second turn to connect ports, signals and constants
-   for(std::map<structural_objectRef, std::vector<std::string> >::iterator c = connections.begin(); c != connections.end(); c++)
+   for(std::map<structural_objectRef, std::vector<std::string> >::iterator c = connections.begin(); c != connections.end(); ++c)
    {
       obj = c->first;
       THROW_ASSERT(obj, "Object not valid");
@@ -3782,7 +3782,7 @@ component_o::component_o(int _debug_level, const structural_objectRef o) :
       module(_debug_level, o)
 {}
 
-structural_objectRef component_o::find_member(const std::string &_id, so_kind _type, const structural_objectRef _owner) const
+structural_objectRef component_o::find_member(const std::string&_id, so_kind _type, const structural_objectRef _owner) const
 {
    return module::find_member(_id, _type, _owner);
 }
@@ -3825,7 +3825,7 @@ channel_o::channel_o(int _debug_level, const structural_objectRef o) :
       module(_debug_level, o)
 {}
 
-void channel_o::add_interface(unsigned int t, std::string _interface)
+void channel_o::add_interface(unsigned int t, const std::string& _interface)
 {
    impl_interfaces[t] = _interface;
 }
@@ -3853,7 +3853,7 @@ unsigned int channel_o::get_connected_objects_size() const
    return static_cast<unsigned int>(connected_objects.size());
 }
 
-structural_objectRef channel_o::find_member(const std::string &_id, so_kind _type, const structural_objectRef _owner) const
+structural_objectRef channel_o::find_member(const std::string&_id, so_kind _type, const structural_objectRef _owner) const
 {
    structural_objectRef mod = module::find_member(_id, _type, _owner);
    if (mod)
@@ -3887,7 +3887,7 @@ void channel_o::copy(structural_objectRef dest) const
 {
    module::copy(dest);
    std::map< unsigned int, std::string >::const_iterator it_end = impl_interfaces.end();
-   for (std::map< unsigned int, std::string >::const_iterator it =  impl_interfaces.begin(); it != it_end; it++)
+   for (std::map< unsigned int, std::string >::const_iterator it =  impl_interfaces.begin(); it != it_end; ++it)
    {
       GetPointer<channel_o>(dest)->add_interface(it->first, it->second);
    }
@@ -3946,7 +3946,7 @@ void channel_o::xload(const xml_element* Enode, structural_objectRef _owner, str
       {
          const xml_element::attribute_list Alist = EnodeC->get_attributes();
          xml_element::attribute_list::const_iterator it_end = Alist.end();
-         for (xml_element::attribute_list::const_iterator it = Alist.begin(); it != it_end; it++)
+         for (xml_element::attribute_list::const_iterator it = Alist.begin(); it != it_end; ++it)
          {
             impl_interfaces[boost::lexical_cast<unsigned int>((*it)->get_name().c_str()+2)] = (*it)->get_value();
          }
@@ -3960,7 +3960,7 @@ void channel_o::xwrite(xml_element* rootnode)
    module::xwrite(Enode);
    xml_element* Enode_II = Enode->add_child_element("impl_interfaces");
    std::map< unsigned int, std::string >::const_iterator it_end = impl_interfaces.end();
-   for (std::map< unsigned int, std::string >::const_iterator it =  impl_interfaces.begin(); it != it_end; it++)
+   for (std::map< unsigned int, std::string >::const_iterator it =  impl_interfaces.begin(); it != it_end; ++it)
    {
       WRITE_XNVM2("II" + boost::lexical_cast<std::string>(it->first), it->second, Enode_II);
    }
@@ -3982,7 +3982,7 @@ void channel_o::print(std::ostream& os) const
    module::print(os);
    PP(os, "[");
    if (impl_interfaces.size()) PP(os, "List of the interfaces:\n");
-   for (std::map< unsigned int, std::string >::const_iterator i = impl_interfaces.begin(); i != impl_interfaces.end(); i++)
+   for (std::map< unsigned int, std::string >::const_iterator i = impl_interfaces.begin(); i != impl_interfaces.end(); ++i)
    {
       os << " @(" << i->first << ") " << i->second;
       PP(os, "\n");
@@ -4019,7 +4019,7 @@ structural_objectRef bus_connection_o::find_isomorphic(const structural_objectRe
    return structural_objectRef();
 }
 
-structural_objectRef bus_connection_o::find_member(const std::string &_id, so_kind _type, const structural_objectRef _owner) const
+structural_objectRef bus_connection_o::find_member(const std::string&_id, so_kind _type, const structural_objectRef _owner) const
 {
    switch (_type)
    {
@@ -4252,7 +4252,7 @@ std::string structural_object::get_equation(const structural_objectRef out_obj, 
             boost::algorithm::split(tokens, tmp, boost::algorithm::is_any_of(";"));
             for(unsigned int i = 0; i < tokens.size(); i++)
             {
-               if (tokens[i].find(out_obj->get_id()) == 0)
+               if (boost::algorithm::starts_with(tokens[i],out_obj->get_id()))
                   EQ = tokens[i].substr(tokens[i].find("=") + 1, tokens[i].size());
             }
             //EQ = NPF->get_NP_functionality(NP_functionality::EQUATION);
@@ -4262,7 +4262,7 @@ std::string structural_object::get_equation(const structural_objectRef out_obj, 
                const structural_objectRef inobj = GetPointer<module>(owner)->get_in_port(p);
                std::string In = inobj->get_equation(inobj, TM, analyzed, input_ports, output_ports);
                bool in_port = false;
-               for(std::set<structural_objectRef>::iterator k = input_ports.begin(); k != input_ports.end() and !in_port; k++)
+               for(std::set<structural_objectRef>::iterator k = input_ports.begin(); k != input_ports.end() and !in_port; ++k)
                   if((*k)->get_id() == In) in_port = true;
                if (!in_port)
                   In = "("+In+")";

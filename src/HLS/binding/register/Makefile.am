@@ -43,11 +43,6 @@ DOX_TAGFILES= src src/HLS/binding/register/algorithms src/HLS/controller
 
 PRJ_DOC = reg_binding_creator.doc
 EXTRA_DIST = $(PRJ_DOC)
-if BUILD_LIB_EXPERIMENTAL
-   PRJ_DOC += \
-      register_grouping.doc
-endif
-
 
 #do not touch the following line
 

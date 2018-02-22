@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -275,10 +275,10 @@ bool CallGraphManager::IsCallPoint(
       case FunctionEdgeInfo::CallType::call_any:
          res = functionEdgeInfo->direct_call_points.find(call_id) !=
             functionEdgeInfo->direct_call_points.end() or
-            functionEdgeInfo->direct_call_points.find(call_id) !=
-            functionEdgeInfo->direct_call_points.end() or
-            functionEdgeInfo->direct_call_points.find(call_id) !=
-            functionEdgeInfo->direct_call_points.end();
+            functionEdgeInfo->indirect_call_points.find(call_id) !=
+            functionEdgeInfo->indirect_call_points.end() or
+            functionEdgeInfo->function_addresses.find(call_id) !=
+            functionEdgeInfo->function_addresses.end();
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "any call! present? "+ STR(res));
          break;
       default:
@@ -311,24 +311,32 @@ void CallGraphManager::RemoveCallPoint(EdgeDescriptor e, const unsigned int call
    auto & indirect_calls = edge_info->indirect_call_points;
    auto & function_addresses = edge_info->function_addresses;
 
+#if HAVE_ASSERTS
    int found_calls = 0;
+#endif
    const auto dir_it = direct_calls.find(callid);
    if (dir_it != direct_calls.end())
    {
       direct_calls.erase(callid);
+#if HAVE_ASSERTS
       found_calls++;
+#endif
    }
    const auto indir_it = indirect_calls.find(callid);
    if (indir_it != indirect_calls.end())
    {
       indirect_calls.erase(callid);
+#if HAVE_ASSERTS
       found_calls++;
+#endif
    }
    const auto addr_it = function_addresses.find(callid);
    if (addr_it != function_addresses.end())
    {
       function_addresses.erase(callid);
+#if HAVE_ASSERTS
       found_calls++;
+#endif
    }
 
    THROW_ASSERT(found_calls, "call id " + STR(callid) + " is not a call point in function " + STR(caller_id) + " for function " + STR(called_id));
@@ -420,7 +428,7 @@ const CallGraphConstRef CallGraphManager::CGetCallGraph() const
    return call_graph;
 }
 
-const CallGraphConstRef CallGraphManager::CGetCallSubGraph(const std::unordered_set<vertex> vertices) const
+const CallGraphConstRef CallGraphManager::CGetCallSubGraph(const std::unordered_set<vertex> &vertices) const
 {
    return CallGraphConstRef(new CallGraph(call_graphs_collection, STD_SELECTOR | FEEDBACK_SELECTOR, vertices));
 }
@@ -468,7 +476,7 @@ void CallGraphManager::ComputeRootAndReachedFunctions()
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Top functions passed by user");
       const auto top_functions_names = Param->getOption<const std::list<std::string> >(OPT_top_functions_names);
-      for(const auto top_function_name : top_functions_names)
+      for(const auto& top_function_name : top_functions_names)
       {
          const unsigned int top_function_index = tree_manager->function_index(top_function_name);
          if(top_function_index == 0)

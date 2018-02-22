@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -151,7 +151,7 @@ void add_in_sched_order(std::list<vertex>& statement_list, vertex stmt, const Sc
    std::list<vertex>::iterator it;
    THROW_ASSERT(std::find(statement_list.begin(), statement_list.end(), stmt) == statement_list.end(), "Statement already ordered: "+ GET_NAME(dfg,stmt));
 
-   for(it = statement_list.begin(); it != it_end; it++)
+   for(it = statement_list.begin(); it != it_end; ++it)
    {
       THROW_ASSERT(sch->is_scheduled(*it), "Second vertex is not scheduled");
       if(sch->get_cstep(*it) > sch->get_cstep(stmt))
@@ -238,6 +238,11 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
                                     parameters->getOption<bool>(OPT_memory_mapped_top);
    bool has_registered_inputs = HLS->registered_inputs && !needMemoryMappedRegisters;
    std::string function_name = HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->get_function_name();
+   const auto top_function_ids = HLSMgr->CGetCallGraphManager()->GetRootFunctions();
+   if(top_function_ids.find(funId) != top_function_ids.end() and parameters->getOption<std::string>(OPT_registered_inputs) == "top")
+   {
+      has_registered_inputs = true;
+   }
    if(HLSMgr->Rfuns->is_a_proxied_function(function_name) && !needMemoryMappedRegisters)
    {
       if(parameters->getOption<std::string>(OPT_registered_inputs) != "no")
@@ -337,10 +342,14 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
       std::map<ControlStep, std::list<vertex> > executing_ops, starting_ops, ending_ops, onfly_ops;
       ControlStep max_cstep = ControlStep(0u);
       ControlStep min_cstep = ControlStep(std::numeric_limits<unsigned int>::max());
+#if 0
       bool has_a_controlling_vertex = false;
+#endif
       std::set<vertex> bb_cur_completely_merged;
 #if HAVE_ASSERTS
+#if 0
       vertex controlling_vertex;
+#endif
 #endif
       std::list<vertex>::const_iterator stmt_it_end = ordered_operations.end();
       for(std::list<vertex>::const_iterator stmt_it = ordered_operations.begin(); stmt_it_end != stmt_it; ++stmt_it)
@@ -364,7 +373,7 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
                {
                   if((GET_TYPE(dfgRef, *obo_it) & TYPE_PHI) != 0)
                   {
-                     for(const auto def_edge : GetPointer<const gimple_phi>(HLSMgr->get_tree_manager()->get_tree_node_const(dfgRef->CGetOpNodeInfo(*obo_it)->GetNodeId()))->CGetDefEdgesList())
+                     for(const auto& def_edge : GetPointer<const gimple_phi>(HLSMgr->get_tree_manager()->get_tree_node_const(dfgRef->CGetOpNodeInfo(*obo_it)->GetNodeId()))->CGetDefEdgesList())
                      {
                         if(not def_edge.first)
                            continue;
@@ -387,9 +396,11 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
          }
          if(GET_TYPE(dfgRef, op) & (TYPE_IF))
          {
+#if 0
             has_a_controlling_vertex = true;
 #if HAVE_ASSERTS
             controlling_vertex = op;
+#endif
 #endif
          }
          const auto cstep = sch->get_cstep(op).second;
@@ -424,7 +435,8 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
       /// the outgoing basic blocks must have only one incoming edge to be considered for the speculation
       /// all the TYPE_IF operations of the outgoing basic blocks could not be speculated
       /// in case all the operations of an outgoing basic blocks OBB are speculated holds the following condition last_state[OBB]= last_state[*vit]
-      if(has_a_controlling_vertex && 0)
+#if 0
+      if(has_a_controlling_vertex)
       {
          THROW_ASSERT(max_cstep == sch->get_cstep(controlling_vertex).second, "mismatch between maximum cstep and controlling vertex cstep");
          OutEdgeIterator oe, oend;
@@ -487,6 +499,7 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
          }
 
       }
+#endif
       vertex s_cur;
       for(auto l = min_cstep; l <= max_cstep; l++)
       {
@@ -505,7 +518,7 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
          global_ending_ops[s_cur] = end_ops;
          global_onfly_ops.insert({s_cur, onf_ops});
 
-         for(std::list<vertex>::iterator op = exec_ops.begin(); op != exec_ops.end(); op++)
+         for(std::list<vertex>::iterator op = exec_ops.begin(); op != exec_ops.end(); ++op)
          {
             technology_nodeRef tn = HLS->allocation_information->get_fu(HLS->Rfu->get_assign(*op));
             technology_nodeRef op_tn = GetPointer<functional_unit>(tn)->get_operation(tree_helper::normalized_ID(dfgRef->CGetOpNodeInfo(*op)->GetOperation()));
@@ -541,7 +554,8 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
                THROW_ASSERT(call_operations.find(previous) != call_operations.end() && call_operations.find(previous)->second.begin() != call_operations.find(previous)->second.end(), "unexpected condition");
                vertex call = call_operations.find(previous)->second.front();
                THROW_ASSERT(call_states.find(previous) != call_states.end(), "unexpected condition");
-               for(std::list<vertex>::iterator s = call_states.find(previous)->second.begin(); s != call_states.find(previous)->second.end(); s++)
+               auto call_sets = call_states.find(previous)->second;
+               for(std::list<vertex>::iterator s = call_sets.begin(); s != call_sets.end(); ++s)
                {
                   EdgeDescriptor s_e = STG_builder->connect_state(*s, s_cur, ST_EDGE_NORMAL_T);
 
@@ -642,13 +656,14 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
          s_e = STG_builder->connect_state(s_src, s_tgt, ST_EDGE_FEEDBACK_T);
          if(call_states.find(s_src) !=  call_states.end())
          {
-            if(call_states.find(s_src)->second.begin() != call_states.find(s_src)->second.end())
+            auto call_sets = call_states.find(s_src)->second;
+            if(call_sets.begin() != call_sets.end())
             {
                std::set<std::pair<vertex, unsigned int> > OutCondition;
                OutCondition.insert(std::make_pair(call_operations[s_src].front(), T_COND));
                STG_builder->set_condition(s_e, OutCondition);
             }
-            for(std::list<vertex>::iterator s = call_states.find(s_src)->second.begin(); s != call_states.find(s_src)->second.end(); s++)
+            for(std::list<vertex>::iterator s = call_sets.begin(); s != call_sets.end(); ++s)
             {
                EdgeDescriptor s_e1 = STG_builder->connect_state(*s, s_tgt, ST_EDGE_FEEDBACK_T);
                std::set<std::pair<vertex, unsigned int> > OutCondition;
@@ -665,7 +680,8 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
          {
             THROW_ASSERT(call_operations.find(s_src) != call_operations.end() && call_operations.find(s_src)->second.size() != 0, "State " + HLS->STG->get_state_name(s_src) + " does not contain any call expression");
             vertex operation =  call_operations.find(s_src)->second.front();
-            for(std::list<vertex>::iterator s = call_states.find(s_src)->second.begin(); s != call_states.find(s_src)->second.end(); s++)
+            auto call_sets = call_states.find(s_src)->second;
+            for(std::list<vertex>::iterator s = call_sets.begin(); s != call_sets.end(); ++s)
             {
                EdgeDescriptor s_edge = STG_builder->connect_state(*s, s_tgt, ST_EDGE_NORMAL_T);
 
@@ -690,7 +706,7 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
       if(cfg_edge_ids.size())
       {
          const std::set<unsigned int>::const_iterator ei_end = cfg_edge_ids.end();
-         for(std::set<unsigned int>::const_iterator ei = cfg_edge_ids.begin(); ei!= ei_end; ei++)
+         for(std::set<unsigned int>::const_iterator ei = cfg_edge_ids.begin(); ei!= ei_end; ++ei)
          {
             out_conditions.insert(std::make_pair(last_operation, *ei));
          }
@@ -712,7 +728,7 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
          vertex controlling_vertex = *(operations->statements_list.rbegin());
          const std::set<unsigned int>& edge_ids = fbb->CGetBBEdgeInfo(*ein)->get_labels(CFG_SELECTOR);
          const std::set<unsigned int>::const_iterator ei_end = edge_ids.end();
-         for(std::set<unsigned int>::const_iterator ei=edge_ids.begin(); ei!= ei_end; ei++)
+         for(std::set<unsigned int>::const_iterator ei=edge_ids.begin(); ei!= ei_end; ++ei)
          {
             OutCondition.insert(std::make_pair(controlling_vertex, *ei));
          }
@@ -727,9 +743,9 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
       HLS->STG->CGetStg()->WriteDot("HLS_STGraph-pre-opt.dot");
    }
    ///Call optimize_cycles for every cycle in the stg
-   unsigned int istance = 0;
    if(not parameters->IsParameter("no-fsm-duplication") or not parameters->GetParameter<bool>("no-fsm-duplication"))
    {
+      unsigned int istance = 0;
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing cycles");
       BOOST_FOREACH(EdgeDescriptor fbbei, boost::edges(*fbb))
       {
@@ -833,7 +849,7 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
          bb_length.insert(CustomMap<unsigned int, ControlStep>::value_type(bb_node_info->block->number, bb_ending - bb_begin + 1));
       }
 #ifndef NDEBUG
-      for(const auto basic_block : bb_length)
+      for(const auto& basic_block : bb_length)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---BB" + STR(basic_block.first) + ": " + STR(from_strongtype_cast<unsigned int>(basic_block.second)) + " vs. " + STR(from_strongtype_cast<unsigned int>(stg_length.find(basic_block.first)->second)));
       }
@@ -1285,9 +1301,6 @@ vertex BB_based_stg::check_data_dependency(vertex operation, vertex state,
     std::list<vertex> ExecutingOpList = global_executing_ops[state];
     std::list<vertex>::iterator it;
     vertex dependentOperation;
-    vertex dependingInstantaneous;
-
-    dependingInstantaneous = nullptr;
 
     for(it = StartingOpList.begin();
         it != StartingOpList.end(); ++it){
@@ -1297,7 +1310,6 @@ vertex BB_based_stg::check_data_dependency(vertex operation, vertex state,
                 dependentOperation = check_data_dependency(*it, state, global_starting_ops, global_executing_ops);
                 if(dependentOperation != nullptr)
                     return dependentOperation;
-                dependingInstantaneous = *it;
             }
             return *it;
         }
@@ -1311,14 +1323,10 @@ vertex BB_based_stg::check_data_dependency(vertex operation, vertex state,
                 dependentOperation = check_data_dependency(*it, state, global_starting_ops, global_executing_ops);
                 if(dependentOperation != nullptr)
                     return dependentOperation;
-                dependingInstantaneous = *it;
             }
             return *it;
         }
     }
-
-    if(dependingInstantaneous != nullptr)
-        return dependingInstantaneous;
 
     return nullptr;
 }

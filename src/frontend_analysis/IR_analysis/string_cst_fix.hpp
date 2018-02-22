@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -80,12 +80,12 @@ class string_cst_fix: public ApplicationFrontendFlowStep
        * @param identifier is the identifier to be normalized
        * @return the normalized identifier
        */
-      virtual const std::string Normalize(const std::string identifier) const;
+      virtual const std::string Normalize(const std::string&identifier) const;
 
       /**
       * Recursive examinate tree node
       */
-      void recursive_examinate(tree_nodeRef & tn, const std::string & srcp);
+      void recursive_examinate(tree_nodeRef & tn, const std::string& srcp);
 
       /**
        * Return the set of analyses in relationship with this design step

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -158,7 +158,7 @@ class port_swapping : public HLSFunctionStep
        * @param operation name
        * @return true if it is a commutative binary operation, false otherwise
        */
-      bool is_commutative_op(std::string operation);
+      bool is_commutative_op(const std::string &operation);
 
       /**
        * This function returns the belonging set of a given vertex

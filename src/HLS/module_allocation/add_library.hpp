@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -65,7 +65,7 @@ class AddLibrarySpecialization : public HLSFlowStepSpecialization
        * Constructor
        * @param interfaced is true if we are adding module with interface
        */
-      AddLibrarySpecialization(const bool interfaced);
+      explicit AddLibrarySpecialization(const bool interfaced);
 
       /**
        * Return the string representation of this

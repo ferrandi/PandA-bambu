@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2016-2017 Politecnico di Milano
+ *              Copyright (c) 2016-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -78,7 +78,7 @@ struct function_information
       std::set<unsigned int> called_functions;
       /// list of statements to be processed
       std::list<unsigned int> stmts_list;
-      function_information(unsigned int _topo_id) : topo_id(_topo_id), preserving(true) {}
+      explicit function_information(unsigned int _topo_id) : topo_id(_topo_id), preserving(true) {}
 };
 
 
@@ -229,7 +229,7 @@ DesignFlowStep_Status ipa_point_to_analysis::Exec()
 {
    std::unordered_set<unsigned int> pointing_to_ssa_vars;
    std::unordered_map<unsigned int,unsigned int> topo_stmt_order;
-   std::unordered_map<unsigned int,unsigned int> topo_func_parameter_order;
+   //std::unordered_map<unsigned int,unsigned int> topo_func_parameter_order;
    unsigned int curr_topo_order = 0;
    /// array storing the functions for which the address has been taken by some gimple node.
    std::set<unsigned int> addr_taken_functions;
@@ -267,7 +267,7 @@ DesignFlowStep_Status ipa_point_to_analysis::Exec()
             {
                function_information_map[function]->preserving &= false;//check if this is actually equal to true
             }
-            else if(fun_name != "__builtin_signbit" &&
+            else if(fun_name != "__builtin_signbit" && fun_name != "__builtin_signbitf" &&
                     fun_name != "__builtin_fabs" &&
                     fun_name != "__builtin_fabsf" &&
                     fun_name != "__builtin_llabs" &&
@@ -283,15 +283,15 @@ DesignFlowStep_Status ipa_point_to_analysis::Exec()
       }
 
       /// reserve priorities for the function parameters
-      for(auto par : fd->list_of_args)
-      {
-         topo_func_parameter_order[GET_INDEX_NODE(par)] = curr_topo_order++;
-      }
+      //for(auto par : fd->list_of_args)
+      //{
+      //   topo_func_parameter_order[GET_INDEX_NODE(par)] = curr_topo_order++;
+      //}
       statement_list * sl = GetPointer<statement_list>(GET_NODE(fd->body));
       std::map<unsigned int, blocRef> &blocks = sl->list_of_bloc;
       std::map<unsigned int, blocRef>::iterator it, it_end;
       it_end = blocks.end();
-      for(it = blocks.begin(); it != it_end; it++)
+      for(it = blocks.begin(); it != it_end; ++it)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining BB" + boost::lexical_cast<std::string>(it->first));
          for(auto stmt : it->second->CGetStmtList())
@@ -391,7 +391,7 @@ DesignFlowStep_Status ipa_point_to_analysis::Exec()
                            THROW_ASSERT(GET_NODE(ce->args.at(0))->get_kind() == ssa_name_K, "unexpected pattern");
                            pointing_to_ssa_vars.insert(GET_INDEX_NODE(ce->args.at(0)));
                         }
-                        else if(fun_name != "__builtin_signbit" &&
+                        else if(fun_name != "__builtin_signbit" && fun_name != "__builtin_signbitf" &&
                               fun_name != "__builtin_fabs" &&
                               fun_name != "__builtin_fabsf" &&
                               fun_name != "__builtin_llabs" &&

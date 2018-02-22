@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -64,7 +64,7 @@ void timing_group::xwrite(xml_element* pin_node, const std::set<std::string>& in
    att->xwrite(pin_node, "intrinsic_fall");
 
    std::string pins;
-   for(std::set<std::string>::const_iterator i = input_set.begin();  i != input_set.end(); i++)
+   for(std::set<std::string>::const_iterator i = input_set.begin();  i != input_set.end(); ++i)
    {
       if (pins.size()) pins += " ";
       pins += *i;

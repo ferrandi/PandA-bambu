@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -73,7 +73,7 @@ struct VHDL_writer : public language_writer
        * Print a comment.
        * @param comment_string is the string to be printed as a comment.
       */
-      void write_comment(const std::string &comment_string);
+      void write_comment(const std::string&comment_string);
       /**
        * Return a language based type string given a structural_type_descriptor.
        * @param Type is the structural_type_descriptor.
@@ -125,7 +125,7 @@ struct VHDL_writer : public language_writer
        * @param module_name is the name of the module to be instanced. It has to be specified since VHDL and verilog can print in different ways
        * @param cir is the module to be instanced.
       */
-      void write_module_instance_begin(const structural_objectRef &cir, const std::string & module_name, bool write_parametrization);
+      void write_module_instance_begin(const structural_objectRef &cir, const std::string& module_name, bool write_parametrization);
       /**
        * Write the ending part of the instance of a module.
        * @param cir is the module to be instanced.
@@ -168,7 +168,7 @@ struct VHDL_writer : public language_writer
        * write the declaration of all the states of the finite state machine.
        * @param list_of_states is the list of all the states.
        */
-      void write_state_declaration(const structural_objectRef &cir, const std::list<std::string> &list_of_states, const std::string &reset_port, const std::string &reset_state, bool one_hot);
+      void write_state_declaration(const structural_objectRef &cir, const std::list<std::string> &list_of_states, const std::string&reset_port, const std::string&reset_state, bool one_hot);
       /**
        * write the present_state update process
        * @param reset_state is the reset state.
@@ -176,7 +176,7 @@ struct VHDL_writer : public language_writer
        * @param clock_port is the clock port.
        * @param synch_reset when true the FSM will have an synchronous reset
        */
-      void write_present_state_update(const std::string &reset_state, const std::string &reset_port, const std::string &clock_port, const std::string & reset_type);
+      void write_present_state_update(const std::string&reset_state, const std::string&reset_port, const std::string&clock_port, const std::string& reset_type);
       /**
        * Write the transition and output functions.
        * @param cir is the component.
@@ -186,7 +186,7 @@ struct VHDL_writer : public language_writer
        * @param end if the end iterator of the state table.
        * @param n_states is the number of states.
       */
-      void write_transition_output_functions(bool single_proc, unsigned int output_index, const structural_objectRef &cir, const std::string &reset_state, const std::string &reset_port, const std::string &start_port, const std::string &clock_port, std::vector<std::string>::const_iterator &first, std::vector<std::string>::const_iterator &end);
+      void write_transition_output_functions(bool single_proc, unsigned int output_index, const structural_objectRef &cir, const std::string&reset_state, const std::string&reset_port, const std::string&start_port, const std::string&clock_port, std::vector<std::string>::const_iterator &first, std::vector<std::string>::const_iterator &end);
 
       /**
        * Write in the proper language the behavioral description of the module described in "Not Parsed" form.

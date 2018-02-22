@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -102,14 +102,14 @@ class glpk_solver : public meilp_solver
       void make(int nvars);
       int  solve();
       int  solve_ilp();
-      void add_row(std::map<int, double> &i_coeffs, double i_rhs, ilp_sign i_sign, const std::string name);
+      void add_row(std::map<int, double> &i_coeffs, double i_rhs, ilp_sign i_sign, const std::string&name);
       void objective_add(std::map<int, double> &i_coeffs, ilp_dir dir);
 
       void set_int(int i);
       void get_vars_solution(std::map<int, double>& vars) const;
       int  get_number_constraints() const;
       int get_number_variables() const;
-      void set_col_name(int var, const std::string name);
+      void set_col_name(int var, const std::string& name);
 
       /**
        * Get name of a variable (column)
@@ -124,6 +124,6 @@ class glpk_solver : public meilp_solver
        * Print the problem
        * @param file_name is the name of the file to be written
        */
-      virtual void print_to_file(const std::string file_name);
+      virtual void print_to_file(const std::string&file_name);
 };
 #endif

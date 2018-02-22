@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -53,7 +53,7 @@ class xml_comment_node : public xml_node
 {
    public:
       /// constructor
-      xml_comment_node(const std::string & comment) : xml_node(comment){}
+      explicit xml_comment_node(const std::string& comment) : xml_node(comment){}
 
       /**
        * Print the class.

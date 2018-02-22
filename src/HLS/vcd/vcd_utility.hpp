@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -88,7 +88,7 @@ struct DiscrepancyLog {
          const HLS_managerConstRef HLSMgr,
          const vcd_trace_head & t,
          const uint64_t c_context,
-         const std::string & _c_val,
+         const std::string& _c_val,
          const unsigned int el_idx,
          const std::string::size_type _first_c_bit,
          const std::string::size_type _c_size,
@@ -153,49 +153,49 @@ class vcd_utility : public HLS_step
       bool detect_mismatch(
             const vcd_trace_head & t,
             const uint64_t c_context,
-            const std::string & c_val);
+            const std::string& c_val);
 
       bool detect_regular_mismatch(
             const vcd_trace_head & t,
-            const std::string & c_val,
-            const std::string & vcd_val)
+            const std::string& c_val,
+            const std::string& vcd_val)
          const;
 
       bool detect_binary_float_mismatch(
-            const std::string & c_val,
-            const std::string & resized_vcd_val)
+            const std::string& c_val,
+            const std::string& resized_vcd_val)
          const;
 
       bool detect_binary_double_mismatch(
-            const std::string & c_val,
-            const std::string & resized_vcd_val)
+            const std::string& c_val,
+            const std::string& resized_vcd_val)
          const;
 
       bool detect_address_mismatch(
             const DiscrepancyOpInfo & op_info,
             const uint64_t c_context,
-            const std::string & c_val,
-            const std::string & vcd_val,
+            const std::string& c_val,
+            const std::string& vcd_val,
             unsigned int & base_index);
 
       bool detect_fixed_address_mismatch(
             const DiscrepancyOpInfo & op_info,
             const uint64_t c_context,
-            const std::string & c_val,
-            const std::string & vcd_val,
+            const std::string& c_val,
+            const std::string& vcd_val,
             const unsigned int base_index)
          const;
 
       bool detect_mismatch_element(
             const vcd_trace_head & t,
             const uint64_t c_context,
-            const std::string & c_val,
+            const std::string& c_val,
             const unsigned int el_idx);
 
       bool detect_mismatch_simple(
             const vcd_trace_head & t,
             const uint64_t c_context,
-            const std::string & c_val,
+            const std::string& c_val,
             const unsigned int el_idx,
             const std::string::size_type first_c_bit,
             const std::string::size_type c_size);
@@ -203,7 +203,7 @@ class vcd_utility : public HLS_step
       void update_discr_list(
             const vcd_trace_head & t,
             const uint64_t c_context,
-            const std::string & c_val,
+            const std::string& c_val,
             const unsigned int el_idx,
             const std::string::size_type first_c_bit,
             const std::string::size_type c_size,
@@ -213,6 +213,6 @@ class vcd_utility : public HLS_step
 
       void print_discrepancy(const DiscrepancyLog & l, const int verbosity) const;
 
-      std::string compute_fsm_state_from_vcd_string(const std::string & vcd_state_string) const;
+      std::string compute_fsm_state_from_vcd_string(const std::string& vcd_state_string) const;
 };
 #endif

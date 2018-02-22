@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -102,7 +102,7 @@ class FrontendFlowStepFactory : public DesignFlowStepFactory
        * Create the frontend design flow steps
        * @param frontend_flow_step_types is the set of frontend flow transformation to be considered
        */
-      const DesignFlowStepSet GenerateFrontendSteps(const std::unordered_set<FrontendFlowStepType> frontend_flow_step_types) const;
+      const DesignFlowStepSet GenerateFrontendSteps(const std::unordered_set<FrontendFlowStepType>& frontend_flow_step_types) const;
 
       /**
        * Create the frontend design flow step

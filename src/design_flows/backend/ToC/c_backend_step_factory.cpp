@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -68,7 +68,7 @@ const std::string CBackendStepFactory::GetPrefix() const
    return "CBackend";
 }
 
-const DesignFlowStepRef CBackendStepFactory::CreateCBackendStep(const CBackend::Type c_backend_type, const std::string file_name, const CBackendInformationConstRef c_backend_information) const
+const DesignFlowStepRef CBackendStepFactory::CreateCBackendStep(const CBackend::Type c_backend_type, const std::string&file_name, const CBackendInformationConstRef c_backend_information) const
 {
    return DesignFlowStepRef(new CBackend(c_backend_type, c_backend_information, design_flow_manager.lock(), application_manager, file_name, parameters));
 }

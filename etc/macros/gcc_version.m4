@@ -80,7 +80,7 @@ for compiler in $GCC_TO_BE_CHECKED; do
          continue
       fi
       cat > plugin_test.c <<PLUGIN_TEST
-      #include "$TOPSRCDIR/../etc/gcc_plugin/plugin_includes.h"
+      #include "plugin_includes.h"
 
       int plugin_is_GPL_compatible;
 
@@ -104,12 +104,12 @@ PLUGIN_TEST
          if test -f plugin_test.so; then
             rm plugin_test.so
          fi
-         $plugin_compiler -fPIC -shared plugin_test.c -o plugin_test.so -I$I386_GCC45_PLUGIN_DIR/include
+         $plugin_compiler -I$TOPSRCDIR/etc/gcc_plugin/ -fPIC -shared plugin_test.c -o plugin_test.so -I$I386_GCC45_PLUGIN_DIR/include
          if test ! -f plugin_test.so; then
-            echo "checking $plugin_compiler -fPIC -shared plugin_test.c -o plugin_test.so -I$I386_GCC45_PLUGIN_DIR/include... no"
+            echo "checking $plugin_compiler -I$TOPSRCDIR/etc/gcc_plugin/ -fPIC -shared plugin_test.c -o plugin_test.so -I$I386_GCC45_PLUGIN_DIR/include... no"
             continue
          fi
-         echo "checking $plugin_compiler -fPIC -shared plugin_test.c -o plugin_test.so -I$I386_GCC45_PLUGIN_DIR/include... yes"
+         echo "checking $plugin_compiler -I$TOPSRCDIR/etc/gcc_plugin/ -fPIC -shared plugin_test.c -o plugin_test.so -I$I386_GCC45_PLUGIN_DIR/include... yes"
          ac_save_CC="$CC"
          ac_save_CFLAGS="$CFLAGS"
          CC=$plugin_compiler
@@ -260,7 +260,7 @@ for compiler in $GCC_TO_BE_CHECKED; do
          continue
       fi
       cat > plugin_test.c <<PLUGIN_TEST
-      #include "$TOPSRCDIR/../etc/gcc_plugin/plugin_includes.h"
+      #include "plugin_includes.h"
 
       int plugin_is_GPL_compatible;
 
@@ -284,12 +284,12 @@ PLUGIN_TEST
          if test -f plugin_test.so; then
             rm plugin_test.so
          fi
-         $plugin_compiler -fPIC -shared plugin_test.c -o plugin_test.so -I$I386_GCC46_PLUGIN_DIR/include 2> /dev/null
+         $plugin_compiler -I$TOPSRCDIR/etc/gcc_plugin/ -fPIC -shared plugin_test.c -o plugin_test.so -I$I386_GCC46_PLUGIN_DIR/include 2> /dev/null
          if test ! -f plugin_test.so; then
-            echo "checking $plugin_compiler -fPIC -shared plugin_test.c -o plugin_test.so -I$I386_GCC46_PLUGIN_DIR/include... no"
+            echo "checking $plugin_compiler -I$TOPSRCDIR/etc/gcc_plugin/ -fPIC -shared plugin_test.c -o plugin_test.so -I$I386_GCC46_PLUGIN_DIR/include... no"
             continue
          fi
-         echo "checking $plugin_compiler -fPIC -shared plugin_test.c -o plugin_test.so -I$I386_GCC46_PLUGIN_DIR/include... yes"
+         echo "checking $plugin_compiler -I$TOPSRCDIR/etc/gcc_plugin/ -fPIC -shared plugin_test.c -o plugin_test.so -I$I386_GCC46_PLUGIN_DIR/include... yes"
          ac_save_CC="$CC"
          ac_save_CFLAGS="$CFLAGS"
          CC=$plugin_compiler
@@ -307,7 +307,7 @@ PLUGIN_TEST
          if test "x$I386_GCC46_PLUGIN_COMPILER" = x; then
             continue
          fi
-         #Look for gengtype
+         echo "Looking for gengtype"
          I386_GCC46_GENGTYPE=`$I386_GCC46_EXE -print-file-name=gengtype`
          if test "x$I386_GCC46_GENGTYPE" = "xgengtype"; then
             I386_GCC46_GENGTYPE=`$I386_GCC46_EXE -print-file-name=plugin/gengtype`
@@ -320,7 +320,7 @@ PLUGIN_TEST
                fi
             fi
          fi
-         #Look for gtype.state
+         echo "Looking for gtype.state"
          I386_GCC46_GTYPESTATE=`$I386_GCC46_EXE -print-file-name=gtype.state`
          if test "x$I386_GCC46_GTYPESTATE" = "xgtype.state"; then
             I386_GCC46_GTYPESTATE=`$I386_GCC46_EXE -print-file-name=plugin/gtype.state`
@@ -329,7 +329,7 @@ PLUGIN_TEST
                continue
             fi
          fi
-         #OK, we have found the compiler
+         echo "OK, we have found the compiler"
          build_I386_GCC46=yes;
          build_I386_GCC46_EMPTY_PLUGIN=yes;
          build_I386_GCC46_SSA_PLUGIN=yes;
@@ -486,7 +486,7 @@ for compiler in $GCC_TO_BE_CHECKED; do
          echo "checking support to -mx32... no"
       fi
       cat > plugin_test.c <<PLUGIN_TEST
-      #include "$TOPSRCDIR/../etc/gcc_plugin/plugin_includes.h"
+      #include "plugin_includes.h"
 
       int plugin_is_GPL_compatible;
 
@@ -510,12 +510,12 @@ PLUGIN_TEST
          if test -f plugin_test.so; then
             rm plugin_test.so
          fi
-         $plugin_compiler -fPIC -shared plugin_test.c -o plugin_test.so -I$I386_GCC47_PLUGIN_DIR/include 2> /dev/null
+         $plugin_compiler -I$TOPSRCDIR/etc/gcc_plugin/ -fPIC -shared plugin_test.c -o plugin_test.so -I$I386_GCC47_PLUGIN_DIR/include 2> /dev/null
          if test ! -f plugin_test.so; then
-            echo "checking $plugin_compiler -fPIC -shared plugin_test.c -o plugin_test.so -I$I386_GCC47_PLUGIN_DIR/include... no"
+            echo "checking $plugin_compiler -I$TOPSRCDIR/etc/gcc_plugin/ -fPIC -shared plugin_test.c -o plugin_test.so -I$I386_GCC47_PLUGIN_DIR/include... no"
             continue
          fi
-         echo "checking $plugin_compiler -fPIC -shared plugin_test.c -o plugin_test.so -I$I386_GCC47_PLUGIN_DIR/include... yes"
+         echo "checking $plugin_compiler -I$TOPSRCDIR/etc/gcc_plugin/ -fPIC -shared plugin_test.c -o plugin_test.so -I$I386_GCC47_PLUGIN_DIR/include... yes"
          ac_save_CC="$CC"
          ac_save_CFLAGS="$CFLAGS"
          CC=$plugin_compiler
@@ -533,7 +533,7 @@ PLUGIN_TEST
          if test "x$I386_GCC47_PLUGIN_COMPILER" = x; then
             continue
          fi
-         #Look for gengtype
+         echo "Looking for gengtype"
          I386_GCC47_GENGTYPE=`$I386_GCC47_EXE -print-file-name=gengtype`
          if test "x$I386_GCC47_GENGTYPE" = "xgengtype"; then
             I386_GCC47_GENGTYPE=`$I386_GCC47_EXE -print-file-name=plugin/gengtype`
@@ -546,7 +546,7 @@ PLUGIN_TEST
                fi
             fi
          fi
-         #Look for gtype.state
+         echo "Looking for gtype.state"
          I386_GCC47_GTYPESTATE=`$I386_GCC47_EXE -print-file-name=gtype.state`
          if test "x$I386_GCC47_GTYPESTATE" = "xgtype.state"; then
             I386_GCC47_GTYPESTATE=`$I386_GCC47_EXE -print-file-name=plugin/gtype.state`
@@ -555,7 +555,7 @@ PLUGIN_TEST
                continue
             fi
          fi
-         #OK, we have found the compiler
+         echo "OK, we have found the compiler"
          build_I386_GCC47=yes;
          build_I386_GCC47_EMPTY_PLUGIN=yes;
          build_I386_GCC47_SSA_PLUGIN=yes;
@@ -713,7 +713,7 @@ for compiler in $GCC_TO_BE_CHECKED; do
          echo "checking support to -mx32... no"
       fi
       cat > plugin_test.c <<PLUGIN_TEST
-      #include "$TOPSRCDIR/../etc/gcc_plugin/plugin_includes.h"
+      #include "plugin_includes.h"
 
       int plugin_is_GPL_compatible;
 
@@ -737,12 +737,12 @@ PLUGIN_TEST
          if test -f plugin_test.so; then
             rm plugin_test.so
          fi
-         $plugin_compiler -fPIC -shared plugin_test.c -o plugin_test.so -I$I386_GCC48_PLUGIN_DIR/include 2> /dev/null
+         $plugin_compiler -I$TOPSRCDIR/etc/gcc_plugin/ -fPIC -shared plugin_test.c -o plugin_test.so -I$I386_GCC48_PLUGIN_DIR/include 2> /dev/null
          if test ! -f plugin_test.so; then
-            echo "checking $plugin_compiler -fPIC -shared plugin_test.c -o plugin_test.so -I$I386_GCC48_PLUGIN_DIR/include... no"
+            echo "checking $plugin_compiler -I$TOPSRCDIR/etc/gcc_plugin/ -fPIC -shared plugin_test.c -o plugin_test.so -I$I386_GCC48_PLUGIN_DIR/include... no"
             continue
          fi
-         echo "checking $plugin_compiler -fPIC -shared plugin_test.c -o plugin_test.so -I$I386_GCC48_PLUGIN_DIR/include... yes"
+         echo "checking $plugin_compiler -I$TOPSRCDIR/etc/gcc_plugin/ -fPIC -shared plugin_test.c -o plugin_test.so -I$I386_GCC48_PLUGIN_DIR/include... yes"
          ac_save_CC="$CC"
          ac_save_CFLAGS="$CFLAGS"
          CC=$plugin_compiler
@@ -760,7 +760,7 @@ PLUGIN_TEST
          if test "x$I386_GCC48_PLUGIN_COMPILER" = x; then
             continue
          fi
-         #Look for gengtype
+         echo "Looking for gengtype"
          I386_GCC48_GENGTYPE=`$I386_GCC48_EXE -print-file-name=gengtype`
          if test "x$I386_GCC48_GENGTYPE" = "xgengtype"; then
             I386_GCC48_GENGTYPE=`$I386_GCC48_EXE -print-file-name=plugin/gengtype`
@@ -773,7 +773,7 @@ PLUGIN_TEST
                fi
             fi
          fi
-         #Look for gtype.state
+         echo "Looking for gtype.state"
          I386_GCC48_GTYPESTATE=`$I386_GCC48_EXE -print-file-name=gtype.state`
          if test "x$I386_GCC48_GTYPESTATE" = "xgtype.state"; then
             I386_GCC48_GTYPESTATE=`$I386_GCC48_EXE -print-file-name=plugin/gtype.state`
@@ -782,7 +782,7 @@ PLUGIN_TEST
                continue
             fi
          fi
-         #OK, we have found the compiler
+         echo "OK, we have found the compiler"
          build_I386_GCC48=yes;
          build_I386_GCC48_EMPTY_PLUGIN=yes;
          build_I386_GCC48_SSA_PLUGIN=yes;
@@ -940,7 +940,7 @@ for compiler in $GCC_TO_BE_CHECKED; do
          echo "checking support to -mx32... no"
       fi
       cat > plugin_test.c <<PLUGIN_TEST
-      #include "$TOPSRCDIR/../etc/gcc_plugin/plugin_includes.h"
+      #include "plugin_includes.h"
 
       int plugin_is_GPL_compatible;
 
@@ -964,12 +964,12 @@ PLUGIN_TEST
          if test -f plugin_test.so; then
             rm plugin_test.so
          fi
-         $plugin_compiler -fPIC -shared plugin_test.c -o plugin_test.so -I$I386_GCC49_PLUGIN_DIR/include 2> /dev/null
+         $plugin_compiler -I$TOPSRCDIR/etc/gcc_plugin/ -fPIC -shared plugin_test.c -o plugin_test.so -I$I386_GCC49_PLUGIN_DIR/include 2> /dev/null
          if test ! -f plugin_test.so; then
-            echo "checking $plugin_compiler -fPIC -shared plugin_test.c -o plugin_test.so -I$I386_GCC49_PLUGIN_DIR/include... no"
+            echo "checking $plugin_compiler -I$TOPSRCDIR/etc/gcc_plugin/ -fPIC -shared plugin_test.c -o plugin_test.so -I$I386_GCC49_PLUGIN_DIR/include... no"
             continue
          fi
-         echo "checking $plugin_compiler -fPIC -shared plugin_test.c -o plugin_test.so -I$I386_GCC49_PLUGIN_DIR/include... yes"
+         echo "checking $plugin_compiler -I$TOPSRCDIR/etc/gcc_plugin/ -fPIC -shared plugin_test.c -o plugin_test.so -I$I386_GCC49_PLUGIN_DIR/include... yes"
          ac_save_CC="$CC"
          ac_save_CFLAGS="$CFLAGS"
          CC=$plugin_compiler
@@ -987,7 +987,7 @@ PLUGIN_TEST
          if test "x$I386_GCC49_PLUGIN_COMPILER" = x; then
             continue
          fi
-         #Look for gengtype
+         echo "Looking for gengtype"
          I386_GCC49_GENGTYPE=`$I386_GCC49_EXE -print-file-name=gengtype`
          if test "x$I386_GCC49_GENGTYPE" = "xgengtype"; then
             I386_GCC49_GENGTYPE=`$I386_GCC49_EXE -print-file-name=plugin/gengtype`
@@ -1000,7 +1000,7 @@ PLUGIN_TEST
                fi
             fi
          fi
-         #Look for gtype.state
+         echo "Looking for gtype.state"
          I386_GCC49_GTYPESTATE=`$I386_GCC49_EXE -print-file-name=gtype.state`
          if test "x$I386_GCC49_GTYPESTATE" = "xgtype.state"; then
             I386_GCC49_GTYPESTATE=`$I386_GCC49_EXE -print-file-name=plugin/gtype.state`
@@ -1009,7 +1009,7 @@ PLUGIN_TEST
                continue
             fi
          fi
-         #OK, we have found the compiler
+         echo "OK, we have found the compiler"
          build_I386_GCC49=yes;
          build_I386_GCC49_EMPTY_PLUGIN=yes;
          build_I386_GCC49_SSA_PLUGIN=yes;
@@ -1162,7 +1162,7 @@ for compiler in $GCC_TO_BE_CHECKED; do
          echo "checking support to -mx32... no"
       fi
       cat > plugin_test.c <<PLUGIN_TEST
-      #include "$TOPSRCDIR/../etc/gcc_plugin/plugin_includes.h"
+      #include "plugin_includes.h"
 
       int plugin_is_GPL_compatible;
 
@@ -1186,12 +1186,12 @@ PLUGIN_TEST
          if test -f plugin_test.so; then
             rm plugin_test.so
          fi
-         $plugin_compiler -fPIC -shared plugin_test.c -o plugin_test.so -I$I386_GCC5_PLUGIN_DIR/include 2> /dev/null
+         $plugin_compiler -I$TOPSRCDIR/etc/gcc_plugin/ -fPIC -shared plugin_test.c -o plugin_test.so -I$I386_GCC5_PLUGIN_DIR/include 2> /dev/null
          if test ! -f plugin_test.so; then
-            echo "checking $plugin_compiler -fPIC -shared plugin_test.c -o plugin_test.so -I$I386_GCC5_PLUGIN_DIR/include... no"
+            echo "checking $plugin_compiler -I$TOPSRCDIR/etc/gcc_plugin/ -fPIC -shared plugin_test.c -o plugin_test.so -I$I386_GCC5_PLUGIN_DIR/include... no"
             continue
          fi
-         echo "checking $plugin_compiler -fPIC -shared plugin_test.c -o plugin_test.so -I$I386_GCC5_PLUGIN_DIR/include... yes"
+         echo "checking $plugin_compiler -I$TOPSRCDIR/etc/gcc_plugin/ -fPIC -shared plugin_test.c -o plugin_test.so -I$I386_GCC5_PLUGIN_DIR/include... yes"
          ac_save_CC="$CC"
          ac_save_CFLAGS="$CFLAGS"
          CC=$plugin_compiler
@@ -1209,7 +1209,7 @@ PLUGIN_TEST
          if test "x$I386_GCC5_PLUGIN_COMPILER" = x; then
             continue
          fi
-         #Look for gengtype
+         echo "Looking for gengtype"
          I386_GCC5_GENGTYPE=`$I386_GCC5_EXE -print-file-name=gengtype`
          if test "x$I386_GCC5_GENGTYPE" = "xgengtype"; then
             I386_GCC5_GENGTYPE=`$I386_GCC5_EXE -print-file-name=plugin/gengtype`
@@ -1222,7 +1222,7 @@ PLUGIN_TEST
                fi
             fi
          fi
-         #Look for gtype.state
+         echo "Looking for gtype.state"
          I386_GCC5_GTYPESTATE=`$I386_GCC5_EXE -print-file-name=gtype.state`
          if test "x$I386_GCC5_GTYPESTATE" = "xgtype.state"; then
             I386_GCC5_GTYPESTATE=`$I386_GCC5_EXE -print-file-name=plugin/gtype.state`
@@ -1231,7 +1231,7 @@ PLUGIN_TEST
                continue
             fi
          fi
-         #OK, we have found the compiler
+         echo "OK, we have found the compiler" 
          build_I386_GCC5=yes;
          build_I386_GCC5_EMPTY_PLUGIN=yes;
          build_I386_GCC5_SSA_PLUGIN=yes;
@@ -1384,7 +1384,7 @@ for compiler in $GCC_TO_BE_CHECKED; do
          echo "checking support to -mx32... no"
       fi
       cat > plugin_test.c <<PLUGIN_TEST
-      #include "$TOPSRCDIR/../etc/gcc_plugin/plugin_includes.h"
+      #include "plugin_includes.h"
 
       int plugin_is_GPL_compatible;
 
@@ -1408,12 +1408,12 @@ PLUGIN_TEST
          if test -f plugin_test.so; then
             rm plugin_test.so
          fi
-         $plugin_compiler -fPIC -shared plugin_test.c -o plugin_test.so -I$I386_GCC6_PLUGIN_DIR/include 2> /dev/null
+         $plugin_compiler -I$TOPSRCDIR/etc/gcc_plugin/ -fPIC -shared plugin_test.c -o plugin_test.so -I$I386_GCC6_PLUGIN_DIR/include 2> /dev/null
          if test ! -f plugin_test.so; then
-            echo "checking $plugin_compiler -fPIC -shared plugin_test.c -o plugin_test.so -I$I386_GCC6_PLUGIN_DIR/include... no"
+            echo "checking $plugin_compiler -I$TOPSRCDIR/etc/gcc_plugin/ -fPIC -shared plugin_test.c -o plugin_test.so -I$I386_GCC6_PLUGIN_DIR/include... no"
             continue
          fi
-         echo "checking $plugin_compiler -fPIC -shared plugin_test.c -o plugin_test.so -I$I386_GCC6_PLUGIN_DIR/include... yes"
+         echo "checking $plugin_compiler -I$TOPSRCDIR/etc/gcc_plugin/ -fPIC -shared plugin_test.c -o plugin_test.so -I$I386_GCC6_PLUGIN_DIR/include... yes"
          ac_save_CC="$CC"
          ac_save_CFLAGS="$CFLAGS"
          CC=$plugin_compiler
@@ -1431,7 +1431,7 @@ PLUGIN_TEST
          if test "x$I386_GCC6_PLUGIN_COMPILER" = x; then
             continue
          fi
-         #Look for gengtype
+         echo "Looking for gengtype"
          I386_GCC6_GENGTYPE=`$I386_GCC6_EXE -print-file-name=gengtype`
          if test "x$I386_GCC6_GENGTYPE" = "xgengtype"; then
             I386_GCC6_GENGTYPE=`$I386_GCC6_EXE -print-file-name=plugin/gengtype`
@@ -1444,7 +1444,7 @@ PLUGIN_TEST
                fi
             fi
          fi
-         #Look for gtype.state
+         echo "Looking for gtype.state"
          I386_GCC6_GTYPESTATE=`$I386_GCC6_EXE -print-file-name=gtype.state`
          if test "x$I386_GCC6_GTYPESTATE" = "xgtype.state"; then
             I386_GCC6_GTYPESTATE=`$I386_GCC6_EXE -print-file-name=plugin/gtype.state`
@@ -1453,7 +1453,7 @@ PLUGIN_TEST
                continue
             fi
          fi
-         #OK, we have found the compiler
+         echo "OK, we have found the compiler" 
          build_I386_GCC6=yes;
          build_I386_GCC6_EMPTY_PLUGIN=yes;
          build_I386_GCC6_SSA_PLUGIN=yes;
@@ -1606,7 +1606,7 @@ for compiler in $GCC_TO_BE_CHECKED; do
          echo "checking support to -mx32... no"
       fi
       cat > plugin_test.c <<PLUGIN_TEST
-      #include "$TOPSRCDIR/../etc/gcc_plugin/plugin_includes.h"
+      #include "plugin_includes.h"
 
       int plugin_is_GPL_compatible;
 
@@ -1630,12 +1630,12 @@ PLUGIN_TEST
          if test -f plugin_test.so; then
             rm plugin_test.so
          fi
-         $plugin_compiler -fPIC -shared plugin_test.c -o plugin_test.so -I$I386_GCC7_PLUGIN_DIR/include 2> /dev/null
+         $plugin_compiler -I$TOPSRCDIR/etc/gcc_plugin/ -fPIC -shared plugin_test.c -o plugin_test.so -I$I386_GCC7_PLUGIN_DIR/include 2> /dev/null
          if test ! -f plugin_test.so; then
-            echo "checking $plugin_compiler -fPIC -shared plugin_test.c -o plugin_test.so -I$I386_GCC7_PLUGIN_DIR/include... no"
+            echo "checking $plugin_compiler -I$TOPSRCDIR/etc/gcc_plugin/ -fPIC -shared plugin_test.c -o plugin_test.so -I$I386_GCC7_PLUGIN_DIR/include... no"
             continue
          fi
-         echo "checking $plugin_compiler -fPIC -shared plugin_test.c -o plugin_test.so -I$I386_GCC7_PLUGIN_DIR/include... yes"
+         echo "checking $plugin_compiler -I$TOPSRCDIR/etc/gcc_plugin/ -fPIC -shared plugin_test.c -o plugin_test.so -I$I386_GCC7_PLUGIN_DIR/include... yes"
          ac_save_CC="$CC"
          ac_save_CFLAGS="$CFLAGS"
          CC=$plugin_compiler
@@ -1653,7 +1653,7 @@ PLUGIN_TEST
          if test "x$I386_GCC7_PLUGIN_COMPILER" = x; then
             continue
          fi
-         #Look for gengtype
+         echo "Looking for gengtype"
          I386_GCC7_GENGTYPE=`$I386_GCC7_EXE -print-file-name=gengtype`
          if test "x$I386_GCC7_GENGTYPE" = "xgengtype"; then
             I386_GCC7_GENGTYPE=`$I386_GCC7_EXE -print-file-name=plugin/gengtype`
@@ -1666,7 +1666,7 @@ PLUGIN_TEST
                fi
             fi
          fi
-         #Look for gtype.state
+         echo "Looking for gtype.state"
          I386_GCC7_GTYPESTATE=`$I386_GCC7_EXE -print-file-name=gtype.state`
          if test "x$I386_GCC7_GTYPESTATE" = "xgtype.state"; then
             I386_GCC7_GTYPESTATE=`$I386_GCC7_EXE -print-file-name=plugin/gtype.state`
@@ -1675,7 +1675,7 @@ PLUGIN_TEST
                continue
             fi
          fi
-         #OK, we have found the compiler
+         echo "OK, we have found the compiler"
          build_I386_GCC7=yes;
          build_I386_GCC7_EMPTY_PLUGIN=yes;
          build_I386_GCC7_SSA_PLUGIN=yes;

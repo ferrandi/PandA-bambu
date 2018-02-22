@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -125,7 +125,8 @@ unsigned int resize_to_8_or_greater(unsigned int value)
 std::string moduleGenerator::get_specialized_name(std::vector<std::tuple<unsigned int,unsigned int> >& required_variables, const FunctionBehaviorConstRef FB) const
 {
    std::string fuName="";
-   for(std::vector<std::tuple<unsigned int,unsigned int> >::iterator l = required_variables.begin(); l != required_variables.end(); l++){
+   for(std::vector<std::tuple<unsigned int,unsigned int> >::iterator l = required_variables.begin(); l != required_variables.end(); ++l)
+   {
       unsigned int dataSize=getDataType(std::get<0>((*l)), FB)->vector_size!=0?getDataType(std::get<0>((*l)), FB)->vector_size:getDataType(std::get<0>((*l)), FB)->size;
       structural_type_descriptorRef typeRef=getDataType(std::get<0>((*l)), FB);
       fuName=fuName+NAMESEPARATOR+typeRef->get_name()+STR(resize_to_8_or_greater(dataSize));
@@ -133,7 +134,7 @@ std::string moduleGenerator::get_specialized_name(std::vector<std::tuple<unsigne
    return fuName;
 }
 
-std::string moduleGenerator::GenerateHDL(std::string hdl_template, std::vector<std::tuple<unsigned int,unsigned int> >& required_variables, const std::string &specializing_string, const FunctionBehaviorConstRef FB, std::string path_dynamic_generators, const HDLWriter_Language language)
+std::string moduleGenerator::GenerateHDL(const std::string& hdl_template, std::vector<std::tuple<unsigned int,unsigned int> >& required_variables, const std::string& specializing_string, const FunctionBehaviorConstRef FB, const std::string& path_dynamic_generators, const HDLWriter_Language language)
 {
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "dynamic_generators @ Reading cpp-template input file '" << (path_dynamic_generators+"/"+hdl_template).c_str() << "'...");
 
@@ -198,7 +199,8 @@ std::string moduleGenerator::GenerateHDL(std::string hdl_template, std::vector<s
 
    int portNum=0;
 
-   for(std::vector<std::tuple<unsigned int,unsigned int> >::iterator l = required_variables.begin(); l != required_variables.end(); l++){
+   for(std::vector<std::tuple<unsigned int,unsigned int> >::iterator l = required_variables.begin(); l != required_variables.end(); ++l)
+   {
       structural_type_descriptorRef typeRef=getDataType(std::get<0>((*l)), FB);
       cpp_code_body += "   _p["+STR(portNum)+"].name = \"in"+STR(portNum+1)+"\";\n";
       cpp_code_body += "   _p["+STR(portNum)+"].type = \""+typeRef->get_name()+"\";\n";
@@ -362,7 +364,7 @@ void moduleGenerator::specialize_fu(std::string fuName, vertex ve, std::string l
       for(currentPort=0;currentPort<inPortSize;currentPort++){
          structural_objectRef curr_port = fu_module->get_in_port(currentPort);
          if(GetPointer<port_o>(curr_port)->get_is_var_args()){
-            for(std::vector<std::tuple<unsigned int,unsigned int> >::iterator l = required_variables.begin(); l != required_variables.end(); l++)
+            for(std::vector<std::tuple<unsigned int,unsigned int> >::iterator l = required_variables.begin(); l != required_variables.end(); ++l)
             {
                unsigned int var = std::get<0>(*l);
                structural_type_descriptorRef dt = getDataType(var,FB);
@@ -461,7 +463,7 @@ void moduleGenerator::specialize_fu(std::string fuName, vertex ve, std::string l
       PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, new_fu_name+" created successfully");
 
       std::vector<technology_nodeRef> op_vec=GetPointer<functional_unit>(techNode_obj)->get_operations();
-      for(std::vector<technology_nodeRef>::iterator techIter=op_vec.begin();techIter!=op_vec.end();techIter++)
+      for(std::vector<technology_nodeRef>::iterator techIter=op_vec.begin();techIter!=op_vec.end();++techIter)
       {
          technology_nodeRef techNode_fu=*techIter;
          GetPointer<functional_unit>(new_techNode_obj)->add(techNode_fu);

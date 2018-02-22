@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -68,7 +68,7 @@
 #include <fstream>
 
 //constructor
-ISE_isim_wrapper::ISE_isim_wrapper(const ParameterConstRef _Param, std::string _suffix) :
+ISE_isim_wrapper::ISE_isim_wrapper(const ParameterConstRef _Param, const std::string& _suffix) :
    SimulationTool(_Param),
    suffix(_suffix)
 {
@@ -94,7 +94,7 @@ std::string ISE_isim_wrapper::create_project_script(const std::string& top_filen
 {
    std::string project_filename = ISIM_SUBDIR + suffix + "/" + top_filename + ".prj";
    std::ofstream prj_file(project_filename.c_str());
-   for(const auto file : file_list)
+   for(const auto& file : file_list)
    {
       boost::filesystem::path file_path(file);
       std::string extension = GetExtension(file_path);
@@ -127,7 +127,7 @@ void ISE_isim_wrapper::GenerateScript(std::ostringstream& script, const std::str
    std::string setupscr = STR(XILINX_SETTINGS);
    if(setupscr.size() && setupscr != "0")
    {
-      if(setupscr.find("export") == 0)
+      if(boost::algorithm::starts_with(setupscr,"export"))
          script << setupscr + " >& /dev/null; ";
       else
          script << ". " << setupscr << " >& /dev/null;";

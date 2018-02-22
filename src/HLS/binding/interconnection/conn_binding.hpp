@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -113,7 +113,7 @@ class conn_binding
           * @param y is the second connection
           * @return true if index of x is less than y
           */
-         bool operator()(const connection x, const connection y) const;
+         bool operator()(const connection &x, const connection &y) const;
       };
 
       typedef std::map<connection, connection_objRef, ConnectionSorter> conn_implementation_map;

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -362,7 +362,7 @@ void VcdSignalSelection::SingleStepPropagateParamToSsa(
 {
    TreeNodeMap<size_t>::const_iterator ssause_it = used_ssa.begin();
    const TreeNodeMap<size_t>::const_iterator ssause_end = used_ssa.end();
-   for (; ssause_it != ssause_end; ssause_it++)
+   for (; ssause_it != ssause_end; ++ssause_it)
    {
       THROW_ASSERT(ssause_it->first->get_kind() == tree_reindex_K,
          ssause_it->first->ToString() + " is of kind " + tree_node::GetString(ssause_it->first->get_kind()));
@@ -723,7 +723,7 @@ void VcdSignalSelection::CrossPropagateAddrSsa(
             }
             auto par_decl_it = fu_dec->list_of_args.cbegin();
             const auto par_decl_end = fu_dec->list_of_args.cend();
-            for (; (par_id_it != par_id_end) and (par_decl_it != par_decl_end); par_id_it++, par_decl_it++)
+            for (; (par_id_it != par_id_end) and (par_decl_it != par_decl_end); ++par_id_it, ++par_decl_it)
             {
                const tree_nodeRef ssa_node = TM->GetTreeNode(*par_id_it);
                if (ssa_node->get_kind() == ssa_name_K)
@@ -866,7 +866,7 @@ void VcdSignalSelection::SelectInternalSignals(
             else if (alloc_info->is_proxy_wrapped_unit(fu_type_id))
             {
                std::string fu_unit_name = fu_bind->get_fu_name(*op_vi);
-               if(fu_unit_name.find(WRAPPED_PROXY_PREFIX) == 0)
+               if(boost::algorithm::starts_with(fu_unit_name,WRAPPED_PROXY_PREFIX))
                {
                   to_select += alloc_info->get_fu_name(fu_type_id).first.substr(std::string(WRAPPED_PROXY_PREFIX).size());
                }
@@ -981,7 +981,7 @@ DesignFlowStep_Status VcdSignalSelection::Exec()
          Cget_node_info<UnfoldedFunctionInfo>(vs.first, Discr->DiscrepancyCallGraph)->behavior->CGetBehavioralHelper();
       if (not BH->has_implementation() or not BH->function_has_to_be_printed(f_id))
          continue;
-      const std::string & scope = vs.second;
+      const std::string& scope = vs.second;
       auto & datapath_scope = Discr->selected_vcd_signals[scope + datapath_str];
       auto & controller_scope = Discr->selected_vcd_signals[scope + controller_str];
       THROW_ASSERT(not controller_scope.empty() or datapath_scope.empty(),

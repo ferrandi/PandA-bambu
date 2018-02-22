@@ -16,15 +16,10 @@ if BUILD_LATEX_TABLE_FORMAT
    DIST_SUBDIRS += latex_table_format
 endif
 
-EXTRA_DIST = Doxyfile VMs/FPL_tutorial_2017_32bit/Vagrantfile VMs/FPL_tutorial_2017_64bit/Vagrantfile
-#Replace acinclude.m4
-ACLOCAL_AMFLAGS = -I ../etc/macros
+EXTRA_DIST = Doxyfile VMs/PandA-bambu-VM_32bit/Vagrantfile VMs/PandA-bambu-VM_32bit/script.sh VMs/PandA-bambu-VM_64bit/Vagrantfile VMs/PandA-bambu-VM_64bit/script.sh
 
 .PHONY documentation: documentation-recursive
 .PHONY documentation-tag:documentation-tag-recursive
 documentation:
 documentation-tag:
-
-dist-hook:
-	$(top_srcdir)/scripts/clean_configure.py $(top_srcdir)/configure.ac  | grep -v "#no_release_tag" > $(distdir)/configure.ac
 

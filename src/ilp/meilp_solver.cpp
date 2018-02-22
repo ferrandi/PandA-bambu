@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -90,12 +90,12 @@ void meilp_solver::set_debug_level(int dl)
    debug_level = dl;
 }
 
-void meilp_solver::set_priority(std::map<int, int> _priority)
+void meilp_solver::set_priority(const std::map<int, int>& _priority)
 {
    priority = _priority;
 }
 
-void meilp_solver::copy(std::map<int,double> &i_coeffs)
+void meilp_solver::copy(const std::map<int,double> &i_coeffs)
 {
    resize(i_coeffs.size());
    std::map<int,double>::const_iterator i_end = i_coeffs.end();

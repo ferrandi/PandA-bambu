@@ -42,12 +42,5 @@ lib_interconnectionbinding_la_SOURCES = conn_binding_creator.cpp conn_binding.cp
 
 PRJ_DOC = mux_connection_binding.doc
 
-if BUILD_LIB_EXPERIMENTAL
-   noinst_HEADERS += \
-      parallel_memory_conn_binding.hpp
-   lib_interconnectionbinding_la_SOURCES += \
-      parallel_memory_conn_binding.cpp
-endif
-
 #do not touch the following line
 
