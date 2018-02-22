@@ -557,6 +557,27 @@ void GccWrapper::InitializeGccParameters()
             }
             ReadParameters();
 
+#if HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER
+         {
+            GccWrapper_CompilerTarget compiler = Param->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler);
+
+            if(false
+      #if HAVE_I386_CLANG4_COMPILER
+                  || compiler == GccWrapper_CompilerTarget::CT_I386_CLANG4
+      #endif
+      #if HAVE_I386_CLANG5_COMPILER
+                  || compiler == GccWrapper_CompilerTarget::CT_I386_CLANG5
+      #endif
+                  )
+            {
+
+               ///sanitize CLANG/LLVM options by removing unsupported GCC options
+               if(optimization_flags.find("tree-pre") != optimization_flags.end())
+                  optimization_flags.erase(optimization_flags.find("tree-pre"));
+            }
+         }
+#endif
+
             gcc_compiling_parameters += (" " + WriteOptimizationsString() + " ");
 
             break;
