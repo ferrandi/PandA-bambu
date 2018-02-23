@@ -154,8 +154,15 @@ namespace flopoco
    bool combinatorialOperator;
 }
 
-flopoco_wrapper::flopoco_wrapper(int _debug_level, const std::string& FU_target) :
-   debug_level(_debug_level), PP(STD_OPENING_CHAR, STD_CLOSING_CHAR, 3), type(UT_UNKNOWN), signed_p(false)
+flopoco_wrapper::flopoco_wrapper(int
+#ifndef NDEBUG
+                                 _debug_level
+#endif
+                                 , const std::string& FU_target) :
+#ifndef NDEBUG
+   debug_level(_debug_level),
+#endif
+   PP(STD_OPENING_CHAR, STD_CLOSING_CHAR, 3), type(UT_UNKNOWN), signed_p(false)
 {
    // Get the target architecture
    if ("Spartan-3" == FU_target)
