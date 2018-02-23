@@ -64,6 +64,7 @@
 #else
 #include "llvm/Transforms/Utils/MemorySSA.h"
 #endif
+#include "llvm/IR/IRBuilder.h"
 #include "llvm/Analysis/TargetTransformInfo.h"
 #include "llvm/Analysis/LazyValueInfo.h"
 #include "llvm/Analysis/AliasAnalysis.h"
@@ -81,6 +82,8 @@
 #include <cxxabi.h>
 
 #include <float.h>
+
+#define PRINT_DBG_MSG 0
 
 static std::string create_file_name_string(const std::string &outdir_name, const std::string & original_filename)
 {
@@ -526,9 +529,6 @@ namespace clang
 
          case llvm::Intrinsic::memset:
          {
-            llvm::errs() << "memset intrinsic" << "\n";
-            fd->print(llvm::errs());
-            llvm::errs() << "operands: "<< fd->getNumOperands() << "\n";
             auto funType = cast<llvm::FunctionType>(fd->getValueType());
             if(funType->getParamType(2)->isIntegerTy() && funType->getParamType(2)->getScalarSizeInBits() == 32)
                return "_llvm_memset_p0i8_i32";
@@ -1645,14 +1645,10 @@ namespace clang
             if(isa<llvm::Function>(op))
                return build1(GT(ADDR_EXPR), type, assignCodeAuto(op));
          }
-//         llvm::errs() << ValueTyNames[calledFun->getValueID()] << "\n";
-//         calledFun->print(llvm::errs());
          return getOperand(calledFun, ci->getFunction());
       }
       else
       {
-//         llvm::errs() << ValueTyNames[calledFun->getValueID()] << "\n";
-//         calledFun->print(llvm::errs());
          return getOperand(calledFun, ci->getFunction());
       }
    }
@@ -3229,7 +3225,9 @@ namespace clang
 
    void DumpGimpleRaw::queue_and_serialize_index(const char *field, const void* t)
    {
+#if PRINT_DBG_MSG
       llvm::errs() << "field:" << field << "\n";
+#endif
       unsigned int index;
       if(t==nullptr)
          return;
@@ -3301,6 +3299,7 @@ namespace clang
 
       auto code = TREE_CODE(g);
       const char* code_name = GET_TREE_CODE_NAME(code);
+#if PRINT_DBG_MSG
       if(code != GT(GIMPLE_NOP) && code != GT(GIMPLE_PHI_VIRTUAL) && code != GT(GIMPLE_LABEL))
       {
          llvm::Instruction *inst = const_cast<llvm::Instruction *>(reinterpret_cast<const llvm::Instruction *>(g));
@@ -3313,6 +3312,7 @@ namespace clang
       }
       else
          llvm::errs() << "@" << code_name  << "\n";
+#endif
       /* Print the node index.  */
       serialize_index (index);
 
@@ -3551,8 +3551,10 @@ namespace clang
         const char *field;
         serialize_new_line ();
         serialize_int ("bloc", getBB_index(&BB));
+#if PRINT_DBG_MSG
         llvm::errs() << "BB" << getBB_index(&BB) << "\n";
         if(MSSA.getMemoryAccess(&BB)) llvm::errs() << "|!!!!!!!!!!!!!!!!!! " << *MSSA.getMemoryAccess(&BB) <<"\n";
+#endif
         if(!LI.empty() && LI.getLoopFor(&BB) && LI.getLoopFor(&BB)->getHeader() == &BB && LI.getLoopFor(&BB)->isAnnotatedParallel())
            serialize_string("hpl");
         if(LI.empty() || !LI.getLoopFor(&BB))
@@ -3859,8 +3861,9 @@ namespace clang
       serialize_index(index);
 
       const char * code_name = GET_TREE_CODE_NAME(TREE_CODE(t));
+#if PRINT_DBG_MSG
       llvm::errs() << "|" << code_name  << "\n";
-
+#endif
       snprintf(buffer, LOCAL_BUFFER_LEN, "%-16s ", code_name);
       stream << buffer;
       column = 25;
@@ -4306,6 +4309,78 @@ namespace clang
       }
    }
 
+   static void expandMemSetAsLoopLocal(llvm::MemSetInst *Memset)
+   {
+      llvm::Instruction *InsertBefore=Memset;
+      llvm::Value *DstAddr=Memset->getRawDest();
+      llvm::Value *CopyLen=Memset->getLength();
+      llvm::Value *SetValue=Memset->getValue();
+      unsigned Align=Memset->getAlignment();
+      bool IsVolatile=Memset->isVolatile();
+      llvm::Type *TypeOfCopyLen = CopyLen->getType();
+      llvm::BasicBlock *OrigBB = InsertBefore->getParent();
+      llvm::Function *F = OrigBB->getParent();
+      llvm::BasicBlock *NewBB =
+          OrigBB->splitBasicBlock(InsertBefore, "split");
+      llvm::BasicBlock *LoopBB
+        = llvm::BasicBlock::Create(F->getContext(), "loadstoreloop", F, NewBB);
+
+      bool AlignCanBeUsed = false;
+      if(isa<llvm::Constant>(CopyLen) &&
+            isa<llvm::Constant>(SetValue) &&
+            cast<llvm::Constant>(SetValue)->isNullValue() &&
+            Align > 1 && Align <= 8 &&
+            SetValue->getType()->isIntegerTy())
+         AlignCanBeUsed = true;
+      if(AlignCanBeUsed)
+      {
+#if PRINT_DBG_MSG
+         llvm::errs() << "memset can be optimized\n";
+         llvm::errs() << "Align=" << Align << "\n";
+#endif
+         SetValue = llvm::ConstantInt::get(llvm::Type::getIntNTy(F->getContext(), Align*8), 0);
+      }
+#if PRINT_DBG_MSG
+      else
+         llvm::errs() << "memset cannot be optimized\n";
+#endif
+      auto offset = AlignCanBeUsed ? llvm::ConstantInt::get(TypeOfCopyLen, Align) : llvm::ConstantInt::get(TypeOfCopyLen, 1);
+
+      llvm::IRBuilder<> Builder(OrigBB->getTerminator());
+
+      // Cast pointer to the type of value getting stored
+      unsigned dstAS = cast<llvm::PointerType>(DstAddr->getType())->getAddressSpace();
+      DstAddr = Builder.CreateBitCast(DstAddr,
+                                      llvm::PointerType::get(SetValue->getType(), dstAS));
+
+      Builder.CreateCondBr(
+          Builder.CreateICmpEQ(llvm::ConstantInt::get(TypeOfCopyLen, 0), CopyLen), NewBB,
+          LoopBB);
+      OrigBB->getTerminator()->eraseFromParent();
+
+      llvm::IRBuilder<> LoopBuilder(LoopBB);
+      llvm::PHINode *LoopIndex = LoopBuilder.CreatePHI(TypeOfCopyLen, 0);
+      LoopIndex->addIncoming(llvm::ConstantInt::get(TypeOfCopyLen, 0), OrigBB);
+
+      if(AlignCanBeUsed)
+         LoopBuilder.CreateAlignedStore(
+             SetValue,
+             LoopBuilder.CreateInBoundsGEP(SetValue->getType(), DstAddr, LoopIndex), Align,
+             IsVolatile);
+      else
+         LoopBuilder.CreateStore(
+          SetValue,
+          LoopBuilder.CreateInBoundsGEP(SetValue->getType(), DstAddr, LoopIndex),
+          IsVolatile);
+
+      llvm::Value *NewIndex =
+          LoopBuilder.CreateAdd(LoopIndex, offset);
+      LoopIndex->addIncoming(NewIndex, LoopBB);
+
+      LoopBuilder.CreateCondBr(LoopBuilder.CreateICmpULT(NewIndex, CopyLen), LoopBB,
+                               NewBB);
+   }
+
    /// Intrinsics lowering
    bool DumpGimpleRaw::lowerMemIntrinsics(llvm::Module &M)
    {
@@ -4324,8 +4399,11 @@ namespace clang
             {
                if (llvm::MemIntrinsic* IntrCall = dyn_cast<llvm::MemIntrinsic>(II))
                {
+#if PRINT_DBG_MSG
                   llvm::errs() << "Found a memIntrinsic Call\n";
+#endif
                   MemCalls.push_back(IntrCall);
+#if PRINT_DBG_MSG
                   if (llvm::MemCpyInst *Memcpy = dyn_cast<llvm::MemCpyInst>(IntrCall))
                   {
                      if (llvm::ConstantInt *CI = dyn_cast<llvm::ConstantInt>(Memcpy->getLength()))
@@ -4337,28 +4415,36 @@ namespace clang
                   {
                      llvm::errs() << "Found a memset intrinsic\n";
                   }
+#endif
                }
             }
          }
          // Transform mem* intrinsic calls.
-         for (llvm::MemIntrinsic *MemCall : MemCalls) {
+         for (llvm::MemIntrinsic *MemCall : MemCalls)
+         {
+            bool do_erase;
+            do_erase = false;
             if (llvm::MemCpyInst *Memcpy = dyn_cast<llvm::MemCpyInst>(MemCall))
             {
 #if __clang_major__ == 5
                llvm::expandMemCpyAsLoop(Memcpy, TTI);
-#endif
-            } else if (llvm::MemMoveInst *Memmove = dyn_cast<llvm::MemMoveInst>(MemCall)) {
-#if __clang_major__ == 5
-               llvm::expandMemMoveAsLoop(Memmove);
-#endif
-            } else if (llvm::MemSetInst *Memset = dyn_cast<llvm::MemSetInst>(MemCall)) {
-#if __clang_major__ == 5
-               llvm::expandMemSetAsLoop(Memset);
+               do_erase = true;
 #endif
             }
+            else if (llvm::MemMoveInst *Memmove = dyn_cast<llvm::MemMoveInst>(MemCall))
+            {
 #if __clang_major__ == 5
-            MemCall->eraseFromParent();
+               llvm::expandMemMoveAsLoop(Memmove);
+               do_erase = true;
 #endif
+            }
+            else if (llvm::MemSetInst *Memset = dyn_cast<llvm::MemSetInst>(MemCall))
+            {
+               expandMemSetAsLoopLocal(Memset);
+               do_erase = true;
+            }
+            if(do_erase)
+               MemCall->eraseFromParent();
          }
          ++currFuncIterator;
       }
@@ -4421,7 +4507,9 @@ namespace clang
       moduleContext = &M.getContext();
       for(const auto& globalVar : M.getGlobalList())
       {
+#if PRINT_DBG_MSG
          llvm::errs() << "Found global name: " << globalVar.getName() << "|" << ValueTyNames[globalVar.getValueID()] << "\n";
+#endif
          SerializeGimpleGlobalTreeNode(assignCodeAuto(&globalVar));
       }
       if(!onlyGlobals)
@@ -4429,10 +4517,16 @@ namespace clang
          for(const auto& fun : M.getFunctionList())
          {
             if(fun.isIntrinsic())
+            {
+#if PRINT_DBG_MSG
                llvm::errs() << "Function intrinsic skipped: " << fun.getName() << "|" << ValueTyNames[fun.getValueID()] << "\n";
+#endif
+            }
             else
             {
+#if PRINT_DBG_MSG
                llvm::errs() << "Found function: " << fun.getName() << "|" << ValueTyNames[fun.getValueID()] << "\n";
+#endif
                SerializeGimpleGlobalTreeNode(assignCodeAuto(&fun));
             }
          }

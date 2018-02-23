@@ -49,6 +49,8 @@
 
 #include <cxxabi.h>
 
+#define PRINT_DBG_MSG 0
+
 namespace llvm {
    struct CLANG_VERSION_SYMBOL(_plugin_DoNotExposeGlobalsPass);
 }
@@ -166,20 +168,29 @@ namespace llvm {
          bool runOnModule(Module &M)
          {
             bool changed = false;
+#if PRINT_DBG_MSG
             llvm::errs() << "Top function name: " << TopFunctionNmae << "\n";
+#endif
             for(auto& globalVar : M.getGlobalList())
             {
                std::string varName = std::string(globalVar.getName());
+#if PRINT_DBG_MSG
                llvm::errs() << "Found global name: " << varName << "\n";
+#endif
                if(varName == "llvm.global_ctors" ||
                      varName == "llvm.global_dtors" ||
                      varName == "llvm.used" ||
                      varName == "llvm.compiler.used")
-                  llvm::errs() << "Global intrinsic skipped: " << globalVar.getName()<< "\n";
-               else
-               if(!globalVar.hasInternalLinkage())
                {
+#if PRINT_DBG_MSG
+                  llvm::errs() << "Global intrinsic skipped: " << globalVar.getName()<< "\n";
+#endif
+               }
+               else if(!globalVar.hasInternalLinkage())
+               {
+#if PRINT_DBG_MSG
                   llvm::errs() << "it becomes internal\n";
+#endif
                   changed = true;
                   globalVar.setLinkage(llvm::GlobalValue::InternalLinkage);
                }
@@ -187,19 +198,27 @@ namespace llvm {
             for(auto& fun : M.getFunctionList())
             {
                if(fun.isIntrinsic())
+               {
+#if PRINT_DBG_MSG
                   llvm::errs() << "Function intrinsic skipped: " << fun.getName()<< "\n";
+#endif
+               }
                else
                {
                   auto funName = fun.getName();
                   auto demangled = getDemangled(funName);
+#if PRINT_DBG_MSG
                   llvm::errs() << "Found function: " << funName << "|" << demangled << "\n";
+#endif
                   if (!fun.hasInternalLinkage() &&
                       funName != TopFunctionNmae &&
                       demangled != TopFunctionNmae &&
                       !is_builtin_fn(funName) &&
                       !is_builtin_fn(demangled) )
                   {
+#if PRINT_DBG_MSG
                      llvm::errs() << "it becomes internal\n";
+#endif
                      changed = true;
                      fun.setLinkage(llvm::GlobalValue::InternalLinkage);
                   }
