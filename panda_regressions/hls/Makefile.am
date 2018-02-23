@@ -1181,4 +1181,15 @@ gcc_regression_simple/zero-struct-1.c\
 ./gcc_regression_simple1.sh\
 ./panda_regression_hls_all_gcc1.sh\
 ./panda_regression_hls_no_gcc1.sh\
-./softfloat-tests1.sh
+./softfloat-tests1.sh\
+clang4_regression_simple_default.sh\
+clang4_regression_simple_ext_pipelined.sh\
+clang4_regression_simple_no_expose_globals.sh\
+clang5_regression_simple_default.sh\
+clang5_regression_simple_ext_pipelined.sh\
+clang5_regression_simple_no_expose_globals.sh\
+softfloat-tests-clang4.sh\
+softfloat-tests-clang5.sh\
+libm-testsClang.sh\
+CHStone_frontend1Clang.sh
+
