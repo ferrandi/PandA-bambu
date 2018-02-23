@@ -94,8 +94,10 @@ class flopoco_wrapper
    private:
       //no copy constructor
       flopoco_wrapper(const flopoco_wrapper& inst) = delete;
+#ifndef NDEBUG
       /// Current debug level
       int debug_level;
+#endif
       /// Generated Functional Units
       std::unordered_map<std::string, flopoco::Operator *> FUs;
       /// Set of Functional Units written to a .vhdl file
