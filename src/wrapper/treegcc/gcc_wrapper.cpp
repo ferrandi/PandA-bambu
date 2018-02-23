@@ -736,7 +736,7 @@ void GccWrapper::SetBambuDefault()
    if(compiler == GccWrapper_CompilerTarget::CT_I386_CLANG4)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--Set parameters for bambu tool");
-      optimization_flags["wrapv"] = true; /// bambu assumes twos complement arithmetic
+      optimization_flags["wrapv"] = true; /// bambu assumes two complement arithmetic
       optimization_flags["builtin-memset"] = false;
       optimization_flags["builtin-memcpy"] = false;
       optimization_flags["builtin-memmove"] = false;
@@ -747,7 +747,7 @@ void GccWrapper::SetBambuDefault()
    if(compiler == GccWrapper_CompilerTarget::CT_I386_CLANG5)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--Set parameters for bambu tool");
-      optimization_flags["wrapv"] = true; /// bambu assumes twos complement arithmetic
+      optimization_flags["wrapv"] = true; /// bambu assumes two complement arithmetic
       optimization_flags["builtin-memset"] = false;
       optimization_flags["builtin-memcpy"] = false;
       optimization_flags["builtin-memmove"] = false;
