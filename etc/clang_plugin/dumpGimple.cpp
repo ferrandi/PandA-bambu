@@ -4326,7 +4326,7 @@ namespace clang
         = llvm::BasicBlock::Create(F->getContext(), "loadstoreloop", F, NewBB);
 
       bool AlignCanBeUsed = false;
-      if(isa<llvm::Constant>(CopyLen) &&
+      if(isa<llvm::ConstantInt>(CopyLen) &&
             isa<llvm::Constant>(SetValue) &&
             cast<llvm::Constant>(SetValue)->isNullValue() &&
             Align > 1 && Align <= 8 &&
@@ -4344,9 +4344,9 @@ namespace clang
       else
          llvm::errs() << "memset cannot be optimized\n";
 #endif
-      auto offset = AlignCanBeUsed ? llvm::ConstantInt::get(TypeOfCopyLen, Align) : llvm::ConstantInt::get(TypeOfCopyLen, 1);
-
       llvm::IRBuilder<> Builder(OrigBB->getTerminator());
+
+      auto ActualCopyLen =  AlignCanBeUsed ? llvm::ConstantInt::get(TypeOfCopyLen, cast<llvm::ConstantInt>(CopyLen)->getValue().udiv(llvm::APInt(TypeOfCopyLen->getIntegerBitWidth(), Align))) : CopyLen;
 
       // Cast pointer to the type of value getting stored
       unsigned dstAS = cast<llvm::PointerType>(DstAddr->getType())->getAddressSpace();
@@ -4374,10 +4374,10 @@ namespace clang
           IsVolatile);
 
       llvm::Value *NewIndex =
-          LoopBuilder.CreateAdd(LoopIndex, offset);
+          LoopBuilder.CreateAdd(LoopIndex, llvm::ConstantInt::get(TypeOfCopyLen, 1));
       LoopIndex->addIncoming(NewIndex, LoopBB);
 
-      LoopBuilder.CreateCondBr(LoopBuilder.CreateICmpULT(NewIndex, CopyLen), LoopBB,
+      LoopBuilder.CreateCondBr(LoopBuilder.CreateICmpULT(NewIndex,ActualCopyLen), LoopBB,
                                NewBB);
    }
 
