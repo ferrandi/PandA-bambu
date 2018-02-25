@@ -187,9 +187,13 @@ void TestVectorParser::ParseXMLFile(
             }
             if(behavioral_helper->GetFunctionReturnType(function_id) and ((Enode)->get_attribute("return")))
             {
-               HLSMgr->RSim->results_available = true;
-               test_vector["return"] = ((Enode)->get_attribute("return")->get_value());
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Expected return value is " + test_vector["return"]);
+               ///If discrepancy is enabled, then xml output is ignored
+               if (not (parameters->isOption(OPT_discrepancy) and parameters->getOption<bool>(OPT_discrepancy)))
+               {
+                  HLSMgr->RSim->results_available = true;
+                  test_vector["return"] = ((Enode)->get_attribute("return")->get_value());
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Expected return value is " + test_vector["return"]);
+               }
             }
             test_vectors.emplace_back(std::move(test_vector));
          }

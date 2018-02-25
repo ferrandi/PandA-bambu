@@ -62,6 +62,9 @@
 ///constants include
 #include "testbench_generation_constants.hpp"
 
+///design_flows include
+#include "design_flow_manager.hpp"
+
 ///design_flows/backend/ToHDL includes
 #include "HDL_manager.hpp"
 #include "language_writer.hpp"
@@ -121,7 +124,19 @@ const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
    {
       case DEPENDENCE_RELATIONSHIP:
          {
-            ret.insert(std::make_tuple(HLSFlowStep_Type::TESTBENCH_VALUES_C_GENERATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::TOP_FUNCTION));
+            ret.insert(std::make_tuple(HLSFlowStep_Type::TEST_VECTOR_PARSER, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::TOP_FUNCTION));
+            if(design_flow_manager.lock()->GetStatus(HLS_step::ComputeSignature(HLSFlowStep_Type::TEST_VECTOR_PARSER, HLSFlowStepSpecializationConstRef())) == DesignFlowStep_Status::SUCCESS)
+            {
+               if(HLSMgr->RSim and HLSMgr->RSim->results_available)
+               {
+                  ret.insert(std::make_tuple(HLSFlowStep_Type::TESTBENCH_VALUES_XML_GENERATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::TOP_FUNCTION));
+               }
+               else
+               {
+                  ret.insert(std::make_tuple(HLSFlowStep_Type::TESTBENCH_VALUES_C_GENERATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::TOP_FUNCTION));
+               }
+            }
+
             ret.insert(std::make_tuple(HLSFlowStep_Type::TESTBENCH_MEMORY_ALLOCATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::TOP_FUNCTION));
 #if HAVE_VCD_BUILT
             if (parameters->isOption(OPT_discrepancy) and parameters->getOption<bool>(OPT_discrepancy))

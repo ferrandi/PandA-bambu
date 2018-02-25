@@ -1,0 +1,309 @@
+/*
+ *
+ *                   _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
+ *                  _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
+ *                 _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
+ *                _/      _/    _/ _/    _/ _/   _/ _/    _/
+ *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
+ *
+ *             ***********************************************
+ *                              PandA Project
+ *                     URL: http://panda.dei.polimi.it
+ *                       Politecnico di Milano - DEIB
+ *                        System Architectures Group
+ *             ***********************************************
+ *              Copyright (c) 2018 Politecnico di Milano
+ *
+ *   This file is part of the PandA framework.
+ *
+ *   The PandA framework is free software; you can redistribute it and/or modify
+ *   it under the terms of the GNU General Public License as published by
+ *   the Free Software Foundation; either version 3 of the License, or
+ *   (at your option) any later version.
+ *
+ *   This program is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU General Public License for more details.
+ *
+ *   You should have received a copy of the GNU General Public License
+ *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+*/
+/**
+ * @file c_initialization_parser_data.cpp
+ * @brief Specification of the global data structure used during parsing of C initialization string
+ *
+ * @author Marco Lattuada <marco.lattuada@polimi.it>
+ *
+*/
+
+///Header include
+#include "c_initialization_parser_data.hpp"
+
+///. include
+#include "Parameter.hpp"
+
+///tree includes
+#include "tree_helper.hpp"
+#include "tree_manager.hpp"
+#include "tree_node.hpp"
+
+///utility include
+#include "exceptions.hpp"
+#include "utility.hpp"
+
+CInitializationParserData::CInitializationParserData(std::ofstream & _output_stream, const tree_managerConstRef _TM, const unsigned long int _reserved_mem_bytes, const tree_nodeConstRef parameter_type, const ParameterConstRef _parameters) :
+   TM(_TM),
+   reserved_mem_bytes(_reserved_mem_bytes),
+   written_bytes(0),
+   output_stream(_output_stream),
+   debug_level(_parameters->get_class_debug_level(GET_CLASS(*this)))
+{
+   status.push_back(std::pair<const tree_nodeConstRef, unsigned int>(parameter_type, 0));
+}
+void CInitializationParserData::CheckEnd()
+{
+   if(written_bytes != reserved_mem_bytes)
+   {
+      THROW_ERROR("Not enough bytes written: " + STR(written_bytes) + " vs. " + STR(reserved_mem_bytes));
+   }
+   ///First of all we have to check that there is just one element in the stack
+   if(status.size() > 1)
+      THROW_ERROR("Missing data in C initialization string");
+   GoUp();
+}
+
+void CInitializationParserData::GoUp()
+{
+   size_t expected_size = 0;
+
+   ///Second, according to the type let's how many elements have to have been processed
+   switch(status.back().first->get_kind())
+   {
+      case array_type_K:
+         ///parameters cannot have this type, but global variables can
+         expected_size = tree_helper::get_array_num_elements(TM, status.back().first->index);
+         break;
+      case boolean_type_K:
+      case CharType_K:
+      case enumeral_type_K:
+      case integer_type_K:
+      case real_type_K:
+         expected_size = 1;
+         break;
+      case complex_type_K:
+         expected_size = 2;
+         break;
+      case pointer_type_K:
+         expected_size = 0; ///Actually the expected size is unknown
+         break;
+      case record_type_K:
+      case union_type_K:
+         expected_size = tree_helper::CGetFieldTypes(status.back().first).size();
+         break;
+      case function_type_K:
+      case lang_type_K:
+      case method_type_K:
+      case nullptr_type_K:
+      case offset_type_K:
+      case qual_union_type_K:
+      case reference_type_K:
+      case set_type_K:
+      case template_type_parm_K:
+      case typename_type_K:
+      case type_argument_pack_K:
+      case type_pack_expansion_K:
+      case vector_type_K:
+      case void_type_K:
+         THROW_ERROR("Unexpected type in initializing parameter/variable: " + status.back().first->get_kind_text());
+         break;
+      case aggr_init_expr_K:
+      case binfo_K:
+      case block_K:
+      case call_expr_K:
+      case case_label_expr_K:
+      case constructor_K:
+      case error_mark_K:
+      case identifier_node_K:
+      case ssa_name_K:
+      case statement_list_K:
+      case target_expr_K:
+      case target_mem_ref_K:
+      case target_mem_ref461_K:
+      case tree_list_K:
+      case tree_vec_K:
+      case CASE_CPP_NODES:
+      case CASE_BINARY_EXPRESSION:
+      case CASE_CST_NODES:
+      case CASE_DECL_NODES:
+      case CASE_FAKE_NODES:
+      case CASE_GIMPLE_NODES:
+      case CASE_PRAGMA_NODES:
+      case CASE_QUATERNARY_EXPRESSION:
+      case CASE_TERNARY_EXPRESSION:
+      case CASE_UNARY_EXPRESSION:
+      default:
+         THROW_ERROR_CODE(NODE_NOT_YET_SUPPORTED_EC, "Not supported node: " + std::string(status.back().first->get_kind_text()));
+   }
+   if(expected_size == 0)
+      return;
+   if(expected_size != status.back().second)
+      THROW_ERROR("Missing data in C initialization for node of type " + status.back().first->get_kind_text());
+}
+
+void CInitializationParserData::GoDown()
+{
+   THROW_ASSERT(not status.empty(), "");
+   const auto type_node = status.back().first;
+   const auto new_type = [&] () -> tree_nodeConstRef
+   {
+      if(type_node->get_kind() == record_type_K or type_node->get_kind() != union_type_K)
+      {
+         return tree_helper::CGetFieldTypes(type_node)[status.back().second];
+      }
+      if(type_node->get_kind() == array_type_K)
+      {
+         return tree_helper::CGetElements(type_node);
+      }
+      THROW_ERROR("Unexpected nested initialization");
+      return tree_nodeRef();
+   }();
+   status.push_back(std::pair<const tree_nodeConstRef, unsigned int>(new_type, 0));
+}
+
+void CInitializationParserData::Write(const std::string & content)
+{
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Writing " + content + " in binary form to initialize memory");
+   unsigned int base_type_index = 0;
+   ///Second, according to the type let's how many elements have to have been processed
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Currently writing " + status.back().first->get_kind_text());
+   switch(status.back().first->get_kind())
+   {
+      case pointer_type_K:
+         base_type_index = tree_helper::get_pointed_type(TM, status.back().first->index);
+         break;
+      case integer_type_K:
+         base_type_index = status.back().first->index;
+         break;
+      case array_type_K:
+      case boolean_type_K:
+      case CharType_K:
+      case enumeral_type_K:
+      case real_type_K:
+      case complex_type_K:
+      case record_type_K:
+      case union_type_K:
+      case function_type_K:
+      case lang_type_K:
+      case method_type_K:
+      case nullptr_type_K:
+      case offset_type_K:
+      case qual_union_type_K:
+      case reference_type_K:
+      case set_type_K:
+      case template_type_parm_K:
+      case typename_type_K:
+      case type_argument_pack_K:
+      case type_pack_expansion_K:
+      case vector_type_K:
+      case void_type_K:
+         THROW_ERROR("Unexpected type in initializing parameter/variable: " + status.back().first->get_kind_text());
+         break;
+      case aggr_init_expr_K:
+      case binfo_K:
+      case block_K:
+      case call_expr_K:
+      case case_label_expr_K:
+      case constructor_K:
+      case error_mark_K:
+      case identifier_node_K:
+      case ssa_name_K:
+      case statement_list_K:
+      case target_expr_K:
+      case target_mem_ref_K:
+      case target_mem_ref461_K:
+      case tree_list_K:
+      case tree_vec_K:
+      case CASE_CPP_NODES:
+      case CASE_BINARY_EXPRESSION:
+      case CASE_CST_NODES:
+      case CASE_DECL_NODES:
+      case CASE_FAKE_NODES:
+      case CASE_GIMPLE_NODES:
+      case CASE_PRAGMA_NODES:
+      case CASE_QUATERNARY_EXPRESSION:
+      case CASE_TERNARY_EXPRESSION:
+      case CASE_UNARY_EXPRESSION:
+      default:
+         THROW_ERROR_CODE(NODE_NOT_YET_SUPPORTED_EC, "Not supported node: " + std::string(status.back().first->get_kind_text()));
+   }
+   THROW_ASSERT(base_type_index != 0, "");
+   const auto base_type = TM->CGetTreeNode(base_type_index);
+   std::string binary_value = "";
+   unsigned int size = 0;
+   switch(base_type->get_kind())
+   {
+      case integer_type_K:
+         size = tree_helper::size(TM, base_type_index);
+         binary_value = ConvertInBinary(content, size, false, tree_helper::is_unsigned(TM, base_type_index));
+         break;
+      case pointer_type_K:
+      case array_type_K:
+      case boolean_type_K:
+      case CharType_K:
+      case enumeral_type_K:
+      case real_type_K:
+      case complex_type_K:
+      case record_type_K:
+      case union_type_K:
+      case function_type_K:
+      case lang_type_K:
+      case method_type_K:
+      case nullptr_type_K:
+      case offset_type_K:
+      case qual_union_type_K:
+      case reference_type_K:
+      case set_type_K:
+      case template_type_parm_K:
+      case typename_type_K:
+      case type_argument_pack_K:
+      case type_pack_expansion_K:
+      case vector_type_K:
+      case void_type_K:
+         THROW_ERROR("Unexpected type in initializing parameter/variable: " + status.back().first->get_kind_text());
+         break;
+      case aggr_init_expr_K:
+      case binfo_K:
+      case block_K:
+      case call_expr_K:
+      case case_label_expr_K:
+      case constructor_K:
+      case error_mark_K:
+      case identifier_node_K:
+      case ssa_name_K:
+      case statement_list_K:
+      case target_expr_K:
+      case target_mem_ref_K:
+      case target_mem_ref461_K:
+      case tree_list_K:
+      case tree_vec_K:
+      case CASE_CPP_NODES:
+      case CASE_BINARY_EXPRESSION:
+      case CASE_CST_NODES:
+      case CASE_DECL_NODES:
+      case CASE_FAKE_NODES:
+      case CASE_GIMPLE_NODES:
+      case CASE_PRAGMA_NODES:
+      case CASE_QUATERNARY_EXPRESSION:
+      case CASE_TERNARY_EXPRESSION:
+      case CASE_UNARY_EXPRESSION:
+      default:
+         THROW_ERROR_CODE(NODE_NOT_YET_SUPPORTED_EC, "Not supported node: " + std::string(status.back().first->get_kind_text()));
+   }
+   THROW_ASSERT(binary_value.size()%8 == 0, "");
+   written_bytes += binary_value.size()/8;
+   output_stream << binary_value << std::endl;
+   status.back().second++;
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Written " + content + " (" + STR(binary_value.size()/8) + " bytes) in binary form to initialize memory");
+}

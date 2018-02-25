@@ -231,6 +231,7 @@
 #include "minimal_interface_testbench.hpp"
 #include "testbench_generation.hpp"
 #include "testbench_values_c_generation.hpp"
+#include "testbench_values_xml_generation.hpp"
 #include "wishbone_interface_testbench.hpp"
 #include "test_vector_parser.hpp"
 #include "testbench_memory_allocation.hpp"
@@ -636,6 +637,11 @@ DesignFlowStepRef HLSFlowStepFactory::CreateHLSFlowStep(const HLSFlowStep_Type t
             design_flow_step = DesignFlowStepRef(new TestbenchValuesCGeneration(parameters, HLS_mgr, design_flow_manager.lock()));
             break;
          }
+      case HLSFlowStep_Type::TESTBENCH_VALUES_XML_GENERATION:
+         {
+            design_flow_step = DesignFlowStepRef(new TestbenchValuesXMLGeneration(parameters, HLS_mgr, design_flow_manager.lock()));
+            break;
+         }
       case HLSFlowStep_Type::TEST_VECTOR_PARSER:
          {
             design_flow_step = DesignFlowStepRef(new TestVectorParser(parameters, HLS_mgr, design_flow_manager.lock()));
@@ -756,6 +762,7 @@ const DesignFlowStepSet HLSFlowStepFactory::CreateHLSFlowSteps(const std::unorde
          case HLSFlowStep_Type::TEST_VECTOR_PARSER:
          case HLSFlowStep_Type::TESTBENCH_MEMORY_ALLOCATION:
          case HLSFlowStep_Type::TESTBENCH_VALUES_C_GENERATION:
+         case HLSFlowStep_Type::TESTBENCH_VALUES_XML_GENERATION:
             {
                ret.insert(CreateHLSFlowStep(hls_flow_step.first, 0, hls_flow_step.second));
                break;
