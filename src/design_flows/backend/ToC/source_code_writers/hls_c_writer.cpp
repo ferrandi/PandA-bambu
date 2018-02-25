@@ -366,10 +366,10 @@ void HLSCWriter::WriteParamInitialization
                std::vector<std::string> splitted_fields;
                std::string field_value = splitted[i];
                boost::algorithm::split(splitted_fields, field_value, boost::algorithm::is_any_of("|"));
-               const std::list<tree_nodeConstRef> fields = tree_helper::CGetFieldTypes(TM->CGetTreeNode(base_type));
+               const auto fields = tree_helper::CGetFieldTypes(TM->CGetTreeNode(base_type));
                size_t n_values = splitted_fields.size();
                unsigned int index = 0;
-               for (std::list<tree_nodeConstRef>::const_iterator it=fields.begin(); it != fields.end(); ++it, ++index)
+               for (auto it=fields.begin(); it != fields.end(); ++it, ++index)
                {
                   if (index < n_values)
                   {
@@ -438,8 +438,7 @@ void HLSCWriter::WriteParamInitialization
          indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"//parameter: " +
                   param + " value: "  + memory_addr + "\\n\");\n");
 
-         indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"p" +
-               convert_in_binary(behavioral_helper, 0, memory_addr, 32) + "\\n\");\n");
+         indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"p" + ConvertInBinary(memory_addr, 32, false, false) + "\\n\");\n");
       }
       else
       {
@@ -459,13 +458,7 @@ void HLSCWriter::WriteParamInitialization
          indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"//parameter: " +
                   param + " value: "  + curr_test_vector.find(param)->second + "\\n\");\n");
 
-         indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"p" + convert_in_binary
-               (
-                  behavioral_helper,
-                  type_id,
-                  curr_test_vector.find(param)->second,
-                  tree_helper::size(TM, type_id)
-               ) + "\\n\");\n");
+         indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"p" + ConvertInBinary(curr_test_vector.find(param)->second, tree_helper::size(TM, type_id), behavioral_helper->is_real(type_id), behavioral_helper->is_unsigned(type_id)) + "\\n\");\n");
       }
    }
 }
@@ -876,22 +869,20 @@ void HLSCWriter::WriteSimulatorInitMemory(const unsigned int function_id)
                {
                   std::vector<std::string> splitted_fields;
                   boost::algorithm::split(splitted_fields, initial_string, boost::algorithm::is_any_of("|"));
-                  const std::list<tree_nodeConstRef> fields = tree_helper::CGetFieldTypes(TM->CGetTreeNode(ptd_base_type));
+                  const auto fields = tree_helper::CGetFieldTypes(TM->CGetTreeNode(ptd_base_type));
                   size_t n_values = splitted_fields.size();
                   unsigned int index=0;
-                  for (std::list<tree_nodeConstRef>::const_iterator it=fields.begin(); it != fields.end(); ++it, ++index)
+                  for (auto it=fields.begin(); it != fields.end(); ++it, ++index)
                   {
                      const tree_nodeConstRef field_type = *it;
                      unsigned int field_size = tree_helper::Size(field_type);
                      if (index < n_values)
                      {
-                        binary_string = convert_in_binary
-                           (behavioral_helper, field_type->index, splitted_fields[index], field_size);
+                        binary_string = ConvertInBinary(splitted_fields[index], field_size, behavioral_helper->is_real(field_type->index), behavioral_helper->is_unsigned(field_type->index));
                      }
                      else
                      {
-                        binary_string = convert_in_binary
-                           (behavioral_helper, field_type->index, "0", field_size);
+                        binary_string = ConvertInBinary("0", field_size, behavioral_helper->is_real(field_type->index), behavioral_helper->is_unsigned(field_type->index));
                      }
 
                      printed_bytes += WriteBinaryMemoryInit(binary_string, field_size, bits_offset);
@@ -901,7 +892,7 @@ void HLSCWriter::WriteSimulatorInitMemory(const unsigned int function_id)
                {
                   unsigned int max_bitsize_field = 0;
                   tree_helper::accessed_greatest_bitsize(TM, ptd_base_type_node, ptd_base_type, max_bitsize_field);
-                  binary_string = convert_in_binary(behavioral_helper, 0, "0", max_bitsize_field);
+                  binary_string = ConvertInBinary("0", max_bitsize_field, false, false);
                   printed_bytes += WriteBinaryMemoryInit(binary_string, max_bitsize_field, bits_offset);
                }
                else if (behavioral_helper->is_an_array(ptd_base_type))
@@ -920,13 +911,13 @@ void HLSCWriter::WriteSimulatorInitMemory(const unsigned int function_id)
                   indented_output_stream->Append("for (__testbench_index0 = 0; __testbench_index0 < " +
                         STR(num_elements) + "; ++__testbench_index0)\n{\n");
 
-                  binary_string =  convert_in_binary(behavioral_helper, elmts_type, initial_string, data_bitsize);
+                  binary_string = ConvertInBinary(initial_string, data_bitsize, behavioral_helper->is_real(elmts_type), behavioral_helper->is_unsigned(elmts_type));
                   printed_bytes += WriteBinaryMemoryInit(binary_string, data_bitsize, bits_offset);
                   indented_output_stream->Append("}\n");
                }
                else
                {
-                  binary_string =  convert_in_binary(behavioral_helper, ptd_base_type, initial_string, data_bitsize);
+                  binary_string = ConvertInBinary(initial_string, data_bitsize, behavioral_helper->is_real(ptd_base_type), behavioral_helper->is_unsigned(ptd_base_type));
 
                   if (data_bitsize == 1)
                   {
@@ -1065,46 +1056,6 @@ void HLSCWriter::WriteFile(const std::string& file_name)
    INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "<--");
 
    indented_output_stream->WriteFile(file_name);
-}
-
-std::string HLSCWriter::convert_in_binary(const BehavioralHelperConstRef behavioral_helper, unsigned int base_type, const std::string&C_value, unsigned int precision)
-{
-   std::string trimmed_value;
-   THROW_ASSERT(C_value!= "", "Empty string for binary conversion");
-   if (base_type && behavioral_helper->is_real(base_type))
-   {
-      trimmed_value = convert_fp_to_string(C_value, precision);
-   }
-   else
-   {
-      long long int ll_value;
-      if (C_value[0] == '\'')
-      {
-         trimmed_value = C_value.substr(1);
-         THROW_ASSERT(trimmed_value.find('\'') != std::string::npos, "unxpected case");
-         trimmed_value = trimmed_value.substr(0, trimmed_value.find('\''));
-         if (trimmed_value[0] == '\\')
-            ll_value = boost::lexical_cast<long long int>(trimmed_value.substr(1));
-         else
-            ll_value = boost::lexical_cast<char>(trimmed_value);
-      }
-      else if (base_type && behavioral_helper->is_unsigned(base_type))
-      {
-         std::string::size_type sz = 0;
-         unsigned long long ull = std::stoull (C_value,&sz,0);
-         ll_value = static_cast<long long int>(ull);
-      }
-      else
-      {
-         std::string::size_type sz = 0;
-         ll_value = std::stoll (C_value,&sz,0);
-      }
-      unsigned long long int ull_value = static_cast<unsigned long long int>(ll_value);
-      trimmed_value = "";
-      for (unsigned int ind = 0; ind < precision; ind++)
-         trimmed_value = trimmed_value + (((1LLU << (precision-ind-1)) & ull_value) ? '1' : '0');
-   }
-   return trimmed_value;
 }
 
 inline void HLSCWriter::WriteZeroedBytes(const size_t n_bytes)

@@ -58,11 +58,6 @@ class HLSCWriter : public CWriter
       const HLSCBackendInformationConstRef hls_c_backend_information;
 
       /**
-       * Print the binary representation of a number
-       */
-      std::string convert_in_binary(const BehavioralHelperConstRef behavioral_helper, unsigned int base_type, const std::string&C_value, unsigned int precision);
-
-      /**
        * Check if a binary string is a sequence of zeros with
        * length multiple of 8
        */

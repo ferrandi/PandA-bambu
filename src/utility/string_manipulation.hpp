@@ -34,25 +34,22 @@
  * @file string_manipulation.hpp
  * @brief Auxiliary methods for manipulating string
  *
- * @author Marco Lattuada <lattuada@elet.polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
+ * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
 */
 #ifndef STRING_MANIPULATION_HPP
 #define STRING_MANIPULATION_HPP
+
+///boost includes
+#include <boost/algorithm/string/classification.hpp>
+#include <boost/algorithm/string/split.hpp>
+#include <boost/lexical_cast.hpp>
 
 ///STD include
 #include <cxxabi.h>
 
 ///STL include
 #include <vector>
-
-///Utility include
-#include <boost/algorithm/string/classification.hpp>
-#include <boost/algorithm/string/split.hpp>
-#include <boost/lexical_cast.hpp>
 
 /**
  * Macro which performs a lexical_cast to a string
@@ -263,4 +260,13 @@ inline std::string convert_fp_to_string(std::string num, unsigned int precision)
    }
    return res;
 }
+
+/**
+ * Convert a string storing a number in decimal format into a string in binary format
+ * @param C_value is the decimal format
+ * @param precision is the precision of the number
+ * @param real_type is true if the type of the number is real
+ * @param unsigned_type is true if the type of the number is unsigned
+ */
+std::string ConvertInBinary(const std::string & C_value, const unsigned int precision, const bool real_type, const bool unsigned_type);
 #endif
