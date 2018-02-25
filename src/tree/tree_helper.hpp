@@ -322,7 +322,7 @@ class tree_helper
        * @param type is the struct type
        */
       static
-      const std::list<tree_nodeConstRef> CGetFieldTypes(const tree_nodeConstRef type);
+      const std::vector<tree_nodeConstRef> CGetFieldTypes(const tree_nodeConstRef type);
 
       /**
        * Return the idx element of the fields declared in an union or a record type
