@@ -574,6 +574,10 @@ void GccWrapper::InitializeGccParameters()
                ///sanitize CLANG/LLVM options by removing unsupported GCC options
                if(optimization_flags.find("tree-pre") != optimization_flags.end())
                   optimization_flags.erase(optimization_flags.find("tree-pre"));
+               if(optimization_flags.find("ipa-cp-clone") != optimization_flags.end())
+                  optimization_flags.erase(optimization_flags.find("ipa-cp-clone"));
+               if(optimization_flags.find("ipa-cp") != optimization_flags.end())
+                  optimization_flags.erase(optimization_flags.find("ipa-cp"));
             }
          }
 #endif
