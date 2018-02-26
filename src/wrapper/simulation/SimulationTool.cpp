@@ -259,6 +259,7 @@ unsigned long long int SimulationTool::DetermineCycles(unsigned long long int &a
          PRINT_OUT_MEX(OUTPUT_LEVEL_PEDANTIC, output_level, "File \"" + profiling_result_file + "\" opened");
          double clock_period = Param->isOption(OPT_clock_period) ? Param->getOption<double>(OPT_clock_period) : 10;
          double time_stamp = 0.0 ;
+         unsigned int prev_state = 3;
 
          while(!profiling_res_file.eof())
          {
@@ -275,9 +276,17 @@ unsigned long long int SimulationTool::DetermineCycles(unsigned long long int &a
                THROW_ERROR("String not valid: " + line);
             }
             if(filevalues[0] == "2")
-               time_stamp = time_stamp - boost::lexical_cast<double>(filevalues[1]);
+            {
+               THROW_ASSERT(prev_state == 3, "Something wrong happen during the reading of the profiling results");
+               prev_state = 2;
+               time_stamp = - boost::lexical_cast<double>(filevalues[1]);
+            }
             else
-               time_stamp = time_stamp + clock_period + boost::lexical_cast<double>(filevalues[1]);
+            {
+               THROW_ASSERT(prev_state == 2, "Something wrong happen during the reading of the profiling results");
+               prev_state = 3;
+               time_stamp = time_stamp - clock_period + boost::lexical_cast<double>(filevalues[1]);
+            }
             i++;
          }
          num_cycles = static_cast<unsigned long long int>(std::round(time_stamp/clock_period));
