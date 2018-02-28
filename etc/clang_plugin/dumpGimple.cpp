@@ -83,7 +83,7 @@
 
 #include <float.h>
 
-#define PRINT_DBG_MSG 0
+#define PRINT_DBG_MSG 1
 
 static std::string create_file_name_string(const std::string &outdir_name, const std::string & original_filename)
 {
@@ -118,6 +118,12 @@ namespace clang
       DEFTREECODE(INTEGER_CST_SIGNED, "integer_cst", tcc_constant, 0)
       DEFTREECODE(SIGNEDPOINTERTYPE, "integer_type", tcc_type, 0)
       DEFTREECODE (MISALIGNED_INDIRECT_REF, "misaligned_indirect_ref", tcc_reference, 2)
+      DEFTREECODE (FCMP_OEQ, "truth_andif_expr", tcc_expression, 2)
+      DEFTREECODE (FCMP_ONE, "truth_andif_expr", tcc_expression, 2)
+      DEFTREECODE (FCMP_ORD, "truth_andif_expr", tcc_expression, 2)
+      DEFTREECODE (FCMP_UEQ, "truth_orif_expr", tcc_expression, 2)
+      DEFTREECODE (FCMP_UNE, "truth_orif_expr", tcc_expression, 2)
+      DEFTREECODE (FCMP_UNO, "truth_orif_expr", tcc_expression, 2)
    };
 #undef DEFTREECODE
 #undef DEFGSCODE
@@ -138,6 +144,12 @@ namespace clang
       DEFTREECODE(INTEGER_CST_SIGNED, "integer_cst", tcc_constant, 0)
       DEFTREECODE(SIGNEDPOINTERTYPE, "integer_type", tcc_type, 0)
       DEFTREECODE (MISALIGNED_INDIRECT_REF, "misaligned_indirect_ref", tcc_reference, 2)
+      DEFTREECODE (FCMP_OEQ, "truth_andif_expr", tcc_expression, 2)
+      DEFTREECODE (FCMP_ONE, "truth_andif_expr", tcc_expression, 2)
+      DEFTREECODE (FCMP_ORD, "truth_andif_expr", tcc_expression, 2)
+      DEFTREECODE (FCMP_UEQ, "truth_orif_expr", tcc_expression, 2)
+      DEFTREECODE (FCMP_UNE, "truth_orif_expr", tcc_expression, 2)
+      DEFTREECODE (FCMP_UNO, "truth_orif_expr", tcc_expression, 2)
    };
 #undef DEFTREECODE
 #undef DEFGSCODE
@@ -157,6 +169,12 @@ namespace clang
       DEFTREECODE(INTEGER_CST_SIGNED, "integer_cst", tcc_constant, 0)
       DEFTREECODE(SIGNEDPOINTERTYPE, "integer_type", tcc_type, 0)
       DEFTREECODE (MISALIGNED_INDIRECT_REF, "misaligned_indirect_ref", tcc_reference, 2)
+      DEFTREECODE (FCMP_OEQ, "truth_andif_expr", tcc_expression, 2)
+      DEFTREECODE (FCMP_ONE, "truth_andif_expr", tcc_expression, 2)
+      DEFTREECODE (FCMP_ORD, "truth_andif_expr", tcc_expression, 2)
+      DEFTREECODE (FCMP_UEQ, "truth_orif_expr", tcc_expression, 2)
+      DEFTREECODE (FCMP_UNE, "truth_orif_expr", tcc_expression, 2)
+      DEFTREECODE (FCMP_UNO, "truth_orif_expr", tcc_expression, 2)
    };
 #undef DEFTREECODE
 #undef DEFGSCODE
@@ -176,6 +194,12 @@ namespace clang
       DEFTREECODE(INTEGER_CST_SIGNED, "integer_cst", tcc_constant, 0)
       DEFTREECODE(SIGNEDPOINTERTYPE, "integer_type", tcc_type, 0)
       DEFTREECODE (MISALIGNED_INDIRECT_REF, "misaligned_indirect_ref", tcc_reference, 2)
+      DEFTREECODE (FCMP_OEQ, "truth_andif_expr", tcc_expression, 2)
+      DEFTREECODE (FCMP_ONE, "truth_andif_expr", tcc_expression, 2)
+      DEFTREECODE (FCMP_ORD, "truth_andif_expr", tcc_expression, 2)
+      DEFTREECODE (FCMP_UEQ, "truth_orif_expr", tcc_expression, 2)
+      DEFTREECODE (FCMP_UNE, "truth_orif_expr", tcc_expression, 2)
+      DEFTREECODE (FCMP_UNO, "truth_orif_expr", tcc_expression, 2)
    };
 #undef DEFTREECODE
 #undef DEFGSCODE
@@ -223,6 +247,12 @@ namespace clang
       DEFTREECODE(INTEGER_CST_SIGNED, "integer_cst", tcc_constant, 0)
       DEFTREECODE(SIGNEDPOINTERTYPE, "integer_type", tcc_type, 0)
       DEFTREECODE (MISALIGNED_INDIRECT_REF, "misaligned_indirect_ref", tcc_reference, 2)
+      DEFTREECODE (FCMP_OEQ, "truth_andif_expr", tcc_expression, 2)
+      DEFTREECODE (FCMP_ONE, "truth_andif_expr", tcc_expression, 2)
+      DEFTREECODE (FCMP_ORD, "truth_andif_expr", tcc_expression, 2)
+      DEFTREECODE (FCMP_UEQ, "truth_orif_expr", tcc_expression, 2)
+      DEFTREECODE (FCMP_UNE, "truth_orif_expr", tcc_expression, 2)
+      DEFTREECODE (FCMP_UNO, "truth_orif_expr", tcc_expression, 2)
 };
 #undef DEFTREECODE
 #undef END_OF_BASE_TREE_CODE
@@ -457,6 +487,8 @@ namespace clang
             return assignCode(t, GT(GIMPLE_ASSIGN));
          case llvm::Value::InstructionVal+llvm::Instruction::Switch:
             return assignCode(t, GT(GIMPLE_SWITCH));
+         case llvm::Value::InstructionVal+llvm::Instruction::Unreachable:
+            return assignCode(t, GT(GIMPLE_RETURN));
          default:
             llvm::errs() << "assignCodeAuto kind not supported: " << ValueTyNames[vid] << "\n";
             stream.close();
@@ -951,9 +983,11 @@ namespace clang
             switch (predicate)
             {
                case llvm::ICmpInst::FCMP_OEQ:
+                  return GT(FCMP_OEQ);
                case llvm::ICmpInst::ICMP_EQ:
                   return GT(EQ_EXPR);
                case llvm::ICmpInst::FCMP_ONE:
+                  return GT(FCMP_ONE);
                case llvm::ICmpInst::ICMP_NE:
                   return GT(NE_EXPR);
                case llvm::ICmpInst::FCMP_OGT:
@@ -972,11 +1006,10 @@ namespace clang
                case llvm::ICmpInst::ICMP_ULE:
                case llvm::ICmpInst::ICMP_SLE:
                   return GT(LE_EXPR);
-
                case llvm::ICmpInst::FCMP_UEQ:
-                  return GT(UNEQ_EXPR);
+                  return GT(FCMP_UEQ);
                case llvm::ICmpInst::FCMP_UNE:
-                  return GT(LTGT_EXPR);
+                  return GT(FCMP_UNE);
                case llvm::ICmpInst::FCMP_UGT:
                   return GT(UNGT_EXPR);
                case llvm::ICmpInst::FCMP_UGE:
@@ -986,9 +1019,9 @@ namespace clang
                case llvm::ICmpInst::FCMP_ULE:
                   return GT(UNLE_EXPR);
                case llvm::ICmpInst::FCMP_ORD:
-                  return GT(ORDERED_EXPR);
+                  return GT(FCMP_ORD);
                case llvm::ICmpInst::FCMP_UNO:
-                  return GT(UNORDERED_EXPR);
+                  return GT(FCMP_UNO);
                default:
                   llvm::errs() << "gimple_expr_code::ICmpInst kind not supported: " << predicate << "\n";
                   stream.close();
@@ -1667,11 +1700,23 @@ namespace clang
 
    const void* DumpGimpleRaw::gimple_return_retval(const void* g)
    {
-      const llvm::ReturnInst* ri = reinterpret_cast<const llvm::ReturnInst*>(g);
-      if(ri->getReturnValue())
+      const llvm::TerminatorInst* ri = reinterpret_cast<const llvm::TerminatorInst*>(g);
+      if(isa<llvm::ReturnInst>(ri) && cast<llvm::ReturnInst>(ri)->getReturnValue())
       {
-         auto op = getOperand(ri->getReturnValue(), ri->getFunction());
+         auto op = getOperand(cast<llvm::ReturnInst>(ri)->getReturnValue(), ri->getFunction());
          return getSignedOperand(ri, op, 0);
+      }
+      else if(isa<llvm::UnreachableInst>(ri))
+      {
+         auto ui = cast<llvm::UnreachableInst>(ri);
+         auto fu = ui->getFunction();
+         if(fu->getReturnType()->isVoidTy())
+            return nullptr;
+         else
+         {
+            auto retType = fu->getReturnType();
+            return assignCodeAuto(llvm::UndefValue::get(retType));
+         }
       }
       else
          return nullptr;
@@ -1860,7 +1905,7 @@ namespace clang
    {
       assert(TREE_CODE(t) == GT(FUNCTION_DECL));
       const llvm::Function* fd = reinterpret_cast<const llvm::Function*>(t);
-      if(fd->getBasicBlockList().empty() && fd->hasName())
+      if(fd->hasName())
       {
          std::string declname;
          if(fd->isIntrinsic())
@@ -3030,10 +3075,18 @@ namespace clang
          bool isDouble = &d.getSemantics() == &llvm::APFloat::IEEEdouble();
          snprintf(buffer, LOCAL_BUFFER_LEN, "%.*g", (isDouble ? __DBL_DECIMAL_DIG__ : __FLT_DECIMAL_DIG__), (isDouble ? d.convertToDouble():d.convertToFloat()));
          std::string literalReal = std::string(buffer);
-         if(literalReal.find('.') == std::string::npos)
-            literalReal = literalReal + ".";
-         if(!isDouble)
-            literalReal = literalReal + "f";
+         if(literalReal.find('e') == std::string::npos)
+         {
+            if(literalReal.find('.') == std::string::npos)
+               literalReal = literalReal + ".";
+            if(!isDouble)
+               literalReal = literalReal + "f";
+         }
+         else
+         {
+            real_to_hexadecimal(buffer,LOCAL_BUFFER_LEN,d);
+            literalReal = std::string(buffer);
+         }
          stream << "valr: \""<< literalReal << "\" ";
       }
       {
@@ -3407,6 +3460,94 @@ namespace clang
                serialize_child ("op", gimple_assign_lhs (g));
                serialize_child ("op", build_custom_function_call_expr(g));
             }
+            else if(gimple_expr_code (g) == GT(FCMP_OEQ) ||
+                    gimple_expr_code (g) == GT(FCMP_ONE) ||
+                    gimple_expr_code (g) == GT(FCMP_ORD) ||
+                    gimple_expr_code (g) == GT(FCMP_UEQ) ||
+                    gimple_expr_code (g) == GT(FCMP_UNE) ||
+                    gimple_expr_code (g) == GT(FCMP_UNO))
+            {
+               const llvm::FCmpInst* cmpInst = reinterpret_cast<const llvm::FCmpInst*>(g);
+
+               auto noNAN = cmpInst->getFastMathFlags().noNaNs();
+               auto lhs = gimple_assign_lhs (g);
+               serialize_child ("op", lhs);
+               auto btype = TREE_TYPE(lhs);
+               auto llvm_op1 = cmpInst->getOperand(0);
+               auto llvm_op2 = cmpInst->getOperand(1);
+               bool isOp1Const = isa<llvm::ConstantFP>(llvm_op1);
+               bool isOp2Const = isa<llvm::ConstantFP>(llvm_op2);
+               auto prec1 = llvm_op1->getType()->getPrimitiveSizeInBits();
+               auto prec2 = llvm_op2->getType()->getPrimitiveSizeInBits();
+               assert(prec2 == prec1);
+               auto intObjType = llvm::Type::getIntNTy(*moduleContext, static_cast<unsigned>(prec1));
+               auto op1 = gimple_assign_rhs1 (g);
+               auto op2 = gimple_assign_rhs2 (g);
+               auto vcType = assignCodeType(intObjType);
+               auto vc_op1 = isOp1Const ? assignCodeAuto(llvm::ConstantInt::get(intObjType, cast<llvm::ConstantFP>(llvm_op1)->getValueAPF().bitcastToAPInt())) : build1(GT(VIEW_CONVERT_EXPR), vcType, op1);
+               auto vc_op2 = isOp2Const ? assignCodeAuto(llvm::ConstantInt::get(intObjType, cast<llvm::ConstantFP>(llvm_op2)->getValueAPF().bitcastToAPInt())) : build1(GT(VIEW_CONVERT_EXPR), vcType, op2);
+               auto constOne = assignCodeAuto(llvm::ConstantInt::get(intObjType, 1, false));
+               auto lshift_op1 = build2(GT(LSHIFT_EXPR), vcType, vc_op1, constOne);
+               auto abs_op1 = build2(GT(RSHIFT_EXPR), vcType, lshift_op1, constOne);
+               auto lshift_op2 = build2(GT(LSHIFT_EXPR), vcType, vc_op2, constOne);
+               auto abs_op2 = build2(GT(RSHIFT_EXPR), vcType, lshift_op2, constOne);
+               const void * constNAN;
+               if(prec1==32)
+                  constNAN = assignCodeAuto(llvm::ConstantInt::get(intObjType, 0x7f800000, false));
+               else if(prec1==64)
+                  constNAN = assignCodeAuto(llvm::ConstantInt::get(intObjType, 0x7FF0000000000000, false));
+               else
+                  llvm_unreachable("unsupported floating point precision");
+               auto isNAN_op1 = build2(GT(GT_EXPR), btype, abs_op1, constNAN);
+               auto isNAN_op2 = build2(GT(GT_EXPR), btype, abs_op2, constNAN);
+               const void * rhs;
+               auto gcode = gimple_expr_code (g);
+               if(gcode == GT(FCMP_ORD) || gcode == GT(FCMP_OEQ) || gcode == GT(FCMP_ONE))
+               {
+                  auto isNotNAN_op1 = build1(GT(TRUTH_NOT_EXPR), btype, isNAN_op1);
+                  auto isNotNAN_op2 = build1(GT(TRUTH_NOT_EXPR), btype, isNAN_op2);
+                  auto ordered = build2(GT(TRUTH_ANDIF_EXPR), btype, isNotNAN_op1, isNotNAN_op2);
+                  if(gcode == GT(FCMP_ORD))
+                  {
+                     assert(!noNAN);
+                     rhs = ordered;
+                  }
+                  else if(gcode == GT(FCMP_OEQ))
+                  {
+                     auto eq = build2(GT(EQ_EXPR), btype, op1, op2);
+                     rhs = noNAN ? eq : build2(GT(TRUTH_ANDIF_EXPR), btype, ordered, eq);
+                  }
+                  else if(gcode == GT(FCMP_ONE))
+                  {
+                     auto neq = build2(GT(NE_EXPR), btype, op1, op2);
+                     rhs = noNAN ? neq : build2(GT(TRUTH_ANDIF_EXPR), btype, ordered, neq);
+                  }
+                  else
+                     llvm_unreachable("unexpected case");
+               }
+               else
+               {
+                  auto unordered = build2(GT(TRUTH_ORIF_EXPR), btype, isNAN_op1, isNAN_op2);
+                  if(gcode == GT(FCMP_UNO))
+                  {
+                     assert(!noNAN);
+                     rhs = unordered;
+                  }
+                  else if(gcode == GT(FCMP_UEQ))
+                  {
+                     auto eq = build2(GT(EQ_EXPR), btype, op1, op2);
+                     rhs = noNAN ? eq : build2(GT(TRUTH_ORIF_EXPR), btype, unordered, eq);
+                  }
+                  else if(gcode == GT(FCMP_UNE))
+                  {
+                     auto neq = build2(GT(NE_EXPR), btype, op1, op2);
+                     rhs = noNAN ? neq : build2(GT(TRUTH_ORIF_EXPR), btype, unordered, neq);
+                  }
+                  else
+                     llvm_unreachable("unexpected case");
+               }
+               serialize_child ("op", rhs);
+            }
             else
                llvm_unreachable("unexpected condition");
             break;
@@ -3582,7 +3723,8 @@ namespace clang
               }
            }
         }
-        if(llvm::succ_begin(&BB) == llvm::succ_end(&BB))
+        if(llvm::succ_begin(&BB) == llvm::succ_end(&BB) ||
+              isa<llvm::UnreachableInst>(BB.getTerminator()))
         {
            serialize_maybe_newline ();
            field = "succ: EXIT";
@@ -3626,8 +3768,6 @@ namespace clang
            {
               if(isa<llvm::BranchInst>(inst) && cast<llvm::BranchInst>(inst).isUnconditional() && isa<llvm::BasicBlock>(*cast<llvm::BranchInst>(inst).getOperand(0)))
                  ; /// goto to basic blocks can be skipped
-              else if(isa<llvm::UnreachableInst>(inst))
-                 ; /// unreachable instruction can be skipped
               else
               {
                  if(firstStmt)
@@ -3649,7 +3789,7 @@ namespace clang
       assert(TREE_CODE(t) == GT(FUNCTION_DECL));
       assert(is_builtin_fn(t));
       const llvm::Function* fd = reinterpret_cast<const llvm::Function*>(t);
-      if(fd->getBasicBlockList().empty() && fd->hasName())
+      if(fd->hasName())
       {
          std::string declname;
          if(fd->isIntrinsic())
@@ -3923,7 +4063,9 @@ namespace clang
            ///with clang/llvm there is no type definition
            snprintf(buffer, LOCAL_BUFFER_LEN, "srcp: \"");
            stream << buffer;
-           if(code==GT(FUNCTION_DECL) && is_builtin_fn(t))
+           if(code==GT(FUNCTION_DECL) &&
+                 is_builtin_fn(t) &&
+                 reinterpret_cast<const llvm::Function*>(t)->getBasicBlockList().empty())
            {
               auto headerFile = getHeaderForBuiltin(t);
               if(headerFile != "")
@@ -4189,6 +4331,7 @@ namespace clang
 //           serialize_fixed ("valu", TREE_FIXED_CST_PTR (t));
 //           break;
 
+         case GT(TRUTH_NOT_EXPR):
          case GT(ADDR_EXPR):
          case GT(VIEW_CONVERT_EXPR):
            /* These nodes are unary, but do not have code class `1'.  */
@@ -4249,6 +4392,12 @@ namespace clang
             }
             break;
          }
+         case GT(TRUTH_ANDIF_EXPR):
+         case GT(TRUTH_ORIF_EXPR):
+            serialize_child ("op", TREE_OPERAND (t, 0));
+            serialize_child ("op", TREE_OPERAND (t, 1));
+            break;
+
          default:
             /* There are no additional fields to print.  */
             break;
