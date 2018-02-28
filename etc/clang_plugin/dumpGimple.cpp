@@ -83,7 +83,7 @@
 
 #include <float.h>
 
-#define PRINT_DBG_MSG 1
+#define PRINT_DBG_MSG 0
 
 static std::string create_file_name_string(const std::string &outdir_name, const std::string & original_filename)
 {
@@ -2023,17 +2023,18 @@ namespace clang
 
    int64_t DumpGimpleRaw::TREE_INT_CST_LOW(const void*t)
    {
-      if(TREE_CODE(t) == GT(INTEGER_CST_SIGNED))
-      {
-         return TREE_INT_CST_LOW(reinterpret_cast<const integer_cst_signed*>(t)->ic);
-      }
-      const llvm::ConstantData* cd = reinterpret_cast<const llvm::ConstantData*>(t);
+      const llvm::ConstantData* cd;
+      bool isSigned = TREE_CODE(t) == GT(INTEGER_CST_SIGNED);
+      if(isSigned)
+         cd = reinterpret_cast<const llvm::ConstantData*>(reinterpret_cast<const integer_cst_signed*>(t)->ic);
+      else
+         cd = reinterpret_cast<const llvm::ConstantData*>(t);
       if(isa<llvm::ConstantPointerNull>(cd))
          return 0;
-      const llvm::ConstantInt* llvm_obj = reinterpret_cast<const llvm::ConstantInt*>(t);
+      const llvm::ConstantInt* llvm_obj = cast<const llvm::ConstantInt>(cd);
       const llvm::APInt & val = llvm_obj->getValue();
       assert(val.getNumWords()==1);
-      if(CheckSignedTag(TREE_TYPE(t)))
+      if(isSigned || CheckSignedTag(TREE_TYPE(t)))
          return val.getSExtValue();
       else
          return static_cast<int64_t>(val.getZExtValue());
@@ -3064,10 +3065,17 @@ namespace clang
       {
          snprintf(buffer, LOCAL_BUFFER_LEN, "valr: %-7s ", "\"Inf\"");
          stream << buffer;
+         if(d.isNegative())
+            snprintf(buffer, LOCAL_BUFFER_LEN, "valx: %-7s ", "\"-Inf\"");
+         else
+            snprintf(buffer, LOCAL_BUFFER_LEN, "valx: %-7s ", "\"Inf\"");
+         stream << buffer;
       }
       else if(d.isNaN())
       {
          snprintf(buffer, LOCAL_BUFFER_LEN, "valr: %-7s ", "\"Nan\"");
+         stream << buffer;
+         snprintf(buffer, LOCAL_BUFFER_LEN, "valx: %-7s ", "\"Nan\"");
          stream << buffer;
       }
       else
@@ -3075,21 +3083,12 @@ namespace clang
          bool isDouble = &d.getSemantics() == &llvm::APFloat::IEEEdouble();
          snprintf(buffer, LOCAL_BUFFER_LEN, "%.*g", (isDouble ? __DBL_DECIMAL_DIG__ : __FLT_DECIMAL_DIG__), (isDouble ? d.convertToDouble():d.convertToFloat()));
          std::string literalReal = std::string(buffer);
-         if(literalReal.find('e') == std::string::npos)
-         {
-            if(literalReal.find('.') == std::string::npos)
-               literalReal = literalReal + ".";
-            if(!isDouble)
-               literalReal = literalReal + "f";
-         }
-         else
-         {
-            real_to_hexadecimal(buffer,LOCAL_BUFFER_LEN,d);
-            literalReal = std::string(buffer);
-         }
+         if(literalReal.find('.') == std::string::npos && literalReal.find('e') == std::string::npos)
+            literalReal = literalReal + ".";
+         if(!isDouble && literalReal.find('e') == std::string::npos)
+            literalReal = literalReal + "f";
          stream << "valr: \""<< literalReal << "\" ";
-      }
-      {
+
          stream << "valx: \"";
          real_to_hexadecimal(buffer,LOCAL_BUFFER_LEN,d);
          stream << std::string(buffer);
