@@ -267,14 +267,14 @@ DesignFlowStep_Status ipa_point_to_analysis::Exec()
             {
                function_information_map[function]->preserving &= false;//check if this is actually equal to true
             }
-            else if(fun_name != "signbit" &&
-                    fun_name != "signbitf" &&
+            else if(fun_name != "signbit" &&  fun_name != "__builtin_signbit" &&
+                    fun_name != "signbitf" && fun_name != "__builtin_signbitf" &&
                     fun_name != "fabs" &&
                     fun_name != "fabsf" &&
                     fun_name != "llabs" &&
                     fun_name != "labs" &&
                     fun_name != "abs" &&
-                    fun_name != "putchar" &&
+                    fun_name != "putchar" && fun_name != "__builtin_putchar" &&
                     fun_name != "__bambu_read4c" &&
                     fun_name != "__bambu_readc" &&
                     fun_name != "abort" &&
@@ -392,14 +392,14 @@ DesignFlowStep_Status ipa_point_to_analysis::Exec()
                            THROW_ASSERT(GET_NODE(ce->args.at(0))->get_kind() == ssa_name_K, "unexpected pattern");
                            pointing_to_ssa_vars.insert(GET_INDEX_NODE(ce->args.at(0)));
                         }
-                        else if(fun_name != "signbit" &&
-                                fun_name != "signbitf" &&
+                        else if(fun_name != "signbit" && fun_name != "__builtin_signbit" &&
+                                fun_name != "signbitf" && fun_name != "__builtin_signbitf" &&
                                 fun_name != "fabs" &&
                                 fun_name != "fabsf" &&
                                 fun_name != "llabs" &&
                                 fun_name != "labs" &&
                                 fun_name != "abs" &&
-                                fun_name != "putchar" &&
+                                fun_name != "putchar" && fun_name != "__builtin_putchar" &&
                                 fun_name != "__bambu_read4c" &&
                                 fun_name != "__bambu_readc")
                         {
