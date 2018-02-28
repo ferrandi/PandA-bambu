@@ -3,6 +3,7 @@
  * September, 11 2013.
  *
 */
+extern int putchar(int c);
 int puts(const char * __restrict s)
 {
     while ((*s) != '\0') {
