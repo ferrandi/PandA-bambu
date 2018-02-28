@@ -38,7 +38,7 @@ common_treegccflags_clang = --output-temporary-directory=/tmp -iplugindir=$(top_
 common_cflags=-DNO_RAISE_EXCEPTIONS -I$(top_srcdir)/etc/libbambu $(common_treegccflags) -I$(BOOST_DIR)
 common_cflags_clang=-DNO_RAISE_EXCEPTIONS -I$(top_srcdir)/etc/libbambu $(common_treegccflags_clang) -I$(BOOST_DIR)
 compiler_flags=-O2 -fipa-pta -fgcse-after-reload -fipa-cp-clone -funswitch-loops -finline-functions -fno-tree-loop-ivcanon $(common_cflags)
-compiler_flags_clang=-O2 -finline-functions $(common_cflags_clang)
+compiler_flags_clang=-O2 -finline-functions -finline-hint-functions $(common_cflags_clang)
 compiler_flags_nosub=-DFLT_NO_DENORMALS -DNO_SUBNORMALS $(compiler_flags)
 compiler_flags_clang_nosub=-DFLT_NO_DENORMALS -DNO_SUBNORMALS $(compiler_flags_clang)
 
