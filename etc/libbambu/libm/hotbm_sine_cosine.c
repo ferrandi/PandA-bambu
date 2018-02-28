@@ -954,7 +954,6 @@ float ADD_BUILTIN_PREFIX(cosf)(float x)
     }
 }
 
-#ifndef __llvm__
 float _Complex
 ADD_BUILTIN_PREFIX(cexpif)(float x)
 {
@@ -1060,7 +1059,6 @@ ADD_BUILTIN_PREFIX(cexpif)(float x)
         __imag__ Res = -__imag__ Res;
     return Res;
 }
-#endif
 
 void ADD_BUILTIN_PREFIX(sincosf)(float x, float *sinx, float *cosx)
 {
