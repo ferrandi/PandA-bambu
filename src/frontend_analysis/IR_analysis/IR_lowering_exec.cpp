@@ -966,7 +966,8 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                if(GET_NODE(def_edge.first)->get_kind() == addr_expr_K ||
                      GET_NODE(def_edge.first)->get_kind() == view_convert_expr_K ||
                      GET_NODE(def_edge.first)->get_kind() == nop_expr_K ||
-                     GET_NODE(def_edge.first)->get_kind() == pointer_plus_expr_K)
+                     GET_NODE(def_edge.first)->get_kind() == pointer_plus_expr_K ||
+                     GET_NODE(def_edge.first)->get_kind() == minus_expr_K)
                {
                   to_be_replaced.push_back(def_edge);
                }
