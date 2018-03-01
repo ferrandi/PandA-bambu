@@ -1,10 +1,10 @@
 libm-tests/conversion.c --benchmark-name=conversion_test
-libm-tests/gamma.c --benchmark-name=gamma_test
-libm-tests/lgamma.c --benchmark-name=lgamma_test
-libm-tests/tgamma.c --benchmark-name=tgamma_test
-libm-tests/gammaf.c --benchmark-name=gammaf_test
-libm-tests/lgammaf.c --benchmark-name=lgammaf_test
-libm-tests/tgammaf.c --benchmark-name=tgammaf_test
+#libm-tests/gamma.c --benchmark-name=gamma_test
+#libm-tests/lgamma.c --benchmark-name=lgamma_test
+#libm-tests/tgamma.c --benchmark-name=tgamma_test
+#libm-tests/gammaf.c --benchmark-name=gammaf_test
+#libm-tests/lgammaf.c --benchmark-name=lgammaf_test
+#libm-tests/tgammaf.c --benchmark-name=tgammaf_test
 libm-tests/test-float.c --top-fname=fpclassify_test --benchmark-name=fpclassify
 libm-tests/test-float.c --top-fname=isfinite_test --benchmark-name=isfinite
 libm-tests/test-float.c --top-fname=isnormal_test --benchmark-name=isnormal
