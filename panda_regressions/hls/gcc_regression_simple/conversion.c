@@ -22,12 +22,14 @@ u2d(u)
   return u;
 }
 
+#if 0
 long double __attribute__((noinline))
 u2ld(u)
      unsigned int u;
 {
   return u;
 }
+#endif
 
 float
 #ifdef __llvm__
@@ -46,12 +48,14 @@ s2d(s)
   return s;
 }
 
+#if 0
 long double __attribute__((noinline))
 s2ld(s)
      int s;
 {
   return s;
 }
+#endif
 
 int __attribute__((noinline))
 fnear (float x, float y)
@@ -67,12 +71,14 @@ dnear (double x, double y)
   return t == 0 || x / t > 100000000000000.0;
 }
 
+#if 0
 int __attribute__((noinline))
 ldnear (long double x, long double y)
 {
   long double t = x - y;
   return t == 0 || x / t > 100000000000000000000000000000000.0;
 }
+#endif
 
 test_integer_to_float()
 {
@@ -154,12 +160,14 @@ ull2d(u)
   return u;
 }
 
+#if 0
 long double __attribute__((noinline))
 ull2ld(u)
      unsigned long long int u;
 {
   return u;
 }
+#endif
 
 float 
 #ifdef __llvm__
@@ -178,12 +186,14 @@ sll2d(s)
   return s;
 }
 
+#if 0
 long double __attribute__((noinline))
 sll2ld(s)
      long long int s;
 {
   return s;
 }
+#endif
 
 test_longlong_integer_to_float()
 {
@@ -268,11 +278,13 @@ d2u(double d)
   return (unsigned) d;
 }
 
+#if 0
 unsigned int __attribute__((noinline))
 ld2u(long double d)
 {
   return (unsigned) d;
 }
+#endif
 
 int __attribute__((noinline))
 f2s(float f)
@@ -286,11 +298,13 @@ d2s(double d)
   return (int) d;
 }
 
+#if 0
 int __attribute__((noinline))
 ld2s(long double d)
 {
   return (int) d;
 }
+#endif
 
 test_float_to_integer()
 {
@@ -427,11 +441,13 @@ d2ull(double d)
   return (unsigned long long int) d;
 }
 
+#if 0
 unsigned long long int __attribute__((noinline))
 ld2ull(long double d)
 {
   return (unsigned long long int) d;
 }
+#endif
 
 long long int __attribute__((noinline))
 f2sll(float f)
@@ -445,11 +461,13 @@ d2sll(double d)
   return (long long int) d;
 }
 
+#if 0
 long long int __attribute__((noinline))
 ld2sll(long double d)
 {
   return (long long int) d;
 }
+#endif
 
 test_float_to_longlong_integer()
 {
