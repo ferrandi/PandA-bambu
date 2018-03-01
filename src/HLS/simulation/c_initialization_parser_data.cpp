@@ -77,14 +77,20 @@ void CInitializationParserData::CheckEnd()
       THROW_ERROR("Not enough bytes written: " + STR(written_bytes) + " vs. " + STR(reserved_mem_bytes));
    }
    ///First of all we have to check that there is just one element in the stack
-   if(status.size() > 1)
+   if(status.size() != 1)
       THROW_ERROR("Missing data in C initialization string");
-   GoUp();
+   if(status.back().second != 1)
+      THROW_ERROR("Missing data in C initialization string");
 }
 
 void CInitializationParserData::GoUp()
 {
+
+   THROW_ASSERT(not status.empty(), "");
+   status.pop_back();
    size_t expected_size = 0;
+
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---GoUp " + status.back().first->get_kind_text());
 
    ///Second, according to the type let's how many elements have to have been processed
    switch(status.back().first->get_kind())
@@ -154,11 +160,9 @@ void CInitializationParserData::GoUp()
       default:
          THROW_ERROR_CODE(NODE_NOT_YET_SUPPORTED_EC, "Not supported node: " + std::string(status.back().first->get_kind_text()));
    }
-   if(expected_size == 0)
-      return;
-   if(expected_size != status.back().second)
+   if(expected_size != 0 and expected_size != status.back().second)
       THROW_ERROR("Missing data in C initialization for node of type " + status.back().first->get_kind_text());
-   status.pop_back();
+   status.back().second++;
 }
 
 void CInitializationParserData::GoDown()
