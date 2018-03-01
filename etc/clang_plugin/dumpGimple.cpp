@@ -1271,6 +1271,7 @@ namespace clang
          case llvm::Instruction::Ret  :
          case llvm::Instruction::Store:
          case llvm::Instruction::Select:
+         case llvm::Instruction::Switch:
             return true;
          case llvm::Instruction::ICmp:
          {
@@ -1725,7 +1726,7 @@ namespace clang
    const void* DumpGimpleRaw::gimple_switch_index(const void* g)
    {
       const llvm::SwitchInst* si = reinterpret_cast<const llvm::SwitchInst*>(g);
-      return getOperand(si->getCondition(), si->getFunction());
+      return getSignedOperand(si, getOperand(si->getCondition(), si->getFunction()), 0);
    }
 
    const void* DumpGimpleRaw::gimple_switch_vec(const void* g)
