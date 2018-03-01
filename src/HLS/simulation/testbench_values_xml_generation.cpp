@@ -61,6 +61,7 @@
 ///HLS/simulation includes
 #include "c_initialization_parser.hpp"
 #include "SimulationInformation.hpp"
+#include "testbench_generation.hpp"
 #include "testbench_generation_base_step.hpp"
 
 ///tree includes
@@ -153,10 +154,13 @@ DesignFlowStep_Status TestbenchValuesXMLGeneration::Exec()
    unsigned int v_idx = 0;
 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Writing initialization of memory variables");
+
+   // For each test vector, for each pointer parameter, the space to be reserved in memory
+   CustomMap<unsigned int, CustomMap<unsigned int, size_t> > all_reserved_mem_bytes;
    // loop on the test vectors
    for (const auto & curr_test_vector : HLSMgr->RSim->test_vectors)
    {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->ConsYidering new test vector");
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering new test vector");
       // loop on the variables in memory
       for (const auto & l : mem)
       {
@@ -198,15 +202,25 @@ DesignFlowStep_Status TestbenchValuesXMLGeneration::Exec()
             }
          }();
 
+         all_reserved_mem_bytes[v_idx][l] = reserved_mem_bytes;
+
          ///Call the parser to translate C initialization to verilog initialization
-         c_initialization_parser->Parse(test_v, reserved_mem_bytes, TM->CGetTreeNode(l));
+         c_initialization_parser->Parse(test_v, reserved_mem_bytes, TM->CGetTreeNode(l), TestbenchGeneration_MemoryType::MEMORY_INITIALIZATION);
+         size_t next_object_offset = HLSMgr->RSim->param_next_off.find(v_idx)->second.find(l)->second;
+
+         if (next_object_offset > reserved_mem_bytes)
+         {
+            for(unsigned int padding = 0; padding < next_object_offset - reserved_mem_bytes; padding++)
+               output_stream << "m00000000" << std::endl;
+         }
 
       }
       ++v_idx;
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Considered vector");
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Written initialization of memory variables");
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Writing initialization of parameters");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Writing values of parameters");
+   v_idx = 0;
    for (const auto & curr_test_vector : HLSMgr->RSim->test_vectors)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Writing initialization of parameters");
@@ -218,23 +232,48 @@ DesignFlowStep_Status TestbenchValuesXMLGeneration::Exec()
          std::string param = behavioral_helper->PrintVariable(function_parameter);
          if (behavioral_helper->is_a_pointer(function_parameter))
          {
-            std::string memory_addr = STR(HLSMgr->RSim->param_address.find(v_idx)->second.find(function_parameter)->second);
-            output_stream << ConvertInBinary(memory_addr, 32, false, false)  << std::endl;
+            std::cerr << v_idx << " " << function_parameter << std::endl;
+            std::string memory_addr = STR(HLSMgr->RSim->param_address.at(v_idx).at(function_parameter));
+            output_stream << "//parameter: " + behavioral_helper->PrintVariable(function_parameter) << " value: " << memory_addr << std::endl;
+            output_stream << "p" << ConvertInBinary(memory_addr, 32, false, false)  << std::endl;
          }
          else
          {
-            c_initialization_parser->Parse(curr_test_vector.find(param)->second, tree_helper::size(TM, function_parameter)/8, TM->CGetTreeNode(function_parameter));
+            c_initialization_parser->Parse(curr_test_vector.at(param), tree_helper::size(TM, function_parameter)/8, TM->CGetTreeNode(function_parameter), TestbenchGeneration_MemoryType::INPUT_PARAMETER);
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Considered parameter " + STR(TM->CGetTreeNode(function_parameter)));
       }
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Writing expected content of pointer parameters at the end of the execution");
+      for (const auto & function_parameter : behavioral_helper->get_parameters())
+      {
+         if (behavioral_helper->is_a_pointer(function_parameter))
+         {
+            std::string param = behavioral_helper->PrintVariable(function_parameter);
+            const auto expected_values = [&] () -> std::string
+            {
+               if(curr_test_vector.find(param + ":output") != curr_test_vector.end())
+               {
+                  return curr_test_vector.at(param + ":output");
+               }
+               else
+               {
+                  return curr_test_vector.at(param);
+               }
+            }();
+            c_initialization_parser->Parse(expected_values, all_reserved_mem_bytes.at(v_idx).at(function_parameter), TM->CGetTreeNode(function_parameter), TestbenchGeneration_MemoryType::OUTPUT_PARAMETER);
+            output_stream << "e" << std::endl;
+         }
+      }
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Written expected content of pointer parameters at the end of the execution");
       const unsigned int return_type_index = behavioral_helper->GetFunctionReturnType(function_id);
       if(return_type_index)
       {
-         c_initialization_parser->Parse(curr_test_vector.find("return")->second, tree_helper::size(TM, return_type_index)/8, TM->CGetTreeNode(return_type_index));
+         c_initialization_parser->Parse(curr_test_vector.find("return")->second, tree_helper::size(TM, return_type_index)/8, TM->CGetTreeNode(return_type_index), TestbenchGeneration_MemoryType::RETURN);
       }
+      ++v_idx;
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Considered vector");
    }
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Written initialization of parameters");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Written values of parameters");
    output_stream << "e" << std::endl;
    output_stream.close();
    return DesignFlowStep_Status::SUCCESS;

@@ -46,7 +46,9 @@
 ///utility include
 #include "refcount.hpp"
 
+CONSTREF_FORWARD_DECL(BehavioralHelper);
 CONSTREF_FORWARD_DECL(Parameter);
+enum class TestbenchGeneration_MemoryType;
 CONSTREF_FORWARD_DECL(tree_manager);
 CONSTREF_FORWARD_DECL(tree_node);
 
@@ -58,6 +60,9 @@ class CInitializationParserData
    protected:
       ///The tree manager
       const tree_managerConstRef TM;
+
+      ///The behavioral helper
+      const BehavioralHelperConstRef behavioral_helper;
 
       ///The number of bytes to be written
       const unsigned long int reserved_mem_bytes;
@@ -72,6 +77,12 @@ class CInitializationParserData
       ///First element of the pair is the tree node describing the type, the second element of the pair is the number of the field (for struct/union) or of the element (for array)
       std::deque<std::pair<const tree_nodeConstRef, size_t> > status;
 
+      ///The variable/parameter being printed
+      const tree_nodeConstRef function_parameter;
+
+      ///The type of initialization being written
+      const TestbenchGeneration_MemoryType testbench_generation_memory_type;
+
       ///The debug level
       const int debug_level;
 
@@ -80,11 +91,13 @@ class CInitializationParserData
        * Constructor
        * @param output_stream is where memory initialization will be written
        * @param TM is the tree manager
+       * @param behavioral_helper is the behavioral helper
        * @param reserved_mem_bytes is the number of bytes to be written
-       * @param parameter_type is the type of the parameter which initialization will be parsed
+       * @param function_parameter is the function parameter whose initialization is being printed
+       * @param testbench_generation_memory_type is the type of initialization being printed
        * @param parameters is the set of input parameters
        */
-      CInitializationParserData(std::ofstream & output_stream, const tree_managerConstRef TM, const unsigned long int reserved_mem_bytes, const tree_nodeConstRef parameter_type, const ParameterConstRef parameters);
+      CInitializationParserData(std::ofstream & output_stream, const tree_managerConstRef TM, const BehavioralHelperConstRef behavioral_helper, const unsigned long int reserved_mem_bytes, const tree_nodeConstRef function_parameter, const TestbenchGeneration_MemoryType testbench_generation_memory_type, const ParameterConstRef parameters);
 
       /**
        * Check that all the necessary information was present in the initialization string

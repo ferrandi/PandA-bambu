@@ -46,6 +46,7 @@ CONSTREF_FORWARD_DECL(BehavioralHelper);
 REF_FORWARD_DECL(CInitializationParserData);
 REF_FORWARD_DECL(CInitializationFlexLexer);
 CONSTREF_FORWARD_DECL(Parameter);
+enum class TestbenchGeneration_MemoryType;
 CONSTREF_FORWARD_DECL(tree_manager);
 CONSTREF_FORWARD_DECL(tree_node);
 
@@ -90,7 +91,7 @@ class CInitializationParser
        * @param reserved_mem_bytes is the number of bytes to be written; this information will be used to check if the initialization is complete
        * @param parameter_type is the type of the parameter whose initialization is analyzed
        */
-      void Parse(const std::string & initialization_string, const unsigned long int reserved_mem_bytes, const tree_nodeConstRef parameter_type) const;
+      void Parse(const std::string & initialization_string, const unsigned long int reserved_mem_bytes, const tree_nodeConstRef parameter_type, const TestbenchGeneration_MemoryType testbench_generation_memory_type) const;
 
 };
 typedef refcount<const CInitializationParser> CInitializationParserConstRef;

@@ -44,7 +44,11 @@
 ///. include
 #include "Parameter.hpp"
 
+///HLS/simulation include
+#include "testbench_generation.hpp"
+
 ///tree includes
+#include "behavioral_helper.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
@@ -53,13 +57,17 @@
 #include "exceptions.hpp"
 #include "utility.hpp"
 
-CInitializationParserData::CInitializationParserData(std::ofstream & _output_stream, const tree_managerConstRef _TM, const unsigned long int _reserved_mem_bytes, const tree_nodeConstRef parameter_type, const ParameterConstRef _parameters) :
+CInitializationParserData::CInitializationParserData(std::ofstream & _output_stream, const tree_managerConstRef _TM, const BehavioralHelperConstRef _behavioral_helper, const unsigned long int _reserved_mem_bytes, const tree_nodeConstRef _function_parameter, const TestbenchGeneration_MemoryType _testbench_generation_memory_type, const ParameterConstRef _parameters) :
    TM(_TM),
+   behavioral_helper(_behavioral_helper),
    reserved_mem_bytes(_reserved_mem_bytes),
    written_bytes(0),
    output_stream(_output_stream),
+   function_parameter(_function_parameter),
+   testbench_generation_memory_type(_testbench_generation_memory_type),
    debug_level(_parameters->get_class_debug_level(GET_CLASS(*this)))
 {
+   const auto parameter_type = GetPointer<const type_node>(function_parameter) ? function_parameter : TM->CGetTreeNode(tree_helper::get_type_index(TM, function_parameter->index));
    status.push_back(std::pair<const tree_nodeConstRef, unsigned int>(parameter_type, 0));
 }
 void CInitializationParserData::CheckEnd()
@@ -150,6 +158,7 @@ void CInitializationParserData::GoUp()
       return;
    if(expected_size != status.back().second)
       THROW_ERROR("Missing data in C initialization for node of type " + status.back().first->get_kind_text());
+   status.pop_back();
 }
 
 void CInitializationParserData::GoDown()
@@ -158,13 +167,17 @@ void CInitializationParserData::GoDown()
    const auto type_node = status.back().first;
    const auto new_type = [&] () -> tree_nodeConstRef
    {
-      if(type_node->get_kind() == record_type_K or type_node->get_kind() != union_type_K)
+      if(type_node->get_kind() == record_type_K or type_node->get_kind() == union_type_K)
       {
          return tree_helper::CGetFieldTypes(type_node)[status.back().second];
       }
       if(type_node->get_kind() == array_type_K)
       {
          return tree_helper::CGetElements(type_node);
+      }
+      if(type_node->get_kind() == pointer_type_K)
+      {
+         return tree_helper::CGetPointedType(type_node);
       }
       THROW_ERROR("Unexpected nested initialization");
       return tree_nodeRef();
@@ -303,7 +316,37 @@ void CInitializationParserData::Write(const std::string & content)
    }
    THROW_ASSERT(binary_value.size()%8 == 0, "");
    written_bytes += binary_value.size()/8;
-   output_stream << binary_value << std::endl;
+   switch(testbench_generation_memory_type)
+   {
+      case TestbenchGeneration_MemoryType::INPUT_PARAMETER:
+         output_stream << "//parameter: " << behavioral_helper->PrintVariable(function_parameter->index) << " value: "  << content << std::endl;
+         output_stream << "p" << binary_value << std::endl;
+         break;
+      case TestbenchGeneration_MemoryType::OUTPUT_PARAMETER:
+         output_stream << "//expected value for output " + behavioral_helper->PrintVariable(function_parameter->index) + ": " << content << std::endl;
+         output_stream << "o" << binary_value << std::endl;
+         break;
+      case TestbenchGeneration_MemoryType::MEMORY_INITIALIZATION:
+         output_stream << "//memory initialization for variable " + behavioral_helper->PrintVariable(function_parameter->index) + " value: " + content << std::endl;
+         for(size_t bit = 0; bit < binary_value.size(); bit += 8)
+         {
+            output_stream << "m" << binary_value.substr(binary_value.size() - 8 - bit, 8) << std::endl;
+         }
+         break;
+      case TestbenchGeneration_MemoryType::RETURN:
+         if(GetPointer<const type_node>(function_parameter))
+         {
+            output_stream << "//expected value for return value" << std::endl;
+            output_stream << "o" << binary_value << std::endl;
+         }
+         else
+         {
+            THROW_UNREACHABLE("");
+         }
+         break;
+      default:
+         THROW_UNREACHABLE("");
+   }
    status.back().second++;
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Written " + content + " (" + STR(binary_value.size()/8) + " bytes) in binary form to initialize memory");
 }

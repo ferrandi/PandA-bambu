@@ -176,7 +176,7 @@ void TestbenchMemoryAllocation::AllocTestbenchMemory(void) const
                HLSMgr->Rmem->reserve_space(reserved_bytes);
 
                INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level,
-                     "---Parameter " + param + " (testvector "+ STR(v_idx)+") allocated at " +
+                     "---Parameter " + param + " (" + STR((*l)) + ") (testvector "+ STR(v_idx)+") allocated at " +
                      STR(HLSMgr->RSim->param_address.at(v_idx).find(*l)->second) +
                      " : reserved_mem_size = " +
                      STR(HLSMgr->RSim->param_mem_size.at(v_idx).find(*l)->second));

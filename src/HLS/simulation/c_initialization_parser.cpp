@@ -68,23 +68,12 @@ CInitializationParser::CInitializationParser(std::ofstream & _output_stream, con
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
-void CInitializationParser::Parse(const std::string & initialization_string, const unsigned long int reserved_mem_bytes, const tree_nodeConstRef function_parameter) const
+void CInitializationParser::Parse(const std::string & initialization_string, const unsigned long int reserved_mem_bytes, const tree_nodeConstRef function_parameter, const TestbenchGeneration_MemoryType testbench_generation_memory_type) const
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing initialization string " + initialization_string);
    const auto parsed_stream = fileIO_istream_open_from_string(initialization_string);
    const CInitializationFlexLexerRef lexer(new CInitializationFlexLexer(parameters, parsed_stream.get(), nullptr));
-   const CInitializationParserDataRef data(new CInitializationParserData(output_stream, TM, reserved_mem_bytes, TM->CGetTreeNode(tree_helper::get_type_index(TM, function_parameter->index)), parameters));
-   if(function_parameter->get_kind() == parm_decl_K)
-   {
-      output_stream << "//parameter: " << behavioral_helper->PrintVariable(function_parameter->index) << " value: "  << initialization_string << std::endl;
-      output_stream << "p";
-   }
-   else
-   {
-      THROW_ASSERT(GetPointer<const type_node>(function_parameter), function_parameter->get_kind_text());
-      output_stream << "//expected value for return value" << std::endl;
-      output_stream << "o";
-   }
+   const CInitializationParserDataRef data(new CInitializationParserData(output_stream, TM, behavioral_helper, reserved_mem_bytes, function_parameter, testbench_generation_memory_type, parameters));
    YYParse(data, lexer);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed initialization string " + initialization_string);
 }
