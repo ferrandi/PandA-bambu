@@ -3497,7 +3497,10 @@ namespace clang
                else if(prec1==64)
                   constNAN = assignCodeAuto(llvm::ConstantInt::get(intObjType, 0x7FF0000000000000, false));
                else
+               {
+                  llvm::errs() << prec1 << "\n";
                   llvm_unreachable("unsupported floating point precision");
+               }
                auto isNAN_op1 = build2(GT(GT_EXPR), btype, abs_op1, constNAN);
                auto isNAN_op2 = build2(GT(GT_EXPR), btype, abs_op2, constNAN);
                const void * rhs;
