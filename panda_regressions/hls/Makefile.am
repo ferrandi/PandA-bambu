@@ -1,13 +1,7 @@
 EXTRA_DIST=./libm-tests/libm-test-ulps.h\
 ./libm-tests/conversion.c\
 ./libm-tests/empty.c\
-./libm-tests/gammaf.c\
-./libm-tests/lgammaf.c\
 ./libm-tests/test-double.c\
-./libm-tests/tgamma.c\
-./libm-tests/tgammaf.c\
-./libm-tests/gamma.c\
-./libm-tests/lgamma.c\
 ./libm-tests/COPYING.LIB\
 ./libm-tests/README_LIBM_TESTS.txt\
 ./libm-tests/test-float.c\

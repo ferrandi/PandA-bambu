@@ -216,6 +216,12 @@ extern double lgamma_r (double, int *);
 #endif	/* _REENTRANT */
 
 /* ieee style elementary functions */
+extern double __hide_kernel_cos(double x, double y);
+extern double __hide_kernel_sin(double x, double y, int iy);
+#ifndef HAVE_FLOPOCO
+extern double __hide_ieee754_exp(double x);
+extern double __hide_ieee754_log(double x);
+#endif
 extern double __hide_ieee754_sqrt (double);			
 extern double __hide_ieee754_acos (double);			
 extern double __hide_ieee754_acosh (double);			

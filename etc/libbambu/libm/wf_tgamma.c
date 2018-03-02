@@ -26,6 +26,33 @@
 
 float tgammaf(float x)
 {
+   int hx;
+
+   GET_FLOAT_WORD (hx, x);
+
+   if (__builtin_expect ((hx & 0x7fffffff) == 0, 0))
+   {
+      /* Return value for x == 0 is Inf with divide by zero exception.  */
+      return 1.0 / x;
+   }
+   if (__builtin_expect (hx < 0, 0)
+       && (unsigned int) hx < 0xff800000 && rintf (x) == x)
+   {
+      /* Return value for integer x < 0 is NaN with invalid exception.  */
+      return (x - x) / (x - x);
+   }
+   if (__builtin_expect (hx == 0xff800000, 0))
+   {
+      /* x == -Inf.  According to ISO this is NaN.  */
+      return x - x;
+   }
+   if (__builtin_expect ((hx & 0x7f800000) == 0x7f800000, 0))
+   {
+      /* Positive infinity (return positive infinity) or NaN (return
+      NaN).  */
+      return x + x;
+   }
+
         float y;
 	int local_signgam=0;
 	y = __hide_ieee754_expf(__hide_ieee754_lgammaf_r(x,&local_signgam));
