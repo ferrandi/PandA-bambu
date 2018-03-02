@@ -7,8 +7,8 @@
  * Date: September, 11 2013.
 */
 /*
- * fdlibm kernel functions in inlined form
- * files k_cos.c, k_rem_pio2.c, k_sin.c, k_standard.c, k_tan.c have been inlined in this file
+ * fdlibm kernel functions
+ * files k_cos.c, k_rem_pio2.c, k_sin.c, k_standard.c, k_tan.c have been merged in this file
 */
 /*
  * ====================================================
@@ -20,9 +20,8 @@
  * is preserved.
  * ====================================================
  */
-#ifndef _MATH_PRIVATE_KERNELS_H_
-#define _MATH_PRIVATE_KERNELS_H_
 
+#include "math_private.h"
 /*
  * __hide_kernel_rem_pio2(x,y,e0,nx,prec,ipio2)
  * double x[],y[]; int e0,nx,prec; int ipio2[];
@@ -297,7 +296,6 @@ recompute:
  * return the remainder of x rem pi/2 in y[0]+y[1] 
  * use __hide_kernel_rem_pio2()
  */
-inline
 int __hide_ieee754_rem_pio2(double x, double *y)
 {
 /*
@@ -446,7 +444,6 @@ int __hide_ieee754_rem_pio2(double x, double *y)
  *	   magnitude of the latter is at least a quarter of x*x/2,
  *	   thus, reducing the rounding error in the subtraction.
  */
-inline
 double __hide_kernel_cos(double x, double y)
 {
 	double a,hz,z,r,qx;
@@ -499,7 +496,6 @@ double __hide_kernel_cos(double x, double y)
  *	   then                   3    2
  *		sin(x) = x + (S1*x + (x *(r-y/2)+y))
  */
-inline
 double __hide_kernel_sin(double x, double y, int iy)
 {
 	double z,r,v;
@@ -579,7 +575,6 @@ double __hide_kernel_sin(double x, double y, int iy)
  * compiler will convert from decimal to binary accurately enough
  * to produce the hexadecimal values shown.
  */
-inline
 double __hide_ieee754_exp(double x)	/* default IEEE double exp */
 {
 	double y,hi=0,lo=0,c,t;
@@ -682,7 +677,6 @@ double __hide_ieee754_exp(double x)	/* default IEEE double exp */
  * compiler will convert from decimal to binary accurately enough 
  * to produce the hexadecimal values shown.
  */
-inline
 double __hide_ieee754_log(double x)
 {
 	double hfsq,f,s,z,R,w,t1,t2,dk;
@@ -740,7 +734,6 @@ double __hide_ieee754_log(double x)
  * passing various standard test suite. One 
  * should use scalbn() instead.
  */
-inline
 #ifdef _SCALB_INT
 	double __hide_ieee754_scalb(double x, int fn)
 #else
@@ -762,4 +755,3 @@ inline
 #endif
 }
 
-#endif /* _MATH_PRIVATE_KERNELS_H_ */

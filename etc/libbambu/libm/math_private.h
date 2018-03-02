@@ -247,9 +247,6 @@ extern double __hide_ieee754_scalb (double,double);
 /* collection of costants used by libm */
 #include "math_constants.h"
 
-/* fdlibm kernel function */
-#include "math_private_kernels.h"
-
 #define FP_NAN         0
 #define FP_INFINITE    1
 #define FP_ZERO        2
