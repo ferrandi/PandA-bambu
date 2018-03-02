@@ -3,6 +3,7 @@ Seventh public release of PandA framework.
 
 New features introduced:
 - Added an initial support to C++/fortran high-level synthesis. Now, Ubuntu distributions require the installation of g++-multilib package.
+- Added an initial support to CLANG/LLVM compiler version 4 and 5. 
 - Added FPT tutorial material
 - Improved the virtual machine generation scripts
 - Improved timing constraints and timing reports
