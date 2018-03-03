@@ -31,17 +31,20 @@
  *
 */
 /**
- * @file c_initialization_parser_data.hpp
- * @brief Specification of the global data structure used during parsing of C initialization string
+ * @file memory_initialization_writer.hpp
+ * @brief Functor used to write initialization of the memory
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
 */
-#ifndef C_INITIALIZATION_PARSER_DATA_HPP
-#define C_INITIALIZATION_PARSER_DATA_HPP
+#ifndef MEMORY_INITIALIZATION_WRITER_HPP
+#define MEMORY_INITIALIZATION_WRITER_HPP
+
+///Superclass include
+#include "c_initialization_parser_functor.hpp"
 
 ///STD include
-#include <stack>
+#include <vector>
 
 ///utility include
 #include "refcount.hpp"
@@ -53,9 +56,9 @@ CONSTREF_FORWARD_DECL(tree_manager);
 CONSTREF_FORWARD_DECL(tree_node);
 
 /**
- * Data associated with ent status of the parsing of C initializaiton string
+ * Functor used to write initialization of the memory writer
 */
-class CInitializationParserData
+class MemoryInitializationWriter : public CInitializationParserFunctor
 {
    protected:
       ///The tree manager
@@ -73,9 +76,11 @@ class CInitializationParserData
       ///The stream corresponding to the memory initialization file
       std::ofstream & output_stream;
 
-      ///The stack representing the current status of th parser; the content is the next element to be read and dumped
+      ///The stack representing the current status of th parser; the content is the last dumped element.
       ///First element of the pair is the tree node describing the type, the second element of the pair is the number of the field (for struct/union) or of the element (for array)
-      std::deque<std::pair<const tree_nodeConstRef, size_t> > status;
+      ///Second element is the number of seen elements (index of the last element + 1)
+      ///Note that storing last element dumped is equivalent to store next element to be dumped, but this approach make easier check of closes parenthesis
+      std::vector<std::pair<const tree_nodeConstRef, size_t> > status;
 
       ///The variable/parameter being printed
       const tree_nodeConstRef function_parameter;
@@ -85,6 +90,11 @@ class CInitializationParserData
 
       ///The debug level
       const int debug_level;
+
+      /**
+       * Print the current status
+       */
+      const std::string PrintStatus() const;
 
    public:
       /**
@@ -97,7 +107,7 @@ class CInitializationParserData
        * @param testbench_generation_memory_type is the type of initialization being printed
        * @param parameters is the set of input parameters
        */
-      CInitializationParserData(std::ofstream & output_stream, const tree_managerConstRef TM, const BehavioralHelperConstRef behavioral_helper, const unsigned long int reserved_mem_bytes, const tree_nodeConstRef function_parameter, const TestbenchGeneration_MemoryType testbench_generation_memory_type, const ParameterConstRef parameters);
+      MemoryInitializationWriter(std::ofstream & output_stream, const tree_managerConstRef TM, const BehavioralHelperConstRef behavioral_helper, const unsigned long int reserved_mem_bytes, const tree_nodeConstRef function_parameter, const TestbenchGeneration_MemoryType testbench_generation_memory_type, const ParameterConstRef parameters);
 
       /**
        * Check that all the necessary information was present in the initialization string
@@ -105,19 +115,23 @@ class CInitializationParserData
       void CheckEnd();
 
       /**
-       * Start the initialization of a new composed data structure
+       * Start the initialization of a new aggregated data structure
        */
       void GoDown();
 
       /**
-       * Ends the initialization of the current nested data structure
+       * Consume an element of an aggregated data structure
+       */
+      void GoNext();
+
+      /**
+       * Ends the initialization of the current aggregated  data structure
        */
       void GoUp();
 
       /**
-       * Count an element
+       * Process an element
        */
-      void Write(const std::string & content);
+      void Process(const std::string & content);
 };
-typedef refcount<CInitializationParserData> CInitializationParserDataRef;
 #endif

@@ -51,14 +51,14 @@
 #define YYSTYPE CInitializationParserNode
 #include "c_initialization_flex_lexer.hpp"
 #include "c_initialization_parser.hpp"
-#include "c_initialization_parser_data.hpp"
+#include "c_initialization_parser_functor.hpp"
 
 ///utility include
 #include "refcount.hpp"
 
 #define YYLTYPE_IS_TRIVIAL 0
 
-///NOTE: forward declarations of CInitializationParserData and CInitializationLexer are in this point since they will be used in c_initialization_yparser.h
+///NOTE: forward declarations of CInitializationParserFunctor and CInitializationLexer are in this point since they will be used in c_initialization_yparser.h
 REF_FORWARD_DECL(CInitializationLexer);
 
 ///Included after vector for the definition of YYSTYPE
@@ -95,7 +95,7 @@ REF_FORWARD_DECL(CInitializationLexer);
 * Function Prototypes
 */
 extern int yylex(YYSTYPE *lvalp, const CInitializationFlexLexerRef lexer);
-extern void yyerror(const CInitializationParserDataRef data, const CInitializationFlexLexerRef lexer, const char *msg);
+extern void yyerror(const CInitializationParserFunctorRef c_initialization_parser_functor, const CInitializationFlexLexerRef lexer, const char *msg);
 #ifndef __clang_analyzer__
 
 %}
@@ -105,7 +105,7 @@ extern void yyerror(const CInitializationParserDataRef data, const CInitializati
 
 %token TOK_CI_COMMA TOK_CI_NUMBER TOK_CI_OPEN_BRACKET TOK_CI_CLOSE_BRACKET
 
-%parse-param {const CInitializationParserDataRef data}
+%parse-param {const CInitializationParserFunctorRef c_initialization_parser_functor}
 %parse-param {const CInitializationFlexLexerRef lexer}
 %lex-param {const CInitializationFlexLexerRef lexer}
 
@@ -116,21 +116,21 @@ extern void yyerror(const CInitializationParserDataRef data, const CInitializati
 
 %%
 
-c_initialization : element {data->CheckEnd();}
+c_initialization : element {c_initialization_parser_functor->CheckEnd();}
                  ;
 
-list : TOK_CI_OPEN_BRACKET {data->GoDown();} elements_list {data->GoUp();} TOK_CI_CLOSE_BRACKET
+list : TOK_CI_OPEN_BRACKET {c_initialization_parser_functor->GoDown();} elements_list {c_initialization_parser_functor->GoUp();} TOK_CI_CLOSE_BRACKET
      ;
 
 elements_list : element
-              | elements_list TOK_CI_COMMA element
+              | elements_list TOK_CI_COMMA {c_initialization_parser_functor->GoNext();} element
               ;
 
 element : value
         | list
         ;
 
-value : TOK_CI_NUMBER {data->Write($1.content);}
+value : TOK_CI_NUMBER {c_initialization_parser_functor->Process($1.content);}
 
 /* End of Grammar */
 
@@ -140,15 +140,15 @@ value : TOK_CI_NUMBER {data->Write($1.content);}
 * EPILOGUE
 */
 
-void CInitializationParser::YYParse(const CInitializationParserDataRef data, const CInitializationFlexLexerRef lexer) const
+void CInitializationParser::YYParse(const CInitializationParserFunctorRef c_initialization_parser_functor, const CInitializationFlexLexerRef lexer) const
 {
 #if YYDEBUG
    yydebug = 1;
 #endif
-   yyparse(data, lexer);
+   yyparse(c_initialization_parser_functor, lexer);
 }
 
-void yyerror(const CInitializationParserDataRef data, const CInitializationFlexLexerRef lexer, const char *msg)
+void yyerror(const CInitializationParserFunctorRef c_initialization_parser_functor, const CInitializationFlexLexerRef lexer, const char *msg)
 {
    lexer->yyerror(msg);
 }

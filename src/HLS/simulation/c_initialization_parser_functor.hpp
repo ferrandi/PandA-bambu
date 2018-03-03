@@ -31,39 +31,53 @@
  *
 */
 /**
- * @file c_initialization_parser.cpp
- * @brief Interface to parse the initialization of c variable.
+ * @file c_initialization_parser_functor.hpp
+ * @brief Specification of the abstract functor used during parsing of C initialization string
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
 */
+#ifndef C_INITIALIZATION_PARSER_FUNCTOR_HPP
+#define C_INITIALIZATION_PARSER_FUNCTOR_HPP
 
-///Header include
-#include "c_initialization_parser.hpp"
+#include "refcount.hpp"
 
-///. include
-#include "Parameter.hpp"
-
-///HLS/simulation include
-#include "c_initialization_parser_node.hpp"
-#define YYSTYPE CInitializationParserNode
-#include "c_initialization_flex_lexer.hpp"
-
-///utility include
-#include "fileIO.hpp"
-#include "utility.hpp"
-
-CInitializationParser::CInitializationParser(const ParameterConstRef _parameters) :
-   parameters(_parameters)
+/**
+ * Abstract functor used during parsing of C initialization string
+ */
+class CInitializationParserFunctor
 {
-   debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
-}
+   public:
+      /**
+       * Destructor
+       */
+      virtual ~CInitializationParserFunctor();
 
-void CInitializationParser::Parse(const CInitializationParserFunctorRef c_initialization_parser_functor, const std::string & initialization_string) const
-{
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing initialization string " + initialization_string);
-   const auto parsed_stream = fileIO_istream_open_from_string(initialization_string);
-   const CInitializationFlexLexerRef lexer(new CInitializationFlexLexer(parameters, parsed_stream.get(), nullptr));
-   YYParse(c_initialization_parser_functor, lexer);
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed initialization string " + initialization_string);
-}
+      /**
+       * Check that all the necessary information was present in the initialization string
+       */
+      virtual void CheckEnd() = 0;
+
+      /**
+       * Start the initialization of a new aggregated data structure
+       */
+      virtual void GoDown() = 0;
+
+      /**
+       * Consume an element of an aggregated data structure
+       */
+      virtual void GoNext() = 0;
+
+      /**
+       * Ends the initialization of the current aggregated  data structure
+       */
+      virtual void GoUp() = 0;
+
+      /**
+       * Process an element
+       * @param content is the string assocated with the string
+       */
+      virtual void Process(const std::string & content) = 0;
+};
+typedef refcount<CInitializationParserFunctor> CInitializationParserFunctorRef;
+#endif

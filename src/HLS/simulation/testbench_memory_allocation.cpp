@@ -46,8 +46,11 @@
 #include "memory.hpp"
 
 ///HLS/simulation include
-#include "testbench_generation_base_step.hpp"
+#include "c_initialization_parser.hpp"
+#include "c_initialization_parser_functor.hpp"
+#include "compute_reserved_memory.hpp"
 #include "SimulationInformation.hpp"
+#include "testbench_generation_base_step.hpp"
 
 ///tree include
 #include "tree_helper.hpp"
@@ -90,6 +93,7 @@ void TestbenchMemoryAllocation::AllocTestbenchMemory(void) const
 
    const std::map<unsigned int, memory_symbolRef>& mem_vars =
       HLSMgr->Rmem->get_ext_memory_variables();
+   CInitializationParserRef c_initialization_parser = CInitializationParserRef(new CInitializationParser(parameters));
    // get the mapping between variables in external memory and their external
    // base address
    std::map<unsigned int, unsigned int> address;
@@ -164,9 +168,9 @@ void TestbenchMemoryAllocation::AllocTestbenchMemory(void) const
             if (base_type_byte_size == 0)
                base_type_byte_size = 1;
 
-            std::vector<std::string> splitted;
-            boost::algorithm::split(splitted, test_v , boost::algorithm::is_any_of(","));
-            reserved_bytes = (static_cast<unsigned int>(splitted.size())) * base_type_byte_size;
+            const CInitializationParserFunctorRef c_initialization_parser_functor = CInitializationParserFunctorRef(new ComputeReservedMemory(TM, TM->CGetTreeNode(*l)));
+            c_initialization_parser->Parse(c_initialization_parser_functor, test_v);
+            reserved_bytes = GetPointer<ComputeReservedMemory>(c_initialization_parser_functor)->GetReservedBytes();
 
             if (HLSMgr->RSim->param_address[v_idx].find(*l) ==
                   HLSMgr->RSim->param_address[v_idx].end())

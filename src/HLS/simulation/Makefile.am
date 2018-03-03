@@ -44,8 +44,10 @@ AM_LFLAGS = -L -B -+  -olex.yy.c
 noinst_HEADERS = \
    c_initialization_flex_lexer.hpp \
    c_initialization_parser.hpp \
-   c_initialization_parser_data.hpp \
+   c_initialization_parser_functor.hpp \
    c_initialization_parser_node.hpp \
+   compute_reserved_memory.hpp \
+   memory_initialization_writer.hpp \
    minimal_interface_testbench.hpp \
    SimulationInformation.hpp \
    test_vector_parser.hpp \
@@ -59,8 +61,10 @@ noinst_HEADERS = \
 lib_simulation_la_SOURCES = \
    c_initialization_flex_lexer.lpp \
    c_initialization_parser.cpp \
-   c_initialization_parser_data.cpp \
+   c_initialization_parser_functor.cpp \
    c_initialization_yparser.ypp \
+   compute_reserved_memory.cpp \
+   memory_initialization_writer.cpp \
    minimal_interface_testbench.cpp \
    test_vector_parser.cpp \
    testbench_generation.cpp \

@@ -31,39 +31,57 @@
  *
 */
 /**
- * @file c_initialization_parser.cpp
- * @brief Interface to parse the initialization of c variable.
+ * @file compute_reserved_memory.cpp
+ * @brief Specification of the functor used to compute size of objects starting from C initialization string
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
 */
 
 ///Header include
-#include "c_initialization_parser.hpp"
+#include "compute_reserved_memory.hpp"
 
-///. include
-#include "Parameter.hpp"
+///tree include
+#include "tree_helper.hpp"
 
-///HLS/simulation include
-#include "c_initialization_parser_node.hpp"
-#define YYSTYPE CInitializationParserNode
-#include "c_initialization_flex_lexer.hpp"
+ComputeReservedMemory::ComputeReservedMemory(const tree_managerConstRef _TM, const tree_nodeConstRef _tn) :
+   TM(_TM),
+   tn(_tn),
+   elements_number(1),
+   depth_level(0)
+{}
 
-///utility include
-#include "fileIO.hpp"
-#include "utility.hpp"
 
-CInitializationParser::CInitializationParser(const ParameterConstRef _parameters) :
-   parameters(_parameters)
+unsigned int ComputeReservedMemory::GetReservedBytes() const
 {
-   debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
+   const auto ptd_type = tree_helper::get_pointed_type(TM, tree_helper::get_type_index(TM, tn->index));
+   return elements_number * tree_helper::size(TM, ptd_type)/8;
 }
 
-void CInitializationParser::Parse(const CInitializationParserFunctorRef c_initialization_parser_functor, const std::string & initialization_string) const
+void ComputeReservedMemory::CheckEnd()
 {
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing initialization string " + initialization_string);
-   const auto parsed_stream = fileIO_istream_open_from_string(initialization_string);
-   const CInitializationFlexLexerRef lexer(new CInitializationFlexLexer(parameters, parsed_stream.get(), nullptr));
-   YYParse(c_initialization_parser_functor, lexer);
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed initialization string " + initialization_string);
+   THROW_ASSERT(depth_level == 0, "");
 }
+
+void ComputeReservedMemory::GoDown()
+{
+   depth_level++;
+}
+
+void ComputeReservedMemory::GoNext()
+{
+   ///For compatibility with old initialization (without parentheses)
+   if(depth_level == 0)
+      elements_number++;
+   if(depth_level == 1)
+      elements_number++;
+}
+
+void ComputeReservedMemory::GoUp()
+{
+   THROW_ASSERT(depth_level > 0, "");
+   depth_level--;
+}
+
+void ComputeReservedMemory::Process(const std::string &)
+{}

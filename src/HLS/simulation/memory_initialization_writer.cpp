@@ -31,15 +31,15 @@
  *
 */
 /**
- * @file c_initialization_parser_data.cpp
- * @brief Specification of the global data structure used during parsing of C initialization string
+ * @file memory_initialization_writer.cpp
+ * @brief Functor used to write initialization of the memory
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
 */
 
 ///Header include
-#include "c_initialization_parser_data.hpp"
+#include "memory_initialization_writer.hpp"
 
 ///. include
 #include "Parameter.hpp"
@@ -57,7 +57,7 @@
 #include "exceptions.hpp"
 #include "utility.hpp"
 
-CInitializationParserData::CInitializationParserData(std::ofstream & _output_stream, const tree_managerConstRef _TM, const BehavioralHelperConstRef _behavioral_helper, const unsigned long int _reserved_mem_bytes, const tree_nodeConstRef _function_parameter, const TestbenchGeneration_MemoryType _testbench_generation_memory_type, const ParameterConstRef _parameters) :
+MemoryInitializationWriter::MemoryInitializationWriter(std::ofstream & _output_stream, const tree_managerConstRef _TM, const BehavioralHelperConstRef _behavioral_helper, const unsigned long int _reserved_mem_bytes, const tree_nodeConstRef _function_parameter, const TestbenchGeneration_MemoryType _testbench_generation_memory_type, const ParameterConstRef _parameters) :
    TM(_TM),
    behavioral_helper(_behavioral_helper),
    reserved_mem_bytes(_reserved_mem_bytes),
@@ -68,9 +68,9 @@ CInitializationParserData::CInitializationParserData(std::ofstream & _output_str
    debug_level(_parameters->get_class_debug_level(GET_CLASS(*this)))
 {
    const auto parameter_type = GetPointer<const type_node>(function_parameter) ? function_parameter : TM->CGetTreeNode(tree_helper::get_type_index(TM, function_parameter->index));
-   status.push_back(std::pair<const tree_nodeConstRef, unsigned int>(parameter_type, 0));
+   status.push_back(std::pair<const tree_nodeConstRef, size_t>(parameter_type, 0));
 }
-void CInitializationParserData::CheckEnd()
+void MemoryInitializationWriter::CheckEnd()
 {
    if(written_bytes != reserved_mem_bytes)
    {
@@ -78,19 +78,17 @@ void CInitializationParserData::CheckEnd()
    }
    ///First of all we have to check that there is just one element in the stack
    if(status.size() != 1)
-      THROW_ERROR("Missing data in C initialization string");
-   if(status.back().second != 1)
-      THROW_ERROR("Missing data in C initialization string");
+      THROW_ERROR("Missing data in C initialization string. Status is " + PrintStatus());
 }
 
-void CInitializationParserData::GoUp()
+void MemoryInitializationWriter::GoUp()
 {
-
-   THROW_ASSERT(not status.empty(), "");
+   THROW_ASSERT(status.size() >= 2, "");
    status.pop_back();
+   status.back().second++;
    size_t expected_size = 0;
 
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---GoUp " + status.back().first->get_kind_text());
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--GoUp " + status.back().first->get_kind_text());
 
    ///Second, according to the type let's how many elements have to have been processed
    switch(status.back().first->get_kind())
@@ -98,13 +96,6 @@ void CInitializationParserData::GoUp()
       case array_type_K:
          ///parameters cannot have this type, but global variables can
          expected_size = tree_helper::get_array_num_elements(TM, status.back().first->index);
-         break;
-      case boolean_type_K:
-      case CharType_K:
-      case enumeral_type_K:
-      case integer_type_K:
-      case real_type_K:
-         expected_size = 1;
          break;
       case complex_type_K:
          expected_size = 2;
@@ -116,6 +107,11 @@ void CInitializationParserData::GoUp()
       case union_type_K:
          expected_size = tree_helper::CGetFieldTypes(status.back().first).size();
          break;
+      case boolean_type_K:
+      case CharType_K:
+      case enumeral_type_K:
+      case integer_type_K:
+      case real_type_K:
       case function_type_K:
       case lang_type_K:
       case method_type_K:
@@ -162,10 +158,9 @@ void CInitializationParserData::GoUp()
    }
    if(expected_size != 0 and expected_size != status.back().second)
       THROW_ERROR("Missing data in C initialization for node of type " + status.back().first->get_kind_text());
-   status.back().second++;
 }
 
-void CInitializationParserData::GoDown()
+void MemoryInitializationWriter::GoDown()
 {
    THROW_ASSERT(not status.empty(), "");
    const auto type_node = status.back().first;
@@ -173,6 +168,8 @@ void CInitializationParserData::GoDown()
    {
       if(type_node->get_kind() == record_type_K or type_node->get_kind() == union_type_K)
       {
+         const auto fields = tree_helper::CGetFieldTypes(type_node);
+         THROW_ASSERT(fields.size() > status.back().second, STR(fields.size()) + " vs. " + STR(status.back().second));
          return tree_helper::CGetFieldTypes(type_node)[status.back().second];
       }
       if(type_node->get_kind() == array_type_K)
@@ -183,13 +180,14 @@ void CInitializationParserData::GoDown()
       {
          return tree_helper::CGetPointedType(type_node);
       }
-      THROW_ERROR("Unexpected nested initialization");
+      THROW_ERROR("Unexpected nested initialization " + type_node->get_kind_text() + " - Current status is " + PrintStatus());
       return tree_nodeRef();
    }();
-   status.push_back(std::pair<const tree_nodeConstRef, unsigned int>(new_type, 0));
+   status.push_back(std::pair<const tree_nodeConstRef, size_t>(new_type, 0));
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Going down. New level " + PrintStatus());
 }
 
-void CInitializationParserData::Write(const std::string & content)
+void MemoryInitializationWriter::Process(const std::string & content)
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Writing " + content + " in binary form to initialize memory");
    unsigned int base_type_index = 0;
@@ -328,7 +326,10 @@ void CInitializationParserData::Write(const std::string & content)
          break;
       case TestbenchGeneration_MemoryType::OUTPUT_PARAMETER:
          output_stream << "//expected value for output " + behavioral_helper->PrintVariable(function_parameter->index) + ": " << content << std::endl;
-         output_stream << "o" << binary_value << std::endl;
+         for(size_t bit = 0; bit < binary_value.size(); bit += 8)
+         {
+            output_stream << "o" << binary_value.substr(binary_value.size() - 8 - bit, 8) << std::endl;
+         }
          break;
       case TestbenchGeneration_MemoryType::MEMORY_INITIALIZATION:
          output_stream << "//memory initialization for variable " + behavioral_helper->PrintVariable(function_parameter->index) + " value: " + content << std::endl;
@@ -351,6 +352,45 @@ void CInitializationParserData::Write(const std::string & content)
       default:
          THROW_UNREACHABLE("");
    }
-   status.back().second++;
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Written " + content + " (" + STR(binary_value.size()/8) + " bytes) in binary form to initialize memory");
+}
+
+void MemoryInitializationWriter::GoNext()
+{
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Updating the status from " + PrintStatus());
+   THROW_ASSERT(status.size() >= 2, "");
+   const tree_nodeConstRef upper_type = status[status.size() - 2].first;
+   if(upper_type->get_kind() == record_type_K)
+   {
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Read field of a record");
+      ///We have read a field of record, move to the next field, if any
+      const auto record_fields = tree_helper::CGetFieldTypes(upper_type);
+
+      ///Check if there is at least another field
+      const auto read_fields = status[status.size() - 2].second;
+      THROW_ASSERT(read_fields < record_fields.size(), "");
+      status.pop_back();
+      status.back().second++;
+      const auto new_type = tree_helper::CGetFieldTypes(upper_type)[status[status.size() - 1].second];
+      status.push_back(std::pair<const tree_nodeConstRef, unsigned int>(new_type, 0));
+   }
+   else
+   {
+      THROW_ASSERT(upper_type->get_kind() == array_type_K or upper_type->get_kind() == pointer_type_K, upper_type->get_kind_text());
+      status[status.size() - 2].second++;
+      status[status.size() - 1].second = 0;
+   }
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Updated the status to " + PrintStatus());
+}
+
+const std::string MemoryInitializationWriter::PrintStatus() const
+{
+   std::string ret;
+   for(const auto level : status)
+   {
+      if(ret != "")
+         ret += ":";
+      ret += level.first->get_kind_text() + "[" + STR(level.second) + "]";
+   }
+   return ret;
 }

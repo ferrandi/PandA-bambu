@@ -52,8 +52,8 @@
 #include "refcount.hpp"
 #include "utility.hpp"
 
-///NOTE: forward declarations of CInitializationParserData and CInitializationFlexLexer are in this point since they will be used in c_initialization_parser.hpp
-REF_FORWARD_DECL(CInitializationParserData);
+///NOTE: forward declarations of CInitializationParserFunctor and CInitializationFlexLexer are in this point since they will be used in c_initialization_parser.hpp
+REF_FORWARD_DECL(CInitializationParserFunctor);
 REF_FORWARD_DECL(CInitializationFlexLexer);
 
 #include "c_initialization_parser_node.hpp"

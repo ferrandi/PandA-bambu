@@ -60,6 +60,7 @@
 
 ///HLS/simulation includes
 #include "c_initialization_parser.hpp"
+#include "memory_initialization_writer.hpp"
 #include "SimulationInformation.hpp"
 #include "testbench_generation.hpp"
 #include "testbench_generation_base_step.hpp"
@@ -120,7 +121,7 @@ DesignFlowStep_Status TestbenchValuesXMLGeneration::Exec()
       boost::filesystem::create_directories(output_directory);
    std::string output_file_name = output_directory + STR(STR_CST_testbench_generation_basename) + ".txt";
    std::ofstream output_stream = std::ofstream(output_file_name.c_str(), std::ios::out);
-   CInitializationParserRef c_initialization_parser = CInitializationParserRef(new CInitializationParser(output_stream, HLSMgr->get_tree_manager(), behavioral_helper, parameters));
+   CInitializationParserRef c_initialization_parser = CInitializationParserRef(new CInitializationParser(parameters));
 
    /// print base address
    unsigned int base_address = HLSMgr->base_address;
@@ -165,6 +166,7 @@ DesignFlowStep_Status TestbenchValuesXMLGeneration::Exec()
       for (const auto & l : mem)
       {
          std::string param = behavioral_helper->PrintVariable(l);
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering parameter " + param);
          if (param[0] == '"')
             param = "@" + STR(l);
 
@@ -205,7 +207,8 @@ DesignFlowStep_Status TestbenchValuesXMLGeneration::Exec()
          all_reserved_mem_bytes[v_idx][l] = reserved_mem_bytes;
 
          ///Call the parser to translate C initialization to verilog initialization
-         c_initialization_parser->Parse(test_v, reserved_mem_bytes, TM->CGetTreeNode(l), TestbenchGeneration_MemoryType::MEMORY_INITIALIZATION);
+         const CInitializationParserFunctorRef c_initialization_parser_functor = CInitializationParserFunctorRef(new MemoryInitializationWriter(output_stream, TM, behavioral_helper, reserved_mem_bytes, TM->CGetTreeNode(l), TestbenchGeneration_MemoryType::MEMORY_INITIALIZATION, parameters));
+         c_initialization_parser->Parse(c_initialization_parser_functor, test_v);
          size_t next_object_offset = HLSMgr->RSim->param_next_off.find(v_idx)->second.find(l)->second;
 
          if (next_object_offset > reserved_mem_bytes)
@@ -213,6 +216,7 @@ DesignFlowStep_Status TestbenchValuesXMLGeneration::Exec()
             for(unsigned int padding = 0; padding < next_object_offset - reserved_mem_bytes; padding++)
                output_stream << "m00000000" << std::endl;
          }
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Cosidered parameter " + param);
 
       }
       ++v_idx;
@@ -239,7 +243,8 @@ DesignFlowStep_Status TestbenchValuesXMLGeneration::Exec()
          }
          else
          {
-            c_initialization_parser->Parse(curr_test_vector.at(param), tree_helper::size(TM, function_parameter)/8, TM->CGetTreeNode(function_parameter), TestbenchGeneration_MemoryType::INPUT_PARAMETER);
+            const CInitializationParserFunctorRef c_initialization_parser_functor = CInitializationParserFunctorRef(new MemoryInitializationWriter(output_stream, TM, behavioral_helper, tree_helper::size(TM, function_parameter)/8, TM->CGetTreeNode(function_parameter), TestbenchGeneration_MemoryType::INPUT_PARAMETER, parameters));
+            c_initialization_parser->Parse(c_initialization_parser_functor, curr_test_vector.at(param));
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Considered parameter " + STR(TM->CGetTreeNode(function_parameter)));
       }
@@ -260,7 +265,8 @@ DesignFlowStep_Status TestbenchValuesXMLGeneration::Exec()
                   return curr_test_vector.at(param);
                }
             }();
-            c_initialization_parser->Parse(expected_values, all_reserved_mem_bytes.at(v_idx).at(function_parameter), TM->CGetTreeNode(function_parameter), TestbenchGeneration_MemoryType::OUTPUT_PARAMETER);
+            const CInitializationParserFunctorRef c_initialization_parser_functor = CInitializationParserFunctorRef(new MemoryInitializationWriter(output_stream, TM, behavioral_helper, all_reserved_mem_bytes.at(v_idx).at(function_parameter), TM->CGetTreeNode(function_parameter), TestbenchGeneration_MemoryType::OUTPUT_PARAMETER, parameters));
+            c_initialization_parser->Parse(c_initialization_parser_functor, expected_values);
             output_stream << "e" << std::endl;
          }
       }
@@ -268,7 +274,8 @@ DesignFlowStep_Status TestbenchValuesXMLGeneration::Exec()
       const unsigned int return_type_index = behavioral_helper->GetFunctionReturnType(function_id);
       if(return_type_index)
       {
-         c_initialization_parser->Parse(curr_test_vector.find("return")->second, tree_helper::size(TM, return_type_index)/8, TM->CGetTreeNode(return_type_index), TestbenchGeneration_MemoryType::RETURN);
+         const CInitializationParserFunctorRef c_initialization_parser_functor = CInitializationParserFunctorRef(new MemoryInitializationWriter(output_stream, TM, behavioral_helper, tree_helper::size(TM, return_type_index)/8, TM->CGetTreeNode(return_type_index), TestbenchGeneration_MemoryType::RETURN, parameters));
+         c_initialization_parser->Parse(c_initialization_parser_functor, curr_test_vector.at("return"));
       }
       ++v_idx;
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Considered vector");

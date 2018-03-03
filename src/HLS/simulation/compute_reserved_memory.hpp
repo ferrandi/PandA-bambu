@@ -31,57 +31,80 @@
  *
 */
 /**
- * @file c_initialization_parser.hpp
- * @brief Interface to parse the initialization of c variable.
+ * @file compute_reserved_memory.hpp
+ * @brief Specification of the functor used to compute size of objects starting from C initialization string
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
 */
-#ifndef C_INITIALIZATION_PARSER_HPP
-#define C_INITIALIZATION_PARSER_HPP
-///Utility include
+#ifndef COMPUTE_RESERVED_MEMORY_HPP
+#define COMPUTE_RESERVED_MEMORY_HPP
+
+///Superclass include
+#include "c_initialization_parser_functor.hpp"
+
+///utility include
 #include "refcount.hpp"
 
-CONSTREF_FORWARD_DECL(BehavioralHelper);
-REF_FORWARD_DECL(CInitializationParserFunctor);
-REF_FORWARD_DECL(CInitializationFlexLexer);
-CONSTREF_FORWARD_DECL(Parameter);
-enum class TestbenchGeneration_MemoryType;
 CONSTREF_FORWARD_DECL(tree_manager);
 CONSTREF_FORWARD_DECL(tree_node);
 
-class CInitializationParser
+/**
+ * Functor used to compute size of memory objects
+ */
+class ComputeReservedMemory : public CInitializationParserFunctor
 {
    private:
-      ///The set of input parameters
-      const ParameterConstRef parameters;
+      ///The tree manager
+      const tree_managerConstRef TM;
 
-      ///The debug level
-      int debug_level;
+      ///The tree node to be stored in memory
+      const tree_nodeConstRef tn;
 
-      /**
-       * Wrapper to yyparse
-       * @param c_initialization_parser_functor is the functor used during the parsing
-       * @param lexer is the lexer used to process the initiation string
-       */
-      void YYParse(const CInitializationParserFunctorRef c_initialization_parser_functor, const CInitializationFlexLexerRef lexer) const;
+      ///The number of elements in the top level
+      unsigned int elements_number;
+
+      ///The current level of {}
+      unsigned int depth_level;
 
    public:
       /**
        * Constructor
-       * @param parameters is the set of input parameters
+       * @param TM is the tree manager
+       * @param tn is the variable/parameter to be stored in memory
        */
-      CInitializationParser(const ParameterConstRef parameters);
+      ComputeReservedMemory(const tree_managerConstRef TM ,const tree_nodeConstRef tn);
 
       /**
-       * Parse a string to generate the corresponding memory initialization
-       * @param c_initialization_parser_functor is the functor used during parsing
-       * @param initialization_string is the C initialization string of a variable
+       * Return the computed value
        */
-      void Parse(const CInitializationParserFunctorRef c_initialization_parser_functor, const std::string & initialization_string) const;
+      unsigned int GetReservedBytes() const;
 
+      /**
+       * Check that all the necessary information was present in the initialization string
+       */
+      void CheckEnd();
+
+      /**
+       * Start the initialization of a new aggregated data structure
+       */
+      void GoDown();
+
+      /**
+       * Consume an element of an aggregated data structure
+       */
+      void GoNext();
+
+      /**
+       * Ends the initialization of the current aggregated  data structure
+       */
+      void GoUp();
+
+      /**
+       * Process an element
+       * @param content is the string assocated with the string
+       */
+      void Process(const std::string & content);
 };
-typedef refcount<const CInitializationParser> CInitializationParserConstRef;
-typedef refcount<CInitializationParser> CInitializationParserRef;
 #endif
 
