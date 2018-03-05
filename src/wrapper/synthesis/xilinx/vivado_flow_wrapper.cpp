@@ -54,7 +54,7 @@
 
 //constructor
 vivado_flow_wrapper::vivado_flow_wrapper(const ParameterConstRef _Param, const std::string& _output_dir, const target_deviceRef _device) :
-   XilinxWrapper(_Param, VIVADO_FLOW_TOOL_EXEC, _device, _output_dir, "vivado_flow")
+   XilinxWrapper(_Param, VIVADO_FLOW_TOOL_EXEC, _device, _output_dir, VIVADO_FLOW_TOOL_ID)
 {
    PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Creating the VIVADO_FLOW wrapper...");
 }

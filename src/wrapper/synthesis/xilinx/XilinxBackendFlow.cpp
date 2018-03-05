@@ -638,7 +638,7 @@ void XilinxBackendFlow::CheckSynthesisResults()
          lut_m->set_timing_value(LUT_model::COMBINATIONAL_DELAY, design_values[VIVADO_XILINX_DESIGN_DELAY]);
          if(design_values[VIVADO_XILINX_DESIGN_DELAY] > Param->getOption<double>(OPT_clock_period))
          {
-            CopyFile("HLS_output/Synthesis/vivado_flow/post_route_timing_summary.rpt", STR_CST_synthesis_timing_violation_report);
+            CopyFile(actual_parameters->parameter_values[PARAM_vivado_timing_report], STR_CST_synthesis_timing_violation_report);
          }
       }
       else
