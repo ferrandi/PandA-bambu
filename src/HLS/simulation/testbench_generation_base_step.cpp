@@ -51,6 +51,8 @@
 #include "config_HAVE_I386_GCC5_COMPILER.hpp"
 #include "config_HAVE_I386_GCC6_COMPILER.hpp"
 #include "config_HAVE_I386_GCC7_COMPILER.hpp"
+#include "config_HAVE_I386_CLANG4_COMPILER.hpp"
+#include "config_HAVE_I386_CLANG5_COMPILER.hpp"
 
 ///Header include
 #include "testbench_generation_base_step.hpp"
@@ -318,8 +320,23 @@ void TestbenchGenerationBaseStep::exec_C_testbench()
    INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "-->Executing C testbench");
    const GccWrapperConstRef gcc_wrapper(new GccWrapper(parameters, parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler), GccWrapper_OptimizationSet::O0));
    std::string compiler_flags = "-fwrapv -ffloat-store -flax-vector-conversions -msse2 -mfpmath=sse -D'__builtin_bambu_time_start()=' -D'__builtin_bambu_time_stop()=' ";
+#if HAVE_I386_CLANG4_COMPILER
+   if(parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANG4)
+      compiler_flags = "-fwrapv -flax-vector-conversions -msse2 -mfpmath=sse -D'__builtin_bambu_time_start()=' -D'__builtin_bambu_time_stop()=' ";
+#endif
+#if HAVE_I386_CLANG5_COMPILER
+   if(parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANG5)
+      compiler_flags = "-fwrapv -flax-vector-conversions -msse2 -mfpmath=sse -D'__builtin_bambu_time_start()=' -D'__builtin_bambu_time_stop()=' ";
+#endif
+
    if(!parameters->isOption(OPT_input_format) || parameters->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_C || parameters->isOption(OPT_pretty_print))
-      compiler_flags += " -fexcess-precision=standard ";
+#if HAVE_I386_CLANG4_COMPILER
+      if(parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) != GccWrapper_CompilerTarget::CT_I386_CLANG4)
+#endif
+#if HAVE_I386_CLANG5_COMPILER
+      if(parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) != GccWrapper_CompilerTarget::CT_I386_CLANG5)
+#endif
+         compiler_flags += " -fexcess-precision=standard ";
    if (parameters->isOption(OPT_testbench_extra_gcc_flags))
       compiler_flags += " " + parameters->getOption<std::string>(OPT_testbench_extra_gcc_flags) + " ";
    if (parameters->isOption(OPT_discrepancy) and
@@ -339,7 +356,13 @@ void TestbenchGenerationBaseStep::exec_C_testbench()
            or parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC6
 #endif
 #if HAVE_I386_GCC7_COMPILER
-               or parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC7
+          or parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC7
+#endif
+#if HAVE_I386_CLANG4_COMPILER
+          or parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANG4
+#endif
+#if HAVE_I386_CLANG5_COMPILER
+          or parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANG5
 #endif
          )
       {
@@ -347,13 +370,19 @@ void TestbenchGenerationBaseStep::exec_C_testbench()
       }
    if (false
 #if HAVE_I386_GCC5_COMPILER
-           or parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC5
+       or parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC5
 #endif
 #if HAVE_I386_GCC6_COMPILER
-               or parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC6
+       or parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC6
 #endif
 #if HAVE_I386_GCC7_COMPILER
-                   or parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC7
+       or parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC7
+#endif
+#if HAVE_I386_CLANG4_COMPILER
+       or parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANG4
+#endif
+#if HAVE_I386_CLANG5_COMPILER
+       or parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANG5
 #endif
          )
       {
@@ -387,14 +416,11 @@ void TestbenchGenerationBaseStep::exec_C_testbench()
    THROW_ASSERT(top_function_ids.size() == 1, "Multiple top functions");
    const auto top_function_id= *(top_function_ids.begin());
    const auto top_function_name = HLSMgr->CGetFunctionBehavior(top_function_id)->CGetBehavioralHelper()->get_function_name();
-#if HAVE_HLS_BUILT && HAVE_EXPERIMENTAL
    if (parameters->isOption(OPT_discrepancy) and parameters->getOption<bool>(OPT_discrepancy))
    {
       ///Nothing to do
    }
-   else
-#endif
-   if(top_function_name != "main")
+   else if(top_function_name != "main")
    {
       if(parameters->isOption(OPT_pretty_print))
       {
@@ -438,18 +464,24 @@ void TestbenchGenerationBaseStep::exec_C_testbench()
    {
       if (false
 #if HAVE_I386_GCC49_COMPILER
-              or parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC49
+          or parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC49
 #endif
 #if HAVE_I386_GCC5_COMPILER
-              or parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC5
+          or parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC5
 #endif
 #if HAVE_I386_GCC6_COMPILER
-              or parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC6
+          or parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC6
 #endif
 #if HAVE_I386_GCC7_COMPILER
-              or parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC7
+          or parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC7
 #endif
-            )
+#if HAVE_I386_CLANG4_COMPILER
+          or parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANG4
+#endif
+#if HAVE_I386_CLANG5_COMPILER
+          or parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANG5
+#endif
+          )
       {
          exec_name.insert(0, "ASAN_OPTIONS='symbolize=1:redzone=2048' ");
       }

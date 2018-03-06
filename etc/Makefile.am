@@ -2,8 +2,8 @@ SUBDIRS = devices macros scripts
 DIST_SUBDIRS = devices macros scripts 
 
 if BUILD_GCC_PLUGIN
-   SUBDIRS += gcc_plugin
-   DIST_SUBDIRS += gcc_plugin
+   SUBDIRS += gcc_plugin clang_plugin
+   DIST_SUBDIRS += gcc_plugin clang_plugin
 endif
 
 if BUILD_LIBBAMBU

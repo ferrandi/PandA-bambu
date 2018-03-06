@@ -850,8 +850,10 @@ std::string tree_helper::print_function_name(const tree_managerConstRef TM, cons
    }
    else
       THROW_ERROR(std::string("Node not yet supported ") + name->get_kind_text());
-   if(fd && fd->undefined_flag && fd->builtin_flag && res.find("__builtin_") == std::string::npos)
-      res = "__builtin_" + res;
+//   if(fd && fd->undefined_flag && fd->builtin_flag && res.find("__builtin_") == std::string::npos)
+//      res = "__builtin_" + res;
+   if(fd->builtin_flag && fd->body && !TM->is_top_function(fd))
+      res = "__internal_" + res;
    return res;
 }
 
@@ -1251,9 +1253,8 @@ tree_nodeRef tree_helper::find_obj_type_ref_function(const tree_nodeRef tn)
       {
          for(std::vector<tree_nodeRef>::const_iterator x = rt->list_of_fncs.begin(); x != rt->list_of_fncs.end(); ++x)
          {
-            THROW_ASSERT(GET_NODE(*x)->get_kind() == function_decl_K || GET_NODE(*x)->get_kind() == template_decl_K, "expected a function decl or a template_decl");
             function_decl* fd = GetPointer<function_decl>(GET_NODE(*x));
-            if(GET_INDEX_NODE(fd->type) == function_type)
+            if(fd && GET_INDEX_NODE(fd->type) == function_type)
                return *x;
          }
       }
@@ -2463,6 +2464,21 @@ bool tree_helper::is_an_array(const tree_managerConstRef  TM, const unsigned int
    }
    if(Type->get_kind() == array_type_K)
       return true;
+   else if(Type->get_kind() == record_type_K)
+   {
+      record_type * rt = GetPointer<record_type>(Type);
+      if(rt->list_of_flds.size()!=1)
+         return false;
+      auto fd = GET_NODE(rt->list_of_flds[0]);
+      THROW_ASSERT(fd->get_kind() == field_decl_K, "expected a field_decl");
+      auto at_node = GET_NODE(GetPointer<field_decl>(fd)->type);
+      if(at_node->get_kind() == array_type_K)
+         return true;
+      else if(at_node->get_kind() == record_type_K)
+         return is_an_array(TM,  GET_INDEX_NODE(GetPointer<field_decl>(fd)->type));
+      else
+         return false;
+   }
    return false;
 }
 
@@ -3086,7 +3102,13 @@ static unsigned int check_for_simple_pointer_arithmetic(tree_nodeRef node)
                   if(ne)
                      return check_for_simple_pointer_arithmetic(ne->op);
                   else
-                     return check_for_simple_pointer_arithmetic(ga->op1);
+                  {
+                     view_convert_expr* vce = GetPointer<view_convert_expr>(GET_NODE(ga->op1));
+                     if(vce)
+                        return check_for_simple_pointer_arithmetic(vce->op);
+                     else
+                        return check_for_simple_pointer_arithmetic(ga->op1);
+                  }
                }
             }
          }
@@ -3096,6 +3118,11 @@ static unsigned int check_for_simple_pointer_arithmetic(tree_nodeRef node)
          {
             nop_expr * ne = GetPointer<nop_expr>(GET_NODE(ga->op1));
             return check_for_simple_pointer_arithmetic(ne->op);
+         }
+         else if(GetPointer<view_convert_expr>(GET_NODE(ga->op1)))
+         {
+            view_convert_expr * vce = GetPointer<view_convert_expr>(GET_NODE(ga->op1));
+            return check_for_simple_pointer_arithmetic(vce->op);
          }
          else
             return 0;
@@ -3133,9 +3160,14 @@ static unsigned int check_for_simple_pointer_arithmetic(tree_nodeRef node)
       case pointer_plus_expr_K:
       {
          pointer_plus_expr * ppe = GetPointer<pointer_plus_expr>(GET_NODE(node));
-         if(GetPointer<addr_expr>(GET_NODE(ppe->op0)))
+         if(GetPointer<addr_expr>(GET_NODE(ppe->op0)) || GetPointer<view_convert_expr>(GET_NODE(ppe->op0)))
             return check_for_simple_pointer_arithmetic(ppe->op0);
          return 0;
+      }
+      case view_convert_expr_K:
+      {
+         view_convert_expr * vce = GetPointer<view_convert_expr>(GET_NODE(node));
+         return check_for_simple_pointer_arithmetic(vce->op);
       }
       case addr_expr_K:
       {
@@ -3309,7 +3341,6 @@ static unsigned int check_for_simple_pointer_arithmetic(tree_nodeRef node)
       case truth_not_expr_K:
       case unsave_expr_K:
       case va_arg_expr_K:
-      case view_convert_expr_K:
       case reduc_max_expr_K:
       case reduc_min_expr_K:
       case reduc_plus_expr_K:
@@ -3594,6 +3625,15 @@ unsigned int tree_helper::get_base_index(const tree_managerConstRef TM, const un
             {
                return GET_INDEX_NODE(vc->op);
             }
+            case integer_cst_K:
+            {
+               return index;
+            }
+            case complex_cst_K:
+            case real_cst_K:
+            case string_cst_K:
+            case vector_cst_K:
+            case void_cst_K:
             case binfo_K:
             case block_K:
             case call_expr_K:
@@ -3621,7 +3661,6 @@ unsigned int tree_helper::get_base_index(const tree_managerConstRef TM, const un
             case error_mark_K:
             case CASE_BINARY_EXPRESSION:
             case CASE_CPP_NODES:
-            case CASE_CST_NODES:
             case CASE_FAKE_NODES:
             case CASE_GIMPLE_NODES:
             case CASE_PRAGMA_NODES:
@@ -4659,6 +4698,14 @@ unsigned int tree_helper::get_array_data_bitsize
 (const tree_managerConstRef TM, const unsigned int index)
 {
    tree_nodeRef node = TM->get_tree_node_const(index);
+   if(node->get_kind() == record_type_K)
+   {
+      record_type* rt = GetPointer<record_type>(node);
+      auto fd = GET_NODE(rt->list_of_flds[0]);
+      THROW_ASSERT(fd->get_kind() == field_decl_K, "expected a field_decl");
+      auto at_index = GET_INDEX_NODE(GetPointer<field_decl>(fd)->type);
+      return get_array_data_bitsize(TM, at_index);
+   }
    THROW_ASSERT(node->get_kind() == array_type_K, "array_type expected: @" + STR(index));
    array_type * at = GetPointer<array_type>(node);
    THROW_ASSERT(at->elts, "elements type expected");
@@ -4683,6 +4730,15 @@ void tree_helper::get_array_dim_and_bitsize
 (const tree_managerConstRef TM, const unsigned int index, std::vector<unsigned int> &dims, unsigned int &elts_bitsize)
 {
    tree_nodeRef node = TM->get_tree_node_const(index);
+   if(node->get_kind() == record_type_K)
+   {
+      record_type* rt = GetPointer<record_type>(node);
+      auto fd = GET_NODE(rt->list_of_flds[0]);
+      THROW_ASSERT(fd->get_kind() == field_decl_K, "expected a field_decl");
+      auto at_index = GET_INDEX_NODE(GetPointer<field_decl>(fd)->type);
+      get_array_dim_and_bitsize(TM, at_index, dims, elts_bitsize);
+      return;
+   }
    THROW_ASSERT(node->get_kind() == array_type_K, "array_type expected: @" + STR(index));
    array_type * at = GetPointer<array_type>(node);
    if(!at->domn)
@@ -4725,6 +4781,15 @@ void tree_helper::get_array_dimensions
 (const tree_managerConstRef TM, const unsigned int index, std::vector<unsigned int> &dims)
 {
    tree_nodeRef node = TM->get_tree_node_const(index);
+   if(node->get_kind() == record_type_K)
+   {
+      record_type* rt = GetPointer<record_type>(node);
+      auto fd = GET_NODE(rt->list_of_flds[0]);
+      THROW_ASSERT(fd->get_kind() == field_decl_K, "expected a field_decl");
+      auto at_index = GET_INDEX_NODE(GetPointer<field_decl>(fd)->type);
+      get_array_dimensions(TM, at_index, dims);
+      return;
+   }
    THROW_ASSERT(node->get_kind() == array_type_K, "array_type expected: @" + STR(index));
    array_type * at = GetPointer<array_type>(node);
    tree_nodeRef domn = GET_NODE(at->domn);
@@ -5488,6 +5553,18 @@ std::string tree_helper::print_type(const tree_managerConstRef TM, unsigned int 
          }
          break;
       }
+      case template_type_parm_K:
+      {
+         template_type_parm *ttp = GetPointer<template_type_parm>(node_type);
+         res += print_type(TM, GET_INDEX_NODE(ttp->name), global, print_qualifiers);
+         break;
+      }
+      case typename_type_K:
+      {
+         typename_type *tt = GetPointer<typename_type>(node_type);
+         res += print_type(TM, GET_INDEX_NODE(tt->name), global, print_qualifiers);
+         break;
+      }
       case binfo_K:
       case block_K:
       case call_expr_K:
@@ -5509,13 +5586,11 @@ std::string tree_helper::print_type(const tree_managerConstRef TM, unsigned int 
       case target_expr_K:
       case target_mem_ref_K:
       case target_mem_ref461_K:
-      case template_type_parm_K:
       case type_argument_pack_K:
       case translation_unit_decl_K:
       case template_decl_K:
       case using_decl_K:
       case tree_vec_K:
-      case typename_type_K:
       case var_decl_K:
       case vec_cond_expr_K:
       case vec_perm_expr_K:
@@ -7244,7 +7319,8 @@ void tree_helper::ComputeSsaUses(const tree_nodeRef tn, TreeNodeMap<size_t> & ss
       case CASE_UNARY_EXPRESSION:
       {
          unary_expr * ue = GetPointer<unary_expr>(curr_tn);
-         ComputeSsaUses(ue->op, ssa_uses);
+         if(GET_NODE(ue->op)->get_kind() != function_decl_K)
+            ComputeSsaUses(ue->op, ssa_uses);
          break;
       }
       case CASE_BINARY_EXPRESSION:
@@ -7476,19 +7552,6 @@ bool tree_helper::is_a_nop_function_decl(function_decl * fd)
       return false;
 }
 
-std::string
-tree_helper::getFunctionTypeString(tree_nodeRef FT)
-{
-  function_type * FunctionType = GetPointer<function_type>(FT);
-  THROW_ASSERT(FunctionType, "Input tree_node is not a function_type");
-
-  std::stringstream SS;
-  SS << FunctionType->retn << " (*)(";
-  if (FunctionType->prms)
-    SS << FunctionType->prms;
-  SS << ")";
-  return SS.str();
-}
 
 void tree_helper::get_required_values(const tree_managerConstRef TM, std::vector<std::tuple<unsigned int, unsigned int> >& required, const tree_nodeRef& tn, unsigned int index)
 {

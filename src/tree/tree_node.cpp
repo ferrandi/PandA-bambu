@@ -1195,8 +1195,9 @@ void ssa_name::visit(tree_node_visitor * const v) const
    VISIT_MEMBER(mask,type,visit(v));
    VISIT_MEMBER(mask,var,visit(v));
    SEQ_VISIT_MEMBER(mask,def_stmts,tree_node,visit,tree_node_visitor,v);
+   VISIT_MEMBER(mask,min,visit(v));
+   VISIT_MEMBER(mask,max,visit(v));
    VISIT_MEMBER(mask, use_set, visit(v));
-
 }
 
 const tree_nodeRef ssa_name::CGetDefStmt() const

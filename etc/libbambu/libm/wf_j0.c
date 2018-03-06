@@ -30,15 +30,15 @@
 #include <errno.h>
 #endif
 
-float __builtin_j0f(float x)		/* wrapper j0f */
+float j0f(float x)		/* wrapper j0f */
 {
 #ifdef _IEEE_LIBM
 	return __hide_ieee754_j0f(x);
 #else
 	struct exception exc;
 	float z = __hide_ieee754_j0f(x);
-	if(_LIB_VERSION == _IEEE_ || __builtin_isnan(x)) return z;
-	if(__builtin_fabsf(x)>(float)X_TLOSS) {
+    if(_LIB_VERSION == _IEEE_ || isnan(x)) return z;
+    if(fabsf(x)>(float)X_TLOSS) {
 	    /* j0f(|x|>X_TLOSS) */
             exc.type = TLOSS;
             exc.name = "j0f";
@@ -47,7 +47,7 @@ float __builtin_j0f(float x)		/* wrapper j0f */
             exc.retval = 0.0;
             if (_LIB_VERSION == _POSIX_)
                errno = ERANGE;
-            else if (!__builtin_matherr(&exc)) {
+            else if (!matherr(&exc)) {
                errno = ERANGE;
             }        
 	    if (exc.err != 0)
@@ -58,7 +58,7 @@ float __builtin_j0f(float x)		/* wrapper j0f */
 #endif
 }
 
-float __builtin_y0f(float x)		/* wrapper y0f */
+float y0f(float x)		/* wrapper y0f */
 {
 #ifdef _IEEE_LIBM
 	return __hide_ieee754_y0f(x);
@@ -66,7 +66,7 @@ float __builtin_y0f(float x)		/* wrapper y0f */
 	float z;
 	struct exception exc;
 	z = __hide_ieee754_y0f(x);
-	if(_LIB_VERSION == _IEEE_ || __builtin_isnan(x) ) return z;
+    if(_LIB_VERSION == _IEEE_ || isnan(x) ) return z;
         if(x <= (float)0.0){
 #ifndef HUGE_VAL 
 #define HUGE_VAL inf
@@ -85,7 +85,7 @@ float __builtin_y0f(float x)		/* wrapper y0f */
 	       exc.retval = -HUGE_VAL;
 	    if (_LIB_VERSION == _POSIX_)
 	       errno = EDOM;
-	    else if (!__builtin_matherr(&exc)) {
+        else if (!matherr(&exc)) {
 	       errno = EDOM;
 	    }
 	    if (exc.err != 0)
@@ -101,7 +101,7 @@ float __builtin_y0f(float x)		/* wrapper y0f */
             exc.retval = 0.0;
             if (_LIB_VERSION == _POSIX_)
                 errno = ERANGE;
-            else if (!__builtin_matherr(&exc)) {
+            else if (!matherr(&exc)) {
                 errno = ERANGE;
             }        
 	    if (exc.err != 0)
@@ -114,14 +114,14 @@ float __builtin_y0f(float x)		/* wrapper y0f */
 
 #ifdef _DOUBLE_IS_32BITS
 
-double __builtin_j0(double x)
+double j0(double x)
 {
-	return (double) __builtin_j0f((float) x);
+    return (double) j0f((float) x);
 }
 
-double __builtin_y0(double x)
+double y0(double x)
 {
-	return (double) __builtin_y0f((float) x);
+    return (double) y0f((float) x);
 }
 
 #endif /* defined(_DOUBLE_IS_32BITS) */

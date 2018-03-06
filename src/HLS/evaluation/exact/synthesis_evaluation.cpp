@@ -130,27 +130,27 @@ DesignFlowStep_Status SynthesisEvaluation::InternalExec()
          if (area_m)
          {
             double slices = GetPointer<clb_model>(area_m) ? GetPointer<clb_model>(area_m)->get_resource_value(clb_model::SLICE) : 0;
-            if (slices)
+            if (slices != 0.0)
             {
                HLSMgr->evaluations["SLICE"] = std::vector<double>(1, slices);
             }
             double sliceLuts = GetPointer<clb_model>(area_m) ? GetPointer<clb_model>(area_m)->get_resource_value(clb_model::SLICE_LUTS) : 0;
-            if (sliceLuts)
+            if (sliceLuts != 0.0)
             {
                HLSMgr->evaluations["SLICE_LUTS"] = std::vector<double>(1, sliceLuts);
             }
             double lut_ff_pairs = GetPointer<clb_model>(area_m) ? GetPointer<clb_model>(area_m)->get_resource_value(clb_model::LUT_FF_PAIRS) : 0;
-            if(lut_ff_pairs)
+            if(lut_ff_pairs != 0.0)
             {
                HLSMgr->evaluations["LUT_FF_PAIRS"] = std::vector<double>(1, lut_ff_pairs);
             }
             double logic_elements = GetPointer<clb_model>(area_m) ? GetPointer<clb_model>(area_m)->get_resource_value(clb_model::LOGIC_ELEMENTS) : 0;
-            if(logic_elements)
+            if(logic_elements != 0.0)
             {
                HLSMgr->evaluations["LOGIC_ELEMENTS"] = std::vector<double>(1, logic_elements);
             }
             double alms = GetPointer<clb_model>(area_m) ? GetPointer<clb_model>(area_m)->get_resource_value(clb_model::ALMS) : 0;
-            if(alms)
+            if(alms != 0.0)
             {
                HLSMgr->evaluations["ALMS"] = std::vector<double>(1, alms);
             }

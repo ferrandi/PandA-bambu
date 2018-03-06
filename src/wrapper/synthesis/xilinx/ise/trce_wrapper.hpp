@@ -43,7 +43,7 @@
  *
 */
 #ifndef _XILINX_TRCE_WRAPPER_HPP_
-#define _XILINX_MAP_WRAPPER_HPP_
+#define _XILINX_TRCE_WRAPPER_HPP_
 
 #include "XilinxWrapper.hpp"
 

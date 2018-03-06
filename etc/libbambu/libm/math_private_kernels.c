@@ -7,8 +7,8 @@
  * Date: September, 11 2013.
 */
 /*
- * fdlibm kernel functions in inlined form
- * files k_cos.c, k_rem_pio2.c, k_sin.c, k_standard.c, k_tan.c have been inlined in this file
+ * fdlibm kernel functions
+ * files k_cos.c, k_rem_pio2.c, k_sin.c, k_standard.c, k_tan.c have been merged in this file
 */
 /*
  * ====================================================
@@ -20,188 +20,8 @@
  * is preserved.
  * ====================================================
  */
-#ifndef _MATH_PRIVATE_KERNELS_H_
-#define _MATH_PRIVATE_KERNELS_H_
 
-/* __hide_ieee754_rem_pio2(x,y)
- * 
- * return the remainder of x rem pi/2 in y[0]+y[1] 
- * use __hide_kernel_rem_pio2()
- */
-inline
-int __hide_ieee754_rem_pio2(double x, double *y)
-{
-/*
- * Table of constants for 2/pi, 396 Hex digits (476 decimal) of 2/pi 
- */
-        static const int two_over_pi[] = {
-        0xA2F983, 0x6E4E44, 0x1529FC, 0x2757D1, 0xF534DD, 0xC0DB62, 
-        0x95993C, 0x439041, 0xFE5163, 0xABDEBB, 0xC561B7, 0x246E3A, 
-        0x424DD2, 0xE00649, 0x2EEA09, 0xD1921C, 0xFE1DEB, 0x1CB129, 
-        0xA73EE8, 0x8235F5, 0x2EBB44, 0x84E99C, 0x7026B4, 0x5F7E41, 
-        0x3991D6, 0x398353, 0x39F49C, 0x845F8B, 0xBDF928, 0x3B1FF8, 
-        0x97FFDE, 0x05980F, 0xEF2F11, 0x8B5A0A, 0x6D1F6D, 0x367ECF, 
-        0x27CB09, 0xB74F46, 0x3F669E, 0x5FEA2D, 0x7527BA, 0xC7EBE5, 
-        0xF17B3D, 0x0739F7, 0x8A5292, 0xEA6BFB, 0x5FB11F, 0x8D5D08, 
-        0x560330, 0x46FC7B, 0x6BABF0, 0xCFBC20, 0x9AF436, 0x1DA9E3, 
-        0x91615E, 0xE61B08, 0x659985, 0x5F14A0, 0x68408D, 0xFFD880, 
-        0x4D7327, 0x310606, 0x1556CA, 0x73A8C9, 0x60E27B, 0xC08C6B, 
-        };
-        static const int npio2_hw[] = {
-          0x3FF921FB, 0x400921FB, 0x4012D97C, 0x401921FB, 0x401F6A7A, 0x4022D97C,
-          0x4025FDBB, 0x402921FB, 0x402C463A, 0x402F6A7A, 0x4031475C, 0x4032D97C,
-          0x40346B9C, 0x4035FDBB, 0x40378FDB, 0x403921FB, 0x403AB41B, 0x403C463A,
-          0x403DD85A, 0x403F6A7A, 0x40407E4C, 0x4041475C, 0x4042106C, 0x4042D97C,
-          0x4043A28C, 0x40446B9C, 0x404534AC, 0x4045FDBB, 0x4046C6CB, 0x40478FDB,
-          0x404858EB, 0x404921FB,
-        };
-
-        double z=0.0,w,t,r,fn;
-	double tx[3];
-	int e0,i,j,nx,n,ix,hx;
-
-	hx = GET_HI(x);		/* high word of x */
-	ix = hx&0x7fffffff;
-	if(ix<=0x3fe921fb)   /* |x| ~<= pi/4 , no need for reduction */
-	    {y[0] = x; y[1] = 0; return 0;}
-	if(ix<0x4002d97c) {  /* |x| < 3pi/4, special case with n=+-1 */
-	    if(hx>0) { 
-		z = x - pio2_1;
-		if(ix!=0x3ff921fb) { 	/* 33+53 bit pi is good enough */
-		    y[0] = z - pio2_1t;
-		    y[1] = (z-y[0])-pio2_1t;
-		} else {		/* near pi/2, use 33+33+53 bit pi */
-		    z -= pio2_2;
-		    y[0] = z - pio2_2t;
-		    y[1] = (z-y[0])-pio2_2t;
-		}
-		return 1;
-	    } else {	/* negative x */
-		z = x + pio2_1;
-		if(ix!=0x3ff921fb) { 	/* 33+53 bit pi is good enough */
-		    y[0] = z + pio2_1t;
-		    y[1] = (z-y[0])+pio2_1t;
-		} else {		/* near pi/2, use 33+33+53 bit pi */
-		    z += pio2_2;
-		    y[0] = z + pio2_2t;
-		    y[1] = (z-y[0])+pio2_2t;
-		}
-		return -1;
-	    }
-	}
-	if(ix<=0x413921fb) { /* |x| ~<= 2^19*(pi/2), medium size */
-	    t  = __builtin_fabs(x);
-	    n  = (int) (t*invpio2+half);
-	    fn = (double)n;
-	    r  = t-fn*pio2_1;
-	    w  = fn*pio2_1t;	/* 1st round good to 85 bit */
-	    if(n<32&&ix!=npio2_hw[n-1]) {	
-		y[0] = r-w;	/* quick check no cancellation */
-	    } else {
-	        j  = ix>>20;
-	        y[0] = r-w; 
-	        i = j-(((GET_HI(y[0]))>>20)&0x7ff);
-	        if(i>16) {  /* 2nd iteration needed, good to 118 */
-		    t  = r;
-		    w  = fn*pio2_2;	
-		    r  = t-w;
-		    w  = fn*pio2_2t-((t-r)-w);	
-		    y[0] = r-w;
-		    i = j-(((GET_HI(y[0]))>>20)&0x7ff);
-		    if(i>49)  {	/* 3rd iteration need, 151 bits acc */
-		    	t  = r;	/* will cover all possible cases */
-		    	w  = fn*pio2_3;	
-		    	r  = t-w;
-		    	w  = fn*pio2_3t-((t-r)-w);	
-		    	y[0] = r-w;
-		    }
-		}
-	    }
-	    y[1] = (r-y[0])-w;
-	    if(hx<0) 	{y[0] = -y[0]; y[1] = -y[1]; return -n;}
-	    else	 return n;
-	}
-    /* 
-     * all other (large) arguments
-     */
-	if(ix>=0x7ff00000) {		/* x is inf or NaN */
-	    y[0]=y[1]=__builtin_nan(""); return 0;
-	}
-    /* set z = scalbn(|x|,ilogb(x)-23) */
-	SET_LOW_WORD(z, GET_LO(x));
-	e0 	= (ix>>20)-1046;	/* e0 = ilogb(z)-23; */
-	SET_HIGH_WORD(z, ix - (e0<<20));
-	for(i=0;i<2;i++) {
-		tx[i] = (double)((int)(z));
-		z     = (z-tx[i])*two24;
-	}
-	tx[2] = z;
-	nx = 3;
-	while(tx[nx-1]==zero) nx--;	/* skip zero term */
-	n  =  __hide_kernel_rem_pio2(tx,y,e0,nx,2,two_over_pi);
-	if(hx<0) {y[0] = -y[0]; y[1] = -y[1]; return -n;}
-	return n;
-}
-
-/*
- * __hide_kernel_cos( x,  y )
- * kernel cos function on [-pi/4, pi/4], pi/4 ~ 0.785398164
- * Input x is assumed to be bounded by ~pi/4 in magnitude.
- * Input y is the tail of x. 
- *
- * Algorithm
- *	1. Since cos(-x) = cos(x), we need only to consider positive x.
- *	2. if x < 2^-27 (hx<0x3e400000 0), return 1 with inexact if x!=0.
- *	3. cos(x) is approximated by a polynomial of degree 14 on
- *	   [0,pi/4]
- *		  	                 4            14
- *	   	cos(x) ~ 1 - x*x/2 + C1*x + ... + C6*x
- *	   where the remez error is
- *	
- * 	|              2     4     6     8     10    12     14 |     -58
- * 	|cos(x)-(1-.5*x +C1*x +C2*x +C3*x +C4*x +C5*x  +C6*x  )| <= 2
- * 	|    					               | 
- * 
- * 	               4     6     8     10    12     14 
- *	4. let r = C1*x +C2*x +C3*x +C4*x +C5*x  +C6*x  , then
- *	       cos(x) = 1 - x*x/2 + r
- *	   since cos(x+y) ~ cos(x) - sin(x)*y 
- *			  ~ cos(x) - x*y,
- *	   a correction term is necessary in cos(x) and hence
- *		cos(x+y) = 1 - (x*x/2 - (r - x*y))
- *	   For better accuracy when x > 0.3, let qx = |x|/4 with
- *	   the last 32 bits mask off, and if x > 0.78125, let qx = 0.28125.
- *	   Then
- *		cos(x+y) = (1-qx) - ((x*x/2-qx) - (r-x*y)).
- *	   Note that 1-qx and (x*x/2-qx) is EXACT here, and the
- *	   magnitude of the latter is at least a quarter of x*x/2,
- *	   thus, reducing the rounding error in the subtraction.
- */
-inline
-double __hide_kernel_cos(double x, double y)
-{
-	double a,hz,z,r,qx;
-	int ix;
-	ix = GET_HI(x)&0x7fffffff;	/* ix = |x|'s high word*/
-	if(ix<0x3e400000) {			/* if x < 2**27 */
-	    if(((int)x)==0) return one;		/* generate inexact */
-	}
-	z  = x*x;
-	r  = z*(C1+z*(C2+z*(C3+z*(C4+z*(C5+z*C6)))));
-	if(ix < 0x3FD33333) 			/* if |x| < 0.3 */ 
-	    return one - (0.5*z - (z*r - x*y));
-	else {
-	    if(ix > 0x3fe90000) {		/* x > 0.78125 */
-		qx = 0.28125;
-	    } else {
-	        INSERT_WORDS(qx,ix-0x00200000,0);	/* x/4 */
-	    }
-	    hz = 0.5*z-qx;
-	    a  = one-qx;
-	    return a - (hz - (z*r-x*y));
-	}
-}
-
+#include "math_private.h"
 /*
  * __hide_kernel_rem_pio2(x,y,e0,nx,prec,ipio2)
  * double x[],y[]; int e0,nx,prec; int ipio2[];
@@ -308,7 +128,7 @@ double __hide_kernel_cos(double x, double y)
  *		it also indicates the *sign* of the result.
  *
  */
-inline
+static inline
 int __hide_kernel_rem_pio2(double *x, double *y, int e0, int nx, int prec, const int *ipio2) 
 {
         static const int init_jk[] = {2,3,4,6}; /* initial value for jk */
@@ -354,8 +174,8 @@ recompute:
 	}
 
     /* compute n */
-	z  = __builtin_scalbn(z,q0);		/* actual value of z */
-	z -= 8.0*__builtin_floor(z*0.125);		/* trim off integer >= 8 */
+    z  = scalbn(z,q0);		/* actual value of z */
+    z -= 8.0*floor(z*0.125);		/* trim off integer >= 8 */
 	n  = (int) z;
 	z -= (double)n;
 	ih = 0;
@@ -387,7 +207,7 @@ recompute:
 	    }
 	    if(ih==2) {
 		z = one - z;
-		if(carry!=0) z -= __builtin_scalbn(one,q0);
+        if(carry!=0) z -= scalbn(one,q0);
 	    }
 	}
 
@@ -413,7 +233,7 @@ recompute:
 	    jz -= 1; q0 -= 24;
 	    while(iq[jz]==0) { jz--; q0-=24;}
 	} else { /* break z into 24-bit if necessary */
-	    z = __builtin_scalbn(z,-q0);
+        z = scalbn(z,-q0);
 	    if(z>=two24) { 
 		fw = (double)((int)(twon24*z));
 		iq[jz] = (int)(z-two24*fw);
@@ -423,7 +243,7 @@ recompute:
 	}
 
     /* convert integer "bit" chunk to floating-point value */
-	fw = __builtin_scalbn(one,q0);
+    fw = scalbn(one,q0);
 	for(i=jz;i>=0;i--) {
 	    q[i] = fw*(double)iq[i]; fw*=twon24;
 	}
@@ -471,6 +291,184 @@ recompute:
 	return n&7;
 }
 
+/* __hide_ieee754_rem_pio2(x,y)
+ * 
+ * return the remainder of x rem pi/2 in y[0]+y[1] 
+ * use __hide_kernel_rem_pio2()
+ */
+int __hide_ieee754_rem_pio2(double x, double *y)
+{
+/*
+ * Table of constants for 2/pi, 396 Hex digits (476 decimal) of 2/pi 
+ */
+        static const int two_over_pi[] = {
+        0xA2F983, 0x6E4E44, 0x1529FC, 0x2757D1, 0xF534DD, 0xC0DB62, 
+        0x95993C, 0x439041, 0xFE5163, 0xABDEBB, 0xC561B7, 0x246E3A, 
+        0x424DD2, 0xE00649, 0x2EEA09, 0xD1921C, 0xFE1DEB, 0x1CB129, 
+        0xA73EE8, 0x8235F5, 0x2EBB44, 0x84E99C, 0x7026B4, 0x5F7E41, 
+        0x3991D6, 0x398353, 0x39F49C, 0x845F8B, 0xBDF928, 0x3B1FF8, 
+        0x97FFDE, 0x05980F, 0xEF2F11, 0x8B5A0A, 0x6D1F6D, 0x367ECF, 
+        0x27CB09, 0xB74F46, 0x3F669E, 0x5FEA2D, 0x7527BA, 0xC7EBE5, 
+        0xF17B3D, 0x0739F7, 0x8A5292, 0xEA6BFB, 0x5FB11F, 0x8D5D08, 
+        0x560330, 0x46FC7B, 0x6BABF0, 0xCFBC20, 0x9AF436, 0x1DA9E3, 
+        0x91615E, 0xE61B08, 0x659985, 0x5F14A0, 0x68408D, 0xFFD880, 
+        0x4D7327, 0x310606, 0x1556CA, 0x73A8C9, 0x60E27B, 0xC08C6B, 
+        };
+        static const int npio2_hw[] = {
+          0x3FF921FB, 0x400921FB, 0x4012D97C, 0x401921FB, 0x401F6A7A, 0x4022D97C,
+          0x4025FDBB, 0x402921FB, 0x402C463A, 0x402F6A7A, 0x4031475C, 0x4032D97C,
+          0x40346B9C, 0x4035FDBB, 0x40378FDB, 0x403921FB, 0x403AB41B, 0x403C463A,
+          0x403DD85A, 0x403F6A7A, 0x40407E4C, 0x4041475C, 0x4042106C, 0x4042D97C,
+          0x4043A28C, 0x40446B9C, 0x404534AC, 0x4045FDBB, 0x4046C6CB, 0x40478FDB,
+          0x404858EB, 0x404921FB,
+        };
+
+        double z=0.0,w,t,r,fn;
+	double tx[3];
+	int e0,i,j,nx,n,ix,hx;
+
+	hx = GET_HI(x);		/* high word of x */
+	ix = hx&0x7fffffff;
+	if(ix<=0x3fe921fb)   /* |x| ~<= pi/4 , no need for reduction */
+	    {y[0] = x; y[1] = 0; return 0;}
+	if(ix<0x4002d97c) {  /* |x| < 3pi/4, special case with n=+-1 */
+	    if(hx>0) { 
+		z = x - pio2_1;
+		if(ix!=0x3ff921fb) { 	/* 33+53 bit pi is good enough */
+		    y[0] = z - pio2_1t;
+		    y[1] = (z-y[0])-pio2_1t;
+		} else {		/* near pi/2, use 33+33+53 bit pi */
+		    z -= pio2_2;
+		    y[0] = z - pio2_2t;
+		    y[1] = (z-y[0])-pio2_2t;
+		}
+		return 1;
+	    } else {	/* negative x */
+		z = x + pio2_1;
+		if(ix!=0x3ff921fb) { 	/* 33+53 bit pi is good enough */
+		    y[0] = z + pio2_1t;
+		    y[1] = (z-y[0])+pio2_1t;
+		} else {		/* near pi/2, use 33+33+53 bit pi */
+		    z += pio2_2;
+		    y[0] = z + pio2_2t;
+		    y[1] = (z-y[0])+pio2_2t;
+		}
+		return -1;
+	    }
+	}
+	if(ix<=0x413921fb) { /* |x| ~<= 2^19*(pi/2), medium size */
+        t  = fabs(x);
+	    n  = (int) (t*invpio2+half);
+	    fn = (double)n;
+	    r  = t-fn*pio2_1;
+	    w  = fn*pio2_1t;	/* 1st round good to 85 bit */
+	    if(n<32&&ix!=npio2_hw[n-1]) {	
+		y[0] = r-w;	/* quick check no cancellation */
+	    } else {
+	        j  = ix>>20;
+	        y[0] = r-w; 
+	        i = j-(((GET_HI(y[0]))>>20)&0x7ff);
+	        if(i>16) {  /* 2nd iteration needed, good to 118 */
+		    t  = r;
+		    w  = fn*pio2_2;	
+		    r  = t-w;
+		    w  = fn*pio2_2t-((t-r)-w);	
+		    y[0] = r-w;
+		    i = j-(((GET_HI(y[0]))>>20)&0x7ff);
+		    if(i>49)  {	/* 3rd iteration need, 151 bits acc */
+		    	t  = r;	/* will cover all possible cases */
+		    	w  = fn*pio2_3;	
+		    	r  = t-w;
+		    	w  = fn*pio2_3t-((t-r)-w);	
+		    	y[0] = r-w;
+		    }
+		}
+	    }
+	    y[1] = (r-y[0])-w;
+	    if(hx<0) 	{y[0] = -y[0]; y[1] = -y[1]; return -n;}
+	    else	 return n;
+	}
+    /* 
+     * all other (large) arguments
+     */
+	if(ix>=0x7ff00000) {		/* x is inf or NaN */
+        y[0]=y[1]=__builtin_nan(""); return 0;
+	}
+    /* set z = scalbn(|x|,ilogb(x)-23) */
+	SET_LOW_WORD(z, GET_LO(x));
+	e0 	= (ix>>20)-1046;	/* e0 = ilogb(z)-23; */
+	SET_HIGH_WORD(z, ix - (e0<<20));
+	for(i=0;i<2;i++) {
+		tx[i] = (double)((int)(z));
+		z     = (z-tx[i])*two24;
+	}
+	tx[2] = z;
+	nx = 3;
+	while(tx[nx-1]==zero) nx--;	/* skip zero term */
+	n  =  __hide_kernel_rem_pio2(tx,y,e0,nx,2,two_over_pi);
+	if(hx<0) {y[0] = -y[0]; y[1] = -y[1]; return -n;}
+	return n;
+}
+
+/*
+ * __hide_kernel_cos( x,  y )
+ * kernel cos function on [-pi/4, pi/4], pi/4 ~ 0.785398164
+ * Input x is assumed to be bounded by ~pi/4 in magnitude.
+ * Input y is the tail of x. 
+ *
+ * Algorithm
+ *	1. Since cos(-x) = cos(x), we need only to consider positive x.
+ *	2. if x < 2^-27 (hx<0x3e400000 0), return 1 with inexact if x!=0.
+ *	3. cos(x) is approximated by a polynomial of degree 14 on
+ *	   [0,pi/4]
+ *		  	                 4            14
+ *	   	cos(x) ~ 1 - x*x/2 + C1*x + ... + C6*x
+ *	   where the remez error is
+ *	
+ * 	|              2     4     6     8     10    12     14 |     -58
+ * 	|cos(x)-(1-.5*x +C1*x +C2*x +C3*x +C4*x +C5*x  +C6*x  )| <= 2
+ * 	|    					               | 
+ * 
+ * 	               4     6     8     10    12     14 
+ *	4. let r = C1*x +C2*x +C3*x +C4*x +C5*x  +C6*x  , then
+ *	       cos(x) = 1 - x*x/2 + r
+ *	   since cos(x+y) ~ cos(x) - sin(x)*y 
+ *			  ~ cos(x) - x*y,
+ *	   a correction term is necessary in cos(x) and hence
+ *		cos(x+y) = 1 - (x*x/2 - (r - x*y))
+ *	   For better accuracy when x > 0.3, let qx = |x|/4 with
+ *	   the last 32 bits mask off, and if x > 0.78125, let qx = 0.28125.
+ *	   Then
+ *		cos(x+y) = (1-qx) - ((x*x/2-qx) - (r-x*y)).
+ *	   Note that 1-qx and (x*x/2-qx) is EXACT here, and the
+ *	   magnitude of the latter is at least a quarter of x*x/2,
+ *	   thus, reducing the rounding error in the subtraction.
+ */
+double __hide_kernel_cos(double x, double y)
+{
+	double a,hz,z,r,qx;
+	int ix;
+	ix = GET_HI(x)&0x7fffffff;	/* ix = |x|'s high word*/
+	if(ix<0x3e400000) {			/* if x < 2**27 */
+	    if(((int)x)==0) return one;		/* generate inexact */
+	}
+	z  = x*x;
+	r  = z*(C1+z*(C2+z*(C3+z*(C4+z*(C5+z*C6)))));
+	if(ix < 0x3FD33333) 			/* if |x| < 0.3 */ 
+	    return one - (0.5*z - (z*r - x*y));
+	else {
+	    if(ix > 0x3fe90000) {		/* x > 0.78125 */
+		qx = 0.28125;
+	    } else {
+	        INSERT_WORDS(qx,ix-0x00200000,0);	/* x/4 */
+	    }
+	    hz = 0.5*z-qx;
+	    a  = one-qx;
+	    return a - (hz - (z*r-x*y));
+	}
+}
+
+
 /* __hide_kernel_sin( x, y, iy)
  * kernel sin function on [-pi/4, pi/4], pi/4 ~ 0.7854
  * Input x is assumed to be bounded by ~pi/4 in magnitude.
@@ -498,7 +496,6 @@ recompute:
  *	   then                   3    2
  *		sin(x) = x + (S1*x + (x *(r-y/2)+y))
  */
-inline
 double __hide_kernel_sin(double x, double y, int iy)
 {
 	double z,r,v;
@@ -513,115 +510,6 @@ double __hide_kernel_sin(double x, double y, int iy)
 	else      return x-((z*(half*y-v*r)-y)-v*S1);
 }
 
-/* __hide_kernel_tan( x, y, k )
- * kernel tan function on [-pi/4, pi/4], pi/4 ~ 0.7854
- * Input x is assumed to be bounded by ~pi/4 in magnitude.
- * Input y is the tail of x.
- * Input k indicates whether tan (if k = 1) or -1/tan (if k = -1) is returned.
- *
- * Algorithm
- *	1. Since tan(-x) = -tan(x), we need only to consider positive x.
- *	2. if x < 2^-28 (hx<0x3e300000 0), return x with inexact if x!=0.
- *	3. tan(x) is approximated by a odd polynomial of degree 27 on
- *	   [0,0.67434]
- *		  	         3             27
- *	   	tan(x) ~ x + T1*x + ... + T13*x
- *	   where
- *
- * 	        |tan(x)         2     4            26   |     -59.2
- * 	        |----- - (1+T1*x +T2*x +.... +T13*x    )| <= 2
- * 	        |  x 					|
- *
- *	   Note: tan(x+y) = tan(x) + tan'(x)*y
- *		          ~ tan(x) + (1+x*x)*y
- *	   Therefore, for better accuracy in computing tan(x+y), let
- *		     3      2      2       2       2
- *		r = x *(T2+x *(T3+x *(...+x *(T12+x *T13))))
- *	   then
- *		 		    3    2
- *		tan(x+y) = x + (T1*x + (x *(r+y)+y))
- *
- *      4. For x in [0.67434,pi/4],  let y = pi/4 - x, then
- *		tan(x) = tan(pi/4-y) = (1-tan(y))/(1+tan(y))
- *		       = 1 - 2*(tan(y) - (tan(y)^2)/(1+tan(y)))
- */
-inline
-double
-__hide_kernel_tan(double x, double y, int iy) {
-	double z, r, v, w, s;
-	int ix, hx;
-
-	hx = GET_HI(x);		/* high word of x */
-	ix = hx & 0x7fffffff;			/* high word of |x| */
-	if (ix < 0x3e300000) {			/* x < 2**-28 */
-		if ((int) x == 0) {		/* generate inexact */
-			if (((ix | GET_LO(x)) | (iy + 1)) == 0)
-				return one / __builtin_fabs(x);
-			else {
-				if (iy == 1)
-					return x;
-				else {	/* compute -1 / (x+y) carefully */
-					double a, t;
-
-					z = w = x + y;
-					RESET_LOW_WORD(z);
-					v = y - (z - x);
-					t = a = -one / w;
-					RESET_LOW_WORD(t);
-					s = one + t * z;
-					return t + a * (s + t * v);
-				}
-			}
-		}
-	}
-	if (ix >= 0x3FE59428) {	/* |x| >= 0.6744 */
-		if (hx < 0) {
-			x = -x;
-			y = -y;
-		}
-		z = pio4 - x;
-		w = pio4lo - y;
-		x = z + w;
-		y = 0.0;
-	}
-	z = x * x;
-	w = z * z;
-	/*
-	 * Break x^5*(T[1]+x^2*T[2]+...) into
-	 * x^5(T[1]+x^4*T[3]+...+x^20*T[11]) +
-	 * x^5(x^2*(T[2]+x^4*T[4]+...+x^22*[T12]))
-	 */
-	r = T[1] + w * (T[3] + w * (T[5] + w * (T[7] + w * (T[9] +
-		w * T[11]))));
-	v = z * (T[2] + w * (T[4] + w * (T[6] + w * (T[8] + w * (T[10] +
-		w * T[12])))));
-	s = z * x;
-	r = y + z * (s * (r + v) + y);
-	r += T[0] * s;
-	w = x + r;
-	if (ix >= 0x3FE59428) {
-		v = (double) iy;
-		return (double) (1 - ((hx >> 30) & 2)) *
-			(v - 2.0 * (x - (w * w / (w + v) - r)));
-	}
-	if (iy == 1)
-		return w;
-	else {
-		/*
-		 * if allow error up to 2 ulp, simply return
-		 * -1.0 / (x+r) here
-		 */
-		/* compute -1.0 / (x+r) accurately */
-		double a, t;
-		z = w;
-		RESET_LOW_WORD(z);
-		v = r - (z - x);	/* z+v = r+x */
-		t = a = -1.0 / w;	/* a = -1.0/w */
-		RESET_LOW_WORD(t);
-		s = 1.0 + t * z;
-		return t + a * (s + t * v);
-	}
-}
 
 #ifndef HAVE_FLOPOCO
 
@@ -687,7 +575,6 @@ __hide_kernel_tan(double x, double y, int iy) {
  * compiler will convert from decimal to binary accurately enough
  * to produce the hexadecimal values shown.
  */
-inline
 double __hide_ieee754_exp(double x)	/* default IEEE double exp */
 {
 	double y,hi=0,lo=0,c,t;
@@ -790,7 +677,6 @@ double __hide_ieee754_exp(double x)	/* default IEEE double exp */
  * compiler will convert from decimal to binary accurately enough 
  * to produce the hexadecimal values shown.
  */
-inline
 double __hide_ieee754_log(double x)
 {
 	double hfsq,f,s,z,R,w,t1,t2,dk;
@@ -803,8 +689,8 @@ double __hide_ieee754_log(double x)
 	k=0;
 	if (hx < 0x00100000) {			/* x < 2**-1022  */
 	    if (((hx&0x7fffffff)|lx)==0) 
-		return -__builtin_inf();		/* log(+-0)=-inf */
-	    if ((hx>>31)&1) return __builtin_nans("");	/* log(-#) = NaN */
+        return -__builtin_inf();		/* log(+-0)=-inf */
+        if ((hx>>31)&1) return __builtin_nans("");	/* log(-#) = NaN */
 	    k -= 54; x *= two54; /* subnormal number, scale up x */
 	    hx = GET_HI(x);		/* high word of x */
 	} 
@@ -848,7 +734,6 @@ double __hide_ieee754_log(double x)
  * passing various standard test suite. One 
  * should use scalbn() instead.
  */
-inline
 #ifdef _SCALB_INT
 	double __hide_ieee754_scalb(double x, int fn)
 #else
@@ -856,18 +741,17 @@ inline
 #endif
 {
 #ifdef _SCALB_INT
-	return __builtin_scalbn(x,fn);
+    return scalbn(x,fn);
 #else
-	if (__builtin_isnan(x)||__builtin_isnan(fn)) return x*fn;
+    if (isnan(x)||isnan(fn)) return x*fn;
 	if (!__finite(fn)) {
 	    if(fn>0.0) return x*fn;
 	    else       return x/(-fn);
 	}
-	if (__builtin_rint(fn)!=fn) return (fn-fn)/(fn-fn);
-	if ( fn > 65000.0) return __builtin_scalbn(x, 65000);
-	if (-fn > 65000.0) return __builtin_scalbn(x,-65000);
-	return __builtin_scalbn(x,(int)fn);
+    if (rint(fn)!=fn) return (fn-fn)/(fn-fn);
+    if ( fn > 65000.0) return scalbn(x, 65000);
+    if (-fn > 65000.0) return scalbn(x,-65000);
+    return scalbn(x,(int)fn);
 #endif
 }
 
-#endif /* _MATH_PRIVATE_KERNELS_H_ */

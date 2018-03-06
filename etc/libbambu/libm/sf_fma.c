@@ -14,7 +14,7 @@
 
 #include "math_privatef.h"
 
-float __builtin_fmaf(float x, float y, float z)
+float fmaf(float x, float y, float z)
 {
   /* NOTE:  The floating-point exception behavior of this is not as
    * required.  But since the basic function is not really done properly,

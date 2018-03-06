@@ -30,7 +30,7 @@
 #include <errno.h>
 #endif
 
-float __builtin_powf(float x, float y)	/* wrapper powf */
+float powf(float x, float y)	/* wrapper powf */
 {
 #ifdef _IEEE_LIBM
 	return  __hide_ieee754_powf(x,y);
@@ -38,8 +38,8 @@ float __builtin_powf(float x, float y)	/* wrapper powf */
 	float z;
 	struct exception exc;
 	z=__hide_ieee754_powf(x,y);
-	if(_LIB_VERSION == _IEEE_|| __builtin_isnan(y)) return z;
-	if(__builtin_isnan(x)) {
+    if(_LIB_VERSION == _IEEE_|| isnan(y)) return z;
+    if(isnan(x)) {
 	    if(y==(float)0.0) { 
 		/* powf(NaN,0.0) */
 		/* error only if _LIB_VERSION == _SVID_ & _XOPEN_ */
@@ -51,7 +51,7 @@ float __builtin_powf(float x, float y)	/* wrapper powf */
 		exc.retval = 1.0;
 		if (_LIB_VERSION == _IEEE_ ||
 		    _LIB_VERSION == _POSIX_) exc.retval = 1.0;
-		else if (!__builtin_matherr(&exc)) {
+        else if (!matherr(&exc)) {
 			errno = EDOM;
 		}
 	        if (exc.err != 0)
@@ -71,7 +71,7 @@ float __builtin_powf(float x, float y)	/* wrapper powf */
 		exc.arg2 = (double)y;
 		exc.retval = 0.0;
 		if (_LIB_VERSION != _SVID_) exc.retval = 1.0;
-		else if (!__builtin_matherr(&exc)) {
+        else if (!matherr(&exc)) {
 			errno = EDOM;
 		}
 	        if (exc.err != 0)
@@ -91,7 +91,7 @@ float __builtin_powf(float x, float y)	/* wrapper powf */
 		  exc.retval = -HUGE_VAL;
 		if (_LIB_VERSION == _POSIX_)
 		  errno = EDOM;
-		else if (!__builtin_matherr(&exc)) {
+        else if (!matherr(&exc)) {
 		  errno = EDOM;
 		}
 	        if (exc.err != 0)
@@ -102,7 +102,7 @@ float __builtin_powf(float x, float y)	/* wrapper powf */
 	}
 	if(!__finitef(z)) {
 	    if(__finitef(x)&&__finitef(y)) {
-	        if(__builtin_isnan(z)) {
+            if(isnan(z)) {
 		    /* neg**non-integral */
 		    exc.type = DOMAIN;
 		    exc.name = "powf";
@@ -131,15 +131,15 @@ float __builtin_powf(float x, float y)	/* wrapper powf */
 		    if (_LIB_VERSION == _SVID_) {
 		       exc.retval = HUGE;
 		       y *= 0.5;
-		       if(x<0.0&&__builtin_rint(y)!=y) exc.retval = -HUGE;
+               if(x<0.0&&rint(y)!=y) exc.retval = -HUGE;
 		    } else {
 		       exc.retval = HUGE_VAL;
                        y *= 0.5;
-		       if(x<0.0&&__builtin_rint(y)!=y) exc.retval = -HUGE_VAL;
+               if(x<0.0&&rint(y)!=y) exc.retval = -HUGE_VAL;
 		    }
 		    if (_LIB_VERSION == _POSIX_)
 		        errno = ERANGE;
-		    else if (!__builtin_matherr(&exc)) {
+            else if (!matherr(&exc)) {
 			errno = ERANGE;
 		    }
 	            if (exc.err != 0)
@@ -158,7 +158,7 @@ float __builtin_powf(float x, float y)	/* wrapper powf */
 	    exc.retval =  0.0;
 	    if (_LIB_VERSION == _POSIX_)
 	        errno = ERANGE;
-	    else if (!__builtin_matherr(&exc)) {
+        else if (!matherr(&exc)) {
 	     	errno = ERANGE;
 	    }
 	    if (exc.err != 0)
@@ -171,9 +171,9 @@ float __builtin_powf(float x, float y)	/* wrapper powf */
 
 #ifdef _DOUBLE_IS_32BITS
 
-double __builtin_pow(double x, double y)
+double pow(double x, double y)
 {
-	return (double) __builtin_powf((float) x, (float) y);
+    return (double) powf((float) x, (float) y);
 }
 
 #endif /* defined(_DOUBLE_IS_32BITS) */

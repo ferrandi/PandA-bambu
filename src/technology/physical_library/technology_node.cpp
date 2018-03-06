@@ -171,7 +171,7 @@ void operation::xload(const xml_element* Enode, const technology_nodeRef fu, con
    if(synthesis_dependent && cycles)
    {
       double clock_period = GetPointer<functional_unit>(fu)->get_clock_period();
-      if (!clock_period) THROW_ERROR("Missing clock period for operation \"" + operation_name + "\" in unit " + fu->get_name());
+      if (clock_period == 0.0) THROW_ERROR("Missing clock period for operation \"" + operation_name + "\" in unit " + fu->get_name());
       double clock_period_resource_fraction = GetPointer<functional_unit>(fu)->get_clock_period_resource_fraction();
       execution_time = cycles * clock_period * clock_period_resource_fraction;
    }
@@ -365,14 +365,12 @@ functional_unit::~functional_unit()
 
 void functional_unit::set_clock_period(double _clock_period)
 {
-   if (_clock_period)
-   {
-      if (std::find(ordered_attributes.begin(), ordered_attributes.end(), "clock_period") == ordered_attributes.end())
-         ordered_attributes.push_back("clock_period");
-      std::vector<attributeRef> content;
-      content.push_back(attributeRef(new attribute("float64", STR(_clock_period))));
-      attributes["clock_period"] = attributeRef(new attribute(content));
-   }
+   THROW_ASSERT(_clock_period>0.0, "Clock period must be greater than zero");
+   if (std::find(ordered_attributes.begin(), ordered_attributes.end(), "clock_period") == ordered_attributes.end())
+      ordered_attributes.push_back("clock_period");
+   std::vector<attributeRef> content;
+   content.push_back(attributeRef(new attribute("float64", STR(_clock_period))));
+   attributes["clock_period"] = attributeRef(new attribute(content));
    clock_period = _clock_period;
 }
 
@@ -961,7 +959,7 @@ void functional_unit::xload(const xml_element* Enode, const technology_nodeRef f
    {
       ///area stuff
       if (attributes.find("area") != attributes.end())
-         area_m->set_area_value(attributes["area"]->get_content<float>());
+         area_m->set_area_value(attributes["area"]->get_content<double>());
       else
       {
          area_m->set_area_value(0.0);
@@ -980,7 +978,7 @@ void functional_unit::xload(const xml_element* Enode, const technology_nodeRef f
             GetPointer<operation>(*v)->time_m = time_model::create_model(dv_type, Param);
          }
          if (attributes.find("drive_strength") != attributes.end())
-            GetPointer<liberty_model>(GetPointer<operation>(*v)->time_m)->set_drive_strength(attributes["drive_strength"]->get_content<float>());
+            GetPointer<liberty_model>(GetPointer<operation>(*v)->time_m)->set_drive_strength(attributes["drive_strength"]->get_content<double>());
 #if HAVE_CIRCUIT_BUILT
          if (!GetPointer<liberty_model>(GetPointer<operation>(*v)->time_m)->has_timing_groups() && CM && CM->get_circ())
          {
@@ -1005,20 +1003,20 @@ void functional_unit::xload(const xml_element* Enode, const technology_nodeRef f
    {
       ///area stuff
       if (attributes.find("area") != attributes.end())
-         area_m->set_area_value(attributes["area"]->get_content<float>());
+         area_m->set_area_value(attributes["area"]->get_content<double>());
       clb_model* clb = GetPointer<clb_model>(area_m);
       if (attributes.find("REGISTERS") != attributes.end())
-         clb->set_resource_value(clb_model::REGISTERS, attributes["REGISTERS"]->get_content<float>());
+         clb->set_resource_value(clb_model::REGISTERS, attributes["REGISTERS"]->get_content<double>());
       if (attributes.find("SLICE_LUTS") != attributes.end())
-         clb->set_resource_value(clb_model::SLICE_LUTS, attributes["SLICE_LUTS"]->get_content<float>());
+         clb->set_resource_value(clb_model::SLICE_LUTS, attributes["SLICE_LUTS"]->get_content<double>());
       if (attributes.find("SLICE") != attributes.end())
-         clb->set_resource_value(clb_model::SLICE, attributes["SLICE"]->get_content<float>());
+         clb->set_resource_value(clb_model::SLICE, attributes["SLICE"]->get_content<double>());
       if (attributes.find("LUT_FF_PAIRS") != attributes.end())
-            clb->set_resource_value(clb_model::LUT_FF_PAIRS, attributes["LUT_FF_PAIRS"]->get_content<float>());
+            clb->set_resource_value(clb_model::LUT_FF_PAIRS, attributes["LUT_FF_PAIRS"]->get_content<double>());
       if (attributes.find("DSP") != attributes.end())
-         clb->set_resource_value(clb_model::DSP, attributes["DSP"]->get_content<float>());
+         clb->set_resource_value(clb_model::DSP, attributes["DSP"]->get_content<double>());
       if (attributes.find("BRAM") != attributes.end())
-         clb->set_resource_value(clb_model::BRAM, attributes["BRAM"]->get_content<float>());
+         clb->set_resource_value(clb_model::BRAM, attributes["BRAM"]->get_content<double>());
 
    }
 
@@ -1161,15 +1159,15 @@ void functional_unit::xwrite(xml_element* rootnode, const technology_nodeRef tn,
       clb_model* clb = GetPointer<clb_model>(area_m);
       if(clb)
       {
-         if(clb->get_resource_value(clb_model::REGISTERS))
+         if(clb->get_resource_value(clb_model::REGISTERS) != 0.0)
             attributes["REGISTERS"] = attributeRef(new attribute(attribute::FLOAT64, boost::lexical_cast<std::string>(clb->get_resource_value(clb_model::REGISTERS))));
-         if(clb->get_resource_value(clb_model::SLICE_LUTS))
+         if(clb->get_resource_value(clb_model::SLICE_LUTS) != 0.0)
             attributes["SLICE_LUTS"] = attributeRef(new attribute(attribute::FLOAT64, boost::lexical_cast<std::string>(clb->get_resource_value(clb_model::SLICE_LUTS))));
-         if(clb->get_resource_value(clb_model::LUT_FF_PAIRS))
+         if(clb->get_resource_value(clb_model::LUT_FF_PAIRS) != 0.0)
             attributes["LUT_FF_PAIRS"] = attributeRef(new attribute(attribute::FLOAT64, boost::lexical_cast<std::string>(clb->get_resource_value(clb_model::LUT_FF_PAIRS))));
-         if(clb->get_resource_value(clb_model::DSP))
+         if(clb->get_resource_value(clb_model::DSP) != 0.0)
             attributes["DSP"] = attributeRef(new attribute(attribute::FLOAT64, boost::lexical_cast<std::string>(clb->get_resource_value(clb_model::DSP))));
-         if(clb->get_resource_value(clb_model::BRAM))
+         if(clb->get_resource_value(clb_model::BRAM) != 0.0)
             attributes["BRAM"] = attributeRef(new attribute(attribute::FLOAT64, boost::lexical_cast<std::string>(clb->get_resource_value(clb_model::BRAM))));
       }
    }

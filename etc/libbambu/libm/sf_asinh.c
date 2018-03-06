@@ -28,7 +28,7 @@ one =  1.0000000000e+00, /* 0x3F800000 */
 ln2 =  6.9314718246e-01, /* 0x3f317218 */
 huge=  1.0000000000e+30; 
 
-float __builtin_asinhf(float x)
+float asinhf(float x)
 {	
 	float t,w;
 	int hx,ix;
@@ -39,22 +39,22 @@ float __builtin_asinhf(float x)
 	    if(huge+x>one) return x;	/* return x inexact except 0 */
 	} 
 	if(ix>0x4d800000) {	/* |x| > 2**28 */
-	    w = __hide_ieee754_logf(__builtin_fabsf(x))+ln2;
+        w = __hide_ieee754_logf(fabsf(x))+ln2;
 	} else if (ix>0x40000000) {	/* 2**28 > |x| > 2.0 */
-	    t = __builtin_fabsf(x);
+        t = fabsf(x);
 	    w = __hide_ieee754_logf((float)2.0*t+one/(__hide_ieee754_sqrtf(x*x+one)+t));
 	} else {		/* 2.0 > |x| > 2**-28 */
 	    t = x*x;
-	    w =__builtin_log1pf(__builtin_fabsf(x)+t/(one+__hide_ieee754_sqrtf(one+t)));
+        w =log1pf(fabsf(x)+t/(one+__hide_ieee754_sqrtf(one+t)));
 	}
 	if(hx>0) return w; else return -w;
 }
 
 #ifdef _DOUBLE_IS_32BITS
 
-double __builtin_asinh(double x)
+double asinh(double x)
 {
-	return (double) __builtin_asinhf((float) x);
+    return (double) asinhf((float) x);
 }
 
 #endif /* defined(_DOUBLE_IS_32BITS) */

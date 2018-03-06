@@ -186,7 +186,7 @@ DesignFlowStep_Status FunctionCallTypeCleanup::InternalExec()
                                  if (GET_INDEX_NODE(*arg_it) == GET_INDEX_NODE(*tmp_arg_it) and
                                        tree_helper::get_formal_ith(TM, ce->index, k) == formal_type_id)
                                  {
-                                    TM->RecursiveReplaceTreeNode(*tmp_arg_it, *tmp_arg_it, new_ssa, stmt);
+                                    TM->RecursiveReplaceTreeNode(*tmp_arg_it, *tmp_arg_it, new_ssa, stmt, false);
                                     tmp_arg_it = std::next(ce->args.begin(), static_cast<int>(k));
                                     arg_it = std::next(ce->args.begin(), static_cast<int>(arg_n));
                                     continue;
@@ -198,28 +198,30 @@ DesignFlowStep_Status FunctionCallTypeCleanup::InternalExec()
                               changed = true;
                            }
                         }
-                        else if (GET_NODE(*arg_it)->get_kind() == addr_expr_K)
+                        else if (GET_NODE(*arg_it)->get_kind() == addr_expr_K ||
+                                 GET_NODE(*arg_it)->get_kind() == nop_expr_K || ///required by CLANG/LLVM
+                                 GET_NODE(*arg_it)->get_kind() == view_convert_expr_K)///required by CLANG/LLVM
                         {
                            unsigned int formal_type_id = tree_helper::get_formal_ith(TM, ce->index, arg_n);
                            const tree_nodeRef formal_type_reindex = TM->CGetTreeReindex(formal_type_id);
-                           addr_expr * parm_ae = GetPointer<addr_expr>(GET_NODE(*arg_it));
-                           tree_nodeRef ae_expr = tree_man->create_unary_operation(
-                                    formal_type_reindex, parm_ae->op, srcp_default, addr_expr_K);///It is required to de-share some IR nodes
-                           tree_nodeRef ae_ga = tree_man->CreateGimpleAssign(formal_type_reindex, ae_expr, block.first, srcp_default);
+                           unary_expr * parm_ue = GetPointer<unary_expr>(GET_NODE(*arg_it));
+                           tree_nodeRef ue_expr = tree_man->create_unary_operation(
+                                    formal_type_reindex, parm_ue->op, srcp_default, GET_NODE(*arg_it)->get_kind());///It is required to de-share some IR nodes
+                           tree_nodeRef ue_ga = tree_man->CreateGimpleAssign(formal_type_reindex, ue_expr, block.first, srcp_default);
                            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                          "---adding statement " + GET_NODE(ae_ga)->ToString());
-                           block.second->PushBefore(ae_ga, stmt);
+                                          "---adding statement " + GET_NODE(ue_ga)->ToString());
+                           block.second->PushBefore(ue_ga, stmt);
                            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                           "---old call statement " + GET_NODE(stmt)->ToString());
                            unsigned int k = 0;
-                           auto new_ssa = GetPointer<gimple_assign>(GET_NODE(ae_ga))->op0;
+                           auto new_ssa = GetPointer<gimple_assign>(GET_NODE(ue_ga))->op0;
                            auto tmp_arg_it = ce->args.begin();
                            for (; tmp_arg_it != ce->args.end(); tmp_arg_it++, k++)
                            {
                               if (GET_INDEX_NODE(*arg_it) == GET_INDEX_NODE(*tmp_arg_it) and
                                   tree_helper::get_formal_ith(TM, ce->index, k) == formal_type_id)
                               {
-                                 TM->RecursiveReplaceTreeNode(*tmp_arg_it, *tmp_arg_it, new_ssa, stmt);
+                                 TM->RecursiveReplaceTreeNode(*tmp_arg_it, *tmp_arg_it, new_ssa, stmt, false);
                                  tmp_arg_it = std::next(ce->args.begin(), static_cast<int>(k));
                                  arg_it = std::next(ce->args.begin(), static_cast<int>(arg_n));
                                  continue;
@@ -282,7 +284,7 @@ DesignFlowStep_Status FunctionCallTypeCleanup::InternalExec()
                               if (GET_INDEX_NODE(*arg_it) == GET_INDEX_NODE(*tmp_arg_it) and
                                     tree_helper::get_formal_ith(TM, gc->index, k) == formal_type_id)
                               {
-                                 TM->RecursiveReplaceTreeNode(*tmp_arg_it, *tmp_arg_it, new_ssa, stmt);
+                                 TM->RecursiveReplaceTreeNode(*tmp_arg_it, *tmp_arg_it, new_ssa, stmt, false);
                                  tmp_arg_it = std::next(gc->args.begin(), static_cast<int>(k));
                                  arg_it = std::next(gc->args.begin(), static_cast<int>(arg_n));
                                  continue;
@@ -294,29 +296,31 @@ DesignFlowStep_Status FunctionCallTypeCleanup::InternalExec()
                            changed = true;
                         }
                      }
-                     else if (GET_NODE(*arg_it)->get_kind() == addr_expr_K)
+                     else if (GET_NODE(*arg_it)->get_kind() == addr_expr_K ||
+                              GET_NODE(*arg_it)->get_kind() == nop_expr_K || ///required by CLANG/LLVM
+                              GET_NODE(*arg_it)->get_kind() == view_convert_expr_K)///required by CLANG/LLVM
                      {
                         unsigned int formal_type_id = tree_helper::get_formal_ith(TM, gc->index, arg_n);
                         const tree_nodeRef formal_type_reindex = TM->CGetTreeReindex(formal_type_id);
-                        addr_expr * parm_ae = GetPointer<addr_expr>(GET_NODE(*arg_it));
-                        tree_nodeRef ae_expr = tree_man->create_unary_operation(
-                                 formal_type_reindex, parm_ae->op, srcp_default, addr_expr_K);///It is required to de-share some IR nodes
-                        tree_nodeRef ae_ga = tree_man->CreateGimpleAssign(formal_type_reindex, ae_expr, block.first, srcp_default);
-                        tree_nodeRef ae_vd = GetPointer<gimple_assign>(GET_NODE(ae_ga))->op0;
+                        unary_expr * parm_ue = GetPointer<unary_expr>(GET_NODE(*arg_it));
+                        tree_nodeRef ue_expr = tree_man->create_unary_operation(
+                                 formal_type_reindex, parm_ue->op, srcp_default, GET_NODE(*arg_it)->get_kind());///It is required to de-share some IR nodes
+                        tree_nodeRef ue_ga = tree_man->CreateGimpleAssign(formal_type_reindex, ue_expr, block.first, srcp_default);
+                        tree_nodeRef ue_vd = GetPointer<gimple_assign>(GET_NODE(ue_ga))->op0;
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                       "---adding statement " + GET_NODE(ae_ga)->ToString());
-                        block.second->PushBefore(ae_ga, stmt);
+                                       "---adding statement " + GET_NODE(ue_ga)->ToString());
+                        block.second->PushBefore(ue_ga, stmt);
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                        "---old call statement " + GET_NODE(stmt)->ToString());
                         unsigned int k = 0;
-                        auto new_ssa = GetPointer<gimple_assign>(GET_NODE(ae_ga))->op0;
+                        auto new_ssa = GetPointer<gimple_assign>(GET_NODE(ue_ga))->op0;
                         auto tmp_arg_it = gc->args.begin();
                         for (; tmp_arg_it != gc->args.end(); tmp_arg_it++, k++)
                         {
                            if (GET_INDEX_NODE(*arg_it) == GET_INDEX_NODE(*tmp_arg_it) and
                                tree_helper::get_formal_ith(TM, gc->index, k) == formal_type_id)
                            {
-                              TM->RecursiveReplaceTreeNode(*tmp_arg_it, *tmp_arg_it, new_ssa, stmt);
+                              TM->RecursiveReplaceTreeNode(*tmp_arg_it, *tmp_arg_it, new_ssa, stmt, false);
                               tmp_arg_it = std::next(gc->args.begin(), static_cast<int>(k));
                               arg_it = std::next(gc->args.begin(), static_cast<int>(arg_n));
                               continue;

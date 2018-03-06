@@ -182,8 +182,8 @@ util_print_cpu_stats(std::ostream& os)
    (void) getrusage(RUSAGE_SELF, &rusage);
    user = rusage.ru_utime.tv_sec + rusage.ru_utime.tv_usec/1000000;
    system = rusage.ru_stime.tv_sec + rusage.ru_stime.tv_usec/1000000;
-   scale = (user + system)*100.0;
-   if (scale == 0.0) scale = 0.001;
+   scale = (user + system)*100.0L;
+   if (scale == 0.0L) scale = 0.001L;
 
    os << "Runtime Statistics\n";
    os << "------------------\n";
@@ -191,8 +191,8 @@ util_print_cpu_stats(std::ostream& os)
    os << "User time   " << user << " seconds\n";
    os << "System time " << system << " seconds\n\n";
 
-   text = (int) (rusage.ru_ixrss / scale + 0.5);
-   data = (int) ((rusage.ru_idrss + rusage.ru_isrss) / scale + 0.5);
+   text = (int) (rusage.ru_ixrss / scale + 0.5L);
+   data = (int) ((rusage.ru_idrss + rusage.ru_isrss) / scale + 0.5L);
    os << "Average resident text size       = " << text << "K\n";
    os << "Average resident data + stack size = " << data << "K\n";
    os << "Maximum resident size            = " << rusage.ru_maxrss/2 << "K\n\n";

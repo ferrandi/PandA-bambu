@@ -29,9 +29,9 @@
  * should use scalbn() instead.
  */
 #ifdef _SCALB_INT
-	double __builtin_scalb(double x, int fn)		/* wrapper scalb */
+    double scalb(double x, int fn)		/* wrapper scalb */
 #else
-	double __builtin_scalb(double x, double fn)	/* wrapper scalb */
+    double scalb(double x, double fn)	/* wrapper scalb */
 #endif
 {
 #ifdef _IEEE_LIBM
@@ -40,7 +40,7 @@
 	double z;
 	z = __hide_ieee754_scalb(x,fn);
 	if(_LIB_VERSION == _IEEE_) return z;
-	if(!(__finite(z)||__builtin_isnan(z))&&__finite(x)) {
+    if(!(__finite(z)||isnan(z))&&__finite(x)) {
 	    return __hide_kernel_standard(x,(double)fn,32); /* scalb overflow */
 	}
 	if(z==0.0&&z!=x) {

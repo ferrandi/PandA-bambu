@@ -219,6 +219,7 @@ DesignFlowStep_Status use_counting::InternalExec()
       it->second->SetSSAUsesComputed();
    }
 
+   //THROW_ASSERT(TM->check_ssa_uses(function_id), "Inconsistent ssa uses: post");
    return DesignFlowStep_Status::SUCCESS;
 }
 
@@ -241,15 +242,6 @@ void use_counting::analyze_node(tree_nodeRef & tn, std::set<tree_nodeRef> & ssa_
             analyze_node(vuse, ssa_uses);
          }
       }
-#if 0
-      if(gn->vovers.size())
-      {
-         for(auto vover : gn->vovers)
-         {
-            analyze_node(vover, ssa_uses);
-         }
-      }
-#endif
    }
 
    switch (curr_tn->get_kind())
@@ -311,14 +303,6 @@ void use_counting::analyze_node(tree_nodeRef & tn, std::set<tree_nodeRef> & ssa_
       /* Unary expressions.  */
       case CASE_UNARY_EXPRESSION:
       {
-         /*if(curr_tn->get_kind() == addr_expr_K)
-         {
-            if(already_visited.find(curr_tn) != already_visited.end())
-            {
-               break;
-            }
-            already_visited.insert(curr_tn);
-         }*/
          unary_expr * ue = GetPointer<unary_expr>(curr_tn);
          if(GET_NODE(ue->op)->get_kind() != function_decl_K)
             analyze_node(ue->op, ssa_uses);

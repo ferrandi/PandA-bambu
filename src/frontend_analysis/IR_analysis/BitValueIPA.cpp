@@ -992,7 +992,8 @@ DesignFlowStep_Status BitValueIPA::Exec()
       tree_nodeRef tn = TM->get_tree_node_const(tn_id);
       const auto kind = tn->get_kind();
 
-      std::string * old_bitvalue;
+      std::string null_string = "";
+      std::string * old_bitvalue=&null_string;
       unsigned int size = 0;
       unsigned int restart_fun_id = 0;
       if (kind == function_decl_K)

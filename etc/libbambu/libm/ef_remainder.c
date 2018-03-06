@@ -41,13 +41,13 @@ float __hide_ieee754_remainderf(float x, float p)
 	if(FLT_UWORD_IS_ZERO(hp)||
 	   !FLT_UWORD_IS_FINITE(hx)||
 	   FLT_UWORD_IS_NAN(hp))
-	    return __builtin_nanf("");
+        return nanf("");
 
 
 	if (hp<=FLT_UWORD_HALF_MAX) x = __hide_ieee754_fmodf(x,p+p); /* now x < 2p */
 	if ((hx-hp)==0) return zero*x;
-	x  = __builtin_fabsf(x);
-	p  = __builtin_fabsf(p);
+    x  = fabsf(x);
+    p  = fabsf(p);
 	if (hp<0x01000000) {
 	    if(x+x>p) {
 		x-=p;

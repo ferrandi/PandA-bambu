@@ -31,7 +31,7 @@
 #include <errno.h>
 #endif
 
-float __builtin_acoshf(float x)		/* wrapper acoshf */
+float acoshf(float x)		/* wrapper acoshf */
 {
 #ifdef _IEEE_LIBM
 	return __hide_ieee754_acoshf(x);
@@ -39,7 +39,7 @@ float __builtin_acoshf(float x)		/* wrapper acoshf */
 	float z;
 	struct exception exc;
 	z = __hide_ieee754_acoshf(x);
-	if(_LIB_VERSION == _IEEE_ || __builtin_isnan(x)) return z;
+    if(_LIB_VERSION == _IEEE_ || isnan(x)) return z;
 	if(x<(float)1.0) {
             /* acoshf(x<1) */
             exc.type = DOMAIN;
@@ -49,7 +49,7 @@ float __builtin_acoshf(float x)		/* wrapper acoshf */
             exc.retval = 0.0/0.0;
             if (_LIB_VERSION == _POSIX_)
                errno = EDOM;
-            else if (!__builtin_matherr(&exc)) {
+            else if (!matherr(&exc)) {
                errno = EDOM;
             }
 	    if (exc.err != 0)
@@ -62,9 +62,9 @@ float __builtin_acoshf(float x)		/* wrapper acoshf */
 
 #ifdef _DOUBLE_IS_32BITS
 
-double __builtin_acosh(double x)
+double acosh(double x)
 {
-	return (double) __builtin_acoshf((float) x);
+    return (double) acoshf((float) x);
 }
 
 #endif /* defined(_DOUBLE_IS_32BITS) */

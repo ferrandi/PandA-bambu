@@ -68,6 +68,8 @@
 #include "config_HAVE_I386_GCC5_COMPILER.hpp"
 #include "config_HAVE_I386_GCC6_COMPILER.hpp"
 #include "config_HAVE_I386_GCC7_COMPILER.hpp"
+#include "config_HAVE_I386_CLANG4_COMPILER.hpp"
+#include "config_HAVE_I386_CLANG5_COMPILER.hpp"
 #include "config_HAVE_FLOPOCO.hpp"
 #include "config_HAVE_LIBRARY_CHARACTERIZATION_BUILT.hpp"
 #include "config_HAVE_VERILATOR.hpp"
@@ -2847,10 +2849,10 @@ void BambuParameter::CheckParameters()
             tuning_optimizations += STR_CST_string_separator + "tree-partial-pre" + STR_CST_string_separator + "disable-tree-bswap";
          }
          if(false
-      #if HAVE_I386_GCC7_COMPILER
+#if HAVE_I386_GCC7_COMPILER
                      or getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) ==
                      GccWrapper_CompilerTarget::CT_I386_GCC7
-      #endif
+#endif
                )
          {
             tuning_optimizations += STR_CST_string_separator + "no-store-merging";
@@ -2866,7 +2868,16 @@ void BambuParameter::CheckParameters()
          optimizations += STR_CST_string_separator;
       }
       optimizations += tuning_optimizations;
-      if(optimizations != "")
+      if(optimizations != ""
+#if HAVE_I386_CLANG4_COMPILER
+            && getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) !=
+            GccWrapper_CompilerTarget::CT_I386_CLANG4
+#endif
+#if HAVE_I386_CLANG5_COMPILER
+            && getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) !=
+            GccWrapper_CompilerTarget::CT_I386_CLANG5
+#endif
+            )
          setOption(OPT_gcc_optimizations, optimizations);
 #if 0
       std::string parameters;
@@ -3359,6 +3370,10 @@ void BambuParameter::SetDefaults()
    setOption(OPT_default_compiler, static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC48));
 #elif HAVE_I386_GCC7_COMPILER
    setOption(OPT_default_compiler, static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC7));
+#elif HAVE_I386_CLANG4_COMPILER
+   setOption(OPT_default_compiler, static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG4));
+#elif HAVE_I386_CLANG5_COMPILER
+   setOption(OPT_default_compiler, static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG5));
 #else
    THROW_ERROR("No GCC compiler available");
 #endif
@@ -3386,6 +3401,12 @@ void BambuParameter::SetDefaults()
 #endif
 #if HAVE_I386_GCC7_COMPILER
       | static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC7)
+#endif
+#if HAVE_I386_CLANG4_COMPILER
+      | static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG4)
+#endif
+#if HAVE_I386_CLANG5_COMPILER
+      | static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG5)
 #endif
 #if HAVE_ARM_COMPILER
       | static_cast<int>(GccWrapper_CompilerTarget::CT_ARM_GCC)
@@ -3451,6 +3472,10 @@ void BambuParameter::SetDefaults()
    setOption(OPT_host_compiler, static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC6));
 #elif HAVE_I386_GCC7_COMPILER
    setOption(OPT_host_compiler, static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC7));
+#elif HAVE_I386_CLANG4_COMPILER
+   setOption(OPT_host_compiler, static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG4));
+#elif HAVE_I386_CLANG5_COMPILER
+   setOption(OPT_host_compiler, static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG5));
 #else
    THROW_ERROR("No GCC compiler available");
 #endif
@@ -3476,7 +3501,7 @@ void BambuParameter::SetDefaults()
 
 void BambuParameter::add_bambu_library(std::string lib)
 {
-#if HAVE_I386_GCC45_COMPILER || HAVE_I386_GCC46_COMPILER || HAVE_I386_GCC47_COMPILER || HAVE_I386_GCC48_COMPILER || HAVE_I386_GCC49_COMPILER || HAVE_I386_GCC5_COMPILER || HAVE_I386_GCC6_COMPILER || HAVE_I386_GCC7_COMPILER
+#if HAVE_I386_GCC45_COMPILER || HAVE_I386_GCC46_COMPILER || HAVE_I386_GCC47_COMPILER || HAVE_I386_GCC48_COMPILER || HAVE_I386_GCC49_COMPILER || HAVE_I386_GCC5_COMPILER || HAVE_I386_GCC6_COMPILER || HAVE_I386_GCC7_COMPILER || HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER
    unsigned int preferred_compiler = getOption<unsigned int>(OPT_default_compiler);
    std::string archive_files;
    bool is_subnormals =
@@ -3551,6 +3576,18 @@ void BambuParameter::add_bambu_library(std::string lib)
    if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC7))
    {
       setOption(OPT_archive_files, archive_files + mingw_prefix+PANDA_LIB_INSTALLDIR "/panda/lib"+lib+"_gcc7" + VSuffix + ".a");
+   }
+#endif
+#if HAVE_I386_CLANG4_COMPILER
+   if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG4))
+   {
+      setOption(OPT_archive_files, archive_files + mingw_prefix+PANDA_LIB_INSTALLDIR "/panda/lib"+lib+"_clang4" + VSuffix + ".a");
+   }
+#endif
+#if HAVE_I386_CLANG5_COMPILER
+   if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG5))
+   {
+      setOption(OPT_archive_files, archive_files + mingw_prefix+PANDA_LIB_INSTALLDIR "/panda/lib"+lib+"_clang5" + VSuffix + ".a");
    }
 #endif
 }

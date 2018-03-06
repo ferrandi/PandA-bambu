@@ -23,7 +23,7 @@
 
 #include "math_privatef.h"
 
-float __builtin_nextafterf(float x, float y)
+float nextafterf(float x, float y)
 {
     int hx,hy,ix,iy;
 
@@ -72,9 +72,9 @@ float __builtin_nextafterf(float x, float y)
 
 #ifdef _DOUBLE_IS_32BITS
 
-double __builtin_nextafter(double x, double y)
+double nextafter(double x, double y)
 {
-	return (double) __builtin_nextafterf((float) x, (float) x);
+    return (double) nextafterf((float) x, (float) x);
 }
 
 #endif /* defined(_DOUBLE_IS_32BITS) */

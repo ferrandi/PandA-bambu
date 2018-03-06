@@ -121,9 +121,6 @@ class MultipleEntryIfReduction : public FunctionFrontendFlowStep
       ///The allocation information
       AllocationInformationConstRef allocation_information;
 
-      /// when true use counting has to be re-executed
-      bool restart_dead_code;
-
       ///Estimate the area cost of the statements of a basic block
       double GetAreaCost(const std::list<tree_nodeRef> & list_of_stmt) const;
 

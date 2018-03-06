@@ -127,7 +127,7 @@ DesignFlowStep_Status mem_cg_ext::Exec()
    {
       const std::string fu_name =
          AppM->CGetFunctionBehavior(fu_id)->CGetBehavioralHelper()->get_function_name();
-      if (fu_name != "__builtin_memcpy" and fu_name != "__builtin_memset")
+      if (fu_name != "__internal_bambu_memcpy" and fu_name != "__internal_bambu_memset")
       {
          continue;
       }
@@ -205,7 +205,7 @@ DesignFlowStep_Status mem_cg_ext::Exec()
                   std::vector<tree_nodeRef> args;
                   // dst is always the ssa on the rhs
                   args.push_back(mr_lhs->op0);
-                  if (fu_name == "__builtin_memcpy")
+                  if (fu_name == "__internal_bambu_memcpy")
                   {
                      THROW_ASSERT(rhs_kind == mem_ref_K or
                            rhs_kind == parm_decl_K or
@@ -320,7 +320,7 @@ DesignFlowStep_Status mem_cg_ext::Exec()
                         copy_byte_size = src_size / 8;
                      }
                   }
-                  else if (fu_name == "__builtin_memset")
+                  else if (fu_name == "__internal_bambu_memset")
                   {
                      THROW_ASSERT(GetPointer<const constructor>(rhs_node)->list_of_idx_valu.empty(), "");
 

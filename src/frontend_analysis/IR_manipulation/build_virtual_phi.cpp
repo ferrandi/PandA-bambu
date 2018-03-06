@@ -311,7 +311,8 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
       std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> ssa_IR_schema;
       ssa_IR_schema[TOK(TOK_TYPE)] = STR(tree_helper::get_type_index(TM, sn->index));
       ssa_IR_schema[TOK(TOK_VERS)] = STR(ssa_vers);
-      ssa_IR_schema[TOK(TOK_VAR)] = STR(sn->var->index);
+      if(sn->var)
+         ssa_IR_schema[TOK(TOK_VAR)] = STR(sn->var->index);
       ssa_IR_schema[TOK(TOK_VOLATILE)] = STR(true);
       ssa_IR_schema[TOK(TOK_VIRTUAL)] = STR(true);
       TM->create_tree_node(volatile_id, ssa_name_K, ssa_IR_schema);
@@ -455,7 +456,8 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
                std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> IR_schema;
                IR_schema[TOK(TOK_TYPE)] = STR(tree_helper::get_type_index(TM, sn->index));
                IR_schema[TOK(TOK_VERS)] = STR(phi_ssa_vers);
-               IR_schema[TOK(TOK_VAR)] = STR(sn->var->index);
+               if(sn->var)
+                  IR_schema[TOK(TOK_VAR)] = STR(sn->var->index);
                IR_schema[TOK(TOK_VOLATILE)] = STR(false);
                IR_schema[TOK(TOK_VIRTUAL)] = STR(true);
                TM->create_tree_node(phi_def_ssa_node_nid, ssa_name_K, IR_schema);

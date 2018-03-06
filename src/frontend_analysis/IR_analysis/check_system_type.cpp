@@ -241,7 +241,7 @@ void CheckSystemType::recursive_examinate(const tree_nodeRef & curr_tn, const un
          function_decl * fd = GetPointer<function_decl>(curr_tn);
          bool is_system;
          std::string include = std::get<0>(behavioral_helper->get_definition(index, is_system));
-         if(fd and library_system_functions.find(tree_helper::print_function_name(TM, fd)) != library_system_functions.end())
+         if(fd and (library_system_functions.find(tree_helper::print_function_name(TM, fd)) != library_system_functions.end()))
          {
             dn->library_system_flag = true;
          }
@@ -898,6 +898,8 @@ void CheckSystemType::build_include_structures()
    ///Building library system function
    library_system_includes.insert("math.h");
    library_system_functions.insert("__errno_location");
+   library_system_functions.insert("exit");
+   library_system_functions.insert("abort");
 
 #if HAVE_LEON3
    ///Building not supported function
@@ -907,12 +909,12 @@ void CheckSystemType::build_include_structures()
    undefined_library_function_include["atof"] = "stdlib.h";
    undefined_library_function_include["atoi"] = "stdlib.h";
    undefined_library_function_include["srand48"] = "stdlib.h";
-   undefined_library_function_include["__builtin_va_start"] = "stdarg.h";
-   undefined_library_function_include["__builtin_va_end"] = "stdarg.h";
-   undefined_library_function_include["__builtin_lgamma"] = "math.h";
-   undefined_library_function_include["__builtin_lgammaf"] = "math.h";
-   undefined_library_function_include["__builtin_lgamma_r"] = "math.h";
-   undefined_library_function_include["__builtin_lgammaf_r"] = "math.h";
+   undefined_library_function_include["va_start"] = "stdarg.h";
+   undefined_library_function_include["va_end"] = "stdarg.h";
+   undefined_library_function_include["lgamma"] = "math.h";
+   undefined_library_function_include["lgammaf"] = "math.h";
+   undefined_library_function_include["lgamma_r"] = "math.h";
+   undefined_library_function_include["lgammaf_r"] = "math.h";
 }
 
 void CheckSystemType::getRealInclName(const std::string&include, std::string & real_name) const

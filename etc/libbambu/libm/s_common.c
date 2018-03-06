@@ -42,7 +42,7 @@ _LIB_VERSION_TYPE _LIB_VERSION = _IEEE_;
 #endif
 #endif
 
-int __builtin_matherr(struct exception *x)
+int matherr(struct exception *x)
 {
 	int n=0;
 	if(x->arg1!=x->arg1) return 0;

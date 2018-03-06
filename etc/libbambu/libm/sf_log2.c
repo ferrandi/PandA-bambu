@@ -27,14 +27,14 @@
 
 #include "math_privatef.h"
 
-float __builtin_log2f(float x)		/* wrapper log2f */
+float log2f(float x)		/* wrapper log2f */
 {
-  return (__builtin_logf(x) / (float_t) M_LN2);
+  return (logf(x) / (float_t) M_LN2);
 }
 
 #ifdef _DOUBLE_IS_32BITS
 
-double __builtin_log2(double x)
+double log2(double x)
 {
 	return (double) log2f((float) x);
 }

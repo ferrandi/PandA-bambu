@@ -24,7 +24,7 @@
 #include "math_privatef.h"
 
 static const float
-half[2] = {0.5,-0.5},
+half[2] = {0.5f,-0.5f},
 ln2hi   = 6.9314575195e-1f,  /* 0x3f317200 */
 ln2lo   = 1.4286067653e-6f,  /* 0x35bfbe8e */
 invln2  = 1.4426950216e+0f,  /* 0x3fb8aa3b */
@@ -87,5 +87,5 @@ float __hide_ieee754_expf(float x)
 	x = 1 + (x*c/(2-c) - lo + hi);
 	if (k == 0)
 		return x;
-	return __builtin_scalbnf(x, k);
+    return scalbnf(x, k);
 }

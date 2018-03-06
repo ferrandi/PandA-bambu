@@ -81,14 +81,14 @@ double __hide_ieee754_log10(double x)
 /* 
  * wrapper log10(X)
  */
-double __builtin_log10(double x)		/* wrapper log10 */
+double log10(double x)		/* wrapper log10 */
 {
 #ifdef _IEEE_LIBM
 	return __hide_ieee754_log10(x);
 #else
 	double z;
 	z = __hide_ieee754_log10(x);
-	if(_LIB_VERSION == _IEEE_ || __builtin_isnan(x)) return z;
+    if(_LIB_VERSION == _IEEE_ || isnan(x)) return z;
 	if(x<=0.0) {
 	    if(x==0.0)
 	        return __hide_kernel_standard(x,x,18); /* log10(0) */

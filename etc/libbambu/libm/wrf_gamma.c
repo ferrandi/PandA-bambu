@@ -30,49 +30,49 @@
 #include <errno.h>
 #endif
 
-float __builtin_gammaf_r(float x, int *signgamp) /* wrapper lgammaf_r */
+float gammaf_r(float x, int *signgamp) /* wrapper lgammaf_r */
 {
 #ifdef _IEEE_LIBM
-	return __hide_ieee754_lgammaf_r(x,signgamp);
+    return __hide_ieee754_lgammaf_r(x,signgamp);
 #else
         float y;
-	struct exception exc;
+    struct exception exc;
         y = __hide_ieee754_lgammaf_r(x,signgamp);
         if(_LIB_VERSION == _IEEE_) return y;
         if(!__finitef(y)&&__finitef(x)) {
-#ifndef HUGE_VAL 
+#ifndef HUGE_VAL
 #define HUGE_VAL inf
-	    double inf = 0.0;
+        double inf = 0.0;
 
-	    SET_HIGH_WORD(inf,0x7ff00000);	/* set inf to infinite */
+        SET_HIGH_WORD(inf,0x7ff00000);	/* set inf to infinite */
 #endif
-	    exc.name = "gammaf";
-	    exc.err = 0;
-	    exc.arg1 = exc.arg2 = (double)x;
+        exc.name = "gammaf";
+        exc.err = 0;
+        exc.arg1 = exc.arg2 = (double)x;
             if (_LIB_VERSION == _SVID_)
                 exc.retval = HUGE;
             else
                 exc.retval = HUGE_VAL;
-            if(__builtin_floorf(x)==x&&x<=(float)0.0) {
-		/* gammaf(-integer) or gamma(0) */
-		exc.type = SING;
-		if (_LIB_VERSION == _POSIX_)
-		  errno = EDOM;
-		else if (!__builtin_matherr(&exc)) {
-		  errno = EDOM;
-		}
+            if(floorf(x)==x&&x<=(float)0.0) {
+        /* gammaf(-integer) or gamma(0) */
+        exc.type = SING;
+        if (_LIB_VERSION == _POSIX_)
+          errno = EDOM;
+        else if (!matherr(&exc)) {
+          errno = EDOM;
+        }
             } else {
-		/* gammaf(finite) overflow */
-		exc.type = OVERFLOW;
+        /* gammaf(finite) overflow */
+        exc.type = OVERFLOW;
                 if (_LIB_VERSION == _POSIX_)
-		  errno = ERANGE;
-                else if (!__builtin_matherr(&exc)) {
+          errno = ERANGE;
+                else if (!matherr(&exc)) {
                   errno = ERANGE;
                 }
             }
-	    if (exc.err != 0)
-	       errno = exc.err;
-	    return (float)exc.retval; 
+        if (exc.err != 0)
+           errno = exc.err;
+        return (float)exc.retval;
         } else
             return y;
 #endif

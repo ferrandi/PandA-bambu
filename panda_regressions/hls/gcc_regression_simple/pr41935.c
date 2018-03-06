@@ -2,6 +2,8 @@
 
 extern void abort (void);
 
+#ifndef __clang__
+
 long int
 foo (int n, int i, int j)
 {
@@ -23,3 +25,10 @@ main (void)
     abort ();
   return 0;
 }
+#else
+int
+main (void)
+{
+  return 0;
+}
+#endif

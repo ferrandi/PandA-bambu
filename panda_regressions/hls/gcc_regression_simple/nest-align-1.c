@@ -15,6 +15,7 @@ check (int *i)
     abort ();
 }
 
+#ifndef __clang__
 void
 foo (void)
 {
@@ -31,10 +32,13 @@ foo (void)
   if (jj != 20)
     abort ();
 }
+#endif
 
 int
 main()
 {
+#ifndef __clang__
   foo ();
+#endif
   return 0;
 }

@@ -36,7 +36,12 @@
  *
 */
 
+#include "config_HAVE_I386_CLANG4_COMPILER.hpp"
+#include "config_HAVE_I386_CLANG5_COMPILER.hpp"
+
 #include "test_vector_parser.hpp"
+
+#include "gcc_wrapper.hpp"
 
 /// utility/ include
 #include "dbgPrintHelper.hpp"
@@ -104,9 +109,20 @@ void TestVectorParser::ParseUserString
 const
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining " + user_input_string);
+   bool ParameterRenaming = false;
+#if HAVE_I386_CLANG4_COMPILER
+   if(parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANG4)
+      ParameterRenaming = true;
+#endif
+#if HAVE_I386_CLANG5_COMPILER
+   if(parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANG5)
+      ParameterRenaming = true;
+#endif
+
    test_vectors.push_back(std::map<std::string, std::string>());
    std::vector<std::string> testbench_parameters;
    boost::algorithm::split(testbench_parameters, user_input_string, boost::algorithm::is_any_of(","));
+   unsigned int index = 0;
    for(auto parameter : testbench_parameters)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Examining " + parameter);
@@ -116,8 +132,17 @@ const
       {
          THROW_ERROR("Error in processing --simulate arg");
       }
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---" + temp[0] + "=" + temp[1]);
-      test_vectors.back()[temp[0]] = temp[1];
+      if(ParameterRenaming)
+      {
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---P" + STR(index) + "=" + temp[1]);
+         test_vectors.back()["P"+STR(index)] = temp[1];
+      }
+      else
+      {
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---" + temp[0] + "=" + temp[1]);
+         test_vectors.back()[temp[0]] = temp[1];
+      }
+      ++index;
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Examined " + user_input_string);
 }
@@ -259,7 +284,7 @@ DesignFlowStep_Status TestVectorParser::Exec()
    size_t n_vectors =
 #endif
    ParseTestVectors(HLSMgr->RSim->test_vectors);
-   PRINT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "Number of input test vectors: " + n_vectors);
+   PRINT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "Number of input test vectors: " + STR(n_vectors));
    return DesignFlowStep_Status::SUCCESS;
 }
 

@@ -1096,12 +1096,10 @@ static __float32 __uint32_to_float32( __uint32 a_orig )
     __flag zSign;
     __uint64 absA;
     __int8 shiftCount;
-    __int64 a;
 
     if ( a_orig == 0 ) return 0;
-    a = a_orig;
     zSign = 0;
-    absA = a;
+    absA = a_orig;
     shiftCount = __countLeadingZeros64( absA ) - 40;
     if ( 0 <= shiftCount ) {
         return __packFloat32( zSign, 0x95 - shiftCount, absA<<shiftCount );
@@ -1237,7 +1235,7 @@ static __float32 __int64_to_float32( __int64 a )
 
 }
 
-static __float64 __uint64_to_float32( __uint64 absA)
+static __float32 __uint64_to_float32( __uint64 absA)
 {
     __int8 shiftCount;
 
@@ -2070,7 +2068,7 @@ static __float32 __addsubFloat32_old( __float32 a, __float32 b, __flag bSign )
 //#define VOLATILE_DEF volatile
 #define VOLATILE_DEF
 
-static __float32 __addsubFloat32(__float32 a, __float32 b, __flag bSign)
+static inline __float32 __addsubFloat32(__float32 a, __float32 b, __flag bSign)
 {
     VOLATILE_DEF __bits32 aSig, bSig, shift_0;
     VOLATILE_DEF __bits8 aExp, bExp, expDiff8;
@@ -2374,7 +2372,7 @@ static __float32 __float32_mul( __float32 a, __float32 b )
     zExp = aExp + bExp - 0x7F;
     aSig = ( aSig | 0x00800000 )<<7;
     bSig = ( bSig | 0x00800000 )<<8;
-    zSig = __builtin_umulh32(aSig,bSig);
+    zSig = _umulh32(aSig,bSig);
     //__shift64RightJamming( ( (__bits64) aSig ) * bSig, 32, &zSig64 );
     //zSig = zSig64;
     if ( 0 <= (__sbits32) ( zSig<<1 ) ) {
@@ -2928,7 +2926,8 @@ static __uint32 __float64_to_uint32_round_to_zero( __float64 a )
     aSign = __extractFloat64Sign( a );
     if ( 0x41E < aExp ) {
         if ( ( aExp == 0x7FF ) && aSig ) aSign = 0;
-        goto invalid;
+        __float_raise( float_flag_invalid );
+        return 0x80000000;
     }
     else if ( aExp < 0x3FF ) {
 #ifndef NO_PARAMETRIC
@@ -2942,18 +2941,12 @@ static __uint32 __float64_to_uint32_round_to_zero( __float64 a )
     aSig >>= shiftCount;
     z = aSig;
     if ( aSign ) z = - z;
-    if ( ( z < 0 ) ^ aSign ) {
- invalid:
-        __float_raise( float_flag_invalid );
-        return 0x80000000;
-    }
     if ( ( aSig<<shiftCount ) != savedASig ) {
 #ifndef NO_PARAMETRIC
         __float_exception_flags |= float_flag_inexact;
 #endif
     }
     return z;
-
 }
 
 /*----------------------------------------------------------------------------
@@ -3539,7 +3532,7 @@ static __float64 __addsubFloat64_old( __float64 a, __float64 b, __flag bSign)
 }
 
 
-static __float64 __addsubFloat64( __float64 a, __float64 b, __flag bSign)
+static inline __float64 __addsubFloat64( __float64 a, __float64 b, __flag bSign)
 {
     VOLATILE_DEF __bits64 aSig, bSig, shift_0;
     VOLATILE_DEF __bits16 aExp, bExp, expDiff11;
@@ -3737,7 +3730,7 @@ static __float64 __float64_sub( __float64 a, __float64 b )
 *----------------------------------------------------------------------------*/
 
 static SF_UDItype
-__builtin_umul64(SF_UDItype u, SF_UDItype v)
+_umul64(SF_UDItype u, SF_UDItype v)
 {
      SF_UDItype t;
      SF_USItype u0, u1, v0, v1, k;
@@ -3881,8 +3874,8 @@ static __float64 __float64_mul( __float64 a, __float64 b )
 #endif
 #else
     __bits64 sigProdHigh, sigProdLow;
-    sigProdHigh = __builtin_umulh64(aSig,bSig);
-    sigProdLow = __builtin_umul64(aSig,bSig);
+    sigProdHigh = _umulh64(aSig,bSig);
+    sigProdLow = _umul64(aSig,bSig);
     sigProdLow_54 = sigProdLow & ((1ULL << 54)-1);
     sigProdHigh_52 = ((sigProdHigh << 10) | ((sigProdLow >> 54) & ((1ULL << 10)-1))) & ((1ULL << 52)-1);
 #endif

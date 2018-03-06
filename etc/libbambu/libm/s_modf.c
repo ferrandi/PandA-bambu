@@ -31,7 +31,7 @@
 
 //static const double one = 1.0;
 
-double __builtin_modf(double x, double *iptr)
+double modf(double x, double *iptr)
 {
 	int i0,i1,j0;
 	unsigned i;
@@ -57,7 +57,7 @@ double __builtin_modf(double x, double *iptr)
 	    *iptr = x*one;
 	    /* We must handle NaNs separately.  */
 	    if (j0 == 0x400 && ((i0 & 0xfffff) | i1))
-	      return __builtin_nan("");
+          return __builtin_nan("");
 	    INSERT_WORDS(x, GET_HI(x) & 0x80000000, 0);	/* return +-0 */
 	    return x;
 	} else {			/* fraction part in low x */

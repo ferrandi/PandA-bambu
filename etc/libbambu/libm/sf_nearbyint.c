@@ -20,16 +20,16 @@
 
 #include "math_privatef.h"
 
-float __builtin_nearbyintf(float x)
+float nearbyintf(float x)
 {
-  return __builtin_rintf(x);
+  return rintf(x);
 }
 
 #ifdef _DOUBLE_IS_32BITS
 
-double __builtin_nearbyint(double x)
+double nearbyint(double x)
 {
-  return (double) __builtin_nearbyintf((float) x);
+  return (double) nearbyintf((float) x);
 }
 
 #endif /* defined(_DOUBLE_IS_32BITS) */

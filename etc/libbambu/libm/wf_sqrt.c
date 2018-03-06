@@ -30,7 +30,7 @@
 #include <errno.h>
 #endif
 
-float __builtin_sqrtf(float x)		/* wrapper sqrtf */
+float sqrtf(float x)		/* wrapper sqrtf */
 {
 #ifdef _IEEE_LIBM
 	return __hide_ieee754_sqrtf(x);
@@ -38,7 +38,7 @@ float __builtin_sqrtf(float x)		/* wrapper sqrtf */
 	float z;
 	struct exception exc;
 	z = __hide_ieee754_sqrtf(x);
-	if(_LIB_VERSION == _IEEE_ || __builtin_isnan(x)) return z;
+    if(_LIB_VERSION == _IEEE_ || isnan(x)) return z;
 	if(x<(float)0.0) {
             /* sqrtf(negative) */
             exc.type = DOMAIN;
@@ -51,7 +51,7 @@ float __builtin_sqrtf(float x)		/* wrapper sqrtf */
               exc.retval = 0.0/0.0;
             if (_LIB_VERSION == _POSIX_) 
               errno = EDOM;
-            else if (!__builtin_matherr(&exc)) {
+            else if (!matherr(&exc)) {
               errno = EDOM;
             }
             if (exc.err != 0)
@@ -64,9 +64,9 @@ float __builtin_sqrtf(float x)		/* wrapper sqrtf */
 
 #ifdef _DOUBLE_IS_32BITS
 
-double __builtin_sqrt(double x)
+double sqrt(double x)
 {
-	return (double) __builtin_sqrtf((float) x);
+    return (double) sqrtf((float) x);
 }
 
 #endif /* defined(_DOUBLE_IS_32BITS) */

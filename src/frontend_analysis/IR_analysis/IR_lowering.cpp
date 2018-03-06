@@ -34,7 +34,7 @@
  * @file IR_lowering.cpp
  * @brief Decompose some complex gimple statements into a set of simpler operations.
  * Matteo M. Fusi and Matteo Locatelli modifies the division by an integer constant
- * integrating the follow work done by Florent de Dinichen:
+ * integrating the work done in this paper:
  * Florent de Dinechin, “Multiplication by Rational Constants” -
  * IEEE Transactions on Circuit Systems-II: Express Briefs, Vol. 59, NO 2, february 2012
  *

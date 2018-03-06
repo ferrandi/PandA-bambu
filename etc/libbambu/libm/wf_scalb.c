@@ -33,9 +33,9 @@
 #endif
 
 #ifdef _SCALB_INT
-	float __builtin_scalbf(float x, int fn)		/* wrapper scalbf */
+    float scalbf(float x, int fn)		/* wrapper scalbf */
 #else
-	float __builtin_scalbf(float x, float fn)		/* wrapper scalbf */
+    float scalbf(float x, float fn)		/* wrapper scalbf */
 #endif
 {
 #ifdef _IEEE_LIBM
@@ -51,7 +51,7 @@
 	struct exception exc;
 	z = __hide_ieee754_scalbf(x,fn);
 	if(_LIB_VERSION == _IEEE_) return z;
-	if(!(__finitef(z)||__builtin_isnan(z))&&__finitef(x)) {
+    if(!(__finitef(z)||isnan(z))&&__finitef(x)) {
 	    /* scalbf overflow; SVID also returns +-HUGE_VAL */
 	    exc.type = OVERFLOW;
 	    exc.name = "scalbf";
@@ -61,7 +61,7 @@
 	    exc.retval = x > 0.0 ? HUGE_VAL : -HUGE_VAL;
 	    if (_LIB_VERSION == _POSIX_)
 	       errno = ERANGE;
-	    else if (!__builtin_matherr(&exc)) {
+        else if (!matherr(&exc)) {
 	       errno = ERANGE;
 	    }
 	    if (exc.err != 0)
@@ -78,7 +78,7 @@
 	    exc.retval = copysign(0.0,x);
 	    if (_LIB_VERSION == _POSIX_)
 	       errno = ERANGE;
-	    else if (!__builtin_matherr(&exc)) {
+        else if (!matherr(&exc)) {
 	       errno = ERANGE;
 	    }
 	    if (exc.err != 0)
@@ -95,15 +95,15 @@
 #ifdef _DOUBLE_IS_32BITS
 
 #ifdef _SCALB_INT
-	double __builtin_scalb(double x, int fn)
+    double scalb(double x, int fn)
 #else 
-	double __builtin_scalb(double x, double fn)
+    double scalb(double x, double fn)
 #endif
 {
 #ifdef _SCALB_INT
-	return (double) __builtin_scalbf((float) x, fn);
+    return (double) scalbf((float) x, fn);
 #else
-	return (double) __builtin_scalbf((float) x, (float) fn);
+    return (double) scalbf((float) x, (float) fn);
 #endif
 }
 

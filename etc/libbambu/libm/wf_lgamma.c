@@ -28,7 +28,7 @@
 #endif
 extern int signgam;
 
-float __builtin_lgammaf(float x)
+float lgammaf(float x)
 {
 #ifdef _IEEE_LIBM
 	return __hide_ieee754_lgammaf_r(x,&signgam);
@@ -51,12 +51,12 @@ float __builtin_lgammaf(float x)
                exc.retval = HUGE;
             else
                exc.retval = HUGE_VAL;
-	    if(__builtin_floorf(x)==x&&x<=(float)0.0) {
+        if(floorf(x)==x&&x<=(float)0.0) {
 		/* lgammaf(-integer) */
 		exc.type = SING;
 		if (_LIB_VERSION == _POSIX_)
 		   errno = EDOM;
-		else if (!__builtin_matherr(&exc)) {
+        else if (!matherr(&exc)) {
 		   errno = EDOM;
 		}
 
@@ -79,9 +79,9 @@ float __builtin_lgammaf(float x)
 
 #ifdef _DOUBLE_IS_32BITS
 
-double __builtin_lgamma(double x)
+double lgamma(double x)
 {
-	return (double) __builtin_lgammaf((float) x);
+    return (double) lgammaf((float) x);
 }
 
 #endif /* defined(_DOUBLE_IS_32BITS) */

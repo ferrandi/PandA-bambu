@@ -164,7 +164,7 @@ test3 (void)
   chk_calls = 0;
   vx = stpcpy (a.buf1 + 2, s3 + 3);
   vx = stpcpy (r, s3 + 2);
-  r = l1 == 1 ? __builtin_malloc (4) : &a.buf2[7];
+  r = l1 == 1 ? malloc (4) : &a.buf2[7];
   vx = stpcpy (r, s2 + 2);
   vx = stpcpy (r + 2, s3 + 3);
   r = buf3;
@@ -189,7 +189,7 @@ test3 (void)
   chk_calls = 0;
   vx = stpcpy (a.buf1 + 2, "");
   vx = stpcpy (r, "a");
-  r = l1 == 1 ? __builtin_malloc (4) : &a.buf2[7];
+  r = l1 == 1 ? malloc (4) : &a.buf2[7];
   vx = stpcpy (r, s1 + 1);
   r = buf3;
   l = "abc";
@@ -263,9 +263,11 @@ main_test (void)
   /* Object size checking is only intended for -O[s123].  */
   return;
 #endif
+#ifndef __clang__
   __asm ("{||assign out1 = in1;\nassign done_port = start_port;| out1 <= in1;\ndone_port <= start_port;}" : "=r" (s2) : "0" (s2));
   __asm ("{||assign out1 = in1;\nassign done_port = start_port;| out1 <= in1;\ndone_port <= start_port;}" : "=r" (s3) : "0" (s3));
   __asm ("{||assign out1 = in1;\nassign done_port = start_port;| out1 <= std_logic_vector(resize(in1, BITSIZE_out1));\ndone_port <= start_port;}" : "=r" (l1) : "0" (l1));
+#endif
   test1 ();
   s4 = p;
   //test2 ();
@@ -274,8 +276,10 @@ main_test (void)
 }
 int main()
 {
+#ifndef __clang__
 #if (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
   main_test();
+#endif
 #endif
   return 0;
 }

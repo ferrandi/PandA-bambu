@@ -25,13 +25,13 @@
  * Use ilogb instead.
  */
 
-double __builtin_logb(double x)
+double logb(double x)
 {
 	int lx,ix;
 	ix = (GET_HI(x))&0x7fffffff;	/* high |x| */
 	lx = GET_LO(x);			/* low x */
-	if((ix|lx)==0) return -1.0/__builtin_fabs(x);
-	if(ix>=0x7ff00000) return __builtin_fabs(x);
+    if((ix|lx)==0) return -1.0/fabs(x);
+    if(ix>=0x7ff00000) return fabs(x);
 	if((ix>>=20)==0) 			/* IEEE 754 logb */
 		return -1022.0; 
 	else

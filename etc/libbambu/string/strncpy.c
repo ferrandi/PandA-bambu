@@ -6,7 +6,7 @@
 /* Public domain.  */
 #include <stddef.h>
 
-char *__builtin_strncpy(char *__restrict dest, const char *__restrict src, size_t n)
+char *strncpy(char *__restrict dest, const char *__restrict src, size_t n)
 {
   char *d = dest;
   while (n)

@@ -25,5 +25,6 @@
       <tech_constraints fu_name="CLOSE" fu_library="STD_FU" n="1"/>
       <tech_constraints fu_name="ui_ternary_alu_expr_FU" fu_library="STD_FU" n="0"/>
       <tech_constraints fu_name="ternary_alu_expr_FU" fu_library="STD_FU" n="0"/>
+      <tech_constraints fu_name="__builtin_putchar" fu_library="STD_FU" n="1"/>
    </HLS_constraints>
 </constraints>

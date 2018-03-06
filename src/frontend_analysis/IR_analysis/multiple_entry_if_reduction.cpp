@@ -107,8 +107,7 @@ REF_FORWARD_DECL(tree_node_dup);
 #define MAX_DOUBLE std::numeric_limits<double>::max();
 
 MultipleEntryIfReduction::MultipleEntryIfReduction (const ParameterConstRef _parameters, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager) :
-   FunctionFrontendFlowStep (_AppM, _function_id, MULTIPLE_ENTRY_IF_REDUCTION, _design_flow_manager, _parameters),
-   restart_dead_code(false)
+   FunctionFrontendFlowStep (_AppM, _function_id, MULTIPLE_ENTRY_IF_REDUCTION, _design_flow_manager, _parameters)
 {
    debug_level = parameters->get_class_debug_level (GET_CLASS(*this),DEBUG_LEVEL_NONE);
 }

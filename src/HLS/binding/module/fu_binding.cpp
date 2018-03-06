@@ -1816,7 +1816,7 @@ void fu_binding::specialize_memory_unit
    else
    {
       fu_module->set_parameter("n_elements", boost::lexical_cast<std::string>(vec_size));
-      fu_module->set_parameter("data_size", boost::lexical_cast<std::string>(elts_size));
+      fu_module->set_parameter("data_size", boost::lexical_cast<std::string>(std::max(elts_size,8u)));
    }
    if(HLSMgr->Rmem->is_private_memory(ar))
       fu_module->set_parameter("PRIVATE_MEMORY", boost::lexical_cast<std::string>(1));
@@ -1842,7 +1842,7 @@ void fu_binding::fill_array_ref_memory(std::ostream &init_file_a, std::ostream &
       init_node = ar_node;
    tree_nodeRef array_type_node = tree_helper::get_type_node(ar_node, type_index);
    unsigned int element_precision = 0;
-   if (GetPointer<array_type>(array_type_node))
+   if (tree_helper::is_an_array (TreeM, type_index))
    {
       std::vector<unsigned int> dims;
       tree_helper::get_array_dim_and_bitsize(TreeM, type_index, dims, elts_size);
@@ -2534,6 +2534,49 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
                ull_value = mem->get_base_address(addr_expr_op_idx, addr_expr_op_idx);
                break;
             }
+            case CASE_BINARY_EXPRESSION:
+            {
+               if (addr_expr_op->get_kind() == mem_ref_K)
+               {
+                  mem_ref* mr = GetPointer<mem_ref>(addr_expr_op);
+                  tree_nodeRef offset = GET_NODE(mr->op1);
+                  if(offset->get_kind() == integer_cst_K)
+                  {
+                     auto base = mr->op0;
+                     auto base_index = GET_INDEX_NODE(base);
+                     auto base_node = GET_NODE(base);
+                     auto base_code = base_node->get_kind();
+                     if(base_code == var_decl_K)
+                     {
+                        THROW_ASSERT(mem->has_base_address(base_index), "missing base address for: @" + STR(base_index));
+                        ull_value = mem->get_base_address(base_index, 0) +
+                                    static_cast<unsigned int>(tree_helper::get_integer_cst_value(GetPointer<integer_cst>(offset)));
+                     }
+                     else if(base_code == addr_expr_K)
+                     {
+                        auto base1 = GetPointer<addr_expr>(base_node)->op;
+                        auto base1_index = GET_INDEX_NODE(base1);
+                        auto base1_node = GET_NODE(base1);
+                        auto base1_code = base1_node->get_kind();
+                        if(base1_code == var_decl_K)
+                        {
+                           THROW_ASSERT(mem->has_base_address(base1_index), "missing base address for: @" + STR(base1_index));
+                           ull_value = mem->get_base_address(base1_index, 0) +
+                                       static_cast<unsigned int>(tree_helper::get_integer_cst_value(GetPointer<integer_cst>(offset)));
+                        }
+                        else
+                           THROW_ERROR("addr_expr pattern not supported: " + std::string(addr_expr_op->get_kind_text())+ " @" + STR(addr_expr_op_idx) );
+                     }
+                     else
+                        THROW_ERROR("addr_expr pattern not supported: " + std::string(addr_expr_op->get_kind_text())+ " @" + STR(addr_expr_op_idx) );
+                  }
+                  else
+                     THROW_ERROR("addr_expr pattern not supported: " + std::string(addr_expr_op->get_kind_text())+ " @" + STR(addr_expr_op_idx) );
+               }
+               else
+                  THROW_ERROR("addr_expr pattern not supported: " + std::string(addr_expr_op->get_kind_text())+ " @" + STR(addr_expr_op_idx) );
+               break;
+            }
             case array_range_ref_K:
             case binfo_K:
             case bit_field_ref_K:
@@ -2578,7 +2621,6 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
             case void_cst_K:
             case vtable_ref_K:
             case with_cleanup_expr_K:
-            case CASE_BINARY_EXPRESSION:
             case CASE_CPP_NODES:
             case CASE_FAKE_NODES:
             case CASE_GIMPLE_NODES:

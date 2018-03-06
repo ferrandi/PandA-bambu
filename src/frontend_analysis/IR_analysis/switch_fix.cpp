@@ -352,7 +352,6 @@ DesignFlowStep_Status SwitchFix::InternalExec()
                   {
                      tree_nodeRef new_label_decl_reindex = TM->GetTreeReindex(new_label_decl_id);
                      cl->got = new_label_decl_reindex;
-                     break;
                   }
                }
                new_bb->PushFront(TM->GetTreeReindex(new_label_expr_id));
@@ -390,6 +389,7 @@ DesignFlowStep_Status SwitchFix::InternalExec()
             {
                const auto cle = GetPointer<const case_label_expr>(GET_NODE(goto_));
                THROW_ASSERT(cle, STR(goto_));
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Destination: " + STR(cle->got->index) + " CLE " + STR(cle->index));
                case_labels[cle->got->index].insert(goto_);
             }
 

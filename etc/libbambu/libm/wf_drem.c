@@ -15,7 +15,7 @@
 
 #include "math_privatef.h"
 
-float __builtin_dremf(float x, float y)
+float dremf(float x, float y)
 {
-	return __builtin_remainderf(x, y);
+    return remainderf(x, y);
 }

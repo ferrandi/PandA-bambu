@@ -5,7 +5,7 @@
 */
 #include <stddef.h>
 
-void *__builtin_memrchr(const void *s, int c, size_t n)
+void *memrchr(const void *s, int c, size_t n)
 {
   const unsigned char *r;
   r = ((unsigned char *)s) + ((size_t) n);

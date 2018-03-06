@@ -32,7 +32,7 @@
 //static const double
 //two54 =  1.80143985094819840000e+16; /* 0x43500000, 0x00000000 */
 
-double __builtin_frexp(double x, int *eptr)
+double frexp(double x, int *eptr)
 {
 	int  hx, ix, lx;
 	hx = GET_HI(x);

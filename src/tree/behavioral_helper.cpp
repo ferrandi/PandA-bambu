@@ -611,7 +611,7 @@ std::string BehavioralHelper::PrintVariable(unsigned int var) const
          name = PrintVariable(ssa_index);
       }
       THROW_ASSERT(sa->volatile_flag or sa->CGetDefStmts().size(), sa->ToString() + " has not define statement");
-      if (!sa->volatile_flag && GET_NODE(sa->CGetDefStmt())->get_kind() != gimple_nop_K)
+      if (sa->virtual_flag || (!sa->volatile_flag && GET_NODE(sa->CGetDefStmt())->get_kind() != gimple_nop_K))
       {
          name += ("_" + boost::lexical_cast<std::string>(sa->vers));
       }
@@ -2164,7 +2164,10 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
          }
          else
          {
-            res = res + "*((" + tree_helper::print_type(TM, vce->type->index) + " * ) &(" + print_node(vce->op->index, v, vppf)+ "))";
+            if(tree_helper::is_a_pointer(TM, vce->type->index))
+               res = res + "((" + tree_helper::print_type(TM, vce->type->index) + ") (" + print_node(vce->op->index, v, vppf)+ "))";
+            else
+               res = res + "*((" + tree_helper::print_type(TM, vce->type->index) + " * ) &(" + print_node(vce->op->index, v, vppf)+ "))";
          }
          break;
       }

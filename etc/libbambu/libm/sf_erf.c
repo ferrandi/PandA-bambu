@@ -98,7 +98,7 @@ sb5  =  2.5530502930e+03, /* 0x451f90ce */
 sb6  =  4.7452853394e+02, /* 0x43ed43a7 */
 sb7  = -2.2440952301e+01; /* 0xc1b38712 */
 
-float __builtin_erff(float x) 
+float erff(float x)
 {
 	int hx,ix,i;
 	float R,S,P,Q,s,y,z,r;
@@ -123,7 +123,7 @@ float __builtin_erff(float x)
 	    return x + x*y;
 	}
 	if(ix < 0x3fa00000) {		/* 0.84375 <= |x| < 1.25 */
-	    s = __builtin_fabsf(x)-one;
+        s = fabsf(x)-one;
 	    P = pa0+s*(pa1+s*(pa2+s*(pa3+s*(pa4+s*(pa5+s*pa6)))));
 	    Q = one+s*(qa1+s*(qa2+s*(qa3+s*(qa4+s*(qa5+s*qa6)))));
 	    if(hx>=0) return erx + P/Q; else return -erx - P/Q;
@@ -131,7 +131,7 @@ float __builtin_erff(float x)
 	if (ix >= 0x40c00000) {		/* inf>|x|>=6 */
 	    if(hx>=0) return one-tiny; else return tiny-one;
 	}
-	x = __builtin_fabsf(x);
+    x = fabsf(x);
  	s = one/(x*x);
 	if(ix< 0x4036DB6E) {	/* |x| < 1/0.35 */
 	    R=ra0+s*(ra1+s*(ra2+s*(ra3+s*(ra4+s*(
@@ -150,7 +150,7 @@ float __builtin_erff(float x)
 	if(hx>=0) return one-r/x; else return  r/x-one;
 }
 
-float __builtin_erfcf(float x) 
+float erfcf(float x)
 {
 	int hx,ix;
 	float R,S,P,Q,s,y,z,r;
@@ -177,7 +177,7 @@ float __builtin_erfcf(float x)
 	    }
 	}
 	if(ix < 0x3fa00000) {		/* 0.84375 <= |x| < 1.25 */
-	    s = __builtin_fabsf(x)-one;
+        s = fabsf(x)-one;
 	    P = pa0+s*(pa1+s*(pa2+s*(pa3+s*(pa4+s*(pa5+s*pa6)))));
 	    Q = one+s*(qa1+s*(qa2+s*(qa3+s*(qa4+s*(qa5+s*qa6)))));
 	    if(hx>=0) {
@@ -187,7 +187,7 @@ float __builtin_erfcf(float x)
 	    }
 	}
 	if (ix < 0x41e00000) {		/* |x|<28 */
-	    x = __builtin_fabsf(x);
+        x = fabsf(x);
  	    s = one/(x*x);
 	    if(ix< 0x4036DB6D) {	/* |x| < 1/.35 ~ 2.857143*/
 	        R=ra0+s*(ra1+s*(ra2+s*(ra3+s*(ra4+s*(
@@ -213,14 +213,14 @@ float __builtin_erfcf(float x)
 
 #ifdef _DOUBLE_IS_32BITS
 
-double __builtin_erf(double x)
+double erf(double x)
 {
-	return (double) __builtin_erff((float) x);
+    return (double) erff((float) x);
 }
 
-double __builtin_erfc(double x)
+double erfc(double x)
 {
-	return (double) __builtin_erfcf((float) x);
+    return (double) erfcf((float) x);
 }
 
 #endif /* defined(_DOUBLE_IS_32BITS) */

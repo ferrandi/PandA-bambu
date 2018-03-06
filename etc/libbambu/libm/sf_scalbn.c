@@ -39,7 +39,7 @@ static float __local_copysignf(float x, float y)
 }
 
 
-float __builtin_scalbnf (float x, int n)
+float scalbnf (float x, int n)
 {
     int k,ix;
     GET_FLOAT_WORD(ix,x);
@@ -70,9 +70,9 @@ float __builtin_scalbnf (float x, int n)
 
 #ifdef _DOUBLE_IS_32BITS
 
-double __builtin_scalbn(double x, int n)
+double scalbn(double x, int n)
 {
-	return (double) __builtin_scalbnf((float) x, n);
+    return (double) scalbnf((float) x, n);
 }
 
 #endif /* defined(_DOUBLE_IS_32BITS) */

@@ -156,9 +156,17 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                         AppM->RegisterTransformation(GetName(), *stmt);
 #endif
                      }
+                     else
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---LHS ssa used: " + STR(ssa->CGetNumberUses()) + "-" + STR(ssa->CGetDefStmts().size()));
                   }
+                  else
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---LHS not ssa");
                }
+               else
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---VDEF statement");
             }
+            else
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Not gimple_assign statement");
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed statement");
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed assignments");

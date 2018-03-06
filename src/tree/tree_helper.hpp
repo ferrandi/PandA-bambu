@@ -188,12 +188,6 @@ class tree_helper
       bool has_function_return(const tree_managerConstRef tm, const unsigned int index);
 
       /**
-       * Return a string describing the functino type
-       * @param Tree node of the function type
-       */
-      static std::string getFunctionTypeString(tree_nodeRef FT);
-
-      /**
        * Return the list of tree nodes associated with the variable used by the node t.
        * @param first_level_only tells if we are performing inlining
        * @param t is a tree node (usually a function declaration).
@@ -333,6 +327,7 @@ class tree_helper
       static
       unsigned int get_field_idx(const tree_managerConstRef  TM, const unsigned int index, unsigned int idx);
 
+
       /**
        * Return the treenode of the type of node.
        * @param node is the treenode
@@ -396,7 +391,15 @@ class tree_helper
       bool is_a_complex(const tree_managerConstRef  TM, const unsigned int index);
 
       /**
-       * Return if treenode index is an array
+       * Return the true in case the struct is equivalent to an array. It has a single field which recursively end into a single arrays
+       * @param TM is the tree_manager
+       * @param index is the index of the record type
+       * @return the true in case this record could be considered as a single array
+       */
+      static bool is_record_array(const tree_managerConstRef  TM, const unsigned int index);
+
+      /**
+       * Return if treenode index is an array or it is equivalent to an array (record recursively having a single field ending into a single arrays)
        * @param TM is the tree_manager
        * @param index is the treenode index
        */

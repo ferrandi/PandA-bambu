@@ -20,9 +20,9 @@
 
 #include "math_private.h"
 
-double __builtin_nearbyint(double x)
+double nearbyint(double x)
 {
-  return __builtin_rint(x);
+  return rint(x);
 }
 
 

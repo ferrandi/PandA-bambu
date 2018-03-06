@@ -112,7 +112,7 @@
  * compiler will convert from decimal to binary accurately enough
  * to produce the hexadecimal values shown.
  */
-double __builtin_expm1(double x)
+double expm1(double x)
 {
 	double y,hi,lo,c=0,t,e,hxs,hfx,r1;
 	int k,xsb;

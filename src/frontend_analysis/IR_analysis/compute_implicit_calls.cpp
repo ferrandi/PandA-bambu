@@ -248,14 +248,14 @@ DesignFlowStep_Status compute_implicit_calls::InternalExec()
                      to_be_lowered_memset.push_front(std::make_pair(stmt,it_bb->second->number));
                   else
                   {
-                     unsigned int memset_function_id = TM->function_index("__builtin_memset");
+                     unsigned int memset_function_id = TM->function_index("__internal_bambu_memset");
                      THROW_ASSERT(AppM->GetFunctionBehavior(memset_function_id)->GetBehavioralHelper()->has_implementation(), "inconsistent behavioral helper");
                      AppM->GetCallGraphManager()->AddCallPoint(function_id, memset_function_id, GET_INDEX_NODE(stmt), FunctionEdgeInfo::CallType::direct_call);
                   }
                }
                else
                {
-                  unsigned int memcpy_function_id = TM->function_index("__builtin_memcpy");
+                  unsigned int memcpy_function_id = TM->function_index("__internal_bambu_memcpy");
                   THROW_ASSERT(AppM->GetFunctionBehavior(memcpy_function_id)->GetBehavioralHelper()->has_implementation(), "inconsistent behavioral helper");
                   AppM->GetCallGraphManager()->AddCallPoint(function_id, memcpy_function_id, GET_INDEX_NODE(stmt), FunctionEdgeInfo::CallType::direct_call);
                }

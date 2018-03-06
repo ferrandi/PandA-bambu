@@ -94,8 +94,10 @@ class flopoco_wrapper
    private:
       //no copy constructor
       flopoco_wrapper(const flopoco_wrapper& inst) = delete;
+#ifndef NDEBUG
       /// Current debug level
       int debug_level;
+#endif
       /// Generated Functional Units
       std::unordered_map<std::string, flopoco::Operator *> FUs;
       /// Set of Functional Units written to a .vhdl file
@@ -110,8 +112,6 @@ class flopoco_wrapper
       typedef enum { top, wrapped, in_wrap, out_wrap } component_type;
       /// unit type
       typedef enum { UT_ADD, UT_SUB, UT_MULT, UT_DIV, UT_FF_CONV, UT_ADDSUB, UT_UFIX2FP, UT_IFIX2FP, UT_FP2UFIX, UT_FP2IFIX, UT_EXP, UT_SQRT, UT_compare_expr, UT_LOG, UT_POW, UT_UNKNOWN } unit_type;
-
-      double target_frequency;
 
       unit_type type;
 

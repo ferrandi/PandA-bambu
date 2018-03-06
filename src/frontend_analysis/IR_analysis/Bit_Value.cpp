@@ -603,7 +603,7 @@ void Bit_Value::initialize()
                // never analyze artificial calls
 #if HAVE_ASSERTS
                const FunctionBehaviorConstRef FB = AppM->CGetFunctionBehavior(function_id);
-               THROW_ASSERT(AppM->CGetFunctionBehavior(called_id)->CGetBehavioralHelper()->get_function_name() == "__builtin_memcpy",
+               THROW_ASSERT(AppM->CGetFunctionBehavior(called_id)->CGetBehavioralHelper()->get_function_name() == "__internal_bambu_memcpy",
                      "function " + FB->CGetBehavioralHelper()->get_function_name() + " calls function " +
                      AppM->CGetFunctionBehavior(called_id)->CGetBehavioralHelper()->get_function_name() +
                      " with an artificial call: this should not happen");

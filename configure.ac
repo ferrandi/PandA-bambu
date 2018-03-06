@@ -359,6 +359,9 @@ panda_USE_LIB_ILP=no;
 MIN_GCC_VERSION=0.0.0
 MAX_GCC_VERSION=9.9.9
 
+MIN_CLANG_VERSION=0.0.0
+MAX_CLANG_VERSION=9.9.9
+
 
 ################################################################################
 #                                                                              #
@@ -412,6 +415,8 @@ if test "x$panda_USE_BAMBU" = xyes; then
   panda_USE_I386_GCC=yes;
   AS_VERSION_COMPARE($MIN_GCC_VERSION, [4.5.0], [MIN_GCC_VERSION=4.5.0],,)
   AS_VERSION_COMPARE($MAX_GCC_VERSION, [8.0.0],,,[MAX_GCC_VERSION=8.0.0])
+  AS_VERSION_COMPARE($MIN_CLANG_VERSION, [4.0.0], [MIN_CLANG_VERSION=4.0.0],,)
+  AS_VERSION_COMPARE($MAX_CLANG_VERSION, [6.0.0],,,[MAX_CLANG_VERSION=6.0.0])
   panda_USE_LIB_HLS=yes;
   panda_USE_LIB_HOST_PROFILING=yes;
   panda_USE_LIB_TECHNOLOGY=yes;
@@ -2691,7 +2696,10 @@ if test "x$panda_USE_I386_GCC" = xyes; then
    AC_CHECK_GCC5_I386_VERSION($MIN_GCC_VERSION,$MAX_GCC_VERSION)
    AC_CHECK_GCC6_I386_VERSION($MIN_GCC_VERSION,$MAX_GCC_VERSION)
    AC_CHECK_GCC7_I386_VERSION($MIN_GCC_VERSION,$MAX_GCC_VERSION)
-   if test "x$I386_GCC45_PLUGIN_COMPILER" = x && test "x$I386_GCC46_PLUGIN_COMPILER" = x && test "x$I386_GCC47_PLUGIN_COMPILER" = x && test "x$I386_GCC48_PLUGIN_COMPILER" = x && test "x$I386_GCC49_PLUGIN_COMPILER" = x && test "x$I386_GCC5_PLUGIN_COMPILER" = x && test "x$I386_GCC6_PLUGIN_COMPILER" = x && test "x$I386_GCC7_PLUGIN_COMPILER" = x; then
+   AC_CHECK_CLANG4_I386_VERSION($MIN_CLANG_VERSION,$MAX_CLANG_VERSION)
+   AC_CHECK_CLANG5_I386_VERSION($MIN_CLANG_VERSION,$MAX_CLANG_VERSION)
+
+   if test "x$I386_GCC45_PLUGIN_COMPILER" = x && test "x$I386_GCC46_PLUGIN_COMPILER" = x && test "x$I386_GCC47_PLUGIN_COMPILER" = x && test "x$I386_GCC48_PLUGIN_COMPILER" = x && test "x$I386_GCC49_PLUGIN_COMPILER" = x && test "x$I386_GCC5_PLUGIN_COMPILER" = x && test "x$I386_GCC6_PLUGIN_COMPILER" = x && test "x$I386_GCC7_PLUGIN_COMPILER" = x && test "x$I386_CLANG4_PLUGIN_COMPILER" = x && test "x$I386_CLANG5_PLUGIN_COMPILER" = x; then
       AC_MSG_ERROR("gcc with support to -m32 and plugin not found")
    fi
 fi
@@ -2748,12 +2756,23 @@ AM_CONDITIONAL(BUILD_I386_GCC7_SSA_PLUGIN, test "x$build_I386_GCC7_SSA_PLUGIN" =
 AM_CONDITIONAL(BUILD_I386_GCC7_SSA_PLUGINCPP, test "x$build_I386_GCC7_SSA_PLUGINCPP" = xyes)
 AM_CONDITIONAL(BUILD_I386_GCC7_TOPFNAME_PLUGIN, test "x$build_I386_GCC7_TOPFNAME_PLUGIN" = xyes)
 
+AM_CONDITIONAL(BUILD_I386_CLANG4, test "x$build_I386_CLANG4" = xyes)
+AM_CONDITIONAL(BUILD_I386_CLANG4_EMPTY_PLUGIN, test "x$build_I386_CLANG4_EMPTY_PLUGIN" = xyes)
+AM_CONDITIONAL(BUILD_I386_CLANG4_SSA_PLUGIN, test "x$build_I386_CLANG4_SSA_PLUGIN" = xyes)
+AM_CONDITIONAL(BUILD_I386_CLANG4_SSA_PLUGINCPP, test "x$build_I386_CLANG4_SSA_PLUGINCPP" = xyes)
+AM_CONDITIONAL(BUILD_I386_CLANG4_TOPFNAME_PLUGIN, test "x$build_I386_CLANG4_TOPFNAME_PLUGIN" = xyes)
 
+AM_CONDITIONAL(BUILD_I386_CLANG5, test "x$build_I386_CLANG5" = xyes)
+AM_CONDITIONAL(BUILD_I386_CLANG5_EMPTY_PLUGIN, test "x$build_I386_CLANG5_EMPTY_PLUGIN" = xyes)
+AM_CONDITIONAL(BUILD_I386_CLANG5_SSA_PLUGIN, test "x$build_I386_CLANG5_SSA_PLUGIN" = xyes)
+AM_CONDITIONAL(BUILD_I386_CLANG5_SSA_PLUGINCPP, test "x$build_I386_CLANG5_SSA_PLUGINCPP" = xyes)
+AM_CONDITIONAL(BUILD_I386_CLANG5_TOPFNAME_PLUGIN, test "x$build_I386_CLANG5_TOPFNAME_PLUGIN" = xyes)
 
 
 if test "x$panda_USE_ARM_GCC" = xyes || test "x$panda_USE_I386_GCC" = xyes || test "x$panda_USE_SPARC_GCC" = xyes; then
    AC_CONFIG_FILES(
       etc/gcc_plugin/Makefile
+      etc/clang_plugin/Makefile
    )
 fi
 AM_CONDITIONAL(BUILD_GCC_PLUGIN, test "x$panda_USE_ARM_GCC" = xyes || test "x$panda_USE_I386_GCC" = xyes || test "x$panda_USE_SPARC_GCC" = xyes)
@@ -2912,7 +2931,7 @@ if test "x$panda_WERROR" = xyes; then
    -Winit-self \
    -Wsign-conversion \
    -Wredundant-decls \
-   -Wvla -Wshadow -Wctor-dtor-privacy -Wnon-virtual-dtor -Woverloaded-virtual -Wlogical-op \
+   -Wvla -Wshadow -Wctor-dtor-privacy -Wnon-virtual-dtor -Woverloaded-virtual \
    -Wmissing-include-dirs \
    -Winit-self \
    -Wpointer-arith \
@@ -2924,30 +2943,29 @@ if test "x$panda_WERROR" = xyes; then
    -Wswitch-enum \
    -Wswitch-default \
    -Wundef \
-   -fdiagnostics-show-option \
    "
-   AX_CHECK_COMPILE_FLAG("-Wunused-local-typedefs", CXXFLAGS+="-Wunused-local-typedefs ")
-   AX_CHECK_COMPILE_FLAG("-Wzero-as-null-pointer-constant", CXXFLAGS+="-Wzero-as-null-pointer-constant ")
+   AX_CHECK_COMPILE_FLAG("-Wlogical-op", CXXFLAGS+="-Wlogical-op ",,"-Werror")
+   AX_CHECK_COMPILE_FLAG("-Wunused-local-typedefs", CXXFLAGS+="-Wunused-local-typedefs ",,"-Werror")
+   AX_CHECK_COMPILE_FLAG("-Wzero-as-null-pointer-constant", CXXFLAGS+="-Wzero-as-null-pointer-constant ",,"-Werror")
+
    AC_COMPILE_WPEDANTIC
    if test "x$panda_WPEDANTIC" = xyes; then
       CXXFLAGS+="-Wpedantic "
    fi
+   AX_CHECK_COMPILE_FLAG("-Wno-mismatched-tags", CXXFLAGS+="-Wno-mismatched-tags ",,"-Werror")
+   AX_CHECK_COMPILE_FLAG("-Wno-overlength-strings", CXXFLAGS+="-Wno-overlength-strings ",,"-Werror")
 else
    CXXFLAGS+=" -w"
 fi
-case "${target_os}" in
-    darwin*)
-      ;;
-    *)
-      CXXFLAGS+=" -fdiagnostics-show-option"
-      ;;
-esac
+
+AX_CHECK_COMPILE_FLAG("-fdiagnostics-show-option", CXXFLAGS+="-fdiagnostics-show-option ",,"-Werror")
+
 AM_CONDITIONAL(ENABLE_WERROR, test "x$panda_WERROR" = xyes)
 
 ################ Debug checking ##############################
 if test "x$panda_DEBUG" = xyes; then
   AC_DEFINE(PANDA_DEBUG, 1, "Define if a debug version is built")
-  CXXFLAGS+=" -g3 -rdynamic -fno-omit-pointers"
+  CXXFLAGS+=" -g3 -rdynamic"
   AC_DEFINE(HAVE_PRINT_STACK,1, "Define if call stack is printed on error")
 fi
 

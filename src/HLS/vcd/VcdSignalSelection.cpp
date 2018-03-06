@@ -587,12 +587,12 @@ void VcdSignalSelection::CrossPropagateAddrSsa(
          for (const unsigned int called_id : call_id_to_called_id.at(callid))
          {
             /*
-             * if this an artificial call (it happens only for __builtin_memcpy),
+             * if this an artificial call (it happens only for memcpy),
              * then we don't cross propagate inside
              */
             if (callid == 0)
             {
-               THROW_ASSERT(HLSMgr->CGetFunctionBehavior(called_id)->CGetBehavioralHelper()->get_function_name() == "__builtin_memcpy",
+               THROW_ASSERT(HLSMgr->CGetFunctionBehavior(called_id)->CGetBehavioralHelper()->get_function_name() == "__internal_bambu_memcpy",
                      "artificial calls to " + HLSMgr->CGetFunctionBehavior(called_id)->CGetBehavioralHelper()->get_function_name() + " should not happen");
                continue;
             }

@@ -358,7 +358,6 @@ void GimpleWriter::operator()(const binary_expr* obj, unsigned int & mask)
       case truth_xor_expr_K:
       case try_catch_expr_K:
       case try_finally_K:
-      case ltgt_expr_K:
       case unge_expr_K:
       case ungt_expr_K:
       case unle_expr_K:
@@ -380,6 +379,13 @@ void GimpleWriter::operator()(const binary_expr* obj, unsigned int & mask)
          obj->op0->visit(this);
          const std::string op = tree_helper::op_symbol (obj);
          os << " " << op << " ";
+         obj->op1->visit(this);
+         break;
+      }
+      case ltgt_expr_K:
+      {
+         obj->op0->visit(this);
+         os << " <!=> ";
          obj->op1->visit(this);
          break;
       }
@@ -925,6 +931,10 @@ void GimpleWriter::operator()(const gimple_assign* obj, unsigned int & mask)
    obj->op0->visit(this);
    os << " = ";
    obj->op1->visit(this);
+   if(obj->clobber)
+      os << "clobber";
+   if(obj->temporary_address)
+      os << "addr";
    obj->gimple_node::visit(this);
 }
 

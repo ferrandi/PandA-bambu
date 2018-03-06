@@ -25,12 +25,12 @@
 #include "math_privatef.h"
 
 static const float 
-tiny  = 1.0e-30,
-zero  = 0.0,
-pi_o_4  = 7.8539818525e-01, /* 0x3f490fdb */
-pi_o_2  = 1.5707963705e+00, /* 0x3fc90fdb */
-pi      = 3.1415927410e+00,  /* 0x40490fdb */
-pi_lo   = -8.7422776573e-08; /* 0xb3bbbd2e */
+tiny  = 1.0e-30f,
+zero  = 0.0f,
+pi_o_4  = 7.8539818525e-01f, /* 0x3f490fdb */
+pi_o_2  = 1.5707963705e+00f, /* 0x3fc90fdb */
+pi      = 3.1415927410e+00f,  /* 0x40490fdb */
+pi_lo   = -8.7422776573e-08f; /* 0xb3bbbd2e */
 
 float __hide_ieee754_atan2f(float y, float x)
 {  
@@ -43,8 +43,8 @@ float __hide_ieee754_atan2f(float y, float x)
 	iy = hy&0x7fffffff;
 	if(FLT_UWORD_IS_NAN(ix)||
 	   FLT_UWORD_IS_NAN(iy))	/* x or y is NaN */
-	   return __builtin_nanf("");
-	if(hx==0x3f800000) return __builtin_atanf(y);   /* x=1.0 */
+       return nanf("");
+    if(hx==0x3f800000) return atanf(y);   /* x=1.0 */
 	m = ((hy>>31)&1)|((hx>>30)&2);	/* 2*sign(x)+sign(y) */
 
     /* when y = 0 */
@@ -84,7 +84,7 @@ float __hide_ieee754_atan2f(float y, float x)
 	k = (iy-ix)>>23;
 	if(k > 60) z=pi_o_2+(float)0.5*pi_lo; 	/* |y/x| >  2**60 */
 	else if(hx<0&&k<-60) z=0.0; 	/* |y|/x < -2**60 */
-	else z=__builtin_atanf(__builtin_fabsf(y/x));	/* safe to do y/x */
+    else z=atanf(fabsf(y/x));	/* safe to do y/x */
 	switch (m) {
 	    case 0: return       z  ;	/* atan(+,+) */
 	    case 1: {

@@ -30,7 +30,7 @@
 #include <errno.h>
 #endif
 
-float __builtin_hypotf(float x, float y)	/* wrapper hypotf */
+float hypotf(float x, float y)	/* wrapper hypotf */
 {
 #ifdef _IEEE_LIBM
 	return __hide_ieee754_hypotf(x,y);
@@ -58,7 +58,7 @@ float __builtin_hypotf(float x, float y)	/* wrapper hypotf */
 	       exc.retval = HUGE_VAL;
 	    if (_LIB_VERSION == _POSIX_)
 	       errno = ERANGE;
-	    else if (!__builtin_matherr(&exc)) {
+        else if (!matherr(&exc)) {
 	     	errno = ERANGE;
 	    }
 	    if (exc.err != 0)
@@ -71,9 +71,9 @@ float __builtin_hypotf(float x, float y)	/* wrapper hypotf */
 
 #ifdef _DOUBLE_IS_32BITS
 
-double __builtin_hypot(double x, double y)
+double hypot(double x, double y)
 {
-	return (double) __builtin_hypotf((float) x, (float) y);
+    return (double) hypotf((float) x, (float) y);
 }
 
 #endif /* defined(_DOUBLE_IS_32BITS) */

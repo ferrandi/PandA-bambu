@@ -551,7 +551,7 @@ ControlStep ASLAP::GetCycleLatency(const vertex operation, Allocation_MinMax min
    {
       for(auto const fu_type : fu_set)
       {
-         if(allocation_information->get_stage_period(fu_type, operation, beh_graph))
+         if(allocation_information->get_stage_period(fu_type, operation, beh_graph) != 0.0)
          {
             return ControlStep(ctrl_step_multiplier)*allocation_information->get_cycles(fu_type, operation, beh_graph);
          }

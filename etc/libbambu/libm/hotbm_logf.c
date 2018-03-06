@@ -39,7 +39,7 @@
 #ifdef CHECK_LOG_FUNCTION
 #define ADD_BUILTIN_PREFIX(fname) local_ ## fname
 #else
-#define ADD_BUILTIN_PREFIX(fname) __builtin_ ## fname
+#define ADD_BUILTIN_PREFIX(fname) fname
 #endif
 
 #define PRINT_DEBUG_MSG 0
@@ -420,7 +420,7 @@ float ADD_BUILTIN_PREFIX(logf)(float x)
 #endif
 
 #if PRINT
-    printf("\n*** __builtin_logf ***\n\n");
+    printf("\n*** logf ***\n\n");
 #endif
 
     func_in.f = x;
@@ -436,13 +436,13 @@ float ADD_BUILTIN_PREFIX(logf)(float x)
     if (e == 0) return -__builtin_inff();
 #endif
     if (fpX == 0x7F800000) return __builtin_inff();
-    if (fpX == 0xFF800000) return __builtin_nanf("");
+    if (fpX == 0xFF800000) return nanf("");
     if (e==255)
     {
         func_in.b |= ( 0x7FC << 20 );
         return func_in.f;
     }
-    if (s==1) return __builtin_nanf("");
+    if (s==1) return nanf("");
     if(fpX == 0x3F800000) return 0;
 
 #ifndef NO_SUBNORMALS
@@ -590,7 +590,7 @@ float ADD_BUILTIN_PREFIX(logf)(float x)
     printf("log bin = %s\n", binrep(res_fp.b,buff,SZ));
     printf("log float = %.20f :", res_fp.f);
     test_print_bin(res_fp.f);
-    printf("\n*** end__builtin_logf ***\n\n");
+    printf("\n*** endlogf ***\n\n");
 #endif
 #endif
     return res_fp.f;

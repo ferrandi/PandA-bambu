@@ -2294,7 +2294,10 @@ dequeue_and_serialize ()
       if (TYPE_FIELDS(t))
          for ( op = TYPE_FIELDS (t); op; op = TREE_CHAIN(op))
          {
-            serialize_child ("flds", op);
+            if(TREE_CODE(op) == FIELD_DECL || TREE_CODE (t) == UNION_TYPE)
+               serialize_child ("flds", op);
+            else
+               serialize_child ("fncs", op);
          }
 
       if (TYPE_METHODS(t))

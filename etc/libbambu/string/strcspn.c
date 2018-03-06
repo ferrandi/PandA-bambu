@@ -6,7 +6,7 @@
 /* Public domain.  */
 #include <stddef.h>
 
-size_t __builtin_strcspn(const char *s, const char *reject)
+size_t strcspn(const char *s, const char *reject)
 {
   const char *saved=s;
   for ( ; *s ; s++)

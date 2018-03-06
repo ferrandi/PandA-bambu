@@ -176,7 +176,7 @@ bool CSE::check_loads(const gimple_assign* ga, unsigned int right_part_index, tr
     bool skip_check = right_part->get_kind() == var_decl_K || right_part->get_kind() == string_cst_K || right_part->get_kind() == constructor_K ||
             (right_part->get_kind() == bit_field_ref_K && !is_a_vector_bitfield) || right_part->get_kind() == component_ref_K ||
           right_part->get_kind() == indirect_ref_K || right_part->get_kind() == misaligned_indirect_ref_K || right_part->get_kind() == array_ref_K ||
-          right_part->get_kind() == target_mem_ref_K || right_part->get_kind() == target_mem_ref461_K or
+          right_part->get_kind() == target_mem_ref_K || right_part->get_kind() == target_mem_ref461_K or right_part->get_kind() == mem_ref_K or
           right_part->get_kind() == call_expr_K  or right_part->get_kind() == aggr_init_expr_K;
     if(right_part->get_kind() == realpart_expr_K || right_part->get_kind() == imagpart_expr_K)
     {

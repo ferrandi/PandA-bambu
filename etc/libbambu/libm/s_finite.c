@@ -31,7 +31,7 @@ int __finite(double x)
 	return  (unsigned)((hx&0x7fffffff)-0x7ff00000)>>31;
 }
 
-int __builtin_finite(double x)
+int finite(double x)
 {
    __finite(x);
 }

@@ -34,7 +34,7 @@
 
 static const float huge = 1.0e30;
 
-float __builtin_floorf(float x)
+float floorf(float x)
 {
 	int i0,j0;
 	unsigned i,ix;
@@ -64,9 +64,9 @@ float __builtin_floorf(float x)
 
 #ifdef _DOUBLE_IS_32BITS
 
-double __builtin_floor(double x)
+double floor(double x)
 {
-	return (double) __builtin_floorf((float) x);
+    return (double) floorf((float) x);
 }
 
 #endif /* defined(_DOUBLE_IS_32BITS) */

@@ -39,7 +39,7 @@ TWO23[2]={
  -8.3886080000e+06, /* 0xcb000000 */
 };
 
-long int __builtin_lrintf(float x)
+long int lrintf(float x)
 {
   int j0,sx;
   unsigned i0;
@@ -85,9 +85,9 @@ long int __builtin_lrintf(float x)
 
 #ifdef _DOUBLE_IS_32BITS
 
-long int __builtin_lrint(double x)
+long int lrint(double x)
 {
-  return __builtin_lrintf((float) x);
+  return lrintf((float) x);
 }
 
 #endif /* defined(_DOUBLE_IS_32BITS) */

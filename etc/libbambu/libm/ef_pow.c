@@ -25,36 +25,36 @@
 
 static const float
 bp[] = {1.0, 1.5,},
-dp_h[] = { 0.0, 5.84960938e-01,}, /* 0x3f15c000 */
-dp_l[] = { 0.0, 1.56322085e-06,}, /* 0x35d1cfdc */
-zero    =  0.0,
-one	=  1.0,
-two	=  2.0,
-two24	=  16777216.0,	/* 0x4b800000 */
-huge	=  1.0e30,
-tiny    =  1.0e-30,
+dp_h[] = { 0.0, 5.84960938e-01f,}, /* 0x3f15c000 */
+dp_l[] = { 0.0, 1.56322085e-06f,}, /* 0x35d1cfdc */
+zero    =  0.0f,
+one	=  1.0f,
+two	=  2.0f,
+two24	=  16777216.0f,	/* 0x4b800000 */
+huge	=  1.0e30f,
+tiny    =  1.0e-30f,
 	/* poly coefs for (3/2)*(log(x)-2s-2/3*s**3 */
-L1  =  6.0000002384e-01, /* 0x3f19999a */
-L2  =  4.2857143283e-01, /* 0x3edb6db7 */
-L3  =  3.3333334327e-01, /* 0x3eaaaaab */
-L4  =  2.7272811532e-01, /* 0x3e8ba305 */
-L5  =  2.3066075146e-01, /* 0x3e6c3255 */
-L6  =  2.0697501302e-01, /* 0x3e53f142 */
-P1   =  1.6666667163e-01, /* 0x3e2aaaab */
-P2   = -2.7777778450e-03, /* 0xbb360b61 */
-P3   =  6.6137559770e-05, /* 0x388ab355 */
-P4   = -1.6533901999e-06, /* 0xb5ddea0e */
-P5   =  4.1381369442e-08, /* 0x3331bb4c */
-lg2  =  6.9314718246e-01, /* 0x3f317218 */
-lg2_h  =  6.93145752e-01, /* 0x3f317200 */
-lg2_l  =  1.42860654e-06, /* 0x35bfbe8c */
-ovt =  4.2995665694e-08, /* -(128-log2(ovfl+.5ulp)) */
-cp    =  9.6179670095e-01, /* 0x3f76384f =2/(3ln2) */
-cp_h  =  9.6179199219e-01, /* 0x3f763800 =head of cp */
-cp_l  =  4.7017383622e-06, /* 0x369dc3a0 =tail of cp_h */
-ivln2    =  1.4426950216e+00, /* 0x3fb8aa3b =1/ln2 */
-ivln2_h  =  1.4426879883e+00, /* 0x3fb8aa00 =16b 1/ln2*/
-ivln2_l  =  7.0526075433e-06; /* 0x36eca570 =1/ln2 tail*/
+L1  =  6.0000002384e-01f, /* 0x3f19999a */
+L2  =  4.2857143283e-01f, /* 0x3edb6db7 */
+L3  =  3.3333334327e-01f, /* 0x3eaaaaab */
+L4  =  2.7272811532e-01f, /* 0x3e8ba305 */
+L5  =  2.3066075146e-01f, /* 0x3e6c3255 */
+L6  =  2.0697501302e-01f, /* 0x3e53f142 */
+P1   =  1.6666667163e-01f, /* 0x3e2aaaab */
+P2   = -2.7777778450e-03f, /* 0xbb360b61 */
+P3   =  6.6137559770e-05f, /* 0x388ab355 */
+P4   = -1.6533901999e-06f, /* 0xb5ddea0e */
+P5   =  4.1381369442e-08f, /* 0x3331bb4c */
+lg2  =  6.9314718246e-01f, /* 0x3f317218 */
+lg2_h  =  6.93145752e-01f, /* 0x3f317200 */
+lg2_l  =  1.42860654e-06f, /* 0x35bfbe8c */
+ovt =  4.2995665694e-08f, /* -(128-log2(ovfl+.5ulp)) */
+cp    =  9.6179670095e-01f, /* 0x3f76384f =2/(3ln2) */
+cp_h  =  9.6179199219e-01f, /* 0x3f763800 =head of cp */
+cp_l  =  4.7017383622e-06f, /* 0x369dc3a0 =tail of cp_h */
+ivln2    =  1.4426950216e+00f, /* 0x3fb8aa3b =1/ln2 */
+ivln2_h  =  1.4426879883e+00f, /* 0x3fb8aa00 =16b 1/ln2*/
+ivln2_l  =  7.0526075433e-06f; /* 0x36eca570 =1/ln2 tail*/
 
 float __hide_ieee754_powf(float x, float y) __attribute__((optimize("-fno-unsafe-math-optimizations")));
 float __hide_ieee754_powf(float x, float y)
@@ -75,7 +75,7 @@ float __hide_ieee754_powf(float x, float y)
     /* x|y==NaN return NaN unless x==1 then return 1 */
 	if(FLT_UWORD_IS_NAN(ix) ||
 	   FLT_UWORD_IS_NAN(iy))
-	    return __builtin_nanf("");
+        return nanf("");
 
     /* determine if y is an odd int when x < 0
      * yisint = 0	... y is not an integer
@@ -110,14 +110,14 @@ float __hide_ieee754_powf(float x, float y)
 	    return __hide_ieee754_sqrtf(x);	
 	}
 
-	ax   = __builtin_fabsf(x);
+    ax   = fabsf(x);
     /* special value of x */
 	if(FLT_UWORD_IS_INFINITE(ix)||FLT_UWORD_IS_ZERO(ix)||ix==0x3f800000){
 	    z = ax;			/*x is +-0,+-inf,+-1*/
 	    if(hy<0) z = one/z;	/* z = (1/|x|) */
 	    if(hx<0) {
 		if(((ix-0x3f800000)|yisint)==0) {
-		    z = __builtin_nanf(""); /* (-1)**non-int is NaN */
+            z = nanf(""); /* (-1)**non-int is NaN */
 		} else if(yisint==1) 
 		    z = -z;		/* (x<0)**odd = -(|x|**odd) */
 	    }
@@ -125,7 +125,7 @@ float __hide_ieee754_powf(float x, float y)
 	}
     
     /* (x<0)**(non-int) is NaN */
-	if(((((unsigned)hx>>31)-1)|yisint)==0) return __builtin_nanf("");
+    if(((((unsigned)hx>>31)-1)|yisint)==0) return nanf("");
 
     /* |y| is huge */
 	if(iy>0x4d000000) { /* if |y| > 2**27 */
@@ -244,7 +244,7 @@ float __hide_ieee754_powf(float x, float y)
 	z  = one-(r-z);
 	GET_FLOAT_WORD(j,z);
 	j += (n<<23);
-	if((j>>23)<=0) z = __builtin_scalbnf(z,(int)n);	/* subnormal output */
+    if((j>>23)<=0) z = scalbnf(z,(int)n);	/* subnormal output */
 	else SET_FLOAT_WORD(z,j);
 	return s*z;
 }

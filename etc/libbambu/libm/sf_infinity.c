@@ -13,7 +13,7 @@
 
 #include "math_privatef.h"
 
-float __builtin_infinityf()
+float infinityf()
 {
 	float x;
 
@@ -23,9 +23,9 @@ float __builtin_infinityf()
 
 #ifdef _DOUBLE_IS_32BITS
 
-double __builtin_infinity()
+double infinity()
 {
-	return (double) __builtin_infinityf();
+    return (double) infinityf();
 }
 
 #endif /* defined(_DOUBLE_IS_32BITS) */

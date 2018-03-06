@@ -14,7 +14,7 @@
 
 #include "math_privatef.h"
 
-float __builtin_fmaxf(float x, float y)
+float fmaxf(float x, float y)
 {
   if (__fpclassifyf(x) == FP_NAN)
     return y;
@@ -26,9 +26,9 @@ float __builtin_fmaxf(float x, float y)
 
 #ifdef _DOUBLE_IS_32BITS
 
-double __builtin_fmax(double x, double y)
+double fmax(double x, double y)
 {
-  return (double) __builtin_fmaxf((float) x, (float) y);
+  return (double) fmaxf((float) x, (float) y);
 }
 
 #endif /* defined(_DOUBLE_IS_32BITS) */

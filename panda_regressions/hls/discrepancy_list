@@ -8,11 +8,8 @@ gcc_regression_simple/builtins/memcpy-chk_test5.c
 gcc_regression_simple/builtins/memmove-2.c
 gcc_regression_simple/builtins/memmove-chk_test5.c
 gcc_regression_simple/builtins/memmove-chk_test6.c
-gcc_regression_simple/builtins/mempcpy-chk_test1.c
-gcc_regression_simple/builtins/mempcpy-chk_test3.c
 gcc_regression_simple/builtins/mempcpy-chk_test4.c
 gcc_regression_simple/builtins/mempcpy-chk_test5.c
-gcc_regression_simple/builtins/mempcpy.c
 gcc_regression_simple/builtins/memset.c
 gcc_regression_simple/builtins/printf.c
 gcc_regression_simple/builtins/stpcpy-chk_test2.c

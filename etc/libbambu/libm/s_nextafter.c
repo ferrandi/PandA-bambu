@@ -25,7 +25,7 @@
  *	direction toward y.
  *   Special cases:
  */
-double __builtin_nextafter(double x, double y)
+double nextafter(double x, double y)
 {
 	int	hx,hy,ix,iy;
 	unsigned lx,ly;

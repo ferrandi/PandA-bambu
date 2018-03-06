@@ -51,7 +51,7 @@ float __hide_kernel_tanf(float x, float y, int iy)
 	ix = hx&0x7fffffff;	/* high word of |x| */
 	if(ix<0x31800000)			/* x < 2**-28 */
 	    {if((int)x==0) {			/* generate inexact */
-		if((ix|(iy+1))==0) return one/__builtin_fabsf(x);
+        if((ix|(iy+1))==0) return one/fabsf(x);
 		else return (iy==1)? x: -one/x;
 	    }
 	    }

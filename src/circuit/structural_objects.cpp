@@ -3428,7 +3428,7 @@ void module::xload(const xml_element* Enode, structural_objectRef _owner, struct
          if (elements.size() == 1)
          {
             ///it can be connected to a primary scalar port or a constant or a signal
-            if (connnected_object = find_member(elements[0], constant_o_K, _owner))
+            if ((connnected_object = find_member(elements[0], constant_o_K, _owner)))
             {
                GetPointer<constant_o>(connnected_object)->add_connection(obj);
             }
@@ -3449,23 +3449,23 @@ void module::xload(const xml_element* Enode, structural_objectRef _owner, struct
          {
             ///it can be connected to a (scalar) port module or a primary vector port element or a vector signal element
             ///check if it is a module
-            if (connnected_object = find_member(elements[0], component_o_K, _owner))
+            if ((connnected_object = find_member(elements[0], component_o_K, _owner)))
             {
-               if (connnected_object = connnected_object->find_member(elements[1], port_o_K, connnected_object))
+               if ((connnected_object = connnected_object->find_member(elements[1], port_o_K, connnected_object)))
                   GetPointer<port_o>(connnected_object)->add_connection(obj);
                else
                   THROW_ERROR("Connected object " + connected_path + " cannot be found");
             }
-            else if (connnected_object = find_member(elements[0], port_vector_o_K, _owner))
+            else if ((connnected_object = find_member(elements[0], port_vector_o_K, _owner)))
             {
-               if (connnected_object = connnected_object->find_member(elements[1], port_o_K, connnected_object))
+               if ((connnected_object = connnected_object->find_member(elements[1], port_o_K, connnected_object)))
                   GetPointer<port_o>(connnected_object)->add_connection(obj);
                else
                   THROW_ERROR("Connected object " + connected_path + " cannot be found");
             }
-            else if (connnected_object = find_member(elements[0], signal_vector_o_K, _owner))
+            else if ((connnected_object = find_member(elements[0], signal_vector_o_K, _owner)))
             {
-               if (connnected_object = connnected_object->find_member(elements[1], signal_o_K, connnected_object))
+               if ((connnected_object = connnected_object->find_member(elements[1], signal_o_K, connnected_object)))
                   GetPointer<signal_o>(connnected_object)->add_port(obj);
                else
                   THROW_ERROR("Connected object " + connected_path + " cannot be found");
@@ -3476,11 +3476,11 @@ void module::xload(const xml_element* Enode, structural_objectRef _owner, struct
          else if (elements.size() == 3)
          {
             ///it can be connected to an element of a vector port of a module
-            if (connnected_object = find_member(elements[0], component_o_K, _owner))
+            if ((connnected_object = find_member(elements[0], component_o_K, _owner)))
             {
-               if (connnected_object = connnected_object->find_member(elements[1], port_vector_o_K, connnected_object))
+               if ((connnected_object = connnected_object->find_member(elements[1], port_vector_o_K, connnected_object)))
                {
-                  if (connnected_object = connnected_object->find_member(elements[2], port_o_K, connnected_object))
+                  if ((connnected_object = connnected_object->find_member(elements[2], port_o_K, connnected_object)))
                      GetPointer<port_o>(connnected_object)->add_connection(obj);
                   else
                      THROW_ERROR("Connected object " + connected_path + " cannot be found");

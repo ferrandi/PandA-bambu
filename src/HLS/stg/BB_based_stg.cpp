@@ -1044,7 +1044,7 @@ void BB_based_stg::optimize_cycles(vertex bbEndingCycle,
            for(auto next_ops : global_starting_ops[first_state[tempBb]])
            {
               const auto operation = dfgRef->CGetOpNodeInfo(next_ops);
-              if((GET_TYPE(dfgRef, next_ops) & (TYPE_STORE | TYPE_LOAD)) != 0)
+              if((GET_TYPE(dfgRef, next_ops) & (TYPE_STORE | TYPE_LOAD | TYPE_EXTERNAL)) != 0)
                  return;
            }
         }

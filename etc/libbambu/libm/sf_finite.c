@@ -36,7 +36,7 @@ int __finitef(float x)
 	return (FLT_UWORD_IS_FINITE(ix));
 }
 
-int __builtin_finitef(float x)
+int finitef(float x)
 {
    __finitef(x);
 }

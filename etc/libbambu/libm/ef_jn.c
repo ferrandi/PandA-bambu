@@ -24,11 +24,10 @@
 #include "math_privatef.h"
 
 static const float
-invsqrtpi=  5.6418961287e-01, /* 0x3f106ebb */
-two   =  2.0000000000e+00, /* 0x40000000 */
-one   =  1.0000000000e+00; /* 0x3F800000 */
+two   =  2.0000000000e+00f, /* 0x40000000 */
+one   =  1.0000000000e+00f; /* 0x3F800000 */
 
-static const float zero  =  0.0000000000e+00;
+static const float zero  =  0.0000000000e+00f;
 
 float __hide_ieee754_jnf(int n, float x)
 {
@@ -51,7 +50,7 @@ float __hide_ieee754_jnf(int n, float x)
 	if(n==0) return(__hide_ieee754_j0f(x));
 	if(n==1) return(__hide_ieee754_j1f(x));
 	sgn = (n&1)&(hx>>31);	/* even n -- 0, odd n -- sign(x) */
-	x = __builtin_fabsf(x);
+    x = fabsf(x);
 	if(FLT_UWORD_IS_ZERO(ix)||FLT_UWORD_IS_INFINITE(ix))
 	    b = zero;
 	else if((float)n<=x) {   
@@ -132,7 +131,7 @@ float __hide_ieee754_jnf(int n, float x)
 		 */
 		tmp = n;
 		v = two/x;
-		tmp = tmp*__hide_ieee754_logf(__builtin_fabsf(v*tmp));
+        tmp = tmp*__hide_ieee754_logf(fabsf(v*tmp));
 		if(tmp<(float)8.8721679688e+01) {
 	    	    for(i=n-1,di=(float)(i+i);i>0;i--){
 		        temp = b;

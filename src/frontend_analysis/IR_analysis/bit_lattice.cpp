@@ -344,7 +344,7 @@ std::deque<bit_lattice> BitLatticeManipulator::constructor_bitstring(
       }
       else if(el->get_kind() == constructor_K && GetPointer<array_type>(GET_CONST_NODE(GetPointer<constructor>(el)->type)))
       {
-         THROW_ASSERT(array_dims.size() > 1, "invalid nested constructors:" + ctor_tn->ToString() + " " +STR(array_dims.size()));
+         THROW_ASSERT(array_dims.size() > 1 || GET_NODE(c->type)->get_kind() == record_type_K, "invalid nested constructors:" + ctor_tn->ToString() + " " +STR(array_dims.size()));
          cur_bitstring = constructor_bitstring(el, ssa_node_id);
       }
       else
@@ -520,7 +520,7 @@ std::deque<bit_lattice> string_to_bitstring(const std::string& s)
             res.push_back(bit_lattice::ONE);
             break;
          default:
-            THROW_ERROR("unexpected char in bitvalue string: " + bit);
+            THROW_ERROR(std::string("unexpected char in bitvalue string: ") + bit);
             break;
       }
    }

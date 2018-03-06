@@ -50,11 +50,11 @@ double __hide_ieee754_cosh(double x)
 	ix &= 0x7fffffff;
 
     /* x is INF or NaN */
-	if(ix>=0x7ff00000) return __builtin_fabs(x);	
+    if(ix>=0x7ff00000) return fabs(x);
 
     /* |x| in [0,0.5*ln2], return 1+expm1(|x|)^2/(2*exp(|x|)) */
 	if(ix<0x3fd62e43) {
-	    t = __builtin_expm1(__builtin_fabs(x));
+        t = expm1(fabs(x));
 	    w = one+t;
 	    if (ix<0x3c800000) return w;	/* cosh(tiny) = 1 */
 	    return one+(t*t)/(w+w);
@@ -62,18 +62,18 @@ double __hide_ieee754_cosh(double x)
 
     /* |x| in [0.5*ln2,22], return (exp(|x|)+1/exp(|x|)/2; */
 	if (ix < 0x40360000) {
-		t = __hide_ieee754_exp(__builtin_fabs(x));
+        t = __hide_ieee754_exp(fabs(x));
 		return half*t+half/t;
 	}
 
     /* |x| in [22, log(maxdouble)] return half*exp(|x|) */
-	if (ix < 0x40862E42)  return half*__hide_ieee754_exp(__builtin_fabs(x));
+    if (ix < 0x40862E42)  return half*__hide_ieee754_exp(fabs(x));
 
     /* |x| in [log(maxdouble), overflowthresold] */
         lx = GET_LO(x);
 	if (ix<0x408633CE || 
 	      (ix==0x408633ce)&&(lx<=(unsigned)0x8fb9f87d)) {
-	    w = __hide_ieee754_exp(half*__builtin_fabs(x));
+        w = __hide_ieee754_exp(half*fabs(x));
 	    t = half*w;
 	    return t*w;
 	}
@@ -84,15 +84,15 @@ double __hide_ieee754_cosh(double x)
 /* 
  * wrapper cosh(x)
  */
-double __builtin_cosh(double x)		/* wrapper cosh */
+double cosh(double x)		/* wrapper cosh */
 {
 #ifdef _IEEE_LIBM
 	return __hide_ieee754_cosh(x);
 #else
 	double z;
 	z = __hide_ieee754_cosh(x);
-	if(_LIB_VERSION == _IEEE_ || __builtin_isnan(x)) return z;
-	if(__builtin_fabs(x)>7.10475860073943863426e+02) {	
+    if(_LIB_VERSION == _IEEE_ || isnan(x)) return z;
+    if(fabs(x)>7.10475860073943863426e+02) {
 	        return __hide_kernel_standard(x,x,5); /* cosh overflow */
 	} else
 	    return z;

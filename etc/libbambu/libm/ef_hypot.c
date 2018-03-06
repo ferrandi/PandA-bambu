@@ -40,15 +40,15 @@ float __hide_ieee754_hypotf(float x, float y)
 		a = x;
 		b = y;
 	}
-	a = __builtin_fabsf(a);
-	b = __builtin_fabsf(b);
+    a = fabsf(a);
+    b = fabsf(b);
 	if (ha - hb > 0xf000000)  /* x/y > 2**30 */
 		return a+b;
 	k = 0;
 	if (ha > 0x58800000) {    /* a > 2**50 */
 		if(ha >= 0x7f800000) {  /* Inf or NaN */
 			/* Use original arg order iff result is NaN; quieten sNaNs. */
-			w = __builtin_fabsf(x+0.0f) - __builtin_fabsf(y+0.0f);
+            w = fabsf(x+0.0f) - fabsf(y+0.0f);
 			if (ha == 0x7f800000) w = a;
 			if (hb == 0x7f800000) w = b;
 			return w;
@@ -79,16 +79,16 @@ float __hide_ieee754_hypotf(float x, float y)
 	if (w > b) {
 		SET_FLOAT_WORD(t1, ha&0xfffff000);
 		t2 = a - t1;
-		w  = __builtin_sqrtf(t1*t1-(b*(-b)-t2*(a+t1)));
+        w  = sqrtf(t1*t1-(b*(-b)-t2*(a+t1)));
 	} else {
 		a  = a + a;
 		SET_FLOAT_WORD(y1, hb&0xfffff000);
 		y2 = b - y1;
 		SET_FLOAT_WORD(t1,(ha+0x00800000)&0xfffff000);
 		t2 = a - t1;
-		w  = __builtin_sqrtf(t1*y1-(w*(-w)-(t1*y2+t2*b)));
+        w  = sqrtf(t1*y1-(w*(-w)-(t1*y2+t2*b)));
 	}
 	if (k)
-		w = __builtin_scalbnf(w, k);
+        w = scalbnf(w, k);
 	return w;
 }
