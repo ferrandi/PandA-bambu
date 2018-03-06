@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2015-2018 Politecnico di Milano
+ *              Copyright (c) 2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -31,11 +31,67 @@
  *
 */
 /**
- * @file synthesis_constants.hpp
- * @brief constants used in synthesis wrappers
+ * @file c_initialization_flex_lexer.hpp
+ * @brief header file for LEX based lexer for C initialization string.
  *
- * @author Marco Lattuada <marco.lattuada@polimi.it>
+ * @author Lattuada Marco <marco.lattuada@polimi.it>
  *
- */
-///The file containing the timing violation report
-#define STR_CST_synthesis_timing_violation_report "HLS_output/Synthesis/timing_violation_report"
+*/
+#ifndef C_INITIALIZATION_LEXER_HPP
+#define C_INITIALIZATION_LEXER_HPP
+
+#define LN_CONCAT(name)CInitialization##name
+
+#define LCLASS_SPECIALIZED
+
+///superclass include
+#include "Lexer_utilities.hpp"
+
+///STD include
+#include <istream>
+
+///utility include
+#include "refcount.hpp"
+
+CONSTREF_FORWARD_DECL(Parameter);
+
+class CInitializationFlexLexer :public yyFlexLexer
+{
+   protected:
+      ///The debug level
+      const int debug_level;
+
+   public:
+      YYSTYPE *lvalp;
+      int yylex();
+
+      /**
+       * Constructor
+       */
+      CInitializationFlexLexer(const ParameterConstRef parameters, std::istream* argin, std::ostream* argout);
+
+      /**
+       * Destructor
+       */
+      ~CInitializationFlexLexer();
+
+      void yyerror(const char * msg)
+      {
+         LexerError(msg);
+      }
+
+      void LexerError(const char * msg)
+      {
+         std::cout << msg << " at line number |" << lineno() << "|\t" ;
+         std::cout << "text is |" << YYText() << "|" << std::endl ;
+         throw "Parse Error";
+      }
+
+      int yywrap()
+      {
+         return 1;
+      }
+};
+typedef refcount<CInitializationFlexLexer> CInitializationFlexLexerRef;
+#endif
+

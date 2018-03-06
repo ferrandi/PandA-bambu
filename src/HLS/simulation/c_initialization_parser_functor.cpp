@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2015-2018 Politecnico di Milano
+ *              Copyright (c) 2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -31,11 +31,16 @@
  *
 */
 /**
- * @file synthesis_constants.hpp
- * @brief constants used in synthesis wrappers
+ * @file c_initialization_parser_functor.cpp
+ * @brief Specification of the abstract functor used during parsing of C initialization string
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
- */
-///The file containing the timing violation report
-#define STR_CST_synthesis_timing_violation_report "HLS_output/Synthesis/timing_violation_report"
+*/
+
+///Header include
+#include "c_initialization_parser_functor.hpp"
+
+CInitializationParserFunctor::~CInitializationParserFunctor()
+{
+}

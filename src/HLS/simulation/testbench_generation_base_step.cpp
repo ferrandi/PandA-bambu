@@ -45,12 +45,6 @@
 #include "config_PACKAGE_BUGREPORT.hpp"
 #include "config_PACKAGE_NAME.hpp"
 #include "config_PACKAGE_VERSION.hpp"
-#include "config_HAVE_I386_GCC47_COMPILER.hpp"
-#include "config_HAVE_I386_GCC48_COMPILER.hpp"
-#include "config_HAVE_I386_GCC49_COMPILER.hpp"
-#include "config_HAVE_I386_GCC5_COMPILER.hpp"
-#include "config_HAVE_I386_GCC6_COMPILER.hpp"
-#include "config_HAVE_I386_GCC7_COMPILER.hpp"
 
 ///Header include
 #include "testbench_generation_base_step.hpp"
@@ -65,16 +59,11 @@
 #include "structural_manager.hpp"
 #include "structural_objects.hpp"
 
-///design_flows includes
-#include "design_flow_graph.hpp"
+///constants include
+#include "testbench_generation_constants.hpp"
+
+///design_flows include
 #include "design_flow_manager.hpp"
-
-///design_flows/backend/ToC/progModels include
-#include "c_backend.hpp"
-
-///design_flows/backend/ToC include
-#include "c_backend_step_factory.hpp"
-#include "hls_c_backend_information.hpp"
 
 ///design_flows/backend/ToHDL includes
 #include "HDL_manager.hpp"
@@ -113,16 +102,12 @@
 ///utility include
 #include "fileIO.hpp"
 
-///wrapper/treegcc include
-#include "gcc_wrapper.hpp"
-
-TestbenchGenerationBaseStep::TestbenchGenerationBaseStep(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type, const std::string& _c_testbench_basename) :
+TestbenchGenerationBaseStep::TestbenchGenerationBaseStep(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type) :
    HLS_step(_parameters, _HLSMgr, _design_flow_manager, _hls_flow_step_type),
    writer(language_writer::create_writer(HDLWriter_Language::VERILOG, _HLSMgr->get_HLS_target()->get_technology_manager(), _parameters)),
    mod(nullptr),
    target_period(0.0),
-   output_directory(parameters->getOption<std::string>(OPT_output_directory) + "/simulation/"),
-   c_testbench_basename(_c_testbench_basename)
+   output_directory(parameters->getOption<std::string>(OPT_output_directory) + "/simulation/")
 {
    if (!boost::filesystem::exists(output_directory))
       boost::filesystem::create_directories(output_directory);
@@ -139,10 +124,20 @@ const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
    {
       case DEPENDENCE_RELATIONSHIP:
          {
+            ret.insert(std::make_tuple(HLSFlowStep_Type::TEST_VECTOR_PARSER, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::TOP_FUNCTION));
+            if(design_flow_manager.lock()->GetStatus(HLS_step::ComputeSignature(HLSFlowStep_Type::TEST_VECTOR_PARSER, HLSFlowStepSpecializationConstRef())) == DesignFlowStep_Status::SUCCESS)
+            {
+               if(HLSMgr->RSim and HLSMgr->RSim->results_available)
+               {
+                  ret.insert(std::make_tuple(HLSFlowStep_Type::TESTBENCH_VALUES_XML_GENERATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::TOP_FUNCTION));
+               }
+               else
+               {
+                  ret.insert(std::make_tuple(HLSFlowStep_Type::TESTBENCH_VALUES_C_GENERATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::TOP_FUNCTION));
+               }
+            }
 
-            ret.insert(std::make_tuple(HLSFlowStep_Type::TESTBENCH_MEMORY_ALLOCATION,
-                  HLSFlowStepSpecializationConstRef(),
-                  HLSFlowStep_Relationship::TOP_FUNCTION));
+            ret.insert(std::make_tuple(HLSFlowStep_Type::TESTBENCH_MEMORY_ALLOCATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::TOP_FUNCTION));
 #if HAVE_VCD_BUILT
             if (parameters->isOption(OPT_discrepancy) and parameters->getOption<bool>(OPT_discrepancy))
             {
@@ -165,74 +160,6 @@ const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
    return ret;
 }
 
-void TestbenchGenerationBaseStep::ComputeRelationships
-(
-   DesignFlowStepSet & design_flow_step_set,
-   const DesignFlowStep::RelationshipType relationship_type
-)
-{
-   HLS_step::ComputeRelationships(design_flow_step_set, relationship_type);
-
-   switch (relationship_type)
-   {
-      case DEPENDENCE_RELATIONSHIP:
-      {
-         const CBackendStepFactory * c_backend_factory = GetPointer<const CBackendStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("CBackend"));
-
-         CBackend::Type hls_c_backend_type;
-#if HAVE_HLS_BUILT
-         if (parameters->isOption(OPT_discrepancy) and parameters->getOption<bool>(OPT_discrepancy))
-         {
-            hls_c_backend_type = CBackend::CB_DISCREPANCY_ANALYSIS;
-         }
-         else
-#endif
-         {
-            hls_c_backend_type = CBackend::CB_HLS;
-            if(parameters->isOption(OPT_pretty_print))
-            {
-               const auto design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
-               const CBackendStepFactory * c_backend_step_factory = GetPointer<const CBackendStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("CBackend"));
-               const std::string output_file_name = parameters->getOption<std::string>(OPT_pretty_print);
-               const vertex c_backend_vertex = design_flow_manager.lock()->GetDesignFlowStep(CBackend::ComputeSignature(CBackend::CB_SEQUENTIAL));
-               const DesignFlowStepRef c_backend_step = c_backend_vertex ? design_flow_graph->CGetDesignFlowStepInfo(c_backend_vertex)->design_flow_step : c_backend_step_factory->CreateCBackendStep(CBackend::CB_SEQUENTIAL, output_file_name, CBackendInformationConstRef());
-               design_flow_step_set.insert(c_backend_step);
-            }
-         }
-
-         const DesignFlowStepRef hls_c_backend_step =
-            c_backend_factory->CreateCBackendStep
-            (
-             hls_c_backend_type,
-             output_directory + c_testbench_basename + ".c",
-             CBackendInformationConstRef
-             (
-              new HLSCBackendInformation
-              (
-               output_directory + c_testbench_basename + ".txt",
-               HLSMgr
-              )
-             )
-            );
-         design_flow_step_set.insert(hls_c_backend_step);
-         break;
-      }
-      case INVALIDATION_RELATIONSHIP:
-      {
-         break;
-      }
-      case PRECEDENCE_RELATIONSHIP:
-      {
-         break;
-      }
-      default:
-      {
-         THROW_UNREACHABLE("");
-         break;
-      }
-   }
-}
-
 void TestbenchGenerationBaseStep::Initialize()
 {
    const auto top_function_ids = HLSMgr->CGetCallGraphManager()->GetRootFunctions();
@@ -248,13 +175,6 @@ void TestbenchGenerationBaseStep::Initialize()
 
 DesignFlowStep_Status TestbenchGenerationBaseStep::Exec()
 {
-   /*
-    * execute the C testbench necessary to print out the expected results.
-    * they are used to generate the hdl testbench, which checks the expected
-    * results against the real ones obtained by the simulation of the
-    * synthesized hdl
-    */
-   exec_C_testbench();
    HLSMgr->RSim->filename_bench = (parameters->getOption<std::string>(OPT_simulator) == "VERILATOR") ? verilator_testbench() : create_HDL_testbench(false);
    return DesignFlowStep_Status::SUCCESS;
 }
@@ -311,160 +231,11 @@ std::string TestbenchGenerationBaseStep::print_var_init(const tree_managerConstR
    return init;
 }
 
-void TestbenchGenerationBaseStep::exec_C_testbench()
-{
-   INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "-->Executing C testbench");
-   const GccWrapperConstRef gcc_wrapper(new GccWrapper(parameters, parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler), GccWrapper_OptimizationSet::O0));
-   std::string compiler_flags = "-fwrapv -ffloat-store -flax-vector-conversions -msse2 -mfpmath=sse -D'__builtin_bambu_time_start()=' -D'__builtin_bambu_time_stop()=' ";
-   if(!parameters->isOption(OPT_input_format) || parameters->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_C || parameters->isOption(OPT_pretty_print))
-      compiler_flags += " -fexcess-precision=standard ";
-   if (parameters->isOption(OPT_testbench_extra_gcc_flags))
-      compiler_flags += " " + parameters->getOption<std::string>(OPT_testbench_extra_gcc_flags) + " ";
-   if (parameters->isOption(OPT_discrepancy) and
-         parameters->getOption<bool>(OPT_discrepancy))
-   {
-      if (false
-#if HAVE_I386_GCC48_COMPILER
-           or parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC48
-#endif
-#if HAVE_I386_GCC49_COMPILER
-           or parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC49
-#endif
-#if HAVE_I386_GCC5_COMPILER
-           or parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC5
-#endif
-#if HAVE_I386_GCC6_COMPILER
-           or parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC6
-#endif
-#if HAVE_I386_GCC7_COMPILER
-               or parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC7
-#endif
-         )
-      {
-         compiler_flags += " -g -fsanitize=address -fno-omit-frame-pointer -fno-common ";
-      }
-   if (false
-#if HAVE_I386_GCC5_COMPILER
-           or parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC5
-#endif
-#if HAVE_I386_GCC6_COMPILER
-               or parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC6
-#endif
-#if HAVE_I386_GCC7_COMPILER
-                   or parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC7
-#endif
-         )
-      {
-         compiler_flags += " -fsanitize=undefined -fsanitize-recover=undefined ";
-      }
-   }
-   if(parameters->isOption(OPT_gcc_optimizations))
-   {
-      const auto gcc_parameters= parameters->getOption<const CustomSet<std::string> >(OPT_gcc_optimizations);
-      if(gcc_parameters.find("tree-vectorize") != gcc_parameters.end())
-      {
-         boost::replace_all(compiler_flags, "-msse2", "");
-         compiler_flags += "-m32 ";
-      }
-   }
-   // setup source files
-   std::list<std::string> file_sources;
-   file_sources.push_front(output_directory + c_testbench_basename + ".c");
-   // add source files to interface with python golden reference, if any
-   std::string exec_name = output_directory + "test";
-   if (parameters->isOption(OPT_no_parse_c_python))
-   {
-      const auto no_parse_files = parameters->getOption<const CustomSet<std::string> >(OPT_no_parse_c_python);
-      for(const auto& no_parse_file : no_parse_files)
-      {
-         file_sources.push_back(no_parse_file);
-      }
-   }
-   // compute top function name and use it to setup the artificial main for cosimulation
-   const auto top_function_ids = HLSMgr->CGetCallGraphManager()->GetRootFunctions();
-   THROW_ASSERT(top_function_ids.size() == 1, "Multiple top functions");
-   const auto top_function_id= *(top_function_ids.begin());
-   const auto top_function_name = HLSMgr->CGetFunctionBehavior(top_function_id)->CGetBehavioralHelper()->get_function_name();
-#if HAVE_HLS_BUILT && HAVE_EXPERIMENTAL
-   if (parameters->isOption(OPT_discrepancy) and parameters->getOption<bool>(OPT_discrepancy))
-   {
-      ///Nothing to do
-   }
-   else
-#endif
-   if(top_function_name != "main")
-   {
-      if(parameters->isOption(OPT_pretty_print))
-      {
-         file_sources.push_back(parameters->getOption<std::string>(OPT_pretty_print));
-      }
-      else
-      {
-         compiler_flags += " -Wl,--allow-multiple-definition ";
-         for(const auto& input_file : parameters->getOption<const CustomSet<std::string> > (OPT_input_file))
-         {
-            file_sources.push_back(input_file);
-         }
-      }
-   }
-   else
-   {
-      const std::string main_file_name = output_directory + "main_exec";
-      CustomSet<std::string> main_sources;
-      if(parameters->isOption(OPT_pretty_print))
-      {
-         main_sources.insert(parameters->getOption<std::string>(OPT_pretty_print));
-      }
-      else
-      {
-         for(const auto& input_file : parameters->getOption<const CustomSet<std::string> > (OPT_input_file))
-         {
-            main_sources.insert(input_file);
-         }
-      }
-      gcc_wrapper->CreateExecutable(main_sources, main_file_name, compiler_flags);
-   }
-   // compile the source file to get an executable
-   gcc_wrapper->CreateExecutable(file_sources, exec_name, compiler_flags);
-   // set some parameters for redirection of discrepancy statistics
-   std::string c_stdout_file = "";
-   if (parameters->isOption(OPT_discrepancy) and parameters->getOption<bool>(OPT_discrepancy))
-      c_stdout_file = output_directory + "dynamic_discrepancy_stats";
-   // executing the test to generate inputs and exected outputs values
-   if (parameters->isOption(OPT_discrepancy) and
-         parameters->getOption<bool>(OPT_discrepancy))
-   {
-      if (false
-#if HAVE_I386_GCC49_COMPILER
-              or parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC49
-#endif
-#if HAVE_I386_GCC5_COMPILER
-              or parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC5
-#endif
-#if HAVE_I386_GCC6_COMPILER
-              or parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC6
-#endif
-#if HAVE_I386_GCC7_COMPILER
-              or parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC7
-#endif
-            )
-      {
-         exec_name.insert(0, "ASAN_OPTIONS='symbolize=1:redzone=2048' ");
-      }
-   }
-   int ret = PandaSystem(parameters, exec_name, c_stdout_file);
-   if(IsError(ret))
-   {
-      THROW_ERROR("Error in generating the expected test results");
-   }
-   INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "<--Executed C testbench");
-}
-
 std::string TestbenchGenerationBaseStep::verilator_testbench() const
 {
    if (not parameters->getOption<bool>(OPT_generate_testbench))
       return "";
-   std::string simulation_values_path = output_directory + c_testbench_basename + ".txt";
+   std::string simulation_values_path = output_directory + STR(STR_CST_testbench_generation_basename) + ".txt";
 
    PRINT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "  . Generation of the Verilator testbenches");
 
@@ -568,7 +339,7 @@ std::string TestbenchGenerationBaseStep::create_HDL_testbench(bool xilinx_isim) 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Creating HDL testbench");
    const tree_managerRef TreeM = HLSMgr->get_tree_manager();
 
-   std::string simulation_values_path = output_directory + c_testbench_basename + ".txt";
+   std::string simulation_values_path = output_directory + STR(STR_CST_testbench_generation_basename) + ".txt";
    bool generate_vcd_output = (parameters->isOption(OPT_generate_vcd) and parameters->getOption<bool>(OPT_generate_vcd)) or
       (parameters->isOption(OPT_discrepancy) and parameters->getOption<bool>(OPT_discrepancy));
 
@@ -728,9 +499,6 @@ void TestbenchGenerationBaseStep::write_output_checks(
             pt_node = GET_NODE(GetPointer<array_type>(pt_node)->elts);
          }
       }
-      long long int bitsize = tree_helper::size(TreeM, pt_type_index);
-      bool is_real = tree_helper::is_real(TreeM, pt_type_index);
-
 
       writer->write("\n");
       writer->write_comment("OPTIONAL - Read a value for " + output_name + " --------------------------------------------------------------\n");
@@ -780,81 +548,16 @@ void TestbenchGenerationBaseStep::write_output_checks(
       std::string nonescaped_name = port_name;
       if(escaped_pos != std::string::npos)
          nonescaped_name.erase (std::remove(nonescaped_name.begin(), nonescaped_name.end(), '\\'), nonescaped_name.end());
-      if(is_real)
+      if (output_level > OUTPUT_LEVEL_MINIMUM)
       {
-         if (output_level > OUTPUT_LEVEL_MINIMUM)
-         {
-            writer->write("$display(\" res = %b " + nonescaped_name + " = %d " " _bambu_testbench_mem_[" + nonescaped_name  + " + %d - base_addr] = %20.20f  expected = %20.20f \", ");
-            writer->write("{");
-            for(unsigned int bitsize_index=0; bitsize_index < bitsize; bitsize_index = bitsize_index + 8)
-            {
-               if(bitsize_index) writer->write(", ");
-               writer->write("_bambu_testbench_mem_[" + port_name + " + _i_*" + boost::lexical_cast<std::string>(bitsize/8) + " + " + boost::lexical_cast<std::string>((bitsize - bitsize_index)/8-1) + " - base_addr]");
-            }
-            writer->write( "} == " + output_name + ", ");
-            writer->write( port_name + ", _i_*" + boost::lexical_cast<std::string>(bitsize/8) + ", " + (bitsize==32?"bits32_to_real64":"$bitstoreal")+ "({");
-            for(unsigned int bitsize_index=0; bitsize_index < bitsize; bitsize_index = bitsize_index + 8)
-            {
-               if(bitsize_index) writer->write(", ");
-               writer->write("_bambu_testbench_mem_[" + port_name + " + _i_*" + boost::lexical_cast<std::string>(bitsize/8) + " + " + boost::lexical_cast<std::string>((bitsize - bitsize_index)/8-1) + " - base_addr]");
-            }
-            writer->write(std::string("}), ") + (bitsize==32?"bits32_to_real64":"$bitstoreal")+ "(" + output_name+ "));\n");
-         }
-         if(bitsize==32 || bitsize==64)
-         {
-            if (output_level > OUTPUT_LEVEL_MINIMUM)
-            {
-               writer->write("$display(\" FP error %f \\n\", compute_ulp"+(bitsize==32?STR(32):STR(64))+"({");
-               for(unsigned int bitsize_index=0; bitsize_index < bitsize; bitsize_index = bitsize_index + 8)
-               {
-                  if(bitsize_index) writer->write(", ");
-                  writer->write("_bambu_testbench_mem_[" + port_name + " + _i_*" + boost::lexical_cast<std::string>(bitsize/8) + " + " + boost::lexical_cast<std::string>((bitsize - bitsize_index)/8-1) + " - base_addr]");
-               }
-               writer->write( "}, " + output_name);
-               writer->write("));\n");
-            }
-            writer->write("if (compute_ulp"+(bitsize==32?STR(32):STR(64))+"({");
-            for(unsigned int bitsize_index=0; bitsize_index < bitsize; bitsize_index = bitsize_index + 8)
-            {
-               if(bitsize_index) writer->write(", ");
-               writer->write("_bambu_testbench_mem_[" + port_name + " + _i_*" + boost::lexical_cast<std::string>(bitsize/8) + " + " + boost::lexical_cast<std::string>((bitsize - bitsize_index)/8-1) + " - base_addr]");
-            }
-            writer->write( "}, " + output_name);
-            writer->write(") > "+ STR(parameters->getOption<double>(OPT_max_ulp)) +")\n");
-         }
-         else
-            THROW_ERROR_CODE(NODE_NOT_YET_SUPPORTED_EC, "floating point precision not yet supported: " + STR(bitsize));
-
+         writer->write("$display(\" res = %b " + nonescaped_name + " = %d " " _bambu_testbench_mem_[" + nonescaped_name + " + %d - base_addr] = %d expected = %d \\n\", ");
+         writer->write("_bambu_testbench_mem_[" + port_name + " + _i_ - base_addr] == " + output_name + ", ");
+         writer->write( port_name + ", ");
+         writer->write("_i_, ");
+         writer->write("_bambu_testbench_mem_[" + port_name + " + _i_ - base_addr], ");
+         writer->write(output_name + ");\n");
       }
-      else
-      {
-         if (output_level > OUTPUT_LEVEL_MINIMUM)
-         {
-            writer->write("$display(\" res = %b " + nonescaped_name + " = %d " " _bambu_testbench_mem_[" + nonescaped_name  + " + %d - base_addr] = %d  expected = %d \\n\", ");
-            writer->write("{");
-            for(unsigned int bitsize_index=0; bitsize_index < bitsize; bitsize_index = bitsize_index + 8)
-            {
-               if(bitsize_index) writer->write(", ");
-               writer->write("_bambu_testbench_mem_[" + port_name + " + _i_*" + boost::lexical_cast<std::string>(bitsize/8) + " + " + boost::lexical_cast<std::string>((bitsize - bitsize_index)/8-1) + " - base_addr]");
-            }
-            writer->write( "} == " + output_name + ", ");
-            writer->write( port_name + ", _i_*" + boost::lexical_cast<std::string>(bitsize/8) + ", {");
-            for(unsigned int bitsize_index=0; bitsize_index < bitsize; bitsize_index = bitsize_index + 8)
-            {
-               if(bitsize_index) writer->write(", ");
-               writer->write("_bambu_testbench_mem_[" + port_name + " + _i_*" + boost::lexical_cast<std::string>(bitsize/8) + " + " + boost::lexical_cast<std::string>((bitsize - bitsize_index)/8-1) + " - base_addr]");
-            }
-            writer->write("}, " + output_name+ ");\n");
-         }
-         writer->write("if ({");
-         for(unsigned int bitsize_index=0; bitsize_index < bitsize; bitsize_index = bitsize_index + 8)
-         {
-            if(bitsize_index) writer->write(", ");
-            writer->write("_bambu_testbench_mem_[" + port_name + " + _i_*" + boost::lexical_cast<std::string>(bitsize/8) + " + " + boost::lexical_cast<std::string>((bitsize - bitsize_index)/8-1) + " - base_addr]");
-         }
-         writer->write( "} !== " + output_name);
-         writer->write(")\n");
-      }
+      writer->write("if (_bambu_testbench_mem_[" + port_name + " + _i_ - base_addr] !== " + output_name + ")\n");
       writer->write(STR(STD_OPENING_CHAR));
       writer->write("begin\n");
       writer->write("success = 0;\n");

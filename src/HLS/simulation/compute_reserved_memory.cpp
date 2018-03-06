@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2015-2018 Politecnico di Milano
+ *              Copyright (c) 2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -31,11 +31,57 @@
  *
 */
 /**
- * @file synthesis_constants.hpp
- * @brief constants used in synthesis wrappers
+ * @file compute_reserved_memory.cpp
+ * @brief Specification of the functor used to compute size of objects starting from C initialization string
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
- */
-///The file containing the timing violation report
-#define STR_CST_synthesis_timing_violation_report "HLS_output/Synthesis/timing_violation_report"
+*/
+
+///Header include
+#include "compute_reserved_memory.hpp"
+
+///tree include
+#include "tree_helper.hpp"
+
+ComputeReservedMemory::ComputeReservedMemory(const tree_managerConstRef _TM, const tree_nodeConstRef _tn) :
+   TM(_TM),
+   tn(_tn),
+   elements_number(1),
+   depth_level(0)
+{}
+
+
+unsigned int ComputeReservedMemory::GetReservedBytes() const
+{
+   const auto ptd_type = tree_helper::get_pointed_type(TM, tree_helper::get_type_index(TM, tn->index));
+   return elements_number * tree_helper::size(TM, ptd_type)/8;
+}
+
+void ComputeReservedMemory::CheckEnd()
+{
+   THROW_ASSERT(depth_level == 0, "");
+}
+
+void ComputeReservedMemory::GoDown()
+{
+   depth_level++;
+}
+
+void ComputeReservedMemory::GoNext()
+{
+   ///For compatibility with old initialization (without parentheses)
+   if(depth_level == 0)
+      elements_number++;
+   if(depth_level == 1)
+      elements_number++;
+}
+
+void ComputeReservedMemory::GoUp()
+{
+   THROW_ASSERT(depth_level > 0, "");
+   depth_level--;
+}
+
+void ComputeReservedMemory::Process(const std::string &)
+{}

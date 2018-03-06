@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2015-2018 Politecnico di Milano
+ *              Copyright (c) 2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -31,11 +31,53 @@
  *
 */
 /**
- * @file synthesis_constants.hpp
- * @brief constants used in synthesis wrappers
+ * @file c_initialization_parser_functor.hpp
+ * @brief Specification of the abstract functor used during parsing of C initialization string
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
+*/
+#ifndef C_INITIALIZATION_PARSER_FUNCTOR_HPP
+#define C_INITIALIZATION_PARSER_FUNCTOR_HPP
+
+#include "refcount.hpp"
+
+/**
+ * Abstract functor used during parsing of C initialization string
  */
-///The file containing the timing violation report
-#define STR_CST_synthesis_timing_violation_report "HLS_output/Synthesis/timing_violation_report"
+class CInitializationParserFunctor
+{
+   public:
+      /**
+       * Destructor
+       */
+      virtual ~CInitializationParserFunctor();
+
+      /**
+       * Check that all the necessary information was present in the initialization string
+       */
+      virtual void CheckEnd() = 0;
+
+      /**
+       * Start the initialization of a new aggregated data structure
+       */
+      virtual void GoDown() = 0;
+
+      /**
+       * Consume an element of an aggregated data structure
+       */
+      virtual void GoNext() = 0;
+
+      /**
+       * Ends the initialization of the current aggregated  data structure
+       */
+      virtual void GoUp() = 0;
+
+      /**
+       * Process an element
+       * @param content is the string assocated with the string
+       */
+      virtual void Process(const std::string & content) = 0;
+};
+typedef refcount<CInitializationParserFunctor> CInitializationParserFunctorRef;
+#endif

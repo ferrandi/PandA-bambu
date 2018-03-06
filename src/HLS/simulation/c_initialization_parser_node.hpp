@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2015-2018 Politecnico di Milano
+ *              Copyright (c) 2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -31,11 +31,27 @@
  *
 */
 /**
- * @file synthesis_constants.hpp
- * @brief constants used in synthesis wrappers
+ * @file c_initialization_parser_node.hpp
+ * @brief Specification of the data structure associated with a node during c initialization parsing
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
- */
-///The file containing the timing violation report
-#define STR_CST_synthesis_timing_violation_report "HLS_output/Synthesis/timing_violation_report"
+*/
+#ifndef C_INITIALIZATION_PARSER_NODE_HPP
+#define C_INITIALIZATION_PARSER_NODE_HPP
+
+///STD include
+#include <string>
+
+/**
+ * Data associated with a node of the aadl parser
+*/
+struct CInitializationParserNode
+{
+   ///A string associated with this node
+   std::string content;
+
+};
+#endif
+
+

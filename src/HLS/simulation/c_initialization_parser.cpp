@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2015-2018 Politecnico di Milano
+ *              Copyright (c) 2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -31,11 +31,39 @@
  *
 */
 /**
- * @file synthesis_constants.hpp
- * @brief constants used in synthesis wrappers
+ * @file c_initialization_parser.cpp
+ * @brief Interface to parse the initialization of c variable.
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
- */
-///The file containing the timing violation report
-#define STR_CST_synthesis_timing_violation_report "HLS_output/Synthesis/timing_violation_report"
+*/
+
+///Header include
+#include "c_initialization_parser.hpp"
+
+///. include
+#include "Parameter.hpp"
+
+///HLS/simulation include
+#include "c_initialization_parser_node.hpp"
+#define YYSTYPE CInitializationParserNode
+#include "c_initialization_flex_lexer.hpp"
+
+///utility include
+#include "fileIO.hpp"
+#include "utility.hpp"
+
+CInitializationParser::CInitializationParser(const ParameterConstRef _parameters) :
+   parameters(_parameters)
+{
+   debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
+}
+
+void CInitializationParser::Parse(const CInitializationParserFunctorRef c_initialization_parser_functor, const std::string & initialization_string) const
+{
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing initialization string " + initialization_string);
+   const auto parsed_stream = fileIO_istream_open_from_string(initialization_string);
+   const CInitializationFlexLexerRef lexer(new CInitializationFlexLexer(parameters, parsed_stream.get(), nullptr));
+   YYParse(c_initialization_parser_functor, lexer);
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed initialization string " + initialization_string);
+}
