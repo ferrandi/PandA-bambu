@@ -52,7 +52,6 @@
 #include "config_HAVE_R.hpp"
 
 ///. includes
-#include "global_variables.hpp"
 #include "SpiderParameter.hpp"
 
 #if HAVE_REGRESSORS_BUILT

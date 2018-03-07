@@ -3,7 +3,7 @@ bin_PROGRAMS += bambu
 
 noinst_HEADERS += BambuParameter.hpp
 
-bambu_SOURCES = bambu.cpp BambuParameter.cpp Parameter.cpp
+bambu_SOURCES = bambu.cpp BambuParameter.cpp Parameter.cpp global_variables.cpp
 
 PRJ_DOC += bambu.doc
 
@@ -28,6 +28,7 @@ bambu_CPPFLAGS = -DPKGLIBDIR="\"$(pkglibdir)\"" -DPKGDATADIR="\"$(pkgdatadir)\""
      -I$(top_srcdir)/src/design_flows/technology \
      -I$(top_srcdir)/src/frontend_analysis \
      -I$(top_srcdir)/src/frontend_analysis/IR_analysis \
+     -I$(top_srcdir)/src/graph \
      -I$(top_srcdir)/src/tree \
      -I$(top_srcdir)/src/HLS \
      -I$(top_srcdir)/src/HLS/architecture_creation \

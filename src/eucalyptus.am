@@ -3,7 +3,7 @@ bin_PROGRAMS += eucalyptus
 
 noinst_HEADERS += EucalyptusParameter.hpp
 
-eucalyptus_SOURCES = eucalyptus.cpp EucalyptusParameter.cpp Parameter.cpp
+eucalyptus_SOURCES = eucalyptus.cpp EucalyptusParameter.cpp Parameter.cpp global_variables.cpp
 
 noinst_LTLIBRARIES += lib_eucalyptus.la
 
