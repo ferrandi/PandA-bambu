@@ -201,7 +201,6 @@ std::string verilog_writer::type_converter_size(const structural_objectRef &cir)
       case structural_type_descriptor::REAL:
       case structural_type_descriptor::VECTOR_BOOL:
       {
-         std::cerr << "A001" << std::endl;
          if(specialization_string)
          {
             if (cir->get_kind() == port_vector_o_K)
@@ -241,7 +240,6 @@ std::string verilog_writer::type_converter_size(const structural_objectRef &cir)
             }
             else if(cir->get_owner() and cir->get_owner()->get_kind() == port_vector_o_K)
             {
-               std::cerr << "A000" << std::endl;
                const auto owner_vector = GetPointer<const port_o>(cir->get_owner());
                unsigned int lsb = owner_vector->get_lsb();
                for(unsigned int vector_index = 0; vector_index < owner_vector->get_ports_size(); vector_index++)
