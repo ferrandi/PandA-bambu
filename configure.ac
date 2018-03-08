@@ -41,11 +41,11 @@ AC_COMPILE_STDCXX_0X
 ############################### c++0x/11 checking ##############################
 if test "x$ac_cv_cxx_compile_cxx11_native" = xno; then
    if test "x$ac_cv_cxx_compile_cxx11_cxx" = xyes; then
-      CXXFLAGS+=" --std=c++11"
+      CXXFLAGS+=" --std=c++11 "
    else
       if test "x$ac_cv_cxx_compile_cxx0x_native" != xyes; then
          if test "x$ac_cv_cxx_compile_cxx0x_cxx" = xyes; then
-            CXXFLAGS+=" --std=c++0x"
+            CXXFLAGS+=" --std=c++0x "
          else
             AC_MSG_ERROR("Compiler does not support C++11 nor C++0X")
          fi
@@ -125,7 +125,7 @@ AC_PROG_LIBTOOL
 MINGW_AC_WIN32_NATIVE_HOST
 AM_CONDITIONAL([MINGW64], [test x$mingw_cv_win32_host = xyes])
 if test "x$mingw_cv_win32_host" = xyes; then
-  CXXFLAGS+=" -idirafter /usr/include"
+  CXXFLAGS+=" -idirafter /usr/include "
 fi
 
 #check doxygen
@@ -150,7 +150,7 @@ AC_DEFINE_UNQUOTED(BOOST_INCLUDE_DIR, "${BOOST_DIR}", "Define the boost include 
 
 PANDA_CHECK_BOOST_SCOPED_ENUMS
 if test "x$panda_boost_no_scoped_enums" = xyes; then
-   CXXFLAGS+=" -DBOOST_NO_SCOPED_ENUMS -DBOOST_NO_CXX11_SCOPED_ENUMS"
+   CXXFLAGS+=" -DBOOST_NO_SCOPED_ENUMS -DBOOST_NO_CXX11_SCOPED_ENUMS "
 fi
 PANDA_CHECK_RPATH_FLAVOR
 
@@ -2913,7 +2913,7 @@ if test "x$ac_cv_prog_cxx_openmp" != "xunsupported" && test "x$ac_cv_prog_cxx_op
 fi
 if test "x$openmp_ok" = "xyes"; then
    dnl We have it, now set up the flags
-   CXXFLAGS+=" $OPENMP_CXXFLAGS"
+   CXXFLAGS+=" $OPENMP_CXXFLAGS "
 fi
 
 
@@ -2944,28 +2944,28 @@ if test "x$panda_WERROR" = xyes; then
    -Wswitch-default \
    -Wundef \
    "
-   AX_CHECK_COMPILE_FLAG("-Wlogical-op", CXXFLAGS+="-Wlogical-op ",,"-Werror")
-   AX_CHECK_COMPILE_FLAG("-Wunused-local-typedefs", CXXFLAGS+="-Wunused-local-typedefs ",,"-Werror")
-   AX_CHECK_COMPILE_FLAG("-Wzero-as-null-pointer-constant", CXXFLAGS+="-Wzero-as-null-pointer-constant ",,"-Werror")
+   AX_CHECK_COMPILE_FLAG("-Wlogical-op", CXXFLAGS+=" -Wlogical-op ",,"-Werror")
+   AX_CHECK_COMPILE_FLAG("-Wunused-local-typedefs", CXXFLAGS+=" -Wunused-local-typedefs ",,"-Werror")
+   AX_CHECK_COMPILE_FLAG("-Wzero-as-null-pointer-constant", CXXFLAGS+=" -Wzero-as-null-pointer-constant ",,"-Werror")
 
    AC_COMPILE_WPEDANTIC
    if test "x$panda_WPEDANTIC" = xyes; then
-      CXXFLAGS+="-Wpedantic "
+      CXXFLAGS+=" -Wpedantic "
    fi
-   AX_CHECK_COMPILE_FLAG("-Wno-mismatched-tags", CXXFLAGS+="-Wno-mismatched-tags ",,"-Werror")
-   AX_CHECK_COMPILE_FLAG("-Wno-overlength-strings", CXXFLAGS+="-Wno-overlength-strings ",,"-Werror")
+   AX_CHECK_COMPILE_FLAG("-Wno-mismatched-tags", CXXFLAGS+=" -Wno-mismatched-tags ",,"-Werror")
+   AX_CHECK_COMPILE_FLAG("-Wno-overlength-strings", CXXFLAGS+=" -Wno-overlength-strings ",,"-Werror")
 else
-   CXXFLAGS+=" -w"
+   CXXFLAGS+=" -w "
 fi
 
-AX_CHECK_COMPILE_FLAG("-fdiagnostics-show-option", CXXFLAGS+="-fdiagnostics-show-option ",,"-Werror")
+AX_CHECK_COMPILE_FLAG("-fdiagnostics-show-option", CXXFLAGS+=" -fdiagnostics-show-option ",,"-Werror")
 
 AM_CONDITIONAL(ENABLE_WERROR, test "x$panda_WERROR" = xyes)
 
 ################ Debug checking ##############################
 if test "x$panda_DEBUG" = xyes; then
   AC_DEFINE(PANDA_DEBUG, 1, "Define if a debug version is built")
-  CXXFLAGS+=" -g3 -rdynamic"
+  CXXFLAGS+=" -g3 -rdynamic "
   AC_DEFINE(HAVE_PRINT_STACK,1, "Define if call stack is printed on error")
 fi
 
