@@ -535,11 +535,10 @@ void TestbenchGenerationBaseStep::write_output_checks(
       writer->write("else\n");
       writer->write(STR(STD_OPENING_CHAR));
       writer->write("begin\n");
+
+      if (output_level >= OUTPUT_LEVEL_VERY_PEDANTIC)
       {
-
-      if (output_level > OUTPUT_LEVEL_MINIMUM)
          writer->write("$display(\"Value found for output " + output_name + ": %b\", " + output_name + ");\n");
-
       }
       writer->write(STR(STD_CLOSING_CHAR));
       writer->write("end\n");
@@ -548,7 +547,7 @@ void TestbenchGenerationBaseStep::write_output_checks(
       std::string nonescaped_name = port_name;
       if(escaped_pos != std::string::npos)
          nonescaped_name.erase (std::remove(nonescaped_name.begin(), nonescaped_name.end(), '\\'), nonescaped_name.end());
-      if (output_level > OUTPUT_LEVEL_MINIMUM)
+      if (output_level >= OUTPUT_LEVEL_VERY_PEDANTIC)
       {
          writer->write("$display(\" res = %b " + nonescaped_name + " = %d " " _bambu_testbench_mem_[" + nonescaped_name + " + %d - base_addr] = %d expected = %d \\n\", ");
          writer->write("_bambu_testbench_mem_[" + port_name + " + _i_ - base_addr] == " + output_name + ", ");
@@ -644,11 +643,10 @@ void TestbenchGenerationBaseStep::write_output_checks(
       writer->write("else\n");
       writer->write(STR(STD_OPENING_CHAR));
       writer->write("begin\n");
+
+      if (output_level >= OUTPUT_LEVEL_VERY_PEDANTIC)
       {
-
-      if (output_level > OUTPUT_LEVEL_MINIMUM)
          writer->write("$display(\"Value found for output " + output_name + ": %b\", " + output_name + ");\n");
-
       }
       writer->write(STR(STD_CLOSING_CHAR));
       writer->write("end\n");
@@ -1377,12 +1375,14 @@ void TestbenchGenerationBaseStep::read_input_value_from_file(const std::string&i
       writer->write("begin\n");
       {
 
-      size_t escaped_pos = input_name.find('\\');
-      std::string nonescaped_name = input_name;
-      if(escaped_pos != std::string::npos)
-         nonescaped_name.erase (std::remove(nonescaped_name.begin(), nonescaped_name.end(), '\\'), nonescaped_name.end());
-      if (output_level > OUTPUT_LEVEL_MINIMUM)
-         writer->write("$display(\"Value found for input " + nonescaped_name + ": %b\", " + input_name + ");\n");
+         size_t escaped_pos = input_name.find('\\');
+         std::string nonescaped_name = input_name;
+         if(escaped_pos != std::string::npos)
+            nonescaped_name.erase (std::remove(nonescaped_name.begin(), nonescaped_name.end(), '\\'), nonescaped_name.end());
+         if (output_level >= OUTPUT_LEVEL_VERY_PEDANTIC)
+         {
+            writer->write("$display(\"Value found for input " + nonescaped_name + ": %b\", " + input_name + ");\n");
+         }
       }
       writer->write(STR(STD_CLOSING_CHAR));
       writer->write("end\n");
