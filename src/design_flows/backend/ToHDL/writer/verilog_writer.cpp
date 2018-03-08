@@ -770,7 +770,6 @@ void verilog_writer::write_port_binding(const structural_objectRef &port, const 
    THROW_ASSERT(port->get_owner(), "The port has to have an owner");
    THROW_ASSERT(object_bounded, "NULL object_bounded received for port: " + port->get_path());
    THROW_ASSERT(object_bounded->get_kind() != port_o_K || object_bounded->get_owner(), "A port has to have always an owner");
-   std::cerr << "Write port binding" << std::endl;
    if (first_port_analyzed)
       indented_output_stream->Append(", ");
    if (port->get_owner()->get_kind() == port_vector_o_K)
@@ -786,12 +785,10 @@ void verilog_writer::write_port_binding(const structural_objectRef &port, const 
    indented_output_stream->Append("(");
    if (object_bounded->get_kind() == port_o_K && object_bounded->get_owner()->get_kind() == port_vector_o_K)
    {
-      std::cerr << "B000" << std::endl;
       indented_output_stream->Append(HDL_manager::convert_to_identifier(this, object_bounded->get_owner()->get_id()) + type_converter_size(object_bounded));
    }
    else if (object_bounded->get_kind() == signal_o_K && object_bounded->get_owner()->get_kind() == signal_vector_o_K)
    {
-      std::cerr << "B001" << std::endl;
       indented_output_stream->Append(HDL_manager::convert_to_identifier(this, object_bounded->get_owner()->get_id()) + type_converter_size(object_bounded));
    }
    else if (object_bounded->get_kind() == constant_o_K)
