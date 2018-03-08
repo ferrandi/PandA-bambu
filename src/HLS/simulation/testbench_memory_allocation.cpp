@@ -127,6 +127,7 @@ void TestbenchMemoryAllocation::AllocTestbenchMemory(void) const
    for (const auto & curr_test_vector : HLSMgr->RSim->test_vectors)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering test vector " + STR(v_idx));
+      HLSMgr->RSim->param_address[v_idx] = std::map<unsigned int, unsigned int>();
       // loop on the variables in memory
       for (std::list<unsigned int>::const_iterator l = mem.begin(); l != mem.end(); ++l)
       {
