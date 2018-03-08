@@ -33,6 +33,9 @@
 
 #include "testbench_memory_allocation.hpp"
 
+///. include
+#include "Parameter.hpp"
+
 ///behavior include
 #include "behavioral_helper.hpp"
 #include "call_graph_manager.hpp"
@@ -58,6 +61,9 @@
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
 
+///utility include
+#include "utility.hpp"
+
 TestbenchMemoryAllocation::TestbenchMemoryAllocation
 (
    const ParameterConstRef _parameters,
@@ -71,7 +77,9 @@ TestbenchMemoryAllocation::TestbenchMemoryAllocation
       _design_flow_manager,
       HLSFlowStep_Type::TESTBENCH_MEMORY_ALLOCATION
    )
-{}
+{
+   debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
+}
 
 TestbenchMemoryAllocation::~TestbenchMemoryAllocation()
 {}
@@ -118,13 +126,14 @@ void TestbenchMemoryAllocation::AllocTestbenchMemory(void) const
    unsigned int v_idx = 0;
    for (const auto & curr_test_vector : HLSMgr->RSim->test_vectors)
    {
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering test vector " + STR(v_idx));
       // loop on the variables in memory
       for (std::list<unsigned int>::const_iterator l = mem.begin(); l != mem.end(); ++l)
       {
          std::string param = behavioral_helper->PrintVariable(*l);
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering " + param);
          if (param[0] == '"')
             param = "@"+STR(*l);
-
          bool is_memory = false;
          std::string test_v = "0";
          if (mem_vars.find(*l) != mem_vars.end() &&
@@ -139,7 +148,10 @@ void TestbenchMemoryAllocation::AllocTestbenchMemory(void) const
          }
 
          if (v_idx > 0 && is_memory)
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped " + param);
             continue;//memory has been already initialized
+         }
 
          unsigned int reserved_bytes = tree_helper::size(TM, *l) / 8;
          if (reserved_bytes == 0)
@@ -246,7 +258,9 @@ void TestbenchMemoryAllocation::AllocTestbenchMemory(void) const
 
          THROW_ASSERT(next_object_offset >= reserved_bytes, "more allocated memory than expected");
          HLSMgr->RSim->param_next_off[v_idx][*l] = next_object_offset;
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Considered " + param);
       }
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Considered test vector " + STR(v_idx));
       v_idx++;
    }
    return;
