@@ -295,34 +295,84 @@ all: $(I386_GCC49_TOPFNAME_PLUGIN)
 endif
 
 $(I386_GCC49_SSA_PLUGIN) : gcc49_plugin_dumpGimpleSSA.o gcc49_dumpGimple.o gcc49_tree-sra.o gcc49_version.h
-	$(I386_GCC49_PLUGIN_COMPILER) -fPIC -shared -fno-rtti gcc49_plugin_dumpGimpleSSA.o gcc49_dumpGimple.o gcc49_tree-sra.o -o gcc49_plugin_dumpGimpleSSA.so
+	@case $(host_os) in \
+	  mingw32) \
+	    flexlink -chain mingw -o gcc49_plugin_dumpGimpleSSA.so gcc49_plugin_dumpGimpleSSA.o gcc49_dumpGimple.o gcc49_tree-sra.o -lstdc++;;\
+	  *) \
+	    $(I386_GCC49_PLUGIN_COMPILER) -fPIC -shared -fno-rtti gcc49_plugin_dumpGimpleSSA.o gcc49_dumpGimple.o gcc49_tree-sra.o -o gcc49_plugin_dumpGimpleSSA.so;; \
+	esac;
 
 $(I386_GCC49_SSA_PLUGINCPP) : gcc49_plugin_dumpGimpleSSA.o gcc49_dumpGimpleCpp.o gcc49_tree-sra.o gcc49_version.h
-	$(I386_GCC49_PLUGIN_COMPILER) -fPIC -shared -fno-rtti gcc49_plugin_dumpGimpleSSA.o gcc49_dumpGimpleCpp.o gcc49_tree-sra.o -o gcc49_plugin_dumpGimpleSSACpp.so
+	@case $(host_os) in \
+	  mingw32) \
+	    flexlink -chain mingw -o gcc49_plugin_dumpGimpleSSACpp.so gcc49_plugin_dumpGimpleSSA.o gcc49_dumpGimpleCpp.o gcc49_tree-sra.o -lstdc++;;\
+	  *) \
+	    $(I386_GCC49_PLUGIN_COMPILER) -fPIC -shared -fno-rtti gcc49_plugin_dumpGimpleSSA.o gcc49_dumpGimpleCpp.o gcc49_tree-sra.o -o gcc49_plugin_dumpGimpleSSACpp.so;; \
+	esac;
 
 $(I386_GCC49_EMPTY_PLUGIN) : gcc49_plugin_dumpGimpleEmpty.o gcc49_dumpGimple.o gcc49_tree-sra.o gcc49_version.h
-	$(I386_GCC49_PLUGIN_COMPILER) -fPIC -shared -fno-rtti gcc49_plugin_dumpGimpleEmpty.o gcc49_dumpGimple.o gcc49_tree-sra.o -o gcc49_plugin_dumpGimpleEmpty.so
+	@case $(host_os) in \
+	  mingw32) \
+	    flexlink -chain mingw -o gcc49_plugin_dumpGimpleEmpty.so gcc49_plugin_dumpGimpleEmpty.o gcc49_dumpGimple.o gcc49_tree-sra.o -lstdc++;;\
+	  *) \
+	    $(I386_GCC49_PLUGIN_COMPILER) -fPIC -shared -fno-rtti gcc49_plugin_dumpGimpleEmpty.o gcc49_dumpGimple.o gcc49_tree-sra.o -o gcc49_plugin_dumpGimpleEmpty.so;;\
+	esac;
 
 $(I386_GCC49_TOPFNAME_PLUGIN) : gcc49_plugin_topfname.o gcc49_version.h
-	$(I386_GCC49_PLUGIN_COMPILER) -fPIC -shared -fno-rtti gcc49_plugin_topfname.o -o gcc49_plugin_topfname.so
+	@case $(host_os) in \
+	  mingw32) \
+	    flexlink -chain mingw -o gcc49_plugin_topfname.so gcc49_plugin_topfname.o -lstdc++;;\
+	  *) \
+	    $(I386_GCC49_PLUGIN_COMPILER) -fPIC -shared -fno-rtti gcc49_plugin_topfname.o -o gcc49_plugin_topfname.so;;\
+	esac;
 
 gcc49_plugin_dumpGimpleEmpty.o : $(top_srcdir)/etc/gcc_plugin/plugin_dumpGimpleEmpty.c $(top_srcdir)/etc/gcc_plugin/plugin_includes.h gcc49_version.h
-	$(I386_GCC49_PLUGIN_COMPILER) -x c++ -fPIC -fno-rtti -c $(top_srcdir)/etc/gcc_plugin/plugin_dumpGimpleEmpty.c -o gcc49_plugin_dumpGimpleEmpty.o -I$(I386_GCC49_PLUGIN_DIR)/include $(WFLAGS)
+	@case $(host_os) in \
+	  mingw32) \
+	    $(I386_GCC49_PLUGIN_COMPILER) -x c++ -c -fno-exceptions -fno-rtti $(top_srcdir)/etc/gcc_plugin/plugin_dumpGimpleEmpty.c -o gcc49_plugin_dumpGimpleEmpty.o -I$(I386_GCC49_PLUGIN_DIR)/include $(WFLAGS);;\
+	  *) \
+	    $(I386_GCC49_PLUGIN_COMPILER) -x c++ -fPIC -fno-rtti -c $(top_srcdir)/etc/gcc_plugin/plugin_dumpGimpleEmpty.c -o gcc49_plugin_dumpGimpleEmpty.o -I$(I386_GCC49_PLUGIN_DIR)/include $(WFLAGS);;\
+	esac;
 
 gcc49_plugin_dumpGimpleSSA.o : $(top_srcdir)/etc/gcc_plugin/plugin_dumpGimpleSSA.c $(top_srcdir)/etc/gcc_plugin/plugin_includes.h gcc49_version.h
-	$(I386_GCC49_PLUGIN_COMPILER) -x c++ -fPIC -fno-rtti -c $(top_srcdir)/etc/gcc_plugin/plugin_dumpGimpleSSA.c -o gcc49_plugin_dumpGimpleSSA.o -I$(I386_GCC49_PLUGIN_DIR)/include $(WFLAGS)
+	@case $(host_os) in \
+	  mingw32) \
+	    $(I386_GCC49_PLUGIN_COMPILER) -x c++ -fno-exceptions -fno-rtti -c $(top_srcdir)/etc/gcc_plugin/plugin_dumpGimpleSSA.c -o gcc49_plugin_dumpGimpleSSA.o -I$(I386_GCC49_PLUGIN_DIR)/include $(WFLAGS);;\
+	  *) \
+	    $(I386_GCC49_PLUGIN_COMPILER) -x c++ -fPIC -fno-rtti -c $(top_srcdir)/etc/gcc_plugin/plugin_dumpGimpleSSA.c -o gcc49_plugin_dumpGimpleSSA.o -I$(I386_GCC49_PLUGIN_DIR)/include $(WFLAGS);;\
+	esac;
 
 gcc49_plugin_topfname.o : $(top_srcdir)/etc/gcc_plugin/plugin_topfname.c $(top_srcdir)/etc/gcc_plugin/plugin_includes.h gcc49_version.h
-	$(I386_GCC49_PLUGIN_COMPILER) -x c++ -fPIC -fno-rtti -c $(top_srcdir)/etc/gcc_plugin/plugin_topfname.c -o gcc49_plugin_topfname.o -I$(I386_GCC49_PLUGIN_DIR)/include $(WFLAGS)
+	@case $(host_os) in \
+	  mingw32) \
+	    $(I386_GCC49_PLUGIN_COMPILER) -x c++ -fno-exceptions -fno-rtti -c $(top_srcdir)/etc/gcc_plugin/plugin_topfname.c -o gcc49_plugin_topfname.o -I$(I386_GCC49_PLUGIN_DIR)/include $(WFLAGS);;\
+	  *) \
+	    $(I386_GCC49_PLUGIN_COMPILER) -x c++ -fPIC -fno-rtti -c $(top_srcdir)/etc/gcc_plugin/plugin_topfname.c -o gcc49_plugin_topfname.o -I$(I386_GCC49_PLUGIN_DIR)/include $(WFLAGS);;\
+	esac;
 
 gcc49_dumpGimple.o : $(top_srcdir)/etc/gcc_plugin/dumpGimple.c gcc49_version.h gtype_roots_gcc49.h 
-	$(I386_GCC49_PLUGIN_COMPILER) -x c++ -fPIC -fno-rtti -c $(top_srcdir)/etc/gcc_plugin/dumpGimple.c -o gcc49_dumpGimple.o -I. -I$(I386_GCC49_PLUGIN_DIR)/include -DPANDA_PLUGIN_VERSION=\"$(PANDA_PLUGIN_VERSION)\" $(WFLAGS)
+	@case $(host_os) in \
+	  mingw32) \
+	    $(I386_GCC49_PLUGIN_COMPILER) -x c++ -fno-exceptions -fno-rtti -c $(top_srcdir)/etc/gcc_plugin/dumpGimple.c -o gcc49_dumpGimple.o -I. -I$(I386_GCC49_PLUGIN_DIR)/include -DPANDA_PLUGIN_VERSION=\"$(PANDA_PLUGIN_VERSION)\" $(WFLAGS);;\
+	  *) \
+	    $(I386_GCC49_PLUGIN_COMPILER) -x c++ -fPIC -fno-rtti -c $(top_srcdir)/etc/gcc_plugin/dumpGimple.c -o gcc49_dumpGimple.o -I. -I$(I386_GCC49_PLUGIN_DIR)/include -DPANDA_PLUGIN_VERSION=\"$(PANDA_PLUGIN_VERSION)\" $(WFLAGS);;\
+	esac;
 
 gcc49_dumpGimpleCpp.o : $(top_srcdir)/etc/gcc_plugin/dumpGimple.c gcc49_version.h gtype_roots_gcc49.h 
-	$(I386_GCC49_PLUGIN_COMPILER) -x c++ -fPIC -fno-rtti -c $(top_srcdir)/etc/gcc_plugin/dumpGimple.c -DCPP_LANGUAGE -o gcc49_dumpGimpleCpp.o -I. -I$(I386_GCC49_PLUGIN_DIR)/include -DPANDA_PLUGIN_VERSION=\"$(PANDA_PLUGIN_VERSION)\" $(WFLAGS)
+	@case $(host_os) in \
+	  mingw32) \
+	    $(I386_GCC49_PLUGIN_COMPILER) -x c++ -fno-exceptions -fno-rtti -c $(top_srcdir)/etc/gcc_plugin/dumpGimple.c -DCPP_LANGUAGE -o gcc49_dumpGimpleCpp.o -I. -I$(I386_GCC49_PLUGIN_DIR)/include -DPANDA_PLUGIN_VERSION=\"$(PANDA_PLUGIN_VERSION)\" $(WFLAGS);;\
+	  *) \
+	    $(I386_GCC49_PLUGIN_COMPILER) -x c++ -fPIC -fno-rtti -c $(top_srcdir)/etc/gcc_plugin/dumpGimple.c -DCPP_LANGUAGE -o gcc49_dumpGimpleCpp.o -I. -I$(I386_GCC49_PLUGIN_DIR)/include -DPANDA_PLUGIN_VERSION=\"$(PANDA_PLUGIN_VERSION)\" $(WFLAGS);;\
+	esac;
 
 gcc49_tree-sra.o : $(top_srcdir)/etc/gcc_plugin/gcc-4.9/tree-sra.c
-	$(I386_GCC49_PLUGIN_COMPILER) -x c++ -fPIC -fno-rtti -c $(top_srcdir)/etc/gcc_plugin/gcc-4.9/tree-sra.c -o gcc49_tree-sra.o -I. -I$(I386_GCC49_PLUGIN_DIR)/include -DPANDA_PLUGIN_VERSION=\"$(PANDA_PLUGIN_VERSION)\" -DIN_GCC 
+	@case $(host_os) in \
+	  mingw32) \
+	    $(I386_GCC49_PLUGIN_COMPILER) -x c++ -fno-exceptions -fno-rtti -c $(top_srcdir)/etc/gcc_plugin/gcc-4.9/tree-sra.c -o gcc49_tree-sra.o -I. -I$(I386_GCC49_PLUGIN_DIR)/include -DPANDA_PLUGIN_VERSION=\"$(PANDA_PLUGIN_VERSION)\" -DIN_GCC;;\
+	  *) \
+	    $(I386_GCC49_PLUGIN_COMPILER) -x c++ -fPIC -fno-rtti -c $(top_srcdir)/etc/gcc_plugin/gcc-4.9/tree-sra.c -o gcc49_tree-sra.o -I. -I$(I386_GCC49_PLUGIN_DIR)/include -DPANDA_PLUGIN_VERSION=\"$(PANDA_PLUGIN_VERSION)\" -DIN_GCC ;;\
+	esac;
 
 
 

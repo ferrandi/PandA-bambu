@@ -961,19 +961,40 @@ for compiler in $GCC_TO_BE_CHECKED; do
       }
 PLUGIN_TEST
       for plugin_compiler in $I386_GCC49_EXE $I386_GPP49_EXE; do
-         if test -f plugin_test.so; then
-            rm plugin_test.so
+         plugin_file_name=plugin_test.so
+         plugin_option=
+         case $host_os in
+           mingw32) 
+             plugin_option="-shared"
+           ;;
+           *)
+             plugin_option='-fPIC -shared'
+           ;;
+         esac
+         if test -f $plugin_file_name; then
+            rm $plugin_file_name
          fi
-         $plugin_compiler -I$TOPSRCDIR/etc/gcc_plugin/ -fPIC -shared plugin_test.c -o plugin_test.so -I$I386_GCC49_PLUGIN_DIR/include 2> /dev/null
-         if test ! -f plugin_test.so; then
-            echo "checking $plugin_compiler -I$TOPSRCDIR/etc/gcc_plugin/ -fPIC -shared plugin_test.c -o plugin_test.so -I$I386_GCC49_PLUGIN_DIR/include... no"
+         case $host_os in
+           mingw32) 
+             echo "$plugin_compiler -I$I386_GCC49_PLUGIN_DIR/include -I$TOPSRCDIR/etc/gcc_plugin/ -o plugin_test.o -c  plugin_test.c $plugin_option"
+             $plugin_compiler -I$I386_GCC49_PLUGIN_DIR/include -I$TOPSRCDIR/etc/gcc_plugin/ -o plugin_test.o -c  plugin_test.c $plugin_option 2> /dev/null
+             echo "flexlink -chain mingw -o $plugin_file_name  plugin_test.o"
+             flexlink -chain mingw -o $plugin_file_name  plugin_test.o 2> /dev/null
+           ;;
+           *)
+             $plugin_compiler -I$I386_GCC49_PLUGIN_DIR/include -I$TOPSRCDIR/etc/gcc_plugin/ -o $plugin_file_name  plugin_test.c $plugin_option 2> /dev/null
+           ;;
+         esac
+         if test ! -f $plugin_file_name; then
+            echo "checking $plugin_compiler -I$I386_GCC49_PLUGIN_DIR/include -I$TOPSRCDIR/etc/gcc_plugin/ -o $plugin_file_name  plugin_test.c $plugin_option ... no"
             continue
          fi
-         echo "checking $plugin_compiler -I$TOPSRCDIR/etc/gcc_plugin/ -fPIC -shared plugin_test.c -o plugin_test.so -I$I386_GCC49_PLUGIN_DIR/include... yes"
+         echo "checking $plugin_compiler -I$I386_GCC49_PLUGIN_DIR/include -I$TOPSRCDIR/etc/gcc_plugin/ -o $plugin_file_name  plugin_test.c $plugin_option... yes"
+
          ac_save_CC="$CC"
          ac_save_CFLAGS="$CFLAGS"
          CC=$plugin_compiler
-         CFLAGS="-fplugin=$BUILDDIR/plugin_test.so"
+         CFLAGS="-fplugin=$BUILDDIR/$plugin_file_name"
          AC_LANG_PUSH([C])
          AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
                ]],[[
@@ -988,12 +1009,12 @@ PLUGIN_TEST
             continue
          fi
          echo "Looking for gengtype"
-         I386_GCC49_GENGTYPE=`$I386_GCC49_EXE -print-file-name=gengtype`
-         if test "x$I386_GCC49_GENGTYPE" = "xgengtype"; then
-            I386_GCC49_GENGTYPE=`$I386_GCC49_EXE -print-file-name=plugin/gengtype`
-            if test "x$I386_GCC49_GENGTYPE" = "xplugin/gengtype"; then
+         I386_GCC49_GENGTYPE=`$I386_GCC49_EXE -print-file-name=gengtype$ac_exeext`
+         if test "x$I386_GCC49_GENGTYPE" = "xgengtype$ac_exeext"; then
+            I386_GCC49_GENGTYPE=`$I386_GCC49_EXE -print-file-name=plugin/gengtype$ac_exeext`
+            if test "x$I386_GCC49_GENGTYPE" = "xplugin/gengtype$ac_exeext"; then
                I386_GCC49_ROOT_DIR=`dirname $I386_GCC49_EXE`/..
-               I386_GCC49_GENGTYPE=`find $I386_GCC49_ROOT_DIR -name gengtype | head -n1`
+               I386_GCC49_GENGTYPE=`find $I386_GCC49_ROOT_DIR -name gengtype$ac_exeext | head -n1`
                if test "x$I386_GCC49_GENGTYPE" = "x"; then
                   I386_GCC49_PLUGIN_COMPILER=
                   continue
