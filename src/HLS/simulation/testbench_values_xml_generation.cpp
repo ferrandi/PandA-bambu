@@ -166,7 +166,7 @@ DesignFlowStep_Status TestbenchValuesXMLGeneration::Exec()
       for (const auto & l : mem)
       {
          std::string param = behavioral_helper->PrintVariable(l);
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering parameter " + param);
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering " + param);
          if (param[0] == '"')
             param = "@" + STR(l);
 
@@ -206,9 +206,26 @@ DesignFlowStep_Status TestbenchValuesXMLGeneration::Exec()
 
          all_reserved_mem_bytes[v_idx][l] = reserved_mem_bytes;
 
-         ///Call the parser to translate C initialization to verilog initialization
-         const CInitializationParserFunctorRef c_initialization_parser_functor = CInitializationParserFunctorRef(new MemoryInitializationWriter(output_stream, TM, behavioral_helper, reserved_mem_bytes, TM->CGetTreeNode(l), TestbenchGeneration_MemoryType::MEMORY_INITIALIZATION, parameters));
-         c_initialization_parser->Parse(c_initialization_parser_functor, test_v);
+         if(is_memory)
+         {
+            std::vector<std::string> splitted;
+            boost::algorithm::split(splitted, test_v , boost::algorithm::is_any_of(","));
+            for(const auto element : splitted)
+            {
+               THROW_ASSERT(element.size()%8 == 0, element + ": " + STR(element.size()));
+               for(size_t bits = 0; bits < element.size(); bits += 8)
+               {
+                  output_stream << "m" << element.substr(element.size() - 8 - bits, 8);
+               }
+            }
+         }
+         else
+         {
+            ///Call the parser to translate C initialization to verilog initialization
+            const CInitializationParserFunctorRef c_initialization_parser_functor = CInitializationParserFunctorRef(new MemoryInitializationWriter(output_stream, TM, behavioral_helper, reserved_mem_bytes, TM->CGetTreeNode(l), TestbenchGeneration_MemoryType::MEMORY_INITIALIZATION, parameters));
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Parsing initialization of " + param + "(" + TM->CGetTreeNode(tree_helper::get_type_index(TM, l))->get_kind_text() + "): " + test_v);
+            c_initialization_parser->Parse(c_initialization_parser_functor, test_v);
+         }
          size_t next_object_offset = HLSMgr->RSim->param_next_off.find(v_idx)->second.find(l)->second;
 
          if (next_object_offset > reserved_mem_bytes)
