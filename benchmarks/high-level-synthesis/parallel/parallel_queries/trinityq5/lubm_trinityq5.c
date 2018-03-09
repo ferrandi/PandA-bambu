@@ -50,11 +50,8 @@ void parallel(Graph * graph, NodeId var_2, PropertyId p_var_3, PropertyId p_var_
 }
 
 __attribute__((noinline))
-void search(Graph * graph, NodeId var_2, PropertyId p_var_3, PropertyId p_var_4, PropertyId p_var_5)
+int search(Graph * graph, NodeId var_2, PropertyId p_var_3, PropertyId p_var_4, PropertyId p_var_5)
 {
-#ifndef DEBUG
-   __builtin_bambu_time_start();
-#endif
    size_t in_degree_var_2 = getInDegree(graph, var_2);
    printf("In degree %d\n", in_degree_var_2);
    Edge * var_2_1_inEdges = getInEdges(graph, var_2);
@@ -62,9 +59,7 @@ void search(Graph * graph, NodeId var_2, PropertyId p_var_3, PropertyId p_var_4,
 
    for (int i = 0; i < N_THREADS; ++i)
      numAnswers += counter[i];
-#ifndef DEBUG
-   __builtin_bambu_time_stop();
-#endif
+   return numAnswers;
 }
 
 
@@ -81,9 +76,9 @@ int test(NodeId var_2, PropertyId p_var_3, PropertyId p_var_4, PropertyId p_var_
 // p_var_3 = "ub:subOrganizationOf" 5
 // p_var_4 = "ub:Research-Group" 22818
 // p_var_5 = "a" 14
-  search(&TheGraph, var_2, p_var_3, p_var_4, p_var_5);
-  printf("%d\n", numAnswers);
-  return numAnswers;
+  int ret_value = search(&TheGraph, var_2, p_var_3, p_var_4, p_var_5);
+  printf("%d\n", ret_value);
+  return ret_value;
 }
 
 

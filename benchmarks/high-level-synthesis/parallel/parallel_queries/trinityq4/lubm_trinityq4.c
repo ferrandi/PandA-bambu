@@ -91,20 +91,15 @@ void parallel(Graph * graph, NodeId var_2, PropertyId p_var_3, PropertyId p_var_
 }
 
 __attribute__((noinline))
-void search(Graph * graph, NodeId var_2, PropertyId p_var_3, PropertyId p_var_4, PropertyId p_var_5, PropertyId p_var_7, PropertyId p_var_9, PropertyId p_var_11)
+int search(Graph * graph, NodeId var_2, PropertyId p_var_3, PropertyId p_var_4, PropertyId p_var_5, PropertyId p_var_7, PropertyId p_var_9, PropertyId p_var_11)
 {
-#ifndef DEBUG
-   __builtin_bambu_time_start();
-#endif
    size_t in_degree_var_2 = getInDegree(graph, var_2);
    Edge * var_2_1_inEdges = getInEdges(graph, var_2);
    printf("In degree %d\n", in_degree_var_2);
    parallel(graph, var_2, p_var_3, p_var_4, p_var_5, p_var_7, p_var_9, p_var_11, in_degree_var_2, var_2_1_inEdges);
    for (int i = 0; i < N_THREADS; ++i)
      numAnswers += counter[i];
-#ifndef DEBUG
-   __builtin_bambu_time_stop();
-#endif
+   return numAnswers;
 }
 
 
@@ -124,9 +119,9 @@ int test(NodeId var_2, PropertyId p_var_3, PropertyId p_var_4, PropertyId p_var_
 // p_var_7 = "ub:name" 17
 // p_var_9 = "ub:emailAddress" 10
 // p_var_11 = "ub:telephone" 11
-  search(&TheGraph, var_2, p_var_3, p_var_4, p_var_5, p_var_7, p_var_9, p_var_11);
-  printf("%d\n", numAnswers);
-  return numAnswers;
+  int ret_value = search(&TheGraph, var_2, p_var_3, p_var_4, p_var_5, p_var_7, p_var_9, p_var_11);
+  printf("%d\n", ret_value);
+  return ret_value;
 }
 
 
