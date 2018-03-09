@@ -964,7 +964,7 @@ PLUGIN_TEST
          plugin_file_name=plugin_test.so
          plugin_option=
          case $host_os in
-           mingw32) 
+           mingw*) 
              plugin_option="-shared"
            ;;
            *)
@@ -975,7 +975,7 @@ PLUGIN_TEST
             rm $plugin_file_name
          fi
          case $host_os in
-           mingw32) 
+           mingw*) 
              echo "$plugin_compiler -I$I386_GCC49_PLUGIN_DIR/include -I$TOPSRCDIR/etc/gcc_plugin/ -o plugin_test.o -c  plugin_test.c $plugin_option"
              $plugin_compiler -I$I386_GCC49_PLUGIN_DIR/include -I$TOPSRCDIR/etc/gcc_plugin/ -o plugin_test.o -c  plugin_test.c $plugin_option 2> /dev/null
              echo "flexlink -chain mingw -o $plugin_file_name  plugin_test.o"
