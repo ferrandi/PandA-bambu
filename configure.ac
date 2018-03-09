@@ -2916,6 +2916,38 @@ if test "x$openmp_ok" = "xyes"; then
    CXXFLAGS+=" $OPENMP_CXXFLAGS "
 fi
 
+################################################################################
+#                                                                              #
+#                                Autoheader                                    #
+#                                                                              #
+################################################################################
+
+cd $TOPSRCDIR && autoheader configure.ac && cp config.h.in $BUILDDIR && cd $BUILDDIR
+AC_CONFIG_HEADERS(config.h:config.h.in)
+if test ! -d config_headers ; then
+   mkdir config_headers
+fi
+for file in `find $BUILDDIR/config_headers -name *hpp`; do
+   keyword=$(grep define $file | awk '{print $2}')
+   found=$(grep $keyword $BUILDDIR/config.h.in )
+   if test "x$found" = x; then
+      echo "removing $file"
+      rm $file
+      if test -f $file.in; then
+         echo "removing $file.in"
+         rm $file.in
+      fi
+   fi
+done;
+
+for keyword in `grep undef $BUILDDIR/config.h.in | awk '{print $2}'`; do
+   if test ! -f config_headers/config_"$keyword".hpp.in; then
+      echo "#define "$keyword 0 > config_headers/config_"$keyword".hpp.in
+   fi
+   AC_CONFIG_HEADERS([config_headers/config_"$keyword".hpp:config_headers/config_"$keyword".hpp.in])
+done;
+all_includes+=" -I$BUILDDIR/config_headers"
+
 
 ################ Werror checking ##############################
 #Checking should performed at the end since macros for checking boost library does not work with -WError
@@ -2932,7 +2964,6 @@ if test "x$panda_WERROR" = xyes; then
    -Wsign-conversion \
    -Wredundant-decls \
    -Wvla -Wshadow -Wctor-dtor-privacy -Wnon-virtual-dtor -Woverloaded-virtual \
-   -Wmissing-include-dirs \
    -Winit-self \
    -Wpointer-arith \
    -Wcast-qual \
@@ -2944,6 +2975,7 @@ if test "x$panda_WERROR" = xyes; then
    -Wswitch-default \
    -Wundef \
    "
+   AX_CHECK_COMPILE_FLAG("-Wmissing-include-dirs", CXXFLAGS+=" -Wmissing-include-dirs ",,"-Werror -I$BUILDDIR/config_headers")
    AX_CHECK_COMPILE_FLAG("-Wlogical-op", CXXFLAGS+=" -Wlogical-op ",,"-Werror")
    AX_CHECK_COMPILE_FLAG("-Wunused-local-typedefs", CXXFLAGS+=" -Wunused-local-typedefs ",,"-Werror")
    AX_CHECK_COMPILE_FLAG("-Wzero-as-null-pointer-constant", CXXFLAGS+=" -Wzero-as-null-pointer-constant ",,"-Werror")
@@ -2989,38 +3021,6 @@ else
   fi
 fi
 
-
-################################################################################
-#                                                                              #
-#                                Autoheader                                    #
-#                                                                              #
-################################################################################
-
-cd $TOPSRCDIR && autoheader configure.ac && cp config.h.in $BUILDDIR && cd $BUILDDIR
-AC_CONFIG_HEADERS(config.h:config.h.in)
-if test ! -d config_headers ; then
-   mkdir config_headers
-fi
-for file in `find $BUILDDIR/config_headers -name *hpp`; do
-   keyword=$(grep define $file | awk '{print $2}')
-   found=$(grep $keyword $BUILDDIR/config.h.in )
-   if test "x$found" = x; then
-      echo "removing $file"
-      rm $file
-      if test -f $file.in; then
-         echo "removing $file.in"
-         rm $file.in
-      fi
-   fi
-done;
-
-for keyword in `grep undef $BUILDDIR/config.h.in | awk '{print $2}'`; do
-   if test ! -f config_headers/config_"$keyword".hpp.in; then
-      echo "#define "$keyword 0 > config_headers/config_"$keyword".hpp.in
-   fi
-   AC_CONFIG_HEADERS([config_headers/config_"$keyword".hpp:config_headers/config_"$keyword".hpp.in])
-done;
-all_includes+=" -I$BUILDDIR/config_headers"
 
 
 
