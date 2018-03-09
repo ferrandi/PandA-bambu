@@ -114,6 +114,7 @@ void TestbenchMemoryAllocation::AllocTestbenchMemory(void) const
    unsigned int v_idx = 0;
    for (const auto & curr_test_vector : HLSMgr->RSim->test_vectors)
    {
+      HLSMgr->RSim->param_address[v_idx] = std::map<unsigned int, unsigned int>();
       // loop on the variables in memory
       for (std::list<unsigned int>::const_iterator l = mem.begin(); l != mem.end(); ++l)
       {
