@@ -34,6 +34,7 @@ if test "x$want_boost" = "xyes"; then
         AC_MSG_CHECKING(for boostlib >= $boost_lib_version_req)
         succeeded=no
         BOOST_LIB_DIR="."
+        BOOST_DIR="."
 
         dnl first we check the system location for boost libraries
         dnl this location ist chosen if boost libraries are installed with the --layout=system option
