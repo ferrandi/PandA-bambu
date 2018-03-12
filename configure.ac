@@ -2916,6 +2916,19 @@ if test "x$openmp_ok" = "xyes"; then
    CXXFLAGS+=" $OPENMP_CXXFLAGS "
 fi
 
+################ Debug checking ##############################
+if test "x$panda_DEBUG" = xyes; then
+  AC_DEFINE(PANDA_DEBUG, 1, "Define if a debug version is built")
+  CXXFLAGS+=" -g3 -rdynamic "
+  AC_DEFINE(HAVE_PRINT_STACK,1, "Define if call stack is printed on error")
+fi
+
+################ Werror checking ##############################
+if test "x$panda_WERROR" = xyes; then
+   AC_DEFINE(WERROR, 1, "Define if panda is compiled with -Werror")
+   AC_DEFINE(SKIP_WARNING_SECTIONS, 1, "Define if warnings in non-cleaned sections are allowed")
+fi
+
 ################################################################################
 #                                                                              #
 #                                Autoheader                                    #
@@ -2928,7 +2941,7 @@ if test ! -d config_headers ; then
    mkdir config_headers
 fi
 for file in `find $BUILDDIR/config_headers -name *hpp`; do
-   keyword=$(grep define $file | awk '{print $2}')
+   keyword=$(grep "#define" $file | awk '{print $2}')
    found=$(grep $keyword $BUILDDIR/config.h.in )
    if test "x$found" = x; then
       echo "removing $file"
@@ -2940,11 +2953,10 @@ for file in `find $BUILDDIR/config_headers -name *hpp`; do
    fi
 done;
 
-for keyword in `grep undef $BUILDDIR/config.h.in | awk '{print $2}'`; do
+for keyword in `grep "#undef" $BUILDDIR/config.h.in | awk '{print $2}'`; do
    if test ! -f config_headers/config_"$keyword".hpp.in; then
       echo "#define "$keyword 0 > config_headers/config_"$keyword".hpp.in
    fi
-   AC_CONFIG_HEADERS([config_headers/config_"$keyword".hpp:config_headers/config_"$keyword".hpp.in])
 done;
 all_includes+=" -I$BUILDDIR/config_headers"
 
@@ -2952,8 +2964,6 @@ all_includes+=" -I$BUILDDIR/config_headers"
 ################ Werror checking ##############################
 #Checking should performed at the end since macros for checking boost library does not work with -WError
 if test "x$panda_WERROR" = xyes; then
-   AC_DEFINE(WERROR, 1, "Define if panda is compiled with -Werror")
-   AC_DEFINE(SKIP_WARNING_SECTIONS, 1, "Define if warnings in non-cleaned sections are allowed")
    CXXFLAGS+=" \
    -Wall \
    -Werror \
@@ -2975,10 +2985,10 @@ if test "x$panda_WERROR" = xyes; then
    -Wswitch-default \
    -Wundef \
    "
-   AX_CHECK_COMPILE_FLAG("-Wmissing-include-dirs", CXXFLAGS+=" -Wmissing-include-dirs ",,"-Werror -I$BUILDDIR/config_headers")
+   #AX_CHECK_COMPILE_FLAG("-Wmissing-include-dirs", CXXFLAGS+=" -Wmissing-include-dirs ",,"-Werror") #it is not doing any real test
    AX_CHECK_COMPILE_FLAG("-Wlogical-op", CXXFLAGS+=" -Wlogical-op ",,"-Werror")
    AX_CHECK_COMPILE_FLAG("-Wunused-local-typedefs", CXXFLAGS+=" -Wunused-local-typedefs ",,"-Werror")
-   AX_CHECK_COMPILE_FLAG("-Wzero-as-null-pointer-constant", CXXFLAGS+=" -Wzero-as-null-pointer-constant ",,"-Werror")
+   AX_CXXFLAGS_GCC_OPTION(-Wzero-as-null-pointer-constant,, CXXFLAGS+=" -Wzero-as-null-pointer-constant ",)
 
    AC_COMPILE_WPEDANTIC
    if test "x$panda_WPEDANTIC" = xyes; then
@@ -2994,12 +3004,6 @@ AX_CHECK_COMPILE_FLAG("-fdiagnostics-show-option", CXXFLAGS+=" -fdiagnostics-sho
 
 AM_CONDITIONAL(ENABLE_WERROR, test "x$panda_WERROR" = xyes)
 
-################ Debug checking ##############################
-if test "x$panda_DEBUG" = xyes; then
-  AC_DEFINE(PANDA_DEBUG, 1, "Define if a debug version is built")
-  CXXFLAGS+=" -g3 -rdynamic "
-  AC_DEFINE(HAVE_PRINT_STACK,1, "Define if call stack is printed on error")
-fi
 
 ############################# Optimization setup ##############################
 optlevel=""
@@ -3038,3 +3042,36 @@ AC_SUBST(all_includes)
 
 
 AC_OUTPUT()
+
+for keyword in `grep "#undef" $BUILDDIR/config.h | awk '{print $3}'`; do
+   if test ! -f config_headers/config_"$keyword".hpp; then
+      echo Creating config_headers/config_"$keyword".hpp
+      echo "#define "$keyword 0 > config_headers/config_"$keyword".hpp
+   else
+      echo "#define "$keyword 0 > configtest.hpp
+      if diff configtest.hpp config_headers/config_"$keyword".hpp >/dev/null 2>&1; then
+      { echo config_headers/config_"$keyword".hpp is unchanged >&5
+echo config_headers/config_"$keyword".hpp is unchanged >&6;}
+    else
+      rm -f config_headers/config_"$keyword".hpp
+      mv configtest.hpp config_headers/config_"$keyword".hpp
+    fi
+   fi
+done;
+
+for keyword in `grep "#define" $BUILDDIR/config.h | awk '{print $2}'`; do
+   if test ! -f config_headers/config_"$keyword".hpp; then
+      echo Creating config_headers/config_"$keyword".hpp
+      grep $keyword $BUILDDIR/config.h > config_headers/config_"$keyword".hpp
+   else
+      grep $keyword $BUILDDIR/config.h > configtest.hpp
+      if diff configtest.hpp config_headers/config_"$keyword".hpp >/dev/null 2>&1; then
+      { echo config_headers/config_"$keyword".hpp is unchanged >&5
+echo config_headers/config_"$keyword".hpp is unchanged >&6;}
+    else
+      rm -f config_headers/config_"$keyword".hpp
+      mv configtest.hpp config_headers/config_"$keyword".hpp
+    fi
+   fi
+done;
+
