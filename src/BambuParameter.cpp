@@ -3154,8 +3154,8 @@ void BambuParameter::SetDefaults()
 {
    // ---------- general options ----------- //
    /// Revision
-   setOption(OPT_dot_directory, "HLS_output/dot/");
-   setOption(OPT_output_directory, "HLS_output/");
+   setOption(OPT_dot_directory, GetCurrentPath()+"/HLS_output/dot/");
+   setOption(OPT_output_directory, GetCurrentPath()+"/HLS_output/");
    setOption(OPT_simulation_output, "results.txt");
    setOption(OPT_profiling_output, "profiling_results.txt");
    /// Debugging level

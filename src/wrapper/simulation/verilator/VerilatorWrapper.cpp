@@ -133,6 +133,9 @@ void VerilatorWrapper::GenerateScript(std::ostringstream& script, const std::str
    script << "ln -s ../../../"+ output_directory +" " + SIM_SUBDIR + suffix + "/verilator_obj\n";
 
    script << "make -C " + SIM_SUBDIR + suffix + "/verilator_obj -j4 OPT_FAST=\"-O1 -fstrict-aliasing\" -f V"+ top_filename +"_tb.mk V"+ top_filename << "_tb";
+#ifdef _WIN32
+   script << " CFG_CXXFLAGS_NO_UNUSED=\"\"";
+#endif
    script << std::endl << std::endl;
 
    script << SIM_SUBDIR + suffix + "/verilator_obj/V"+top_filename+"_tb";
