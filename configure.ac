@@ -3053,7 +3053,7 @@ for keyword in `grep "#undef" $BUILDDIR/config.h | awk '{print $3}'`; do
       { echo config_headers/config_"$keyword".hpp is unchanged >&5
 echo config_headers/config_"$keyword".hpp is unchanged >&6;}
     else
-      cho config_headers/config_"$keyword".hpp is changed
+      echo config_headers/config_"$keyword".hpp is changed
       rm -f config_headers/config_"$keyword".hpp
       mv configtest.hpp config_headers/config_"$keyword".hpp
     fi
@@ -3070,7 +3070,7 @@ for keyword in `grep "#define" $BUILDDIR/config.h | awk '{print $2}'`; do
       { echo config_headers/config_"$keyword".hpp is unchanged >&5
 echo config_headers/config_"$keyword".hpp is unchanged >&6;}
     else
-      cho config_headers/config_"$keyword".hpp is changed
+      echo config_headers/config_"$keyword".hpp is changed
       rm -f config_headers/config_"$keyword".hpp
       mv configtest.hpp config_headers/config_"$keyword".hpp
     fi
