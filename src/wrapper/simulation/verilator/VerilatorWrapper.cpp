@@ -110,9 +110,7 @@ void VerilatorWrapper::GenerateScript(std::ostringstream& script, const std::str
    script << "verilator --cc --exe --Mdir " + SIM_SUBDIR + suffix + "/verilator_obj -Wall -Wno-DECLFILENAME -Wno-WIDTH -Wno-UNUSED -Wno-CASEINCOMPLETE -Wno-UNOPTFLAT -Wno-PINMISSING -Wno-UNDRIVEN -Wno-SYNCASYNCNET -sv";
 #else
    script << "verilator --cc --exe --Mdir " + SIM_SUBDIR + suffix + "/verilator_obj -Wno-fatal -Wno-lint -sv";
-#endif
-#ifndef _WIN32
-   script << " -Ox";
+   script << " -O3";
 #endif
    if(generate_vcd_output)
    {
