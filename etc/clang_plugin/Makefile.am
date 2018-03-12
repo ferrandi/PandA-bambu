@@ -133,7 +133,7 @@ clean :
 	rm -rf *.o *.so *.h
 
 install: all
-	if test "`ls *so`" != ""; then then mkdir -p $(DESTDIR)$(PLUGIN_DIR); cp *.so $(DESTDIR)$(PLUGIN_DIR) -v; fi
+	if test "`ls *so`" != ""; then mkdir -p $(DESTDIR)$(PLUGIN_DIR); cp *.so $(DESTDIR)$(PLUGIN_DIR) -v; fi
 
 #do not touch the following line
 
