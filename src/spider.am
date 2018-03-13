@@ -3,7 +3,7 @@ bin_PROGRAMS += spider
 
 noinst_HEADERS += SpiderParameter.hpp
 
-spider_SOURCES = spider.cpp SpiderParameter.cpp Parameter.cpp
+spider_SOURCES = spider.cpp SpiderParameter.cpp Parameter.cpp global_variables.cpp
 
 noinst_LTLIBRARIES += lib_spider.la
 
@@ -15,6 +15,7 @@ spider_CPPFLAGS = \
    -I$(top_srcdir)/src/constants \
    -I$(top_srcdir)/src/design_flows \
    -I$(top_srcdir)/src/design_flows/backend/ToDataFile \
+   -I$(top_srcdir)/src/graph \
    -I$(top_srcdir)/src/ilp \
    -I$(top_srcdir)/src/parser/csv \
    -I$(top_srcdir)/src/parser/data_xml \

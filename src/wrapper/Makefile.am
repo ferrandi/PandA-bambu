@@ -9,7 +9,7 @@ lib_wrapper_la_CPPFLAGS = \
     -I$(top_srcdir)/src \
     -I$(top_srcdir)/src/constants \
     -I$(top_srcdir)/src/utility \
-    -I$(BOOST_DIR)
+    -I$(BOOST_DIR) $(all_includes)
 
 lib_wrapper_la_SOURCES = ToolManager.cpp
 lib_wrapper_la_LIBADD =

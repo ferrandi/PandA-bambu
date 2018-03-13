@@ -31,7 +31,7 @@
  *
 */
 /**
- * @file global_variables.hpp
+ * @file global_variables.cpp
  * @brief global variables used by each tool 
  *
  * @author Marco Lattuada <lattuada@elet.polimi.it>
@@ -39,8 +39,6 @@
  * Last modified by $Author$
  *
  */
-#ifndef GLOBAL_VARIABLES_HPP
-#define GLOBAL_VARIABLES_HPP
 
 ///NOTE: this file must be included only by source code of the executable (i.e., the file with the main)
 
@@ -63,4 +61,3 @@ std::string panda_message;
 
 ///Transform warning into errors
 bool error_on_warning = false;
-#endif

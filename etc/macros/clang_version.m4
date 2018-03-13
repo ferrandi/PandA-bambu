@@ -239,15 +239,24 @@ static FrontendPluginRegistry::Add<PrintFunctionNamesAction>
 X("print-fns", "print function names");
 PLUGIN_TEST
       for plugin_compiler in $I386_CLANGPP4_EXE; do
+         plugin_option=
+         case $host_os in
+           mingw*) 
+             plugin_option="-shared -O3"
+           ;;
+           *)
+             plugin_option='-fPIC -shared -O3'
+           ;;
+         esac
          if test -f plugin_test.so; then
             rm plugin_test.so
          fi
-         $plugin_compiler -I$TOPSRCDIR/etc/clang_plugin/ -fPIC -shared plugin_test.cpp -o plugin_test.so -std=c++11 -I$I386_LLVM4_HEADER_DIR 2> /dev/null
+         $plugin_compiler -I$TOPSRCDIR/etc/clang_plugin/ $plugin_option plugin_test.cpp -o plugin_test.so -std=c++11 -I$I386_LLVM4_HEADER_DIR 2> /dev/null
          if test ! -f plugin_test.so; then
-            echo "checking $plugin_compiler -I$TOPSRCDIR/etc/clang_plugin/ -fPIC -shared plugin_test.cpp -o plugin_test.so -std=c++11 -I$I386_LLVM4_HEADER_DIR... no... Package libclang-4.0-dev missing?"
+            echo "checking $plugin_compiler -I$TOPSRCDIR/etc/clang_plugin/ $plugin_option plugin_test.cpp -o plugin_test.so -std=c++11 -I$I386_LLVM4_HEADER_DIR... no... Package libclang-4.0-dev missing?"
             continue
          fi
-         echo "checking $plugin_compiler -I$TOPSRCDIR/etc/clang_plugin/ -fPIC -shared plugin_test.cpp -o plugin_test.so -std=c++11 -I$I386_LLVM4_HEADER_DIR... yes"
+         echo "checking $plugin_compiler -I$TOPSRCDIR/etc/clang_plugin/ $plugin_option plugin_test.cpp -o plugin_test.so -std=c++11 -I$I386_LLVM4_HEADER_DIR... yes"
          ac_save_CC="$CC"
          ac_save_CFLAGS="$CFLAGS"
          CC=$I386_CLANG4_EXE
@@ -553,15 +562,24 @@ static FrontendPluginRegistry::Add<PrintFunctionNamesAction>
 X("print-fns", "print function names");
 PLUGIN_TEST
       for plugin_compiler in $I386_CLANGPP5_EXE; do
+         plugin_option=
+         case $host_os in
+           mingw*) 
+             plugin_option="-shared -O3"
+           ;;
+           *)
+             plugin_option='-fPIC -shared -O3'
+           ;;
+         esac
          if test -f plugin_test.so; then
             rm plugin_test.so
          fi
-         $plugin_compiler -I$TOPSRCDIR/etc/clang_plugin/ -fPIC -shared plugin_test.cpp -o plugin_test.so -std=c++11 -I$I386_LLVM5_HEADER_DIR 2> /dev/null
+         $plugin_compiler -I$TOPSRCDIR/etc/clang_plugin/ $plugin_option plugin_test.cpp -o plugin_test.so -std=c++11 -I$I386_LLVM5_HEADER_DIR 2> /dev/null
          if test ! -f plugin_test.so; then
-            echo "checking $plugin_compiler -I$TOPSRCDIR/etc/clang_plugin/ -fPIC -shared plugin_test.cpp -o plugin_test.so -std=c++11 -I$I386_LLVM5_HEADER_DIR... no... Package libclang-5.0-dev missing?"
+            echo "checking $plugin_compiler -I$TOPSRCDIR/etc/clang_plugin/ $plugin_option plugin_test.cpp -o plugin_test.so -std=c++11 -I$I386_LLVM5_HEADER_DIR... no... Package libclang-5.0-dev missing?"
             continue
          fi
-         echo "checking $plugin_compiler -I$TOPSRCDIR/etc/clang_plugin/ -fPIC -shared plugin_test.cpp -o plugin_test.so -std=c++11 -I$I386_LLVM5_HEADER_DIR... yes"
+         echo "checking $plugin_compiler -I$TOPSRCDIR/etc/clang_plugin/ $plugin_option plugin_test.cpp -o plugin_test.so -std=c++11 -I$I386_LLVM5_HEADER_DIR... yes"
          ac_save_CC="$CC"
          ac_save_CFLAGS="$CFLAGS"
          CC=$I386_CLANG5_EXE

@@ -330,7 +330,7 @@ void GccWrapper::CompileFile(const std::string& original_file_name, std::string 
    }
    else
    {
-      temporary_file_run_o = boost::filesystem::unique_path(std::string(STR_CST_gcc_obj_file)).c_str();
+      temporary_file_run_o = boost::filesystem::unique_path(std::string(STR_CST_gcc_obj_file)).string();
       command += " -o " + temporary_file_run_o;
    }
 

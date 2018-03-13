@@ -52,7 +52,6 @@
 
 ///. includes
 #include "BambuParameter.hpp"
-#include "global_variables.hpp"
 
 ///behavior includes
 #include "application_manager.hpp"

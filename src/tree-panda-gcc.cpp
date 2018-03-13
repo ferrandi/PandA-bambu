@@ -67,7 +67,6 @@
 #include <boost/lexical_cast.hpp>
 #include "cpu_time.hpp"
 #include "exceptions.hpp"
-#include "global_variables.hpp"
 #include "utility.hpp"
 #include "fileIO.hpp"
 

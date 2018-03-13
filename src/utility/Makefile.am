@@ -7,7 +7,7 @@ noinst_LTLIBRARIES = lib_utility.la
 
 
 lib_utility_la_CPPFLAGS = \
-                     -I$(BOOST_DIR)
+                     -I$(BOOST_DIR) $(all_includes)
 
 noinst_HEADERS = \
    augmented_vector.hpp \

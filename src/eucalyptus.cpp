@@ -69,7 +69,6 @@
 #include "core_generation.hpp"
 #endif
 
-#include "global_variables.hpp"
 #include "cpu_time.hpp"
 #include "utility.hpp"
 
