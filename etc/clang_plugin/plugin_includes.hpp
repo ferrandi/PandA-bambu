@@ -97,6 +97,7 @@ namespace llvm {
    class AllocaInst;
 }
 
+class Andersen_AA;
 
 namespace clang {
 
@@ -288,6 +289,8 @@ namespace clang {
                pt_info() : valid(false) {}
          };
          const pt_info* SSA_NAME_PTR_INFO (const void* t) const;
+
+         Andersen_AA * PtoSets_AA;
 
          unsigned int SignedPointerTypeReference;
 
@@ -572,7 +575,7 @@ namespace clang {
          DumpGimpleRaw(CompilerInstance &_Instance,
                        const std::string& _outdir_name, const std::string& _InFile, bool onlyGlobals);
 
-         bool runOnModule(llvm::Module &M, llvm::ModulePass *modulePass);
+         bool runOnModule(llvm::Module &M, llvm::ModulePass *modulePass, const std::string& TopFunctionName);
 
 
    };

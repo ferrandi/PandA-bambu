@@ -55,7 +55,7 @@ namespace llvm {
    struct CLANG_VERSION_SYMBOL(_plugin_DoNotExposeGlobalsPass);
 }
 
-static std::string TopFunctionNmae;
+static std::string TopFunctionName;
 
 namespace clang {
 
@@ -68,7 +68,7 @@ namespace clang {
          std::unique_ptr<ASTConsumer> CreateASTConsumer(CompilerInstance &,
                                                         llvm::StringRef ) override
          {
-            TopFunctionNmae = topfname;
+            TopFunctionName = topfname;
             return llvm::make_unique<dummyConsumer>();
          }
 
@@ -169,7 +169,7 @@ namespace llvm {
          {
             bool changed = false;
 #if PRINT_DBG_MSG
-            llvm::errs() << "Top function name: " << TopFunctionNmae << "\n";
+            llvm::errs() << "Top function name: " << TopFunctionName << "\n";
 #endif
             for(auto& globalVar : M.getGlobalList())
             {
@@ -211,8 +211,8 @@ namespace llvm {
                   llvm::errs() << "Found function: " << funName << "|" << demangled << "\n";
 #endif
                   if (!fun.hasInternalLinkage() &&
-                      funName != TopFunctionNmae &&
-                      demangled != TopFunctionNmae &&
+                      funName != TopFunctionName &&
+                      demangled != TopFunctionName &&
                       !is_builtin_fn(funName) &&
                       !is_builtin_fn(demangled) )
                   {

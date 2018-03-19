@@ -255,6 +255,11 @@ void GccWrapper::CompileFile(const std::string& original_file_name, std::string 
       command += AddSourceCodeIncludes(source_files) + " ";
    }
    command += " " + compiler.extra_options + " ";
+
+   bool isWholeProgram = Param->isOption(OPT_gcc_optimizations) &&
+                         Param->getOption<std::string>(OPT_gcc_optimizations).find("whole-program") != std::string::npos &&
+                         Param->getOption<std::string>(OPT_gcc_optimizations).find("no-whole-program") == std::string::npos;
+
    if(empty_file)
    {
       if(original_file_name == "-")
@@ -286,13 +291,28 @@ void GccWrapper::CompileFile(const std::string& original_file_name, std::string 
 #endif
    {
       if(compiler.is_clang)
+      {
+         std::string fname;
+         bool addTopFName = false;
+         if(isWholeProgram && compiler.is_clang)
+         {
+            fname = "main";
+            addTopFName = true;
+         }
+         else if(Param->isOption(OPT_top_functions_names))
+         {
+            const auto top_functions_names = Param->getOption<const std::list<std::string> >(OPT_top_functions_names);
+            addTopFName = top_functions_names.size()==1;
+            fname = top_functions_names.front();
+         }
+
          command += opt + " -c -fplugin=" + compiler.ssa_plugin_obj + " -Xclang -add-plugin -Xclang " + compiler.ssa_plugin_name + " -Xclang -plugin-arg-"+compiler.ssa_plugin_name+" -Xclang -outputdir -Xclang -plugin-arg-"+compiler.ssa_plugin_name+" -Xclang "+Param->getOption<std::string>(OPT_output_temporary_directory);
+         if(addTopFName)
+            command += " -Xclang -plugin-arg-"+compiler.ssa_plugin_name+" -Xclang -topfname -Xclang -plugin-arg-"+compiler.ssa_plugin_name+" -Xclang "+fname;
+      }
       else
          command += opt + " -c -fplugin=" + compiler.ssa_plugin_obj + " -fplugin-arg-"+compiler.ssa_plugin_name+"-outputdir="+Param->getOption<std::string>(OPT_output_temporary_directory);
    }
-   bool isWholeProgram = Param->isOption(OPT_gcc_optimizations) &&
-                         Param->getOption<std::string>(OPT_gcc_optimizations).find("whole-program") != std::string::npos &&
-                         Param->getOption<std::string>(OPT_gcc_optimizations).find("no-whole-program") == std::string::npos;
    if((Param->isOption(OPT_top_functions_names) && Param->getOption<bool>(OPT_do_not_expose_globals)) ||
          (isWholeProgram && compiler.is_clang))
    {

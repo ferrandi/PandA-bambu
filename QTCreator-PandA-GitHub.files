@@ -640,6 +640,8 @@ build/src/parser/treegcc/treeLexer.cpp
 build/src/parser/treegcc/treeParser.cpp
 build/src/parser/treegcc/treeParser.hpp
 build/src/revision_hash.hpp
+etc/clang_plugin/HardekopfLin_AA.cpp
+etc/clang_plugin/HardekopfLin_AA.hpp
 etc/clang_plugin/dumpGimple.cpp
 etc/clang_plugin/plugin_dumpGimpleEmpty.cpp
 etc/clang_plugin/plugin_dumpGimpleSSA.cpp

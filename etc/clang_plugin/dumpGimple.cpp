@@ -66,6 +66,7 @@
 #endif
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/Analysis/TargetTransformInfo.h"
+#include "llvm/Analysis/TargetLibraryInfo.h"
 #include "llvm/Analysis/LazyValueInfo.h"
 #include "llvm/Analysis/AliasAnalysis.h"
 #include "llvm/IR/ModuleSlotTracker.h"
@@ -77,6 +78,8 @@
 #include "clang/AST/Mangle.h"
 #include "clang/AST/Stmt.h"
 #include "clang/Lex/Preprocessor.h"
+
+#include "HardekopfLin_AA.hpp"
 
 #include <iomanip>
 #include <cxxabi.h>
@@ -278,6 +281,7 @@ namespace clang
         stream(create_file_name_string(_outdir_name,_InFile), EC, llvm::sys::fs::F_RW), onlyGlobals(_onlyGlobals),
         DL(0),modulePass(0),
         last_used_index(0), column(0),
+        PtoSets_AA(0),
         SignedPointerTypeReference(0),
         last_memory_ssa_vers(std::numeric_limits<int>::max()),
         last_BB_index(2)
@@ -1118,9 +1122,8 @@ namespace clang
                if(U->getOperand(0) == inst)
                   return false;
             }
-            else if(isa<llvm::PHINode>(U))///PHIs require a PointTo set computed
-               return false;
-            else if(isa<llvm::GetElementPtrInst>(U) ||
+            else if(isa<llvm::PHINode>(U) ||
+                    isa<llvm::GetElementPtrInst>(U) ||
                     isa<llvm::BitCastInst>(U) ||
                     isa<llvm::PtrToIntInst>(U) ||
                     isa<llvm::IntToPtrInst>(U) ||
@@ -1130,6 +1133,8 @@ namespace clang
                     cast<llvm::Instruction>(U)->getOpcode() == llvm::Instruction::And ||
                     cast<llvm::Instruction>(U)->getOpcode() == llvm::Instruction::Or)
             {
+               if(isa<llvm::PHINode>(U) && (!PtoSets_AA || PtoSets_AA->PE(U) == NOVAR_ID || !PtoSets_AA->is_single(PtoSets_AA->PE(U),0)))
+                  return false;
                auto res = temporary_addr_check(U, visited);
                if(!res)
                   return res;
@@ -1324,6 +1329,32 @@ namespace clang
             ssa_vers = MST.getLocalSlot(operand);
             assert(ssa_vers>=0);
             sn.type = assignCodeType(getCondSignedResult(operand, operand->getType()));
+            if(operand->getType()->isPointerTy())
+            {
+               auto varId = PtoSets_AA->PE(operand);
+               if(varId != NOVAR_ID && PtoSets_AA->is_single(varId,0))
+               {
+                  sn.ptr_info.valid=true;
+                  const std::vector<u32>* pts = PtoSets_AA->pointsToSet(varId);
+                  for(auto var: *pts)
+                  {
+                     auto val = PtoSets_AA->getValue(var);
+                     if(val)
+                     {
+                        llvm::errs() << "Point-to var: ";
+                        val->print(llvm::errs());
+                        llvm::errs() << "\n";
+                        auto vid = val->getValueID();
+                        if(vid == llvm::Value::InstructionVal+llvm::Instruction::Alloca)
+                           sn.ptr_info.pt.vars.push_back(TREE_OPERAND(gimple_assign_rhs_alloca(val),0));
+                        else if(vid == llvm::Value::GlobalVariableVal)
+                           sn.ptr_info.pt.vars.push_back(assignCodeAuto(val));
+                        else
+                           llvm_unreachable("unexpected pointed to variable");
+                     }
+                  }
+               }
+            }
          }
          sn.vers= ssa_vers;
          assert(HAS_CODE(def_stmt));
@@ -4650,13 +4681,20 @@ namespace clang
       return res;
    }
 
-   bool DumpGimpleRaw::runOnModule(llvm::Module &M, llvm::ModulePass *_modulePass)
+   bool DumpGimpleRaw::runOnModule(llvm::Module &M, llvm::ModulePass *_modulePass, const std::string& TopFunctionName)
    {
       DL = &M.getDataLayout();
       modulePass=_modulePass;
       auto res = lowerMemIntrinsics(M);
       res = res | lowerIntrinsics(M);
       moduleContext = &M.getContext();
+      if(!onlyGlobals && TopFunctionName != "")
+      {
+         PtoSets_AA = new Andersen_AA(TopFunctionName);
+         const llvm::TargetLibraryInfo &TLI =
+               modulePass->getAnalysis<llvm::TargetLibraryInfoWrapperPass>().getTLI();
+         PtoSets_AA->computePointToSet(M,&TLI);
+      }
       for(const auto& globalVar : M.getGlobalList())
       {
 #if PRINT_DBG_MSG
@@ -4682,6 +4720,11 @@ namespace clang
                SerializeGimpleGlobalTreeNode(assignCodeAuto(&fun));
             }
          }
+      }
+      if(PtoSets_AA)
+      {
+         delete PtoSets_AA;
+         PtoSets_AA = 0;
       }
       return res;
    }

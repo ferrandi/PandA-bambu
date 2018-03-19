@@ -47,16 +47,20 @@
 #include "clang/Frontend/CompilerInstance.h"
 #include "clang/Sema/Sema.h"
 
+#define PRINT_DBG_MSG 0
+
 namespace llvm {
    struct CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSAPass);
 }
 
 static clang::DumpGimpleRaw *gimpleRawWriter;
+static std::string TopFunctionName;
 
 namespace clang {
 
    class CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSA) : public PluginASTAction
    {
+         std::string topfname;
          std::string outdir_name;
          friend struct llvm::CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSAPass);
       protected:
@@ -68,6 +72,7 @@ namespace clang {
                D.Report(D.getCustomDiagID(DiagnosticsEngine::Error,
                                        "outputdir argument not specified"));
             gimpleRawWriter = new DumpGimpleRaw(CI, outdir_name, InFile, false);
+            TopFunctionName = topfname;
             return llvm::make_unique<dummyConsumer>();
          }
 
@@ -77,7 +82,17 @@ namespace clang {
             DiagnosticsEngine &D = CI.getDiagnostics();
             for (size_t i = 0, e = args.size(); i != e; ++i)
             {
-               if (args.at(i) == "-outputdir")
+               if (args.at(i) == "-topfname")
+               {
+                  if (i + 1 >= e) {
+                     D.Report(D.getCustomDiagID(DiagnosticsEngine::Error,
+                                                "missing topfname argument"));
+                     return false;
+                  }
+                  ++i;
+                  topfname = args.at(i);
+               }
+               else if (args.at(i) == "-outputdir")
                {
                   if (i + 1 >= e) {
                      D.Report(D.getCustomDiagID(DiagnosticsEngine::Error,
@@ -101,6 +116,8 @@ namespace clang {
             ros << "Help for " CLANG_VERSION_STRING(_plugin_dumpGimpleSSA) " plugin\n";
             ros << "-outputdir <directory>\n";
             ros << "  Directory where the raw file will be written\n";
+            ros << "-topfname <function name>\n";
+            ros << "  Function from which the Point-To analysis has to start\n";
          }
 
          PluginASTAction::ActionType getActionType() override
@@ -168,11 +185,15 @@ namespace llvm {
 //            initializeCFLSteensAAWrapperPassPass(*PassRegistry::getPassRegistry());
 //            initializeTypeBasedAAWrapperPassPass(*PassRegistry::getPassRegistry());
             initializeTargetTransformInfoWrapperPassPass(*PassRegistry::getPassRegistry());
+            initializeTargetLibraryInfoWrapperPassPass(*PassRegistry::getPassRegistry());
          }
          bool runOnModule(Module &M)
          {
+#if PRINT_DBG_MSG
+            llvm::errs() << "Top function name: " << TopFunctionName << "\n";
+#endif
             assert(gimpleRawWriter);
-            auto res = gimpleRawWriter->runOnModule(M, this);
+            auto res = gimpleRawWriter->runOnModule(M, this, TopFunctionName);
             delete gimpleRawWriter;
             gimpleRawWriter = nullptr;
             return res;
@@ -196,6 +217,7 @@ namespace llvm {
            AU.addPreserved<MemorySSAWrapperPass>();
            //AU.addPreserved<MemorySSAPrinterLegacyPass>();
            AU.addRequired<TargetTransformInfoWrapperPass>();
+           AU.addRequired<TargetLibraryInfoWrapperPass>();
          }
    };
    char CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSAPass)::ID = 0;
