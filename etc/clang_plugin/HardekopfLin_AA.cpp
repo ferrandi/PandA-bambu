@@ -71,6 +71,7 @@
 *
 */
 #define DEBUG_AA 0
+#define NO_FIELD_SENSITIVE 1
 #include "HardekopfLin_AA.hpp"
 
 #include "llvm/IR/Constants.h"
@@ -1123,12 +1124,18 @@ enum ConsType : unsigned int {addr_of_cons=0, copy_cons, load_cons, store_cons, 
 //------------------------------------------------------------------------------
 class Constraint
 {
-   public:
+      friend void Staged_Flow_Sensitive_AA::process_idr_cons();
       ConsType type;
-      u32 dest, src, off;
+      u32 off;
+   public:
+      u32 dest, src;
 
-      Constraint(ConsType t, u32 d, u32 s, u32 o= 0):
-         type(t), dest(d), src(s), off(o) {}
+      Constraint(ConsType t, u32 d, u32 s, u32 o = 0):
+#if NO_FIELD_SENSITIVE
+         type(t==gep_cons?copy_cons:t), off(0), dest(d), src(s) {}
+#else
+         type(t), off(o), dest(d), src(s) {}
+#endif
 
       //------------------------------------------------------------------------------
       bool operator == (const Constraint &b) const
@@ -1167,6 +1174,30 @@ class Constraint
       {
          return !(operator>(b));
       }
+      void print(const Andersen_AA*AA) const
+      {
+         if(type == store_cons)
+            llvm::errs() <<"*";
+         llvm::errs()<<'(';
+         AA->print_node(dest);
+         llvm::errs()<<')';
+         if(type == store_cons && off)
+            llvm::errs() <<" + " << off;
+         llvm::errs()<<" = ";
+         if(type == addr_of_cons)
+            llvm::errs()<<'&';
+         else if(type == load_cons)
+            llvm::errs()<<"*";
+         llvm::errs()<<'(';
+         AA->print_node(src);
+         llvm::errs()<<')';
+         if(type != store_cons && off)
+            llvm::errs() << " + " << off;
+      }
+      ConsType get_type() const {return type;}
+      u32 get_dest() const {return dest;}
+      u32 get_src() const {return src;}
+      u32 get_off() const {return off;}
 };
 
 namespace llvm
@@ -1180,7 +1211,7 @@ namespace llvm
             return Constraint(copy_cons, 0, 0, 0);
          }
          static unsigned getHashValue(const Constraint &X){
-            return ((u32)X.type<<29) ^ (X.dest<<12) ^ X.src ^ X.off;
+            return ((u32)X.get_type()<<29) ^ (X.get_dest()<<12) ^ X.get_src() ^ X.get_off();
          }
          static unsigned isEqual(const Constraint &X, const Constraint &Y){
             return X == Y;
@@ -1502,6 +1533,10 @@ const llvm::Type * Andersen_AA::getmin_struct(llvm::Module &M)
 bool Andersen_AA::add_cons(ConsType t, u32 dest, u32 src, u32 off)
 {
    assert(src && dest && "null node in constraint");
+#if NO_FIELD_SENSITIVE
+   if(t == gep_cons && src == dest)
+      return 0;
+#endif
    if(t == copy_cons && src == dest)
       return 0;
    if(t == gep_cons && !off)             //replace 0-offset GEP by copy
@@ -2641,26 +2676,6 @@ void Andersen_AA::print_all_nodes() const
 
 
 //------------------------------------------------------------------------------
-void Andersen_AA::print_constraint(const Constraint &C) const
-{
-   if(C.type == store_cons)
-      llvm::errs() <<"*";
-   llvm::errs()<<'(';
-   print_node(C.dest);
-   llvm::errs()<<')';
-   if(C.type == store_cons && C.off)
-      llvm::errs() <<" + " << C.off;
-   llvm::errs()<<" = ";
-   if(C.type == addr_of_cons)
-      llvm::errs()<<'&';
-   else if(C.type == load_cons)
-      llvm::errs()<<"*";
-   llvm::errs()<<'(';
-   print_node(C.src);
-   llvm::errs()<<')';
-   if(C.type != store_cons && C.off)
-      llvm::errs() << " + " << C.off;
-}
 
 void Andersen_AA::print_all_constraints() const
 {
@@ -2669,7 +2684,7 @@ void Andersen_AA::print_all_constraints() const
    for(auto i: boost::irange(0ul,constraints.size()))
    {
       const Constraint &C= constraints[i];
-      print_constraint(C);
+      C.print(this);
       llvm::errs() <<"\n";
    }
 }
@@ -2739,22 +2754,22 @@ void Andersen_AA::print_node_cons(const bitmap &L) const
    {
       llvm::errs()<<"  ";
       const Constraint &C= cplx_cons[*it];
-      switch(C.type)
+      switch(C.get_type())
       {
          case load_cons:
-            print_node(C.dest);
+            print_node(C.get_dest());
             break;
          case store_cons:
-            print_node(C.src);
+            print_node(C.get_src());
             break;
          case gep_cons:
-            print_node(C.dest);
+            print_node(C.get_dest());
             break;
          default:
             assert(!"not a complex constraint");
       }
-      if(C.off)
-         llvm::errs() << " +"<< C.off;
+      if(C.get_off())
+         llvm::errs() << " +"<< C.get_off();
    }
 }
 
@@ -4045,8 +4060,8 @@ void Andersen_AA::obj_cons_id(const llvm::Module &M, const llvm::Type * MS)
    std::set<u32> def;
    for(auto i: boost::irange(0ul,constraints.size()))
    {
-      if(constraints[i].type != store_cons)
-         def.insert(constraints[i].dest);
+      if(constraints[i].get_type() != store_cons)
+         def.insert(constraints[i].get_dest());
    }
    //Assume addr-taken function args are always defined (as they will be
    //  written by the store_cons of indirect calls).
@@ -4060,10 +4075,10 @@ void Andersen_AA::obj_cons_id(const llvm::Module &M, const llvm::Type * MS)
    for(auto i: boost::irange(0ul,constraints.size()))
    {
       const Constraint &C= constraints[i];
-      assert(C.src);
-      if(C.type == addr_of_cons || def.count(C.src))
+      assert(C.get_src());
+      if(C.get_type() == addr_of_cons || def.count(C.get_src()))
          continue;
-      const llvm::Value /**D= nodes[C.dest]->get_val(),*/ *S= nodes[C.src]->get_val();
+      const llvm::Value /**D= nodes[C.get_dest()]->get_val(),*/ *S= nodes[C.get_src()]->get_val();
       if(S)
       {
          if(llvm::isa<llvm::Argument>(S))
@@ -4082,13 +4097,13 @@ void Andersen_AA::obj_cons_id(const llvm::Module &M, const llvm::Type * MS)
          }
          else if(auto F = llvm::dyn_cast<const llvm::Function>(S))
          {
-            if(C.src == get_ret_node(F))
+            if(C.get_src() == get_ret_node(F))
             {
                if(DEBUG_AA) llvm::errs() << "[ret] ";
                continue;
                //The vararg part may also be unused.
             }
-            else if(C.src == get_vararg_node(F))
+            else if(C.get_src() == get_vararg_node(F))
             {
                if(DEBUG_AA) llvm::errs() << "[vararg] ";
                continue;
@@ -4100,7 +4115,7 @@ void Andersen_AA::obj_cons_id(const llvm::Module &M, const llvm::Type * MS)
          hdr_done= 1;
          if(DEBUG_AA) llvm::errs() << "!! Constraints with undefined src:\n";
       }
-      if(DEBUG_AA) print_constraint(C);
+      if(DEBUG_AA) C.print(this);
       if(DEBUG_AA) llvm::errs() << '\n';
    }
 #endif
@@ -4146,11 +4161,11 @@ void Andersen_AA::clump_addr_taken()
    for(auto i: boost::irange(0ul,constraints.size()))
    {
       Constraint &C= constraints[i];
-      C.dest= move_to[C.dest];
-      C.src= move_to[C.src];
+      C.dest= move_to[C.get_dest()];
+      C.src= move_to[C.get_src()];
       //Make sure all address-taken nodes are in the object-node segment
       //  (i.e. that no value node has its address taken).
-      assert(C.type != addr_of_cons || C.src <= last_obj_node);
+      assert(C.get_type() != addr_of_cons || C.get_src() <= last_obj_node);
    }
    for(auto it= val_node.begin(), ie= val_node.end();
        it != ie; ++it)
@@ -4174,8 +4189,8 @@ void Andersen_AA::clump_addr_taken()
    for(auto i: boost::irange(0ul,old_icall_cons.size()))
    {
       Constraint &C= old_icall_cons[i].first;
-      C.dest= move_to[C.dest];
-      C.src= move_to[C.src];
+      C.dest= move_to[C.get_dest()];
+      C.src= move_to[C.get_src()];
       icall_cons[C]= old_icall_cons[i].second;
    }
 
@@ -4451,19 +4466,19 @@ void Andersen_AA::add_off_edges(bool hcd)
       const Constraint &C= constraints[i];
       //This may fail if the source of an addr_of is a non-rep (which is
       //  allowed but hasn't happened yet).
-      assert(nodes[C.dest]->is_rep() && nodes[C.src]->is_rep());
-      u32 od= main2off[C.dest], os= main2off[C.src];
+      assert(nodes[C.get_dest()]->is_rep() && nodes[C.get_src()]->is_rep());
+      u32 od= main2off[C.get_dest()], os= main2off[C.get_src()];
       if(!od)
       {
          //A few constraints will have an obj_node for the dest.
-         if(nodes[C.dest]->obj_sz)
+         if(nodes[C.get_dest()]->obj_sz)
          {
             continue;
          }
          assert(!"no offline node for dest");
       }
-      assert(os || nodes[C.src]->obj_sz && "no offline node for non-obj src");
-      switch(C.type)
+      assert(os || nodes[C.get_src()]->obj_sz && "no offline node for non-obj src");
+      switch(C.get_type())
       {
          case addr_of_cons:
             if(!hcd)
@@ -4473,7 +4488,7 @@ void Andersen_AA::add_off_edges(bool hcd)
                //  Because of SSA form, there is only one addr_of_cons per dest.
                //  node, so all initial label sets will be singletons or empty,
                //  and HVN mode (do_union = 0) will work correctly.
-               off_nodes[od].ptr_eq.set(C.src);
+               off_nodes[od].ptr_eq.set(C.get_src());
                //Note that S is often a non-AFP obj_node, which we ignore.
                if(os)
                {
@@ -4507,7 +4522,7 @@ void Andersen_AA::add_off_edges(bool hcd)
             //Note: we don't handle load/store with offset as part of the HVN.
             //  These are only used for indirect calls, so handling them
             //  would not help much.
-            if(C.off)
+            if(C.get_off())
             {
                //D = *S + k: D indirect
                if(!hcd)
@@ -4525,7 +4540,7 @@ void Andersen_AA::add_off_edges(bool hcd)
             break;
          case store_cons:
             //*D + k = *S: ignored
-            if(!C.off)
+            if(!C.get_off())
             {
                //*D = S: edge *D -> S
                assert(os && "no offline node for src");
@@ -4540,7 +4555,7 @@ void Andersen_AA::add_off_edges(bool hcd)
             if(!hcd)
             {
                u32 pe;
-               std::pair<u32, u32> R(C.src, C.off);
+               std::pair<u32, u32> R(C.get_src(), C.get_off());
                auto i_g2p = gep2pe.find(R);
                if(i_g2p == gep2pe.end())
                {
@@ -4844,16 +4859,16 @@ void Andersen_AA::merge_ptr_eq()
    {
       Constraint &C= old_cons[i];
       //Ignore this constraint if either side is a non-ptr.
-      if(nodes[C.dest]->nonptr || nodes[C.src]->nonptr)
+      if(nodes[C.get_dest()]->nonptr || nodes[C.get_src()]->nonptr)
          continue;
-      C.dest= get_node_rep(C.dest);
+      C.dest= get_node_rep(C.get_dest());
       //Don't replace the source of addr_of by the rep: the merging
       //  done in HVN/HCD is based only on pointer equivalence,
       //  so non-reps may still be pointed to.
-      if(C.type != addr_of_cons)
-         C.src= get_node_rep(C.src);
+      if(C.get_type() != addr_of_cons)
+         C.src= get_node_rep(C.get_src());
       //Ignore (copy X X) and duplicates.
-      if((C.type != copy_cons || C.dest != C.src) && !cons_seen.count(C)){
+      if((C.get_type() != copy_cons || C.get_dest() != C.get_src()) && !cons_seen.count(C)){
          cons_seen.insert(C);
          constraints.push_back(C);
       }
@@ -4869,10 +4884,10 @@ void Andersen_AA::merge_ptr_eq()
    for(auto i: boost::irange(0ul,old_icall_cons.size()))
    {
       Constraint &C= old_icall_cons[i].first;
-      if(nodes[C.dest]->nonptr || nodes[C.src]->nonptr)
+      if(nodes[C.get_dest()]->nonptr || nodes[C.get_src()]->nonptr)
          continue;
-      C.dest= get_node_rep(C.dest);
-      C.src= get_node_rep(C.src);
+      C.dest= get_node_rep(C.get_dest());
+      C.src= get_node_rep(C.get_src());
       const std::set<const llvm::Instruction*> &I= old_icall_cons[i].second;
       icall_cons[C].insert(I.begin(), I.end());
    }
@@ -4921,12 +4936,12 @@ void Andersen_AA::hcd()
    for(auto i: boost::irange(0ul,old_cons.size()))
    {
       const Constraint &C0= old_cons[i];
-      u32 dest= get_node_rep(C0.dest), src= C0.src;
-      if(C0.type != addr_of_cons)
+      u32 dest= get_node_rep(C0.get_dest()), src= C0.get_src();
+      if(C0.get_type() != addr_of_cons)
          src= get_node_rep(src);
-      Constraint C(C0.type, dest, src, C0.off);
+      Constraint C(C0.get_type(), dest, src, C0.get_off());
       //Ignore (copy X X) and duplicates.
-      if((C.type != copy_cons || C.dest != C.src) && !cons_seen.count(C))
+      if((C.get_type() != copy_cons || C.get_dest() != C.get_src()) && !cons_seen.count(C))
       {
          cons_seen.insert(C);
          constraints.push_back(C);
@@ -4941,8 +4956,8 @@ void Andersen_AA::hcd()
    for(auto i: boost::irange(0ul,old_icall_cons.size()))
    {
       Constraint &C= old_icall_cons[i].first;
-      C.dest= get_node_rep(C.dest);
-      C.src= get_node_rep(C.src);
+      C.dest= get_node_rep(C.get_dest());
+      C.src= get_node_rep(C.get_src());
       const std::set<const llvm::Instruction*> &I= old_icall_cons[i].second;
       icall_cons[C].insert(I.begin(), I.end());
    }
@@ -5073,13 +5088,13 @@ void Andersen_AA::factor_ls()
    for(auto i: boost::irange(0ul,old_cons.size()))
    {
       const Constraint &C= old_cons[i];
-      if(C.type == load_cons)
+      if(C.get_type() == load_cons)
       {
-         loads[std::make_pair(C.src, C.off)].insert(C.dest);
+         loads[std::make_pair(C.get_src(), C.get_off())].insert(C.get_dest());
       }
-      else if(C.type == store_cons)
+      else if(C.get_type() == store_cons)
       {
-         stores[std::make_pair(C.dest, C.off)].insert(C.src);
+         stores[std::make_pair(C.get_dest(), C.get_off())].insert(C.get_src());
       }
       else
       {
@@ -5111,7 +5126,7 @@ void Andersen_AA::factor_ls()
       auto i_fc= factored_cons.find(C);
       if(i_fc != factored_cons.end())
       {
-         if(C.type == load_cons)
+         if(C.get_type() == load_cons)
             C.dest= i_fc->second;
          else
             C.src= i_fc->second;
@@ -5135,10 +5150,7 @@ void Andersen_AA::factor_ls(const std::set<u32> &other, u32 ref, u32 off, bool l
       //Return unfactored cons. to the list.
       for(auto j= other.begin(), je= other.end(); j != je; ++j)
       {
-         if(load)
-            C.dest= *j;
-         else
-            C.src= *j;
+         Constraint C(load ? load_cons : store_cons, (load?*j:ref), load?ref:*j, off);
          constraints.push_back(C);
       }
    }
@@ -5147,28 +5159,16 @@ void Andersen_AA::factor_ls(const std::set<u32> &other, u32 ref, u32 off, bool l
       //Add (T = *V + k) or (*V + k = T).
       u32 t= nodes.size();
       nodes.push_back(new Node);
-      if(load)
-         C.dest= t;
-      else
-         C.src= t;
-      constraints.push_back(C);
+      Constraint Ca(load ? load_cons : store_cons, load?t:ref, load?ref:t, off);
+      constraints.push_back(Ca);
       //All the original cons. will be mapped to T.
-      Constraint C0= C;
       //Add (A = T) or (T = B).
-      C.type= copy_cons;
-      C.off= 0;
-      if(load)
-         C.src= t;
-      else
-         C.dest= t;
       for(auto j= other.begin(), je= other.end(); j != je; ++j)
       {
-         if(load)
-            C0.dest= C.dest= *j;
-         else
-            C0.src= C.src= *j;
-         constraints.push_back(C);
-         factored_cons[C0]= t;
+         Constraint Cb(copy_cons, load?*j:t, load?t:*j, 0);
+         Constraint Cb0(load ? load_cons : store_cons, load?*j:ref, load?ref:*j, off);
+         constraints.push_back(Cb);
+         factored_cons[Cb0]= t;
       }
    }
 }
@@ -5351,11 +5351,11 @@ void Andersen_AA::pts_init()
    for(auto i: boost::irange(0ul,constraints.size()))
    {
       const Constraint &C= constraints[i];
-      if(C.off)
+      if(C.get_off())
       {
-         max_sz = std::max(max_sz,C.off+1);
-         valid_off.insert(C.off);
-         if(DEBUG_AA) print_constraint(C);
+         max_sz = std::max(max_sz,C.get_off()+1);
+         valid_off.insert(C.get_off());
+         if(DEBUG_AA) C.print(this);
          if(DEBUG_AA) llvm::errs() << "\n";
       }
    }
@@ -5479,8 +5479,8 @@ void Andersen_AA::solve_init()
    for(auto i: boost::irange(0ul,constraints.size()))
    {
       const Constraint &C= constraints[i];
-      u32 dest= get_node_rep(C.dest), src= get_node_rep(C.src);
-      switch(C.type)
+      u32 dest= get_node_rep(C.get_dest()), src= get_node_rep(C.get_src());
+      switch(C.get_type())
       {
          case addr_of_cons:
             assert(src < npts);
@@ -5711,16 +5711,16 @@ void Andersen_AA::solve_node(u32 n)
 bool Andersen_AA::solve_ls_cons(u32 n, u32 hcd_rep, bdd d_points_to,
                                 std::set<Constraint> &cons_seen, Constraint &C)
 {
-   bool load= C.type == load_cons;
-   assert(load || C.type == store_cons);
+   bool load= C.get_type() == load_cons;
+   assert(load || C.get_type() == store_cons);
    //This has to be done on every call because solve_ls_off() may invalidate
    //  the cache entry for d_points_to.
    const std::vector<u32> *d_points_to_v= bdd2vec(d_points_to);
    const u32 *pdpts= &(d_points_to_v->at(0));
    const u32 *edpts= pdpts + d_points_to_v->size();
    Constraint C0= C;
-   u32 dest0= C.dest, src0= C.src;
-   u32 dest= get_node_rep(dest0), src= get_node_rep(src0), off= C.off;
+   u32 dest0= C.get_dest(), src0= C.get_src();
+   u32 dest= get_node_rep(dest0), src= get_node_rep(src0), off= C.get_off();
    //Is N a func.ptr used for indirect calls?
    bool ind_call= ind_calls.count(n);
    //If C is used for an actual ind. call, this will point to its insn.
@@ -5966,11 +5966,11 @@ void Andersen_AA::solve_ls_n(const u32 *pdpts, const u32 *edpts, bool load,
 bool Andersen_AA::solve_gep_cons(u32 n, bdd d_points_to,
                                  std::set<Constraint> &cons_seen, Constraint &C)
 {
-   assert(C.type == gep_cons);
+   assert(C.get_type() == gep_cons);
    //If n2 was merged into n, C.src may still be n2.
-   assert(get_node_rep(C.src) == n);
+   assert(get_node_rep(C.get_src()) == n);
    C.src= n;
-   u32 dest= get_node_rep(C.dest), off= C.off;
+   u32 dest= get_node_rep(C.get_dest()), off= C.get_off();
    C.dest= dest;
    if(cons_seen.count(C))
    {
@@ -6824,7 +6824,7 @@ class DFG
       // to (ie, Tp/Ld/St/Np), rather than in the overall index space
       size_t insert(const Constraint& C)
       {
-         switch (C.type)
+         switch (C.get_type())
          {
             case addr_of_cons:
             case copy_cons:
@@ -6854,19 +6854,19 @@ class DFG
          std::map<u32,std::vector<size_t> > v2d;
          for(auto i: boost::irange(0ul,tp_nodes.size()))
          {
-            v2d[tp_nodes[i].inst.dest].push_back(tp_base+i);
+            v2d[tp_nodes[i].inst.get_dest()].push_back(tp_base+i);
          }
          for(auto i: boost::irange(0ul,ld_nodes.size()))
          {
-            v2d[ld_nodes[i].inst.dest].push_back(ld_base+i);
+            v2d[ld_nodes[i].inst.get_dest()].push_back(ld_base+i);
          }
 
          for(auto i: boost::irange(0ul,tp_nodes.size()))
          {
             Constraint& C = tp_nodes[i].inst;
-            if (C.type != addr_of_cons && v2d.count(C.src))
+            if (C.get_type() != addr_of_cons && v2d.count(C.get_src()))
             {
-               auto& def = v2d[C.src];
+               auto& def = v2d[C.get_src()];
                for( auto j : def)
                   add_edge(j,i);
             }
@@ -6875,7 +6875,7 @@ class DFG
          for(auto i: boost::irange(0ul,ld_nodes.size()))
          {
             Constraint& C = ld_nodes[i].inst;
-            auto& def = v2d[C.src];
+            auto& def = v2d[C.get_src()];
             for(auto j : def)
                add_edge(j,ld_base+i);
          }
@@ -6883,7 +6883,7 @@ class DFG
          for(auto i: boost::irange(0ul,st_nodes.size()))
          {
             Constraint& C = st_nodes[i].inst;
-            auto&d1 = v2d[C.dest], &d2 = v2d[C.src];
+            auto&d1 = v2d[C.get_dest()], &d2 = v2d[C.get_src()];
             for(auto j : d1)
                add_edge(j,st_base+i);
 
@@ -7327,22 +7327,22 @@ void Staged_Flow_Sensitive_AA::make_off_graph()
    for(auto i: boost::irange(0ul,constraints.size()))
    {
       const Constraint& C = constraints[i];
-      switch(C.type)
+      switch(C.get_type())
       {
          case addr_of_cons:  // D = &S
-            OCG[C.dest].idr = true;
+            OCG[C.get_dest()].idr = true;
          case load_cons:     // D = *S+k
             //!! this test makes results inconsistent with PRE (why?)
             //
-            //if (PRE.is_null(C.src,C.off)) { continue; }
-            OCG[C.dest].idr = true;
+            //if (PRE.is_null(C.get_src(),C.get_off())) { continue; }
+            OCG[C.get_dest()].idr = true;
             break;
          case copy_cons:     // D = S
-            OCG[C.dest].edges.set(C.src);
+            OCG[C.get_dest()].edges.set(C.get_src());
             break;
          case gep_cons:      // D = GEP S k
          {
-            std::pair<u32,u32> A(C.src,C.off);
+            std::pair<u32,u32> A(C.get_src(),C.get_off());
             auto j = gep2pe.find(A);
             u32 l = pe_lbl;
 
@@ -7353,7 +7353,7 @@ void Staged_Flow_Sensitive_AA::make_off_graph()
                gep2pe[A] = l;
                pe_lbl++;
             }
-            OCG[C.dest].lbls.set(l);
+            OCG[C.get_dest()].lbls.set(l);
             break;
          }
          case store_cons:    // *D+k = S
@@ -7414,30 +7414,30 @@ void Staged_Flow_Sensitive_AA::cons_opt(std::vector<u32>& redir)
    for(auto i: boost::irange(0ul,old_cons.size()))
    {
       const Constraint& OC = old_cons[i];
-      if (nodes[OC.dest]->nonptr || nodes[OC.src]->nonptr)
+      if (nodes[OC.get_dest()]->nonptr || nodes[OC.get_src()]->nonptr)
       {
          redir[i] = ~0u;
          continue;
       }
       // eliminate constraints involving pointers that PRE says are null
-      if (OC.type != store_cons && OC.type != addr_of_cons &&
-          PRE.is_null(OC.src,0))
+      if (OC.get_type() != store_cons && OC.get_type() != addr_of_cons &&
+          PRE.is_null(OC.get_src(),0))
       {
          redir[i] = ~0u;
          continue;
       }
-      else if (OC.type == store_cons && PRE.is_null(OC.dest,0))
+      else if (OC.get_type() == store_cons && PRE.is_null(OC.get_dest(),0))
       {
          redir[i] = ~0u;
          continue;
       }
       Constraint C(OC);
-      C.dest = get_node_rep(C.dest);
-      if (C.type != addr_of_cons)
-         C.src = get_node_rep(C.src);
-      if (C.type != load_cons && C.type != store_cons)
+      C.dest = get_node_rep(C.get_dest());
+      if (C.get_type() != addr_of_cons)
+         C.src = get_node_rep(C.get_src());
+      if (C.get_type() != load_cons && C.get_type() != store_cons)
       {
-         if ((C.type == copy_cons && !C.off && C.src == C.dest) ||
+         if ((C.get_type() == copy_cons && !C.get_off() && C.get_src() == C.get_dest()) ||
              seen.count(C))
          {
             redir[i] = ~0u;
@@ -8146,7 +8146,7 @@ void Staged_Flow_Sensitive_AA::processBlock(u32 parent, const llvm::BasicBlock *
                u32 num_stores = 0;
                for (u32 i = curr_cons; i < cons_sz; ++i)
                {
-                  if (constraints[i].type == store_cons)
+                  if (constraints[i].get_type() == store_cons)
                      num_stores++;
                }
 
@@ -8162,8 +8162,8 @@ void Staged_Flow_Sensitive_AA::processBlock(u32 parent, const llvm::BasicBlock *
 
                   for (u32 i = 0; i < num_stores*2; i += 2)
                   {
-                     assert(constraints[curr_cons+i].type == load_cons);
-                     assert(constraints[curr_cons+i+1].type == store_cons);
+                     assert(constraints[curr_cons+i].get_type() == load_cons);
+                     assert(constraints[curr_cons+i+1].get_type() == store_cons);
 
                      u32 next = create_node(true);
                      ICFG[next].r = true;
@@ -8192,9 +8192,9 @@ void Staged_Flow_Sensitive_AA::processBlock(u32 parent, const llvm::BasicBlock *
                   {
                      Constraint& C = constraints[i];
 
-                     if (C.type == store_cons)
+                     if (C.get_type() == store_cons)
                         defs[i] = n;
-                     else if (C.type == load_cons)
+                     else if (C.get_type() == load_cons)
                      {
                         ICFG[n].r = true;
                         uses[i] = n;
@@ -8258,7 +8258,7 @@ void Staged_Flow_Sensitive_AA::processBlock(u32 parent, const llvm::BasicBlock *
          // will be exactly one load constraint
          for (u32 i = curr_cons; i < cons_sz; ++i)
          {
-            if (constraints[i].type == load_cons)
+            if (constraints[i].get_type() == load_cons)
             {
                uses[i] = n;
                break;
@@ -8281,7 +8281,7 @@ void Staged_Flow_Sensitive_AA::processBlock(u32 parent, const llvm::BasicBlock *
          for (u32 i = curr_cons; i < cons_sz; ++i)
          {
             Constraint& C = constraints[i];
-            if (C.type == store_cons)
+            if (C.get_type() == store_cons)
             {
                defs[i] = n;
                break;
@@ -8326,7 +8326,7 @@ void Staged_Flow_Sensitive_AA::cons_opt_wrap()
    for(auto i:idr_cons)
    {
       Constraint& C = constraints[i];
-      assert(C.type == load_cons || C.type == store_cons);
+      assert(C.get_type() == load_cons || C.get_type() == store_cons);
    }
 #endif
    std::vector<u32> new_defs(defs.size()), new_uses(uses.size());
@@ -8345,8 +8345,8 @@ void Staged_Flow_Sensitive_AA::cons_opt_wrap()
 #if 1
    for(auto i: boost::irange(0ul,defs.size()))
    {
-      assert(!defs[i] || constraints[i].type == store_cons);
-      assert(!uses[i] || constraints[i].type == load_cons);
+      assert(!defs[i] || constraints[i].get_type() == store_cons);
+      assert(!uses[i] || constraints[i].get_type() == load_cons);
    }
 #endif
    redir.clear();
@@ -8504,22 +8504,22 @@ void Staged_Flow_Sensitive_AA::process_idr_cons()
 
       // assume we don't pass a non-pointer arg to a pointer formal
       //
-      if (C.src == p_i2p) { continue; }
+      if (C.get_src() == p_i2p) { continue; }
 
-      if (C.type == store_cons) {
-         assert(C.off > 1);
-         fp = PRE.PE(C.dest); src_p = &tv; dst_p = &el;
+      if (C.get_type() == store_cons) {
+         assert(C.get_off() > 1);
+         fp = PRE.PE(C.get_dest()); src_p = &tv; dst_p = &el;
       }
       else {
-         assert(C.type == load_cons && C.off == 1);
-         fp = PRE.PE(C.src); src_p = &el; dst_p = &tv;
+         assert(C.get_type() == load_cons && C.get_off() == 1);
+         fp = PRE.PE(C.get_src()); src_p = &el; dst_p = &tv;
       }
 
       // we're going to factor the edges from indirect calls using
       // top-level variables created specifically for this purpose
       // (note that we don't actually create a Node for the new var)
 
-      std::pair<u32,u32> p(fp,C.off);
+      std::pair<u32,u32> p(fp,C.get_off());
       auto j = tmps.find(p);
 
       if (j == tmps.end())
@@ -8535,12 +8535,12 @@ void Staged_Flow_Sensitive_AA::process_idr_cons()
             cle = get_obj_node(j);
             assert(llvm::isa<llvm::Function>(nodes[cle]->get_val()));
 
-            if (nodes[cle]->obj_sz > C.off)
+            if (nodes[cle]->obj_sz > C.get_off())
             {
-               el = cle + C.off;
+               el = cle + C.get_off();
 
                // eliminate edges from pointer arguments to non-pointer formals
-               if (C.off > 1 && !llvm::isa<llvm::PointerType>(nodes[el]->get_val()->getType()))
+               if (C.get_off() > 1 && !llvm::isa<llvm::PointerType>(nodes[el]->get_val()->getType()))
                   continue;
 
                new_cons.push_back(Constraint(copy_cons,*dst_p,*src_p,0));
@@ -8550,7 +8550,7 @@ void Staged_Flow_Sensitive_AA::process_idr_cons()
       else
          tv = j->second;
 
-      if (C.off == 1)
+      if (C.get_off() == 1)
       {
          src_p = &tv;
          dst_p = &C.dest;
@@ -8572,7 +8572,6 @@ void Staged_Flow_Sensitive_AA::process_idr_cons()
    // mark the constraints for deletion (we don't need to update
    // defs[], uses[], or the SEG nodes because the constraints from
    // indirect calls were never used for them).
-
    for(auto i : idr_cons)
       constraints[i].off = ~0u;
 
@@ -8606,24 +8605,25 @@ void Staged_Flow_Sensitive_AA::sfs_prep()
    for(auto i: boost::irange(0ul,constraints.size()))
    {
       Constraint& C = constraints[i];
-      if (C.off == ~0u) { continue; }
+      if (C.get_off() == ~0u) { continue; }
 
       u32 idx = dfg->insert(C);
 
       if (defs[i])
       {
-         assert(C.type == store_cons);
+         assert(C.get_type() == store_cons);
          new_defs.resize(idx+1,0);
          new_defs[idx] = defs[i];
       }
-      else if (uses[i]) {
-         assert(C.type == load_cons);
+      else if (uses[i])
+      {
+         assert(C.get_type() == load_cons);
          new_uses.resize(idx+1,0);
          new_uses[idx] = uses[i];
       }
-      else if ((C.type == addr_of_cons || C.type == copy_cons) &&
-               C.dest <= last_obj_node) // global init
-         gv2n[C.dest].push_back(idx);
+      else if ((C.get_type() == addr_of_cons || C.get_type() == copy_cons) &&
+               C.get_dest() <= last_obj_node) // global init
+         gv2n[C.get_dest()].push_back(idx);
    }
 
    defs.swap(new_defs);
@@ -8682,17 +8682,17 @@ void Staged_Flow_Sensitive_AA::partition_vars()
 
       u32 idx = dfg->st_idx(i,true);
       Constraint& C = dfg->node_cons(idx);
-      assert(C.type == store_cons);
+      assert(C.get_type() == store_cons);
 
-      cons_part[squeeze(PRE.PE(C.dest),C.off,true)].push_back(idx);
+      cons_part[squeeze(PRE.PE(C.get_dest()),C.get_off(),true)].push_back(idx);
 
-      if (PRE.is_single(C.dest,C.off))
+      if (PRE.is_single(C.get_dest(),C.get_off()))
       {
-         auto& pts = *(PRE.pointsToSet(C.dest,C.off));
+         auto& pts = *(PRE.pointsToSet(C.get_dest(),C.get_off()));
          if (strong[pts.front()])
             cons_strong.insert(idx);
       }
-      else if (PRE.is_null(C.dest,C.off))
+      else if (PRE.is_null(C.get_dest(),C.get_off()))
          cons_strong.insert(idx);
    }
 
@@ -8703,9 +8703,9 @@ void Staged_Flow_Sensitive_AA::partition_vars()
 
       u32 idx = dfg->ld_idx(i,true);
       Constraint& C = dfg->node_cons(idx);
-      assert(C.type == load_cons);
+      assert(C.get_type() == load_cons);
 
-      cons_part[squeeze(PRE.PE(C.src),C.off,true)].push_back(idx);
+      cons_part[squeeze(PRE.PE(C.get_src()),C.get_off(),true)].push_back(idx);
    }
 
    for(auto i : cons_part)
@@ -8744,7 +8744,8 @@ void Staged_Flow_Sensitive_AA::partition_vars()
    {
       u32 cl = eq[i.second];
 
-      if (!cl) {
+      if (!cl)
+      {
          var_part.push_back(bitmap());
          cl = var_part.size() - 1;
          eq[i.second] = cl;
@@ -8808,7 +8809,7 @@ void Staged_Flow_Sensitive_AA::compute_seg()
          {
             Constraint& C = dfg->node_cons(k);
 
-            if (C.type == store_cons)
+            if (C.get_type() == store_cons)
             {
                cons_store.push_back(k);
 
@@ -8822,7 +8823,7 @@ void Staged_Flow_Sensitive_AA::compute_seg()
             }
             else
             {
-               assert(C.type == load_cons);
+               assert(C.get_type() == load_cons);
                cons_load.push_back(k);
 
                u32 ld_idx = dfg->ld_idx(k,false);
@@ -8913,7 +8914,7 @@ void Staged_Flow_Sensitive_AA::compute_seg()
          {
             Constraint& C = dfg->node_cons(k);
 
-            if (C.type == store_cons)
+            if (C.get_type() == store_cons)
             {
                u32 n = find(defs[dfg->st_idx(k,false)]);
                if (DEL(n))
@@ -8928,7 +8929,7 @@ void Staged_Flow_Sensitive_AA::compute_seg()
                if (DEL(n))
                   continue;  // because of rm_undef
 
-               assert(C.type == load_cons && CHK(n) && RQ(n));
+               assert(C.get_type() == load_cons && CHK(n) && RQ(n));
                pass_uses[n].push_back(k);
                n2p[k].push_back(i);
             }
@@ -9051,7 +9052,8 @@ void Staged_Flow_Sensitive_AA::compute_seg()
          // a non-rep's rep does not itself have a rep, and a non-rep and
          // its rep have exactly the same partitions
          //
-         if (i->rep) {
+         if (i->rep)
+         {
             if (dfg->is_ld(i->rep)) { assert(!dfg->get_ld(i->rep).rep); }
             u32 idx = dfg->ld_idx(i-dfg->ld_begin(),true);
             auto& p = n2p[idx];
@@ -9114,7 +9116,8 @@ void Staged_Flow_Sensitive_AA::compute_seg()
 
       for(auto& j : i->part_succ)
       {
-         if (dfg->is_ld(j.first)) {
+         if (dfg->is_ld(j.first))
+         {
             LdNode& N = dfg->get_ld(j.first);
             if (N.rep && N.rep != idx)
                j.first = N.rep;
@@ -9172,7 +9175,8 @@ void Staged_Flow_Sensitive_AA::compute_seg()
 
 void Staged_Flow_Sensitive_AA::process_1store(u32 part)
 {
-   if (!cons_store.empty()) { // def is a store, not a global init
+   if (!cons_store.empty())  // def is a store, not a global init
+   {
       assert(glob_init.empty());
       u32 st_idx = cons_store.front();
       for(auto i : cons_load)
@@ -9287,7 +9291,7 @@ bool Staged_Flow_Sensitive_AA::solve()
    u32 idx = 0;
    for (auto i = dfg->tp_begin(), e = dfg->tp_end(); i != e; ++i, ++idx)
    {
-      if (i->inst.type == addr_of_cons)
+      if (i->inst.get_type() == addr_of_cons)
          sfsWL->push(idx,0);
    }
 
@@ -9331,20 +9335,19 @@ bool Staged_Flow_Sensitive_AA::solve()
 void Staged_Flow_Sensitive_AA::processTp(TpNode& N)
 {
    bool change = false;
-
-   switch (N.inst.type) {
+   switch (N.inst.get_type())
+   {
       case addr_of_cons:
-         change = top[N.inst.dest].insert(N.inst.src);
+         change = top[N.inst.get_dest()].insert(N.inst.get_src());
          break;
       case copy_cons:
-         change = (top[N.inst.dest] |= top[N.inst.src]);
+         change = (top[N.inst.get_dest()] |= top[N.inst.get_src()]);
          break;
       case gep_cons:
-         change = (top[N.inst.dest] |= (top[N.inst.src] + N.inst.off));
+         change = (top[N.inst.get_dest()] |= (top[N.inst.get_src()] + N.inst.get_off()));
          break;
       default: assert(0 && "unknown constraint type");
    }
-
    if (change)
    {
       for(auto i : N.succ)
@@ -9362,14 +9365,14 @@ void Staged_Flow_Sensitive_AA::processLd(LdNode& N, u32 idx)
       return;
 
    // first we process the load instruction itself
-   PtsSet rhs = top[N.inst.src] + N.inst.off;
+   PtsSet rhs = top[N.inst.get_src()] + N.inst.get_off();
    auto& ptsto = *(bdd2vec(rhs.get_bdd()));
 
    if (ptsto.empty())
       return;
 
    bool change = false;
-   PtsSet& lhs = top[N.inst.dest];
+   PtsSet& lhs = top[N.inst.get_dest()];
 
    if (rhs == N.old)
    {
@@ -9435,13 +9438,13 @@ void Staged_Flow_Sensitive_AA::processSt(StNode& N, u32 idx)
    if (N.out.empty())
       return;
 
-   PtsSet lhs = top[N.inst.dest] + N.inst.off;
+   PtsSet lhs = top[N.inst.get_dest()] + N.inst.get_off();
    auto& ptsto = *(bdd2vec(lhs.get_bdd()));
 
    if (ptsto.empty())
       return;
 
-   PtsSet& rhs = top[N.inst.src];
+   PtsSet& rhs = top[N.inst.get_src()];
 
    if (ptsto.size() == 1 && strong[ptsto.front()])
    {
@@ -9512,7 +9515,8 @@ void Staged_Flow_Sensitive_AA::processNp(NpNode& N)
    for(auto i : N.succ)
    {
       bool change = false;
-      switch (dfg->type(i)) {
+      switch (dfg->type(i))
+      {
          case IS_LD:
          {
             LdNode& S = dfg->get_ld(i); assert(!S.rep);
@@ -9536,10 +9540,10 @@ void Staged_Flow_Sensitive_AA::processNp(NpNode& N)
 void Staged_Flow_Sensitive_AA::processSharedLd(LdNode& N, PtsGraph& pts)
 {
    n_node_runs++; // this counts as a processed node
-   PtsSet rhs = top[N.inst.src] + N.inst.off;
+   PtsSet rhs = top[N.inst.get_src()] + N.inst.get_off();
    const auto& ptsto = *(bdd2vec(rhs.get_bdd()));
    bool change = false;
-   PtsSet& lhs = top[N.inst.dest];
+   PtsSet& lhs = top[N.inst.get_dest()];
    if (rhs == N.old)
    {
       PtsSet old = lhs;

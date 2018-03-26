@@ -1403,7 +1403,7 @@ namespace clang
                      {
                         val->print(llvm::errs());
                         stream.close();
-                        llvm_unreachable("unexpected pointer to variable");
+                        llvm_unreachable(("unexpected pointer to variable "+ std::string(ValueTyNames[val->getValueID()])).c_str());
                      }
                   }
                }
@@ -1425,7 +1425,10 @@ namespace clang
          for(auto var: *pts)
          {
             auto val = PtoSets_AA->getValue(var);
-            if(!val || dyn_cast<llvm::Argument>(val)  || dyn_cast<llvm::Function>(val))
+            if(!val ||
+                  dyn_cast<llvm::Argument>(val) ||
+                  dyn_cast<llvm::Function>(val) ||
+                  dyn_cast<llvm::CallInst>(val))
                return false;
          }
          return true;

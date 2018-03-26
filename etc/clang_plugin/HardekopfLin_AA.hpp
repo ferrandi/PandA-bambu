@@ -175,6 +175,7 @@ typedef unsigned int u32;
 
 class Andersen_AA
 {
+      friend Constraint;
    protected:
       //top function name
       const std::string TopFunctionName;
@@ -374,7 +375,6 @@ class Andersen_AA
       void print_const_expr(const llvm::ConstantExpr *E) const;
       void print_node(u32 n) const;
       void print_all_nodes() const;
-      void print_constraint(const Constraint &C) const;
       void print_all_constraints() const;
       void print_cons_graph(bool points_to_only) const;
       void print_node_cons(const bitmap &L) const;
@@ -569,6 +569,7 @@ class PtsGraph;
 
 class Staged_Flow_Sensitive_AA : public Andersen_AA
 {
+      friend Constraint;
       Andersen_AA PRE; // for obj_cons_id, cons_opt
       std::vector<PtsSet> top; // top-level var -> points-to set
       std::vector<bool> strong; // object -> strong?
