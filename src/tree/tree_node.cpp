@@ -1384,6 +1384,8 @@ var_decl::var_decl(unsigned int i) :
    static_static_flag(false),
    static_flag(false),
    extern_flag(false),
+   addr_taken(false),
+   addr_not_taken(false),
    algn(0),
    used(0),
    register_flag(false),

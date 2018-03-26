@@ -594,7 +594,7 @@ bool pred;
 %token TOK_BISON_THEN TOK_BISON_ELSE TOK_BISON_CRNT TOK_BISON_HDLR
 %token TOK_BISON_USE_TMPL TOK_BISON_TMPL_PARMS TOK_BISON_TMPL_ARGS
 
-%token TOK_BISON_ARTIFICIAL TOK_BISON_SYSTEM TOK_BISON_OPERATING_SYSTEM TOK_BISON_LIBRARY_SYSTEM TOK_BISON_LIBBAMBU TOK_BISON_EXTERN TOK_BISON_C TOK_BISON_LSHIFT
+%token TOK_BISON_ARTIFICIAL TOK_BISON_SYSTEM TOK_BISON_OPERATING_SYSTEM TOK_BISON_LIBRARY_SYSTEM TOK_BISON_LIBBAMBU TOK_BISON_EXTERN TOK_BISON_ADDR_TAKEN TOK_BISON_ADDR_NOT_TAKEN TOK_BISON_C TOK_BISON_LSHIFT
 %token TOK_BISON_GLOBAL_INIT TOK_BISON_GLOBAL_FINI TOK_BISON_UNDEFINED TOK_BISON_BUILTIN TOK_BISON_HWCALL TOK_BISON_OPERATOR
 %token TOK_BISON_OVERFLOW TOK_BISON_VIRT TOK_BISON_UNSIGNED TOK_BISON_STRUCT
 %token TOK_BISON_UNION TOK_BISON_CONSTANT TOK_BISON_READONLY TOK_BISON_REGISTER TOK_BISON_STATIC TOK_BISON_REVERSE_RESTRICT TOK_BISON_OMP_ATOMIC TOK_BISON_OMP_BODY_LOOP TOK_BISON_OMP_CRITICAL_SESSION TOK_BISON_OMP_FOR_WRAPPER
@@ -1059,6 +1059,10 @@ bool pred;
 
    var_tok_readonly : /*empty*/ | TOK_BISON_READONLY{NSV(var_decl,readonly_flag, true)};
 
+   var_tok_addr_taken : /*empty*/ | TOK_BISON_ADDR_TAKEN{NSV(var_decl,addr_taken, true)};
+
+   var_tok_addr_not_taken : /*empty*/ | TOK_BISON_ADDR_NOT_TAKEN{NSV(var_decl,addr_not_taken, true)};
+
    //var_decl: TOK_BISON_VAR_DECL^ decl_node attr (TOK_BISON_STATIC TOK_BISON_STATIC | TOK_BISON_STATIC |TOK_BISON_EXTERN)? (init)? (size)? algn used (TOK_BISON_REGISTER)?;
    wvar_decl : TOK_BISON_VAR_DECL   {CTN(var_decl)}
                wdecl_node           {}
@@ -1077,6 +1081,8 @@ bool pred;
                var_tok_readonly     {}
                bit_values_opt{OPT($31, NSV(var_decl, bit_values, data->curr_string));}
                smt_ann_opt          {OPT($33, NS(var_decl, smt_ann))}
+               var_tok_addr_taken   {}
+               var_tok_addr_not_taken   {}
                ;
 
    var_decl_definitions : /*empty*/

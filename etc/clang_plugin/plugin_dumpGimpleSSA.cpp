@@ -147,12 +147,14 @@ X(CLANG_VERSION_STRING(_plugin_dumpGimpleSSA), "Dump gimple ssa raw format start
 
 #include "llvm/Pass.h"
 #include "llvm/PassRegistry.h"
+#include "llvm/IR/Dominators.h"
 #include "llvm/IR/PassManager.h"
 #include "llvm/IR/LegacyPassManager.h"
 #include "llvm/Transforms/IPO/PassManagerBuilder.h"
 #include "llvm/Transforms/Utils/LoopUtils.h"
 #include "llvm/Analysis/LazyValueInfo.h"
 #include "llvm/Analysis/AliasAnalysis.h"
+#include "llvm/Analysis/AssumptionCache.h"
 //#include "llvm/Analysis/TypeBasedAliasAnalysis.h"
 //#include "llvm/Analysis/CFLSteensAliasAnalysis.h"
 #include "llvm/Analysis/MemoryDependenceAnalysis.h"
@@ -166,6 +168,7 @@ X(CLANG_VERSION_STRING(_plugin_dumpGimpleSSA), "Dump gimple ssa raw format start
 #include "llvm/InitializePasses.h"
 #include "llvm-c/Transforms/Scalar.h"
 #include "llvm/CodeGen/Passes.h"
+
 
 namespace llvm {
 
@@ -186,6 +189,8 @@ namespace llvm {
 //            initializeTypeBasedAAWrapperPassPass(*PassRegistry::getPassRegistry());
             initializeTargetTransformInfoWrapperPassPass(*PassRegistry::getPassRegistry());
             initializeTargetLibraryInfoWrapperPassPass(*PassRegistry::getPassRegistry());
+            initializeAssumptionCacheTrackerPass(*PassRegistry::getPassRegistry());
+            initializeDominatorTreeWrapperPassPass(*PassRegistry::getPassRegistry());
          }
          bool runOnModule(Module &M)
          {
@@ -218,6 +223,8 @@ namespace llvm {
            //AU.addPreserved<MemorySSAPrinterLegacyPass>();
            AU.addRequired<TargetTransformInfoWrapperPass>();
            AU.addRequired<TargetLibraryInfoWrapperPass>();
+           AU.addRequired<AssumptionCacheTracker>();
+           AU.addRequired<DominatorTreeWrapperPass>();
          }
    };
    char CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSAPass)::ID = 0;

@@ -1014,6 +1014,10 @@ void raw_writer::operator()(const var_decl* obj, unsigned int & mask)
    {
       write_when_not_null(STOK(TOK_ADDR_STMT), *var);
    }
+   if (obj->addr_taken)
+      WRITE_TOKEN(os, TOK_ADDR_TAKEN);
+   if (obj->addr_not_taken)
+      WRITE_TOKEN(os, TOK_ADDR_NOT_TAKEN);
 }
 
 void raw_writer::operator()(const vector_cst* obj, unsigned int & mask)

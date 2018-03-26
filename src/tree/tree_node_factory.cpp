@@ -1384,6 +1384,8 @@ void tree_node_factory::operator()(const var_decl* obj, unsigned int & mask)
    SET_VALUE_OPT(TOK_USE_TMPL,use_tmpl,var_decl,int);
    SET_VALUE_OPT(TOK_STATIC_STATIC,static_static_flag,var_decl,bool);
    SET_VALUE_OPT(TOK_EXTERN,extern_flag,var_decl,bool);
+   SET_VALUE_OPT(TOK_ADDR_TAKEN,addr_taken,var_decl,bool);
+   SET_VALUE_OPT(TOK_ADDR_NOT_TAKEN,addr_not_taken,var_decl,bool);
    SET_VALUE_OPT(TOK_STATIC,static_flag,var_decl,bool);
    SET_NODE_ID_OPT(TOK_INIT,init,var_decl);
    SET_NODE_ID_OPT(TOK_SIZE,size,var_decl);

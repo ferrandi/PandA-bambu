@@ -43,6 +43,7 @@
 
 #include "llvm/IR/Constants.h"
 #include "llvm/IR/ConstantRange.h"
+#include "llvm/IR/Dominators.h"
 #include "llvm/IR/Module.h"
 #include "llvm/IR/Function.h"
 #include "llvm/IR/Intrinsics.h"
@@ -54,13 +55,16 @@
 #include "llvm/IR/CFG.h"
 #include "llvm/IR/Operator.h"
 #include "llvm/IR/GetElementPtrTypeIterator.h"
+#include "llvm/Analysis/AssumptionCache.h"
 #include "llvm/Analysis/CFG.h"
+#include "llvm/Analysis/ValueTracking.h"
 #include "llvm/Pass.h"
 #include "llvm/Analysis/LoopPass.h"
 
 #if __clang_major__ >= 5
 #include "llvm/Analysis/MemorySSA.h"
 #include "llvm/Transforms/Utils/LowerMemIntrinsics.h"
+#include "llvm/Support/KnownBits.h"
 #else
 #include "llvm/Transforms/Utils/MemorySSA.h"
 #endif
@@ -118,6 +122,7 @@ namespace clang
       DEFGSCODE(GIMPLE_NOPMEM, "gimple_nop", GSS_BASE)
       DEFGSCODE(GETELEMENTPTR, "gimple_assign", GSS_BASE)
       DEFTREECODE (ALLOCAVAR_DECL, "var_decl", tcc_declaration, 0)
+      DEFTREECODE (ORIGVAR_DECL, "var_decl", tcc_declaration, 0)
       DEFTREECODE(INTEGER_CST_SIGNED, "integer_cst", tcc_constant, 0)
       DEFTREECODE(SIGNEDPOINTERTYPE, "integer_type", tcc_type, 0)
       DEFTREECODE (MISALIGNED_INDIRECT_REF, "misaligned_indirect_ref", tcc_reference, 2)
@@ -144,6 +149,7 @@ namespace clang
       DEFGSCODE(GIMPLE_NOPMEM, "gimple_nop", GSS_BASE)
       DEFGSCODE(GETELEMENTPTR, "gimple_assign", GSS_BASE)
       DEFTREECODE(ALLOCAVAR_DECL, "var_decl", tcc_declaration, 0)
+      DEFTREECODE (ORIGVAR_DECL, "var_decl", tcc_declaration, 0)
       DEFTREECODE(INTEGER_CST_SIGNED, "integer_cst", tcc_constant, 0)
       DEFTREECODE(SIGNEDPOINTERTYPE, "integer_type", tcc_type, 0)
       DEFTREECODE (MISALIGNED_INDIRECT_REF, "misaligned_indirect_ref", tcc_reference, 2)
@@ -169,6 +175,7 @@ namespace clang
       DEFGSCODE(GIMPLE_NOPMEM, "gimple_nop", GSS_BASE)
       DEFGSCODE(GETELEMENTPTR, "gimple_assign", GSS_BASE)
       DEFTREECODE(ALLOCAVAR_DECL, "var_decl", tcc_declaration, 0)
+      DEFTREECODE (ORIGVAR_DECL, "var_decl", tcc_declaration, 0)
       DEFTREECODE(INTEGER_CST_SIGNED, "integer_cst", tcc_constant, 0)
       DEFTREECODE(SIGNEDPOINTERTYPE, "integer_type", tcc_type, 0)
       DEFTREECODE (MISALIGNED_INDIRECT_REF, "misaligned_indirect_ref", tcc_reference, 2)
@@ -194,6 +201,7 @@ namespace clang
       DEFGSCODE(GIMPLE_NOPMEM, "gimple_nop", GSS_BASE)
       DEFGSCODE(GETELEMENTPTR, "gimple_assign", GSS_BASE)
       DEFTREECODE(ALLOCAVAR_DECL, "var_decl", tcc_declaration, 0)
+      DEFTREECODE (ORIGVAR_DECL, "var_decl", tcc_declaration, 0)
       DEFTREECODE(INTEGER_CST_SIGNED, "integer_cst", tcc_constant, 0)
       DEFTREECODE(SIGNEDPOINTERTYPE, "integer_type", tcc_type, 0)
       DEFTREECODE (MISALIGNED_INDIRECT_REF, "misaligned_indirect_ref", tcc_reference, 2)
@@ -247,6 +255,7 @@ namespace clang
       DEFGSCODE(GIMPLE_NOPMEM, "gimple_nop", GSS_BASE)
       DEFGSCODE(GETELEMENTPTR, "gimple_assign", GSS_BASE)
       DEFTREECODE(ALLOCAVAR_DECL, "var_decl", tcc_declaration, 0)
+      DEFTREECODE (ORIGVAR_DECL, "var_decl", tcc_declaration, 0)
       DEFTREECODE(INTEGER_CST_SIGNED, "integer_cst", tcc_constant, 0)
       DEFTREECODE(SIGNEDPOINTERTYPE, "integer_type", tcc_type, 0)
       DEFTREECODE (MISALIGNED_INDIRECT_REF, "misaligned_indirect_ref", tcc_reference, 2)
@@ -383,6 +392,7 @@ namespace clang
             {
                llvm_obj->print(llvm::errs(), true);
                llvm::errs() << "\n";
+               stream.close();
                llvm_unreachable((std::string("unexpected condition: ") + std::string(ValueTyNames[llvm_obj->getValueID()])).c_str());
             }
          }
@@ -407,6 +417,7 @@ namespace clang
                llvm_obj->print(llvm::errs(), true);
                llvm::errs() << "\n";
                llvm::errs() << cast<llvm::ConstantExpr>(llvm_obj)->getOpcodeName() << "\n";
+               stream.close();
                llvm_unreachable((std::string("unexpected condition: ") + std::string(ValueTyNames[llvm_obj->getValueID()])).c_str());
             }
          }
@@ -503,6 +514,11 @@ namespace clang
    {
       if(TREE_CODE(t) == GT(TRANSLATION_UNIT_DECL)) return  false;
       if(TREE_CODE(t) == GT(ALLOCAVAR_DECL)) return  false;
+      if(TREE_CODE(t) == GT(ORIGVAR_DECL))
+      {
+         const orig_var* ov = reinterpret_cast<const orig_var*>(t);
+         return DECL_ASSEMBLER_NAME_SET_P(ov->orig);
+      }
       if(TREE_CODE(t) == GT(LABEL_DECL)) return  false;
       const llvm::GlobalObject* llvm_obj = reinterpret_cast<const llvm::GlobalObject*>(t);
       if(!llvm_obj->getName().empty())
@@ -524,6 +540,11 @@ namespace clang
    const void* DumpGimpleRaw::DECL_ASSEMBLER_NAME(const void * t)
    {
       assert(TREE_CODE(t) != GT(TRANSLATION_UNIT_DECL));
+      if(TREE_CODE(t) == GT(ORIGVAR_DECL))
+      {
+         const orig_var* ov = reinterpret_cast<const orig_var*>(t);
+         return DECL_ASSEMBLER_NAME(ov->orig);
+      }
       const llvm::GlobalObject* llvm_obj = reinterpret_cast<const llvm::GlobalObject*>(t);
       if(!llvm_obj->getName().empty())
       {
@@ -605,6 +626,7 @@ namespace clang
    {
       if(TREE_CODE(t) == GT(TRANSLATION_UNIT_DECL)) return nullptr;
       if(TREE_CODE(t) == GT(ALLOCAVAR_DECL)) return nullptr;
+      if(TREE_CODE(t) == GT(ORIGVAR_DECL)) return nullptr;
       if(TREE_CODE(t) == GT(LABEL_DECL)) return nullptr;
       if(TREE_CODE(t) == GT(FIELD_DECL))
       {
@@ -727,6 +749,11 @@ namespace clang
          return nullptr;
       else if(TREE_CODE(t) == GT(ALLOCAVAR_DECL))
          return nullptr;
+      else if(TREE_CODE(t) == GT(ORIGVAR_DECL))
+      {
+         const orig_var* ov = reinterpret_cast<const orig_var*>(t);
+         return DECL_SOURCE_LOCATION(ov->orig);
+      }
       else if(TREE_CODE(t) == GT(PARM_DECL))
          return nullptr;
       else
@@ -1089,16 +1116,35 @@ namespace clang
    {
       const llvm::AllocaInst* inst = reinterpret_cast<const llvm::AllocaInst*>(g);
       auto type = assignCodeType(inst->getType());
-      const void* alloca_var;
+      const void* allocaVar;
       if(index2alloca_var.find(g) == index2alloca_var.end())
       {
          auto& av = index2alloca_var[g];
          av.alloc_inst = inst;
-         alloca_var =assignCode(&av, GT(ALLOCAVAR_DECL));
+         std::set<const llvm::User*> visited;
+         visited.insert(inst);
+         const llvm::TargetLibraryInfo &TLI =
+               modulePass->getAnalysis<llvm::TargetLibraryInfoWrapperPass>().getTLI();
+         av.addr = temporary_addr_check(inst, visited, TLI);
+         allocaVar =assignCode(&av, GT(ALLOCAVAR_DECL));
       }
       else
-         alloca_var = &index2alloca_var.find(g)->second;
-      return build1(GT(ADDR_EXPR), type, alloca_var);
+         allocaVar = &index2alloca_var.find(g)->second;
+      return build1(GT(ADDR_EXPR), type, allocaVar);
+   }
+
+   const void* DumpGimpleRaw::DECL_ABSTRACT_ORIGIN(const void*t)
+   {
+      const void* origVar;
+      if(index2orig_var.find(t) == index2orig_var.end())
+      {
+         auto& ov = index2orig_var[t];
+         ov.orig = t;
+         origVar = assignCode(&ov, GT(ORIGVAR_DECL));
+      }
+      else
+         origVar = &index2orig_var.find(t)->second;
+      return origVar;
    }
 
    const void* DumpGimpleRaw::gimple_assign_rhs_getelementptr(const void* g)
@@ -1108,7 +1154,7 @@ namespace clang
       return LowerGetElementPtr(inst->getType(), inst, currentFunction);
    }
 
-   bool DumpGimpleRaw::temporary_addr_check(const llvm::User* inst, std::set<const llvm::User*>& visited)
+   bool DumpGimpleRaw::temporary_addr_check(const llvm::User* inst, std::set<const llvm::User*>& visited, const llvm::TargetLibraryInfo &TLI)
    {
       for (auto U : inst->users())
       {
@@ -1133,9 +1179,10 @@ namespace clang
                     cast<llvm::Instruction>(U)->getOpcode() == llvm::Instruction::And ||
                     cast<llvm::Instruction>(U)->getOpcode() == llvm::Instruction::Or)
             {
-               if(isa<llvm::PHINode>(U) && (!PtoSets_AA || PtoSets_AA->PE(U) == NOVAR_ID || !PtoSets_AA->is_single(PtoSets_AA->PE(U),0)))
+               if(isa<llvm::PHINode>(U) &&
+                     (!PtoSets_AA || !is_PTS(PtoSets_AA->PE(U), TLI)))
                   return false;
-               auto res = temporary_addr_check(U, visited);
+               auto res = temporary_addr_check(U, visited, TLI);
                if(!res)
                   return res;
             }
@@ -1148,7 +1195,9 @@ namespace clang
                   ;
                else
                {
-                  auto res = temporary_addr_check(U, visited);
+                  if(!PtoSets_AA || !is_PTS(PtoSets_AA->PE(U), TLI))
+                     return false;
+                  auto res = temporary_addr_check(U, visited, TLI);
                   if(!res)
                      return res;
                }
@@ -1162,6 +1211,7 @@ namespace clang
                U->print(llvm::errs(), true);
                llvm::errs() << "\n";
                llvm::errs() << cast<llvm::Instruction>(U)->getOpcodeName() << "\n";
+               stream.close();
                llvm_unreachable((std::string("unexpected condition: ") + std::string(ValueTyNames[U->getValueID()])).c_str());
             }
          }
@@ -1329,28 +1379,31 @@ namespace clang
             ssa_vers = MST.getLocalSlot(operand);
             assert(ssa_vers>=0);
             sn.type = assignCodeType(getCondSignedResult(operand, operand->getType()));
-            if(operand->getType()->isPointerTy())
+            if(operand->getType()->isPointerTy() && PtoSets_AA)
             {
                auto varId = PtoSets_AA->PE(operand);
-               if(varId != NOVAR_ID && PtoSets_AA->is_single(varId,0))
+               const llvm::TargetLibraryInfo &TLI =
+                     modulePass->getAnalysis<llvm::TargetLibraryInfoWrapperPass>().getTLI();
+               if(is_PTS(varId, TLI))
                {
-                  sn.ptr_info.valid=true;
                   const std::vector<u32>* pts = PtoSets_AA->pointsToSet(varId);
                   for(auto var: *pts)
                   {
                      auto val = PtoSets_AA->getValue(var);
-                     if(val)
+                     assert(val);
+                     assert(!dyn_cast<llvm::Argument>(val));
+                     assert(!dyn_cast<llvm::Function>(val));
+                     sn.ptr_info.valid=true;
+                     auto vid = val->getValueID();
+                     if(vid == llvm::Value::InstructionVal+llvm::Instruction::Alloca)
+                        sn.ptr_info.pt.vars.push_back(TREE_OPERAND(gimple_assign_rhs_alloca(val),0));
+                     else if(vid == llvm::Value::GlobalVariableVal)
+                        sn.ptr_info.pt.vars.push_back(assignCodeAuto(val));
+                     else
                      {
-                        llvm::errs() << "Point-to var: ";
                         val->print(llvm::errs());
-                        llvm::errs() << "\n";
-                        auto vid = val->getValueID();
-                        if(vid == llvm::Value::InstructionVal+llvm::Instruction::Alloca)
-                           sn.ptr_info.pt.vars.push_back(TREE_OPERAND(gimple_assign_rhs_alloca(val),0));
-                        else if(vid == llvm::Value::GlobalVariableVal)
-                           sn.ptr_info.pt.vars.push_back(assignCodeAuto(val));
-                        else
-                           llvm_unreachable("unexpected pointed to variable");
+                        stream.close();
+                        llvm_unreachable("unexpected pointer to variable");
                      }
                   }
                }
@@ -1362,6 +1415,23 @@ namespace clang
          sn.isDefault = isDefault;
       }
       return &index2ssa_name.find(key)->second;
+   }
+
+   bool DumpGimpleRaw::is_PTS(unsigned int varId, const llvm::TargetLibraryInfo &TLI)
+   {
+      if(varId != NOVAR_ID && PtoSets_AA->is_single(varId) && !PtoSets_AA->has_malloc_obj(varId,&TLI))
+      {
+         const std::vector<u32>* pts = PtoSets_AA->pointsToSet(varId);
+         for(auto var: *pts)
+         {
+            auto val = PtoSets_AA->getValue(var);
+            if(!val || dyn_cast<llvm::Argument>(val)  || dyn_cast<llvm::Function>(val))
+               return false;
+         }
+         return true;
+      }
+      else
+         return false;
    }
 
    bool DumpGimpleRaw::is_virtual_ssa(const void* t) const
@@ -1526,6 +1596,7 @@ namespace clang
          {
             operand->print(llvm::errs(), true);
             llvm::errs() << "\n";
+            stream.close();
             llvm_unreachable((std::string("unexpected condition: ") + std::string(ValueTyNames[operand->getValueID()])).c_str());
          }
       }
@@ -1538,6 +1609,7 @@ namespace clang
       {
          operand->print(llvm::errs(), true);
          llvm::errs() << "\n";
+         stream.close();
          llvm_unreachable((std::string("unexpected condition: ") + std::string(ValueTyNames[operand->getValueID()])).c_str());
       }
    }
@@ -1875,6 +1947,11 @@ namespace clang
          const alloca_var* av = reinterpret_cast<const alloca_var*>(t);
          return assignCodeAuto(av->alloc_inst->getFunction());
       }
+      else if(TREE_CODE(t) == GT(ORIGVAR_DECL))
+      {
+         const orig_var* ov = reinterpret_cast<const orig_var*>(t);
+         return DECL_CONTEXT(ov->orig);
+      }
       else if(TREE_CODE(t) == GT(FIELD_DECL))
       {
          const field_decl* ty = reinterpret_cast<const field_decl*>(t);
@@ -1911,6 +1988,13 @@ namespace clang
 
    bool DumpGimpleRaw::DECL_EXTERNAL(const void* t) const
    {
+      if(TREE_CODE(t) == GT(ORIGVAR_DECL))
+      {
+         const orig_var* ov = reinterpret_cast<const orig_var*>(t);
+         if(TREE_CODE(ov->orig) == GT(VAR_DECL))
+            return DECL_EXTERNAL(ov->orig);
+         else return false;
+      }
       const llvm::GlobalObject* llvm_obj = reinterpret_cast<const llvm::GlobalObject*>(t);
       if(isa<llvm::GlobalVariable>(llvm_obj))
          return llvm_obj->hasExternalLinkage() && !cast<llvm::GlobalVariable>(llvm_obj)->hasInitializer();
@@ -1922,12 +2006,27 @@ namespace clang
 
    bool DumpGimpleRaw::TREE_PUBLIC(const void* t) const
    {
+      if(TREE_CODE(t) == GT(ORIGVAR_DECL))
+      {
+         const orig_var* ov = reinterpret_cast<const orig_var*>(t);
+         if(TREE_CODE(ov->orig) == GT(VAR_DECL))
+            return TREE_PUBLIC(ov->orig);
+         else return false;
+      }
       const llvm::GlobalValue* llvm_obj = reinterpret_cast<const llvm::GlobalValue*>(t);
       return llvm_obj->hasDefaultVisibility() && !llvm_obj->hasInternalLinkage() && llvm_obj->getLinkage() != llvm::GlobalValue::PrivateLinkage;
    }
 
    bool DumpGimpleRaw::TREE_STATIC(const void* t) const
    {
+      if(TREE_CODE(t) == GT(ORIGVAR_DECL))
+      {
+         const orig_var* ov = reinterpret_cast<const orig_var*>(t);
+         if(TREE_CODE(ov->orig) == GT(VAR_DECL))
+            return TREE_STATIC(ov->orig);
+         else
+            return false;
+      }
       const llvm::GlobalValue* llvm_obj = reinterpret_cast<const llvm::GlobalValue*>(t);
       auto lt = llvm_obj->getLinkage();
       return lt == llvm::GlobalValue::InternalLinkage || lt == llvm::GlobalValue::PrivateLinkage;
@@ -1959,6 +2058,7 @@ namespace clang
    {
       if(TREE_CODE(t) == GT(FIELD_DECL)) return nullptr;
       if(TREE_CODE(t) == GT(ALLOCAVAR_DECL)) return nullptr;
+      if(TREE_CODE(t) == GT(ORIGVAR_DECL)) return nullptr;
       const llvm::Value* llvm_obj = reinterpret_cast<const llvm::Value*>(t);
       if(isa<llvm::GlobalVariable>(llvm_obj) && cast<llvm::GlobalVariable>(llvm_obj)->hasInitializer())
       {
@@ -1980,8 +2080,14 @@ namespace clang
          else
          {
             llvm::errs() << "Size type " << ValueTyNames[arraySize->getValueID()] << "\n";
+            stream.close();
             llvm_unreachable("Plugin error");
          }
+      }
+      else if(TREE_CODE(t) == GT(ORIGVAR_DECL))
+      {
+         const orig_var* ov = reinterpret_cast<const orig_var*>(t);
+         return DECL_SIZE(ov->orig);
       }
       else
          return TYPE_SIZE(TREE_TYPE(t));
@@ -1989,7 +2095,18 @@ namespace clang
 
    int DumpGimpleRaw::DECL_ALIGN(const void* t)
    {
-      return TYPE_ALIGN(TREE_TYPE(t));
+      if(TREE_CODE(t) == GT(VAR_DECL))
+      {
+         const llvm::GlobalVariable* llvm_obj = reinterpret_cast<const llvm::GlobalVariable*>(t);
+         return std::max(8u,8*llvm_obj->getAlignment());
+      }
+      else if(TREE_CODE(t) == GT(ALLOCAVAR_DECL))
+      {
+         const alloca_var* av = reinterpret_cast<const alloca_var*>(t);
+         return std::max(8u,8*av->alloc_inst->getAlignment());
+      }
+      else
+         return TYPE_ALIGN(TREE_TYPE(t));
    }
 
    bool DumpGimpleRaw::DECL_PACKED(const void* t) const
@@ -2016,9 +2133,14 @@ namespace clang
 
    int DumpGimpleRaw::TREE_USED(const void*t) const
    {
-      assert(TREE_CODE(t) == GT(ALLOCAVAR_DECL) || TREE_CODE(t) == GT(VAR_DECL) || TREE_CODE(t) == GT(PARM_DECL));
+      assert(TREE_CODE(t) == GT(ALLOCAVAR_DECL) || TREE_CODE(t) == GT(VAR_DECL) || TREE_CODE(t) == GT(PARM_DECL) || TREE_CODE(t) == GT(ORIGVAR_DECL));
       if(TREE_CODE(t) == GT(PARM_DECL)) return 1;
       else if(TREE_CODE(t) == GT(ALLOCAVAR_DECL)) return 1;
+      else if(TREE_CODE(t) == GT(ORIGVAR_DECL))
+      {
+         const orig_var* ov = reinterpret_cast<const orig_var*>(t);
+         return TREE_USED(ov->orig);
+      }
       const llvm::Constant* llvm_obj = reinterpret_cast<const llvm::Constant*>(t);
       if(llvm_obj->isConstantUsed())
          return 1;
@@ -2035,9 +2157,21 @@ namespace clang
    {
       if(TREE_CODE(t) == GT(FIELD_DECL)) return false;
       else if(TREE_CODE(t) == GT(ALLOCAVAR_DECL)) return false;
+      else if(TREE_CODE(t) == GT(ORIGVAR_DECL))
+      {
+         const orig_var* ov = reinterpret_cast<const orig_var*>(t);
+         return TREE_READONLY(ov->orig);
+      }
       else if(TREE_CODE(t) == GT(RESULT_DECL)) return false;
       const llvm::GlobalVariable* llvm_obj = reinterpret_cast<const llvm::GlobalVariable*>(t);
       return llvm_obj->isConstant();
+
+   }
+   bool DumpGimpleRaw::TREE_ADDRESSABLE(const void* t) const
+   {
+      assert(TREE_CODE(t) == GT(ALLOCAVAR_DECL));
+      const alloca_var* av = reinterpret_cast<const alloca_var*>(t);
+      return !av->addr;
 
    }
    const void* DumpGimpleRaw::TREE_OPERAND(const void* t, unsigned index)
@@ -2127,6 +2261,11 @@ namespace clang
          const alloca_var* av = reinterpret_cast<const alloca_var*>(t);
          auto allocType = av->alloc_inst->getAllocatedType();
          return assignCodeType(allocType);
+      }
+      else if(code == GT(ORIGVAR_DECL))
+      {
+         const orig_var* ov = reinterpret_cast<const orig_var*>(t);
+         return TREE_TYPE(ov->orig);
       }
       else if(code == GT(FIELD_DECL))
       {
@@ -2753,10 +2892,38 @@ namespace clang
       llvm::LazyValueInfo &LVI = modulePass->getAnalysis<llvm::LazyValueInfoWrapperPass>(*currentFunction).getLVI();
       if(inst->getType()->isIntegerTy())
       {
+         unsigned long long int zeroMask=0;
+#if __clang_major__ >= 5
+         llvm::KnownBits KnownOneZero;
+         auto AC = modulePass->getAnalysis<llvm::AssumptionCacheTracker>().getAssumptionCache(*currentFunction);
+         const auto& DT = modulePass->getAnalysis<llvm::DominatorTreeWrapperPass>(*currentFunction).getDomTree();
+         KnownOneZero = llvm::computeKnownBits(inst, *DL, 0, &AC, inst, &DT);
+         zeroMask = KnownOneZero.Zero.getZExtValue();
+#else
+         llvm::APInt KnownZero;
+         llvm::APInt KnownOne;
+         auto AC = modulePass->getAnalysis<llvm::AssumptionCacheTracker>().getAssumptionCache(*currentFunction);
+         const auto& DT = modulePass->getAnalysis<llvm::DominatorTreeWrapperPass>(*currentFunction).getDomTree();
+         llvm::computeKnownBits(inst,KnownZero, KnownOne, *DL, 0, &AC, inst, &DT);
+         zeroMask = KnownZero.getZExtValue();
+#endif
          auto ty = inst->getType();
          auto obj_size = ty->isSized() ? DL->getTypeAllocSizeInBits(ty) : 8ULL;
          auto active_size = ty->isSized() ? DL->getTypeSizeInBits(ty) : 8ULL;
          auto isSigned = CheckSignedTag(TREE_TYPE(t));
+         auto i=active_size;
+         for (;i>1;--i)
+         {
+            if((zeroMask&(1ULL<<(i-1)))==0)
+               break;
+         }
+         if(i!=active_size)
+         {
+            if(isSigned)
+               ++i;
+            if(i<active_size)
+               active_size = i;
+         }
          if(obj_size != active_size)
          {
             uint64_t val;
@@ -2776,20 +2943,24 @@ namespace clang
             llvm::ConstantRange range = LVI.getConstantRange(inst, BB, inst);
             if(!range.isFullSet())
             {
-               //            llvm::errs() << "Range:\n";
-               //            range.print(llvm::errs());
-               //            llvm::errs() << range.getBitWidth() << "\n";
-               auto low = range.getLower();
-               //            llvm::errs() << "Min:\n";
-               //            low.print(llvm::errs(), low.isNegative());
-               //            llvm::errs() << (isSigned?"T":"F") << "\n";
-               if((!isSigned && range.getUpper().uge(range.getLower())) || (isSigned && range.getUpper().sge(range.getLower())))
-               {
-                  //               low.print(llvm::errs(), isSigned);
-                  return assignCodeAuto(llvm::ConstantInt::get(inst->getContext(), low));
-               }
-               else
-                  return nullptr;
+//               llvm::errs() << "Range:\n";
+//               range.print(llvm::errs());
+//               llvm::errs() << range.getBitWidth() << "\n";
+//               auto low = range.getLower();
+//               llvm::errs() << "Min: " << (low.isMinValue()?"Tmin":"Fmin") << " " << (low.isMaxValue()?"Tmax":"Fmax") << "\n";
+//               llvm::errs() << "Min: " << (low.isMinSignedValue()?"Tmin_signed":"Fmin_signed") << " " << (low.isMaxSignedValue()?"Tmax_signed":"Fmax_signed") << "\n";
+//               llvm::errs() << "Min: " << (range.getUnsignedMin()).getZExtValue() << "\n";
+//               llvm::errs() << "Min: " << (range.getSignedMin()) << "\n";
+//               low.print(llvm::errs(), isSigned);
+//               llvm::errs() << (isSigned?"T":"F") << "\n";
+//               auto upper = range.getUpper()-1;
+//               llvm::errs() << "Max: " << (upper.isMinValue()?"Tmin":"Fmin") << " " << (upper.isMaxValue()?"Tmax":"Fmax") << "\n";
+//               llvm::errs() << "Max: " << (upper.isMinSignedValue()?"Tmin_signed":"Fmin_signed") << " " << (upper.isMaxSignedValue()?"Tmax_signed":"Fmax_signed") << "\n";
+//               llvm::errs() << "Max: " << (range.getUnsignedMax()).getZExtValue() << "\n";
+//               llvm::errs() << "Max: " << (range.getSignedMax()) << "\n";
+//               upper.print(llvm::errs(), isSigned);
+//               llvm::errs() << (isSigned?"T":"F") << "\n";
+               return assignCodeAuto(llvm::ConstantInt::get(inst->getContext(), (isSigned?range.getSignedMin():range.getUnsignedMin())));
             }
             else
                return nullptr;
@@ -2810,10 +2981,38 @@ namespace clang
       llvm::LazyValueInfo &LVI = modulePass->getAnalysis<llvm::LazyValueInfoWrapperPass>(*currentFunction).getLVI();
       if(inst->getType()->isIntegerTy())
       {
+         unsigned long long int zeroMask=0;
+#if __clang_major__ >= 5
+         llvm::KnownBits KnownOneZero;
+         auto AC = modulePass->getAnalysis<llvm::AssumptionCacheTracker>().getAssumptionCache(*currentFunction);
+         const auto& DT = modulePass->getAnalysis<llvm::DominatorTreeWrapperPass>(*currentFunction).getDomTree();
+         KnownOneZero = llvm::computeKnownBits(inst, *DL, 0, &AC, inst, &DT);
+         zeroMask = KnownOneZero.Zero.getZExtValue();
+#else
+         llvm::APInt KnownZero;
+         llvm::APInt KnownOne;
+         auto AC = modulePass->getAnalysis<llvm::AssumptionCacheTracker>().getAssumptionCache(*currentFunction);
+         const auto& DT = modulePass->getAnalysis<llvm::DominatorTreeWrapperPass>(*currentFunction).getDomTree();
+         llvm::computeKnownBits(inst,KnownZero, KnownOne, *DL, 0, &AC, inst, &DT);
+         zeroMask = KnownZero.getZExtValue();
+#endif
          auto ty = inst->getType();
          auto obj_size = ty->isSized() ? DL->getTypeAllocSizeInBits(ty) : 8ULL;
          auto active_size = ty->isSized() ? DL->getTypeSizeInBits(ty) : 8ULL;
          auto isSigned = CheckSignedTag(TREE_TYPE(t));
+         auto i=active_size;
+         for (;i>1;--i)
+         {
+            if((zeroMask&(1ULL<<(i-1)))==0)
+               break;
+         }
+         if(i!=active_size)
+         {
+            if(isSigned)
+               ++i;
+            if(i<active_size)
+               active_size = i;
+         }
          if(obj_size != active_size)
          {
             auto maxvalue = llvm::APInt::getMaxValue(std::max((isSigned?active_size-1ULL:active_size),1ULL)).getZExtValue();
@@ -2830,17 +3029,7 @@ namespace clang
             if(!range.isFullSet())
             {
                auto isSigned = CheckSignedTag(TREE_TYPE(t));
-               auto low = range.getLower();
-               //            llvm::errs() << "Max:\n";
-               //            range.getUpper().print(llvm::errs(), range.getUpper().isNegative());
-               //            llvm::errs() << (isSigned?"T":"F") << "\n";
-               if((!isSigned && range.getUpper().uge(range.getLower())) || (isSigned && range.getUpper().sge(range.getLower())))
-               {
-                  //               range.getUpper().print(llvm::errs(), isSigned);
-                  return assignCodeAuto(llvm::ConstantInt::get(inst->getContext(), range.getUpper()-1));
-               }
-               else
-                  return nullptr;
+               return assignCodeAuto(llvm::ConstantInt::get(inst->getContext(), (isSigned?range.getSignedMax():range.getUnsignedMax())));
             }
             else
                return nullptr;
@@ -3435,6 +3624,8 @@ namespace clang
             add_alloca_pt_solution(lhs,rhs);
             serialize_child ("op", lhs);
             serialize_child ("op", rhs);
+            if(index2alloca_var.find(g)->second.addr)
+               serialize_string("addr");
             break;
          }
          case GT(GETELEMENTPTR):
@@ -3446,7 +3637,9 @@ namespace clang
             std::set<const llvm::User*> visited;
             auto currInst = reinterpret_cast<const llvm::User *>(g);
             visited.insert(currInst);
-            if(temporary_addr_check(currInst, visited))
+            const llvm::TargetLibraryInfo &TLI =
+                  modulePass->getAnalysis<llvm::TargetLibraryInfoWrapperPass>().getTLI();
+            if(temporary_addr_check(currInst, visited, TLI))
                serialize_string("addr");
             break;
          }
@@ -4085,8 +4278,8 @@ namespace clang
          if(DECL_ASSEMBLER_NAME_SET_P(t) && DECL_ASSEMBLER_NAME(t) != DECL_NAME(t))
            serialize_child("mngl", DECL_ASSEMBLER_NAME(t));
 
-         //if(DECL_ABSTRACT_ORIGIN(t))
-         //  serialize_child("orig", DECL_ABSTRACT_ORIGIN(t));
+         if((code == GT(VAR_DECL) || code == GT(ALLOCAVAR_DECL)) && DECL_ALIGN(t) != TYPE_ALIGN(TREE_TYPE(t)))
+            serialize_child("orig", DECL_ABSTRACT_ORIGIN(t));
          /* And types.  */
          queue_and_serialize_type(t);
          serialize_child("scpe", DECL_CONTEXT(t));
@@ -4284,13 +4477,14 @@ namespace clang
             break;
          }
          case GT(ALLOCAVAR_DECL):
+         case GT(ORIGVAR_DECL):
          case GT(VAR_DECL):
          case GT(PARM_DECL):
          case GT(FIELD_DECL):
          case GT(RESULT_DECL):
             if(TREE_CODE(t) == GT(FIELD_DECL) && DECL_C_BIT_FIELD(t))
                serialize_string("bitfield");
-            if(TREE_CODE(t) == GT(VAR_DECL))
+            if(TREE_CODE(t) == GT(VAR_DECL) || TREE_CODE(t) == GT(ORIGVAR_DECL))
             {
                if(DECL_EXTERNAL(t))
                   serialize_string("extern");
@@ -4313,7 +4507,7 @@ namespace clang
               if(DECL_FIELD_OFFSET(t))
                 serialize_child("bpos", bit_position(t));
             }
-            else if(TREE_CODE(t) == GT(ALLOCAVAR_DECL) || TREE_CODE(t) == GT(VAR_DECL) || TREE_CODE(t) == GT(PARM_DECL))
+            else if(TREE_CODE(t) == GT(ALLOCAVAR_DECL) || TREE_CODE(t) == GT(ORIGVAR_DECL) || TREE_CODE(t) == GT(VAR_DECL) || TREE_CODE(t) == GT(PARM_DECL))
             {
               serialize_int("used", TREE_USED(t));
               if(DECL_REGISTER(t))
@@ -4321,6 +4515,13 @@ namespace clang
             }
             if(TREE_READONLY(t) && TREE_CODE(t) != GT(RESULT_DECL) && TREE_CODE(t) != GT(FIELD_DECL))
                serialize_string("readonly");
+            if(TREE_CODE(t) == GT(ALLOCAVAR_DECL) && PtoSets_AA)
+            {
+               if(TREE_ADDRESSABLE(t))
+                  serialize_string("addr_taken");
+               else
+                  serialize_string("addr_not_taken");
+            }
             break;
          case GT(FUNCTION_DECL):
          {
@@ -4688,12 +4889,25 @@ namespace clang
       auto res = lowerMemIntrinsics(M);
       res = res | lowerIntrinsics(M);
       moduleContext = &M.getContext();
-      if(!onlyGlobals && TopFunctionName != "")
+      if(!onlyGlobals)
       {
-         PtoSets_AA = new Andersen_AA(TopFunctionName);
-         const llvm::TargetLibraryInfo &TLI =
-               modulePass->getAnalysis<llvm::TargetLibraryInfoWrapperPass>().getTLI();
-         PtoSets_AA->computePointToSet(M,&TLI);
+         std::string starting_function = TopFunctionName;
+         if(starting_function == "")
+         {
+            const llvm::Function *main = M.getFunction("main");
+            if(main)
+               starting_function = "main";
+         }
+         if(starting_function != "")
+         {
+#define ANDERSEN 1
+#if ANDERSEN
+            PtoSets_AA = new Andersen_AA(starting_function);
+#else
+            PtoSets_AA = new Staged_Flow_Sensitive_AA(starting_function);
+#endif
+            PtoSets_AA->computePointToSet(M);
+         }
       }
       for(const auto& globalVar : M.getGlobalList())
       {

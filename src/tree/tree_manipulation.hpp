@@ -293,7 +293,9 @@ class tree_manipulation
             bool static_flag = false,
             bool register_flag = false,
             bool readonly_flag = false,
-            const std::string&bit_values="") const;
+            const std::string&bit_values="",
+            bool addr_taken=false,
+            bool addr_not_taken=false) const;
 
       ///TYPE_OBJ
 

@@ -376,6 +376,8 @@ enum class TreeVocabularyTokenTypes_TokenEnum
    TOK_LIBRARY_SYSTEM,
    TOK_LIBBAMBU,
    TOK_EXTERN,
+   TOK_ADDR_TAKEN,
+   TOK_ADDR_NOT_TAKEN,
    TOK_C,
    TOK_LSHIFT,
    TOK_GLOBAL_INIT,

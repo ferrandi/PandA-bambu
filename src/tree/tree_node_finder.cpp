@@ -698,6 +698,8 @@ void tree_node_finder::operator()(const var_decl* obj, unsigned int & mask)
    find_res = find_res && CHECK_VALUE_OPT(TOK_USE_TMPL, obj->use_tmpl) &&
          CHECK_VALUE_OPT(TOK_STATIC_STATIC, obj->static_static_flag) &&
          CHECK_VALUE_OPT(TOK_EXTERN, obj->extern_flag) &&
+         CHECK_VALUE_OPT(TOK_ADDR_TAKEN, obj->addr_taken) &&
+         CHECK_VALUE_OPT(TOK_ADDR_NOT_TAKEN, obj->addr_not_taken) &&
          CHECK_VALUE_OPT(TOK_STATIC, obj->static_flag) &&
          CHECK_TREE_NODE_OPT(TOK_INIT, obj->init) &&
          CHECK_TREE_NODE_OPT(TOK_SIZE, obj->size) &&

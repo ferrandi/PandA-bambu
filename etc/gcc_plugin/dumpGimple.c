@@ -2428,6 +2428,8 @@ if (!POINTER_TYPE_P (TREE_TYPE (t))
       }
       if(TREE_READONLY(t) && TREE_CODE (t) != RESULT_DECL && TREE_CODE (t) != FIELD_DECL)
          serialize_string ("readonly");
+      if(TREE_CODE (t) == VAR_DECL && !TREE_ADDRESSABLE(t))
+         serialize_string ("addr_not_taken");
       break;
 
     case FUNCTION_DECL:

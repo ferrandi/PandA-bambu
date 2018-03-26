@@ -2175,6 +2175,8 @@ void tree_node_index_factory::operator()(const var_decl* obj, unsigned int & mas
    SET_VALUE(use_tmpl,var_decl);
    SET_VALUE(static_static_flag,var_decl);
    SET_VALUE(extern_flag,var_decl);
+   SET_VALUE(addr_taken,var_decl);
+   SET_VALUE(addr_not_taken,var_decl);
    SET_VALUE(static_flag,var_decl);
    SET_NODE_ID(init,var_decl);
    SET_NODE_ID(size,var_decl);

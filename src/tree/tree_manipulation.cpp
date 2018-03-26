@@ -659,7 +659,9 @@ tree_nodeRef tree_manipulation::create_var_decl(
       bool static_flag,
       bool register_flag,
       bool readonly_flag,
-      const std::string&bit_values) const
+      const std::string&bit_values,
+      bool addr_taken,
+      bool addr_not_taken) const
 {
    ///Check if the tree_node given are tree_reindex
    THROW_ASSERT(type->get_kind() == tree_reindex_K, "Node is not a tree reindex");
@@ -710,6 +712,8 @@ tree_nodeRef tree_manipulation::create_var_decl(
    IR_schema[TOK(TOK_REGISTER)] = STR(register_flag);
    IR_schema[TOK(TOK_READONLY)] = STR(readonly_flag);
    IR_schema[TOK(TOK_BIT_VALUES)] = bit_values;
+   IR_schema[TOK(TOK_ADDR_TAKEN)] = addr_taken;
+   IR_schema[TOK(TOK_ADDR_NOT_TAKEN)] = addr_not_taken;
    IR_schema[TOK(TOK_ARTIFICIAL)] = STR(artificial_flag);
 
    this->TreeM->create_tree_node(node_nid, var_decl_K, IR_schema);

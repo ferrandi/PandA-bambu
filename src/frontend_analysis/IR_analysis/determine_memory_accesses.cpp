@@ -1054,7 +1054,7 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
                   INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "---Global variable externally accessible found: " + behavioral_helper->PrintVariable(node_id));
             }
             function_behavior->add_state_variable(node_id);
-            if((dynamic_address && !no_dynamic_address)|| address_externally_used)
+            if((dynamic_address && !no_dynamic_address && !vd->addr_not_taken)|| address_externally_used||vd->addr_taken)
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Variable for which the dynamic address is used-10: " + behavioral_helper->PrintVariable(node_id));
                function_behavior->add_dynamic_address(node_id);
@@ -1098,7 +1098,7 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
                else if(vd->static_flag)
                   function_behavior->add_state_variable(node_id);
                function_behavior->add_function_mem(node_id);
-               if((dynamic_address && !no_dynamic_address) || address_externally_used)
+               if((dynamic_address && !no_dynamic_address && !vd->addr_not_taken) || address_externally_used||vd->addr_taken)
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Variable for which the dynamic address is used-11: " + behavioral_helper->PrintVariable(node_id));
                   function_behavior->add_dynamic_address(node_id);
