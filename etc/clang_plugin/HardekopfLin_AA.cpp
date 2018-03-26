@@ -3550,7 +3550,7 @@ void Andersen_AA::id_dir_call(llvm::ImmutableCallSite CS, const llvm::Function *
       if(DEBUG_AA) llvm::errs() << "    ";
       if(DEBUG_AA) print_val(FA);
       if(DEBUG_AA) llvm::errs() << " <= ";
-      print_val(AA);
+      if(DEBUG_AA) print_val(AA);
       u32 vnFA= get_val_node(FA);
       if(llvm::isa<llvm::PointerType>(AA->getType()))
       {
@@ -3627,7 +3627,7 @@ void Andersen_AA::id_ind_call(llvm::ImmutableCallSite CS)
    {
       llvm::Value *AA= *itA;
       if(DEBUG_AA) llvm::errs() << "  ";
-      print_val(AA);
+      if(DEBUG_AA) print_val(AA);
       //FIXME: don't add these cons. if the current formal arg in the
       //  function ptr type is of non-ptr type
       if(llvm::isa<llvm::PointerType>(AA->getType()))
@@ -4018,7 +4018,7 @@ void Andersen_AA::obj_cons_id(const llvm::Module &M, const llvm::Type * MS)
       else
       {
          if(DEBUG_AA) llvm::errs() << "!! uninitialized global:\n";
-         print_val(G);
+         if(DEBUG_AA) print_val(G);
       }
    }
    //Now handle all remaining GEP CEs, since some of them are local.
@@ -4034,11 +4034,11 @@ void Andersen_AA::obj_cons_id(const llvm::Module &M, const llvm::Type * MS)
    //Count the node types (except the special nodes).
    assert(next_node == nodes.size() && "wrong node count");
 
-   print_all_structs();
+   if(DEBUG_AA) print_all_structs();
 
    //The nodes are now verified and printed at the end of clump_addr_taken().
    //The original constraints should appear in the order they were identified.
-   print_all_constraints();
+   if(DEBUG_AA) print_all_constraints();
 
 #if CHECK_CONS_UNDEF
    //Look for nodes that are read by constraints but never written.
@@ -4182,7 +4182,7 @@ void Andersen_AA::clump_addr_taken()
    free(move_to);
    //Recheck what we just modified and print the nodes in the new sequence.
    verify_nodes();
-   print_all_nodes();
+   if(DEBUG_AA) print_all_nodes();
 }
 
 //------------------------------------------------------------------------------
@@ -5507,7 +5507,7 @@ void Andersen_AA::solve_init()
       }
    }
    constraints.clear();
-   print_cons_graph(0);           //print the complete constraint graph
+   if(DEBUG_AA) print_cons_graph(0);           //print the complete constraint graph
 
    //Start the worklist with all nodes that point to something
    //  and have outgoing constraint edges.
@@ -5530,7 +5530,7 @@ void Andersen_AA::solve_init()
       }
       WL->push(i, 0);
       if(DEBUG_AA) llvm::errs() << "  ";
-      print_node(i);
+      if(DEBUG_AA) print_node(i);
    }
    if(DEBUG_AA) llvm::errs() << "\n";
    WL->swap_if_empty();

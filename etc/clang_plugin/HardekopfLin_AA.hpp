@@ -534,7 +534,6 @@ class Andersen_AA
       //  all the entries at the start because we don't use all the nodes.
       bdd get_node_var(u32 n)
       {
-         llvm::errs() << n << "\n";
          assert(n < node_vars.size() && "node ID out of range");
          bdd &b= node_vars[n];
          if(b == bddfalse)
