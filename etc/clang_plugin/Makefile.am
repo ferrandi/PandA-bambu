@@ -51,7 +51,7 @@ $(I386_CLANG4_SSA_PLUGIN) : clang4_plugin_dumpGimpleSSA.o clang4_dumpGimple.o cl
 	$(I386_CLANG4_PLUGIN_COMPILER) -fPIC -shared -fno-rtti -O3 clang4_plugin_dumpGimpleSSA.o clang4_dumpGimple.o clang4_HardekopfLin_AA.o -o clang4_plugin_dumpGimpleSSA.so -lbdd
 
 $(I386_CLANG4_SSA_PLUGINCPP) : clang4_plugin_dumpGimpleSSACpp.o clang4_dumpGimple.o clang4_HardekopfLin_AA.o
-	$(I386_CLANG4_PLUGIN_COMPILER) -fPIC -shared -fno-rtti -O3 clang4_plugin_dumpGimpleSSACpp.o clang4_dumpGimple.o -o clang4_plugin_dumpGimpleSSACpp.so -lbdd
+	$(I386_CLANG4_PLUGIN_COMPILER) -fPIC -shared -fno-rtti -O3 clang4_plugin_dumpGimpleSSACpp.o clang4_dumpGimple.o clang4_HardekopfLin_AA.o -o clang4_plugin_dumpGimpleSSACpp.so -lbdd
 
 $(I386_CLANG4_EMPTY_PLUGIN) : clang4_plugin_dumpGimpleEmpty.o clang4_dumpGimple.o  clang4_HardekopfLin_AA.o
 	$(I386_CLANG4_PLUGIN_COMPILER) -fPIC -shared -fno-rtti -O3 clang4_plugin_dumpGimpleEmpty.o clang4_dumpGimple.o clang4_HardekopfLin_AA.o -o clang4_plugin_dumpGimpleEmpty.so -lbdd
