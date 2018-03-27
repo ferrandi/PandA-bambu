@@ -1130,11 +1130,11 @@ class Constraint
    public:
       u32 dest, src;
 
-      Constraint(ConsType t, u32 d, u32 s, u32 o = 0):
+      Constraint(ConsType t, u32 d, u32 s, u32 o = 0, bool off_mandatory=false):
 #if NO_FIELD_SENSITIVE
-         type(t==gep_cons?copy_cons:t), off(0), dest(d), src(s) {}
+         type((t==gep_cons && (o==0 || !off_mandatory))?copy_cons:t), off(off_mandatory?o:0), dest(d), src(s) {}
 #else
-         type(t), off(o), dest(d), src(s) {}
+         type((t==gep_cons && o==0)?copy_cons:t), off(o), dest(d), src(s) {}
 #endif
 
       //------------------------------------------------------------------------------
@@ -1530,18 +1530,17 @@ const llvm::Type * Andersen_AA::getmin_struct(llvm::Module &M)
 //  - one of the nodes is null
 //  - offset is given for addr_of or copy
 //Returns true iff it was added.
-bool Andersen_AA::add_cons(ConsType t, u32 dest, u32 src, u32 off)
+static const Constraint empty_C(addr_of_cons,0,0,0);
+const Constraint& Andersen_AA::add_cons(ConsType t, u32 dest, u32 src, u32 off, bool off_mandatory)
 {
    assert(src && dest && "null node in constraint");
 #if NO_FIELD_SENSITIVE
-   if(t == gep_cons && src == dest)
-      return 0;
+   if(!off_mandatory && (t == gep_cons && src == dest))
+      return empty_C;
 #endif
    if(t == copy_cons && src == dest)
-      return 0;
-   if(t == gep_cons && !off)             //replace 0-offset GEP by copy
-      t= copy_cons;
-   Constraint C(t, dest, src, off);
+      return empty_C;
+   Constraint C(t, dest, src, off, off_mandatory);
    switch(t)
    {
       case addr_of_cons:
@@ -1565,7 +1564,7 @@ bool Andersen_AA::add_cons(ConsType t, u32 dest, u32 src, u32 off)
          assert(!"unknown constraint type");
    }
    constraints.push_back(C);
-   return 1;
+   return constraints.back();
 }
 
 //------------------------------------------------------------------------------
@@ -3625,9 +3624,9 @@ void Andersen_AA::id_ind_call(llvm::ImmutableCallSite CS)
    if(llvm::isa<llvm::PointerType>(CS.getType()))
    {
       u32 vnI= get_val_node(CS.getInstruction());
-      add_cons(load_cons, vnI, vnC, func_node_off_ret);
+      const auto& CST = add_cons(load_cons, vnI, vnC, func_node_off_ret,true);
       //Map the constraint to the insn. that created it.
-      icall_cons[Constraint(load_cons, vnI, vnC, func_node_off_ret)].insert(I);
+      icall_cons[CST].insert(I);
       if(DEBUG_AA) llvm::errs() << "normal";
    }
    else if(DEBUG_AA)
@@ -3650,14 +3649,14 @@ void Andersen_AA::id_ind_call(llvm::ImmutableCallSite CS)
          u32 vnAA= get_val_node_cptr(AA);
          if(vnAA)
          {
-            add_cons(store_cons, vnC, vnAA, arg_off);
-            icall_cons[Constraint(store_cons, vnC, vnAA, arg_off)].insert(I);
+            const auto& CST = add_cons(store_cons, vnC, vnAA, arg_off,true);
+            icall_cons[CST].insert(I);
          }
       }
       else
       {
-         add_cons(store_cons, vnC, p_i2p, arg_off);
-         icall_cons[Constraint(store_cons, vnC, p_i2p, arg_off)].insert(I);
+         const auto& CST = add_cons(store_cons, vnC, p_i2p, arg_off,true);
+         icall_cons[CST].insert(I);
       }
    }
    //TODO: handle varargs (whenever the offset on a store cons. is exceeded,
@@ -4941,7 +4940,7 @@ void Andersen_AA::hcd()
          src= get_node_rep(src);
       Constraint C(C0.get_type(), dest, src, C0.get_off());
       //Ignore (copy X X) and duplicates.
-      if((C.get_type() != copy_cons || C.get_dest() != C.get_src()) && !cons_seen.count(C))
+      if((C.get_type() != copy_cons || dest != src) && !cons_seen.count(C))
       {
          cons_seen.insert(C);
          constraints.push_back(C);
@@ -5144,7 +5143,6 @@ void Andersen_AA::factor_ls(const std::set<u32> &other, u32 ref, u32 off, bool l
    u32 szo= other.size();
    assert(szo);
    //dest (for load) or src (for store) will be filled in below.
-   Constraint C(load ? load_cons : store_cons, ref, ref, off);
    if(szo < factor_min_sz)
    {
       //Return unfactored cons. to the list.
@@ -8432,7 +8430,7 @@ void Staged_Flow_Sensitive_AA::icfg_inter_edges(llvm::Module &M)
       {
          u32 src = get_obj_node(ci);
          u32 dest = get_val_node(ci);
-         add_cons(addr_of_cons, dest, src, 0);
+         add_cons(addr_of_cons, dest, src);
       }
 
       assert(factor.count(rep));

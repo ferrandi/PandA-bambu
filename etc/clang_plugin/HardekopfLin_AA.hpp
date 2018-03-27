@@ -340,7 +340,7 @@ class Andersen_AA
       
       
    protected:
-      bool add_cons(ConsType t, u32 dest, u32 src, u32 off=0);
+      const Constraint &add_cons(ConsType t, u32 dest, u32 src, u32 off=0, bool off_mandatory=false);
    private:
       void verify_nodes();
       void analyze_struct(const llvm::StructType *T);

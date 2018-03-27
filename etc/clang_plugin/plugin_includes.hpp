@@ -214,7 +214,7 @@ namespace clang {
          ///unsigned integer constant table
          std::map<uint64_t, const void*> uicTable;
          /// type_integer with specific max value
-         std::map<const void*, unsigned int> maxValueITtable;
+         std::map<const void*, unsigned long long int> maxValueITtable;
          std::map<const void*, llvm::LLVMContext*> ArraysContexts;
 
          std::string getTypeName(const void * ty) const;
