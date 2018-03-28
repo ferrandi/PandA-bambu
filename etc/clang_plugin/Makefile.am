@@ -1,5 +1,5 @@
 #This is etc/clang_plugin/Makefile.am
-EXTRA_DIST = $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleEmpty.cpp $(top_srcdir)/etc/clang_plugin/dumpGimple.cpp $(top_srcdir)/etc/clang_plugin/plugin_topfname.cpp gcc/cp-tree.def gcc/sync-builtins.def gcc/gtm-builtins.def gcc/sanitizer.def gcc/hsa-builtins.def gcc/c-common.def gcc/gimple.def gcc/builtins.def gcc/brig-builtins.def gcc/cilkplus.def gcc/omp-builtins.def gcc/tree.def gcc/cilk-builtins.def gcc/chkp-builtins.def gcc/COPYING3
+EXTRA_DIST = $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleEmpty.cpp $(top_srcdir)/etc/clang_plugin/dumpGimple.cpp $(top_srcdir)/etc/clang_plugin/plugin_topfname.cpp gcc/cp-tree.def gcc/sync-builtins.def gcc/gtm-builtins.def gcc/sanitizer.def gcc/hsa-builtins.def gcc/c-common.def gcc/gimple.def gcc/builtins.def gcc/brig-builtins.def gcc/cilkplus.def gcc/omp-builtins.def gcc/tree.def gcc/cilk-builtins.def gcc/chkp-builtins.def gcc/COPYING3 HardekopfLin_AA.hpp HardekopfLin_AA.cpp
 
 
 LD_LIBRARY_PATH=
