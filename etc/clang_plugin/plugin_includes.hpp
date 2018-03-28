@@ -46,6 +46,9 @@
 #include "llvm/ADT/Hashing.h"
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/Support/raw_ostream.h"
+#if __clang_major__ >= 5
+#include "llvm/Transforms/Utils/PredicateInfo.h"
+#endif
 #include <vector>
 #include <set>
 #include <unordered_set>
@@ -55,9 +58,7 @@
 #define GT(code) tree_codes::code
 #define LOCAL_BUFFER_LEN 512
 
-#if __clang_major__ > 7 || __clang_major__ < 4
-#error
-#elif __clang_major__ == 7
+#if __clang_major__ == 7
 #define CLANG_VERSION_SYMBOL(SYMBOL) clang7 ## SYMBOL
 #define CLANG_VERSION_STRING(SYMBOL) "clang7" #SYMBOL
 #elif __clang_major__ == 6
@@ -96,6 +97,9 @@ namespace llvm {
    class MemoryLocation;
    class AllocaInst;
    class TargetLibraryInfo;
+#if __clang_major__ >= 5
+   class PredicateInfo;
+#endif
 }
 
 class Andersen_AA;
@@ -525,7 +529,9 @@ namespace clang {
          const void* SSA_NAME_DEF_STMT(const void*t) const;
          const void* getMinValue(const void* t);
          const void* getMaxValue(const void* t);
-
+#if __clang_major__ >= 5
+         std::map<llvm::Function*, std::unique_ptr<llvm::PredicateInfo>> PredInfoMap;
+#endif
          const std::list<std::pair<const void *, const void*>> CONSTRUCTOR_ELTS (const void*t);
 
          const void* CASE_LOW(const void* t);

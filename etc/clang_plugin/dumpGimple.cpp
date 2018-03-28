@@ -2899,9 +2899,14 @@ namespace clang
 #if __clang_major__ >= 5
          llvm::KnownBits KnownOneZero;
          auto AC = modulePass->getAnalysis<llvm::AssumptionCacheTracker>().getAssumptionCache(*currentFunction);
-         const auto& DT = modulePass->getAnalysis<llvm::DominatorTreeWrapperPass>(*currentFunction).getDomTree();
+         auto& DT = modulePass->getAnalysis<llvm::DominatorTreeWrapperPass>(*currentFunction).getDomTree();
          KnownOneZero = llvm::computeKnownBits(inst, *DL, 0, &AC, inst, &DT);
          zeroMask = KnownOneZero.Zero.getZExtValue();
+         if(PredInfoMap.find(currentFunction) == PredInfoMap.end())
+         {
+            PredInfoMap[currentFunction]= llvm::make_unique<llvm::PredicateInfo>(*currentFunction, DT, AC);
+            PredInfoMap.find(currentFunction)->second->print(llvm::errs());
+         }
 #else
 //         llvm::APInt KnownZero;
 //         llvm::APInt KnownOne;
