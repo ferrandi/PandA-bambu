@@ -712,8 +712,8 @@ tree_nodeRef tree_manipulation::create_var_decl(
    IR_schema[TOK(TOK_REGISTER)] = STR(register_flag);
    IR_schema[TOK(TOK_READONLY)] = STR(readonly_flag);
    IR_schema[TOK(TOK_BIT_VALUES)] = bit_values;
-   IR_schema[TOK(TOK_ADDR_TAKEN)] = addr_taken;
-   IR_schema[TOK(TOK_ADDR_NOT_TAKEN)] = addr_not_taken;
+   IR_schema[TOK(TOK_ADDR_TAKEN)] = STR(addr_taken);
+   IR_schema[TOK(TOK_ADDR_NOT_TAKEN)] = STR(addr_not_taken);
    IR_schema[TOK(TOK_ARTIFICIAL)] = STR(artificial_flag);
 
    this->TreeM->create_tree_node(node_nid, var_decl_K, IR_schema);
