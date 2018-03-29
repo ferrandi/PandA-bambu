@@ -40,6 +40,9 @@
 #ifndef PLUGIN_INCLUDES_HPP
 #define PLUGIN_INCLUDES_HPP
 
+///Autoheader include
+#include "config_HAVE_LIBBDD.hpp"
+
 #include "clang/AST/ASTConsumer.h"
 #include "clang/Frontend/CompilerInstance.h"
 #include "llvm/ADT/APFloat.h"

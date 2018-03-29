@@ -83,7 +83,9 @@
 #include "clang/AST/Stmt.h"
 #include "clang/Lex/Preprocessor.h"
 
+#if HAVE_LIBBDD
 #include "HardekopfLin_AA.hpp"
+#endif
 
 #include <iomanip>
 #include <cxxabi.h>
@@ -290,7 +292,9 @@ namespace clang
         stream(create_file_name_string(_outdir_name,_InFile), EC, llvm::sys::fs::F_RW), onlyGlobals(_onlyGlobals),
         DL(0),modulePass(0),
         last_used_index(0), column(0),
+#if HAVE_LIBBDD
         PtoSets_AA(0),
+#endif
         SignedPointerTypeReference(0),
         last_memory_ssa_vers(std::numeric_limits<int>::max()),
         last_BB_index(2)
@@ -1179,8 +1183,11 @@ namespace clang
                     cast<llvm::Instruction>(U)->getOpcode() == llvm::Instruction::And ||
                     cast<llvm::Instruction>(U)->getOpcode() == llvm::Instruction::Or)
             {
-               if(isa<llvm::PHINode>(U) &&
-                     (!PtoSets_AA || !is_PTS(PtoSets_AA->PE(U), TLI)))
+               if(isa<llvm::PHINode>(U)
+#if HAVE_LIBBDD
+                     && (!PtoSets_AA || !is_PTS(PtoSets_AA->PE(U), TLI))
+#endif
+                     )
                   return false;
                auto res = temporary_addr_check(U, visited, TLI);
                if(!res)
@@ -1195,7 +1202,9 @@ namespace clang
                   ;
                else
                {
+#if HAVE_LIBBDD
                   if(!PtoSets_AA || !is_PTS(PtoSets_AA->PE(U), TLI))
+#endif
                      return false;
                   auto res = temporary_addr_check(U, visited, TLI);
                   if(!res)
@@ -1379,6 +1388,7 @@ namespace clang
             ssa_vers = MST.getLocalSlot(operand);
             assert(ssa_vers>=0);
             sn.type = assignCodeType(getCondSignedResult(operand, operand->getType()));
+#if HAVE_LIBBDD
             if(operand->getType()->isPointerTy() && PtoSets_AA)
             {
                auto varId = PtoSets_AA->PE(operand);
@@ -1408,6 +1418,7 @@ namespace clang
                   }
                }
             }
+#endif
          }
          sn.vers= ssa_vers;
          assert(HAS_CODE(def_stmt));
@@ -1419,6 +1430,7 @@ namespace clang
 
    bool DumpGimpleRaw::is_PTS(unsigned int varId, const llvm::TargetLibraryInfo &TLI)
    {
+#if HAVE_LIBBDD
       if(varId != NOVAR_ID && PtoSets_AA->is_single(varId) && !PtoSets_AA->has_malloc_obj(varId,&TLI))
       {
          const std::vector<u32>* pts = PtoSets_AA->pointsToSet(varId);
@@ -1434,6 +1446,7 @@ namespace clang
          return true;
       }
       else
+#endif
          return false;
    }
 
@@ -4574,6 +4587,7 @@ namespace clang
             }
             if(TREE_READONLY(t) && TREE_CODE(t) != GT(RESULT_DECL) && TREE_CODE(t) != GT(FIELD_DECL))
                serialize_string("readonly");
+#if HAVE_LIBBDD
             if(TREE_CODE(t) == GT(ALLOCAVAR_DECL) && PtoSets_AA)
             {
                if(TREE_ADDRESSABLE(t))
@@ -4581,6 +4595,7 @@ namespace clang
                else
                   serialize_string("addr_not_taken");
             }
+#endif
             break;
          case GT(FUNCTION_DECL):
          {
@@ -4948,6 +4963,7 @@ namespace clang
       auto res = lowerMemIntrinsics(M);
       res = res | lowerIntrinsics(M);
       moduleContext = &M.getContext();
+#if HAVE_LIBBDD
       if(!onlyGlobals)
       {
          std::string starting_function = TopFunctionName;
@@ -4968,6 +4984,7 @@ namespace clang
             PtoSets_AA->computePointToSet(M);
          }
       }
+#endif
       for(const auto& globalVar : M.getGlobalList())
       {
 #if PRINT_DBG_MSG
@@ -4994,11 +5011,13 @@ namespace clang
             }
          }
       }
+#if HAVE_LIBBDD
       if(PtoSets_AA)
       {
          delete PtoSets_AA;
          PtoSets_AA = 0;
       }
+#endif
       return res;
    }
 
