@@ -267,14 +267,14 @@ def CollectResults(directory):
             local_report_file.close()
     report_file.close()
     if args.tool == "bambu":
-        local_args = ""
+        input_files = ""
         named_list_name = os.path.join(abs_path, "named_list")
         lines = open(named_list_name).readlines()
         for line in lines:
             local_dir = ComputeDirectory(line)
             if os.path.exists(os.path.join(local_dir, args.tool + "_results_0.xml")):
-                local_args = local_args + " " + os.path.join(local_dir, args.tool + "_results_0.xml")
-        if len(local_args) > 0:
+                input_files = input_files + " " + os.path.join(local_dir, args.tool + "_results_0.xml")
+        if len(input_files) > 0:
             #Generate experimental setup xml
             experimental_setup_file_name = os.path.join(abs_path, "experimental_setup.xml")
             temp_list = open(experimental_setup_file_name, "w")
@@ -305,12 +305,18 @@ def CollectResults(directory):
             temp_list.write("   </benchmarks>\n")
             temp_list.write("</experimental_setup>\n")
             temp_list.close();
-            local_args = local_args + " " + experimental_setup_file_name
+            local_args = input_files + " " + experimental_setup_file_name
             if os.path.exists(args.spider_style) :
                 local_args = local_args + " " + args.spider_style + " " + table
             else:
                 local_args = local_args + " " + os.path.join(os.path.dirname(spider), args.spider_style) + " " + table
 #            logging.info("   Executing " + spider + " " + local_args)
+            logging.info("   Executing " + spider)
+            local_command = [spider]
+            local_command.extend(shlex.split(local_args))
+            return_value = subprocess.call(local_command)
+        if len(input_files) > 0 and csv != None:
+            local_args = input_files + " " + csv
             logging.info("   Executing " + spider)
             local_command = [spider]
             local_command.extend(shlex.split(local_args))
@@ -477,6 +483,7 @@ parser.add_argument('-t', "--timeout", help="Timeout for tool execution (default
 parser.add_argument('-a', "--args", help="A set of arguments to be passed to the tool", nargs='*', action='append')
 parser.add_argument('-c', "--commonargs", help="A set of arguments to be passed to the tool", nargs='*', action='append')
 parser.add_argument("--table", help="Print the results in tex format", default="results.tex")
+parser.add_argument("--csv", help="Print the results in csv format", default="")
 parser.add_argument("--tool", help="The tool to be tested", default="bambu")
 parser.add_argument("--ulimit", help="The ulimit options", default="-f 2097152 -v 8388608 -s 16384")
 parser.add_argument("--stop", help="Stop the execution on first error (default=false)", default=False, action="store_true")
@@ -523,6 +530,13 @@ abs_script = os.path.abspath(sys.argv[0])
 
 #The table to be produced
 table = os.path.abspath(args.table)
+
+#The csv to be produced
+if args.csv != None:
+    csv = os.path.abspath(args.csv)
+else:
+    csv = None
+
 #Check if output directory exists, if yes abort
 if os.path.exists(args.output) and not args.restart:
     logging.error("Output directory " + args.output + " already exists. Please remove it or specify a different one with -o")

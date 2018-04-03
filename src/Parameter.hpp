@@ -599,8 +599,8 @@ enum class Parameters_FileFormat
    FF_OBJECTIVECPP,              /**< (Input/Output) Objective C++ source file */
    FF_FORTRAN,                 /**< (Input/Output) Fortran source file */
 #endif
-#if HAVE_EXPERIMENTAL
    FF_CSV,                     /**< (Input) comma separated value */
+#if HAVE_EXPERIMENTAL
    FF_CSV_RTL,                 /**< (Output) comma separated value rtl sequences */
    FF_CSV_TRE,                 /**< (Output) comma seperated value tree sequences */
 #endif
