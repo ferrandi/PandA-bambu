@@ -28,19 +28,26 @@
 #include "llvm/IR/CallSite.h"
 #include "llvm/IR/ConstantRange.h"
 #include "llvm/IR/Constants.h"
+#include "llvm/IR/Dominators.h"
 #include "llvm/IR/Function.h"
 #include "llvm/IR/InstIterator.h"
 #include "llvm/IR/Instruction.h"
 #include "llvm/IR/Instructions.h"
+#include "llvm/Analysis/LazyValueInfo.h"
 #include "llvm/IR/Module.h"
+#include "llvm/IR/ModuleSlotTracker.h"
 #include "llvm/IR/Type.h"
 #include "llvm/IR/Use.h"
 #include "llvm/IR/User.h"
 #include "llvm/IR/Value.h"
+#include "llvm/Analysis/AssumptionCache.h"
+#include "llvm/Analysis/ValueTracking.h"
 #include "llvm/PassAnalysisSupport.h"
 #include "llvm/PassSupport.h"
 #include "llvm/Support/FileSystem.h"
-#include "llvm/IR/ModuleSlotTracker.h"
+#if __clang_major__ != 4
+#include "llvm/Support/KnownBits.h"
+#endif
 
 int __builtin_clzll(unsigned long long int);
 
@@ -166,7 +173,73 @@ namespace RangeAnalysis {
                return false;
          }
       }
+
+      Range getLLVM_range(Instruction *I, ModulePass *modulePass, const llvm::DataLayout* DL)
+      {
+         if(modulePass==nullptr || DL==nullptr)
+            return Range();
+         auto Fun = I->getFunction();
+         assert(modulePass);
+         llvm::LazyValueInfo &LVI = modulePass->getAnalysis<llvm::LazyValueInfoWrapperPass>(*Fun).getLVI();
+         llvm::ConstantRange range = LVI.getConstantRange(I, I->getParent(), I);
+         unsigned long long int zeroMask=0;
+#if __clang_major__ != 4
+         llvm::KnownBits KnownOneZero;
+         auto AC = modulePass->getAnalysis<llvm::AssumptionCacheTracker>().getAssumptionCache(*Fun);
+         auto& DT = modulePass->getAnalysis<llvm::DominatorTreeWrapperPass>(*Fun).getDomTree();
+         KnownOneZero = llvm::computeKnownBits(I, *DL, 0, &AC, I, &DT);
+         zeroMask = KnownOneZero.Zero.getZExtValue();
+#else
+//         llvm::APInt KnownZero;
+//         llvm::APInt KnownOne;
+//         auto AC = modulePass->getAnalysis<llvm::AssumptionCacheTracker>().getAssumptionCache(*Fun);
+//         const auto& DT = modulePass->getAnalysis<llvm::DominatorTreeWrapperPass>(*Fun).getDomTree();
+//         llvm::computeKnownBits(I,KnownZero, KnownOne, *DL, 0, &AC, I, &DT);
+//         zeroMask = KnownZero.getZExtValue();
+#endif
+         auto ty = I->getType();
+         auto obj_size = ty->isSized() ? DL->getTypeAllocSizeInBits(ty) : 8ULL;
+         auto active_size = ty->isSized() ? DL->getTypeSizeInBits(ty) : 8ULL;
+         auto i=active_size;
+         for (;i>1;--i)
+         {
+            if((zeroMask&(1ULL<<(i-1)))==0)
+               break;
+         }
+         if(i!=active_size)
+         {
+            ++i;
+            if(i<active_size)
+               active_size = i;
+         }
+         if(obj_size != active_size)
+         {
+            assert(active_size<64);
+            APInt l(MAX_BIT_INT, -(1LL << (active_size-1)),true);
+            if(range.getSignedMin().sgt(l))
+               l = range.getSignedMin();
+            APInt u(MAX_BIT_INT, (1LL << (active_size-1)),true);
+            if(range.getSignedMax().slt(u))
+               u = range.getSignedMax();
+            return Range(l,u);
+         }
+         else if(!range.isFullSet())
+         {
+            auto l = range.getLower();
+            auto u = range.getUpper();
+            if(range.isEmptySet())
+               return Range(Min,Max, Empty);
+            else if (range.isWrappedSet())
+               return Range(u,l-1,Anti);
+            else
+               return Range(l,u-1);
+         }
+         else
+            return Range();
+      }
    } // end anonymous namespace
+
+
 
    // ========================================================================== //
    // RangeAnalysis
@@ -236,7 +309,7 @@ namespace RangeAnalysis {
       Timer *timer = prof.registerNewTimer("BuildGraph", "Build constraint graph");
       timer->startTimer();
 #endif
-      CG->buildGraph(F,nullptr);
+      CG->buildGraph(F,nullptr,nullptr);
       CG->buildVarNodes();
 #ifdef STATS
       timer->stopTimer();
@@ -337,7 +410,7 @@ namespace RangeAnalysis {
             continue;
          }
 
-         CG->buildGraph(F,nullptr);
+         CG->buildGraph(F,nullptr,nullptr);
          MatchParametersAndReturnValues(F, *CG);
       }
       CG->buildVarNodes();
@@ -561,7 +634,12 @@ namespace RangeAnalysis {
 
    void Range_base::normalizeRange(const APInt &lb, const APInt &ub, RangeType rType)
    {
-      if(rType==Anti)
+      if(rType==Empty)
+      {
+         l = Min;
+         u = Max;
+      }
+      else if(rType==Anti)
       {
          assert(lb.sle(ub));
          if(lb.eq(Min) && ub.eq(Max))
@@ -614,7 +692,7 @@ namespace RangeAnalysis {
       if (type!=Anti) return l;
       if(l.eq(u))
          return Min;
-      ConstantRange tmpT(l,u);
+      ConstantRange tmpT(l,u+1);
       ConstantRange tmpF = tmpT.inverse();
       auto sigMin = tmpF.getSignedMin();
       auto sigMax = tmpF.getSignedMax();
@@ -634,7 +712,7 @@ namespace RangeAnalysis {
       if (type!=Anti) return u;
       if(l.eq(u))
          return Max;
-      ConstantRange tmpT(l,u);
+      ConstantRange tmpT(l,u+1);
       ConstantRange tmpF = tmpT.inverse();
       auto sigMax = tmpF.getSignedMax();
 
@@ -1621,35 +1699,31 @@ namespace RangeAnalysis {
       APInt lower = sink->getRange().getLower();
       APInt upper = sink->getRange().getUpper();
 
-      switch (this->getOperation()) {
+      switch (this->getOperation())
+      {
          case ICmpInst::ICMP_EQ: // equal
             return Range(l, u);
-            break;
          case ICmpInst::ICMP_SLE: // signed less or equal
             return Range(lower, u);
-            break;
          case ICmpInst::ICMP_SLT: // signed less than
             if (u != Max) {
                return Range(lower, u - 1);
             } else {
                return Range(lower, u);
             }
-            break;
          case ICmpInst::ICMP_SGE: // signed greater or equal
             return Range(l, upper);
-            break;
          case ICmpInst::ICMP_SGT: // signed greater than
             if (l != Min) {
                return Range(l + 1, upper);
             } else {
                return Range(l, upper);
             }
-            break;
          default:
             return Range(Min, Max);
       }
 
-      return Range(Min, Max);
+      llvm_unreachable("unexpected condition");
    }
 
    /// Pretty print.
@@ -2091,11 +2165,12 @@ namespace RangeAnalysis {
                {
                   auto I = getInstruction();
                   auto opV0 = I->getOperand(0);
+
                   if(isa<ICmpInst>(opV0))
                   {
                      const Value *CondOp0 = cast<ICmpInst>(opV0)->getOperand(0);
                      const Value *CondOp1 = cast<ICmpInst>(opV0)->getOperand(1);
-                     if (isa<ConstantInt>(CondOp0) || isa<ConstantInt>(CondOp0))
+                     if (isa<ConstantInt>(CondOp0) || isa<ConstantInt>(CondOp1))
                      {
                         auto variable = isa<ConstantInt>(CondOp0) ? CondOp1 : CondOp0;
                         auto constant = isa<ConstantInt>(CondOp0) ? cast<ConstantInt>(CondOp0) : cast<ConstantInt>(CondOp1);
@@ -2133,14 +2208,13 @@ namespace RangeAnalysis {
                            else
                            {
                               Range TValues = Range(sigMin, sigMax);
-                              op3= op3.intersectWith(TValues);
+                              op2= op2.intersectWith(TValues);
                            }
                         }
                      }
                   }
                   result = op2.unionWith(op3);
                }
-               llvm::errs() << "Regular\n";
             } break;
             default:
                break;
@@ -2377,7 +2451,7 @@ namespace RangeAnalysis {
    }
 
    /// Adds an UnaryOp in the graph.
-   void ConstraintGraph::addUnaryOp(const Instruction *I, ModulePass *modulePass)
+   void ConstraintGraph::addUnaryOp(Instruction *I, ModulePass *modulePass, const llvm::DataLayout* DL)
    {
       assert(I->getNumOperands() == 1U);
       // Create the sink.
@@ -2403,7 +2477,7 @@ namespace RangeAnalysis {
 #ifndef OVERFLOWHANDLER
       // Create the operation using the intersect to constrain sink's interval.
 
-      UOp = new UnaryOp(new BasicInterval(), sink, I, source, I->getOpcode());
+      UOp = new UnaryOp(new BasicInterval(getLLVM_range(I,modulePass, DL)), sink, I, source, I->getOpcode());
 #else
       // I can only be an Add instruction if it is a newdef overflow instruction
       if (I->getOpcode() == Instruction::Add) {
@@ -2508,7 +2582,7 @@ namespace RangeAnalysis {
    /// So, we don't have intersections associated with binary oprs.
    /// To have an intersect, we must have a Sigma instruction.
    /// Adds a BinaryOp in the graph.
-   void ConstraintGraph::addBinaryOp(const Instruction *I, ModulePass *modulePass) {
+   void ConstraintGraph::addBinaryOp(Instruction *I, ModulePass *modulePass, const llvm::DataLayout* DL) {
       assert(I->getNumOperands() == 2U);
       // Create the sink.
       VarNode *sink = addVarNode(I);
@@ -2518,7 +2592,7 @@ namespace RangeAnalysis {
       VarNode *source2 = addVarNode(I->getOperand(1));
 
       // Create the operation using the intersect to constrain sink's interval.
-      BasicInterval *BI = new BasicInterval();
+      BasicInterval *BI = new BasicInterval(getLLVM_range(I,modulePass, DL));
       BinaryOp *BOp = new BinaryOp(BI, sink, I, source1, source2, I->getOpcode());
 
       // Insert the operation in the graph.
@@ -2532,7 +2606,7 @@ namespace RangeAnalysis {
       this->useMap.find(source2->getValue())->second.insert(BOp);
    }
 
-   void ConstraintGraph::addTernaryOp(const Instruction *I, ModulePass *modulePass)
+   void ConstraintGraph::addTernaryOp(Instruction *I, ModulePass *modulePass, const llvm::DataLayout* DL)
    {
       assert(I->getNumOperands() == 3U);
       // Create the sink.
@@ -2544,7 +2618,7 @@ namespace RangeAnalysis {
       VarNode *source3 = addVarNode(I->getOperand(2));
 
       // Create the operation using the intersect to constrain sink's interval.
-      BasicInterval *BI = new BasicInterval();
+      BasicInterval *BI = new BasicInterval(getLLVM_range(I,modulePass,DL));
       TernaryOp *TOp =
             new TernaryOp(BI, sink, I, source1, source2, source3, I->getOpcode());
 
@@ -2561,12 +2635,12 @@ namespace RangeAnalysis {
    }
 
    /// Add a phi node (actual phi, does not include sigmas)
-   void ConstraintGraph::addPhiOp(const PHINode *Phi, ModulePass *modulePass)
+   void ConstraintGraph::addPhiOp(PHINode *Phi, ModulePass *modulePass, const llvm::DataLayout* DL)
    {
       llvm::errs() << "Adding a phi operation constraint\n";
       // Create the sink.
       VarNode *sink = addVarNode(Phi);
-      PhiOp *phiOp = new PhiOp(new BasicInterval(), sink, Phi);
+      PhiOp *phiOp = new PhiOp(new BasicInterval(getLLVM_range(Phi,modulePass,DL)), sink, Phi);
 
       // Insert the operation in the graph.
       this->oprs.insert(phiOp);
@@ -2676,34 +2750,35 @@ namespace RangeAnalysis {
       }
    }
 
-   void ConstraintGraph::buildOperations(const Instruction *I, ModulePass *modulePass) {
+   void ConstraintGraph::buildOperations(Instruction *I, ModulePass *modulePass, const llvm::DataLayout* DL)
+   {
 
 #ifdef OVERFLOWHANDLER
       if (I->getName().endswith("_newdef")) {
-         addUnaryOp(I,modulePass);
+         addUnaryOp(I,modulePass,DL);
          return;
       }
 #endif
 
       if (I->isBinaryOp()) {
-         addBinaryOp(I,modulePass);
+         addBinaryOp(I,modulePass,DL);
       } else if (isTernaryOp(I)) {
-         addTernaryOp(I,modulePass);
+         addTernaryOp(I,modulePass,DL);
       } else {
          if(isa<ICmpInst>(I))
          {
-            addBinaryOp(I,modulePass);
+            addBinaryOp(I,modulePass,DL);
          }
          // Handle Phi functions.
-         else if (const PHINode *Phi = dyn_cast<PHINode>(I)) {
+         else if (auto Phi = dyn_cast<PHINode>(I)) {
             if (Phi->getNumOperands()==1) {
                addSigmaOp(Phi);
             } else {
-               addPhiOp(Phi,modulePass);
+               addPhiOp(Phi,modulePass,DL);
             }
          } else {
             // We have an unary instruction to handle.
-            addUnaryOp(I,modulePass);
+            addUnaryOp(I,modulePass,DL);
          }
       }
    }
@@ -3124,11 +3199,12 @@ namespace RangeAnalysis {
    }
 
    /// Iterates through all instructions in the function and builds the graph.
-   void ConstraintGraph::buildGraph(const Function &F, ModulePass *modulePass) {
+   void ConstraintGraph::buildGraph(Function &F, ModulePass *modulePass, const llvm::DataLayout* DL)
+   {
       this->func = &F;
       buildValueMaps(F);
 
-      for (const Instruction &I : instructions(F)) {
+      for (auto &I : instructions(F)) {
          const Type *ty = I.getType();
 
          // createNodesForConstants(inst);
@@ -3142,7 +3218,7 @@ namespace RangeAnalysis {
             continue;
          }
 
-         buildOperations(&I, modulePass);
+         buildOperations(&I, modulePass,DL);
       }
    }
 
@@ -4303,7 +4379,7 @@ namespace RangeAnalysis {
             continue;
          }
 
-         CG->buildGraph(F, modulePass);
+         CG->buildGraph(F, modulePass, &M.getDataLayout());
          MatchParametersAndReturnValues(F, *CG);
       }
       CG->buildVarNodes();

@@ -783,11 +783,11 @@ private:
   SmallVector<APInt, 2> constantvector;
 
   /// Adds a BinaryOp in the graph.
-  void addBinaryOp(const Instruction *I, ModulePass *modulePass);
+  void addBinaryOp(Instruction *I, ModulePass *modulePass, const DataLayout *DL);
   /// Adds a TernaryOp in the graph.
-  void addTernaryOp(const Instruction *I, ModulePass *modulePass);
+  void addTernaryOp(Instruction *I, ModulePass *modulePass, const DataLayout *DL);
   /// Adds a PhiOp in the graph.
-  void addPhiOp(const PHINode *Phi, ModulePass *modulePass);
+  void addPhiOp(PHINode *Phi, ModulePass *modulePass, const llvm::DataLayout* DL);
   // Adds a SigmaOp to the graph.
   void addSigmaOp(const PHINode *Sigma);
 
@@ -795,7 +795,7 @@ private:
   // void createNodesForConstants(const Instruction *I);
 
   /// Takes an instruction and creates an operation.
-  void buildOperations(const Instruction *I, ModulePass *modulePass);
+  void buildOperations(Instruction *I, ModulePass *modulePass, const DataLayout *DL);
   void buildValueBranchMap(const BranchInst *br);
   void buildValueSwitchMap(const SwitchInst *sw);
   void buildValueMaps(const Function &F);
@@ -841,9 +841,9 @@ public:
   DefMap *getDefMap() { return &defMap; }
   UseMap *getUseMap() { return &useMap; }
   /// Adds an UnaryOp to the graph.
-  void addUnaryOp(const Instruction *I, ModulePass *modulePass);
+  void addUnaryOp(Instruction *I, ModulePass *modulePass, const DataLayout *DL);
   /// Iterates through all instructions in the function and builds the graph.
-  void buildGraph(const Function &F, ModulePass *modulePass);
+  void buildGraph(Function &F, ModulePass *modulePass, const DataLayout *DL);
   void buildVarNodes();
   void buildSymbolicIntersectMap();
   UseMap buildUseMap(const SmallPtrSet<VarNode *, 32> &component);
