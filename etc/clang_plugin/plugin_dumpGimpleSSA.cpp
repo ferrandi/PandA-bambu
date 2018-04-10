@@ -48,6 +48,7 @@
 #include "clang/Sema/Sema.h"
 
 #define PRINT_DBG_MSG 0
+//#define UNIFYFUNCTIONEXITNODES
 
 namespace llvm {
    struct CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSAPass);
@@ -148,6 +149,7 @@ X(CLANG_VERSION_STRING(_plugin_dumpGimpleSSA), "Dump gimple ssa raw format start
 #include "llvm/Pass.h"
 #include "llvm/PassRegistry.h"
 #include "llvm/IR/Dominators.h"
+#include "llvm/Analysis/DominanceFrontier.h"
 #include "llvm/IR/PassManager.h"
 #include "llvm/IR/LegacyPassManager.h"
 #include "llvm/Transforms/IPO/PassManagerBuilder.h"
@@ -159,12 +161,15 @@ X(CLANG_VERSION_STRING(_plugin_dumpGimpleSSA), "Dump gimple ssa raw format start
 //#include "llvm/Analysis/CFLSteensAliasAnalysis.h"
 #include "llvm/Analysis/MemoryDependenceAnalysis.h"
 #include "llvm/Analysis/TargetTransformInfo.h"
-#if __clang_major__ >= 5
+#if __clang_major__ != 4
 #include "llvm/Analysis/MemorySSA.h"
 #else
 #include "llvm/Transforms/Utils/MemorySSA.h"
 #endif
 #include "llvm/Transforms/Scalar.h"
+#ifdef UNIFYFUNCTIONEXITNODES
+#include "llvm/Transforms/Utils/UnifyFunctionExitNodes.h"
+#endif
 #include "llvm/InitializePasses.h"
 #include "llvm-c/Transforms/Scalar.h"
 #include "llvm/CodeGen/Passes.h"
@@ -191,6 +196,7 @@ namespace llvm {
             initializeTargetLibraryInfoWrapperPassPass(*PassRegistry::getPassRegistry());
             initializeAssumptionCacheTrackerPass(*PassRegistry::getPassRegistry());
             initializeDominatorTreeWrapperPassPass(*PassRegistry::getPassRegistry());
+            initializeDominanceFrontierWrapperPassPass(*PassRegistry::getPassRegistry());
          }
          bool runOnModule(Module &M)
          {
@@ -225,6 +231,7 @@ namespace llvm {
            AU.addRequired<TargetLibraryInfoWrapperPass>();
            AU.addRequired<AssumptionCacheTracker>();
            AU.addRequired<DominatorTreeWrapperPass>();
+           AU.addRequired<DominanceFrontierWrapperPass>();
          }
    };
    char CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSAPass)::ID = 0;
@@ -240,6 +247,10 @@ static void loadPass(const llvm::PassManagerBuilder &PMB, llvm::legacy::PassMana
 {
    //PM.add(llvm::createCodeGenPreparePass());
    PM.add(llvm::createCFGSimplificationPass());
+   PM.add(llvm::createBreakCriticalEdgesPass());
+#ifdef UNIFYFUNCTIONEXITNODES
+   PM.add(llvm::createUnifyFunctionExitNodesPass());
+#endif
    if(PMB.OptLevel >= 2)
    {
       PM.add(llvm::createDeadStoreEliminationPass());

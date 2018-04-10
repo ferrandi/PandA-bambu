@@ -40,13 +40,16 @@
 #ifndef PLUGIN_INCLUDES_HPP
 #define PLUGIN_INCLUDES_HPP
 
+///Autoheader include
+#include "config_HAVE_LIBBDD.hpp"
+
 #include "clang/AST/ASTConsumer.h"
 #include "clang/Frontend/CompilerInstance.h"
 #include "llvm/ADT/APFloat.h"
 #include "llvm/ADT/Hashing.h"
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/Support/raw_ostream.h"
-#if __clang_major__ >= 5
+#if __clang_major__ != 4
 #include "llvm/Transforms/Utils/PredicateInfo.h"
 #endif
 #include <vector>
@@ -64,12 +67,12 @@
 #elif __clang_major__ == 6
 #define CLANG_VERSION_SYMBOL(SYMBOL) clang6 ## SYMBOL
 #define CLANG_VERSION_STRING(SYMBOL) "clang6" #SYMBOL
-#elif __clang_major__ == 5
-#define CLANG_VERSION_SYMBOL(SYMBOL) clang5 ## SYMBOL
-#define CLANG_VERSION_STRING(SYMBOL) "clang5" #SYMBOL
-#else
+#elif __clang_major__ == 4
 #define CLANG_VERSION_SYMBOL(SYMBOL) clang4 ## SYMBOL
 #define CLANG_VERSION_STRING(SYMBOL) "clang4" #SYMBOL
+#else
+#define CLANG_VERSION_SYMBOL(SYMBOL) clang5 ## SYMBOL
+#define CLANG_VERSION_STRING(SYMBOL) "clang5" #SYMBOL
 #endif
 
 
@@ -97,11 +100,14 @@ namespace llvm {
    class MemoryLocation;
    class AllocaInst;
    class TargetLibraryInfo;
-#if __clang_major__ >= 5
+#if __clang_major__ != 4
    class PredicateInfo;
 #endif
 }
 
+namespace RangeAnalysis {
+   class InterProceduralRACropDFSHelper;
+}
 class Andersen_AA;
 
 namespace clang {
@@ -529,9 +535,7 @@ namespace clang {
          const void* SSA_NAME_DEF_STMT(const void*t) const;
          const void* getMinValue(const void* t);
          const void* getMaxValue(const void* t);
-#if __clang_major__ >= 5
-         std::map<llvm::Function*, std::unique_ptr<llvm::PredicateInfo>> PredInfoMap;
-#endif
+         RangeAnalysis::InterProceduralRACropDFSHelper* RA;
          const std::list<std::pair<const void *, const void*>> CONSTRUCTOR_ELTS (const void*t);
 
          const void* CASE_LOW(const void* t);
@@ -585,6 +589,9 @@ namespace clang {
          bool lowerMemIntrinsics(llvm::Module &M);
          bool lowerIntrinsics(llvm::Module &M);
 
+         void compute_eSSA(llvm::Module &M);
+
+         void computeValueRange(llvm::Module &M);
       public:
          DumpGimpleRaw(CompilerInstance &_Instance,
                        const std::string& _outdir_name, const std::string& _InFile, bool onlyGlobals);

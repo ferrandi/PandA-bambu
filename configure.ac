@@ -355,6 +355,7 @@ panda_USE_SPARC_ELF_GCC=no;
 panda_USE_LIB_SYNTHESIS_WRAPPER=no;
 
 panda_USE_LIB_ILP=no;
+panda_USE_LIBBDD=no
 
 MIN_GCC_VERSION=0.0.0
 MAX_GCC_VERSION=9.9.9
@@ -442,6 +443,11 @@ if test "x$panda_USE_BAMBU" = xyes; then
     panda_USE_EUCALYPTUS=yes;
   fi
 
+AC_CHECK_HEADERS([bdd.h fdd.h bvec.h ], [panda_USE_LIBBDD=yes],[ echo "$ac_header not found: Clang/LLVM Point-to analysis will not enabled"])
+  if test "x$panda_USE_LIBBDD" = xyes; then
+  AC_DEFINE(HAVE_LIBBDD, 1, "Define if bambu is built")
+  fi
+
 ###  bambu experimental packages ###
   if test "x$panda_USE_EXPERIMENTAL" = xyes; then
     panda_USE_LIB_CLUSTERING=yes;
@@ -465,6 +471,7 @@ if test "x$panda_USE_BAMBU" = xyes; then
 
 fi
 AM_CONDITIONAL(BUILD_BAMBU,       test "x$panda_USE_BAMBU" = xyes)
+AM_CONDITIONAL(BUILD_PTAA,        test "x$panda_USE_LIBBDD" = xyes)
 
 ################ Eucalyptus checking ##############################
 if test "x$panda_USE_EUCALYPTUS" = xyes; then

@@ -1646,7 +1646,7 @@ void mux_connection_binding::create_connections()
                THROW_ERROR("Functional unit " + HLS->allocation_information->get_string_name(fu) + " does not have an instance " + STR(idx));
             generic_objRef selector_obj = GetPointer<funit_obj>(HLS->Rfu->get(fu,idx))->GetSelector_op(data->CGetOpNodeInfo(*op)->GetOperation());
             if(!selector_obj)
-               THROW_ERROR("Functional unit " + HLS->allocation_information->get_string_name(fu) + " does not exist or it does not have selector " + data->CGetOpNodeInfo(*op)->GetOperation() + "("+STR(idx)+")");
+               THROW_ERROR("Functional unit " + HLS->allocation_information->get_string_name(fu) + " does not exist or it does not have selector " + data->CGetOpNodeInfo(*op)->GetOperation() + "("+STR(idx)+") Operation: "+ STR(data->CGetOpNodeInfo(*op)->GetNodeId()));
             const std::set<vertex>& running_states = HLS->Rliv->get_state_where_run(*op);
             const std::set<vertex>::const_iterator rs_it_end = running_states.end();
             for(std::set<vertex>::const_iterator rs_it = running_states.begin(); rs_it_end != rs_it; ++rs_it)

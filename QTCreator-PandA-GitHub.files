@@ -644,9 +644,9 @@ etc/clang_plugin/HardekopfLin_AA.cpp
 etc/clang_plugin/HardekopfLin_AA.hpp
 etc/clang_plugin/dumpGimple.cpp
 etc/clang_plugin/llvm/RangeAnalysis.cpp
-etc/clang_plugin/llvm/RangeAnalysis.h
+etc/clang_plugin/llvm/RangeAnalysis.hpp
 etc/clang_plugin/llvm/vSSA.cpp
-etc/clang_plugin/llvm/vSSA.h
+etc/clang_plugin/llvm/vSSA.hpp
 etc/clang_plugin/plugin_dumpGimpleEmpty.cpp
 etc/clang_plugin/plugin_dumpGimpleSSA.cpp
 etc/clang_plugin/plugin_includes.hpp
