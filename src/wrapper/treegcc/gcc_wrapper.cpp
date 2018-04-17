@@ -764,6 +764,7 @@ void GccWrapper::SetBambuDefault()
       optimization_flags["builtin-memset"] = false;
       optimization_flags["builtin-memcpy"] = false;
       optimization_flags["builtin-memmove"] = false;
+      optimization_flags["unroll-loops"] = false; // it is preferrable to have unrolling disabled by default as with GCC
       return;
    }
 #endif
@@ -775,6 +776,7 @@ void GccWrapper::SetBambuDefault()
       optimization_flags["builtin-memset"] = false;
       optimization_flags["builtin-memcpy"] = false;
       optimization_flags["builtin-memmove"] = false;
+      optimization_flags["unroll-loops"] = false; // it is preferrable to have unrolling disabled by default as with GCC
       return;
    }
 #endif
