@@ -24,7 +24,8 @@ STATISTIC(numphis, "Number of phis");
 vSSA::vSSA()  {
     }
 
-bool vSSA::runOnFunction(Function &F, ModulePass *modulePass) {
+bool vSSA::runOnFunction(Function &F, ModulePass *modulePass)
+{
    // For some reason, in the DominatorTree pass, an unreachable BasicBlock
    // inside a function is considered to be dominated by anything. This goes
    // against the definition of dominance in my algorithm, and breaks for
@@ -36,9 +37,8 @@ bool vSSA::runOnFunction(Function &F, ModulePass *modulePass) {
    DF_ = &modulePass->getAnalysis<DominanceFrontierWrapperPass>(F).getDominanceFrontier();
 
    // Iterate over all Basic Blocks of the Function, calling the function that creates sigma functions, if needed
-   for (Function::iterator Fit = F.begin(), Fend = F.end(); Fit != Fend; ++Fit) {
-      createSigmasIfNeeded(&*Fit);
-   }
+   for (auto& BB: F.getBasicBlockList())
+      createSigmasIfNeeded(&BB);
    return true;
 }
 
@@ -134,13 +134,13 @@ void vSSA::insertSigmas(TerminatorInst *TI, Value *V)
       BasicBlock *BB_next = TI->getSuccessor(i);
 
       // If the successor is not BB itself and BB dominates the successor
-      if (BB_next != BB && BB_next->getSinglePredecessor() != NULL && dominateOrHasInFrontier(BB, BB_next, V)) {
+      if (BB_next != BB && BB_next->getSinglePredecessor() != NULL && dominateOrHasInFrontier(BB, BB_next, V))
+      {
          // Create the sigma function (but before, verify if there is already an identical sigma function)
          if (verifySigmaExistance(V, BB_next, BB))
             continue;
 
          PHINode *sigma = PHINode::Create(V->getType(), 1, Twine(vSSA_SIG), &(BB_next->front()));
-         llvm::errs() << "Sigma inserted\n";
          sigma->addIncoming(V, BB);
 
          ++numsigmas;
@@ -292,7 +292,6 @@ SmallVector<PHINode*, 25> vSSA::insertPhisForSigma(Value *V, PHINode *sigma)
          // Create the vSSA_PHI, and put the phi node in the deques
          //NumReservedValues is a hint for the number of incoming edges that this phi node will have (use 0 if you really have no idea).
          PHINode *vssaphi = PHINode::Create(V->getType(), 0, Twine(vSSA_PHI), &(BB_infrontier->front()));
-
          phiscreated.push_back(vssaphi);
 
          ++numphis;
@@ -346,7 +345,6 @@ void vSSA::insertPhisForPhi(Value *V, PHINode *phi)
 
          // Create the vSSA_PHI, and put the phi node in the deques
          PHINode *vssaphi = PHINode::Create(V->getType(), 0, Twine(vSSA_PHI), &(BB_infrontier->front()));
-
          phiscreated.push_back(vssaphi);
 
          ++numphis;
@@ -403,7 +401,8 @@ void vSSA::renameUsesToPhi(Value *V, PHINode *phi)
 
             // If this use is in a sigma, we need to check whether phis creation are needed again for this sigma
             if (PHINode *sigma = dyn_cast<PHINode>(usepointers[i])) {
-               if (sigma->getName().startswith(vSSA_SIG)) {
+               if (sigma->getNumOperands()==1)
+               {
                   sigmasRenamed.push_back(sigma);
                }
             }
@@ -429,10 +428,11 @@ void vSSA::renameUsesToPhi(Value *V, PHINode *phi)
       }
    }
 
-   for (unsigned k = 0, f = phi->getNumIncomingValues(); k < f; ++k) {
+   for (unsigned k = 0, f = phi->getNumIncomingValues(); k < f; ++k)
+   {
       PHINode *p = dyn_cast<PHINode>(phi->getIncomingValue(k));
 
-      if (!p || !p->getName().startswith(vSSA_SIG))
+      if (!p || p->getNumOperands()!=1)
          continue;
 
       Value *V = p->getIncomingValue(0);
@@ -453,7 +453,8 @@ void vSSA::renameUsesToPhi(Value *V, PHINode *phi)
 
                // If this use is in a sigma, we need to check whether phis creation are needed again for this sigma
                if (PHINode *sigma = dyn_cast<PHINode>(usepointers[i])) {
-                  if (sigma->getName().startswith(vSSA_SIG)) {
+                  if (sigma->getNumOperands()==1)
+                  {
                      sigmasRenamed.push_back(sigma);
                   }
                }
