@@ -82,11 +82,12 @@
 #include "clang/AST/Stmt.h"
 #include "clang/Lex/Preprocessor.h"
 
+
 #if HAVE_LIBBDD
 #include "HardekopfLin_AA.hpp"
 #endif
 
-#include "llvm/vSSA.hpp"
+#include "llvm/eSSA.hpp"
 #include "llvm/RangeAnalysis.hpp"
 
 #include <iomanip>
@@ -2915,108 +2916,130 @@ namespace clang
       llvm::Instruction *inst = const_cast<llvm::Instruction *>(reinterpret_cast<const llvm::Instruction *>(ssa->def_stmts));
       if(inst->getType()->isIntegerTy())
       {
-         llvm::BasicBlock* BB = inst->getParent();
-         llvm::Function *currentFunction = inst->getFunction();
-         assert(modulePass);
-         llvm::LazyValueInfo &LVI = modulePass->getAnalysis<llvm::LazyValueInfoWrapperPass>(*currentFunction).getLVI();
-         unsigned long long int zeroMask=0;
-#if __clang_major__ != 4
-         llvm::KnownBits KnownOneZero;
-         auto AC = modulePass->getAnalysis<llvm::AssumptionCacheTracker>().getAssumptionCache(*currentFunction);
-         auto& DT = modulePass->getAnalysis<llvm::DominatorTreeWrapperPass>(*currentFunction).getDomTree();
-         KnownOneZero = llvm::computeKnownBits(inst, *DL, 0, &AC, inst, &DT);
-         zeroMask = KnownOneZero.Zero.getZExtValue();
-#else
-//         llvm::APInt KnownZero;
-//         llvm::APInt KnownOne;
-//         auto AC = modulePass->getAnalysis<llvm::AssumptionCacheTracker>().getAssumptionCache(*currentFunction);
-//         const auto& DT = modulePass->getAnalysis<llvm::DominatorTreeWrapperPass>(*currentFunction).getDomTree();
-//         llvm::computeKnownBits(inst,KnownZero, KnownOne, *DL, 0, &AC, inst, &DT);
-//         zeroMask = KnownZero.getZExtValue();
-#endif
-         auto ty = inst->getType();
-         auto obj_size = ty->isSized() ? DL->getTypeAllocSizeInBits(ty) : 8ULL;
-         auto active_size = ty->isSized() ? DL->getTypeSizeInBits(ty) : 8ULL;
-         auto isSigned = CheckSignedTag(TREE_TYPE(t));
-         auto i=active_size;
-         for (;i>1;--i)
+         if(RA)
          {
-            if((zeroMask&(1ULL<<(i-1)))==0)
-               break;
-         }
-         if(i!=active_size)
-         {
-            if(isSigned)
-               ++i;
-            if(i<active_size)
-               active_size = i;
-         }
-         if(obj_size != active_size)
-         {
-            uint64_t val;
-            if(isSigned)
+            auto varRange = RA->getRange(inst);
+            auto isSigned = CheckSignedTag(TREE_TYPE(t));
+            if(!varRange.isMaxRange())
             {
-               val = -(1ULL << (active_size-1));
-            }
-            else
-               val = 0;
-            llvm::ConstantRange range = LVI.getConstantRange(inst, BB, inst);
-            if(!range.isFullSet())
-            {
+#ifdef DEBUG_RA
                if(isSigned)
-               {
-                  if(range.getSignedMin().getSExtValue()>(int64_t)val)
-                     val = range.getSignedMin().getSExtValue();
-               }
+                  llvm::errs() << "Range: <" << varRange.getSignedMin() << "," << varRange.getSignedMax() << "> ";
                else
-               {
-                  if(range.getUnsignedMin().getZExtValue()>val)
-                     val = range.getUnsignedMin().getZExtValue();
-               }
-            }
-
-            if(isSigned)
-               llvm::errs() << "Range: " << (int64_t)val << ",";
-            else
-               llvm::errs() << "Range: " << val << ",";
-            auto context = TREE_CODE(t)==GT(SIGNEDPOINTERTYPE) ? moduleContext : &ty->getContext();
-            if(uicTable.find(val) == uicTable.end())
-               uicTable[val] = assignCodeAuto(llvm::ConstantInt::get(llvm::Type::getInt64Ty(*context), val, false));
-            return uicTable.find(val)->second;
-         }
-         else
-         {
-            llvm::ConstantRange range = LVI.getConstantRange(inst, BB, inst);
-            if(!range.isFullSet())
-            {
-//               llvm::errs() << "Range:\n";
-//               range.print(llvm::errs());
-//               llvm::errs() << range.getBitWidth() << "\n";
-//               auto low = range.getLower();
-//               llvm::errs() << "Min: " << (low.isMinValue()?"Tmin":"Fmin") << " " << (low.isMaxValue()?"Tmax":"Fmax") << "\n";
-//               llvm::errs() << "Min: " << (low.isMinSignedValue()?"Tmin_signed":"Fmin_signed") << " " << (low.isMaxSignedValue()?"Tmax_signed":"Fmax_signed") << "\n";
-//               llvm::errs() << "Min: " << (range.getUnsignedMin()).getZExtValue() << "\n";
-//               llvm::errs() << "Min: " << (range.getSignedMin()) << "\n";
-//               low.print(llvm::errs(), isSigned);
-//               llvm::errs() << (isSigned?"T":"F") << "\n";
-//               auto upper = range.getUpper()-1;
-//               llvm::errs() << "Max: " << (upper.isMinValue()?"Tmin":"Fmin") << " " << (upper.isMaxValue()?"Tmax":"Fmax") << "\n";
-//               llvm::errs() << "Max: " << (upper.isMinSignedValue()?"Tmin_signed":"Fmin_signed") << " " << (upper.isMaxSignedValue()?"Tmax_signed":"Fmax_signed") << "\n";
-//               llvm::errs() << "Max: " << (range.getUnsignedMax()).getZExtValue() << "\n";
-//               llvm::errs() << "Max: " << (range.getSignedMax()) << "\n";
-//               upper.print(llvm::errs(), isSigned);
-//               llvm::errs() << (isSigned?"T":"F") << "\n";
-               if(isSigned)
-                  llvm::errs() << "Range: <" << range.getSignedMin() << "," << range.getSignedMax() << "> ";
-               else
-                  llvm::errs() << "Range: <" << range.getUnsignedMin().getZExtValue() << "," << range.getUnsignedMax().getZExtValue() << "> ";
+                  llvm::errs() << "Range: <" << varRange.getUnsignedMin().getZExtValue() << "," << varRange.getUnsignedMax().getZExtValue() << "> ";
                inst->print(llvm::errs());
                llvm::errs() << "\n";
-
-               return assignCodeAuto(llvm::ConstantInt::get(inst->getContext(), (isSigned?range.getSignedMin():range.getUnsignedMin())));
+#endif
+               return assignCodeAuto(llvm::ConstantInt::get(inst->getContext(), (isSigned?varRange.getSignedMin():varRange.getUnsignedMin())));
             }
             else
                return nullptr;
+         }
+         else
+         {
+            llvm::BasicBlock* BB = inst->getParent();
+            llvm::Function *currentFunction = inst->getFunction();
+            assert(modulePass);
+            llvm::LazyValueInfo &LVI = modulePass->getAnalysis<llvm::LazyValueInfoWrapperPass>(*currentFunction).getLVI();
+            unsigned long long int zeroMask=0;
+#if __clang_major__ != 4
+            llvm::KnownBits KnownOneZero;
+            auto AC = modulePass->getAnalysis<llvm::AssumptionCacheTracker>().getAssumptionCache(*currentFunction);
+            auto& DT = modulePass->getAnalysis<llvm::DominatorTreeWrapperPass>(*currentFunction).getDomTree();
+            KnownOneZero = llvm::computeKnownBits(inst, *DL, 0, &AC, inst, &DT);
+            zeroMask = KnownOneZero.Zero.getZExtValue();
+#else
+            //         llvm::APInt KnownZero;
+            //         llvm::APInt KnownOne;
+            //         auto AC = modulePass->getAnalysis<llvm::AssumptionCacheTracker>().getAssumptionCache(*currentFunction);
+            //         const auto& DT = modulePass->getAnalysis<llvm::DominatorTreeWrapperPass>(*currentFunction).getDomTree();
+            //         llvm::computeKnownBits(inst,KnownZero, KnownOne, *DL, 0, &AC, inst, &DT);
+            //         zeroMask = KnownZero.getZExtValue();
+#endif
+            auto ty = inst->getType();
+            auto obj_size = ty->isSized() ? DL->getTypeAllocSizeInBits(ty) : 8ULL;
+            auto active_size = ty->isSized() ? DL->getTypeSizeInBits(ty) : 8ULL;
+            auto isSigned = CheckSignedTag(TREE_TYPE(t));
+            auto i=active_size;
+            for (;i>1;--i)
+            {
+               if((zeroMask&(1ULL<<(i-1)))==0)
+                  break;
+            }
+            if(i!=active_size)
+            {
+               if(isSigned)
+                  ++i;
+               if(i<active_size)
+                  active_size = i;
+            }
+            if(obj_size != active_size)
+            {
+               uint64_t val;
+               if(isSigned)
+               {
+                  val = -(1ULL << (active_size-1));
+               }
+               else
+                  val = 0;
+               llvm::ConstantRange range = LVI.getConstantRange(inst, BB, inst);
+               if(!range.isFullSet())
+               {
+                  if(isSigned)
+                  {
+                     if(range.getSignedMin().getSExtValue()>(int64_t)val)
+                        val = range.getSignedMin().getSExtValue();
+                  }
+                  else
+                  {
+                     if(range.getUnsignedMin().getZExtValue()>val)
+                        val = range.getUnsignedMin().getZExtValue();
+                  }
+               }
+
+               if(isSigned)
+                  llvm::errs() << "Range: " << (int64_t)val << ",";
+               else
+                  llvm::errs() << "Range: " << val << ",";
+               auto context = TREE_CODE(t)==GT(SIGNEDPOINTERTYPE) ? moduleContext : &ty->getContext();
+               if(uicTable.find(val) == uicTable.end())
+                  uicTable[val] = assignCodeAuto(llvm::ConstantInt::get(llvm::Type::getInt64Ty(*context), val, false));
+               return uicTable.find(val)->second;
+            }
+            else
+            {
+               llvm::ConstantRange range = LVI.getConstantRange(inst, BB, inst);
+               if(!range.isFullSet())
+               {
+                  //               llvm::errs() << "Range:\n";
+                  //               range.print(llvm::errs());
+                  //               llvm::errs() << range.getBitWidth() << "\n";
+                  //               auto low = range.getLower();
+                  //               llvm::errs() << "Min: " << (low.isMinValue()?"Tmin":"Fmin") << " " << (low.isMaxValue()?"Tmax":"Fmax") << "\n";
+                  //               llvm::errs() << "Min: " << (low.isMinSignedValue()?"Tmin_signed":"Fmin_signed") << " " << (low.isMaxSignedValue()?"Tmax_signed":"Fmax_signed") << "\n";
+                  //               llvm::errs() << "Min: " << (range.getUnsignedMin()).getZExtValue() << "\n";
+                  //               llvm::errs() << "Min: " << (range.getSignedMin()) << "\n";
+                  //               low.print(llvm::errs(), isSigned);
+                  //               llvm::errs() << (isSigned?"T":"F") << "\n";
+                  //               auto upper = range.getUpper()-1;
+                  //               llvm::errs() << "Max: " << (upper.isMinValue()?"Tmin":"Fmin") << " " << (upper.isMaxValue()?"Tmax":"Fmax") << "\n";
+                  //               llvm::errs() << "Max: " << (upper.isMinSignedValue()?"Tmin_signed":"Fmin_signed") << " " << (upper.isMaxSignedValue()?"Tmax_signed":"Fmax_signed") << "\n";
+                  //               llvm::errs() << "Max: " << (range.getUnsignedMax()).getZExtValue() << "\n";
+                  //               llvm::errs() << "Max: " << (range.getSignedMax()) << "\n";
+                  //               upper.print(llvm::errs(), isSigned);
+                  //               llvm::errs() << (isSigned?"T":"F") << "\n";
+                  if(isSigned)
+                     llvm::errs() << "Range: <" << range.getSignedMin() << "," << range.getSignedMax() << "> ";
+                  else
+                     llvm::errs() << "Range: <" << range.getUnsignedMin().getZExtValue() << "," << range.getUnsignedMax().getZExtValue() << "> ";
+                  inst->print(llvm::errs());
+                  llvm::errs() << "\n";
+
+                  return assignCodeAuto(llvm::ConstantInt::get(inst->getContext(), (isSigned?range.getSignedMin():range.getUnsignedMin())));
+               }
+               else
+                  return nullptr;
+            }
          }
       }
       else
@@ -3028,98 +3051,111 @@ namespace clang
       if(ssa->var|| ssa->isVirtual)
          return nullptr;
       llvm::Instruction *inst = const_cast<llvm::Instruction *>(reinterpret_cast<const llvm::Instruction *>(ssa->def_stmts));
-      llvm::BasicBlock* BB = inst->getParent();
-      llvm::Function *currentFunction = inst->getFunction();
-      assert(modulePass);
-      llvm::LazyValueInfo &LVI = modulePass->getAnalysis<llvm::LazyValueInfoWrapperPass>(*currentFunction).getLVI();
       if(inst->getType()->isIntegerTy())
       {
-         unsigned long long int zeroMask=0;
-#if __clang_major__ != 4
-         llvm::KnownBits KnownOneZero;
-         auto AC = modulePass->getAnalysis<llvm::AssumptionCacheTracker>().getAssumptionCache(*currentFunction);
-         const auto& DT = modulePass->getAnalysis<llvm::DominatorTreeWrapperPass>(*currentFunction).getDomTree();
-         KnownOneZero = llvm::computeKnownBits(inst, *DL, 0, &AC, inst, &DT);
-         zeroMask = KnownOneZero.Zero.getZExtValue();
-#else
-//         llvm::APInt KnownZero;
-//         llvm::APInt KnownOne;
-//         auto AC = modulePass->getAnalysis<llvm::AssumptionCacheTracker>().getAssumptionCache(*currentFunction);
-//         const auto& DT = modulePass->getAnalysis<llvm::DominatorTreeWrapperPass>(*currentFunction).getDomTree();
-//         llvm::computeKnownBits(inst,KnownZero, KnownOne, *DL, 0, &AC, inst, &DT);
-//         zeroMask = KnownZero.getZExtValue();
-#endif
-         auto ty = inst->getType();
-         auto obj_size = ty->isSized() ? DL->getTypeAllocSizeInBits(ty) : 8ULL;
-         auto active_size = ty->isSized() ? DL->getTypeSizeInBits(ty) : 8ULL;
-         auto isSigned = CheckSignedTag(TREE_TYPE(t));
-         auto i=active_size;
-         for (;i>1;--i)
+         if(RA)
          {
-            if((zeroMask&(1ULL<<(i-1)))==0)
-               break;
-         }
-         if(i!=active_size)
-         {
-            if(isSigned)
-               ++i;
-            if(i<active_size)
-               active_size = i;
-         }
-         if(obj_size != active_size)
-         {
-            uint64_t val;
-            assert(active_size<64);
-            if(isSigned)
-            {
-               val = (1ULL << (active_size-1))-1;
-            }
+            auto varRange = RA->getRange(inst);
+            auto isSigned = CheckSignedTag(TREE_TYPE(t));
+            if(!varRange.isMaxRange())
+               return assignCodeAuto(llvm::ConstantInt::get(inst->getContext(), (isSigned?varRange.getSignedMax():varRange.getUnsignedMax())));
             else
-               val = (1ULL << (active_size))-1;
-            llvm::ConstantRange range = LVI.getConstantRange(inst, BB, inst);
-            if(!range.isFullSet())
-            {
-               if(isSigned)
-               {
-                  if(range.getSignedMax().getSExtValue()<(int64_t)val)
-                     val = range.getSignedMin().getSExtValue();
-               }
-               else
-               {
-                  if(range.getUnsignedMax().getZExtValue()<val)
-                     val = range.getUnsignedMax().getZExtValue();
-               }
-            }
-            else
-            {
-               assert(range.getBitWidth() >= active_size);
-            }
-
-            if(isSigned)
-               llvm::errs() << (int64_t)val << ") ";
-            else
-               llvm::errs() << val << ") ";
-            inst->print(llvm::errs());
-            llvm::errs() << "\n";
-            //auto maxvalue = llvm::APInt::getMaxValue(std::max((isSigned?active_size-1ULL:active_size),1ULL)).getZExtValue();
-            auto maxvalue = val;
-            auto context = TREE_CODE(t)==GT(SIGNEDPOINTERTYPE) ? moduleContext : &ty->getContext();
-            if(uicTable.find(maxvalue) == uicTable.end())
-               uicTable[maxvalue] = assignCodeAuto(llvm::ConstantInt::get(llvm::Type::getInt64Ty(*context), maxvalue, false));
-            return uicTable.find(maxvalue)->second;
+               return nullptr;
          }
          else
          {
-            llvm::ConstantRange range = LVI.getConstantRange(inst, BB, inst);
-            if(!range.isFullSet())
+
+            llvm::BasicBlock* BB = inst->getParent();
+            llvm::Function *currentFunction = inst->getFunction();
+            assert(modulePass);
+            llvm::LazyValueInfo &LVI = modulePass->getAnalysis<llvm::LazyValueInfoWrapperPass>(*currentFunction).getLVI();
+            unsigned long long int zeroMask=0;
+#if __clang_major__ != 4
+            llvm::KnownBits KnownOneZero;
+            auto AC = modulePass->getAnalysis<llvm::AssumptionCacheTracker>().getAssumptionCache(*currentFunction);
+            const auto& DT = modulePass->getAnalysis<llvm::DominatorTreeWrapperPass>(*currentFunction).getDomTree();
+            KnownOneZero = llvm::computeKnownBits(inst, *DL, 0, &AC, inst, &DT);
+            zeroMask = KnownOneZero.Zero.getZExtValue();
+#else
+            //         llvm::APInt KnownZero;
+            //         llvm::APInt KnownOne;
+            //         auto AC = modulePass->getAnalysis<llvm::AssumptionCacheTracker>().getAssumptionCache(*currentFunction);
+            //         const auto& DT = modulePass->getAnalysis<llvm::DominatorTreeWrapperPass>(*currentFunction).getDomTree();
+            //         llvm::computeKnownBits(inst,KnownZero, KnownOne, *DL, 0, &AC, inst, &DT);
+            //         zeroMask = KnownZero.getZExtValue();
+#endif
+            auto ty = inst->getType();
+            auto obj_size = ty->isSized() ? DL->getTypeAllocSizeInBits(ty) : 8ULL;
+            auto active_size = ty->isSized() ? DL->getTypeSizeInBits(ty) : 8ULL;
+            auto isSigned = CheckSignedTag(TREE_TYPE(t));
+            auto i=active_size;
+            for (;i>1;--i)
             {
-               auto isSigned = CheckSignedTag(TREE_TYPE(t));
-               return assignCodeAuto(llvm::ConstantInt::get(inst->getContext(), (isSigned?range.getSignedMax():range.getUnsignedMax())));
+               if((zeroMask&(1ULL<<(i-1)))==0)
+                  break;
+            }
+            if(i!=active_size)
+            {
+               if(isSigned)
+                  ++i;
+               if(i<active_size)
+                  active_size = i;
+            }
+            if(obj_size != active_size)
+            {
+               uint64_t val;
+               assert(active_size<64);
+               if(isSigned)
+               {
+                  val = (1ULL << (active_size-1))-1;
+               }
+               else
+                  val = (1ULL << (active_size))-1;
+               llvm::ConstantRange range = LVI.getConstantRange(inst, BB, inst);
+               if(!range.isFullSet())
+               {
+                  if(isSigned)
+                  {
+                     if(range.getSignedMax().getSExtValue()<(int64_t)val)
+                        val = range.getSignedMin().getSExtValue();
+                  }
+                  else
+                  {
+                     if(range.getUnsignedMax().getZExtValue()<val)
+                        val = range.getUnsignedMax().getZExtValue();
+                  }
+               }
+               else
+               {
+                  assert(range.getBitWidth() >= active_size);
+               }
+
+               if(isSigned)
+                  llvm::errs() << (int64_t)val << ") ";
+               else
+                  llvm::errs() << val << ") ";
+               inst->print(llvm::errs());
+               llvm::errs() << "\n";
+               //auto maxvalue = llvm::APInt::getMaxValue(std::max((isSigned?active_size-1ULL:active_size),1ULL)).getZExtValue();
+               auto maxvalue = val;
+               auto context = TREE_CODE(t)==GT(SIGNEDPOINTERTYPE) ? moduleContext : &ty->getContext();
+               if(uicTable.find(maxvalue) == uicTable.end())
+                  uicTable[maxvalue] = assignCodeAuto(llvm::ConstantInt::get(llvm::Type::getInt64Ty(*context), maxvalue, false));
+               return uicTable.find(maxvalue)->second;
             }
             else
             {
-               assert(range.getBitWidth() == active_size);
-               return nullptr;
+               llvm::ConstantRange range = LVI.getConstantRange(inst, BB, inst);
+               if(!range.isFullSet())
+               {
+                  auto isSigned = CheckSignedTag(TREE_TYPE(t));
+                  return assignCodeAuto(llvm::ConstantInt::get(inst->getContext(), (isSigned?range.getSignedMax():range.getUnsignedMax())));
+               }
+               else
+               {
+                  assert(range.getBitWidth() == active_size);
+                  return nullptr;
+               }
             }
          }
       }
@@ -4982,7 +5018,7 @@ namespace clang
 
    void DumpGimpleRaw::compute_eSSA(llvm::Module &M)
    {
-      llvm::vSSA eSSAHelper;
+      eSSA eSSAHelper;
       for(auto& fun : M.getFunctionList())
       {
          if(!fun.isIntrinsic() && !fun.isDeclaration())
@@ -5057,11 +5093,12 @@ namespace clang
       if(PtoSets_AA)
       {
          delete PtoSets_AA;
-         PtoSets_AA = 0;
+         PtoSets_AA = nullptr;
       }
 #endif
       if(RA)
       {
+#ifdef DEBUG_RA
          for (llvm::Function &F : M)
          {
             llvm::errs() << "Analysis for function: " << F.getName() << "\n";
@@ -5084,6 +5121,7 @@ namespace clang
                }
             }
          }
+#endif
          delete RA;
       }
       return res;
