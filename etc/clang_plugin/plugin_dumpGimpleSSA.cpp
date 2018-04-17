@@ -166,6 +166,7 @@ X(CLANG_VERSION_STRING(_plugin_dumpGimpleSSA), "Dump gimple ssa raw format start
 #else
 #include "llvm/Transforms/Utils/MemorySSA.h"
 #endif
+#include "llvm/Transforms/IPO.h"
 #include "llvm/Transforms/Scalar.h"
 #ifdef UNIFYFUNCTIONEXITNODES
 #include "llvm/Transforms/Utils/UnifyFunctionExitNodes.h"
@@ -173,7 +174,6 @@ X(CLANG_VERSION_STRING(_plugin_dumpGimpleSSA), "Dump gimple ssa raw format start
 #include "llvm/InitializePasses.h"
 #include "llvm-c/Transforms/Scalar.h"
 #include "llvm/CodeGen/Passes.h"
-
 
 namespace llvm {
 
@@ -215,7 +215,6 @@ namespace llvm {
          }
          void getAnalysisUsage(AnalysisUsage &AU) const
          {
-           AU.setPreservesAll();
            getLoopAnalysisUsage(AU);
            AU.addRequired<MemoryDependenceWrapperPass>();
            AU.addRequired<MemorySSAWrapperPass>();
@@ -247,6 +246,7 @@ static void loadPass(const llvm::PassManagerBuilder &PMB, llvm::legacy::PassMana
 {
    //PM.add(llvm::createCodeGenPreparePass());
    PM.add(llvm::createCFGSimplificationPass());
+   PM.add(llvm::createGlobalOptimizerPass());
    PM.add(llvm::createBreakCriticalEdgesPass());
 #ifdef UNIFYFUNCTIONEXITNODES
    PM.add(llvm::createUnifyFunctionExitNodesPass());

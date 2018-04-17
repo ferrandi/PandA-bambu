@@ -233,7 +233,6 @@ namespace llvm {
          }
          void getAnalysisUsage(AnalysisUsage &AU) const
          {
-           AU.setPreservesAll();
            getLoopAnalysisUsage(AU);
          }
    };
