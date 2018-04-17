@@ -643,15 +643,12 @@ build/src/revision_hash.hpp
 etc/clang_plugin/HardekopfLin_AA.cpp
 etc/clang_plugin/HardekopfLin_AA.hpp
 etc/clang_plugin/dumpGimple.cpp
-etc/clang_plugin/llvm/GlobalOpt.cpp
 etc/clang_plugin/llvm/RangeAnalysis.cpp
 etc/clang_plugin/llvm/RangeAnalysis.hpp
 etc/clang_plugin/llvm/eSSA.cpp
 etc/clang_plugin/llvm/eSSA.hpp
 etc/clang_plugin/llvm/my_OrderedInstructions.cpp
 etc/clang_plugin/llvm/my_OrderedInstructions.hpp
-etc/clang_plugin/llvm/vSSA.cpp
-etc/clang_plugin/llvm/vSSA.hpp
 etc/clang_plugin/plugin_dumpGimpleEmpty.cpp
 etc/clang_plugin/plugin_dumpGimpleSSA.cpp
 etc/clang_plugin/plugin_includes.hpp
