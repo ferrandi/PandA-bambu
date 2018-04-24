@@ -1094,7 +1094,7 @@ class Node
       bitmap load_to, store_from, gep_to;
 
       //------------------------------------------------------------------------------
-      Node(const llvm::Value *v= 0, u32 s= 0, bool w= 0): val(v), obj_sz(s), vtime(0),
+      Node(const llvm::Value *v= nullptr, u32 s= 0, bool w= 0): val(v), obj_sz(s), vtime(0),
          rep(node_rank_min), nonptr(0), weak(w) {}
 
       bool is_rep() const
@@ -1338,7 +1338,7 @@ class Heap
          return 1;
       }
       //Delete and return the current min value, storing its key in (pk).
-      u32 pop(u32 *pk= 0)
+      u32 pop(u32 *pk= nullptr)
       {
          assert(nv);
          u32 k= hk[1], v= hv[1];
@@ -1386,7 +1386,7 @@ class Worklist
       }
       //Return the top-priority node from the list,
       //  storing the priority into (pp) if provided.
-      u32 pop(u32 *pp= 0)
+      u32 pop(u32 *pp= nullptr)
       {
          assert(!curr.empty() && "trying to pop empty worklist");
          return curr.pop(pp);
@@ -1411,7 +1411,7 @@ void Andersen_AA::releaseMemory()
    for(auto i: boost::irange(0ul,nodes.size()))
    {
       delete nodes[i];
-      nodes[i]= 0;
+      nodes[i]= nullptr;
    }
    nodes.clear();
    val_node.clear();
@@ -1422,7 +1422,7 @@ void Andersen_AA::releaseMemory()
    pts_dom= bddfalse;
    if(gep2pts){
       bdd_freepair(gep2pts);
-      gep2pts= 0;
+      gep2pts= nullptr;
    }
    geps.clear();
    clear_bdd2vec();
@@ -1454,12 +1454,12 @@ void Andersen_AA::run_cleanup()
    if(extinfo)
    {
       delete extinfo;
-      extinfo= 0;
+      extinfo= nullptr;
    }
    if(WL)
    {
       delete WL;
-      WL= 0;
+      WL= nullptr;
    }
    lcd_edges.clear();
    lcd_starts.clear();
@@ -1852,7 +1852,7 @@ u32 Andersen_AA::get_val_node_cptr(const llvm::Value *V)
          }
          else
          {
-            if(DEBUG_AA) llvm::errs() << "CGEP #" <<  next_node << "\n";
+            if(DEBUG_AA) llvm::errs() << "CGEP #" <<  next_node << " addr:" << V << "\n";
             if(DEBUG_AA) print_val(E);
             if(DEBUG_AA) llvm::errs() << "\n";
             if(!val_node.count(E))
@@ -1971,7 +1971,7 @@ bool Andersen_AA::trace_int(const llvm::Value *V, llvm::DenseSet<const llvm::Val
          if(DEBUG_AA) llvm::errs() << "      last store  ";
          auto LI0= llvm::cast<const llvm::LoadInst>(V);
          auto addr= ops[0];
-         const llvm::Value *S= 0;
+         const llvm::Value *S= nullptr;
          //Whether the BB iterator reached the current insn.
          bool found= 0;
          auto bb= LI0->getParent();
@@ -2956,7 +2956,7 @@ u32 Andersen_AA::proc_global_init(u32 onG, const llvm::Constant *C, bool first)
             done= 1;
             break;
          case llvm::Instruction::IntToPtr:
-            C= 0;
+            C= nullptr;
             break;
          case llvm::Instruction::PtrToInt:
             if(first)
@@ -3136,7 +3136,7 @@ void Andersen_AA::id_alloc_insn(const llvm::Instruction *I)
    if(DEBUG_AA) print_val(AI);
    if(DEBUG_AA) llvm::errs() << "\n";
 
-   const llvm::Type *T= 0;
+   const llvm::Type *T= nullptr;
    //heap-allocated or array => weak
    bool weak= 0;
    //Find out which type of data was allocated.
@@ -3204,7 +3204,11 @@ void Andersen_AA::id_store_insn(const llvm::Instruction *I)
    llvm::Value *dest= SI->getOperand(1), *src= SI->getOperand(0);
    //ignore stores of non-ptr values
    if(!llvm::isa<llvm::PointerType>(src->getType()))
+   {
+      /// add val node anyway for SI->getPointerOperand()
+      get_val_node_cptr(dest);
       return;
+   }
 
    if(DEBUG_AA) llvm::errs() << "  id_store_insn  ";
    if(DEBUG_AA) print_val(dest);
@@ -3253,7 +3257,7 @@ void Andersen_AA::id_i2p_insn(const llvm::Value *V)
    if(DEBUG_AA) print_val(V);
    if(DEBUG_AA) llvm::errs() << "\n";
    u32 vnD= 0;
-   llvm::Value *op= 0;
+   llvm::Value *op= nullptr;
    if(auto II= llvm::dyn_cast<const llvm::IntToPtrInst>(V))
    {
       vnD= get_val_node(II);
@@ -3874,7 +3878,7 @@ void Andersen_AA::add_store2_cons(const llvm::Value *D, const llvm::Value *S, si
    for(auto i: boost::irange(0ul,sz))
    {
       u32 tn= next_node++;
-      nodes.push_back(new Node(0));
+      nodes.push_back(new Node(nullptr));
       add_cons(load_cons, tn, vnS, i);
       add_cons(store_cons, vnD, tn, i);
    }
@@ -3907,6 +3911,8 @@ void Andersen_AA::processBlock(const llvm::BasicBlock *BB)
          case llvm::Instruction::Load:
             if(is_ptr)
                id_load_insn(I);
+            else
+               get_val_node_cptr(I->getOperand(0));
             break;
          case llvm::Instruction::Store:
             assert(!is_ptr);
@@ -4371,7 +4377,7 @@ void Andersen_AA::hr(bool do_union, u32 min_del)
    //Note: we can optimize this by modifying the constraint graph at the end
    //  of each iteration (merging *X and *Y whenever X ptr_eq Y), then
    //  running the DFS on the same graph.
-   u32 curr_n_cons= constraints.size(), prev_n_cons= 0;
+   auto curr_n_cons= constraints.size(), prev_n_cons= 0ul;
    if(DEBUG_AA) llvm::errs() << "  running HR" << (do_union ? "U" : "") << ", constraint count:  " << curr_n_cons;
    do
    {
@@ -4388,7 +4394,7 @@ void Andersen_AA::hr(bool do_union, u32 min_del)
 void Andersen_AA::make_off_nodes()
 {
    if(DEBUG_AA) llvm::errs() << "***** Creating offline graph nodes\n";
-   u32 nn= nodes.size();
+   auto nn= nodes.size();
    assert(last_obj_node && "clump_addr_taken is required");
    main2off.assign(nn, 0);
    //Start the graph with only the null node (onn - size of off_nodes).
@@ -4816,10 +4822,10 @@ void Andersen_AA::hu_label(u32 n)
 void Andersen_AA::merge_ptr_eq()
 {
    if(DEBUG_AA) llvm::errs() << "***** Merging pointer-equivalent nodes\n";
-   u32 nn= nodes.size();
+   auto nn= nodes.size();
    //The first node (of the main graph) with the given ptr_eq.
    std::unordered_map<bitmap, u32> pe2node;
-   for(auto i: boost::irange(0u,nn))
+   for(auto i: boost::irange(0ul,nn))
    {
       u32 on= main2off[i];
       //If this node has no offline version, it's not pointer-equivalent.
@@ -5140,7 +5146,7 @@ void Andersen_AA::factor_ls()
 //Factor a cons. of the form (other = *ref + off) or (*ref + off = other).
 void Andersen_AA::factor_ls(const std::set<u32> &other, u32 ref, u32 off, bool load)
 {
-   u32 szo= other.size();
+   auto szo= other.size();
    assert(szo);
    //dest (for load) or src (for store) will be filled in below.
    if(szo < factor_min_sz)
@@ -5155,7 +5161,7 @@ void Andersen_AA::factor_ls(const std::set<u32> &other, u32 ref, u32 off, bool l
    else
    {
       //Add (T = *V + k) or (*V + k = T).
-      u32 t= nodes.size();
+      auto t= nodes.size();
       nodes.push_back(new Node);
       Constraint Ca(load ? load_cons : store_cons, load?t:ref, load?ref:t, off);
       constraints.push_back(Ca);
@@ -5394,7 +5400,7 @@ void Andersen_AA::pts_init()
    //  (since we already keep track of memory usage).
    bdd_setmaxnodenum(0);
    //Disable default pre/post-garbage-collection hook.
-   bdd_gbc_hook(NULL);
+   bdd_gbc_hook(nullptr);
    //We require a particular variable ordering.
    bdd_disable_reorder();
 
@@ -5579,7 +5585,7 @@ bool Andersen_AA::solve()
    }
 
    delete WL;
-   WL= 0;
+   WL= nullptr;
    return fail;
 }
 
@@ -5722,7 +5728,7 @@ bool Andersen_AA::solve_ls_cons(u32 n, u32 hcd_rep, bdd d_points_to,
    //Is N a func.ptr used for indirect calls?
    bool ind_call= ind_calls.count(n);
    //If C is used for an actual ind. call, this will point to its insn.
-   std::set<const llvm::Instruction*> *I= 0;
+   std::set<const llvm::Instruction*> *I= nullptr;
 
    if(load)
    {
@@ -7329,6 +7335,7 @@ void Staged_Flow_Sensitive_AA::make_off_graph()
       {
          case addr_of_cons:  // D = &S
             OCG[C.get_dest()].idr = true;
+            break;
          case load_cons:     // D = *S+k
             //!! this test makes results inconsistent with PRE (why?)
             //
@@ -8014,7 +8021,7 @@ static const llvm::Function* calledFunction(const llvm::CallInst *ci)
             return F;
       }
    }
-   return 0;
+   return nullptr;
 }
 
 void Staged_Flow_Sensitive_AA::processBlock(u32 parent, const llvm::BasicBlock *BB)
@@ -8498,7 +8505,7 @@ void Staged_Flow_Sensitive_AA::process_idr_cons()
    for(auto i : idr_cons)
    {
       Constraint& C = constraints[i];
-      u32 fp = 0, cle = 0, tv = 0, el = 0, *src_p = 0, *dst_p = 0;
+      u32 fp = 0, cle = 0, tv = 0, el = 0, *src_p = nullptr, *dst_p = nullptr;
 
       // assume we don't pass a non-pointer arg to a pointer formal
       //
@@ -9229,7 +9236,8 @@ void Staged_Flow_Sensitive_AA::process_seg(u32 part, u32 n)
    if (!dfg->is_np(first)) { n2g[first].set(squeeze(n,part)); }
 
    if (!ld || (!st && use->second.size() == 1)) { pass_node[n] = first; }
-   else {
+   else
+   {
       const std::vector<u32>& lds = use->second;
       u32 p = lds.front();
 
