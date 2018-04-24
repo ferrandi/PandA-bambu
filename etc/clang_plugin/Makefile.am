@@ -24,7 +24,7 @@ PANDA_PLUGIN_VERSION=0.11
 #   -Wno-unused-function \
 #   -fdiagnostics-show-option
 #else
-WFLAGS=$(all_includes)
+WFLAGS=$(all_includes) -I$(top_srcdir)/etc/clang_plugin/
 #endif
 
 check:all

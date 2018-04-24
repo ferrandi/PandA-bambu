@@ -298,11 +298,9 @@ namespace clang
                           const std::string& _outdir_name, const std::string& _InFile, bool _onlyGlobals)
       : outdir_name(_outdir_name), InFile(_InFile), filename(create_file_name_string(_outdir_name,_InFile)), Instance(_Instance),
         stream(create_file_name_string(_outdir_name,_InFile), EC, llvm::sys::fs::F_RW), onlyGlobals(_onlyGlobals),
-        DL(0),modulePass(0),
+        DL(nullptr),modulePass(nullptr),
         last_used_index(0), column(0),
-#if HAVE_LIBBDD
-        PtoSets_AA(0),
-#endif
+        PtoSets_AA(nullptr),
         SignedPointerTypeReference(0),
         last_memory_ssa_vers(std::numeric_limits<int>::max()),
         last_BB_index(2)
@@ -1270,6 +1268,7 @@ namespace clang
          case llvm::Instruction::SRem :
          case llvm::Instruction::AShr :
          case llvm::Instruction::FPToSI:
+         case llvm::Instruction::SExt:
             return true;
          default:
             return false;
@@ -5029,18 +5028,68 @@ namespace clang
    void DumpGimpleRaw::computeValueRange(llvm::Module &M)
    {
       RA = new RangeAnalysis::InterProceduralRACropDFSHelper();
-      RA->runOnModule(M,modulePass);
+      RA->runOnModule(M,modulePass,PtoSets_AA);
+   }
+
+   void DumpGimpleRaw::ValueRangeOptimizer(llvm::Module &M)
+   {
+      if(RA)
+      {
+         for (llvm::Function &F : M)
+         {
+            llvm::errs() << "ValueRangeOptimizer: Analysis for function: " << F.getName() << "\n";
+            for(auto& BB: F.getBasicBlockList())
+            {
+               auto curInstIterator = BB.getInstList().begin();
+               while( curInstIterator != BB.getInstList().end())
+               {
+                  llvm::Instruction *I = &*curInstIterator;
+                  if(dyn_cast<llvm::PHINode>(I))
+                  {
+                     ++curInstIterator;
+                     continue;
+                  }
+                  RangeAnalysis::Range R = RA->getRange(I);
+                  if (!R.isUnknown())
+                  {
+                     if(!R.isMaxRange())
+                     {
+                        auto nbitU = RangeAnalysis::Range_base::neededBits(R.getUnsignedMin(), R.getUnsignedMax(), false);
+                        auto nbitS = RangeAnalysis::Range_base::neededBits(R.getSignedMin(), R.getSignedMax(), true);
+                        auto bw = R.getBitWidth();
+                        if(nbitS<nbitU && nbitS<bw && !isSignedResult(I))
+                        {
+                           assert(bw>nbitS);
+                           llvm::errs() << "this operation could be optimized: ";
+                           I->print(llvm::errs());
+                           llvm::errs() << " -> " << R.getBitWidth() << " -> " << nbitS << " -> " << nbitU << " -> ";
+                           R.print(llvm::errs());
+                           llvm::errs() << "\n";
+                           llvm::IRBuilder<> B(curInstIterator->getNextNode());
+
+                           auto leftShiftConstant = B.getIntN(bw, bw-nbitS);
+                           auto lsh = B.CreateShl(dyn_cast<llvm::Value>(I),leftShiftConstant);
+                           auto ashr = B.CreateAShr(lsh, leftShiftConstant);
+                           I->replaceAllUsesWith(ashr);
+                           cast<llvm::Instruction>(lsh)->setOperand(0,I);
+                        }
+                     }
+                  }
+                  ++curInstIterator;
+               }
+            }
+         }
+      }
    }
 
    bool DumpGimpleRaw::runOnModule(llvm::Module &M, llvm::ModulePass *_modulePass, const std::string& TopFunctionName)
    {
       DL = &M.getDataLayout();
       modulePass=_modulePass;
+      moduleContext = &M.getContext();
       auto res = lowerMemIntrinsics(M);
       res = res | lowerIntrinsics(M);
       compute_eSSA(M);
-      computeValueRange(M);
-      moduleContext = &M.getContext();
 #if HAVE_LIBBDD
       if(!onlyGlobals)
       {
@@ -5063,6 +5112,8 @@ namespace clang
          }
       }
 #endif
+      computeValueRange(M);
+      ValueRangeOptimizer(M);
       for(const auto& globalVar : M.getGlobalList())
       {
 #if PRINT_DBG_MSG

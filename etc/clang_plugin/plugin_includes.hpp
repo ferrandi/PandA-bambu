@@ -592,6 +592,8 @@ namespace clang {
          void compute_eSSA(llvm::Module &M);
 
          void computeValueRange(llvm::Module &M);
+         void ValueRangeOptimizer(llvm::Module &M);
+
       public:
          DumpGimpleRaw(CompilerInstance &_Instance,
                        const std::string& _outdir_name, const std::string& _InFile, bool onlyGlobals);
