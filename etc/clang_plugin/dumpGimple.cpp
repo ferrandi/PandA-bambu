@@ -929,7 +929,7 @@ namespace clang
 
    int DumpGimpleRaw::getBB_index(const llvm::BasicBlock * BB)
    {
-      assert(BB != 0);
+      assert(BB != nullptr);
       if(BB_index_map.find(BB) == BB_index_map.end())
       {
          BB_index_map[BB] = last_BB_index;
@@ -1118,7 +1118,7 @@ namespace clang
          auto ty = store.getValueOperand()->getType();
          auto type = assignCodeType(ty);
          auto written_obj_size = ty->isSized() ? DL->getTypeAllocSizeInBits(ty) : 8ULL;
-         if(written_obj_size > (8*store.getAlignment()))
+         if(store.getAlignment() && written_obj_size > (8*store.getAlignment()))
             return build1(GT(MISALIGNED_INDIRECT_REF), type, addr);
          else
             return build2(GT(MEM_REF), type, addr, zero);
@@ -1405,26 +1405,33 @@ namespace clang
                auto varId = PtoSets_AA->PE(operand);
                const llvm::TargetLibraryInfo &TLI =
                      modulePass->getAnalysis<llvm::TargetLibraryInfoWrapperPass>().getTLI();
-               if(is_PTS(varId, TLI))
+               if(is_PTS(varId, TLI, true))
                {
                   const std::vector<u32>* pts = PtoSets_AA->pointsToSet(varId);
                   for(auto var: *pts)
                   {
-                     auto val = PtoSets_AA->getValue(var);
-                     assert(val);
-                     assert(!dyn_cast<llvm::Argument>(val));
-                     assert(!dyn_cast<llvm::Function>(val));
-                     sn.ptr_info.valid=true;
-                     auto vid = val->getValueID();
-                     if(vid == llvm::Value::InstructionVal+llvm::Instruction::Alloca)
-                        sn.ptr_info.pt.vars.push_back(TREE_OPERAND(gimple_assign_rhs_alloca(val),0));
-                     else if(vid == llvm::Value::GlobalVariableVal)
-                        sn.ptr_info.pt.vars.push_back(assignCodeAuto(val));
+                     if(PtoSets_AA->is_any(var))
+                     {
+                        sn.ptr_info.pt.anything = true;
+                     }
                      else
                      {
-                        val->print(llvm::errs());
-                        stream.close();
-                        llvm_unreachable(("unexpected pointer to variable "+ std::string(ValueTyNames[val->getValueID()])).c_str());
+                        auto val = PtoSets_AA->getValue(var);
+                        assert(val);
+                        assert(!dyn_cast<llvm::Argument>(val));
+                        assert(!dyn_cast<llvm::Function>(val));
+                        sn.ptr_info.valid=true;
+                        auto vid = val->getValueID();
+                        if(vid == llvm::Value::InstructionVal+llvm::Instruction::Alloca)
+                           sn.ptr_info.pt.vars.push_back(TREE_OPERAND(gimple_assign_rhs_alloca(val),0));
+                        else if(vid == llvm::Value::GlobalVariableVal)
+                           sn.ptr_info.pt.vars.push_back(assignCodeAuto(val));
+                        else
+                        {
+                           val->print(llvm::errs());
+                           stream.close();
+                           llvm_unreachable(("unexpected pointer to variable "+ std::string(ValueTyNames[val->getValueID()])).c_str());
+                        }
                      }
                   }
                }
@@ -1439,17 +1446,19 @@ namespace clang
       return &index2ssa_name.find(key)->second;
    }
 
-   bool DumpGimpleRaw::is_PTS(unsigned int varId, const llvm::TargetLibraryInfo &TLI)
+   bool DumpGimpleRaw::is_PTS(unsigned int varId, const llvm::TargetLibraryInfo &TLI, bool with_all)
    {
 #if HAVE_LIBBDD
-      if(varId != NOVAR_ID && PtoSets_AA->is_single(varId) && !PtoSets_AA->has_malloc_obj(varId,&TLI))
+      if(varId != NOVAR_ID && (with_all || PtoSets_AA->is_single(varId)) && !PtoSets_AA->has_malloc_obj(varId,&TLI))
       {
+         if(with_all) return true;
          const std::vector<u32>* pts = PtoSets_AA->pointsToSet(varId);
          for(auto var: *pts)
          {
+            if(PtoSets_AA->is_any(var)) return false;
             auto val = PtoSets_AA->getValue(var);
-            if(!val ||
-                  dyn_cast<llvm::Argument>(val) ||
+            assert(val);
+            if(dyn_cast<llvm::Argument>(val) ||
                   dyn_cast<llvm::Function>(val) ||
                   dyn_cast<llvm::CallInst>(val))
                return false;
@@ -1699,7 +1708,7 @@ namespace clang
          auto ty = load.getType();
          auto type = assignCodeType(ty);
          auto read_obj_size = ty->isSized() ? DL->getTypeAllocSizeInBits(ty) : 8ULL;
-         if(read_obj_size > (8*load.getAlignment()))
+         if(load.getAlignment() && read_obj_size > (8*load.getAlignment()))
             return build1(GT(MISALIGNED_INDIRECT_REF), type, addr);
          else
             return build2(GT(MEM_REF), type, addr, zero);
@@ -5113,7 +5122,7 @@ namespace clang
       }
 #endif
       computeValueRange(M);
-      ValueRangeOptimizer(M);
+      //ValueRangeOptimizer(M);
       for(const auto& globalVar : M.getGlobalList())
       {
 #if PRINT_DBG_MSG

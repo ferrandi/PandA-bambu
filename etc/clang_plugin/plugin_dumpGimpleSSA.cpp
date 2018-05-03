@@ -246,6 +246,7 @@ static void loadPass(const llvm::PassManagerBuilder &PMB, llvm::legacy::PassMana
 {
    //PM.add(llvm::createCodeGenPreparePass());
    PM.add(llvm::createCFGSimplificationPass());
+   PM.add(llvm::createPromoteMemoryToRegisterPass());
    PM.add(llvm::createGlobalOptimizerPass());
    PM.add(llvm::createBreakCriticalEdgesPass());
 #ifdef UNIFYFUNCTIONEXITNODES
@@ -256,7 +257,6 @@ static void loadPass(const llvm::PassManagerBuilder &PMB, llvm::legacy::PassMana
       PM.add(llvm::createDeadStoreEliminationPass());
       PM.add(llvm::createAggressiveDCEPass());
       PM.add(llvm::createLoopLoadEliminationPass());
-      PM.add(llvm::createPromoteMemoryToRegisterPass());
    }
    PM.add(new llvm::CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSAPass)());
 }

@@ -339,7 +339,7 @@ namespace clang {
          template<class InstructionOrConstantExpr>
          bool isUnsignedOperand(const InstructionOrConstantExpr* inst) const;
          const void* getSSA(const llvm::Value *operand, const void* def_stmt, const llvm::Function * currentFunction, bool isDefault);
-         bool is_PTS(unsigned int varId,const llvm::TargetLibraryInfo &TLI);
+         bool is_PTS(unsigned int varId,const llvm::TargetLibraryInfo &TLI, bool with_all=false);
          bool is_virtual_ssa(const void* t) const;
          bool SSA_NAME_IS_DEFAULT_DEF(const void* t) const;
          const void* LowerGetElementPtrOffset(const llvm::GEPOperator* gep, const llvm::Function * currentFunction, const void *& base_node);
