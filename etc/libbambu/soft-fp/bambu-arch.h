@@ -164,7 +164,7 @@ unsigned __divlu2(unsigned u1, unsigned u0, unsigned v,
    vn1 = v >> 16;            // Break divisor up into
    vn0 = v & 0xFFFF;         // two 16-bit digits.
 
-   un32 = (u1 << s) | (u0 >> 32 - s) & (-s >> 31);
+   un32 = (u1 << s) | ((u0 >> (32 - s)) & (-s >> 31));
    un10 = u0 << s;           // Shift dividend left.
 
    un1 = un10 >> 16;         // Break right half of
