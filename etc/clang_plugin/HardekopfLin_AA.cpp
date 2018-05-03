@@ -155,8 +155,9 @@ const u32 bvc_sz= 5000000, bvc_remove= 10000;
 
 //Special node IDs: 0 - no node, i2p - unknown target of pointers cast from int,
 //  p_i2p - constant ptr to i2p,
+// any - represent a ptr to anything
 //  first_var_node - the 1st node representing a real variable.
-static const u32 i2p= 1, p_i2p= 2, first_var_node= 3;
+static const u32 i2p= 1, p_i2p= 2, any = 3, first_var_node= 4;
 
 static std::set<const llvm::BasicBlock*> bb_seen; // for processBlock()
 
@@ -1544,7 +1545,6 @@ const Constraint& Andersen_AA::add_cons(ConsType t, u32 dest, u32 src, u32 off, 
    switch(t)
    {
       case addr_of_cons:
-         assert(dest != i2p);
          assert(!off && "offset not allowed on addr_of_cons");
          break;
       case copy_cons:
@@ -2125,17 +2125,10 @@ void Andersen_AA::id_func(const llvm::Function *F)
          if(!argAddr->getType()->isPtrOrPtrVectorTy())
             continue;
          if(DEBUG_AA) llvm::errs() << "Add constraint on parameter %" << i-1 << "\n";
-         //Args 1 (argv) & 2 (envp) need 2 obj nodes, with v -> o0 -> o1.
          u32 vn= next_node++;
          nodes.push_back(new Node(argAddr));
          val_node[argAddr]= vn;
-         u32 on= next_node;
-         nodes.push_back(new Node(argAddr, 2));
-         nodes.push_back(new Node(argAddr, 1));
-         next_node += 2;
-         obj_node[argAddr]= on;
-         add_cons(addr_of_cons, vn, on);
-         add_cons(addr_of_cons, on, on+1);
+         add_cons(copy_cons, vn, any);
       }
    }
    else if(!AT)
@@ -2626,6 +2619,9 @@ void Andersen_AA::print_node(u32 n) const
          break;
       case p_i2p:
          llvm::errs()<<"<p_i2p>";
+         break;
+      case any:
+         llvm::errs()<<"<any>";
          break;
       default:
          const llvm::Value *V= nodes[n]->get_val();
@@ -3686,6 +3682,7 @@ void Andersen_AA::id_ext_call(const llvm::ImmutableCallSite &CS, const llvm::Fun
       return;
 
    extf_t tF= extinfo->get_type(F);
+   llvm::errs() << "Code " << tF << "\n";
    switch(tF)
    {
       case EFT_REALLOC:
@@ -3856,8 +3853,19 @@ void Andersen_AA::id_ext_call(const llvm::ImmutableCallSite &CS, const llvm::Fun
       case EFT_STAT2:
          assert(!"alloc type func. are not handled here");
       case EFT_NOOP:
-      case EFT_OTHER:
          break;
+      case EFT_OTHER:
+      {
+         if(!F->doesNotAccessMemory())
+         {
+            if(llvm::isa<llvm::PointerType>(F->getReturnType()))
+            {
+               u32 vnD= get_val_node(I);
+               add_cons(copy_cons, vnD, any);
+            }
+         }
+         break;
+      }
       default:
          assert(!"unknown ext.func type");
    }
@@ -4010,6 +4018,7 @@ void Andersen_AA::obj_cons_id(const llvm::Module &M, const llvm::Type * MS)
    //i2p is actually an object, since its addr. is taken;
    //  p_i2p is its initial pointer
    nodes[i2p]->obj_sz= 1;
+   add_cons(addr_of_cons, any, any);
    add_cons(addr_of_cons, p_i2p, i2p);
 
    //Find and analyze all struct types in the program.
@@ -4432,8 +4441,9 @@ void Andersen_AA::make_off_nodes()
    firstVAL= onn;
    nAFP= firstVAL - firstAFP;
 
-   //Now add the value nodes, including p_i2p and temporary (no-value) nodes.
+   //Now add the value nodes, including p_i2p, any and temporary (no-value) nodes.
    main2off[p_i2p]= onn++;
+   main2off[any]= onn++;
    for(u32 i= last_obj_node+1; i < nn; ++i)
    {
       const Node *N= nodes[i];
@@ -6180,9 +6190,25 @@ void Andersen_AA::handle_ext(const llvm::Function *F, const llvm::Instruction *I
          break;
       }
       case EFT_NOOP:
-      case EFT_OTHER:
          //No-op and unknown func. have no effect.
          if(DEBUG_AA) llvm::errs() << "(no-op)";
+         break;
+      case EFT_OTHER:
+         if(!F->doesNotAccessMemory())
+         {
+            if(llvm::isa<llvm::PointerType>(F->getReturnType()))
+            {
+               u32 vnD= get_node_rep(get_val_node(I));
+               Node *D= nodes[vnD];
+               bdd prev_pts= D->points_to;
+               D->points_to |= get_node_var(any);
+               if(D->points_to != prev_pts)
+               {
+                  if(DEBUG_AA) llvm::errs() << '*';
+                  WL->push(vnD, D->vtime);
+               }
+            }
+         }
          break;
       default:
          //FIXME: support other types
@@ -6364,6 +6390,13 @@ u32 Andersen_AA::PE(u32 n)
    assert(n && n < nodes.size() && "node ID out of range");
    return get_node_rep(n);
 }
+
+bool Andersen_AA::is_any(u32 n)
+{
+   assert(n && n < nodes.size() && "node ID out of range");
+   return n < first_var_node;
+}
+
 
 bool Andersen_AA::is_null(u32 n, u32 off)
 {

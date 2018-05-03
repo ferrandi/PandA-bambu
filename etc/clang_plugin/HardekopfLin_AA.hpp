@@ -550,6 +550,7 @@ class Andersen_AA
       bool has_malloc_obj(u32 n, const llvm::TargetLibraryInfo *TLI, u32 off=0);
       u32 PE(const llvm::Value *);
       u32 PE(u32);
+      bool is_any(u32);
       bool is_null(u32,u32);
       bool is_single(u32 n,u32 off=0);
       const llvm::Value *getValue(u32);
