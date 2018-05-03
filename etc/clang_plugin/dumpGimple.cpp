@@ -5122,7 +5122,7 @@ namespace clang
       }
 #endif
       computeValueRange(M);
-      //ValueRangeOptimizer(M);
+      ValueRangeOptimizer(M);
       for(const auto& globalVar : M.getGlobalList())
       {
 #if PRINT_DBG_MSG
