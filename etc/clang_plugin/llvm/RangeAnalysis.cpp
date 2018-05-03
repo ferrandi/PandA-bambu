@@ -364,6 +364,12 @@ namespace RangeAnalysis {
                }
                return res;
             }
+            case llvm::Value::ConstantIntVal:
+            {
+               const llvm::ConstantInt* val = cast<const llvm::ConstantInt>(CV);
+               auto bw = CV->getType()->getPrimitiveSizeInBits();
+               return Range(Regular,bw,val->getValue().sext(MAX_BIT_INT),val->getValue().sext(MAX_BIT_INT));
+            }
 
             default:
                llvm::errs() << "getLLVM_range kind not supported: ";
@@ -2742,7 +2748,7 @@ namespace RangeAnalysis {
    }
 
 
-   void ConstraintGraph::addLoadOp(llvm::LoadInst *LI, Andersen_AA * PtoSets_AA, bool arePointersResolved, llvm::ModulePass *modulePass, const llvm::DataLayout* DL)
+   void ConstraintGraph::addLoadOp(llvm::LoadInst *LI, Andersen_AA * PtoSets_AA, bool arePointersResolved, llvm::ModulePass *modulePass, const llvm::DataLayout* DL, llvm::DenseMap<llvm::Function*, llvm::SmallPtrSet<llvm::Instruction*,6>>&Function2Store)
    {
       auto bw = LI->getType()->getPrimitiveSizeInBits();
       Range intersection(Regular, bw, Min,Max);
@@ -2760,6 +2766,11 @@ namespace RangeAnalysis {
                for(auto var: *PTS)
                {
                   auto varValue = PtoSets_AA->getValue(var);
+                  if(!varValue)
+                  {
+                     pointToConstant = false;
+                     break;
+                  }
                   if(!isa<llvm::GlobalVariable>(varValue) || !cast<llvm::GlobalVariable>(varValue)->isConstant())
                   {
                      pointToConstant = false;
@@ -2776,6 +2787,7 @@ namespace RangeAnalysis {
             for(auto var: *PtoSets_AA->pointsToSet(PO))
             {
                auto varValue = PtoSets_AA->getValue(var);
+               assert(varValue);
                assert(isa<llvm::GlobalVariable>(varValue) && cast<llvm::GlobalVariable>(varValue)->isConstant());
                auto ROM = cast<llvm::GlobalVariable>(varValue);
                auto init_value = ROM->getInitializer();
@@ -2816,7 +2828,7 @@ namespace RangeAnalysis {
             {
                auto varValue = PtoSets_AA->getValue(var);
                assert(varValue);
-               for (const Value *operand : ComputeConflictingStores(nullptr,varValue,modulePass,MSSA,ma,PtoSets_AA))
+               for (const Value *operand : ComputeConflictingStores(nullptr,varValue,MSSA,ma,PtoSets_AA,Function2Store))
                {
                   VarNode *source = addVarNode(operand,varValue);
                   loadOp->addSource(source);
@@ -2829,7 +2841,58 @@ namespace RangeAnalysis {
 #endif
    }
 
-   llvm::SmallPtrSet<const llvm::Value *, 6> ConstraintGraph::ComputeConflictingStores(llvm::StoreInst *SI, const llvm::Value* GV, llvm::ModulePass *modulePass, llvm::MemorySSA &MSSA, const llvm::MemoryUseOrDef*ma, Andersen_AA * PtoSets_AA)
+   static bool recurseComputeConflictingStores(llvm::SmallPtrSet<const llvm::Value *, 6>& visited, Instruction* mInstr, const llvm::Value* GV, llvm::SmallPtrSet<const llvm::Value *, 6> &res, Andersen_AA * PtoSets_AA, llvm::DenseMap<Function*, SmallPtrSet<Instruction*,6>>&Function2Store)
+   {
+      bool GVfound=false;
+      if(visited.find(mInstr) != visited.end())
+         return GVfound;
+      visited.insert(mInstr);
+      if(auto st = dyn_cast<StoreInst>(mInstr))
+      {
+         auto PO = st->getPointerOperand();
+         for(auto var: *PtoSets_AA->pointsToSet(PO))
+         {
+            auto varValue = PtoSets_AA->getValue(var);
+            assert(varValue);
+            if(varValue==GV)
+            {
+               GVfound = true;
+               break;
+            }
+         }
+         if(GVfound)
+            res.insert(mInstr);
+      }
+      else if(auto CI =dyn_cast<CallInst>(mInstr))
+      {
+         auto CF = CI->getCalledFunction();
+         assert(CF);
+         assert(Function2Store.find(CF) != Function2Store.end());
+         for(auto si : Function2Store.find(CF)->second)
+         {
+            auto gvFOUND = recurseComputeConflictingStores(visited, si, GV, res, PtoSets_AA, Function2Store);
+            GVfound = GVfound || gvFOUND;
+         }
+      }
+      else if(auto II = dyn_cast<llvm::InvokeInst>(mInstr))
+      {
+         auto CF = II->getCalledFunction();
+         assert(CF);
+         assert(Function2Store.find(CF) != Function2Store.end());
+         for(auto si : Function2Store.find(CF)->second)
+         {
+            auto gvFOUND = recurseComputeConflictingStores(visited, si, GV, res, PtoSets_AA, Function2Store);
+            GVfound = GVfound || gvFOUND;
+         }
+      }
+      else
+      {
+         mInstr->print(llvm::errs());
+         llvm_unreachable("unexpected condition");
+      }
+      return GVfound;
+   }
+   llvm::SmallPtrSet<const llvm::Value *, 6> ConstraintGraph::ComputeConflictingStores(llvm::StoreInst *SI, const llvm::Value* GV, llvm::MemorySSA &MSSA, const llvm::MemoryUseOrDef*ma, Andersen_AA * PtoSets_AA, llvm::DenseMap<Function*, SmallPtrSet<Instruction*,6>>&Function2Store)
    {
       llvm::SmallPtrSet<const llvm::Value *, 6> res;
       llvm::SmallPtrSet<const llvm::MemoryAccess *, 6> toBeAnalyzed;
@@ -2846,27 +2909,8 @@ namespace RangeAnalysis {
             auto mInstr = mud->getMemoryInst();
             if(mInstr != SI) /// self loop could be removed
             {
-               bool GVfound=false;
-               if(auto st = dyn_cast<StoreInst>(mInstr))
-               {
-                  auto PO = st->getPointerOperand();
-                  for(auto var: *PtoSets_AA->pointsToSet(PO))
-                  {
-                     auto varValue = PtoSets_AA->getValue(var);
-                     if(varValue==GV)
-                     {
-                        GVfound = true;
-                        break;
-                     }
-                  }
-                  if(GVfound)
-                     res.insert(mInstr);
-               }
-               else
-               {
-                  mInstr->print(llvm::errs());
-                  llvm_unreachable("unexpected condition");
-               }
+               llvm::SmallPtrSet<const llvm::Value *, 6> visited;
+               bool GVfound= recurseComputeConflictingStores(visited, mInstr, GV, res, PtoSets_AA, Function2Store);
                if(Analyzed.find(currMA) == Analyzed.end())
                {
                   Analyzed.insert(currMA);
@@ -2899,7 +2943,7 @@ namespace RangeAnalysis {
       return  res;
    }
 
-   void ConstraintGraph::addStoreOp(llvm::StoreInst *SI, Andersen_AA * PtoSets_AA, bool arePointersResolved, llvm::ModulePass *modulePass)
+   void ConstraintGraph::addStoreOp(llvm::StoreInst *SI, Andersen_AA * PtoSets_AA, bool arePointersResolved, llvm::ModulePass *modulePass, llvm::DenseMap<Function*, SmallPtrSet<Instruction*,6>>&Function2Store)
    {
 #if HAVE_LIBBDD
       if(arePointersResolved)
@@ -2928,7 +2972,7 @@ namespace RangeAnalysis {
             VarNode *source = addVarNode(SI->getValueOperand(),nullptr);
             storeOp->addSource(source);
             this->useMap.find(source->getValue())->second.insert(storeOp);
-            for (const Value *operand : ComputeConflictingStores(SI,varValue,modulePass,MSSA,ma,PtoSets_AA))
+            for (const Value *operand : ComputeConflictingStores(SI,varValue,MSSA,ma,PtoSets_AA,Function2Store))
             {
                VarNode *source = addVarNode(operand,varValue);
                storeOp->addSource(source);
@@ -2947,12 +2991,12 @@ namespace RangeAnalysis {
       }
    }
 
-   void ConstraintGraph::buildOperations(Instruction *I, ModulePass *modulePass, const llvm::DataLayout* DL, Andersen_AA * PtoSets_AA, bool arePointersResolved)
+   void ConstraintGraph::buildOperations(Instruction *I, ModulePass *modulePass, const llvm::DataLayout* DL, Andersen_AA * PtoSets_AA, bool arePointersResolved, llvm::DenseMap<Function*, SmallPtrSet<Instruction*,6>>&Function2Store)
    {
       if(auto LI = dyn_cast<LoadInst>(I))
-         addLoadOp(LI,PtoSets_AA,arePointersResolved,modulePass,DL);
+         addLoadOp(LI,PtoSets_AA,arePointersResolved,modulePass,DL,Function2Store);
       else if(auto SI = dyn_cast<StoreInst>(I))
-         addStoreOp(SI,PtoSets_AA,arePointersResolved,modulePass);
+         addStoreOp(SI,PtoSets_AA,arePointersResolved,modulePass,Function2Store);
       else if (I->isBinaryOp())
          addBinaryOp(I,modulePass,DL);
       else if (isTernaryOp(I))
@@ -2964,12 +3008,13 @@ namespace RangeAnalysis {
          // Handle Phi functions.
          else if (auto Phi = dyn_cast<PHINode>(I))
          {
-            if (Phi->getNumOperands()==1) {
+            if (Phi->getNumOperands()==1)
                addSigmaOp(Phi,modulePass,DL);
-            } else {
+            else
                addPhiOp(Phi,modulePass,DL);
-            }
-         } else {
+         }
+         else
+         {
             // We have an unary instruction to handle.
             addUnaryOp(I,modulePass,DL);
          }
@@ -3337,7 +3382,7 @@ namespace RangeAnalysis {
    }
 
    /// Iterates through all instructions in the function and builds the graph.
-   void ConstraintGraph::buildGraph(Function &F, ModulePass *modulePass, const llvm::DataLayout* DL, Andersen_AA * PtoSets_AA, bool arePointersResolved)
+   void ConstraintGraph::buildGraph(Function &F, ModulePass *modulePass, const llvm::DataLayout* DL, Andersen_AA * PtoSets_AA, bool arePointersResolved, llvm::DenseMap<Function*, SmallPtrSet<Instruction*,6>>&Function2Store)
    {
       this->func = &F;
       buildValueMaps(F);
@@ -3348,7 +3393,7 @@ namespace RangeAnalysis {
             continue;
          if (!isValidInstruction(&I))
             continue;
-         buildOperations(&I, modulePass,DL, PtoSets_AA, arePointersResolved);
+         buildOperations(&I, modulePass,DL, PtoSets_AA, arePointersResolved,Function2Store);
       }
    }
 
@@ -4470,7 +4515,7 @@ namespace RangeAnalysis {
    }
 
    static
-   bool checkStores(Module &M, Andersen_AA * PtoSets_AA)
+   bool checkStores(Module &M, Andersen_AA * PtoSets_AA, llvm::DenseMap<Function*, SmallPtrSet<Instruction*,6>>& Function2Store)
    {
       if(!PtoSets_AA) return false;
 #if HAVE_LIBBDD
@@ -4482,6 +4527,12 @@ namespace RangeAnalysis {
          {
             if(auto SI = dyn_cast<StoreInst>(&I))
             {
+               if(Function2Store.find(&F) == Function2Store.end())
+               {
+                  SmallPtrSet<Instruction *, 6> storeList;
+                  Function2Store.insert(std::make_pair(&F,storeList));
+               }
+               Function2Store.find(&F)->second.insert(SI);
                auto PO = SI->getPointerOperand();
                auto PTS = PtoSets_AA->pointsToSet(PO);
                if(PTS->empty())
@@ -4491,9 +4542,16 @@ namespace RangeAnalysis {
                }
                else
                {
+                  SI->print(llvm::errs());
+                  llvm::errs() << " -> num of addresses " << PTS->size() << "\n";
                   for(auto var: *PTS)
                   {
                      auto varValue = PtoSets_AA->getValue(var);
+                     if(!varValue)
+                     {
+                        res = false;
+                        break;
+                     }
                      auto vid = varValue->getValueID();
                      if(vid != llvm::Value::InstructionVal+llvm::Instruction::Alloca && vid != llvm::Value::GlobalVariableVal)
                      {
@@ -4510,6 +4568,40 @@ namespace RangeAnalysis {
                      }
                   }
                   if(!res) break;
+               }
+            }
+            else if(auto CI = dyn_cast<CallInst>(&I))
+            {
+               if(!CI->getCalledFunction())
+               {
+                  res = false;
+                  break;
+               }
+               if(!CI->onlyReadsMemory())
+               {
+                  if(Function2Store.find(&F) == Function2Store.end())
+                  {
+                     SmallPtrSet<Instruction *, 6> storeList;
+                     Function2Store.insert(std::make_pair(&F,storeList));
+                  }
+                  Function2Store.find(&F)->second.insert(&I);
+               }
+            }
+            else if(auto II = dyn_cast<llvm::InvokeInst>(&I))
+            {
+               if(!II->getCalledFunction())
+               {
+                  res = false;
+                  break;
+               }
+               if(!II->onlyReadsMemory())
+               {
+                  if(Function2Store.find(&F) == Function2Store.end())
+                  {
+                     SmallPtrSet<Instruction *, 6> storeList;
+                     Function2Store.insert(std::make_pair(&F,storeList));
+                  }
+                  Function2Store.find(&F)->second.insert(&I);
                }
             }
          }
@@ -4530,8 +4622,8 @@ namespace RangeAnalysis {
 
       MAX_BIT_INT = getMaxBitWidth(M);
       updateConstantIntegers(MAX_BIT_INT);
-
-      auto arePointersResolved = checkStores(M,PtoSets_AA);
+      llvm::DenseMap<Function*, SmallPtrSet<Instruction*,6>> Function2Store;
+      auto arePointersResolved = checkStores(M,PtoSets_AA,Function2Store);
       if(arePointersResolved)
          llvm::errs() << "Pointers are Resolved\n";
       else
@@ -4548,7 +4640,7 @@ namespace RangeAnalysis {
          // arguments, do not match
          if (F.isDeclaration() || F.isVarArg()) continue;
 
-         CG->buildGraph(F, modulePass, &M.getDataLayout(), PtoSets_AA, arePointersResolved);
+         CG->buildGraph(F, modulePass, &M.getDataLayout(), PtoSets_AA, arePointersResolved, Function2Store);
          MatchParametersAndReturnValues(F, *CG);
       }
       CG->buildVarNodes();
@@ -4593,9 +4685,12 @@ namespace RangeAnalysis {
    void InterProceduralRACropDFSHelper::MatchParametersAndReturnValues(
          Function &F, ConstraintGraph &G) {
       // Only do the matching if F has any use
-      if (!F.hasNUsesOrMore(1)) {
+      unsigned int countUses =0;
+      for(auto fuse : F.users())
+         if(!isa<GlobalAlias>(fuse))
+            ++countUses;
+      if(countUses==0)
          return;
-      }
 
       // Data structure which contains the matches between formal and real
       // parameters

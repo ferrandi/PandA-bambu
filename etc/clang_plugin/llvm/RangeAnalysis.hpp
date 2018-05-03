@@ -942,13 +942,13 @@ namespace RangeAnalysis {
          // Adds a SigmaOp to the graph.
          void addSigmaOp(llvm::PHINode *Sigma, llvm::ModulePass *modulePass, const llvm::DataLayout* DL);
          /// Add LoadOp in the graph
-         void addLoadOp(llvm::LoadInst *LI, Andersen_AA *PtoSets_AA, bool arePointersResolved, llvm::ModulePass *modulePass, const llvm::DataLayout* DL);
+         void addLoadOp(llvm::LoadInst *LI, Andersen_AA *PtoSets_AA, bool arePointersResolved, llvm::ModulePass *modulePass, const llvm::DataLayout* DL, llvm::DenseMap<llvm::Function*, llvm::SmallPtrSet<llvm::Instruction*,6>>&Function2Store);
          /// Add StoreOp in the graph
-         void addStoreOp(llvm::StoreInst *SI, Andersen_AA *PtoSets_AA, bool arePointersResolved, llvm::ModulePass *modulePass);
+         void addStoreOp(llvm::StoreInst *SI, Andersen_AA *PtoSets_AA, bool arePointersResolved, llvm::ModulePass *modulePass, llvm::DenseMap<llvm::Function*, llvm::SmallPtrSet<llvm::Instruction*,6>>&Function2Store);
 
 
          /// Takes an instruction and creates an operation.
-         void buildOperations(llvm::Instruction *I, llvm::ModulePass *modulePass, const llvm::DataLayout *DL, Andersen_AA * PtoSets_AA, bool arePointersResolved);
+         void buildOperations(llvm::Instruction *I, llvm::ModulePass *modulePass, const llvm::DataLayout *DL, Andersen_AA * PtoSets_AA, bool arePointersResolved, llvm::DenseMap<llvm::Function*, llvm::SmallPtrSet<llvm::Instruction*,6>>&Function2Store);
          void buildValueBranchMap(const llvm::BranchInst *br);
          void buildValueSwitchMap(const llvm::SwitchInst *sw);
          void buildValueMaps(const llvm::Function &F);
@@ -962,7 +962,7 @@ namespace RangeAnalysis {
                                             const llvm::APInt &val);
          void buildConstantVector(const llvm::SmallPtrSet<VarNode *, 32> &component,
                                   const UseMap &compusemap);
-         llvm::SmallPtrSet<const llvm::Value *, 6> ComputeConflictingStores(llvm::StoreInst *SI, const llvm::Value* GV, llvm::ModulePass *modulePass, llvm::MemorySSA &MSSA, const llvm::MemoryUseOrDef*ma, Andersen_AA * PtoSets_AA);
+         llvm::SmallPtrSet<const llvm::Value *, 6> ComputeConflictingStores(llvm::StoreInst *SI, const llvm::Value* GV, llvm::MemorySSA &MSSA, const llvm::MemoryUseOrDef*ma, Andersen_AA * PtoSets_AA, llvm::DenseMap<llvm::Function*, llvm::SmallPtrSet<llvm::Instruction*,6>>&Function2Store);
 
       protected:
 
@@ -995,7 +995,7 @@ namespace RangeAnalysis {
          /// Adds an UnaryOp to the graph.
          void addUnaryOp(llvm::Instruction *I, llvm::ModulePass *modulePass, const llvm::DataLayout *DL);
          /// Iterates through all instructions in the function and builds the graph.
-         void buildGraph(llvm::Function &F, llvm::ModulePass *modulePass, const llvm::DataLayout *DL, Andersen_AA * PtoSets_AA, bool arePointersResolved);
+         void buildGraph(llvm::Function &F, llvm::ModulePass *modulePass, const llvm::DataLayout *DL, Andersen_AA * PtoSets_AA, bool arePointersResolved, llvm::DenseMap<llvm::Function*, llvm::SmallPtrSet<llvm::Instruction*,6>>&Function2Store);
          void buildVarNodes();
          void buildSymbolicIntersectMap();
          UseMap buildUseMap(const llvm::SmallPtrSet<VarNode *, 32> &component);
