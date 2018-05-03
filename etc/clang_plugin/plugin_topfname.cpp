@@ -197,7 +197,7 @@ namespace llvm {
             }
             for(auto& fun : M.getFunctionList())
             {
-               if(fun.isIntrinsic())
+               if(fun.isIntrinsic() || fun.isDeclaration())
                {
 #if PRINT_DBG_MSG
                   llvm::errs() << "Function intrinsic skipped: " << fun.getName()<< "\n";
