@@ -2771,7 +2771,10 @@ namespace RangeAnalysis {
                      pointToConstant = false;
                      break;
                   }
-                  if(!isa<llvm::GlobalVariable>(varValue) || !cast<llvm::GlobalVariable>(varValue)->isConstant())
+                  if(!isa<llvm::GlobalVariable>(varValue) ||
+                        !cast<llvm::GlobalVariable>(varValue)->isConstant() ||
+                        cast<llvm::GlobalVariable>(varValue)->getValueType()->isStructTy() ||
+                        (cast<llvm::GlobalVariable>(varValue)->getValueType()->isArrayTy() && !cast<llvm::ArrayType>(cast<llvm::GlobalVariable>(varValue)->getValueType())->getElementType()->isIntegerTy()))
                   {
                      pointToConstant = false;
                      break;
@@ -2867,22 +2870,38 @@ namespace RangeAnalysis {
       {
          auto CF = CI->getCalledFunction();
          assert(CF);
-         assert(Function2Store.find(CF) != Function2Store.end());
-         for(auto si : Function2Store.find(CF)->second)
+         if(CF->isDeclaration() || CF->isIntrinsic())
          {
-            auto gvFOUND = recurseComputeConflictingStores(visited, si, GV, res, PtoSets_AA, Function2Store);
-            GVfound = GVfound || gvFOUND;
+            GVfound = true;
+            res.insert(mInstr);
+         }
+         else
+         {
+            assert(Function2Store.find(CF) != Function2Store.end());
+            for(auto si : Function2Store.find(CF)->second)
+            {
+               auto gvFOUND = recurseComputeConflictingStores(visited, si, GV, res, PtoSets_AA, Function2Store);
+               GVfound = GVfound || gvFOUND;
+            }
          }
       }
       else if(auto II = dyn_cast<llvm::InvokeInst>(mInstr))
       {
          auto CF = II->getCalledFunction();
          assert(CF);
-         assert(Function2Store.find(CF) != Function2Store.end());
-         for(auto si : Function2Store.find(CF)->second)
+         if(CF->isDeclaration() || CF->isIntrinsic())
          {
-            auto gvFOUND = recurseComputeConflictingStores(visited, si, GV, res, PtoSets_AA, Function2Store);
-            GVfound = GVfound || gvFOUND;
+            GVfound = true;
+            res.insert(mInstr);
+         }
+         else
+         {
+            assert(Function2Store.find(CF) != Function2Store.end());
+            for(auto si : Function2Store.find(CF)->second)
+            {
+               auto gvFOUND = recurseComputeConflictingStores(visited, si, GV, res, PtoSets_AA, Function2Store);
+               GVfound = GVfound || gvFOUND;
+            }
          }
       }
       else
@@ -4682,8 +4701,8 @@ namespace RangeAnalysis {
       return max+1;
    }
 
-   void InterProceduralRACropDFSHelper::MatchParametersAndReturnValues(
-         Function &F, ConstraintGraph &G) {
+   void InterProceduralRACropDFSHelper::MatchParametersAndReturnValues(Function &F, ConstraintGraph &G)
+   {
       // Only do the matching if F has any use
       unsigned int countUses =0;
       for(auto fuse : F.users())
@@ -4716,23 +4735,25 @@ namespace RangeAnalysis {
       // function, if there is any
       SmallPtrSet<Value *, 4> returnValues;
 
-      if (!noReturn) {
+      if (!noReturn)
+      {
          // Iterate over the basic blocks to fetch all possible return values
-         for (BasicBlock &BB : F) {
+         for (BasicBlock &BB : F)
+         {
             // Get the terminator instruction of the basic block and check if it's
             // a return instruction: if it's not, continue to next basic block
             Instruction *terminator = BB.getTerminator();
 
             ReturnInst *RI = dyn_cast<ReturnInst>(terminator);
 
-            if (RI == nullptr) {
-               continue;
-            }
+            if (RI == nullptr)  continue;
 
             // Get the return value and insert in the data structure
             returnValues.insert(RI->getReturnValue());
          }
       }
+      if(returnValues.empty())
+         noReturn = true;
 
       // For each use of F, get the real parameters and the caller instruction to do
       // the matching
@@ -4741,12 +4762,9 @@ namespace RangeAnalysis {
       for (auto i = 0ul, e = parameters.size(); i < e; ++i)
       {
          VarNode *sink = G.addVarNode(parameters[i].first,nullptr);
-
          matchers[i] = new PhiOp(new BasicInterval(), sink, nullptr);
-
          // Insert the operation in the graph.
          G.getOprs()->insert(matchers[i]);
-
          // Insert this definition in defmap
          (*G.getDefMap())[sink->getValue()] = matchers[i];
       }
@@ -4754,35 +4772,29 @@ namespace RangeAnalysis {
       // For each return value, create a node
       SmallVector<VarNode *, 4> returnVars;
 
-      for (Value *returnValue : returnValues) {
+      for (Value *returnValue : returnValues)
+      {
          // Add VarNode to the CG
          VarNode *from = G.addVarNode(returnValue,nullptr);
-
          returnVars.push_back(from);
       }
 
-      for (Use &U : F.uses()) {
+      for (Use &U : F.uses())
+      {
          User *Us = U.getUser();
 
          // Ignore blockaddress uses
-         if (isa<BlockAddress>(Us)) {
-            continue;
-         }
+         if (isa<BlockAddress>(Us)) continue;
 
          // Used by a non-instruction, or not the callee of a function, do not
          // match.
-         if (!isa<CallInst>(Us) && !isa<InvokeInst>(Us)) {
-            continue;
-         }
+         if (!isa<CallInst>(Us) && !isa<InvokeInst>(Us))  continue;
 
          Instruction *caller = cast<Instruction>(Us);
 
          CallSite CS(caller);
 
-         if (!CS.isCallee(&U))
-         {
-            continue;
-         }
+         if (!CS.isCallee(&U)) continue;
 
          // Iterate over the real parameters and put them in the data structure
          CallSite::arg_iterator AI;
