@@ -100,7 +100,7 @@ struct vertex2obj: public std::map<vertex, data_obj>
    * Function that prints the class vertex2obj.
    * @param os is the output stream
    */
-   virtual void print(std::ostream& os, const graph * data = 0) const
+   virtual void print(std::ostream& os, const graph * data = nullptr) const
    {
       typename vertex2obj<data_obj>::const_iterator i_end = this->end();
       for ( typename vertex2obj<data_obj>::const_iterator i = this->begin(); i != i_end; ++i)
