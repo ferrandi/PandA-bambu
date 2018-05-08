@@ -126,7 +126,7 @@ namespace RangeAnalysis {
 //#define SCC_DEBUG
 
    // Comment the line below to disable the dot printing of Constraint Graphs
-//#define DEBUG_RA
+#define DEBUG_RA
 
    // Used to enable the stats computing. Comment the below line to disable it
 //#define STATS
@@ -136,33 +136,7 @@ namespace RangeAnalysis {
    // running time, so I recommend leaving it activated
 #define JUMPSET
 
-   // Used to limit the number of iterations of fixed meet operator.
-   // This update runs before widening and is necessary to improve the result of
-   // some particular cases
-   // This option is deprecated. We just used it for testing.
-#define NUMBER_FIXED_ITERATIONS 20
 
-#define PRINTCOMPONENT(component)                                              \
-   errs() << "\n--------------\n";                                              \
-   for (auto cit = (component).begin(),                                         \
-   cend = (component).end();                \
-   cit != cend; ++cit) {                                                   \
-   const VarNode *var = *cit;                                                 \
-   const llvm::Value *V = var->getValue();                                    \
-   const llvm::Argument *A = NULL;                                            \
-   const llvm::Instruction *I = NULL;                                         \
-   const llvm::ConstantInt *CI = NULL;                                        \
-   if ((A = llvm::dyn_cast<llvm::Argument>(V))) {                             \
-   errs() << A->getParent()->getName() << "." << A->getName();              \
-} else if ((I = llvm::dyn_cast<llvm::Instruction>(V))) {                   \
-   errs() << I->getParent()->getParent()->getName() << "."                  \
-   << I->getParent()->getName() << "." << I->getName();              \
-} else if ((CI = dyn_cast<ConstantInt>(V))) {                              \
-   errs() << CI->getValue();                                                \
-}                                                                          \
-   errs() << "\n";                                                            \
-}                                                                            \
-   errs() << "\n----------\n";
 
 #ifdef SCC_DEBUG
 #define ASSERT(cond, msg)                                                      \
@@ -188,13 +162,10 @@ namespace RangeAnalysis {
    /// perform operations on ranges, considering these big numbers and without
    /// allowing them to wrap around.
    /// The interface of this class is very similar to LLVM's ConstantRange class.
-   /// TODO: probably, a better idea would be perform our range analysis
-   /// considering the ranges symbolically, letting them wrap around,
-   /// as ConstantRange considers, but it would require big changes
-   /// in our algorithm.
    ///
    /// Changes done by Fabrizio Ferrandi, Politecnico di Milano, Italy
    /// Added Anti range support to describe range in this form ~[l,m]. The idea has been taken from GCC VR_ANTI_RANGE objects.
+   /// Moreover, many range computation are done by exploiting the standard LLVM ConstantRange class.
 
    /// Value extended for value range analysis
    using eValue = std::pair<const llvm::Value *,const llvm::Value *>;
@@ -237,6 +208,7 @@ namespace RangeAnalysis {
          bool isEmpty() const { return type == Empty; }
          bool isSameType(const Range_base &a, const Range_base &b) const {return (a.isRegular()&&b.isRegular())||(a.isEmpty()&&b.isEmpty())||(a.isUnknown()&&b.isUnknown())||(a.isAnti()&&b.isAnti());}
          bool isSameRange(const Range_base &a, const Range_base &b) const {return (a.l.eq(b.l) && a.u.eq(b.u));}
+         bool isSingleElement() {return type == Regular && l==u;}
 
          static
          unsigned neededBits(const llvm::APInt& a, const llvm::APInt& b, bool sign);
@@ -270,6 +242,8 @@ namespace RangeAnalysis {
          Range Or(const Range &other) const;
          Range Or_conservative(const Range &other) const;
          Range Xor(const Range &other) const;
+         Range Eq(const Range &other, unsigned bw) const;
+         Range Ne(const Range &other, unsigned bw) const;
          Range truncate(unsigned bitwidth) const;
          Range sextOrTrunc(unsigned bitwidth) const;
          Range zextOrTrunc(unsigned from_bitwidth) const;
@@ -962,7 +936,7 @@ namespace RangeAnalysis {
                                             const llvm::APInt &val);
          void buildConstantVector(const llvm::SmallPtrSet<VarNode *, 32> &component,
                                   const UseMap &compusemap);
-         llvm::SmallPtrSet<const llvm::Value *, 6> ComputeConflictingStores(llvm::StoreInst *SI, const llvm::Value* GV, llvm::MemorySSA &MSSA, const llvm::MemoryUseOrDef*ma, Andersen_AA * PtoSets_AA, llvm::DenseMap<llvm::Function*, llvm::SmallPtrSet<llvm::Instruction*,6>>&Function2Store);
+         llvm::SmallPtrSet<const llvm::Value *, 6> ComputeConflictingStores(llvm::StoreInst *SI, const llvm::Value* GV, llvm::MemorySSA &MSSA, const llvm::MemoryUseOrDef*ma, Andersen_AA * PtoSets_AA, llvm::DenseMap<llvm::Function*, llvm::SmallPtrSet<llvm::Instruction*,6>>&Function2Store,llvm::ModulePass *modulePass);
 
       protected:
 
