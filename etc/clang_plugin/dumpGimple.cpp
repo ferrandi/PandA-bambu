@@ -1419,12 +1419,13 @@ namespace clang
                         auto val = PtoSets_AA->getValue(var);
                         assert(val);
                         assert(!dyn_cast<llvm::Argument>(val));
-                        assert(!dyn_cast<llvm::Function>(val));
                         sn.ptr_info.valid=true;
                         auto vid = val->getValueID();
                         if(vid == llvm::Value::InstructionVal+llvm::Instruction::Alloca)
                            sn.ptr_info.pt.vars.push_back(TREE_OPERAND(gimple_assign_rhs_alloca(val),0));
                         else if(vid == llvm::Value::GlobalVariableVal)
+                           sn.ptr_info.pt.vars.push_back(assignCodeAuto(val));
+                        else if(vid == llvm::Value::FunctionVal)
                            sn.ptr_info.pt.vars.push_back(assignCodeAuto(val));
                         else
                         {
