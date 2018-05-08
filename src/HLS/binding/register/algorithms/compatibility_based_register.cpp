@@ -118,7 +118,7 @@ void compatibility_based_register::create_compatibility_graph()
             if(edge_weight>1)
             {
                bool in1;
-               tie(e1, in1) = boost::add_edge(verts[vi], verts[vj], edge_compatibility_property(edge_weight), CG);
+               boost::tie(e1, in1) = boost::add_edge(verts[vi], verts[vj], edge_compatibility_property(edge_weight), CG);
                THROW_ASSERT(in1, "unable to add edge");
             }
          }
