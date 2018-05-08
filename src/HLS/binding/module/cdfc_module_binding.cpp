@@ -1211,6 +1211,14 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
 
       int _w = 1;
 
+      // Do a preliminary register binding to help the sharing of complex operations
+      {
+        DesignFlowStepRef regb;
+        regb = GetPointer<const HLSFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("HLS"))->CreateHLSFlowStep(HLSFlowStep_Type::WEIGHTED_CLIQUE_REGISTER_BINDING, funId, HLSFlowStepSpecializationConstRef(new WeightedCliqueRegisterBindingSpecialization(CliqueCovering_Algorithm::WEIGHTED_COLORING)));
+        regb->Initialize();
+        regb->Exec();
+      }
+
       for(const auto& fu_cv : candidate_vertices)
       {
          unsigned int fu_s1 = fu_cv.first;
