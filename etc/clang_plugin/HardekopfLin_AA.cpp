@@ -3682,7 +3682,6 @@ void Andersen_AA::id_ext_call(const llvm::ImmutableCallSite &CS, const llvm::Fun
       return;
 
    extf_t tF= extinfo->get_type(F);
-   llvm::errs() << "Code " << tF << "\n";
    switch(tF)
    {
       case EFT_REALLOC:
@@ -6346,7 +6345,10 @@ const std::vector<u32>* Andersen_AA::pointsToSet(u32 n, u32 off)
 //Return the points-to set of V's node.
 const std::vector<u32>* Andersen_AA::pointsToSet(const llvm::Value *V, u32 off)
 {
-   return pointsToSet(get_val_node(V), off);
+   if(llvm::dyn_cast<const llvm::ConstantExpr>(V) && llvm::dyn_cast<const llvm::ConstantExpr>(V)->getOpcode() == llvm::Instruction::BitCast)
+      return pointsToSet(get_val_node(llvm::dyn_cast<const llvm::ConstantExpr>(V)->getOperand(0)), off);
+   else
+      return pointsToSet(get_val_node(V), off);
 }
 
 bool Andersen_AA::has_malloc_obj(u32 n, const llvm::TargetLibraryInfo *TLI, u32 off)
