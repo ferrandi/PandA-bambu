@@ -1543,32 +1543,42 @@ bus_merger #(.BITSIZE_in1(BITSIZE_Mout_Wdata_ram*NUM_BANK), .PORTSIZE_in1(2), .B
 //In order to be generated correctly num NUM_BANK>=NUM_CHANNEL and both of them must be a power of 2
 
 parameter FIFO_OUT =ADDR_TASKS+ADDR_ACC, FIFO_IN=ADDR_TASKS+ADDR_ACC;
-parameter SIZE_TOT_IN = BITSIZE_Mout_tag_ram+BITSIZE_Mout_Wdata_ram+BITSIZE_Mout_data_ram_size+BITSIZE_Mout_addr_ram+BITSIZE_Mout_we_ram+BITSIZE_Mout_oe_ram;
+parameter MEMORY_REQUEST_TOTAL_SIZE = BITSIZE_Mout_tag_ram+BITSIZE_Mout_Wdata_ram+BITSIZE_Mout_data_ram_size+BITSIZE_Mout_addr_ram+BITSIZE_Mout_we_ram+BITSIZE_Mout_oe_ram;
 parameter MEMORY_ANSWER_TOTAL_SIZE = BITSIZE_Mout_tag_ram+BITSIZE_M_Rdata_ram;
+parameter MEMORY_ANSWER_CHANNEL_MSB=ADDR_ACC+ADDR_TASKS+BITSIZE_M_Rdata_ram-1;  //MSB=Most significant bit of addr_acc
+parameter MEMORY_ANSWER_CHANNEL_LSB=ADDR_ACC+ADDR_TASKS+BITSIZE_M_Rdata_ram-$clog2(NUM_CHANNEL);  //MSB=Most significant bit of addr_acc
 parameter LSB_BANK_0=$clog2(NUM_BANK)-$clog2(NUM_CHANNEL)+2+BITSIZE_Mout_we_ram+BITSIZE_Mout_oe_ram-1; //MSB=oe+we+2 bit (32 bit address)+log2(bank)-log2(channel) -1
 parameter LSB_BANK_1=2+BITSIZE_Mout_we_ram+BITSIZE_Mout_oe_ram; //MSB=oe+we+2 bit (32 bit address)
+parameter MSB_BANK_TAG=BITSIZE_Mout_oe_ram + BITSIZE_Mout_we_ram + 2 + $clog2(NUM_BANK) - 1; //BITSIZE_Mout_oe_ram + BITSIZE_Mout_we_ram is the LSB of the address, +2 since we are accessing 32 bit words
+parameter LSB_BANK_TAG=BITSIZE_Mout_oe_ram + BITSIZE_Mout_we_ram + 2;  //BITSIZE_Mout_oe_ram + BITSIZE_Mout_we_ram is the LSB of the address, +2 since we are accessing 32 bit words
 parameter NUM_BANK_NUM_CHANNEL_RATIO=(NUM_BANK > NUM_CHANNEL) ? NUM_BANK/NUM_CHANNEL : 1;
+parameter ATOMIC_BIT_OFFSET = MEMORY_REQUEST_TOTAL_SIZE - 2;
+parameter WE_BIT_OFFSET = BITSIZE_Mout_oe_ram;
 
-// fifo in
+// fifo to memory
 wire [NUM_BANK-1:0] to_memory_fifo_full;
-wire [NUM_BANK-1:0] IN_fifo_empty;
-wire [SIZE_TOT_IN*NUM_BANK-1:0] IN_fifo_data_out;
-wire [NUM_BANK-1:0] IN_fifo_rd_en;
-wire [NUM_BANK-1:0] IN_fifo_wr_en;
-wire [SIZE_TOT_IN*NUM_BANK-1:0] IN_fifo_data_in;
+wire [NUM_BANK-1:0] to_memory_fifo_empty;
+wire [MEMORY_REQUEST_TOTAL_SIZE*NUM_BANK-1:0] to_memory_fifo_data_out;
+wire [NUM_BANK-1:0] to_memory_fifo_rd_en;
+wire [NUM_BANK-1:0] to_memory_fifo_wr_en;
+wire [MEMORY_REQUEST_TOTAL_SIZE*NUM_BANK-1:0] to_memory_fifo_data_in;
+
+// This is the output of the multiplexer beween top of the from_memory_fifo and atomic write register
+wire [MEMORY_REQUEST_TOTAL_SIZE * NUM_BANK - 1 :0] to_memory_next_request;
+
 
 // fifo out
-wire [NUM_BANK-1:0] OUT_fifo_full;
-wire [NUM_BANK-1:0] OUT_fifo_empty;
-wire [MEMORY_ANSWER_TOTAL_SIZE*NUM_BANK-1:0] OUT_fifo_data_out;
-wire [NUM_BANK-1:0] OUT_fifo_rd_en;
-wire [NUM_BANK-1:0] OUT_fifo_wr_en;
-wire [MEMORY_ANSWER_TOTAL_SIZE*NUM_BANK-1:0] OUT_fifo_data_in;
+wire [NUM_BANK-1:0] from_memory_fifo_full;
+wire [NUM_BANK-1:0] from_memory_fifo_empty;
+wire [MEMORY_ANSWER_TOTAL_SIZE*NUM_BANK-1:0] from_memory_fifo_data_out;
+wire [NUM_BANK-1:0] from_memory_fifo_rd_en;
+wire [NUM_BANK-1:0] from_memory_fifo_wr_en;
+wire [MEMORY_ANSWER_TOTAL_SIZE*NUM_BANK-1:0] from_memory_fifo_data_in;
 
 //register status
-reg [3*NUM_BANK-1:0] in_status;
-wire [3*NUM_BANK-1:0] out_status;
-wire [SIZE_TOT_IN*NUM_BANK-1:0] out_reg;
+reg [3*NUM_BANK-1:0] next_status;
+wire [3*NUM_BANK-1:0] current_status;
+wire [MEMORY_REQUEST_TOTAL_SIZE*NUM_BANK-1:0] registered_to_memory_next_request;
 
 //to bank
 wire [BITSIZE_Mout_oe_ram*NUM_BANK-1:0] Mout_oe_ram_0;
@@ -1581,25 +1591,34 @@ wire [BITSIZE_Mout_we_ram*NUM_BANK-1:0] Mout_we_ram_1;
 wire [BITSIZE_Mout_addr_ram*NUM_BANK-1:0] Mout_addr_ram_1;
 wire [BITSIZE_Mout_Wdata_ram*NUM_BANK-1:0] Mout_Wdata_ram_1;
 wire [BITSIZE_Mout_data_ram_size*NUM_BANK-1:0] Mout_data_ram_size_1;
-wire [NUM_BANK-1:0] valid_Out_reg_oe_we;
-wire [NUM_BANK-1:0] valid_Out_reg;
-wire [NUM_BANK-1:0] valid_Out_fifo;
+wire [NUM_BANK-1:0] valid_registered_to_memory_next_request_oe_we;
+wire [NUM_BANK-1:0] valid_registered_to_memory_next_request;
+wire [NUM_BANK-1:0] top_fifo_register_we;
+wire [NUM_BANK-1:0] copy_from_fifo_to_top_fifo_register;
 
 //rotation in
-wire [NUM_CHANNEL-1:0] fifo_notempty;
-wire [NUM_BANK-1:0] selector_mux_fifo_in;
-wire [NUM_BANK-1:0] arbiter_0_fifo_in;
-wire [SIZE_TOT_IN*NUM_BANK-1:0] exit_arbiter_0_fifo;
-wire [NUM_BANK-1:0] rotate_to_memory_fifo;
+wire [NUM_CHANNEL-1:0] from_channel_request;
+wire [NUM_BANK-1:0] rotate_inter_to_memory_fifos;
+wire [NUM_BANK-1:0] from_channel_to_banks;
+wire [MEMORY_REQUEST_TOTAL_SIZE*NUM_BANK-1:0] exit_arbiter_0_fifo;
+wire [NUM_BANK-1:0] rotate_single_to_memory_fifo;
 wire [NUM_BANK-1:0] request_accepted_by_fifo;
 
 //rotation out
-wire [NUM_BANK-1:0] selector_mux_OUT_fifo_out;
+wire [NUM_BANK-1:0] selector_mux_from_memory_fifo_out;
 wire [NUM_CHANNEL-1:0] rotation_fifo_out;
-wire [SIZE_TOT_IN*NUM_CHANNEL-1:0] data_in;
-wire [NUM_BANK-1:0] request_OUT_fifo;
+wire [MEMORY_REQUEST_TOTAL_SIZE*NUM_CHANNEL-1:0] data_in;
 wire [NUM_BANK-1:0] request_out;
 wire [MEMORY_ANSWER_TOTAL_SIZE*NUM_CHANNEL-1:0] channel_out;
+
+//atomic_write register
+wire [MEMORY_REQUEST_TOTAL_SIZE*NUM_BANK-1:0] next_atomic_write;
+wire [MEMORY_REQUEST_TOTAL_SIZE*NUM_BANK-1:0] bank_incoming_atomic_write;
+wire [MEMORY_REQUEST_TOTAL_SIZE*NUM_BANK-1:0] registered_atomic_write;
+//wire [NUM_BANK-1:0] bank_incoming_atomic_write_we;
+wire [MEMORY_REQUEST_TOTAL_SIZE * NUM_BANK * NUM_CHANNEL - 1:0] all_incoming_atomic_write;
+wire [NUM_BANK-1:0] reset_registered_atomic_write;
+wire [NUM_BANK-1:0] atomic_write_we;
 
 parameter S_0 = 3'b000,
           S_1 = 3'b001,
@@ -1612,114 +1631,173 @@ generate
   for(i=0; i&lt;NUM_BANK; i=i+1)
   begin
     // IN - I am putting data from parallel
-    fifio #(.BITSIZE_data_in(SIZE_TOT_IN), .BITSIZE_data_out(SIZE_TOT_IN), .ADDR_WIDTH(FIFO_IN), .DEPTH(2**FIFO_IN)) IN_fifo (.full (IN_fifo_full[i]), .empty (IN_fifo_empty[i]), .data_out (IN_fifo_data_out[SIZE_TOT_IN*(i+1)-1:SIZE_TOT_IN*i]), .clock (clock), .reset (reset), .rd_en (IN_fifo_rd_en[i]), .wr_en (IN_fifo_wr_en[i]), .data_in (IN_fifo_data_in[SIZE_TOT_IN*(i+1)-1:SIZE_TOT_IN*i]));
+    fifio #(.BITSIZE_data_in(MEMORY_REQUEST_TOTAL_SIZE), .BITSIZE_data_out(MEMORY_REQUEST_TOTAL_SIZE), .ADDR_WIDTH(FIFO_IN), .DEPTH(2**FIFO_IN)) to_memory_fifo (.full (to_memory_fifo_full[i]), .empty (to_memory_fifo_empty[i]), .data_out (to_memory_fifo_data_out[MEMORY_REQUEST_TOTAL_SIZE*(i+1)-1:MEMORY_REQUEST_TOTAL_SIZE*i]), .clock (clock), .reset (reset), .rd_en (to_memory_fifo_rd_en[i]), .wr_en (to_memory_fifo_wr_en[i]), .data_in (to_memory_fifo_data_in[MEMORY_REQUEST_TOTAL_SIZE*(i+1)-1:MEMORY_REQUEST_TOTAL_SIZE*i]));
+      // apsl ERROR_write_atomic_in_fifo: assert never to_memory_fifo_data_in[MEMORY_REQUEST_TOTAL_SIZE * i + ATOMIC_BIT_OFFSET] &amp;&amp; to_memory_fifo_data_in[MEMORY_REQUEST_TOTAL_SIZE * i + 1] &amp;&amp; to_memory_fifo_wr_en[i];
+      // apsl ERROR_read_atomic_from_fifo: assert never to_memory_fifo_data_out[MEMORY_REQUEST_TOTAL_SIZE * i + ATOMIC_BIT_OFFSET] &amp;&amp; to_memory_fifo_data_out[MEMORY_REQUEST_TOTAL_SIZE * i + 1] &amp;&amp; to_memory_fifo_rd_en[i];
 
     //OUT - I am putting data from memory
-    fifio #(.BITSIZE_data_in(MEMORY_ANSWER_TOTAL_SIZE), .BITSIZE_data_out(MEMORY_ANSWER_TOTAL_SIZE), .ADDR_WIDTH(FIFO_OUT), .DEPTH(2**FIFO_OUT)) OUT_fifo_0 (.full (OUT_fifo_full[i]), .empty (OUT_fifo_empty[i]), .data_out (OUT_fifo_data_out[MEMORY_ANSWER_TOTAL_SIZE*(i+1)-1:MEMORY_ANSWER_TOTAL_SIZE*i]), .clock (clock), .reset (reset), .rd_en (OUT_fifo_rd_en[i]), .wr_en (OUT_fifo_wr_en[i]), .data_in (OUT_fifo_data_in[MEMORY_ANSWER_TOTAL_SIZE*(i+1)-1:MEMORY_ANSWER_TOTAL_SIZE*i]));
+    fifio #(.BITSIZE_data_in(MEMORY_ANSWER_TOTAL_SIZE), .BITSIZE_data_out(MEMORY_ANSWER_TOTAL_SIZE), .ADDR_WIDTH(FIFO_OUT), .DEPTH(2**FIFO_OUT)) from_memory_fifo_0 (.full (from_memory_fifo_full[i]), .empty (from_memory_fifo_empty[i]), .data_out (from_memory_fifo_data_out[MEMORY_ANSWER_TOTAL_SIZE*(i+1)-1:MEMORY_ANSWER_TOTAL_SIZE*i]), .clock (clock), .reset (reset), .rd_en (from_memory_fifo_rd_en[i]), .wr_en (from_memory_fifo_wr_en[i]), .data_in (from_memory_fifo_data_in[MEMORY_ANSWER_TOTAL_SIZE*(i+1)-1:MEMORY_ANSWER_TOTAL_SIZE*i]));
 
     //register of data that is connected with memory (blocking)
-    register_SE_r #(.BITSIZE_in1(SIZE_TOT_IN), .BITSIZE_out1(SIZE_TOT_IN)) register_status(.clock(clock), .reset(reset), .in1(IN_fifo_data_out[SIZE_TOT_IN*(i+1)-1:SIZE_TOT_IN*i]), .we(valid_Out_fifo[i]), .out1(out_reg[SIZE_TOT_IN*(i+1)-1:SIZE_TOT_IN*i]));
+    register_SE_r #(.BITSIZE_in1(MEMORY_REQUEST_TOTAL_SIZE), .BITSIZE_out1(MEMORY_REQUEST_TOTAL_SIZE)) top_fifo_register(.clock(clock), .reset(reset), .in1(to_memory_next_request[MEMORY_REQUEST_TOTAL_SIZE*(i+1)-1:MEMORY_REQUEST_TOTAL_SIZE*i]), .we(top_fifo_register_we[i]), .out1(registered_to_memory_next_request[MEMORY_REQUEST_TOTAL_SIZE*(i+1)-1:MEMORY_REQUEST_TOTAL_SIZE*i]));
 
     //register status of each bank of memory
-    register_SE_r #(.BITSIZE_in1(3), .BITSIZE_out1(3)) register_0(.clock(clock), .reset(reset), .in1(in_status[3*(i+1)-1:3*i]), .we(1'b1), .out1(out_status[3*(i+1)-1:3*i]));
+    register_SE_r #(.BITSIZE_in1(3), .BITSIZE_out1(3)) register_status(.clock(clock), .reset(reset), .in1(next_status[3*(i+1)-1:3*i]), .we(1'b1), .out1(current_status[3*(i+1)-1:3*i]));
+
+    //register of atomic write
+    register_SE_r #(.BITSIZE_in1(MEMORY_REQUEST_TOTAL_SIZE), .BITSIZE_out1(MEMORY_REQUEST_TOTAL_SIZE)) register_write_atomic(.clock(clock), .reset(reset), .in1(bank_incoming_atomic_write[MEMORY_REQUEST_TOTAL_SIZE*(i+1)-1:MEMORY_REQUEST_TOTAL_SIZE*i]), .we(atomic_write_we[i]), .out1(registered_atomic_write[MEMORY_REQUEST_TOTAL_SIZE*(i+1)-1:MEMORY_REQUEST_TOTAL_SIZE*i]));
+
+    //Input of the register of the atomic write; it is the next atomic write until it is written into the top_fifo_register
+    assign bank_incoming_atomic_write[MEMORY_REQUEST_TOTAL_SIZE*(i+1)-1:MEMORY_REQUEST_TOTAL_SIZE*i] =
+       reset_registered_atomic_write[i]
+       ?
+       {MEMORY_REQUEST_TOTAL_SIZE{1'b0}}
+       :
+       next_atomic_write[MEMORY_REQUEST_TOTAL_SIZE*(i+1)-1:MEMORY_REQUEST_TOTAL_SIZE*i]
+       ;
+    //We delete the content of the register if it contains an atomic write which is going to be written in the top_fifo_register or it has already be written in the top_fifo_register (i.e., there is atomic write in the top_fifo_register)
+    assign reset_registered_atomic_write[i] = (registered_atomic_write[MEMORY_REQUEST_TOTAL_SIZE*i + ATOMIC_BIT_OFFSET] &amp;&amp; top_fifo_register_we[i]) || (registered_to_memory_next_request[MEMORY_REQUEST_TOTAL_SIZE*i + ATOMIC_BIT_OFFSET] &amp;&amp; registered_to_memory_next_request[MEMORY_REQUEST_TOTAL_SIZE*i + 1]);
+
+    //We write atomic write register when there is atomic write on the internal channel or the current atomic write is moved to registered_to_memory_next_request
+    assign atomic_write_we[i] = next_atomic_write[MEMORY_REQUEST_TOTAL_SIZE*i + ATOMIC_BIT_OFFSET] || (to_memory_next_request[MEMORY_REQUEST_TOTAL_SIZE*i + ATOMIC_BIT_OFFSET] &amp;&amp; top_fifo_register_we[i]);
+
+    //input to register of atomic_write is the merge of the atomic write coming from the single channels; only one atomic write for each bank can be active
+    bus_merger #(.BITSIZE_in1(MEMORY_REQUEST_TOTAL_SIZE*NUM_BANK), .PORTSIZE_in1(NUM_CHANNEL), .BITSIZE_out1(MEMORY_REQUEST_TOTAL_SIZE*NUM_BANK)) bus_merger_next_atomic_write (.out1(next_atomic_write), .in1(all_incoming_atomic_write));
+
+    ///Write of register of atomic write; it is written when there is a new atomic write or when the current one is dispatched to the memory
+    //assign bank_incoming_atomic_write_we[i] = (bank_incoming_atomic_write[MEMORY_REQUEST_TOTAL_SIZE*i + ATOMIC_BIT_OFFSET] &amp; &amp; bank_incoming_atomic_write[MEMORY_REQUEST_TOTAL_SIZE*i + WE_BIT_OFFSET]) || next_status == S_1;
+
+    // Multiplexer between top of the to memory fifo and write atomic register
+    assign to_memory_next_request[MEMORY_REQUEST_TOTAL_SIZE*(i+1)-1:MEMORY_REQUEST_TOTAL_SIZE*i] = registered_atomic_write[MEMORY_REQUEST_TOTAL_SIZE*i + ATOMIC_BIT_OFFSET] ? registered_atomic_write[MEMORY_REQUEST_TOTAL_SIZE*(i+1)-1:MEMORY_REQUEST_TOTAL_SIZE*i] : to_memory_fifo_data_out[MEMORY_REQUEST_TOTAL_SIZE*(i+1)-1:MEMORY_REQUEST_TOTAL_SIZE*i];
 
     //fifo that accept a request from parallel write, the second arbiter is 1
-    assign request_accepted_by_fifo[i]=(IN_fifo_wr_en[i] &amp;&amp; !selector_mux_fifo_in[i] &amp;&amp; arbiter_0_fifo_in[i]);
+    assign request_accepted_by_fifo[i]=(to_memory_fifo_wr_en[i] &amp;&amp; !rotate_inter_to_memory_fifos[i] &amp;&amp; !rotate_single_to_memory_fifo[i] &amp;&amp; from_channel_to_banks[i]);
 
-    // IN_fifo_data_in can be output of IN_fifo_data_out or data from arbiter_0 (HIGH LEVEL)
-    assign IN_fifo_data_in[SIZE_TOT_IN*(i+1)-1:SIZE_TOT_IN*i] = (selector_mux_fifo_in[i]) ? IN_fifo_data_out[SIZE_TOT_IN*((NUM_BANK+i-NUM_BANK_NUM_CHANNEL_RATIO)%NUM_BANK+1)-1:SIZE_TOT_IN*((NUM_BANK+i-NUM_BANK_NUM_CHANNEL_RATIO)%NUM_BANK)] : exit_arbiter_0_fifo[SIZE_TOT_IN*(i+1)-1:SIZE_TOT_IN*i];
+    // to_memory_fifo_data_in can be output of to_memory_fifo_data_out or data from arbiter_0 (HIGH LEVEL)
+    assign to_memory_fifo_data_in[MEMORY_REQUEST_TOTAL_SIZE*(i+1)-1:MEMORY_REQUEST_TOTAL_SIZE*i] =
+       (rotate_inter_to_memory_fifos[i])
+       ?
+       to_memory_fifo_data_out[MEMORY_REQUEST_TOTAL_SIZE*((NUM_BANK+i-NUM_BANK_NUM_CHANNEL_RATIO)%NUM_BANK+1)-1:MEMORY_REQUEST_TOTAL_SIZE*((NUM_BANK+i-NUM_BANK_NUM_CHANNEL_RATIO)%NUM_BANK)]
+       :
+       exit_arbiter_0_fifo[MEMORY_REQUEST_TOTAL_SIZE*(i+1)-1:MEMORY_REQUEST_TOTAL_SIZE*i];
 
-    // exit_arbiter_0 can be output of IN_fifo_data_out itself or data from channel (LOW LEVEL)
-    assign exit_arbiter_0_fifo[SIZE_TOT_IN*(i+1)-1:SIZE_TOT_IN*i] = (arbiter_0_fifo_in[i]) ? data_in[SIZE_TOT_IN*(i/NUM_BANK_NUM_CHANNEL_RATIO+1)-1:SIZE_TOT_IN*(i/NUM_BANK_NUM_CHANNEL_RATIO)] : IN_fifo_data_out[SIZE_TOT_IN*(i+1)-1:SIZE_TOT_IN*i];
+    // exit_arbiter_0 can be output of to_memory_fifo_data_out itself or data from channel (LOW LEVEL)
+    assign exit_arbiter_0_fifo[MEMORY_REQUEST_TOTAL_SIZE*(i+1)-1:MEMORY_REQUEST_TOTAL_SIZE*i] = 
+       (from_channel_to_banks[i])
+       ?
+       data_in[MEMORY_REQUEST_TOTAL_SIZE*(i/NUM_BANK_NUM_CHANNEL_RATIO+1)-1:MEMORY_REQUEST_TOTAL_SIZE*(i/NUM_BANK_NUM_CHANNEL_RATIO)] 
+       :
+       to_memory_fifo_data_out[MEMORY_REQUEST_TOTAL_SIZE*(i+1)-1:MEMORY_REQUEST_TOTAL_SIZE*i];
 
     //write on fifo if not full and or there is a real request from another fifo, a rotation or data from channel
-    assign IN_fifo_wr_en[i]=(selector_mux_fifo_in[i] || arbiter_0_fifo_in[i] || rotate_to_memory_fifo[i]);
+    assign to_memory_fifo_wr_en[i]=(rotate_inter_to_memory_fifos[i] || from_channel_to_banks[i] || rotate_single_to_memory_fifo[i]);
 
-    //request from channel (valid only if fifo not full)
-    assign arbiter_0_fifo_in[i]=(fifo_notempty[i/NUM_BANK_NUM_CHANNEL_RATIO] &amp;&amp; !IN_fifo_full[i] &amp;&amp; data_in[SIZE_TOT_IN*(i/NUM_BANK_NUM_CHANNEL_RATIO)+LSB_BANK_0:SIZE_TOT_IN*(i/NUM_BANK_NUM_CHANNEL_RATIO)+LSB_BANK_1]==(i%NUM_BANK_NUM_CHANNEL_RATIO));
+    //MUX arbiter_0 reads from channel if there is an actual request, if the fifo is not full, if the request is for this fifo (or one connected by inter rotation mechanism) and it is not an atomic write
+    assign from_channel_to_banks[i] = (from_channel_request[i/NUM_BANK_NUM_CHANNEL_RATIO] &amp;&amp; !to_memory_fifo_full[i] &amp;&amp; data_in[MEMORY_REQUEST_TOTAL_SIZE*(i/NUM_BANK_NUM_CHANNEL_RATIO)+LSB_BANK_0:MEMORY_REQUEST_TOTAL_SIZE*(i/NUM_BANK_NUM_CHANNEL_RATIO)+LSB_BANK_1]==(i%NUM_BANK_NUM_CHANNEL_RATIO) &amp;&amp; ~(data_in[MEMORY_REQUEST_TOTAL_SIZE * (i/NUM_BANK_NUM_CHANNEL_RATIO) + ATOMIC_BIT_OFFSET] &amp;&amp; data_in[MEMORY_REQUEST_TOTAL_SIZE * (i/NUM_BANK_NUM_CHANNEL_RATIO) + 1]));
 
-    //single channel data don't move from one fifo to another
-    assign selector_mux_fifo_in[i]=0;
+    //if fifo_in opposite wants to copy data on correct fifo then do it only if destination not full
+    assign rotate_inter_to_memory_fifos[i]=0;
 
-    //read if there is a write in output but its not from a different fifo, if write on a different fifo, if rotating
-    assign IN_fifo_rd_en[i]= selector_mux_fifo_in[(i+NUM_BANK_NUM_CHANNEL_RATIO)%NUM_BANK] || (rotate_to_memory_fifo[i] &amp;&amp; !arbiter_0_fifo_in[i] &amp;&amp; !selector_mux_fifo_in[i]) || valid_Out_fifo[i];
+    ///Read if (the top has to be rotated to a different fifo) or (the fifo has to be rotated) or (the top has to be written in the register)
+    assign to_memory_fifo_rd_en[i]= rotate_inter_to_memory_fifos[(i+NUM_BANK_NUM_CHANNEL_RATIO)%NUM_BANK] || (rotate_single_to_memory_fifo[i] &amp;&amp; !from_channel_to_banks[i] &amp;&amp; !rotate_inter_to_memory_fifos[i]) || copy_from_fifo_to_top_fifo_register[i];
 
-    //cycle if fifo not empty, state is S_3, but copy data on another fifo and data from channal are false, data is store but not atomic, data il load atomic
-    assign rotate_to_memory_fifo[i]=!IN_fifo_empty[i] &amp;&amp; (out_status[3*(i+1)-1:3*i]==3'b011 || out_status[3*(i+1)-1:3*i]==3'b100 || out_status[3*(i+1)-1:3*i]==3'b101) &amp;&amp; !selector_mux_fifo_in[(i+NUM_BANK_NUM_CHANNEL_RATIO)%NUM_BANK] &amp;&amp; ((IN_fifo_data_out[SIZE_TOT_IN*(i+1)-2] &amp;&amp; IN_fifo_data_out[SIZE_TOT_IN*i+BITSIZE_Mout_oe_ram-1]) || (!IN_fifo_data_out[SIZE_TOT_IN*(i+1)-2] &amp;&amp; IN_fifo_data_out[SIZE_TOT_IN*i+BITSIZE_Mout_we_ram+BITSIZE_Mout_oe_ram-1]));
+    //Rotate the single fifo if fifo is not empty and bank is locked and there is not inter fifos rotation and (top fifo operation is atomic (load) or a (non-atomic) store) and there is not operation coming from channel
+    assign rotate_single_to_memory_fifo[i] = 
+       !to_memory_fifo_empty[i] 
+       &amp;&amp;
+       (current_status[3*(i+1)-1:3*i] == S_3 || current_status[3*(i+1)-1:3*i] == S_4 || current_status[3*(i+1)-1:3*i] == S_5)
+       &amp;&amp;
+       !rotate_inter_to_memory_fifos[(i+NUM_BANK_NUM_CHANNEL_RATIO)%NUM_BANK]
+       &amp;&amp;
+       (
+          (
+             to_memory_fifo_data_out[MEMORY_REQUEST_TOTAL_SIZE*(i+1)-2]
+          )
+          ||
+          (
+             to_memory_fifo_data_out[MEMORY_REQUEST_TOTAL_SIZE*i+BITSIZE_Mout_we_ram+BITSIZE_Mout_oe_ram-1]
+          )
+       )
+       &amp;&amp;
+       !from_channel_to_banks[i]
+       ;
+
 
     //FSM for the state of the register
     always @(*) begin
-      case(out_status[3*(i+1)-1:3*i])
-        S_0: begin
-          if (!IN_fifo_empty[i]) begin
-            if(IN_fifo_data_out[SIZE_TOT_IN*(i+1)-2] &amp;&amp; IN_fifo_data_out[SIZE_TOT_IN*i+BITSIZE_Mout_oe_ram-1]) begin
-              in_status[3*(i+1)-1:3*i]=S_4;        //status is busy rotate
+      case(current_status[3*(i+1)-1:3*i])
+      S_0: begin //Bank is available
+          //Operation in the top of the fifo is for this bank
+          if (!to_memory_fifo_empty[i]) begin
+            //There is an atomic read on top of the fifo
+            if(to_memory_next_request[MEMORY_REQUEST_TOTAL_SIZE*i + ATOMIC_BIT_OFFSET] &amp;&amp; to_memory_next_request[MEMORY_REQUEST_TOTAL_SIZE*i]) begin
+               next_status[3*(i+1)-1:3*i] = S_4;        //busy - we wait for atomic write 
             end
             else begin
-              in_status[3*(i+1)-1:3*i]=S_1;        //status is busy
+              next_status[3*(i+1)-1:3*i] = S_1;         //Bank starts memory operation - It becomes busy
             end
           end
           else begin
-            in_status[3*(i+1)-1:3*i]=S_0;
+             next_status[3*(i+1)-1:3*i] = S_0;          //Bank remains available
           end
         end
-        S_1: begin
+        S_1: begin ///Bank is busy
           if(!IN_M_DataRdy[i]) begin
-            in_status[3*(i+1)-1:3*i]=S_1;
+             next_status[3*(i+1)-1:3*i] = S_1;          //Bank remains busy
           end
           else begin
-            if(!request_OUT_fifo[(NUM_BANK+i-NUM_BANK_NUM_CHANNEL_RATIO)%NUM_BANK] &amp;&amp; !OUT_fifo_full[i]) begin  //if ready, no request to rotate and fifo not full then free
-              in_status[3*(i+1)-1:3*i]=S_0;
+            if(!from_memory_fifo_full[i]) begin //Bank ends operation
+              next_status[3*(i+1)-1:3*i] = S_0;         //Bank ends operation and becomes available
             end
             else begin
-              in_status[3*(i+1)-1:3*i]=S_2;
+              next_status[3*(i+1)-1:3*i] = S_2;         //Bank ends operation, but the fifo is full
             end
           end
         end
-        S_2: begin
-          if(!request_OUT_fifo[(NUM_BANK+i-NUM_BANK_NUM_CHANNEL_RATIO)%NUM_BANK] &amp;&amp; !OUT_fifo_full[i]) begin
-            in_status[3*(i+1)-1:3*i]=S_0;
+        S_2: begin                                      //Bank already ended operation, but result has to be transfered
+          if(!from_memory_fifo_full[i]) begin
+            next_status[3*(i+1)-1:3*i] = S_0;           //Bank becomesd available
           end
           else begin
-            in_status[3*(i+1)-1:3*i]=S_2;
+            next_status[3*(i+1)-1:3*i] = S_2;           //Bank already ended operation, but result cannot yet be transfered
           end
         end
-        S_3: begin
-          if (!IN_fifo_empty[i] &amp;&amp; !rotate_to_memory_fifo[i]) begin
-            if(IN_fifo_data_out[SIZE_TOT_IN*(i+1)-2] &amp;&amp; IN_fifo_data_out[SIZE_TOT_IN*i+BITSIZE_Mout_we_ram+BITSIZE_Mout_oe_ram-1]) begin
-              in_status[3*(i+1)-1:3*i]=S_1;        //status is busy
-            end
-            else begin
-              in_status[3*(i+1)-1:3*i]=S_4;        //status is busy rotate
-            end
+        S_3: begin                                      //Bank is available but locked
+          if(registered_atomic_write[MEMORY_REQUEST_TOTAL_SIZE*i + ATOMIC_BIT_OFFSET]) begin
+             next_status[3*(i+1)-1:3*i]=S_1;           //status is busy
           end
           else begin
-            in_status[3*(i+1)-1:3*i]=S_3;
+             if (copy_from_fifo_to_top_fifo_register[i]) begin
+                next_status[3*(i+1)-1:3*i] = S_4;           //status is busy rotate
+             end
+             else begin
+                next_status[3*(i+1)-1:3*i] = S_3;          //The operation on top of the fifo is not for this bank or it is atomic read (bank is locked)
+             end
           end
         end
-        S_4: begin
+        S_4: begin                                      //Bank is busy and we wait for atomic write 
           if(!IN_M_DataRdy[i]) begin
-            in_status[3*(i+1)-1:3*i]=S_4;
+            next_status[3*(i+1)-1:3*i] = S_4;           //Memory operation does not end
           end
           else begin
-            if(!request_OUT_fifo[(NUM_BANK+i-NUM_BANK_NUM_CHANNEL_RATIO)%NUM_BANK] &amp;&amp; !OUT_fifo_full[i]) begin  //if ready, no request to rotate and fifo not full then free
-              in_status[3*(i+1)-1:3*i]=S_3;
+            if(!from_memory_fifo_full[i]) begin  //if ready and fifo not full then free
+               next_status[3*(i+1)-1:3*i] = S_3;        //Atomic write ends; bank is available but locked (i.e., only corresponding atomic read an all the non-atomic reads can go ahead)
             end
             else begin
-              in_status[3*(i+1)-1:3*i]=S_5;
+              next_status[3*(i+1)-1:3*i] = S_5;         //Atomic write ends; fifo from memory is not available
             end
           end
         end
-        S_5: begin
-          if(!request_OUT_fifo[(NUM_BANK+i-NUM_BANK_NUM_CHANNEL_RATIO)%NUM_BANK] &amp;&amp; !OUT_fifo_full[i]) begin
-            in_status[3*(i+1)-1:3*i]=S_3;
+        S_5: begin                                      //Bank already ended operation, but fifo is not available
+          if(!from_memory_fifo_full[i]) begin
+            next_status[3*(i+1)-1:3*i] = S_3;           //Bank already ended operation and fifo becomes available
           end
           else begin
-            in_status[3*(i+1)-1:3*i]=S_5;
+            next_status[3*(i+1)-1:3*i] = S_5;           //Bank already ended operation, but fifo from memory is not available
           end
         end
         default: begin
-          in_status[3*(i+1)-1:3*i]=S_0;
+          next_status[3*(i+1)-1:3*i]=S_0;
         end
       endcase
     end
@@ -1727,67 +1805,109 @@ generate
     //OUT PART
 
     //valid output only if fifo not empty and state is 00 and data is correct, or status is 01 and not ready, or status is 11 data correct, no rotation and fifo not empty
-    assign valid_Out_reg_oe_we[i]=((out_status[3*(i+1)-1:3*i]==3'b001 || out_status[3*(i+1)-1:3*i]==3'b100) &amp;&amp; !IN_M_DataRdy[i]);
-    assign valid_Out_reg[i]= out_status[3*(i+1)-1:3*i]==3'b001 || out_status[3*(i+1)-1:3*i]==3'b100 || out_status[3*(i+1)-1:3*i]==3'b010 || out_status[3*(i+1)-1:3*i]==3'b101;
+    assign valid_registered_to_memory_next_request_oe_we[i]=((current_status[3*(i+1)-1:3*i] == S_1 || current_status[3*(i+1)-1:3*i] == S_4) &amp;&amp; !IN_M_DataRdy[i]);
+    assign valid_registered_to_memory_next_request[i]= current_status[3*(i+1)-1:3*i] == S_1 || current_status[3*(i+1)-1:3*i] == S_4 || current_status[3*(i+1)-1:3*i]== S_2 || current_status[3*(i+1)-1:3*i] == S_5;
 
-    //valid output only if fifo not empty and state is 00 and data is correct, or status is 01 and not ready, or status is 11 data correct, no rotation and fifo not empty
-    assign valid_Out_fifo[i]=((out_status[3*(i+1)-1:3*i]==3'b000 &amp;&amp; !IN_fifo_empty[i]) || (out_status[3*(i+1)-1:3*i]==3'b011 &amp;&amp; !IN_fifo_empty[i] &amp;&amp; !rotate_to_memory_fifo[i]));
+    //Top fifo register is written if (data is copied from fifo) or (status is S_3 and (there is atomic write or (fifo is not empty and the request has not to be rotated)))Y
+    assign top_fifo_register_we[i] =
+       (
+          copy_from_fifo_to_top_fifo_register[i]
+          ||
+          (
+             current_status[3*(i+1)-1:3*i] == S_3
+             &amp;&amp;
+             registered_atomic_write[MEMORY_REQUEST_TOTAL_SIZE*i + ATOMIC_BIT_OFFSET]
+          )
+       );
+
+    //Data is copied from fifo to top register if (status is S_0 or (S_3 and there is not an atomic write and the operation is not atomic)) and (fifo is not empty)
+    assign copy_from_fifo_to_top_fifo_register[i] =
+       (
+          current_status[3*(i+1)-1:3*i] == S_0
+          ||
+          (
+             current_status[3*(i+1)-1:3*i] == S_3
+             &amp;&amp;
+             !registered_atomic_write[MEMORY_REQUEST_TOTAL_SIZE*i + ATOMIC_BIT_OFFSET]
+             &amp;&amp;
+             !to_memory_fifo_data_out[MEMORY_REQUEST_TOTAL_SIZE*i + ATOMIC_BIT_OFFSET]
+          )
+       )
+       &amp;&amp;
+       !to_memory_fifo_empty[i]
+       ;
 
 //output send out by module
-    assign Mout_oe_ram_0[i]=(out_reg[SIZE_TOT_IN*i+BITSIZE_Mout_oe_ram-1] &amp; {BITSIZE_Mout_oe_ram{valid_Out_reg_oe_we[i]}});
-    assign Mout_we_ram_0[i]= (out_reg[SIZE_TOT_IN*i+BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1] &amp; {BITSIZE_Mout_we_ram{valid_Out_reg_oe_we[i]}});
-    assign Mout_addr_ram_0[BITSIZE_Mout_addr_ram*(i+1)-1:BITSIZE_Mout_addr_ram*i]= (out_reg[SIZE_TOT_IN*i+BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1:SIZE_TOT_IN*i+BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram] &amp; {BITSIZE_Mout_addr_ram{valid_Out_reg[i]}});
-    assign Mout_data_ram_size_0[BITSIZE_Mout_data_ram_size*(i+1)-1:BITSIZE_Mout_data_ram_size*i]= (out_reg[SIZE_TOT_IN*i+BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1:SIZE_TOT_IN*i+BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram] &amp; {BITSIZE_Mout_data_ram_size{valid_Out_reg[i]}});
-    assign Mout_Wdata_ram_0[BITSIZE_Mout_Wdata_ram*(i+1)-1:BITSIZE_Mout_Wdata_ram*i]= (out_reg[SIZE_TOT_IN*i+BITSIZE_Mout_Wdata_ram + BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1:SIZE_TOT_IN*i+BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram] &amp; {BITSIZE_Mout_Wdata_ram{valid_Out_reg[i]}});
+    assign Mout_oe_ram_0[i]=(registered_to_memory_next_request[MEMORY_REQUEST_TOTAL_SIZE*i+BITSIZE_Mout_oe_ram-1] &amp; {BITSIZE_Mout_oe_ram{valid_registered_to_memory_next_request_oe_we[i]}});
+    assign Mout_we_ram_0[i]= (registered_to_memory_next_request[MEMORY_REQUEST_TOTAL_SIZE*i+BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1] &amp; {BITSIZE_Mout_we_ram{valid_registered_to_memory_next_request_oe_we[i]}});
+    assign Mout_addr_ram_0[BITSIZE_Mout_addr_ram*(i+1)-1:BITSIZE_Mout_addr_ram*i]= (registered_to_memory_next_request[MEMORY_REQUEST_TOTAL_SIZE*i+BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1:MEMORY_REQUEST_TOTAL_SIZE*i+BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram] &amp; {BITSIZE_Mout_addr_ram{valid_registered_to_memory_next_request[i]}});
+    assign Mout_data_ram_size_0[BITSIZE_Mout_data_ram_size*(i+1)-1:BITSIZE_Mout_data_ram_size*i]= (registered_to_memory_next_request[MEMORY_REQUEST_TOTAL_SIZE*i+BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1:MEMORY_REQUEST_TOTAL_SIZE*i+BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram] &amp; {BITSIZE_Mout_data_ram_size{valid_registered_to_memory_next_request[i]}});
+    assign Mout_Wdata_ram_0[BITSIZE_Mout_Wdata_ram*(i+1)-1:BITSIZE_Mout_Wdata_ram*i]= (registered_to_memory_next_request[MEMORY_REQUEST_TOTAL_SIZE*i+BITSIZE_Mout_Wdata_ram + BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1:MEMORY_REQUEST_TOTAL_SIZE*i+BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram] &amp; {BITSIZE_Mout_Wdata_ram{valid_registered_to_memory_next_request[i]}});
 
 //output send out by module
-    assign Mout_oe_ram_1[i]=(IN_fifo_data_out[SIZE_TOT_IN*i+BITSIZE_Mout_oe_ram-1] &amp; {BITSIZE_Mout_oe_ram{valid_Out_fifo[i]}});
-    assign Mout_we_ram_1[i]=(IN_fifo_data_out[SIZE_TOT_IN*i+BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1] &amp; {BITSIZE_Mout_we_ram{valid_Out_fifo[i]}});
-    assign Mout_addr_ram_1[BITSIZE_Mout_addr_ram*(i+1)-1:BITSIZE_Mout_addr_ram*i]=(IN_fifo_data_out[SIZE_TOT_IN*i+BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1:SIZE_TOT_IN*i+BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram] &amp; {BITSIZE_Mout_addr_ram{valid_Out_fifo[i]}});
-    assign Mout_data_ram_size_1[BITSIZE_Mout_data_ram_size*(i+1)-1:BITSIZE_Mout_data_ram_size*i]=(IN_fifo_data_out[SIZE_TOT_IN*i+BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1:SIZE_TOT_IN*i+BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram] &amp; {BITSIZE_Mout_data_ram_size{valid_Out_fifo[i]}});
-    assign Mout_Wdata_ram_1[BITSIZE_Mout_Wdata_ram*(i+1)-1:BITSIZE_Mout_Wdata_ram*i]=(IN_fifo_data_out[SIZE_TOT_IN*i+BITSIZE_Mout_Wdata_ram + BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1:SIZE_TOT_IN*i+BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram] &amp; {BITSIZE_Mout_Wdata_ram{valid_Out_fifo[i]}});
-
-    //sigle channel for output no need to move data between fifo
-    assign request_OUT_fifo[i]=0;
+    assign Mout_oe_ram_1[i]=(to_memory_next_request[MEMORY_REQUEST_TOTAL_SIZE*i+BITSIZE_Mout_oe_ram-1] &amp; {BITSIZE_Mout_oe_ram{top_fifo_register_we[i]}});
+    assign Mout_we_ram_1[i]=(to_memory_next_request[MEMORY_REQUEST_TOTAL_SIZE*i+BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1] &amp; {BITSIZE_Mout_we_ram{top_fifo_register_we[i]}});
+    assign Mout_addr_ram_1[BITSIZE_Mout_addr_ram*(i+1)-1:BITSIZE_Mout_addr_ram*i]=(to_memory_next_request[MEMORY_REQUEST_TOTAL_SIZE*i+BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1:MEMORY_REQUEST_TOTAL_SIZE*i+BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram] &amp; {BITSIZE_Mout_addr_ram{top_fifo_register_we[i]}});
+    assign Mout_data_ram_size_1[BITSIZE_Mout_data_ram_size*(i+1)-1:BITSIZE_Mout_data_ram_size*i]=(to_memory_next_request[MEMORY_REQUEST_TOTAL_SIZE*i+BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1:MEMORY_REQUEST_TOTAL_SIZE*i+BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram] &amp; {BITSIZE_Mout_data_ram_size{top_fifo_register_we[i]}});
+    assign Mout_Wdata_ram_1[BITSIZE_Mout_Wdata_ram*(i+1)-1:BITSIZE_Mout_Wdata_ram*i]=(to_memory_next_request[MEMORY_REQUEST_TOTAL_SIZE*i+BITSIZE_Mout_Wdata_ram + BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1:MEMORY_REQUEST_TOTAL_SIZE*i+BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram] &amp; {BITSIZE_Mout_Wdata_ram{top_fifo_register_we[i]}});
 
     //if fifo out not full and or there is a request to rotate or the corresponding register has data ready then copy data
-    assign OUT_fifo_wr_en[i]= (!OUT_fifo_full[i] &amp;&amp; (request_OUT_fifo[(NUM_BANK+i-NUM_BANK_NUM_CHANNEL_RATIO)%NUM_BANK] || out_status[3*(i+1)-1:3*i]==3'b010 || out_status[3*(i+1)-1:3*i]==3'b101 || IN_M_DataRdy[i]));
+    assign from_memory_fifo_wr_en[i]= (!from_memory_fifo_full[i] &amp;&amp; (current_status[3*(i+1)-1:3*i]== S_2 || current_status[3*(i+1)-1:3*i] == S_5 || IN_M_DataRdy[i]));
 
-    //if there is a request to rotate then that is data in of FIFO_OUT, otherwise is exit of register
-    assign OUT_fifo_data_in[MEMORY_ANSWER_TOTAL_SIZE*(i+1)-1:MEMORY_ANSWER_TOTAL_SIZE*i]=(request_OUT_fifo[(NUM_BANK+i-NUM_BANK_NUM_CHANNEL_RATIO)%NUM_BANK])? OUT_fifo_data_out[MEMORY_ANSWER_TOTAL_SIZE*((NUM_BANK+i-NUM_BANK_NUM_CHANNEL_RATIO)%NUM_BANK+1)-1:MEMORY_ANSWER_TOTAL_SIZE*((NUM_BANK+i-NUM_BANK_NUM_CHANNEL_RATIO)%NUM_BANK)] : {out_reg[SIZE_TOT_IN*(i+1)-1:SIZE_TOT_IN*(i+1)-BITSIZE_Mout_tag_ram],IN_M_Rdata_ram[BITSIZE_M_Rdata_ram*(i+1)-1:BITSIZE_M_Rdata_ram*i]};
+    assign from_memory_fifo_data_in[MEMORY_ANSWER_TOTAL_SIZE*(i+1)-1:MEMORY_ANSWER_TOTAL_SIZE*i] = {registered_to_memory_next_request[MEMORY_REQUEST_TOTAL_SIZE*(i+1)-1:MEMORY_REQUEST_TOTAL_SIZE*(i+1)-BITSIZE_Mout_tag_ram], IN_M_Rdata_ram[BITSIZE_M_Rdata_ram*(i+1)-1:BITSIZE_M_Rdata_ram*i]};
 
     //if fifo is nonempty and data is in the correct channel (look at the most significant bit of the kernel) then request to go down
-    assign request_out[i]=!OUT_fifo_empty[i];
+    assign request_out[i]=!from_memory_fifo_empty[i];
 
     // read if data selected has to go down or to be translated
-    assign OUT_fifo_rd_en[i]=(request_OUT_fifo[i] || selector_mux_OUT_fifo_out[i]);
+    assign from_memory_fifo_rd_en[i]=(selector_mux_from_memory_fifo_out[i]);
   end
 endgenerate
 
+genvar j;
 generate
 for(i=0; i&lt;NUM_CHANNEL; i=i+1)
   begin
     //arbiter to decide in case of multiple data ready which one go down
-    PT_RR_FU #(.BITSIZE_ops(1), .PORTSIZE_ops(NUM_BANK_NUM_CHANNEL_RATIO), .BITSIZE_rops(1), .PORTSIZE_rops(NUM_BANK_NUM_CHANNEL_RATIO)) RR_fifo_in(.ops(selector_mux_OUT_fifo_out[NUM_BANK_NUM_CHANNEL_RATIO*(i+1)-1:NUM_BANK_NUM_CHANNEL_RATIO*i]), .ENABLE(1'b1), .clock(clock), .reset(!reset), .rops(request_out[NUM_BANK_NUM_CHANNEL_RATIO*(i+1)-1:NUM_BANK_NUM_CHANNEL_RATIO*i]));
+    PT_RR_FU #(.BITSIZE_ops(1), .PORTSIZE_ops(NUM_BANK_NUM_CHANNEL_RATIO), .BITSIZE_rops(1), .PORTSIZE_rops(NUM_BANK_NUM_CHANNEL_RATIO)) RR_fifo_in(.ops(selector_mux_from_memory_fifo_out[NUM_BANK_NUM_CHANNEL_RATIO*(i+1)-1:NUM_BANK_NUM_CHANNEL_RATIO*i]), .ENABLE(1'b1), .clock(clock), .reset(!reset), .rops(request_out[NUM_BANK_NUM_CHANNEL_RATIO*(i+1)-1:NUM_BANK_NUM_CHANNEL_RATIO*i]));
 
     //mux for exit, decide which data output of fifo to give on output
-    mux_pw_2 #(.BITSIZE_selector(NUM_BANK_NUM_CHANNEL_RATIO), .BITSIZE_data(MEMORY_ANSWER_TOTAL_SIZE*NUM_BANK_NUM_CHANNEL_RATIO), .BITSIZE_out(MEMORY_ANSWER_TOTAL_SIZE)) mux_out (.selector(selector_mux_OUT_fifo_out[NUM_BANK_NUM_CHANNEL_RATIO*(i+1)-1:NUM_BANK_NUM_CHANNEL_RATIO*i]), .data(OUT_fifo_data_out[NUM_BANK_NUM_CHANNEL_RATIO*(i+1)*MEMORY_ANSWER_TOTAL_SIZE-1:NUM_BANK_NUM_CHANNEL_RATIO*i*MEMORY_ANSWER_TOTAL_SIZE]), .out(channel_out[MEMORY_ANSWER_TOTAL_SIZE*(i+1)-1:MEMORY_ANSWER_TOTAL_SIZE*i]));
+    mux_pw_2 #(.BITSIZE_selector(NUM_BANK_NUM_CHANNEL_RATIO), .BITSIZE_data(MEMORY_ANSWER_TOTAL_SIZE*NUM_BANK_NUM_CHANNEL_RATIO), .BITSIZE_out(MEMORY_ANSWER_TOTAL_SIZE)) mux_out (.selector(selector_mux_from_memory_fifo_out[NUM_BANK_NUM_CHANNEL_RATIO*(i+1)-1:NUM_BANK_NUM_CHANNEL_RATIO*i]), .data(from_memory_fifo_data_out[NUM_BANK_NUM_CHANNEL_RATIO*(i+1)*MEMORY_ANSWER_TOTAL_SIZE-1:NUM_BANK_NUM_CHANNEL_RATIO*i*MEMORY_ANSWER_TOTAL_SIZE]), .out(channel_out[MEMORY_ANSWER_TOTAL_SIZE*(i+1)-1:MEMORY_ANSWER_TOTAL_SIZE*i]));
 
     //create the packed used to put data toghether into fifo
-    assign data_in[SIZE_TOT_IN*(i+1)-1:SIZE_TOT_IN*i]={Mout_tag_ram[BITSIZE_Mout_tag_ram*(i+1)-1:BITSIZE_Mout_tag_ram*i], Mout_Wdata_ram[BITSIZE_Mout_Wdata_ram*(i+1)-1:BITSIZE_Mout_Wdata_ram*i], Mout_data_ram_size[BITSIZE_Mout_data_ram_size*(i+1)-1:BITSIZE_Mout_data_ram_size*i], Mout_addr_ram[BITSIZE_Mout_addr_ram*(i+1)-1:BITSIZE_Mout_addr_ram*i], Mout_we_ram[BITSIZE_Mout_we_ram*(i+1)-1:BITSIZE_Mout_we_ram*i], Mout_oe_ram[BITSIZE_Mout_oe_ram*(i+1)-1:BITSIZE_Mout_oe_ram*i]};
+    assign data_in[MEMORY_REQUEST_TOTAL_SIZE*(i+1)-1:MEMORY_REQUEST_TOTAL_SIZE*i] =
+      {
+         Mout_tag_ram[BITSIZE_Mout_tag_ram*(i+1)-1:BITSIZE_Mout_tag_ram*i],
+         Mout_Wdata_ram[BITSIZE_Mout_Wdata_ram*(i+1)-1:BITSIZE_Mout_Wdata_ram*i],
+         Mout_data_ram_size[BITSIZE_Mout_data_ram_size*(i+1)-1:BITSIZE_Mout_data_ram_size*i],
+         Mout_addr_ram[BITSIZE_Mout_addr_ram*(i+1)-1:BITSIZE_Mout_addr_ram*i],
+         Mout_we_ram[BITSIZE_Mout_we_ram*(i+1)-1:BITSIZE_Mout_we_ram*i],
+         Mout_oe_ram[BITSIZE_Mout_oe_ram*(i+1)-1:BITSIZE_Mout_oe_ram*i]
+      };
 
     //check if there is a real request
-    assign fifo_notempty[i]=Mout_oe_ram[i]||Mout_we_ram[i];
+    assign from_channel_request[i]=Mout_oe_ram[i]||Mout_we_ram[i];
 
     //bind the channel for the output
     assign M_Rdata_ram[BITSIZE_M_Rdata_ram*(i+1)-1:BITSIZE_M_Rdata_ram*i]=channel_out[MEMORY_ANSWER_TOTAL_SIZE*i+BITSIZE_M_Rdata_ram-1:MEMORY_ANSWER_TOTAL_SIZE*i];
     assign Min_tag[BITSIZE_Mout_tag_ram*(i+1)-1:BITSIZE_Mout_tag_ram*i]=channel_out[MEMORY_ANSWER_TOTAL_SIZE*i+BITSIZE_M_Rdata_ram+BITSIZE_Mout_tag_ram-1:MEMORY_ANSWER_TOTAL_SIZE*i+BITSIZE_M_Rdata_ram];
 
     //if or of selector has at least 1 means that there is a data ready coming down
-    assign M_DataRdy[i]=(|selector_mux_OUT_fifo_out[NUM_BANK_NUM_CHANNEL_RATIO*(i+1)-1:NUM_BANK_NUM_CHANNEL_RATIO*i]);
+    assign M_DataRdy[i]=(|selector_mux_from_memory_fifo_out[NUM_BANK_NUM_CHANNEL_RATIO*(i+1)-1:NUM_BANK_NUM_CHANNEL_RATIO*i]);
 
-    //rd_en send to lower level only if the fifo in this module read their data
-    assign request_accepted[i]=(|request_accepted_by_fifo[(i+1)*NUM_BANK_NUM_CHANNEL_RATIO-1:i*NUM_BANK_NUM_CHANNEL_RATIO]);
+    //rd_en send to lower level only if the fifo in this module read their data; atomic write are always accepted
+    assign request_accepted[i]=(|request_accepted_by_fifo[(i+1)*NUM_BANK_NUM_CHANNEL_RATIO-1:i*NUM_BANK_NUM_CHANNEL_RATIO]) || (data_in[MEMORY_REQUEST_TOTAL_SIZE*i + ATOMIC_BIT_OFFSET] &amp; &amp; data_in[MEMORY_REQUEST_TOTAL_SIZE*i + WE_BIT_OFFSET]);
+
+    ///Generate all_incoming_atomic_write: for each channel, for each bank we check if the current memory request is an atomic write targeting that bank
+    for(j=0; j&lt;NUM_BANK; j=j+1)
+    begin
+       assign all_incoming_atomic_write[((MEMORY_REQUEST_TOTAL_SIZE*NUM_BANK*i) + (MEMORY_REQUEST_TOTAL_SIZE*(j+1)))-1:(MEMORY_REQUEST_TOTAL_SIZE*NUM_BANK*i) + (MEMORY_REQUEST_TOTAL_SIZE*j)] =
+          data_in[MEMORY_REQUEST_TOTAL_SIZE*i + ATOMIC_BIT_OFFSET] &amp;&amp; data_in[MEMORY_REQUEST_TOTAL_SIZE*i + WE_BIT_OFFSET] &amp;&amp; data_in[MEMORY_REQUEST_TOTAL_SIZE*i + MSB_BANK_TAG : MEMORY_REQUEST_TOTAL_SIZE*i + LSB_BANK_TAG] == j
+             ?
+                data_in[MEMORY_REQUEST_TOTAL_SIZE*(i+1)-1:MEMORY_REQUEST_TOTAL_SIZE*i]
+             :
+                {MEMORY_REQUEST_TOTAL_SIZE{1'b0}};
+    end
   end
 endgenerate
 
