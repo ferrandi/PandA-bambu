@@ -1426,7 +1426,19 @@ namespace clang
                         else if(vid == llvm::Value::GlobalVariableVal)
                            sn.ptr_info.pt.vars.push_back(assignCodeAuto(val));
                         else if(vid == llvm::Value::FunctionVal)
-                           sn.ptr_info.pt.vars.push_back(assignCodeAuto(val));
+                        {
+                           /// pointers to function are managed as point to anything objects
+                           sn.ptr_info.pt.anything = true;
+                           sn.ptr_info.valid=false;
+//                           sn.ptr_info.pt.vars.push_back(assignCodeAuto(val));
+                        }
+                        else if(llvm::dyn_cast<const llvm::CallInst>(val))
+                        {
+                           /// malloc like functions are managed as point to anything objects
+                           sn.ptr_info.pt.anything = true;
+                           sn.ptr_info.valid=false;
+//                           sn.ptr_info.pt.vars.push_back(assignCodeAuto(val));
+                        }
                         else
                         {
                            val->print(llvm::errs());
