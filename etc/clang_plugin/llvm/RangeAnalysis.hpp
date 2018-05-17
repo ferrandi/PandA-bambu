@@ -407,7 +407,7 @@ namespace RangeAnalysis {
 
          /// Given the input of the operation and the operation that will be
          /// performed, evaluates the result of the operation.
-         virtual Range eval() const = 0;
+         virtual Range eval() = 0;
          /// Return the instruction that originated this op node
          const llvm::Instruction *getInstruction() const { return inst; }
          /// Replace symbolic intervals with hard-wired constants.
@@ -439,7 +439,7 @@ namespace RangeAnalysis {
          unsigned int opcode;
          /// Computes the interval of the sink based on the interval of the sources,
          /// the operation and the interval associated to the operation.
-         Range eval() const override;
+         Range eval() override;
 
       public:
          UnaryOp(BasicInterval *intersect, VarNode *sink, const llvm::Instruction *inst,
@@ -471,12 +471,17 @@ namespace RangeAnalysis {
       private:
          /// Computes the interval of the sink based on the interval of the sources,
          /// the operation and the interval associated to the operation.
-         Range eval() const override;
+         Range eval() override;
+
+         // The symbolic source node of the operation.
+         VarNode *SymbolicSource;
+
          bool unresolved;
+
 
       public:
          SigmaOp(BasicInterval *intersect, VarNode *sink, const llvm::Instruction *inst,
-                 VarNode *source, unsigned int opcode);
+                 VarNode *source, VarNode *SymbolicSource, unsigned int opcode);
          ~SigmaOp() override = default;
          SigmaOp(const SigmaOp &) = delete;
          SigmaOp(SigmaOp &&) = delete;
@@ -504,7 +509,7 @@ namespace RangeAnalysis {
    {
       private:
          VarNode *source;
-         Range eval() const override;
+         Range eval() override;
 
       public:
          ControlDep(VarNode *sink, VarNode *source);
@@ -531,7 +536,7 @@ namespace RangeAnalysis {
       private:
          /// reference to the memory access operand
          llvm::SmallVector<const VarNode *, 2> sources;
-         Range eval() const override;
+         Range eval() override;
 
       public:
          LoadOp(BasicInterval *intersect, VarNode *sink, const llvm::Instruction *inst);
@@ -563,7 +568,7 @@ namespace RangeAnalysis {
          llvm::SmallVector<const VarNode *, 2> sources;
          /// union of the values at which the variable is iniialized
          Range init;
-         Range eval() const override;
+         Range eval() override;
 
       public:
          StoreOp(VarNode *sink,const llvm::Instruction *inst, Range _init);
@@ -596,7 +601,7 @@ namespace RangeAnalysis {
          llvm::SmallVector<const VarNode *, 2> sources;
          /// Computes the interval of the sink based on the interval of the sources,
          /// the operation and the interval associated to the operation.
-         Range eval() const override;
+         Range eval() override;
 
       public:
          PhiOp(BasicInterval *intersect, VarNode *sink, const llvm::Instruction *inst);
@@ -635,7 +640,7 @@ namespace RangeAnalysis {
          unsigned int opcode;
          /// Computes the interval of the sink based on the interval of the sources,
          /// the operation and the interval associated to the operation.
-         Range eval() const override;
+         Range eval() override;
 
       public:
          BinaryOp(BasicInterval *intersect, VarNode *sink, const llvm::Instruction *inst,
@@ -676,7 +681,7 @@ namespace RangeAnalysis {
          unsigned int opcode;
          /// Computes the interval of the sink based on the interval of the sources,
          /// the operation and the interval associated to the operation.
-         Range eval() const override;
+         Range eval() override;
 
       public:
          TernaryOp(BasicInterval *intersect, VarNode *sink, const llvm::Instruction *inst,
@@ -936,7 +941,7 @@ namespace RangeAnalysis {
                                             const llvm::APInt &val);
          void buildConstantVector(const llvm::SmallPtrSet<VarNode *, 32> &component,
                                   const UseMap &compusemap);
-         llvm::SmallPtrSet<const llvm::Value *, 6> ComputeConflictingStores(llvm::StoreInst *SI, const llvm::Value* GV, llvm::MemorySSA &MSSA, const llvm::MemoryUseOrDef*ma, Andersen_AA * PtoSets_AA, llvm::DenseMap<llvm::Function*, llvm::SmallPtrSet<llvm::Instruction*,6>>&Function2Store,llvm::ModulePass *modulePass);
+         llvm::SmallPtrSet<const llvm::Value *, 6> ComputeConflictingStores(llvm::StoreInst *SI, const llvm::Value* GV, llvm::Instruction*instr, Andersen_AA * PtoSets_AA, llvm::DenseMap<llvm::Function*, llvm::SmallPtrSet<llvm::Instruction*,6>>&Function2Store,llvm::ModulePass *modulePass);
 
       protected:
 
@@ -979,6 +984,7 @@ namespace RangeAnalysis {
          void findIntervals();
          void generateEntryPoints(const llvm::SmallPtrSet<VarNode *, 32> &component,
                                   llvm::DenseSet<eValue> &entryPoints);
+         void fixIntersectsSC(VarNode *varNode);
          void fixIntersects(const llvm::SmallPtrSet<VarNode *, 32> &component);
          void generateActivesVars(const llvm::SmallPtrSet<VarNode *, 32> &component,
                                   llvm::DenseSet<eValue> &activeVars);
@@ -1042,7 +1048,7 @@ namespace RangeAnalysis {
                       llvm::SmallPtrSet<VarNode *, 32> *componentTo, UseMap *useMap);
 #endif
       public:
-         Nuutila(VarNodes *varNodes, UseMap *useMap, SymbMap *symbMap, bool single = false);
+         Nuutila(VarNodes *varNodes, UseMap *useMap, SymbMap *symbMap);
          ~Nuutila();
          Nuutila(const Nuutila &) = delete;
          Nuutila(Nuutila &&) = delete;

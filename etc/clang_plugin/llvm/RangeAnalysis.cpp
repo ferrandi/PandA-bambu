@@ -153,6 +153,7 @@ namespace RangeAnalysis {
       // The number of bits needed to store the largest variable of the function
       // (APInt).
       unsigned MAX_BIT_INT = 1;
+      unsigned POINTER_BITSIZE = 32;
 
       // This map is used to store the number of times that the narrow_meet
       // operator is called on a variable. It was a Fernando's suggestion.
@@ -311,12 +312,9 @@ namespace RangeAnalysis {
             if(range.getSignedMax().sext(MAX_BIT_INT).slt(u))
                u = range.getSignedMax().sext(MAX_BIT_INT);
             return Range(Regular, bw,l,u);
-
          }
          else if(!range.isFullSet())
-         {
             return CR2R(range,bw);
-         }
          else
             return Range(Regular,bw);
       }
@@ -383,6 +381,69 @@ namespace RangeAnalysis {
          }
          llvm_unreachable("unexpecteed condition");
       }
+      unsigned ObjectBW(const llvm::Value *varValue)
+      {
+         assert(varValue);
+         auto vid = varValue->getValueID();
+         assert(vid == llvm::Value::InstructionVal+llvm::Instruction::Alloca || vid == llvm::Value::GlobalVariableVal);
+         unsigned int elmtSize = 0;
+         if(auto AI = llvm::dyn_cast<const llvm::AllocaInst>(varValue))
+         {
+            if(AI->getAllocatedType()->isArrayTy())
+            {
+               if(cast<llvm::ArrayType>(AI->getAllocatedType())->getArrayElementType()->isPointerTy())
+                  elmtSize = POINTER_BITSIZE;
+               else
+                  elmtSize = cast<llvm::ArrayType>(AI->getAllocatedType())->getArrayElementType()->getPrimitiveSizeInBits();
+            }
+            else if(AI->getAllocatedType()->isPointerTy())
+               elmtSize = POINTER_BITSIZE;
+            else
+               elmtSize = AI->getAllocatedType()->getPrimitiveSizeInBits();
+         }
+         else if(auto GV = llvm::dyn_cast<const llvm::GlobalVariable>(varValue))
+         {
+            auto VGT = GV->getValueType();
+            if(VGT->isAggregateType())
+            {
+               if(VGT->isArrayTy())
+               {
+                  if(cast<llvm::ArrayType>(VGT)->getElementType()->isPointerTy())
+                     elmtSize = POINTER_BITSIZE;
+                  else
+                     elmtSize = cast<llvm::ArrayType>(VGT)->getElementType()->getPrimitiveSizeInBits();
+               }
+               else
+                  return 0;
+            }
+            else if (VGT->isPointerTy())
+               elmtSize = POINTER_BITSIZE;
+            else
+               elmtSize = VGT->getPrimitiveSizeInBits();
+         }
+         else
+         {
+            varValue->print(llvm::errs());
+            llvm_unreachable("unexpected condition");
+         }
+         return elmtSize;
+      }
+      unsigned LoadStoreOperationBW(const Value *V, const Value *GV)
+      {
+         if(auto ST= dyn_cast<StoreInst>(V))
+            return ST->getValueOperand()->getType()->isPointerTy() ? POINTER_BITSIZE : ST->getValueOperand()->getType()->getPrimitiveSizeInBits();
+         else if (dyn_cast<LoadInst>(V))
+            return V->getType()->isPointerTy() ? POINTER_BITSIZE : V->getType()->getPrimitiveSizeInBits();
+         else if(GV)
+            return ObjectBW(GV);
+         else if(V->getType()->isPointerTy())
+            return POINTER_BITSIZE;
+         else if(auto bw = V->getType()->getPrimitiveSizeInBits())
+            return bw;
+         else
+            llvm_unreachable("unexpected condition");
+      }
+
    } // end anonymous namespace
 
 
@@ -427,7 +488,7 @@ namespace RangeAnalysis {
    // ========================================================================== //
    // Range
    // ========================================================================== //
-   Range_base::Range_base(RangeType rType, unsigned rbw) : l(Min), u(Max), bw(rbw), type(rType) {}
+   Range_base::Range_base(RangeType rType, unsigned rbw) : l(Min), u(Max), bw(rbw), type(rType) {assert(rbw);}
 
    void Range_base::normalizeRange(const APInt &lb, const APInt &ub, RangeType rType)
    {
@@ -460,6 +521,16 @@ namespace RangeAnalysis {
          l = Min;
          u = Max;
       }
+      else if(type == Regular && bw==1)
+      {
+         if(l.eq(u) && l.eq(One))
+            l=u=-One;
+         else if(l.ne(u) && l.eq(Zero))
+         {
+            l=-One;
+            u=Zero;
+         }
+      }
       assert(u.sge(l));
    }
 
@@ -472,7 +543,9 @@ namespace RangeAnalysis {
    }
 
    Range_base::Range_base(RangeType rType, unsigned rbw, const APInt &lb, const APInt &ub)
-      : l(lb), u(ub), bw(rbw), type(rType) {
+      : l(lb), u(ub), bw(rbw), type(rType)
+   {
+      assert(rbw);
       normalizeRange(lb,ub,rType);
    }
 
@@ -729,12 +802,12 @@ namespace RangeAnalysis {
          return *this;
       if (other.isEmpty()||other.isUnknown())
          return other;
-      llvm::errs() << "this:";
-      this->print(llvm::errs());
-      llvm::errs() << "\n";
-      llvm::errs() << "other:";
-      other.print(llvm::errs());
-      llvm::errs() << "\n";
+//      llvm::errs() << "this:";
+//      this->print(llvm::errs());
+//      llvm::errs() << "\n";
+//      llvm::errs() << "other:";
+//      other.print(llvm::errs());
+//      llvm::errs() << "\n";
       APInt a = getUnsignedMin().zext(MAX_BIT_INT);
       APInt b = getUnsignedMax().zext(MAX_BIT_INT);
       APInt c = other.getUnsignedMin().zext(MAX_BIT_INT);
@@ -749,13 +822,13 @@ namespace RangeAnalysis {
       APInt candidates[4];
       // value[1]: lb(c) / leastpositive(d)
       candidates[0] = DIV_HELPER(udiv, a, c);
-      llvm::errs() << "candidates[0]:" << candidates[0] << "\n";
+//      llvm::errs() << "candidates[0]:" << candidates[0] << "\n";
       candidates[1] = DIV_HELPER(udiv, a, d);
-      llvm::errs() << "candidates[1]:" << candidates[1] << "\n";
+//      llvm::errs() << "candidates[1]:" << candidates[1] << "\n";
       candidates[2] = DIV_HELPER(udiv, b, c);
-      llvm::errs() << "candidates[2]:" << candidates[2] << "\n";
+//      llvm::errs() << "candidates[2]:" << candidates[2] << "\n";
       candidates[3] = DIV_HELPER(udiv, b, d);
-      llvm::errs() << "candidates[3]:" << candidates[3] << "\n";
+//      llvm::errs() << "candidates[3]:" << candidates[3] << "\n";
       // Lower bound is the min value from the vector, while upper bound is the max value
       APInt *min = &candidates[0];
       APInt *max = &candidates[0];
@@ -920,12 +993,12 @@ namespace RangeAnalysis {
       else if(c.eq(Zero))
          c = APInt(MAX_BIT_INT,1);
 
-      llvm::errs() << "this-rem:";
-      this->print(llvm::errs());
-      llvm::errs() << "\n";
-      llvm::errs() << "other-rem:";
-      other.print(llvm::errs());
-      llvm::errs() << "\n";
+//      llvm::errs() << "this-rem:";
+//      this->print(llvm::errs());
+//      llvm::errs() << "\n";
+//      llvm::errs() << "other-rem:";
+//      other.print(llvm::errs());
+//      llvm::errs() << "\n";
 
       APInt candidates[4];
       candidates[0] = Min;
@@ -951,9 +1024,9 @@ namespace RangeAnalysis {
             min = &candidates[i];
       }
       auto res = Range(Regular,getBitWidth(), *min, *max);
-      llvm::errs() << "res-rem:";
-      res.print(llvm::errs());
-      llvm::errs() << "\n";
+//      llvm::errs() << "res-rem:";
+//      res.print(llvm::errs());
+//      llvm::errs() << "\n";
 
       return res;
    }
@@ -1216,22 +1289,22 @@ namespace RangeAnalysis {
  */
    Range Range::Or(const Range &other) const
    {
-            llvm::errs() << "Or-a: ";
-            this->print(llvm::errs());
-            llvm::errs() << "\n";
-            llvm::errs() << "Or-b: ";
-            other.print(llvm::errs());
-            llvm::errs() << "\n";
+//            llvm::errs() << "Or-a: ";
+//            this->print(llvm::errs());
+//            llvm::errs() << "\n";
+//            llvm::errs() << "Or-b: ";
+//            other.print(llvm::errs());
+//            llvm::errs() << "\n";
       if (isEmpty()||isUnknown())
          return *this;
       if (other.isEmpty()||other.isUnknown())
          return other;
       if(this->isAnti() || other.isAnti())
          return Range(Regular,getBitWidth(),Min,Max);
-      const APInt &aM = this->getLower();
-      const APInt &bM = this->getUpper();
-      const APInt &cM = other.getLower();
-      const APInt &dM = other.getUpper();
+      const APInt aM = this->getLower();
+      const APInt bM = this->getUpper();
+      const APInt cM = other.getLower();
+      const APInt dM = other.getUpper();
 
       if (aM.eq(Min) || bM.eq(Max) || cM.eq(Min) || dM.eq(Max))
          return Range(Regular,getBitWidth(),Min,Max);
@@ -1245,13 +1318,15 @@ namespace RangeAnalysis {
       switchval <<= 1;
       switchval += (dM.isNonNegative() ? 1 : 0);
 
-      unsigned bw = 64;
-      const APInt a = aM.trunc(bw);
-      const APInt b = bM.trunc(bw);
-      const APInt c = cM.trunc(bw);
-      const APInt d = dM.trunc(bw);
+      unsigned bw = std::min(64u, MAX_BIT_INT);
+      const APInt a = aM.sextOrTrunc(bw);
+      const APInt b = bM.sextOrTrunc(bw);
+      const APInt c = cM.sextOrTrunc(bw);
+      const APInt d = dM.sextOrTrunc(bw);
 
       APInt l = Min, u = Max;
+
+//      llvm ::errs() << "switchval " << (unsigned)switchval << "\n";
 
       switch (switchval)
       {
@@ -1311,6 +1386,9 @@ namespace RangeAnalysis {
             break;
       }
       auto res = Range(Regular,getBitWidth(),l, u);
+//      llvm::errs() << "Or-res: ";
+//      res.print(llvm::errs());
+//      llvm::errs() << "\n";
       return res;
    }
 
@@ -1500,8 +1578,15 @@ namespace RangeAnalysis {
          auto antiu_a = antiRange_a.getUpper();
          auto antil_b = antiRange_b.getLower();
          auto antiu_b = antiRange_b.getUpper();
-         APInt l = antil_a.sgt(antil_b) ? antil_b : antil_a;
-         APInt u = antiu_a.sgt(antiu_b) ? antiu_a : antiu_b;
+         if(antil_a.sgt(antil_b))
+         {
+            std::swap(antil_a,antil_b);
+            std::swap(antiu_a,antiu_b);
+         }
+         if(antil_b.sgt(antiu_a+1))
+            return Range(Anti,getBitWidth(),antil_a,antiu_a);
+         APInt l = antil_a;
+         APInt u = antiu_b;
          if(l.eq(Min) && u.eq(Max))
             return Range(Empty,getBitWidth(),Min,Max);
          else
@@ -1773,7 +1858,7 @@ namespace RangeAnalysis {
    VarNode::VarNode(const Value *_V, const Value *_GV)
       : V(_V),
         GV(_GV),
-        interval(Unknown,dyn_cast<StoreInst>(_V)?dyn_cast<StoreInst>(_V)->getValueOperand()->getType()->getPrimitiveSizeInBits():_V->getType()->getPrimitiveSizeInBits(), Min, Max),
+        interval(Unknown,LoadStoreOperationBW(_V,_GV), Min, Max),
         abstractState(0)
    {
       if(dyn_cast<FPToSIInst>(_V))
@@ -1794,7 +1879,8 @@ namespace RangeAnalysis {
    /// Initializes the value of the node.
    void VarNode::init(bool outside)
    {
-      auto bw = dyn_cast<StoreInst>(V)?dyn_cast<StoreInst>(V)->getValueOperand()->getType()->getPrimitiveSizeInBits():V->getType()->getPrimitiveSizeInBits();
+      auto bw = LoadStoreOperationBW(V,GV);
+      assert(bw);
       if (const ConstantInt *CI = dyn_cast<ConstantInt>(V))
       {
          APInt tmp = CI->getValue();
@@ -1874,10 +1960,7 @@ namespace RangeAnalysis {
    void BasicOp::fixIntersects(VarNode *V)
    {
       if (SymbInterval *SI = dyn_cast<SymbInterval>(getIntersect()))
-      {
-         Range r = SI->fixIntersects(V, getSink());
          this->setIntersect(SI->fixIntersects(V, getSink()));
-      }
    }
 
    // ========================================================================== //
@@ -1889,7 +1972,7 @@ namespace RangeAnalysis {
 
    ControlDep::~ControlDep() = default;
 
-   Range ControlDep::eval() const { return Range(Regular,MAX_BIT_INT,Min,Max); }
+   Range ControlDep::eval() { return Range(Regular,MAX_BIT_INT,Min,Max); }
 
    void ControlDep::print(raw_ostream & /*OS*/) const {}
 
@@ -1903,7 +1986,7 @@ namespace RangeAnalysis {
 
    LoadOp::~LoadOp() = default;
 
-   Range LoadOp::eval() const
+   Range LoadOp::eval()
    {
       unsigned bw = getSink()->getBitWidth();
       Range result(Unknown, bw, Min, Max);
@@ -1928,6 +2011,9 @@ namespace RangeAnalysis {
       if (!test)
       {
          Range aux(getIntersect()->getRange());
+//         llvm::errs() << "aux: ";
+//         aux.print(llvm::errs());
+//         llvm::errs() << "\n";
          result = result.intersectWith(aux);
 //         llvm::errs() << "intersection: ";
 //         result.print(llvm::errs());
@@ -1982,7 +2068,7 @@ namespace RangeAnalysis {
 
    StoreOp::~StoreOp() = default;
 
-   Range StoreOp::eval() const
+   Range StoreOp::eval()
    {
 //      getSink()->getValue().first->print(llvm::errs());
 //      llvm::errs()<< "\n";
@@ -2047,7 +2133,7 @@ namespace RangeAnalysis {
 
    /// Computes the interval of the sink based on the interval of the sources,
    /// the operation and the interval associated to the operation.
-   Range UnaryOp::eval() const
+   Range UnaryOp::eval()
    {
       unsigned bw = getSink()->getBitWidth();
       Range oprnd = source->getRange();
@@ -2171,14 +2257,16 @@ namespace RangeAnalysis {
    // ========================================================================== //
 
    SigmaOp::SigmaOp(BasicInterval *intersect, VarNode *sink,
-                    const Instruction *inst, VarNode *source, unsigned int opcode)
-      : UnaryOp(intersect, sink, inst, source, opcode), unresolved(false) {}
+                    const Instruction *inst, VarNode *source, VarNode *_SymbolicSource, unsigned int opcode)
+      : UnaryOp(intersect, sink, inst, source, opcode), SymbolicSource(_SymbolicSource), unresolved(false) {}
 
    /// Computes the interval of the sink based on the interval of the sources,
    /// the operation and the interval associated to the operation.
-   Range SigmaOp::eval() const
+   Range SigmaOp::eval()
    {
       Range result = this->getSource()->getRange();
+      if(SymbolicSource && dyn_cast<SymbInterval>(getIntersect()))
+         fixIntersects(SymbolicSource);
       result = result.intersectWith(getIntersect()->getRange());
       return result;
    }
@@ -2188,7 +2276,7 @@ namespace RangeAnalysis {
    void SigmaOp::print(raw_ostream &OS) const
    {
       const char *quot = R"(")";
-      OS << " " << quot << this << quot << R"( [label=")";
+      OS << " " << quot << this << quot << R"( [label=")" << "SigmnaOp:";
       this->getIntersect()->print(OS);
       OS << "\"]\n";
       const auto V = this->getSource()->getValue();
@@ -2205,6 +2293,24 @@ namespace RangeAnalysis {
          else
             printVarName(V.first, OS);
          OS << quot << " -> " << quot << this << quot << "\n";
+      }
+      if(SymbolicSource)
+      {
+         const auto V = SymbolicSource->getValue();
+         if (const ConstantInt *C = dyn_cast<ConstantInt>(V.first))
+            OS << " " << C->getValue() << " -> " << quot << this << quot << "\n";
+         else
+         {
+            OS << " " << quot;
+            if(V.second)
+            {
+               printVarName(V.second, OS);
+               OS << "."<<V.first;
+            }
+            else
+               printVarName(V.first, OS);
+            OS << quot << " -> " << quot << this << quot << "\n";
+         }
       }
 
       const auto VS = this->getSink()->getValue();
@@ -2234,7 +2340,7 @@ namespace RangeAnalysis {
    /// the operation and the interval associated to the operation.
    /// Basically, this function performs the operation indicated in its opcode
    /// taking as its operands the source1 and the source2.
-   Range BinaryOp::eval() const
+   Range BinaryOp::eval()
    {
       Range op1 = this->getSource1()->getRange();
       Range op2 = this->getSource2()->getRange();
@@ -2245,13 +2351,13 @@ namespace RangeAnalysis {
       // only evaluate if all operands are Regular
       if (op1.isRegular() && op2.isRegular())
       {
+//                  getSink()->getValue().first->print(llvm::errs());
+//                  llvm::errs()<< "\n";
+//                  op1.print(llvm::errs());
+//                  llvm::errs()<< ",";
+//                  op2.print(llvm::errs());
          assert(op1.getBitWidth()==bw || this->getOpcode()==llvm::Instruction::ICmp);
          assert(op2.getBitWidth()==bw || this->getOpcode()==llvm::Instruction::ICmp);
-//         getSink()->getValue().first->print(llvm::errs());
-//         llvm::errs()<< "\n";
-//         op1.print(llvm::errs());
-//         llvm::errs()<< ",";
-//         op2.print(llvm::errs());
          switch (this->getOpcode())
          {
             case Instruction::Add:
@@ -2397,7 +2503,7 @@ namespace RangeAnalysis {
       : BasicOp(intersect, sink, inst), source1(source1), source2(source2),
         source3(source3), opcode(opcode) {}
 
-   Range TernaryOp::eval() const
+   Range TernaryOp::eval()
    {
 
       Range op1 = this->getSource1()->getRange();
@@ -2573,7 +2679,7 @@ namespace RangeAnalysis {
    /// Computes the interval of the sink based on the interval of the sources.
    /// The result of evaluating a phi-function is the union of the ranges of
    /// every variable used in the phi.
-   Range PhiOp::eval() const
+   Range PhiOp::eval()
    {
       assert(sources.size()>0);
       Range result = this->getSource(0)->getRange();
@@ -2713,7 +2819,8 @@ namespace RangeAnalysis {
          // I decided NOT to insert these uncovered
          // values to the node set after their range
          // is created here.
-         auto bw = dyn_cast<StoreInst>(v.first)?dyn_cast<StoreInst>(v.first)->getValueOperand()->getType()->getPrimitiveSizeInBits():v.first->getType()->getPrimitiveSizeInBits();
+         auto bw = LoadStoreOperationBW(v.first, v.second);
+         assert(bw);
          const ConstantInt *ci = dyn_cast<ConstantInt>(v.first);
          if (ci == nullptr)
             return Range(Unknown,bw,Min,Max);
@@ -2906,9 +3013,24 @@ namespace RangeAnalysis {
          }
 
          if (BItv == nullptr)
-            sigmaOp = new SigmaOp(new BasicInterval(getLLVM_range(Sigma,modulePass,DL)), sink, Sigma, source, Sigma->getOpcode());
+            sigmaOp = new SigmaOp(new BasicInterval(getLLVM_range(Sigma,modulePass,DL)), sink, Sigma, source, nullptr, Sigma->getOpcode());
          else
-            sigmaOp = new SigmaOp(BItv, sink, Sigma, source, Sigma->getOpcode());
+         {
+//            llvm::errs() << "Add SigmaOp: ";
+//            BItv->print(llvm::errs());
+//            llvm::errs()<<"\n";
+//            BItv->getRange().print(llvm::errs());
+//            llvm::errs()<<"\n";
+            VarNode*SymbSrc=nullptr;
+            if(auto symb= dyn_cast<SymbInterval>(BItv))
+            {
+               auto bound = symb->getBound();
+               SymbSrc=addVarNode(bound.first,bound.second);
+            }
+            sigmaOp = new SigmaOp(BItv, sink, Sigma, source, SymbSrc, Sigma->getOpcode());
+            if(SymbSrc)
+               this->useMap.find(SymbSrc->getValue())->second.insert(sigmaOp);
+         }
 
          // Insert the operation in the graph.
          this->oprs.insert(sigmaOp);
@@ -3000,16 +3122,19 @@ namespace RangeAnalysis {
          auto PO = LI->getPointerOperand();
          if(PtoSets_AA->PE(PO) != NOVAR_ID)
          {
-            auto fun = LI->getFunction();
-            auto &MSSA = modulePass->getAnalysis<llvm::MemorySSAWrapperPass>(*fun).getMSSA();
-            const llvm::MemoryUseOrDef* ma = MSSA.getMemoryAccess(LI);
-
             for(auto var: *PtoSets_AA->pointsToSet(PO))
             {
                auto varValue = PtoSets_AA->getValue(var);
                assert(varValue);
-               for (const Value *operand : ComputeConflictingStores(nullptr,varValue,MSSA,ma,PtoSets_AA,Function2Store,modulePass))
+//               llvm::errs() << "LoadedVar: ";
+//               varValue->print(llvm::errs());
+//               llvm::errs() << "\n";
+
+               for (const Value *operand : ComputeConflictingStores(nullptr,varValue,LI,PtoSets_AA,Function2Store,modulePass))
                {
+//                  llvm::errs() << "  source: ";
+//                  operand->print(llvm::errs());
+//                  llvm::errs() << "\n";
                   VarNode *source = addVarNode(operand,varValue);
                   loadOp->addSource(source);
                   this->useMap.find(source->getValue())->second.insert(loadOp);
@@ -3023,6 +3148,7 @@ namespace RangeAnalysis {
 
    static bool recurseComputeConflictingStores(llvm::SmallPtrSet<const llvm::Value *, 6>& visited, Instruction* mInstr, const llvm::Value* GV, llvm::SmallPtrSet<const llvm::Value *, 6> &res, Andersen_AA * PtoSets_AA, llvm::DenseMap<Function*, SmallPtrSet<Instruction*,6>>&Function2Store)
    {
+      assert(mInstr);
       bool GVfound=false;
       if(visited.find(mInstr) != visited.end())
          return GVfound;
@@ -3047,7 +3173,12 @@ namespace RangeAnalysis {
             }
          }
          if(GVfound)
+         {
+//            llvm::errs() << "      added0 ";
+//            mInstr->print(llvm::errs());
+//            llvm::errs() << "\n";
             res.insert(mInstr);
+         }
       }
       else if(auto CI =dyn_cast<CallInst>(mInstr))
       {
@@ -3056,15 +3187,20 @@ namespace RangeAnalysis {
          if(CF->isDeclaration() || CF->isIntrinsic())
          {
             GVfound = true;
+//            llvm::errs() << "      added1 ";
+//            mInstr->print(llvm::errs());
+//            llvm::errs() << "\n";
             res.insert(mInstr);
          }
          else
          {
-            assert(Function2Store.find(CF) != Function2Store.end());
-            for(auto si : Function2Store.find(CF)->second)
+            if(Function2Store.find(CF) != Function2Store.end()) //relevant only in case CF has stores
             {
-               auto gvFOUND = recurseComputeConflictingStores(visited, si, GV, res, PtoSets_AA, Function2Store);
-               GVfound = GVfound || gvFOUND;
+               for(auto si : Function2Store.find(CF)->second)
+               {
+                  auto gvFOUND = recurseComputeConflictingStores(visited, si, GV, res, PtoSets_AA, Function2Store);
+                  GVfound = GVfound || gvFOUND;
+               }
             }
          }
       }
@@ -3075,109 +3211,174 @@ namespace RangeAnalysis {
          if(CF->isDeclaration() || CF->isIntrinsic())
          {
             GVfound = true;
+//            llvm::errs() << "      added2 ";
+//            mInstr->print(llvm::errs());
+//            llvm::errs() << "\n";
             res.insert(mInstr);
          }
          else
          {
-            assert(Function2Store.find(CF) != Function2Store.end());
-            for(auto si : Function2Store.find(CF)->second)
+            if(Function2Store.find(CF) != Function2Store.end()) //relevant only in case CF has stores
             {
-               auto gvFOUND = recurseComputeConflictingStores(visited, si, GV, res, PtoSets_AA, Function2Store);
-               GVfound = GVfound || gvFOUND;
+               for(auto si : Function2Store.find(CF)->second)
+               {
+                  auto gvFOUND = recurseComputeConflictingStores(visited, si, GV, res, PtoSets_AA, Function2Store);
+                  GVfound = GVfound || gvFOUND;
+               }
             }
          }
       }
       else
       {
-         mInstr->print(llvm::errs());
          llvm_unreachable("unexpected condition");
       }
       return GVfound;
    }
-   static void recurseUpMemoryAccess(llvm::Function*fun, llvm::SmallPtrSet<const llvm::MemoryAccess *, 6> &toBeAnalyzed, llvm::ModulePass *modulePass)
+   static void addAllClobberingStmts(llvm::DenseSet<std::pair<llvm::Instruction *, llvm::Function*>>&toBeAnalyzed, llvm::MemorySSA &MSSA,llvm::MemoryAccess* ma)
+   {
+      llvm::SmallPtrSet<llvm::MemoryAccess *, 6> Analyzed;
+      llvm::SmallPtrSet<llvm::MemoryAccess *, 6> MAtoBeAnalyzed;
+      MAtoBeAnalyzed.insert(ma);
+
+      while(!MAtoBeAnalyzed.empty())
+      {
+         auto currMA = *MAtoBeAnalyzed.begin();
+         MAtoBeAnalyzed.erase(currMA);
+         if(Analyzed.find(currMA) == Analyzed.end())
+         {
+            Analyzed.insert(currMA);
+            if(auto mp = dyn_cast<llvm::MemoryPhi>(currMA))
+            {
+//               llvm::errs() << "    addAllClobberingStmts-phi\n";
+               for(auto index=0u; index < mp->getNumIncomingValues(); ++index)
+               {
+                  auto val = mp->getIncomingValue(index);
+                  assert(val->getValueID()==llvm::Value::MemoryDefVal||val->getValueID()==llvm::Value::MemoryPhiVal);
+                  if(!MSSA.isLiveOnEntryDef(val))
+                     MAtoBeAnalyzed.insert(val);
+                  else
+                  {
+//                     llvm::errs() << "    addAllClobberingStmts-function: " << mp->getBlock()->getParent()->getName() << "\n";
+                     auto el = std::make_pair<llvm::Instruction *, llvm::Function*>(nullptr,mp->getBlock()->getParent());
+                     toBeAnalyzed.insert(el);
+                  }
+               }
+            }
+            else
+            {
+//               llvm::errs() << "    addAllClobberingStmts-mud\n";
+               auto mud = dyn_cast<llvm::MemoryUseOrDef>(currMA);
+               assert(mud);
+               toBeAnalyzed.insert(std::make_pair<llvm::Instruction *, llvm::Function*>(mud->getMemoryInst(),nullptr));
+            }
+         }
+      }
+   }
+   static void recurseUpMemoryAccess(llvm::Function*fun, llvm::DenseSet<std::pair<llvm::Instruction *, llvm::Function*>> &toBeAnalyzedInstr, llvm::ModulePass *modulePass)
    {
       for(auto fuse: fun->users())
       {
          if(auto instr = dyn_cast<llvm::Instruction>(fuse))
          {
+//            llvm::errs() << "    recurseUpMemoryAccess-instr-" << instr->getFunction()->getName() << ": ";
+//            instr->print(llvm::errs());
+//            llvm::errs() << "\n";
             llvm::MemorySSA &MSSA = modulePass->getAnalysis<llvm::MemorySSAWrapperPass>(*instr->getFunction()).getMSSA();
             auto funMA = MSSA.getMemoryAccess(instr);
-            assert(funMA);
+            if(!funMA) continue;
             auto funImmDefAcc = funMA->getDefiningAccess();
             if(!MSSA.isLiveOnEntryDef(funImmDefAcc))
             {
-               toBeAnalyzed.insert(funImmDefAcc);
+//               llvm::errs() << "    add stmts\n";
+               if(auto mud = dyn_cast<llvm::MemoryUseOrDef>(funImmDefAcc))
+                  toBeAnalyzedInstr.insert(std::make_pair<llvm::Instruction *, llvm::Function*>(mud->getMemoryInst(),nullptr));
+               else
+               {
+//                  llvm::errs() << "    phisUp\n";
+                  addAllClobberingStmts(toBeAnalyzedInstr, MSSA, funImmDefAcc);
+               }
             }
             else
-               recurseUpMemoryAccess(instr->getFunction(), toBeAnalyzed, modulePass);
+            {
+//               llvm::errs() << "    add upfunction " << instr->getFunction() << "\n";
+               recurseUpMemoryAccess(instr->getFunction(), toBeAnalyzedInstr, modulePass);
+            }
          }
       }
    }
-   llvm::SmallPtrSet<const llvm::Value *, 6> ConstraintGraph::ComputeConflictingStores(llvm::StoreInst *SI, const llvm::Value* GV, llvm::MemorySSA &MSSA, const llvm::MemoryUseOrDef*ma, Andersen_AA * PtoSets_AA, llvm::DenseMap<Function*, SmallPtrSet<Instruction*,6>>&Function2Store, llvm::ModulePass *modulePass)
+
+   llvm::SmallPtrSet<const llvm::Value *, 6> ConstraintGraph::ComputeConflictingStores(llvm::StoreInst *SI, const llvm::Value* GV, llvm::Instruction*instr0, Andersen_AA * PtoSets_AA, llvm::DenseMap<Function*, SmallPtrSet<Instruction*,6>>&Function2Store, llvm::ModulePass *modulePass)
    {
       llvm::SmallPtrSet<const llvm::Value *, 6> res;
-      llvm::SmallPtrSet<const llvm::MemoryAccess *, 6> toBeAnalyzed;
-      llvm::SmallPtrSet<const llvm::MemoryAccess *, 6> Analyzed;
-      auto immDefAcc = ma->getDefiningAccess();
-      if(!MSSA.isLiveOnEntryDef(immDefAcc))
-         toBeAnalyzed.insert(immDefAcc);
+      llvm::DenseSet<std::pair<llvm::Instruction *, llvm::Function*>> toBeAnalyzed;
+      llvm::DenseSet<std::pair<llvm::Instruction *, llvm::Function*>> Analyzed;
+      llvm::MemorySSA &MSSA0 = modulePass->getAnalysis<llvm::MemorySSAWrapperPass>(*instr0->getFunction()).getMSSA();
+      const llvm::MemoryUseOrDef* ma0 = MSSA0.getMemoryAccess(instr0);
+      auto immDefAcc0 = ma0->getDefiningAccess();
+      if(!MSSA0.isLiveOnEntryDef(immDefAcc0))
+      {
+         if(auto mud = dyn_cast<llvm::MemoryUseOrDef>(immDefAcc0))
+            toBeAnalyzed.insert(std::make_pair<llvm::Instruction *, llvm::Function*>(mud->getMemoryInst(),nullptr));
+         else
+         {
+//            llvm::errs() << "    phis0\n";
+            addAllClobberingStmts(toBeAnalyzed, MSSA0, immDefAcc0);
+         }
+      }
       else
       {
-         auto mInstr = ma->getMemoryInst();
+         auto mInstr = ma0->getMemoryInst();
          auto fun = mInstr->getFunction();
          recurseUpMemoryAccess(fun, toBeAnalyzed, modulePass);
       }
 
       while(!toBeAnalyzed.empty())
       {
-         auto currMA = *toBeAnalyzed.begin();
-         toBeAnalyzed.erase(currMA);
-         if(auto mud = dyn_cast<llvm::MemoryUseOrDef>(currMA))
+         auto currInstrFun = *toBeAnalyzed.begin();
+         toBeAnalyzed.erase(currInstrFun);
+         if(Analyzed.find(currInstrFun) == Analyzed.end())
          {
-            auto mInstr = mud->getMemoryInst();
-            if(mInstr != SI) /// self loop could be removed
+            Analyzed.insert(currInstrFun);
+            if(currInstrFun.first)
             {
-               llvm::SmallPtrSet<const llvm::Value *, 6> visited;
-               bool GVfound= recurseComputeConflictingStores(visited, mInstr, GV, res, PtoSets_AA, Function2Store);
-               if(Analyzed.find(currMA) == Analyzed.end())
+               auto mInstr = currInstrFun.first;
+               if(mInstr != SI) /// self loop could be removed
                {
-                  Analyzed.insert(currMA);
+                  llvm::SmallPtrSet<const llvm::Value *, 6> visited;
+                  bool GVfound= recurseComputeConflictingStores(visited, mInstr, GV, res, PtoSets_AA, Function2Store);
                   if(!GVfound)
                   {
-                     immDefAcc = mud->getDefiningAccess();
-                     if(!MSSA.isLiveOnEntryDef(immDefAcc))
-                        toBeAnalyzed.insert(immDefAcc);
+                     llvm::MemorySSA &MSSAm = modulePass->getAnalysis<llvm::MemorySSAWrapperPass>(*mInstr->getFunction()).getMSSA();
+                     const llvm::MemoryUseOrDef* mam = MSSAm.getMemoryAccess(mInstr);
+                     auto immDefAccm = mam->getDefiningAccess();
+                     if(!MSSAm.isLiveOnEntryDef(immDefAccm))
+                     {
+                        if(auto mud = dyn_cast<llvm::MemoryUseOrDef>(immDefAccm))
+                           toBeAnalyzed.insert(std::make_pair<llvm::Instruction *, llvm::Function*>(mud->getMemoryInst(),nullptr));
+                        else
+                        {
+//                           llvm::errs() << "    phis\n";
+                           addAllClobberingStmts(toBeAnalyzed, MSSAm, immDefAccm);
+                        }
+                     }
                      else
                      {
-                        auto mInstr = mud->getMemoryInst();
-                        auto fun = mInstr->getFunction();
+                        auto mInstrm = mam->getMemoryInst();
+                        auto fun = mInstrm->getFunction();
                         recurseUpMemoryAccess(fun, toBeAnalyzed, modulePass);
                      }
                   }
                }
             }
-         }
-         else if(auto mp = dyn_cast<llvm::MemoryPhi>(currMA))
-         {
-            if(Analyzed.find(currMA) == Analyzed.end())
+            else if(currInstrFun.second)
             {
-               Analyzed.insert(currMA);
-               for(auto index=0u; index < mp->getNumIncomingValues(); ++index)
-               {
-                  auto val = mp->getIncomingValue(index);
-                  assert(val->getValueID()==llvm::Value::MemoryDefVal||val->getValueID()==llvm::Value::MemoryPhiVal);
-                  if(!MSSA.isLiveOnEntryDef(val))
-                     toBeAnalyzed.insert(val);
-                  else
-                  {
-                     auto fun = mp->getBlock()->getParent();
-                     recurseUpMemoryAccess(fun, toBeAnalyzed, modulePass);
-                  }
-               }
+//               llvm::errs() << "Upfunction: " << currInstrFun.second->getName() << "\n";
+               recurseUpMemoryAccess(currInstrFun.second, toBeAnalyzed, modulePass);
             }
+            else
+               llvm_unreachable("unexpected condition");
+
          }
-         else
-            llvm_unreachable("unexpected condition");
       }
       return  res;
    }
@@ -3186,7 +3387,7 @@ namespace RangeAnalysis {
    {
       auto vid = varValue->getValueID();
       if(auto AI = llvm::dyn_cast<const llvm::AllocaInst>(varValue))
-         return AI->isArrayAllocation();
+         return AI->getAllocatedType()->isAggregateType();
       else if(auto GV = llvm::dyn_cast<const llvm::GlobalVariable>(varValue))
       {
          auto VGT = GV->getValueType();
@@ -3210,9 +3411,6 @@ namespace RangeAnalysis {
          assert(PtoSets_AA->PE(PO) != NOVAR_ID);
          auto bw = SI->getValueOperand()->getType()->getPrimitiveSizeInBits();
          Range intersection(Regular, bw, Min,Max);
-         auto fun = SI->getFunction();
-         auto &MSSA = modulePass->getAnalysis<llvm::MemorySSAWrapperPass>(*fun).getMSSA();
-         const llvm::MemoryUseOrDef* ma = MSSA.getMemoryAccess(SI);
 
          for(auto var: *PtoSets_AA->pointsToSet(PO))
          {
@@ -3232,8 +3430,17 @@ namespace RangeAnalysis {
 
             if(isAggregateValue(varValue))
             {
-               for (const Value *operand : ComputeConflictingStores(SI,varValue,MSSA,ma,PtoSets_AA,Function2Store,modulePass))
+//               llvm::errs() << "SI: ";
+//               SI->print(llvm::errs());
+//               llvm::errs() << "\n";
+//               llvm::errs() << "    isAggregateValue: ";
+//               varValue->print(llvm::errs());
+//               llvm::errs() << "\n";
+               for (const Value *operand : ComputeConflictingStores(SI,varValue,SI,PtoSets_AA,Function2Store,modulePass))
                {
+//                  llvm::errs() << "  source: ";
+//                  operand->print(llvm::errs());
+//                  llvm::errs() << "\n";
                   VarNode *source = addVarNode(operand,varValue);
                   storeOp->addSource(source);
                   this->useMap.find(source->getValue())->second.insert(storeOp);
@@ -4030,16 +4237,15 @@ namespace RangeAnalysis {
          if (component.size() == 1)
          {
             ++numAloneSCCs;
-            fixIntersects(component);
             VarNode *var = *component.begin();
+//            if (var->getRange().isUnknown())
+//               var->setRange(Range(Regular,var->getBitWidth(),Min,Max));
+//            fixIntersectsSC(var);
             if(this->defMap.find(var->getValue()) != this->defMap.end())
             {
                BasicOp * op = this->defMap.find(var->getValue())->second;
-//               llvm::errs() << "single component:\n";
                var->setRange(op->eval());
             }
-            if (var->getRange().isUnknown())
-               var->setRange(Range(Regular,var->getBitWidth(),Min,Max));
          }
          else
          {
@@ -4067,7 +4273,14 @@ namespace RangeAnalysis {
             generateEntryPoints(component, entryPoints);
             // First iterate till fix point
             preUpdate(compUseMap, entryPoints);
-            fixIntersects(component);
+//            fixIntersects(component);
+
+#ifdef DEBUG_RA
+            if (func != nullptr)
+            {
+               printToFile(*func, "/tmp/" + func->getName().str() + "cgfixintersect.dot");
+            }
+#endif
 
             for (VarNode *varNode : component)
             {
@@ -4076,6 +4289,7 @@ namespace RangeAnalysis {
                   llvm::errs() << "initialize unknown: ";
                   varNode->getValue().first->print(llvm::errs());
                   llvm::errs() << "\n";
+                  //llvm_unreachable("unexpected condition");
                   varNode->setRange(Range(Regular, varNode->getBitWidth(), Min, Max));
                }
             }
@@ -4149,13 +4363,27 @@ namespace RangeAnalysis {
    {
       // Iterate again over the varnodes in the component
       for (VarNode *varNode : component)
+         fixIntersectsSC(varNode);
+   }
+
+   void ConstraintGraph::fixIntersectsSC(VarNode *varNode)
+   {
+      const auto V = varNode->getValue();
+      auto sit = symbMap.find(V);
+      if (sit != symbMap.end())
       {
-         const auto V = varNode->getValue();
-         auto sit = symbMap.find(V);
-         if (sit != symbMap.end())
+//         llvm::errs() << "fix intersects:\n";
+//         varNode->print(llvm::errs());
+//         llvm::errs() << "\n";
+         for (BasicOp *op : sit->second)
          {
-            for (BasicOp *op : sit->second)
-               op->fixIntersects(varNode);
+//            llvm::errs() << "op intersects:\n";
+//            op->print(llvm::errs());
+//            llvm::errs() << "\n";
+            op->fixIntersects(varNode);
+//            llvm::errs() << "sink:";
+//            op->getSink()->print(llvm::errs());
+//            llvm::errs() << "\n";
          }
       }
    }
@@ -4572,51 +4800,33 @@ namespace RangeAnalysis {
  *  control dependence edges in the contraint graph. These edges are removed
  *  after the class is done computing the SCCs.
  */
-   Nuutila::Nuutila(VarNodes *varNodes, UseMap *useMap, SymbMap *symbMap,
-                    bool single)
+   Nuutila::Nuutila(VarNodes *varNodes, UseMap *useMap, SymbMap *symbMap)
    {
-      if (single)
-      {
-         /* FERNANDO */
-         auto SCC = new SmallPtrSet<VarNode *, 32>;
-         for (auto vit = varNodes->begin(), vend = varNodes->end(); vit != vend; ++vit)
-            SCC->insert(vit->second);
+      // Copy structures
+      this->variables = varNodes;
+      this->index = 0;
 
-         for (auto vit = varNodes->begin(), vend = varNodes->end(); vit != vend; ++vit)
-         {
-            auto V = vit->first;
-            components[V] = SCC;
-         }
-         if (!varNodes->empty())
-            this->worklist.push_back(varNodes->begin()->first);
-      }
-      else
+      // Iterate over all varnodes of the constraint graph
+      for (auto vit = varNodes->begin(), vend = varNodes->end(); vit != vend; ++vit)
       {
-         // Copy structures
-         this->variables = varNodes;
-         this->index = 0;
-
-         // Iterate over all varnodes of the constraint graph
-         for (auto vit = varNodes->begin(), vend = varNodes->end(); vit != vend; ++vit)
-         {
-            // Initialize DFS control variable for each Value in the graph
-            auto V = vit->first;
-            dfs[V] = -1;
-         }
-         addControlDependenceEdges(symbMap, useMap, varNodes);
-         // Iterate again over all varnodes of the constraint graph
-         for (auto vit = varNodes->begin(), vend = varNodes->end(); vit != vend; ++vit)
-         {
-            auto V = vit->first;
-            // If the Value has not been visited yet, call visit for him
-            if (dfs[V] < 0)
-            {
-               std::stack<eValue> pilha;
-               visit(V, pilha, useMap);
-            }
-         }
-         delControlDependenceEdges(useMap);
+         // Initialize DFS control variable for each Value in the graph
+         auto V = vit->first;
+         dfs[V] = -1;
       }
+      addControlDependenceEdges(symbMap, useMap, varNodes);
+      // Iterate again over all varnodes of the constraint graph
+      for (auto vit = varNodes->begin(), vend = varNodes->end(); vit != vend; ++vit)
+      {
+         auto V = vit->first;
+         // If the Value has not been visited yet, call visit for him
+         if (dfs[V] < 0)
+         {
+            std::stack<eValue> pilha;
+            visit(V, pilha, useMap);
+         }
+      }
+      delControlDependenceEdges(useMap);
+
 
 #ifdef SCC_DEBUG
       ASSERT(checkWorklist(), "an inconsistency in SCC worklist have been found");
@@ -4797,24 +5007,27 @@ namespace RangeAnalysis {
                if(PTS->empty())
                {
                   res = false;
+//                  llvm::errs() << "checkStores1\n";
                   break;
                }
                else
                {
-                  SI->print(llvm::errs());
-                  llvm::errs() << " -> num of addresses " << PTS->size() << "\n";
+//                  SI->print(llvm::errs());
+//                  llvm::errs() << " -> num of addresses " << PTS->size() << "\n";
                   for(auto var: *PTS)
                   {
                      auto varValue = PtoSets_AA->getValue(var);
                      if(!varValue)
                      {
                         res = false;
+//                        llvm::errs() << "checkStores2\n";
                         break;
                      }
                      auto vid = varValue->getValueID();
                      if(vid != llvm::Value::InstructionVal+llvm::Instruction::Alloca && vid != llvm::Value::GlobalVariableVal)
                      {
                         res = false;
+//                        llvm::errs() << "checkStores3\n";
                         break;
                      }
                      else if(auto GV=dyn_cast<llvm::GlobalVariable>(varValue))
@@ -4822,6 +5035,7 @@ namespace RangeAnalysis {
                         if(!GV->hasInternalLinkage())
                         {
                            res = false;
+//                           llvm::errs() << "checkStores4\n";
                            break;
                         }
                      }
@@ -4834,6 +5048,7 @@ namespace RangeAnalysis {
                if(!CI->getCalledFunction())
                {
                   res = false;
+//                  llvm::errs() << "checkStores5\n";
                   break;
                }
                if(!CI->onlyReadsMemory())
@@ -4851,6 +5066,7 @@ namespace RangeAnalysis {
                if(!II->getCalledFunction())
                {
                   res = false;
+//                  llvm::errs() << "checkStores6\n";
                   break;
                }
                if(!II->onlyReadsMemory())
@@ -4894,56 +5110,62 @@ namespace RangeAnalysis {
                auto writtenObj = SI->getValueOperand();
                bw = writtenObj->getType()->getPrimitiveSizeInBits();
                if(SI->getAlignment() && bw > (8*SI->getAlignment()))
+               {
+//                  llvm::errs() << "checkSDS1\n";
                   return false;
+               }
             }
             else
             {
                assert(LI);
                bw = LI->getType()->getPrimitiveSizeInBits();
                if(LI->getAlignment() && bw > (8*LI->getAlignment()))
+               {
+//                  llvm::errs() << "checkSDS2\n";
                   return false;
+               }
                PO = LI->getPointerOperand();
             }
             auto PTS = PtoSets_AA->pointsToSet(PO);
-            assert(!PTS->empty());
+            if(PTS->empty())
+               return false;
             for(auto var: *PTS)
             {
                auto varValue = PtoSets_AA->getValue(var);
-               if(!varValue) return false;
+               if(!varValue)
+                  return false;
+               if(llvm::dyn_cast<const llvm::CallInst>(varValue))
+                  return false;
                auto vid = varValue->getValueID();
                assert(vid == llvm::Value::InstructionVal+llvm::Instruction::Alloca || vid == llvm::Value::GlobalVariableVal);
-               unsigned int elmtSize = 0;
-               if(auto AI = llvm::dyn_cast<const llvm::AllocaInst>(varValue))
-               {
-                  if(AI->isArrayAllocation())
-                     elmtSize = AI->getAllocatedType()->getPrimitiveSizeInBits();
-                  else
-                     elmtSize = AI->getType()->getPrimitiveSizeInBits();
-               }
-               else if(auto GV = llvm::dyn_cast<const llvm::GlobalVariable>(varValue))
-               {
-                  auto VGT = GV->getValueType();
-                  if(VGT->isAggregateType())
-                  {
-                     if(VGT->isArrayTy())
-                        elmtSize = cast<llvm::ArrayType>(VGT)->getElementType()->getPrimitiveSizeInBits();
-                     else
-                        return false;
-                  }
-                  else
-                     elmtSize = VGT->getPrimitiveSizeInBits();
-               }
-               else
-               {
-                  varValue->print(llvm::errs());
-                  llvm_unreachable("unexpected condition");
-               }
-               if(bw != elmtSize)
+               unsigned int elmtSize = ObjectBW(varValue);
+               if(elmtSize==0)
                   return false;
+               if(bw != elmtSize)
+               {
+//                  if(SI)
+//                  {
+//                     llvm::errs() << "Store:";
+//                     SI->print(llvm::errs());
+//                     llvm::errs() << "\n";
+//                  }
+//                  if(LI)
+//                  {
+//                     llvm::errs() << "Load:";
+//                     LI->print(llvm::errs());
+//                     llvm::errs() << "\n";
+//                  }
+//                  varValue->print(llvm::errs());
+//                  llvm::errs() << "\ncheckSDS5 "<< bw << " -> " << elmtSize << "\n";
+                  return false;
+               }
                if(SDS_map.find(varValue) == SDS_map.end())
                   SDS_map.insert(std::make_pair(varValue,elmtSize));
                else if(SDS_map.find(varValue)->second != elmtSize)
+               {
+//                  llvm::errs() << "checkSDS6\n";
                   return false;
+               }
             }
          }
       }
@@ -4960,15 +5182,20 @@ namespace RangeAnalysis {
       CG = new CropDFS();
 
       MAX_BIT_INT = getMaxBitWidth(M);
+      POINTER_BITSIZE = M.getDataLayout().getTypeAllocSizeInBits(llvm::Type::getInt32PtrTy(M.getContext()));
       updateConstantIntegers(MAX_BIT_INT);
       llvm::DenseMap<Function*, SmallPtrSet<Instruction*,6>> Function2Store;
       auto arePointersResolved = checkStores(M,PtoSets_AA,Function2Store) && checkSDS(M,PtoSets_AA);
       if(arePointersResolved)
       {
          llvm::errs() << "Pointers are Resolved\n";
+         M.print(llvm::errs(),nullptr);
       }
       else
-         llvm::errs() << "Pointers are not Resolved\n";
+      {
+         //llvm::errs() << "Pointers are not Resolved\n";
+         M.print(llvm::errs(),nullptr);
+      }
 
       // Build the Constraint Graph by running on each function
 #ifdef STATS
@@ -5027,9 +5254,15 @@ namespace RangeAnalysis {
    {
       // Only do the matching if F has any use
       unsigned int countUses = 0;
-      for(auto fuse : F.users())
+      for (Use &U : F.uses())
       {
-         if (!isa<CallInst>(fuse) && !isa<InvokeInst>(fuse))  continue;
+         User *Us = U.getUser();
+         if (!isa<CallInst>(Us) && !isa<InvokeInst>(Us))  continue;
+
+         Instruction *caller = cast<Instruction>(Us);
+         CallSite CS(caller);
+         if (!CS.isCallee(&U)) continue;
+
          ++countUses;
       }
       if(countUses==0)
@@ -5086,6 +5319,7 @@ namespace RangeAnalysis {
       for (auto i = 0ul, e = parameters.size(); i < e; ++i)
       {
          VarNode *sink = G.addVarNode(parameters[i].first,nullptr);
+         sink->setRange(Range(Regular, sink->getBitWidth(), Min, Max));
          matchers[i] = new PhiOp(new BasicInterval(), sink, nullptr);
          // Insert the operation in the graph.
          G.getOprs()->insert(matchers[i]);
@@ -5147,6 +5381,7 @@ namespace RangeAnalysis {
          {
             // Add caller instruction to the CG (it receives the return value)
             to = G.addVarNode(caller,nullptr);
+            to->setRange(Range(Regular, to->getBitWidth(), Min, Max));
 
             PhiOp *phiOp = new PhiOp(new BasicInterval(), to, nullptr);
 
@@ -5176,7 +5411,10 @@ namespace RangeAnalysis {
 
    Range InterProceduralRACropDFSHelper::getRange(const Value *v)
    {
-      return CG->getRange(std::make_pair(v,nullptr));
+      if(v->getType()->isVoidTy())
+         return Range(Unknown,MAX_BIT_INT);
+      else
+         return CG->getRange(std::make_pair(v,nullptr));
    }
 
 
