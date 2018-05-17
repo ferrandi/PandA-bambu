@@ -159,7 +159,7 @@ int StorageValueInformation::get_compatibility_weight(unsigned int storage_value
 
    // BIAGIO
    // prendo i successori della operazione v1 e v2
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, DEBUG_LEVEL_VERY_PEDANTIC,
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, 0,
                   "-->[D]Evaluation storage values (vars): [" +
                   STR(HLS_mgr->get_tree_manager()->CGetTreeNode(var1)) + "]"
                   " and [" + STR(HLS_mgr->get_tree_manager()->CGetTreeNode(var2)) + "]");
@@ -168,13 +168,13 @@ int StorageValueInformation::get_compatibility_weight(unsigned int storage_value
 
    // Verifico se v1 e v2 pilotano moltiplicazioni
    std::set<unsigned int> mult_succ_of_v1_port0, mult_succ_of_v1_port1;
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, DEBUG_LEVEL_VERY_PEDANTIC,
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, 0,
                   "-->[D]Statement with USE first variable");
    std::for_each(it_succ_v1.first, it_succ_v1.second,
                  [this, &mult_succ_of_v1_port0, &mult_succ_of_v1_port1, &var1] (const vertex succ) {
                    const std::string op_label = data->CGetOpNodeInfo(succ)->GetOperation();
                    const unsigned int succ_id = data->CGetOpNodeInfo(succ)->GetNodeId();
-                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, DEBUG_LEVEL_VERY_PEDANTIC,
+                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, 0,
                                   "---[D][" + STR(succ_id) + "] type: " + STR(op_label));
                    if ((op_label == "mult_expr"||op_label == "widen_mult_expr"))
                    {
@@ -187,16 +187,16 @@ int StorageValueInformation::get_compatibility_weight(unsigned int storage_value
                          THROW_ERROR("unexpected case:" + STR(succ_id) + "|" + STR(std::get<0>(var_read[0])) + ":" + STR(std::get<0>(var_read[1])));
                    }
                  });
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, DEBUG_LEVEL_VERY_PEDANTIC, "<--");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, 0, "<--");
 
    std::set<unsigned int> mult_succ_of_v2_port0, mult_succ_of_v2_port1;
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, DEBUG_LEVEL_VERY_PEDANTIC,
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, 0,
                   "-->[D]Statement with USE second variable");
    std::for_each(it_succ_v2.first, it_succ_v2.second,
                  [this, &mult_succ_of_v2_port0, &mult_succ_of_v2_port1, &var2] (const vertex succ) {
                    const std::string op_label = data->CGetOpNodeInfo(succ)->GetOperation();
                    const unsigned int succ_id = data->CGetOpNodeInfo(succ)->GetNodeId();
-                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, DEBUG_LEVEL_VERY_PEDANTIC,
+                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, 0,
                                   "---[D][" + STR(succ_id) + "] type: " + STR(op_label));
                    if (op_label == "mult_expr"||op_label == "widen_mult_expr")
                    {
@@ -209,7 +209,7 @@ int StorageValueInformation::get_compatibility_weight(unsigned int storage_value
                          THROW_ERROR("unexpected case");
                    }
                  });
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, DEBUG_LEVEL_VERY_PEDANTIC, "<--");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, 0, "<--");
 
    // Check both pilot mult
    const bool both_pilot_mult =
@@ -219,9 +219,9 @@ int StorageValueInformation::get_compatibility_weight(unsigned int storage_value
           mult_succ_of_v2_port1.empty() == false);
 
 
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, DEBUG_LEVEL_VERY_PEDANTIC,
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, 0,
                   "Both pilot mult_expr: " + STR(both_pilot_mult));
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, DEBUG_LEVEL_VERY_PEDANTIC, "<--");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, 0, "<--");
    if (both_pilot_mult) {
      return 6;
    }
