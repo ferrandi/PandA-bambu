@@ -2951,7 +2951,7 @@ namespace clang
                inst->print(llvm::errs());
                llvm::errs() << "\n";
 #endif
-               return assignCodeAuto(llvm::ConstantInt::get(inst->getContext(), (isSigned?varRange.getSignedMin():varRange.getUnsignedMin())));
+               return assignCodeAuto(llvm::ConstantInt::get(inst->getContext(), (isSigned?varRange.getSignedMin().sext(64):varRange.getUnsignedMin())));
             }
             else
                return nullptr;
@@ -3079,7 +3079,7 @@ namespace clang
             auto varRange = RA->getRange(inst);
             auto isSigned = CheckSignedTag(TREE_TYPE(t));
             if(!varRange.isMaxRange())
-               return assignCodeAuto(llvm::ConstantInt::get(inst->getContext(), (isSigned?varRange.getSignedMax():varRange.getUnsignedMax())));
+               return assignCodeAuto(llvm::ConstantInt::get(inst->getContext(), (isSigned?varRange.getSignedMax().sext(64):varRange.getUnsignedMax())));
             else
                return nullptr;
          }
