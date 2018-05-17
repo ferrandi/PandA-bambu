@@ -1201,9 +1201,6 @@ generate
     //We write atomic write register when there is atomic write on the internal channel or the current atomic write is moved to registered_to_memory_next_request
     assign atomic_write_we[i] = next_atomic_write[MEMORY_REQUEST_TOTAL_SIZE*i + ATOMIC_BIT_OFFSET] || (to_memory_next_request[MEMORY_REQUEST_TOTAL_SIZE*i + ATOMIC_BIT_OFFSET] &amp;&amp; top_fifo_register_we[i]);
 
-    //input to register of atomic_write is the merge of the atomic write coming from the single channels; only one atomic write for each bank can be active
-    bus_merger #(.BITSIZE_in1(MEMORY_REQUEST_TOTAL_SIZE*NUM_BANK), .PORTSIZE_in1(NUM_CHANNEL), .BITSIZE_out1(MEMORY_REQUEST_TOTAL_SIZE*NUM_BANK)) bus_merger_next_atomic_write (.out1(next_atomic_write), .in1(all_incoming_atomic_write));
-
     ///Write of register of atomic write; it is written when there is a new atomic write or when the current one is dispatched to the memory
     //assign bank_incoming_atomic_write_we[i] = (bank_incoming_atomic_write[MEMORY_REQUEST_TOTAL_SIZE*i + ATOMIC_BIT_OFFSET] &amp; &amp; bank_incoming_atomic_write[MEMORY_REQUEST_TOTAL_SIZE*i + WE_BIT_OFFSET]) || next_status == S_1;
 
@@ -1464,7 +1461,11 @@ bus_merger #(.BITSIZE_in1(BITSIZE_Mout_oe_ram*NUM_BANK), .PORTSIZE_in1(2), .BITS
 bus_merger #(.BITSIZE_in1(BITSIZE_Mout_we_ram*NUM_BANK), .PORTSIZE_in1(2), .BITSIZE_out1(BITSIZE_Mout_we_ram*NUM_BANK)) bus_merger_Mout_we_ram (.out1(OUT_Mout_we_ram), .in1({Mout_we_ram_0, Mout_we_ram_1}));
 bus_merger #(.BITSIZE_in1(BITSIZE_Mout_addr_ram*NUM_BANK), .PORTSIZE_in1(2), .BITSIZE_out1(BITSIZE_Mout_addr_ram*NUM_BANK)) bus_merger_Mout_addr_ram (.out1(OUT_Mout_addr_ram), .in1({Mout_addr_ram_0, Mout_addr_ram_1}));
 bus_merger #(.BITSIZE_in1(BITSIZE_Mout_data_ram_size*NUM_BANK), .PORTSIZE_in1(2), .BITSIZE_out1(BITSIZE_Mout_data_ram_size*NUM_BANK)) bus_merger_Mout_data_ram_size (.out1(OUT_Mout_data_ram_size), .in1({Mout_data_ram_size_0, Mout_data_ram_size_1}));
-bus_merger #(.BITSIZE_in1(BITSIZE_Mout_Wdata_ram*NUM_BANK), .PORTSIZE_in1(2), .BITSIZE_out1(BITSIZE_Mout_Wdata_ram*NUM_BANK)) bus_merger_Mout_Wdata_ram (.out1(OUT_Mout_Wdata_ram), .in1({Mout_Wdata_ram_0, Mout_Wdata_ram_1}));"/>
+bus_merger #(.BITSIZE_in1(BITSIZE_Mout_Wdata_ram*NUM_BANK), .PORTSIZE_in1(2), .BITSIZE_out1(BITSIZE_Mout_Wdata_ram*NUM_BANK)) bus_merger_Mout_Wdata_ram (.out1(OUT_Mout_Wdata_ram), .in1({Mout_Wdata_ram_0, Mout_Wdata_ram_1}));
+
+//input to register of atomic_write is the merge of the atomic write coming from the single channels; only one atomic write for each bank can be active
+bus_merger #(.BITSIZE_in1(MEMORY_REQUEST_TOTAL_SIZE*NUM_BANK), .PORTSIZE_in1(NUM_CHANNEL), .BITSIZE_out1(MEMORY_REQUEST_TOTAL_SIZE*NUM_BANK)) bus_merger_next_atomic_write (.out1(next_atomic_write), .in1(all_incoming_atomic_write));
+"/>
         </component_o>
       </circuit>
     </cell>
@@ -1660,9 +1661,6 @@ generate
 
     //We write atomic write register when there is atomic write on the internal channel or the current atomic write is moved to registered_to_memory_next_request
     assign atomic_write_we[i] = next_atomic_write[MEMORY_REQUEST_TOTAL_SIZE*i + ATOMIC_BIT_OFFSET] || (to_memory_next_request[MEMORY_REQUEST_TOTAL_SIZE*i + ATOMIC_BIT_OFFSET] &amp;&amp; top_fifo_register_we[i]);
-
-    //input to register of atomic_write is the merge of the atomic write coming from the single channels; only one atomic write for each bank can be active
-    bus_merger #(.BITSIZE_in1(MEMORY_REQUEST_TOTAL_SIZE*NUM_BANK), .PORTSIZE_in1(NUM_CHANNEL), .BITSIZE_out1(MEMORY_REQUEST_TOTAL_SIZE*NUM_BANK)) bus_merger_next_atomic_write (.out1(next_atomic_write), .in1(all_incoming_atomic_write));
 
     ///Write of register of atomic write; it is written when there is a new atomic write or when the current one is dispatched to the memory
     //assign bank_incoming_atomic_write_we[i] = (bank_incoming_atomic_write[MEMORY_REQUEST_TOTAL_SIZE*i + ATOMIC_BIT_OFFSET] &amp; &amp; bank_incoming_atomic_write[MEMORY_REQUEST_TOTAL_SIZE*i + WE_BIT_OFFSET]) || next_status == S_1;
@@ -1916,7 +1914,12 @@ bus_merger #(.BITSIZE_in1(BITSIZE_Mout_oe_ram*NUM_BANK), .PORTSIZE_in1(2), .BITS
 bus_merger #(.BITSIZE_in1(BITSIZE_Mout_we_ram*NUM_BANK), .PORTSIZE_in1(2), .BITSIZE_out1(BITSIZE_Mout_we_ram*NUM_BANK)) bus_merger_Mout_we_ram (.out1(OUT_Mout_we_ram), .in1({Mout_we_ram_0, Mout_we_ram_1}));
 bus_merger #(.BITSIZE_in1(BITSIZE_Mout_addr_ram*NUM_BANK), .PORTSIZE_in1(2), .BITSIZE_out1(BITSIZE_Mout_addr_ram*NUM_BANK)) bus_merger_Mout_addr_ram (.out1(OUT_Mout_addr_ram), .in1({Mout_addr_ram_0, Mout_addr_ram_1}));
 bus_merger #(.BITSIZE_in1(BITSIZE_Mout_data_ram_size*NUM_BANK), .PORTSIZE_in1(2), .BITSIZE_out1(BITSIZE_Mout_data_ram_size*NUM_BANK)) bus_merger_Mout_data_ram_size (.out1(OUT_Mout_data_ram_size), .in1({Mout_data_ram_size_0, Mout_data_ram_size_1}));
-bus_merger #(.BITSIZE_in1(BITSIZE_Mout_Wdata_ram*NUM_BANK), .PORTSIZE_in1(2), .BITSIZE_out1(BITSIZE_Mout_Wdata_ram*NUM_BANK)) bus_merger_Mout_Wdata_ram (.out1(OUT_Mout_Wdata_ram), .in1({Mout_Wdata_ram_0, Mout_Wdata_ram_1}));"/>
+bus_merger #(.BITSIZE_in1(BITSIZE_Mout_Wdata_ram*NUM_BANK), .PORTSIZE_in1(2), .BITSIZE_out1(BITSIZE_Mout_Wdata_ram*NUM_BANK)) bus_merger_Mout_Wdata_ram (.out1(OUT_Mout_Wdata_ram), .in1({Mout_Wdata_ram_0, Mout_Wdata_ram_1}));
+
+//input to register of atomic_write is the merge of the atomic write coming from the single channels; only one atomic write for each bank can be active
+bus_merger #(.BITSIZE_in1(MEMORY_REQUEST_TOTAL_SIZE*NUM_BANK), .PORTSIZE_in1(NUM_CHANNEL), .BITSIZE_out1(MEMORY_REQUEST_TOTAL_SIZE*NUM_BANK)) bus_merger_next_atomic_write (.out1(next_atomic_write), .in1(all_incoming_atomic_write));
+"/>
+
         </component_o>
       </circuit>
     </cell>
