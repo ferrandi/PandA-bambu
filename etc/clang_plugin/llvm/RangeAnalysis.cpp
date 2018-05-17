@@ -1065,7 +1065,6 @@ namespace RangeAnalysis {
          return *this;
       if (other.isEmpty()||other.isUnknown())
          return other;
-
       APInt this_min = getUnsignedMin();
       APInt this_max = getUnsignedMax();
       APInt other_min = other.getUnsignedMin();
@@ -1166,6 +1165,12 @@ namespace RangeAnalysis {
  */
    Range Range::And(const Range &other) const
    {
+//      llvm::errs() << "And-a: ";
+//      this->print(llvm::errs());
+//      llvm::errs() << "\n";
+//      llvm::errs() << "And-b: ";
+//      other.print(llvm::errs());
+//      llvm::errs() << "\n";
       if (isEmpty() || isUnknown())
          return *this;
       if (other.isEmpty() || other.isUnknown())
@@ -1203,6 +1208,9 @@ namespace RangeAnalysis {
       APInt invUpper = invres.getLower();
       invUpper.flipAllBits();
       auto res = Range(Regular,getBitWidth(),invLower,invUpper);
+//      llvm::errs() << "And-res: ";
+//      res.print(llvm::errs());
+//      llvm::errs() << "\n";
       return res;
    }
 
@@ -1210,27 +1218,15 @@ namespace RangeAnalysis {
       uint64_t minOR(uint64_t a, uint64_t b, uint64_t c, uint64_t d)
       {
          uint64_t m, temp;
-
-         m = 8000000000000000ULL >> __builtin_clzll(a ^ c);
-         while (m != 0)
-         {
-            if ((~a & c & m) != 0)
-            {
+         m = 0x8000000000000000ULL >> __builtin_clzll(a ^ c);
+         while (m != 0) {
+            if (~a & c & m) {
                temp = (a | m) & -m;
-               if (temp <= b)
-               {
-                  a = temp;
-                  break;
-               }
+               if (temp <= b) {a = temp; break;}
             }
-            else if ((a & ~c & m) != 0)
-            {
+            else if (a & ~c & m) {
                temp = (c | m) & -m;
-               if (temp <= d)
-               {
-                  c = temp;
-                  break;
-               }
+               if (temp <= d) {c = temp; break;}
             }
             m = m >> 1;
          }
@@ -1240,29 +1236,55 @@ namespace RangeAnalysis {
       uint64_t maxOR(uint64_t a, uint64_t b, uint64_t c, uint64_t d)
       {
          uint64_t m, temp;
-
-         m = 8000000000000000ULL  >> __builtin_clzll(b & d);
-         //m = 0x80000000 >> __builtin_clzll(b & d);
+         m = 0x8000000000000000ULL >> __builtin_clzll(b & d);
          while (m != 0) {
-            if ((b & d & m) != 0)
-            {
+            if (b & d & m) {
                temp = (b - m) | (m - 1);
-               if (temp >= a)
-               {
-                  b = temp;
-                  break;
-               }
+               if (temp >= a) {b = temp; break;}
                temp = (d - m) | (m - 1);
-               if (temp >= c)
-               {
-                  d = temp;
-                  break;
-               }
+               if (temp >= c) {d = temp; break;}
             }
             m = m >> 1;
          }
          return b | d;
       }
+
+      uint64_t minXOR(uint64_t a, uint64_t b, uint64_t c, uint64_t d)
+      {
+         uint64_t m, temp;
+         m = 0x8000000000000000ULL >> __builtin_clzll(a ^ c);
+         while (m != 0) {
+            if (~a & c & m) {
+               temp = (a | m) & -m;
+               if (temp <= b) a = temp;
+            }
+            else if (a & ~c & m) {
+               temp = (c | m) & -m;
+               if (temp <= d) c = temp;
+            }
+            m = m >> 1;
+         }
+         return a ^ c;
+      }
+
+      uint64_t maxXOR(uint64_t a, uint64_t b, uint64_t c, uint64_t d)
+      {
+         uint64_t m, temp;
+         m = 0x8000000000000000ULL >> __builtin_clzll(b & d);
+         while (m != 0) {
+            if (b & d & m) {
+               temp = (b - m) | (m - 1);
+               if (temp >= a) b = temp;
+               else {
+                  temp = (d - m) | (m - 1);
+                  if (temp >= c) d = temp;
+               }
+            }
+            m = m >> 1;
+         }
+         return b ^ d;
+      }
+
    } // namespace
 
    // This operator is used when we are dealing with values
@@ -1319,14 +1341,19 @@ namespace RangeAnalysis {
       switchval += (dM.isNonNegative() ? 1 : 0);
 
       unsigned bw = std::min(64u, MAX_BIT_INT);
+//      llvm::errs() << "bw " << bw << "\n";
       const APInt a = aM.sextOrTrunc(bw);
+//      llvm::errs() << "a " << a << "\n";
       const APInt b = bM.sextOrTrunc(bw);
+//      llvm::errs() << "b " << b << "\n";
       const APInt c = cM.sextOrTrunc(bw);
+//      llvm::errs() << "c " << c << "\n";
       const APInt d = dM.sextOrTrunc(bw);
+//      llvm::errs() << "d " << d << "\n";
 
       APInt l = Min, u = Max;
 
-//      llvm ::errs() << "switchval " << (unsigned)switchval << "\n";
+//      llvm::errs() << "switchval " << (unsigned)switchval << "\n";
 
       switch (switchval)
       {
@@ -1339,7 +1366,7 @@ namespace RangeAnalysis {
          case 1:
             l = a;
             l = l.sext(MAX_BIT_INT);
-            u = -1;
+            u = -1LL;
             u= u.sext(MAX_BIT_INT);
             break;
          case 3:
@@ -1351,7 +1378,7 @@ namespace RangeAnalysis {
          case 4:
             l = c;
             l = l.sext(MAX_BIT_INT);
-            u = -1;
+            u = -1LL;
             u = u.sext(MAX_BIT_INT);
             break;
          case 5:
@@ -1361,7 +1388,7 @@ namespace RangeAnalysis {
             u = u.sext(MAX_BIT_INT);
             break;
          case 7:
-            l = APInt(bw,minOR(a.getSExtValue(), 0xFFFFFFFF, c.getSExtValue(), d.getSExtValue()),true);
+            l = APInt(bw,minOR(a.getSExtValue(), 0xFFFFFFFFFFFFFFFFLL, c.getSExtValue(), d.getSExtValue()),true);
             l= l.sext(MAX_BIT_INT);
             u = APInt(bw,maxOR(0, b.getSExtValue(), c.getSExtValue(), d.getSExtValue()),true);
             u = u.sext(MAX_BIT_INT);
@@ -1373,13 +1400,13 @@ namespace RangeAnalysis {
             u= u.sext(MAX_BIT_INT);
             break;
          case 13:
-            l = APInt(bw,minOR(a.getSExtValue(), b.getSExtValue(), c.getSExtValue(), 0xFFFFFFFF),true);
+            l = APInt(bw,minOR(a.getSExtValue(), b.getSExtValue(), c.getSExtValue(), 0xFFFFFFFFFFFFFFFFLL),true);
             l = l.sext(MAX_BIT_INT);
             u = APInt(bw,maxOR(a.getSExtValue(), b.getSExtValue(), 0, d.getSExtValue()),true);
             u = u.sext(MAX_BIT_INT);
             break;
          case 15:
-            l = APInt(MAX_BIT_INT,minOR(a.getSExtValue(), b.getSExtValue(), c.getSExtValue(), d.getSExtValue()),true);
+            l = APInt(bw,minOR(a.getSExtValue(), b.getSExtValue(), c.getSExtValue(), d.getSExtValue()),true);
             l = l.sext(MAX_BIT_INT);
             u = APInt(bw,maxOR(a.getSExtValue(), b.getSExtValue(), c.getSExtValue(), d.getSExtValue()),true);
             u = u.sext(MAX_BIT_INT);
@@ -1402,6 +1429,27 @@ namespace RangeAnalysis {
          return *this;
       if (other.isEmpty()|| other.isUnknown())
          return other;
+      if(this->isAnti() || other.isAnti())
+         return Range(Regular,getBitWidth(),Min,Max);
+      const APInt aM = this->getLower();
+      const APInt bM = this->getUpper();
+      const APInt cM = other.getLower();
+      const APInt dM = other.getUpper();
+      if(aM.isNonNegative() && bM.isNonNegative() && cM.isNonNegative() && dM.isNonNegative())
+      {
+         unsigned bw = std::min(64u, MAX_BIT_INT);
+         const APInt a = aM.sextOrTrunc(bw);
+         const APInt b = bM.sextOrTrunc(bw);
+         const APInt c = cM.sextOrTrunc(bw);
+         const APInt d = dM.sextOrTrunc(bw);
+
+         APInt l = APInt(bw,minXOR(a.getSExtValue(), b.getSExtValue(), c.getSExtValue(), d.getSExtValue()),true);
+         l = l.sext(MAX_BIT_INT);
+         APInt u = APInt(bw,maxXOR(a.getSExtValue(), b.getSExtValue(), c.getSExtValue(), d.getSExtValue()),true);
+         u = u.sext(MAX_BIT_INT);
+         auto res = Range(Regular,getBitWidth(),l, u);
+         return res;
+      }
       return Range(Regular,getBitWidth(),Min,Max);
    }
 
@@ -1458,6 +1506,7 @@ namespace RangeAnalysis {
    {
       if (isEmpty()||isUnknown())
          return *this;
+
       APInt maxupper = APInt::getSignedMaxValue(bitwidth);
       APInt maxlower = APInt::getSignedMinValue(bitwidth);
 
