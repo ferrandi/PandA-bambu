@@ -1564,30 +1564,29 @@ tree_nodeRef tree_manipulation::create_return_expr(const tree_nodeRef & decl, tr
 ///Create a gimple_phi
 tree_nodeRef tree_manipulation::create_phi_node(tree_nodeRef & ssa_res, const std::vector<std::pair<tree_nodeRef, unsigned int> > & list_of_def_edge, unsigned int bb_index, bool virtual_flag) const
 {
-   ///Check if the tree_node given are tree_reindex
-   ///THROW_ASSERT(ssa_res->get_kind() == tree_reindex_K, "ssa_name res is not a tree_reindex node");
-
-   ///res is the new SSA_NAME node created by the PHI node.
-   ///tree_nodeRef res_node = GET_NODE(ssa_res);
-   ///THROW_ASSERT(res_node->get_kind() == ssa_name_K, "ssa_name res is not a ssa_name node");
 
    std::vector<std::pair<tree_nodeRef, unsigned int> >::const_iterator iterator=list_of_def_edge.begin();
    tree_nodeRef ssa_ref = iterator->first;
    ssa_name * sn_ref = GetPointer<ssa_name>(GET_NODE(ssa_ref));
    THROW_ASSERT(ssa_ref->get_kind() == tree_reindex_K, "ssa_name res is not a tree_reindex node");
-   THROW_ASSERT(GET_NODE(ssa_ref)->get_kind() == ssa_name_K, "ssa_name res is not a ssa_name node");
    for (++iterator; iterator != list_of_def_edge.end(); ++iterator)
    {
       tree_nodeRef tn=iterator->first;
-#ifndef NDEBUG
       THROW_ASSERT(tn->get_kind() == tree_reindex_K, "ssa_name res is not a tree_reindex node");
-      THROW_ASSERT(GET_NODE(tn)->get_kind() == ssa_name_K, "ssa_name res is not a ssa_name node");
-      ssa_name * sn_temp = GetPointer<ssa_name>(GET_NODE(tn));
-      THROW_ASSERT((not sn_temp->var and not sn_ref->var) or (GET_INDEX_NODE(sn_temp->var) == GET_INDEX_NODE(sn_ref->var)), "Phi_node must be on the same variable");
-#endif
+      if(!sn_ref && GetPointer<ssa_name>(GET_NODE(tn)))
+      {
+         ssa_ref = tn;
+         sn_ref = GetPointer<ssa_name>(GET_NODE(ssa_ref));
+      }
    }
-
-   ssa_res = create_ssa_name(sn_ref->var,sn_ref->type, sn_ref->volatile_flag,sn_ref->virtual_flag);
+   if(sn_ref)
+      ssa_res = create_ssa_name(sn_ref->var,sn_ref->type, false,sn_ref->virtual_flag);
+   else
+   {
+      unsigned ssa_res_type_index;
+      const tree_nodeRef ssa_res_type_node = tree_helper::get_type_node(GET_NODE(list_of_def_edge.begin()->first), ssa_res_type_index);
+      ssa_res = create_ssa_name(tree_nodeRef(), ssa_res_type_node, false,false);
+   }
 
    unsigned int phi_node_nid = this->TreeM->new_tree_node_id();
 
