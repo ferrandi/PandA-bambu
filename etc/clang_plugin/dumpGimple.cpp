@@ -56,6 +56,7 @@
 #include "llvm/IR/GetElementPtrTypeIterator.h"
 #include "llvm/Analysis/AssumptionCache.h"
 #include "llvm/Analysis/CFG.h"
+#include "llvm/Analysis/InstructionSimplify.h"
 #include "llvm/Analysis/ValueTracking.h"
 #include "llvm/Pass.h"
 #include "llvm/Analysis/LoopPass.h"
@@ -77,6 +78,7 @@
 #include "llvm/IR/Instructions.h"
 #include "llvm/IR/InlineAsm.h"
 #include "llvm/Support/FileSystem.h"
+#include "llvm/Transforms/Utils/Local.h"
 #include "llvm/CodeGen/IntrinsicLowering.h"
 #include "clang/AST/Mangle.h"
 #include "clang/AST/Stmt.h"
@@ -2940,9 +2942,9 @@ namespace clang
          if(RA)
          {
             auto varRange = RA->getRange(inst);
-            auto isSigned = CheckSignedTag(TREE_TYPE(t));
             if(!varRange.isMaxRange())
             {
+               auto isSigned = CheckSignedTag(TREE_TYPE(t));
 #ifdef DEBUG_RA
                if(isSigned)
                   llvm::errs() << "Range: <" << varRange.getSignedMin() << "," << varRange.getSignedMax() << "> ";
@@ -2950,8 +2952,13 @@ namespace clang
                   llvm::errs() << "Range: <" << varRange.getUnsignedMin().getZExtValue() << "," << varRange.getUnsignedMax().getZExtValue() << "> ";
                inst->print(llvm::errs());
                llvm::errs() << "\n";
+               if(isSigned)
+                  llvm::errs() << varRange.getSignedMin().sextOrTrunc(64).getSExtValue() << " " << varRange.getSignedMax().sextOrTrunc(64).getSExtValue() << "\n";
+               else
+                  llvm::errs() << varRange.getUnsignedMin().zextOrTrunc(64).getZExtValue() << " " << varRange.getUnsignedMax().zextOrTrunc(64).getZExtValue() << "\n";
+               assert(isSigned?(varRange.getSignedMin().sextOrTrunc(64).getSExtValue()<=varRange.getSignedMax().sextOrTrunc(64).getSExtValue()):(varRange.getUnsignedMin().zextOrTrunc(64).getZExtValue()<=varRange.getUnsignedMax().zextOrTrunc(64).getZExtValue()));
 #endif
-               return assignCodeAuto(llvm::ConstantInt::get(inst->getContext(), (isSigned?varRange.getSignedMin().sext(64):varRange.getUnsignedMin())));
+               return assignCodeAuto(llvm::ConstantInt::get(inst->getContext(), (isSigned?varRange.getSignedMin().sextOrTrunc(64):varRange.getUnsignedMin().zextOrTrunc(64))));
             }
             else
                return nullptr;
@@ -3077,9 +3084,11 @@ namespace clang
          if(RA)
          {
             auto varRange = RA->getRange(inst);
-            auto isSigned = CheckSignedTag(TREE_TYPE(t));
             if(!varRange.isMaxRange())
-               return assignCodeAuto(llvm::ConstantInt::get(inst->getContext(), (isSigned?varRange.getSignedMax().sext(64):varRange.getUnsignedMax())));
+            {
+               auto isSigned = CheckSignedTag(TREE_TYPE(t));
+               return assignCodeAuto(llvm::ConstantInt::get(inst->getContext(), (isSigned?varRange.getSignedMax().sextOrTrunc(64):varRange.getUnsignedMax().zextOrTrunc(64))));
+            }
             else
                return nullptr;
          }
@@ -5057,48 +5066,91 @@ namespace clang
    {
       if(RA)
       {
+         llvm::TargetLibraryInfo &TLI =
+               modulePass->getAnalysis<llvm::TargetLibraryInfoWrapperPass>().getTLI();
+
          for (llvm::Function &F : M)
          {
             llvm::errs() << "ValueRangeOptimizer: Analysis for function: " << F.getName() << "\n";
+            std::list<llvm::Instruction*> deadList;
             for(auto& BB: F.getBasicBlockList())
             {
                auto curInstIterator = BB.getInstList().begin();
                while( curInstIterator != BB.getInstList().end())
                {
                   llvm::Instruction *I = &*curInstIterator;
-                  if(dyn_cast<llvm::PHINode>(I))
+                  RangeAnalysis::Range R = RA->getRange(I);
+                  if(R.isEmpty())
+                  {
+                     llvm::errs() << "this instruction is dead: ";
+                     I->print(llvm::errs());
+                     llvm::errs() << "\n";
+                     assert(!I->getType()->isVoidTy());
+                     I->replaceAllUsesWith(llvm::UndefValue::get(I->getType()));
+                     if(llvm::isInstructionTriviallyDead(I,&TLI))
+                        deadList.push_back(I);
+                  }
+                  else if(dyn_cast<llvm::PHINode>(I))
                   {
                      ++curInstIterator;
                      continue;
                   }
-                  RangeAnalysis::Range R = RA->getRange(I);
-                  if (!R.isUnknown())
+                  else if (!R.isUnknown())
                   {
                      if(!R.isMaxRange())
                      {
-                        auto nbitU = RangeAnalysis::Range_base::neededBits(R.getUnsignedMin(), R.getUnsignedMax(), false);
-                        auto nbitS = RangeAnalysis::Range_base::neededBits(R.getSignedMin(), R.getSignedMax(), true);
-                        auto bw = R.getBitWidth();
-                        if(nbitS<nbitU && nbitS<bw && !isSignedResult(I))
+                        if(R.isConstant())
                         {
-                           assert(bw>nbitS);
-                           llvm::errs() << "this operation could be optimized: ";
+                           llvm::errs() << "the value associated with this instruction is constant and could be propagated: ";
                            I->print(llvm::errs());
-                           llvm::errs() << " -> " << R.getBitWidth() << " -> " << nbitS << " -> " << nbitU << " -> ";
+                           llvm::errs() << " -> ";
                            R.print(llvm::errs());
                            llvm::errs() << "\n";
-                           llvm::IRBuilder<> B(curInstIterator->getNextNode());
+                           auto cInt = R.getLower().sextOrTrunc(I->getType()->getPrimitiveSizeInBits());
+                           auto C = llvm::ConstantInt::get(I->getContext(), cInt);
+                           I->replaceAllUsesWith(C);
+                           if(llvm::isInstructionTriviallyDead(I,&TLI))
+                              deadList.push_back(I);
+                        }
+                        else
+                        {
+                           auto nbitU = RangeAnalysis::Range_base::neededBits(R.getUnsignedMin(), R.getUnsignedMax(), false);
+                           auto nbitS = RangeAnalysis::Range_base::neededBits(R.getSignedMin(), R.getSignedMax(), true);
+                           auto bw = R.getBitWidth();
+                           if(nbitS<nbitU && nbitS<bw && !isSignedResult(I))
+                           {
+                              assert(bw>nbitS);
+                              llvm::errs() << "the value range associated with this instruction could be reduced: ";
+                              I->print(llvm::errs());
+                              llvm::errs() << " -> " << R.getBitWidth() << " -> " << nbitS << " -> " << nbitU << " -> ";
+                              R.print(llvm::errs());
+                              llvm::errs() << "\n";
+                              llvm::IRBuilder<> B(curInstIterator->getNextNode());
 
-                           auto leftShiftConstant = B.getIntN(bw, bw-nbitS);
-                           auto lsh = B.CreateShl(dyn_cast<llvm::Value>(I),leftShiftConstant);
-                           auto ashr = B.CreateAShr(lsh, leftShiftConstant);
-                           I->replaceAllUsesWith(ashr);
-                           cast<llvm::Instruction>(lsh)->setOperand(0,I);
+                              auto leftShiftConstant = B.getIntN(bw, bw-nbitS);
+                              auto lsh = B.CreateShl(dyn_cast<llvm::Value>(I),leftShiftConstant);
+                              auto ashr = B.CreateAShr(lsh, leftShiftConstant);
+                              I->replaceAllUsesWith(ashr);
+                              cast<llvm::Instruction>(lsh)->setOperand(0,I);
+                           }
                         }
                      }
                   }
                   ++curInstIterator;
                }
+            }
+            for(auto I : deadList)
+            if (llvm::isInstructionTriviallyDead(I, &TLI))
+               I->eraseFromParent();
+            if(!deadList.empty())
+            {
+               const llvm::TargetTransformInfo &TTI =
+                   modulePass->getAnalysis<llvm::TargetTransformInfoWrapperPass>().getTTI(F);
+               for (llvm::Function::iterator BBIt = F.begin(); BBIt != F.end(); )
+                  llvm::SimplifyInstructionsInBlock(&*BBIt++, &TLI);
+               for (llvm::Function::iterator BBIt = F.begin(); BBIt != F.end();)
+                  llvm::SimplifyCFG(&*BBIt++, TTI, 1);
+               llvm::removeUnreachableBlocks(F);
             }
          }
       }
@@ -5135,6 +5187,30 @@ namespace clang
       }
 #endif
       computeValueRange(M);
+#ifdef DEBUG_RA
+         for (llvm::Function &F : M)
+         {
+            llvm::errs() << "Analysis for function: " << F.getName() << "\n";
+            for (llvm::BasicBlock &BB : F)
+            {
+               for (llvm::Instruction &I : BB)
+               {
+                  const llvm::Value *V = &I;
+                  RangeAnalysis::Range R = RA->getRange(V);
+                  if (!R.isUnknown())
+                  {
+                     R.print(llvm::errs());
+                     llvm::errs() << I << "\n";
+                  }
+                  else
+                  {
+                     llvm::errs() << "unknown range ";
+                     llvm::errs() << I << "\n";
+                  }
+               }
+            }
+         }
+#endif
       ValueRangeOptimizer(M);
       for(const auto& globalVar : M.getGlobalList())
       {
@@ -5155,9 +5231,9 @@ namespace clang
             }
             else
             {
-#if PRINT_DBG_MSG
+//#if PRINT_DBG_MSG
                llvm::errs() << "Found function: " << fun.getName() << "|" << ValueTyNames[fun.getValueID()] << "\n";
-#endif
+//#endif
                SerializeGimpleGlobalTreeNode(assignCodeAuto(&fun));
             }
          }

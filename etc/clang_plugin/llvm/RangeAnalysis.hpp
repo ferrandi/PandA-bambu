@@ -33,10 +33,10 @@
 /**
   * The starting file was taken from this project:
   *  https://code.google.com/archive/p/range-analysis/
-  * The code went trough a deep revision and change to port to a recent version of LLVM and to extend its functionality.
-  * In particular, it has been added:
+  * The code went through a deep revision and change to port to a recent version of LLVM and to extend its functionality.
+  * In particular, it has been:
   * - Added anti range support
-  * - Redesigned many Range operatoris to take into account wrapping and to
+  * - Redesigned many Range operations to take into account wrapping and to
   *   improve the reductions performed
   * - Integrated the LLVM lazy value range analysis.
   * - Added support to range value propagation of load from constant arrays.
@@ -45,7 +45,7 @@
   * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
   *
 //===-------------------------- RangeAnalysis.h ---------------------------===//
-//===-----Performs the Range analysis of the variables of the function-----===//
+//===-----        Performs the Range analysis of the variables        -----===//
 //
 //					 The LLVM Compiler Infrastructure
 //
@@ -97,6 +97,7 @@
 #include "llvm/ADT/StringRef.h"
 #include "llvm/IR/BasicBlock.h"
 #include "llvm/IR/InstrTypes.h"
+#include "llvm/IR/ValueMap.h"
 #include "llvm/Pass.h"
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/Support/Timer.h"
@@ -126,7 +127,7 @@ namespace RangeAnalysis {
 //#define SCC_DEBUG
 
    // Comment the line below to disable the dot printing of Constraint Graphs
-#define DEBUG_RA
+//#define DEBUG_RA
 
    // Used to enable the stats computing. Comment the below line to disable it
 //#define STATS
@@ -177,7 +178,7 @@ namespace RangeAnalysis {
          llvm::APInt l;
          /// The upper bound of the range.
          llvm::APInt u;
-         /// the range bitwidth
+         /// the range bit-width
          unsigned bw;
          /// the range type
          RangeType type;
@@ -227,6 +228,7 @@ namespace RangeAnalysis {
          Range &operator=(Range &&) = default;
 
          bool isMaxRange() const;
+         bool isConstant() const;
          void print(llvm::raw_ostream &OS) const;
          Range add(const Range &other) const;
          Range sub(const Range &other) const;
@@ -240,10 +242,17 @@ namespace RangeAnalysis {
          Range ashr(const Range &other) const;
          Range And(const Range &other) const;
          Range Or(const Range &other) const;
-         Range Or_conservative(const Range &other) const;
          Range Xor(const Range &other) const;
          Range Eq(const Range &other, unsigned bw) const;
          Range Ne(const Range &other, unsigned bw) const;
+         Range Ugt(const Range &other, unsigned bw) const;
+         Range Uge(const Range &other, unsigned bw) const;
+         Range Ult(const Range &other, unsigned bw) const;
+         Range Ule(const Range &other, unsigned bw) const;
+         Range Sgt(const Range &other, unsigned bw) const;
+         Range Sge(const Range &other, unsigned bw) const;
+         Range Slt(const Range &other, unsigned bw) const;
+         Range Sle(const Range &other, unsigned bw) const;
          Range truncate(unsigned bitwidth) const;
          Range sextOrTrunc(unsigned bitwidth) const;
          Range zextOrTrunc(unsigned from_bitwidth) const;
@@ -258,14 +267,14 @@ namespace RangeAnalysis {
    class VarNode
    {
       private:
-         // The program variable which is represented.
+         /// The program variable
          const llvm::Value *V;
-         // if not null refers to a global variable object or to an AllocaInst
+         /// if not null refers to a global variable object or to an AllocaInst
          const llvm::Value *GV;
-         // A Range associated to the variable, that is,
-         // its interval inferred by the analysis.
+         /// A Range associated to the variable, that is,
+         /// its interval inferred by the analysis.
          Range interval;
-         // Used by the crop meet operator
+         /// Used by the crop meet operator
          char abstractState;
 
       public:
@@ -330,11 +339,11 @@ namespace RangeAnalysis {
    class SymbInterval : public BasicInterval
    {
       private:
-         // The bound. It is a node which limits the interval of this range.
+         /// The bound. It is a node which limits the interval of this range.
          const llvm::Value *bound;
-         // The predicate of the operation in which this interval takes part.
-         // It is useful to know how we can constrain this interval
-         // after we fix the intersects.
+         /// The predicate of the operation in which this interval takes part.
+         /// It is useful to know how we can constrain this interval
+         /// after we fix the intersects.
          llvm::CmpInst::Predicate pred;
 
       public:
@@ -365,10 +374,10 @@ namespace RangeAnalysis {
    class BasicOp
    {
       private:
-         // The range of the operation. Each operation has a range associated to it.
-         // This range is obtained by inspecting the branches in the source program
-         // and extracting its condition and intervals.
-         BasicInterval *intersect;
+         /// The range of the operation. Each operation has a range associated to it.
+         /// This range is obtained by inspecting the branches in the source program
+         /// and extracting its condition and intervals.
+         std::shared_ptr<BasicInterval> intersect;
          // The target of the operation, that is, the node which
          // will store the result of the operation.
          VarNode *sink;
@@ -378,7 +387,7 @@ namespace RangeAnalysis {
       protected:
          /// We do not want people creating objects of this class,
          /// but we want to inherit from it.
-         BasicOp(BasicInterval *intersect, VarNode *sink, const llvm::Instruction *inst);
+         BasicOp(std::shared_ptr<BasicInterval> intersect, VarNode *sink, const llvm::Instruction *inst);
 
       public:
          enum class OperationId
@@ -413,7 +422,7 @@ namespace RangeAnalysis {
          /// Replace symbolic intervals with hard-wired constants.
          void fixIntersects(VarNode *V);
          /// Returns the range of the operation.
-         BasicInterval *getIntersect() const { return intersect; }
+         std::shared_ptr<BasicInterval> getIntersect() const { return intersect; }
          /// Changes the interval of the operation.
          void setIntersect(const Range &newIntersect) {this->intersect->setRange(newIntersect);}
          /// Returns the target of the operation, that is,
@@ -428,7 +437,7 @@ namespace RangeAnalysis {
    };
 
    /// A constraint like sink = operation(source) \intersec [l, u]
-   /// Examples: unary instructions such as truncations, sign extensions,
+   /// Examples: unary instructions such as truncation, sign extensions,
    /// zero extensions.
    class UnaryOp : public BasicOp
    {
@@ -442,7 +451,7 @@ namespace RangeAnalysis {
          Range eval() override;
 
       public:
-         UnaryOp(BasicInterval *intersect, VarNode *sink, const llvm::Instruction *inst,
+         UnaryOp(std::shared_ptr<BasicInterval> intersect, VarNode *sink, const llvm::Instruction *inst,
                  VarNode *source, unsigned int opcode);
          ~UnaryOp() override;
          UnaryOp(const UnaryOp &) = delete;
@@ -480,7 +489,7 @@ namespace RangeAnalysis {
 
 
       public:
-         SigmaOp(BasicInterval *intersect, VarNode *sink, const llvm::Instruction *inst,
+         SigmaOp(std::shared_ptr<BasicInterval> intersect, VarNode *sink, const llvm::Instruction *inst,
                  VarNode *source, VarNode *SymbolicSource, unsigned int opcode);
          ~SigmaOp() override = default;
          SigmaOp(const SigmaOp &) = delete;
@@ -539,7 +548,7 @@ namespace RangeAnalysis {
          Range eval() override;
 
       public:
-         LoadOp(BasicInterval *intersect, VarNode *sink, const llvm::Instruction *inst);
+         LoadOp(std::shared_ptr<BasicInterval> intersect, VarNode *sink, const llvm::Instruction *inst);
          ~LoadOp() override;
          LoadOp(const LoadOp &) = delete;
          LoadOp(LoadOp &&) = delete;
@@ -566,7 +575,7 @@ namespace RangeAnalysis {
       private:
          /// reference to the memory access operand
          llvm::SmallVector<const VarNode *, 2> sources;
-         /// union of the values at which the variable is iniialized
+         /// union of the values at which the variable is initialized
          Range init;
          Range eval() override;
 
@@ -604,7 +613,7 @@ namespace RangeAnalysis {
          Range eval() override;
 
       public:
-         PhiOp(BasicInterval *intersect, VarNode *sink, const llvm::Instruction *inst);
+         PhiOp(std::shared_ptr<BasicInterval> intersect, VarNode *sink, const llvm::Instruction *inst);
          ~PhiOp() override = default;
          PhiOp(const PhiOp &) = delete;
          PhiOp(PhiOp &&) = delete;
@@ -643,7 +652,7 @@ namespace RangeAnalysis {
          Range eval() override;
 
       public:
-         BinaryOp(BasicInterval *intersect, VarNode *sink, const llvm::Instruction *inst,
+         BinaryOp(std::shared_ptr<BasicInterval> intersect, VarNode *sink, const llvm::Instruction *inst,
                   VarNode *source1, VarNode *source2, unsigned int opcode);
          ~BinaryOp() override = default;
          BinaryOp(const BinaryOp &) = delete;
@@ -684,7 +693,7 @@ namespace RangeAnalysis {
          Range eval() override;
 
       public:
-         TernaryOp(BasicInterval *intersect, VarNode *sink, const llvm::Instruction *inst,
+         TernaryOp(std::shared_ptr<BasicInterval> intersect, VarNode *sink, const llvm::Instruction *inst,
                    VarNode *source1, VarNode *source2, VarNode *source3,
                    unsigned int opcode);
          ~TernaryOp() override = default;
@@ -722,14 +731,15 @@ namespace RangeAnalysis {
          const llvm::Value *V;
          const llvm::BasicBlock *BBTrue;
          const llvm::BasicBlock *BBFalse;
-         BasicInterval *ItvT;
-         BasicInterval *ItvF;
+         std::shared_ptr<BasicInterval> ItvT;
+         std::shared_ptr<BasicInterval> ItvF;
 
       public:
          ValueBranchMap(const llvm::Value *V, const llvm::BasicBlock *BBTrue,
-                        const llvm::BasicBlock *BBFalse, BasicInterval *ItvT,
-                        BasicInterval *ItvF);
-         ~ValueBranchMap();
+                        const llvm::BasicBlock *BBFalse, std::shared_ptr<BasicInterval>ItvT,
+                        std::shared_ptr<BasicInterval> ItvF)
+            : V(V), BBTrue(BBTrue), BBFalse(BBFalse), ItvT(ItvT), ItvF(ItvF) {}
+         ~ValueBranchMap() = default;
          ValueBranchMap(const ValueBranchMap &) = default;
          ValueBranchMap(ValueBranchMap &&) = default;
          ValueBranchMap &operator=(const ValueBranchMap &) = delete;
@@ -740,17 +750,15 @@ namespace RangeAnalysis {
          /// Get the "true side" of the branch
          const llvm::BasicBlock *getBBTrue() const { return BBTrue; }
          /// Get the interval associated to the true side of the branch
-         BasicInterval *getItvT() const { return ItvT; }
+         std::shared_ptr<BasicInterval> getItvT() const { return ItvT; }
          /// Get the interval associated to the false side of the branch
-         BasicInterval *getItvF() const { return ItvF; }
+         std::shared_ptr<BasicInterval> getItvF() const { return ItvF; }
          /// Get the value associated to the branch.
          const llvm::Value *getV() const { return V; }
          /// Change the interval associated to the true side of the branch
-         void setItvT(BasicInterval *Itv) { this->ItvT = Itv; }
+         void setItvT(std::shared_ptr<BasicInterval> Itv) { this->ItvT = Itv; }
          /// Change the interval associated to the false side of the branch
-         void setItvF(BasicInterval *Itv) { this->ItvF = Itv; }
-         /// Clear memory allocated
-         void clear();
+         void setItvF(std::shared_ptr<BasicInterval> Itv) { this->ItvF = Itv; }
    };
 
    /// This is pretty much the same thing as ValueBranchMap
@@ -759,13 +767,13 @@ namespace RangeAnalysis {
    {
       private:
          const llvm::Value *V;
-         llvm::SmallVector<std::pair<BasicInterval *, const llvm::BasicBlock *>, 4> BBsuccs;
+         llvm::SmallVector<std::pair<std::shared_ptr<BasicInterval>, const llvm::BasicBlock *>, 4> BBsuccs;
 
       public:
          ValueSwitchMap(
                const llvm::Value *V,
-               llvm::SmallVector<std::pair<BasicInterval *, const llvm::BasicBlock *>, 4> &BBsuccs);
-         ~ValueSwitchMap();
+               llvm::SmallVector<std::pair<std::shared_ptr<BasicInterval>, const llvm::BasicBlock *>, 4> &BBsuccs): V(V), BBsuccs(BBsuccs) {}
+         ~ValueSwitchMap() = default;
          ValueSwitchMap(const ValueSwitchMap &) = default;
          ValueSwitchMap(ValueSwitchMap &&) = default;
          ValueSwitchMap &operator=(const ValueSwitchMap &) = delete;
@@ -774,17 +782,15 @@ namespace RangeAnalysis {
          /// Get the corresponding basic block
          const llvm::BasicBlock *getBB(unsigned idx) const { return BBsuccs[idx].second; }
          /// Get the interval associated to the switch case idx
-         BasicInterval *getItv(unsigned idx) const { return BBsuccs[idx].first; }
+         std::shared_ptr<BasicInterval> getItv(unsigned idx) const { return BBsuccs[idx].first; }
          // Get how many cases this switch has
          unsigned getNumOfCases() const { return BBsuccs.size(); }
          /// Get the value associated to the switch.
          const llvm::Value *getV() const { return V; }
          /// Change the interval associated to the true side of the branch
-         void setItv(unsigned idx, BasicInterval *Itv) {
+         void setItv(unsigned idx, std::shared_ptr<BasicInterval> Itv) {
             this->BBsuccs[idx].first = Itv;
          }
-         /// Clear memory allocated
-         void clear();
    };
 
    /// This class can be used to gather statistics on running time
@@ -913,21 +919,21 @@ namespace RangeAnalysis {
          llvm::SmallVector<llvm::APInt, 2> constantvector;
 
          /// Adds a BinaryOp in the graph.
-         void addBinaryOp(llvm::Instruction *I, llvm::ModulePass *modulePass, const llvm::DataLayout *DL);
+         void addBinaryOp(const llvm::Instruction *I, llvm::ModulePass *modulePass, const llvm::DataLayout *DL);
          /// Adds a TernaryOp in the graph.
-         void addTernaryOp(llvm::Instruction *I, llvm::ModulePass *modulePass, const llvm::DataLayout *DL);
+         void addTernaryOp(const llvm::Instruction *I, llvm::ModulePass *modulePass, const llvm::DataLayout *DL);
          /// Adds a PhiOp in the graph.
-         void addPhiOp(llvm::PHINode *Phi, llvm::ModulePass *modulePass, const llvm::DataLayout* DL);
+         void addPhiOp(const llvm::PHINode *Phi, llvm::ModulePass *modulePass, const llvm::DataLayout* DL);
          // Adds a SigmaOp to the graph.
-         void addSigmaOp(llvm::PHINode *Sigma, llvm::ModulePass *modulePass, const llvm::DataLayout* DL);
+         void addSigmaOp(const llvm::PHINode *Sigma, llvm::ModulePass *modulePass, const llvm::DataLayout* DL);
          /// Add LoadOp in the graph
-         void addLoadOp(llvm::LoadInst *LI, Andersen_AA *PtoSets_AA, bool arePointersResolved, llvm::ModulePass *modulePass, const llvm::DataLayout* DL, llvm::DenseMap<llvm::Function*, llvm::SmallPtrSet<llvm::Instruction*,6>>&Function2Store);
+         void addLoadOp(const llvm::LoadInst *LI, Andersen_AA *PtoSets_AA, bool arePointersResolved, llvm::ModulePass *modulePass, const llvm::DataLayout* DL, llvm::DenseMap<const llvm::Function*, llvm::SmallPtrSet<const llvm::Instruction*,6>>&Function2Store);
          /// Add StoreOp in the graph
-         void addStoreOp(llvm::StoreInst *SI, Andersen_AA *PtoSets_AA, bool arePointersResolved, llvm::ModulePass *modulePass, llvm::DenseMap<llvm::Function*, llvm::SmallPtrSet<llvm::Instruction*,6>>&Function2Store);
+         void addStoreOp(const llvm::StoreInst *SI, Andersen_AA *PtoSets_AA, bool arePointersResolved, llvm::ModulePass *modulePass, llvm::DenseMap<const llvm::Function*, llvm::SmallPtrSet<const llvm::Instruction*,6>>&Function2Store);
 
 
          /// Takes an instruction and creates an operation.
-         void buildOperations(llvm::Instruction *I, llvm::ModulePass *modulePass, const llvm::DataLayout *DL, Andersen_AA * PtoSets_AA, bool arePointersResolved, llvm::DenseMap<llvm::Function*, llvm::SmallPtrSet<llvm::Instruction*,6>>&Function2Store);
+         void buildOperations(const llvm::Instruction *I, llvm::ModulePass *modulePass, const llvm::DataLayout *DL, Andersen_AA * PtoSets_AA, bool arePointersResolved, llvm::DenseMap<const llvm::Function*, llvm::SmallPtrSet<const llvm::Instruction*,6>>&Function2Store);
          void buildValueBranchMap(const llvm::BranchInst *br);
          void buildValueSwitchMap(const llvm::SwitchInst *sw);
          void buildValueMaps(const llvm::Function &F);
@@ -941,7 +947,7 @@ namespace RangeAnalysis {
                                             const llvm::APInt &val);
          void buildConstantVector(const llvm::SmallPtrSet<VarNode *, 32> &component,
                                   const UseMap &compusemap);
-         llvm::SmallPtrSet<const llvm::Value *, 6> ComputeConflictingStores(llvm::StoreInst *SI, const llvm::Value* GV, llvm::Instruction*instr, Andersen_AA * PtoSets_AA, llvm::DenseMap<llvm::Function*, llvm::SmallPtrSet<llvm::Instruction*,6>>&Function2Store,llvm::ModulePass *modulePass);
+         llvm::SmallPtrSet<const llvm::Value *, 6> ComputeConflictingStores(const llvm::StoreInst *SI, const llvm::Value* GV, const llvm::Instruction*instr, Andersen_AA * PtoSets_AA, llvm::DenseMap<const llvm::Function*, llvm::SmallPtrSet<const llvm::Instruction*,6>>&Function2Store,llvm::ModulePass *modulePass);
 
       protected:
 
@@ -972,9 +978,9 @@ namespace RangeAnalysis {
          DefMap *getDefMap() { return &defMap; }
          UseMap *getUseMap() { return &useMap; }
          /// Adds an UnaryOp to the graph.
-         void addUnaryOp(llvm::Instruction *I, llvm::ModulePass *modulePass, const llvm::DataLayout *DL);
+         void addUnaryOp(const llvm::Instruction *I, llvm::ModulePass *modulePass, const llvm::DataLayout *DL);
          /// Iterates through all instructions in the function and builds the graph.
-         void buildGraph(llvm::Function &F, llvm::ModulePass *modulePass, const llvm::DataLayout *DL, Andersen_AA * PtoSets_AA, bool arePointersResolved, llvm::DenseMap<llvm::Function*, llvm::SmallPtrSet<llvm::Instruction*,6>>&Function2Store);
+         void buildGraph(const llvm::Function &F, llvm::ModulePass *modulePass, const llvm::DataLayout *DL, Andersen_AA * PtoSets_AA, bool arePointersResolved, llvm::DenseMap<const llvm::Function*, llvm::SmallPtrSet<const llvm::Instruction*,6>>&Function2Store);
          void buildVarNodes();
          void buildSymbolicIntersectMap();
          UseMap buildUseMap(const llvm::SmallPtrSet<VarNode *, 32> &component);
@@ -989,9 +995,7 @@ namespace RangeAnalysis {
          void generateActivesVars(const llvm::SmallPtrSet<VarNode *, 32> &component,
                                   llvm::DenseSet<eValue> &activeVars);
 
-         /// Releases the memory used by the graph.
-         void clear();
-         /// Prints the content of the graph in dot format. For more informations
+         /// Prints the content of the graph in dot format. For more information
          /// about the dot format, see: http://www.graphviz.org/pdf/dotguide.pdf
          void print(const llvm::Function &F, llvm::raw_ostream &OS) const;
          void printToFile(const llvm::Function &F, const std::string &FileName);
@@ -1076,8 +1080,11 @@ namespace RangeAnalysis {
 
    class RangeAnalysis
    {
+
       protected:
          ConstraintGraph *CG{nullptr};
+         llvm::ValueMap<const llvm::Value*,Range> ranges;
+         virtual void finalizeRangeAnalysis(const llvm::Module &M) = 0;
 
       public:
          RangeAnalysis() = default;
@@ -1096,7 +1103,7 @@ namespace RangeAnalysis {
           */
          static unsigned getMaxBitWidth(const llvm::Function &F);
          static void updateConstantIntegers(unsigned maxBitWidth);
-         virtual Range getRange(const llvm::Value *v) = 0;
+         virtual const Range getRange(const llvm::Value *v);
    };
 
 
@@ -1109,13 +1116,12 @@ namespace RangeAnalysis {
          InterProceduralRACropDFSHelper &operator=(const InterProceduralRACropDFSHelper &) = delete;
          InterProceduralRACropDFSHelper(InterProceduralRACropDFSHelper &&) = delete;
          InterProceduralRACropDFSHelper &operator=(InterProceduralRACropDFSHelper &&) = delete;
-         bool runOnModule(llvm::Module &M, llvm::ModulePass *modulePass, Andersen_AA * PtoSets_AA);
-         static unsigned getMaxBitWidth(llvm::Module &M);
-
-         Range getRange(const llvm::Value *v) override;
+         bool runOnModule(const llvm::Module &M, llvm::ModulePass *modulePass, Andersen_AA * PtoSets_AA);
+         static unsigned getMaxBitWidth(const llvm::Module &M);
 
       private:
-         void MatchParametersAndReturnValues(llvm::Function &F, ConstraintGraph &G);
+         void MatchParametersAndReturnValues(const llvm::Function &F, ConstraintGraph &G);
+         void finalizeRangeAnalysis(const llvm::Module &M) override;
    };
 
 
