@@ -87,6 +87,7 @@
 #include <sstream>
 #include <stack>
 #include <utility>
+#include <list>
 #include <system_error>
 
 #include "llvm/ADT/APInt.h"
@@ -424,7 +425,7 @@ namespace RangeAnalysis {
          /// Returns the range of the operation.
          std::shared_ptr<BasicInterval> getIntersect() const { return intersect; }
          /// Changes the interval of the operation.
-         void setIntersect(const Range &newIntersect) {this->intersect->setRange(newIntersect);}
+         void setIntersect(const Range& newIntersect) {this->intersect->setRange(newIntersect);}
          /// Returns the target of the operation, that is,
          /// where the result will be stored.
          const VarNode *getSink() const { return sink; }
@@ -945,26 +946,21 @@ namespace RangeAnalysis {
                                                const llvm::APInt &val);
          llvm::APInt getFirstLessFromVector(const llvm::SmallVector<llvm::APInt, 2> &constantvector,
                                             const llvm::APInt &val);
-         void buildConstantVector(const llvm::SmallPtrSet<VarNode *, 32> &component,
-                                  const UseMap &compusemap);
+         void buildConstantVector(const llvm::SmallPtrSet<VarNode *,32>&component, const UseMap &compusemap);
          llvm::SmallPtrSet<const llvm::Value *, 6> ComputeConflictingStores(const llvm::StoreInst *SI, const llvm::Value* GV, const llvm::Instruction*instr, Andersen_AA * PtoSets_AA, llvm::DenseMap<const llvm::Function*, llvm::SmallPtrSet<const llvm::Instruction*,6>>&Function2Store,llvm::ModulePass *modulePass);
 
       protected:
 
          // Perform the widening and narrowing operations
          void update(const UseMap &compUseMap, llvm::DenseSet<eValue> &actv, bool (*meet)(BasicOp *op, const llvm::SmallVector<llvm::APInt, 2> *constantvector));
-         void update(unsigned nIterations, const UseMap &compUseMap, llvm::DenseSet<eValue> &actv);
 
          virtual void preUpdate(const UseMap &compUseMap,
                                 llvm::DenseSet<eValue> &entryPoints) = 0;
          virtual void posUpdate(const UseMap &compUseMap,
                                 llvm::DenseSet<eValue> &activeVars,
-                                const llvm::SmallPtrSet<VarNode *, 32> *component) = 0;
+                                const llvm::SmallPtrSet<VarNode *,32>*component) = 0;
 
       public:
-         /// I'm doing this because I want to use this analysis in an
-         /// inter-procedural pass. So, I have to receive these data structures as
-         // parameters.
          ConstraintGraph() = default;
          virtual ~ConstraintGraph();
          ConstraintGraph(const ConstraintGraph &) = delete;
@@ -983,17 +979,15 @@ namespace RangeAnalysis {
          void buildGraph(const llvm::Function &F, llvm::ModulePass *modulePass, const llvm::DataLayout *DL, Andersen_AA * PtoSets_AA, bool arePointersResolved, llvm::DenseMap<const llvm::Function*, llvm::SmallPtrSet<const llvm::Instruction*,6>>&Function2Store);
          void buildVarNodes();
          void buildSymbolicIntersectMap();
-         UseMap buildUseMap(const llvm::SmallPtrSet<VarNode *, 32> &component);
-         void propagateToNextSCC(const llvm::SmallPtrSet<VarNode *, 32> &component);
+         UseMap buildUseMap(const llvm::SmallPtrSet<VarNode *,32>&component);
+         void propagateToNextSCC(const llvm::SmallPtrSet<VarNode *,32>&component);
 
          /// Finds the intervals of the variables in the graph.
          void findIntervals();
-         void generateEntryPoints(const llvm::SmallPtrSet<VarNode *, 32> &component,
-                                  llvm::DenseSet<eValue> &entryPoints);
+         void generateEntryPoints(const llvm::SmallPtrSet<VarNode *,32>&component, llvm::DenseSet<eValue> &entryPoints);
          void fixIntersectsSC(VarNode *varNode);
-         void fixIntersects(const llvm::SmallPtrSet<VarNode *, 32> &component);
-         void generateActivesVars(const llvm::SmallPtrSet<VarNode *, 32> &component,
-                                  llvm::DenseSet<eValue> &activeVars);
+         void fixIntersects(const llvm::SmallPtrSet<VarNode *,32>&component);
+         void generateActivesVars(const llvm::SmallPtrSet<VarNode *,32>&component, llvm::DenseSet<eValue> &activeVars);
 
          /// Prints the content of the graph in dot format. For more information
          /// about the dot format, see: http://www.graphviz.org/pdf/dotguide.pdf
@@ -1004,31 +998,32 @@ namespace RangeAnalysis {
             print(F, llvm::dbgs());
             llvm::dbgs() << '\n';
          }
-         void printResultIntervals();
          void computeStats();
          Range getRange(eValue v);
    };
 
-   class Cousot : public ConstraintGraph {
+   class Cousot : public ConstraintGraph
+   {
       private:
          void preUpdate(const UseMap &compUseMap,
                         llvm::DenseSet<eValue> &entryPoints) override;
          void posUpdate(const UseMap &compUseMap,
                         llvm::DenseSet<eValue> &entryPoints,
-                        const llvm::SmallPtrSet<VarNode *, 32> *component) override;
+                        const llvm::SmallPtrSet<VarNode *,32>*component) override;
 
       public:
          Cousot() = default;
    };
 
-   class CropDFS : public ConstraintGraph {
+   class CropDFS : public ConstraintGraph
+   {
       private:
          void preUpdate(const UseMap &compUseMap,
                         llvm::DenseSet<eValue> &entryPoints) override;
          void posUpdate(const UseMap &compUseMap,
                         llvm::DenseSet<eValue> &activeVars,
-                        const llvm::SmallPtrSet<VarNode *, 32> *component) override;
-         void storeAbstractStates(const llvm::SmallPtrSet<VarNode *, 32> &component);
+                        const llvm::SmallPtrSet<VarNode *,32>*component) override;
+         void storeAbstractStates(const llvm::SmallPtrSet<VarNode *,32>&component);
          void crop(const UseMap &compUseMap, BasicOp *op);
 
       public:
@@ -1042,14 +1037,14 @@ namespace RangeAnalysis {
          llvm::DenseMap<eValue, int> dfs;
          llvm::DenseMap<eValue, eValue> root;
          llvm::DenseSet<eValue> inComponent;
-         llvm::DenseMap<eValue, llvm::SmallPtrSet<VarNode *, 32> *> components;
+         llvm::DenseMap<eValue, llvm::SmallPtrSet<VarNode *,32>*> components;
          std::deque<eValue> worklist;
 #ifdef SCC_DEBUG
          bool checkWorklist();
          bool checkComponents();
          bool checkTopologicalSort(UseMap *useMap);
-         bool hasEdge(llvm::SmallPtrSet<VarNode *, 32> *componentFrom,
-                      llvm::SmallPtrSet<VarNode *, 32> *componentTo, UseMap *useMap);
+         bool hasEdge(llvm::SmallPtrSet<VarNode *,32>*componentFrom,
+                      llvm::SmallPtrSet<VarNode *,32>*componentTo, UseMap *useMap);
 #endif
       public:
          Nuutila(VarNodes *varNodes, UseMap *useMap, SymbMap *symbMap);
@@ -1075,7 +1070,7 @@ namespace RangeAnalysis {
          static bool narrow(BasicOp *op, const llvm::SmallVector<llvm::APInt, 2> *constantvector);
          static bool crop(BasicOp *op, const llvm::SmallVector<llvm::APInt, 2> *constantvector);
          static bool growth(BasicOp *op, const llvm::SmallVector<llvm::APInt, 2> *constantvector);
-         static bool fixed(BasicOp *op, const llvm::SmallVector<llvm::APInt, 2> *constantvector);
+         static bool fixed(BasicOp *op);
    };
 
    class RangeAnalysis
@@ -1104,6 +1099,7 @@ namespace RangeAnalysis {
          static unsigned getMaxBitWidth(const llvm::Function &F);
          static void updateConstantIntegers(unsigned maxBitWidth);
          virtual const Range getRange(const llvm::Value *v);
+         virtual void printRanges(llvm::Module &M,llvm::raw_ostream &O);
    };
 
 

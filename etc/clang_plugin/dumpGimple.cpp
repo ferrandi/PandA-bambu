@@ -54,6 +54,7 @@
 #include "llvm/IR/CFG.h"
 #include "llvm/IR/Operator.h"
 #include "llvm/IR/GetElementPtrTypeIterator.h"
+#include "llvm/IR/Verifier.h"
 #include "llvm/Analysis/AssumptionCache.h"
 #include "llvm/Analysis/CFG.h"
 #include "llvm/Analysis/InstructionSimplify.h"
@@ -2952,10 +2953,6 @@ namespace clang
                   llvm::errs() << "Range: <" << varRange.getUnsignedMin().getZExtValue() << "," << varRange.getUnsignedMax().getZExtValue() << "> ";
                inst->print(llvm::errs());
                llvm::errs() << "\n";
-               if(isSigned)
-                  llvm::errs() << varRange.getSignedMin().sextOrTrunc(64).getSExtValue() << " " << varRange.getSignedMax().sextOrTrunc(64).getSExtValue() << "\n";
-               else
-                  llvm::errs() << varRange.getUnsignedMin().zextOrTrunc(64).getZExtValue() << " " << varRange.getUnsignedMax().zextOrTrunc(64).getZExtValue() << "\n";
                assert(isSigned?(varRange.getSignedMin().sextOrTrunc(64).getSExtValue()<=varRange.getSignedMax().sextOrTrunc(64).getSExtValue()):(varRange.getUnsignedMin().zextOrTrunc(64).getZExtValue()<=varRange.getUnsignedMax().zextOrTrunc(64).getZExtValue()));
 #endif
                return assignCodeAuto(llvm::ConstantInt::get(inst->getContext(), (isSigned?varRange.getSignedMin().sextOrTrunc(64):varRange.getUnsignedMin().zextOrTrunc(64))));
@@ -5071,7 +5068,9 @@ namespace clang
 
          for (llvm::Function &F : M)
          {
+#ifdef DEBUG_RA
             llvm::errs() << "ValueRangeOptimizer: Analysis for function: " << F.getName() << "\n";
+#endif
             std::list<llvm::Instruction*> deadList;
             for(auto& BB: F.getBasicBlockList())
             {
@@ -5079,6 +5078,20 @@ namespace clang
                while( curInstIterator != BB.getInstList().end())
                {
                   llvm::Instruction *I = &*curInstIterator;
+                  assert(I->getParent());
+                  if(I->getType()->isVoidTy())
+                  {
+                     ++curInstIterator;
+                     continue;
+                  }
+                  if(I->user_empty())
+                  {
+                     llvm::errs() << "this instruction is not used by anyone: ";
+                     I->print(llvm::errs());
+                     llvm::errs() << "\n";
+                     ++curInstIterator;
+                     continue;
+                  }
                   RangeAnalysis::Range R = RA->getRange(I);
                   if(R.isEmpty())
                   {
@@ -5188,30 +5201,12 @@ namespace clang
 #endif
       computeValueRange(M);
 #ifdef DEBUG_RA
-         for (llvm::Function &F : M)
-         {
-            llvm::errs() << "Analysis for function: " << F.getName() << "\n";
-            for (llvm::BasicBlock &BB : F)
-            {
-               for (llvm::Instruction &I : BB)
-               {
-                  const llvm::Value *V = &I;
-                  RangeAnalysis::Range R = RA->getRange(V);
-                  if (!R.isUnknown())
-                  {
-                     R.print(llvm::errs());
-                     llvm::errs() << I << "\n";
-                  }
-                  else
-                  {
-                     llvm::errs() << "unknown range ";
-                     llvm::errs() << I << "\n";
-                  }
-               }
-            }
-         }
+      assert(!llvm::verifyModule(M,&llvm::errs()));
 #endif
       ValueRangeOptimizer(M);
+#ifdef DEBUG_RA
+      assert(!llvm::verifyModule(M,&llvm::errs()));
+#endif
       for(const auto& globalVar : M.getGlobalList())
       {
 #if PRINT_DBG_MSG
@@ -5231,9 +5226,9 @@ namespace clang
             }
             else
             {
-//#if PRINT_DBG_MSG
+#if PRINT_DBG_MSG
                llvm::errs() << "Found function: " << fun.getName() << "|" << ValueTyNames[fun.getValueID()] << "\n";
-//#endif
+#endif
                SerializeGimpleGlobalTreeNode(assignCodeAuto(&fun));
             }
          }
@@ -5247,30 +5242,7 @@ namespace clang
 #endif
       if(RA)
       {
-#ifdef DEBUG_RA
-         for (llvm::Function &F : M)
-         {
-            llvm::errs() << "Analysis for function: " << F.getName() << "\n";
-            for (llvm::BasicBlock &BB : F)
-            {
-               for (llvm::Instruction &I : BB)
-               {
-                  const llvm::Value *V = &I;
-                  RangeAnalysis::Range R = RA->getRange(V);
-                  if (!R.isUnknown())
-                  {
-                     R.print(llvm::errs());
-                     llvm::errs() << I << "\n";
-                  }
-                  else
-                  {
-                     llvm::errs() << "unknown range ";
-                     llvm::errs() << I << "\n";
-                  }
-               }
-            }
-         }
-#endif
+         RA->printRanges(M,llvm::errs());
          delete RA;
       }
       return res;
