@@ -5084,11 +5084,12 @@ namespace clang
                      ++curInstIterator;
                      continue;
                   }
-                  if(I->user_empty())
+                  if(I->user_empty() && llvm::isInstructionTriviallyDead(I,&TLI))
                   {
                      llvm::errs() << "this instruction is not used by anyone: ";
                      I->print(llvm::errs());
                      llvm::errs() << "\n";
+                     deadList.push_back(I);
                      ++curInstIterator;
                      continue;
                   }
