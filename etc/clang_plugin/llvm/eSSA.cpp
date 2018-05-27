@@ -709,10 +709,10 @@ namespace eSSAInfoClasses {
       };
 
       // Match combinations of conditions.
-      llvm::CmpInst::Predicate Pred;
       bool isAnd = false;
       bool isOr = false;
       llvm::SmallVector<llvm::Value *, 8> CmpOperands;
+      /* llvm::CmpInst::Predicate Pred;
       if (match(BI->getCondition(), m_And(m_Cmp(Pred, llvm::PatternMatch::m_Value(), llvm::PatternMatch::m_Value()),
                                           m_Cmp(Pred, llvm::PatternMatch::m_Value(), llvm::PatternMatch::m_Value()))) ||
           match(BI->getCondition(), m_Or(m_Cmp(Pred, llvm::PatternMatch::m_Value(), llvm::PatternMatch::m_Value()),
@@ -725,7 +725,7 @@ namespace eSSAInfoClasses {
          ConditionsToProcess.push_back(BinOp->getOperand(0));
          ConditionsToProcess.push_back(BinOp->getOperand(1));
          ConditionsToProcess.push_back(BI->getCondition());
-      } else if (llvm::isa<llvm::CmpInst>(BI->getCondition())) {
+      } else */if (llvm::isa<llvm::CmpInst>(BI->getCondition())) {
          ConditionsToProcess.push_back(BI->getCondition());
       }
       for (auto Cond : ConditionsToProcess) {
