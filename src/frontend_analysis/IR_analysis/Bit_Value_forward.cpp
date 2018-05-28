@@ -964,7 +964,7 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign * ga) co
       unsigned int max_bitsize = tree_helper::Size(GET_NODE(ga->op0));
       for (unsigned bit_index = 0;
            bit_index< max_bitsize && arg1_it != arg1_bitstring.rend () && arg2_it != arg2_bitstring.rend ();
-           ++arg1_it, ++arg2_it)
+           ++arg1_it, ++arg2_it, ++bit_index)
       {
          res.push_front(minus_expr_map.at(*arg1_it).at(*arg2_it).at(borrow).back());
          borrow = minus_expr_map.at(*arg1_it).at(*arg2_it).at(borrow).front();
