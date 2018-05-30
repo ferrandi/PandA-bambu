@@ -1035,6 +1035,8 @@ extf_t ExtInfo::get_type(const llvm::Function *F) const
 bool ExtInfo::is_ext(const llvm::Function *F)
 {
    assert(F);
+   if(!F->getBasicBlockList().empty())
+      return false;
    //Check the cache first; everything below is slower.
    auto i_iec= isext_cache.find(F);
    if(i_iec != isext_cache.end())
