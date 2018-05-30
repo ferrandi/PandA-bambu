@@ -5134,7 +5134,7 @@ namespace clang
                            if(nbitS<nbitU && nbitS<bw && !isSignedResult(I))
                            {
                               assert(bw>nbitS);
-                              llvm::errs() << "the value range associated with this instruction could be reduced: ";
+                              llvm::errs() << "the range associated with this unsigned instruction could be reduced with the signed range: ";
                               I->print(llvm::errs());
                               llvm::errs() << " -> " << R.getBitWidth() << " -> " << nbitS << " -> " << nbitU << " -> ";
                               R.print(llvm::errs());
