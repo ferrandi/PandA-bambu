@@ -3402,12 +3402,18 @@ namespace RangeAnalysis {
                auto ROM = cast<llvm::GlobalVariable>(varValue);
                auto init_value = ROM->getInitializer();
                auto ivid = init_value->getValueID();
-               if(ivid==llvm::Value::ConstantArrayVal || ivid==llvm::Value::ConstantDataArrayVal  || ivid==llvm::Value::ConstantDataVectorVal)
+               if(ivid==llvm::Value::ConstantArrayVal ||
+                     ivid==llvm::Value::ConstantDataArrayVal  ||
+                     ivid==llvm::Value::ConstantDataVectorVal ||
+                     ivid==llvm::Value::ConstantAggregateZeroVal)
                {
                   res = res.unionWith(getLLVM_range(init_value));
                }
                else
+               {
+                  init_value->print(llvm::errs(),true);
                   llvm_unreachable("unexpected condition");
+               }
             }
             intersection = res;
 #endif
