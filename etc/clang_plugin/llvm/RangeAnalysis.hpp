@@ -289,12 +289,12 @@ namespace RangeAnalysis {
          /// Initializes the value of the node.
          void init(bool outside);
          /// Returns the range of the variable represented by this node.
-         const Range& getRange() const { return interval; }
+         const Range getRange() const { return interval; }
          /// Returns the variable represented by this node.
          eValue getValue() const { return std::make_pair(V,GV); }
          unsigned int getBitWidth() const {return interval.getBitWidth();}
          /// Changes the status of the variable represented by this node.
-         void setRange(const Range &newInterval) {interval = newInterval;}
+         void setRange(const Range newInterval) {interval = newInterval;}
 
          /// Pretty print.
          void print(llvm::raw_ostream &OS) const;
@@ -953,6 +953,7 @@ namespace RangeAnalysis {
 
          // Perform the widening and narrowing operations
          void update(const UseMap &compUseMap, llvm::DenseSet<eValue> &actv, bool (*meet)(BasicOp *op, const llvm::SmallVector<llvm::APInt, 2> *constantvector));
+         void update(unsigned nIterations, const UseMap &compUseMap, llvm::DenseSet<eValue> &actv);
 
          virtual void preUpdate(const UseMap &compUseMap,
                                 llvm::DenseSet<eValue> &entryPoints) = 0;

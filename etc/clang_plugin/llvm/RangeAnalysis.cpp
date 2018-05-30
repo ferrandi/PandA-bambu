@@ -236,11 +236,11 @@ namespace RangeAnalysis {
          auto l = CR.getLower();
          auto u = CR.getUpper();
          if(CR.isEmptySet())
-            return Range(Empty,bw,Min,Max);
+            return Range(Empty,bw);
          else if(CR.isSignWrappedSet())
             return Range(Anti,bw,u.sext(MAX_BIT_INT),(l-1).sext(MAX_BIT_INT));
          else if(!CR.isWrappedSet())
-            return Range(Regular,bw,l.zext(MAX_BIT_INT),(u-1).zext(MAX_BIT_INT));
+            return Range(Regular,bw,l.sext(MAX_BIT_INT),(u-1).sext(MAX_BIT_INT));
          else if(!CR.isSignWrappedSet())
             return Range(Regular,bw,l.sext(MAX_BIT_INT),(u-1).sext(MAX_BIT_INT));
          else
@@ -334,7 +334,7 @@ namespace RangeAnalysis {
             {
                const llvm::ConstantArray* val = cast<const llvm::ConstantArray>(CV);
                auto bw = val->getType()->getArrayElementType()->getPrimitiveSizeInBits();
-               Range res(Empty,bw,Min,Max);
+               Range res(Empty,bw);
                for(unsigned index = 0; index < val->getNumOperands(); ++index)
                {
                   auto elmnt = val->getOperand(index);
@@ -349,7 +349,7 @@ namespace RangeAnalysis {
             {
                const llvm::ConstantDataSequential* val = cast<const llvm::ConstantDataSequential>(CV);
                auto bw = val->getElementType()->getPrimitiveSizeInBits();
-               Range res(Empty,bw,Min,Max);
+               Range res(Empty,bw);
                for(unsigned index = 0; index < val->getNumElements(); ++index)
                {
                   auto elmnt = val->getElementAsConstant(index);
@@ -517,11 +517,17 @@ namespace RangeAnalysis {
             }
          }
       }
+      else if((lb-1).eq(ub))
+      {
+         type = Regular;
+         l=Min;
+         u=Max;
+      }
       else if (lb.sgt(ub))
       {
-         type = Empty;
-         l = Min;
-         u = Max;
+         type = Anti;
+         l = ub+1;
+         u = lb-1;
       }
       else if(type == Regular && bw==1)
       {
@@ -631,6 +637,8 @@ namespace RangeAnalysis {
    {
       if(type!=Anti)
       {
+         if(l.eq(u))
+            return APInt(bw,u.trunc(bw).getZExtValue(),false);
          auto maxU = APInt::getMaxValue(bw);
          if (maxU.getBitWidth() < MAX_BIT_INT)
             maxU = maxU.zext(MAX_BIT_INT);
@@ -646,7 +654,9 @@ namespace RangeAnalysis {
    {
       if(type!=Anti)
       {
-         if(l.slt(Zero))
+         if(l.eq(u))
+            return APInt(bw,l.trunc(bw).getZExtValue(),false);
+         else if(l.slt(Zero))
             return APInt(bw,0,false);
          else
             return APInt(bw,l.trunc(bw).getZExtValue(),false);
@@ -684,12 +694,30 @@ namespace RangeAnalysis {
          auto u = antiThis.getUpper();
          auto ol = other.getLower();
          if(ol.sge(Max-u))
-            return Range(Regular,getBitWidth(),Min,Max);
+            return Range(Regular,getBitWidth());
          else
             return Range(Anti,getBitWidth(),l+ol,u+ol);
       }
       if(this->isAnti() || other.isAnti())
-         return Range(Regular,getBitWidth(),Min,Max);
+         return Range(Regular,getBitWidth());
+      if(other.isConstant())
+      {
+         auto l = this->getLower();
+         auto u = this->getUpper();
+         auto ol = other.getLower();
+         if(l.eq(Min))
+         {
+            assert(u.ne(Max));
+            return Range(Regular,getBitWidth(),l,u+ol);
+         }
+         else if(u.eq(Max))
+         {
+            assert(l.ne(Min));
+            return Range(Regular,getBitWidth(),l+ol,u);
+         }
+         else
+            return Range(Regular,getBitWidth(),l+ol,u+ol);
+      }
 
       auto this_min = getSignedMin();
       auto this_max = getSignedMax();
@@ -708,11 +736,11 @@ namespace RangeAnalysis {
       auto AddU = thisUR.add(otherUR);
       auto AddS = thisR.add(otherR);
       if(AddU.isFullSet() && AddS.isFullSet())
-         return Range(Regular, getBitWidth(), Min, Max);
+         return Range(Regular, getBitWidth());
       else if(AddU.isFullSet())
-         return Range(Regular, getBitWidth(), AddS.getSignedMin().sext(MAX_BIT_INT), (AddS.getSignedMax()).sext(MAX_BIT_INT));
+         return CR2R(AddS,getBitWidth());
       else if(AddS.isFullSet())
-         return Range(Regular, getBitWidth(), AddU.getUnsignedMin().zext(MAX_BIT_INT), AddU.getUnsignedMax().sext(MAX_BIT_INT));
+         return CR2R(AddU,getBitWidth());
       else
          return BestRange(AddU,AddS,getBitWidth());
    }
@@ -730,12 +758,50 @@ namespace RangeAnalysis {
          auto u = antiThis.getUpper();
          auto ol = other.getLower();
          if(l.sle(Min+ol))
-            return Range(Regular,getBitWidth(),Min,Max);
+            return Range(Regular,getBitWidth());
          else
             return Range(Anti,getBitWidth(),l-ol,u-ol);
       }
       if(this->isAnti() || other.isAnti())
-         return Range(Regular,getBitWidth(),Min,Max);
+         return Range(Regular,getBitWidth());
+      if(other.isConstant())
+      {
+         auto l = this->getLower();
+         auto u = this->getUpper();
+         auto ol = other.getLower();
+         if(l.eq(Min))
+         {
+            assert(u.ne(Max));
+            auto bw = getBitWidth();
+            auto minValue = APInt::getSignedMinValue(bw).sext(MAX_BIT_INT);
+            auto upper = u-ol;
+            if(minValue.sgt(upper))
+               return Range(Regular,bw);
+            else
+               return Range(Regular,bw,l,upper);
+         }
+         else if(u.eq(Max))
+         {
+            assert(l.ne(Min));
+            auto bw = getBitWidth();
+            auto maxValue = APInt::getSignedMaxValue(bw).sext(MAX_BIT_INT);
+            auto lower = l-ol;
+            if(maxValue.slt(lower))
+               return Range(Regular,bw);
+            else
+               return Range(Regular,getBitWidth(),l-ol,u);
+         }
+         else
+         {
+            auto bw = getBitWidth();
+            auto lower = (l-ol).sextOrTrunc(bw).sext(MAX_BIT_INT);
+            auto upper = (u-ol).sextOrTrunc(bw).sext(MAX_BIT_INT);
+            if(lower.sle(upper))
+               return Range(Regular,bw,lower,upper);
+            else
+               return Range(Anti,bw,upper+1,lower-1);
+         }
+      }
 
       auto this_min = getSignedMin();
       auto this_max = getSignedMax();
@@ -754,17 +820,11 @@ namespace RangeAnalysis {
       auto SubU = thisUR.sub(otherUR);
       auto SubS = thisR.sub(otherR);
       if(SubU.isFullSet() && SubS.isFullSet())
-         return Range(Regular, getBitWidth(), Min, Max);
+         return Range(Regular, getBitWidth());
       else if(SubU.isFullSet())
-      {
-         assert(SubS.getSignedMin().sext(MAX_BIT_INT).sle((SubS.getSignedMax()).sext(MAX_BIT_INT)));
-         return Range(Regular, getBitWidth(), SubS.getSignedMin().sext(MAX_BIT_INT), (SubS.getSignedMax()).sext(MAX_BIT_INT));
-      }
+         return CR2R(SubS,getBitWidth());
       else if(SubS.isFullSet())
-      {
-         assert(SubU.getUnsignedMin().zext(MAX_BIT_INT).ule(SubU.getUnsignedMax().zext(MAX_BIT_INT)));
-         return Range(Regular, getBitWidth(), SubU.getUnsignedMin().zext(MAX_BIT_INT), SubU.getUnsignedMax().sext(MAX_BIT_INT));
-      }
+         return CR2R(SubU,getBitWidth());
       else
          return BestRange(SubU,SubS,getBitWidth());
    }
@@ -776,7 +836,7 @@ namespace RangeAnalysis {
       if (other.isEmpty()||other.isUnknown()||other.isMaxRange())
          return other;
       if(this->isAnti() || other.isAnti())
-         return Range(Regular,getBitWidth(),Min,Max);
+         return Range(Regular,getBitWidth());
 
       // Multiplication is signedness-independent. However different ranges can be
       // obtained depending on how the input ranges are treated. These different
@@ -868,7 +928,7 @@ namespace RangeAnalysis {
       if (other.isEmpty()||other.isUnknown())
          return other;
       if(this->isAnti())
-         return Range(Regular,getBitWidth(),Min,Max);
+         return Range(Regular,getBitWidth());
 
       const APInt &a = this->getLower();
       const APInt &b = this->getUpper();
@@ -882,12 +942,12 @@ namespace RangeAnalysis {
          if(d1.eq(Zero))
             d1 = -One;
          else if(d1.sgt(Zero))
-            return Range(Regular,getBitWidth(),Min,Max);///could be improved
+            return Range(Regular,getBitWidth());///could be improved
          c2 = antiRange.getUpper()+1;
          if(c2.eq(Zero))
             c2 = One;
          else if(c2.slt(Zero))
-            return Range(Regular,getBitWidth(),Min,Max);///could be improved
+            return Range(Regular,getBitWidth());///could be improved
          d2 = Max;
       }
       else
@@ -943,7 +1003,7 @@ namespace RangeAnalysis {
       if (other.isEmpty()||other.isUnknown())
          return other;
       if(this->isAnti() || other.isAnti())
-         return Range(Regular,getBitWidth(),Min,Max);
+         return Range(Regular,getBitWidth());
 
       const APInt &a = this->getUnsignedMin().zext(MAX_BIT_INT);
       const APInt &b = this->getUnsignedMax().zext(MAX_BIT_INT);
@@ -952,7 +1012,7 @@ namespace RangeAnalysis {
 
       // Deal with mod 0 exception
       if (c.eq(Zero) && d.eq(Zero))
-         return Range(Regular,getBitWidth(),Min,Max);
+         return Range(Regular,getBitWidth());
       else if(c.eq(Zero))
          c = APInt(MAX_BIT_INT,1);
 //      llvm::errs() << "this-urem:";
@@ -997,9 +1057,9 @@ namespace RangeAnalysis {
       if (other.isEmpty()||other.isUnknown())
          return other;
       if(this->isAnti() || other.isAnti())
-         return Range(Regular,getBitWidth(),Min,Max);
+         return Range(Regular,getBitWidth());
       if (other == Range(Regular,other.getBitWidth(),Zero,Zero))
-         return Range(Empty,getBitWidth(),Min,Max);
+         return Range(Empty,getBitWidth());
 
       const APInt &a = this->getLower();
       const APInt &b = this->getUpper();
@@ -1059,7 +1119,7 @@ namespace RangeAnalysis {
          return other;
       auto bw = getBitWidth();
       if(this->isAnti() || other.isAnti())
-         return Range(Regular,bw,Min,Max);
+         return Range(Regular,bw);
 
 //      llvm::errs() << "this-shl:";
 //      this->print(llvm::errs());
@@ -1075,11 +1135,11 @@ namespace RangeAnalysis {
       APInt Prec(MAX_BIT_INT,bw);
 
       if(c.uge(Prec))
-         return Range(Regular,bw,Min,Max);
+         return Range(Regular,bw);
       if(d.uge(Prec))
-         return Range(Regular,bw,Min,Max);
+         return Range(Regular,bw);
       if (a.eq(Min) || b.eq(Max))
-         return Range(Regular,bw,Min,Max);
+         return Range(Regular,bw);
       if(a.eq(b) && c.eq(d)) //constant case
       {
          auto minmax = a.trunc(bw).shl(c.trunc(bw));
@@ -1090,7 +1150,7 @@ namespace RangeAnalysis {
       {
          auto clOnes = a.countLeadingOnes()-(MAX_BIT_INT-getBitWidth());
          if(d.ugt(clOnes)) //overflow
-            return Range(Regular,bw,Min,Max);
+            return Range(Regular,bw);
          else
             return Range(Regular,getBitWidth(), a.shl(d), b.shl(c));
       }
@@ -1099,7 +1159,7 @@ namespace RangeAnalysis {
          auto clOnes = a.countLeadingOnes()-(MAX_BIT_INT-getBitWidth());
          auto clZeros = b.countLeadingZeros()-(MAX_BIT_INT-getBitWidth());
          if(d.ugt(clOnes) || d.ugt(clZeros)) //overflow
-            return Range(Regular,bw,Min,Max);
+            return Range(Regular,bw);
          else
             return Range(Regular,getBitWidth(), a.shl(d), b.shl(d));
       }
@@ -1107,7 +1167,7 @@ namespace RangeAnalysis {
       {
          auto clZeros = b.countLeadingZeros()-(MAX_BIT_INT-getBitWidth());
          if(d.ugt(clZeros)) //overflow
-            return Range(Regular,bw,Min,Max);
+            return Range(Regular,bw);
          else
             return Range(Regular,getBitWidth(), a.shl(c), b.shl(d));
       }
@@ -1354,7 +1414,7 @@ namespace RangeAnalysis {
       if (other.isEmpty()||other.isUnknown())
          return other;
       if(this->isAnti() || other.isAnti())
-         return Range(Regular,getBitWidth(),Min,Max);
+         return Range(Regular,getBitWidth());
 
       const APInt a = this->getLower();
       const APInt b = this->getUpper();
@@ -1362,7 +1422,7 @@ namespace RangeAnalysis {
       const APInt d = other.getUpper();
 
 //      if (a.eq(Min) || b.eq(Max) || c.eq(Min) || d.eq(Max))
-//         return Range(Regular,getBitWidth(),Min,Max);
+//         return Range(Regular,getBitWidth());
 
       unsigned char switchval = 0;
       switchval += (a.isNonNegative() ? 1 : 0);
@@ -1418,7 +1478,7 @@ namespace RangeAnalysis {
             break;
       }
       if (l.eq(Min) || u.eq(Max))
-         return Range(Regular,getBitWidth(),Min,Max);
+         return Range(Regular,getBitWidth());
       auto res = Range(Regular,getBitWidth(),l, u);
 //      llvm::errs() << "Or-res: ";
 //      res.print(llvm::errs());
@@ -1439,7 +1499,7 @@ namespace RangeAnalysis {
       if (other.isEmpty()|| other.isUnknown())
          return other;
       if(this->isAnti() || other.isAnti())
-         return Range(Regular,getBitWidth(),Min,Max);
+         return Range(Regular,getBitWidth());
       const APInt a = this->getLower();
       const APInt b = this->getUpper();
       const APInt c = other.getLower();
@@ -1462,7 +1522,7 @@ namespace RangeAnalysis {
 //         llvm::errs() << "\n";
          return res;
       }
-      return Range(Regular,getBitWidth(),Min,Max);
+      return Range(Regular,getBitWidth());
    }
 
    Range Range::Eq(const Range &other, unsigned bw) const
@@ -1471,6 +1531,12 @@ namespace RangeAnalysis {
          return *this;
       if (other.isEmpty()|| other.isUnknown())
          return other;
+      if(!isAnti()&&!other.isAnti())
+      {
+         if(getLower().eq(Min) || getUpper().eq(Max) ||
+               other.getLower().eq(Min) ||other.getUpper().eq(Max))
+            return Range(Regular,bw,Zero,One);
+      }
       bool areTheyEqual = !this->intersectWith(other).isEmpty();
       auto AntiThis = getAnti(*this);
       auto AntiOther = getAnti(other);
@@ -1493,6 +1559,12 @@ namespace RangeAnalysis {
          return *this;
       if (other.isEmpty()|| other.isUnknown())
          return other;
+      if(!isAnti()&&!other.isAnti())
+      {
+         if(getLower().eq(Min) || getUpper().eq(Max) ||
+               other.getLower().eq(Min) ||other.getUpper().eq(Max))
+            return Range(Regular,bw,Zero,One);
+      }
       bool areTheyEqual = !this->intersectWith(other).isEmpty();
       auto AntiThis = getAnti(*this);
       auto AntiOther = getAnti(other);
@@ -1735,7 +1807,10 @@ namespace RangeAnalysis {
       {
          APInt l = getLower().sgt(other.getLower()) ? getLower() : other.getLower();
          APInt u = getUpper().slt(other.getUpper()) ? getUpper() : other.getUpper();
-         return Range(Regular,getBitWidth(),l,u);
+         if(u.slt(l))
+            return Range(Empty,getBitWidth());
+         else
+            return Range(Regular,getBitWidth(),l,u);
       }
       else if(this->isAnti() && !other.isAnti())
       {
@@ -1745,7 +1820,7 @@ namespace RangeAnalysis {
          if(antil.sle(other.getLower()))
          {
             if(other.getUpper().sle(antiu))
-               return Range(Empty,getBitWidth(),Min,Max);
+               return Range(Empty,getBitWidth());
             APInt l = other.getLower().sgt(antiu) ? other.getLower() : antiu+1;
             APInt u = other.getUpper();
             return Range(Regular,getBitWidth(),l,u);
@@ -1772,7 +1847,7 @@ namespace RangeAnalysis {
          if(antil.sle(this->getLower()))
          {
             if(this->getUpper().sle(antiu))
-               return Range(Empty,getBitWidth(),Min,Max);
+               return Range(Empty,getBitWidth());
             APInt l = this->getLower().sgt(antiu) ? this->getLower() : antiu+1;
             APInt u = this->getUpper();
             return Range(Regular,getBitWidth(),l,u);
@@ -1809,7 +1884,7 @@ namespace RangeAnalysis {
          APInt l = antil_a;
          APInt u = antiu_a.sgt(antiu_b)?antiu_a:antiu_b;
          if(l.eq(Min) && u.eq(Max))
-            return Range(Empty,getBitWidth(),Min,Max);
+            return Range(Empty,getBitWidth());
          else
             return Range(Anti,getBitWidth(),l,u);
       }
@@ -1837,13 +1912,13 @@ namespace RangeAnalysis {
          if(antil.sgt(other.getUpper()) || antiu.slt(other.getLower()))
             return *this;
          else if(antil.sgt(other.getLower()) && antiu.slt(other.getUpper()))
-            return Range(Regular,getBitWidth(),Min,Max);
+            return Range(Regular,getBitWidth());
          else if(antil.sge(other.getLower()) && antiu.sgt(other.getUpper()))
             return Range(Anti,getBitWidth(),other.getUpper()+1,antiu);
          else if(antil.slt(other.getLower()) && antiu.sle(other.getUpper()))
             return Range(Anti,getBitWidth(), antil,other.getLower()-1);
          else
-            return Range(Regular,getBitWidth(),Min,Max); //approximate to the full set
+            return Range(Regular,getBitWidth()); //approximate to the full set
       }
       else if(!this->isAnti() && other.isAnti())
       {
@@ -1855,13 +1930,13 @@ namespace RangeAnalysis {
          if(antil.sgt(this->getUpper()) || antiu.slt(this->getLower()))
             return other;
          else if(antil.sgt(this->getLower()) && antiu.slt(this->getUpper()))
-            return Range(Regular,getBitWidth(),Min,Max);
+            return Range(Regular,getBitWidth());
          else if(antil.sge(this->getLower()) && antiu.sgt(this->getUpper()))
             return Range(Anti,getBitWidth(),this->getUpper()+1,antiu);
          else if(antil.slt(this->getLower()) && antiu.sle(this->getUpper()))
             return Range(Anti,getBitWidth(),antil,this->getLower()-1);
          else
-            return Range(Regular,getBitWidth(),Min,Max); //approximate to the full set
+            return Range(Regular,getBitWidth()); //approximate to the full set
 
       }
       else
@@ -1877,7 +1952,7 @@ namespace RangeAnalysis {
          assert(antil_b.ne(Min));
          assert(antiu_b.ne(Max));
          if(antil_a.sgt(antiu_b) || antiu_a.slt(antil_b))
-            return Range(Regular,getBitWidth(),Min,Max);
+            return Range(Regular,getBitWidth());
          else if(antil_a.sgt(antil_b) && antiu_a.slt(antiu_b))
             return *this;
          else if(antil_b.sgt(antil_a) && antiu_b.slt(antiu_a))
@@ -1893,12 +1968,18 @@ namespace RangeAnalysis {
 
    Range Range::BestRange(const llvm::ConstantRange&UR,const llvm::ConstantRange&SR, unsigned bw) const
    {
+      if(UR.isFullSet() && SR.isFullSet())
+         return Range(Regular,bw);
+      else if(UR.isFullSet())
+         return CR2R(SR,bw);
+      else if(SR.isFullSet())
+         return CR2R(UR,bw);
       auto nbitU = neededBits(UR.getUnsignedMin(), UR.getUnsignedMax(), false);
       auto nbitS = neededBits(SR.getSignedMin(), SR.getSignedMax(), true);
       if(nbitU<nbitS)
-         return Range(Regular,bw,UR.getUnsignedMin().zext(MAX_BIT_INT),UR.getUnsignedMax().zext(MAX_BIT_INT));
+         return CR2R(UR,bw);
       else
-         return Range(Regular,bw,SR.getSignedMin().sext(MAX_BIT_INT),SR.getSignedMax().sext(MAX_BIT_INT));
+         return CR2R(SR,bw);
    }
 
    bool Range::operator==(const Range &other) const
@@ -1963,7 +2044,7 @@ namespace RangeAnalysis {
 
    BasicInterval::BasicInterval(Range range) : range(std::move(range)) {}
 
-   BasicInterval::BasicInterval() : range(Range(Regular,MAX_BIT_INT,Min,Max)) {}
+   BasicInterval::BasicInterval() : range(Range(Regular,MAX_BIT_INT)) {}
 
    // This is a base class, its dtor must be virtual.
    BasicInterval::~BasicInterval() = default;
@@ -1996,21 +2077,47 @@ namespace RangeAnalysis {
          case ICmpInst::ICMP_EQ: // equal
             return Range(Regular,getRange().getBitWidth(),l,u);
          case ICmpInst::ICMP_SLE: // signed less or equal
-            return Range(Regular,getRange().getBitWidth(),lower,u);
-         case ICmpInst::ICMP_SLT: // signed less than
-            if (u != Max)
-               return Range(Regular,getRange().getBitWidth(),lower,u-1);
+            if(lower.sgt(u))
+               return Range(Empty,getRange().getBitWidth());
             else
                return Range(Regular,getRange().getBitWidth(),lower,u);
+         case ICmpInst::ICMP_SLT: // signed less than
+            if (u != Max)
+            {
+               if(lower.sgt(u-1))
+                  return Range(Empty,getRange().getBitWidth());
+               else
+                  return Range(Regular,getRange().getBitWidth(),lower,u-1);
+            }
+            else
+            {
+               if(lower.sgt(u))
+                  return Range(Empty,getRange().getBitWidth());
+               else
+                  return Range(Regular,getRange().getBitWidth(),lower,u);
+            }
          case ICmpInst::ICMP_SGE: // signed greater or equal
-            return Range(Regular,getRange().getBitWidth(),l,upper);
+            if(l.sgt(upper))
+               return Range(Empty,getRange().getBitWidth());
+            else
+               return Range(Regular,getRange().getBitWidth(),l,upper);
          case ICmpInst::ICMP_SGT: // signed greater than
             if (l != Min)
-               return Range(Regular,getRange().getBitWidth(),l+1,upper);
-             else
-               return Range(Regular,getRange().getBitWidth(),l,upper);
+            {
+               if((l+1).sgt(upper))
+                  return Range(Empty,getRange().getBitWidth());
+               else
+                  return Range(Regular,getRange().getBitWidth(),l+1,upper);
+            }
+            else
+            {
+               if((l).sgt(upper))
+                  return Range(Empty,getRange().getBitWidth());
+               else
+                  return Range(Regular,getRange().getBitWidth(),l,upper);
+            }
          default:
-            return Range(Regular,getRange().getBitWidth(),Min,Max);
+            return Range(Regular,getRange().getBitWidth());
       }
       llvm_unreachable("unexpected condition");
    }
@@ -2114,9 +2221,9 @@ namespace RangeAnalysis {
          if (!outside)
          {
             // Initialize with a basic, unknown, interval.
-            this->setRange(Range(Unknown,bw,Min,Max));
+            this->setRange(Range(Unknown,bw));
          } else
-            this->setRange(Range(Regular,bw,Min,Max));
+            this->setRange(Range(Regular,bw));
       }
    }
 
@@ -2193,7 +2300,7 @@ namespace RangeAnalysis {
 
    ControlDep::~ControlDep() = default;
 
-   Range ControlDep::eval() { return Range(Regular,MAX_BIT_INT,Min,Max); }
+   Range ControlDep::eval() { return Range(Regular,MAX_BIT_INT); }
 
    void ControlDep::print(raw_ostream & /*OS*/) const {}
 
@@ -2383,7 +2490,7 @@ namespace RangeAnalysis {
 //         llvm::errs()<< "\n";
       }
       else if (oprnd.isEmpty())
-         result = Range(Empty,bw,Min,Max);
+         result = Range(Empty,bw);
 
       auto test = this->getIntersect()->getRange().isMaxRange();
       if (!test)
@@ -2475,9 +2582,23 @@ namespace RangeAnalysis {
    Range SigmaOp::eval()
    {
       Range result = this->getSource()->getRange();
-      if(SymbolicSource && dyn_cast<SymbInterval>(getIntersect().get()))
-         fixIntersects(SymbolicSource);
-      result = result.intersectWith(getIntersect()->getRange());
+//      llvm::errs() << "SigmaOp: ";
+//      getSink()->print(llvm::errs());
+//      llvm::errs()<<" src=";
+//      result.print(llvm::errs());
+      Range aux = this->getIntersect()->getRange();
+//      llvm::errs() << " aux = ";
+//      aux.print(llvm::errs());
+//      llvm::errs()<<"\n";
+      if(!aux.isUnknown())
+      {
+         Range intersect = result.intersectWith(aux);
+         if(!intersect.isEmpty())
+            result = intersect;
+      }
+//      llvm::errs() << " = ";
+//      result.print(llvm::errs());
+//      llvm::errs()<<"\n";
       return result;
    }
 
@@ -2556,7 +2677,7 @@ namespace RangeAnalysis {
       Range op2 = this->getSource2()->getRange();
       // Instruction bitwidth
       unsigned bw = getSink()->getBitWidth();
-      Range result(Unknown,bw,Min,Max);
+      Range result(Unknown,bw);
 
       // only evaluate if all operands are Regular
       if (op1.isRegular() && op2.isRegular())
@@ -2646,6 +2767,9 @@ namespace RangeAnalysis {
          if (!test)
          {
             Range aux = this->getIntersect()->getRange();
+//            llvm::errs()<< "  aux=";
+//            aux.print(llvm::errs());
+//            llvm::errs()<< "\n";
             Range intersect = result.intersectWith(aux);
             if(!intersect.isEmpty())
                result = intersect;
@@ -2654,7 +2778,7 @@ namespace RangeAnalysis {
       else
       {
          if (op1.isEmpty() || op2.isEmpty())
-            result = Range(Empty,bw,Min,Max);
+            result = Range(Empty,bw);
       }
       return result;
    }
@@ -2819,7 +2943,7 @@ namespace RangeAnalysis {
       else
       {
          if (op1.isEmpty() || op2.isEmpty() || op3.isEmpty())
-            result = Range(Empty,bw,Min,Max);
+            result = Range(Empty,bw);
       }
       return result;
    }
@@ -3007,7 +3131,7 @@ namespace RangeAnalysis {
          assert(bw);
          const ConstantInt *ci = dyn_cast<ConstantInt>(v.first);
          if (ci == nullptr)
-            return Range(Unknown,bw,Min,Max);
+            return Range(Unknown,bw);
          APInt tmp = ci->getValue();
          if (tmp.getBitWidth() < MAX_BIT_INT)
             tmp = tmp.sext(MAX_BIT_INT);
@@ -3269,7 +3393,7 @@ namespace RangeAnalysis {
          if(pointToConstant)
          {
 #if HAVE_LIBBDD
-            Range res(Empty,bw,Min,Max);
+            Range res(Empty,bw);
             for(auto var: *PtoSets_AA->pointsToSet(PO))
             {
                auto varValue = PtoSets_AA->getValue(var);
@@ -3722,7 +3846,7 @@ namespace RangeAnalysis {
       BasicBlock *succ = sw->getDefaultDest();
       if (succ != nullptr)
       {
-         auto antidefaultRange = Range(Empty,bw,Min,Max);
+         auto antidefaultRange = Range(Empty,bw);
          for(auto case_expr: sw->cases())
          {
             const ConstantInt *constant = case_expr.getCaseValue();
@@ -3856,7 +3980,7 @@ namespace RangeAnalysis {
          CmpInst::Predicate pred = ici->getPredicate();
          CmpInst::Predicate invPred = ici->getInversePredicate();
          assert(Op0->getType()->getPrimitiveSizeInBits()==Op1->getType()->getPrimitiveSizeInBits());
-         Range CR(Unknown,Op0->getType()->getPrimitiveSizeInBits(),Min,Max);
+         Range CR(Unknown,Op0->getType()->getPrimitiveSizeInBits());
 
          // Symbolic intervals for op0
          std::shared_ptr<BasicInterval> STOp0 = std::shared_ptr<BasicInterval>(new SymbInterval(CR, Op1, pred));
@@ -3974,7 +4098,8 @@ namespace RangeAnalysis {
          const auto V = varNode->getValue();
          const ConstantInt *ci = nullptr;
 
-         if ((ci = dyn_cast<ConstantInt>(V.first)) != nullptr) {
+         if ((ci = dyn_cast<ConstantInt>(V.first)) != nullptr)
+         {
             insertConstantIntoVector(ci->getValue());
          }
       }
@@ -3999,11 +4124,93 @@ namespace RangeAnalysis {
             const auto sourceval2 = source2->getValue();
 
             const ConstantInt *const1, *const2;
+            auto opcode=bop->getOpcode();
 
             if ((const1 = dyn_cast<ConstantInt>(sourceval1.first)) != nullptr)
-               insertConstantIntoVector(const1->getValue());
+            {
+               auto cnstVal = const1->getValue();
+               if(opcode==llvm::Instruction::ICmp)
+               {
+                  auto pred = cast<llvm::CmpInst>(bop->getSink()->getValue().first)->getPredicate();
+                  if(pred == llvm::ICmpInst::ICMP_EQ || pred == llvm::ICmpInst::ICMP_NE)
+                  {
+                     insertConstantIntoVector(cnstVal);
+                     insertConstantIntoVector(cnstVal-1);
+                     insertConstantIntoVector(cnstVal+1);
+                  }
+                  else if (pred == llvm::ICmpInst::ICMP_SGT||pred == llvm::ICmpInst::ICMP_SLE)
+                  {
+                     insertConstantIntoVector(cnstVal);
+                     insertConstantIntoVector(cnstVal+1);
+                  }
+                  else if (pred == llvm::ICmpInst::ICMP_SGE||pred == llvm::ICmpInst::ICMP_SLT)
+                  {
+                     insertConstantIntoVector(cnstVal);
+                     insertConstantIntoVector(cnstVal-1);
+                  }
+                  else if (pred == llvm::ICmpInst::ICMP_UGT||pred == llvm::ICmpInst::ICMP_ULE)
+                  {
+                     auto bw = source1->getBitWidth();
+                     auto cnstValU = const1->getValue().zextOrTrunc(bw).zext(MAX_BIT_INT);
+                     insertConstantIntoVector(cnstValU);
+                     insertConstantIntoVector(cnstValU+1);
+                  }
+                  else if (pred == llvm::ICmpInst::ICMP_UGE||pred == llvm::ICmpInst::ICMP_ULT)
+                  {
+                     auto bw = source1->getBitWidth();
+                     auto cnstValU = const1->getValue().zextOrTrunc(bw).zext(MAX_BIT_INT);
+                     insertConstantIntoVector(cnstValU);
+                     insertConstantIntoVector(cnstValU-1);
+                  }
+                  else
+                     llvm_unreachable("unexpected condition");
+               }
+               else
+                  insertConstantIntoVector(cnstVal);
+
+            }
             if ((const2 = dyn_cast<ConstantInt>(sourceval2.first)) != nullptr)
-               insertConstantIntoVector(const2->getValue());
+            {
+               auto cnstVal = const2->getValue();
+               if(opcode==llvm::Instruction::ICmp)
+               {
+                  auto pred = cast<llvm::CmpInst>(bop->getSink()->getValue().first)->getPredicate();
+                  if(pred == llvm::ICmpInst::ICMP_EQ || pred == llvm::ICmpInst::ICMP_NE)
+                  {
+                     insertConstantIntoVector(cnstVal);
+                     insertConstantIntoVector(cnstVal-1);
+                     insertConstantIntoVector(cnstVal+1);
+                  }
+                  else if (pred == llvm::ICmpInst::ICMP_SGT||pred == llvm::ICmpInst::ICMP_SLE)
+                  {
+                     insertConstantIntoVector(cnstVal);
+                     insertConstantIntoVector(cnstVal+1);
+                  }
+                  else if (pred == llvm::ICmpInst::ICMP_SGE||pred == llvm::ICmpInst::ICMP_SLT)
+                  {
+                     insertConstantIntoVector(cnstVal);
+                     insertConstantIntoVector(cnstVal-1);
+                  }
+                  else if (pred == llvm::ICmpInst::ICMP_UGT||pred == llvm::ICmpInst::ICMP_ULE)
+                  {
+                     auto bw = source2->getBitWidth();
+                     auto cnstValU = const2->getValue().zextOrTrunc(bw).zext(MAX_BIT_INT);
+                     insertConstantIntoVector(cnstValU);
+                     insertConstantIntoVector(cnstValU+1);
+                  }
+                  else if (pred == llvm::ICmpInst::ICMP_UGE||pred == llvm::ICmpInst::ICMP_ULT)
+                  {
+                     auto bw = source2->getBitWidth();
+                     auto cnstValU = const2->getValue().zextOrTrunc(bw).zext(MAX_BIT_INT);
+                     insertConstantIntoVector(cnstValU);
+                     insertConstantIntoVector(cnstValU-1);
+                  }
+                  else
+                     llvm_unreachable("unexpected condition");
+               }
+               else
+                  insertConstantIntoVector(cnstVal);
+            }
          }
          // Handle PhiOp case
          else if (pop != nullptr)
@@ -4019,42 +4226,45 @@ namespace RangeAnalysis {
          }
       }
 
-      // Get constants used in intersections generated for sigmas
+      // Get constants used in intersections
       for (auto &pair : compusemap)
       {
          for (BasicOp *op : pair.second)
          {
             const SigmaOp *sigma = dyn_cast<SigmaOp>(op);
-            if (sigma != nullptr)
+            // Symbolic intervals are discarded, as they don't have fixed values yet
+            if (sigma == nullptr || isa<SymbInterval>(sigma->getIntersect().get()))
+               continue;
+            Range rintersect = op->getIntersect()->getRange();
+            if(rintersect.isAnti())
             {
-               // Symbolic intervals are discarded, as they don't have fixed values yet
-               if (isa<SymbInterval>(sigma->getIntersect().get()))
-                  continue;
-               Range rintersect = sigma->getIntersect()->getRange();
-               if(rintersect.isAnti())
+               auto anti = Range(Range_base::getAnti(rintersect));
+               const APInt lb = anti.getLower();
+               const APInt ub = anti.getUpper();
+               if (lb.ne(Min) && lb.ne(Max))
                {
-                  auto anti = Range(Range_base::getAnti(rintersect));
-                  const APInt lb = anti.getLower();
-                  const APInt ub = anti.getUpper();
-                  if (lb.ne(Min) && lb.ne(Max))
-                  {
-                     insertConstantIntoVector(lb-1);
-                     insertConstantIntoVector(lb);
-                  }
-                  if (ub.ne(Min) && ub.ne(Max))
-                  {
-                     insertConstantIntoVector(ub);
-                     insertConstantIntoVector(ub+1);
-                  }
+                  insertConstantIntoVector(lb-1);
+                  insertConstantIntoVector(lb);
                }
-               else
+               if (ub.ne(Min) && ub.ne(Max))
                {
-                  const APInt &lb = rintersect.getLower();
-                  const APInt &ub = rintersect.getUpper();
-                  if (lb.ne(Min) && lb.ne(Max))
-                     insertConstantIntoVector(lb);
-                  if (ub.ne(Min) && ub.ne(Max))
-                     insertConstantIntoVector(ub);
+                  insertConstantIntoVector(ub);
+                  insertConstantIntoVector(ub+1);
+               }
+            }
+            else
+            {
+               const APInt &lb = rintersect.getLower();
+               const APInt &ub = rintersect.getUpper();
+               if (lb.ne(Min) && lb.ne(Max))
+               {
+                  insertConstantIntoVector(lb-1);
+                  insertConstantIntoVector(lb);
+               }
+               if (ub.ne(Min) && ub.ne(Max))
+               {
+                  insertConstantIntoVector(ub);
+                  insertConstantIntoVector(ub+1);
                }
             }
          }
@@ -4110,11 +4320,19 @@ namespace RangeAnalysis {
 
       op->getSink()->setRange(newInterval);
 #ifdef LOG_TRANSACTIONS
-      llvm::ModuleSlotTracker MST(op->getInstruction()->getFunction()->getParent());
-      MST.incorporateFunction(*op->getInstruction()->getFunction());
-      auto instID = MST.getLocalSlot(op->getInstruction());
-      LOG_TRANSACTION("FIXED::%" << instID << ": "
-                      << oldInterval << " -> " << newInterval);
+      if(op->getInstruction())
+      {
+         llvm::ModuleSlotTracker MST(op->getInstruction()->getFunction()->getParent());
+         MST.incorporateFunction(*op->getInstruction()->getFunction());
+         auto instID = MST.getLocalSlot(op->getInstruction());
+         LOG_TRANSACTION("FIXED::%" << instID << ": "
+                         << oldInterval << " -> " << newInterval);
+      }
+      else
+      {
+         LOG_TRANSACTION("FIXED::%" << "artificial phi " << ": "
+                         << oldInterval << " -> " << newInterval);
+      }
 #endif
       return oldInterval != newInterval;
    }
@@ -4285,10 +4503,10 @@ namespace RangeAnalysis {
       }
       else
       {
-         const APInt& oLower = oldInterval.getLower();
-         const APInt& oUpper = oldInterval.getUpper();
-         const APInt& nLower = newInterval.getLower();
-         const APInt& nUpper = newInterval.getUpper();
+         const APInt oLower = oldInterval.getLower();
+         const APInt oUpper = oldInterval.getUpper();
+         const APInt nLower = newInterval.getLower();
+         const APInt nUpper = newInterval.getUpper();
          if (oLower.eq(Min) && nLower.ne(Min))
             op->getSink()->setRange(Range(Regular,bw, nLower, oUpper));
          else
@@ -4464,6 +4682,30 @@ namespace RangeAnalysis {
       }
    }
 
+   void ConstraintGraph::update(unsigned nIterations, const UseMap &compUseMap, llvm::DenseSet<eValue> &actv)
+   {
+      std::list<eValue> queue(actv.begin(),actv.end());
+      actv.clear();
+      while (!queue.empty())
+      {
+         const auto V = queue.front();
+         queue.pop_front();
+         // The use list.
+         const auto &L = compUseMap.find(V)->second;
+         for (auto op : L)
+         {
+            if (nIterations == 0)
+               return;
+            --nIterations;
+            if (Meet::fixed(op))
+            {
+               auto next = op->getSink()->getValue();
+               if(std::find(queue.begin(), queue.end(), next) == queue.end())
+                  queue.push_back(next);
+            }
+         }
+      }
+   }
 
    /// Finds the intervals of the variables in the graph.
    void ConstraintGraph::findIntervals()
@@ -4502,13 +4744,15 @@ namespace RangeAnalysis {
          --numberOfSCCs;
 #endif
 
-//         llvm::errs() << "Components:\n";
-//         for(auto var:component)
-//         {
-//            llvm::errs()<<"  ";var->print(llvm::errs());
-//            llvm::errs()<<"\n";
-//         }
-//         llvm::errs() << "-----------\n";
+#ifdef DEBUG_RA
+         llvm::errs() << "Components:\n";
+         for(auto var:component)
+         {
+            llvm::errs()<<"  ";var->print(llvm::errs());
+            llvm::errs()<<"\n";
+         }
+         llvm::errs() << "-----------\n";
+#endif
          if (component.size() == 1)
          {
             ++numAloneSCCs;
@@ -4520,7 +4764,7 @@ namespace RangeAnalysis {
                var->setRange(op->eval());
             }
             if (var->getRange().isUnknown())
-               var->setRange(Range(Regular,var->getBitWidth(),Min,Max));
+               var->setRange(Range(Regular,var->getBitWidth()));
          }
          else
          {
@@ -4537,11 +4781,15 @@ namespace RangeAnalysis {
             // Comment this line below to deactivate jump-set
             buildConstantVector(component, compUseMap);
 #endif
-//            for(auto cnst: constantvector)
-//               llvm::errs() << " " << cnst;
-//            if(!constantvector.empty())
-//               llvm::errs() << "\n";
-
+#ifdef DEBUG_RA
+            for(auto cnst: constantvector)
+               llvm::errs() << " " << cnst;
+            if(!constantvector.empty())
+               llvm::errs() << "\n";
+#endif
+            generateEntryPoints(component, entryPoints);
+            // iterate a fixed number of time before widening
+            update(component.size()*16 , compUseMap, entryPoints);
 #ifdef DEBUG_RA
             if (func != nullptr)
             {
@@ -4919,6 +5167,8 @@ namespace RangeAnalysis {
          auto p = this->useMap.find(V);
          for (BasicOp *op : p->second)
          {
+            ///VarNodes belonging to the current SCC must not be evaluated otherwise we break the fixed point previously computed
+            if(component.find(op->getSink()) != component.end()) continue;
             SigmaOp *sigmaop = dyn_cast<SigmaOp>(op);
             op->getSink()->setRange(op->eval());
             if ((sigmaop != nullptr) && sigmaop->getIntersect()->getRange().isUnknown())
