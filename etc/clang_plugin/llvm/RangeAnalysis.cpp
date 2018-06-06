@@ -1870,23 +1870,7 @@ namespace RangeAnalysis {
       }
 
       // Check if source range is contained by max bit range
-      if(this->isAnti())
-      {
-         auto antiThis = getAnti(*this);
-         auto l = antiThis.getLower();
-         auto u = antiThis.getUpper();
-         if(l.sle(maxlower) && u.sge(maxupper))
-            return Range(Regular,bitwidth);
-         else if(l.sge(maxlower) && u.sle(maxupper))
-            return Range(Anti,bitwidth, l, u);
-         else if (l.sge(maxlower) && u.sge(maxupper))
-            return Range(Anti,bitwidth, l, maxupper);
-         else if (l.sle(maxlower) && u.sle(maxupper))
-            return Range(Anti,bitwidth, maxlower, u);
-         else
-            llvm_unreachable("unexpected condition");
-      }
-      else if (this->getLower().sge(maxlower) && this->getUpper().sle(maxupper))
+      if (!this->isAnti() && this->getLower().sge(maxlower) && this->getUpper().sle(maxupper))
          return Range(Regular,bitwidth,this->getLower(),this->getUpper());
       else
          return Range(Regular,bitwidth, maxlower, maxupper);
