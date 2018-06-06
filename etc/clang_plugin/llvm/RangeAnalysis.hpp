@@ -150,7 +150,7 @@ namespace RangeAnalysis {
 #endif
 
    //************************** Log Transactions ********************************//
-   //#define LOG_TRANSACTIONS
+//#define LOG_TRANSACTIONS
 
    //****************************************************************************//
 
@@ -205,10 +205,10 @@ namespace RangeAnalysis {
 
          bool isUnknown() const { return type == Unknown; }
          void setUnknown() { type = Unknown; }
-         bool isRegular() const { return type == Regular || type == Anti; }
+         bool isRegular() const { return type == Regular;}
          bool isAnti() const { return type == Anti; }
          bool isEmpty() const { return type == Empty; }
-         bool isSameType(const Range_base &a, const Range_base &b) const {return (a.isRegular()&&b.isRegular())||(a.isEmpty()&&b.isEmpty())||(a.isUnknown()&&b.isUnknown())||(a.isAnti()&&b.isAnti());}
+         bool isSameType(const Range_base &a, const Range_base &b) const {return a.type==b.type;}
          bool isSameRange(const Range_base &a, const Range_base &b) const {return (a.l.eq(b.l) && a.u.eq(b.u));}
          bool isSingleElement() {return type == Regular && l==u;}
 

@@ -141,6 +141,7 @@ namespace RangeAnalysis {
    STATISTIC(numEmpty, "Number of empty-set variables");
    STATISTIC(numCPlusInf, "Number of variables [c, +inf].");
    STATISTIC(numCC, "Number of variables [c, c].");
+   STATISTIC(numAnti, "Number of variables )c, c(.");
    STATISTIC(numMinInfC, "Number of variables [-inf, c].");
    STATISTIC(numMaxRange, "Number of variables [-inf, +inf].");
    STATISTIC(numConstants, "Number of constants.");
@@ -297,7 +298,7 @@ namespace RangeAnalysis {
             assert(active_size<64);
 
             APInt l(MAX_BIT_INT, -(1LL << (active_size-1)),true);
-            APInt u(MAX_BIT_INT, (1LL << (active_size-1)),true);
+            APInt u(MAX_BIT_INT, (1LL << (active_size-1))-1,true);
             if(range.isEmptySet())
                return Range(Regular, bw,l,u);
             if(range.getSignedMin().sext(MAX_BIT_INT).sgt(l))
@@ -485,7 +486,7 @@ namespace RangeAnalysis {
 
    void Range_base::normalizeRange(const APInt &lb, const APInt &ub, RangeType rType)
    {
-      if(rType==Empty)
+      if(rType==Empty||rType==Unknown)
       {
          l = Min;
          u = Max;
@@ -502,7 +503,6 @@ namespace RangeAnalysis {
          {
             if(lb.eq(Min) && ub.eq(Max))
                type = Empty;
-            //         else if(lb.sle(APInt::getSignedMinValue(bw).sext(MAX_BIT_INT)))
             else if(lb.eq(Min))
             {
                type = Regular;
@@ -515,6 +515,67 @@ namespace RangeAnalysis {
                l = Min;
                u = lb-1;
             }
+            else
+            {
+               assert(ub.sge(lb));
+               auto maxS = APInt::getSignedMaxValue(bw);
+               maxS = maxS.sext(MAX_BIT_INT);
+               auto minS = APInt::getSignedMinValue(bw);
+               minS = minS.sext(MAX_BIT_INT);
+               bool lbgt = lb.sgt(maxS);
+               bool ubgt = ub.sgt(maxS);
+               bool lblt = lb.slt(minS);
+               bool ublt = ub.slt(minS);
+               if(lbgt && ubgt)
+               {
+                  l=lb.trunc(bw).sext(MAX_BIT_INT);
+                  u=ub.trunc(bw).sext(MAX_BIT_INT);
+               }
+               else if(lblt && ublt)
+               {
+                  l=ub.trunc(bw).sext(MAX_BIT_INT);
+                  u=lb.trunc(bw).sext(MAX_BIT_INT);
+               }
+               else if(!lblt && ubgt)
+               {
+                  auto ubnew=ub.trunc(bw).sext(MAX_BIT_INT);
+                  if(ubnew.sge(lb-1))
+                  {
+                     l=Min;
+                     u=Max;
+                  }
+                  else
+                  {
+                     type=Regular;
+                     l=ubnew+1;
+                     u=lb-1;
+                  }
+               }
+               else if(lblt && !ubgt)
+               {
+                  auto lbnew=lb.trunc(bw).sext(MAX_BIT_INT);
+                  if(lbnew.sle(ub+1))
+                  {
+                     l=Min;
+                     u=Max;
+                  }
+                  else
+                  {
+                     type=Regular;
+                     l=ub+1;
+                     u=lbnew-1;
+                  }
+               }
+               else if(!lblt && !ubgt)
+               {
+                  l=lb;
+                  u=ub;
+               }
+               else
+               {
+                  llvm_unreachable("unexpected condition");
+               }
+            }
          }
       }
       else if((lb-1).eq(ub))
@@ -525,19 +586,73 @@ namespace RangeAnalysis {
       }
       else if (lb.sgt(ub))
       {
-         type = Anti;
-         l = ub+1;
-         u = lb-1;
+         normalizeRange(ub+1,lb-1,Anti);
       }
-      else if(type == Regular && bw==1)
+      else
       {
-         if(l.eq(u) && l.eq(One))
-            l=u=-One;
-         else if(l.ne(u) && l.eq(Zero))
+         assert(ub.sge(lb));
+         auto maxS = APInt::getSignedMaxValue(bw);
+         maxS = maxS.sext(MAX_BIT_INT);
+         auto minS = APInt::getSignedMinValue(bw);
+         minS = minS.sext(MAX_BIT_INT);
+
+         bool lbgt = lb.sgt(maxS);
+         bool ubgt = ub.sgt(maxS);
+         bool lblt = lb.slt(minS);
+         bool ublt = ub.slt(minS);
+         if(ubgt && lblt)
          {
-            l=-One;
-            u=Zero;
+            l=Min;
+            u=Max;
          }
+         else if(lbgt && ubgt)
+         {
+            l=lb.trunc(bw).sext(MAX_BIT_INT);
+            u=ub.trunc(bw).sext(MAX_BIT_INT);
+         }
+         else if(lblt && ublt)
+         {
+            l=ub.trunc(bw).sext(MAX_BIT_INT);
+            u=lb.trunc(bw).sext(MAX_BIT_INT);
+         }
+         else if(!lblt && ubgt)
+         {
+            auto ubnew=ub.trunc(bw).sext(MAX_BIT_INT);
+            if(ubnew.sge(lb-1))
+            {
+               l=Min;
+               u=Max;
+            }
+            else
+            {
+               type=Anti;
+               l=ubnew+1;
+               u=lb-1;
+            }
+         }
+         else if(lblt && !ubgt)
+         {
+            auto lbnew=lb.trunc(bw).sext(MAX_BIT_INT);
+            if(lbnew.sle(ub+1))
+            {
+               l=Min;
+               u=Max;
+            }
+            else
+            {
+               type=Anti;
+               l=ub+1;
+               u=lbnew-1;
+            }
+         }
+         else if(!lblt && !ubgt)
+         {
+            l=lb;
+            u=ub;
+         }
+         else
+            llvm_unreachable("unexpected condition");
+
       }
       assert(u.sge(l));
    }
@@ -578,91 +693,91 @@ namespace RangeAnalysis {
 
    const APInt Range_base::getLower() const
    {
-      if (type!=Anti) return l;
-      if(l.eq(u))
-         return Min;
-      ConstantRange tmpT(l,u+1);
-      ConstantRange tmpF = tmpT.inverse();
-      auto sigMin = tmpF.getSignedMin();
-      auto sigMax = tmpF.getSignedMax();
-      assert (sigMin.getBitWidth() == MAX_BIT_INT);
-      assert (sigMax.getBitWidth() == MAX_BIT_INT);
-      assert(sigMax.sge(sigMin));
-      return sigMin;
+      assert(type!=Anti);
+      return l;
    }
 
    const APInt Range_base::getUpper() const
    {
-      if (type!=Anti) return u;
-      if(l.eq(u))
-         return Max;
-      ConstantRange tmpT(l,u+1);
-      ConstantRange tmpF = tmpT.inverse();
-      auto sigMax = tmpF.getSignedMax();
-      assert (sigMax.getBitWidth() == MAX_BIT_INT);
-      return sigMax;
+      assert(type!=Anti);
+      return u;
    }
 
    const APInt Range_base::getSignedMax() const
    {
-      if(type!=Anti)
+      assert(type!=Unknown&&type!=Empty);
+      if(type==Regular)
       {
          auto maxS = APInt::getSignedMaxValue(bw);
-         if (maxS.getBitWidth() < MAX_BIT_INT)
-            maxS = maxS.sext(MAX_BIT_INT);
-         if(u.sgt(maxS))
-            return APInt::getSignedMaxValue(bw);
+         if(u.sgt(maxS.sext(MAX_BIT_INT)))
+            return maxS;
          else
-            return APInt(bw,u.trunc(bw).getSExtValue(),true);
+            return u.trunc(bw);
       }
       else
          return APInt::getSignedMaxValue(bw);
    }
    const APInt Range_base::getSignedMin() const
    {
+      assert(type!=Unknown&&type!=Empty);
       if(type!=Anti)
       {
          auto minS = APInt::getSignedMinValue(bw);
-         if (minS.getBitWidth() < MAX_BIT_INT)
-            minS = minS.sext(MAX_BIT_INT);
-         if(l.slt(minS))
-            return APInt::getSignedMinValue(bw);
+         if(l.slt(minS.sext(MAX_BIT_INT)))
+            return minS;
          else
-            return APInt(bw,l.trunc(bw).getSExtValue(),true);
+            return l.trunc(bw);
       }
       else
          return APInt::getSignedMinValue(bw);
    }
    const APInt Range_base::getUnsignedMax() const
    {
-      if(type!=Anti)
+      assert(type!=Unknown&&type!=Empty);
+      if(type==Regular)
       {
-         if(l.eq(u))
-            return APInt(bw,u.trunc(bw).getZExtValue(),false);
-         auto maxU = APInt::getMaxValue(bw);
-         if (maxU.getBitWidth() < MAX_BIT_INT)
-            maxU = maxU.zext(MAX_BIT_INT);
-         if(u.sgt(maxU) || l.slt(Zero))
+         if((l.isNegative()) && (u.isNegative()))
+            return u.trunc(bw);
+         if(l.slt(Zero))
             return APInt::getMaxValue(bw);
          else
-            return APInt(bw,u.trunc(bw).getZExtValue(),false);
+            return u.trunc(bw);
       }
       else
-         return APInt::getMaxValue(bw);
+      {
+         auto lb = l.sextOrTrunc(bw)-1;
+         auto ub = u.sextOrTrunc(bw)+1;
+         auto bwZero = APInt(bw,0,false);
+
+         if(lb.sge(bwZero)||ub.slt(bwZero))
+            return APInt::getMaxValue(bw);
+         else
+            return lb;
+      }
    }
    const APInt Range_base::getUnsignedMin() const
    {
-      if(type!=Anti)
+      assert(type!=Unknown&&type!=Empty);
+      if(type==Regular)
       {
-         if(l.eq(u))
-            return APInt(bw,l.trunc(bw).getZExtValue(),false);
+         if((l.isNegative()) && (u.isNegative()))
+            return l.trunc(bw);
          else if(l.slt(Zero))
             return APInt(bw,0,false);
          else
-            return APInt(bw,l.trunc(bw).getZExtValue(),false);
+            return l.trunc(bw);
       }
       else
-         return APInt(bw,0,false);
+      {
+         auto lb = l.sextOrTrunc(bw)-1;
+         auto ub = u.sextOrTrunc(bw)+1;
+         auto bwZero = APInt(bw,0,false);
+
+         if(lb.sge(bwZero)||ub.slt(bwZero))
+            return APInt(bw,0,false);
+         else
+            return ub;
+      }
    }
 
    bool Range::isMaxRange() const
@@ -1187,12 +1302,9 @@ namespace RangeAnalysis {
       const ConstantRange otherR = (other_min==other_max+1) ? ConstantRange(getBitWidth(), /*isFullSet=*/true) : ConstantRange(other_min,other_max+1);
       auto lshrU = thisR.lshr(otherR);
       if(lshrU.isFullSet())
-         return Range(Regular,getBitWidth(), Min, Max);
-      if(lshrU.isEmptySet())
-         return Range(Empty,getBitWidth(), Min, Max);
-      assert(lshrU.getLower().ult(lshrU.getUpper()));
-
-      return Range(Regular,getBitWidth(),lshrU.getSignedMin().sext(MAX_BIT_INT),lshrU.getSignedMax().sext(MAX_BIT_INT));
+         return Range(Regular,getBitWidth());
+      else
+         return CR2R(lshrU,getBitWidth());
    }
 
 #if __clang_major__ < 6
@@ -1293,10 +1405,10 @@ namespace RangeAnalysis {
          return *this;
       if (other.isEmpty() || other.isUnknown())
          return other;
-      APInt a = this->getLower();
-      APInt b = this->getUpper();
-      APInt c = other.getLower();
-      APInt d = other.getUpper();
+      APInt a = this->isAnti() ? Min : this->getLower();
+      APInt b = this->isAnti() ? Max : this->getUpper();
+      APInt c = other.isAnti() ? Min : other.getLower();
+      APInt d = other.isAnti() ? Max : other.getUpper();
 
       // negate everybody
       APInt negA = APInt(a);
@@ -1307,9 +1419,10 @@ namespace RangeAnalysis {
       negC.flipAllBits();
       APInt negD = APInt(d);
       negD.flipAllBits();
+      auto bw = getBitWidth();
 
-      Range inv1 = Range(Regular,getBitWidth(), negB, negA);
-      Range inv2 = Range(Regular,getBitWidth(), negD, negC);
+      Range inv1 = Range(Regular,bw, negB, negA);
+      Range inv2 = Range(Regular,bw, negD, negC);
       Range invres = inv1.Or(inv2);
 
       // negate the result of the 'or'
@@ -1317,7 +1430,7 @@ namespace RangeAnalysis {
       invLower.flipAllBits();
       APInt invUpper = invres.getLower();
       invUpper.flipAllBits();
-      auto res = Range(Regular,getBitWidth(),invLower,invUpper);
+      auto res = Range(Regular,bw,invLower,invUpper);
 //      llvm::errs() << "And-res: ";
 //      res.print(llvm::errs());
 //      llvm::errs() << "\n";
@@ -1539,9 +1652,8 @@ namespace RangeAnalysis {
       }
       bool areTheyEqual = !this->intersectWith(other).isEmpty();
       auto AntiThis = getAnti(*this);
-      auto AntiOther = getAnti(other);
-      APInt a = this->getLower();
-      APInt b = this->getUpper();
+      APInt a = isAnti() ? AntiThis.getLower() : this->getLower();
+      APInt b = isAnti() ? AntiThis.getUpper() : this->getUpper();
       bool areTheyDifferent = !(a.eq(b) && *this==other);
 
       if(areTheyEqual && areTheyDifferent)
@@ -1567,9 +1679,8 @@ namespace RangeAnalysis {
       }
       bool areTheyEqual = !this->intersectWith(other).isEmpty();
       auto AntiThis = getAnti(*this);
-      auto AntiOther = getAnti(other);
-      APInt a = this->getLower();
-      APInt b = this->getUpper();
+      APInt a = isAnti() ? AntiThis.getLower() : this->getLower();
+      APInt b = isAnti() ? AntiThis.getUpper() : this->getUpper();
       bool areTheyDifferent = !(a.eq(b) && *this==other);
       if(areTheyEqual && areTheyDifferent)
          return Range(Regular,bw,Zero,One);
@@ -1742,10 +1853,8 @@ namespace RangeAnalysis {
    }
 
    // Truncate
-   //		- if the source range is entirely inside max bit range, he is
-   // the
-   // result
-   //      - else, the result is the max bit range
+   // - if the source range is entirely inside max bit range, it is the result
+   // - else, the result is the max bit range
    Range Range::truncate(unsigned bitwidth) const
    {
       if (isEmpty()||isUnknown())
@@ -1761,33 +1870,55 @@ namespace RangeAnalysis {
       }
 
       // Check if source range is contained by max bit range
-      if (this->getLower().sge(maxlower) && this->getUpper().sle(maxupper))
+      if(this->isAnti())
+      {
+         auto antiThis = getAnti(*this);
+         auto l = antiThis.getLower();
+         auto u = antiThis.getUpper();
+         if(l.sle(maxlower) && u.sge(maxupper))
+            return Range(Regular,bitwidth);
+         else if(l.sge(maxlower) && u.sle(maxupper))
+            return Range(Anti,bitwidth, l, u);
+         else if (l.sge(maxlower) && u.sge(maxupper))
+            return Range(Anti,bitwidth, l, maxupper);
+         else if (l.sle(maxlower) && u.sle(maxupper))
+            return Range(Anti,bitwidth, maxlower, u);
+         else
+            llvm_unreachable("unexpected condition");
+      }
+      else if (this->getLower().sge(maxlower) && this->getUpper().sle(maxupper))
          return Range(Regular,bitwidth,this->getLower(),this->getUpper());
-
-      return Range(Regular,bitwidth, maxlower, maxupper);
+      else
+         return Range(Regular,bitwidth, maxlower, maxupper);
    }
 
    Range Range::sextOrTrunc(unsigned bitwidth) const
    {
+      if (isEmpty()||isUnknown())
+         return *this;
       auto from_bw = getBitWidth();
       auto this_min = from_bw == 1 ? getUnsignedMin() : getSignedMin();
       auto this_max = from_bw == 1 ? getUnsignedMax() : getSignedMax();
       const ConstantRange thisR = (this_min==this_max+1) ? ConstantRange(getBitWidth(), /*isFullSet=*/true) : ConstantRange(this_min,this_max+1);
       auto sextRes = thisR.sextOrTrunc(bitwidth);
-      return Range(Regular,bitwidth,sextRes.getSignedMin().sext(MAX_BIT_INT),sextRes.getSignedMax().sext(MAX_BIT_INT));
+      if(sextRes.isFullSet())
+         return Range(Regular,bitwidth);
+      else
+         return CR2R(sextRes,bitwidth);//Range(Regular,bitwidth,sextRes.getSignedMin().sext(MAX_BIT_INT),sextRes.getSignedMax().sext(MAX_BIT_INT));
    }
 
    Range Range::zextOrTrunc(unsigned bitwidth) const
    {
       if (isEmpty()||isUnknown())
          return *this;
-      APInt a = this->getLower();
-      APInt b = this->getUpper();
-      assert(getBitWidth() <= MAX_BIT_INT);
-      if (a.slt(Zero))
-         return Range(Regular,bitwidth,Zero, APInt::getMaxValue(getBitWidth()).zext(MAX_BIT_INT));
+      auto this_min = getUnsignedMin() ;
+      auto this_max = getUnsignedMax() ;
+      const ConstantRange thisR = (this_min==this_max+1) ? ConstantRange(getBitWidth(), /*isFullSet=*/true) : ConstantRange(this_min,this_max+1);
+      auto zextRes = thisR.zextOrTrunc(bitwidth);
+      if(zextRes.isFullSet())
+         return Range(Regular,bitwidth);
       else
-         return Range(Regular,bitwidth,a,b);
+         return CR2R(zextRes,bitwidth);//Range(Regular,bitwidth,zextRes.getUnsignedMin().zext(MAX_BIT_INT),zextRes.getUnsignedMax().zext(MAX_BIT_INT));
    }
 
    Range Range::intersectWith(const Range &other) const
@@ -2062,62 +2193,70 @@ namespace RangeAnalysis {
 
    SymbInterval::~SymbInterval() = default;
 
-   Range SymbInterval::fixIntersects(VarNode *bound, VarNode *sink) {
+   Range SymbInterval::fixIntersects(VarNode *bound, VarNode *sink)
+   {
       // Get the lower and the upper bound of the
       // node which bounds this intersection.
-      APInt l = bound->getRange().getLower();
-      APInt u = bound->getRange().getUpper();
+      const auto boundRange = bound->getRange();
+      const auto sinkRange = sink->getRange();
+      assert(!boundRange.isEmpty());
+      assert(!sinkRange.isEmpty());
+
+      auto IsAnti = bound->getRange().isAnti() || sinkRange.isAnti();
+      APInt l = IsAnti ? (boundRange.isUnknown() ? Min : boundRange.getUnsignedMin().zext(MAX_BIT_INT)) : boundRange.getLower();
+      APInt u = IsAnti ? (boundRange.isUnknown() ? Max : boundRange.getUnsignedMax().zext(MAX_BIT_INT)) : boundRange.getUpper();
 
       // Get the lower and upper bound of the interval of this operation
-      APInt lower = sink->getRange().getLower();
-      APInt upper = sink->getRange().getUpper();
+      APInt lower = IsAnti ? (sinkRange.isUnknown() ? Min : sinkRange.getUnsignedMin().zext(MAX_BIT_INT)) : sinkRange.getLower();
+      APInt upper = IsAnti ? (sinkRange.isUnknown() ? Max : sinkRange.getUnsignedMax().zext(MAX_BIT_INT)) : sinkRange.getUpper();
 
+      auto bw = getRange().getBitWidth();
       switch (this->getOperation())
       {
          case ICmpInst::ICMP_EQ: // equal
-            return Range(Regular,getRange().getBitWidth(),l,u);
+            return Range(Regular,bw,l,u);
          case ICmpInst::ICMP_SLE: // signed less or equal
             if(lower.sgt(u))
-               return Range(Empty,getRange().getBitWidth());
+               return Range(Empty,bw);
             else
-               return Range(Regular,getRange().getBitWidth(),lower,u);
+               return Range(Regular,bw,lower,u);
          case ICmpInst::ICMP_SLT: // signed less than
             if (u != Max)
             {
                if(lower.sgt(u-1))
-                  return Range(Empty,getRange().getBitWidth());
+                  return Range(Empty,bw);
                else
-                  return Range(Regular,getRange().getBitWidth(),lower,u-1);
+                  return Range(Regular,bw,lower,u-1);
             }
             else
             {
                if(lower.sgt(u))
-                  return Range(Empty,getRange().getBitWidth());
+                  return Range(Empty,bw);
                else
-                  return Range(Regular,getRange().getBitWidth(),lower,u);
+                  return Range(Regular,bw,lower,u);
             }
          case ICmpInst::ICMP_SGE: // signed greater or equal
             if(l.sgt(upper))
-               return Range(Empty,getRange().getBitWidth());
+               return Range(Empty,bw);
             else
-               return Range(Regular,getRange().getBitWidth(),l,upper);
+               return Range(Regular,bw,l,upper);
          case ICmpInst::ICMP_SGT: // signed greater than
             if (l != Min)
             {
                if((l+1).sgt(upper))
-                  return Range(Empty,getRange().getBitWidth());
+                  return Range(Empty,bw);
                else
-                  return Range(Regular,getRange().getBitWidth(),l+1,upper);
+                  return Range(Regular,bw,l+1,upper);
             }
             else
             {
                if((l).sgt(upper))
-                  return Range(Empty,getRange().getBitWidth());
+                  return Range(Empty,bw);
                else
-                  return Range(Regular,getRange().getBitWidth(),l,upper);
+                  return Range(Regular,bw,l,upper);
             }
          default:
-            return Range(Regular,getRange().getBitWidth());
+            return Range(Regular,bw);
       }
       llvm_unreachable("unexpected condition");
    }
@@ -2458,7 +2597,7 @@ namespace RangeAnalysis {
       Range oprnd = source->getRange();
       Range result(Unknown, bw, Min, Max);
 
-      if (oprnd.isRegular())
+      if (oprnd.isRegular()||oprnd.isAnti())
       {
 //         getSink()->getValue().first->print(llvm::errs());
 //         llvm::errs()<< "\n";
@@ -2680,7 +2819,7 @@ namespace RangeAnalysis {
       Range result(Unknown,bw);
 
       // only evaluate if all operands are Regular
-      if (op1.isRegular() && op2.isRegular())
+      if ((op1.isRegular()||op1.isAnti()) && (op2.isRegular()||op2.isAnti()))
       {
 //         getSink()->getValue().first->print(llvm::errs());
 //         llvm::errs()<< "\n";
@@ -2859,7 +2998,7 @@ namespace RangeAnalysis {
       Range result(Unknown,bw, Min, Max);
 
       // only evaluate if all operands are Regular
-      if (op1.isRegular() && op2.isRegular() && op3.isRegular())
+      if ((op1.isRegular()||op1.isAnti()) && (op2.isRegular()||op2.isAnti()) && (op3.isRegular()||op3.isAnti()))
       {
 //         getSink()->getValue().first->print(llvm::errs());
 //         llvm::errs()<< "\n";
@@ -2930,7 +3069,6 @@ namespace RangeAnalysis {
 //         llvm::errs()<< "=";
 //         result.print(llvm::errs());
 //         llvm::errs()<< "\n";
-         assert(result.getUpper().sge(result.getLower()));
          bool test = this->getIntersect()->getRange().isMaxRange();
          if (!test)
          {
@@ -5045,48 +5183,55 @@ namespace RangeAnalysis {
             ++numEmpty;
             continue;
          }
-         if (CR.getLower().eq(Min))
+         if(CR.isAnti())
          {
-            if (CR.getUpper().eq(Max))
-               ++numMaxRange;
+            ++numAnti;
+         }
+         else
+         {
+            if (CR.getLower().eq(Min))
+            {
+               if (CR.getUpper().eq(Max))
+                  ++numMaxRange;
+               else
+                  ++numMinInfC;
+            }
+            else if (CR.getUpper().eq(Max))
+               ++numCPlusInf;
             else
-               ++numMinInfC;
+               ++numCC;
+
+
+            unsigned ub, lb;
+
+            if (CR.getLower().isNegative())
+            {
+               APInt abs = CR.getLower().abs();
+               lb = abs.getActiveBits() + 1;
+            }
+            else
+               lb = CR.getLower().getActiveBits() + 1;
+
+
+            if (CR.getUpper().isNegative())
+            {
+               APInt abs = CR.getUpper().abs();
+               ub = abs.getActiveBits() + 1;
+            }
+            else
+               ub = CR.getUpper().getActiveBits() + 1;
+
+
+            unsigned nBits = lb > ub ? lb : ub;
+
+            // If both bounds are positive, decrement needed bits by 1
+            if (!CR.getLower().isNegative() && !CR.getUpper().isNegative())
+               --nBits;
+            if (nBits < total)
+               needBits += nBits;
+            else
+               needBits += total;
          }
-         else if (CR.getUpper().eq(Max))
-            ++numCPlusInf;
-         else
-            ++numCC;
-
-
-         unsigned ub, lb;
-
-         if (CR.getLower().isNegative())
-         {
-            APInt abs = CR.getLower().abs();
-            lb = abs.getActiveBits() + 1;
-         }
-         else
-            lb = CR.getLower().getActiveBits() + 1;
-
-
-         if (CR.getUpper().isNegative())
-         {
-            APInt abs = CR.getUpper().abs();
-            ub = abs.getActiveBits() + 1;
-         }
-         else
-            ub = CR.getUpper().getActiveBits() + 1;
-
-
-         unsigned nBits = lb > ub ? lb : ub;
-
-         // If both bounds are positive, decrement needed bits by 1
-         if (!CR.getLower().isNegative() && !CR.getUpper().isNegative())
-            --nBits;
-         if (nBits < total)
-            needBits += nBits;
-         else
-            needBits += total;
       }
 
       double totalB = usedBits;
@@ -5458,6 +5603,7 @@ namespace RangeAnalysis {
       errs() << "Number of empty-set variables: " << numEmpty << "\n";
       errs() << "Number of variables [c, +inf]: " << numCPlusInf << "\n";
       errs() << "Number of variables [c, c]: " <<numCC  << "\n";
+      errs() << "Number of variables )c, c(: " <<numAnti  << "\n";
       errs() << "Number of variables [-inf, c]: " << numMinInfC << "\n";
       errs() << "Number of variables [-inf, +inf]: " << numMaxRange << "\n";
       errs() << "Number of constants: " << numConstants << "\n";
