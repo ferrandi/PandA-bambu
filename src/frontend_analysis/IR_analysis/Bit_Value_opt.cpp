@@ -164,7 +164,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
       unsigned int B_id = B->number;
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining BB" + STR(B_id));
       const auto list_of_stmt = B->CGetStmtList();
-      for (const auto stmt : list_of_stmt)
+      for (const auto& stmt : list_of_stmt)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining statement " + GET_NODE(stmt)->ToString());
 #ifndef NDEBUG
@@ -206,7 +206,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                }
                if(GetPointer<integer_cst>(GET_NODE(ga->op1)) && tree_helper::is_a_pointer(TM, GET_INDEX_NODE(ga->op1)))
                {
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---constant pointer value assignements not considered: "+ STR(GET_INDEX_NODE(ga->op0)));
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---constant pointer value assignments not considered: "+ STR(GET_INDEX_NODE(ga->op0)));
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Examined statement " + GET_NODE(stmt)->ToString());
                   continue;
                }

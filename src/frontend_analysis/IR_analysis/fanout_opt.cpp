@@ -143,7 +143,7 @@ fanout_opt::InternalExec ()
    for (auto block : sl->list_of_bloc)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining BB" + STR(block.first));
-      for(const auto stmt : block.second->CGetStmtList())
+      for(const auto& stmt : block.second->CGetStmtList())
       {
 #ifndef NDEBUG
          if(not AppM->ApplyNewTransformation())
@@ -216,7 +216,7 @@ fanout_opt::InternalExec ()
             {
                ///Copy the list of def edges
                std::vector<std::pair<tree_nodeRef, unsigned int> > list_of_def_edge;
-               for(const auto def_edge : gp->CGetDefEdgesList())
+               for(const auto& def_edge : gp->CGetDefEdgesList())
                {
                   list_of_def_edge.push_back(std::pair<tree_nodeRef, unsigned int>(def_edge.first, def_edge.second));
                }
