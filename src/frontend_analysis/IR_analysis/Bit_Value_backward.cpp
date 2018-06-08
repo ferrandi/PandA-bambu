@@ -90,7 +90,7 @@ std::deque<bit_lattice> Bit_Value::backward_compute_result_from_uses(
          {
             const gimple_phi * gp_tmp = GetPointer<const gimple_phi>(use_stmt);
             bool all_comes_from_the_same_loop = true;
-            for (const auto def_edge : gp_tmp->CGetDefEdgesList())
+            for (const auto& def_edge : gp_tmp->CGetDefEdgesList())
             {
                if (bb_loop_id != sl.list_of_bloc.at(def_edge.second)->loop_id)
                   all_comes_from_the_same_loop = false;

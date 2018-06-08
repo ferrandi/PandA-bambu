@@ -223,6 +223,7 @@ fanout_opt::InternalExec ()
                tree_nodeRef new_res_var;
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---starting from phi " + phi->ToString());
                auto new_phi = tree_man->create_phi_node(new_res_var, list_of_def_edge, block.first);
+               GetPointer<gimple_phi>(GET_NODE(new_phi))->SetSSAUsesComputed();
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---created a new phi " + new_phi->ToString());
                block.second->AddPhi(new_phi);
                GetPointer<gimple_phi>(GET_NODE(new_phi))->keep = true;
