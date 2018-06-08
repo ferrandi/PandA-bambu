@@ -780,6 +780,8 @@ void PhiOpt::ApplyIfMerge(const unsigned int bb_index)
          gimple_assign_schema[TOK(TOK_OP0)] = STR(ssa_node_nid);
          gimple_assign_schema[TOK(TOK_OP1)] = STR(cond_expr_id);
          TM->create_tree_node(gimple_node_id, gimple_assign_K, gimple_assign_schema);
+         auto sn = GetPointer<ssa_name>(GET_NODE(TM->GetTreeReindex(ssa_node_nid)));
+         sn->AddUseStmt(TM->GetTreeReindex(GET_INDEX_NODE(phi)));
       }
       pred_block->PushBack(TM->GetTreeReindex(gimple_node_id));
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created " + TM->get_tree_node_const(gimple_node_id)->ToString());
@@ -802,7 +804,7 @@ void PhiOpt::ApplyIfMerge(const unsigned int bb_index)
          }
       }
       gp->SetDefEdgeList(TM, new_list_of_def_edge);
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Modifyed " + phi->ToString());
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Modified " + phi->ToString());
    }
 
    ///Refactoring of the cfg - updating the predecessor
@@ -1206,6 +1208,8 @@ void PhiOpt::ApplyMultiMerge(const unsigned int bb_index)
          gimple_assign_schema[TOK(TOK_OP0)] = STR(ssa_node_nid);
          gimple_assign_schema[TOK(TOK_OP1)] = STR(cond_expr_id);
          TM->create_tree_node(gimple_node_id, gimple_assign_K, gimple_assign_schema);
+         auto sn = GetPointer<ssa_name>(GET_NODE(TM->GetTreeReindex(ssa_node_nid)));
+         sn->AddUseStmt(TM->GetTreeReindex(GET_INDEX_NODE(phi)));
       }
       pred_block->PushBack(TM->GetTreeReindex(gimple_node_id));
 
