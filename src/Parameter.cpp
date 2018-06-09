@@ -61,6 +61,7 @@
 #include "config_HAVE_I386_GCC7_COMPILER.hpp"
 #include "config_HAVE_I386_CLANG4_COMPILER.hpp"
 #include "config_HAVE_I386_CLANG5_COMPILER.hpp"
+#include "config_HAVE_I386_CLANG6_COMPILER.hpp"
 #include "config_HAVE_I386_GCC47_MX32.hpp"
 #include "config_HAVE_I386_GCC48_MX32.hpp"
 #include "config_HAVE_I386_GCC49_MX32.hpp"
@@ -69,6 +70,7 @@
 #include "config_HAVE_I386_GCC7_MX32.hpp"
 #include "config_HAVE_I386_CLANG4_MX32.hpp"
 #include "config_HAVE_I386_CLANG5_MX32.hpp"
+#include "config_HAVE_I386_CLANG6_MX32.hpp"
 #include "config_HAVE_IPXACT_BUILT.hpp"
 #include "config_HAVE_PERFORMANCE_METRICS_XML.hpp"
 #include "config_HAVE_REGRESSORS_BUILT.hpp"
@@ -86,6 +88,7 @@
 #include "config_I386_GCC7_VERSION.hpp"
 #include "config_I386_CLANG4_VERSION.hpp"
 #include "config_I386_CLANG5_VERSION.hpp"
+#include "config_I386_CLANG6_VERSION.hpp"
 #include "config_PACKAGE_BUGREPORT.hpp"
 #include "config_PACKAGE_STRING.hpp"
 #include "config_SPARC_GCC_VERSION.hpp"
@@ -544,6 +547,12 @@ bool Parameter::ManageDefaultOptions(int next_option, char * optarg_param, bool 
                PRINT_OUT_MEX(OUTPUT_LEVEL_NONE, 0, I386_CLANG5_VERSION);
             }
 #endif
+#if HAVE_I386_CLANG6_COMPILER
+            if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG6))
+            {
+               PRINT_OUT_MEX(OUTPUT_LEVEL_NONE, 0, I386_CLANG6_VERSION);
+            }
+#endif
 #if HAVE_SPARC_COMPILER
             if(static_cast<int>(preferred_compiler) & (static_cast<int>(GccWrapper_CompilerTarget::CT_SPARC_GCC) | static_cast<int>(GccWrapper_CompilerTarget::CT_SPARC_ELF_GCC)))
             {
@@ -721,7 +730,7 @@ bool Parameter::ManageGccOptions(int next_option, char * optarg_param)
             }
             else if(opt_level == "x32")
             {
-#if (HAVE_I386_GCC47_COMPILER && HAVE_I386_GCC47_MX32) ||(HAVE_I386_GCC48_COMPILER && HAVE_I386_GCC48_MX32) || (HAVE_I386_GCC49_COMPILER && HAVE_I386_GCC49_MX32) || (HAVE_I386_GCC5_COMPILER && HAVE_I386_GCC5_MX32) || (HAVE_I386_GCC6_COMPILER && HAVE_I386_GCC6_MX32) || (HAVE_I386_GCC7_COMPILER && HAVE_I386_GCC7_MX32) || (HAVE_I386_CLANG4_COMPILER && HAVE_I386_CLANG4_MX32) || (HAVE_I386_CLANG5_COMPILER && HAVE_I386_CLANG5_MX32)
+#if (HAVE_I386_GCC47_COMPILER && HAVE_I386_GCC47_MX32) ||(HAVE_I386_GCC48_COMPILER && HAVE_I386_GCC48_MX32) || (HAVE_I386_GCC49_COMPILER && HAVE_I386_GCC49_MX32) || (HAVE_I386_GCC5_COMPILER && HAVE_I386_GCC5_MX32) || (HAVE_I386_GCC6_COMPILER && HAVE_I386_GCC6_MX32) || (HAVE_I386_GCC7_COMPILER && HAVE_I386_GCC7_MX32) || (HAVE_I386_CLANG4_COMPILER && HAVE_I386_CLANG4_MX32) || (HAVE_I386_CLANG5_COMPILER && HAVE_I386_CLANG5_MX32) || (HAVE_I386_CLANG6_COMPILER && HAVE_I386_CLANG6_MX32)
                if( false
 #if (HAVE_I386_GCC47_COMPILER && HAVE_I386_GCC47_MX32)
                    || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC47
@@ -746,6 +755,9 @@ bool Parameter::ManageGccOptions(int next_option, char * optarg_param)
 #endif
 #if (HAVE_I386_CLANG5_COMPILER && HAVE_I386_CLANG5_MX32)
                    || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANG5
+#endif
+#if (HAVE_I386_CLANG6_COMPILER && HAVE_I386_CLANG6_MX32)
+                   || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANG6
 #endif
                   )
                   setOption(OPT_gcc_m32_mx32, "-mx32");
@@ -953,6 +965,13 @@ bool Parameter::ManageGccOptions(int next_option, char * optarg_param)
          if(std::string(optarg_param) == "I386_CLANG5")
          {
             setOption(OPT_default_compiler, static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG5));
+            break;
+         }
+#endif
+#if HAVE_I386_CLANG6_COMPILER
+         if(std::string(optarg_param) == "I386_CLANG6")
+         {
+            setOption(OPT_default_compiler, static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG6));
             break;
          }
 #endif
@@ -1460,6 +1479,9 @@ void Parameter::PrintGccOptionsUsage(std::ostream & os) const
 #endif
 #if HAVE_I386_CLANG5_COMPILER
    << "            I386_CLANG5\n"
+#endif
+#if HAVE_I386_CLANG6_COMPILER
+   << "            I386_CLANG6\n"
 #endif
    << "\n"
    << "    -O<level>\n"
