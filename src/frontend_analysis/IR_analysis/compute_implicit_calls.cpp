@@ -359,7 +359,7 @@ DesignFlowStep_Status compute_implicit_calls::InternalExec()
       ///The list of def edge which contains for the moment only the value coming from the forward edge
       std::vector<std::pair<tree_nodeRef, unsigned int> > list_of_def_edge;
       list_of_def_edge.push_back(std::pair<tree_nodeRef, unsigned int>(init_var, BB1_index));
-      auto phi = tree_man->create_phi_node(new_induction_var, list_of_def_edge, BBN1_block_index);
+      auto phi = tree_man->create_phi_node(new_induction_var, list_of_def_edge, TM->GetTreeReindex(function_id), BBN1_block_index);
       BBN1_block->AddPhi(phi);
       gimple_phi* gp = GetPointer<gimple_phi>(GET_NODE(phi));
       GetPointer<ssa_name>(GET_NODE(gp->res))->use_set = PointToSolutionRef(new PointToSolution());
