@@ -179,6 +179,7 @@ unsigned int tree_helper::Size(const tree_nodeConstRef t)
             }
             long long max = get_integer_cst_value(GetPointer<integer_cst>(GET_NODE(sa->max)));
             long long min = get_integer_cst_value(GetPointer<integer_cst>(GET_NODE(sa->min)));
+
             long long min_it;
             long long max_it;
             bool unsigned_p;
@@ -205,7 +206,7 @@ unsigned int tree_helper::Size(const tree_nodeConstRef t)
                return_value = (64-static_cast<unsigned>(__builtin_clzll(static_cast<unsigned long long>(max))));
             else
             {
-               if(max==-1)
+               if(max==-1||max==0)
                   return_value = 1;
                else if(max<-1)
                   return_value = 65u-static_cast<unsigned>(__builtin_clzll(~static_cast<unsigned long long>(max)));
@@ -213,7 +214,7 @@ unsigned int tree_helper::Size(const tree_nodeConstRef t)
                   return_value = 65u-static_cast<unsigned>(__builtin_clzll(static_cast<unsigned long long>(max)));
                if(min<-1)
                {
-                  auto minbits = 65u-static_cast<unsigned>(__builtin_clzll(~static_cast<unsigned long long>(min)));
+                  unsigned minbits = 65u-static_cast<unsigned>(__builtin_clzll(~static_cast<unsigned long long>(min)));
                   return_value = std::max(return_value,minbits);
                }
                else if(min==-1)
@@ -281,7 +282,7 @@ unsigned int tree_helper::Size(const tree_nodeConstRef t)
                return_value = 64u-static_cast<unsigned>(__builtin_clzll(static_cast<unsigned long long>(max)));
             else
             {
-               if(max==-1)
+               if(max==-1||max==0)
                   return_value = 1;
                else if(max<-1)
                   return_value = 65u-static_cast<unsigned>(__builtin_clzll(~static_cast<unsigned long long>(max)));
@@ -289,7 +290,7 @@ unsigned int tree_helper::Size(const tree_nodeConstRef t)
                   return_value = 65u-static_cast<unsigned>(__builtin_clzll(static_cast<unsigned long long>(max)));
                if(min<-1)
                {
-                  auto minbits = 65u-static_cast<unsigned>(__builtin_clzll(~static_cast<unsigned long long>(min)));
+                  unsigned minbits = 65u-static_cast<unsigned>(__builtin_clzll(~static_cast<unsigned long long>(min)));
                   return_value = std::max(return_value,minbits);
                }
                else if(min==-1)
