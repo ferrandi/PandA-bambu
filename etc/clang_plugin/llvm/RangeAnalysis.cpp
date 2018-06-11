@@ -4624,7 +4624,16 @@ namespace RangeAnalysis {
             assert(oUpper.ne(Max));
             const APInt& smax = APIntOps::smin(oUpper, nuconstant);
             if (oUpper.ne(smax))
-               op->getSink()->setRange(Range(Anti,bw, op->getSink()->getRange().getLower(), smax));
+            {
+               auto sinkRange = op->getSink()->getRange();
+               if(sinkRange.isAnti())
+               {
+                  auto sinkAnti = Range::getAnti(sinkRange);
+                  op->getSink()->setRange(Range(Anti,bw, sinkAnti.getLower(), smax));
+               }
+               else
+                  op->getSink()->setRange(Range(Anti,bw, sinkRange.getLower(), smax));
+            }
          }
          else
             op->getSink()->setRange(newInterval);
