@@ -4854,7 +4854,7 @@ namespace clang
       }
    }
 
-   static void expandMemSetAsLoopLocal(llvm::MemSetInst *Memset)
+   static void expandMemSetAsLoopLocal(llvm::MemSetInst *Memset, const llvm::DataLayout* DL)
    {
       llvm::Instruction *InsertBefore=Memset;
       llvm::Value *DstAddr=Memset->getRawDest();
@@ -4869,6 +4869,21 @@ namespace clang
           OrigBB->splitBasicBlock(InsertBefore, "split");
       llvm::BasicBlock *LoopBB
         = llvm::BasicBlock::Create(F->getContext(), "loadstoreloop", F, NewBB);
+      if(llvm::dyn_cast<llvm::BitCastInst>(DstAddr))
+      {
+         auto srcType=llvm::cast<llvm::BitCastInst>(DstAddr)->getSrcTy();
+         if(srcType->isPointerTy())
+         {
+            auto pointee=llvm::cast<llvm::PointerType>(srcType)->getElementType();
+            if(pointee->isArrayTy())
+            {
+               auto elType=llvm::cast<llvm::ArrayType>(pointee)->getArrayElementType();
+               auto size= elType->isSized() ? DL->getTypeAllocSizeInBits(elType) : 8ULL;
+               if(size<Align*8)
+                  Align=size/8;
+            }
+         }
+      }
 
       bool AlignCanBeUsed = false;
       if(isa<llvm::ConstantInt>(CopyLen) &&
@@ -4985,7 +5000,7 @@ namespace clang
             }
             else if (llvm::MemSetInst *Memset = dyn_cast<llvm::MemSetInst>(MemCall))
             {
-               expandMemSetAsLoopLocal(Memset);
+               expandMemSetAsLoopLocal(Memset, DL);
                do_erase = true;
             }
             if(do_erase)
