@@ -179,6 +179,7 @@ unsigned int tree_helper::Size(const tree_nodeConstRef t)
             }
             long long max = get_integer_cst_value(GetPointer<integer_cst>(GET_NODE(sa->max)));
             long long min = get_integer_cst_value(GetPointer<integer_cst>(GET_NODE(sa->min)));
+
             long long min_it;
             long long max_it;
             bool unsigned_p;
@@ -202,18 +203,22 @@ unsigned int tree_helper::Size(const tree_nodeConstRef t)
                break;
             }
             if(unsigned_p)
-               return_value = (64-static_cast<unsigned>(__builtin_clzl(static_cast<unsigned long long>(max))));
+               return_value = (64-static_cast<unsigned>(__builtin_clzll(static_cast<unsigned long long>(max))));
             else
             {
-               if(max<0)
-                  return_value = 65u-static_cast<unsigned>(__builtin_clzl(~static_cast<unsigned long long>(max)));
+               if(max==-1||max==0)
+                  return_value = 1;
+               else if(max<-1)
+                  return_value = 65u-static_cast<unsigned>(__builtin_clzll(~static_cast<unsigned long long>(max)));
                else
-                  return_value = 65u-static_cast<unsigned>(__builtin_clzl(static_cast<unsigned long long>(max)));
-               if(min<0)
+                  return_value = 65u-static_cast<unsigned>(__builtin_clzll(static_cast<unsigned long long>(max)));
+               if(min<-1)
                {
-                  auto minbits = 65u-static_cast<unsigned>(__builtin_clzl(~static_cast<unsigned long long>(min)));
+                  unsigned minbits = 65u-static_cast<unsigned>(__builtin_clzll(~static_cast<unsigned long long>(min)));
                   return_value = std::max(return_value,minbits);
                }
+               else if(min==-1)
+                  return_value = std::max(return_value,1u);
             }
          }
          else if(sa->var)
@@ -274,18 +279,22 @@ unsigned int tree_helper::Size(const tree_nodeConstRef t)
             long long max = get_integer_cst_value(GetPointer<integer_cst>(GET_NODE(et->max)));
             long long min = get_integer_cst_value(GetPointer<integer_cst>(GET_NODE(et->min)));
             if(et->unsigned_flag)
-               return_value = 64u-static_cast<unsigned>(__builtin_clzl(static_cast<unsigned long long>(max)));
+               return_value = 64u-static_cast<unsigned>(__builtin_clzll(static_cast<unsigned long long>(max)));
             else
             {
-               if(max<0)
-                  return_value = 65u-static_cast<unsigned>(__builtin_clzl(~static_cast<unsigned long long>(max)));
+               if(max==-1||max==0)
+                  return_value = 1;
+               else if(max<-1)
+                  return_value = 65u-static_cast<unsigned>(__builtin_clzll(~static_cast<unsigned long long>(max)));
                else
-                  return_value = 65u-static_cast<unsigned>(__builtin_clzl(static_cast<unsigned long long>(max)));
-               if(min<0)
+                  return_value = 65u-static_cast<unsigned>(__builtin_clzll(static_cast<unsigned long long>(max)));
+               if(min<-1)
                {
-                  auto minbits = 65u-static_cast<unsigned>(__builtin_clzl(~static_cast<unsigned long long>(min)));
+                  unsigned minbits = 65u-static_cast<unsigned>(__builtin_clzll(~static_cast<unsigned long long>(min)));
                   return_value = std::max(return_value,minbits);
                }
+               else if(min==-1)
+                  return_value = std::max(return_value,1u);
             }
          }
          else

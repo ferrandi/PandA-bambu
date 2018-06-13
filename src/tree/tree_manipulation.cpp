@@ -1562,7 +1562,7 @@ tree_nodeRef tree_manipulation::create_return_expr(const tree_nodeRef & decl, tr
 ///GIMPLE_PHI
 
 ///Create a gimple_phi
-tree_nodeRef tree_manipulation::create_phi_node(tree_nodeRef & ssa_res, const std::vector<std::pair<tree_nodeRef, unsigned int> > & list_of_def_edge, unsigned int bb_index, bool virtual_flag) const
+tree_nodeRef tree_manipulation::create_phi_node(tree_nodeRef & ssa_res, const std::vector<std::pair<tree_nodeRef, unsigned int> > & list_of_def_edge, const tree_nodeRef & scpe, unsigned int bb_index, bool virtual_flag) const
 {
 
    std::vector<std::pair<tree_nodeRef, unsigned int> >::const_iterator iterator=list_of_def_edge.begin();
@@ -1593,6 +1593,7 @@ tree_nodeRef tree_manipulation::create_phi_node(tree_nodeRef & ssa_res, const st
    //Create the gimple_phi
    std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> IR_schema;
    IR_schema[TOK(TOK_RES)] = STR(GET_INDEX_NODE(ssa_res));
+   IR_schema[TOK(TOK_SCPE)] = STR(GET_INDEX_NODE(scpe));
    IR_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
    this->TreeM->create_tree_node(phi_node_nid, gimple_phi_K, IR_schema);
    tree_nodeRef phi_stmt = TreeM->GetTreeReindex(phi_node_nid);

@@ -98,7 +98,7 @@
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="INT" size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="ASSIGN_SIGNED_FU in1 out1" VERILOG_PROVIDED="assign out1 = in1;" VHDL_PROVIDED="begin\n  out1 &lt;= in1(BITSIZE_out1-1 downto 0);"/>
+          <NP_functionality LIBRARY="ASSIGN_SIGNED_FU in1 out1" VERILOG_PROVIDED="assign out1 = in1;" VHDL_PROVIDED="begin\n  out1 &lt;= resize_signed(in1,BITSIZE_out1);"/>
         </component_o>
       </circuit>
     </cell>
