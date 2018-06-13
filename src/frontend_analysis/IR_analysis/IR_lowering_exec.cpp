@@ -1185,6 +1185,69 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                   }
                }
 
+               if(GetPointer<binary_expr>(GET_NODE(ga->op0)))/// required by the CLANG/LLVM plugin
+               {
+                  auto be = GetPointer<binary_expr>(GET_NODE(ga->op0));
+                  if(GetPointer<unary_expr>(GET_NODE(be->op0)))
+                  {
+                     if (GET_NODE(be->op0)->get_kind() == addr_expr_K)
+                     {
+                        addr_expr* ae = GetPointer<addr_expr>(GET_NODE(be->op0));
+                        tree_nodeRef ae_expr = tree_man->create_unary_operation(ae->type,ae->op, srcp_default, addr_expr_K);///It is required to de-share some IR nodes
+                        tree_nodeRef ae_ga = CreateGimpleAssign(ae->type, ae_expr, block.first, srcp_default);
+                        tree_nodeRef ae_vd = GetPointer<gimple_assign>(GET_NODE(ae_ga))->op0;
+                        if(code0 == mem_ref_K)
+                           GetPointer<gimple_assign>(GET_NODE(ae_ga))->temporary_address = true;
+                        be->op0 = ae_vd;
+                        block.second->PushBefore(ae_ga, *it_los);
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(ae_ga)->ToString());
+                     }
+                     else
+                     {
+                        unary_expr * ue = GetPointer<unary_expr>(GET_NODE(be->op0));
+                        tree_nodeRef new_ga = CreateGimpleAssign(ue->type, be->op0, block.first, srcp_default);
+                        tree_nodeRef ssa_vd = GetPointer<gimple_assign>(GET_NODE(new_ga))->op0;
+                        if(code0 == mem_ref_K)
+                           GetPointer<gimple_assign>(GET_NODE(new_ga))->temporary_address = true;
+                        be->op0 = ssa_vd;
+                        block.second->PushBefore(new_ga, *it_los);
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(new_ga)->ToString());
+                     }
+                     restart_analysis = true;
+                  }
+                  if(GetPointer<unary_expr>(GET_NODE(be->op1)))
+                  {
+                     unary_expr * ue = GetPointer<unary_expr>(GET_NODE(be->op1));
+                     tree_nodeRef new_ga = CreateGimpleAssign(ue->type, be->op1, block.first, srcp_default);
+                     tree_nodeRef ssa_vd = GetPointer<gimple_assign>(GET_NODE(new_ga))->op0;
+                     be->op1 = ssa_vd;
+                     block.second->PushBefore(new_ga, *it_los);
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(new_ga)->ToString());
+                     restart_analysis = true;
+                  }
+                  if(GetPointer<binary_expr>(GET_NODE(be->op0)))
+                  {
+                     binary_expr * op = GetPointer<binary_expr>(GET_NODE(be->op0));
+                     tree_nodeRef new_ga = CreateGimpleAssign(op->type, be->op0, block.first, srcp_default);
+                     tree_nodeRef ssa_vd = GetPointer<gimple_assign>(GET_NODE(new_ga))->op0;
+                     if(code0 == mem_ref_K)
+                        GetPointer<gimple_assign>(GET_NODE(new_ga))->temporary_address = true;
+                     be->op0 = ssa_vd;
+                     block.second->PushBefore(new_ga, *it_los);
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(new_ga)->ToString());
+                     restart_analysis = true;
+                  }
+                  if(GetPointer<binary_expr>(GET_NODE(be->op1)))
+                  {
+                     binary_expr * op = GetPointer<binary_expr>(GET_NODE(be->op1));
+                     tree_nodeRef new_ga = CreateGimpleAssign(op->type, be->op1, block.first, srcp_default);
+                     tree_nodeRef ssa_vd = GetPointer<gimple_assign>(GET_NODE(new_ga))->op0;
+                     be->op1 = ssa_vd;
+                     block.second->PushBefore(new_ga, *it_los);
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(new_ga)->ToString());
+                     restart_analysis = true;
+                  }
+               }
                if(code1 == array_ref_K)
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---expand array_ref 1 " + STR(GET_INDEX_NODE(ga->op1)));

@@ -1182,8 +1182,12 @@ clang4_regression_simple_no_expose_globals.sh\
 clang5_regression_simple_default.sh\
 clang5_regression_simple_ext_pipelined.sh\
 clang5_regression_simple_no_expose_globals.sh\
+clang6_regression_simple_default.sh\
+clang6_regression_simple_ext_pipelined.sh\
+clang6_regression_simple_no_expose_globals.sh\
 softfloat-tests-clang4.sh\
 softfloat-tests-clang5.sh\
+softfloat-tests-clang6.sh\
 libm-testsClang.sh\
 CHStone_frontend1Clang.sh
 

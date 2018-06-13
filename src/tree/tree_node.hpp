@@ -2716,7 +2716,7 @@ struct function_type : public type_node
 
 /**
  * This struct specifies the ge_expr node.
- * Relational operator. GE_EXPR is allowed only for integer (or pointer or enumeral) or real types.
+ * Relational operator. GE_EXPR is allowed only for integer (or pointer or enumerate) or real types.
  * The operands will have the same type, and the value is always the type used by the language for booleans.
 */
 CREATE_TREE_NODE_CLASS(ge_expr,binary_expr);
@@ -2826,7 +2826,7 @@ CREATE_TREE_NODE_CLASS(goto_subroutine,binary_expr);
 
 /**
  * This struct specifies the gt_expr node.
- * Relational operator. GT_EXPR is allowed only for integer (or pointer or enumeral) or real types.
+ * Relational operator. GT_EXPR is allowed only for integer (or pointer or enumerate) or real types.
  * The operands will have the same type, and the value is always the type used by the language for booleans.
 */
 CREATE_TREE_NODE_CLASS(gt_expr,binary_expr);
@@ -3051,7 +3051,7 @@ CREATE_TREE_NODE_CLASS(lang_type,type_node);
 
 /**
  * This struct specifies the le_expr node.
- * Relational operator.LE_EXPR is allowed only for integer (or pointer or enumeral) or real types.
+ * Relational operator.LE_EXPR is allowed only for integer (or pointer or enumerate) or real types.
  * The operands will have the same type, and the value is always the type used by the language for booleans. 
 */
 CREATE_TREE_NODE_CLASS(le_expr,binary_expr);
@@ -3083,7 +3083,7 @@ CREATE_TREE_NODE_CLASS(lshift_expr,binary_expr);
 
 /**
  * This struct specifies the lt_expr node.
- * Relational operator. LT_EXPR is allowed only for integer (or pointer or enumeral) or real types.
+ * Relational operator. LT_EXPR is allowed only for integer (or pointer or enumerate) or real types.
  * The operands will have the same type, and the value is always the type used by the language for booleans.
 */
 CREATE_TREE_NODE_CLASS(lt_expr,binary_expr);
