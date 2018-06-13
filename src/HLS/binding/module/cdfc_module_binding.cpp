@@ -1211,6 +1211,14 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
 
       int _w = 1;
 
+      // Do a preliminary register binding to help the sharing of complex operations
+      {
+        DesignFlowStepRef regb;
+        regb = GetPointer<const HLSFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("HLS"))->CreateHLSFlowStep(HLSFlowStep_Type::WEIGHTED_CLIQUE_REGISTER_BINDING, funId, HLSFlowStepSpecializationConstRef(new WeightedCliqueRegisterBindingSpecialization(CliqueCovering_Algorithm::WEIGHTED_COLORING)));
+        regb->Initialize();
+        regb->Exec();
+      }
+
       for(const auto& fu_cv : candidate_vertices)
       {
          unsigned int fu_s1 = fu_cv.first;
@@ -1627,7 +1635,7 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
             if(allocation_information->get_number_fu(p_it->first)!=INFINITE_UINT)
             {
                THROW_ASSERT(allocation_information->get_number_channels(p_it->first) == 0 || allocation_information->get_number_channels(p_it->first) == allocation_information->get_number_fu(p_it->first), "unexpected condition");
-
+               PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Defining resource constraints for  : "+ allocation_information->get_string_name(p_it->first) + " to " + STR(allocation_information->get_number_fu(p_it->first)));
                module_clique->suggest_min_resources(allocation_information->get_number_channels(p_it->first));
                if(allocation_information->get_number_channels(p_it->first)>0)
                   module_clique->max_resources(allocation_information->get_number_channels(p_it->first));
@@ -1640,7 +1648,7 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
             if(var && !HLSMgr->Rmem->is_private_memory(var))
                module_clique->min_resources(allocation_information->get_number_channels(p_it->first));
 
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Starting clique covering on a graph with "+ STR(p_it->second.size()) + " vertices");
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Starting clique covering on a graph with "+ STR(p_it->second.size()) + " vertices for " + allocation_information->get_string_name(p_it->first));
 
             /// performing clique covering
             if(disabling_slack_based_binding)
@@ -1660,8 +1668,10 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
                   no_check_clique<vertex> cq;
                   module_clique->exec(no_filter_clique<vertex>(), cq);
                }
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Number of cliques covering the graph: "+ STR(module_clique->num_vertices()) + " for " + allocation_information->get_string_name(p_it->first));
                if(module_clique->num_vertices()==0 || (allocation_information->get_number_channels(p_it->first) >= 1 && module_clique->num_vertices()>allocation_information->get_number_channels(p_it->first)))
                {
+                  PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Restarting with BIPARTITE_MATCHING: "+ res_name);
                   module_clique = clique_covering<vertex>::create_solver(CliqueCovering_Algorithm::BIPARTITE_MATCHING);
                   for(std::unordered_set<cdfc_vertex>::const_iterator vert_it = p_it->second.begin(); vert_it != vert_it_end; ++vert_it)
                   {
@@ -1717,6 +1727,12 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
                      module_clique->min_resources(allocation_information->get_number_channels(p_it->first));
                   no_check_clique<vertex> cq;
                   module_clique->exec(no_filter_clique<vertex>(), cq);
+                  if(allocation_information->get_number_fu(p_it->first)!=INFINITE_UINT)
+                  {
+                     THROW_ASSERT(allocation_information->get_number_channels(p_it->first) == 0 || allocation_information->get_number_channels(p_it->first) == allocation_information->get_number_fu(p_it->first), "unexpected condition");
+                     if(allocation_information->get_number_channels(p_it->first)>0 && module_clique->num_vertices() > allocation_information->get_number_channels(p_it->first))
+                        THROW_ERROR("Something of wrong happen: no feasible solution exist for module binding");
+                  }
                }
             }
 #if HAVE_EXPERIMENTAL
@@ -1735,7 +1751,7 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
                module_binding_check<vertex> cq(fu_prec, area_resource, HLS, HLSMgr, slack_time, starting_time, controller_delay, mrbs);
                module_clique->exec(slack_based_filtering(slack_time, starting_time, controller_delay, fu_prec, HLS, HLSMgr, area_resource, con_rel), cq);
             }
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Number of cliques covering the graph: "+ STR(module_clique->num_vertices()));
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Number of cliques covering the graph: "+ STR(module_clique->num_vertices()) + " for " + allocation_information->get_string_name(p_it->first));
             total_modules_allocated +=module_clique->num_vertices();
             to_update.clear();
 

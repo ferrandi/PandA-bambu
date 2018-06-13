@@ -640,7 +640,15 @@ build/src/parser/treegcc/treeLexer.cpp
 build/src/parser/treegcc/treeParser.cpp
 build/src/parser/treegcc/treeParser.hpp
 build/src/revision_hash.hpp
+etc/clang_plugin/HardekopfLin_AA.cpp
+etc/clang_plugin/HardekopfLin_AA.hpp
 etc/clang_plugin/dumpGimple.cpp
+etc/clang_plugin/llvm/RangeAnalysis.cpp
+etc/clang_plugin/llvm/RangeAnalysis.hpp
+etc/clang_plugin/llvm/eSSA.cpp
+etc/clang_plugin/llvm/eSSA.hpp
+etc/clang_plugin/llvm/my_OrderedInstructions.cpp
+etc/clang_plugin/llvm/my_OrderedInstructions.hpp
 etc/clang_plugin/plugin_dumpGimpleEmpty.cpp
 etc/clang_plugin/plugin_dumpGimpleSSA.cpp
 etc/clang_plugin/plugin_includes.hpp
@@ -721,6 +729,7 @@ etc/libbambu/libm/kf_sin.c
 etc/libbambu/libm/kf_tan.c
 etc/libbambu/libm/math_constants.h
 etc/libbambu/libm/math_private.h
+etc/libbambu/libm/math_private_kernels.c
 etc/libbambu/libm/math_private_kernels.h
 etc/libbambu/libm/math_privatef.h
 etc/libbambu/libm/poly_sqrtf.c
@@ -1791,6 +1800,8 @@ src/frontend_analysis/IR_analysis/determine_memory_accesses.cpp
 src/frontend_analysis/IR_analysis/determine_memory_accesses.hpp
 src/frontend_analysis/IR_analysis/extract_patterns.cpp
 src/frontend_analysis/IR_analysis/extract_patterns.hpp
+src/frontend_analysis/IR_analysis/fanout_opt.cpp
+src/frontend_analysis/IR_analysis/fanout_opt.hpp
 src/frontend_analysis/IR_analysis/hdl_function_decl_fix.cpp
 src/frontend_analysis/IR_analysis/hdl_function_decl_fix.hpp
 src/frontend_analysis/IR_analysis/hdl_var_decl_fix.cpp

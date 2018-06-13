@@ -1098,6 +1098,12 @@ tree_nodeRef IR_lowering::expand_MC(tree_nodeRef op0, integer_cst* ic_node, tree
    long long int ext_op1 = tree_helper::get_integer_cst_value(ic_node);
    short int mult_plus_ratio = 3;
    unsigned int data_bitsize = tree_helper::Size(GET_NODE(op0));
+   unsigned int typeSize = tree_helper::Size(type_expr);
+   if(typeSize<64)
+   {
+      ext_op1 <<= 64-typeSize;
+      ext_op1 >>= 64-typeSize;
+   }
 #if HAVE_BAMBU_BUILT
    if(GetPointer<HLS_manager>(AppM))
    {

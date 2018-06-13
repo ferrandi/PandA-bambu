@@ -31,8 +31,6 @@ gcc_regression_simple/builtins/strstr-asm.c
 gcc_regression_simple/builtins/strstr.c
 gcc_regression_simple/ieee/20010114-2.c
 gcc_regression_simple/ieee/20011123-1.c
-gcc_regression_simple/ieee/20030331-1.c
-gcc_regression_simple/ieee/920518-1.c
 gcc_regression_simple/ieee/980619-1.c
 gcc_regression_simple/ieee/builtin-nan-1.c
 gcc_regression_simple/ieee/compare-fp-2.c
@@ -327,7 +325,6 @@ gcc_regression_simple/20070724-1.c
 gcc_regression_simple/20071011-1.c
 gcc_regression_simple/20071018-1.c
 gcc_regression_simple/20071029-1.c
-gcc_regression_simple/20071030-1.c
 gcc_regression_simple/20071108-1.c
 gcc_regression_simple/20071205-1.c
 gcc_regression_simple/20071216-1.c
@@ -575,7 +572,6 @@ gcc_regression_simple/bf-pack-1.c
 gcc_regression_simple/bf-sign-1.c
 gcc_regression_simple/bitfld-1.c
 gcc_regression_simple/bitfld-2.c
-gcc_regression_simple/bitfld-3.c
 gcc_regression_simple/bitfld-4.c
 gcc_regression_simple/call-trap-1.c
 gcc_regression_simple/cmpdi-1.c
@@ -588,7 +584,6 @@ gcc_regression_simple/compare-3.c
 gcc_regression_simple/complex-1.c
 gcc_regression_simple/complex-4.c
 gcc_regression_simple/complex-7.c
-gcc_regression_simple/conversion.c
 gcc_regression_simple/cvt-1.c
 gcc_regression_simple/dbra-1.c
 gcc_regression_simple/divcmp-1.c
@@ -604,7 +599,6 @@ gcc_regression_simple/enum-1.c
 gcc_regression_simple/enum-2.c
 gcc_regression_simple/enum-3.c
 gcc_regression_simple/extzvsi.c
-gcc_regression_simple/floatunsisf-1.c
 gcc_regression_simple/func-ptr-1.c
 gcc_regression_simple/gofast.c
 gcc_regression_simple/ifcvt-onecmpl-abs-1.c

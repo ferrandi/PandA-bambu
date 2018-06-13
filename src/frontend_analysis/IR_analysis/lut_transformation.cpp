@@ -114,7 +114,7 @@ unsigned long long int lut_transformation::BinToDec(const std::string& number)
    unsigned long long int i_bin = 0;
    try
    {
-      size_t * endptr = NULL;
+      size_t * endptr = nullptr;
       i_bin = std::stoull(number,endptr,2);
    }
    catch( const std::invalid_argument &e )
@@ -443,7 +443,7 @@ void lut_transformation::MergeLut(const std::list<tree_nodeRef>& gimpleLutList, 
 #endif
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering node " + STR(*nodeToExpand));
          std::vector<tree_nodeRef> inputsOfToMerge;
-         lut_expr* lutToExpand = NULL;
+         lut_expr* lutToExpand = nullptr;
          // Get the lut to expand and its inputs
          THROW_ASSERT(*nodeToExpand, "");
          if((GET_NODE(*nodeToExpand))->get_kind() == ssa_name_K)

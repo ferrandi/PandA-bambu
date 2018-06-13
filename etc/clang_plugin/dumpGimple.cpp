@@ -40,9 +40,9 @@
 #include "plugin_includes.hpp"
 
 #include "clang/AST/AST.h"
-
 #include "llvm/IR/Constants.h"
 #include "llvm/IR/ConstantRange.h"
+#include "llvm/IR/Dominators.h"
 #include "llvm/IR/Module.h"
 #include "llvm/IR/Function.h"
 #include "llvm/IR/Intrinsics.h"
@@ -54,18 +54,24 @@
 #include "llvm/IR/CFG.h"
 #include "llvm/IR/Operator.h"
 #include "llvm/IR/GetElementPtrTypeIterator.h"
+#include "llvm/IR/Verifier.h"
+#include "llvm/Analysis/AssumptionCache.h"
 #include "llvm/Analysis/CFG.h"
+#include "llvm/Analysis/InstructionSimplify.h"
+#include "llvm/Analysis/ValueTracking.h"
 #include "llvm/Pass.h"
 #include "llvm/Analysis/LoopPass.h"
 
-#if __clang_major__ >= 5
+#if __clang_major__ == 4
+#include "llvm/Transforms/Utils/MemorySSA.h"
+#else
 #include "llvm/Analysis/MemorySSA.h"
 #include "llvm/Transforms/Utils/LowerMemIntrinsics.h"
-#else
-#include "llvm/Transforms/Utils/MemorySSA.h"
+#include "llvm/Support/KnownBits.h"
 #endif
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/Analysis/TargetTransformInfo.h"
+#include "llvm/Analysis/TargetLibraryInfo.h"
 #include "llvm/Analysis/LazyValueInfo.h"
 #include "llvm/Analysis/AliasAnalysis.h"
 #include "llvm/IR/ModuleSlotTracker.h"
@@ -73,10 +79,19 @@
 #include "llvm/IR/Instructions.h"
 #include "llvm/IR/InlineAsm.h"
 #include "llvm/Support/FileSystem.h"
+#include "llvm/Transforms/Utils/Local.h"
 #include "llvm/CodeGen/IntrinsicLowering.h"
 #include "clang/AST/Mangle.h"
 #include "clang/AST/Stmt.h"
 #include "clang/Lex/Preprocessor.h"
+
+
+#if HAVE_LIBBDD
+#include "HardekopfLin_AA.hpp"
+#endif
+
+#include "llvm/eSSA.hpp"
+#include "llvm/RangeAnalysis.hpp"
 
 #include <iomanip>
 #include <cxxabi.h>
@@ -113,8 +128,10 @@ namespace clang
       DEFGSCODE(GIMPLE_PHI_VIRTUAL, "gimple_phi", GSS_PHI)
       DEFGSCODE(GIMPLE_ASSIGN_ALLOCA, "gimple_assign", GSS_WITH_MEM_OPS)
       DEFGSCODE(GIMPLE_NOPMEM, "gimple_nop", GSS_BASE)
-      DEFGSCODE(GETELEMENTPTR, "gimple_assign", GSS_BASE)
+      DEFGSCODE(GETELEMENTPTR, "gimple_assign", GSS_WITH_OPS)
+      DEFGSCODE(GIMPLE_SSACOPY, "gimple_assign", GSS_WITH_OPS)
       DEFTREECODE (ALLOCAVAR_DECL, "var_decl", tcc_declaration, 0)
+      DEFTREECODE (ORIGVAR_DECL, "var_decl", tcc_declaration, 0)
       DEFTREECODE(INTEGER_CST_SIGNED, "integer_cst", tcc_constant, 0)
       DEFTREECODE(SIGNEDPOINTERTYPE, "integer_type", tcc_type, 0)
       DEFTREECODE (MISALIGNED_INDIRECT_REF, "misaligned_indirect_ref", tcc_reference, 2)
@@ -139,8 +156,10 @@ namespace clang
       DEFGSCODE(GIMPLE_PHI_VIRTUAL, "gimple_phi", GSS_PHI)
       DEFGSCODE(GIMPLE_ASSIGN_ALLOCA, "gimple_assign", GSS_WITH_MEM_OPS)
       DEFGSCODE(GIMPLE_NOPMEM, "gimple_nop", GSS_BASE)
-      DEFGSCODE(GETELEMENTPTR, "gimple_assign", GSS_BASE)
+      DEFGSCODE(GETELEMENTPTR, "gimple_assign", GSS_WITH_OPS)
+      DEFGSCODE(GIMPLE_SSACOPY, "gimple_assign", GSS_WITH_OPS)
       DEFTREECODE(ALLOCAVAR_DECL, "var_decl", tcc_declaration, 0)
+      DEFTREECODE (ORIGVAR_DECL, "var_decl", tcc_declaration, 0)
       DEFTREECODE(INTEGER_CST_SIGNED, "integer_cst", tcc_constant, 0)
       DEFTREECODE(SIGNEDPOINTERTYPE, "integer_type", tcc_type, 0)
       DEFTREECODE (MISALIGNED_INDIRECT_REF, "misaligned_indirect_ref", tcc_reference, 2)
@@ -164,8 +183,10 @@ namespace clang
       DEFGSCODE(GIMPLE_PHI_VIRTUAL, "gimple_phi", GSS_PHI)
       DEFGSCODE(GIMPLE_ASSIGN_ALLOCA, "gimple_assign", GSS_WITH_MEM_OPS)
       DEFGSCODE(GIMPLE_NOPMEM, "gimple_nop", GSS_BASE)
-      DEFGSCODE(GETELEMENTPTR, "gimple_assign", GSS_BASE)
+      DEFGSCODE(GETELEMENTPTR, "gimple_assign", GSS_WITH_OPS)
+      DEFGSCODE(GIMPLE_SSACOPY, "gimple_assign", GSS_WITH_OPS)
       DEFTREECODE(ALLOCAVAR_DECL, "var_decl", tcc_declaration, 0)
+      DEFTREECODE (ORIGVAR_DECL, "var_decl", tcc_declaration, 0)
       DEFTREECODE(INTEGER_CST_SIGNED, "integer_cst", tcc_constant, 0)
       DEFTREECODE(SIGNEDPOINTERTYPE, "integer_type", tcc_type, 0)
       DEFTREECODE (MISALIGNED_INDIRECT_REF, "misaligned_indirect_ref", tcc_reference, 2)
@@ -189,8 +210,10 @@ namespace clang
       DEFGSCODE(GIMPLE_PHI_VIRTUAL, "gimple_phi", GSS_PHI)
       DEFGSCODE(GIMPLE_ASSIGN_ALLOCA, "gimple_assign", GSS_WITH_MEM_OPS)
       DEFGSCODE(GIMPLE_NOPMEM, "gimple_nop", GSS_BASE)
-      DEFGSCODE(GETELEMENTPTR, "gimple_assign", GSS_BASE)
+      DEFGSCODE(GETELEMENTPTR, "gimple_assign", GSS_WITH_OPS)
+      DEFGSCODE(GIMPLE_SSACOPY, "gimple_assign", GSS_WITH_OPS)
       DEFTREECODE(ALLOCAVAR_DECL, "var_decl", tcc_declaration, 0)
+      DEFTREECODE (ORIGVAR_DECL, "var_decl", tcc_declaration, 0)
       DEFTREECODE(INTEGER_CST_SIGNED, "integer_cst", tcc_constant, 0)
       DEFTREECODE(SIGNEDPOINTERTYPE, "integer_type", tcc_type, 0)
       DEFTREECODE (MISALIGNED_INDIRECT_REF, "misaligned_indirect_ref", tcc_reference, 2)
@@ -242,8 +265,10 @@ namespace clang
       DEFGSCODE(GIMPLE_PHI_VIRTUAL, "gimple_phi", GSS_PHI)
       DEFGSCODE(GIMPLE_ASSIGN_ALLOCA, "gimple_assign", GSS_WITH_MEM_OPS)
       DEFGSCODE(GIMPLE_NOPMEM, "gimple_nop", GSS_BASE)
-      DEFGSCODE(GETELEMENTPTR, "gimple_assign", GSS_BASE)
+      DEFGSCODE(GETELEMENTPTR, "gimple_assign", GSS_WITH_OPS)
+      DEFGSCODE(GIMPLE_SSACOPY, "gimple_assign", GSS_WITH_OPS)
       DEFTREECODE(ALLOCAVAR_DECL, "var_decl", tcc_declaration, 0)
+      DEFTREECODE (ORIGVAR_DECL, "var_decl", tcc_declaration, 0)
       DEFTREECODE(INTEGER_CST_SIGNED, "integer_cst", tcc_constant, 0)
       DEFTREECODE(SIGNEDPOINTERTYPE, "integer_type", tcc_type, 0)
       DEFTREECODE (MISALIGNED_INDIRECT_REF, "misaligned_indirect_ref", tcc_reference, 2)
@@ -276,8 +301,9 @@ namespace clang
                           const std::string& _outdir_name, const std::string& _InFile, bool _onlyGlobals)
       : outdir_name(_outdir_name), InFile(_InFile), filename(create_file_name_string(_outdir_name,_InFile)), Instance(_Instance),
         stream(create_file_name_string(_outdir_name,_InFile), EC, llvm::sys::fs::F_RW), onlyGlobals(_onlyGlobals),
-        DL(0),modulePass(0),
+        DL(nullptr),modulePass(nullptr),
         last_used_index(0), column(0),
+        PtoSets_AA(nullptr),
         SignedPointerTypeReference(0),
         last_memory_ssa_vers(std::numeric_limits<int>::max()),
         last_BB_index(2)
@@ -379,6 +405,7 @@ namespace clang
             {
                llvm_obj->print(llvm::errs(), true);
                llvm::errs() << "\n";
+               stream.close();
                llvm_unreachable((std::string("unexpected condition: ") + std::string(ValueTyNames[llvm_obj->getValueID()])).c_str());
             }
          }
@@ -403,6 +430,7 @@ namespace clang
                llvm_obj->print(llvm::errs(), true);
                llvm::errs() << "\n";
                llvm::errs() << cast<llvm::ConstantExpr>(llvm_obj)->getOpcodeName() << "\n";
+               stream.close();
                llvm_unreachable((std::string("unexpected condition: ") + std::string(ValueTyNames[llvm_obj->getValueID()])).c_str());
             }
          }
@@ -453,6 +481,10 @@ namespace clang
                      return assignCode(t, GT(GIMPLE_ASSIGN));
                   case llvm::Intrinsic::rint:
                      return assignCode(t, GT(GIMPLE_ASSIGN));
+#if __clang_major__ != 4
+                  case llvm::Intrinsic::ssa_copy:
+                     return assignCode(t, GT(GIMPLE_SSACOPY));
+#endif
                   default:
                      llvm::errs() << "assignCodeAuto kind not supported: " << ValueTyNames[vid] << "\n";
                      ci->print(llvm::errs(), true);
@@ -499,6 +531,11 @@ namespace clang
    {
       if(TREE_CODE(t) == GT(TRANSLATION_UNIT_DECL)) return  false;
       if(TREE_CODE(t) == GT(ALLOCAVAR_DECL)) return  false;
+      if(TREE_CODE(t) == GT(ORIGVAR_DECL))
+      {
+         const orig_var* ov = reinterpret_cast<const orig_var*>(t);
+         return DECL_ASSEMBLER_NAME_SET_P(ov->orig);
+      }
       if(TREE_CODE(t) == GT(LABEL_DECL)) return  false;
       const llvm::GlobalObject* llvm_obj = reinterpret_cast<const llvm::GlobalObject*>(t);
       if(!llvm_obj->getName().empty())
@@ -520,6 +557,11 @@ namespace clang
    const void* DumpGimpleRaw::DECL_ASSEMBLER_NAME(const void * t)
    {
       assert(TREE_CODE(t) != GT(TRANSLATION_UNIT_DECL));
+      if(TREE_CODE(t) == GT(ORIGVAR_DECL))
+      {
+         const orig_var* ov = reinterpret_cast<const orig_var*>(t);
+         return DECL_ASSEMBLER_NAME(ov->orig);
+      }
       const llvm::GlobalObject* llvm_obj = reinterpret_cast<const llvm::GlobalObject*>(t);
       if(!llvm_obj->getName().empty())
       {
@@ -601,6 +643,7 @@ namespace clang
    {
       if(TREE_CODE(t) == GT(TRANSLATION_UNIT_DECL)) return nullptr;
       if(TREE_CODE(t) == GT(ALLOCAVAR_DECL)) return nullptr;
+      if(TREE_CODE(t) == GT(ORIGVAR_DECL)) return nullptr;
       if(TREE_CODE(t) == GT(LABEL_DECL)) return nullptr;
       if(TREE_CODE(t) == GT(FIELD_DECL))
       {
@@ -723,6 +766,11 @@ namespace clang
          return nullptr;
       else if(TREE_CODE(t) == GT(ALLOCAVAR_DECL))
          return nullptr;
+      else if(TREE_CODE(t) == GT(ORIGVAR_DECL))
+      {
+         const orig_var* ov = reinterpret_cast<const orig_var*>(t);
+         return DECL_SOURCE_LOCATION(ov->orig);
+      }
       else if(TREE_CODE(t) == GT(PARM_DECL))
          return nullptr;
       else
@@ -884,7 +932,7 @@ namespace clang
 
    int DumpGimpleRaw::getBB_index(const llvm::BasicBlock * BB)
    {
-      assert(BB != 0);
+      assert(BB != nullptr);
       if(BB_index_map.find(BB) == BB_index_map.end())
       {
          BB_index_map[BB] = last_BB_index;
@@ -1073,7 +1121,7 @@ namespace clang
          auto ty = store.getValueOperand()->getType();
          auto type = assignCodeType(ty);
          auto written_obj_size = ty->isSized() ? DL->getTypeAllocSizeInBits(ty) : 8ULL;
-         if(written_obj_size > (8*store.getAlignment()))
+         if(store.getAlignment() && written_obj_size > (8*store.getAlignment()))
             return build1(GT(MISALIGNED_INDIRECT_REF), type, addr);
          else
             return build2(GT(MEM_REF), type, addr, zero);
@@ -1085,16 +1133,35 @@ namespace clang
    {
       const llvm::AllocaInst* inst = reinterpret_cast<const llvm::AllocaInst*>(g);
       auto type = assignCodeType(inst->getType());
-      const void* alloca_var;
+      const void* allocaVar;
       if(index2alloca_var.find(g) == index2alloca_var.end())
       {
          auto& av = index2alloca_var[g];
          av.alloc_inst = inst;
-         alloca_var =assignCode(&av, GT(ALLOCAVAR_DECL));
+         std::set<const llvm::User*> visited;
+         visited.insert(inst);
+         const llvm::TargetLibraryInfo &TLI =
+               modulePass->getAnalysis<llvm::TargetLibraryInfoWrapperPass>().getTLI();
+         av.addr = temporary_addr_check(inst, visited, TLI);
+         allocaVar =assignCode(&av, GT(ALLOCAVAR_DECL));
       }
       else
-         alloca_var = &index2alloca_var.find(g)->second;
-      return build1(GT(ADDR_EXPR), type, alloca_var);
+         allocaVar = &index2alloca_var.find(g)->second;
+      return build1(GT(ADDR_EXPR), type, allocaVar);
+   }
+
+   const void* DumpGimpleRaw::DECL_ABSTRACT_ORIGIN(const void*t)
+   {
+      const void* origVar;
+      if(index2orig_var.find(t) == index2orig_var.end())
+      {
+         auto& ov = index2orig_var[t];
+         ov.orig = t;
+         origVar = assignCode(&ov, GT(ORIGVAR_DECL));
+      }
+      else
+         origVar = &index2orig_var.find(t)->second;
+      return origVar;
    }
 
    const void* DumpGimpleRaw::gimple_assign_rhs_getelementptr(const void* g)
@@ -1104,7 +1171,7 @@ namespace clang
       return LowerGetElementPtr(inst->getType(), inst, currentFunction);
    }
 
-   bool DumpGimpleRaw::temporary_addr_check(const llvm::User* inst, std::set<const llvm::User*>& visited)
+   bool DumpGimpleRaw::temporary_addr_check(const llvm::User* inst, std::set<const llvm::User*>& visited, const llvm::TargetLibraryInfo &TLI)
    {
       for (auto U : inst->users())
       {
@@ -1118,9 +1185,8 @@ namespace clang
                if(U->getOperand(0) == inst)
                   return false;
             }
-            else if(isa<llvm::PHINode>(U))///PHIs require a PointTo set computed
-               return false;
-            else if(isa<llvm::GetElementPtrInst>(U) ||
+            else if(isa<llvm::PHINode>(U) ||
+                    isa<llvm::GetElementPtrInst>(U) ||
                     isa<llvm::BitCastInst>(U) ||
                     isa<llvm::PtrToIntInst>(U) ||
                     isa<llvm::IntToPtrInst>(U) ||
@@ -1130,7 +1196,13 @@ namespace clang
                     cast<llvm::Instruction>(U)->getOpcode() == llvm::Instruction::And ||
                     cast<llvm::Instruction>(U)->getOpcode() == llvm::Instruction::Or)
             {
-               auto res = temporary_addr_check(U, visited);
+               if(isa<llvm::PHINode>(U)
+#if HAVE_LIBBDD
+                     && (!PtoSets_AA || !is_PTS(PtoSets_AA->PE(U), TLI))
+#endif
+                     )
+                  return false;
+               auto res = temporary_addr_check(U, visited, TLI);
                if(!res)
                   return res;
             }
@@ -1143,7 +1215,11 @@ namespace clang
                   ;
                else
                {
-                  auto res = temporary_addr_check(U, visited);
+#if HAVE_LIBBDD
+                  if(!PtoSets_AA || !is_PTS(PtoSets_AA->PE(U), TLI))
+#endif
+                     return false;
+                  auto res = temporary_addr_check(U, visited, TLI);
                   if(!res)
                      return res;
                }
@@ -1157,6 +1233,7 @@ namespace clang
                U->print(llvm::errs(), true);
                llvm::errs() << "\n";
                llvm::errs() << cast<llvm::Instruction>(U)->getOpcodeName() << "\n";
+               stream.close();
                llvm_unreachable((std::string("unexpected condition: ") + std::string(ValueTyNames[U->getValueID()])).c_str());
             }
          }
@@ -1194,6 +1271,7 @@ namespace clang
          case llvm::Instruction::SRem :
          case llvm::Instruction::AShr :
          case llvm::Instruction::FPToSI:
+         case llvm::Instruction::SExt:
             return true;
          default:
             return false;
@@ -1324,6 +1402,57 @@ namespace clang
             ssa_vers = MST.getLocalSlot(operand);
             assert(ssa_vers>=0);
             sn.type = assignCodeType(getCondSignedResult(operand, operand->getType()));
+#if HAVE_LIBBDD
+            if(operand->getType()->isPointerTy() && PtoSets_AA)
+            {
+               auto varId = PtoSets_AA->PE(operand);
+               const llvm::TargetLibraryInfo &TLI =
+                     modulePass->getAnalysis<llvm::TargetLibraryInfoWrapperPass>().getTLI();
+               if(is_PTS(varId, TLI, true))
+               {
+                  const std::vector<u32>* pts = PtoSets_AA->pointsToSet(varId);
+                  for(auto var: *pts)
+                  {
+                     if(PtoSets_AA->is_any(var))
+                     {
+                        sn.ptr_info.pt.anything = true;
+                     }
+                     else
+                     {
+                        auto val = PtoSets_AA->getValue(var);
+                        assert(val);
+                        assert(!dyn_cast<llvm::Argument>(val));
+                        sn.ptr_info.valid=true;
+                        auto vid = val->getValueID();
+                        if(vid == llvm::Value::InstructionVal+llvm::Instruction::Alloca)
+                           sn.ptr_info.pt.vars.push_back(TREE_OPERAND(gimple_assign_rhs_alloca(val),0));
+                        else if(vid == llvm::Value::GlobalVariableVal)
+                           sn.ptr_info.pt.vars.push_back(assignCodeAuto(val));
+                        else if(vid == llvm::Value::FunctionVal)
+                        {
+                           /// pointers to function are managed as point to anything objects
+                           sn.ptr_info.pt.anything = true;
+                           sn.ptr_info.valid=false;
+//                           sn.ptr_info.pt.vars.push_back(assignCodeAuto(val));
+                        }
+                        else if(llvm::dyn_cast<const llvm::CallInst>(val))
+                        {
+                           /// malloc like functions are managed as point to anything objects
+                           sn.ptr_info.pt.anything = true;
+                           sn.ptr_info.valid=false;
+//                           sn.ptr_info.pt.vars.push_back(assignCodeAuto(val));
+                        }
+                        else
+                        {
+                           val->print(llvm::errs());
+                           stream.close();
+                           llvm_unreachable(("unexpected pointer to variable "+ std::string(ValueTyNames[val->getValueID()])).c_str());
+                        }
+                     }
+                  }
+               }
+            }
+#endif
          }
          sn.vers= ssa_vers;
          assert(HAS_CODE(def_stmt));
@@ -1331,6 +1460,30 @@ namespace clang
          sn.isDefault = isDefault;
       }
       return &index2ssa_name.find(key)->second;
+   }
+
+   bool DumpGimpleRaw::is_PTS(unsigned int varId, const llvm::TargetLibraryInfo &TLI, bool with_all)
+   {
+#if HAVE_LIBBDD
+      if(varId != NOVAR_ID && (with_all || PtoSets_AA->is_single(varId)) && !PtoSets_AA->has_malloc_obj(varId,&TLI))
+      {
+         if(with_all) return true;
+         const std::vector<u32>* pts = PtoSets_AA->pointsToSet(varId);
+         for(auto var: *pts)
+         {
+            if(PtoSets_AA->is_any(var)) return false;
+            auto val = PtoSets_AA->getValue(var);
+            assert(val);
+            if(dyn_cast<llvm::Argument>(val) ||
+                  dyn_cast<llvm::Function>(val) ||
+                  dyn_cast<llvm::CallInst>(val))
+               return false;
+         }
+         return true;
+      }
+      else
+#endif
+         return false;
    }
 
    bool DumpGimpleRaw::is_virtual_ssa(const void* t) const
@@ -1495,6 +1648,7 @@ namespace clang
          {
             operand->print(llvm::errs(), true);
             llvm::errs() << "\n";
+            stream.close();
             llvm_unreachable((std::string("unexpected condition: ") + std::string(ValueTyNames[operand->getValueID()])).c_str());
          }
       }
@@ -1507,6 +1661,7 @@ namespace clang
       {
          operand->print(llvm::errs(), true);
          llvm::errs() << "\n";
+         stream.close();
          llvm_unreachable((std::string("unexpected condition: ") + std::string(ValueTyNames[operand->getValueID()])).c_str());
       }
    }
@@ -1569,7 +1724,7 @@ namespace clang
          auto ty = load.getType();
          auto type = assignCodeType(ty);
          auto read_obj_size = ty->isSized() ? DL->getTypeAllocSizeInBits(ty) : 8ULL;
-         if(read_obj_size > (8*load.getAlignment()))
+         if(load.getAlignment() && read_obj_size > (8*load.getAlignment()))
             return build1(GT(MISALIGNED_INDIRECT_REF), type, addr);
          else
             return build2(GT(MEM_REF), type, addr, zero);
@@ -1844,6 +1999,11 @@ namespace clang
          const alloca_var* av = reinterpret_cast<const alloca_var*>(t);
          return assignCodeAuto(av->alloc_inst->getFunction());
       }
+      else if(TREE_CODE(t) == GT(ORIGVAR_DECL))
+      {
+         const orig_var* ov = reinterpret_cast<const orig_var*>(t);
+         return DECL_CONTEXT(ov->orig);
+      }
       else if(TREE_CODE(t) == GT(FIELD_DECL))
       {
          const field_decl* ty = reinterpret_cast<const field_decl*>(t);
@@ -1880,6 +2040,13 @@ namespace clang
 
    bool DumpGimpleRaw::DECL_EXTERNAL(const void* t) const
    {
+      if(TREE_CODE(t) == GT(ORIGVAR_DECL))
+      {
+         const orig_var* ov = reinterpret_cast<const orig_var*>(t);
+         if(TREE_CODE(ov->orig) == GT(VAR_DECL))
+            return DECL_EXTERNAL(ov->orig);
+         else return false;
+      }
       const llvm::GlobalObject* llvm_obj = reinterpret_cast<const llvm::GlobalObject*>(t);
       if(isa<llvm::GlobalVariable>(llvm_obj))
          return llvm_obj->hasExternalLinkage() && !cast<llvm::GlobalVariable>(llvm_obj)->hasInitializer();
@@ -1891,12 +2058,27 @@ namespace clang
 
    bool DumpGimpleRaw::TREE_PUBLIC(const void* t) const
    {
+      if(TREE_CODE(t) == GT(ORIGVAR_DECL))
+      {
+         const orig_var* ov = reinterpret_cast<const orig_var*>(t);
+         if(TREE_CODE(ov->orig) == GT(VAR_DECL))
+            return TREE_PUBLIC(ov->orig);
+         else return false;
+      }
       const llvm::GlobalValue* llvm_obj = reinterpret_cast<const llvm::GlobalValue*>(t);
       return llvm_obj->hasDefaultVisibility() && !llvm_obj->hasInternalLinkage() && llvm_obj->getLinkage() != llvm::GlobalValue::PrivateLinkage;
    }
 
    bool DumpGimpleRaw::TREE_STATIC(const void* t) const
    {
+      if(TREE_CODE(t) == GT(ORIGVAR_DECL))
+      {
+         const orig_var* ov = reinterpret_cast<const orig_var*>(t);
+         if(TREE_CODE(ov->orig) == GT(VAR_DECL))
+            return TREE_STATIC(ov->orig);
+         else
+            return false;
+      }
       const llvm::GlobalValue* llvm_obj = reinterpret_cast<const llvm::GlobalValue*>(t);
       auto lt = llvm_obj->getLinkage();
       return lt == llvm::GlobalValue::InternalLinkage || lt == llvm::GlobalValue::PrivateLinkage;
@@ -1928,6 +2110,7 @@ namespace clang
    {
       if(TREE_CODE(t) == GT(FIELD_DECL)) return nullptr;
       if(TREE_CODE(t) == GT(ALLOCAVAR_DECL)) return nullptr;
+      if(TREE_CODE(t) == GT(ORIGVAR_DECL)) return nullptr;
       const llvm::Value* llvm_obj = reinterpret_cast<const llvm::Value*>(t);
       if(isa<llvm::GlobalVariable>(llvm_obj) && cast<llvm::GlobalVariable>(llvm_obj)->hasInitializer())
       {
@@ -1949,8 +2132,14 @@ namespace clang
          else
          {
             llvm::errs() << "Size type " << ValueTyNames[arraySize->getValueID()] << "\n";
+            stream.close();
             llvm_unreachable("Plugin error");
          }
+      }
+      else if(TREE_CODE(t) == GT(ORIGVAR_DECL))
+      {
+         const orig_var* ov = reinterpret_cast<const orig_var*>(t);
+         return DECL_SIZE(ov->orig);
       }
       else
          return TYPE_SIZE(TREE_TYPE(t));
@@ -1958,7 +2147,18 @@ namespace clang
 
    int DumpGimpleRaw::DECL_ALIGN(const void* t)
    {
-      return TYPE_ALIGN(TREE_TYPE(t));
+      if(TREE_CODE(t) == GT(VAR_DECL))
+      {
+         const llvm::GlobalVariable* llvm_obj = reinterpret_cast<const llvm::GlobalVariable*>(t);
+         return std::max(8u,8*llvm_obj->getAlignment());
+      }
+      else if(TREE_CODE(t) == GT(ALLOCAVAR_DECL))
+      {
+         const alloca_var* av = reinterpret_cast<const alloca_var*>(t);
+         return std::max(8u,8*av->alloc_inst->getAlignment());
+      }
+      else
+         return TYPE_ALIGN(TREE_TYPE(t));
    }
 
    bool DumpGimpleRaw::DECL_PACKED(const void* t) const
@@ -1985,9 +2185,14 @@ namespace clang
 
    int DumpGimpleRaw::TREE_USED(const void*t) const
    {
-      assert(TREE_CODE(t) == GT(ALLOCAVAR_DECL) || TREE_CODE(t) == GT(VAR_DECL) || TREE_CODE(t) == GT(PARM_DECL));
+      assert(TREE_CODE(t) == GT(ALLOCAVAR_DECL) || TREE_CODE(t) == GT(VAR_DECL) || TREE_CODE(t) == GT(PARM_DECL) || TREE_CODE(t) == GT(ORIGVAR_DECL));
       if(TREE_CODE(t) == GT(PARM_DECL)) return 1;
       else if(TREE_CODE(t) == GT(ALLOCAVAR_DECL)) return 1;
+      else if(TREE_CODE(t) == GT(ORIGVAR_DECL))
+      {
+         const orig_var* ov = reinterpret_cast<const orig_var*>(t);
+         return TREE_USED(ov->orig);
+      }
       const llvm::Constant* llvm_obj = reinterpret_cast<const llvm::Constant*>(t);
       if(llvm_obj->isConstantUsed())
          return 1;
@@ -2004,9 +2209,21 @@ namespace clang
    {
       if(TREE_CODE(t) == GT(FIELD_DECL)) return false;
       else if(TREE_CODE(t) == GT(ALLOCAVAR_DECL)) return false;
+      else if(TREE_CODE(t) == GT(ORIGVAR_DECL))
+      {
+         const orig_var* ov = reinterpret_cast<const orig_var*>(t);
+         return TREE_READONLY(ov->orig);
+      }
       else if(TREE_CODE(t) == GT(RESULT_DECL)) return false;
       const llvm::GlobalVariable* llvm_obj = reinterpret_cast<const llvm::GlobalVariable*>(t);
       return llvm_obj->isConstant();
+
+   }
+   bool DumpGimpleRaw::TREE_ADDRESSABLE(const void* t) const
+   {
+      assert(TREE_CODE(t) == GT(ALLOCAVAR_DECL));
+      const alloca_var* av = reinterpret_cast<const alloca_var*>(t);
+      return !av->addr;
 
    }
    const void* DumpGimpleRaw::TREE_OPERAND(const void* t, unsigned index)
@@ -2096,6 +2313,11 @@ namespace clang
          const alloca_var* av = reinterpret_cast<const alloca_var*>(t);
          auto allocType = av->alloc_inst->getAllocatedType();
          return assignCodeType(allocType);
+      }
+      else if(code == GT(ORIGVAR_DECL))
+      {
+         const orig_var* ov = reinterpret_cast<const orig_var*>(t);
+         return TREE_TYPE(ov->orig);
       }
       else if(code == GT(FIELD_DECL))
       {
@@ -2716,52 +2938,133 @@ namespace clang
       if(ssa->var|| ssa->isVirtual)
          return nullptr;
       llvm::Instruction *inst = const_cast<llvm::Instruction *>(reinterpret_cast<const llvm::Instruction *>(ssa->def_stmts));
-      llvm::BasicBlock* BB = inst->getParent();
-      llvm::Function *currentFunction = inst->getFunction();
-      assert(modulePass);
-      llvm::LazyValueInfo &LVI = modulePass->getAnalysis<llvm::LazyValueInfoWrapperPass>(*currentFunction).getLVI();
       if(inst->getType()->isIntegerTy())
       {
-         auto ty = inst->getType();
-         auto obj_size = ty->isSized() ? DL->getTypeAllocSizeInBits(ty) : 8ULL;
-         auto active_size = ty->isSized() ? DL->getTypeSizeInBits(ty) : 8ULL;
-         auto isSigned = CheckSignedTag(TREE_TYPE(t));
-         if(obj_size != active_size)
+         if(RA)
          {
-            uint64_t val;
-            if(isSigned)
+            auto varRange = RA->getRange(inst);
+            if(!varRange.isMaxRange())
             {
-               val = -(1ULL << (active_size-1));
+               auto isSigned = CheckSignedTag(TREE_TYPE(t));
+#ifdef DEBUG_RA
+               if(isSigned)
+                  llvm::errs() << "Range: <" << varRange.getSignedMin() << "," << varRange.getSignedMax() << "> ";
+               else
+                  llvm::errs() << "Range: <" << varRange.getUnsignedMin().getZExtValue() << "," << varRange.getUnsignedMax().getZExtValue() << "> ";
+               inst->print(llvm::errs());
+               llvm::errs() << "\n";
+               assert(isSigned?(varRange.getSignedMin().sextOrTrunc(64).getSExtValue()<=varRange.getSignedMax().sextOrTrunc(64).getSExtValue()):(varRange.getUnsignedMin().zextOrTrunc(64).getZExtValue()<=varRange.getUnsignedMax().zextOrTrunc(64).getZExtValue()));
+#endif
+               return assignCodeAuto(llvm::ConstantInt::get(inst->getContext(), (isSigned?varRange.getSignedMin().sextOrTrunc(64):varRange.getUnsignedMin().zextOrTrunc(64))));
             }
             else
-               val = 0;
-            auto context = TREE_CODE(t)==GT(SIGNEDPOINTERTYPE) ? moduleContext : &ty->getContext();
-            if(uicTable.find(val) == uicTable.end())
-               uicTable[val] = assignCodeAuto(llvm::ConstantInt::get(llvm::Type::getInt64Ty(*context), val, false));
-            return uicTable.find(val)->second;
+               return nullptr;
          }
          else
          {
-            llvm::ConstantRange range = LVI.getConstantRange(inst, BB, inst);
-            if(!range.isFullSet())
+            llvm::BasicBlock* BB = inst->getParent();
+            llvm::Function *currentFunction = inst->getFunction();
+            assert(modulePass);
+            llvm::LazyValueInfo &LVI = modulePass->getAnalysis<llvm::LazyValueInfoWrapperPass>(*currentFunction).getLVI();
+            unsigned long long int zeroMask=0;
+#if __clang_major__ != 4
+            llvm::KnownBits KnownOneZero;
+            auto AC = modulePass->getAnalysis<llvm::AssumptionCacheTracker>().getAssumptionCache(*currentFunction);
+            auto& DT = modulePass->getAnalysis<llvm::DominatorTreeWrapperPass>(*currentFunction).getDomTree();
+            KnownOneZero = llvm::computeKnownBits(inst, *DL, 0, &AC, inst, &DT);
+            zeroMask = KnownOneZero.Zero.getZExtValue();
+#else
+            //         llvm::APInt KnownZero;
+            //         llvm::APInt KnownOne;
+            //         auto AC = modulePass->getAnalysis<llvm::AssumptionCacheTracker>().getAssumptionCache(*currentFunction);
+            //         const auto& DT = modulePass->getAnalysis<llvm::DominatorTreeWrapperPass>(*currentFunction).getDomTree();
+            //         llvm::computeKnownBits(inst,KnownZero, KnownOne, *DL, 0, &AC, inst, &DT);
+            //         zeroMask = KnownZero.getZExtValue();
+#endif
+            auto ty = inst->getType();
+            auto obj_size = ty->isSized() ? DL->getTypeAllocSizeInBits(ty) : 8ULL;
+            auto active_size = ty->isSized() ? DL->getTypeSizeInBits(ty) : 8ULL;
+            auto isSigned = CheckSignedTag(TREE_TYPE(t));
+            auto i=active_size;
+            for (;i>1;--i)
             {
-               //            llvm::errs() << "Range:\n";
-               //            range.print(llvm::errs());
-               //            llvm::errs() << range.getBitWidth() << "\n";
-               auto low = range.getLower();
-               //            llvm::errs() << "Min:\n";
-               //            low.print(llvm::errs(), low.isNegative());
-               //            llvm::errs() << (isSigned?"T":"F") << "\n";
-               if((!isSigned && range.getUpper().uge(range.getLower())) || (isSigned && range.getUpper().sge(range.getLower())))
+               if((zeroMask&(1ULL<<(i-1)))==0)
+                  break;
+            }
+            if(i!=active_size)
+            {
+               if(isSigned)
+                  ++i;
+               if(i<active_size)
+                  active_size = i;
+            }
+            if(obj_size != active_size)
+            {
+               uint64_t val;
+               if(isSigned)
                {
+                  val = -(1ULL << (active_size-1));
+               }
+               else
+                  val = 0;
+               llvm::ConstantRange range = LVI.getConstantRange(inst, BB, inst);
+               if(!range.isFullSet())
+               {
+                  if(isSigned)
+                  {
+                     if(range.getSignedMin().getSExtValue()>(int64_t)val)
+                        val = range.getSignedMin().getSExtValue();
+                  }
+                  else
+                  {
+                     if(range.getUnsignedMin().getZExtValue()>val)
+                        val = range.getUnsignedMin().getZExtValue();
+                  }
+               }
+
+               if(isSigned)
+                  llvm::errs() << "Range: " << (int64_t)val << ",";
+               else
+                  llvm::errs() << "Range: " << val << ",";
+               auto context = TREE_CODE(t)==GT(SIGNEDPOINTERTYPE) ? moduleContext : &ty->getContext();
+               if(uicTable.find(val) == uicTable.end())
+                  uicTable[val] = assignCodeAuto(llvm::ConstantInt::get(llvm::Type::getInt64Ty(*context), val, false));
+               return uicTable.find(val)->second;
+            }
+            else
+            {
+               llvm::ConstantRange range = LVI.getConstantRange(inst, BB, inst);
+               if(!range.isFullSet())
+               {
+                  //               llvm::errs() << "Range:\n";
+                  //               range.print(llvm::errs());
+                  //               llvm::errs() << range.getBitWidth() << "\n";
+                  //               auto low = range.getLower();
+                  //               llvm::errs() << "Min: " << (low.isMinValue()?"Tmin":"Fmin") << " " << (low.isMaxValue()?"Tmax":"Fmax") << "\n";
+                  //               llvm::errs() << "Min: " << (low.isMinSignedValue()?"Tmin_signed":"Fmin_signed") << " " << (low.isMaxSignedValue()?"Tmax_signed":"Fmax_signed") << "\n";
+                  //               llvm::errs() << "Min: " << (range.getUnsignedMin()).getZExtValue() << "\n";
+                  //               llvm::errs() << "Min: " << (range.getSignedMin()) << "\n";
                   //               low.print(llvm::errs(), isSigned);
-                  return assignCodeAuto(llvm::ConstantInt::get(inst->getContext(), low));
+                  //               llvm::errs() << (isSigned?"T":"F") << "\n";
+                  //               auto upper = range.getUpper()-1;
+                  //               llvm::errs() << "Max: " << (upper.isMinValue()?"Tmin":"Fmin") << " " << (upper.isMaxValue()?"Tmax":"Fmax") << "\n";
+                  //               llvm::errs() << "Max: " << (upper.isMinSignedValue()?"Tmin_signed":"Fmin_signed") << " " << (upper.isMaxSignedValue()?"Tmax_signed":"Fmax_signed") << "\n";
+                  //               llvm::errs() << "Max: " << (range.getUnsignedMax()).getZExtValue() << "\n";
+                  //               llvm::errs() << "Max: " << (range.getSignedMax()) << "\n";
+                  //               upper.print(llvm::errs(), isSigned);
+                  //               llvm::errs() << (isSigned?"T":"F") << "\n";
+                  if(isSigned)
+                     llvm::errs() << "Range: <" << range.getSignedMin() << "," << range.getSignedMax() << "> ";
+                  else
+                     llvm::errs() << "Range: <" << range.getUnsignedMin().getZExtValue() << "," << range.getUnsignedMax().getZExtValue() << "> ";
+                  inst->print(llvm::errs());
+                  llvm::errs() << "\n";
+
+                  return assignCodeAuto(llvm::ConstantInt::get(inst->getContext(), (isSigned?range.getSignedMin():range.getUnsignedMin())));
                }
                else
                   return nullptr;
             }
-            else
-               return nullptr;
          }
       }
       else
@@ -2773,46 +3076,114 @@ namespace clang
       if(ssa->var|| ssa->isVirtual)
          return nullptr;
       llvm::Instruction *inst = const_cast<llvm::Instruction *>(reinterpret_cast<const llvm::Instruction *>(ssa->def_stmts));
-      llvm::BasicBlock* BB = inst->getParent();
-      llvm::Function *currentFunction = inst->getFunction();
-      assert(modulePass);
-      llvm::LazyValueInfo &LVI = modulePass->getAnalysis<llvm::LazyValueInfoWrapperPass>(*currentFunction).getLVI();
       if(inst->getType()->isIntegerTy())
       {
-         auto ty = inst->getType();
-         auto obj_size = ty->isSized() ? DL->getTypeAllocSizeInBits(ty) : 8ULL;
-         auto active_size = ty->isSized() ? DL->getTypeSizeInBits(ty) : 8ULL;
-         auto isSigned = CheckSignedTag(TREE_TYPE(t));
-         if(obj_size != active_size)
+         if(RA)
          {
-            auto maxvalue = llvm::APInt::getMaxValue(std::max((isSigned?active_size-1ULL:active_size),1ULL)).getZExtValue();
-            if(maxValueITtable.find(t) != maxValueITtable.end())
-               maxvalue = maxValueITtable.find(t)->second;
-            auto context = TREE_CODE(t)==GT(SIGNEDPOINTERTYPE) ? moduleContext : &ty->getContext();
-            if(uicTable.find(maxvalue) == uicTable.end())
-               uicTable[maxvalue] = assignCodeAuto(llvm::ConstantInt::get(llvm::Type::getInt64Ty(*context), maxvalue, false));
-            return uicTable.find(maxvalue)->second;
-         }
-         else
-         {
-            llvm::ConstantRange range = LVI.getConstantRange(inst, BB, inst);
-            if(!range.isFullSet())
+            auto varRange = RA->getRange(inst);
+            if(!varRange.isMaxRange())
             {
                auto isSigned = CheckSignedTag(TREE_TYPE(t));
-               auto low = range.getLower();
-               //            llvm::errs() << "Max:\n";
-               //            range.getUpper().print(llvm::errs(), range.getUpper().isNegative());
-               //            llvm::errs() << (isSigned?"T":"F") << "\n";
-               if((!isSigned && range.getUpper().uge(range.getLower())) || (isSigned && range.getUpper().sge(range.getLower())))
-               {
-                  //               range.getUpper().print(llvm::errs(), isSigned);
-                  return assignCodeAuto(llvm::ConstantInt::get(inst->getContext(), range.getUpper()-1));
-               }
-               else
-                  return nullptr;
+               return assignCodeAuto(llvm::ConstantInt::get(inst->getContext(), (isSigned?varRange.getSignedMax().sextOrTrunc(64):varRange.getUnsignedMax().zextOrTrunc(64))));
             }
             else
                return nullptr;
+         }
+         else
+         {
+
+            llvm::BasicBlock* BB = inst->getParent();
+            llvm::Function *currentFunction = inst->getFunction();
+            assert(modulePass);
+            llvm::LazyValueInfo &LVI = modulePass->getAnalysis<llvm::LazyValueInfoWrapperPass>(*currentFunction).getLVI();
+            unsigned long long int zeroMask=0;
+#if __clang_major__ != 4
+            llvm::KnownBits KnownOneZero;
+            auto AC = modulePass->getAnalysis<llvm::AssumptionCacheTracker>().getAssumptionCache(*currentFunction);
+            const auto& DT = modulePass->getAnalysis<llvm::DominatorTreeWrapperPass>(*currentFunction).getDomTree();
+            KnownOneZero = llvm::computeKnownBits(inst, *DL, 0, &AC, inst, &DT);
+            zeroMask = KnownOneZero.Zero.getZExtValue();
+#else
+            //         llvm::APInt KnownZero;
+            //         llvm::APInt KnownOne;
+            //         auto AC = modulePass->getAnalysis<llvm::AssumptionCacheTracker>().getAssumptionCache(*currentFunction);
+            //         const auto& DT = modulePass->getAnalysis<llvm::DominatorTreeWrapperPass>(*currentFunction).getDomTree();
+            //         llvm::computeKnownBits(inst,KnownZero, KnownOne, *DL, 0, &AC, inst, &DT);
+            //         zeroMask = KnownZero.getZExtValue();
+#endif
+            auto ty = inst->getType();
+            auto obj_size = ty->isSized() ? DL->getTypeAllocSizeInBits(ty) : 8ULL;
+            auto active_size = ty->isSized() ? DL->getTypeSizeInBits(ty) : 8ULL;
+            auto isSigned = CheckSignedTag(TREE_TYPE(t));
+            auto i=active_size;
+            for (;i>1;--i)
+            {
+               if((zeroMask&(1ULL<<(i-1)))==0)
+                  break;
+            }
+            if(i!=active_size)
+            {
+               if(isSigned)
+                  ++i;
+               if(i<active_size)
+                  active_size = i;
+            }
+            if(obj_size != active_size)
+            {
+               uint64_t val;
+               assert(active_size<64);
+               if(isSigned)
+               {
+                  val = (1ULL << (active_size-1))-1;
+               }
+               else
+                  val = (1ULL << (active_size))-1;
+               llvm::ConstantRange range = LVI.getConstantRange(inst, BB, inst);
+               if(!range.isFullSet())
+               {
+                  if(isSigned)
+                  {
+                     if(range.getSignedMax().getSExtValue()<(int64_t)val)
+                        val = range.getSignedMin().getSExtValue();
+                  }
+                  else
+                  {
+                     if(range.getUnsignedMax().getZExtValue()<val)
+                        val = range.getUnsignedMax().getZExtValue();
+                  }
+               }
+               else
+               {
+                  assert(range.getBitWidth() >= active_size);
+               }
+
+               if(isSigned)
+                  llvm::errs() << (int64_t)val << ") ";
+               else
+                  llvm::errs() << val << ") ";
+               inst->print(llvm::errs());
+               llvm::errs() << "\n";
+               //auto maxvalue = llvm::APInt::getMaxValue(std::max((isSigned?active_size-1ULL:active_size),1ULL)).getZExtValue();
+               auto maxvalue = val;
+               auto context = TREE_CODE(t)==GT(SIGNEDPOINTERTYPE) ? moduleContext : &ty->getContext();
+               if(uicTable.find(maxvalue) == uicTable.end())
+                  uicTable[maxvalue] = assignCodeAuto(llvm::ConstantInt::get(llvm::Type::getInt64Ty(*context), maxvalue, false));
+               return uicTable.find(maxvalue)->second;
+            }
+            else
+            {
+               llvm::ConstantRange range = LVI.getConstantRange(inst, BB, inst);
+               if(!range.isFullSet())
+               {
+                  auto isSigned = CheckSignedTag(TREE_TYPE(t));
+                  return assignCodeAuto(llvm::ConstantInt::get(inst->getContext(), (isSigned?range.getSignedMax():range.getUnsignedMax())));
+               }
+               else
+               {
+                  assert(range.getBitWidth() == active_size);
+                  return nullptr;
+               }
+            }
          }
       }
       else
@@ -3404,6 +3775,8 @@ namespace clang
             add_alloca_pt_solution(lhs,rhs);
             serialize_child ("op", lhs);
             serialize_child ("op", rhs);
+            if(index2alloca_var.find(g)->second.addr)
+               serialize_string("addr");
             break;
          }
          case GT(GETELEMENTPTR):
@@ -3415,8 +3788,18 @@ namespace clang
             std::set<const llvm::User*> visited;
             auto currInst = reinterpret_cast<const llvm::User *>(g);
             visited.insert(currInst);
-            if(temporary_addr_check(currInst, visited))
+            const llvm::TargetLibraryInfo &TLI =
+                  modulePass->getAnalysis<llvm::TargetLibraryInfoWrapperPass>().getTLI();
+            if(temporary_addr_check(currInst, visited, TLI))
                serialize_string("addr");
+            break;
+         }
+         case GT(GIMPLE_SSACOPY):
+         {
+            auto lhs = gimple_assign_lhs (g);
+            auto rhs = gimple_assign_rhs1 (g);
+            serialize_child ("op", lhs);
+            serialize_child ("op", rhs);
             break;
          }
          case GT(GIMPLE_ASSIGN):
@@ -4054,8 +4437,8 @@ namespace clang
          if(DECL_ASSEMBLER_NAME_SET_P(t) && DECL_ASSEMBLER_NAME(t) != DECL_NAME(t))
            serialize_child("mngl", DECL_ASSEMBLER_NAME(t));
 
-         //if(DECL_ABSTRACT_ORIGIN(t))
-         //  serialize_child("orig", DECL_ABSTRACT_ORIGIN(t));
+         if((code == GT(VAR_DECL) || code == GT(ALLOCAVAR_DECL)) && DECL_ALIGN(t) != TYPE_ALIGN(TREE_TYPE(t)))
+            serialize_child("orig", DECL_ABSTRACT_ORIGIN(t));
          /* And types.  */
          queue_and_serialize_type(t);
          serialize_child("scpe", DECL_CONTEXT(t));
@@ -4253,13 +4636,14 @@ namespace clang
             break;
          }
          case GT(ALLOCAVAR_DECL):
+         case GT(ORIGVAR_DECL):
          case GT(VAR_DECL):
          case GT(PARM_DECL):
          case GT(FIELD_DECL):
          case GT(RESULT_DECL):
             if(TREE_CODE(t) == GT(FIELD_DECL) && DECL_C_BIT_FIELD(t))
                serialize_string("bitfield");
-            if(TREE_CODE(t) == GT(VAR_DECL))
+            if(TREE_CODE(t) == GT(VAR_DECL) || TREE_CODE(t) == GT(ORIGVAR_DECL))
             {
                if(DECL_EXTERNAL(t))
                   serialize_string("extern");
@@ -4282,7 +4666,7 @@ namespace clang
               if(DECL_FIELD_OFFSET(t))
                 serialize_child("bpos", bit_position(t));
             }
-            else if(TREE_CODE(t) == GT(ALLOCAVAR_DECL) || TREE_CODE(t) == GT(VAR_DECL) || TREE_CODE(t) == GT(PARM_DECL))
+            else if(TREE_CODE(t) == GT(ALLOCAVAR_DECL) || TREE_CODE(t) == GT(ORIGVAR_DECL) || TREE_CODE(t) == GT(VAR_DECL) || TREE_CODE(t) == GT(PARM_DECL))
             {
               serialize_int("used", TREE_USED(t));
               if(DECL_REGISTER(t))
@@ -4290,6 +4674,15 @@ namespace clang
             }
             if(TREE_READONLY(t) && TREE_CODE(t) != GT(RESULT_DECL) && TREE_CODE(t) != GT(FIELD_DECL))
                serialize_string("readonly");
+#if HAVE_LIBBDD
+            if(TREE_CODE(t) == GT(ALLOCAVAR_DECL) && PtoSets_AA)
+            {
+               if(TREE_ADDRESSABLE(t))
+                  ;//serialize_string("addr_taken");
+               else
+                  serialize_string("addr_not_taken");
+            }
+#endif
             break;
          case GT(FUNCTION_DECL):
          {
@@ -4578,14 +4971,14 @@ namespace clang
             do_erase = false;
             if (llvm::MemCpyInst *Memcpy = dyn_cast<llvm::MemCpyInst>(MemCall))
             {
-#if __clang_major__ == 5
+#if __clang_major__ != 4
                llvm::expandMemCpyAsLoop(Memcpy, TTI);
                do_erase = true;
 #endif
             }
             else if (llvm::MemMoveInst *Memmove = dyn_cast<llvm::MemMoveInst>(MemCall))
             {
-#if __clang_major__ == 5
+#if __clang_major__ != 4
                llvm::expandMemMoveAsLoop(Memmove);
                do_erase = true;
 #endif
@@ -4650,13 +5043,171 @@ namespace clang
       return res;
    }
 
-   bool DumpGimpleRaw::runOnModule(llvm::Module &M, llvm::ModulePass *_modulePass)
+   void DumpGimpleRaw::compute_eSSA(llvm::Module &M)
+   {
+      eSSA eSSAHelper;
+      for(auto& fun : M.getFunctionList())
+      {
+         if(!fun.isIntrinsic() && !fun.isDeclaration())
+            eSSAHelper.runOnFunction(fun, modulePass);
+      }
+   }
+
+   void DumpGimpleRaw::computeValueRange(llvm::Module &M)
+   {
+      RA = new RangeAnalysis::InterProceduralRACropDFSHelper();
+      RA->runOnModule(M,modulePass,PtoSets_AA);
+   }
+
+   void DumpGimpleRaw::ValueRangeOptimizer(llvm::Module &M)
+   {
+      if(RA)
+      {
+         llvm::TargetLibraryInfo &TLI =
+               modulePass->getAnalysis<llvm::TargetLibraryInfoWrapperPass>().getTLI();
+
+         for (llvm::Function &F : M)
+         {
+#ifdef DEBUG_RA
+            llvm::errs() << "ValueRangeOptimizer: Analysis for function: " << F.getName() << "\n";
+#endif
+            std::list<llvm::Instruction*> deadList;
+            for(auto& BB: F.getBasicBlockList())
+            {
+               auto curInstIterator = BB.getInstList().begin();
+               while( curInstIterator != BB.getInstList().end())
+               {
+                  llvm::Instruction *I = &*curInstIterator;
+                  assert(I->getParent());
+                  if(I->getType()->isVoidTy())
+                  {
+                     ++curInstIterator;
+                     continue;
+                  }
+                  if(I->user_empty() && llvm::isInstructionTriviallyDead(I,&TLI))
+                  {
+                     llvm::errs() << "this instruction is not used by anyone: ";
+                     I->print(llvm::errs());
+                     llvm::errs() << "\n";
+                     deadList.push_back(I);
+                     ++curInstIterator;
+                     continue;
+                  }
+                  RangeAnalysis::Range R = RA->getRange(I);
+                  if(R.isEmpty())
+                  {
+                     llvm::errs() << "this instruction is dead: ";
+                     I->print(llvm::errs());
+                     llvm::errs() << "\n";
+                     assert(!I->getType()->isVoidTy());
+                     I->replaceAllUsesWith(llvm::UndefValue::get(I->getType()));
+                     if(llvm::isInstructionTriviallyDead(I,&TLI))
+                        deadList.push_back(I);
+                  }
+                  else if(dyn_cast<llvm::PHINode>(I))
+                  {
+                     ++curInstIterator;
+                     continue;
+                  }
+                  else if (!R.isUnknown())
+                  {
+                     if(!R.isMaxRange())
+                     {
+                        if(R.isConstant())
+                        {
+                           llvm::errs() << "the value associated with this instruction is constant and could be propagated: ";
+                           I->print(llvm::errs());
+                           llvm::errs() << " -> ";
+                           R.print(llvm::errs());
+                           llvm::errs() << "\n";
+                           auto cInt = R.getLower().sextOrTrunc(I->getType()->getPrimitiveSizeInBits());
+                           auto C = llvm::ConstantInt::get(I->getContext(), cInt);
+                           I->replaceAllUsesWith(C);
+                           if(llvm::isInstructionTriviallyDead(I,&TLI))
+                              deadList.push_back(I);
+                        }
+                        else
+                        {
+                           auto nbitU = RangeAnalysis::Range_base::neededBits(R.getUnsignedMin(), R.getUnsignedMax(), false);
+                           auto nbitS = RangeAnalysis::Range_base::neededBits(R.getSignedMin(), R.getSignedMax(), true);
+                           auto bw = R.getBitWidth();
+                           if(nbitS<nbitU && nbitS<bw && !isSignedResult(I))
+                           {
+                              assert(bw>nbitS);
+                              llvm::errs() << "the range associated with this unsigned instruction could be reduced with the signed range: ";
+                              I->print(llvm::errs());
+                              llvm::errs() << " -> " << R.getBitWidth() << " -> " << nbitS << " -> " << nbitU << " -> ";
+                              R.print(llvm::errs());
+                              llvm::errs() << "\n";
+                              llvm::IRBuilder<> B(curInstIterator->getNextNode());
+
+                              auto leftShiftConstant = B.getIntN(bw, bw-nbitS);
+                              auto lsh = B.CreateShl(dyn_cast<llvm::Value>(I),leftShiftConstant);
+                              auto ashr = B.CreateAShr(lsh, leftShiftConstant);
+                              I->replaceAllUsesWith(ashr);
+                              cast<llvm::Instruction>(lsh)->setOperand(0,I);
+                           }
+                        }
+                     }
+                  }
+                  ++curInstIterator;
+               }
+            }
+            for(auto I : deadList)
+            if (llvm::isInstructionTriviallyDead(I, &TLI))
+               I->eraseFromParent();
+            if(!deadList.empty())
+            {
+               const llvm::TargetTransformInfo &TTI =
+                   modulePass->getAnalysis<llvm::TargetTransformInfoWrapperPass>().getTTI(F);
+               for (llvm::Function::iterator BBIt = F.begin(); BBIt != F.end(); )
+                  llvm::SimplifyInstructionsInBlock(&*BBIt++, &TLI);
+               for (llvm::Function::iterator BBIt = F.begin(); BBIt != F.end();)
+                  llvm::SimplifyCFG(&*BBIt++, TTI, 1);
+               llvm::removeUnreachableBlocks(F);
+            }
+         }
+      }
+   }
+
+   bool DumpGimpleRaw::runOnModule(llvm::Module &M, llvm::ModulePass *_modulePass, const std::string& TopFunctionName)
    {
       DL = &M.getDataLayout();
       modulePass=_modulePass;
+      moduleContext = &M.getContext();
       auto res = lowerMemIntrinsics(M);
       res = res | lowerIntrinsics(M);
-      moduleContext = &M.getContext();
+      compute_eSSA(M);
+#if HAVE_LIBBDD
+      if(!onlyGlobals)
+      {
+         std::string starting_function = TopFunctionName;
+         if(starting_function == "")
+         {
+            const llvm::Function *main = M.getFunction("main");
+            if(main)
+               starting_function = "main";
+         }
+         if(starting_function != "")
+         {
+#define ANDERSEN 1
+#if ANDERSEN
+            PtoSets_AA = new Andersen_AA(starting_function);
+#else
+            PtoSets_AA = new Staged_Flow_Sensitive_AA(starting_function);
+#endif
+            PtoSets_AA->computePointToSet(M);
+         }
+      }
+#endif
+      computeValueRange(M);
+#ifdef DEBUG_RA
+      assert(!llvm::verifyModule(M,&llvm::errs()));
+#endif
+      ValueRangeOptimizer(M);
+#ifdef DEBUG_RA
+      assert(!llvm::verifyModule(M,&llvm::errs()));
+#endif
       for(const auto& globalVar : M.getGlobalList())
       {
 #if PRINT_DBG_MSG
@@ -4683,7 +5234,19 @@ namespace clang
             }
          }
       }
+#if HAVE_LIBBDD
+      if(PtoSets_AA)
+      {
+         delete PtoSets_AA;
+         PtoSets_AA = nullptr;
+      }
+#endif
+      if(RA)
+      {
+         RA->printRanges(M,llvm::errs());
+         delete RA;
+      }
       return res;
    }
-
 }
+

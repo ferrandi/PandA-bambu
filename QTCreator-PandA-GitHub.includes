@@ -364,4 +364,5 @@ src/wrapper/target_architectures/SimIt
 src/wrapper/target_architectures/tsim
 src/wrapper/treegcc
 etc/clang_plugin
-/usr/lib/llvm-4.0/include
+/usr/lib/llvm-5.0/include
+etc/clang_plugin/llvm

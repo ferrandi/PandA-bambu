@@ -72,7 +72,7 @@ SynthesisToolRef SynopsysWrapper::CreateWrapper(wrapper_t type, const ParameterC
 {
    switch(type)
    {
-      case UNKNOWN:
+      case UNDEFINED:
          THROW_ERROR("Undefined wrapper");
          break;
       case DESIGN_COMPILER:

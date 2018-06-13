@@ -389,7 +389,7 @@ void discrepancy_parseY(const std::string & fname, DiscrepancyRef Discr)
    fileIO_istreamRef in_f = fileIO_istream_open(fname);
    if(in_f->fail())
       THROW_ERROR(std::string("Failed opening discrepancy data file: ") + fname);
-   const DiscrepancyFlexLexerRef lexer(new DiscrepancyFlexLexer(in_f.get(), 0));
+   const DiscrepancyFlexLexerRef lexer(new DiscrepancyFlexLexer(in_f.get(), nullptr));
 #if YYDEBUG
     yydebug = 1;
 #endif

@@ -68,6 +68,7 @@ if BUILD_BAMBU
      dead_code_elimination.hpp \
      determine_memory_accesses.hpp \
      extract_patterns.hpp \
+     fanout_opt.hpp\
      FixStructsPassedByValue.hpp \
      FunctionCallTypeCleanup.hpp \
      hdl_function_decl_fix.hpp \
@@ -107,6 +108,7 @@ if BUILD_BAMBU
      dead_code_elimination.cpp \
      determine_memory_accesses.cpp \
      extract_patterns.cpp \
+     fanout_opt.cpp\
      FixStructsPassedByValue.cpp \
      FunctionCallTypeCleanup.cpp \
      hdl_function_decl_fix.cpp \

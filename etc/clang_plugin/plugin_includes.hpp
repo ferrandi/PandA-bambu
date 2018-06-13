@@ -40,12 +40,18 @@
 #ifndef PLUGIN_INCLUDES_HPP
 #define PLUGIN_INCLUDES_HPP
 
+///Autoheader include
+#include "config_HAVE_LIBBDD.hpp"
+
 #include "clang/AST/ASTConsumer.h"
 #include "clang/Frontend/CompilerInstance.h"
 #include "llvm/ADT/APFloat.h"
 #include "llvm/ADT/Hashing.h"
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/Support/raw_ostream.h"
+#if __clang_major__ != 4
+#include "llvm/Transforms/Utils/PredicateInfo.h"
+#endif
 #include <vector>
 #include <set>
 #include <unordered_set>
@@ -55,20 +61,18 @@
 #define GT(code) tree_codes::code
 #define LOCAL_BUFFER_LEN 512
 
-#if __clang_major__ > 7 || __clang_major__ < 4
-#error
-#elif __clang_major__ == 7
+#if __clang_major__ == 7
 #define CLANG_VERSION_SYMBOL(SYMBOL) clang7 ## SYMBOL
 #define CLANG_VERSION_STRING(SYMBOL) "clang7" #SYMBOL
 #elif __clang_major__ == 6
 #define CLANG_VERSION_SYMBOL(SYMBOL) clang6 ## SYMBOL
 #define CLANG_VERSION_STRING(SYMBOL) "clang6" #SYMBOL
-#elif __clang_major__ == 5
-#define CLANG_VERSION_SYMBOL(SYMBOL) clang5 ## SYMBOL
-#define CLANG_VERSION_STRING(SYMBOL) "clang5" #SYMBOL
-#else
+#elif __clang_major__ == 4
 #define CLANG_VERSION_SYMBOL(SYMBOL) clang4 ## SYMBOL
 #define CLANG_VERSION_STRING(SYMBOL) "clang4" #SYMBOL
+#else
+#define CLANG_VERSION_SYMBOL(SYMBOL) clang5 ## SYMBOL
+#define CLANG_VERSION_STRING(SYMBOL) "clang5" #SYMBOL
 #endif
 
 
@@ -95,8 +99,16 @@ namespace llvm {
    class MemoryAccess;
    class MemoryLocation;
    class AllocaInst;
+   class TargetLibraryInfo;
+#if __clang_major__ != 4
+   class PredicateInfo;
+#endif
 }
 
+namespace RangeAnalysis {
+   class InterProceduralRACropDFSHelper;
+}
+class Andersen_AA;
 
 namespace clang {
 
@@ -212,7 +224,7 @@ namespace clang {
          ///unsigned integer constant table
          std::map<uint64_t, const void*> uicTable;
          /// type_integer with specific max value
-         std::map<const void*, unsigned int> maxValueITtable;
+         std::map<const void*, unsigned long long int> maxValueITtable;
          std::map<const void*, llvm::LLVMContext*> ArraysContexts;
 
          std::string getTypeName(const void * ty) const;
@@ -288,7 +300,7 @@ namespace clang {
                pt_info() : valid(false) {}
          };
          const pt_info* SSA_NAME_PTR_INFO (const void* t) const;
-
+         Andersen_AA * PtoSets_AA;
          unsigned int SignedPointerTypeReference;
 
          struct ssa_name
@@ -327,12 +339,13 @@ namespace clang {
          template<class InstructionOrConstantExpr>
          bool isUnsignedOperand(const InstructionOrConstantExpr* inst) const;
          const void* getSSA(const llvm::Value *operand, const void* def_stmt, const llvm::Function * currentFunction, bool isDefault);
+         bool is_PTS(unsigned int varId,const llvm::TargetLibraryInfo &TLI, bool with_all=false);
          bool is_virtual_ssa(const void* t) const;
          bool SSA_NAME_IS_DEFAULT_DEF(const void* t) const;
          const void* LowerGetElementPtrOffset(const llvm::GEPOperator* gep, const llvm::Function * currentFunction, const void *& base_node);
          const void* LowerGetElementPtr(const void* type, const llvm::User* gep, const llvm::Function * currentFunction);
          const void* gimple_assign_rhs_getelementptr(const void* g);
-         bool temporary_addr_check(const llvm::User* inst, std::set<const llvm::User*>& visited);
+         bool temporary_addr_check(const llvm::User* inst, std::set<const llvm::User*>& visited, const llvm::TargetLibraryInfo &TLI);
          const void* getOperand(const llvm::Value *operand, const llvm::Function * currentFunction);
          const void* gimple_assign_lhs(const void* g);
          const void* gimple_assign_rhs_alloca (const void* g);
@@ -340,8 +353,15 @@ namespace clang {
          struct alloca_var
          {
                const llvm::AllocaInst* alloc_inst;
+               bool addr;
          };
          std::map<const void*, alloca_var> index2alloca_var;
+         struct orig_var
+         {
+               const void* orig;
+         };
+         std::map<const void*, orig_var> index2orig_var;
+         const void*DECL_ABSTRACT_ORIGIN(const void*t);
          struct integer_cst_signed
          {
                const void* type;
@@ -477,6 +497,7 @@ namespace clang {
          int TREE_USED (const void*t) const;
          bool DECL_REGISTER (const void* t) const;
          bool TREE_READONLY(const void* t) const;
+         bool TREE_ADDRESSABLE(const void* t) const;
          const void* TREE_OPERAND(const void* t, unsigned index);
          int64_t TREE_INT_CST_LOW(const void* t);
          const void* TREE_TYPE(const void* t);
@@ -514,7 +535,7 @@ namespace clang {
          const void* SSA_NAME_DEF_STMT(const void*t) const;
          const void* getMinValue(const void* t);
          const void* getMaxValue(const void* t);
-
+         RangeAnalysis::InterProceduralRACropDFSHelper* RA;
          const std::list<std::pair<const void *, const void*>> CONSTRUCTOR_ELTS (const void*t);
 
          const void* CASE_LOW(const void* t);
@@ -568,11 +589,16 @@ namespace clang {
          bool lowerMemIntrinsics(llvm::Module &M);
          bool lowerIntrinsics(llvm::Module &M);
 
+         void compute_eSSA(llvm::Module &M);
+
+         void computeValueRange(llvm::Module &M);
+         void ValueRangeOptimizer(llvm::Module &M);
+
       public:
          DumpGimpleRaw(CompilerInstance &_Instance,
                        const std::string& _outdir_name, const std::string& _InFile, bool onlyGlobals);
 
-         bool runOnModule(llvm::Module &M, llvm::ModulePass *modulePass);
+         bool runOnModule(llvm::Module &M, llvm::ModulePass *modulePass, const std::string& TopFunctionName);
 
 
    };

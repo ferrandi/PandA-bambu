@@ -1136,6 +1136,9 @@ struct gimple_node : public srcp, public WeightedNode
     * structs by value or accepting structs by value as parameters
     */
    bool artificial;
+
+   /// when true CSE and Bit Value optimization will not remove from the IR
+   bool keep;
 };
 
 
@@ -5144,6 +5147,15 @@ struct var_decl : public decl_node, public attr
 
    /// a variable can be extern
    bool extern_flag;
+
+   /// True when we are able to prove that its address
+   /// is taken and escape from a the function in which is defined.
+   /// Defined by LLVM/CLANG and it refers mainly to alloca type variables
+   bool addr_taken;
+
+   /// True when we are able to prove that its address is not taken and do not escape.
+   /// It is defined by LLVM/CLANG and it refers mainly to alloca type variables
+   bool addr_not_taken;
 
    /*attr fields are in the parent class: attr*/
 

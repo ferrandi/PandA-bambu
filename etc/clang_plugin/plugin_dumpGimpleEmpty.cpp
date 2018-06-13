@@ -133,7 +133,8 @@ namespace llvm {
          bool runOnModule(Module &M)
          {
             assert(gimpleRawWriter);
-            auto res = gimpleRawWriter->runOnModule(M, this);
+            const std::string empty;
+            auto res = gimpleRawWriter->runOnModule(M, this, empty);
             delete gimpleRawWriter;
             gimpleRawWriter = nullptr;
             return res;

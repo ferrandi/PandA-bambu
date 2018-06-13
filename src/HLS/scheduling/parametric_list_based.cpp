@@ -2054,6 +2054,7 @@ void parametric_list_based::do_balanced_scheduling1(std::deque<vertex> &sub_leve
 bool parametric_list_based::check_non_direct_operation_chaining(vertex current_v, unsigned int v_fu_type, const ControlStep cs, const ScheduleConstRef schedule, fu_bindingRef res_binding) const
 {
    bool v_is_indirect = REMOVE_DIRECT_TO_INDIRECT && HLS->allocation_information->is_indirect_access_memory_unit(v_fu_type);
+   bool v_is_one_cycle_direct_access = HLS->allocation_information->is_one_cycle_direct_access_memory_unit(v_fu_type) && HLSMgr->Rmem->get_maximum_references(HLS->allocation_information->is_memory_unit(v_fu_type) ? HLS->allocation_information->get_memory_var(v_fu_type) : HLS->allocation_information->get_proxy_memory_var(v_fu_type))>HLS->allocation_information->get_number_channels(v_fu_type);
 
    ///Set of already analyzed operations
    OpVertexSet already_analyzed_operations(flow_graph);
@@ -2071,7 +2072,7 @@ bool parametric_list_based::check_non_direct_operation_chaining(vertex current_v
       if(cs == schedule->get_cstep_end(current_op).second)
       {
          unsigned int from_fu_type = res_binding->get_assign(current_op);
-         if((GET_TYPE(flow_graph, current_op) & TYPE_LOAD) and (v_is_indirect or HLS->allocation_information->is_indirect_access_memory_unit(from_fu_type)))
+         if((GET_TYPE(flow_graph, current_op) & TYPE_LOAD) and (v_is_indirect or v_is_one_cycle_direct_access or HLS->allocation_information->is_indirect_access_memory_unit(from_fu_type)))
          {
             return true;
          }

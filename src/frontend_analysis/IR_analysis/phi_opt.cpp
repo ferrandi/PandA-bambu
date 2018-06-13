@@ -802,7 +802,7 @@ void PhiOpt::ApplyIfMerge(const unsigned int bb_index)
          }
       }
       gp->SetDefEdgeList(TM, new_list_of_def_edge);
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Modifyed " + phi->ToString());
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Modified " + phi->ToString());
    }
 
    ///Refactoring of the cfg - updating the predecessor

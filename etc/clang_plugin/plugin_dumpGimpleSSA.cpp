@@ -47,16 +47,21 @@
 #include "clang/Frontend/CompilerInstance.h"
 #include "clang/Sema/Sema.h"
 
+#define PRINT_DBG_MSG 0
+//#define UNIFYFUNCTIONEXITNODES
+
 namespace llvm {
    struct CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSAPass);
 }
 
 static clang::DumpGimpleRaw *gimpleRawWriter;
+static std::string TopFunctionName;
 
 namespace clang {
 
    class CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSA) : public PluginASTAction
    {
+         std::string topfname;
          std::string outdir_name;
          friend struct llvm::CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSAPass);
       protected:
@@ -68,6 +73,7 @@ namespace clang {
                D.Report(D.getCustomDiagID(DiagnosticsEngine::Error,
                                        "outputdir argument not specified"));
             gimpleRawWriter = new DumpGimpleRaw(CI, outdir_name, InFile, false);
+            TopFunctionName = topfname;
             return llvm::make_unique<dummyConsumer>();
          }
 
@@ -77,7 +83,17 @@ namespace clang {
             DiagnosticsEngine &D = CI.getDiagnostics();
             for (size_t i = 0, e = args.size(); i != e; ++i)
             {
-               if (args.at(i) == "-outputdir")
+               if (args.at(i) == "-topfname")
+               {
+                  if (i + 1 >= e) {
+                     D.Report(D.getCustomDiagID(DiagnosticsEngine::Error,
+                                                "missing topfname argument"));
+                     return false;
+                  }
+                  ++i;
+                  topfname = args.at(i);
+               }
+               else if (args.at(i) == "-outputdir")
                {
                   if (i + 1 >= e) {
                      D.Report(D.getCustomDiagID(DiagnosticsEngine::Error,
@@ -101,6 +117,8 @@ namespace clang {
             ros << "Help for " CLANG_VERSION_STRING(_plugin_dumpGimpleSSA) " plugin\n";
             ros << "-outputdir <directory>\n";
             ros << "  Directory where the raw file will be written\n";
+            ros << "-topfname <function name>\n";
+            ros << "  Function from which the Point-To analysis has to start\n";
          }
 
          PluginASTAction::ActionType getActionType() override
@@ -130,22 +148,29 @@ X(CLANG_VERSION_STRING(_plugin_dumpGimpleSSA), "Dump gimple ssa raw format start
 
 #include "llvm/Pass.h"
 #include "llvm/PassRegistry.h"
+#include "llvm/IR/Dominators.h"
+#include "llvm/Analysis/DominanceFrontier.h"
 #include "llvm/IR/PassManager.h"
 #include "llvm/IR/LegacyPassManager.h"
 #include "llvm/Transforms/IPO/PassManagerBuilder.h"
 #include "llvm/Transforms/Utils/LoopUtils.h"
 #include "llvm/Analysis/LazyValueInfo.h"
 #include "llvm/Analysis/AliasAnalysis.h"
+#include "llvm/Analysis/AssumptionCache.h"
 //#include "llvm/Analysis/TypeBasedAliasAnalysis.h"
 //#include "llvm/Analysis/CFLSteensAliasAnalysis.h"
 #include "llvm/Analysis/MemoryDependenceAnalysis.h"
 #include "llvm/Analysis/TargetTransformInfo.h"
-#if __clang_major__ >= 5
+#if __clang_major__ != 4
 #include "llvm/Analysis/MemorySSA.h"
 #else
 #include "llvm/Transforms/Utils/MemorySSA.h"
 #endif
+#include "llvm/Transforms/IPO.h"
 #include "llvm/Transforms/Scalar.h"
+#ifdef UNIFYFUNCTIONEXITNODES
+#include "llvm/Transforms/Utils/UnifyFunctionExitNodes.h"
+#endif
 #include "llvm/InitializePasses.h"
 #include "llvm-c/Transforms/Scalar.h"
 #include "llvm/CodeGen/Passes.h"
@@ -168,11 +193,18 @@ namespace llvm {
 //            initializeCFLSteensAAWrapperPassPass(*PassRegistry::getPassRegistry());
 //            initializeTypeBasedAAWrapperPassPass(*PassRegistry::getPassRegistry());
             initializeTargetTransformInfoWrapperPassPass(*PassRegistry::getPassRegistry());
+            initializeTargetLibraryInfoWrapperPassPass(*PassRegistry::getPassRegistry());
+            initializeAssumptionCacheTrackerPass(*PassRegistry::getPassRegistry());
+            initializeDominatorTreeWrapperPassPass(*PassRegistry::getPassRegistry());
+            initializeDominanceFrontierWrapperPassPass(*PassRegistry::getPassRegistry());
          }
          bool runOnModule(Module &M)
          {
+#if PRINT_DBG_MSG
+            llvm::errs() << "Top function name: " << TopFunctionName << "\n";
+#endif
             assert(gimpleRawWriter);
-            auto res = gimpleRawWriter->runOnModule(M, this);
+            auto res = gimpleRawWriter->runOnModule(M, this, TopFunctionName);
             delete gimpleRawWriter;
             gimpleRawWriter = nullptr;
             return res;
@@ -183,7 +215,6 @@ namespace llvm {
          }
          void getAnalysisUsage(AnalysisUsage &AU) const
          {
-           AU.setPreservesAll();
            getLoopAnalysisUsage(AU);
            AU.addRequired<MemoryDependenceWrapperPass>();
            AU.addRequired<MemorySSAWrapperPass>();
@@ -196,6 +227,10 @@ namespace llvm {
            AU.addPreserved<MemorySSAWrapperPass>();
            //AU.addPreserved<MemorySSAPrinterLegacyPass>();
            AU.addRequired<TargetTransformInfoWrapperPass>();
+           AU.addRequired<TargetLibraryInfoWrapperPass>();
+           AU.addRequired<AssumptionCacheTracker>();
+           AU.addRequired<DominatorTreeWrapperPass>();
+           AU.addRequired<DominanceFrontierWrapperPass>();
          }
    };
    char CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSAPass)::ID = 0;
@@ -211,12 +246,17 @@ static void loadPass(const llvm::PassManagerBuilder &PMB, llvm::legacy::PassMana
 {
    //PM.add(llvm::createCodeGenPreparePass());
    PM.add(llvm::createCFGSimplificationPass());
+   PM.add(llvm::createPromoteMemoryToRegisterPass());
+   PM.add(llvm::createGlobalOptimizerPass());
+   PM.add(llvm::createBreakCriticalEdgesPass());
+#ifdef UNIFYFUNCTIONEXITNODES
+   PM.add(llvm::createUnifyFunctionExitNodesPass());
+#endif
    if(PMB.OptLevel >= 2)
    {
       PM.add(llvm::createDeadStoreEliminationPass());
       PM.add(llvm::createAggressiveDCEPass());
       PM.add(llvm::createLoopLoadEliminationPass());
-      PM.add(llvm::createPromoteMemoryToRegisterPass());
    }
    PM.add(new llvm::CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSAPass)());
 }

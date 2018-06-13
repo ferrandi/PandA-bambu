@@ -54,6 +54,7 @@
 #include "tree_manipulation.hpp"
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
+#include "tree_helper.hpp"
 
 UnComparisonLowering::UnComparisonLowering(const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters) :
    FunctionFrontendFlowStep(_AppM, _function_id, UN_COMPARISON_LOWERING, _design_flow_manager, _parameters)
@@ -142,7 +143,16 @@ DesignFlowStep_Status UnComparisonLowering::InternalExec()
             block.second->PushBefore(new_ga, stmt);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created " + STR(new_ga));
             auto new_not = tree_man->create_unary_operation(booleanType, new_ssa, srcp_string, truth_not_expr_K);
-            TreeM->ReplaceTreeNode(stmt, ga->op1, new_not);
+            if (GET_INDEX_NODE(be->type) != GET_INDEX_NODE(booleanType))
+            {
+                auto new_ssa_not = tree_man->create_ssa_name(sn->var, booleanType);
+                auto new_ga_not = tree_man->create_gimple_modify_stmt(new_ssa_not, new_not, srcp_string, 0);
+                block.second->PushBefore(new_ga_not, stmt);
+                auto new_nop = tree_man->create_unary_operation(be->type, new_ssa_not, srcp_string, nop_expr_K);
+                TreeM->ReplaceTreeNode(stmt, ga->op1, new_nop);
+            }
+            else
+               TreeM->ReplaceTreeNode(stmt, ga->op1, new_not);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Transformed into " + STR(stmt));
             modified = true;
          }

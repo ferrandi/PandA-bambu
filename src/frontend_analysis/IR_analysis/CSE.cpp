@@ -221,6 +221,11 @@ bool CSE::check_loads(const gimple_assign* ga, unsigned int right_part_index, tr
 tree_nodeRef CSE::hash_check(tree_nodeRef tn, vertex bb)
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Checking: "+ tn->ToString());
+   if(GetPointer<gimple_node>(tn)->keep)
+   {
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Checked: null");
+      return tree_nodeRef();
+   }
    const gimple_assign * ga = GetPointer<gimple_assign>(tn);
    if(ga && (ga->clobber || ga->init_assignment))
    {
@@ -450,12 +455,18 @@ CSE::InternalExec ()
             ssa_name * ref_ssa = GetPointer<ssa_name>(GET_NODE(ref_ga->op0));
             ssa_name * dead_ssa = GetPointer<ssa_name>(GET_NODE(dead_ga->op0));
             ///update bit values with the longest
-            if(dead_ssa->bit_values.size()>ref_ssa->bit_values.size())
-               ref_ssa->bit_values = dead_ssa->bit_values;
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Bit_values dead" + dead_ssa->bit_values);
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Bit_values ref" + ref_ssa->bit_values);
+            if(dead_ssa->bit_values!=ref_ssa->bit_values)
+            {
+               auto size = std::max(dead_ssa->bit_values.size(),ref_ssa->bit_values.size());
+               ref_ssa->bit_values="";
+               for(auto i=0u; i<size;++i)
+                  ref_ssa->bit_values = ref_ssa->bit_values +"U";
+            }
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Bit_values ref" + ref_ssa->bit_values);
             if(dead_ssa->use_set && !ref_ssa->use_set)
                ref_ssa->use_set = dead_ssa->use_set;
-            if(dead_ssa->bit_values.size() > ref_ssa->bit_values.size())
-               ref_ssa->bit_values = dead_ssa->bit_values;
             if(tree_helper::CGetType(GET_CONST_NODE(ref_ga->op0))->get_kind() == integer_type_K)
             {
                const auto dead_min = dead_ssa->min;

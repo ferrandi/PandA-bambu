@@ -293,7 +293,9 @@ class tree_manipulation
             bool static_flag = false,
             bool register_flag = false,
             bool readonly_flag = false,
-            const std::string&bit_values="") const;
+            const std::string&bit_values="",
+            bool addr_taken=false,
+            bool addr_not_taken=false) const;
 
       ///TYPE_OBJ
 
@@ -380,7 +382,7 @@ class tree_manipulation
        * @param  virtual_flag flag to set if it is a virtual gimple_phi (default false).
        * @return the tree_reindex node of the gimple_phi.
        */
-      tree_nodeRef create_phi_node(tree_nodeRef & ssa_res, const std::vector<std::pair<tree_nodeRef, unsigned int> > & list_of_def_edge, unsigned int bb_index, bool virtual_flag = false) const;
+      tree_nodeRef create_phi_node(tree_nodeRef & ssa_res, const std::vector<std::pair<tree_nodeRef, unsigned int> > & list_of_def_edge, const tree_nodeRef & scpe, unsigned int bb_index, bool virtual_flag = false) const;
 
 
       ///GIMPLE_ASSIGN
