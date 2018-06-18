@@ -5439,7 +5439,7 @@ namespace clang
          for(auto& I : StoreLoadList)
             I->eraseFromParent();
       }
-      M.print(llvm::errs(),nullptr);
+      //M.print(llvm::errs(),nullptr);
       return changed;
    }
    bool DumpGimpleRaw::runOnModule(llvm::Module &M, llvm::ModulePass *_modulePass, const std::string& TopFunctionName)
@@ -5469,7 +5469,7 @@ namespace clang
             PtoSets_AA = new Staged_Flow_Sensitive_AA(starting_function);
 #endif
             PtoSets_AA->computePointToSet(M);
-            auto changed = false;//LoadStoreOptimizer(M);
+            auto changed = LoadStoreOptimizer(M);
             res = res | changed;
          }
       }
