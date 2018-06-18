@@ -798,7 +798,7 @@ class FunctionBehavior
        * helper for has_undefined_function_receiveing_pointers variables property
        * @return true in case there are undefined function which receives pointers as a parameter
        */
-      inline bool get_has_undefined_function_receiveing_pointers() const
+      inline bool get_has_undefined_function_receiving_pointers() const
       {
          return has_undefined_function_receiveing_pointers;
 

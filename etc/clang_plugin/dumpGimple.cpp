@@ -306,7 +306,7 @@ namespace clang
         PtoSets_AA(nullptr),
         SignedPointerTypeReference(0),
         last_memory_ssa_vers(std::numeric_limits<int>::max()),
-        last_BB_index(2)
+        last_BB_index(2),RA(nullptr)
    {
       if( EC)
       {
@@ -1498,13 +1498,14 @@ namespace clang
       return ssa->isDefault;
    }
 
-   const void* DumpGimpleRaw::LowerGetElementPtrOffset(const llvm::GEPOperator* gep_op, const llvm::Function * currentFunction, const void *& base_node)
+   const void* DumpGimpleRaw::LowerGetElementPtrOffset(const llvm::GEPOperator* gep_op, const llvm::Function * currentFunction, const void *& base_node, bool &isZero)
    {
       if(gep_op->hasAllConstantIndices())
       {
          llvm::APInt OffsetAI(DL->getPointerTypeSizeInBits(gep_op->getType()), 0);
          auto allconstantoffet = gep_op->accumulateConstantOffset(*DL, OffsetAI);
          assert(allconstantoffet);
+         isZero=!OffsetAI;
          return assignCodeAuto(llvm::ConstantInt::get(gep_op->getContext(), OffsetAI));
       }
       else
@@ -1549,6 +1550,7 @@ namespace clang
            ConstantIndexOffset += Index * llvm::APInt(ConstantIndexOffset.getBitWidth(),
                                    DL->getTypeAllocSize(GTI.getIndexedType()));
          }
+         isZero=!ConstantIndexOffset;
          return assignCodeAuto(llvm::ConstantInt::get(gep_op->getContext(), ConstantIndexOffset));
       }
    }
@@ -1560,12 +1562,16 @@ namespace clang
       auto base_node = getOperand(gep->getOperand(0), currentFunction);
       const llvm::GEPOperator* gep_op = dyn_cast<llvm::GEPOperator>(gep);
       assert(gep_op);
-      auto offset_node = LowerGetElementPtrOffset(gep_op, currentFunction, base_node);
-      if(gep_op->isInBounds())
-      {
-         auto mem_ref_node = build2(GT(MEM_REF), mem_ref_type, base_node, offset_node);
-         return build1(GT(ADDR_EXPR), type, mem_ref_node);
-      }
+      bool isZero=false;
+      auto offset_node = LowerGetElementPtrOffset(gep_op, currentFunction, base_node,isZero);
+//      if(gep_op->isInBounds())
+//      {
+//         auto mem_ref_node = build2(GT(MEM_REF), mem_ref_type, base_node, offset_node);
+//         return build1(GT(ADDR_EXPR), type, mem_ref_node);
+//      }
+//      else
+      if(isZero)
+         return base_node;
       else
          return build2(GT(POINTER_PLUS_EXPR), type, base_node, offset_node);
    }
@@ -4941,7 +4947,7 @@ namespace clang
                                NewBB);
    }
 
-   /// Intrinsics lowering
+   /// Intrinsic lowering
    bool DumpGimpleRaw::lowerMemIntrinsics(llvm::Module &M)
    {
       auto res = false;
@@ -5011,7 +5017,7 @@ namespace clang
       return res;
    }
 
-   /// Intrinsics lowering
+   /// Intrinsic lowering
    bool DumpGimpleRaw::lowerIntrinsics(llvm::Module &M)
    {
       auto res = false;
@@ -5189,6 +5195,253 @@ namespace clang
       }
    }
 
+
+   bool DumpGimpleRaw::LoadStoreOptimizer(llvm::Module &M)
+   {
+      bool changed=false;
+      for (llvm::Function &F : M)
+      {
+         std::list<llvm::Instruction*> StoreLoadList;
+         std::list<llvm::BasicBlock*> BBlist;
+         for(auto& BB: F.getBasicBlockList())
+            BBlist.push_back(&BB);
+         for(auto BB: BBlist)
+         {
+            auto curInstIterator = BB->getInstList().begin();
+            while( curInstIterator != BB->getInstList().end())
+            {
+               llvm::Instruction *I = &*curInstIterator;
+               if(dyn_cast<llvm::StoreInst>(I)||dyn_cast<llvm::LoadInst>(I))
+               {
+                  auto PO = dyn_cast<llvm::StoreInst>(I) ? dyn_cast<llvm::StoreInst>(I)->getPointerOperand() : dyn_cast<llvm::LoadInst>(I)->getPointerOperand();
+                  auto PTS = PtoSets_AA->pointsToSet(PO);
+                  if(PTS->size()>1)
+                  {
+                     bool res=true;
+                     for(auto var: *PTS)
+                     {
+                        auto varValue = PtoSets_AA->getValue(var);
+                        if(!varValue)
+                        {
+                           res = false;
+                           break;
+                        }
+                        auto vid = varValue->getValueID();
+                        if(vid != llvm::Value::InstructionVal+llvm::Instruction::Alloca && vid != llvm::Value::GlobalVariableVal)
+                        {
+                           res = false;
+                           break;
+                        }
+                        auto AI = llvm::dyn_cast<const llvm::AllocaInst>(varValue);
+                        auto GV = llvm::dyn_cast<const llvm::GlobalVariable>(varValue);
+                        if(AI && AI->getAllocatedType()->isAggregateType() && !AI->getAllocatedType()->isArrayTy())
+                        {
+                           res=false;
+                           break;
+                        }
+                        else if(GV && GV->getValueType()->isAggregateType() && !GV->getValueType()->isArrayTy())
+                        {
+                           res=false;
+                           break;
+                        }
+                     }
+                     if(res)
+                     {
+                        StoreLoadList.push_back(I);
+                     }
+                  }
+               }
+               ++curInstIterator;
+            }
+         }
+         for(auto& I: StoreLoadList)
+         {
+            if(llvm::StoreInst* SI = dyn_cast<llvm::StoreInst>(I))
+            {
+               auto PO = SI->getPointerOperand();
+               auto PTS = PtoSets_AA->pointsToSet(PO);
+               llvm::IRBuilder<> Builder(SI);
+               llvm::errs()<<"Store to be optimized: ";
+               SI->print(llvm::errs());
+               llvm::errs()<<"\n";
+               llvm::errs()<<"PO to be used: ";
+               PO->print(llvm::errs());
+               llvm::errs()<<"\n";
+               llvm::errs()<<"Var to be written: ";
+               SI->getValueOperand()->print(llvm::errs());
+               llvm::errs()<<"\n";
+               llvm::BasicBlock *BB0=SI->getParent();
+               auto LastBB = BB0->splitBasicBlock(SI);
+               llvm::BasicBlock *PrevBB=BB0;
+               llvm::IRBuilder<> Builder0(BB0->getTerminator());
+               auto ptrToInt1 = Builder0.CreatePtrToInt(PO,llvm::Type::getInt64Ty(F.getContext()));
+
+               for(auto var: *PTS)
+               {
+                  auto varValue = PtoSets_AA->getValue(var);
+                  auto AI = llvm::dyn_cast<const llvm::AllocaInst>(varValue);
+                  auto GV = llvm::dyn_cast<const llvm::GlobalVariable>(varValue);
+                  assert(AI||GV);
+                  llvm::Type* objType;
+                  if(AI)
+                     objType = AI->getAllocatedType();
+                  else if (GV)
+                     objType = GV->getValueType();
+                  else
+                     llvm_unreachable("unexpected condition");
+
+                  if(objType->isArrayTy())
+                  {
+                     auto gep1 = Builder0.CreateBitCast(const_cast<llvm::Value*>(varValue), PO->getType());
+
+                     auto ptrToInt2 = Builder0.CreatePtrToInt(gep1,llvm::Type::getInt64Ty(F.getContext()));
+                     auto sub1 = Builder0.CreateSub(ptrToInt1,ptrToInt2);
+
+                     auto sge1 = Builder0.CreateICmpSGE(sub1, Builder0.getInt64(0));
+                     auto varValueSize= objType->isSized() ? DL->getTypeAllocSize(objType) : 1ULL;
+
+                     auto ult1 = Builder0.CreateICmpULT(sub1, Builder0.getInt64(varValueSize));
+                     auto and1 = Builder0.CreateAnd(sge1,ult1);
+
+                     llvm::BasicBlock *TrueBB = llvm::BasicBlock::Create(F.getContext(), "StoreBB", &F, LastBB);
+                     llvm::BasicBlock *FalseBB = llvm::BasicBlock::Create(F.getContext(), "StoreBB", &F, LastBB);
+                     PrevBB->getTerminator()->eraseFromParent();
+                     Builder.SetInsertPoint(PrevBB);
+                     Builder.CreateCondBr(and1, TrueBB, FalseBB);
+                     if(PrevBB==BB0)
+                        Builder0.SetInsertPoint(BB0->getTerminator());
+                     PrevBB=FalseBB;
+                     llvm::IRBuilder<> FalseBuilder(FalseBB);
+                     FalseBuilder.CreateBr(LastBB);
+
+                     llvm::IRBuilder<> StoreBuilder(TrueBB);
+                     auto bitcast1 = StoreBuilder.CreateBitCast(gep1, llvm::Type::getInt8PtrTy(F.getContext()));
+                     auto gep3 = StoreBuilder.CreateGEP(bitcast1, sub1);
+                     auto bitcast2 = StoreBuilder.CreateBitCast(gep3,PO->getType());
+                     StoreBuilder.CreateStore(SI->getValueOperand(),bitcast2);
+                     StoreBuilder.CreateBr(LastBB);
+                     changed=true;
+                  }
+                  else
+                  {
+                     auto gep1 = Builder0.CreateBitCast(const_cast<llvm::Value*>(varValue), PO->getType());
+                     auto eq1 = Builder0.CreateICmpEQ(PO, gep1);
+                     llvm::BasicBlock *TrueBB = llvm::BasicBlock::Create(F.getContext(), "StoreBB", &F, LastBB);
+                     llvm::BasicBlock *FalseBB = llvm::BasicBlock::Create(F.getContext(), "StoreBB", &F, LastBB);
+                     PrevBB->getTerminator()->eraseFromParent();
+                     Builder.SetInsertPoint(PrevBB);
+                     Builder.CreateCondBr(eq1, TrueBB, FalseBB);
+                     if(PrevBB==BB0)
+                        Builder0.SetInsertPoint(BB0->getTerminator());
+                     PrevBB=FalseBB;
+                     llvm::IRBuilder<> FalseBuilder(FalseBB);
+                     FalseBuilder.CreateBr(LastBB);
+                     llvm::IRBuilder<> StoreBuilder(TrueBB);
+                     StoreBuilder.CreateStore(SI->getValueOperand(),gep1);
+                     StoreBuilder.CreateBr(LastBB);
+                     changed=true;
+                  }
+               }
+            }
+            else if(llvm::LoadInst* LI = dyn_cast<llvm::LoadInst>(I))
+            {
+               auto PO = LI->getPointerOperand();
+               auto PTS = PtoSets_AA->pointsToSet(PO);
+
+               llvm::BasicBlock *BB0=LI->getParent();
+               auto LastBB = BB0->splitBasicBlock(LI);
+               llvm::BasicBlock *PrevBB=BB0;
+               llvm::IRBuilder<> Builder0(BB0->getTerminator());
+               auto ptrToInt1 = Builder0.CreatePtrToInt(PO,llvm::Type::getInt64Ty(F.getContext()));
+               llvm::IRBuilder<> Builder(LI);
+               auto phi1 = Builder.CreatePHI(LI->getType(), 1+PTS->size());
+               LI->replaceAllUsesWith(phi1);
+               unsigned index = 0;
+
+               for(auto var: *PTS)
+               {
+                  ++index;
+                  auto varValue = PtoSets_AA->getValue(var);
+                  auto AI = llvm::dyn_cast<const llvm::AllocaInst>(varValue);
+                  auto GV = llvm::dyn_cast<const llvm::GlobalVariable>(varValue);
+                  assert(AI||GV);
+                  llvm::Type* objType;
+                  if(AI)
+                     objType = AI->getAllocatedType();
+                  else if (GV)
+                     objType = GV->getValueType();
+                  else
+                     llvm_unreachable("unexpected condition");
+
+                  if(objType->isArrayTy())
+                  {
+                     auto gep1 = Builder0.CreateBitCast(const_cast<llvm::Value*>(varValue), PO->getType());
+
+                     auto ptrToInt2 = Builder0.CreatePtrToInt(gep1,llvm::Type::getInt64Ty(F.getContext()));
+                     auto sub1 = Builder0.CreateSub(ptrToInt1,ptrToInt2);
+
+                     auto sge1 = Builder0.CreateICmpSGE(sub1, Builder0.getInt64(0));
+                     auto varValueSize= objType->isSized() ? DL->getTypeAllocSize(objType) : 1ULL;
+
+                     auto ult1 = Builder0.CreateICmpULT(sub1, Builder0.getInt64(varValueSize));
+                     auto and1 = Builder0.CreateAnd(sge1,ult1);
+
+                     llvm::BasicBlock *TrueBB = llvm::BasicBlock::Create(F.getContext(), "StoreBB", &F, LastBB);
+                     llvm::BasicBlock *FalseBB = llvm::BasicBlock::Create(F.getContext(), "StoreBB", &F, LastBB);
+                     PrevBB->getTerminator()->eraseFromParent();
+                     Builder.SetInsertPoint(PrevBB);
+                     Builder.CreateCondBr(and1, TrueBB, FalseBB);
+                     if(PrevBB==BB0)
+                        Builder0.SetInsertPoint(BB0->getTerminator());
+                     PrevBB=FalseBB;
+                     llvm::IRBuilder<> FalseBuilder(FalseBB);
+                     FalseBuilder.CreateBr(LastBB);
+
+                     llvm::IRBuilder<> LoadBuilder(TrueBB);
+                     auto bitcast1 = LoadBuilder.CreateBitCast(gep1, llvm::Type::getInt8PtrTy(F.getContext()));
+                     auto gep3 = LoadBuilder.CreateGEP(bitcast1, sub1);
+                     auto bitcast2 = LoadBuilder.CreateBitCast(gep3,PO->getType());
+                     auto load1 = LoadBuilder.CreateLoad(bitcast2);
+                     phi1->addIncoming(load1, TrueBB);
+                     LoadBuilder.CreateBr(LastBB);
+                     if(index==PTS->size())
+                        phi1->addIncoming(llvm::UndefValue::get(I->getType()), FalseBB);
+                     changed=true;
+                  }
+                  else
+                  {
+                     auto gep1 = Builder0.CreateBitCast(const_cast<llvm::Value*>(varValue), PO->getType());
+                     auto eq1 = Builder0.CreateICmpEQ(PO, gep1);
+                     llvm::BasicBlock *TrueBB = llvm::BasicBlock::Create(F.getContext(), "LoadBB", &F, LastBB);
+                     llvm::BasicBlock *FalseBB = llvm::BasicBlock::Create(F.getContext(), "LoadBB", &F, LastBB);
+                     PrevBB->getTerminator()->eraseFromParent();
+                     Builder.SetInsertPoint(PrevBB);
+                     Builder.CreateCondBr(eq1, TrueBB, FalseBB);
+                     if(PrevBB==BB0)
+                        Builder0.SetInsertPoint(BB0->getTerminator());
+                     PrevBB=FalseBB;
+                     llvm::IRBuilder<> FalseBuilder(FalseBB);
+                     FalseBuilder.CreateBr(LastBB);
+
+                     llvm::IRBuilder<> LoadBuilder(TrueBB);
+                     auto load1 = LoadBuilder.CreateLoad(gep1);
+                     phi1->addIncoming(load1, TrueBB);
+                     LoadBuilder.CreateBr(LastBB);
+                     if(index==PTS->size())
+                        phi1->addIncoming(llvm::UndefValue::get(I->getType()), FalseBB);
+                     changed=true;
+                  }
+               }
+            }
+            else
+               llvm_unreachable("unexpected condition");
+         }
+         for(auto& I : StoreLoadList)
+            I->eraseFromParent();
+      }
+      M.print(llvm::errs(),nullptr);
+      return changed;
+   }
    bool DumpGimpleRaw::runOnModule(llvm::Module &M, llvm::ModulePass *_modulePass, const std::string& TopFunctionName)
    {
       DL = &M.getDataLayout();
@@ -5216,6 +5469,8 @@ namespace clang
             PtoSets_AA = new Staged_Flow_Sensitive_AA(starting_function);
 #endif
             PtoSets_AA->computePointToSet(M);
+            auto changed = false;//LoadStoreOptimizer(M);
+            res = res | changed;
          }
       }
 #endif

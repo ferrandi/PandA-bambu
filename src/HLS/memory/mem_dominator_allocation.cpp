@@ -191,7 +191,6 @@ DesignFlowStep_Status mem_dominator_allocation::Exec()
    std::map<unsigned int, std::set<vertex> > var_map;
    std::map<unsigned int, std::set<unsigned int> > where_used;
    bool all_pointers_resolved = true;
-   std::set<unsigned int> res_set;
    bool unaligned_access_p = parameters->isOption(OPT_unaligned_access) && parameters->getOption<bool>(OPT_unaligned_access);
    bool assume_aligned_access_p = parameters->isOption(OPT_aligned_access) && parameters->getOption<bool>(OPT_aligned_access);
    if(unaligned_access_p && assume_aligned_access_p)
@@ -204,9 +203,15 @@ DesignFlowStep_Status mem_dominator_allocation::Exec()
       const BehavioralHelperConstRef BH = function_behavior->CGetBehavioralHelper();
       INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "-->Analyzing function: " + BH->get_function_name());
       if(function_behavior->get_has_globals())
+      {
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "---Pointers not resolved: it has global variables");
          all_pointers_resolved = false;
-      if(function_behavior->get_has_undefined_function_receiveing_pointers())
+      }
+      if(function_behavior->get_has_undefined_function_receiving_pointers())
+      {
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "---Pointers not resolved: it has undefined function receiving pointers");
          all_pointers_resolved = false;
+      }
       CustomSet<vertex> vert_dominator;
       vertex current_vertex = get_remapped_vertex(CG->GetVertex(fun_id), CG, HLSMgr);
       unsigned int projection_in_degree = 0;
@@ -256,6 +261,7 @@ DesignFlowStep_Status mem_dominator_allocation::Exec()
          /// custom function like printf may create problem to the pointer resolution
          if(current_op == "__builtin_printf" || current_op == BUILTIN_WAIT_CALL || current_op == MEMSET || current_op == MEMCMP || current_op == MEMCPY)
          {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "---Pointers not resolved: it uses printf/builtin-wait-call/memset/memcpy/memcmp");
             all_pointers_resolved = false;
          }
          if (GET_TYPE(g, *v) & (TYPE_LOAD | TYPE_STORE))
@@ -264,100 +270,130 @@ DesignFlowStep_Status mem_dominator_allocation::Exec()
             const tree_nodeRef curr_tn = TreeM->get_tree_node_const(g->CGetOpNodeInfo(*v)->GetNodeId());
             gimple_assign * me = GetPointer<gimple_assign>(curr_tn);
             THROW_ASSERT(me, "only gimple_assign's are allowed as memory operations");
-            unsigned int var = 0;
             unsigned int expr_index;
+            std::set<unsigned int> res_set;
+            bool resolved;
+
             if (GET_TYPE(g, *v) & TYPE_STORE)
             {
                expr_index = GET_INDEX_NODE(me->op0);
-               var = tree_helper::get_base_index(TreeM, expr_index);
+               unsigned int var = 0;
+               resolved = tree_helper::is_fully_resolved(TreeM, expr_index, res_set);
+               if(!resolved)
+               {
+                  var = tree_helper::get_base_index(TreeM, expr_index);
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "---var:"+STR(var));
+                  if(var!=0 && function_behavior->is_variable_mem(var))
+                  {
+                     res_set.insert(var);
+                     resolved=true;
+                  }
+                  else
+                  {
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "---Pointers not resolved: point-to-set not resolved");
+                     all_pointers_resolved = false;
+                  }
+               }
             }
             else
             {
                expr_index = GET_INDEX_NODE(me->op1);
-               var = tree_helper::get_base_index(TreeM, expr_index);
-            }
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Variable is " + STR(var));
-            unsigned int value_bitsize;
-            if (GET_TYPE(g, *v) & TYPE_STORE)
-            {
-               std::vector<HLS_manager::io_binding_type> var_read = HLSMgr->get_required_values(fun_id, *v);
-               unsigned int size_var = std::get<0>(var_read[0]);
-               unsigned int size_type_index = tree_helper::get_type_index(TreeM, size_var);
-               value_bitsize = tree_helper::size(TreeM, size_type_index);
-               field_decl * fd = GetPointer<field_decl>(TreeM->get_tree_node_const(size_type_index));
-               if (!fd or !fd->is_bitfield())
-                  value_bitsize = std::max(8u, value_bitsize);
-               if(var)
-                  HLSMgr->Rmem->add_source_value(var, size_var);
-            }
-            else
-            {
-               unsigned int size_var = HLSMgr->get_produced_value(fun_id, *v);
-               unsigned int size_type_index = tree_helper::get_type_index(TreeM, size_var);
-               value_bitsize = tree_helper::size(TreeM, size_type_index);
-               field_decl * fd = GetPointer<field_decl>(TreeM->get_tree_node_const(size_type_index));
-               if (!fd or !fd->is_bitfield())
-                  value_bitsize = std::max(8u, value_bitsize);
-            }
-            if(var!=0 && function_behavior->is_variable_mem(var))
-            {
-               if(var_size.find(var) == var_size.end())
+               unsigned int var = 0;
+               resolved = tree_helper::is_fully_resolved(TreeM, expr_index, res_set);
+               if(!resolved)
                {
-                  unsigned int elmt_bitsize=1;
-                  unsigned int type_index = tree_helper::get_type_index(TreeM, var);
-                  bool is_a_struct_union = ((tree_helper::is_a_struct(TreeM, type_index)) && !tree_helper::is_an_array(TreeM, type_index)) || tree_helper::is_an_union(TreeM, type_index) || tree_helper::is_a_complex(TreeM, type_index);
-                  tree_nodeRef type_node = TreeM->get_tree_node_const(type_index);
-                  tree_helper::accessed_greatest_bitsize(TreeM, type_node, type_index, elmt_bitsize);
-                  unsigned int mim_elmt_bitsize = elmt_bitsize;
-                  tree_helper::accessed_minimum_bitsize(TreeM, type_node, type_index, mim_elmt_bitsize);
-                  unsigned int elts_size = elmt_bitsize;
-                  if(tree_helper::is_an_array(TreeM, type_index))
-                     elts_size = tree_helper::get_array_data_bitsize(TreeM, type_index);
-                  if(unaligned_access_p || mim_elmt_bitsize != elmt_bitsize || is_a_struct_union || elts_size != elmt_bitsize)
+                 var = tree_helper::get_base_index(TreeM, expr_index);
+                 INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "---var:"+STR(var));
+                 if(var!=0 && function_behavior->is_variable_mem(var))
+                 {
+                    res_set.insert(var);
+                    resolved=true;
+                 }
+                 else
+                 {
+                    INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "---Pointers not resolved: point-to-set not resolved");
+                    all_pointers_resolved = false;
+                 }
+               }
+            }
+            for(auto var: res_set)
+            {
+               assert(var);
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Variable is " + STR(var));
+               unsigned int value_bitsize;
+               if (GET_TYPE(g, *v) & TYPE_STORE)
+               {
+                  std::vector<HLS_manager::io_binding_type> var_read = HLSMgr->get_required_values(fun_id, *v);
+                  unsigned int size_var = std::get<0>(var_read[0]);
+                  unsigned int size_type_index = tree_helper::get_type_index(TreeM, size_var);
+                  value_bitsize = tree_helper::size(TreeM, size_type_index);
+                  field_decl * fd = GetPointer<field_decl>(TreeM->get_tree_node_const(size_type_index));
+                  if (!fd or !fd->is_bitfield())
+                     value_bitsize = std::max(8u, value_bitsize);
+                  HLSMgr->Rmem->add_source_value(var, size_var);
+               }
+               else
+               {
+                  unsigned int size_var = HLSMgr->get_produced_value(fun_id, *v);
+                  unsigned int size_type_index = tree_helper::get_type_index(TreeM, size_var);
+                  value_bitsize = tree_helper::size(TreeM, size_type_index);
+                  field_decl * fd = GetPointer<field_decl>(TreeM->get_tree_node_const(size_type_index));
+                  if (!fd or !fd->is_bitfield())
+                     value_bitsize = std::max(8u, value_bitsize);
+               }
+               if(function_behavior->is_variable_mem(var))
+               {
+                  if(var_size.find(var) == var_size.end())
                   {
-                     if(assume_aligned_access_p)
-                        THROW_ERROR("Option --aligned-access have been specified on a function with unaligned accesses:\n\tVariable " + BH->PrintVariable(var) + " could be accessed in unaligned way");
-                     HLSMgr->Rmem->set_sds_var(var, false);
-                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Variable " + STR(var) + " not sds " + STR(elmt_bitsize) + " vs " + STR(mim_elmt_bitsize) + " vs " + STR(elts_size));
-                  }
-                  else if(value_bitsize != elmt_bitsize)
-                  {
-                     if(assume_aligned_access_p)
-                        THROW_ERROR("Option --aligned-access have been specified on a function with unaligned accesses:\n\tVariable " + BH->PrintVariable(var) + " could be accessed in unaligned way: "+ curr_tn->ToString());
-                     HLSMgr->Rmem->set_sds_var(var, false);
-                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Variable " + STR(var) + " not sds " + STR(value_bitsize) + " vs " + STR(elmt_bitsize));
+                     unsigned int elmt_bitsize=1;
+                     unsigned int type_index = tree_helper::get_type_index(TreeM, var);
+                     bool is_a_struct_union = ((tree_helper::is_a_struct(TreeM, type_index)) && !tree_helper::is_an_array(TreeM, type_index)) || tree_helper::is_an_union(TreeM, type_index) || tree_helper::is_a_complex(TreeM, type_index);
+                     tree_nodeRef type_node = TreeM->get_tree_node_const(type_index);
+                     tree_helper::accessed_greatest_bitsize(TreeM, type_node, type_index, elmt_bitsize);
+                     unsigned int mim_elmt_bitsize = elmt_bitsize;
+                     tree_helper::accessed_minimum_bitsize(TreeM, type_node, type_index, mim_elmt_bitsize);
+                     unsigned int elts_size = elmt_bitsize;
+                     if(tree_helper::is_an_array(TreeM, type_index))
+                        elts_size = tree_helper::get_array_data_bitsize(TreeM, type_index);
+                     if(unaligned_access_p || mim_elmt_bitsize != elmt_bitsize || is_a_struct_union || elts_size != elmt_bitsize)
+                     {
+                        if(assume_aligned_access_p)
+                           THROW_ERROR("Option --aligned-access have been specified on a function with unaligned accesses:\n\tVariable " + BH->PrintVariable(var) + " could be accessed in unaligned way");
+                        HLSMgr->Rmem->set_sds_var(var, false);
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Variable " + STR(var) + " not sds " + STR(elmt_bitsize) + " vs " + STR(mim_elmt_bitsize) + " vs " + STR(elts_size));
+                     }
+                     else if(value_bitsize != elmt_bitsize)
+                     {
+                        if(assume_aligned_access_p)
+                           THROW_ERROR("Option --aligned-access have been specified on a function with unaligned accesses:\n\tVariable " + BH->PrintVariable(var) + " could be accessed in unaligned way: "+ curr_tn->ToString());
+                        HLSMgr->Rmem->set_sds_var(var, false);
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Variable " + STR(var) + " not sds " + STR(value_bitsize) + " vs " + STR(elmt_bitsize));
+                     }
+                     else
+                     {
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Variable " + STR(var) + " sds " + STR(value_bitsize) + " vs " + STR(elmt_bitsize));
+                        HLSMgr->Rmem->set_sds_var(var, true);
+                     }
+                     var_size[var]=value_bitsize;
                   }
                   else
                   {
-                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Variable " + STR(var) + " sds " + STR(value_bitsize) + " vs " + STR(elmt_bitsize));
-                     HLSMgr->Rmem->set_sds_var(var, true);
+                     if(var_size.find(var)->second != value_bitsize)
+                     {
+                        if(assume_aligned_access_p)
+                           THROW_ERROR("Option --aligned-access have been specified on a function with unaligned accesses:\n\tVariable " + BH->PrintVariable(var) + " could be accessed in unaligned way");
+                        HLSMgr->Rmem->set_sds_var(var, false);
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Variable " + STR(var) + " not sds " + STR(value_bitsize) + " vs " + STR(var_size.find(var)->second));
+                     }
                   }
-                  var_size[var]=value_bitsize;
+                  /// var referring vertex map
+                  var_referring_vertex_map[var][fun_id].insert(*v);
+                  if(GET_TYPE(g, *v) & TYPE_LOAD)
+                     var_load_vertex_map[var][fun_id].insert(*v);;
                }
                else
                {
-                  if(var_size.find(var)->second != value_bitsize)
-                  {
-                     if(assume_aligned_access_p)
-                        THROW_ERROR("Option --aligned-access have been specified on a function with unaligned accesses:\n\tVariable " + BH->PrintVariable(var) + " could be accessed in unaligned way");
-                     HLSMgr->Rmem->set_sds_var(var, false);
-                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Variable " + STR(var) + " not sds " + STR(value_bitsize) + " vs " + STR(var_size.find(var)->second));
-                  }
-               }
-               /// var referring vertex map
-               var_referring_vertex_map[var][fun_id].insert(*v);
-               if(GET_TYPE(g, *v) & TYPE_LOAD)
-                   var_load_vertex_map[var][fun_id].insert(*v);;
-            }
-            else
-            {
-               if(var && tree_helper::is_fully_resolved(TreeM, expr_index, res_set))
-               {
-                  THROW_ASSERT(res_set.size() != 1, "unexpected condition");
-               }
-               else
-               {
-                  all_pointers_resolved = false;
+                  THROW_ERROR("unexpected condition");
                }
             }
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed statement " + GET_NAME(g, *v));
@@ -365,37 +401,55 @@ DesignFlowStep_Status mem_dominator_allocation::Exec()
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--Analyzed function: " + BH->get_function_name());
    }
+   HLSMgr->Rmem->set_all_pointers_resolved(all_pointers_resolved);
 
    if(all_pointers_resolved)
    {
-      if(res_set.empty())
+      for(const auto fun_id : func_list)
       {
-         /// fix dynamic accesses
-         for(const auto fun_id : func_list)
+         const FunctionBehaviorConstRef function_behavior = HLSMgr->CGetFunctionBehavior(fun_id);
+         const BehavioralHelperConstRef BH = function_behavior->CGetBehavioralHelper();
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "-->Analyzing function: " + BH->get_function_name());
+         const OpGraphConstRef g = function_behavior->CGetOpGraph(FunctionBehavior::CFG);
+         graph::vertex_iterator v, v_end;
+         for (boost::tie(v, v_end) = boost::vertices(*g); v != v_end; ++v)
          {
-            FunctionBehaviorRef function_behavior = HLSMgr->GetFunctionBehavior(fun_id);
-            function_behavior->erase_all_dynamic_addresses();
-         }
-      }
-      else
-      {
-         /// fix dynamic accesses
-         for(const auto fun_id : func_list)
-         {
-            FunctionBehaviorRef function_behavior = HLSMgr->GetFunctionBehavior(fun_id);
-            const std::set<unsigned int> & all_memory_vars = function_behavior->get_function_mem();
-            const std::set<unsigned int>::const_iterator amv_it_end = all_memory_vars.end();
-            for(std::set<unsigned int>::const_iterator amv_it = all_memory_vars.begin(); amv_it != amv_it_end; ++amv_it)
+            if (GET_TYPE(g, *v) & (TYPE_LOAD | TYPE_STORE))
             {
-               if(res_set.find(*amv_it) == res_set.end() && function_behavior->get_dynamic_address().find(*amv_it) != function_behavior->get_dynamic_address().end())
-                  function_behavior->erase_dynamic_address(*amv_it);
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing statement " + GET_NAME(g, *v));
+               const tree_nodeRef curr_tn = TreeM->get_tree_node_const(g->CGetOpNodeInfo(*v)->GetNodeId());
+               gimple_assign * me = GetPointer<gimple_assign>(curr_tn);
+               THROW_ASSERT(me, "only gimple_assign's are allowed as memory operations");
+               unsigned int expr_index;
+               if (GET_TYPE(g, *v) & TYPE_STORE)
+               {
+                  expr_index = GET_INDEX_NODE(me->op0);
+               }
+               else
+               {
+                  expr_index = GET_INDEX_NODE(me->op1);
+               }
+               std::set<unsigned int> used_set;
+               bool resolved = tree_helper::is_fully_resolved(TreeM, expr_index, used_set);
+               assert(resolved&&!used_set.empty());
+               if(used_set.size()>1)
+               {
+                  for(auto used_var: used_set)
+                  {
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Variable need the bus for loads and stores " + BH->PrintVariable(used_var));
+                     HLSMgr->Rmem->add_need_bus(used_var);
+                  }
+               }
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed statement " + GET_NAME(g, *v));
             }
          }
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--Analyzed function: " + BH->get_function_name());
       }
-   }
-   HLSMgr->Rmem->set_all_pointers_resolved(all_pointers_resolved);
 
-   /// compute the number of istances for each function
+   }
+
+
+   /// compute the number of instances for each function
    std::map<vertex, unsigned int> num_instances;
    for(const auto top_function : top_functions)
    {
@@ -637,12 +691,18 @@ DesignFlowStep_Status mem_dominator_allocation::Exec()
             }
 
             if(is_dynamic_address_used && !all_pointers_resolved && !assume_aligned_access_p)
+            {
                HLSMgr->Rmem->set_sds_var(var_index, false);
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Variable " + STR(var_index) + " not sds-A");
+            }
 
             if(!HLSMgr->Rmem->has_sds_var(var_index) && assume_aligned_access_p)
                HLSMgr->Rmem->set_sds_var(var_index, true);
             else if(!HLSMgr->Rmem->has_sds_var(var_index))
+            {
                HLSMgr->Rmem->set_sds_var(var_index, false);
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Variable " + STR(var_index) + " not sds-B");
+            }
 
             if((!parameters->IsParameter("no-private-mem") || parameters->GetParameter<int>("no-private-mem") == 0) && (!parameters->IsParameter("no-local-mem") || parameters->GetParameter<int>("no-local-mem") == 0))
             {
@@ -681,7 +741,10 @@ DesignFlowStep_Status mem_dominator_allocation::Exec()
             if(assume_aligned_access_p)
                HLSMgr->Rmem->set_sds_var(var_index, true);
             else
+            {
                HLSMgr->Rmem->set_sds_var(var_index, false);
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Variable " + STR(var_index) + " not sds-C");
+            }
          }
          const tree_nodeRef curr_tn = TreeM->get_tree_node_const(var_index);
          var_decl* vd = GetPointer<var_decl>(curr_tn);

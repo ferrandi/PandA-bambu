@@ -450,6 +450,7 @@ CSE::InternalExec ()
             const gimple_assign * dead_ga = GetPointer<gimple_assign>(GET_NODE(stmt));
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Replacing use of " + STR(dead_ga->op0));
             ref_ga->temporary_address = ref_ga->temporary_address && dead_ga->temporary_address;
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---ref_ga->temporary_address" + (ref_ga->temporary_address?std::string("T"):std::string("F")));
             //THROW_ASSERT(ref_ga->bb_index==dead_ga->bb_index, "unexpected condition");
             //THROW_ASSERT(ref_ga->bb_index==B->number, "unexpected condition");
             ssa_name * ref_ssa = GetPointer<ssa_name>(GET_NODE(ref_ga->op0));

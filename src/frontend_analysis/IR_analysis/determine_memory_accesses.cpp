@@ -967,10 +967,11 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
       case ssa_name_K:
       {
          ssa_name* sn = GetPointer<ssa_name>(tn);
-         if(sn->use_set->is_a_singleton())
-         {
-            function_behavior->add_function_mem(GET_INDEX_NODE(sn->use_set->variables.front()));
-         }
+         if(sn->use_set->is_fully_resolved())
+            for(auto var : sn->use_set->variables)
+            {
+               function_behavior->add_function_mem(GET_INDEX_NODE(var));
+            }
          break;
       }
       case vector_cst_K:

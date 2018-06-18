@@ -2114,7 +2114,9 @@ void allocation::IntegrateTechnologyLibraries()
       {
          if(HLSMgr->Rmem->is_sds_var(var))
          {
-            if(HLSMgr->Rmem->is_private_memory(var))
+            if((HLSMgr->Rmem->has_all_pointers_resolved() && HLSMgr->Rmem->does_need_addr(var)) || (!HLSMgr->Rmem->has_all_pointers_resolved() && !HLSMgr->Rmem->is_private_memory(var)))
+               current_fu = get_fu(ARRAY_1D_STD_BRAM_SDS_BUS+latency_postfix);
+            else
             {
 
                if(parameters->getOption<bool>(OPT_use_asynchronous_memories) &&
@@ -2132,8 +2134,6 @@ void allocation::IntegrateTechnologyLibraries()
                else
                   current_fu = get_fu(ARRAY_1D_STD_BRAM_SDS+allocation_information->get_latency_string(get_synch_ram_latency(ARRAY_1D_STD_BRAM_SDS, latency_postfix, HLS_C, var)));
             }
-            else
-               current_fu = get_fu(ARRAY_1D_STD_BRAM_SDS_BUS+latency_postfix);
          }
          else if(!unaligned_access_p && HLSMgr->Rmem->get_bram_bitsize()==8 && HLSMgr->Rmem->get_bus_data_bitsize() == 8 && !HLSMgr->Rmem->is_private_memory(var))
             current_fu = get_fu(ARRAY_1D_STD_BRAM_SDS_BUS+latency_postfix);
@@ -2144,7 +2144,9 @@ void allocation::IntegrateTechnologyLibraries()
       {
          if(HLSMgr->Rmem->is_sds_var(var))
          {
-            if(HLSMgr->Rmem->is_private_memory(var))
+            if((HLSMgr->Rmem->has_all_pointers_resolved() && HLSMgr->Rmem->does_need_addr(var)) || (!HLSMgr->Rmem->has_all_pointers_resolved() && !HLSMgr->Rmem->is_private_memory(var)))
+               current_fu = get_fu(ARRAY_1D_STD_BRAM_N1_SDS_BUS+latency_postfix);
+            else
             {
                if(parameters->getOption<bool>(OPT_use_asynchronous_memories) &&
                      AllocationInformation::can_be_asynchronous_ram(TreeM, var, parameters->getOption<unsigned int>(OPT_distram_threshold), HLSMgr->Rmem->is_read_only_variable(var)))
@@ -2161,8 +2163,6 @@ void allocation::IntegrateTechnologyLibraries()
                else
                   current_fu = get_fu(ARRAY_1D_STD_BRAM_N1_SDS+allocation_information->get_latency_string(get_synch_ram_latency(ARRAY_1D_STD_BRAM_N1_SDS, latency_postfix, HLS_C, var)));
             }
-            else
-               current_fu = get_fu(ARRAY_1D_STD_BRAM_N1_SDS_BUS+latency_postfix);
          }
          else if(!unaligned_access_p && HLSMgr->Rmem->get_bram_bitsize()==8 && HLSMgr->Rmem->get_bus_data_bitsize() == 8 && !HLSMgr->Rmem->is_private_memory(var))
             current_fu = get_fu(ARRAY_1D_STD_BRAM_N1_SDS_BUS+latency_postfix);
@@ -2174,7 +2174,9 @@ void allocation::IntegrateTechnologyLibraries()
       {
          if(HLSMgr->Rmem->is_sds_var(var))
          {
-            if(HLSMgr->Rmem->is_private_memory(var))
+            if((HLSMgr->Rmem->has_all_pointers_resolved() && HLSMgr->Rmem->does_need_addr(var)) || (!HLSMgr->Rmem->has_all_pointers_resolved() && !HLSMgr->Rmem->is_private_memory(var)))
+               current_fu = get_fu(ARRAY_1D_STD_BRAM_NN_SDS_BUS+latency_postfix);
+            else
             {
                if(parameters->getOption<bool>(OPT_use_asynchronous_memories) &&
                      AllocationInformation::can_be_asynchronous_ram(TreeM, var, parameters->getOption<unsigned int>(OPT_distram_threshold), HLSMgr->Rmem->is_read_only_variable(var)))
@@ -2191,8 +2193,6 @@ void allocation::IntegrateTechnologyLibraries()
                else
                   current_fu = get_fu(ARRAY_1D_STD_BRAM_NN_SDS+allocation_information->get_latency_string(get_synch_ram_latency(ARRAY_1D_STD_BRAM_NN_SDS, latency_postfix, HLS_C, var)));
             }
-            else
-               current_fu = get_fu(ARRAY_1D_STD_BRAM_NN_SDS_BUS+latency_postfix);
          }
          else if(!unaligned_access_p && HLSMgr->Rmem->get_bram_bitsize()==8 && HLSMgr->Rmem->get_bus_data_bitsize() == 8 && !HLSMgr->Rmem->is_private_memory(var))
             current_fu = get_fu(ARRAY_1D_STD_BRAM_NN_SDS_BUS+latency_postfix);
@@ -2207,7 +2207,7 @@ void allocation::IntegrateTechnologyLibraries()
       unsigned int current_size = allocation_information->get_number_fu_types();
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - allocating unit " + current_fu->get_name() + " for variable " + function_behavior->CGetBehavioralHelper()->PrintVariable(l.first) + " in position " + STR(current_size));
       allocation_information->list_of_FU.push_back(current_fu);
-      if(HLSMgr->Rmem->is_sds_var(var) && HLSMgr->Rmem->is_private_memory(var) && HLSMgr->Rmem->is_read_only_variable(var) &&
+      if(HLSMgr->Rmem->is_sds_var(var) && HLSMgr->Rmem->is_read_only_variable(var) &&
             (is_async_var || (parameters->isOption(OPT_rom_duplication) && parameters->getOption<bool>(OPT_rom_duplication))))
       {
          allocation_information->tech_constraints.push_back(INFINITE_UINT);
@@ -2246,10 +2246,12 @@ void allocation::IntegrateTechnologyLibraries()
          {
             if(HLSMgr->Rmem->is_sds_var(proxied_var_id))
             {
-               if(HLSMgr->Rmem->is_private_memory(proxied_var_id))
+               if((HLSMgr->Rmem->has_all_pointers_resolved() && HLSMgr->Rmem->does_need_addr(proxied_var_id)) || (!HLSMgr->Rmem->has_all_pointers_resolved() && !HLSMgr->Rmem->is_private_memory(proxied_var_id)))
                {
                   if(parameters->getOption<bool>(OPT_use_asynchronous_memories) &&
                         AllocationInformation::can_be_asynchronous_ram(TreeM, proxied_var_id, parameters->getOption<unsigned int>(OPT_distram_threshold), HLSMgr->Rmem->is_read_only_variable(proxied_var_id)))
+                     current_fu = get_fu(PROXY_CTRL+allocation_information->get_latency_string(get_synch_ram_latency(ARRAY_1D_STD_BRAM_SDS, latency_postfix, HLS_C, proxied_var_id)));
+                  else
                   {
                      technology_nodeRef a_fu = get_fu(ARRAY_1D_STD_DISTRAM_SDS);
                      bool is_asynchronous_ram_not_timing_compliant = is_ram_not_timing_compliant(HLS_C, proxied_var_id, a_fu);
@@ -2260,8 +2262,6 @@ void allocation::IntegrateTechnologyLibraries()
                         current_fu = get_fu(DPROXY_CTRL);
                      }
                   }
-                  else
-                     current_fu = get_fu(PROXY_CTRL+allocation_information->get_latency_string(get_synch_ram_latency(ARRAY_1D_STD_BRAM_SDS, latency_postfix, HLS_C, proxied_var_id)));
                }
                else
                   current_fu = get_fu(PROXY_CTRL+latency_postfix);
@@ -2275,7 +2275,9 @@ void allocation::IntegrateTechnologyLibraries()
          {
             if(HLSMgr->Rmem->is_sds_var(proxied_var_id))
             {
-               if(HLSMgr->Rmem->is_private_memory(proxied_var_id))
+               if((HLSMgr->Rmem->has_all_pointers_resolved() && HLSMgr->Rmem->does_need_addr(proxied_var_id)) || (!HLSMgr->Rmem->has_all_pointers_resolved() && !HLSMgr->Rmem->is_private_memory(proxied_var_id)))
+                  current_fu = get_fu(PROXY_CTRLN+latency_postfix);
+               else
                {
                   bool is_nn = parameters->getOption<MemoryAllocation_ChannelsType>(OPT_channels_type) == MemoryAllocation_ChannelsType::MEM_ACC_NN;
                   if(parameters->getOption<bool>(OPT_use_asynchronous_memories) &&
@@ -2293,8 +2295,6 @@ void allocation::IntegrateTechnologyLibraries()
                   else
                      current_fu = get_fu(PROXY_CTRLN+allocation_information->get_latency_string(get_synch_ram_latency(is_nn?ARRAY_1D_STD_BRAM_NN_SDS:ARRAY_1D_STD_BRAM_N1_SDS, latency_postfix, HLS_C, proxied_var_id)));
                }
-               else
-                  current_fu = get_fu(PROXY_CTRLN+latency_postfix);
             }
             else
                current_fu = get_fu(PROXY_CTRLN+latency_postfix);

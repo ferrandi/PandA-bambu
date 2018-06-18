@@ -568,6 +568,7 @@ void FunctionBehavior::add_function_mem(unsigned int node_id)
 
 void FunctionBehavior::add_dynamic_address(unsigned int node_id)
 {
+   //std::cerr << "addr taken " << node_id << std::endl;
    dynamic_address.insert(node_id);
    ///the object may be written once you have the address
 }

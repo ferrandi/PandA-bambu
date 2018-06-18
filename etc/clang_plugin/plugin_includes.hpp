@@ -161,7 +161,7 @@ namespace clang {
                tree_list(): purp(nullptr), valu(nullptr), chan(0) {}
          };
          std::map<unsigned int, tree_list> index2tree_list;
-         /// memoization map used to avoid the recompuation of tree associated with a given node
+         /// memoization map used to avoid the re-computation of tree associated with a given node
          std::map<const void*, const void*> memoization_tree_list;
 
          struct tree_vec
@@ -169,7 +169,7 @@ namespace clang {
                std::vector<const void*> data;
          };
          std::map<unsigned int, tree_vec> index2tree_vec;
-         /// memoization map used to avoid the recompuation of tree associated with a given node
+         /// memoization map used to avoid the re-computation of tree associated with a given node
          std::map<const void*, const void*> memoization_tree_vec;
 
          struct field_decl
@@ -342,7 +342,7 @@ namespace clang {
          bool is_PTS(unsigned int varId,const llvm::TargetLibraryInfo &TLI, bool with_all=false);
          bool is_virtual_ssa(const void* t) const;
          bool SSA_NAME_IS_DEFAULT_DEF(const void* t) const;
-         const void* LowerGetElementPtrOffset(const llvm::GEPOperator* gep, const llvm::Function * currentFunction, const void *& base_node);
+         const void* LowerGetElementPtrOffset(const llvm::GEPOperator* gep, const llvm::Function * currentFunction, const void *& base_node, bool &isZero);
          const void* LowerGetElementPtr(const void* type, const llvm::User* gep, const llvm::Function * currentFunction);
          const void* gimple_assign_rhs_getelementptr(const void* g);
          bool temporary_addr_check(const llvm::User* inst, std::set<const llvm::User*>& visited, const llvm::TargetLibraryInfo &TLI);
@@ -457,7 +457,7 @@ namespace clang {
          const void* build2(tree_codes tc, const void* type, const void* op1, const void* op2) {return build3(tc, type, op1, op2, nullptr);}
          const void* build1(tree_codes tc, const void* type, const void* op1) {return build3(tc, type, op1, nullptr, nullptr);}
 
-         /// currrently expressions do not have source file associated
+         /// currently expressions do not have source file associated
          bool EXPR_HAS_LOCATION(const void*) const {return false;}
          char * EXPR_FILENAME(const void*) const {return nullptr;}
          unsigned int EXPR_LINENO(const void*) const {return 0;}
@@ -593,6 +593,7 @@ namespace clang {
 
          void computeValueRange(llvm::Module &M);
          void ValueRangeOptimizer(llvm::Module &M);
+         bool LoadStoreOptimizer(llvm::Module &M);
 
       public:
          DumpGimpleRaw(CompilerInstance &_Instance,

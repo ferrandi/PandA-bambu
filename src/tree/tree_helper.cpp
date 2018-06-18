@@ -3124,7 +3124,10 @@ static unsigned int check_for_simple_pointer_arithmetic(tree_nodeRef node)
             }
          }
          else if(GetPointer<pointer_plus_expr>(GET_NODE(ga->op1)))
-            return check_for_simple_pointer_arithmetic(ga->op1);
+         {
+            pointer_plus_expr * ppe = GetPointer<pointer_plus_expr>(GET_NODE(ga->op1));
+            return check_for_simple_pointer_arithmetic(ppe->op0);
+         }
          else if(GetPointer<nop_expr>(GET_NODE(ga->op1)))
          {
             nop_expr * ne = GetPointer<nop_expr>(GET_NODE(ga->op1));
@@ -3171,9 +3174,7 @@ static unsigned int check_for_simple_pointer_arithmetic(tree_nodeRef node)
       case pointer_plus_expr_K:
       {
          pointer_plus_expr * ppe = GetPointer<pointer_plus_expr>(GET_NODE(node));
-         if(GetPointer<addr_expr>(GET_NODE(ppe->op0)) || GetPointer<view_convert_expr>(GET_NODE(ppe->op0)))
-            return check_for_simple_pointer_arithmetic(ppe->op0);
-         return 0;
+         return check_for_simple_pointer_arithmetic(ppe->op0);
       }
       case view_convert_expr_K:
       {
