@@ -858,7 +858,7 @@ void GccWrapper::SetBambuDefault()
          )
    {
       optimization_flags["tree-builtin-call-dce"] = false;
-
+      optimization_flags["ivopts"] = false;
    }
    if(opt_level == GccWrapper_OptimizationSet::O4)
    {
