@@ -533,12 +533,12 @@ void PointToSolution::Add(const tree_nodeRef variable)
 
 bool PointToSolution::is_a_singleton() const
 {
-   return !anything && !escaped && !ipa_escaped && !nonlocal && !null && variables.size() == 1;
+   return !anything && !escaped && !ipa_escaped && !nonlocal && variables.size() == 1;
 }
 
 bool PointToSolution::is_fully_resolved() const
 {
-   return !anything && !escaped && !ipa_escaped && !nonlocal && !null && variables.size() != 0;
+   return !anything && !escaped && !ipa_escaped && !nonlocal && variables.size() != 0;
 }
 
 std::string PointToSolution::ToString() const
