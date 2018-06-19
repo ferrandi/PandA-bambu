@@ -4,6 +4,8 @@ $(dirname $0)/../../etc/scripts/test_panda.py --tool=bambu -llibm-tests_list -o 
    --args="--configuration-name=soft-floatC4-libm --compiler=I386_CLANG4 --soft-float --simulate --experimental-setup=BAMBU -lm --reset-type=sync -DNO_MAIN --libm-std-rounding" \
    --args="--configuration-name=soft-floatC5 --compiler=I386_CLANG5 --soft-float --simulate --experimental-setup=BAMBU -lm --reset-type=sync -DNO_MAIN -O0 -DFAITHFULLY_ROUNDED" \
    --args="--configuration-name=soft-floatC5-libm --compiler=I386_CLANG5 --soft-float --simulate --experimental-setup=BAMBU -lm --reset-type=sync -DNO_MAIN --libm-std-rounding" \
+   --args="--configuration-name=soft-floatC6 --compiler=I386_CLANG6 --soft-float --simulate --experimental-setup=BAMBU -lm --reset-type=sync -DNO_MAIN -O0 -DFAITHFULLY_ROUNDED" \
+   --args="--configuration-name=soft-floatC6-libm --compiler=I386_CLANG6 --soft-float --simulate --experimental-setup=BAMBU -lm --reset-type=sync -DNO_MAIN --libm-std-rounding" \
   $@
 return_value=$?
 if test $return_value != 0; then

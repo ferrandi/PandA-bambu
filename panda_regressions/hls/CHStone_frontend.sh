@@ -9,6 +9,7 @@ $(dirname $0)/../../etc/scripts/test_panda.py --tool=bambu \
              --args="--configuration-name=GCC7-O3-wp-NN --simulate -O3 -fwhole-program --compiler=I386_GCC7 --clock-period=15 -D'printf(fmt, ...)=' --channels-type=MEM_ACC_NN --experimental-setup=BAMBU"\
              --args="--configuration-name=CLANG4-O3-wp-NN --simulate -O3 -fwhole-program --compiler=I386_CLANG4 --clock-period=15 -D'printf(fmt, ...)=' --channels-type=MEM_ACC_NN --experimental-setup=BAMBU"\
              --args="--configuration-name=CLANG5-O3-wp-NN --simulate -O3 -fwhole-program --compiler=I386_CLANG5 --clock-period=15 -D'printf(fmt, ...)=' --channels-type=MEM_ACC_NN --experimental-setup=BAMBU"\
+             --args="--configuration-name=CLANG6-O3-wp-NN --simulate -O3 -fwhole-program --compiler=I386_CLANG6 --clock-period=15 -D'printf(fmt, ...)=' --channels-type=MEM_ACC_NN --experimental-setup=BAMBU"\
              --args="--configuration-name=GCC49-O0-wp-NN --simulate -O0 -fwhole-program --compiler=I386_GCC49 --clock-period=15 -D'printf(fmt, ...)=' --channels-type=MEM_ACC_NN --experimental-setup=BAMBU"\
              --args="--configuration-name=GCC49-O1-wp-NN --simulate -O1 -fwhole-program --compiler=I386_GCC49 --clock-period=15 -D'printf(fmt, ...)=' --channels-type=MEM_ACC_NN --experimental-setup=BAMBU"\
              --args="--configuration-name=GCC49-O2-wp-NN --simulate -O2 -fwhole-program --compiler=I386_GCC49 --clock-period=15 -D'printf(fmt, ...)=' --channels-type=MEM_ACC_NN --experimental-setup=BAMBU"\

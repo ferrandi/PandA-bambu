@@ -38,6 +38,7 @@
 
 #include "config_HAVE_I386_CLANG4_COMPILER.hpp"
 #include "config_HAVE_I386_CLANG5_COMPILER.hpp"
+#include "config_HAVE_I386_CLANG6_COMPILER.hpp"
 
 #include "test_vector_parser.hpp"
 
@@ -116,6 +117,10 @@ const
 #endif
 #if HAVE_I386_CLANG5_COMPILER
    if(parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANG5)
+      ParameterRenaming = true;
+#endif
+#if HAVE_I386_CLANG6_COMPILER
+   if(parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANG6)
       ParameterRenaming = true;
 #endif
 

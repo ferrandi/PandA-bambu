@@ -59,6 +59,7 @@
 #include "config_HAVE_I386_GCC7_COMPILER.hpp"
 #include "config_HAVE_I386_CLANG4_COMPILER.hpp"
 #include "config_HAVE_I386_CLANG5_COMPILER.hpp"
+#include "config_HAVE_I386_CLANG6_COMPILER.hpp"
 #include "config_HAVE_SPARC_COMPILER.hpp"
 #include "config_HAVE_TUCANO_BUILT.hpp"
 #include "config_HAVE_ZEBU_BUILT.hpp"
@@ -144,12 +145,15 @@ enum class GccWrapper_CompilerTarget
 #if HAVE_I386_CLANG5_COMPILER
    CT_I386_CLANG5 = 512,
 #endif
+#if HAVE_I386_CLANG6_COMPILER
+   CT_I386_CLANG6 = 1024,
+#endif
 #if HAVE_ARM_COMPILER
-   CT_ARM_GCC = 1024,
+   CT_ARM_GCC = 2048,
 #endif
 #if HAVE_SPARC_COMPILER
-   CT_SPARC_GCC = 2048,
-   CT_SPARC_ELF_GCC = 4096
+   CT_SPARC_GCC = 4096,
+   CT_SPARC_ELF_GCC = 8192
 #endif
 };
 
