@@ -82,11 +82,11 @@ for compiler in $CLANG_TO_BE_CHECKED; do
       CFLAGS=$ac_save_CFLAGS
       LDFLAGS=$ac_save_LDFLAGS
       LIBS=$ac_save_LIBS
-      if test "x$I386_CLANG4_MULTIARCH" != xyes; then
-         echo "checking support to -m32... no"
-         continue
-      else
+      if test "x$I386_CLANG4_MULTIARCH" == xyes; then
+         AC_DEFINE(HAVE_I386_CLANG4_M32,1,[Define if clang 4.0 supports -m32 ])
          echo "checking support to -m32... yes"
+      else
+         echo "checking support to -m32... no"
       fi
       ac_save_CC="$CC"
       ac_save_CFLAGS="$CFLAGS"
@@ -108,6 +108,27 @@ for compiler in $CLANG_TO_BE_CHECKED; do
          echo "checking support to -mx32... yes"
       else
          echo "checking support to -mx32... no"
+      fi
+      ac_save_CC="$CC"
+      ac_save_CFLAGS="$CFLAGS"
+      ac_save_LDFLAGS="$LDFLAGS"
+      ac_save_LIBS="$LIBS"
+      CC=$I386_CLANG4_EXE
+      CFLAGS="-m64"
+      LDFLAGS=
+      LIBS=
+      AC_LANG_PUSH([C])
+      AC_LINK_IFELSE([AC_LANG_SOURCE([int main(void){ return 0;}])],I386_CLANG4_M64=yes,I386_CLANG4_M64=no)
+      AC_LANG_POP([C])
+      CC=$ac_save_CC
+      CFLAGS=$ac_save_CFLAGS
+      LDFLAGS=$ac_save_LDFLAGS
+      LIBS=$ac_save_LIBS
+      if test "x$I386_CLANG4_M64" == xyes; then
+         AC_DEFINE(HAVE_I386_CLANG4_M64,1,[Define if clang 4.0 supports -m64 ])
+         echo "checking support to -m64... yes"
+      else
+         echo "checking support to -m64... no"
       fi
       cat > plugin_test.cpp <<PLUGIN_TEST
 //===- PrintFunctionNames.cpp ---------------------------------------------===//
@@ -405,11 +426,11 @@ for compiler in $CLANG_TO_BE_CHECKED; do
       CFLAGS=$ac_save_CFLAGS
       LDFLAGS=$ac_save_LDFLAGS
       LIBS=$ac_save_LIBS
-      if test "x$I386_CLANG5_MULTIARCH" != xyes; then
-         echo "checking support to -m32... no"
-         continue
-      else
+      if test "x$I386_CLANG5_MULTIARCH" == xyes; then
+         AC_DEFINE(HAVE_I386_CLANG5_M32,1,[Define if clang 5.0 supports -m32 ])
          echo "checking support to -m32... yes"
+      else
+         echo "checking support to -m32... no"
       fi
       ac_save_CC="$CC"
       ac_save_CFLAGS="$CFLAGS"
@@ -431,6 +452,27 @@ for compiler in $CLANG_TO_BE_CHECKED; do
          echo "checking support to -mx32... yes"
       else
          echo "checking support to -mx32... no"
+      fi
+      ac_save_CC="$CC"
+      ac_save_CFLAGS="$CFLAGS"
+      ac_save_LDFLAGS="$LDFLAGS"
+      ac_save_LIBS="$LIBS"
+      CC=$I386_CLANG5_EXE
+      CFLAGS="-m64"
+      LDFLAGS=
+      LIBS=
+      AC_LANG_PUSH([C])
+      AC_LINK_IFELSE([AC_LANG_SOURCE([int main(void){ return 0;}])],I386_CLANG5_M64=yes,I386_CLANG5_M64=no)
+      AC_LANG_POP([C])
+      CC=$ac_save_CC
+      CFLAGS=$ac_save_CFLAGS
+      LDFLAGS=$ac_save_LDFLAGS
+      LIBS=$ac_save_LIBS
+      if test "x$I386_CLANG5_M64" == xyes; then
+         AC_DEFINE(HAVE_I386_CLANG5_M64,1,[Define if clang 5.0 supports -m64 ])
+         echo "checking support to -m64... yes"
+      else
+         echo "checking support to -m64... no"
       fi
       cat > plugin_test.cpp <<PLUGIN_TEST
 //===- PrintFunctionNames.cpp ---------------------------------------------===//

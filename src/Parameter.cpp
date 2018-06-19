@@ -61,6 +61,14 @@
 #include "config_HAVE_I386_GCC7_COMPILER.hpp"
 #include "config_HAVE_I386_CLANG4_COMPILER.hpp"
 #include "config_HAVE_I386_CLANG5_COMPILER.hpp"
+#include "config_HAVE_I386_GCC47_M32.hpp"
+#include "config_HAVE_I386_GCC48_M32.hpp"
+#include "config_HAVE_I386_GCC49_M32.hpp"
+#include "config_HAVE_I386_GCC5_M32.hpp"
+#include "config_HAVE_I386_GCC6_M32.hpp"
+#include "config_HAVE_I386_GCC7_M32.hpp"
+#include "config_HAVE_I386_CLANG4_M32.hpp"
+#include "config_HAVE_I386_CLANG5_M32.hpp"
 #include "config_HAVE_I386_GCC47_MX32.hpp"
 #include "config_HAVE_I386_GCC48_MX32.hpp"
 #include "config_HAVE_I386_GCC49_MX32.hpp"
@@ -69,6 +77,14 @@
 #include "config_HAVE_I386_GCC7_MX32.hpp"
 #include "config_HAVE_I386_CLANG4_MX32.hpp"
 #include "config_HAVE_I386_CLANG5_MX32.hpp"
+#include "config_HAVE_I386_GCC47_M64.hpp"
+#include "config_HAVE_I386_GCC48_M64.hpp"
+#include "config_HAVE_I386_GCC49_M64.hpp"
+#include "config_HAVE_I386_GCC5_M64.hpp"
+#include "config_HAVE_I386_GCC6_M64.hpp"
+#include "config_HAVE_I386_GCC7_M64.hpp"
+#include "config_HAVE_I386_CLANG4_M64.hpp"
+#include "config_HAVE_I386_CLANG5_M64.hpp"
 #include "config_HAVE_IPXACT_BUILT.hpp"
 #include "config_HAVE_PERFORMANCE_METRICS_XML.hpp"
 #include "config_HAVE_REGRESSORS_BUILT.hpp"
@@ -717,7 +733,37 @@ bool Parameter::ManageGccOptions(int next_option, char * optarg_param)
             const std::string opt_level = std::string(optarg_param);
             if(opt_level == "32")
             {
-               setOption(OPT_gcc_m32_mx32, "-m32 -mno-sse2 ");
+#if (HAVE_I386_GCC47_COMPILER && HAVE_I386_GCC47_M32) ||(HAVE_I386_GCC48_COMPILER && HAVE_I386_GCC48_M32) || (HAVE_I386_GCC49_COMPILER && HAVE_I386_GCC49_M32) || (HAVE_I386_GCC5_COMPILER && HAVE_I386_GCC5_M32) || (HAVE_I386_GCC6_COMPILER && HAVE_I386_GCC6_M32) || (HAVE_I386_GCC7_COMPILER && HAVE_I386_GCC7_M32) || (HAVE_I386_CLANG4_COMPILER && HAVE_I386_CLANG4_M32) || (HAVE_I386_CLANG5_COMPILER && HAVE_I386_CLANG5_M32)
+               if( false
+#if (HAVE_I386_GCC47_COMPILER && HAVE_I386_GCC47_M32)
+                   || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC47
+#endif
+#if (HAVE_I386_GCC48_COMPILER && HAVE_I386_GCC48_M32)
+                   || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC48
+#endif
+#if (HAVE_I386_GCC49_COMPILER && HAVE_I386_GCC49_M32)
+                   || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC49
+#endif
+#if (HAVE_I386_GCC5_COMPILER && HAVE_I386_GCC5_M32)
+                   || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC5
+#endif
+#if (HAVE_I386_GCC6_COMPILER && HAVE_I386_GCC6_M32)
+                   || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC6
+#endif
+#if (HAVE_I386_GCC7_COMPILER && HAVE_I386_GCC7_M32)
+                   || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC7
+#endif
+#if (HAVE_I386_CLANG4_COMPILER && HAVE_I386_CLANG4_M32)
+                   || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANG4
+#endif
+#if (HAVE_I386_CLANG5_COMPILER && HAVE_I386_CLANG5_M32)
+                   || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANG5
+#endif
+                  )
+                  setOption(OPT_gcc_m32_mx32, "-m32 -mno-sse2 ");
+               else
+#endif
+                  THROW_ERROR("Option -m32 not supported");
             }
             else if(opt_level == "x32")
             {
@@ -749,6 +795,40 @@ bool Parameter::ManageGccOptions(int next_option, char * optarg_param)
 #endif
                   )
                   setOption(OPT_gcc_m32_mx32, "-mx32");
+               else
+#endif
+                  THROW_ERROR("Option -mx32 not supported");
+            }
+            else if(opt_level == "64")
+            {
+#if (HAVE_I386_GCC47_COMPILER && HAVE_I386_GCC47_M64) ||(HAVE_I386_GCC48_COMPILER && HAVE_I386_GCC48_M64) || (HAVE_I386_GCC49_COMPILER && HAVE_I386_GCC49_MX64) || (HAVE_I386_GCC5_COMPILER && HAVE_I386_GCC5_M64) || (HAVE_I386_GCC6_COMPILER && HAVE_I386_GCC6_M64) || (HAVE_I386_GCC7_COMPILER && HAVE_I386_GCC7_M64) || (HAVE_I386_CLANG4_COMPILER && HAVE_I386_CLANG4_M64) || (HAVE_I386_CLANG5_COMPILER && HAVE_I386_CLANG5_MX64)
+               if( false
+#if (HAVE_I386_GCC47_COMPILER && HAVE_I386_GCC47_M64)
+                   || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC47
+#endif
+#if (HAVE_I386_GCC48_COMPILER && HAVE_I386_GCC48_M64)
+                   || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC48
+#endif
+#if (HAVE_I386_GCC49_COMPILER && HAVE_I386_GCC49_M64)
+                   || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC49
+#endif
+#if (HAVE_I386_GCC5_COMPILER && HAVE_I386_GCC5_M64)
+                   || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC5
+#endif
+#if (HAVE_I386_GCC6_COMPILER && HAVE_I386_GCC6_M64)
+                   || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC6
+#endif
+#if (HAVE_I386_GCC7_COMPILER && HAVE_I386_GCC7_M64)
+                   || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC7
+#endif
+#if (HAVE_I386_CLANG4_COMPILER && HAVE_I386_CLANG4_M64)
+                   || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANG4
+#endif
+#if (HAVE_I386_CLANG5_COMPILER && HAVE_I386_CLANG5_M64)
+                   || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANG5
+#endif
+                  )
+                  setOption(OPT_gcc_m32_mx32, "-m64");
                else
 #endif
                   THROW_ERROR("Option -mx32 not supported");

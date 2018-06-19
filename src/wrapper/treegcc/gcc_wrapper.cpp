@@ -2116,6 +2116,10 @@ size_t GccWrapper::CGetPointerSize(const ParameterConstRef parameters)
    {
       return 32;
    }
+   else if(gcc_m32_mx32 == "-m64")
+   {
+      return 64;
+   }
    else
    {
       THROW_ERROR("-m parameter not supported: " + gcc_m32_mx32);

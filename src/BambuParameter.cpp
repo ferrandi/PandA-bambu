@@ -60,6 +60,30 @@
 #include "config_SKIP_WARNING_SECTIONS.hpp"
 #include "config_HAVE_MAPPING_BUILT.hpp"
 #include "config_HAVE_VCD_BUILT.hpp"
+#include "config_HAVE_I386_GCC47_M32.hpp"
+#include "config_HAVE_I386_GCC48_M32.hpp"
+#include "config_HAVE_I386_GCC49_M32.hpp"
+#include "config_HAVE_I386_GCC5_M32.hpp"
+#include "config_HAVE_I386_GCC6_M32.hpp"
+#include "config_HAVE_I386_GCC7_M32.hpp"
+#include "config_HAVE_I386_CLANG4_M32.hpp"
+#include "config_HAVE_I386_CLANG5_M32.hpp"
+#include "config_HAVE_I386_GCC47_MX32.hpp"
+#include "config_HAVE_I386_GCC48_MX32.hpp"
+#include "config_HAVE_I386_GCC49_MX32.hpp"
+#include "config_HAVE_I386_GCC5_MX32.hpp"
+#include "config_HAVE_I386_GCC6_MX32.hpp"
+#include "config_HAVE_I386_GCC7_MX32.hpp"
+#include "config_HAVE_I386_CLANG4_MX32.hpp"
+#include "config_HAVE_I386_CLANG5_MX32.hpp"
+#include "config_HAVE_I386_GCC47_M64.hpp"
+#include "config_HAVE_I386_GCC48_M64.hpp"
+#include "config_HAVE_I386_GCC49_M64.hpp"
+#include "config_HAVE_I386_GCC5_M64.hpp"
+#include "config_HAVE_I386_GCC6_M64.hpp"
+#include "config_HAVE_I386_GCC7_M64.hpp"
+#include "config_HAVE_I386_CLANG4_M64.hpp"
+#include "config_HAVE_I386_CLANG5_M64.hpp"
 #include "config_HAVE_I386_GCC45_COMPILER.hpp"
 #include "config_HAVE_I386_GCC46_COMPILER.hpp"
 #include "config_HAVE_I386_GCC47_COMPILER.hpp"
@@ -3361,6 +3385,8 @@ void BambuParameter::SetDefaults()
    /// -- GCC options -- //
 #if HAVE_I386_GCC49_COMPILER
    setOption(OPT_default_compiler, static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC49));
+#elif HAVE_I386_GCC7_COMPILER
+   setOption(OPT_default_compiler, static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC7));
 #elif HAVE_I386_GCC6_COMPILER
    setOption(OPT_default_compiler, static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC6));
 #elif HAVE_I386_GCC5_COMPILER
@@ -3373,8 +3399,6 @@ void BambuParameter::SetDefaults()
    setOption(OPT_default_compiler, static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC45));
 #elif HAVE_I386_GCC48_COMPILER
    setOption(OPT_default_compiler, static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC48));
-#elif HAVE_I386_GCC7_COMPILER
-   setOption(OPT_default_compiler, static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC7));
 #elif HAVE_I386_CLANG4_COMPILER
    setOption(OPT_default_compiler, static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG4));
 #elif HAVE_I386_CLANG5_COMPILER
@@ -3420,7 +3444,63 @@ void BambuParameter::SetDefaults()
       | static_cast<int>(GccWrapper_CompilerTarget::CT_SPARC_GCC)
 #endif
       );
+
+#if (HAVE_I386_GCC49_COMPILER && HAVE_I386_GCC49_M32)
    setOption(OPT_gcc_m32_mx32, "-m32 -mno-sse2 ");
+#elif (HAVE_I386_GCC49_COMPILER && HAVE_I386_GCC49_MX32)
+   setOption(OPT_gcc_m32_mx32, "-mx32 ");
+#elif (HAVE_I386_GCC49_COMPILER && HAVE_I386_GCC49_M64)
+   setOption(OPT_gcc_m32_mx32, "-m64 ");
+#elif (HAVE_I386_GCC7_COMPILER && HAVE_I386_GCC7_M32)
+   setOption(OPT_gcc_m32_mx32, "-m32 -mno-sse2 ");
+#elif (HAVE_I386_GCC7_COMPILER && HAVE_I386_GCC7_MX32)
+   setOption(OPT_gcc_m32_mx32, "-mx32 ");
+#elif (HAVE_I386_GCC7_COMPILER && HAVE_I386_GCC7_M64)
+   setOption(OPT_gcc_m32_mx32, "-m64 ");
+#elif (HAVE_I386_GCC6_COMPILER && HAVE_I386_GCC6_M32)
+   setOption(OPT_gcc_m32_mx32, "-m32 -mno-sse2 ");
+#elif (HAVE_I386_GCC6_COMPILER && HAVE_I386_GCC6_MX32)
+   setOption(OPT_gcc_m32_mx32, "-mx32 ");
+#elif (HAVE_I386_GCC6_COMPILER && HAVE_I386_GCC6_M64)
+   setOption(OPT_gcc_m32_mx32, "-m64 ");
+#elif (HAVE_I386_GCC5_COMPILER && HAVE_I386_GCC5_M32)
+   setOption(OPT_gcc_m32_mx32, "-m32 -mno-sse2 ");
+#elif (HAVE_I386_GCC5_COMPILER && HAVE_I386_GCC5_MX32)
+   setOption(OPT_gcc_m32_mx32, "-mx32 ");
+#elif (HAVE_I386_GCC5_COMPILER && HAVE_I386_GCC5_M64)
+   setOption(OPT_gcc_m32_mx32, "-m64 ");
+#elif (HAVE_I386_GCC48_COMPILER && HAVE_I386_GCC48_M32)
+   setOption(OPT_gcc_m32_mx32, "-m32 -mno-sse2 ");
+#elif (HAVE_I386_GCC48_COMPILER && HAVE_I386_GCC48_MX32)
+   setOption(OPT_gcc_m32_mx32, "-mx32 ");
+#elif (HAVE_I386_GCC48_COMPILER && HAVE_I386_GCC48_M64)
+   setOption(OPT_gcc_m32_mx32, "-m64 ");
+#elif (HAVE_I386_GCC47_COMPILER && HAVE_I386_GCC47_M32)
+   setOption(OPT_gcc_m32_mx32, "-m32 -mno-sse2 ");
+#elif (HAVE_I386_GCC47_COMPILER && HAVE_I386_GCC47_MX32)
+   setOption(OPT_gcc_m32_mx32, "-mx32 ");
+#elif (HAVE_I386_GCC47_COMPILER && HAVE_I386_GCC47_M64)
+   setOption(OPT_gcc_m32_mx32, "-m64 ");
+#elif (HAVE_I386_GCC46_COMPILER)
+   setOption(OPT_gcc_m32_mx32, "-m32 -mno-sse2 ");
+#elif (HAVE_I386_GCC45_COMPILER)
+   setOption(OPT_gcc_m32_mx32, "-m32 -mno-sse2 ");
+#elif (HAVE_I386_CLANG4_COMPILER && HAVE_I386_CLANG4_M32)
+   setOption(OPT_gcc_m32_mx32, "-m32 -mno-sse2 ");
+#elif (HAVE_I386_CLANG4_COMPILER && HAVE_I386_CLANG4_MX32)
+   setOption(OPT_gcc_m32_mx32, "-mx32 ");
+#elif (HAVE_I386_CLANG4_COMPILER && HAVE_I386_CLANG4_M64)
+   setOption(OPT_gcc_m32_mx32, "-m64 ");
+#elif (HAVE_I386_CLANG5_COMPILER && HAVE_I386_CLANG5_M32)
+   setOption(OPT_gcc_m32_mx32, "-m32 -mno-sse2 ");
+#elif (HAVE_I386_CLANG5_COMPILER && HAVE_I386_CLANG5_MX32)
+   setOption(OPT_gcc_m32_mx32, "-mx32 ");
+#elif (HAVE_I386_CLANG5_COMPILER && HAVE_I386_CLANG5_M64)
+   setOption(OPT_gcc_m32_mx32, "-m64 ");
+#else
+   THROW_ERROR("None of -m32, -mx32, -m64 GCC option is supported");
+#endif
+
    setOption(OPT_without_transformation, true);
    setOption(OPT_compute_size_of, true);
    setOption(OPT_precision, 3);
