@@ -5469,8 +5469,8 @@ namespace clang
             PtoSets_AA = new Staged_Flow_Sensitive_AA(starting_function);
 #endif
             PtoSets_AA->computePointToSet(M);
-            auto changed = LoadStoreOptimizer(M);
-            res = res | changed;
+//            auto changed = LoadStoreOptimizer(M);
+//            res = res | changed;
          }
       }
 #endif
