@@ -6399,7 +6399,9 @@ u32 Andersen_AA::PE(const llvm::Value* V)
    u32 n;
    auto CE = llvm::dyn_cast<const llvm::ConstantExpr>(V);
    if(CE && CE->getOpcode() == llvm::Instruction::BitCast)
+   {
       n = get_val_node(CE->getOperand(0));
+   }
    else if(auto BC = llvm::dyn_cast<const llvm::BitCastInst>(V))
    {
       if(auto gepOp = llvm::dyn_cast<const llvm::GetElementPtrInst>(BC->getOperand(0)))
@@ -6411,7 +6413,7 @@ u32 Andersen_AA::PE(const llvm::Value* V)
             n = get_val_node(gepOp->getPointerOperand());
       }
       else
-         n = get_val_node(BC->getOperand(0));
+         n = get_val_node(BC->getOperand(0),1);
    }
    else
       n = get_val_node(V, 1);
