@@ -612,7 +612,6 @@ gcc_regression_simple/loop-11.c
 gcc_regression_simple/loop-12.c
 gcc_regression_simple/loop-13.c
 gcc_regression_simple/loop-14.c
-gcc_regression_simple/loop-15.c
 gcc_regression_simple/loop-2.c
 gcc_regression_simple/loop-2b.c
 gcc_regression_simple/loop-2c.c
