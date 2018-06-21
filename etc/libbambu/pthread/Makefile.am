@@ -66,3 +66,9 @@ libpthread_clang5_a_SOURCES = pthread.c
 libpthread_clang5_a_CFLAGS = --compiler=I386_CLANG5 $(common_treegccflags_clang)
 endif
 
+if BUILD_I386_CLANG6
+pkglib_LIBRARIES += libpthread_clang6.a
+libpthread_clang6_a_SOURCES = pthread.c
+libpthread_clang6_a_CFLAGS = --compiler=I386_CLANG6 $(common_treegccflags_clang)
+endif
+

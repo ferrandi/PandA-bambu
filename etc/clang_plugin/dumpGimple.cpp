@@ -5163,7 +5163,11 @@ namespace clang
                for (llvm::Function::iterator BBIt = F.begin(); BBIt != F.end(); )
                   llvm::SimplifyInstructionsInBlock(&*BBIt++, &TLI);
                for (llvm::Function::iterator BBIt = F.begin(); BBIt != F.end();)
+#if __clang_major__ >= 6
+                     llvm::simplifyCFG(&*BBIt++, TTI, 1);
+#else
                   llvm::SimplifyCFG(&*BBIt++, TTI, 1);
+#endif
                llvm::removeUnreachableBlocks(F);
             }
          }
