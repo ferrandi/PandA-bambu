@@ -1188,8 +1188,7 @@ void GccWrapper::SetGccDefault()
 #endif
    bool flag_cpp;
    if(Param->isOption(OPT_input_format) &&
-         Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_CPP &&
-         !Param->isOption(OPT_pretty_print))
+         Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_CPP)
       flag_cpp = true;
    else
       flag_cpp = false;
