@@ -366,3 +366,7 @@ src/wrapper/treegcc
 etc/clang_plugin
 /usr/lib/llvm-5.0/include
 etc/clang_plugin/llvm
+etc/libbambu/ac_types/gdb
+etc/libbambu/ac_types
+etc/libbambu/ac_types/include
+etc/libbambu/ac_types/pdfdocs

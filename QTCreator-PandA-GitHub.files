@@ -681,6 +681,15 @@ etc/gcc_plugin/plugin_dumpGimpleSSAVRP.c
 etc/gcc_plugin/plugin_dumpRTL.c
 etc/gcc_plugin/plugin_includes.h
 etc/gcc_plugin/plugin_topfname.c
+etc/libbambu/ac_types/gdb/ac_pp.py
+etc/libbambu/ac_types/include/ac_channel.h
+etc/libbambu/ac_types/include/ac_complex.h
+etc/libbambu/ac_types/include/ac_fixed.h
+etc/libbambu/ac_types/include/ac_float.h
+etc/libbambu/ac_types/include/ac_int.h
+etc/libbambu/ac_types/include/ac_sc.h
+etc/libbambu/ac_types/include/ap_fixed.h
+etc/libbambu/ac_types/include/ap_int.h
 etc/libbambu/assert.c
 etc/libbambu/bambu_macros.h
 etc/libbambu/byteswap.c
