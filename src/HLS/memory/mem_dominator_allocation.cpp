@@ -272,21 +272,18 @@ DesignFlowStep_Status mem_dominator_allocation::Exec()
             THROW_ASSERT(me, "only gimple_assign's are allowed as memory operations");
             unsigned int expr_index;
             std::set<unsigned int> res_set;
-            bool resolved;
 
             if (GET_TYPE(g, *v) & TYPE_STORE)
             {
                expr_index = GET_INDEX_NODE(me->op0);
                unsigned int var = 0;
-               resolved = tree_helper::is_fully_resolved(TreeM, expr_index, res_set);
-               if(!resolved)
+               if(!tree_helper::is_fully_resolved(TreeM, expr_index, res_set))
                {
                   var = tree_helper::get_base_index(TreeM, expr_index);
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "---var:"+STR(var));
                   if(var!=0 && function_behavior->is_variable_mem(var))
                   {
                      res_set.insert(var);
-                     resolved=true;
                   }
                   else
                   {
@@ -299,15 +296,13 @@ DesignFlowStep_Status mem_dominator_allocation::Exec()
             {
                expr_index = GET_INDEX_NODE(me->op1);
                unsigned int var = 0;
-               resolved = tree_helper::is_fully_resolved(TreeM, expr_index, res_set);
-               if(!resolved)
+               if(!tree_helper::is_fully_resolved(TreeM, expr_index, res_set))
                {
                  var = tree_helper::get_base_index(TreeM, expr_index);
                  INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "---var:"+STR(var));
                  if(var!=0 && function_behavior->is_variable_mem(var))
                  {
                     res_set.insert(var);
-                    resolved=true;
                  }
                  else
                  {
