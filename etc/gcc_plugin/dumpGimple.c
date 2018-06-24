@@ -299,7 +299,7 @@ void
 SerializeGimpleUseDefs(const GIMPLE_type current, const GIMPLE_type next_def);
 
 /**
- * Add output dependences by dumping further vdef to the currently analyzed gimple
+ * Add output dependencies by dumping further vdef to the currently analyzed gimple
  * @param previous is potentially the first gimple of the pair
  * @param current is the currently analyzed gimple 
  */
@@ -3573,7 +3573,7 @@ SerializeGimpleUseDefs(GIMPLE_type current, GIMPLE_type next_def)
 }
 
 /**
- * Add output dependences by dumping further vdef to the currently analyzed gimple
+ * Add output dependencies by dumping further vdef to the currently analyzed gimple
  * @param previous is potentially the first gimple of the pair
  * @param current is the currently analyzed gimple 
  */
@@ -3587,7 +3587,7 @@ SerializeGimpleDefsDef(const GIMPLE_type previous, const GIMPLE_type current)
       return;
    }
    ///Now check if there is an output-dependence because of alias
-   ///Get left oprand of previous gimple 
+   ///Get left operand of previous gimple
    tree * previous_def = GetLeftOperand(previous);
    ///Get right operand of current gimple
    tree * current_def = GetLeftOperand(current);
