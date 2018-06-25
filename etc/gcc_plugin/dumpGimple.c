@@ -1340,7 +1340,7 @@ serialize_vops (GIMPLE_type gs)
    /// check for true dependencies by exploiting GCC alias analysis infrastructure
    if(vuse != NULL_TREE)
    {
-      ///Serialize gimple pairs becuase of use after def chain
+      ///Serialize gimple pairs because of use after def chain
       serialize_gimple_dependent_stmts_load(gs);
       ///Serialize gimple pairs because of def after use chain
 
