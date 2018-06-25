@@ -929,6 +929,14 @@ bool Parameter::ManageGccOptions(int next_option, char * optarg_param)
             {
                setOption(OPT_gcc_opt_level, GccWrapper_OptimizationSet::Os);
             }
+            else if(opt_level == "fast")
+            {
+               setOption(OPT_gcc_opt_level, GccWrapper_OptimizationSet::Ofast);
+            }
+            else if(opt_level == "z")
+            {
+               setOption(OPT_gcc_opt_level, GccWrapper_OptimizationSet::Oz);
+            }
             else
             {
                THROW_ERROR("Unknown optimization level: " + opt_level);

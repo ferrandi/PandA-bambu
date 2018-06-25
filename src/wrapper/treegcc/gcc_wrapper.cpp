@@ -530,6 +530,8 @@ void GccWrapper::InitializeGccParameters()
          case(GccWrapper_OptimizationSet::O5):
          case(GccWrapper_OptimizationSet::Og):
          case(GccWrapper_OptimizationSet::Os):
+         case(GccWrapper_OptimizationSet::Ofast):
+         case(GccWrapper_OptimizationSet::Oz):
             gcc_compiling_parameters += (" -O" + WriteOptimizationLevel(optimization_set) + " ");
             break;
 #if HAVE_BAMBU_BUILT
@@ -572,6 +574,8 @@ void GccWrapper::InitializeGccParameters()
                case(GccWrapper_OptimizationSet::O5):
                case(GccWrapper_OptimizationSet::Og):
                case(GccWrapper_OptimizationSet::Os):
+               case(GccWrapper_OptimizationSet::Ofast):
+               case(GccWrapper_OptimizationSet::Oz):
 #if HAVE_BAMBU_BUILT
                case(GccWrapper_OptimizationSet::OSF):
 #endif
@@ -775,7 +779,7 @@ void GccWrapper::SetBambuDefault()
       optimization_flags["builtin-memset"] = false;
       optimization_flags["builtin-memcpy"] = false;
       optimization_flags["builtin-memmove"] = false;
-      optimization_flags["unroll-loops"] = false; // it is preferrable to have unrolling disabled by default as with GCC
+      optimization_flags["unroll-loops"] = false; // it is preferable to have unrolling disabled by default as with GCC
       return;
    }
 #endif
@@ -787,7 +791,7 @@ void GccWrapper::SetBambuDefault()
       optimization_flags["builtin-memset"] = false;
       optimization_flags["builtin-memcpy"] = false;
       optimization_flags["builtin-memmove"] = false;
-      optimization_flags["unroll-loops"] = false; // it is preferrable to have unrolling disabled by default as with GCC
+      optimization_flags["unroll-loops"] = false; // it is preferable to have unrolling disabled by default as with GCC
       return;
    }
 #endif
@@ -799,7 +803,7 @@ void GccWrapper::SetBambuDefault()
       optimization_flags["builtin-memset"] = false;
       optimization_flags["builtin-memcpy"] = false;
       optimization_flags["builtin-memmove"] = false;
-      optimization_flags["unroll-loops"] = false; // it is preferrable to have unrolling disabled by default as with GCC
+      optimization_flags["unroll-loops"] = false; // it is preferable to have unrolling disabled by default as with GCC
       return;
    }
 #endif
@@ -955,6 +959,8 @@ void GccWrapper::SetGccDefault()
       case(GccWrapper_OptimizationSet::O3) :
       case(GccWrapper_OptimizationSet::O4):
       case(GccWrapper_OptimizationSet::O5):
+      case(GccWrapper_OptimizationSet::Ofast):
+      case(GccWrapper_OptimizationSet::Oz):
          {
             gcc_compiling_parameters += (" -O" + WriteOptimizationLevel(optimization_level) + " ");
             break;
@@ -1814,6 +1820,10 @@ std::string GccWrapper::WriteOptimizationLevel(const GccWrapper_OptimizationSet 
          return "g";
       case(GccWrapper_OptimizationSet::Os):
          return "s";
+      case(GccWrapper_OptimizationSet::Ofast):
+         return "fast";
+      case(GccWrapper_OptimizationSet::Oz):
+         return "z";
 #if HAVE_BAMBU_BUILT
       case(GccWrapper_OptimizationSet::OBAMBU) :
          return "bambu";
@@ -1856,7 +1866,7 @@ std::string GccWrapper::WriteOptimizationsString()
          continue;
       else if (it->first == "argument-noalias-global" and (argument_noalias_anything))
          continue;
-      THROW_ASSERT(it->first != "", "unexpected contition");
+      THROW_ASSERT(it->first != "", "unexpected condition");
       if (it->second)
          optimizations += std::string("-f") + it->first + " ";  // enable optimizations set to true
       else
