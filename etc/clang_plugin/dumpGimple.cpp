@@ -2806,9 +2806,9 @@ namespace clang
          serialize_child("memdef", vdef);
       }
       /// check for true dependencies by exploiting LLVM alias analysis infrastructure
-      if(ma->getValueID()==llvm::Value::MemoryUseVal || ma->getValueID()==llvm::Value::MemoryDefVal)
+      if(ma->getValueID()==llvm::Value::MemoryUseVal)
       {
-         ///Serialize gimple pairs becuase of use after def chain
+         ///Serialize gimple pairs because of use after def chain
          std::set<llvm::MemoryAccess *>visited;
          auto startingMA = MSSA.getMemoryAccess(inst);
          visited.insert(startingMA);
@@ -2836,7 +2836,6 @@ namespace clang
             serialize_gimple_aliased_reaching_defs(startingMA, MSSA, visited, inst->getFunction(), &Loc, "vover");
          }
       }
-
    }
 
    void DumpGimpleRaw::serialize_gimple_aliased_reaching_defs(llvm::MemoryAccess *MA, llvm::MemorySSA &MSSA, std::set<llvm::MemoryAccess *>&visited, const llvm::Function *currentFunction, const llvm::MemoryLocation* OrigLoc, const char* tag)
