@@ -1835,7 +1835,7 @@
         <attribute name="REGISTERS" value_type="float64">64</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">33</attribute>
         <characterization_timestamp>2016-11-09T23:33:47</characterization_timestamp>
-        <operation operation_name="ASSIGN" supported_types="REAL:*" execution_time="0.45400065376094145"/>
+        <operation operation_name="ASSIGN" supported_types="REAL:*" execution_time="0.43099918541153959"/>
       </cell>
       <cell>
         <name>ASSIGN_SIGNED_FU</name>
@@ -1843,7 +1843,7 @@
         <attribute name="REGISTERS" value_type="float64">64</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">33</attribute>
         <characterization_timestamp>2016-11-09T23:33:47</characterization_timestamp>
-        <operation operation_name="ASSIGN" supported_types="INT:*" execution_time="0.45400065376094145"/>
+        <operation operation_name="ASSIGN" supported_types="INT:*" execution_time="0.43099918541153959"/>
       </cell>
       <cell>
         <name>ASSIGN_SINGLE_UNSIGNED_FU</name>
@@ -1859,7 +1859,7 @@
         <attribute name="REGISTERS" value_type="float64">64</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">33</attribute>
         <characterization_timestamp>2016-11-09T23:44:49</characterization_timestamp>
-        <operation operation_name="ASSIGN" supported_types="UINT:*" execution_time="0.45400065376094145"/>
+        <operation operation_name="ASSIGN" supported_types="UINT:*" execution_time="0.43099918541153959"/>
       </cell>
       <cell>
         <name>ASSIGN_VECTOR_BOOL_FU</name>
@@ -1867,7 +1867,7 @@
         <attribute name="REGISTERS" value_type="float64">64</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">33</attribute>
         <characterization_timestamp>2016-11-09T23:44:24</characterization_timestamp>
-        <operation operation_name="ASSIGN" supported_types="VECTOR_BOOL:*" execution_time="0.45400065376094145"/>
+        <operation operation_name="ASSIGN" supported_types="VECTOR_BOOL:*" execution_time="0.43099918541153959"/>
       </cell>
       <cell>
         <name>BAMBU_READ4C</name>
@@ -2677,7 +2677,7 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">17</attribute>
         <template name="MUX_N_to_1" parameter="1 1 1 30"/>
         <characterization_timestamp>2016-11-10T01:12:16</characterization_timestamp>
-        <operation operation_name="MUX_N_to_1" execution_time="0.45400065376094145"/>
+        <operation operation_name="MUX_N_to_1" execution_time="0.43099918541153959"/>
       </cell>
       <cell>
         <name>MUX_N_to_1_1_1_1_31</name>
@@ -2704,7 +2704,7 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">19</attribute>
         <template name="MUX_N_to_1" parameter="1 1 1 33"/>
         <characterization_timestamp>2016-11-10T01:13:04</characterization_timestamp>
-        <operation operation_name="MUX_N_to_1" execution_time="0.45400065376094145"/>
+        <operation operation_name="MUX_N_to_1" execution_time="0.43099918541153959"/>
       </cell>
       <cell>
         <name>MUX_N_to_1_1_1_1_34</name>
@@ -2749,7 +2749,7 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">27</attribute>
         <template name="MUX_N_to_1" parameter="1 1 1 50"/>
         <characterization_timestamp>2016-11-10T01:24:48</characterization_timestamp>
-        <operation operation_name="MUX_N_to_1" execution_time="0.45400065376094145"/>
+        <operation operation_name="MUX_N_to_1" execution_time="0.43099918541153959"/>
       </cell>
       <cell>
         <name>MUX_N_to_1_1_1_1_6</name>
@@ -2776,7 +2776,7 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">34</attribute>
         <template name="MUX_N_to_1" parameter="1 1 1 63"/>
         <characterization_timestamp>2016-11-10T01:25:45</characterization_timestamp>
-        <operation operation_name="MUX_N_to_1" execution_time="0.45400065376094145"/>
+        <operation operation_name="MUX_N_to_1" execution_time="0.43099918541153959"/>
       </cell>
       <cell>
         <name>MUX_N_to_1_1_1_1_64</name>
@@ -3831,7 +3831,7 @@
         <attribute name="REGISTERS" value_type="float64">64</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">33</attribute>
         <characterization_timestamp>2016-11-10T03:30:24</characterization_timestamp>
-        <operation operation_name="addr_expr" execution_time="0.45400065376094145"/>
+        <operation operation_name="addr_expr" execution_time="0.43099918541153959"/>
       </cell>
       <cell>
         <name>assert_expr_FU</name>
@@ -3839,7 +3839,7 @@
         <attribute name="REGISTERS" value_type="float64">64</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">33</attribute>
         <characterization_timestamp>2016-11-10T03:30:25</characterization_timestamp>
-        <operation operation_name="assert_expr" supported_types="INT:*" execution_time="0.45400065376094145"/>
+        <operation operation_name="assert_expr" supported_types="INT:*" execution_time="0.43099918541153959"/>
       </cell>
       <cell>
         <name>bit_and_expr_FU_0_16_16</name>
@@ -9211,7 +9211,7 @@
         <attribute name="REGISTERS" value_type="float64">64</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">33</attribute>
         <characterization_timestamp>2016-11-10T15:32:23</characterization_timestamp>
-        <operation operation_name="view_convert_expr" supported_types="REAL:*" execution_time="0.45400065376094145"/>
+        <operation operation_name="view_convert_expr" supported_types="REAL:*" execution_time="0.43099918541153959"/>
       </cell>
       <cell>
         <name>ge_expr_FU_0_16_16</name>
@@ -15648,7 +15648,7 @@
         <attribute name="REGISTERS" value_type="float64">64</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">33</attribute>
         <characterization_timestamp>2016-11-11T00:36:20</characterization_timestamp>
-        <operation operation_name="assert_expr" supported_types="UINT:*" execution_time="0.45400065376094145"/>
+        <operation operation_name="assert_expr" supported_types="UINT:*" execution_time="0.43099918541153959"/>
       </cell>
       <cell>
         <name>ui_bit_and_expr_FU_0_16_16</name>
@@ -32166,7 +32166,7 @@
         <attribute name="REGISTERS" value_type="float64">64</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">33</attribute>
         <characterization_timestamp>2016-11-12T02:53:58</characterization_timestamp>
-        <operation operation_name="view_convert_expr" supported_types="UINT:*|VECTOR_BOOL:*" execution_time="0.45400065376094145"/>
+        <operation operation_name="view_convert_expr" supported_types="UINT:*|VECTOR_BOOL:*" execution_time="0.43099918541153959"/>
       </cell>
       <cell>
         <name>ui_widen_mult_expr_FU_0_16_32_0</name>
@@ -42011,7 +42011,7 @@
         <attribute name="REGISTERS" value_type="float64">64</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">33</attribute>
         <characterization_timestamp>2016-11-12T11:05:35</characterization_timestamp>
-        <operation operation_name="view_convert_expr" supported_types="INT:*" execution_time="0.45400065376094145"/>
+        <operation operation_name="view_convert_expr" supported_types="INT:*" execution_time="0.43099918541153959"/>
       </cell>
       <cell>
         <name>widen_mult_expr_FU_0_16_32_0</name>

@@ -1866,7 +1866,7 @@
         <attribute name="REGISTERS" value_type="float64">64</attribute>
         <attribute name="SLICE" value_type="float64">32</attribute>
         <characterization_timestamp>2017-05-04T08:58:42</characterization_timestamp>
-        <operation operation_name="ASSIGN" supported_types="REAL:*" execution_time="1.1160000000000001"/>
+        <operation operation_name="ASSIGN" supported_types="REAL:*" execution_time="0.91600000000000004"/>
       </cell>
       <cell>
         <name>ASSIGN_SIGNED_FU</name>
@@ -1874,7 +1874,7 @@
         <attribute name="REGISTERS" value_type="float64">64</attribute>
         <attribute name="SLICE" value_type="float64">32</attribute>
         <characterization_timestamp>2017-05-04T08:58:43</characterization_timestamp>
-        <operation operation_name="ASSIGN" supported_types="INT:*" execution_time="1.1160000000000001"/>
+        <operation operation_name="ASSIGN" supported_types="INT:*" execution_time="0.91600000000000004"/>
       </cell>
       <cell>
         <name>ASSIGN_SINGLE_UNSIGNED_FU</name>
@@ -1890,7 +1890,7 @@
         <attribute name="REGISTERS" value_type="float64">64</attribute>
         <attribute name="SLICE" value_type="float64">32</attribute>
         <characterization_timestamp>2017-05-04T08:58:53</characterization_timestamp>
-        <operation operation_name="ASSIGN" supported_types="UINT:*" execution_time="1.1160000000000001"/>
+        <operation operation_name="ASSIGN" supported_types="UINT:*" execution_time="0.91600000000000004"/>
       </cell>
       <cell>
         <name>ASSIGN_VECTOR_BOOL_FU</name>
@@ -1898,7 +1898,7 @@
         <attribute name="REGISTERS" value_type="float64">64</attribute>
         <attribute name="SLICE" value_type="float64">32</attribute>
         <characterization_timestamp>2017-05-04T08:58:51</characterization_timestamp>
-        <operation operation_name="ASSIGN" supported_types="VECTOR_BOOL:*" execution_time="1.1160000000000001"/>
+        <operation operation_name="ASSIGN" supported_types="VECTOR_BOOL:*" execution_time="0.91600000000000004"/>
       </cell>
       <cell>
         <name>BAMBU_READ4C</name>
@@ -4043,7 +4043,7 @@
         <attribute name="REGISTERS" value_type="float64">64</attribute>
         <attribute name="SLICE" value_type="float64">32</attribute>
         <characterization_timestamp>2017-05-04T09:22:20</characterization_timestamp>
-        <operation operation_name="addr_expr" execution_time="1.1160000000000001"/>
+        <operation operation_name="addr_expr" execution_time="0.91600000000000004"/>
       </cell>
       <cell>
         <name>assert_expr_FU</name>
@@ -4051,7 +4051,7 @@
         <attribute name="REGISTERS" value_type="float64">64</attribute>
         <attribute name="SLICE" value_type="float64">32</attribute>
         <characterization_timestamp>2017-05-04T09:22:37</characterization_timestamp>
-        <operation operation_name="assert_expr" supported_types="INT:*" execution_time="1.1160000000000001"/>
+        <operation operation_name="assert_expr" supported_types="INT:*" execution_time="0.91600000000000004"/>
       </cell>
       <cell>
         <name>bit_and_expr_FU_0_16_16</name>
@@ -9563,7 +9563,7 @@
         <attribute name="SLICE" value_type="float64">32</attribute>
         <template name="fp_negate_expr_FU" parameter="32 32"/>
         <characterization_timestamp>2017-05-04T10:29:37</characterization_timestamp>
-        <operation operation_name="negate_expr" supported_types="REAL:32" execution_time="1.1160000000000001"/>
+        <operation operation_name="negate_expr" supported_types="REAL:32" execution_time="0.91600000000000004"/>
       </cell>
       <cell>
         <name>fp_negate_expr_FU_64_64</name>
@@ -10210,7 +10210,7 @@
         <attribute name="REGISTERS" value_type="float64">64</attribute>
         <attribute name="SLICE" value_type="float64">32</attribute>
         <characterization_timestamp>2017-05-04T10:37:24</characterization_timestamp>
-        <operation operation_name="view_convert_expr" supported_types="REAL:*" execution_time="1.1160000000000001"/>
+        <operation operation_name="view_convert_expr" supported_types="REAL:*" execution_time="0.91600000000000004"/>
       </cell>
       <cell>
         <name>ge_expr_FU_0_16_16</name>
@@ -12696,7 +12696,7 @@
         <attribute name="REGISTERS" value_type="float64">96</attribute>
         <attribute name="SLICE" value_type="float64">48</attribute>
         <characterization_timestamp>2017-05-04T10:56:38</characterization_timestamp>
-        <operation operation_name="realpart_expr" execution_time="1.1160000000000001"/>
+        <operation operation_name="realpart_expr" execution_time="0.91600000000000004"/>
       </cell>
       <cell>
         <name>rshift_expr_FU_0_16_16</name>
@@ -16464,7 +16464,7 @@
         <attribute name="REGISTERS" value_type="float64">64</attribute>
         <attribute name="SLICE" value_type="float64">32</attribute>
         <characterization_timestamp>2017-05-04T11:32:38</characterization_timestamp>
-        <operation operation_name="assert_expr" supported_types="UINT:*" execution_time="1.1160000000000001"/>
+        <operation operation_name="assert_expr" supported_types="UINT:*" execution_time="0.91600000000000004"/>
       </cell>
       <cell>
         <name>ui_bit_and_expr_FU_0_16_16</name>
@@ -27079,7 +27079,7 @@
         <template name="ui_vec_extracteven_expr_FU" parameter="1 128 0 1 128"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2017-05-04T13:55:05</characterization_timestamp>
-        <operation operation_name="vec_extracteven_expr" supported_types="VECTOR_UINT:1" execution_time="1.1160000000000001"/>
+        <operation operation_name="vec_extracteven_expr" supported_types="VECTOR_UINT:1" execution_time="0.91600000000000004"/>
       </cell>
       <cell>
         <name>ui_vec_extracteven_expr_FU_1_128_1_128_1_128</name>
@@ -27136,7 +27136,7 @@
         <template name="ui_vec_extracteven_expr_FU" parameter="8 16 0 8 16"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2017-05-04T13:56:08</characterization_timestamp>
-        <operation operation_name="vec_extracteven_expr" supported_types="VECTOR_UINT:8" execution_time="1.1160000000000001"/>
+        <operation operation_name="vec_extracteven_expr" supported_types="VECTOR_UINT:8" execution_time="0.91600000000000004"/>
       </cell>
       <cell>
         <name>ui_vec_extracteven_expr_FU_8_16_8_16_8_16</name>
@@ -27372,7 +27372,7 @@
         <template name="ui_vec_ge_expr_FU" parameter="1 128 0 1 128"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2017-05-04T13:59:27</characterization_timestamp>
-        <operation operation_name="ge_expr" supported_types="VECTOR_UINT:1" execution_time="1.1160000000000001"/>
+        <operation operation_name="ge_expr" supported_types="VECTOR_UINT:1" execution_time="0.91600000000000004"/>
       </cell>
       <cell>
         <name>ui_vec_ge_expr_FU_1_128_1_128_1_128</name>
@@ -32950,7 +32950,7 @@
         <attribute name="REGISTERS" value_type="float64">64</attribute>
         <attribute name="SLICE" value_type="float64">32</attribute>
         <characterization_timestamp>2017-05-04T15:05:25</characterization_timestamp>
-        <operation operation_name="view_convert_expr" supported_types="UINT:*|VECTOR_BOOL:*" execution_time="1.1160000000000001"/>
+        <operation operation_name="view_convert_expr" supported_types="UINT:*|VECTOR_BOOL:*" execution_time="0.91600000000000004"/>
       </cell>
       <cell>
         <name>ui_widen_mult_expr_FU_0_16_32_0</name>
@@ -36355,7 +36355,7 @@
         <template name="vec_extracteven_expr_FU" parameter="1 128 0 1 128"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2017-05-04T15:40:12</characterization_timestamp>
-        <operation operation_name="vec_extracteven_expr" supported_types="VECTOR_INT:1" execution_time="1.1160000000000001"/>
+        <operation operation_name="vec_extracteven_expr" supported_types="VECTOR_INT:1" execution_time="0.91600000000000004"/>
       </cell>
       <cell>
         <name>vec_extracteven_expr_FU_1_128_1_128_1_128</name>
@@ -36412,7 +36412,7 @@
         <template name="vec_extracteven_expr_FU" parameter="8 16 0 8 16"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2017-05-04T15:40:58</characterization_timestamp>
-        <operation operation_name="vec_extracteven_expr" supported_types="VECTOR_INT:8" execution_time="1.1160000000000001"/>
+        <operation operation_name="vec_extracteven_expr" supported_types="VECTOR_INT:8" execution_time="0.91600000000000004"/>
       </cell>
       <cell>
         <name>vec_extracteven_expr_FU_8_16_8_16_8_16</name>
@@ -36648,7 +36648,7 @@
         <template name="vec_ge_expr_FU" parameter="1 128 0 1 128"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2017-05-04T15:43:17</characterization_timestamp>
-        <operation operation_name="ge_expr" supported_types="VECTOR_INT:1" execution_time="1.1160000000000001"/>
+        <operation operation_name="ge_expr" supported_types="VECTOR_INT:1" execution_time="0.91600000000000004"/>
       </cell>
       <cell>
         <name>vec_ge_expr_FU_1_128_1_128_1_128</name>
@@ -42387,7 +42387,7 @@
         <attribute name="REGISTERS" value_type="float64">64</attribute>
         <attribute name="SLICE" value_type="float64">32</attribute>
         <characterization_timestamp>2017-05-04T16:30:15</characterization_timestamp>
-        <operation operation_name="view_convert_expr" supported_types="INT:*" execution_time="1.1160000000000001"/>
+        <operation operation_name="view_convert_expr" supported_types="INT:*" execution_time="0.91600000000000004"/>
       </cell>
       <cell>
         <name>widen_mult_expr_FU_0_16_32_0</name>

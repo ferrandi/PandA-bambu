@@ -367,7 +367,7 @@
         <attribute name="SLICE" value_type="float64">12</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">42</attribute>
         <characterization_timestamp>2017-05-05T19:51:05</characterization_timestamp>
-        <operation operation_name="ASSIGN" supported_types="REAL:*" execution_time="1.0489999999999999"/>
+        <operation operation_name="ASSIGN" supported_types="REAL:*" execution_time="0.70899999999999996"/>
       </cell>
       <cell>
         <name>ASSIGN_SIGNED_FU</name>
@@ -377,7 +377,7 @@
         <attribute name="SLICE" value_type="float64">12</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">42</attribute>
         <characterization_timestamp>2017-05-05T19:51:04</characterization_timestamp>
-        <operation operation_name="ASSIGN" supported_types="INT:*" execution_time="1.0489999999999999"/>
+        <operation operation_name="ASSIGN" supported_types="INT:*" execution_time="0.70899999999999996"/>
       </cell>
       <cell>
         <name>ASSIGN_SINGLE_UNSIGNED_FU</name>
@@ -397,7 +397,7 @@
         <attribute name="SLICE" value_type="float64">12</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">42</attribute>
         <characterization_timestamp>2017-05-05T19:51:02</characterization_timestamp>
-        <operation operation_name="ASSIGN" supported_types="UINT:*" execution_time="1.0489999999999999"/>
+        <operation operation_name="ASSIGN" supported_types="UINT:*" execution_time="0.70899999999999996"/>
       </cell>
       <cell>
         <name>ASSIGN_VECTOR_BOOL_FU</name>
@@ -407,7 +407,7 @@
         <attribute name="SLICE" value_type="float64">12</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">42</attribute>
         <characterization_timestamp>2017-05-05T19:51:42</characterization_timestamp>
-        <operation operation_name="ASSIGN" supported_types="VECTOR_BOOL:*" execution_time="1.0489999999999999"/>
+        <operation operation_name="ASSIGN" supported_types="VECTOR_BOOL:*" execution_time="0.70899999999999996"/>
       </cell>
       <cell>
         <name>BAMBU_READ4C</name>
@@ -2900,7 +2900,7 @@
         <attribute name="SLICE" value_type="float64">12</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">42</attribute>
         <characterization_timestamp>2017-05-05T20:41:40</characterization_timestamp>
-        <operation operation_name="addr_expr" execution_time="1.0489999999999999"/>
+        <operation operation_name="addr_expr" execution_time="0.70899999999999996"/>
       </cell>
       <cell>
         <name>assert_expr_FU</name>
@@ -2910,7 +2910,7 @@
         <attribute name="SLICE" value_type="float64">12</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">42</attribute>
         <characterization_timestamp>2017-05-05T20:42:14</characterization_timestamp>
-        <operation operation_name="assert_expr" supported_types="INT:*" execution_time="1.0489999999999999"/>
+        <operation operation_name="assert_expr" supported_types="INT:*" execution_time="0.70899999999999996"/>
       </cell>
       <cell>
         <name>bit_and_expr_FU_0_16_16</name>
@@ -9062,7 +9062,7 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">42</attribute>
         <template name="fp_negate_expr_FU" parameter="32 32"/>
         <characterization_timestamp>2017-05-05T22:34:21</characterization_timestamp>
-        <operation operation_name="negate_expr" supported_types="REAL:32" execution_time="1.0489999999999999"/>
+        <operation operation_name="negate_expr" supported_types="REAL:32" execution_time="0.70899999999999996"/>
       </cell>
       <cell>
         <name>fp_negate_expr_FU_64_64</name>
@@ -9713,7 +9713,7 @@
         <attribute name="SLICE" value_type="float64">12</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">42</attribute>
         <characterization_timestamp>2017-05-05T22:45:47</characterization_timestamp>
-        <operation operation_name="view_convert_expr" supported_types="REAL:*" execution_time="1.0489999999999999"/>
+        <operation operation_name="view_convert_expr" supported_types="REAL:*" execution_time="0.70899999999999996"/>
       </cell>
       <cell>
         <name>ge_expr_FU_0_16_16</name>
@@ -17149,7 +17149,7 @@
         <attribute name="SLICE" value_type="float64">12</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">42</attribute>
         <characterization_timestamp>2017-05-06T00:46:32</characterization_timestamp>
-        <operation operation_name="assert_expr" supported_types="UINT:*" execution_time="1.0489999999999999"/>
+        <operation operation_name="assert_expr" supported_types="UINT:*" execution_time="0.70899999999999996"/>
       </cell>
       <cell>
         <name>ui_bit_and_expr_FU_0_16_16</name>
@@ -36613,7 +36613,7 @@
         <attribute name="SLICE" value_type="float64">12</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">42</attribute>
         <characterization_timestamp>2017-05-06T06:35:40</characterization_timestamp>
-        <operation operation_name="view_convert_expr" supported_types="UINT:*|VECTOR_BOOL:*" execution_time="1.0489999999999999"/>
+        <operation operation_name="view_convert_expr" supported_types="UINT:*|VECTOR_BOOL:*" execution_time="0.70899999999999996"/>
       </cell>
       <cell>
         <name>ui_widen_mult_expr_FU_0_16_32_0</name>
@@ -48037,7 +48037,7 @@
         <attribute name="SLICE" value_type="float64">12</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">42</attribute>
         <characterization_timestamp>2017-05-06T09:30:14</characterization_timestamp>
-        <operation operation_name="view_convert_expr" supported_types="INT:*" execution_time="1.0489999999999999"/>
+        <operation operation_name="view_convert_expr" supported_types="INT:*" execution_time="0.70899999999999996"/>
       </cell>
       <cell>
         <name>widen_mult_expr_FU_0_16_32_0</name>

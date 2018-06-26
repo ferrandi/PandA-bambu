@@ -371,7 +371,7 @@
         <attribute name="REGISTERS" value_type="float64">64</attribute>
         <attribute name="SLICE_LUTS" value_type="float64">2</attribute>
         <characterization_timestamp>2016-06-16T12:08:35</characterization_timestamp>
-        <operation operation_name="ASSIGN" supported_types="REAL:*" execution_time="0.33000000000000002"/>
+        <operation operation_name="ASSIGN" supported_types="REAL:*" execution_time="0.32900000000000001"/>
       </cell>
       <cell>
         <name>ASSIGN_SIGNED_FU</name>
@@ -379,7 +379,7 @@
         <attribute name="REGISTERS" value_type="float64">64</attribute>
         <attribute name="SLICE_LUTS" value_type="float64">2</attribute>
         <characterization_timestamp>2016-06-16T12:08:35</characterization_timestamp>
-        <operation operation_name="ASSIGN" supported_types="INT:*" execution_time="0.33000000000000002"/>
+        <operation operation_name="ASSIGN" supported_types="INT:*" execution_time="0.32900000000000001"/>
       </cell>
       <cell>
         <name>ASSIGN_SINGLE_UNSIGNED_FU</name>
@@ -395,7 +395,7 @@
         <attribute name="REGISTERS" value_type="float64">64</attribute>
         <attribute name="SLICE_LUTS" value_type="float64">2</attribute>
         <characterization_timestamp>2016-06-16T12:08:46</characterization_timestamp>
-        <operation operation_name="ASSIGN" supported_types="UINT:*" execution_time="0.33000000000000002"/>
+        <operation operation_name="ASSIGN" supported_types="UINT:*" execution_time="0.32900000000000001"/>
       </cell>
       <cell>
         <name>ASSIGN_VECTOR_BOOL_FU</name>
@@ -403,7 +403,7 @@
         <attribute name="REGISTERS" value_type="float64">64</attribute>
         <attribute name="SLICE_LUTS" value_type="float64">2</attribute>
         <characterization_timestamp>2016-06-16T12:08:47</characterization_timestamp>
-        <operation operation_name="ASSIGN" supported_types="VECTOR_BOOL:*" execution_time="0.33000000000000002"/>
+        <operation operation_name="ASSIGN" supported_types="VECTOR_BOOL:*" execution_time="0.32900000000000001"/>
       </cell>
       <cell>
         <name>BAMBU_READ4C</name>
@@ -2566,7 +2566,7 @@
         <attribute name="REGISTERS" value_type="float64">64</attribute>
         <attribute name="SLICE_LUTS" value_type="float64">2</attribute>
         <characterization_timestamp>2016-06-16T13:09:48</characterization_timestamp>
-        <operation operation_name="addr_expr" execution_time="0.33000000000000002"/>
+        <operation operation_name="addr_expr" execution_time="0.32900000000000001"/>
       </cell>
       <cell>
         <name>assert_expr_FU</name>
@@ -2574,7 +2574,7 @@
         <attribute name="REGISTERS" value_type="float64">64</attribute>
         <attribute name="SLICE_LUTS" value_type="float64">2</attribute>
         <characterization_timestamp>2016-06-16T13:09:52</characterization_timestamp>
-        <operation operation_name="assert_expr" supported_types="INT:*" execution_time="0.33000000000000002"/>
+        <operation operation_name="assert_expr" supported_types="INT:*" execution_time="0.32900000000000001"/>
       </cell>
       <cell>
         <name>bit_and_expr_FU_0_16_16</name>
@@ -8429,7 +8429,7 @@
         <attribute name="REGISTERS" value_type="float64">64</attribute>
         <attribute name="SLICE_LUTS" value_type="float64">2</attribute>
         <characterization_timestamp>2016-06-16T16:26:51</characterization_timestamp>
-        <operation operation_name="view_convert_expr" supported_types="REAL:*" execution_time="0.33000000000000002"/>
+        <operation operation_name="view_convert_expr" supported_types="REAL:*" execution_time="0.32900000000000001"/>
       </cell>
       <cell>
         <name>ge_expr_FU_0_16_16</name>
@@ -15366,7 +15366,7 @@
         <attribute name="REGISTERS" value_type="float64">64</attribute>
         <attribute name="SLICE_LUTS" value_type="float64">2</attribute>
         <characterization_timestamp>2016-06-16T18:36:15</characterization_timestamp>
-        <operation operation_name="assert_expr" supported_types="UINT:*" execution_time="0.33000000000000002"/>
+        <operation operation_name="assert_expr" supported_types="UINT:*" execution_time="0.32900000000000001"/>
       </cell>
       <cell>
         <name>ui_bit_and_expr_FU_0_16_16</name>
@@ -15727,7 +15727,7 @@
         <template name="ui_bit_xor_expr_FU" parameter="0 16 16"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-16T18:42:36</characterization_timestamp>
-        <operation operation_name="bit_xor_expr" commutative="1" supported_types="UINT:16|VECTOR_BOOL:16" execution_time="0.33000000000000002"/>
+        <operation operation_name="bit_xor_expr" commutative="1" supported_types="UINT:16|VECTOR_BOOL:16" execution_time="0.32900000000000001"/>
       </cell>
       <cell>
         <name>ui_bit_xor_expr_FU_0_1_1</name>
@@ -15749,7 +15749,7 @@
         <template name="ui_bit_xor_expr_FU" parameter="0 32 32"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-16T18:42:43</characterization_timestamp>
-        <operation operation_name="bit_xor_expr" commutative="1" supported_types="UINT:32|VECTOR_BOOL:32" execution_time="0.33000000000000002"/>
+        <operation operation_name="bit_xor_expr" commutative="1" supported_types="UINT:32|VECTOR_BOOL:32" execution_time="0.32900000000000001"/>
       </cell>
       <cell>
         <name>ui_bit_xor_expr_FU_0_64_64</name>
@@ -15782,7 +15782,7 @@
         <template name="ui_bit_xor_expr_FU" parameter="16 0 16"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-16T18:42:36</characterization_timestamp>
-        <operation operation_name="bit_xor_expr" commutative="1" supported_types="UINT:16|VECTOR_BOOL:16" execution_time="0.33000000000000002"/>
+        <operation operation_name="bit_xor_expr" commutative="1" supported_types="UINT:16|VECTOR_BOOL:16" execution_time="0.32900000000000001"/>
       </cell>
       <cell>
         <name>ui_bit_xor_expr_FU_16_16_16</name>
@@ -15824,7 +15824,7 @@
         <template name="ui_bit_xor_expr_FU" parameter="32 0 32"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-16T18:42:43</characterization_timestamp>
-        <operation operation_name="bit_xor_expr" commutative="1" supported_types="UINT:32|VECTOR_BOOL:32" execution_time="0.33000000000000002"/>
+        <operation operation_name="bit_xor_expr" commutative="1" supported_types="UINT:32|VECTOR_BOOL:32" execution_time="0.32900000000000001"/>
       </cell>
       <cell>
         <name>ui_bit_xor_expr_FU_32_32_32</name>
@@ -27462,7 +27462,7 @@
         <template name="ui_vec_interleavelow_expr_FU" parameter="8 16 0 8 16"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-16T23:07:12</characterization_timestamp>
-        <operation operation_name="vec_interleavelow_expr" supported_types="VECTOR_UINT:8" execution_time="0.33000000000000002"/>
+        <operation operation_name="vec_interleavelow_expr" supported_types="VECTOR_UINT:8" execution_time="0.32900000000000001"/>
       </cell>
       <cell>
         <name>ui_vec_interleavelow_expr_FU_8_16_8_16_8_16</name>
@@ -30593,7 +30593,7 @@
         <attribute name="SLICE_LUTS" value_type="float64">2</attribute>
         <template name="ui_vec_unpack_lo_expr_FU" parameter="8 16 16 8"/>
         <characterization_timestamp>2016-06-17T00:08:17</characterization_timestamp>
-        <operation operation_name="vec_unpack_lo_expr" supported_types="VECTOR_UINT:8" execution_time="0.33000000000000002"/>
+        <operation operation_name="vec_unpack_lo_expr" supported_types="VECTOR_UINT:8" execution_time="0.32900000000000001"/>
       </cell>
       <cell>
         <name>ui_vec_widen_mult_hi_expr_FU_0_16_8_32_4_0</name>
@@ -32895,7 +32895,7 @@
         <attribute name="REGISTERS" value_type="float64">64</attribute>
         <attribute name="SLICE_LUTS" value_type="float64">2</attribute>
         <characterization_timestamp>2016-06-17T00:45:49</characterization_timestamp>
-        <operation operation_name="view_convert_expr" supported_types="UINT:*|VECTOR_BOOL:*" execution_time="0.33000000000000002"/>
+        <operation operation_name="view_convert_expr" supported_types="UINT:*|VECTOR_BOOL:*" execution_time="0.32900000000000001"/>
       </cell>
       <cell>
         <name>ui_widen_mult_expr_FU_0_16_32_0</name>
@@ -37556,7 +37556,7 @@
         <template name="vec_interleavelow_expr_FU" parameter="8 16 0 8 16"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-17T02:29:48</characterization_timestamp>
-        <operation operation_name="vec_interleavelow_expr" supported_types="VECTOR_INT:8" execution_time="0.33000000000000002"/>
+        <operation operation_name="vec_interleavelow_expr" supported_types="VECTOR_INT:8" execution_time="0.32900000000000001"/>
       </cell>
       <cell>
         <name>vec_interleavelow_expr_FU_8_16_8_16_8_16</name>
@@ -43149,7 +43149,7 @@
         <attribute name="REGISTERS" value_type="float64">64</attribute>
         <attribute name="SLICE_LUTS" value_type="float64">2</attribute>
         <characterization_timestamp>2016-06-17T04:09:40</characterization_timestamp>
-        <operation operation_name="view_convert_expr" supported_types="INT:*" execution_time="0.33000000000000002"/>
+        <operation operation_name="view_convert_expr" supported_types="INT:*" execution_time="0.32900000000000001"/>
       </cell>
       <cell>
         <name>widen_mult_expr_FU_0_16_32_0</name>

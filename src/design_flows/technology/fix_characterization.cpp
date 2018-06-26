@@ -98,7 +98,8 @@ DesignFlowStep_Status FixCharacterization::Exec()
             if(fu_name == "ASSIGN_REAL_FU" ||
                fu_name == "ASSIGN_SIGNED_FU" ||
                fu_name == "ASSIGN_UNSIGNED_FU" ||
-               fu_name == "ASSIGN_VECTOR_BOOL_FU"
+               fu_name == "ASSIGN_VECTOR_BOOL_FU" ||
+               fu_name == "addr_expr_FU" || fu_name == "fp_view_convert_expr_FU" || fu_name == "ui_view_convert_expr_FU" || fu_name == "view_convert_expr_FU" || fu_name == "assert_expr_FU"
                     )
             {
                single_fu->area_m->set_area_value(1);
