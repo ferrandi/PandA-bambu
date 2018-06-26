@@ -2818,6 +2818,44 @@ namespace clang
          {
             const auto Loc = llvm::MemoryLocation::get(inst);
             serialize_gimple_aliased_reaching_defs(startingMA, MSSA, visited, inst->getFunction(), &Loc, "vuse");
+
+            ///add possible anti-dependences
+            auto defMA = MSSA.getWalker()->getClobberingMemoryAccess(inst);
+            if(MSSA.isLiveOnEntryDef(defMA) && CurrentListofMAEntryDef.find(currentFunction) != CurrentListofMAEntryDef.end())
+            {
+               auto &AA = modulePass->getAnalysis<llvm::AAResultsWrapperPass>(*currentFunction).getAAResults();
+               for(auto defInst : CurrentListofMAEntryDef.find(currentFunction)->second)
+               {
+                  llvm::ImmutableCallSite UseCS(static_cast<const llvm::Instruction*>(inst));
+                  bool addVuse=false;
+                  if (UseCS)
+                  {
+                      const llvm::ModRefInfo I = AA.getModRefInfo(const_cast<llvm::Instruction*>(defInst), UseCS);
+#if __clang_major__ > 5
+                      addVuse = llvm::isModOrRefSet(I);
+#else
+                      addVuse = I != llvm::MRI_NoModRef;
+#endif
+                  }
+                  else
+                  {
+                     const auto Loc = llvm::MemoryLocation::get(inst);
+                     auto I = AA.getModRefInfo(defInst, Loc);
+#if __clang_major__ > 5
+                     addVuse = llvm::isModSet(I);
+#else
+                     addVuse = I & llvm::MRI_Mod;
+#endif
+                  }
+                  if(addVuse)
+                  {
+                     auto maDef = MSSA.getMemoryAccess(defInst);
+                     assert(maDef);
+                     const void* vuse=getSSA(maDef,defInst,currentFunction,false);
+                     serialize_child("vuse", vuse);
+                  }
+               }
+            }
          }
       }
       if(ma->getValueID()==llvm::Value::MemoryDefVal)
@@ -2828,6 +2866,7 @@ namespace clang
          std::set<llvm::MemoryAccess *>visited;
          auto startingMA = MSSA.getMemoryAccess(inst);
          visited.insert(startingMA);
+         visited.insert(MSSA.getLiveOnEntryDef());
          if (llvm::ImmutableCallSite(inst) || isa<llvm::FenceInst>(inst))
             serialize_gimple_aliased_reaching_defs(startingMA, MSSA, visited, inst->getFunction(), nullptr, "vover");
          else
@@ -5441,6 +5480,41 @@ namespace clang
       //M.print(llvm::errs(),nullptr);
       return changed;
    }
+
+   static
+   void computeMAEntryDefs(const llvm::Function *F, std::map<const llvm::Function*,std::set<const llvm::Instruction *>> &CurrentListofMAEntryDef, llvm::ModulePass *modulePass)
+   {
+      auto &MSSA = modulePass->getAnalysis<llvm::MemorySSAWrapperPass>(*const_cast<llvm::Function *>(F)).getMSSA();
+      for(const auto& BB: F->getBasicBlockList())
+      {
+         for(const auto&inst: BB)
+         {
+            const llvm::MemoryUseOrDef* ma = MSSA.getMemoryAccess(&inst);
+            if(ma && ma->getValueID()==llvm::Value::MemoryDefVal)
+            {
+               auto immDefAcc = ma->getDefiningAccess();
+               if(MSSA.isLiveOnEntryDef(immDefAcc))
+                  CurrentListofMAEntryDef[F].insert(&inst);
+               else
+               {
+                  if (llvm::ImmutableCallSite(&inst) || isa<llvm::FenceInst>(&inst))
+                  {
+                     auto defMA = MSSA.getWalker()->getClobberingMemoryAccess(&inst);
+                     if(MSSA.isLiveOnEntryDef(defMA))
+                        CurrentListofMAEntryDef[F].insert(&inst);
+                  }
+                  else
+                  {
+                     const auto Loc = llvm::MemoryLocation::get(&inst);
+                     auto defMA = MSSA.getWalker()->getClobberingMemoryAccess(immDefAcc, Loc);
+                     if(MSSA.isLiveOnEntryDef(defMA))
+                        CurrentListofMAEntryDef[F].insert(&inst);
+                  }
+               }
+            }
+         }
+      }
+   }
    bool DumpGimpleRaw::runOnModule(llvm::Module &M, llvm::ModulePass *_modulePass, const std::string& TopFunctionName)
    {
       DL = &M.getDataLayout();
@@ -5481,6 +5555,17 @@ namespace clang
 #ifdef DEBUG_RA
       assert(!llvm::verifyModule(M,&llvm::errs()));
 #endif
+      if(!onlyGlobals)
+      {
+         for(const auto& fun : M.getFunctionList())
+         {
+            if(!fun.isDeclaration() && !fun.isIntrinsic())
+            {
+               computeMAEntryDefs(&fun,CurrentListofMAEntryDef,modulePass);
+            }
+         }
+      }
+
       for(const auto& globalVar : M.getGlobalList())
       {
 #if PRINT_DBG_MSG
@@ -5506,6 +5591,7 @@ namespace clang
                SerializeGimpleGlobalTreeNode(assignCodeAuto(&fun));
             }
          }
+         CurrentListofMAEntryDef.clear();
       }
 #if HAVE_LIBBDD
       if(PtoSets_AA)

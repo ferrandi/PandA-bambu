@@ -527,6 +527,7 @@ namespace clang {
          const void* getGimpleScpe(const void* g);
          int getGimple_bb_index(const void* g);
          bool gimple_has_mem_ops(const void* g) const;
+         std::map<const llvm::Function*,std::set<const llvm::Instruction *>> CurrentListofMAEntryDef;
          void serialize_vops(const void* g);
          void serialize_gimple_aliased_reaching_defs(llvm::MemoryAccess *MA, llvm::MemorySSA &MSSA, std::set<llvm::MemoryAccess *>&visited,const llvm::Function *currentFunction, const llvm::MemoryLocation* OrigLoc, const char* tag);
 
