@@ -280,7 +280,7 @@ void SDCScheduling::AddDelayConstraints(const meilp_solverRef solver, const OpGr
                   return clock_period;
                if(GET_TYPE(filtered_op_graph, current) & TYPE_PHI)
                   return allocation_information->GetCondExprTimeLatency(filtered_op_graph->CGetOpNodeInfo(current)->GetNodeId());
-               auto timeLatency = allocation_information->GetTimeLatency(current, AbsControlStep(bb_node_info->block->number, AbsControlStep::UNKNOWN), fu_binding::UNKNOWN, allocation_information->GetCycleLatency(current) -1);
+               auto timeLatency = allocation_information->GetTimeLatency(current, fu_binding::UNKNOWN, allocation_information->GetCycleLatency(current) -1);
                ///Stage period of first cycle of operations with registered inputs is 0
                return allocation_information->get_initiation_time(allocation_information->GetFuType(current),current)>0 ? (allocation_information->is_operation_PI_registered(filtered_op_graph, current, allocation_information->GetFuType(current)) ? 0.0 : timeLatency.second): timeLatency.first;
             }();

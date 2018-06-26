@@ -278,11 +278,11 @@ DesignFlowStep_Status CondExprRestructuring::InternalExec()
          }
 
          ///As cond expr time we consider the worst among the existing operation in the chain
-         const auto cond_expr_time1 = allocation_information->GetTimeLatency((*stmt)->index, schedule->get_cstep((*stmt)->index), fu_binding::UNKNOWN).first;
+         const auto cond_expr_time1 = allocation_information->GetTimeLatency((*stmt)->index, fu_binding::UNKNOWN).first;
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Delay of first operation is " + STR(cond_expr_time1));
-         const auto cond_expr_time2 = allocation_information->GetTimeLatency(second_stmt->index, schedule->get_cstep(second_stmt->index), fu_binding::UNKNOWN).first;
+         const auto cond_expr_time2 = allocation_information->GetTimeLatency(second_stmt->index, fu_binding::UNKNOWN).first;
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Delay of second operation is " + STR(cond_expr_time2));
-         const auto cond_expr_time3 = allocation_information->GetTimeLatency(third_stmt->index, schedule->get_cstep(third_stmt->index), fu_binding::UNKNOWN).first;
+         const auto cond_expr_time3 = allocation_information->GetTimeLatency(third_stmt->index, fu_binding::UNKNOWN).first;
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Delay of third operation is " + STR(cond_expr_time3));
          const auto mux_time = std::max(cond_expr_time1, std::max(cond_expr_time2, cond_expr_time3));
          const auto new_ending_time = operand_ready_time + 2 * mux_time;

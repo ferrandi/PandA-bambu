@@ -627,7 +627,7 @@ void parametric_list_based::exec(const OpVertexSet & operations, ControlStep cur
                }
                if(postponed)
                {
-                  PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "                  MEMORY_CTRL cannot run together with BRAM direct accessess " + GET_NAME(flow_graph, current_vertex) + " mapped on " + HLS->allocation_information->get_fu_name(fu_type).first + "at cstep " + STR(current_cycle));
+                  PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "                  MEMORY_CTRL cannot run together with BRAM direct accesses " + GET_NAME(flow_graph, current_vertex) + " mapped on " + HLS->allocation_information->get_fu_name(fu_type).first + "at cstep " + STR(current_cycle));
                   auto insertResult = black_list.insert(make_pair(fu_type, OpVertexSet(flow_graph)));
                   insertResult.first->second.insert(current_vertex);
                   continue;
@@ -921,7 +921,7 @@ void parametric_list_based::exec(const OpVertexSet & operations, ControlStep cur
             if(black_list.empty())
             {
                do_again = true;
-               PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "         Restarted the schedulign loop to accomodate postponed vertices");
+               PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "         Restarted the scheduling loop to accommodate postponed vertices");
             }
          }
       } while(do_again);
@@ -949,7 +949,7 @@ void parametric_list_based::exec(const OpVertexSet & operations, ControlStep cur
          for(unsigned int i = 0; i < n_resources; i++)
             priority_queues[i].rehash();
 #endif
-      /// clear the vuses
+      /// clear the vises
       cstep_vuses_ARRAYs = cstep_vuses_ARRAYs > 0 ? cstep_vuses_ARRAYs-1 : 0;
       cstep_vuses_others = cstep_vuses_others > 0 ? cstep_vuses_others-1 : 0;
       cstep_has_RET_conflict = false;
@@ -1055,11 +1055,11 @@ void parametric_list_based::compute_exec_stage_time(const unsigned int fu_type, 
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Computing exec stage time of " + GET_NAME(flow_graph_with_feedbacks, v));
    const auto bb_index = op_graph->CGetOpNodeInfo(v)->bb_index;
-   std::pair<double,double> timeLatency = HLS->allocation_information->GetTimeLatency(v, AbsControlStep(bb_index, cs), fu_type);
+   std::pair<double,double> timeLatency = HLS->allocation_information->GetTimeLatency(v, fu_type);
    op_execution_time = timeLatency.first;
    stage_period = timeLatency.second;
 
-   /// check for PHIs attached to the ouput. They may require one or more muxes.
+   /// check for PHIs attached to the output. They may require one or more muxes.
    phi_extra_time = HLS->allocation_information->GetConnectionTime(flow_graph_with_feedbacks->CGetOpNodeInfo(v)->GetNodeId(), 0, AbsControlStep(bb_index, cs));
 
    double scheduling_mux_margins = HLS->Param->getOption<double>(OPT_scheduling_mux_margins) * HLS->allocation_information->mux_time_unit(32);
@@ -1390,9 +1390,9 @@ void parametric_list_based::update_starting_ending_time(vertex candidate_v, fu_b
    /// non-pipelined operations move towards the control step border
    if(!is_pipelined)
    {
-      THROW_ASSERT(ending_time[candidate_v]>=starting_time[candidate_v], "unpexected starting/ending time");
+      THROW_ASSERT(ending_time[candidate_v]>=starting_time[candidate_v], "unexpected starting/ending time");
       current_ending_time = std::min(current_ending_time,ctrl_step_border);
-      THROW_ASSERT((current_ending_time - (ending_time[candidate_v]-starting_time[candidate_v]))/clock_cycle>=floor(starting_time[candidate_v]/clock_cycle), "unpexpected starting time");
+      THROW_ASSERT((current_ending_time - (ending_time[candidate_v]-starting_time[candidate_v]))/clock_cycle>=floor(starting_time[candidate_v]/clock_cycle), "unexpected starting time");
       starting_time[candidate_v] = current_ending_time - (ending_time[candidate_v]-starting_time[candidate_v]);
       ending_time[candidate_v] = current_ending_time;
       PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "      non-pipelined op new starting time = " + STR(starting_time[candidate_v]));
@@ -1436,7 +1436,7 @@ void parametric_list_based::update_starting_ending_time_asap(vertex candidate_v,
    /// non-pipelined operations move towards the control step border
    if(!is_pipelined)
    {
-      THROW_ASSERT(ending_time[candidate_v]>=starting_time[candidate_v], "unpexected starting/ending time");
+      THROW_ASSERT(ending_time[candidate_v]>=starting_time[candidate_v], "unexpected starting/ending time");
       ending_time[candidate_v] = current_starting_time+(ending_time[candidate_v]-starting_time[candidate_v]);
       starting_time[candidate_v] = current_starting_time;
       PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "      asap non-pipelined op new starting time = " + STR(starting_time[candidate_v]));

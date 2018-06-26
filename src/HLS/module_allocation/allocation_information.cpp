@@ -1638,12 +1638,12 @@ unsigned int AllocationInformation::GetCycleLatency(const unsigned int operation
    return 0;
 }
 
-std::pair<double,double>  AllocationInformation::GetTimeLatency(const vertex operation, const AbsControlStep control_step, const unsigned int functional_unit, const unsigned int stage, const bool ignore_connection) const
+std::pair<double,double>  AllocationInformation::GetTimeLatency(const vertex operation, const unsigned int functional_unit, const unsigned int stage) const
 {
-   return GetTimeLatency(op_graph->CGetOpNodeInfo(operation)->GetNodeId(), control_step, functional_unit, stage, ignore_connection);
+   return GetTimeLatency(op_graph->CGetOpNodeInfo(operation)->GetNodeId(), functional_unit, stage);
 }
 
-std::pair<double,double> AllocationInformation::GetTimeLatency(const unsigned int operation_index, const AbsControlStep control_step, const unsigned int functional_unit_type, const unsigned int stage, const bool ignore_connection) const
+std::pair<double,double> AllocationInformation::GetTimeLatency(const unsigned int operation_index,  const unsigned int functional_unit_type, const unsigned int stage) const
 {
    if(operation_index == ENTRY_ID || operation_index == EXIT_ID)
       return std::pair<double,double> (0.0, 0.0);
@@ -1661,7 +1661,7 @@ std::pair<double,double> AllocationInformation::GetTimeLatency(const unsigned in
       else
          return operation_index;
    }();
-   ///For the intermediate stage of multicycle the latency is the clock cycle
+   ///For the intermediate stage of multi-cycle the latency is the clock cycle
    const unsigned int num_cycles = GetCycleLatency(time_operation_index);
    if(stage > 0 and stage < num_cycles - 1)
    {
@@ -1966,7 +1966,7 @@ std::pair<double,double> AllocationInformation::GetTimeLatency(const unsigned in
       }
       if(ga and ga->orig)
       {
-         const auto op_execution_time = GetTimeLatency(ga->orig->index, control_step, functional_unit_type, stage, ignore_connection);
+         const auto op_execution_time = GetTimeLatency(ga->orig->index, functional_unit_type, stage);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Time is " + STR(op_execution_time.first));
          return op_execution_time;
       }
@@ -2146,6 +2146,7 @@ double AllocationInformation::get_correction_time(unsigned int fu, const std::st
    std::string memory_type = GetPointer<functional_unit>(current_fu)->memory_type;
    std::string memory_ctrl_type = GetPointer<functional_unit>(current_fu)->memory_ctrl_type;
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Computing correction time of '" + operation_name + "'" + (memory_type != "" ? "(" + memory_type + ")" : "") + (memory_ctrl_type != "" ? "(" + memory_ctrl_type + ")" : ""));
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Setup-Hold-time: " + STR(res_value));
    unsigned int elmt_bitsize = 0;
    bool is_read_only_correction = false;
    bool is_proxied_correction = false;
@@ -2988,7 +2989,7 @@ double AllocationInformation::GetConnectionTime(const unsigned int first_operati
          {
             const bool adding_connection = [&] () -> bool
             {
-               const auto second_delay = GetTimeLatency(second_operation, AbsControlStep(0, AbsControlStep::UNKNOWN), fu_binding::UNKNOWN);
+               const auto second_delay = GetTimeLatency(second_operation, fu_binding::UNKNOWN);
                if(second_delay.first > epsilon)
                {
                   return true;
@@ -2999,7 +3000,7 @@ double AllocationInformation::GetConnectionTime(const unsigned int first_operati
                {
                   if(GetPointer<const gimple_node>(TreeM->CGetTreeNode(zero_distance_operation))->bb_index == first_bb_index)
                   {
-                     const auto other_delay = GetTimeLatency(zero_distance_operation, AbsControlStep(0, AbsControlStep::UNKNOWN), fu_binding::UNKNOWN);
+                     const auto other_delay = GetTimeLatency(zero_distance_operation, fu_binding::UNKNOWN);
                      if(other_delay.first > epsilon or other_delay.second > epsilon)
                      {
                         return true;
@@ -3138,8 +3139,8 @@ bool AllocationInformation::CanBeMerged(const unsigned int first_operation, cons
    if(first_operation == ENTRY_ID or second_operation == EXIT_ID)
       return 0.0;
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Checking if " + STR(TreeM->CGetTreeNode(first_operation)) + " can be fused in " + STR(TreeM->CGetTreeNode(second_operation)));
-//   const auto first_delay = GetTimeLatency(first_operation, AbsControlStep(0, AbsControlStep::UNKNOWN), fu_binding::UNKNOWN);
-   const auto second_delay = GetTimeLatency(second_operation, AbsControlStep(0, AbsControlStep::UNKNOWN), fu_binding::UNKNOWN);
+//   const auto first_delay = GetTimeLatency(first_operation, fu_binding::UNKNOWN);
+   const auto second_delay = GetTimeLatency(second_operation, fu_binding::UNKNOWN);
    if(/*(first_delay.first <= epsilon and first_delay.second <= epsilon) or */ (second_delay.first <= epsilon and second_delay.second <= epsilon))
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Yes because one of the operations has zero delay");
@@ -3189,8 +3190,11 @@ bool AllocationInformation::CanBeChained(const unsigned int first_statement_inde
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--No because first is unbounded");
       return false;
    }
-   ///Load/Store from distributed memory cannot be chained
-   else if(behavioral_helper->IsLoad(second_statement_index) and is_one_cycle_direct_access_memory_unit(GetFuType(second_statement_index)) and ((Rmem->get_maximum_references(is_memory_unit(GetFuType(second_statement_index)) ? get_memory_var(GetFuType(second_statement_index)) : get_proxy_memory_var(GetFuType(second_statement_index)))) > get_number_channels(GetFuType(second_statement_index))))
+   ///Load/Store from distributed memory cannot be chained with non-zero delay operations
+   else if(GetTimeLatency(first_statement_index, CanImplementSetNotEmpty(first_statement_index) ? GetFuType(first_statement_index) : fu_binding::UNKNOWN, 0).first > 0.001 and
+           behavioral_helper->IsLoad(second_statement_index) and
+           is_one_cycle_direct_access_memory_unit(GetFuType(second_statement_index)) and
+           ((Rmem->get_maximum_references(is_memory_unit(GetFuType(second_statement_index)) ? get_memory_var(GetFuType(second_statement_index)) : get_proxy_memory_var(GetFuType(second_statement_index)))) > get_number_channels(GetFuType(second_statement_index))))
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--No because second is a load from distributed memory");
       return false;
@@ -3440,7 +3444,7 @@ CustomSet<unsigned int> AllocationInformation::GetZeroDistanceOperations(const u
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Not continuing since multi-cycle");
                continue;
             }
-            if(GetTimeLatency(current_tn_index, AbsControlStep(0, AbsControlStep::UNKNOWN), CanImplementSetNotEmpty(current_tn_index) ? GetFuType(current_tn_index) : fu_binding::UNKNOWN, 0, true).first > 0.001)
+            if(GetTimeLatency(current_tn_index, CanImplementSetNotEmpty(current_tn_index) ? GetFuType(current_tn_index) : fu_binding::UNKNOWN, 0).first > 0.001)
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Not continuing since not zero delay");
                continue;
