@@ -2818,23 +2818,22 @@ namespace clang
          {
             const auto Loc = llvm::MemoryLocation::get(inst);
             serialize_gimple_aliased_reaching_defs(startingMA, MSSA, visited, inst->getFunction(), &Loc, "vuse");
-
-            ///add possible anti-dependences
+            ///add anti-dependencies
             auto defMA = MSSA.getWalker()->getClobberingMemoryAccess(inst);
             if(MSSA.isLiveOnEntryDef(defMA) && CurrentListofMAEntryDef.find(currentFunction) != CurrentListofMAEntryDef.end())
             {
-               auto &AA = modulePass->getAnalysis<llvm::AAResultsWrapperPass>(*currentFunction).getAAResults();
                for(auto defInst : CurrentListofMAEntryDef.find(currentFunction)->second)
                {
+                  auto &AA = modulePass->getAnalysis<llvm::AAResultsWrapperPass>(*currentFunction).getAAResults();
                   llvm::ImmutableCallSite UseCS(static_cast<const llvm::Instruction*>(inst));
                   bool addVuse=false;
                   if (UseCS)
                   {
-                      const llvm::ModRefInfo I = AA.getModRefInfo(const_cast<llvm::Instruction*>(defInst), UseCS);
+                     const llvm::ModRefInfo I = AA.getModRefInfo(const_cast<llvm::Instruction*>(defInst), UseCS);
 #if __clang_major__ > 5
-                      addVuse = llvm::isModOrRefSet(I);
+                     addVuse = llvm::isModOrRefSet(I);
 #else
-                      addVuse = I != llvm::MRI_NoModRef;
+                     addVuse = I != llvm::MRI_NoModRef;
 #endif
                   }
                   else
@@ -2849,7 +2848,7 @@ namespace clang
                   }
                   if(addVuse)
                   {
-                     auto maDef = MSSA.getMemoryAccess(defInst);
+                     auto maDef = modulePass->getAnalysis<llvm::MemorySSAWrapperPass>(*currentFunction).getMSSA().getMemoryAccess(defInst);
                      assert(maDef);
                      const void* vuse=getSSA(maDef,defInst,currentFunction,false);
                      serialize_child("vuse", vuse);
@@ -2858,7 +2857,7 @@ namespace clang
             }
          }
       }
-      if(ma->getValueID()==llvm::Value::MemoryDefVal)
+      else if(ma->getValueID()==llvm::Value::MemoryDefVal)
       {
          const void* vdef=getSSA(ma,g,currentFunction,false);
          serialize_child("vdef", vdef);
