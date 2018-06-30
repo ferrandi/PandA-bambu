@@ -280,18 +280,15 @@ unsigned long long int SimulationTool::DetermineCycles(unsigned long long int &a
                THROW_ASSERT(prev_state == 3, "Something wrong happen during the reading of the profiling results");
                prev_state = 2;
                time_stamp = time_stamp - boost::lexical_cast<double>(filevalues[1]);
-               std::cerr << "time_stamp2=" << time_stamp << "\n";
             }
             else
             {
                THROW_ASSERT(prev_state == 2, "Something wrong happen during the reading of the profiling results");
                prev_state = 3;
                time_stamp = time_stamp - clock_period + boost::lexical_cast<double>(filevalues[1]);
-               std::cerr << "time_stamp=3" << time_stamp << "\n";
             }
             i++;
          }
-         std::cerr << "time_stamp" << time_stamp << "\n";
          num_cycles = static_cast<unsigned long long int>(std::round(time_stamp/clock_period));
          i = i / 2;
          PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "Simulation completed with SUCCESS; Total Execution time " << num_cycles << " cycles; Number of executions " << i << ";");
