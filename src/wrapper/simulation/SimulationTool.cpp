@@ -279,7 +279,7 @@ unsigned long long int SimulationTool::DetermineCycles(unsigned long long int &a
             {
                THROW_ASSERT(prev_state == 3, "Something wrong happen during the reading of the profiling results");
                prev_state = 2;
-               time_stamp = - boost::lexical_cast<double>(filevalues[1]);
+               time_stamp = time_stamp - boost::lexical_cast<double>(filevalues[1]);
             }
             else
             {

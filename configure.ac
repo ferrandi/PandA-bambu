@@ -1251,6 +1251,7 @@ if test "x$panda_USE_FLOPOCO" = xyes; then
    fi
    cd ext/sollya
    make
+   make install
    if test $? != 0; then
       AC_MSG_ERROR("Error in sollya compilation")
    fi
