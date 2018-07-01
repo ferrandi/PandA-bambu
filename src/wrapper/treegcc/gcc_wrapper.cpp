@@ -337,6 +337,8 @@ void GccWrapper::CompileFile(const std::string& original_file_name, std::string 
          const auto top_functions_names = Param->getOption<const std::list<std::string> >(OPT_top_functions_names);
          addPlugin = top_functions_names.size()==1;
          fname = top_functions_names.front();
+         if(fname == "main" && !compiler.is_clang)
+            addPlugin = false;
       }
 
       if(addPlugin)
