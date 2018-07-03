@@ -2521,49 +2521,6 @@ static __float32 __float32_div( __float32 a, __float32 b )
       BOOST_PP_REPEAT(UNROLL_FACTOR_F32_DIV, LOOP_BODY_F32_DIV, index);
     }
     BOOST_PP_REPEAT(BOOST_PP_MOD(13,UNROLL_FACTOR_F32_DIV), LOOP_BODY_F32_DIV, index);
-#if 0
-    for(index=0; index < 13; ++index)
-    {
-        current_sel = (((current >> 22) & 15) << 1) | MsbB;
-        q_i0 = (0xF1FFFF6C >> current_sel)&1;
-        q_i1 = (0xFE00FFD0 >> current_sel)&1;
-        q_i2 = SELECT_BIT(current_sel, 4);
-        nq_i2 = !q_i2;
-        //q_i = tableR4[current_sel];
-        q_i = (q_i2<<2)|(q_i1<<1)|q_i0;
-        positive |= (q_i1<<1)|q_i0;
-        positive <<= 2;
-        negative |= q_i2 << 1;
-        negative <<= 2;
-        switch(q_i)
-        {
-           case 1:
-              w = nbSig;
-              break;
-           case 7:
-              w = bSig;
-              break;
-           case 2:
-              w = nbSigx2;
-              break;
-           case 6:
-              w = bSigx2;
-              break;
-           case 3:
-              w = nbSigx3;
-              break;
-           case 5:
-              w = bSigx3;
-              break;
-           default: /*case 0: case 4:*/
-              w = 0;
-              break;
-        }
-        current = (current << 1)+w;
-        BIT_RESIZE(current,25);
-        current <<= 1;
-    }
-#endif
     if(current != 0)
     {
       positive |= 2;
