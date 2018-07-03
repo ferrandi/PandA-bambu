@@ -3,7 +3,7 @@ Seventh public release of PandA framework.
 
 New features introduced:
 - Added an initial support to C++/fortran high-level synthesis. Now, Ubuntu distributions require the installation of g++-multilib package.
-- Added an initial support to CLANG/LLVM compiler version 4 and 5. 
+- Added an initial support to CLANG/LLVM compiler version 4, 5 and 6. 
 - Added FPT tutorial material
 - Improved the virtual machine generation scripts
 - Improved timing constraints and timing reports
@@ -13,6 +13,9 @@ New features introduced:
 - The building system is now based on a single configure.ac.
 - Regressions are now exploiting a Jenkins based infrastructure.
 - Some performance, style, and c++ improvements have been done following the suggestions coming from cppcheck, clang static analyzer, and Codacy.
+- Single precision floating point faithfully rounded powf function implemented following the method published in:
+  Florent De Dinechin, Pedro Echeverria, Marisa Lopez-Vallejo, Bogdan Pasca. Floating-Point Exponentiation Units for Reconfigurable Computing. ACM Transactions on Reconfigurable Technology and Systems (TRETS), ACM, 2013, 6 (1), pp.4:1–4:15.
+  The does not supports subnormals.
 
 This release includes a set of fixes:
     on COND_EXPR_RESTRUCTURING step
