@@ -1,5 +1,5 @@
 #this file is libbambu/Makefile.am
-SUBDIRS = libm softfloat soft-fp pthread
+SUBDIRS = libm softfloat soft-fp pthread ac_types
 DIST_SUBDIRS = libm softfloat soft-fp pthread
 EXTRA_DIST= COPYING.LIB README_PANDA.txt bambu_macros.h
 common_libbambu_src = memcmp.c memcpy.c memmove.c memset.c memmgr.c puts.c byteswap.c read.c write.c assert.c\

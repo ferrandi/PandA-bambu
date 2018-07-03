@@ -2782,6 +2782,14 @@ void BambuParameter::CheckParameters()
       flag_cpp = false;
 
 
+   if(flag_cpp)
+   {
+      /// add -I <ac_types_dir>
+      std::string includes= "-I " + std::string(PANDA_DATA_INSTALLDIR "/panda/ac_types/include");
+      if(isOption(OPT_gcc_includes))
+         includes = getOption<std::string>(OPT_gcc_includes) + " " + includes;
+      setOption(OPT_gcc_includes, includes);
+   }
    ///add experimental setup options
    if(getOption<std::string>(OPT_experimental_setup) == "VVD")
    {
