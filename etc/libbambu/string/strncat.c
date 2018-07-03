@@ -6,7 +6,7 @@
 /* Public domain.  */
 #include <stddef.h>
 
-char *__builtin_strncat(char *__restrict dest, const char *__restrict src, size_t n)
+char *strncat(char *__restrict dest, const char *__restrict src, size_t n)
 {
   char *s = dest;
   while (*s++);

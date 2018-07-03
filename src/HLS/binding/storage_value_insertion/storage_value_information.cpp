@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -57,6 +57,7 @@
 ///tree includes
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
+#include "math_function.hpp"
 
 StorageValueInformation::StorageValueInformation(const HLS_managerConstRef _HLS_mgr, const unsigned int _function_id) :
    number_of_storage_values(0),
@@ -83,7 +84,9 @@ void StorageValueInformation::Initialize()
       if(not scalar_defs.empty())
       {
          CustomSet<unsigned int>::const_iterator it_end = scalar_defs.end();
+#if HAVE_ASSERTS
          size_t counter = 0;
+#endif
          for(CustomSet<unsigned int>::const_iterator it = scalar_defs.begin(); it != it_end; ++it)
          {
             if(tree_helper::is_ssa_name(TreeM, *it) &&
@@ -91,7 +94,9 @@ void StorageValueInformation::Initialize()
                   !tree_helper::is_parameter(TreeM, *it))
             {
                HLS->storage_value_information->vw2vertex[*it] = *ki;
+#if HAVE_ASSERTS
                ++counter;
+#endif
             }
          }
 #if HAVE_ASSERTS
@@ -151,6 +156,87 @@ int StorageValueInformation::get_compatibility_weight(unsigned int storage_value
    bool is_a_phi1 = (GET_TYPE(data, v1) & TYPE_PHI)!=0;
    vertex v2 = vw2vertex.find(var2)->second;
    bool is_a_phi2 = (GET_TYPE(data, v2) & TYPE_PHI)!=0;
+
+   // compute the successors of v1 e v2
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, 0,
+                  "-->Evaluation storage values (vars): [" +
+                  STR(HLS_mgr->get_tree_manager()->CGetTreeNode(var1)) + "]"
+                  " and [" + STR(HLS_mgr->get_tree_manager()->CGetTreeNode(var2)) + "]");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, 0,
+                  "---vertex names: [" +
+                  GET_NAME(data, v1) + "]"
+                  " and [" + GET_NAME(data, v2) + "]");
+   const auto it_succ_v1 = boost::adjacent_vertices(v1, *data);
+   const auto it_succ_v2 = boost::adjacent_vertices(v2, *data);
+
+   // check if v1 or v2 drive multiplications
+   // variable coming from the Entry vertex have to be neglected in this analysis
+   std::set<unsigned int> mult_succ_of_v1_port0, mult_succ_of_v1_port1;
+   if(!(GET_TYPE(data, v1) & TYPE_ENTRY))
+   {
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, 0,
+                     "-->Statement with USE first variable");
+      std::for_each(it_succ_v1.first, it_succ_v1.second,
+                    [this, &mult_succ_of_v1_port0, &mult_succ_of_v1_port1, &var1] (const vertex succ) {
+         const std::string op_label = data->CGetOpNodeInfo(succ)->GetOperation();
+         const unsigned int succ_id = data->CGetOpNodeInfo(succ)->GetNodeId();
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, 0,
+                        "---[" + STR(succ_id) + "] type: " + STR(op_label));
+         if ((op_label == "mult_expr"||op_label == "widen_mult_expr"))
+         {
+            std::vector<HLS_manager::io_binding_type> var_read = HLS_mgr->get_required_values(function_id, succ);
+            if(std::get<0>(var_read[0]) == var1)
+               mult_succ_of_v1_port0.insert(succ_id);
+            else if(std::get<0>(var_read[1]) == var1)
+               mult_succ_of_v1_port1.insert(succ_id);
+            else
+               THROW_ERROR("unexpected case:" + STR(succ_id) + "|" + STR(std::get<0>(var_read[0])) + ":" + STR(std::get<0>(var_read[1])));
+         }
+      });
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, 0, "<--");
+   }
+
+   std::set<unsigned int> mult_succ_of_v2_port0, mult_succ_of_v2_port1;
+   if(!(GET_TYPE(data, v2) & TYPE_ENTRY))
+   {
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, 0,
+                     "-->Statement with USE second variable");
+      std::for_each(it_succ_v2.first, it_succ_v2.second,
+                    [this, &mult_succ_of_v2_port0, &mult_succ_of_v2_port1, &var2] (const vertex succ) {
+         const std::string op_label = data->CGetOpNodeInfo(succ)->GetOperation();
+         const unsigned int succ_id = data->CGetOpNodeInfo(succ)->GetNodeId();
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, 0,
+                        "---[" + STR(succ_id) + "] type: " + STR(op_label));
+         if (op_label == "mult_expr"||op_label == "widen_mult_expr")
+         {
+            std::vector<HLS_manager::io_binding_type> var_read = HLS_mgr->get_required_values(function_id, succ);
+            if(std::get<0>(var_read[0]) == var2)
+               mult_succ_of_v2_port0.insert(succ_id);
+            else if(std::get<0>(var_read[1]) == var2)
+               mult_succ_of_v2_port1.insert(succ_id);
+            else
+               THROW_ERROR("unexpected case");
+         }
+      });
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, 0, "<--");
+   }
+
+   // Check if both pilot multipliers
+   const bool both_pilot_mult =
+         (mult_succ_of_v1_port0.empty() == false &&
+          mult_succ_of_v2_port0.empty() == false) ||
+         (mult_succ_of_v1_port1.empty() == false &&
+          mult_succ_of_v2_port1.empty() == false);
+
+
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, 0,
+                  "Both pilot multipliers: " + STR(both_pilot_mult));
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, 0, "<--");
+   if (both_pilot_mult) {
+     return 6;
+   }
+   // ------------
+
    const CustomSet<unsigned int> & ssa_read1 = data->CGetOpNodeInfo(v1)->GetVariables(FunctionBehavior_VariableType::SCALAR, FunctionBehavior_VariableAccessType::USE);
    if(is_a_phi1)
    {
@@ -221,5 +307,5 @@ int StorageValueInformation::get_compatibility_weight(unsigned int storage_value
 
 unsigned int StorageValueInformation::get_storage_value_bitsize(unsigned int storage_value_index) const
 {
-   return tree_helper::size(HLS_mgr->get_tree_manager(), get_variable_index(storage_value_index));
+   return /*resize_to_1_8_16_32_64_128_256_512*/(tree_helper::size(HLS_mgr->get_tree_manager(), get_variable_index(storage_value_index)));
 }

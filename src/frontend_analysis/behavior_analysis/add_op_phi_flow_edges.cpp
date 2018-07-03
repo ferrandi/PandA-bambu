@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -178,7 +178,7 @@ DesignFlowStep_Status AddOpPhiFlowEdges::InternalExec()
          {
             ///Approximation: we consider all conditions
             const auto gmwi = GetPointer<const gimple_multi_way_if>(last_statement);
-            for(const auto cond : gmwi->list_of_cond)
+            for(const auto& cond : gmwi->list_of_cond)
             {
                const auto cond_bb = bb_index_map.find(cond.second)->second;
                if(cond.first and ((cond.second == bb_index) or function_behavior->CheckBBReachability(cond_bb, bb_vertex)))

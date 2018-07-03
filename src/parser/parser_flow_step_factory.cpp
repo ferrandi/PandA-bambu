@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2015 Politecnico di Milano
+ *              Copyright (c) 2015-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -67,7 +67,7 @@ const std::string ParserFlowStepFactory::GetPrefix() const
    return "Parser";
 }
 
-DesignFlowStepRef ParserFlowStepFactory::CreateFlowStep(const std::string signature) const
+DesignFlowStepRef ParserFlowStepFactory::CreateFlowStep(const std::string&signature) const
 {
    THROW_ASSERT(signature.find(GetPrefix() + "::") == 0, signature);
    const auto step_to_be_created = signature.substr(GetPrefix().size() + 2);

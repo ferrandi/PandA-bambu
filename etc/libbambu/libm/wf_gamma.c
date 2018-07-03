@@ -28,7 +28,7 @@
 #endif
 extern int signgam;
 
-float __builtin_gammaf(float x)
+float gammaf(float x)
 {
 #ifdef _IEEE_LIBM
 	return __hide_ieee754_lgammaf_r(x,&signgam);
@@ -44,7 +44,7 @@ float __builtin_gammaf(float x)
 
 	    SET_HIGH_WORD(inf,0x7ff00000);	/* set inf to infinite */
 #endif
-	    if(__builtin_floorf(x)==x&&x<=(float)0.0) {
+        if(floorf(x)==x&&x<=(float)0.0) {
 		/* gammaf(-integer) or gammaf(0) */
 		exc.type = SING;
 		exc.name = "gammaf";
@@ -56,7 +56,7 @@ float __builtin_gammaf(float x)
                   exc.retval = HUGE_VAL;
 		if (_LIB_VERSION == _POSIX_)
 		  errno = EDOM;
-		else if (!__builtin_matherr(&exc)) {
+        else if (!matherr(&exc)) {
 		  errno = EDOM;
 		}
             } else {
@@ -71,7 +71,7 @@ float __builtin_gammaf(float x)
                   exc.retval = HUGE_VAL;
                 if (_LIB_VERSION == _POSIX_)
 		  errno = ERANGE;
-                else if (!__builtin_matherr(&exc)) {
+                else if (!matherr(&exc)) {
                   errno = ERANGE;
                 }
             }
@@ -85,9 +85,9 @@ float __builtin_gammaf(float x)
 
 #ifdef _DOUBLE_IS_32BITS
 
-double __builtin_gamma(double x)
+double gamma(double x)
 {
-	return (double) __builtin_gammaf((float) x);
+    return (double) gammaf((float) x);
 }
 
 #endif /* defined(_DOUBLE_IS_32BITS) */

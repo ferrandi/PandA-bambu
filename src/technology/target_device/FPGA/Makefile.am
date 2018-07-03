@@ -14,7 +14,7 @@ lib_FPGA_device_la_CPPFLAGS = \
    -I$(top_srcdir)/src/technology/target_technology \
    -I$(top_srcdir)/src/technology/target_device \
    -I$(top_srcdir)/src/utility \
-   -I$(BOOST_DIR)
+   -I$(BOOST_DIR) $(all_includes)
 
 
 noinst_HEADERS = FPGA_device.hpp

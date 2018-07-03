@@ -35,7 +35,7 @@ int __isinf(double x)
 
 }
 
-int __builtin_isinf(double x)
+int isinf(double x)
 {
     return __isinf(x);
 }

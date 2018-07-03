@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -132,7 +132,7 @@ class meilp_solver
        * 
        * @param i_coeffs
        */
-      virtual void copy(std::map<int,double> &i_coeffs);
+      virtual void copy(const std::map<int, double> &i_coeffs);
 
       /**
        * Set the lower and upper of the variables using lower_bounds and upper_bounds
@@ -200,7 +200,7 @@ class meilp_solver
        * @param i_sign is the operator in the constraints
        * @param name is the name of the constraint
        */
-      virtual void add_row(std::map<int,double> &i_coeffs, double i_rhs, ilp_sign i_sign, const std::string name) = 0;
+      virtual void add_row(std::map<int,double> &i_coeffs, double i_rhs, ilp_sign i_sign, const std::string&name) = 0;
 
       /**
        * Set the objective function
@@ -266,7 +266,7 @@ class meilp_solver
        * @param var is the index of the variables
        * @param name is the name of the variable
        */
-      virtual void set_col_name(int var, std::string name) = 0;
+      virtual void set_col_name(int var, const std::string& name) = 0;
 
       /**
        * Get name of a variable (column)
@@ -294,7 +294,7 @@ class meilp_solver
        * Set the variable priority
        * @param _priority is mapping between index variable and priority
        */
-      void set_priority(std::map<int, int> _priority);
+      void set_priority(const std::map<int, int> &_priority);
 
       /**
       * Factory static member function.
@@ -308,7 +308,7 @@ class meilp_solver
        * Print the problem
        * @param file_name is the name of the file to be written
        */
-      virtual void print_to_file(const std::string file_name) = 0;
+      virtual void print_to_file(const std::string&file_name) = 0;
 
 };
 

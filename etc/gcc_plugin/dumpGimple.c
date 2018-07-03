@@ -12,7 +12,7 @@
 *                       Politecnico di Milano - DEIB
 *                        System Architectures Group
 *             ***********************************************
-*              Copyright (c) 2004-2017 Politecnico di Milano
+*              Copyright (c) 2004-2018 Politecnico di Milano
 *
 *   This file is part of the PandA framework.
 *
@@ -2294,7 +2294,10 @@ dequeue_and_serialize ()
       if (TYPE_FIELDS(t))
          for ( op = TYPE_FIELDS (t); op; op = TREE_CHAIN(op))
          {
-            serialize_child ("flds", op);
+            if(TREE_CODE(op) == FIELD_DECL || TREE_CODE (t) == UNION_TYPE)
+               serialize_child ("flds", op);
+            else
+               serialize_child ("fncs", op);
          }
 
       if (TYPE_METHODS(t))
@@ -2425,6 +2428,8 @@ if (!POINTER_TYPE_P (TREE_TYPE (t))
       }
       if(TREE_READONLY(t) && TREE_CODE (t) != RESULT_DECL && TREE_CODE (t) != FIELD_DECL)
          serialize_string ("readonly");
+      if(TREE_CODE (t) == VAR_DECL && !TREE_ADDRESSABLE(t))
+         serialize_string ("addr_not_taken");
       break;
 
     case FUNCTION_DECL:

@@ -12,7 +12,7 @@
 *                       Politecnico di Milano - DEIB
 *                        System Architectures Group
 *             ***********************************************
-*              Copyright (c) 2004-2017 Politecnico di Milano
+*              Copyright (c) 2004-2018 Politecnico di Milano
 *
 *   This file is part of the PandA framework.
 *
@@ -109,21 +109,23 @@ std::string lut_transformation::DecToBin(unsigned long long int number)
    }
 }
 
-unsigned long long int lut_transformation::BinToDec(std::string number)
+unsigned long long int lut_transformation::BinToDec(const std::string& number)
 {
-   size_t * endptr = NULL;
    unsigned long long int i_bin = 0;
    try
    {
+      size_t * endptr = nullptr;
       i_bin = std::stoull(number,endptr,2);
    }
-   catch( std::invalid_argument e )
+   catch( const std::invalid_argument &e )
    {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Invalid Argument");
+      std::string reasonWhy = e.what();
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Invalid Argument" + reasonWhy);
    }
-   catch ( std::out_of_range  e )
+   catch ( const std::out_of_range & e )
    {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Out Of Range");
+      std::string reasonWhy = e.what();
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Out Of Range" + reasonWhy);
    }
    return i_bin;
 }
@@ -135,7 +137,7 @@ unsigned long long int lut_transformation::BinToDec(std::string number)
 * @param op0size size for shifting
 * @param bb_index index of bb where to append the concatenation
 */
-tree_nodeRef lut_transformation::CreateConcat(tree_nodeRef op0,tree_nodeRef op1, std::pair<const unsigned int, boost::shared_ptr<bloc>> bb,tree_nodeRef stm_to_append)
+tree_nodeRef lut_transformation::CreateConcat(tree_nodeRef op0,tree_nodeRef op1, std::pair<const unsigned int, blocRef> bb,tree_nodeRef stm_to_append)
 {
 
    const auto type = tree_man->CreateDefaultUnsignedLongLongInt();
@@ -158,7 +160,7 @@ tree_nodeRef lut_transformation::CreateConcat(tree_nodeRef op0,tree_nodeRef op1,
 * @param set_of_nodes set of nodes to concatenate
 * @param bb_index index of bb where to append the concatenation
 */
-tree_nodeRef lut_transformation::CreateMultiConcat( std::vector<tree_nodeRef> set_of_nodes,std::pair<const unsigned int, boost::shared_ptr<bloc>> bb, tree_nodeRef stm_to_append)
+tree_nodeRef lut_transformation::CreateMultiConcat( std::vector<tree_nodeRef> set_of_nodes, const std::pair<const unsigned int, blocRef>& bb, tree_nodeRef stm_to_append)
 {
    // Create the first concat
    std::vector<tree_nodeRef>::iterator it = set_of_nodes.begin();
@@ -187,10 +189,10 @@ tree_nodeRef lut_transformation::CreateMultiConcat( std::vector<tree_nodeRef> se
 * @param binString string of bit
 * @param indexesSet vector of indexes
 */
-unsigned long long int lut_transformation::GenerateIndexOfLutValue(std::string binString, std::vector<std::size_t> indexesSet)
+unsigned long long int lut_transformation::GenerateIndexOfLutValue(const std::string& binString, const std::vector<std::size_t>& indexesSet)
 {
    std::string result("");
-   for (std::vector<std::size_t>::iterator it=indexesSet.begin(); it != indexesSet.end(); ++it){
+   for (std::vector<std::size_t>::const_iterator it=indexesSet.begin(); it != indexesSet.end(); ++it){
       result+=(binString.substr(*it,1));
    }
    return BinToDec(result);
@@ -226,8 +228,9 @@ std::vector<tree_nodeRef> lut_transformation::CreateSetFromVector( std::vector<t
 * @param binString string of bit
 * @param sizeOfTheSet num of bit required
 */
-std::string lut_transformation::AddZeroes(std::string bitString,double sizeOfTheSet)
+std::string lut_transformation::AddZeroes(const std::string& _bitString,double sizeOfTheSet)
 {
+   std::string bitString=_bitString;
    while(bitString.size() < static_cast<std::size_t>(sizeOfTheSet)){
       bitString = "0"+ bitString;
    }
@@ -235,7 +238,7 @@ std::string lut_transformation::AddZeroes(std::string bitString,double sizeOfThe
 }
 
 
-tree_nodeRef lut_transformation::CreateGimpleAssign(const tree_nodeRef type, const tree_nodeRef op, const unsigned int bb_index, const std::string & srcp_default)
+tree_nodeRef lut_transformation::CreateGimpleAssign(const tree_nodeRef type, const tree_nodeRef op, const unsigned int bb_index, const std::string& srcp_default)
 {
    tree_nodeRef ssa_vd = tree_man->create_ssa_name(tree_nodeRef(), type);
    auto ret_value = tree_man->create_gimple_modify_stmt(ssa_vd, op, srcp_default, bb_index);
@@ -361,13 +364,13 @@ std::vector<std::size_t> lut_transformation::FindIndex( std::vector<tree_nodeRef
 * @param binaryString binary string where to find the inputs 
 * @param unmergedSet original set not merged
 * @param mergedSet merged set
-* @mergingValue value of the lut table we are mergin with the input combination of binaryString
+* @param mergingValue value of the lut table we are mergin with the input combination of binaryString
 */
-std::string lut_transformation::CreateFinalString( std::string binaryString, std::vector<tree_nodeRef> unmergedSet,std::vector<tree_nodeRef> mergedSet, std::string mergingValue )
+std::string lut_transformation::CreateFinalString(const std::string& binaryString, const std::vector<tree_nodeRef>& unmergedSet,std::vector<tree_nodeRef>& mergedSet, const std::string& mergingValue )
 {
    std::string finalString;
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Computing value of final LUT");
-   for (std::vector<tree_nodeRef>::iterator it= unmergedSet.begin(); it != unmergedSet.end(); ++it)
+   for (std::vector<tree_nodeRef>::const_iterator it= unmergedSet.begin(); it != unmergedSet.end(); ++it)
    {
       std::vector<std::size_t> indexList = FindIndex(mergedSet,*it);
       if(indexList.size() != 0)
@@ -411,9 +414,9 @@ std::vector<tree_nodeRef> lut_transformation::GetLutList(const std::vector<tree_
 * @param gimpleLutList list of gimple where the right part is a lut_expr
 * @param bb_index index of the bb to add the lut
 */
-void lut_transformation::MergeLut(std::list<tree_nodeRef> gimpleLutList,std::pair<const unsigned int, boost::shared_ptr<bloc>> bb)
+void lut_transformation::MergeLut(const std::list<tree_nodeRef>& gimpleLutList, const std::pair<const unsigned int, blocRef>& bb)
 {
-   for(const auto stmt : gimpleLutList)
+   for(const auto& stmt : gimpleLutList)
    {
       gimple_assign* consideredLutGa = GetPointer<gimple_assign>(GET_NODE(stmt));
       THROW_ASSERT(consideredLutGa, STR(stmt));
@@ -422,7 +425,7 @@ void lut_transformation::MergeLut(std::list<tree_nodeRef> gimpleLutList,std::pai
       std::vector<tree_nodeRef> expansionSet = GetInputs(consideredLut->op0);
       std::vector<tree_nodeRef>::iterator nodeToExpand  = expansionSet.begin();
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Starting analysis of: " + STR(stmt));
-      for (std::vector<tree_nodeRef>::iterator i3=expansionSet.begin(); i3 != expansionSet.end(); i3++)
+      for (std::vector<tree_nodeRef>::iterator i3=expansionSet.begin(); i3 != expansionSet.end(); ++i3)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Initial LUT support : "+STR(*i3));
 
@@ -440,7 +443,7 @@ void lut_transformation::MergeLut(std::list<tree_nodeRef> gimpleLutList,std::pai
 #endif
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering node " + STR(*nodeToExpand));
          std::vector<tree_nodeRef> inputsOfToMerge;
-         lut_expr* lutToExpand = NULL;
+         lut_expr* lutToExpand = nullptr;
          // Get the lut to expand and its inputs
          THROW_ASSERT(*nodeToExpand, "");
          if((GET_NODE(*nodeToExpand))->get_kind() == ssa_name_K)
@@ -469,10 +472,10 @@ void lut_transformation::MergeLut(std::list<tree_nodeRef> gimpleLutList,std::pai
          if(inputsOfToMerge.size() == 0)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipping becasue no more inputs");
-            nodeToExpand++;
+            ++nodeToExpand;
             continue;
          }
-         for (std::vector<tree_nodeRef>::iterator i3=inputsOfToMerge.begin(); i3 != inputsOfToMerge.end(); i3++)
+         for (std::vector<tree_nodeRef>::iterator i3=inputsOfToMerge.begin(); i3 != inputsOfToMerge.end(); ++i3)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Merging LUT support : "+STR(*i3));
 
@@ -492,14 +495,12 @@ void lut_transformation::MergeLut(std::list<tree_nodeRef> gimpleLutList,std::pai
          if(mergedSet.size() > max_lut_size)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipping becasue too many inputs");
-            nodeToExpand++;
+            ++nodeToExpand;
             continue;
          }
          expansionSet = temp_expansionSet;
          // Now create the index sets
          std::vector<std::size_t> firstOpIndexes = CreateLutIndexSet(mergedSet,inputsOfToMerge);
-         std::vector<std::size_t> secondOpIndexes = CreateLutIndexSet(mergedSet,expansionSet);
-
 
          // Get the lut values
          integer_cst* considered_lut_cost = GetPointer<integer_cst>(GET_NODE(consideredLut->op1));
@@ -510,7 +511,6 @@ void lut_transformation::MergeLut(std::list<tree_nodeRef> gimpleLutList,std::pai
          std::reverse(currentLutValueInBit.begin(),currentLutValueInBit.end());  
 
          std::string firstOpValueInBit;
-         std::string secondOpValueInBit;
 
          integer_cst* expand_lut_cost = GetPointer<integer_cst>(GET_NODE(lutToExpand->op1));
          THROW_ASSERT(expand_lut_cost, STR(lutToExpand->op1));
@@ -536,7 +536,7 @@ void lut_transformation::MergeLut(std::list<tree_nodeRef> gimpleLutList,std::pai
          std::reverse(newLutValue.begin(),newLutValue.end());
          auto newLutNumber = BinToDec(newLutValue);
          // create new concat
-         for (std::vector<tree_nodeRef>::iterator i3=mergedSet.begin(); i3 != mergedSet.end(); i3++)
+         for (std::vector<tree_nodeRef>::iterator i3=mergedSet.begin(); i3 != mergedSet.end(); ++i3)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Merged LUT support : "+STR(*i3));
 

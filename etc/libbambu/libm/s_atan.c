@@ -72,7 +72,7 @@ static const double aT[] = {
 //one   = 1.0,
 //huge   = 1.0e300;
 
-double __builtin_atan(double x)
+double atan(double x)
 {
 	double w,s1,s2,z;
 	int ix,hx,id;
@@ -82,7 +82,7 @@ double __builtin_atan(double x)
 	if(ix>=0x44100000) {	/* if |x| >= 2^66 */
 	    if(ix>0x7ff00000||
 		(ix==0x7ff00000&&(GET_LO(x)!=0)))
-		return __builtin_nan("");		/* NaN */
+        return __builtin_nan("");		/* NaN */
 	    if(hx>0) return  atanhi[3]+atanlo[3];
 	    else     return -atanhi[3]-atanlo[3];
 	} if (ix < 0x3fdc0000) {	/* |x| < 0.4375 */
@@ -91,7 +91,7 @@ double __builtin_atan(double x)
 	    }
 	    id = -1;
 	} else {
-	x = __builtin_fabs(x);
+    x = fabs(x);
 	if (ix < 0x3ff30000) {		/* |x| < 1.1875 */
 	    if (ix < 0x3fe60000) {	/* 7/16 <=|x|<11/16 */
 		id = 0; x = (2.0*x-one)/(2.0+x); 

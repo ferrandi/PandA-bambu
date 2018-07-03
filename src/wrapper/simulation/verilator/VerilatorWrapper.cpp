@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -47,6 +47,7 @@
 ///Autoheader include
 #include "config_HAVE_EXPERIMENTAL.hpp"
 #include "config_HAVE_VERILATOR.hpp"
+#include "config_HAVE_L2_NAME.hpp"
 
 ///Constants include
 #include "file_IO_constants.hpp"
@@ -97,7 +98,7 @@ void VerilatorWrapper::CheckExecution()
 
 void VerilatorWrapper::GenerateScript(std::ostringstream& script, const std::string& top_filename, const std::list<std::string> & file_list)
 {
-   for(const auto file : file_list)
+   for(const auto& file : file_list)
       if(file.find(".vhd") != std::string::npos)
          THROW_ERROR_CODE(NODE_NOT_YET_SUPPORTED_EC, "Mixed simulation not supported by Verilator");
    bool generate_vcd_output = (Param->isOption(OPT_generate_vcd) && Param->getOption<bool>(OPT_generate_vcd)) ||
@@ -106,13 +107,19 @@ void VerilatorWrapper::GenerateScript(std::ostringstream& script, const std::str
    const std::string output_directory = Param->getOption<std::string>(OPT_output_directory);
    log_file = SIM_SUBDIR + suffix + "/" + top_filename + "_verilator.log";
 #if HAVE_EXPERIMENTAL
-   script << "verilator --cc --exe --Mdir " + SIM_SUBDIR + suffix + "/verilator_obj -Wall -Wno-DECLFILENAME -Wno-WIDTH -Wno-UNUSED -Wno-CASEINCOMPLETE -Wno-UNOPTFLAT -Wno-PINMISSING -Wno-UNDRIVEN -Wno-SYNCASYNCNET -Ox -sv";
+   script << "verilator --cc --exe --Mdir " + SIM_SUBDIR + suffix + "/verilator_obj -Wall -Wno-DECLFILENAME -Wno-WIDTH -Wno-UNUSED -Wno-CASEINCOMPLETE -Wno-UNOPTFLAT -Wno-PINMISSING -Wno-UNDRIVEN -Wno-SYNCASYNCNET -sv";
 #else
-   script << "verilator --cc --exe --Mdir " + SIM_SUBDIR + suffix + "/verilator_obj -Wno-fatal -Wno-lint -Ox -sv";
+   script << "verilator --cc --exe --Mdir " + SIM_SUBDIR + suffix + "/verilator_obj -Wno-fatal -Wno-lint -sv";
+   script << " -O3";
 #endif
    if(generate_vcd_output)
+   {
       script << " --trace --trace-underscore"; // --trace-params
-   for(auto const file : file_list)
+#if HAVE_L2_NAME
+      script << " --l2-name v";
+#endif
+   }
+   for(const auto& file : file_list)
       script << " " << file;
    script << " " << output_directory + "/simulation/testbench_" + top_filename << "_tb.v";
    script << " --top-module " << top_filename << "_tb";
@@ -124,6 +131,9 @@ void VerilatorWrapper::GenerateScript(std::ostringstream& script, const std::str
    script << "ln -s ../../../"+ output_directory +" " + SIM_SUBDIR + suffix + "/verilator_obj\n";
 
    script << "make -C " + SIM_SUBDIR + suffix + "/verilator_obj -j4 OPT_FAST=\"-O1 -fstrict-aliasing\" -f V"+ top_filename +"_tb.mk V"+ top_filename << "_tb";
+#ifdef _WIN32
+   script << " CFG_CXXFLAGS_NO_UNUSED=\"\"";
+#endif
    script << std::endl << std::endl;
 
    script << SIM_SUBDIR + suffix + "/verilator_obj/V"+top_filename+"_tb";

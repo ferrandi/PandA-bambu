@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -67,7 +67,7 @@ protected:
 
 public:
 
-  problem_dim(const meilp_solverRef & ms);
+  explicit problem_dim(const meilp_solverRef & ms);
   
   virtual void print(std::ostream& os) const = 0;
   

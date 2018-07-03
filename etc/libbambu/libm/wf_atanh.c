@@ -29,7 +29,7 @@
 #include <errno.h>
 #endif
 
-float __builtin_atanhf(float x)		/* wrapper atanhf */
+float atanhf(float x)		/* wrapper atanhf */
 {
 #ifdef _IEEE_LIBM
 	return __hide_ieee754_atanhf(x);
@@ -37,8 +37,8 @@ float __builtin_atanhf(float x)		/* wrapper atanhf */
 	float z,y;
 	struct exception exc;
 	z = __hide_ieee754_atanhf(x);
-	if(_LIB_VERSION == _IEEE_ || __builtin_isnan(x)) return z;
-	y = __builtin_fabsf(x);
+    if(_LIB_VERSION == _IEEE_ || isnan(x)) return z;
+    y = fabsf(x);
 	if(y>=(float)1.0) {
 	    if(y>(float)1.0) {
                 /* atanhf(|x|>1) */
@@ -49,7 +49,7 @@ float __builtin_atanhf(float x)		/* wrapper atanhf */
                 exc.retval = 0.0/0.0;
                 if (_LIB_VERSION == _POSIX_)
                   errno = EDOM;
-                else if (!__builtin_matherr(&exc)) {
+                else if (!matherr(&exc)) {
                   errno = EDOM;
                 }
 	    } else { 
@@ -61,7 +61,7 @@ float __builtin_atanhf(float x)		/* wrapper atanhf */
 		exc.retval = x/0.0;	/* sign(x)*inf */
                 if (_LIB_VERSION == _POSIX_)
                   errno = EDOM;
-                else if (!__builtin_matherr(&exc)) {
+                else if (!matherr(&exc)) {
                   errno = EDOM;
                 }
             }
@@ -75,9 +75,9 @@ float __builtin_atanhf(float x)		/* wrapper atanhf */
 
 #ifdef _DOUBLE_IS_32BITS
 
-double __builtin_atanh(double x)
+double atanh(double x)
 {
-	return (double) __builtin_atanhf((float) x);
+    return (double) atanhf((float) x);
 }
 
 #endif /* defined(_DOUBLE_IS_32BITS) */

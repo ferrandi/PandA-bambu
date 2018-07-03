@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -118,6 +118,7 @@ void yyerror
    const DiscrepancyFlexLexerRef lexer,
    const char *s
 );
+#ifndef __clang_analyzer__
 
 %}
 
@@ -266,8 +267,8 @@ context_id  : CALL_ID UNUMBER CONTEXT LL_UNUMBER CALLED_ID UNUMBER
 
                THROW_ASSERT(Discr->unfolded_v_to_scope.find(vertex_stack.top()) !=
                      Discr->unfolded_v_to_scope.end(),
-                     "can't find scope for new vertex " +
-                     Cget_node_info<UnfoldedFunctionInfo>(vertex_stack.top(), Discr->DiscrepancyCallGraph)->f_id);
+                     std::string("can't find scope for new vertex ") +
+                     STR(Cget_node_info<UnfoldedFunctionInfo>(vertex_stack.top(), Discr->DiscrepancyCallGraph)->f_id));
 
                Discr->context_to_scope[new_context] = Discr->unfolded_v_to_scope.at(vertex_stack.top());
             };
@@ -382,13 +383,13 @@ assign_data : ASSIGNMENT SSA_ID UNUMBER SEMI SSA IDENTIFIER SEMI BITSIZE UNUMBER
                   $$.type |= DISCR_ADDR;
             };
 %%
-
+#endif
 void discrepancy_parseY(const std::string & fname, DiscrepancyRef Discr)
 {
    fileIO_istreamRef in_f = fileIO_istream_open(fname);
    if(in_f->fail())
       THROW_ERROR(std::string("Failed opening discrepancy data file: ") + fname);
-   const DiscrepancyFlexLexerRef lexer(new DiscrepancyFlexLexer(in_f.get(), 0));
+   const DiscrepancyFlexLexerRef lexer(new DiscrepancyFlexLexer(in_f.get(), nullptr));
 #if YYDEBUG
     yydebug = 1;
 #endif

@@ -26,7 +26,7 @@
  * ilogb(NaN) = 0x80000000 (no signal is raised)
  */
 
-int __builtin_ilogb(double x)
+int ilogb(double x)
 {
 	int hx,lx,ix;
 

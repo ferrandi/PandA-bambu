@@ -64,7 +64,7 @@ double __hide_ieee754_hypot(double x, double y)
 	k=0;
 	if(ha > 0x5f300000) {	/* a>2**500 */
 	   if(ha >= 0x7ff00000) {	/* Inf or NaN */
-	       w = __builtin_nan("");	/* for sNaN */
+           w = __builtin_nan("");	/* for sNaN */
 	       if(((ha&0xfffff)|GET_LO(a))==0) w = a;
 	       if(((hb^0x7ff00000)|GET_LO(b))==0) w = b;
 	       return w;
@@ -96,7 +96,7 @@ double __hide_ieee754_hypot(double x, double y)
 	    t1 = 0;
 	    SET_HIGH_WORD(t1, ha);
 	    t2 = a-t1;
-	    w  = __builtin_sqrt(t1*t1-(b*(-b)-t2*(a+t1)));
+        w  = sqrt(t1*t1-(b*(-b)-t2*(a+t1)));
 	} else {
 	    a  = a+a;
 	    y1 = 0;
@@ -105,7 +105,7 @@ double __hide_ieee754_hypot(double x, double y)
 	    t1 = 0;
 	    SET_HIGH_WORD(t1, ha+0x00100000);
 	    t2 = a - t1;
-	    w  = __builtin_sqrt(t1*y1-(w*(-w)-(t1*y2+t2*b)));
+        w  = sqrt(t1*y1-(w*(-w)-(t1*y2+t2*b)));
 	}
 	if(k!=0) {
 	    t1 = 1.0;
@@ -117,7 +117,7 @@ double __hide_ieee754_hypot(double x, double y)
 /*
  * wrapper hypot(x,y)
  */
-double __builtin_hypot(double x, double y)/* wrapper hypot */
+double hypot(double x, double y)/* wrapper hypot */
 {
 #ifdef _IEEE_LIBM
 	return __hide_ieee754_hypot(x,y);

@@ -12,7 +12,12 @@ import signal
 import subprocess
 import sys
 import threading
-import xml.dom.minidom
+try:
+    from defusedxml import minidom
+except ImportError:
+    print>>sys.stderr, 'WARNING: pyhon-defusedxml not available, falling back to unsafe standard libraries...'
+    from xml.dom import minidom
+
 from collections import deque
 
 line_index = 0
@@ -66,6 +71,9 @@ def execute_tests(named_list,thread_index):
         failed_output_file_name = os.path.join(cwd, args.tool + "_failed_output")
         if os.path.exists(failed_output_file_name):
             os.remove(failed_output_file_name)
+        timing_violation_report_file_name = os.path.join(cwd, "HLS_output/Synthesis/timing_violation_report")
+        if os.path.exists(timing_violation_report_file_name):
+            os.remove(timing_violation_report_file_name)
         tool_return_value_file_name = os.path.join(cwd, args.tool + "_return_value")
         if args.restart and os.path.exists(os.path.join(cwd, args.tool + "_return_value")):
             tool_return_value_file = open(tool_return_value_file_name, "r")
@@ -132,7 +140,7 @@ def execute_tests(named_list,thread_index):
             tool_results_file_name = os.path.join(cwd, args.tool + "_results")
             tool_results_file = open(tool_results_file_name, "w")
             tool_results_string = ""
-            xml_document = xml.dom.minidom.parse(os.path.join(cwd, args.tool + "_results_0.xml"))
+            xml_document = minidom.parse(os.path.join(cwd, args.tool + "_results_0.xml"))
             if len(xml_document.getElementsByTagName("CYCLES")) > 0:
                 cycles_tag = xml_document.getElementsByTagName("CYCLES")[0]
                 tool_results_string = tool_results_string + cycles_tag.attributes["value"].value + " CYCLES"
@@ -144,6 +152,17 @@ def execute_tests(named_list,thread_index):
         if not (failure and args.stop) or (return_value != -9 and return_value != 0):
             if return_value != 0:
                 shutil.copy(output_file_name, str(os.path.join(os.path.dirname(output_file_name), args.tool + "_failed_output")))
+            if os.path.exists(timing_violation_report_file_name):
+                annotated_timing_violation_report_file = open(os.path.join(cwd, "timing_violation_report"), "w")
+                annotated_timing_violation_report_file.write("#" * 80 + "\n")
+                annotated_timing_violation_report_file.write("cd " + cwd + "; ")
+                annotated_timing_violation_report_file.write(local_command + "\n")
+                annotated_timing_violation_report_file.write("#" * 80 + "\n")
+                annotated_timing_violation_report_file.flush()
+                timing_violation_report_file = open(timing_violation_report_file_name)
+                annotated_timing_violation_report_file.write(timing_violation_report_file.read())
+                timing_violation_report_file.close()
+                annotated_timing_violation_report_file.close()
             with lock:
                 total_benchmark += 1
                 if return_value == 0:
@@ -210,6 +229,15 @@ def CollectResults(directory):
                 tool_failed_output.write("\n")
                 tool_failed_output.write("\n")
     tool_failed_output.close()
+    timing_violation_report = open(os.path.join(directory, "timing_violation_report"), "w")
+    for subdir in subdirs:
+        if os.path.exists(os.path.join(directory, subdir, "timing_violation_report")):
+            timing_violation_report.write(open(os.path.join(directory, subdir, "timing_violation_report")).read())
+            if os.path.exists(os.path.join(directory, subdir, args.tool + "_execution_output")):
+                timing_violation_report.write("\n")
+                timing_violation_report.write("\n")
+                timing_violation_report.write("\n")
+    timing_violation_report.close()
     report_file = open(os.path.join(directory, "report"), "w")
     for subdir in subdirs:
         if os.path.exists(os.path.join(directory, subdir, args.tool + "_return_value")):
@@ -348,10 +376,7 @@ def CreatePerfPublisherBody(directory,pp_file):
     if os.path.exists(os.path.join(directory, args.tool + "_return_value")) or os.listdir(directory) == []:
         return
     subdirs = [s for s in sorted(os.listdir(directory)) if os.path.isdir(os.path.join(directory,s)) and s != "panda-temp" and s != "HLS_output"]
-    print_testsuite = False
     for subdir in subdirs:
-        if os.path.exists(os.path.join(directory, subdir, args.tool + "_return_value")):
-            print_testsuite = True
         CreatePerfPublisherBody(os.path.join(directory, subdir),pp_file)
 
     for subdir in subdirs:
@@ -376,12 +401,11 @@ def CreatePerfPublisherBody(directory,pp_file):
                 dsps_tag = ""
                 brams_tag = ""
                 period_tag = ""
-                dsps_tag = ""
                 slack_tag = ""
                 frequency_tag = ""
                 HLS_execution_time_tag = ""
                 if os.path.exists(os.path.join(directory, subdir, args.tool + "_results_0.xml")):
-                    xml_document = xml.dom.minidom.parse(os.path.join(directory, subdir, args.tool + "_results_0.xml"))
+                    xml_document = minidom.parse(os.path.join(directory, subdir, args.tool + "_results_0.xml"))
                     if len(xml_document.getElementsByTagName("CYCLES")) > 0:
                         cycles_tag = str(xml_document.getElementsByTagName("CYCLES")[0].attributes["value"].value)
                     if len(xml_document.getElementsByTagName("AREAxTIME")) > 0:
@@ -405,30 +429,30 @@ def CreatePerfPublisherBody(directory,pp_file):
                     if len(xml_document.getElementsByTagName("HLS_execution_time")) > 0:
                         HLS_execution_time_tag = str(xml_document.getElementsByTagName("HLS_execution_time")[0].attributes["value"].value)
 
-                if cycles_tag != "":
+                if cycles_tag != "" and cycles_tag != "inf":
                     pp_file.write("      <performance unit=\"cycles\" mesure=\""+ cycles_tag + "\" isRelevant=\"true\"/>\n")
                 if HLS_execution_time_tag != "":
                     pp_file.write("      <executiontime unit=\"s\" mesure=\""+ HLS_execution_time_tag + "\" isRelevant=\"true\"/>\n")
 
-                if areatime_tag != "" or slice_tag != "" or sliceluts_tag != "" or registers_tag != "" or dsps_tag != "" or brams_tag != "" or period_tag != "" or  dsps_tag != "" or slack_tag != "" or frequency_tag != "":
+                if (areatime_tag != "" and  areatime_tag != "inf") or (slice_tag != "" and slice_tag != "inf") or (sliceluts_tag != "" and sliceluts_tag != "inf") or (registers_tag != "" and registers_tag != "inf") or (dsps_tag != "" and dsps_tag != "inf") or (brams_tag != "" and brams_tag != "inf") or (period_tag != "" and period_tag != "inf") or (slack_tag != "" and slack_tag != "inf") or (frequency_tag != "" and frequency_tag != "inf"):
                     pp_file.write("      <metrics>\n")
-                    if areatime_tag != "":
+                    if areatime_tag != "" and areatime_tag != "inf":
                         pp_file.write("        <areatime unit=\"lutxns\" mesure=\""+ areatime_tag + "\" isRelevant=\"true\"/>\n")
-                    if slice_tag != "":
+                    if slice_tag != "" and slice_tag != "inf":
                         pp_file.write("        <slices unit=\"ns\" mesure=\""+ slice_tag + "\" isRelevant=\"true\"/>\n")
-                    if sliceluts_tag != "":
+                    if sliceluts_tag != "" and sliceluts_tag != "inf":
                         pp_file.write("        <sliceluts unit=\"slice\" mesure=\""+ sliceluts_tag + "\" isRelevant=\"true\"/>\n")
-                    if registers_tag != "":
+                    if registers_tag != "" and registers_tag != "inf":
                         pp_file.write("        <registers unit=\"registers\" mesure=\""+ registers_tag + "\" isRelevant=\"true\"/>\n")
-                    if dsps_tag != "":
+                    if dsps_tag != "" and dsps_tag != "inf":
                         pp_file.write("        <dsps unit=\"dsp\" mesure=\""+ dsps_tag + "\" isRelevant=\"true\"/>\n")
-                    if brams_tag != "":
+                    if brams_tag != "" and brams_tag != "inf":
                         pp_file.write("        <brams unit=\"bram\" mesure=\""+ brams_tag + "\" isRelevant=\"true\"/>\n")
-                    if period_tag != "":
+                    if period_tag != "" and period_tag != "inf":
                         pp_file.write("        <period unit=\"ns\" mesure=\""+ period_tag + "\" isRelevant=\"true\"/>\n")
-                    if slack_tag != "":
+                    if slack_tag != "" and slack_tag != "inf":
                         pp_file.write("        <slack unit=\"ns\" mesure=\""+ slack_tag + "\" isRelevant=\"true\"/>\n")
-                    if frequency_tag != "":
+                    if frequency_tag != "" and frequency_tag != "inf":
                         pp_file.write("        <frequency unit=\"MHz\" mesure=\""+ frequency_tag + "\" isRelevant=\"true\"/>\n")
                     pp_file.write("      </metrics>\n")
             else:

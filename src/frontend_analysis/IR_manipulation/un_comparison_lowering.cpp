@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2016-2017 Politecnico di Milano
+ *              Copyright (c) 2016-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -54,6 +54,7 @@
 #include "tree_manipulation.hpp"
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
+#include "tree_helper.hpp"
 
 UnComparisonLowering::UnComparisonLowering(const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters) :
    FunctionFrontendFlowStep(_AppM, _function_id, UN_COMPARISON_LOWERING, _design_flow_manager, _parameters)
@@ -99,10 +100,10 @@ DesignFlowStep_Status UnComparisonLowering::InternalExec()
    tree_nodeRef Scpe = TreeM->GetTreeReindex(function_id);
    function_decl * fd = GetPointer<function_decl>(curr_tn);
    statement_list * sl = GetPointer<statement_list>(GET_NODE(fd->body));
-   for(const auto block : sl->list_of_bloc)
+   for(const auto& block : sl->list_of_bloc)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing BB" + STR(block.first));
-      for(const auto stmt : block.second->CGetStmtList())
+      for(const auto& stmt : block.second->CGetStmtList())
       {
          auto ga = GetPointer<gimple_assign>(GET_NODE(stmt));
          if(not ga)
@@ -115,10 +116,14 @@ DesignFlowStep_Status UnComparisonLowering::InternalExec()
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped" + STR(stmt));
             continue;
          }
-         if(be->get_kind() == unlt_expr_K or be->get_kind() == unge_expr_K or be->get_kind() == ungt_expr_K or be->get_kind() == unle_expr_K)
+         if(be->get_kind() == unlt_expr_K or
+               be->get_kind() == unge_expr_K or
+               be->get_kind() == ungt_expr_K or
+               be->get_kind() == unle_expr_K or
+               be->get_kind() == ltgt_expr_K)
          {
             const std::string srcp_string = be->include_name + ":" + STR(be->line_number) + ":" + STR(be->column_number);
-            enum kind new_kind;
+            enum kind new_kind=last_tree_K;
             if(be->get_kind() == unlt_expr_K)
                new_kind = ge_expr_K;
             else if(be->get_kind() == unge_expr_K)
@@ -127,16 +132,29 @@ DesignFlowStep_Status UnComparisonLowering::InternalExec()
                new_kind = le_expr_K;
             else if(be->get_kind() == unle_expr_K)
                new_kind = gt_expr_K;
+            else if(be->get_kind() == ltgt_expr_K)
+               new_kind = eq_expr_K;
             else
                THROW_UNREACHABLE("");
-            auto new_be = tree_man->create_binary_operation(be->type, be->op0, be->op1, srcp_string, new_kind);
-            auto new_ssa = tree_man->create_ssa_name(sn->var, sn->type);
+            auto booleanType = tree_man->create_boolean_type();
+            auto new_be = tree_man->create_binary_operation(booleanType, be->op0, be->op1, srcp_string, new_kind);
+            auto new_ssa = tree_man->create_ssa_name(sn->var, booleanType);
             auto new_ga = tree_man->create_gimple_modify_stmt(new_ssa, new_be, srcp_string, 0);
             block.second->PushBefore(new_ga, stmt);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created " + STR(new_ga));
-            auto new_not = tree_man->create_unary_operation(be->type, new_ssa, srcp_string, truth_not_expr_K);
-            TreeM->ReplaceTreeNode(stmt, ga->op1, new_not);
+            auto new_not = tree_man->create_unary_operation(booleanType, new_ssa, srcp_string, truth_not_expr_K);
+            if (GET_INDEX_NODE(be->type) != GET_INDEX_NODE(booleanType))
+            {
+                auto new_ssa_not = tree_man->create_ssa_name(sn->var, booleanType);
+                auto new_ga_not = tree_man->create_gimple_modify_stmt(new_ssa_not, new_not, srcp_string, 0);
+                block.second->PushBefore(new_ga_not, stmt);
+                auto new_nop = tree_man->create_unary_operation(be->type, new_ssa_not, srcp_string, nop_expr_K);
+                TreeM->ReplaceTreeNode(stmt, ga->op1, new_nop);
+            }
+            else
+               TreeM->ReplaceTreeNode(stmt, ga->op1, new_not);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Transformed into " + STR(stmt));
+            modified = true;
          }
          else
          {

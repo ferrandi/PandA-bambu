@@ -11,7 +11,7 @@
  *                     Politecnico di Milano - DEIB
  *                      System Architectures Group
  *           ***********************************************
- *            Copyright (c) 2004-2017 Politecnico di Milano
+ *            Copyright (c) 2004-2018 Politecnico di Milano
  *
  * This file is part of the PandA framework.
  *
@@ -70,7 +70,7 @@ HWCallInjection::InternalExec()
    statement_list * sl = GetPointer<statement_list>(GET_NODE(fd->body));
    THROW_ASSERT(sl, "Body is not a statement_list");
 
-   for(const auto block : sl->list_of_bloc)
+   for(const auto& block : sl->list_of_bloc)
    {
       const auto list_of_stmt = block.second->CGetStmtList();
       auto stmt = list_of_stmt.begin();

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -312,7 +312,7 @@ class application_manager
        * @param step is the name of the step in which the transformation is applied
        * @param new_tn is the tree node to be created
        */
-      void RegisterTransformation(const std::string step, const tree_nodeConstRef new_tn);
+      void RegisterTransformation(const std::string&step, const tree_nodeConstRef new_tn);
 #endif
 };
 ///refcount definition of the class

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2015-2017 Politecnico di Milano
+ *              Copyright (c) 2015-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -62,7 +62,7 @@ bool GenericObjSorter::operator()(const generic_objRef x, const generic_objRef y
 GenericObjUnsignedIntSorter::GenericObjUnsignedIntSorter()
 {}
 
-bool GenericObjUnsignedIntSorter::operator()(const std::pair<generic_objRef,int> x, const std::pair<generic_objRef,int> y) const
+bool GenericObjUnsignedIntSorter::operator()(const std::pair<generic_objRef,int> &x, const std::pair<generic_objRef,int> &y) const
 {
    if(x.first == y.first)
       return x.second < y.second; 

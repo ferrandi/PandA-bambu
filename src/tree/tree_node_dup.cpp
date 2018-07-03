@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -89,7 +89,7 @@
 
 unsigned int  tree_node_dup::create_tree_node(const tree_nodeRef &tn)
 {
-   unsigned int node_id;
+   unsigned int node_id=0;
    switch(tn->get_kind())
    {
       case abs_expr_K:
@@ -611,6 +611,7 @@ void tree_node_dup::operator()(const attr* obj, unsigned int & mask)
 {
    THROW_ASSERT(obj==dynamic_cast<attr*>(curr_tree_node_ptr), "wrong factory setup");
    tree_node_mask::operator()(obj,mask);
+   // cppcheck-suppress unusedVariable
    bool attr_p;
 
 #define ATTR_SEQ (TOK_NEW) (TOK_DELETE) (TOK_ASSIGN) (TOK_MEMBER) (TOK_PUBLIC) (TOK_PROTECTED) (TOK_PRIVATE) (TOK_NORETURN)\
@@ -657,7 +658,7 @@ if(GetPointer<type>(source_tn)->field)\
 #define SEQ_SET_NODE_ID(list_field,type) \
 if(!GetPointer<type>(source_tn)->list_field.empty())\
 {\
-   for (auto const field : GetPointer<type>(source_tn)->list_field)\
+   for (auto const& field : GetPointer<type>(source_tn)->list_field)\
    {\
       unsigned int node_id = field->index;\
       if(remap.find(node_id) != remap.end())\
@@ -698,7 +699,7 @@ if(!GetPointer<type>(source_tn)->list_field.empty())\
 if(!GetPointer<type>(source_tn)->list_field.empty())\
 {\
    std::list<tree_nodeRef>::const_iterator vend = GetPointer<type>(source_tn)->list_field.end();\
-   for (std::list<tree_nodeRef>::const_iterator i = GetPointer<type>(source_tn)->list_field.begin(); i != vend; i++)\
+   for (std::list<tree_nodeRef>::const_iterator i = GetPointer<type>(source_tn)->list_field.begin(); i != vend; ++i)\
    {\
       unsigned int node_id = GET_INDEX_NODE(*i);\
       if(remap.find(node_id) != remap.end())\
@@ -894,7 +895,7 @@ void tree_node_dup::operator()(const binfo* obj, unsigned int & mask)
    if(!GetPointer<binfo>(source_tn)->list_of_access_binf.empty())
    {
       std::vector<std::pair< TreeVocabularyTokenTypes_TokenEnum, tree_nodeRef> >::const_iterator vend = GetPointer<binfo>(source_tn)->list_of_access_binf.end();
-      for (std::vector<std::pair< TreeVocabularyTokenTypes_TokenEnum, tree_nodeRef> >::const_iterator i = GetPointer<binfo>(source_tn)->list_of_access_binf.begin(); i != vend; i++)
+      for (std::vector<std::pair< TreeVocabularyTokenTypes_TokenEnum, tree_nodeRef> >::const_iterator i = GetPointer<binfo>(source_tn)->list_of_access_binf.begin(); i != vend; ++i)
       {
          unsigned int node_id = GET_INDEX_NODE(i->second);
          THROW_ASSERT(remap.find(node_id) != remap.end(), "missing an index");
@@ -1003,7 +1004,7 @@ void tree_node_dup::operator()(const constructor* obj, unsigned int & mask)
    if(!GetPointer<constructor>(source_tn)->list_of_idx_valu.empty())
    {
       std::vector<std::pair< tree_nodeRef, tree_nodeRef> >::const_iterator vend = GetPointer<constructor>(source_tn)->list_of_idx_valu.end();
-      for (std::vector<std::pair< tree_nodeRef, tree_nodeRef> >::const_iterator i = GetPointer<constructor>(source_tn)->list_of_idx_valu.begin(); i != vend; i++)
+      for (std::vector<std::pair< tree_nodeRef, tree_nodeRef> >::const_iterator i = GetPointer<constructor>(source_tn)->list_of_idx_valu.begin(); i != vend; ++i)
       {
          unsigned int node_id1 = i->first ? GET_INDEX_NODE(i->first) : 0;
          unsigned int node_id2 = GET_INDEX_NODE(i->second);
@@ -1059,7 +1060,7 @@ void tree_node_dup::operator()(const function_decl* obj, unsigned int & mask)
    if(!GetPointer<function_decl>(source_tn)->list_of_op_names.empty())
    {
       std::vector<std::string>::const_iterator vend = GetPointer<function_decl>(source_tn)->list_of_op_names.end();
-      for (std::vector<std::string>::const_iterator i = GetPointer<function_decl>(source_tn)->list_of_op_names.begin(); i != vend; i++)
+      for (std::vector<std::string>::const_iterator i = GetPointer<function_decl>(source_tn)->list_of_op_names.begin(); i != vend; ++i)
       {
          dynamic_cast<function_decl*>(curr_tree_node_ptr)->add(*i);
       }
@@ -1209,7 +1210,7 @@ void tree_node_dup::operator()(const gimple_phi* obj, unsigned int & mask)
    tree_node_mask::operator()(obj,mask);
 
    SET_NODE_ID(res,gimple_phi);
-   for(const auto def_edge : GetPointer<gimple_phi>(source_tn)->CGetDefEdgesList())
+   for(const auto& def_edge : GetPointer<gimple_phi>(source_tn)->CGetDefEdgesList())
    {
       unsigned int node_id = GET_INDEX_NODE(def_edge.first);
       if(remap.find(node_id) != remap.end())
@@ -1321,7 +1322,7 @@ void tree_node_dup::operator()(const ssa_name* obj, unsigned int & mask)
    SET_VALUE(volatile_flag,ssa_name);
    SET_VALUE(virtual_flag,ssa_name);
    SET_VALUE(default_flag,ssa_name);
-   for(const auto def_stmt : obj->CGetDefStmts())
+   for(const auto& def_stmt : obj->CGetDefStmts())
    {
       dynamic_cast<ssa_name *>(curr_tree_node_ptr)->AddDefStmt(def_stmt);
    }
@@ -1336,7 +1337,7 @@ void tree_node_dup::operator()(const statement_list* obj, unsigned int & mask)
    tree_node_mask::operator()(obj,mask);
    LSEQ_SET_NODE_ID(list_of_stmt,statement_list);
    std::map<unsigned int, blocRef>::const_iterator mend = GetPointer<statement_list>(source_tn)->list_of_bloc.end();
-   for (std::map<unsigned int, blocRef>::const_iterator i = GetPointer<statement_list>(source_tn)->list_of_bloc.begin(); i != mend; i++)
+   for (std::map<unsigned int, blocRef>::const_iterator i = GetPointer<statement_list>(source_tn)->list_of_bloc.begin(); i != mend; ++ i)
    {
       curr_bloc = new bloc(i->first);
       source_bloc = i->second;
@@ -1449,6 +1450,8 @@ void tree_node_dup::operator()(const var_decl* obj, unsigned int & mask)
    SET_VALUE(use_tmpl,var_decl);
    SET_VALUE(static_static_flag,var_decl);
    SET_VALUE(extern_flag,var_decl);
+   SET_VALUE(addr_taken,var_decl);
+   SET_VALUE(addr_not_taken,var_decl);
    SET_VALUE(static_flag,var_decl);
    SET_NODE_ID(init,var_decl);
    SET_NODE_ID(size,var_decl);
@@ -1535,14 +1538,14 @@ void tree_node_dup::operator()(const bloc* obj, unsigned int & mask)
    curr_bloc->list_of_succ = source_bloc->list_of_succ;
    curr_bloc->true_edge = source_bloc->true_edge;
    curr_bloc->false_edge = source_bloc->false_edge;
-   for(const auto phi : source_bloc->CGetPhiList())
+   for(const auto& phi : source_bloc->CGetPhiList())
    {
       unsigned int node_id = GET_INDEX_NODE(phi);
       THROW_ASSERT(remap.find(node_id) != remap.end(), "missing an index");
       node_id = remap.find(node_id)->second;
       curr_bloc->AddPhi(TM->GetTreeReindex(node_id));
    }
-   for(const auto stmt : source_bloc->CGetStmtList())
+   for(const auto& stmt : source_bloc->CGetStmtList())
    {
       unsigned int node_id = GET_INDEX_NODE(stmt);
       THROW_ASSERT(remap.find(node_id) != remap.end(), "missing an index");
@@ -1622,7 +1625,7 @@ void tree_node_dup::operator()(const omp_parallel_pragma* obj, unsigned int & ma
    if(!GetPointer<omp_parallel_pragma>(source_tn)->clauses.empty())
    {
       std::unordered_map<std::string, std::string>::const_iterator vend = GetPointer<omp_parallel_pragma>(source_tn)->clauses.end();
-      for (std::unordered_map<std::string, std::string>::const_iterator i = GetPointer<omp_parallel_pragma>(source_tn)->clauses.begin(); i != vend; i++)
+      for (std::unordered_map<std::string, std::string>::const_iterator i = GetPointer<omp_parallel_pragma>(source_tn)->clauses.begin(); i != vend; ++i)
       {
          dynamic_cast<omp_parallel_pragma*>(curr_tree_node_ptr)->clauses[i->first] = i->second;
       }
@@ -1636,7 +1639,7 @@ void tree_node_dup::operator()(const omp_for_pragma* obj, unsigned int & mask)
    if(!GetPointer<omp_for_pragma>(source_tn)->clauses.empty())
    {
       std::unordered_map<std::string, std::string>::const_iterator vend = GetPointer<omp_for_pragma>(source_tn)->clauses.end();
-      for (std::unordered_map<std::string, std::string>::const_iterator i = GetPointer<omp_for_pragma>(source_tn)->clauses.begin(); i != vend; i++)
+      for (std::unordered_map<std::string, std::string>::const_iterator i = GetPointer<omp_for_pragma>(source_tn)->clauses.begin(); i != vend; ++i)
       {
          dynamic_cast<omp_for_pragma*>(curr_tree_node_ptr)->clauses[i->first] = i->second;
       }
@@ -1650,7 +1653,7 @@ void tree_node_dup::operator()(const omp_simd_pragma* obj, unsigned int & mask)
    if(!GetPointer<omp_simd_pragma>(source_tn)->clauses.empty())
    {
       std::unordered_map<std::string, std::string>::const_iterator vend = GetPointer<omp_simd_pragma>(source_tn)->clauses.end();
-      for (std::unordered_map<std::string, std::string>::const_iterator i = GetPointer<omp_simd_pragma>(source_tn)->clauses.begin(); i != vend; i++)
+      for (std::unordered_map<std::string, std::string>::const_iterator i = GetPointer<omp_simd_pragma>(source_tn)->clauses.begin(); i != vend; ++i)
       {
          dynamic_cast<omp_simd_pragma*>(curr_tree_node_ptr)->clauses[i->first] = i->second;
       }
@@ -1664,7 +1667,7 @@ void tree_node_dup::operator()(const omp_declare_simd_pragma* obj, unsigned int 
    if(!GetPointer<omp_declare_simd_pragma>(source_tn)->clauses.empty())
    {
       std::unordered_map<std::string, std::string>::const_iterator vend = GetPointer<omp_declare_simd_pragma>(source_tn)->clauses.end();
-      for (std::unordered_map<std::string, std::string>::const_iterator i = GetPointer<omp_declare_simd_pragma>(source_tn)->clauses.begin(); i != vend; i++)
+      for (std::unordered_map<std::string, std::string>::const_iterator i = GetPointer<omp_declare_simd_pragma>(source_tn)->clauses.begin(); i != vend; ++i)
       {
          dynamic_cast<omp_declare_simd_pragma*>(curr_tree_node_ptr)->clauses[i->first] = i->second;
       }
@@ -1678,7 +1681,7 @@ void tree_node_dup::operator()(const omp_target_pragma* obj, unsigned int & mask
    if(!GetPointer<omp_target_pragma>(source_tn)->clauses.empty())
    {
       std::unordered_map<std::string, std::string>::const_iterator vend = GetPointer<omp_target_pragma>(source_tn)->clauses.end();
-      for (std::unordered_map<std::string, std::string>::const_iterator i = GetPointer<omp_target_pragma>(source_tn)->clauses.begin(); i != vend; i++)
+      for (std::unordered_map<std::string, std::string>::const_iterator i = GetPointer<omp_target_pragma>(source_tn)->clauses.begin(); i != vend; ++i)
       {
          dynamic_cast<omp_target_pragma*>(curr_tree_node_ptr)->clauses[i->first] = i->second;
       }
@@ -1692,7 +1695,7 @@ void tree_node_dup::operator()(const omp_critical_pragma* obj, unsigned int & ma
    if(!GetPointer<omp_critical_pragma>(source_tn)->clauses.empty())
    {
       std::unordered_map<std::string, std::string>::const_iterator vend = GetPointer<omp_critical_pragma>(source_tn)->clauses.end();
-      for (std::unordered_map<std::string, std::string>::const_iterator i = GetPointer<omp_critical_pragma>(source_tn)->clauses.begin(); i != vend; i++)
+      for (std::unordered_map<std::string, std::string>::const_iterator i = GetPointer<omp_critical_pragma>(source_tn)->clauses.begin(); i != vend; ++i)
       {
          dynamic_cast<omp_critical_pragma*>(curr_tree_node_ptr)->clauses[i->first] = i->second;
       }
@@ -1706,7 +1709,7 @@ void tree_node_dup::operator()(const omp_task_pragma* obj, unsigned int & mask)
    if(!GetPointer<omp_task_pragma>(source_tn)->clauses.empty())
    {
       std::unordered_map<std::string, std::string>::const_iterator vend = GetPointer<omp_task_pragma>(source_tn)->clauses.end();
-      for (std::unordered_map<std::string, std::string>::const_iterator i = GetPointer<omp_task_pragma>(source_tn)->clauses.begin(); i != vend; i++)
+      for (std::unordered_map<std::string, std::string>::const_iterator i = GetPointer<omp_task_pragma>(source_tn)->clauses.begin(); i != vend; ++i)
       {
          dynamic_cast<omp_task_pragma*>(curr_tree_node_ptr)->clauses[i->first] = i->second;
       }

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -90,7 +90,7 @@ std::deque<bit_lattice> Bit_Value::backward_compute_result_from_uses(
          {
             const gimple_phi * gp_tmp = GetPointer<const gimple_phi>(use_stmt);
             bool all_comes_from_the_same_loop = true;
-            for (const auto def_edge : gp_tmp->CGetDefEdgesList())
+            for (const auto& def_edge : gp_tmp->CGetDefEdgesList())
             {
                if (bb_loop_id != sl.list_of_bloc.at(def_edge.second)->loop_id)
                   all_comes_from_the_same_loop = false;
@@ -227,7 +227,7 @@ void Bit_Value::backward()
       {
          blocRef B = B_it.second;
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing BB" + STR(B->number));
-         for(const auto stmt : boost::adaptors::reverse(B->CGetStmtList()))
+         for(const auto& stmt : boost::adaptors::reverse(B->CGetStmtList()))
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing statement " + STR(stmt));
             const tree_nodeRef s = GET_NODE(stmt);
@@ -268,7 +268,7 @@ void Bit_Value::backward()
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed statement " + STR(stmt));
          }
 
-         for(const auto stmt : boost::adaptors::reverse(B->CGetPhiList()))
+         for(const auto& stmt : boost::adaptors::reverse(B->CGetPhiList()))
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing Phi " + STR(stmt));
             gimple_phi * gp = GetPointer<gimple_phi> (GET_NODE(stmt));
@@ -355,11 +355,11 @@ std::deque<bit_lattice> Bit_Value::backward_transfer(
    }
 
    const std::deque<bit_lattice>& output_bitstring = current.at(GET_INDEX_NODE(ga->op0));
-   ///first check if the gimple assign still produces something of relevant
-   if(output_bitstring.size() == 1 && output_bitstring.front() == bit_lattice::X)
+   enum kind op_kind = GET_NODE(ga->op1)->get_kind ();
+   ///first check if the gimple assign still produces something of relevant and it is not a call_expr
+   if(output_bitstring.size() == 1 && output_bitstring.front() == bit_lattice::X && op_kind != call_expr_K && op_kind != aggr_init_expr_K  && op_kind != mem_ref_K)
       return output_bitstring;
 
-   enum kind op_kind = GET_NODE(ga->op1)->get_kind ();
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, GET_NODE(ga->op1)->get_kind_text());
    if (op_kind == ssa_name_K)
    {
@@ -523,7 +523,7 @@ std::deque<bit_lattice> Bit_Value::backward_transfer(
       for(;
           it_output_bitstring!=  se_output_bitstring.rend() &&
           it_arg1_bitstring != arg1_bitstring.rend();
-          it_output_bitstring++, it_arg1_bitstring++, it_arg2_bitstring++)
+          ++it_output_bitstring, ++it_arg1_bitstring, ++it_arg2_bitstring)
       {
          if ( *it_output_bitstring == bit_lattice::X)
          {
@@ -595,7 +595,7 @@ std::deque<bit_lattice> Bit_Value::backward_transfer(
       for(;
           it_output_bitstring!=  se_output_bitstring.rend() &&
           it_arg1_bitstring != arg1_bitstring.rend();
-          it_output_bitstring++, it_arg1_bitstring++, it_arg2_bitstring++)
+          ++it_output_bitstring, ++it_arg1_bitstring, ++it_arg2_bitstring)
       {
          if ( *it_output_bitstring == bit_lattice::X)
          {
@@ -666,7 +666,7 @@ std::deque<bit_lattice> Bit_Value::backward_transfer(
           for(;
               it_output_bitstring!=  se_output_bitstring.rend() &&
               it_arg1_bitstring != arg1_bitstring.rend() && index < offset;
-              it_output_bitstring++, it_arg1_bitstring++, ++index)
+              ++it_output_bitstring, ++it_arg1_bitstring, ++index)
           {
              res_input1.push_front(*it_output_bitstring);
           }
@@ -678,7 +678,7 @@ std::deque<bit_lattice> Bit_Value::backward_transfer(
           for(;
               it_output_bitstring!=  se_output_bitstring.rend() &&
               it_arg1_bitstring != arg1_bitstring.rend();
-              it_output_bitstring++, it_arg1_bitstring++, ++index)
+              ++it_output_bitstring, ++it_arg1_bitstring, ++index)
           {
              if(index < offset)
                 res_input1.push_front(bit_lattice::ZERO);
@@ -738,7 +738,7 @@ std::deque<bit_lattice> Bit_Value::backward_transfer(
 
       std::deque<bit_lattice> res_input1;
 
-      for(;it_output_bitstring!=  se_output_bitstring.rend() && it_arg1_bitstring != arg1_bitstring.rend(); it_output_bitstring++, it_arg1_bitstring++)
+      for(;it_output_bitstring!=  se_output_bitstring.rend() && it_arg1_bitstring != arg1_bitstring.rend(); ++it_output_bitstring, ++it_arg1_bitstring)
       {
          if ( *it_output_bitstring == bit_lattice::X)
          {
@@ -786,7 +786,7 @@ std::deque<bit_lattice> Bit_Value::backward_transfer(
 
       for(;
           it_output_bitstring !=  se_output_bitstring.rend() && it_arg1_bitstring != arg1_bitstring.rend();
-          it_output_bitstring++, it_arg1_bitstring++)
+          ++it_output_bitstring, ++it_arg1_bitstring)
       {
          if ( *it_output_bitstring == bit_lattice::X)
          {
@@ -1071,7 +1071,7 @@ std::deque<bit_lattice> Bit_Value::backward_transfer(
 
       for(;
           it_output_bitstring !=  output_bitstring.rend() && it_arg1_bitstring != arg1_bitstring.rend();
-          it_output_bitstring++, it_arg1_bitstring++)
+          ++it_output_bitstring, ++it_arg1_bitstring)
       {
          if ( *it_output_bitstring == bit_lattice::X)
          {

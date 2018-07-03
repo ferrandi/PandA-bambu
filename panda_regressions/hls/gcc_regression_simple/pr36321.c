@@ -4,8 +4,8 @@ extern __SIZE_TYPE__ strlen (const char *);
 void foo(char *str)
 {
   int len2 = strlen (str);
-  char *a = (char *) __builtin_malloc (0);
-  char *b = (char *) __builtin_malloc (len2*3);
+  char *a = (char *) malloc (0);
+  char *b = (char *) malloc (len2*3);
 
   if ((int) (a-b) < (len2*3))
     {

@@ -1,5 +1,5 @@
 /* 64-bit division and modulus
-   Copyright (c) 2004-2017 Politecnico di Milano
+   Copyright (c) 2004-2018 Politecnico di Milano
 
    author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
 
@@ -142,7 +142,7 @@ __udivmoddi4 (UDWtype x, UDWtype y, UDWtype *res)
       18, 17, 17, 16, 15, 15, 14, 14, 13, 13, 12, 12, 11, 10, 10, 9, 9, 8, 8, 7, 7, 6, 6, 5, 5, 4, 4, 3, 3, 2, 2, 1, 1, 0, 0};
     // table lookup start
 #define W 64
-    unsigned char k = __builtin_clzll(y);
+    unsigned char k = clzll(y);
     UDItype lshifted_y = lsl64(y,k);
     /// remove the leading 1
     lshifted_y = lshifted_y << 1;

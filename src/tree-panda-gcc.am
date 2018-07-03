@@ -3,7 +3,7 @@ bin_PROGRAMS += tree-panda-gcc
 
 noinst_HEADERS += tree-panda-gcc-Parameter.hpp
 
-tree_panda_gcc_SOURCES = tree-panda-gcc.cpp tree-panda-gcc-Parameter.cpp Parameter.cpp
+tree_panda_gcc_SOURCES = tree-panda-gcc.cpp tree-panda-gcc-Parameter.cpp Parameter.cpp global_variables.cpp
 
 noinst_LTLIBRARIES += lib_treepandagcc.la
 
@@ -14,6 +14,7 @@ tree_panda_gcc_CPPFLAGS = \
    -I$(top_srcdir)/src/behavior \
    -I$(top_srcdir)/src/constants \
    -I$(top_srcdir)/src/design_flows \
+   -I$(top_srcdir)/src/graph \
    -I$(top_srcdir)/src/frontend_analysis \
    -I$(top_srcdir)/src/parser/machine \
    -I$(top_srcdir)/src/parser/treegcc \

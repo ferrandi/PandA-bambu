@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -96,7 +96,7 @@ class operations_cfg_computation : public FunctionFrontendFlowStep
        * @param f_name is the name of the function of the node we are analyzing
        * @return the name of the first node
        */
-      std::string get_first_node(const tree_nodeRef &tn, const std::string &f_name) const;
+      std::string get_first_node(const tree_nodeRef &tn, const std::string&f_name) const;
 
       /**
        * Clean the list of start nodes
@@ -107,7 +107,7 @@ class operations_cfg_computation : public FunctionFrontendFlowStep
        * Insert a start node to the list of start nodes
        * @param start_node is the starting node
       */
-      void insert_start_node(const std::string &start_node);
+      void insert_start_node(const std::string&start_node);
 
       /**
        * Return true if start_node is empty
@@ -119,7 +119,7 @@ class operations_cfg_computation : public FunctionFrontendFlowStep
        * Initialize the list of start nodes
        * @param start_node is the starting node
        */
-      void init_start_nodes(const std::string &start_node);
+      void init_start_nodes(const std::string&start_node);
 
       /**
        * Connect start_node with the next node.
@@ -129,7 +129,7 @@ class operations_cfg_computation : public FunctionFrontendFlowStep
        * @param false_edge when it is true the control edge is the false branch of an if then else statement.
        * @param nodeid is meaningful only in case true_edge and false_edge are both true and the control edge is associated with a switch statement.
        */
-      void connect_start_nodes(const operations_graph_constructorRef ogc, const std::string & next, bool true_edge = false, bool false_edge = false, unsigned int nodeid = 0);
+      void connect_start_nodes(const operations_graph_constructorRef ogc, const std::string& next, bool true_edge = false, bool false_edge = false, unsigned int nodeid = 0);
 
       /**
        * Builds recursively the operation for a given tree node. We assume a one to one mapping between nodeids and vertices
@@ -138,7 +138,7 @@ class operations_cfg_computation : public FunctionFrontendFlowStep
        * @param tn is the reference of the tree node we are currently analyzing
        * @param f_name is the name of the function which the node we are analyzing belongs to
        */
-      void build_operation_recursive(const tree_managerRef TM, const operations_graph_constructorRef ogc, const tree_nodeRef tn, const std::string &f_name, unsigned int bb_index);
+      void build_operation_recursive(const tree_managerRef TM, const operations_graph_constructorRef ogc, const tree_nodeRef tn, const std::string&f_name, unsigned int bb_index);
 
       /**
        * Return the set of analyses in relationship with this design step

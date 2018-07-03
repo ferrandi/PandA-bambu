@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -117,7 +117,7 @@
 #include "indented_output_stream.hpp"
 #include "refcount.hpp"
 
-CBackend::CBackend(const Type _c_backend_type, const CBackendInformationConstRef c_backend_information, const DesignFlowManagerConstRef _design_flow_manager, const application_managerConstRef _AppM, const std::string _file_name, const ParameterConstRef _parameters) :
+CBackend::CBackend(const Type _c_backend_type, const CBackendInformationConstRef c_backend_information, const DesignFlowManagerConstRef _design_flow_manager, const application_managerConstRef _AppM, const std::string&_file_name, const ParameterConstRef _parameters) :
    DesignFlowStep(_design_flow_manager, _parameters),
    indented_output_stream(new IndentedOutputStream()),
    writer(CWriter::CreateCWriter(_c_backend_type, c_backend_information, _AppM, indented_output_stream, _parameters, _parameters->getOption<int>(OPT_debug_level) >= DEBUG_LEVEL_VERBOSE)),
@@ -219,7 +219,7 @@ void CBackend::WriteGlobalDeclarations()
       if (parameters->isOption(OPT_pretty_print))
       {
          std::string f_name = BH->get_function_name();
-         if(f_name.find("__builtin_") == 0)
+         if(boost::algorithm::starts_with(f_name,"__builtin_"))
          {
             indented_output_stream->Append("#define " + f_name + " _bambu_"+f_name + "\n");
          }
@@ -365,14 +365,13 @@ void CBackend::compute_variables(const OpGraphConstRef inGraph, const std::unord
    }
 
    //I have to take out the variables global to the whole program and the function parameters
-   std::set<unsigned int> varsTemp;
    std::unordered_set<unsigned int>::const_iterator it, it_end = gblVariables.end();
-   for(it = gblVariables.begin(); it != it_end; it++)
+   for(it = gblVariables.begin(); it != it_end; ++it)
    {
       vars.erase(*it);
    }
    std::list<unsigned int>::const_iterator it2, it2_end = funParams.end();
-   for(it2 = funParams.begin(); it2 != it2_end; it2++)
+   for(it2 = funParams.begin(); it2 != it2_end; ++it2)
    {
       vars.erase(*it2);
    }
@@ -396,17 +395,9 @@ const std::string CBackend::ComputeSignature(const CBackend::Type type)
       case(CB_BBP) :
          return "CBackend::BasicBlocksProfiling";
 #endif
-#if HAVE_HOST_PROFILING_BUILT
-      case(CB_DATA_MEMORY_PROFILING) :
-         return "CBackend::DataMemoryProfiling";
-#endif
 #if HAVE_HLS_BUILT
       case(CB_DISCREPANCY_ANALYSIS):
          return "CBackend::DiscrepancyAnalysis";
-#endif
-#if HAVE_HOST_PROFILING_BUILT
-      case(CB_EPP) :
-         return "CBackend::EfficientPathProfiling";
 #endif
 #if HAVE_TARGET_PROFILING
       case(CB_ESCAPED_SEQUENTIAL):
@@ -416,10 +407,6 @@ const std::string CBackend::ComputeSignature(const CBackend::Type type)
       case(CB_HLS):
          return "CBackend::HighLevelSynthesis";
 #endif
-#if HAVE_HOST_PROFILING_BUILT
-      case(CB_HPP):
-         return "CBackend::HierarchicalPathProfiling";
-#endif
 #if HAVE_GRAPH_PARTITIONING_BUILT && HAVE_TARGET_PROFILING
       case(CB_INSTRUMENTED_PARALLEL):
          return "CBackend::InstrumentedParallel";
@@ -427,10 +414,6 @@ const std::string CBackend::ComputeSignature(const CBackend::Type type)
 #if HAVE_TARGET_PROFILING
       case(CB_INSTRUMENTED_SEQUENTIAL):
          return "CBackend::InstrumentedSequential";
-#endif
-#if HAVE_HOST_PROFILING_BUILT
-      case(CB_LOOPS_PROFILING):
-         return "CBackend::LoopsProfiling";
 #endif
 #if HAVE_ZEBU_BUILT
       case(CB_POINTED_DATA_EVALUATION):
@@ -442,10 +425,6 @@ const std::string CBackend::ComputeSignature(const CBackend::Type type)
 #endif
       case(CB_SEQUENTIAL):
          return "CBackend::Sequential";
-#if HAVE_HOST_PROFILING_BUILT
-      case(CB_TPP):
-         return "CBackend::TreePathProfiling";
-#endif
       default:
       {
          THROW_UNREACHABLE("");
@@ -467,13 +446,9 @@ void CBackend::ComputeRelationships(DesignFlowStepSet & relationships, const Des
       {
          switch(c_backend_type)
          {
-#if HAVE_HOST_PROFILING_BUILT
-            case(CB_DATA_MEMORY_PROFILING) :
-#endif
             case CB_SEQUENTIAL:
 #if HAVE_HOST_PROFILING_BUILT
             case(CB_BBP):
-            case(CB_TPP):
 #endif
             {
                std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship> > frontend_relationships;
@@ -535,23 +510,14 @@ void CBackend::ComputeRelationships(DesignFlowStepSet & relationships, const Des
                break;
             }
 #endif
-#if HAVE_HOST_PROFILING_BUILT
-            case(CB_EPP) :
-#endif
 #if HAVE_TARGET_PROFILING
             case(CB_ESCAPED_SEQUENTIAL):
-#endif
-#if HAVE_HOST_PROFILING_BUILT
-            case(CB_HPP):
 #endif
 #if HAVE_GRAPH_PARTITIONING_BUILT && HAVE_TARGET_PROFILING
             case(CB_INSTRUMENTED_PARALLEL):
 #endif
 #if HAVE_TARGET_PROFILING
             case(CB_INSTRUMENTED_SEQUENTIAL):
-#endif
-#if HAVE_HOST_PROFILING_BUILT
-            case(CB_LOOPS_PROFILING):
 #endif
 #if HAVE_ZEBU_BUILT
             case(CB_POINTED_DATA_EVALUATION):
@@ -574,13 +540,9 @@ void CBackend::ComputeRelationships(DesignFlowStepSet & relationships, const Des
       {
          switch(c_backend_type)
          {
-#if HAVE_HOST_PROFILING_BUILT
-            case(CB_DATA_MEMORY_PROFILING) :
-#endif
             case CB_SEQUENTIAL:
 #if HAVE_HOST_PROFILING_BUILT
             case(CB_BBP):
-            case(CB_TPP):
 #endif
             {
 #if HAVE_BAMBU_BUILT
@@ -607,23 +569,14 @@ void CBackend::ComputeRelationships(DesignFlowStepSet & relationships, const Des
                break;
             }
 #endif
-#if HAVE_HOST_PROFILING_BUILT
-            case(CB_EPP) :
-#endif
 #if HAVE_TARGET_PROFILING
             case(CB_ESCAPED_SEQUENTIAL):
-#endif
-#if HAVE_HOST_PROFILING_BUILT
-            case(CB_HPP):
 #endif
 #if HAVE_GRAPH_PARTITIONING_BUILT && HAVE_TARGET_PROFILING
             case(CB_INSTRUMENTED_PARALLEL):
 #endif
 #if HAVE_TARGET_PROFILING
             case(CB_INSTRUMENTED_SEQUENTIAL):
-#endif
-#if HAVE_HOST_PROFILING_BUILT
-            case(CB_LOOPS_PROFILING):
 #endif
 #if HAVE_ZEBU_BUILT
             case(CB_POINTED_DATA_EVALUATION):

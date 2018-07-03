@@ -42,17 +42,17 @@ double __hide_ieee754_remainder(double x, double p)
 	hx &= 0x7fffffff;
 
     /* purge off exception values */
-	if((hp|lp)==0) return __builtin_nan(""); 	/* p = 0 */
+    if((hp|lp)==0) return __builtin_nan(""); 	/* p = 0 */
 	if((hx>=0x7ff00000)||			/* x not finite */
 	  ((hp>=0x7ff00000)&&			/* p is NaN */
 	  (((hp-0x7ff00000)|lp)!=0)))
-	    return __builtin_nan("");
+        return __builtin_nan("");
 
 
 	if (hp<=0x7fdfffff) x = __hide_ieee754_fmod(x,p+p);	/* now x < 2p */
 	if (((hx-hp)|(lx-lp))==0) return zero*x;
-	x  = __builtin_fabs(x);
-	p  = __builtin_fabs(p);
+    x  = fabs(x);
+    p  = fabs(p);
 	if (hp<0x00200000) {
 	    if(x+x>p) {
 		x-=p;
@@ -72,14 +72,14 @@ double __hide_ieee754_remainder(double x, double p)
 /* 
  * wrapper remainder(x,p)
  */
-double __builtin_remainder(double x, double y)	/* wrapper remainder */
+double remainder(double x, double y)	/* wrapper remainder */
 {
 #ifdef _IEEE_LIBM
 	return __hide_ieee754_remainder(x,y);
 #else
 	double z;
 	z = __hide_ieee754_remainder(x,y);
-	if(_LIB_VERSION == _IEEE_ || __builtin_isnan(y)) return z;
+    if(_LIB_VERSION == _IEEE_ || isnan(y)) return z;
 	if(y==0.0) 
 	    return __hide_kernel_standard(x,y,28); /* remainder(x,0) */
 	else

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -140,15 +140,15 @@ DesignFlowStep_Status determine_memory_accesses::InternalExec()
    statement_list * sl = GetPointer<statement_list>(GET_NODE(fd->body));
    THROW_ASSERT(sl, "Body is not a statement_list");
    std::map<unsigned int, blocRef>::iterator it_bb, it_bb_end = sl->list_of_bloc.end();
-   for(it_bb = sl->list_of_bloc.begin(); it_bb != it_bb_end ; it_bb++)
+   for(it_bb = sl->list_of_bloc.begin(); it_bb != it_bb_end ; ++it_bb)
    {
       if (it_bb->second->number == BB_ENTRY || it_bb->second->number == BB_EXIT)
          continue;
-      for(const auto phi : it_bb->second->CGetPhiList())
+      for(const auto& phi : it_bb->second->CGetPhiList())
       {
          analyze_node(phi->index, false, false, false);
       }
-      for(const auto stmt : it_bb->second->CGetStmtList())
+      for(const auto& stmt : it_bb->second->CGetStmtList())
       {
          analyze_node(stmt->index, false, false, false);
       }
@@ -521,7 +521,7 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
       case gimple_phi_K:
       {
          gimple_phi * gp = GetPointer<gimple_phi>(tn);
-         for(const auto def_edge : gp->CGetDefEdgesList())
+         for(const auto& def_edge : gp->CGetDefEdgesList())
          {
             analyze_node(GET_INDEX_NODE(def_edge.first), left_p, dynamic_address, no_dynamic_address);
          }
@@ -578,6 +578,8 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
          // following analysys.
          if (!ae) break;
 
+         if(AppM->GetFunctionBehavior(GET_INDEX_NODE(ae->op))->get_unaligned_accesses())
+            function_behavior->set_unaligned_accesses(true);
          function_decl* fd = GetPointer<function_decl>(GET_NODE(ae->op));
          bool is_var_args_p = GetPointer<function_type>(GET_NODE(fd->type))->varargs_flag;
          THROW_ASSERT(fd, "expected a function_decl");
@@ -1052,7 +1054,7 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
                   INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "---Global variable externally accessible found: " + behavioral_helper->PrintVariable(node_id));
             }
             function_behavior->add_state_variable(node_id);
-            if((dynamic_address && !no_dynamic_address)|| address_externally_used)
+            if((dynamic_address && !no_dynamic_address && !vd->addr_not_taken)|| address_externally_used||vd->addr_taken)
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Variable for which the dynamic address is used-10: " + behavioral_helper->PrintVariable(node_id));
                function_behavior->add_dynamic_address(node_id);
@@ -1096,7 +1098,7 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
                else if(vd->static_flag)
                   function_behavior->add_state_variable(node_id);
                function_behavior->add_function_mem(node_id);
-               if((dynamic_address && !no_dynamic_address) || address_externally_used)
+               if((dynamic_address && !no_dynamic_address && !vd->addr_not_taken) || address_externally_used||vd->addr_taken)
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Variable for which the dynamic address is used-11: " + behavioral_helper->PrintVariable(node_id));
                   function_behavior->add_dynamic_address(node_id);
@@ -1119,7 +1121,7 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
       {
          constructor* con = GetPointer<constructor>(tn);
          std::vector<std::pair< tree_nodeRef, tree_nodeRef> > &list_of_idx_valu = con->list_of_idx_valu;
-         for(std::vector<std::pair< tree_nodeRef, tree_nodeRef> >::iterator el = list_of_idx_valu.begin(); el != list_of_idx_valu.end(); el++)
+         for(std::vector<std::pair< tree_nodeRef, tree_nodeRef> >::iterator el = list_of_idx_valu.begin(); el != list_of_idx_valu.end(); ++el)
          {
             if (el->first) analyze_node(GET_INDEX_NODE(el->first), left_p, dynamic_address, no_dynamic_address);
             if (el->second) analyze_node(GET_INDEX_NODE(el->second), left_p, dynamic_address, no_dynamic_address);

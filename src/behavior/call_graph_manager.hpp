@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -157,7 +157,7 @@ class CallGraphManager
        * Return a subset of the call graph
        * @param vertices is the subset of vertices to be considered
        */
-      const CallGraphConstRef CGetCallSubGraph(const std::unordered_set<vertex> vertices) const;
+      const CallGraphConstRef CGetCallSubGraph(const std::unordered_set<vertex> &vertices) const;
 
       /**
        * Returns the set of functions called by a function

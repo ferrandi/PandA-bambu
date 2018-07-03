@@ -14,7 +14,7 @@
 
 #include "math_privatef.h"
 
-float __builtin_fdimf(float x, float y)
+float fdimf(float x, float y)
 {
   int c = __fpclassifyf(x);
   if (c == FP_NAN)  return(x);
@@ -27,9 +27,9 @@ float __builtin_fdimf(float x, float y)
 
 #ifdef _DOUBLE_IS_32BITS
 
-double __builtin_fdim(double x, double y)
+double fdim(double x, double y)
 {
-  return (double) __builtin_fdimf((float) x, (float) y);
+  return (double) fdimf((float) x, (float) y);
 }
 
 #endif /* defined(_DOUBLE_IS_32BITS) */

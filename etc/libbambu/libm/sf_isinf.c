@@ -29,16 +29,16 @@ int __isinff(float x)
 }
 
 
-int __builtin_isinff(float x)
+int isinff(float x)
 {
    return __isinff(x);
 }
 
 #ifdef _DOUBLE_IS_32BITS
 
-int __builtin_isinf(double x)
+int isinf(double x)
 {
-	return __builtin_isinff((float) x);
+    return isinff((float) x);
 }
 
 #endif /* defined(_DOUBLE_IS_32BITS) */

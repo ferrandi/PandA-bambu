@@ -3,7 +3,7 @@
    This specific code has been derived from libgcc from GCC.
    The GCC licence and its exception applies.
 */
-/* Copyright (C) 1989-2016 Free Software Foundation, Inc.
+/* Copyright (C) 1989-2018 Free Software Foundation, Inc.
 
 This file is part of GCC.
 
@@ -63,12 +63,12 @@ float __local_copysignf(float x, float y)
 
 
 __complex__ float
-__builtin___divsc3 (float a, float b, float c, float d)
+__divsc3 (float a, float b, float c, float d)
 {
   float denom, ratio, x, y;
   __complex__ float res;
 
-  if (__builtin_fabsf (c) < __builtin_fabsf (d))
+  if (fabsf (c) < fabsf (d))
     {
       ratio = c / d;
       denom = (c * ratio) + d;

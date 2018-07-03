@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -68,7 +68,7 @@ std::ostream& operator<<(std::ostream& out, boost::spirit::file_position const& 
  * @param class_name is the name of the calling class
 */
 template <class info_t>
-void print_parsing_error(info_t &info, const std::string &class_name)
+void print_parsing_error(info_t &info, const std::string&class_name)
 {
    std::string curr_string = std::string(info.stop, info.stop + STRING_LENGTH);
    typedef boost::tokenizer<boost::char_separator<char> > tokenizer;

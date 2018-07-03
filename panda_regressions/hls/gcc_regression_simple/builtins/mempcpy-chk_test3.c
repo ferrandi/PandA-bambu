@@ -242,9 +242,11 @@ test2 (void)
   int z;
   __builtin_memcpy (buf5, "RSTUVWXYZ0123456789", 20);
   __builtin_memcpy (buf7, "RSTUVWXYZ0123456789", 20);
+#ifndef __clang__
  __asm ("{||assign out1 = in1;\nassign done_port = start_port;|out1 <= std_logic_vector(resize(unsigned(in1), BITSIZE_out1));}" : "=r" (x) : "0" (buf1));
  __asm ("{||assign out1 = in1;\nassign done_port = start_port;|out1 <= std_logic_vector(resize(unsigned(in1), BITSIZE_out1));}" : "=r" (y) : "0" (buf2));
  __asm ("{||assign out1 = in1;\nassign done_port = start_port;|out1 <= std_logic_vector(resize(unsigned(in1), BITSIZE_out1));}" : "=r" (z) : "0" (0));
+#endif
   test2_sub (x, y, "rstuvwxyz", z);
 }
 
@@ -267,7 +269,7 @@ test3 (void)
   chk_calls = 0;
   vx = mempcpy (a.buf1 + 2, s3, l1);
   vx = mempcpy (r, s3, l1 + 1);
-  r = l1 == 1 ? __builtin_malloc (4) : &a.buf2[7];
+  r = l1 == 1 ? malloc (4) : &a.buf2[7];
   vx = mempcpy (r, s2, l1 + 2);
   vx = mempcpy (r + 2, s3, l1);
   r = buf3;
@@ -292,7 +294,7 @@ test3 (void)
   chk_calls = 0;
   vx = mempcpy (a.buf1 + 2, s3, 1);
   vx = mempcpy (r, s3, 2);
-  r = l1 == 1 ? __builtin_malloc (4) : &a.buf2[7];
+  r = l1 == 1 ? malloc (4) : &a.buf2[7];
   vx = mempcpy (r, s2, 3);
   r = buf3;
   l = 4;
@@ -486,7 +488,9 @@ main_test (void)
   /* Object size checking is only intended for -O[s123].  */
   return;
 #endif
+#ifndef __clang__
   __asm ("{||assign out1 = in1;\nassign done_port = start_port;|out1 <= std_logic_vector(resize(unsigned(in1), BITSIZE_out1));}" : "=r" (l1) : "0" (l1));
+#endif
   //test1 ();
   //test2 ();
   test3 ();
@@ -497,8 +501,10 @@ main_test (void)
 int main()
 {
   buf2 = (char *) (buf1 + 32);
+#ifndef __clang__
 #if (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
   main_test();
+#endif
 #endif
   return 0;
 }

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -56,6 +56,7 @@
 #else
 #include <boost/property_map.hpp>
 #endif
+#include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/graph_traits.hpp>
 #include <boost/graph/visitors.hpp>
 #include <boost/tuple/tuple.hpp>
@@ -126,6 +127,8 @@ namespace boost
          ColorMap &CM;
          size_type * heap_container;
          dsatur2_heap_compare_functor<size_type> HCF;
+         //no copy constructor
+         dsatur2_coloring_helper(const dsatur2_coloring_helper& inst) = delete;
 
       public:
          dsatur2_coloring_helper(const VertexListGraph& _G, ColorMap &_CM, const size_type _num_node) : 

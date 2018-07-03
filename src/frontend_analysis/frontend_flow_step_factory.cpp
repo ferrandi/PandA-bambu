@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -119,16 +119,13 @@
 #if HAVE_ZEBU_BUILT || HAVE_BAMBU_BUILT
 #include "dead_code_elimination.hpp"
 #endif
-#if HAVE_BAMBU_BUILT && HAVE_EXPERIMENTAL
+#if HAVE_BAMBU_BUILT
 #include "find_max_cfg_transformations.hpp"
 #endif
 #if HAVE_BAMBU_BUILT
 #include "determine_memory_accesses.hpp"
 #endif
 #include "dom_post_dom_computation.hpp"
-#if HAVE_HOST_PROFILING_BUILT
-#include "dump_profiling_data.hpp"
-#endif
 #if HAVE_HOST_PROFILING_BUILT && HAVE_EXPERIMENTAL
 #include "dynamic_aggregate_data_flow_analysis.hpp"
 #include "dynamic_var_computation.hpp"
@@ -146,6 +143,7 @@
 #if HAVE_BAMBU_BUILT
 #include "extract_gimple_cond_op.hpp"
 #include "extract_patterns.hpp"
+#include "fanout_opt.hpp"
 #include "FixStructsPassedByValue.hpp"
 #include "FunctionCallTypeCleanup.hpp"
 #endif
@@ -165,9 +163,6 @@
 #if HAVE_BAMBU_BUILT
 #include "hls_div_cg_ext.hpp"
 #include "HWCallInjection.hpp"
-#endif
-#if HAVE_HOST_PROFILING_BUILT
-#include "hpp_profiling.hpp"
 #endif
 #if HAVE_BAMBU_BUILT
 #include "ipa_point_to_analysis.hpp"
@@ -228,7 +223,7 @@
 #include "probability_path.hpp"
 #endif
 #if HAVE_HOST_PROFILING_BUILT
-#include "profiling.hpp"
+#include "host_profiling.hpp"
 #endif
 #if HAVE_BAMBU_BUILT
 #include "rebuild_initializations.hpp"
@@ -277,9 +272,6 @@
 #endif
 #include "string_cst_fix.hpp"
 #include "switch_fix.hpp"
-#if HAVE_HOST_PROFILING_BUILT
-#include "tp_profiling.hpp"
-#endif
 #if HAVE_BAMBU_BUILT
 #include "un_comparison_lowering.hpp"
 #endif
@@ -308,14 +300,8 @@
 
 #include "call_graph_computation.hpp"
 #include "create_tree_manager.hpp"
-#if HAVE_HOST_PROFILING_BUILT
-#include "loops_profiling.hpp"
-#endif
 #if HAVE_FROM_PRAGMA_BUILT
 #include "pragma_analysis.hpp"
-#endif
-#if HAVE_HOST_PROFILING_BUILT
-#include "read_profiling_data.hpp"
 #endif
 #include "symbolic_application_frontend_flow_step.hpp"
 
@@ -335,11 +321,11 @@ FrontendFlowStepFactory::FrontendFlowStepFactory(const application_managerRef _A
 FrontendFlowStepFactory::~FrontendFlowStepFactory()
 {}
 
-const DesignFlowStepSet FrontendFlowStepFactory::GenerateFrontendSteps(const std::unordered_set<FrontendFlowStepType> frontend_flow_step_types) const
+const DesignFlowStepSet FrontendFlowStepFactory::GenerateFrontendSteps(const std::unordered_set<FrontendFlowStepType>& frontend_flow_step_types) const
 {
    DesignFlowStepSet frontend_flow_steps;
    std::unordered_set<FrontendFlowStepType>::const_iterator frontend_flow_step_type, frontend_flow_step_type_end = frontend_flow_step_types.end();
-   for(frontend_flow_step_type = frontend_flow_step_types.begin(); frontend_flow_step_type != frontend_flow_step_type_end; frontend_flow_step_type++)
+   for(frontend_flow_step_type = frontend_flow_step_types.begin(); frontend_flow_step_type != frontend_flow_step_type_end; ++frontend_flow_step_type)
    {
       frontend_flow_steps.insert(GenerateFrontendStep(*frontend_flow_step_type));
    }
@@ -407,6 +393,7 @@ const DesignFlowStepRef FrontendFlowStepFactory::GenerateFrontendStep(FrontendFl
 #endif
       case DOM_POST_DOM_COMPUTATION:
 #if HAVE_BAMBU_BUILT
+      case (FANOUT_OPT):
       case MULTIPLE_ENTRY_IF_REDUCTION:
 #endif
 #if HAVE_EXPERIMENTAL && HAVE_ZEBU_BUILT
@@ -568,7 +555,6 @@ const DesignFlowStepRef FrontendFlowStepFactory::GenerateFrontendStep(FrontendFl
 #endif
          {
             return DesignFlowStepRef(new SymbolicApplicationFrontendFlowStep(AppM, frontend_flow_step_type, design_flow_manager.lock(), parameters));
-            break;
          }
 #if HAVE_HOST_PROFILING_BUILT
       case BASIC_BLOCKS_PROFILING:
@@ -582,13 +568,10 @@ const DesignFlowStepRef FrontendFlowStepFactory::GenerateFrontendStep(FrontendFl
       case CREATE_ADDRESS_TRANSLATION:
 #endif
       case(CREATE_TREE_MANAGER) :
-#if HAVE_HOST_PROFILING_BUILT
-      case(DUMP_PROFILING_DATA) :
-#endif
 #if HAVE_EXPERIMENTAL && HAVE_ZEBU_BUILT
       case DYNAMIC_VAR_COMPUTATION:
 #endif
-#if HAVE_BAMBU_BUILT && HAVE_EXPERIMENTAL
+#if HAVE_BAMBU_BUILT
       case FIND_MAX_CFG_TRANSFORMATIONS:
 #endif
       case(FUNCTION_ANALYSIS) :
@@ -600,13 +583,9 @@ const DesignFlowStepRef FrontendFlowStepFactory::GenerateFrontendStep(FrontendFl
 #endif
 #if HAVE_HOST_PROFILING_BUILT
       case(HOST_PROFILING):
-      case(HPP_PROFILING):
 #endif
 #if HAVE_BAMBU_BUILT
       case (IPA_POINT_TO_ANALYSIS):
-#endif
-#if HAVE_HOST_PROFILING_BUILT
-      case(LOOPS_PROFILING) :
 #endif
       case MEM_CG_EXT:
 #if HAVE_ZEBU_BUILT
@@ -618,9 +597,6 @@ const DesignFlowStepRef FrontendFlowStepFactory::GenerateFrontendStep(FrontendFl
 #if HAVE_FROM_PRAGMA_BUILT
       case(PRAGMA_SUBSTITUTION):
 #endif
-#if HAVE_HOST_PROFILING_BUILT
-      case(READ_PROFILING_DATA) :
-#endif
 #if HAVE_ZEBU_BUILT
       case(SOURCE_CODE_STATISTICS) :
 #endif
@@ -628,9 +604,6 @@ const DesignFlowStepRef FrontendFlowStepFactory::GenerateFrontendStep(FrontendFl
       case(SYMBOLIC_APPLICATION_FRONTEND_FLOW_STEP) :
 #if HAVE_ZEBU_BUILT
       case(SIZEOF_SUBSTITUTION) :
-#endif
-#if HAVE_HOST_PROFILING_BUILT
-      case(TP_PROFILING) :
 #endif
          {
             return CreateApplicationFrontendFlowStep(frontend_flow_step_type);
@@ -676,20 +649,13 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateApplicationFrontendFlowSt
       {
          return DesignFlowStepRef(new create_tree_manager(parameters, AppM, design_flow_manager.lock()));
       }
-      
-#if HAVE_HOST_PROFILING_BUILT
-      case(DUMP_PROFILING_DATA):
-      {
-         return DesignFlowStepRef(new DumpProfilingData(AppM, design_flow_manager.lock(), parameters));
-      }
-#endif
 #if HAVE_ZEBU_BUILT && HAVE_EXPERIMENTAL
       case DYNAMIC_VAR_COMPUTATION:
       {
          return DesignFlowStepRef(new DynamicVarComputation(AppM, design_flow_manager.lock(), parameters));
       }
 #endif
-#if HAVE_BAMBU_BUILT && HAVE_EXPERIMENTAL
+#if HAVE_BAMBU_BUILT
       case FIND_MAX_CFG_TRANSFORMATIONS:
       {
          return DesignFlowStepRef(new FindMaxCFGTransformations(AppM, design_flow_manager.lock(), parameters));
@@ -716,21 +682,11 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateApplicationFrontendFlowSt
       {
          return DesignFlowStepRef(new HostProfiling(AppM, design_flow_manager.lock(), parameters));
       }
-      case(HPP_PROFILING):
-      {
-         return DesignFlowStepRef(new hpp_profiling(parameters, AppM, design_flow_manager.lock()));
-      }
 #endif
 #if HAVE_BAMBU_BUILT
       case IPA_POINT_TO_ANALYSIS:
       {
          return DesignFlowStepRef(new ipa_point_to_analysis(AppM, design_flow_manager.lock(), parameters));
-      }
-#endif
-#if HAVE_HOST_PROFILING_BUILT
-      case(LOOPS_PROFILING) :
-      {
-         return DesignFlowStepRef(new LoopsProfiling(parameters, AppM, design_flow_manager.lock()));
       }
 #endif
       case MEM_CG_EXT:
@@ -755,12 +711,6 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateApplicationFrontendFlowSt
          return DesignFlowStepRef(new PragmaSubstitution(AppM, design_flow_manager.lock(), parameters));
       }
 #endif
-#if HAVE_HOST_PROFILING_BUILT
-      case(READ_PROFILING_DATA) :
-      {
-         return DesignFlowStepRef(new read_profiling_data(parameters, AppM, design_flow_manager.lock()));
-      }
-#endif
 #if HAVE_ZEBU_BUILT
       case(SIZEOF_SUBSTITUTION) :
       {
@@ -777,12 +727,6 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateApplicationFrontendFlowSt
       {
          return DesignFlowStepRef(new string_cst_fix(AppM, design_flow_manager.lock(), parameters));
       }
-#if HAVE_HOST_PROFILING_BUILT
-      case(TP_PROFILING) :
-      {
-          return DesignFlowStepRef(new tp_profiling(parameters, AppM, design_flow_manager.lock()));
-      }
-#endif
       case ADD_BB_ECFG_EDGES:
 #if HAVE_BAMBU_BUILT
       case ADD_ARTIFICIAL_CALL_FLOW_EDGES:
@@ -840,6 +784,7 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateApplicationFrontendFlowSt
 #endif
       case DOM_POST_DOM_COMPUTATION:
 #if HAVE_BAMBU_BUILT
+      case (FANOUT_OPT):
       case MULTIPLE_ENTRY_IF_REDUCTION:
 #endif
 #if HAVE_EXPERIMENTAL && HAVE_ZEBU_BUILT
@@ -1169,6 +1114,10 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateFunctionFrontendFlowStep(
          return DesignFlowStepRef(new dom_post_dom_computation(parameters, AppM, function_id, design_flow_manager.lock()));
       }
 #if HAVE_BAMBU_BUILT
+      case (FANOUT_OPT):
+      {
+         return DesignFlowStepRef(new fanout_opt(parameters, AppM, function_id, design_flow_manager.lock()));
+      }
       case(MULTIPLE_ENTRY_IF_REDUCTION):
       {
          return DesignFlowStepRef(new MultipleEntryIfReduction(parameters, AppM, function_id, design_flow_manager.lock()));
@@ -1564,10 +1513,7 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateFunctionFrontendFlowStep(
       case(DYNAMIC_VAR_COMPUTATION):
 #endif
 
-#if HAVE_HOST_PROFILING_BUILT
-      case(DUMP_PROFILING_DATA) :
-#endif
-#if HAVE_BAMBU_BUILT && HAVE_EXPERIMENTAL
+#if HAVE_BAMBU_BUILT
       case FIND_MAX_CFG_TRANSFORMATIONS:
 #endif
       case(FUNCTION_ANALYSIS) :
@@ -1579,13 +1525,9 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateFunctionFrontendFlowStep(
 #endif
 #if HAVE_HOST_PROFILING_BUILT
       case(HOST_PROFILING):
-      case(HPP_PROFILING):
 #endif
 #if HAVE_BAMBU_BUILT
       case(IPA_POINT_TO_ANALYSIS):
-#endif
-#if HAVE_HOST_PROFILING_BUILT
-      case(LOOPS_PROFILING) :
 #endif
       case MEM_CG_EXT:
 #if HAVE_ZEBU_BUILT
@@ -1597,9 +1539,6 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateFunctionFrontendFlowStep(
 #if HAVE_FROM_PRAGMA_BUILT
       case(PRAGMA_SUBSTITUTION):
 #endif
-#if HAVE_HOST_PROFILING_BUILT
-      case(READ_PROFILING_DATA) :
-#endif
 #if HAVE_ZEBU_BUILT
       case(SIZEOF_SUBSTITUTION):
 #endif
@@ -1608,9 +1547,6 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateFunctionFrontendFlowStep(
 #endif
       case STRING_CST_FIX:
       case(SYMBOLIC_APPLICATION_FRONTEND_FLOW_STEP) :
-#if HAVE_HOST_PROFILING_BUILT
-      case(TP_PROFILING) :
-#endif
       {
          THROW_UNREACHABLE("Trying to create a function frontend flow step from " + FrontendFlowStep::EnumToKindText(design_flow_step_type));
          break;

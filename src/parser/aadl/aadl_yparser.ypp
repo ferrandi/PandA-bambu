@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2015 Politecnico di Milano
+ *              Copyright (c) 2015-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -81,8 +81,9 @@ REF_FORWARD_DECL(AadlFlexLexer);
 #pragma GCC diagnostic ignored "-Wwrite-strings"
 #pragma GCC diagnostic ignored "-Wold-style-cast"
 #pragma GCC diagnostic ignored "-Wredundant-decls"
+#if (__GNUC__ > 4) || (__GNUC__ == 4 && __GNUC_MINOR__ >= 7) || (defined(__clang__) && __clang_major__ >= 6)
 #pragma GCC diagnostic ignored "-Wzero-as-null-pointer-constant"
-
+#endif
 /**
 * Class declarations
 */
@@ -101,6 +102,7 @@ REF_FORWARD_DECL(AadlFlexLexer);
 */
 extern int yylex(YYSTYPE *lvalp, const AadlFlexLexerRef lexer);
 extern void yyerror(const AadlParserDataRef data, const AadlFlexLexerRef lexer, const char *msg);
+#ifndef __clang_analyzer__
 
 %}
 /**
@@ -691,6 +693,7 @@ signed_aadlreal_or_constant : sign NUMBER unit_identifier_opt
 /* End of Grammar */
 
 %%
+#endif
 /**
 * EPILOGUE
 */

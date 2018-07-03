@@ -5,7 +5,8 @@
 */
 #include <stddef.h>
 
-void *__builtin_mempcpy(void * __restrict dest, const void * __restrict src, size_t n)
+void *
+mempcpy(void * dest, const void * src, size_t n)
 {
   char *p1 = dest;
   const char *p2 = src;

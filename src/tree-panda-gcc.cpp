@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -67,7 +67,6 @@
 #include <boost/lexical_cast.hpp>
 #include "cpu_time.hpp"
 #include "exceptions.hpp"
-#include "global_variables.hpp"
 #include "utility.hpp"
 #include "fileIO.hpp"
 
@@ -152,10 +151,10 @@ int main( int argc, char* argv_orig[] )
 {
 
    char** argv = alloc_argv(argc, argv_orig);
-   long int total_time;
    ParameterRef Param;
    try
    {
+      long int total_time;
       START_TIME(total_time);
       // ---------- Parameter parsing ------------ //
       Param = ParameterRef(new tree_panda_gcc_parameter(argv[0], argc, argv));
@@ -218,7 +217,7 @@ int main( int argc, char* argv_orig[] )
          PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Created list of files: " + boost::lexical_cast<std::string>(input_files.size()) + " input source code files to be concatenated");
 
          CustomMap<std::string, std::string> temp_input_files;
-         for(const auto input_file : input_files)
+         for(const auto& input_file : input_files)
          {
             temp_input_files[input_file] = input_file;
          }
@@ -245,7 +244,7 @@ int main( int argc, char* argv_orig[] )
          if(Param->isOption(OPT_obj_files))
          {
             const auto object_files = Param->getOption<const CustomSet<std::string> >(OPT_obj_files);
-            for(const auto object_file : object_files)
+            for(const auto& object_file : object_files)
             {
                if(!boost::filesystem::exists(boost::filesystem::path(object_file)))
                {
@@ -258,7 +257,7 @@ int main( int argc, char* argv_orig[] )
          if(Param->isOption(OPT_archive_files))
          {
             const auto archive_files = Param->getOption<const CustomSet<std::string> >(OPT_archive_files);
-            for(const auto archive_file : archive_files)
+            for(const auto& archive_file : archive_files)
             {
                if(!boost::filesystem::exists(boost::filesystem::path(archive_file)))
                {

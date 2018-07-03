@@ -1,4 +1,4 @@
-/* Copyright (C) 2017 Politecnico di Milano (Italy).
+/* Copyright (C) 2017-2018 Politecnico di Milano (Italy).
    This file is part of the HLS-FP Library.
 
    The HLS-FP Library is free software; you can redistribute it and/or
@@ -44,7 +44,7 @@
 #ifdef CHECK_EXP_FUNCTION
 #define ADD_BUILTIN_PREFIX(fname) local_ ## fname
 #else
-#define ADD_BUILTIN_PREFIX(fname) __builtin_ ## fname
+#define ADD_BUILTIN_PREFIX(fname) fname
 #endif
 
 typedef union {

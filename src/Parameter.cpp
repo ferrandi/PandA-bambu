@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -59,12 +59,35 @@
 #include "config_HAVE_I386_GCC5_COMPILER.hpp"
 #include "config_HAVE_I386_GCC6_COMPILER.hpp"
 #include "config_HAVE_I386_GCC7_COMPILER.hpp"
+#include "config_HAVE_I386_CLANG4_COMPILER.hpp"
+#include "config_HAVE_I386_CLANG5_COMPILER.hpp"
+#include "config_HAVE_I386_GCC47_M32.hpp"
+#include "config_HAVE_I386_GCC48_M32.hpp"
+#include "config_HAVE_I386_GCC49_M32.hpp"
+#include "config_HAVE_I386_GCC5_M32.hpp"
+#include "config_HAVE_I386_GCC6_M32.hpp"
+#include "config_HAVE_I386_GCC7_M32.hpp"
+#include "config_HAVE_I386_CLANG4_M32.hpp"
+#include "config_HAVE_I386_CLANG5_M32.hpp"
+#include "config_HAVE_I386_CLANG6_M32.hpp"
 #include "config_HAVE_I386_GCC47_MX32.hpp"
 #include "config_HAVE_I386_GCC48_MX32.hpp"
 #include "config_HAVE_I386_GCC49_MX32.hpp"
 #include "config_HAVE_I386_GCC5_MX32.hpp"
 #include "config_HAVE_I386_GCC6_MX32.hpp"
 #include "config_HAVE_I386_GCC7_MX32.hpp"
+#include "config_HAVE_I386_CLANG4_MX32.hpp"
+#include "config_HAVE_I386_CLANG5_MX32.hpp"
+#include "config_HAVE_I386_CLANG6_MX32.hpp"
+#include "config_HAVE_I386_GCC47_M64.hpp"
+#include "config_HAVE_I386_GCC48_M64.hpp"
+#include "config_HAVE_I386_GCC49_M64.hpp"
+#include "config_HAVE_I386_GCC5_M64.hpp"
+#include "config_HAVE_I386_GCC6_M64.hpp"
+#include "config_HAVE_I386_GCC7_M64.hpp"
+#include "config_HAVE_I386_CLANG4_M64.hpp"
+#include "config_HAVE_I386_CLANG5_M64.hpp"
+#include "config_HAVE_I386_CLANG6_M64.hpp"
 #include "config_HAVE_IPXACT_BUILT.hpp"
 #include "config_HAVE_PERFORMANCE_METRICS_XML.hpp"
 #include "config_HAVE_REGRESSORS_BUILT.hpp"
@@ -80,6 +103,9 @@
 #include "config_I386_GCC5_VERSION.hpp"
 #include "config_I386_GCC6_VERSION.hpp"
 #include "config_I386_GCC7_VERSION.hpp"
+#include "config_I386_CLANG4_VERSION.hpp"
+#include "config_I386_CLANG5_VERSION.hpp"
+#include "config_I386_CLANG6_VERSION.hpp"
 #include "config_PACKAGE_BUGREPORT.hpp"
 #include "config_PACKAGE_STRING.hpp"
 #include "config_SPARC_GCC_VERSION.hpp"
@@ -175,7 +201,7 @@ const std::string revision_hash =
 
 #define OPTION_NAME(r, data, elem) option_name[BOOST_PP_CAT(OPT_, elem)] = #elem;
 
-Parameter::Parameter(const std::string _program_name, int _argc, char * * const _argv, int _debug_level) :
+Parameter::Parameter(const std::string&_program_name, int _argc, char * * const _argv, int _debug_level) :
    argc(_argc),
    argv(_argv),
    debug_level(_debug_level)
@@ -207,7 +233,8 @@ Parameter::Parameter(const Parameter & other) :
    Options(other.Options),
    enum_options(other.enum_options),
    option_name(other.option_name),
-   debug_classes(other.debug_classes)
+   debug_classes(other.debug_classes),
+   debug_level(other.debug_level)
 {
 }
 
@@ -285,7 +312,7 @@ void Parameter::load_xml_configuration_file(const std::string& filename)
    {
       std::cerr << msg << std::endl;
    }
-   catch (const std::string & msg)
+   catch (const std::string& msg)
    {
       std::cerr << msg << std::endl;
    }
@@ -306,7 +333,7 @@ void Parameter::write_xml_configuration_file(const std::string& filename)
 
    xml_element* parameters = document.create_root_node("parameters");
 
-   for (OptionMap::const_iterator Op = Options.begin(); Op != Options.end(); Op++)
+   for (OptionMap::const_iterator Op = Options.begin(); Op != Options.end(); ++Op)
    {
       xml_element* node = parameters->add_child_element(Op->first);
       WRITE_XNVM2("value", Op->second, node);
@@ -338,19 +365,19 @@ void Parameter::SetCommonDefaults()
 void Parameter::print(std::ostream& os) const
 {
    os << "List of parameters: " << std::endl;
-   for(OptionMap::const_iterator i = Options.begin(); i != Options.end(); i++)
+   for(OptionMap::const_iterator i = Options.begin(); i != Options.end(); ++i)
    {
       os << i->first << ": " << i->second << std::endl;
    }
    std::map<enum enum_option, std::string>::const_iterator option, option_end = enum_options.end();
-   for(option = enum_options.begin(); option != option_end; option++)
+   for(option = enum_options.begin(); option != option_end; ++option)
    {
       os << option_name.find(option->first)->second << ": " << option->second << std::endl;
    }
    os << " === " << std::endl;
 }
 
-int Parameter::get_class_debug_level(const std::string class_name, int _debug_level) const
+int Parameter::get_class_debug_level(const std::string&class_name, int _debug_level) const
 {
    auto temp = class_name;
    temp.erase(std::remove(temp.begin(), temp.end(), '_'), temp.end());
@@ -362,7 +389,7 @@ int Parameter::get_class_debug_level(const std::string class_name, int _debug_le
       return _debug_level;
 }
 
-int Parameter::GetFunctionDebugLevel(const std::string class_name, const std::string function_name) const
+int Parameter::GetFunctionDebugLevel(const std::string&class_name, const std::string&function_name) const
 {
    auto canonic_class_name = class_name;
    canonic_class_name.erase(std::remove(canonic_class_name.begin(), canonic_class_name.end(), '_'), canonic_class_name.end());
@@ -380,7 +407,7 @@ int Parameter::GetFunctionDebugLevel(const std::string class_name, const std::st
 
 }
 
-void Parameter::add_debug_class(const std::string & class_name)
+void Parameter::add_debug_class(const std::string& class_name)
 {
    auto temp = class_name;
    temp.erase(std::remove(temp.begin(), temp.end(), '_'), temp.end());
@@ -393,7 +420,7 @@ void Parameter::PrintFullHeader(std::ostream & os) const
    os << "                         Politecnico di Milano - DEIB" << std::endl;
    os << "                          System Architectures Group" << std::endl;
    os << "********************************************************************************" << std::endl;
-   os << "                Copyright (c) 2004-2017 Politecnico di Milano" << std::endl;
+   os << "                Copyright (c) 2004-2018 Politecnico di Milano" << std::endl;
    std::string version = PrintVersion();
    if(version.size() < 80)
       os << std::string(40 - (version.size()/2), ' ') << version << std::endl;
@@ -523,6 +550,24 @@ bool Parameter::ManageDefaultOptions(int next_option, char * optarg_param, bool 
             if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC7))
             {
                PRINT_OUT_MEX(OUTPUT_LEVEL_NONE, 0, I386_GCC7_VERSION);
+            }
+#endif
+#if HAVE_I386_CLANG4_COMPILER
+            if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG4))
+            {
+               PRINT_OUT_MEX(OUTPUT_LEVEL_NONE, 0, I386_CLANG4_VERSION);
+            }
+#endif
+#if HAVE_I386_CLANG5_COMPILER
+            if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG5))
+            {
+               PRINT_OUT_MEX(OUTPUT_LEVEL_NONE, 0, I386_CLANG5_VERSION);
+            }
+#endif
+#if HAVE_I386_CLANG6_COMPILER
+            if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG6))
+            {
+               PRINT_OUT_MEX(OUTPUT_LEVEL_NONE, 0, I386_CLANG6_VERSION);
             }
 #endif
 #if HAVE_SPARC_COMPILER
@@ -698,35 +743,114 @@ bool Parameter::ManageGccOptions(int next_option, char * optarg_param)
             const std::string opt_level = std::string(optarg_param);
             if(opt_level == "32")
             {
-               setOption(OPT_gcc_m32_mx32, "-m32 -mno-sse2 ");
+#if (HAVE_I386_GCC47_COMPILER && HAVE_I386_GCC47_M32) ||(HAVE_I386_GCC48_COMPILER && HAVE_I386_GCC48_M32) || (HAVE_I386_GCC49_COMPILER && HAVE_I386_GCC49_M32) || (HAVE_I386_GCC5_COMPILER && HAVE_I386_GCC5_M32) || (HAVE_I386_GCC6_COMPILER && HAVE_I386_GCC6_M32) || (HAVE_I386_GCC7_COMPILER && HAVE_I386_GCC7_M32) || (HAVE_I386_CLANG4_COMPILER && HAVE_I386_CLANG4_M32) || (HAVE_I386_CLANG5_COMPILER && HAVE_I386_CLANG5_M32) || (HAVE_I386_CLANG6_COMPILER && HAVE_I386_CLANG6_M32)
+               if( false
+#if (HAVE_I386_GCC47_COMPILER && HAVE_I386_GCC47_M32)
+                   || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC47
+#endif
+#if (HAVE_I386_GCC48_COMPILER && HAVE_I386_GCC48_M32)
+                   || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC48
+#endif
+#if (HAVE_I386_GCC49_COMPILER && HAVE_I386_GCC49_M32)
+                   || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC49
+#endif
+#if (HAVE_I386_GCC5_COMPILER && HAVE_I386_GCC5_M32)
+                   || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC5
+#endif
+#if (HAVE_I386_GCC6_COMPILER && HAVE_I386_GCC6_M32)
+                   || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC6
+#endif
+#if (HAVE_I386_GCC7_COMPILER && HAVE_I386_GCC7_M32)
+                   || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC7
+#endif
+#if (HAVE_I386_CLANG4_COMPILER && HAVE_I386_CLANG4_M32)
+                   || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANG4
+#endif
+#if (HAVE_I386_CLANG5_COMPILER && HAVE_I386_CLANG5_M32)
+                   || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANG5
+#endif
+#if (HAVE_I386_CLANG6_COMPILER && HAVE_I386_CLANG6_M32)
+                   || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANG6
+#endif
+                  )
+                  setOption(OPT_gcc_m32_mx32, "-m32 -mno-sse2 ");
+               else
+#endif
+                  THROW_ERROR("Option -m32 not supported");
             }
             else if(opt_level == "x32")
             {
-#if (HAVE_I386_GCC47_COMPILER && HAVE_I386_GCC47_MX32) ||(HAVE_I386_GCC48_COMPILER && HAVE_I386_GCC48_MX32) || (HAVE_I386_GCC49_COMPILER && HAVE_I386_GCC49_MX32) || (HAVE_I386_GCC5_COMPILER && HAVE_I386_GCC5_MX32) || (HAVE_I386_GCC6_COMPILER && HAVE_I386_GCC6_MX32) || (HAVE_I386_GCC7_COMPILER && HAVE_I386_GCC7_MX32)
+#if (HAVE_I386_GCC47_COMPILER && HAVE_I386_GCC47_MX32) ||(HAVE_I386_GCC48_COMPILER && HAVE_I386_GCC48_MX32) || (HAVE_I386_GCC49_COMPILER && HAVE_I386_GCC49_MX32) || (HAVE_I386_GCC5_COMPILER && HAVE_I386_GCC5_MX32) || (HAVE_I386_GCC6_COMPILER && HAVE_I386_GCC6_MX32) || (HAVE_I386_GCC7_COMPILER && HAVE_I386_GCC7_MX32) || (HAVE_I386_CLANG4_COMPILER && HAVE_I386_CLANG4_MX32) || (HAVE_I386_CLANG5_COMPILER && HAVE_I386_CLANG5_MX32) || (HAVE_I386_CLANG6_COMPILER && HAVE_I386_CLANG6_MX32)
                if( false
 #if (HAVE_I386_GCC47_COMPILER && HAVE_I386_GCC47_MX32)
-                     || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC47
+                   || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC47
 #endif
 #if (HAVE_I386_GCC48_COMPILER && HAVE_I386_GCC48_MX32)
-                     || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC48
+                   || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC48
 #endif
 #if (HAVE_I386_GCC49_COMPILER && HAVE_I386_GCC49_MX32)
-                     || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC49
+                   || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC49
 #endif
 #if (HAVE_I386_GCC5_COMPILER && HAVE_I386_GCC5_MX32)
-                     || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC5
+                   || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC5
 #endif
 #if (HAVE_I386_GCC6_COMPILER && HAVE_I386_GCC6_MX32)
-                     || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC6
+                   || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC6
 #endif
 #if (HAVE_I386_GCC7_COMPILER && HAVE_I386_GCC7_MX32)
-                     || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC7
+                   || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC7
+#endif
+#if (HAVE_I386_CLANG4_COMPILER && HAVE_I386_CLANG4_MX32)
+                   || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANG4
+#endif
+#if (HAVE_I386_CLANG5_COMPILER && HAVE_I386_CLANG5_MX32)
+                   || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANG5
+#endif
+#if (HAVE_I386_CLANG6_COMPILER && HAVE_I386_CLANG6_MX32)
+                   || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANG6
 #endif
                   )
                   setOption(OPT_gcc_m32_mx32, "-mx32");
                else
 #endif
                   THROW_ERROR("Option -mx32 not supported");
+            }
+            else if(opt_level == "64")
+            {
+#if (HAVE_I386_GCC47_COMPILER && HAVE_I386_GCC47_M64) ||(HAVE_I386_GCC48_COMPILER && HAVE_I386_GCC48_M64) || (HAVE_I386_GCC49_COMPILER && HAVE_I386_GCC49_M64) || (HAVE_I386_GCC5_COMPILER && HAVE_I386_GCC5_M64) || (HAVE_I386_GCC6_COMPILER && HAVE_I386_GCC6_M64) || (HAVE_I386_GCC7_COMPILER && HAVE_I386_GCC7_M64) || (HAVE_I386_CLANG4_COMPILER && HAVE_I386_CLANG4_M64) || (HAVE_I386_CLANG5_COMPILER && HAVE_I386_CLANG5_M64) || (HAVE_I386_CLANG6_COMPILER && HAVE_I386_CLANG6_M64)
+               if( false
+    #if (HAVE_I386_GCC47_COMPILER && HAVE_I386_GCC47_M64)
+                   || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC47
+    #endif
+    #if (HAVE_I386_GCC48_COMPILER && HAVE_I386_GCC48_M64)
+                   || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC48
+    #endif
+    #if (HAVE_I386_GCC49_COMPILER && HAVE_I386_GCC49_M64)
+                   || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC49
+    #endif
+    #if (HAVE_I386_GCC5_COMPILER && HAVE_I386_GCC5_M64)
+                   || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC5
+    #endif
+    #if (HAVE_I386_GCC6_COMPILER && HAVE_I386_GCC6_M64)
+                   || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC6
+    #endif
+    #if (HAVE_I386_GCC7_COMPILER && HAVE_I386_GCC7_M64)
+                   || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC7
+    #endif
+    #if (HAVE_I386_CLANG4_COMPILER && HAVE_I386_CLANG4_M64)
+                   || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANG4
+    #endif
+    #if (HAVE_I386_CLANG5_COMPILER && HAVE_I386_CLANG5_M64)
+                   || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANG5
+    #endif
+    #if (HAVE_I386_CLANG6_COMPILER && HAVE_I386_CLANG6_M64)
+                   || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANG6
+    #endif
+                   )
+                  setOption(OPT_gcc_m32_mx32, "-m64");
+               else
+#endif
+                  THROW_ERROR("Option -m64 not supported");
             }
          }
          break;
@@ -917,6 +1041,27 @@ bool Parameter::ManageGccOptions(int next_option, char * optarg_param)
             break;
          }
 #endif
+#if HAVE_I386_CLANG4_COMPILER
+         if(std::string(optarg_param) == "I386_CLANG4")
+         {
+            setOption(OPT_default_compiler, static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG4));
+            break;
+         }
+#endif
+#if HAVE_I386_CLANG5_COMPILER
+         if(std::string(optarg_param) == "I386_CLANG5")
+         {
+            setOption(OPT_default_compiler, static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG5));
+            break;
+         }
+#endif
+#if HAVE_I386_CLANG6_COMPILER
+         if(std::string(optarg_param) == "I386_CLANG6")
+         {
+            setOption(OPT_default_compiler, static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG6));
+            break;
+         }
+#endif
          THROW_ERROR("Unknown compiler " + std::string(optarg_param));
          break;
       }
@@ -968,7 +1113,7 @@ bool Parameter::ManageGccOptions(int next_option, char * optarg_param)
 }
 #endif
 
-Parameters_FileFormat Parameter::GetFileFormat(const std::string & file_name, const bool check_xml_root_node) const
+Parameters_FileFormat Parameter::GetFileFormat(const std::string& file_name, const bool check_xml_root_node) const
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Getting file format of file " + file_name);
    std::string extension = GetExtension(file_name);
@@ -1383,9 +1528,9 @@ void Parameter::PrintGccOptionsUsage(std::ostream & os) const
 {
    os
    << "  GCC options:\n\n"
-   << "    --compiler=<gcc_version>\n"
+   << "    --compiler=<compiler_version>\n"
    << "        Specify which compiler is used.\n"
-   << "        Possible values for <processor>:\n"
+   << "        Possible values for <compiler_version> are:\n"
 #if HAVE_ARM_COMPILER
    << "            ARM\n"
 #endif
@@ -1415,6 +1560,15 @@ void Parameter::PrintGccOptionsUsage(std::ostream & os) const
 #endif
 #if HAVE_I386_GCC7_COMPILER
    << "            I386_GCC7\n"
+#endif
+#if HAVE_I386_CLANG4_COMPILER
+   << "            I386_CLANG4\n"
+#endif
+#if HAVE_I386_CLANG5_COMPILER
+   << "            I386_CLANG5\n"
+#endif
+#if HAVE_I386_CLANG6_COMPILER
+   << "            I386_CLANG6\n"
 #endif
    << "\n"
    << "    -O<level>\n"
@@ -1702,7 +1856,7 @@ void Parameter::setOption(const enum enum_option name, const SDCScheduling_Algor
 }
 
 #endif
-bool Parameter::IsParameter(const std::string & name) const
+bool Parameter::IsParameter(const std::string& name) const
 {
    return panda_parameters.find(name) != panda_parameters.end();
 }

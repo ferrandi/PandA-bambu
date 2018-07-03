@@ -26,7 +26,7 @@
 #include <errno.h>
 #endif
 
-float __builtin_jnf(int n, float x)	/* wrapper jnf */
+float jnf(int n, float x)	/* wrapper jnf */
 {
 #ifdef _IEEE_LIBM
 	return __hide_ieee754_jnf(n,x);
@@ -34,8 +34,8 @@ float __builtin_jnf(int n, float x)	/* wrapper jnf */
 	float z;
 	struct exception exc;
 	z = __hide_ieee754_jnf(n,x);
-	if(_LIB_VERSION == _IEEE_ || __builtin_isnan(x) ) return z;
-	if(__builtin_fabsf(x)>(float)X_TLOSS) {
+    if(_LIB_VERSION == _IEEE_ || isnan(x) ) return z;
+    if(fabsf(x)>(float)X_TLOSS) {
 	    /* jnf(|x|>X_TLOSS) */
             exc.type = TLOSS;
             exc.name = "jnf";
@@ -45,7 +45,7 @@ float __builtin_jnf(int n, float x)	/* wrapper jnf */
             exc.retval = 0.0;
             if (_LIB_VERSION == _POSIX_)
                 errno = ERANGE;
-            else if (!__builtin_matherr(&exc)) {
+            else if (!matherr(&exc)) {
                errno = ERANGE;
             }        
 	    if (exc.err != 0)
@@ -56,7 +56,7 @@ float __builtin_jnf(int n, float x)	/* wrapper jnf */
 #endif
 }
 
-float __builtin_ynf(int n, float x)	/* wrapper ynf */
+float ynf(int n, float x)	/* wrapper ynf */
 {
 #ifdef _IEEE_LIBM
 	return __hide_ieee754_ynf(n,x);
@@ -64,7 +64,7 @@ float __builtin_ynf(int n, float x)	/* wrapper ynf */
 	float z;
 	struct exception exc;
 	z = __hide_ieee754_ynf(n,x);
-	if(_LIB_VERSION == _IEEE_ || __builtin_isnan(x) ) return z;
+    if(_LIB_VERSION == _IEEE_ || isnan(x) ) return z;
         if(x <= (float)0.0){
 	    /* ynf(n,0) = -inf or ynf(x<0) = NaN */
 #ifndef HUGE_VAL 
@@ -84,7 +84,7 @@ float __builtin_ynf(int n, float x)	/* wrapper ynf */
 	        exc.retval = -HUGE_VAL;
 	    if (_LIB_VERSION == _POSIX_)
 	        errno = EDOM;
-	    else if (!__builtin_matherr(&exc)) {
+        else if (!matherr(&exc)) {
 	        errno = EDOM;
 	    }
 	    if (exc.err != 0)
@@ -101,7 +101,7 @@ float __builtin_ynf(int n, float x)	/* wrapper ynf */
             exc.retval = 0.0;
             if (_LIB_VERSION == _POSIX_)
                 errno = ERANGE;
-            else if (!__builtin_matherr(&exc)) {
+            else if (!matherr(&exc)) {
                 errno = ERANGE;
             }        
 	    if (exc.err != 0)
@@ -114,14 +114,14 @@ float __builtin_ynf(int n, float x)	/* wrapper ynf */
 
 #ifdef _DOUBLE_IS_32BITS
 
-double __builtin_jn(int n, double x)
+double jn(int n, double x)
 {
-	return (double) __builtin_jnf(n, (float) x);
+    return (double) jnf(n, (float) x);
 }
 
-double __builtin_yn(int n, double x)
+double yn(int n, double x)
 {
-	return (double) __builtin_ynf(n, (float) x);
+    return (double) ynf(n, (float) x);
 }
 
 #endif /* defined(_DOUBLE_IS_32BITS) */

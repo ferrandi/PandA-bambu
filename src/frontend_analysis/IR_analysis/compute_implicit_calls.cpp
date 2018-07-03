@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -145,12 +145,12 @@ DesignFlowStep_Status compute_implicit_calls::InternalExec()
    statement_list * sl = GetPointer<statement_list>(GET_NODE(fd->body));
    THROW_ASSERT(sl, "Body is not a statement_list");
    std::map<unsigned int, blocRef>::iterator it_bb, it_bb_end = sl->list_of_bloc.end();
-   for(it_bb = sl->list_of_bloc.begin(); it_bb != it_bb_end ; it_bb++)
+   for(it_bb = sl->list_of_bloc.begin(); it_bb != it_bb_end ; ++it_bb)
    {
       if (it_bb->second->number == BB_ENTRY || it_bb->second->number == BB_EXIT)
          continue;
       max_loop_id = std::max(max_loop_id, it_bb->second->loop_id);
-      for(const auto stmt : it_bb->second->CGetStmtList())
+      for(const auto& stmt : it_bb->second->CGetStmtList())
       {
          tree_nodeRef tn = GET_NODE(stmt);
          if(tn->get_kind() == gimple_assign_K)
@@ -248,14 +248,14 @@ DesignFlowStep_Status compute_implicit_calls::InternalExec()
                      to_be_lowered_memset.push_front(std::make_pair(stmt,it_bb->second->number));
                   else
                   {
-                     unsigned int memset_function_id = TM->function_index("__builtin_memset");
+                     unsigned int memset_function_id = TM->function_index("__internal_bambu_memset");
                      THROW_ASSERT(AppM->GetFunctionBehavior(memset_function_id)->GetBehavioralHelper()->has_implementation(), "inconsistent behavioral helper");
                      AppM->GetCallGraphManager()->AddCallPoint(function_id, memset_function_id, GET_INDEX_NODE(stmt), FunctionEdgeInfo::CallType::direct_call);
                   }
                }
                else
                {
-                  unsigned int memcpy_function_id = TM->function_index("__builtin_memcpy");
+                  unsigned int memcpy_function_id = TM->function_index("__internal_bambu_memcpy");
                   THROW_ASSERT(AppM->GetFunctionBehavior(memcpy_function_id)->GetBehavioralHelper()->has_implementation(), "inconsistent behavioral helper");
                   AppM->GetCallGraphManager()->AddCallPoint(function_id, memcpy_function_id, GET_INDEX_NODE(stmt), FunctionEdgeInfo::CallType::direct_call);
                }
@@ -359,7 +359,7 @@ DesignFlowStep_Status compute_implicit_calls::InternalExec()
       ///The list of def edge which contains for the moment only the value coming from the forward edge
       std::vector<std::pair<tree_nodeRef, unsigned int> > list_of_def_edge;
       list_of_def_edge.push_back(std::pair<tree_nodeRef, unsigned int>(init_var, BB1_index));
-      auto phi = tree_man->create_phi_node(new_induction_var, list_of_def_edge, BBN1_block_index);
+      auto phi = tree_man->create_phi_node(new_induction_var, list_of_def_edge, TM->GetTreeReindex(function_id), BBN1_block_index);
       BBN1_block->AddPhi(phi);
       gimple_phi* gp = GetPointer<gimple_phi>(GET_NODE(phi));
       GetPointer<ssa_name>(GET_NODE(gp->res))->use_set = PointToSolutionRef(new PointToSolution());
@@ -422,24 +422,28 @@ DesignFlowStep_Status compute_implicit_calls::InternalExec()
             found_memset_statement = true;
             const auto temp_statement = *statement;
             ///Going one step step forward to avoid invalidation of the pointer
-            statement++;
+            auto tmp_it = statement;
+            ++tmp_it;
             ///Moving statement
             BB1_block->RemoveStmt(temp_statement);
             BBN1_block->PushBack(temp_statement);
             ///Going one step back since pointer is already increment in for loop
-            statement--;
+            --tmp_it;
+            statement = tmp_it;
          }
          else if(found_memset_statement)
          {
             /// move (xxxxb)* to BBN2
             const auto temp_statement = *statement;
             ///Going one step step forward to avoid invalidation of the pointer
-            statement++;
+            auto tmp_it = statement;
+            ++tmp_it;
             ///Moving statement
             BB1_block->RemoveStmt(temp_statement);
             BBN2_block->PushBack(temp_statement);
             ///Going one step back since pointer is already increment in for loop
-            statement--;
+            --tmp_it;
+            statement = tmp_it;
          }
       }
       THROW_ASSERT(found_memset_statement, "unexpected condition");

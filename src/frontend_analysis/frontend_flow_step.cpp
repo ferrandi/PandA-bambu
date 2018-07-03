@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -80,7 +80,7 @@ void FrontendFlowStep::CreateSteps(const DesignFlowManagerConstRef design_flow_m
    const DesignFlowGraphConstRef design_flow_graph = design_flow_manager->CGetDesignFlowGraph();
    const FrontendFlowStepFactory * frontend_flow_step_factory = GetPointer<const FrontendFlowStepFactory>(design_flow_manager->CGetDesignFlowStepFactory("Frontend"));
    std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> >::const_iterator frontend_relationship, frontend_relationship_end = frontend_relationships.end();
-   for(frontend_relationship = frontend_relationships.begin(); frontend_relationship != frontend_relationship_end; frontend_relationship++)
+   for(frontend_relationship = frontend_relationships.begin(); frontend_relationship != frontend_relationship_end; ++frontend_relationship)
    {
       switch(frontend_relationship->second)
       {
@@ -249,12 +249,10 @@ const std::string FrontendFlowStep::EnumToKindText(const FrontendFlowStepType fr
       case(DOM_POST_DOM_COMPUTATION):
          return "DomPostDomComputation";
 #if HAVE_BAMBU_BUILT
+      case(FANOUT_OPT):
+         return "FanoutOpt";
       case(MULTIPLE_ENTRY_IF_REDUCTION): //modified here
          return "MultipleEntryIfReduction";
-#endif
-#if HAVE_HOST_PROFILING_BUILT
-      case(DUMP_PROFILING_DATA):
-         return "DumpProfilingData";
 #endif
 #if HAVE_ZEBU_BUILT && HAVE_EXPERIMENTAL
       case(DYNAMIC_AGGREGATE_DATA_FLOW_ANALYSIS):
@@ -280,7 +278,7 @@ const std::string FrontendFlowStep::EnumToKindText(const FrontendFlowStepType fr
       case(EXTRACT_PATTERNS) :
          return "ExtractPatterns";
 #endif
-#if HAVE_BAMBU_BUILT && HAVE_EXPERIMENTAL
+#if HAVE_BAMBU_BUILT
       case FIND_MAX_CFG_TRANSFORMATIONS:
          return "FindMaxCfgTransformations";
 #endif
@@ -317,8 +315,6 @@ const std::string FrontendFlowStep::EnumToKindText(const FrontendFlowStepType fr
 #if HAVE_HOST_PROFILING_BUILT
       case(HOST_PROFILING) :
          return "HostProfiling";
-      case(HPP_PROFILING) :
-         return "HppProfiling";
 #endif
 #if HAVE_ZEBU_BUILT
       case(INSTRUCTION_SEQUENCES_COMPUTATION) :
@@ -348,10 +344,6 @@ const std::string FrontendFlowStep::EnumToKindText(const FrontendFlowStepType fr
 #endif
       case(LOOPS_IDENTIFICATION) :
          return "LoopsIdentification";
-#if HAVE_HOST_PROFILING_BUILT
-      case(LOOPS_PROFILING) :
-         return "LoopsProfiling";
-#endif
 #if HAVE_ZEBU_BUILT
       case(LOOPS_REBUILDING):
          return "LoopsRebuilding";
@@ -422,10 +414,6 @@ const std::string FrontendFlowStep::EnumToKindText(const FrontendFlowStepType fr
       case (REBUILD_INITIALIZATION):
          return "RebuildInitialization";
 #endif
-#if HAVE_HOST_PROFILING_BUILT
-      case(READ_PROFILING_DATA) :
-         return "ReadProfilingData";
-#endif
 #if HAVE_BAMBU_BUILT && HAVE_EXPERIMENTAL
       case(REDUCED_PDG_COMPUTATION):
          return "ReducedPdgComputation";
@@ -495,10 +483,6 @@ const std::string FrontendFlowStep::EnumToKindText(const FrontendFlowStepType fr
          return "StringCstFix";
       case(SWITCH_FIX):
          return "SwitchFix";
-#if HAVE_HOST_PROFILING_BUILT
-      case(TP_PROFILING):
-         return "TpProfiling";
-#endif
 #if HAVE_BAMBU_BUILT
       case UN_COMPARISON_LOWERING:
          return "UnComparisonLowering";

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -144,7 +144,7 @@ void FPGA_device::load_devices(const target_deviceRef device)
    try
    {
       PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "Available devices:");
-      for (std::map<std::string, std::string>::const_iterator d = default_device_data.begin(); d != default_device_data.end(); d++)
+      for (std::map<std::string, std::string>::const_iterator d = default_device_data.begin(); d != default_device_data.end(); ++d)
       {
          PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, " - " + d->first);
       }
@@ -156,7 +156,7 @@ void FPGA_device::load_devices(const target_deviceRef device)
          if (Param->isOption(OPT_target_device_file))
          {
             const auto file_devices = Param->getOption<const std::list<std::string> >(OPT_target_device_file);
-            for(const auto file_device : file_devices)
+            for(const auto& file_device : file_devices)
             {
                PRINT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "Imported user data from file " + file_device);
                ret.insert(XMLDomParserRef(new XMLDomParser(file_device)));
@@ -177,7 +177,7 @@ void FPGA_device::load_devices(const target_deviceRef device)
          return ret;
       }();
 
-      for(const auto parser : parsers)
+      for(const auto& parser : parsers)
       {
          parser->Exec();
          if (parser and *parser)
@@ -193,7 +193,7 @@ void FPGA_device::load_devices(const target_deviceRef device)
    {
       std::cerr << msg << std::endl;
    }
-   catch (const std::string & msg)
+   catch (const std::string& msg)
    {
       std::cerr << msg << std::endl;
    }
@@ -238,7 +238,7 @@ void FPGA_device::xwrite(xml_element* nodeRoot)
    std::string speed_grade = get_parameter<std::string>("speed_grade");
    WRITE_XNVM2("value", speed_grade, speed_grade_el);
 
-   for(std::map<std::string, std::string>::iterator p = parameters.begin(); p != parameters.end(); p++)
+   for(std::map<std::string, std::string>::iterator p = parameters.begin(); p != parameters.end(); ++p)
    {
       if(p->first == "vendor" || p->first == "family"  || p->first == "model"  || p->first == "package" || p->first == "speed_grade" || p->first == "clock_period") continue;
       xml_element* elRoot = tmRoot->add_child_element(p->first);

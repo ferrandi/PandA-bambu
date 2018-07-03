@@ -60,7 +60,6 @@ lib_HLS_la_CPPFLAGS = \
    -I$(top_srcdir)/src/HLS/chaining \
    -I$(top_srcdir)/src/HLS/evaluation \
    -I$(top_srcdir)/src/HLS/evaluation/exact \
-   -I$(top_srcdir)/src/HLS/evaluation/linear \
    -I$(top_srcdir)/src/HLS/function_allocation \
    -I$(top_srcdir)/src/HLS/hls_flow  \
    -I$(top_srcdir)/src/HLS/hls_flow/synthesis  \
@@ -127,22 +126,6 @@ lib_HLS_la_LIBADD = \
            $(top_builddir)/src/HLS/evaluation/lib_evaluation.la \
            $(top_builddir)/src/HLS/interface/lib_interface.la 
 
-if BUILD_LIB_EXPERIMENTAL
-   SUBDIRS += export
-   DIST_SUBDIRS += export
-
-   lib_HLS_la_CPPFLAGS += \
-      -I$(top_srcdir)/src/design_flows/backend/ToDataFile \
-      -I$(top_srcdir)/src/HLS/export  \
-      -I$(top_srcdir)/src/HLS/hls_flow/design_space_exploration \
-      -I$(top_srcdir)/src/HLS/interface/AXI \
-      -I$(top_srcdir)/src/HLS/interface/FSL \
-      -I$(top_srcdir)/src/HLS/interface/NPI
-
-   lib_HLS_la_LIBADD += \
-           $(top_builddir)/src/HLS/export/lib_hls_export.la
-
-endif
 if BUILD_LIB_VCD
    lib_HLS_la_CPPFLAGS += \
       -I$(top_srcdir)/src/HLS/vcd

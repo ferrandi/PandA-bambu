@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -54,7 +54,7 @@
 
 //constructor
 vivado_flow_wrapper::vivado_flow_wrapper(const ParameterConstRef _Param, const std::string& _output_dir, const target_deviceRef _device) :
-   XilinxWrapper(_Param, VIVADO_FLOW_TOOL_EXEC, _device, _output_dir, "vivado_flow")
+   XilinxWrapper(_Param, VIVADO_FLOW_TOOL_EXEC, _device, _output_dir, VIVADO_FLOW_TOOL_ID)
 {
    PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Creating the VIVADO_FLOW wrapper...");
 }
@@ -93,7 +93,7 @@ std::string vivado_flow_wrapper::get_command_line(const DesignParametersRef& dp)
 {
    std::ostringstream s;
    s << get_tool_exec() << " -mode batch -nojournal -nolog -source " << script_name;
-   for (std::vector<xml_parameter_tRef>::const_iterator it = xml_tool_options.begin(); it != xml_tool_options.end(); it++)
+   for (std::vector<xml_parameter_tRef>::const_iterator it = xml_tool_options.begin(); it != xml_tool_options.end(); ++it)
    {
       const xml_parameter_tRef & option = *it;
       if (option->checkCondition(dp))

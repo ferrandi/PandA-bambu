@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -111,7 +111,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
    const tree_nodeRef curr_tn = TM->GetTreeNode(function_id);
    function_decl * fd = GetPointer<function_decl>(curr_tn);
    statement_list * sl = GetPointer<statement_list>(GET_NODE(fd->body));
-   ///Retrive the list of block
+   ///Retrieve the list of block
    std::map<unsigned int, blocRef> &blocks = sl->list_of_bloc;
    std::map<unsigned int, blocRef>::iterator block_it, block_it_end;
    block_it_end = blocks.end();
@@ -121,10 +121,10 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
    do
    {
       restart_analysis = false;
-      for (block_it = blocks.begin();block_it != block_it_end;block_it++)
+      for (block_it = blocks.begin();block_it != block_it_end; ++block_it)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Analyzing BB" + boost::lexical_cast<std::string>(block_it->second->number));
-         ///Retrive the list of statement of the block
+         ///Retrieve the list of statement of the block
          const auto & stmt_list = block_it->second->CGetStmtList();
          std::list<tree_nodeRef> stmts_to_be_removed;
          ///for each statement, if it is a gimple_assign there could be an indirect_ref in both of the operands
@@ -156,13 +156,21 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                         AppM->RegisterTransformation(GetName(), *stmt);
 #endif
                      }
+                     else
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---LHS ssa used: " + STR(ssa->CGetNumberUses()) + "-" + STR(ssa->CGetDefStmts().size()));
                   }
+                  else
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---LHS not ssa");
                }
+               else
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---VDEF statement");
             }
+            else
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Not gimple_assign statement");
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed statement");
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed assignments");
-         if(stmts_to_be_removed.size())
+         if(not stmts_to_be_removed.empty())
          {
             modified = true;
             restart_analysis = true;
@@ -236,7 +244,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed phi");
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed phis");
-         if(phis_to_be_removed.size())
+         if(not phis_to_be_removed.empty())
          {
             modified = true;
             restart_analysis = true;

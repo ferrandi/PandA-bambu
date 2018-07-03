@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -51,6 +51,9 @@
 #include "config_HAVE_I386_GCC5_COMPILER.hpp"
 #include "config_HAVE_I386_GCC6_COMPILER.hpp"
 #include "config_HAVE_I386_GCC7_COMPILER.hpp"
+#include "config_HAVE_I386_CLANG4_COMPILER.hpp"
+#include "config_HAVE_I386_CLANG5_COMPILER.hpp"
+#include "config_HAVE_I386_CLANG6_COMPILER.hpp"
 
 ///Header include
 #include "tree-panda-gcc-Parameter.hpp"
@@ -58,6 +61,7 @@
 ///Boost include
 #include <boost/algorithm/string/split.hpp>
 #include <boost/algorithm/string/classification.hpp>
+#include <boost/algorithm/string/predicate.hpp>
 #include <boost/filesystem/convenience.hpp>
 #include <boost/filesystem/path.hpp>
 
@@ -102,7 +106,7 @@
 #define OPT_GC_SECTIONS 270
 
 
-tree_panda_gcc_parameter::tree_panda_gcc_parameter(const std::string _program_name, int _argc, char ** const _argv) :
+tree_panda_gcc_parameter::tree_panda_gcc_parameter(const std::string&_program_name, int _argc, char ** const _argv) :
    Parameter(_program_name, _argc, _argv)
 {
    SetDefaults();
@@ -118,7 +122,6 @@ int tree_panda_gcc_parameter::Exec()
 
    /// variable used into option parsing
    int option_index;
-   int next_option;
 
    const char* const short_options = COMMON_SHORT_OPTIONS_STRING "o:Ss::x:tn:cM::i:C:ru:e:T:" GCC_SHORT_OPTIONS_STRING;
 
@@ -138,7 +141,6 @@ int tree_panda_gcc_parameter::Exec()
          GCC_LONG_OPTIONS,
          {nullptr , 0, nullptr, 0}
       };
-   const std::string program_name = argv[0];
 
    if (argc == 1)
    {
@@ -148,7 +150,7 @@ int tree_panda_gcc_parameter::Exec()
 
    while (1)
    {
-      next_option = getopt_long_only(argc, argv, short_options, long_options, &option_index);
+      int next_option = getopt_long_only(argc, argv, short_options, long_options, &option_index);
 
       // no more options are available
       if (next_option == -1)
@@ -181,7 +183,7 @@ int tree_panda_gcc_parameter::Exec()
             {
                ///
                std::string parameter(optarg);
-               if(parameter.find("td=") == 0)
+               if(boost::algorithm::starts_with(parameter,"td="))
                   setOption(OPT_gcc_standard, parameter.substr(parameter.find("=")+1));
                else
                   THROW_ERROR("unexpected parameter: " + parameter);
@@ -288,7 +290,6 @@ int tree_panda_gcc_parameter::Exec()
             GccWrapperRef Wrap = GccWrapperRef(new GccWrapper(param, GccWrapper_CompilerTarget::CT_NO_GCC, optimization_set));
             Wrap->QueryGccConfig("--print-file-name=" + std::string(optarg));
             return EXIT_SUCCESS;
-            break;
          }
          case OPT_START_GROUP:
          case OPT_END_GROUP:
@@ -441,6 +442,12 @@ void tree_panda_gcc_parameter::SetDefaults()
    setOption(OPT_default_compiler, static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC6));
 #elif HAVE_I386_GCC7_COMPILER
    setOption(OPT_default_compiler, static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC7));
+#elif HAVE_I386_CLANG4_COMPILER
+   setOption(OPT_default_compiler, static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG4));
+#elif HAVE_I386_CLANG5_COMPILER
+   setOption(OPT_default_compiler, static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG5));
+#elif HAVE_I386_CLANG6_COMPILER
+   setOption(OPT_default_compiler, static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG6));
 #else
    THROW_ERROR("No GCC compiler available");
 #endif
@@ -468,6 +475,15 @@ void tree_panda_gcc_parameter::SetDefaults()
 #endif
 #if HAVE_I386_GCC7_COMPILER
       | static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC7)
+#endif
+#if HAVE_I386_CLANG4_COMPILER
+      | static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG4)
+#endif
+#if HAVE_I386_CLANG5_COMPILER
+      | static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG5)
+#endif
+#if HAVE_I386_CLANG6_COMPILER
+      | static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG6)
 #endif
 #if HAVE_ARM_COMPILER
       | static_cast<int>(GccWrapper_CompilerTarget::CT_ARM_GCC)

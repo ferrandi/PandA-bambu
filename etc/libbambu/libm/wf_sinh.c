@@ -30,7 +30,7 @@
 #include <errno.h>
 #endif
 
-float __builtin_sinhf(float x)		/* wrapper sinhf */
+float sinhf(float x)		/* wrapper sinhf */
 {
 #ifdef _IEEE_LIBM
 	return __hide_ieee754_sinhf(x);
@@ -57,7 +57,7 @@ float __builtin_sinhf(float x)		/* wrapper sinhf */
 	       exc.retval = ( (x>0.0) ? HUGE_VAL : -HUGE_VAL);
 	    if (_LIB_VERSION == _POSIX_)
 	       errno = ERANGE;
-	    else if (!__builtin_matherr(&exc)) {
+        else if (!matherr(&exc)) {
 	       errno = ERANGE;
 	    }
 	    if (exc.err != 0)
@@ -70,9 +70,9 @@ float __builtin_sinhf(float x)		/* wrapper sinhf */
 
 #ifdef _DOUBLE_IS_32BITS
 
-double __builtin_sinh(double x)
+double sinh(double x)
 {
-	return (double) __builtin_sinhf((float) x);
+    return (double) sinhf((float) x);
 }
 
 #endif /* defined(_DOUBLE_IS_32BITS) */

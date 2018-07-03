@@ -96,7 +96,7 @@ typedef union
 */
 #define SF_ADAPTER1(fun_name, prec) \
 __Tfloat##prec fun_name##if(__Tfloat##prec a, __Tfloat##prec b);\
-inline __Tfloat##prec fun_name##if(__Tfloat##prec a, __Tfloat##prec b) {\
+__Tfloat##prec fun_name##if(__Tfloat##prec a, __Tfloat##prec b) {\
   __convert##prec a_c, b_c, res_c;\
   a_c.f = a;\
   b_c.f = b;\
@@ -105,7 +105,7 @@ inline __Tfloat##prec fun_name##if(__Tfloat##prec a, __Tfloat##prec b) {\
 }
 #define SF_ADAPTER1_unary(fun_name, prec) \
 __Tfloat##prec fun_name##if(__Tfloat##prec a);\
-inline __Tfloat##prec fun_name##if(__Tfloat##prec a) {\
+__Tfloat##prec fun_name##if(__Tfloat##prec a) {\
   __convert##prec a_c, res_c;\
   a_c.f = a;\
   res_c.b = fun_name(a_c.b);\
@@ -113,7 +113,7 @@ inline __Tfloat##prec fun_name##if(__Tfloat##prec a) {\
 }
 #define SF_ADAPTER2(fun_name, prec) \
 __flag fun_name##if(__Tfloat##prec a, __Tfloat##prec b);\
-inline __flag fun_name##if(__Tfloat##prec a, __Tfloat##prec b) {\
+__flag fun_name##if(__Tfloat##prec a, __Tfloat##prec b) {\
   __convert##prec a_c, b_c, res_c;\
   a_c.f = a;\
   b_c.f = b;\
@@ -220,7 +220,7 @@ static __floatx80 __int32_to_floatx80( __int32 );
 static __float128 __int32_to_float128( __int32 );
 #endif
 static __float32 __int64_to_float32( __int64 );SF_ADAPTER3_unary(__int64_to_float32,64,32);
-static __float64 __uint64_to_float32( __uint64 ); SF_UADAPTER3_unary(__uint64_to_float32,64,32);
+static __float32 __uint64_to_float32( __uint64 ); SF_UADAPTER3_unary(__uint64_to_float32,64,32);
 static __float64 __int64_to_float64( __int64 );SF_ADAPTER3_unary(__int64_to_float64,64,64);
 static __float64 __uint64_to_float64( __uint64 a);SF_UADAPTER3_unary(__uint64_to_float64,64,64);
 #ifdef FLOATX80
@@ -256,7 +256,7 @@ static __float32 __float32_sub( __float32, __float32 );SF_ADAPTER1(__float32_sub
 static __float32 __float32_mul( __float32, __float32 );SF_ADAPTER1(__float32_mul,32);
 static __float32 __float32_div( __float32, __float32 );SF_ADAPTER1(__float32_div,32);
 static __float32 __float32_rem( __float32, __float32 );
-static __float32 __float32_sqrt( __float32 );SF_ADAPTER1_unary(__float32_sqrt,32); //inline float __builtin_sqrtf(float x) {return float32_sqrtif(x);}
+static __float32 __float32_sqrt( __float32 );SF_ADAPTER1_unary(__float32_sqrt,32); //inline float sqrtf(float x) {return float32_sqrtif(x);}
 static __flag __float32_eq( __float32, __float32 );
 static __flag __float32_le( __float32, __float32 );SF_ADAPTER2(__float32_le,32);
 static __flag __float32_lt( __float32, __float32 );SF_ADAPTER2(__float32_lt,32);
@@ -266,6 +266,7 @@ static __flag __float32_eq_signaling( __float32, __float32 );
 static __flag __float32_le_quiet( __float32, __float32 );
 static __flag __float32_lt_quiet( __float32, __float32 );
 static __flag __float32_is_signaling_nan( __float32 );
+//static __flag __float32_ltgt_quiet( __float32 a, __float32 b) {return !__float32_eq(b,a);}SF_ADAPTER2(__float32_ltgt_quiet,32);
 
 /*----------------------------------------------------------------------------
 | Software IEC/IEEE double-precision conversion routines.
@@ -293,7 +294,7 @@ static __float64 __float64_sub( __float64, __float64 );SF_ADAPTER1(__float64_sub
 static __float64 __float64_mul( __float64, __float64 );SF_ADAPTER1(__float64_mul,64);
 static __float64 __float64_div( __float64, __float64 );SF_ADAPTER1(__float64_div,64);
 static __float64 __float64_rem( __float64, __float64 );
-static __float64 __float64_sqrt( __float64 );SF_ADAPTER1_unary(__float64_sqrt,64); //inline double __builtin_sqrt(double x) {return float64_sqrtif(x);}
+static __float64 __float64_sqrt( __float64 );SF_ADAPTER1_unary(__float64_sqrt,64); //inline double sqrt(double x) {return float64_sqrtif(x);}
 static __flag __float64_eq( __float64, __float64 );
 static __flag __float64_le( __float64, __float64 );SF_ADAPTER2(__float64_le,64);
 static __flag __float64_lt( __float64, __float64 );SF_ADAPTER2(__float64_lt,64);
@@ -303,6 +304,7 @@ static __flag __float64_eq_signaling( __float64, __float64 );
 static __flag __float64_le_quiet( __float64, __float64 );
 static __flag __float64_lt_quiet( __float64, __float64 );
 static __flag __float64_is_signaling_nan( __float64 );
+//static __flag __float64_ltgt_quiet( __float64 a, __float64 b) {return !__float64_eq(b,a);}SF_ADAPTER2(__float64_ltgt_quiet,64);
 
 #ifdef FLOATX80
 
@@ -334,7 +336,7 @@ static __floatx80 __floatx80_sub( __floatx80, __floatx80 );SF_ADAPTER1(__floatx8
 static __floatx80 __floatx80_mul( __floatx80, __floatx80 );SF_ADAPTER1(__floatx80_mul,x80);
 static __floatx80 __floatx80_div( __floatx80, __floatx80 );SF_ADAPTER1(__floatx80_div,x80);
 static __floatx80 __floatx80_rem( __floatx80, __floatx80 );
-static __floatx80 __floatx80_sqrt( __floatx80 );SF_ADAPTER1_unary(__floatx80_sqrt,x80); //inline long double __builtin_sqrtl(long double x) {return floatx80_sqrtif(x);}
+static __floatx80 __floatx80_sqrt( __floatx80 );SF_ADAPTER1_unary(__floatx80_sqrt,x80); //inline long double sqrtl(long double x) {return floatx80_sqrtif(x);}
 static __flag __floatx80_eq( __floatx80, __floatx80 );
 static __flag __floatx80_le( __floatx80, __floatx80 );SF_ADAPTER2(__floatx80_le,x80);
 static __flag __floatx80_lt( __floatx80, __floatx80 );SF_ADAPTER2(__floatx80_lt,x80);
@@ -371,7 +373,7 @@ static __float128 __float128_sub( __float128, __float128 );SF_ADAPTER1(__float12
 static __float128 __float128_mul( __float128, __float128 );SF_ADAPTER1(__float128_mul,128);
 static __float128 __float128_div( __float128, __float128 );SF_ADAPTER1(__float128_div,128);
 static __float128 __float128_rem( __float128, __float128 );
-static __float128 __float128_sqrt( __float128 );SF_ADAPTER1_unary(__float128_sqrt,128); //inline __float128 __builtin_sqrtl(__float128 x) {return float128_sqrtif(x);}
+static __float128 __float128_sqrt( __float128 );SF_ADAPTER1_unary(__float128_sqrt,128); //inline __float128 sqrtl(__float128 x) {return float128_sqrtif(x);}
 static __flag __float128_eq( __float128, __float128 );
 static __flag __float128_le( __float128, __float128 );SF_ADAPTER2(__float128_le,128);
 static __flag __float128_lt( __float128, __float128 );SF_ADAPTER2(__float128_lt,128);

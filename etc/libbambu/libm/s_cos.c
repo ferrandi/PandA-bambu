@@ -50,7 +50,7 @@
  *	TRIG(x) returns trig(x) nearly rounded 
  */
 
-double __builtin_cos(double x)
+double cos(double x)
 {
 	double y[2],z=0.0;
 	int n, ix;
@@ -63,7 +63,7 @@ double __builtin_cos(double x)
 	if(ix <= 0x3fe921fb) return __hide_kernel_cos(x,z);
 
     /* cos(Inf or NaN) is NaN */
-	else if (ix>=0x7ff00000) return __builtin_nan("");
+    else if (ix>=0x7ff00000) return __builtin_nan("");
 
     /* argument reduction needed */
 	else {

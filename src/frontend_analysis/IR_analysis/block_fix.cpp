@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -115,14 +115,13 @@ DesignFlowStep_Status BlockFix::InternalExec()
    blocRef entry_bloc = blocRef(new bloc(BB_ENTRY));
    //Set of successor of entry
    std::vector<unsigned int>& succ_entry = entry_bloc->list_of_succ;
-   it3_end = list_of_bloc.end();
-   for(it3 = list_of_bloc.begin(); it3 != it3_end; it3++)
+   for(it3 = list_of_bloc.begin(); it3 != it3_end; ++it3)
    {
       std::vector<unsigned int>::iterator it2, it2_end;
       if(it3->second)
       {
          it2_end = it3->second->list_of_pred.end();
-         for(it2 = it3->second->list_of_pred.begin(); it2 != it2_end; it2++)
+         for(it2 = it3->second->list_of_pred.begin(); it2 != it2_end; ++it2)
          {
             if(*it2 == BB_ENTRY)
                succ_entry.push_back(it3->second->number);
@@ -152,7 +151,7 @@ DesignFlowStep_Status BlockFix::InternalExec()
          const auto gs = GetPointer<const gimple_switch>(GET_NODE(statement));
          if(gs)
          {
-            for(const auto vec_op: GetPointer<const tree_vec>(GET_NODE(gs->op1))->list_of_op)
+            for(const auto& vec_op: GetPointer<const tree_vec>(GET_NODE(gs->op1))->list_of_op)
             {
                const auto cle = GetPointer<const case_label_expr>(GET_NODE(vec_op));
                if(cle->got and GetPointer<const label_decl>(GET_NODE(cle->got)))

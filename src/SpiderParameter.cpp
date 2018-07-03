@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -169,7 +169,7 @@ void SpiderParameter::PrintProgramName(std::ostream & os) const
    os << "********************************************************************************" << std::endl;
 }
 
-SpiderParameter::SpiderParameter(const std::string _program_name, int _argc, char ** const _argv) :
+SpiderParameter::SpiderParameter(const std::string&_program_name, int _argc, char ** const _argv) :
    Parameter(_program_name, _argc, _argv)
 {
    SetDefaults();
@@ -178,11 +178,9 @@ SpiderParameter::SpiderParameter(const std::string _program_name, int _argc, cha
 int SpiderParameter::Exec()
 {
    exit_code = PARAMETER_NOTPARSED;
-   const std::string program_name = argv[0];
 
    /// variable used into option parsing
    int option_index;
-   int next_option;
 
    const char* const short_options = COMMON_SHORT_OPTIONS_STRING"I:O:p:";
 
@@ -217,7 +215,7 @@ int SpiderParameter::Exec()
    }
    while (1)
    {
-      next_option = getopt_long(argc, argv, short_options, long_options, &option_index);
+      int next_option = getopt_long(argc, argv, short_options, long_options, &option_index);
 
       // no more options are available
       if (next_option == -1)
@@ -379,7 +377,7 @@ void SpiderParameter::CheckParameters()
    {
       Parameters_FileFormat input_format = Parameters_FileFormat::FF_UNKNOWN, temp = Parameters_FileFormat::FF_UNKNOWN;
       const auto input_files = getOption<const CustomSet<std::string> >(OPT_input_file);
-      for(const auto input_file : input_files)
+      for(const auto& input_file : input_files)
       {
          temp = GetFileFormat(input_file, true);
          switch(temp)
@@ -496,7 +494,7 @@ void SpiderParameter::CheckParameters()
    setOption(OPT_circuit_debug_level, getOption<int>(OPT_debug_level));
 #endif
 #if HAVE_TECHNOLOGY_BUILT
-   for(const auto input_file : getOption<const CustomSet<std::string> >(OPT_input_file))
+   for(const auto& input_file : getOption<const CustomSet<std::string> >(OPT_input_file))
    {
       if(GetFileFormat(input_file, true) == Parameters_FileFormat::FF_XML_TEC)
       {

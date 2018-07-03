@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -210,7 +210,7 @@ struct cdfc_resource_ordering_functor
        * Constructor
        * @param o is the order.
        */
-      cdfc_resource_ordering_functor(const AllocationInformationConstRef _allocation_soluton) : allocation_information(_allocation_soluton) {}
+      explicit cdfc_resource_ordering_functor(const AllocationInformationConstRef _allocation_soluton) : allocation_information(_allocation_soluton) {}
 
       /**
        * Destructor
@@ -419,7 +419,7 @@ void estimate_muxes(const connection_relation &con_rel, unsigned int mux_prec, d
             }
          }
       }
-      for(const auto oe : data->CGetOutEdges(current_v))
+      for(const auto& oe : data->CGetOutEdges(current_v))
       {
          if((data->GetSelector(oe) & (DFG_SCA_SELECTOR|FB_DFG_SCA_SELECTOR)))
          {
@@ -442,7 +442,6 @@ void estimate_muxes(const connection_relation &con_rel, unsigned int mux_prec, d
    total_muxes=0;
    tot_mux_area = 0;
    tot_mux_delay = 0;
-   unsigned int current_muxs;
    for(unsigned int port_index=0; port_index < max_port_index; ++port_index)
    {
       if(IS_DEBUGGING)
@@ -453,7 +452,7 @@ void estimate_muxes(const connection_relation &con_rel, unsigned int mux_prec, d
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Module in ports: " + STR(module_in[port_index].size()));
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Module in reg ports: " + STR(module_in_reg[port_index].size()));
       }
-      current_muxs=0;
+      unsigned int current_muxs=0;
       current_muxs += static_cast<unsigned int>(regs_in[port_index].size());
       current_muxs += static_cast<unsigned int>(chained_in[port_index].size());
       current_muxs += static_cast<unsigned int>(module_in[port_index].size());
@@ -499,7 +498,6 @@ struct slack_based_filtering : public filter_clique<vertex>
          THROW_ASSERT(!candidate_clique.empty(), "candidate clique cannot be empty");
          double min_slack=std::numeric_limits<double>::max();
          C_vertex min_slack_vertex=*candidate_clique.begin();
-         double curr_slack ;
          vertex current_v;
          unsigned int total_muxes;
          unsigned int n_shared;
@@ -519,7 +517,7 @@ struct slack_based_filtering : public filter_clique<vertex>
          {
             THROW_ASSERT(converter.find(*vert_it) != converter.end(), "non-existing vertex");
             current_v = converter.find(*vert_it)->second;
-            curr_slack = slack_time.find(current_v)->second - (max_starting_time-starting_time.find(current_v)->second);
+            double curr_slack = slack_time.find(current_v)->second - (max_starting_time-starting_time.find(current_v)->second);
 
             //THROW_ASSERT(curr_slack>=0.0, "negative slack not allowed");
             //std::cerr << "Current slack " << curr_slack << " for vertex " << GET_NAME(data, current_v) << std::endl;
@@ -617,7 +615,7 @@ class CdfcWriter : public VertexWriter
        * Constructor
        * @param _printing_graph is the graph to be printed
        */
-      CdfcWriter(const CdfcGraph * _printing_graph) :
+      explicit CdfcWriter(const CdfcGraph * _printing_graph) :
          VertexWriter(_printing_graph, 0),
          cdfc_graph_info(GetPointer<const CdfcGraphInfo>(_printing_graph->CGetGraphInfo())),
          c2s(cdfc_graph_info->c2s),
@@ -643,7 +641,7 @@ class CdfcEdgeWriter : public EdgeWriter
        * @param _printing_graph is the graph to be printed
        * @param _selector is the selector of the graph to be printed
        */
-      CdfcEdgeWriter(const CdfcGraph * _printing_graph) :
+      explicit CdfcEdgeWriter(const CdfcGraph * _printing_graph) :
          EdgeWriter(_printing_graph, 0)
       {}
 
@@ -678,14 +676,14 @@ CdfcGraph::CdfcGraph(const CdfcGraphsCollectionRef  cdfc_graphs_collection, cons
    graph(cdfc_graphs_collection.get(), _selector)
 {}
 
-CdfcGraph::CdfcGraph(const CdfcGraphsCollectionRef  cdfc_graphs_collection, const int _selector, const std::unordered_set<vertex> vertices) :
+CdfcGraph::CdfcGraph(const CdfcGraphsCollectionRef  cdfc_graphs_collection, const int _selector, const std::unordered_set<vertex> &vertices) :
    graph(cdfc_graphs_collection.get(), _selector, vertices)
 {}
 
 CdfcGraph::~CdfcGraph()
 {}
 
-void CdfcGraph::WriteDot(const std::string & file_name, const int) const
+void CdfcGraph::WriteDot(const std::string& file_name, const int) const
 {
    const CdfcGraphInfo * cdfc_graph_info = GetPointer<const CdfcGraphInfo>(CGetGraphInfo());
    const BehavioralHelperConstRef behavioral_helper = cdfc_graph_info->operation_graph->CGetOpGraphInfo()->BH;
@@ -722,7 +720,7 @@ void cdfc_module_binding::update_slack_starting_time(const OpGraphConstRef fdfg,
       double new_current_budget = current_budget;
       if(!only_forward)
       {
-         for(const auto ie : fdfg->CGetInEdges(curr_vertex))
+         for(const auto& ie : fdfg->CGetInEdges(curr_vertex))
          {
             if(fdfg->GetSelector(ie) & DFG_SCA_SELECTOR)
             {
@@ -743,7 +741,7 @@ void cdfc_module_binding::update_slack_starting_time(const OpGraphConstRef fdfg,
       }
       if(!only_backward)
       {
-         for(const auto oe : fdfg->CGetOutEdges(curr_vertex))
+         for(const auto& oe : fdfg->CGetOutEdges(curr_vertex))
          {
             if(fdfg->GetSelector(oe) & DFG_SCA_SELECTOR)
             {
@@ -795,7 +793,7 @@ static vertex get_src_vertex(unsigned int var_written, vertex tgt, const HLS_man
 #endif
 
 static inline
-bool compute_condition1(std::string lib_name, const AllocationInformationConstRef allocation_information, double local_mux_time, unsigned int fu_s1)
+bool compute_condition1(const std::string& lib_name, const AllocationInformationConstRef allocation_information, double local_mux_time, unsigned int fu_s1)
 {
    bool cond1 = local_mux_time > 0 &&
                 lib_name != WORK_LIBRARY &&
@@ -821,11 +819,6 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
    long step_time;
    START_TIME(step_time);
    const tree_managerRef TreeM = HLSMgr->get_tree_manager();
-
-#if HAVE_EXPERIMENTAL
-   //added for managing chaining in PC
-   std::map<vertex, std::set<vertex> > unreachable_nodes;
-#endif
 
    // resource binding and allocation  info
    fu_bindingRef fu = HLS->Rfu;
@@ -1099,11 +1092,11 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
                && II_src == 0 /// pipelined operations break false loops
                )
          {
-            bool exists;
             cdfc_vertex cdfc_src = s2c[src];
             cdfc_vertex cdfc_tgt = s2c[tgt];
             if(cdfc_src != cdfc_tgt)
             {
+               bool exists;
                cdfc_edge E;
                boost::tie(E, exists) = boost::edge(cdfc_src, cdfc_tgt, *cdfc_bulk_graph);
                //std::cerr << "Chained " << cdfc_src << "-" << cdfc_tgt << " -- " << GET_NAME(sdg, src)  << "-" << GET_NAME(sdg, tgt) << std::endl;
@@ -1118,7 +1111,6 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
          }
       }
 
-      unsigned int fu_s1;
       double clock_cycle = HLS->HLS_C->get_clock_period()*CLOCK_MARGIN*clock_period_resource_fraction;
 
 #ifdef HC_APPROACH
@@ -1130,7 +1122,7 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
          const std::set<vertex>::const_iterator cv_it_end = fu_cv.second.end();
          for(std::set<vertex>::const_iterator cv_it = fu_cv.second.begin(); cv_it != cv_it_end;++cv_it)
          {
-            fu_s1 = fu_cv.first;
+            unsigned int fu_s1 = fu_cv.first;
             const double mux_time = MODULE_BINDING_MUX_MARGIN * allocation_information->estimate_mux_time(fu_s1);
             if(!can_be_clustered(*cv_it, fsdg, fu, slack_time, mux_time))
             {
@@ -1178,7 +1170,7 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
          const std::set<vertex>::const_iterator cv_it_end = fu_cv_it->second.end();
          for(std::set<vertex>::const_iterator cv_it = fu_cv_it->second.begin(); cv_it != cv_it_end;++cv_it)
          {
-            fu_s1 = fu_cv_it->first;
+            unsigned int fu_s1 = fu_cv_it->first;
             const double mux_time = MODULE_BINDING_MUX_MARGIN * allocation_information->estimate_mux_time(fu_s1);
             if(!can_be_clustered(*cv_it, fsdg, fu, slack_time, mux_time)) continue;
             std::vector<HLS_manager::io_binding_type> vars_read1 = HLSMgr->get_required_values(HLS->functionId, *cv_it);
@@ -1219,9 +1211,17 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
 
       int _w = 1;
 
-      for(const auto fu_cv : candidate_vertices)
+      // Do a preliminary register binding to help the sharing of complex operations
       {
-         fu_s1 = fu_cv.first;
+        DesignFlowStepRef regb;
+        regb = GetPointer<const HLSFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("HLS"))->CreateHLSFlowStep(HLSFlowStep_Type::WEIGHTED_CLIQUE_REGISTER_BINDING, funId, HLSFlowStepSpecializationConstRef(new WeightedCliqueRegisterBindingSpecialization(CliqueCovering_Algorithm::WEIGHTED_COLORING)));
+        regb->Initialize();
+        regb->Exec();
+      }
+
+      for(const auto& fu_cv : candidate_vertices)
+      {
+         unsigned int fu_s1 = fu_cv.first;
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering fu " + allocation_information->get_fu_name(fu_s1).first);
 
          std::string res_name = allocation_information->get_fu_name(fu_s1).first;
@@ -1450,7 +1450,7 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
       /// partition vertices for clique covering or bind the easy functional units
       std::map<unsigned int, unsigned int> numModule;
       std::map<unsigned int, std::unordered_set<cdfc_vertex>, cdfc_resource_ordering_functor > partitions(r_functor);
-      for(const auto fu_cv : candidate_vertices)
+      for(const auto& fu_cv : candidate_vertices)
       {
          fu_unit = fu_cv.first;
          for(const auto cv : fu_cv.second)
@@ -1635,7 +1635,7 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
             if(allocation_information->get_number_fu(p_it->first)!=INFINITE_UINT)
             {
                THROW_ASSERT(allocation_information->get_number_channels(p_it->first) == 0 || allocation_information->get_number_channels(p_it->first) == allocation_information->get_number_fu(p_it->first), "unexpected condition");
-
+               PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Defining resource constraints for  : "+ allocation_information->get_string_name(p_it->first) + " to " + STR(allocation_information->get_number_fu(p_it->first)));
                module_clique->suggest_min_resources(allocation_information->get_number_channels(p_it->first));
                if(allocation_information->get_number_channels(p_it->first)>0)
                   module_clique->max_resources(allocation_information->get_number_channels(p_it->first));
@@ -1648,7 +1648,7 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
             if(var && !HLSMgr->Rmem->is_private_memory(var))
                module_clique->min_resources(allocation_information->get_number_channels(p_it->first));
 
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Starting clique covering on a graph with "+ STR(p_it->second.size()) + " vertices");
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Starting clique covering on a graph with "+ STR(p_it->second.size()) + " vertices for " + allocation_information->get_string_name(p_it->first));
 
             /// performing clique covering
             if(disabling_slack_based_binding)
@@ -1668,8 +1668,10 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
                   no_check_clique<vertex> cq;
                   module_clique->exec(no_filter_clique<vertex>(), cq);
                }
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Number of cliques covering the graph: "+ STR(module_clique->num_vertices()) + " for " + allocation_information->get_string_name(p_it->first));
                if(module_clique->num_vertices()==0 || (allocation_information->get_number_channels(p_it->first) >= 1 && module_clique->num_vertices()>allocation_information->get_number_channels(p_it->first)))
                {
+                  PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Restarting with BIPARTITE_MATCHING: "+ res_name);
                   module_clique = clique_covering<vertex>::create_solver(CliqueCovering_Algorithm::BIPARTITE_MATCHING);
                   for(std::unordered_set<cdfc_vertex>::const_iterator vert_it = p_it->second.begin(); vert_it != vert_it_end; ++vert_it)
                   {
@@ -1725,6 +1727,12 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
                      module_clique->min_resources(allocation_information->get_number_channels(p_it->first));
                   no_check_clique<vertex> cq;
                   module_clique->exec(no_filter_clique<vertex>(), cq);
+                  if(allocation_information->get_number_fu(p_it->first)!=INFINITE_UINT)
+                  {
+                     THROW_ASSERT(allocation_information->get_number_channels(p_it->first) == 0 || allocation_information->get_number_channels(p_it->first) == allocation_information->get_number_fu(p_it->first), "unexpected condition");
+                     if(allocation_information->get_number_channels(p_it->first)>0 && module_clique->num_vertices() > allocation_information->get_number_channels(p_it->first))
+                        THROW_ERROR("Something of wrong happen: no feasible solution exist for module binding");
+                  }
                }
             }
 #if HAVE_EXPERIMENTAL
@@ -1743,7 +1751,7 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
                module_binding_check<vertex> cq(fu_prec, area_resource, HLS, HLSMgr, slack_time, starting_time, controller_delay, mrbs);
                module_clique->exec(slack_based_filtering(slack_time, starting_time, controller_delay, fu_prec, HLS, HLSMgr, area_resource, con_rel), cq);
             }
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Number of cliques covering the graph: "+ STR(module_clique->num_vertices()));
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Number of cliques covering the graph: "+ STR(module_clique->num_vertices()) + " for " + allocation_information->get_string_name(p_it->first));
             total_modules_allocated +=module_clique->num_vertices();
             to_update.clear();
 
@@ -1890,7 +1898,7 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
       {
          INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "---Clique covering computation:");
          INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "-->");
-         for(const auto iteration : clique_iteration_cputime)
+         for(const auto& iteration : clique_iteration_cputime)
          {
             INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "---Iteration " + STR(iteration.first) + " completed in " + print_cpu_time(iteration.second) + " seconds");
          }

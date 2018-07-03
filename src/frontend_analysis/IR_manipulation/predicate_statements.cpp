@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2016-2017 Politecnico di Milano
+ *              Copyright (c) 2016-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -123,9 +123,9 @@ DesignFlowStep_Status PredicateStatements::InternalExec()
    bool bb_modified = false;
    const auto fd = GetPointer<const function_decl>(TM->CGetTreeNode(function_id));
    const auto sl = GetPointer<const statement_list>(GET_NODE(fd->body));
-   for(const auto block : sl->list_of_bloc)
+   for(const auto& block : sl->list_of_bloc)
    {
-      for(const auto stmt : block.second->CGetStmtList())
+      for(const auto& stmt : block.second->CGetStmtList())
       {
          auto ga = GetPointer<gimple_assign>(GET_NODE(stmt));
          if(behavioral_helper->CanBeSpeculated(stmt->index) or not ga or (GET_NODE(ga->op1)->get_kind() == call_expr_K || GET_NODE(ga->op1)->get_kind() == aggr_init_expr_K))

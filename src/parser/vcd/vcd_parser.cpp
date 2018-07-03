@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -42,12 +42,14 @@
 
 #include "structural_objects.hpp"
 
-vcd_parser::vcd_parser(const ParameterConstRef & param)
-   : debug_level(param->get_class_debug_level(GET_CLASS(*this)))
+vcd_parser::vcd_parser(const ParameterConstRef & param) :
+   debug_level(param->get_class_debug_level(GET_CLASS(*this))),
+   vcd_fp(nullptr),
+   sig_n(0)
 {}
 
 vcd_parser::vcd_trace_t vcd_parser::parse_vcd(
-      const std::string & vcd_file_to_parse,
+      const std::string& vcd_file_to_parse,
       const vcd_parser::vcd_filter_t & selected_signals)
 {
    // ---- initialization ----
@@ -112,7 +114,7 @@ int vcd_parser::vcd_parse_skip_to_end()
    char token[256];        /* String value of current token */
    int chars_read = -1;    /* Number of characters scanned in */
 
-   while (fscanf(vcd_fp, "%s%n", token, &chars_read) != EOF)
+   while (fscanf(vcd_fp, "%255s%n", token, &chars_read) != EOF)
    {
       if (chars_read < 0)
          continue;
@@ -131,20 +133,19 @@ int vcd_parser::vcd_parse_skip_to_end()
 /**
  * Parses definition $var keyword line until $end keyword is seen.
  */
-int vcd_parser::vcd_parse_def_var(const std::string & scope)
+int vcd_parser::vcd_parse_def_var(const std::string& scope)
 {
    char type[256];         /* Variable type */
    unsigned int size;      /* Bit width of specified variable */
    char id_code[256];      /* Unique variable identifier_code */
    char ref[256];          /* Name of variable in design */
-   char reftmp[256];       /* Temporary variable name */
    char tmp[15];           /* Temporary string holder */
    unsigned int msb = 0;   /* Most significant bit */
    unsigned int lsb = 0;   /* Least significant bit */
-   bool isvect = false;    /* check if the signal is a vector */
 
-   if( fscanf( vcd_fp, "%s %u %s %s %s", type, &size, id_code, ref, tmp ) == 5 )
+   if( fscanf( vcd_fp, "%255s %u %255s %255s %14s", type, &size, id_code, ref, tmp ) == 5 )
    {
+      bool isvect = false;    /* check if the signal is a vector */
       /* Make sure that we have not exceeded array boundaries */
       if(strlen( type ) > 256)
          THROW_ERROR("Overflow. Read token too long (type var)");
@@ -166,6 +167,7 @@ int vcd_parser::vcd_parse_def_var(const std::string & scope)
       }
       else
       {
+         char reftmp[256];       /* Temporary variable name */
          if( strncmp( "$end", tmp, 4 ) != 0 )
          {
             /* A bit select was specified for this signal, get the size */
@@ -178,7 +180,7 @@ int vcd_parser::vcd_parse_def_var(const std::string & scope)
             }
             isvect = true;
 
-            if( (fscanf( vcd_fp, "%s", tmp ) != 1) || (strncmp( "$end", tmp, 4 ) != 0) )
+            if( (fscanf( vcd_fp, "%14s", tmp ) != 1) || (strncmp( "$end", tmp, 4 ) != 0) )
                THROW_ERROR("Unrecognized $var format");
          }
          else if( sscanf( ref, "%*[a-zA-Z0-9_][%*s].") == 2 )
@@ -190,7 +192,7 @@ int vcd_parser::vcd_parse_def_var(const std::string & scope)
             if (msb > 0)
                isvect = true;
          }
-         else if( sscanf( ref, "%[a-zA-Z0-9_][%s]", reftmp, tmp ) == 2 )
+         else if( sscanf( ref, "%255[a-zA-Z0-9_][%14s]", reftmp, tmp ) == 2 )
          {  
             strcpy( ref, reftmp );
 
@@ -236,7 +238,7 @@ void vcd_parser::vcd_push_def_scope(std::stack<std::string> & scope)
 {
    char new_scope[256]; /* scope name */
 
-   if (fscanf(vcd_fp, " %*s %s $end ", new_scope) == 1)
+   if (fscanf(vcd_fp, " %*s %255s $end ", new_scope) == 1)
    {
       /* Make sure that we have not exceeded any array boundaries */
       if (strlen(new_scope) > 256)
@@ -255,7 +257,7 @@ void vcd_parser::vcd_pop_def_scope(std::stack<std::string> & scope)
 {
    char token[256];
 
-   if (fscanf(vcd_fp, " %s ", token) == 1)
+   if (fscanf(vcd_fp, " %255s ", token) == 1)
    {
       /* Make sure that we have not exceeded any array boundaries */
       if (strlen(token) > 256)
@@ -292,7 +294,7 @@ int vcd_parser::vcd_parse_def()
    char keyword[256];          /* Holds keyword value */
    int  chars_read;            /* Number of characters scanned in */
 
-   while( !enddef_found && (fscanf( vcd_fp, "%s%n", keyword, &chars_read ) == 1) )
+   while( !enddef_found && (fscanf( vcd_fp, "%255s%n", keyword, &chars_read ) == 1) )
    {
       if(chars_read > 256)
          THROW_ERROR("Overflow. Read token too long");
@@ -346,7 +348,7 @@ int vcd_parser::vcd_parse_sim_vector(char* value, unsigned long timestamp)
    char sym[256];    /* String value of signal symbol */
    int  chars_read;  /* Number of characters scanned in */
 
-   if( fscanf( vcd_fp, "%s%n", sym, &chars_read ) == 1 )
+   if( fscanf( vcd_fp, "%255s%n", sym, &chars_read ) == 1 )
    {
       if(chars_read > 256)
          THROW_ERROR("Overflow. Read token too long");
@@ -370,7 +372,7 @@ int vcd_parser::vcd_parse_sim_real(char* value, unsigned long timestamp)
    char sym[256];    /* String value of signal symbol */
    int  chars_read;  /* Number of characters scanned in */
 
-   if( fscanf( vcd_fp, "%s%n", sym, &chars_read ) == 1 )
+   if( fscanf( vcd_fp, "%255s%n", sym, &chars_read ) == 1 )
    {
       if(chars_read > 256)
           THROW_ERROR("Overflow. Read token too long");
@@ -447,7 +449,7 @@ int vcd_parser::vcd_parse_sim()
    return 0;     
 }
 
-bool vcd_parser::check_filter_list(const std::string & scope_str, const std::string & name)
+bool vcd_parser::check_filter_list(const std::string& scope_str, const std::string& name)
 {
    if (filtered_signals.empty())
       return false;
@@ -461,10 +463,10 @@ bool vcd_parser::check_filter_list(const std::string & scope_str, const std::str
 
 void vcd_parser::vcd_add_signal
 (
-   const std::string & scope,
-   const std::string & name,
-   const std::string & vcd_id,
-   const std::string & type,
+   const std::string& scope,
+   const std::string& name,
+   const std::string& vcd_id,
+   const std::string& type,
    const bool isvect,
    const unsigned int msb,
    const unsigned int lsb
@@ -529,8 +531,8 @@ void vcd_parser::init_variations()
 }
 
 void vcd_parser::add_variation(
-      const std::string & sig_id,
-      const std::string & value,
+      const std::string& sig_id,
+      const std::string& value,
       unsigned long long ts)
 {
    THROW_ASSERT(value.size(), "trying to add an empty variation for vcd id " +

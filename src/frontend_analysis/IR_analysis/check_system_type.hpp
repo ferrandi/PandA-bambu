@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -143,7 +143,7 @@ class CheckSystemType : public FunctionFrontendFlowStep
        * @param include is the string of srcp to be checked
        * @param real_name is the string fixed
        */
-      void getRealInclName(const std::string include, std::string & real_name) const;
+      void getRealInclName(const std::string&include, std::string & real_name) const;
 
       /**
        * Return the set of analyses in relationship with this design step

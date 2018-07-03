@@ -25,7 +25,7 @@
  * for exercising the fraction-part(F) IEEE 754-1985 test vector.
  */
 
-double __builtin_significand(double x)
+double significand(double x)
 {
-	return __hide_ieee754_scalb(x,(double) -__builtin_ilogb(x));
+    return __hide_ieee754_scalb(x,(double) -ilogb(x));
 }

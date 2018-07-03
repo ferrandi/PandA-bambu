@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2015-2017 Politecnico di Milano
+ *              Copyright (c) 2015-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -49,13 +49,13 @@ TimeStamp::TimeStamp(boost::posix_time::ptime timestamp) :
    boost::posix_time::ptime(timestamp)
 {}
 
-TimeStamp::TimeStamp(const std::string timestamp) :
+TimeStamp::TimeStamp(const std::string&timestamp) :
    boost::posix_time::ptime(boost::date_time::parse_delimited_time<boost::posix_time::ptime>(timestamp, 'T'))
 {}
 
 TimeStamp TimeStamp::GetCurrentTimeStamp()
 {
-   return boost::posix_time::second_clock::local_time();
+   return TimeStamp(boost::posix_time::second_clock::local_time());
 }
 
 std::ostream & operator<<(std::ostream & os, const TimeStamp & timestamp)

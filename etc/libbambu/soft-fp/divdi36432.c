@@ -1,5 +1,5 @@
 /* 64-bit division and modulus
-   Copyright (c) 2004-2017 Politecnico di Milano
+   Copyright (c) 2004-2018 Politecnico di Milano
    This file is part of the HLS-FP Library.
 
    author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
@@ -122,7 +122,7 @@ __udivmoddi4 (UDItype x, UDItype y, DItype *res)
      BIT_RESIZE(y,32);
     // table lookup start
 #define W 64
-    unsigned char k32 =__builtin_clz(y);
+    unsigned char k32 =clz(y);
     UDItype lshifted_y = ((UDItype)(((USItype)y) << k32))<<32;
     /// remove the leading 1
     lshifted_y = lshifted_y << 1;

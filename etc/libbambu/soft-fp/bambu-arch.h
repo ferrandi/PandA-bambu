@@ -1,5 +1,5 @@
 /* Specific functions for bambu architecture.
-   Copyright (C) 2014-2017 Politecnico di Milano (Italy).
+   Copyright (C) 2014-2018 Politecnico di Milano (Italy).
    This file is part of the HLS-FP Library.
 
    The HLS-FP Library is free software; you can redistribute it and/or
@@ -64,7 +64,7 @@
 */
 #ifdef LOG2_BASED_CLZ
 inline
-unsigned char __builtin_clz(unsigned int v)
+int clz(unsigned int v)
 {
     unsigned int r; // result of log2(v) will go here
     unsigned int shift;
@@ -84,16 +84,16 @@ unsigned char __builtin_clz(unsigned int v)
     return 31 - r;
 
 }
-unsigned char __builtin_clzll(unsigned long long int v)
+int clzll(unsigned long long int v)
 {
     unsigned int high = v >> 32;
     unsigned int low = v;
-    return high==0 ? 32 + __builtin_clz(v) : __builtin_clz(high);
+    return high==0 ? 32 + clz(v) : clz(high);
 }
 
 #elif SHIFT_BASED
 inline
-unsigned char __builtin_clz(unsigned int v)
+int clz(unsigned int v)
 {
   _Bool result_4, result_3, result_2, result_1, result_0;
   unsigned short val16;
@@ -110,18 +110,18 @@ unsigned char __builtin_clz(unsigned int v)
 }
 
 inline
-unsigned char __builtin_clzll(unsigned long long int v)
+int clzll(unsigned long long int v)
 {
   _Bool result_5;
   unsigned int val32;
 
   result_5 = v>>32 == 0;
   val32 = result_5 ? v : v>>32;
-  return result_5 << 5 | __builtin_clz(val32);
+  return result_5 << 5 | clz(val32);
 }
 #else
 inline
-unsigned char __builtin_clz(unsigned int v)
+int clz(unsigned int v)
 {
   unsigned char res;
   count_leading_zero_macro(32,v,res)
@@ -129,7 +129,7 @@ unsigned char __builtin_clz(unsigned int v)
 
 }
 inline
-unsigned char __builtin_clzll(unsigned long long int v)
+int clzll(unsigned long long int v)
 {
   unsigned char res;
   count_leading_zero_macro(64,v,res)
@@ -139,7 +139,7 @@ unsigned char __builtin_clzll(unsigned long long int v)
 #endif
 
 
-#define count_leading_zeros(count, x)	((count) = __builtin_clz (x))
+#define count_leading_zeros(count, x)	((count) = clz (x))
 
 #define UDIV_NEEDS_NORMALIZATION 0
 
@@ -159,12 +159,12 @@ unsigned __divlu2(unsigned u1, unsigned u0, unsigned v,
          *r = 0xFFFFFFFF;    // and return the largest
       return 0xFFFFFFFF;}    // possible quotient.
 
-   s = __builtin_clz(v);               // 0 <= s <= 31.
+   s = clz(v);               // 0 <= s <= 31.
    v = v << s;               // Normalize divisor.
    vn1 = v >> 16;            // Break divisor up into
    vn0 = v & 0xFFFF;         // two 16-bit digits.
 
-   un32 = (u1 << s) | (u0 >> 32 - s) & (-s >> 31);
+   un32 = (u1 << s) | ((u0 >> (32 - s)) & (-s >> 31));
    un10 = u0 << s;           // Shift dividend left.
 
    un1 = un10 >> 16;         // Break right half of

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -34,7 +34,7 @@
  * @file IR_lowering.cpp
  * @brief Decompose some complex gimple statements into a set of simpler operations.
  * Matteo M. Fusi and Matteo Locatelli modifies the division by an integer constant
- * integrating the follow work done by Florent de Dinichen:
+ * integrating the work done in this paper:
  * Florent de Dinechin, “Multiplication by Rational Constants” -
  * IEEE Transactions on Circuit Systems-II: Express Briefs, Vol. 59, NO 2, february 2012
  *
@@ -166,7 +166,7 @@ void IR_lowering::ComputeRelationships(DesignFlowStepSet & relationship, const D
    FunctionFrontendFlowStep::ComputeRelationships(relationship, relationship_type);
 }
 
-tree_nodeRef IR_lowering::CreateGimpleAssign(const tree_nodeRef type, const tree_nodeRef op, unsigned int bb_index, const std::string & srcp)
+tree_nodeRef IR_lowering::CreateGimpleAssign(const tree_nodeRef type, const tree_nodeRef op, unsigned int bb_index, const std::string& srcp)
 {
    auto ret_value = tree_man->CreateGimpleAssign(type, op, bb_index, srcp);
    return ret_value;
@@ -530,12 +530,12 @@ synth_mult (struct algorithm &alg_out, unsigned long long t,
           hardware the shift may be executed concurrently with the
           earlier steps in the algorithm.  */
          op_cost = 1/*add_cost[speed][mode]*/ + 0/*shift_cost[speed][mode][m]*/;
-         if (1/*shiftadd_cost[speed][mode][m]*/ < op_cost)
-         {
-            op_cost = 1/*shiftadd_cost[speed][mode][m]*/;
-            op_latency = op_cost;
-         }
-         else
+         //if (1/*shiftadd_cost[speed][mode][m]*/ < op_cost)
+         //{
+         //   op_cost = 1/*shiftadd_cost[speed][mode][m]*/;
+         //   op_latency = op_cost;
+         //}
+         //else
             op_latency = 1/*add_cost[speed][mode]*/;
 
          new_limit.cost = static_cast<short>(best_cost.cost - op_cost);
@@ -568,12 +568,12 @@ synth_mult (struct algorithm &alg_out, unsigned long long t,
           hardware the shift may be executed concurrently with the
           earlier steps in the algorithm.  */
          op_cost = 1/*add_cost[speed][mode]*/ + 0/*shift_cost[speed][mode][m]*/;
-         if (1/*shiftsub0_cost[speed][mode][m]*/ < op_cost)
-         {
-            op_cost = 1/*shiftsub0_cost[speed][mode][m]*/;
-            op_latency = op_cost;
-         }
-         else
+         //if (1/*shiftsub0_cost[speed][mode][m]*/ < op_cost)
+         //{
+         //   op_cost = 1/*shiftsub0_cost[speed][mode][m]*/;
+         //   op_latency = op_cost;
+         //}
+         //else
             op_latency = 1/*add_cost[speed][mode]*/;
 
          new_limit.cost = static_cast<short>(best_cost.cost - op_cost);
@@ -760,7 +760,7 @@ choose_mult_variant (unsigned int data_bitsize, long long int val,
    return MULT_COST_LESS (alg.cost, Mult_cost);
  }
 
-tree_nodeRef IR_lowering::expand_mult_const (tree_nodeRef op0, unsigned long long int val, const struct algorithm &alg, enum mult_variant &variant, const tree_nodeRef stmt, const blocRef block, tree_nodeRef &type, const std::string srcp_default)
+tree_nodeRef IR_lowering::expand_mult_const (tree_nodeRef op0, unsigned long long int val, const struct algorithm &alg, enum mult_variant &variant, const tree_nodeRef stmt, const blocRef block, tree_nodeRef &type, const std::string&srcp_default)
 {
    long long int val_so_far = 0;
    tree_nodeRef accum, tem;
@@ -962,7 +962,9 @@ tree_nodeRef IR_lowering::expand_mult_const (tree_nodeRef op0, unsigned long lon
 
    /** Compare only the bits of val and val_so_far that are significant
      in the result mode, to avoid sign-/zero-extension confusion.  */
+#if HAVE_ASSERTS
    val = val & data_mask;
+#endif
    val_so_far = val_so_far & static_cast<long long int>(data_mask);
    THROW_ASSERT (val == static_cast<unsigned long long int>(val_so_far), "unexpected difference");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Expanded " + op0->ToString());
@@ -971,7 +973,7 @@ tree_nodeRef IR_lowering::expand_mult_const (tree_nodeRef op0, unsigned long lon
 
 }
 
-tree_nodeRef IR_lowering::expand_smod_pow2 (tree_nodeRef op0, unsigned long long int  d, const tree_nodeRef stmt, const blocRef block, tree_nodeRef &type, const std::string srcp_default)
+tree_nodeRef IR_lowering::expand_smod_pow2 (tree_nodeRef op0, unsigned long long int  d, const tree_nodeRef stmt, const blocRef block, tree_nodeRef &type, const std::string&srcp_default)
 {
    unsigned long long int  masklow;
    int logd;
@@ -1027,7 +1029,7 @@ tree_nodeRef IR_lowering::expand_smod_pow2 (tree_nodeRef op0, unsigned long long
 
 }
 
-tree_nodeRef IR_lowering::expand_sdiv_pow2 (tree_nodeRef op0, unsigned long long int d, const tree_nodeRef stmt, const blocRef block, tree_nodeRef &type, const std::string srcp_default)
+tree_nodeRef IR_lowering::expand_sdiv_pow2 (tree_nodeRef op0, unsigned long long int d, const tree_nodeRef stmt, const blocRef block, tree_nodeRef &type, const std::string&srcp_default)
 {
    int logd;
 
@@ -1091,11 +1093,17 @@ tree_nodeRef IR_lowering::expand_sdiv_pow2 (tree_nodeRef op0, unsigned long long
 }
 
 
-tree_nodeRef IR_lowering::expand_MC(tree_nodeRef op0, integer_cst* ic_node, tree_nodeRef old_target, const tree_nodeRef stmt, const blocRef block, tree_nodeRef &type_expr, const std::string & srcp_default)
+tree_nodeRef IR_lowering::expand_MC(tree_nodeRef op0, integer_cst* ic_node, tree_nodeRef old_target, const tree_nodeRef stmt, const blocRef block, tree_nodeRef &type_expr, const std::string& srcp_default)
 {
    long long int ext_op1 = tree_helper::get_integer_cst_value(ic_node);
    short int mult_plus_ratio = 3;
    unsigned int data_bitsize = tree_helper::Size(GET_NODE(op0));
+   unsigned int typeSize = tree_helper::Size(type_expr);
+   if(typeSize<64)
+   {
+      ext_op1 <<= 64-typeSize;
+      ext_op1 >>= 64-typeSize;
+   }
 #if HAVE_BAMBU_BUILT
    if(GetPointer<HLS_manager>(AppM))
    {
@@ -1181,7 +1189,7 @@ tree_nodeRef IR_lowering::expand_MC(tree_nodeRef op0, integer_cst* ic_node, tree
    }
 }
 
-bool IR_lowering::expand_target_mem_ref(target_mem_ref461 * tmr, const tree_nodeRef stmt, const blocRef block, const std::string srcp_default, bool temp_addr)
+bool IR_lowering::expand_target_mem_ref(target_mem_ref461 * tmr, const tree_nodeRef stmt, const blocRef block, const std::string&srcp_default, bool temp_addr)
 {
    tree_nodeRef accum;
    tree_nodeRef type_sum;
@@ -1326,7 +1334,7 @@ bool IR_lowering::expand_target_mem_ref(target_mem_ref461 * tmr, const tree_node
    return changed;
 }
 
-tree_nodeRef IR_lowering::expand_mult_highpart(tree_nodeRef op0, unsigned long long int ml, tree_nodeRef type_expr, int data_bitsize, const std::list<tree_nodeRef>::const_iterator it_los, const blocRef block, const std::string srcp_default)
+tree_nodeRef IR_lowering::expand_mult_highpart(tree_nodeRef op0, unsigned long long int ml, tree_nodeRef type_expr, int data_bitsize, const std::list<tree_nodeRef>::const_iterator it_los, const blocRef block, const std::string&srcp_default)
 {
    /**
     long long int u0, v0, u1, v1, u0v0, u0v0h, u1v0, u0v0hu1v0, u0v1, u0v0hu1v0u0v1, u0v0hu1v0u0v1h, u1v1;
@@ -1531,7 +1539,7 @@ tree_nodeRef IR_lowering::expand_mult_highpart(tree_nodeRef op0, unsigned long l
 
 }
 
-tree_nodeRef IR_lowering::array_ref_lowering(array_ref * AR, const std::string srcp_default, std::pair<unsigned int, blocRef> block, std::list<tree_nodeRef>::const_iterator it_los, bool temp_addr)
+tree_nodeRef IR_lowering::array_ref_lowering(array_ref * AR, const std::string&srcp_default, std::pair<unsigned int, blocRef> block, std::list<tree_nodeRef>::const_iterator it_los, bool temp_addr)
 {
    tree_nodeRef type = AR->type;
 

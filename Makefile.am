@@ -52,16 +52,11 @@ ACLOCAL_AMFLAGS = -I etc/macros
 
 
 dist-hook:
-	$(top_srcdir)/etc/scripts/clean_configure.py $(top_srcdir)/configure.ac  | grep -v "#no_release_tag" > $(distdir)/configure.ac
 	rm $(distdir)/aclocal.m4
 	rm $(distdir)/missing
 	rm $(distdir)/configure
 	rm $(distdir)/depcomp
-	rm $(distdir)/etc/aclocal.m4
-	rm $(distdir)/etc/configure
 	rm $(distdir)/etc/macros/ltversion.m4
-	rm $(distdir)/ext/aclocal.m4
-	rm $(distdir)/ext/configure
 	rm $(distdir)/ext/flopoco/aclocal.m4
 	rm $(distdir)/ext/flopoco/configure
 	rm $(distdir)/ext/flopoco/m4/ltversion.m4
@@ -89,6 +84,7 @@ dist-hook:
 	cp $(srcdir)/ext/flopoco/autotools/src/Makefile.am $(distdir)/ext/flopoco/autotools/src/Makefile.am
 	cp $(builddir)/src/revision_hash.hpp $(distdir)/dist_revision_hash
 	for file in \
+        $(distdir)/ext/flopoco/src/ExpressionScanner.cpp $(distdir)/ext/flopoco/src/ExpressionParser.cpp \
 	$(distdir)/src/parser/polixml/xmlLexer.cpp $(distdir)/src/parser/polixml/xmlParser.hpp $(distdir)/src/parser/polixml/xmlParser.h $(distdir)/src/parser/polixml/xmlParser.cpp \
 	$(distdir)/src/parser/rtlgcc/rtlLexer.cpp $(distdir)/src/parser/rtlgcc/rtlParser.hpp $(distdir)/src/parser/rtlgcc/rtlParser.h $(distdir)/src/parser/rtlgcc/rtlParser.cpp \
 	$(distdir)/src/parser/treegcc/treeLexer.cpp $(distdir)/src/parser/treegcc/treeParser.hpp $(distdir)/src/parser/treegcc/treeParser.h $(distdir)/src/parser/treegcc/treeParser.cpp \
@@ -100,5 +96,4 @@ dist-hook:
 	      rm $$file;\
 	   fi \
 	done
-	cp $(top_srcdir)/etc/macros/mentor.m4.public $(distdir)/etc/macros/mentor.m4
-	cp $(top_srcdir)/etc/macros/panda_ext_args.m4.public $(distdir)/etc/macros/panda_ext_args.m4
+

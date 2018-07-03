@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -128,7 +128,7 @@ struct BBNodeInfo : public NodeInfo
        * Constructor which uses gcc information
        * @param _block is the block in the gcc dump
        */
-      BBNodeInfo(blocRef _block);
+      explicit BBNodeInfo(blocRef _block);
 
       /**
        * Adds an operation to the list of the statements
@@ -344,7 +344,7 @@ struct BBGraph : public graph
        * @param selector is the selector used to filter the bulk graph.
        * @param sub is the set of vertices on which the graph is filtered.
        */
-      BBGraph(const BBGraphsCollectionRef bb_graphs_collection, int selector, std::unordered_set<vertex> sub);
+      BBGraph(const BBGraphsCollectionRef bb_graphs_collection, int selector, std::unordered_set<vertex> &sub);
 
       /**
        * Destructor
@@ -356,7 +356,7 @@ struct BBGraph : public graph
        * @param file_name is the file where the graph has to be printed
        * @param detail_level is the detail level of the printed graph
        */
-      void WriteDot(const std::string & file_name, const int detail_level = 0) const;
+      void WriteDot(const std::string& file_name, const int detail_level = 0) const;
 
       /**
        * Write this graph in dot format with some basic blocks highlightened
@@ -364,7 +364,7 @@ struct BBGraph : public graph
        * @param detail_level is the detail level of the printed graph
        * @param annotated is the set of the vertices to be annotated
        */
-      void WriteDot(const std::string & file_name, const std::unordered_set<vertex> & annotated, const int detail_level = 0) const;
+      void WriteDot(const std::string& file_name, const std::unordered_set<vertex> & annotated, const int detail_level = 0) const;
 
       /**
        * Returns the number of basic blocks contained into the graph
@@ -448,7 +448,7 @@ class BBVertexSorter : std::binary_function<vertex, vertex, bool>
        * Constructor
        * @param bb_graph is the basic block graph to which vertices belong
        */
-      BBVertexSorter(const BBGraphConstRef bb_graph);
+      explicit BBVertexSorter(const BBGraphConstRef bb_graph);
 
       /**
        * Compare position of two vertices
@@ -474,7 +474,7 @@ class BBEdgeSorter : std::binary_function<EdgeDescriptor, EdgeDescriptor, bool>
        * Constructor
        * @param bb_graph is the basic block graph to which edges belong
        */
-      BBEdgeSorter(const BBGraphConstRef bb_graph);
+      explicit BBEdgeSorter(const BBGraphConstRef bb_graph);
 
       /**
        * Compare position of two edges
@@ -502,7 +502,7 @@ class bb_vertex_order_by_map : std::binary_function<vertex, vertex, bool>
        * Constructor
        * @param ref_ is the map with the topological sort of vertices
        */
-      bb_vertex_order_by_map(const std::map<vertex, unsigned int> & _ref) :
+      explicit bb_vertex_order_by_map(const std::map<vertex, unsigned int> & _ref) :
          ref(_ref)
          {}
 

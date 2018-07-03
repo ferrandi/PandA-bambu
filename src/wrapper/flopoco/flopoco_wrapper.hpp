@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -92,9 +92,12 @@ namespace flopoco { class Operator; class Target;}
 class flopoco_wrapper
 {
    private:
-
+      //no copy constructor
+      flopoco_wrapper(const flopoco_wrapper& inst) = delete;
+#ifndef NDEBUG
       /// Current debug level
       int debug_level;
+#endif
       /// Generated Functional Units
       std::unordered_map<std::string, flopoco::Operator *> FUs;
       /// Set of Functional Units written to a .vhdl file
@@ -110,8 +113,6 @@ class flopoco_wrapper
       /// unit type
       typedef enum { UT_ADD, UT_SUB, UT_MULT, UT_DIV, UT_FF_CONV, UT_ADDSUB, UT_UFIX2FP, UT_IFIX2FP, UT_FP2UFIX, UT_FP2IFIX, UT_EXP, UT_SQRT, UT_compare_expr, UT_LOG, UT_POW, UT_UNKNOWN } unit_type;
 
-      double target_frequency;
-
       unit_type type;
 
       bool signed_p;
@@ -120,15 +121,6 @@ class flopoco_wrapper
       std::vector<flopoco::Operator *> oplist;
 
       flopoco::Target * target;
-
-
-      /**
-       * Decode the encoded FU's string
-       * @param encoded_FU is a string representing the FU to be created
-       * @param FU_type, is the type of operand to instantiate
-       * @param FU_prec is the precision of operand to instantiate
-       */
-      void DECODE_FU(std::string & encoded_FU, std::string & FU_type, unsigned int & FU_prec_in, unsigned int & FU_prec_out) const;
 
       /**
        * Returns one of the generated Functional Units
@@ -143,7 +135,7 @@ class flopoco_wrapper
        * @param expected_ports is the number of expected ports to be returned
        * @param type is the type of the required ports
        */
-      const std::vector<std::string> get_ports(std::string FU_name_stored, unsigned int expected_ports, port_type type, bool check_ports = true) const;
+      const std::vector<std::string> get_ports(const std::string & FU_name_stored, unsigned int expected_ports, port_type type, bool check_ports = true) const;
       
       /**
        * Returns the name of a port, according to the needed port type (clock or reset)
@@ -160,7 +152,7 @@ class flopoco_wrapper
        * @param FU_file is the name of the file, without extension, where the VHDL code should be put (i.e. "FPAdder", not "FPAdder.vhdl")
        * @param pipe_parameter is a string defining the design frequency, in case is not empty
        */
-      int InternalWriteVHDL(const std::string & FU_name, const unsigned int FU_prec_in, const unsigned int FU_prec_out, const std::string & FU_file, std::string pipe_parameter);
+      int InternalWriteVHDL(const std::string& FU_name, const unsigned int FU_prec_in, const unsigned int FU_prec_out, const std::string& FU_file, const std::string& pipe_parameter);
 
       /**
        * Helper methods for automatic VHDL code generation:
@@ -169,11 +161,11 @@ class flopoco_wrapper
        * @param os is the stream where the VHDL code should be put
        * @param type is the type of component under examination
        */
-      void outputHeaderVHDL(std::string & FU_name_stored, std::ostream & os) const;
-      void outputWrapVHDL(std::string & FU_name_stored, std::ostream & os, std::string pipe_parameter);
-      void outputPortDeclaration(std::string FU_prefix, std::string & FU_name_stored, std::ostream & os, component_type type, std::string pipe_parameter);
-      void outputSignals(std::string & FU_name_stored, std::ostream & os);
-      void outputPortMap(std::string & FU_name_stored, std::ostream & os, std::string pipe_parameter);
+      void outputHeaderVHDL(const std::string &FU_name_stored, std::ostream & os) const;
+      void outputWrapVHDL(const std::string & FU_name_stored, std::ostream & os, const std::string& pipe_parameter);
+      void outputPortDeclaration(const std::string& FU_prefix, const std::string & FU_name_stored, std::ostream & os, component_type type, const std::string &pipe_parameter);
+      void outputSignals(const std::string & FU_name_stored, std::ostream & os);
+      void outputPortMap(const std::string &FU_name_stored, std::ostream & os, const std::string &pipe_parameter);
 
    public:
    
@@ -181,7 +173,7 @@ class flopoco_wrapper
        * Constructor
        * @param debug is the current debug level
        */
-      flopoco_wrapper(int _debug_level, const std::string & FU_target);
+      flopoco_wrapper(int _debug_level, const std::string& FU_target);
 
       /**
        * Destructor
@@ -197,7 +189,7 @@ class flopoco_wrapper
        * @param FU_name is a string representing the FU name
        * @param pipe_parameter is a string defining the design frequency, in case is not empty
        */
-      void add_FU(const std::string & FU_type, unsigned int FU_prec_in, unsigned int FU_prec_out, const std::string & FU_name, std::string pipe_parameter);
+      void add_FU(const std::string& FU_type, unsigned int FU_prec_in, unsigned int FU_prec_out, const std::string& FU_name, const std::string& pipe_parameter);
 
       /**
         * Returns the Functional Unit's Pipeline Depth
@@ -205,7 +197,7 @@ class flopoco_wrapper
         * @param FU_prec_in is a number representing the FU input precision
         * @param FU_prec_out is a number representing the FU output precision
        */
-      unsigned int get_FUPipelineDepth(const std::string & FU_name, const unsigned int FU_prec_in, const unsigned int FU_prec_out, std::string pipe_parameter) const;
+      unsigned int get_FUPipelineDepth(const std::string& FU_name, const unsigned int FU_prec_in, const unsigned int FU_prec_out, const std::string &pipe_parameter) const;
 
       /**
        * Writes the VHDL for a Functional Unit to the default file name, which is "FU_name.vhdl"
@@ -216,7 +208,7 @@ class flopoco_wrapper
        * @param pipe_parameter is a string defining the design frequency, in case is not empty
        * @param filename is where the name of the produced file will be stored
        */
-      int writeVHDL(const std::string & FU_name, const unsigned int FU_prec_in, const unsigned int FU_prec_out, std::string pipe_parameter, std::string & filename);
+      int writeVHDL(const std::string& FU_name, const unsigned int FU_prec_in, const unsigned int FU_prec_out, std::string pipe_parameter, std::string & filename);
 
       /**
        * write the common components
@@ -234,7 +226,7 @@ class flopoco_wrapper
        * Checks if a Functional Unit have been written to a VHDL file
        * @param FU_name is the Functional Unit whose existence must be checked
        */
-      bool is_unit_written(const std::string & FU_name, const unsigned int FU_prec_in, const unsigned int FU_prec_out, std::string pipe_parameter) const
+      bool is_unit_written(const std::string& FU_name, const unsigned int FU_prec_in, const unsigned int FU_prec_out, const std::string& pipe_parameter) const
          { return this->FU_files.find(ENCODE_NAME(FU_name,FU_prec_in, FU_prec_out, pipe_parameter)+FILE_EXT) != this->FU_files.end(); }
 
       /**
@@ -242,9 +234,9 @@ class flopoco_wrapper
        * @param FU_name is a string representing the FU name
        * @param expected_ports is the number of expected ports to be returned
        */
-      const std::vector<std::string> get_in_ports(const std::string & FU_name, const unsigned int FU_prec_in, const unsigned int FU_prec_out, const unsigned int expected_ports, std::string pipe_parameter) const
+      const std::vector<std::string> get_in_ports(const std::string& FU_name, const unsigned int FU_prec_in, const unsigned int FU_prec_out, const unsigned int expected_ports, const std::string& pipe_parameter) const
          { return get_ports(ENCODE_NAME(WRAPPED_PREFIX+FU_name,FU_prec_in,FU_prec_out, pipe_parameter), expected_ports, port_in); }
-      const std::vector<std::string> get_out_ports(const std::string & FU_name, const unsigned int FU_prec_in, const unsigned int FU_prec_out, const unsigned int expected_ports, std::string pipe_parameter) const
+      const std::vector<std::string> get_out_ports(const std::string& FU_name, const unsigned int FU_prec_in, const unsigned int FU_prec_out, const unsigned int expected_ports, const std::string& pipe_parameter) const
          { return get_ports(ENCODE_NAME(WRAPPED_PREFIX+FU_name,FU_prec_in,FU_prec_out, pipe_parameter), expected_ports, port_out); }
 
 

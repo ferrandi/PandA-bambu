@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2015-2017 Politecnico di Milano
+ *              Copyright (c) 2015-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -182,7 +182,7 @@ DesignFlowStep_Status CondExprRestructuring::InternalExec()
    const tree_manipulationConstRef tree_man = tree_manipulationConstRef(new tree_manipulation(TM, parameters));
    function_decl * fd = GetPointer<function_decl>(TM->get_tree_node_const(function_id));
    statement_list * sl = GetPointer<statement_list>(GET_NODE(fd->body));
-   for(const auto block : sl->list_of_bloc)
+   for(const auto& block : sl->list_of_bloc)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining BB" + STR(block.first));
       const auto & list_of_stmt = block.second->CGetStmtList();
@@ -256,7 +256,7 @@ DesignFlowStep_Status CondExprRestructuring::InternalExec()
          operands.insert(std::pair<tree_nodeRef, tree_nodeRef>(first_ce->op0, *stmt));
          operands.insert(std::pair<tree_nodeRef, tree_nodeRef>(second_ce->op0, second_stmt));
          operands.insert(std::pair<tree_nodeRef, tree_nodeRef>(third_ce->op0, third_stmt));
-         for(const auto operand : operands)
+         for(const auto& operand : operands)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Analyzing when " + STR(operand.first) + " used in " + STR(operand.second) + " is ready");
             const auto sn = GetPointer<const ssa_name>(GET_NODE(operand.first));
@@ -409,7 +409,7 @@ DesignFlowStep_Status CondExprRestructuring::InternalExec()
          ///Remove the intermediate cond_expr
          block.second->RemoveStmt(second_stmt);
 
-         for(const auto temp_stmt : list_of_stmt)
+         for(const auto& temp_stmt : list_of_stmt)
          {
             schedule->UpdateTime(temp_stmt->index);
          }
@@ -425,7 +425,7 @@ DesignFlowStep_Status CondExprRestructuring::InternalExec()
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Error in estimation");
             ///Removing added statements
-            for(const auto to_be_removed : new_tree_nodes)
+            for(const auto& to_be_removed : new_tree_nodes)
             {
                block.second->RemoveStmt(to_be_removed);
             }
@@ -435,7 +435,7 @@ DesignFlowStep_Status CondExprRestructuring::InternalExec()
             next_stmt ? block.second->PushBefore(first_stmt, next_stmt) : block.second->PushBack(first_stmt);
 
             ///Recomputing schedule
-            for(const auto temp_stmt : list_of_stmt)
+            for(const auto& temp_stmt : list_of_stmt)
             {
                schedule->UpdateTime(temp_stmt->index);
             }

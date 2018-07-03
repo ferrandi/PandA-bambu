@@ -22,14 +22,14 @@
 /*
  * wrapper log(x)
  */
-double __builtin_log(double x)		/* wrapper log */
+double log(double x)		/* wrapper log */
 {
 #ifdef _IEEE_LIBM
 	return __hide_ieee754_log(x);
 #else
 	double z;
 	z = __hide_ieee754_log(x);
-	if(_LIB_VERSION == _IEEE_ || __builtin_isnan(x) || x > 0.0) return z;
+    if(_LIB_VERSION == _IEEE_ || isnan(x) || x > 0.0) return z;
 	if(x==0.0)
 	    return __hide_kernel_standard(x,x,16); /* log(0) */
 	else 

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -92,11 +92,11 @@ MinimalInterfaceTestbench::~MinimalInterfaceTestbench()
 void MinimalInterfaceTestbench::cond_load(
       long long int Mout_addr_ram_bitsize,
       std::string,
-      std::string post_slice2,
-      std::string res_string,
+      const std::string& post_slice2,
+      const std::string& res_string,
       unsigned int i,
-      std::string in_else,
-      std::string mem_aggregate)
+      const std::string& in_else,
+      const std::string& mem_aggregate)
    const
 {
    writer->write("assign " + res_string + post_slice2 + " = ((base_addr <= Mout_addr_ram["+boost::lexical_cast<std::string>((i+1)*Mout_addr_ram_bitsize-1)+ ":"+boost::lexical_cast<std::string>(i*Mout_addr_ram_bitsize)+"] && Mout_addr_ram["+boost::lexical_cast<std::string>((i+1)*Mout_addr_ram_bitsize-1)+ ":"+boost::lexical_cast<std::string>(i*Mout_addr_ram_bitsize)+"] < (base_addr + MEMSIZE)))" + " ? " + mem_aggregate + " : " + in_else + ";\n");
@@ -296,11 +296,6 @@ void MinimalInterfaceTestbench::write_memory_handler() const
       std::string post_slice1;
       if(Mout_addr_ram_port->get_kind() == port_vector_o_K)
          post_slice1 = "["+boost::lexical_cast<std::string>(i)+"]";
-      std::string post_slice2;
-      if(M_Rdata_ram_port->get_kind() == port_vector_o_K)
-         post_slice2 = "["+boost::lexical_cast<std::string>((i+1)*bitsize-1)+":"+boost::lexical_cast<std::string>(i*bitsize)+"]";
-      else
-         post_slice2 = "";
 
       writer->write("if ((Mout_oe_ram"+ post_slice1 + "===1'b1 && base_addr <= Mout_addr_ram["+boost::lexical_cast<std::string>((i+1)*Mout_addr_ram_bitsize-1)+ ":"+boost::lexical_cast<std::string>(i*Mout_addr_ram_bitsize)+"] && Mout_addr_ram["+boost::lexical_cast<std::string>((i+1)*Mout_addr_ram_bitsize-1)+ ":"+boost::lexical_cast<std::string>(i*Mout_addr_ram_bitsize)+"] < (base_addr + MEMSIZE)))\n");
       writer->write("begin");
@@ -443,10 +438,10 @@ void MinimalInterfaceTestbench::write_slave_initializations(
    const
 {
    if(with_memory) return;
-   bool print_header_comment = true;
    /// write slave signals initialization
    if (mod->get_in_port_size())
    {
+      bool print_header_comment = true;
       for (unsigned int i = 0; i < mod->get_in_port_size(); i++)
       {
          const structural_objectRef& port_obj = mod->get_in_port(i);
@@ -566,6 +561,7 @@ void MinimalInterfaceTestbench::write_signals(
 void MinimalInterfaceTestbench::write_file_reading_operations() const
 {
    /// file reading operations
+   // cppcheck-suppress variableScope
    bool first_valid_input = true;
    /// iterate over all input ports
    if (mod->get_in_port_size())

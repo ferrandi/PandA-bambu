@@ -133,6 +133,7 @@ void SAMM_print_stats()
 }
 #endif // DEBUG_SAMM_SUPPORT_STATS
 
+void free(void* ap);
 
 static SAMM_header_t* __hide_get_mem_from_pool(size_t nquantas)
 {
@@ -149,7 +150,7 @@ static SAMM_header_t* __hide_get_mem_from_pool(size_t nquantas)
     {
         h = (SAMM_header_t*) (SAMM_pool + SAMM_pool_free_pos);
         h->s.size = nquantas;
-        __builtin_free((void*) (h + 1));
+        free((void*) (h + 1));
         SAMM_pool_free_pos += total_req_size;
     }
     else
@@ -169,7 +170,7 @@ static SAMM_header_t* __hide_get_mem_from_pool(size_t nquantas)
 // The pointer returned to the user points to the free space within the block,
 // which begins one quanta after the header.
 //
-void* __builtin_malloc(size_t nbytes)
+void* malloc(size_t nbytes)
 {
     SAMM_header_t* p;
     SAMM_header_t* prevp;
@@ -238,7 +239,7 @@ void* __builtin_malloc(size_t nbytes)
 // list. In any case, if the block being freed is adjacent to either neighbor,
 // the adjacent blocks are combined.
 //
-void __builtin_free(void* ap)
+void free(void* ap)
 {
     SAMM_header_t* block;
     SAMM_header_t* p;
@@ -289,7 +290,7 @@ void __builtin_free(void* ap)
     freep = p;
 }
 
-void *__builtin_memalign(size_t align, size_t len)
+void *memalign(size_t align, size_t len)
 {
 	void *mem, *new;
         SAMM_header_t* mem_block;
@@ -300,12 +301,12 @@ void *__builtin_memalign(size_t align, size_t len)
 	}
 
 	if (align <= sizeof(union SAMM_header_union)) {
-		if (!(mem = __builtin_malloc(len)))
+		if (!(mem = malloc(len)))
 			return 0;
 		return mem;
 	}
 
-	if (!(mem = __builtin_malloc(len + align-1)))
+	if (!(mem = malloc(len + align-1)))
 		return 0;
 
 	new = (void *)((unsigned int)mem + align-1 & -align);
@@ -316,13 +317,13 @@ void *__builtin_memalign(size_t align, size_t len)
 	new_block->s.size = len;
 	mem_block->s.size = new-mem;
 
-	__builtin_free(mem);
+	free(mem);
 	return new;
 }
 
-void *__builtin_alloca_with_align(size_t len, size_t align)
+void *alloca_with_align(size_t len, size_t align)
 {
-	return __builtin_memalign(align, len);
+	return memalign(align, len);
 }
 
 
@@ -330,7 +331,7 @@ void*
 #if (__GNUC__ > 4)
 __attribute__((optimize("-fno-optimize-strlen")))
 #endif
-__builtin_calloc(size_t nmemb, size_t size)
+calloc(size_t nmemb, size_t size)
 {
     unsigned int upsize;
     void* mem;
@@ -342,9 +343,9 @@ __builtin_calloc(size_t nmemb, size_t size)
     upsize = (dsize >> bitsize)&((1ULL << bitsize)-1);
 
     if (nmemb && upsize!=0) return 0;
-    mem = __builtin_malloc(totsize);
+    mem = malloc(totsize);
     if (mem==0) return 0;
-    __builtin_memset(mem, 0, totsize);
+    memset(mem, 0, totsize);
     return mem;
 }
 

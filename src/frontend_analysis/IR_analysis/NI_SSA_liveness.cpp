@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -123,6 +123,7 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(VECTORIZE, SAME_FUNCTION));
 #endif
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(CSE_STEP, SAME_FUNCTION));
+         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(FANOUT_OPT, SAME_FUNCTION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(COND_EXPR_RESTRUCTURING, SAME_FUNCTION));
          break;
       }
@@ -146,7 +147,7 @@ void NI_SSA_liveness::Up_and_Mark(blocRef B, tree_nodeRef v, statement_list * sl
    if(((GET_NODE(v_ssa_name->CGetDefStmt()))->get_kind() == gimple_nop_K && GET_NODE(v_ssa_name->var)->get_kind() == parm_decl_K))
       return;
 
-   for(const auto stmt : B->CGetStmtList())
+   for(const auto& stmt : B->CGetStmtList())
       if(def_stmt == GET_INDEX_NODE(stmt))
          return;
    /// if v ∈ LiveIn(B) then return >    Propagation already done, stop
@@ -156,7 +157,7 @@ void NI_SSA_liveness::Up_and_Mark(blocRef B, tree_nodeRef v, statement_list * sl
    /// LiveIn(B) = LiveIn(B) ∪ {v}
    B->live_in.insert(v_index);
    /// if v ∈ PhiDefs(B) then return >   Do not propagate φ definitions
-   for(const auto phi : B->CGetPhiList())
+   for(const auto& phi : B->CGetPhiList())
    {
       gimple_phi * pn = GetPointer<gimple_phi>(GET_NODE(phi));
       if(GET_INDEX_NODE(pn->res) == v_index)
@@ -191,13 +192,13 @@ DesignFlowStep_Status NI_SSA_liveness::InternalExec()
       for(std::vector<unsigned int>::const_iterator ls_it = B->list_of_succ.begin(); ls_it != ls_it_end; ++ls_it)
       {
          const blocRef B_succ = sl->list_of_bloc[*ls_it];
-         for(auto const phi : B_succ->CGetPhiList())
+         for(auto const& phi : B_succ->CGetPhiList())
          {
             gimple_phi * pn = GetPointer<gimple_phi>(GET_NODE(phi));
             bool is_virtual = pn->virtual_flag;
             if(!is_virtual)
             {
-               for(const auto def_edge : pn->CGetDefEdgesList())
+               for(const auto& def_edge : pn->CGetDefEdgesList())
                {
                   if(def_edge.second == B_id)
                   {
@@ -212,10 +213,10 @@ DesignFlowStep_Status NI_SSA_liveness::InternalExec()
       }
 
       CustomSet<tree_nodeRef> bb_ssa_uses;
-      for(const auto stmt : B->CGetStmtList())
+      for(const auto& stmt : B->CGetStmtList())
       {
          const auto stmt_uses = tree_helper::ComputeSsaUses(stmt);
-         for(const auto stmt_use : stmt_uses)
+         for(const auto& stmt_use : stmt_uses)
          {
             if(not tree_helper::is_virtual(TM, stmt_use.first->index))
             {
@@ -224,7 +225,7 @@ DesignFlowStep_Status NI_SSA_liveness::InternalExec()
          }
       }
       /// for each v used in B (φ excluded) do >       Traverse B to find all uses
-      for(const auto ssa_use : bb_ssa_uses)
+      for(const auto& ssa_use : bb_ssa_uses)
       {
          Up_and_Mark(B, ssa_use, sl);
       }

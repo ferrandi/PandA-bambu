@@ -36,12 +36,5 @@ lib_source_code_manipulation_la_SOURCES += \
    create_address_translation.cpp
 endif
 
-if BUILD_ZEBU
-noinst_HEADERS += \
-   sizeof_substitution.hpp
-lib_source_code_manipulation_la_SOURCES += \
-   sizeof_substitution.cpp
-endif
-
 #do not touch the following line
 

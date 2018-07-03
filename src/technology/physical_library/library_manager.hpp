@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -101,7 +101,7 @@ struct attribute
 
    attribute(const std::string& _value_type, const std::string& _content);
 
-   attribute(const std::vector<attributeRef>& _content);
+   explicit attribute(const std::vector<attributeRef>& _content);
 
    std::string get_value_type_str() const;
 

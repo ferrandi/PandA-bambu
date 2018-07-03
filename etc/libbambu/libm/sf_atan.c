@@ -56,7 +56,7 @@ static const float
 one   = 1.0,
 huge   = 1.0e30;
 
-float __builtin_atanf(float x)
+float atanf(float x)
 {
 	float w,s1,s2,z;
 	int ix,hx,id;
@@ -65,7 +65,7 @@ float __builtin_atanf(float x)
 	ix = hx&0x7fffffff;
 	if(ix>=0x50800000) {	/* if |x| >= 2^34 */
 	    if(FLT_UWORD_IS_NAN(ix))
-		return __builtin_nanf("");		/* NaN */
+        return nanf("");		/* NaN */
 	    if(hx>0) return  atanhi[3]+atanlo[3];
 	    else     return -atanhi[3]-atanlo[3];
 	} if (ix < 0x3ee00000) {	/* |x| < 0.4375 */
@@ -74,7 +74,7 @@ float __builtin_atanf(float x)
 	    }
 	    id = -1;
 	} else {
-	x = __builtin_fabsf(x);
+    x = fabsf(x);
 	if (ix < 0x3f980000) {		/* |x| < 1.1875 */
 	    if (ix < 0x3f300000) {	/* 7/16 <=|x|<11/16 */
 		id = 0; x = ((float)2.0*x-one)/((float)2.0+x); 
@@ -103,9 +103,9 @@ float __builtin_atanf(float x)
 
 #ifdef _DOUBLE_IS_32BITS
 
-double __builtin_atan(double x)
+double atan(double x)
 {
-	return (double) __builtin_atanf((float) x);
+    return (double) atanf((float) x);
 }
 
 #endif /* defined(_DOUBLE_IS_32BITS) */

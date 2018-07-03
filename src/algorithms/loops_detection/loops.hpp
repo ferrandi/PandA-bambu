@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -191,7 +191,7 @@ class Loops
        * @param file_name is the file name to be produced
        * @param profiling_information is the profiling information used to print data about loop iterations
        */
-      void WriteDot(const std::string & file_name
+      void WriteDot(const std::string& file_name
 #if HAVE_HOST_PROFILING_BUILT
          ,const ProfilingInformationConstRef profiling_information = ProfilingInformationConstRef()
 #endif

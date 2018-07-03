@@ -5,7 +5,7 @@
 */
 /* Public domain.  */
 
-char *__builtin_strchrnul(const char *s, int c)
+char *strchrnul(const char *s, int c)
 {
   --s;
   while (*++s && (*s != c));

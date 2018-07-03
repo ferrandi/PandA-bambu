@@ -16,11 +16,13 @@ int f2()
 
 int main()
 {
+#ifndef __clang__
 #if INT_MAX == 2147483647
   if (f1() != 2147483647)
     abort ();
   if (f2() != 2147483647)
     abort ();
+#endif
 #endif
   return 0;
 }

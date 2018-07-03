@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -93,8 +93,9 @@ private:
       T* const ptr;
       unsigned int count : 31;
       unsigned int deleter :1 ;
-
-      Ref(T* p) : ptr(p), count(1), deleter(1) {}
+      // cppcheck-suppress noExplicitConstructor
+      Ref(T* p) :
+         ptr(p), count(1), deleter(1) {}
       template<class null_deleter>
          Ref(T* p, null_deleter &d) : ptr(p), count(1), deleter(0) {}
       ~Ref() {if(deleter) delete ptr;}
@@ -111,6 +112,7 @@ public:
       explicit refcount(T* p, null_deleter &d)
       : ref(p ? new Ref(p, d) : 0)
    {}
+   // cppcheck-suppress noExplicitConstructor
    refcount(const refcount<T>& other)
    : ref(other.ref ? other.ref->increment() : 0)
    {}
@@ -119,6 +121,7 @@ public:
       if (ref && ref->decrement())
          delete ref;
    }
+   // cppcheck-suppress operatorEqToSelf
    refcount<T>& operator=(const refcount<T>& other)
    {
       Ref* tmp = other.ref ? other.ref->increment() : 0;
@@ -154,6 +157,7 @@ public:
 };
 
 template<typename T>
+// cppcheck-suppress copyCtorAndEqOperator
 struct Wrefcount
 {
 private:
@@ -163,9 +167,11 @@ public:
    Wrefcount()
       : ptr(0)
    {}
+   // cppcheck-suppress noExplicitConstructor
    Wrefcount(Wrefcount<T>const & other)
       : ptr(other.ptr)
    {}
+   // cppcheck-suppress noExplicitConstructor
    Wrefcount(refcount<T>const & other)
       : ptr(other.get())
    {}

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -117,6 +117,7 @@ void write_lib_technology_File(const std::string& f, technology_managerRef const
 void write_lib_technology_File(const std::string& f, library_manager* LM, TargetDevice_Type dv_type);
 #endif
 
+#if HAVE_EXPERIMENTAL
 #if HAVE_PHYSICAL_LIBRARY_MODELS_BUILT
 /**
  * Write a LEF file describing the technology data structures.
@@ -127,7 +128,6 @@ void write_lib_technology_File(const std::string& f, library_manager* LM, Target
 void write_lef_technology_File(const std::string& f, technology_managerRef const & TM, TargetDevice_Type dv_type, const std::set<std::string> &libraries = std::set<std::string>());
 #endif
 
-#if HAVE_EXPERIMENTAL
 /**
  * Write a LEF file describing the technology data structures.
  * @param f the output file name

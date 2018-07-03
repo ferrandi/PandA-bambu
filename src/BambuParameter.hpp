@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -95,7 +95,7 @@ class BambuParameter : public Parameter
        * @param argc is the number of arguments
        * @param argv is the array of arguments passed to program.
        */
-      BambuParameter(const std::string program_name, int argc, char ** const argv);
+      BambuParameter(const std::string& program_name, int argc, char ** const argv);
 
       /**
        * Destructor

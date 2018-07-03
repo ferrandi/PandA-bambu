@@ -29,7 +29,7 @@
 
 #include "math_privatef.h"
 
-float __builtin_copysignf(float x, float y)
+float copysignf(float x, float y)
 {
 	unsigned ix,iy;
 	GET_FLOAT_WORD(ix,x);
@@ -40,9 +40,9 @@ float __builtin_copysignf(float x, float y)
 
 #ifdef _DOUBLE_IS_32BITS
 
-double __builtin_copysign(double x, double y)
+double copysign(double x, double y)
 {
-	return (double) __builtin_copysignf((float) x, (float) y);
+    return (double) copysignf((float) x, (float) y);
 }
 
 #endif /* defined(_DOUBLE_IS_32BITS) */

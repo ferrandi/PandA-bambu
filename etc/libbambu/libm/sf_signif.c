@@ -23,16 +23,16 @@
 
 #include "math_privatef.h"
 
-float __builtin_significandf(float x)
+float significandf(float x)
 {
-	return __hide_ieee754_scalbf(x,(float) -__builtin_ilogbf(x));
+    return __hide_ieee754_scalbf(x,(float) -ilogbf(x));
 }
 
 #ifdef _DOUBLE_IS_32BITS
 
-double __builtin_significand(double x)
+double significand(double x)
 {
-	return (double) __builtin_significandf((float) x);
+    return (double) significandf((float) x);
 }
 
 #endif /* defined(_DOUBLE_IS_32BITS) */

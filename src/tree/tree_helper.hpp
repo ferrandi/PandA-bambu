@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -188,12 +188,6 @@ class tree_helper
       bool has_function_return(const tree_managerConstRef tm, const unsigned int index);
 
       /**
-       * Return a string describing the functino type
-       * @param Tree node of the function type
-       */
-      static std::string getFunctionTypeString(tree_nodeRef FT);
-
-      /**
        * Return the list of tree nodes associated with the variable used by the node t.
        * @param first_level_only tells if we are performing inlining
        * @param t is a tree node (usually a function declaration).
@@ -209,7 +203,7 @@ class tree_helper
        * @return true if an inheritance is found
        */
       static
-      bool look_for_binfo_inheritance(binfo* b, std::string bcs);
+      bool look_for_binfo_inheritance(binfo* b, const std::string & bcs);
 
       /**
        * Given the tree_node of an obj_type_ref return the tree_node of the called function
@@ -333,6 +327,7 @@ class tree_helper
       static
       unsigned int get_field_idx(const tree_managerConstRef  TM, const unsigned int index, unsigned int idx);
 
+
       /**
        * Return the treenode of the type of node.
        * @param node is the treenode
@@ -396,7 +391,15 @@ class tree_helper
       bool is_a_complex(const tree_managerConstRef  TM, const unsigned int index);
 
       /**
-       * Return if treenode index is an array
+       * Return the true in case the struct is equivalent to an array. It has a single field which recursively end into a single arrays
+       * @param TM is the tree_manager
+       * @param index is the index of the record type
+       * @return the true in case this record could be considered as a single array
+       */
+      static bool is_record_array(const tree_managerConstRef  TM, const unsigned int index);
+
+      /**
+       * Return if treenode index is an array or it is equivalent to an array (record recursively having a single field ending into a single arrays)
        * @param TM is the tree_manager
        * @param index is the treenode index
        */
@@ -850,7 +853,7 @@ class tree_helper
        * @param id is the initial ID
        */
       static
-      std::string normalized_ID(const std::string &id);
+      std::string normalized_ID(const std::string&id);
 
       /**
        * Return the name of the function in a string
@@ -871,7 +874,7 @@ class tree_helper
        * @return the printed string
        */
       static
-      std::string print_type(const tree_managerConstRef TM, unsigned int type, bool global = false, bool print_qualifiers = false, bool print_storage = false, unsigned int var = 0, const var_pp_functorConstRef vppf = var_pp_functorConstRef(), const std::string prefix = "", const std::string tail = "");
+      std::string print_type(const tree_managerConstRef TM, unsigned int type, bool global = false, bool print_qualifiers = false, bool print_storage = false, unsigned int var = 0, const var_pp_functorConstRef vppf = var_pp_functorConstRef(), const std::string&prefix = "", const std::string&tail = "");
 
       /**
        * return the type of the ith formal parameter in case index_obj is a call_expr

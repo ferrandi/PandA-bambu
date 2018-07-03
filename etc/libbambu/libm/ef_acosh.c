@@ -26,7 +26,7 @@
 
 static const float 
 one	= 1.0,
-ln2	= 6.9314718246e-01;  /* 0x3f317218 */
+ln2	= 6.9314718246e-01f;  /* 0x3f317218 */
 
 float __hide_ieee754_acoshf(float x)
 {	
@@ -34,7 +34,7 @@ float __hide_ieee754_acoshf(float x)
 	int hx;
 	GET_FLOAT_WORD(hx,x);
 	if(hx<0x3f800000) {		/* x < 1 */
-	    return __builtin_nansf("");
+        return __builtin_nansf("");
 	} else if(hx >=0x4d800000) {	/* x > 2**28 */
 	    if(!FLT_UWORD_IS_FINITE(hx)) {	/* x is inf of NaN */
 	        return x;
@@ -47,6 +47,6 @@ float __hide_ieee754_acoshf(float x)
 	    return __hide_ieee754_logf((float)2.0*x-one/(x+__hide_ieee754_sqrtf(t-one)));
 	} else {			/* 1<x<2 */
 	    t = x-one;
-	    return __builtin_log1pf(t+__hide_ieee754_sqrtf((float)2.0*t+t*t));
+        return log1pf(t+__hide_ieee754_sqrtf((float)2.0*t+t*t));
 	}
 }

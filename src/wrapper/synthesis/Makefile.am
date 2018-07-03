@@ -57,25 +57,6 @@ lib_synthesis_la_LIBADD = \
                         $(top_builddir)/src/wrapper/synthesis/lattice/lib_Latticewrapper.la \
                         $(top_builddir)/src/wrapper/synthesis/synopsys/lib_Synopsyswrapper.la
 
-if BUILD_LIB_EXPERIMENTAL
-   SUBDIRS += cadence nangate
-   DIST_SUBDIRS += cadence nangate
-
-   lib_synthesis_la_CPPFLAGS += \
-                              -I$(top_srcdir)/src/wrapper/synthesis/nangate \
-                              -I$(top_srcdir)/src/wrapper/synthesis/nangate/library_creator \
-                              -I$(top_srcdir)/src/wrapper/synthesis/nangate/design_optimizer \
-                              -I$(top_srcdir)/src/wrapper/synthesis/synopsys/primetime \
-                              -I$(top_srcdir)/src/wrapper/synthesis/cadence \
-                              -I$(top_srcdir)/src/wrapper/synthesis/cadence/soc_encounter \
-                              -I$(top_srcdir)/src/wrapper/synthesis/synopsys/formality \
-                              -I$(top_srcdir)/src/wrapper/synthesis/synopsys/library_compiler
-
-   lib_synthesis_la_LIBADD += \
-                              $(top_builddir)/src/wrapper/synthesis/cadence/lib_Cadencewrapper.la \
-                              $(top_builddir)/src/wrapper/synthesis/nangate/lib_Nangatewrapper.la
-
-endif
 
 if BUILD_ABC
   SUBDIRS += abc

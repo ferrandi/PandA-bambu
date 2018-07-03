@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -677,14 +677,15 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
    std::unordered_map<vertex, vertex> bb_dominator_map = bb_dominators->get_dominator_map();
 
    ///If we are performing simd transformation, look for simd pragma
+   // cppcheck-suppress uninitvar
    const CustomSet<vertex> simd_loop_headers = parameters->getOption<int>(OPT_gcc_openmp_simd) == 0 ? CustomSet<vertex>() : [&] () -> CustomSet<vertex> const
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Looking for openmp simd pragma");
       CustomSet<vertex> return_value;
-      for(const auto block : list_of_bloc)
+      for(const auto& block : list_of_bloc)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing BB" + STR(block.first));
-         for(const auto statement : block.second->CGetStmtList())
+         for(const auto& statement : block.second->CGetStmtList())
          {
             const gimple_pragma * gp = GetPointer<const gimple_pragma>(GET_NODE(statement));
             if(gp and GetPointer<const omp_pragma>(GET_NODE(gp->scope)) and GetPointer<const omp_simd_pragma>(GET_NODE(gp->directive)))
@@ -752,7 +753,7 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
       return return_value;
    }();
 #else
-   const CustomSet<vertex> to_be_parallelized;
+   const CustomSet<vertex> to_be_parallelized = CustomSet<vertex>();
 #endif
 
    for(const auto bb_vertex: bb_sorted_vertices)
@@ -825,7 +826,7 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
             for(std::set<ssa_name*>::const_iterator ssu_it = stmt_ssa_uses.begin(); ssu_it != ssu_it_end; ++ssu_it)
             {
                ssa_name* sn = *ssu_it;
-               for(auto const def_stmt : sn->CGetDefStmts())
+               for(auto const& def_stmt : sn->CGetDefStmts())
                {
                   gimple_node * def_gn = GetPointer<gimple_node>(GET_NODE(def_stmt));
                   THROW_ASSERT(def_gn->get_kind() == gimple_nop_K or def_gn->index, sn->ToString() + " is defined in entry");
@@ -848,12 +849,11 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
                bool zero_delay = true;
                if(can_be_pipelined && (gn->vuses.size()|| CheckMovable(curr_bb, GetPointer<gimple_assign>(tn), zero_delay, TM) == FunctionFrontendFlowStep_Movable::MOVABLE))
                {
-                  std::map<std::pair<unsigned int,blocRef>, std::pair<unsigned int,blocRef> > dom_diff;
                   THROW_ASSERT(bb_dominator_map.find(bb_vertex) != bb_dominator_map.end(), "unexpected condition");
-                  vertex curr_dom_bb = bb_dominator_map.find(bb_vertex)->second;
 #if HAVE_EXPERIMENTAL
+                  std::map<std::pair<unsigned int,blocRef>, std::pair<unsigned int,blocRef> > dom_diff;
+                  vertex curr_dom_bb = bb_dominator_map.find(bb_vertex)->second;
                   loop_pipelined(*statement, TM, curr_bb, list_of_bloc[curr_bb]->loop_id, to_be_removed, to_be_added_back, to_be_added_front, list_of_bloc, dom_diff, direct_vertex_map[curr_dom_bb]);
-#endif
                   const std::map<std::pair<unsigned int,blocRef>, std::pair<unsigned int,blocRef> >::const_iterator dd_it_end = dom_diff.end();
                   for(std::map<std::pair<unsigned int,blocRef>, std::pair<unsigned int,blocRef> >::const_iterator dd_it = dom_diff.begin(); dd_it != dd_it_end; ++dd_it)
                   {
@@ -873,6 +873,7 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
                      curr_dom_bb = inverse_vertex_map[dd_it->second.first];
                      bb_dominator_map[dd_curr_vertex] = curr_dom_bb;
                   }
+#endif
                }
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped because uses ssa defined in the same block");
                continue;
@@ -970,7 +971,7 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
             for(auto sn : stmt_ssa_uses)
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Checking definition of " + sn->ToString());
-               for(auto const def_stmt : sn->CGetDefStmts())
+               for(auto const& def_stmt : sn->CGetDefStmts())
                {
                   gimple_node * def_gn = GetPointer<gimple_node>(GET_NODE(def_stmt));
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Checked definition " + def_gn->ToString());
@@ -1003,31 +1004,33 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
 
             const auto temp_statement = *statement;
             ///Going one step step forward to avoid invalidation of the pointer
-            statement++;
+            auto tmp_it = statement;
+            ++tmp_it;
             ///Moving statement
             list_of_bloc[curr_bb]->RemoveStmt(temp_statement);
             list_of_bloc[dest_bb_index]->PushBack(temp_statement);
             ///Going one step back since pointer is already increment in for loop
-            statement--;
+            --tmp_it;
+            statement = tmp_it;
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Moved in BB" + STR(dest_bb_index));
          }
 
-         for(const auto removing : to_be_removed)
+         for(const auto& removing : to_be_removed)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Removing " + removing->ToString() + " from BB" + STR(curr_bb));
             list_of_bloc[curr_bb]->RemoveStmt(removing);
          }
-         for(const auto adding_back : to_be_added_back)
+         for(const auto& adding_back : to_be_added_back)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Adding back " + adding_back->ToString() + " from BB" + STR(curr_bb));
             list_of_bloc[curr_bb]->PushBack(adding_back);
          }
-         for(const auto adding_front : to_be_added_front)
+         for(const auto& adding_front : to_be_added_front)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Adding front " + adding_front->ToString() + " from BB" + STR(curr_bb));
             list_of_bloc[curr_bb]->PushFront(adding_front);
          }
-         restart_bb_code_motion = to_be_added_back.size() or to_be_added_front.size();
+         restart_bb_code_motion = (!to_be_added_back.empty()) or (!to_be_added_front.empty());
          if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC)
          {
             GCC_bb_graph->WriteDot("BB_simple_code_motion_" + STR(counter) + ".dot");

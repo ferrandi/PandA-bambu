@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -156,16 +156,18 @@ using namespace std;
 #pragma GCC diagnostic ignored "-Wredundant-decls"
 #pragma GCC diagnostic ignored "-Wold-style-cast"
 #pragma GCC diagnostic ignored "-Wswitch-default"
-#if (__GNUC__ > 4) || (__GNUC__ == 4 && __GNUC_MINOR__ >= 7)
+#if (__GNUC__ > 4) || (__GNUC__ == 4 && __GNUC_MINOR__ >= 7) || (defined(__clang__) && __clang_major__ >= 6)
 #pragma GCC diagnostic ignored "-Wzero-as-null-pointer-constant"
 #endif
 
 DiscrepancyFlexLexer::DiscrepancyFlexLexer
-(std::istream* argin = 0, std::ostream* argout = 0) : yyFlexLexer(argin, argout)
+(std::istream* argin, std::ostream* argout) : yyFlexLexer(argin, argout)
 {}
 
 DiscrepancyFlexLexer::~DiscrepancyFlexLexer()
 {}
+#ifndef __clang_analyzer__
+
 %}
 
 
@@ -237,3 +239,4 @@ ID          [a-z_A-Z][a-zA-Z_0-9]*
 
 .               { LexerError("Lexical Error"); }
 %%
+#endif

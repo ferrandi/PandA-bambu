@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -120,9 +120,6 @@ class MultipleEntryIfReduction : public FunctionFrontendFlowStep
 
       ///The allocation information
       AllocationInformationConstRef allocation_information;
-
-      /// when true use counting has to be re-executed
-      bool restart_dead_code;
 
       ///Estimate the area cost of the statements of a basic block
       double GetAreaCost(const std::list<tree_nodeRef> & list_of_stmt) const;

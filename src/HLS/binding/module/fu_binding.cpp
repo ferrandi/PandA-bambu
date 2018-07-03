@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -304,7 +304,7 @@ void fu_binding::kill_proxy_function_units(std::map<unsigned int, std::string> &
          structural_objectRef curr_port = GetPointer<module>(curr_gate)->get_in_port(currentPort);
          if(!GetPointer<port_o>(curr_port)->get_is_memory()) continue;
          std::string port_name=curr_port->get_id();
-         if(port_name.find(PROXY_PREFIX) == 0)
+         if(boost::algorithm::starts_with(port_name,PROXY_PREFIX))
          {
             size_t found = port_name.rfind(fun_name);
             if(found != std::string::npos && found+fun_name.size() == port_name.size())
@@ -409,7 +409,7 @@ void fu_binding::manage_killing_function_proxies(std::map<unsigned int, structur
       {
          structural_objectRef curr_port = GetPointer<module>(wrapped_fu_unit)->get_in_port(currentPort);
          std::string port_name=curr_port->get_id();
-         if(port_name.find(PROXY_PREFIX) == 0)
+         if(boost::algorithm::starts_with(port_name,PROXY_PREFIX))
          {
             for(std::set<structural_objectRef>::iterator proxied_unit_it = fcsr_it->second.begin(); proxied_unit_it != proxied_unit_it_end; ++proxied_unit_it)
             {
@@ -425,7 +425,7 @@ void fu_binding::manage_killing_function_proxies(std::map<unsigned int, structur
       {
          structural_objectRef wrapped_port_proxy_out_i = GetPointer<module>(wrapped_fu_unit)->get_out_port(currentPort);
          std::string port_name=wrapped_port_proxy_out_i->get_id();
-         if(port_name.find(PROXY_PREFIX) == 0)
+         if(boost::algorithm::starts_with(port_name,PROXY_PREFIX))
          {
             structural_objectRef wrapped_port_proxy_out_i_sign;
             for(std::set<structural_objectRef>::iterator proxied_unit_it = fcsr_it->second.begin(); proxied_unit_it != proxied_unit_it_end; ++proxied_unit_it)
@@ -741,7 +741,7 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Specializing functional units");
 
    std::set<unsigned int> fu_list = this->get_allocation_list();
-   for (std::set<unsigned int>::iterator i = fu_list.begin(); i != fu_list.end(); i++)
+   for (std::set<unsigned int>::iterator i = fu_list.begin(); i != fu_list.end(); ++i)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Functional Unit: " + allocation_information->get_string_name(*i));
       if (allocation_information->is_return(*i))
@@ -843,7 +843,7 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
                   structural_objectRef curr_port = GetPointer<module>(curr_gate)->get_in_port(currentPort);
                   if(!GetPointer<port_o>(curr_port)->get_is_memory()) continue;
                   std::string port_name=curr_port->get_id();
-                  if(port_name.find(PROXY_PREFIX) == 0)
+                  if(boost::algorithm::starts_with(port_name,PROXY_PREFIX))
                   {
                      GetPointer<port_o>(curr_port)->set_id(port_name+fun_name);
                   }
@@ -854,7 +854,7 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
                   structural_objectRef curr_port = GetPointer<module>(curr_gate)->get_out_port(currentPort);
                   if(!GetPointer<port_o>(curr_port)->get_is_memory()) continue;
                   std::string port_name=curr_port->get_id();
-                  if(port_name.find(PROXY_PREFIX) == 0)
+                  if(boost::algorithm::starts_with(port_name,PROXY_PREFIX))
                   {
                      GetPointer<port_o>(curr_port)->set_id(port_name+fun_name);
                   }
@@ -996,7 +996,7 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
       {
          structural_objectRef curr_port = GetPointer<module>(curr_gate)->get_in_port(currentPort);
          std::string port_name=curr_port->get_id();
-         if(port_name.find(PROXY_PREFIX) == 0)
+         if(boost::algorithm::starts_with(port_name,PROXY_PREFIX))
          {
             size_t found = port_name.rfind(fun_name);
             if(found != std::string::npos)
@@ -1011,7 +1011,7 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
       {
          structural_objectRef curr_port = GetPointer<module>(curr_gate)->get_out_port(currentPort);
          std::string port_name=curr_port->get_id();
-         if(port_name.find(PROXY_PREFIX) == 0)
+         if(boost::algorithm::starts_with(port_name,PROXY_PREFIX))
          {
             size_t found = port_name.rfind(fun_name);
             if(found != std::string::npos)
@@ -1075,7 +1075,7 @@ void fu_binding::manage_memory_ports_chained(const structural_managerRef SM, con
    std::map<std::string, structural_objectRef> primary_outs;
    structural_objectRef cir_port;
    unsigned int sign_id = 0;
-   for (std::set<structural_objectRef>::iterator i = memory_modules.begin(); i != memory_modules.end(); i++)
+   for (std::set<structural_objectRef>::iterator i = memory_modules.begin(); i != memory_modules.end(); ++i)
    {
       for(unsigned int j = 0; j < GetPointer<module>(*i)->get_in_port_size(); j++)
       {
@@ -1257,9 +1257,9 @@ void fu_binding::manage_memory_ports_parallel_chained(const structural_managerRe
 {
    std::map<structural_objectRef, std::set<structural_objectRef> > primary_outs;
    structural_objectRef cir_port;
-   for (std::set<structural_objectRef>::iterator i = memory_modules.begin(); i != memory_modules.end(); i++)
+   for (std::set<structural_objectRef>::iterator i = memory_modules.begin(); i != memory_modules.end(); ++i)
    {
-      for(unsigned int j = 0; j < GetPointer<module>(*i)->get_in_port_size(); j++)
+      for(unsigned int j = 0; j < GetPointer<module>(*i)->get_in_port_size(); ++j)
       {
          structural_objectRef port_i = GetPointer<module>(*i)->get_in_port(j);
          if(GetPointer<port_o>(port_i)->get_is_memory() && (!GetPointer<port_o>(port_i)->get_is_global()) && (!GetPointer<port_o>(port_i)->get_is_extern()))
@@ -1376,10 +1376,10 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
    unsigned int produced_variables = 1;
    bool is_multiport =  allocation_information->get_number_channels(fu) >1;
    size_t max_n_ports = is_multiport ? allocation_information->get_number_channels(fu) : 0;
-   bool has_misaligned_indirect_ref = false;
 
    if (ar)
    {
+      bool has_misaligned_indirect_ref = false;
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Ar is true");
       unsigned int elmt_bitsize=1;
       unsigned int type_index = tree_helper::get_type_index(TreeM, ar);
@@ -1401,7 +1401,7 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
       else
          THROW_ERROR("Unit currently not supported: " + allocation_information->get_fu_name(fu).first);
       const OpGraphConstRef data = FB->CGetOpGraph(FunctionBehavior::CFG);
-      for(std::set<vertex>::iterator op = mapped_operations.begin(); op != mapped_operations.end(); op++)
+      for(std::set<vertex>::iterator op = mapped_operations.begin(); op != mapped_operations.end(); ++op)
       {
          PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "  on BRAM = " + data->CGetOpNodeInfo(*op)->GetOperation() + " " + GET_NAME(data, *op));
          const std::vector<HLS_manager::io_binding_type>& vars = HLSMgr->get_required_values(HLS->functionId, *op);
@@ -1469,7 +1469,7 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
    {
       const OpGraphConstRef data = FB->CGetOpGraph(FunctionBehavior::CFG);
 
-      for(std::set<vertex>::iterator op = mapped_operations.begin(); op != mapped_operations.end(); op++)
+      for(std::set<vertex>::iterator op = mapped_operations.begin(); op != mapped_operations.end(); ++op)
       {
          const std::vector<HLS_manager::io_binding_type>& vars = HLSMgr->get_required_values(HLS->functionId, *op);
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Considering operation " + HLSMgr->get_tree_manager()->get_tree_node_const(data->CGetOpNodeInfo(*op)->GetNodeId())->ToString());
@@ -1711,7 +1711,7 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Resized input ports");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Resizing variables");
-   for(std::map<unsigned int, unsigned int>::iterator l = required_variables.begin(); l != required_variables.end() && !is_multi_read_cond; l++)
+   for(std::map<unsigned int, unsigned int>::iterator l = required_variables.begin(); l != required_variables.end() && !is_multi_read_cond; ++l)
    {
       unsigned int bitsize_variable = l->second;
       structural_objectRef port = fu_module->get_in_port(l->first+offset);
@@ -1750,7 +1750,7 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
    {
       const functional_unit::operation_vec & Ops = fun_unit->get_operations();
       functional_unit::operation_vec::const_iterator ops_end = Ops.end();
-      for (functional_unit::operation_vec::const_iterator ops = Ops.begin(); ops != ops_end; ops++)
+      for (functional_unit::operation_vec::const_iterator ops = Ops.begin(); ops != ops_end; ++ops)
       {
          operation* curr_op = GetPointer<operation>(*ops);
          std::string pipe_parameters_str = curr_op->pipe_parameters;
@@ -1816,7 +1816,7 @@ void fu_binding::specialize_memory_unit
    else
    {
       fu_module->set_parameter("n_elements", boost::lexical_cast<std::string>(vec_size));
-      fu_module->set_parameter("data_size", boost::lexical_cast<std::string>(elts_size));
+      fu_module->set_parameter("data_size", boost::lexical_cast<std::string>(std::max(elts_size,8u)));
    }
    if(HLSMgr->Rmem->is_private_memory(ar))
       fu_module->set_parameter("PRIVATE_MEMORY", boost::lexical_cast<std::string>(1));
@@ -1842,7 +1842,7 @@ void fu_binding::fill_array_ref_memory(std::ostream &init_file_a, std::ostream &
       init_node = ar_node;
    tree_nodeRef array_type_node = tree_helper::get_type_node(ar_node, type_index);
    unsigned int element_precision = 0;
-   if (GetPointer<array_type>(array_type_node))
+   if (tree_helper::is_an_array (TreeM, type_index))
    {
       std::vector<unsigned int> dims;
       tree_helper::get_array_dim_and_bitsize(TreeM, type_index, dims, elts_size);
@@ -1974,7 +1974,6 @@ void fu_binding::fill_array_ref_memory(std::ostream &init_file_a, std::ostream &
             for(auto tail_padding_ind=bits_offset.size(); tail_padding_ind < 8;  ++tail_padding_ind)
                tail_padding += "0";
             tail_padding = tail_padding + bits_offset;
-            bits_offset = "";
             eightbit_string.push_back(tail_padding);
          }
          if(eightbit_string.size()%nbyte_on_memory != 0)
@@ -2171,7 +2170,7 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
                THROW_ERROR("expected a record_type or a union_type");
             std::vector<tree_nodeRef>::const_iterator flend = field_list->end();
             std::vector<tree_nodeRef>::const_iterator fli = field_list->begin();
-            for (; fli != flend && i != vend; i++, fli++)
+            for (; fli != flend && i != vend; ++i, ++fli)
             {
                if (i->first && GET_INDEX_NODE(i->first) != GET_INDEX_NODE(*fli))
                   break;
@@ -2189,7 +2188,7 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
             std::vector<tree_nodeRef>::const_iterator fli = field_list->begin();
             std::vector<tree_nodeRef>::const_iterator inext;
             i = co->list_of_idx_valu.begin();
-            for (; fli != flend; fli++)
+            for (; fli != flend; ++fli)
             {
                if(!GetPointer<field_decl>(GET_NODE(*fli))) continue;
                inext = fli;
@@ -2207,7 +2206,7 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
                if (i != vend && GET_INDEX_NODE(i->first) == GET_INDEX_NODE(*fli))
                {
                   write_init(TreeM, GET_NODE(i->first), GET_NODE(i->second), init_file, mem, element_precision);
-                  i++;
+                  ++i;
                }
                else
                {
@@ -2259,7 +2258,7 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
          else
          {
             std::vector<std::pair< tree_nodeRef, tree_nodeRef> >::const_iterator inext;
-            for(i = co->list_of_idx_valu.begin(); i != vend; i++)
+            for(i = co->list_of_idx_valu.begin(); i != vend; ++i)
             {
                if(is_struct and !GetPointer<field_decl>(GET_NODE(i->first))) continue;
                inext = i;
@@ -2535,6 +2534,49 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
                ull_value = mem->get_base_address(addr_expr_op_idx, addr_expr_op_idx);
                break;
             }
+            case CASE_BINARY_EXPRESSION:
+            {
+               if (addr_expr_op->get_kind() == mem_ref_K)
+               {
+                  mem_ref* mr = GetPointer<mem_ref>(addr_expr_op);
+                  tree_nodeRef offset = GET_NODE(mr->op1);
+                  if(offset->get_kind() == integer_cst_K)
+                  {
+                     auto base = mr->op0;
+                     auto base_index = GET_INDEX_NODE(base);
+                     auto base_node = GET_NODE(base);
+                     auto base_code = base_node->get_kind();
+                     if(base_code == var_decl_K)
+                     {
+                        THROW_ASSERT(mem->has_base_address(base_index), "missing base address for: @" + STR(base_index));
+                        ull_value = mem->get_base_address(base_index, 0) +
+                                    static_cast<unsigned int>(tree_helper::get_integer_cst_value(GetPointer<integer_cst>(offset)));
+                     }
+                     else if(base_code == addr_expr_K)
+                     {
+                        auto base1 = GetPointer<addr_expr>(base_node)->op;
+                        auto base1_index = GET_INDEX_NODE(base1);
+                        auto base1_node = GET_NODE(base1);
+                        auto base1_code = base1_node->get_kind();
+                        if(base1_code == var_decl_K)
+                        {
+                           THROW_ASSERT(mem->has_base_address(base1_index), "missing base address for: @" + STR(base1_index));
+                           ull_value = mem->get_base_address(base1_index, 0) +
+                                       static_cast<unsigned int>(tree_helper::get_integer_cst_value(GetPointer<integer_cst>(offset)));
+                        }
+                        else
+                           THROW_ERROR("addr_expr pattern not supported: " + std::string(addr_expr_op->get_kind_text())+ " @" + STR(addr_expr_op_idx) );
+                     }
+                     else
+                        THROW_ERROR("addr_expr pattern not supported: " + std::string(addr_expr_op->get_kind_text())+ " @" + STR(addr_expr_op_idx) );
+                  }
+                  else
+                     THROW_ERROR("addr_expr pattern not supported: " + std::string(addr_expr_op->get_kind_text())+ " @" + STR(addr_expr_op_idx) );
+               }
+               else
+                  THROW_ERROR("addr_expr pattern not supported: " + std::string(addr_expr_op->get_kind_text())+ " @" + STR(addr_expr_op_idx) );
+               break;
+            }
             case array_range_ref_K:
             case binfo_K:
             case bit_field_ref_K:
@@ -2579,7 +2621,6 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
             case void_cst_K:
             case vtable_ref_K:
             case with_cleanup_expr_K:
-            case CASE_BINARY_EXPRESSION:
             case CASE_CPP_NODES:
             case CASE_FAKE_NODES:
             case CASE_GIMPLE_NODES:
@@ -2730,7 +2771,7 @@ fu_binding::set_ports_are_swapped(vertex v, bool condition)
 {
    if(condition)
       ports_are_swapped.insert(v);
-   else if(ports_are_swapped.find(v) != ports_are_swapped.end())
+   else
       ports_are_swapped.erase(v);
 }
 

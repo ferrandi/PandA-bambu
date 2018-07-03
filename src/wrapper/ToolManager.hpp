@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -84,12 +84,12 @@ class ToolManager
        * If the permissive flag is given, it raises simply a warning
        * @param log_file is the file where output will be saved
        */
-      int execute_command(const std::string& command, const std::string & error_message, const std::string log_file, bool permissive = false, bool throw_message=true);
+      int execute_command(const std::string& command, const std::string& error_message, const std::string&log_file, bool permissive = false, bool throw_message=true);
 
       /**
        * Check if a command exist on a given host provided a configuration script
        */
-      int check_command(const std::string& command, const std::string & setupscr, const std::string& host, bool permissive = false);
+      int check_command(const std::string& command, const std::string& setupscr, const std::string& host, bool permissive = false);
       /**
        * Generate the command to the executed on the remote host
        */
@@ -124,7 +124,7 @@ class ToolManager
        * Constructor
        * @param Param is the set of parameters
        */
-      ToolManager(const ParameterConstRef Param);
+      explicit ToolManager(const ParameterConstRef Param);
 
       /**
        * Destructor
@@ -134,7 +134,7 @@ class ToolManager
       /**
        * Configuration of the tool
        */
-      void configure(const std::string& tool, const std::string & setupscr, const std::string& host = "", const std::string& remote_path = "", bool force_remote = false);
+      void configure(const std::string& tool, const std::string& setupscr, const std::string& host = "", const std::string& remote_path = "", bool force_remote = false);
 
       /**
        * Execute the tool
@@ -143,7 +143,7 @@ class ToolManager
        * @param log_file is the log file
        * @return a flag that is true if the execution has been terminated with success, false otherwise.
        */
-      int execute(const std::vector<std::string>& parameters, const std::vector<std::string>& input_files, const std::vector<std::string>& output_files = std::vector<std::string>(), const std::string log_file = std::string(), bool permissive = false);
+      int execute(const std::vector<std::string>& parameters, const std::vector<std::string>& input_files, const std::vector<std::string>& output_files = std::vector<std::string>(), const std::string&log_file = std::string(), bool permissive = false);
 
       /**
        * Determine the relative paths of the inputs files

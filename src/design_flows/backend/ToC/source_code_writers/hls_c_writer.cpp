@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -100,9 +100,6 @@ HLSCWriter::~HLSCWriter()
 
 void HLSCWriter::WriteHeader()
 {
-   indented_output_stream->Append("#define __builtin___divsc3 __divsc3\n");
-   indented_output_stream->Append("#define __builtin___divdc3 __divdc3\n");
-
    indented_output_stream->Append("#define _FILE_OFFSET_BITS 64\n\n");
    indented_output_stream->Append("#define __Inf (1.0/0.0)\n");
    indented_output_stream->Append("#define __Nan (0.0/0.0)\n\n");
@@ -250,7 +247,6 @@ void HLSCWriter::WriteTestbenchHelperFunctions()
 void HLSCWriter::WriteParamDecl
 (const BehavioralHelperConstRef behavioral_helper)
 {
-   unsigned int type_id;
    std::string type;
    std::string param;
    bool flag_cpp = TM->is_CPP() && !Param->isOption(OPT_pretty_print);
@@ -258,7 +254,7 @@ void HLSCWriter::WriteParamDecl
    indented_output_stream->Append("// parameters declaration\n");
    for (const auto & p : behavioral_helper->get_parameters())
    {
-      type_id = behavioral_helper->get_type(p);
+      unsigned int type_id = behavioral_helper->get_type(p);
       type = behavioral_helper->print_type(type_id);
       param = behavioral_helper->PrintVariable(p);
 
@@ -880,11 +876,10 @@ void HLSCWriter::WriteSimulatorInitMemory(const unsigned int function_id)
                   const std::list<tree_nodeConstRef> fields = tree_helper::CGetFieldTypes(TM->CGetTreeNode(ptd_base_type));
                   size_t n_values = splitted_fields.size();
                   unsigned int index=0;
-                  unsigned int field_size;
                   for (std::list<tree_nodeConstRef>::const_iterator it=fields.begin(); it != fields.end(); ++it, ++index)
                   {
                      const tree_nodeConstRef field_type = *it;
-                     field_size = tree_helper::Size(field_type);
+                     unsigned int field_size = tree_helper::Size(field_type);
                      if (index < n_values)
                      {
                         binary_string = convert_in_binary
@@ -1052,7 +1047,7 @@ void HLSCWriter::WriteMainTestbench()
    indented_output_stream->Append("}\n");
 }
 
-void HLSCWriter::WriteFile(const std::string & file_name)
+void HLSCWriter::WriteFile(const std::string& file_name)
 {
    const auto top_function_ids = AppM->CGetCallGraphManager()->GetRootFunctions();
    THROW_ASSERT(top_function_ids.size() == 1, "Multiple top function");
@@ -1069,7 +1064,7 @@ void HLSCWriter::WriteFile(const std::string & file_name)
    indented_output_stream->WriteFile(file_name);
 }
 
-std::string HLSCWriter::convert_in_binary(const BehavioralHelperConstRef behavioral_helper, unsigned int base_type, const std::string &C_value, unsigned int precision)
+std::string HLSCWriter::convert_in_binary(const BehavioralHelperConstRef behavioral_helper, unsigned int base_type, const std::string&C_value, unsigned int precision)
 {
    std::string trimmed_value;
    THROW_ASSERT(C_value!= "", "Empty string for binary conversion");
@@ -1119,7 +1114,7 @@ inline void HLSCWriter::WriteZeroedBytes(const size_t n_bytes)
 }
 
 size_t HLSCWriter::WriteBinaryMemoryInit
-(const std::string & binary_string, const size_t data_bitsize, std::string &bits_offset)
+(const std::string& binary_string, const size_t data_bitsize, std::string &bits_offset)
 {
    size_t printed_bytes = 0;
    if (bits_offset.size() == 0 && is_all_8zeros(binary_string))
@@ -1171,7 +1166,7 @@ size_t HLSCWriter::WriteBinaryMemoryInit
    return printed_bytes;
 }
 
-bool HLSCWriter::is_all_8zeros(const std::string & str)
+bool HLSCWriter::is_all_8zeros(const std::string& str)
 {
    size_t size = str.size();
    if (size % 8 != 0 || size == 8)

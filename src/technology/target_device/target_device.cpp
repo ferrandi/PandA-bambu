@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -70,7 +70,8 @@ target_device::target_device(const ParameterConstRef _Param, const technology_ma
       Param(_Param),
       TM(_TM),
       core_height(0),
-      core_width(0)
+      core_width(0),
+      debug_level(_Param->get_class_debug_level(GET_CLASS(*this)))
 {
 
 }
@@ -100,7 +101,7 @@ target_deviceRef target_device::create_device(const TargetDevice_Type type, cons
 void target_device::xload(const target_deviceRef device, const xml_element* node)
 {
    const xml_node::node_list c_list = node->get_children();
-   for(xml_node::node_list::const_iterator n = c_list.begin(); n != c_list.end(); n++)
+   for(xml_node::node_list::const_iterator n = c_list.begin(); n != c_list.end(); ++n)
    {
       if ((*n)->get_name() == "device")
       {
@@ -109,7 +110,7 @@ void target_device::xload(const target_deviceRef device, const xml_element* node
       }
    }
 
-   for(xml_node::node_list::const_iterator n = c_list.begin(); n != c_list.end(); n++)
+   for(xml_node::node_list::const_iterator n = c_list.begin(); n != c_list.end(); ++n)
    {
       //The second part of the condition is false when we are generating the list of functional units in spider
       if ((*n)->get_name() == "technology" and (not Param->isOption(OPT_input_format) or Param->getOption<Parameters_FileFormat>(OPT_input_format) != Parameters_FileFormat::FF_XML_TEC))
@@ -123,7 +124,7 @@ void target_device::xload(const target_deviceRef device, const xml_element* node
 void target_device::xload_device_parameters(const xml_element* dev_xml)
 {
    const xml_node::node_list t_list = dev_xml->get_children();
-   for(xml_node::node_list::const_iterator t = t_list.begin(); t != t_list.end(); t++)
+   for(xml_node::node_list::const_iterator t = t_list.begin(); t != t_list.end(); ++t)
    {
       const xml_element* t_elem = GetPointer<const xml_element>(*t);
       if (!t_elem) continue;

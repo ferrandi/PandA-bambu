@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -128,7 +128,7 @@ DesignFlowStep_Status call_graph_computation::Exec()
             "---Adding function " + STR(f_id) + " " + fu_name + " to call graph");
       if (fu_name == "__start_pragma__" or
             fu_name == "__close_pragma__" or
-            fu_name.find("__pragma__") == 0)
+            boost::algorithm::starts_with(fu_name,"__pragma__"))
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Skipped...");
          continue;
@@ -331,7 +331,7 @@ void call_graph_computation::call_graph_computation_recursive(
       case gimple_multi_way_if_K:
       {
          gimple_multi_way_if* gmwi=GetPointer<gimple_multi_way_if>(curr_tn);
-         for(const auto cond : gmwi->list_of_cond)
+         for(const auto& cond : gmwi->list_of_cond)
             if(cond.first)
                call_graph_computation_recursive(TM, cond.first, node_stmt, call_type);
          break;

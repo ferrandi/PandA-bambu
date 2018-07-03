@@ -1,4 +1,4 @@
-/* Copyright (C) 2016-2017 Politecnico di Milano (Italy).
+/* Copyright (C) 2016-2018 Politecnico di Milano (Italy).
    This file is part of the HLS-FP Library.
 
    The HLS-FP Library is free software; you can redistribute it and/or
@@ -42,7 +42,7 @@
 #ifdef CHECK_TRIG_FUNCTIONS
 #define ADD_BUILTIN_PREFIX(fname) local_ ## fname
 #else
-#define ADD_BUILTIN_PREFIX(fname) __builtin_ ## fname
+#define ADD_BUILTIN_PREFIX(fname) fname
 #endif
 
 
@@ -831,7 +831,7 @@ float ADD_BUILTIN_PREFIX(sinf)(float x)
     e = (y >> 23)&255;
     s = y>>31;
     m = y & 0x007fffff;
-    if (e==255 && m==0) return -__builtin_nanf("");
+    if (e==255 && m==0) return -nanf("");
     else if (e==255)
     {
         func_in.b |= ( 0x7FC << 20 );
@@ -898,7 +898,7 @@ float ADD_BUILTIN_PREFIX(cosf)(float x)
     e = (y >> 23)&255;
     s = y>>31;
     m = y & 0x007fffff;
-    if (e==255 && m==0) return -__builtin_nanf("");
+    if (e==255 && m==0) return -nanf("");
     else if (e==255)
     {
         func_in.b |= ( 0x7FC << 20 );
@@ -955,7 +955,7 @@ float ADD_BUILTIN_PREFIX(cosf)(float x)
 }
 
 float _Complex
-ADD_BUILTIN_PREFIX(cexpif) (float x)
+ADD_BUILTIN_PREFIX(cexpif)(float x)
 {
     unsigned int y;
     float _Complex  Res;
@@ -972,8 +972,8 @@ ADD_BUILTIN_PREFIX(cexpif) (float x)
     do_negate_sine=s;
     if (e==255 && m==0)
     {
-        __imag__ Res = -__builtin_nanf("");
-        __real__ Res = -__builtin_nanf("");
+        __imag__ Res = -nanf("");
+        __real__ Res = -nanf("");
         return Res;
     }
     else if (e==255)

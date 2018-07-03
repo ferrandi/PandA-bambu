@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2017 Politecnico di Milano
+ *              Copyright (c) 2017-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -75,7 +75,7 @@ DesignFlowStep_Status DryRunEvaluation::InternalExec()
 {
    std::string objective_string = parameters->getOption<std::string>(OPT_evaluation_objectives);
    std::vector<std::string> objective_vector = convert_string_to_vector<std::string>(objective_string, ",");
-   for(const auto objective : objective_vector)
+   for(const auto& objective : objective_vector)
    {
       HLSMgr->evaluations[objective] = std::vector<double>(1, 0.0);
       if(objective == "CYCLES")

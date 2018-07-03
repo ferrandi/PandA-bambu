@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -114,10 +114,10 @@ class multi_way_if : public FunctionFrontendFlowStep
 
       /**
        * Update the basic block control flow graph data structure
+       * @param pred_bb is the predecessor basic block
        * @param curr_bb is the current basic block
-       * @param pred is the predecessor basic block
        */
-      void UpdateCfg(unsigned int curr_bb, unsigned int pred);
+      void UpdateCfg(unsigned int pred_bb, unsigned int curr_bb);
 
       /**
        * Insert a basic block on an edge

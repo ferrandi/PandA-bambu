@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -96,18 +96,18 @@ class HLSFlowStepFactory : public DesignFlowStepFactory
        * Create the frontend design flow steps
        * @param hls_flow_steps is the set of steps to be created
        */
-      const DesignFlowStepSet CreateHLSFlowSteps(const std::unordered_set<std::pair<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef> > hls_flow_steps) const;
+      const DesignFlowStepSet CreateHLSFlowSteps(const std::unordered_set<std::pair<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef> > &hls_flow_steps) const;
 
       /**
        * The same as CreateHLSFlowSteps, but just for one step
        */
-      const DesignFlowStepSet CreateHLSFlowSteps(const std::pair<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef> hls_flow_step) const;
+      const DesignFlowStepSet CreateHLSFlowSteps(const std::pair<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef> &hls_flow_step) const;
       /**
        * The same as CreateHLSFlowSteps, but just for one step, with an even
        * simpler syntax
        */
       const DesignFlowStepSet CreateHLSFlowSteps(const HLSFlowStep_Type type, const HLSFlowStepSpecializationConstRef hls_flow_step_specialization) const;
-      const DesignFlowStepRef CreateHLSFlowStep(const std::pair<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef> hls_flow_step) const;
+      const DesignFlowStepRef CreateHLSFlowStep(const std::pair<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef> &hls_flow_step) const;
 
       const DesignFlowStepRef CreateHLSFlowStep(const HLSFlowStep_Type type, const HLSFlowStepSpecializationConstRef hls_flow_step_specialization) const;
 };

@@ -12,7 +12,7 @@
  *                      Micro Architecture Laboratory
  *                       Politecnico di Milano - DEIB
  *             **********************************************
- *             Copyright (c) 2004-2017 Politecnico di Milano
+ *             Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -376,6 +376,8 @@ enum class TreeVocabularyTokenTypes_TokenEnum
    TOK_LIBRARY_SYSTEM,
    TOK_LIBBAMBU,
    TOK_EXTERN,
+   TOK_ADDR_TAKEN,
+   TOK_ADDR_NOT_TAKEN,
    TOK_C,
    TOK_LSHIFT,
    TOK_GLOBAL_INIT,

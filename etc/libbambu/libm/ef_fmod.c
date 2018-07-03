@@ -29,7 +29,7 @@
 
 #include "math_privatef.h"
 
-static const float one = 1.0, Zero[] = {0.0, -0.0,};
+static const float one = 1.0f, Zero[] = {0.0f, -0.0f,};
 
 float __hide_ieee754_fmodf(float x, float y)
 {
@@ -45,7 +45,7 @@ float __hide_ieee754_fmodf(float x, float y)
 	if(FLT_UWORD_IS_ZERO(hy)||
 	   !FLT_UWORD_IS_FINITE(hx)||
 	   FLT_UWORD_IS_NAN(hy))
-	    return __builtin_nanf("");
+        return nanf("");
 	if(hx<hy) return x;			/* |x|<|y| return x */
 	if(hx==hy)
 	    return Zero[(unsigned)sx>>31];	/* |x|=|y| return x*0*/

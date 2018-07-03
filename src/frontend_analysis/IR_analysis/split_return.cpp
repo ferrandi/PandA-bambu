@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -205,7 +205,7 @@ DesignFlowStep_Status SplitReturn::InternalExec()
     std::map<unsigned int, blocRef> & list_of_bloc = sl->list_of_bloc;
     std::map<unsigned int, blocRef>::iterator iit, iit_end = list_of_bloc.end();
     std::list<unsigned int> to_be_erase;
-    for(iit = list_of_bloc.begin(); iit != iit_end ; iit++)
+    for(iit = list_of_bloc.begin(); iit != iit_end ; ++iit)
     {
        blocRef& bb_block = iit->second;
        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "--- Considering BB" + STR(bb_block->number) + " " + STR(bb_block->CGetPhiList().size()) + " " + STR(bb_block->CGetStmtList().size()));

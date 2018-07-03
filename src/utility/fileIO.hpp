@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -87,7 +87,7 @@ typedef refcount<std::ostream> fileIO_ostreamRef;
  * @param name is the file name.
  * @return the refcount to the istream
  */
-inline fileIO_istreamRef fileIO_istream_open(const std::string name)
+inline fileIO_istreamRef fileIO_istream_open(const std::string&name)
 {
    fileIO_istreamRef res_file;
    res_file = fileIO_istreamRef(new igzstream((name).c_str()));
@@ -113,7 +113,7 @@ inline fileIO_istreamRef fileIO_istream_open(const std::string name)
 /**
  * Create a fileIO_istreamRef starting from a string
  */
-inline fileIO_istreamRef fileIO_istream_open_from_string(const std::string input)
+inline fileIO_istreamRef fileIO_istream_open_from_string(const std::string&input)
 {
    fileIO_istreamRef output;
    output = fileIO_istreamRef(new std::istringstream(input));
@@ -126,7 +126,7 @@ inline fileIO_istreamRef fileIO_istream_open_from_string(const std::string input
  * @param name is the file name.
  * @return the refcount to the ostream
  */
-inline fileIO_ostreamRef fileIO_ostream_open(const std::string name)
+inline fileIO_ostreamRef fileIO_ostream_open(const std::string&name)
 {
    fileIO_ostreamRef res_file;
    res_file = fileIO_ostreamRef(new ogzstream((name).c_str()));
@@ -142,7 +142,7 @@ inline fileIO_ostreamRef fileIO_ostream_open(const std::string name)
 /**
  * Copy a file to the standard output
 */
-inline void CopyStdout(const std::string filename)
+inline void CopyStdout(const std::string&filename)
 {
    FILE *filese;
    filese = fopen(filename.c_str(), "r");
@@ -232,7 +232,7 @@ inline std::string GetDirectory(const boost::filesystem::path file)
  * @param file is the starting file
  * @return the extension of the file
  */
-inline std::string GetExtension(const std::string file)
+inline std::string GetExtension(const std::string&file)
 {
    return file.find(".") == std::string::npos ? "" : file.substr(file.find_last_of(".") + 1);
 }
@@ -255,7 +255,7 @@ inline std::string GetCurrentPath()
    return current_dir;
 }
 
-inline bool ExistFile(const std::string file)
+inline bool ExistFile(const std::string&file)
 {
    return boost::filesystem::exists(file);
 }
@@ -291,7 +291,7 @@ inline void CopyFile(boost::filesystem::path file_source, boost::filesystem::pat
  * @param timeout is the timeout for the command (in minutes)
  * @return the value returned by the shell
  */
-inline int PandaSystem(const ParameterConstRef Param, const std::string & system_command, const std::string output = "", const unsigned int type = 3,  const bool background = false, const size_t timeout = 0)
+inline int PandaSystem(const ParameterConstRef Param, const std::string& system_command, const std::string&output = "", const unsigned int type = 3,  const bool background = false, const size_t timeout = 0)
 {
    static size_t counter = 0;
    const std::string actual_output = output == "" ? Param->getOption<std::string>(OPT_output_temporary_directory) + STR_CST_file_IO_shell_output_file + "_" + boost::lexical_cast<std::string>(counter) : output;

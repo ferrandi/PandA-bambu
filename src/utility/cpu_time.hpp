@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -96,7 +96,9 @@ inline long int p_cpu_time()
    struct tms now;
    clock_t    ret = times(&now);
    if (ret == static_cast<clock_t>(-1))
+      // cppcheck-suppress unreadVariable
       now.tms_utime = now.tms_stime = now.tms_cutime = now.tms_cstime = ret = 0;
+   // cppcheck-suppress ConfigurationNotChecked
    t = (long(now.tms_utime) * 1000) / (TIMES_TICKS_PER_SEC) + (long(now.tms_cutime) * 1000) / (TIMES_TICKS_PER_SEC);
    return t;
 #endif
@@ -118,8 +120,9 @@ inline std::string print_cpu_time(long int t)
    return ost;
 }
 
-void inline dump_exec_time(std::string thing, long et)
+void inline dump_exec_time(const std::string & thing, long et)
 {
+   // cppcheck-suppress duplicateExpression
    INDENT_OUT_MEX(0,0, thing + ": " + print_cpu_time(et) + " seconds;");
 }
 
@@ -140,7 +143,7 @@ inline long int p_cpu_wtime()
 #if HAVE_OPENMP
    return static_cast<long int>(1000*omp_get_wtime());
 #else
-   return p_cpu_wtime();
+   return p_cpu_time();
 #endif
 }
 

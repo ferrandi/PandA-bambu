@@ -23,7 +23,7 @@
 
 #include "math_privatef.h"
 
-static const float one = 1.0, half=0.5, huge = 1.0e30;
+static const float one = 1.0f, half=0.5f, huge = 1.0e30f;
 
 float __hide_ieee754_coshf(float x)
 {	
@@ -38,7 +38,7 @@ float __hide_ieee754_coshf(float x)
 
     /* |x| in [0,0.5*ln2], return 1+expm1(|x|)^2/(2*exp(|x|)) */
 	if(ix<0x3eb17218) {
-	    t = __builtin_expm1f(__builtin_fabsf(x));
+        t = expm1f(fabsf(x));
 	    w = one+t;
 	    if (ix<0x24000000) return w;	/* cosh(tiny) = 1 */
 	    return one+(t*t)/(w+w);
@@ -46,17 +46,17 @@ float __hide_ieee754_coshf(float x)
 
     /* |x| in [0.5*ln2,22], return (exp(|x|)+1/exp(|x|)/2; */
 	if (ix < 0x41b00000) {
-		t = __hide_ieee754_expf(__builtin_fabsf(x));
+        t = __hide_ieee754_expf(fabsf(x));
 		return half*t+half/t;
 	}
 
     /* |x| in [22, log(maxdouble)] return half*exp(|x|) */
 	if (ix <= FLT_UWORD_LOG_MAX)
-	  return half*__hide_ieee754_expf(__builtin_fabsf(x));
+      return half*__hide_ieee754_expf(fabsf(x));
 
     /* |x| in [log(maxdouble), overflowthresold] */
 	if (ix <= FLT_UWORD_LOG_2MAX) {
-	    w = __hide_ieee754_expf(half*__builtin_fabsf(x));
+        w = __hide_ieee754_expf(half*fabsf(x));
 	    t = half*w;
 	    return t*w;
 	}

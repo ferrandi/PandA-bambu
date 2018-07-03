@@ -71,3 +71,5 @@ ext/flopoco/src/Makefile.am
 QTCreator-PandA-GitHub.creator.user
 config.h.in~
 
+/build*
+

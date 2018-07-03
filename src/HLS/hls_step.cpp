@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -354,7 +354,7 @@ void HLS_step::ComputeRelationships(DesignFlowStepSet & design_flow_step_set, co
    /// check if __builtin_memcpy has to be synthesized
    if(HLSMgr->Rmem and HLSMgr->Rmem->has_implicit_memcpy())
    {
-      unsigned int memcpy_function_id = TreeM->function_index("__builtin_memcpy");
+      unsigned int memcpy_function_id = TreeM->function_index("__internal_bambu_memcpy");
       functions.insert(memcpy_function_id);
    }
    const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > steps_to_be_created = ComputeHLSRelationships(relationship_type);

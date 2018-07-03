@@ -1,13 +1,7 @@
 EXTRA_DIST=./libm-tests/libm-test-ulps.h\
 ./libm-tests/conversion.c\
 ./libm-tests/empty.c\
-./libm-tests/gammaf.c\
-./libm-tests/lgammaf.c\
 ./libm-tests/test-double.c\
-./libm-tests/tgamma.c\
-./libm-tests/tgammaf.c\
-./libm-tests/gamma.c\
-./libm-tests/lgamma.c\
 ./libm-tests/COPYING.LIB\
 ./libm-tests/README_LIBM_TESTS.txt\
 ./libm-tests/test-float.c\
@@ -1175,13 +1169,25 @@ gcc_regression_simple/zero-struct-1.c\
 ./test_libm_sqrtf.sh \
 ./discrepancy.sh \
 ./discrepancy_list\
-./panda_regression_hls1.sh\
-./panda_regression_hls_long1.sh\
-./panda_regression_hls_release1.sh\
 ./CHStone_frontend1.sh\
 ./CHStone_memarch_core1.sh\
 ./discrepancy1.sh\
 ./gcc_regression_simple1.sh\
 ./panda_regression_hls_all_gcc1.sh\
 ./panda_regression_hls_no_gcc1.sh\
-./softfloat-tests1.sh
+./softfloat-tests1.sh\
+clang4_regression_simple_default.sh\
+clang4_regression_simple_ext_pipelined.sh\
+clang4_regression_simple_no_expose_globals.sh\
+clang5_regression_simple_default.sh\
+clang5_regression_simple_ext_pipelined.sh\
+clang5_regression_simple_no_expose_globals.sh\
+clang6_regression_simple_default.sh\
+clang6_regression_simple_ext_pipelined.sh\
+clang6_regression_simple_no_expose_globals.sh\
+softfloat-tests-clang4.sh\
+softfloat-tests-clang5.sh\
+softfloat-tests-clang6.sh\
+libm-testsClang.sh\
+CHStone_frontend1Clang.sh
+

@@ -25,7 +25,7 @@
 
 static const float one=1.0, two=2.0, tiny = 1.0e-30;
 
-float __builtin_tanhf(float x)
+float tanhf(float x)
 {
 	float t,z;
 	int jx,ix;
@@ -36,7 +36,7 @@ float __builtin_tanhf(float x)
     /* x is INF or NaN */
 	if(!FLT_UWORD_IS_FINITE(ix)) {
 	    if (jx>=0) return one/x+one;    /* tanh(+-inf)=+-1 */
-	    else       return __builtin_nanf("");    /* tanh(NaN) = NaN */
+        else       return nanf("");    /* tanh(NaN) = NaN */
 	}
 
     /* |x| < 22 */
@@ -44,10 +44,10 @@ float __builtin_tanhf(float x)
 	    if (ix<0x24000000) 		/* |x|<2**-55 */
 		return x*(one+x);    	/* tanh(small) = small */
 	    if (ix>=0x3f800000) {	/* |x|>=1  */
-		t = __builtin_expm1f(two*__builtin_fabsf(x));
+        t = expm1f(two*fabsf(x));
 		z = one - two/(t+two);
 	    } else {
-	        t = __builtin_expm1f(-two*__builtin_fabsf(x));
+            t = expm1f(-two*fabsf(x));
 	        z= -t/(t+two);
 	    }
     /* |x| > 22, return +-1 */
@@ -59,9 +59,9 @@ float __builtin_tanhf(float x)
 
 #ifdef _DOUBLE_IS_32BITS
 
-double __builtin_tanh(double x)
+double tanh(double x)
 {
-	return (double) __builtin_tanhf((float) x);
+    return (double) tanhf((float) x);
 }
 
 #endif /* defined(_DOUBLE_IS_32BITS) */

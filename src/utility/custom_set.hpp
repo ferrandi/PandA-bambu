@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -67,7 +67,7 @@ class CustomSet : public std::unordered_set<T>
       void operator+=(const CustomSet & other)
       {
          typename CustomSet<T>::const_iterator other_element, other_element_end = other.end();
-         for(other_element = other.begin(); other_element != other_element_end; other_element++)
+         for(other_element = other.begin(); other_element != other_element_end; ++other_element)
          {
             this->insert(*other_element);
          }
@@ -76,7 +76,7 @@ class CustomSet : public std::unordered_set<T>
       void operator-=(const CustomSet & other)
       {
          typename CustomSet<T>::const_iterator other_element, other_element_end = other.end();
-         for(other_element = other.begin(); other_element != other_element_end; other_element++)
+         for(other_element = other.begin(); other_element != other_element_end; ++other_element)
          {
             this->erase(*other_element);
          }
@@ -93,7 +93,7 @@ class CustomSet : public std::unordered_set<T>
       {
          CustomSet return_value;
          typename CustomSet<T>::const_iterator other_element, other_element_end = other.end();
-         for(other_element = other.begin(); other_element != other_element_end; other_element++)
+         for(other_element = other.begin(); other_element != other_element_end; ++other_element)
          {
             if(this->find(*other_element) != this->end())
             {
@@ -111,7 +111,7 @@ class CustomSet : public std::set<T>
       void operator+=(const CustomSet & other)
       {
          typename CustomSet<T>::const_iterator other_element, other_element_end = other.end();
-         for(other_element = other.begin(); other_element != other_element_end; other_element++)
+         for(other_element = other.begin(); other_element != other_element_end; ++other_element)
          {
             this->insert(*other_element);
          }
@@ -120,7 +120,7 @@ class CustomSet : public std::set<T>
       void operator-=(const CustomSet & other)
       {
          typename CustomSet<T>::const_iterator other_element, other_element_end = other.end();
-         for(other_element = other.begin(); other_element != other_element_end; other_element++)
+         for(other_element = other.begin(); other_element != other_element_end; ++other_element)
          {
             this->erase(*other_element);
          }
@@ -137,7 +137,7 @@ class CustomSet : public std::set<T>
       {
          CustomSet return_value;
          typename CustomSet<T>::const_iterator other_element, other_element_end = other.end();
-         for(other_element = other.begin(); other_element != other_element_end; other_element++)
+         for(other_element = other.begin(); other_element != other_element_end; ++other_element)
          {
             if(this->find(*other_element) != this->end())
             {

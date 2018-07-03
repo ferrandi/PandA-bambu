@@ -3,7 +3,7 @@
    This specific code has been derived from libgcc from GCC.
    The GCC licence and its exception applies.
 */
-/* Copyright (C) 1989-2016 Free Software Foundation, Inc.
+/* Copyright (C) 1989-2018 Free Software Foundation, Inc.
 
 This file is part of GCC.
 
@@ -69,12 +69,12 @@ double __local_copysign(double x, double y)
 
 
 __complex__ double
-__builtin___divdc3 (double a, double b, double c, double d)
+___divdc3 (double a, double b, double c, double d)
 {
   double denom, ratio, x, y;
   __complex__ double res;
 
-  if (__builtin_fabs (c) < __builtin_fabs (d))
+  if (fabs (c) < fabs (d))
     {
       ratio = c / d;
       denom = (c * ratio) + d;

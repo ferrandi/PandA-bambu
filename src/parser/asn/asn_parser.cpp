@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2015 Politecnico di Milano
+ *              Copyright (c) 2015-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -68,7 +68,7 @@ AsnParserData::AsnParserData(const AadlInformationRef _aadl_information, const P
    debug_level(_parameters->get_class_debug_level("AsnParser"))
 {}
 
-AsnParser::AsnParser(const DesignFlowManagerConstRef _design_flow_manager, const std::string _file_name, const application_managerRef _AppM, const ParameterConstRef _parameters) :
+AsnParser::AsnParser(const DesignFlowManagerConstRef _design_flow_manager, const std::string&_file_name, const application_managerRef _AppM, const ParameterConstRef _parameters) :
    ParserFlowStep(_design_flow_manager, ParserFlowStep_Type::ASN, _file_name, _parameters),
    AppM(_AppM)
 {

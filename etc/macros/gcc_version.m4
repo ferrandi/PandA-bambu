@@ -452,17 +452,17 @@ for compiler in $GCC_TO_BE_CHECKED; do
       LDFLAGS=
       LIBS=
       AC_LANG_PUSH([C])
-      AC_LINK_IFELSE([AC_LANG_SOURCE([int main(void){ return 0;}])],I386_GCC47_MULTIARCH=yes,I386_GCC47_MULTIARCH=no)
+      AC_LINK_IFELSE([AC_LANG_SOURCE([int main(void){ return 0;}])],I386_GCC47_M32=yes,I386_GCC47_M32=no)
       AC_LANG_POP([C])
       CC=$ac_save_CC
       CFLAGS=$ac_save_CFLAGS
       LDFLAGS=$ac_save_LDFLAGS
       LIBS=$ac_save_LIBS
-      if test "x$I386_GCC47_MULTIARCH" != xyes; then
-         echo "checking support to -m32... no"
-         continue
-      else
+      if test "x$I386_GCC47_M32" == xyes; then
+         AC_DEFINE(HAVE_I386_GCC47_M32,1,[Define if gcc 4.7 supports -m32 ])
          echo "checking support to -m32... yes"
+      else
+         echo "checking support to -m32... no"
       fi
       ac_save_CC="$CC"
       ac_save_CFLAGS="$CFLAGS"
@@ -484,6 +484,27 @@ for compiler in $GCC_TO_BE_CHECKED; do
          echo "checking support to -mx32... yes"
       else
          echo "checking support to -mx32... no"
+      fi
+      ac_save_CC="$CC"
+      ac_save_CFLAGS="$CFLAGS"
+      ac_save_LDFLAGS="$LDFLAGS"
+      ac_save_LIBS="$LIBS"
+      CC=$I386_GCC47_EXE
+      CFLAGS="-m64"
+      LDFLAGS=
+      LIBS=
+      AC_LANG_PUSH([C])
+      AC_LINK_IFELSE([AC_LANG_SOURCE([int main(void){ return 0;}])],I386_GCC47_M64=yes,I386_GCC47_M64=no)
+      AC_LANG_POP([C])
+      CC=$ac_save_CC
+      CFLAGS=$ac_save_CFLAGS
+      LDFLAGS=$ac_save_LDFLAGS
+      LIBS=$ac_save_LIBS
+      if test "x$I386_GCC47_M64" == xyes; then
+         AC_DEFINE(HAVE_I386_GCC47_M64,1,[Define if gcc 4.7 supports -m64 ])
+         echo "checking support to -m64... yes"
+      else
+         echo "checking support to -m64... no"
       fi
       cat > plugin_test.c <<PLUGIN_TEST
       #include "plugin_includes.h"
@@ -679,17 +700,17 @@ for compiler in $GCC_TO_BE_CHECKED; do
       LDFLAGS=
       LIBS=
       AC_LANG_PUSH([C])
-      AC_LINK_IFELSE([AC_LANG_SOURCE([int main(void){ return 0;}])],I386_GCC48_MULTIARCH=yes,I386_GCC48_MULTIARCH=no)
+      AC_LINK_IFELSE([AC_LANG_SOURCE([int main(void){ return 0;}])],I386_GCC48_M32=yes,I386_GCC48_M32=no)
       AC_LANG_POP([C])
       CC=$ac_save_CC
       CFLAGS=$ac_save_CFLAGS
       LDFLAGS=$ac_save_LDFLAGS
       LIBS=$ac_save_LIBS
-      if test "x$I386_GCC48_MULTIARCH" != xyes; then
-         echo "checking support to -m32... no"
-         continue
-      else
+      if test "x$I386_GCC48_M32" == xyes; then
+         AC_DEFINE(HAVE_I386_GCC48_M32,1,[Define if gcc 4.8 supports -m32 ])
          echo "checking support to -m32... yes"
+      else
+         echo "checking support to -m32... no"
       fi
       ac_save_CC="$CC"
       ac_save_CFLAGS="$CFLAGS"
@@ -711,6 +732,27 @@ for compiler in $GCC_TO_BE_CHECKED; do
          echo "checking support to -mx32... yes"
       else
          echo "checking support to -mx32... no"
+      fi
+      ac_save_CC="$CC"
+      ac_save_CFLAGS="$CFLAGS"
+      ac_save_LDFLAGS="$LDFLAGS"
+      ac_save_LIBS="$LIBS"
+      CC=$I386_GCC48_EXE
+      CFLAGS="-m64"
+      LDFLAGS=
+      LIBS=
+      AC_LANG_PUSH([C])
+      AC_LINK_IFELSE([AC_LANG_SOURCE([int main(void){ return 0;}])],I386_GCC48_M64=yes,I386_GCC48_M64=no)
+      AC_LANG_POP([C])
+      CC=$ac_save_CC
+      CFLAGS=$ac_save_CFLAGS
+      LDFLAGS=$ac_save_LDFLAGS
+      LIBS=$ac_save_LIBS
+      if test "x$I386_GCC48_M64" == xyes; then
+         AC_DEFINE(HAVE_I386_GCC48_M64,1,[Define if gcc 4.8 supports -m64 ])
+         echo "checking support to -m64... yes"
+      else
+         echo "checking support to -m64... no"
       fi
       cat > plugin_test.c <<PLUGIN_TEST
       #include "plugin_includes.h"
@@ -906,17 +948,17 @@ for compiler in $GCC_TO_BE_CHECKED; do
       LDFLAGS=
       LIBS=
       AC_LANG_PUSH([C])
-      AC_LINK_IFELSE([AC_LANG_SOURCE([int main(void){ return 0;}])],I386_GCC49_MULTIARCH=yes,I386_GCC49_MULTIARCH=no)
+      AC_LINK_IFELSE([AC_LANG_SOURCE([int main(void){ return 0;}])],I386_GCC49_M32=yes,I386_GCC49_M32=no)
       AC_LANG_POP([C])
       CC=$ac_save_CC
       CFLAGS=$ac_save_CFLAGS
       LDFLAGS=$ac_save_LDFLAGS
       LIBS=$ac_save_LIBS
-      if test "x$I386_GCC49_MULTIARCH" != xyes; then
-         echo "checking support to -m32... no"
-         continue
-      else
+      if test "x$I386_GCC49_M32" == xyes; then
+         AC_DEFINE(HAVE_I386_GCC49_M32,1,[Define if gcc 4.9 supports -m32 ])
          echo "checking support to -m32... yes"
+      else
+         echo "checking support to -m32... no"
       fi
       ac_save_CC="$CC"
       ac_save_CFLAGS="$CFLAGS"
@@ -938,6 +980,27 @@ for compiler in $GCC_TO_BE_CHECKED; do
          echo "checking support to -mx32... yes"
       else
          echo "checking support to -mx32... no"
+      fi
+      ac_save_CC="$CC"
+      ac_save_CFLAGS="$CFLAGS"
+      ac_save_LDFLAGS="$LDFLAGS"
+      ac_save_LIBS="$LIBS"
+      CC=$I386_GCC49_EXE
+      CFLAGS="-m64"
+      LDFLAGS=
+      LIBS=
+      AC_LANG_PUSH([C])
+      AC_LINK_IFELSE([AC_LANG_SOURCE([int main(void){ return 0;}])],I386_GCC49_M64=yes,I386_GCC49_M64=no)
+      AC_LANG_POP([C])
+      CC=$ac_save_CC
+      CFLAGS=$ac_save_CFLAGS
+      LDFLAGS=$ac_save_LDFLAGS
+      LIBS=$ac_save_LIBS
+      if test "x$I386_GCC49_M64" == xyes; then
+         AC_DEFINE(HAVE_I386_GCC49_M64,1,[Define if gcc 4.9 supports -m64 ])
+         echo "checking support to -m64... yes"
+      else
+         echo "checking support to -m64... no"
       fi
       cat > plugin_test.c <<PLUGIN_TEST
       #include "plugin_includes.h"
@@ -961,19 +1024,40 @@ for compiler in $GCC_TO_BE_CHECKED; do
       }
 PLUGIN_TEST
       for plugin_compiler in $I386_GCC49_EXE $I386_GPP49_EXE; do
-         if test -f plugin_test.so; then
-            rm plugin_test.so
+         plugin_file_name=plugin_test.so
+         plugin_option=
+         case $host_os in
+           mingw*) 
+             plugin_option="-shared"
+           ;;
+           *)
+             plugin_option='-fPIC -shared'
+           ;;
+         esac
+         if test -f $plugin_file_name; then
+            rm $plugin_file_name
          fi
-         $plugin_compiler -I$TOPSRCDIR/etc/gcc_plugin/ -fPIC -shared plugin_test.c -o plugin_test.so -I$I386_GCC49_PLUGIN_DIR/include 2> /dev/null
-         if test ! -f plugin_test.so; then
-            echo "checking $plugin_compiler -I$TOPSRCDIR/etc/gcc_plugin/ -fPIC -shared plugin_test.c -o plugin_test.so -I$I386_GCC49_PLUGIN_DIR/include... no"
+         case $host_os in
+           mingw*) 
+             echo "$plugin_compiler -I$I386_GCC49_PLUGIN_DIR/include -I$TOPSRCDIR/etc/gcc_plugin/ -o plugin_test.o -c  plugin_test.c $plugin_option"
+             $plugin_compiler -I$I386_GCC49_PLUGIN_DIR/include -I$TOPSRCDIR/etc/gcc_plugin/ -o plugin_test.o -c  plugin_test.c $plugin_option 2> /dev/null
+             echo "flexlink -chain mingw -o $plugin_file_name  plugin_test.o"
+             flexlink -chain mingw -o $plugin_file_name  plugin_test.o 2> /dev/null
+           ;;
+           *)
+             $plugin_compiler -I$I386_GCC49_PLUGIN_DIR/include -I$TOPSRCDIR/etc/gcc_plugin/ -o $plugin_file_name  plugin_test.c $plugin_option 2> /dev/null
+           ;;
+         esac
+         if test ! -f $plugin_file_name; then
+            echo "checking $plugin_compiler -I$I386_GCC49_PLUGIN_DIR/include -I$TOPSRCDIR/etc/gcc_plugin/ -o $plugin_file_name  plugin_test.c $plugin_option ... no"
             continue
          fi
-         echo "checking $plugin_compiler -I$TOPSRCDIR/etc/gcc_plugin/ -fPIC -shared plugin_test.c -o plugin_test.so -I$I386_GCC49_PLUGIN_DIR/include... yes"
+         echo "checking $plugin_compiler -I$I386_GCC49_PLUGIN_DIR/include -I$TOPSRCDIR/etc/gcc_plugin/ -o $plugin_file_name  plugin_test.c $plugin_option... yes"
+
          ac_save_CC="$CC"
          ac_save_CFLAGS="$CFLAGS"
          CC=$plugin_compiler
-         CFLAGS="-fplugin=$BUILDDIR/plugin_test.so"
+         CFLAGS="-fplugin=$BUILDDIR/$plugin_file_name"
          AC_LANG_PUSH([C])
          AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
                ]],[[
@@ -988,12 +1072,12 @@ PLUGIN_TEST
             continue
          fi
          echo "Looking for gengtype"
-         I386_GCC49_GENGTYPE=`$I386_GCC49_EXE -print-file-name=gengtype`
-         if test "x$I386_GCC49_GENGTYPE" = "xgengtype"; then
-            I386_GCC49_GENGTYPE=`$I386_GCC49_EXE -print-file-name=plugin/gengtype`
-            if test "x$I386_GCC49_GENGTYPE" = "xplugin/gengtype"; then
+         I386_GCC49_GENGTYPE=`$I386_GCC49_EXE -print-file-name=gengtype$ac_exeext`
+         if test "x$I386_GCC49_GENGTYPE" = "xgengtype$ac_exeext"; then
+            I386_GCC49_GENGTYPE=`$I386_GCC49_EXE -print-file-name=plugin/gengtype$ac_exeext`
+            if test "x$I386_GCC49_GENGTYPE" = "xplugin/gengtype$ac_exeext"; then
                I386_GCC49_ROOT_DIR=`dirname $I386_GCC49_EXE`/..
-               I386_GCC49_GENGTYPE=`find $I386_GCC49_ROOT_DIR -name gengtype | head -n1`
+               I386_GCC49_GENGTYPE=`find $I386_GCC49_ROOT_DIR -name gengtype$ac_exeext | head -n1`
                if test "x$I386_GCC49_GENGTYPE" = "x"; then
                   I386_GCC49_PLUGIN_COMPILER=
                   continue
@@ -1128,17 +1212,17 @@ for compiler in $GCC_TO_BE_CHECKED; do
       LDFLAGS=
       LIBS=
       AC_LANG_PUSH([C])
-      AC_LINK_IFELSE([AC_LANG_SOURCE([int main(void){ return 0;}])],I386_GCC5_MULTIARCH=yes,I386_GCC5_MULTIARCH=no)
+      AC_LINK_IFELSE([AC_LANG_SOURCE([int main(void){ return 0;}])],I386_GCC5_M32=yes,I386_GCC5_M32=no)
       AC_LANG_POP([C])
       CC=$ac_save_CC
       CFLAGS=$ac_save_CFLAGS
       LDFLAGS=$ac_save_LDFLAGS
       LIBS=$ac_save_LIBS
-      if test "x$I386_GCC5_MULTIARCH" != xyes; then
-         echo "checking support to -m32... no"
-         continue
-      else
+      if test "x$I386_GCC5_M32" == xyes; then
+         AC_DEFINE(HAVE_I386_GCC5_M32,1,[Define if gcc 5 supports -m32 ])
          echo "checking support to -m32... yes"
+      else
+         echo "checking support to -m32... no"
       fi
       ac_save_CC="$CC"
       ac_save_CFLAGS="$CFLAGS"
@@ -1160,6 +1244,27 @@ for compiler in $GCC_TO_BE_CHECKED; do
          echo "checking support to -mx32... yes"
       else
          echo "checking support to -mx32... no"
+      fi
+      ac_save_CC="$CC"
+      ac_save_CFLAGS="$CFLAGS"
+      ac_save_LDFLAGS="$LDFLAGS"
+      ac_save_LIBS="$LIBS"
+      CC=$I386_GCC5_EXE
+      CFLAGS="-m64"
+      LDFLAGS=
+      LIBS=
+      AC_LANG_PUSH([C])
+      AC_LINK_IFELSE([AC_LANG_SOURCE([int main(void){ return 0;}])],I386_GCC5_M64=yes,I386_GCC5_M64=no)
+      AC_LANG_POP([C])
+      CC=$ac_save_CC
+      CFLAGS=$ac_save_CFLAGS
+      LDFLAGS=$ac_save_LDFLAGS
+      LIBS=$ac_save_LIBS
+      if test "x$I386_GCC5_M64" == xyes; then
+         AC_DEFINE(HAVE_I386_GCC5_M64,1,[Define if gcc 5 supports -m64 ])
+         echo "checking support to -m64... yes"
+      else
+         echo "checking support to -m64... no"
       fi
       cat > plugin_test.c <<PLUGIN_TEST
       #include "plugin_includes.h"
@@ -1350,17 +1455,17 @@ for compiler in $GCC_TO_BE_CHECKED; do
       LDFLAGS=
       LIBS=
       AC_LANG_PUSH([C])
-      AC_LINK_IFELSE([AC_LANG_SOURCE([int main(void){ return 0;}])],I386_GCC6_MULTIARCH=yes,I386_GCC6_MULTIARCH=no)
+      AC_LINK_IFELSE([AC_LANG_SOURCE([int main(void){ return 0;}])],I386_GCC6_M32=yes,I386_GCC6_M32=no)
       AC_LANG_POP([C])
       CC=$ac_save_CC
       CFLAGS=$ac_save_CFLAGS
       LDFLAGS=$ac_save_LDFLAGS
       LIBS=$ac_save_LIBS
-      if test "x$I386_GCC6_MULTIARCH" != xyes; then
-         echo "checking support to -m32... no"
-         continue
-      else
+      if test "x$I386_GCC6_M32" == xyes; then
+         AC_DEFINE(HAVE_I386_GCC6_M32,1,[Define if gcc 6 supports -m32 ])
          echo "checking support to -m32... yes"
+      else
+         echo "checking support to -m32... no"
       fi
       ac_save_CC="$CC"
       ac_save_CFLAGS="$CFLAGS"
@@ -1382,6 +1487,27 @@ for compiler in $GCC_TO_BE_CHECKED; do
          echo "checking support to -mx32... yes"
       else
          echo "checking support to -mx32... no"
+      fi
+      ac_save_CC="$CC"
+      ac_save_CFLAGS="$CFLAGS"
+      ac_save_LDFLAGS="$LDFLAGS"
+      ac_save_LIBS="$LIBS"
+      CC=$I386_GCC6_EXE
+      CFLAGS="-m64"
+      LDFLAGS=
+      LIBS=
+      AC_LANG_PUSH([C])
+      AC_LINK_IFELSE([AC_LANG_SOURCE([int main(void){ return 0;}])],I386_GCC6_M64=yes,I386_GCC6_M64=no)
+      AC_LANG_POP([C])
+      CC=$ac_save_CC
+      CFLAGS=$ac_save_CFLAGS
+      LDFLAGS=$ac_save_LDFLAGS
+      LIBS=$ac_save_LIBS
+      if test "x$I386_GCC6_M64" == xyes; then
+         AC_DEFINE(HAVE_I386_GCC6_M64,1,[Define if gcc 6 supports -m64 ])
+         echo "checking support to -m64... yes"
+      else
+         echo "checking support to -m64... no"
       fi
       cat > plugin_test.c <<PLUGIN_TEST
       #include "plugin_includes.h"
@@ -1572,17 +1698,17 @@ for compiler in $GCC_TO_BE_CHECKED; do
       LDFLAGS=
       LIBS=
       AC_LANG_PUSH([C])
-      AC_LINK_IFELSE([AC_LANG_SOURCE([int main(void){ return 0;}])],I386_GCC7_MULTIARCH=yes,I386_GCC7_MULTIARCH=no)
+      AC_LINK_IFELSE([AC_LANG_SOURCE([int main(void){ return 0;}])],I386_GCC7_M32=yes,I386_GCC7_M32=no)
       AC_LANG_POP([C])
       CC=$ac_save_CC
       CFLAGS=$ac_save_CFLAGS
       LDFLAGS=$ac_save_LDFLAGS
       LIBS=$ac_save_LIBS
-      if test "x$I386_GCC7_MULTIARCH" != xyes; then
-         echo "checking support to -m32... no"
-         continue
-      else
+      if test "x$I386_GCC7_M32" == xyes; then
+         AC_DEFINE(HAVE_I386_GCC7_M32,1,[Define if gcc 7 supports -m32 ])
          echo "checking support to -m32... yes"
+      else
+         echo "checking support to -m32... no"
       fi
       ac_save_CC="$CC"
       ac_save_CFLAGS="$CFLAGS"
@@ -1604,6 +1730,27 @@ for compiler in $GCC_TO_BE_CHECKED; do
          echo "checking support to -mx32... yes"
       else
          echo "checking support to -mx32... no"
+      fi
+      ac_save_CC="$CC"
+      ac_save_CFLAGS="$CFLAGS"
+      ac_save_LDFLAGS="$LDFLAGS"
+      ac_save_LIBS="$LIBS"
+      CC=$I386_GCC7_EXE
+      CFLAGS="-m64"
+      LDFLAGS=
+      LIBS=
+      AC_LANG_PUSH([C])
+      AC_LINK_IFELSE([AC_LANG_SOURCE([int main(void){ return 0;}])],I386_GCC7_M64=yes,I386_GCC7_M64=no)
+      AC_LANG_POP([C])
+      CC=$ac_save_CC
+      CFLAGS=$ac_save_CFLAGS
+      LDFLAGS=$ac_save_LDFLAGS
+      LIBS=$ac_save_LIBS
+      if test "x$I386_GCC7_M64" == xyes; then
+         AC_DEFINE(HAVE_I386_GCC7_M64,1,[Define if gcc 7 supports -m64 ])
+         echo "checking support to -m64... yes"
+      else
+         echo "checking support to -m64... no"
       fi
       cat > plugin_test.c <<PLUGIN_TEST
       #include "plugin_includes.h"

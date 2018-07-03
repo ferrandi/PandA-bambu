@@ -1,5 +1,5 @@
 /* Specific functions for bambu architecture.
-   Copyright (C) 2014-2017 Politecnico di Milano (Italy).
+   Copyright (C) 2014-2018 Politecnico di Milano (Italy).
    This file is part of the HLS-FP Library.
 
    author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
@@ -61,7 +61,7 @@ __udivmodsi4(USItype x, USItype y, USItype* res)
     USItype r = x;
     USItype q = 0;
     if (y <= r) {
-        unsigned char k = __builtin_clz(y) - __builtin_clz(r);
+        unsigned char k = clz(y) - clz(r);
         BIT_RESIZE(k,6);
         y = lsl(y,k); // align y
         if (r >= y) {

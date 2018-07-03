@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -130,7 +130,7 @@ enum class TargetDevice_Type;
 #define ASSERT_EXPR_REAL_STD "fp_assert_expr_FU"
 #define BMEMORY_STD        "BMEMORY_CTRL"
 #define BMEMORY_STDN       "BMEMORY_CTRLN"
-#define MEMCPY_STD         "__builtin_memcpy"
+#define MEMCPY_STD         "__internal_bambu_memcpy"
 #define ARRAY_1D_STD_BRAM  "ARRAY_1D_STD_BRAM"
 #define ARRAY_1D_STD_BRAM_SDS  "ARRAY_1D_STD_BRAM_SDS"
 #define ARRAY_1D_STD_BRAM_SDS_BUS  "ARRAY_1D_STD_BRAM_SDS_BUS"
@@ -404,7 +404,7 @@ struct operation: public technology_node
     * @param type_name is the name of the type
     * @param type_prec is the vector of type precisions
     */
-   bool is_type_supported(std::string type_name, const std::vector<unsigned int> &type_prec, const std::vector<unsigned int> &type_n_element) const;
+   bool is_type_supported(const std::string& type_name, const std::vector<unsigned int> &type_prec, const std::vector<unsigned int> &type_n_element) const;
 
    /**
     * Returns the supported type as a string
@@ -553,7 +553,7 @@ struct functional_unit: public technology_node
       /**
        * Constructor
        */
-   functional_unit(const xml_nodeRef XML_description);
+   explicit functional_unit(const xml_nodeRef XML_description);
 
    /**
     * Destructor
@@ -617,7 +617,7 @@ struct functional_unit: public technology_node
    /**
     * Return the name of the operation.
     */
-   const std::string & get_name() const {return functional_unit_name;}
+   const std::string& get_name() const {return functional_unit_name;}
 
    /**
     * Load a functional unit starting from an xml file.
@@ -716,13 +716,13 @@ struct functional_unit: public technology_node
    //@{
    functional_unit_template();
 
-   functional_unit_template(const xml_nodeRef XML_description);
+   explicit functional_unit_template(const xml_nodeRef XML_description);
    //@}
 
    /**
     * Return the name of the operation.
     */
-   const std::string & get_name() const {return FU->get_name();}
+   const std::string& get_name() const {return FU->get_name();}
 
    /**
     * Load a functional unit starting from an xml file.
@@ -793,25 +793,25 @@ struct functional_unit: public technology_node
 #endif
 
    /// Constructor
-   storage_unit() {}
+   storage_unit() : bits(0), words(0), read_ports(0), read_latency(0), write_ports(0), write_latency(0), readwrite_ports(0), readwrite_latency(0), area(0) {}
 
    /// Destructor
    ~storage_unit() {}
 
-   const std::string & get_name() const {return storage_unit_name;}
+   const std::string& get_name() const {return storage_unit_name;}
    /**
     * Load a storage_unit starting from an xml file.
     * @param node is a node of the xml tree.
     * @param owner is the refcount version of this.
     * @param TM is the technology manager.
     */
-   virtual void xload(const xml_element*, const technology_nodeRef, const ParameterConstRef, const target_deviceRef) { abort(); }
+   void xload(const xml_element*, const technology_nodeRef, const ParameterConstRef, const target_deviceRef) { abort(); }
 
    /**
     * Add a storage_unit to an xml tree.
     * @param rootnode is the root node at which the xml representation of the storage_unit unit is attached.
     */
-   virtual void xwrite(xml_element*, const technology_nodeRef, const ParameterConstRef, TargetDevice_Type) { abort(); }
+   void xwrite(xml_element*, const technology_nodeRef, const ParameterConstRef, TargetDevice_Type) { abort(); }
    /**
     * Append a technology_node to a liberty file.
     */

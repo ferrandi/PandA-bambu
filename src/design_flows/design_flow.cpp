@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2017 Politecnico di Milano
+ *              Copyright (c) 2017-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -85,7 +85,7 @@ const DesignFlowStepFactoryConstRef DesignFlow::CGetDesignFlowStepFactory() cons
    return design_flow_manager.lock()->CGetDesignFlowStepFactory("DF");
 }
 
-DesignFlow_Type DesignFlow::KindTextToEnum(const std::string name)
+DesignFlow_Type DesignFlow::KindTextToEnum(const std::string&name)
 {
    if(name == "NonDeterministicFlows")
    {

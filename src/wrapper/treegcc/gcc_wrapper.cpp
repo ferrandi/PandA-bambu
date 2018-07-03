@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -60,6 +60,9 @@
 #include "config_HAVE_I386_GCC5_COMPILER.hpp"
 #include "config_HAVE_I386_GCC6_COMPILER.hpp"
 #include "config_HAVE_I386_GCC7_COMPILER.hpp"
+#include "config_HAVE_I386_CLANG4_COMPILER.hpp"
+#include "config_HAVE_I386_CLANG5_COMPILER.hpp"
+#include "config_HAVE_I386_CLANG6_COMPILER.hpp"
 #include "config_HAVE_SPARC_COMPILER.hpp"
 #include "config_HAVE_SPARC_ELF_GCC.hpp"
 #include "config_HAVE_FROM_RTL_BUILT.hpp"
@@ -123,12 +126,36 @@
 #include "config_I386_GCC7_SSA_PLUGIN.hpp"
 #include "config_I386_GCC7_SSA_PLUGINCPP.hpp"
 #include "config_I386_GCC7_TOPFNAME_PLUGIN.hpp"
+#include "config_I386_CLANG_CPP4_EXE.hpp"
+#include "config_I386_CLANG4_EMPTY_PLUGIN.hpp"
+#include "config_I386_CLANG4_EXE.hpp"
+#include "config_I386_CLANGPP4_EXE.hpp"
+#include "config_I386_CLANG4_SSA_PLUGIN.hpp"
+#include "config_I386_CLANG4_SSA_PLUGINCPP.hpp"
+#include "config_I386_CLANG4_TOPFNAME_PLUGIN.hpp"
+#include "config_I386_CLANG_CPP5_EXE.hpp"
+#include "config_I386_CLANG5_EMPTY_PLUGIN.hpp"
+#include "config_I386_CLANG5_EXE.hpp"
+#include "config_I386_CLANGPP5_EXE.hpp"
+#include "config_I386_CLANG5_SSA_PLUGIN.hpp"
+#include "config_I386_CLANG5_SSA_PLUGINCPP.hpp"
+#include "config_I386_CLANG5_TOPFNAME_PLUGIN.hpp"
+#include "config_I386_CLANG_CPP6_EXE.hpp"
+#include "config_I386_CLANG6_EMPTY_PLUGIN.hpp"
+#include "config_I386_CLANG6_EXE.hpp"
+#include "config_I386_CLANGPP6_EXE.hpp"
+#include "config_I386_CLANG6_SSA_PLUGIN.hpp"
+#include "config_I386_CLANG6_SSA_PLUGINCPP.hpp"
+#include "config_I386_CLANG6_TOPFNAME_PLUGIN.hpp"
 #include "config_HAVE_I386_GCC47_MX32.hpp"
 #include "config_HAVE_I386_GCC48_MX32.hpp"
 #include "config_HAVE_I386_GCC49_MX32.hpp"
 #include "config_HAVE_I386_GCC5_MX32.hpp"
 #include "config_HAVE_I386_GCC6_MX32.hpp"
 #include "config_HAVE_I386_GCC7_MX32.hpp"
+#include "config_HAVE_I386_CLANG4_MX32.hpp"
+#include "config_HAVE_I386_CLANG5_MX32.hpp"
+#include "config_HAVE_I386_CLANG6_MX32.hpp"
 #include "config_NPROFILE.hpp"
 #include "config_PANDA_INCLUDE_INSTALLDIR.hpp"
 #include "config_SPARC_CPP_EXE.hpp"
@@ -198,7 +225,6 @@ GccWrapper::GccWrapper(const ParameterConstRef _Param, const GccWrapper_Compiler
    Param(_Param),
    compiler_target(_compiler_target),
    OS(_OS),
-   file_name_counter(0),
    output_level(_Param->getOption<int>(OPT_output_level)),
    debug_level(_Param->get_class_debug_level("GccWrapper"))
 {
@@ -214,7 +240,7 @@ GccWrapper::~GccWrapper()
 {
 }
 
-void GccWrapper::CompileFile(const std::string & original_file_name, std::string & real_file_name, const std::string & parameters_line, bool empty_file)
+void GccWrapper::CompileFile(const std::string& original_file_name, std::string & real_file_name, const std::string& parameters_line, bool empty_file)
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Compiling " + original_file_name + "(transformed in " + real_file_name);
 
@@ -238,6 +264,11 @@ void GccWrapper::CompileFile(const std::string & original_file_name, std::string
       command += AddSourceCodeIncludes(source_files) + " ";
    }
    command += " " + compiler.extra_options + " ";
+
+   bool isWholeProgram = Param->isOption(OPT_gcc_optimizations) &&
+                         Param->getOption<std::string>(OPT_gcc_optimizations).find("whole-program") != std::string::npos &&
+                         Param->getOption<std::string>(OPT_gcc_optimizations).find("no-whole-program") == std::string::npos;
+
    if(empty_file)
    {
       if(original_file_name == "-")
@@ -252,7 +283,10 @@ void GccWrapper::CompileFile(const std::string & original_file_name, std::string
          THROW_ERROR("Error in appending empty function");
       }
       real_file_name = temp_file_name;
-      command += opt + " -c -fplugin=" + compiler.empty_plugin_obj + " -fplugin-arg-"+compiler.empty_plugin_name+"-outputdir="+Param->getOption<std::string>(OPT_output_temporary_directory);
+      if(compiler.is_clang)
+         command += opt + " -c -fplugin=" + compiler.empty_plugin_obj + " -Xclang -add-plugin -Xclang " + compiler.empty_plugin_name + " -Xclang -plugin-arg-"+compiler.empty_plugin_name+" -Xclang -outputdir -Xclang -plugin-arg-"+compiler.empty_plugin_name+" -Xclang "+Param->getOption<std::string>(OPT_output_temporary_directory);
+      else
+         command += opt + " -c -fplugin=" + compiler.empty_plugin_obj + " -fplugin-arg-"+compiler.empty_plugin_name+"-outputdir="+Param->getOption<std::string>(OPT_output_temporary_directory);
    }
    else if((Param->isOption(OPT_gcc_E) and Param->getOption<bool>(OPT_gcc_E)) or (Param->isOption(OPT_gcc_S) and Param->getOption<bool>(OPT_gcc_S)))
       command += opt;
@@ -264,26 +298,72 @@ void GccWrapper::CompileFile(const std::string & original_file_name, std::string
    }
    else
 #endif
-      command += opt + " -c -fplugin=" + compiler.ssa_plugin_obj + " -fplugin-arg-"+compiler.ssa_plugin_name+"-outputdir="+Param->getOption<std::string>(OPT_output_temporary_directory);
-   if(Param->isOption(OPT_top_functions_names) && Param->getOption<bool>(OPT_do_not_expose_globals))
    {
-      const auto top_functions_names = Param->getOption<const std::list<std::string> >(OPT_top_functions_names);
-      if(top_functions_names.size()==1)
+      if(compiler.is_clang)
       {
-         if(top_functions_names.front() != "main")
+         std::string fname;
+         bool addTopFName = false;
+         if(isWholeProgram && compiler.is_clang)
          {
-            command += " -fplugin=" + compiler.topfname_plugin_obj + " -fplugin-arg-"+compiler.topfname_plugin_name+"-topfname="+top_functions_names.front();
+            fname = "main";
+            addTopFName = true;
          }
+         else if(Param->isOption(OPT_top_functions_names))
+         {
+            const auto top_functions_names = Param->getOption<const std::list<std::string> >(OPT_top_functions_names);
+            addTopFName = top_functions_names.size()==1;
+            fname = top_functions_names.front();
+         }
+
+         command += opt + " -c -fplugin=" + compiler.ssa_plugin_obj + " -Xclang -add-plugin -Xclang " + compiler.ssa_plugin_name + " -Xclang -plugin-arg-"+compiler.ssa_plugin_name+" -Xclang -outputdir -Xclang -plugin-arg-"+compiler.ssa_plugin_name+" -Xclang "+Param->getOption<std::string>(OPT_output_temporary_directory);
+         if(addTopFName)
+            command += " -Xclang -plugin-arg-"+compiler.ssa_plugin_name+" -Xclang -topfname -Xclang -plugin-arg-"+compiler.ssa_plugin_name+" -Xclang "+fname;
+      }
+      else
+         command += opt + " -c -fplugin=" + compiler.ssa_plugin_obj + " -fplugin-arg-"+compiler.ssa_plugin_name+"-outputdir="+Param->getOption<std::string>(OPT_output_temporary_directory);
+   }
+   if((Param->isOption(OPT_top_functions_names) && Param->getOption<bool>(OPT_do_not_expose_globals)) ||
+         (isWholeProgram && compiler.is_clang))
+   {
+      std::string fname;
+      bool addPlugin = false;
+      if(isWholeProgram && compiler.is_clang)
+      {
+         fname = "main";
+         addPlugin = true;
+      }
+      else
+      {
+         const auto top_functions_names = Param->getOption<const std::list<std::string> >(OPT_top_functions_names);
+         addPlugin = top_functions_names.size()==1;
+         fname = top_functions_names.front();
+         if(fname == "main" && !compiler.is_clang)
+            addPlugin = false;
+      }
+
+      if(addPlugin)
+      {
+         if(compiler.is_clang)
+            command += " -fplugin=" + compiler.topfname_plugin_obj + " -Xclang -add-plugin -Xclang " + compiler.topfname_plugin_name + " -Xclang -plugin-arg-"+compiler.topfname_plugin_name+" -Xclang -topfname -Xclang -plugin-arg-"+compiler.topfname_plugin_name+" -Xclang "+fname;
+         else
+            command += " -fplugin=" + compiler.topfname_plugin_obj + " -fplugin-arg-"+compiler.topfname_plugin_name+"-topfname="+fname;
       }
    }
 
+   std::string temporary_file_run_o;
    if((Param->isOption(OPT_gcc_E) and Param->getOption<bool>(OPT_gcc_E)) or (Param->isOption(OPT_gcc_S) and Param->getOption<bool>(OPT_gcc_S)))
    {
       if(Param->isOption(OPT_output_file))
-         command += " -o " + Param->getOption<std::string>(OPT_output_file);
+      {
+         temporary_file_run_o = Param->getOption<std::string>(OPT_output_file);
+         command += " -o " + temporary_file_run_o;
+      }
    }
    else
-      command += " -o " + std::string(STR_CST_gcc_obj_file);
+   {
+      temporary_file_run_o = boost::filesystem::unique_path(std::string(STR_CST_gcc_obj_file)).string();
+      command += " -o " + temporary_file_run_o;
+   }
 
    if(!(Param->getOption<bool>(OPT_compute_size_of)))
       command += " -D\"" + std::string(STR_CST_panda_sizeof) + "(arg)=" + STR_CST_string_sizeof + "(#arg)\"";
@@ -316,7 +396,7 @@ void GccWrapper::CompileFile(const std::string & original_file_name, std::string
 #endif
 
    if(!((Param->isOption(OPT_gcc_E) and Param->getOption<bool>(OPT_gcc_E)) or (Param->isOption(OPT_gcc_S) and Param->getOption<bool>(OPT_gcc_S))))
-      std::remove(STR_CST_gcc_obj_file);
+      std::remove(temporary_file_run_o.c_str());
    if(IsError(ret))
    {
       PRINT_OUT_MEX(OUTPUT_LEVEL_NONE, 0, "Error in compilation");
@@ -467,6 +547,7 @@ void GccWrapper::InitializeGccParameters()
          case(GccWrapper_OptimizationSet::OZEBU):
 #endif
             ///Filling optimizations map
+#if HAVE_BAMBU_BUILT || HAVE_TUCANO_BUILT || HAVE_ZEBU_BUILT
             SetGccDefault();
 
             switch(OS)
@@ -507,9 +588,37 @@ void GccWrapper::InitializeGccParameters()
             }
             ReadParameters();
 
+#if HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER
+         {
+            GccWrapper_CompilerTarget compiler = Param->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler);
+
+            if(false
+      #if HAVE_I386_CLANG4_COMPILER
+                  || compiler == GccWrapper_CompilerTarget::CT_I386_CLANG4
+      #endif
+      #if HAVE_I386_CLANG5_COMPILER
+                  || compiler == GccWrapper_CompilerTarget::CT_I386_CLANG5
+      #endif
+      #if HAVE_I386_CLANG6_COMPILER
+                  || compiler == GccWrapper_CompilerTarget::CT_I386_CLANG6
+      #endif
+                  )
+            {
+               ///sanitize CLANG/LLVM options by removing unsupported GCC options
+               if(optimization_flags.find("tree-pre") != optimization_flags.end())
+                  optimization_flags.erase(optimization_flags.find("tree-pre"));
+               if(optimization_flags.find("ipa-cp-clone") != optimization_flags.end())
+                  optimization_flags.erase(optimization_flags.find("ipa-cp-clone"));
+               if(optimization_flags.find("ipa-cp") != optimization_flags.end())
+                  optimization_flags.erase(optimization_flags.find("ipa-cp"));
+            }
+         }
+#endif
+
             gcc_compiling_parameters += (" " + WriteOptimizationsString() + " ");
 
             break;
+#endif
          default:
             {
                THROW_UNREACHABLE("Unexpected optimization level");
@@ -532,7 +641,7 @@ void GccWrapper::InitializeGccParameters()
    if(Param->isOption(OPT_gcc_defines))
    {
       const auto defines = Param->getOption<const CustomSet<std::string> >(OPT_gcc_defines);
-      for(const auto define : defines)
+      for(const auto& define : defines)
       {
          std::string escaped_string = define;
          //add_escape(escaped_string, "\"");
@@ -544,7 +653,7 @@ void GccWrapper::InitializeGccParameters()
    if(Param->isOption(OPT_gcc_undefines))
    {
       const auto undefines = Param->getOption<const CustomSet<std::string> >(OPT_gcc_undefines);
-      for(const auto undefine : undefines)
+      for(const auto& undefine : undefines)
       {
          std::string escaped_string = undefine;
          //add_escape(escaped_string, "\"");
@@ -556,7 +665,7 @@ void GccWrapper::InitializeGccParameters()
    if(Param->isOption(OPT_gcc_warnings))
    {
       const auto warnings = Param->getOption<const CustomSet<std::string> >(OPT_gcc_warnings);
-      for(const auto warning : warnings)
+      for(const auto& warning : warnings)
       {
          gcc_compiling_parameters += "-W" + warning + " ";
       }
@@ -579,7 +688,7 @@ void GccWrapper::InitializeGccParameters()
    if(Param->isOption(OPT_gcc_libraries))
    {
       const auto libraries = Param->getOption<const CustomSet<std::string> >(OPT_gcc_libraries);
-      for(const auto library : libraries)
+      for(const auto& library : libraries)
       {
          gcc_linking_parameters += "-l" + library + " ";
       }
@@ -589,7 +698,7 @@ void GccWrapper::InitializeGccParameters()
    if(Param->isOption(OPT_gcc_library_directories))
    {
       const auto library_directories = Param->getOption<const CustomSet<std::string> >(OPT_gcc_library_directories);
-      for(const auto library_directory : library_directories)
+      for(const auto& library_directory : library_directories)
       {
          gcc_linking_parameters += "-L" + library_directory + " ";
       }
@@ -599,7 +708,7 @@ void GccWrapper::InitializeGccParameters()
    if(Param->isOption(OPT_no_parse_files))
    {
       const auto no_parse_files = Param->getOption<const CustomSet<std::string> >(OPT_no_parse_files);
-      for(const auto no_parse_file : no_parse_files)
+      for(const auto& no_parse_file : no_parse_files)
       {
          gcc_linking_parameters += no_parse_file + " ";
       }
@@ -657,6 +766,45 @@ void GccWrapper::SetBambuDefault()
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "-->Setting parameters for Bambu tool...");
    const GccWrapper_OptimizationSet opt_level = Param->getOption<GccWrapper_OptimizationSet>(OPT_gcc_opt_level);
+#if HAVE_I386_GCC46_COMPILER || HAVE_I386_GCC47_COMPILER || HAVE_I386_GCC48_COMPILER || HAVE_I386_GCC49_COMPILER || HAVE_I386_GCC5_COMPILER || HAVE_I386_GCC6_COMPILER || HAVE_I386_GCC7_COMPILER || HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER
+   GccWrapper_CompilerTarget compiler = Param->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler);
+#endif
+#if HAVE_I386_CLANG4_COMPILER
+   if(compiler == GccWrapper_CompilerTarget::CT_I386_CLANG4)
+   {
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--Set parameters for bambu tool");
+      optimization_flags["wrapv"] = true; /// bambu assumes two complement arithmetic
+      optimization_flags["builtin-memset"] = false;
+      optimization_flags["builtin-memcpy"] = false;
+      optimization_flags["builtin-memmove"] = false;
+      optimization_flags["unroll-loops"] = false; // it is preferrable to have unrolling disabled by default as with GCC
+      return;
+   }
+#endif
+#if HAVE_I386_CLANG5_COMPILER
+   if(compiler == GccWrapper_CompilerTarget::CT_I386_CLANG5)
+   {
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--Set parameters for bambu tool");
+      optimization_flags["wrapv"] = true; /// bambu assumes two complement arithmetic
+      optimization_flags["builtin-memset"] = false;
+      optimization_flags["builtin-memcpy"] = false;
+      optimization_flags["builtin-memmove"] = false;
+      optimization_flags["unroll-loops"] = false; // it is preferrable to have unrolling disabled by default as with GCC
+      return;
+   }
+#endif
+#if HAVE_I386_CLANG6_COMPILER
+   if(compiler == GccWrapper_CompilerTarget::CT_I386_CLANG6)
+   {
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--Set parameters for bambu tool");
+      optimization_flags["wrapv"] = true; /// bambu assumes two complement arithmetic
+      optimization_flags["builtin-memset"] = false;
+      optimization_flags["builtin-memcpy"] = false;
+      optimization_flags["builtin-memmove"] = false;
+      optimization_flags["unroll-loops"] = false; // it is preferrable to have unrolling disabled by default as with GCC
+      return;
+   }
+#endif
 
    ///parameters with enable
 
@@ -667,8 +815,7 @@ void GccWrapper::SetBambuDefault()
    optimization_flags["tree-copy-prop"] = true; ///FIXME: this has been always active with gcc >= 4.6; produced c code in bambu for example gcc_regression_simple/20040307-1.c when disabled
    optimization_flags["ipa-pta"] = true;
 
-#if HAVE_I386_GCC46_COMPILER || HAVE_I386_GCC47_COMPILER || HAVE_I386_GCC48_COMPILER || HAVE_I386_GCC49_COMPILER || HAVE_I386_GCC5_COMPILER || HAVE_I386_GCC6_COMPILER || HAVE_I386_GCC7_COMPILER
-   GccWrapper_CompilerTarget compiler = Param->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler);
+#if HAVE_I386_GCC46_COMPILER || HAVE_I386_GCC47_COMPILER || HAVE_I386_GCC48_COMPILER || HAVE_I386_GCC49_COMPILER || HAVE_I386_GCC5_COMPILER || HAVE_I386_GCC6_COMPILER || HAVE_I386_GCC7_COMPILER || HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER
    ///NOTE: the false here is used to be sure that the first operand of the first or always exists 
    if(false
 #if HAVE_I386_GCC46_COMPILER
@@ -796,6 +943,9 @@ void GccWrapper::SetGccDefault()
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "-->Setting GCC defaults");
    const GccWrapper_OptimizationSet optimization_level = Param->getOption<GccWrapper_OptimizationSet>(OPT_gcc_opt_level);
+#if HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER
+   GccWrapper_CompilerTarget compiler = Param->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler);
+#endif
    optimization_flags["stack-protector"] = false;//In Ubuntu 6.10 and later versions this option is enabled by default for C, C++, ObjC, ObjC++
 
    switch(optimization_level)
@@ -820,47 +970,59 @@ void GccWrapper::SetGccDefault()
          {
             gcc_compiling_parameters += " -O1 ";
 
-            optimization_flags["auto-inc-dec"] = false;
-            optimization_flags["cprop-registers"] = false;
-            optimization_flags["dce"] = false;
-            optimization_flags["defer-pop"] = false;
-            optimization_flags["delayed-branch"] = false;
-            optimization_flags["dse"] = false;
-            optimization_flags["guess-branch-probability"] = false;
-            optimization_flags["if-conversion"] = false;
-            optimization_flags["if-conversion2"] = false;
-            optimization_flags["ipa-pure-const"] = false;
-            optimization_flags["ipa-reference"] = false;
-            optimization_flags["merge-constants"] = false;
-            optimization_flags["split-wide-types"] = false;
-            optimization_flags["tree-builtin-call-dce"] = false;
-            optimization_flags["tree-ccp"] = false;
-            optimization_flags["tree-ch"] = false;
-            optimization_flags["tree-dce"] = false;
-            optimization_flags["tree-dominator-opts"] = false;
-            optimization_flags["tree-dse"] = false;
-            optimization_flags["tree-forwprop"] = false;
-            optimization_flags["tree-fre"] = false;
-            optimization_flags["tree-phiprop"] = false;
-            optimization_flags["tree-pta"] = false;
-            optimization_flags["tree-sra"] = false;
-            optimization_flags["tree-ter"] = false;
-            /**
+            if(true
+#if HAVE_I386_CLANG4_COMPILER
+            && compiler != GccWrapper_CompilerTarget::CT_I386_CLANG4
+#endif
+#if HAVE_I386_CLANG5_COMPILER
+            && compiler != GccWrapper_CompilerTarget::CT_I386_CLANG5
+#endif
+#if HAVE_I386_CLANG6_COMPILER
+            && compiler != GccWrapper_CompilerTarget::CT_I386_CLANG6
+#endif
+            )
+            {
+               optimization_flags["auto-inc-dec"] = false;
+               optimization_flags["cprop-registers"] = false;
+               optimization_flags["dce"] = false;
+               optimization_flags["defer-pop"] = false;
+               optimization_flags["delayed-branch"] = false;
+               optimization_flags["dse"] = false;
+               optimization_flags["guess-branch-probability"] = false;
+               optimization_flags["if-conversion"] = false;
+               optimization_flags["if-conversion2"] = false;
+               optimization_flags["ipa-pure-const"] = false;
+               optimization_flags["ipa-reference"] = false;
+               optimization_flags["merge-constants"] = false;
+               optimization_flags["split-wide-types"] = false;
+               optimization_flags["tree-builtin-call-dce"] = false;
+               optimization_flags["tree-ccp"] = false;
+               optimization_flags["tree-ch"] = false;
+               optimization_flags["tree-dce"] = false;
+               optimization_flags["tree-dominator-opts"] = false;
+               optimization_flags["tree-dse"] = false;
+               optimization_flags["tree-forwprop"] = false;
+               optimization_flags["tree-fre"] = false;
+               optimization_flags["tree-phiprop"] = false;
+               optimization_flags["tree-pta"] = false;
+               optimization_flags["tree-sra"] = false;
+               optimization_flags["tree-ter"] = false;
+               /**
              * In the gcc documentation is not clear if unit-at-a-time is activated or not at O0;
              * However it has to be activated to manage empty files
              */
-            ///optimization_flags["unit-at-a-time"] = false;
-            switch(compiler_target)
-            {
+               ///optimization_flags["unit-at-a-time"] = false;
+               switch(compiler_target)
+               {
 #if HAVE_I386_GCC45_COMPILER
-               case(GccWrapper_CompilerTarget::CT_I386_GCC45) :
+                  case(GccWrapper_CompilerTarget::CT_I386_GCC45) :
                   {
                      optimization_flags["tree-copy-prop"] = false;
                      break;
                   }
 #endif
 #if HAVE_I386_GCC46_COMPILER
-               case(GccWrapper_CompilerTarget::CT_I386_GCC46) :
+                  case(GccWrapper_CompilerTarget::CT_I386_GCC46) :
                   {
                      optimization_flags["compare-elim"] = false;
                      optimization_flags["ipa-profile"] = false;
@@ -870,7 +1032,7 @@ void GccWrapper::SetGccDefault()
                   }
 #endif
 #if HAVE_I386_GCC47_COMPILER
-               case(GccWrapper_CompilerTarget::CT_I386_GCC47) :
+                  case(GccWrapper_CompilerTarget::CT_I386_GCC47) :
                   {
                      optimization_flags["compare-elim"] = false;
                      optimization_flags["ipa-profile"] = false;
@@ -880,7 +1042,7 @@ void GccWrapper::SetGccDefault()
                   }
 #endif
 #if HAVE_I386_GCC48_COMPILER
-               case(GccWrapper_CompilerTarget::CT_I386_GCC48) :
+                  case(GccWrapper_CompilerTarget::CT_I386_GCC48) :
                   {
                      optimization_flags["compare-elim"] = false;
                      optimization_flags["ipa-profile"] = false;
@@ -892,7 +1054,7 @@ void GccWrapper::SetGccDefault()
                   }
 #endif
 #if HAVE_I386_GCC49_COMPILER
-               case(GccWrapper_CompilerTarget::CT_I386_GCC49) :
+                  case(GccWrapper_CompilerTarget::CT_I386_GCC49) :
                   {
                      optimization_flags["compare-elim"] = false;
                      optimization_flags["ipa-profile"] = false;
@@ -904,7 +1066,7 @@ void GccWrapper::SetGccDefault()
                   }
 #endif
 #if HAVE_I386_GCC5_COMPILER
-               case(GccWrapper_CompilerTarget::CT_I386_GCC5) :
+                  case(GccWrapper_CompilerTarget::CT_I386_GCC5) :
                   {
                      optimization_flags["compare-elim"] = false;
                      optimization_flags["ipa-profile"] = false;
@@ -916,7 +1078,7 @@ void GccWrapper::SetGccDefault()
                   }
 #endif
 #if HAVE_I386_GCC6_COMPILER
-               case(GccWrapper_CompilerTarget::CT_I386_GCC6) :
+                  case(GccWrapper_CompilerTarget::CT_I386_GCC6) :
                   {
                      optimization_flags["compare-elim"] = false;
                      optimization_flags["ipa-profile"] = false;
@@ -928,7 +1090,7 @@ void GccWrapper::SetGccDefault()
                   }
 #endif
 #if HAVE_I386_GCC7_COMPILER
-               case(GccWrapper_CompilerTarget::CT_I386_GCC7) :
+                  case(GccWrapper_CompilerTarget::CT_I386_GCC7) :
                   {
                      optimization_flags["compare-elim"] = false;
                      optimization_flags["ipa-profile"] = false;
@@ -939,30 +1101,49 @@ void GccWrapper::SetGccDefault()
                      break;
                   }
 #endif
+#if HAVE_I386_CLANG4_COMPILER
+                  case(GccWrapper_CompilerTarget::CT_I386_CLANG4) :
+                  {
+                     break;
+                  }
+#endif
+#if HAVE_I386_CLANG5_COMPILER
+                  case(GccWrapper_CompilerTarget::CT_I386_CLANG5) :
+                  {
+                     break;
+                  }
+#endif
+#if HAVE_I386_CLANG6_COMPILER
+                  case(GccWrapper_CompilerTarget::CT_I386_CLANG6) :
+                  {
+                     break;
+                  }
+#endif
 #if HAVE_ARM_COMPILER
-               case(GccWrapper_CompilerTarget::CT_ARM_GCC):
+                  case(GccWrapper_CompilerTarget::CT_ARM_GCC):
                   {
                      optimization_flags["tree-copy-prop"] = false;
                      break;
                   }
 #endif
 #if HAVE_SPARC_COMPILER
-               case(GccWrapper_CompilerTarget::CT_SPARC_GCC):
-               case(GccWrapper_CompilerTarget::CT_SPARC_ELF_GCC):
+                  case(GccWrapper_CompilerTarget::CT_SPARC_GCC):
+                  case(GccWrapper_CompilerTarget::CT_SPARC_ELF_GCC):
                   {
                      optimization_flags["tree-copy-prop"] = false;
                      break;
                   }
 #endif
-               case(GccWrapper_CompilerTarget::CT_NO_GCC):
+                  case(GccWrapper_CompilerTarget::CT_NO_GCC):
                   {
                      THROW_UNREACHABLE("Unexpected gcc target");
                      break;
                   }
-               default:
+                  default:
                   {
                      THROW_UNREACHABLE("");
                   }
+               }
             }
             break;
          }
@@ -985,9 +1166,28 @@ void GccWrapper::SetGccDefault()
             }
    }
    /// required by PandA
-   optimization_flags["ipa-pure-const"] = true; ///needed to correctly manage global variables
-   optimization_flags["tree-dce"] = true; ///needed to remove unnecessary computations
-
+   if(true
+#if HAVE_I386_CLANG4_COMPILER
+      && compiler != GccWrapper_CompilerTarget::CT_I386_CLANG4
+#endif
+#if HAVE_I386_CLANG5_COMPILER
+      && compiler != GccWrapper_CompilerTarget::CT_I386_CLANG5
+#endif
+#if HAVE_I386_CLANG6_COMPILER
+      && compiler != GccWrapper_CompilerTarget::CT_I386_CLANG6
+#endif
+   )
+   {
+      optimization_flags["ipa-pure-const"] = true; ///needed to correctly manage global variables
+      optimization_flags["tree-dce"] = true; ///needed to remove unnecessary computations
+   }
+#if HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER
+   else
+   {
+      optimization_flags["vectorize"] = false; ///disable vectorization
+      optimization_flags["slp-vectorize"] = false; ///disable superword-level parallelism vectorization
+   }
+#endif
    bool flag_cpp;
    if(Param->isOption(OPT_input_format) &&
          Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_CPP &&
@@ -1009,10 +1209,13 @@ void GccWrapper::SetGccDefault()
 GccWrapper::Compiler GccWrapper::GetCompiler() const
 {
    Compiler compiler;
+#if HAVE_I386_GCC45_COMPILER || HAVE_I386_GCC46_COMPILER || HAVE_I386_GCC47_COMPILER || HAVE_I386_GCC48_COMPILER || HAVE_I386_GCC49_COMPILER || HAVE_I386_GCC5_COMPILER || HAVE_I386_GCC6_COMPILER || HAVE_I386_GCC7_COMPILER || HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER || HAVE_SPARC_COMPILER || HAVE_ARM_COMPILER
 #ifndef NDEBUG
    GccWrapper_CompilerTarget compatible_compilers = Param->getOption<GccWrapper_CompilerTarget>(OPT_compatible_compilers);
 #endif
+#endif
 
+#if HAVE_I386_GCC45_COMPILER || HAVE_I386_GCC46_COMPILER || HAVE_I386_GCC47_COMPILER || HAVE_I386_GCC48_COMPILER || HAVE_I386_GCC49_COMPILER || HAVE_I386_GCC5_COMPILER || HAVE_I386_GCC6_COMPILER || HAVE_I386_GCC7_COMPILER || HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER || HAVE_SPARC_COMPILER || HAVE_ARM_COMPILER
    bool flag_cpp;
    if(Param->isOption(OPT_input_format) &&
          Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_CPP &&
@@ -1020,11 +1223,15 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
       flag_cpp = true;
    else
       flag_cpp = false;
+#endif
 
+#if HAVE_I386_GCC45_COMPILER || HAVE_I386_GCC46_COMPILER || HAVE_I386_GCC47_COMPILER || HAVE_I386_GCC48_COMPILER || HAVE_I386_GCC49_COMPILER || HAVE_I386_GCC5_COMPILER || HAVE_I386_GCC6_COMPILER || HAVE_I386_GCC7_COMPILER || HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER || HAVE_SPARC_COMPILER || HAVE_ARM_COMPILER || HAVE_SPARC_ELF_GCC
    std::string gcc_extra_options;
    if(Param->isOption(OPT_gcc_extra_options))
       gcc_extra_options = Param->getOption<std::string>(OPT_gcc_extra_options);
+#endif
 
+#if HAVE_I386_GCC45_COMPILER || HAVE_I386_GCC46_COMPILER || HAVE_I386_GCC47_COMPILER || HAVE_I386_GCC48_COMPILER || HAVE_I386_GCC49_COMPILER || HAVE_I386_GCC5_COMPILER || HAVE_I386_GCC6_COMPILER || HAVE_I386_GCC7_COMPILER || HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER || HAVE_SPARC_COMPILER || HAVE_ARM_COMPILER
    GccWrapper_CompilerTarget preferred_compiler;
    if(compiler_target == GccWrapper_CompilerTarget::CT_NO_GCC)
    {
@@ -1044,6 +1251,7 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
    }
    const std::string plugin_dir = (Param->isOption(OPT_gcc_plugindir) ? Param->getOption<std::string>(OPT_gcc_plugindir) : STR(PLUGIN_DIR)) + "/";
    const std::string plugin_ext = ".so";
+#endif
 
 #if HAVE_I386_GCC45_COMPILER
    if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC45))
@@ -1208,7 +1416,7 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
    {
       compiler.gcc = flag_cpp ? I386_GPP5_EXE : I386_GCC5_EXE;
       compiler.cpp = I386_CPP5_EXE;
-      compiler.extra_options = Param->getOption<std::string>(OPT_gcc_m32_mx32) + " -mlong-double-64 -D_FORTIFY_SOURCE=0 " + gcc_extra_options;
+      compiler.extra_options = " -mlong-double-64 -D_FORTIFY_SOURCE=0 " + gcc_extra_options;
       if(optimization_flags.find("tree-vectorize") != optimization_flags.end() && optimization_flags.find("tree-vectorize")->second)
       {
 #if HAVE_I386_GCC5_MX32
@@ -1237,7 +1445,7 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
    {
       compiler.gcc = flag_cpp ? I386_GPP6_EXE : I386_GCC6_EXE;
       compiler.cpp = I386_CPP6_EXE;
-      compiler.extra_options = Param->getOption<std::string>(OPT_gcc_m32_mx32) + " -mlong-double-64 -D_FORTIFY_SOURCE=0 " + gcc_extra_options;
+      compiler.extra_options = " -mlong-double-64 -D_FORTIFY_SOURCE=0 " + gcc_extra_options;
       if(optimization_flags.find("tree-vectorize") != optimization_flags.end() && optimization_flags.find("tree-vectorize")->second)
       {
 #if HAVE_I386_GCC6_MX32
@@ -1267,7 +1475,7 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
    {
       compiler.gcc = flag_cpp ? I386_GPP7_EXE : I386_GCC7_EXE;
       compiler.cpp = I386_CPP7_EXE;
-      compiler.extra_options = Param->getOption<std::string>(OPT_gcc_m32_mx32) + " -mlong-double-64 -D_FORTIFY_SOURCE=0 " + gcc_extra_options;
+      compiler.extra_options = " -mlong-double-64 -D_FORTIFY_SOURCE=0 " + gcc_extra_options;
       if(optimization_flags.find("tree-vectorize") != optimization_flags.end() && optimization_flags.find("tree-vectorize")->second)
       {
 #if HAVE_I386_GCC7_MX32
@@ -1291,6 +1499,70 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
 #endif
    }
 #endif
+
+#if HAVE_I386_CLANG4_COMPILER
+   if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG4))
+   {
+      compiler.is_clang = true;
+      compiler.gcc = flag_cpp ? I386_CLANGPP4_EXE : I386_CLANG4_EXE;
+      compiler.cpp = I386_CLANG_CPP4_EXE;
+      compiler.extra_options = " -D_FORTIFY_SOURCE=0 " + gcc_extra_options;
+      compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m32_mx32);
+      compiler.empty_plugin_obj = plugin_dir + I386_CLANG4_EMPTY_PLUGIN + plugin_ext;
+      compiler.empty_plugin_name = I386_CLANG4_EMPTY_PLUGIN;
+      compiler.ssa_plugin_obj = plugin_dir + (flag_cpp ? I386_CLANG4_SSA_PLUGINCPP : I386_CLANG4_SSA_PLUGIN) + plugin_ext;
+      compiler.ssa_plugin_name = (flag_cpp ? I386_CLANG4_SSA_PLUGINCPP : I386_CLANG4_SSA_PLUGIN);
+      compiler.topfname_plugin_obj = plugin_dir + I386_CLANG4_TOPFNAME_PLUGIN + plugin_ext;
+      compiler.topfname_plugin_name = I386_CLANG4_TOPFNAME_PLUGIN;
+
+#if HAVE_FROM_RTL_BUILT
+      compiler.rtl_plugin = plugin_dir + "";
+#endif
+   }
+#endif
+
+#if HAVE_I386_CLANG5_COMPILER
+   if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG5))
+   {
+      compiler.is_clang = true;
+      compiler.gcc = flag_cpp ? I386_CLANGPP5_EXE : I386_CLANG5_EXE;
+      compiler.cpp = I386_CLANG_CPP5_EXE;
+      compiler.extra_options = " -D_FORTIFY_SOURCE=0 " + gcc_extra_options;
+      compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m32_mx32);
+      compiler.empty_plugin_obj = plugin_dir + I386_CLANG5_EMPTY_PLUGIN + plugin_ext;
+      compiler.empty_plugin_name = I386_CLANG5_EMPTY_PLUGIN;
+      compiler.ssa_plugin_obj = plugin_dir + (flag_cpp ? I386_CLANG5_SSA_PLUGINCPP : I386_CLANG5_SSA_PLUGIN) + plugin_ext;
+      compiler.ssa_plugin_name = (flag_cpp ? I386_CLANG5_SSA_PLUGINCPP : I386_CLANG5_SSA_PLUGIN);
+      compiler.topfname_plugin_obj = plugin_dir + I386_CLANG5_TOPFNAME_PLUGIN + plugin_ext;
+      compiler.topfname_plugin_name = I386_CLANG5_TOPFNAME_PLUGIN;
+
+#if HAVE_FROM_RTL_BUILT
+      compiler.rtl_plugin = plugin_dir + "";
+#endif
+   }
+#endif
+
+#if HAVE_I386_CLANG6_COMPILER
+   if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG6))
+   {
+      compiler.is_clang = true;
+      compiler.gcc = flag_cpp ? I386_CLANGPP6_EXE : I386_CLANG6_EXE;
+      compiler.cpp = I386_CLANG_CPP6_EXE;
+      compiler.extra_options = " -D_FORTIFY_SOURCE=0 " + gcc_extra_options;
+      compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m32_mx32);
+      compiler.empty_plugin_obj = plugin_dir + I386_CLANG6_EMPTY_PLUGIN + plugin_ext;
+      compiler.empty_plugin_name = I386_CLANG6_EMPTY_PLUGIN;
+      compiler.ssa_plugin_obj = plugin_dir + (flag_cpp ? I386_CLANG6_SSA_PLUGINCPP : I386_CLANG6_SSA_PLUGIN) + plugin_ext;
+      compiler.ssa_plugin_name = (flag_cpp ? I386_CLANG6_SSA_PLUGINCPP : I386_CLANG6_SSA_PLUGIN);
+      compiler.topfname_plugin_obj = plugin_dir + I386_CLANG6_TOPFNAME_PLUGIN + plugin_ext;
+      compiler.topfname_plugin_name = I386_CLANG6_TOPFNAME_PLUGIN;
+
+#if HAVE_FROM_RTL_BUILT
+      compiler.rtl_plugin = plugin_dir + "";
+#endif
+   }
+#endif
+
 
 #if HAVE_SPARC_COMPILER
    if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_SPARC_GCC))
@@ -1381,7 +1653,7 @@ void GccWrapper::GetGccConfig() const
    QueryGccConfig("-v");
 }
 
-void GccWrapper::QueryGccConfig(std::string gcc_option) const
+void GccWrapper::QueryGccConfig(const std::string& gcc_option) const
 {
    const std::string gcc = GetCompiler().gcc.string();
    const std::string command = gcc + " " + gcc_option;
@@ -1405,7 +1677,7 @@ size_t GccWrapper::GetSourceCodeLines(const ParameterConstRef Param)
 
    std::string command = "cat ";
    const auto source_files = Param->getOption<const CustomSet<std::string> >(OPT_input_file);
-   for(const auto source_file : source_files)
+   for(const auto& source_file : source_files)
    {
       boost::filesystem::path absolute_path = boost::filesystem::system_complete(source_file);
       command += absolute_path.branch_path().string() + "/*\\.h ";
@@ -1433,17 +1705,17 @@ size_t GccWrapper::GetSourceCodeLines(const ParameterConstRef Param)
    return 0;
 }
 
-void GccWrapper::CreateExecutable(const CustomSet<std::string> & file_names, const std::string & executable_name, const std::string & extra_gcc_options) const
+void GccWrapper::CreateExecutable(const CustomSet<std::string> & file_names, const std::string& executable_name, const std::string& extra_gcc_options) const
 {
    std::list<std::string> sorted_file_names;
-   for(const auto file_name : file_names)
+   for(const auto& file_name : file_names)
       sorted_file_names.push_back(file_name);
    CreateExecutable(sorted_file_names, executable_name, extra_gcc_options);
 }
-void GccWrapper::CreateExecutable(const std::list<std::string> & file_names, const std::string & executable_name, const std::string & extra_gcc_options) const
+void GccWrapper::CreateExecutable(const std::list<std::string> & file_names, const std::string& executable_name, const std::string& extra_gcc_options) const
 {
    std::string file_names_string;
-   for(const auto file_name : file_names)
+   for(const auto& file_name : file_names)
    {
       file_names_string += file_name + " ";
    }
@@ -1577,12 +1849,10 @@ std::string GccWrapper::WriteOptimizationsString()
    std::map<std::string, bool>::const_iterator it, it_end = optimization_flags.end();
    if(strict_aliasing)
       optimizations += std::string("-Wstrict-aliasing ");
-   for (it = optimization_flags.begin(); it != it_end; it++)
+   for (it = optimization_flags.begin(); it != it_end; ++it)
    {
       /*argument aliasing should be treated in a different way*/
       if (it->first == "argument-alias" and (argument_noalias or argument_noalias_global or argument_noalias_anything))
-         continue;
-      if (it->first == "argument-noalias" and (argument_noalias_global or argument_noalias_anything))
          continue;
       else if (it->first == "argument-noalias" and (argument_noalias_global or argument_noalias_anything))
          continue;
@@ -1595,19 +1865,19 @@ std::string GccWrapper::WriteOptimizationsString()
          optimizations += std::string("-fno-") + it->first + " "; // disable optimizations set to false
    }
    std::map<std::string, int>::const_iterator it2, it2_end = optimization_values.end();
-   for (it2 = optimization_values.begin(); it2 != it2_end; it2++)
+   for (it2 = optimization_values.begin(); it2 != it2_end; ++it2)
    {
       optimizations += std::string("-f") + it2->first + "=" + boost::lexical_cast<std::string>(it2->second) + " ";
    }
    std::map<std::string, int>::const_iterator it3, it3_end = parameter_values.end();
-   for(it3 = parameter_values.begin(); it3 != it3_end; it3++)
+   for(it3 = parameter_values.begin(); it3 != it3_end; ++it3)
    {
       optimizations += "--param " + it3->first + "=" + boost::lexical_cast<std::string>(it3->second) + " ";
    }
    return optimizations;
 }
 
-void GccWrapper::ReadXml(const std::string file_name)
+void GccWrapper::ReadXml(const std::string&file_name)
 {
    try
    {
@@ -1619,7 +1889,7 @@ void GccWrapper::ReadXml(const std::string file_name)
 
          const xml_node::node_list root_children = root->get_children();
          xml_node::node_list::const_iterator root_child, root_child_end = root_children.end();
-         for(root_child = root_children.begin(); root_child != root_child_end; root_child++)
+         for(root_child = root_children.begin(); root_child != root_child_end; ++root_child)
          {
             const xml_element * root_child_element = GetPointer<const xml_element>(*root_child);
             if(not root_child_element)
@@ -1628,7 +1898,7 @@ void GccWrapper::ReadXml(const std::string file_name)
             {
                const xml_node::node_list optimizations_children = root_child_element->get_children();
                xml_node::node_list::const_iterator optimizations_child, optimizations_child_end = optimizations_children.end();
-               for(optimizations_child = optimizations_children.begin(); optimizations_child != optimizations_child_end; optimizations_child++)
+               for(optimizations_child = optimizations_children.begin(); optimizations_child != optimizations_child_end; ++optimizations_child)
                {
                   const xml_element * optimizations_child_element = GetPointer<const xml_element>(*optimizations_child);
                   if(not optimizations_child_element)
@@ -1637,7 +1907,7 @@ void GccWrapper::ReadXml(const std::string file_name)
                   {
                      const xml_node::node_list parameter_values_children = optimizations_child_element->get_children();
                      xml_node::node_list::const_iterator parameter_value, parameter_value_end = parameter_values_children.end();
-                     for(parameter_value = parameter_values_children.begin(); parameter_value != parameter_value_end; parameter_value++)
+                     for(parameter_value = parameter_values_children.begin(); parameter_value != parameter_value_end; ++parameter_value)
                      {
                         const xml_element * parameter_value_element = GetPointer<const xml_element>(*parameter_value);
                         if(not parameter_value_element)
@@ -1653,7 +1923,7 @@ void GccWrapper::ReadXml(const std::string file_name)
                   {
                      const xml_node::node_list optimization_flags_children = optimizations_child_element->get_children();
                      xml_node::node_list::const_iterator optimization_flag, optimization_flag_end = optimization_flags_children.end();
-                     for(optimization_flag = optimization_flags_children.begin(); optimization_flag != optimization_flag_end; optimization_flag++)
+                     for(optimization_flag = optimization_flags_children.begin(); optimization_flag != optimization_flag_end; ++optimization_flag)
                      {
                         const xml_element * optimization_flag_element = GetPointer<const xml_element>(*optimization_flag);
                         if(not optimization_flag_element)
@@ -1669,7 +1939,7 @@ void GccWrapper::ReadXml(const std::string file_name)
                   {
                      const xml_node::node_list optimization_value_children = optimizations_child_element->get_children();
                      xml_node::node_list::const_iterator optimization_value, optimization_value_end = optimization_value_children.end();
-                     for(optimization_value = optimization_value_children.begin(); optimization_value != optimization_value_end; optimization_value++)
+                     for(optimization_value = optimization_value_children.begin(); optimization_value != optimization_value_end; ++optimization_value)
                      {
                         const xml_element * optimization_value_element = GetPointer<const xml_element>(*optimization_value);
                         if(not optimization_value_element)
@@ -1697,7 +1967,7 @@ void GccWrapper::ReadXml(const std::string file_name)
             {
                const xml_node::node_list defines = root_child_element->get_children();
                xml_node::node_list::const_iterator define, define_end = defines.end();
-               for(define = defines.begin(); define != define_end; define++)
+               for(define = defines.begin(); define != define_end; ++define)
                {
                   const xml_element * define_element = GetPointer<const xml_element>(*define);
                   if(not define_element)
@@ -1713,7 +1983,7 @@ void GccWrapper::ReadXml(const std::string file_name)
             {
                const xml_node::node_list undefines = root_child_element->get_children();
                xml_node::node_list::const_iterator undefine, undefine_end = undefines.end();
-               for(undefine = undefines.begin(); undefine != undefine_end; undefine++)
+               for(undefine = undefines.begin(); undefine != undefine_end; ++undefine)
                {
                   const xml_element * undefine_element = GetPointer<const xml_element>(*undefine);
                   if(not undefine_element)
@@ -1729,7 +1999,7 @@ void GccWrapper::ReadXml(const std::string file_name)
             {
                const xml_node::node_list warnings = root_child_element->get_children();
                xml_node::node_list::const_iterator warning, warning_end = warnings.end();
-               for(warning = warnings.begin(); warning != warning_end; warning++)
+               for(warning = warnings.begin(); warning != warning_end; ++warning)
                {
                   const xml_element * warning_element = GetPointer<const xml_element>(*warning);
                   if(not warning_element)
@@ -1745,7 +2015,7 @@ void GccWrapper::ReadXml(const std::string file_name)
             {
                const xml_node::node_list includes = root_child_element->get_children();
                xml_node::node_list::const_iterator include, include_end = includes.end();
-               for(include = includes.begin(); include != include_end; include++)
+               for(include = includes.begin(); include != include_end; ++include)
                {
                   const xml_element * include_element = GetPointer<const xml_element>(*include);
                   if(not include_element)
@@ -1761,7 +2031,7 @@ void GccWrapper::ReadXml(const std::string file_name)
             {
                const xml_node::node_list libraries = root_child_element->get_children();
                xml_node::node_list::const_iterator library, library_end = libraries.end();
-               for(library = libraries.begin(); library != library_end; library++)
+               for(library = libraries.begin(); library != library_end; ++library)
                {
                   const xml_element * library_element = GetPointer<const xml_element>(*library);
                   if(not library_element)
@@ -1777,7 +2047,7 @@ void GccWrapper::ReadXml(const std::string file_name)
             {
                const xml_node::node_list library_directories = root_child_element->get_children();
                xml_node::node_list::const_iterator library_directory, library_directory_end = library_directories.end();
-               for(library_directory = library_directories.begin(); library_directory != library_directory_end; library_directory++)
+               for(library_directory = library_directories.begin(); library_directory != library_directory_end; ++library_directory)
                {
                   const xml_element * library_directory_element = GetPointer<const xml_element>(*library_directory);
                   if(not library_directory_element)
@@ -1796,7 +2066,7 @@ void GccWrapper::ReadXml(const std::string file_name)
    {
       THROW_ERROR("Error " + std::string(msg) + " during reading of gcc configuration from " + file_name);
    }
-   catch (const std::string & msg)
+   catch (const std::string& msg)
    {
       THROW_ERROR("Error " + msg + " during reading of gcc configuration from " + file_name);
    }
@@ -1811,14 +2081,14 @@ void GccWrapper::ReadXml(const std::string file_name)
 
 }
 
-void GccWrapper::WriteXml(const std::string file_name) const
+void GccWrapper::WriteXml(const std::string&file_name) const
 {
    xml_document document;
    xml_element * root = document.create_root_node(STR_XML_gcc_root);
    xml_element * optimizations = root->add_child_element(STR_XML_gcc_optimizations);
    xml_element * parameter_values_xml = optimizations->add_child_element(STR_XML_gcc_parameter_values);
    std::map<std::string, int>::const_iterator parameter_value, parameter_value_end = this->parameter_values.end();
-   for(parameter_value = this->parameter_values.begin(); parameter_value != parameter_value_end; parameter_value++)
+   for(parameter_value = this->parameter_values.begin(); parameter_value != parameter_value_end; ++parameter_value)
    {
       xml_element * parameter_value_xml = parameter_values_xml->add_child_element(STR_XML_gcc_parameter_value);
       parameter_value_xml->set_attribute(STR_XML_gcc_name, parameter_value->first);
@@ -1826,7 +2096,7 @@ void GccWrapper::WriteXml(const std::string file_name) const
    }
    xml_element * optimization_flags_xml = optimizations->add_child_element(STR_XML_gcc_parameter_values);
    std::map<std::string, bool>::const_iterator optimization_flag, optimization_flag_end = this->optimization_flags.end();
-   for(optimization_flag = this->optimization_flags.begin(); optimization_flag != optimization_flag_end; optimization_flag++)
+   for(optimization_flag = this->optimization_flags.begin(); optimization_flag != optimization_flag_end; ++optimization_flag)
    {
       xml_element * optimization_flag_xml = optimization_flags_xml->add_child_element(STR_XML_gcc_optimization_flag);
       optimization_flag_xml->set_attribute(STR_XML_gcc_name, optimization_flag->first);
@@ -1834,7 +2104,7 @@ void GccWrapper::WriteXml(const std::string file_name) const
    }
    xml_element * optimization_values_xml = optimizations->add_child_element(STR_XML_gcc_parameter_values);
    std::map<std::string, int>::const_iterator optimization_value, optimization_value_end = this->optimization_values.end();
-   for(optimization_value = this->optimization_values.begin(); optimization_value != optimization_value_end; optimization_value++)
+   for(optimization_value = this->optimization_values.begin(); optimization_value != optimization_value_end; ++optimization_value)
    {
       xml_element * optimization_value_xml = optimization_values_xml->add_child_element(STR_XML_gcc_optimization_value);
       optimization_value_xml->set_attribute(STR_XML_gcc_name, optimization_value->first);
@@ -1847,7 +2117,7 @@ const std::string GccWrapper::AddSourceCodeIncludes(const std::list<std::string>
 {
    std::string includes;
    ///Adding includes of original source code files
-   for(const auto source_file : source_files)
+   for(const auto& source_file : source_files)
    {
       boost::filesystem::path absolute_path = boost::filesystem::system_complete(source_file);
       std::string new_path =  "-iquote " + absolute_path.branch_path().string() + " ";
@@ -1857,7 +2127,7 @@ const std::string GccWrapper::AddSourceCodeIncludes(const std::list<std::string>
    return includes;
 }
 
-size_t GccWrapper::ConvertVersion(const std::string version)
+size_t GccWrapper::ConvertVersion(const std::string&version)
 {
    size_t ret_value = 0;
    std::vector<std::string> version_tokens;
@@ -1871,7 +2141,7 @@ size_t GccWrapper::ConvertVersion(const std::string version)
    return ret_value;
 }
 
-void GccWrapper::CheckGccCompatibleVersion(const std::string gcc_version, const std::string plugin_version)
+void GccWrapper::CheckGccCompatibleVersion(const std::string&gcc_version, const std::string&plugin_version)
 {
    current_gcc_version = gcc_version;
    current_plugin_version = plugin_version;
@@ -1903,6 +2173,10 @@ size_t GccWrapper::CGetPointerSize(const ParameterConstRef parameters)
    else if(gcc_m32_mx32 == "-mx32")
    {
       return 32;
+   }
+   else if(gcc_m32_mx32 == "-m64")
+   {
+      return 64;
    }
    else
    {

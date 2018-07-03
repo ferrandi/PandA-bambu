@@ -13,7 +13,7 @@
 
 #include "math_privatef.h"
 
-float __builtin_nanf(const char *unused)
+float nanf(const char *unused)
 {
 	float x;
 
@@ -23,9 +23,9 @@ float __builtin_nanf(const char *unused)
 
 #ifdef _DOUBLE_IS_32BITS
 
-	double __builtin_nan(const char *arg)
+    double nan(const char *arg)
 {
-	return (double) __builtin_nanf(arg);
+    return (double) nanf(arg);
 }
 
 #endif /* defined(_DOUBLE_IS_32BITS) */

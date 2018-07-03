@@ -26,10 +26,10 @@
 #include <errno.h>
 #endif
 
-float __builtin_ldexpf(float value, int exp)
+float ldexpf(float value, int exp)
 {
     if(!__finitef(value)||value==(float)0.0) return value;
-	value = __builtin_scalbnf(value,exp);
+    value = scalbnf(value,exp);
 #ifdef WITH_ERRNO
     if(!__finitef(value)||value==(float)0.0) errno = ERANGE;
 #else
@@ -40,9 +40,9 @@ float __builtin_ldexpf(float value, int exp)
 
 #ifdef _DOUBLE_IS_32BITS
 
-double __builtin_ldexp(double value, int exp)
+double ldexp(double value, int exp)
 {
-	return (double) __builtin_ldexpf((float) value, exp);
+    return (double) ldexpf((float) value, exp);
 }
 
 #endif /* defined(_DOUBLE_IS_32BITS) */

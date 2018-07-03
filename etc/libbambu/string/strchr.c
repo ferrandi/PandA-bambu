@@ -5,7 +5,7 @@
 */
 /* Public domain.  */
 
-char *__builtin_strchr(const char *s, int c)
+char *strchr(const char *s, int c)
 {
   do
   {
@@ -14,7 +14,7 @@ char *__builtin_strchr(const char *s, int c)
   return 0;
 }
 
-char *__builtin_index(const char *s, int c)
+char *index(const char *s, int c)
 {
   do
   {

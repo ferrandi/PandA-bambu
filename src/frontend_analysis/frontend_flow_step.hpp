@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -79,10 +79,7 @@ typedef enum
    BASIC_BLOCKS_PROFILING,
 #endif
    CREATE_TREE_MANAGER,
-#if HAVE_HOST_PROFILING_BUILT
-   DUMP_PROFILING_DATA,
-#endif
-#if HAVE_BAMBU_BUILT && HAVE_EXPERIMENTAL
+#if HAVE_BAMBU_BUILT
    FIND_MAX_CFG_TRANSFORMATIONS,
 #endif
    FUNCTION_ANALYSIS,                  //! Creation of the call graph
@@ -91,27 +88,17 @@ typedef enum
 #endif
 #if HAVE_HOST_PROFILING_BUILT
    HOST_PROFILING,
-   HPP_PROFILING,
 #endif
 #if HAVE_BAMBU_BUILT
    IPA_POINT_TO_ANALYSIS,
 #endif
-#if HAVE_HOST_PROFILING_BUILT
-   LOOPS_PROFILING,
-#endif
 #if HAVE_FROM_PRAGMA_BUILT
    PRAGMA_SUBSTITUTION,
-#endif
-#if HAVE_HOST_PROFILING_BUILT
-   READ_PROFILING_DATA,
 #endif
 #if HAVE_ZEBU_BUILT
    SIZEOF_SUBSTITUTION,
 #endif
    SYMBOLIC_APPLICATION_FRONTEND_FLOW_STEP,
-#if HAVE_HOST_PROFILING_BUILT
-   TP_PROFILING,
-#endif
    ///Function frontend flow steps
    ADD_BB_ECFG_EDGES,
 #if HAVE_ZEBU_BUILT
@@ -199,6 +186,7 @@ typedef enum
    EXTRACT_PATTERNS,
    FIX_STRUCTS_PASSED_BY_VALUE,
    FUNCTION_CALL_TYPE_CLEANUP,
+   FANOUT_OPT,
 #endif
 #if HAVE_ZEBU_BUILT
    GLOBAL_VARIABLES_ANALYSIS,

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -471,8 +471,8 @@ void DiscrepancyAnalysisCWriter::writePostInstructionInfo
             THROW_ASSERT(node_info->called.size() == 1,
                          "rhs of gimple_assign node " + STR(st_tn_id) + " is a call_expr but calls more than a function");
             const unsigned int called_id = *node_info->called.begin();
-            const BehavioralHelperConstRef BH = AppM->CGetFunctionBehavior(called_id)->CGetBehavioralHelper();
-            if (BH->has_implementation() and BH->function_has_to_be_printed(called_id))
+            const BehavioralHelperConstRef BHC = AppM->CGetFunctionBehavior(called_id)->CGetBehavioralHelper();
+            if (BHC->has_implementation() and BHC->function_has_to_be_printed(called_id))
             {
                call_expr *ce = GetPointer<call_expr>(rhs);
                const std::vector<tree_nodeRef> & actual_args = ce->args;
@@ -486,12 +486,12 @@ void DiscrepancyAnalysisCWriter::writePostInstructionInfo
                   if(fd)
                   {
                      std::map<std::string, std::pair<unsigned int,std::string>>
-                           basic_unary_operations_relation = {{"__int32_to_float32if", {0, "(float)"}},
-                                                              {"__int32_to_float64if", {1, "(double)"}},
+                           basic_unary_operations_relation = {{"__int32_to_float32if", {0, "(float)(int)"}},
+                                                              {"__int32_to_float64if", {1, "(double)(int)"}},
                                                               {"__uint32_to_float32if", {0, "(float)"}},
                                                               {"__uint32_to_float64if", {1, "(double)"}},
-                                                              {"__int64_to_float32if", {0, "(float)"}},
-                                                              {"__int64_to_float64if", {1, "(double)"}},
+                                                              {"__int64_to_float32if", {0, "(float)(long long int)"}},
+                                                              {"__int64_to_float64if", {1, "(double)(long long int)"}},
                                                               {"__uint64_to_float32if", {0, "(float)"}},
                                                               {"__uint64_to_float64if", {1, "(double)"}},
                                                               {"__float32_to_int32_round_to_zeroif", {2, "(int)"}},
@@ -521,7 +521,7 @@ void DiscrepancyAnalysisCWriter::writePostInstructionInfo
                                                                {"__float32_gtif", {false, ">"}},
                                                                {"__float64_gtif", {true, ">"}},
                                                               };
-                     std::string var1 = BH->PrintVariable(GET_INDEX_NODE(actual_args.at(0)));
+                     std::string var1 = BHC->PrintVariable(GET_INDEX_NODE(actual_args.at(0)));
                      if(basic_unary_operations_relation.find(oper->get_name()) != basic_unary_operations_relation.end())
                      {
                         std::string computation = "("  + basic_unary_operations_relation.find(oper->get_name())->second.second + var1 + ")";
@@ -541,7 +541,7 @@ void DiscrepancyAnalysisCWriter::writePostInstructionInfo
                      }
                      else if(basic_binary_operations_relation.find(oper->get_name()) != basic_binary_operations_relation.end())
                      {
-                        std::string var2 = BH->PrintVariable(GET_INDEX_NODE(actual_args.at(1)));
+                        std::string var2 = BHC->PrintVariable(GET_INDEX_NODE(actual_args.at(1)));
                         std::string computation = "(" +var1 + basic_binary_operations_relation.find(oper->get_name())->second.second + var2 + ")";
                         std::string check_string0 = var_name + "==" + computation;
                         std::string check_string1 = (basic_binary_operations_relation.find(oper->get_name())->second.first ? "_FPs64Mismatch_" : "_FPs32Mismatch_") +
@@ -695,7 +695,7 @@ void DiscrepancyAnalysisCWriter::WriteFunctionImplementation(unsigned int functi
 {
    const FunctionBehaviorConstRef FB = AppM->CGetFunctionBehavior(function_index);
    const BehavioralHelperConstRef behavioral_helper = FB->CGetBehavioralHelper();
-   const std::string & funName = behavioral_helper->get_function_name();
+   const std::string& funName = behavioral_helper->get_function_name();
    tree_nodeRef node_fun = TM->GetTreeNode(function_index);
    THROW_ASSERT(GetPointer<function_decl>(node_fun), "expected a function decl");
    bool prepend_static = not tree_helper::is_static(TM, function_index) and not tree_helper::is_extern(TM, function_index) and (funName != "main");
@@ -716,7 +716,7 @@ void DiscrepancyAnalysisCWriter::WriteFunctionDeclaration(const unsigned int fun
 {
    const FunctionBehaviorConstRef FB = AppM->CGetFunctionBehavior(funId);
    const BehavioralHelperConstRef behavioral_helper = FB->CGetBehavioralHelper();
-   const std::string & funName = behavioral_helper->get_function_name();
+   const std::string& funName = behavioral_helper->get_function_name();
    tree_nodeRef node_fun = TM->GetTreeNode(funId);
    THROW_ASSERT(GetPointer<function_decl>(node_fun), "expected a function decl");
    bool prepend_static = not tree_helper::is_static(TM, funId) and not tree_helper::is_extern(TM, funId) and (funName != "main");

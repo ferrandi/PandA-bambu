@@ -34,7 +34,7 @@ static const float
 o_threshold=  8.8721679688e+01,  /* 0x42b17180 */
 u_threshold= -1.0397208405e+02;  /* 0xc2cff1b5 */
 
-float __builtin_expf(float x)		/* wrapper expf */
+float expf(float x)		/* wrapper expf */
 {
 #ifdef _IEEE_LIBM
 	return __hide_ieee754_expf(x);
@@ -62,7 +62,7 @@ float __builtin_expf(float x)		/* wrapper expf */
 		  exc.retval = HUGE_VAL;
 		if (_LIB_VERSION == _POSIX_)
 		  errno = ERANGE;
-		else if (!__builtin_matherr(&exc)) {
+        else if (!matherr(&exc)) {
 			errno = ERANGE;
 		}
 	        if (exc.err != 0)
@@ -77,7 +77,7 @@ float __builtin_expf(float x)		/* wrapper expf */
 		exc.retval = 0.0;
 		if (_LIB_VERSION == _POSIX_)
 		  errno = ERANGE;
-		else if (!__builtin_matherr(&exc)) {
+        else if (!matherr(&exc)) {
 			errno = ERANGE;
 		}
 	        if (exc.err != 0)
@@ -91,9 +91,9 @@ float __builtin_expf(float x)		/* wrapper expf */
 
 #ifdef _DOUBLE_IS_32BITS
 
-double __builtin_exp(double x)
+double exp(double x)
 {
-	return (double) __builtin_expf((float) x);
+    return (double) expf((float) x);
 }
 
 #endif /* defined(_DOUBLE_IS_32BITS) */

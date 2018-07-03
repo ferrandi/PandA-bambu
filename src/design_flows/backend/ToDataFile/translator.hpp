@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -176,21 +176,21 @@ class Translator
              * @param string is the string to be analyzed
              */
             static
-            TextFormat get_TF(const std::string string);
+            TextFormat get_TF(const std::string&string);
 
             /**
              * Given a string return the corresponding enum
              * @param string is the string to be analyzed
              */
             static
-            ComparisonOperator get_CO(const std::string string);
+            ComparisonOperator get_CO(const std::string&string);
 
             /**
              * Given a string return the corresponding enum
              * @param string is the string to be analyzed
              */
             static
-            TotalFormat GetTotalFormat(const std::string string);
+            TotalFormat GetTotalFormat(const std::string&string);
 
             /**
              * Return A operator B
@@ -214,7 +214,7 @@ class Translator
        * @param input is the number to be translated
        * @return the string in exponential notation
        */
-      std::string get_exponential_notation(const std::string & input)const ;
+      std::string get_exponential_notation(const std::string& input)const ;
 
       /**
        * Replace '_' with ' '
@@ -236,7 +236,7 @@ class Translator
        * Constructor
        * @param Param is the set of the parameters
        */
-      Translator(const ParameterConstRef Param);
+      explicit Translator(const ParameterConstRef Param);
 
 #if HAVE_RTL_BUILT
       /**
@@ -260,14 +260,14 @@ class Translator
        * @param data is the data to be written
        * @param file_name is the name of the file where data will be written
        */
-      void write_to_csv(const std::map<std::string, std::set<std::string> > & tags, const std::unordered_map<std::string, std::unordered_map<std::string, std::unordered_map<std::string, long double> > > & results, const std::string file_name) const;
+      void write_to_csv(const std::map<std::string, std::set<std::string> > & tags, const std::unordered_map<std::string, std::unordered_map<std::string, std::unordered_map<std::string, long double> > > & results, const std::string&file_name) const;
 
       /**
        * Write text data in csv format
        * @param results is the data to be written
        * @param file_name is the name of the file
        */
-      void write_to_csv(const std::unordered_map<std::string, std::list<std::pair<std::string, std::string> > > & results, const std::string & file_name) const;
+      void write_to_csv(const std::unordered_map<std::string, std::list<std::pair<std::string, std::string> > > & results, const std::string& file_name) const;
 
       /**
        * Write profiling analysis to pa
@@ -275,14 +275,14 @@ class Translator
        * @param data is the data to be written
        * @param file_name is the name of the file where data will be written
        */
-      void write_to_pa(const std::map<std::string, std::set<std::string> > & tags, const std::unordered_map<std::string, std::unordered_map<std::string, std::unordered_map<std::string, long double> > > & results, const std::string file_name) const;
+      void write_to_pa(const std::map<std::string, std::set<std::string> > & tags, const std::unordered_map<std::string, std::unordered_map<std::string, std::unordered_map<std::string, long double> > > & results, const std::string&file_name) const;
 
       /**
        * Write data in latex table format
        * @param results is the data to be written
        * @param file_name is the name of the files
        */
-      void write_to_latex(std::map<std::string, CustomMap<std::string, std::string> > & results, const Parameters_FileFormat input_format, const std::string & file_name) const;
+      void write_to_latex(std::map<std::string, CustomMap<std::string, std::string> > & results, const Parameters_FileFormat input_format, const std::string& file_name) const;
 
       /**
        * Merget profiling analysis

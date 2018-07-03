@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -154,8 +154,15 @@ namespace flopoco
    bool combinatorialOperator;
 }
 
-flopoco_wrapper::flopoco_wrapper(int _debug_level, const std::string & FU_target) :
-   debug_level(_debug_level), PP(STD_OPENING_CHAR, STD_CLOSING_CHAR, 3), type(UT_UNKNOWN)
+flopoco_wrapper::flopoco_wrapper(int
+#ifndef NDEBUG
+                                 _debug_level
+#endif
+                                 , const std::string& FU_target) :
+#ifndef NDEBUG
+   debug_level(_debug_level),
+#endif
+   PP(STD_OPENING_CHAR, STD_CLOSING_CHAR, 3), type(UT_UNKNOWN), signed_p(false)
 {
    // Get the target architecture
    if ("Spartan-3" == FU_target)
@@ -214,7 +221,7 @@ flopoco_wrapper::~flopoco_wrapper()
    //finishTool();
 }
 
-void flopoco_wrapper::add_FU(const std::string & FU_type, unsigned int FU_prec_in, unsigned int FU_prec_out, const std::string & FU_name, std::string pipe_parameter)
+void flopoco_wrapper::add_FU(const std::string& FU_type, unsigned int FU_prec_in, unsigned int FU_prec_out, const std::string& FU_name, const std::string& pipe_parameter)
 {
    // Get the number of bits for the number representation
    unsigned int n_mant_in, n_exp_in;
@@ -240,7 +247,7 @@ void flopoco_wrapper::add_FU(const std::string & FU_type, unsigned int FU_prec_i
    ///set the target frequency
    target->setFrequency(1e6*freq);
 
-   flopoco::Operator * op;
+   flopoco::Operator * op=nullptr;
    THROW_ASSERT(n_mant_in > 0 && n_exp_in > 0, "Unsupported significand and exponent values.");
    THROW_ASSERT(n_mant_out > 0 && n_exp_out > 0, "Unsupported significand and exponent values.");
 
@@ -470,7 +477,7 @@ void flopoco_wrapper::add_FU(const std::string & FU_type, unsigned int FU_prec_i
 
 }
 
-unsigned int flopoco_wrapper::get_FUPipelineDepth(const std::string & FU_name, const unsigned int FU_prec_in, const unsigned int FU_prec_out, std::string pipe_parameter) const
+unsigned int flopoco_wrapper::get_FUPipelineDepth(const std::string& FU_name, const unsigned int FU_prec_in, const unsigned int FU_prec_out, const std::string& pipe_parameter) const
 {
    std::string FU_name_stored = ENCODE_NAME(FU_name, FU_prec_in, FU_prec_out, pipe_parameter);
    unsigned int fu_pipe_depth = static_cast<unsigned int>(get_FU(WRAPPED_PREFIX+FU_name_stored)->getPipelineDepth());
@@ -488,7 +495,7 @@ flopoco::Operator * flopoco_wrapper::get_FU(std::string FU_name_stored) const
    return op_found->second;
 }
 
-void flopoco_wrapper::outputWrapVHDL(std::string & FU_name_stored, std::ostream & os, std::string pipe_parameter)
+void flopoco_wrapper::outputWrapVHDL(const std::string & FU_name_stored, std::ostream & os, const std::string& pipe_parameter)
 {
    outputHeaderVHDL(FU_name_stored, os);
    // Write library declaration
@@ -502,11 +509,11 @@ void flopoco_wrapper::outputWrapVHDL(std::string & FU_name_stored, std::ostream 
    std::unordered_map<std::string, std::pair<unsigned int,unsigned int> >::const_iterator FU_to_prec_it = FU_to_prec.find(FU_name_stored);
    // Write input port(s) generics
    const std::vector<std::string> p_in = get_ports(WRAPPED_PREFIX+FU_name_stored, 0, port_in, false);
-   for (std::vector<std::string>::const_iterator p_in_it = p_in.begin(); p_in_it != p_in.end(); p_in_it++)
+   for (std::vector<std::string>::const_iterator p_in_it = p_in.begin(); p_in_it != p_in.end(); ++p_in_it)
      PP(os, "BITSIZE_" + *p_in_it + ": integer := " + STR(FU_to_prec_it->second.first) + "; ");
    // Write output port(s) generics
    const std::vector<std::string> p_out = get_ports(WRAPPED_PREFIX+FU_name_stored, 0, port_out, false);
-   for (std::vector<std::string>::const_iterator p_out_it = p_out.begin(); p_out_it != p_out.end(); p_out_it++)
+   for (std::vector<std::string>::const_iterator p_out_it = p_out.begin(); p_out_it != p_out.end(); ++p_out_it)
       if (p_out_it + 1 != p_out.end())
          PP(os, "BITSIZE_" + *p_out_it + ": integer := " + STR(FU_to_prec_it->second.second) + ";");
       else
@@ -572,7 +579,7 @@ void flopoco_wrapper::outputWrapVHDL(std::string & FU_name_stored, std::ostream 
    PP(os, "\n");
 }
 
-void flopoco_wrapper::outputPortMap(std::string & FU_name_stored, std::ostream & os, std::string pipe_parameter)
+void flopoco_wrapper::outputPortMap(const std::string & FU_name_stored, std::ostream & os, const std::string& pipe_parameter)
 {
    std::string mapping;
    const std::vector<std::string> p_wrapped_in = get_ports(WRAPPED_PREFIX+FU_name_stored, 0, port_in, false);
@@ -683,7 +690,7 @@ void flopoco_wrapper::outputPortMap(std::string & FU_name_stored, std::ostream &
    }
 }
 
-void flopoco_wrapper::outputSignals(std::string & FU_name_stored, std::ostream & os)
+void flopoco_wrapper::outputSignals(const std::string & FU_name_stored, std::ostream & os)
 {
    std::string Signals = "";
    const std::vector<std::string> p_in = get_ports(WRAPPED_PREFIX+FU_name_stored, 0, port_in, false);
@@ -731,7 +738,7 @@ void flopoco_wrapper::outputSignals(std::string & FU_name_stored, std::ostream &
    }
 }
 
-void flopoco_wrapper::outputPortDeclaration(std::string FU_prefix, std::string & FU_name_stored, std::ostream & os, component_type c_type, std::string pipe_parameter)
+void flopoco_wrapper::outputPortDeclaration(const std::string& FU_prefix, const std::string & FU_name_stored, std::ostream & os, component_type c_type, const std::string& pipe_parameter)
 {
    // Compute offsets for addition bits' handling
    int in_offset, out_offset;
@@ -786,7 +793,7 @@ void flopoco_wrapper::outputPortDeclaration(std::string FU_prefix, std::string &
       }
    }
    const std::vector<std::string> p_in = get_ports(FU_prefix+FU_name_stored, 0, port_in, false);
-   for (std::vector<std::string>::const_iterator p_in_it = p_in.begin(); p_in_it != p_in.end(); p_in_it++)
+   for (std::vector<std::string>::const_iterator p_in_it = p_in.begin(); p_in_it != p_in.end(); ++p_in_it)
       if(top == c_type)
       {
          if(type == flopoco_wrapper::UT_IFIX2FP)
@@ -825,7 +832,7 @@ void flopoco_wrapper::outputPortDeclaration(std::string FU_prefix, std::string &
    }
    // Write output port(s) declaration
    const std::vector<std::string> p_out = get_ports(FU_prefix+FU_name_stored, 0, port_out, false);
-   for (std::vector<std::string>::const_iterator p_out_it = p_out.begin(); p_out_it != p_out.end(); p_out_it++)
+   for (std::vector<std::string>::const_iterator p_out_it = p_out.begin(); p_out_it != p_out.end(); ++p_out_it)
    {
 
       if(top == c_type)
@@ -857,7 +864,7 @@ void flopoco_wrapper::outputPortDeclaration(std::string FU_prefix, std::string &
    }
 }
 
-void flopoco_wrapper::outputHeaderVHDL(std::string & FU_name_stored, std::ostream & os) const
+void flopoco_wrapper::outputHeaderVHDL(const std::string & FU_name_stored, std::ostream & os) const
 {
    os << "--------------------------------------------------------------------------------" << endl;
    os << "--                              " << FU_name_stored << endl;
@@ -867,7 +874,7 @@ void flopoco_wrapper::outputHeaderVHDL(std::string & FU_name_stored, std::ostrea
    os << "--------------------------------------------------------------------------------" << endl;
 }
 
-int flopoco_wrapper::InternalWriteVHDL(const std::string & FU_name, const unsigned int FU_prec_in, const unsigned int FU_prec_out, const std::string & filename, std::string pipe_parameter)
+int flopoco_wrapper::InternalWriteVHDL(const std::string& FU_name, const unsigned int FU_prec_in, const unsigned int FU_prec_out, const std::string& filename, const std::string& pipe_parameter)
 {
    std::string FU_name_stored = ENCODE_NAME(FU_name, FU_prec_in, FU_prec_out, pipe_parameter);
    PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Writing VHDL code for unit " + FU_name_stored + " to file " + filename);
@@ -886,7 +893,7 @@ int flopoco_wrapper::InternalWriteVHDL(const std::string & FU_name, const unsign
    {
       try {
          flopoco::Operator::outputVHDLToFile(OPLIST, file);
-      } catch (std::string s) {
+      } catch (const std::string& s) {
          cerr << "Exception while generating '" << s <<endl;
       }
    }
@@ -901,7 +908,7 @@ int flopoco_wrapper::InternalWriteVHDL(const std::string & FU_name, const unsign
    return 0;
 }
 
-int flopoco_wrapper::writeVHDL(const std::string & FU_name, const unsigned int FU_prec_in, const unsigned int FU_prec_out, std::string pipe_parameter, std::string & filename)
+int flopoco_wrapper::writeVHDL(const std::string& FU_name, const unsigned int FU_prec_in, const unsigned int FU_prec_out, std::string pipe_parameter, std::string & filename)
 {
    filename = ENCODE_NAME(FU_name,FU_prec_in, FU_prec_out, pipe_parameter) + FILE_EXT;
    return this->InternalWriteVHDL(FU_name, FU_prec_in, FU_prec_out, filename, pipe_parameter);
@@ -925,7 +932,7 @@ std::string flopoco_wrapper::writeVHDLcommon()
       {
          flopoco::Operator::outputVHDLToFile(*common_oplist, file);
       }
-      catch (std::string s)
+      catch (const std::string& s)
       {
          THROW_UNREACHABLE("Exception while generating " + s);
       }
@@ -935,7 +942,7 @@ std::string flopoco_wrapper::writeVHDLcommon()
 }
 
 
-const std::vector<std::string> flopoco_wrapper::get_ports(std::string FU_name_stored, unsigned int ASSERT_PARAMETER(expected_ports), port_type local_type, bool ASSERT_PARAMETER(check_ports)) const
+const std::vector<std::string> flopoco_wrapper::get_ports(const std::string & FU_name_stored, unsigned int ASSERT_PARAMETER(expected_ports), port_type local_type, bool ASSERT_PARAMETER(check_ports)) const
 {
    std::vector<std::string> ports;
    flopoco::Operator * op = get_FU(FU_name_stored);
@@ -959,16 +966,6 @@ const std::string flopoco_wrapper::get_port(port_type local_type) const
       return "clk";
    THROW_UNREACHABLE("Something went wrong!");
    return "";
-}
-
-void flopoco_wrapper::DECODE_FU(std::string & encoded_FU, std::string & FU_type, unsigned int & FU_prec_in, unsigned int & FU_prec_out) const
-{
-   std::vector<std::string> split;
-   boost::algorithm::split(split, encoded_FU, boost::algorithm::is_any_of(" "));
-   THROW_ASSERT(split.size() == 3, "Malformed FU");
-   FU_type = split[0];
-   FU_prec_in = boost::lexical_cast<unsigned int>(split[1]);
-   FU_prec_out = boost::lexical_cast<unsigned int>(split[2]);
 }
 
 void flopoco_wrapper::DECODE_BITS(unsigned int FU_prec, unsigned int & n_mant, unsigned int & n_exp)

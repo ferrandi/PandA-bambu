@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -129,7 +129,7 @@ DesignFlowStep_Status string_cst_fix::Exec()
       std::map<unsigned int, blocRef>::iterator it, it_end;
 
       it_end = blocks.end();
-      for(it = blocks.begin(); it != it_end; it++)
+      for(it = blocks.begin(); it != it_end; ++it)
       {
          for(auto stmt : it->second->CGetStmtList())
          {
@@ -144,7 +144,7 @@ DesignFlowStep_Status string_cst_fix::Exec()
    return DesignFlowStep_Status::SUCCESS;
 }
 
-void string_cst_fix::recursive_examinate(tree_nodeRef & tn, const std::string & srcp)
+void string_cst_fix::recursive_examinate(tree_nodeRef & tn, const std::string& srcp)
 {
    THROW_ASSERT(tn->get_kind() == tree_reindex_K, "Node is not a tree reindex");
    const tree_managerRef TM = AppM->get_tree_manager();
@@ -292,7 +292,7 @@ void string_cst_fix::recursive_examinate(tree_nodeRef & tn, const std::string & 
          constructor * co = GetPointer<constructor>(curr_tn);
          std::vector<std::pair< tree_nodeRef, tree_nodeRef> > & list_of_idx_valu = co->list_of_idx_valu;
          std::vector<std::pair< tree_nodeRef, tree_nodeRef> >::iterator it, it_end = list_of_idx_valu.end();
-         for(it = list_of_idx_valu.begin(); it != it_end; it++)
+         for(it = list_of_idx_valu.begin(); it != it_end; ++it)
          {
             recursive_examinate(it->second, srcp);
          }
@@ -443,7 +443,7 @@ void string_cst_fix::recursive_examinate(tree_nodeRef & tn, const std::string & 
    return;
 }
 
-const std::string string_cst_fix::Normalize(const std::string identifier) const
+const std::string string_cst_fix::Normalize(const std::string&identifier) const
 {
    return identifier;
 }

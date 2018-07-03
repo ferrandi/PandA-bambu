@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -102,7 +102,7 @@ struct priority_static_mobility : public priority_data<int>
    /**
     * Constructor.
    */
-   priority_static_mobility(const ASLAPRef &aslap);
+   explicit priority_static_mobility(const ASLAPRef &aslap);
    
    /**
     * This specialization does not update the priorities at the end of the control step.
@@ -143,7 +143,7 @@ struct priority_fixed : public priority_data<int>
    /**
     * Constructor.
    */
-   priority_fixed(const std::unordered_map<vertex,int>& priority_value);
+   explicit priority_fixed(const std::unordered_map<vertex,int>& priority_value);
    
    /**
     * This specialization does not update the priorities at the end of the control step.
@@ -176,12 +176,19 @@ struct priority_compare_functor
       priority_compare_functor(const priority_data<Type> & pri, const OpGraphConstRef d) : priority_values(pri), data(d) {}
 
       /**
-       * Copy constructor
+       * Copy assignment
       */
       priority_compare_functor& operator=(const priority_compare_functor&in)
       {
          priority_values = in.priority_values;
          return *this;
+      }
+      /**
+       * Copy constructor
+      */
+      priority_compare_functor(const priority_compare_functor&in)
+      {
+         priority_values = in.priority_values;
       }
 
       /**

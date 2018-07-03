@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -91,7 +91,7 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
 
 DesignFlowStep_Status PragmaSubstitution::Exec()
 {
-   for(const auto input_file : AppM->input_files)
+   for(const auto& input_file : AppM->input_files)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Patching file " + input_file.first + "(" + input_file.second + ")");
       if(not boost::filesystem::exists(boost::filesystem::path(input_file.second)))

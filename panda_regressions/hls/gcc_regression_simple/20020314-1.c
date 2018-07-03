@@ -1,3 +1,4 @@
+#include <stdlib.h> 
 void f(void * a, double y)
 {
 }
@@ -18,6 +19,7 @@ double g (double a, double b, double c, double d)
   return z + b;
 }
 
+int
 main ()
 {
   double a, b, c, d;

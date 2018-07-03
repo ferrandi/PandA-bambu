@@ -23,7 +23,7 @@
 
 #include "math_privatef.h"
 
-float __builtin_tanf(float x)
+float tanf(float x)
 {
 	float y[2],z=0.0;
 	int n,ix;
@@ -35,7 +35,7 @@ float __builtin_tanf(float x)
 	if(ix <= 0x3f490fda) return __hide_kernel_tanf(x,z,1);
 
     /* tan(Inf or NaN) is NaN */
-	else if (!FLT_UWORD_IS_FINITE(ix)) return __builtin_nanf("");		/* NaN */
+    else if (!FLT_UWORD_IS_FINITE(ix)) return nanf("");		/* NaN */
 
     /* argument reduction needed */
 	else {
@@ -47,9 +47,9 @@ float __builtin_tanf(float x)
 
 #ifdef _DOUBLE_IS_32BITS
 
-double __builtin_tan(double x)
+double tan(double x)
 {
-	return (double) __builtin_tanf((float) x);
+    return (double) tanf((float) x);
 }
 
 #endif /* defined(_DOUBLE_IS_32BITS) */

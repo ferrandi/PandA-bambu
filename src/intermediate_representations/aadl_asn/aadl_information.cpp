@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2015-2017 Politecnico di Milano
+ *              Copyright (c) 2015-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -45,12 +45,14 @@
 #include <boost/algorithm/string/replace.hpp>
 
 AadlInformation::AadlParameter::AadlParameter() :
+   endianess(NATIVE_ENDIANESS),
+   direction(INOUT),
    num_registers(0),
    bambu_address(0),
    pointer(false)
 {}
 
-AadlInformation::AadlParameter::EndianessType AadlInformation::AadlParameter::Endianess(const std::string endianess_string)
+AadlInformation::AadlParameter::EndianessType AadlInformation::AadlParameter::Endianess(const std::string&endianess_string)
 {
    if(endianess_string == "UPER")
       return BIG_ENDIANESS;
@@ -62,7 +64,7 @@ AadlInformation::AadlParameter::EndianessType AadlInformation::AadlParameter::En
    return BIG_ENDIANESS;
 }
 
-AadlInformation::AadlParameter::Direction AadlInformation::AadlParameter::GetDirection(const std::string direction_string)
+AadlInformation::AadlParameter::Direction AadlInformation::AadlParameter::GetDirection(const std::string&direction_string)
 {
    if(direction_string == "IN")
       return IN;
@@ -74,17 +76,17 @@ AadlInformation::AadlParameter::Direction AadlInformation::AadlParameter::GetDir
    return IN;
 }
 
-std::string AadlInformation::Normalize(const std::string name) const
+std::string AadlInformation::Normalize(const std::string&name) const
 {
    return boost::replace_all_copy(name, "-", "_");
 }
 
-void AadlInformation::AddAsnType(const std::string name, const AsnTypeRef asn_type)
+void AadlInformation::AddAsnType(const std::string&name, const AsnTypeRef asn_type)
 {
    asn_types[Normalize(name)] = asn_type;
 }
 
-AsnTypeRef AadlInformation::CGetAsnType(const std::string name) const
+AsnTypeRef AadlInformation::CGetAsnType(const std::string&name) const
 {
    const auto normalized = Normalize(name);
    THROW_ASSERT(asn_types.find(normalized) != asn_types.end(), name);

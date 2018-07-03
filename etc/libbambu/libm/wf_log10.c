@@ -30,7 +30,7 @@
 #include <errno.h>
 #endif
 
-float __builtin_log10f(float x)		/* wrapper log10f */
+float log10f(float x)		/* wrapper log10f */
 {
 #ifdef _IEEE_LIBM
 	return __hide_ieee754_log10f(x);
@@ -38,7 +38,7 @@ float __builtin_log10f(float x)		/* wrapper log10f */
 	float z;
 	struct exception exc;
 	z = __hide_ieee754_log10f(x);
-	if(_LIB_VERSION == _IEEE_ || __builtin_isnan(x)) return z;
+    if(_LIB_VERSION == _IEEE_ || isnan(x)) return z;
 	if(x<=(float)0.0) {
 #ifndef HUGE_VAL 
 #define HUGE_VAL inf
@@ -66,7 +66,7 @@ float __builtin_log10f(float x)		/* wrapper log10f */
 	        exc.type = DOMAIN;
 	        if (_LIB_VERSION == _POSIX_)
 	           errno = EDOM;
-	        else if (!__builtin_matherr(&exc)) {
+            else if (!matherr(&exc)) {
 	           errno = EDOM;
 	        }
                 exc.retval = __builtin_nan("");
@@ -81,9 +81,9 @@ float __builtin_log10f(float x)		/* wrapper log10f */
 
 #ifdef _DOUBLE_IS_32BITS
 
-double __builtin_log10(double x)
+double log10(double x)
 {
-	return (double) __builtin_log10f((float) x);
+    return (double) log10f((float) x);
 }
 
 #endif /* defined(_DOUBLE_IS_32BITS) */

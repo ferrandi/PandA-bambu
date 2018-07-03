@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -181,14 +181,15 @@ class tree_manager
        * @param old_node is the node whose occurrences have to be replace
        * @param new_node is the node that replaces occurrences of old_node
        * @param stmt is the statement from which the recursion originates (necessary to update ssa_nodes usage information)
+       * @param definition is true if old_node is a ssa_name in the left part of a gimple_assign
        */
-      void RecursiveReplaceTreeNode(tree_nodeRef & tn, const tree_nodeRef old_node, tree_nodeRef new_node, tree_nodeRef stmt);
+      void RecursiveReplaceTreeNode(tree_nodeRef & tn, const tree_nodeRef old_node, tree_nodeRef new_node, tree_nodeRef stmt, bool definition);
 
       /**
        * This is the constructor of the tree_manager which initializes the vector of functions.
        * @param Param is the set of input parameters
       */
-      tree_manager(const ParameterConstRef Param);
+      explicit tree_manager(const ParameterConstRef Param);
 
       ~tree_manager();
 
@@ -411,14 +412,14 @@ class tree_manager
        * In case there is not that identifier_node it returns 0.
        * @param str is the identifier we are looking for.
        */
-      unsigned int find_identifier_nodeID(const std::string &str) const;
+      unsigned int find_identifier_nodeID(const std::string&str) const;
 
       /**
        * Add an identifier_node to the corresponding unique table
        * @param nodeID is the node id.
        * @param str is the string.
        */
-      void add_identifier_node(unsigned int nodeID, const std::string &str) {identifiers_unique_table[str]=nodeID;}
+      void add_identifier_node(unsigned int nodeID, const std::string&str) {identifiers_unique_table[str]=nodeID;}
       void add_identifier_node(unsigned int nodeID, const bool &op);
 
       /**
@@ -455,6 +456,13 @@ class tree_manager
        * @return true in case fd is a top function
        */
       bool is_top_function(const function_decl *fd) const;
+
+      /**
+       * @brief check_ssa_uses check if the uses of a ssa are correct
+       * @return true in case all the ssa uses are correct, false otherwise.
+       */
+      bool check_ssa_uses(unsigned int fun_id) const;
+
 };
 typedef refcount<tree_manager> tree_managerRef;
 typedef refcount<const tree_manager> tree_managerConstRef;

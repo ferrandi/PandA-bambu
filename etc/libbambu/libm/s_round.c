@@ -23,7 +23,7 @@
 #include <math_private.h>
 
 double
-__builtin_round (double x)
+round (double x)
 {
   int i0, j0;
   unsigned int i1;

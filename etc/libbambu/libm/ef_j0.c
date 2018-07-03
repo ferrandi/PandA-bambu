@@ -26,21 +26,21 @@
 static float __hide_pzerof(float), __hide_qzerof(float);
 
 static const float 
-huge 	= 1e30,
-one	= 1.0,
-invsqrtpi=  5.6418961287e-01, /* 0x3f106ebb */
-tpi      =  6.3661974669e-01, /* 0x3f22f983 */
+huge 	= 1e30f,
+one	= 1.0f,
+invsqrtpi=  5.6418961287e-01f, /* 0x3f106ebb */
+tpi      =  6.3661974669e-01f, /* 0x3f22f983 */
 /* R0/S0 on [0, 2.00] */
-R02  =  1.5625000000e-02, /* 0x3c800000 */
-R03  = -1.8997929874e-04, /* 0xb947352e */
-R04  =  1.8295404516e-06, /* 0x35f58e88 */
-R05  = -4.6183270541e-09, /* 0xb19eaf3c */
-S01  =  1.5619102865e-02, /* 0x3c7fe744 */
-S02  =  1.1692678527e-04, /* 0x38f53697 */
-S03  =  5.1354652442e-07, /* 0x3509daa6 */
-S04  =  1.1661400734e-09; /* 0x30a045e8 */
+R02  =  1.5625000000e-02f, /* 0x3c800000 */
+R03  = -1.8997929874e-04f, /* 0xb947352e */
+R04  =  1.8295404516e-06f, /* 0x35f58e88 */
+R05  = -4.6183270541e-09f, /* 0xb19eaf3c */
+S01  =  1.5619102865e-02f, /* 0x3c7fe744 */
+S02  =  1.1692678527e-04f, /* 0x38f53697 */
+S03  =  5.1354652442e-07f, /* 0x3509daa6 */
+S04  =  1.1661400734e-09f; /* 0x30a045e8 */
 
-static const float zero = 0.0;
+static const float zero = 0.0f;
 
 float __hide_ieee754_j0f(float x) 
 {
@@ -50,14 +50,14 @@ float __hide_ieee754_j0f(float x)
     GET_FLOAT_WORD(hx,x);
     ix = hx&0x7fffffff;
     if(!FLT_UWORD_IS_FINITE(ix)) return one/(x*x);
-    x = __builtin_fabsf(x);
+    x = fabsf(x);
     if(ix >= 0x40000000) {	/* |x| >= 2.0 */
-        s = __builtin_sinf(x);
-        c = __builtin_cosf(x);
+        s = sinf(x);
+        c = cosf(x);
         ss = s-c;
         cc = s+c;
         if(ix<=FLT_UWORD_HALF_MAX) {  /* make sure x+x not overflow */
-            z = -__builtin_cosf(x+x);
+            z = -cosf(x+x);
             if ((s*c)<zero) cc = z/ss;
             else 	    ss = z/cc;
         }
@@ -124,8 +124,8 @@ float __hide_ieee754_y0f(float x)
          *              sin(x) +- cos(x) = -cos(2x)/(sin(x) -+ cos(x))
          * to compute the worse one.
          */
-        s = __builtin_sinf(x);
-        c = __builtin_cosf(x);
+        s = sinf(x);
+        c = cosf(x);
         ss = s-c;
         cc = s+c;
         /*
@@ -133,7 +133,7 @@ float __hide_ieee754_y0f(float x)
      * y0(x) = 1/sqrt(pi) * (P(0,x)*ss + Q(0,x)*cc) / sqrt(x)
      */
         if(ix<=FLT_UWORD_HALF_MAX) {  /* make sure x+x not overflow */
-            z = -__builtin_cosf(x+x);
+            z = -cosf(x+x);
             if ((s*c)<zero) cc = z/ss;
             else            ss = z/cc;
         }

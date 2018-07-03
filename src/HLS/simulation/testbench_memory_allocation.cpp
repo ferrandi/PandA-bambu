@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -102,7 +102,7 @@ void TestbenchMemoryAllocation::AllocTestbenchMemory(void) const
 
    const std::list<unsigned int>& func_parameters =
       behavioral_helper->get_parameters();
-   for(const auto & p : func_parameters)
+   for(const auto& p : func_parameters)
    {
       // if the function has some pointer func_parameters some memory needs to be
       // reserved for the place where they point to
@@ -114,8 +114,9 @@ void TestbenchMemoryAllocation::AllocTestbenchMemory(void) const
    unsigned int v_idx = 0;
    for (const auto & curr_test_vector : HLSMgr->RSim->test_vectors)
    {
+      HLSMgr->RSim->param_address[v_idx] = std::map<unsigned int, unsigned int>();
       // loop on the variables in memory
-      for (std::list<unsigned int>::const_iterator l = mem.begin(); l != mem.end(); l++)
+      for (std::list<unsigned int>::const_iterator l = mem.begin(); l != mem.end(); ++l)
       {
          std::string param = behavioral_helper->PrintVariable(*l);
          if (param[0] == '"')
@@ -145,7 +146,7 @@ void TestbenchMemoryAllocation::AllocTestbenchMemory(void) const
          {
             unsigned int base_type = tree_helper::get_type_index(TM, *l);
             tree_nodeRef pt_node = TM->get_tree_node_const(base_type);
-            unsigned int ptd_base_type;
+            unsigned int ptd_base_type=0;
             if(pt_node->get_kind() == pointer_type_K)
                ptd_base_type = GET_INDEX_NODE(GetPointer<pointer_type>(pt_node)->ptd);
             else if(pt_node->get_kind() == reference_type_K)

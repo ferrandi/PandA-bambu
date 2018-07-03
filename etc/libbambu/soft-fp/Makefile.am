@@ -1,8 +1,11 @@
 #this file is libbambu/libsoft-fp/Makefile.am
 EXTRA_DIST=bambu-arch.h double.h extended.h longlong.h op-1.h op-2.h op-4.h op-8.h op-common.h quad.h sfp-machine.h single.h soft-fp.h common_core_nonrestoring_sdiv.h README
 common_treegccflags = --output-temporary-directory=/tmp -iplugindir=$(top_builddir)/etc/gcc_plugin
+common_treegccflags_clang = --output-temporary-directory=/tmp -iplugindir=$(top_builddir)/etc/clang_plugin
 common_cflags= -O3 -D_FLT_NO_DENORMALS -I$(top_srcdir)/etc/libbambu -fipa-pta $(common_treegccflags)
+common_cflags_clang= -O3 -D_FLT_NO_DENORMALS -I$(top_srcdir)/etc/libbambu $(common_treegccflags_clang)
 common_cflags_nr= -O2 -D_FLT_NO_DENORMALS -I$(top_srcdir)/etc/libbambu -fipa-pta -finline-functions $(common_treegccflags)
+common_cflags_nr_clang= -O2 -D_FLT_NO_DENORMALS -I$(top_srcdir)/etc/libbambu -finline-functions $(common_treegccflags_clang)
 
 METASOURCES = AUTO
 CC=$(top_builddir)/src/tree-panda-gcc
@@ -199,5 +202,71 @@ libhls_divas_gcc7_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_GCC7
 libhls_cdiv_gcc7_a_SOURCES = $(common_libhls_cdiv_src)
 libhls_cdiv_gcc7_a_CFLAGS = -finline-limit=10000 --compiler=I386_GCC7  $(common_cflags)  -I$(BOOST_DIR)
 libhls_cdiv_gcc7_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_GCC7 $(common_treegccflags) -C
+endif
+
+if BUILD_I386_CLANG4
+pkglib_LIBRARIES += libsoft-fp_clang4.a libhls-divNR_clang4.a libhls-divnr1_clang4.a libhls-divnr2_clang4.a libhls-divas_clang4.a  libhls-cdiv_clang4.a
+libsoft_fp_clang4_a_SOURCES = $(common_libsoft_fp_src)
+libsoft_fp_clang4_a_CFLAGS = --compiler=I386_CLANG4  $(common_cflags_clang)  -I$(BOOST_DIR)
+libsoft_fp_clang4_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_CLANG4 $(common_treegccflags_clang) -C
+libhls_divNR_clang4_a_SOURCES = $(common_libhls_div_src)
+libhls_divNR_clang4_a_CFLAGS = --compiler=I386_CLANG4  $(common_cflags_nr_clang)  -I$(BOOST_DIR) --extra-gcc-options="-mllvm -inline-threshold=10000"
+libhls_divNR_clang4_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_CLANG4 $(common_treegccflags_clang) -C
+libhls_divnr1_clang4_a_SOURCES = $(common_libhls_divnr_src)
+libhls_divnr1_clang4_a_CFLAGS = --compiler=I386_CLANG4  $(common_cflags_clang)  -I$(BOOST_DIR) -DUNROLL_FACTOR=1 --extra-gcc-options="-mllvm -inline-threshold=10000"
+libhls_divnr1_clang4_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_CLANG4 $(common_treegccflags_clang) -C
+libhls_divnr2_clang4_a_SOURCES = $(common_libhls_divnr_src)
+libhls_divnr2_clang4_a_CFLAGS = --compiler=I386_CLANG4  $(common_cflags_clang)  -I$(BOOST_DIR) -DUNROLL_FACTOR=2 --extra-gcc-options="-mllvm -inline-threshold=10000"
+libhls_divnr2_clang4_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_CLANG4 $(common_treegccflags_clang) -C
+libhls_divas_clang4_a_SOURCES = $(common_libhls_divas_src)
+libhls_divas_clang4_a_CFLAGS = --compiler=I386_CLANG4  $(common_cflags_clang)  -I$(BOOST_DIR) --extra-gcc-options="-mllvm -inline-threshold=10000"
+libhls_divas_clang4_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_CLANG4 $(common_treegccflags_clang) -C
+libhls_cdiv_clang4_a_SOURCES = $(common_libhls_cdiv_src)
+libhls_cdiv_clang4_a_CFLAGS = --compiler=I386_CLANG4  $(common_cflags_clang)  -I$(BOOST_DIR) --extra-gcc-options="-mllvm -inline-threshold=10000"
+libhls_cdiv_clang4_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_CLANG4 $(common_treegccflags_clang) -C
+endif
+
+if BUILD_I386_CLANG5
+pkglib_LIBRARIES += libsoft-fp_clang5.a libhls-divNR_clang5.a libhls-divnr1_clang5.a libhls-divnr2_clang5.a libhls-divas_clang5.a  libhls-cdiv_clang5.a
+libsoft_fp_clang5_a_SOURCES = $(common_libsoft_fp_src)
+libsoft_fp_clang5_a_CFLAGS = --compiler=I386_CLANG5 $(common_cflags_clang)  -I$(BOOST_DIR)
+libsoft_fp_clang5_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_CLANG5 $(common_treegccflags_clang) -C
+libhls_divNR_clang5_a_SOURCES = $(common_libhls_div_src)
+libhls_divNR_clang5_a_CFLAGS = --compiler=I386_CLANG5 $(common_cflags_nr_clang)  -I$(BOOST_DIR) --extra-gcc-options="-mllvm -inline-threshold=10000"
+libhls_divNR_clang5_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_CLANG5 $(common_treegccflags_clang) -C
+libhls_divnr1_clang5_a_SOURCES = $(common_libhls_divnr_src)
+libhls_divnr1_clang5_a_CFLAGS = --compiler=I386_CLANG5  $(common_cflags_clang)  -I$(BOOST_DIR) -DUNROLL_FACTOR=1 --extra-gcc-options="-mllvm -inline-threshold=10000"
+libhls_divnr1_clang5_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_CLANG5 $(common_treegccflags_clang) -C
+libhls_divnr2_clang5_a_SOURCES = $(common_libhls_divnr_src)
+libhls_divnr2_clang5_a_CFLAGS = --compiler=I386_CLANG5  $(common_cflags_clang)  -I$(BOOST_DIR) -DUNROLL_FACTOR=2 --extra-gcc-options="-mllvm -inline-threshold=10000"
+libhls_divnr2_clang5_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_CLANG5 $(common_treegccflags_clang) -C
+libhls_divas_clang5_a_SOURCES = $(common_libhls_divas_src)
+libhls_divas_clang5_a_CFLAGS = --compiler=I386_CLANG5  $(common_cflags_clang)  -I$(BOOST_DIR) --extra-gcc-options="-mllvm -inline-threshold=10000"
+libhls_divas_clang5_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_CLANG5 $(common_treegccflags_clang) -C
+libhls_cdiv_clang5_a_SOURCES = $(common_libhls_cdiv_src)
+libhls_cdiv_clang5_a_CFLAGS = --compiler=I386_CLANG5  $(common_cflags_clang)  -I$(BOOST_DIR) --extra-gcc-options="-mllvm -inline-threshold=10000"
+libhls_cdiv_clang5_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_CLANG5 $(common_treegccflags_clang) -C
+endif
+
+if BUILD_I386_CLANG6
+pkglib_LIBRARIES += libsoft-fp_clang6.a libhls-divNR_clang6.a libhls-divnr1_clang6.a libhls-divnr2_clang6.a libhls-divas_clang6.a  libhls-cdiv_clang6.a
+libsoft_fp_clang6_a_SOURCES = $(common_libsoft_fp_src)
+libsoft_fp_clang6_a_CFLAGS = --compiler=I386_CLANG6 $(common_cflags_clang)  -I$(BOOST_DIR)
+libsoft_fp_clang6_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_CLANG6 $(common_treegccflags_clang) -C
+libhls_divNR_clang6_a_SOURCES = $(common_libhls_div_src)
+libhls_divNR_clang6_a_CFLAGS = --compiler=I386_CLANG6 $(common_cflags_nr_clang)  -I$(BOOST_DIR) --extra-gcc-options="-mllvm -inline-threshold=10000"
+libhls_divNR_clang6_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_CLANG6 $(common_treegccflags_clang) -C
+libhls_divnr1_clang6_a_SOURCES = $(common_libhls_divnr_src)
+libhls_divnr1_clang6_a_CFLAGS = --compiler=I386_CLANG6  $(common_cflags_clang)  -I$(BOOST_DIR) -DUNROLL_FACTOR=1 --extra-gcc-options="-mllvm -inline-threshold=10000"
+libhls_divnr1_clang6_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_CLANG6 $(common_treegccflags_clang) -C
+libhls_divnr2_clang6_a_SOURCES = $(common_libhls_divnr_src)
+libhls_divnr2_clang6_a_CFLAGS = --compiler=I386_CLANG6  $(common_cflags_clang)  -I$(BOOST_DIR) -DUNROLL_FACTOR=2 --extra-gcc-options="-mllvm -inline-threshold=10000"
+libhls_divnr2_clang6_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_CLANG6 $(common_treegccflags_clang) -C
+libhls_divas_clang6_a_SOURCES = $(common_libhls_divas_src)
+libhls_divas_clang6_a_CFLAGS = --compiler=I386_CLANG6  $(common_cflags_clang)  -I$(BOOST_DIR) --extra-gcc-options="-mllvm -inline-threshold=10000"
+libhls_divas_clang6_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_CLANG6 $(common_treegccflags_clang) -C
+libhls_cdiv_clang6_a_SOURCES = $(common_libhls_cdiv_src)
+libhls_cdiv_clang6_a_CFLAGS = --compiler=I386_CLANG6  $(common_cflags_clang)  -I$(BOOST_DIR) --extra-gcc-options="-mllvm -inline-threshold=10000"
+libhls_cdiv_clang6_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_CLANG6 $(common_treegccflags_clang) -C
 endif
 

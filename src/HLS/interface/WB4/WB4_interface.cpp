@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -244,14 +244,14 @@ void WB4_interface::connect_with_signal_name(structural_managerRef SM, structura
       SM->add_connection(signA, signB);
 }
 
-void WB4_interface::connect_with_signal_name(structural_managerRef SM, structural_objectRef A, std::string Asignal, structural_objectRef B, std::string Bsignal, std::string signalName)
+void WB4_interface::connect_with_signal_name(structural_managerRef SM, structural_objectRef A, std::string Asignal, structural_objectRef B, std::string Bsignal, const std::string& signalName)
 {
    structural_objectRef port1 = A->find_member(Asignal, port_o_K, A);
    structural_objectRef port2 = B->find_member(Bsignal,port_o_K, B);
    connect_with_signal_name(SM, port1, port2, signalName);
 }
 
-void WB4_interface::connect_with_signal_name(structural_managerRef SM, structural_objectRef APort, structural_objectRef B, std::string Bsignal, std::string signalName)
+void WB4_interface::connect_with_signal_name(structural_managerRef SM, structural_objectRef APort, structural_objectRef B, std::string Bsignal, const std::string& signalName)
 {
    structural_objectRef port1 = B->find_member(Bsignal,port_o_K, B);
    connect_with_signal_name(SM, APort, port1, signalName);
@@ -303,7 +303,7 @@ void WB4_interface::build_WB4_complete_logic(structural_managerRef SM, structura
    structural_objectRef S_oe_ram_port = wrappedObj->find_member("S_oe_ram", port_o_K, wrappedObj);
 
    // check consitency of the interfaces
-   bool is_slave, is_master;
+   bool is_slave=false, is_master=false;
    bool only_mm_parameters_allocated = HLSMgr->Rmem->get_allocated_parameters_memory() == HLSMgr->Rmem->get_allocated_intern_memory();
 
    if (S_data_ram_size_port && S_Wdata_ram_port &&

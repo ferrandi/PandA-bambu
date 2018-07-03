@@ -5,7 +5,7 @@
 */
 #include <stddef.h>
 
-char *__builtin_stpncpy(char * __restrict s1, const char * __restrict s2, size_t n)
+char *stpncpy(char * __restrict s1, const char * __restrict s2, size_t n)
 {
   char *s = s1;
   const char *p = s2;

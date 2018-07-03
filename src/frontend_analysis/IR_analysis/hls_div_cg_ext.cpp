@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -141,9 +141,9 @@ DesignFlowStep_Status hls_div_cg_ext::InternalExec()
    std::map<unsigned int, blocRef>::iterator it, it_end;
 
    it_end = blocks.end();
-   for(it = blocks.begin(); it != it_end; it++)
+   for(it = blocks.begin(); it != it_end; ++it)
    {
-      for(const auto stmt : it->second->CGetStmtList())
+      for(const auto& stmt : it->second->CGetStmtList())
       {
          recursive_examinate(stmt, stmt);
       }
@@ -176,7 +176,7 @@ void hls_div_cg_ext::recursive_examinate(const tree_nodeRef & current_tree_node,
          const std::vector<tree_nodeRef> & args = ce->args;
          std::vector<tree_nodeRef>::const_iterator arg, arg_end = args.end();
          unsigned int parm_index = 0;
-         for(arg = args.begin(); arg != arg_end; arg++)
+         for(arg = args.begin(); arg != arg_end; ++arg)
          {
             recursive_examinate(*arg, current_statement);
             ++parm_index;
@@ -189,7 +189,7 @@ void hls_div_cg_ext::recursive_examinate(const tree_nodeRef & current_tree_node,
          const std::vector<tree_nodeRef> & args = ce->args;
          std::vector<tree_nodeRef>::const_iterator arg, arg_end = args.end();
          unsigned int parm_index = 0;
-         for(arg = args.begin(); arg != arg_end; arg++)
+         for(arg = args.begin(); arg != arg_end; ++arg)
          {
             recursive_examinate(*arg, current_statement);
             ++parm_index;
@@ -332,7 +332,7 @@ void hls_div_cg_ext::recursive_examinate(const tree_nodeRef & current_tree_node,
          const constructor * co = GetPointer<constructor>(curr_tn);
          const std::vector<std::pair< tree_nodeRef, tree_nodeRef> > & list_of_idx_valu = co->list_of_idx_valu;
          std::vector<std::pair< tree_nodeRef, tree_nodeRef> >::const_iterator it, it_end = list_of_idx_valu.end();
-         for(it = list_of_idx_valu.begin(); it != it_end; it++)
+         for(it = list_of_idx_valu.begin(); it != it_end; ++it)
          {
             recursive_examinate(it->second, current_statement);
          }

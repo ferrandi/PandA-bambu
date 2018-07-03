@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -220,7 +220,7 @@ DesignFlowStep_Status mem_dominator_allocation::Exec()
 
       if(projection_in_degree != 1)
       {
-         for(const auto top_function : cg_dominator_map)
+         for(const auto& top_function : cg_dominator_map)
          {
             if(top_function.second.find(current_vertex) != top_function.second.end())
             {
@@ -234,17 +234,18 @@ DesignFlowStep_Status mem_dominator_allocation::Exec()
       }
 
       const std::set<unsigned int>& function_mem = function_behavior->get_function_mem();
-      for(std::set<unsigned int>::const_iterator v = function_mem.begin(); v != function_mem.end(); v++)
+      for(std::set<unsigned int>::const_iterator v = function_mem.begin(); v != function_mem.end(); ++v)
       {
          if(function_behavior->is_a_state_variable(*v))
-	 {
+         {
             var_map[*v].insert(vert_dominator.begin(), vert_dominator.end());
-	 }
+         }
          else
-	 {
+         {
             var_map[*v].insert(current_vertex);
-	 }
+         }
          where_used[*v].insert(fun_id);
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Variable : " + BH->PrintVariable(*v) + " used in function " + function_behavior->CGetBehavioralHelper()->get_function_name());
          //INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Dominator Vertex: " + HLSMgr->CGetFunctionBehavior(CG->get_function(vert_dominator))->CGetBehavioralHelper()->get_function_name() + " - Variable to be stored: " + BH->PrintVariable(*v));
       }
       const OpGraphConstRef g = function_behavior->CGetOpGraph(FunctionBehavior::CFG);
@@ -304,7 +305,7 @@ DesignFlowStep_Status mem_dominator_allocation::Exec()
                {
                   unsigned int elmt_bitsize=1;
                   unsigned int type_index = tree_helper::get_type_index(TreeM, var);
-                  bool is_a_struct_union = tree_helper::is_a_struct(TreeM, type_index) || tree_helper::is_an_union(TreeM, type_index) || tree_helper::is_a_complex(TreeM, type_index);
+                  bool is_a_struct_union = ((tree_helper::is_a_struct(TreeM, type_index)) && !tree_helper::is_an_array(TreeM, type_index)) || tree_helper::is_an_union(TreeM, type_index) || tree_helper::is_a_complex(TreeM, type_index);
                   tree_nodeRef type_node = TreeM->get_tree_node_const(type_index);
                   tree_helper::accessed_greatest_bitsize(TreeM, type_node, type_index, elmt_bitsize);
                   unsigned int mim_elmt_bitsize = elmt_bitsize;
@@ -455,7 +456,7 @@ DesignFlowStep_Status mem_dominator_allocation::Exec()
       THROW_ASSERT(var_index, "null var index unexpected");
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Finding common dominator for variable " + STR(var_index));
       CustomSet<unsigned int> filtered_top_functions;
-      for(const auto reachable_vertex : reachable_vertices)
+      for(const auto& reachable_vertex : reachable_vertices)
       {
          for(const auto use_vertex : it->second)
          {
@@ -615,7 +616,6 @@ DesignFlowStep_Status mem_dominator_allocation::Exec()
          unsigned int var_index = mem_map.first;
          THROW_ASSERT(var_index, "null var index unexpected");
          bool is_internal = mem_map.second;
-         std::string var_index_string;
          bool is_dynamic_address_used = false;
 
          if (is_internal)
@@ -623,14 +623,17 @@ DesignFlowStep_Status mem_dominator_allocation::Exec()
             THROW_ASSERT(where_used[var_index].size() > 0, "variable not used anywhere");
             const FunctionBehaviorConstRef function_behavior = HLSMgr->CGetFunctionBehavior(*(where_used[var_index].begin()));
             const BehavioralHelperConstRef BH = function_behavior->CGetBehavioralHelper();
-            var_index_string = BH->PrintVariable(var_index);
             ///check dynamic address use
             std::set<unsigned int>::const_iterator wiu_it_end = where_used[var_index].end();
             for(std::set<unsigned int>::const_iterator wiu_it = where_used[var_index].begin(); wiu_it != wiu_it_end && !is_dynamic_address_used; ++wiu_it)
             {
                const FunctionBehaviorConstRef cur_function_behavior = HLSMgr->CGetFunctionBehavior(*wiu_it);
-               if(cur_function_behavior->get_dynamic_address().find(var_index) != cur_function_behavior->get_dynamic_address().end())
+               if(cur_function_behavior->get_dynamic_address().find(var_index) != cur_function_behavior->get_dynamic_address().end()||
+                     (GetPointer<var_decl>(TreeM->get_tree_node_const(var_index)) && GetPointer<var_decl>(TreeM->get_tree_node_const(var_index))->addr_taken))
+               {
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Found dynamic use of variable: " + cur_function_behavior->CGetBehavioralHelper()->PrintVariable(var_index) + " - " + STR(var_index) + " - " + BH->PrintVariable(var_index) + " in function " + cur_function_behavior->CGetBehavioralHelper()->get_function_name());
                   is_dynamic_address_used = true;
+               }
             }
 
             if(is_dynamic_address_used && !all_pointers_resolved && !assume_aligned_access_p)
@@ -674,7 +677,6 @@ DesignFlowStep_Status mem_dominator_allocation::Exec()
          {
             const FunctionBehaviorConstRef function_behavior = HLSMgr->CGetFunctionBehavior(funID);
             const BehavioralHelperConstRef BH = function_behavior->CGetBehavioralHelper();
-            var_index_string = BH->PrintVariable(var_index);
             is_dynamic_address_used = true;
             if(assume_aligned_access_p)
                HLSMgr->Rmem->set_sds_var(var_index, true);
@@ -738,11 +740,14 @@ DesignFlowStep_Status mem_dominator_allocation::Exec()
             const BehavioralHelperConstRef BH = function_behavior->CGetBehavioralHelper();
             var_index_string = BH->PrintVariable(var_index);
             ///check dynamic address use
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Check dynamic use for var " + var_index_string);
             std::set<unsigned int>::const_iterator wiu_it_end = where_used[var_index].end();
             for(std::set<unsigned int>::const_iterator wiu_it = where_used[var_index].begin(); wiu_it != wiu_it_end && !is_dynamic_address_used; ++wiu_it)
             {
                const FunctionBehaviorConstRef cur_function_behavior = HLSMgr->CGetFunctionBehavior(*wiu_it);
-               if(cur_function_behavior->get_dynamic_address().find(var_index) != cur_function_behavior->get_dynamic_address().end())
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Analyzing function " + cur_function_behavior->CGetBehavioralHelper()->get_function_name());
+               if(cur_function_behavior->get_dynamic_address().find(var_index) != cur_function_behavior->get_dynamic_address().end() ||
+                     (GetPointer<var_decl>(TreeM->get_tree_node_const(var_index)) && GetPointer<var_decl>(TreeM->get_tree_node_const(var_index))->addr_taken))
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Found dynamic use of variable: " + cur_function_behavior->CGetBehavioralHelper()->PrintVariable(var_index) + " - " + STR(var_index) + " - " + var_index_string + " in function " + cur_function_behavior->CGetBehavioralHelper()->get_function_name());
                   is_dynamic_address_used = true;

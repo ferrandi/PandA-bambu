@@ -11,7 +11,7 @@ static int __local_tolower(int c)
   return c;
 }
 
-char *__builtin_strcasestr(const char *haystack, const char *needle)
+char *strcasestr(const char *haystack, const char *needle)
 {
   const char *h = haystack;
   const char *n = needle;

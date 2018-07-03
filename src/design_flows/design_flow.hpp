@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2017 Politecnico di Milano
+ *              Copyright (c) 2017-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -122,7 +122,7 @@ class DesignFlow : public DesignFlowStep
        * @return the corresponding enum
        */
       static
-      DesignFlow_Type KindTextToEnum(const std::string name);
+      DesignFlow_Type KindTextToEnum(const std::string&name);
 
       /**
        * Check if this step has actually to be executed

@@ -118,7 +118,7 @@ test3 (void)
   chk_calls = 0;
   strncpy (a.buf1 + 2, s3 + 3, l1);
   strncpy (r, s3 + 2, l1 + 2);
-  r = l1 == 1 ? __builtin_malloc (4) : &a.buf2[7];
+  r = l1 == 1 ? malloc (4) : &a.buf2[7];
   strncpy (r, s2 + 2, l1 + 2);
   strncpy (r + 2, s3 + 3, l1);
   r = buf3;
@@ -145,7 +145,7 @@ test3 (void)
   strncpy (a.buf1 + 2, "", 0);
   strncpy (r, "a", 1);
   strncpy (r, "a", 3);
-  r = l1 == 1 ? __builtin_malloc (4) : &a.buf2[7];
+  r = l1 == 1 ? malloc (4) : &a.buf2[7];
   strncpy (r, s1 + 1, 3);
   strncpy (r, s1 + 1, 2);
   r = buf3;
@@ -226,9 +226,11 @@ main_test (void)
   /* Object size checking is only intended for -O[s123].  */
   return;
 #endif
+#ifndef __clang__
   __asm ("{||assign out1 = in1;\nassign done_port = start_port;}" : "=r" (s2) : "0" (s2));
   __asm ("{||assign out1 = in1;\nassign done_port = start_port;}" : "=r" (s3) : "0" (s3));
   __asm ("{||assign out1 = in1;\nassign done_port = start_port;}" : "=r" (l1) : "0" (l1));
+#endif
   test1 ();
   s4 = p;
   test2 ();
@@ -237,8 +239,10 @@ main_test (void)
 }
 int main()
 {
+#ifndef __clang__
 #if (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
   main_test();
+#endif
 #endif
   return 0;
 }

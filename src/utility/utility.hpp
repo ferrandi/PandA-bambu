@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -411,7 +411,7 @@ class string_separator
        * Constructor
        * @param delimiter is the string used to divide the string
        */
-      string_separator(const std::string & _delimiter) :
+      explicit string_separator(const std::string& _delimiter) :
          delimiter(_delimiter)
       {
       }
@@ -441,10 +441,6 @@ class string_separator
             next = end;
             return true;
          }
-      }
-      string_separator operator=(string_separator other)
-      {
-         return string_separator(other.delimiter);
       }
 
       /**
@@ -557,13 +553,13 @@ struct TimeStamp : public boost::posix_time::ptime
    /**
     * Super class constructor
     */
-   TimeStamp(boost::posix_time::ptime timestamp);
+   explicit TimeStamp(boost::posix_time::ptime timestamp);
 
    /**
     * Constructor from string
     * @param timestamp is the string containing the timestamp
     */
-   TimeStamp(const std::string timestamp);
+   explicit TimeStamp(const std::string&timestamp);
 
    /**
     * Return a timestamp of the current time

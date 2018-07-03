@@ -6,7 +6,7 @@
 /* Public domain.  */
 #include <stddef.h>
 
-size_t __builtin_strlen(const char *s)
+size_t strlen(const char *s)
 {
   const char *c = s;
   for (; *c ; c++);

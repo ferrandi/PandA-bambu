@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -92,7 +92,7 @@ private:
 
 public:
    ///Constructor
-   std_var_pp_functor(const BehavioralHelperConstRef _BH): BH(_BH) {}
+   explicit std_var_pp_functor(const BehavioralHelperConstRef _BH): BH(_BH) {}
 
    ///Destructor
    ~std_var_pp_functor() {}
@@ -187,7 +187,7 @@ private:
 
 public:
    ///Constructor
-   isolated_var_pp_functor(const BehavioralHelperConstRef _BH, unsigned int _repl_var, std::string _var_string): BH(_BH), repl_var(_repl_var), var_string(_var_string) {}
+   isolated_var_pp_functor(const BehavioralHelperConstRef _BH, unsigned int _repl_var, const std::string& _var_string): BH(_BH), repl_var(_repl_var), var_string(_var_string) {}
 
    ///Destructor
    ~isolated_var_pp_functor() {}

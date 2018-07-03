@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -70,7 +70,7 @@ class xml_attribute : public xml_node
 
    public:
       /// constructor
-      xml_attribute(const std::string &_name) : xml_node(_name)
+      explicit xml_attribute(const std::string&_name) : xml_node(_name)
       {}
 
       /**
@@ -113,7 +113,7 @@ struct attribute_sequence
       void print_attributes(std::ostream& os) const
       {
          attribute_list::const_iterator it_end =  a_list.end();
-         for(attribute_list::const_iterator it =  a_list.begin(); it != it_end; it++)
+         for(attribute_list::const_iterator it =  a_list.begin(); it != it_end; ++it)
          {
             os << " ";
             (*it)->print(os, false, nullptr);

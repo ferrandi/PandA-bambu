@@ -36,7 +36,7 @@ float __hide_local_sinf(float x)
 	if(ix <= 0x3f490fd8) return __hide_kernel_sinf(x,z,0);
 
     /* sin(Inf or NaN) is NaN */
-	else if (!FLT_UWORD_IS_FINITE(ix)) return __builtin_nanf("");
+    else if (!FLT_UWORD_IS_FINITE(ix)) return nanf("");
 
     /* argument reduction needed */
 	else {
@@ -51,16 +51,16 @@ float __hide_local_sinf(float x)
 	}
 }
 
-float __builtin_sinf(float x)
+float sinf(float x)
 {
 	return __hide_local_sinf(x);
 }
 
 #ifdef _DOUBLE_IS_32BITS
 
-double __builtin_sin(double x)
+double sin(double x)
 {
-	return (double) __builtin_sinf((float) x);
+    return (double) sinf((float) x);
 }
 
 #endif /* defined(_DOUBLE_IS_32BITS) */

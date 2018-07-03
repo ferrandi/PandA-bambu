@@ -6,7 +6,7 @@
 /* Public domain.  */
 #include <stddef.h>
 
-size_t __builtin_strspn(const char *s, const char *accept)
+size_t strspn(const char *s, const char *accept)
 {
   const char *saved = s;
   const char *p = accept;

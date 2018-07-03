@@ -7,7 +7,7 @@ noinst_LTLIBRARIES = lib_utility.la
 
 
 lib_utility_la_CPPFLAGS = \
-                     -I$(BOOST_DIR)
+                     -I$(BOOST_DIR) $(all_includes)
 
 noinst_HEADERS = \
    augmented_vector.hpp \
@@ -46,23 +46,11 @@ if MINGW64
    lib_utility_la_LIBADD += -lws2_32 -lpsapi
 endif
 
-if BUILD_KOALA
- noinst_LTLIBRARIES += lib_md5.la
- noinst_HEADERS += md5.hpp
-
- lib_md5_la_SOURCES = md5.cpp
- lib_md5_la_CPPFLAGS = -I$(BOOST_DIR)
-endif
-
 if BUILD_LIB_PROBABILITY_DISTRIBUTION
   SUBDIRS += probability_distribution
   DIST_SUBDIRS += probability_distribution
   lib_utility_la_CPPFLAGS += -I$(top_srcdir)/src/utility/probability_distribution
   lib_utility_la_LIBADD += $(top_builddir)/src/utility/probability_distribution/lib_ProbabilityDistribution.la
-endif
-
-if USE_FRACTIONS
-  noinst_HEADERS += fraction.hpp
 endif
 
 #do not touch the following line

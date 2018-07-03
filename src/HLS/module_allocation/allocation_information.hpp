@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -100,38 +100,44 @@ class AllocationInformation : public HLSFunctionIR
       friend struct updatecopy_HLS_constraints_functor;
 
       /// coefficient used to estimate connection delay
-      const double connection_time_ratio;
+      double connection_time_ratio;
 
       ///coefficient used to estimate the controller delay
-      const double controller_delay_multiplier;
+      double controller_delay_multiplier;
 
       ///coefficient used to modify setup value
-      const double setup_multiplier;
+      double setup_multiplier;
 
       ///coefficient used to modify execution time and stage time
-      const double time_multiplier;
+      double time_multiplier;
 
-      const double mux_time_multiplier;
+      double mux_time_multiplier;
 
       /// coefficient used to correct timing of memories
-      const double memory_correction_coefficient;
+      double memory_correction_coefficient;
 
-      const double connection_offset;
+      double connection_offset;
+
+      /// Connection delay at the exit of DSP
+      double output_DSP_connection_time;
+
+      /// Connection delay at the exit of carry
+      double output_carry_connection_time;
 
       ///The coefficient used for estimating fanout delay
-      const double fanout_coefficient;
+      double fanout_coefficient;
 
       ///The maximum size of fanout
-      const size_t max_fanout_size;
+      size_t max_fanout_size;
 
       /// coefficient used to modify DSPs execution time
-      const double DSPs_margin;
+      double DSPs_margin;
 
       /// coefficient used to modify DSPs stage period
-      const double DSPs_margin_stage;
+      double DSPs_margin_stage;
 
       /// coefficient used to modify pipelining DSPs allocation
-      const double DSP_allocation_coefficient;
+      double DSP_allocation_coefficient;
 
       ///The operation graph
       OpGraphConstRef op_graph;
@@ -232,21 +238,21 @@ class AllocationInformation : public HLSFunctionIR
       mutable CustomMap<unsigned int, unsigned int> zero_distance_ops_bb_version;
 
       /// store mux timing for the current technology
-      const CustomMap<unsigned int, std::unordered_map<unsigned int, double> > & mux_timing_db;
+      CustomMap<unsigned int, std::unordered_map<unsigned int, double> > mux_timing_db;
 
       /// store mux timing for the current technology
-      const CustomMap<unsigned int, std::unordered_map<unsigned int, double> > & mux_area_db;
+      CustomMap<unsigned int, std::unordered_map<unsigned int, double> >  mux_area_db;
 
       /// store DSP x sizes
-      const std::vector<unsigned int> & DSP_x_db;
+      std::vector<unsigned int> DSP_x_db;
 
       /// store DSP y sizes
-      const std::vector<unsigned int> & DSP_y_db;
+      std::vector<unsigned int> DSP_y_db;
 
       /// put into relation variable and their latency when they are mapped on a private synchronous ram
       std::map<unsigned int, std::string> sync_ram_var_latency;
 
-      std::string get_latency_string(std::string lat) const;
+      std::string get_latency_string(const std::string &lat) const;
 
       /// return the execution time of the operation corrected by time_multiplier factor
       double time_m_execution_time(operation* op) const;
@@ -710,7 +716,7 @@ class AllocationInformation : public HLSFunctionIR
        * @param operation_name is the operation name
        * @return a correction time
        */
-      double get_correction_time(unsigned int fu, const std::string &operation_name) const;
+      double get_correction_time(unsigned int fu, const std::string&operation_name) const;
 
       /**
        * estimate the delay of a mux that can be uses to mux the input of the given functional unit
@@ -1039,7 +1045,7 @@ struct updatecopy_HLS_constraints_functor
        * Constructor
        * @param ALL is the reference to allocation class where technology constraints are stored
        */
-      updatecopy_HLS_constraints_functor(const AllocationInformationRef allocation_information);
+      explicit updatecopy_HLS_constraints_functor(const AllocationInformationRef allocation_information);
 
       /**
        * Destructor

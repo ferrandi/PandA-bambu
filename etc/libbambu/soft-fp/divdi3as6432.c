@@ -1,5 +1,5 @@
 /* 64-bit division and modulus
-   Copyright (c) 2004-2017 Politecnico di Milano
+   Copyright (c) 2004-2018 Politecnico di Milano
    This file is part of the HLS-FP Library.
 
    author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
@@ -79,7 +79,7 @@ __udivmoddi4 (UDWtype x, UDWtype y, UDWtype *res)
     UDWtype q = 0;
     BIT_RESIZE(y,32);
     if (y <= r) {
-        unsigned char k = ((1<<5)|__builtin_clz(y)) - __builtin_clzll(r);
+        unsigned char k = ((1<<5)|clz(y)) - clzll(r);
         BIT_RESIZE(k,6);
         y = lsl64(y,k); // align y
         if (r >= y) {

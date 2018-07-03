@@ -11,7 +11,7 @@
  *                     Politecnico di Milano - DEIB
  *                      System Architectures Group
  *           ***********************************************
- *            Copyright (c) 2004-2017 Politecnico di Milano
+ *            Copyright (c) 2004-2018 Politecnico di Milano
  *
  * This file is part of the PandA framework.
  *
@@ -250,7 +250,7 @@ CallGraphBuiltinCall::lookForBuiltinCall(const tree_nodeRef TN)
 
 void CallGraphBuiltinCall::ExtendCallGraph(unsigned int callerIdx, tree_nodeRef funType, unsigned int stmtIdx)
 {
-  std::string type = tree_helper::getFunctionTypeString(funType);
+  std::string type = tree_helper::print_type(AppM->get_tree_manager(), funType->index);
   for (TypeDeclarationMap::mapped_type::iterator
            Itr = typeToDeclaration[type].begin(),
            End = typeToDeclaration[type].end();
@@ -341,18 +341,22 @@ DesignFlowStep_Status CallGraphBuiltinCall::InternalExec()
             "---Analyzing function " + STR(*Itr) + " " + functionName);
       tree_nodeRef function = TM->get_tree_node_const(*Itr);
       function_decl * funDecl = GetPointer<function_decl>(function);
-      std::string type = tree_helper::getFunctionTypeString(GET_NODE(funDecl->type));
+      std::string type = tree_helper::print_type(TM, GET_INDEX_NODE(funDecl->type));
       if(funDecl->body && functionName != "__start_pragma__" && functionName != "__close_pragma__" &&
-              functionName.find("__pragma__") != 0)
+              !boost::algorithm::starts_with(functionName,"__pragma__"))
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+               "---FunctionTypeString " + type);
       typeToDeclaration[type].insert(*Itr);
    }
-   for(const auto block : stmtList->list_of_bloc)
+   for(const auto& block : stmtList->list_of_bloc)
    {
 
-      for(const auto stmt : block.second->CGetStmtList())
+      for(const auto& stmt : block.second->CGetStmtList())
       {
          if(GET_NODE(stmt)->get_kind() == gimple_call_K or GET_NODE(stmt)->get_kind() == gimple_assign_K)
          {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                  "---Analyzing stmt " + stmt->ToString());
             lookForBuiltinCall(stmt);
          }
       }

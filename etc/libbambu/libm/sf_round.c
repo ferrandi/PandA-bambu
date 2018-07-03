@@ -19,7 +19,7 @@
 
 #include "math_privatef.h"
 
-float __builtin_roundf(float x)
+float roundf(float x)
 {
     int i0, j0;
 
@@ -63,9 +63,9 @@ float __builtin_roundf(float x)
 
 #ifdef _DOUBLE_IS_32BITS
 
-double __builtin_round(double x)
+double round(double x)
 {
-	return (double) __builtin_roundf((float) x);
+    return (double) roundf((float) x);
 }
 
 #endif /* defined(_DOUBLE_IS_32BITS) */

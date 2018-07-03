@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -52,7 +52,6 @@
 #include "config_HAVE_R.hpp"
 
 ///. includes
-#include "global_variables.hpp"
 #include "SpiderParameter.hpp"
 
 #if HAVE_REGRESSORS_BUILT
@@ -611,7 +610,7 @@ int main(int argc, char *argv[])
                   std::string benchmark_to_be_removed;
                   const std::unordered_map<std::string, long double> & training_errors = results->training_errors;
                   std::unordered_map<std::string, long double>::const_iterator training_error, training_error_end = training_errors.end();
-                  for(training_error = training_errors.begin(); training_error != training_error_end; training_error++)
+                  for(training_error = training_errors.begin(); training_error != training_error_end; ++training_error)
                   {
                      long double current_training_error = training_error->second;
                      if(current_training_error < 0.0)
@@ -628,7 +627,6 @@ int main(int argc, char *argv[])
                   preprocessed_data.erase(preprocessed_data.find(benchmark_to_be_removed));
                   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, debug_level, "Removed " + benchmark_to_be_removed + " with error " + boost::lexical_cast<std::string>(max_error) + ": current average error is " + boost::lexical_cast<std::string>(error));
                }
-               long double current_minimum_significance = 0.0;
                while(true)
                {
                   RegressorConstRef regression = RegressorConstRef(new LinearRegression(parameters));
@@ -638,7 +636,7 @@ int main(int argc, char *argv[])
                   }
                   const RegressionResultsRef results = regression->Exec(column_names, STR_CST_cycles, preprocessed_data);
                   results->Print(std::cerr);
-                  current_minimum_significance = GetPointer<LinearRegressionResults>(results)->regressor_minimum_significance;
+                  long double current_minimum_significance = GetPointer<LinearRegressionResults>(results)->regressor_minimum_significance;
                   if(current_minimum_significance >= parameters->getOption<long double>(OPT_minimum_significance))
                   {
                      XMLGeneratorConstRef generator(new XMLGenerator(parameters));

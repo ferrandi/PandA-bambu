@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2015 Politecnico di Milano
+ *              Copyright (c) 2015-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -51,7 +51,7 @@
 #if 0
 #define STR_CST_taste_endianess_inversion "panda_endianess_inversion_"
 #else
-#define STR_CST_taste_endianess_inversion "__builtin_bswap32"
+#define STR_CST_taste_endianess_inversion "bswap32"
 #endif
 
 ///The suffix of the memory enabling function

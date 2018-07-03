@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -398,6 +398,8 @@ const int treeVocabularyTokenTypes::bisontokens[] =
    TOK_BISON_LIBRARY_SYSTEM,
    TOK_BISON_LIBBAMBU,
    TOK_BISON_EXTERN,
+   TOK_BISON_ADDR_TAKEN,
+   TOK_BISON_ADDR_NOT_TAKEN,
    TOK_BISON_C,
    TOK_BISON_LSHIFT,
    TOK_BISON_GLOBAL_INIT,
@@ -1051,6 +1053,8 @@ const char* treeVocabularyTokenTypes::tokenNames[] =
    "library_system",
    "libbambu",
    "extern",
+   "addr_taken",
+   "addr_not_taken",
    "C",
    "lshift",
    "global_init",

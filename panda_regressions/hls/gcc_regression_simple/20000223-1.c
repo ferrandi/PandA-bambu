@@ -34,7 +34,7 @@ struct A
   unsigned long long ull;
   float f;
   double d;
-  long double ld;
+  //long double ld;
   void *dp;
   void (*fp)();
 };
@@ -53,7 +53,7 @@ int main ()
   check (unsigned long long);
   check (float);
   check (double);
-  check (long double);
+  //check (long double);
   check (void *);
   check (void (*)());
   check (struct A);

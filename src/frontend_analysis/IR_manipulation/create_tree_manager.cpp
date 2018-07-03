@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -91,7 +91,7 @@ void create_tree_manager::ComputeRelationships(DesignFlowStepSet & relationship,
    if(relationship_type == DEPENDENCE_RELATIONSHIP and parameters->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_AADL)
    {
       const auto input_files = AppM->input_files;
-      for(const auto input_file : input_files)
+      for(const auto& input_file : input_files)
       {
          const auto file_format = parameters->GetFileFormat(input_file.first);
          if(file_format == Parameters_FileFormat::FF_AADL)
@@ -154,7 +154,7 @@ DesignFlowStep_Status create_tree_manager::Exec()
    if(parameters->isOption(OPT_archive_files))
    {
       const auto archive_files = parameters->getOption<const CustomSet<std::string> >(OPT_archive_files);
-      for(const auto archive_file : archive_files)
+      for(const auto& archive_file : archive_files)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Reading " + archive_file);
          if(!boost::filesystem::exists(boost::filesystem::path(archive_file)))
@@ -211,7 +211,7 @@ DesignFlowStep_Status create_tree_manager::Exec()
          }
       }
       const auto raw_files = parameters->getOption<const CustomSet<std::string> >(OPT_input_file);
-      for(const auto raw_file : raw_files)
+      for(const auto& raw_file : raw_files)
       {
          if(!boost::filesystem::exists(boost::filesystem::path(raw_file)))
          {

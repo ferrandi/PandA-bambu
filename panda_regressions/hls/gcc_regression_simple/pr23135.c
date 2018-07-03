@@ -1,6 +1,9 @@
 /* Based on execute/simd-1.c, modified by joern.rennecke@st.com to
    trigger a reload bug.  Verified for gcc mainline from 20050722 13:00 UTC
    for sh-elf -m4 -O2.  */
+
+#ifndef __clang__
+
 #ifndef STACK_SIZE
 #define STACK_SIZE (256*1024)
 #endif
@@ -132,3 +135,10 @@ Reload 3: reload_in (SI) = (symbol_ref:SI ("__sdivsi3_i4") [flags 0x1])
 
   exit (0);
 }
+#else
+int
+main ()
+{
+  exit (0);
+}
+#endif

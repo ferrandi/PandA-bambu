@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -72,7 +72,7 @@ static bool cannot_have_struct_parameters(
       TM
 #endif
       ,
-      const std::string &
+      const std::string&
 #if HAVE_ASSERTS
       fu_name
 #endif
@@ -261,8 +261,8 @@ DesignFlowStep_Status FixStructsPassedByValue::InternalExec()
 
             // create the call to memcpy
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                  "-->Creating new call to __builtin_memcpy");
-            unsigned int memcpy_function_id = TM->function_index("__builtin_memcpy");
+                  "-->Creating new call to memcpy");
+            unsigned int memcpy_function_id = TM->function_index("__internal_bambu_memcpy");
             THROW_ASSERT(AppM->GetFunctionBehavior(memcpy_function_id)->GetBehavioralHelper()->has_implementation(),
                   "inconsistent behavioral helper");
             unsigned int size_formal_type_id = tree_helper::get_formal_ith(TM, memcpy_function_id, 2);
@@ -292,7 +292,7 @@ DesignFlowStep_Status FixStructsPassedByValue::InternalExec()
              */
             gn->artificial = true;
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                  "<--Created new call to __builtin_memcpy: " + STR(GET_NODE(gimple_call_memcpy)));
+                  "<--Created new call to memcpy: " + STR(GET_NODE(gimple_call_memcpy)));
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Updating basic block");
             first_block->PushFront(gimple_call_memcpy);
             // add call to memcpy to the call graph and refresh the reached functions

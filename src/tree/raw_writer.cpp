@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (c) 2004-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -112,20 +112,20 @@ raw_writer::raw_writer(
 {
 }
 
-void raw_writer::write_when_not_null(const std::string str, const tree_nodeRef & t) const
+void raw_writer::write_when_not_null(const std::string&str, const tree_nodeRef & t) const
 {
    if (t)
       os << " " << str << ": @" << GET_INDEX_NODE(t);
 }
 
-void raw_writer::write_when_not_null_bloc(const std::string str, const blocRef & t)
+void raw_writer::write_when_not_null_bloc(const std::string&str, const blocRef & t)
 {
    if (t)
       os << " " << str << ":";
    t->visit(this);
 }
 
-void raw_writer::write_when_not_null_point_to(const std::string type, const PointToSolutionRef solution) const
+void raw_writer::write_when_not_null_point_to(const std::string&type, const PointToSolutionRef solution) const
 {
    if(solution->anything)
    {
@@ -149,24 +149,11 @@ void raw_writer::write_when_not_null_point_to(const std::string type, const Poin
    }
    const std::vector<tree_nodeRef> & variables = solution->variables;
    std::vector<tree_nodeRef>::const_iterator variable, variable_end = variables.end();
-   for(variable = variables.begin(); variable != variable_end; variable++)
+   for(variable = variables.begin(); variable != variable_end; ++variable)
    {
       write_when_not_null(type + "_vars", *variable);
    }
 }
-
-#if HAVE_RTL_BUILT
-void raw_writer::write_when_not_null_rtl(const std::list<std::pair<enum rtl_kind, enum mode_kind> > & rtl) const
-{
-   std::list<std::pair<enum rtl_kind, enum mode_kind> >::const_iterator it, it_end = rtl.end();
-   for(it = rtl.begin(); it != it_end; it++)
-   {
-      os << " " << STOK(TOK_RTL) << ": " << rtl_node::GetString(it->first);
-      if(it->second != none_R)
-         os << ":" << rtl_node::GetString(it->second);
-   }
-}
-#endif
 
 void raw_writer::operator()(const tree_node * obj, unsigned int & )
 {
@@ -275,7 +262,7 @@ void raw_writer::operator()(const gimple_node* obj, unsigned int & mask)
       WRITE_NFIELD(os, STOK(TOK_SIZE_WEIGHT), obj->weight_information->instruction_size);
 #endif
    std::vector<tree_nodeRef>::const_iterator vend2 = obj->pragmas.end();
-   for (std::vector<tree_nodeRef>::const_iterator i = obj->pragmas.begin(); i != vend2; i++)
+   for (std::vector<tree_nodeRef>::const_iterator i = obj->pragmas.begin(); i != vend2; ++i)
      write_when_not_null(STOK(TOK_PRAGMA), *i);
 #if HAVE_CODE_ESTIMATION_BUILT && HAVE_RTL_BUILT
    write_when_not_null_rtl(obj->weight_information->rtl_nodes);
@@ -343,7 +330,7 @@ void raw_writer::operator()(const memory_tag* obj, unsigned int & mask)
    mask = NO_VISIT;
    obj->decl_node::visit(this);
    std::vector<tree_nodeRef>::const_iterator vend = obj->list_of_aliases.end();
-   for (std::vector<tree_nodeRef>::const_iterator i = obj->list_of_aliases.begin(); i != vend; i++)
+   for (std::vector<tree_nodeRef>::const_iterator i = obj->list_of_aliases.begin(); i != vend; ++i)
       write_when_not_null(STOK(TOK_ALIAS), *i);
 }
 
@@ -393,7 +380,7 @@ void raw_writer::operator()(const gimple_bind* obj, unsigned int & mask)
    mask = NO_VISIT;
    obj->expr_node::visit(this);
    std::vector<tree_nodeRef>::const_iterator vend = obj->list_of_vars.end();
-   for (std::vector<tree_nodeRef>::const_iterator i = obj->list_of_vars.begin(); i != vend; i++)
+   for (std::vector<tree_nodeRef>::const_iterator i = obj->list_of_vars.begin(); i != vend; ++i)
       write_when_not_null(STOK(TOK_VARS), *i);
    write_when_not_null(STOK(TOK_BODY), obj->body);
 }
@@ -407,7 +394,7 @@ void raw_writer::operator()(const binfo* obj, unsigned int & mask)
       WRITE_TOKEN(os, TOK_VIRT);
    WRITE_NFIELD(os, STOK(TOK_BASES), obj->bases);
    std::vector<std::pair< TreeVocabularyTokenTypes_TokenEnum, tree_nodeRef> >::const_iterator vend = obj->list_of_access_binf.end();
-   for (std::vector<std::pair< TreeVocabularyTokenTypes_TokenEnum, tree_nodeRef> >::const_iterator i = obj->list_of_access_binf.begin(); i != vend; i++)
+   for (std::vector<std::pair< TreeVocabularyTokenTypes_TokenEnum, tree_nodeRef> >::const_iterator i = obj->list_of_access_binf.begin(); i != vend; ++i)
    {
       WRITE_TOKEN2(os, i->first);
       write_when_not_null(STOK(TOK_BINF), i->second);
@@ -428,7 +415,7 @@ void raw_writer::operator()(const call_expr* obj, unsigned int & mask)
    obj->expr_node::visit(this);
    write_when_not_null(STOK(TOK_FN), obj->fn);
    std::vector<tree_nodeRef>::const_iterator arg, arg_end = obj->args.end();
-   for (arg = obj->args.begin(); arg != arg_end; arg++)
+   for (arg = obj->args.begin(); arg != arg_end; ++arg)
       write_when_not_null(STOK(TOK_ARG), *arg);
 }
 
@@ -446,7 +433,7 @@ void raw_writer::operator()(const gimple_call* obj, unsigned int & mask)
    obj->gimple_node::visit(this);
    write_when_not_null(STOK(TOK_FN), obj->fn);
    std::vector<tree_nodeRef>::const_iterator arg, arg_end = obj->args.end();
-   for (arg = obj->args.begin(); arg != arg_end; arg++)
+   for (arg = obj->args.begin(); arg != arg_end; ++arg)
       write_when_not_null(STOK(TOK_ARG), *arg);
    write_when_not_null_point_to("use", obj->use_set);
    write_when_not_null_point_to("clb", obj->clobbered_set);
@@ -508,7 +495,7 @@ void raw_writer::operator()(const constructor* obj, unsigned int & mask)
    obj->tree_node::visit(this);
    write_when_not_null(STOK(TOK_TYPE), obj->type);
    std::vector<std::pair< tree_nodeRef, tree_nodeRef> >::const_iterator vend = obj->list_of_idx_valu.end();
-   for (std::vector<std::pair< tree_nodeRef, tree_nodeRef> >::const_iterator i = obj->list_of_idx_valu.begin(); i != vend; i++)
+   for (std::vector<std::pair< tree_nodeRef, tree_nodeRef> >::const_iterator i = obj->list_of_idx_valu.begin(); i != vend; ++i)
    {
       write_when_not_null(STOK(TOK_IDX), i->first);
       write_when_not_null(STOK(TOK_VALU), i->second);
@@ -560,7 +547,7 @@ void raw_writer::operator()(const function_decl* obj, unsigned int & mask)
    if (obj->operator_flag)
       WRITE_TOKEN(os, TOK_OPERATOR);
    std::vector<std::string>::const_iterator vend = obj->list_of_op_names.end();
-   for (std::vector<std::string>::const_iterator i = obj->list_of_op_names.begin(); i != vend; i++)
+   for (std::vector<std::string>::const_iterator i = obj->list_of_op_names.begin(); i != vend; ++i)
       WRITE_UFIELD_STRING(os, *i);
    obj->attr::visit(this);
    write_when_not_null(STOK(TOK_TMPL_PARMS), obj->tmpl_parms);
@@ -572,7 +559,7 @@ void raw_writer::operator()(const function_decl* obj, unsigned int & mask)
       WRITE_NFIELD(os, STOK(TOK_VIRT), obj->virt);
    write_when_not_null(STOK(TOK_FN), obj->fn);
    std::vector<tree_nodeRef>::const_iterator vend2 = obj->list_of_args.end();
-   for (std::vector<tree_nodeRef>::const_iterator i = obj->list_of_args.begin(); i != vend2; i++)
+   for (std::vector<tree_nodeRef>::const_iterator i = obj->list_of_args.begin(); i != vend2; ++i)
       write_when_not_null(STOK(TOK_ARG), *i);
 
    if (obj->undefined_flag)
@@ -727,7 +714,7 @@ void raw_writer::operator()(const gimple_phi* obj, unsigned int & mask)
    mask = NO_VISIT;
    obj->gimple_node::visit(this);
    write_when_not_null(STOK(TOK_RES), obj->res);
-   for(const auto def_edge : obj->CGetDefEdgesList())
+   for(const auto& def_edge : obj->CGetDefEdgesList())
    {
       write_when_not_null(STOK(TOK_DEF), def_edge.first);
       WRITE_NFIELD(os, STOK(TOK_EDGE), def_edge.second);
@@ -781,10 +768,10 @@ void raw_writer::operator()(const record_type* obj, unsigned int & mask)
    if (obj->struct_flag)
       WRITE_TOKEN(os, TOK_STRUCT);
    std::vector<tree_nodeRef>::const_iterator vend1 = obj->list_of_flds.end();
-   for (std::vector<tree_nodeRef>::const_iterator i = obj->list_of_flds.begin(); i != vend1; i++)
+   for (std::vector<tree_nodeRef>::const_iterator i = obj->list_of_flds.begin(); i != vend1; ++i)
       write_when_not_null(STOK(TOK_FLDS), *i);
    std::vector<tree_nodeRef>::const_iterator vend2 = obj->list_of_fncs.end();
-   for (std::vector<tree_nodeRef>::const_iterator i = obj->list_of_fncs.begin(); i != vend2; i++)
+   for (std::vector<tree_nodeRef>::const_iterator i = obj->list_of_fncs.begin(); i != vend2; ++i)
       write_when_not_null(STOK(TOK_FNCS), *i);
    write_when_not_null(STOK(TOK_BINF), obj->binf);
 }
@@ -848,10 +835,10 @@ void raw_writer::operator()(const ssa_name* obj, unsigned int & mask)
       WRITE_TOKEN(os, TOK_VOLATILE);
    else
    {
-      for(auto const def_stmt : obj->CGetDefStmts())
+      for(const auto& def_stmt : obj->CGetDefStmts())
          write_when_not_null(STOK(TOK_DEF_STMT), def_stmt);
    }
-   for(const auto use_stmt : obj->CGetUseStmts())
+   for(const auto& use_stmt : obj->CGetUseStmts())
    {
       for(size_t counter = 0; counter < use_stmt.second; counter++)
          write_when_not_null(STOK(TOK_USE_STMT), use_stmt.first);
@@ -871,10 +858,10 @@ void raw_writer::operator()(const statement_list* obj, unsigned int & mask)
    mask = NO_VISIT;
    obj->tree_node::visit(this);
    std::list<tree_nodeRef>::const_iterator vend = obj->list_of_stmt.end();
-   for (std::list<tree_nodeRef>::const_iterator i = obj->list_of_stmt.begin(); i != vend; i++)
+   for (std::list<tree_nodeRef>::const_iterator i = obj->list_of_stmt.begin(); i != vend; ++i)
       write_when_not_null(STOK(TOK_STMT), *i);
    std::map<unsigned int, blocRef>::const_iterator mend = obj->list_of_bloc.end();
-   for (std::map<unsigned int, blocRef>::const_iterator i = obj->list_of_bloc.begin(); i != mend; i++)
+   for (std::map<unsigned int, blocRef>::const_iterator i = obj->list_of_bloc.begin(); i != mend; ++i)
       write_when_not_null_bloc(STOK(TOK_BLOC), i->second);
 }
 
@@ -943,7 +930,7 @@ void raw_writer::operator()(const tree_vec* obj, unsigned int & mask)
    if (obj->lngt != 0)
       WRITE_NFIELD(os, STOK(TOK_LNGT), obj->lngt);
    std::vector<tree_nodeRef>::const_iterator vend = obj->list_of_op.end();
-   for (std::vector<tree_nodeRef>::const_iterator i = obj->list_of_op.begin(); i != vend; i++)
+   for (std::vector<tree_nodeRef>::const_iterator i = obj->list_of_op.begin(); i != vend; ++i)
       write_when_not_null(STOK(TOK_OP), *i);
 }
 
@@ -972,10 +959,10 @@ void raw_writer::operator()(const union_type* obj, unsigned int & mask)
    obj->type_node::visit(this);
    WRITE_TOKEN(os, TOK_UNION);
    std::vector<tree_nodeRef>::const_iterator vend1 = obj->list_of_flds.end();
-   for (std::vector<tree_nodeRef>::const_iterator i = obj->list_of_flds.begin(); i != vend1; i++)
+   for (std::vector<tree_nodeRef>::const_iterator i = obj->list_of_flds.begin(); i != vend1; ++i)
       write_when_not_null(STOK(TOK_FLDS), *i);
    std::vector<tree_nodeRef>::const_iterator vend2 = obj->list_of_fncs.end();
-   for (std::vector<tree_nodeRef>::const_iterator i = obj->list_of_fncs.begin(); i != vend2; i++)
+   for (std::vector<tree_nodeRef>::const_iterator i = obj->list_of_fncs.begin(); i != vend2; ++i)
       write_when_not_null(STOK(TOK_FNCS), *i);
    write_when_not_null(STOK(TOK_BINF), obj->binf);
 }
@@ -1013,20 +1000,24 @@ void raw_writer::operator()(const var_decl* obj, unsigned int & mask)
    write_when_not_null(STOK(TOK_SMT_ANN), obj->smt_ann);
    std::unordered_set<tree_nodeRef>::const_iterator var, var_end;
    var_end = obj->defs.end();
-   for(var = obj->defs.begin(); var != var_end; var++)
+   for(var = obj->defs.begin(); var != var_end; ++var)
    {
       write_when_not_null(STOK(TOK_DEF_STMT), *var);
    }
    var_end = obj->uses.end();
-   for(var = obj->uses.begin(); var != var_end; var++)
+   for(var = obj->uses.begin(); var != var_end; ++var)
    {
       write_when_not_null(STOK(TOK_USE_STMT), *var);
    }
    var_end = obj->addressings.end();
-   for(var = obj->addressings.begin(); var != var_end; var++)
+   for(var = obj->addressings.begin(); var != var_end; ++var)
    {
       write_when_not_null(STOK(TOK_ADDR_STMT), *var);
    }
+   if (obj->addr_taken)
+      WRITE_TOKEN(os, TOK_ADDR_TAKEN);
+   if (obj->addr_not_taken)
+      WRITE_TOKEN(os, TOK_ADDR_NOT_TAKEN);
 }
 
 void raw_writer::operator()(const vector_cst* obj, unsigned int & mask)
@@ -1034,7 +1025,7 @@ void raw_writer::operator()(const vector_cst* obj, unsigned int & mask)
    mask = NO_VISIT;
    obj->cst_node::visit(this);
    std::vector<tree_nodeRef>::const_iterator vend = obj->list_of_valu.end();
-   for (std::vector<tree_nodeRef>::const_iterator i = obj->list_of_valu.begin(); i != vend; i++)
+   for (std::vector<tree_nodeRef>::const_iterator i = obj->list_of_valu.begin(); i != vend; ++i)
       write_when_not_null(STOK(TOK_VALU), *i);
 }
 
@@ -1103,13 +1094,13 @@ void raw_writer::operator()(const bloc* obj, unsigned int & mask)
       WRITE_TOKEN(os, TOK_HPL);
    WRITE_NFIELD(os, STOK(TOK_LOOP_ID), obj->loop_id);
    std::vector<unsigned int>::const_iterator vend1 = obj->list_of_pred.end();
-   for (std::vector<unsigned int>::const_iterator i = obj->list_of_pred.begin(); i != vend1; i++)
+   for (std::vector<unsigned int>::const_iterator i = obj->list_of_pred.begin(); i != vend1; ++i)
       if (*i == bloc::ENTRY_BLOCK_ID)
          WRITE_NFIELD(os, STOK(TOK_PRED), STOK(TOK_ENTRY));
    else
       WRITE_NFIELD(os, STOK(TOK_PRED), *i);
    std::vector<unsigned int>::const_iterator vend2 = obj->list_of_succ.end();
-   for (std::vector<unsigned int>::const_iterator i = obj->list_of_succ.begin(); i != vend2; i++)
+   for (std::vector<unsigned int>::const_iterator i = obj->list_of_succ.begin(); i != vend2; ++i)
       if (*i == bloc::EXIT_BLOCK_ID)
          WRITE_NFIELD(os, STOK(TOK_SUCC), STOK(TOK_EXIT));
    else
@@ -1118,9 +1109,9 @@ void raw_writer::operator()(const bloc* obj, unsigned int & mask)
       WRITE_NFIELD(os, STOK(TOK_TRUE_EDGE), obj->true_edge);
    if (obj->false_edge > 0)
       WRITE_NFIELD(os, STOK(TOK_FALSE_EDGE), obj->false_edge);
-   for(const auto phi : obj->CGetPhiList())
+   for(const auto& phi : obj->CGetPhiList())
       write_when_not_null(STOK(TOK_PHI), phi);
-   for(const auto stmt : obj->CGetStmtList())
+   for(const auto& stmt : obj->CGetStmtList())
       write_when_not_null(STOK(TOK_STMT), stmt);
 }
 
@@ -1143,7 +1134,7 @@ void raw_writer::operator()(const gimple_multi_way_if* obj, unsigned int & mask)
 {
    mask = NO_VISIT;
    obj->gimple_node::visit(this);
-   for(const auto cond : obj->list_of_cond)
+   for(const auto& cond : obj->list_of_cond)
    {
       write_when_not_null(STOK(TOK_OP), cond.first);
       WRITE_NFIELD(os, STOK(TOK_BLOC), cond.second);
