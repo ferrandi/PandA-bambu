@@ -238,7 +238,8 @@
 #define OPT_GENERATE_VCD                        1+OPT_FLOPOCO
 #define OPT_GENERATION                          1+OPT_GENERATE_VCD
 #define OPT_HLS_DIV                             1+OPT_GENERATION
-#define OPT_HOST_PROFILING                      1+OPT_HLS_DIV
+#define OPT_HLS_FPDIV                           1+OPT_HLS_DIV
+#define OPT_HOST_PROFILING                      1+OPT_HLS_FPDIV
 #define OPT_ILP                                 1+OPT_HOST_PROFILING
 #define OPT_ILP_NEWFORM                         1+OPT_ILP
 #define OPT_ILP_SOLVER                          1+OPT_ILP_NEWFORM
@@ -783,7 +784,7 @@ void BambuParameter::PrintHelp(std::ostream &os) const
    << "    --max-ulp\n"
    << "        Define the maximal ULP (Unit in the last place, i.e., is the spacing\n"
    << "        between floating-point numbers) accepted.\n\n"
-   << "    --hls-div\n"
+   << "    --hls-div=<method>\n"
    << "        Perform the high-level synthesis of integer division and modulo\n"
    << "        operations starting from a C library based implementation or a HDL component:\n"
    << "             none  - use a HDL based pipelined restoring division\n"
@@ -791,6 +792,11 @@ void BambuParameter::PrintHelp(std::ostream &os) const
    << "             nr2   - use a C-based non-restoring division with unrolling factor equal to 2\n"
    << "             NR    - use a C-based Newton-Raphson division\n"
    << "             as    - use a C-based align divisor shift dividend method\n\n"
+   << "    --hls-fpdiv=<method>\n"
+   << "        Perform the high-level synthesis of floating point division \n"
+   << "        operations starting from a C library based implementation:\n"
+   << "             SRT4 - use a C-based Sweeney, Robertson, Tocher floating point division with radix 4 (default)\n"
+   << "             G    - use a C-based Goldschmidt floating point division.\n"
    << "    --skip-pipe-parameter=<value>\n"
    << "        Used during the allocation of pipelined units. <value> specifies how\n"
    << "        many pipelined units, compliant with the clock period, will be skipped.\n"
@@ -1146,6 +1152,7 @@ int BambuParameter::Exec()
          {"libm-std-rounding",          no_argument,       nullptr, OPT_LIBM_STD_ROUNDING},
          {"soft-fp",                    no_argument,       nullptr, OPT_SOFT_FP},
          {"hls-div",                    optional_argument, nullptr, OPT_HLS_DIV},
+         {"hls-fpdiv",                  optional_argument, nullptr, OPT_HLS_FPDIV},
          {"max-ulp",                    required_argument, nullptr, OPT_MAX_ULP},
          {"skip-pipe-parameter",        required_argument, nullptr, OPT_SKIP_PIPE_PARAMETER},
          {"unaligned-access",           no_argument,       nullptr, OPT_UNALIGNED_ACCESS_PARAMETER},
@@ -1897,6 +1904,13 @@ int BambuParameter::Exec()
                setOption(OPT_hls_div, optarg);
             else if (optarg && std::string(optarg)=="none")
                setOption(OPT_hls_div, optarg);
+            break;
+         }
+         case OPT_HLS_FPDIV:
+         {
+            setOption(OPT_hls_fpdiv, "SRT4");
+            if (optarg && std::string(optarg)=="G")
+               setOption(OPT_hls_fpdiv, optarg);
             break;
          }
          case OPT_CLOCK_PERIOD_RESOURCE_FRACTION:
@@ -3530,6 +3544,7 @@ void BambuParameter::SetDefaults()
 
    setOption(OPT_soft_float, true);
    setOption(OPT_hls_div, "nr1");
+   setOption(OPT_hls_fpdiv, "SRT4");
    setOption(OPT_max_ulp, 1.0);
    setOption(OPT_skip_pipe_parameter, 0);
    setOption(OPT_unaligned_access, false);

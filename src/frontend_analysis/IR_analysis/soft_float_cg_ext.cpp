@@ -465,6 +465,17 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef current_statement,
                case rdiv_expr_K:
                {
                   fu_suffix = "div";
+                  unsigned int bitsize = tree_helper::size(TreeM, expr_type_index);
+                  if(bitsize==32||bitsize==64)
+                  {
+                     THROW_ASSERT(parameters->isOption(OPT_hls_fpdiv), "a default is expected");
+                     if (parameters->getOption<std::string>(OPT_hls_fpdiv) == "SRT4")
+                        fu_suffix = fu_suffix + "SRT4";
+                     else if (parameters->getOption<std::string>(OPT_hls_fpdiv) == "G")
+                        fu_suffix = fu_suffix + "G";
+                     else
+                        THROW_ERROR("FP-Division algorithm not supported:" + parameters->getOption<std::string>(OPT_hls_fpdiv));
+                  }
                   break;
                }
                case gt_expr_K:
