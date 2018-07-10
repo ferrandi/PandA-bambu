@@ -18,13 +18,14 @@
 
 /* In this file the single precision sqrt function is implemented
    following the method published by:
-   Florent De Dinechin, Pedro Echeverria, Marisa Lopez-Vallejo, Bogdan Pasca. 
-   Floating-Point Exponentiation Units for Reconfigurable Computing. 
+   Florent De Dinechin, Pedro Echeverria, Marisa Lopez-Vallejo, Bogdan Pasca.
+   Floating-Point Exponentiation Units for Reconfigurable Computing.
    ACM Transactions on Reconfigurable Technology and Systems (TRETS), ACM, 2013, 6 (1), pp.4:1–4:15.
    The code does not support subnormals.
    @author Serena Curzel and Iris Cusini
 */
 #include "bambu_macros.h"
+
 
 #ifdef CHECK_POW_FUNCTION
 #include <math.h>
@@ -44,6 +45,7 @@
 #define    G            3
 #define    P            7
 
+
 #ifdef CHECK_POW_FUNCTION
 #define ADD_BUILTIN_PREFIX(fname) local_ ## fname
 #else
@@ -55,8 +57,8 @@
 //#define DEBUG_PRINT_EXP
 
 typedef union {
-    unsigned int b;
-    float f;
+      unsigned int b;
+      float f;
 } float_uint_converter;
 
 static const unsigned int KCM_1_tab0[]= {0b00000000,0b00000011, 0b00000110,0b00001001,0b00001100,0b00001110,0b00010001,
@@ -5020,94 +5022,84 @@ static const unsigned long long int KCM_6[]= {0b00000000000000000000000000000000
 
 unsigned short int KCM_1(unsigned short int XmulIn)
 {
-    char d0=SELECT_RANGE(XmulIn,5,0);
-    char d1=SELECT_RANGE(XmulIn,9,6);
-    unsigned short int pp0=KCM_1_tab0[d0];
-    unsigned short int pp1=KCM_1_tab1[d1];
-    unsigned short int pp2=pp0+pp1;
-    return SELECT_RANGE(pp2,11,4);
+   char d0=SELECT_RANGE(XmulIn,5,0);
+   char d1=SELECT_RANGE(XmulIn,9,6);
+   unsigned short int pp0=KCM_1_tab0[d0];
+   unsigned short int pp1=KCM_1_tab1[d1];
+   unsigned short int pp2=pp0+pp1;
+   return SELECT_RANGE(pp2,11,4);
 }
 unsigned long long int KCM_2_function(unsigned short int XmulIn)
 {
-    unsigned short int d0=SELECT_RANGE(XmulIn,7,6);
-    unsigned short int d1=SELECT_RANGE(XmulIn,5,0);
-    unsigned long long int pp0=KCM_2_tab0[d0];
-    unsigned long long int pp1=KCM_2_tab1[d1];
-    return pp0+pp1;
-#ifdef DEBUG_PRINT
-    printf("\n d0=");
-    test_print_bin_short(d0);
-    printf("\n d1=");
-    test_print_bin_short(d1);
-    printf("\n pp0=");
-    test_print_bin_long(pp0);
-    printf("\n pp1=");
-    test_print_bin_long(pp1);
-#endif
+   unsigned short int d0=SELECT_RANGE(XmulIn,7,6);
+   unsigned short int d1=SELECT_RANGE(XmulIn,5,0);
+   unsigned long long int pp0=KCM_2_tab0[d0];
+   unsigned long long int pp1=KCM_2_tab1[d1];
+   return pp0+pp1;
 }
 unsigned int LZOC_33(unsigned long long int i, _Bool ozb)
 {
-    unsigned int o,l4,l3,l2,l1;
-    unsigned long long int ozb_vector=0, l5;
-    _Bool d1, d2, d3, d4, d5, d6;
-    if(ozb) ozb_vector=~ozb_vector;
-    i=i<<31;
-    i=i|SELECT_RANGE(~ozb_vector,30,0);
-    d6=(SELECT_RANGE(i,63,32)==SELECT_RANGE(ozb_vector,63,32));
-    l5=d6==0? SELECT_RANGE(i,63,32): SELECT_RANGE(i,31,0);
-    d5=(SELECT_RANGE(l5,31,16)==SELECT_RANGE(ozb_vector,31,16));
-    l4=d5==0? SELECT_RANGE(l5,31,16): SELECT_RANGE(l5,15,0);
-    d4=(SELECT_RANGE(l4,15,8)==SELECT_RANGE(ozb_vector,15,8));
-    l3=d4==0? SELECT_RANGE(l4,15,8): SELECT_RANGE(l4,7,0);
-    d3=(SELECT_RANGE(l3,7,4)==SELECT_RANGE(ozb_vector,7,4));
-    l2=d3==0? SELECT_RANGE(l3,7,4): SELECT_RANGE(l3,3,0);
-    d2=(SELECT_RANGE(l2,3,2)==SELECT_RANGE(ozb_vector,3,2));
-    l1=d2==0? SELECT_RANGE(l2,3,2): SELECT_RANGE(l2,1,0);
-    d1=(SELECT_BIT(l1,1)==ozb);
-    o=d6<<5|d5<<4|d4<<3|d3<<2|d2<<1|d1;
-    return o;
+   unsigned int o,l4,l3,l2,l1;
+   unsigned long long int ozb_vector=0, l5;
+   _Bool d1, d2, d3, d4, d5, d6;
+   if(ozb) ozb_vector=~ozb_vector;
+   i=i<<31;
+   i=i|SELECT_RANGE(~ozb_vector,30,0);
+   d6=(SELECT_RANGE(i,63,32)==SELECT_RANGE(ozb_vector,63,32));
+   l5=d6==0? SELECT_RANGE(i,63,32): SELECT_RANGE(i,31,0);
+   d5=(SELECT_RANGE(l5,31,16)==SELECT_RANGE(ozb_vector,31,16));
+   l4=d5==0? SELECT_RANGE(l5,31,16): SELECT_RANGE(l5,15,0);
+   d4=(SELECT_RANGE(l4,15,8)==SELECT_RANGE(ozb_vector,15,8));
+   l3=d4==0? SELECT_RANGE(l4,15,8): SELECT_RANGE(l4,7,0);
+   d3=(SELECT_RANGE(l3,7,4)==SELECT_RANGE(ozb_vector,7,4));
+   l2=d3==0? SELECT_RANGE(l3,7,4): SELECT_RANGE(l3,3,0);
+   d2=(SELECT_RANGE(l2,3,2)==SELECT_RANGE(ozb_vector,3,2));
+   l1=d2==0? SELECT_RANGE(l2,3,2): SELECT_RANGE(l2,1,0);
+   d1=(SELECT_BIT(l1,1)==ozb);
+   o=d6<<5|d5<<4|d4<<3|d3<<2|d2<<1|d1;
+   return o;
 }
 unsigned long long int LeftShifter18(unsigned int x, unsigned short int s)
 {
-    unsigned long long int r=(unsigned long long int)x;
-    if(SELECT_BIT(s,0))
-        r=r<<1UL;
-    if(SELECT_BIT(s,1))
-        r=r<<2UL;
-    if(SELECT_BIT(s,2))
-        r=r<<4UL;
-    if(SELECT_BIT(s,3))
-        r=r<<8UL;
-    if(SELECT_BIT(s,4))
-        r=r<<16UL;
-    return r;
+   unsigned long long int r=(unsigned long long int)x;
+   if(SELECT_BIT(s,0))
+      r=r<<1UL;
+   if(SELECT_BIT(s,1))
+      r=r<<2UL;
+   if(SELECT_BIT(s,2))
+      r=r<<4UL;
+   if(SELECT_BIT(s,3))
+      r=r<<8UL;
+   if(SELECT_BIT(s,4))
+      r=r<<16UL;
+   return r;
 }
 unsigned long long int IntSquarer(unsigned int x)
 {
-    unsigned long long int r,p0, p1_x2,s1,p2,s2;
-    p0=SELECT_RANGE(x,16,0)*SELECT_RANGE(x,16,0);
-    p1_x2=SELECT_RANGE(x,16,0)*(SELECT_RANGE(x,21,17)<<1);
-    s1=p1_x2+SELECT_RANGE(p0,35,17);
-    p2=SELECT_RANGE(x,21,17)*SELECT_RANGE(x,21,17);
-    s2=p2+SELECT_RANGE(s1,35,17);
-    r=(SELECT_RANGE(s2,9,0)<<34)|(SELECT_RANGE(s1,16,0)<<17)|SELECT_RANGE(p0,16,0);
-    return r;
+   unsigned long long int r,p0, p1_x2,s1,p2,s2;
+   p0=SELECT_RANGE(x,16,0)*SELECT_RANGE(x,16,0);
+   p1_x2=SELECT_RANGE(x,16,0)*(SELECT_RANGE(x,21,17)<<1);
+   s1=p1_x2+SELECT_RANGE(p0,35,17);
+   p2=SELECT_RANGE(x,21,17)*SELECT_RANGE(x,21,17);
+   s2=p2+SELECT_RANGE(s1,35,17);
+   r=(SELECT_RANGE(s2,9,0)<<34)|(SELECT_RANGE(s1,16,0)<<17)|SELECT_RANGE(p0,16,0);
+   return r;
 
 }
 unsigned long long int RightShifter(unsigned int x, unsigned short int s)
 {
-    unsigned long long int r=(unsigned long long int)x;
-    if(!SELECT_BIT(s,0))
-        r=r<<1;
-    if(!SELECT_BIT(s,1))
-        r=r<<2;
-    if(!SELECT_BIT(s,2))
-        r=r<<4;
-    if(!SELECT_BIT(s,3))
-        r=r<<8;
-    if(!SELECT_BIT(s,4))
-        r=r<<16;
-    return SELECT_RANGE(r,52,10);
+   unsigned long long int r=(unsigned long long int)x;
+   if(!SELECT_BIT(s,0))
+      r=r<<1;
+   if(!SELECT_BIT(s,1))
+      r=r<<2;
+   if(!SELECT_BIT(s,2))
+      r=r<<4;
+   if(!SELECT_BIT(s,3))
+      r=r<<8;
+   if(!SELECT_BIT(s,4))
+      r=r<<16;
+   return SELECT_RANGE(r,52,10);
 }
 
 
@@ -5116,663 +5108,546 @@ unsigned long long int RightShifter(unsigned int x, unsigned short int s)
 #ifdef CHECK_POW_FUNCTION
 void test_print_bin_long(unsigned long long int n)
 {
-    unsigned long long int i;
-    for (i = 1UL << 63; i > 0; i = i / 2) {
-        (n & i)? printf("1"): printf("0");
-    }
-    printf("\n");
+   unsigned long long int i;
+   for (i = 1UL << 63; i > 0; i = i / 2) {
+      (n & i)? printf("1"): printf("0");
+   }
+   printf("\n");
 }
 void test_print_bin_short(unsigned short int n)
 {
-    unsigned short int i;
-    for (i = 1 << 15; i > 0; i = i / 2) {
-        (n & i)? printf("1"): printf("0");
-    }
-    printf("\n");
+   unsigned short int i;
+   for (i = 1 << 15; i > 0; i = i / 2) {
+      (n & i)? printf("1"): printf("0");
+   }
+   printf("\n");
 }
 void test_print_bin(unsigned int n)
 {
-    unsigned int i;
-    for (i = 1 << 31; i > 0; i = i / 2) {
-        (n & i)? printf("1"): printf("0");
-    }
-    printf("\n");
+   unsigned int i;
+   for (i = 1 << 31; i > 0; i = i / 2) {
+      (n & i)? printf("1"): printf("0");
+   }
+   printf("\n");
 }
 #endif
 
 float ADD_BUILTIN_PREFIX(powf)(float x, float y)
 {
 
-    //initial checks on the inputs
-    float_uint_converter fpX;
-    fpX.f = x;
-    unsigned int  checkX = fpX.b & 0x7FFFFFFF;
-    _Bool signX = SELECT_BIT(fpX.b,31);
-
-    float_uint_converter fpY;
-    fpY.f = y;
-    unsigned int checkY = fpY.b & 0x7FFFFFFF;
-    _Bool signY = SELECT_BIT(fpY.b,31);
-    unsigned int my=SELECT_RANGE(fpY.b,22,0);
-    unsigned int exp_y=SELECT_RANGE(fpY.b,30,23);
-
-    _Bool IY=0;
-    int count=0;
-
-    if(my==0)
-    {
-       if((((int)exp_y)-127)>=0)
-          IY=1;
-    }
-    else
-    {
-       int i, output = 0;
-       for (i = 0; i < 32; i++ )
-          output |= (((my>>i)&1) << (31-i));
-       count_leading_zero_macro(32, output, count);
-       if(count<=(int)(exp_y-127)) IY=1;
-    }
-
-
-    _Bool Y_NaN = exp_y==255&&my!=0;
-    _Bool X_NaN = SELECT_RANGE(fpX.b,30,23)==255&&SELECT_RANGE(fpX.b,22,0)!=0;
-
-    _Bool X_inf = checkX==0x7f800000;
-    _Bool Y_inf = checkY==0x7f800000;
-
-    _Bool NY= Y_inf||checkY==0||Y_NaN;
-    _Bool NX= X_inf||checkX==0||X_NaN;
-
-    _Bool X_1 = checkX==0x3f800000;
-    _Bool Y_1 = checkY==0x3f800000;
-
-
-    if(X_1&&signX&&Y_inf||     //(-1)^inf
-            X_1&&!signX||         //(+1)^any
-            checkY==0)                  //(any)^0
-        return 1;
-
-    if(X_NaN||Y_NaN||!NX&&signX&&!NY&&!IY)
-        return __builtin_nanf("");
-
-    if(X_inf&&signY&&!NY||       //(+inf) ^ (y<0)
-            (fpX.f>1||fpX.f<-1)&&!NX&&Y_inf&&signY||    //(|x|>1) ^ (-inf)
-            fpX.f<1&&fpX.f>-1&&!NX&&Y_inf&&!signY||     //(|x|<1) ^ (+inf)
-            checkX==0&&Y_inf&&!signY||  //(+/- 0) ^ (+inf)
-            checkX==0&&!signY&&IY&&checkY!=0)     //(+/- 0) ^ (positive int y)
-        return 0;
-
-
-    _Bool Rinf=checkX==0&&signY&&IY&&checkY!=0||       //(+/- 0) ^ (negative int y)
-               checkX==0&&Y_inf&&signY||   //(+/- 0) ^ (-inf)
-               (fpX.f>1||fpX.f<-1)&&Y_inf&&!signY||       //(|x|>1) ^ (+inf)
-               fpX.f<1&&fpX.f>-1&&Y_inf&&signY||           //(|x|<1) ^ (-inf)
-               X_inf&&!signY&&!NY;     //(+inf) ^ (y>0)
-    _Bool SignR=(signX&&IY&&(unsigned int)fpY.f%2);
-
-    if(Rinf&&!SignR)
-        return __builtin_inff();
-    if(Rinf&&SignR)
-        return -__builtin_inff();
-    //Log(x)
-
-    _Bool sR;
-    unsigned short e;
-    unsigned long long int  res, m,zero=0;
-    unsigned int  abse;
-    float_uint_converter func_in;
-
-    unsigned long long int logx, ylogx;
-    if(x==0) logx=0xff800000UL<<10;
-    else
-    {
-
-        e = SELECT_RANGE(fpX.b,30,23);
-        m = fpX.b & 0x007fffff;
-        m = m<<10;
-
-        sR=e==127? 0:!SELECT_BIT(e,7);
-        unsigned long long int y0;
-        y0=(1UL<<33)|m;
-        if(SELECT_BIT(m,32)==0) y0=y0<<1;
-        unsigned int absZ0=SELECT_RANGE(y0,17,0);
-
-        unsigned int a=(63<<1)|!SELECT_BIT(m,32);
-        unsigned int e1=e-a;
-        abse=sR? 0-e1:e1;
-        if(sR)	absZ0=0-absZ0;
-
-
-        unsigned int lzo=LZOC_33(SELECT_RANGE(y0,33,1),SELECT_BIT(m,32));
-        unsigned int shiftval=lzo-17;
-        _Bool doRR=SELECT_BIT(shiftval,6);
-        unsigned long long int small_abs=LeftShifter18(absZ0,SELECT_RANGE(shiftval,4,0));
-        unsigned int Inva0=InvTable[SELECT_RANGE(m,32,22)];
-
-        unsigned long long int p0=y0*Inva0;
-
-        unsigned long long int p1=SELECT_RANGE(p0,35,27)*SELECT_RANGE(p0,35,0);
-
-        unsigned long long int y1=(0b1000000000UL<<36)|SELECT_RANGE(p0,35,0);
-
-        unsigned long long int eiy1= SELECT_BIT(p0,35)==0? SELECT_RANGE(y1,45,10):SELECT_RANGE(y1,45,9);
-
-        unsigned long long int addxiter1=SELECT_RANGE(p0,26,0)<<9;
-
-        unsigned long long int ppypb1=eiy1+addxiter1;
-
-        unsigned long long int pp1=1UL<<36|SELECT_RANGE(~p1,44,9);
-
-        unsigned long long int z2=1+ppypb1+pp1;
-        z2=SELECT_RANGE(z2,36,0);
-        unsigned int squarerin=doRR==1? SELECT_RANGE(z2,36,15): (small_abs<<4);
-        unsigned long long int z2full=IntSquarer(squarerin);
-        unsigned int z2norm=SELECT_RANGE(z2full,43,25);
-        unsigned long long int add_final=0;
-        add_final=(SELECT_RANGE(~add_final,17,0)<<19)|(~z2norm);
-        unsigned long long int  log1norm=1+add_final+z2;
-        log1norm=SELECT_RANGE(log1norm,36,0);
-
-        unsigned long long int almostlong=LogTable0[SELECT_RANGE(m,32,22)]+LogTable1[SELECT_RANGE(p0,35,27)];
-        unsigned long long int logf_norm=almostlong+log1norm;
-        logf_norm=SELECT_RANGE(logf_norm,53,0);
-        if(SELECT_BIT(logf_norm,53)) logf_norm=(SELECT_RANGE(~zero,7,0)<<54)|logf_norm;
-
-        unsigned long long int abselog2=((SELECT_RANGE(KCM_6[SELECT_RANGE(abse,5,0)],42,6)+KCM_2[SELECT_RANGE(abse,7,6)])<<6)|KCM_6[SELECT_RANGE(abse,5,0)];
-        abselog2=abselog2<<17;
-        logf_norm=SELECT_RANGE(logf_norm,61,0);
-        if(sR) logf_norm=~logf_norm;
-        unsigned long long int ln=abselog2+logf_norm+sR;
-
-        _Bool c0, c1, c2,c3,c4,c5;
-        unsigned long long int l5,l4,l3,l2,l1;
-        c5=SELECT_RANGE(ln,61,30)==0;
-        l5=c5==0? ln :(SELECT_RANGE(ln,29,0)<<32);
-        c4=SELECT_RANGE(l5,61,46)==0;
-        l4=c4==0? l5:(SELECT_RANGE(l5,45,0)<<16);
-        c3=SELECT_RANGE(l4,61,54)==0;
-        l3=c3==0? SELECT_RANGE(l4,61,1):(SELECT_RANGE(l4,53,0)<<7);
-        c2=SELECT_RANGE(l3,60,57)==0;
-        l2=c2==0? SELECT_RANGE(l3,60,4):SELECT_RANGE(l3,56,0);
-        c1=SELECT_RANGE(l2,56,55)==0;
-        l1=c1==0? SELECT_RANGE(l2,56,2):SELECT_RANGE(l2,54,0);
-        c0=SELECT_BIT(l1,54)==0;
-        unsigned long long int log_normal_normal=c0==0? SELECT_RANGE(l1,54,1):SELECT_RANGE(l1,53,0);
-
-        unsigned short int enorm=c5<<5|c4<<4|c3<<3|c2<<2|c1<<1|c0;
-
-        unsigned long long int z2small=RightShifter(SELECT_RANGE(z2full,43,22),SELECT_RANGE(shiftval,4,0));
-
-        unsigned long long int  z_small=small_abs<<21;
-
-        z_small=SELECT_RANGE(z_small,39,0);
-        z2small=SELECT_RANGE(z2small,42,21);
-
-        if(!sR) z2small=~z2small;
-
-        z2small=SELECT_RANGE(z2small,39,0);
-
-        unsigned long long int log_small=z_small+z2small+!sR;
-
-        log_small=SELECT_RANGE(log_small,39,0);
-        unsigned short int e0sub=1;
-        if(SELECT_BIT(log_small,38)) e0sub=3;
-        if(SELECT_RANGE(log_small,38,37)==1) e0sub=2;
-        unsigned short int esmall=((SELECT_RANGE(~zero,4,0)<<2)|e0sub)-lzo;
-
-        if(SELECT_BIT(log_small,38)) log_small=log_small>>2;
-        if(SELECT_BIT(log_small,37)) log_small=log_small>>1;
-
-        if(!SELECT_BIT(log_normal_normal,53)&&!(e1==0&&!SELECT_BIT(shiftval,6))||!SELECT_BIT(log_small,36)&&(e1==0&&!SELECT_BIT(shiftval,6)))
-        {   unsigned long long int a=sR? 0x80000000 : 0;
-            logx=a<<10;
-        }
-        else
-        {
-            unsigned short int eR=(e1==0&&!SELECT_BIT(shiftval,6))? SELECT_RANGE(esmall,7,0): 134-enorm;
-            unsigned long long int logg=(e1==0&&!SELECT_BIT(shiftval,6))? SELECT_RANGE(log_small,35,0)<<1 : SELECT_RANGE(log_normal_normal,52,16);
-            unsigned long long int ef3=SELECT_BIT(logg,3)+((unsigned long long int)eR<<33|SELECT_RANGE(logg,36,4));
-            logx=(unsigned long long int)sR<<41|ef3;
-        }
-    }
-
-
-#ifdef DEBUG_PRINT_LOG
-
-    printf("\n e_in=");
-    test_print_bin(e);
-    printf("\n m_in_shift=");
-    test_print_bin_long(m);
-    printf("\n sR=");
-    test_print_bin(sR);
-    printf("\n absZ0=");
-    test_print_bin(absZ0);
-    printf("\n abse=");
-    test_print_bin(abse);
-    printf("\n lzo=");
-    test_print_bin(lzo);
-    printf("\n small_abs=");
-    test_print_bin_long(small_abs);
-    printf("\n Inva0=");
-    test_print_bin_long(Inva0);
-    printf("\n p0=");
-    test_print_bin_long(p0);
-    printf("\n p1=");
-    test_print_bin_long(p1);
-    printf("\n y0=");
-    test_print_bin_long(y0);
-    printf("\n y1=");
-    test_print_bin_long(y1);
-    printf("\n eiy1=");
-    test_print_bin_long(eiy1);
-    printf("\n addxiter1=");
-    test_print_bin_long(addxiter1);
-    printf("\n ppypb1=");
-    test_print_bin_long(ppypb1);
-    printf("\n pp1=");
-    test_print_bin_long(pp1);
-    printf("\n z2=");
-    test_print_bin_long(z2);
-    printf("\n squarerin=");
-    test_print_bin(squarerin);
-    printf("\nz 2full=");
-    test_print_bin_long(z2full);
-    printf("\n almostlong=");
-    test_print_bin_long(almostlong);
-    printf("\n log1norm=");
-    test_print_bin_long(log1norm);
-    printf("\n logf_norm=");
-    test_print_bin_long(logf_norm);
-    printf("\n abselog2=");
-    test_print_bin_long(abselog2);
-    printf("\n ln=");
-    test_print_bin_long(ln);
-    printf("\n log_normal_normal=");
-    test_print_bin_long(log_normal_normal);
-    printf("\n enorm=");
-    test_print_bin_short(enorm);
-    printf("\n z2small=");
-    test_print_bin_long(z2small);
-    printf("\n z_small=");
-    test_print_bin_long(z_small);
-    printf("\n log_small=");
-    test_print_bin_long(log_small);
-    printf("\n logg=");
-    test_print_bin_long(logg);
-    printf("\nef3  =");
-    test_print_bin_long(ef3);
-    printf("\nresult   =");
-    test_print_bin_long(res);
-#endif
-
-
-    //Log(x)*y
-    _Bool sRm, sticky_bit, round_bit, guard_bit, LSB_bit;
-    _Bool sX, sY;
-    unsigned long long int mX1, mX, mR, mR1, mR2, mR3, mY1, mult;
-    unsigned short int eY, eX;
-    unsigned int mY;
-
-
-    eX = SELECT_RANGE(logx,40,33);
-    mX = logx & 0x1ffffffff;
-    sX=(logx>>41)&1;
-
-
-    eY = SELECT_RANGE(fpY.b,30,23);
-    mY =fpY.b & 0x007fffff;
-    sY=(fpY.b>>31)&1;
-    if(logx==(0xff800000UL<<10))
-    {
-        if(sY) return __builtin_inff();
-        else   return 0;
-    }
-    if(logx==(0x7f800000UL<<10))
-    {
-        if(sY) return 0;
-        else   return __builtin_inff();
-    }
-
-    unsigned long long int y1=SELECT_RANGE(fpY.b,30,0);
-    unsigned long long int x1=SELECT_RANGE(logx,41,0);
-    _Bool normalX=logx!=(0xff800000UL<<10);
-    _Bool normalY=fpY.b!=0x7fc00000&&fpY.b!=0x7f800000;
-
-    if(x1==0&&y==0||x1==0&&normalY||y1==0&&normalX) return 1;
-    if(fpY.b==0x7f800000) return __builtin_inff();
-    if(!normalX||!normalY)  return __builtin_nanf("");
-
-    unsigned int eR=eX+eY-127;
-    mX1=(1UL<<33)|mX;
-    mY1=(1UL<<23)|mY;
-    mR=mX1*mY1;
-
-    if(SELECT_BIT(mR,57))
-    {
-        eR=eR+1;
-        mR1= SELECT_RANGE(mR, 56, 17);
-        sticky_bit = (SELECT_RANGE(mR,20,0) == 0) ? 0 : 1;
-        round_bit = SELECT_BIT(mR1, 4);
-        guard_bit = SELECT_BIT(mR1, 5);
-        LSB_bit = SELECT_BIT(mR1, 6);
-    }
-    else
-    {
-        mR1=SELECT_RANGE(mR,55,16);
-        sticky_bit = (SELECT_RANGE(mR,19,0) == 0) ? 0 : 1;
-        round_bit = SELECT_BIT(mR1, 4);
-        guard_bit = SELECT_BIT(mR1, 5);
-        LSB_bit = SELECT_BIT(mR1, 6);
-
-    }
-
-    _Bool _round = guard_bit&(LSB_bit|round_bit|sticky_bit);
-    _round=1;
-    mR3 = (mR1 >> 6) + _round;
-    mR2= SELECT_RANGE(mR3,33,0);
-
-    eR = eR + SELECT_BIT(mR3, 34);
-
-    sRm=sY^sX;
-    //overflow exp
-    if(SELECT_BIT(eR,8)&&!SELECT_BIT(eR,9)) {
-        if(sRm) return 0;
-        return __builtin_inff();
-    }
-
-    //underflow
-    if(SELECT_BIT(eR,9)) return 1;
-
-
-    mult=(unsigned long)sRm<<42|(unsigned long)eR<<34|mR2;
-
-    unsigned long long int  mXu, m2=0, fixX,m1, m3; ;
-    unsigned short int  eXe;
-
-
-
-    _Bool sign = SELECT_BIT(mult,42);
-    e = SELECT_RANGE(mult,41,34);
-    eXe  = (short int)e - ( 127 - WX);
-    mXu = SELECT_RANGE(mult,33,0) | ( 1UL << 34 );
-    m1=mXu;
-
-    if(SELECT_BIT(eXe,0))
-        m1=m1<<1UL;
-    if(SELECT_BIT(eXe,1))
-        m1=m1<<2UL;
-    if(SELECT_BIT(eXe,2))
-        m1=m1<<4UL;
-    if(SELECT_BIT(eXe,3))
-        m1=m1<<8UL;
-    if(SELECT_BIT(eXe,4))
-    {
-        if(m1>=(1ULL<<48))     		m2=SELECT_RANGE(m1,63,48);
-        m1=m1<<16UL;
-    }
-
-    if(SELECT_BIT(eXe,5))
-    {
-        if(m1>=(1ULL<<32)||m2>0)
-        {
-            m2=m2<<32UL;
-            m3=SELECT_RANGE(m1,63,32);
-            m2=m2|m3;
-        }
-        m1=m1<<32;
-    }
-
-    m2=m2&0xF; //final vector: 4bits of M2 followed by m1
-
-    fixX=(m2<<60)|(m1>>4);
-
-    unsigned long long int fixX0=SELECT_RANGE(fixX,63,30);
-    unsigned int fixX26=SELECT_RANGE(fixX0,25,0);
-    if(sign)
-        fixX26=~fixX26;
-
-    m2=m2&0b111;
-    m1=m1>>3;
-    m3=(m2<<61)|m1;
-
-    unsigned short int XmulIn=SELECT_RANGE(m3,63,54);
-    unsigned short int absK=KCM_1(XmulIn);
-    if(sign)
-        absK=0-absK;
-
-    unsigned long long int absKlog2=KCM_2_function(absK);
-    unsigned int subOp2=SELECT_RANGE(absKlog2,25,0);
-    if(!sign)
-    {   subOp2=~subOp2;
-        subOp2=SELECT_RANGE(subOp2,25,0);
-    }
-
-
-    unsigned long long int sum=subOp2+1+fixX26;
-
-    unsigned int addr1=SELECT_RANGE(sum,25,17);
-    unsigned int z=SELECT_RANGE(sum,16,0);
-    unsigned int addr2=SELECT_RANGE(z,16,8);
-
-    unsigned long long int expA_output=Magic[addr1];
-    unsigned long long int expZ_output=Magic[addr2];
-
-    unsigned int expA=SELECT_RANGE(expA_output,35,9);
-
-    unsigned int expZmZm1=SELECT_RANGE(expZ_output,8,0);
-    unsigned long long int expZminus1=z+expZmZm1;
-
-    unsigned long long int expArounded0=SELECT_RANGE(expA,26,9)+1;
-    expArounded0=SELECT_RANGE(expArounded0,17,1);
-
-    unsigned long long int lowerproduct=expArounded0*expZminus1;
-    lowerproduct=lowerproduct>>16;
-    lowerproduct=SELECT_RANGE(lowerproduct,18,0);
-
-    unsigned int expy=expA+lowerproduct;
-
-    _Bool neednonorm=SELECT_BIT(expy,26);
-
-    unsigned long long int preroundbiassig;
-    if(neednonorm)
-        preroundbiassig=(127<<23)|SELECT_RANGE(expy,25,3);
-    else
-        preroundbiassig=(126<<23)|SELECT_RANGE(expy,24,2);
-
-    _Bool roundBit=neednonorm? SELECT_BIT(expy,2): SELECT_BIT(expy,1);
-
-    unsigned long long int roundNormAddend= (SELECT_BIT(absK,8)<<31)|((absK<<23)|roundBit);
-
-    unsigned long long int out_p=roundNormAddend+preroundbiassig;
-
-    float_uint_converter out;
-    unsigned int temp=((0<<31)|SELECT_RANGE(out_p,30,0));
-    out.b=temp;
-
-    //very large input
-    _Bool oufl0=eXe>=33? !SELECT_BIT(eXe,9):0;
-
-    if(SELECT_BIT(eXe,9))
-        return 1.0f;
-    //return 0
-    if(SELECT_BIT(out_p,31)&&SELECT_BIT(out_p,32)||sign&&oufl0);
-    return 0;
-
-#ifdef DEBUG_PRINT_EXP
-
-    printf("\n in_exp=");
-    test_print_bin_long(mult);
-    printf("\n fixX=");
-    test_print_bin_long(fixX);
-    printf("\n fixX0=");
-    test_print_bin_long(fixX0);
-    printf("\n fixX26=");
-    test_print_bin(fixX26);
-    printf("m3=");
-    test_print_bin_long(m3);
-    printf("\n XMultIn=");
-    test_print_bin_short(XmulIn);
-    printf("\n subOp2=");
-    test_print_bin(subOp2);
-    printf("\n absKlog2=");
-    test_print_bin_long(absKlog2);
-    printf("\n sum=");
-    test_print_bin_long(sum);
-    printf("\n addr1=");
-    test_print_bin(addr1);
-    printf("\n addr2=");
-    test_print_bin(addr2);
-    printf("\n expA_output=");
-    test_print_bin_long(expA_output);
-    printf("\n expZ_output=");
-    test_print_bin_long(expZ_output);
-    printf("\n expZminus1=");
-    test_print_bin(expZminus1);
-    printf("\n expArounded0=");
-    test_print_bin_long(expArounded0);
-    printf("\n expA=");
-    test_print_bin_long(expA);
-    printf("\n lowerproduct=");
-    test_print_bin(lowerproduct);
-    printf("\n expy=");
-    test_print_bin(expy);
-    printf("\n neednonorm=%d",neednonorm);
-    printf("\n preroundbiassig=");
-    test_print_bin_long(preroundbiassig);
-    printf("\n out_p=");
-    test_print_bin_long(out_p);
-    printf("\n roundBit=%d", roundBit);
-    printf("\n roundNormAddend=");
-    test_print_bin_long(roundNormAddend);
-
-#endif
-    //return inf
-    if(oufl0&&(!sign)||!sign&&SELECT_BIT(out_p,31)&&!SELECT_BIT(out_p,32))
-
-        return __builtin_inff();
-
-
-    if(SignR) out.f=-out.f;
-    return out.f;
+   //initial checks on the inputs
+   float_uint_converter fpX;
+   fpX.f = x;
+   unsigned int  checkX = fpX.b & 0x7FFFFFFF;
+   _Bool signX = SELECT_BIT(fpX.b,31);
+
+   float_uint_converter fpY;
+   fpY.f = y;
+   unsigned int checkY = fpY.b & 0x7FFFFFFF;
+   _Bool signY = SELECT_BIT(fpY.b,31);
+   unsigned int my=SELECT_RANGE(fpY.b,22,0);
+   unsigned int exp_y=SELECT_RANGE(fpY.b,30,23);
+
+   _Bool IY=0;
+   unsigned long long int count;
+
+   if(my==0)
+   {
+      if(exp_y>=127)
+         IY=1;
+   }
+   else
+   {
+      unsigned long long int i, output = 0;
+      for (i = 0; i < 32; i++ )
+         output |= (((my>>i)&1) << (31-i));
+      count_leading_zero_macro(32, output, count);
+      BIT_RESIZE(count,5);
+      if((150-count)<=exp_y) IY=1;
+   }
+
+   _Bool Y_NaN = checkY==0x7fc00000;//exp_y==255&&my!=0;
+   _Bool X_NaN = checkX==0x7fc00000;//SELECT_RANGE(fpX.b,30,23)==255&&SELECT_RANGE(fpX.b,22,0)!=0;
+
+   _Bool X_inf = checkX==0x7f800000;
+   _Bool Y_inf = checkY==0x7f800000;
+
+   _Bool NY= Y_inf||checkY==0||Y_NaN;
+   _Bool NX= X_inf||checkX==0||X_NaN;
+
+   _Bool X_1 = checkX==0x3f800000;
+
+
+   if((X_1&&signX&&Y_inf)||     //(-1)^inf
+         (X_1&&!signX)||         //(+1)^any
+         checkY==0)                  //(any)^0
+      return 1;
+
+   if(X_NaN||Y_NaN||(!NX&&signX&&!NY&&!IY))
+      return -__builtin_nanf("");
+
+   unsigned int cmpXOneRes=3229614080U+checkX;
+   _Bool L1=SELECT_BIT(cmpXOneRes,31);
+
+   if((X_inf&&signY&&!NY)||       //(+inf) ^ (y<0)
+         ((L1&&!X_1)&&!NX&&Y_inf&&signY)||    //(|x|>1) ^ (-inf)
+         (!L1&&!NX&&Y_inf&&!signY)||     //(|x|<1) ^ (+inf)
+         (checkX==0&&Y_inf&&!signY)||  //(+/- 0) ^ (+inf)
+         (checkX==0&&!signY&&IY&&checkY!=0))     //(+/- 0) ^ (positive int y)
+      return 0;
+
+
+   _Bool Rinf=(checkX==0&&signY&&IY&&checkY!=0)||       //(+/- 0) ^ (negative int y)
+              (checkX==0&&Y_inf&&signY)||   //(+/- 0) ^ (-inf)
+              ((L1&&!X_1)&&Y_inf&&!signY)||       //(|x|>1) ^ (+inf)
+              (!L1&&Y_inf&&signY)||           //(|x|<1) ^ (-inf)
+              (X_inf&&!signY&&!NY);     //(+inf) ^ (y>0)
+   _Bool SignR=(signX&&IY&&(unsigned int)fpY.f%2);
+
+   if(Rinf&&!SignR)
+      return __builtin_inff();
+   if(Rinf&&SignR)
+      return -__builtin_inff();
+   //Log(x)
+
+   _Bool sR;
+   unsigned short e;
+   unsigned long long int  m,zero=0;
+   unsigned int  abse;
+
+   unsigned long long int logx;
+   if(fpX.b==0) logx=0xff800000UL<<10;
+   else
+   {
+      e = SELECT_RANGE(fpX.b,30,23);
+      m = fpX.b & 0x007fffff;
+      m = m<<10;
+
+      sR=e==127? 0:!SELECT_BIT(e,7);
+      unsigned long long int y0;
+      y0=(1UL<<33)|m;
+      if(SELECT_BIT(m,32)==0) y0=y0<<1;
+      unsigned int absZ0=SELECT_RANGE(y0,17,0);
+
+      unsigned int a=(63<<1)|!SELECT_BIT(m,32);
+      unsigned int e1=e-a;
+      abse=sR? 0-e1:e1;
+      if(sR)	absZ0=0-absZ0;
+
+      unsigned int lzo=LZOC_33(SELECT_RANGE(y0,33,1),SELECT_BIT(m,32));
+      unsigned int shiftval=lzo-17;
+      _Bool doRR=SELECT_BIT(shiftval,6);
+      unsigned long long int small_abs=LeftShifter18(absZ0,SELECT_RANGE(shiftval,4,0));
+      unsigned int Inva0=InvTable[SELECT_RANGE(m,32,22)];
+
+      unsigned long long int p0=y0*Inva0;
+
+      unsigned long long int p1=SELECT_RANGE(p0,35,27)*SELECT_RANGE(p0,35,0);
+
+      unsigned long long int y1=(0b1000000000UL<<36)|SELECT_RANGE(p0,35,0);
+
+      unsigned long long int eiy1= SELECT_BIT(p0,35)==0? SELECT_RANGE(y1,45,10):SELECT_RANGE(y1,45,9);
+
+      unsigned long long int addxiter1=SELECT_RANGE(p0,26,0)<<9;
+
+      unsigned long long int ppypb1=eiy1+addxiter1;
+
+      unsigned long long int pp1=1UL<<36|SELECT_RANGE(~p1,44,9);
+
+      unsigned long long int z2=1+ppypb1+pp1;
+      z2=SELECT_RANGE(z2,36,0);
+      unsigned int squarerin=doRR==1? SELECT_RANGE(z2,36,15): (small_abs<<4);
+      unsigned long long int z2full=IntSquarer(squarerin);
+      unsigned int z2norm=SELECT_RANGE(z2full,43,25);
+      unsigned long long int add_final=0;
+      add_final=(SELECT_RANGE(~add_final,17,0)<<19)|(~z2norm);
+      unsigned long long int  log1norm=1+add_final+z2;
+      log1norm=SELECT_RANGE(log1norm,36,0);
+
+      unsigned long long int almostlong=LogTable0[SELECT_RANGE(m,32,22)]+LogTable1[SELECT_RANGE(p0,35,27)];
+      unsigned long long int logf_norm=almostlong+log1norm;
+      logf_norm=SELECT_RANGE(logf_norm,53,0);
+      if(SELECT_BIT(logf_norm,53)) logf_norm=(SELECT_RANGE(~zero,7,0)<<54)|logf_norm;
+
+      unsigned long long int abselog2=((SELECT_RANGE(KCM_6[SELECT_RANGE(abse,5,0)],42,6)+KCM_2[SELECT_RANGE(abse,7,6)])<<6)|SELECT_RANGE(KCM_6[SELECT_RANGE(abse,5,0)],5,0);
+      abselog2=abselog2<<17;
+      if(sR) logf_norm=~logf_norm;
+      logf_norm=SELECT_RANGE(logf_norm,61,0);
+      unsigned long long int ln=abselog2+logf_norm+sR;
+
+      _Bool c0, c1, c2,c3,c4,c5;
+      unsigned long long int l5,l4,l3,l2,l1;
+      c5=SELECT_RANGE(ln,61,30)==0;
+      l5=c5==0? ln :(SELECT_RANGE(ln,29,0)<<32);
+      c4=SELECT_RANGE(l5,61,46)==0;
+      l4=c4==0? l5:(SELECT_RANGE(l5,45,0)<<16);
+      c3=SELECT_RANGE(l4,61,54)==0;
+      l3=c3==0? SELECT_RANGE(l4,61,1):(SELECT_RANGE(l4,53,0)<<7);
+      c2=SELECT_RANGE(l3,60,57)==0;
+      l2=c2==0? SELECT_RANGE(l3,60,4):SELECT_RANGE(l3,56,0);
+      c1=SELECT_RANGE(l2,56,55)==0;
+      l1=c1==0? SELECT_RANGE(l2,56,2):SELECT_RANGE(l2,54,0);
+      c0=SELECT_BIT(l1,54)==0;
+      unsigned long long int log_normal_normal=c0==0? SELECT_RANGE(l1,54,1):SELECT_RANGE(l1,53,0);
+
+      unsigned short int enorm=c5<<5|c4<<4|c3<<3|c2<<2|c1<<1|c0;
+
+      unsigned long long int z2small=RightShifter(SELECT_RANGE(z2full,43,22),SELECT_RANGE(shiftval,4,0));
+
+      unsigned long long int  z_small=small_abs<<21;
+
+      z_small=SELECT_RANGE(z_small,39,0);
+      z2small=SELECT_RANGE(z2small,42,21);
+
+      if(!sR) z2small=~z2small;
+
+      z2small=SELECT_RANGE(z2small,39,0);
+
+      unsigned long long int log_small=z_small+z2small+!sR;
+
+      log_small=SELECT_RANGE(log_small,39,0);
+      unsigned short int e0sub=1;
+      if(SELECT_BIT(log_small,38)) e0sub=3;
+      if(SELECT_RANGE(log_small,38,37)==1) e0sub=2;
+      unsigned short int esmall=((SELECT_RANGE(~zero,4,0)<<2)|e0sub)-lzo;
+
+      if(SELECT_BIT(log_small,38)) log_small=log_small>>2;
+      if(SELECT_BIT(log_small,37)) log_small=log_small>>1;
+
+      if((!SELECT_BIT(log_normal_normal,53)&&!(e1==0&&!SELECT_BIT(shiftval,6)))||(!SELECT_BIT(log_small,36)&&(e1==0&&!SELECT_BIT(shiftval,6))))
+      {   unsigned long long int a=sR? 0x80000000 : 0;
+         logx=a<<10;
+      }
+      else
+      {
+         unsigned short int eR=(e1==0&&!SELECT_BIT(shiftval,6))? SELECT_RANGE(esmall,7,0): 134-enorm;
+         unsigned long long int logg=(e1==0&&!SELECT_BIT(shiftval,6))? SELECT_RANGE(log_small,35,0)<<1 : SELECT_RANGE(log_normal_normal,52,16);
+         unsigned long long int ef3=SELECT_BIT(logg,3)+((unsigned long long int)eR<<33|SELECT_RANGE(logg,36,4));
+         logx=(unsigned long long int)sR<<41|ef3;
+      }
+   }
+
+   //Log(x)*y
+   _Bool sRm, sticky_bit, round_bit, guard_bit, LSB_bit;
+   _Bool sX, sY;
+   unsigned long long int mX1, mX, mR, mR1, mR2, mR3, mY1, mult;
+   unsigned short int eY, eX;
+   unsigned int mY;
+
+
+   eX = SELECT_RANGE(logx,40,33);
+   mX = logx & 0x1ffffffff;
+   sX=(logx>>41)&1;
+
+
+   eY = SELECT_RANGE(fpY.b,30,23);
+   mY =fpY.b & 0x007fffff;
+   sY=(fpY.b>>31)&1;
+   if(logx==(0xff800000UL<<10))
+   {
+      if(sY) return __builtin_inff();
+      else   return 0;
+   }
+   if(logx==(0x7f800000UL<<10))
+   {
+      if(sY) return 0;
+      else   return __builtin_inff();
+   }
+
+   unsigned long long int y1=SELECT_RANGE(fpY.b,30,0);
+   unsigned long long int x1=SELECT_RANGE(logx,41,0);
+   _Bool normalX=logx!=(0xff800000UL<<10);
+   _Bool normalY=fpY.b!=0x7fc00000&&fpY.b!=0x7f800000;
+
+   if((x1==0&&fpY.b==0)||(x1==0&&normalY)||(y1==0&&normalX)) return  (SignR ? -1: 1);
+   if(fpY.b==0x7f800000) return __builtin_inff();
+   if(!normalX||!normalY)  return __builtin_nanf("");
+
+   unsigned int eR=eX+eY-127;
+   mX1=(1UL<<33)|mX;
+   mY1=(1UL<<23)|mY;
+   mR=mX1*mY1;
+
+   if(SELECT_BIT(mR,57))
+   {
+      eR=eR+1;
+      mR1= SELECT_RANGE(mR, 56, 17);
+      sticky_bit = (SELECT_RANGE(mR,20,0) == 0) ? 0 : 1;
+      round_bit = SELECT_BIT(mR1, 4);
+      guard_bit = SELECT_BIT(mR1, 5);
+      LSB_bit = SELECT_BIT(mR1, 6);
+   }
+   else
+   {
+      mR1=SELECT_RANGE(mR,55,16);
+      sticky_bit = (SELECT_RANGE(mR,19,0) == 0) ? 0 : 1;
+      round_bit = SELECT_BIT(mR1, 4);
+      guard_bit = SELECT_BIT(mR1, 5);
+      LSB_bit = SELECT_BIT(mR1, 6);
+
+   }
+
+   _Bool _round = guard_bit&(LSB_bit|round_bit|sticky_bit);
+   _round=1;
+   mR3 = (mR1 >> 6) + _round;
+   mR2= SELECT_RANGE(mR3,33,0);
+
+   eR = eR + SELECT_BIT(mR3, 34);
+
+   sRm=sY^sX;
+   //overflow exp
+   if(SELECT_BIT(eR,8)&&!SELECT_BIT(eR,9)) {
+      if(sRm) return 0;
+      return __builtin_inff();
+   }
+
+   //underflow
+   if(SELECT_BIT(eR,9)) return 1;
+
+
+   mult=(unsigned long long)sRm<<42|(unsigned long long)eR<<34|mR2;
+
+   unsigned long long int  mXu, m2=0, fixX,m1, m3; ;
+   unsigned short int  eXe;
+
+   _Bool sign = SELECT_BIT(mult,42);
+   e = SELECT_RANGE(mult,41,34);
+   eXe  = (short int)e - ( 127 - WX);
+   mXu = SELECT_RANGE(mult,33,0) | ( 1UL << 34 );
+   m1=mXu;
+
+   if(SELECT_BIT(eXe,0))
+      m1=m1<<1UL;
+   if(SELECT_BIT(eXe,1))
+      m1=m1<<2UL;
+   if(SELECT_BIT(eXe,2))
+      m1=m1<<4UL;
+   if(SELECT_BIT(eXe,3))
+      m1=m1<<8UL;
+   if(SELECT_BIT(eXe,4))
+   {
+      if(m1>=(1ULL<<48))     		m2=SELECT_RANGE(m1,63,48);
+      m1=m1<<16UL;
+   }
+
+   if(SELECT_BIT(eXe,5))
+   {
+      if((m1>=(1ULL<<32))||(m2>0))
+      {
+         m2=m2<<32UL;
+         m3=SELECT_RANGE(m1,63,32);
+         m2=m2|m3;
+      }
+      m1=m1<<32;
+   }
+
+   m2=m2&0xF; //final vector: 4bits of M2 followed by m1
+
+   fixX=(m2<<60)|(m1>>4);
+
+   unsigned long long int fixX0=SELECT_RANGE(fixX,63,30);
+
+   if(sign)
+      fixX0=~fixX0;
+   unsigned int fixX26=SELECT_RANGE(fixX0,25,0);
+   m2=m2&7;
+   m1=m1>>3;
+   m3=(m2<<61)|m1;
+
+   unsigned short int XmulIn=SELECT_RANGE(m3,63,54);
+   unsigned short int absK=KCM_1(XmulIn);
+
+   unsigned long long int absKlog2=KCM_2_function(absK);
+   if(sign)
+      absK=0-absK;
+   unsigned int subOp2=SELECT_RANGE(absKlog2,25,0);
+   if(!sign)
+   {   subOp2=~subOp2;
+      subOp2=SELECT_RANGE(subOp2,25,0);
+   }
+
+
+   unsigned long long int sum=subOp2+1+fixX26;
+
+   unsigned int addr1=SELECT_RANGE(sum,25,17);
+   unsigned int z=SELECT_RANGE(sum,16,0);
+   unsigned int addr2=SELECT_RANGE(z,16,8);
+
+   unsigned long long int expA_output=Magic[addr1];
+   unsigned long long int expZ_output=Magic[addr2];
+
+   unsigned int expA=SELECT_RANGE(expA_output,35,9);
+
+   unsigned int expZmZm1=SELECT_RANGE(expZ_output,8,0);
+   unsigned long long int expZminus1=z+expZmZm1;
+
+   unsigned long long int expArounded0=SELECT_RANGE(expA,26,9)+1;
+   expArounded0=SELECT_RANGE(expArounded0,17,1);
+
+   unsigned long long int lowerproduct=expArounded0*expZminus1;
+   lowerproduct=lowerproduct>>16;
+   lowerproduct=SELECT_RANGE(lowerproduct,18,0);
+
+   unsigned int expy=expA+lowerproduct;
+
+   _Bool neednonorm=SELECT_BIT(expy,26);
+
+   unsigned long long int preroundbiassig;
+   if(neednonorm)
+      preroundbiassig=(127<<23)|SELECT_RANGE(expy,25,3);
+   else
+      preroundbiassig=(126<<23)|SELECT_RANGE(expy,24,2);
+
+   _Bool roundBit=neednonorm? SELECT_BIT(expy,2): SELECT_BIT(expy,1);
+
+   unsigned long long int roundNormAddend= (SELECT_BIT(absK,8)<<31)|((absK<<23)|roundBit);
+   roundNormAddend=SELECT_RANGE(roundNormAddend,32,0);
+   unsigned long long int out_p=roundNormAddend+preroundbiassig;
+
+   float_uint_converter out;
+   unsigned int temp=SELECT_RANGE(out_p,30,0);
+   out.b=temp;
+
+   //very large input
+   _Bool oufl0=eXe>=33? !SELECT_BIT(eXe,9):0;
+
+   if(SELECT_BIT(eXe,9))
+      return 1.0f;
+   //return 0
+   if((SELECT_BIT(out_p,31)&&SELECT_BIT(out_p,32))||(sign&&oufl0))
+      return 0;
+
+   //return inf
+   if((oufl0&&(!sign))||(!sign&&SELECT_BIT(out_p,31)&&!SELECT_BIT(out_p,32)))
+      return __builtin_inff();
+
+
+   if(SignR) out.f=-out.f;
+   return out.f;
 }
 
 float __hide_ieee754_powf (float x, float y)
 {
-    return ADD_BUILTIN_PREFIX(powf)(x,y);
+   return ADD_BUILTIN_PREFIX(powf)(x,y);
 }
 
 
 #ifdef CHECK_POW_FUNCTION
 float golden_reference_pow(float a, float b)
 {
-    mpfr_t a_mpfr, b_mpfr, res;
-    float final_value;
-    mpfr_init2 (a_mpfr, PRECISION);
-    mpfr_init2 (b_mpfr, PRECISION);
-    mpfr_init2 (res, PRECISION);
-    mpfr_set_d (a_mpfr, a, MPFR_RNDN);
-    mpfr_set_d (b_mpfr, b, MPFR_RNDN);
+   mpfr_t a_mpfr, b_mpfr, res;
+   float final_value;
+   mpfr_init2 (a_mpfr, PRECISION);
+   mpfr_init2 (b_mpfr, PRECISION);
+   mpfr_init2 (res, PRECISION);
+   mpfr_set_d (a_mpfr, a, MPFR_RNDN);
+   mpfr_set_d (b_mpfr, b, MPFR_RNDN);
 
-    mpfr_pow(res, a_mpfr, b_mpfr, MPFR_RNDN);
+   mpfr_pow(res, a_mpfr, b_mpfr, MPFR_RNDN);
 
-    final_value=mpfr_get_flt (res, MPFR_RNDN);
-    mpfr_clear(a_mpfr);
-    mpfr_clear(b_mpfr);
-    mpfr_clear(res);
-    return final_value;
+   final_value=mpfr_get_flt (res, MPFR_RNDN);
+   mpfr_clear(a_mpfr);
+   mpfr_clear(b_mpfr);
+   mpfr_clear(res);
+   return final_value;
 }
 
 int main_test_pow()
 {
-    unsigned int sx=0,sy;
-    unsigned int ex=0,ey,mx,my;
-    unsigned int n_ones_pos = 0;
-    unsigned int n_ones_neg = 0;
+   unsigned int sy;
+   unsigned int ey;
+   unsigned int n_ones_pos = 0;
+   unsigned int n_ones_neg = 0;
 
-    for(sy=0; sy < 1; ++sy)
-    {
-        for(ey=127; ey <128; ++ey)
-        {
-            #pragma omp parallel for reduction (+ : n_ones_pos,n_ones_neg) schedule(dynamic)
-            for(my=2; my <3; ++my)
+   for(sy=0; sy < 1; ++sy)
+   {
+      for(ey=125; ey <129; ++ey)
+      {
+         unsigned int my;
+         #pragma omp parallel for reduction (+ : n_ones_pos,n_ones_neg) schedule(dynamic)
+         for(my=1; my <(1<<3); ++my)
+         {
+            unsigned int sx;
+            float_uint_converter func_in_y;
+            func_in_y.b = (sy<<31)|(ey<<23)|my;
+            for(sx=0; sx < 2; ++sx)
             {
-                float_uint_converter func_in_y;
-                func_in_y.b = (sy<<31)|(ey<<23)|my;
-                for(sx=0; sx < 2; ++sx)
-                {
-                    for(ex=1; ex<3; ++ex)
-                    {
-                        for(mx=(1<<23)-1; mx <(1<<23); ++mx)
-                        {
-                            float_uint_converter func_in_x;
-                            float_uint_converter func_golden_libm;
-                            float_uint_converter func_out;
-                            func_in_x.b = (sx<<31)|(ex<<23)|mx;
-                            func_out.f=ADD_BUILTIN_PREFIX(powf)(func_in_x.f, func_in_y.f);
-                            func_golden_libm.f = powf(func_in_x.f, func_in_y.f);
-                            float_uint_converter func_golden;
-                            func_golden.f = golden_reference_pow(func_in_x.f,func_in_y.f);
+               unsigned int ex;
+               for(ex=126; ex<129; ++ex)
+               {
+                  unsigned int mx;
+                  for(mx=0x7fff80; mx <(1<<23); ++mx)
+                  {
+                     float_uint_converter func_in_x;
+                     float_uint_converter func_golden_libm;
+                     float_uint_converter func_out;
+                     func_in_x.b = (sx<<31)|(ex<<23)|mx;
+                     func_out.f=ADD_BUILTIN_PREFIX(powf)(func_in_x.f, func_in_y.f);
+                     func_golden_libm.f = powf(func_in_x.f, func_in_y.f);
 
-                            if((func_golden_libm.b>>31) != (func_out.b>>31)&&!(func_golden.b==0xffc00000&&func_out.b==0x7fc00000))
-                            {
-                                printf("Opposite sign\n");
-                                printf("sy=%d\n",sy);
-                                printf("ey=%d\n",ey);
-                                printf("my=%x\n",my);
-                                printf("sx=%d\n",sx);
-                                printf("ex=%d\n",ex);
-                                printf("mx=%x\n",mx);
-                                printf("log golden=%.40f\n",func_golden.f);
-                                printf("golden=%x\n", func_golden.b);
-                                printf("my log=%.20f\n", func_out.f);
-                                printf("binary=%x\n", func_out.b);
-                                printf("log libm=%.20f\n", func_golden_libm.f);
-                                printf("libm=%x\n", func_golden_libm.b);
-                                abort();
-                            }
-                            if(abs(func_golden_libm.b-func_out.b)>1 &&!(func_golden.b==0xffc00000&&func_out.b==0x7fc00000))
-                            {
-                                float_uint_converter func_golden;
-                                func_golden.f = golden_reference_pow(func_in_x.f,func_in_y.f);
-                                printf("NO PASS\n");
-                                printf("sy=%d\n",sy);
-                                printf("ey=%d\n",ey);
-                                printf("my=%x\n",my);
-                                printf("sx=%d\n",sx);
-                                printf("ex=%d\n",ex);
-                                printf("mx=%x\n",mx);
-                                printf("log golden=%.40f\n",func_golden.f);
-                                printf("golden=%x\n", func_golden.b);
-                                printf("my log=%.20f\n", func_out.f);
-                                printf("binary=%x\n", func_out.b);
-                                printf("log libm=%.20f\n", func_golden_libm.f);
-                                printf("libm=%x\n", func_golden_libm.b);
-                                abort();
-                            }
-                            else if (abs(func_golden_libm.b-func_out.b)==1)
-                            {
-                                if(func_golden_libm.b>func_out.b)
-                                    n_ones_pos++;
-                                else
-                                    n_ones_neg++;
-                            }
+                     if((func_golden_libm.b>>31) != (func_out.b>>31))
+                     {
+                        printf("Opposite sign\n");
+                        printf("sy=%d\n",sy);
+                        printf("ey=%d\n",ey);
+                        printf("my=%x\n",my);
+                        printf("sx=%d\n",sx);
+                        printf("ex=%d\n",ex);
+                        printf("mx=%x\n",mx);
+                        printf("my pow=%.20f\n", func_out.f);
+                        printf("binary=%x\n", func_out.b);
+                        printf("pow libm=%.20f\n", func_golden_libm.f);
+                        printf("libm=%x\n", func_golden_libm.b);
+                        printf("\n y=");
+                        test_print_bin(func_in_y.b);
+                        printf("\n x=");
+                        test_print_bin(func_in_x.b);
 
-                        }
-                    }
-                }
+                        abort();
+                     }
+                     if(abs(func_golden_libm.b-func_out.b)>1)
+                     {
+                        printf("NO PASS\n");
+                        printf("sy=%d\n",sy);
+                        printf("ey=%d\n",ey);
+                        printf("my=%x\n",my);
+                        printf("\n y=");
+                        test_print_bin(func_in_y.b);
+                        printf("sx=%d\n",sx);
+                        printf("ex=%d\n",ex);
+                        printf("mx=%x\n",mx);
+                        printf("\n x=");
+                        test_print_bin(func_in_x.b);
+                        printf("my pow=%.20f\n", func_out.f);
+                        printf("binary=%x\n", func_out.b);
+                        printf("pow libm=%.20f\n", func_golden_libm.f);
+                        printf("libm=%x\n", func_golden_libm.b);
+                        abort();
+                     }
+                     else if (abs(func_golden_libm.b-func_out.b)==1)
+                     {
+                        if(func_golden_libm.b>func_out.b)
+                           n_ones_pos++;
+                        else
+                           n_ones_neg++;
+                     }
+
+                  }
+               }
             }
-        }
-    }
-    printf("n_ones_pos=%d\n", n_ones_pos);
-    printf("n_ones_neg=%d\n", n_ones_neg);
-    return 0;
+         }
+      }
+   }
+   printf("n_ones_pos=%d\n", n_ones_pos);
+   printf("n_ones_neg=%d\n", n_ones_neg);
+   return 0;
 }
 
 
 int main()
 {
-    printf("*** main ***\n");
-    main_test_pow();
-    return 0;
+   printf("*** main ***\n");
+   main_test_pow();
+   return 0;
 }
 #endif
