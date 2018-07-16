@@ -5588,6 +5588,11 @@ float ADD_BUILTIN_PREFIX(powf)(float x, float y)
    _Bool NX= X_inf||checkX==0||X_NaN;
    _Bool X_1 = checkX==0x3f800000;
 
+   if((X_1&&signX&&Y_inf)||     //(-1)^inf
+         (X_1&&!signX)||        //(+1)^any
+         (checkY==0))             //(any)^0
+      return 1.0f;
+
    if(X_NaN)
    {
       fpX.b |= ( 0x7FC << 20 );
@@ -5601,27 +5606,24 @@ float ADD_BUILTIN_PREFIX(powf)(float x, float y)
    if(!NX&&signX&&!NY&&!IY)
       return -__builtin_nanf("");
 
-   if((X_1&&signX&&Y_inf)||     //(-1)^inf
-         (X_1&&!signX)||        //(+1)^any
-         (checkY==0))             //(any)^0
-      return 1;
 
 
    unsigned int cmpXOneRes=3229614080U+checkX;
    _Bool L1=!SELECT_BIT(cmpXOneRes,31);
 
-   if((X_inf&&signY&&!NY)||                //(+inf) ^ (y<0)
-         ((L1&&!X_1)&&!NX&&Y_inf&&signY)|| //(|x|>1) ^ (-inf)
-         (!L1&&!NX&&Y_inf&&!signY)||       //(|x|<1) ^ (+inf)
-         (checkX==0&&Y_inf&&!signY)||      //(+/- 0) ^ (+inf)
-         (checkX==0&&!signY&&checkY!=0&&!(signX&&IY&&odd)))     //(+/- 0) ^ (positive int y)
-      return 0;
-   if(checkX==0&&!signY&&checkY!=0&&signX&&IY&&odd)
+   if((checkX==0&&!signY&&checkY!=0&&signX&&IY&&odd)||
+         (signX&&X_inf&&signY&&IY&&odd))//(-inf) ^ (y) and y is a negative and an odd integer
    {
       float_uint_converter temp;
       temp.b=0x80000000;
       return temp.f;
    }
+   if((X_inf&&signY&&!NY)||                //(+inf) ^ (y<0)
+         ((L1&&!X_1)&&!NX&&Y_inf&&signY)|| //(|x|>1) ^ (-inf)
+         (!L1&&!NX&&Y_inf&&!signY)||       //(|x|<1) ^ (+inf)
+         (checkX==0&&Y_inf&&!signY)||      //(+/- 0) ^ (+inf)
+         (checkX==0&&!signY&&checkY!=0&&!(signX&&IY&&odd)))     //(+/- 0) ^ (positive int y)
+      return 0.0f;
 
    _Bool Rinf=(checkX==0&&signY&&IY&&checkY!=0)||   //(+/- 0) ^ (negative int y)
               (checkX==0&&Y_inf&&signY)||           //(+/- 0) ^ (-inf)
@@ -5758,11 +5760,11 @@ float ADD_BUILTIN_PREFIX(powf)(float x, float y)
    if(logx==(0xff800000ULL<<10))
    {
       if(sY) return __builtin_inff();
-      else return 0;
+      else return 0.0f;
    }
    if(logx==(0x7f800000ULL<<10))
    {
-      if(sY) return 0;
+      if(sY) return 0.0f;
       else return __builtin_inff();
    }
 
@@ -5807,12 +5809,12 @@ float ADD_BUILTIN_PREFIX(powf)(float x, float y)
    sRm=sY^sX;
    //overflow exp
    if(SELECT_BIT(eR,8)&&!SELECT_BIT(eR,9)) {
-      if(sRm) return 0;
+      if(sRm) return 0.0f;
       return __builtin_inff();
    }
 
    //underflow
-   if(SELECT_BIT(eR,9)) return 1;
+   if(SELECT_BIT(eR,9)) return 1.0f;
 
 
    mult=(unsigned long long)sRm<<42|(unsigned long long)eR<<34|mR2;
@@ -5906,7 +5908,7 @@ float ADD_BUILTIN_PREFIX(powf)(float x, float y)
       return 1.0f;
    //return 0
    if((SELECT_BIT(out_p,31)&&SELECT_BIT(out_p,32))||(sign&&oufl0))
-      return 0;
+      return 0.0f;
 
    //return inf
    if((oufl0&&(!sign))||(!sign&&SELECT_BIT(out_p,31)&&!SELECT_BIT(out_p,32)))
@@ -5973,9 +5975,9 @@ int main_test_pow(unsigned int eyMin, unsigned int eyMax, unsigned int myMin, un
                         printf("binary=%x\n", func_out.b);
                         printf("pow libm=%.20f\n", func_golden_libm.f);
                         printf("libm=%x\n", func_golden_libm.b);
-                        printf("\n y=");
+                        printf("y=");
                         test_print_bin(func_in_y.b);
-                        printf("\n x=");
+                        printf("x=");
                         test_print_bin(func_in_x.b);
 
                         abort();
@@ -5986,12 +5988,12 @@ int main_test_pow(unsigned int eyMin, unsigned int eyMax, unsigned int myMin, un
                         printf("sy=%d\n",sy);
                         printf("ey=%d\n",ey);
                         printf("my=%x\n",my);
-                        printf("\n y=");
+                        printf("y=");
                         test_print_bin(func_in_y.b);
                         printf("sx=%d\n",sx);
                         printf("ex=%d\n",ex);
                         printf("mx=%x\n",mx);
-                        printf("\n x=");
+                        printf("x=");
                         test_print_bin(func_in_x.b);
                         printf("my pow=%.20f\n", func_out.f);
                         printf("binary=%x\n", func_out.b);
@@ -6042,7 +6044,7 @@ int main()
    main_test_pow(254,256,0,(1<<3),1,2,0,(1<<3));
    ++test;
    printf("*** Test %d passed ***\n", test);
-   main_test_pow(0,1,0,1,255,256,0,(1<<3));
+   main_test_pow(0,1,0,1,255,256,4194304,4194304+(1<<3));
    ++test;
    printf("*** Test %d passed ***\n", test);
    main_test_pow(254,255,0,(1<<3),254,256,0,(1<<3));
