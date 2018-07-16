@@ -24,7 +24,7 @@ common_libm_src = math_private_kernels.c s_tanh.c s_modf.c s_ilogb.c s_sin.c s_s
 
 
 common_libm_src_fr=hotbm_sine_cosine.c hotbm_logf.c hotbm_expf.c poly_sqrtf.c wf_pow_opt.c
-common_libm_src_std=sf_trigon.c wf_log.c ef_log.c wf_exp.c ef_exp.c wf_sqrt.c ef_sqrt.c
+common_libm_src_std=sf_trigon.c wf_log.c ef_log.c wf_exp.c ef_exp.c wf_sqrt.c ef_sqrt.c wf_pow.c ef_pow.c 
 
 #if BUILD_FLOPOCO
 #AM_CFLAGS += -DHAVE_FLOPOCO
