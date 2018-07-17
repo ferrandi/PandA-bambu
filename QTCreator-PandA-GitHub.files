@@ -858,6 +858,7 @@ etc/libbambu/libm/wf_lgamma.c
 etc/libbambu/libm/wf_log.c
 etc/libbambu/libm/wf_log10.c
 etc/libbambu/libm/wf_pow.c
+etc/libbambu/libm/wf_pow_opt.c
 etc/libbambu/libm/wf_remainder.c
 etc/libbambu/libm/wf_scalb.c
 etc/libbambu/libm/wf_sincos.c

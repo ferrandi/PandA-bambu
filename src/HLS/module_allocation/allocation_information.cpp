@@ -3090,9 +3090,9 @@ bool AllocationInformation::can_be_asynchronous_ram(tree_managerConstRef TM, uns
          if(elts_size==0)
             THROW_ERROR("elts_size cannot be equal to zero");
          if(meaningful_bits != elts_size)
-            return ((var_bitsize/elts_size)*meaningful_bits <= threshold) && (is_read_only_variable || var_bitsize/elts_size < 127);
+            return (((var_bitsize/elts_size)*meaningful_bits <= threshold) || (is_read_only_variable && var_bitsize/elts_size<=2048)) && (is_read_only_variable || var_bitsize/elts_size < 127);
          else
-            return (var_bitsize <= threshold) && (is_read_only_variable || threshold/elts_size < 127);
+            return ((var_bitsize <= threshold) ||  (is_read_only_variable && var_bitsize/elts_size<=2048)) && (is_read_only_variable || threshold/elts_size < 127);
       }
       else
          return var_bitsize <= threshold;
