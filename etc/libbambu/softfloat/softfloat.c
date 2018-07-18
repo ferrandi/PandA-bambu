@@ -2730,49 +2730,7 @@ I0 = ab + cd + ac + bd + a'b'c'd'
 #endif
 #ifndef DEFAULT
 #if 1
-    zExp = aExp - bExp + 0x7D;
-    aSig = ( aSig | 0x00800000U )<<7;
-    bSig = ( bSig | 0x00800000U )<<8;
-     if ( bSig <= ( aSig << 1 ) ) {
-        aSig >>= 1;
-        ++zExp;
-    }
-    {
-        static const __bits16 softfloat_approxRecip_1k0s[16] = {
-            0xFFC4, 0xF0BE, 0xE363, 0xD76F, 0xCCAD, 0xC2F0, 0xBA16, 0xB201,
-            0xAA97, 0xA3C6, 0x9D7A, 0x97A6, 0x923C, 0x8D32, 0x887E, 0x8417
-        };
-        static const __bits16 softfloat_approxRecip_1k1s[16] = {
-            0xF0F1, 0xD62C, 0xBFA1, 0xAC77, 0x9C0A, 0x8DDB, 0x8185, 0x76BA,
-            0x6D3B, 0x64D4, 0x5D5C, 0x56B1, 0x50B6, 0x4B55, 0x4679, 0x4211
-        };
-        __bits8 index = bSig>>27 & 0xF;
-        __bits16 eps = (__bits16) (bSig>>11);
-        __bits16 r0 = softfloat_approxRecip_1k0s[index]
-                 - ((softfloat_approxRecip_1k1s[index] * (__bits32) eps)>>20);
-        __bits32 sigma0 = ~(__bits32) ((r0 * (__bits64) bSig)>>7);
-        __bits32 r = ((__bits32) r0<<16) + ((r0 * (__bits32) ((sigma0>>16)))>>8);
-        _Bool rem_ge;
-        __bits32 p = (__bits32) r >> 1;
-        ga0 = __builtin_umulh32(aSig, p) << 2;
-        //ga0 = ((((div_UDItype)(div_USItype)(aSig>>6) * (div_USItype)(r1r2))<<21)>>32)<<2;
-        gb0 = __builtin_umulh32(bSig, p);
-        //gb0 = (((div_UDItype)(div_USItype)(bSig>>8) * (div_USItype)(r1r2))<<23)>>32;
-        gb1 = 0x80000000U - gb0;
-        //ga1 = __builtin_umulh32(ga0, gb1) << 1;
-        ga1 = ((((div_UDItype)(div_USItype)(ga0>>2) * (div_USItype)(gb1))<<2)>>32)<<1;
-        zSig = (ga1 + 0x10) >> 5;
-        __bits32 zSigminus1 = zSig-1;
-        zSig <<= 6;
-        zSigminus1 <<= 6;
-        //rem0 = __builtin_umulh32(bSig, zSig);
-        rem0 = (((div_UDItype)(div_USItype)(bSig>>8) * (div_USItype)(zSig>>6))<<14)>>32;
-        rem = aSig - rem0;
-        rem_ge = ((__sbits32) rem) <= 0;
-        zSig = COND_EXPR_MACRO32(rem_ge, zSigminus1, zSig);
-        zSig = zSig| (0x1<< 5);
-    }
-    //GOLDSCHMIDT_MANTISSA_DIVISION();
+    GOLDSCHMIDT_MANTISSA_DIVISION();
 #else
     FLIP_MANTISSA_DIVISION();
 #endif
@@ -4292,14 +4250,14 @@ static __float64 __float64_divSRT4( __float64 a, __float64 b )
 #ifndef NO_SUBNORMALS
     if(aExp_null && !a_c_zero)
     {
-      unsigned int subnormal_lz, mshifted;
+      unsigned long long int subnormal_lz, mshifted;
       count_leading_zero_macro_lshift(52, aSig, subnormal_lz,mshifted);
       aExp = -subnormal_lz;
       aSig = SELECT_RANGE(mshifted, 50, 0)<<1;
     }
     if(bExp_null && !b_c_zero)
     {
-      unsigned int subnormal_lz, mshifted;
+      unsigned long long int subnormal_lz, mshifted;
       count_leading_zero_macro_lshift(52, bSig, subnormal_lz,mshifted);
       bExp = -subnormal_lz;
       bSig = SELECT_RANGE(mshifted, 50, 0)<<1;
@@ -4407,6 +4365,22 @@ static __float64 __float64_divG( __float64 a, __float64 b )
     z_c = ((a_c>>1|(1&(~(b_c>>1))&(~(b_c&1)))|(1&(b_c>>1)&b_c))<<1)|
           ((1&(a_c>>1)&a_c)|(1&(b_c>>1)&b_c)|(1&(a_c>>1)&(b_c>>1))|(1&a_c&b_c)|(1&(~(a_c>>1))&(~(a_c&1))&(~(b_c>>1))&(~(b_c&1))));
 
+#ifndef NO_SUBNORMALS
+    if(aExp_null && !a_c_zero)
+    {
+      unsigned long long int subnormal_lz, mshifted;
+      count_leading_zero_macro_lshift(52, aSig, subnormal_lz,mshifted);
+      aExp = -subnormal_lz;
+      aSig = SELECT_RANGE(mshifted, 50, 0)<<1;
+    }
+    if(bExp_null && !b_c_zero)
+    {
+      unsigned long long int subnormal_lz, mshifted;
+      count_leading_zero_macro_lshift(52, bSig, subnormal_lz,mshifted);
+      bExp = -subnormal_lz;
+      bSig = SELECT_RANGE(mshifted, 50, 0)<<1;
+    }
+#endif
 #else
 
     if(aExp == 0x7FF || bExp == 0x7FF || bExp == 0 || aExp == 0)
