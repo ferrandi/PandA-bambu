@@ -480,7 +480,10 @@ void BambuParameter::PrintHelp(std::ostream &os) const
    << "    --register-allocation=<type>\n"
    << "        Set the algorithm used for register allocation. Possible values for the\n"
    << "        <type> argument are the following:\n"
-   << "            WEIGHTED_COLORING   - use weighted coloring algorithm (default)\n"
+   << "            WEIGHTED_TS        - solve the weighted clique covering problem by\n"
+   << "                                 exploiting the Tseng&Siewiorek heuristics\n"
+   << "                                 (default)\n"
+   << "            WEIGHTED_COLORING   - use weighted coloring algorithm\n"
    << "            COLORING            - use simple coloring algorithm\n"
    << "            CHORDAL_COLORING    - use chordal coloring algorithm\n"
    << "            BIPARTITE_MATCHING  - use bipartite matching algorithm\n"
@@ -1574,6 +1577,11 @@ int BambuParameter::Exec()
             {
                setOption(OPT_register_allocation_algorithm, HLSFlowStep_Type::WEIGHTED_CLIQUE_REGISTER_BINDING);
                setOption(OPT_weighted_clique_register_algorithm, CliqueCovering_Algorithm::TTT_CLIQUE_COVERING);
+            }
+            else if (std::string(optarg) == "WEIGHTED_TS")
+            {
+               setOption(OPT_register_allocation_algorithm, HLSFlowStep_Type::WEIGHTED_CLIQUE_REGISTER_BINDING);
+               setOption(OPT_weighted_clique_register_algorithm, CliqueCovering_Algorithm::TS_WEIGHTED_CLIQUE_COVERING);
             }
             else if(std::string(optarg) == "UNIQUE_BINDING")
             {
@@ -3282,7 +3290,7 @@ void BambuParameter::SetDefaults()
    /// -- Register allocation -- //
    /// register allocation algorithm
    setOption(OPT_register_allocation_algorithm, HLSFlowStep_Type::WEIGHTED_CLIQUE_REGISTER_BINDING);
-   setOption(OPT_weighted_clique_register_algorithm, CliqueCovering_Algorithm::WEIGHTED_COLORING);
+   setOption(OPT_weighted_clique_register_algorithm, CliqueCovering_Algorithm::TS_WEIGHTED_CLIQUE_COVERING);
    /// storage value insertion algorithm
    setOption(OPT_storage_value_insertion_algorithm, HLSFlowStep_Type::VALUES_SCHEME_STORAGE_VALUE_INSERTION);
    setOption(OPT_sync_reset, "no");
