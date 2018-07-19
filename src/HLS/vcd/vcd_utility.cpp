@@ -620,8 +620,8 @@ bool vcd_utility::detect_mismatch(
          vcd_val.find_first_not_of("01") != std::string::npos)
    {
       /*
-       * The user is sayin that he guarantees that there are no uninitialized
-       * variables in the orginal C specification. For this reason any value in
+       * The user is saying that he/she guarantees that there are no uninitialized
+       * variables in the original C specification. For this reason any value in
        * vcd different from 0 or 1 is considered an error, independently of the
        * values in C.
        * The last four parameters are set to 0, because they are irrelevant in
