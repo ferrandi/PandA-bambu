@@ -2785,6 +2785,36 @@ namespace clang
          }
       }
    }
+   /// This does one-way checks to see if Use could theoretically be hoisted above
+   /// MayClobber. This will not check the other way around.
+   ///
+   /// This assumes that, for the purposes of MemorySSA, Use comes directly after
+   /// MayClobber, with no potentially clobbering operations in between them.
+   /// (Where potentially clobbering ops are memory barriers, aliased stores, etc.)
+   static bool areLoadsReorderable(const llvm::LoadInst *Use,
+                                   const llvm::LoadInst *MayClobber) {
+     bool VolatileUse = Use->isVolatile();
+     bool VolatileClobber = MayClobber->isVolatile();
+     // Volatile operations may never be reordered with other volatile operations.
+     if (VolatileUse && VolatileClobber)
+       return false;
+     // Otherwise, volatile doesn't matter here. From the language reference:
+     // 'optimizers may change the order of volatile operations relative to
+     // non-volatile operations.'"
+
+     // If a load is seq_cst, it cannot be moved above other loads. If its ordering
+     // is weaker, it can be moved above other loads. We just need to be sure that
+     // MayClobber isn't an acquire load, because loads can't be moved above
+     // acquire loads.
+     //
+     // Note that this explicitly *does* allow the free reordering of monotonic (or
+     // weaker) loads of the same address.
+     bool SeqCstUse = Use->getOrdering() == llvm::AtomicOrdering::SequentiallyConsistent;
+     bool MayClobberIsAcquire = isAtLeastOrStrongerThan(MayClobber->getOrdering(),
+                                                        llvm::AtomicOrdering::Acquire);
+     return !(SeqCstUse || MayClobberIsAcquire);
+   }
+
    void DumpGimpleRaw::serialize_vops(const void* g)
    {
       assert(TREE_CODE(g) != GT(GIMPLE_PHI_VIRTUAL));
@@ -2820,9 +2850,11 @@ namespace clang
             serialize_gimple_aliased_reaching_defs(startingMA, MSSA, visited, inst->getFunction(), &Loc, "vuse");
             ///add anti-dependencies
             auto defMA = MSSA.getWalker()->getClobberingMemoryAccess(inst);
-            if(MSSA.isLiveOnEntryDef(defMA) && CurrentListofMAEntryDef.find(currentFunction) != CurrentListofMAEntryDef.end())
+            const void* VirtDef=MSSA.isLiveOnEntryDef(defMA) ? nullptr : (defMA->getValueID()==llvm::Value::MemoryPhiVal ? gimple_phi_virtual_result(getVirtualGimplePhi(dyn_cast<llvm::MemoryPhi>(defMA), MSSA)) : dyn_cast<llvm::MemoryUseOrDef>(defMA)->getMemoryInst());
+            if(CurrentListofMAEntryDef.find(currentFunction) != CurrentListofMAEntryDef.end() &&
+                  CurrentListofMAEntryDef.find(currentFunction)->second.find(VirtDef) != CurrentListofMAEntryDef.find(currentFunction)->second.end())
             {
-               for(auto defInst : CurrentListofMAEntryDef.find(currentFunction)->second)
+               for(auto defInst : CurrentListofMAEntryDef.find(currentFunction)->second.find(VirtDef)->second)
                {
                   auto &AA = modulePass->getAnalysis<llvm::AAResultsWrapperPass>(*currentFunction).getAAResults();
                   llvm::ImmutableCallSite UseCS(static_cast<const llvm::Instruction*>(inst));
@@ -2839,12 +2871,20 @@ namespace clang
                   else
                   {
                      const auto Loc = llvm::MemoryLocation::get(inst);
-                     auto I = AA.getModRefInfo(defInst, Loc);
+                     if (auto *DefLoad = dyn_cast<llvm::LoadInst>(defInst))
+                     {
+                         if (auto *UseLoad = dyn_cast<llvm::LoadInst>(inst))
+                            addVuse = !areLoadsReorderable(UseLoad, DefLoad);
+                     }
+                     else
+                     {
+                        auto I = AA.getModRefInfo(defInst, Loc);
 #if __clang_major__ > 5
-                     addVuse = llvm::isModSet(I);
+                        addVuse = llvm::isModSet(I);
 #else
-                     addVuse = I & llvm::MRI_Mod;
+                        addVuse = I & llvm::MRI_Mod;
 #endif
+                     }
                   }
                   if(addVuse)
                   {
@@ -3065,10 +3105,12 @@ namespace clang
                   }
                }
 
+#ifdef DEBUG_RA
                if(isSigned)
                   llvm::errs() << "Range: " << (int64_t)val << ",";
                else
                   llvm::errs() << "Range: " << val << ",";
+#endif
                auto context = TREE_CODE(t)==GT(SIGNEDPOINTERTYPE) ? moduleContext : &ty->getContext();
                if(uicTable.find(val) == uicTable.end())
                   uicTable[val] = assignCodeAuto(llvm::ConstantInt::get(llvm::Type::getInt64Ty(*context), val, false));
@@ -3096,13 +3138,14 @@ namespace clang
                   //               llvm::errs() << "Max: " << (range.getSignedMax()) << "\n";
                   //               upper.print(llvm::errs(), isSigned);
                   //               llvm::errs() << (isSigned?"T":"F") << "\n";
+#ifdef DEBUG_RA
                   if(isSigned)
                      llvm::errs() << "Range: <" << range.getSignedMin() << "," << range.getSignedMax() << "> ";
                   else
                      llvm::errs() << "Range: <" << range.getUnsignedMin().getZExtValue() << "," << range.getUnsignedMax().getZExtValue() << "> ";
                   inst->print(llvm::errs());
                   llvm::errs() << "\n";
-
+#endif
                   return assignCodeAuto(llvm::ConstantInt::get(inst->getContext(), (isSigned?range.getSignedMin():range.getUnsignedMin())));
                }
                else
@@ -3200,12 +3243,14 @@ namespace clang
                   assert(range.getBitWidth() >= active_size);
                }
 
+#ifdef DEBUG_RA
                if(isSigned)
                   llvm::errs() << (int64_t)val << ") ";
                else
                   llvm::errs() << val << ") ";
                inst->print(llvm::errs());
                llvm::errs() << "\n";
+#endif
                //auto maxvalue = llvm::APInt::getMaxValue(std::max((isSigned?active_size-1ULL:active_size),1ULL)).getZExtValue();
                auto maxvalue = val;
                auto context = TREE_CODE(t)==GT(SIGNEDPOINTERTYPE) ? moduleContext : &ty->getContext();
@@ -5480,8 +5525,7 @@ namespace clang
       return changed;
    }
 
-   static
-   void computeMAEntryDefs(const llvm::Function *F, std::map<const llvm::Function*,std::set<const llvm::Instruction *>> &CurrentListofMAEntryDef, llvm::ModulePass *modulePass)
+   void DumpGimpleRaw::computeMAEntryDefs(const llvm::Function *F, std::map<const llvm::Function*,std::map<const void *, std::set<const llvm::Instruction *>>> &CurrentListofMAEntryDef, llvm::ModulePass *modulePass)
    {
       auto &MSSA = modulePass->getAnalysis<llvm::MemorySSAWrapperPass>(*const_cast<llvm::Function *>(F)).getMSSA();
       for(const auto& BB: F->getBasicBlockList())
@@ -5491,24 +5535,15 @@ namespace clang
             const llvm::MemoryUseOrDef* ma = MSSA.getMemoryAccess(&inst);
             if(ma && ma->getValueID()==llvm::Value::MemoryDefVal)
             {
-               auto immDefAcc = ma->getDefiningAccess();
-               if(MSSA.isLiveOnEntryDef(immDefAcc))
-                  CurrentListofMAEntryDef[F].insert(&inst);
+               auto defMA = MSSA.getWalker()->getClobberingMemoryAccess(&inst);
+               if(MSSA.isLiveOnEntryDef(defMA))
+                  CurrentListofMAEntryDef[F][nullptr].insert(&inst);
+               else if(defMA->getValueID()==llvm::Value::MemoryPhiVal)
+                  CurrentListofMAEntryDef[F][gimple_phi_virtual_result(getVirtualGimplePhi(dyn_cast<llvm::MemoryPhi>(defMA), MSSA))].insert(&inst);
                else
                {
-                  if (llvm::ImmutableCallSite(&inst) || isa<llvm::FenceInst>(&inst))
-                  {
-                     auto defMA = MSSA.getWalker()->getClobberingMemoryAccess(&inst);
-                     if(MSSA.isLiveOnEntryDef(defMA))
-                        CurrentListofMAEntryDef[F].insert(&inst);
-                  }
-                  else
-                  {
-                     const auto Loc = llvm::MemoryLocation::get(&inst);
-                     auto defMA = MSSA.getWalker()->getClobberingMemoryAccess(immDefAcc, Loc);
-                     if(MSSA.isLiveOnEntryDef(defMA))
-                        CurrentListofMAEntryDef[F].insert(&inst);
-                  }
+                  assert(defMA->getValueID()==llvm::Value::MemoryDefVal);
+                  CurrentListofMAEntryDef[F][dyn_cast<llvm::MemoryUseOrDef>(defMA)->getMemoryInst()].insert(&inst);
                }
             }
          }
