@@ -138,6 +138,7 @@ enum class DiopsisInstrumentWriter_Type;
 (generate_vcd) \
 (hls_flow) \
 (hls_div)\
+(hls_fpdiv)\
 (interface) \
 (interface_type) \
 (additional_top) \
