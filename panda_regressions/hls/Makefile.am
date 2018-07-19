@@ -1167,6 +1167,8 @@ gcc_regression_simple/zero-struct-1.c\
 ./test_libm_logf.sh\
 ./test_libm_expf.sh\
 ./test_libm_sqrtf.sh \
+./test_softfloat_div32.c\
+./test_softfloat_div32.sh\
 ./test_libm_powf.sh \
 ./discrepancy.sh \
 ./discrepancy_list\

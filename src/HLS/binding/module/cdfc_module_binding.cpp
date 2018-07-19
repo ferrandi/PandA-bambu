@@ -827,7 +827,7 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
    cdfc_resource_ordering_functor r_functor(allocation_information);
    double setup_hold_time = allocation_information->get_setup_hold_time();
 
-   // pointer to a Control, Data dependence and antidependence graph graph
+   // pointer to a Control, Data dependence and anti-dependence graph graph
    const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(funId);
    const OpGraphConstRef sdg = FB->CGetOpGraph(FunctionBehavior::SDG);
 #ifdef HC_APPROACH
@@ -1079,7 +1079,7 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
          s2c[s] = C;
       }
 
-      /// add the control dependences edges and the chained edges to the cdfc graph
+      /// add the control dependencies edges and the chained edges to the cdfc graph
       const OpGraphConstRef dfg = FB->CGetOpGraph(FunctionBehavior::DFG);
       EdgeIterator ei,ei_end;
       for(boost::tie(ei,ei_end) = boost::edges(*sdg); ei != ei_end; ++ei)
@@ -1214,7 +1214,7 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
       // Do a preliminary register binding to help the sharing of complex operations
       {
         DesignFlowStepRef regb;
-        regb = GetPointer<const HLSFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("HLS"))->CreateHLSFlowStep(HLSFlowStep_Type::WEIGHTED_CLIQUE_REGISTER_BINDING, funId, HLSFlowStepSpecializationConstRef(new WeightedCliqueRegisterBindingSpecialization(CliqueCovering_Algorithm::WEIGHTED_COLORING)));
+        regb = GetPointer<const HLSFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("HLS"))->CreateHLSFlowStep(HLSFlowStep_Type::WEIGHTED_CLIQUE_REGISTER_BINDING, funId, HLSFlowStepSpecializationConstRef(new WeightedCliqueRegisterBindingSpecialization(CliqueCovering_Algorithm::TS_WEIGHTED_CLIQUE_COVERING)));
         regb->Initialize();
         regb->Exec();
       }
@@ -1536,7 +1536,7 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
          {
            DesignFlowStepRef regb;
            //if(iteration%2)
-              regb = GetPointer<const HLSFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("HLS"))->CreateHLSFlowStep(HLSFlowStep_Type::WEIGHTED_CLIQUE_REGISTER_BINDING, funId, HLSFlowStepSpecializationConstRef(new WeightedCliqueRegisterBindingSpecialization(CliqueCovering_Algorithm::WEIGHTED_COLORING)));
+              regb = GetPointer<const HLSFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("HLS"))->CreateHLSFlowStep(HLSFlowStep_Type::WEIGHTED_CLIQUE_REGISTER_BINDING, funId, HLSFlowStepSpecializationConstRef(new WeightedCliqueRegisterBindingSpecialization(CliqueCovering_Algorithm::TS_WEIGHTED_CLIQUE_COVERING)));
            //else
            //   regb = GetPointer<const HLSFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("HLS"))->CreateHLSFlowStep(HLSFlowStep_Type::WEIGHTED_CLIQUE_REGISTER_BINDING, funId, HLSFlowStepSpecializationConstRef(new WeightedCliqueRegisterBindingSpecialization(CliqueCovering_Algorithm::BIPARTITE_MATCHING)));
            regb->Initialize();
@@ -1888,7 +1888,7 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Slack computed in " + print_cpu_time(slack_cputime) + " seconds");
    if(clique_covering_executed)
    {
-      INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Falseloop computation completed in " + print_cpu_time(falseloop_cputime) + " seconds");
+      INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---False-loop computation completed in " + print_cpu_time(falseloop_cputime) + " seconds");
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Weight computation completed in " + print_cpu_time(weight_cputime) + " seconds");
       if(output_level == OUTPUT_LEVEL_MINIMUM)
       {

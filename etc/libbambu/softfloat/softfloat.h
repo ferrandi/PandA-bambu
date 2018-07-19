@@ -254,7 +254,8 @@ static __float32 __float32_round_to_int( __float32 );
 static __float32 __float32_add( __float32, __float32 );SF_ADAPTER1(__float32_add,32);
 static __float32 __float32_sub( __float32, __float32 );SF_ADAPTER1(__float32_sub,32);
 static __float32 __float32_mul( __float32, __float32 );SF_ADAPTER1(__float32_mul,32);
-static __float32 __float32_div( __float32, __float32 );SF_ADAPTER1(__float32_div,32);
+static __float32 __float32_divG( __float32, __float32 );SF_ADAPTER1(__float32_divG,32);
+static __float32 __float32_divSRT4( __float32, __float32 );SF_ADAPTER1(__float32_divSRT4,32);
 static __float32 __float32_rem( __float32, __float32 );
 static __float32 __float32_sqrt( __float32 );SF_ADAPTER1_unary(__float32_sqrt,32); //inline float sqrtf(float x) {return float32_sqrtif(x);}
 static __flag __float32_eq( __float32, __float32 );
@@ -292,7 +293,8 @@ static __float64 __float64_round_to_int( __float64 );
 static __float64 __float64_add( __float64, __float64 );SF_ADAPTER1(__float64_add,64);
 static __float64 __float64_sub( __float64, __float64 );SF_ADAPTER1(__float64_sub,64);
 static __float64 __float64_mul( __float64, __float64 );SF_ADAPTER1(__float64_mul,64);
-static __float64 __float64_div( __float64, __float64 );SF_ADAPTER1(__float64_div,64);
+static __float64 __float64_divSRT4( __float64, __float64 );SF_ADAPTER1(__float64_divSRT4,64);
+static __float64 __float64_divG( __float64, __float64 );SF_ADAPTER1(__float64_divG,64);
 static __float64 __float64_rem( __float64, __float64 );
 static __float64 __float64_sqrt( __float64 );SF_ADAPTER1_unary(__float64_sqrt,64); //inline double sqrt(double x) {return float64_sqrtif(x);}
 static __flag __float64_eq( __float64, __float64 );
