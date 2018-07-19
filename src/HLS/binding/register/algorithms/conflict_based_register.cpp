@@ -108,7 +108,7 @@ void conflict_based_register::create_conflict_graph()
    for(unsigned int vj = 1; vj < cg_num_vertices; ++vj)
       for(unsigned int vi = 0; vi < vj; ++vi)
       {
-         if(HLS->storage_value_information->get_storage_value_bitsize(vi) != HLS->storage_value_information->get_storage_value_bitsize(vj))
+         if(!HLS->storage_value_information->are_value_bitsize_compatible(vi,vj))
          {
             boost::graph_traits<conflict_graph>::edge_descriptor e1;
             bool in1;

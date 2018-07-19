@@ -129,10 +129,11 @@ class StorageValueInformation
       int get_compatibility_weight(unsigned int storage_value_index1, unsigned int storage_value_index2) const;
 
       /**
-       * return the bitsize of a storage value
-       * @param storage_value_index is the storage value
+       * return the in case the storage values have compatible size
+       * @param storage_value_index1 is the first storage value
+       * @param storage_value_index2 is the second storage value
        */
-      unsigned int get_storage_value_bitsize(unsigned int storage_value_index) const;
+      bool are_value_bitsize_compatible(unsigned int storage_value_index1, unsigned int storage_value_index2) const;
 };
 typedef refcount<StorageValueInformation> StorageValueInformationRef;
 #endif

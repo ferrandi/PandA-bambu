@@ -110,7 +110,7 @@ void compatibility_based_register::create_compatibility_graph()
    for(unsigned int vj = 1; vj < CG_num_vertices; ++vj)
       for(unsigned int vi = 0; vi < vj; ++vi)
       {
-         if(!conflict_map(vi,vj) && HLS->storage_value_information->get_storage_value_bitsize(vi) == HLS->storage_value_information->get_storage_value_bitsize(vj))
+         if(!conflict_map(vi,vj) && HLS->storage_value_information->are_value_bitsize_compatible(vi,vj))
          {
             boost::graph_traits<compatibility_graph>::edge_descriptor e1;
             int edge_weight = HLS->storage_value_information->get_compatibility_weight(vi,vj);

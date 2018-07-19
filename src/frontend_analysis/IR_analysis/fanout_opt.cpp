@@ -109,6 +109,7 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
       case DEPENDENCE_RELATIONSHIP:
       {
          relationships.insert (std::pair<FrontendFlowStepType, FunctionRelationship> (CSE_STEP, SAME_FUNCTION));
+         relationships.insert (std::pair<FrontendFlowStepType, FunctionRelationship> (EXTRACT_PATTERNS, SAME_FUNCTION));
          break;
       }
       default:
@@ -123,7 +124,14 @@ bool fanout_opt::is_dest_relevant(tree_nodeRef t, bool )
    if(GET_NODE(t)->get_kind() == gimple_assign_K)
    {
        gimple_assign * temp_assign = GetPointer<gimple_assign>(GET_NODE(t));
-       if(GET_NODE(temp_assign->op1)->get_kind() == mult_expr_K || GET_NODE(temp_assign->op1)->get_kind() == widen_mult_expr_K)
+       if(
+             GET_NODE(temp_assign->op1)->get_kind() == mult_expr_K ||
+             GET_NODE(temp_assign->op1)->get_kind() == widen_mult_expr_K ||
+             GET_NODE(temp_assign->op1)->get_kind() == ternary_plus_expr_K ||
+             GET_NODE(temp_assign->op1)->get_kind() == ternary_mm_expr_K ||
+             GET_NODE(temp_assign->op1)->get_kind() == ternary_pm_expr_K ||
+             GET_NODE(temp_assign->op1)->get_kind() == ternary_mp_expr_K
+             )
           return true;
    }
    return false;
