@@ -729,7 +729,12 @@ void parametric_list_based::exec(const OpVertexSet & operations, ControlStep cur
                   insertResult.first->second.insert(current_vertex);
                   continue;
                }*/
-               else if((current_starting_time > (EPSILON + current_cycle_starting_time)) and (GET_TYPE(flow_graph, current_vertex) & TYPE_LOAD) and HLS->allocation_information->is_one_cycle_direct_access_memory_unit(fu_type) and ((HLSMgr->Rmem->get_maximum_references(HLS->allocation_information->is_memory_unit(fu_type) ? HLS->allocation_information->get_memory_var(fu_type) : HLS->allocation_information->get_proxy_memory_var(fu_type))) > HLS->allocation_information->get_number_channels(fu_type)))
+               else if((current_starting_time > (EPSILON + current_cycle_starting_time)) and (GET_TYPE(flow_graph, current_vertex) & TYPE_LOAD) and
+                       HLS->allocation_information->is_one_cycle_direct_access_memory_unit(fu_type) and
+                       (!HLS->allocation_information->is_readonly_memory_unit(fu_type) ||
+                        (!HLS->Param->isOption(OPT_rom_duplication) || !HLS->Param->getOption<bool>(OPT_rom_duplication))) and
+                       ((HLSMgr->Rmem->get_maximum_references(HLS->allocation_information->is_memory_unit(fu_type) ? HLS->allocation_information->get_memory_var(fu_type) : HLS->allocation_information->get_proxy_memory_var(fu_type))) > HLS->allocation_information->get_number_channels(fu_type))
+                       )
                {
                   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "                  Chaining with an asynchronous load is not possible -> starting time " + boost::lexical_cast<std::string>(current_starting_time) + " ending time: " + boost::lexical_cast<std::string>(current_ending_time));
                   auto insertResult = black_list.insert(make_pair(fu_type, OpVertexSet(flow_graph)));
@@ -1018,7 +1023,11 @@ void parametric_list_based::compute_starting_ending_time_asap(const vertex v, co
       {
          if(HLS->Param->getOption<double>(OPT_scheduling_mux_margins) != 0.0)
             return HLS->allocation_information->EstimateControllerDelay();
-         if(cs==cs_prev && HLS->allocation_information->is_one_cycle_direct_access_memory_unit(from_fu_type) && HLSMgr->Rmem->get_maximum_references(HLS->allocation_information->is_memory_unit(from_fu_type) ? HLS->allocation_information->get_memory_var(from_fu_type) : HLS->allocation_information->get_proxy_memory_var(from_fu_type))>HLS->allocation_information->get_number_channels(from_fu_type))
+         if(cs==cs_prev &&
+            HLS->allocation_information->is_one_cycle_direct_access_memory_unit(from_fu_type) &&
+            (!HLS->allocation_information->is_readonly_memory_unit(from_fu_type) ||
+             (!HLS->Param->isOption(OPT_rom_duplication) || !HLS->Param->getOption<bool>(OPT_rom_duplication))) &&
+            HLSMgr->Rmem->get_maximum_references(HLS->allocation_information->is_memory_unit(from_fu_type) ? HLS->allocation_information->get_memory_var(from_fu_type) : HLS->allocation_information->get_proxy_memory_var(from_fu_type))>HLS->allocation_information->get_number_channels(from_fu_type))
             return HLS->allocation_information->EstimateControllerDelay();
          return 0.0;
       }();
@@ -1131,7 +1140,11 @@ void parametric_list_based::compute_starting_ending_time_alap(vertex v, const un
       {
          if(HLS->Param->getOption<double>(OPT_scheduling_mux_margins) != 0.0)
             return HLS->allocation_information->EstimateControllerDelay();
-         if(cs==cs_prev && HLS->allocation_information->is_one_cycle_direct_access_memory_unit(from_fu_type) && HLSMgr->Rmem->get_maximum_references(HLS->allocation_information->is_memory_unit(from_fu_type) ? HLS->allocation_information->get_memory_var(from_fu_type) : HLS->allocation_information->get_proxy_memory_var(from_fu_type))>HLS->allocation_information->get_number_channels(from_fu_type))
+         if(cs==cs_prev &&
+            HLS->allocation_information->is_one_cycle_direct_access_memory_unit(from_fu_type) &&
+            (!HLS->allocation_information->is_readonly_memory_unit(from_fu_type) ||
+             (!HLS->Param->isOption(OPT_rom_duplication) || !HLS->Param->getOption<bool>(OPT_rom_duplication))) &&
+            HLSMgr->Rmem->get_maximum_references(HLS->allocation_information->is_memory_unit(from_fu_type) ? HLS->allocation_information->get_memory_var(from_fu_type) : HLS->allocation_information->get_proxy_memory_var(from_fu_type))>HLS->allocation_information->get_number_channels(from_fu_type))
             return HLS->allocation_information->EstimateControllerDelay();
          return 0.0;
       }();
@@ -2054,7 +2067,10 @@ void parametric_list_based::do_balanced_scheduling1(std::deque<vertex> &sub_leve
 bool parametric_list_based::check_non_direct_operation_chaining(vertex current_v, unsigned int v_fu_type, const ControlStep cs, const ScheduleConstRef schedule, fu_bindingRef res_binding) const
 {
    bool v_is_indirect = REMOVE_DIRECT_TO_INDIRECT && HLS->allocation_information->is_indirect_access_memory_unit(v_fu_type);
-   bool v_is_one_cycle_direct_access = HLS->allocation_information->is_one_cycle_direct_access_memory_unit(v_fu_type) && HLSMgr->Rmem->get_maximum_references(HLS->allocation_information->is_memory_unit(v_fu_type) ? HLS->allocation_information->get_memory_var(v_fu_type) : HLS->allocation_information->get_proxy_memory_var(v_fu_type))>HLS->allocation_information->get_number_channels(v_fu_type);
+   bool v_is_one_cycle_direct_access = (HLS->allocation_information->is_one_cycle_direct_access_memory_unit(v_fu_type) &&
+                                        (!HLS->allocation_information->is_readonly_memory_unit(v_fu_type) ||
+                                         (!HLS->Param->isOption(OPT_rom_duplication) || !HLS->Param->getOption<bool>(OPT_rom_duplication))) &&
+                                        HLS->allocation_information->is_readonly_memory_unit(v_fu_type)) && HLSMgr->Rmem->get_maximum_references(HLS->allocation_information->is_memory_unit(v_fu_type) ? HLS->allocation_information->get_memory_var(v_fu_type) : HLS->allocation_information->get_proxy_memory_var(v_fu_type))>HLS->allocation_information->get_number_channels(v_fu_type);
 
    ///Set of already analyzed operations
    OpVertexSet already_analyzed_operations(flow_graph);

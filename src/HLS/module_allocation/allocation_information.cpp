@@ -2534,7 +2534,8 @@ bool AllocationInformation::is_proxy_memory_unit(const unsigned int fu_name) con
 bool AllocationInformation::is_readonly_memory_unit(const unsigned int fu_name) const
 {
    THROW_ASSERT(fu_name < get_number_fu_types(), "functional unit id not meaningful");
-   return (is_memory_unit(fu_name) && Rmem->is_read_only_variable(get_memory_var(fu_name)));
+   return (is_memory_unit(fu_name) && Rmem->is_read_only_variable(get_memory_var(fu_name))) ||
+         (is_proxy_memory_unit(fu_name) && Rmem->is_read_only_variable(get_proxy_memory_var(fu_name)));
 }
 
 bool AllocationInformation::is_single_bool_test_cond_expr_units(const unsigned int fu_name) const
@@ -3194,6 +3195,8 @@ bool AllocationInformation::CanBeChained(const unsigned int first_statement_inde
    else if(GetTimeLatency(first_statement_index, CanImplementSetNotEmpty(first_statement_index) ? GetFuType(first_statement_index) : fu_binding::UNKNOWN, 0).first > 0.001 and
            behavioral_helper->IsLoad(second_statement_index) and
            is_one_cycle_direct_access_memory_unit(GetFuType(second_statement_index)) and
+           (!is_readonly_memory_unit(GetFuType(second_statement_index)) ||
+            (!parameters->isOption(OPT_rom_duplication) || !parameters->getOption<bool>(OPT_rom_duplication))) and
            ((Rmem->get_maximum_references(is_memory_unit(GetFuType(second_statement_index)) ? get_memory_var(GetFuType(second_statement_index)) : get_proxy_memory_var(GetFuType(second_statement_index)))) > get_number_channels(GetFuType(second_statement_index))))
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--No because second is a load from distributed memory");

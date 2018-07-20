@@ -877,7 +877,14 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
       else
       {
          if(allocation_information->is_vertex_bounded(fu_unit) ||
-               (allocation_information->is_memory_unit(fu_unit) && ((!allocation_information->is_one_cycle_direct_access_memory_unit(fu_unit) && (!parameters->isOption(OPT_rom_duplication) || !parameters->getOption<bool>(OPT_rom_duplication))) || !allocation_information->is_readonly_memory_unit(fu_unit)) && allocation_information->get_number_channels(fu_unit) == 1) || n_shared_fu.find(fu_unit)->second == 1)
+               (allocation_information->is_memory_unit(fu_unit) &&
+                (
+                   !allocation_information->is_readonly_memory_unit(fu_unit) ||
+                   (!allocation_information->is_one_cycle_direct_access_memory_unit(fu_unit) && (!parameters->isOption(OPT_rom_duplication) || !parameters->getOption<bool>(OPT_rom_duplication)))
+                   ) &&
+                allocation_information->get_number_channels(fu_unit) == 1
+                ) ||
+               n_shared_fu.find(fu_unit)->second == 1)
          {
             ++total_modules_allocated;
             total_resource_area += allocation_information->get_area(fu_unit);
@@ -1229,7 +1236,9 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
          const double mux_time = MODULE_BINDING_MUX_MARGIN * allocation_information->estimate_mux_time(fu_s1);
          double controller_delay = allocation_information->EstimateControllerDelay();
          double resource_area = allocation_information->compute_normalized_area(fu_s1);
-         bool disabling_slack_based_binding = ((allocation_information->get_number_channels(fu_s1) >= 1) and ((not allocation_information->is_one_cycle_direct_access_memory_unit(fu_s1) && (!parameters->isOption(OPT_rom_duplication) || !parameters->getOption<bool>(OPT_rom_duplication))) || not allocation_information->is_readonly_memory_unit(fu_s1))) ||
+         bool disabling_slack_based_binding = ((allocation_information->get_number_channels(fu_s1) >= 1) and
+                                               (!allocation_information->is_readonly_memory_unit(fu_s1) ||
+                                                (!parameters->isOption(OPT_rom_duplication) || !parameters->getOption<bool>(OPT_rom_duplication)))) ||
                                               lib_name  == WORK_LIBRARY || lib_name == PROXY_LIBRARY ||
                                               allocation_information->get_number_fu(fu_s1) != INFINITE_UINT;
          double local_mux_time = (disabling_slack_based_binding ? -std::numeric_limits<double>::infinity() : mux_time);
@@ -1251,12 +1260,10 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
                   continue;
                }
                if(
-                     !disabling_slack_based_binding && lib_name != WORK_LIBRARY &&
+                     !disabling_slack_based_binding &&
                      !allocation_information->is_proxy_unit(fu_s1) &&
                      allocation_information->get_number_channels(fu_s1) < 2 &&
                      !allocation_information->is_indirect_access_memory_unit(fu_s1) &&
-                     !allocation_information->is_direct_access_memory_unit(fu_s1) &&
-                     !allocation_information->is_one_cycle_direct_access_memory_unit(fu_s1) &&
                      allocation_information->get_cycles(fu_s1, *cv1_it, sdg) <= 1  &&
                      allocation_information->get_cycles(fu_s1, *cv2_it, sdg) <= 1)
                {
@@ -1566,7 +1573,9 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
             const CliqueCovering_Algorithm clique_covering_method_used =clique_covering_algorithm;
             std::string res_name = allocation_information->get_fu_name(p_it->first).first;
             std::string lib_name = HLS->HLS_T->get_technology_manager()->get_library(res_name);
-            bool disabling_slack_based_binding = ((allocation_information->get_number_channels(p_it->first) >= 1) and ((not allocation_information->is_one_cycle_direct_access_memory_unit(p_it->first) && (!parameters->isOption(OPT_rom_duplication) || !parameters->getOption<bool>(OPT_rom_duplication))) || not allocation_information->is_readonly_memory_unit(p_it->first))) ||
+            bool disabling_slack_based_binding = ((allocation_information->get_number_channels(p_it->first) >= 1) and
+                                                  (!allocation_information->is_readonly_memory_unit(p_it->first) ||
+                                                   (!parameters->isOption(OPT_rom_duplication) || !parameters->getOption<bool>(OPT_rom_duplication)))) ||
                                                  lib_name  == WORK_LIBRARY || lib_name == PROXY_LIBRARY ||
                                                  allocation_information->get_number_fu(p_it->first) != INFINITE_UINT;
 

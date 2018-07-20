@@ -166,8 +166,9 @@ DesignFlowStep_Status easy_module_binding::InternalExec()
       if(fu.get_index(operation) != INFINITE_UINT) continue;
       fu_unit = fu.get_assign(operation);
       if(allocation_information->is_vertex_bounded(fu_unit) ||
-            (allocation_information->is_memory_unit(fu_unit) && (!allocation_information->is_readonly_memory_unit(fu_unit) ||
-                                                                 (!allocation_information->is_one_cycle_direct_access_memory_unit(fu_unit) && (!parameters->isOption(OPT_rom_duplication) || !parameters->getOption<bool>(OPT_rom_duplication)))) &&
+            (allocation_information->is_memory_unit(fu_unit) &&
+             (!allocation_information->is_readonly_memory_unit(fu_unit) ||
+              (!allocation_information->is_one_cycle_direct_access_memory_unit(fu_unit) && (!parameters->isOption(OPT_rom_duplication) || !parameters->getOption<bool>(OPT_rom_duplication)))) &&
              allocation_information->get_number_channels(fu_unit) == 1) || n_shared_fu.find(fu_unit)->second == 1)
       {
          fu.bind(operation, fu_unit, 0);
