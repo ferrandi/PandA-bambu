@@ -720,8 +720,7 @@ const int treeVocabularyTokenTypes::bisontokens[] =
    NO_TOKEN,
    NO_TOKEN,
    NO_TOKEN,
-
-   static_cast<const int>(TreeVocabularyTokenTypes_TokenEnum::LAST_TOKEN)
+   static_cast<int>(TreeVocabularyTokenTypes_TokenEnum::LAST_TOKEN)
 };
 
 const char* treeVocabularyTokenTypes::tokenNames[] =
