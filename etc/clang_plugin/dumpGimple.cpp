@@ -542,7 +542,7 @@ namespace clang
       {
          std::string declname = std::string(llvm_obj->getName());
          int status;
-         char * demangled_outbuffer = abi::__cxa_demangle(declname.c_str(), NULL, NULL, &status);
+         char * demangled_outbuffer = abi::__cxa_demangle(declname.c_str(), nullptr, nullptr, &status);
          if(status==0)
          {
             free(demangled_outbuffer);
@@ -661,7 +661,7 @@ namespace clang
          {
             declname = std::string(llvm_obj->getName());
             int status;
-            char * demangled_outbuffer = abi::__cxa_demangle(declname.c_str(), NULL, NULL, &status);
+            char * demangled_outbuffer = abi::__cxa_demangle(declname.c_str(), nullptr, nullptr, &status);
             if(status==0)
             {
                if(std::string(demangled_outbuffer).find(':') == std::string::npos && std::string(demangled_outbuffer).find('(') != std::string::npos)
@@ -1558,7 +1558,7 @@ namespace clang
    const void* DumpGimpleRaw::LowerGetElementPtr(const void* type, const llvm::User* gep, const llvm::Function * currentFunction)
    {
       assert(TREE_CODE(type) == GT(POINTER_TYPE));
-      auto mem_ref_type = TREE_TYPE(type);
+      //auto mem_ref_type = TREE_TYPE(type);
       auto base_node = getOperand(gep->getOperand(0), currentFunction);
       const llvm::GEPOperator* gep_op = dyn_cast<llvm::GEPOperator>(gep);
       assert(gep_op);
@@ -2206,7 +2206,7 @@ namespace clang
          return 0;
    }
 
-   bool DumpGimpleRaw::DECL_REGISTER(const void* t) const
+   bool DumpGimpleRaw::DECL_REGISTER(const void* ) const
    {
       return false;
    }
@@ -2432,12 +2432,12 @@ namespace clang
       return !CheckSignedTag(ty);
    }
 
-   bool DumpGimpleRaw::COMPLEX_FLOAT_TYPE_P(const void*t) const
+   bool DumpGimpleRaw::COMPLEX_FLOAT_TYPE_P(const void*) const
    {
       llvm_unreachable("unexpected call to COMPLEX_FLOAT_TYPE_P");
    }
 
-   bool DumpGimpleRaw::TYPE_SATURATING(const void*t) const
+   bool DumpGimpleRaw::TYPE_SATURATING(const void*) const
    {
       llvm_unreachable("unexpected call to COMPLEX_FLOAT_TYPE_P");
    }
@@ -2515,7 +2515,7 @@ namespace clang
       return uicTable.find(maxvalue)->second;
    }
 
-   const void* DumpGimpleRaw::TYPE_VALUES(const void* t)
+   const void* DumpGimpleRaw::TYPE_VALUES(const void* )
    {
       llvm_unreachable("unexpected call to TYPE_VALUES");
    }
@@ -2570,7 +2570,7 @@ namespace clang
       }
    }
 
-   const void* DumpGimpleRaw::TYPE_CONTEXT(const void* t)
+   const void* DumpGimpleRaw::TYPE_CONTEXT(const void* )
    {
       return nullptr;/// TBF
    }
@@ -2684,12 +2684,12 @@ namespace clang
       return assignCode(&index2field_decl.find(std::make_pair(scpe, pos))->second, GT(FIELD_DECL));
    }
 
-   const void * DumpGimpleRaw::GET_METHOD_TYPE(const llvm::Type*t, unsigned int pos, const void * scpe)
+   const void * DumpGimpleRaw::GET_METHOD_TYPE(const llvm::Type*, unsigned int , const void *)
    {
       llvm_unreachable("unexpected condition");
    }
 
-   const void* DumpGimpleRaw::TYPE_METHOD_BASETYPE(const void* t)
+   const void* DumpGimpleRaw::TYPE_METHOD_BASETYPE(const void* )
    {
       llvm_unreachable("unexpected condition");
    }
