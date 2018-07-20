@@ -426,6 +426,13 @@ DesignFlowStep_Status mem_dominator_allocation::Exec()
                }
                std::set<unsigned int> used_set;
                bool resolved = tree_helper::is_fully_resolved(TreeM, expr_index, used_set);
+               if(!resolved)
+               {
+                   auto var = tree_helper::get_base_index(TreeM, expr_index);
+                   THROW_ASSERT(var, "unexpected condition");
+                   used_set.insert(var);
+                   resolved = true;
+               }
                assert(resolved&&!used_set.empty());
                if(resolved && used_set.size()>1)
                {
