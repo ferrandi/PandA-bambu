@@ -1263,7 +1263,6 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
                      !disabling_slack_based_binding &&
                      !allocation_information->is_proxy_unit(fu_s1) &&
                      allocation_information->get_number_channels(fu_s1) < 2 &&
-                     !allocation_information->is_indirect_access_memory_unit(fu_s1) &&
                      allocation_information->get_cycles(fu_s1, *cv1_it, sdg) <= 1  &&
                      allocation_information->get_cycles(fu_s1, *cv2_it, sdg) <= 1)
                {
@@ -1393,7 +1392,12 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
                   size_t cand_out_degree = boost::out_degree(cand_src, *CG) + boost::out_degree(cand_tgt, *CG);
                   int cand_edge_weight = (*CG)[cand_e].weight;
                   if(allocation_information->get_number_channels(fu->get_assign(c2s[boost::get(boost::vertex_index, *CG, cand_src)])) >= 1)
-                     cand_level_difference = -1;
+                  {
+                     if(allocation_information->is_readonly_memory_unit(fu->get_assign(c2s[boost::get(boost::vertex_index, *CG, cand_src)])))
+                        cand_level_difference = -2;
+                     else
+                        cand_level_difference = -1;
+                  }
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing compatibility between operations " + GET_NAME(sdg, c2s[boost::get(boost::vertex_index, *CG, cand_src)]) + " and " + GET_NAME(sdg, c2s[boost::get(boost::vertex_index, *CG, cand_tgt)]) + " - ld = " + STR(cand_level_difference) + " - d= " + STR(cand_out_degree) + " - w = " + STR(cand_edge_weight));
 
                   for(; ce_it != ce_it_end; ++ce_it)
@@ -1739,8 +1743,10 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
                   if(allocation_information->get_number_fu(p_it->first)!=INFINITE_UINT)
                   {
                      THROW_ASSERT(allocation_information->get_number_channels(p_it->first) == 0 || allocation_information->get_number_channels(p_it->first) == allocation_information->get_number_fu(p_it->first), "unexpected condition");
-                     if(allocation_information->get_number_channels(p_it->first)>0 && module_clique->num_vertices() > allocation_information->get_number_channels(p_it->first))
-                        THROW_ERROR("Something of wrong happen: no feasible solution exist for module binding");
+                     if(allocation_information->get_number_channels(p_it->first)>0 && module_clique->num_vertices() > allocation_information->get_number_channels(p_it->first) && !allocation_information->is_readonly_memory_unit(p_it->first))
+                     {
+                        THROW_ERROR("Something of wrong happen: no feasible solution exist for module binding: "+res_name + "["+STR(module_clique->num_vertices())+"]");
+                     }
                   }
                }
             }

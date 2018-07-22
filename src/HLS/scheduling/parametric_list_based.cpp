@@ -2069,8 +2069,8 @@ bool parametric_list_based::check_non_direct_operation_chaining(vertex current_v
    bool v_is_indirect = REMOVE_DIRECT_TO_INDIRECT && HLS->allocation_information->is_indirect_access_memory_unit(v_fu_type);
    bool v_is_one_cycle_direct_access = (HLS->allocation_information->is_one_cycle_direct_access_memory_unit(v_fu_type) &&
                                         (!HLS->allocation_information->is_readonly_memory_unit(v_fu_type) ||
-                                         (!HLS->Param->isOption(OPT_rom_duplication) || !HLS->Param->getOption<bool>(OPT_rom_duplication))) &&
-                                        HLS->allocation_information->is_readonly_memory_unit(v_fu_type)) && HLSMgr->Rmem->get_maximum_references(HLS->allocation_information->is_memory_unit(v_fu_type) ? HLS->allocation_information->get_memory_var(v_fu_type) : HLS->allocation_information->get_proxy_memory_var(v_fu_type))>HLS->allocation_information->get_number_channels(v_fu_type);
+                                         (!HLS->Param->isOption(OPT_rom_duplication) || !HLS->Param->getOption<bool>(OPT_rom_duplication)))) &&
+                                       HLSMgr->Rmem->get_maximum_references(HLS->allocation_information->is_memory_unit(v_fu_type) ? HLS->allocation_information->get_memory_var(v_fu_type) : HLS->allocation_information->get_proxy_memory_var(v_fu_type))>HLS->allocation_information->get_number_channels(v_fu_type);
 
    ///Set of already analyzed operations
    OpVertexSet already_analyzed_operations(flow_graph);
