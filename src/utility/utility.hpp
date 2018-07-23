@@ -43,25 +43,36 @@
 #ifndef UTILITY_HPP
 #define UTILITY_HPP
 
-///Autoheader include
-#include "config_HAVE_ASSERTS.hpp"
+#include <boost/algorithm/string/classification.hpp>
+#include <boost/algorithm/string/detail/classification.hpp>
+#include <boost/algorithm/string/split.hpp>
+#include <boost/concept/usage.hpp>
+#include <boost/container/detail/std_fwd.hpp>
 ///boost include
 #include <boost/date_time.hpp>
-
-///STD include
-#include <limits>
-#include <sstream>
-#include <string>
-#include <typeinfo>
-
+#include <boost/date_time/posix_time/ptime.hpp>
 ///Utility include
 #include <boost/filesystem/convenience.hpp>
 #include <boost/filesystem/fstream.hpp>
 #include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/path.hpp>
 #include <boost/functional/hash/hash.hpp>
+#include <boost/iterator/iterator_facade.hpp>
 #include <boost/serialization/strong_typedef.hpp>
+#include <boost/type_index/type_index_facade.hpp>
 #include <boost/version.hpp>
+#include <stdlib.h>
+#include <functional>
+///STD include
+#include <limits>
+#include <memory>
+#include <sstream>
+#include <string>
+#include <typeindex>
+#include <typeinfo>
+
+///Autoheader include
+#include "config_HAVE_ASSERTS.hpp"
 #include "string_manipulation.hpp"
 
 
@@ -348,9 +359,9 @@ type_t MIN(const type_t a, const type_t b)
  */
 #define GET_FUNCTION_DEBUG_LEVEL() parameters->GetFunctionDebugLevel(GET_CLASS(*this), __func__)
 
-#include <vector>
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
+#include <vector>
 
 template<class G>
 std::string convert_to_binary(G _value, unsigned int precision)

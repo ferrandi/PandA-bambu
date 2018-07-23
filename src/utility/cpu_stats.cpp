@@ -42,20 +42,16 @@
  *
 */
 #include "cpu_stats.hpp"
-
-#include <sys/types.h>
-#include <sys/time.h>
+#include "string_manipulation.hpp"
 #ifdef _WIN32
-#include <winsock2.h>
 #include <psapi.h>
+#include <winsock2.h>
 #else
 #include <sys/resource.h>
 #endif
+#include <bits/types/struct_rusage.h>
+#include <bits/types/struct_timeval.h>
 #include <unistd.h>
-
-
-///utility include
-#include "utility.hpp"
 
 
 #pragma GCC diagnostic ignored "-Wold-style-cast"

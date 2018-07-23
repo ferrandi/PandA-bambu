@@ -45,6 +45,7 @@
 #define CPU_STATS_HPP
 
 #include <ostream>
+#include <string>
 
 extern void util_print_cpu_stats(std::ostream& os);
 extern std::string PrintVirtualDataMemoryUsage();

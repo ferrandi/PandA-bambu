@@ -47,11 +47,6 @@
 
 ///Utility include
 #include <cstdlib>
-#ifndef _WIN32
-#include <sys/wait.h>
-#endif
-
-#include <iosfwd>
 
 #pragma GCC diagnostic ignored "-Wold-style-cast"
 #pragma GCC diagnostic ignored "-Wcast-qual"

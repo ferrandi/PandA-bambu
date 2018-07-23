@@ -40,6 +40,9 @@
  * $Date$
  *
 */
+#include <boost/math/special_functions/fpclassify.hpp>
+#include <cmath>
+
 #include "Statistics.hpp"
 
 boost::math::normal MultiplyVarForCoefficient(int coeff, boost::math::normal var)

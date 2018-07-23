@@ -45,17 +45,14 @@
 #ifndef MATH_FUNCTION_HPP
 #define MATH_FUNCTION_HPP
 
-///Header include
-#include "math_function.hpp"
-
-///STD include
-#include <vector>
+#include <math.h>
+#include <stddef.h>
 
 ///Utility include
 #include "augmented_vector.hpp"
-#include <boost/lexical_cast.hpp>
 #include "exceptions.hpp"
-#include "math.h"
+///Header include
+#include "math_function.hpp"
 
 long double get_point_line_distance(const AugmentedVector<long double>& point, AugmentedVector<long double>& line_point1, AugmentedVector<long double>& line_point2)
 {

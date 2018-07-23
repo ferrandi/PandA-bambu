@@ -41,14 +41,13 @@
  *
 */
 
-///Header include
-#include "indented_output_stream.hpp"
+#include <stddef.h>
+#include <iostream>
 
 ///Utility include
 #include "exceptions.hpp"
-
-///STD include
-#include <fstream>
+///Header include
+#include "indented_output_stream.hpp"
 
 ///In global_variables.hpp
 extern size_t indentation;
