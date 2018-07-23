@@ -43,9 +43,10 @@
  *
 */
 
-#include "meilp_solver.hpp"
-#include "utility.hpp"
+#include "dbgPrintHelper.hpp"
 #include "exceptions.hpp"
+#include "meilp_solver.hpp"
+
 #if HAVE_GLPK
 #include "glpk_solver.hpp"
 #endif

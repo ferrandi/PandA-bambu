@@ -46,10 +46,13 @@
 #ifndef GLPK_SOLVER_HPP
 #define GLPK_SOLVER_HPP
 
+#include <meilp_solver.hpp>
+#include <iosfwd>
+#include <string>
+
+#include "config_HAVE_GLPK.hpp"
 ///Autoheader include
 #include "config_HAVE_GLPK_NESTED.hpp"
-
-#include <meilp_solver.hpp>
 #if HAVE_GLPK_NESTED
 #include <glpk/glpk.h>
 #else

@@ -45,22 +45,20 @@
 #ifndef MEILP_SOLVER_HPP
 #define MEILP_SOLVER_HPP
 
+///STD include
+#include <iosfwd>
+///STL include
+#include <map>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
 ///Autoheader include
 #include "config_HAVE_COIN_OR.hpp"
 #include "config_HAVE_GLPK.hpp"
 #include "config_HAVE_LP_SOLVE.hpp"
-
 ///Utility include
 #include "refcount.hpp"
-
-///STD include
-#include <iosfwd>
-#include <string>
-
-///STL include
-#include <map>
-#include <unordered_map>
-#include <vector>
 
 /**
  * @name forward declarations

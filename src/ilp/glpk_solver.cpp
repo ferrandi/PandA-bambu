@@ -43,14 +43,10 @@
  *
 */
 
-///Autoheader include
-#include "config_HAVE_GLPK_NESTED.hpp"
-
-#include "glpk_solver.hpp"
-#include "exceptions.hpp"
 #include "dbgPrintHelper.hpp"
+#include "exceptions.hpp"
+#include "glpk_solver.hpp"
 #include "utility.hpp"
-#include <boost/lexical_cast.hpp>
 
 extern "C"
 {
@@ -63,8 +59,6 @@ extern "C"
 #include <glpk.h>
 #endif
 }
-
-#include <cfloat>
 
 
 glpk_solver::glpk_solver() : meilp_solver(), lp(nullptr), scp(nullptr), iocp(nullptr), bfcp(nullptr), mip_solution(false)
