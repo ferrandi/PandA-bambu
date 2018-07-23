@@ -332,7 +332,7 @@ type_t MIN(const type_t a, const type_t b)
 /**
 * Macro which defines the get_kind_text function that returns the parameter as a string.
 */
-#define GET_KIND_TEXT(meth) std::string get_kind_text() const {return std::string(#meth);}
+#define GET_KIND_TEXT(meth) std::string get_kind_text() const override {return std::string(#meth);}
 /**
 * Macro returning the name of a class. It uses the static version of get_kind_text
 */

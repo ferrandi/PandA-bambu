@@ -150,7 +150,7 @@ class application_manager
 
       /**
        * Constructor
-       * @param function_expander is the expander used to determine if a called funciton has to be examinedi
+       * @param function_expander is the expander used to determine if a called function has to be examinedi
        * @param single_root_function specifies if only one root function has to be considered
        * @param allow_recursive_functions specifies if recursive functions are allowed
        * @param _Param is the reference to the class containing all the parameters

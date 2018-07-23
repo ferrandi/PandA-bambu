@@ -5484,6 +5484,7 @@ bool BehavioralHelper::CanBeSpeculated(const unsigned int node_index) const
          }
       case (gimple_assign_K):
          {
+            THROW_ASSERT(ga and ga->op1, "unexpected condition"); // to silence the clang static analyzer
             switch(GET_NODE(ga->op1)->get_kind())
             {
                case call_expr_K:

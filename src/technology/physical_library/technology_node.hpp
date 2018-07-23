@@ -244,9 +244,9 @@ enum class TargetDevice_Type;
 enum tec_kind {operation_K, functional_unit_K, functional_unit_template_K, storage_unit_K};
 
 /**
- * Macro used to implement get_kind() function in structural_object hyerarchy classes
+ * Macro used to implement get_kind() function in structural_object hierarchy classes
  */
-#define GET_TEC_KIND(meth) enum tec_kind get_kind() const {return (meth##_K);}
+#define GET_TEC_KIND(meth) enum tec_kind get_kind() const override {return (meth##_K);}
 
 /**
  * Abstract pure class for the technology structure. This node and in particular its refCount type will be used to describe all
@@ -381,7 +381,7 @@ struct operation: public technology_node
    /**
     * Returns the name of the operation.
     */
-   const std::string& get_name() const { return operation_name; }
+   const std::string& get_name() const override { return operation_name; }
 
    /**
     * Checks if the specified type name is supported.
@@ -417,23 +417,23 @@ struct operation: public technology_node
     * @param owner is the refcount version of this.
     * @param TM is the technology manager.
     */
-   void xload(const xml_element* Enode, const technology_nodeRef owner, const ParameterConstRef Param, const target_deviceRef device);
+   void xload(const xml_element* Enode, const technology_nodeRef owner, const ParameterConstRef Param, const target_deviceRef device) override;
 
    /**
     * Add a operation node to an xml tree.
     * @param rootnode is the root node at which the xml representation of the operation is attached.
     */
-   void xwrite(xml_element* rootnode, const technology_nodeRef tn, const ParameterConstRef Param, const TargetDevice_Type type);
+   void xwrite(xml_element* rootnode, const technology_nodeRef tn, const ParameterConstRef Param, const TargetDevice_Type type) override;
 
    /**
     * Append a technology_node to a liberty file.
     */
-   void lib_write(std::ofstream& os, const simple_indentRef PP);
+   void lib_write(std::ofstream& os, const simple_indentRef PP) override;
 
    /**
     * Append a technology_node to a LEF file.
     */
-   void lef_write(std::ofstream& os, const simple_indentRef PP);
+   void lef_write(std::ofstream& os, const simple_indentRef PP) override;
 
    /**
     * Return the datastructure containing the pin-to-pin delay for this operation
@@ -448,7 +448,7 @@ struct operation: public technology_node
     * function that prints the class operation.
     * @param os is the output stream.
     */
-   void print(std::ostream& os) const;
+   void print(std::ostream& os) const override;
 
    /**
     * Redefinition of get_kind_text()
@@ -617,14 +617,14 @@ struct functional_unit: public technology_node
    /**
     * Return the name of the operation.
     */
-   const std::string& get_name() const {return functional_unit_name;}
+   const std::string& get_name() const override {return functional_unit_name;}
 
    /**
     * Load a functional unit starting from an xml file.
     * @param node is a node of the xml tree.
     * @param owner is the refcount version of this.
     */
-   void xload(const xml_element* node, const technology_nodeRef owner, const ParameterConstRef Param, const target_deviceRef device);
+   void xload(const xml_element* node, const technology_nodeRef owner, const ParameterConstRef Param, const target_deviceRef device) override;
 
 #if HAVE_BOOLEAN_PARSER_BUILT
    /**
@@ -639,23 +639,23 @@ struct functional_unit: public technology_node
     * Add a functional unit to an xml tree.
     * @param rootnode is the root node at which the xml representation of the functional unit is attached.
     */
-      void xwrite(xml_element* rootnode, const technology_nodeRef tn, const ParameterConstRef Param, const TargetDevice_Type type);
+      void xwrite(xml_element* rootnode, const technology_nodeRef tn, const ParameterConstRef Param, const TargetDevice_Type type) override;
 
       /**
        * Append a technology_node to a liberty file.
        */
-      void lib_write(std::ofstream& os, const simple_indentRef PP);
+      void lib_write(std::ofstream& os, const simple_indentRef PP) override;
 
       /**
        * Append a technology_node to a LEF file.
        */
-   void lef_write(std::ofstream& os, const simple_indentRef PP);
+   void lef_write(std::ofstream& os, const simple_indentRef PP) override;
 
    /**
     * function that prints the class functional_unit.
     * @param os is the output stream.
     */
-   void print(std::ostream& os) const;
+   void print(std::ostream& os) const override;
 
    /**
     * Redefinition of get_kind_text()
@@ -722,36 +722,36 @@ struct functional_unit: public technology_node
    /**
     * Return the name of the operation.
     */
-   const std::string& get_name() const {return FU->get_name();}
+   const std::string& get_name() const override {return FU->get_name();}
 
    /**
     * Load a functional unit starting from an xml file.
     * @param node is a node of the xml tree.
     * @param owner is the refcount version of this.
     */
-   void xload(const xml_element* Enode, const technology_nodeRef owner, const ParameterConstRef Param, const target_deviceRef device);
+   void xload(const xml_element* Enode, const technology_nodeRef owner, const ParameterConstRef Param, const target_deviceRef device) override;
 
    /**
     * Add a functional unit to an xml tree.
     * @param rootnode is the root node at which the xml representation of the functional unit is attached.
     */
-   void xwrite(xml_element* rootnode, const technology_nodeRef tn, const ParameterConstRef Param, TargetDevice_Type type);
+   void xwrite(xml_element* rootnode, const technology_nodeRef tn, const ParameterConstRef Param, TargetDevice_Type type) override;
 
    /**
     * Append a technology_node to a liberty file.
     */
-   void lib_write(std::ofstream& os, const simple_indentRef PP);
+   void lib_write(std::ofstream& os, const simple_indentRef PP) override;
 
    /**
     * Append a technology_node to a LEF file.
     */
-   void lef_write(std::ofstream& os, const simple_indentRef PP);
+   void lef_write(std::ofstream& os, const simple_indentRef PP) override;
 
    /**
     * function that prints the class functional_unit.
     * @param os is the output stream.
     */
-   void print(std::ostream& os) const;
+   void print(std::ostream& os) const override;
 
    /**
     * Redefinition of get_kind_text()
@@ -798,38 +798,38 @@ struct functional_unit: public technology_node
    /// Destructor
    ~storage_unit() {}
 
-   const std::string& get_name() const {return storage_unit_name;}
+   const std::string& get_name() const override {return storage_unit_name;}
    /**
     * Load a storage_unit starting from an xml file.
     * @param node is a node of the xml tree.
     * @param owner is the refcount version of this.
     * @param TM is the technology manager.
     */
-   void xload(const xml_element*, const technology_nodeRef, const ParameterConstRef, const target_deviceRef) { abort(); }
+   void xload(const xml_element*, const technology_nodeRef, const ParameterConstRef, const target_deviceRef) override { abort(); }
 
    /**
     * Add a storage_unit to an xml tree.
     * @param rootnode is the root node at which the xml representation of the storage_unit unit is attached.
     */
-   void xwrite(xml_element*, const technology_nodeRef, const ParameterConstRef, TargetDevice_Type) { abort(); }
+   void xwrite(xml_element*, const technology_nodeRef, const ParameterConstRef, TargetDevice_Type) override { abort(); }
    /**
     * Append a technology_node to a liberty file.
     */
-   void lib_write(std::ofstream&, const simple_indentRef) {abort();}
+   void lib_write(std::ofstream&, const simple_indentRef) override {abort();}
    /**
     * Append a technology_node to a LEF file.
     */
-   void lef_write(std::ofstream&, const simple_indentRef) {abort();}
+   void lef_write(std::ofstream&, const simple_indentRef) override {abort();}
    /**
     * function that prints the class storage_unit.
     * @param os is the output stream.
     */
-   void print(std::ostream&) const {abort();}
+   void print(std::ostream&) const override {abort();}
 
    /**
     * Redefinition of get_kind_text()
     */
-   GET_KIND_TEXT(storage_unit);
+   GET_KIND_TEXT(storage_unit)
    /**
     * Redefinition of get_kind()
     */

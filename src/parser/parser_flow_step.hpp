@@ -76,7 +76,7 @@ class ParserFlowStep : public DesignFlowStep
 
       /**
        * Given a parser step type, return the name of the type
-       * @param type is the type to be consiedred
+       * @param type is the type to be considered
        * @return the name of the type
        */
       static
@@ -98,21 +98,15 @@ class ParserFlowStep : public DesignFlowStep
       virtual ~ParserFlowStep();
 
       /**
-       * Execute the step
-       * @return the exit status of this step
-       */
-      virtual DesignFlowStep_Status Exec() = 0;
-
-      /**
        * Return the signature of this step
        */
-      virtual const std::string GetSignature() const;
+      virtual const std::string GetSignature() const override;
 
       /**
        * Return the name of this design step
        * @return the name of the pass (for debug purpose)
        */
-      virtual const std::string GetName() const;
+      virtual const std::string GetName() const override;
 
       /**
        * Compute the signature of a parser flow step
@@ -127,18 +121,18 @@ class ParserFlowStep : public DesignFlowStep
        * Check if this step has actually to be executed
        * @return true if the step has to be executed
        */
-      virtual bool HasToBeExecuted() const;
+      virtual bool HasToBeExecuted() const override;
 
       /**
        * Compute the relationships of a step with other steps
        * @param dependencies is where relationships will be stored
        * @param relationship_type is the type of relationship to be computed
        */
-      virtual void ComputeRelationships(DesignFlowStepSet & relationship, const DesignFlowStep::RelationshipType relationship_type);
+      virtual void ComputeRelationships(DesignFlowStepSet & relationship, const DesignFlowStep::RelationshipType relationship_type) override;
 
       /**
        * Return the factory to create this type of steps
        */
-      virtual const DesignFlowStepFactoryConstRef CGetDesignFlowStepFactory() const;
+      virtual const DesignFlowStepFactoryConstRef CGetDesignFlowStepFactory() const override;
 };
 #endif

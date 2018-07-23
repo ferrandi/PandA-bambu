@@ -113,9 +113,9 @@ class vcd_utility : public HLS_step
        * Execute the step
        * @return the exit status of this step
        */
-      DesignFlowStep_Status Exec();
+      DesignFlowStep_Status Exec() override;
 
-      bool HasToBeExecuted() const;
+      bool HasToBeExecuted() const override;
 
    protected:
 
@@ -145,10 +145,10 @@ class vcd_utility : public HLS_step
        * @param relationship_type is the type of relationship to be considered
        */
       virtual const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> >
-      ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const;
+      ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
       virtual void ComputeRelationships(DesignFlowStepSet & relationship,
-            const DesignFlowStep::RelationshipType relationship_type);
+            const DesignFlowStep::RelationshipType relationship_type) override;
 
       bool detect_mismatch(
             const vcd_trace_head & t,

@@ -98,7 +98,7 @@ class OpEdgeWriter : public EdgeWriter
        * @param out is the stream
        * @param e is the edge
        */
-      virtual void operator()(std::ostream& out, const EdgeDescriptor& e) const;
+      virtual void operator()(std::ostream& out, const EdgeDescriptor& e) const override;
 };
 
 /**
@@ -122,7 +122,7 @@ class BBEdgeWriter : public EdgeWriter
        * @param out is the stream on which edge should be printed
        * @param e is the edge to be printed
        */
-      void operator()(std::ostream & out, const EdgeDescriptor & e) const;
+      void operator()(std::ostream & out, const EdgeDescriptor & e) const override;
 };
 
 class OpWriter : public VertexWriter
@@ -146,7 +146,7 @@ class OpWriter : public VertexWriter
        * @param out is the stream where label has to be printed
        * @param v is the vertex whose label has to be printed
        */
-      virtual void operator()(std::ostream& out, const vertex& v) const;
+      virtual void operator()(std::ostream& out, const vertex& v) const override;
 };
 
 class BBWriter : public VertexWriter
@@ -179,7 +179,7 @@ class BBWriter : public VertexWriter
        * @param out is the stream where label has to printed
        * @param v is the vertex to be printed
        */
-      void operator()(std::ostream& out, const vertex& v) const;
+      void operator()(std::ostream& out, const vertex& v) const override;
 };
 
 #if HAVE_HLS_BUILT
@@ -196,7 +196,7 @@ class TimedOpWriter : public OpWriter
       /**
        * Constructor
        * @param op_graph is the operation graph to be printed
-       * @param HLS is the HLS data structre
+       * @param HLS is the HLS data structure
        * @param critical_paths is the set of operations belonging to critical paths
        */
       TimedOpWriter(const OpGraph * op_graph, const hlsConstRef HLS, CustomSet<unsigned int> critical_paths);
@@ -206,7 +206,7 @@ class TimedOpWriter : public OpWriter
        * @param out is the stream
        * @param e is the edge
        */
-      void operator()(std::ostream& out, const vertex& v) const;
+      void operator()(std::ostream& out, const vertex& v) const override;
 };
 
 class TimedOpEdgeWriter : public OpEdgeWriter
@@ -222,7 +222,7 @@ class TimedOpEdgeWriter : public OpEdgeWriter
       /**
        * Constructor
        * @param _g is the operation graph
-       * @param HLS is the HLS data structre
+       * @param HLS is the HLS data structure
        * @param critical_paths is the set of operations belonging to critical paths
        */
       TimedOpEdgeWriter(const OpGraph * operation_graph, const hlsConstRef HLS, CustomSet<unsigned int> critical_paths);
@@ -232,7 +232,7 @@ class TimedOpEdgeWriter : public OpEdgeWriter
        * @param out is the stream
        * @param e is the edge
        */
-      void operator()(std::ostream& out, const EdgeDescriptor& e) const;
+      void operator()(std::ostream& out, const EdgeDescriptor& e) const override;
 };
 #endif
 

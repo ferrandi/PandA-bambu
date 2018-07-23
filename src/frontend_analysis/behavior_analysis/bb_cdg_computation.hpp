@@ -32,7 +32,7 @@
 */
 /**
  * @file bb_cdg_computation.hpp
- * @brief Analysis step computing basic block control dependences
+ * @brief Analysis step computing basic block control dependencies
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *

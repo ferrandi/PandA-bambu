@@ -191,7 +191,7 @@ class NP_functionality
     /**
      * Definition of get_kind_text()
     */
-    GET_KIND_TEXT(NP_functionality);
+    std::string get_kind_text() const {return std::string("NP_functionality");}
 
 };
 

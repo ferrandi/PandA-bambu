@@ -389,6 +389,6 @@ enum kind {
 /**
 * Macro which define a function that return the parameter as a enum kind.
 */
-#define GET_KIND(meth) enum kind get_kind() const {return (meth##_K);}
+#define GET_KIND(meth) enum kind get_kind() const override {return (meth##_K);}
 
 #endif

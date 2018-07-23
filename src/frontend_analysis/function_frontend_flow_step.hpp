@@ -116,18 +116,18 @@ class FunctionFrontendFlowStep : public FrontendFlowStep
        * @param dependencies is where relationships will be stored
        * @param relationship_type is the type of relationship to be computed
        */
-      virtual void ComputeRelationships(DesignFlowStepSet & relationship, const DesignFlowStep::RelationshipType relationship_type);
+      virtual void ComputeRelationships(DesignFlowStepSet & relationship, const DesignFlowStep::RelationshipType relationship_type) override;
 
       /**
        * Return the signature of this step
        */
-      virtual const std::string GetSignature() const;
+      virtual const std::string GetSignature() const override;
 
       /**
        * Return the name of this design step
        * @return the name of the pass (for debug purpose)
        */
-      virtual const std::string GetName() const;
+      virtual const std::string GetName() const override;
 
       /**
        * Execute the step
@@ -152,7 +152,7 @@ class FunctionFrontendFlowStep : public FrontendFlowStep
        * Check if this step has actually to be executed
        * @return true if the step has to be executed
        */
-      virtual bool HasToBeExecuted() const;
+      virtual bool HasToBeExecuted() const override;
 
       /**
        * @return on which bb version this step has been executed last time
@@ -162,11 +162,11 @@ class FunctionFrontendFlowStep : public FrontendFlowStep
       /**
        * Dump the initial intermediate representation
        */
-      virtual void PrintInitialIR() const;
+      virtual void PrintInitialIR() const override;
 
       /**
        * Dump the final intermediate representation
        */
-      virtual void PrintFinalIR() const;
+      virtual void PrintFinalIR() const override;
 };
 #endif

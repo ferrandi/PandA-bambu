@@ -32,7 +32,7 @@
 */
 /**
  * @file op_cdg_computation.hpp
- * @brief Analysis step computing operation control dependences
+ * @brief Analysis step computing operation control dependencies
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *

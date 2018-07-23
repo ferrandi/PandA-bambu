@@ -215,7 +215,7 @@ class Bit_Value : public FunctionFrontendFlowStep, public BitLatticeManipulator
        * Given an ssa_name it computes the resulting bitstring from backward
        * propagation from the places where that ssa is used
        * @param ssa the ssa_name to process
-       * @param sl is the statment list of the funciton where ssa is defined
+       * @param sl is the statment list of the function where ssa is defined
        * @param bb_loop_id is the loop_id of the basic block where ssa is defined
        * @return the computed bitstring
        */

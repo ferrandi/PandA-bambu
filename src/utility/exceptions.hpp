@@ -238,9 +238,8 @@ do {\
 #if HAVE_ASSERTS
 #define THROW_ASSERT(cond, str_expr) do {if(cond){;}else{PRINT_STACK;THROW_ERROR(std::string(str_expr)+" ("+#cond+")");}} while(0)
 #else
-#define THROW_ASSERT(cond, str_expr) (void) 0
+#define THROW_ASSERT(cond, str_expr) if(!cond) assert(false) /*to silence static analyzers*/
 #endif
-
 ///helper function used to specify that some points should never be reached
 #define THROW_UNREACHABLE(str_expr) do {THROW_ERROR(std::string("This point should never be reached - " + std::string(str_expr)));} while(0)
 

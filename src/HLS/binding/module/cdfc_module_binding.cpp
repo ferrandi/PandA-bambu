@@ -1171,7 +1171,7 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
             }
          }
       }
-      /// add the control dependences edges and the chained edges to the HC graph
+      /// add the control dependencies edges and the chained edges to the HC graph
       for(std::map<unsigned int, std::set<vertex> >::const_iterator fu_cv_it = candidate_vertices.begin(); fu_cv_it != fu_cv_it_end; ++fu_cv_it)
       {
          const std::set<vertex>::const_iterator cv_it_end = fu_cv_it->second.end();

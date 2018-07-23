@@ -61,7 +61,7 @@ class DesignFlow : public DesignFlowStep
        * Constructor
        * @param design_flow_manager is the design flow manager
        * @param design_flow_type is the type of the flow
-       * @param _Param is the set of the parameters
+       * @param parameters is the set of the parameters
        */
       DesignFlow(const DesignFlowManagerConstRef design_flow_manager, const DesignFlow_Type design_flow_type, const ParameterConstRef parameters);
 
@@ -71,20 +71,14 @@ class DesignFlow : public DesignFlowStep
       virtual ~DesignFlow();
 
       /**
-       * Execute the step
-       * @return the exit status of this step
-       */
-      virtual DesignFlowStep_Status Exec() = 0;
-
-      /**
        * Compute the relationships of a step with other steps
-       * @param dependencies is where relationships will be stored
+       * @param relationship is where relationships will be stored
        * @param relationship_type is the type of relationship to be computed
        */
-      virtual void ComputeRelationships(DesignFlowStepSet & relationship, const DesignFlowStep::RelationshipType relationship_type);
+      virtual void ComputeRelationships(DesignFlowStepSet & relationship, const DesignFlowStep::RelationshipType relationship_type) override;
 
       /**
-       * Compute the siganture of a step
+       * Compute the signature of a step
        * @param design_flow_type is the type of design flow
        * @return the signature corresponding to the design flow
        */
@@ -94,13 +88,13 @@ class DesignFlow : public DesignFlowStep
       /**
        * Return the signature of this step
        */
-      virtual const std::string GetSignature() const;
+      virtual const std::string GetSignature() const override;
 
       /**
        * Return the name of this design step
        * @return the name of the pass (for debug purpose)
        */
-      virtual const std::string GetName() const;
+      virtual const std::string GetName() const override;
 
       /**
        * Return the name of the type
@@ -114,7 +108,7 @@ class DesignFlow : public DesignFlowStep
        * Return the factory to create this type of steps
        * @return the factory to create frontend flow step
        */
-      const DesignFlowStepFactoryConstRef CGetDesignFlowStepFactory() const;
+      const DesignFlowStepFactoryConstRef CGetDesignFlowStepFactory() const override;
 
       /**
        * Given the name of design flow, return the enum
@@ -128,6 +122,6 @@ class DesignFlow : public DesignFlowStep
        * Check if this step has actually to be executed
        * @return true if the step has to be executed
        */
-      virtual bool HasToBeExecuted() const;
+      virtual bool HasToBeExecuted() const override;
 };
 #endif

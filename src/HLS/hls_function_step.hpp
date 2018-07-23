@@ -53,7 +53,7 @@ class HLSFunctionStep : public HLS_step
       ///identifier of the function to be processed (0 means that it is a global step)
       const unsigned int funId;
 
-      ///HLS datastructure of the function to be analyzed
+      ///HLS data structure of the function to be analyzed
       hlsRef HLS;
 
       ///The version of bb intermediate representation on which this step was applied
@@ -69,7 +69,7 @@ class HLSFunctionStep : public HLS_step
       /**
        * Constructor
        * @param Param class containing all the parameters
-       * @param HLS class containing all the HLS datastructures
+       * @param HLS class containing all the HLS data structures
        * @param design_flow_manager is the design flow manager
        * @param hls_flow_step_type is the type of this hls flow step
        */
@@ -84,18 +84,18 @@ class HLSFunctionStep : public HLS_step
        * Check if this step has actually to be executed
        * @return true if the step has to be executed
        */
-      virtual bool HasToBeExecuted() const;
+      virtual bool HasToBeExecuted() const override;
 
       /**
        * Initialize the step (i.e., like a constructor, but executed just before exec
        */
-      virtual void Initialize();
+      virtual void Initialize() override;
 
       /**
        * Return a unified identifier of this design step
        * @return the signature of the design step
        */
-      const std::string GetSignature() const;
+      const std::string GetSignature() const override;
 
       /**
        * Compute the signature of a hls flow step
@@ -111,14 +111,14 @@ class HLSFunctionStep : public HLS_step
        * Return the name of this design step
        * @return the name of the pass (for debug purpose)
        */
-      virtual const std::string GetName() const;
+      virtual const std::string GetName() const override;
 
       /**
        * Compute the relationships of a step with other steps
        * @param dependencies is where relationships will be stored
        * @param relationship_type is the type of relationship to be computed
        */
-      virtual void ComputeRelationships(DesignFlowStepSet & relationship, const DesignFlowStep::RelationshipType relationship_type);
+      virtual void ComputeRelationships(DesignFlowStepSet & relationship, const DesignFlowStep::RelationshipType relationship_type) override;
 
       /**
        * Execute the step

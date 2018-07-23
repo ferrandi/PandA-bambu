@@ -1396,7 +1396,7 @@ const std::unordered_set<unsigned int> tree_helper::RecursiveGetTypesToBeDeclare
                      }
                      return false;
                   }();
-                  ///Non pointer fields must be declared before structs, pointer fields can be declared after; in some cases they must be declared after (circular dependences)
+                  ///Non pointer fields must be declared before structs, pointer fields can be declared after; in some cases they must be declared after (circular dependencies)
                   if(before)
                   {
                      if(not is_a_pointer(TM, field_type->index) or not pointer_to_unnamed_structure)
@@ -1467,7 +1467,7 @@ const std::unordered_set<unsigned int> tree_helper::RecursiveGetTypesToBeDeclare
                      }
                      return false;
                   }();
-                  ///Non pointer fields must be declared before structs, pointer fields can be declared after; in some cases they must be declared after (circular dependences)
+                  ///Non pointer fields must be declared before structs, pointer fields can be declared after; in some cases they must be declared after (circular dependencies)
                   if(before)
                   {
                      if(not is_a_pointer(TM, field_type->index) or not pointer_to_unnamed_structure)

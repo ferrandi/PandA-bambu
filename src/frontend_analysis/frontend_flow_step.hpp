@@ -401,17 +401,11 @@ class FrontendFlowStep : public DesignFlowStep
       virtual ~FrontendFlowStep();
 
       /**
-       * Execute the step
-       * @return the exit status of this step
-       */
-      virtual DesignFlowStep_Status Exec() = 0;
-
-      /**
        * Compute the relationships of a step with other steps
        * @param dependencies is where relationships will be stored
        * @param relationship_type is the type of relationship to be computed
        */
-      virtual void ComputeRelationships(DesignFlowStepSet & relationship, const DesignFlowStep::RelationshipType relationship_type);
+      virtual void ComputeRelationships(DesignFlowStepSet & relationship, const DesignFlowStep::RelationshipType relationship_type) override;
 
       /**
        * Create the relationship steps of a step with other steps starting from already specified dependencies between frontend flow steps
@@ -424,24 +418,13 @@ class FrontendFlowStep : public DesignFlowStep
       void CreateSteps(const DesignFlowManagerConstRef design_flow_manager, const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > & frontend_relationships, const application_managerConstRef application_manager, DesignFlowStepSet & relationships);
 
       /**
-       * Return the signature of this step
-       */
-      virtual const std::string GetSignature() const = 0;
-
-      /**
-       * Return the name of this design step
-       * @return the name of the pass (for debug purpose)
-       */
-      virtual const std::string GetName() const = 0;
-
-      /**
        * Return the name of the type of this frontend flow step
        */
       virtual const std::string GetKindText() const;
 
       /**
        * Given a frontend flow step type, return the name of the type
-       * @param type is the type to be consiedred
+       * @param type is the type to be considered
        * @return the name of the type
        */
       static
@@ -451,7 +434,7 @@ class FrontendFlowStep : public DesignFlowStep
        * Return the factory to create this type of steps
        * @return the factory to create frontend flow step
        */
-      const DesignFlowStepFactoryConstRef CGetDesignFlowStepFactory() const;
+      const DesignFlowStepFactoryConstRef CGetDesignFlowStepFactory() const override;
 
       /**
        * Dump the tree manager
@@ -461,12 +444,12 @@ class FrontendFlowStep : public DesignFlowStep
       /**
        * Dump the initial intermediate representation
        */
-      void PrintInitialIR() const;
+      void PrintInitialIR() const override;
 
       /**
        * Dump the final intermediate representation
        */
-      void PrintFinalIR() const;
+      void PrintFinalIR() const override;
 };
 
 /**

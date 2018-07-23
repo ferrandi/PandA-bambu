@@ -102,7 +102,6 @@
 RTLCharacterization::RTLCharacterization(const target_managerRef _target, const std::string&_cells, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters) :
    DesignFlowStep(_design_flow_manager, _parameters),
    FunctionalUnitStep(_target, _design_flow_manager, _parameters),
-   output_level(_parameters->getOption<int>(OPT_output_level)),
    component(ComputeComponent(_cells)),
    cells(ComputeCells(_cells))
 #ifndef NDEBUG

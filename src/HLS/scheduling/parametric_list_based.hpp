@@ -274,16 +274,16 @@ class parametric_list_based : public Scheduling
        * @param relationship_type is the type of relationship to be considered
        * @return the steps in relationship with this
        */
-      virtual const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const;
+      virtual const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
    public:
       /**
        * This is the constructor of the list_based.
        * @param parameters is the set of input parameters
        * @param HLSmgr is the HLS manager
-       * @param function_id is the funciton index of the function
+       * @param function_id is the function index of the function
        * @param design_flow_manager is the hls design flow
-       * @param hls_flow_step_specialization spciefies how specialize this step
+       * @param hls_flow_step_specialization specifies how specialize this step
       */
       parametric_list_based(const ParameterConstRef parameters, const HLS_managerRef HLSMgr, unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStepSpecializationConstRef hls_flow_step_specialization);
 
@@ -296,7 +296,7 @@ class parametric_list_based : public Scheduling
        * Execute the step
        * @return the exit status of this step
        */
-      virtual DesignFlowStep_Status InternalExec();
+      virtual DesignFlowStep_Status InternalExec() override;
 
       /**
        * Function that computes the List-Based scheduling of the graph.
@@ -306,13 +306,13 @@ class parametric_list_based : public Scheduling
       /**
        * Initialize the step (i.e., like a constructor, but executed just before exec
        */
-      virtual void Initialize();
+      virtual void Initialize() override;
 
       /**
        * Compute the relationships of a step with other steps
        * @param dependencies is where relationships will be stored
        * @param relationship_type is the type of relationship to be computed
        */
-      virtual void ComputeRelationships(DesignFlowStepSet & relationship, const DesignFlowStep::RelationshipType relationship_type);
+      virtual void ComputeRelationships(DesignFlowStepSet & relationship, const DesignFlowStep::RelationshipType relationship_type) override;
 };
 #endif

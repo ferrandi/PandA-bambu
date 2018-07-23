@@ -67,19 +67,19 @@ class fun_dominator_allocation : public function_allocation
        * Execute the step
        * @return the exit status of this step
        */
-      virtual DesignFlowStep_Status Exec();
+      virtual DesignFlowStep_Status Exec() override;
 
       /**
        * Compute the relationships of a step with other steps
        * @param dependencies is where relationships will be stored
        * @param relationship_type is the type of relationship to be computed
        */
-      virtual void ComputeRelationships(DesignFlowStepSet & relationship, const DesignFlowStep::RelationshipType relationship_type);
+      virtual void ComputeRelationships(DesignFlowStepSet & relationship, const DesignFlowStep::RelationshipType relationship_type) override;
 
       /**
        * Check if this step has actually to be executed
        * @return true if the step has to be executed
        */
-      virtual bool HasToBeExecuted() const;
+      virtual bool HasToBeExecuted() const override;
 };
 #endif

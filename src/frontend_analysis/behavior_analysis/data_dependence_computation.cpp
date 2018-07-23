@@ -69,7 +69,7 @@ DesignFlowStep_Status DataDependenceComputation::InternalExec()
 {
    if(frontend_flow_step_type == SCALAR_SSA_DATA_FLOW_ANALYSIS)
    {
-      return ComputeDependences<unsigned int>(DFG_SCA_SELECTOR, FB_DFG_SCA_SELECTOR, ADG_SCA_SELECTOR, FB_ADG_SCA_SELECTOR);
+      return Computedependencies<unsigned int>(DFG_SCA_SELECTOR, FB_DFG_SCA_SELECTOR, ADG_SCA_SELECTOR, FB_ADG_SCA_SELECTOR);
    }
    else if(frontend_flow_step_type == VIRTUAL_AGGREGATE_DATA_FLOW_ANALYSIS or
       frontend_flow_step_type == MEMORY_DATA_FLOW_ANALYSIS
@@ -78,12 +78,12 @@ DesignFlowStep_Status DataDependenceComputation::InternalExec()
 #endif
    )
    {
-      return ComputeDependences<unsigned int>(DFG_AGG_SELECTOR, FB_DFG_AGG_SELECTOR, ADG_AGG_SELECTOR, FB_ADG_AGG_SELECTOR);
+      return Computedependencies<unsigned int>(DFG_AGG_SELECTOR, FB_DFG_AGG_SELECTOR, ADG_AGG_SELECTOR, FB_ADG_AGG_SELECTOR);
    }
 #if HAVE_ZEBU_BUILT && HAVE_EXPERIMENTAL
    else if(frontend_flow_step_type == DYNAMIC_AGGREGATE_DATA_FLOW_ANALYSIS)
    {
-      return ComputeDependences<unsigned int>(DFG_AGG_SELECTOR, FB_DFG_AGG_SELECTOR, ADG_AGG_SELECTOR, FB_ADG_AGG_SELECTOR);
+      return Computedependencies<unsigned int>(DFG_AGG_SELECTOR, FB_DFG_AGG_SELECTOR, ADG_AGG_SELECTOR, FB_ADG_AGG_SELECTOR);
    }
 #endif
    else
@@ -94,7 +94,7 @@ DesignFlowStep_Status DataDependenceComputation::InternalExec()
 }
 
 template <typename type>
-DesignFlowStep_Status DataDependenceComputation::ComputeDependences(const int dfg_selector, const int fb_dfg_selector, const int adg_selector, const int fb_adg_selector)
+DesignFlowStep_Status DataDependenceComputation::Computedependencies(const int dfg_selector, const int fb_dfg_selector, const int adg_selector, const int fb_adg_selector)
 {
    const auto TM = AppM->get_tree_manager();
    const OpGraphConstRef cfg = function_behavior->CGetOpGraph(FunctionBehavior::CFG);
@@ -134,7 +134,7 @@ DesignFlowStep_Status DataDependenceComputation::ComputeDependences(const int df
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Computing dependencies");
    for (boost::tie(vi, vi_end) = boost::vertices(*cfg); vi != vi_end; vi++)
    {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Computing anti and data dependences of vertex " + GET_NAME(cfg, *vi));
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Computing anti and data dependencies of vertex " + GET_NAME(cfg, *vi));
       for(auto local_use : GetVariables<type>(*vi, FunctionBehavior_VariableAccessType::USE))
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering use of " + TM->get_tree_node_const(local_use)->ToString());
@@ -196,8 +196,8 @@ DesignFlowStep_Status DataDependenceComputation::ComputeDependences(const int df
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
       }
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Computed anti and data dependences of vertex " + GET_NAME(cfg, *vi));
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Computing output dependences of vertex " + GET_NAME(cfg, *vi));
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Computed anti and data dependencies of vertex " + GET_NAME(cfg, *vi));
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Computing output dependencies of vertex " + GET_NAME(cfg, *vi));
       for(auto local_def : GetVariables<type>(*vi, FunctionBehavior_VariableAccessType::OVER))
       {
          if(defs.find(local_def) != defs.end())
@@ -219,7 +219,7 @@ DesignFlowStep_Status DataDependenceComputation::ComputeDependences(const int df
             }
          }
       }
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Computed output dependences of vertex " + GET_NAME(cfg, *vi));
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Computed output dependencies of vertex " + GET_NAME(cfg, *vi));
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Computed dependencies");
    if(parameters->getOption<bool>(OPT_print_dot))

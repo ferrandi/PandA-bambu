@@ -177,7 +177,7 @@ class HLS_constraints
       void set_scheduling_priority(const std::string&vertex_name, int Priority);
 
       /**
-       * Returns the datastructure containing scheduling priority constraints
+       * Returns the data structure containing scheduling priority constraints
        * @return a map between the operation vertex and its priority value
        */
       CustomMap<std::string,int> get_scheduling_priority() const;
@@ -277,7 +277,7 @@ class HLS_constraints
       }
 
       ///definition of the get_kind_text method
-      GET_KIND_TEXT(HLS_constraints)
+      std::string get_kind_text() const {return std::string("HLS_constraints");}
 
 };
 ///refcount definition of the class

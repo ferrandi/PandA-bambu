@@ -528,7 +528,7 @@ bool Bit_Value::update_IR()
 #endif
                /*
                 * don't update the bit values of parm_decl here because it would
-                * change how the bitvalue of this funciton is seen from outside.
+                * change how the bitvalue of this function is seen from outside.
                 * for this reason this operation must be performed in BitValueIPA
                 * pd->bit_values = bitstring_to_string(b.second);
                 * res= true;
@@ -551,7 +551,7 @@ bool Bit_Value::update_IR()
                "new bit value: " + STR(b.second.size()));
          /*
           * don't update the bit values of function_decl here because it would
-          * change how the bitvalue of this funciton is seen from outside.
+          * change how the bitvalue of this function is seen from outside.
           * for this reason this operation must be performed in BitValueIPA
           * fd->bit_values = bitstring_to_string(b.second);
           * res= true;

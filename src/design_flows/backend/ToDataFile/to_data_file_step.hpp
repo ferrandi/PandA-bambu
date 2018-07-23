@@ -100,7 +100,7 @@ class ToDataFileStep : public virtual DesignFlowStep
 
       /**
        * Given a to data file step type, return the name of the type
-       * @param to_data_file_step is the type to be consiedred
+       * @param to_data_file_step is the type to be considered
        * @return the name of the type
        */
       static
@@ -108,7 +108,7 @@ class ToDataFileStep : public virtual DesignFlowStep
 
       /**
        * Given the name of data file step type, return the enum
-       * @param to_data_file_step_type is the type to be consiedred
+       * @param to_data_file_step_type is the type to be considered
        * @return the name of the type
        */
       static

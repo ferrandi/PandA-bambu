@@ -217,7 +217,7 @@ struct structural_type_descriptor
       /**
        * Definition of get_kind_text()
       */
-      GET_KIND_TEXT(structural_type_descriptor);
+      std::string get_kind_text() const {return std::string("structural_type_descriptor");}
 
       /**
        * Friend definition of the << operator.
@@ -277,7 +277,7 @@ enum so_kind {component_o_K,
 /**
  * Macro used to implement get_kind() function in structural_object hyerarchy classes
 */
-#define GET_SO_KIND(meth) enum so_kind get_kind() const {return (meth##_K);}
+#define GET_SO_KIND(meth) enum so_kind get_kind() const override {return (meth##_K);}
 
 /**
  * Base object for all the structural objects.
@@ -829,7 +829,7 @@ struct port_o : public structural_object
        * Perform a copy of the port.
        * @param dest destination object.
       */
-      void copy(structural_objectRef dest) const;
+      void copy(structural_objectRef dest) const override;
 
       /**
        * Return the object named id of a given type which belongs to or it is associated with the object.
@@ -837,13 +837,13 @@ struct port_o : public structural_object
        * @param type is the type of the object we are looking for.
        * @param owner is the owner of the object named id.
       */
-      structural_objectRef find_member(const std::string&id, so_kind type, const structural_objectRef owner) const;
+      structural_objectRef find_member(const std::string&id, so_kind type, const structural_objectRef owner) const override;
 
       /**
        * Find key in this object.
        * @param key is the object searched.
       */
-      structural_objectRef find_isomorphic(const structural_objectRef key) const;
+      structural_objectRef find_isomorphic(const structural_objectRef key) const override;
 
       /**
        * Load a structural_object starting from an xml file.
@@ -851,20 +851,20 @@ struct port_o : public structural_object
        * @param owner is the refcount version of this.
        * @param CM is the circuit manager.
       */
-      void xload(const xml_element* Enode, structural_objectRef owner, structural_managerRef const & CM);
+      void xload(const xml_element* Enode, structural_objectRef owner, structural_managerRef const & CM) override;
 
       /**
        * Add a structural_object to an xml tree.
        * @param rootnode is the root node at which the xml representation of the structural object is attached.
       */
-      void xwrite(xml_element* rootnode);
+      void xwrite(xml_element* rootnode) override;
 
 #if HAVE_TECHNOLOGY_BUILT
       /**
        * Add all the port attributes to an xml tree.
        * @param rootnode is the root node at which the xml representation of attributes is attached.
       */
-      void xwrite_attributes(xml_element* rootnode, const technology_nodeRef& tn = technology_nodeRef());
+      void xwrite_attributes(xml_element* rootnode, const technology_nodeRef& tn = technology_nodeRef()) override;
 #endif
 
       /**
@@ -925,16 +925,16 @@ struct port_o : public structural_object
        * Print the port (for debug purpose)
        * @param os is an output stream
       */
-      void print(std::ostream& os) const;
+      void print(std::ostream& os) const override;
 
       /**
        * return the name of the class as a string.
       */
-      std::string get_kind_text() const {if(port_type == port_vector_o_K) return "port_vector_o"; else return "port_o";}
+      std::string get_kind_text() const override {if(port_type == port_vector_o_K) return "port_vector_o"; else return "port_o";}
       /**
        * return the type of the class
       */
-      enum so_kind get_kind() const {return port_type;}
+      enum so_kind get_kind() const override {return port_type;}
 
    private:
       /// The list of connections associated with the port.
@@ -1045,7 +1045,7 @@ class event_o : public structural_object
           * Perform a copy of the event.
           * @param dest destination object.
          */
-      void copy(structural_objectRef dest) const;
+      void copy(structural_objectRef dest) const override;
 
       /**
           * Return the object named id of a given type which belongs to or it is associated with the object.
@@ -1054,13 +1054,13 @@ class event_o : public structural_object
           * @param type is the type of the object we are looking for.
           * @param owner is the owner of the object named id.
          */
-      structural_objectRef find_member(const std::string&id, so_kind type, const structural_objectRef owner) const;
+      structural_objectRef find_member(const std::string&id, so_kind type, const structural_objectRef owner) const override;
 
       /**
           * Find key in this object.
           * @param key is the object searched.
          */
-      structural_objectRef find_isomorphic(const structural_objectRef key) const;
+      structural_objectRef find_isomorphic(const structural_objectRef key) const override;
 
       /**
           * Load a structural_object starting from an xml file.
@@ -1068,28 +1068,28 @@ class event_o : public structural_object
           * @param owner is the refcount version of this.
           * @param CM is the circuit manager.
          */
-      void xload(const xml_element* Enode, structural_objectRef owner, structural_managerRef const & CM);
+      void xload(const xml_element* Enode, structural_objectRef owner, structural_managerRef const & CM) override;
 
       /**
           * Add a structural_object to an xml tree.
           * @param rootnode is the root node at which the xml representation of the structural object is attached.
          */
-      void xwrite(xml_element* rootnode);
+      void xwrite(xml_element* rootnode) override;
 
       /**
           * Print the event (for debug purpose)
           * @param os is an output stream
          */
-      void print(std::ostream& os) const;
+      void print(std::ostream& os) const override;
 
       /**
           * Redefinition of get_kind_text()
          */
-      GET_KIND_TEXT(event_o);
+      GET_KIND_TEXT(event_o)
       /**
           * Redefinition of get_kind()
          */
-      GET_SO_KIND(event_o);
+      GET_SO_KIND(event_o)
 };
 
 /**
@@ -1111,7 +1111,7 @@ class data_o : public structural_object
           * Perform a copy of the data.
           * @param dest destination object.
          */
-      void copy(structural_objectRef dest) const;
+      void copy(structural_objectRef dest) const override;
 
       /**
           * Return the object named id of a given type which belongs to or it is associated with the object.
@@ -1120,13 +1120,13 @@ class data_o : public structural_object
           * @param type is the type of the object we are looking for.
           * @param owner is the owner of the object named id.
          */
-      structural_objectRef find_member(const std::string&id, so_kind type, const structural_objectRef owner) const;
+      structural_objectRef find_member(const std::string&id, so_kind type, const structural_objectRef owner) const override;
 
       /**
           * Find key in this object.
           * @param key is the object searched.
          */
-      structural_objectRef find_isomorphic(const structural_objectRef key) const;
+      structural_objectRef find_isomorphic(const structural_objectRef key) const override;
 
       /**
           * Load a structural_object starting from an xml file.
@@ -1134,24 +1134,24 @@ class data_o : public structural_object
           * @param owner is the refcount version of this.
           * @param CM is the circuit manager.
          */
-      void xload(const xml_element* Enode, structural_objectRef owner, structural_managerRef const & CM);
+      void xload(const xml_element* Enode, structural_objectRef owner, structural_managerRef const & CM) override;
 
       /**
           * Add a structural_object to an xml tree.
           * @param rootnode is the root node at which the xml representation of the structural object is attached.
          */
-      void xwrite(xml_element* rootnode);
+      void xwrite(xml_element* rootnode) override;
 
       /**
           * Print the data declaration object (for debug purpose).
           * @param os is an output stream.
          */
-      void print(std::ostream& os) const;
+      void print(std::ostream& os) const override;
 
       /**
           * Redefinition of get_kind_text()
          */
-      GET_KIND_TEXT(data_o);
+      GET_KIND_TEXT(data_o)
       /**
           * Redefinition of get_kind()
          */
@@ -1278,7 +1278,7 @@ class action_o : public structural_object
           * Perform a copy of the action.
           * @param dest destination object.
          */
-      void copy(structural_objectRef dest) const;
+      void copy(structural_objectRef dest) const override;
 
       /**
           * Return the object named id of a given type which belongs to or it is associated with the object.
@@ -1286,13 +1286,13 @@ class action_o : public structural_object
           * @param type is the type of the object we are looking for.
           * @param owner is the owner of the object named id.
          */
-      structural_objectRef find_member(const std::string&id, so_kind type, const structural_objectRef owner) const;
+      structural_objectRef find_member(const std::string&id, so_kind type, const structural_objectRef owner) const override;
 
       /**
           * Find key in this object.
           * @param key is the object searched.
          */
-      structural_objectRef find_isomorphic(const structural_objectRef key) const;
+      structural_objectRef find_isomorphic(const structural_objectRef key) const override;
 
       /**
           * Load a structural_object starting from an xml file.
@@ -1300,24 +1300,24 @@ class action_o : public structural_object
           * @param owner is the refcount version of this.
           * @param CM is the circuit manager.
          */
-      void xload(const xml_element* Enode, structural_objectRef owner, structural_managerRef const & CM);
+      void xload(const xml_element* Enode, structural_objectRef owner, structural_managerRef const & CM) override;
 
       /**
           * Add a structural_object to an xml tree.
           * @param rootnode is the root node at which the xml representation of the structural object is attached.
          */
-      void xwrite(xml_element* rootnode);
+      void xwrite(xml_element* rootnode) override;
 
       /**
           * Print the action (for debug purpose)
           * @param os is an output stream
           */
-      void print(std::ostream& os) const;
+      void print(std::ostream& os) const override;
 
       /**
           * Redefinition of get_kind_text()
          */
-      GET_KIND_TEXT(action_o);
+      GET_KIND_TEXT(action_o)
       /**
           * Redefinition of get_kind()
          */
@@ -1391,7 +1391,7 @@ class constant_o : public structural_object
           * Perform a copy of the value.
           * @param dest destination object.
          */
-      void copy(structural_objectRef dest) const;
+      void copy(structural_objectRef dest) const override;
 
       /**
           * Return the object named id of a given type which belongs to or it is associated with the object.
@@ -1399,13 +1399,13 @@ class constant_o : public structural_object
           * @param type is the type of the object we are looking for.
           * @param owner is the owner of the object named id.
          */
-      structural_objectRef find_member(const std::string&id, so_kind type, const structural_objectRef owner) const;
+      structural_objectRef find_member(const std::string&id, so_kind type, const structural_objectRef owner) const override;
 
       /**
           * Find key in this object.
           * @param key is the object searched.
          */
-      structural_objectRef find_isomorphic(const structural_objectRef key) const;
+      structural_objectRef find_isomorphic(const structural_objectRef key) const override;
 
       /**
           * Load a structural_object starting from an xml file.
@@ -1413,24 +1413,24 @@ class constant_o : public structural_object
           * @param owner is the refcount version of this.
           * @param CM is the circuit manager.
          */
-      void xload(const xml_element* Enode, structural_objectRef owner, structural_managerRef const & CM);
+      void xload(const xml_element* Enode, structural_objectRef owner, structural_managerRef const & CM) override;
 
       /**
           * Add a structural_object to an xml tree.
           * @param rootnode is the root node at which the xml representation of the structural object is attached.
          */
-      void xwrite(xml_element* rootnode);
+      void xwrite(xml_element* rootnode) override;
 
       /**
           * Print the constant value (for debug purpose)
           * @param os is an output stream
          */
-      void print(std::ostream& os) const;
+      void print(std::ostream& os) const override;
 
       /**
           * Redefinition of get_kind_text()
          */
-      GET_KIND_TEXT(constant_o);
+      GET_KIND_TEXT(constant_o)
       /**
           * Redefinition of get_kind()
           */
@@ -1543,7 +1543,7 @@ class signal_o : public structural_object
           * Perform a copy of the signal.
           * @param dest destination object.
          */
-      void copy(structural_objectRef dest) const;
+      void copy(structural_objectRef dest) const override;
 
       /**
           * Return the object named id of a given type which belongs to or it is associated with the object.
@@ -1551,13 +1551,13 @@ class signal_o : public structural_object
           * @param type is the type of the object we are looking for.
           * @param owner is the owner of the object named id.
          */
-      structural_objectRef find_member(const std::string&id, so_kind type, const structural_objectRef owner) const;
+      structural_objectRef find_member(const std::string&id, so_kind type, const structural_objectRef owner) const override;
 
       /**
           * Find key in this object.
           * @param key is the object searched.
          */
-      structural_objectRef find_isomorphic(const structural_objectRef key) const;
+      structural_objectRef find_isomorphic(const structural_objectRef key) const override;
 
       /**
           * Load a structural_object starting from an xml file.
@@ -1565,28 +1565,28 @@ class signal_o : public structural_object
           * @param owner is the refcount version of this.
           * @param CM is the circuit manager.
          */
-      void xload(const xml_element* Enode, structural_objectRef owner, structural_managerRef const & CM);
+      void xload(const xml_element* Enode, structural_objectRef owner, structural_managerRef const & CM) override;
 
       /**
           * Add a structural_object to an xml tree.
           * @param rootnode is the root node at which the xml representation of the structural object is attached.
          */
-      void xwrite(xml_element* rootnode);
+      void xwrite(xml_element* rootnode) override;
 
       /**
           * Print the signal (for debug purpose)
           * @param os is an output stream
          */
-      void print(std::ostream& os) const;
+      void print(std::ostream& os) const override;
 
       /**
           * return the name of the class as a string.
           */
-      std::string get_kind_text() const {if(signal_type == signal_vector_o_K) return "signal_vector_o"; else return "signal_o";}
+      std::string get_kind_text() const override {if(signal_type == signal_vector_o_K) return "signal_vector_o"; else return "signal_o";}
       /**
           * return the type of the class
           */
-      enum so_kind get_kind() const {return signal_type;}
+      enum so_kind get_kind() const override {return signal_type;}
 
 
    private:
@@ -1609,7 +1609,7 @@ class signal_o : public structural_object
 
 /**
  * This class describes a generic module.
- * A module can be futher specialized in a channel or in a component.
+ * A module can be further specialized in a channel or in a component.
  * This class should be not instantiated. Only channels and components can be instantiated.
  */
 class module : public structural_object
@@ -1896,7 +1896,7 @@ class module : public structural_object
           * Perform a copy of the module.
           * @param dest destination object.
          */
-      virtual void copy(structural_objectRef dest) const;
+      virtual void copy(structural_objectRef dest) const override;
 
       /**
           * Return the object named id of a given type which belongs to or it is associated with the object.
@@ -1904,18 +1904,13 @@ class module : public structural_object
           * @param type is the type of the object we are looking for.
           * @param owner is the owner of the object named id.
          */
-      virtual structural_objectRef find_member(const std::string&id, so_kind type, const structural_objectRef owner) const;
+      virtual structural_objectRef find_member(const std::string&id, so_kind type, const structural_objectRef owner) const override;
 
       /**
           * Find key in this object.
           * @param key is the object searched.
          */
-      virtual structural_objectRef find_isomorphic(const structural_objectRef key) const;
-
-      /**
-         * True if one of the ports of the module has the attribute is_var_args=true
-         */
-      bool is_var_args() const;
+      virtual structural_objectRef find_isomorphic(const structural_objectRef key) const override;
 
       /**
           * Load a structural_object starting from an xml file.
@@ -1923,27 +1918,32 @@ class module : public structural_object
           * @param owner is the refcount version of this.
           * @param CM is the circuit manager.
          */
-      virtual void xload(const xml_element* Enode, structural_objectRef owner, structural_managerRef const & CM) = 0;
+      virtual void xload(const xml_element* Enode, structural_objectRef owner, structural_managerRef const & CM) override = 0;
 
 #if HAVE_TECHNOLOGY_BUILT
       /**
           * Add the list of attributes for the component
           * @param rootnode is the root node at which the xml representation of the structural object is attached.
          */
-      virtual void xwrite_attributes(xml_element* rootnode, const technology_nodeRef& tn = technology_nodeRef()) = 0;
+      virtual void xwrite_attributes(xml_element* rootnode, const technology_nodeRef& tn = technology_nodeRef()) override = 0;
 #endif
 
       /**
           * Add a structural_object to an xml tree.
           * @param rootnode is the root node at which the xml representation of the structural object is attached.
          */
-      virtual void xwrite(xml_element* rootnode) = 0;
+      virtual void xwrite(xml_element* rootnode) override = 0;
+
+      /**
+         * True if one of the ports of the module has the attribute is_var_args=true
+         */
+      bool is_var_args() const;
 
       /**
           * Print the module (for debug purpose)
           * @param os is an output stream
           */
-      virtual void print(std::ostream& os) const;
+      virtual void print(std::ostream& os) const override;
 
       /**
           * set the component as critical with respect to the timing path
@@ -2061,7 +2061,7 @@ class component_o : public module
           * Perform a copy of the component.
           * @param dest destination object.
          */
-      void copy(structural_objectRef dest) const;
+      void copy(structural_objectRef dest) const override;
 
       /**
           * Return the object named id of a given type which belongs to or it is associated with the object.
@@ -2069,13 +2069,13 @@ class component_o : public module
           * @param type is the type of the object we are looking for.
           * @param owner is the owner of the object named id.
          */
-      structural_objectRef find_member(const std::string&id, so_kind type, const structural_objectRef owner) const;
+      structural_objectRef find_member(const std::string&id, so_kind type, const structural_objectRef owner) const override;
 
       /**
           * Find key in this object.
           * @param key is the object searched.
          */
-      structural_objectRef find_isomorphic(const structural_objectRef key) const;
+      structural_objectRef find_isomorphic(const structural_objectRef key) const override;
 
       /**
           * Load a structural_object starting from an xml file.
@@ -2083,32 +2083,32 @@ class component_o : public module
           * @param owner is the refcount version of this.
           * @param CM is the circuit manager.
          */
-      void xload(const xml_element* Enode, structural_objectRef owner, structural_managerRef const & CM);
+      void xload(const xml_element* Enode, structural_objectRef owner, structural_managerRef const & CM) override;
 
       /**
           * Add a structural_object to an xml tree.
           * @param rootnode is the root node at which the xml representation of the structural object is attached.
          */
-      void xwrite(xml_element* rootnode);
+      void xwrite(xml_element* rootnode) override;
 
 #if HAVE_TECHNOLOGY_BUILT
       /**
           * Add the list of attributes for the component
           * @param rootnode is the root node at which the xml representation of the structural object is attached.
          */
-      virtual void xwrite_attributes(xml_element* rootnode, const technology_nodeRef& tn = technology_nodeRef());
+      virtual void xwrite_attributes(xml_element* rootnode, const technology_nodeRef& tn = technology_nodeRef()) override;
 #endif
 
       /**
           * Print the component (for debug purpose)
           * @param os is an output stream
          */
-      void print(std::ostream& os) const;
+      void print(std::ostream& os) const override;
 
       /**
           * Redefinition of get_kind_text()
          */
-      GET_KIND_TEXT(component_o);
+      GET_KIND_TEXT(component_o)
       /**
           * Redefinition of get_kind()
          */
@@ -2170,7 +2170,7 @@ class channel_o : public module
           * Perform a copy of the channel.
           * @param dest destination object.
          */
-      void copy(structural_objectRef dest) const;
+      void copy(structural_objectRef dest) const override;
 
       /**
           * Return the object named id of a given type which belongs to or it is associated with the object.
@@ -2178,13 +2178,13 @@ class channel_o : public module
           * @param type is the type of the object we are looking for.
           * @param owner is the owner of the object named id.
          */
-      structural_objectRef find_member(const std::string&id, so_kind type, const structural_objectRef owner) const;
+      structural_objectRef find_member(const std::string&id, so_kind type, const structural_objectRef owner) const override;
 
       /**
           * Find key in this object.
           * @param key is the object searched.
          */
-      structural_objectRef find_isomorphic(const structural_objectRef key) const;
+      structural_objectRef find_isomorphic(const structural_objectRef key) const override;
 
       /**
           * Load a structural_object starting from an xml file.
@@ -2192,32 +2192,32 @@ class channel_o : public module
           * @param owner is the refcount version of this.
           * @param CM is the circuit manager.
          */
-      void xload(const xml_element* Enode, structural_objectRef owner, structural_managerRef const & CM);
+      void xload(const xml_element* Enode, structural_objectRef owner, structural_managerRef const & CM) override;
 
       /**
           * Add a structural_object to an xml tree.
           * @param rootnode is the root node at which the xml representation of the structural object is attached.
          */
-      void xwrite(xml_element* rootnode);
+      void xwrite(xml_element* rootnode) override;
 
 #if HAVE_TECHNOLOGY_BUILT
       /**
           * Add the list of attributes for the component
           * @param rootnode is the root node at which the xml representation of the structural object is attached.
          */
-      virtual void xwrite_attributes(xml_element* rootnode, const technology_nodeRef& tn = technology_nodeRef());
+      virtual void xwrite_attributes(xml_element* rootnode, const technology_nodeRef& tn = technology_nodeRef()) override;
 #endif
 
       /**
           * Print the channel (for debug purpose)
           * @param os is an output stream
          */
-      void print(std::ostream& os) const;
+      void print(std::ostream& os) const override;
 
       /**
           * Redefinition of get_kind_text()
          */
-      GET_KIND_TEXT(channel_o);
+      GET_KIND_TEXT(channel_o)
       /**
           * Redefinition of get_kind()
          */
@@ -2265,7 +2265,7 @@ class bus_connection_o : public structural_object
           * Perform a copy of the bus_connection_o.
           * @param dest destination object.
          */
-      void copy(structural_objectRef dest) const;
+      void copy(structural_objectRef dest) const override;
 
       /**
           * Return the object named id of a given type which belongs to or it is associated with the object.
@@ -2273,13 +2273,13 @@ class bus_connection_o : public structural_object
           * @param type is the type of the object we are looking for.
           * @param owner is the owner of the object named id.
          */
-      structural_objectRef find_member(const std::string&id, so_kind type, const structural_objectRef owner) const;
+      structural_objectRef find_member(const std::string&id, so_kind type, const structural_objectRef owner) const override;
 
       /**
           * Find key in this object.
           * @param key is the object searched.
          */
-      structural_objectRef find_isomorphic(const structural_objectRef key) const;
+      structural_objectRef find_isomorphic(const structural_objectRef key) const override;
 
       /**
           * Load a structural_object starting from an xml file.
@@ -2287,24 +2287,24 @@ class bus_connection_o : public structural_object
           * @param owner is the refcount version of this.
           * @param CM is the circuit manager.
          */
-      void xload(const xml_element* Enode, structural_objectRef owner, structural_managerRef const & CM);
+      void xload(const xml_element* Enode, structural_objectRef owner, structural_managerRef const & CM) override;
 
       /**
           * Add a structural_object to an xml tree.
           * @param rootnode is the root node at which the xml representation of the structural object is attached.
          */
-      void xwrite(xml_element* rootnode);
+      void xwrite(xml_element* rootnode) override;
 
       /**
           * Print the bus_connection_o (for debug purpose)
           * @param os is an output stream
           */
-      void print(std::ostream& os) const;
+      void print(std::ostream& os) const override;
 
       /**
           * Redefinition of get_kind_text()
          */
-      GET_KIND_TEXT(bus_connection_o);
+      GET_KIND_TEXT(bus_connection_o)
       /**
           * Redefinition of get_kind()
           */

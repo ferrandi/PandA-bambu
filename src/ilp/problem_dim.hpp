@@ -7,7 +7,7 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
@@ -33,8 +33,8 @@
 /**
  * @file problem_dim.hpp
  * @brief This file defines the problem_dim struct. This
- * struct represents the dimension of the scheduling problem. 
- * 
+ * struct represents the dimension of the scheduling problem.
+ *
  * It simply defines the number of operation of the specification, the
  * number of control steps, the number of functional unit types and
  * the number of branching blocks.
@@ -61,23 +61,23 @@ REF_FORWARD_DECL(meilp_solver);
 
 class problem_dim
 {
-protected:
-    /** store the ilp_solver. Used to set the type of the column. X variables are binary, while Z and W are integers*/
-    const meilp_solverRef MS;
+   protected:
+      /** store the ilp_solver. Used to set the type of the column. X variables are binary, while Z and W are integers*/
+      const meilp_solverRef MS;
 
-public:
+   public:
 
-  explicit problem_dim(const meilp_solverRef & ms);
-  
-  virtual void print(std::ostream& os) const = 0;
-  
-  friend std::ostream& operator << (std::ostream& os, const problem_dim& pd)
-  {
-    pd.print(os);
-    return os;
-  }
+      explicit problem_dim(const meilp_solverRef & ms);
 
-  virtual ~problem_dim();
+      virtual void print(std::ostream& os) const = 0;
+
+      friend std::ostream& operator << (std::ostream& os, const problem_dim& pd)
+      {
+         pd.print(os);
+         return os;
+      }
+
+      virtual ~problem_dim();
 };
 
 typedef refcount<problem_dim> problem_dimRef;

@@ -100,7 +100,7 @@ class tree_reindex : public tree_node
         * virtual function used to traverse the tree_node data structure.
         * @param v is a reference to the tree_node visitor class
         */
-       virtual void visit(tree_node_visitor * const v) const;
+       virtual void visit(tree_node_visitor * const v) const override;
        ///visitor enum
        enum {GETID(tree_node)=0, GETID(actual_tree_node)};
 

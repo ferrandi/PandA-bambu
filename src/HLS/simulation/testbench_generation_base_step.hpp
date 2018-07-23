@@ -195,7 +195,7 @@ class TestbenchGenerationBaseStep : public HLS_step
       /**
        * Initialize the step (i.e., like a constructor, but executed just before exec
        */
-      virtual void Initialize();
+      virtual void Initialize() override;
 
    protected:
 
@@ -222,7 +222,7 @@ class TestbenchGenerationBaseStep : public HLS_step
        * @param relationship_type is the type of relationship to be considered
        * @return the steps in relationship with this
        */
-      virtual const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const;
+      virtual const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
       /**
        * Constructor.
@@ -242,7 +242,7 @@ class TestbenchGenerationBaseStep : public HLS_step
       (
          DesignFlowStepSet & design_flow_step_set,
          const DesignFlowStep::RelationshipType relationship_type
-      );
+      ) override;
 
       static
       std::string print_var_init(const tree_managerConstRef TreeM, unsigned int var, const memoryRef mem);
@@ -261,12 +261,12 @@ class TestbenchGenerationBaseStep : public HLS_step
        * Execute the step
        * @return the exit status of this step
        */
-      virtual DesignFlowStep_Status Exec();
+      virtual DesignFlowStep_Status Exec() override;
 
       /**
        * Check if this step has actually to be executed
        * @return true if the step has to be executed
        */
-      virtual bool HasToBeExecuted() const;
+      virtual bool HasToBeExecuted() const override;
 };
 #endif

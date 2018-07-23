@@ -105,6 +105,7 @@ void FunctionalUnitStep::AnalyzeFu(const technology_nodeRef f_unit)
       isTemplate = true;
       no_constants = GetPointer<functional_unit_template>(f_unit)->no_constant_characterization;
    }
+   THROW_ASSERT(fu_curr, "unexpected condition");
    std::string fu_name = fu_curr->functional_unit_name;
    std::string fu_base_name = fu_name;
    const functional_unit::operation_vec & Ops = fu_curr->get_operations();

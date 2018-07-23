@@ -88,21 +88,21 @@ class meilp_solver
 
    private:
 
-      /// ???
+      /// number of elements in the constraint buffer
       size_t nel;
 
 
    protected:
-      /// ???
+      /// values in the constraint buffer
       double * real_buffer;
 
-      /// ???
+      /// indexes in the constraint buffer
       int * int_buffer;
 
-      /// ???
+      /// unique column identifier
       int unique_column_id;
 
-      /// ???
+      /// Time-out value
       int MAX_time;
 
       /// debug_level
