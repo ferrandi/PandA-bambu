@@ -48,6 +48,7 @@
 
 #include <meilp_solver.hpp>
 #include <iosfwd>
+#include <map>
 #include <string>
 
 #include "config_HAVE_GLPK.hpp"

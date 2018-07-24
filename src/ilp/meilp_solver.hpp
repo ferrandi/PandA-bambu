@@ -45,6 +45,7 @@
 #ifndef MEILP_SOLVER_HPP
 #define MEILP_SOLVER_HPP
 
+#include <stddef.h>
 ///STD include
 #include <iosfwd>
 ///STL include

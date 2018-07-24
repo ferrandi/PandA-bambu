@@ -43,9 +43,17 @@
  *
 */
 
+#include <boost/lexical_cast.hpp>
+#include <float.h>
+#include <limits.h>
+#include <iostream>
+#include <unordered_map>
+#include <utility>
+
 #include "dbgPrintHelper.hpp"
 #include "exceptions.hpp"
 #include "glpk_solver.hpp"
+#include "meilp_solver.hpp"
 #include "utility.hpp"
 
 extern "C"
