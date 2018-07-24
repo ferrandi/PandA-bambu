@@ -44,24 +44,21 @@
 #ifndef FILEIO_HPP
 #define FILEIO_HPP
 
-///Constants include
-#include "file_IO_constants.hpp"
-
-///STD include
-#include <fstream>
-#include <iosfwd>
-#include <sstream>
-#include <string>
-
-#include "gzstream.hpp"
-
-///Parameter include
-#include "Parameter.hpp"
-
-///Utility include
-#include <boost/filesystem.hpp>
-#include "exceptions.hpp"
-#include "refcount.hpp"
+#include <stdio.h>                                   // for size_t, fclose
+#include <stdlib.h>                                  // for system
+#include <boost/filesystem/operations.hpp>           // for copy_file, remove
+#include <boost/filesystem/path.hpp>                 // for path
+#include <boost/lexical_cast.hpp>                    // for lexical_cast
+#include <boost/system/error_code.hpp>               // for error_code
+#include <boost/version.hpp>                         // for BOOST_VERSION
+#include <iostream>                                  // for operator<<, basi...
+#include <string>                                    // for string, operator+
+#include "Parameter.hpp"                             // for ParameterConstRef
+#include "dbgPrintHelper.hpp"                        // for OUTPUT_LEVEL_PED...
+#include "exceptions.hpp"                            // for THROW_UNREACHABLE
+#include "file_IO_constants.hpp"                     // for STR_CST_file_IO_...
+#include "gzstream.hpp"                              // for igzstream, ogzst...
+#include "refcount.hpp"                              // for refcount
 
 ///Return value of timeout signaling timeout has reached
 #define TIMEOUT 124

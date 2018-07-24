@@ -44,15 +44,17 @@
 #define STRING_MANIPULATION_HPP
 
 ///STD include
-#include <cxxabi.h>
-
-///STL include
+#include <cxxabi.h>                                          // for __cxa_de...
+#include <stdlib.h>                                          // for strtod
+#include <boost/algorithm/string/classification.hpp>         // for is_any_of
+#include <boost/algorithm/string/split.hpp>                  // for split
+#include <boost/iterator/iterator_facade.hpp>                // for operator!=
+#include <boost/lexical_cast.hpp>                            // for lexical_...
+#include <boost/type_index/type_index_facade.hpp>            // for operator==
+#include <iosfwd>                                            // for stringst...
+#include <memory>                                            // for allocato...
+#include <string>                                            // for string
 #include <vector>
-
-///Utility include
-#include <boost/algorithm/string/classification.hpp>
-#include <boost/algorithm/string/split.hpp>
-#include <boost/lexical_cast.hpp>
 
 /**
  * Macro which performs a lexical_cast to a string

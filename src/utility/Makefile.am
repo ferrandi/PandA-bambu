@@ -22,7 +22,6 @@ noinst_HEADERS = \
    indented_output_stream.hpp \
    Lexer_utilities.hpp \
    math_function.hpp \
-   parsing_error.hpp \
    refcount.hpp \
    simple_indent.hpp \
    Statistics.hpp \

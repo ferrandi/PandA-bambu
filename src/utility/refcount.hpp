@@ -45,9 +45,6 @@
 #ifndef REFCOUNT_HPP
 #define REFCOUNT_HPP
 
-///STL include
-#include <unordered_set>
-
 #include <boost/version.hpp>
 
 ///null deleter 
@@ -58,9 +55,9 @@ struct null_deleter
 };
 
 #if !defined(USE_REFCOUNT_POINTERS) && BOOST_VERSION >= 103300
-
-#include <boost/shared_ptr.hpp>
-#include <boost/weak_ptr.hpp>
+#include <boost/smart_ptr/shared_ptr.hpp>  // for shared_ptr
+#include <boost/smart_ptr/weak_ptr.hpp>    // for weak_ptr
+#include <cstddef>                         // for size_t
 
 #define refcount boost::shared_ptr
 #define Wrefcount boost::weak_ptr
