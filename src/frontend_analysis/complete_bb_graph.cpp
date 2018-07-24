@@ -44,8 +44,7 @@
 ///. include
 #include "Parameter.hpp"
 
-///utility include
-#include "utility.hpp"
+#include "hash_helper.hpp"
 
 CompleteBBGraph::CompleteBBGraph(const application_managerRef _AppM, const unsigned int _function_index, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters) :
    FunctionFrontendFlowStep(_AppM, _function_index, COMPLETE_BB_GRAPH, _design_flow_manager, _parameters)

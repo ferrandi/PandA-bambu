@@ -57,8 +57,7 @@
 #include "weight_information.hpp"
 #endif
 
-///STD include
-#include <iosfwd>
+#include <ostream>                                       // for operator<<
 
 ///Tree include
 #include "gimple_writer.hpp"
@@ -67,6 +66,8 @@
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
+#include "dbgPrintHelper.hpp"                            // for INDENT_DBG_MEX
+#include "string_manipulation.hpp"                       // for STR
 
 ///Utility include
 #include <boost/preprocessor/seq/for_each.hpp>

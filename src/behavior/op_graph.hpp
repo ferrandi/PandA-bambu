@@ -32,7 +32,7 @@
 */
 /**
 * @file op_graph.hpp
-* @brief Data stuctures used in operations graph
+* @brief Data structures used in operations graph
 *
 * @author Marco Lattuada <lattuada@elet.polimi.it>
 * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
@@ -43,7 +43,6 @@
 */
 #ifndef OP_GRAPH_HPP
 #define OP_GRAPH_HPP
-
 
 ///Autoheader include
 #include "config_HAVE_BAMBU_BUILT.hpp"
@@ -60,18 +59,21 @@
 ///behavior include
 #include "function_behavior.hpp"
 
-///STD include
-#include <iosfwd>
-#include <string>
-
-///STL include
-#include <unordered_map>
+#include <boost/graph/graph_traits.hpp>              // for graph_traits<>::...
+#include <iosfwd>                                    // for ostream
+#include <limits>                                    // for numeric_limits
+#include <list>                                      // for list
+#include <map>                                       // for map
+#include <set>                                       // for set
+#include <string>                                    // for string
+#include <unordered_map>                             // for unordered_map
+#include <unordered_set>                             // for unordered_set
 
 ///utility includes
 #include "custom_map.hpp"
 #include "custom_set.hpp"
 #include "refcount.hpp"
-#include "utility.hpp"
+#include "strong_typedef.hpp"                               // for UINT_STRONG_TYPEDEF
 
 CONSTREF_FORWARD_DECL(BehavioralHelper);
 enum class FunctionBehavior_VariableAccessType;

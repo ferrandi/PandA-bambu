@@ -47,9 +47,16 @@
 #ifndef FUNCTION_BEHAVIOR_HPP
 #define FUNCTION_BEHAVIOR_HPP
 
-///Autoheader include
 #include "config_HAVE_EXPERIMENTAL.hpp"
 #include "config_HAVE_HOST_PROFILING_BUILT.hpp"
+#include <deque>                                     // for deque
+#include <functional>                                // for binary_function
+#include <iosfwd>                                    // for ostream, size_t
+#include <map>                                       // for map, _Rb_tree_co...
+#include <set>                                       // for set
+#include <typeindex>                                 // for hash
+#include <unordered_map>                             // for hash, unordered_map
+#include <unordered_set>                             // for unordered_set
 
 ///Behavior include (because of enums)
 #if HAVE_EXPERIMENTAL
@@ -58,14 +65,6 @@
 #endif
 ///Graph include
 #include "graph.hpp"
-
-///STL include
-#include <deque>
-#include <map>
-#include <unordered_map>
-#include <unordered_set>
-
-///Utility include
 #include "refcount.hpp"
 
 /**

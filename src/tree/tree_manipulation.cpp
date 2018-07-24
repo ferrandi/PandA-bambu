@@ -43,31 +43,23 @@
 */
 ///Header include
 #include "tree_manipulation.hpp"
+#include <algorithm>                       // for find
+#include <boost/lexical_cast.hpp>          // for lexical_cast
+#include <boost/smart_ptr/shared_ptr.hpp>  // for shared_ptr
 
-///. include
-#include "Parameter.hpp"
-
-///parser/treegcc include
-#include "token_interface.hpp"
-
-///STL include
-#include <unordered_set>
+#include "Parameter.hpp"                   // for Parameter
+#include "dbgPrintHelper.hpp"              // for DEBUG_LEVEL_VERY_PEDANTIC
+#include "exceptions.hpp"                  // for THROW_ASSERT, THROW_ERROR
+#include "string_manipulation.hpp"         // for STR
 
 ///tree includes
 #include "ext_tree_node.hpp"
-#include "tree_helper.hpp"
+#include "token_interface.hpp"
 #include "tree_basic_block.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
-
-#include "token_interface.hpp"
-
-#include <unordered_set>
-
-///tree include
-#include "tree_helper.hpp"
 
 ///utility include
 #include "utility.hpp"

@@ -52,11 +52,9 @@
 #include <string>
 #include <ostream>
 #include <map>
-
 #include "simple_indent.hpp"
-#include "utility.hpp"
-
 #include "refcount.hpp"
+#include "utility.hpp"
 
 /**
  * @name forward declarations
@@ -236,6 +234,11 @@ enum class TargetDevice_Type;
 #define NOTYFY_CALLER_MINIMALN_FU        "notify_caller_minimalN_FU"
 #define STATUS_REGISTERN_FU              "status_registerN_FU"
 #define STATUS_REGISTER_NO_NOTIFIEDN_FU  "status_register_no_notifiedN_FU"
+
+/**
+* Macro which defines the get_kind_text function that returns the parameter as a string.
+*/
+#define GET_KIND_TEXT(meth) std::string get_kind_text() const override {return std::string(#meth);}
 
 /**
  * Enumerative type for technology object classes, it is used with get_kind() function

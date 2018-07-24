@@ -47,7 +47,9 @@
 
 #include "xml_node.hpp"
 #include "xml_attribute.hpp"
+#include "exceptions.hpp"
 #include <string>
+
 /**
  * @name forward declarations
  */

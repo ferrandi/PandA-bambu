@@ -60,6 +60,8 @@
 #include "Vertex.hpp"
 #include "refcount.hpp"
 #include <unordered_map>
+#include "hash_helper.hpp"
+
 /**
  * @name forward declarations
 */

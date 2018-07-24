@@ -32,7 +32,7 @@
 */
 /**
  * @file op_graph.cpp
- * @brief Data stuctures used in operations graph
+ * @brief Data structures used in operations graph
  *
  * @author Marco Lattuada <lattuada@elet.polimi.it>
  * $Revision$
@@ -41,26 +41,21 @@
  *
 */
 
-///Header include
 #include "op_graph.hpp"
 
-///Behavior include
+#include <boost/filesystem/operations.hpp>        // for create_directories
+#include <boost/tuple/tuple.hpp>                  // for tie
+#include <fstream>
+#include <utility>                                // for pair
+#include "Parameter.hpp"
 #include "behavioral_helper.hpp"
 #include "behavioral_writer_helper.hpp"
-
-///Parameter include
-#include "Parameter.hpp"
-
-///STD include
-#include <fstream>
-
-///tree includes
+#include "exceptions.hpp"                         // for THROW_ASSERT, THROW...
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
 
 ///Utility include
-#include <boost/filesystem/path.hpp>
 
 OpEdgeInfo::OpEdgeInfo()
 {}

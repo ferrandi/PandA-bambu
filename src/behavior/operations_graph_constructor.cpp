@@ -44,13 +44,19 @@
 
 ///Header include
 #include "operations_graph_constructor.hpp"
-
-///Behavior include
+#include <boost/lexical_cast.hpp>                 // for lexical_cast
+#include <boost/tuple/tuple.hpp>                  // for tie
+#include <list>                                   // for list
+#include <unordered_set>                          // for unordered_set
+#include <utility>                                // for pair
+#include "custom_map.hpp"                         // for CustomMap
+#include "custom_set.hpp"                         // for CustomSet
+#include "exceptions.hpp"                         // for THROW_ASSERT
+#include "function_behavior.hpp"                  // for tree_nodeRef, Funct...
 #include "op_graph.hpp"
-
-///tree includes
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
+#include "typed_node_info.hpp"                    // for GET_NAME, ENTRY, EXIT
 
 operations_graph_constructor::operations_graph_constructor(OpGraphsCollectionRef _og) :
    og(_og),

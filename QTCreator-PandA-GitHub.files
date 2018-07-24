@@ -1673,6 +1673,8 @@ src/behavior/op_graph.cpp
 src/behavior/op_graph.hpp
 src/behavior/operations_graph_constructor.cpp
 src/behavior/operations_graph_constructor.hpp
+src/behavior/profiling_information.cpp
+src/behavior/profiling_information.hpp
 src/circuit/NP_functionality.cpp
 src/circuit/NP_functionality.hpp
 src/circuit/cg_node.cpp
@@ -2138,6 +2140,7 @@ src/utility/exceptions.cpp
 src/utility/exceptions.hpp
 src/utility/fileIO.hpp
 src/utility/gzstream.hpp
+src/utility/hash_helper.hpp
 src/utility/indented_output_stream.cpp
 src/utility/indented_output_stream.hpp
 src/utility/math_function.cpp
@@ -2147,6 +2150,7 @@ src/utility/refcount.hpp
 src/utility/simple_indent.cpp
 src/utility/simple_indent.hpp
 src/utility/string_manipulation.hpp
+src/utility/strong_typedef.hpp
 src/utility/utility.cpp
 src/utility/utility.hpp
 src/utility/visitor.hpp

@@ -45,7 +45,6 @@
 
 ///Super class include
 #include "function_frontend_flow_step.hpp"
-#include "tree_common.hpp"
 
 ///STD include
 #include <string>
@@ -61,6 +60,7 @@ REF_FORWARD_DECL(bloc);
 class integer_cst;
 class target_mem_ref461;
 class array_ref;
+enum kind : int;
 REF_FORWARD_DECL(IR_lowering);
 REF_FORWARD_DECL(tree_manager);
 REF_FORWARD_DECL(tree_manipulation);

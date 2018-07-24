@@ -54,20 +54,22 @@
 #include "config_HAVE_TUCANO_BUILT.hpp"
 #include "config_HAVE_UNORDERED.hpp"
 
-///STL include
-#include <list>
-#include <map>
-#include <set>
-#include <unordered_map>
-#include <vector>
+#include <stddef.h>                                  // for size_t
+#include <functional>                                // for binary_function
+#include <iosfwd>                                    // for ostream
+#include <list>                                      // for list
+#include <map>                                       // for map
+#include <memory>                                    // for allocator_traits...
+#include <set>                                       // for set
+#include <string>                                    // for string
+#include <unordered_set>                             // for unordered_set
+#include <utility>                                   // for pair
+#include <vector>                                    // for vector
 
-///Tree include
-#include "tree_common.hpp"
-
-///Utility include
-#include "custom_map.hpp"
-#include "custom_set.hpp"
-#include "exceptions.hpp"
+#include "custom_map.hpp"                            // for CustomMap
+#include "exceptions.hpp"                            // for throw_error
+#include "refcount.hpp"                              // for GetPointer, refc...
+#include "tree_common.hpp"                           // for GET_KIND, BINARY...
 
 /**
  * @name forward declarations
@@ -84,6 +86,12 @@ enum class TreeVocabularyTokenTypes_TokenEnum;
 REF_FORWARD_DECL(WeightInformation);
 #endif
 //@}
+
+/**
+* Macro which defines the get_kind_text function that returns the parameter as a string.
+*/
+#define GET_KIND_TEXT(meth) std::string get_kind_text() const override {return std::string(#meth);}
+
 
 #define NON_LEAF_TREE_NODES (tree_node) (WeightedNode) (attr) (srcp) (PointToSolution) (decl_node) (expr_node) (gimple_node) (unary_expr) (binary_expr) (ternary_expr) (quaternary_expr) (type_node) (memory_tag) (cst_node)
 
@@ -313,6 +321,7 @@ class TreeNodeSet : public std::set<tree_nodeRef, TreeNodeSorter>
  * A map with key tree_nodeRef
  */
 #if HAVE_UNORDERED
+#include <unordered_map>
 template <typename value>
 class TreeNodeMap : public std::unordered_map<tree_nodeRef, value, TreeNodeHash, TreeNodeConstEqualTo>
 {};
@@ -325,7 +334,7 @@ class TreeNodeMap : public std::map<tree_nodeRef, value, TreeNodeSorter>
 
 
 /**
- * Macro used to hide implementation details when accesing a tree_node from another tree_node
+ * Macro used to hide implementation details when accessing a tree_node from another tree_node
  * @param t is the tree_nodeRef to access
  * @return the pointer to t 
 */
@@ -338,7 +347,7 @@ class TreeNodeMap : public std::map<tree_nodeRef, value, TreeNodeSorter>
 #endif
 
 /**
- * Macro used to hide implementation details when accesing a tree_node from another tree_node
+ * Macro used to hide implementation details when accessing a tree_node from another tree_node
  * @param t is the tree_nodeRef to access
  * @return the index of t in tree_manager
 */

@@ -48,14 +48,16 @@
 #ifndef SCHEDULING_HPP
 #define SCHEDULING_HPP
 
+#include <unordered_map>
+
 #include "hls_function_step.hpp"
+#include "graph.hpp"
+#include "strong_typedef.hpp"
+
 CONSTREF_FORWARD_DECL(OpGraph);
 REF_FORWARD_DECL(DesignFlowStep);
 UINT_STRONG_TYPEDEF_FORWARD_DECL(ControlStep);
 
-#include "graph.hpp"
-
-#include <unordered_map>
 
 /**
  * Generic class managing scheduling algorithms.

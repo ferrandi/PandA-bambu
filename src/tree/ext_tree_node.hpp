@@ -46,8 +46,12 @@
 #ifndef EXT_TREE_NODE_HPP
 #define EXT_TREE_NODE_HPP
 
+#include <list>             // for list
+#include <string>           // for string
+#include <unordered_map>    // for unordered_map
+#include <utility>          // for pair
+#include "tree_common.hpp"  // for GET_KIND, blackbox_pragma_K, call_hw_prag...
 #include "tree_node.hpp"
-#include <unordered_map>
 
 struct null_node : public tree_node
 {

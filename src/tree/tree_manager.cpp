@@ -50,6 +50,12 @@
 
 ///Header include
 #include "tree_manager.hpp"
+#include <string.h>                               // for strlen, size_t
+#include <iostream>                               // for operator<<, basic_o...
+#include <list>                                   // for list
+#include <vector>                                 // for vector, allocator
+#include "exceptions.hpp"                         // for THROW_ASSERT, THROW...
+#include "string_manipulation.hpp"                // for STR
 
 ///Machine include
 #if HAVE_MAPPING_BUILT
@@ -75,9 +81,6 @@
 #if HAVE_CODE_ESTIMATION_BUILT
 #include "weight_information.hpp"
 #endif
-
-///Utility include
-#include "cpu_time.hpp"
 
 ///Wrapper include
 #include "gcc_wrapper.hpp"

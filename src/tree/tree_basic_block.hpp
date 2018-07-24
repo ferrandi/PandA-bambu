@@ -47,18 +47,14 @@
 ///Autoheader include
 #include "config_HAVE_BAMBU_BUILT.hpp"
 
-///STD include
-#include <iosfwd>
+#include <stddef.h>                                  // for size_t
 
 ///STL include
 #include <list>
-#include <map>
+//#include <map>
 #include <vector>
 #include <set>
 
-///tree include
-///FIXME: this is require to define VISITED_OBJ_SEQ - it should be removed after refactoring of visitor
-#include "tree_node.hpp"
 
 ///Utility include
 #include "refcount.hpp"
@@ -73,6 +69,8 @@ REF_FORWARD_DECL(tree_node);
 class tree_node_visitor;
 //@}
 
+///return the id given a super class or a class member
+#define GETID(field) field ## _ID
 
 /**
  * constant identifying the basic block node of type entry
@@ -241,10 +239,10 @@ struct bloc
        */
       size_t CGetNumberRemovedPhi() const;
 
-      /// constant indentify the entry basic block
+      /// constant identifying the entry basic block
       static const unsigned int ENTRY_BLOCK_ID;
 
-      /// constant indentify the exit basic block
+      /// constant identifying the exit basic block
       static const unsigned int EXIT_BLOCK_ID;
 
       /**

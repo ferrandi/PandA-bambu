@@ -59,8 +59,6 @@
 #include <vector>
 
 #include "simple_indent.hpp"
-#include "utility.hpp"
-
 
 #include "NP_functionality.hpp"
 #include "exceptions.hpp"
@@ -103,6 +101,12 @@ class xml_element;
 #define RETURN_PORT_NAME "return_port"
 #define PROXY_PREFIX "PROXY_PREF_"
 #define WRAPPED_PROXY_PREFIX "WRAPPED_PROXY_PREF_"
+
+/**
+* Macro which defines the get_kind_text function that returns the parameter as a string.
+*/
+#define GET_KIND_TEXT(meth) std::string get_kind_text() const override {return std::string(#meth);}
+
 
 /**
  * Structure representing the most relevant information about the type of a structural object.

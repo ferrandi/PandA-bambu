@@ -64,15 +64,6 @@ void tree_reindex::print(std::ostream& os) const
    else
    {
       os << "@" << index;
-        //// only for debug purpose
-        /*
-      if(!test_null(actual_tree_node))
-      {
-      os << "{";
-      actual_tree_node->tree_node::print(os);
-      os << "}";
-   }
-        */
    }
 }
 

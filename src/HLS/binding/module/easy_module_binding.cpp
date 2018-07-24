@@ -54,7 +54,6 @@
 #include "op_graph.hpp"
 
 #include "Parameter.hpp"
-#include "utility.hpp"
 #include "dbgPrintHelper.hpp"
 
 #include <iosfwd>

@@ -136,7 +136,7 @@
 ///utility include
 #include "cpu_time.hpp"
 #include "dbgPrintHelper.hpp"
-#include "utility.hpp"
+#include "hash_helper.hpp"
 
 #ifdef HC_APPROACH
 #include "hierarchical_clustering.hpp"

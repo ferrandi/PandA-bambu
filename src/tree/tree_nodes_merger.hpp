@@ -43,7 +43,6 @@
 #ifndef TREE_NODES_MERGER_HPP
 #define TREE_NODES_MERGER_HPP
 
-#include <ostream>
 #include <unordered_map>
 #include <unordered_set>
 #include <boost/preprocessor/seq/for_each.hpp>

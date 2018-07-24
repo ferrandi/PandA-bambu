@@ -42,47 +42,44 @@
  * Last modified by $Author$
  *
 */
-///Autoheader include
-#include "config_HAVE_HOST_PROFILING_BUILT.hpp"
-
-///Header include
 #include "behavioral_writer_helper.hpp"
 
-///behavior includes
-#include "application_manager.hpp"
-#include "basic_block.hpp"
-#include "behavioral_helper.hpp"
-#include "function_behavior.hpp"
-#include "op_graph.hpp"
-#if HAVE_HOST_PROFILING_BUILT
-#include "profiling_information.hpp"
-#endif
+#include "config_HAVE_HOST_PROFILING_BUILT.hpp"
 
+#include <boost/lexical_cast.hpp>                // for lexical_cast
+#include <boost/smart_ptr/shared_ptr.hpp>        // for shared_ptr
+#include <list>                                  // for list
+#include <map>                                   // for _Rb_tree_const_iterator
+#include <string>                                // for string, operator<<
+#include <utility>                               // for pair
 #if HAVE_HLS_BUILT
-///HLS includes
-#include "hls.hpp"
-#include "hls_manager.hpp"
-
-///HLS/scheduling include
-#include "schedule.hpp"
-
-///HLS/module_allocation include
-#include "allocation_information.hpp"
-
+#include "allocation_information.hpp"            // for AllocationInformation
 #endif
-
-///STD include
-#include <algorithm>
-
-///Tree include
+#include "application_manager.hpp"               // for application_manager
+#include "basic_block.hpp"                       // for BBNodeInfoConstRef
+#include "behavioral_helper.hpp"                 // for BehavioralHelper
+#include "cdfg_edge_info.hpp"                    // for CDG_SELECTOR, CFG_SE...
+#include "exceptions.hpp"                        // for THROW_UNREACHABLE
+#include "function_behavior.hpp"                 // for tree_nodeRef, Functi...
+#if HAVE_HLS_BUILT
+#include "hls.hpp"                               // for hls, AllocationInfor...
+#include "hls_manager.hpp"                       // for HLS_manager, hlsRef
+#endif
+#include "op_graph.hpp"                          // for OpEdgeInfo, OpGraph
+#if HAVE_HOST_PROFILING_BUILT
+#include "profiling_information.hpp"             // for ProfilingInformation
+#endif
+#if HAVE_HLS_BUILT
+#include "schedule.hpp"                          // for Schedule, AbsControl...
+#endif
+#include "string_manipulation.hpp"               // for STR
+#include "tree_basic_block.hpp"                  // for bloc, tree_nodeRef
+#include "tree_common.hpp"                       // for aggr_init_expr_K
+#include "tree_node.hpp"                         // for tree_node, CASE_BINA...
 #include "tree_reindex.hpp"
-#include "tree_basic_block.hpp"
+#include "typed_node_info.hpp"                   // for GET_TYPE, GET_NAME
+#include "var_pp_functor.hpp"                    // for std_var_pp_functor
 
-///Utility include
-#include "boost/algorithm/string/replace.hpp"
-#include "exceptions.hpp"
-#include "simple_indent.hpp"
-#include "var_pp_functor.hpp"
 
 BBWriter::BBWriter(const BBGraph * _g, const std::unordered_set<vertex> &_annotated) :
    VertexWriter(_g, 0),

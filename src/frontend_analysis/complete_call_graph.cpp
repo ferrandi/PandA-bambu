@@ -44,8 +44,7 @@
 ///. include
 #include "Parameter.hpp"
 
-///utility include
-#include "utility.hpp"
+#include "hash_helper.hpp"
 
 CompleteCallGraph::CompleteCallGraph(const application_managerRef _AppM, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters) :
    ApplicationFrontendFlowStep(_AppM, COMPLETE_CALL_GRAPH, _design_flow_manager, _parameters)

@@ -52,8 +52,7 @@
 ///Parser include
 #include "PragmaParser.hpp"
 
-///Utility include
-#include "utility.hpp"
+#include "hash_helper.hpp"
 
 PragmaSubstitution::PragmaSubstitution(const application_managerRef _AppM, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters) :
    ApplicationFrontendFlowStep(_AppM, PRAGMA_SUBSTITUTION, _design_flow_manager, _parameters)

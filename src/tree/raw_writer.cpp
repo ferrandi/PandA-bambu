@@ -49,6 +49,15 @@
 ///Header include
 #include "raw_writer.hpp"
 
+#include <stddef.h>                                  // for size_t
+#include <list>                                      // for list, list<>::co...
+#include <map>                                       // for map, map<>::cons...
+#include <unordered_set>                             // for unordered_set<>:...
+#include <utility>                                   // for pair
+#include <vector>                                    // for vector, vector<>...
+
+#include "exceptions.hpp"                            // for THROW_ERROR
+
 ///parser/treegcc include
 #include "token_interface.hpp"
 

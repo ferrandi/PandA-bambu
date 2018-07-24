@@ -47,6 +47,7 @@
 
 ///Boost include
 #include <boost/algorithm/string.hpp>
+#include <vector>
 
 xml_element* xml_child::add_child_element(const std::string& _name)
 {

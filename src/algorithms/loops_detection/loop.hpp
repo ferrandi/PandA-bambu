@@ -102,13 +102,14 @@
 #ifndef LOOP_HPP
 #define LOOP_HPP
 
-///Boost include
-#include "graph.hpp"
-
-///STL include
-#include <list>
-#include <set>
-#include <unordered_set>
+#include <stddef.h>                                  // for size_t
+#include <list>                                      // for list, list<>::co...
+#include <map>                                       // for map
+#include <set>                                       // for set, _Rb_tree_co...
+#include <unordered_set>                             // for unordered_set
+#include <utility>                                   // for pair
+#include "graph.hpp"                                 // for vertex
+#include "refcount.hpp"                              // for REF_FORWARD_DECL
 
 /**
  * @name Constants identifying the type of the loops

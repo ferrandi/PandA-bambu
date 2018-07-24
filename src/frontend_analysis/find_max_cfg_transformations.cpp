@@ -46,7 +46,7 @@
 
 ///utility includes
 #include "fileIO.hpp"
-#include "utility.hpp"
+#include "hash_helper.hpp"
 
 FindMaxCFGTransformations::FindMaxCFGTransformations(const application_managerRef _AppM, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters) :
    ApplicationFrontendFlowStep(_AppM, FrontendFlowStepType::FIND_MAX_CFG_TRANSFORMATIONS, _design_flow_manager, _parameters)

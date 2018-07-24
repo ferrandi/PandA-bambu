@@ -32,7 +32,7 @@
 */
 /**
  * @file cdfg_edge_info.cpp
- * @brief Data stuctures used to represent an edge in operation and basic block graphs.
+ * @brief Data structures used to represent an edge in operation and basic block graphs.
  *
  * @author Marco Lattuada <lattuada@elet.polimi.it>
  * $Revision$
@@ -40,11 +40,8 @@
  * Last modified by $Author$
  *
 */
-
-///Header include
 #include "cdfg_edge_info.hpp"
-
-///Behavior include
+#include <utility>                // for pair
 #include "behavioral_helper.hpp"
 
 bool CdfgEdgeInfo::CdgEdgeT() const

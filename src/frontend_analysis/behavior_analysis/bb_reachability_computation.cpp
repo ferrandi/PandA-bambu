@@ -64,6 +64,7 @@
 ///STL includes
 #include <unordered_map>
 #include <unordered_set>
+#include "hash_helper.hpp"
 
 
 BBReachabilityComputation::BBReachabilityComputation(const ParameterConstRef _Param, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager) :

@@ -49,11 +49,9 @@
 #include "behavioral_helper.hpp"
 #include "op_graph.hpp"
 
-///STD include
-#include <algorithm>
-
 ///utility include
 #include "var_pp_functor.hpp"
+#include "simple_indent.hpp"      // for simple_indent
 
 void prettyPrintVertex::get_internal_vars(const vertex &v, const OpGraphConstRef g, std::unordered_set<unsigned int> &list_of_variables, const BehavioralHelperConstRef BH)
 {

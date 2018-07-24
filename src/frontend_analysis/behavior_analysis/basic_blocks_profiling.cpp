@@ -70,6 +70,7 @@
 
 ///wrapper/treegcc include
 #include "gcc_wrapper.hpp"
+#include "hash_helper.hpp"
 
 BasicBlocksProfiling::BasicBlocksProfiling(const application_managerRef _AppM, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters) :
    ApplicationFrontendFlowStep(_AppM, BASIC_BLOCKS_PROFILING, _design_flow_manager, _parameters),

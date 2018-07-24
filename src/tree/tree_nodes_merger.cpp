@@ -45,15 +45,20 @@
 #include "config_HAVE_CODE_ESTIMATION_BUILT.hpp"
 #include "config_HAVE_RTL_BUILT.hpp"
 
-///parser/treegcc include
-#include "token_interface.hpp"
-
 #include "tree_nodes_merger.hpp"
-#include "tree_node.hpp"
-#include "tree_basic_block.hpp"
-#include "ext_tree_node.hpp"
-#include "tree_reindex.hpp"
-#include "tree_manager.hpp"
+#include <boost/lexical_cast.hpp>                 // for lexical_cast
+#include <string>                                 // for string, operator+
+#include <utility>                                // for pair
+#include <vector>                                 // for vector, vector<>::c...
+#include "exceptions.hpp"                         // for THROW_ASSERT, THROW...
+#include "ext_tree_node.hpp"                      // for gimple_pragma, gimp...
+#include "token_interface.hpp"                    // for TOK, TreeVocabulary...
+#include "tree_basic_block.hpp"                   // for tree_nodeRef, bloc
+#include "tree_common.hpp"                        // for CharType_K, abs_expr_K
+#include "tree_manager.hpp"                       // for tree_nodeRef, tree_...
+#include "tree_node.hpp"                          // for tree_nodeRef, tree_...
+#include "tree_reindex.hpp"                       // for tree_reindex, tree_...
+
 #if HAVE_CODE_ESTIMATION_BUILT
 #include "weight_information.hpp"
 #endif

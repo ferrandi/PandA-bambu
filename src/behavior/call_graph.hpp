@@ -44,13 +44,16 @@
 */
 #ifndef CALL_GRAPH_HPP
 #define CALL_GRAPH_HPP
-
-///Superclass include
-#include "graph.hpp"
-#include "graph_info.hpp"
-
-///Utility include
-#include "refcount.hpp"
+#include <iosfwd>                                    // for ostream
+#include <map>                                       // for map
+#include <set>                                       // for set
+#include <string>                                    // for string
+#include <unordered_set>                             // for unordered_set
+#include "edge_info.hpp"                             // for EdgeInfo, EdgeIn...
+#include "graph.hpp"                                 // for graph, vertex
+#include "graph_info.hpp"                            // for GraphInfo
+#include "node_info.hpp"                             // for NodeInfo
+#include "refcount.hpp"                              // for refcount, Refcou...
 
 REF_FORWARD_DECL(FunctionBehavior);
 

@@ -43,21 +43,18 @@
 ///Header include
 #include "profiling_information.hpp"
 
-///Behavior include
-#include "basic_block.hpp"
+#include <boost/graph/adjacency_list.hpp>     // for adjacency_list, source
+#include <boost/graph/filtered_graph.hpp>     // for source, target
+#include <boost/lexical_cast.hpp>             // for lexical_cast
+#include <string>                             // for string, operator+
+#include <utility>                            // for pair
+#include "basic_block.hpp"                    // for BBEdgeSorter, BBVertexS...
+#include "host_profiling_xml.hpp"             // for STR_XML_host_profiling_id
+#include "loop.hpp"                           // for LoopConstRef, Loop
+#include "tree_basic_block.hpp"               // for bloc
+#include "xml_element.hpp"                    // for xml_element
+#include "xml_helper.hpp"                     // for WRITE_XNVM2
 
-///Constants include
-#include "host_profiling_xml.hpp"
-
-///Loop include
-#include "loop.hpp"
-
-///Tree include
-#include "tree_basic_block.hpp"
-
-///Xml include
-#include "xml_element.hpp"
-#include "xml_helper.hpp"
 
 #if HAVE_UNORDERED
 BBExecutions::BBExecutions(const BBGraphConstRef) :

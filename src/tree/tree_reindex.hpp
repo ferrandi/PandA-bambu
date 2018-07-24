@@ -58,7 +58,7 @@ class tree_reindex : public tree_node
       friend class tree_manager;
 
        /**
-        * Private construnctor with index initialization
+        * Private constructor with index initialization
         * It can be accesses only by tree_manager
         * @param ind is the value of the index member.
         * @param tn is the actual reference to the tree_node.
@@ -84,12 +84,12 @@ class tree_reindex : public tree_node
        /**
         * Redefinition of get_tree_node_kind_text.
         */
-       GET_KIND_TEXT(tree_reindex);
+       GET_KIND_TEXT(tree_reindex)
 
        /**
         * Redefinition of get_tree_node_kind.
         */
-       GET_KIND(tree_reindex);
+       GET_KIND(tree_reindex)
 
        /**
         * Switch the print function to the html format

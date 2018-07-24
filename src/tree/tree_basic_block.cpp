@@ -50,9 +50,6 @@
 #include "schedule.hpp"
 #endif
 
-///STL include
-#include <iosfwd>
-
 ///tree includes
 #include "tree_helper.hpp"
 #include "tree_node.hpp"

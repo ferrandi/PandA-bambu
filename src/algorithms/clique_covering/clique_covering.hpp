@@ -59,21 +59,25 @@
 ///Autoheader include
 #include "config_HAVE_EXPERIMENTAL.hpp"
 
-#include <set>
-#include <vector>
-#include <algorithm>
-
-/// Graph includes
-#include <boost/config.hpp>
+#include <stddef.h>                                // for size_t
+#include <algorithm>                               // for binary_search, sort
 #include <boost/pending/disjoint_sets.hpp>
 #include <boost/graph/incremental_components.hpp>
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/filtered_graph.hpp>
-#include <boost/graph/graph_utility.hpp>
 #include <boost/graph/graphviz.hpp>
-#include <boost/graph/topological_sort.hpp>
 #include <boost/version.hpp>
 #include <boost/graph/properties.hpp>
+#include <boost/tuple/tuple.hpp>                   // for tie
+#include <iterator>                                // for inserter, reverse_...
+#include <limits>                                  // for numeric_limits
+#include <map>                                     // for map, map<>::const_...
+#include <ostream>                                 // for operator<<, ostream
+#include <set>                                     // for set, _Rb_tree_cons...
+#include <string>                                  // for string, operator+
+#include <unordered_set>                           // for unordered_set, uno...
+#include <utility>                                 // for pair, swap
+#include <vector>                                  // for vector, allocator
 
 /// matrix includes
 #if BOOST_VERSION >= 106400
@@ -89,11 +93,10 @@
 #include "DawsonRun.hpp"
 #endif
 #include "clique_covering_graph.hpp"
+#include "string_manipulation.hpp"
 
-#include <boost/foreach.hpp>
-#include "check_clique.hpp"
-#include "filter_clique.hpp"
-#include "dbgPrintHelper.hpp"
+template <typename vertex_type> struct check_clique;
+template <typename vertex_type> struct filter_clique;
 
 
 /// unordered_set_difference

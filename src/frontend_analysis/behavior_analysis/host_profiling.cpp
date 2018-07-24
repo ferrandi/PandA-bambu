@@ -79,7 +79,7 @@
 #include <boost/filesystem/fstream.hpp>
 #include <boost/filesystem/path.hpp>
 #include <boost/cast.hpp>
-#include "utility.hpp"
+#include "hash_helper.hpp"
 
 HostProfiling_Method operator&(const HostProfiling_Method first, const HostProfiling_Method second)
 {

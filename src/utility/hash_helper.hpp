@@ -7,12 +7,12 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (c) 2015-2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -31,40 +31,52 @@
  *
 */
 /**
- * @file fixed_scheduling.hpp
- * @brief 
+ * @file hash_helper.hpp
+ * @brief This file collects some hash functors
  *
- * @author Christian Pilato <pilato@elet.polimi.it>
- * $Revision$
- * $Date$ $
- * Last modified by 
+ * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  *
- */
-#ifndef FIXED_SCHEDULING_HPP
-#define FIXED_SCHEDULING_HPP
+*/
+#ifndef HASH_HELPER_HPP
+#define HASH_HELPER_HPP
+#include <boost/functional/hash/hash.hpp>
 
-#include "scheduling.hpp"
-
-class fixed_scheduling : public Scheduling
+///Hash function for std::vector
+namespace std
 {
-   public:
+   template<typename T>
+      struct hash<std::vector<T> > : public std::unary_function<std::vector<T>, std::size_t>
+      {
+         std::size_t operator()(const std::vector<T> &val) const
+         {
+            return boost::hash_range<typename std::vector<T>::const_iterator>(val.begin(), val.end());
+         }
+      };
+}
 
-      /**
-       * Constructor
-       * @param design_flow_manager is the design flow manager
-       */
-      fixed_scheduling(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager);
+///Hash function for std::pair<T, U>
+namespace std
+{
+   template<typename T, typename U>
+      struct hash<std::pair<T, U> > : public std::unary_function<std::pair<T, U>, std::size_t>
+      {
+         private:
+            const hash<T> Th;
+            const hash<U> Uh;
 
-      /**
-       * Destructor
-       */
-      virtual ~fixed_scheduling();
+         public:
+            /**
+             * Constructor
+             */
+            hash() :
+               Th(),
+               Uh()
+            {}
 
-      /**
-       * Execute the step
-       * @return the exit status of this step
-       */
-      virtual DesignFlowStep_Status InternalExec();
-};
-
+            std::size_t operator()(const std::pair<T, U> &val) const
+            {
+               return Th(val.first) ^ Uh(val.second);
+            }
+      };
+}
 #endif

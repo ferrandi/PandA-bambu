@@ -67,7 +67,7 @@
 #include "boost/lexical_cast.hpp"
 #include "dbgPrintHelper.hpp"
 #include "exceptions.hpp"
-#include "utility.hpp"
+#include "hash_helper.hpp"
 
 AddBbEcfgEdges::AddBbEcfgEdges(const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters) :
    FunctionFrontendFlowStep(_AppM, _function_id, ADD_BB_ECFG_EDGES, _design_flow_manager, _parameters)

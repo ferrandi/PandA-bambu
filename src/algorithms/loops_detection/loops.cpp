@@ -47,59 +47,40 @@
 */
 ///Header include
 #include "loops.hpp"
-#include "loop.hpp"
 
 ///Autoheader include
 #include "config_HAVE_HOST_PROFILING_BUILT.hpp"
 
-///Algorithms include
-#include "Dominance.hpp"
+#include <boost/lexical_cast.hpp>                 // for lexical_cast
+#include <boost/graph/depth_first_search.hpp>
+#include <boost/graph/graph_traits.hpp>
+#include <iosfwd>
+#include <list>
+#include <map>
+#include <ostream>                                // for operator<<, basic_o...
+#include <unordered_set>
+#include <utility>
+#include <vector>
 
-///Behavior include
+#include "Dominance.hpp"
+#include "Parameter.hpp"
+#include "Vertex.hpp"
 #include "basic_block.hpp"
 #include "basic_blocks_graph_constructor.hpp"
+#include "behavioral_helper.hpp"
 #include "behavioral_writer_helper.hpp"
+#include "dbgPrintHelper.hpp"
+#include "exceptions.hpp"
 #include "function_behavior.hpp"
-
+#include "graph.hpp"
+#include "hash_helper.hpp"
+#include "loop.hpp"
 #if HAVE_HOST_PROFILING_BUILT
 #include "profiling_information.hpp"
 #endif
-
-///Graph include
-#include "graph.hpp"
-#include "Vertex.hpp"
-
-///Parameter include
-#include "Parameter.hpp"
-
-///STL include
-#include <list>
-#include <vector>
-#include <map>
-#include <unordered_set>
-
-///STD Include
-#include <algorithm>
-#include <cmath>
-#include <iosfwd>
-#include <limits>
-#include <utility>
-
-///Tree include
-#include "behavioral_helper.hpp"
+#include "string_manipulation.hpp"                // for STR
 #include "tree_basic_block.hpp"
-
-///Utility include
-#include <boost/graph/depth_first_search.hpp>
-#include <boost/graph/graph_traits.hpp>
-#include <boost/graph/reverse_graph.hpp>
-#include <boost/graph/transitive_closure.hpp>
-#include <boost/graph/visitors.hpp>
-#include <boost/lexical_cast.hpp>
-#include "dbgPrintHelper.hpp"
-#include "exceptions.hpp"
-#include "simple_indent.hpp"
-#include "utility.hpp"
+#include "utility.hpp"                            // for GET_CLASS
 
 /**
  * Visitor used during the depth-first search on the DJ graph.

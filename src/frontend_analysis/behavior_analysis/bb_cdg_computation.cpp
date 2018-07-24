@@ -51,6 +51,7 @@
 #include "basic_blocks_graph_constructor.hpp"
 #include "function_behavior.hpp"
 #include "op_graph.hpp"
+#include "hash_helper.hpp"
 
 BBCdgComputation::BBCdgComputation(const ParameterConstRef _Param, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager) :
    FunctionFrontendFlowStep(_AppM, _function_id, BB_CONTROL_DEPENDENCE_COMPUTATION, _design_flow_manager, _Param)

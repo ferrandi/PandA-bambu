@@ -43,30 +43,21 @@
  * Last modified by $Author$
  *
 */
-
-///Autoheader include
-#include "config_HAVE_HOST_PROFILING_BUILT.hpp"
-
-///Header include
 #include "basic_block.hpp"
 
-///. include
-#include "Parameter.hpp"
-
-///behavior includes
-#include "application_manager.hpp"
-#include "behavioral_writer_helper.hpp"
-#include "function_behavior.hpp"
-
-///graph include
-#include "graph.hpp"
-
-///STD include
-#include <fstream>
-
-///tree includes
-#include "behavioral_helper.hpp"
-#include "tree_basic_block.hpp"
+#include <boost/filesystem/operations.hpp>        // for create_directories
+#include <boost/graph/adjacency_list.hpp>         // for adjacency_list, source
+#include <boost/graph/detail/adjacency_list.hpp>  // for num_vertices, adj_l...
+#include <boost/graph/detail/edge.hpp>            // for operator!=, operator==
+#include <boost/graph/filtered_graph.hpp>         // for source, target
+#include <boost/iterator/iterator_facade.hpp>     // for operator!=, operator++
+#include "Parameter.hpp"                          // for OPT_dot_directory
+#include "application_manager.hpp"                // for FunctionBehaviorCon...
+#include "behavioral_helper.hpp"                  // for BehavioralHelper
+#include "behavioral_writer_helper.hpp"           // for BBWriter, BBEdgeWriter
+#include "function_behavior.hpp"                  // for BBGraphsCollectionRef
+#include "graph.hpp"                              // for vertex, EdgeDescriptor
+#include "tree_basic_block.hpp"                   // for bloc, blocRef
 
 BBNodeInfo::BBNodeInfo() :
    loop_id(0),

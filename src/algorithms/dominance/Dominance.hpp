@@ -76,7 +76,6 @@
 #include <boost/graph/reverse_graph.hpp>
 #include <boost/version.hpp>
 #include "exceptions.hpp"
-#include "utility.hpp"
 
 /// Type of Basic Block aka TBB. In this case each basic block is represented with its index.
 typedef unsigned long int TBB;

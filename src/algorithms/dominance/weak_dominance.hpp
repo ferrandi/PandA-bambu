@@ -44,13 +44,8 @@
 #ifndef WEAK_DOMINANCE_HPP
 #define WEAK_DOMINANCE_HPP
 
-///Graph include
-#include "graph.hpp"
-
-///Stl include
 #include <unordered_map>
-
-///Utility include
+#include "graph.hpp"
 #include "refcount.hpp"
 
 CONSTREF_FORWARD_DECL(Parameter);

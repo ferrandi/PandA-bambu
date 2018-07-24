@@ -55,8 +55,7 @@
 #include "behavioral_helper.hpp"
 #include "tree_basic_block.hpp"
 
-///utility include
-#include "utility.hpp"
+#include "hash_helper.hpp"
 
 AddArtificialCallFlowEdges::AddArtificialCallFlowEdges(const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters) :
    FunctionFrontendFlowStep(_AppM, _function_id, ADD_ARTIFICIAL_CALL_FLOW_EDGES, _design_flow_manager, _parameters)

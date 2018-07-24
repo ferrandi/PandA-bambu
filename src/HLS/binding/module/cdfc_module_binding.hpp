@@ -48,6 +48,7 @@
 
 #include <unordered_map>
 #include <unordered_set>
+#include "hash_helper.hpp"
 
 //#define HC_APPROACH
 

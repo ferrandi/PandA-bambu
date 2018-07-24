@@ -56,7 +56,6 @@
 #include <boost/filesystem/fstream.hpp>
 #include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/path.hpp>
-#include <boost/functional/hash/hash.hpp>
 #include <boost/iterator/iterator_facade.hpp>
 #include <boost/serialization/strong_typedef.hpp>
 #include <boost/type_index/type_index_facade.hpp>
@@ -109,210 +108,6 @@
 #define ASSERT_PARAMETER(parameter)
 #endif
 
-#ifdef NDEBUG
-#define STRONG_TYPEDEF(original_type, new_type) typedef original_type new_type
-#define STRONG_TYPEDEF_FORWARD_DECL(original_type, new_type) typedef original_type new_type
-
-template<typename Dest, typename Source>
-inline Dest from_strongtype_cast(Source source)
-{
-   return static_cast<Dest>(source);
-}
-
-#if 0
-template<typename Dest, typename Source>
-inline Dest to_strongtype_cast(Source source)
-{
-   return static_cast<Dest>(source);
-}
-#endif
-
-#else
-template<typename Dest, typename Source>\
-inline Dest from_strongtype_cast(Source source)
-{
-   return static_cast<Dest>(source.GetContent());
-}
-
-#if 0
-template<typename Dest, typename Source>
-inline Dest to_strongtype_cast(Source source)
-{
-   return Dest(source);
-}
-#endif
-
-#define STRONG_TYPEDEF_FORWARD_DECL(OriginalType, NewType) class NewType
-///This is quite similar to boost strong typedef, but implicit conversion are disabled
-#define STRONG_TYPEDEF(OriginalType, NewType) \
-class NewType\
-{\
-   private:\
-      /*The actual value of the object*/\
-      OriginalType content;\
-\
-   public:\
-\
-      /* Explicit constructor */\
-      explicit\
-      NewType(const OriginalType _content) :\
-         content(_content)\
-      {}\
-\
-      friend std::ostream& operator<<(std::ostream& os, const NewType element);\
-\
-      inline OriginalType GetContent() const\
-      {\
-         return content;\
-      }\
-\
-      /* Overloading of -- */\
-      NewType & operator--() \
-      {\
-         content--;\
-         return *this;\
-      }\
-\
-      /* Overloading of ++ */\
-      NewType & operator++() \
-      {\
-         content++;\
-         return *this;\
-      }\
-\
-      /* Overloading of ++ */\
-      NewType operator++(int) \
-      {\
-         content++;\
-         return NewType(content-1);\
-      }\
-\
-      /* Overloading of + */\
-      NewType operator+(const NewType & other) const\
-      {\
-         return NewType(content + other.content);\
-      }\
-      NewType operator+(const OriginalType & other) const\
-      {\
-         return NewType(content + other);\
-      }\
-\
-      /* Overloading of += */\
-      NewType operator+=(const NewType & other)\
-      {\
-         content += other.content;\
-         return *this;\
-      }\
-      NewType operator+=(const OriginalType & other)\
-      {\
-         content += other;\
-         return *this;\
-      }\
-\
-      /* Overloading of - */\
-      NewType operator-(const NewType & other) const\
-      {\
-         return NewType(content - other.content);\
-      }\
-      NewType operator-(const OriginalType & other) const\
-      {\
-         return NewType(content - other);\
-      }\
-\
-      /* Overloading of - */\
-      NewType operator-() const\
-      {\
-         return NewType(-content);\
-      }\
-\
-      /* Overloading of * */\
-      NewType operator*(const NewType & other) const\
-      {\
-         return NewType(content * other.content);\
-      }\
-      NewType operator*(const OriginalType & other) const\
-      {\
-         return NewType(content * other);\
-      }\
-\
-      /* Overloading of < */\
-      bool operator<(const NewType & other) const\
-      {\
-         return content < other.content;\
-      }\
-      bool operator<(const OriginalType & other) const\
-      {\
-         return content < other;\
-      }\
-\
-      /* Overloading of <= */\
-      bool operator<=(const NewType & other) const\
-      {\
-         return content <= other.content;\
-      }\
-\
-      /* Overloading of > */\
-      bool operator>(const NewType & other) const\
-      {\
-         return content > other.content;\
-      }\
-      bool operator>(const OriginalType & other) const\
-      {\
-         return content > other;\
-      }\
-\
-      /* Overloading of >= */\
-      bool operator>=(const NewType & other) const\
-      {\
-         return content >= other.content;\
-      }\
-\
-      /* Overloading of == */\
-      bool operator==(const NewType & other) const\
-      {\
-         return content == other.content;\
-      }\
-      bool operator==(const OriginalType & other) const\
-      {\
-         return content == other;\
-      }\
-\
-      /* Overloading of != */\
-      bool operator!=(const NewType & other) const\
-      {\
-         return content != other.content;\
-      }\
-      bool operator!=(const OriginalType & other) const\
-      {\
-         return content != other;\
-      }\
-};\
-inline \
-std::ostream & operator<<(std::ostream & os, const NewType element)\
-{\
-   os << element.content;\
-   return os;\
-}\
-\
-namespace std\
-{\
-   template <>\
-      struct hash<NewType> : public unary_function<NewType, size_t>\
-      {\
-         size_t operator()(NewType var) const\
-         {\
-            hash<int> hasher;\
-            return hasher(static_cast<int>(var.GetContent()));\
-         }\
-      };\
-}\
-/* Workaround for ;;*/\
-class NewType
-
-#endif
-
-#define UINT_STRONG_TYPEDEF(new_type) STRONG_TYPEDEF(unsigned int, new_type)
-#define UINT_STRONG_TYPEDEF_FORWARD_DECL(new_type) STRONG_TYPEDEF_FORWARD_DECL(unsigned int, new_type)
 
 /**
  * @return return the maximum between two numbers.
@@ -340,10 +135,7 @@ type_t MIN(const type_t a, const type_t b)
 }
 #endif
 
-/**
-* Macro which defines the get_kind_text function that returns the parameter as a string.
-*/
-#define GET_KIND_TEXT(meth) std::string get_kind_text() const override {return std::string(#meth);}
+
 /**
 * Macro returning the name of a class. It uses the static version of get_kind_text
 */
@@ -462,14 +254,6 @@ class string_separator
 };
 
 /**
- * Macro which performs a lexical_cast to a string
- * Temporary is duplicated in utility.hpp and string_manipulation.hpp
- */
-#ifndef STR
-#define STR(s) boost::lexical_cast<std::string>(s)
-#endif
-
-/**
  * Macro which "pretty prints" a multi-line string
  */
 #define PP_ONE_LINE(multi_line_string) boost::regex_replace(multi_line_string, boost::regex("\\n"), "\\\\n")
@@ -514,44 +298,6 @@ void ShuffleVector(typename std::vector<T> & shuffle, const unsigned int seed)
    }
 }
 
-///Hash function for std::vector
-namespace std
-{
-   template<typename T>
-      struct hash<std::vector<T> > : public std::unary_function<std::vector<T>, std::size_t>
-      {
-         std::size_t operator()(const std::vector<T> &val) const
-         {
-            return boost::hash_range<typename std::vector<T>::const_iterator>(val.begin(), val.end());
-         }
-      };
-}
-
-///Hash function for std::pair<T, U>
-namespace std
-{
-   template<typename T, typename U>
-      struct hash<std::pair<T, U> > : public std::unary_function<std::pair<T, U>, std::size_t>
-      {
-         private:
-            const hash<T> Th;
-            const hash<U> Uh;
-
-         public:
-            /**
-             * Constructor
-             */
-            hash() :
-               Th(),
-               Uh()
-            {}
-
-            std::size_t operator()(const std::pair<T, U> &val) const
-            {
-               return Th(val.first) ^ Uh(val.second);
-            }
-      };
-}
 
 ///The type used for timestamp
 struct TimeStamp : public boost::posix_time::ptime

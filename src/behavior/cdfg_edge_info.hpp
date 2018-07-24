@@ -32,7 +32,7 @@
 */
 /**
  * @file cdfg_edge_info.hpp
- * @brief Data stuctures used to represent an edge in operation and basic block graphs.
+ * @brief Data structures used to represent an edge in operation and basic block graphs.
  *
  * @author Marco Lattuada <lattuada@elet.polimi.it>
  * $Revision$
@@ -43,18 +43,12 @@
 #ifndef CDFG_EDGE_INFO_HPP
 #define CDFG_EDGE_INFO_HPP
 
-///Superclass include
-#include "edge_info.hpp"
-
-///STD include
-#include <limits>
-
-///STL include
-#include <map>
-#include <set>
-
-///Utility include
-#include "refcount.hpp"
+#include <limits>                                    // for numeric_limits
+#include <map>                                       // for map
+#include <set>                                       // for set
+#include <string>                                    // for string
+#include "edge_info.hpp"                             // for EdgeInfo
+#include "refcount.hpp"                              // for CONSTREF_FORWARD...
 
 CONSTREF_FORWARD_DECL(BehavioralHelper);
 

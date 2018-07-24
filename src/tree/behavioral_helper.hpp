@@ -48,15 +48,16 @@
 #include "config_HAVE_FROM_PRAGMA_BUILT.hpp"
 #include "config_HAVE_BAMBU_BUILT.hpp"
 
-///graph include
-#include "Vertex.hpp"
-//#include "cdfg.hpp"
-
-///STL include
+#include <list>                                      // for list
 #include <map>
+#include <set>                                       // for set
+#include <string>                                    // for string
 #include <tuple>
 #include <unordered_set>
-#include <vector>
+#include <utility>                                   // for pair
+
+///graph include
+#include "graph.hpp"
 
 ///Utility include
 #include "refcount.hpp"
@@ -66,10 +67,8 @@
 //@{
 REF_FORWARD_DECL(application_manager);
 REF_FORWARD_DECL(bloc);
-class function_decl;
 CONSTREF_FORWARD_DECL(OpGraph);
 CONSTREF_FORWARD_DECL(Parameter);
-class simple_indent;
 CONSTREF_FORWARD_DECL(tree_manager);
 REF_FORWARD_DECL(tree_node);
 CONSTREF_FORWARD_DECL(var_pp_functor);

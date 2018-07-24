@@ -43,34 +43,21 @@
 #ifndef _APPLICATION_MANAGER_HPP_
 #define _APPLICATION_MANAGER_HPP_
 
-///Autoheader
-#include "config_HAVE_ACTOR_GRAPHS_BUILT.hpp"
-#include "config_HAVE_ARCH_BUILT.hpp"
-#include "config_HAVE_CODE_ESTIMATION_BUILT.hpp"
 #include "config_HAVE_CODESIGN.hpp"
 #include "config_HAVE_FROM_DISCREPANCY_BUILT.hpp"
 #include "config_HAVE_PRAGMA_BUILT.hpp"
-#include "config_HAVE_SOURCE_CODE_STATISTICS_XML.hpp"
 
-///Graph include
-#include "graph.hpp"
-#include "call_graph.hpp"
-
-///STD include
-#include <string>
-
-///STL include
-#include <list>
-#include <map>
-#include <tuple>
+#include <stddef.h>                                  // for size_t
+#include <set>                                       // for set
+#include <string>                                    // for string
+#if HAVE_CODESIGN
 #include <unordered_map>
-#include <unordered_set>
-#include <vector>
+#endif
+#include "custom_map.hpp"                            // for CustomMap
+#include "custom_set.hpp"                            // for CustomSet
+#include "graph.hpp"                                 // for vertex
+#include "refcount.hpp"                              // for REF_FORWARD_DECL
 
-///utility include
-#include "custom_map.hpp"
-#include "custom_set.hpp"
-#include "refcount.hpp"
 
 CONSTREF_FORWARD_DECL(ActorGraphManager);
 REF_FORWARD_DECL(ActorGraphManager);

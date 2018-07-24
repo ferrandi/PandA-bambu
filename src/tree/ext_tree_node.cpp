@@ -42,7 +42,6 @@
 */
 
 #include "ext_tree_node.hpp"
-#include "tree_reindex.hpp"
 
 void null_node::visit(tree_node_visitor * const v) const
 {

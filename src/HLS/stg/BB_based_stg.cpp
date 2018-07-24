@@ -110,6 +110,7 @@
 #include "tree_basic_block.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
+#include "tree_node.hpp"
 
 #include <set>
 #include <unordered_map>

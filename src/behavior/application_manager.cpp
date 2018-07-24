@@ -41,45 +41,36 @@
  * Last modified by $Author$
  *
 */
-
-///Autoheader include
-#include "config_HAVE_POLIXML_BUILT.hpp"
-#include "config_HAVE_PRAGMA_BUILT.hpp"
-#include "config_HAVE_SOURCE_CODE_STATISTICS_XML.hpp"
-
-///Header include
 #include "application_manager.hpp"
 
-///Behavior includes
-#include "call_graph_manager.hpp"
-#include "call_graph.hpp"
-#include "function_behavior.hpp"
-#include "loop.hpp"
-#include "loops.hpp"
-#include "op_graph.hpp"
+#include "config_HAVE_CODESIGN.hpp"
+#include "config_HAVE_FROM_DISCREPANCY_BUILT.hpp"
+#include "config_HAVE_PRAGMA_BUILT.hpp"
 
-// include from HLS/vcd/
+#include <limits>                          // for numeric_limits
 #if HAVE_FROM_DISCREPANCY_BUILT
-#include "Discrepancy.hpp"
+#include "Discrepancy.hpp"                 // for Discrepancy
 #endif
-
+#include "Parameter.hpp"                   // for Parameter, OPT_cfg_max_tra...
+#include "UnfoldedFunctionInfo.hpp"        // for FunctionBehaviorConstRef
+#include "behavioral_helper.hpp"           // for OpGraphConstRef, tree_nodeRef
+#include "call_graph.hpp"                  // for CallGraph, CallGraphInfo
+#include "call_graph_manager.hpp"          // for CallGraphManager, CallGrap...
+#include "dbgPrintHelper.hpp"              // for DEBUG_LEVEL_NONE, INDENT_O...
+#include "exceptions.hpp"                  // for THROW_ASSERT, THROW_ERROR
+#include "ext_tree_node.hpp"               // for gimple_while
+#include "function_behavior.hpp"           // for FunctionBehavior, Function...
+#include "loops.hpp"                       // for FunctionBehaviorRef
+#include "op_graph.hpp"                    // for ENTRY_ID, EXIT_ID, OpGraph
 #if HAVE_PRAGMA_BUILT
-#include "pragma_manager.hpp"
+#include "pragma_manager.hpp"              // for pragma_manager, pragma_man...
 #endif
-
-///tree includes
-#include "behavioral_helper.hpp"
-#include "ext_tree_node.hpp"
-#include "tree_helper.hpp"
-#include "tree_manager.hpp"
+#include "string_manipulation.hpp"         // for STR
+#include "tree_common.hpp"                 // for target_mem_ref461_K, targe...
+#include "tree_manager.hpp"                // for ParameterConstRef, tree_no...
+#include "tree_node.hpp"                   // for tree_nodeRef, tree_node
 #include "tree_reindex.hpp"
-
-///Utility includes
-#include "Parameter.hpp"
-#include "constant_strings.hpp"
-#include "exceptions.hpp"
-#include "utility.hpp"
-
+#include "utility.hpp"                     // for GET_CLASS
 
 application_manager::application_manager(const FunctionExpanderConstRef function_expander, const bool _single_root_function, const bool _allow_recursive_functions, const ParameterConstRef _Param) :
    TM(new tree_manager(_Param)),

@@ -49,8 +49,6 @@
 
 #define NOUTPUT 0
 
-///Autoheader include
-
 #include <iosfwd>
 #include <string>
 
@@ -201,7 +199,6 @@ extern std::string panda_message;
    ((profLevel <= curprofLevel) ? std::cerr << mex : std::cerr)
 
 #endif
-
 
 
 #define PRINT_MSG(mex) \

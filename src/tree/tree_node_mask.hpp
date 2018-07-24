@@ -43,7 +43,6 @@
 #ifndef TREE_NODE_MASK_HPP
 #define TREE_NODE_MASK_HPP
 
-#include <ostream>
 #include <boost/preprocessor/seq/for_each.hpp>
 #include <boost/preprocessor/facilities/empty.hpp>
 #include "refcount.hpp"

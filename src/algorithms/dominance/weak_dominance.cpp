@@ -44,11 +44,16 @@
 ///Header include
 #include "weak_dominance.hpp"
 
-///Dominance include
+#include <boost/tuple/tuple.hpp>                  // for tie
+#include <iterator>                               // for front_insert_iterator
+#include <list>                                   // for list, _List_iterator
 #include "Dominance.hpp"
+#include "Parameter.hpp"                          // for ParameterConstRef
+#include "dbgPrintHelper.hpp"                     // for DEBUG_LEVEL_NONE
+#include "edge_info.hpp"                          // for EdgeInfoRef
+#include "exceptions.hpp"                         // for THROW_ASSERT
+#include "utility.hpp"                            // for GET_CLASS
 
-///Utility include
-#include "utility.hpp"
 
 void weak_dominance::calculate_weak_dominance_info(graphs_collection * output, std::unordered_map<vertex, vertex> & i2o, std::unordered_map<vertex, vertex> & o2i)
 {

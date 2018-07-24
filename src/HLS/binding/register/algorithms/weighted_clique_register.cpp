@@ -45,6 +45,9 @@
 #include "weighted_clique_register.hpp"
 
 #include "clique_covering.hpp"
+#include "check_clique.hpp"
+#include "filter_clique.hpp"
+
 #include "hls.hpp"
 #include "hls_manager.hpp"
 #include "reg_binding.hpp"

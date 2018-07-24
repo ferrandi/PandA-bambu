@@ -43,14 +43,9 @@
 #ifndef _VAR_PP_FUNCTOR_HPP
 #define _VAR_PP_FUNCTOR_HPP
 
-///STL include
-#include <unordered_set>
-
-///Utility include
-#include "custom_set.hpp"
+#include <string>                                    // for string
+#include "custom_set.hpp"                            // for CustomSet
 #include "refcount.hpp"
-
-#include "graph.hpp"
 
 /**
  * @name Forward declarations.

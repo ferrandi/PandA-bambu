@@ -42,30 +42,44 @@
  * Last modified by $Author$
  *
 */
+#include "function_behavior.hpp"
 
-///Autoheader include
 #include "config_HAVE_EXPERIMENTAL.hpp"
 #include "config_HAVE_HOST_PROFILING_BUILT.hpp"
 #include "config_HAVE_POLIXML_BUILT.hpp"
 
-///Header include
-#include "function_behavior.hpp"
-
-///Behavior include
-#include "application_manager.hpp"
-#include "behavioral_helper.hpp"
-#include "loop.hpp"
-#include "loops.hpp"
-#include "op_graph.hpp"
+#include <boost/graph/adjacency_list.hpp>         // for adjacency_list
+#include <boost/graph/filtered_graph.hpp>         // for filtered_graph<>::v...
+#include <boost/iterator/filter_iterator.hpp>     // for filter_iterator
+#include <boost/iterator/iterator_facade.hpp>     // for operator!=, operator++
+#include <boost/tuple/tuple.hpp>                  // for tie
+#include <list>                                   // for list, _List_const_i...
+#include <ostream>                                // for operator<<, basic_o...
+#include <string>                                 // for operator+, char_traits
+#include <utility>                                // for pair
+#include "Dominance.hpp"                          // for dominance
+#include "Parameter.hpp"                          // for ParameterConstRef
+#include "application_manager.hpp"                // for application_manager
+#include "basic_block.hpp"                        // for BBGraph, BBGraphInfo
+#include "basic_blocks_graph_constructor.hpp"     // for BBGraphRef, BasicBl...
+#include "behavioral_helper.hpp"                  // for BehavioralHelper
+#include "cdfg_edge_info.hpp"                     // for CFG_SELECTOR, CDG_S...
+#include "config_HAVE_EXPERIMENTAL.hpp"           // for HAVE_EXPERIMENTAL
+#include "config_HAVE_HOST_PROFILING_BUILT.hpp"   // for HAVE_HOST_PROFILING...
+#include "config_HAVE_POLIXML_BUILT.hpp"          // for HAVE_POLIXML_BUILT
+#include "custom_set.hpp"                         // for CustomSet
+#include "exceptions.hpp"                         // for THROW_ASSERT, THROW...
+#include "graph.hpp"                              // for vertex, VertexIterator
+#include "level_constructor.hpp"                  // for level_constructor
+#include "loop.hpp"                               // for LoopsRef
+#include "loops.hpp"                              // for ProfilingInformatio...
+#include "op_graph.hpp"                           // for OpGraph, OpGraphCon...
+#include "operations_graph_constructor.hpp"       // for OpGraphRef, operati...
 #if HAVE_HOST_PROFILING_BUILT
-#include "profiling_information.hpp"
+#include "profiling_information.hpp"              // for BBGraphConstRef
 #endif
+#include "typed_node_info.hpp"                    // for GET_NAME
 
-///Graph include
-#include "basic_block.hpp"
-#include "basic_blocks_graph_constructor.hpp"
-#include "level_constructor.hpp"
-#include "operations_graph_constructor.hpp"
 #if HAVE_EXPERIMENTAL
 #include "epd_graph.hpp"
 #include "extended_pdg_constructor.hpp"
@@ -73,23 +87,7 @@
 #include "parallel_regions_graph.hpp"
 #include "parallel_regions_graph_constructor.hpp"
 #endif
-#include "graph.hpp"
-#include "Dominance.hpp"
 
-///tree include
-#include "tree_node.hpp"
-
-///Utility include
-#include "constant_strings.hpp"
-#include "utility.hpp"
-
-///XML include
-#if HAVE_POLIXML_BUILT
-#include "xml_helper.hpp"
-#include "polixml.hpp"
-#include "xml_dom_parser.hpp"
-#include "xml_element.hpp"
-#endif
 
 #if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
 #pragma GCC diagnostic push

@@ -43,6 +43,16 @@
 ///Header include
 #include "gimple_writer.hpp"
 
+#include <ctype.h>                                   // for toupper
+#include <stddef.h>                                  // for size_t
+#include <algorithm>                                 // for transform
+#include <boost/algorithm/string/replace.hpp>        // for replace_all
+#include <boost/lexical_cast.hpp>                    // for lexical_cast
+#include <string>                                    // for string, operator+
+#include <unordered_map>                             // for unordered_map<>:...
+#include <utility>                                   // for pair, operator!=
+#include <vector>                                    // for vector, vector<>...
+
 ///Behavior include
 #include "basic_block.hpp"
 

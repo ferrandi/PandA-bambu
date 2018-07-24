@@ -19,6 +19,7 @@ noinst_HEADERS = \
    exceptions.hpp \
    fileIO.hpp \
    gzstream.hpp \
+   hash_helper.hpp \
    indented_output_stream.hpp \
    Lexer_utilities.hpp \
    math_function.hpp \
@@ -26,6 +27,7 @@ noinst_HEADERS = \
    simple_indent.hpp \
    Statistics.hpp \
    string_manipulation.hpp \
+   strong_typedef.hpp \
    utility.hpp \
    visitor.hpp \
    xml_helper.hpp

@@ -41,6 +41,7 @@
 #include "Parameter.hpp"
 
 #include "structural_objects.hpp"
+#include "hash_helper.hpp"
 
 vcd_parser::vcd_parser(const ParameterConstRef & param) :
    debug_level(param->get_class_debug_level(GET_CLASS(*this))),

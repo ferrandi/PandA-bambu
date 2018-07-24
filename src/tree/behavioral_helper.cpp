@@ -42,14 +42,22 @@
 */
 
 ///Autoheader include
-#include "config_HAVE_CODE_ESTIMATION_BUILT.hpp"
-#include "config_HAVE_SPARC_COMPILER.hpp"
-#include "config_HAVE_RTL_BUILT.hpp"
-#include "config_SKIP_WARNING_SECTIONS.hpp"
-#include "config_HAVE_FROM_PRAGMA_BUILT.hpp"
+#include "config_HAVE_ASSERTS.hpp"                // for HAVE_ASSERTS
+#include "config_HAVE_CODE_ESTIMATION_BUILT.hpp"  // for HAVE_CODE_ESTIMATIO...
+#include "config_HAVE_FROM_PRAGMA_BUILT.hpp"      // for HAVE_FROM_PRAGMA_BUILT
+#include "config_HAVE_RTL_BUILT.hpp"              // for HAVE_RTL_BUILT
+#include "config_HAVE_SPARC_COMPILER.hpp"         // for HAVE_SPARC_COMPILER
+#include "config_RELEASE.hpp"                     // for RELEASE
 
 ///Header include
 #include "behavioral_helper.hpp"
+
+#include <stddef.h>                               // for size_t
+#include <boost/algorithm/string/replace.hpp>     // for replace_all
+
+#include <string>                                 // for operator+, string
+#include <unordered_map>                          // for unordered_map, unor...
+#include <vector>                                 // for vector, allocator
 
 ///Behavior include
 #include "application_manager.hpp"
@@ -77,8 +85,6 @@
 #include "weight_information.hpp"
 #endif
 
-///STD include
-#include <string>
 
 ///Tree include
 #include "ext_tree_node.hpp"
@@ -94,8 +100,6 @@
 ///Utility include
 #include "boost/lexical_cast.hpp"
 #include "exceptions.hpp"
-#include "simple_indent.hpp"
-#include "utility.hpp"
 #include "var_pp_functor.hpp"
 
 #include "type_casting.hpp"

@@ -53,8 +53,9 @@
 #include "op_graph.hpp"     // for OpGraphConstRef
 #include "refcount.hpp"     // for CONSTREF_FORWARD_DECL, REF_FORWARD_DECL
 #include "utility.hpp"      // for UINT_STRONG_TYPEDEF_FORWARD_DECL
-
+#include "hash_helper.hpp"
 #include "schedule.hpp"
+
 CONSTREF_FORWARD_DECL(AllocationInformation);
 CONSTREF_FORWARD_DECL(BehavioralHelper);
 UINT_STRONG_TYPEDEF_FORWARD_DECL(ControlStep);

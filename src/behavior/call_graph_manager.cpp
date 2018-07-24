@@ -42,51 +42,29 @@
  * Last modified by $Author$
  *
 */
-
-///Autoheader include
-#include "config_HAVE_HOST_PROFILING_BUILT.hpp"
-#include "config_HAVE_POLIXML_BUILT.hpp"
-
-/// STL include
-#include <iterator>
-
-///Header include
 #include "call_graph_manager.hpp"
+#include "config_HAVE_ASSERTS.hpp"                // for HAVE_ASSERTS
 
-///Behavior include
-#include "behavioral_helper.hpp"
-#include "call_graph.hpp"
-#include "function_behavior.hpp"
-#include "loop.hpp"
-#include "loops.hpp"
-#include "op_graph.hpp"
-#if HAVE_HOST_PROFILING_BUILT
-#include "profiling_information.hpp"
-#endif
-///Boost include
-#include <boost/filesystem/path.hpp>
-#include <boost/filesystem/operations.hpp>
+#include <algorithm>                              // for set_intersection
+#include <boost/tuple/tuple.hpp>                  // for tie
+#include <iterator>                               // for insert_iterator
+#include <list>                                   // for list
+#include <string>                                 // for operator+, char_traits
+#include <utility>                                // for pair
+#include <vector>                                 // for vector
+#include "Parameter.hpp"                          // for Parameter, OPT_top_...
+#include "behavioral_helper.hpp"                  // for BehavioralHelper
+#include "call_graph.hpp"                         // for CallGraph, Function...
+#include "dbgPrintHelper.hpp"                     // for DEBUG_LEVEL_VERY_PE...
+#include "exceptions.hpp"                         // for THROW_ASSERT, THROW...
+#include "function_behavior.hpp"                  // for BehavioralHelperCon...
+#include "graph.hpp"                              // for SelectEdge, vertex
+#include "loops.hpp"                              // for FunctionBehaviorRef
+#include "op_graph.hpp"                           // for OpGraphConstRef
+#include "string_manipulation.hpp"                // for STR
+#include "tree_manager.hpp"                       // for tree_manager, Param...
+#include "utility.hpp"                            // for GET_CLASS
 
-///Graph include
-#include "graph.hpp"
-#include <boost/graph/graphviz.hpp>
-
-///Paramter include
-#include "Parameter.hpp"
-
-///Tree include
-#include "tree_manager.hpp"
-
-///Utility include
-#include <boost/date_time/posix_time/posix_time.hpp>
-
-///XML include
-#if HAVE_POLIXML_BUILT
-#include "xml_helper.hpp"
-#include "polixml.hpp"
-#include "xml_dom_parser.hpp"
-#include "xml_document.hpp"
-#endif
 
 /**
  * Helper macro adding a call point to an edge of the call graph
