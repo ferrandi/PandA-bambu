@@ -60,6 +60,8 @@
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_reindex.hpp"
+#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 bool virtual_phi_nodes_split::tree_dumped = false;
 

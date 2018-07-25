@@ -104,6 +104,9 @@
 #include "cpu_time.hpp"
 
 #include <boost/range/adaptor/reversed.hpp>
+#include "string_manipulation.hpp"          // for GET_CLASS
+
+
 fun_dominator_allocation::fun_dominator_allocation(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type) :
    function_allocation(_parameters, _HLSMgr, _design_flow_manager, _hls_flow_step_type),
    already_executed(false)

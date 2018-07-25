@@ -83,6 +83,7 @@
 #include "technology_node.hpp"
 
 #include "copyrights_strings.hpp"
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 fsm_controller::fsm_controller(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager) :
    ControllerCreatorBaseStep(_Param, _HLSMgr, _funId, _design_flow_manager, HLSFlowStep_Type::FSM_CONTROLLER_CREATOR)

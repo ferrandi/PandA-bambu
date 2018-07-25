@@ -78,6 +78,7 @@
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
+#include "string_manipulation.hpp"          // for STR
 
 WishboneInterfaceTestbench::WishboneInterfaceTestbench(
       const ParameterConstRef _parameters,

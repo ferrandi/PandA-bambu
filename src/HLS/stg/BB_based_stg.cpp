@@ -126,6 +126,7 @@
 ///utility include
 #include "cpu_time.hpp"
 #include "dbgPrintHelper.hpp"
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 BB_based_stg::BB_based_stg(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, unsigned _funId, const DesignFlowManagerConstRef _design_flow_manager) :
    STG_creator(_parameters, _HLSMgr, _funId, _design_flow_manager, HLSFlowStep_Type::BB_STG_CREATOR)

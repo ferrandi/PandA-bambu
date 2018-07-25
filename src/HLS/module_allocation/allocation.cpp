@@ -62,7 +62,7 @@
 #include "moduleGenerator.hpp"           // for structural_objectRef, struct...
 #include "op_graph.hpp"                  // for STORE, ADDR_EXPR, ASSERT_EXPR
 #include "schedule.hpp"                  // for FunctionBehaviorConstRef
-#include "string_manipulation.hpp"       // for STR
+#include "string_manipulation.hpp"       // for STR GET_CLASS
 #include "structural_objects.hpp"        // for PROXY_PREFIX, module, CLOCK_...
 #include "technology_manager.hpp"        // for PROXY_LIBRARY, WORK_LIBRARY
 #include "technology_node.hpp"           // for functional_unit, operation

@@ -41,11 +41,11 @@
 #ifndef COMPLETE_CALL_GRAPH_HPP
 #define COMPLETE_CALL_GRAPH_HPP
 
-///Superclass include
-#include "application_frontend_flow_step.hpp"
-
-///Utility include
-#include "refcount.hpp"
+#include <unordered_set>                       // for unordered_set
+#include <utility>                             // for pair
+#include "application_frontend_flow_step.hpp"  // for ApplicationFrontendFlo...
+#include "design_flow_step.hpp"                // for DesignFlowManagerConstRef
+#include "frontend_flow_step.hpp"              // for FrontendFlowStep::Func...
 
 class CompleteCallGraph: public ApplicationFrontendFlowStep
 {

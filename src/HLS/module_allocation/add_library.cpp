@@ -49,11 +49,10 @@
 #include "hls.hpp"                  // for HLS_managerRef
 #include "hls_target.hpp"           // for target_deviceRef
 #include "hls_manager.hpp"          // for HLS_managerRef
-#include "string_manipulation.hpp"  // for STR
+#include "string_manipulation.hpp"  // for STR GET_CLASS
 #include "structural_manager.hpp"   // for technology_managerRef
 #include "technology_manager.hpp"   // for WORK_LIBRARY
 #include "technology_node.hpp"      // for functional_unit, operation (ptr o...
-#include "utility.hpp"              // for GET_CLASS
 
 #include "hls_constraints.hpp"
 #include "state_transition_graph_manager.hpp"

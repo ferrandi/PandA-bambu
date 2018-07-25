@@ -33,7 +33,7 @@
  *
 */
 /**
- * @file exceptions.icpp
+ * @file exceptions.cpp
  * @brief exceptions managed by PandA
  *
  * This structure is used to manage the exception arised by the Panda toolset.

@@ -52,7 +52,7 @@
 ///Utility include
 #include "exceptions.hpp"
 #include "fileIO.hpp"
-#include "utility.hpp"
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 ///XML include
 #include "data_xml.hpp"

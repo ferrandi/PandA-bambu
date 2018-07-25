@@ -64,7 +64,9 @@
 #include <boost/algorithm/string/split.hpp>
 #include <boost/lexical_cast.hpp>
 #include "exceptions.hpp"
-#include <iosfwd>
+#include <iostream>
+#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_
+#include "string_manipulation.hpp"          // for STR
 
 ///built in type without parameter
 ///"sc_in_resolved" is not a template and inherits from sc_in<sc_dt::sc_logic>

@@ -47,7 +47,6 @@
 #include <map>
 #include <vector>
 #include "refcount.hpp"
-#include "utility.hpp"
 
 REF_FORWARD_DECL(NP_functionality);
 

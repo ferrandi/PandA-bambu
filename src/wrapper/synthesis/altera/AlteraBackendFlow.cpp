@@ -70,6 +70,7 @@
 
 ///circuit include
 #include "structural_objects.hpp"
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 #define ALTERA_LE               "ALTERA_LE"
 #define ALTERA_LAB              "ALTERA_LAB"

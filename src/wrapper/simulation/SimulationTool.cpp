@@ -52,6 +52,7 @@
 #include "Parameter.hpp"
 #include "fileIO.hpp"
 #include <cmath>
+#include "string_manipulation.hpp"          // for Trimspaces
 
 SimulationTool::SimulationTool(const ParameterConstRef _Param) :
    Param(_Param),

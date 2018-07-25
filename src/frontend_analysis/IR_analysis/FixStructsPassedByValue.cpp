@@ -49,6 +49,8 @@
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
 #include "Parameter.hpp"
+#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 FixStructsPassedByValue::FixStructsPassedByValue(
       const ParameterConstRef params,

@@ -65,6 +65,8 @@
 
 #include "behavioral_helper.hpp"
 #include "tree_helper.hpp"
+#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 #define SET_A 0
 #define SET_B 1

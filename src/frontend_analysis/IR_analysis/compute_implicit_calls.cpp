@@ -90,6 +90,8 @@
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
 #include "op_graph.hpp"
+#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 compute_implicit_calls::compute_implicit_calls(const ParameterConstRef _parameters, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager):
    FunctionFrontendFlowStep(_AppM, _function_id, COMPUTE_IMPLICIT_CALLS, _design_flow_manager, _parameters),

@@ -88,6 +88,7 @@
 #include "SimulationInformation.hpp"
 
 #include <boost/algorithm/string.hpp>
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 TestVectorParser::TestVectorParser
 (

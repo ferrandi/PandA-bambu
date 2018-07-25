@@ -88,6 +88,7 @@
 ///technology includes
 #include "technology_manager.hpp"
 #include "technology_node.hpp"
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 HDL_manager::HDL_manager(const HLS_managerRef _HLSMgr, const target_deviceRef _device, const structural_managerRef _SM, const ParameterConstRef _parameters) :
    HLSMgr(_HLSMgr),

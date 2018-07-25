@@ -40,15 +40,11 @@
  * Last modified by $Author$
  *
 */
-
-///Header include
 #include "design_flow_step.hpp"
+#include <ostream>                         // for operator<<, basic_ostream
+#include "Parameter.hpp"                   // for Parameter, OPT_debug_level
+#include "design_flow_manager.hpp"         // for DesignFlowStepRef, DesignF...
 
-///. include
-#include "Parameter.hpp"
-
-///design_flows include
-#include "design_flow_manager.hpp"
 
 DesignFlowStep::DesignFlowStep(const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters) :
    composed(false),

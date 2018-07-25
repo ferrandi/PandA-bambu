@@ -62,6 +62,8 @@
 
 ///Tree include
 #include "tree_manager.hpp"
+#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 op_feedback_edges_computation::op_feedback_edges_computation(const ParameterConstRef _parameters, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager) :
    FunctionFrontendFlowStep(_AppM, _function_id, OP_FEEDBACK_EDGES_IDENTIFICATION, _design_flow_manager, _parameters)

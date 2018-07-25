@@ -51,6 +51,8 @@
 
 ///utility include
 #include "exceptions.hpp"
+#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_
+#include "string_manipulation.hpp"          // for STR
 
 extern int exit_code;
 

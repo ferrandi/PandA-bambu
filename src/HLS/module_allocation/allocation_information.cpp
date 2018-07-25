@@ -52,7 +52,7 @@
 #include "hls_step.hpp"              // for hlsRef
 #include "math_function.hpp"         // for resize_to_1_8_16_32_64_128_256_512
 #include "schedule.hpp"              // for ControlStep, AbsControlStep, HLS...
-#include "string_manipulation.hpp"   // for STR
+#include "string_manipulation.hpp"   // for STR GET_CLASS
 #include "technology_manager.hpp"    // for LIBRARY_STD_FU
 #include "technology_node.hpp"       // for technology_nodeRef, MEMORY_CTRL_...
 #include "tree_node.hpp"             // for GET_NODE, GET_CONST_NODE, TreeNo...
@@ -401,15 +401,15 @@ double AllocationInformation::get_attribute_of_fu_per_op(const vertex v, const O
             {
                case Allocation_MinMax::MAX:
                   THROW_ASSERT(GetPointer<operation>(GetPointer<functional_unit>(list_of_FU[*f_i])->get_operation(op_name))->time_m, "Timing information not specified for operation " + op_name + " on unit " + id_to_fu_names.find(*f_i)->second.first);
-                  temp = MAX(int_value, GetPointer<operation>(GetPointer<functional_unit>(list_of_FU[*f_i])->get_operation(op_name))->time_m->get_initiation_time());
+                  temp = std::max(int_value, GetPointer<operation>(GetPointer<functional_unit>(list_of_FU[*f_i])->get_operation(op_name))->time_m->get_initiation_time());
                   break;
                case Allocation_MinMax::MIN:
                   THROW_ASSERT(GetPointer<operation>(GetPointer<functional_unit>(list_of_FU[*f_i])->get_operation(op_name))->time_m, "Timing information not specified for operation " + op_name + " on unit " + id_to_fu_names.find(*f_i)->second.first);
-                  temp = MIN(int_value, GetPointer<operation>(GetPointer<functional_unit>(list_of_FU[*f_i])->get_operation(op_name))->time_m->get_initiation_time());
+                  temp = std::min(int_value, GetPointer<operation>(GetPointer<functional_unit>(list_of_FU[*f_i])->get_operation(op_name))->time_m->get_initiation_time());
                   break;
                default:
                   temp = ControlStep(0u);
-                  THROW_ERROR(std::string("Not supported AllocationInformation::op_perfomed"));
+                  THROW_ERROR(std::string("Not supported AllocationInformation::op_performed"));
                   break;
             }
             if (temp != int_value)
@@ -444,15 +444,15 @@ double AllocationInformation::get_attribute_of_fu_per_op(const vertex v, const O
             {
                case Allocation_MinMax::MAX:
                   THROW_ASSERT(GetPointer<operation>(GetPointer<functional_unit>(list_of_FU[*f_i])->get_operation(op_name))->time_m, "Timing information not specified for operation " + op_name + " on unit " + id_to_fu_names.find(*f_i)->second.first);
-                  temp = MAX(double_value, get_execution_time_dsp_modified(fu_name, GetPointer<functional_unit>(list_of_FU[*f_i])->get_operation(op_name)));
+                  temp = std::max(double_value, get_execution_time_dsp_modified(fu_name, GetPointer<functional_unit>(list_of_FU[*f_i])->get_operation(op_name)));
                   break;
                case Allocation_MinMax::MIN:
                   THROW_ASSERT(GetPointer<operation>(GetPointer<functional_unit>(list_of_FU[*f_i])->get_operation(op_name))->time_m, "Timing information not specified for operation " + op_name + " on unit " + id_to_fu_names.find(*f_i)->second.first);
-                  temp = MIN(double_value, get_execution_time_dsp_modified(fu_name, GetPointer<functional_unit>(list_of_FU[*f_i])->get_operation(op_name)));
+                  temp = std::min(double_value, get_execution_time_dsp_modified(fu_name, GetPointer<functional_unit>(list_of_FU[*f_i])->get_operation(op_name)));
                   break;
                default:
                   temp = 0;
-                  THROW_ERROR(std::string("Not supported AllocationInformation::op_perfomed"));
+                  THROW_ERROR(std::string("Not supported AllocationInformation::op_performed"));
                   break;
             }
             if (temp != double_value)

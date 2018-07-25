@@ -95,6 +95,7 @@ REF_FORWARD_DECL(Discrepancy);
 
 #include "fileIO.hpp"
 #include "exceptions.hpp"
+#include "string_manipulation.hpp"          // for STR
 
 // Skipping warnings due to bison
 #pragma GCC diagnostic ignored "-Wconversion"

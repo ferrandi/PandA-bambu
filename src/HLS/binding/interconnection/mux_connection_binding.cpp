@@ -118,6 +118,7 @@
 #include "state_transition_graph.hpp"
 #include "state_transition_graph_manager.hpp"
 #include "math_function.hpp"
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 #define USE_ALIGNMENT_INFO 1
 

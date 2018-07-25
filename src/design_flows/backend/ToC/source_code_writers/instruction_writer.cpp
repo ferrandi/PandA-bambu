@@ -98,6 +98,7 @@
 ///utility include
 #include "indented_output_stream.hpp"
 #include "refcount.hpp"
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 InstructionWriter::InstructionWriter(const application_managerConstRef _AppM, const IndentedOutputStreamRef _indented_output_stream, const ParameterConstRef _parameters) :
    AppM(_AppM),

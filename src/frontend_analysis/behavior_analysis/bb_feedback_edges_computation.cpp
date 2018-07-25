@@ -57,6 +57,8 @@
 ///tree include
 #include "tree_basic_block.hpp"
 #include "hash_helper.hpp"
+#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 bb_feedback_edges_computation::bb_feedback_edges_computation(const ParameterConstRef _parameters, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager) :
     FunctionFrontendFlowStep(_AppM, _function_id, BB_FEEDBACK_EDGES_IDENTIFICATION, _design_flow_manager, _parameters)

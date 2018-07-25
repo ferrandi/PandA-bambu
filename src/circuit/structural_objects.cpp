@@ -42,46 +42,55 @@
  * Last modified by $Author$
  *
 */
+#include "structural_objects.hpp"
 
-///Autoheader include
 #include "config_HAVE_ASSERTS.hpp"
 #include "config_HAVE_BAMBU_BUILT.hpp"
 #include "config_HAVE_TECHNOLOGY_BUILT.hpp"
 #include "config_HAVE_TUCANO_BUILT.hpp"
 #include "config_RELEASE.hpp"
 
-#include "structural_manager.hpp"
-#include "structural_objects.hpp"
+#include <limits.h>                                          // for UINT_MAX
+#include <algorithm>                                         // for find, min
+#include <boost/algorithm/string/classification.hpp>         // for is_any_of
+#include <boost/algorithm/string/replace.hpp>                // for replace_all
+#include <boost/algorithm/string/split.hpp>                  // for split
+#include <boost/iterator/iterator_facade.hpp>                // for operator!=
+#include <boost/iterator/iterator_traits.hpp>                // for iterator...
+#include <boost/lexical_cast.hpp>                            // for lexical_...
+#include <boost/type_index/type_index_facade.hpp>            // for operator==
+#include <iostream>                                          // for cout
+#include <list>                                              // for _List_co...
+#include <memory>                                            // for allocato...
+#include <set>                                               // for set, set...
+#include "HDL_manager.hpp"                                   // for structur...
+#include "NP_functionality.hpp"                              // for NP_funct...
+#if HAVE_BAMBU_BUILT
+#include "behavioral_helper.hpp"                             // for Behavior...
+#endif
+#include "dbgPrintHelper.hpp"                                // for DEBUG_LE...
+#include "exceptions.hpp"                                    // for THROW_AS...
+#include "library_manager.hpp"                               // for attribute
+#include "simple_indent.hpp"                                 // for simple_i...
+#include "string_manipulation.hpp"                           // for STR
+#include "structural_manager.hpp"                            // for structur...
+#include "technology_manager.hpp"                            // for technolo...
+#include "technology_node.hpp"                               // for function...
+#include "utility.hpp"                                       // for GET_CLAS...
+#include "xml_attribute.hpp"                                 // for attribut...
+#include "xml_element.hpp"                                   // for xml_element
+#include "xml_helper.hpp"                                    // for CE_XVM
+#include "xml_node.hpp"                                      // for xml_node...
+#include "xml_text_node.hpp"                                 // for xml_text...
+
 #if HAVE_TUCANO_BUILT
 #include "tree_manager.hpp"
 #include "tree_helper.hpp"
 #endif
-#if HAVE_BAMBU_BUILT
-#include "behavioral_helper.hpp"
-#endif
 
-#include "technology_manager.hpp"
-#include "library_manager.hpp"
-#include "technology_node.hpp"
-///models
-#include "area_model.hpp"
-#include "time_model.hpp"
 #if HAVE_EXPERIMENTAL
 #include "layout_model.hpp"
 #endif
-
-#include "exceptions.hpp"
-#include "dbgPrintHelper.hpp"
-#include "NP_functionality.hpp"
-#include "utility.hpp"
-
-#include "xml_helper.hpp"
-#include "polixml.hpp"
-
-#include "HDL_manager.hpp"
-
-#include <iosfwd>
-#include <boost/algorithm/string.hpp>
 
 inline std::string legalize(std::string& id)
 {

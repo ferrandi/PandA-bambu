@@ -75,7 +75,8 @@
 #include "tree_reindex.hpp"
 
 ///utility include
-#include "utility.hpp"
+#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_
+#include "string_manipulation.hpp"          // for GET_CLASS
 #include <boost/algorithm/string/replace.hpp>
 std::string ToString(Transformation transformation)
 {

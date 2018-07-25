@@ -49,6 +49,8 @@
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
 #include "Parameter.hpp"
+#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 parm_decl_taken_address_fix::parm_decl_taken_address_fix(const ParameterConstRef params, const application_managerRef AM, unsigned int fun_id, const DesignFlowManagerConstRef dfm)
    : FunctionFrontendFlowStep(AM, fun_id, PARM_DECL_TAKEN_ADDRESS, dfm, params)

@@ -64,6 +64,7 @@
 
 ///utility include
 #include "dbgPrintHelper.hpp"
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 remove_clobber_ga::remove_clobber_ga(const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters) :
    FunctionFrontendFlowStep(_AppM, _function_id, REMOVE_CLOBBER_GA, _design_flow_manager, _parameters)

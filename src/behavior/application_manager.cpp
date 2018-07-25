@@ -65,12 +65,11 @@
 #if HAVE_PRAGMA_BUILT
 #include "pragma_manager.hpp"              // for pragma_manager, pragma_man...
 #endif
-#include "string_manipulation.hpp"         // for STR
+#include "string_manipulation.hpp"         // for STR GET_CLASS
 #include "tree_common.hpp"                 // for target_mem_ref461_K, targe...
 #include "tree_manager.hpp"                // for ParameterConstRef, tree_no...
 #include "tree_node.hpp"                   // for tree_nodeRef, tree_node
 #include "tree_reindex.hpp"
-#include "utility.hpp"                     // for GET_CLASS
 
 application_manager::application_manager(const FunctionExpanderConstRef function_expander, const bool _single_root_function, const bool _allow_recursive_functions, const ParameterConstRef _Param) :
    TM(new tree_manager(_Param)),

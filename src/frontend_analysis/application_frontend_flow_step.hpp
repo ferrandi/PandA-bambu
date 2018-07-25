@@ -44,11 +44,11 @@
 #ifndef APPLICATION_FRONTEND_FLOW_STEP_HPP
 #define APPLICATION_FRONTEND_FLOW_STEP_HPP
 
-///Superclass include
-#include "frontend_flow_step.hpp"
-
-///Utility include
-#include "refcount.hpp"
+#include <string>                  // for string
+#include <unordered_set>           // for unordered_set
+#include <utility>                 // for pair
+#include "design_flow_step.hpp"    // for DesignFlowManagerConstRef, DesignF...
+#include "frontend_flow_step.hpp"  // for FrontendFlowStepType, FrontendFlow...
 
 class ApplicationFrontendFlowStep : public FrontendFlowStep
 {

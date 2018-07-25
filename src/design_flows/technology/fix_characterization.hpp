@@ -46,6 +46,7 @@
 
 ///utility include
 #include "refcount.hpp"
+#include "utility.hpp"
 
 REF_FORWARD_DECL(target_device);
 REF_FORWARD_DECL(technology_manager);

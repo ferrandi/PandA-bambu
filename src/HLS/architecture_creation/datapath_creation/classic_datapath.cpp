@@ -84,6 +84,7 @@
 #include "technology_node.hpp"
 
 #include "copyrights_strings.hpp"
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 classic_datapath::classic_datapath(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager) :
    datapath_creator(_parameters, _HLSMgr, _funId, _design_flow_manager, HLSFlowStep_Type::CLASSIC_DATAPATH_CREATOR)

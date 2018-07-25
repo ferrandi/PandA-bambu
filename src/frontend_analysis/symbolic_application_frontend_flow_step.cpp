@@ -41,27 +41,18 @@
  *
 */
 
-///Autoheader include
-#include "config_HAVE_BAMBU_BUILT.hpp"
-#include "config_HAVE_ZEBU_BUILT.hpp"
-
-///Header include
 #include "symbolic_application_frontend_flow_step.hpp"
+#include "config_HAVE_ZEBU_BUILT.hpp"         // for HAVE_ZEBU_BUILT
 
-///Behavior include
-#include "application_manager.hpp"
-#include "call_graph_manager.hpp"
+#include <boost/lexical_cast.hpp>             // for lexical_cast
+#include <iostream>                           // for ios_base::failure
+#include "Parameter.hpp"                      // for Parameter, ParameterCon...
+#include "application_manager.hpp"            // for application_managerRef
+#include "exceptions.hpp"                     // for THROW_UNREACHABLE
+#include "function_frontend_flow_step.hpp"    // for DesignFlowManagerConstRef
+#include "hash_helper.hpp"                    // for hash
+#include "string_manipulation.hpp"          // for GET_CLASS
 
-///Design flow include
-#include "design_flow_graph.hpp"
-#include "design_flow_manager.hpp"
-
-///Frontend flow include
-#include "function_frontend_flow_step.hpp"
-
-///Parameter include
-#include "Parameter.hpp"
-#include "hash_helper.hpp"
 
 SymbolicApplicationFrontendFlowStep::SymbolicApplicationFrontendFlowStep(const application_managerRef _AppM, const FrontendFlowStepType _represented_frontend_flow_step,  const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters) :
    ApplicationFrontendFlowStep(_AppM, SYMBOLIC_APPLICATION_FRONTEND_FLOW_STEP, _design_flow_manager, _parameters),

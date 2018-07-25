@@ -40,12 +40,11 @@
  * Last modified by $Author$
  *
 */
+#include "cdfc_module_binding.hpp"
 
-///Autoheader include
 #include "config_HAVE_EXPERIMENTAL.hpp"
 
-///Header include
-#include "cdfc_module_binding.hpp"
+#include <boost/filesystem/operations.hpp>
 
 ///. include
 #include "Parameter.hpp"
@@ -142,6 +141,7 @@
 #include "hierarchical_clustering.hpp"
 struct spec_hierarchical_clustering: public hierarchical_clustering<>{};
 #endif
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 #define TOOSMALL_NORMALIZED_RESOURCE_AREA 0.9
 #define DEFAULT_SMALL_NORMALIZED_RESOURCE_AREA 1.0

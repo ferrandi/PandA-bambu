@@ -37,12 +37,12 @@
  * @author Marco Lattuada <lattuada@elet.polimi.it>
  *
 */
-
-///Header include
 #include "design_flow_factory.hpp"
+#include "design_flow.hpp"               // for DesignFlow_Type, DesignFlow
+#include "design_flow_step.hpp"          // for DesignFlowStepRef, DesignFlo...
+#include "exceptions.hpp"                // for THROW_UNREACHABLE, THROW_ASSERT
+#include "non_deterministic_flows.hpp"   // for NonDeterministicFlows
 
-///design_flows include
-#include "non_deterministic_flows.hpp"
 
 DesignFlowFactory::DesignFlowFactory(const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters) :
    DesignFlowStepFactory(_design_flow_manager, _parameters)

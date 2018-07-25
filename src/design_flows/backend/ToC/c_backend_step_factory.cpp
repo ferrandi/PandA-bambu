@@ -50,8 +50,7 @@
 ///. includes
 #include "Parameter.hpp"
 
-///utility includes
-#include "utility.hpp"
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 CBackendStepFactory::CBackendStepFactory(const DesignFlowManagerConstRef _design_flow_manager, const application_managerConstRef _application_manager, const ParameterConstRef _parameters) :
    DesignFlowStepFactory(_design_flow_manager, _parameters),

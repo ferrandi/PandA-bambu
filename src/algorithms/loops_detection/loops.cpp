@@ -78,9 +78,8 @@
 #if HAVE_HOST_PROFILING_BUILT
 #include "profiling_information.hpp"
 #endif
-#include "string_manipulation.hpp"                // for STR
+#include "string_manipulation.hpp"                // for STR GET_CLASS
 #include "tree_basic_block.hpp"
-#include "utility.hpp"                            // for GET_CLASS
 
 /**
  * Visitor used during the depth-first search on the DJ graph.

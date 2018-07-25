@@ -61,9 +61,8 @@
 #include "graph.hpp"                              // for SelectEdge, vertex
 #include "loops.hpp"                              // for FunctionBehaviorRef
 #include "op_graph.hpp"                           // for OpGraphConstRef
-#include "string_manipulation.hpp"                // for STR
+#include "string_manipulation.hpp"                // for STR GET_CLASS
 #include "tree_manager.hpp"                       // for tree_manager, Param...
-#include "utility.hpp"                            // for GET_CLASS
 
 
 /**

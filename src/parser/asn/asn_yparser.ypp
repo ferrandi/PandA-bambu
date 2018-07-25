@@ -59,7 +59,8 @@
 
 ///utility include
 #include "refcount.hpp"
-
+#include "string_manipulation.hpp"          // for STR
+#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_
 
 #define YYLTYPE_IS_TRIVIAL 0
 

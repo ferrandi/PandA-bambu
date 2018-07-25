@@ -70,6 +70,7 @@
 ///technology/physical_library include
 #include "technology_node.hpp"
 #include "copyrights_strings.hpp"
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 top_entity::top_entity(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type) :
    HLSFunctionStep(_parameters, _HLSMgr, _funId, _design_flow_manager, _hls_flow_step_type)

@@ -88,6 +88,7 @@
 
 ///wrapper/treegcc include
 #include "gcc_wrapper.hpp"
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 const std::map<bit_lattice, std::map<bit_lattice, std::map<bit_lattice, std::deque<bit_lattice> > > > Bit_Value::plus_expr_map =
 {

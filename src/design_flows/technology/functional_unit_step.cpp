@@ -72,6 +72,7 @@
 
 ///utility include
 #include "math_function.hpp"
+#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_
 
 FunctionalUnitStep::FunctionalUnitStep(const target_managerRef _target, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters) :
    DesignFlowStep(_design_flow_manager, _parameters),

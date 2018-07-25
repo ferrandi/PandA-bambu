@@ -77,6 +77,7 @@
 ///Utility include
 #include "dbgPrintHelper.hpp"
 #include "exceptions.hpp"
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 VarDeclFix::VarDeclFix(const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters, const FrontendFlowStepType _frontend_flow_step_type) :
    FunctionFrontendFlowStep(_AppM, _function_id, _frontend_flow_step_type, _design_flow_manager, _parameters)

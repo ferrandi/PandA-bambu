@@ -69,6 +69,8 @@
 #include "tree_helper.hpp"
 
 #include "copyrights_strings.hpp"
+#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 TopEntityMemoryMapped::TopEntityMemoryMapped(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager) :
    top_entity(_parameters, _HLSMgr, _funId, _design_flow_manager, HLSFlowStep_Type::TOP_ENTITY_MEMORY_MAPPED_CREATION),

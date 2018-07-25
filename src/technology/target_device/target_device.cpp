@@ -64,6 +64,7 @@
 #include "constant_strings.hpp"
 ///boost includes for file manipulations
 #include <boost/filesystem.hpp>
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 target_device::target_device(const ParameterConstRef _Param, const technology_managerRef _TM, const TargetDevice_Type type) :
       device_type(type),

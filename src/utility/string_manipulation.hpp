@@ -51,7 +51,6 @@
 #include <boost/lexical_cast.hpp>                            // for lexical_...
 #include <boost/type_index/type_index_facade.hpp>            // for operator==
 #include <iosfwd>                                            // for stringst...
-#include <memory>                                            // for allocato...
 #include <string>                                            // for string
 #include <vector>
 
@@ -263,4 +262,11 @@ inline std::string convert_fp_to_string(std::string num, unsigned int precision)
    }
    return res;
 }
+
+/**
+ * Macro returning the actual type of an object
+ */
+#define GET_CLASS(obj) string_demangle(typeid(obj).name())
+
+
 #endif

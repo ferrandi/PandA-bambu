@@ -43,18 +43,12 @@
 
 #ifndef DESIGN_FLOW_STEP_HPP
 #define DESIGN_FLOW_STEP_HPP
+#include "config_HAVE_UNORDERED.hpp"                 // for HAVE_UNORDERED
 
-///Autoheader include
-#include "config_HAVE_UNORDERED.hpp"
-
-///Graph include
-#include "graph.hpp"
-
-///STD stream
-#include <iosfwd>
-
-///Utility include
-#include "refcount.hpp"
+#include <iosfwd>                                    // for ostream
+#include <string>                                    // for string
+#include "graph.hpp"                                 // for vertex
+#include "refcount.hpp"                              // for CONSTREF_FORWARD...
 
 CONSTREF_FORWARD_DECL(DesignFlowManager);
 REF_FORWARD_DECL(DesignFlowStep);
@@ -65,9 +59,12 @@ CONSTREF_FORWARD_DECL(Parameter);
  * A set of design flow step
  */
 #if HAVE_UNORDERED
+#include <unordered_set>
 class DesignFlowStepSet : public std::unordered_set<DesignFlowStepRef>
 {};
 #else
+#include <functional>                                // for binary_function
+#include <set>                                       // for set
 class DesignFlowStepSorter : std::binary_function<vertex, vertex, bool>
 {
    public:

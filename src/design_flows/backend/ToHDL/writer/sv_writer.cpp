@@ -58,6 +58,7 @@
 
 ///Utility include
 #include "indented_output_stream.hpp"
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 void system_verilog_writer::write_NP_functionalities(const structural_objectRef &cir)
 {

@@ -51,20 +51,20 @@
 #include "config_HAVE_FROM_PRAGMA_BUILT.hpp"
 #include "config_HAVE_HOST_PROFILING_BUILT.hpp"
 #include "config_HAVE_ILP_BUILT.hpp"
-#include "config_HAVE_MPPB.hpp"
 #include "config_HAVE_PRAGMA_BUILT.hpp"
 #include "config_HAVE_RTL_BUILT.hpp"
 #include "config_HAVE_TASTE.hpp"
 #include "config_HAVE_TUCANO_BUILT.hpp"
 #include "config_HAVE_ZEBU_BUILT.hpp"
-///Superclass include
-#include "design_flow_step.hpp"
 
-///STL include
-#include <unordered_map>
+#include <cstddef>                                   // for size_t
+#include <string>                                    // for string
+#include <typeindex>                                 // for hash
+#include <unordered_set>                             // for unordered_set
+#include <utility>                                   // for pair
 
-///Utility include
-#include "refcount.hpp"
+#include "design_flow_step.hpp"                      // for DesignFlowStep
+#include "refcount.hpp"                              // for REF_FORWARD_DECL
 
 ///Forward declaration
 CONSTREF_FORWARD_DECL(application_manager);

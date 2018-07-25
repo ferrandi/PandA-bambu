@@ -119,6 +119,7 @@
 #include "cpu_time.hpp"
 #include "dbgPrintHelper.hpp"
 #include "exceptions.hpp"
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 const std::string pragma_manager::omp_directive_keywords[pragma_manager::OMP_UNKNOWN] =
 {

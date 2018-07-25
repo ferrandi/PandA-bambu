@@ -43,7 +43,8 @@
  *
 */
 #include "cg_node.hpp"
-#include "structural_manager.hpp"
+#include "exceptions.hpp"          // for THROW_ERROR
+#include "structural_objects.hpp"  // for structural_object, structural_obje...
 
 void cg_edge_info::print(std::ostream& os) const
 {

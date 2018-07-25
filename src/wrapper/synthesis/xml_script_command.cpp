@@ -48,7 +48,7 @@
 #include "boost/algorithm/string/trim.hpp"
 
 #include "xml_script_command.hpp"
-
+#include <boost/algorithm/string/predicate.hpp>
 
 xml_script_node_t::~xml_script_node_t()
 {

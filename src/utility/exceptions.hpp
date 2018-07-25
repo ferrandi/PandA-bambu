@@ -63,8 +63,6 @@
 
 ///Utility include
 #include <boost/lexical_cast.hpp>
-#include "dbgPrintHelper.hpp"
-#include "utility.hpp"
 
 extern int exit_code;
 
@@ -79,7 +77,19 @@ extern bool error_on_warning;
  * @param  line is the line where throw_error is called
 */
 template<class T>
-inline T& throw_error(const T& t, const std::string&expression, const char * DEBUG_PARAMETER(pp), const char * DEBUG_PARAMETER(file), int DEBUG_PARAMETER(line), int code = EXIT_FAILURE)
+inline T& throw_error(const T& t, const std::string&expression, const char *
+#ifndef NDEBUG
+                      pp
+#endif
+                      , const char *
+#ifndef NDEBUG
+                      file
+#endif
+                      , int
+#ifndef NDEBUG
+                      line
+#endif
+                      , int code = EXIT_FAILURE)
 {
    exit_code = code;
 #ifdef NDEBUG
@@ -96,7 +106,19 @@ inline T& throw_error(const T& t, const std::string&expression, const char * DEB
 /**
  * Prints a warning, along with information about the source code
 */
-inline void throw_warning(const std::string&expression, const char * DEBUG_PARAMETER(pp), const char * DEBUG_PARAMETER(file), int DEBUG_PARAMETER(line))
+inline void throw_warning(const std::string&expression, const char *
+#ifndef NDEBUG
+                          pp
+#endif
+                          , const char *
+#ifndef NDEBUG
+                          file
+#endif
+                          , int
+#ifndef NDEBUG
+                          line
+#endif
+                          )
 {
 #ifdef NDEBUG
    throw std::string (std::string("warning -> ") + expression + std::string("\n"));

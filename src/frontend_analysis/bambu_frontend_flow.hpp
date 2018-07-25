@@ -39,8 +39,11 @@
 
 #ifndef BAMBU_FRONTEND_FLOW_HPP
 #define BAMBU_FRONTEND_FLOW_HPP
-///Superclass include
-#include "application_frontend_flow_step.hpp"
+#include <unordered_set>                       // for unordered_set
+#include <utility>                             // for pair
+#include "application_frontend_flow_step.hpp"  // for ApplicationFrontendFlo...
+#include "design_flow_step.hpp"                // for DesignFlowStep, Design...
+#include "frontend_flow_step.hpp"              // for FrontendFlowStep::Func...
 
 class BambuFrontendFlow : public ApplicationFrontendFlowStep
 {

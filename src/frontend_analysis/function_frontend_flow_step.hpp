@@ -45,16 +45,13 @@
 #ifndef FUNCTION_FRONTEND_FLOW_STEP_HPP
 #define FUNCTION_FRONTEND_FLOW_STEP_HPP
 
-///Autoheader include
-#include "config_HAVE_STDCXX_11.hpp"
-#include "config_HAVE_ARCH_BUILT.hpp"
-#include "config_HAVE_BAMBU_BUILT.hpp"
+#include "config_HAVE_BAMBU_BUILT.hpp"               // for HAVE_BAMBU_BUILT
+#include "config_HAVE_STDCXX_11.hpp"                 // for HAVE_STDCXX_11
 
-///Superclass include
-#include "frontend_flow_step.hpp"
-
-///Utility include
-#include "refcount.hpp"
+#include <string>                                    // for string
+#include "design_flow_step.hpp"                      // for DesignFlowStep_S...
+#include "frontend_flow_step.hpp"                    // for FrontendFlowStep...
+#include "refcount.hpp"                              // for REF_FORWARD_DECL
 
 REF_FORWARD_DECL(ArchManager);
 CONSTREF_FORWARD_DECL(DesignFlowManager);

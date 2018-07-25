@@ -53,9 +53,10 @@
 ///technology/physical_library/models includes
 #include "time_model.hpp"
 
-
 // include from wrapper/simulation
 #include "SimulationTool.hpp"
+
+#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_
 
 SimulationEvaluation::SimulationEvaluation(const ParameterConstRef _Param, const HLS_managerRef _hls_mgr, const DesignFlowManagerConstRef _design_flow_manager) :
    EvaluationBaseStep(_Param, _hls_mgr, 0, _design_flow_manager, HLSFlowStep_Type::SIMULATION_EVALUATION),

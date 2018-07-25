@@ -77,6 +77,7 @@
 #include "Parameter.hpp"
 #include "exceptions.hpp"
 #include <fstream>
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 PragmaAnalysis::PragmaAnalysis(const application_managerRef _AppM, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters) :
    ApplicationFrontendFlowStep(_AppM, PRAGMA_ANALYSIS, _design_flow_manager, _parameters)

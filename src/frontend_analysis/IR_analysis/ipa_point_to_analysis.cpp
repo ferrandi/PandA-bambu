@@ -64,6 +64,8 @@
 
 ///boost include
 #include <boost/range/adaptors.hpp>
+#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 REF_FORWARD_DECL(function_information);
 

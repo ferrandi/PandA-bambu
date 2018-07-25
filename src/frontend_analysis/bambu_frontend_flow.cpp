@@ -36,40 +36,32 @@
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
 */
-
-///Header include
 #include "bambu_frontend_flow.hpp"
 
-///. include
-#include "Parameter.hpp"
+#include "config_HAVE_EXPERIMENTAL.hpp"          // for HAVE_EXPERIMENTAL
+#include "config_HAVE_HOST_PROFILING_BUILT.hpp"  // for HAVE_HOST_PROFILING_...
+#include "config_HAVE_ILP_BUILT.hpp"             // for HAVE_ILP_BUILT
+#include "config_HAVE_PRAGMA_BUILT.hpp"          // for HAVE_PRAGMA_BUILT
+#include "config_HAVE_TASTE.hpp"                 // for HAVE_TASTE
 
-///behavior include
-#include "application_manager.hpp"
-#include "call_graph_manager.hpp"
-
-///design_flows include
-#include "design_flow_graph.hpp"
-#include "design_flow_manager.hpp"
-
-///design_flows/backend/ToHDL include
-#include "language_writer.hpp"
-
-///frontend_flow includes
-#include "frontend_flow_step_factory.hpp"
-#include "function_frontend_flow_step.hpp"
-
+#include <iosfwd>                                // for ofstream
+#include <string>                                // for string, operator+
+#include "Parameter.hpp"                         // for Parameter, OPT_parse...
+#include "application_manager.hpp"               // for application_manager
+#include "call_graph.hpp"                        // for CallGraph
+#include "call_graph_manager.hpp"                // for CallGraphConstRef
+#include "dbgPrintHelper.hpp"                    // for DEBUG_LEVEL_PEDANTIC
+#include "exceptions.hpp"                        // for THROW_UNREACHABLE
+#include "frontend_flow_step_factory.hpp"        // for application_managerRef
+#include "function_frontend_flow_step.hpp"       // for DesignFlowManagerCon...
+#include "hash_helper.hpp"                       // for hash
+#include "hls_step.hpp"                          // for HLSFlowStep_Type
 #if HAVE_HOST_PROFILING_BUILT
-///frontend_flow/behavior_analysis include
-#include "host_profiling.hpp"
+#include "host_profiling.hpp"                    // for HostProfiling_Method
 #endif
-
-///HLS include
-#include "hls_step.hpp"
-#include "hls_manager.hpp"
-#include "hls_target.hpp"
-
-///tree include
-#include "tree_manager.hpp"
+#include "language_writer.hpp"                   // for HDLWriter_Language
+#include "tree_manager.hpp"                      // for tree_managerConstRef
+#include "string_manipulation.hpp"               // for GET_CLASS
 
 BambuFrontendFlow::BambuFrontendFlow(const application_managerRef _AppM, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters) :
    ApplicationFrontendFlowStep(_AppM, BAMBU_FRONTEND_FLOW, _design_flow_manager, _parameters)

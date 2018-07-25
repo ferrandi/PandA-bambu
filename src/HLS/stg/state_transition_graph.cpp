@@ -42,12 +42,11 @@
  * Last modified by $Author$
  *
  */
+#include "state_transition_graph.hpp"
 
-///Autoheader include
 #include "config_HAVE_HOST_PROFILING_BUILT.hpp"
 
-///Header include
-#include "state_transition_graph.hpp"
+#include <boost/filesystem/operations.hpp>
 
 ///. include
 #include "Parameter.hpp"

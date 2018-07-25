@@ -47,6 +47,8 @@
 #include "config_HAVE_SIMULATION_WRAPPER_BUILT.hpp"
 #include "config_HAVE_TASTE.hpp"
 
+#include <list>
+
 #include "refcount.hpp"
 CONSTREF_FORWARD_DECL(Parameter);
 REF_FORWARD_DECL(SynthesisTool);

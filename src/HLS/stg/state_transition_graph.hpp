@@ -63,6 +63,7 @@
 
 ///Utility includes
 #include "refcount.hpp"
+#include "string_manipulation.hpp"          // for STR
 
 /**
  * @name Forward declarations

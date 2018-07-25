@@ -72,6 +72,7 @@
 ///Utility include
 #include <boost/preprocessor/seq/for_each.hpp>
 #include <boost/preprocessor/facilities/empty.hpp>
+#include <iostream>
 
 ///forward declaration macro
 #define VISIT_TREE_NODE_MACRO(r, data, elem)   \

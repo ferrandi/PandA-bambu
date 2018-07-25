@@ -40,8 +40,13 @@
 #ifndef FIND_MAX_CFG_TRANSFORMATIONS_HPP
 #define FIND_MAX_CFG_TRANSFORMATIONS_HPP
 
-///Superclass include
-#include "application_frontend_flow_step.hpp"
+#include <stddef.h>                            // for size_t
+#include <string>                              // for string
+#include <unordered_set>                       // for unordered_set
+#include <utility>                             // for pair
+#include "application_frontend_flow_step.hpp"  // for ApplicationFrontendFlo...
+#include "design_flow_step.hpp"                // for DesignFlowManagerConstRef
+#include "frontend_flow_step.hpp"              // for FrontendFlowStep::Func...
 
 /**
  * Class to find the maximum admissible value of cfg-max-transformations

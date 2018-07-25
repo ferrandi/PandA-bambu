@@ -54,6 +54,8 @@
 #include "Parameter.hpp"
 
 #include "fileIO.hpp"
+#include "string_manipulation.hpp"          // for GET_CLASS
+#include "utility.hpp"
 
 //constructor
 xst_wrapper::xst_wrapper(const ParameterConstRef _Param, const std::string& _output_dir, const target_deviceRef _device) :

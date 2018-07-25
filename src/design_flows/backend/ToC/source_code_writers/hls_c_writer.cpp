@@ -85,6 +85,8 @@
 
 ///utility include
 #include "indented_output_stream.hpp"
+#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_NONE
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 REF_FORWARD_DECL(memory_symbol);
 

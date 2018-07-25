@@ -77,6 +77,7 @@
 
 ///utility include
 #include "indented_output_stream.hpp"
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 #define VERILOG_2001_SUPPORTED
 

@@ -36,12 +36,14 @@
 
 // include class header
 #include "vcd_parser.hpp"
-
+#include <iostream>
 // include from ./
 #include "Parameter.hpp"
 
 #include "structural_objects.hpp"
 #include "hash_helper.hpp"
+#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 vcd_parser::vcd_parser(const ParameterConstRef & param) :
    debug_level(param->get_class_debug_level(GET_CLASS(*this))),

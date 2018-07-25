@@ -72,6 +72,7 @@
 
 ///utility include
 #include "indented_output_stream.hpp"
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 const char* VHDL_writer::tokenNames[]=
 {

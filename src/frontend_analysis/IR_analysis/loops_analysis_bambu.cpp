@@ -65,6 +65,7 @@
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_reindex.hpp"
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 LoopsAnalysisBambu::LoopsAnalysisBambu(const ParameterConstRef _parameters, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager) :
    FunctionFrontendFlowStep(_AppM, _function_id, LOOPS_ANALYSIS_BAMBU, _design_flow_manager, _parameters)

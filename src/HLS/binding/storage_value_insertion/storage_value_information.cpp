@@ -58,6 +58,7 @@
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "math_function.hpp"
+#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_
 
 StorageValueInformation::StorageValueInformation(const HLS_managerConstRef _HLS_mgr, const unsigned int _function_id) :
    number_of_storage_values(0),

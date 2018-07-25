@@ -43,7 +43,7 @@
 */
 #include "functions.hpp"
 #include "exceptions.hpp"
-
+#include "string_manipulation.hpp"    //STR
 
 functions::functions() 
 {}

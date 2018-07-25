@@ -40,9 +40,9 @@
  * Last modified by $Author$
  *
 */
-
-///Header include
 #include "weighted_clique_register.hpp"
+
+#include <boost/filesystem/operations.hpp>
 
 #include "clique_covering.hpp"
 #include "check_clique.hpp"

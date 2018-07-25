@@ -51,6 +51,8 @@
 #include "xml_script_command.hpp"
 
 #include "Parameter.hpp"
+#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_
+#include <iostream>
 
 //constructor
 ngdbuild_wrapper::ngdbuild_wrapper(const ParameterConstRef _Param, const std::string& _output_dir, const target_deviceRef _device) :

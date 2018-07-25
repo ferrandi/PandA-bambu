@@ -85,6 +85,7 @@
 #include <utility.hpp>
 
 #include <fstream>
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 // Fixed design parameter names
 #define dc_compile_effort_high      "dc_compile_effort_high"      // enable high effort compilation switch

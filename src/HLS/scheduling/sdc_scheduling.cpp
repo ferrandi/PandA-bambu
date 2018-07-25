@@ -98,6 +98,7 @@
 
 ///utility include
 #include "cpu_time.hpp"
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 CONSTREF_FORWARD_DECL(Schedule);
 

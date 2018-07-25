@@ -67,6 +67,7 @@
 
 #include "Parameter.hpp"
 #include "hash_helper.hpp"
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 AggregateDataFlowAnalysis::AggregateDataFlowAnalysis(const application_managerRef _AppM, const unsigned int _function_index, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters) :
    FunctionFrontendFlowStep(_AppM, _function_index, AGGREGATE_DATA_FLOW_ANALYSIS, _design_flow_manager, _parameters)

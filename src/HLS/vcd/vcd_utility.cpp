@@ -33,10 +33,10 @@
 /**
  * @author Pietro Fezzardi <pietrofezzardi@gmail.com>
  */
+#include "vcd_utility.hpp"
 
 #include <iterator>
-// include class header
-#include "vcd_utility.hpp"
+#include <boost/filesystem/operations.hpp>
 
 // include from ./
 #include "Parameter.hpp"
@@ -100,6 +100,7 @@
 // external include
 #include <float.h>
 #include <fstream>
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 DiscrepancyLog::DiscrepancyLog(
       const HLS_managerConstRef HLSMgr,

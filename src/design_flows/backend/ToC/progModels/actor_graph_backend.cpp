@@ -47,8 +47,7 @@
 ///. includes
 #include "Parameter.hpp"
 
-///utility includes
-#include "utility.hpp"
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 std::string ToString(ActorGraphBackend_Type actor_graph_backend_type)
 {

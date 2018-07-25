@@ -95,6 +95,7 @@
 
 ///technology/physical_library include
 #include "technology_node.hpp"
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 #define CONN_COLUMN_SIZE 40
 

@@ -65,6 +65,8 @@
 #include "tree_manipulation.hpp"
 #include "tree_reindex.hpp"
 #include "tree_helper.hpp"
+#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 
 rebuild_initializations::rebuild_initializations(const ParameterConstRef Param, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager) :

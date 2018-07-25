@@ -58,6 +58,8 @@
 
 ///technology/target_device include
 #include "target_device.hpp"
+#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 FixCharacterization::FixCharacterization(const technology_managerRef _TM, const target_deviceRef _target, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters) :
    TechnologyFlowStep(_TM, _target, _design_flow_manager, TechnologyFlowStep_Type::FIX_CHARACTERIZATION, _parameters),

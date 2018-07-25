@@ -64,7 +64,7 @@
 
 ///utility include
 #include "fileIO.hpp"
-#include "utility.hpp"
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 
 static

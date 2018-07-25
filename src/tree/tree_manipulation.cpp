@@ -50,7 +50,7 @@
 #include "Parameter.hpp"                   // for Parameter
 #include "dbgPrintHelper.hpp"              // for DEBUG_LEVEL_VERY_PEDANTIC
 #include "exceptions.hpp"                  // for THROW_ASSERT, THROW_ERROR
-#include "string_manipulation.hpp"         // for STR
+#include "string_manipulation.hpp"         // for STR GET_CLASS
 
 ///tree includes
 #include "ext_tree_node.hpp"
@@ -60,10 +60,7 @@
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
-
-///utility include
-#include "utility.hpp"
-
+#include <iostream>
 unsigned int tree_manipulation::goto_label_unique_id = 0;
 
 #define TREE_NOT_YET_IMPLEMENTED(token) \

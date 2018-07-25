@@ -42,14 +42,19 @@
 */
 
 #include "NP_functionality.hpp"
-#include "exceptions.hpp"
-
-#include "xml_helper.hpp"
-#include "polixml.hpp"
-
-#include <boost/tokenizer.hpp>
-#include <boost/algorithm/string/split.hpp>
-#include <boost/algorithm/string/classification.hpp>
+#include <boost/algorithm/string/classification.hpp>         // for is_any_of
+#include <boost/algorithm/string/split.hpp>                  // for split
+#include <boost/iterator/iterator_facade.hpp>                // for operator!=
+#include <boost/lexical_cast.hpp>                            // for lexical_...
+#include <boost/token_functions.hpp>                         // for char_sep...
+#include <boost/tokenizer.hpp>                               // for tokenize...
+#include <boost/type_index/type_index_facade.hpp>            // for operator==
+#include <list>                                              // for _List_co...
+#include <utility>                                           // for pair
+#include "exceptions.hpp"                                    // for THROW_AS...
+#include "xml_attribute.hpp"                                 // for attribut...
+#include "xml_element.hpp"                                   // for xml_element
+#include "xml_helper.hpp"                                    // for WRITE_XNVM2
 
 
 NP_functionality::NP_functionaly_type NP_functionality::to_NP_functionaly_type(const std::string& val)

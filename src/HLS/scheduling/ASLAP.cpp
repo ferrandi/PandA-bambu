@@ -75,9 +75,8 @@
 ///tree include
 #include "behavioral_helper.hpp"
 
-///utility include
-#include "utility.hpp"
-
+#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 //in case asap and alap are computed with/without constraints on the resources available
 #define WITH_CONSTRAINT 0
@@ -213,7 +212,7 @@ void ASLAP::add_constraints_to_ASAP()
       v = *vi;
       if (ASAP_p[v] == 0) continue;
       m_k = allocation_information->max_number_of_resources(v);
-      cur_et = ControlStep(static_cast<unsigned int>(ceil(from_strongtype_cast<double>(GetCycleLatency(v, Allocation_MinMax::MIN))/static_cast<double>(ctrl_step_multiplier))) * MAX(static_cast<unsigned int>(ceil(static_cast<double>(ASAP_p[v]) / m_k)), (1 + static_cast<unsigned int>(ceil(static_cast<double>(ASAP_nip[v]) / m_k)))));
+      cur_et = ControlStep(static_cast<unsigned int>(ceil(from_strongtype_cast<double>(GetCycleLatency(v, Allocation_MinMax::MIN))/static_cast<double>(ctrl_step_multiplier))) * std::max(static_cast<unsigned int>(ceil(static_cast<double>(ASAP_p[v]) / m_k)), (1 + static_cast<unsigned int>(ceil(static_cast<double>(ASAP_nip[v]) / m_k)))));
       if(cur_et > 0u) --cur_et;
       min_tot_csteps = min_tot_csteps < cur_et ? cur_et : min_tot_csteps;
       const auto schedule = ASAP->get_cstep(v).second < cur_et ? cur_et : ASAP->get_cstep(v).second;
@@ -335,7 +334,7 @@ void ASLAP::add_constraints_to_ALAP()
       v = *vi;
       if (ALAP_p(v) == 0) continue;
       m_k = allocation_information->min_number_of_resources(v);
-      cur_et = ControlStep(static_cast<unsigned int>((ceil(from_strongtype_cast<double>(GetCycleLatency(v, Allocation_MinMax::MIN))/static_cast<double>(ctrl_step_multiplier))) * MAX(static_cast<unsigned int>(ceil(static_cast<double>(ALAP_p[v]) / m_k)), (1 + static_cast<unsigned int>(ceil(static_cast<double>(ALAP_nip[v]) / m_k))))));
+      cur_et = ControlStep(static_cast<unsigned int>((ceil(from_strongtype_cast<double>(GetCycleLatency(v, Allocation_MinMax::MIN))/static_cast<double>(ctrl_step_multiplier))) * std::max(static_cast<unsigned int>(ceil(static_cast<double>(ALAP_p[v]) / m_k)), (1 + static_cast<unsigned int>(ceil(static_cast<double>(ALAP_nip[v]) / m_k))))));
       max_tot_csteps = max_tot_csteps < cur_et ? cur_et : max_tot_csteps;
 
       const auto schedule = ALAP->get_cstep(v).second < cur_et ? cur_et : ALAP->get_cstep(v).second;
@@ -511,7 +510,7 @@ void ASLAP::compute_ALAP_worst_case()
       {
          vi = boost::target(*ei, *beh_graph);
          const ControlStep cur_rev_level = ALAP->get_cstep(vi).second + 1u;
-         max_rev_level = MAX(max_rev_level, cur_rev_level);
+         max_rev_level = std::max(max_rev_level, cur_rev_level);
          const auto schedule = ALAP->get_cstep(*i).second < cur_rev_level ? cur_rev_level : ALAP->get_cstep(*i).second;
          ALAP->set_execution(*i, schedule);
       }
@@ -521,20 +520,20 @@ void ASLAP::compute_ALAP_worst_case()
          max_et.insert(std::pair<ControlStep, ControlStep>(ALAP->get_cstep(*i).second, ControlStep(0u)));
       }
       rev_levels_to_cycles.find(ALAP->get_cstep(*i).second)->second += static_cast<unsigned int>(allocation_information->get_attribute_of_fu_per_op(*i, beh_graph, Allocation_MinMax::MAX, AllocationInformation::initiation_time));
-      max_et.insert(std::pair<ControlStep, ControlStep>(ALAP->get_cstep(*i).second, MAX(max_et.find(ALAP->get_cstep(*i).second)->second, ControlStep(static_cast<unsigned int>(ceil(from_strongtype_cast<double>(GetCycleLatency(*i, Allocation_MinMax::MAX))/static_cast<double>(ctrl_step_multiplier)))))));
+      max_et.insert(std::pair<ControlStep, ControlStep>(ALAP->get_cstep(*i).second, std::max(max_et.find(ALAP->get_cstep(*i).second)->second, ControlStep(static_cast<unsigned int>(ceil(from_strongtype_cast<double>(GetCycleLatency(*i, Allocation_MinMax::MAX))/static_cast<double>(ctrl_step_multiplier)))))));
 
    }
    auto level = max_rev_level - 1u;
    do
    {
-      rev_levels_to_cycles.find(level)->second += MAX(rev_levels_to_cycles.find(level + 1u)->second, max_et.find(level + 1u)->second);
+      rev_levels_to_cycles.find(level)->second += std::max(rev_levels_to_cycles.find(level + 1u)->second, max_et.find(level + 1u)->second);
    }
    while(level != 0u);
    for (std::deque<vertex>::const_iterator i = levels.begin(); i != levels.end(); ++i)
    {
       if(!beh_graph->is_in_subset(*i)) continue;
       ALAP->set_execution(*i, rev_levels_to_cycles.find(ALAP->get_cstep(*i).second)->second - ControlStep(static_cast<unsigned int>(allocation_information->get_attribute_of_fu_per_op(*i, beh_graph, Allocation_MinMax::MAX, AllocationInformation::initiation_time))));
-      max_tot_csteps = MAX(max_tot_csteps, ALAP->get_cstep(*i).second);
+      max_tot_csteps = std::max(max_tot_csteps, ALAP->get_cstep(*i).second);
    }
 }
 

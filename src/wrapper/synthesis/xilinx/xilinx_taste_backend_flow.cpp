@@ -62,6 +62,7 @@
 
 ///wrapper/synthesis/xilinx/ise include
 #include "xst_wrapper.hpp"
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 XilinxTasteBackendFlow::XilinxTasteBackendFlow(const ParameterConstRef _parameters, const std::string& _flow_name, const target_managerRef _manager) :
    XilinxBackendFlow(_parameters, _flow_name, _manager)

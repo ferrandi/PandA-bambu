@@ -60,7 +60,7 @@
 
 ///utility include
 #include "fileIO.hpp"
-#include "utility.hpp"
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 AsnParserData::AsnParserData(const AadlInformationRef _aadl_information, const ParameterConstRef _parameters) :
    aadl_information(_aadl_information),

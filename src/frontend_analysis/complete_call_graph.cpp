@@ -37,14 +37,18 @@
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
 */
-
-///Header include
 #include "complete_call_graph.hpp"
 
-///. include
-#include "Parameter.hpp"
+#include "config_HAVE_BAMBU_BUILT.hpp"        // for HAVE_BAMBU_BUILT
+#include "config_HAVE_EXPERIMENTAL.hpp"       // for HAVE_EXPERIMENTAL
+#include "config_HAVE_FROM_PRAGMA_BUILT.hpp"  // for HAVE_FROM_PRAGMA_BUILT
+#include "config_HAVE_ZEBU_BUILT.hpp"         // for HAVE_ZEBU_BUILT
 
-#include "hash_helper.hpp"
+#include <string>                             // for string, operator!=, bas...
+#include "Parameter.hpp"                      // for Parameter, OPT_hls_div
+#include "exceptions.hpp"                     // for THROW_UNREACHABLE
+#include "hash_helper.hpp"                    // for hash
+#include "string_manipulation.hpp"            // for GET_CLASS
 
 CompleteCallGraph::CompleteCallGraph(const application_managerRef _AppM, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters) :
    ApplicationFrontendFlowStep(_AppM, COMPLETE_CALL_GRAPH, _design_flow_manager, _parameters)

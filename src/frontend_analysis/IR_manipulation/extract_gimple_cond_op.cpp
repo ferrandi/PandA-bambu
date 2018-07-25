@@ -56,7 +56,7 @@
 #include "tree_reindex.hpp"
 
 ///utility include
-#include "utility.hpp"
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 ExtractGimpleCondOp::ExtractGimpleCondOp(const application_managerRef _AppM, const DesignFlowManagerConstRef _design_flow_manager, const unsigned int _function_id, const ParameterConstRef _parameters) :
    FunctionFrontendFlowStep(_AppM, _function_id, EXTRACT_GIMPLE_COND_OP, _design_flow_manager, _parameters),

@@ -67,6 +67,7 @@
 
 #include <iosfwd>
 #include "clb_model.hpp"
+#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_
 
 attribute::attribute(const std::vector<attributeRef>& _content)
 {

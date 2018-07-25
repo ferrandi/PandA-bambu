@@ -80,6 +80,8 @@
 #include "tree_reindex.hpp"
 #include "tree_basic_block.hpp"
 #include "tree_helper.hpp"
+#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 SplitReturn::SplitReturn(const ParameterConstRef _parameters, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager) :
    FunctionFrontendFlowStep(_AppM, _function_id, SPLIT_RETURN, _design_flow_manager, _parameters)

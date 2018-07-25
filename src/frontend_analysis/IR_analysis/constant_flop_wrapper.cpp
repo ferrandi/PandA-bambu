@@ -65,6 +65,7 @@
 #include "Parameter.hpp"
 
 ///STD include
+#include <boost/filesystem/fstream.hpp>
 #include <fstream>
 
 ///STL include
@@ -90,6 +91,7 @@
 
 ///SoftFloat functions include
 #include "config_PANDA_INCLUDE_INSTALLDIR.hpp"
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 static std::set<std::string> functions = {"__float32_addif", "__float32_subif", "__float32_mulif", "__float32_divif", "__float64_addif", "__float64_subif", "__float64_mulif", "__float64_divif"};
 

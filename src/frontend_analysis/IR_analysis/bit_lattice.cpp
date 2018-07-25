@@ -50,6 +50,8 @@
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
 
+#include "string_manipulation.hpp"
+
 BitLatticeManipulator::BitLatticeManipulator(const tree_managerConstRef _TM)
 	: TM(_TM)
 {}

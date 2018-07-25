@@ -94,6 +94,7 @@
 ///utility include
 #include <boost/range/adaptor/reversed.hpp>
 #include "dbgPrintHelper.hpp"
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 PhiOpt::PhiOpt(const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters) :
    FunctionFrontendFlowStep(_AppM, _function_id, PHI_OPT, _design_flow_manager, _parameters),

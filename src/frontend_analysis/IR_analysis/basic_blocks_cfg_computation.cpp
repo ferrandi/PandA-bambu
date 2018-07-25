@@ -88,6 +88,7 @@
 
 ///utility include
 #include "dbgPrintHelper.hpp"
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 BasicBlocksCfgComputation::BasicBlocksCfgComputation(const ParameterConstRef _parameters, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager) :
    FunctionFrontendFlowStep(_AppM, _function_id, BASIC_BLOCKS_CFG_COMPUTATION, _design_flow_manager, _parameters)

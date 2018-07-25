@@ -70,6 +70,9 @@
 ///circuit include
 #include "structural_objects.hpp"
 
+#include "string_manipulation.hpp"          // for GET_CLASS
+
+
 #define XST_NUMBER_OF_SLICE_REGISTERS           "XST_NUMBER_OF_SLICE_REGISTERS"
 #define XST_NUMBER_OF_SLICE_LUTS                "XST_NUMBER_OF_SLICE_LUTS"
 #define XST_NUMBER_OF_LUT_FLIP_FLOP_PAIRS_USED  "XST_NUMBER_OF_LUT_FLIP_FLOP_PAIRS_USED"

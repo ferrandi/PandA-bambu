@@ -42,9 +42,11 @@
  * Last modified by $Author$
  *
 */
+#include "schedule.hpp"
+
+#include <boost/filesystem/operations.hpp>
 #include <ostream>
 
-#include "schedule.hpp"
 #include "behavioral_writer_helper.hpp"
 #include "op_graph.hpp"
 #include "behavioral_helper.hpp"
@@ -82,6 +84,8 @@
 #include "tree_manipulation.hpp"
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
+#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 AbsControlStep::AbsControlStep() :
    std::pair<unsigned int, ControlStep>(0, AbsControlStep::UNKNOWN)

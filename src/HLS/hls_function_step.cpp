@@ -64,6 +64,7 @@
 #include "behavioral_helper.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
+#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_
 
 HLSFunctionStep::HLSFunctionStep(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type, const HLSFlowStepSpecializationConstRef _hls_flow_step_specialization) :
    HLS_step(_Param, _HLSMgr, _design_flow_manager, _hls_flow_step_type, _hls_flow_step_specialization),

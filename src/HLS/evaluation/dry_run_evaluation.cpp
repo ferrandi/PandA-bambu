@@ -56,6 +56,7 @@
 
 ///utility include
 #include "xml_helper.hpp"
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 DryRunEvaluation::DryRunEvaluation(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, const DesignFlowManagerConstRef _design_flow_manager) :
    EvaluationBaseStep(_parameters, _HLSMgr, 0, _design_flow_manager, HLSFlowStep_Type::DRY_RUN_EVALUATION)

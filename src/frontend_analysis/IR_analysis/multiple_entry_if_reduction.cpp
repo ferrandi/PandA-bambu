@@ -101,6 +101,8 @@
 #pragma GCC diagnostic ignored "-Woverloaded-virtual"
 #include "tree_node_dup.hpp"
 #include "tree_reindex.hpp"
+#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 REF_FORWARD_DECL(tree_node_dup);
 

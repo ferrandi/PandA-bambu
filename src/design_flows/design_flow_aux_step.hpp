@@ -43,9 +43,9 @@
 
 #ifndef DESIGN_FLOW_AUX_STEP_HPP
 #define DESIGN_FLOW_AUX_STEP_HPP
-
-///Superclass include
-#include "design_flow_step.hpp"
+#include <iosfwd>                // for ostream
+#include <string>                // for string
+#include "design_flow_step.hpp"  // for DesignFlowStep, DesignFlowManagerCon...
 
 ///Identifier of the auxiliary design flow steps
 typedef enum

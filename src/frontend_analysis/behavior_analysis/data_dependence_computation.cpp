@@ -57,6 +57,7 @@
 #include "behavioral_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
+#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_
 
 DataDependenceComputation::DataDependenceComputation(const application_managerRef _AppM, unsigned int _function_id, const FrontendFlowStepType _frontend_flow_step_type, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters) :
    FunctionFrontendFlowStep(_AppM, _function_id, _frontend_flow_step_type, _design_flow_manager, _parameters)

@@ -49,6 +49,7 @@
 #include "xml_script_command.hpp"
 
 #include "Parameter.hpp"
+#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_
 
 //constructor
 Quartus13ReportWrapper::Quartus13ReportWrapper(const ParameterConstRef _Param, const std::string& _output_dir, const target_deviceRef _device) :

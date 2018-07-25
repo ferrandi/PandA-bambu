@@ -37,13 +37,11 @@
  * @author Marco Lattuada <lattuada@elet.polimi.it>
  *
 */
+#include "utility.hpp"
 
 #include <boost/date_time/posix_time/posix_time_types.hpp>
 #include <boost/date_time/posix_time/time_formatters.hpp>
 #include <boost/date_time/time_parsing.hpp>
-
-///Header include
-#include "utility.hpp"
 
 TimeStamp::TimeStamp() :
    boost::posix_time::ptime(boost::date_time::parse_delimited_time<boost::posix_time::ptime>("1970-01-01T00:00:00", 'T'))

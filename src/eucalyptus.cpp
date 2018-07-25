@@ -47,6 +47,8 @@
 #include "config_HAVE_DESIGN_COMPILER.hpp"
 #include "config_HAVE_LATTICE.hpp"
 
+#include <boost/filesystem/operations.hpp>
+
 ///design_flows include
 #include "design_flow_graph.hpp"
 #include "design_flow_manager.hpp"

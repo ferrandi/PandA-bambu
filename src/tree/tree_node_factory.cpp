@@ -57,6 +57,7 @@
 #if HAVE_CODE_ESTIMATION_BUILT
 #include "weight_information.hpp"
 #endif
+#include "utility.hpp"
 
 #define CREATE_TREE_NODE_CASE_BODY(tree_node_name, node_id)\
 {\

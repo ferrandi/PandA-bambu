@@ -37,16 +37,15 @@
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
 */
-
-///Header include
 #include "find_max_cfg_transformations.hpp"
+#include <boost/filesystem/operations.hpp>  // for create_directory, exists
+#include "Parameter.hpp"                    // for Parameter, OPT_output_tem...
+#include "dbgPrintHelper.hpp"               // for INDENT_OUT_MEX, OUTPUT_LE...
+#include "exceptions.hpp"                   // for IsError, THROW_ASSERT
+#include "fileIO.hpp"                       // for PandaSystem
+#include "hash_helper.hpp"                  // for hash
+#include "string_manipulation.hpp"          // for STR GET_CLASS
 
-///. include
-#include "Parameter.hpp"
-
-///utility includes
-#include "fileIO.hpp"
-#include "hash_helper.hpp"
 
 FindMaxCFGTransformations::FindMaxCFGTransformations(const application_managerRef _AppM, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters) :
    ApplicationFrontendFlowStep(_AppM, FrontendFlowStepType::FIND_MAX_CFG_TRANSFORMATIONS, _design_flow_manager, _parameters)

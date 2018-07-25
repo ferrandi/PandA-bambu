@@ -46,6 +46,8 @@
 #include "exceptions.hpp"
 
 #include "language_writer.hpp"
+#include "string_manipulation.hpp"    //STR
+#include "utility.hpp"
 
 memory_symbol::memory_symbol(unsigned int var, unsigned int addr, unsigned int funId) :
    variable(var),

@@ -52,7 +52,7 @@
 #include "dbgPrintHelper.hpp"                     // for DEBUG_LEVEL_NONE
 #include "edge_info.hpp"                          // for EdgeInfoRef
 #include "exceptions.hpp"                         // for THROW_ASSERT
-#include "utility.hpp"                            // for GET_CLASS
+#include "string_manipulation.hpp"                // for GET_CLASS
 
 
 void weak_dominance::calculate_weak_dominance_info(graphs_collection * output, std::unordered_map<vertex, vertex> & i2o, std::unordered_map<vertex, vertex> & o2i)

@@ -90,8 +90,7 @@
 ///HLS/module_allocation
 #include "allocation_information.hpp"
 
-///utility include
-#include "utility.hpp"
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 const unsigned int fu_binding::UNKNOWN = std::numeric_limits<unsigned int>::max();
 

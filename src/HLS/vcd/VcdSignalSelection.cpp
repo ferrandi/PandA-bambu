@@ -91,6 +91,7 @@
 
 // include from utility
 #include "cpu_time.hpp"
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 VcdSignalSelection::VcdSignalSelection
 (

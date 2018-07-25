@@ -48,6 +48,8 @@
 
 // include boost range adaptors
 #include <boost/range/adaptors.hpp>
+#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_
+#include "string_manipulation.hpp"
 
 bool Bit_Value::manage_forward_binary_operands(
       const binary_expr * operation,

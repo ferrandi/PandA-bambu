@@ -43,35 +43,24 @@
 #ifndef UTILITY_HPP
 #define UTILITY_HPP
 
+#include "config_HAVE_ASSERTS.hpp"
+
 #include <boost/algorithm/string/classification.hpp>
 #include <boost/algorithm/string/detail/classification.hpp>
 #include <boost/algorithm/string/split.hpp>
 #include <boost/concept/usage.hpp>
-#include <boost/container/detail/std_fwd.hpp>
-///boost include
 #include <boost/date_time.hpp>
 #include <boost/date_time/posix_time/ptime.hpp>
-///Utility include
-#include <boost/filesystem/convenience.hpp>
-#include <boost/filesystem/fstream.hpp>
-#include <boost/filesystem/operations.hpp>
-#include <boost/filesystem/path.hpp>
 #include <boost/iterator/iterator_facade.hpp>
-#include <boost/serialization/strong_typedef.hpp>
 #include <boost/type_index/type_index_facade.hpp>
-#include <boost/version.hpp>
 #include <stdlib.h>
-#include <functional>
-///STD include
 #include <limits>
 #include <memory>
 #include <sstream>
 #include <string>
-#include <typeindex>
-#include <typeinfo>
+#include <boost/lexical_cast.hpp>
+#include <vector>
 
-///Autoheader include
-#include "config_HAVE_ASSERTS.hpp"
 #include "string_manipulation.hpp"
 
 
@@ -110,50 +99,15 @@
 
 
 /**
- * @return return the maximum between two numbers.
- * @param a is the first number.
- * @param b is the second number.
-*/
-#ifndef MAX
-template<typename type_t>
-type_t MAX(const type_t a, const type_t b)
-{
-   return a > b ? a : b;
-}
-#endif
-
-/**
- * @return return the minimum between two numbers.
- * @param a is the first number.
- * @param b is the second number.
-*/
-#ifndef MIN
-template<typename type_t>
-type_t MIN(const type_t a, const type_t b)
-{
-   return a < b ? a : b;
-}
-#endif
-
-
-/**
 * Macro returning the name of a class. It uses the static version of get_kind_text
 */
 #define GET_CLASS_NAME(meth) #meth
-
-/**
- * Macro returning the actual type of an object
- */
-#define GET_CLASS(obj) string_demangle(typeid(obj).name())
 
 /**
  * Macro returning the debug_level of a function
  */
 #define GET_FUNCTION_DEBUG_LEVEL() parameters->GetFunctionDebugLevel(GET_CLASS(*this), __func__)
 
-#include <boost/algorithm/string.hpp>
-#include <boost/lexical_cast.hpp>
-#include <vector>
 
 template<class G>
 std::string convert_to_binary(G _value, unsigned int precision)

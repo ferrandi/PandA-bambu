@@ -40,9 +40,12 @@
  * Last modified by $Author$
  *
 */
-
-///Header include
 #include "design_flow_aux_step.hpp"
+
+#include <boost/lexical_cast.hpp>             // for lexical_cast
+#include <ostream>                            // for operator<<, basic_ostream
+#include "exceptions.hpp"                     // for THROW_UNREACHABLE
+
 
 AuxDesignFlowStep::AuxDesignFlowStep(const std::string&_name, const AuxDesignFlowStepType _type, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters) :
    DesignFlowStep(_design_flow_manager, _parameters),

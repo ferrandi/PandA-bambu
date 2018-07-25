@@ -53,6 +53,8 @@
 
 // include boost range adaptors
 #include <boost/range/adaptors.hpp>
+#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_
+#include "string_manipulation.hpp"
 
 std::deque<bit_lattice> Bit_Value::backward_compute_result_from_uses(
       const ssa_name & ssa, const statement_list & sl, unsigned int bb_loop_id) const

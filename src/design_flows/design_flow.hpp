@@ -38,11 +38,10 @@
  * @author Marco Lattuada <lattuada@elet.polimi.it>
  *
 */
-
 #ifndef DESIGN_FLOW_HPP
 #define DESIGN_FLOW_HPP
 
-///Superclass include
+#include <string>                // for string
 #include "design_flow_step.hpp"
 
 enum class DesignFlow_Type

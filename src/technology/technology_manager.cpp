@@ -77,6 +77,7 @@
 #include "constant_strings.hpp"
 
 #include "simple_indent.hpp"
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 const unsigned int technology_manager::XML = 1 << 0;
 #if HAVE_FROM_LIBERTY

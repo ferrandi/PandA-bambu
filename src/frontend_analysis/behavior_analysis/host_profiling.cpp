@@ -80,6 +80,8 @@
 #include <boost/filesystem/path.hpp>
 #include <boost/cast.hpp>
 #include "hash_helper.hpp"
+#include "string_manipulation.hpp"          // for GET_CLASS
+#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_
 
 HostProfiling_Method operator&(const HostProfiling_Method first, const HostProfiling_Method second)
 {

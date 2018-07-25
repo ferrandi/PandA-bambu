@@ -43,19 +43,13 @@
 #ifndef CG_NODE_HPP
 #define CG_NODE_HPP
 
-///Behavior include
-#include "edge_info.hpp"
-#include "graph_info.hpp"
-#include "typed_node_info.hpp"
-
-///Graph include
-#include "graph.hpp"
-
-///STD include
-#include <algorithm>
-
-///Utility include
-#include "refcount.hpp"
+#include <ostream>                                   // for operator<<, ostream
+#include <string>                                    // for operator<<, string
+#include "edge_info.hpp"                             // for EdgeInfo
+#include "graph.hpp"                                 // for graph, vertex
+#include "graph_info.hpp"                            // for GraphInfo
+#include "refcount.hpp"                              // for REF_FORWARD_DECL
+#include "typed_node_info.hpp"                       // for TypedNodeInfo
 
 /**
  * @name Forward declarations.

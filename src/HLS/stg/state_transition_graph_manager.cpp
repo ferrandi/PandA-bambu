@@ -70,6 +70,7 @@
 ///Utilty include
 #include "simple_indent.hpp"
 #include "boost/graph/topological_sort.hpp"
+#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_
 
 StateTransitionGraphManager::StateTransitionGraphManager(const HLS_managerConstRef _HLSMgr, const hlsConstRef  _HLS, const ParameterConstRef _Param) :
    state_transition_graphs_collection(StateTransitionGraphsCollectionRef(new StateTransitionGraphsCollection(StateTransitionGraphInfoRef(new StateTransitionGraphInfo(_HLSMgr->CGetFunctionBehavior(_HLS->functionId)->CGetOpGraph(FunctionBehavior::CFG))), _Param))),

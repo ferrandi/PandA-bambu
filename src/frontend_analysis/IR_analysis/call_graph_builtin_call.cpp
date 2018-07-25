@@ -51,6 +51,8 @@
 #include "tree_helper.hpp"
 #include "function_decl_refs.hpp"
 #include "op_graph.hpp"
+#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 static tree_nodeRef getFunctionPointerType(tree_nodeRef fptr);
 void

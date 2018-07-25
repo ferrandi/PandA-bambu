@@ -73,6 +73,7 @@ REF_FORWARD_DECL(xml_document);
 #include "polixml.hpp"
 #include "fileIO.hpp"
 #include "xml_dom_parser.hpp"
+#include "string_manipulation.hpp"          // for STR
 
 REF_FORWARD_DECL(xml_document);
 /**

@@ -83,6 +83,7 @@
 #include "dbgPrintHelper.hpp"
 #include "exceptions.hpp"
 #include "math_function.hpp"
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 
 hls_div_cg_ext::hls_div_cg_ext(const ParameterConstRef _parameters, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager) :

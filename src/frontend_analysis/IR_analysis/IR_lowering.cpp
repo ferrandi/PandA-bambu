@@ -44,54 +44,42 @@
  * Last modified by $Author$
  *
 */
-///Autoheader include
-#include "config_HAVE_BAMBU_BUILT.hpp"
-
-///Header include
 #include "IR_lowering.hpp"
 
-///. include
-#include "Parameter.hpp"
+#include "config_HAVE_ASSERTS.hpp"           // for HAVE_ASSERTS
+#include "config_HAVE_BAMBU_BUILT.hpp"       // for HAVE_BAMBU_BUILT
 
-///behavior includes
-#include "application_manager.hpp"
-#include "function_behavior.hpp"
-
-///design_flows includes
-#include "design_flow_graph.hpp"
-#include "design_flow_manager.hpp"
-
-///design_flows/technology includes
-#include "technology_flow_step.hpp"
-#include "technology_flow_step_factory.hpp"
-
-///HLS include
-#include "hls_manager.hpp"
-#include "hls_target.hpp"
-
-///HLS/scheduling include
-#include "schedule.hpp"
-
-#if HAVE_BAMBU_BUILT
-///technology include
-#include "technology_manager.hpp"
-
-///technology/physical_library/modes include
-#include "time_model.hpp"
-#endif
-
-///technology/physical_library include
-#include "technology_node.hpp"
-
-///tree includes
-#include "tree_basic_block.hpp"
-#include "tree_helper.hpp"
-#include "tree_manager.hpp"
-#include "tree_manipulation.hpp"
+#include <math.h>                            // for ceil
+#include <stddef.h>                          // for size_t
+#include <algorithm>                         // for min
+#include <unordered_map>                     // for unordered_map, operator!=
+#include <vector>                            // for vector
+#include "Parameter.hpp"                     // for Parameter
+#include "application_manager.hpp"           // for application_manager, app...
+#include "dbgPrintHelper.hpp"                // for DEBUG_LEVEL_VERY_PEDANTIC
+#include "design_flow_graph.hpp"             // for DesignFlowGraph, DesignF...
+#include "design_flow_manager.hpp"           // for DesignFlowManager, Desig...
+#include "design_flow_step_factory.hpp"      // for DesignFlowManagerConstRef
+#include "exceptions.hpp"                    // for THROW_ASSERT, THROW_UNRE...
+#include "graph.hpp"                         // for vertex
+#include "hash_helper.hpp"                   // for hash
+#include "hls_manager.hpp"                   // for HLS_manager
+#include "hls_target.hpp"                    // for HLS_target, HLS_targetRef
+#include "math_function.hpp"                 // for floor_log2, exact_log2
+#include "string_manipulation.hpp"           // for STR, GET_CLASS
+#include "technology_flow_step.hpp"          // for TechnologyFlowStep_Type
+#include "technology_flow_step_factory.hpp"  // for TechnologyFlowStepFactory
+#include "technology_manager.hpp"            // for LIBRARY_STD_FU, technolo...
+#include "technology_node.hpp"               // for functional_unit, operation
+#include "time_model.hpp"                    // for time_model
+#include "tree_basic_block.hpp"              // for bloc
+#include "tree_common.hpp"                   // for plus_expr_K, lshift_expr_K
+#include "tree_helper.hpp"                   // for tree_helper
+#include "tree_manager.hpp"                  // for tree_manager
+#include "tree_manipulation.hpp"             // for tree_manipulation, Param...
+#include "tree_node.hpp"                     // for tree_nodeRef, gimple_assign
 #include "tree_reindex.hpp"
 
-///utility include
-#include "math_function.hpp"
 
 IR_lowering::IR_lowering(const ParameterConstRef Param, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager) :
    FunctionFrontendFlowStep(_AppM, _function_id, IR_LOWERING, _design_flow_manager, Param)

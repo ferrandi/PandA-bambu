@@ -74,6 +74,7 @@
 
 ///Wrapper include
 #include "gcc_wrapper.hpp"
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 #define FILENAME_NORM(name) ((boost::filesystem::path(name)).normalize().string())
 

@@ -81,6 +81,7 @@
 
 ///tree include
 #include "behavioral_helper.hpp"
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 #if ! HAVE_UNORDERED
 PrioritySorter::PrioritySorter(refcount<priority_data<int> > _priority, const OpGraphConstRef _op_graph) :
@@ -881,7 +882,7 @@ void parametric_list_based::exec(const OpVertexSet & operations, ControlStep cur
                      scheduled_predecessors[s->second]++;
                      if(current_ASAP.find(s->second) != current_ASAP.end())
                      {
-                        current_ASAP.find(s->second)->second = MAX(ControlStep(static_cast<unsigned int>(floor(ending_time.find(current_vertex)->second / clock_cycle))), current_ASAP.find(s->second)->second);
+                        current_ASAP.find(s->second)->second = std::max(ControlStep(static_cast<unsigned int>(floor(ending_time.find(current_vertex)->second / clock_cycle))), current_ASAP.find(s->second)->second);
                      }
                      else
                      {
@@ -1038,7 +1039,7 @@ void parametric_list_based::compute_starting_ending_time_asap(const vertex v, co
       double connection_time = local_connection_map[edge_pair] = (schedule->get_cstep_end(from_vertex).second == cs) ? HLS->allocation_information->GetConnectionTime(from_statement, v_statement, AbsControlStep(v_basic_block_index, cs)) : 0.0;
       /// ending time is equal to the connection time plus the maximum between the controller time and the operation ending time
       double local_ending_time = connection_time + ((cs==cs_prev && starting_time(from_vertex) < (fsm_correction+(from_strongtype_cast<double>(cs) * clock_cycle))) ? ending_time.find(from_vertex)->second + fsm_correction + (from_strongtype_cast<double>(cs) * clock_cycle) - starting_time(from_vertex) : ending_time.find(from_vertex)->second);
-      current_starting_time = MAX(current_starting_time, local_ending_time);
+      current_starting_time = std::max(current_starting_time, local_ending_time);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "current_starting_time of " + STR(GET_NAME(flow_graph, v)) + " updated to " + STR(current_starting_time));
 
       ///Check for chaining
@@ -1155,7 +1156,7 @@ void parametric_list_based::compute_starting_ending_time_alap(vertex v, const un
       double connection_time = local_connection_map[edge_pair] = HLS->allocation_information->GetConnectionTime(from_statement, v_statement, AbsControlStep(v_basic_block_index, cs));
       /// ending time is equal to the connection time plus the maximum between the controller time and the operation ending time
       double local_ending_time = connection_time + ((cs==cs_prev && starting_time(from_vertex) < (fsm_correction+(from_strongtype_cast<double>(cs) * clock_cycle))) ? ending_time.find(from_vertex)->second + fsm_correction +(from_strongtype_cast<double>(cs) * clock_cycle) - starting_time(from_vertex) : ending_time.find(from_vertex)->second);
-      current_starting_time = MAX(current_starting_time, local_ending_time);
+      current_starting_time = std::max(current_starting_time, local_ending_time);
 
       if((GET_TYPE(flow_graph, from_vertex) & TYPE_STORE) and schedule->get_cstep_end(from_vertex).second == cs and !is_operation_unbounded_and_registered)
          cannot_be_chained = true;
@@ -1169,7 +1170,7 @@ void parametric_list_based::compute_starting_ending_time_alap(vertex v, const un
    for(boost::tie(oi, oi_end) = boost::out_edges(v, *flow_graph); oi != oi_end; oi++)
    {
       vertex to_vertex = boost::target(*oi, *flow_graph);
-      max_ending_time = MIN(max_ending_time, starting_time(to_vertex));
+      max_ending_time = std::min(max_ending_time, starting_time(to_vertex));
    }
 
    compute_exec_stage_time(fu_type, stage_period, cs, flow_graph, v, op_execution_time, phi_extra_time, current_starting_time, setup_hold_time);
@@ -1392,7 +1393,7 @@ void parametric_list_based::update_starting_ending_time(vertex candidate_v, fu_b
    {
       vertex target = boost::target(*eo, *opDFG);
       PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "      starting time target " + GET_NAME(opDFG, target) + " = " + STR(starting_time(target)));
-      current_ending_time = MIN(current_ending_time, starting_time(target));
+      current_ending_time = std::min(current_ending_time, starting_time(target));
    }
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "      current_ending_time = " + STR(current_ending_time));
 

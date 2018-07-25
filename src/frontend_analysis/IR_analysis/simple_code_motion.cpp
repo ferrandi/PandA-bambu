@@ -94,6 +94,7 @@
 
 #include "cyclic_topological_sort.hpp"
 #include "behavioral_helper.hpp"
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 simple_code_motion::simple_code_motion(const ParameterConstRef _parameters, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager) :
    FunctionFrontendFlowStep(_AppM, _function_id, SIMPLE_CODE_MOTION, _design_flow_manager, _parameters),

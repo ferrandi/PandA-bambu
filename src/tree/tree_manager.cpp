@@ -55,7 +55,7 @@
 #include <list>                                   // for list
 #include <vector>                                 // for vector, allocator
 #include "exceptions.hpp"                         // for THROW_ASSERT, THROW...
-#include "string_manipulation.hpp"                // for STR
+#include "string_manipulation.hpp"                // for STR GET_CLASS
 
 ///Machine include
 #if HAVE_MAPPING_BUILT
@@ -86,6 +86,7 @@
 #include "gcc_wrapper.hpp"
 
 #include "dbgPrintHelper.hpp"
+#include "utility.hpp"
 
 tree_manager::tree_manager(const ParameterConstRef _Param) :
    n_pl(0),

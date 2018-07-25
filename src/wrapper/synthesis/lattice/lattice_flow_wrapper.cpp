@@ -49,6 +49,7 @@
 #include "xml_script_command.hpp"
 
 #include "Parameter.hpp"
+#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_
 
 //constructor
 lattice_flow_wrapper::lattice_flow_wrapper(const ParameterConstRef _Param, const std::string& _output_dir, const target_deviceRef _device) :

@@ -44,18 +44,17 @@
 #ifndef DESIGN_FLOW_GRAPH_HPP
 #define DESIGN_FLOW_GRAPH_HPP
 
-///Superclass include
-#include "graph.hpp"
-#include "edge_info.hpp"
-#include "node_info.hpp"
+#include <stddef.h>                                  // for size_t
+#include <iosfwd>                                    // for ostream
+#include <string>                                    // for string
+#include <unordered_map>                             // for unordered_map
+#include "custom_map.hpp"                            // for CustomMap
+#include "edge_info.hpp"                             // for EdgeInfo, EdgeIn...
+#include "graph.hpp"                                 // for vertex, EdgeDesc...
+#include "graph_info.hpp"                            // for GraphInfo
+#include "node_info.hpp"                             // for NodeInfo
+#include "refcount.hpp"                              // for refcount, Refcou...
 
-///STL include
-#include <unordered_map>
-
-///utility include
-#include "custom_map.hpp"
-#include "custom_set.hpp"
-#include "refcount.hpp"
 
 CONSTREF_FORWARD_DECL(Parameter);
 REF_FORWARD_DECL(DesignFlowGraphsCollection);

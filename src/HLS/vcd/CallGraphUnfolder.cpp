@@ -41,6 +41,7 @@
 
 // includes from HLS/vcd/
 #include "CallGraphUnfolder.hpp"
+#include "string_manipulation.hpp"          // for STR
 
 CallGraphUnfolder::CallGraphUnfolder(CallGraphManagerConstRef cgman,
       std::unordered_map<unsigned int, std::unordered_set<unsigned int> > & _caller_to_call_id,

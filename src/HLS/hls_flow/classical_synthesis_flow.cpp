@@ -45,6 +45,7 @@
 
 // . include
 #include "Parameter.hpp"
+#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_
 
 ClassicalHLSSynthesisFlow::ClassicalHLSSynthesisFlow(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, const DesignFlowManagerConstRef _design_flow_manager) :
    HLS_step(_parameters, _HLSMgr, _design_flow_manager, HLSFlowStep_Type::CLASSICAL_HLS_SYNTHESIS_FLOW)

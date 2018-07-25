@@ -60,6 +60,8 @@
 #include "tree_basic_block.hpp"
 #include "tree_manager.hpp"
 #include "tree_reindex.hpp"
+#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 UpdateSchedule::UpdateSchedule(const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters) :
    FunctionFrontendFlowStep(_AppM, _function_id, UPDATE_SCHEDULE, _design_flow_manager, _parameters)

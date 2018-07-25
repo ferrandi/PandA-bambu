@@ -49,6 +49,7 @@
 #include "xml_script_command.hpp"
 
 #include "Parameter.hpp"
+#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_
 
 #define PARAM_vivado_outdir     "vivado_outdir"
 

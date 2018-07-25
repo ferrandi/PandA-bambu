@@ -70,6 +70,7 @@
 
 ///utility include
 #include "cpu_time.hpp"
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 easy_module_binding::easy_module_binding(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager) :
    HLSFunctionStep(_Param, _HLSMgr, _funId, _design_flow_manager, HLSFlowStep_Type::EASY_MODULE_BINDING)

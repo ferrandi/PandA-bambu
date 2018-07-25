@@ -67,7 +67,7 @@
 #include <boost/version.hpp>
 #include "exceptions.hpp"
 #include "fileIO.hpp"
-#include "utility.hpp"
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 unsigned int PragmaParser::number = 0;
 

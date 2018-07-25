@@ -64,6 +64,8 @@
 ///technology/physical_library includes
 #include "library_manager.hpp"
 #include "technology_node.hpp"
+#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_VERY_PEDANTIC
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 GenerateFuList::GenerateFuList(const target_managerRef _target, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters) :
    DesignFlowStep(_design_flow_manager, _parameters),

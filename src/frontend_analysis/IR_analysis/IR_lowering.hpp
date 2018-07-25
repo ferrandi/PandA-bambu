@@ -42,15 +42,14 @@
 */
 #ifndef IR_LOWERING_HPP
 #define IR_LOWERING_HPP
-
-///Super class include
-#include "function_frontend_flow_step.hpp"
-
-///STD include
-#include <string>
-
-///Utility include
-#include "refcount.hpp"
+#include <list>                                      // for list, list<>::co...
+#include <string>                                    // for string
+#include <unordered_set>                             // for unordered_set
+#include <utility>                                   // for pair
+#include "design_flow_step.hpp"                      // for DesignFlowStep
+#include "frontend_flow_step.hpp"                    // for FrontendFlowStep...
+#include "function_frontend_flow_step.hpp"           // for DesignFlowManage...
+#include "refcount.hpp"                              // for REF_FORWARD_DECL
 
 /**
  * @name forward declarations

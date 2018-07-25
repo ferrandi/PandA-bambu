@@ -45,6 +45,8 @@
 
 ///parser/treegcc include
 #include "token_interface.hpp"
+#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 unsigned int HWCallInjection::builtinWaitCallDeclIdx = 0;
 

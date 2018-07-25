@@ -39,6 +39,7 @@
 
 // includes from behavior/
 #include "call_graph_manager.hpp"
+#include "string_manipulation.hpp"          // for STR
 
 CallSitesCollectorVisitor::CallSitesCollectorVisitor(CallGraphManagerConstRef cgman,
       std::unordered_map<unsigned int, std::unordered_set<unsigned int> > & _fu_id_to_call_ids,

@@ -46,23 +46,19 @@
 #ifndef STRUCTURAL_OBJECTS_HPP
 #define STRUCTURAL_OBJECTS_HPP
 
-/// Autoheader include
-#include "config_HAVE_BAMBU_BUILT.hpp"
-#include "config_HAVE_KOALA_BUILT.hpp"
-#include "config_HAVE_TECHNOLOGY_BUILT.hpp"
-#include "config_HAVE_TUCANO_BUILT.hpp"
+#include "config_HAVE_BAMBU_BUILT.hpp"               // for HAVE_BAMBU_BUILT
+#include "config_HAVE_KOALA_BUILT.hpp"               // for HAVE_KOALA_BUILT
+#include "config_HAVE_TECHNOLOGY_BUILT.hpp"          // for HAVE_TECHNOLOGY_...
+#include "config_HAVE_TUCANO_BUILT.hpp"              // for HAVE_TUCANO_BUILT
 
-#include <string>
-#include <ostream>
-#include <map>
-#include <set>
-#include <vector>
-
-#include "simple_indent.hpp"
-
-#include "NP_functionality.hpp"
-#include "exceptions.hpp"
-#include "refcount.hpp"
+#include <map>                                       // for map
+#include <ostream>                                   // for ostream
+#include <string>                                    // for string
+#include <utility>                                   // for pair
+#include <vector>                                    // for vector
+#include "NP_functionality.hpp"                      // for NP_functionalityRef
+#include "exceptions.hpp"                            // for THROW_UNREACHABLE
+#include "refcount.hpp"                              // for REF_FORWARD_DECL
 
 /**
  * @name Forward declarations.
@@ -84,6 +80,8 @@ REF_FORWARD_DECL(technology_node);
 REF_FORWARD_DECL(attribute);
 /// forward decl of xml Element
 class xml_element;
+class simple_indent;
+
 //@}
 
 #define HIERARCHY_SEPARATOR "/"

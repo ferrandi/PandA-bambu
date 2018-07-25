@@ -57,6 +57,7 @@
 
 ///HLS/module_allocation include
 #include "allocation_information.hpp"
+#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_
 
 
 unique_binding::unique_binding(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager) :

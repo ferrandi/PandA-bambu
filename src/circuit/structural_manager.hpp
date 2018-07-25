@@ -43,22 +43,20 @@
  * Last modified by $Author$
  *
 */
-///Autoheader include
+#ifndef STRUCTURAL_MANAGER_HPP
+#define STRUCTURAL_MANAGER_HPP
+
 #include "config_HAVE_BAMBU_BUILT.hpp"
 #include "config_HAVE_EUCALYPTUS_BUILT.hpp"
 #include "config_HAVE_KOALA_BUILT.hpp"
 #include "config_HAVE_TUCANO_BUILT.hpp"
 
-#ifndef STRUCTURAL_MANAGER_HPP
-#define STRUCTURAL_MANAGER_HPP
-
+#include <iosfwd>                                    // for ostream
 #include <string>
-#include <map>
-#include <set>
-#include <refcount.hpp>
 #include "NP_functionality.hpp"
-#include "structural_objects.hpp"
 #include "graph.hpp"
+#include "structural_objects.hpp"
+#include "refcount.hpp"
 
 #define TREENODE_CHECK -1
 
@@ -72,8 +70,8 @@ REF_FORWARD_DECL(tree_manager);
 CONSTREF_FORWARD_DECL(Parameter);
 REF_FORWARD_DECL(technology_manager);
 REF_FORWARD_DECL(technology_node);
-class graphs_collection;
-class graph;
+struct graphs_collection;
+struct graph;
 /// forward decl of xml Element
 class xml_element;
 //@}

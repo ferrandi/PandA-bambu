@@ -92,6 +92,7 @@
 #include "xml_helper.hpp"
 #include "polixml.hpp"
 #include "xml_dom_parser.hpp"
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 #define SKIPPED_COLUMN ("Loop_number") ("bit_expr") ("comp_expr") ("const_readings") ("div_expr") ("mult_expr") ("plusminus_expr") ("memory_writings") ("register_accesses") ("memory_readings") ("register_writing") ("Backward_branches")
 

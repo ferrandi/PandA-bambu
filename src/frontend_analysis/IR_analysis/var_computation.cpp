@@ -76,6 +76,7 @@
 
 ///wrapper/treegcc include
 #include "gcc_wrapper.hpp"
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 #define TOSTRING(id) boost::lexical_cast<std::string>(id)
 

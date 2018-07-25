@@ -41,11 +41,8 @@
 #ifndef DESIGN_FLOW_FACTORY_HPP
 #define DESIGN_FLOW_FACTORY_HPP
 
-///Superclass include
-#include "design_flow_step_factory.hpp"
-
-///Utility include
-#include "refcount.hpp"
+#include <string>                        // for string
+#include "design_flow_step_factory.hpp"  // for DesignFlowStepRef, DesignFlo...
 
 enum class DesignFlow_Type;
 

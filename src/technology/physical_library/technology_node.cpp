@@ -78,6 +78,7 @@
 
 #include <boost/lexical_cast.hpp>
 #include <boost/algorithm/string.hpp>
+#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_
 
 simple_indent technology_node::PP('[', ']',2);
 
@@ -194,7 +195,7 @@ void operation::xload(const xml_element* Enode, const technology_nodeRef fu, con
          LOAD_XVM(source, EnodeC);
          LOAD_XVM(target, EnodeC);
          LOAD_XVM(delay, EnodeC);
-         max_delay = MAX(delay, max_delay);
+         max_delay = std::max(delay, max_delay);
          time_m->set_execution_time(max_delay, time_model::cycles_time_DEFAULT);
          time_m->pin_to_pin_delay[source][target] = delay;
       }

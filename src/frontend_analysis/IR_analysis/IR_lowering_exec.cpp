@@ -33,35 +33,36 @@
 /**
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  */
+#include "config_HAVE_ASSERTS.hpp"                   // for HAVE_ASSERTS
+#include "config_HAVE_FROM_DISCREPANCY_BUILT.hpp"    // for HAVE_FROM_DISCRE...
 
-// include autoheader
-#include "config_HAVE_FROM_DISCREPANCY_BUILT.hpp"
-
-// include class header
-#include "IR_lowering.hpp"
-
-// include from ./
-#include "Parameter.hpp"
-
-// include from behavior/
-#include "function_behavior.hpp"
-#include "call_graph_manager.hpp"
-#include "application_manager.hpp"
-
-// include from HLS/vcd/
-#include "Discrepancy.hpp"
-
-// include from tree/
-#include "tree_basic_block.hpp"
-#include "tree_helper.hpp"
-#include "tree_manager.hpp"
-#include "tree_manipulation.hpp"
-#include "tree_node.hpp"
+#include <string.h>                                  // for memset, size_t
+#include <algorithm>                                 // for max, min
+#include <iterator>                                  // for next
+#include <map>                                       // for map, _Rb_tree_it...
+#include <string>                                    // for operator+, alloc...
+#include <utility>                                   // for pair
+#include <vector>                                    // for vector
+#include "Discrepancy.hpp"                           // for Discrepancy
+#include "IR_lowering.hpp"                           // for IR_lowering, blo...
+#include "Parameter.hpp"                             // for Parameter, OPT_d...
+#include "application_manager.hpp"                   // for application_manager
+#include "dbgPrintHelper.hpp"                        // for INDENT_DBG_MEX
+#include "design_flow_step.hpp"                      // for ParameterConstRef
+#include "exceptions.hpp"                            // for THROW_ASSERT
+#include "frontend_flow_step.hpp"                    // for application_mana...
+#include "function_behavior.hpp"                     // for FunctionBehavior
+#include "function_frontend_flow_step.hpp"           // for FunctionBehaviorRef
+#include "math_function.hpp"                         // for resize_to_1_8_16...
+#include "refcount.hpp"                              // for GetPointer
+#include "string_manipulation.hpp"                   // for STR
+#include "tree_basic_block.hpp"                      // for bloc
+#include "tree_common.hpp"                           // for addr_expr_K, mem...
+#include "tree_helper.hpp"                           // for tree_helper
+#include "tree_manager.hpp"                          // for tree_manager
+#include "tree_manipulation.hpp"                     // for tree_nodeRef
+#include "tree_node.hpp"                             // for gimple_assign
 #include "tree_reindex.hpp"
-
-// include from utility/
-#include "refcount.hpp"
-#include "math_function.hpp"
 
 
 /// Compute the inverse of X mod 2**n, i.e., find Y such that X * Y is

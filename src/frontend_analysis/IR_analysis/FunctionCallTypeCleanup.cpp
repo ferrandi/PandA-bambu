@@ -56,6 +56,8 @@
 #include "application_manager.hpp"
 
 #include "function_behavior.hpp"
+#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 static inline bool conv_really_needed(
       const tree_managerConstRef TM, unsigned int op0, unsigned int op1)

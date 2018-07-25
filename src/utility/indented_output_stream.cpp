@@ -43,6 +43,7 @@
 
 #include <stddef.h>
 #include <iostream>
+#include <fstream>
 
 ///Utility include
 #include "exceptions.hpp"

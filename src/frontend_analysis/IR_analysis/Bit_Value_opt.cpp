@@ -76,7 +76,9 @@
 #include "tree_reindex.hpp"
 #include "tree_helper.hpp"
 #include "math_function.hpp"         // for resize_to_1_8_16_32_64_128_256_512
-
+#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_
+#include "string_manipulation.hpp"          // for GET_CLASS
+#include "utility.hpp"
 
 Bit_Value_opt::Bit_Value_opt (const ParameterConstRef _parameters, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager) :
    FunctionFrontendFlowStep (_AppM, _function_id, BIT_VALUE_OPT, _design_flow_manager, _parameters),

@@ -91,7 +91,7 @@
 ///utility include
 #include "fileIO.hpp"
 #include "math_function.hpp"
-#include "utility.hpp"
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 moduleGenerator::moduleGenerator(const HLS_managerConstRef _HLSMgr, const ParameterConstRef _parameters) :
    HLSMgr(_HLSMgr),

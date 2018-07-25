@@ -76,6 +76,7 @@
 #include "behavioral_helper.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
+#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_
 
 HLSFlowStepSpecialization::~HLSFlowStepSpecialization()
 {}

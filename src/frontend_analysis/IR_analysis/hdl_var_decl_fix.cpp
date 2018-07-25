@@ -65,7 +65,7 @@
 #include "tree_reindex.hpp"
 
 ///utility include
-#include "utility.hpp"
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 HDLVarDeclFix::HDLVarDeclFix(const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters) :
    VarDeclFix(_AppM, _function_id, _design_flow_manager, _parameters, HDL_VAR_DECL_FIX),

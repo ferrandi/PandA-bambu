@@ -43,6 +43,7 @@
 
 ///design_flows include
 #include "design_flow_manager.hpp"
+#include "string_manipulation.hpp"          // for STR
 
 ParserFlowStep::ParserFlowStep(const DesignFlowManagerConstRef _design_flow_manager, const ParserFlowStep_Type _parser_step_type, const std::string&_file_name, const ParameterConstRef _parameters) :
    DesignFlowStep(_design_flow_manager, _parameters),

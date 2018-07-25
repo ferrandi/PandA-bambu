@@ -107,15 +107,19 @@
 
 ///Utility include
 #include <boost/config.hpp>
-#include <boost/lexical_cast.hpp>
+#include <boost/date_time.hpp>
+#include <boost/date_time/posix_time/ptime.hpp>
 #include "boost/filesystem/operations.hpp"
 #include "boost/filesystem/path.hpp"
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/topological_sort.hpp>
 #include <boost/graph/filtered_graph.hpp>
 #include <boost/graph/graph_utility.hpp>
+#include <boost/lexical_cast.hpp>
+#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_NONE
 #include "indented_output_stream.hpp"
 #include "refcount.hpp"
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 CBackend::CBackend(const Type _c_backend_type, const CBackendInformationConstRef c_backend_information, const DesignFlowManagerConstRef _design_flow_manager, const application_managerConstRef _AppM, const std::string&_file_name, const ParameterConstRef _parameters) :
    DesignFlowStep(_design_flow_manager, _parameters),

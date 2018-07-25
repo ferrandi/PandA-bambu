@@ -62,6 +62,8 @@
 ///Parameter include
 #include "Parameter.hpp"
 #include "hash_helper.hpp"
+#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 AddOpLoopFlowEdges::AddOpLoopFlowEdges(const ParameterConstRef _parameters, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager) :
    FunctionFrontendFlowStep(_AppM, _function_id, ADD_OP_LOOP_FLOW_EDGES, _design_flow_manager, _parameters)

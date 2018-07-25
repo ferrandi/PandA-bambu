@@ -65,6 +65,7 @@
 
 ///technology/physical_library include
 #include "technology_node.hpp"
+#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_
 
 reg_binding::reg_binding(const hlsRef& HLS_, const HLS_managerRef HLSMgr_) :
    debug(HLS_->debug_level), used_regs(0), HLS(HLS_), HLSMgr(HLSMgr_), all_regs_without_enable(false)

@@ -73,6 +73,7 @@
 ///Utility include
 #include "dbgPrintHelper.hpp"
 #include "exceptions.hpp"
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 string_cst_fix::string_cst_fix(const application_managerRef _AppM, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters) :
    ApplicationFrontendFlowStep(_AppM, STRING_CST_FIX, _design_flow_manager, _parameters)

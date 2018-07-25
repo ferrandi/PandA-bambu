@@ -101,6 +101,7 @@
 #include "boost/lexical_cast.hpp"
 #include "exceptions.hpp"
 #include "var_pp_functor.hpp"
+#include "string_manipulation.hpp"          // for STR
 
 #include "type_casting.hpp"
 

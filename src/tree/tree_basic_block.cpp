@@ -54,6 +54,7 @@
 #include "tree_helper.hpp"
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
+#include "string_manipulation.hpp"          // for STR
 
 
 const unsigned int bloc::ENTRY_BLOCK_ID = 0;

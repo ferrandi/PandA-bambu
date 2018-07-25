@@ -41,11 +41,11 @@
 #ifndef COMPLETE_BB_GRAPH_HPP
 #define COMPLETE_BB_GRAPH_HPP
 
-///Superclass include
-#include "function_frontend_flow_step.hpp"
-
-///Utility include
-#include "refcount.hpp"
+#include <unordered_set>                    // for unordered_set
+#include <utility>                          // for pair
+#include "design_flow_step.hpp"             // for DesignFlowStep, DesignFlo...
+#include "frontend_flow_step.hpp"           // for FrontendFlowStep::Functio...
+#include "function_frontend_flow_step.hpp"  // for DesignFlowManagerConstRef
 
 class CompleteBBGraph: public FunctionFrontendFlowStep
 {

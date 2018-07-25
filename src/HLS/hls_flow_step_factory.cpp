@@ -250,6 +250,8 @@
 
 ///utility include
 #include "xml_helper.hpp"
+#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 HLSFlowStepFactory::HLSFlowStepFactory(const DesignFlowManagerConstRef _design_flow_manager, const HLS_managerRef _HLS_mgr, const ParameterConstRef _parameters) :
    DesignFlowStepFactory(_design_flow_manager, _parameters),

@@ -95,6 +95,7 @@
 #if HAVE_FLOPOCO
 #include "flopoco_wrapper.hpp"
 #endif
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 
 #define PORT_VECTOR_N_PORTS 2

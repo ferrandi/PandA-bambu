@@ -57,7 +57,7 @@
 
 ///Utility include
 #include "fileIO.hpp"
-#include "utility.hpp"
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 #define OUTPUT_FILE "__stdouterr"
 

@@ -77,6 +77,7 @@
 #include <boost/algorithm/string/classification.hpp>
 #include <boost/algorithm/string/replace.hpp>
 #include <boost/algorithm/string/split.hpp>
+#include <boost/filesystem/operations.hpp>
 
 ///constants include
 #if HAVE_R
@@ -149,6 +150,7 @@
 
 ///utility include
 #include "exceptions.hpp"
+#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_
 
 #define MAX_LENGTH 10000
 
