@@ -237,9 +237,9 @@ void HDL_manager::write_components(const std::string &filename,  const std::list
 
    ///determine the proper language for each component
    std::map<HDLWriter_Language, std::list<structural_objectRef> > component_language;
-   for (std::list<structural_objectRef>::const_iterator cit = components.begin(); cit != components.end(); ++cit)
+   for (const auto & component : components)
    {
-      module* mod = GetPointer<module>(*cit);
+      module* mod = GetPointer<module>(component);
       THROW_ASSERT(mod, "Expected a component object");
 
       unsigned int n_elements = mod->get_internal_objects_size();
@@ -250,13 +250,13 @@ void HDL_manager::write_components(const std::string &filename,  const std::list
       if (n_elements || (np && (np->exist_NP_functionality(type) || (language == HDLWriter_Language::VERILOG && np->exist_NP_functionality(NP_functionality::VERILOG_FILE_PROVIDED))
                                 || (language == HDLWriter_Language::VHDL && np->exist_NP_functionality(NP_functionality::VHDL_PROVIDED)))))
       {
-         component_language[language].push_back(*cit);
+         component_language[language].push_back(component);
       }
       else
       {
          if (np and np->exist_NP_functionality(NP_functionality::FSM))
          {
-            component_language[language].push_back(*cit);
+            component_language[language].push_back(component);
          }
          else if (np && (np->exist_NP_functionality(NP_functionality::VERILOG_PROVIDED) || np->exist_NP_functionality(NP_functionality::VERILOG_FILE_PROVIDED)))
          {
@@ -275,7 +275,7 @@ void HDL_manager::write_components(const std::string &filename,  const std::list
                }
             }
 #endif
-            component_language[HDLWriter_Language::VERILOG].push_back(*cit);
+            component_language[HDLWriter_Language::VERILOG].push_back(component);
          }
          else if (np && (np->exist_NP_functionality(NP_functionality::VHDL_PROVIDED) || np->exist_NP_functionality(NP_functionality::FLOPOCO_PROVIDED) || np->exist_NP_functionality(NP_functionality::VHDL_FILE_PROVIDED)))
          {
@@ -286,12 +286,12 @@ void HDL_manager::write_components(const std::string &filename,  const std::list
             }
             else
 #endif
-               THROW_WARNING((*cit)->get_path() + " is available only in VHDL");
-            component_language[HDLWriter_Language::VHDL].push_back(*cit);
+               THROW_WARNING(component->get_path() + " is available only in VHDL");
+            component_language[HDLWriter_Language::VHDL].push_back(component);
          }
          else if (np && np->exist_NP_functionality(NP_functionality::SYSTEM_VERILOG_PROVIDED))
          {
-            component_language[HDLWriter_Language::SYSTEM_VERILOG].push_back(*cit);
+            component_language[HDLWriter_Language::SYSTEM_VERILOG].push_back(component);
          }
          else
             THROW_ERROR("Language not supported! Module " + mod->get_path());
@@ -415,9 +415,8 @@ void HDL_manager::get_post_order_structural_components(const structural_objectRe
          {
             std::string ip_cores = NPF->get_NP_functionality(NP_functionality::IP_COMPONENT);
             std::vector<std::string> ip_cores_list = convert_string_to_vector<std::string>(ip_cores, ",");
-            for(unsigned int ip = 0; ip < ip_cores_list.size(); ip++)
+            for(auto ip_core : ip_cores_list)
             {
-               std::string ip_core = ip_cores_list[ip];
                std::vector<std::string> ip_core_vec = convert_string_to_vector<std::string>(ip_core, ":");
                if (ip_core_vec.size() < 1 or ip_core_vec.size() > 2) THROW_ERROR("Malformed IP component definition \"" + ip_core + "\"");
                std::string library, component_name;
@@ -645,9 +644,9 @@ void HDL_manager::write_module(const language_writerRef writer, const structural
          }
          cs.sort();
 
-         for(std::list<std::pair<std::string, structural_objectRef> >::iterator c = cs.begin(); c != cs.end(); ++c)
+         for(auto & c : cs)
          {
-            writer->write_signal_declaration(c->second);
+            writer->write_signal_declaration(c.second);
          }
 
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Writing module instantiation of " + cir->get_id());
@@ -682,9 +681,9 @@ void HDL_manager::write_module(const language_writerRef writer, const structural
          }
          cs.sort();
 
-         for(std::list<std::pair<std::string, structural_objectRef> >::iterator c = cs.begin(); c != cs.end(); ++c)
+         for(auto & c : cs)
          {
-            structural_objectRef obj = c->second;
+            structural_objectRef obj = c.second;
             if(TM->IsBuiltin(GET_TYPE_NAME(obj)))
             {
                writer->WriteBuiltin(obj);
@@ -870,9 +869,8 @@ void HDL_manager::write_module(const language_writerRef writer, const structural
          {
             std::string ip_cores = np->get_NP_functionality(NP_functionality::IP_COMPONENT);
             std::vector<std::string> ip_cores_list = convert_string_to_vector<std::string>(ip_cores, ",");
-            for(unsigned int ip = 0; ip < ip_cores_list.size(); ip++)
+            for(auto ip_core : ip_cores_list)
             {
-               std::string ip_core = ip_cores_list[ip];
                std::vector<std::string> ip_core_vec = convert_string_to_vector<std::string>(ip_core, ":");
                if (ip_core_vec.size() < 1 or ip_core_vec.size() > 2) THROW_ERROR("Malformed IP component definition \"" + ip_core + "\"");
                std::string library, component_name;
@@ -954,10 +952,10 @@ void HDL_manager::write_behavioral(const language_writerRef writer, const struct
    boost::algorithm::split( SplitVec, behav, boost::algorithm::is_any_of(";"));
    THROW_ASSERT(SplitVec.size(), "Expected at least one behavioral description");
 
-   for(unsigned int i = 0; i < SplitVec.size(); i++)
+   for(auto & i : SplitVec)
    {
       std::vector<std::string> SplitVec2;
-      boost::algorithm::split( SplitVec2, SplitVec[i], boost::algorithm::is_any_of("="));
+      boost::algorithm::split( SplitVec2, i, boost::algorithm::is_any_of("="));
       THROW_ASSERT(SplitVec2.size() == 2, "Expected two operands");
       writer->write_assign(SplitVec2[0], SplitVec2[1]);
    }

@@ -175,9 +175,8 @@ std::string XilinxWrapper::toString(const xml_script_node_tRef node, const Desig
          if (comm->name)
             result += *(comm->name);
          if (comm->parameters.size())
-            for (std::vector<xml_parameter_tRef>::const_iterator it = comm->parameters.begin(); it != comm->parameters.end(); ++it)
+            for (auto p : comm->parameters)
             {
-               const xml_parameter_tRef p = *it;
                if (p->condition && !xml_script_node_t::evaluate_condition(p->condition, dp)) continue;
                result += "\n" + toString(p, dp);
             }

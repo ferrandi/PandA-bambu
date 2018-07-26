@@ -121,9 +121,9 @@ struct module_binding_check : public check_clique<vertex_type>
           std::vector<std::set<unsigned int> > variableVector;
 
           std::vector<HLS_manager::io_binding_type> vars_read = HLSMgr->get_required_values(HLS->functionId, operationVertex);
-          for(unsigned int port_index = 0; port_index < vars_read.size(); ++port_index)
+          for(auto & port_index : vars_read)
           {
-              unsigned int tree_var = std::get<0>(vars_read[port_index]);
+              unsigned int tree_var = std::get<0>(port_index);
               std::set<unsigned int> variablesAtPort;
               if(tree_var != 0)
                  variablesAtPort.insert(tree_var);

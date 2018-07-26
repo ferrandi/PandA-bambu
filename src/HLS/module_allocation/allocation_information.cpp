@@ -95,10 +95,10 @@ const std::pair<const CustomMap<unsigned int, std::unordered_map<unsigned int, d
       THROW_ASSERT(parameters_split.size() > 0, "unexpected portsize_parameter format");
       for(auto module_prec : mux_precisions)
       {
-         for(size_t el_indx = 0; el_indx < parameters_split.size(); ++el_indx)
+         for(auto & el_indx : parameters_split)
          {
             std::vector<std::string> parameters_pairs;
-            boost::algorithm::split(parameters_pairs, parameters_split[el_indx], boost::algorithm::is_any_of(":"));
+            boost::algorithm::split(parameters_pairs, el_indx, boost::algorithm::is_any_of(":"));
             if(parameters_pairs[0] == "*")
             {
                temp_portsize_parameters = parameters_pairs[1];

@@ -347,9 +347,9 @@ DesignFlowStep_Status SwitchFix::InternalExec()
                gl->bb_index = new_bb->number;
                tree_vec * te = GetPointer<tree_vec>(GET_NODE(gs->op1));
                std::vector<tree_nodeRef> & list_of_op = te->list_of_op;
-               for(size_t ind = 0; ind < list_of_op.size(); ind++)
+               for(auto & ind : list_of_op)
                {
-                  case_label_expr * cl = GetPointer<case_label_expr>(GET_NODE(list_of_op[ind]));
+                  case_label_expr * cl = GetPointer<case_label_expr>(GET_NODE(ind));
                   if(GET_INDEX_NODE(cl->got) == GET_INDEX_NODE(le->op))
                   {
                      tree_nodeRef new_label_decl_reindex = TM->GetTreeReindex(new_label_decl_id);

@@ -139,10 +139,10 @@ std::vector<G> convert_string_to_vector(const std::string& string_form, const st
    std::vector<G> vector_form;
    std::vector<std::string> tmp_vector_form;
    boost::split(tmp_vector_form, string_form, boost::is_any_of(separator));
-   for(unsigned int i = 0; i < tmp_vector_form.size(); i++)
+   for(auto & i : tmp_vector_form)
    {
-      if (trim_empty_elements and tmp_vector_form[i].size() == 0) continue;
-      vector_form.push_back(boost::lexical_cast<G>(tmp_vector_form[i]));
+      if (trim_empty_elements and i.size() == 0) continue;
+      vector_form.push_back(boost::lexical_cast<G>(i));
    }
    return vector_form;
 }

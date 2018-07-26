@@ -117,13 +117,13 @@ std::string TrimSpaces(const std::string& value)
    std::vector<std::string> splitted;
    boost::algorithm::split(splitted, value, boost::algorithm::is_any_of(" \n\t\r"));
    bool first = true;
-   for (unsigned int i = 0; i < splitted.size(); i++)
+   for (auto & i : splitted)
    {
-      if (!first and splitted[i].size())
+      if (!first and i.size())
          temp += " ";
-      if (splitted[i].size())
+      if (i.size())
       {
-         temp += splitted[i];
+         temp += i;
          first = false;
       }
    }

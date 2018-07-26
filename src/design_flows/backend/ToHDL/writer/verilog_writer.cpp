@@ -816,9 +816,9 @@ void verilog_writer::write_module_parametrization(const structural_objectRef &ci
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Writing memory parameters");
       std::string memory_str = mod->get_parameter(MEMORY_PARAMETER);
       std::vector<std::string> mem_tag = convert_string_to_vector<std::string>(memory_str, ";");
-      for(unsigned int i = 0; i < mem_tag.size(); i++)
+      for(const auto & i : mem_tag)
       {
-         std::vector<std::string> mem_add = convert_string_to_vector<std::string>(mem_tag[i], "=");
+         std::vector<std::string> mem_add = convert_string_to_vector<std::string>(i, "=");
          THROW_ASSERT(mem_add.size() == 2, "malformed address");
          if(first_it)
          {
@@ -1078,9 +1078,8 @@ void verilog_writer::write_transition_output_functions(bool single_proc, unsigne
       {
          ///check if we can skip this state
          bool skip_state = true;
-         for(unsigned int i = 0; i < state_transitions.size(); i++)
+         for(auto current_transition : state_transitions)
          {
-            std::string current_transition = state_transitions[i];
             tokenizer transition_tokens(current_transition, sep);
             tokenizer::const_iterator itt = transition_tokens.begin();
 
@@ -1349,9 +1348,9 @@ void verilog_writer::write_module_parametrization_decl(const structural_objectRe
    {
       std::string memory_str = mod->get_parameter(MEMORY_PARAMETER);
       std::vector<std::string> mem_tag = convert_string_to_vector<std::string>(memory_str, ";");
-      for(unsigned int i = 0; i < mem_tag.size(); i++)
+      for(const auto & i : mem_tag)
       {
-         std::vector<std::string> mem_add = convert_string_to_vector<std::string>(mem_tag[i], "=");
+         std::vector<std::string> mem_add = convert_string_to_vector<std::string>(i, "=");
          THROW_ASSERT(mem_add.size() == 2, "malformed address");
          if(first_it)
          {
@@ -1744,8 +1743,8 @@ verilog_writer::verilog_writer(const ParameterConstRef _parameters) :
    language_writer(STD_OPENING_CHAR, STD_CLOSING_CHAR, _parameters)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
-   for(unsigned int i = 0; i < sizeof(tokenNames)/sizeof(char*); ++i)
-      keywords.insert(tokenNames[i]);
+   for(auto & tokenName : tokenNames)
+      keywords.insert(tokenName);
    builtin_to_verilog_keyword[AND_GATE_STD] = "and";
    builtin_to_verilog_keyword[NAND_GATE_STD] = "nand";
    builtin_to_verilog_keyword[OR_GATE_STD] = "or";
@@ -1801,12 +1800,12 @@ void verilog_writer::write_timing_specification(const technology_managerConstRef
       }
       else
       {
-         for(std::map<std::string, std::map<std::string, double> >::iterator d = delays.begin(); d != delays.end(); ++d)
+         for(auto & delay : delays)
          {
-            for(std::map<std::string, double>::iterator o = d->second.begin(); o != d->second.end(); ++o)
+            for(std::map<std::string, double>::iterator o = delay.second.begin(); o != delay.second.end(); ++o)
             {
                if (ops.size() > 1) indented_output_stream->Append("if (sel_" + GetPointer<operation>(ops[i])->operation_name + " == 1'b1) ");
-               indented_output_stream->Append("(" + d->first + " *> " + o->first + ") = " + STR(o->second) + ";\n");
+               indented_output_stream->Append("(" + delay.first + " *> " + o->first + ") = " + STR(o->second) + ";\n");
             }
          }
       }

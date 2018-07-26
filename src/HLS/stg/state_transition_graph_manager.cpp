@@ -108,40 +108,40 @@ std::set<std::pair<vertex, unsigned int> > StateTransitionGraphManager::get_cond
    for (boost::tie(ie, iend) = boost::in_edges(v, *STG_graph); ie != iend; ie++)
    {
       std::set<std::pair<vertex, unsigned int> > EdgeConditions = GET_EDGE_INFO(state_transition_graphs_collection, TransitionInfo, *ie)->conditions;
-      for (std::set<std::pair<vertex, unsigned int> >::const_iterator c = EdgeConditions.begin(); c != EdgeConditions.end(); ++c)
+      for (const auto & EdgeCondition : EdgeConditions)
       {
-         if (Conditions.find(*c) != Conditions.end()) continue;
-         if (c->second == TransitionInfo::DONTCARE)
+         if (Conditions.find(EdgeCondition) != Conditions.end()) continue;
+         if (EdgeCondition.second == TransitionInfo::DONTCARE)
          {
-            if (Conditions.find(std::make_pair(c->first, T_COND)) != Conditions.end())
-               Conditions.erase(std::make_pair(c->first, T_COND));
-            if (Conditions.find(std::make_pair(c->first, F_COND)) != Conditions.end())
-               Conditions.erase(std::make_pair(c->first, F_COND));
-            Conditions.insert(*c);
+            if (Conditions.find(std::make_pair(EdgeCondition.first, T_COND)) != Conditions.end())
+               Conditions.erase(std::make_pair(EdgeCondition.first, T_COND));
+            if (Conditions.find(std::make_pair(EdgeCondition.first, F_COND)) != Conditions.end())
+               Conditions.erase(std::make_pair(EdgeCondition.first, F_COND));
+            Conditions.insert(EdgeCondition);
          }
-         if (c->second == T_COND)
+         if (EdgeCondition.second == T_COND)
          {
-            if (Conditions.find(std::make_pair(c->first, F_COND)) != Conditions.end())
+            if (Conditions.find(std::make_pair(EdgeCondition.first, F_COND)) != Conditions.end())
             {
-               Conditions.erase(std::make_pair(c->first, F_COND));
-               Conditions.insert(std::make_pair(c->first, TransitionInfo::DONTCARE));
+               Conditions.erase(std::make_pair(EdgeCondition.first, F_COND));
+               Conditions.insert(std::make_pair(EdgeCondition.first, TransitionInfo::DONTCARE));
             }
-            if (Conditions.find(std::make_pair(c->first, TransitionInfo::DONTCARE)) == Conditions.end())
-               Conditions.insert(*c);
+            if (Conditions.find(std::make_pair(EdgeCondition.first, TransitionInfo::DONTCARE)) == Conditions.end())
+               Conditions.insert(EdgeCondition);
          }
-         if (c->second == F_COND)
+         if (EdgeCondition.second == F_COND)
          {
-            if (Conditions.find(std::make_pair(c->first, T_COND)) != Conditions.end())
+            if (Conditions.find(std::make_pair(EdgeCondition.first, T_COND)) != Conditions.end())
             {
-               Conditions.erase(std::make_pair(c->first, T_COND));
-               Conditions.insert(std::make_pair(c->first, TransitionInfo::DONTCARE));
+               Conditions.erase(std::make_pair(EdgeCondition.first, T_COND));
+               Conditions.insert(std::make_pair(EdgeCondition.first, TransitionInfo::DONTCARE));
             }
-            if (Conditions.find(std::make_pair(c->first, TransitionInfo::DONTCARE)) == Conditions.end())
-               Conditions.insert(*c);
+            if (Conditions.find(std::make_pair(EdgeCondition.first, TransitionInfo::DONTCARE)) == Conditions.end())
+               Conditions.insert(EdgeCondition);
          }
          else
          {
-            Conditions.insert(*c);
+            Conditions.insert(EdgeCondition);
          }
       }
    }

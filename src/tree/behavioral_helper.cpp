@@ -202,12 +202,12 @@ std::string BehavioralHelper::print_vertex(const OpGraphConstRef g, const vertex
    {
       boost::replace_all(res, "\\\"", "&quot;");
       std::string ret;
-      for (unsigned int i = 0; i < res.size(); i++)
+      for (char re : res)
       {
-         if (res[i] == '\"')
+         if (re == '\"')
             ret += "\\\"";
-         else if (res[i] != '\n')
-            ret += res[i];
+         else if (re != '\n')
+            ret += re;
          else
             ret += "\\\n";
       }
@@ -1003,10 +1003,10 @@ const std::list<unsigned int> BehavioralHelper::get_parameters() const
    if (fd->list_of_args.size())
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Parameter list size: " + STR(list_of_args.size()));
-      for (unsigned int i = 0; i < list_of_args.size(); i++)
+      for (const auto & list_of_arg : list_of_args)
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Adding parameter " + STR(GET_INDEX_NODE(list_of_args[i])));
-         parameters.push_back(GET_INDEX_NODE(list_of_args[i]));
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Adding parameter " + STR(GET_INDEX_NODE(list_of_arg)));
+         parameters.push_back(GET_INDEX_NODE(list_of_arg));
       }
    }
    else
@@ -3535,8 +3535,8 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
          omp_for_pragma * fp = GetPointer<omp_for_pragma>(node);
          res += "for ";
          /// now print clauses
-         for (std::unordered_map<std::string, std::string>::iterator i = fp->clauses.begin(); i != fp->clauses.end(); ++i)
-            res += " " + i->first + "(" + i->second + ")";
+         for (auto & clause : fp->clauses)
+            res += " " + clause.first + "(" + clause.second + ")";
          break;
       }
       case omp_parallel_pragma_K:
@@ -3547,8 +3547,8 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
             res += "parallel";
          }
          /// now print clauses
-         for (std::unordered_map<std::string, std::string>::iterator i = pn->clauses.begin(); i != pn->clauses.end(); ++i)
-            res += " " + i->first + "(" + i->second + ")";
+         for (auto & clause : pn->clauses)
+            res += " " + clause.first + "(" + clause.second + ")";
          break;
       }
       case omp_sections_pragma_K:
@@ -3579,8 +3579,8 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
          omp_declare_simd_pragma * fp = GetPointer<omp_declare_simd_pragma>(node);
          res += "declare simd ";
          /// now print clauses
-         for (std::unordered_map<std::string, std::string>::iterator i = fp->clauses.begin(); i != fp->clauses.end(); ++i)
-            res += " " + i->first + "(" + i->second + ")";
+         for (auto & clause : fp->clauses)
+            res += " " + clause.first + "(" + clause.second + ")";
          break;
       }
       case omp_simd_pragma_K:
@@ -3588,8 +3588,8 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
          omp_simd_pragma * fp = GetPointer<omp_simd_pragma>(node);
          res += "simd ";
          /// now print clauses
-         for (std::unordered_map<std::string, std::string>::iterator i = fp->clauses.begin(); i != fp->clauses.end(); ++i)
-            res += " " + i->first + "(" + i->second + ")";
+         for (auto & clause : fp->clauses)
+            res += " " + clause.first + "(" + clause.second + ")";
          break;
       }
       case omp_critical_pragma_K:
@@ -3818,10 +3818,10 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
          if(op0->get_kind() == vector_cst_K)
          {
             vector_cst *vc = GetPointer<vector_cst>(op0);
-            for (unsigned int i = 0; i < (vc->list_of_valu).size(); i++ ) //vector elements
+            for (auto & i : (vc->list_of_valu)) //vector elements
             {
                res += "((" + tree_helper::print_type(TM, element_type) + ") (";
-               res += print_constant(GET_INDEX_NODE(vc->list_of_valu[i]), vppf);
+               res += print_constant(GET_INDEX_NODE(i), vppf);
                res += ")), ";
             }
          }
@@ -4131,9 +4131,9 @@ std::string BehavioralHelper::print_type_declaration(unsigned int type) const
             null_deleter null_del;
             const var_pp_functorConstRef std_vpf(new std_var_pp_functor(BehavioralHelperConstRef(this, null_del)));
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Printing content of the structure");
-            for (unsigned int i = 0; i < rt->list_of_flds.size();i++)
+            for (auto & list_of_fld : rt->list_of_flds)
             {
-               unsigned int field = GET_INDEX_NODE(rt->list_of_flds[i]);
+               unsigned int field = GET_INDEX_NODE(list_of_fld);
                auto fld_node = TM->get_tree_node_const(field);
                if(fld_node->get_kind() == type_decl_K) continue;
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Printing field " + boost::lexical_cast<std::string>(field));
@@ -4214,9 +4214,9 @@ std::string BehavioralHelper::print_type_declaration(unsigned int type) const
             res += "\n{\n";
             null_deleter null_del;
             const var_pp_functorConstRef std_vpf(new std_var_pp_functor(BehavioralHelperConstRef(this, null_del)));
-            for (unsigned int i = 0; i < ut->list_of_flds.size();i++)
+            for (auto & list_of_fld : ut->list_of_flds)
             {
-               unsigned int field = GET_INDEX_NODE(ut->list_of_flds[i]);
+               unsigned int field = GET_INDEX_NODE(list_of_fld);
                res += tree_helper::print_type(TM, get_type(field), false, false, false, field, std_vpf);
                res += ";\n";
             }

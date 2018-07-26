@@ -253,12 +253,9 @@ CallGraphBuiltinCall::lookForBuiltinCall(const tree_nodeRef TN)
 void CallGraphBuiltinCall::ExtendCallGraph(unsigned int callerIdx, tree_nodeRef funType, unsigned int stmtIdx)
 {
   std::string type = tree_helper::print_type(AppM->get_tree_manager(), funType->index);
-  for (TypeDeclarationMap::mapped_type::iterator
-           Itr = typeToDeclaration[type].begin(),
-           End = typeToDeclaration[type].end();
-       Itr != End; ++Itr)
+  for (unsigned int Itr : typeToDeclaration[type])
   {
-    AppM->GetCallGraphManager()->AddCallPoint(callerIdx, *Itr, stmtIdx, FunctionEdgeInfo::CallType::indirect_call);
+    AppM->GetCallGraphManager()->AddCallPoint(callerIdx, Itr, stmtIdx, FunctionEdgeInfo::CallType::indirect_call);
     modified = true;
   }
 }

@@ -760,11 +760,11 @@ std::string tree_helper::name_tmpl(const tree_managerConstRef tm, const unsigned
       record_type* rect = GetPointer<record_type>(t);
       if (rect->tmpl_args) /*the class is a template*/
       {
-         for (unsigned int i = 0; i < rect->list_of_flds.size(); i++)
+         for (auto & list_of_fld : rect->list_of_flds)
          {
-            if (GET_NODE(rect->list_of_flds[i])->get_kind() == type_decl_K)
+            if (GET_NODE(list_of_fld)->get_kind() == type_decl_K)
             {
-               type_decl* td = GetPointer<type_decl>(GET_NODE(rect->list_of_flds[i]));
+               type_decl* td = GetPointer<type_decl>(GET_NODE(list_of_fld));
                if (GET_NODE(td->name)->get_kind() == identifier_node_K)
                {
                   identifier_node* idn = GetPointer<identifier_node>(GET_NODE(td->name));
@@ -2031,19 +2031,19 @@ const std::list<tree_nodeConstRef> tree_helper::CGetFieldTypes(const tree_nodeCo
    if (type->get_kind() == record_type_K)
    {
       const record_type * rt = GetPointer<const record_type>(type);
-      for(std::vector<tree_nodeRef>::const_iterator it = rt->list_of_flds.begin(); it != rt->list_of_flds.end(); ++it)
+      for(const auto & list_of_fld : rt->list_of_flds)
       {
-         if(GET_CONST_NODE(*it)->get_kind() == type_decl_K) continue;
-         if(GET_CONST_NODE(*it)->get_kind() == function_decl_K) continue;
-         ret.push_back(CGetType(GET_CONST_NODE(*it)));
+         if(GET_CONST_NODE(list_of_fld)->get_kind() == type_decl_K) continue;
+         if(GET_CONST_NODE(list_of_fld)->get_kind() == function_decl_K) continue;
+         ret.push_back(CGetType(GET_CONST_NODE(list_of_fld)));
       }
    }
    else if (type->get_kind() == union_type_K)
    {
       const union_type * ut = GetPointer<const union_type>(type);
-      for(std::vector<tree_nodeRef>::const_iterator it = ut->list_of_flds.begin(); it != ut->list_of_flds.end(); ++it)
+      for(const auto & list_of_fld : ut->list_of_flds)
       {
-         ret.push_back(CGetType(GET_CONST_NODE(*it)));
+         ret.push_back(CGetType(GET_CONST_NODE(list_of_fld)));
       }
    }
    else
@@ -4887,14 +4887,14 @@ bool tree_helper::IsAligned (const tree_managerConstRef TM, unsigned int type)
 std::string tree_helper::normalized_ID(const std::string&id)
 {
    std::string strg = id;
-   for (unsigned int i = 0;i < strg.size();i++)
+   for (char & i : strg)
    {
-      if (strg[i] == '*')
-         strg[i] = '_';
-      if (strg[i] == '$')
-         strg[i] = '_';
-      if (strg[i] == '.')
-         strg[i] = '_';
+      if (i == '*')
+         i = '_';
+      if (i == '$')
+         i = '_';
+      if (i == '.')
+         i = '_';
    }
    return strg;
 }
@@ -5872,9 +5872,9 @@ bool tree_helper::is_packed(const tree_managerConstRef TreeM, unsigned int node_
          THROW_ASSERT(not rt->unql, "unexpected pattern");
          if(rt->packed_flag)
             return true;
-         for (unsigned int i = 0; i < rt->list_of_flds.size();i++)
+         for (auto & list_of_fld : rt->list_of_flds)
          {
-            const field_decl * fd = GetPointer<field_decl>(GET_NODE(rt->list_of_flds[i]));
+            const field_decl * fd = GetPointer<field_decl>(GET_NODE(list_of_fld));
             if(fd && fd->packed_flag)
                return true;
          }
@@ -5890,9 +5890,9 @@ bool tree_helper::is_packed(const tree_managerConstRef TreeM, unsigned int node_
             return true;
 
          /// Print the contents of the structure
-         for (unsigned int i = 0; i < ut->list_of_flds.size();i++)
+         for (auto & list_of_fld : ut->list_of_flds)
          {
-            const field_decl * fd = GetPointer<field_decl>(GET_NODE(ut->list_of_flds[i]));
+            const field_decl * fd = GetPointer<field_decl>(GET_NODE(list_of_fld));
 
             if(fd->packed_flag)
                return true;

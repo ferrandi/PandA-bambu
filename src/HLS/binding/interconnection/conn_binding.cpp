@@ -522,10 +522,10 @@ void conn_binding::mux_allocation(const hlsRef HLS, const structural_managerRef 
    THROW_ASSERT(mux_tree.size() > 0, "no mux into a mux connection");
 
    const structural_objectRef circuit = SM->get_circ();
-   for (unsigned int i = 0; i < mux_tree.size(); i++)
+   for (const auto & i : mux_tree)
    {
-      structural_objectRef mux = mux_tree[i].first->get_structural_obj();
-      unsigned int in_mux = mux_tree[i].second == T_COND ? 1 : 2;
+      structural_objectRef mux = i.first->get_structural_obj();
+      unsigned int in_mux = i.second == T_COND ? 1 : 2;
 
       if (mux)
       {
@@ -542,12 +542,12 @@ void conn_binding::mux_allocation(const hlsRef HLS, const structural_managerRef 
       else
       {
          PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "MUX must be allocated");
-         std::string name = mux_tree[i].first->get_string();
+         std::string name = i.first->get_string();
          mux = SM->add_module_from_technology_library(name, MUX_GATE_STD, HLS->HLS_T->get_technology_manager()->get_library(MUX_GATE_STD), circuit, HLS->HLS_T->get_technology_manager());
-         mux_tree[i].first->set_structural_obj(mux);
+         i.first->set_structural_obj(mux);
 
          ///mux selector in datapath interface
-         generic_objRef selector = GetPointer<mux_obj>(mux_tree[i].first)->GetSelector();
+         generic_objRef selector = GetPointer<mux_obj>(i.first)->GetSelector();
          structural_objectRef sel_obj = selector->get_structural_obj();
          THROW_ASSERT(sel_obj, "Selector obj not created");
          ///selector in mux object
@@ -556,7 +556,7 @@ void conn_binding::mux_allocation(const hlsRef HLS, const structural_managerRef 
          SM->add_connection(sel_obj, mux_sel);
 
          ///specializing allocated mux
-         specialise_mux(mux_tree[i].first, bits_tgt);
+         specialise_mux(i.first, bits_tgt);
 
          module* mux_object = GetPointer<module>(mux);
 
@@ -572,7 +572,7 @@ void conn_binding::mux_allocation(const hlsRef HLS, const structural_managerRef 
          THROW_ASSERT(out_type->size,"size greater than zero expected");
          std::string sig_name = "out_" + name;
          structural_objectRef sign = SM->add_sign(sig_name, circuit, out_type);
-         mux_tree[i].first->set_out_sign(sign);
+         i.first->set_out_sign(sign);
          SM->add_connection(sign, port_out_mux);
          src = sign;
       }
@@ -858,16 +858,16 @@ void conn_binding::print() const
 unsigned int conn_binding::determine_bit_level_mux() const
 {
    std::set<generic_objRef> mux;
-   for(conn_implementation_map::const_iterator it = conn_implementation.begin(); it != conn_implementation.end(); ++it)
+   for(const auto & it : conn_implementation)
    {
-      if (!GetPointer<mux_conn>(it->second)) continue;
-      const std::vector<std::pair<generic_objRef,unsigned int> >& tree = GetPointer<mux_conn>(it->second)->get_mux_tree();
-      for(unsigned int v = 0; v < tree.size(); v++)
-         mux.insert(tree[v].first);
+      if (!GetPointer<mux_conn>(it.second)) continue;
+      const std::vector<std::pair<generic_objRef,unsigned int> >& tree = GetPointer<mux_conn>(it.second)->get_mux_tree();
+      for(const auto & v : tree)
+         mux.insert(v.first);
    }
    unsigned int bit_mux = 0;
-   for(std::set<generic_objRef>::iterator m = mux.begin(); m != mux.end(); ++m)
-      bit_mux += GetPointer<mux_obj>(*m)->get_bitsize();
+   for(const auto & m : mux)
+      bit_mux += GetPointer<mux_obj>(m)->get_bitsize();
    return bit_mux;
 }
 
@@ -884,11 +884,11 @@ void conn_binding::add_command_ports(const HLS_managerRef HLSMgr, const hlsRef H
 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Adding starting ports");
    const OpVertexSet & operations = HLS->operations;
-   for (OpVertexSet::const_iterator j = operations.begin(); j != operations.end(); ++j)
+   for (auto j : operations)
    {
-      technology_nodeRef tn = HLS->allocation_information->get_fu(HLS->Rfu->get_assign(*j));
-      technology_nodeRef op_tn = GetPointer<functional_unit>(tn)->get_operation(tree_helper::normalized_ID(data->CGetOpNodeInfo(*j)->GetOperation()));
-      THROW_ASSERT(GetPointer<operation>(op_tn)->time_m, "Time model not available for operation: " + GET_NAME(data, *j));
+      technology_nodeRef tn = HLS->allocation_information->get_fu(HLS->Rfu->get_assign(j));
+      technology_nodeRef op_tn = GetPointer<functional_unit>(tn)->get_operation(tree_helper::normalized_ID(data->CGetOpNodeInfo(j)->GetOperation()));
+      THROW_ASSERT(GetPointer<operation>(op_tn)->time_m, "Time model not available for operation: " + GET_NAME(data, j));
       ///check for start port
       structural_managerRef CM = GetPointer<functional_unit>(tn)->CM;
       if(!CM) continue;
@@ -897,10 +897,10 @@ void conn_binding::add_command_ports(const HLS_managerRef HLSMgr, const hlsRef H
       module *fu_module = GetPointer<module>(top);
       THROW_ASSERT(fu_module, "expected");
       structural_objectRef start_port_i = fu_module->find_member(START_PORT_NAME, port_o_K, top);
-      if ((GET_TYPE(data, *j) & TYPE_EXTERNAL && start_port_i) || !GetPointer<operation>(op_tn)->is_bounded() || start_port_i)
+      if ((GET_TYPE(data, j) & TYPE_EXTERNAL && start_port_i) || !GetPointer<operation>(op_tn)->is_bounded() || start_port_i)
       {
-         bind_selector_port(conn_binding::IN, commandport_obj::UNBOUNDED, *j, data);
-         bind_selector_port(conn_binding::OUT, commandport_obj::UNBOUNDED, *j, data);
+         bind_selector_port(conn_binding::IN, commandport_obj::UNBOUNDED, j, data);
+         bind_selector_port(conn_binding::OUT, commandport_obj::UNBOUNDED, j, data);
       }
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Added starting ports");

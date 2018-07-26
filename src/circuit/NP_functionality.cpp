@@ -101,9 +101,9 @@ void NP_functionality::xload(const xml_element* Enode)
 {
   //Recurse through attributes:
   const xml_element::attribute_list list = Enode->get_attributes();
-  for (xml_element::attribute_list::const_iterator iter = list.begin(); iter != list.end(); ++iter)
+  for (auto iter : list)
   {
-    descriptions[to_NP_functionaly_type((*iter)->get_name())] = (*iter)->get_value();
+    descriptions[to_NP_functionaly_type(iter->get_name())] = iter->get_value();
   }
 }
 void NP_functionality::xwrite(xml_element* rootnode)
@@ -169,9 +169,8 @@ void NP_functionality::get_port_list(std::map<unsigned int, std::map<std::string
   if(port_list == "") return ;
   std::vector<std::string> splitted;
   boost::algorithm::split(splitted, port_list , boost::algorithm::is_any_of(";"));
-  for (unsigned int i = 0; i < splitted.size(); i++)
+  for (auto port_description : splitted)
   {
-    std::string port_description = splitted[i];
     if (port_description == "") continue;
     std::vector<std::string> ports;
     boost::algorithm::split(ports, port_description, boost::algorithm::is_any_of(":"));

@@ -168,9 +168,9 @@ void HostProfiling::normalize(const application_managerRef AppM, const std::unor
             continue;
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Loop: " + boost::lexical_cast<std::string>(loop_id));
          const auto& elements = path_profiling.find(loop_id)->second;
-         for(std::map<std::set<unsigned int>, long double>::const_iterator k = elements.begin(); k != elements.end(); ++k)
+         for(const auto & element : elements)
          {
-            abs_execution += k->second;
+            abs_execution += element.second;
          }
          if(abs_execution != 0.0L)
          {

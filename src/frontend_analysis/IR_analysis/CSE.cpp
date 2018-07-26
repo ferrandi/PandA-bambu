@@ -410,11 +410,11 @@ CSE::InternalExec ()
    const std::unordered_map<vertex, vertex>& bb_dominator_map = bb_dominators->get_dominator_map();
 
    BBGraphRef bb_domGraph(new BBGraph(GCC_bb_graphs_collection, D_SELECTOR));
-   for(std::unordered_map<vertex, vertex>::const_iterator it = bb_dominator_map.begin(); it != bb_dominator_map.end(); ++it)
+   for(auto it : bb_dominator_map)
    {
-      if(it->first != inverse_vertex_map[bloc::ENTRY_BLOCK_ID])
+      if(it.first != inverse_vertex_map[bloc::ENTRY_BLOCK_ID])
       {
-         GCC_bb_graphs_collection->AddEdge(it->second, it->first, D_SELECTOR);
+         GCC_bb_graphs_collection->AddEdge(it.second, it.first, D_SELECTOR);
       }
    }
 

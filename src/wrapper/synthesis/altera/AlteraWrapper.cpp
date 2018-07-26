@@ -187,9 +187,8 @@ std::string AlteraWrapper::toString(const xml_script_node_tRef node, const Desig
          if (comm->value)
             result += *(comm->value);
          if (comm->parameters.size())
-            for (std::vector<xml_parameter_tRef>::const_iterator it = comm->parameters.begin(); it != comm->parameters.end(); ++it)
+            for (auto p : comm->parameters)
             {
-               const xml_parameter_tRef p = *it;
                result += " " + toString(p, dp);
             }
          if (comm->output)
@@ -210,9 +209,8 @@ std::string AlteraWrapper::toString(const xml_script_node_tRef node, const Desig
          if (sh->value)
             result += *(sh->value);
          if (sh->parameters.size())
-            for (std::vector<xml_parameter_tRef>::const_iterator it = sh->parameters.begin(); it != sh->parameters.end(); ++it)
+            for (auto p : sh->parameters)
             {
-               const xml_parameter_tRef p = *it;
                result += " " + toString(p, dp);
             }
          if (sh->output)
@@ -227,9 +225,8 @@ std::string AlteraWrapper::toString(const xml_script_node_tRef node, const Desig
          std::string result;
          bool conditionValue = ite->evaluate_condition(&(ite->condition), dp), first = true;
          const std::vector<xml_script_node_tRef>& block = conditionValue ? ite->thenNodes : ite->elseNodes;
-         for (std::vector<xml_script_node_tRef>::const_iterator it = block.begin(); it != block.end(); ++it)
+         for (auto n : block)
          {
-            const xml_script_node_tRef n = *it;
             if (n->checkCondition(dp))
             {
                if (!first)

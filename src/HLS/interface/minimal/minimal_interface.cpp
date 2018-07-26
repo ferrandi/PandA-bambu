@@ -353,8 +353,8 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj,
             unsigned int counter=0;
             bool is_even = true;
             std::list<std::pair<unsigned int, memory_symbolRef> > mem_variables;
-            for(std::map<unsigned int, memory_symbolRef>::const_iterator m = mem_vars.begin(); m != mem_vars.end(); ++m)
-               mem_variables.push_back(std::make_pair(m->first, m->second));
+            for(const auto & mem_var : mem_vars)
+               mem_variables.push_back(std::make_pair(mem_var.first, mem_var.second));
             mem_variables.sort(compareMemVarsPair);
 
             std::list<std::pair<unsigned int, memory_symbolRef> >::const_iterator m_next;
@@ -365,9 +365,9 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj,
                unsigned int byte_allocated = 0;
                unsigned int actual_byte = tree_helper::size(HLSMgr->get_tree_manager(), m->first)/8;
                std::vector<std::string> eightbit_string;
-               for(unsigned int i = 0; i < splitted.size(); i++)
+               for(const auto & i : splitted)
                {
-                  current_bits = splitted[i];
+                  current_bits = i;
                   for(unsigned int base_index = 0; base_index < current_bits.size(); base_index = base_index + 8, ++byte_allocated)
                      eightbit_string.push_back(current_bits.substr(current_bits.size()-8-base_index, 8));
                }

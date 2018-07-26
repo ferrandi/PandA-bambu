@@ -96,11 +96,11 @@ unsigned int reg_binding::compute_bitsize(unsigned int r)
 {
    std::set<unsigned int> reg_vars = get_vars(r);
    unsigned int max_bits = 0;
-   for (std::set<unsigned int>::const_iterator var = reg_vars.begin(); var != reg_vars.end(); ++var)
+   for (unsigned int reg_var : reg_vars)
    {
-      structural_type_descriptorRef node_type = structural_type_descriptorRef(new structural_type_descriptor(*var, HLSMgr->CGetFunctionBehavior(HLS->functionId)->CGetBehavioralHelper()));
+      structural_type_descriptorRef node_type = structural_type_descriptorRef(new structural_type_descriptor(reg_var, HLSMgr->CGetFunctionBehavior(HLS->functionId)->CGetBehavioralHelper()));
       unsigned int node_size = STD_GET_SIZE(node_type);
-      PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, HLS->debug_level, "- Examinating node " + STR(*var) + ", whose type is " + node_type->get_name() + " (size: " + STR(node_type->size) + ", vector_size: " + STR(node_type->vector_size) + ")");
+      PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, HLS->debug_level, "- Examinating node " + STR(reg_var) + ", whose type is " + node_type->get_name() + " (size: " + STR(node_type->size) + ", vector_size: " + STR(node_type->vector_size) + ")");
       max_bits = max_bits < node_size ? node_size : max_bits;
    }
    bitsize_map[r] = max_bits;

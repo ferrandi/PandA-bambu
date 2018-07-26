@@ -287,14 +287,14 @@ buildCircuit(
 
 
    const std::set<unsigned int> additionalTops = HLSMgr->CGetCallGraphManager()->GetAddressedFunctions();
-   for (std::set<unsigned int>::const_iterator itr = additionalTops.begin(), end = additionalTops.end(); itr != end; ++itr)
+   for (unsigned int itr : additionalTops)
    {
-      std::string functionName = tree_helper::name_function(TM, *itr);
+      std::string functionName = tree_helper::name_function(TM, itr);
       std::string moduleName = functionName + "_minimal_interface_wb4_interface";
 
-      baseAddressFile << std::bitset<8 * sizeof(unsigned int)>(HLSMgr->Rmem->get_first_address(*itr))
+      baseAddressFile << std::bitset<8 * sizeof(unsigned int)>(HLSMgr->Rmem->get_first_address(itr))
                       << '\n'
-                      << std::bitset<8 * sizeof(unsigned int)>(HLSMgr->Rmem->get_last_address(*itr, HLSMgr))
+                      << std::bitset<8 * sizeof(unsigned int)>(HLSMgr->Rmem->get_last_address(itr, HLSMgr))
                       << '\n';
       structural_objectRef additionalTop = SM->add_module_from_technology_library(
 	  functionName, moduleName, WORK_LIBRARY, interfaceObj,

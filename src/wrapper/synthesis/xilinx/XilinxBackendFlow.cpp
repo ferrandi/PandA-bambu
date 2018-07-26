@@ -334,17 +334,17 @@ void XilinxBackendFlow::xparse_xst_utilization(const std::string& fn)
          THROW_ASSERT(node->get_name() == "document", "Wrong root name: " + node->get_name());
 
          const xml_node::node_list list_int = node->get_children();
-         for (xml_node::node_list::const_iterator iter_int = list_int.begin(); iter_int != list_int.end(); ++iter_int)
+         for (const auto & iter_int : list_int)
          {
-            const xml_element* EnodeC = GetPointer<const xml_element>(*iter_int);
+            const xml_element* EnodeC = GetPointer<const xml_element>(iter_int);
             if(!EnodeC) continue;
 
             if (EnodeC->get_name() == "application")
             {
                const xml_node::node_list list_sec = EnodeC->get_children();
-               for (xml_node::node_list::const_iterator iter_sec = list_sec.begin(); iter_sec != list_sec.end(); ++iter_sec)
+               for (const auto & iter_sec : list_sec)
                {
-                  const xml_element* nodeS = GetPointer<const xml_element>(*iter_sec);
+                  const xml_element* nodeS = GetPointer<const xml_element>(iter_sec);
                   if(!nodeS) continue;
 
                   if (nodeS->get_name() == "section")
@@ -354,9 +354,9 @@ void XilinxBackendFlow::xparse_xst_utilization(const std::string& fn)
                      if (stringID == "XST_DEVICE_UTILIZATION_SUMMARY")
                      {
                         const xml_node::node_list list_item = nodeS->get_children();
-                        for (xml_node::node_list::const_iterator it_item = list_item.begin(); it_item != list_item.end(); ++it_item)
+                        for (const auto & it_item : list_item)
                         {
-                           const xml_element* nodeIt = GetPointer<const xml_element>(*it_item);
+                           const xml_element* nodeIt = GetPointer<const xml_element>(it_item);
                            if(!nodeIt or nodeIt->get_name() != "item") continue;
 
                            if(CE_XVM(stringID, nodeIt)) LOAD_XVM(stringID, nodeIt);
@@ -497,9 +497,9 @@ void XilinxBackendFlow::xparse_timing(const std::string& fn, bool post)
             THROW_ASSERT(node->get_name() == "twReport", "Wrong root name: " + node->get_name());
 
             const xml_node::node_list list_int = node->get_children();
-            for (xml_node::node_list::const_iterator iter_int = list_int.begin(); iter_int != list_int.end(); ++iter_int)
+            for (const auto & iter_int : list_int)
             {
-               const xml_element* EnodeC = GetPointer<const xml_element>(*iter_int);
+               const xml_element* EnodeC = GetPointer<const xml_element>(iter_int);
                if(!EnodeC)
                   continue;
                if (flow_name == "Characterization" and EnodeC->get_name() == "twBody")
@@ -517,16 +517,16 @@ void XilinxBackendFlow::xparse_timing(const std::string& fn, bool post)
                else if (EnodeC->get_name() == "twSum")
                {
                   const xml_node::node_list list = EnodeC->get_children();
-                  for (xml_node::node_list::const_iterator iter = list.begin(); iter != list.end(); ++iter)
+                  for (const auto & iter : list)
                   {
-                     const xml_element* Enode = GetPointer<const xml_element>(*iter);
+                     const xml_element* Enode = GetPointer<const xml_element>(iter);
                      if(!Enode) continue;
                      if (Enode->get_name() == "twStats")
                      {
                         const xml_node::node_list listS = Enode->get_children();
-                        for (xml_node::node_list::const_iterator iterS = listS.begin(); iterS != listS.end(); ++iterS)
+                        for (const auto & iterS : listS)
                         {
-                           const xml_element* EnodeS = GetPointer<const xml_element>(*iterS);
+                           const xml_element* EnodeS = GetPointer<const xml_element>(iterS);
                            if(!EnodeS) continue;
                            if (EnodeS->get_name() == "twMinPer" or EnodeS->get_name() == "twMaxCombDel")
                            {
@@ -666,17 +666,17 @@ void XilinxBackendFlow::vivado_xparse_utilization(const std::string& fn)
          THROW_ASSERT(node->get_name() == "document", "Wrong root name: " + node->get_name());
 
          const xml_node::node_list list_int = node->get_children();
-         for (xml_node::node_list::const_iterator iter_int = list_int.begin(); iter_int != list_int.end(); ++iter_int)
+         for (const auto & iter_int : list_int)
          {
-            const xml_element* EnodeC = GetPointer<const xml_element>(*iter_int);
+            const xml_element* EnodeC = GetPointer<const xml_element>(iter_int);
             if(!EnodeC) continue;
 
             if (EnodeC->get_name() == "application")
             {
                const xml_node::node_list list_sec = EnodeC->get_children();
-               for (xml_node::node_list::const_iterator iter_sec = list_sec.begin(); iter_sec != list_sec.end(); ++iter_sec)
+               for (const auto & iter_sec : list_sec)
                {
-                  const xml_element* nodeS = GetPointer<const xml_element>(*iter_sec);
+                  const xml_element* nodeS = GetPointer<const xml_element>(iter_sec);
                   if(!nodeS) continue;
 
                   if (nodeS->get_name() == "section")
@@ -686,9 +686,9 @@ void XilinxBackendFlow::vivado_xparse_utilization(const std::string& fn)
                      if (stringID == "XILINX_SYNTHESIS_SUMMARY")
                      {
                         const xml_node::node_list list_item = nodeS->get_children();
-                        for (xml_node::node_list::const_iterator it_item = list_item.begin(); it_item != list_item.end(); ++it_item)
+                        for (const auto & it_item : list_item)
                         {
-                           const xml_element* nodeIt = GetPointer<const xml_element>(*it_item);
+                           const xml_element* nodeIt = GetPointer<const xml_element>(it_item);
                            if(!nodeIt or nodeIt->get_name() != "item") continue;
 
                            if(CE_XVM(stringID, nodeIt)) LOAD_XVM(stringID, nodeIt);
@@ -855,11 +855,11 @@ void XilinxBackendFlow::InitDesignParameters()
       create_cf(actual_parameters, true);
       create_cf(actual_parameters, false);
    }
-   for (unsigned int i = 0; i < steps.size(); i++)
+   for (auto & step : steps)
    {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Evaluating variables of step " + steps[i]->name);
-      steps[i]->tool->EvaluateVariables(actual_parameters);
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Evaluated variables of step " + steps[i]->name);
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Evaluating variables of step " + step->name);
+      step->tool->EvaluateVariables(actual_parameters);
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Evaluated variables of step " + step->name);
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--XilinxBackendFlow - Init Design Parameters");
 }

@@ -118,9 +118,9 @@ void FunctionWriter::operator()(std::ostream & out, const vertex & v) const
    if (mem_nodeID.size())
    {
       out << "\\nMEMORY:";
-      for(std::set<unsigned int>::const_iterator l = mem_nodeID.begin(); l != mem_nodeID.end(); ++l)
+      for(unsigned int l : mem_nodeID)
       {
-         std::string label = FB->CGetBehavioralHelper()->PrintVariable(*l);
+         std::string label = FB->CGetBehavioralHelper()->PrintVariable(l);
          add_escape(label, "\"");
 	 out << "\\n";
          out << label;

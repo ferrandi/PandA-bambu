@@ -94,13 +94,12 @@ static void buildAllocationOrderRecursively(const HLS_managerRef HLSMgr,
 {
    const std::set<unsigned int> calledSet = HLSMgr->CGetCallGraphManager()->get_called_by(topFunction);
    List.push_back(topFunction);
-   for (std::set<unsigned int>::const_iterator
-              Itr = calledSet.begin(), End = calledSet.end(); Itr != End; ++Itr)
+   for (unsigned int Itr : calledSet)
    {
-      if (not HLSMgr->hasToBeInterfaced(*Itr) &&
-          std::find(List.begin(), List.end(), *Itr) == List.end())
+      if (not HLSMgr->hasToBeInterfaced(Itr) &&
+          std::find(List.begin(), List.end(), Itr) == List.end())
       {
-         buildAllocationOrderRecursively(HLSMgr, List, *Itr);
+         buildAllocationOrderRecursively(HLSMgr, List, Itr);
       }
    }
 }
@@ -240,18 +239,18 @@ DesignFlowStep_Status mem_dominator_allocation::Exec()
       }
 
       const std::set<unsigned int>& function_mem = function_behavior->get_function_mem();
-      for(std::set<unsigned int>::const_iterator v = function_mem.begin(); v != function_mem.end(); ++v)
+      for(unsigned int v : function_mem)
       {
-         if(function_behavior->is_a_state_variable(*v))
+         if(function_behavior->is_a_state_variable(v))
          {
-            var_map[*v].insert(vert_dominator.begin(), vert_dominator.end());
+            var_map[v].insert(vert_dominator.begin(), vert_dominator.end());
          }
          else
          {
-            var_map[*v].insert(current_vertex);
+            var_map[v].insert(current_vertex);
          }
-         where_used[*v].insert(fun_id);
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Variable : " + BH->PrintVariable(*v) + " used in function " + function_behavior->CGetBehavioralHelper()->get_function_name());
+         where_used[v].insert(fun_id);
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Variable : " + BH->PrintVariable(v) + " used in function " + function_behavior->CGetBehavioralHelper()->get_function_name());
          //INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Dominator Vertex: " + HLSMgr->CGetFunctionBehavior(CG->get_function(vert_dominator))->CGetBehavioralHelper()->get_function_name() + " - Variable to be stored: " + BH->PrintVariable(*v));
       }
       const OpGraphConstRef g = function_behavior->CGetOpGraph(FunctionBehavior::CFG);

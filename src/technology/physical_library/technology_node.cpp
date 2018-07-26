@@ -184,9 +184,9 @@ void operation::xload(const xml_element* Enode, const technology_nodeRef fu, con
    ///timing path
    double max_delay = 0.0;
    const xml_node::node_list list_int = Enode->get_children();
-   for (xml_node::node_list::const_iterator iter_int = list_int.begin(); iter_int != list_int.end(); ++iter_int)
+   for (const auto & iter_int : list_int)
    {
-      const xml_element* EnodeC = GetPointer<const xml_element>(*iter_int);
+      const xml_element* EnodeC = GetPointer<const xml_element>(iter_int);
       if(!EnodeC) continue;
       if (EnodeC->get_name() == "timing_path")
       {
@@ -681,9 +681,9 @@ void functional_unit::xload(const xml_element* Enode, const technology_nodeRef f
 
    logical_type = UNKNOWN;
    const xml_node::node_list list_int = Enode->get_children();
-   for (xml_node::node_list::const_iterator iter_int = list_int.begin(); iter_int != list_int.end(); ++iter_int)
+   for (const auto & iter_int : list_int)
    {
-      const xml_element* EnodeC = GetPointer<const xml_element>(*iter_int);
+      const xml_element* EnodeC = GetPointer<const xml_element>(iter_int);
       if(!EnodeC) continue;
       if (EnodeC->get_name() == "name")
       {
@@ -793,9 +793,9 @@ void functional_unit::xload(const xml_element* Enode, const technology_nodeRef f
          }
          //top must be a component_o
          const xml_node::node_list listC = EnodeC->get_children();
-         for (xml_node::node_list::const_iterator iterC = listC.begin(); iterC != listC.end(); ++iterC)
+         for (const auto & iterC : listC)
          {
-            const xml_element* EnodeCC = GetPointer<const xml_element>(*iterC);
+            const xml_element* EnodeCC = GetPointer<const xml_element>(iterC);
             if(!EnodeCC) continue;
             if(EnodeCC->get_name() == GET_CLASS_NAME(component_o))
                CM->get_circ()->xload(EnodeCC, CM->get_circ(), CM);
@@ -828,9 +828,9 @@ void functional_unit::xload(const xml_element* Enode, const technology_nodeRef f
          std::string pin_name;
 
          const xml_node::node_list& pin_list = EnodeC->get_children();
-         for (xml_node::node_list::const_iterator iter_int1 = pin_list.begin(); iter_int1 != pin_list.end(); ++iter_int1)
+         for (const auto & iter_int1 : pin_list)
          {
-            const xml_element* EnodeP = GetPointer<const xml_element>(*iter_int1);
+            const xml_element* EnodeP = GetPointer<const xml_element>(iter_int1);
             if(!EnodeP) continue;
             if (EnodeP->get_name() == "name")
             {
@@ -927,9 +927,9 @@ void functional_unit::xload(const xml_element* Enode, const technology_nodeRef f
 
    }
 
-   for (xml_node::node_list::const_iterator iter_int = list_int.begin(); iter_int != list_int.end(); ++iter_int)
+   for (const auto & iter_int : list_int)
    {
-      const xml_element* EnodeC = GetPointer<const xml_element>(*iter_int);
+      const xml_element* EnodeC = GetPointer<const xml_element>(iter_int);
       if(!EnodeC) continue;
       if (EnodeC->get_name() == "operation")
       {
@@ -940,9 +940,9 @@ void functional_unit::xload(const xml_element* Enode, const technology_nodeRef f
    }
 
 #if HAVE_CIRCUIT_BUILT
-   for(std::map<unsigned int, std::string>::iterator m = NP_functionalities.begin(); m != NP_functionalities.end(); ++m)
+   for(auto & NP_functionalitie : NP_functionalities)
    {
-      CM->add_NP_functionality(CM->get_circ(), static_cast<NP_functionality::NP_functionaly_type>(m->first), m->second);
+      CM->add_NP_functionality(CM->get_circ(), static_cast<NP_functionality::NP_functionaly_type>(NP_functionalitie.first), NP_functionalitie.second);
    }
 #endif
 
@@ -972,16 +972,16 @@ void functional_unit::xload(const xml_element* Enode, const technology_nodeRef f
          GetPointer<operation>(curr_op)->operation_name = functional_unit_name;
          add(curr_op);
       }
-      for (operation_vec::iterator v = list_of_operation.begin(); v != list_of_operation.end(); ++v)
+      for (auto & v : list_of_operation)
       {
-         if (!GetPointer<operation>(*v)->time_m)
+         if (!GetPointer<operation>(v)->time_m)
          {
-            GetPointer<operation>(*v)->time_m = time_model::create_model(dv_type, Param);
+            GetPointer<operation>(v)->time_m = time_model::create_model(dv_type, Param);
          }
          if (attributes.find("drive_strength") != attributes.end())
-            GetPointer<liberty_model>(GetPointer<operation>(*v)->time_m)->set_drive_strength(attributes["drive_strength"]->get_content<double>());
+            GetPointer<liberty_model>(GetPointer<operation>(v)->time_m)->set_drive_strength(attributes["drive_strength"]->get_content<double>());
 #if HAVE_CIRCUIT_BUILT
-         if (!GetPointer<liberty_model>(GetPointer<operation>(*v)->time_m)->has_timing_groups() && CM && CM->get_circ())
+         if (!GetPointer<liberty_model>(GetPointer<operation>(v)->time_m)->has_timing_groups() && CM && CM->get_circ())
          {
             for(unsigned int l = 0; l < GetPointer<module>(CM->get_circ())->get_out_port_size(); l++)
             {
@@ -991,7 +991,7 @@ void functional_unit::xload(const xml_element* Enode, const technology_nodeRef f
                {
                   inputs.insert(GetPointer<module>(CM->get_circ())->get_in_port(m)->get_id());
                }
-               GetPointer<liberty_model>(GetPointer<operation>(*v)->time_m)->add_timing_group(output_name, inputs, timing_groupRef(new timing_group));
+               GetPointer<liberty_model>(GetPointer<operation>(v)->time_m)->add_timing_group(output_name, inputs, timing_groupRef(new timing_group));
             }
          }
 #endif
@@ -1185,10 +1185,10 @@ void functional_unit::xwrite(xml_element* rootnode, const technology_nodeRef tn,
 #endif
 
    ///dumping of attributes
-   for(unsigned int o = 0; o < ordered_attributes.size(); o++)
+   for(const auto & ordered_attribute : ordered_attributes)
    {
-      const attributeRef attr = attributes[ordered_attributes[o]];
-      attr->xwrite(rootnode, ordered_attributes[o]);
+      const attributeRef attr = attributes[ordered_attribute];
+      attr->xwrite(rootnode, ordered_attribute);
    }
 
    ///writing logical type
@@ -1304,9 +1304,9 @@ functional_unit_template::functional_unit_template(const xml_nodeRef XML_descrip
 void functional_unit_template::xload(const xml_element* Enode, const technology_nodeRef tnd, const ParameterConstRef Param, const target_deviceRef device)
 {
    const xml_node::node_list list_int = Enode->get_children();
-   for (xml_node::node_list::const_iterator iter_int = list_int.begin(); iter_int != list_int.end(); ++iter_int)
+   for (const auto & iter_int : list_int)
    {
-      const xml_element* EnodeC = GetPointer<const xml_element>(*iter_int);
+      const xml_element* EnodeC = GetPointer<const xml_element>(iter_int);
       if(!EnodeC) continue;
       if (EnodeC->get_name() == GET_CLASS_NAME(specialized))
       {

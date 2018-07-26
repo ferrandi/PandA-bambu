@@ -128,11 +128,11 @@ DesignFlowStep_Status dom_post_dom_computation::InternalExec()
    function_behavior->dominators = new dominance<BBGraph>(*fbb, bbentry, bbexit, parameters);
    function_behavior->dominators->calculate_dominance_info(dominance<BBGraph>::CDI_DOMINATORS);
    std::unordered_map<vertex, vertex> dominator_map = function_behavior->dominators->get_dominator_map();
-   for(std::unordered_map<vertex, vertex>::iterator it = dominator_map.begin(); it != dominator_map.end(); ++it)
+   for(auto & it : dominator_map)
    {
-      if(it->first != bbentry)
+      if(it.first != bbentry)
       {
-         function_behavior->bbgc->AddEdge(it->second, it->first, D_SELECTOR);
+         function_behavior->bbgc->AddEdge(it.second, it.first, D_SELECTOR);
       }
    }
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Built dominators tree of " + helper->get_function_name());
@@ -145,11 +145,11 @@ DesignFlowStep_Status dom_post_dom_computation::InternalExec()
    function_behavior->post_dominators = new dominance<BBGraph>(*fbb, bbentry, bbexit, parameters);
    function_behavior->post_dominators->calculate_dominance_info(dominance<BBGraph>::CDI_POST_DOMINATORS);
    std::unordered_map<vertex, vertex> post_dominator_map = function_behavior->post_dominators->get_dominator_map();
-   for(std::unordered_map<vertex, vertex>::iterator it = post_dominator_map.begin(); it != post_dominator_map.end(); ++it)
+   for(auto & it : post_dominator_map)
    {
-      if(it->first != bbexit)
+      if(it.first != bbexit)
       {
-         function_behavior->bbgc->AddEdge(it->second, it->first, PD_SELECTOR);
+         function_behavior->bbgc->AddEdge(it.second, it.first, PD_SELECTOR);
       }
    }
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Built post-dominators tree of " + helper->get_function_name());

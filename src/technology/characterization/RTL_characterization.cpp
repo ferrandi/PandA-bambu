@@ -170,9 +170,9 @@ void RTLCharacterization::fix_muxes()
       technology_nodeRef f_unit_mux = TM->get_fu(std::string(MUX_GATE_STD)+"_1_"+STR(*b_it)+"_"+STR(*b_it)+"_"+STR(*b_it), LIBRARY_STD_FU);
       functional_unit * fu_mux= GetPointer<functional_unit>(f_unit_mux);
       const functional_unit::operation_vec &ops = fu_mux->get_operations();
-      for(unsigned int o = 0; o < ops.size(); o++)
+      for(const auto & op : ops)
       {
-         operation * current_op = GetPointer<operation>(ops[o]);
+         operation * current_op = GetPointer<operation>(op);
          if(!current_op->time_m) continue;
          unsigned int curr_cycles = current_op->time_m->get_cycles();
          double curr_exec = current_op->time_m->get_execution_time();
@@ -199,9 +199,9 @@ void RTLCharacterization::fix_execution_time_std()
       if ((!parameters->isOption(OPT_component_name) || current_fu->get_operations_num() == 0) && completed.find(current_fu->functional_unit_name) == completed.end())
          return;
       const functional_unit::operation_vec &ops = current_fu->get_operations();
-      for(unsigned int o = 0; o < ops.size(); o++)
+      for(const auto & op : ops)
       {
-         operation * current_op = GetPointer<operation>(ops[o]);
+         operation * current_op = GetPointer<operation>(op);
          if(!current_op->time_m) continue;
          double curr_exec = current_op->time_m->get_execution_time();
          unsigned int curr_cycles = current_op->time_m->get_cycles();
@@ -256,9 +256,9 @@ void RTLCharacterization::fix_proxies_execution_time_std()
          if ((!parameters->isOption(OPT_component_name) || current_fu->get_operations_num() == 0) && completed.find(fu_name) == completed.end())
             return;
          const functional_unit::operation_vec &ops = current_fu->get_operations();
-         for(unsigned int o = 0; o < ops.size(); o++)
+         for(const auto & op : ops)
          {
-            operation * current_op = GetPointer<operation>(ops[o]);
+            operation * current_op = GetPointer<operation>(op);
             if(!current_op->time_m) continue;
             unsigned int curr_cycles = current_op->time_m->get_cycles();
             if(bram_load_latency == "2")
@@ -285,9 +285,9 @@ void RTLCharacterization::fix_proxies_execution_time_std()
          if ((!parameters->isOption(OPT_component_name) || current_fu->get_operations_num() == 0) && completed.find(fu_name) == completed.end())
             return;
          const functional_unit::operation_vec &ops = current_fu->get_operations();
-         for(unsigned int o = 0; o < ops.size(); o++)
+         for(const auto & op : ops)
          {
-            operation * current_op = GetPointer<operation>(ops[o]);
+            operation * current_op = GetPointer<operation>(op);
             if(!current_op->time_m) continue;
             unsigned int curr_cycles = current_op->time_m->get_cycles();
             if(bram_load_latency == "2")
@@ -446,10 +446,10 @@ void RTLCharacterization::xwrite_characterization(const target_deviceRef device,
          auto characterization_timestamp_el = cell_el->add_child_element("characterization_timestamp");
          characterization_timestamp_el->add_child_text(STR(TimeStamp::GetCurrentTimeStamp()));
          const functional_unit::operation_vec &ops = current_fu->get_operations();
-         for(unsigned int o = 0; o < ops.size(); o++)
+         for(const auto & op : ops)
          {
-            operation * current_op = GetPointer<operation>(ops[o]);
-            current_op->xwrite(cell_el, ops[o], parameters, device->get_type());
+            operation * current_op = GetPointer<operation>(op);
+            current_op->xwrite(cell_el, op, parameters, device->get_type());
          }
          if(current_fu->CM && current_fu->CM->get_circ() && GetPointer<module>(current_fu->CM->get_circ()) && GetPointer<module>(current_fu->CM->get_circ())->get_specialized() != "")
          {
@@ -987,9 +987,9 @@ void RTLCharacterization::AnalyzeCell(functional_unit * fu, const unsigned int p
 #endif
       ///setting the timing values for each operation
       const functional_unit::operation_vec &ops = fu->get_operations();
-      for(unsigned int o = 0; o < ops.size(); o++)
+      for(const auto & op : ops)
       {
-         operation * new_op = GetPointer<operation>(ops[o]);
+         operation * new_op = GetPointer<operation>(op);
          time_modelRef synthesis_results;
 #ifndef NDEBUG
          if(not dummy_synthesis)

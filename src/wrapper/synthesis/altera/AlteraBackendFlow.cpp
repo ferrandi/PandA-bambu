@@ -148,17 +148,17 @@ void AlteraBackendFlow::xparse_utilization(const std::string& fn)
          THROW_ASSERT(node->get_name() == "document", "Wrong root name: " + node->get_name());
 
          const xml_node::node_list list_int = node->get_children();
-         for (xml_node::node_list::const_iterator iter_int = list_int.begin(); iter_int != list_int.end(); ++iter_int)
+         for (const auto & iter_int : list_int)
          {
-            const xml_element* EnodeC = GetPointer<const xml_element>(*iter_int);
+            const xml_element* EnodeC = GetPointer<const xml_element>(iter_int);
             if(!EnodeC) continue;
 
             if (EnodeC->get_name() == "application")
             {
                const xml_node::node_list list_sec = EnodeC->get_children();
-               for (xml_node::node_list::const_iterator iter_sec = list_sec.begin(); iter_sec != list_sec.end(); ++iter_sec)
+               for (const auto & iter_sec : list_sec)
                {
-                  const xml_element* nodeS = GetPointer<const xml_element>(*iter_sec);
+                  const xml_element* nodeS = GetPointer<const xml_element>(iter_sec);
                   if(!nodeS) continue;
 
                   if (nodeS->get_name() == "section")
@@ -168,9 +168,9 @@ void AlteraBackendFlow::xparse_utilization(const std::string& fn)
                      if (stringID == "QUARTUS_SYNTHESIS_SUMMARY")
                      {
                         const xml_node::node_list list_item = nodeS->get_children();
-                        for (xml_node::node_list::const_iterator it_item = list_item.begin(); it_item != list_item.end(); ++it_item)
+                        for (const auto & it_item : list_item)
                         {
-                           const xml_element* nodeIt = GetPointer<const xml_element>(*it_item);
+                           const xml_element* nodeIt = GetPointer<const xml_element>(it_item);
                            if(!nodeIt or nodeIt->get_name() != "item") continue;
 
                            if(CE_XVM(stringID, nodeIt)) LOAD_XVM(stringID, nodeIt);
@@ -326,9 +326,9 @@ void AlteraBackendFlow::InitDesignParameters()
    std::string HDL_files = actual_parameters->parameter_values[PARAM_HDL_files];
    std::vector<std::string> file_list = convert_string_to_vector<std::string>(HDL_files, ";");
    std::string sources_macro_list;
-   for(unsigned int v = 0; v < file_list.size(); v++)
+   for(const auto & v : file_list)
    {
-      sources_macro_list += "set_global_assignment -name SOURCE_FILE " + file_list[v] + "\n";
+      sources_macro_list += "set_global_assignment -name SOURCE_FILE " + v + "\n";
    }
    actual_parameters->parameter_values[PARAM_sources_macro_list] = sources_macro_list;
    if(Param->isOption(OPT_backend_script_extensions))
@@ -341,9 +341,9 @@ void AlteraBackendFlow::InitDesignParameters()
 
    create_sdc(actual_parameters);
 
-   for (unsigned int i = 0; i < steps.size(); i++)
+   for (auto & step : steps)
    {
-      steps[i]->tool->EvaluateVariables(actual_parameters);
+      step->tool->EvaluateVariables(actual_parameters);
    }
 }
 

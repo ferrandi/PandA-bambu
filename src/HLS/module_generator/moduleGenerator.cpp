@@ -125,10 +125,10 @@ unsigned int resize_to_8_or_greater(unsigned int value)
 std::string moduleGenerator::get_specialized_name(std::vector<std::tuple<unsigned int,unsigned int> >& required_variables, const FunctionBehaviorConstRef FB) const
 {
    std::string fuName="";
-   for(std::vector<std::tuple<unsigned int,unsigned int> >::iterator l = required_variables.begin(); l != required_variables.end(); ++l)
+   for(auto & required_variable : required_variables)
    {
-      unsigned int dataSize=getDataType(std::get<0>((*l)), FB)->vector_size!=0?getDataType(std::get<0>((*l)), FB)->vector_size:getDataType(std::get<0>((*l)), FB)->size;
-      structural_type_descriptorRef typeRef=getDataType(std::get<0>((*l)), FB);
+      unsigned int dataSize=getDataType(std::get<0>(required_variable), FB)->vector_size!=0?getDataType(std::get<0>(required_variable), FB)->vector_size:getDataType(std::get<0>(required_variable), FB)->size;
+      structural_type_descriptorRef typeRef=getDataType(std::get<0>(required_variable), FB);
       fuName=fuName+NAMESEPARATOR+typeRef->get_name()+STR(resize_to_8_or_greater(dataSize));
    }
    return fuName;
@@ -199,9 +199,9 @@ std::string moduleGenerator::GenerateHDL(const std::string& hdl_template, std::v
 
    int portNum=0;
 
-   for(std::vector<std::tuple<unsigned int,unsigned int> >::iterator l = required_variables.begin(); l != required_variables.end(); ++l)
+   for(auto & required_variable : required_variables)
    {
-      structural_type_descriptorRef typeRef=getDataType(std::get<0>((*l)), FB);
+      structural_type_descriptorRef typeRef=getDataType(std::get<0>(required_variable), FB);
       cpp_code_body += "   _p["+STR(portNum)+"].name = \"in"+STR(portNum+1)+"\";\n";
       cpp_code_body += "   _p["+STR(portNum)+"].type = \""+typeRef->get_name()+"\";\n";
       unsigned int dataSize = typeRef->vector_size !=0 ? typeRef->vector_size : typeRef->size;
@@ -364,9 +364,9 @@ void moduleGenerator::specialize_fu(std::string fuName, vertex ve, std::string l
       for(currentPort=0;currentPort<inPortSize;currentPort++){
          structural_objectRef curr_port = fu_module->get_in_port(currentPort);
          if(GetPointer<port_o>(curr_port)->get_is_var_args()){
-            for(std::vector<std::tuple<unsigned int,unsigned int> >::iterator l = required_variables.begin(); l != required_variables.end(); ++l)
+            for(auto & required_variable : required_variables)
             {
-               unsigned int var = std::get<0>(*l);
+               unsigned int var = std::get<0>(required_variable);
                structural_type_descriptorRef dt = getDataType(var,FB);
                /// normalize type
                if(dt->vector_size == 0)
@@ -463,9 +463,8 @@ void moduleGenerator::specialize_fu(std::string fuName, vertex ve, std::string l
       PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, new_fu_name+" created successfully");
 
       std::vector<technology_nodeRef> op_vec=GetPointer<functional_unit>(techNode_obj)->get_operations();
-      for(std::vector<technology_nodeRef>::iterator techIter=op_vec.begin();techIter!=op_vec.end();++techIter)
+      for(auto techNode_fu : op_vec)
       {
-         technology_nodeRef techNode_fu=*techIter;
          GetPointer<functional_unit>(new_techNode_obj)->add(techNode_fu);
       }
 

@@ -1599,15 +1599,15 @@ void mux_connection_binding::create_connections()
       GetPointer<register_obj>(reg_obj)->set_wr_enable(sel_port);
    }
    std::set<unsigned int> setFu = HLS->Rfu->get_allocation_list();
-   for (std::set<unsigned int>::iterator i = setFu.begin(); i!= setFu.end(); ++i)
+   for (unsigned int i : setFu)
    {
       //number of istance functional unit i
-      unsigned int num = HLS->Rfu->get_number(*i);
+      unsigned int num = HLS->Rfu->get_number(i);
       for(unsigned int fu_num=0; fu_num < num; fu_num++)
       {
          //get the functional unit object associated to i and fu_num (id and index)
-         generic_objRef tmp_Fu = HLS->Rfu->get(*i,fu_num);
-         std::vector<technology_nodeRef> tmp_ops_node = GetPointer<functional_unit>(HLS->allocation_information->get_fu(*i))->get_operations();
+         generic_objRef tmp_Fu = HLS->Rfu->get(i,fu_num);
+         std::vector<technology_nodeRef> tmp_ops_node = GetPointer<functional_unit>(HLS->allocation_information->get_fu(i))->get_operations();
 
          if(tmp_ops_node.size() > 1)
          {
@@ -2617,23 +2617,23 @@ unsigned int mux_connection_binding::input_logic(const conn_binding::ConnectionS
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "     * Source: " + src.first->get_string() + " ");
       const std::set<data_transfer>& vars = src.second;
       THROW_ASSERT(vars.size(), "A connection should contain at least one data-transfer");
-      for(std::set<data_transfer>::iterator v = vars.begin(); v != vars.end(); ++v)
+      for(const auto & var : vars)
       {
-         if (std::get<0>(*v) == INFINITE_UINT)
-            PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "       - var: (bool) from. " + HLS->Rliv->get_name(std::get<2>(*v)) + " to " + HLS->Rliv->get_name(std::get<3>(*v)));
-         else if (std::get<0>(*v) != 0)
-            PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "       - var: " + HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->PrintVariable(std::get<0>(*v)) + " of size " + STR(std::get<1>(*v)) + " from. " + HLS->Rliv->get_name(std::get<2>(*v)) + " to " + HLS->Rliv->get_name(std::get<3>(*v)));
+         if (std::get<0>(var) == INFINITE_UINT)
+            PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "       - var: (bool) from. " + HLS->Rliv->get_name(std::get<2>(var)) + " to " + HLS->Rliv->get_name(std::get<3>(var)));
+         else if (std::get<0>(var) != 0)
+            PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "       - var: " + HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->PrintVariable(std::get<0>(var)) + " of size " + STR(std::get<1>(var)) + " from. " + HLS->Rliv->get_name(std::get<2>(var)) + " to " + HLS->Rliv->get_name(std::get<3>(var)));
          else
-            PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "       - size: " + STR(std::get<1>(*v)) + " from. " + HLS->Rliv->get_name(std::get<2>(*v)) + " to " + HLS->Rliv->get_name(std::get<3>(*v)));
+            PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "       - size: " + STR(std::get<1>(var)) + " from. " + HLS->Rliv->get_name(std::get<2>(var)) + " to " + HLS->Rliv->get_name(std::get<3>(var)));
 
-         var2obj[*v] = src.first;
-         var2src[*v] = src.first;
-         obj2var[src.first].push_back(*v);
+         var2obj[var] = src.first;
+         var2src[var] = src.first;
+         obj2var[src.first].push_back(var);
 #ifndef NDEBUG
-         if(check_sources.find(std::make_pair(std::get<2>(*v), std::get<3>(*v))) != check_sources.end() && check_sources.find(std::make_pair(std::get<2>(*v), std::get<3>(*v)))->second != src.first)
-            THROW_ERROR("two different sources for the same transition: from. " + HLS->Rliv->get_name(std::get<2>(*v)) + " to " + HLS->Rliv->get_name(std::get<3>(*v)) + " source 1 " + src.first->get_string() + " source 2 " + check_sources.find(std::make_pair(std::get<2>(*v), std::get<3>(*v)))->second->get_string());
-         else if (check_sources.find(std::make_pair(std::get<2>(*v), std::get<3>(*v))) == check_sources.end() )
-            check_sources[std::make_pair(std::get<2>(*v), std::get<3>(*v))] = src.first;
+         if(check_sources.find(std::make_pair(std::get<2>(var), std::get<3>(var))) != check_sources.end() && check_sources.find(std::make_pair(std::get<2>(var), std::get<3>(var)))->second != src.first)
+            THROW_ERROR("two different sources for the same transition: from. " + HLS->Rliv->get_name(std::get<2>(var)) + " to " + HLS->Rliv->get_name(std::get<3>(var)) + " source 1 " + src.first->get_string() + " source 2 " + check_sources.find(std::make_pair(std::get<2>(var), std::get<3>(var)))->second->get_string());
+         else if (check_sources.find(std::make_pair(std::get<2>(var), std::get<3>(var))) == check_sources.end() )
+            check_sources[std::make_pair(std::get<2>(var), std::get<3>(var))] = src.first;
 #endif
 
       }

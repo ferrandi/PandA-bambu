@@ -346,9 +346,8 @@ std::unordered_map<std::string, std::string> pragma_manager::ExtractClauses(cons
    std::vector<std::string> splitted;
    boost::algorithm::split(splitted, trimmed_clauses, boost::algorithm::is_any_of(" \t\n"));
 
-   for(size_t splitted_index = 0; splitted_index < splitted.size(); splitted_index++)
+   for(auto clause : splitted)
    {
-      const std::string clause = splitted[splitted_index];
       if(clause.find("(") != std::string::npos)
       {
          const std::string key = clause.substr(0, clause.find("("));

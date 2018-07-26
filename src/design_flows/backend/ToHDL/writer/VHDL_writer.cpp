@@ -179,8 +179,8 @@ VHDL_writer::VHDL_writer(const technology_managerConstRef _TM, const ParameterCo
    TM(_TM)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
-   for(unsigned int i = 0; i < sizeof(tokenNames)/sizeof(char*); ++i)
-      keywords.insert(boost::to_upper_copy<std::string>(tokenNames[i]));
+   for(auto & tokenName : tokenNames)
+      keywords.insert(boost::to_upper_copy<std::string>(tokenName));
 }
 
 VHDL_writer::~VHDL_writer()
@@ -410,9 +410,9 @@ void VHDL_writer::write_library_declaration(const structural_objectRef & cir)
    }
    std::string library = NPF->get_NP_functionality(NP_functionality::IP_LIBRARY);
    std::vector<std::string> library_list = convert_string_to_vector<std::string>(library, ";");
-   for(unsigned int l = 0; l < library_list.size(); l++)
+   for(const auto & l : library_list)
    {
-      indented_output_stream->Append(library_list[l]+";\n");
+      indented_output_stream->Append(l+";\n");
    }
 }
 
@@ -969,9 +969,9 @@ void VHDL_writer::write_module_parametrization(const structural_objectRef &cir)
 #endif
                               std::string memory_str = mod->get_owner()->get_parameter(MEMORY_PARAMETER);
                               std::vector<std::string> mem_tag = convert_string_to_vector<std::string>(memory_str, ";");
-                              for(unsigned int i = 0; i < mem_tag.size(); i++)
+                              for(const auto & i : mem_tag)
                               {
-                                 std::vector<std::string> mem_add = convert_string_to_vector<std::string>(mem_tag[i], "=");
+                                 std::vector<std::string> mem_add = convert_string_to_vector<std::string>(i, "=");
                                  THROW_ASSERT(mem_add.size() == 2, "malformed address");
                                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Checking owner memory parameter " + mem_add[0]);
                                  if(mem_add[0] == parameter)
@@ -1453,9 +1453,9 @@ void VHDL_writer::write_module_parametrization_decl(const structural_objectRef &
       indented_output_stream->Append("generic(\n");
       std::string memory_str = mod->get_parameter(MEMORY_PARAMETER);
       std::vector<std::string> mem_tag = convert_string_to_vector<std::string>(memory_str, ";");
-      for(unsigned int i = 0; i < mem_tag.size(); i++)
+      for(const auto & i : mem_tag)
       {
-         std::vector<std::string> mem_add = convert_string_to_vector<std::string>(mem_tag[i], "=");
+         std::vector<std::string> mem_add = convert_string_to_vector<std::string>(i, "=");
          THROW_ASSERT(mem_add.size() == 2, "malformed address");
          if(first_it)
          {

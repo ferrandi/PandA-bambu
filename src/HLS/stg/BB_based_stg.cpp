@@ -520,15 +520,15 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
          global_ending_ops[s_cur] = end_ops;
          global_onfly_ops.insert({s_cur, onf_ops});
 
-         for(std::list<vertex>::iterator op = exec_ops.begin(); op != exec_ops.end(); ++op)
+         for(auto & exec_op : exec_ops)
          {
-            technology_nodeRef tn = HLS->allocation_information->get_fu(HLS->Rfu->get_assign(*op));
-            technology_nodeRef op_tn = GetPointer<functional_unit>(tn)->get_operation(tree_helper::normalized_ID(dfgRef->CGetOpNodeInfo(*op)->GetOperation()));
-            THROW_ASSERT(GetPointer<operation>(op_tn)->time_m, "Time model not available for operation: " + GET_NAME(dfgRef, *op));
+            technology_nodeRef tn = HLS->allocation_information->get_fu(HLS->Rfu->get_assign(exec_op));
+            technology_nodeRef op_tn = GetPointer<functional_unit>(tn)->get_operation(tree_helper::normalized_ID(dfgRef->CGetOpNodeInfo(exec_op)->GetOperation()));
+            THROW_ASSERT(GetPointer<operation>(op_tn)->time_m, "Time model not available for operation: " + GET_NAME(dfgRef, exec_op));
             if (!GetPointer<operation>(op_tn)->is_bounded())
             {
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---" + GET_NAME(dfgRef, *op) + " is unbounded");
-               call_operations[s_cur].push_back(*op);
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---" + GET_NAME(dfgRef, exec_op) + " is unbounded");
+               call_operations[s_cur].push_back(exec_op);
             }
          }
          THROW_ASSERT(call_operations.find(s_cur) == call_operations.end() || call_operations.find(s_cur)->second.size() <= 1, "currently only one unbounded operation per state is admitted");
@@ -557,9 +557,9 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
                vertex call = call_operations.find(previous)->second.front();
                THROW_ASSERT(call_states.find(previous) != call_states.end(), "unexpected condition");
                auto call_sets = call_states.find(previous)->second;
-               for(std::list<vertex>::iterator s = call_sets.begin(); s != call_sets.end(); ++s)
+               for(auto & call_set : call_sets)
                {
-                  EdgeDescriptor s_e = STG_builder->connect_state(*s, s_cur, ST_EDGE_NORMAL_T);
+                  EdgeDescriptor s_e = STG_builder->connect_state(call_set, s_cur, ST_EDGE_NORMAL_T);
 
                   std::set<std::pair<vertex, unsigned int> > OutCondition;
                   OutCondition.insert(std::make_pair(call, T_COND));
@@ -665,9 +665,9 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
                OutCondition.insert(std::make_pair(call_operations[s_src].front(), T_COND));
                STG_builder->set_condition(s_e, OutCondition);
             }
-            for(std::list<vertex>::iterator s = call_sets.begin(); s != call_sets.end(); ++s)
+            for(auto & call_set : call_sets)
             {
-               EdgeDescriptor s_e1 = STG_builder->connect_state(*s, s_tgt, ST_EDGE_FEEDBACK_T);
+               EdgeDescriptor s_e1 = STG_builder->connect_state(call_set, s_tgt, ST_EDGE_FEEDBACK_T);
                std::set<std::pair<vertex, unsigned int> > OutCondition;
                OutCondition.insert(std::make_pair(call_operations[s_src].front(), T_COND));
                STG_builder->set_condition(s_e1, OutCondition);
@@ -683,9 +683,9 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
             THROW_ASSERT(call_operations.find(s_src) != call_operations.end() && call_operations.find(s_src)->second.size() != 0, "State " + HLS->STG->get_state_name(s_src) + " does not contain any call expression");
             vertex operation =  call_operations.find(s_src)->second.front();
             auto call_sets = call_states.find(s_src)->second;
-            for(std::list<vertex>::iterator s = call_sets.begin(); s != call_sets.end(); ++s)
+            for(auto & call_set : call_sets)
             {
-               EdgeDescriptor s_edge = STG_builder->connect_state(*s, s_tgt, ST_EDGE_NORMAL_T);
+               EdgeDescriptor s_edge = STG_builder->connect_state(call_set, s_tgt, ST_EDGE_NORMAL_T);
 
                std::set<std::pair<vertex, unsigned int> > OutCondition;
                OutCondition.insert(std::make_pair(operation, T_COND));

@@ -229,10 +229,10 @@ structural_objectRef structural_manager::add_port(std::string id, port_o::port_d
                      std::string equation = NPF->get_NP_functionality(NP_functionality::EQUATION);
                      std::vector<std::string> tokens;
                      boost::algorithm::split(tokens, equation, boost::algorithm::is_any_of(";"));
-                     for(unsigned int i = 0; i < tokens.size(); i++)
+                     for(auto & token : tokens)
                      {
-                        if (boost::algorithm::starts_with(tokens[i],id))
-                           equation = tokens[i].substr(tokens[i].find("=") + 1, tokens[i].size());
+                        if (boost::algorithm::starts_with(token,id))
+                           equation = token.substr(token.find("=") + 1, token.size());
                      }
                      attributeRef function(new attribute(attribute::STRING, equation));
                      cp->add_attribute("function", function);
@@ -1666,9 +1666,9 @@ void structural_manager::xload(const xml_element* node, structural_managerRef co
 {
    //Recurse through child nodes:
    const xml_node::node_list list = node->get_children();
-   for (xml_node::node_list::const_iterator iter = list.begin(); iter != list.end(); ++iter)
+   for (const auto & iter : list)
    {
-      const xml_element* Enode = GetPointer<const xml_element>(*iter);
+      const xml_element* Enode = GetPointer<const xml_element>(iter);
       if (!Enode || Enode->get_name() != GET_CLASS_NAME(component_o)) continue;
       CM->get_circ()->xload(Enode, CM->get_circ(), CM);
    }
@@ -1747,8 +1747,8 @@ void structural_manager::remove_module(structural_objectRef obj)
    //std::cerr << "removing signals" << std::endl;
    module* top = GetPointer<module>(top_obj);
    top->remove_internal_object(obj);
-   for(std::set<structural_objectRef>::iterator k = remove.begin(); k != remove.end(); ++k)
-      top->remove_internal_object(*k);
+   for(const auto & k : remove)
+      top->remove_internal_object(k);
 }
 
 void structural_manager::remove_connection(structural_objectRef, structural_objectRef)

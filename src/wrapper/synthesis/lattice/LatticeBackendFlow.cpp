@@ -123,17 +123,17 @@ void LatticeBackendFlow::xparse_utilization(const std::string& fn)
          THROW_ASSERT(node->get_name() == "document", "Wrong root name: " + node->get_name());
 
          const xml_node::node_list list_int = node->get_children();
-         for (xml_node::node_list::const_iterator iter_int = list_int.begin(); iter_int != list_int.end(); ++iter_int)
+         for (const auto & iter_int : list_int)
          {
-            const xml_element* EnodeC = GetPointer<const xml_element>(*iter_int);
+            const xml_element* EnodeC = GetPointer<const xml_element>(iter_int);
             if(!EnodeC) continue;
 
             if (EnodeC->get_name() == "application")
             {
                const xml_node::node_list list_sec = EnodeC->get_children();
-               for (xml_node::node_list::const_iterator iter_sec = list_sec.begin(); iter_sec != list_sec.end(); ++iter_sec)
+               for (const auto & iter_sec : list_sec)
                {
-                  const xml_element* nodeS = GetPointer<const xml_element>(*iter_sec);
+                  const xml_element* nodeS = GetPointer<const xml_element>(iter_sec);
                   if(!nodeS) continue;
 
                   if (nodeS->get_name() == "section")
@@ -143,9 +143,9 @@ void LatticeBackendFlow::xparse_utilization(const std::string& fn)
                      if (stringID == "LATTICE_SYNTHESIS_SUMMARY")
                      {
                         const xml_node::node_list list_item = nodeS->get_children();
-                        for (xml_node::node_list::const_iterator it_item = list_item.begin(); it_item != list_item.end(); ++it_item)
+                        for (const auto & it_item : list_item)
                         {
-                           const xml_element* nodeIt = GetPointer<const xml_element>(*it_item);
+                           const xml_element* nodeIt = GetPointer<const xml_element>(it_item);
                            if(!nodeIt or nodeIt->get_name() != "item") continue;
 
                            if(CE_XVM(stringID, nodeIt)) LOAD_XVM(stringID, nodeIt);
@@ -258,14 +258,14 @@ void LatticeBackendFlow::InitDesignParameters()
    std::string HDL_files = actual_parameters->parameter_values[PARAM_HDL_files];
    std::vector<std::string> file_list = convert_string_to_vector<std::string>(HDL_files, ";");
    std::string sources_macro_list;
-   for(unsigned int v = 0; v < file_list.size(); v++)
+   for(auto & v : file_list)
    {
-      boost::filesystem::path file_path(file_list[v]);
+      boost::filesystem::path file_path(v);
       std::string extension = GetExtension(file_path);
       if(extension == "vhd" || extension == "vhdl" || extension == "VHD" || extension == "VHDL")
-         sources_macro_list += "prj_src add -format VHDL " + file_list[v] + "\n";
+         sources_macro_list += "prj_src add -format VHDL " + v + "\n";
       else if(extension == "v" || extension == "V" || extension == "sv" || extension == "SV")
-         sources_macro_list += "prj_src add -format VERILOG " + file_list[v] + "\n";
+         sources_macro_list += "prj_src add -format VERILOG " + v + "\n";
       else
          THROW_ERROR("Extension not recognized! "+extension);
 
@@ -285,9 +285,9 @@ void LatticeBackendFlow::InitDesignParameters()
 
    create_sdc(actual_parameters);
 
-   for (unsigned int i = 0; i < steps.size(); i++)
+   for (auto & step : steps)
    {
-      steps[i]->tool->EvaluateVariables(actual_parameters);
+      step->tool->EvaluateVariables(actual_parameters);
    }
 }
 

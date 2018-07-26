@@ -172,7 +172,7 @@ int StorageValueInformation::get_compatibility_weight(unsigned int storage_value
    const auto it_succ_v2 = boost::adjacent_vertices(v2, *data);
 
    static const std::vector<std::string> labels = {"mult_expr","widen_mult_expr", "ternary_plus_expr", "ternary_mm_expr", "ternary_pm_expr", "ternary_mp_expr"};
-   for(auto ind=0u; ind < labels.size(); ++ind)
+   for(const auto & label : labels)
    {
       // check if v1 or v2 drive complex operations
       // variable coming from the Entry vertex have to be neglected in this analysis
@@ -182,12 +182,12 @@ int StorageValueInformation::get_compatibility_weight(unsigned int storage_value
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, 0,
                         "-->Statement with USE first variable");
          std::for_each(it_succ_v1.first, it_succ_v1.second,
-                       [this, &op_succ_of_v1_port0, &op_succ_of_v1_port1, &op_succ_of_v1_port2, &var1, &ind] (const vertex succ) {
+                       [this, &op_succ_of_v1_port0, &op_succ_of_v1_port1, &op_succ_of_v1_port2, &var1, &label] (const vertex succ) {
             const std::string op_label = data->CGetOpNodeInfo(succ)->GetOperation();
             const unsigned int succ_id = data->CGetOpNodeInfo(succ)->GetNodeId();
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, 0,
                            "---[" + STR(succ_id) + "] type: " + STR(op_label));
-            if ((op_label == labels[ind]))
+            if ((op_label == label))
             {
                std::vector<HLS_manager::io_binding_type> var_read = HLS_mgr->get_required_values(function_id, succ);
                if(std::get<0>(var_read[0]) == var1)
@@ -209,12 +209,12 @@ int StorageValueInformation::get_compatibility_weight(unsigned int storage_value
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, 0,
                         "-->Statement with USE second variable");
          std::for_each(it_succ_v2.first, it_succ_v2.second,
-                       [this, &op_succ_of_v2_port0, &op_succ_of_v2_port1, &op_succ_of_v2_port2, &var2, &ind] (const vertex succ) {
+                       [this, &op_succ_of_v2_port0, &op_succ_of_v2_port1, &op_succ_of_v2_port2, &var2, &label] (const vertex succ) {
             const std::string op_label = data->CGetOpNodeInfo(succ)->GetOperation();
             const unsigned int succ_id = data->CGetOpNodeInfo(succ)->GetNodeId();
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, 0,
                            "---[" + STR(succ_id) + "] type: " + STR(op_label));
-            if (op_label == labels[ind])
+            if (op_label == label)
             {
                std::vector<HLS_manager::io_binding_type> var_read = HLS_mgr->get_required_values(function_id, succ);
                if(std::get<0>(var_read[0]) == var2)

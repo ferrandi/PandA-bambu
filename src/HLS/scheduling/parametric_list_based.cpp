@@ -417,30 +417,30 @@ void parametric_list_based::exec(const OpVertexSet & operations, ControlStep cur
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "   Computing free input vertices...");
    ///compute the set of vertices without input edges.
    /// At least one vertex is expected
-   for(OpVertexSet::const_iterator vi = operations.begin(); vi != operations.end(); ++vi)
+   for(auto operation : operations)
    {
       ///Skip vertex if it is not in the current subgraph
-      if(!flow_graph->is_in_subset(*vi))
+      if(!flow_graph->is_in_subset(operation))
       {
          continue;
       }
       ///Updating structure for already scheduled operations
-      if(schedule->is_scheduled(*vi))
+      if(schedule->is_scheduled(operation))
       {
-         live_vertices.insert(*vi);
+         live_vertices.insert(operation);
 
       }
-      else if(boost::in_degree(*vi, *flow_graph) <= 0)
+      else if(boost::in_degree(operation, *flow_graph) <= 0)
       {
-         ready_vertices.insert(*vi);
-         if(GET_TYPE(flow_graph, *vi) == TYPE_ENTRY)
-            entry_vertex = *vi;
+         ready_vertices.insert(operation);
+         if(GET_TYPE(flow_graph, operation) == TYPE_ENTRY)
+            entry_vertex = operation;
       }
       else
       {
          ///Check if all its predecessors have been scheduled. In this case the vertex is ready
          InEdgeIterator ei, ei_end;
-         for(boost::tie(ei, ei_end) = boost::in_edges(*vi, *flow_graph); ei != ei_end; ei++)
+         for(boost::tie(ei, ei_end) = boost::in_edges(operation, *flow_graph); ei != ei_end; ei++)
          {
             vertex source = boost::source(*ei, *flow_graph);
             if(!schedule->is_scheduled(source))
@@ -448,7 +448,7 @@ void parametric_list_based::exec(const OpVertexSet & operations, ControlStep cur
          }
          if(ei == ei_end)
          {
-            ready_vertices.insert(*vi);
+            ready_vertices.insert(operation);
          }
       }
    }
@@ -1237,10 +1237,10 @@ DesignFlowStep_Status parametric_list_based::InternalExec()
    {
       OpVertexSet operations(op_graph);
       std::list<vertex> bb_operations = bbg->CGetBBNodeInfo(*vi)->statements_list;
-      for(std::list<vertex>::iterator l = bb_operations.begin(); l != bb_operations.end(); ++l)
+      for(auto & bb_operation : bb_operations)
       {
-         if(HLS->operations.find(*l) != HLS->operations.end())
-            operations.insert(*l);
+         if(HLS->operations.find(bb_operation) != HLS->operations.end())
+            operations.insert(bb_operation);
       }
       PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "performing scheduling of basic block " + STR(bbg->CGetBBNodeInfo(*vi)->block->number));
       PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "  .operations: " + STR(operations.size()));

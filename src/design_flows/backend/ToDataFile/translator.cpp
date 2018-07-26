@@ -1314,9 +1314,9 @@ void Translator::get_normalization(std::unordered_map<std::string, long double> 
          PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Got Root");
          //Recurse through child nodes:
          const xml_node::node_list list = node->get_children();
-         for(xml_node::node_list::const_iterator iter = list.begin(); iter != list.end(); ++iter)
+         for(const auto & iter : list)
          {
-            const xml_element* feature = GetPointer<const xml_element>(*iter);
+            const xml_element* feature = GetPointer<const xml_element>(iter);
             if (!feature) 
                continue;
             if (feature->get_name() == "feature")
@@ -1437,9 +1437,9 @@ void Translator::read_column_formats(const XMLDomParserRef parser, std::list<Lat
             std::vector<std::string> splitted;
             const std::string values = field_element->get_attribute(STR_XML_latex_table_value)->get_value();
             boost::algorithm::split(splitted, values, boost::algorithm::is_any_of(","));
-            for(size_t column = 0; column < splitted.size(); column++)
+            for(const auto & column : splitted)
             {
-               latex_column_format.compared_columns.insert(splitted[column]);
+               latex_column_format.compared_columns.insert(column);
             }
             if(field_element->get_attribute(STR_XML_latex_table_operator))
             {

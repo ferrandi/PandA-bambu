@@ -169,20 +169,20 @@ DesignFlowStep_Status VarComputation::InternalExec()
          Vertices.erase(curr_Ver);
       }
    }
-   for(std::list<vertex>::iterator Ver = Vertices.begin(); Ver != Vertices.end(); ++Ver)
+   for(auto & Vertice : Vertices)
    {
-      const unsigned int node_id = cfg->CGetOpNodeInfo(*Ver)->GetNodeId();
+      const unsigned int node_id = cfg->CGetOpNodeInfo(Vertice)->GetNodeId();
       if(node_id != ENTRY_ID and node_id != EXIT_ID)
       {
-         RecursivelyAnalyze(*Ver, tree_manager->CGetTreeNode(node_id), FunctionBehavior_VariableAccessType::UNKNOWN);
+         RecursivelyAnalyze(Vertice, tree_manager->CGetTreeNode(node_id), FunctionBehavior_VariableAccessType::UNKNOWN);
       }
    }
-   for(std::list<vertex>::iterator Ver = PhiNodes.begin(); Ver != PhiNodes.end(); ++Ver)
+   for(auto & PhiNode : PhiNodes)
    {
-      const unsigned int node_id = cfg->CGetOpNodeInfo(*Ver)->GetNodeId();
+      const unsigned int node_id = cfg->CGetOpNodeInfo(PhiNode)->GetNodeId();
       if(node_id != ENTRY_ID and node_id != EXIT_ID)
       {
-         RecursivelyAnalyze(*Ver, tree_manager->CGetTreeNode(node_id), FunctionBehavior_VariableAccessType::UNKNOWN);
+         RecursivelyAnalyze(PhiNode, tree_manager->CGetTreeNode(node_id), FunctionBehavior_VariableAccessType::UNKNOWN);
       }
    }
    if(parameters->getOption<bool>(OPT_print_dot))

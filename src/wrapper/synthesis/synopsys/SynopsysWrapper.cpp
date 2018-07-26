@@ -130,9 +130,8 @@ std::string SynopsysWrapper::get_command_line(const DesignParametersRef& dp) con
 {
    std::ostringstream s;
    s << get_tool_exec() << " -f " << script_name;
-   for (std::vector<xml_parameter_tRef>::const_iterator it = xml_tool_options.begin(); it != xml_tool_options.end(); ++it)
+   for (const auto & option : xml_tool_options)
    {
-      const xml_parameter_tRef & option = *it;
       if (option->checkCondition(dp))
          s << " " << toString(option, dp) << std::endl;
    }
@@ -229,9 +228,8 @@ std::string SynopsysWrapper::toString(const xml_script_node_tRef node, const Des
          if (comm->value)
             result += *(comm->value);
          if (comm->parameters.size())
-            for (std::vector<xml_parameter_tRef>::const_iterator it = comm->parameters.begin(); it != comm->parameters.end(); ++it)
+            for (auto p : comm->parameters)
             {
-               const xml_parameter_tRef p = *it;
                result += " " + toString(p, dp);
             }
          if (comm->output)
@@ -252,9 +250,8 @@ std::string SynopsysWrapper::toString(const xml_script_node_tRef node, const Des
          if (sh->value)
             result += *(sh->value);
          if (sh->parameters.size())
-            for (std::vector<xml_parameter_tRef>::const_iterator it = sh->parameters.begin(); it != sh->parameters.end(); ++it)
+            for (auto p : sh->parameters)
             {
-               const xml_parameter_tRef p = *it;
                result += " " + toString(p, dp);
             }
          if (sh->output)
@@ -269,9 +266,8 @@ std::string SynopsysWrapper::toString(const xml_script_node_tRef node, const Des
          std::string result;
          bool conditionValue = ite->evaluate_condition(&(ite->condition), dp), first = true;
          const std::vector<xml_script_node_tRef>& block = conditionValue ? ite->thenNodes : ite->elseNodes;
-         for (std::vector<xml_script_node_tRef>::const_iterator it = block.begin(); it != block.end(); ++it)
+         for (auto n : block)
          {
-            const xml_script_node_tRef n = *it;
             if (n->checkCondition(dp))
             {
                if (!first)

@@ -224,24 +224,24 @@ void classic_datapath::add_ports()
 
    std::map<conn_binding::const_param, generic_objRef> const_objs = HLS->Rconn->get_constant_objs();
    unsigned int num = 0;
-   for(std::map<conn_binding::const_param, generic_objRef>::iterator c = const_objs.begin(); c != const_objs.end(); ++c)
+   for(auto & c : const_objs)
    {
-      generic_objRef constant_obj = c->second;
+      generic_objRef constant_obj = c.second;
       structural_objectRef const_obj = SM->add_module_from_technology_library("const_" + STR(num), CONSTANT_STD, LIBRARY_STD, circuit, HLS->HLS_T->get_technology_manager());
 
-      std::string value = std::get<0>(c->first);
-      std::string param = std::get<1>(c->first);
+      std::string value = std::get<0>(c.first);
+      std::string param = std::get<1>(c.first);
       std::string trimmed_value;
       unsigned int precision;
       if (param.size() == 0)
       {
-         trimmed_value = "\"" + std::get<0>(c->first) + "\"";
+         trimmed_value = "\"" + std::get<0>(c.first) + "\"";
          precision = static_cast<unsigned int>(value.size());
       }
       else
       {
          trimmed_value = param;
-         memory::add_memory_parameter(SM, param, std::get<0>(c->first));
+         memory::add_memory_parameter(SM, param, std::get<0>(c.first));
          precision = GetPointer<dataport_obj>(constant_obj)->get_bitsize();
       }
       const_obj->set_parameter("value", trimmed_value);

@@ -137,12 +137,12 @@ void BBWriter::operator()(std::ostream& out, const vertex& v) const
 #endif
             res += " -> " + helper->print_node(phi->index, nullptr, svpf);
             std::string temp;
-            for (unsigned int i = 0; i < res.size(); i++)
+            for (char re : res)
             {
-               if (res[i] == '\"')
+               if (re == '\"')
                   temp += "\\\"";
-               else if (res[i] != '\n')
-                  temp += res[i];
+               else if (re != '\n')
+                  temp += re;
             }
             out << temp << "\\l";
          }
@@ -211,12 +211,12 @@ void BBWriter::operator()(std::ostream& out, const vertex& v) const
                   break;
             }
             std::string temp;
-            for (unsigned int i = 0; i < res.size(); i++)
+            for (char re : res)
             {
-               if (res[i] == '\"')
+               if (re == '\"')
                   temp += "\\\"";
-               else if (res[i] != '\n')
-                  temp += res[i];
+               else if (re != '\n')
+                  temp += re;
             }
             out << temp << "\\l";
          }

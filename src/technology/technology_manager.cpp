@@ -100,13 +100,13 @@ technology_manager::~technology_manager()
 
 void technology_manager::print(std::ostream& os) const
 {
-   for (std::vector<std::string>::const_iterator lib = libraries.begin(); lib != libraries.end(); ++lib)
+   for (const auto & librarie : libraries)
    {
-      const library_managerRef library = library_map.find(*lib)->second;
+      const library_managerRef library = library_map.find(librarie)->second;
       const library_manager::fu_map_type& cells = library->get_library_fu();
-      for (library_manager::fu_map_type::const_iterator it = cells.begin(); it != cells.end(); ++it)
+      for (const auto & cell : cells)
       {
-         it->second->print(os);
+         cell.second->print(os);
       }
    }
 }
@@ -229,9 +229,9 @@ void technology_manager::xload(const xml_element* node, const target_deviceRef d
    std::set<library_managerRef> temp_libraries;
 
    const xml_node::node_list list = node->get_children();
-   for (xml_node::node_list::const_iterator iter = list.begin(); iter != list.end(); ++iter)
+   for (const auto & iter : list)
    {
-      const xml_element* Enode = GetPointer<const xml_element>(*iter);
+      const xml_element* Enode = GetPointer<const xml_element>(iter);
       if(!Enode) continue;
       if(Enode->get_name() == "information")
       {
@@ -441,9 +441,9 @@ void technology_manager::lef_write(const std::string& filename, TargetDevice_Typ
 std::string technology_manager::get_library(const std::string& Name) const
 {
    std::string Library;
-   for(unsigned int i = 0; i < libraries.size(); i++)
+   for(const auto & librarie : libraries)
    {
-      Library = libraries[i];
+      Library = librarie;
       THROW_ASSERT(library_map.find(Library) != library_map.end(), "Library " + Library + " not found");
       if (library_map.find(Library)->second->is_fu(Name))
          return Library;

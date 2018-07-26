@@ -181,10 +181,10 @@ void fsm_controller::create_state_machine(std::string &parse)
    THROW_ASSERT(std::find(working_list.begin(), working_list.end(), first_state) != working_list.end(), "unexpected case");
    working_list.erase(std::find(working_list.begin(), working_list.end(), first_state));
    working_list.push_front(first_state); /// ensure that first_state is the really first one...
-   for(std::list<vertex>::iterator v = working_list.begin(); v != working_list.end(); ++v)
+   for(auto & v : working_list)
    {
-      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Analyzing state " + astg->CGetStateInfo(*v)->name);
-      present_state[*v] = std::vector<long long int>(out_num, 0);
+      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Analyzing state " + astg->CGetStateInfo(v)->name);
+      present_state[v] = std::vector<long long int>(out_num, 0);
       if(selectors.find(conn_binding::IN) != selectors.end())
       {
          auto connection_binding_sets = selectors.find(conn_binding::IN)->second;
@@ -194,20 +194,20 @@ void fsm_controller::create_state_machine(std::string &parse)
             std::map<vertex, std::set<vertex> > activations_check;
    #endif
             const std::set<commandport_obj::transition >& activations = GetPointer<commandport_obj>(s->second)->get_activations();
-            for(std::set<commandport_obj::transition >::const_iterator a = activations.begin(); a != activations.end(); ++a)
+            for(const auto & activation : activations)
             {
    #ifndef NDEBUG
-               if(activations_check.find(std::get<0>(*a)) != activations_check.end())
+               if(activations_check.find(std::get<0>(activation)) != activations_check.end())
                {
-                  THROW_ASSERT(!activations_check.find(std::get<0>(*a))->second.empty(), "empty set not expected here");
-                  if(activations_check.find(std::get<0>(*a))->second.find(std::get<1>(*a)) == activations_check.find(std::get<0>(*a))->second.end())
+                  THROW_ASSERT(!activations_check.find(std::get<0>(activation))->second.empty(), "empty set not expected here");
+                  if(activations_check.find(std::get<0>(activation))->second.find(std::get<1>(activation)) == activations_check.find(std::get<0>(activation))->second.end())
                   {
-                     if(std::get<1>(*a) == NULL_VERTEX)
+                     if(std::get<1>(activation) == NULL_VERTEX)
                         THROW_ERROR("non compatible transitions added");
-                     else if(activations_check.find(std::get<0>(*a))->second.find(NULL_VERTEX) != activations_check.find(std::get<0>(*a))->second.end())
+                     else if(activations_check.find(std::get<0>(activation))->second.find(NULL_VERTEX) != activations_check.find(std::get<0>(activation))->second.end())
                         THROW_ERROR("non compatible transitions added");
                      else
-                        activations_check[std::get<0>(*a)].insert(std::get<1>(*a));
+                        activations_check[std::get<0>(activation)].insert(std::get<1>(activation));
                   }
                   else
                   {
@@ -215,23 +215,23 @@ void fsm_controller::create_state_machine(std::string &parse)
                   }
                }
                else
-                  activations_check[std::get<0>(*a)].insert(std::get<1>(*a));
+                  activations_check[std::get<0>(activation)].insert(std::get<1>(activation));
    #endif
-               if (std::get<0>(*a) == *v)
+               if (std::get<0>(activation) == v)
                {
-                  present_state[*v][out_ports[s->second]] = 1;
+                  present_state[v][out_ports[s->second]] = 1;
                   //std::cerr << "port " << s->second->get_string() << " " << out_ports[s->second] << " enabled from state " << HLS->STG->get_state_name(a->first) << " to " << HLS->STG->get_state_name(a->second) << std::endl;
                }
             }
          }
       }
 
-      const std::list<vertex>& operations = astg->CGetStateInfo(*v)->executing_operations;
-      for (std::list<vertex>::const_iterator op = operations.begin(); op != operations.end(); ++op)
+      const std::list<vertex>& operations = astg->CGetStateInfo(v)->executing_operations;
+      for (auto op : operations)
       {
-         technology_nodeRef tn = HLS->allocation_information->get_fu(HLS->Rfu->get_assign(*op));
-         technology_nodeRef op_tn = GetPointer<functional_unit>(tn)->get_operation(tree_helper::normalized_ID(data->CGetOpNodeInfo(*op)->GetOperation()));
-         THROW_ASSERT(GetPointer<operation>(op_tn)->time_m, "Time model not available for operation: " + GET_NAME(data, *op));
+         technology_nodeRef tn = HLS->allocation_information->get_fu(HLS->Rfu->get_assign(op));
+         technology_nodeRef op_tn = GetPointer<functional_unit>(tn)->get_operation(tree_helper::normalized_ID(data->CGetOpNodeInfo(op)->GetOperation()));
+         THROW_ASSERT(GetPointer<operation>(op_tn)->time_m, "Time model not available for operation: " + GET_NAME(data, op));
          structural_managerRef CM = GetPointer<functional_unit>(tn)->CM;
          if(!CM) continue;
          structural_objectRef top = CM->get_circ();
@@ -243,13 +243,13 @@ void fsm_controller::create_state_machine(std::string &parse)
          /// do some checks
          if(!GetPointer<operation>(op_tn)->is_bounded() && (!start_port_i || !done_port_i))
              THROW_ERROR("Unbonded operations have to have both done_port and start_port ports!");
-         if (((GET_TYPE(data, *op) & TYPE_EXTERNAL && start_port_i) or !GetPointer<operation>(op_tn)->is_bounded() or start_port_i) and
-             !stg->CGetStateInfo(*v)->is_dummy and
-             std::find(stg->CGetStateInfo(*v)->starting_operations.begin(), stg->CGetStateInfo(*v)->starting_operations.end(), *op) != stg->CGetStateInfo(*v)->starting_operations.end())
+         if (((GET_TYPE(data, op) & TYPE_EXTERNAL && start_port_i) or !GetPointer<operation>(op_tn)->is_bounded() or start_port_i) and
+             !stg->CGetStateInfo(v)->is_dummy and
+             std::find(stg->CGetStateInfo(v)->starting_operations.begin(), stg->CGetStateInfo(v)->starting_operations.end(), op) != stg->CGetStateInfo(v)->starting_operations.end())
          {
-            unsigned int unbounded_port = out_ports[HLS->Rconn->bind_selector_port(conn_binding::IN, commandport_obj::UNBOUNDED, *op, data)];
+            unsigned int unbounded_port = out_ports[HLS->Rconn->bind_selector_port(conn_binding::IN, commandport_obj::UNBOUNDED, op, data)];
             unbounded_ports.insert(unbounded_port);
-            present_state[*v][unbounded_port] = 1;
+            present_state[v][unbounded_port] = 1;
          }
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--");
@@ -260,26 +260,26 @@ void fsm_controller::create_state_machine(std::string &parse)
    parse += "\n";
 
    const tree_managerRef TreeM = HLSMgr->get_tree_manager();
-   for(std::list<vertex>::iterator v = working_list.begin(); v != working_list.end(); ++v)
+   for(auto & v : working_list)
    {
-      if (HLS->STG->get_entry_state() == *v or HLS->STG->get_exit_state() == *v)
+      if (HLS->STG->get_entry_state() == v or HLS->STG->get_exit_state() == v)
          continue;
-      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Analyzing state " + stg->CGetStateInfo(*v)->name);
+      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Analyzing state " + stg->CGetStateInfo(v)->name);
 
-      parse += stg->CGetStateInfo(*v)->name + " 0" + input_vector_to_string(present_state[*v],0);
+      parse += stg->CGetStateInfo(v)->name + " 0" + input_vector_to_string(present_state[v],0);
 
       std::list<EdgeDescriptor> sorted;
       EdgeDescriptor default_edge;
       bool found_default=false;
 
-      for(boost::tie(oe,oend) = boost::out_edges(*v, *stg); oe != oend; oe++)
+      for(boost::tie(oe,oend) = boost::out_edges(v, *stg); oe != oend; oe++)
       {
          if(!found_default)
          {
             const std::set<std::pair<vertex,unsigned int> >& cond = stg->CGetTransitionInfo(*oe)->conditions;
-            for(std::set<std::pair<vertex,unsigned int> >::const_iterator cond_it = cond.begin(); cond_it != cond.end(); ++cond_it)
+            for(const auto & cond_it : cond)
             {
-               if(cond_it->second == default_COND)
+               if(cond_it.second == default_COND)
                {
                   found_default = true;
                   default_edge = *oe;
@@ -365,7 +365,7 @@ void fsm_controller::create_state_machine(std::string &parse)
          std::vector<long long int> transition_outputs(out_num, default_COND);
          for(unsigned int k = 0; k < out_num; k++)
          {
-            if (present_state[*v][k] == 1 && unbounded_ports.find(k) == unbounded_ports.end()) transition_outputs[k] = 0;
+            if (present_state[v][k] == 1 && unbounded_ports.find(k) == unbounded_ports.end()) transition_outputs[k] = 0;
          }
          if(selectors.find(conn_binding::IN) != selectors.end())
          {
@@ -374,12 +374,12 @@ void fsm_controller::create_state_machine(std::string &parse)
             {
                //std::cerr << jt->second->get_string() << std::endl;
                const std::set<commandport_obj::transition >& activations = GetPointer<commandport_obj>(s->second)->get_activations();
-               for(std::set<commandport_obj::transition>::const_iterator it = activations.begin(); it != activations.end(); ++it)
+               for(const auto & activation : activations)
                {
-                  THROW_ASSERT(*v != NULL_VERTEX && std::get<0>(*it) != NULL_VERTEX, "error on source vertex");
-                  if (std::get<0>(*it) == *v && (std::get<1>(*it) == tgt || std::get<1>(*it) == NULL_VERTEX))
+                  THROW_ASSERT(v != NULL_VERTEX && std::get<0>(activation) != NULL_VERTEX, "error on source vertex");
+                  if (std::get<0>(activation) == v && (std::get<1>(activation) == tgt || std::get<1>(activation) == NULL_VERTEX))
                   {
-                     THROW_ASSERT(present_state[*v][out_ports[s->second]] == 1, "unexpected condition");
+                     THROW_ASSERT(present_state[v][out_ports[s->second]] == 1, "unexpected condition");
                      transition_outputs[out_ports[s->second]] = 1;
                      //std::cerr << "Port " << s->second->get_string() << " " << out_ports[s->second] << " enabled from state " << HLS->STG->get_state_name(it->first) << " to " << HLS->STG->get_state_name(it->second) << std::endl;
                   }
@@ -388,9 +388,9 @@ void fsm_controller::create_state_machine(std::string &parse)
          }
          for(unsigned int k = 0; k < out_num; k++)
          {
-            if(present_state[*v][k] == transition_outputs[k])
+            if(present_state[v][k] == transition_outputs[k])
                transition_outputs[k] = default_COND;
-            else if (present_state[*v][k] != transition_outputs[k] && present_state[*v][k] == 1 && transition_outputs[k] == 0)
+            else if (present_state[v][k] != transition_outputs[k] && present_state[v][k] == 1 && transition_outputs[k] == 0)
             {
                //std::cerr << "k " << k << " to " << HLS->STG->get_state_name(tgt)<< std::endl;
                //abort();
@@ -404,7 +404,7 @@ void fsm_controller::create_state_machine(std::string &parse)
       parse += "; ";
 
       parse += "\n";
-      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Analyzed state " + stg->CGetStateInfo(*v)->name);
+      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Analyzed state " + stg->CGetStateInfo(v)->name);
 
    }
    //std::cerr << "Finite_state_machine representation: " << std::endl;

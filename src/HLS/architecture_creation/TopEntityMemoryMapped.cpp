@@ -210,10 +210,10 @@ void TopEntityMemoryMapped::allocate_parameters() const
 
    // Allocate every parameter on chip.
    const std::list<unsigned int>& topParams = behavioral_helper->get_parameters();
-   for (std::list<unsigned int>::const_iterator itr = topParams.begin(), end = topParams.end(); itr != end; ++itr)
+   for (unsigned int topParam : topParams)
    {
-      base_address = HLSMgr->Rmem->get_symbol(*itr, topIdx)->get_symbol_name();
-      memory::add_memory_parameter(HLS->top, base_address, STR(HLSMgr->Rmem->get_parameter_base_address(topIdx, *itr)));
+      base_address = HLSMgr->Rmem->get_symbol(topParam, topIdx)->get_symbol_name();
+      memory::add_memory_parameter(HLS->top, base_address, STR(HLSMgr->Rmem->get_parameter_base_address(topIdx, topParam)));
    }
 
    // Allocate the return value on chip.

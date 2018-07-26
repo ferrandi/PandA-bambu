@@ -113,8 +113,8 @@ DesignFlowStep_Status BBCdgComputation::InternalExec()
    boost::topological_sort(*bb, std::front_inserter(bb_levels));
    std::map<vertex, unsigned int> bb_sorted;
    unsigned int counter = 0;
-   for(std::list<vertex>::iterator it = bb_levels.begin(); it != bb_levels.end(); ++it)
-      bb_sorted[*it] = ++counter;
+   for(auto & bb_level : bb_levels)
+      bb_sorted[bb_level] = ++counter;
    //iterate over outgoing edges of the basic block CFG.
    for (boost::tie(ei, ei_end) = boost::edges(*bb); ei != ei_end ; ++ei )
    {

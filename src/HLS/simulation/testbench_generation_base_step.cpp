@@ -1265,9 +1265,9 @@ void TestbenchGenerationBaseStep::write_auxiliary_signal_declaration() const
    {
       std::string memory_str = mod->get_parameter(MEMORY_PARAMETER);
       std::vector<std::string> mem_tag = convert_string_to_vector<std::string>(memory_str, ";");
-      for(unsigned int i = 0; i < mem_tag.size(); i++)
+      for(const auto & i : mem_tag)
       {
-         std::vector<std::string> mem_add = convert_string_to_vector<std::string>(mem_tag[i], "=");
+         std::vector<std::string> mem_add = convert_string_to_vector<std::string>(i, "=");
          THROW_ASSERT(mem_add.size() == 2, "malformed address");
          writer->write(", ");
          std::string name = mem_add[0];

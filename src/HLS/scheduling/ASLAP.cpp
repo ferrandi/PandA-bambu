@@ -104,9 +104,9 @@ ASLAP::ASLAP(const HLS_managerConstRef _hls_manager, const hlsRef HLS, const boo
          has_branching_blocks = true;
    }
    const std::deque<vertex>& ls = _hls_manager->CGetFunctionBehavior(HLS->functionId)->get_levels();
-   for(std::deque<vertex>::const_iterator l = ls.begin(); l != ls.end(); ++l)
+   for(auto l : ls)
    {
-      if (operations.find(*l) != operations.end()) levels.push_back(*l);
+      if (operations.find(l) != operations.end()) levels.push_back(l);
    }
 }
 

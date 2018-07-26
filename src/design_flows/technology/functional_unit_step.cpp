@@ -172,10 +172,10 @@ void FunctionalUnitStep::AnalyzeFu(const technology_nodeRef f_unit)
                THROW_ASSERT(pipe_params.size()>0, "malformed pipe parameter string");
                if(precision_pipe_param_pair[0] == "*")
                {
-                  for (std::set<unsigned int>::iterator prec = precision.begin(), end = precision.end(); prec != end; ++prec)
+                  for (unsigned int prec : precision)
                      for(std::vector<std::string>::const_iterator param_it=pipe_params.begin(), param_it_end = pipe_params.end(); param_it != param_it_end; ++param_it)
-                        if(std::find(pipe_parameters[*prec].begin(), pipe_parameters[*prec].end(), *param_it) == pipe_parameters[*prec].end())
-                           pipe_parameters[*prec].push_back(*param_it);
+                        if(std::find(pipe_parameters[prec].begin(), pipe_parameters[prec].end(), *param_it) == pipe_parameters[prec].end())
+                           pipe_parameters[prec].push_back(*param_it);
                }
                else if(precision_pipe_param_pair[0] == "DSPs_y_sizes")
                {
@@ -215,10 +215,10 @@ void FunctionalUnitStep::AnalyzeFu(const technology_nodeRef f_unit)
                THROW_ASSERT(portsize_params.size()>0, "malformed portsize parameter string");
                if(precision_portsize_param_pair[0] == "*")
                {
-                  for (std::set<unsigned int>::iterator prec = precision.begin(), end = precision.end(); prec != end; ++prec)
+                  for (unsigned int prec : precision)
                      for(std::vector<std::string>::const_iterator param_it=portsize_params.begin(), param_it_end = portsize_params.end(); param_it != param_it_end; ++param_it)
-                        if(std::find(portsize_parameters[*prec].begin(), portsize_parameters[*prec].end(), *param_it) == portsize_parameters[*prec].end())
-                           portsize_parameters[*prec].push_back(*param_it);
+                        if(std::find(portsize_parameters[prec].begin(), portsize_parameters[prec].end(), *param_it) == portsize_parameters[prec].end())
+                           portsize_parameters[prec].push_back(*param_it);
                }
                else if(precision.find(boost::lexical_cast<unsigned int>(precision_portsize_param_pair[0])) != precision.end())
                {
@@ -238,9 +238,9 @@ void FunctionalUnitStep::AnalyzeFu(const technology_nodeRef f_unit)
 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Computed parameters");
 
-   for (std::set<unsigned int>::iterator prec = precision.begin(), end = precision.end(); prec != end; ++prec)
+   for (unsigned int prec : precision)
    {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering precision " + STR(*prec) + " bits");
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering precision " + STR(prec) + " bits");
       if (fu_curr->CM)
       {
          const structural_objectRef obj = fu_curr->CM->get_circ();
@@ -295,9 +295,9 @@ void FunctionalUnitStep::AnalyzeFu(const technology_nodeRef f_unit)
             }
             unsigned int constPort;
             /// check if the resource can be pipelined
-            size_t n_pipe_parameters = pipe_parameters[*prec].size();
+            size_t n_pipe_parameters = pipe_parameters[prec].size();
             size_t n_iterations_pipe = n_pipe_parameters > 1 ? n_pipe_parameters : 1;
-            size_t n_portsize_parameters = portsize_parameters[*prec].size();
+            size_t n_portsize_parameters = portsize_parameters[prec].size();
             size_t n_iterations_portsize = n_portsize_parameters > 1 ? n_portsize_parameters : 1;
 
             for(size_t portsize_index=0; portsize_index < n_iterations_portsize; ++portsize_index)
@@ -331,19 +331,19 @@ void FunctionalUnitStep::AnalyzeFu(const technology_nodeRef f_unit)
                               fu_name += "_" + STR(1);
                               template_parameters += STR(1);
                            }
-                           else if (iport == 1 and (fu_base_name == "widen_mult_expr_FU" or fu_base_name == "ui_widen_mult_expr_FU" or fu_base_name == "mult_expr_FU" or fu_base_name == "ui_mult_expr_FU") and DSP_y_to_DSP_x.find(*prec) != DSP_y_to_DSP_x.end())
+                           else if (iport == 1 and (fu_base_name == "widen_mult_expr_FU" or fu_base_name == "ui_widen_mult_expr_FU" or fu_base_name == "mult_expr_FU" or fu_base_name == "ui_mult_expr_FU") and DSP_y_to_DSP_x.find(prec) != DSP_y_to_DSP_x.end())
                            {
-                              fu_name += "_" + STR(DSP_y_to_DSP_x.find(*prec)->second);
-                              template_parameters += STR(DSP_y_to_DSP_x.find(*prec)->second);
+                              fu_name += "_" + STR(DSP_y_to_DSP_x.find(prec)->second);
+                              template_parameters += STR(DSP_y_to_DSP_x.find(prec)->second);
                            }
                            else if (iport != constPort)
                            {
-                              fu_name += "_" + STR(*prec);
-                              template_parameters += STR(*prec);
+                              fu_name += "_" + STR(prec);
+                              template_parameters += STR(prec);
                               if(port->get_typeRef()->type ==  structural_type_descriptor::VECTOR_INT || port->get_typeRef()->type ==  structural_type_descriptor::VECTOR_UINT || port->get_typeRef()->type ==  structural_type_descriptor::VECTOR_REAL)
                               {
-                                 fu_name += "_" + STR(128 / *prec);
-                                 template_parameters += " " + STR(128 / *prec);
+                                 fu_name += "_" + STR(128 / prec);
+                                 template_parameters += " " + STR(128 / prec);
                               }
 
                            }
@@ -359,48 +359,48 @@ void FunctionalUnitStep::AnalyzeFu(const technology_nodeRef f_unit)
                            structural_objectRef port = mod->get_out_port(oport);
                            THROW_ASSERT(port, "expected a port");
                            if (port->get_id() == DONE_PORT_NAME || (GetPointer<port_o>(port)->get_is_memory())) continue;
-                           if ((fu_base_name == "widen_mult_expr_FU" or fu_base_name == "ui_widen_mult_expr_FU") and DSP_y_to_DSP_x.find(*prec) != DSP_y_to_DSP_x.end())
+                           if ((fu_base_name == "widen_mult_expr_FU" or fu_base_name == "ui_widen_mult_expr_FU") and DSP_y_to_DSP_x.find(prec) != DSP_y_to_DSP_x.end())
                            {
-                              fu_name += "_" + STR(*prec + DSP_y_to_DSP_x.find(*prec)->second);
-                              template_parameters += " " + STR(*prec + DSP_y_to_DSP_x.find(*prec)->second);
+                              fu_name += "_" + STR(prec + DSP_y_to_DSP_x.find(prec)->second);
+                              template_parameters += " " + STR(prec + DSP_y_to_DSP_x.find(prec)->second);
                            }
-                           else if ((fu_base_name == "mult_expr_FU" or fu_base_name == "ui_mult_expr_FU") and DSP_y_to_DSP_x.find(*prec) != DSP_y_to_DSP_x.end())
+                           else if ((fu_base_name == "mult_expr_FU" or fu_base_name == "ui_mult_expr_FU") and DSP_y_to_DSP_x.find(prec) != DSP_y_to_DSP_x.end())
                            {
-                              fu_name += "_" + STR(resize_to_1_8_16_32_64_128_256_512(*prec));
-                              template_parameters += " " + STR(resize_to_1_8_16_32_64_128_256_512(*prec));
+                              fu_name += "_" + STR(resize_to_1_8_16_32_64_128_256_512(prec));
+                              template_parameters += " " + STR(resize_to_1_8_16_32_64_128_256_512(prec));
 
                            }
                            else if(GetPointer<port_o>(port)->get_is_doubled())
                            {
-                              fu_name += "_" + STR(2 * *prec);
-                              template_parameters += " " + STR(2 * *prec);
+                              fu_name += "_" + STR(2 * prec);
+                              template_parameters += " " + STR(2 * prec);
                            }
                            else if(GetPointer<port_o>(port)->get_is_halved())
                            {
-                              fu_name += "_" + STR(*prec/2);
-                              template_parameters += " " + STR(*prec/2);
+                              fu_name += "_" + STR(prec/2);
+                              template_parameters += " " + STR(prec/2);
                            }
                            else
                            {
-                              fu_name += "_" + STR(*prec);
-                              template_parameters += " " + STR(*prec);
+                              fu_name += "_" + STR(prec);
+                              template_parameters += " " + STR(prec);
                            }
                            if(port->get_typeRef()->type ==  structural_type_descriptor::VECTOR_INT || port->get_typeRef()->type ==  structural_type_descriptor::VECTOR_UINT || port->get_typeRef()->type ==  structural_type_descriptor::VECTOR_REAL)
                            {
                               if(GetPointer<port_o>(port)->get_is_doubled())
                               {
-                                 fu_name += "_" + STR(128 / (2 * *prec));
-                                 template_parameters += " " + STR(128 / (2 * *prec));
+                                 fu_name += "_" + STR(128 / (2 * prec));
+                                 template_parameters += " " + STR(128 / (2 * prec));
                               }
                               else if(GetPointer<port_o>(port)->get_is_halved())
                               {
-                                 fu_name += "_" + STR(128 / (*prec/2));
-                                 template_parameters += " " + STR(128 / (*prec/2));
+                                 fu_name += "_" + STR(128 / (prec/2));
+                                 template_parameters += " " + STR(128 / (prec/2));
                               }
                               else
                               {
-                                 fu_name += "_" + STR(128 / *prec);
-                                 template_parameters += " " + STR(128 / *prec);
+                                 fu_name += "_" + STR(128 / prec);
+                                 template_parameters += " " + STR(128 / prec);
                               }
 
                            }
@@ -408,13 +408,13 @@ void FunctionalUnitStep::AnalyzeFu(const technology_nodeRef f_unit)
                      }
                      if(n_pipe_parameters>0)
                      {
-                        fu_name += "_" + pipe_parameters[*prec][stage_index];
-                        template_parameters += " " + pipe_parameters[*prec][stage_index];
+                        fu_name += "_" + pipe_parameters[prec][stage_index];
+                        template_parameters += " " + pipe_parameters[prec][stage_index];
                      }
                      if(n_portsize_parameters>0)
                      {
-                        fu_name += "_" + portsize_parameters[*prec][portsize_index];
-                        template_parameters += " " + portsize_parameters[*prec][portsize_index];
+                        fu_name += "_" + portsize_parameters[prec][portsize_index];
+                        template_parameters += " " + portsize_parameters[prec][portsize_index];
                      }
 
 
@@ -428,7 +428,7 @@ void FunctionalUnitStep::AnalyzeFu(const technology_nodeRef f_unit)
                            fun_unit = GetPointer<functional_unit_template>(f_unit)->FU;
                         else
                            fun_unit = f_unit;
-                        tn = create_template_instance(fun_unit, fu_name, device, *prec);
+                        tn = create_template_instance(fun_unit, fu_name, device, prec);
                         fu = GetPointer<functional_unit>(tn);
                         fu->fu_template_parameters = template_parameters;
                         TM->get_library_manager(LM)->add(tn);
@@ -436,7 +436,7 @@ void FunctionalUnitStep::AnalyzeFu(const technology_nodeRef f_unit)
                      else
                         fu = GetPointer<functional_unit>(tn);
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing cell " + fu->get_name());
-                     AnalyzeCell(fu, *prec, portsize_parameters.find(*prec)->second, portsize_index, pipe_parameters.find(*prec)->second, stage_index, constPort, is_commutative);
+                     AnalyzeCell(fu, prec, portsize_parameters.find(prec)->second, portsize_index, pipe_parameters.find(prec)->second, stage_index, constPort, is_commutative);
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed cell " + fu->get_name());
                   }
                }
@@ -444,7 +444,7 @@ void FunctionalUnitStep::AnalyzeFu(const technology_nodeRef f_unit)
             }
          }
       }
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Considered precision " + STR(*prec) + " bits");
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Considered precision " + STR(prec) + " bits");
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed " + f_unit->get_name());
 }

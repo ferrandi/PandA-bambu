@@ -165,10 +165,10 @@ boost::math::normal CreateStatisticalAttribute(double a, std::vector<int> d, dou
    boost::math::normal x_rand(mean_rand, st_dev_rand);
    ris = MultiplyVarForCoefficient(d_rand, x_rand);
 
-   for (unsigned int i = 0;i < d.size(); i++)
+   for (int i : d)
    {
       boost::math::normal temp(mean, st_dev);
-      ris = VarSum(ris, MultiplyVarForCoefficient(d.at(i), temp));
+      ris = VarSum(ris, MultiplyVarForCoefficient(i, temp));
    }
 
    return VarSum(ris, a);

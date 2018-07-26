@@ -201,9 +201,9 @@ DesignFlowStep_Status use_counting::InternalExec()
          std::set<tree_nodeRef> ssa_uses;
          analyze_node(statement_node, ssa_uses);
          /// [breadshe] Add current statement to the use_stmts corresponding to the ssa_name nodes contained in ssa_uses
-         for(std::set<tree_nodeRef>::iterator uses_it = ssa_uses.begin(); uses_it != ssa_uses.end(); ++uses_it)
+         for(const auto & ssa_use : ssa_uses)
          {
-            ssa_name * sn = GetPointer<ssa_name>(GET_NODE(*uses_it));
+            ssa_name * sn = GetPointer<ssa_name>(GET_NODE(ssa_use));
             sn->AddUseStmt(statement_node);
          }
       }
@@ -211,9 +211,9 @@ DesignFlowStep_Status use_counting::InternalExec()
       {
          std::set<tree_nodeRef> ssa_uses;
          analyze_node(phi_node, ssa_uses);
-         for(std::set<tree_nodeRef>::iterator uses_it = ssa_uses.begin(); uses_it != ssa_uses.end(); ++uses_it)
+         for(const auto & ssa_use : ssa_uses)
          {
-            ssa_name * sn = GetPointer<ssa_name>(GET_NODE(*uses_it));
+            ssa_name * sn = GetPointer<ssa_name>(GET_NODE(ssa_use));
             sn->AddUseStmt(phi_node);
          }
          GetPointer<gimple_phi>(GET_NODE(phi_node))->SetSSAUsesComputed();

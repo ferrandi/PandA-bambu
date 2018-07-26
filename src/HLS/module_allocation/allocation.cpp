@@ -214,8 +214,8 @@ technology_nodeRef allocation::extract_bambu_provided(
    bool has_current_op = false;
 
    std::string op_name = curr_op->get_name();
-   for(std::vector<technology_nodeRef>::const_iterator op_it=op_vec.begin(); op_it!=op_vec.end(); ++op_it)
-      if(GetPointer<operation>(*op_it)->get_name() == op_name)
+   for(const auto & op_it : op_vec)
+      if(GetPointer<operation>(op_it)->get_name() == op_name)
          has_current_op = true;
 
    if(!has_current_op)
@@ -236,13 +236,13 @@ technology_nodeRef allocation::extract_bambu_provided(
    }
    else
    {
-      for(std::vector<technology_nodeRef>::const_iterator op_it=op_vec.begin(); op_it!=op_vec.end(); ++op_it)
-         if(GetPointer<operation>(*op_it)->get_name() == op_name)
+      for(const auto & op_it : op_vec)
+         if(GetPointer<operation>(op_it)->get_name() == op_name)
          {
             functional_unit* fu_ob = GetPointer<functional_unit>(TM->get_fu(bambu_provided_resource, WORK_LIBRARY));
             THROW_ASSERT(fu_ob, "Functional unit not found for " + bambu_provided_resource);
             operation* op_ob = GetPointer<operation>(fu_ob->get_operation(bambu_provided_resource));
-            GetPointer<operation>(*op_it)->bounded = op_ob->bounded;
+            GetPointer<operation>(op_it)->bounded = op_ob->bounded;
          }
    }
 
@@ -533,9 +533,9 @@ void allocation::add_proxy_function_wrapper(
    wrapper_fu->memory_ctrl_type = orig_fu->memory_ctrl_type;
    wrapper_fu->bram_load_latency = orig_fu->bram_load_latency;
    const functional_unit::operation_vec &ops = orig_fu->get_operations();
-   for(unsigned int o = 0; o < ops.size(); o++)
+   for(const auto & op : ops)
    {
-      operation * current_op = GetPointer<operation>(ops[o]);
+      operation * current_op = GetPointer<operation>(op);
       std::string op_name = current_op->get_name();
       TM->add_operation(PROXY_LIBRARY, wrapped_fu_name, op_name);
       operation* proxy_op = GetPointer<operation>(wrapper_fu->get_operation(op_name));
@@ -566,9 +566,9 @@ void allocation::BuildProxyFunctionVerilog(functional_unit* current_fu)
 
    structural_type_descriptorRef b_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 0));
    std::string sel_guard;
-   for(unsigned int o = 0; o < ops.size(); o++)
+   for(const auto & op : ops)
    {
-      operation * current_op = GetPointer<operation>(ops[o]);
+      operation * current_op = GetPointer<operation>(op);
       std::string op_name = current_op->get_name();
       if(boost::algorithm::starts_with(op_name,PROXY_PREFIX)) continue;
       std::string sel_port_name = "sel_"+op_name;
@@ -626,9 +626,9 @@ void allocation::BuildProxyFunctionVHDL(functional_unit* current_fu)
 
    structural_type_descriptorRef b_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 0));
    std::string sel_guard;
-   for(unsigned int o = 0; o < ops.size(); o++)
+   for(const auto & op : ops)
    {
-      operation * current_op = GetPointer<operation>(ops[o]);
+      operation * current_op = GetPointer<operation>(op);
       std::string op_name = current_op->get_name();
       if(boost::algorithm::starts_with(op_name,PROXY_PREFIX)) continue;
       std::string sel_port_name = "sel_"+op_name;
@@ -871,9 +871,9 @@ void allocation::add_proxy_function_module(
    proxy_fu->memory_ctrl_type = orig_fu->memory_ctrl_type;
    proxy_fu->bram_load_latency = orig_fu->bram_load_latency;
    const functional_unit::operation_vec &ops = orig_fu->get_operations();
-   for (unsigned int o = 0; o < ops.size(); o++)
+   for (const auto & op : ops)
    {
-      operation * current_op = GetPointer<operation>(ops[o]);
+      operation * current_op = GetPointer<operation>(op);
       std::string op_name = current_op->get_name();
       TM->add_operation(PROXY_LIBRARY, proxied_fu_name, op_name);
       operation* proxy_op = GetPointer<operation>(proxy_fu->get_operation(op_name));
@@ -1945,10 +1945,10 @@ std::string allocation::get_compliant_pipelined_unit(double clock, const std::st
    std::vector<std::string> parameters_split;
    boost::algorithm::split(parameters_split, temp_pipe_parameters, boost::algorithm::is_any_of("|"));
    THROW_ASSERT(parameters_split.size() > 0, "unexpected pipe_parameter format");
-   for(size_t el_indx = 0; el_indx < parameters_split.size(); ++el_indx)
+   for(auto & el_indx : parameters_split)
    {
       std::vector<std::string> parameters_pairs;
-      boost::algorithm::split(parameters_pairs, parameters_split[el_indx], boost::algorithm::is_any_of(":"));
+      boost::algorithm::split(parameters_pairs, el_indx, boost::algorithm::is_any_of(":"));
       if(parameters_pairs[0] == "*")
       {
          temp_pipe_parameters = parameters_pairs[1];

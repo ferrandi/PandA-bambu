@@ -96,9 +96,9 @@ HLS_constraints::HLS_constraints(const ParameterConstRef _Param, const std::stri
          {
             xml_element* node = parser.get_document()->get_root_node();
             xml_node::node_list list = node->get_children();
-            for (xml_node::node_list::iterator iter = list.begin(); iter != list.end(); ++iter)
+            for (auto & iter : list)
             {
-               xml_element* Enode = GetPointer<xml_element>(*iter);
+               xml_element* Enode = GetPointer<xml_element>(iter);
                if(!Enode || Enode->get_name() != GET_CLASS_NAME(HLS_constraints)) continue;
                std::string function_name;
                if (fun_name.size()) /* constraints related to a specific function */
@@ -280,9 +280,9 @@ void HLS_constraints::xload(const xml_element* Enode)
 {
    //Recurse through child nodes:
    const xml_node::node_list list = Enode->get_children();
-   for (xml_node::node_list::const_iterator iter = list.begin(); iter != list.end(); ++iter)
+   for (const auto & iter : list)
    {
-      const xml_element* EnodeC = GetPointer<const xml_element>(*iter);
+      const xml_element* EnodeC = GetPointer<const xml_element>(iter);
       if(!EnodeC) continue;
       if(EnodeC->get_name() == "tech_constraints")
       {
@@ -419,9 +419,9 @@ void HLS_constraints::add_builtin_constraints()
 
          //Recurse through child nodes:
          const xml_node::node_list list = node->get_children();
-         for (xml_node::node_list::const_iterator iter = list.begin(); iter != list.end(); ++iter)
+         for (const auto & iter : list)
          {
-            const xml_element* Enode = GetPointer<const xml_element>(*iter);
+            const xml_element* Enode = GetPointer<const xml_element>(iter);
             if(!Enode || Enode->get_name() != GET_CLASS_NAME(HLS_constraints)) continue;
             xload(Enode);
          }
@@ -462,9 +462,9 @@ void HLS_constraints::read_HLS_constraints_File(const std::string& fn)
 
          //Recurse through child nodes:
          const xml_node::node_list list = node->get_children();
-         for (xml_node::node_list::const_iterator iter = list.begin(); iter != list.end(); ++iter)
+         for (const auto & iter : list)
          {
-            const xml_element* Enode = GetPointer<const xml_element>(*iter);
+            const xml_element* Enode = GetPointer<const xml_element>(iter);
             if(!Enode || Enode->get_name() != GET_CLASS_NAME(HLS_constraints)) continue;
             xload(Enode);
          }

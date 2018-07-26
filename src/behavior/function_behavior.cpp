@@ -642,17 +642,17 @@ std::set<unsigned int> FunctionBehavior::get_local_variables(const application_m
       vars.insert(varsTemp.begin(), varsTemp.end());
    }
    const std::list<unsigned int>& funParams = helper->get_parameters();
-   for (std::list<unsigned int>::const_iterator i = funParams.begin(); i != funParams.end(); ++i)
+   for (unsigned int funParam : funParams)
    {
-      if (vars.find(*i) != vars.end())
-         vars.erase(*i);
+      if (vars.find(funParam) != vars.end())
+         vars.erase(funParam);
    }
 
    const CustomSet<unsigned int>& gblVariables = AppM->get_global_variables();
-   for (CustomSet<unsigned int>::const_iterator i = gblVariables.begin(); i != gblVariables.end(); ++i)
+   for (unsigned int gblVariable : gblVariables)
    {
-      if (vars.find(*i) != vars.end())
-         vars.erase(*i);
+      if (vars.find(gblVariable) != vars.end())
+         vars.erase(gblVariable);
    }
    return vars;
 }

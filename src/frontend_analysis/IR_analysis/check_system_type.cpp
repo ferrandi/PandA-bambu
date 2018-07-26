@@ -787,9 +787,9 @@ bool CheckSystemType::is_system_include(std::string include) const
    if(include == "<built-in>")
       return true;
    std::string include_p(FILENAME_NORM(include));
-   for (unsigned int i = 0; i < systemIncPath.size(); i++)
+   for (auto & i : systemIncPath)
    {
-      if (include_p.compare(0, systemIncPath[i].size() + 1, systemIncPath[i] + "/") == 0)
+      if (include_p.compare(0, i.size() + 1, i + "/") == 0)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Include is " + include + ": system include");
          return true;
@@ -861,15 +861,15 @@ void CheckSystemType::build_include_structures()
    const GccWrapperConstRef gcc_wrapper(new GccWrapper(parameters, GccWrapper_CompilerTarget::CT_NO_GCC, GccWrapper_OptimizationSet::O0));
    gcc_wrapper->GetSystemIncludes(Splitted);
 
-   for (std::vector<std::string>::iterator tok_iter = Splitted.begin(); tok_iter != Splitted.end(); ++tok_iter)
+   for (auto & tok_iter : Splitted)
    {
-      if (*tok_iter != "")
+      if (tok_iter != "")
       {
          std::string temp;
          if (getenv("MINGW_INST_DIR"))
          {
             std::string mingw_prefix = getenv("MINGW_INST_DIR");
-            temp = *tok_iter;
+            temp = tok_iter;
             if (boost::algorithm::starts_with(temp,"z:/mingw"))
                temp = temp.replace(0, 8, FILENAME_NORM(mingw_prefix)); ///replace z:/mingw at the beginning of the string
             temp = FILENAME_NORM(temp);
@@ -877,7 +877,7 @@ void CheckSystemType::build_include_structures()
          }
          else
          {
-            temp = FILENAME_NORM(*tok_iter);
+            temp = FILENAME_NORM(tok_iter);
             systemIncPath.push_back(temp);
          }
       }
@@ -923,15 +923,15 @@ void CheckSystemType::getRealInclName(const std::string&include, std::string & r
    //Now I have to see if one of the elements in systemIncPath is the start of the include:
    //in case I eliminate it and look the remaining part of the string in the map
    std::string include_p(FILENAME_NORM(include));
-   for (unsigned int i = 0; i < systemIncPath.size(); i++)
+   for (auto & i : systemIncPath)
    {
-      if (include_p.compare(0, systemIncPath[i].size() + 1, systemIncPath[i] + "/") == 0)
+      if (include_p.compare(0, i.size() + 1, i + "/") == 0)
       {
-         std::string trimmed = include_p.substr(systemIncPath[i].size() + 1);
+         std::string trimmed = include_p.substr(i.size() + 1);
          if (inclNameToPath.find(trimmed) != inclNameToPath.end())
             real_name = inclNameToPath.find(trimmed)->second;
 #if HAVE_BAMBU_BUILT
-         else if(LIBBAMBU_SRCDIR == systemIncPath[i] && boost::algorithm::starts_with(trimmed,"libm/"))
+         else if(LIBBAMBU_SRCDIR == i && boost::algorithm::starts_with(trimmed,"libm/"))
             real_name = FILENAME_NORM("math.h");
 #endif
          else

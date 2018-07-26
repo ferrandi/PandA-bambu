@@ -509,8 +509,8 @@ void flopoco_wrapper::outputWrapVHDL(const std::string & FU_name_stored, std::os
    std::unordered_map<std::string, std::pair<unsigned int,unsigned int> >::const_iterator FU_to_prec_it = FU_to_prec.find(FU_name_stored);
    // Write input port(s) generics
    const std::vector<std::string> p_in = get_ports(WRAPPED_PREFIX+FU_name_stored, 0, port_in, false);
-   for (std::vector<std::string>::const_iterator p_in_it = p_in.begin(); p_in_it != p_in.end(); ++p_in_it)
-     PP(os, "BITSIZE_" + *p_in_it + ": integer := " + STR(FU_to_prec_it->second.first) + "; ");
+   for (const auto & p_in_it : p_in)
+     PP(os, "BITSIZE_" + p_in_it + ": integer := " + STR(FU_to_prec_it->second.first) + "; ");
    // Write output port(s) generics
    const std::vector<std::string> p_out = get_ports(WRAPPED_PREFIX+FU_name_stored, 0, port_out, false);
    for (std::vector<std::string>::const_iterator p_out_it = p_out.begin(); p_out_it != p_out.end(); ++p_out_it)
@@ -533,22 +533,22 @@ void flopoco_wrapper::outputWrapVHDL(const std::string & FU_name_stored, std::os
    PP.indent();
    // Write declaration for each of entity's components
    std::string prefixes[] = { WRAPPED_PREFIX, IN_WRAP_PREFIX, OUT_WRAP_PREFIX};
-   for (unsigned int i = 0; i < sizeof(prefixes)/sizeof(prefixes[0]); i++)
+   for (const auto & prefixe : prefixes)
    {
-      if(!(((type == flopoco_wrapper::UT_UFIX2FP or type == flopoco_wrapper::UT_IFIX2FP) && prefixes[i] == IN_WRAP_PREFIX) ||
+      if(!(((type == flopoco_wrapper::UT_UFIX2FP or type == flopoco_wrapper::UT_IFIX2FP) && prefixe == IN_WRAP_PREFIX) ||
            (((type == flopoco_wrapper::UT_FP2UFIX or type == flopoco_wrapper::UT_FP2IFIX) || type == flopoco_wrapper::UT_compare_expr)
-            && prefixes[i] == OUT_WRAP_PREFIX)))
+            && prefixe == OUT_WRAP_PREFIX)))
       {
-         PP(os, "component " + prefixes[i] + FU_name_stored + "\n");
+         PP(os, "component " + prefixe + FU_name_stored + "\n");
          PP.indent();
          PP(os, "port (\n");
          PP.indent();
-         if (WRAPPED_PREFIX == prefixes[i])
-            outputPortDeclaration(prefixes[i], FU_name_stored, os, wrapped, pipe_parameter);
-         else if (IN_WRAP_PREFIX == prefixes[i])
-            outputPortDeclaration(prefixes[i], FU_name_stored, os, in_wrap, pipe_parameter);
-         else if (OUT_WRAP_PREFIX == prefixes[i])
-            outputPortDeclaration(prefixes[i], FU_name_stored, os, out_wrap, pipe_parameter);
+         if (WRAPPED_PREFIX == prefixe)
+            outputPortDeclaration(prefixe, FU_name_stored, os, wrapped, pipe_parameter);
+         else if (IN_WRAP_PREFIX == prefixe)
+            outputPortDeclaration(prefixe, FU_name_stored, os, in_wrap, pipe_parameter);
+         else if (OUT_WRAP_PREFIX == prefixe)
+            outputPortDeclaration(prefixe, FU_name_stored, os, out_wrap, pipe_parameter);
          else
             THROW_UNREACHABLE("Something wrong happened");
          PP.deindent();
@@ -793,26 +793,26 @@ void flopoco_wrapper::outputPortDeclaration(const std::string& FU_prefix, const 
       }
    }
    const std::vector<std::string> p_in = get_ports(FU_prefix+FU_name_stored, 0, port_in, false);
-   for (std::vector<std::string>::const_iterator p_in_it = p_in.begin(); p_in_it != p_in.end(); ++p_in_it)
+   for (const auto & p_in_it : p_in)
       if(top == c_type)
       {
          if(type == flopoco_wrapper::UT_IFIX2FP)
          {
-            PP(os, *p_in_it + " : in signed(BITSIZE_" + *p_in_it + "-1 downto 0);\n");
+            PP(os, p_in_it + " : in signed(BITSIZE_" + p_in_it + "-1 downto 0);\n");
          }
          else if(type == flopoco_wrapper::UT_UFIX2FP)
          {
-            PP(os, *p_in_it + " : in unsigned(BITSIZE_" + *p_in_it + "-1 downto 0);\n");
+            PP(os, p_in_it + " : in unsigned(BITSIZE_" + p_in_it + "-1 downto 0);\n");
          }
          else
          {
-            PP(os, *p_in_it + " : in std_logic_vector(BITSIZE_" + *p_in_it + "-1 downto 0);\n");
+            PP(os, p_in_it + " : in std_logic_vector(BITSIZE_" + p_in_it + "-1 downto 0);\n");
          }
       }
       else if(static_cast<int>(n_bits_in) + in_offset>0)
-         PP(os, *p_in_it + " : in std_logic_vector(" + STR(static_cast<int>(n_bits_in)+in_offset) + " downto 0);\n");
+         PP(os, p_in_it + " : in std_logic_vector(" + STR(static_cast<int>(n_bits_in)+in_offset) + " downto 0);\n");
       else
-         PP(os, *p_in_it + " : in std_logic;\n");
+         PP(os, p_in_it + " : in std_logic;\n");
    // Write clock and reset ports declaration, only for top and wrapped entities
    if (top == c_type)
    {

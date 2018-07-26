@@ -86,9 +86,8 @@ std::string ngdbuild_wrapper::get_command_line(const DesignParametersRef& dp) co
       s << " -verbose"; // Reports all messages
    else
       s << " -quiet"; // Only report Warning and Error messages.
-   for (std::vector<xml_parameter_tRef>::const_iterator it = xml_tool_options.begin(); it != xml_tool_options.end(); ++it)
+   for (const auto & option : xml_tool_options)
    {
-      const xml_parameter_tRef & option = *it;
       if (option->checkCondition(dp))
       {
          std::string value = toString(option, dp);

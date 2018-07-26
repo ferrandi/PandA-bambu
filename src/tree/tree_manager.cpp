@@ -177,9 +177,9 @@ unsigned int tree_manager::function_index(std::string function_name) const
    null_deleter null_del;
    tree_managerConstRef TM(this, null_del);
    unsigned int function_id = 0;
-   for(std::map<unsigned int, tree_nodeRef>::const_iterator it = function_decl_nodes.begin(); it != function_decl_nodes.end(); ++it)
+   for(const auto & function_decl_node : function_decl_nodes)
    {
-      tree_nodeRef curr_tn = it->second;
+      tree_nodeRef curr_tn = function_decl_node.second;
       function_decl * fd = GetPointer<function_decl>(curr_tn);
       tree_nodeRef id_name = GET_NODE(fd->name);
       std::string simple_name;
@@ -201,7 +201,7 @@ unsigned int tree_manager::function_index(std::string function_name) const
                continue;
             }*/
          }
-         function_id = it->first;
+         function_id = function_decl_node.first;
       }
    }
    return function_id;
@@ -1039,9 +1039,9 @@ void tree_manager::RecursiveReplaceTreeNode(tree_nodeRef & tn, const tree_nodeRe
       {
          call_expr * ce = GetPointer<call_expr>(curr_tn);
          std::vector<tree_nodeRef> & args = ce->args;
-         for(size_t arg_index = 0; arg_index < args.size(); arg_index++)
+         for(auto & arg : args)
          {
-            RecursiveReplaceTreeNode(args[arg_index], old_node, new_node, stmt, false);
+            RecursiveReplaceTreeNode(arg, old_node, new_node, stmt, false);
          }
          break;
       }
@@ -1049,9 +1049,9 @@ void tree_manager::RecursiveReplaceTreeNode(tree_nodeRef & tn, const tree_nodeRe
       {
          gimple_call * ce = GetPointer<gimple_call>(curr_tn);
          std::vector<tree_nodeRef> & args = ce->args;
-         for(size_t arg_index = 0; arg_index < args.size(); arg_index++)
+         for(auto & arg : args)
          {
-            RecursiveReplaceTreeNode(args[arg_index], old_node, new_node, stmt, false);
+            RecursiveReplaceTreeNode(arg, old_node, new_node, stmt, false);
          }
          std::vector<tree_nodeRef> & uses = ce->use_set->variables;
          std::vector<tree_nodeRef>::iterator use, use_end = uses.end();

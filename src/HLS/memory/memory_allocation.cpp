@@ -174,21 +174,21 @@ void memory_allocation::setup_memory_allocation()
       const FunctionBehaviorConstRef function_behavior = HLSMgr->CGetFunctionBehavior(It);
       /// add parm_decls that have to be copied
       const std::set<unsigned int>& parm_decl_copied = function_behavior->get_parm_decl_copied();
-      for(std::set<unsigned int>::const_iterator p = parm_decl_copied.begin(); p != parm_decl_copied.end(); ++p)
+      for(unsigned int p : parm_decl_copied)
       {
-         HLSMgr->Rmem->add_parm_decl_copied(*p);
+         HLSMgr->Rmem->add_parm_decl_copied(p);
       }
       /// add parm_decls that have to be stored
       const std::set<unsigned int>& parm_decl_stored = function_behavior->get_parm_decl_stored();
-      for(std::set<unsigned int>::const_iterator p = parm_decl_stored.begin(); p != parm_decl_stored.end(); ++p)
+      for(unsigned int p : parm_decl_stored)
       {
-         HLSMgr->Rmem->add_parm_decl_stored(*p);
+         HLSMgr->Rmem->add_parm_decl_stored(p);
       }
       /// add actual parameters that have to be loaded
       const std::set<unsigned int>& parm_decl_loaded = function_behavior->get_parm_decl_loaded();
-      for(std::set<unsigned int>::const_iterator p = parm_decl_loaded.begin(); p != parm_decl_loaded.end(); ++p)
+      for(unsigned int p : parm_decl_loaded)
       {
-         HLSMgr->Rmem->add_actual_parm_loaded(*p);
+         HLSMgr->Rmem->add_actual_parm_loaded(p);
       }
    }
 }
@@ -272,9 +272,9 @@ void memory_allocation::finalize_memory_allocation()
       if(function_behavior->has_packed_vars())
          has_misaligned_indirect_ref = true;
       const std::set<unsigned int>& parm_decl_stored = function_behavior->get_parm_decl_stored();
-      for(std::set<unsigned int>::const_iterator p = parm_decl_stored.begin(); p != parm_decl_stored.end(); ++p)
+      for(unsigned int p : parm_decl_stored)
       {
-         maximum_bus_size = std::max(maximum_bus_size, tree_helper::size(TreeM, tree_helper::get_type_index(TreeM,*p)));
+         maximum_bus_size = std::max(maximum_bus_size, tree_helper::size(TreeM, tree_helper::get_type_index(TreeM,p)));
       }
       PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Analyzing function for bus size: " + behavioral_helper->get_function_name());
       const OpGraphConstRef g = function_behavior->CGetOpGraph(FunctionBehavior::CFG);
