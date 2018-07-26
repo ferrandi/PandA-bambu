@@ -50,6 +50,7 @@
 #include "config_HAVE_BAMBU_BUILT.hpp"       // for HAVE_BAMBU_BUILT
 
 #include <cmath>                            // for ceil
+#include <limits>
 #include <cstddef>                          // for size_t
 #include <algorithm>                         // for min
 #include <unordered_map>                     // for unordered_map, operator!=
@@ -256,6 +257,9 @@ synth_mult (struct algorithm &alg_out, unsigned long long t,
    int maxm = static_cast<int>(std::min (32u, data_bitsize));
    bool cache_hit = false;
    enum alg_code cache_alg = alg_zero;
+   best_alg.cost.cost =std::numeric_limits<short>::max();
+   best_alg.cost.latency =std::numeric_limits<short>::max();
+   best_alg.ops=0;
 
    /** Indicate that no algorithm is yet found.  If no algorithm
       is found, this value will be returned and indicate failure.  */
