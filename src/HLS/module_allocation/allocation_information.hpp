@@ -44,7 +44,7 @@
 ///Superclass include
 #include "hls_function_ir.hpp"
 
-#include <stddef.h>         // for size_t
+#include <cstddef>         // for size_t
 #include <iosfwd>           // for ostream
 #include <string>           // for string
 #include <utility>          // for pair
@@ -1050,7 +1050,7 @@ struct updatecopy_HLS_constraints_functor
       /**
        * Destructor
        */
-      ~updatecopy_HLS_constraints_functor() {}
+      ~updatecopy_HLS_constraints_functor() = default;
 
    private:
 

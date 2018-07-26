@@ -139,7 +139,7 @@ CallGraphBuiltinCall::lookForBuiltinCall(const tree_nodeRef TN)
       }
       case gimple_assign_K:
       {
-         gimple_assign * gm = GetPointer<gimple_assign>(currentTreeNode);
+         auto * gm = GetPointer<gimple_assign>(currentTreeNode);
          if (GetPointer<call_expr>(GET_NODE(gm->op1)))
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---call_expr " + STR(GET_NODE(gm->op1)));
@@ -147,7 +147,7 @@ CallGraphBuiltinCall::lookForBuiltinCall(const tree_nodeRef TN)
          }
          else if(GetPointer<addr_expr>(GET_NODE(gm->op1)))
          {
-            addr_expr* ae = GetPointer<addr_expr>(GET_NODE(gm->op1));
+            auto* ae = GetPointer<addr_expr>(GET_NODE(gm->op1));
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                   "---is addr_expr " + GET_NODE(ae->op)->get_kind_text());
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
@@ -159,13 +159,13 @@ CallGraphBuiltinCall::lookForBuiltinCall(const tree_nodeRef TN)
          }
          else if (GetPointer<nop_expr>(GET_NODE(gm->op1)))
          {
-            nop_expr * nop = GetPointer<nop_expr>(GET_NODE(gm->op1));
+            auto * nop = GetPointer<nop_expr>(GET_NODE(gm->op1));
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                   "---nop_expr(" + STR(GET_NODE(nop->op)) + ")"
                   " op is " + GET_NODE(nop->op)->get_kind_text());
             if (GetPointer<addr_expr>(GET_NODE(nop->op)))
             {
-               addr_expr * ae = GetPointer<addr_expr>(GET_NODE(nop->op));
+               auto * ae = GetPointer<addr_expr>(GET_NODE(nop->op));
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                      "---is addr_expr of " + GET_NODE(ae->op)->get_kind_text());
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
@@ -300,7 +300,7 @@ CallGraphBuiltinCall::CallGraphBuiltinCall(
    debug_level = P->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
 }
 
-CallGraphBuiltinCall::~CallGraphBuiltinCall() {}
+CallGraphBuiltinCall::~CallGraphBuiltinCall() = default;
 
 void CallGraphBuiltinCall::Initialize()
 {
@@ -313,8 +313,8 @@ DesignFlowStep_Status CallGraphBuiltinCall::InternalExec()
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->BuiltinWaitCall Analysis");
    tree_managerRef TM = AppM->get_tree_manager();
    const tree_nodeRef currentTreeNode = TM->GetTreeNode(function_id);
-   function_decl * functionDecl = GetPointer<function_decl>(currentTreeNode);
-   statement_list * stmtList =
+   auto * functionDecl = GetPointer<function_decl>(currentTreeNode);
+   auto * stmtList =
          GetPointer<statement_list>(GET_NODE(functionDecl->body));
 
    if(parameters->getOption<bool>(OPT_print_dot))
@@ -339,7 +339,7 @@ DesignFlowStep_Status CallGraphBuiltinCall::InternalExec()
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
             "---Analyzing function " + STR(*Itr) + " " + functionName);
       tree_nodeRef function = TM->get_tree_node_const(*Itr);
-      function_decl * funDecl = GetPointer<function_decl>(function);
+      auto * funDecl = GetPointer<function_decl>(function);
       std::string type = tree_helper::print_type(TM, GET_INDEX_NODE(funDecl->type));
       if(funDecl->body && functionName != "__start_pragma__" && functionName != "__close_pragma__" &&
               !boost::algorithm::starts_with(functionName,"__pragma__"))
@@ -373,12 +373,12 @@ DesignFlowStep_Status CallGraphBuiltinCall::InternalExec()
 
 static tree_nodeRef getFunctionPointerType(tree_nodeRef fptr)
 {
-  ssa_name* sa = GetPointer<ssa_name>(fptr);
+  auto* sa = GetPointer<ssa_name>(fptr);
   THROW_ASSERT(sa, "Function pointer not in SSA-form");
   pointer_type* pt;
   if(sa->var)
   {
-    decl_node* var = GetPointer<decl_node>(GET_NODE(sa->var));
+    auto* var = GetPointer<decl_node>(GET_NODE(sa->var));
     THROW_ASSERT(var, "Call expression does not point to a declaration node");
     pt = GetPointer<pointer_type>(GET_NODE(var->type));
   }

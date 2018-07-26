@@ -65,9 +65,7 @@ compatibility_based_register::compatibility_based_register(const ParameterConstR
 }
 
 compatibility_based_register::~compatibility_based_register()
-{
-
-}
+= default;
 
 void compatibility_based_register::create_compatibility_graph()
 {
@@ -84,14 +82,14 @@ void compatibility_based_register::create_compatibility_graph()
    /// compatibility graph creation
    const std::list<vertex> & support = HLS->Rliv->get_support();
    const std::list<vertex>::const_iterator vEnd = support.end();
-   for(std::list<vertex>::const_iterator vIt = support.begin(); vIt != vEnd; ++vIt)
+   for(auto vIt = support.begin(); vIt != vEnd; ++vIt)
    {
       const std::set<unsigned int>& live = HLS->Rliv->get_live_in(*vIt);
       register_lower_bound = std::max(static_cast<unsigned int>(live.size()), register_lower_bound);
       const std::set<unsigned int>::const_iterator k_end = live.end(); 
-      for(std::set<unsigned int>::const_iterator k = live.begin(); k != k_end; ++k)
+      for(auto k = live.begin(); k != k_end; ++k)
       {
-         std::set<unsigned int>::const_iterator k_inner = k;
+         auto k_inner = k;
          ++k_inner;
          while(k_inner != k_end)
          {

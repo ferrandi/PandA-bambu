@@ -79,7 +79,7 @@
 #include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_
 
 HLSFlowStepSpecialization::~HLSFlowStepSpecialization()
-{}
+= default;
 
 HLS_step::HLS_step(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type, const HLSFlowStepSpecializationConstRef _hls_flow_step_specialization) :
    DesignFlowStep(_design_flow_manager, _parameters),
@@ -96,8 +96,7 @@ const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
 }
 
 HLS_step::~HLS_step()
-{
-}
+= default;
 
 std::unordered_map<std::string, HLSFlowStep_Type> HLS_step::command_line_name_to_enum;
 
@@ -344,7 +343,7 @@ const std::string HLS_step::EnumToName(const HLSFlowStep_Type hls_flow_step_type
 void HLS_step::ComputeRelationships(DesignFlowStepSet & design_flow_step_set, const DesignFlowStep::RelationshipType relationship_type)
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Computing relationships of " + GetName());
-   const HLSFlowStepFactory * hls_flow_step_factory = GetPointer<const HLSFlowStepFactory>(CGetDesignFlowStepFactory());
+   const auto * hls_flow_step_factory = GetPointer<const HLSFlowStepFactory>(CGetDesignFlowStepFactory());
    const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
    const CallGraphManagerConstRef call_graph_manager = HLSMgr->CGetCallGraphManager();
    std::set<unsigned int> functions = call_graph_manager->GetReachedBodyFunctions();
@@ -365,7 +364,7 @@ void HLS_step::ComputeRelationships(DesignFlowStepSet & design_flow_step_set, co
       {
          case HLSFlowStep_Relationship::ALL_FUNCTIONS:
             {
-               const FrontendFlowStepFactory * frontend_flow_step_factory = GetPointer<const FrontendFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("Frontend"));
+               const auto * frontend_flow_step_factory = GetPointer<const FrontendFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("Frontend"));
                const vertex call_graph_computation_step = design_flow_manager.lock()->GetDesignFlowStep(ApplicationFrontendFlowStep::ComputeSignature(FUNCTION_ANALYSIS));
                const DesignFlowStepRef cg_design_flow_step = call_graph_computation_step ? design_flow_graph->CGetDesignFlowStepInfo(call_graph_computation_step)->design_flow_step : frontend_flow_step_factory->CreateApplicationFrontendFlowStep(FUNCTION_ANALYSIS);
                design_flow_step_set.insert(cg_design_flow_step);
@@ -391,7 +390,7 @@ void HLS_step::ComputeRelationships(DesignFlowStepSet & design_flow_step_set, co
             }
          case HLSFlowStep_Relationship::TOP_FUNCTION:
             {
-               const FrontendFlowStepFactory * frontend_flow_step_factory = GetPointer<const FrontendFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("Frontend"));
+               const auto * frontend_flow_step_factory = GetPointer<const FrontendFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("Frontend"));
                const vertex call_graph_computation_step = design_flow_manager.lock()->GetDesignFlowStep(ApplicationFrontendFlowStep::ComputeSignature(FUNCTION_ANALYSIS));
                const DesignFlowStepRef cg_design_flow_step = call_graph_computation_step ? design_flow_graph->CGetDesignFlowStepInfo(call_graph_computation_step)->design_flow_step : frontend_flow_step_factory->CreateApplicationFrontendFlowStep(FUNCTION_ANALYSIS);
                design_flow_step_set.insert(cg_design_flow_step);

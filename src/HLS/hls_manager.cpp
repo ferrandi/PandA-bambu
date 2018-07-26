@@ -93,9 +93,7 @@ HLS_manager::HLS_manager(const ParameterConstRef _Param, const HLS_targetRef _HL
 }
 
 HLS_manager::~HLS_manager()
-{
-
-}
+= default;
 
 hlsRef HLS_manager::get_HLS(unsigned int funId) const
 {
@@ -138,7 +136,7 @@ std::string HLS_manager::get_constant_string(unsigned int node, unsigned int pre
    {
       THROW_ASSERT(tree_helper::size(TM, tree_helper::get_type_index(TM, node)) == precision, "real precision mistmatch");
       tree_nodeRef rc_node = TM->get_tree_node_const(node);
-      real_cst *rc = GetPointer<real_cst>(rc_node);
+      auto *rc = GetPointer<real_cst>(rc_node);
       std::string C_value = rc->valr;
       if(C_value == "Inf") C_value = rc->valx;
       trimmed_value = convert_fp_to_string(C_value, precision);
@@ -146,8 +144,8 @@ std::string HLS_manager::get_constant_string(unsigned int node, unsigned int pre
    else if(tree_helper::is_a_vector(TM, tree_helper::get_type_index(TM, node)))
    {
       tree_nodeRef vc_node = TM->get_tree_node_const(node);
-      vector_cst *vc = GetPointer<vector_cst>(vc_node);
-      unsigned int n_elm = static_cast<unsigned int>(vc->list_of_valu.size());
+      auto *vc = GetPointer<vector_cst>(vc_node);
+      auto n_elm = static_cast<unsigned int>(vc->list_of_valu.size());
       unsigned int elm_prec = precision/n_elm;
       trimmed_value = "";
       for (unsigned int i = 0; i < n_elm; ++i)
@@ -156,8 +154,8 @@ std::string HLS_manager::get_constant_string(unsigned int node, unsigned int pre
    else if(tree_helper::is_a_complex(TM, tree_helper::get_type_index(TM, node)))
    {
       tree_nodeRef cc_node = TM->get_tree_node_const(node);
-      complex_cst *cc = GetPointer<complex_cst>(cc_node);
-      real_cst *rcc = GetPointer<real_cst>(GET_NODE(cc->real));
+      auto *cc = GetPointer<complex_cst>(cc_node);
+      auto *rcc = GetPointer<real_cst>(GET_NODE(cc->real));
       std::string trimmed_value_r;
       if(rcc)
       {
@@ -167,12 +165,12 @@ std::string HLS_manager::get_constant_string(unsigned int node, unsigned int pre
       }
       else
       {
-         integer_cst *ic = GetPointer<integer_cst>(GET_NODE(cc->real));
+         auto *ic = GetPointer<integer_cst>(GET_NODE(cc->real));
          THROW_ASSERT(ic, "expected an integer_cst");
-         unsigned long long int ull_value = static_cast<unsigned long long int>(tree_helper::get_integer_cst_value(ic));
+         auto ull_value = static_cast<unsigned long long int>(tree_helper::get_integer_cst_value(ic));
          trimmed_value_r = convert_to_binary(ull_value, precision/2);
       }
-      real_cst *icc = GetPointer<real_cst>(GET_NODE(cc->imag));
+      auto *icc = GetPointer<real_cst>(GET_NODE(cc->imag));
       std::string trimmed_value_i;
       if(icc)
       {
@@ -182,9 +180,9 @@ std::string HLS_manager::get_constant_string(unsigned int node, unsigned int pre
       }
       else
       {
-          integer_cst *ic = GetPointer<integer_cst>(GET_NODE(cc->imag));
+          auto *ic = GetPointer<integer_cst>(GET_NODE(cc->imag));
           THROW_ASSERT(ic, "expected an integer_cst");
-          unsigned long long int ull_value = static_cast<unsigned long long int>(tree_helper::get_integer_cst_value(ic));
+          auto ull_value = static_cast<unsigned long long int>(tree_helper::get_integer_cst_value(ic));
           trimmed_value_i = convert_to_binary(ull_value, precision/2);
       }
       trimmed_value = trimmed_value_i + trimmed_value_r;
@@ -192,8 +190,8 @@ std::string HLS_manager::get_constant_string(unsigned int node, unsigned int pre
    else
    {
       tree_nodeRef ic_node = TM->get_tree_node_const(node);
-      integer_cst *ic = GetPointer<integer_cst>(ic_node);
-      unsigned long long int ull_value = static_cast<unsigned long long int>(tree_helper::get_integer_cst_value(ic));
+      auto *ic = GetPointer<integer_cst>(ic_node);
+      auto ull_value = static_cast<unsigned long long int>(tree_helper::get_integer_cst_value(ic));
       trimmed_value = convert_to_binary(ull_value, precision);
    }
    return trimmed_value;

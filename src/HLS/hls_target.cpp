@@ -62,19 +62,17 @@ HLS_target::HLS_target(const ParameterConstRef _Param, const technology_managerR
 {
    if (Param->isOption(OPT_clock_period))
    {
-      double clock_period_value = Param->getOption<double>(OPT_clock_period);
+      auto clock_period_value = Param->getOption<double>(OPT_clock_period);
       device->set_parameter("clock_period", clock_period_value);
    }
-   unsigned int output_level = Param->getOption<unsigned int>(OPT_output_level);
+   auto output_level = Param->getOption<unsigned int>(OPT_output_level);
    PRINT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "Target technology = " + target->get_string_type());
 
 
 }
 
 HLS_target::~HLS_target()
-{
-
-}
+= default;
 
 HLS_targetRef HLS_target::create_target(const ParameterRef Param)
 {
@@ -94,7 +92,7 @@ HLS_targetRef HLS_target::create_target(const ParameterRef Param)
             const xml_node::node_list list = node->get_children();
             for (const auto & iter : list)
             {
-               const xml_element* Enode = GetPointer<const xml_element>(iter);
+               const auto* Enode = GetPointer<const xml_element>(iter);
                if(!Enode) continue;
                if(Enode->get_name() == "device")
                {
@@ -129,7 +127,7 @@ HLS_targetRef HLS_target::create_target(const ParameterRef Param)
          THROW_ERROR("Error during technology file parsing");
       }
    }
-   unsigned int type_device = Param->getOption<unsigned int>(OPT_target_device_type);
+   auto type_device = Param->getOption<unsigned int>(OPT_target_device_type);
    target_deviceRef target = target_device::create_device(static_cast<TargetDevice_Type>(type_device), Param, TM);
    return HLS_targetRef(new HLS_target(Param, TM, target));
 }

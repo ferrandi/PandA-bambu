@@ -71,8 +71,7 @@ BasicBlocksProfilingCWriter::BasicBlocksProfilingCWriter(const application_manag
 }
 
 BasicBlocksProfilingCWriter::~BasicBlocksProfilingCWriter()
-{
-}
+= default;
 
 void BasicBlocksProfilingCWriter::print_loop_ending(EdgeDescriptor e)
 {

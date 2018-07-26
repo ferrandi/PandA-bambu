@@ -160,7 +160,7 @@ class SynthesisTool
       /**
        * Constructor
        */
-      SynthesisTool(const ParameterConstRef Param, const std::string& tool_exec, const target_deviceRef device, const std::string& output_dir, const std::string& default_output_dir);
+      SynthesisTool(const ParameterConstRef Param, std::string  tool_exec, const target_deviceRef device, const std::string& output_dir, std::string  default_output_dir);
 
       /**
        * Destructor

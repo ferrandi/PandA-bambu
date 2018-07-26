@@ -58,10 +58,10 @@
 ///Utility include
 
 OpEdgeInfo::OpEdgeInfo()
-{}
+= default;
 
 OpEdgeInfo::~OpEdgeInfo()
-{}
+= default;
 
 bool OpEdgeInfo::FlgEdgeT() const
 {
@@ -113,7 +113,7 @@ void OpNodeInfo::Initialize()
 
 
 OpNodeInfo::~OpNodeInfo()
-{}
+= default;
 
 const CustomSet<unsigned int> & OpNodeInfo::GetVariables(const FunctionBehavior_VariableType variable_type, const FunctionBehavior_VariableAccessType access_type) const
 {
@@ -223,7 +223,7 @@ OpGraphInfo::OpGraphInfo(const BehavioralHelperConstRef _BH) :
 {}
 
 OpGraphInfo::~OpGraphInfo()
-{}
+= default;
 
 OpGraphsCollection::OpGraphsCollection(const OpGraphInfoRef _info, const ParameterConstRef _parameters) :
    graphs_collection(RefcountCast<GraphInfo>(_info), _parameters),
@@ -232,7 +232,7 @@ OpGraphsCollection::OpGraphsCollection(const OpGraphInfoRef _info, const Paramet
 }
 
 OpGraphsCollection::~OpGraphsCollection()
-{}
+= default;
 
 const OpVertexSet OpGraphsCollection::CGetOperations() const
 {
@@ -309,7 +309,7 @@ OpGraph::OpGraph(const OpGraphsCollectionRef _op_graphs_collection, int _selecto
 {}
 
 OpGraph::~OpGraph()
-{}
+= default;
 
 void OpGraph::WriteDot(const std::string& file_name, const int detail_level) const
 {

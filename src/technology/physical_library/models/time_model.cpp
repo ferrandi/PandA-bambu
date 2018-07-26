@@ -80,9 +80,7 @@ time_model::time_model(const ParameterConstRef _Param_)  :
 }
 
 time_model::~time_model()
-{
-
-}
+= default;
 
 void time_model::set_execution_time(double _execution_time, unsigned int _cycles)
 {
@@ -172,7 +170,7 @@ unsigned int time_model::xload_timing_path(xml_element* node)
    xml_node::node_list infos = node->get_children();
    for (auto & info : infos)
    {
-      xml_element* Enode = GetPointer<xml_element>(info);
+      auto* Enode = GetPointer<xml_element>(info);
       if(!Enode) continue;
 
       if (Enode->get_name() == "path_element")

@@ -237,8 +237,7 @@ GccWrapper::GccWrapper(const ParameterConstRef _Param, const GccWrapper_Compiler
 
 // destructor
 GccWrapper::~GccWrapper()
-{
-}
+= default;
 
 void GccWrapper::CompileFile(const std::string& original_file_name, std::string & real_file_name, const std::string& parameters_line, bool empty_file)
 {
@@ -1901,7 +1900,7 @@ void GccWrapper::ReadXml(const std::string&file_name)
          xml_node::node_list::const_iterator root_child, root_child_end = root_children.end();
          for(root_child = root_children.begin(); root_child != root_child_end; ++root_child)
          {
-            const xml_element * root_child_element = GetPointer<const xml_element>(*root_child);
+            const auto * root_child_element = GetPointer<const xml_element>(*root_child);
             if(not root_child_element)
                continue;
             if(root_child_element->get_name() == STR_XML_gcc_optimizations)
@@ -1910,7 +1909,7 @@ void GccWrapper::ReadXml(const std::string&file_name)
                xml_node::node_list::const_iterator optimizations_child, optimizations_child_end = optimizations_children.end();
                for(optimizations_child = optimizations_children.begin(); optimizations_child != optimizations_child_end; ++optimizations_child)
                {
-                  const xml_element * optimizations_child_element = GetPointer<const xml_element>(*optimizations_child);
+                  const auto * optimizations_child_element = GetPointer<const xml_element>(*optimizations_child);
                   if(not optimizations_child_element)
                      continue;
                   if(optimizations_child_element->get_name() == STR_XML_gcc_parameter_values)
@@ -1919,7 +1918,7 @@ void GccWrapper::ReadXml(const std::string&file_name)
                      xml_node::node_list::const_iterator parameter_value, parameter_value_end = parameter_values_children.end();
                      for(parameter_value = parameter_values_children.begin(); parameter_value != parameter_value_end; ++parameter_value)
                      {
-                        const xml_element * parameter_value_element = GetPointer<const xml_element>(*parameter_value);
+                        const auto * parameter_value_element = GetPointer<const xml_element>(*parameter_value);
                         if(not parameter_value_element)
                            continue;
                         if(not (parameter_value_element->get_attribute(STR_XML_gcc_name) and parameter_value_element->get_attribute(STR_XML_gcc_value)))
@@ -1935,7 +1934,7 @@ void GccWrapper::ReadXml(const std::string&file_name)
                      xml_node::node_list::const_iterator optimization_flag, optimization_flag_end = optimization_flags_children.end();
                      for(optimization_flag = optimization_flags_children.begin(); optimization_flag != optimization_flag_end; ++optimization_flag)
                      {
-                        const xml_element * optimization_flag_element = GetPointer<const xml_element>(*optimization_flag);
+                        const auto * optimization_flag_element = GetPointer<const xml_element>(*optimization_flag);
                         if(not optimization_flag_element)
                            continue;
                         if(not (optimization_flag_element->get_attribute(STR_XML_gcc_name) and optimization_flag_element->get_attribute(STR_XML_gcc_value)))
@@ -1951,7 +1950,7 @@ void GccWrapper::ReadXml(const std::string&file_name)
                      xml_node::node_list::const_iterator optimization_value, optimization_value_end = optimization_value_children.end();
                      for(optimization_value = optimization_value_children.begin(); optimization_value != optimization_value_end; ++optimization_value)
                      {
-                        const xml_element * optimization_value_element = GetPointer<const xml_element>(*optimization_value);
+                        const auto * optimization_value_element = GetPointer<const xml_element>(*optimization_value);
                         if(not optimization_value_element)
                            continue;
                         if(not (optimization_value_element->get_attribute(STR_XML_gcc_name) and optimization_value_element->get_attribute(STR_XML_gcc_value)))
@@ -1979,7 +1978,7 @@ void GccWrapper::ReadXml(const std::string&file_name)
                xml_node::node_list::const_iterator define, define_end = defines.end();
                for(define = defines.begin(); define != define_end; ++define)
                {
-                  const xml_element * define_element = GetPointer<const xml_element>(*define);
+                  const auto * define_element = GetPointer<const xml_element>(*define);
                   if(not define_element)
                      continue;
                   if(not define_element->get_attribute(STR_XML_gcc_value))
@@ -1995,7 +1994,7 @@ void GccWrapper::ReadXml(const std::string&file_name)
                xml_node::node_list::const_iterator undefine, undefine_end = undefines.end();
                for(undefine = undefines.begin(); undefine != undefine_end; ++undefine)
                {
-                  const xml_element * undefine_element = GetPointer<const xml_element>(*undefine);
+                  const auto * undefine_element = GetPointer<const xml_element>(*undefine);
                   if(not undefine_element)
                      continue;
                   if(not undefine_element->get_attribute(STR_XML_gcc_value))
@@ -2011,7 +2010,7 @@ void GccWrapper::ReadXml(const std::string&file_name)
                xml_node::node_list::const_iterator warning, warning_end = warnings.end();
                for(warning = warnings.begin(); warning != warning_end; ++warning)
                {
-                  const xml_element * warning_element = GetPointer<const xml_element>(*warning);
+                  const auto * warning_element = GetPointer<const xml_element>(*warning);
                   if(not warning_element)
                      continue;
                   if(not warning_element->get_attribute(STR_XML_gcc_value))
@@ -2027,7 +2026,7 @@ void GccWrapper::ReadXml(const std::string&file_name)
                xml_node::node_list::const_iterator include, include_end = includes.end();
                for(include = includes.begin(); include != include_end; ++include)
                {
-                  const xml_element * include_element = GetPointer<const xml_element>(*include);
+                  const auto * include_element = GetPointer<const xml_element>(*include);
                   if(not include_element)
                      continue;
                   if(not include_element->get_attribute(STR_XML_gcc_value))
@@ -2043,7 +2042,7 @@ void GccWrapper::ReadXml(const std::string&file_name)
                xml_node::node_list::const_iterator library, library_end = libraries.end();
                for(library = libraries.begin(); library != library_end; ++library)
                {
-                  const xml_element * library_element = GetPointer<const xml_element>(*library);
+                  const auto * library_element = GetPointer<const xml_element>(*library);
                   if(not library_element)
                      continue;
                   if(not library_element->get_attribute(STR_XML_gcc_value))
@@ -2059,7 +2058,7 @@ void GccWrapper::ReadXml(const std::string&file_name)
                xml_node::node_list::const_iterator library_directory, library_directory_end = library_directories.end();
                for(library_directory = library_directories.begin(); library_directory != library_directory_end; ++library_directory)
                {
-                  const xml_element * library_directory_element = GetPointer<const xml_element>(*library_directory);
+                  const auto * library_directory_element = GetPointer<const xml_element>(*library_directory);
                   if(not library_directory_element)
                      continue;
                   if(not library_directory_element->get_attribute(STR_XML_gcc_value))
@@ -2144,8 +2143,8 @@ size_t GccWrapper::ConvertVersion(const std::string&version)
    boost::algorithm::split(version_tokens, version, boost::algorithm::is_any_of("."));
    for(size_t index = version_tokens.size(); index > 0; index--)
    {
-      const size_t shifter = static_cast<size_t>(pow(100, static_cast<double>(version_tokens.size() - index)));
-      const size_t value = boost::lexical_cast<size_t>(version_tokens[index-1]);
+      const auto shifter = static_cast<size_t>(pow(100, static_cast<double>(version_tokens.size() - index)));
+      const auto value = boost::lexical_cast<size_t>(version_tokens[index-1]);
       ret_value += (value * shifter);
    }
    return ret_value;

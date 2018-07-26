@@ -52,7 +52,7 @@ tree_reindex::tree_reindex(const unsigned int i, const tree_nodeRef & tn)
 
 
 tree_reindex::~tree_reindex()
-{}
+= default;
 
 
 void tree_reindex::print(std::ostream& os) const

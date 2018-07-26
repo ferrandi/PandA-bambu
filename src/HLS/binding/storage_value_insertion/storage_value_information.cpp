@@ -67,7 +67,7 @@ StorageValueInformation::StorageValueInformation(const HLS_managerConstRef _HLS_
 {}
 
 StorageValueInformation::~StorageValueInformation()
-{}
+= default;
 
 void StorageValueInformation::Initialize()
 {
@@ -84,11 +84,11 @@ void StorageValueInformation::Initialize()
       const CustomSet<unsigned int> & scalar_defs = data->CGetOpNodeInfo(*ki)->GetVariables(FunctionBehavior_VariableType::SCALAR, FunctionBehavior_VariableAccessType::DEFINITION);
       if(not scalar_defs.empty())
       {
-         CustomSet<unsigned int>::const_iterator it_end = scalar_defs.end();
+         auto it_end = scalar_defs.end();
 #if HAVE_ASSERTS
          size_t counter = 0;
 #endif
-         for(CustomSet<unsigned int>::const_iterator it = scalar_defs.begin(); it != it_end; ++it)
+         for(auto it = scalar_defs.begin(); it != it_end; ++it)
          {
             if(tree_helper::is_ssa_name(TreeM, *it) &&
                   !tree_helper::is_virtual(TreeM, *it) &&
@@ -283,8 +283,8 @@ int StorageValueInformation::get_compatibility_weight(unsigned int storage_value
                return 1;
          }
          bool they_have_common_inputs = false;
-         CustomSet<unsigned int>::const_iterator it1_end = ssa_read1.end();
-         for(CustomSet<unsigned int>::const_iterator it1 = ssa_read1.begin(); it1 != it1_end; ++it1)
+         auto it1_end = ssa_read1.end();
+         for(auto it1 = ssa_read1.begin(); it1 != it1_end; ++it1)
          {
             if(ssa_read2.find(*it1) != ssa_read2.end())
             {
@@ -294,8 +294,8 @@ int StorageValueInformation::get_compatibility_weight(unsigned int storage_value
             else if(vw2vertex.find(*it1) != vw2vertex.end())
             {
                vertex from_v1 = vw2vertex.find(*it1)->second;
-               CustomSet<unsigned int>::const_iterator it2_end = ssa_read2.end();
-               for(CustomSet<unsigned int>::const_iterator it2 = ssa_read2.begin(); it2 != it2_end; ++it2)
+               auto it2_end = ssa_read2.end();
+               for(auto it2 = ssa_read2.begin(); it2 != it2_end; ++it2)
                {
                   if(vw2vertex.find(*it2) != vw2vertex.end())
                   {

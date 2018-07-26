@@ -118,8 +118,7 @@ Schedule::Schedule(const HLS_managerConstRef _hls_manager, const unsigned int _f
 }
 
 Schedule::~Schedule()
-{
-}
+= default;
 
 void Schedule::print(fu_bindingRef Rfu) const
 {

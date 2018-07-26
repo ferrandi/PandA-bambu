@@ -81,11 +81,11 @@
 #include "var_pp_functor.hpp"                    // for std_var_pp_functor
 
 
-BBWriter::BBWriter(const BBGraph * _g, const std::unordered_set<vertex> &_annotated) :
+BBWriter::BBWriter(const BBGraph * _g, std::unordered_set<vertex> _annotated) :
    VertexWriter(_g, 0),
    function_behavior(_g->CGetBBGraphInfo()->AppM->CGetFunctionBehavior(_g->CGetBBGraphInfo()->function_index)),
    helper(function_behavior->CGetBehavioralHelper()),
-   annotated(_annotated)
+   annotated(std::move(_annotated))
 #if HAVE_HLS_BUILT
    ,schedule(GetPointer<const HLS_manager>(_g->CGetBBGraphInfo()->AppM) and GetPointer<const HLS_manager>(_g->CGetBBGraphInfo()->AppM)->get_HLS(helper->get_function_index()) ?  GetPointer<const HLS_manager>(_g->CGetBBGraphInfo()->AppM)->get_HLS(helper->get_function_index())->Rsch : ScheduleConstRef())
 #endif
@@ -278,7 +278,7 @@ void OpEdgeWriter::operator()(std::ostream& out, const EdgeDescriptor& e) const
    else if((FB_FLG_SELECTOR) & selector & printing_graph->GetSelector(e))
       out << "[color=pink";
 
-   const OpEdgeInfo * edge_info = Cget_edge_info<OpEdgeInfo>(e, *printing_graph);
+   const auto * edge_info = Cget_edge_info<OpEdgeInfo>(e, *printing_graph);
 
    if(edge_info)
    {
@@ -381,7 +381,7 @@ OpWriter::OpWriter(const OpGraph * operation_graph, const int _detail_level) :
 
 void OpWriter::operator()(std::ostream& out, const vertex& v) const
 {
-   const OpGraph * op_graph = dynamic_cast<const OpGraph *>(printing_graph);
+   const auto * op_graph = dynamic_cast<const OpGraph *>(printing_graph);
    if(GET_TYPE(printing_graph, v) & (TYPE_IF | TYPE_SWITCH))
       out << "[color=red,shape=diamond,";
    else if(GET_TYPE(printing_graph, v) & TYPE_LOAD)
@@ -429,7 +429,7 @@ TimedOpWriter::TimedOpWriter(const OpGraph * op_graph, const hlsConstRef _HLS, c
 void TimedOpWriter::operator()(std::ostream& out, const vertex& v) const
 {
    const auto schedule = HLS->Rsch;
-   const OpGraph * op_graph = dynamic_cast<const OpGraph *>(printing_graph);
+   const auto * op_graph = dynamic_cast<const OpGraph *>(printing_graph);
    const unsigned node_id = op_graph->CGetOpNodeInfo(v)->GetNodeId();
    if(critical_paths.find(node_id) != critical_paths.end())
    {
@@ -462,7 +462,7 @@ void TimedOpWriter::operator()(std::ostream& out, const vertex& v) const
 TimedOpEdgeWriter::TimedOpEdgeWriter(const OpGraph * _operation_graph, const hlsConstRef _HLS, CustomSet<unsigned int> _critical_paths) :
    OpEdgeWriter(_operation_graph),
    HLS(_HLS),
-   critical_paths(_critical_paths)
+   critical_paths(std::move(_critical_paths))
 {
 }
 
@@ -470,7 +470,7 @@ void TimedOpEdgeWriter::operator()(std::ostream& out, const EdgeDescriptor& e) c
 {
    const auto source = boost::source(e, *printing_graph);
    const auto target = boost::target(e, *printing_graph);
-   const OpGraph * op_graph = dynamic_cast<const OpGraph *>(printing_graph);
+   const auto * op_graph = dynamic_cast<const OpGraph *>(printing_graph);
    const auto source_id = op_graph->CGetOpNodeInfo(source)->GetNodeId();
    const auto target_id = op_graph->CGetOpNodeInfo(target)->GetNodeId();
    out << "[";

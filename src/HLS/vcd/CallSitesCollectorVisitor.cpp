@@ -37,6 +37,8 @@
 // header for this class
 #include "CallSitesCollectorVisitor.hpp"
 
+#include <utility>
+
 // includes from behavior/
 #include "call_graph_manager.hpp"
 #include "string_manipulation.hpp"          // for STR
@@ -45,14 +47,14 @@ CallSitesCollectorVisitor::CallSitesCollectorVisitor(CallGraphManagerConstRef cg
       std::unordered_map<unsigned int, std::unordered_set<unsigned int> > & _fu_id_to_call_ids,
       std::unordered_map<unsigned int, std::unordered_set<unsigned int> > & _call_id_to_called_id,
       std::unordered_set<unsigned int> & _indirect_calls) :
-   CGMan(cgman),
+   CGMan(std::move(cgman)),
    fu_id_to_call_ids(_fu_id_to_call_ids),
    call_id_to_called_id(_call_id_to_called_id),
    indirect_calls(_indirect_calls)
 {}
 
 CallSitesCollectorVisitor::~CallSitesCollectorVisitor()
-{}
+= default;
 
 void CallSitesCollectorVisitor::discover_vertex(const vertex & v, const CallGraph &)
 {

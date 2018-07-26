@@ -136,9 +136,7 @@ memory_allocation::memory_allocation(const ParameterConstRef _parameters, const 
 }
 
 memory_allocation::~memory_allocation()
-{
-
-}
+= default;
 
 const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > memory_allocation::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
@@ -287,7 +285,7 @@ void memory_allocation::finalize_memory_allocation()
          if(GET_TYPE(g, *v) & (TYPE_LOAD | TYPE_STORE))
          {
             const tree_nodeRef curr_tn = TreeM->get_tree_node_const(g->CGetOpNodeInfo(*v)->GetNodeId());
-            gimple_assign * me = GetPointer<gimple_assign>(curr_tn);
+            auto * me = GetPointer<gimple_assign>(curr_tn);
             THROW_ASSERT(me, "only gimple_assign's are allowed as memory operations");
             unsigned int var = 0;
             unsigned int expr_index;
@@ -306,7 +304,7 @@ void memory_allocation::finalize_memory_allocation()
             if(!has_intern_shared_data && var && function_behavior->is_variable_mem(var) && !HLSMgr->Rmem->is_private_memory(var) && (!parameters->isOption(OPT_do_not_expose_globals) || !parameters->getOption<bool>(OPT_do_not_expose_globals)))
             {
                const tree_nodeRef var_tn = TreeM->get_tree_node_const(var);
-               var_decl *vd = GetPointer<var_decl>(var_tn);
+               auto *vd = GetPointer<var_decl>(var_tn);
                if(vd &&
                   (((!vd->scpe || GET_NODE(vd->scpe)->get_kind() == translation_unit_decl_K) && !vd->static_flag) ||
                    tree_helper::is_volatile(TreeM,var) ||
@@ -398,8 +396,8 @@ void memory_allocation::finalize_memory_allocation()
    const HLS_targetRef HLS_T = HLSMgr->get_HLS_target();
    unsigned int aligned_bitsize;
    unsigned int bram_bitsize=0, data_bus_bitsize, addr_bus_bitsize, size_bus_bitsize;
-   unsigned int bram_bitsize_min = HLS_T->get_target_device()->get_parameter<unsigned int>("BRAM_bitsize_min");
-   unsigned int bram_bitsize_max = HLS_T->get_target_device()->get_parameter<unsigned int>("BRAM_bitsize_max");
+   auto bram_bitsize_min = HLS_T->get_target_device()->get_parameter<unsigned int>("BRAM_bitsize_min");
+   auto bram_bitsize_max = HLS_T->get_target_device()->get_parameter<unsigned int>("BRAM_bitsize_max");
    HLSMgr->Rmem->set_maxbram_bitsize(bram_bitsize_max);
 
    maximum_bus_size = resize_to_1_8_16_32_64_128_256_512(maximum_bus_size);
@@ -511,9 +509,9 @@ void memory_allocation::allocate_parameters(unsigned int functionId)
 
    // Allocate every parameter on chip.
    const std::list<unsigned int>& topParams = behavioral_helper->get_parameters();
-   for (std::list<unsigned int>::const_iterator itr = topParams.begin(), end = topParams.end(); itr != end; ++itr)
+   for (auto itr = topParams.begin(), end = topParams.end(); itr != end; ++itr)
    {
-      std::list<unsigned int>::const_iterator itr_next = itr;
+      auto itr_next = itr;
       ++itr_next;
       HLSMgr->Rmem->add_parameter(behavioral_helper->get_function_index(), *itr, !function_return && itr_next==end);
       INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "-->Parameter " + behavioral_helper->PrintVariable(*itr) + " of Function " + functionName);

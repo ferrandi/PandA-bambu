@@ -207,8 +207,7 @@ CWriter::CWriter(const application_managerConstRef _AppM, const InstructionWrite
 }
 
 CWriter::~CWriter()
-{
-}
+= default;
 
 CWriterRef CWriter::CreateCWriter(const CBackend::Type type, const CBackendInformationConstRef
 #if HAVE_TARGET_PROFILING || HAVE_BAMBU_BUILT
@@ -851,7 +850,7 @@ void CWriter::writeRoutineInstructions_rec
             unsigned int node_id = local_rec_cfgGraph->CGetOpNodeInfo(last_stmt)->GetNodeId();
             const tree_nodeRef node = TM->get_tree_node_const(node_id);
             THROW_ASSERT(node->get_kind()== gimple_multi_way_if_K, "unexpected node");
-            gimple_multi_way_if* gmwi = GetPointer<gimple_multi_way_if>(node);
+            auto* gmwi = GetPointer<gimple_multi_way_if>(node);
             std::map<unsigned int, bool> add_elseif_to_goto;
             for(const auto& cond : gmwi->list_of_cond)
             {
@@ -1258,7 +1257,7 @@ void CWriter::DeclareType(unsigned int varType, const BehavioralHelperConstRef b
    const std::string& routine_name = behavioral_helper->get_function_name();
 #endif
 
-   const bool without_transformation = Param->getOption<bool>(OPT_without_transformation);
+   const auto without_transformation = Param->getOption<bool>(OPT_without_transformation);
    const unsigned int real_var_type = tree_helper::GetRealType(TM, varType);
    const std::string type_name = tree_helper::name_type(TM, real_var_type);
 
@@ -1369,7 +1368,7 @@ void CWriter::DeclareLocalVariables(const CustomSet<unsigned int> & to_be_declar
       const tree_nodeRef node = TreeMan->get_tree_node_const(obj);
       if (node->get_kind() == parm_decl_K)
          return false;
-      ssa_name* sa = GetPointer<ssa_name>(node);
+      auto* sa = GetPointer<ssa_name>(node);
       if (sa and (sa->volatile_flag || GET_NODE(sa->CGetDefStmt())->get_kind() == gimple_nop_K)
           and sa->var and GET_NODE(sa->var)->get_kind() == parm_decl_K)
          return false;
@@ -1435,7 +1434,7 @@ void CWriter::schedule_copies(vertex b, const BBGraphConstRef bb_domGraph, const
       {
          if(phi_instructions.find(GET_INDEX_NODE(phi_op)) == phi_instructions.end())
             continue;
-         gimple_phi * pn = GetPointer<gimple_phi>(GET_NODE(phi_op));
+         auto * pn = GetPointer<gimple_phi>(GET_NODE(phi_op));
          tree_nodeRef dest = pn->res;
          unsigned int dest_i = GET_INDEX_NODE(pn->res);
          bool is_virtual = pn->virtual_flag;

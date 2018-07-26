@@ -65,7 +65,7 @@ SimulationEvaluation::SimulationEvaluation(const ParameterConstRef _Param, const
 }
 
 SimulationEvaluation::~SimulationEvaluation()
-{}
+= default;
 
 const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > SimulationEvaluation::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {

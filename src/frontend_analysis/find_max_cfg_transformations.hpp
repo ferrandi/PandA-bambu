@@ -40,7 +40,7 @@
 #ifndef FIND_MAX_CFG_TRANSFORMATIONS_HPP
 #define FIND_MAX_CFG_TRANSFORMATIONS_HPP
 
-#include <stddef.h>                            // for size_t
+#include <cstddef>                            // for size_t
 #include <string>                              // for string
 #include <unordered_set>                       // for unordered_set
 #include <utility>                             // for pair

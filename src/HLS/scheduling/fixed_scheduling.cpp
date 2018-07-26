@@ -68,9 +68,7 @@ fixed_scheduling::fixed_scheduling(const ParameterConstRef _parameters, const HL
 }
 
 fixed_scheduling::~fixed_scheduling()
-{
-
-}
+= default;
 
 DesignFlowStep_Status fixed_scheduling::InternalExec()
 {

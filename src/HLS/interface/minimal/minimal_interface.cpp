@@ -77,9 +77,7 @@ minimal_interface::minimal_interface(const ParameterConstRef _Param, const HLS_m
 }
 
 minimal_interface::~minimal_interface()
-{
-
-}
+= default;
 
 DesignFlowStep_Status minimal_interface::InternalExec()
 {
@@ -298,7 +296,7 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj,
             std::ofstream init_file_a((init_filename).c_str());
             std::ofstream init_file_b((+"0_"+init_filename).c_str());
 
-            module* shared_memory_module = GetPointer<module>(shared_memory);
+            auto* shared_memory_module = GetPointer<module>(shared_memory);
             shared_memory_module->set_parameter("address_space_begin", boost::lexical_cast<std::string>(base_address));
             shared_memory_module->set_parameter("address_space_rangesize", boost::lexical_cast<std::string>(n_bytes));
             if(parameters->isOption(OPT_sparse_memory) && parameters->getOption<bool>(OPT_sparse_memory))

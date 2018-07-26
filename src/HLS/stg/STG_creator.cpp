@@ -59,6 +59,4 @@ STG_creator::STG_creator(const ParameterConstRef _Param, const HLS_managerRef _H
 }
 
 STG_creator::~STG_creator()
-{
-
-}
+= default;

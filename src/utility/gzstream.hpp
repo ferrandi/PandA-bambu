@@ -189,7 +189,7 @@
    {
       // Separate the writing of the buffer from overflow() and
       // sync() operation.
-      int w = static_cast<int>(pptr() - pbase());
+      auto w = static_cast<int>(pptr() - pbase());
       if ( gzwrite( file, pbase(), static_cast<unsigned int>(w)) != w)
          return EOF;
       pbump(-w);

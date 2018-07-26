@@ -105,7 +105,7 @@ AadlParser::AadlParser(const DesignFlowManagerConstRef _design_flow_manager, con
 }
 
 AadlParser::~AadlParser()
-{}
+= default;
 
 DesignFlowStep_Status AadlParser::Exec()
 {

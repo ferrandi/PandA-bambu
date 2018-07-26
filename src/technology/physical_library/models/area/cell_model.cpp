@@ -67,9 +67,7 @@ cell_model::cell_model(const ParameterConstRef _Param, const double &_area_) :
 }
 
 cell_model::~cell_model()
-{
-
-}
+= default;
 
 void cell_model::print(std::ostream& os) const
 {

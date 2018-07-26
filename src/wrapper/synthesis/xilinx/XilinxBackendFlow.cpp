@@ -160,9 +160,7 @@ XilinxBackendFlow::XilinxBackendFlow(const ParameterConstRef _Param, const std::
 }
 
 XilinxBackendFlow::~XilinxBackendFlow()
-{
-
-}
+= default;
 
 void XilinxBackendFlow::xparse_map_utilization(const std::string& fn)
 {
@@ -183,7 +181,7 @@ void XilinxBackendFlow::xparse_map_utilization(const std::string& fn)
             boost::replace_all(token, ",", "");
             if(!area_m)
                area_m = area_model::create_model(TargetDevice_Type::FPGA, Param);
-            clb_model* clb_m = GetPointer<clb_model>(area_m);
+            auto* clb_m = GetPointer<clb_model>(area_m);
             clb_m->set_resource_value(clb_model::REGISTERS, boost::lexical_cast<unsigned int>(token));
          }
          else if (line.size() and line.find("Number of Slice Flip Flops:") != std::string::npos)
@@ -196,7 +194,7 @@ void XilinxBackendFlow::xparse_map_utilization(const std::string& fn)
             boost::replace_all(token, ",", "");
             if(!area_m)
                area_m = area_model::create_model(TargetDevice_Type::FPGA, Param);
-            clb_model* clb_m = GetPointer<clb_model>(area_m);
+            auto* clb_m = GetPointer<clb_model>(area_m);
             clb_m->set_resource_value(clb_model::REGISTERS, boost::lexical_cast<unsigned int>(token));
          }
          else if (line.size() and line.find("Number of 4 input LUTs:") != std::string::npos)
@@ -209,7 +207,7 @@ void XilinxBackendFlow::xparse_map_utilization(const std::string& fn)
             boost::replace_all(token, ",", "");
             if(!area_m)
                area_m = area_model::create_model(TargetDevice_Type::FPGA, Param);
-            clb_model* clb_m = GetPointer<clb_model>(area_m);
+            auto* clb_m = GetPointer<clb_model>(area_m);
             clb_m->set_resource_value(clb_model::SLICE_LUTS, boost::lexical_cast<unsigned int>(token));
          }
          else if (line.size() and line.find("Number of Slice LUTs:") != std::string::npos)
@@ -222,7 +220,7 @@ void XilinxBackendFlow::xparse_map_utilization(const std::string& fn)
             boost::replace_all(token, ",", "");
             if(!area_m)
                area_m = area_model::create_model(TargetDevice_Type::FPGA, Param);
-            clb_model* clb_m = GetPointer<clb_model>(area_m);
+            auto* clb_m = GetPointer<clb_model>(area_m);
             clb_m->set_resource_value(clb_model::SLICE_LUTS, boost::lexical_cast<unsigned int>(token));
          }
          else if (line.size() and line.find("Number of occupied Slices:") != std::string::npos)
@@ -235,7 +233,7 @@ void XilinxBackendFlow::xparse_map_utilization(const std::string& fn)
             boost::replace_all(token, ",", "");
             if(!area_m)
                area_m = area_model::create_model(TargetDevice_Type::FPGA, Param);
-            clb_model* clb_m = GetPointer<clb_model>(area_m);
+            auto* clb_m = GetPointer<clb_model>(area_m);
             clb_m->set_resource_value(clb_model::SLICE, boost::lexical_cast<unsigned int>(token));
          }
          else if (line.size() and line.find("Number of LUT Flip Flop pairs used:") != std::string::npos)
@@ -248,7 +246,7 @@ void XilinxBackendFlow::xparse_map_utilization(const std::string& fn)
             boost::replace_all(token, ",", "");
             if(!area_m)
                area_m = area_model::create_model(TargetDevice_Type::FPGA, Param);
-            clb_model* clb_m = GetPointer<clb_model>(area_m);
+            auto* clb_m = GetPointer<clb_model>(area_m);
             clb_m->set_resource_value(clb_model::LUT_FF_PAIRS, boost::lexical_cast<unsigned int>(token));
             clb_m->set_area_value(boost::lexical_cast<unsigned int>(token));
          }
@@ -262,7 +260,7 @@ void XilinxBackendFlow::xparse_map_utilization(const std::string& fn)
             boost::replace_all(token, ",", "");
             if(!area_m)
                area_m = area_model::create_model(TargetDevice_Type::FPGA, Param);
-            clb_model* clb_m = GetPointer<clb_model>(area_m);
+            auto* clb_m = GetPointer<clb_model>(area_m);
             clb_m->set_resource_value(clb_model::DSP, boost::lexical_cast<unsigned int>(token));
          }
          else if (line.size() and line.find("Number of DSP48E1s:") != std::string::npos)
@@ -275,7 +273,7 @@ void XilinxBackendFlow::xparse_map_utilization(const std::string& fn)
             boost::replace_all(token, ",", "");
             if(!area_m)
                area_m = area_model::create_model(TargetDevice_Type::FPGA, Param);
-            clb_model* clb_m = GetPointer<clb_model>(area_m);
+            auto* clb_m = GetPointer<clb_model>(area_m);
             clb_m->set_resource_value(clb_model::DSP, boost::lexical_cast<unsigned int>(token));
          }
          else if (line.size() and line.find("Number of BlockRAM/FIFO:") != std::string::npos)
@@ -288,7 +286,7 @@ void XilinxBackendFlow::xparse_map_utilization(const std::string& fn)
             boost::replace_all(token, ",", "");
             if(!area_m)
                area_m = area_model::create_model(TargetDevice_Type::FPGA, Param);
-            clb_model* clb_m = GetPointer<clb_model>(area_m);
+            auto* clb_m = GetPointer<clb_model>(area_m);
             clb_m->set_resource_value(clb_model::BRAM, boost::lexical_cast<unsigned int>(token));
          }
          else if (line.size() and line.find("Number of RAMB36E1/FIFO36E1s:") != std::string::npos)
@@ -301,7 +299,7 @@ void XilinxBackendFlow::xparse_map_utilization(const std::string& fn)
             boost::replace_all(token, ",", "");
             if(!area_m)
                area_m = area_model::create_model(TargetDevice_Type::FPGA, Param);
-            clb_model* clb_m = GetPointer<clb_model>(area_m);
+            auto* clb_m = GetPointer<clb_model>(area_m);
             clb_m->set_resource_value(clb_model::BRAM, boost::lexical_cast<unsigned int>(token));
          }
          else if (line.size() and line.find("Number of FIFO16/RAMB16s:") != std::string::npos)
@@ -314,7 +312,7 @@ void XilinxBackendFlow::xparse_map_utilization(const std::string& fn)
             boost::replace_all(token, ",", "");
             if(!area_m)
                area_m = area_model::create_model(TargetDevice_Type::FPGA, Param);
-            clb_model* clb_m = GetPointer<clb_model>(area_m);
+            auto* clb_m = GetPointer<clb_model>(area_m);
             clb_m->set_resource_value(clb_model::BRAM, boost::lexical_cast<unsigned int>(token));
          }
       }
@@ -336,7 +334,7 @@ void XilinxBackendFlow::xparse_xst_utilization(const std::string& fn)
          const xml_node::node_list list_int = node->get_children();
          for (const auto & iter_int : list_int)
          {
-            const xml_element* EnodeC = GetPointer<const xml_element>(iter_int);
+            const auto* EnodeC = GetPointer<const xml_element>(iter_int);
             if(!EnodeC) continue;
 
             if (EnodeC->get_name() == "application")
@@ -344,7 +342,7 @@ void XilinxBackendFlow::xparse_xst_utilization(const std::string& fn)
                const xml_node::node_list list_sec = EnodeC->get_children();
                for (const auto & iter_sec : list_sec)
                {
-                  const xml_element* nodeS = GetPointer<const xml_element>(iter_sec);
+                  const auto* nodeS = GetPointer<const xml_element>(iter_sec);
                   if(!nodeS) continue;
 
                   if (nodeS->get_name() == "section")
@@ -356,7 +354,7 @@ void XilinxBackendFlow::xparse_xst_utilization(const std::string& fn)
                         const xml_node::node_list list_item = nodeS->get_children();
                         for (const auto & it_item : list_item)
                         {
-                           const xml_element* nodeIt = GetPointer<const xml_element>(it_item);
+                           const auto* nodeIt = GetPointer<const xml_element>(it_item);
                            if(!nodeIt or nodeIt->get_name() != "item") continue;
 
                            if(CE_XVM(stringID, nodeIt)) LOAD_XVM(stringID, nodeIt);
@@ -379,7 +377,7 @@ void XilinxBackendFlow::xparse_xst_utilization(const std::string& fn)
          }
 
          area_m = area_model::create_model(TargetDevice_Type::FPGA, Param);
-         clb_model* clb_m = GetPointer<clb_model>(area_m);
+         auto* clb_m = GetPointer<clb_model>(area_m);
          if (design_values.find(XST_NUMBER_OF_SLICE_REGISTERS) != design_values.end())
             clb_m->set_resource_value(clb_model::REGISTERS, design_values[XST_NUMBER_OF_SLICE_REGISTERS]);
          if (design_values.find(XST_NUMBER_OF_SLICE_LUTS) != design_values.end())
@@ -430,7 +428,7 @@ void XilinxBackendFlow::parse_timing(const std::string& log_file)
             if(line.find("No path found") != std::string::npos)
             {
                time_m = time_model::create_model(TargetDevice_Type::FPGA, Param);
-               LUT_model* lut_m = GetPointer<LUT_model>(time_m);
+               auto* lut_m = GetPointer<LUT_model>(time_m);
                lut_m->set_timing_value(LUT_model::COMBINATIONAL_DELAY, 0.0);
             }
             else
@@ -441,7 +439,7 @@ void XilinxBackendFlow::parse_timing(const std::string& log_file)
                tk = tk.substr(0, tk.find_first_of(' '));
                boost::replace_all(tk, "ns", "");
                time_m = time_model::create_model(TargetDevice_Type::FPGA, Param);
-               LUT_model* lut_m = GetPointer<LUT_model>(time_m);
+               auto* lut_m = GetPointer<LUT_model>(time_m);
                lut_m->set_timing_value(LUT_model::COMBINATIONAL_DELAY, boost::lexical_cast<double>(tk));
                if(boost::lexical_cast<double>(tk) > Param->getOption<double>(OPT_clock_period))
                {
@@ -474,7 +472,7 @@ void XilinxBackendFlow::parse_DSPs(const std::string& log_file)
             std::string tk = line.substr(line.find(token)+token.size()+1, line.size());
             boost::trim(tk);
             tk = tk.substr(0, tk.find_first_of(' '));
-            clb_model* clb_m = GetPointer<clb_model>(area_m);
+            auto* clb_m = GetPointer<clb_model>(area_m);
             THROW_ASSERT(clb_m, "missing area model");
             clb_m->set_resource_value(clb_model::DSP, boost::lexical_cast<double>(tk));
          }
@@ -499,7 +497,7 @@ void XilinxBackendFlow::xparse_timing(const std::string& fn, bool post)
             const xml_node::node_list list_int = node->get_children();
             for (const auto & iter_int : list_int)
             {
-               const xml_element* EnodeC = GetPointer<const xml_element>(iter_int);
+               const auto* EnodeC = GetPointer<const xml_element>(iter_int);
                if(!EnodeC)
                   continue;
                if (flow_name == "Characterization" and EnodeC->get_name() == "twBody")
@@ -519,14 +517,14 @@ void XilinxBackendFlow::xparse_timing(const std::string& fn, bool post)
                   const xml_node::node_list list = EnodeC->get_children();
                   for (const auto & iter : list)
                   {
-                     const xml_element* Enode = GetPointer<const xml_element>(iter);
+                     const auto* Enode = GetPointer<const xml_element>(iter);
                      if(!Enode) continue;
                      if (Enode->get_name() == "twStats")
                      {
                         const xml_node::node_list listS = Enode->get_children();
                         for (const auto & iterS : listS)
                         {
-                           const xml_element* EnodeS = GetPointer<const xml_element>(iterS);
+                           const auto* EnodeS = GetPointer<const xml_element>(iterS);
                            if(!EnodeS) continue;
                            if (EnodeS->get_name() == "twMinPer" or EnodeS->get_name() == "twMaxCombDel")
                            {
@@ -542,7 +540,7 @@ void XilinxBackendFlow::xparse_timing(const std::string& fn, bool post)
          }();
          double period = std::abs(boost::lexical_cast<double>(child_text->get_content()));
          time_m = time_model::create_model(TargetDevice_Type::FPGA, Param);
-         LUT_model* lut_m = GetPointer<LUT_model>(time_m);
+         auto* lut_m = GetPointer<LUT_model>(time_m);
          if (post)
          {
             lut_m->set_timing_value(LUT_model::MINIMUM_PERIOD_POST_PAR, period);
@@ -622,7 +620,7 @@ void XilinxBackendFlow::CheckSynthesisResults()
       vivado_xparse_utilization(report_filename);
       area_m = area_model::create_model(TargetDevice_Type::FPGA, Param);
       area_m->set_area_value(design_values[VIVADO_XILINX_SLICE_LUTS]);
-      clb_model* area_clb_model = GetPointer<clb_model>(area_m);
+      auto* area_clb_model = GetPointer<clb_model>(area_m);
       if(design_values[VIVADO_XILINX_LUT_FLIP_FLOP_PAIRS_USED] != 0.0)
          area_clb_model->set_resource_value(clb_model::LUT_FF_PAIRS, design_values[VIVADO_XILINX_LUT_FLIP_FLOP_PAIRS_USED]);
 
@@ -635,7 +633,7 @@ void XilinxBackendFlow::CheckSynthesisResults()
       area_clb_model->set_resource_value(clb_model::BRAM, design_values[VIVADO_XILINX_BLOCK_RAMFIFO]);
 
       time_m = time_model::create_model(TargetDevice_Type::FPGA, Param);
-      LUT_model* lut_m = GetPointer<LUT_model>(time_m);
+      auto* lut_m = GetPointer<LUT_model>(time_m);
       if(design_values[VIVADO_XILINX_DESIGN_DELAY] != 0.0)
       {
          lut_m->set_timing_value(LUT_model::COMBINATIONAL_DELAY, design_values[VIVADO_XILINX_DESIGN_DELAY]);
@@ -668,7 +666,7 @@ void XilinxBackendFlow::vivado_xparse_utilization(const std::string& fn)
          const xml_node::node_list list_int = node->get_children();
          for (const auto & iter_int : list_int)
          {
-            const xml_element* EnodeC = GetPointer<const xml_element>(iter_int);
+            const auto* EnodeC = GetPointer<const xml_element>(iter_int);
             if(!EnodeC) continue;
 
             if (EnodeC->get_name() == "application")
@@ -676,7 +674,7 @@ void XilinxBackendFlow::vivado_xparse_utilization(const std::string& fn)
                const xml_node::node_list list_sec = EnodeC->get_children();
                for (const auto & iter_sec : list_sec)
                {
-                  const xml_element* nodeS = GetPointer<const xml_element>(iter_sec);
+                  const auto* nodeS = GetPointer<const xml_element>(iter_sec);
                   if(!nodeS) continue;
 
                   if (nodeS->get_name() == "section")
@@ -688,7 +686,7 @@ void XilinxBackendFlow::vivado_xparse_utilization(const std::string& fn)
                         const xml_node::node_list list_item = nodeS->get_children();
                         for (const auto & it_item : list_item)
                         {
-                           const xml_element* nodeIt = GetPointer<const xml_element>(it_item);
+                           const auto* nodeIt = GetPointer<const xml_element>(it_item);
                            if(!nodeIt or nodeIt->get_name() != "item") continue;
 
                            if(CE_XVM(stringID, nodeIt)) LOAD_XVM(stringID, nodeIt);

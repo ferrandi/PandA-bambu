@@ -158,7 +158,7 @@ class xml_set_entry_t : public xml_script_node_t
       std::string *  condition;
 
       xml_set_entry_t(
-            const std::string &    _value,
+            std::string     _value,
             const std::string *  _condition
             );
       explicit xml_set_entry_t(const xml_element *element);
@@ -187,7 +187,7 @@ class xml_set_variable_t : public xml_script_node_t
       std::string *                    condition;
 
       xml_set_variable_t(
-            const std::string&    _name,
+            std::string     _name,
             const std::string *  _singleValue,
             const std::string *  _condition
             );
@@ -340,7 +340,7 @@ struct xml_foreach_t : public xml_script_node_t
       std::string                        variable;
       std::vector<xml_script_node_tRef>  Nodes;
 
-      explicit xml_foreach_t(const std::string &_variable);
+      explicit xml_foreach_t(std::string _variable);
       explicit xml_foreach_t(const xml_element * element);
 
       std::string get_xml_name() const override;

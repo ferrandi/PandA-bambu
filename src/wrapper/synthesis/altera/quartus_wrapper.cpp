@@ -51,9 +51,7 @@ QuartusWrapper::QuartusWrapper(const ParameterConstRef _Param, const std::string
 {}
 
 QuartusWrapper::~QuartusWrapper()
-{
-
-}
+= default;
 std::string QuartusWrapper::get_command_line(const DesignParametersRef& dp) const
 {
    std::ostringstream s;

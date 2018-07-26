@@ -165,7 +165,7 @@ tree_nodeRef lut_transformation::CreateConcat(tree_nodeRef op0,tree_nodeRef op1,
 tree_nodeRef lut_transformation::CreateMultiConcat( std::vector<tree_nodeRef> set_of_nodes, const std::pair<const unsigned int, blocRef>& bb, tree_nodeRef stm_to_append)
 {
    // Create the first concat
-   std::vector<tree_nodeRef>::iterator it = set_of_nodes.begin();
+   auto it = set_of_nodes.begin();
 
    const std::string srcp_default("built-in:0:0");
    const auto type = tree_man->CreateDefaultUnsignedLongLongInt();
@@ -259,7 +259,7 @@ std::vector<tree_nodeRef> lut_transformation::GetInputs(const tree_nodeRef nodeR
    tree_nodeRef noderef = GET_NODE(nodeReindex);
    if(noderef->get_kind() == gimple_assign_K)
    {
-      gimple_assign* gimpleNode = GetPointer<gimple_assign>(noderef);
+      auto* gimpleNode = GetPointer<gimple_assign>(noderef);
       tree_nodeRef node = GET_NODE(gimpleNode->op1);
       enum kind kindOfNode = node->get_kind();
       if(kindOfNode == lut_expr_K)
@@ -270,7 +270,7 @@ std::vector<tree_nodeRef> lut_transformation::GetInputs(const tree_nodeRef nodeR
       else if(kindOfNode == bit_ior_concat_expr_K)
       {
       // If it's a concat i have to call the function on the two operand
-         bit_ior_concat_expr* concat = GetPointer<bit_ior_concat_expr>(node);
+         auto* concat = GetPointer<bit_ior_concat_expr>(node);
          std::vector<tree_nodeRef> inputsOp0 = GetInputs(concat->op0);
          std::vector<tree_nodeRef> inputsOp1 = GetInputs(concat->op1);
          allInputs.insert(allInputs.end(),inputsOp0.begin(), inputsOp0.end());
@@ -278,7 +278,7 @@ std::vector<tree_nodeRef> lut_transformation::GetInputs(const tree_nodeRef nodeR
       }
       else if(kindOfNode == lshift_expr_K)
       {
-         lshift_expr* lshift = GetPointer<lshift_expr>(node);
+         auto* lshift = GetPointer<lshift_expr>(node);
          if(GET_NODE(lshift->op1)->get_kind() == integer_cst_K)
          {
             std::vector<tree_nodeRef> inputsOp0 = GetInputs(lshift->op0);
@@ -291,7 +291,7 @@ std::vector<tree_nodeRef> lut_transformation::GetInputs(const tree_nodeRef nodeR
       }
       else if(kindOfNode == bit_and_expr_K)
       {
-         bit_and_expr* mask = GetPointer<bit_and_expr>(node);
+         auto* mask = GetPointer<bit_and_expr>(node);
          if(GET_NODE(mask->op1)->get_kind() == integer_cst_K)
          {
             std::vector<tree_nodeRef> inputsOp0 = GetInputs(mask->op0);
@@ -351,7 +351,7 @@ std::vector<std::size_t> lut_transformation::CreateLutIndexSet( std::vector<tree
 std::vector<std::size_t> lut_transformation::FindIndex( std::vector<tree_nodeRef> mergedSet, tree_nodeRef node)
 {
    std::vector<std::size_t> result;
-   for (std::vector<tree_nodeRef>::iterator it= mergedSet.begin(); it != mergedSet.end(); ++it){
+   for (auto it= mergedSet.begin(); it != mergedSet.end(); ++it){
       std::size_t position = static_cast<std::size_t>(std::distance(mergedSet.begin(), it));
       if(node == *it){
          result.push_back(position);
@@ -401,7 +401,7 @@ std::vector<tree_nodeRef> lut_transformation::GetLutList(const std::vector<tree_
    while(it_los != it_los_end)
    {
       if(GET_NODE(*it_los)->get_kind() == gimple_assign_K){
-         gimple_assign* ga = GetPointer<gimple_assign>(GET_NODE(*it_los));
+         auto* ga = GetPointer<gimple_assign>(GET_NODE(*it_los));
          if(ga->op1->get_kind() == lut_expr_K){
             lutList.push_back(*it_los);
          }
@@ -420,12 +420,12 @@ void lut_transformation::MergeLut(const std::list<tree_nodeRef>& gimpleLutList, 
 {
    for(const auto& stmt : gimpleLutList)
    {
-      gimple_assign* consideredLutGa = GetPointer<gimple_assign>(GET_NODE(stmt));
+      auto* consideredLutGa = GetPointer<gimple_assign>(GET_NODE(stmt));
       THROW_ASSERT(consideredLutGa, STR(stmt));
-      lut_expr* consideredLut = GetPointer<lut_expr>(GET_NODE(consideredLutGa->op1));
+      auto* consideredLut = GetPointer<lut_expr>(GET_NODE(consideredLutGa->op1));
       THROW_ASSERT(consideredLut, STR(consideredLutGa->op1));
       std::vector<tree_nodeRef> expansionSet = GetInputs(consideredLut->op0);
-      std::vector<tree_nodeRef>::iterator nodeToExpand  = expansionSet.begin();
+      auto nodeToExpand  = expansionSet.begin();
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Starting analysis of: " + STR(stmt));
       for (auto & i3 : expansionSet)
       {
@@ -454,7 +454,7 @@ void lut_transformation::MergeLut(const std::list<tree_nodeRef>& gimpleLutList, 
             tree_nodeRef temp_def0 = GET_NODE((GetPointer<const ssa_name>(GET_NODE(*nodeToExpand)))->CGetDefStmt());
             if(temp_def0->get_kind() == gimple_assign_K)
             {
-               gimple_assign* gaToExpand = GetPointer<gimple_assign>(temp_def0);
+               auto* gaToExpand = GetPointer<gimple_assign>(temp_def0);
                if(GET_NODE(gaToExpand->op1)->get_kind()== lut_expr_K)
                {
                   lutToExpand = GetPointer<lut_expr>(GET_NODE(gaToExpand->op1));
@@ -505,18 +505,18 @@ void lut_transformation::MergeLut(const std::list<tree_nodeRef>& gimpleLutList, 
          std::vector<std::size_t> firstOpIndexes = CreateLutIndexSet(mergedSet,inputsOfToMerge);
 
          // Get the lut values
-         integer_cst* considered_lut_cost = GetPointer<integer_cst>(GET_NODE(consideredLut->op1));
+         auto* considered_lut_cost = GetPointer<integer_cst>(GET_NODE(consideredLut->op1));
          THROW_ASSERT(considered_lut_cost, STR(consideredLut->op1));
-         long long unsigned int lutNumber =  static_cast<long long unsigned int>(tree_helper::get_integer_cst_value(considered_lut_cost)); 
+         auto lutNumber =  static_cast<long long unsigned int>(tree_helper::get_integer_cst_value(considered_lut_cost)); 
 
          std::string currentLutValueInBit = AddZeroes(DecToBin(lutNumber),pow(2,static_cast<double>(unmergedSet.size())));
          std::reverse(currentLutValueInBit.begin(),currentLutValueInBit.end());  
 
          std::string firstOpValueInBit;
 
-         integer_cst* expand_lut_cost = GetPointer<integer_cst>(GET_NODE(lutToExpand->op1));
+         auto* expand_lut_cost = GetPointer<integer_cst>(GET_NODE(lutToExpand->op1));
          THROW_ASSERT(expand_lut_cost, STR(lutToExpand->op1));
-         long long unsigned int expandlutNumber =  static_cast<long long unsigned int>(tree_helper::get_integer_cst_value(expand_lut_cost)); 
+         auto expandlutNumber =  static_cast<long long unsigned int>(tree_helper::get_integer_cst_value(expand_lut_cost)); 
          firstOpValueInBit = AddZeroes(DecToBin(expandlutNumber),pow(2,static_cast<double>(inputsOfToMerge.size())));
          std::reverse(firstOpValueInBit.begin(),firstOpValueInBit.end());
 
@@ -601,17 +601,15 @@ return relationships;
 }
 
 lut_transformation::~lut_transformation()
-{
-
-}
+= default;
 
 DesignFlowStep_Status lut_transformation::InternalExec()
 {
    bool modified = false;
    tree_nodeRef temp = TM->get_tree_node_const(function_id);
-   function_decl * fd = GetPointer<function_decl>(temp);
+   auto * fd = GetPointer<function_decl>(temp);
    THROW_ASSERT(fd && fd->body, "Node is not a function or it has not a body");
-   statement_list * sl = GetPointer<statement_list>(GET_NODE(fd->body));
+   auto * sl = GetPointer<statement_list>(GET_NODE(fd->body));
    THROW_ASSERT(sl, "Body is not a statement list");
    /// iteration over basic blocks
    for(auto block : sl->list_of_bloc)
@@ -640,7 +638,7 @@ DesignFlowStep_Status lut_transformation::InternalExec()
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining statement " + GET_NODE(*it_los)->ToString());
          if(GET_NODE(*it_los)->get_kind() == gimple_assign_K)
          {
-            gimple_assign * ga =  GetPointer<gimple_assign>(GET_NODE(*it_los));
+            auto * ga =  GetPointer<gimple_assign>(GET_NODE(*it_los));
             const std::string srcp_default = ga->include_name + ":" + STR(ga->line_number) + ":" + STR(ga->column_number);
             //second operand : the right part of the assignment
             enum kind code1 = GET_NODE(ga->op1)->get_kind();
@@ -656,7 +654,7 @@ DesignFlowStep_Status lut_transformation::InternalExec()
 
             if(lut_number !=0 )
             {
-               binary_expr * be = GetPointer<binary_expr>(GET_NODE(ga->op1));
+               auto * be = GetPointer<binary_expr>(GET_NODE(ga->op1));
                THROW_ASSERT(be->op0 && be->op1, "expected two parameters");
                int data_size0 = static_cast<int>(tree_helper::Size(GET_NODE(be->op0)));
                int data_size1 = static_cast<int>(tree_helper::Size(GET_NODE(be->op1)));
@@ -746,7 +744,7 @@ void lut_transformation::ComputeRelationships(DesignFlowStepSet & relationship, 
       case DEPENDENCE_RELATIONSHIP:
          {
             const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
-            const TechnologyFlowStepFactory * technology_flow_step_factory = GetPointer<const TechnologyFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("Technology"));
+            const auto * technology_flow_step_factory = GetPointer<const TechnologyFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("Technology"));
             const std::string technology_flow_signature = TechnologyFlowStep::ComputeSignature(TechnologyFlowStep_Type::LOAD_TECHNOLOGY);
             const vertex technology_flow_step = design_flow_manager.lock()->GetDesignFlowStep(technology_flow_signature);
             const DesignFlowStepRef technology_design_flow_step = technology_flow_step ? design_flow_graph->CGetDesignFlowStepInfo(technology_flow_step)->design_flow_step : technology_flow_step_factory->CreateTechnologyFlowStep(TechnologyFlowStep_Type::LOAD_TECHNOLOGY);

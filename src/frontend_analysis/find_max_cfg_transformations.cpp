@@ -54,7 +54,7 @@ FindMaxCFGTransformations::FindMaxCFGTransformations(const application_managerRe
 }
 
 FindMaxCFGTransformations::~FindMaxCFGTransformations()
-{}
+= default;
 
 const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship> > FindMaxCFGTransformations::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType) const
 {

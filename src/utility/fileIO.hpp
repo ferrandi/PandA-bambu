@@ -44,8 +44,8 @@
 #ifndef FILEIO_HPP
 #define FILEIO_HPP
 
-#include <stdio.h>                                   // for size_t, fclose
-#include <stdlib.h>                                  // for system
+#include <cstdio>                                   // for size_t, fclose
+#include <cstdlib>                                  // for system
 #include <boost/filesystem/operations.hpp>           // for copy_file, remove
 #include <boost/filesystem/path.hpp>                 // for path
 #include <boost/lexical_cast.hpp>                    // for lexical_cast

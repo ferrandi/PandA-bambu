@@ -81,7 +81,7 @@ WB4_interface::WB4_interface(const ParameterConstRef _parameters, const HLS_mana
    minimal_interface(_parameters, _HLSMgr, _funId, _design_flow_manager, _hls_flow_step_type)
 {}
 
-WB4_interface::~WB4_interface() {}
+WB4_interface::~WB4_interface() = default;
 
 DesignFlowStep_Status WB4_interface::InternalExec()
 {
@@ -391,7 +391,7 @@ void WB4_interface::build_WB4_complete_logic(structural_managerRef SM, structura
          HLS->HLS_T->get_technology_manager());
 
       structural_objectRef port_objReWe = orGateReWe->find_member("in", port_o_K, orGateReWe);
-      port_o *in_portReWe = GetPointer<port_o>(port_objReWe);
+      auto *in_portReWe = GetPointer<port_o>(port_objReWe);
       in_portReWe->add_n_ports(2, port_objReWe);
 
       connect_with_signal(SM, Mout_we_ram_port, in_portReWe->get_port(0));
@@ -410,7 +410,7 @@ void WB4_interface::build_WB4_complete_logic(structural_managerRef SM, structura
 
       structural_objectRef port_objAndSTB =
          andGateSTB->find_member("in", port_o_K, andGateSTB);
-      port_o *in_portAndSTB = GetPointer<port_o>(port_objAndSTB);
+      auto *in_portAndSTB = GetPointer<port_o>(port_objAndSTB);
       in_portAndSTB->add_n_ports(2, port_objAndSTB);
 
       connect_with_signal_name(SM, notGateSTB->find_member("out1", port_o_K, notGateSTB),
@@ -472,7 +472,7 @@ void WB4_interface::build_WB4_complete_logic(structural_managerRef SM, structura
             structural_objectRef orGateControl = SM->add_module_from_technology_library
                                                  ("orGateControl", OR_GATE_STD, LIBRARY_STD, interfaceObj, HLS->HLS_T->get_technology_manager());
             structural_objectRef port_objControl = orGateControl->find_member("in", port_o_K, orGateControl);
-            port_o *in_portControl = GetPointer<port_o>(port_objControl);
+            auto *in_portControl = GetPointer<port_o>(port_objControl);
             in_portControl->add_n_ports(2, port_objControl);
 
             SM->add_connection(signNotInternal, in_portControl->get_port(0));
@@ -514,7 +514,7 @@ void WB4_interface::build_WB4_complete_logic(structural_managerRef SM, structura
                                                                HLS->HLS_T->get_technology_manager());
                structural_objectRef port_objControl_delayed =
                      orGateControl_delayed->find_member("in", port_o_K, orGateControl_delayed);
-               port_o *in_portControl_delayed = GetPointer<port_o>(port_objControl_delayed);
+               auto *in_portControl_delayed = GetPointer<port_o>(port_objControl_delayed);
                in_portControl_delayed->add_n_ports(2, port_objControl_delayed);
 
                structural_objectRef signNotInternal_delayed =
@@ -540,7 +540,7 @@ void WB4_interface::build_WB4_complete_logic(structural_managerRef SM, structura
             HLS->HLS_T->get_technology_manager());
 
          structural_objectRef port_objStbCyc = andGateStbCyc->find_member("in", port_o_K, andGateStbCyc);
-         port_o *in_portStbCyc = GetPointer<port_o>(port_objStbCyc);
+         auto *in_portStbCyc = GetPointer<port_o>(port_objStbCyc);
          in_portStbCyc->add_n_ports(2, port_objStbCyc);
 
          SM->add_connection(signNotInternal, in_portStbCyc->get_port(1));
@@ -578,7 +578,7 @@ void WB4_interface::build_WB4_complete_logic(structural_managerRef SM, structura
          HLS->HLS_T->get_technology_manager());
       structural_objectRef port_objWeICS =
          andGateWeICS->find_member("in", port_o_K, andGateWeICS);
-      port_o *in_portWeICS = GetPointer<port_o>(port_objWeICS);
+      auto *in_portWeICS = GetPointer<port_o>(port_objWeICS);
       in_portWeICS->add_n_ports(3, port_objWeICS);
 
       SM->add_connection(interfaceObj->find_member(WB_WEIS_PORT_NAME, port_o_K, interfaceObj), in_portWeICS->get_port(0));
@@ -596,7 +596,7 @@ void WB4_interface::build_WB4_complete_logic(structural_managerRef SM, structura
          "andGateReICS", AND_GATE_STD, LIBRARY_STD, interfaceObj,
          HLS->HLS_T->get_technology_manager());
       structural_objectRef port_objReICS = andGateReICS->find_member("in", port_o_K, andGateReICS);
-      port_o *in_portReICS = GetPointer<port_o>(port_objReICS);
+      auto *in_portReICS = GetPointer<port_o>(port_objReICS);
       in_portReICS->add_n_ports(3, port_objReICS);
 
       structural_objectRef signNotWeIS =
@@ -923,7 +923,7 @@ void WB4_interface::build_WB4_complete_logic(structural_managerRef SM, structura
 
       structural_objectRef port_objAndAckOS =
          andGateAckOS->find_member("in", port_o_K, andGateAckOS);
-      port_o *in_portAndAckOS = GetPointer<port_o>(port_objAndAckOS);
+      auto *in_portAndAckOS = GetPointer<port_o>(port_objAndAckOS);
       in_portAndAckOS->add_n_ports(3, port_objAndAckOS);
 
       SM->add_connection(

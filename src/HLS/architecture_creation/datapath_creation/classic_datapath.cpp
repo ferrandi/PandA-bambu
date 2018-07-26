@@ -93,9 +93,7 @@ classic_datapath::classic_datapath(const ParameterConstRef _parameters, const HL
 }
 
 classic_datapath::~classic_datapath()
-{
-
-}
+= default;
 
 DesignFlowStep_Status classic_datapath::InternalExec()
 {

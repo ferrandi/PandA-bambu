@@ -66,9 +66,7 @@ area_model::area_model(const ParameterConstRef _Param_) :
 }
 
 area_model::~area_model()
-{
-
-}
+= default;
 
 area_modelRef area_model::create_model(const TargetDevice_Type type, const ParameterConstRef Param)
 {

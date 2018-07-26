@@ -67,8 +67,7 @@ AddOpPhiFlowEdges::AddOpPhiFlowEdges(const application_managerRef _AppM, const u
 }
 
 AddOpPhiFlowEdges::~AddOpPhiFlowEdges()
-{
-}
+= default;
 
 const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship> > AddOpPhiFlowEdges::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {

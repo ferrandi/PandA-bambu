@@ -63,9 +63,7 @@ ngdbuild_wrapper::ngdbuild_wrapper(const ParameterConstRef _Param, const std::st
 
 //destructor
 ngdbuild_wrapper::~ngdbuild_wrapper()
-{
-
-}
+= default;
 
 void ngdbuild_wrapper::init_reserved_vars()
 {

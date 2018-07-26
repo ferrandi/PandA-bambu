@@ -88,8 +88,7 @@ FSM_NI_SSA_liveness::FSM_NI_SSA_liveness(const ParameterConstRef _parameters, co
 }
 
 FSM_NI_SSA_liveness::~FSM_NI_SSA_liveness()
-{
-}
+= default;
 
 void FSM_NI_SSA_liveness::Initialize()
 {

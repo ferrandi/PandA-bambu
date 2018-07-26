@@ -51,7 +51,7 @@
 
 xml_element* xml_child::add_child_element(const std::string& _name)
 {
-   xml_element* new_el = new xml_element(_name);
+   auto* new_el = new xml_element(_name);
    xml_nodeRef new_ref(new_el);
    child_list.push_back(new_ref);
    return new_el;
@@ -66,7 +66,7 @@ xml_element* xml_child::add_child_element(const xml_nodeRef& node)
 
 xml_text_node* xml_child::add_child_text(const std::string& content)
 {
-   xml_text_node* new_el = new xml_text_node(content);
+   auto* new_el = new xml_text_node(content);
    if(!first_text)
       first_text = new_el;
    xml_nodeRef new_ref(new_el);
@@ -76,7 +76,7 @@ xml_text_node* xml_child::add_child_text(const std::string& content)
 
 xml_comment_node* xml_child::add_child_comment(const std::string& content)
 {
-   xml_comment_node* new_el = new xml_comment_node(content);
+   auto* new_el = new xml_comment_node(content);
    xml_nodeRef new_ref(new_el);
    child_list.push_back(new_ref);
    return new_el;
@@ -84,7 +84,7 @@ xml_comment_node* xml_child::add_child_comment(const std::string& content)
 
 xml_att_decl_node* xml_child::add_child_attribute_declaration(const std::string& _name)
 {
-   xml_att_decl_node* new_el = new xml_att_decl_node(_name);
+   auto* new_el = new xml_att_decl_node(_name);
    xml_nodeRef new_ref(new_el);
    child_list.push_back(new_ref);
    return new_el;
@@ -108,7 +108,7 @@ const CustomSet<xml_nodeRef> xml_child::CGetDescendants(const std::string& path)
    boost::algorithm::split(splitted, path, boost::algorithm::is_any_of("/"));
    for(const auto& child : get_children())
    {
-      const xml_element* child_xml = GetPointer<const xml_element>(child);
+      const auto* child_xml = GetPointer<const xml_element>(child);
       if(not child_xml)
          continue;
       iteration_input_nodes.insert(child);
@@ -128,7 +128,7 @@ const CustomSet<xml_nodeRef> xml_child::CGetDescendants(const std::string& path)
             {
                for(const auto& child : GetPointer<xml_child>(iteration_input_node)->get_children())
                {
-                  const xml_element * child_xml = GetPointer<const xml_element>(child);
+                  const auto * child_xml = GetPointer<const xml_element>(child);
                   if(not child_xml)
                      continue;
                   iteration_output_nodes.insert(child);

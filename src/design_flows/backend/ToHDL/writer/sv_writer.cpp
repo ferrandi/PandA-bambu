@@ -62,7 +62,7 @@
 
 void system_verilog_writer::write_NP_functionalities(const structural_objectRef &cir)
 {
-   module * mod = GetPointer<module>(cir);
+   auto * mod = GetPointer<module>(cir);
    THROW_ASSERT(mod, "Expected a component object");
    const NP_functionalityRef &np = mod->get_NP_functionality();
    THROW_ASSERT(np, "NP Behavioral description is missing for module: "+HDL_manager::convert_to_identifier(this, GET_TYPE_NAME(cir)));
@@ -100,7 +100,5 @@ system_verilog_writer::system_verilog_writer(const ParameterConstRef _parameters
 }
 
 system_verilog_writer::~system_verilog_writer()
-{
-
-}
+= default;
 

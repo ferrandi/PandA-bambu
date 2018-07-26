@@ -61,9 +61,7 @@ trce_wrapper::trce_wrapper(const ParameterConstRef _Param, const std::string& _o
 
 //destructor
 trce_wrapper::~trce_wrapper()
-{
-
-}
+= default;
 
 void trce_wrapper::init_reserved_vars()
 {

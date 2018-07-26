@@ -59,24 +59,24 @@ class SpiderParameter : public Parameter
        * Check the compatibility among the different parameters
        * and compute implicated parameters
        */
-      void CheckParameters();
+      void CheckParameters() override;
 
       /**
        * Print the usage of this tool
        * @param os is the stream where the message has to be printed
        */
-      void PrintHelp(std::ostream &os) const;
+      void PrintHelp(std::ostream &os) const override;
 
       /**
        * Print the name of the program to be included in the header
        * @param os is the stream on which the program name has to be printed
        */
-      void PrintProgramName(std::ostream & os) const;
+      void PrintProgramName(std::ostream & os) const override;
 
       /**
        * Sets the default values for the Zebu tool
        */
-      virtual void SetDefaults();
+      void SetDefaults() override;
 
    public:
       /**
@@ -90,12 +90,12 @@ class SpiderParameter : public Parameter
      /**
        * Destructor
        */
-      virtual ~SpiderParameter() {}
+      ~SpiderParameter() override = default;
 
       /**
        * Execute parameter parsing
        */
-      virtual int Exec();
+      int Exec() override;
 };
 
 typedef refcount<SpiderParameter> SpiederParameterRef;

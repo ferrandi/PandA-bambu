@@ -66,6 +66,7 @@
 #include "target_device.hpp"
 
 #include <iosfwd>
+#include <utility>
 #include "clb_model.hpp"
 #include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_
 
@@ -74,7 +75,7 @@ attribute::attribute(const std::vector<attributeRef>& _content)
    content_list = _content;
 }
 
-attribute::attribute(const std::string& _value_type, const std::string& _content) : content(_content)
+attribute::attribute(const std::string& _value_type, std::string  _content) : content(std::move(_content))
 {
    xml_node::convert_escaped(content);
    if (_value_type == "float64")
@@ -89,8 +90,8 @@ attribute::attribute(const std::string& _value_type, const std::string& _content
       THROW_ERROR("Not supported attribute type: " + _value_type);
 }
 
-attribute::attribute(const value_t  _value_type, const std::string& _content) :
-   content(_content),
+attribute::attribute(const value_t  _value_type, std::string  _content) :
+   content(std::move(_content)),
    value_type(_value_type)
 {
    xml_node::convert_escaped(content);
@@ -135,7 +136,7 @@ void attribute::xload(const xml_element* EnodeC, std::vector<std::string>& order
    std::vector<attributeRef> _content;
    for (const auto & iter_int : list_att)
    {
-      const xml_element* EnodeC1 = GetPointer<const xml_element>(iter_int);
+      const auto* EnodeC1 = GetPointer<const xml_element>(iter_int);
       if(!EnodeC1) continue;
       const xml_text_node* txt_node = EnodeC1->get_child_text();
       _content.push_back(attributeRef(new attribute(EnodeC1->get_name(), txt_node->get_content())));
@@ -213,9 +214,9 @@ library_manager::library_manager(const ParameterConstRef _Param, bool std) :
    set_default_attributes();
 }
 
-library_manager::library_manager(const std::string& library_name, const ParameterConstRef _Param, bool std) :
+library_manager::library_manager(std::string  library_name, const ParameterConstRef _Param, bool std) :
       Param(_Param),
-      name(library_name),
+      name(std::move(library_name)),
       is_std(std)
 {
    set_default_attributes();
@@ -223,20 +224,18 @@ library_manager::library_manager(const std::string& library_name, const Paramete
 
 
 library_manager::~library_manager()
-{
-
-}
+= default;
 
 void library_manager::xload(const xml_element* node, const library_managerRef LM, const ParameterConstRef Param, const target_deviceRef device)
 {
 #ifndef NDEBUG
    int debug_level = Param->get_class_debug_level("library_manager");
 #endif
-   int output_level = Param->getOption<int>(OPT_output_level);
+   auto output_level = Param->getOption<int>(OPT_output_level);
    const xml_node::node_list list_int = node->get_children();
    for (const auto & iter_int : list_int)
    {
-      const xml_element* EnodeC = GetPointer<const xml_element>(iter_int);
+      const auto* EnodeC = GetPointer<const xml_element>(iter_int);
       if(!EnodeC) continue;
       if (EnodeC->get_name() == "information")
       {
@@ -383,7 +382,7 @@ void library_manager::update(const technology_nodeRef& fu_node)
    technology_nodeRef fu = fu_map[_name];
    technology_nodeRef node = fu_node;
    if(!GetPointer<functional_unit>(node)) node = GetPointer<functional_unit_template>(node)->FU;
-   functional_unit * current_fu = GetPointer<functional_unit>(fu);
+   auto * current_fu = GetPointer<functional_unit>(fu);
    if (!current_fu) current_fu = GetPointer<functional_unit>(GetPointer<functional_unit_template>(fu)->FU);
    if (current_fu)
    {

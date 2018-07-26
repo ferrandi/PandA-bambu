@@ -52,7 +52,7 @@
 
 #include "config_HAVE_UNORDERED.hpp"
 
-#include <stddef.h>                                  // for size_t
+#include <cstddef>                                  // for size_t
 #include <functional>                                // for binary_function
 #include <list>                                      // for list
 #include <map>                                       // for map, _Rb_tree_co...
@@ -345,7 +345,7 @@ struct BBGraph : public graph
       /**
        * Destructor
        */
-      ~BBGraph() override{}
+      ~BBGraph() override= default;
 
       /**
        * Writes this graph in dot format

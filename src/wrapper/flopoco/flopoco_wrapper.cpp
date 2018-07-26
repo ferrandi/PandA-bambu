@@ -286,7 +286,7 @@ void flopoco_wrapper::add_FU(const std::string& FU_type, unsigned int FU_prec_in
    else if ("FPSqrtPoly" == FU_type)
    {
       type = flopoco_wrapper::UT_SQRT;
-      op = new flopoco::FPSqrtPoly(target, static_cast<int>(n_exp_in), static_cast<int>(n_mant_in), 0, 3/*degree*/);
+      op = new flopoco::FPSqrtPoly(target, static_cast<int>(n_exp_in), static_cast<int>(n_mant_in), false, 3/*degree*/);
    }
    else if ("FPSqrt" == FU_type)
    {
@@ -490,7 +490,7 @@ unsigned int flopoco_wrapper::get_FUPipelineDepth(const std::string& FU_name, co
 
 flopoco::Operator * flopoco_wrapper::get_FU(std::string FU_name_stored) const
 {
-   std::unordered_map<std::string, flopoco::Operator*>::const_iterator op_found = FUs.find(FU_name_stored);
+   auto op_found = FUs.find(FU_name_stored);
    THROW_ASSERT(op_found != FUs.end(), "Functional unit " + FU_name_stored + " not found (maybe not yet generated)");
    return op_found->second;
 }
@@ -513,7 +513,7 @@ void flopoco_wrapper::outputWrapVHDL(const std::string & FU_name_stored, std::os
      PP(os, "BITSIZE_" + p_in_it + ": integer := " + STR(FU_to_prec_it->second.first) + "; ");
    // Write output port(s) generics
    const std::vector<std::string> p_out = get_ports(WRAPPED_PREFIX+FU_name_stored, 0, port_out, false);
-   for (std::vector<std::string>::const_iterator p_out_it = p_out.begin(); p_out_it != p_out.end(); ++p_out_it)
+   for (auto p_out_it = p_out.begin(); p_out_it != p_out.end(); ++p_out_it)
       if (p_out_it + 1 != p_out.end())
          PP(os, "BITSIZE_" + *p_out_it + ": integer := " + STR(FU_to_prec_it->second.second) + ";");
       else
@@ -832,7 +832,7 @@ void flopoco_wrapper::outputPortDeclaration(const std::string& FU_prefix, const 
    }
    // Write output port(s) declaration
    const std::vector<std::string> p_out = get_ports(FU_prefix+FU_name_stored, 0, port_out, false);
-   for (std::vector<std::string>::const_iterator p_out_it = p_out.begin(); p_out_it != p_out.end(); ++p_out_it)
+   for (auto p_out_it = p_out.begin(); p_out_it != p_out.end(); ++p_out_it)
    {
 
       if(top == c_type)

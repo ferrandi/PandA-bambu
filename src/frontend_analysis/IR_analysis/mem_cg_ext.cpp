@@ -77,7 +77,7 @@ mem_cg_ext::mem_cg_ext(
 }
 
 mem_cg_ext::~mem_cg_ext()
-{}
+= default;
 
 const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship> >
    mem_cg_ext::ComputeFrontendRelationships(
@@ -148,9 +148,9 @@ DesignFlowStep_Status mem_cg_ext::Exec()
          const FunctionBehaviorConstRef FB = AppM->CGetFunctionBehavior(caller_id);
          const std::string caller_name = FB->CGetBehavioralHelper()->get_function_name();
          const tree_nodeConstRef caller_tn = TM->get_tree_node_const(caller_id);
-         const function_decl * caller_fd = GetPointer<const function_decl>(caller_tn);
+         const auto * caller_fd = GetPointer<const function_decl>(caller_tn);
          THROW_ASSERT(caller_fd, "");
-         const statement_list * sl = GetPointer<const statement_list>(GET_NODE(caller_fd->body));
+         const auto * sl = GetPointer<const statement_list>(GET_NODE(caller_fd->body));
          THROW_ASSERT(sl, "");
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->analyzing caller function " + caller_name);
 
@@ -175,7 +175,7 @@ DesignFlowStep_Status mem_cg_ext::Exec()
                const tree_nodeRef call_node_reindex = TM->CGetTreeReindex(i);
                if (call_node->get_kind() != gimple_assign_K)
                   continue;
-               const gimple_assign * ga = GetPointer<const gimple_assign>(call_node);
+               const auto * ga = GetPointer<const gimple_assign>(call_node);
                if (GET_NODE(ga->op1)->get_kind() != call_expr_K && GET_NODE(ga->op1)->get_kind() != aggr_init_expr_K)
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
@@ -187,17 +187,17 @@ DesignFlowStep_Status mem_cg_ext::Exec()
                         fu_name + " in operation " + ga->ToString() +
                         " but lhs " + lhs_node->ToString() +
                         " is not a mem_ref: it's a " + lhs_node->get_kind_text());
-                  const mem_ref * mr_lhs = GetPointer<const mem_ref>(lhs_node);
+                  const auto * mr_lhs = GetPointer<const mem_ref>(lhs_node);
                   THROW_ASSERT(GetPointer<const ssa_name>(GET_NODE(mr_lhs->op0)), "");
 #if HAVE_ASSERTS
-                  const integer_cst * dst_offset = GetPointer<const integer_cst>(GET_NODE(mr_lhs->op1));
+                  const auto * dst_offset = GetPointer<const integer_cst>(GET_NODE(mr_lhs->op1));
 #endif
                   THROW_ASSERT(dst_offset, "");
                   THROW_ASSERT(dst_offset->value == 0, "");
                   const auto rhs_node = GET_NODE(ga->op1);
                   const auto rhs_kind = rhs_node->get_kind();
 
-                  const srcp * s = GetPointer<const srcp>(call_node);
+                  const auto * s = GetPointer<const srcp>(call_node);
                   const std::string current_srcp = s ?
                      (s->include_name + ":" + STR(s->line_number) + ":" + STR(s->column_number)) : "";
                   // node for the new gimple_call
@@ -219,10 +219,10 @@ DesignFlowStep_Status mem_cg_ext::Exec()
 
                      if (rhs_kind == mem_ref_K)
                      {
-                        const mem_ref * mr_rhs = GetPointer<const mem_ref>(rhs_node);
+                        const auto * mr_rhs = GetPointer<const mem_ref>(rhs_node);
                         THROW_ASSERT(GetPointer<const ssa_name>(GET_NODE(mr_rhs->op0)), "");
 #if HAVE_ASSERTS
-                        const integer_cst * src_offset =
+                        const auto * src_offset =
                            GetPointer<const integer_cst>(GET_NODE(mr_rhs->op1));
 #endif
                         THROW_ASSERT(src_offset, "");
@@ -234,14 +234,14 @@ DesignFlowStep_Status mem_cg_ext::Exec()
                         // compute the size in bytes of the copied memory
                         const auto dst_type = tree_helper::CGetType(GET_NODE(mr_lhs->op0));
                         const auto src_type = tree_helper::CGetType(GET_NODE(mr_rhs->op0));
-                        const pointer_type * dst_ptr_t = GetPointer<const pointer_type>(dst_type);
-                        const pointer_type * src_ptr_t = GetPointer<const pointer_type>(src_type);
+                        const auto * dst_ptr_t = GetPointer<const pointer_type>(dst_type);
+                        const auto * src_ptr_t = GetPointer<const pointer_type>(src_type);
                         unsigned int dst_size;
                         if(dst_ptr_t)
                            dst_size = tree_helper::Size(dst_ptr_t->ptd);
                         else
                         {
-                           const reference_type * dst_rptr_t = GetPointer<const reference_type>(dst_type);
+                           const auto * dst_rptr_t = GetPointer<const reference_type>(dst_type);
                            dst_size = tree_helper::Size(dst_rptr_t->refd);
                         }
                         unsigned int src_size;
@@ -249,7 +249,7 @@ DesignFlowStep_Status mem_cg_ext::Exec()
                            src_size = tree_helper::Size(src_ptr_t->ptd);
                         else
                         {
-                           const reference_type * src_rptr_t = GetPointer<const reference_type>(src_type);
+                           const auto * src_rptr_t = GetPointer<const reference_type>(src_type);
                            src_size = tree_helper::Size(src_rptr_t->refd);
                         }
                         if (src_size != dst_size)
@@ -271,17 +271,17 @@ DesignFlowStep_Status mem_cg_ext::Exec()
                         blocRef block = sl->list_of_bloc.at(ga->bb_index);
                         block->PushBefore(memcpy_src_ga, call_node_reindex);
                         // push back src param
-                        const gimple_assign * new_ga = GetPointer<const gimple_assign>(GET_NODE(memcpy_src_ga));
+                        const auto * new_ga = GetPointer<const gimple_assign>(GET_NODE(memcpy_src_ga));
                         args.push_back(new_ga->op0);
 
                         // compute the size in bytes of the copied memory
                         const auto dst_type = tree_helper::CGetType(GET_NODE(mr_lhs->op0));
-                        const pointer_type * dst_ptr_t = GetPointer<const pointer_type>(dst_type);
+                        const auto * dst_ptr_t = GetPointer<const pointer_type>(dst_type);
                         THROW_ASSERT(dst_ptr_t, "");
                         const auto dst_bitsize = tree_helper::Size(dst_ptr_t->ptd);
                         THROW_ASSERT(dst_bitsize % 8 == 0, "");
                         const auto dst_size = dst_bitsize / 8;
-                        const string_cst * sc = GetPointer<const string_cst>(rhs_node);
+                        const auto * sc = GetPointer<const string_cst>(rhs_node);
                         const auto src_strlen = sc->strg.length();
                         if ((src_strlen + 1) != dst_size)
                         {
@@ -301,14 +301,14 @@ DesignFlowStep_Status mem_cg_ext::Exec()
                         blocRef block = sl->list_of_bloc.at(ga->bb_index);
                         block->PushBefore(memcpy_src_ga, call_node_reindex);
                         // push back src param
-                        const gimple_assign * new_ga = GetPointer<const gimple_assign>(GET_NODE(memcpy_src_ga));
+                        const auto * new_ga = GetPointer<const gimple_assign>(GET_NODE(memcpy_src_ga));
                         args.push_back(new_ga->op0);
 
                         // compute the size in bytes of the copied memory
                         const auto dst_type = tree_helper::CGetType(GET_NODE(mr_lhs->op0));
                         const auto src_type = GET_NODE(tree_man->create_pointer_type(tree_helper::CGetType(rhs_node)));
-                        const pointer_type * dst_ptr_t = GetPointer<const pointer_type>(dst_type);
-                        const pointer_type * src_ptr_t = GetPointer<const pointer_type>(src_type);
+                        const auto * dst_ptr_t = GetPointer<const pointer_type>(dst_type);
+                        const auto * src_ptr_t = GetPointer<const pointer_type>(src_type);
                         THROW_ASSERT(dst_ptr_t, "");
                         THROW_ASSERT(src_ptr_t, "");
                         const auto dst_size = tree_helper::Size(dst_ptr_t->ptd);
@@ -333,7 +333,7 @@ DesignFlowStep_Status mem_cg_ext::Exec()
 
                      // compute the size of memory to be set with memset
                      const auto dst_type = tree_helper::CGetType(GET_NODE(mr_lhs->op0));
-                     const pointer_type * dst_ptr_t = GetPointer<const pointer_type>(dst_type);
+                     const auto * dst_ptr_t = GetPointer<const pointer_type>(dst_type);
                      THROW_ASSERT(dst_ptr_t, "");
                      const auto dst_size = tree_helper::Size(dst_ptr_t->ptd);
                      THROW_ASSERT(dst_size % 8 == 0, "");

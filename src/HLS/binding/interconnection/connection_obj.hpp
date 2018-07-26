@@ -46,6 +46,8 @@
 #ifndef CONN_ELEMENT_HPP
 #define CONN_ELEMENT_HPP
 
+#include <utility>
+
 #include "refcount.hpp"
 #include "conn_binding.hpp"
 class graph;
@@ -80,15 +82,15 @@ class connection_obj
        * @param _type is the type of the interconnection
        * @param _live_variable is the set of variables crossing the connection
        */
-      connection_obj(element_t _type, const std::set<data_transfer>& _live_variable) :
+      connection_obj(element_t _type, std::set<data_transfer>  _live_variable) :
          type(_type),
-         live_variable(_live_variable)
+         live_variable(std::move(_live_variable))
       {}
 
       /**
        * Destructor.
        */
-      virtual ~connection_obj() {}
+      virtual ~connection_obj() = default;
 
       /**
        * Returns the name associated with the element

@@ -51,6 +51,7 @@
 #include <boost/graph/detail/edge.hpp>            // for operator!=, operator==
 #include <boost/graph/filtered_graph.hpp>         // for source, target
 #include <boost/iterator/iterator_facade.hpp>     // for operator!=, operator++
+#include <utility>
 #include "Parameter.hpp"                          // for OPT_dot_directory
 #include "application_manager.hpp"                // for FunctionBehaviorCon...
 #include "behavioral_helper.hpp"                  // for BehavioralHelper
@@ -67,7 +68,7 @@ BBNodeInfo::BBNodeInfo() :
 BBNodeInfo::BBNodeInfo(blocRef _block) :
    loop_id(0),
    cer(0),
-   block(_block)
+   block(std::move(_block))
 {}
 
 void BBNodeInfo::add_operation_node(const vertex op)
@@ -121,8 +122,7 @@ BBEdgeInfo::BBEdgeInfo() :
 }
 
 BBEdgeInfo::~BBEdgeInfo()
-{
-}
+= default;
 
 void BBEdgeInfo::set_epp_value(unsigned long long _epp_value)
 {
@@ -148,9 +148,7 @@ BBGraphsCollection::BBGraphsCollection(const BBGraphInfoRef bb_graph_info, const
 {}
 
 BBGraphsCollection::~BBGraphsCollection()
-{
-
-}
+= default;
 
 BBGraph::BBGraph(const BBGraphsCollectionRef _g, int _selector) :
    graph(_g.get(), _selector)

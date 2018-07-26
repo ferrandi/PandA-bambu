@@ -81,8 +81,7 @@ BasicBlocksProfiling::BasicBlocksProfiling(const application_managerRef _AppM, c
 }
 
 BasicBlocksProfiling::~BasicBlocksProfiling()
-{
-}
+= default;
 
 const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship> > BasicBlocksProfiling::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType) const
 {

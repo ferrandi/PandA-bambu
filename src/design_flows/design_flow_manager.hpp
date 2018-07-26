@@ -46,7 +46,7 @@
 
 #include "config_HAVE_STDCXX_11.hpp"                 // for HAVE_STDCXX_11
 
-#include <stddef.h>                                  // for size_t
+#include <cstddef>                                  // for size_t
 #include <functional>                                // for binary_function
 #include <set>                                       // for set
 #include <string>                                    // for string

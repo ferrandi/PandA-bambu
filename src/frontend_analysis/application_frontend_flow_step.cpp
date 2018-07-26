@@ -66,7 +66,7 @@ ApplicationFrontendFlowStep::ApplicationFrontendFlowStep(const application_manag
 }
 
 ApplicationFrontendFlowStep::~ApplicationFrontendFlowStep()
-{}
+= default;
 
 const std::string ApplicationFrontendFlowStep::ComputeSignature(const FrontendFlowStepType frontend_flow_step_type)
 {

@@ -168,7 +168,7 @@
 ///STD include
 #include <cstring>
 #include <iosfwd>
-#include <string.h>
+#include <cstring>
 
 ///Technology include
 #include "language_writer.hpp"
@@ -1249,7 +1249,7 @@ int BambuParameter::Exec()
       return EXIT_SUCCESS;
    }
 
-   while (1)
+   while (true)
    {
       int next_option = getopt_long(argc, argv, short_options, long_options, &option_index);
 
@@ -1267,11 +1267,11 @@ int BambuParameter::Exec()
             std::vector<std::string> splitted;
             std::string to_be_splitted = std::string(optarg);
             boost::split(splitted, to_be_splitted, boost::is_any_of(","));
-            for(size_t counter = 0; counter < splitted.size(); counter++)
+            for(const auto & counter : splitted)
             {
                if(top_function_names != "")
                   top_function_names += STR_CST_string_separator;
-               top_function_names += splitted[counter];
+               top_function_names += counter;
             }
             setOption(OPT_top_functions_names, top_function_names);
             if(splitted.size() == 1)
@@ -2210,10 +2210,10 @@ int BambuParameter::Exec()
             std::vector<std::string> Splitted;
             std::string no_parse_files;
             boost::algorithm::split(Splitted, optarg, boost::algorithm::is_any_of(" ,"));
-            for (unsigned int i = 0; i < Splitted.size(); i++)
+            for (auto & i : Splitted)
             {
-               boost::trim(Splitted[i]);
-               no_parse_files += Splitted[i] + " ";
+               boost::trim(i);
+               no_parse_files += i + " ";
             }
             setOption(OPT_no_parse_files, no_parse_files);
             break;
@@ -2223,10 +2223,10 @@ int BambuParameter::Exec()
             std::vector<std::string> Splitted;
             std::string no_parse_c_python_files;
             boost::algorithm::split(Splitted, optarg, boost::algorithm::is_any_of(" ,"));
-            for (unsigned int i = 0; i < Splitted.size(); i++)
+            for (auto & i : Splitted)
             {
-               boost::trim(Splitted[i]);
-               no_parse_c_python_files += Splitted[i] + " ";
+               boost::trim(i);
+               no_parse_c_python_files += i + " ";
             }
             setOption(OPT_no_parse_c_python, no_parse_c_python_files);
             break;
@@ -3622,7 +3622,7 @@ void BambuParameter::SetDefaults()
 void BambuParameter::add_bambu_library(std::string lib)
 {
 #if HAVE_I386_GCC45_COMPILER || HAVE_I386_GCC46_COMPILER || HAVE_I386_GCC47_COMPILER || HAVE_I386_GCC48_COMPILER || HAVE_I386_GCC49_COMPILER || HAVE_I386_GCC5_COMPILER || HAVE_I386_GCC6_COMPILER || HAVE_I386_GCC7_COMPILER || HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER
-   unsigned int preferred_compiler = getOption<unsigned int>(OPT_default_compiler);
+   auto preferred_compiler = getOption<unsigned int>(OPT_default_compiler);
    std::string archive_files;
    bool is_subnormals =
        isOption(OPT_softfloat_subnormal) && getOption<bool>(OPT_softfloat_subnormal);

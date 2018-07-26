@@ -63,7 +63,7 @@ VirtualAggregateDataFlowAnalysis::VirtualAggregateDataFlowAnalysis(const applica
 }
 
 VirtualAggregateDataFlowAnalysis::~VirtualAggregateDataFlowAnalysis()
-{}
+= default;
 
 const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship> > VirtualAggregateDataFlowAnalysis::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {

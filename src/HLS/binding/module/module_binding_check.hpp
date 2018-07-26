@@ -168,7 +168,7 @@ struct module_binding_check : public check_clique<vertex_type>
     module_binding_check & operator=(const module_binding_check&) = delete;
 
 
-    ~module_binding_check() override {}
+    ~module_binding_check() override = default;
 
 
     void initialize_structures(boost_cc_compatibility_graph &graph,

@@ -124,14 +124,12 @@ CMOS_technology::CMOS_technology(const ParameterConstRef param) :
 }
 
 CMOS_technology::~CMOS_technology( )
-{
-
-}
+= default;
 
 
 void CMOS_technology::initialize()
 {
-   int output_level = Param->getOption<int>(OPT_output_level);
+   auto output_level = Param->getOption<int>(OPT_output_level);
 
 #if HAVE_EXPERIMENTAL
    ///size of the manufacturing grid in um

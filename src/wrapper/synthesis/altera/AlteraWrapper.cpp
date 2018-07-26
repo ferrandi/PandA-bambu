@@ -63,9 +63,7 @@ AlteraWrapper::AlteraWrapper(const ParameterConstRef _Param, const std::string& 
 }
 
 AlteraWrapper::~AlteraWrapper()
-{
-
-}
+= default;
 
 void AlteraWrapper::generate_synthesis_script(const DesignParametersRef& dp, const std::string& file_name)
 {
@@ -110,7 +108,7 @@ std::string AlteraWrapper::getStringValue(const xml_script_node_tRef node, const
          else if (var->multiValues.size())
          {
             result += "{";
-            for (std::vector<xml_set_entry_tRef>::const_iterator it = var->multiValues.begin(); it != var->multiValues.end(); ++it)
+            for (auto it = var->multiValues.begin(); it != var->multiValues.end(); ++it)
             {
                const xml_set_entry_tRef e = *it;
                if (it != var->multiValues.begin())
@@ -164,7 +162,7 @@ std::string AlteraWrapper::toString(const xml_script_node_tRef node, const Desig
          else if (par->multiValues.size())
          {
             result += par->curlyBrackets ? "{" : "\"";
-            for (std::vector<xml_set_entry_tRef>::const_iterator it = par->multiValues.begin(); it != par->multiValues.end(); ++it)
+            for (auto it = par->multiValues.begin(); it != par->multiValues.end(); ++it)
             {
                const xml_set_entry_tRef p = *it;
                if (it != par->multiValues.begin())

@@ -53,4 +53,4 @@ HLSFunctionIR::HLSFunctionIR(const HLS_managerRef _hls_manager, const unsigned i
 {}
 
 HLSFunctionIR::~HLSFunctionIR()
-{}
+= default;

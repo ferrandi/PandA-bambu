@@ -133,7 +133,7 @@ CondExprRestructuring::CondExprRestructuring(const application_managerRef _AppM,
 }
 
 CondExprRestructuring::~CondExprRestructuring()
-{}
+= default;
 
 
 bool CondExprRestructuring::IsCondExprGimple(const tree_nodeConstRef tn) const
@@ -182,8 +182,8 @@ DesignFlowStep_Status CondExprRestructuring::InternalExec()
    }
 
    const tree_manipulationConstRef tree_man = tree_manipulationConstRef(new tree_manipulation(TM, parameters));
-   function_decl * fd = GetPointer<function_decl>(TM->get_tree_node_const(function_id));
-   statement_list * sl = GetPointer<statement_list>(GET_NODE(fd->body));
+   auto * fd = GetPointer<function_decl>(TM->get_tree_node_const(function_id));
+   auto * sl = GetPointer<statement_list>(GET_NODE(fd->body));
    for(const auto& block : sl->list_of_bloc)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining BB" + STR(block.first));

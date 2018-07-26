@@ -73,14 +73,14 @@ FunctionInfo::FunctionInfo() :
 {}
 
 FunctionEdgeInfo::FunctionEdgeInfo()
-{}
+= default;
 
 CallGraphsCollection::CallGraphsCollection(const CallGraphInfoRef call_graph_info, const ParameterConstRef _parameters) :
    graphs_collection(call_graph_info, _parameters)
 {}
 
 CallGraphsCollection::~CallGraphsCollection()
-{}
+= default;
 
 CallGraph::CallGraph(const CallGraphsCollectionRef call_graphs_collection, const int _selector) :
    graph(call_graphs_collection.get(), _selector)
@@ -91,7 +91,7 @@ CallGraph::CallGraph(const CallGraphsCollectionRef call_graphs_collection, const
 {}
 
 CallGraph::~CallGraph()
-{}
+= default;
 
 void CallGraph::WriteDot(const std::string& file_name) const
 {
@@ -135,7 +135,7 @@ FunctionEdgeWriter::FunctionEdgeWriter(const CallGraph * call_graph) :
 {}
 
 FunctionEdgeWriter::~FunctionEdgeWriter()
-{}
+= default;
 
 void FunctionEdgeWriter::operator()(std::ostream& out, const EdgeDescriptor& e) const
 {

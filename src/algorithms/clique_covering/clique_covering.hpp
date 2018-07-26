@@ -59,7 +59,7 @@
 ///Autoheader include
 #include "config_HAVE_EXPERIMENTAL.hpp"
 
-#include <stddef.h>                                // for size_t
+#include <cstddef>                                // for size_t
 #include <algorithm>                               // for binary_search, sort
 #include <boost/pending/disjoint_sets.hpp>
 #include <boost/graph/incremental_components.hpp>
@@ -163,12 +163,12 @@ class clique_covering
       /**
        * Default constructor.
        */
-      clique_covering() {}
+      clique_covering() = default;
 
       /**
        * Destructor
        */
-      virtual ~clique_covering() {}
+      virtual ~clique_covering() = default;
 
       /**
        * Creates a reference to desidered solver
@@ -339,7 +339,7 @@ class TTT_maximal_weighted_clique
       THROW_ASSERT(!subg.empty(), "at least one element should belong to subg");
       int max_weighted_intersection = -1;
       const typename std::unordered_set<vertex>::const_iterator it_end = subg.end();
-      for(typename std::unordered_set<vertex>::const_iterator it = subg.begin(); it != it_end; ++it)
+      for(auto it = subg.begin(); it != it_end; ++it)
       {
          int weight_intersection = 0;
          edge_iterator ei,ei_end;
@@ -511,7 +511,7 @@ class TTT_maximal_weighted_clique_fast
       THROW_ASSERT(!subg.empty(), "at least one element should belong to subg");
       int max_weighted_intersection = -1;
       const typename std::unordered_set<vertex>::const_iterator it_end = subg.end();
-      for(typename std::unordered_set<vertex>::const_iterator it = subg.begin(); it != it_end; ++it)
+      for(auto it = subg.begin(); it != it_end; ++it)
       {
          int weight_intersection = 0;
          edge_iterator ei,ei_end;
@@ -678,7 +678,7 @@ class coloring_based_clique_covering : public clique_covering<vertex_type>
    explicit coloring_based_clique_covering(bool _all_edges) : max_level(0), all_edges(_all_edges) {}
 
    /// destructor
-   ~coloring_based_clique_covering() override {}
+   ~coloring_based_clique_covering() override = default;
 
    /// add a vertex
    C_vertex add_vertex(const vertex_type& element, const std::string& name) override
@@ -715,8 +715,8 @@ class coloring_based_clique_covering : public clique_covering<vertex_type>
    {
       std::set<vertex_type> result;
       std::set<C_vertex> & cur_clique = cliques[i];
-      std::set<C_vertex>::const_iterator it_end = cur_clique.end();
-      for(std::set<C_vertex>::const_iterator it = cur_clique.begin(); it != it_end; ++it)
+      auto it_end = cur_clique.end();
+      for(auto it = cur_clique.begin(); it != it_end; ++it)
       {
          THROW_ASSERT(uv2v.find(*it) != uv2v.end(), "vertex not added");
          result.insert(uv2v.find(*it)->second);
@@ -786,10 +786,10 @@ class coloring_based_clique_covering : public clique_covering<vertex_type>
    /// build partitions
    void build_partitions(std::unordered_set<C_vertex> & support, boost::disjoint_sets<rank_pmap_type,pred_pmap_type> & ds,   std::map<C_vertex, std::set<C_vertex> > & current_partitions)
    {
-      std::unordered_set<C_vertex>::iterator it_end = support.end();
-      for(std::unordered_set<C_vertex>::iterator it=support.begin(); it != it_end;)
+      auto it_end = support.end();
+      for(auto it=support.begin(); it != it_end;)
       {
-         std::unordered_set<C_vertex>::iterator current = it++;
+         auto current = it++;
          C_vertex rep = ds.find_set(*current);
          C_vertex cur = *current;
          if(rep!= cur)
@@ -862,15 +862,15 @@ class coloring_based_clique_covering : public clique_covering<vertex_type>
             do
             {
                restart = false;
-               std::map<C_vertex, std::set<C_vertex> >::iterator cp_it_end = current_partitions.end();
-               for(std::map<C_vertex, std::set<C_vertex> >::iterator cp_it = current_partitions.begin(); cp_it != cp_it_end; ++cp_it)
+               auto cp_it_end = current_partitions.end();
+               for(auto cp_it = current_partitions.begin(); cp_it != cp_it_end; ++cp_it)
                {
                   C_vertex rep = cp_it->first;
                   std::set<C_vertex> & current_cliques = cp_it->second;
-                  std::set<C_vertex>::const_iterator c_it_end = current_cliques.end();
-                  for(std::set<C_vertex>::iterator c_it=current_cliques.begin(); c_it != c_it_end;)
+                  auto c_it_end = current_cliques.end();
+                  for(auto c_it=current_cliques.begin(); c_it != c_it_end;)
                   {
-                     std::set<C_vertex>::iterator current = c_it++;
+                     auto current = c_it++;
                      C_vertex cur = *current;
                      C_outEdgeIterator ei,ei_end;
                      /// remove edges given the current set of clique
@@ -911,10 +911,10 @@ class coloring_based_clique_covering : public clique_covering<vertex_type>
 
             /// recompute the support
             /// by keeping only the representative of each partition
-            std::unordered_set<C_vertex>::iterator it_end = support.end();
-            for(std::unordered_set<C_vertex>::iterator it=support.begin(); it != it_end;)
+            auto it_end = support.end();
+            for(auto it=support.begin(); it != it_end;)
             {
-               std::unordered_set<C_vertex>::iterator current = it++;
+               auto current = it++;
                C_vertex rep = ds.find_set(*current);
                C_vertex cur = *current;
                if(rep != cur || boost::out_degree(rep,*completeCG) == 0)
@@ -992,7 +992,7 @@ class TTT_based_clique_covering_fast : public coloring_based_clique_covering<ver
                {
                   std::set<C_vertex> curr_expandend_clique;
                   const std::unordered_set<C_vertex>::const_iterator av_it_end = all_vertices.end();
-                  for(std::unordered_set<C_vertex>::const_iterator av_it = all_vertices.begin(); av_it != av_it_end; ++av_it)
+                  for(auto av_it = all_vertices.begin(); av_it != av_it_end; ++av_it)
                   {
                      C_vertex rep = ds.find_set(*av_it);
                      if(curr_clique.find(rep) != curr_clique.end())
@@ -1019,7 +1019,7 @@ class TTT_based_clique_covering_fast : public coloring_based_clique_covering<ver
             do
             {
                C_vertex curr_vertex = *cc_it;
-               std::unordered_set<C_vertex>::iterator current = support.find(curr_vertex);
+               auto current = support.find(curr_vertex);
                THROW_ASSERT(current != support.end(), "unexpected condition");
                if(cc_it != first_cc_it)
                   ds.union_set(first,curr_vertex);
@@ -1028,10 +1028,10 @@ class TTT_based_clique_covering_fast : public coloring_based_clique_covering<ver
             } while(cc_it != cc_it_end);
 
             /// check trivial cases
-            std::unordered_set<C_vertex>::iterator s_it_end = support.end();
-            for(std::unordered_set<C_vertex>::iterator s_it=support.begin(); s_it != s_it_end;)
+            auto s_it_end = support.end();
+            for(auto s_it=support.begin(); s_it != s_it_end;)
             {
-               std::unordered_set<C_vertex>::iterator current = s_it++;
+               auto current = s_it++;
                if(boost::out_degree(*current, *CG)==0)
                {
                   support.erase(current);
@@ -1070,7 +1070,7 @@ class TTT_based_clique_covering : public coloring_based_clique_covering<vertex_t
                {
                   std::set<C_vertex> curr_expandend_clique;
                   const std::unordered_set<C_vertex>::const_iterator av_it_end = all_vertices.end();
-                  for(std::unordered_set<C_vertex>::const_iterator av_it = all_vertices.begin(); av_it != av_it_end; ++av_it)
+                  for(auto av_it = all_vertices.begin(); av_it != av_it_end; ++av_it)
                   {
                      C_vertex rep = ds.find_set(*av_it);
                      if(curr_clique.find(rep) != curr_clique.end())
@@ -1096,7 +1096,7 @@ class TTT_based_clique_covering : public coloring_based_clique_covering<vertex_t
             do
             {
                C_vertex curr_vertex = *cc_it;
-               std::unordered_set<C_vertex>::iterator current = support.find(curr_vertex);
+               auto current = support.find(curr_vertex);
                THROW_ASSERT(current != support.end(), "unexpected condition");
                if(cc_it != first_cc_it)
                   ds.union_set(first,curr_vertex);
@@ -1106,10 +1106,10 @@ class TTT_based_clique_covering : public coloring_based_clique_covering<vertex_t
 
 
             /// check trivial cases
-            std::unordered_set<C_vertex>::iterator s_it_end = support.end();
-            for(std::unordered_set<C_vertex>::iterator s_it=support.begin(); s_it != s_it_end;)
+            auto s_it_end = support.end();
+            for(auto s_it=support.begin(); s_it != s_it_end;)
             {
-               std::unordered_set<C_vertex>::iterator current = s_it++;
+               auto current = s_it++;
                if(boost::out_degree(*current, *CG)==0)
                {
                   support.erase(current);
@@ -1131,7 +1131,7 @@ class TS_based_clique_covering : public coloring_based_clique_covering<vertex_ty
       C_vertex vertex_to_be_removed;
       std::set<C_vertex> curr_expandend_clique;
       const std::unordered_set<C_vertex>::const_iterator av_it_end = all_vertices.end();
-      for(std::unordered_set<C_vertex>::const_iterator av_it = all_vertices.begin(); av_it != av_it_end; ++av_it)
+      for(auto av_it = all_vertices.begin(); av_it != av_it_end; ++av_it)
       {
          C_vertex rep = ds.find_set(*av_it);
          if(rep == src || rep == tgt)
@@ -1296,8 +1296,8 @@ class TS_based_clique_covering : public coloring_based_clique_covering<vertex_ty
          //std::cerr << "Found one of size " << cluster_size << std::endl;
 
          /// check trivial cases
-         std::unordered_set<C_vertex>::iterator s_it_end = support.end();
-         for(std::unordered_set<C_vertex>::iterator s_it=support.begin(); s_it != s_it_end;)
+         auto s_it_end = support.end();
+         for(auto s_it=support.begin(); s_it != s_it_end;)
          {
             current = s_it++;
             if(boost::out_degree(*current, *CG)==0)
@@ -1438,7 +1438,7 @@ class bipartite_matching_clique_covering : public clique_covering<vertex_type>
          for (boost::tie(ui, uiend) = boost::vertices(clique_covering_graph_bulk); ui != uiend; ++ui)
          {
             cg_vertices_size_type c= color[*ui];
-            std::map<size_t, std::set<boost::graph_traits<boost_cc_compatibility_graph>::vertex_descriptor> >::iterator p_it = partitions.find(c);
+            auto p_it = partitions.find(c);
             if(p_it == partitions.end())
             {
                std::set<boost::graph_traits<boost_cc_compatibility_graph>::vertex_descriptor> singularity;
@@ -1542,14 +1542,14 @@ class bipartite_matching_clique_covering : public clique_covering<vertex_type>
          //std::cerr << "offset " << offset <<std::endl;
          boost::numeric::ublas::matrix<int> cost_matrix(num_cols,num_cols);
          /// compute the assignment for each element of a partition
-         std::map<size_t, std::set<boost::graph_traits<boost_cc_compatibility_graph>::vertex_descriptor> >::reverse_iterator p_it_end = partitions.rend();
-         for(std::map<size_t, std::set<boost::graph_traits<boost_cc_compatibility_graph>::vertex_descriptor> >::reverse_iterator p_it = partitions.rbegin(); p_it != p_it_end; ++p_it)
+         auto p_it_end = partitions.rend();
+         for(auto p_it = partitions.rbegin(); p_it != p_it_end; ++p_it)
          {
             boost::numeric::ublas::noalias(cost_matrix)=boost::numeric::ublas::zero_matrix<int>(num_cols,num_cols);
             unsigned int num_rows=0;
             bool added_an_element = false;
-            std::set<boost::graph_traits<boost_cc_compatibility_graph>::vertex_descriptor>::const_iterator v_it_end = p_it->second.end();
-            for(std::set<boost::graph_traits<boost_cc_compatibility_graph>::vertex_descriptor>::const_iterator v_it = p_it->second.begin(); v_it != v_it_end; ++v_it, ++num_rows)
+            auto v_it_end = p_it->second.end();
+            for(auto v_it = p_it->second.begin(); v_it != v_it_end; ++v_it, ++num_rows)
             {
                boost::graph_traits<boost_cc_compatibility_graph>::out_edge_iterator ei,eibegin,ei_end;
                boost::tie(ei,ei_end) = boost::out_edges(*v_it, clique_covering_graph_bulk);
@@ -1628,7 +1628,7 @@ class bipartite_matching_clique_covering : public clique_covering<vertex_type>
                WBM.solve_bipartite_matching();
                std::vector<size_t> &sol = WBM.get_solution();
                size_t analyzed_rows = 0;
-               std::set<boost::graph_traits<boost_cc_compatibility_graph>::vertex_descriptor>::const_iterator v_it = p_it->second.begin();
+               auto v_it = p_it->second.begin();
                for(unsigned int i = 0; i < num_rows; ++i, ++v_it)
                {
                   size_t s = sol[i];

@@ -62,7 +62,7 @@ LoadDefaultTechnology::LoadDefaultTechnology(const technology_managerRef _TM, co
 {}
 
 LoadDefaultTechnology::~LoadDefaultTechnology()
-{}
+= default;
 
 const std::unordered_set<TechnologyFlowStep_Type> LoadDefaultTechnology::ComputeTechnologyRelationships(const DesignFlowStep::RelationshipType) const
 {

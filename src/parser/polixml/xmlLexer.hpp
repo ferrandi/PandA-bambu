@@ -47,6 +47,8 @@
 
 #define LCLASS_SPECIALIZED
 
+#include <utility>
+
 #include "Lexer_utilities.hpp"
 
 ///utility include
@@ -61,13 +63,13 @@ struct XmlFlexLexer : public yyFlexLexer
    ///The name of the parsed file/string
    const std::string name;
 
-   XmlFlexLexer(const std::string&_name,  std::istream* argin=nullptr, std::ostream* argout=nullptr) :
+   XmlFlexLexer(std::string _name,  std::istream* argin=nullptr, std::ostream* argout=nullptr) :
       yyFlexLexer(argin, argout),
-      name(_name),
+      name(std::move(_name)),
       keep(0)
    {
    }
-   ~XmlFlexLexer() override {}
+   ~XmlFlexLexer() override = default;
    void yyerror(const char* msg)
    {
       LexerError(msg);

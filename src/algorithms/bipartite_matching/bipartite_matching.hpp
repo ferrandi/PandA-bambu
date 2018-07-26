@@ -55,7 +55,7 @@
 struct BM_cost_functor
 {
    /// Destructor
-   virtual ~BM_cost_functor() {}
+   virtual ~BM_cost_functor() = default;
 
    /**
     * This functor returns a cost given x and y

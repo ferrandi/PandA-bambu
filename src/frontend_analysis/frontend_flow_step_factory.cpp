@@ -323,7 +323,7 @@ FrontendFlowStepFactory::FrontendFlowStepFactory(const application_managerRef _A
 {}
 
 FrontendFlowStepFactory::~FrontendFlowStepFactory()
-{}
+= default;
 
 const DesignFlowStepSet FrontendFlowStepFactory::GenerateFrontendSteps(const std::unordered_set<FrontendFlowStepType>& frontend_flow_step_types) const
 {

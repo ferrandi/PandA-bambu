@@ -138,8 +138,7 @@ ipa_point_to_analysis::ipa_point_to_analysis(const application_managerRef _AppM,
 }
 
 ipa_point_to_analysis::~ipa_point_to_analysis()
-{
-}
+= default;
 
 const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship> > ipa_point_to_analysis::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
@@ -183,8 +182,8 @@ class worklist_queue
 {
    public:
 
-      worklist_queue() {}
-      ~worklist_queue() {}
+      worklist_queue() = default;
+      ~worklist_queue() = default;
 
       /**
        * @brief insert a statement in the priority queue
@@ -251,7 +250,7 @@ DesignFlowStep_Status ipa_point_to_analysis::Exec()
    for(const auto function : functions)
    {
       const tree_nodeRef curr_tn = TM->get_tree_node_const(function);
-      function_decl * fd = GetPointer<function_decl>(curr_tn);
+      auto * fd = GetPointer<function_decl>(curr_tn);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining function " + tree_helper::name_function(TM, function));
       function_information_map[function] = function_informationRef(new function_information(topo_func_order));
       topo_func_order++;
@@ -291,7 +290,7 @@ DesignFlowStep_Status ipa_point_to_analysis::Exec()
       //{
       //   topo_func_parameter_order[GET_INDEX_NODE(par)] = curr_topo_order++;
       //}
-      statement_list * sl = GetPointer<statement_list>(GET_NODE(fd->body));
+      auto * sl = GetPointer<statement_list>(GET_NODE(fd->body));
       std::map<unsigned int, blocRef> &blocks = sl->list_of_bloc;
       std::map<unsigned int, blocRef>::iterator it, it_end;
       it_end = blocks.end();
@@ -304,16 +303,16 @@ DesignFlowStep_Status ipa_point_to_analysis::Exec()
             topo_stmt_order[GET_INDEX_NODE(stmt)] = curr_topo_order++;
             if(GET_NODE(stmt)->get_kind() == gimple_assign_K)
             {
-               gimple_assign * ga =  GetPointer<gimple_assign>(GET_NODE(stmt));
+               auto * ga =  GetPointer<gimple_assign>(GET_NODE(stmt));
                unsigned int output_uid = GET_INDEX_NODE(ga->op0);
-               ssa_name *ssa = GetPointer<ssa_name> (GET_NODE(ga->op0));
+               auto *ssa = GetPointer<ssa_name> (GET_NODE(ga->op0));
                if (ssa)
                {
                   if(GET_NODE(ga->op1)->get_kind() == addr_expr_K)
                   {
                      pointing_to_ssa_vars.insert(output_uid);
                      wl.insert(GET_INDEX_NODE(stmt), topo_stmt_order.find(GET_INDEX_NODE(stmt))->second);
-                     addr_expr* ae = GetPointer<addr_expr>(GET_NODE(ga->op1));
+                     auto* ae = GetPointer<addr_expr>(GET_NODE(ga->op1));
                      if(GET_NODE(ae->op)->get_kind() == var_decl_K || GET_NODE(ae->op)->get_kind() == parm_decl_K || GET_NODE(ae->op)->get_kind() == function_decl_K || GET_NODE(ae->op)->get_kind() == string_cst_K)
                      {
                         ssa->use_set = PointToSolutionRef(new PointToSolution());
@@ -323,7 +322,7 @@ DesignFlowStep_Status ipa_point_to_analysis::Exec()
                      }
                      else if(GET_NODE(ae->op)->get_kind()== mem_ref_K)
                      {
-                        mem_ref * MR =  GetPointer<mem_ref>(GET_NODE(ae->op));
+                        auto * MR =  GetPointer<mem_ref>(GET_NODE(ae->op));
                         THROW_ASSERT(
                               GET_NODE(MR->op0)->get_kind() == ssa_name_K && GetPointer<integer_cst>(GET_NODE(MR->op1)) &&
                               tree_helper::get_integer_cst_value(GetPointer<integer_cst>(GET_NODE(MR->op1))) == 0,
@@ -348,7 +347,7 @@ DesignFlowStep_Status ipa_point_to_analysis::Exec()
                   }
                   else if(GET_NODE(ga->op1)->get_kind() == mem_ref_K)
                   {
-                     mem_ref * MR =  GetPointer<mem_ref>(GET_NODE(ga->op1));
+                     auto * MR =  GetPointer<mem_ref>(GET_NODE(ga->op1));
                      THROW_ASSERT(MR, STR(GET_NODE(ga->op1)) + " is not a mem_ref but a " + GET_NODE(ga->op1)->get_kind_text());
                      if(GET_NODE(MR->op0)->get_kind() != integer_cst_K)
                      {
@@ -363,12 +362,12 @@ DesignFlowStep_Status ipa_point_to_analysis::Exec()
                   }
                   else if(GET_NODE(ga->op1)->get_kind() == call_expr_K || GET_NODE(ga->op1)->get_kind() == aggr_init_expr_K)
                   {
-                     call_expr* ce = GetPointer<call_expr>(GET_NODE(ga->op1));
+                     auto* ce = GetPointer<call_expr>(GET_NODE(ga->op1));
                      if(GET_NODE(ce->fn)->get_kind() == ssa_name_K)
                      {
                         pointing_to_ssa_vars.insert(GET_INDEX_NODE(ce->fn));
                      }
-                     addr_expr* ae = GetPointer<addr_expr>(GET_NODE(ce->fn));
+                     auto* ae = GetPointer<addr_expr>(GET_NODE(ce->fn));
                      THROW_ASSERT(ae, "unexpected pattern" + GET_NODE(stmt)->ToString());
                      if(function_information_map[function]->preserving)
                      {
@@ -385,7 +384,7 @@ DesignFlowStep_Status ipa_point_to_analysis::Exec()
                         }
                      }
 
-                     function_decl* called_fd = GetPointer<function_decl>(GET_NODE(ae->op));
+                     auto* called_fd = GetPointer<function_decl>(GET_NODE(ae->op));
                      if(not called_fd->body)
                      {
                         std::string fun_name = tree_helper::print_function_name(TM, called_fd);
@@ -424,7 +423,7 @@ DesignFlowStep_Status ipa_point_to_analysis::Exec()
                }
                else if(GET_NODE(ga->op0)->get_kind() == mem_ref_K)
                {
-                  mem_ref * MR =  GetPointer<mem_ref>(GET_NODE(ga->op0));
+                  auto * MR =  GetPointer<mem_ref>(GET_NODE(ga->op0));
                   THROW_ASSERT(MR, STR(GET_NODE(ga->op0)) + " is not a mem_ref but a " + GET_NODE(ga->op0)->get_kind_text());
                   if(GET_NODE(MR->op0)->get_kind() != integer_cst_K)
                   {
@@ -453,7 +452,7 @@ DesignFlowStep_Status ipa_point_to_analysis::Exec()
             }
             else if(GET_NODE(stmt)->get_kind() == gimple_call_K)
             {
-               gimple_call* ce = GetPointer<gimple_call>(GET_NODE(stmt));
+               auto* ce = GetPointer<gimple_call>(GET_NODE(stmt));
                if(GET_NODE(ce->fn)->get_kind() == ssa_name_K)
                {
                   pointing_to_ssa_vars.insert(GET_INDEX_NODE(ce->fn));

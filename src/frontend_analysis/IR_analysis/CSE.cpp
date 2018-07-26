@@ -79,7 +79,7 @@
 
 ///STD include
 #include <fstream>
-#include <math.h>
+#include <cmath>
 #include <string>
 
 ///tree include
@@ -107,8 +107,7 @@ CSE::CSE (const ParameterConstRef _parameters, const application_managerRef _App
 }
 
 CSE::~CSE ()
-{
-}
+= default;
 
 const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship> > CSE::ComputeFrontendRelationships (const DesignFlowStep::RelationshipType relationship_type) const
 {
@@ -169,7 +168,7 @@ bool CSE::check_loads(const gimple_assign* ga, unsigned int right_part_index, tr
     /// check for bit field ref of vector type
     if(right_part->get_kind() == bit_field_ref_K)
     {
-       bit_field_ref* bfr = GetPointer<bit_field_ref>(right_part);
+       auto* bfr = GetPointer<bit_field_ref>(right_part);
        if(tree_helper::is_a_vector(TM, GET_INDEX_NODE(bfr->op0)))
        is_a_vector_bitfield = true;
     }
@@ -192,7 +191,7 @@ bool CSE::check_loads(const gimple_assign* ga, unsigned int right_part_index, tr
     }
     if(right_part->get_kind() == view_convert_expr_K)
     {
-       view_convert_expr* vc = GetPointer<view_convert_expr>(right_part);
+       auto* vc = GetPointer<view_convert_expr>(right_part);
        tree_nodeRef vc_op_type = tree_helper::get_type_node(GET_NODE(vc->op));
        if(op0_type->get_kind() == record_type_K || op0_type->get_kind() == union_type_K)
           skip_check = true;
@@ -290,7 +289,7 @@ tree_nodeRef CSE::hash_check(tree_nodeRef tn, vertex bb)
       }
       if(op_kind == ssa_name_K)
       {
-          ssa_name* ssa_var=GetPointer<ssa_name>(right_part);
+          auto* ssa_var=GetPointer<ssa_name>(right_part);
           const auto def_stmt = GET_NODE(ssa_var->CGetDefStmt());
           const auto def_gimple = GetPointer<gimple_node>(def_stmt);
           if(def_gimple->bb_index == ga->bb_index && GetPointer<gimple_assign>(def_stmt))
@@ -308,7 +307,7 @@ tree_nodeRef CSE::hash_check(tree_nodeRef tn, vertex bb)
       else if(op_kind == nop_expr_K || op_kind == view_convert_expr_K || op_kind == convert_expr_K ||
               op_kind == float_expr_K || op_kind == fix_trunc_expr_K)
       {
-          unary_expr* ue=GetPointer<unary_expr>(right_part);
+          auto* ue=GetPointer<unary_expr>(right_part);
           ins.push_back(GET_INDEX_NODE(ue->op));
           unsigned int type_index;
           tree_helper::get_type_node(GET_NODE(ga->op0), type_index);
@@ -316,18 +315,18 @@ tree_nodeRef CSE::hash_check(tree_nodeRef tn, vertex bb)
       }
       else if(GetPointer<unary_expr>(right_part))
       {
-         unary_expr* ue=GetPointer<unary_expr>(right_part);
+         auto* ue=GetPointer<unary_expr>(right_part);
          ins.push_back(GET_INDEX_NODE(ue->op));
       }
       else if(GetPointer<binary_expr>(right_part))
       {
-         binary_expr* be   =GetPointer<binary_expr>(right_part);
+         auto* be   =GetPointer<binary_expr>(right_part);
          ins.push_back(GET_INDEX_NODE(be->op0));
          ins.push_back(GET_INDEX_NODE(be->op1));
       }
       else if(GetPointer<ternary_expr>(right_part))
       {
-         ternary_expr* te=GetPointer<ternary_expr>(right_part);
+         auto* te=GetPointer<ternary_expr>(right_part);
          ins.push_back(GET_INDEX_NODE(te->op0));
          ins.push_back(GET_INDEX_NODE(te->op1));
          if(te->op2)
@@ -369,7 +368,7 @@ CSE::InternalExec ()
    size_t n_equiv_stmt = 0;
 
    tree_nodeRef temp = TM->get_tree_node_const(function_id);
-   function_decl * fd = GetPointer<function_decl>(temp);
+   auto * fd = GetPointer<function_decl>(temp);
    sl = GetPointer<statement_list>(GET_NODE(fd->body));
 
    /// store the GCC BB graph ala boost::graph
@@ -447,15 +446,15 @@ CSE::InternalExec ()
          tree_nodeRef eq_tn = hash_check(GET_NODE(stmt), bb);
          if(eq_tn)
          {
-            gimple_assign * ref_ga = GetPointer<gimple_assign>(eq_tn);
+            auto * ref_ga = GetPointer<gimple_assign>(eq_tn);
             const gimple_assign * dead_ga = GetPointer<gimple_assign>(GET_NODE(stmt));
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Replacing use of " + STR(dead_ga->op0));
             ref_ga->temporary_address = ref_ga->temporary_address && dead_ga->temporary_address;
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---ref_ga->temporary_address" + (ref_ga->temporary_address?std::string("T"):std::string("F")));
             //THROW_ASSERT(ref_ga->bb_index==dead_ga->bb_index, "unexpected condition");
             //THROW_ASSERT(ref_ga->bb_index==B->number, "unexpected condition");
-            ssa_name * ref_ssa = GetPointer<ssa_name>(GET_NODE(ref_ga->op0));
-            ssa_name * dead_ssa = GetPointer<ssa_name>(GET_NODE(dead_ga->op0));
+            auto * ref_ssa = GetPointer<ssa_name>(GET_NODE(ref_ga->op0));
+            auto * dead_ssa = GetPointer<ssa_name>(GET_NODE(dead_ga->op0));
             ///update bit values with the longest
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Bit_values dead" + dead_ssa->bit_values);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Bit_values ref" + ref_ssa->bit_values);

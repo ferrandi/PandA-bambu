@@ -52,9 +52,7 @@ liberty_model::liberty_model(const ParameterConstRef _Param) :
 }
 
 liberty_model::~liberty_model()
-{
-
-}
+= default;
 
 void liberty_model::xwrite(xml_element* pin_node, const std::string& output_pin)
 {

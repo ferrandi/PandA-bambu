@@ -50,7 +50,7 @@
 
 ///Header include
 #include "tree_manager.hpp"
-#include <string.h>                               // for strlen, size_t
+#include <cstring>                               // for strlen, size_t
 #include <iostream>                               // for operator<<, basic_o...
 #include <list>                                   // for list
 #include <vector>                                 // for vector, allocator
@@ -103,7 +103,7 @@ tree_manager::tree_manager(const ParameterConstRef _Param) :
 }
 
 tree_manager::~tree_manager()
-{}
+= default;
 
 unsigned int tree_manager::get_implementation_node(unsigned int decl_node) const
 {
@@ -180,12 +180,12 @@ unsigned int tree_manager::function_index(std::string function_name) const
    for(const auto & function_decl_node : function_decl_nodes)
    {
       tree_nodeRef curr_tn = function_decl_node.second;
-      function_decl * fd = GetPointer<function_decl>(curr_tn);
+      auto * fd = GetPointer<function_decl>(curr_tn);
       tree_nodeRef id_name = GET_NODE(fd->name);
       std::string simple_name;
       if (id_name->get_kind() == identifier_node_K)
       {
-         identifier_node *in = GetPointer<identifier_node>(id_name);
+         auto *in = GetPointer<identifier_node>(id_name);
          if(!in->operator_flag)
             simple_name = in->strg;
       }
@@ -300,7 +300,7 @@ unsigned int tree_manager::find(enum kind tree_node_type, const std::map<TreeVoc
    }
    std::string key = tree_node::GetString(tree_node_type);
    const std::map<TreeVocabularyTokenTypes_TokenEnum, std::string>::const_iterator tns_end =tree_node_schema.end();
-   for(std::map<TreeVocabularyTokenTypes_TokenEnum, std::string>::const_iterator tns =tree_node_schema.begin(); tns != tns_end; ++tns)
+   for(auto tns =tree_node_schema.begin(); tns != tns_end; ++tns)
    {
       key += ";" + STOK2(tns->first) + "=" + tns->second ;
    }
@@ -345,7 +345,7 @@ void tree_manager::collapse_into(const unsigned int & funID, std::unordered_map<
       case gimple_assign_K:
       {
          stack.push_front(tn);
-         gimple_assign * gm = GetPointer<gimple_assign>(curr_tn);
+         auto * gm = GetPointer<gimple_assign>(curr_tn);
          ///If there is a conversion to a not built-in type, type has to be declared; but if no variable survives, type will be not declared by the backend
          null_deleter null_del;
          if(GET_NODE(gm->op1)->get_kind() != nop_expr_K or not tree_helper::HasToBeDeclared(tree_managerRef(this, null_del), GET_INDEX_NODE(GetPointer<nop_expr>(GET_NODE(gm->op1))->type)))
@@ -358,7 +358,7 @@ void tree_manager::collapse_into(const unsigned int & funID, std::unordered_map<
       case gimple_cond_K:
       {
          stack.push_front(tn);
-         gimple_cond* gc = GetPointer<gimple_cond>(curr_tn);
+         auto* gc = GetPointer<gimple_cond>(curr_tn);
          collapse_into(funID, stmt_to_bloc, gc->op0, removed_nodes);
          stack.pop_front();
          break;
@@ -366,13 +366,13 @@ void tree_manager::collapse_into(const unsigned int & funID, std::unordered_map<
       /* Unary expressions.  */
       case CASE_UNARY_EXPRESSION:
       {
-         unary_expr * ue = GetPointer<unary_expr>(curr_tn);
+         auto * ue = GetPointer<unary_expr>(curr_tn);
          collapse_into(funID, stmt_to_bloc, ue->op, removed_nodes);
          break;
       }
       case CASE_BINARY_EXPRESSION:
       {
-         binary_expr* be = GetPointer<binary_expr>(curr_tn);
+         auto* be = GetPointer<binary_expr>(curr_tn);
          collapse_into(funID, stmt_to_bloc, be->op0, removed_nodes);
          collapse_into(funID, stmt_to_bloc, be->op1, removed_nodes);
          break;
@@ -380,13 +380,13 @@ void tree_manager::collapse_into(const unsigned int & funID, std::unordered_map<
       /*ternary expressions*/
       case gimple_switch_K:
       {
-         gimple_switch* se = GetPointer<gimple_switch>(curr_tn);
+         auto* se = GetPointer<gimple_switch>(curr_tn);
          collapse_into(funID, stmt_to_bloc, se->op0, removed_nodes);
          break;
       }
       case CASE_TERNARY_EXPRESSION:
       {
-         ternary_expr * te = GetPointer<ternary_expr>(curr_tn);
+         auto * te = GetPointer<ternary_expr>(curr_tn);
          collapse_into(funID, stmt_to_bloc, te->op0, removed_nodes);
          collapse_into(funID, stmt_to_bloc, te->op1, removed_nodes);
          if(te->op2)
@@ -395,7 +395,7 @@ void tree_manager::collapse_into(const unsigned int & funID, std::unordered_map<
       }
       case CASE_QUATERNARY_EXPRESSION:
       {
-         quaternary_expr * qe = GetPointer<quaternary_expr>(curr_tn);
+         auto * qe = GetPointer<quaternary_expr>(curr_tn);
          collapse_into(funID, stmt_to_bloc, qe->op0, removed_nodes);
          collapse_into(funID, stmt_to_bloc, qe->op1, removed_nodes);
          if(qe->op2)
@@ -428,11 +428,11 @@ void tree_manager::collapse_into(const unsigned int & funID, std::unordered_map<
       }
       case ssa_name_K:
       {
-         ssa_name * sn = GetPointer<ssa_name>(curr_tn);
+         auto * sn = GetPointer<ssa_name>(curr_tn);
 
          if(sn->CGetDefStmts().size()==1)
          {
-            gimple_assign * gm = GetPointer<gimple_assign>(GET_NODE(sn->CGetDefStmt()));
+            auto * gm = GetPointer<gimple_assign>(GET_NODE(sn->CGetDefStmt()));
             // Don't continue if declaration of ssa variable is not a gimple_assign
             if((!gm and GET_NODE(sn->CGetDefStmt())->get_kind() == gimple_asm_K) || (!gm and GET_NODE(sn->CGetDefStmt())->get_kind() == nop_expr_K) || (!gm and GET_NODE(sn->CGetDefStmt())->get_kind() == gimple_nop_K))
                break;
@@ -473,8 +473,8 @@ void tree_manager::collapse_into(const unsigned int & funID, std::unordered_map<
 #endif
             // Retrieve curr_block, the block which contains the conditional expression that originated the collapsing
             tree_nodeRef temp = get_tree_node_const(funID);
-            function_decl * fd = GetPointer<function_decl>(temp);
-            statement_list * sl = GetPointer<statement_list>(GET_NODE(fd->body));
+            auto * fd = GetPointer<function_decl>(temp);
+            auto * sl = GetPointer<statement_list>(GET_NODE(fd->body));
             const std::map<unsigned int, blocRef> & list_of_bloc = sl->list_of_bloc;
 #if 1
             THROW_ASSERT(stack.size(), "stack is empty");
@@ -525,7 +525,7 @@ void tree_manager::collapse_into(const unsigned int & funID, std::unordered_map<
                {
                   if(in_between and GET_NODE(stmt)->get_kind() == gimple_assign_K)
                   {
-                     gimple_assign * gms = GetPointer<gimple_assign>(GET_NODE(stmt));
+                     auto * gms = GetPointer<gimple_assign>(GET_NODE(stmt));
                      if(gms->memdef)
                      {
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Statement " + STR(GET_INDEX_NODE(stmt)) + " contains vdef");
@@ -582,7 +582,7 @@ void tree_manager::collapse_into(const unsigned int & funID, std::unordered_map<
                         unsigned int sn_index = new_tree_node_id();
                         create_tree_node(sn_index, ssa_name_K, IR_schema);
                         tree_nodeRef tree_reindexRef_sn = GetTreeReindex(sn_index);
-                        ssa_name * new_sn = GetPointer<ssa_name>(GET_NODE(tree_reindexRef_sn));
+                        auto * new_sn = GetPointer<ssa_name>(GET_NODE(tree_reindexRef_sn));
                         for(const auto& use_stmt : sn->CGetUseStmts())
                         {
                            for(decltype(use_stmt.second) repetition = 0; repetition < use_stmt.second; repetition++)
@@ -613,11 +613,11 @@ void tree_manager::collapse_into(const unsigned int & funID, std::unordered_map<
                         ///Update uses of right operand
                         if(GetPointer<const ssa_name>(GET_NODE(gm->op1)))
                         {
-                           ssa_name * sn_right = GetPointer<ssa_name>(GET_NODE(gm->op1));
+                           auto * sn_right = GetPointer<ssa_name>(GET_NODE(gm->op1));
                            sn_right->AddUseStmt(tree_reindexRef_gm);
                         }
 
-                        gimple_assign * new_gm = GetPointer<gimple_assign>(GET_NODE(tree_reindexRef_gm));
+                        auto * new_gm = GetPointer<gimple_assign>(GET_NODE(tree_reindexRef_gm));
 #if HAVE_CODE_ESTIMATION_BUILT
                         new_gm->weight_information->instruction_size = gm->weight_information->instruction_size;
 #if HAVE_RTL_BUILT
@@ -658,14 +658,14 @@ void tree_manager::collapse_into(const unsigned int & funID, std::unordered_map<
                tree_nodeRef top = stack.front();
                if(GET_NODE(top)->get_kind() == gimple_cond_K)
                {
-                  gimple_cond * gc = GetPointer<gimple_cond>(GET_NODE(top));
+                  auto * gc = GetPointer<gimple_cond>(GET_NODE(top));
                   gc->memuse = gm->memuse;
                   gc->vuses = gm->vuses;
                   gc->vovers = gm->vovers;
                }
                else if (GET_NODE(top)->get_kind() == gimple_assign_K)
                {
-                  gimple_assign * top_gm = GetPointer<gimple_assign>(GET_NODE(top));
+                  auto * top_gm = GetPointer<gimple_assign>(GET_NODE(top));
                   top_gm->memuse = gm->memuse;
                   top_gm->vuses = gm->vuses;
                   top_gm->vovers = gm->vovers;
@@ -732,7 +732,7 @@ void tree_manager::collapse_into(const unsigned int & funID, std::unordered_map<
       case call_expr_K:
       case aggr_init_expr_K:
       {
-         call_expr* ce = GetPointer<call_expr>(curr_tn);
+         auto* ce = GetPointer<call_expr>(curr_tn);
          const std::vector<tree_nodeRef> & args = ce->args;
          std::vector<tree_nodeRef>::const_iterator arg, arg_end = args.end();
          for(arg = args.begin(); arg != arg_end; ++arg)
@@ -744,7 +744,7 @@ void tree_manager::collapse_into(const unsigned int & funID, std::unordered_map<
       case gimple_call_K:
       {
          stack.push_front(tn);
-         gimple_call* ce = GetPointer<gimple_call>(curr_tn);
+         auto* ce = GetPointer<gimple_call>(curr_tn);
          const std::vector<tree_nodeRef> & args = ce->args;
          std::vector<tree_nodeRef>::const_iterator arg, arg_end = args.end();
          for(arg = args.begin(); arg != arg_end; ++arg)
@@ -897,7 +897,7 @@ void tree_manager::RecursiveReplaceTreeNode(tree_nodeRef & tn, const tree_nodeRe
    {
       case gimple_assign_K:
       {
-         gimple_assign * gm = GetPointer<gimple_assign>(curr_tn);
+         auto * gm = GetPointer<gimple_assign>(curr_tn);
          RecursiveReplaceTreeNode(gm->op0, old_node, new_node, stmt, true);
          RecursiveReplaceTreeNode(gm->op1, old_node, new_node, stmt, false);
          std::vector<tree_nodeRef> & uses = gm->use_set->variables;
@@ -920,7 +920,7 @@ void tree_manager::RecursiveReplaceTreeNode(tree_nodeRef & tn, const tree_nodeRe
       }
       case gimple_asm_K:
       {
-         gimple_asm * gasm = GetPointer<gimple_asm>(curr_tn);
+         auto * gasm = GetPointer<gimple_asm>(curr_tn);
          if(gasm->in)
             RecursiveReplaceTreeNode(gasm->in, old_node, new_node, stmt, false);
          if(gasm->out)
@@ -931,32 +931,32 @@ void tree_manager::RecursiveReplaceTreeNode(tree_nodeRef & tn, const tree_nodeRe
       }
       case gimple_cond_K:
       {
-         gimple_cond* gc = GetPointer<gimple_cond>(curr_tn);
+         auto* gc = GetPointer<gimple_cond>(curr_tn);
          RecursiveReplaceTreeNode(gc->op0, old_node, new_node, stmt, false);
          break;
       }
       case CASE_UNARY_EXPRESSION:
       {
-         unary_expr * ue = GetPointer<unary_expr>(curr_tn);
+         auto * ue = GetPointer<unary_expr>(curr_tn);
          RecursiveReplaceTreeNode(ue->op, old_node, new_node, stmt, false);
          break;
       }
       case CASE_BINARY_EXPRESSION:
       {
-         binary_expr* be = GetPointer<binary_expr>(curr_tn);
+         auto* be = GetPointer<binary_expr>(curr_tn);
          RecursiveReplaceTreeNode(be->op0, old_node, new_node, stmt, false);
          RecursiveReplaceTreeNode(be->op1, old_node, new_node, stmt, false);
          break;
       }
       case gimple_switch_K:
       {
-         gimple_switch* se = GetPointer<gimple_switch>(curr_tn);
+         auto* se = GetPointer<gimple_switch>(curr_tn);
          RecursiveReplaceTreeNode(se->op0, old_node, new_node, stmt, false);
          break;
       }
       case gimple_multi_way_if_K:
       {
-         gimple_multi_way_if * gmwi = GetPointer<gimple_multi_way_if>(curr_tn);
+         auto * gmwi = GetPointer<gimple_multi_way_if>(curr_tn);
          for(auto & cond : gmwi->list_of_cond)
             if(cond.first)
                RecursiveReplaceTreeNode(cond.first, old_node, new_node, stmt, false);
@@ -964,7 +964,7 @@ void tree_manager::RecursiveReplaceTreeNode(tree_nodeRef & tn, const tree_nodeRe
       }
       case CASE_TERNARY_EXPRESSION:
       {
-         ternary_expr * te = GetPointer<ternary_expr>(curr_tn);
+         auto * te = GetPointer<ternary_expr>(curr_tn);
          RecursiveReplaceTreeNode(te->op0, old_node, new_node, stmt, false);
          RecursiveReplaceTreeNode(te->op1, old_node, new_node, stmt, false);
          if(te->op2)
@@ -973,7 +973,7 @@ void tree_manager::RecursiveReplaceTreeNode(tree_nodeRef & tn, const tree_nodeRe
       }
       case CASE_QUATERNARY_EXPRESSION:
       {
-         quaternary_expr * qe = GetPointer<quaternary_expr>(curr_tn);
+         auto * qe = GetPointer<quaternary_expr>(curr_tn);
          RecursiveReplaceTreeNode(qe->op0, old_node, new_node, stmt, false);
          RecursiveReplaceTreeNode(qe->op1, old_node, new_node, stmt, false);
          if(qe->op2)
@@ -984,7 +984,7 @@ void tree_manager::RecursiveReplaceTreeNode(tree_nodeRef & tn, const tree_nodeRe
       }
       case gimple_phi_K:
       {
-         gimple_phi * gp = GetPointer<gimple_phi>(curr_tn);
+         auto * gp = GetPointer<gimple_phi>(curr_tn);
          for(auto & def_edge : gp->list_of_def_edge)
             RecursiveReplaceTreeNode(def_edge.first, old_node, new_node, stmt, false);
          RecursiveReplaceTreeNode(gp->res, old_node, new_node, stmt, true);
@@ -1037,7 +1037,7 @@ void tree_manager::RecursiveReplaceTreeNode(tree_nodeRef & tn, const tree_nodeRe
       case call_expr_K:
       case aggr_init_expr_K:
       {
-         call_expr * ce = GetPointer<call_expr>(curr_tn);
+         auto * ce = GetPointer<call_expr>(curr_tn);
          std::vector<tree_nodeRef> & args = ce->args;
          for(auto & arg : args)
          {
@@ -1047,7 +1047,7 @@ void tree_manager::RecursiveReplaceTreeNode(tree_nodeRef & tn, const tree_nodeRe
       }
       case gimple_call_K:
       {
-         gimple_call * ce = GetPointer<gimple_call>(curr_tn);
+         auto * ce = GetPointer<gimple_call>(curr_tn);
          std::vector<tree_nodeRef> & args = ce->args;
          for(auto & arg : args)
          {
@@ -1069,7 +1069,7 @@ void tree_manager::RecursiveReplaceTreeNode(tree_nodeRef & tn, const tree_nodeRe
       }
       case gimple_return_K:
       {
-         gimple_return * gr = GetPointer<gimple_return>(curr_tn);
+         auto * gr = GetPointer<gimple_return>(curr_tn);
          if(gr->op)
             RecursiveReplaceTreeNode(gr->op, old_node, new_node, stmt, false);
          break;
@@ -1085,7 +1085,7 @@ void tree_manager::RecursiveReplaceTreeNode(tree_nodeRef & tn, const tree_nodeRe
       }
       case tree_list_K:
       {
-         tree_list* tl = GetPointer<tree_list>(curr_tn);
+         auto* tl = GetPointer<tree_list>(curr_tn);
          if(tl->valu)
             RecursiveReplaceTreeNode(tl->valu, old_node, new_node, stmt, false);
          if (tl->chan)
@@ -1132,7 +1132,7 @@ void tree_manager::erase_usage_info(tree_nodeRef tn, tree_nodeRef stmt)
    {
       case gimple_assign_K:
       {
-         gimple_assign * gm = GetPointer<gimple_assign>(curr_tn);
+         auto * gm = GetPointer<gimple_assign>(curr_tn);
          erase_usage_info(gm->op1, stmt);
          if(gm->predicate)
             erase_usage_info(gm->predicate, stmt);
@@ -1140,7 +1140,7 @@ void tree_manager::erase_usage_info(tree_nodeRef tn, tree_nodeRef stmt)
       }
       case gimple_cond_K:
       {
-         gimple_cond* gc = GetPointer<gimple_cond>(curr_tn);
+         auto* gc = GetPointer<gimple_cond>(curr_tn);
          erase_usage_info(gc->op0, stmt);
          break;
       }
@@ -1154,26 +1154,26 @@ void tree_manager::erase_usage_info(tree_nodeRef tn, tree_nodeRef stmt)
             }
             already_visited.insert(curr_tn);*/
          }
-         unary_expr * ue = GetPointer<unary_expr>(curr_tn);
+         auto * ue = GetPointer<unary_expr>(curr_tn);
          erase_usage_info(ue->op, stmt);
          break;
       }
       case CASE_BINARY_EXPRESSION:
       {
-         binary_expr* be = GetPointer<binary_expr>(curr_tn);
+         auto* be = GetPointer<binary_expr>(curr_tn);
          erase_usage_info(be->op0, stmt);
          erase_usage_info(be->op1, stmt);
          break;
       }
       case gimple_switch_K:
       {
-         gimple_switch* se = GetPointer<gimple_switch>(curr_tn);
+         auto* se = GetPointer<gimple_switch>(curr_tn);
          erase_usage_info(se->op0, stmt);
          break;
       }
       case gimple_multi_way_if_K:
       {
-         gimple_multi_way_if * gmwi = GetPointer<gimple_multi_way_if>(curr_tn);
+         auto * gmwi = GetPointer<gimple_multi_way_if>(curr_tn);
          for(auto cond : gmwi->list_of_cond)
             if(cond.first)
                erase_usage_info(cond.first, stmt);
@@ -1181,7 +1181,7 @@ void tree_manager::erase_usage_info(tree_nodeRef tn, tree_nodeRef stmt)
       }
       case CASE_TERNARY_EXPRESSION:
       {
-         ternary_expr * te = GetPointer<ternary_expr>(curr_tn);
+         auto * te = GetPointer<ternary_expr>(curr_tn);
          erase_usage_info(te->op0, stmt);
          erase_usage_info(te->op1, stmt);
          if(te->op2)
@@ -1190,7 +1190,7 @@ void tree_manager::erase_usage_info(tree_nodeRef tn, tree_nodeRef stmt)
       }
       case CASE_QUATERNARY_EXPRESSION:
       {
-         quaternary_expr * qe = GetPointer<quaternary_expr>(curr_tn);
+         auto * qe = GetPointer<quaternary_expr>(curr_tn);
          erase_usage_info(qe->op0, stmt);
          erase_usage_info(qe->op1, stmt);
          if(qe->op2)
@@ -1221,7 +1221,7 @@ void tree_manager::erase_usage_info(tree_nodeRef tn, tree_nodeRef stmt)
       }
       case ssa_name_K:
       {
-         ssa_name * sn = GetPointer<ssa_name>(curr_tn);
+         auto * sn = GetPointer<ssa_name>(curr_tn);
          for(const auto& use_stmt : sn->CGetUseStmts())
          {
             if(GET_INDEX_NODE(use_stmt.first) == GET_INDEX_NODE(stmt))
@@ -1237,7 +1237,7 @@ void tree_manager::erase_usage_info(tree_nodeRef tn, tree_nodeRef stmt)
       case call_expr_K:
       case aggr_init_expr_K:
       {
-         call_expr* ce = GetPointer<call_expr>(curr_tn);
+         auto* ce = GetPointer<call_expr>(curr_tn);
          std::vector<tree_nodeRef> & args = ce->args;
          std::vector<tree_nodeRef>::iterator arg, arg_end = args.end();
          for(arg = args.begin(); arg != arg_end; ++arg)
@@ -1248,7 +1248,7 @@ void tree_manager::erase_usage_info(tree_nodeRef tn, tree_nodeRef stmt)
       }
       case gimple_call_K:
       {
-         gimple_call* ce = GetPointer<gimple_call>(curr_tn);
+         auto* ce = GetPointer<gimple_call>(curr_tn);
          std::vector<tree_nodeRef> & args = ce->args;
          std::vector<tree_nodeRef>::iterator arg, arg_end = args.end();
          for(arg = args.begin(); arg != arg_end; ++arg)
@@ -1301,7 +1301,7 @@ void tree_manager::insert_usage_info(tree_nodeRef tn, tree_nodeRef stmt)
    {
       case gimple_assign_K:
       {
-         gimple_assign * gm = GetPointer<gimple_assign>(curr_tn);
+         auto * gm = GetPointer<gimple_assign>(curr_tn);
          insert_usage_info(gm->op1, stmt);
          if(gm->predicate)
             insert_usage_info(gm->predicate, stmt);
@@ -1309,7 +1309,7 @@ void tree_manager::insert_usage_info(tree_nodeRef tn, tree_nodeRef stmt)
       }
       case gimple_cond_K:
       {
-         gimple_cond* gc = GetPointer<gimple_cond>(curr_tn);
+         auto* gc = GetPointer<gimple_cond>(curr_tn);
          insert_usage_info(gc->op0, stmt);
          break;
       }
@@ -1323,26 +1323,26 @@ void tree_manager::insert_usage_info(tree_nodeRef tn, tree_nodeRef stmt)
             }
             already_visited.insert(curr_tn);*/
          }
-         unary_expr * ue = GetPointer<unary_expr>(curr_tn);
+         auto * ue = GetPointer<unary_expr>(curr_tn);
          insert_usage_info(ue->op, stmt);
          break;
       }
       case CASE_BINARY_EXPRESSION:
       {
-         binary_expr* be = GetPointer<binary_expr>(curr_tn);
+         auto* be = GetPointer<binary_expr>(curr_tn);
          insert_usage_info(be->op0, stmt);
          insert_usage_info(be->op1, stmt);
          break;
       }
       case gimple_switch_K:
       {
-         gimple_switch* se = GetPointer<gimple_switch>(curr_tn);
+         auto* se = GetPointer<gimple_switch>(curr_tn);
          insert_usage_info(se->op0, stmt);
          break;
       }
       case gimple_multi_way_if_K:
       {
-         gimple_multi_way_if * gmwi = GetPointer<gimple_multi_way_if>(curr_tn);
+         auto * gmwi = GetPointer<gimple_multi_way_if>(curr_tn);
          for(auto cond : gmwi->list_of_cond)
             if(cond.first)
                insert_usage_info(cond.first, stmt);
@@ -1350,7 +1350,7 @@ void tree_manager::insert_usage_info(tree_nodeRef tn, tree_nodeRef stmt)
       }
       case CASE_TERNARY_EXPRESSION:
       {
-         ternary_expr * te = GetPointer<ternary_expr>(curr_tn);
+         auto * te = GetPointer<ternary_expr>(curr_tn);
          insert_usage_info(te->op0, stmt);
          insert_usage_info(te->op1, stmt);
          if(te->op2)
@@ -1359,7 +1359,7 @@ void tree_manager::insert_usage_info(tree_nodeRef tn, tree_nodeRef stmt)
       }
       case CASE_QUATERNARY_EXPRESSION:
       {
-         quaternary_expr * qe = GetPointer<quaternary_expr>(curr_tn);
+         auto * qe = GetPointer<quaternary_expr>(curr_tn);
          insert_usage_info(qe->op0, stmt);
          insert_usage_info(qe->op1, stmt);
          if(qe->op2)
@@ -1390,14 +1390,14 @@ void tree_manager::insert_usage_info(tree_nodeRef tn, tree_nodeRef stmt)
       }
       case ssa_name_K:
       {
-         ssa_name * sn = GetPointer<ssa_name>(curr_tn);
+         auto * sn = GetPointer<ssa_name>(curr_tn);
          sn->AddUseStmt(stmt);
          break;
       }
       case call_expr_K:
       case aggr_init_expr_K:
       {
-         call_expr* ce = GetPointer<call_expr>(curr_tn);
+         auto* ce = GetPointer<call_expr>(curr_tn);
          const std::vector<tree_nodeRef> & args = ce->args;
          std::vector<tree_nodeRef>::const_iterator arg, arg_end = args.end();
          for(arg = args.begin(); arg != arg_end; ++arg)
@@ -1408,7 +1408,7 @@ void tree_manager::insert_usage_info(tree_nodeRef tn, tree_nodeRef stmt)
       }
       case gimple_call_K:
       {
-         gimple_call* ce = GetPointer<gimple_call>(curr_tn);
+         auto* ce = GetPointer<gimple_call>(curr_tn);
          std::vector<tree_nodeRef> & args = ce->args;
          std::vector<tree_nodeRef>::iterator arg, arg_end = args.end();
          for(arg = args.begin(); arg != arg_end; ++arg)
@@ -1506,7 +1506,7 @@ void tree_manager::merge_tree_managers(const tree_managerRef source_tree_manager
    for (const auto ti : tree_nodes)
    {
       const tree_nodeRef tn = ti.second;
-      decl_node* dn = GetPointer<decl_node>(tn);
+      auto* dn = GetPointer<decl_node>(tn);
       if(not dn)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Checking " + STR(ti.first));
@@ -1541,7 +1541,7 @@ void tree_manager::merge_tree_managers(const tree_managerRef source_tree_manager
    {
       ///check for decl_node
       const tree_nodeRef tn = ti.second;
-      decl_node* dn = GetPointer<decl_node>(tn);
+      auto* dn = GetPointer<decl_node>(tn);
       if(dn)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Checking " + STR(ti.first));
@@ -1663,13 +1663,13 @@ void tree_manager::merge_tree_managers(const tree_managerRef source_tree_manager
    {
       const tree_nodeRef tn = ti_source.second;
       ///check for decl_node
-      decl_node* dn = GetPointer<decl_node>(tn);
+      auto* dn = GetPointer<decl_node>(tn);
       if (not dn)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Checking " + STR(ti_source.first));
          if(GetPointer<identifier_node>(tn))
          {
-            identifier_node* id = GetPointer<identifier_node>(tn);
+            auto* id = GetPointer<identifier_node>(tn);
             unsigned int node_id = find_identifier_nodeID(id->strg);
             if(node_id)
             {
@@ -1822,7 +1822,7 @@ void tree_manager::merge_tree_managers(const tree_managerRef source_tree_manager
    {
       const tree_nodeRef tn = ti_source.second;
       ///check for decl_node
-      decl_node* dn = GetPointer<decl_node>(tn);
+      auto* dn = GetPointer<decl_node>(tn);
       if(dn)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining declaration node " + STR(ti_source.first) + " of second tree:" + STR(tn));
@@ -2008,7 +2008,7 @@ void tree_manager::merge_tree_managers(const tree_managerRef source_tree_manager
    for(std::map<unsigned int, tree_nodeRef>::const_iterator it = source_tree_manager->function_decl_nodes.begin(); it != source_tree_manager->function_decl_nodes.end(); ++it)
    {
       tree_nodeRef curr_tn = it->second;
-      function_decl * fd = GetPointer<function_decl>(curr_tn);
+      auto * fd = GetPointer<function_decl>(curr_tn);
       if(remap.find(it->first) == remap.end())
       {
          remap[it->first] = new_tree_node_id(it->first);
@@ -2099,7 +2099,7 @@ bool tree_manager::check_for_decl(const tree_nodeRef tn, const tree_managerRef T
    }
    if(dn->scpe and GetPointer<type_node>(GET_NODE(dn->scpe)) and GetPointer<type_node>(GET_NODE(dn->scpe))->name)
    {
-      type_node* type = GetPointer<type_node>(GET_NODE(dn->scpe));
+      auto* type = GetPointer<type_node>(GET_NODE(dn->scpe));
       THROW_ASSERT(type, "expected a type_node: "+std::string(GET_NODE(dn->scpe)->get_kind_text()));
       ///declaration with type_node local to a function are not considered
       if(type->scpe and GET_NODE(type->scpe)->get_kind() == function_decl_K)
@@ -2141,7 +2141,7 @@ bool tree_manager::check_for_decl(const tree_nodeRef tn, const tree_managerRef T
 bool tree_manager::check_for_type(const tree_nodeRef tn, const tree_managerRef TM, std::string & symbol_name, std::string &symbol_scope, const std::unordered_map<std::string, unsigned int> &global_type_symbol_table, unsigned int DEBUG_PARAMETER(node_id))
 {
    PRINT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "Checking for type " + STR(node_id));
-   type_node* type = GetPointer<type_node>(tn);
+   auto* type = GetPointer<type_node>(tn);
    symbol_name = symbol_scope = "";
    if(!type || !type->name)///integer_type and real_type have some duplications
       return true;
@@ -2182,7 +2182,7 @@ bool tree_manager::check_for_type(const tree_nodeRef tn, const tree_managerRef T
 
 unsigned int tree_manager::find_identifier_nodeID(const std::string&str) const
 {
-   std::unordered_map<std::string, unsigned int>::const_iterator it = identifiers_unique_table.find(str);
+   auto it = identifiers_unique_table.find(str);
    if(it == identifiers_unique_table.end())
       return 0;
    else
@@ -2217,7 +2217,7 @@ unsigned int tree_manager::get_next_vers()
             tree_nodeRef tn = ti.second;
             if(tn->get_kind() == ssa_name_K)
             {
-               ssa_name * sn = GetPointer<ssa_name>(tn);
+               auto * sn = GetPointer<ssa_name>(tn);
                if(sn->vers > next_vers)
                   next_vers = sn->vers;
             }
@@ -2307,7 +2307,7 @@ bool tree_manager::is_top_function(const function_decl *fd) const
       std::string simple_name;
       if (id_name->get_kind() == identifier_node_K)
       {
-         identifier_node *in = GetPointer<identifier_node>(id_name);
+         auto *in = GetPointer<identifier_node>(id_name);
          if(!in->operator_flag)
             simple_name = in->strg;
          if(simple_name != "")
@@ -2337,8 +2337,8 @@ bool tree_manager::is_top_function(const function_decl *fd) const
 bool tree_manager::check_ssa_uses(unsigned int fun_id) const
 {
    tree_nodeRef fd_node = get_tree_node_const(fun_id);
-   function_decl * fd = GetPointer<function_decl>(fd_node);
-   statement_list * sl = GetPointer<statement_list>(GET_NODE(fd->body));
+   auto * fd = GetPointer<function_decl>(fd_node);
+   auto * sl = GetPointer<statement_list>(GET_NODE(fd->body));
 
    for(const auto& bb : sl->list_of_bloc)
    {
@@ -2354,7 +2354,7 @@ bool tree_manager::check_ssa_uses(unsigned int fun_id) const
             tree_nodeRef tn = GET_NODE(ssa.first);
             if(tn->get_kind() == ssa_name_K)
             {
-               ssa_name * sn = GetPointer<ssa_name>(tn);
+               auto * sn = GetPointer<ssa_name>(tn);
                bool found = false;
                for(auto& use: sn->CGetUseStmts())
                {

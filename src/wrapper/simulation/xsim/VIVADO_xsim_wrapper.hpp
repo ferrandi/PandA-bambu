@@ -86,7 +86,7 @@ class VIVADO_xsim_wrapper : public SimulationTool
        * Constructor
        * @param Param is the set of parameters
        */
-      VIVADO_xsim_wrapper(const ParameterConstRef Param, const std::string &suffix);
+      VIVADO_xsim_wrapper(const ParameterConstRef Param, std::string suffix);
 
       /**
        * Destructor

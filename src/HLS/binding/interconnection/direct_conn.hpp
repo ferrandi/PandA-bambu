@@ -67,7 +67,7 @@ class direct_conn : public connection_obj
       /**
        * Destructor.
        */
-      ~direct_conn() override{}
+      ~direct_conn() override= default;
 
       /**
        * Returns the name associated with the element

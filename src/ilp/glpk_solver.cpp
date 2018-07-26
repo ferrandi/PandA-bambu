@@ -44,8 +44,8 @@
 */
 
 #include <boost/lexical_cast.hpp>
-#include <float.h>
-#include <limits.h>
+#include <cfloat>
+#include <climits>
 #include <iostream>
 #include <unordered_map>
 #include <utility>

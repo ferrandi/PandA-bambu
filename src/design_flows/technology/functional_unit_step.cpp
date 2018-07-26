@@ -82,7 +82,7 @@ FunctionalUnitStep::FunctionalUnitStep(const target_managerRef _target, const De
 {}
 
 FunctionalUnitStep::~FunctionalUnitStep()
-{}
+= default;
 
 void FunctionalUnitStep::AnalyzeFu(const technology_nodeRef f_unit)
 {
@@ -94,7 +94,7 @@ void FunctionalUnitStep::AnalyzeFu(const technology_nodeRef f_unit)
    std::set<unsigned int> precision;
    std::map<unsigned int, std::vector<std::string> > pipe_parameters;
    std::map<unsigned int, std::vector<std::string> > portsize_parameters;
-   functional_unit * fu_curr = GetPointer<functional_unit>(f_unit);
+   auto * fu_curr = GetPointer<functional_unit>(f_unit);
    if(fu_curr && fu_curr->fu_template_name != "")
       return; ///previous characterization is not considered
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing " + f_unit->get_name());
@@ -110,13 +110,13 @@ void FunctionalUnitStep::AnalyzeFu(const technology_nodeRef f_unit)
    std::string fu_name = fu_curr->functional_unit_name;
    std::string fu_base_name = fu_name;
    const functional_unit::operation_vec & Ops = fu_curr->get_operations();
-   functional_unit::operation_vec::const_iterator ops_end = Ops.end();
+   auto ops_end = Ops.end();
    if(fu_base_name == READ_COND_STD)
       precision.insert(1);
    else
-      for (functional_unit::operation_vec::const_iterator ops = Ops.begin(); ops != ops_end; ++ops)
+      for (auto ops = Ops.begin(); ops != ops_end; ++ops)
       {
-         operation* curr_op = GetPointer<operation>(*ops);
+         auto* curr_op = GetPointer<operation>(*ops);
          is_commutative = is_commutative && curr_op->commutative;
          std::map< std::string, std::vector<unsigned int> >::const_iterator supported_type_it_end =  curr_op->supported_types.end();
          if(curr_op->supported_types.begin() == curr_op->supported_types.end())
@@ -134,8 +134,8 @@ void FunctionalUnitStep::AnalyzeFu(const technology_nodeRef f_unit)
          {
             for(std::map< std::string, std::vector<unsigned int> >::const_iterator supported_type_it =  curr_op->supported_types.begin(); supported_type_it != supported_type_it_end; ++supported_type_it)
             {
-               std::vector<unsigned int>::const_iterator prec_it_end = supported_type_it->second.end();
-               std::vector<unsigned int>::const_iterator prec_it = supported_type_it->second.begin();
+               auto prec_it_end = supported_type_it->second.end();
+               auto prec_it = supported_type_it->second.begin();
                if(prec_it == prec_it_end)
                {
                   if(isTemplate)
@@ -474,10 +474,10 @@ void FunctionalUnitStep::Initialize()
 
 technology_nodeRef FunctionalUnitStep::create_template_instance(const technology_nodeRef& fu_template, std::string & name, const target_deviceRef& device, unsigned int prec)
 {
-   functional_unit * curr_fu = GetPointer<functional_unit>(fu_template);
+   auto * curr_fu = GetPointer<functional_unit>(fu_template);
    THROW_ASSERT(curr_fu, "Null functional unit template");
 
-   functional_unit * specialized_fu = new functional_unit;
+   auto * specialized_fu = new functional_unit;
    specialized_fu->functional_unit_name = name;
    specialized_fu->fu_template_name = curr_fu->functional_unit_name;
    specialized_fu->characterizing_constant_value = curr_fu->characterizing_constant_value;
@@ -487,10 +487,10 @@ technology_nodeRef FunctionalUnitStep::create_template_instance(const technology
    specialized_fu->CM = curr_fu->CM;
    specialized_fu->XML_description = curr_fu->XML_description;
 
-   for (functional_unit::operation_vec::const_iterator itr = curr_fu->get_operations().begin(), end = curr_fu->get_operations().end(); itr < end; ++itr)
+   for (auto itr = curr_fu->get_operations().begin(), end = curr_fu->get_operations().end(); itr < end; ++itr)
    {
-      operation * const op = GetPointer<operation>(*itr);
-      operation * new_op = new operation;
+      auto * const op = GetPointer<operation>(*itr);
+      auto * new_op = new operation;
       new_op->operation_name = op->operation_name;
       new_op->bounded = op->bounded;
 

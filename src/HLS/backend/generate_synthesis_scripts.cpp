@@ -59,7 +59,7 @@ GenerateSynthesisScripts::GenerateSynthesisScripts(const ParameterConstRef _para
 {}
 
 GenerateSynthesisScripts::~GenerateSynthesisScripts()
-{}
+= default;
 
 const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > GenerateSynthesisScripts::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {

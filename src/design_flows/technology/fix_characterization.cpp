@@ -69,7 +69,7 @@ FixCharacterization::FixCharacterization(const technology_managerRef _TM, const 
 }
 
 FixCharacterization::~FixCharacterization()
-{}
+= default;
 
 void FixCharacterization::Initialize()
 {

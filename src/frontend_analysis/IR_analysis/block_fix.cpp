@@ -73,8 +73,7 @@ BlockFix::BlockFix(const application_managerRef _AppM, unsigned int _function_id
 }
 
 BlockFix::~BlockFix()
-{
-}
+= default;
 
 const std::unordered_set<std::pair<FrontendFlowStepType, FunctionFrontendFlowStep::FunctionRelationship> > BlockFix::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
@@ -106,8 +105,8 @@ DesignFlowStep_Status BlockFix::InternalExec()
 {
    const tree_managerRef TM = AppM->get_tree_manager();
    tree_nodeRef temp = TM->get_tree_node_const(function_id);
-   function_decl * fd = GetPointer<function_decl>(temp);
-   statement_list * sl = GetPointer<statement_list>(GET_NODE(fd->body));
+   auto * fd = GetPointer<function_decl>(temp);
+   auto * sl = GetPointer<statement_list>(GET_NODE(fd->body));
 
    std::map<unsigned int, blocRef> & list_of_bloc = sl->list_of_bloc;
    std::map<unsigned int, blocRef>::iterator it3, it3_end = list_of_bloc.end();
@@ -142,7 +141,7 @@ DesignFlowStep_Status BlockFix::InternalExec()
    {
       for(auto statement : block.second->CGetStmtList())
       {
-         const gimple_goto * gg = GetPointer<const gimple_goto>(GET_NODE(statement));
+         const auto * gg = GetPointer<const gimple_goto>(GET_NODE(statement));
          if(gg)
          {
             THROW_ASSERT(gg->op and GetPointer<const label_decl>(GET_NODE(gg->op)), "Unexpexted condition :" + gg->ToString());
@@ -170,10 +169,10 @@ DesignFlowStep_Status BlockFix::InternalExec()
    {
       for(auto statement : block.second->CGetStmtList())
       {
-         const gimple_label * gl = GetPointer<const gimple_label>(GET_NODE(statement));
+         const auto * gl = GetPointer<const gimple_label>(GET_NODE(statement));
          if(gl)
          {
-            const label_decl * ld = GetPointer<const label_decl>(GET_NODE(gl->op));
+            const auto * ld = GetPointer<const label_decl>(GET_NODE(gl->op));
             if(ld and reachable_labels.find(ld->index) == reachable_labels.end())
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Found a removable label " + statement->ToString());

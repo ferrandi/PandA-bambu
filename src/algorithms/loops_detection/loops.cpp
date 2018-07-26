@@ -315,7 +315,7 @@ void Loops::DetectLoops()
    for(auto vl_pair : vertex_level_rel)
    {
       auto &curr_list = level_vertices_rel[vl_pair.second];
-      std::list<vertex>::iterator pos = curr_list.begin();
+      auto pos = curr_list.begin();
       const std::list<vertex>::iterator pos_end = curr_list.end();
       while(pos_end != pos && dfs_order.find(vl_pair.first)->second > dfs_order.find(*pos)->second)
          ++pos;
@@ -479,8 +479,8 @@ void Loops::DetectIrreducibleLoop(const BBGraphRef djg, unsigned int min_level, 
 
 bool Loops::stack_contains(std::list<vertex> stack, vertex v)
 {
-   std::list<vertex>::iterator stack_iter = stack.begin();
-   std::list<vertex>::iterator stack_end  = stack.end();
+   auto stack_iter = stack.begin();
+   auto stack_end  = stack.end();
 
    for (; stack_iter != stack_end; ++stack_iter)
    {
@@ -688,7 +688,7 @@ void Loops::computeDepth(const LoopConstRef loop)
    std::set<LoopConstRef>::const_iterator child, child_end = children.end();
    for(child = children.begin(); child != child_end; ++child)
    {
-      Loop * child_loop = const_cast<Loop *>(child->get());
+      auto * child_loop = const_cast<Loop *>(child->get());
       child_loop->depth = loop->depth + 1;
       computeDepth(*child);
    }

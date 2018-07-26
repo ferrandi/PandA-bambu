@@ -76,7 +76,7 @@ AsnParser::AsnParser(const DesignFlowManagerConstRef _design_flow_manager, const
 }
 
 AsnParser::~AsnParser()
-{}
+= default;
 
 DesignFlowStep_Status AsnParser::Exec()
 {

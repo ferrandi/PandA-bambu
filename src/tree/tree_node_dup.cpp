@@ -68,7 +68,7 @@
 #define CREATE_TREE_NODE_CASE_BODY(tree_node_name, node_id)\
 {\
    node_id = TM->new_tree_node_id();\
-   tree_node_name * tnn = new tree_node_name(node_id);\
+   auto tnn = new tree_node_name(node_id);\
    tree_nodeRef cur = tree_nodeRef(tnn);\
    if(dynamic_cast<function_decl*>(tnn)) \
    {\

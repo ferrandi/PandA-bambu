@@ -65,7 +65,7 @@ WriteTechnology::WriteTechnology(const technology_managerRef _TM, const target_d
 {}
 
 WriteTechnology::~WriteTechnology()
-{}
+= default;
 
 DesignFlowStep_Status WriteTechnology::Exec()
 {

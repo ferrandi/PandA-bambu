@@ -82,7 +82,7 @@ ProfilingInformation::ProfilingInformation(const BBGraphConstRef _bb_graph) :
 {}
 
 ProfilingInformation::~ProfilingInformation()
-{}
+= default;
 
 const PathProfilingInformation & ProfilingInformation::GetPathProfiling() const
 {

@@ -88,7 +88,7 @@ MinimalInterfaceTestbench::MinimalInterfaceTestbench(
 }
 
 MinimalInterfaceTestbench::~MinimalInterfaceTestbench()
-{}
+= default;
 
 void MinimalInterfaceTestbench::cond_load(
       long long int Mout_addr_ram_bitsize,

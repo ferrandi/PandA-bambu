@@ -71,7 +71,7 @@ SynthesisEvaluation::SynthesisEvaluation(const ParameterConstRef _Param, const H
 }
 
 SynthesisEvaluation::~SynthesisEvaluation()
-{}
+= default;
 
 const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > SynthesisEvaluation::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {

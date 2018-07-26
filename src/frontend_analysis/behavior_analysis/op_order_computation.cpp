@@ -62,8 +62,7 @@ OpOrderComputation::OpOrderComputation(const ParameterConstRef _Param, const app
 
 
 OpOrderComputation::~OpOrderComputation()
-{
-}
+= default;
 
 const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship> > OpOrderComputation::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {

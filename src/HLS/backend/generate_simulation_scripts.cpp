@@ -80,7 +80,7 @@ GenerateSimulationScripts::GenerateSimulationScripts(const ParameterConstRef _pa
 {}
 
 GenerateSimulationScripts::~GenerateSimulationScripts()
-{}
+= default;
 
 const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > GenerateSimulationScripts::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {

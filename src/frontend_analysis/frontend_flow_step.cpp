@@ -69,12 +69,12 @@ FrontendFlowStep::FrontendFlowStep(const application_managerRef _AppM, const Fro
 }
 
 FrontendFlowStep::~FrontendFlowStep()
-{}
+= default;
 
 void FrontendFlowStep::CreateSteps(const DesignFlowManagerConstRef design_flow_manager, const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > & frontend_relationships, const application_managerConstRef application_manager, DesignFlowStepSet & relationships)
 {
    const DesignFlowGraphConstRef design_flow_graph = design_flow_manager->CGetDesignFlowGraph();
-   const FrontendFlowStepFactory * frontend_flow_step_factory = GetPointer<const FrontendFlowStepFactory>(design_flow_manager->CGetDesignFlowStepFactory("Frontend"));
+   const auto * frontend_flow_step_factory = GetPointer<const FrontendFlowStepFactory>(design_flow_manager->CGetDesignFlowStepFactory("Frontend"));
    std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> >::const_iterator frontend_relationship, frontend_relationship_end = frontend_relationships.end();
    for(frontend_relationship = frontend_relationships.begin(); frontend_relationship != frontend_relationship_end; ++frontend_relationship)
    {

@@ -68,8 +68,7 @@ fu_binding_creator::fu_binding_creator(const ParameterConstRef _Param, const HLS
 }
 
 fu_binding_creator::~fu_binding_creator()
-{
-}
+= default;
 
 void fu_binding_creator::Initialize()
 {

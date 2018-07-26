@@ -53,8 +53,7 @@ OpReachabilityComputation::OpReachabilityComputation(const ParameterConstRef _Pa
 }
 
 OpReachabilityComputation::~OpReachabilityComputation()
-{
-}
+= default;
 
 void OpReachabilityComputation::Initialize()
 {

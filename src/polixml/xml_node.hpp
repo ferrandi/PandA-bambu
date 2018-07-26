@@ -49,6 +49,7 @@
 #include <string>
 #include <list>
 #include <iosfwd>
+#include <utility>
 
 ///utility include
 #include "custom_set.hpp"
@@ -79,9 +80,9 @@ class xml_node
       /**
        * constructor
       */
-      explicit xml_node(const std::string&_name) : name(_name), line(0) {}
+      explicit xml_node(std::string _name) : name(std::move(_name)), line(0) {}
       ///destructor
-      virtual ~xml_node() {}
+      virtual ~xml_node() = default;
 
       ///type for list of xml nodes
       typedef std::list<xml_nodeRef> node_list;
@@ -221,8 +222,8 @@ class xml_child : public xml_node
        */
       void print(std::ostream& os, bool formatted, simple_indent* pp) const override
       {
-         node_list::const_iterator it_end =  child_list.end();
-         for(node_list::const_iterator it =  child_list.begin(); it != it_end; ++it)
+         auto it_end =  child_list.end();
+         for(auto it =  child_list.begin(); it != it_end; ++it)
          {
             (*it)->print(os, formatted, pp);
          }

@@ -132,8 +132,8 @@ void tree_node_reached::operator()(const gimple_node* obj, unsigned int & mask)
    {
       CHECK_AND_ADD(vover, gimple_node::vovers);
    }
-   std::vector<tree_nodeRef>::const_iterator vend2 = obj->pragmas.end();
-   for (std::vector<tree_nodeRef>::const_iterator i = obj->pragmas.begin(); i != vend2; ++i)
+   auto vend2 = obj->pragmas.end();
+   for (auto i = obj->pragmas.begin(); i != vend2; ++i)
      CHECK_AND_ADD(*i,gimple_node::pragmas);
    std::vector<tree_nodeRef>::const_iterator use, use_end = obj->use_set->variables.end();
    for(use = obj->use_set->variables.begin(); use != use_end; ++use)
@@ -189,8 +189,8 @@ void tree_node_reached::operator()(const type_node* obj, unsigned int & mask)
 void tree_node_reached::operator()(const memory_tag* obj, unsigned int & mask)
 {
    tree_node_mask::operator()(obj,mask);
-   std::vector<tree_nodeRef>::const_iterator vend = obj->list_of_aliases.end();
-   for (std::vector<tree_nodeRef>::const_iterator i = obj->list_of_aliases.begin(); i != vend; ++i)
+   auto vend = obj->list_of_aliases.end();
+   for (auto i = obj->list_of_aliases.begin(); i != vend; ++i)
       CHECK_AND_ADD(*i,memory_tag::list_of_aliases);
 }
 
@@ -229,8 +229,8 @@ void tree_node_reached::operator()(const baselink* obj, unsigned int & mask)
 void tree_node_reached::operator()(const gimple_bind* obj, unsigned int & mask)
 {
    tree_node_mask::operator()(obj,mask);
-   std::vector<tree_nodeRef>::const_iterator vend = obj->list_of_vars.end();
-   for (std::vector<tree_nodeRef>::const_iterator i = obj->list_of_vars.begin(); i != vend; ++i)
+   auto vend = obj->list_of_vars.end();
+   for (auto i = obj->list_of_vars.begin(); i != vend; ++i)
       CHECK_AND_ADD(*i,gimple_bind::list_of_vars);
    CHECK_AND_ADD(obj->body,gimple_bind::body);
 }
@@ -239,8 +239,8 @@ void tree_node_reached::operator()(const binfo* obj, unsigned int & mask)
 {
    tree_node_mask::operator()(obj,mask);
    CHECK_AND_ADD(obj->type,binfo::type);
-   std::vector<std::pair< TreeVocabularyTokenTypes_TokenEnum, tree_nodeRef> >::const_iterator vend = obj->list_of_access_binf.end();
-   for (std::vector<std::pair< TreeVocabularyTokenTypes_TokenEnum, tree_nodeRef> >::const_iterator i = obj->list_of_access_binf.begin(); i != vend; ++i)
+   auto vend = obj->list_of_access_binf.end();
+   for (auto i = obj->list_of_access_binf.begin(); i != vend; ++i)
       CHECK_AND_ADD(i->second,binfo::list_of_access_binf);
 }
 
@@ -316,8 +316,8 @@ void tree_node_reached::operator()(const constructor* obj, unsigned int & mask)
 {
    tree_node_mask::operator()(obj,mask);
    CHECK_AND_ADD(obj->type,constructor::type);
-   std::vector<std::pair< tree_nodeRef, tree_nodeRef> >::const_iterator vend = obj->list_of_idx_valu.end();
-   for (std::vector<std::pair< tree_nodeRef, tree_nodeRef> >::const_iterator i = obj->list_of_idx_valu.begin(); i != vend; ++i)
+   auto vend = obj->list_of_idx_valu.end();
+   for (auto i = obj->list_of_idx_valu.begin(); i != vend; ++i)
    {
       CHECK_AND_ADD(i->first,constructor::list_of_idx_valu);
       CHECK_AND_ADD(i->second,constructor::list_of_idx_valu);
@@ -359,8 +359,8 @@ void tree_node_reached::operator()(const function_decl* obj, unsigned int & mask
    CHECK_AND_ADD(obj->tmpl_args,function_decl::tmpl_args);
 
    CHECK_AND_ADD(obj->fn,function_decl::fn);
-   std::vector<tree_nodeRef>::const_iterator vend2 = obj->list_of_args.end();
-   for (std::vector<tree_nodeRef>::const_iterator i = obj->list_of_args.begin(); i != vend2; ++i)
+   auto vend2 = obj->list_of_args.end();
+   for (auto i = obj->list_of_args.begin(); i != vend2; ++i)
       CHECK_AND_ADD(*i,function_decl::list_of_args);
 
    CHECK_AND_ADD(obj->body,function_decl::body);
@@ -483,11 +483,11 @@ void tree_node_reached::operator()(const record_type* obj, unsigned int & mask)
    CHECK_AND_ADD(obj->cls,record_type::cls);
    CHECK_AND_ADD(obj->bfld,record_type::bfld);
    CHECK_AND_ADD(obj->vfld,record_type::vfld);
-   std::vector<tree_nodeRef>::const_iterator vend1 = obj->list_of_flds.end();
-   for (std::vector<tree_nodeRef>::const_iterator i = obj->list_of_flds.begin(); i != vend1; ++i)
+   auto vend1 = obj->list_of_flds.end();
+   for (auto i = obj->list_of_flds.begin(); i != vend1; ++i)
       CHECK_AND_ADD(*i,record_type::list_of_flds);
-   std::vector<tree_nodeRef>::const_iterator vend2 = obj->list_of_fncs.end();
-   for (std::vector<tree_nodeRef>::const_iterator i = obj->list_of_fncs.begin(); i != vend2; ++i)
+   auto vend2 = obj->list_of_fncs.end();
+   for (auto i = obj->list_of_fncs.begin(); i != vend2; ++i)
       CHECK_AND_ADD(*i,record_type::list_of_fncs);
    CHECK_AND_ADD(obj->binf,record_type::binf);
 }
@@ -551,8 +551,8 @@ void tree_node_reached::operator()(const statement_list* obj, unsigned int & mas
 {
    tree_node_mask::operator()(obj,mask);
    SET_VISIT_INDEX(mask,statement_list::list_of_bloc);
-   std::list<tree_nodeRef>::const_iterator vend = obj->list_of_stmt.end();
-   for (std::list<tree_nodeRef>::const_iterator i = obj->list_of_stmt.begin(); i != vend; ++i)
+   auto vend = obj->list_of_stmt.end();
+   for (auto i = obj->list_of_stmt.begin(); i != vend; ++i)
       CHECK_AND_ADD(*i,statement_list::list_of_stmt);
 }
 
@@ -605,8 +605,8 @@ void tree_node_reached::operator()(const tree_vec* obj, unsigned int & mask)
 {
    tree_node_mask::operator()(obj,mask);
 
-   std::vector<tree_nodeRef>::const_iterator vend = obj->list_of_op.end();
-   for (std::vector<tree_nodeRef>::const_iterator i = obj->list_of_op.begin(); i != vend; ++i)
+   auto vend = obj->list_of_op.end();
+   for (auto i = obj->list_of_op.begin(); i != vend; ++i)
       CHECK_AND_ADD(*i,tree_vec::list_of_op);
 }
 
@@ -629,11 +629,11 @@ void tree_node_reached::operator()(const type_decl* obj, unsigned int & mask)
 void tree_node_reached::operator()(const union_type* obj, unsigned int & mask)
 {
    tree_node_mask::operator()(obj,mask);
-   std::vector<tree_nodeRef>::const_iterator vend1 = obj->list_of_flds.end();
-   for (std::vector<tree_nodeRef>::const_iterator i = obj->list_of_flds.begin(); i != vend1; ++i)
+   auto vend1 = obj->list_of_flds.end();
+   for (auto i = obj->list_of_flds.begin(); i != vend1; ++i)
       CHECK_AND_ADD(*i,union_type::list_of_flds);
-   std::vector<tree_nodeRef>::const_iterator vend2 = obj->list_of_fncs.end();
-   for (std::vector<tree_nodeRef>::const_iterator i = obj->list_of_fncs.begin(); i != vend2; ++i)
+   auto vend2 = obj->list_of_fncs.end();
+   for (auto i = obj->list_of_fncs.begin(); i != vend2; ++i)
       CHECK_AND_ADD(*i,union_type::list_of_fncs);
    CHECK_AND_ADD(obj->binf,union_type::binf);
 }
@@ -650,8 +650,8 @@ void tree_node_reached::operator()(const var_decl* obj, unsigned int & mask)
 void tree_node_reached::operator()(const vector_cst* obj, unsigned int & mask)
 {
    tree_node_mask::operator()(obj,mask);
-   std::vector<tree_nodeRef>::const_iterator vend = obj->list_of_valu.end();
-   for (std::vector<tree_nodeRef>::const_iterator i = obj->list_of_valu.begin(); i != vend; ++i)
+   auto vend = obj->list_of_valu.end();
+   for (auto i = obj->list_of_valu.begin(); i != vend; ++i)
       CHECK_AND_ADD(*i,vector_cst::list_of_valu);
 }
 
@@ -842,7 +842,7 @@ void tree_node_reached::operator()(const statistical_profiling* obj, unsigned in
 
 #define CREATE_TREE_NODE_CASE_BODY(tree_node_name, node_id)\
 {\
-   tree_node_name * tnn = new tree_node_name(node_id);\
+   auto tnn = new tree_node_name(node_id);\
    tree_nodeRef cur = tree_nodeRef(tnn);\
    if(dynamic_cast<function_decl*>(tnn)) \
    {\

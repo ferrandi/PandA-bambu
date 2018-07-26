@@ -51,7 +51,7 @@
 
 ///Autoheader include
 #include "config_HAVE_HOST_PROFILING_BUILT.hpp"
-#include <stddef.h>                                  // for size_t
+#include <cstddef>                                  // for size_t
 #include <list>                                      // for list
 #include <set>                                       // for set
 #include <string>                                    // for string

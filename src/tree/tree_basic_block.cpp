@@ -73,9 +73,7 @@ bloc::bloc(unsigned int _number) :
 }
 
 bloc::~bloc()
-{
-
-}
+= default;
 
 void bloc::visit(tree_node_visitor * const v) const
 {

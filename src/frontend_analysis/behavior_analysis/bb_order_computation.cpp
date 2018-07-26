@@ -65,8 +65,7 @@ BBOrderComputation::BBOrderComputation(const ParameterConstRef _Param, const app
 
 
 BBOrderComputation::~BBOrderComputation()
-{
-}
+= default;
 
 const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship> > BBOrderComputation::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {

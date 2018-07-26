@@ -79,9 +79,7 @@ port_swapping::port_swapping(const ParameterConstRef _Param, const HLS_managerRe
 }
 
 port_swapping::~port_swapping()
-{
-
-}
+= default;
 
 const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > port_swapping::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
@@ -260,7 +258,7 @@ void port_swapping::port_swapping_algorithm(PSGraph g,
       for(size_t i = 0; i < num_vertices_g; i++)
          if(component[i] == count)
          {
-            PSVertex connection_ver_2 = PSVertex(i);
+            auto connection_ver_2 = PSVertex(i);
             add_edge(connection_ver_1, connection_ver_2, g);
             connection_ver_1 = connection_ver_2;
             break;
@@ -501,7 +499,7 @@ DesignFlowStep_Status port_swapping::InternalExec()
                INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Read: " + behavioral_helper->PrintVariable(tree_var));
                const std::set<vertex>& running_states = HLS->Rliv->get_state_where_run(fu_operation);
                const std::set<vertex>::const_iterator rs_it_end = running_states.end();
-               for(std::set<vertex>::const_iterator rs_it = running_states.begin(); rs_it != rs_it_end; ++rs_it)
+               for(auto rs_it = running_states.begin(); rs_it != rs_it_end; ++rs_it)
                {
                   vertex state = *rs_it;
                   if(tree_helper::is_parameter(TreeM, tree_var) || !HLS->Rliv->has_op_where_defined(tree_var))

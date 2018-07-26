@@ -77,7 +77,7 @@ static char * alloc_long_option(char* argv[], int &i, int &dec)
 {
    size_t len1 = strlen(argv[i]);
    size_t len2 = strlen(argv[i+1]);
-   char * tmp = new char[1+len1+1+len2+1];
+   auto * tmp = new char[1+len1+1+len2+1];
    *tmp = '-';
    strcpy(tmp+1, argv[i]);
    *(tmp+1+len1)='=';
@@ -89,7 +89,7 @@ static char * alloc_long_option(char* argv[], int &i, int &dec)
 
 static char** alloc_argv( int &argc, char* argv[])
 {
-   char ** argv_copied = new char*[argc+1];
+   auto ** argv_copied = new char*[argc+1];
    int dec=0;
    for(int i=0; i < argc; ++i)
    {
@@ -181,11 +181,11 @@ int main( int argc, char* argv_orig[] )
             THROW_ERROR("Bad Parameters parsing");
          }
       }
-      int output_level = Param->getOption<int>(OPT_output_level);
+      auto output_level = Param->getOption<int>(OPT_output_level);
       if(output_level >= OUTPUT_LEVEL_MINIMUM)
          Param->PrintFullHeader(std::cerr);
 
-      int debug_level = Param->getOption<int>(OPT_debug_level);
+      auto debug_level = Param->getOption<int>(OPT_debug_level);
 
       /// GCC wrapper to create the raw
       // it means that the Param are source code input files: GCC wrapper has to be invoked

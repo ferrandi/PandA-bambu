@@ -60,9 +60,7 @@ QuartusReportWrapper::QuartusReportWrapper(const ParameterConstRef _Param, const
 
 //destructor
 QuartusReportWrapper::~QuartusReportWrapper()
-{
-
-}
+= default;
 
 void QuartusReportWrapper::EvaluateVariables(const DesignParametersRef dp)
 {

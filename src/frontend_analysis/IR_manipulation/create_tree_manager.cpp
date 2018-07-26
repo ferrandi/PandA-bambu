@@ -81,9 +81,7 @@ create_tree_manager::create_tree_manager(const ParameterConstRef _parameters, co
 }
 
 create_tree_manager::~create_tree_manager()
-{
-
-}
+= default;
 
 void create_tree_manager::ComputeRelationships(DesignFlowStepSet & relationship, const DesignFlowStep::RelationshipType relationship_type)
 {

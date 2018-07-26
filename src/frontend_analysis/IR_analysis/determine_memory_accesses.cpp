@@ -78,8 +78,7 @@ determine_memory_accesses::determine_memory_accesses(const ParameterConstRef _pa
 }
 
 determine_memory_accesses::~determine_memory_accesses()
-{
-}
+= default;
 
 const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship> > determine_memory_accesses::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
@@ -127,7 +126,7 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
 DesignFlowStep_Status determine_memory_accesses::InternalExec()
 {
    tree_nodeRef tn = TM->get_tree_node_const(function_id);
-   function_decl * fd = GetPointer<function_decl>(tn);
+   auto * fd = GetPointer<function_decl>(tn);
    if (!fd || !fd->body)
    {
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Node is not a function or it hasn't a body");
@@ -139,7 +138,7 @@ DesignFlowStep_Status determine_memory_accesses::InternalExec()
    for(std::vector <tree_nodeRef>::const_iterator formal_it = fd->list_of_args.begin(); formal_it != formal_it_end; ++formal_it)
       analyze_node(GET_INDEX_NODE(*formal_it), false, false, false);
 
-   statement_list * sl = GetPointer<statement_list>(GET_NODE(fd->body));
+   auto * sl = GetPointer<statement_list>(GET_NODE(fd->body));
    THROW_ASSERT(sl, "Body is not a statement_list");
    std::map<unsigned int, blocRef>::iterator it_bb, it_bb_end = sl->list_of_bloc.end();
    for(it_bb = sl->list_of_bloc.begin(); it_bb != it_bb_end ; ++it_bb)
@@ -170,7 +169,7 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
 
    if(GetPointer<gimple_node>(tn))
    {
-      gimple_node* gn = GetPointer<gimple_node>(tn);
+      auto* gn = GetPointer<gimple_node>(tn);
       if(gn->use_set)
       {
          const std::vector<tree_nodeRef>::const_iterator usv_it_end = gn->use_set->variables.end();
@@ -185,7 +184,7 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
    {
       case gimple_assign_K:
       {
-         gimple_assign* gm = GetPointer<gimple_assign>(tn);
+         auto* gm = GetPointer<gimple_assign>(tn);
          if(!gm->init_assignment)
          {
             //std::cerr << "gimple assign " << node_id << " " << tn << std::endl;
@@ -202,7 +201,7 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
             bool is_a_vector_bitfield = false;
             if(op1->get_kind() == bit_field_ref_K)
             {
-               bit_field_ref* bfr = GetPointer<bit_field_ref>(op1);
+               auto* bfr = GetPointer<bit_field_ref>(op1);
                if(tree_helper::is_a_vector(TM, GET_INDEX_NODE(bfr->op0)))
                   is_a_vector_bitfield = true;
             }
@@ -243,12 +242,12 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
             {
                if(op0->get_kind() == mem_ref_K)
                {
-                  mem_ref * mr = GetPointer<mem_ref>(op0);
+                  auto * mr = GetPointer<mem_ref>(op0);
                   analyze_node(GET_INDEX_NODE(mr->op0), true, true, false);
                }
                else if(op0->get_kind() == target_mem_ref461_K)
                {
-                  target_mem_ref461 * tmr = GetPointer<target_mem_ref461>(op0);
+                  auto * tmr = GetPointer<target_mem_ref461>(op0);
                   if(tmr->base)
                      analyze_node(GET_INDEX_NODE(tmr->base), true, true, false);
                   else
@@ -259,12 +258,12 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
 
                if(op1->get_kind() == mem_ref_K)
                {
-                  mem_ref * mr = GetPointer<mem_ref>(op1);
+                  auto * mr = GetPointer<mem_ref>(op1);
                   analyze_node(GET_INDEX_NODE(mr->op0), true, true, false);
                }
                else if(op1->get_kind() == target_mem_ref461_K)
                {
-                  target_mem_ref461 * tmr = GetPointer<target_mem_ref461>(op1);
+                  auto * tmr = GetPointer<target_mem_ref461>(op1);
                   if(tmr->base)
                      analyze_node(GET_INDEX_NODE(tmr->base), true, true, false);
                   else
@@ -295,13 +294,13 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
       }
       case CASE_UNARY_EXPRESSION:
       {
-         unary_expr* ue = GetPointer<unary_expr>(tn);
+         auto* ue = GetPointer<unary_expr>(tn);
          if (GetPointer<addr_expr>(tn))
          {
             if (GetPointer<var_decl>(GET_NODE(ue->op)))
             {
                bool address_externally_used = false;
-               var_decl *vd = GetPointer<var_decl>(GET_NODE(ue->op));
+               auto *vd = GetPointer<var_decl>(GET_NODE(ue->op));
                function_behavior->add_function_mem(GET_INDEX_NODE(ue->op));
                if((((!vd->scpe || GET_NODE(vd->scpe)->get_kind() == translation_unit_decl_K) && !vd->static_flag) || tree_helper::is_volatile(TM,node_id)))
                {
@@ -377,12 +376,12 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
             }
             else if(GetPointer<mem_ref>(GET_NODE(ue->op)))
             {
-               mem_ref* mr = GetPointer<mem_ref>(GET_NODE(ue->op));
+               auto* mr = GetPointer<mem_ref>(GET_NODE(ue->op));
                analyze_node(GET_INDEX_NODE(mr->op0), left_p, !no_dynamic_address, no_dynamic_address);
             }
             else if(GetPointer<target_mem_ref461>(GET_NODE(ue->op)))
             {
-               target_mem_ref461* tmr = GetPointer<target_mem_ref461>(GET_NODE(ue->op));
+               auto* tmr = GetPointer<target_mem_ref461>(GET_NODE(ue->op));
                if(tmr->base)
                   analyze_node(GET_INDEX_NODE(tmr->base), left_p, !no_dynamic_address, no_dynamic_address);
                else
@@ -393,12 +392,12 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
          }
          else if(GetPointer<view_convert_expr>(tn))
          {
-            view_convert_expr* vc = GetPointer<view_convert_expr>(tn);
+            auto* vc = GetPointer<view_convert_expr>(tn);
             analyze_node(GET_INDEX_NODE(vc->op), left_p, dynamic_address, no_dynamic_address);
          }
          else if(GetPointer<indirect_ref>(tn))
          {
-            indirect_ref * ir = GetPointer<indirect_ref>(tn);
+            auto * ir = GetPointer<indirect_ref>(tn);
             if(GetPointer<integer_cst>(GET_NODE(ir->op)))
             {
                function_behavior->set_dereference_unknown_addr(true);
@@ -416,11 +415,11 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
       }
       case CASE_BINARY_EXPRESSION:
       {
-         binary_expr* be = GetPointer<binary_expr>(tn);
+         auto* be = GetPointer<binary_expr>(tn);
          if (GetPointer<mem_ref>(tn))
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---It is a mem ref");
-            mem_ref * mr = GetPointer<mem_ref>(tn);
+            auto * mr = GetPointer<mem_ref>(tn);
             if(GetPointer<integer_cst>(GET_NODE(mr->op0)))
             {
                function_behavior->set_dereference_unknown_addr(true);
@@ -502,19 +501,19 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
       }
       case gimple_cond_K:
       {
-         gimple_cond* gc = GetPointer<gimple_cond>(tn);
+         auto* gc = GetPointer<gimple_cond>(tn);
          analyze_node(GET_INDEX_NODE(gc->op0), false, false, true);
          break;
       }
       case gimple_switch_K:
       {
-         gimple_switch* se = GetPointer<gimple_switch>(tn);
+         auto* se = GetPointer<gimple_switch>(tn);
          if (se->op0) analyze_node(GET_INDEX_NODE(se->op0), left_p, dynamic_address, no_dynamic_address);
          break;
       }
       case gimple_multi_way_if_K:
       {
-         gimple_multi_way_if* gmwi=GetPointer<gimple_multi_way_if>(tn);
+         auto* gmwi=GetPointer<gimple_multi_way_if>(tn);
          for(auto cond : gmwi->list_of_cond)
             if(cond.first)
                analyze_node(cond.first->index, left_p, dynamic_address, no_dynamic_address);
@@ -522,7 +521,7 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
       }
       case gimple_phi_K:
       {
-         gimple_phi * gp = GetPointer<gimple_phi>(tn);
+         auto * gp = GetPointer<gimple_phi>(tn);
          for(const auto& def_edge : gp->CGetDefEdgesList())
          {
             analyze_node(GET_INDEX_NODE(def_edge.first), left_p, dynamic_address, no_dynamic_address);
@@ -531,7 +530,7 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
       }
       case CASE_TERNARY_EXPRESSION:
       {
-         ternary_expr* te = GetPointer<ternary_expr>(tn);
+         auto* te = GetPointer<ternary_expr>(tn);
          if(GetPointer<component_ref>(tn))
             left_p = true;
          if (te->op0) analyze_node(GET_INDEX_NODE(te->op0), left_p, dynamic_address, no_dynamic_address);
@@ -541,7 +540,7 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
       }
       case CASE_QUATERNARY_EXPRESSION:
       {
-         quaternary_expr* qe = GetPointer<quaternary_expr>(tn);
+         auto* qe = GetPointer<quaternary_expr>(tn);
          if (qe->op0) analyze_node(GET_INDEX_NODE(qe->op0), left_p, dynamic_address, no_dynamic_address);
          if (qe->op1) analyze_node(GET_INDEX_NODE(qe->op1), left_p, dynamic_address, no_dynamic_address);
          if (qe->op2) analyze_node(GET_INDEX_NODE(qe->op2), left_p, dynamic_address, no_dynamic_address);
@@ -550,7 +549,7 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
       }
       case gimple_return_K:
       {
-         gimple_return* re = GetPointer<gimple_return>(tn);
+         auto* re = GetPointer<gimple_return>(tn);
          if (re->op)
          {
             tree_nodeRef res = GET_NODE(re->op);
@@ -571,9 +570,9 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
       case call_expr_K:
       case aggr_init_expr_K:
       {
-         call_expr* ce = GetPointer<call_expr>(tn);
+         auto* ce = GetPointer<call_expr>(tn);
          std::vector<tree_nodeRef> & args = ce->args;
-         addr_expr* ae = GetPointer<addr_expr>(GET_NODE(ce->fn));
+         auto* ae = GetPointer<addr_expr>(GET_NODE(ce->fn));
 
          // The first parameter of a call_expr can be a ssa_name in
          // case of function pointer usage.  When it happens skip the
@@ -582,7 +581,7 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
 
          if(AppM->GetFunctionBehavior(GET_INDEX_NODE(ae->op))->get_unaligned_accesses())
             function_behavior->set_unaligned_accesses(true);
-         function_decl* fd = GetPointer<function_decl>(GET_NODE(ae->op));
+         auto* fd = GetPointer<function_decl>(GET_NODE(ae->op));
          bool is_var_args_p = GetPointer<function_type>(GET_NODE(fd->type))->varargs_flag;
          THROW_ASSERT(fd, "expected a function_decl");
          std::vector<tree_nodeRef>::iterator arg, arg_end = args.end();
@@ -769,15 +768,15 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
       }
       case gimple_call_K:
       {
-         gimple_call* ce = GetPointer<gimple_call>(tn);
+         auto* ce = GetPointer<gimple_call>(tn);
          std::vector<tree_nodeRef> & args = ce->args;
-         addr_expr* ae = GetPointer<addr_expr>(GET_NODE(ce->fn));
+         auto* ae = GetPointer<addr_expr>(GET_NODE(ce->fn));
          // The first parameter of a call_expr can be a ssa_name in
          // case of function pointer usage.  When it happens skip the
          // following analysys.
          if (!ae) break;
 
-         function_decl* fd = GetPointer<function_decl>(GET_NODE(ae->op));
+         auto* fd = GetPointer<function_decl>(GET_NODE(ae->op));
          if (tree_helper::print_function_name(TM, fd) == BUILTIN_WAIT_CALL)
          {
             function_behavior->add_function_mem(node_id);
@@ -968,7 +967,7 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
       }
       case ssa_name_K:
       {
-         ssa_name* sn = GetPointer<ssa_name>(tn);
+         auto* sn = GetPointer<ssa_name>(tn);
          if(sn->use_set->is_fully_resolved())
             for(auto var : sn->use_set->variables)
             {
@@ -1001,7 +1000,7 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
       }
       case parm_decl_K:
       {
-         parm_decl *pd = GetPointer<parm_decl>(tn);
+         auto *pd = GetPointer<parm_decl>(tn);
          if(GET_NODE(pd->type)->get_kind() == record_type_K || //records have to be allocated
             GET_NODE(pd->type)->get_kind() == union_type_K // unions have to be allocated
             )
@@ -1020,7 +1019,7 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
       }
       case result_decl_K:
       {
-         result_decl *rd = GetPointer<result_decl>(tn);
+         auto *rd = GetPointer<result_decl>(tn);
          if(GET_NODE(rd->type)->get_kind() == record_type_K || //records have to be allocated
             GET_NODE(rd->type)->get_kind() == union_type_K // unions have to be allocated
             )
@@ -1034,14 +1033,14 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
       }
       case tree_list_K:
       {
-         tree_list* tl = GetPointer<tree_list>(tn);
+         auto* tl = GetPointer<tree_list>(tn);
          analyze_node(GET_INDEX_NODE(tl->valu), left_p, dynamic_address, no_dynamic_address);
          if (tl->chan) analyze_node(GET_INDEX_NODE(tl->chan), left_p, dynamic_address, no_dynamic_address);
          break;
       }
       case var_decl_K:
       {
-         var_decl *vd = GetPointer<var_decl>(tn);
+         auto *vd = GetPointer<var_decl>(tn);
          if(vd->extern_flag)
             THROW_ERROR_CODE(C_EC, "Extern symbols not yet supported " + behavioral_helper->PrintVariable(node_id));
          if (!vd->scpe || GET_NODE(vd->scpe)->get_kind() == translation_unit_decl_K) //memory has to be allocated in case of global variables
@@ -1122,9 +1121,9 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
       }
       case constructor_K:
       {
-         constructor* con = GetPointer<constructor>(tn);
+         auto* con = GetPointer<constructor>(tn);
          std::vector<std::pair< tree_nodeRef, tree_nodeRef> > &list_of_idx_valu = con->list_of_idx_valu;
-         for(std::vector<std::pair< tree_nodeRef, tree_nodeRef> >::iterator el = list_of_idx_valu.begin(); el != list_of_idx_valu.end(); ++el)
+         for(auto el = list_of_idx_valu.begin(); el != list_of_idx_valu.end(); ++el)
          {
             if (el->first) analyze_node(GET_INDEX_NODE(el->first), left_p, dynamic_address, no_dynamic_address);
             if (el->second) analyze_node(GET_INDEX_NODE(el->second), left_p, dynamic_address, no_dynamic_address);
@@ -1133,7 +1132,7 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
       }
       case gimple_goto_K:
       {
-         gimple_goto* ge = GetPointer<gimple_goto>(tn);
+         auto* ge = GetPointer<gimple_goto>(tn);
          analyze_node(GET_INDEX_NODE(ge->op), left_p, dynamic_address, no_dynamic_address);
          break;
       }
@@ -1146,7 +1145,7 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
       }
       case target_mem_ref_K:
       {
-         target_mem_ref* tmr = GetPointer<target_mem_ref>(tn);
+         auto* tmr = GetPointer<target_mem_ref>(tn);
          if(tmr->symbol) analyze_node(GET_INDEX_NODE(tmr->symbol), left_p, false, true);
          if(tmr->base) analyze_node(GET_INDEX_NODE(tmr->base), left_p, false, true);
          if(tmr->idx) analyze_node(GET_INDEX_NODE(tmr->idx), left_p, false, false);
@@ -1154,7 +1153,7 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
       }
       case target_mem_ref461_K:
       {
-         target_mem_ref461* tmr = GetPointer<target_mem_ref461>(tn);
+         auto* tmr = GetPointer<target_mem_ref461>(tn);
          if(tmr->base)
          {
             tree_nodeRef operand = GET_NODE(tmr->base);
@@ -1173,7 +1172,7 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
          if(tmr->base)
          {
             tree_nodeRef type_base = tree_helper::get_type_node(GET_NODE(tmr->base));
-            type_node* t_base_ptr = GetPointer<type_node>(type_base);
+            auto* t_base_ptr = GetPointer<type_node>(type_base);
             if(t_base_ptr->algn != 8)
             {
 
@@ -1188,7 +1187,7 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
       }
       case gimple_asm_K:
       {
-         gimple_asm *ga = GetPointer<gimple_asm>(tn);
+         auto *ga = GetPointer<gimple_asm>(tn);
          if(ga->in) analyze_node(GET_INDEX_NODE(ga->in), false, false, false);
          if(ga->out) analyze_node(GET_INDEX_NODE(ga->out),  true, false, false);
          break;

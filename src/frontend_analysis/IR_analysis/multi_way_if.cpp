@@ -104,8 +104,7 @@ multi_way_if::multi_way_if(const ParameterConstRef _parameters, const applicatio
 }
 
 multi_way_if::~multi_way_if()
-{
-}
+= default;
 
 const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship> > multi_way_if::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
@@ -193,7 +192,7 @@ void multi_way_if::UpdateCfg(unsigned int pred_bb, unsigned int curr_bb)
       for(const auto& phi : sl->list_of_bloc[succ]->CGetPhiList())
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Original phi " + phi->ToString());
-         gimple_phi * current_phi = GetPointer<gimple_phi>(GET_NODE(phi));
+         auto * current_phi = GetPointer<gimple_phi>(GET_NODE(phi));
          for(const auto& def_edge : current_phi->CGetDefEdgesList())
          {
             if(def_edge.second == curr_bb)
@@ -648,7 +647,7 @@ void multi_way_if::MergeCondCond(unsigned int pred, unsigned int curr_bb)
    IR_schema.clear();
    tree_nodeRef gimple_multi_way_if_stmt = TM->GetTreeReindex(gimple_multi_way_if_id);
    GetPointer<gimple_node>(GET_NODE(gimple_multi_way_if_stmt))->bb_index = pred;
-   gimple_multi_way_if* gmwi = GetPointer<gimple_multi_way_if>(GET_NODE(gimple_multi_way_if_stmt));
+   auto* gmwi = GetPointer<gimple_multi_way_if>(GET_NODE(gimple_multi_way_if_stmt));
    gmwi->bb_index = pred;
    if(pred_block->false_edge == curr_bb)
    {

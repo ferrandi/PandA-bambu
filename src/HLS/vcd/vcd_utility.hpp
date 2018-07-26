@@ -88,7 +88,7 @@ struct DiscrepancyLog {
          const HLS_managerConstRef HLSMgr,
          const vcd_trace_head & t,
          const uint64_t c_context,
-         const std::string& _c_val,
+         std::string  _c_val,
          const unsigned int el_idx,
          const std::string::size_type _first_c_bit,
          const std::string::size_type _c_size,
@@ -107,7 +107,7 @@ class vcd_utility : public HLS_step
       vcd_utility(const ParameterConstRef parameters, const HLS_managerRef HLSMgr, const DesignFlowManagerConstRef design_flow_manager);
 
       /* Destructor */
-      ~vcd_utility() override{}
+      ~vcd_utility() override= default;
 
       /**
        * Execute the step

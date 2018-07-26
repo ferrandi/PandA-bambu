@@ -1,5 +1,6 @@
 #ifndef PolynomialEvaluator_HPP
 #define PolynomialEvaluator_HPP
+#include <utility>
 #include <vector>
 #include <sstream>
 #include <gmp.h>
@@ -102,7 +103,7 @@ namespace flopoco{
 		}
 
 		/** Destructor */
-		~YVar(){};
+		~YVar()= default;;
 
 		/**
 		 * Fetch the variable size (if known). 0 = unknown
@@ -120,7 +121,7 @@ namespace flopoco{
 	class LevelSignal{
 	public: 
 		LevelSignal(string name, unsigned size, int shift):
-			name_(name), size_(size), shift_(shift){
+			name_(std::move(name)), size_(size), shift_(shift){
 		}
 			
 		LevelSignal(LevelSignal* l){
@@ -130,7 +131,7 @@ namespace flopoco{
 		}
 			
 		/* Destructor */
-		~LevelSignal(){};
+		~LevelSignal()= default;;
 
 		string getName(){
 			return name_;
@@ -173,7 +174,7 @@ namespace flopoco{
 		}
 			
 		/* Destructor */
-		~Sigma(){};
+		~Sigma()= default;;
 
 		unsigned getSize(){
 			return size;
@@ -202,7 +203,7 @@ namespace flopoco{
 		}
 			
 		/* Destructor */
-		~Pi(){};
+		~Pi()= default;;
 
 		unsigned getSize(){
 			return size;

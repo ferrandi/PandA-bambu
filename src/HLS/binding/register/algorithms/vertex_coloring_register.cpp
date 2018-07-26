@@ -72,9 +72,7 @@ vertex_coloring_register::vertex_coloring_register(const ParameterConstRef _Para
 }
 
 vertex_coloring_register::~vertex_coloring_register()
-{
-
-}
+= default;
 
 DesignFlowStep_Status vertex_coloring_register::InternalExec()
 {
@@ -89,11 +87,11 @@ DesignFlowStep_Status vertex_coloring_register::InternalExec()
    const std::list<vertex> & support = HLS->Rliv->get_support();
 
    const std::list<vertex>::const_iterator vEnd = support.end();
-   for(std::list<vertex>::const_iterator vIt = support.begin(); vIt != vEnd; ++vIt)
+   for(auto vIt = support.begin(); vIt != vEnd; ++vIt)
    {
       const std::set<unsigned int>& live = HLS->Rliv->get_live_in(*vIt);
-      std::set<unsigned int>::iterator k_end = live.end();
-      for(std::set<unsigned int>::iterator k = live.begin(); k != k_end; ++k)
+      auto k_end = live.end();
+      for(auto k = live.begin(); k != k_end; ++k)
       {
          unsigned int storage_value_index = HLS->storage_value_information->get_storage_value_index(*vIt, *k);
          HLS->Rreg->bind(storage_value_index, static_cast<unsigned int>(color[storage_value_index]));

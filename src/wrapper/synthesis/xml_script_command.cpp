@@ -49,11 +49,10 @@
 
 #include "xml_script_command.hpp"
 #include <boost/algorithm/string/predicate.hpp>
+#include <utility>
 
 xml_script_node_t::~xml_script_node_t()
-{
-
-}
+= default;
 
 
 bool xml_script_node_t::checkCondition(const DesignParametersRef&) const
@@ -124,7 +123,7 @@ bool xml_script_node_t::evaluate_condition(const std::string * condition)
    if (boost::algorithm::starts_with(trimmed,"${__"))
       return false;
 
-   unsigned int length = static_cast<unsigned int>(trimmed.length());
+   auto length = static_cast<unsigned int>(trimmed.length());
    if (length == 0)
       return false;
    try
@@ -178,9 +177,9 @@ bool xml_script_node_t::evaluate_condition(const std::string * condition, const 
 }
 
 
-xml_set_entry_t::xml_set_entry_t(const std::string &_value,
+xml_set_entry_t::xml_set_entry_t(std::string _value,
    const std::string *  _condition
-) : xml_script_node_t(NODE_ENTRY), value(_value)
+) : xml_script_node_t(NODE_ENTRY), value(std::move(_value))
 {
    condition = _condition ? new std::string(*_condition) : nullptr;
 }
@@ -230,10 +229,10 @@ bool xml_set_entry_t::checkCondition(const DesignParametersRef& dp) const
    return evaluate_condition(condition, dp);
 }
 
-xml_set_variable_t::xml_set_variable_t(const std::string &_name,
+xml_set_variable_t::xml_set_variable_t(std::string _name,
    const std::string *  _singleValue,
    const std::string *  _condition
-) : xml_script_node_t(NODE_VARIABLE), name(_name)
+) : xml_script_node_t(NODE_VARIABLE), name(std::move(_name))
 {
    singleValue = _singleValue ? new std::string(*_singleValue) : nullptr;
    multiValues.clear();
@@ -704,7 +703,7 @@ bool xml_ite_block_t::checkCondition(const DesignParametersRef& dp) const
    return evaluate_condition(&condition, dp);
 }
 
-xml_foreach_t::xml_foreach_t(const std::string &_variable) : xml_script_node_t(NODE_FOREACH), variable(_variable)
+xml_foreach_t::xml_foreach_t(std::string _variable) : xml_script_node_t(NODE_FOREACH), variable(std::move(_variable))
 {
 }
 

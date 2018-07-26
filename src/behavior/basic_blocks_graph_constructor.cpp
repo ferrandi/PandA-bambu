@@ -42,7 +42,7 @@
  *
 */
 #include "basic_blocks_graph_constructor.hpp"
-#include <stddef.h>                               // for size_t
+#include <cstddef>                               // for size_t
 #include <boost/lexical_cast.hpp>                 // for lexical_cast
 #include <boost/tuple/tuple.hpp>                  // for tie
 #include <string>                                 // for allocator, operator+
@@ -61,8 +61,7 @@ BasicBlocksGraphConstructor::BasicBlocksGraphConstructor(const BBGraphsCollectio
 
 
 BasicBlocksGraphConstructor::~BasicBlocksGraphConstructor()
-{
-}
+= default;
 
 vertex BasicBlocksGraphConstructor::add_vertex(blocRef info)
 {

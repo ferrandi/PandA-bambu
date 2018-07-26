@@ -78,7 +78,7 @@ FunctionCallTypeCleanup::FunctionCallTypeCleanup(const ParameterConstRef Param,
 }
 
 FunctionCallTypeCleanup::~FunctionCallTypeCleanup()
-{}
+= default;
 
 DesignFlowStep_Status FunctionCallTypeCleanup::InternalExec()
 {
@@ -86,9 +86,9 @@ DesignFlowStep_Status FunctionCallTypeCleanup::InternalExec()
    const tree_managerRef TM = AppM->get_tree_manager();
    const tree_manipulationRef tree_man = tree_manipulationRef(new tree_manipulation(TM, parameters));
    const tree_nodeConstRef tn = TM->get_tree_node_const(function_id);
-   const function_decl * fd = GetPointer<const function_decl>(tn);
+   const auto * fd = GetPointer<const function_decl>(tn);
    THROW_ASSERT(fd && fd->body, "Node is not a function or it hasn't a body");
-   const statement_list * sl = GetPointer<const statement_list>(GET_NODE(fd->body));
+   const auto * sl = GetPointer<const statement_list>(GET_NODE(fd->body));
    THROW_ASSERT(sl, "Body is not a statement_list");
    const auto CGMan = AppM->CGetCallGraphManager();
    const auto called_body_fun_ids = CGMan->GetReachedBodyFunctionsFrom(function_id);
@@ -101,7 +101,7 @@ DesignFlowStep_Status FunctionCallTypeCleanup::InternalExec()
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining statement " + GET_NODE(stmt)->ToString());
          if (GET_NODE(stmt)->get_kind() == gimple_assign_K)
          {
-            gimple_assign * ga =  GetPointer<gimple_assign>(GET_NODE(stmt));
+            auto * ga =  GetPointer<gimple_assign>(GET_NODE(stmt));
             const std::string srcp_default =
                ga->include_name + ":" + STR(ga->line_number) + ":" + STR(ga->column_number);
             enum kind code0 = GET_NODE(ga->op0)->get_kind();
@@ -110,11 +110,11 @@ DesignFlowStep_Status FunctionCallTypeCleanup::InternalExec()
             THROW_ASSERT(not ga->clobber, "");
             if (code1 == call_expr_K || code1 == aggr_init_expr_K)
             {
-               call_expr * ce = GetPointer<call_expr>(GET_NODE(ga->op1));
+               auto * ce = GetPointer<call_expr>(GET_NODE(ga->op1));
                if (GET_NODE(ce->fn)->get_kind() == addr_expr_K)
                {
                   const auto addr_node = GET_NODE(ce->fn);
-                  const addr_expr * ae = GetPointer<const addr_expr>(addr_node);
+                  const auto * ae = GetPointer<const addr_expr>(addr_node);
                   const auto fu_decl_node = GET_NODE(ae->op);
                   THROW_ASSERT(fu_decl_node->get_kind() == function_decl_K,
                         "node  " + STR(fu_decl_node) +
@@ -144,7 +144,7 @@ DesignFlowStep_Status FunctionCallTypeCleanup::InternalExec()
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                               "---create nop " + GET_NODE(ga_nop)->ToString());
 
-                        const gimple_assign * cast_ga = GetPointer<const gimple_assign>(GET_NODE(ga_nop));
+                        const auto * cast_ga = GetPointer<const gimple_assign>(GET_NODE(ga_nop));
                         TM->ReplaceTreeNode(ga_nop, cast_ga->op0, ga->op0);
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                               "---fix nop " + GET_NODE(ga_nop)->ToString());
@@ -206,7 +206,7 @@ DesignFlowStep_Status FunctionCallTypeCleanup::InternalExec()
                         {
                            unsigned int formal_type_id = tree_helper::get_formal_ith(TM, ce->index, arg_n);
                            const tree_nodeRef formal_type_reindex = TM->CGetTreeReindex(formal_type_id);
-                           unary_expr * parm_ue = GetPointer<unary_expr>(GET_NODE(*arg_it));
+                           auto * parm_ue = GetPointer<unary_expr>(GET_NODE(*arg_it));
                            tree_nodeRef ue_expr = tree_man->create_unary_operation(
                                     formal_type_reindex, parm_ue->op, srcp_default, GET_NODE(*arg_it)->get_kind());///It is required to de-share some IR nodes
                            tree_nodeRef ue_ga = tree_man->CreateGimpleAssign(formal_type_reindex, ue_expr, block.first, srcp_default);
@@ -247,13 +247,13 @@ DesignFlowStep_Status FunctionCallTypeCleanup::InternalExec()
          }
          else if (GET_NODE(stmt)->get_kind() == gimple_call_K)
          {
-            gimple_call * gc =  GetPointer<gimple_call>(GET_NODE(stmt));
+            auto * gc =  GetPointer<gimple_call>(GET_NODE(stmt));
             const std::string srcp_default =
                gc->include_name + ":" + STR(gc->line_number) + ":" + STR(gc->column_number);
             if (GET_NODE(gc->fn)->get_kind() == addr_expr_K)
             {
                const auto addr_node = GET_NODE(gc->fn);
-               const addr_expr * ae = GetPointer<const addr_expr>(addr_node);
+               const auto * ae = GetPointer<const addr_expr>(addr_node);
                THROW_ASSERT(GET_NODE(ae->op)->get_kind() == function_decl_K,
                      "node  " + STR(GET_NODE(ae->op)) +
                      " is not function_decl but " + GET_NODE(ae->op)->get_kind_text());
@@ -304,7 +304,7 @@ DesignFlowStep_Status FunctionCallTypeCleanup::InternalExec()
                      {
                         unsigned int formal_type_id = tree_helper::get_formal_ith(TM, gc->index, arg_n);
                         const tree_nodeRef formal_type_reindex = TM->CGetTreeReindex(formal_type_id);
-                        unary_expr * parm_ue = GetPointer<unary_expr>(GET_NODE(*arg_it));
+                        auto * parm_ue = GetPointer<unary_expr>(GET_NODE(*arg_it));
                         tree_nodeRef ue_expr = tree_man->create_unary_operation(
                                  formal_type_reindex, parm_ue->op, srcp_default, GET_NODE(*arg_it)->get_kind());///It is required to de-share some IR nodes
                         tree_nodeRef ue_ga = tree_man->CreateGimpleAssign(formal_type_reindex, ue_expr, block.first, srcp_default);

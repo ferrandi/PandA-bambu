@@ -73,8 +73,7 @@ virtual_phi_nodes_split::virtual_phi_nodes_split(const ParameterConstRef _parame
 
 
 virtual_phi_nodes_split::~virtual_phi_nodes_split()
-{
-}
+= default;
 
 const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship> > virtual_phi_nodes_split::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
@@ -118,8 +117,8 @@ DesignFlowStep_Status virtual_phi_nodes_split::InternalExec()
    }
 
    tree_nodeRef temp = TM->get_tree_node_const(function_id);
-   function_decl * fd = GetPointer<function_decl>(temp);
-   statement_list * sl = GetPointer<statement_list>(GET_NODE(fd->body));
+   auto * fd = GetPointer<function_decl>(temp);
+   auto * sl = GetPointer<statement_list>(GET_NODE(fd->body));
    std::map<unsigned int, blocRef> & list_of_bloc = sl->list_of_bloc;
 
    std::map<unsigned int, blocRef>::iterator iit, iit_end = list_of_bloc.end();
@@ -147,7 +146,7 @@ DesignFlowStep_Status virtual_phi_nodes_split::InternalExec()
 void virtual_phi_nodes_split::virtual_split_phi(tree_nodeRef tree_phi, blocRef& bb_block, std::map<unsigned int, blocRef>& list_of_bloc, const tree_managerRef TM)
 {
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Splitting phi node " + boost::lexical_cast<std::string>(GET_INDEX_NODE(tree_phi)));
-   gimple_phi *phi = GetPointer<gimple_phi>(GET_NODE(tree_phi));
+   auto *phi = GetPointer<gimple_phi>(GET_NODE(tree_phi));
    THROW_ASSERT(phi, "A non-phi node is stored in the phi_list");
    //std::cout << "Analyzing phi-node: @" << GET_INDEX_NODE(tree_phi) << std::endl;
    if (phi->virtual_flag)
@@ -161,7 +160,7 @@ void virtual_phi_nodes_split::virtual_split_phi(tree_nodeRef tree_phi, blocRef& 
 
       ///create the new ssa
       std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> ssa_IR_schema;
-      ssa_name *ssa_var = GetPointer<ssa_name>(GET_NODE(phi->res));
+      auto *ssa_var = GetPointer<ssa_name>(GET_NODE(phi->res));
       THROW_ASSERT(ssa_var, "unexpected condition " + STR(GET_INDEX_NODE(phi->res)));
       unsigned int type_index = tree_helper::get_type_index(TM, GET_INDEX_NODE(phi->res));
       unsigned int new_ssa_id = TM->new_tree_node_id();

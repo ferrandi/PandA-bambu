@@ -41,7 +41,7 @@
  *
 */
 
-#include <stddef.h>
+#include <cstddef>
 #include <iostream>
 #include <fstream>
 

@@ -53,12 +53,13 @@
 #include <boost/date_time/posix_time/ptime.hpp>
 #include <boost/iterator/iterator_facade.hpp>
 #include <boost/type_index/type_index_facade.hpp>
-#include <stdlib.h>
+#include <cstdlib>
 #include <limits>
 #include <memory>
 #include <sstream>
 #include <string>
 #include <boost/lexical_cast.hpp>
+#include <utility>
 #include <vector>
 
 #include "string_manipulation.hpp"
@@ -112,7 +113,7 @@
 template<class G>
 std::string convert_to_binary(G _value, unsigned int precision)
 {
-   unsigned long long int value = static_cast<unsigned long long int>(_value);
+   auto value = static_cast<unsigned long long int>(_value);
    std::string bin_value;
    for(unsigned int ind = 0; ind < precision; ind++)
       bin_value = bin_value + (((1LLU << (precision-ind-1)) & value) ? '1' : '0');
@@ -168,8 +169,8 @@ class string_separator
        * Constructor
        * @param delimiter is the string used to divide the string
        */
-      explicit string_separator(const std::string& _delimiter) :
-         delimiter(_delimiter)
+      explicit string_separator(std::string  _delimiter) :
+         delimiter(std::move(_delimiter))
       {
       }
 

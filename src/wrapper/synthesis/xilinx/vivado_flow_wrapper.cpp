@@ -62,9 +62,7 @@ vivado_flow_wrapper::vivado_flow_wrapper(const ParameterConstRef _Param, const s
 
 //destructor
 vivado_flow_wrapper::~vivado_flow_wrapper()
-{
-
-}
+= default;
 
 void vivado_flow_wrapper::EvaluateVariables(const DesignParametersRef dp)
 {

@@ -71,7 +71,7 @@ HDLFunctionDeclFix::HDLFunctionDeclFix(const application_managerRef _AppM, const
 }
 
 HDLFunctionDeclFix::~HDLFunctionDeclFix()
-{}
+= default;
 
 DesignFlowStep_Status HDLFunctionDeclFix::Exec()
 {

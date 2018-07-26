@@ -86,8 +86,7 @@ hls_bit_value::hls_bit_value(const ParameterConstRef _parameters, const HLS_mana
 }
 
 hls_bit_value::~hls_bit_value()
-{
-}
+= default;
 
 void hls_bit_value::Initialize()
 {

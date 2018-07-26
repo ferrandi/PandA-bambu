@@ -41,18 +41,20 @@
 ///Header include
 #include "parser_flow_step.hpp"
 
+#include <utility>
+
 ///design_flows include
 #include "design_flow_manager.hpp"
 #include "string_manipulation.hpp"          // for STR
 
-ParserFlowStep::ParserFlowStep(const DesignFlowManagerConstRef _design_flow_manager, const ParserFlowStep_Type _parser_step_type, const std::string&_file_name, const ParameterConstRef _parameters) :
+ParserFlowStep::ParserFlowStep(const DesignFlowManagerConstRef _design_flow_manager, const ParserFlowStep_Type _parser_step_type, std::string _file_name, const ParameterConstRef _parameters) :
    DesignFlowStep(_design_flow_manager, _parameters),
    parser_step_type(_parser_step_type),
-   file_name(_file_name)
+   file_name(std::move(_file_name))
 {}
 
 ParserFlowStep::~ParserFlowStep()
-{}
+= default;
 
 const std::string ParserFlowStep::GetSignature() const
 {

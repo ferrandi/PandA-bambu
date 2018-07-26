@@ -3,7 +3,7 @@
 #include <iostream>
 #include <sstream>
 #include <vector>
-#include <math.h>
+#include <cmath>
 #include <gmp.h>
 #include <mpfr.h>
 #include <gmpxx.h>
@@ -64,7 +64,7 @@ namespace flopoco{
 		}
 	
 		/** The destructor */
-		~StratixII() override {}
+		~StratixII() override = default;
 
 		/** overloading the virtual functions of Target
 		 * @see the target class for more details 

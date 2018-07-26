@@ -102,7 +102,7 @@ TestVectorParser::TestVectorParser
 }
 
 TestVectorParser::~TestVectorParser()
-{}
+= default;
 
 void TestVectorParser::ParseUserString
 (
@@ -197,7 +197,7 @@ void TestVectorParser::ParseXMLFile(
          const xml_node::node_list list = node->get_children();
          for (const auto & iter : list)
          {
-            const xml_element* Enode = GetPointer<const xml_element>(iter);
+            const auto* Enode = GetPointer<const xml_element>(iter);
 
             if(!Enode || Enode->get_name() != "testbench") continue;
 

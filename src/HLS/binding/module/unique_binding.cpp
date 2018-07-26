@@ -67,9 +67,7 @@ unique_binding::unique_binding(const ParameterConstRef _Param, const HLS_manager
 }
 
 unique_binding::~unique_binding()
-{
-
-}
+= default;
 
 DesignFlowStep_Status unique_binding::InternalExec()
 {
@@ -95,14 +93,14 @@ DesignFlowStep_Status unique_binding::InternalExec()
    {
       unsigned int fu = fu_op.first;
       fu_op.second.sort();
-      for(std::list<std::pair<std::string, vertex> >::iterator op = fu_op.second.begin(); op != fu_op.second.end(); ++op)
+      for(auto & op : fu_op.second)
       {
          unsigned int idx = 0;
          while (black_list[fu].find(idx) != black_list[fu].end())
          {
             idx++;
          }
-         HLS->Rfu->bind(op->second, fu, idx);
+         HLS->Rfu->bind(op.second, fu, idx);
          black_list[fu].insert(idx);
       }
    }

@@ -61,9 +61,7 @@ par_wrapper::par_wrapper(const ParameterConstRef _Param, const std::string& _out
 
 //destructor
 par_wrapper::~par_wrapper()
-{
-
-}
+= default;
 
 void par_wrapper::init_reserved_vars()
 {

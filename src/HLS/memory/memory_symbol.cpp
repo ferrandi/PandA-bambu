@@ -59,9 +59,7 @@ memory_symbol::memory_symbol(unsigned int var, unsigned int addr, unsigned int f
 }
 
 memory_symbol::~memory_symbol()
-{
-
-}
+= default;
 
 void memory_symbol::set_address(unsigned int _address)
 {

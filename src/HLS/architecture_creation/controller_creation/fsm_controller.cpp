@@ -92,9 +92,7 @@ fsm_controller::fsm_controller(const ParameterConstRef _Param, const HLS_manager
 }
 
 fsm_controller::~fsm_controller()
-{
-
-}
+= default;
 
 DesignFlowStep_Status fsm_controller::InternalExec()
 {
@@ -236,7 +234,7 @@ void fsm_controller::create_state_machine(std::string &parse)
          if(!CM) continue;
          structural_objectRef top = CM->get_circ();
          THROW_ASSERT(top, "expected");
-         module *fu_module = GetPointer<module>(top);
+         auto *fu_module = GetPointer<module>(top);
          THROW_ASSERT(fu_module, "expected");
          structural_objectRef start_port_i = fu_module->find_member(START_PORT_NAME, port_o_K, top);
          structural_objectRef done_port_i = fu_module->find_member(DONE_PORT_NAME, port_o_K, top);
@@ -266,7 +264,7 @@ void fsm_controller::create_state_machine(std::string &parse)
          continue;
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Analyzing state " + stg->CGetStateInfo(v)->name);
 
-      parse += stg->CGetStateInfo(v)->name + " 0" + input_vector_to_string(present_state[v],0);
+      parse += stg->CGetStateInfo(v)->name + " 0" + input_vector_to_string(present_state[v],false);
 
       std::list<EdgeDescriptor> sorted;
       EdgeDescriptor default_edge;
@@ -306,7 +304,7 @@ void fsm_controller::create_state_machine(std::string &parse)
          std::vector<std::string> in(in_num, "-");
 
          const std::set<std::pair<vertex,unsigned int> >& cond = stg->CGetTransitionInfo(*e_it)->conditions;;
-         for(std::set<std::pair<vertex,unsigned int> >::const_iterator cond_it = cond.begin(); cond_it != cond.end(); ++cond_it)
+         for(auto cond_it = cond.begin(); cond_it != cond.end(); ++cond_it)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing condition");
             std::string value;
@@ -397,7 +395,7 @@ void fsm_controller::create_state_machine(std::string &parse)
             }
          }
 
-         parse += " " + stg->CGetStateInfo(next_state)->name + " " + (assert_done_port?"1":"-") + input_vector_to_string(transition_outputs,0);
+         parse += " " + stg->CGetStateInfo(next_state)->name + " " + (assert_done_port?"1":"-") + input_vector_to_string(transition_outputs,false);
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--");
       }
 
@@ -424,15 +422,15 @@ std::string fsm_controller::get_guard_value(const tree_managerRef TM, const unsi
    {
       tree_nodeRef node = TM->get_tree_node_const(index);
       THROW_ASSERT(node->get_kind() == case_label_expr_K, "case_label_expr expected " + GET_NAME(data, op));
-      case_label_expr * cle = GetPointer<case_label_expr>(node);
+      auto * cle = GetPointer<case_label_expr>(node);
       THROW_ASSERT(cle->op0, "guard expected in a case_label_expr");
-      integer_cst * ic = GetPointer<integer_cst>(GET_NODE(cle->op0));
+      auto * ic = GetPointer<integer_cst>(GET_NODE(cle->op0));
       THROW_ASSERT(ic, "expected integer_cst object as guard in a case_label_expr");
       long long int low_result = tree_helper::get_integer_cst_value(ic);
       long long int high_result = 0;
       if(cle->op1)
       {
-         integer_cst * ic_high = GetPointer<integer_cst>(GET_NODE(cle->op1));
+         auto * ic_high = GetPointer<integer_cst>(GET_NODE(cle->op1));
          THROW_ASSERT(ic_high, "expected integer_cst object as guard in a case_label_expr");
          high_result = tree_helper::get_integer_cst_value(ic_high);
       }

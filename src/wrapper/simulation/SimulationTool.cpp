@@ -63,9 +63,7 @@ SimulationTool::SimulationTool(const ParameterConstRef _Param) :
 }
 
 SimulationTool::~SimulationTool()
-{
-
-}
+= default;
 
 SimulationToolRef SimulationTool::CreateSimulationTool(type_t type, const ParameterConstRef _Param, const std::string& suffix)
 {
@@ -177,7 +175,7 @@ unsigned long long int SimulationTool::DetermineCycles(unsigned long long int &a
                CopyStdout(log_file);
                THROW_ERROR("String not valid: " + line);
             }
-            unsigned long long int sim_cycles = boost::lexical_cast<unsigned long long int>(filevalues[1]);
+            auto sim_cycles = boost::lexical_cast<unsigned long long int>(filevalues[1]);
             ///Remove one cycle if primary input are registered
             if(Param->getOption<std::string>(OPT_registered_inputs) == "top")
             {

@@ -62,8 +62,7 @@ sched_based_chaining_computation::sched_based_chaining_computation(const Paramet
 }
 
 sched_based_chaining_computation::~sched_based_chaining_computation()
-{
-}
+= default;
 
 void sched_based_chaining_computation::Initialize()
 {

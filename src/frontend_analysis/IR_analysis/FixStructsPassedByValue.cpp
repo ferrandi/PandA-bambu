@@ -63,8 +63,7 @@ FixStructsPassedByValue::FixStructsPassedByValue(
 }
 
 FixStructsPassedByValue::~FixStructsPassedByValue()
-{
-}
+= default;
 
 static bool cannot_have_struct_parameters(
       const function_decl * const fd,
@@ -93,7 +92,7 @@ static bool cannot_have_struct_parameters(
    {
       while (p_type_head)
       {
-         const tree_list * const p = GetPointer<const tree_list>(GET_CONST_NODE(p_type_head));
+         const auto * const p = GetPointer<const tree_list>(GET_CONST_NODE(p_type_head));
          p_type_head = p->chan;
          /*
           * from what I figured out from gcc, if the function_decl has no
@@ -125,12 +124,12 @@ DesignFlowStep_Status FixStructsPassedByValue::InternalExec()
    const tree_managerRef TM = AppM->get_tree_manager();
    const tree_manipulationRef tree_man = tree_manipulationRef(new tree_manipulation(TM, parameters));
    const tree_nodeRef tn = TM->get_tree_node_const(function_id);
-   function_decl * fd = GetPointer<function_decl>(tn);
+   auto * fd = GetPointer<function_decl>(tn);
    THROW_ASSERT(fd and fd->body, "Node " + STR(tn) + "is not a function_decl or has no body");
-   const statement_list * sl = GetPointer<const statement_list>(GET_NODE(fd->body));
+   const auto * sl = GetPointer<const statement_list>(GET_NODE(fd->body));
    THROW_ASSERT(sl, "Body is not a statement_list");
    const std::string fu_name = tree_helper::name_function(TM, function_id);
-   const function_type * fu_type = GetPointer<const function_type>(tree_helper::CGetType(tn));
+   const auto * fu_type = GetPointer<const function_type>(tree_helper::CGetType(tn));
    THROW_ASSERT(not fu_type->varargs_flag, "function " + fu_name + " is varargs");
    // fix declaration
    if (not cannot_have_struct_parameters(fd, fu_type, TM, fu_name))
@@ -141,7 +140,7 @@ DesignFlowStep_Status FixStructsPassedByValue::InternalExec()
       unsigned int param_n = 0;
       auto p_decl_it = fd->list_of_args.begin();
       auto p_type_head = fu_type->prms;
-      bool has_param_types = static_cast<bool>(p_type_head);
+      auto has_param_types = static_cast<bool>(p_type_head);
       for (; p_decl_it != fd->list_of_args.cend(); p_decl_it++, param_n++)
       {
          const tree_nodeConstRef p_decl = GET_NODE(*p_decl_it);
@@ -159,7 +158,7 @@ DesignFlowStep_Status FixStructsPassedByValue::InternalExec()
                   "function " + fu_name + " has a struct parameter: " +
                   STR(p_decl) + " with type " + STR(p_type));
             // initialize some general stuff useful later
-            const parm_decl * pd = GetPointer<const parm_decl>(p_decl);
+            const auto * pd = GetPointer<const parm_decl>(p_decl);
             const std::string srcp = pd->include_name + ":" + STR(pd->line_number) + ":" + STR(pd->column_number);
             const std::string original_param_name = pd->name ? GetPointer<const identifier_node>(GET_NODE(pd->name))->strg : "";
 
@@ -280,7 +279,7 @@ DesignFlowStep_Status FixStructsPassedByValue::InternalExec()
             };
             const auto gimple_call_memcpy =
                tree_man->create_gimple_call(TM->CGetTreeReindex(memcpy_function_id), args, srcp, bb_index);
-            gimple_node * gn = GetPointer<gimple_node>(GET_NODE(gimple_call_memcpy));
+            auto * gn = GetPointer<gimple_node>(GET_NODE(gimple_call_memcpy));
             /*
              * the call is artificial. this is necessary because this memcpy
              * should not be moved around by code motion or other steps. this
@@ -322,7 +321,7 @@ DesignFlowStep_Status FixStructsPassedByValue::InternalExec()
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                   "-->Examining statement " + GET_NODE(stmt)->ToString());
-            const gimple_node * gn = GetPointer<const gimple_node>(GET_NODE(stmt));
+            const auto * gn = GetPointer<const gimple_node>(GET_NODE(stmt));
             const std::string srcp_default =
                gn->include_name + ":" + STR(gn->line_number) + ":" + STR(gn->column_number);
             if (GET_NODE(stmt)->get_kind() == gimple_assign_K or
@@ -336,21 +335,21 @@ DesignFlowStep_Status FixStructsPassedByValue::InternalExec()
 
                if (GET_NODE(stmt)->get_kind() == gimple_assign_K)
                {
-                  const gimple_assign * ga =  GetPointer<const gimple_assign>(GET_NODE(stmt));
+                  const auto * ga =  GetPointer<const gimple_assign>(GET_NODE(stmt));
                   if (GET_NODE(ga->op1)->get_kind() != call_expr_K && GET_NODE(ga->op1)->get_kind() != aggr_init_expr_K)
                   {
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--RHS is not a call_expr");
                      continue;
                   }
 
-                  call_expr * ce = GetPointer<call_expr>(GET_NODE(ga->op1));
+                  auto * ce = GetPointer<call_expr>(GET_NODE(ga->op1));
                   called_node = GET_NODE(ce->fn);
                   arguments = &ce->args;
                   call_tree_node_id = ce->index;
                }
                else // GET_NODE(stmt)->get_kind() == gimple_call_K
                {
-                  gimple_call * gc =  GetPointer<gimple_call>(GET_NODE(stmt));
+                  auto * gc =  GetPointer<gimple_call>(GET_NODE(stmt));
                   called_node = GET_NODE(gc->fn);
                   arguments = &gc->args;
                   call_tree_node_id = gc->index;
@@ -365,15 +364,15 @@ DesignFlowStep_Status FixStructsPassedByValue::InternalExec()
                   const std::string called_ssa_name = STR(called_node);
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                         "-->Indirect function call through ssa " + called_ssa_name);
-                  const pointer_type * f_ptr = GetPointer<const pointer_type>(tree_helper::CGetType(called_node));
+                  const auto * f_ptr = GetPointer<const pointer_type>(tree_helper::CGetType(called_node));
                   THROW_ASSERT(f_ptr, "");
-                  const function_type * ft = GetPointer<const function_type>(GET_CONST_NODE(f_ptr->ptd));
+                  const auto * ft = GetPointer<const function_type>(GET_CONST_NODE(f_ptr->ptd));
                   THROW_ASSERT(ft, "");
                   unsigned int param_n = 0;
                   auto p_type_head = ft->prms;
                   while (p_type_head)
                   {
-                     const tree_list * const p = GetPointer<const tree_list>(GET_CONST_NODE(p_type_head));
+                     const auto * const p = GetPointer<const tree_list>(GET_CONST_NODE(p_type_head));
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                            "-->Analyzing parameter type" + STR(GET_CONST_NODE(p->valu)));
                      if (tree_helper::is_an_union(TM, p->valu->index) or tree_helper::is_a_struct(TM, p->valu->index))
@@ -405,7 +404,7 @@ DesignFlowStep_Status FixStructsPassedByValue::InternalExec()
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                               "---Changing parameter: creating pointer " + STR(GET_NODE(new_ga_node)));
                         block.second->PushBefore(new_ga_node, stmt);
-                        const gimple_assign * new_ga = GetPointer<const gimple_assign>(GET_NODE(new_ga_node));
+                        const auto * new_ga = GetPointer<const gimple_assign>(GET_NODE(new_ga_node));
                         arguments->at(param_n) = new_ga->op0;
                         changed = true;
                      }
@@ -421,15 +420,15 @@ DesignFlowStep_Status FixStructsPassedByValue::InternalExec()
                }
                THROW_ASSERT(called_node->get_kind() == addr_expr_K,
                      "called_node = " + STR(called_node) + " is a " + called_node->get_kind_text());
-               const addr_expr * ae = GetPointer<const addr_expr>(called_node);
+               const auto * ae = GetPointer<const addr_expr>(called_node);
                const auto called_fu_decl_node = GET_NODE(ae->op);
                THROW_ASSERT(called_fu_decl_node->get_kind() == function_decl_K,
                      "node  " + STR(called_fu_decl_node) +
                      " is not function_decl but " +
                      called_fu_decl_node->get_kind_text());
                const std::string called_fu_name = tree_helper::name_function(TM, called_fu_decl_node->index);
-               const function_decl * called_fd = GetPointer<const function_decl>(called_fu_decl_node);
-               const function_type * called_fu_type = GetPointer<const function_type>(tree_helper::CGetType(called_fu_decl_node));
+               const auto * called_fd = GetPointer<const function_decl>(called_fu_decl_node);
+               const auto * called_fu_type = GetPointer<const function_type>(tree_helper::CGetType(called_fu_decl_node));
                /*
                 * if there is a call to a function without body we don't turn
                 * structs parameters into pointers, because we would also need
@@ -448,7 +447,7 @@ DesignFlowStep_Status FixStructsPassedByValue::InternalExec()
                   continue;
                }
                auto p_type_head = called_fu_type->prms;
-               bool has_param_types = static_cast<bool>(p_type_head);
+               auto has_param_types = static_cast<bool>(p_type_head);
                unsigned int param_n = 0;
                auto p_decl_it = called_fd->list_of_args.begin();
                for (; p_decl_it != called_fd->list_of_args.cend(); p_decl_it++, param_n++)
@@ -494,7 +493,7 @@ DesignFlowStep_Status FixStructsPassedByValue::InternalExec()
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                            "---Changing parameter: creating pointer " + STR(GET_NODE(new_ga_node)));
                      block.second->PushBefore(new_ga_node, stmt);
-                     const gimple_assign * new_ga = GetPointer<const gimple_assign>(GET_NODE(new_ga_node));
+                     const auto * new_ga = GetPointer<const gimple_assign>(GET_NODE(new_ga_node));
                      arguments->at(param_n) = new_ga->op0;
                      changed = true;
                   }

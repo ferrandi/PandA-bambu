@@ -644,17 +644,17 @@ class dominance
       ///Debug level
       int debug_level;
 
-      /**
-       * Hide copy constructor for Weffc++
-       */
-      dominance(const dominance<GraphObj> &);
-
-      /**
-       * Hide assignment operator for Weffc++
-       */
-      dominance<GraphObj>  operator=(const dominance<GraphObj> &);
-
    public:
+
+      /**
+       * Deleted copy constructor for Weffc++
+       */
+      dominance(const dominance<GraphObj> &) = delete;
+
+      /**
+       * Deleted assignment operator for Weffc++
+       */
+      dominance<GraphObj>  operator=(const dominance<GraphObj> &) = delete;
       /**
        * The main entry point into this module.
        * @param dir is set depending on whether we want to compute dominators or postdominators.
@@ -728,8 +728,8 @@ class dominance
       {
          typename std::unordered_map<Vertex, std::set<Vertex> > dominated;
          //These are the immediate dominated nodes
-         typename std::unordered_map<Vertex, Vertex>::const_iterator dom_it_end = dom.end();
-         for(typename std::unordered_map<Vertex, Vertex>::const_iterator dom_it = dom.begin(); dom_it != dom_it_end; ++dom_it)
+         auto dom_it_end = dom.end();
+         for(auto dom_it = dom.begin(); dom_it != dom_it_end; ++dom_it)
          {
             dominated[dom_it->second].insert(dom_it->first);
             dominated[dom_it->first].insert(dom_it->first);
@@ -741,7 +741,7 @@ class dominance
          {
             changed = false;
             //for(domBeg = this->dom.begin(), domEnd = this->dom.end(); domBeg != domEnd; domBeg++)
-            for(typename std::unordered_map<Vertex, Vertex>::const_iterator dom_it = dom.begin(); dom_it != dom_it_end; ++dom_it)
+            for(auto dom_it = dom.begin(); dom_it != dom_it_end; ++dom_it)
             {
                typedef typename std::unordered_map<Vertex, std::set<Vertex> >::iterator mSetIter;
                mSetIter mSetBeg, mSetEnd;

@@ -79,9 +79,7 @@ easy_module_binding::easy_module_binding(const ParameterConstRef _Param, const H
 }
 
 easy_module_binding::~easy_module_binding()
-{
-
-}
+= default;
 
 void easy_module_binding::Initialize()
 {

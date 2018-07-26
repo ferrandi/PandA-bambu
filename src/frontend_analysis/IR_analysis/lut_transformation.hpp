@@ -51,7 +51,7 @@
 #include <string>
 #include <set>
 #include <list>
-#include <math.h> 
+#include <cmath> 
 #include <map>
 #include <vector>
 #include <algorithm>

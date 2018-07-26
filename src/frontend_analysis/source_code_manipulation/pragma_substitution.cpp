@@ -64,7 +64,7 @@ PragmaSubstitution::PragmaSubstitution(const application_managerRef _AppM, const
 }
 
 PragmaSubstitution::~PragmaSubstitution()
-{}
+= default;
 
 const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship> > PragmaSubstitution::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {

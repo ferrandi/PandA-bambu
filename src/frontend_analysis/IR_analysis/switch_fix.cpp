@@ -72,8 +72,7 @@ SwitchFix::SwitchFix(const application_managerRef _AppM, unsigned int _function_
 }
 
 SwitchFix::~SwitchFix()
-{
-}
+= default;
 
 const std::unordered_set<std::pair<FrontendFlowStepType, FunctionFrontendFlowStep::FunctionRelationship> > SwitchFix::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
@@ -111,8 +110,8 @@ DesignFlowStep_Status SwitchFix::InternalExec()
    }
    const auto tree_man = tree_manipulationRef(new tree_manipulation(TM, parameters));
    tree_nodeRef temp = TM->get_tree_node_const(function_id);
-   function_decl * fd = GetPointer<function_decl>(temp);
-   statement_list * sl = GetPointer<statement_list>(GET_NODE(fd->body));
+   auto * fd = GetPointer<function_decl>(temp);
+   auto * sl = GetPointer<statement_list>(GET_NODE(fd->body));
    auto & list_of_block = sl->list_of_bloc;
 
    /// Fix switch statements
@@ -301,7 +300,7 @@ DesignFlowStep_Status SwitchFix::InternalExec()
                   list_of_block.find(*t)->second->list_of_pred[i] = new_bb->number;
                   for(const auto& phi : list_of_block.find(*t)->second->CGetPhiList())
                   {
-                     gimple_phi * current_phi = GetPointer<gimple_phi>(GET_NODE(phi));
+                     auto * current_phi = GetPointer<gimple_phi>(GET_NODE(phi));
                      for(const auto& def_edge : current_phi->CGetDefEdgesList())
                      {
                         if(def_edge.second == basic_block.first)
@@ -327,9 +326,9 @@ DesignFlowStep_Status SwitchFix::InternalExec()
             if(multiple_pred_switch)
             {
                auto label_expr_node = list_of_block.find(*t)->second->CGetStmtList().front();
-               gimple_label * le = GetPointer<gimple_label>(GET_NODE(label_expr_node));
+               auto * le = GetPointer<gimple_label>(GET_NODE(label_expr_node));
                tree_nodeRef label_decl_node = le->op;
-               label_decl * ld = GetPointer<label_decl>(GET_NODE(label_decl_node));
+               auto * ld = GetPointer<label_decl>(GET_NODE(label_decl_node));
                unsigned int new_label_decl_id = TM->new_tree_node_id();
                std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> IR_schema;
                IR_schema[TOK(TOK_TYPE)] = boost::lexical_cast<std::string>(GET_INDEX_NODE(ld->type));
@@ -345,11 +344,11 @@ DesignFlowStep_Status SwitchFix::InternalExec()
                TM->create_tree_node(new_label_expr_id, gimple_label_K, IR_schema);
                auto gl = GetPointer<gimple_label>(TM->get_tree_node_const(new_label_expr_id));
                gl->bb_index = new_bb->number;
-               tree_vec * te = GetPointer<tree_vec>(GET_NODE(gs->op1));
+               auto * te = GetPointer<tree_vec>(GET_NODE(gs->op1));
                std::vector<tree_nodeRef> & list_of_op = te->list_of_op;
                for(auto & ind : list_of_op)
                {
-                  case_label_expr * cl = GetPointer<case_label_expr>(GET_NODE(ind));
+                  auto * cl = GetPointer<case_label_expr>(GET_NODE(ind));
                   if(GET_INDEX_NODE(cl->got) == GET_INDEX_NODE(le->op))
                   {
                      tree_nodeRef new_label_decl_reindex = TM->GetTreeReindex(new_label_decl_id);

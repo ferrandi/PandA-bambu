@@ -41,6 +41,8 @@
 */
 #include "SynthesisTool.hpp"
 
+#include <utility>
+
 ///Autoheader include
 #include "config_HAVE_EXPERIMENTAL.hpp"
 
@@ -88,13 +90,13 @@
 #include "DesignParameters.hpp"
 
 
-SynthesisTool::SynthesisTool(const ParameterConstRef _Param, const std::string& _tool_exec, const target_deviceRef _device, const std::string& _flow_name, const std::string& _output_dir) :
+SynthesisTool::SynthesisTool(const ParameterConstRef _Param, std::string  _tool_exec, const target_deviceRef _device, const std::string& _flow_name, std::string  _output_dir) :
    device(_device),
    Param(_Param),
    debug_level(Param->getOption<int>(OPT_debug_level)),
    output_level(Param->getOption<unsigned int>(OPT_output_level)),
-   tool_exec(_tool_exec),
-   output_dir(_output_dir)
+   tool_exec(std::move(_tool_exec)),
+   output_dir(std::move(_output_dir))
 {
    ///creating the output directory
    create_output_directory(_flow_name);
@@ -103,9 +105,7 @@ SynthesisTool::SynthesisTool(const ParameterConstRef _Param, const std::string& 
 }
 
 SynthesisTool::~SynthesisTool()
-{
-
-}
+= default;
 
 bool SynthesisTool::has_scripts() const
 {

@@ -45,7 +45,7 @@
 
 ///STD include
 #include <cxxabi.h>                                          // for __cxa_de...
-#include <stdlib.h>                                          // for strtod
+#include <cstdlib>                                          // for strtod
 #include <boost/algorithm/string/classification.hpp>         // for is_any_of
 #include <boost/algorithm/string/split.hpp>                  // for split
 #include <boost/lexical_cast.hpp>                            // for lexical_...

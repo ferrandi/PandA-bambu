@@ -63,9 +63,7 @@ map_wrapper::map_wrapper(const ParameterConstRef _Param, const std::string& _out
 
 //destructor
 map_wrapper::~map_wrapper()
-{
-
-}
+= default;
 
 void map_wrapper::init_reserved_vars()
 {

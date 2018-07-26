@@ -82,9 +82,7 @@ ASICBackendFlow::ASICBackendFlow(const ParameterConstRef _Param, const std::stri
 }
 
 ASICBackendFlow::~ASICBackendFlow()
-{
-
-}
+= default;
 
 void ASICBackendFlow::create_sdc(const DesignParametersRef dp)
 {

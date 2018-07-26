@@ -76,8 +76,7 @@ module_interface::module_interface(const ParameterConstRef _parameters, const HL
 }
 
 module_interface::~module_interface()
-{
-}
+= default;
 
 const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > module_interface::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {

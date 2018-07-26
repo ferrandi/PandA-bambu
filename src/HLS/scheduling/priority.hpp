@@ -87,7 +87,7 @@ struct priority_data
       /**
        * Destructor.
       */
-      virtual ~priority_data(){}
+      virtual ~priority_data()= default;
    private:
       /// data structure storing the priority values.
       vertex2obj<dataType> priority_values;
@@ -194,7 +194,7 @@ struct priority_compare_functor
       /**
        * Destructor
        */
-      ~priority_compare_functor() {}
+      ~priority_compare_functor() = default;
 
    private:
 

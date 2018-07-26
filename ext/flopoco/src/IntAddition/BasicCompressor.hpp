@@ -9,8 +9,8 @@
 #include "mpfr.h"
 #include <vector>
 #include <gmpxx.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cstdlib>
 #include "../utils.hpp"
 
 namespace flopoco

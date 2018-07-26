@@ -66,9 +66,7 @@ SynopsysWrapper::SynopsysWrapper(const ParameterConstRef _Param, const std::stri
 }
 
 SynopsysWrapper::~SynopsysWrapper()
-{
-
-}
+= default;
 
 SynthesisToolRef SynopsysWrapper::CreateWrapper(wrapper_t type, const ParameterConstRef Param, const target_deviceRef device, const std::string& output_dir)
 {
@@ -151,7 +149,7 @@ std::string SynopsysWrapper::getStringValue(const xml_script_node_tRef node, con
          else if (var->multiValues.size())
          {
             result += "{";
-            for (std::vector<xml_set_entry_tRef>::const_iterator it = var->multiValues.begin(); it != var->multiValues.end(); ++it)
+            for (auto it = var->multiValues.begin(); it != var->multiValues.end(); ++it)
             {
                const xml_set_entry_tRef e = *it;
                if (it != var->multiValues.begin())
@@ -205,7 +203,7 @@ std::string SynopsysWrapper::toString(const xml_script_node_tRef node, const Des
          else if (par->multiValues.size())
          {
             result += par->curlyBrackets ? "{" : "\"";
-            for (std::vector<xml_set_entry_tRef>::const_iterator it = par->multiValues.begin(); it != par->multiValues.end(); ++it)
+            for (auto it = par->multiValues.begin(); it != par->multiValues.end(); ++it)
             {
                const xml_set_entry_tRef p = *it;
                if (it != par->multiValues.begin())

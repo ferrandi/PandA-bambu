@@ -74,7 +74,7 @@ HLSFunctionStep::HLSFunctionStep(const ParameterConstRef _Param, const HLS_manag
 }
 
 HLSFunctionStep::~HLSFunctionStep()
-{}
+= default;
 
 bool HLSFunctionStep::HasToBeExecuted() const
 {
@@ -130,7 +130,7 @@ const std::string HLSFunctionStep::GetName() const
 void HLSFunctionStep::ComputeRelationships(DesignFlowStepSet & design_flow_step_set, const DesignFlowStep::RelationshipType relationship_type)
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Computing relationships of " + GetName());
-   const HLSFlowStepFactory * hls_flow_step_factory = GetPointer<const HLSFlowStepFactory>(CGetDesignFlowStepFactory());
+   const auto * hls_flow_step_factory = GetPointer<const HLSFlowStepFactory>(CGetDesignFlowStepFactory());
    const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
    const CallGraphManagerConstRef call_graph_manager = HLSMgr->CGetCallGraphManager();
    const tree_managerRef TreeM = HLSMgr->get_tree_manager();

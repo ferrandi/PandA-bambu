@@ -86,9 +86,7 @@ PragmaParser::PragmaParser(const pragma_managerRef _PM, const ParameterConstRef 
 
 // destructor
 PragmaParser::~PragmaParser()
-{
-
-}
+= default;
 
 std::string PragmaParser::substitutePragmas(const std::string& OldFile)
 {

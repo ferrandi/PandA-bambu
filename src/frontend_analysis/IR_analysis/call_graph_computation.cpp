@@ -77,8 +77,7 @@ call_graph_computation::call_graph_computation(const ParameterConstRef _paramete
 }
 
 call_graph_computation::~call_graph_computation()
-{
-}
+= default;
 
 const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship> > call_graph_computation::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
@@ -136,7 +135,7 @@ DesignFlowStep_Status call_graph_computation::Exec()
       }
       // avoid nested functions
       const tree_nodeRef fun = TM->get_tree_node_const(f_id);
-      const function_decl* fd = GetPointer<const function_decl>(fun);
+      const auto* fd = GetPointer<const function_decl>(fun);
       if (fd->scpe and GET_NODE(fd->scpe)->get_kind() == function_decl_K)
       {
          THROW_ERROR_CODE(NESTED_FUNCTIONS_EC, "Nested functions not yet supported " + STR(f_id));
@@ -171,8 +170,8 @@ DesignFlowStep_Status call_graph_computation::Exec()
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Analyze body of " + fu_name );
          const tree_nodeRef fun = TM->get_tree_node_const(f_id);
-         const function_decl * fd = GetPointer<const function_decl>(fun);
-         const statement_list * sl = GetPointer<const statement_list>(GET_NODE(fd->body));
+         const auto * fd = GetPointer<const function_decl>(fun);
+         const auto * sl = GetPointer<const statement_list>(GET_NODE(fd->body));
          if (sl->list_of_bloc.empty())
          {
             THROW_ERROR("We can only work on CFG provided by GCC");
@@ -215,7 +214,7 @@ void call_graph_computation::call_graph_computation_recursive(
          if (impl)
             ind = impl;
          ///check for nested function
-         function_decl* fd = GetPointer<function_decl>(curr_tn);
+         auto* fd = GetPointer<function_decl>(curr_tn);
          if(fd->scpe && GET_NODE(fd->scpe)->get_kind() == function_decl_K)
          {
             THROW_ERROR_CODE(NESTED_FUNCTIONS_EC,"Nested functions not yet supported "+STR(ind));
@@ -226,7 +225,7 @@ void call_graph_computation::call_graph_computation_recursive(
       }
       case gimple_return_K:
       {
-         gimple_return* re = GetPointer<gimple_return>(curr_tn);
+         auto* re = GetPointer<gimple_return>(curr_tn);
          if(re->op)
          {
             call_graph_computation_recursive(TM, re->op, node_stmt, call_type);
@@ -235,7 +234,7 @@ void call_graph_computation::call_graph_computation_recursive(
       }
       case gimple_assign_K:
       {
-         gimple_assign* me = GetPointer<gimple_assign>(curr_tn);
+         auto* me = GetPointer<gimple_assign>(curr_tn);
 
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Analyzing left part");
          call_graph_computation_recursive(TM, me->op0, node_stmt, call_type);
@@ -255,11 +254,11 @@ void call_graph_computation::call_graph_computation_recursive(
       case aggr_init_expr_K:
       case call_expr_K:
       {
-         call_expr* ce = GetPointer<call_expr>(curr_tn);
+         auto* ce = GetPointer<call_expr>(curr_tn);
          tree_nodeRef fun_node = GET_NODE(ce->fn);
          if(fun_node->get_kind() == addr_expr_K)
          {
-            unary_expr* ue = GetPointer<unary_expr>(fun_node);
+            auto* ue = GetPointer<unary_expr>(fun_node);
             fun_node = ue->op;
          }
          else if(fun_node->get_kind() == obj_type_ref_K)
@@ -276,11 +275,11 @@ void call_graph_computation::call_graph_computation_recursive(
       }
       case gimple_call_K:
       {
-         gimple_call* ce = GetPointer<gimple_call>(curr_tn);
+         auto* ce = GetPointer<gimple_call>(curr_tn);
          tree_nodeRef fun_node = GET_NODE(ce->fn);
          if(fun_node->get_kind() == addr_expr_K)
          {
-            unary_expr* ue = GetPointer<unary_expr>(fun_node);
+            auto* ue = GetPointer<unary_expr>(fun_node);
             fun_node = ue->op;
          }
          else if(fun_node->get_kind() == obj_type_ref_K)
@@ -296,7 +295,7 @@ void call_graph_computation::call_graph_computation_recursive(
       }
       case cond_expr_K:
       {
-         cond_expr* ce = GetPointer<cond_expr>(curr_tn);
+         auto* ce = GetPointer<cond_expr>(curr_tn);
          call_graph_computation_recursive(TM, ce->op0, node_stmt, call_type);
          call_graph_computation_recursive(TM, ce->op1, node_stmt, call_type);
          call_graph_computation_recursive(TM, ce->op2, node_stmt, call_type);
@@ -304,20 +303,20 @@ void call_graph_computation::call_graph_computation_recursive(
       }
       case gimple_cond_K:
       {
-         gimple_cond* gc = GetPointer<gimple_cond>(curr_tn);
+         auto* gc = GetPointer<gimple_cond>(curr_tn);
          call_graph_computation_recursive(TM, gc->op0, node_stmt, call_type);
          break;
       }
       /* Unary expressions.  */
       case CASE_UNARY_EXPRESSION:
       {
-         unary_expr * ue = GetPointer<unary_expr>(curr_tn);
+         auto * ue = GetPointer<unary_expr>(curr_tn);
          call_graph_computation_recursive(TM, ue->op, node_stmt, call_type);
          break;
       }
       case CASE_BINARY_EXPRESSION:
       {
-         binary_expr* be = GetPointer<binary_expr>(curr_tn);
+         auto* be = GetPointer<binary_expr>(curr_tn);
          call_graph_computation_recursive(TM, be->op0, node_stmt, call_type);
          call_graph_computation_recursive(TM, be->op1, node_stmt, call_type);
          break;
@@ -325,13 +324,13 @@ void call_graph_computation::call_graph_computation_recursive(
       /*ternary expressions*/
       case gimple_switch_K:
       {
-         gimple_switch* se = GetPointer<gimple_switch>(curr_tn);
+         auto* se = GetPointer<gimple_switch>(curr_tn);
          call_graph_computation_recursive(TM, se->op0, node_stmt, call_type);
          break;
       }
       case gimple_multi_way_if_K:
       {
-         gimple_multi_way_if* gmwi=GetPointer<gimple_multi_way_if>(curr_tn);
+         auto* gmwi=GetPointer<gimple_multi_way_if>(curr_tn);
          for(const auto& cond : gmwi->list_of_cond)
             if(cond.first)
                call_graph_computation_recursive(TM, cond.first, node_stmt, call_type);
@@ -357,7 +356,7 @@ void call_graph_computation::call_graph_computation_recursive(
       case ternary_mm_expr_K:
       case bit_ior_concat_expr_K:
       {
-         ternary_expr * te = GetPointer<ternary_expr>(curr_tn);
+         auto * te = GetPointer<ternary_expr>(curr_tn);
          call_graph_computation_recursive(TM, te->op0, node_stmt, call_type);
          call_graph_computation_recursive(TM, te->op1, node_stmt, call_type);
          if(te->op2)
@@ -366,7 +365,7 @@ void call_graph_computation::call_graph_computation_recursive(
       }
       case CASE_QUATERNARY_EXPRESSION:
       {
-         quaternary_expr * qe = GetPointer<quaternary_expr>(curr_tn);
+         auto * qe = GetPointer<quaternary_expr>(curr_tn);
          call_graph_computation_recursive(TM, qe->op0, node_stmt, call_type);
          call_graph_computation_recursive(TM, qe->op1, node_stmt, call_type);
          if(qe->op2)
@@ -377,7 +376,7 @@ void call_graph_computation::call_graph_computation_recursive(
       }
       case constructor_K:
       {
-         constructor * c = GetPointer<constructor>(curr_tn);
+         auto * c = GetPointer<constructor>(curr_tn);
          for (const auto & i : c->list_of_idx_valu)
          {
             call_graph_computation_recursive(TM, i.second, node_stmt, call_type);
@@ -387,7 +386,7 @@ void call_graph_computation::call_graph_computation_recursive(
       case var_decl_K:
       {
          ///var decl performs an assignment when init is not null
-         var_decl * vd = GetPointer<var_decl>(curr_tn);
+         auto * vd = GetPointer<var_decl>(curr_tn);
          if(vd->init)
             call_graph_computation_recursive(TM, vd->init, node_stmt, call_type);
       }

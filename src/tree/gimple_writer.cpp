@@ -43,8 +43,8 @@
 ///Header include
 #include "gimple_writer.hpp"
 
-#include <ctype.h>                                   // for toupper
-#include <stddef.h>                                  // for size_t
+#include <cctype>                                   // for toupper
+#include <cstddef>                                  // for size_t
 #include <algorithm>                                 // for transform
 #include <boost/algorithm/string/replace.hpp>        // for replace_all
 #include <boost/lexical_cast.hpp>                    // for lexical_cast
@@ -427,7 +427,7 @@ void GimpleWriter::operator()(const binary_expr* obj, unsigned int & mask)
       case lut_expr_K:
       {
          os << "LUT<";
-         const lut_expr* obj2 = dynamic_cast<const lut_expr *>(obj);
+         const auto* obj2 = dynamic_cast<const lut_expr *>(obj);
          obj2->op0->visit(this);
          os << ", ";
          obj2->op1->visit(this);
@@ -644,9 +644,9 @@ void GimpleWriter::operator()(const array_type* obj, unsigned int & mask)
    tree_nodeRef array_element = GET_NODE (obj->elts);
    if (array_length->get_kind() == integer_cst_K)
    {
-      integer_cst *arr_ic = GetPointer<integer_cst>(array_length);
-      type_node *tn = GetPointer<type_node>(array_element);
-      integer_cst *eln_ic = GetPointer<integer_cst>(GET_NODE(tn->size));
+      auto *arr_ic = GetPointer<integer_cst>(array_length);
+      auto *tn = GetPointer<type_node>(array_element);
+      auto *eln_ic = GetPointer<integer_cst>(GET_NODE(tn->size));
       os << boost::lexical_cast<std::string>(tree_helper::get_integer_cst_value(arr_ic) / tree_helper::get_integer_cst_value(eln_ic));
    }
 

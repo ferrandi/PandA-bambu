@@ -60,7 +60,7 @@ CBackendStepFactory::CBackendStepFactory(const DesignFlowManagerConstRef _design
 }
 
 CBackendStepFactory::~CBackendStepFactory()
-{}
+= default;
 
 const std::string CBackendStepFactory::GetPrefix() const
 {

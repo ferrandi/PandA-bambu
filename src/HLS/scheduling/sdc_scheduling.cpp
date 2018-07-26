@@ -238,7 +238,7 @@ SDCScheduling::SDCScheduling(const ParameterConstRef _parameters, const HLS_mana
 }
 
 SDCScheduling::~SDCScheduling()
-{}
+= default;
 
 void SDCScheduling::AddDelayConstraints(const meilp_solverRef solver, const OpGraphConstRef filtered_op_graph,
 #ifndef NDEBUG

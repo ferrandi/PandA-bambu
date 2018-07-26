@@ -90,7 +90,7 @@
 #include <fstream>
 #include <iosfwd>
 #include <ostream>
-#include <math.h>
+#include <cmath>
 
 ///tree includes
 #include "var_pp_functor.hpp"
@@ -141,7 +141,7 @@ InstructionWriterRef InstructionWriter::CreateInstructionWriter(const ActorGraph
 }
 
 InstructionWriter::~InstructionWriter()
-{}
+= default;
 
 void InstructionWriter::Initialize()
 {}

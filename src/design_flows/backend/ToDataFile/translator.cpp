@@ -70,7 +70,7 @@
 ///STD include
 #include <fstream>
 #include <iomanip>
-#include <math.h>
+#include <cmath>
 #include <string>
 
 ///STL include
@@ -743,7 +743,7 @@ void Translator::write_to_latex(std::map<std::string, CustomMap<std::string, std
 
          for(const auto& root_child : node->get_children())
          {
-            const xml_element * child = GetPointer<const xml_element>(root_child);
+            const auto * child = GetPointer<const xml_element>(root_child);
             if (not child)
                continue;
             if (child->get_name() == STR_XML_experimental_setup_bambu_version)
@@ -762,7 +762,7 @@ void Translator::write_to_latex(std::map<std::string, CustomMap<std::string, std
             {
                for(const auto& benchmark : child->get_children())
                {
-                  const xml_element * benchmark_xml = GetPointer<const xml_element>(benchmark);
+                  const auto * benchmark_xml = GetPointer<const xml_element>(benchmark);
                   if(not benchmark_xml)
                      continue;
                   benchmarks.push_back(benchmark_xml->get_attribute(STR_XML_experimental_setup_value)->get_value());
@@ -1316,7 +1316,7 @@ void Translator::get_normalization(std::unordered_map<std::string, long double> 
          const xml_node::node_list list = node->get_children();
          for(const auto & iter : list)
          {
-            const xml_element* feature = GetPointer<const xml_element>(iter);
+            const auto* feature = GetPointer<const xml_element>(iter);
             if (!feature) 
                continue;
             if (feature->get_name() == "feature")
@@ -1396,7 +1396,7 @@ void Translator::read_column_formats(const XMLDomParserRef parser, std::list<Lat
    xml_node::node_list::const_iterator child, child_end = list.end();
    for (child = list.begin(); child != child_end; ++child)
    {
-      const xml_element * child_element = GetPointer<const xml_element>(*child);
+      const auto * child_element = GetPointer<const xml_element>(*child);
       if (!child_element)
          continue;
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Reading information about new column");
@@ -1408,7 +1408,7 @@ void Translator::read_column_formats(const XMLDomParserRef parser, std::list<Lat
       xml_node::node_list::const_iterator field, field_end = fields.end();
       for (field = fields.begin(); field != field_end; ++field)
       {
-         const xml_element * field_element = GetPointer<const xml_element>(*field);
+         const auto * field_element = GetPointer<const xml_element>(*field);
          if(!field_element)
             continue;
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Read field " + field_element->get_name());

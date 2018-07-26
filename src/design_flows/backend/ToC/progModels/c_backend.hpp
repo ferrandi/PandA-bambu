@@ -210,7 +210,7 @@ class CBackend : public DesignFlowStep
             const CBackendInformationConstRef c_backend_information,
             const DesignFlowManagerConstRef design_flow_manager,
             const application_managerConstRef AppM,
-            const std::string& file_name,
+            std::string  file_name,
             const ParameterConstRef Param);
 
    public:

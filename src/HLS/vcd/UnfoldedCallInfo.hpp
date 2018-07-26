@@ -53,7 +53,7 @@ class UnfoldedCallInfo : public EdgeInfo
       UnfoldedCallInfo(unsigned int _call_id, bool _is_direct = true)
          : call_id(_call_id), is_direct(_is_direct) {};
 
-      ~UnfoldedCallInfo() override {};
+      ~UnfoldedCallInfo() override = default;;
 };
 
 typedef refcount<UnfoldedCallInfo> UnfoldedCallInfoRef;

@@ -49,7 +49,7 @@ DesignFlowFactory::DesignFlowFactory(const DesignFlowManagerConstRef _design_flo
 {}
 
 DesignFlowFactory::~DesignFlowFactory()
-{}
+= default;
 
 const std::string DesignFlowFactory::GetPrefix() const
 {

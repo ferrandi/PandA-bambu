@@ -63,7 +63,7 @@ SymbolicApplicationFrontendFlowStep::SymbolicApplicationFrontendFlowStep(const a
 }
 
 SymbolicApplicationFrontendFlowStep::~SymbolicApplicationFrontendFlowStep()
-{}
+= default;
 
 const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship> > SymbolicApplicationFrontendFlowStep::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {

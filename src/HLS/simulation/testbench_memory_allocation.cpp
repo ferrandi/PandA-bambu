@@ -73,7 +73,7 @@ TestbenchMemoryAllocation::TestbenchMemoryAllocation
 {}
 
 TestbenchMemoryAllocation::~TestbenchMemoryAllocation()
-{}
+= default;
 
 DesignFlowStep_Status TestbenchMemoryAllocation::Exec()
 {

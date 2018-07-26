@@ -61,8 +61,7 @@ OpCdgComputation::OpCdgComputation(const ParameterConstRef _Param, const applica
 }
 
 OpCdgComputation::~OpCdgComputation()
-{
-}
+= default;
 
 const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship> > OpCdgComputation::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {

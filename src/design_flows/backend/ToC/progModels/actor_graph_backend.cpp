@@ -82,4 +82,4 @@ ActorGraphBackend::ActorGraphBackend(const PartitioningManagerConstRef _partitio
 {}
 
 ActorGraphBackend::~ActorGraphBackend()
-{}
+= default;

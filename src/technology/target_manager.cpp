@@ -57,9 +57,7 @@ target_manager::target_manager(const ParameterConstRef _Param, const technology_
 }
 
 target_manager::~target_manager()
-{
-
-}
+= default;
 
 void target_manager::set_technology_manager(const technology_managerRef _TM)
 {

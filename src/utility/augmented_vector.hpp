@@ -44,8 +44,8 @@
 
 #ifndef AUGMENTED_VECTOR_HPP
 #define AUGMENTED_VECTOR_HPP
-#include <math.h>                  // for sqrtl
-#include <stddef.h>                // for size_t, ptrdiff_t
+#include <cmath>                  // for sqrtl
+#include <cstddef>                // for size_t, ptrdiff_t
 #include <boost/lexical_cast.hpp>  // for lexical_cast
 #include <string>                  // for string
 #include <vector>                  // for vector
@@ -63,7 +63,7 @@ class AugmentedVector
        * Empty Constructor
        */
       AugmentedVector<T>()
-      {}
+      = default;
 
       /**
        * Construct a vector composed by size element

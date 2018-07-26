@@ -68,8 +68,7 @@ bb_feedback_edges_computation::bb_feedback_edges_computation(const ParameterCons
 
 
 bb_feedback_edges_computation::~bb_feedback_edges_computation()
-{
-}
+= default;
 
 const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship> > bb_feedback_edges_computation::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {

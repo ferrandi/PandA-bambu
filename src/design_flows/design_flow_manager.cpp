@@ -142,8 +142,7 @@ DesignFlowManager::DesignFlowManager(const ParameterConstRef _parameters) :
 }
 
 DesignFlowManager::~DesignFlowManager()
-{
-}
+= default;
 
 size_t DesignFlowManager::step_counter = 0;
 

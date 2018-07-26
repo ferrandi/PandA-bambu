@@ -100,7 +100,7 @@ class BambuParameter : public Parameter
       /**
        * Destructor
        */
-      ~BambuParameter() override {}
+      ~BambuParameter() override = default;
 
       /**
        * Execute parameter parsing

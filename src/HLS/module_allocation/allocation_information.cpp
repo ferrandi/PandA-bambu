@@ -39,7 +39,7 @@
  *
 */
 #include "allocation_information.hpp"
-#include <math.h>                    // for exp, ceil
+#include <cmath>                    // for exp, ceil
 #include <limits>                    // for numeric_limits
 #include "Parameter.hpp"            // for ParameterConstRef
 #include "allocation.hpp"            // for Allocation_MinMax, Allocation_Mi...
@@ -84,9 +84,9 @@ const std::pair<const CustomMap<unsigned int, std::unordered_map<unsigned int, d
       const technology_managerRef TM = allocation_information->hls_manager->get_HLS_target()->get_technology_manager();
       technology_nodeRef f_unit_mux = TM->get_fu(MUX_N_TO_1, LIBRARY_STD_FU);
       THROW_ASSERT(f_unit_mux, "Library miss component: " + std::string(MUX_N_TO_1));
-      functional_unit_template * fu_br= GetPointer<functional_unit_template>(f_unit_mux);
+      auto * fu_br= GetPointer<functional_unit_template>(f_unit_mux);
       technology_nodeRef op_mux_node =GetPointer<functional_unit>(fu_br->FU)->get_operation(MUX_N_TO_1);
-      operation * op_mux = GetPointer<operation>(op_mux_node);
+      auto * op_mux = GetPointer<operation>(op_mux_node);
       std::string temp_portsize_parameters = op_mux->portsize_parameters;
       std::vector<unsigned int> mux_precisions;
       mux_precisions.push_back(1);mux_precisions.push_back(8);mux_precisions.push_back(16);mux_precisions.push_back(32);mux_precisions.push_back(64);
@@ -123,9 +123,9 @@ const std::pair<const CustomMap<unsigned int, std::unordered_map<unsigned int, d
                double cur_area = GetPointer<clb_model>(a_m)->get_resource_value(clb_model::SLICE_LUTS);
                if(cur_area == 0.0)
                   cur_area = GetPointer<clb_model>(a_m)->get_area_value();
-               unsigned int n_inputs_value = boost::lexical_cast<unsigned int>(n_inputs);
+               auto n_inputs_value = boost::lexical_cast<unsigned int>(n_inputs);
                mux_area_db[module_prec][n_inputs_value] = cur_area;
-               operation* fu_cur_operation = GetPointer<operation>(fu_cur->get_operation(MUX_N_TO_1));
+               auto* fu_cur_operation = GetPointer<operation>(fu_cur->get_operation(MUX_N_TO_1));
                mux_timing_db[module_prec][n_inputs_value] = fu_cur_operation->time_m->get_execution_time() * allocation_information->time_multiplier * allocation_information->mux_time_multiplier;
             }
          }
@@ -215,7 +215,7 @@ AllocationInformation::AllocationInformation(const HLS_managerRef _hls_manager, 
 }
 
 AllocationInformation::~AllocationInformation()
-{}
+= default;
 
 double AllocationInformation::time_m_execution_time(operation* op) const
 {
@@ -307,7 +307,7 @@ double AllocationInformation::get_execution_time(const unsigned int fu_name, uns
             std::string library = HLS_T->get_technology_manager()->get_library(component_name);
             technology_nodeRef f_unit_alias = HLS_T->get_technology_manager()->get_fu(component_name, library);
             THROW_ASSERT(f_unit_alias, "Library miss component: " + component_name);
-            functional_unit * fu_alias= GetPointer<functional_unit>(f_unit_alias);
+            auto * fu_alias= GetPointer<functional_unit>(f_unit_alias);
             technology_nodeRef op_alias_node =fu_alias->get_operation(operation_name);
             operation * op_alias = op_alias_node ? GetPointer<operation>(op_alias_node) : GetPointer<operation>(fu_alias->get_operations().front());
             const auto ret = time_m_stage_period(op_alias);
@@ -337,7 +337,7 @@ double AllocationInformation::get_execution_time(const unsigned int fu_name, uns
       std::string library = HLS_T->get_technology_manager()->get_library(component_name);
       technology_nodeRef f_unit_alias = HLS_T->get_technology_manager()->get_fu(component_name, library);
       THROW_ASSERT(f_unit_alias, "Library miss component: " + component_name);
-      functional_unit * fu_alias= GetPointer<functional_unit>(f_unit_alias);
+      auto * fu_alias= GetPointer<functional_unit>(f_unit_alias);
       ///FIXME: here we are passing fu_name and not the index of the alias function which does not exists; however fu_name is used to identifiy if the operation is mapped on the DSP, so for non DSP operations works
       technology_nodeRef op_alias_node = fu_alias->get_operation(operation_name);
       op_alias_node = op_alias_node ? op_alias_node : fu_alias->get_operations().front();
@@ -372,7 +372,7 @@ double AllocationInformation::get_attribute_of_fu_per_op(const vertex v, const O
 
    std::string op_name = tree_helper::normalized_ID(g->CGetOpNodeInfo(v)->GetOperation());
    const std::set<unsigned int>::const_iterator f_end = fu_set.end();
-   std::set<unsigned int>::const_iterator f_i = fu_set.begin();
+   auto f_i = fu_set.begin();
    flag = false;
    while (CF && f_i != f_end && ((*CF)(*f_i) <= 0 || (binding.find(node_id) != binding.end()  && binding.find(node_id)->second.second != *f_i))) ++f_i;
    if (f_i == f_end) return -1.0;
@@ -481,7 +481,7 @@ unsigned int AllocationInformation::min_number_of_resources(const vertex v) cons
    unsigned int min_num_res = INFINITE_UINT;
    const std::set<unsigned int>::const_iterator f_end = fu_set.end();
 
-   for (std::set<unsigned int>::const_iterator f_i = fu_set.begin(); f_i != f_end; ++f_i)
+   for (auto f_i = fu_set.begin(); f_i != f_end; ++f_i)
    {
       unsigned int num_res = tech_constraints[*f_i];
       THROW_ASSERT(num_res != 0, "something of wrong happen");
@@ -508,8 +508,8 @@ double AllocationInformation::get_worst_execution_time(const unsigned int fu_nam
       return 0.0;
    const functional_unit::operation_vec node_ops = GetPointer<functional_unit>(list_of_FU[fu_name])->get_operations();
    double max_value = 0.0;
-   functional_unit::operation_vec::const_iterator no_it_end = node_ops.end();
-   for(functional_unit::operation_vec::const_iterator no_it = node_ops.begin(); no_it != no_it_end; ++no_it)
+   auto no_it_end = node_ops.end();
+   for(auto no_it = node_ops.begin(); no_it != no_it_end; ++no_it)
       max_value = std::max(max_value,  get_execution_time_dsp_modified(fu_name, *no_it));
    return max_value;
 }
@@ -885,7 +885,7 @@ double AllocationInformation::get_stage_period(const unsigned int fu_name, const
       std::string library = HLS_T->get_technology_manager()->get_library(component_name);
       technology_nodeRef f_unit_alias = HLS_T->get_technology_manager()->get_fu(component_name, library);
       THROW_ASSERT(f_unit_alias, "Library miss component: " + component_name);
-      functional_unit * fu_alias= GetPointer<functional_unit>(f_unit_alias);
+      auto * fu_alias= GetPointer<functional_unit>(f_unit_alias);
       technology_nodeRef op_alias_node = fu_alias->get_operation(operation_t);
       operation * op_alias = op_alias_node ? GetPointer<operation>(op_alias_node) : GetPointer<operation>(fu_alias->get_operations().front());
       return time_m_stage_period(op_alias);
@@ -1020,8 +1020,8 @@ double AllocationInformation::get_worst_stage_period(const unsigned int fu_name)
       return 0.0;
    const functional_unit::operation_vec node_ops = GetPointer<functional_unit>(list_of_FU[fu_name])->get_operations();
    double max_value = 0.0;
-   functional_unit::operation_vec::const_iterator no_it_end = node_ops.end();
-   for(functional_unit::operation_vec::const_iterator no_it = node_ops.begin(); no_it != no_it_end; ++no_it)
+   auto no_it_end = node_ops.end();
+   for(auto no_it = node_ops.begin(); no_it != no_it_end; ++no_it)
       max_value = std::max(max_value, get_stage_period_dsp_modified(fu_name, *no_it));
    return max_value;
 }
@@ -1040,7 +1040,7 @@ unsigned int AllocationInformation::max_number_of_resources(const vertex v) cons
    unsigned int tot_num_res = 0;
    const std::set<unsigned int>::const_iterator f_end = fu_set.end();
 
-   for (std::set<unsigned int>::const_iterator f_i = fu_set.begin(); f_i != f_end; ++f_i)
+   for (auto f_i = fu_set.begin(); f_i != f_end; ++f_i)
    {
       unsigned int num_res = tech_constraints[*f_i];
       THROW_ASSERT(num_res != 0, "something of wrong happen");
@@ -1084,7 +1084,7 @@ void AllocationInformation::GetNodeTypePrec(const vertex node, const OpGraphCons
    unsigned int max_size_in = 0;
    unsigned int min_n_elements = 0;
    bool is_cond_expr_bool_test = false;
-   for (std::vector<HLS_manager::io_binding_type>::iterator itr = vars_read.begin(), end = vars_read.end(); itr != end; ++itr, ++index)
+   for (auto itr = vars_read.begin(), end = vars_read.end(); itr != end; ++itr, ++index)
    {
       unsigned int id = std::get<0>(*itr);
       if (id && !first_valid_id)
@@ -1514,9 +1514,9 @@ double AllocationInformation::mux_time_unit_raw(unsigned int fu_prec) const
    const technology_managerRef TM = HLS_T->get_technology_manager();
    technology_nodeRef f_unit_mux = TM->get_fu(MUX_GATE_STD + STR("_1_") + STR(fu_prec) + "_" + STR(fu_prec) + "_" + STR(fu_prec), LIBRARY_STD_FU);
    THROW_ASSERT(f_unit_mux, "Library miss component: " + std::string(MUX_GATE_STD)+ STR("_1_") + STR(fu_prec) + "_" + STR(fu_prec) + "_" + STR(fu_prec));
-   functional_unit * fu_br= GetPointer<functional_unit>(f_unit_mux);
+   auto * fu_br= GetPointer<functional_unit>(f_unit_mux);
    technology_nodeRef op_mux_node =fu_br->get_operation(MUX_GATE_STD);
-   operation * op_mux = GetPointer<operation>(op_mux_node);
+   auto * op_mux = GetPointer<operation>(op_mux_node);
    double mux_delay = time_m_execution_time(op_mux)-get_setup_hold_time();
    if(mux_delay<=0.0) mux_delay = get_setup_hold_time()/2;
 //#define MUX_MARGIN 1.3
@@ -1527,9 +1527,9 @@ double AllocationInformation::mux_time_unit_raw(unsigned int fu_prec) const
 
 void AllocationInformation::print(std::ostream& os) const
 {
-   std::vector<technology_nodeRef>::const_iterator fu_end = list_of_FU.end();
+   auto fu_end = list_of_FU.end();
    unsigned int index = 0;
-   for (std::vector<technology_nodeRef>::const_iterator fu =  list_of_FU.begin(); fu != fu_end; ++fu)
+   for (auto fu =  list_of_FU.begin(); fu != fu_end; ++fu)
    {
       os << index << " ";
       index++;
@@ -1558,7 +1558,7 @@ void AllocationInformation::print_allocated_resources() const
             continue;
          PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "  Vertex " + STR(bind.first));
          PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "    Corresponding operation: " + tree_helper::normalized_ID(GetPointer<const gimple_node>(TreeM->get_tree_node_const(bind.first))->operation) + "(" + STR(bind.second.second) + ")");
-         functional_unit* fu = dynamic_cast<functional_unit*>(GetPointer<functional_unit>(list_of_FU[bind.second.second]));
+         auto* fu = dynamic_cast<functional_unit*>(GetPointer<functional_unit>(list_of_FU[bind.second.second]));
          PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "    Vertex bound to: " + fu->get_name());
       }
 
@@ -1571,7 +1571,7 @@ void AllocationInformation::print_allocated_resources() const
          PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "    Operation can be implemented by the following FUs:");
          for(const auto fu_id : bind.second)
          {
-            functional_unit* fu = dynamic_cast<functional_unit*>(GetPointer<functional_unit>(list_of_FU[fu_id]));
+            auto* fu = dynamic_cast<functional_unit*>(GetPointer<functional_unit>(list_of_FU[fu_id]));
             PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "      FU name: " + fu->get_name()+ "(" + STR(fu_id) + ")");
          }
       }
@@ -2073,7 +2073,7 @@ double AllocationInformation::mux_area_unit_raw(unsigned int fu_prec) const
    const technology_managerRef TM = HLS_T->get_technology_manager();
    technology_nodeRef f_unit_mux = TM->get_fu(MUX_GATE_STD + STR("_1_") + STR(fu_prec) + "_" + STR(fu_prec) + "_" + STR(fu_prec), LIBRARY_STD_FU);
    THROW_ASSERT(f_unit_mux, "Library miss component: " + std::string(MUX_GATE_STD) + STR("_1_") + STR(fu_prec) + "_" + STR(fu_prec) + "_" + STR(fu_prec));
-   functional_unit * fu_mux= GetPointer<functional_unit>(f_unit_mux);
+   auto * fu_mux= GetPointer<functional_unit>(f_unit_mux);
    double area = GetPointer<clb_model>(fu_mux->area_m)->get_resource_value(clb_model::SLICE_LUTS);
    if(area == 0.0)
       area = fu_mux->area_m->get_area_value()-1.0;
@@ -2112,9 +2112,9 @@ double AllocationInformation::EstimateControllerDelay() const
    const technology_managerRef TM = HLS_T->get_technology_manager();
    technology_nodeRef f_unit = TM->get_fu(MULTIPLIER_STD + std::string("_") + STR(fu_prec) + "_" + STR(fu_prec) + "_" + STR(fu_prec) + "_0", LIBRARY_STD_FU);
    THROW_ASSERT(f_unit, "Library miss component: " + std::string(MULTIPLIER_STD)+ std::string("_") + STR(fu_prec) + "_" + STR(fu_prec) + "_" + STR(fu_prec) + "_0");
-   functional_unit * fu= GetPointer<functional_unit>(f_unit);
+   auto * fu= GetPointer<functional_unit>(f_unit);
    technology_nodeRef op_node =fu->get_operation("mult_expr");
-   operation * op = GetPointer<operation>(op_node);
+   auto * op = GetPointer<operation>(op_node);
    double delay = time_m_execution_time(op);
    delay = delay*controller_delay_multiplier*1.1*(1-exp(-n_states_factor));
    if(delay<2*get_setup_hold_time())
@@ -2297,11 +2297,11 @@ double AllocationInformation::get_correction_time(unsigned int fu, const std::st
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Applying memory correction for PROXY for var:"+STR(var));
       if(Rmem->is_read_only_variable(var))
           is_read_only_correction = true;
-      functional_unit * fu_cur= GetPointer<functional_unit>(current_fu);
+      auto * fu_cur= GetPointer<functional_unit>(current_fu);
       technology_nodeRef op_cur_node =fu_cur->get_operation(operation_name);
       std::string latency_postfix = (memory_ctrl_type == MEMORY_CTRL_TYPE_DPROXY || memory_ctrl_type == MEMORY_CTRL_TYPE_DPROXYN) ? "" : get_latency_string(fu_cur->bram_load_latency);
 
-      operation * op_cur = GetPointer<operation>(op_cur_node);
+      auto * op_cur = GetPointer<operation>(op_cur_node);
       double cur_exec_time = op_cur->time_m->get_initiation_time() != 0u ? time_m_stage_period(op_cur) : time_m_execution_time(op_cur);
       double cur_exec_delta;
       technology_nodeRef f_unit_sds;
@@ -2353,9 +2353,9 @@ double AllocationInformation::get_correction_time(unsigned int fu, const std::st
          elmt_bitsize = Rmem->get_bram_bitsize();
       }
       THROW_ASSERT(f_unit_sds, "Library miss component");
-      functional_unit * fu_sds= GetPointer<functional_unit>(f_unit_sds);
+      auto * fu_sds= GetPointer<functional_unit>(f_unit_sds);
       technology_nodeRef op_sds_node =fu_sds->get_operation(operation_name);
-      operation * op_sds = GetPointer<operation>(op_sds_node);
+      auto * op_sds = GetPointer<operation>(op_sds_node);
       double cur_sds_exec_time = op_sds->time_m->get_initiation_time() != 0u ? time_m_stage_period(op_sds) : time_m_execution_time(op_sds);
       cur_exec_delta = cur_exec_time - cur_sds_exec_time;
       res_value = res_value + cur_exec_delta;
@@ -2401,9 +2401,9 @@ double AllocationInformation::get_correction_time(unsigned int fu, const std::st
       if(fu_prec>1)
       {
          technology_nodeRef f_unit_ce = TM->get_fu(get_fu_name(fu).first, LIBRARY_STD_FU);
-         functional_unit * fu_ce= GetPointer<functional_unit>(f_unit_ce);
+         auto * fu_ce= GetPointer<functional_unit>(f_unit_ce);
          technology_nodeRef op_ce_node =fu_ce->get_operation("cond_expr");
-         operation * op_ce = GetPointer<operation>(op_ce_node);
+         auto * op_ce = GetPointer<operation>(op_ce_node);
          double setup_time=get_setup_hold_time();
          double ce_delay = time_m_execution_time(op_ce)-setup_time;
          double correction = ce_delay-true_delay;
@@ -2414,9 +2414,9 @@ double AllocationInformation::get_correction_time(unsigned int fu, const std::st
    {
       const technology_managerRef TM = HLS_T->get_technology_manager();
       technology_nodeRef f_unit_ce = TM->get_fu(get_fu_name(fu).first, LIBRARY_STD_FU);
-      functional_unit * fu_ce= GetPointer<functional_unit>(f_unit_ce);
+      auto * fu_ce= GetPointer<functional_unit>(f_unit_ce);
       technology_nodeRef op_ce_node =fu_ce->get_operation(operation_name);
-      operation * op_ce = GetPointer<operation>(op_ce_node);
+      auto * op_ce = GetPointer<operation>(op_ce_node);
       double setup_time=get_setup_hold_time();
       double ce_delay = time_m_execution_time(op_ce)-setup_time;
       double correction = ce_delay;
@@ -2473,8 +2473,8 @@ double AllocationInformation::estimate_call_delay() const
       call_delay = ctrl_delay;
    ///Check if the operation mapped on this fu is bounded
    std::string function_name = behavioral_helper->get_function_name(); 
-   functional_unit* fu = GetPointer<functional_unit>(HLS_T->get_technology_manager()->get_fu(function_name, WORK_LIBRARY));
-   operation* op = GetPointer<operation>(fu->get_operation(function_name));
+   auto* fu = GetPointer<functional_unit>(HLS_T->get_technology_manager()->get_fu(function_name, WORK_LIBRARY));
+   auto* op = GetPointer<operation>(fu->get_operation(function_name));
    if(not op->bounded)
    {
       ///Add delay due to multiplexer in front of the input; the multiplexer has as input the actual input used in first clock cycle and the registered input used in the following cycles
@@ -2557,8 +2557,8 @@ unsigned int AllocationInformation::get_worst_number_of_cycles(const unsigned in
       return 0;
    const functional_unit::operation_vec node_ops = GetPointer<functional_unit>(list_of_FU[fu_name])->get_operations();
    unsigned int max_value = 0;
-   functional_unit::operation_vec::const_iterator no_it_end = node_ops.end();
-   for(functional_unit::operation_vec::const_iterator no_it = node_ops.begin(); no_it != no_it_end; ++no_it) max_value = std::max(max_value, GetPointer<operation>(*no_it)->time_m->get_cycles());
+   auto no_it_end = node_ops.end();
+   for(auto no_it = node_ops.begin(); no_it != no_it_end; ++no_it) max_value = std::max(max_value, GetPointer<operation>(*no_it)->time_m->get_cycles());
    return max_value;
 }
 
@@ -3065,7 +3065,7 @@ double AllocationInformation::GetConnectionTime(const unsigned int first_operati
 bool AllocationInformation::can_be_asynchronous_ram(tree_managerConstRef TM, unsigned int var, unsigned int threshold, bool is_read_only_variable)
 {
    tree_nodeRef var_node = TM->get_tree_node_const(var);
-   var_decl* vd = GetPointer<var_decl>(var_node);
+   auto* vd = GetPointer<var_decl>(var_node);
    unsigned int var_bitsize = tree_helper::Size(var_node);
    if(is_read_only_variable)
    {

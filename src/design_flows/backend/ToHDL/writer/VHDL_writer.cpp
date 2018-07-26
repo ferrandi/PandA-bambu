@@ -184,9 +184,7 @@ VHDL_writer::VHDL_writer(const technology_managerConstRef _TM, const ParameterCo
 }
 
 VHDL_writer::~VHDL_writer()
-{
-
-}
+= default;
 
 void VHDL_writer::write_comment(const std::string&comment_string)
 {
@@ -249,7 +247,7 @@ std::string VHDL_writer::type_converter_size(const structural_objectRef &cir)
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---type_converter_size of " + cir->get_path());
    structural_type_descriptorRef Type = cir->get_typeRef();
    const structural_objectRef Owner = cir->get_owner();
-   module * mod = GetPointer<module>(Owner);
+   auto * mod = GetPointer<module>(Owner);
    std::string port_name = cir->get_id();
    bool specialization_string=false;
    //std::cerr << "cir: " << cir->get_id() << " " << GetPointer<port_o>(cir)->size_parameter << std::endl;
@@ -471,7 +469,7 @@ void VHDL_writer::write_port_declaration(const structural_objectRef &cir, bool l
 
 void VHDL_writer::write_component_declaration(const structural_objectRef &cir)
 {
-   module * mod = GetPointer<module>(cir);
+   auto * mod = GetPointer<module>(cir);
    THROW_ASSERT(mod, "Expected a module got a " + cir->get_kind_text() + ": " + cir->get_path());
 
    const std::string comp = HDL_manager::get_mod_typename(this, cir);
@@ -664,9 +662,9 @@ void VHDL_writer::write_vector_port_binding(const structural_objectRef &port, bo
             }
             else if(object_bounded->get_kind() == constant_o_K)
             {
-               constant_o *con = GetPointer<constant_o>(object_bounded);
+               auto *con = GetPointer<constant_o>(object_bounded);
                std::string trimmed_value = "";
-               unsigned long long int long_value = boost::lexical_cast<unsigned long long int>(con->get_value());
+               auto long_value = boost::lexical_cast<unsigned long long int>(con->get_value());
                for(unsigned int ind = 0; ind < GET_TYPE_SIZE(con); ind++)
                   trimmed_value = trimmed_value + (((1LLU << (GET_TYPE_SIZE(con)-ind-1)) & long_value) ? '1' : '0');
                if(single_port_size == 1 and object_bounded->get_typeRef()->type == structural_type_descriptor::BOOL)
@@ -734,9 +732,9 @@ void VHDL_writer::write_port_binding(const structural_objectRef &port, const str
    THROW_ASSERT(object_bounded->get_kind() != port_o_K || object_bounded->get_owner(), "A port has to have always an owner");
    if (object_bounded->get_kind() == constant_o_K)
    {
-      constant_o * con = GetPointer<constant_o>(object_bounded);
+      auto * con = GetPointer<constant_o>(object_bounded);
       std::string trimmed_value = "";
-      unsigned long long int long_value = boost::lexical_cast<unsigned long long int>(con->get_value());
+      auto long_value = boost::lexical_cast<unsigned long long int>(con->get_value());
       for(unsigned int ind = 0; ind < GET_TYPE_SIZE(con); ind++)
          trimmed_value = trimmed_value + (((1LLU << (GET_TYPE_SIZE(con)-ind-1)) & long_value) ? '1' : '0');
       if(port->get_typeRef()->type == structural_type_descriptor::VECTOR_BOOL)
@@ -858,7 +856,7 @@ void VHDL_writer::write_module_parametrization(const structural_objectRef &cir)
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Writing module parametrization of " + cir->get_path());
    THROW_ASSERT(cir->get_kind() == component_o_K || cir->get_kind() == channel_o_K, "Expected a component or a channel got something of different");
-   module * mod = GetPointer<module>(cir);
+   auto * mod = GetPointer<module>(cir);
    ///writing memory-related parameters
 #if 0
    if (mod->is_parameter(MEMORY_PARAMETER))
@@ -1070,12 +1068,12 @@ void VHDL_writer::write_tail(const structural_objectRef &)
 
 void VHDL_writer::write_state_declaration(const structural_objectRef &, const std::list<std::string> &list_of_states, const std::string&, const std::string&, bool one_hot)
 {
-   std::list<std::string>::const_iterator it_end = list_of_states.end();
+   auto it_end = list_of_states.end();
    size_t n_states = list_of_states.size();
    unsigned int bitsnumber = language_writer::bitnumber(static_cast<unsigned int>(n_states-1));
    /// adjust in case states are not consecutives
    unsigned max_value = 0;
-   for(std::list<std::string>::const_iterator it = list_of_states.begin(); it != it_end; ++it)
+   for(auto it = list_of_states.begin(); it != it_end; ++it)
    {
       max_value = std::max(max_value, boost::lexical_cast<unsigned int>(it->substr(strlen(STATE_NAME_PREFIX))));
    }
@@ -1102,7 +1100,7 @@ void VHDL_writer::write_state_declaration(const structural_objectRef &, const st
    {
       indented_output_stream->Append("type state_type is (");
       unsigned int count = 0;
-      for(std::list<std::string>::const_iterator it = list_of_states.begin(); it != it_end; ++it)
+      for(auto it = list_of_states.begin(); it != it_end; ++it)
       {
          indented_output_stream->Append(*it);
          count++;
@@ -1162,7 +1160,7 @@ void VHDL_writer::write_present_state_update(const std::string&reset_state, cons
 void VHDL_writer::write_transition_output_functions(bool single_proc, unsigned int output_index, const structural_objectRef &cir, const std::string&reset_state, const std::string&reset_port, const std::string& start_port, const std::string&clock_port, std::vector<std::string>::const_iterator &first, std::vector<std::string>::const_iterator &end)
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Writing transition output function");
-   module * mod = GetPointer<module>(cir);
+   auto * mod = GetPointer<module>(cir);
    boost::char_separator<char> state_sep(":", nullptr);
    boost::char_separator<char> sep(" ", nullptr);
    typedef boost::tokenizer<boost::char_separator<char> > tokenizer;
@@ -1200,7 +1198,7 @@ void VHDL_writer::write_transition_output_functions(bool single_proc, unsigned i
    indented_output_stream->Append(  "case present_state is\n");
    indented_output_stream->Indent();
 
-   for(std::vector<std::string>::const_iterator first_it = first; first_it != end; ++first_it)
+   for(auto first_it = first; first_it != end; ++first_it)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Writing " + *first_it);
       tokenizer state_tokens_first(*first_it, state_sep);
@@ -1332,7 +1330,7 @@ void VHDL_writer::write_transition_output_functions(bool single_proc, unsigned i
                            {
                               unsigned n_bits = vec_size==0 ? port_size : vec_size;
                               res_or_conditions += std::string(" = ");
-                              unsigned int pos = boost::lexical_cast<unsigned int>((*in_or_conditions_tokens_it).substr(1));
+                              auto pos = boost::lexical_cast<unsigned int>((*in_or_conditions_tokens_it).substr(1));
                               std::string one_hot_tag;
                               for(unsigned ih=0; ih<n_bits;++ih)
                                  one_hot_tag = (ih==pos?std::string("1"):std::string("0")) + one_hot_tag;
@@ -1404,7 +1402,7 @@ void VHDL_writer::write_assign(const std::string&, const std::string&)
 
 void VHDL_writer::write_NP_functionalities(const structural_objectRef &cir)
 {
-   module * mod = GetPointer<module>(cir);
+   auto * mod = GetPointer<module>(cir);
    THROW_ASSERT(mod, "Expected a component object");
    const NP_functionalityRef &np = mod->get_NP_functionality();
    THROW_ASSERT(np, "NP Behavioral description is missing for module: "+HDL_manager::convert_to_identifier(this, GET_TYPE_NAME(cir)));
@@ -1445,7 +1443,7 @@ void VHDL_writer::write_module_parametrization_decl(const structural_objectRef &
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Writing generics of entity " + cir->get_id());
    THROW_ASSERT(cir->get_kind() == component_o_K || cir->get_kind() == channel_o_K, "Expected a component or a channel got something of different");
-   module * mod = GetPointer<module>(cir);
+   auto * mod = GetPointer<module>(cir);
    bool first_it = true;
    ///writing memory-related parameters
    if (mod->is_parameter(MEMORY_PARAMETER))

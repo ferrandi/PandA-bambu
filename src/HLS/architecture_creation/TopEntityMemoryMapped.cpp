@@ -79,7 +79,7 @@ TopEntityMemoryMapped::TopEntityMemoryMapped(const ParameterConstRef _parameters
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
-TopEntityMemoryMapped::~TopEntityMemoryMapped() {}
+TopEntityMemoryMapped::~TopEntityMemoryMapped() = default;
 
 void TopEntityMemoryMapped::Initialize()
 {
@@ -370,7 +370,7 @@ TopEntityMemoryMapped::insertStartDoneLogic(
                interfaceObj, HLS->HLS_T->get_technology_manager());
       structural_objectRef port_startOr =
             startOr->find_member("in", port_o_K, startOr);
-      port_o * inPortStartOr = GetPointer<port_o>(port_startOr);
+      auto * inPortStartOr = GetPointer<port_o>(port_startOr);
       inPortStartOr->add_n_ports(2, port_startOr);
 
       SM_mm->add_connection(interfaceObj->find_member(START_PORT_NAME, port_o_K, interfaceObj),
@@ -568,11 +568,11 @@ propagateInterface(structural_managerRef SM,
    THROW_ASSERT(wrappedObj, "Null wrapped object");
    structural_objectRef interfaceObj = SM->get_circ();
 
-   module * wrappedModule = GetPointer<module>(wrappedObj);
+   auto * wrappedModule = GetPointer<module>(wrappedObj);
    for (unsigned int i = 0; i < wrappedModule->get_num_ports(); ++i)
    {
       structural_objectRef port = wrappedModule->get_positional_port(i);
-      port_o * portObj = GetPointer<port_o>(port);
+      auto * portObj = GetPointer<port_o>(port);
 
       std::string portID = portObj->get_id();
       if (portID != CLOCK_PORT_NAME && portID != RESET_PORT_NAME &&
@@ -641,11 +641,11 @@ connectClockAndReset(
    static void
 setBusSizes(structural_objectRef component, memoryRef Mem)
 {
-   module * componentModule = GetPointer<module>(component);
+   auto * componentModule = GetPointer<module>(component);
    for (unsigned int i = 0; i < componentModule->get_num_ports(); ++i)
    {
       structural_objectRef port = componentModule->get_positional_port(i);
-      port_o * portObj = GetPointer<port_o>(port);
+      auto * portObj = GetPointer<port_o>(port);
       if (portObj->get_is_data_bus()) portObj->type_resize(Mem->get_bus_data_bitsize());
       else if (portObj->get_is_addr_bus()) portObj->type_resize(Mem->get_bus_addr_bitsize());
       else if (portObj->get_is_size_bus()) portObj->type_resize(Mem->get_bus_size_bitsize());

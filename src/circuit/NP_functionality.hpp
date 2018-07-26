@@ -133,13 +133,13 @@ class NP_functionality
 
   public:
     /// Constructor.
-    NP_functionality() {}
+    NP_functionality() = default;
 
     /// Constructor.
     explicit NP_functionality(const NP_functionalityRef& obj);
 
     /// Destructor.
-    ~NP_functionality() {}
+    ~NP_functionality() = default;
 
     /**
      * Add a non SystemC based description.

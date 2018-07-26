@@ -42,6 +42,8 @@
 */
 
 #include "parametric_list_based.hpp"
+
+#include <utility>
 // #include "call_graph.hpp"
 #include "function_behavior.hpp"
 #include "exceptions.hpp"
@@ -85,7 +87,7 @@
 
 #if ! HAVE_UNORDERED
 PrioritySorter::PrioritySorter(refcount<priority_data<int> > _priority, const OpGraphConstRef _op_graph) :
-   priority(_priority),
+   priority(std::move(_priority)),
    op_graph(_op_graph)
 {}
 
@@ -131,7 +133,7 @@ struct cs_ordering_functor
       /**
        * Destructor
        */
-      ~cs_ordering_functor() {}
+      ~cs_ordering_functor() = default;
 
 };
 
@@ -183,7 +185,7 @@ struct resource_ordering_functor
       /**
        * Destructor
        */
-      ~resource_ordering_functor() {}
+      ~resource_ordering_functor() = default;
 
 };
 
@@ -256,7 +258,7 @@ class edge_integer_order_by_map : std::binary_function<vertex, vertex, bool>
 static
 bool check_if_is_live_in_next_cycle(const std::set<vertex, cs_ordering_functor> &live_vertices, const ControlStep current_cycle, const OpVertexMap<double> & ending_time, double clock_cycle)
 {
-   std::set<vertex, cs_ordering_functor>::const_iterator live_vertex_it = live_vertices.begin();
+   auto live_vertex_it = live_vertices.begin();
    while(live_vertex_it != live_vertices.end())
    {
       if(ending_time.find(*live_vertex_it)->second > (from_strongtype_cast<double>(current_cycle) + 1) * clock_cycle)
@@ -304,9 +306,7 @@ parametric_list_based::parametric_list_based(const ParameterConstRef _parameters
 }
 
 parametric_list_based::~parametric_list_based()
-{
-
-}
+= default;
 
 void parametric_list_based::ComputeRelationships(DesignFlowStepSet & relationship, const DesignFlowStep::RelationshipType relationship_type)
 {
@@ -522,7 +522,7 @@ void parametric_list_based::exec(const OpVertexSet & operations, ControlStep cur
       CustomMap<unsigned int, OpVertexSet > black_list;
 
       ///Adding information about operation still live
-      std::set<vertex, cs_ordering_functor>::const_iterator live_vertex_it = live_vertices.begin();
+      auto live_vertex_it = live_vertices.begin();
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "         Considering live vertices...");
       while(live_vertex_it != live_vertices.end())
       {
@@ -566,7 +566,7 @@ void parametric_list_based::exec(const OpVertexSet & operations, ControlStep cur
          while(ready_resources.size())
          {
             unsigned int fu_type;
-            std::set<unsigned int, resource_ordering_functor>::const_iterator best_res_it = ready_resources.begin();
+            auto best_res_it = ready_resources.begin();
             fu_type = *best_res_it;
 
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering functional unit type " + STR(fu_type) + "("+ HLS->allocation_information->get_fu_name(fu_type).first + "-" + HLS->allocation_information->get_fu_name(fu_type).second + ")" + " at clock cycle " + STR(current_cycle));
@@ -876,7 +876,7 @@ void parametric_list_based::exec(const OpVertexSet & operations, ControlStep cur
                   }
                   //successors.sort();
 
-                  for(std::list<std::pair<std::string, vertex> >::iterator s = successors.begin(); s != successors.end(); ++s)
+                  for(auto s = successors.begin(); s != successors.end(); ++s)
                   {
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Considering successor " + s->first);
                      scheduled_predecessors[s->second]++;
@@ -912,8 +912,8 @@ void parametric_list_based::exec(const OpVertexSet & operations, ControlStep cur
             CustomMap<unsigned int, OpVertexSet >::const_iterator bl_end = postponed_resources.end();
             for(CustomMap<unsigned int, OpVertexSet >::const_iterator bl_it = postponed_resources.begin(); bl_it != bl_end; ++bl_it)
             {
-               OpVertexSet::const_iterator v_end = bl_it->second.end();
-               for(OpVertexSet::const_iterator v = bl_it->second.begin(); v != v_end; ++v)
+               auto v_end = bl_it->second.end();
+               for(auto v = bl_it->second.begin(); v != v_end; ++v)
                {
 #if HAVE_UNORDERED
                   priority_queues[bl_it->first].push(*v);
@@ -935,8 +935,8 @@ void parametric_list_based::exec(const OpVertexSet & operations, ControlStep cur
       CustomMap<unsigned int, OpVertexSet >::const_iterator bl_end = black_list.end();
       for(CustomMap<unsigned int, OpVertexSet >::const_iterator bl_it = black_list.begin(); bl_it != bl_end; ++bl_it)
       {
-         OpVertexSet::const_iterator v_end = bl_it->second.end();
-         for(OpVertexSet::const_iterator v = bl_it->second.begin(); v != v_end; ++v)
+         auto v_end = bl_it->second.end();
+         for(auto v = bl_it->second.begin(); v != v_end; ++v)
          {
 #if HAVE_UNORDERED
             priority_queues[bl_it->first].push(*v);
@@ -971,7 +971,7 @@ void parametric_list_based::exec(const OpVertexSet & operations, ControlStep cur
       const OpGraphConstRef opDFG = FB->CGetOpGraph(FunctionBehavior::DFG, operations);
       const std::deque<vertex>& levels = FB->get_levels();
       std::deque<vertex> sub_levels;
-      for(std::deque<vertex>::const_reverse_iterator rit = levels.rbegin(); rit != levels.rend(); ++rit)
+      for(auto rit = levels.rbegin(); rit != levels.rend(); ++rit)
       {
          vertex candidate_v = *rit;
          if(operations.find(candidate_v) == operations.end()) continue;
@@ -1209,7 +1209,7 @@ void parametric_list_based::add_to_priority_queues(PriorityQueues & priority_que
    {
       const std::set<unsigned int> & fu_set = HLS->allocation_information->can_implement_set(v);
       const std::set<unsigned int>::const_iterator fu_set_it_end = fu_set.end();
-      for(std::set<unsigned int>::const_iterator fu_set_it = fu_set.begin(); fu_set_it != fu_set_it_end; ++fu_set_it)
+      for(auto fu_set_it = fu_set.begin(); fu_set_it != fu_set_it_end; ++fu_set_it)
       {
 #if HAVE_UNORDERED
          priority_queue[*fu_set_it].push(v);

@@ -97,7 +97,7 @@ struct CdfgEdgeInfo : public EdgeInfo
    public:
       /// Constructor
       CdfgEdgeInfo()
-      {}
+      = default;
 
       /**
        * Function returning true when the edge is a then control dependence edge 

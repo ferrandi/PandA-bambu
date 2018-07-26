@@ -78,7 +78,7 @@ dom_post_dom_computation::dom_post_dom_computation(const ParameterConstRef _para
 
 
 dom_post_dom_computation::~dom_post_dom_computation()
-{}
+= default;
 
 const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship> > dom_post_dom_computation::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {

@@ -64,9 +64,7 @@ mem_xml_allocation::mem_xml_allocation(const ParameterConstRef _parameters, cons
 }
 
 mem_xml_allocation::~mem_xml_allocation()
-{
-
-}
+= default;
 
 DesignFlowStep_Status mem_xml_allocation::Exec()
 {
@@ -90,7 +88,7 @@ bool mem_xml_allocation::parse_xml_allocation(const std::string& xml_file)
 {
    const tree_managerRef TreeM = HLSMgr->get_tree_manager();
    const HLS_targetRef HLS_T = HLSMgr->get_HLS_target();
-   unsigned int max_bram = HLS_T->get_target_device()->get_parameter<unsigned int>("BRAM_bitsize_max");
+   auto max_bram = HLS_T->get_target_device()->get_parameter<unsigned int>("BRAM_bitsize_max");
    bool initial_internal_address_p = parameters->isOption(OPT_initial_internal_address);
    unsigned int initial_internal_address = initial_internal_address_p ? parameters->getOption<unsigned int>(OPT_initial_internal_address) : std::numeric_limits<unsigned int>::max();
    bool null_pointer_check = true;
@@ -239,14 +237,14 @@ void mem_xml_allocation::finalize_memory_allocation()
    }
    for(auto & int_variable : int_variables)
    {
-      for(std::map<unsigned int, memory_symbolRef>::iterator vIt = int_variable.second.begin(); vIt != int_variable.second.end(); ++vIt)
+      for(auto vIt = int_variable.second.begin(); vIt != int_variable.second.end(); ++vIt)
       {
          HLSMgr->Rmem->add_internal_symbol(int_variable.first, vIt->first, vIt->second);
       }
    }
    for(auto & param_variable : param_variables)
    {
-      for(std::map<unsigned int, memory_symbolRef>::iterator vIt = param_variable.second.begin(); vIt != param_variable.second.end(); ++vIt)
+      for(auto vIt = param_variable.second.begin(); vIt != param_variable.second.end(); ++vIt)
       {
          HLSMgr->Rmem->add_parameter_symbol(param_variable.first, vIt->first, vIt->second);
       }

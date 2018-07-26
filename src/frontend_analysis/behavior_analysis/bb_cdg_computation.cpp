@@ -58,8 +58,7 @@ BBCdgComputation::BBCdgComputation(const ParameterConstRef _Param, const applica
 {}
 
 BBCdgComputation::~BBCdgComputation()
-{
-}
+= default;
 
 const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship> > BBCdgComputation::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
@@ -130,8 +129,8 @@ DesignFlowStep_Status BBCdgComputation::InternalExec()
             std::set<unsigned int> labels = bb->CGetBBEdgeInfo(*ei)->get_labels(CFG_SELECTOR);
             if(labels.size())
             {
-               std::set<unsigned int>::iterator it_end = labels.end();
-               for(std::set<unsigned int>::iterator it = labels.begin(); it != it_end; ++it)
+               auto it_end = labels.end();
+               for(auto it = labels.begin(); it != it_end; ++it)
                {
                   function_behavior->bbgc->add_bb_edge_info(A, current_node, CDG_SELECTOR, *it);
                }

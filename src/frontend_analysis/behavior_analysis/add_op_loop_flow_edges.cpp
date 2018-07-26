@@ -72,8 +72,7 @@ AddOpLoopFlowEdges::AddOpLoopFlowEdges(const ParameterConstRef _parameters, cons
 }
 
 AddOpLoopFlowEdges::~AddOpLoopFlowEdges()
-{
-}
+= default;
 
 const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship> > AddOpLoopFlowEdges::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {

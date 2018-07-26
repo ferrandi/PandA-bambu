@@ -97,7 +97,7 @@ CallGraphManager::CallGraphManager(const FunctionExpanderConstRef _function_expa
 {}
 
 CallGraphManager::~CallGraphManager()
-{}
+= default;
 
 void CallGraphManager::AddFunction(unsigned int new_function_id, const FunctionBehaviorRef fun_behavior)
 {
@@ -170,7 +170,7 @@ void CallGraphManager::AddCallPoint(
          " from function " + STR(caller_id) + " function " + STR(called_id) +
          " was not in the call graph");
 
-   FunctionEdgeInfo * functionEdgeInfo =
+   auto * functionEdgeInfo =
       get_edge_info<FunctionEdgeInfo, CallGraph>(e, *call_graph);
    THROW_ASSERT(call_id, "");
 
@@ -228,7 +228,7 @@ bool CallGraphManager::IsCallPoint(
          " from function " + STR(caller_id) + " function " + STR(called_id) +
          " was not in the call graph");
 
-   FunctionEdgeInfo * functionEdgeInfo =
+   auto * functionEdgeInfo =
       get_edge_info<FunctionEdgeInfo, CallGraph>(e, *call_graph);
 
    bool res = false;
@@ -282,7 +282,7 @@ void CallGraphManager::RemoveCallPoint(EdgeDescriptor e, const unsigned int call
    const unsigned int called_id =
       Cget_node_info<FunctionInfo, CallGraph>(boost::target(e, *call_graph), *call_graph)->nodeID;
 
-   FunctionEdgeInfo * edge_info =
+   auto * edge_info =
       get_edge_info<FunctionEdgeInfo, CallGraph>(e, *call_graph);
    auto & direct_calls = edge_info->direct_call_points;
    auto & indirect_calls = edge_info->indirect_call_points;

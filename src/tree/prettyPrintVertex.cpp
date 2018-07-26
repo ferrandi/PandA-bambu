@@ -67,7 +67,7 @@ void prettyPrintVertex::get_internal_vars(const vertex &v, const OpGraphConstRef
       else if(intermediate_var && BH->is_an_addr_expr(intermediate_var))
       {
          unsigned int var = BH->get_operand_from_unary_expr(intermediate_var);
-         while(1)
+         while(true)
          {
             if (BH->is_a_component_ref(var))
             {

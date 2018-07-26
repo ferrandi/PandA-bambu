@@ -107,6 +107,7 @@
 #include "boost/filesystem.hpp"
 
 #include <iosfwd>
+#include <utility>
 
 #if HAVE_IPXACT_BUILT
 #include "ip_xact_xml.hpp"
@@ -190,11 +191,11 @@ void DesignParameters::xload_design_configuration(const ParameterConstRef DEBUG_
 }
 #endif
 
-BackendFlow::BackendFlow(const ParameterConstRef _Param, const std::string& _flow_name, const target_managerRef _manager) :
+BackendFlow::BackendFlow(const ParameterConstRef _Param, std::string  _flow_name, const target_managerRef _manager) :
    Param(_Param),
    debug_level(_Param->getOption<int>(OPT_debug_level)),
    output_level(_Param->getOption<unsigned int>(OPT_output_level)),
-   flow_name(_flow_name),
+   flow_name(std::move(_flow_name)),
    out_dir(Param->getOption<std::string>(OPT_output_directory) + "/" + flow_name),
    target(_manager),
    root(nullptr)
@@ -205,9 +206,7 @@ BackendFlow::BackendFlow(const ParameterConstRef _Param, const std::string& _flo
 }
 
 BackendFlow::~BackendFlow()
-{
-
-}
+= default;
 
 BackendFlow::type_t BackendFlow::DetermineBackendFlowType(const target_deviceRef device, const ParameterConstRef
 #if HAVE_TASTE
@@ -504,7 +503,7 @@ std::string BackendFlow::CreateScripts(const DesignParametersRef dp)
    exec_params->component_name = dp->component_name;
    THROW_ASSERT(exec_params->chain_name == dp->chain_name, "Mismatching!! exec = \"" + exec_params->chain_name + "\" vs. dp = \"" + dp->chain_name + "\"");
 
-   for(DesignParameters::map_t::iterator p = dp->parameter_values.begin(); p != dp->parameter_values.end(); ++p)
+   for(auto p = dp->parameter_values.begin(); p != dp->parameter_values.end(); ++p)
    {
       exec_params->parameter_values[p->first] = p->second;
       INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "-->setting parameter \"" + p->first + "\" to value \"" + p->second + "\"");

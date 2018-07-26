@@ -102,7 +102,7 @@
 #ifndef LOOP_HPP
 #define LOOP_HPP
 
-#include <stddef.h>                                  // for size_t
+#include <cstddef>                                  // for size_t
 #include <list>                                      // for list, list<>::co...
 #include <map>                                       // for map
 #include <set>                                       // for set, _Rb_tree_co...

@@ -73,6 +73,7 @@
 #include "utility.hpp"
 
 #include <boost/lexical_cast.hpp>
+#include <utility>
 
 #include "op_graph.hpp"
 
@@ -97,9 +98,9 @@ void computeResources(const structural_objectRef circ, const technology_managerR
  *                                                                                               *
  *************************************************************************************************/
 
-hls::hls(const ParameterConstRef _Param, unsigned int _function_id, const OpVertexSet & _operations, const HLS_targetRef _HLS_T, const HLS_constraintsRef _HLS_C) :
+hls::hls(const ParameterConstRef _Param, unsigned int _function_id, OpVertexSet  _operations, const HLS_targetRef _HLS_T, const HLS_constraintsRef _HLS_C) :
    functionId(_function_id),
-   operations(_operations),
+   operations(std::move(_operations)),
    HLS_T(_HLS_T),
    HLS_C(_HLS_C),
    allocation_information(),
@@ -117,8 +118,7 @@ hls::hls(const ParameterConstRef _Param, unsigned int _function_id, const OpVert
 }
 
 hls::~hls()
-{
-}
+= default;
 
 void hls::xload(const xml_element* node, const OpGraphConstRef data)
 {
@@ -143,12 +143,12 @@ void hls::xload(const xml_element* node, const OpGraphConstRef data)
    const xml_node::node_list list = node->get_children();
    for (const auto & iter : list)
    {
-      const xml_element* Enode = GetPointer<const xml_element>(iter);
+      const auto* Enode = GetPointer<const xml_element>(iter);
       if(!Enode || Enode->get_name() != "scheduling") continue;
       const xml_node::node_list list1 = Enode->get_children();
       for (const auto & iter1 : list1)
       {
-         const xml_element* EnodeC = GetPointer<const xml_element>(iter1);
+         const auto* EnodeC = GetPointer<const xml_element>(iter1);
          if(!EnodeC) continue;
          if(EnodeC->get_name() == "scheduling_constraints")
          {
@@ -258,7 +258,7 @@ void hls::PrintResources() const
    if(output_level <= OUTPUT_LEVEL_PEDANTIC)
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "");
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "-->Summary of resources:");
-   for (std::map<std::string, unsigned int>::iterator r = resources.begin(); r != resources.end(); ++r)
+   for (auto r = resources.begin(); r != resources.end(); ++r)
    {
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "--- - " + r->first + ": " + STR(r->second));
    }

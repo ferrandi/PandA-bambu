@@ -81,9 +81,10 @@ class xml_element;
 */
 class structural_manager
 {
+   public :
+
       //no copy constructor
       structural_manager(const structural_manager& inst) = delete;
-   public :
 
       enum circuit_graph_type { DATA_G, COMPLETE_G};
 

@@ -135,9 +135,7 @@ BB_based_stg::BB_based_stg(const ParameterConstRef _parameters, const HLS_manage
 }
 
 BB_based_stg::~BB_based_stg()
-{
-
-}
+= default;
 
 void BB_based_stg::Initialize()
 {
@@ -266,7 +264,7 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
       size_t n_call_sites = 0;
       for(boost::tie(ie_it, ie_it_end) = boost::in_edges(current_vertex, *subgraph); ie_it != ie_it_end; ++ie_it)
       {
-         const FunctionEdgeInfo * info = Cget_edge_info<FunctionEdgeInfo, const CallGraph>(*ie_it, *subgraph);
+         const auto * info = Cget_edge_info<FunctionEdgeInfo, const CallGraph>(*ie_it, *subgraph);
          n_call_sites += info->direct_call_points.size() + info->indirect_call_points.size();
       }
       HLS->call_sites_number = n_call_sites;
@@ -299,8 +297,8 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Builindg STG of BB" + STR(fbb->CGetBBNodeInfo(*vit)->block->number));
       const BBNodeInfoConstRef operations = fbb->CGetBBNodeInfo(*vit);
       std::list<vertex> ordered_operations;
-      std::list<vertex>::const_iterator ops_it_end = operations->statements_list.end();
-      for(std::list<vertex>::const_iterator ops_it = operations->statements_list.begin(); ops_it_end != ops_it; ++ops_it)
+      auto ops_it_end = operations->statements_list.end();
+      for(auto ops_it = operations->statements_list.begin(); ops_it_end != ops_it; ++ops_it)
       {
          add_in_sched_order(ordered_operations,*ops_it, sch, dfgRef);
       }
@@ -321,8 +319,8 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
                   /// add an empty state before the current basic block
                   std::list<vertex> exec_ops, start_ops, end_ops;
                   const BBNodeInfoConstRef entry_operations = fbb->CGetBBNodeInfo(bb_src);
-                  std::list<vertex>::const_iterator entry_ops_it_end = entry_operations->statements_list.end();
-                  for(std::list<vertex>::const_iterator entry_ops_it = entry_operations->statements_list.begin(); entry_ops_it_end != entry_ops_it; ++entry_ops_it)
+                  auto entry_ops_it_end = entry_operations->statements_list.end();
+                  for(auto entry_ops_it = entry_operations->statements_list.begin(); entry_ops_it_end != entry_ops_it; ++entry_ops_it)
                   {
                      exec_ops.push_back(*entry_ops_it);
                      start_ops.push_back(*entry_ops_it);
@@ -370,8 +368,8 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
                vertex tgt = boost::target(*oe, *fbb);
                if(tgt == *vit) continue;
                const BBNodeInfoConstRef out_bb_operations = fbb->CGetBBNodeInfo(tgt);
-               std::list<vertex>::const_iterator obo_it_end = out_bb_operations->statements_list.end();
-               for(std::list<vertex>::const_iterator obo_it = out_bb_operations->statements_list.begin(); obo_it_end != obo_it && can_be_removed; ++obo_it)
+               auto obo_it_end = out_bb_operations->statements_list.end();
+               for(auto obo_it = out_bb_operations->statements_list.begin(); obo_it_end != obo_it && can_be_removed; ++obo_it)
                {
                   if((GET_TYPE(dfgRef, *obo_it) & TYPE_PHI) != 0)
                   {
@@ -601,8 +599,8 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
       }
       if(!bb_cur_completely_merged.empty())
       {
-         std::set<vertex>::const_iterator bb_vert_end = bb_cur_completely_merged.end();
-         for(std::set<vertex>::const_iterator bb_vert_it = bb_cur_completely_merged.begin(); bb_vert_it != bb_vert_end; ++bb_vert_it)
+         auto bb_vert_end = bb_cur_completely_merged.end();
+         for(auto bb_vert_it = bb_cur_completely_merged.begin(); bb_vert_it != bb_vert_end; ++bb_vert_it)
          {
             bb_completely_merged.insert(*bb_vert_it);
             last_state[*bb_vert_it] = s_cur;
@@ -708,7 +706,7 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
       if(cfg_edge_ids.size())
       {
          const std::set<unsigned int>::const_iterator ei_end = cfg_edge_ids.end();
-         for(std::set<unsigned int>::const_iterator ei = cfg_edge_ids.begin(); ei!= ei_end; ++ei)
+         for(auto ei = cfg_edge_ids.begin(); ei!= ei_end; ++ei)
          {
             out_conditions.insert(std::make_pair(last_operation, *ei));
          }
@@ -730,7 +728,7 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
          vertex controlling_vertex = *(operations->statements_list.rbegin());
          const std::set<unsigned int>& edge_ids = fbb->CGetBBEdgeInfo(*ein)->get_labels(CFG_SELECTOR);
          const std::set<unsigned int>::const_iterator ei_end = edge_ids.end();
-         for(std::set<unsigned int>::const_iterator ei=edge_ids.begin(); ei!= ei_end; ++ei)
+         for(auto ei=edge_ids.begin(); ei!= ei_end; ++ei)
          {
             OutCondition.insert(std::make_pair(controlling_vertex, *ei));
          }

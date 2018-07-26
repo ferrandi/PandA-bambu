@@ -64,7 +64,7 @@ DataDependenceComputation::DataDependenceComputation(const application_managerRe
 {}
 
 DataDependenceComputation::~DataDependenceComputation()
-{}
+= default;
 
 DesignFlowStep_Status DataDependenceComputation::InternalExec()
 {

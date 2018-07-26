@@ -4,7 +4,7 @@
 
 #include "Operator.hpp"
 #include "utils.hpp"
-#include <math.h>
+#include <cmath>
 #include <sstream>
 #include <cstdlib>
 #include <iostream>
@@ -49,7 +49,7 @@ namespace flopoco{
 		
 		DualTable(Target* target);
 
-		~DualTable() override {};
+		~DualTable() override = default;;
 
 	
 		/** The function that will define the values contained in the table
@@ -115,7 +115,7 @@ namespace flopoco{
 		
 			void setInputData(std::ostringstream&  data);				
 			primitiveDualMemory(Target* target, int _wIn, int _wOut, int _minIn, int _maxIn);
-			~primitiveDualMemory() override {}
+			~primitiveDualMemory() override = default;
 		
 		
 		private:

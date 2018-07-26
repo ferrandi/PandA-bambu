@@ -90,7 +90,7 @@ class ParserFlowStep : public DesignFlowStep
        * @param file_name is the name of the file
        * @param parameters is the set of input parameters
        */
-      ParserFlowStep(const DesignFlowManagerConstRef design_flow_manager, const ParserFlowStep_Type parser_step_type, const std::string&file_name, const ParameterConstRef parameters);
+      ParserFlowStep(const DesignFlowManagerConstRef design_flow_manager, const ParserFlowStep_Type parser_step_type, std::string file_name, const ParameterConstRef parameters);
 
       /**
        * Destructor

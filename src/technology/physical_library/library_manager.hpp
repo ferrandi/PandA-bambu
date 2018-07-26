@@ -97,9 +97,9 @@ struct attribute
 
    public:
 
-   attribute(const value_t _value_type, const std::string& _content);
+   attribute(const value_t _value_type, std::string  _content);
 
-   attribute(const std::string& _value_type, const std::string& _content);
+   attribute(const std::string& _value_type, std::string  _content);
 
    explicit attribute(const std::vector<attributeRef>& _content);
 
@@ -192,7 +192,7 @@ class library_manager
       ///Constructor.
       library_manager(const ParameterConstRef Param, bool std = true);
 
-      library_manager(const std::string& library_name, const ParameterConstRef Param, bool std = true);
+      library_manager(std::string  library_name, const ParameterConstRef Param, bool std = true);
 
       ///Destructor.
       ~library_manager();

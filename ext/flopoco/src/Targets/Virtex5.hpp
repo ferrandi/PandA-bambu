@@ -4,7 +4,7 @@
 #include <iostream>
 #include <sstream>
 #include <vector>
-#include <math.h>
+#include <cmath>
 #include <gmp.h>
 #include <mpfr.h>
 #include <gmpxx.h>
@@ -84,7 +84,7 @@ namespace flopoco{
 		}
 
 		/** The destructor */
-		~Virtex5() override {}
+		~Virtex5() override = default;
 
 		/** overloading the virtual functions of Target
 		 * @see the target class for more details 
@@ -113,9 +113,9 @@ namespace flopoco{
 		double distantWireDelay(int n) override;
 		bool   suggestSubmultSize(int &x, int &y, int wInX, int wInY) override;
 		bool   suggestSubaddSize(int &x, int wIn) override;
-		bool   suggestSubadd3Size(int &x, int wIn) override{return 0;}; // currently irrelevant for Xilinx
+		bool   suggestSubadd3Size(int &x, int wIn) override{return false;}; // currently irrelevant for Xilinx
 		bool   suggestSlackSubaddSize(int &x, int wIn, double slack) override;
-		bool   suggestSlackSubadd3Size(int &x, int wIn, double slack) override{return 0;}; // currently irrelevant for Xilinx
+		bool   suggestSlackSubadd3Size(int &x, int wIn, double slack) override{return false;}; // currently irrelevant for Xilinx
 		bool   suggestSlackSubcomparatorSize(int &x, int wIn, double slack, bool constant) override;
 		
 		int    getIntMultiplierCost(int wInX, int wInY) override;

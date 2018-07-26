@@ -87,8 +87,7 @@ StateTransitionGraphManager::StateTransitionGraphManager(const HLS_managerConstR
 }
 
 StateTransitionGraphManager::~StateTransitionGraphManager()
-{
-}
+= default;
 
 const StateTransitionGraphConstRef StateTransitionGraphManager::CGetAstg() const
 {
@@ -158,7 +157,7 @@ void StateTransitionGraphManager::compute_min_max()
    std::unordered_map<vertex, unsigned int> CSteps_min;
    std::unordered_map<vertex, unsigned int> CSteps_max;
    const std::list<vertex>::iterator it_sv_end = sorted_vertices.end();
-   for(std::list<vertex>::iterator it_sv = sorted_vertices.begin(); it_sv != it_sv_end; ++it_sv)
+   for(auto it_sv = sorted_vertices.begin(); it_sv != it_sv_end; ++it_sv)
    {
       CSteps_min[*it_sv] = 0;
       CSteps_max[*it_sv] = 0;
@@ -208,10 +207,10 @@ std::set<vertex> StateTransitionGraphManager::get_states(const vertex& op, State
       default:
          THROW_UNREACHABLE("Unknown state type. Which one are you lookig for?");
       }
-      std::list<vertex>::const_iterator op_it_end = operations->end();
+      auto op_it_end = operations->end();
       bool stop_flag;
       stop_flag = false;
-      for(std::list<vertex>::const_iterator op_it = operations->begin(); op_it !=  op_it_end && !stop_flag; ++op_it)
+      for(auto op_it = operations->begin(); op_it !=  op_it_end && !stop_flag; ++op_it)
       {
          if(*op_it == op)
          {

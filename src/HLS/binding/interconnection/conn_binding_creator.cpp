@@ -78,9 +78,7 @@ conn_binding_creator::conn_binding_creator(const ParameterConstRef _Param, const
 }
 
 conn_binding_creator::~conn_binding_creator()
-{
-
-}
+= default;
 
 const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > conn_binding_creator::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {

@@ -59,14 +59,13 @@
 #include "typed_node_info.hpp"                    // for GET_NAME, ENTRY, EXIT
 
 operations_graph_constructor::operations_graph_constructor(OpGraphsCollectionRef _og) :
-   og(_og),
+   og(std::move(_og)),
    op_graph(new OpGraph(og, -1))
 {}
 
 
 operations_graph_constructor::~operations_graph_constructor()
-{
-}
+= default;
 
 void operations_graph_constructor::Clear()
 {

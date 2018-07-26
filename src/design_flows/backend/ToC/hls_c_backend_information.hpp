@@ -69,7 +69,7 @@ class HLSCBackendInformation : public CBackendInformation
        */
       HLSCBackendInformation
       (
-         const std::string& results_filename,
+         std::string  results_filename,
          const HLS_managerConstRef HLSMgr
       );
 

@@ -93,7 +93,7 @@ TasteInterfaceGeneration::TasteInterfaceGeneration(const ParameterConstRef _Para
 }
 
 TasteInterfaceGeneration::~TasteInterfaceGeneration()
-{}
+= default;
 
 const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > TasteInterfaceGeneration::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {

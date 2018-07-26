@@ -79,9 +79,7 @@ top_entity::top_entity(const ParameterConstRef _parameters, const HLS_managerRef
 }
 
 top_entity::~top_entity()
-{
-
-}
+= default;
 
 const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > top_entity::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {

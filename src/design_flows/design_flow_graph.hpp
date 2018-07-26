@@ -44,7 +44,7 @@
 #ifndef DESIGN_FLOW_GRAPH_HPP
 #define DESIGN_FLOW_GRAPH_HPP
 
-#include <stddef.h>                                  // for size_t
+#include <cstddef>                                  // for size_t
 #include <iosfwd>                                    // for ostream
 #include <string>                                    // for string
 #include <unordered_map>                             // for unordered_map

@@ -49,8 +49,8 @@
 #include "config_HAVE_ASSERTS.hpp"           // for HAVE_ASSERTS
 #include "config_HAVE_BAMBU_BUILT.hpp"       // for HAVE_BAMBU_BUILT
 
-#include <math.h>                            // for ceil
-#include <stddef.h>                          // for size_t
+#include <cmath>                            // for ceil
+#include <cstddef>                          // for size_t
 #include <algorithm>                         // for min
 #include <unordered_map>                     // for unordered_map, operator!=
 #include <vector>                            // for vector
@@ -116,9 +116,7 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
 }
 
 IR_lowering::~IR_lowering()
-{
-
-}
+= default;
 
 void IR_lowering::Initialize()
 {
@@ -137,7 +135,7 @@ void IR_lowering::ComputeRelationships(DesignFlowStepSet & relationship, const D
       case DEPENDENCE_RELATIONSHIP:
          {
             const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
-            const TechnologyFlowStepFactory * technology_flow_step_factory = GetPointer<const TechnologyFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("Technology"));
+            const auto * technology_flow_step_factory = GetPointer<const TechnologyFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("Technology"));
             const std::string technology_flow_signature = TechnologyFlowStep::ComputeSignature(TechnologyFlowStep_Type::LOAD_TECHNOLOGY);
             const vertex technology_flow_step = design_flow_manager.lock()->GetDesignFlowStep(technology_flow_signature);
             const DesignFlowStepRef technology_design_flow_step = technology_flow_step ? design_flow_graph->CGetDesignFlowStepInfo(technology_flow_step)->design_flow_step : technology_flow_step_factory->CreateTechnologyFlowStep(TechnologyFlowStep_Type::LOAD_TECHNOLOGY);
@@ -1103,14 +1101,14 @@ tree_nodeRef IR_lowering::expand_MC(tree_nodeRef op0, integer_cst* ic_node, tree
          fu_prec = 8;
       }
       technology_nodeRef mult_f_unit = TechManager->get_fu(MULTIPLIER_STD + std::string("_") + STR(fu_prec) + "_" + STR(fu_prec) + "_" + STR(fu_prec) + "_0", LIBRARY_STD_FU);
-      functional_unit * mult_fu= GetPointer<functional_unit>(mult_f_unit);
+      auto * mult_fu= GetPointer<functional_unit>(mult_f_unit);
       technology_nodeRef mult_op_node =mult_fu->get_operation("mult_expr");
-      operation * mult_op = GetPointer<operation>(mult_op_node);
+      auto * mult_op = GetPointer<operation>(mult_op_node);
       double mult_delay = mult_op->time_m->get_execution_time();
       technology_nodeRef add_f_unit = TechManager->get_fu(ADDER_STD + std::string("_") + STR(fu_prec) + "_" + STR(fu_prec) + "_" + STR(fu_prec), LIBRARY_STD_FU);
-      functional_unit * add_fu= GetPointer<functional_unit>(add_f_unit);
+      auto * add_fu= GetPointer<functional_unit>(add_f_unit);
       technology_nodeRef add_op_node =add_fu->get_operation("plus_expr");
-      operation * add_op = GetPointer<operation>(add_op_node);
+      auto * add_op = GetPointer<operation>(add_op_node);
       double add_delay = add_op->time_m->get_execution_time();
       mult_plus_ratio = static_cast<short int>(ceil(mult_delay/add_delay));
    }
@@ -1154,7 +1152,7 @@ tree_nodeRef IR_lowering::expand_MC(tree_nodeRef op0, integer_cst* ic_node, tree
       }
       else
       {
-         unsigned long long int coeff = static_cast<unsigned long long int>(ext_op1);
+         auto coeff = static_cast<unsigned long long int>(ext_op1);
          if(EXACT_POWER_OF_2_OR_ZERO_P (coeff))
          {
             int l_shift = floor_log2 (coeff);
@@ -1200,7 +1198,7 @@ bool IR_lowering::expand_target_mem_ref(target_mem_ref461 * tmr, const tree_node
    {
       if(tmr->step)
       {
-         integer_cst* ic_step_node = GetPointer<integer_cst>(GET_NODE(tmr->step));
+         auto* ic_step_node = GetPointer<integer_cst>(GET_NODE(tmr->step));
          type_sum = ic_step_node->type;
          accum = expand_MC(tmr->idx, ic_step_node, tree_nodeRef(), stmt, block, type_sum, srcp_default);
          if(accum)
@@ -1227,7 +1225,7 @@ bool IR_lowering::expand_target_mem_ref(target_mem_ref461 * tmr, const tree_node
    }
    if(tmr->offset)
    {
-      integer_cst* ic_node = GetPointer<integer_cst>(GET_NODE(tmr->offset));
+      auto* ic_node = GetPointer<integer_cst>(GET_NODE(tmr->offset));
       long long int ic_value = tree_helper::get_integer_cst_value(ic_node);
       if(ic_value!=0)
       {
@@ -1295,7 +1293,7 @@ bool IR_lowering::expand_target_mem_ref(target_mem_ref461 * tmr, const tree_node
 
    if(GET_NODE(tmr->base)->get_kind() == addr_expr_K)
    {
-      addr_expr* ae = GetPointer<addr_expr>(GET_NODE(tmr->base));
+      auto* ae = GetPointer<addr_expr>(GET_NODE(tmr->base));
       tree_nodeRef ae_expr = tree_man->create_unary_operation(ae->type,ae->op, srcp_default, addr_expr_K);///It is required to de-share some IR nodes
       tree_nodeRef ae_ga = CreateGimpleAssign(ae->type, ae_expr, block->number, srcp_default);
       tree_nodeRef ae_vd = GetPointer<gimple_assign>(GET_NODE(ae_ga))->op0;

@@ -65,8 +65,7 @@ AddOpExitFlowEdges::AddOpExitFlowEdges(const ParameterConstRef _parameters, cons
 }
 
 AddOpExitFlowEdges::~AddOpExitFlowEdges()
-{
-}
+= default;
 
 const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship> > AddOpExitFlowEdges::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {

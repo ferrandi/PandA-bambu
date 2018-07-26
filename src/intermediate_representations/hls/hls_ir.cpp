@@ -46,7 +46,7 @@ HLSIR::HLSIR(const HLS_managerRef _hls_manager, const ParameterConstRef _paramet
 {}
 
 HLSIR::~HLSIR()
-{}
+= default;
 
 void HLSIR::Initialize()
 {

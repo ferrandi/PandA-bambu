@@ -55,7 +55,7 @@ DesignFlowStep::DesignFlowStep(const DesignFlowManagerConstRef _design_flow_mana
 {}
 
 DesignFlowStep::~DesignFlowStep()
-{}
+= default;
 
 void DesignFlowStep::WriteDot(std::ostream & out) const
 {
@@ -88,7 +88,7 @@ void DesignFlowStep::PrintFinalIR() const
 
 #if not HAVE_UNORDERED
 DesignFlowStepSorter::DesignFlowStepSorter()
-{}
+= default;
 
 bool DesignFlowStepSorter::operator()(const DesignFlowStepRef x, const DesignFlowStepRef y) const
 {

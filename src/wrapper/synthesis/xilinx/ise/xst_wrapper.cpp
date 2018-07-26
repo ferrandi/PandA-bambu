@@ -67,9 +67,7 @@ xst_wrapper::xst_wrapper(const ParameterConstRef _Param, const std::string& _out
 
 //destructor
 xst_wrapper::~xst_wrapper()
-{
-
-}
+= default;
 
 void xst_wrapper::init_reserved_vars()
 {

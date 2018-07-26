@@ -54,7 +54,7 @@
 #include "config_HAVE_TUCANO_BUILT.hpp"
 #include "config_HAVE_UNORDERED.hpp"
 
-#include <stddef.h>                                  // for size_t
+#include <cstddef>                                  // for size_t
 #include <functional>                                // for binary_function
 #include <iosfwd>                                    // for ostream
 #include <list>                                      // for list
@@ -150,7 +150,7 @@ class tree_node
       explicit tree_node(unsigned int i) : index(i){}
 
       /// Destructor
-      virtual ~tree_node() {}
+      virtual ~tree_node() = default;
 
       /**
       * Virtual function returning the type of the actual class
@@ -2882,7 +2882,7 @@ struct handler : public tree_node
 struct identifier_node : public tree_node
 {
    /// constructors
-   identifier_node(unsigned int node_id, const std::string & _strg, tree_manager* TM);
+   identifier_node(unsigned int node_id, std::string  _strg, tree_manager* TM);
    identifier_node(unsigned int node_id, bool _operator_flag, tree_manager* TM);
 
    /// Store true if the identifier_node is an operator.

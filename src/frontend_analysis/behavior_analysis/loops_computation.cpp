@@ -67,7 +67,7 @@ loops_computation::loops_computation(const ParameterConstRef _parameters, const 
 }
 
 loops_computation::~loops_computation()
-{}
+= default;
 
 const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship> > loops_computation::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {

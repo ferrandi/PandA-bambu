@@ -61,7 +61,7 @@ MemoryDataFlowAnalysis::MemoryDataFlowAnalysis(const application_managerRef _App
 }
 
 MemoryDataFlowAnalysis::~MemoryDataFlowAnalysis()
-{}
+= default;
 
 const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship> > MemoryDataFlowAnalysis::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {

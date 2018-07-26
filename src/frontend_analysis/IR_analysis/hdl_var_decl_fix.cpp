@@ -75,7 +75,7 @@ HDLVarDeclFix::HDLVarDeclFix(const application_managerRef _AppM, unsigned int _f
 }
 
 HDLVarDeclFix::~HDLVarDeclFix()
-{}
+= default;
 
 DesignFlowStep_Status HDLVarDeclFix::InternalExec()
 {
@@ -94,7 +94,7 @@ DesignFlowStep_Status HDLVarDeclFix::InternalExec()
 
    ///Fixing names of parameters
    const tree_nodeRef curr_tn = TM->GetTreeNode(function_id);
-   function_decl * fd = GetPointer<function_decl>(curr_tn);
+   auto * fd = GetPointer<function_decl>(curr_tn);
 
    for(auto arg : fd->list_of_args)
       recursive_examinate(arg);

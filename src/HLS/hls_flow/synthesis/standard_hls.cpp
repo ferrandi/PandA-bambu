@@ -78,9 +78,7 @@ standard_hls::standard_hls(const ParameterConstRef _parameters, const HLS_manage
 }
 
 standard_hls::~standard_hls()
-{
-
-}
+= default;
 
 const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > standard_hls::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {

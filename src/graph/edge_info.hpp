@@ -55,10 +55,10 @@
 struct EdgeInfo
 {
    ///Constructor
-   EdgeInfo(){}
+   EdgeInfo()= default;
 
    ///Destructor
-   virtual ~EdgeInfo(){}
+   virtual ~EdgeInfo()= default;
 };
 
 /**

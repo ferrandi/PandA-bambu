@@ -70,8 +70,7 @@ UpdateSchedule::UpdateSchedule(const application_managerRef _AppM, unsigned int 
 }
 
 UpdateSchedule::~UpdateSchedule()
-{
-}
+= default;
 
 const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship> > UpdateSchedule::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
@@ -132,8 +131,8 @@ bool UpdateSchedule::HasToBeExecuted() const
 DesignFlowStep_Status UpdateSchedule::InternalExec()
 {
    const auto TM = AppM->get_tree_manager();
-   function_decl * fd = GetPointer<function_decl>(TM->get_tree_node_const(function_id));
-   statement_list * sl = GetPointer<statement_list>(GET_NODE(fd->body));
+   auto * fd = GetPointer<function_decl>(TM->get_tree_node_const(function_id));
+   auto * sl = GetPointer<statement_list>(GET_NODE(fd->body));
    for(auto block : sl->list_of_bloc)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->BB" + STR(block.first));

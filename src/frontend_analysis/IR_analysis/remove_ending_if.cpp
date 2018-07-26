@@ -150,8 +150,7 @@ RemoveEndingIf::RemoveEndingIf(const ParameterConstRef _parameters, const applic
 }
 
 RemoveEndingIf::~RemoveEndingIf()
-{
-}
+= default;
 
 const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship> > RemoveEndingIf::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {

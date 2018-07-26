@@ -261,8 +261,7 @@ HLSFlowStepFactory::HLSFlowStepFactory(const DesignFlowManagerConstRef _design_f
 }
 
 HLSFlowStepFactory::~HLSFlowStepFactory()
-{
-}
+= default;
 
 const std::string HLSFlowStepFactory::GetPrefix() const
 {

@@ -47,7 +47,7 @@
 #include "config_HAVE_FROM_DISCREPANCY_BUILT.hpp"
 #include "config_HAVE_PRAGMA_BUILT.hpp"
 
-#include <stddef.h>                                  // for size_t
+#include <cstddef>                                  // for size_t
 #include <set>                                       // for set
 #include <string>                                    // for string
 #if HAVE_CODESIGN

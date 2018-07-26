@@ -59,7 +59,7 @@ LoadFileTechnology::LoadFileTechnology(const technology_managerRef _TM, const ta
 }
 
 LoadFileTechnology::~LoadFileTechnology()
-{}
+= default;
 
 DesignFlowStep_Status LoadFileTechnology::Exec()
 {

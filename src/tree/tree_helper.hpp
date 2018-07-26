@@ -48,7 +48,7 @@
 
 #include "config_HAVE_BAMBU_BUILT.hpp"
 
-#include <stddef.h>                                  // for size_t
+#include <cstddef>                                  // for size_t
 #include <list>                                      // for list
 #include <set>                                       // for set
 #include <string>                                    // for string
@@ -1068,7 +1068,7 @@ class FunctionExpander
       FunctionExpander();
 
       ///Destructor
-      virtual ~FunctionExpander(){}
+      virtual ~FunctionExpander()= default;
 };
 typedef refcount<FunctionExpander> FunctionExpanderRef;
 #endif

@@ -154,7 +154,7 @@ struct structural_type_descriptor
        * Object factory for module objects.
        * @param treenode is the treenode descriptor of the type.
       */
-      explicit structural_type_descriptor(const std::string& module_name) :  type(OTHER), size(size_DEFAULT), vector_size(vector_size_DEFAULT), id_type(module_name), treenode(treenode_DEFAULT) {}
+      explicit structural_type_descriptor(std::string  module_name) :  type(OTHER), size(size_DEFAULT), vector_size(vector_size_DEFAULT), id_type(std::move(module_name)), treenode(treenode_DEFAULT) {}
 
 #if HAVE_TUCANO_BUILT
       /**
@@ -176,7 +176,7 @@ struct structural_type_descriptor
       /**
        * Destructor
        */
-      ~structural_type_descriptor() {}
+      ~structural_type_descriptor() = default;
 
       /**
        * Method that copies the contents of the current structural_type_descriptorRef into another structural_type_descriptor
@@ -362,7 +362,7 @@ class structural_object
       structural_object(int debug_level, const structural_objectRef o);
 
       /// virtual destructor
-      virtual ~structural_object() {}
+      virtual ~structural_object() = default;
 
       /**
           * Return the owner.
@@ -597,7 +597,7 @@ struct port_o : public structural_object
       port_o(int debug_level, const structural_objectRef o, port_direction dir, so_kind _port_type);
 
       /// Destructor.
-      ~port_o() override {}
+      ~port_o() override = default;
 
       /// custom size parameter
       std::string size_parameter;
@@ -1041,7 +1041,7 @@ class event_o : public structural_object
       event_o(int debug_level, const structural_objectRef o);
 
       /// Destructor
-      ~event_o() override {}
+      ~event_o() override = default;
 
       /**
           * Perform a copy of the event.
@@ -1107,7 +1107,7 @@ class data_o : public structural_object
       data_o(int debug_level, const structural_objectRef o);
 
       /// destructor
-      ~data_o() override {}
+      ~data_o() override = default;
 
       /**
           * Perform a copy of the data.
@@ -1201,7 +1201,7 @@ class action_o : public structural_object
       action_o(int debug_level, const structural_objectRef o);
 
       /// destructor
-      ~action_o() override {}
+      ~action_o() override = default;
 
       /**
           * Add a procedure paramenter.
@@ -1360,7 +1360,7 @@ class constant_o : public structural_object
       constant_o(int debug_level, const structural_objectRef o, const std::string &value);
 
       /// Destructor
-      ~constant_o() override {}
+      ~constant_o() override = default;
 
       /**
           * Bind the element object with a port/signal.
@@ -1458,7 +1458,7 @@ class signal_o : public structural_object
       signal_o(int debug_level, const structural_objectRef o, so_kind _signal_type);
 
       /// Destructor
-      ~signal_o() override {}
+      ~signal_o() override = default;
 
       /**
           * Bind the connection object with a port.
@@ -1702,7 +1702,7 @@ class module : public structural_object
       module(int debug_level, const structural_objectRef o);
 
       /// destructor
-      ~module() override{}
+      ~module() override= default;
 
       /**
           * Return the total number of the ports
@@ -2057,7 +2057,7 @@ class component_o : public module
       component_o(int debug_level, const structural_objectRef o);
 
       /// destructor
-      ~component_o() override {}
+      ~component_o() override = default;
 
       /**
           * Perform a copy of the component.
@@ -2138,7 +2138,7 @@ class channel_o : public module
       channel_o(int debug_level, const structural_objectRef o);
 
       /// Destructor
-      ~channel_o() override {}
+      ~channel_o() override = default;
 
       /**
           * Add an interface to the object.
@@ -2244,7 +2244,7 @@ class bus_connection_o : public structural_object
       bus_connection_o(int debug_level, const structural_objectRef o);
 
       /// destructor
-      ~bus_connection_o() override {}
+      ~bus_connection_o() override = default;
 
       /**
           * Add a connection (e.g. a signal or a channel) to the bus connection object.

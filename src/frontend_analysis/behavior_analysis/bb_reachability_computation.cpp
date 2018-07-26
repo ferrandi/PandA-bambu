@@ -77,8 +77,7 @@ BBReachabilityComputation::BBReachabilityComputation(const ParameterConstRef _Pa
 
 
 BBReachabilityComputation::~BBReachabilityComputation()
-{
-}
+= default;
 
 void BBReachabilityComputation::Initialize()
 {

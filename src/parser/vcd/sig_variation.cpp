@@ -36,9 +36,11 @@
 
 #include "sig_variation.hpp"
 
+#include <utility>
+
 sig_variation::sig_variation(
-      unsigned long long ts, const std::string& val, unsigned long long d)
-   : time_stamp(ts), value(val), duration(d)
+      unsigned long long ts, std::string  val, unsigned long long d)
+   : time_stamp(ts), value(std::move(val)), duration(d)
 {}
 
 bool operator < (const sig_variation &w, const unsigned long long t)

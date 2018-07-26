@@ -345,7 +345,7 @@ void ToolManager::check_output_files(const std::vector<std::string>& files)
       move_from_host.push_back(".");
       move_from_host.push_back(">& " + std::string(OUTPUT_FILE));
       std::string command = create_command_line(move_from_host);
-      unsigned int output_level = Param->getOption<unsigned int>(OPT_output_level);
+      auto output_level = Param->getOption<unsigned int>(OPT_output_level);
       PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, " Moving output files from the host machine...");
       execute_command(command, "Generated files cannot be moved from the host machine", Param->getOption<std::string>(OPT_output_temporary_directory) + "/check_output_files_output");
    }

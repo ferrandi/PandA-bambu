@@ -131,9 +131,7 @@ AlteraBackendFlow::AlteraBackendFlow(const ParameterConstRef _Param, const std::
 }
 
 AlteraBackendFlow::~AlteraBackendFlow()
-{
-
-}
+= default;
 
 void AlteraBackendFlow::xparse_utilization(const std::string& fn)
 {
@@ -150,7 +148,7 @@ void AlteraBackendFlow::xparse_utilization(const std::string& fn)
          const xml_node::node_list list_int = node->get_children();
          for (const auto & iter_int : list_int)
          {
-            const xml_element* EnodeC = GetPointer<const xml_element>(iter_int);
+            const auto* EnodeC = GetPointer<const xml_element>(iter_int);
             if(!EnodeC) continue;
 
             if (EnodeC->get_name() == "application")
@@ -158,7 +156,7 @@ void AlteraBackendFlow::xparse_utilization(const std::string& fn)
                const xml_node::node_list list_sec = EnodeC->get_children();
                for (const auto & iter_sec : list_sec)
                {
-                  const xml_element* nodeS = GetPointer<const xml_element>(iter_sec);
+                  const auto* nodeS = GetPointer<const xml_element>(iter_sec);
                   if(!nodeS) continue;
 
                   if (nodeS->get_name() == "section")
@@ -170,7 +168,7 @@ void AlteraBackendFlow::xparse_utilization(const std::string& fn)
                         const xml_node::node_list list_item = nodeS->get_children();
                         for (const auto & it_item : list_item)
                         {
-                           const xml_element* nodeIt = GetPointer<const xml_element>(it_item);
+                           const auto* nodeIt = GetPointer<const xml_element>(it_item);
                            if(!nodeIt or nodeIt->get_name() != "item") continue;
 
                            if(CE_XVM(stringID, nodeIt)) LOAD_XVM(stringID, nodeIt);
@@ -222,7 +220,7 @@ void AlteraBackendFlow::CheckSynthesisResults()
       area_m->set_area_value(design_values[ALTERA_LE]);
    else
       area_m->set_area_value(design_values[ALTERA_ALM]);
-   clb_model* area_clb_model = GetPointer<clb_model>(area_m);
+   auto* area_clb_model = GetPointer<clb_model>(area_m);
    if(design_values[ALTERA_LE] != 0.0)
       area_clb_model->set_resource_value(clb_model::LOGIC_ELEMENTS, design_values[ALTERA_LE]);
    else
@@ -233,7 +231,7 @@ void AlteraBackendFlow::CheckSynthesisResults()
    area_clb_model->set_resource_value(clb_model::BRAM, design_values[ALTERA_MEM]);
 
    time_m = time_model::create_model(TargetDevice_Type::FPGA, Param);
-   LUT_model* lut_m = GetPointer<LUT_model>(time_m);
+   auto* lut_m = GetPointer<LUT_model>(time_m);
    const auto combinational_delay = [&] () -> double
    {
       if(design_values[ALTERA_FMAX] != 0.0)

@@ -143,9 +143,7 @@ mux_connection_binding::mux_connection_binding(const ParameterConstRef _paramete
 }
 
 mux_connection_binding::~mux_connection_binding()
-{
-
-}
+= default;
 
 void mux_connection_binding::Initialize()
 {
@@ -218,7 +216,7 @@ generic_objRef mux_connection_binding::dynamic_multidimensional_array_handler(ar
          HLS->Rconn->add_sparse_logic(mult);
       }
       ///updates indexes array and calls recursive function
-      array_ref* snd_ar = GetPointer<array_ref>(GET_NODE(ar->op0));
+      auto* snd_ar = GetPointer<array_ref>(GET_NODE(ar->op0));
       recursive_indexes_values.push_back(tree_index);
       generic_objRef received_adder = dynamic_multidimensional_array_handler(snd_ar, op, data, base_address_index, recursive_indexes_values, dims, global_adder, is_not_a_phi);
 
@@ -303,7 +301,7 @@ void mux_connection_binding::create_single_conn(const OpGraphConstRef data, cons
 {
    const std::set<vertex>& running_states = HLS->Rliv->get_state_where_run(op);
    const std::set<vertex>::const_iterator rs_it_end = running_states.end();
-   for(std::set<vertex>::const_iterator rs_it = running_states.begin(); rs_it_end != rs_it; ++rs_it)
+   for(auto rs_it = running_states.begin(); rs_it_end != rs_it; ++rs_it)
    {
       vertex state = *rs_it;
 
@@ -332,7 +330,7 @@ void mux_connection_binding::create_single_conn(const OpGraphConstRef data, cons
          THROW_ASSERT( HLS->Rliv->has_state_in(state, op, cur_phi_tree_var), " no state in for @" + STR(tree_var));
          const std::set<vertex>& states_in = HLS->Rliv->get_state_in(state, op, cur_phi_tree_var);
          const std::set<vertex>::const_iterator s_in_it_end = states_in.end();
-         for(std::set<vertex>::const_iterator s_in_it = states_in.begin(); s_in_it != s_in_it_end; ++s_in_it)
+         for(auto s_in_it = states_in.begin(); s_in_it != s_in_it_end; ++s_in_it)
          {
             HLS->Rconn->add_data_transfer(fu_obj_src, fu_obj, port_num, port_index, data_transfer(tree_var, precision, *s_in_it, state, op));
             PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "       - add data transfer from " << fu_obj_src->get_string() << " to " << fu_obj->get_string() << " port " << boost::lexical_cast<std::string>(port_num) << ":" << boost::lexical_cast<std::string>(port_index) << " from state " << HLS->Rliv->get_name(*s_in_it) + " to state " + HLS->Rliv->get_name(state) + (tree_var?(" for " + HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->PrintVariable(tree_var)):""));
@@ -355,7 +353,7 @@ unsigned int mux_connection_binding::address_precision(unsigned int precision, c
    unsigned int fu_type = HLS->Rfu->get_assign(op);
    unsigned int node_id = data->CGetOpNodeInfo(op)->GetNodeId();
    const tree_nodeRef node = TreeM->get_tree_node_const(node_id);
-   gimple_assign* gm = GetPointer<gimple_assign>(node);
+   auto* gm = GetPointer<gimple_assign>(node);
    bool right_addr_expr = false;
    if(gm && GetPointer<addr_expr>(GET_NODE(gm->op1)))
       right_addr_expr = true;
@@ -391,10 +389,10 @@ void mux_connection_binding::determine_connection(const vertex& op, const HLS_ma
       {
          case addr_expr_K:
          {
-            addr_expr* ae = GetPointer<addr_expr>(tn);
+            auto* ae = GetPointer<addr_expr>(tn);
             unsigned int node_id = data->CGetOpNodeInfo(op)->GetNodeId();
             const tree_nodeRef node = TreeM->get_tree_node_const(node_id);
-            gimple_assign* gm = GetPointer<gimple_assign>(node);
+            auto* gm = GetPointer<gimple_assign>(node);
             unsigned int return_index;
             const tree_nodeRef type = tree_helper::get_type_node(GET_NODE(ae->op), return_index);
             if(type && GetPointer<type_node>(type))
@@ -425,7 +423,7 @@ void mux_connection_binding::determine_connection(const vertex& op, const HLS_ma
          }
          case array_ref_K:
          {
-            array_ref* ar = GetPointer<array_ref>(tn);
+            auto* ar = GetPointer<array_ref>(tn);
             if(GET_NODE(ar->op0)->get_kind() == array_ref_K) ///dynamic multidimensional array case
             {
                unsigned int base_address_index = 0;
@@ -498,15 +496,15 @@ void mux_connection_binding::determine_connection(const vertex& op, const HLS_ma
          }
          case component_ref_K:
          {
-            component_ref* cr = GetPointer<component_ref>(tn);
+            auto* cr = GetPointer<component_ref>(tn);
 
             unsigned int base_index = GET_INDEX_NODE(cr->op0);
-            field_decl * fd = GetPointer<field_decl>(GET_NODE(cr->op1));
+            auto * fd = GetPointer<field_decl>(GET_NODE(cr->op1));
             THROW_ASSERT(fd, "expected an field_decl but got something of different");
             THROW_ASSERT(!fd->is_bitfield(), "bitfield not yet supported: " + fd->ToString());
-            integer_cst* curr_int = GetPointer<integer_cst>(GET_NODE(fd->bpos));
+            auto* curr_int = GetPointer<integer_cst>(GET_NODE(fd->bpos));
             THROW_ASSERT(curr_int, "expected an integer_cst but got something of different");
-            unsigned int offset = static_cast<unsigned int>(tree_helper::get_integer_cst_value(curr_int));
+            auto offset = static_cast<unsigned int>(tree_helper::get_integer_cst_value(curr_int));
             if(offset%8 != 0)
                THROW_ERROR("bitfields are not yet supported");
 #if USE_ALIGNMENT_INFO
@@ -531,7 +529,7 @@ void mux_connection_binding::determine_connection(const vertex& op, const HLS_ma
          }
          case misaligned_indirect_ref_K:
          {
-            misaligned_indirect_ref * mir = GetPointer<misaligned_indirect_ref>(tn);
+            auto * mir = GetPointer<misaligned_indirect_ref>(tn);
             if(GetPointer<ssa_name>(GET_NODE(mir->op)))
             {
                tree_var = GET_INDEX_NODE(mir->op);
@@ -542,7 +540,7 @@ void mux_connection_binding::determine_connection(const vertex& op, const HLS_ma
          }
          case indirect_ref_K:
          {
-            indirect_ref * ir = GetPointer<indirect_ref>(tn);
+            auto * ir = GetPointer<indirect_ref>(tn);
             if(GetPointer<ssa_name>(GET_NODE(ir->op)))
             {
                tree_var = GET_INDEX_NODE(ir->op);
@@ -565,7 +563,7 @@ void mux_connection_binding::determine_connection(const vertex& op, const HLS_ma
          }
          case mem_ref_K:
          {
-            mem_ref * mr = GetPointer<mem_ref>(tn);
+            auto * mr = GetPointer<mem_ref>(tn);
             unsigned int base_index = GET_INDEX_NODE(mr->op0);
             long long int offset = tree_helper::get_integer_cst_value(GetPointer<integer_cst>(GET_NODE(mr->op1)));
             unsigned int offset_index = offset ? GET_INDEX_NODE(mr->op1) : 0;
@@ -598,7 +596,7 @@ void mux_connection_binding::determine_connection(const vertex& op, const HLS_ma
          }
          case target_mem_ref_K:
          {
-            target_mem_ref * tmr = GetPointer<target_mem_ref>(tn);
+            auto * tmr = GetPointer<target_mem_ref>(tn);
             unsigned int symbol_index = tmr->symbol ? GET_INDEX_NODE(tmr->symbol) : 0;
             unsigned int base_index = tmr->base ? GET_INDEX_NODE(tmr->base) : 0;
             unsigned int idx_index = tmr->idx ? GET_INDEX_NODE(tmr->idx) : 0;
@@ -614,7 +612,7 @@ void mux_connection_binding::determine_connection(const vertex& op, const HLS_ma
 #if USE_ALIGNMENT_INFO
             if(offset_index)
             {
-               integer_cst* curr_int = GetPointer<integer_cst>(GET_NODE(tmr->offset));
+               auto* curr_int = GetPointer<integer_cst>(GET_NODE(tmr->offset));
                long long int cost_val =tree_helper::get_integer_cst_value(curr_int);
                unsigned int offset = 8*static_cast<unsigned int>(cost_val&-cost_val);
                if(offset<alignment)
@@ -622,7 +620,7 @@ void mux_connection_binding::determine_connection(const vertex& op, const HLS_ma
             }
             if(step_index)
             {
-               integer_cst* curr_int = GetPointer<integer_cst>(GET_NODE(tmr->step));
+               auto* curr_int = GetPointer<integer_cst>(GET_NODE(tmr->step));
                alignment = std::min(static_cast<unsigned int>((8*(tree_helper::get_integer_cst_value(curr_int)&-tree_helper::get_integer_cst_value(curr_int)))), alignment);
             }
             else if(idx_index)
@@ -758,7 +756,7 @@ void mux_connection_binding::determine_connection(const vertex& op, const HLS_ma
          }
          case target_mem_ref461_K:
          {
-            target_mem_ref461 * tmr = GetPointer<target_mem_ref461>(tn);
+            auto * tmr = GetPointer<target_mem_ref461>(tn);
             unsigned int idx2_index = tmr->idx2 ? GET_INDEX_NODE(tmr->idx2) : 0;
             unsigned int base_index = tmr->base ? GET_INDEX_NODE(tmr->base) : 0;
             unsigned int idx_index = tmr->idx ? GET_INDEX_NODE(tmr->idx) : 0;
@@ -775,22 +773,22 @@ void mux_connection_binding::determine_connection(const vertex& op, const HLS_ma
             if(base_index)
             {
                tree_nodeRef base_type_n = tree_helper::get_type_node(GET_NODE(tmr->base));
-               pointer_type * pt = GetPointer<pointer_type>(base_type_n);
+               auto * pt = GetPointer<pointer_type>(base_type_n);
                if(pt)
                {
-                  type_node * ptd_type = GetPointer<type_node>(GET_NODE(pt->ptd));
+                  auto * ptd_type = GetPointer<type_node>(GET_NODE(pt->ptd));
                   alignment = std::min(ptd_type->algn, alignment);
                }
                else if(base_type_n->get_kind() == reference_type_K)
                {
-                  reference_type * rt = GetPointer<reference_type>(base_type_n);
-                  type_node * rtd_type = GetPointer<type_node>(GET_NODE(rt->refd));
+                  auto * rt = GetPointer<reference_type>(base_type_n);
+                  auto * rtd_type = GetPointer<type_node>(GET_NODE(rt->refd));
                   alignment = std::min(rtd_type->algn, alignment);
                }
             }
             if(offset_index)
             {
-               integer_cst* curr_int = GetPointer<integer_cst>(GET_NODE(tmr->offset));
+               auto* curr_int = GetPointer<integer_cst>(GET_NODE(tmr->offset));
                long long int cost_val =tree_helper::get_integer_cst_value(curr_int);
                unsigned int offset = 8*static_cast<unsigned int>(cost_val&-cost_val);
                if(offset<alignment)
@@ -798,7 +796,7 @@ void mux_connection_binding::determine_connection(const vertex& op, const HLS_ma
             }
             if(step_index)
             {
-               integer_cst* curr_int = GetPointer<integer_cst>(GET_NODE(tmr->step));
+               auto* curr_int = GetPointer<integer_cst>(GET_NODE(tmr->step));
                alignment = std::min(static_cast<unsigned int>((8*(tree_helper::get_integer_cst_value(curr_int)&-tree_helper::get_integer_cst_value(curr_int)))), alignment);
             }
             else if(idx_index)
@@ -940,7 +938,7 @@ void mux_connection_binding::determine_connection(const vertex& op, const HLS_ma
 
          case realpart_expr_K: /// the first element of a complex object is the realpart so we just need the base_address
          {
-            realpart_expr* rpe = GetPointer<realpart_expr>(tn);
+            auto* rpe = GetPointer<realpart_expr>(tn);
             tree_var = GET_INDEX_NODE(rpe->op);
             if(HLSMgr->Rmem->has_base_address(tree_var))
             {
@@ -958,7 +956,7 @@ void mux_connection_binding::determine_connection(const vertex& op, const HLS_ma
          }
          case imagpart_expr_K:
          {
-            imagpart_expr * ipe = GetPointer<imagpart_expr>(tn);
+            auto * ipe = GetPointer<imagpart_expr>(tn);
             unsigned int base_index = GET_INDEX_NODE(ipe->op);
             unsigned int offset = tree_helper::size(TreeM, tree_helper::get_type_index(TreeM, base_index)) /16;
 #if USE_ALIGNMENT_INFO
@@ -1022,11 +1020,11 @@ void mux_connection_binding::determine_connection(const vertex& op, const HLS_ma
          }
          case view_convert_expr_K:
          {
-            view_convert_expr* vc = GetPointer<view_convert_expr>(tn);
+            auto* vc = GetPointer<view_convert_expr>(tn);
             if (GetPointer<ssa_name>(GET_NODE(vc->op)))
             {
-               ssa_name* sn = GetPointer<ssa_name>(GET_NODE(vc->op));
-               parm_decl *pd = GetPointer<parm_decl>(GET_NODE(sn->var));
+               auto* sn = GetPointer<ssa_name>(GET_NODE(vc->op));
+               auto *pd = GetPointer<parm_decl>(GET_NODE(sn->var));
                if(pd)
                {
                   THROW_ASSERT(HLSMgr->Rmem->has_base_address(GET_INDEX_NODE(sn->var)), "expected a parm_decl allocated in memory");
@@ -1060,15 +1058,15 @@ void mux_connection_binding::determine_connection(const vertex& op, const HLS_ma
          }
          case bit_field_ref_K:
          {
-            bit_field_ref * bf = GetPointer<bit_field_ref>(tn);
+            auto * bf = GetPointer<bit_field_ref>(tn);
             long long int bpos = tree_helper::get_integer_cst_value(GetPointer<integer_cst>(GET_NODE(bf->op2)));
             if(bpos%8)
                THROW_ERROR_CODE(BITFIELD_EC, "Bitfield LOAD/STORE not yet supported @" + boost::lexical_cast<std::string>(tree_var));
             ///check bitsize
-            unsigned int bsize = static_cast<unsigned int>(tree_helper::get_integer_cst_value(GetPointer<integer_cst>(GET_NODE(bf->op1))));
+            auto bsize = static_cast<unsigned int>(tree_helper::get_integer_cst_value(GetPointer<integer_cst>(GET_NODE(bf->op1))));
             if(bsize == 1 || resize_to_1_8_16_32_64_128_256_512(bsize) != bsize)
                 THROW_ERROR_CODE(BITFIELD_EC, "Bitfield LOAD/STORE not yet supported @" + boost::lexical_cast<std::string>(tree_var));
-            unsigned int offset = static_cast<unsigned int>(bpos/8);
+            auto offset = static_cast<unsigned int>(bpos/8);
 #if USE_ALIGNMENT_INFO
             alignment = offset & (alignment-1);
 #endif
@@ -1291,7 +1289,7 @@ unsigned int mux_connection_binding::extract_parm_decl(unsigned int tree_var, co
    if(GetPointer<parm_decl>(node)) base_index = tree_var;
    else
    {
-      ssa_name *sn = GetPointer<ssa_name>(node);
+      auto *sn = GetPointer<ssa_name>(node);
       base_index = GET_INDEX_NODE(sn->var);
    }
    return base_index;
@@ -1303,7 +1301,7 @@ void mux_connection_binding::connect_to_registers(vertex op, const OpGraphConstR
    const tree_managerRef TreeM = HLSMgr->get_tree_manager();
    const std::set<vertex>& running_states = HLS->Rliv->get_state_where_run(op);
    const std::set<vertex>::const_iterator rs_it_end = running_states.end();
-   for(std::set<vertex>::const_iterator rs_it = running_states.begin(); rs_it_end != rs_it; ++rs_it)
+   for(auto rs_it = running_states.begin(); rs_it_end != rs_it; ++rs_it)
    {
       unsigned int tree_var_state_in;
       if(!is_not_a_phi)
@@ -1334,7 +1332,7 @@ void mux_connection_binding::connect_to_registers(vertex op, const OpGraphConstR
       THROW_ASSERT( HLS->Rliv->has_state_in(*rs_it, op, tree_var_state_in), " no state in for @" + STR(tree_var_state_in) + " - " + (is_not_a_phi? " not a phi" : "phi") + " - " + HLS->Rliv->get_name(*rs_it)+ " for op " + GET_NAME(data,op));
       const std::set<vertex>& states_in = HLS->Rliv->get_state_in(*rs_it, op, tree_var_state_in);
       const std::set<vertex>::const_iterator s_in_it_end = states_in.end();
-      for(std::set<vertex>::const_iterator s_in_it = states_in.begin(); s_in_it != s_in_it_end; ++s_in_it)
+      for(auto s_in_it = states_in.begin(); s_in_it != s_in_it_end; ++s_in_it)
       {
          vertex state = *rs_it;
          generic_objRef reg_obj;
@@ -1650,7 +1648,7 @@ void mux_connection_binding::create_connections()
                THROW_ERROR("Functional unit " + HLS->allocation_information->get_string_name(fu) + " does not exist or it does not have selector " + data->CGetOpNodeInfo(*op)->GetOperation() + "("+STR(idx)+") Operation: "+ STR(data->CGetOpNodeInfo(*op)->GetNodeId()));
             const std::set<vertex>& running_states = HLS->Rliv->get_state_where_run(*op);
             const std::set<vertex>::const_iterator rs_it_end = running_states.end();
-            for(std::set<vertex>::const_iterator rs_it = running_states.begin(); rs_it_end != rs_it; ++rs_it)
+            for(auto rs_it = running_states.begin(); rs_it_end != rs_it; ++rs_it)
             {
                GetPointer<commandport_obj>(selector_obj)->add_activation(commandport_obj::transition(*rs_it, NULL_VERTEX, commandport_obj::data_operation_pair(0, *op)));
                PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "       - add activation for " + selector_obj->get_string() + " in state " << HLS->Rliv->get_name(*rs_it));
@@ -1670,7 +1668,7 @@ void mux_connection_binding::create_connections()
          {
             unsigned int node_id = data->CGetOpNodeInfo(*op)->GetNodeId();
             const tree_nodeRef node = TreeM->get_tree_node_const(node_id);
-            gimple_assign * gm = GetPointer<gimple_assign>(node);
+            auto * gm = GetPointer<gimple_assign>(node);
             THROW_ASSERT(gm, "only gimple_assign's are allowed as memory operations");
 
             if (HLS->allocation_information->is_direct_access_memory_unit(fu) || HLS->allocation_information->is_indirect_access_memory_unit(fu)) ///MEMORY REFERENCES
@@ -1968,20 +1966,20 @@ void mux_connection_binding::create_connections()
                }
                case gimple_assign_K:
                {
-                  gimple_assign * gm = GetPointer<gimple_assign>(node);
+                  auto * gm = GetPointer<gimple_assign>(node);
                   if(GET_NODE(gm->op1)->get_kind() == call_expr_K || GET_NODE(gm->op1)->get_kind() == aggr_init_expr_K)
                   {
-                     call_expr* ce = GetPointer<call_expr>(GET_NODE(gm->op1));
+                     auto* ce = GetPointer<call_expr>(GET_NODE(gm->op1));
                      tree_nodeRef cefn = GET_NODE(ce->fn);
                      THROW_ASSERT(cefn && cefn->get_kind() == addr_expr_K, "expected a function");
    #ifndef NDEBUG
-                     function_decl * fd = GetPointer<function_decl>(GET_NODE(GetPointer<addr_expr>(cefn)->op));
+                     auto * fd = GetPointer<function_decl>(GET_NODE(GetPointer<addr_expr>(cefn)->op));
                      THROW_ASSERT(fd && (tree_helper::print_function_name(TreeM, fd) == "memcpy" || tree_helper::print_function_name(TreeM, fd) == "__internal_bambu_memcpy"), "expected a memcpy call");
    #endif
                      const std::vector<tree_nodeRef> & args = ce->args;
                      unsigned int num = 0;
-                     std::vector<tree_nodeRef>::const_iterator arg_end = args.end();
-                     for(std::vector<tree_nodeRef>::const_iterator arg = args.begin(); arg != arg_end; ++arg, ++num)
+                     auto arg_end = args.end();
+                     for(auto arg = args.begin(); arg != arg_end; ++arg, ++num)
                      {
                         determine_connection(*op, HLS_manager::io_binding_type(GET_INDEX_NODE(*arg),0), fu_obj, num, 0, data, bus_addr_bitsize);
                      }
@@ -2061,20 +2059,20 @@ void mux_connection_binding::create_connections()
                }
                case gimple_assign_K:
                {
-                  gimple_assign * gm = GetPointer<gimple_assign>(node);
+                  auto * gm = GetPointer<gimple_assign>(node);
                   if(GET_NODE(gm->op1)->get_kind() == call_expr_K || GET_NODE(gm->op1)->get_kind() == aggr_init_expr_K)
                   {
-                     call_expr* ce = GetPointer<call_expr>(GET_NODE(gm->op1));
+                     auto* ce = GetPointer<call_expr>(GET_NODE(gm->op1));
                      tree_nodeRef cefn = GET_NODE(ce->fn);
                      THROW_ASSERT(cefn && cefn->get_kind() == addr_expr_K, "expected a function");
    #ifndef NDEBUG
-                     function_decl * fd = GetPointer<function_decl>(GET_NODE(GetPointer<addr_expr>(cefn)->op));
+                     auto * fd = GetPointer<function_decl>(GET_NODE(GetPointer<addr_expr>(cefn)->op));
                      THROW_ASSERT(fd && (tree_helper::print_function_name(TreeM, fd) == "memset" || tree_helper::print_function_name(TreeM, fd) == "__internal_bambu_memset"), "expected a memcpy call");
    #endif
                      const std::vector<tree_nodeRef> & args = ce->args;
                      unsigned int num = 0;
-                     std::vector<tree_nodeRef>::const_iterator arg_end = args.end();
-                     for(std::vector<tree_nodeRef>::const_iterator arg = args.begin(); arg != arg_end; ++arg, ++num)
+                     auto arg_end = args.end();
+                     for(auto arg = args.begin(); arg != arg_end; ++arg, ++num)
                      {
                         determine_connection(*op, HLS_manager::io_binding_type(GET_INDEX_NODE(*arg),0), fu_obj, num, 0, data, object_bitsize(TreeM, HLS_manager::io_binding_type(GET_INDEX_NODE(*arg),0)));
                      }
@@ -2214,7 +2212,7 @@ void mux_connection_binding::create_connections()
          const std::set<vertex>& ending_states = HLS->Rliv->get_state_where_end(*op);
          THROW_ASSERT(ending_states.size()==1 || is_PC || HLS->STG->GetStg()->CGetStateInfo(*ending_states.begin())->is_duplicated, "phis cannot run in more than one state");
          const std::set<vertex>::const_iterator e_it_end = ending_states.end();
-         for(std::set<vertex>::const_iterator e_it = ending_states.begin(); e_it_end != e_it; ++e_it)
+         for(auto e_it = ending_states.begin(); e_it_end != e_it; ++e_it)
          {
             const StateInfoConstRef state_info = is_PC ? StateInfoConstRef() : HLS->STG->GetStg()->CGetStateInfo(*e_it);
             const auto gp = GetPointer<const gimple_phi>(TreeM->get_tree_node_const(data->CGetOpNodeInfo(*op)->GetNodeId()));
@@ -2292,7 +2290,7 @@ void mux_connection_binding::create_connections()
                               }
                               const std::set<vertex>& states_out = HLS->Rliv->get_state_out(*e_it, *op, var_written);
                               const std::set<vertex>::const_iterator s_out_it_end = states_out.end();
-                              for(std::set<vertex>::const_iterator s_out_it = states_out.begin(); s_out_it != s_out_it_end; ++s_out_it)
+                              for(auto s_out_it = states_out.begin(); s_out_it != s_out_it_end; ++s_out_it)
                               {
                                  HLS->Rconn->add_data_transfer(fu_src_obj, conv_port, 0, 0, data_transfer(cur_phi_tree_var, in_bitsize, *e_it, *s_out_it, *op));
                                  HLS->Rconn->add_data_transfer(conv_port, tgt_reg_obj, 0, 0, data_transfer(cur_phi_tree_var, in_bitsize, *e_it, *s_out_it, *op));
@@ -2334,7 +2332,7 @@ void mux_connection_binding::create_connections()
 
                               const std::set<vertex>& states_out = HLS->Rliv->get_state_out(*e_it, *op, var_written);
                               const std::set<vertex>::const_iterator s_out_it_end = states_out.end();
-                              for(std::set<vertex>::const_iterator s_out_it = states_out.begin(); s_out_it != s_out_it_end; ++s_out_it)
+                              for(auto s_out_it = states_out.begin(); s_out_it != s_out_it_end; ++s_out_it)
                               {
                                  HLS->Rconn->add_data_transfer(fu_src_obj, conv_port, 0, 0, data_transfer(cur_phi_tree_var, in_bitsize, *e_it, *s_out_it, *op));
                                  HLS->Rconn->add_data_transfer(conv_port, tgt_reg_obj, 0, 0, data_transfer(cur_phi_tree_var, in_bitsize, *e_it, *s_out_it, *op));
@@ -2376,7 +2374,7 @@ void mux_connection_binding::create_connections()
 
                               const std::set<vertex>& states_out = HLS->Rliv->get_state_out(*e_it, *op, var_written);
                               const std::set<vertex>::const_iterator s_out_it_end = states_out.end();
-                              for(std::set<vertex>::const_iterator s_out_it = states_out.begin(); s_out_it != s_out_it_end; ++s_out_it)
+                              for(auto s_out_it = states_out.begin(); s_out_it != s_out_it_end; ++s_out_it)
                               {
                                  HLS->Rconn->add_data_transfer(fu_src_obj, conv_port, 0, 0, data_transfer(cur_phi_tree_var, in_bitsize, *e_it, *s_out_it, *op));
                                  HLS->Rconn->add_data_transfer(conv_port, tgt_reg_obj, 0, 0, data_transfer(cur_phi_tree_var, in_bitsize, *e_it, *s_out_it, *op));
@@ -2417,7 +2415,7 @@ void mux_connection_binding::create_connections()
                            }
                            const std::set<vertex>& states_out = HLS->Rliv->get_state_out(*e_it, *op, var_written);
                            const std::set<vertex>::const_iterator s_out_it_end = states_out.end();
-                           for(std::set<vertex>::const_iterator s_out_it = states_out.begin(); s_out_it != s_out_it_end; ++s_out_it)
+                           for(auto s_out_it = states_out.begin(); s_out_it != s_out_it_end; ++s_out_it)
                            {
                               HLS->Rconn->add_data_transfer(fu_src_obj, tgt_reg_obj, 0, 0, data_transfer(cur_phi_tree_var, in_bitsize, *e_it, *s_out_it, *op));
                               PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "       - add data transfer from " << fu_src_obj->get_string() << " to " << tgt_reg_obj->get_string() << " port 0:0 from state " << HLS->Rliv->get_name(*e_it) + " to state " + HLS->Rliv->get_name(*s_out_it) + " for " + HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->PrintVariable(cur_phi_tree_var));
@@ -2452,7 +2450,7 @@ void mux_connection_binding::create_connections()
             generic_objRef TargetPort = HLS->Rconn->bind_selector_port(conn_binding::OUT, commandport_obj::MULTIIF, *op, data);
             const std::set<vertex>& ending_states = HLS->Rliv->get_state_where_end(*op);
             const std::set<vertex>::const_iterator e_it_end = ending_states.end();
-            for(std::set<vertex>::const_iterator e_it = ending_states.begin(); e_it_end != e_it; ++e_it)
+            for(auto e_it = ending_states.begin(); e_it_end != e_it; ++e_it)
             {
                HLS->Rconn->add_data_transfer(fu_obj, TargetPort, 0, 0, data_transfer(node_id, var_read.size(), *e_it, NULL_VERTEX, *op));
                PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "       - add data transfer from " << fu_obj->get_string() << " to " << TargetPort->get_string() << " in state " << HLS->Rliv->get_name(*e_it) + " for " + STR(node_id));
@@ -2468,7 +2466,7 @@ void mux_connection_binding::create_connections()
             generic_objRef TargetPort = HLS->Rconn->bind_selector_port(conn_binding::OUT, commandport_obj::CONDITION, *op, data);
             const std::set<vertex>& ending_states = HLS->Rliv->get_state_where_end(*op);
             const std::set<vertex>::const_iterator e_it_end = ending_states.end();
-            for(std::set<vertex>::const_iterator e_it = ending_states.begin(); e_it_end != e_it; ++e_it)
+            for(auto e_it = ending_states.begin(); e_it_end != e_it; ++e_it)
             {
                HLS->Rconn->add_data_transfer(fu_obj, TargetPort, 0, 0, data_transfer(var_written, tree_helper::size(TreeM, var_written), *e_it, NULL_VERTEX, *op));
                PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "       - add data transfer from " << fu_obj->get_string() << " to " << TargetPort->get_string() << " in state " << HLS->Rliv->get_name(*e_it) + "for condition");
@@ -2482,7 +2480,7 @@ void mux_connection_binding::create_connections()
             generic_objRef TargetPort = HLS->Rconn->bind_selector_port(conn_binding::OUT, commandport_obj::SWITCH, *op, data);
             const std::set<vertex>& ending_states = HLS->Rliv->get_state_where_end(*op);
             const std::set<vertex>::const_iterator e_it_end = ending_states.end();
-            for(std::set<vertex>::const_iterator e_it = ending_states.begin(); e_it_end != e_it; ++e_it)
+            for(auto e_it = ending_states.begin(); e_it_end != e_it; ++e_it)
             {
                HLS->Rconn->add_data_transfer(fu_obj, TargetPort, 0, 0, data_transfer(var_written, tree_helper::size(TreeM, var_written), *e_it, NULL_VERTEX, *op));
                PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "       - add data transfer from " << fu_obj->get_string() << " to " << TargetPort->get_string() << " in state " << HLS->Rliv->get_name(*e_it) + " for " + HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->PrintVariable(var_written));
@@ -2495,7 +2493,7 @@ void mux_connection_binding::create_connections()
             PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "     - Write: " + behavioral_helper->PrintVariable(var_written));
             const std::set<vertex>& ending_states = HLS->Rliv->get_state_where_end(*op);
             const std::set<vertex>::const_iterator e_it_end = ending_states.end();
-            for(std::set<vertex>::const_iterator e_it = ending_states.begin(); e_it_end != e_it; ++e_it)
+            for(auto e_it = ending_states.begin(); e_it_end != e_it; ++e_it)
             {
                if (HLS->Rliv->has_state_out(*e_it, *op, var_written))
                {
@@ -2504,7 +2502,7 @@ void mux_connection_binding::create_connections()
                   generic_objRef tgt_reg_obj = HLS->Rreg->get(r_index);
                   const std::set<vertex>& states_out = HLS->Rliv->get_state_out(*e_it, *op, var_written);
                   const std::set<vertex>::const_iterator s_out_it_end = states_out.end();
-                  for(std::set<vertex>::const_iterator s_out_it = states_out.begin(); s_out_it != s_out_it_end; ++s_out_it)
+                  for(auto s_out_it = states_out.begin(); s_out_it != s_out_it_end; ++s_out_it)
                   {
                      HLS->Rconn->add_data_transfer(fu_obj, tgt_reg_obj, 0, 0, data_transfer(var_written, tree_helper::size(TreeM, var_written), *e_it, *s_out_it, *op));
                      PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "       - add data transfer from " << fu_obj->get_string() << " to " << tgt_reg_obj->get_string() << " from state " << HLS->Rliv->get_name(*e_it) + " to state " + HLS->Rliv->get_name(*s_out_it) + " for " + HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->PrintVariable(var_written));
@@ -2797,7 +2795,7 @@ unsigned int mux_connection_binding::swap_p(const OpGraphConstRef data, vertex o
             {
                const std::set<vertex>& running_states = HLS->Rliv->get_state_where_run(op);
                const std::set<vertex>::const_iterator rs_it_end = running_states.end();
-               for(std::set<vertex>::const_iterator rs_it = running_states.begin(); rs_it != rs_it_end; ++rs_it)
+               for(auto rs_it = running_states.begin(); rs_it != rs_it_end; ++rs_it)
                {
                   vertex state = *rs_it;
                   if(tree_helper::is_parameter(TreeM, tree_var) || !HLS->Rliv->has_op_where_defined(tree_var))
@@ -2876,7 +2874,7 @@ unsigned int mux_connection_binding::swap_p(const OpGraphConstRef data, vertex o
                else
                {
                   const std::set<unsigned int>::const_iterator rio2_it_end = rio_it->second.end();
-                  for(std::set<unsigned int>::const_iterator rio2_it = rio_it->second.begin(); rio2_it != rio2_it_end; ++rio2_it)
+                  for(auto rio2_it = rio_it->second.begin(); rio2_it != rio2_it_end; ++rio2_it)
                   {
                      if(regs_in.find(resource_id)->second.find(0)->second.find(*rio2_it) == regs_in.find(resource_id)->second.find(0)->second.end())
                      {
@@ -2891,7 +2889,7 @@ unsigned int mux_connection_binding::swap_p(const OpGraphConstRef data, vertex o
                else
                {
                   const std::set<unsigned int>::const_iterator rio2_it_end = rio_it->second.end();
-                  for(std::set<unsigned int>::const_iterator rio2_it = rio_it->second.begin(); rio2_it != rio2_it_end; ++rio2_it)
+                  for(auto rio2_it = rio_it->second.begin(); rio2_it != rio2_it_end; ++rio2_it)
                   {
                      if(regs_in.find(resource_id)->second.find(1)->second.find(*rio2_it) == regs_in.find(resource_id)->second.find(1)->second.end())
                      {
@@ -2907,7 +2905,7 @@ unsigned int mux_connection_binding::swap_p(const OpGraphConstRef data, vertex o
                else
                {
                   const std::set<unsigned int>::const_iterator rio2_it_end = rio_it->second.end();
-                  for(std::set<unsigned int>::const_iterator rio2_it = rio_it->second.begin(); rio2_it != rio2_it_end; ++rio2_it)
+                  for(auto rio2_it = rio_it->second.begin(); rio2_it != rio2_it_end; ++rio2_it)
                   {
                      if(regs_in.find(resource_id)->second.find(1)->second.find(*rio2_it) == regs_in.find(resource_id)->second.find(1)->second.end())
                      {
@@ -2920,7 +2918,7 @@ unsigned int mux_connection_binding::swap_p(const OpGraphConstRef data, vertex o
                else
                {
                   const std::set<unsigned int>::const_iterator rio2_it_end = rio_it->second.end();
-                  for(std::set<unsigned int>::const_iterator rio2_it = rio_it->second.begin(); rio2_it != rio2_it_end; ++rio2_it)
+                  for(auto rio2_it = rio_it->second.begin(); rio2_it != rio2_it_end; ++rio2_it)
                   {
                      if(regs_in.find(resource_id)->second.find(0)->second.find(*rio2_it) == regs_in.find(resource_id)->second.find(0)->second.end())
                      {
@@ -2941,7 +2939,7 @@ unsigned int mux_connection_binding::swap_p(const OpGraphConstRef data, vertex o
                else
                {
                   const std::set<unsigned int>::const_iterator cio2_it_end = cio_it->second.end();
-                  for(std::set<unsigned int>::const_iterator cio2_it = cio_it->second.begin(); cio2_it != cio2_it_end; ++cio2_it)
+                  for(auto cio2_it = cio_it->second.begin(); cio2_it != cio2_it_end; ++cio2_it)
                   {
                      if(chained_in.find(resource_id)->second.find(0)->second.find(*cio2_it) == chained_in.find(resource_id)->second.find(0)->second.end())
                      {
@@ -2954,7 +2952,7 @@ unsigned int mux_connection_binding::swap_p(const OpGraphConstRef data, vertex o
                else
                {
                   const std::set<unsigned int>::const_iterator cio2_it_end = cio_it->second.end();
-                  for(std::set<unsigned int>::const_iterator cio2_it = cio_it->second.begin(); cio2_it != cio2_it_end; ++cio2_it)
+                  for(auto cio2_it = cio_it->second.begin(); cio2_it != cio2_it_end; ++cio2_it)
                   {
                      if(chained_in.find(resource_id)->second.find(1)->second.find(*cio2_it) == chained_in.find(resource_id)->second.find(1)->second.end())
                      {
@@ -2970,7 +2968,7 @@ unsigned int mux_connection_binding::swap_p(const OpGraphConstRef data, vertex o
                else
                {
                   const std::set<unsigned int>::const_iterator cio2_it_end = cio_it->second.end();
-                  for(std::set<unsigned int>::const_iterator cio2_it = cio_it->second.begin(); cio2_it != cio2_it_end; ++cio2_it)
+                  for(auto cio2_it = cio_it->second.begin(); cio2_it != cio2_it_end; ++cio2_it)
                   {
                      if(chained_in.find(resource_id)->second.find(1)->second.find(*cio2_it) == chained_in.find(resource_id)->second.find(1)->second.end())
                      {
@@ -2983,7 +2981,7 @@ unsigned int mux_connection_binding::swap_p(const OpGraphConstRef data, vertex o
                else
                {
                   const std::set<unsigned int>::const_iterator cio2_it_end = cio_it->second.end();
-                  for(std::set<unsigned int>::const_iterator cio2_it = cio_it->second.begin(); cio2_it != cio2_it_end; ++cio2_it)
+                  for(auto cio2_it = cio_it->second.begin(); cio2_it != cio2_it_end; ++cio2_it)
                   {
                      if(chained_in.find(resource_id)->second.find(0)->second.find(*cio2_it) == chained_in.find(resource_id)->second.find(0)->second.end())
                      {
@@ -3004,7 +3002,7 @@ unsigned int mux_connection_binding::swap_p(const OpGraphConstRef data, vertex o
                else
                {
                   const std::set<resource_id_type>::const_iterator mio2_it_end = mio_it->second.end();
-                  for(std::set<resource_id_type>::const_iterator mio2_it = mio_it->second.begin(); mio2_it != mio2_it_end; ++mio2_it)
+                  for(auto mio2_it = mio_it->second.begin(); mio2_it != mio2_it_end; ++mio2_it)
                   {
                      if(module_in.find(resource_id)->second.find(0)->second.find(*mio2_it) == module_in.find(resource_id)->second.find(0)->second.end())
                      {
@@ -3017,7 +3015,7 @@ unsigned int mux_connection_binding::swap_p(const OpGraphConstRef data, vertex o
                else
                {
                   const std::set<resource_id_type>::const_iterator mio2_it_end = mio_it->second.end();
-                  for(std::set<resource_id_type>::const_iterator mio2_it = mio_it->second.begin(); mio2_it != mio2_it_end; ++mio2_it)
+                  for(auto mio2_it = mio_it->second.begin(); mio2_it != mio2_it_end; ++mio2_it)
                   {
                      if(module_in.find(resource_id)->second.find(1)->second.find(*mio2_it) == module_in.find(resource_id)->second.find(1)->second.end())
                      {
@@ -3033,7 +3031,7 @@ unsigned int mux_connection_binding::swap_p(const OpGraphConstRef data, vertex o
                else
                {
                   const std::set<resource_id_type>::const_iterator mio2_it_end = mio_it->second.end();
-                  for(std::set<resource_id_type>::const_iterator mio2_it = mio_it->second.begin(); mio2_it != mio2_it_end; ++mio2_it)
+                  for(auto mio2_it = mio_it->second.begin(); mio2_it != mio2_it_end; ++mio2_it)
                   {
                      if(module_in.find(resource_id)->second.find(1)->second.find(*mio2_it) == module_in.find(resource_id)->second.find(1)->second.end())
                      {
@@ -3046,7 +3044,7 @@ unsigned int mux_connection_binding::swap_p(const OpGraphConstRef data, vertex o
                else
                {
                   const std::set<resource_id_type>::const_iterator mio2_it_end = mio_it->second.end();
-                  for(std::set<resource_id_type>::const_iterator mio2_it = mio_it->second.begin(); mio2_it != mio2_it_end; ++mio2_it)
+                  for(auto mio2_it = mio_it->second.begin(); mio2_it != mio2_it_end; ++mio2_it)
                   {
                      if(module_in.find(resource_id)->second.find(0)->second.find(*mio2_it) == module_in.find(resource_id)->second.find(0)->second.end())
                      {

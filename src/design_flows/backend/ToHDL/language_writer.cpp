@@ -77,9 +77,7 @@ language_writer::language_writer(char open_char, char close_char, const Paramete
 }
 
 language_writer::~language_writer()
-{
-
-}
+= default;
 
 unsigned int language_writer::bitnumber(unsigned int n)
 {

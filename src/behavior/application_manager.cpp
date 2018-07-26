@@ -97,8 +97,7 @@ application_manager::application_manager(const FunctionExpanderConstRef function
 }
 
 application_manager::~application_manager()
-{
-}
+= default;
 
 const ParameterConstRef application_manager::get_parameter() const
 {
@@ -183,12 +182,12 @@ unsigned int application_manager::get_produced_value(const tree_nodeRef& tn) con
    {
       case gimple_while_K:
       {
-         gimple_while * we = GetPointer<gimple_while>(tn);
+         auto * we = GetPointer<gimple_while>(tn);
          return GET_INDEX_NODE(we->op0);
       }
       case gimple_cond_K:
       {
-         gimple_cond * gc = GetPointer<gimple_cond>(tn);
+         auto * gc = GetPointer<gimple_cond>(tn);
          return GET_INDEX_NODE(gc->op0);
       }
       case gimple_label_K:
@@ -203,17 +202,17 @@ unsigned int application_manager::get_produced_value(const tree_nodeRef& tn) con
       }
       case gimple_phi_K:
       {
-         gimple_phi* gp = GetPointer<gimple_phi>(tn);
+         auto* gp = GetPointer<gimple_phi>(tn);
          return GET_INDEX_NODE(gp->res);
       }
       case gimple_switch_K:
       {
-         gimple_switch * se = GetPointer<gimple_switch>(tn);
+         auto * se = GetPointer<gimple_switch>(tn);
          return GET_INDEX_NODE(se->op0);
       }
       case gimple_assign_K:
       {
-         gimple_assign* gm = GetPointer<gimple_assign>(tn);
+         auto* gm = GetPointer<gimple_assign>(tn);
          tree_nodeRef op0 = GET_NODE(gm->op0);
          if(gm->init_assignment || gm->clobber)
             break;
@@ -237,7 +236,7 @@ unsigned int application_manager::get_produced_value(const tree_nodeRef& tn) con
       }
       case gimple_asm_K:
       {
-         gimple_asm * ga = GetPointer<gimple_asm>(tn);
+         auto * ga = GetPointer<gimple_asm>(tn);
          if(ga->out)
          {
             auto tl = GetPointer<tree_list>(GET_NODE(ga->out));

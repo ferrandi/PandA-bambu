@@ -102,9 +102,7 @@ moduleGenerator::moduleGenerator(const HLS_managerConstRef _HLSMgr, const Parame
 }
 
 moduleGenerator::~moduleGenerator()
-{
-
-}
+= default;
 
 #define NAMESEPARATOR "_"
 
@@ -192,7 +190,7 @@ std::string moduleGenerator::GenerateHDL(const std::string& hdl_template, std::v
 
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "dynamic_generators @ Setting up parameters structure...");
 
-   unsigned int parNum = static_cast<unsigned int>(required_variables.size());
+   auto parNum = static_cast<unsigned int>(required_variables.size());
 
    cpp_code_body += "   int _np = "+STR(parNum)+";\n";
    cpp_code_body += "   parameter _p["+ STR(parNum) +"];\n";
@@ -316,7 +314,7 @@ void moduleGenerator::specialize_fu(std::string fuName, vertex ve, std::string l
    technology_nodeRef techNode_obj=libraryManager->get_fu(fuName);
    structural_managerRef structManager_obj=GetPointer<functional_unit>(techNode_obj)->CM;
    structural_objectRef fu_obj=structManager_obj->get_circ();
-   module *fu_module=GetPointer<module>(fu_obj);
+   auto *fu_module=GetPointer<module>(fu_obj);
 
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Specializing: "+fuName+" as "+new_fu_name);
 
@@ -354,8 +352,8 @@ void moduleGenerator::specialize_fu(std::string fuName, vertex ve, std::string l
       std::string param_list= fu_module->get_NP_functionality()->get_NP_functionality(NP_functionality::LIBRARY);
 
       /*Adding ports*/
-      unsigned int inPortSize=static_cast<unsigned int>(fu_module->get_in_port_size());
-      unsigned int outPortSize=static_cast<unsigned int>(fu_module->get_out_port_size());
+      auto inPortSize=static_cast<unsigned int>(fu_module->get_in_port_size());
+      auto outPortSize=static_cast<unsigned int>(fu_module->get_out_port_size());
 
 
       structural_objectRef generated_port;

@@ -46,6 +46,8 @@
 #ifndef DATAPORT_OBJ_HPP
 #define DATAPORT_OBJ_HPP
 
+#include <utility>
+
 #include "generic_obj.hpp"
 
 /**
@@ -70,12 +72,12 @@ class dataport_obj : public generic_obj
       /**
        * Constructor
        */
-      dataport_obj( const std::string&_name, const std::string& _parameter, unsigned int _bitsize) : generic_obj(DATA_PORT, _name), parameter(_parameter), bitsize(_bitsize) {}
+      dataport_obj( const std::string&_name, std::string  _parameter, unsigned int _bitsize) : generic_obj(DATA_PORT, _name), parameter(std::move(_parameter)), bitsize(_bitsize) {}
 
       /**
        * Destructor.
        */
-      ~dataport_obj() override {}
+      ~dataport_obj() override = default;
 
       /**
        * return the maximum bitsize associated with the component

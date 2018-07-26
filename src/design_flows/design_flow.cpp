@@ -49,7 +49,7 @@ DesignFlow::DesignFlow(const DesignFlowManagerConstRef _design_flow_manager, con
 {}
 
 DesignFlow::~DesignFlow()
-{}
+= default;
 
 void DesignFlow::ComputeRelationships(DesignFlowStepSet &, const DesignFlowStep::RelationshipType)
 {}

@@ -236,7 +236,7 @@ class RefCountOrder : std::binary_function<refcount<T>, refcount<T>, bool>
        * Constructor
        */
       RefCountOrder<T>()
-      {}
+      = default;
 
       /**
        * Compare of refcount object

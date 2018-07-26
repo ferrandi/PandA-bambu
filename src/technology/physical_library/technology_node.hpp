@@ -571,7 +571,7 @@ struct functional_unit: public technology_node
    {
       if (op_name_to_op.count(curr->get_name()))
       {
-         std::vector<technology_nodeRef>::iterator del = std::find(list_of_operation.begin(), list_of_operation.end(), op_name_to_op[curr->get_name()]);
+         auto del = std::find(list_of_operation.begin(), list_of_operation.end(), op_name_to_op[curr->get_name()]);
          if (del != list_of_operation.end())
             list_of_operation.erase(del);
       }
@@ -799,7 +799,7 @@ struct functional_unit: public technology_node
    storage_unit() : bits(0), words(0), read_ports(0), read_latency(0), write_ports(0), write_latency(0), readwrite_ports(0), readwrite_latency(0), area(0) {}
 
    /// Destructor
-   ~storage_unit() override {}
+   ~storage_unit() override = default;
 
    const std::string& get_name() const override {return storage_unit_name;}
    /**

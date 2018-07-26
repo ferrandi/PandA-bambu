@@ -215,7 +215,7 @@ struct cdfc_resource_ordering_functor
       /**
        * Destructor
        */
-      ~cdfc_resource_ordering_functor() {}
+      ~cdfc_resource_ordering_functor() = default;
 
 };
 
@@ -254,7 +254,7 @@ void cdfc_module_binding::initialize_connection_relation(connection_relation &co
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---" + STR(TreeM->CGetTreeNode(tree_var)));
             const std::set<vertex>& running_states = HLS->Rliv->get_state_where_run(current_v);
             const std::set<vertex>::const_iterator rs_it_end = running_states.end();
-            for(std::set<vertex>::const_iterator rs_it = running_states.begin(); rs_it != rs_it_end; ++rs_it)
+            for(auto rs_it = running_states.begin(); rs_it != rs_it_end; ++rs_it)
             {
                vertex state = *rs_it;
                if(tree_helper::is_parameter(TreeM, tree_var) || !HLS->Rliv->has_op_where_defined(tree_var))
@@ -407,7 +407,7 @@ void estimate_muxes(const connection_relation &con_rel, unsigned int mux_prec, d
          {
             const std::set<vertex>& end = HLS->Rliv->get_state_where_end(current_v);
             const std::set<vertex>::const_iterator e_it_end = end.end();
-            for(std::set<vertex>::const_iterator e_it = end.begin(); e_it != e_it_end; ++e_it)
+            for(auto e_it = end.begin(); e_it != e_it_end; ++e_it)
             {
                vertex state = *e_it;
                if(HLS->storage_value_information->is_a_storage_value(state, var_written))
@@ -512,8 +512,8 @@ struct slack_based_filtering : public filter_clique<vertex>
          }
          if(max_starting_time < controller_delay && total_muxes >0)
             max_starting_time = controller_delay;
-         std::set<C_vertex>::const_iterator vert_it_end = candidate_clique.end();
-         for(std::set<C_vertex>::const_iterator vert_it = candidate_clique.begin(); vert_it != vert_it_end; ++vert_it)
+         auto vert_it_end = candidate_clique.end();
+         for(auto vert_it = candidate_clique.begin(); vert_it != vert_it_end; ++vert_it)
          {
             THROW_ASSERT(converter.find(*vert_it) != converter.end(), "non-existing vertex");
             current_v = converter.find(*vert_it)->second;
@@ -652,7 +652,7 @@ class CdfcEdgeWriter : public EdgeWriter
        */
       void operator()(std::ostream& out, const EdgeDescriptor& e) const override
       {
-         const CdfcEdgeInfo * edge_info = Cget_edge_info<CdfcEdgeInfo>(e, *printing_graph);
+         const auto * edge_info = Cget_edge_info<CdfcEdgeInfo>(e, *printing_graph);
          if(edge_info)
             out << "[label=\"" << edge_info->edge_weight << "\"]";
          else
@@ -670,7 +670,7 @@ CdfcGraphsCollection::CdfcGraphsCollection(const CdfcGraphInfoRef cdfc_graph_inf
 {}
 
 CdfcGraphsCollection::~CdfcGraphsCollection()
-{}
+= default;
 
 CdfcGraph::CdfcGraph(const CdfcGraphsCollectionRef  cdfc_graphs_collection, const int _selector) :
    graph(cdfc_graphs_collection.get(), _selector)
@@ -681,11 +681,11 @@ CdfcGraph::CdfcGraph(const CdfcGraphsCollectionRef  cdfc_graphs_collection, cons
 {}
 
 CdfcGraph::~CdfcGraph()
-{}
+= default;
 
 void CdfcGraph::WriteDot(const std::string& file_name, const int) const
 {
-   const CdfcGraphInfo * cdfc_graph_info = GetPointer<const CdfcGraphInfo>(CGetGraphInfo());
+   const auto * cdfc_graph_info = GetPointer<const CdfcGraphInfo>(CGetGraphInfo());
    const BehavioralHelperConstRef behavioral_helper = cdfc_graph_info->operation_graph->CGetOpGraphInfo()->BH;
    const std::string output_directory = collection->parameters->getOption<std::string>(OPT_dot_directory) + "/" + behavioral_helper->get_function_name() + "/";
    if (!boost::filesystem::exists(output_directory))
@@ -704,9 +704,7 @@ cdfc_module_binding::cdfc_module_binding(const ParameterConstRef _parameters, co
 }
 
 cdfc_module_binding::~cdfc_module_binding()
-{
-
-}
+= default;
 
 void cdfc_module_binding::update_slack_starting_time(const OpGraphConstRef fdfg, OpVertexSet & sorted_vertices, std::unordered_map<vertex,double> &slack_time, std::unordered_map<vertex,double> &starting_time, bool update_starting_time, bool only_backward, bool only_forward)
 {
@@ -1046,7 +1044,7 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
       {
          std::map<unsigned int, vertex> rep_vertex;
          const std::set<vertex>::const_iterator eb_it_end = fu_eb_it->second.end();
-         for(std::set<vertex>::const_iterator eb_it = fu_eb_it->second.begin(); eb_it != eb_it_end; ++eb_it)
+         for(auto eb_it = fu_eb_it->second.begin(); eb_it != eb_it_end; ++eb_it)
          {
             vertex cur_v = *eb_it;
             unsigned int vertex_index = fu->get_index(cur_v);
@@ -1559,7 +1557,7 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
          for(std::map<unsigned int, std::unordered_set<cdfc_vertex>, cdfc_resource_ordering_functor >::const_iterator p_it = partitions.begin(); p_it_end != p_it; ++p_it)
          {
             THROW_ASSERT(p_it->second.size()>1, "bad projection");
-            std::unordered_set<cdfc_vertex>::const_iterator vert_it_end = p_it->second.end();
+            auto vert_it_end = p_it->second.end();
             const double mux_time = MODULE_BINDING_MUX_MARGIN * allocation_information->estimate_mux_time(p_it->first);
             double controller_delay = allocation_information->EstimateControllerDelay();
             double resource_area = allocation_information->compute_normalized_area(p_it->first);
@@ -1588,7 +1586,7 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
             /// build the clique covering solver
             refcount< clique_covering<vertex> > module_clique(clique_covering<vertex>::create_solver(clique_covering_method_used));
             /// add vertex to the clique covering solver
-            for(std::unordered_set<cdfc_vertex>::const_iterator vert_it = p_it->second.begin(); vert_it != vert_it_end; ++vert_it)
+            for(auto vert_it = p_it->second.begin(); vert_it != vert_it_end; ++vert_it)
             {
                std::string el1_name = GET_NAME(sdg, c2s[boost::get(boost::vertex_index, *CG, *vert_it)]) + "(" + sdg->CGetOpNodeInfo(c2s[boost::get(boost::vertex_index, *CG, *vert_it)])->GetOperation() + ")";
                module_clique->add_vertex(c2s[boost::get(boost::vertex_index, *CG, *vert_it)],el1_name);
@@ -1598,11 +1596,11 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
             {
                std::map<vertex, size_t> v2id;
                size_t max_id = 0, curr_id;
-               for(std::unordered_set<cdfc_vertex>::const_iterator vert_it = p_it->second.begin(); vert_it != vert_it_end; ++vert_it)
+               for(auto vert_it = p_it->second.begin(); vert_it != vert_it_end; ++vert_it)
                {
                   const std::set<vertex>& running_states = HLS->Rliv->get_state_where_run(c2s[boost::get(boost::vertex_index, *CG, *vert_it)]);
                   const std::set<vertex>::const_iterator rs_it_end = running_states.end();
-                  for(std::set<vertex>::const_iterator rs_it = running_states.begin(); rs_it != rs_it_end; ++rs_it)
+                  for(auto rs_it = running_states.begin(); rs_it != rs_it_end; ++rs_it)
                   {
                      if(v2id.find(*rs_it) == v2id.end())
                      {
@@ -1686,18 +1684,18 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
                {
                   PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Restarting with BIPARTITE_MATCHING: "+ res_name);
                   module_clique = clique_covering<vertex>::create_solver(CliqueCovering_Algorithm::BIPARTITE_MATCHING);
-                  for(std::unordered_set<cdfc_vertex>::const_iterator vert_it = p_it->second.begin(); vert_it != vert_it_end; ++vert_it)
+                  for(auto vert_it = p_it->second.begin(); vert_it != vert_it_end; ++vert_it)
                   {
                      std::string el1_name = GET_NAME(sdg, c2s[boost::get(boost::vertex_index, *CG, *vert_it)]) + "(" + sdg->CGetOpNodeInfo(c2s[boost::get(boost::vertex_index, *CG, *vert_it)])->GetOperation() + ")";
                      module_clique->add_vertex(c2s[boost::get(boost::vertex_index, *CG, *vert_it)],el1_name);
                   }
                   std::map<vertex, size_t> v2id;
                   size_t max_id = 0, curr_id;
-                  for(std::unordered_set<cdfc_vertex>::const_iterator vert_it = p_it->second.begin(); vert_it != vert_it_end; ++vert_it)
+                  for(auto vert_it = p_it->second.begin(); vert_it != vert_it_end; ++vert_it)
                   {
                      const std::set<vertex>& running_states = HLS->Rliv->get_state_where_run(c2s[boost::get(boost::vertex_index, *CG, *vert_it)]);
                      const std::set<vertex>::const_iterator rs_it_end = running_states.end();
-                     for(std::set<vertex>::const_iterator rs_it = running_states.begin(); rs_it != rs_it_end; ++rs_it)
+                     for(auto rs_it = running_states.begin(); rs_it != rs_it_end; ++rs_it)
                      {
                         if(v2id.find(*rs_it) == v2id.end())
                         {

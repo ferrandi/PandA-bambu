@@ -66,7 +66,7 @@ ExtractGimpleCondOp::ExtractGimpleCondOp(const application_managerRef _AppM, con
 }
 
 ExtractGimpleCondOp::~ExtractGimpleCondOp()
-{}
+= default;
 
 void ExtractGimpleCondOp::Initialize()
 {

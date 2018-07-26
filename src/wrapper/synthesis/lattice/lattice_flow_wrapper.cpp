@@ -60,9 +60,7 @@ lattice_flow_wrapper::lattice_flow_wrapper(const ParameterConstRef _Param, const
 
 //destructor
 lattice_flow_wrapper::~lattice_flow_wrapper()
-{
-
-}
+= default;
 
 void lattice_flow_wrapper::EvaluateVariables(const DesignParametersRef dp)
 {

@@ -54,8 +54,7 @@ ClassicalHLSSynthesisFlow::ClassicalHLSSynthesisFlow(const ParameterConstRef _pa
 }
 
 ClassicalHLSSynthesisFlow::~ClassicalHLSSynthesisFlow()
-{
-}
+= default;
 
 const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > ClassicalHLSSynthesisFlow::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {

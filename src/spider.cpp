@@ -193,7 +193,7 @@ int main(int argc, char *argv[])
          }
       }
 #if !defined(NDEBUG) || HAVE_EXPERIMENTAL
-      int debug_level = parameters->getOption<int>(OPT_debug_level);
+      auto debug_level = parameters->getOption<int>(OPT_debug_level);
 #endif
       Parameters_FileFormat input_format = parameters->getOption<Parameters_FileFormat>(OPT_input_format);
       Parameters_FileFormat output_format = parameters->getOption<Parameters_FileFormat>(OPT_output_format);
@@ -656,7 +656,7 @@ int main(int argc, char *argv[])
 #if HAVE_TECHNOLOGY_BUILT
          case(Parameters_FileFormat::FF_XML_TARGET):
          {
-            int output_level = parameters->getOption<int>(OPT_output_level);
+            auto output_level = parameters->getOption<int>(OPT_output_level);
             INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "-->Merging characterizations");
             // Technology library manager
             technology_managerRef TM = technology_managerRef(new technology_manager(parameters));

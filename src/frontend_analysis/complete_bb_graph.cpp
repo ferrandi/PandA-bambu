@@ -56,7 +56,7 @@ CompleteBBGraph::CompleteBBGraph(const application_managerRef _AppM, const unsig
 }
 
 CompleteBBGraph::~CompleteBBGraph()
-{}
+= default;
 
 const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship> > CompleteBBGraph::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {

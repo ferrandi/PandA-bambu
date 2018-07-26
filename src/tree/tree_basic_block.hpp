@@ -47,7 +47,7 @@
 ///Autoheader include
 #include "config_HAVE_BAMBU_BUILT.hpp"
 
-#include <stddef.h>                                  // for size_t
+#include <cstddef>                                  // for size_t
 
 ///STL include
 #include <list>

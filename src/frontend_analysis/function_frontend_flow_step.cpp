@@ -87,7 +87,7 @@ FunctionFrontendFlowStep::FunctionFrontendFlowStep(const application_managerRef 
 }
 
 FunctionFrontendFlowStep::~FunctionFrontendFlowStep()
-{}
+= default;
 
 const std::string FunctionFrontendFlowStep::GetSignature() const
 {
@@ -114,7 +114,7 @@ const std::string FunctionFrontendFlowStep::GetName() const
 void FunctionFrontendFlowStep::ComputeRelationships(DesignFlowStepSet & relationships, const DesignFlowStep::RelationshipType relationship_type)
 {
    const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
-   const FrontendFlowStepFactory * frontend_flow_step_factory = GetPointer<const FrontendFlowStepFactory>(CGetDesignFlowStepFactory());
+   const auto * frontend_flow_step_factory = GetPointer<const FrontendFlowStepFactory>(CGetDesignFlowStepFactory());
    std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > frontend_relationships = ComputeFrontendRelationships(relationship_type);
 
    ///Precedence step whose symbolic application frontend flow step has to be executed can be considered as dependence step

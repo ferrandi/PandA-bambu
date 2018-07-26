@@ -44,6 +44,7 @@
 #include <unordered_set>
 #include <stack>
 #include <string>
+#include <utility>
 
 // include from parser/vcd/
 #include "sig_variation.hpp"
@@ -75,8 +76,8 @@ class vcd_sig_info
        */
       std::unordered_map<std::string, size_t> vcd_id_to_bit;
 
-      vcd_sig_info(const std::string&_type, const bool _is_vec, const size_t _msb, const size_t _lsb) :
-         type(_type), is_vec(_is_vec), msb(_msb), lsb(_lsb)
+      vcd_sig_info(std::string _type, const bool _is_vec, const size_t _msb, const size_t _lsb) :
+         type(std::move(_type)), is_vec(_is_vec), msb(_msb), lsb(_lsb)
       {}
 };
 

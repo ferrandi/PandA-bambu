@@ -58,17 +58,17 @@ DesignFlowStepInfo::DesignFlowStepInfo(const DesignFlowStepRef _design_flow_step
 {}
 
 DesignFlowDependenceInfo::DesignFlowDependenceInfo()
-{}
+= default;
 
 DesignFlowDependenceInfo::~DesignFlowDependenceInfo()
-{}
+= default;
 
 DesignFlowGraphsCollection::DesignFlowGraphsCollection(const ParameterConstRef _parameters) :
    graphs_collection(GraphInfoRef(new DesignFlowGraphInfo()), _parameters)
 {}
 
 DesignFlowGraphsCollection::~DesignFlowGraphsCollection()
-{}
+= default;
 
 vertex DesignFlowGraphsCollection::AddDesignFlowStep(const DesignFlowStepRef design_flow_step, const bool unnecessary)
 {
@@ -103,7 +103,7 @@ DesignFlowGraph::DesignFlowGraph(const DesignFlowGraphsCollectionRef design_flow
 {}
 
 DesignFlowGraph::~DesignFlowGraph()
-{}
+= default;
 
 vertex DesignFlowGraph::GetDesignFlowStep(const std::string&signature) const
 {
@@ -141,7 +141,7 @@ DesignFlowStepWriter::DesignFlowStepWriter(const DesignFlowGraph * design_flow_g
 {}
 
 DesignFlowStepWriter::~DesignFlowStepWriter()
-{}
+= default;
 
 void DesignFlowStepWriter::operator()(std::ostream& out, const vertex& v) const
 {

@@ -58,7 +58,7 @@ CompleteCallGraph::CompleteCallGraph(const application_managerRef _AppM, const D
 }
 
 CompleteCallGraph::~CompleteCallGraph()
-{}
+= default;
 
 const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship> > CompleteCallGraph::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {

@@ -96,6 +96,8 @@ if BUILD_BAMBU
      virtual_phi_nodes_split.hpp\
      constant_flop_wrapper.hpp
   lib_IR_analysis_la_SOURCES += \
+     IR_lowering.cpp \
+     IR_lowering_exec.cpp \
      bit_lattice.cpp \
      Bit_Value.cpp \
      Bit_Value_backward.cpp \
@@ -116,8 +118,6 @@ if BUILD_BAMBU
      hls_div_cg_ext.cpp \
      HWCallInjection.cpp \
      ipa_point_to_analysis.cpp\
-     IR_lowering.cpp \
-     IR_lowering_exec.cpp \
      loops_analysis_bambu.cpp \
      lut_transformation.cpp \
      multi_way_if.cpp \

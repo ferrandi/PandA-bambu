@@ -58,6 +58,8 @@
 ///Header include
 #include "testbench_generation_base_step.hpp"
 
+#include <utility>
+
 ///. include
 #include "Parameter.hpp"
 
@@ -119,21 +121,20 @@
 ///wrapper/treegcc include
 #include "gcc_wrapper.hpp"
 
-TestbenchGenerationBaseStep::TestbenchGenerationBaseStep(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type, const std::string& _c_testbench_basename) :
+TestbenchGenerationBaseStep::TestbenchGenerationBaseStep(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type, std::string  _c_testbench_basename) :
    HLS_step(_parameters, _HLSMgr, _design_flow_manager, _hls_flow_step_type),
    writer(language_writer::create_writer(HDLWriter_Language::VERILOG, _HLSMgr->get_HLS_target()->get_technology_manager(), _parameters)),
    mod(nullptr),
    target_period(0.0),
    output_directory(parameters->getOption<std::string>(OPT_output_directory) + "/simulation/"),
-   c_testbench_basename(_c_testbench_basename)
+   c_testbench_basename(std::move(_c_testbench_basename))
 {
    if (!boost::filesystem::exists(output_directory))
       boost::filesystem::create_directories(output_directory);
 }
 
 TestbenchGenerationBaseStep::~TestbenchGenerationBaseStep()
-{
-}
+= default;
 
 const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > TestbenchGenerationBaseStep::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
@@ -182,7 +183,7 @@ void TestbenchGenerationBaseStep::ComputeRelationships
    {
       case DEPENDENCE_RELATIONSHIP:
       {
-         const CBackendStepFactory * c_backend_factory = GetPointer<const CBackendStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("CBackend"));
+         const auto * c_backend_factory = GetPointer<const CBackendStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("CBackend"));
 
          CBackend::Type hls_c_backend_type;
 #if HAVE_HLS_BUILT
@@ -197,7 +198,7 @@ void TestbenchGenerationBaseStep::ComputeRelationships
             if(parameters->isOption(OPT_pretty_print))
             {
                const auto design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
-               const CBackendStepFactory * c_backend_step_factory = GetPointer<const CBackendStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("CBackend"));
+               const auto * c_backend_step_factory = GetPointer<const CBackendStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("CBackend"));
                const std::string output_file_name = parameters->getOption<std::string>(OPT_pretty_print);
                const vertex c_backend_vertex = design_flow_manager.lock()->GetDesignFlowStep(CBackend::ComputeSignature(CBackend::CB_SEQUENTIAL));
                const DesignFlowStepRef c_backend_step = c_backend_vertex ? design_flow_graph->CGetDesignFlowStepInfo(c_backend_vertex)->design_flow_step : c_backend_step_factory->CreateCBackendStep(CBackend::CB_SEQUENTIAL, output_file_name, CBackendInformationConstRef());
@@ -269,7 +270,7 @@ std::string TestbenchGenerationBaseStep::print_var_init(const tree_managerConstR
    std::vector<std::string> init_els;
    const tree_nodeRef& tn = TreeM->get_tree_node_const(var);
    tree_nodeRef init_node;
-   var_decl * vd = GetPointer<var_decl>(tn);
+   auto * vd = GetPointer<var_decl>(tn);
    if(vd && vd->init)
       init_node = GET_NODE(vd->init);
 

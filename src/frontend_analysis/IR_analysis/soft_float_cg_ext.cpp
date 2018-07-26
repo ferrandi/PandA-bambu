@@ -94,7 +94,7 @@ soft_float_cg_ext::soft_float_cg_ext(const ParameterConstRef _parameters, const 
 }
 
 soft_float_cg_ext::~soft_float_cg_ext()
-{}
+= default;
 
 const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship> > soft_float_cg_ext::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
@@ -127,8 +127,8 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
 {
    const tree_nodeRef curr_tn = TreeM->GetTreeNode(function_id);
    tree_nodeRef Scpe = TreeM->GetTreeReindex(function_id);
-   function_decl * fd = GetPointer<function_decl>(curr_tn);
-   statement_list * sl = GetPointer<statement_list>(GET_NODE(fd->body));
+   auto * fd = GetPointer<function_decl>(curr_tn);
+   auto * sl = GetPointer<statement_list>(GET_NODE(fd->body));
    modified = false;
 
    for(const auto& block : sl->list_of_bloc)
@@ -188,7 +188,7 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef current_statement,
       }
       case gimple_assign_K:
       {
-         gimple_assign * gm = GetPointer<gimple_assign>(curr_tn);
+         auto * gm = GetPointer<gimple_assign>(curr_tn);
          RecursiveExaminate(current_statement, gm->op0);
          RecursiveExaminate(current_statement, gm->op1);
          if(gm->predicate)
@@ -678,7 +678,7 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef current_statement,
       }
       case gimple_multi_way_if_K:
       {
-         gimple_multi_way_if* gmwi=GetPointer<gimple_multi_way_if>(curr_tn);
+         auto* gmwi=GetPointer<gimple_multi_way_if>(curr_tn);
          for(const auto& cond : gmwi->list_of_cond)
             if(cond.first)
                RecursiveExaminate(current_statement, cond.first);
@@ -693,7 +693,7 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef current_statement,
       }
       case gimple_for_K:
       {
-         const gimple_for * gf = GetPointer<const gimple_for>(curr_tn);
+         const auto * gf = GetPointer<const gimple_for>(curr_tn);
          RecursiveExaminate(current_statement, gf->op0);
          RecursiveExaminate(current_statement, gf->op1);
          RecursiveExaminate(current_statement, gf->op2);

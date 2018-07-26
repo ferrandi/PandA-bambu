@@ -98,7 +98,7 @@ class weak_dominance
       /**
        * Destructor
        */
-      ~weak_dominance(){}
+      ~weak_dominance()= default;
 
       /**
        * Compute weak dominance info

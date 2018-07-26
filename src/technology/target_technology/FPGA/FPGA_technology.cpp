@@ -65,9 +65,7 @@ FPGA_technology::FPGA_technology(const ParameterConstRef param) :
 }
 
 FPGA_technology::~FPGA_technology( )
-{
-
-}
+= default;
 
 void FPGA_technology::initialize()
 {

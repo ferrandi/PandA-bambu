@@ -70,7 +70,7 @@ BambuFrontendFlow::BambuFrontendFlow(const application_managerRef _AppM, const D
 }
 
 BambuFrontendFlow::~BambuFrontendFlow()
-{}
+= default;
 
 const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship> > BambuFrontendFlow::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {

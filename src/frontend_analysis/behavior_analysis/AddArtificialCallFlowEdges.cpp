@@ -66,8 +66,7 @@ AddArtificialCallFlowEdges::AddArtificialCallFlowEdges(const application_manager
 }
 
 AddArtificialCallFlowEdges::~AddArtificialCallFlowEdges()
-{
-}
+= default;
 
 const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship> > AddArtificialCallFlowEdges::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
