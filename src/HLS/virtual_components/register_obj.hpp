@@ -75,7 +75,7 @@ class register_obj : public generic_obj
       /**
        * Destructor.
        */
-      ~register_obj() {}
+      ~register_obj() override {}
 
       /**
        * Gets the write enable object for the given register

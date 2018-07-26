@@ -66,13 +66,13 @@ class minimal_interface : public module_interface
       /**
        * Destructor
        */
-      virtual ~minimal_interface();
+      ~minimal_interface() override;
 
       /**
        * Execute the step
        * @return the exit status of this step
        */
-      virtual DesignFlowStep_Status InternalExec();
+      DesignFlowStep_Status InternalExec() override;
 };
 
 #endif

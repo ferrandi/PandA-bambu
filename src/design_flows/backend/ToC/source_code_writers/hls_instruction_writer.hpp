@@ -67,9 +67,9 @@ class HLSInstructionWriter : public InstructionWriter
       /**
        * Destructor
        */
-      virtual ~HLSInstructionWriter();
+      ~HLSInstructionWriter() override;
 
-      virtual void declareFunction(const unsigned int function_id);
+      void declareFunction(const unsigned int function_id) override;
 
 };
 #endif

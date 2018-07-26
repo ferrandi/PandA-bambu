@@ -163,7 +163,7 @@ class ScheduleWriter : public GraphWriter
       /**
        * Redifinition of operator()
        */
-      void operator()(std::ostream& os) const
+      void operator()(std::ostream& os) const override
       {
          os << "//Scheduling solution\n";
          os << "splines=polyline;\n";

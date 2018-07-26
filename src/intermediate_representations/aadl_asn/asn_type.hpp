@@ -148,7 +148,7 @@ class OctetStringAsnType : public AsnType
       /**
        * Destructor
        */
-      ~OctetStringAsnType();
+      ~OctetStringAsnType() override;
 };
 
 class RealAsnType : public AsnType

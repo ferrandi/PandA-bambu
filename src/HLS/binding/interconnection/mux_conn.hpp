@@ -79,13 +79,13 @@ class mux_conn : public connection_obj
       /**
        * Destructor.
        */
-      virtual ~mux_conn() {}
+      ~mux_conn() override {}
 
       /**
        * Returns the name associated with the element
        * @return a string containing the name associated with the element.
        */
-      const std::string get_string() const
+      const std::string get_string() const override
       {
          THROW_ASSERT(mux_tree.size() > 0, "Mux connection without any multiplexer associated");
          return mux_tree[0].first->get_string() + (mux_tree[0].second == T_COND ? "(T)" : "(F)");

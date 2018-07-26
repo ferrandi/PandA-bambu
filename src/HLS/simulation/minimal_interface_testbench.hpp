@@ -68,20 +68,20 @@ class MinimalInterfaceTestbench : public TestbenchGenerationBaseStep
             const std::string &mem_aggregate)
          const;
 
-      virtual void write_call(bool hasMultiIrq) const;
+      void write_call(bool hasMultiIrq) const override;
 
-      virtual void write_memory_handler() const;
+      void write_memory_handler() const override;
 
-      virtual void write_signals(
+      void write_signals(
             const tree_managerConstRef TreeM,
             bool & withMemory,
             bool & hasMultiIrq)
-         const;
+         const override;
 
-      virtual void write_slave_initializations(bool withMemory)
-         const;
+      void write_slave_initializations(bool withMemory)
+         const override;
 
-      virtual void write_file_reading_operations() const;
+      void write_file_reading_operations() const override;
 
       void write_input_signal_declaration(
             const tree_managerConstRef TreeM,
@@ -102,6 +102,6 @@ class MinimalInterfaceTestbench : public TestbenchGenerationBaseStep
       /**
        * Destructor
        */
-      virtual ~MinimalInterfaceTestbench();
+      ~MinimalInterfaceTestbench() override;
 };
 #endif

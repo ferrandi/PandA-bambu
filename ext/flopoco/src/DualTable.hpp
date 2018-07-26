@@ -49,7 +49,7 @@ namespace flopoco{
 		
 		DualTable(Target* target);
 
-		virtual ~DualTable() {};
+		~DualTable() override {};
 
 	
 		/** The function that will define the values contained in the table
@@ -64,7 +64,7 @@ namespace flopoco{
 		void fillTable();
 
 		/** overload the virtual method of Operator to have access to the virtual function() */
-		void outputVHDL(std::ostream& o, std::string name);
+		void outputVHDL(std::ostream& o, std::string name) override;
 
 		/** A function that translates an real value into an integer input
 			 This function should be overridden by an implementation of Table
@@ -115,7 +115,7 @@ namespace flopoco{
 		
 			void setInputData(std::ostringstream&  data);				
 			primitiveDualMemory(Target* target, int _wIn, int _wOut, int _minIn, int _maxIn);
-			~primitiveDualMemory() {}
+			~primitiveDualMemory() override {}
 		
 		
 		private:

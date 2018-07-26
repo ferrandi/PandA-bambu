@@ -64,48 +64,48 @@ namespace flopoco{
 		}
 	
 		/** The destructor */
-		virtual ~CycloneII() {}
+		~CycloneII() override {}
 
 		/** overloading the virtual functions of Target
 		 * @see the target class for more details 
 		 */
-		double carryPropagateDelay();
-		double adderDelay(int size);
-		double adder3Delay(int size){return 0;}; // currently irrelevant for this architecture
-		double eqComparatorDelay(int size);
-		double eqConstComparatorDelay(int size);
+		double carryPropagateDelay() override;
+		double adderDelay(int size) override;
+		double adder3Delay(int size) override{return 0;}; // currently irrelevant for this architecture
+		double eqComparatorDelay(int size) override;
+		double eqConstComparatorDelay(int size) override;
 
-		double DSPMultiplierDelay(){ return multiplierDelay_[1];}
-		double DSPAdderDelay(){ return 0.000e-9;} // Feature not available for this FPGA family
-		double DSPCascadingWireDelay(){ return 0.378e-9;}	// TODO
-		double DSPToLogicWireDelay(){ return 0.765e-9;}	// TODO
-		double LogicToDSPWireDelay(){ return 0.765e-9;}	// TODO
-		void delayForDSP(MultiplierBlock* multBlock, double currentCp, int& cycleDelay, double& cpDelay);
+		double DSPMultiplierDelay() override{ return multiplierDelay_[1];}
+		double DSPAdderDelay() override{ return 0.000e-9;} // Feature not available for this FPGA family
+		double DSPCascadingWireDelay() override{ return 0.378e-9;}	// TODO
+		double DSPToLogicWireDelay() override{ return 0.765e-9;}	// TODO
+		double LogicToDSPWireDelay() override{ return 0.765e-9;}	// TODO
+		void delayForDSP(MultiplierBlock* multBlock, double currentCp, int& cycleDelay, double& cpDelay) override;
 		
-		double RAMDelay() { return RAMDelay_; }
-		double RAMToLogicWireDelay() { return RAMToLogicWireDelay_; }
-		double LogicToRAMWireDelay() { return RAMToLogicWireDelay_; }	
+		double RAMDelay() override { return RAMDelay_; }
+		double RAMToLogicWireDelay() override { return RAMToLogicWireDelay_; }
+		double LogicToRAMWireDelay() override { return RAMToLogicWireDelay_; }	
 
 		
-		void   getAdderParameters(double &k1, double &k2, int size);
-		double localWireDelay(int fanout = 1);
-		double lutDelay();
-		double ffDelay();
-		double distantWireDelay(int n);
-		bool   suggestSubmultSize(int &x, int &y, int wInX, int wInY);
-		bool   suggestSubaddSize(int &x, int wIn);
-		bool   suggestSubadd3Size(int &x, int wIn){return 0;}; // currently irrelevant for this architecture
-		bool   suggestSlackSubaddSize(int &x, int wIn, double slack);
-		bool   suggestSlackSubadd3Size(int &x, int wIn, double slack){return 0;}; // currently irrelevant for this architecture
-		bool   suggestSlackSubcomparatorSize(int &x, int wIn, double slack, bool constant);
+		void   getAdderParameters(double &k1, double &k2, int size) override;
+		double localWireDelay(int fanout = 1) override;
+		double lutDelay() override;
+		double ffDelay() override;
+		double distantWireDelay(int n) override;
+		bool   suggestSubmultSize(int &x, int &y, int wInX, int wInY) override;
+		bool   suggestSubaddSize(int &x, int wIn) override;
+		bool   suggestSubadd3Size(int &x, int wIn) override{return 0;}; // currently irrelevant for this architecture
+		bool   suggestSlackSubaddSize(int &x, int wIn, double slack) override;
+		bool   suggestSlackSubadd3Size(int &x, int wIn, double slack) override{return 0;}; // currently irrelevant for this architecture
+		bool   suggestSlackSubcomparatorSize(int &x, int wIn, double slack, bool constant) override;
 		
-		int    getIntMultiplierCost(int wInX, int wInY);
-		long   sizeOfMemoryBlock();
-		DSP*   createDSP(); 
-		int    getEquivalenceSliceDSP();
-		int    getNumberOfDSPs();
-		void   getDSPWidths(int &x, int &y, bool sign = false);
-		int    getIntNAdderCost(int wIn, int n);
+		int    getIntMultiplierCost(int wInX, int wInY) override;
+		long   sizeOfMemoryBlock() override;
+		DSP*   createDSP() override; 
+		int    getEquivalenceSliceDSP() override;
+		int    getNumberOfDSPs() override;
+		void   getDSPWidths(int &x, int &y, bool sign = false) override;
+		int    getIntNAdderCost(int wIn, int n) override;
 		int*   getDSPMultiplierWidths(){return multiplierWidth_;};
 		int    getNrDSPMultiplier(){return nrConfigs_;};
 	

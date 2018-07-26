@@ -70,7 +70,7 @@ class AggregateDataFlowAnalysis : public FunctionFrontendFlowStep
       /**
        *  Destructor
        */
-      virtual ~AggregateDataFlowAnalysis();
+      ~AggregateDataFlowAnalysis() override;
 
       /**
        * Cleans the fake data dependencies
@@ -83,7 +83,7 @@ class AggregateDataFlowAnalysis : public FunctionFrontendFlowStep
        * @param dependencies is where relationships will be stored
        * @param relationship_type is the type of relationship to be computed
        */
-      virtual void ComputeRelationships(DesignFlowStepSet & relationship, const DesignFlowStep::RelationshipType relationship_type) override;
+      void ComputeRelationships(DesignFlowStepSet & relationship, const DesignFlowStep::RelationshipType relationship_type) override;
 };
 #endif
 

@@ -79,7 +79,7 @@ class hls_bit_value : public HLSFunctionStep
        * Return the set of analyses in relationship with this design step
        * @param relationship_type is the type of relationship to be considered
        */
-      virtual const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+      const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
    public:
 
@@ -96,18 +96,18 @@ class hls_bit_value : public HLSFunctionStep
       /**
        * Destructor.
        */
-      ~hls_bit_value();
+      ~hls_bit_value() override;
       //@}
 
       /**
        * Execute the step
        * @return the exit status of this step
        */
-      virtual DesignFlowStep_Status InternalExec() override;
+      DesignFlowStep_Status InternalExec() override;
 
       /**
        * Initialize the step (i.e., like a constructor, but executed just before exec
        */
-      virtual void Initialize() override;
+      void Initialize() override;
 };
 #endif

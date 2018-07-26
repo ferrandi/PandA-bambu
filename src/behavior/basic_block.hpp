@@ -201,7 +201,7 @@ struct BBEdgeInfo : public CdfgEdgeInfo
       /**
        * Destructor
        */
-      ~BBEdgeInfo();
+      ~BBEdgeInfo() override;
 
       /**
        * Function returning true when the edge is a then control dependence edge, false otherwise
@@ -299,7 +299,7 @@ class BBGraphsCollection : public graphs_collection
       /**
        * Destructor
        */
-      ~BBGraphsCollection();
+      ~BBGraphsCollection() override;
 
       /**
        * Add an edge with empty information associated
@@ -345,7 +345,7 @@ struct BBGraph : public graph
       /**
        * Destructor
        */
-      ~BBGraph(){}
+      ~BBGraph() override{}
 
       /**
        * Writes this graph in dot format

@@ -61,12 +61,12 @@ class WeightedCliqueRegisterBindingSpecialization : public HLSFlowStepSpecializa
       /**
        * Return the string representation of this
        */
-      virtual const std::string GetKindText() const;
+      const std::string GetKindText() const override;
 
       /**
        * Return the contribution to the signature of a step given by the specialization
        */
-      virtual const std::string GetSignature() const;
+      const std::string GetSignature() const override;
 
 
 };
@@ -83,18 +83,18 @@ class weighted_clique_register : public compatibility_based_register
       /**
        * Destructor of the class.
        */
-      ~weighted_clique_register();
+      ~weighted_clique_register() override;
 
       /**
        * Execute the step
        * @return the exit status of this step
        */
-      virtual DesignFlowStep_Status InternalExec();
+      DesignFlowStep_Status InternalExec() override;
 
       /**
        * Initialize the step (i.e., like a constructor, but executed just before exec
        */
-      virtual void Initialize();
+      void Initialize() override;
 
 };
 

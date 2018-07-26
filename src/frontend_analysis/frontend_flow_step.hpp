@@ -398,14 +398,14 @@ class FrontendFlowStep : public DesignFlowStep
       /**
        * Destructor
        */
-      virtual ~FrontendFlowStep();
+      ~FrontendFlowStep() override;
 
       /**
        * Compute the relationships of a step with other steps
        * @param dependencies is where relationships will be stored
        * @param relationship_type is the type of relationship to be computed
        */
-      virtual void ComputeRelationships(DesignFlowStepSet & relationship, const DesignFlowStep::RelationshipType relationship_type) override;
+      void ComputeRelationships(DesignFlowStepSet & relationship, const DesignFlowStep::RelationshipType relationship_type) override;
 
       /**
        * Create the relationship steps of a step with other steps starting from already specified dependencies between frontend flow steps

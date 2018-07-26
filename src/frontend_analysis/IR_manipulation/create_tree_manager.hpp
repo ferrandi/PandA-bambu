@@ -71,7 +71,7 @@ class create_tree_manager : public ApplicationFrontendFlowStep
        * @param dependencies is where relationships will be stored
        * @param relationship_type is the type of relationship to be computed
        */
-      virtual void ComputeRelationships(DesignFlowStepSet & relationship, const DesignFlowStep::RelationshipType relationship_type) override;
+      void ComputeRelationships(DesignFlowStepSet & relationship, const DesignFlowStep::RelationshipType relationship_type) override;
 
    public:
       /**
@@ -85,7 +85,7 @@ class create_tree_manager : public ApplicationFrontendFlowStep
       /**
        * Destructor
        */
-      virtual ~create_tree_manager();
+      ~create_tree_manager() override;
 
       /**
        * Creates the tree_manager data structure by invoking the GCC wrapper
@@ -97,6 +97,6 @@ class create_tree_manager : public ApplicationFrontendFlowStep
        * Check if this step has actually to be executed
        * @return true if the step has to be executed
        */
-      virtual bool HasToBeExecuted() const override;
+      bool HasToBeExecuted() const override;
 };
 #endif

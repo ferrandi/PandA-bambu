@@ -73,7 +73,7 @@ class multiplier_conn_obj : public generic_obj
       /**
        * Destructor.
        */
-      ~multiplier_conn_obj() {}
+      ~multiplier_conn_obj() override {}
 
       /**
        * add a size to the component

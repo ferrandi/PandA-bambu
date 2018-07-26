@@ -53,7 +53,7 @@ class UnfoldedFunctionInfo : public NodeInfo
 
       explicit UnfoldedFunctionInfo(unsigned int _f_id = 0) : f_id(_f_id) {}
 
-      ~UnfoldedFunctionInfo() {}
+      ~UnfoldedFunctionInfo() override {}
 };
 
 typedef refcount<UnfoldedFunctionInfo> UnfoldedFunctionInfoRef;

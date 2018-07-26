@@ -95,18 +95,18 @@ class ParserFlowStep : public DesignFlowStep
       /**
        * Destructor
        */
-      virtual ~ParserFlowStep();
+      ~ParserFlowStep() override;
 
       /**
        * Return the signature of this step
        */
-      virtual const std::string GetSignature() const override;
+      const std::string GetSignature() const override;
 
       /**
        * Return the name of this design step
        * @return the name of the pass (for debug purpose)
        */
-      virtual const std::string GetName() const override;
+      const std::string GetName() const override;
 
       /**
        * Compute the signature of a parser flow step
@@ -121,18 +121,18 @@ class ParserFlowStep : public DesignFlowStep
        * Check if this step has actually to be executed
        * @return true if the step has to be executed
        */
-      virtual bool HasToBeExecuted() const override;
+      bool HasToBeExecuted() const override;
 
       /**
        * Compute the relationships of a step with other steps
        * @param dependencies is where relationships will be stored
        * @param relationship_type is the type of relationship to be computed
        */
-      virtual void ComputeRelationships(DesignFlowStepSet & relationship, const DesignFlowStep::RelationshipType relationship_type) override;
+      void ComputeRelationships(DesignFlowStepSet & relationship, const DesignFlowStep::RelationshipType relationship_type) override;
 
       /**
        * Return the factory to create this type of steps
        */
-      virtual const DesignFlowStepFactoryConstRef CGetDesignFlowStepFactory() const override;
+      const DesignFlowStepFactoryConstRef CGetDesignFlowStepFactory() const override;
 };
 #endif

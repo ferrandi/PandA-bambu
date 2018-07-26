@@ -56,7 +56,7 @@ class WB4Intercon_interface : public WB4_interface
    /**
     * Destructor.
     */
-   virtual ~WB4Intercon_interface();
+   ~WB4Intercon_interface() override;
 
    virtual void exec();
 };

@@ -98,7 +98,7 @@ class OpEdgeWriter : public EdgeWriter
        * @param out is the stream
        * @param e is the edge
        */
-      virtual void operator()(std::ostream& out, const EdgeDescriptor& e) const override;
+      void operator()(std::ostream& out, const EdgeDescriptor& e) const override;
 };
 
 /**
@@ -146,7 +146,7 @@ class OpWriter : public VertexWriter
        * @param out is the stream where label has to be printed
        * @param v is the vertex whose label has to be printed
        */
-      virtual void operator()(std::ostream& out, const vertex& v) const override;
+      void operator()(std::ostream& out, const vertex& v) const override;
 };
 
 class BBWriter : public VertexWriter

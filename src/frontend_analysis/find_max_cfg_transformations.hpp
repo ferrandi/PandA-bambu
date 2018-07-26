@@ -59,7 +59,7 @@ class FindMaxCFGTransformations: public ApplicationFrontendFlowStep
        * Return the set of analyses in relationship with this design step
        * @param relationship_type is the type of relationship to be considered
        */
-      const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const;
+      const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
       /**
        * Compute the arg list string of bambu
@@ -88,13 +88,13 @@ class FindMaxCFGTransformations: public ApplicationFrontendFlowStep
       /**
        *  Destructor
        */
-      ~FindMaxCFGTransformations();
+      ~FindMaxCFGTransformations() override;
 
       /**
        * Performs the profiling step
        * @return the exit status of this step
        */
-      DesignFlowStep_Status Exec();
+      DesignFlowStep_Status Exec() override;
 };
 #endif
 

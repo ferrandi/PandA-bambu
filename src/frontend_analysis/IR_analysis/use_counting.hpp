@@ -90,7 +90,7 @@ class use_counting : public FunctionFrontendFlowStep
        * @param dependencies is where relationships will be stored
        * @param relationship_type is the type of relationship to be computed
        */
-      virtual void ComputeRelationships(DesignFlowStepSet & relationship, const DesignFlowStep::RelationshipType relationship_type) override;
+      void ComputeRelationships(DesignFlowStepSet & relationship, const DesignFlowStep::RelationshipType relationship_type) override;
 
    public:
       /**
@@ -105,7 +105,7 @@ class use_counting : public FunctionFrontendFlowStep
       /**
        *  Destructor
        */
-      ~use_counting();
+      ~use_counting() override;
 
       /**
        * Counts how many time a ssa_name is read

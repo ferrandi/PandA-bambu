@@ -392,7 +392,7 @@ struct OpNodeInfo : public TypedNodeInfo
    /**
     * Destructor
     */
-   virtual ~OpNodeInfo();
+   ~OpNodeInfo() override;
 
    /**
     * Initialize variable maps
@@ -544,7 +544,7 @@ class OpEdgeInfo : public CdfgEdgeInfo
       /**
        * Destructor
        */
-      virtual ~OpEdgeInfo();
+      ~OpEdgeInfo() override;
 
       /**
        * Function returning true when the edge is a then flow edge
@@ -573,7 +573,7 @@ struct OpGraphInfo : public GraphInfo
    /**
     * Destructor();
     */
-   ~OpGraphInfo();
+   ~OpGraphInfo() override;
 
    /// Index identifying the entry vertex
    vertex entry_vertex;
@@ -738,7 +738,7 @@ class OpGraphsCollection : public graphs_collection
       /**
        * Destructor
        */
-      virtual ~OpGraphsCollection();
+      ~OpGraphsCollection() override;
 
       /**
        * Add an edge with empty information associated
@@ -761,13 +761,13 @@ class OpGraphsCollection : public graphs_collection
        * @param info is the property to be associated with the new vertex
        * @return the added vertex
        */
-      virtual boost::graph_traits<boost_graphs_collection>::vertex_descriptor AddVertex(const NodeInfoRef info);
+      boost::graph_traits<boost_graphs_collection>::vertex_descriptor AddVertex(const NodeInfoRef info) override;
 
       /**
        * Remove a vertex from this graph
        * @param v is the vertex to be removed
        */
-      virtual void RemoveVertex(boost::graph_traits<boost_graphs_collection>::vertex_descriptor v);
+      void RemoveVertex(boost::graph_traits<boost_graphs_collection>::vertex_descriptor v) override;
 
       /**
        * Return the vertices belonging to the graph
@@ -810,7 +810,7 @@ struct OpGraph : public graph
       /**
        * Destructor
        */
-      ~OpGraph();
+      ~OpGraph() override;
 
       /**
        * Writes this graph in dot format

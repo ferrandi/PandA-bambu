@@ -122,7 +122,7 @@ class lut_transformation : public FunctionFrontendFlowStep
       /**
        *  Destructor
        */
-      ~lut_transformation();
+      ~lut_transformation() override;
 
       /**
        * Computes the operations CFG graph data structure.
@@ -133,14 +133,14 @@ class lut_transformation : public FunctionFrontendFlowStep
       /**
        * Initialize the step (i.e., like a constructor, but executed just before exec
        */
-      virtual void Initialize() override;
+      void Initialize() override;
 
       /**
        * Compute the relationships of a step with other steps
        * @param dependencies is where relationships will be stored
        * @param relationship_type is the type of relationship to be computed
        */
-      virtual void ComputeRelationships(DesignFlowStepSet & relationship, const DesignFlowStep::RelationshipType relationship_type) override;
+      void ComputeRelationships(DesignFlowStepSet & relationship, const DesignFlowStep::RelationshipType relationship_type) override;
 };
 
 #endif

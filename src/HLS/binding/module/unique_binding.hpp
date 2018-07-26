@@ -61,13 +61,13 @@ class unique_binding : public fu_binding_creator
       /**
        * Destructor.
        */
-      ~unique_binding();
+      ~unique_binding() override;
 
       /**
        * Performs module binding assigning each operation to a free resource
        * @return the exit status of this step
        */
-      virtual DesignFlowStep_Status InternalExec();
+      DesignFlowStep_Status InternalExec() override;
 };
 
 #endif

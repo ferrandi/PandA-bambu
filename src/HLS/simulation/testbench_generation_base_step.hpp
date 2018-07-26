@@ -195,7 +195,7 @@ class TestbenchGenerationBaseStep : public HLS_step
       /**
        * Initialize the step (i.e., like a constructor, but executed just before exec
        */
-      virtual void Initialize() override;
+      void Initialize() override;
 
    protected:
 
@@ -222,7 +222,7 @@ class TestbenchGenerationBaseStep : public HLS_step
        * @param relationship_type is the type of relationship to be considered
        * @return the steps in relationship with this
        */
-      virtual const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+      const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
       /**
        * Constructor.
@@ -236,7 +236,7 @@ class TestbenchGenerationBaseStep : public HLS_step
       /**
        * Destructor.
        */
-      virtual ~TestbenchGenerationBaseStep();
+      ~TestbenchGenerationBaseStep() override;
 
       void ComputeRelationships
       (
@@ -261,12 +261,12 @@ class TestbenchGenerationBaseStep : public HLS_step
        * Execute the step
        * @return the exit status of this step
        */
-      virtual DesignFlowStep_Status Exec() override;
+      DesignFlowStep_Status Exec() override;
 
       /**
        * Check if this step has actually to be executed
        * @return true if the step has to be executed
        */
-      virtual bool HasToBeExecuted() const override;
+      bool HasToBeExecuted() const override;
 };
 #endif

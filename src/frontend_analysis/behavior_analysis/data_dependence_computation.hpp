@@ -88,13 +88,13 @@ class DataDependenceComputation : public FunctionFrontendFlowStep
       /**
        *  Destructor
        */
-      virtual ~DataDependenceComputation();
+      ~DataDependenceComputation() override;
 
       /**
        * Cleans the fake data dependencies
        * @return the exit status of this step
        */
-      virtual DesignFlowStep_Status InternalExec()
+      DesignFlowStep_Status InternalExec()
 #if HAVE_STDCXX_11
          final
 #endif
@@ -103,6 +103,6 @@ class DataDependenceComputation : public FunctionFrontendFlowStep
       /**
        * Initialize the step (i.e., like a constructor, but executed just before exec
        */
-      virtual void Initialize() = 0;
+      void Initialize() override = 0;
 };
 #endif

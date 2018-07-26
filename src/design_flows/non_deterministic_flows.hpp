@@ -77,13 +77,13 @@ class NonDeterministicFlows : public DesignFlow
       /**
        *  Destructor
        */
-      ~NonDeterministicFlows();
+      ~NonDeterministicFlows() override;
 
       /**
        * Execute the flow
        * @return the exit status of this step
        */
-      DesignFlowStep_Status Exec();
+      DesignFlowStep_Status Exec() override;
 };
 #endif
 

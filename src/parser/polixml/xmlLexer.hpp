@@ -67,22 +67,22 @@ struct XmlFlexLexer : public yyFlexLexer
       keep(0)
    {
    }
-   ~XmlFlexLexer() {}
+   ~XmlFlexLexer() override {}
    void yyerror(const char* msg)
    {
       LexerError(msg);
    }
-   void LexerError(const char* msg)
+   void LexerError(const char* msg) override
    {
       INDENT_OUT_MEX(0,0, STR(msg) + " at line number |" + STR(lineno()) + "|\ttext is |" + STR(YYText()) + "|");
       exit_code = EXIT_FAILURE;
       THROW_ERROR("Error in parsing xml: " + name);
    }
-   int yywrap(){return 1;}
+   int yywrap() override{return 1;}
    ///To store start condition
    int keep;
    YYSTYPE *lvalp;
-   int yylex();
+   int yylex() override;
 };
 
 #endif

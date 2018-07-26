@@ -90,13 +90,13 @@ public:
    explicit std_var_pp_functor(const BehavioralHelperConstRef _BH): BH(_BH) {}
 
    ///Destructor
-   ~std_var_pp_functor() {}
+   ~std_var_pp_functor() override {}
 
    /**
     * return the name of the variable.
     * @param var is the nodeid of the variable.
    */
-   std::string operator() (unsigned int var) const;
+   std::string operator() (unsigned int var) const override;
 
 };
 
@@ -117,13 +117,13 @@ struct pointer_var_pp_functor : public var_pp_functor
    /**
     * Destructor
     */
-   ~pointer_var_pp_functor() {}
+   ~pointer_var_pp_functor() override {}
 
    /**
     * return the name of the variable with a star as a prefix.
     * @param var is the nodeid of the variable.
    */
-   std::string operator() (unsigned int var) const;
+   std::string operator() (unsigned int var) const override;
 
 private:
    ///reference to the set of variable that has to have a star in front when returned by operator()
@@ -153,13 +153,13 @@ public:
    address_var_pp_functor(const BehavioralHelperConstRef _BH, const CustomSet<unsigned int> vars, const CustomSet<unsigned int> pointer_vars);
 
    ///Destructor
-   ~address_var_pp_functor() {}
+   ~address_var_pp_functor() override {}
 
    /**
     * return the name of the variable with a star as a prefix.
     * @param var is the nodeid of the variable.
    */
-   std::string operator() (unsigned int var) const;
+   std::string operator() (unsigned int var) const override;
 
 private:
    ///reference to the set of variable that has to have a star in front when returned by operator()
@@ -185,13 +185,13 @@ public:
    isolated_var_pp_functor(const BehavioralHelperConstRef _BH, unsigned int _repl_var, const std::string& _var_string): BH(_BH), repl_var(_repl_var), var_string(_var_string) {}
 
    ///Destructor
-   ~isolated_var_pp_functor() {}
+   ~isolated_var_pp_functor() override {}
 
    /**
     * return the name of the variable.
     * @param var is the nodeid of the variable.
    */
-   std::string operator() (unsigned int var) const;
+   std::string operator() (unsigned int var) const override;
 };
 
 

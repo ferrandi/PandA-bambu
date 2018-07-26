@@ -130,7 +130,7 @@ class commandport_obj : public generic_obj
       /**
        * Destructor.
        */
-      ~commandport_obj() {}
+      ~commandport_obj() override {}
 
       /**
        * Gets the vertex associated with port

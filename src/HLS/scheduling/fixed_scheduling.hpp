@@ -58,13 +58,13 @@ class fixed_scheduling : public Scheduling
       /**
        * Destructor
        */
-      virtual ~fixed_scheduling();
+      ~fixed_scheduling() override;
 
       /**
        * Execute the step
        * @return the exit status of this step
        */
-      virtual DesignFlowStep_Status InternalExec();
+      DesignFlowStep_Status InternalExec() override;
 };
 
 #endif

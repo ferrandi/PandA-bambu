@@ -62,17 +62,17 @@ class par_wrapper : public XilinxWrapper
       /**
        * Initializes the reserved variables
        */
-      void init_reserved_vars();
+      void init_reserved_vars() override;
 
       /**
        * Evaluates the design variables
        */
-      void EvaluateVariables(const DesignParametersRef dp);
+      void EvaluateVariables(const DesignParametersRef dp) override;
 
       /**
        * Returns the proper command line
        */
-      std::string get_command_line(const DesignParametersRef& dp) const;
+      std::string get_command_line(const DesignParametersRef& dp) const override;
 
    public:
 
@@ -85,7 +85,7 @@ class par_wrapper : public XilinxWrapper
       /**
        * Destructor
        */
-      virtual ~par_wrapper();
+      ~par_wrapper() override;
 
 };
 ///Refcount definition for the class

@@ -236,7 +236,7 @@ namespace flopoco{
 		PolynomialEvaluator(Target* target, vector<FixedPointCoefficient*> coef, YVar* y, int targetPrec, mpfr_t* approxError, map<string, double> inputDelays = emptyDelayMap);
 
 		/** Destructor */
-		~PolynomialEvaluator();
+		~PolynomialEvaluator() override;
 			
 			
 		/* ------------------------------ EXTRA -----------------------------*/

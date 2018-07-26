@@ -63,12 +63,12 @@ class vivado_flow_wrapper : public XilinxWrapper
       /**
        * Evaluates the design variables
        */
-      void EvaluateVariables(const DesignParametersRef dp);
+      void EvaluateVariables(const DesignParametersRef dp) override;
 
       /**
        * Returns the proper command line
        */
-      std::string get_command_line(const DesignParametersRef& dp) const;
+      std::string get_command_line(const DesignParametersRef& dp) const override;
 
 
    public:
@@ -82,7 +82,7 @@ class vivado_flow_wrapper : public XilinxWrapper
       /**
        * Destructor
        */
-      virtual ~vivado_flow_wrapper();
+      ~vivado_flow_wrapper() override;
 
 };
 ///Refcount definition for the class

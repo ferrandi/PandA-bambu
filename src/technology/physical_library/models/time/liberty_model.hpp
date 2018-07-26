@@ -71,10 +71,10 @@ class liberty_model : public time_model
       /**
        * Destructor
        */
-      virtual ~liberty_model();
+      ~liberty_model() override;
       //@}
 
-      void xwrite(xml_element* pin_node, const std::string& output_pin);
+      void xwrite(xml_element* pin_node, const std::string& output_pin) override;
 
       void add_timing_group(const std::string& output, const std::set<std::string>& inputs, const timing_groupRef& tg);
 

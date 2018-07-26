@@ -70,7 +70,7 @@ class FixCharacterization : public TechnologyFlowStep
        * Return the set of analyses in relationship with this design step
        * @param relationship_type is the type of relationship to be considered
        */
-      virtual const std::unordered_set<TechnologyFlowStep_Type> ComputeTechnologyRelationships(const DesignFlowStep::RelationshipType relationship_type) const;
+      const std::unordered_set<TechnologyFlowStep_Type> ComputeTechnologyRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
    public:
       /**
@@ -84,18 +84,18 @@ class FixCharacterization : public TechnologyFlowStep
       /**
        * Destructor
        */
-      ~FixCharacterization();
+      ~FixCharacterization() override;
 
       /**
        * Execute the step
        * @return the exit status of this step
        */
-      virtual DesignFlowStep_Status Exec();
+      DesignFlowStep_Status Exec() override;
 
       /**
        * Initialize the step (i.e., like a constructor, but executed just before exec
        */
-      virtual void Initialize();
+      void Initialize() override;
 };
 #endif
 

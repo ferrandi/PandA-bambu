@@ -132,12 +132,12 @@ class ParametricListBasedSpecialization : public HLSFlowStepSpecialization
       /**
        * Return the string representation of this
        */
-      virtual const std::string GetKindText() const;
+      const std::string GetKindText() const override;
 
       /**
        * Return the contribution to the signature of a step given by the specialization
        */
-      virtual const std::string GetSignature() const;
+      const std::string GetSignature() const override;
 };
 
 /**
@@ -276,7 +276,7 @@ class parametric_list_based : public Scheduling
        * @param relationship_type is the type of relationship to be considered
        * @return the steps in relationship with this
        */
-      virtual const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+      const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
    public:
       /**
@@ -292,13 +292,13 @@ class parametric_list_based : public Scheduling
       /**
        * Destructor.
       */
-      virtual ~parametric_list_based();
+      ~parametric_list_based() override;
 
       /**
        * Execute the step
        * @return the exit status of this step
        */
-      virtual DesignFlowStep_Status InternalExec() override;
+      DesignFlowStep_Status InternalExec() override;
 
       /**
        * Function that computes the List-Based scheduling of the graph.
@@ -308,13 +308,13 @@ class parametric_list_based : public Scheduling
       /**
        * Initialize the step (i.e., like a constructor, but executed just before exec
        */
-      virtual void Initialize() override;
+      void Initialize() override;
 
       /**
        * Compute the relationships of a step with other steps
        * @param dependencies is where relationships will be stored
        * @param relationship_type is the type of relationship to be computed
        */
-      virtual void ComputeRelationships(DesignFlowStepSet & relationship, const DesignFlowStep::RelationshipType relationship_type) override;
+      void ComputeRelationships(DesignFlowStepSet & relationship, const DesignFlowStep::RelationshipType relationship_type) override;
 };
 #endif

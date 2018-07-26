@@ -60,23 +60,23 @@ class FPGA_device : public target_device
       /**
        * Destructor
        */
-      virtual ~FPGA_device();
+      ~FPGA_device() override;
 
       /**
        * Initializes the target device based on the given parameters
        */
-      virtual void initialize();
+      void initialize() override;
 
       /**
        * Method to write an XML node
        * @param node is the node for writing the information
        */
-      virtual void xwrite(xml_element* node);
+      void xwrite(xml_element* node) override;
 
       /**
        * load all the data for the given FPGA
        */
-      virtual void load_devices(const target_deviceRef device);
+      void load_devices(const target_deviceRef device) override;
 
 };
 

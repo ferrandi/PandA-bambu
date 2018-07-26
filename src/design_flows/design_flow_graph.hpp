@@ -90,7 +90,7 @@ struct DesignFlowDependenceInfo : public EdgeInfo
       /**
        * Desturctor
        */
-      ~DesignFlowDependenceInfo();
+      ~DesignFlowDependenceInfo() override;
 };
 typedef refcount<DesignFlowDependenceInfo> DesignFlowDependenceInfoRef;
 typedef refcount<const DesignFlowDependenceInfo> DesignFlowDependenceInfoConstRef;
@@ -122,7 +122,7 @@ class DesignFlowGraphsCollection : public graphs_collection
       /**
        * Destructor
        */
-      virtual ~DesignFlowGraphsCollection();
+      ~DesignFlowGraphsCollection() override;
 
       /**
        * Return the vertex associated with a design step if exists, NULL_VERTEX otherwise
@@ -187,7 +187,7 @@ class DesignFlowGraph : public graph
       /**
        * Destructor
        */
-      virtual ~DesignFlowGraph();
+      ~DesignFlowGraph() override;
 
       /**
        * Return the vertex associated with a design step if exists, NULL_VERTEX otherwise
@@ -281,14 +281,14 @@ class DesignFlowStepWriter : public VertexWriter
       /**
        * Destructor
        */
-      virtual ~DesignFlowStepWriter();
+      ~DesignFlowStepWriter() override;
 
       /**
        * Functor actually called by the boost library to perform the writing
        * @param out is the stream where the nodes have to be printed
        * @param v is the vertex to be printed
        */
-      void operator()(std::ostream& out, const vertex& v) const;
+      void operator()(std::ostream& out, const vertex& v) const override;
 };
 
 /**
@@ -318,7 +318,7 @@ class DesignFlowEdgeWriter : public EdgeWriter
        * @param out is the stream where the edges have to be printed
        * @param edge is the edge to be printed
        */
-      virtual void operator()(std::ostream& out, const EdgeDescriptor & edge) const;
+      void operator()(std::ostream& out, const EdgeDescriptor & edge) const override;
 };
 
 #endif

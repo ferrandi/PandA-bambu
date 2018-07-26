@@ -57,7 +57,7 @@ template<typename vertex_type>
 struct no_filter_clique : public filter_clique<vertex_type>
 {
 
-      bool select_candidate_to_remove(const std::set<C_vertex> &, C_vertex &, const std::map<C_vertex, vertex_type> &, const cc_compatibility_graph &) const {return false;}
+      bool select_candidate_to_remove(const std::set<C_vertex> &, C_vertex &, const std::map<C_vertex, vertex_type> &, const cc_compatibility_graph &) const override {return false;}
 };
 
 

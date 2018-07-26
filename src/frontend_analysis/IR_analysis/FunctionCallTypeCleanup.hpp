@@ -58,7 +58,7 @@ class FunctionCallTypeCleanup : public FunctionFrontendFlowStep
        * @param relationship_type is the type of relationship to be considered
        */
       const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> >
-         ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const;
+         ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
    public:
       /**
@@ -76,17 +76,17 @@ class FunctionCallTypeCleanup : public FunctionFrontendFlowStep
       /**
        *  Destructor
        */
-      ~FunctionCallTypeCleanup();
+      ~FunctionCallTypeCleanup() override;
 
       /**
        * Computes the operations CFG graph data structure.
        * @return the exit status of this step
        */
-      DesignFlowStep_Status InternalExec();
+      DesignFlowStep_Status InternalExec() override;
 
       /**
        * Initialize the step (i.e., like a constructor, but executed just before exec
        */
-      virtual void Initialize();
+      void Initialize() override;
 };
 #endif

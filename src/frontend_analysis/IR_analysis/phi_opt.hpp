@@ -186,7 +186,7 @@ class PhiOpt : public FunctionFrontendFlowStep
        * Return the set of analyses in relationship with this design step
        * @param relationship_type is the type of relationship to be considered
        */
-      virtual const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+      const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
    public:
       /**
@@ -201,7 +201,7 @@ class PhiOpt : public FunctionFrontendFlowStep
       /**
        *  Destructor
        */
-      ~PhiOpt();
+      ~PhiOpt() override;
 
       /**
        * Updates the tree to have a more compliant CFG
@@ -211,13 +211,13 @@ class PhiOpt : public FunctionFrontendFlowStep
       /**
        * Initialize the step (i.e., like a constructor, but executed just before exec
        */
-      virtual void Initialize() override;
+      void Initialize() override;
 
       /**
        * Compute the relationships of a step with other steps
        * @param dependencies is where relationships will be stored
        * @param relationship_type is the type of relationship to be computed
        */
-      virtual void ComputeRelationships(DesignFlowStepSet & relationship, const DesignFlowStep::RelationshipType relationship_type) override;
+      void ComputeRelationships(DesignFlowStepSet & relationship, const DesignFlowStep::RelationshipType relationship_type) override;
 };
 #endif

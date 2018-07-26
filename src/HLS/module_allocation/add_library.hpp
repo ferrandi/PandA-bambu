@@ -70,12 +70,12 @@ class AddLibrarySpecialization : public HLSFlowStepSpecialization
       /**
        * Return the string representation of this
        */
-      virtual const std::string GetKindText() const;
+      const std::string GetKindText() const override;
 
       /**
        * Return the contribution to the signature of a step given by the specialization
        */
-      virtual const std::string GetSignature() const;
+      const std::string GetSignature() const override;
 };
 
 class add_library : public HLSFunctionStep
@@ -85,7 +85,7 @@ class add_library : public HLSFunctionStep
        * Return the set of analyses in relationship with this design step
        * @param relationship_type is the type of relationship to be considered
        */
-      virtual const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const;
+      const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
    public:
       /**
@@ -97,13 +97,13 @@ class add_library : public HLSFunctionStep
       /**
        * Destructor
        */
-      virtual ~add_library();
+      ~add_library() override;
 
       /**
        * Execute the step
        * @return the exit status of this step
        */
-      virtual DesignFlowStep_Status InternalExec();
+      DesignFlowStep_Status InternalExec() override;
 };
 
 #endif // ADD_LIBRARY_HPP

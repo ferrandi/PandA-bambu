@@ -67,14 +67,14 @@ class DesignFlow : public DesignFlowStep
       /**
        * Destructor
        */
-      virtual ~DesignFlow();
+      ~DesignFlow() override;
 
       /**
        * Compute the relationships of a step with other steps
        * @param relationship is where relationships will be stored
        * @param relationship_type is the type of relationship to be computed
        */
-      virtual void ComputeRelationships(DesignFlowStepSet & relationship, const DesignFlowStep::RelationshipType relationship_type) override;
+      void ComputeRelationships(DesignFlowStepSet & relationship, const DesignFlowStep::RelationshipType relationship_type) override;
 
       /**
        * Compute the signature of a step
@@ -87,13 +87,13 @@ class DesignFlow : public DesignFlowStep
       /**
        * Return the signature of this step
        */
-      virtual const std::string GetSignature() const override;
+      const std::string GetSignature() const override;
 
       /**
        * Return the name of this design step
        * @return the name of the pass (for debug purpose)
        */
-      virtual const std::string GetName() const override;
+      const std::string GetName() const override;
 
       /**
        * Return the name of the type
@@ -121,6 +121,6 @@ class DesignFlow : public DesignFlowStep
        * Check if this step has actually to be executed
        * @return true if the step has to be executed
        */
-      virtual bool HasToBeExecuted() const override;
+      bool HasToBeExecuted() const override;
 };
 #endif

@@ -63,7 +63,7 @@ class STG_creator : public HLSFunctionStep
       /**
        * Destructor.
        */
-      virtual ~STG_creator();
+      ~STG_creator() override;
 };
 ///refcount definition of the class
 typedef refcount<STG_creator> STG_creatorRef;

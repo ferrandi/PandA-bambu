@@ -75,7 +75,7 @@ class dataport_obj : public generic_obj
       /**
        * Destructor.
        */
-      ~dataport_obj() {}
+      ~dataport_obj() override {}
 
       /**
        * return the maximum bitsize associated with the component

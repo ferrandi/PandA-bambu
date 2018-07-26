@@ -79,7 +79,7 @@ class xml_attribute : public xml_node
        * @param formatted when true the xml is formatted in human readable way.
        * @param pp is the pretty print helper.
        */
-      void print(std::ostream& os, bool, simple_indent* ) const
+      void print(std::ostream& os, bool, simple_indent* ) const override
       {
          std::string escaped(at_value);
          convert_unescaped(escaped);

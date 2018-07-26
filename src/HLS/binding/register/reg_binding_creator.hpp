@@ -62,7 +62,7 @@ class reg_binding_creator : public HLSFunctionStep
        * @param relationship_type is the type of relationship to be considered
        * @return the steps in relationship with this
        */
-      virtual const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const;
+      const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
    public:
       /**
@@ -75,7 +75,7 @@ class reg_binding_creator : public HLSFunctionStep
       /**
        * Destructor.
        */
-      virtual ~reg_binding_creator();
+      ~reg_binding_creator() override;
 };
 ///refcount definition of the class
 typedef refcount<reg_binding_creator> reg_binding_creatorRef;

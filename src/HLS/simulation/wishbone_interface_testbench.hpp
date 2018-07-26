@@ -53,22 +53,22 @@ class WishboneInterfaceTestbench : public TestbenchGenerationBaseStep
 
       void write_wishbone_callFSM_signal_declaration() const;
 
-      virtual void write_call(bool hasMultiIrq) const;
+      void write_call(bool hasMultiIrq) const override;
 
-      virtual void write_memory_handler() const;
+      void write_memory_handler() const override;
 
-      virtual void write_signals(
+      void write_signals(
             const tree_managerConstRef TreeM,
             bool & withMemory,
             bool & hasMultiIrq)
-         const;
+         const override;
 
-      virtual void write_slave_initializations(bool withMemory)
-         const;
+      void write_slave_initializations(bool withMemory)
+         const override;
 
-      virtual void init_extra_signals(bool withMemory) const;
+      void init_extra_signals(bool withMemory) const override;
 
-      virtual void write_file_reading_operations() const;
+      void write_file_reading_operations() const override;
 
       void write_wishbone_output_signal_declaration(
             bool & withMemory,
@@ -85,7 +85,7 @@ class WishboneInterfaceTestbench : public TestbenchGenerationBaseStep
       /**
        * Destructor
        */
-      virtual ~WishboneInterfaceTestbench();
+      ~WishboneInterfaceTestbench() override;
 };
 
 

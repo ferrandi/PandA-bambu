@@ -223,7 +223,7 @@ class Bit_Value : public FunctionFrontendFlowStep, public BitLatticeManipulator
             const ssa_name & ssa, const statement_list & sl, unsigned int bb_loop_id) const;
 
       const std::unordered_set< std::pair<FrontendFlowStepType, FunctionRelationship> >
-      ComputeFrontendRelationships (const DesignFlowStep::RelationshipType relationship_type) const;
+      ComputeFrontendRelationships (const DesignFlowStep::RelationshipType relationship_type) const override;
 
    public:
       /**
@@ -242,23 +242,23 @@ class Bit_Value : public FunctionFrontendFlowStep, public BitLatticeManipulator
       /**
        *  Destructor
        */
-      ~Bit_Value ();
+      ~Bit_Value () override;
       /**
        * perform the bit value analysis
        * @return the exit status of this step
        */
-      DesignFlowStep_Status InternalExec ();
+      DesignFlowStep_Status InternalExec () override;
 
       /**
        * Initialize the step (i.e., like a constructor, but executed just before exec
        */
-      virtual void Initialize();
+      void Initialize() override;
 
       /**
        * Check if this step has actually to be executed
        * @return true if the step has to be executed
        */
-      virtual bool HasToBeExecuted() const;
+      bool HasToBeExecuted() const override;
 };
 
 #endif /* BIT_VALUE_HPP */

@@ -65,7 +65,7 @@ class uu_conv_conn_obj : public generic_obj
       /**
        * Destructor.
        */
-      ~uu_conv_conn_obj() {}
+      ~uu_conv_conn_obj() override {}
 
       /**
        * add a size to the component
@@ -98,7 +98,7 @@ class ui_conv_conn_obj : public generic_obj
       /**
        * Destructor.
        */
-      ~ui_conv_conn_obj() {}
+      ~ui_conv_conn_obj() override {}
 
       /**
        * add a size to the component
@@ -131,7 +131,7 @@ class iu_conv_conn_obj : public generic_obj
       /**
        * Destructor.
        */
-      ~iu_conv_conn_obj() {}
+      ~iu_conv_conn_obj() override {}
 
       /**
        * add a size to the component
@@ -164,7 +164,7 @@ class ii_conv_conn_obj : public generic_obj
       /**
        * Destructor.
        */
-      ~ii_conv_conn_obj() {}
+      ~ii_conv_conn_obj() override {}
 
       /**
        * add a size to the component
@@ -199,7 +199,7 @@ class ff_conv_conn_obj : public generic_obj
       /**
        * Destructor.
        */
-      ~ff_conv_conn_obj() {}
+      ~ff_conv_conn_obj() override {}
 
       /**
        * add a size in to the component
@@ -241,7 +241,7 @@ class i_assign_conn_obj : public generic_obj
       /**
        * Destructor.
        */
-      ~i_assign_conn_obj() {}
+      ~i_assign_conn_obj() override {}
 
       /**
        * add a size to the component
@@ -274,7 +274,7 @@ class u_assign_conn_obj : public generic_obj
       /**
        * Destructor.
        */
-      ~u_assign_conn_obj() {}
+      ~u_assign_conn_obj() override {}
 
       /**
        * add a size to the component
@@ -307,7 +307,7 @@ class vb_assign_conn_obj : public generic_obj
       /**
        * Destructor.
        */
-      ~vb_assign_conn_obj() {}
+      ~vb_assign_conn_obj() override {}
 
       /**
        * add a size to the component
@@ -340,7 +340,7 @@ class f_assign_conn_obj : public generic_obj
       /**
        * Destructor.
        */
-      ~f_assign_conn_obj() {}
+      ~f_assign_conn_obj() override {}
 
       /**
        * add a size to the component

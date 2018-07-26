@@ -32,11 +32,11 @@ namespace flopoco{
 		/**
 		 *  destructor
 		 */
-		~Fix2FP();
+		~Fix2FP() override;
 
 
-		void emulate(TestCase * tc);
-		void buildStandardTestCases(TestCaseList* tcl);
+		void emulate(TestCase * tc) override;
+		void buildStandardTestCases(TestCaseList* tcl) override;
 
 
 

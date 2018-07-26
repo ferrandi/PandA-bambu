@@ -99,7 +99,7 @@ class VarComputation : public FunctionFrontendFlowStep
        * Return the set of analyses in relationship with this design step
        * @param relationship_type is the type of relationship to be considered
        */
-      const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const;
+      const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
    public:
       /**
@@ -114,18 +114,18 @@ class VarComputation : public FunctionFrontendFlowStep
       /**
        * Destructor
        */
-      ~VarComputation();
+      ~VarComputation() override;
 
       /**
        * Initialize the step (i.e., like a constructor, but executed just before exec
        */
-      virtual void Initialize();
+      void Initialize() override;
 
       /**
        * Computes the set of read and written variables.
        * @return the exit status of this step
        */
-      DesignFlowStep_Status InternalExec();
+      DesignFlowStep_Status InternalExec() override;
 };
 
 #endif

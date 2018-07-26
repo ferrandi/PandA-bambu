@@ -128,7 +128,7 @@ class reg_binding : public variable2obj< generic_objRef >
       /**
        * Destructor.
        */
-      virtual ~reg_binding();
+      ~reg_binding() override;
 
       /**
        *
@@ -160,7 +160,7 @@ class reg_binding : public variable2obj< generic_objRef >
       /**
        * Function that print the register binding associated with a storage value.
        */
-      void print_el(const_iterator &it) const;
+      void print_el(const_iterator &it) const override;
 
       /**
        * Returns reference to register object associated to a given index

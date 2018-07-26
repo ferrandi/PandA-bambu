@@ -96,7 +96,7 @@ class TestVectorParser : public HLS_step
       /**
        * Destructor
        */
-      ~TestVectorParser();
+      ~TestVectorParser() override;
 
       /**
        * Initializes the data needed for execution. It's something similar to a
@@ -104,12 +104,12 @@ class TestVectorParser : public HLS_step
        * data needed for the execution may not be present when the step is
        * created and they need to be retreived just before the execution
        */
-      void Initialize();
+      void Initialize() override;
 
       /**
        * Executes the step
        */
-      DesignFlowStep_Status Exec();
+      DesignFlowStep_Status Exec() override;
 
       /**
        * Compute the HLS relationships of this step
@@ -125,12 +125,12 @@ class TestVectorParser : public HLS_step
       >
       ComputeHLSRelationships
       (const DesignFlowStep::RelationshipType relationship_type)
-      const;
+      const override;
 
       /**
        * Check if this step has actually to be executed
        * @return true if the step has to be executed
        */
-      virtual bool HasToBeExecuted() const;
+      bool HasToBeExecuted() const override;
 };
 #endif

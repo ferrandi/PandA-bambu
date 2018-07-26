@@ -102,7 +102,7 @@ class glpk_solver : public meilp_solver
 
    public:
       glpk_solver();
-      virtual ~glpk_solver();
+      ~glpk_solver() override;
       void make(int nvars) override;
       int  solve() override;
       int  solve_ilp() override;
@@ -128,6 +128,6 @@ class glpk_solver : public meilp_solver
        * Print the problem
        * @param file_name is the name of the file to be written
        */
-      virtual void print_to_file(const std::string&file_name) override;
+      void print_to_file(const std::string&file_name) override;
 };
 #endif

@@ -126,7 +126,7 @@ class MultipleEntryIfReduction : public FunctionFrontendFlowStep
 
 
       const std::unordered_set< std::pair<FrontendFlowStepType, FunctionRelationship> >
-      ComputeFrontendRelationships (const DesignFlowStep::RelationshipType relationship_type) const;
+      ComputeFrontendRelationships (const DesignFlowStep::RelationshipType relationship_type) const override;
 
    public:
       /**
@@ -142,24 +142,24 @@ class MultipleEntryIfReduction : public FunctionFrontendFlowStep
       /**
        *  Destructor
       */
-      ~MultipleEntryIfReduction ();
+      ~MultipleEntryIfReduction () override;
 
       /**
        * Extract patterns from the GCC IR.
        * @return the exit status of this step
       */
-      DesignFlowStep_Status InternalExec ();
+      DesignFlowStep_Status InternalExec () override;
 
       /**
       * Initialize the step (i.e., like a constructor, but executed just before exec
       */
-      virtual void Initialize();
+      void Initialize() override;
 
       /**
       * Check if this step has actually to be executed
       * @return true if the step has to be executed
       */
-      virtual bool HasToBeExecuted() const;
+      bool HasToBeExecuted() const override;
 };
 
 #endif /* MultipleEntryIfReductionHPP */

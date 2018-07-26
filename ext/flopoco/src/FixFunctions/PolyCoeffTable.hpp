@@ -29,7 +29,7 @@ namespace flopoco{
 		/**
 		 * PolyCoeffTable destructor
 		 */
-		~PolyCoeffTable();
+		~PolyCoeffTable() override;
 			
 		MPPolynomial* getMPPolynomial(sollya_node_t t);
 		vector<FixedPointCoefficient*> getPolynomialCoefficients(sollya_node_t t, sollya_chain_t c);
@@ -47,12 +47,12 @@ namespace flopoco{
 
 		/************************************************/
 		/********Virtual methoods from class Table*******/
-		mpz_class function(int x);
+		mpz_class function(int x) override;
 
-		int    double2input(double x);
-		double input2double(int x);
-		mpz_class double2output(double x);
-		double output2double(mpz_class x);
+		int    double2input(double x) override;
+		double input2double(int x) override;
+		mpz_class double2output(double x) override;
+		double output2double(mpz_class x) override;
 		/************************************************/
 	protected:
 		void buildActualTable();

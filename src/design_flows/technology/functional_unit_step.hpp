@@ -108,12 +108,12 @@ class FunctionalUnitStep : public virtual DesignFlowStep
       /**
        * Destructor
        */
-      ~FunctionalUnitStep();
+      ~FunctionalUnitStep() override;
 
       /**
        * Initialize the step (i.e., like a constructor, but executed just before exec
        */
-      virtual void Initialize();
+      void Initialize() override;
 };
 #endif
 

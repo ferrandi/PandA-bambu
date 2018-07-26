@@ -122,7 +122,7 @@ class EdgeCWriter : public virtual CWriter
          const var_pp_functorConstRef variableFunctor,
          vertex bb_start = NULL_VERTEX,
          std::set<vertex> bb_end = std::set<vertex>()
-      );
+      ) override;
 
    protected:
       /// Increment which should be added before the label in a basic block
@@ -175,7 +175,7 @@ class EdgeCWriter : public virtual CWriter
       /**
        * Destructor
        */
-      virtual ~EdgeCWriter();
+      ~EdgeCWriter() override;
 
       /**
        * Returns the map which associates to each loop a unique id
@@ -186,11 +186,11 @@ class EdgeCWriter : public virtual CWriter
       /**
        * Initialize data structure
        */
-      virtual void Initialize();
+      void Initialize() override;
 
       /**
        * Writes the header of the file
        */
-      virtual void WriteHeader();
+      void WriteHeader() override;
 };
 #endif

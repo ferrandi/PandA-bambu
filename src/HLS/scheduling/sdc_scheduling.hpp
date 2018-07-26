@@ -148,7 +148,7 @@ class SDCScheduling : public Scheduling
        * @param relationship_type is the type of relationship to be considered
        * @return the steps in relationship with this
        */
-      virtual const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+      const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
    public:
       ///Result of SPECULATIVE_LOOP: the list of movement to be performed (first element is the operation, second element is the old basic block, third element is the new basic block)
@@ -168,25 +168,25 @@ class SDCScheduling : public Scheduling
       /**
        * Destructor
        */
-      ~SDCScheduling();
+      ~SDCScheduling() override;
 
       /**
        * Compute the relationships of a step with other steps
        * @param dependencies is where relationships will be stored
        * @param relationship_type is the type of relationship to be computed
        */
-      virtual void ComputeRelationships(DesignFlowStepSet & relationship, const DesignFlowStep::RelationshipType relationship_type) override;
+      void ComputeRelationships(DesignFlowStepSet & relationship, const DesignFlowStep::RelationshipType relationship_type) override;
 
       /**
        * Check if this step has actually to be executed
        * @return true if the step has to be executed
        */
-      virtual bool HasToBeExecuted() const override;
+      bool HasToBeExecuted() const override;
 
       /**
        * Execute the step
        * @return the exit status of this step
        */
-      virtual DesignFlowStep_Status InternalExec() override;
+      DesignFlowStep_Status InternalExec() override;
 };
 #endif

@@ -82,7 +82,7 @@ class HostProfiling : public ApplicationFrontendFlowStep
        * Return the set of analyses in relationship with this design step
        * @param relationship_type is the type of relationship to be considered
        */
-      const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const;
+      const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
    public:
       /**
@@ -96,12 +96,12 @@ class HostProfiling : public ApplicationFrontendFlowStep
       /**
        *  Destructor
        */
-      virtual ~HostProfiling();
+      ~HostProfiling() override;
 
       /**
        * Do nothing
        */
-      virtual DesignFlowStep_Status Exec();
+      DesignFlowStep_Status Exec() override;
 
       /**
        * Normalize path frequency according to execution times of whole function_id

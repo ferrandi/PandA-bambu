@@ -72,7 +72,7 @@ class EvaluationBaseStep : public HLSFunctionStep
       /**
        * Destructor
        */
-      ~EvaluationBaseStep();
+      ~EvaluationBaseStep() override;
 
       /**
        * Returns the results of the evaluation

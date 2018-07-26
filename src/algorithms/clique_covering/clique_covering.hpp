@@ -678,10 +678,10 @@ class coloring_based_clique_covering : public clique_covering<vertex_type>
    explicit coloring_based_clique_covering(bool _all_edges) : max_level(0), all_edges(_all_edges) {}
 
    /// destructor
-   virtual ~coloring_based_clique_covering() {}
+   ~coloring_based_clique_covering() override {}
 
    /// add a vertex
-   C_vertex add_vertex(const vertex_type& element, const std::string& name)
+   C_vertex add_vertex(const vertex_type& element, const std::string& name) override
    {
       C_vertex result;
       THROW_ASSERT(v2uv.find(element) == v2uv.end(), "vertex already added");
@@ -693,7 +693,7 @@ class coloring_based_clique_covering : public clique_covering<vertex_type>
    }
 
    /// add an edge
-   void add_edge(const vertex_type& src, const vertex_type& dest, int _weight)
+   void add_edge(const vertex_type& src, const vertex_type& dest, int _weight) override
    {
       THROW_ASSERT(src != dest, "autoloops are not allowed in a compatibility graph");
       THROW_ASSERT(v2uv.find(src) != v2uv.end(), "src not added");
@@ -706,12 +706,12 @@ class coloring_based_clique_covering : public clique_covering<vertex_type>
    }
 
    /// return the number of vertices of the clique
-   size_t num_vertices()
+   size_t num_vertices() override
    {
       return cliques.size();
    }
 
-   std::set<vertex_type> get_clique(unsigned int i)
+   std::set<vertex_type> get_clique(unsigned int i) override
    {
       std::set<vertex_type> result;
       std::set<C_vertex> & cur_clique = cliques[i];
@@ -814,7 +814,7 @@ class coloring_based_clique_covering : public clique_covering<vertex_type>
       }
    }
 
-   void exec(const filter_clique<vertex_type> & fc, check_clique<vertex_type> & )
+   void exec(const filter_clique<vertex_type> & fc, check_clique<vertex_type> & ) override
    {
       VertexIndex n = boost::num_vertices(clique_covering_graph_bulk);
       std::vector<VertexIndex> rank_map(n);
@@ -948,21 +948,21 @@ class coloring_based_clique_covering : public clique_covering<vertex_type>
       }
    }
 
-   void writeDot(const std::string&filename) const
+   void writeDot(const std::string&filename) const override
    {
       std::ofstream f(filename.c_str());
       boost::write_graphviz(f, clique_covering_graph_bulk, compatibility_node_info_writer(names), compatibility_edge_writer(clique_covering_graph_bulk));
    }
 
-   void add_subpartitions(size_t , vertex_type ) {}
+   void add_subpartitions(size_t , vertex_type ) override {}
 
-   virtual void suggest_min_resources(size_t ) {}
+   void suggest_min_resources(size_t ) override {}
 
-   virtual void suggest_max_resources(size_t ) {}
+   void suggest_max_resources(size_t ) override {}
 
-   virtual void min_resources(size_t ) {}
+   void min_resources(size_t ) override {}
 
-   virtual void max_resources(size_t ) {}
+   void max_resources(size_t ) override {}
 };
 
 /// second fast version of the TTT_based_clique_covering. The first maximal clique found is used by the greedy clique covering.
@@ -973,7 +973,7 @@ class TTT_based_clique_covering_fast : public coloring_based_clique_covering<ver
       /// constructor
       explicit TTT_based_clique_covering_fast(bool _all_edges) : coloring_based_clique_covering<vertex_type>(_all_edges)  {}
 
-      void do_clique_covering(const cc_compatibility_graphRef CG, typename boost::disjoint_sets<rank_pmap_type, pred_pmap_type> &ds, std::unordered_set<C_vertex> &support, const std::unordered_set<C_vertex> &all_vertices, const filter_clique<vertex_type> & fc)
+      void do_clique_covering(const cc_compatibility_graphRef CG, typename boost::disjoint_sets<rank_pmap_type, pred_pmap_type> &ds, std::unordered_set<C_vertex> &support, const std::unordered_set<C_vertex> &all_vertices, const filter_clique<vertex_type> & fc) override
       {
          TTT_maximal_weighted_clique_fast<cc_compatibility_graph> MWC(coloring_based_clique_covering<vertex_type>::names);
          //std::cerr << "Looking for a maximum weighted clique in a set of " << support.size() << std::endl;
@@ -1049,7 +1049,7 @@ class TTT_based_clique_covering : public coloring_based_clique_covering<vertex_t
       /// constructor
       explicit TTT_based_clique_covering(bool _all_edges) : coloring_based_clique_covering<vertex_type>(_all_edges)  {}
 
-      void do_clique_covering(const cc_compatibility_graphRef CG, typename boost::disjoint_sets<rank_pmap_type, pred_pmap_type> &ds, std::unordered_set<C_vertex> &support, const std::unordered_set<C_vertex> &all_vertices, const filter_clique<vertex_type> & fc)
+      void do_clique_covering(const cc_compatibility_graphRef CG, typename boost::disjoint_sets<rank_pmap_type, pred_pmap_type> &ds, std::unordered_set<C_vertex> &support, const std::unordered_set<C_vertex> &all_vertices, const filter_clique<vertex_type> & fc) override
       {
          TTT_maximal_weighted_clique<cc_compatibility_graph> MWC(coloring_based_clique_covering<vertex_type>::names);
          std::unordered_set<C_vertex> support_copy(support.begin(), support.end());
@@ -1228,7 +1228,7 @@ class TS_based_clique_covering : public coloring_based_clique_covering<vertex_ty
    explicit TS_based_clique_covering(bool _all_edges) : coloring_based_clique_covering<vertex_type>(_all_edges)  {}
 
 
-   void do_clique_covering(const cc_compatibility_graphRef CG, typename boost::disjoint_sets<rank_pmap_type, pred_pmap_type> &ds, std::unordered_set<C_vertex> &support, const std::unordered_set<C_vertex> &all_vertices, const filter_clique<vertex_type> & fc)
+   void do_clique_covering(const cc_compatibility_graphRef CG, typename boost::disjoint_sets<rank_pmap_type, pred_pmap_type> &ds, std::unordered_set<C_vertex> &support, const std::unordered_set<C_vertex> &all_vertices, const filter_clique<vertex_type> & fc) override
    {
       std::unordered_set<C_vertex> support_copy(support.begin(), support.end());
 
@@ -1359,11 +1359,11 @@ struct y_independent_cost : BM_cost_functor
    public:
       explicit y_independent_cost(const std::vector<int> & _cost) : cost(_cost) {}
 
-      int operator() (size_t x, size_t /*notused*/) const
+      int operator() (size_t x, size_t /*notused*/) const override
       {
          return cost[x];
       }
-      int max_row(size_t x) const
+      int max_row(size_t x) const override
       {
          return cost[x];
       }
@@ -1378,11 +1378,11 @@ struct full_cost_matrix : BM_cost_functor
    public:
       explicit full_cost_matrix(const boost::numeric::ublas::matrix<int> & _cost) : cost(_cost) {}
 
-      int operator() (size_t x, size_t y) const
+      int operator() (size_t x, size_t y) const override
       {
          return cost(x,y);
       }
-      int max_row(size_t x) const
+      int max_row(size_t x) const override
       {
          int res = cost(x,0);
          for (unsigned j = 1; j < cost.size2(); ++j)
@@ -1464,7 +1464,7 @@ class bipartite_matching_clique_covering : public clique_covering<vertex_type>
       bipartite_matching_clique_covering() : max_weight(std::numeric_limits<int>::min()), num_cols(0) {}
 
       /// add a vertex
-      C_vertex add_vertex(const vertex_type& element, const std::string& name)
+      C_vertex add_vertex(const vertex_type& element, const std::string& name) override
       {
          C_vertex result;
          THROW_ASSERT(v2uv.find(element) == v2uv.end(), "vertex already added");
@@ -1476,7 +1476,7 @@ class bipartite_matching_clique_covering : public clique_covering<vertex_type>
       }
 
       /// add an edge
-      void add_edge(const vertex_type& src, const vertex_type& dest, int _weight)
+      void add_edge(const vertex_type& src, const vertex_type& dest, int _weight) override
       {
          THROW_ASSERT(src != dest, "autoloops are not allowed in a compatibility graph");
          THROW_ASSERT(v2uv.find(src) != v2uv.end(), "src not added");
@@ -1489,12 +1489,12 @@ class bipartite_matching_clique_covering : public clique_covering<vertex_type>
       }
 
       /// return the number of vertices of the clique
-      size_t num_vertices()
+      size_t num_vertices() override
       {
          return cliques.size();
       }
 
-      std::set<vertex_type> get_clique(unsigned int i)
+      std::set<vertex_type> get_clique(unsigned int i) override
       {
          std::set<vertex_type> result;
          std::unordered_set<C_vertex> & cur_clique = cliques[i];
@@ -1520,7 +1520,7 @@ class bipartite_matching_clique_covering : public clique_covering<vertex_type>
          ++final_num_cols;
       }
 
-      void exec(const filter_clique<vertex_type> & fc, check_clique<vertex_type> & )
+      void exec(const filter_clique<vertex_type> & fc, check_clique<vertex_type> & ) override
       {
          /// now color the graph and then do the bipartite matching on the vertex having the same color
          if(partitions.empty())
@@ -1673,13 +1673,13 @@ class bipartite_matching_clique_covering : public clique_covering<vertex_type>
          }
       }
 
-      void writeDot(const std::string&filename) const
+      void writeDot(const std::string&filename) const override
       {
          std::ofstream f(filename.c_str());
          boost::write_graphviz(f, clique_covering_graph_bulk, compatibility_node_info_writer(names), compatibility_edge_writer(clique_covering_graph_bulk));
       }
 
-      void add_subpartitions(size_t id, vertex_type v)
+      void add_subpartitions(size_t id, vertex_type v) override
       {
          THROW_ASSERT(v2uv.find(v) != v2uv.end(), "vertex not added");
          C_vertex C_v = v2uv.find(v)->second;
@@ -1687,19 +1687,19 @@ class bipartite_matching_clique_covering : public clique_covering<vertex_type>
          num_cols=std::max(partitions[id].size(), num_cols);
       }
 
-      void suggest_min_resources(size_t n_resources)
+      void suggest_min_resources(size_t n_resources) override
       {
          num_cols = std::min(num_cols, n_resources);
       }
 
-      void min_resources(size_t n_resources)
+      void min_resources(size_t n_resources) override
       {
          num_cols = std::max(num_cols, n_resources);
       }
 
-      void suggest_max_resources(size_t ) {}
+      void suggest_max_resources(size_t ) override {}
 
-      void max_resources(size_t ) {}
+      void max_resources(size_t ) override {}
 
 };
 

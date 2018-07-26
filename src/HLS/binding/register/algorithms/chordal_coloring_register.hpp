@@ -63,7 +63,7 @@ class chordal_coloring_register : public conflict_based_register
       /**
        * Destructor of the class.
        */
-      ~chordal_coloring_register();
+      ~chordal_coloring_register() override;
 
       /**
        * Chordal coloring algorithm algorithm.
@@ -73,7 +73,7 @@ class chordal_coloring_register : public conflict_based_register
        * All previous result are erased.
        * @return the exit status of this step
        */
-      virtual DesignFlowStep_Status InternalExec();
+      DesignFlowStep_Status InternalExec() override;
 
    private:
 

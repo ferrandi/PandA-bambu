@@ -493,7 +493,7 @@ struct slack_based_filtering : public filter_clique<vertex>
          con_rel(_con_rel)
       {}
 
-      bool select_candidate_to_remove(const std::set<C_vertex> &candidate_clique, C_vertex &v, const std::map<C_vertex, vertex> &converter, const cc_compatibility_graph &cg) const
+      bool select_candidate_to_remove(const std::set<C_vertex> &candidate_clique, C_vertex &v, const std::map<C_vertex, vertex> &converter, const cc_compatibility_graph &cg) const override
       {
          THROW_ASSERT(!candidate_clique.empty(), "candidate clique cannot be empty");
          double min_slack=std::numeric_limits<double>::max();
@@ -627,7 +627,7 @@ class CdfcWriter : public VertexWriter
        * @param out is the stream where label has to printed
        * @param v is the vertex to be printed
        */
-      void operator()(std::ostream& out, const vertex& v) const
+      void operator()(std::ostream& out, const vertex& v) const override
       {
          operation_writer(out, c2s.find(v)->second);
       }
@@ -650,7 +650,7 @@ class CdfcEdgeWriter : public EdgeWriter
        * @param out is the stream
        * @param e is the edge
        */
-      void operator()(std::ostream& out, const EdgeDescriptor& e) const
+      void operator()(std::ostream& out, const EdgeDescriptor& e) const override
       {
          const CdfcEdgeInfo * edge_info = Cget_edge_info<CdfcEdgeInfo>(e, *printing_graph);
          if(edge_info)

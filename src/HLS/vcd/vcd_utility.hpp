@@ -107,7 +107,7 @@ class vcd_utility : public HLS_step
       vcd_utility(const ParameterConstRef parameters, const HLS_managerRef HLSMgr, const DesignFlowManagerConstRef design_flow_manager);
 
       /* Destructor */
-      ~vcd_utility(){}
+      ~vcd_utility() override{}
 
       /**
        * Execute the step
@@ -144,10 +144,10 @@ class vcd_utility : public HLS_step
        * Return the set of analyses in relationship with this design step
        * @param relationship_type is the type of relationship to be considered
        */
-      virtual const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> >
+      const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> >
       ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
-      virtual void ComputeRelationships(DesignFlowStepSet & relationship,
+      void ComputeRelationships(DesignFlowStepSet & relationship,
             const DesignFlowStep::RelationshipType relationship_type) override;
 
       bool detect_mismatch(

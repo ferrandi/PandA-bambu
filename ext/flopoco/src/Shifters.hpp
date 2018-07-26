@@ -35,7 +35,7 @@ namespace flopoco{
 
 
 		/** Destructor */
-		~Shifter();
+		~Shifter() override;
 
 
 		/** 
@@ -47,7 +47,7 @@ namespace flopoco{
 		 * Emulate a correctly rounded division using MPFR.
 		 * @param tc a TestCase partially filled with input values 
 		 */
-		void emulate(TestCase * tc);
+		void emulate(TestCase * tc) override;
 
 		/** Returns the number of bits of the sift amount 
 		 *@return number of bits of the shift amount

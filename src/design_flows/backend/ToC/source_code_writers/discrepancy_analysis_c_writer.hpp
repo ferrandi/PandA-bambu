@@ -53,36 +53,36 @@ class DiscrepancyAnalysisCWriter : public HLSCWriter
       /**
        * Writes the global declarations
        */
-      virtual void WriteGlobalDeclarations();
+      void WriteGlobalDeclarations() override;
 
       /**
        * Write additional initialization code needed by subclasses
        */
-      virtual void WriteExtraInitCode();
+      void WriteExtraInitCode() override;
 
-      virtual void WriteExtraCodeBeforeEveryMainCall();
+      void WriteExtraCodeBeforeEveryMainCall() override;
 
-      virtual void WriteBBHeader(unsigned int bb_number);
+      void WriteBBHeader(unsigned int bb_number) override;
 
       /**
        * Write extra information on the given statement vertex, before the
        * statement itself
        */
       void writePreInstructionInfo
-      (const FunctionBehaviorConstRef FB, const vertex v);
+      (const FunctionBehaviorConstRef FB, const vertex v) override;
 
       /**
        * Write extra information on the given statement vertex, after the
        * statement itself
        */
       void writePostInstructionInfo
-      (const FunctionBehaviorConstRef fun_behavior, const vertex);
+      (const FunctionBehaviorConstRef fun_behavior, const vertex) override;
 
       /**
        * Write function implementation
        * @param function_id is the index of the function to be written
        */
-      virtual void WriteFunctionImplementation(unsigned int function_index);
+      void WriteFunctionImplementation(unsigned int function_index) override;
 
    public:
 
@@ -102,7 +102,7 @@ class DiscrepancyAnalysisCWriter : public HLSCWriter
       /**
        * Destructor
        */
-      ~DiscrepancyAnalysisCWriter();
+      ~DiscrepancyAnalysisCWriter() override;
 
       /**
        * Declares the local variable; in case the variable used in the intialization of
@@ -120,13 +120,13 @@ class DiscrepancyAnalysisCWriter : public HLSCWriter
          CustomSet<std::string> & locally_declared_type,
          const BehavioralHelperConstRef BH,
          const var_pp_functorConstRef varFunc
-      );
+      ) override;
 
-      virtual void WriteFunctionDeclaration(const unsigned int funId);
+      void WriteFunctionDeclaration(const unsigned int funId) override;
 
       /**
        * Writes implementation of __builtin_wait_call
        */
-      virtual void WriteBuiltinWaitCall();
+      void WriteBuiltinWaitCall() override;
 };
 #endif

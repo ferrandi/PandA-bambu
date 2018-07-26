@@ -82,7 +82,7 @@ class determine_memory_accesses : public FunctionFrontendFlowStep
        * Return the set of analyses in relationship with this design step
        * @param relationship_type is the type of relationship to be considered
        */
-      virtual const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const;
+      const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
    public:
       /**
@@ -97,17 +97,17 @@ class determine_memory_accesses : public FunctionFrontendFlowStep
       /**
        *  Destructor
        */
-      ~determine_memory_accesses();
+      ~determine_memory_accesses() override;
 
       /**
        * Determines the variables that require a memory access
        */
-      DesignFlowStep_Status InternalExec();
+      DesignFlowStep_Status InternalExec() override;
 
       /**
        * Check if this step has actually to be executed
        * @return true if the step has to be executed
        */
-      virtual bool HasToBeExecuted() const;
+      bool HasToBeExecuted() const override;
 };
 #endif

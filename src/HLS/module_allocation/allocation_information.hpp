@@ -365,12 +365,12 @@ class AllocationInformation : public HLSFunctionIR
       /**
        * Initialize all the data structure
        */
-      virtual void Initialize();
+      void Initialize() override;
 
       /**
        * Clear all the data structure
        */
-      virtual void Clear();
+      void Clear() override;
 
       enum op_target
       {
@@ -381,7 +381,7 @@ class AllocationInformation : public HLSFunctionIR
       /**
        * Destructor
        */
-      virtual ~AllocationInformation();
+      ~AllocationInformation() override;
 
       /**
        * Returns the set of functional units that can be used to implement the operation associated with vertex v.

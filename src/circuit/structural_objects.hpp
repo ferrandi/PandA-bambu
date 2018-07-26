@@ -597,7 +597,7 @@ struct port_o : public structural_object
       port_o(int debug_level, const structural_objectRef o, port_direction dir, so_kind _port_type);
 
       /// Destructor.
-      ~port_o() {}
+      ~port_o() override {}
 
       /// custom size parameter
       std::string size_parameter;
@@ -1041,7 +1041,7 @@ class event_o : public structural_object
       event_o(int debug_level, const structural_objectRef o);
 
       /// Destructor
-      ~event_o() {}
+      ~event_o() override {}
 
       /**
           * Perform a copy of the event.
@@ -1107,7 +1107,7 @@ class data_o : public structural_object
       data_o(int debug_level, const structural_objectRef o);
 
       /// destructor
-      ~data_o() {}
+      ~data_o() override {}
 
       /**
           * Perform a copy of the data.
@@ -1201,7 +1201,7 @@ class action_o : public structural_object
       action_o(int debug_level, const structural_objectRef o);
 
       /// destructor
-      ~action_o() {}
+      ~action_o() override {}
 
       /**
           * Add a procedure paramenter.
@@ -1360,7 +1360,7 @@ class constant_o : public structural_object
       constant_o(int debug_level, const structural_objectRef o, const std::string &value);
 
       /// Destructor
-      ~constant_o() {}
+      ~constant_o() override {}
 
       /**
           * Bind the element object with a port/signal.
@@ -1458,7 +1458,7 @@ class signal_o : public structural_object
       signal_o(int debug_level, const structural_objectRef o, so_kind _signal_type);
 
       /// Destructor
-      ~signal_o() {}
+      ~signal_o() override {}
 
       /**
           * Bind the connection object with a port.
@@ -1702,7 +1702,7 @@ class module : public structural_object
       module(int debug_level, const structural_objectRef o);
 
       /// destructor
-      virtual ~module(){}
+      ~module() override{}
 
       /**
           * Return the total number of the ports
@@ -1898,7 +1898,7 @@ class module : public structural_object
           * Perform a copy of the module.
           * @param dest destination object.
          */
-      virtual void copy(structural_objectRef dest) const override;
+      void copy(structural_objectRef dest) const override;
 
       /**
           * Return the object named id of a given type which belongs to or it is associated with the object.
@@ -1906,13 +1906,13 @@ class module : public structural_object
           * @param type is the type of the object we are looking for.
           * @param owner is the owner of the object named id.
          */
-      virtual structural_objectRef find_member(const std::string&id, so_kind type, const structural_objectRef owner) const override;
+      structural_objectRef find_member(const std::string&id, so_kind type, const structural_objectRef owner) const override;
 
       /**
           * Find key in this object.
           * @param key is the object searched.
          */
-      virtual structural_objectRef find_isomorphic(const structural_objectRef key) const override;
+      structural_objectRef find_isomorphic(const structural_objectRef key) const override;
 
       /**
           * Load a structural_object starting from an xml file.
@@ -1920,21 +1920,21 @@ class module : public structural_object
           * @param owner is the refcount version of this.
           * @param CM is the circuit manager.
          */
-      virtual void xload(const xml_element* Enode, structural_objectRef owner, structural_managerRef const & CM) override = 0;
+      void xload(const xml_element* Enode, structural_objectRef owner, structural_managerRef const & CM) override = 0;
 
 #if HAVE_TECHNOLOGY_BUILT
       /**
           * Add the list of attributes for the component
           * @param rootnode is the root node at which the xml representation of the structural object is attached.
          */
-      virtual void xwrite_attributes(xml_element* rootnode, const technology_nodeRef& tn = technology_nodeRef()) override = 0;
+      void xwrite_attributes(xml_element* rootnode, const technology_nodeRef& tn = technology_nodeRef()) override = 0;
 #endif
 
       /**
           * Add a structural_object to an xml tree.
           * @param rootnode is the root node at which the xml representation of the structural object is attached.
          */
-      virtual void xwrite(xml_element* rootnode) override = 0;
+      void xwrite(xml_element* rootnode) override = 0;
 
       /**
          * True if one of the ports of the module has the attribute is_var_args=true
@@ -1945,7 +1945,7 @@ class module : public structural_object
           * Print the module (for debug purpose)
           * @param os is an output stream
           */
-      virtual void print(std::ostream& os) const override;
+      void print(std::ostream& os) const override;
 
       /**
           * set the component as critical with respect to the timing path
@@ -2057,7 +2057,7 @@ class component_o : public module
       component_o(int debug_level, const structural_objectRef o);
 
       /// destructor
-      ~component_o() {}
+      ~component_o() override {}
 
       /**
           * Perform a copy of the component.
@@ -2098,7 +2098,7 @@ class component_o : public module
           * Add the list of attributes for the component
           * @param rootnode is the root node at which the xml representation of the structural object is attached.
          */
-      virtual void xwrite_attributes(xml_element* rootnode, const technology_nodeRef& tn = technology_nodeRef()) override;
+      void xwrite_attributes(xml_element* rootnode, const technology_nodeRef& tn = technology_nodeRef()) override;
 #endif
 
       /**
@@ -2138,7 +2138,7 @@ class channel_o : public module
       channel_o(int debug_level, const structural_objectRef o);
 
       /// Destructor
-      ~channel_o() {}
+      ~channel_o() override {}
 
       /**
           * Add an interface to the object.
@@ -2207,7 +2207,7 @@ class channel_o : public module
           * Add the list of attributes for the component
           * @param rootnode is the root node at which the xml representation of the structural object is attached.
          */
-      virtual void xwrite_attributes(xml_element* rootnode, const technology_nodeRef& tn = technology_nodeRef()) override;
+      void xwrite_attributes(xml_element* rootnode, const technology_nodeRef& tn = technology_nodeRef()) override;
 #endif
 
       /**
@@ -2244,7 +2244,7 @@ class bus_connection_o : public structural_object
       bus_connection_o(int debug_level, const structural_objectRef o);
 
       /// destructor
-      ~bus_connection_o() {}
+      ~bus_connection_o() override {}
 
       /**
           * Add a connection (e.g. a signal or a channel) to the bus connection object.

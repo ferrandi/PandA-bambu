@@ -95,12 +95,12 @@ class MemoryAllocationSpecialization : public HLSFlowStepSpecialization
       /**
        * Return the string representation of this
        */
-      const std::string GetKindText() const;
+      const std::string GetKindText() const override;
 
       /**
        * Return the contribution to the signature of a step given by the specialization
        */
-      virtual const std::string GetSignature() const;
+      const std::string GetSignature() const override;
 };
 
 /**
@@ -133,7 +133,7 @@ class memory_allocation : public HLS_step
        * @param relationship_type is the type of relationship to be considered
        * @return the steps in relationship with this
        */
-      virtual const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const;
+      const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
    public:
       /**
@@ -146,7 +146,7 @@ class memory_allocation : public HLS_step
       /**
        * Destructor
        */
-      ~memory_allocation();
+      ~memory_allocation() override;
 
       void allocate_parameters(unsigned int functionId);
 
@@ -154,7 +154,7 @@ class memory_allocation : public HLS_step
        * Check if this step has actually to be executed
        * @return true if the step has to be executed
        */
-      virtual bool HasToBeExecuted() const;
+      bool HasToBeExecuted() const override;
 };
 
 #endif

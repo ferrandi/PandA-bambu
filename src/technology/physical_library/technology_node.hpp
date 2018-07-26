@@ -379,7 +379,7 @@ struct operation: public technology_node
    /**
     * Destructor
     */
-   ~operation();
+   ~operation() override;
 
    /**
     * Returns the name of the operation.
@@ -561,7 +561,7 @@ struct functional_unit: public technology_node
    /**
     * Destructor
     */
-   ~functional_unit();
+   ~functional_unit() override;
 
    /**
     * Add the given operation to the current functional_unit.
@@ -799,7 +799,7 @@ struct functional_unit: public technology_node
    storage_unit() : bits(0), words(0), read_ports(0), read_latency(0), write_ports(0), write_latency(0), readwrite_ports(0), readwrite_latency(0), area(0) {}
 
    /// Destructor
-   ~storage_unit() {}
+   ~storage_unit() override {}
 
    const std::string& get_name() const override {return storage_unit_name;}
    /**

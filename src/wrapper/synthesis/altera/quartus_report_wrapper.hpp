@@ -61,7 +61,7 @@ class QuartusReportWrapper : public AlteraWrapper
       /**
        * Evaluates the design variables
        */
-      void EvaluateVariables(const DesignParametersRef dp);
+      void EvaluateVariables(const DesignParametersRef dp) override;
 
    public:
 
@@ -74,11 +74,11 @@ class QuartusReportWrapper : public AlteraWrapper
       /**
        * Destructor
        */
-      virtual ~QuartusReportWrapper();
+      ~QuartusReportWrapper() override;
 
       /**
        * Returns the proper command line
        */
-      std::string get_command_line(const DesignParametersRef& dp) const;
+      std::string get_command_line(const DesignParametersRef& dp) const override;
 };
 #endif

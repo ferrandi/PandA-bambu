@@ -16,15 +16,15 @@ namespace flopoco{
 	{
 	public:
 		FPPow(Target* target, int wE, int wF, int type, int logTableSize=0, int expTableSize=0, int expDegree=0);
-		~FPPow();
+		~FPPow() override;
 
 		void compute_error(mpfr_t & r, mpfr_t &epsE, mpfr_t& epsM, mpfr_t& epsL );
 
 		//		Overloading the virtual functions of Operator
-		void emulate(TestCase * tc);
-		void buildStandardTestCases(TestCaseList* tcl);
+		void emulate(TestCase * tc) override;
+		void buildStandardTestCases(TestCaseList* tcl) override;
 		/**Overloading the function of Operator */
-		TestCase* buildRandomTestCase(int n); 
+		TestCase* buildRandomTestCase(int n) override; 
 
 		int wE, wF;
 

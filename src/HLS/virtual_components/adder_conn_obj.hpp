@@ -73,7 +73,7 @@ class adder_conn_obj : public generic_obj
       /**
        * Destructor.
        */
-      ~adder_conn_obj() {}
+      ~adder_conn_obj() override {}
 
       /**
        * add a size to the component

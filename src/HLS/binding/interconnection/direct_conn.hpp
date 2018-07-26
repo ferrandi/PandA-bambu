@@ -67,13 +67,13 @@ class direct_conn : public connection_obj
       /**
        * Destructor.
        */
-      virtual ~direct_conn(){}
+      ~direct_conn() override{}
 
       /**
        * Returns the name associated with the element
        * @return a string containing the identifier
        */
-      const std::string get_string() const { return "DIRECT_CONNECTION"; }
+      const std::string get_string() const override { return "DIRECT_CONNECTION"; }
 
 };
 ///refcount definition of the class

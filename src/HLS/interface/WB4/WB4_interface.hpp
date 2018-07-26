@@ -95,12 +95,12 @@ class WB4_interface : public minimal_interface
       /**
        * Destructor
        */
-      virtual ~WB4_interface();
+      ~WB4_interface() override;
 
       /**
        * Execute the step
        * @return the exit status of this step
        */
-      virtual DesignFlowStep_Status InternalExec();
+      DesignFlowStep_Status InternalExec() override;
 };
 #endif

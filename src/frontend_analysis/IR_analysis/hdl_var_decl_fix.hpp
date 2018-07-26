@@ -61,7 +61,7 @@ class HDLVarDeclFix: public VarDeclFix
        * @param identifier is the identifier to be normalized
        * @return the normalized identifier
        */
-      virtual const std::string Normalize(const std::string&identifier) const;
+      const std::string Normalize(const std::string&identifier) const override;
 
    public:
       /**
@@ -76,13 +76,13 @@ class HDLVarDeclFix: public VarDeclFix
       /**
        * Destructor
        */
-      virtual ~HDLVarDeclFix();
+      ~HDLVarDeclFix() override;
 
       /**
        * Fixes the var_decl duplication.
        * @return the exit status of this step
        */
-      virtual DesignFlowStep_Status InternalExec();
+      DesignFlowStep_Status InternalExec() override;
 };
 #endif
 

@@ -731,7 +731,7 @@ struct WeightedNode : public tree_node
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const;
+   void visit(tree_node_visitor * const v) const override;
 };
 
 
@@ -932,7 +932,7 @@ struct decl_node : public srcp, public tree_node
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const;
+   void visit(tree_node_visitor * const v) const override;
 
    /// visitor enum
    enum { GETID(srcp)=0, GETID(tree_node), GETID(name), GETID(mngl), GETID(orig), GETID(type), GETID(scpe), GETID(chan), GETID(attributes)};
@@ -985,7 +985,7 @@ struct expr_node : public srcp, public WeightedNode
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const;
+   void visit(tree_node_visitor * const v) const override;
 
    /// visitor enum
    enum { GETID(srcp)=0, GETID(WeightedNode), GETID(type)};
@@ -1134,7 +1134,7 @@ struct gimple_node : public srcp, public WeightedNode
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const;
+   void visit(tree_node_visitor * const v) const override;
 
    /// visitor enum
    enum { GETID(srcp)=0, GETID(WeightedNode), GETID(memuse), GETID(memdef), GETID(vuses), GETID(vdef), GETID(vovers), GETID(pragmas), GETID(use_set), GETID(clobbered_set), GETID(scpe)};
@@ -1168,7 +1168,7 @@ struct unary_expr : public expr_node
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const;
+   void visit(tree_node_visitor * const v) const override;
 
    /// visitor enum
    enum { GETID(expr_node)=0, GETID(op)};
@@ -1194,7 +1194,7 @@ struct binary_expr : public expr_node
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const;
+   void visit(tree_node_visitor * const v) const override;
 
    /// visitor enum
    enum { GETID(expr_node)=0, GETID(op0), GETID(op1)};
@@ -1223,7 +1223,7 @@ struct ternary_expr : public expr_node
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const;
+   void visit(tree_node_visitor * const v) const override;
 
    /// visitor enum
    enum { GETID(expr_node)=0, GETID(op0), GETID(op1), GETID(op2)};
@@ -1255,7 +1255,7 @@ struct quaternary_expr : public expr_node
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const;
+   void visit(tree_node_visitor * const v) const override;
 
    /// visitor enum
    enum { GETID(expr_node)=0, GETID(op0), GETID(op1), GETID(op2), GETID(op3)};
@@ -1328,7 +1328,7 @@ struct type_node : public tree_node
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const;
+   void visit(tree_node_visitor * const v) const override;
 
    /// visitor enum
    enum { GETID(tree_node)=0, GETID(name), GETID(unql), GETID(size), GETID(scpe)};
@@ -1361,7 +1361,7 @@ struct memory_tag : public decl_node
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const override;
+   void visit(tree_node_visitor * const v) const override;
 
    /// visitor enum
    enum { GETID(decl_node)=0, GETID(list_of_aliases)};
@@ -1383,7 +1383,7 @@ struct cst_node : tree_node
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const override;
+   void visit(tree_node_visitor * const v) const override;
 
    /// visitor enum
    enum {GETID(tree_node)=0, GETID(type)};
@@ -1410,7 +1410,7 @@ struct error_mark : tree_node
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const override;
+   void visit(tree_node_visitor * const v) const override;
 
    /// visitor enum
    enum {GETID(tree_node)=0};
@@ -1473,7 +1473,7 @@ struct array_type : public type_node
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const override;
+   void visit(tree_node_visitor * const v) const override;
 
    /// visitor enum
    enum { GETID(type_node)=0, GETID(elts), GETID(domn)};
@@ -1522,7 +1522,7 @@ struct gimple_asm : public gimple_node
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const override;
+   void visit(tree_node_visitor * const v) const override;
 
    /// visitor enum
    enum { GETID(gimple_node)=0, GETID(out), GETID(in), GETID(clob)};
@@ -1555,7 +1555,7 @@ struct baselink : public tree_node
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const override;
+   void visit(tree_node_visitor * const v) const override;
 
    /// visitor enum
    enum { GETID(tree_node)=0, GETID(type)};
@@ -1598,7 +1598,7 @@ struct gimple_bind : public expr_node
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const override;
+   void visit(tree_node_visitor * const v) const override;
 
    /// visitor enum
    enum {GETID(expr_node)=0, GETID(list_of_vars), GETID(body)};
@@ -1658,7 +1658,7 @@ struct binfo : public tree_node
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const override;
+   void visit(tree_node_visitor * const v) const override;
 
    /// visitor enum
    enum {GETID(tree_node)=0, GETID(type), GETID(list_of_access_binf)};
@@ -1732,7 +1732,7 @@ struct block : public tree_node
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const override;
+   void visit(tree_node_visitor * const v) const override;
 
    /// visitor enum
    enum {GETID(tree_node)=0};
@@ -1787,7 +1787,7 @@ struct call_expr : public expr_node
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const override;
+   void visit(tree_node_visitor * const v) const override;
 
    /// visitor enum
    enum {GETID(expr_node)=0, GETID(type), GETID(fn), GETID(args)};
@@ -1821,7 +1821,7 @@ struct aggr_init_expr : public call_expr
        * virtual function used to traverse the tree_node data structure.
        * @param v is a reference to the tree_node visitor class
        */
-      virtual void visit(tree_node_visitor * const v) const override;
+      void visit(tree_node_visitor * const v) const override;
 
       /// visitor enum
       enum {GETID(call_expr)=0, GETID(ctor),  GETID(slot)};
@@ -1862,7 +1862,7 @@ struct gimple_call : public gimple_node
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const override;
+   void visit(tree_node_visitor * const v) const override;
 
    /// visitor enum
    enum {GETID(gimple_node)=0, GETID(type), GETID(fn), GETID(args)};
@@ -1908,7 +1908,7 @@ struct case_label_expr : public expr_node
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const override;
+   void visit(tree_node_visitor * const v) const override;
 
    /// visitor enum
    enum {GETID(expr_node)=0, GETID(op0), GETID(op1), GETID(got)};
@@ -1938,7 +1938,7 @@ struct cast_expr : public expr_node
        * virtual function used to traverse the tree_node data structure.
        * @param v is a reference to the tree_node visitor class
        */
-      virtual void visit(tree_node_visitor * const v) const override;
+      void visit(tree_node_visitor * const v) const override;
 
       /// visitor enum
       enum {GETID(expr_node)=0, GETID(op)};
@@ -2032,7 +2032,7 @@ struct expr_pack_expansion : public expr_node
    * virtual function used to traverse the tree_node data structure.
    * @param v is a reference to the tree_node visitor class
    */
-  virtual void visit(tree_node_visitor * const v) const override;
+  void visit(tree_node_visitor * const v) const override;
 
   /// visitor enum
   enum {GETID(expr_node)=0, GETID(op), GETID(param_packs), GETID(arg)};
@@ -2072,7 +2072,7 @@ struct complex_cst : public cst_node
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const override;
+   void visit(tree_node_visitor * const v) const override;
 
    /// visitor enum
    enum {GETID(cst_node)=0, GETID(real), GETID(imag)};
@@ -2114,7 +2114,7 @@ struct complex_type : public type_node
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const override;
+   void visit(tree_node_visitor * const v) const override;
 
    /// visitor enum
    enum {GETID(type_node)=0};
@@ -2167,7 +2167,7 @@ struct gimple_cond : public gimple_node
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const override;
+   void visit(tree_node_visitor * const v) const override;
 
    /// visitor enum
    enum {GETID(gimple_node)=0, GETID(op0)};
@@ -2205,7 +2205,7 @@ struct const_decl : public decl_node
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const override;
+   void visit(tree_node_visitor * const v) const override;
 
    /// visitor enum
    enum {GETID(decl_node)=0, GETID(cnst)};
@@ -2268,7 +2268,7 @@ struct constructor : public tree_node
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const override;
+   void visit(tree_node_visitor * const v) const override;
 
    /// visitor enum
    enum {GETID(tree_node)=0, GETID(type), GETID(list_of_idx_valu)};
@@ -2343,7 +2343,7 @@ struct enumeral_type : public type_node
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const override;
+   void visit(tree_node_visitor * const v) const override;
 
    /// visitor enum
    enum {GETID(type_node)=0, GETID(min), GETID(max), GETID(csts)};
@@ -2397,7 +2397,7 @@ struct expr_stmt : public tree_node
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const override;
+   void visit(tree_node_visitor * const v) const override;
 
    /// visitor enum
    enum {GETID(tree_node)=0, GETID(expr), GETID(next)};
@@ -2471,7 +2471,7 @@ struct field_decl : public decl_node, public attr
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const override;
+   void visit(tree_node_visitor * const v) const override;
 
    /// visitor enum
    enum {GETID(decl_node)=0, GETID(attr), GETID(init), GETID(size), GETID(bpos), GETID(smt_ann)};
@@ -2667,7 +2667,7 @@ struct function_decl : public decl_node, public attr
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const override;
+   void visit(tree_node_visitor * const v) const override;
 
    /// visitor enum
    enum {GETID(decl_node)=0, GETID(attr), GETID(fn), GETID(tmpl_parms), GETID(tmpl_args), GETID(list_of_args), GETID(body), GETID(inline_body)};
@@ -2716,7 +2716,7 @@ struct function_type : public type_node
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const override;
+   void visit(tree_node_visitor * const v) const override;
 
    /// visitor enum
    enum {GETID(type_node)=0, GETID(retn), GETID(prms)};
@@ -2767,7 +2767,7 @@ struct gimple_assign :  public gimple_node
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const override;
+   void visit(tree_node_visitor * const v) const override;
 
    /// visitor enum
    enum {GETID(gimple_node)=0, GETID(op0), GETID(op1), GETID(orig), GETID(predicate)};
@@ -2788,7 +2788,7 @@ struct gimple_nop :  public gimple_node
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const override;
+   void visit(tree_node_visitor * const v) const override;
 
    /// visitor enum
    enum {GETID(gimple_node)=0};
@@ -2817,7 +2817,7 @@ struct gimple_goto : public gimple_node
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const override;
+   void visit(tree_node_visitor * const v) const override;
 
    /// visitor enum
    enum {GETID(gimple_node)=0, GETID(op)};
@@ -2867,7 +2867,7 @@ struct handler : public tree_node
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const override;
+   void visit(tree_node_visitor * const v) const override;
 
    /// visitor enum
    enum {GETID(tree_node)=0, GETID(body)};
@@ -2901,7 +2901,7 @@ struct identifier_node : public tree_node
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
    */
-   virtual void visit(tree_node_visitor * const v) const override;
+   void visit(tree_node_visitor * const v) const override;
 
    /// visitor enum
    enum {GETID(tree_node)=0};
@@ -2957,7 +2957,7 @@ struct integer_cst : public cst_node
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const override;
+   void visit(tree_node_visitor * const v) const override;
 
    /// visitor enum
    enum {GETID(cst_node)=0};
@@ -3007,7 +3007,7 @@ struct integer_type : public type_node
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const override;
+   void visit(tree_node_visitor * const v) const override;
 
    /// visitor enum
    enum {GETID(type_node)=0, GETID(min), GETID(max)};
@@ -3045,7 +3045,7 @@ struct gimple_label : public gimple_node
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const override;
+   void visit(tree_node_visitor * const v) const override;
 
    /// visitor enum
    enum {GETID(gimple_node)=0, GETID(op)};
@@ -3154,7 +3154,7 @@ struct method_type : public function_type
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const override;
+   void visit(tree_node_visitor * const v) const override;
 
    /// visitor enum
    enum {GETID(function_type)=0, GETID(clas)};
@@ -3222,7 +3222,7 @@ struct namespace_decl : public decl_node
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const override;
+   void visit(tree_node_visitor * const v) const override;
 
    /// visitor enum
    enum {GETID(decl_node)=0, GETID(dcls)};
@@ -3310,7 +3310,7 @@ struct overload : public tree_node
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const override;
+   void visit(tree_node_visitor * const v) const override;
 
    /// visitor enum
    enum { GETID(tree_node)=0, GETID(crnt),  GETID(chan)};
@@ -3387,7 +3387,7 @@ struct parm_decl : public decl_node
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const override;
+   void visit(tree_node_visitor * const v) const override;
 
    /// visitor enum
    enum {GETID(decl_node)=0, GETID(argt), GETID(size), GETID(smt_ann)};
@@ -3484,7 +3484,7 @@ struct gimple_phi : public gimple_node
        * virtual function used to traverse the tree_node data structure.
        * @param v is a reference to the tree_node visitor class
        */
-      virtual void visit(tree_node_visitor * const v) const override;
+      void visit(tree_node_visitor * const v) const override;
 
       /// visitor enum
       enum {GETID(gimple_node)=0, GETID(res), GETID(list_of_def_edge)};
@@ -3515,7 +3515,7 @@ struct gimple_predict : public gimple_node
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const override;
+   void visit(tree_node_visitor * const v) const override;
 
    /// visitor enum
    enum {GETID(gimple_node)=0};
@@ -3570,7 +3570,7 @@ struct pointer_type : public type_node
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const override;
+   void visit(tree_node_visitor * const v) const override;
 
    /// visitor enum
    enum {GETID(type_node)=0, GETID(ptd)};
@@ -3664,7 +3664,7 @@ struct real_cst : public cst_node
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const override;
+   void visit(tree_node_visitor * const v) const override;
 
    /// visitor enum
    enum {GETID(cst_node)=0};
@@ -3705,7 +3705,7 @@ struct real_type : public type_node
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const override;
+   void visit(tree_node_visitor * const v) const override;
 
    /// visitor enum
    enum {GETID(type_node)=0};
@@ -3816,7 +3816,7 @@ struct record_type :  public type_node
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const override;
+   void visit(tree_node_visitor * const v) const override;
 
    /// visitor enum
    enum {GETID(type_node)=0, GETID(vfld), GETID(list_of_flds),GETID(list_of_fncs),GETID(ptd),GETID(cls),GETID(bfld),GETID(binf),GETID(tmpl_parms),GETID(tmpl_args)};
@@ -3869,7 +3869,7 @@ struct reference_type : public type_node
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const override;
+   void visit(tree_node_visitor * const v) const override;
 
    /// visitor enum
    enum {GETID(type_node)=0, GETID(refd)};
@@ -3927,7 +3927,7 @@ struct result_decl : public decl_node
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const override;
+   void visit(tree_node_visitor * const v) const override;
 
    /// visitor enum
    enum {GETID(decl_node)=0, GETID(init), GETID(size),GETID(smt_ann)};
@@ -3950,7 +3950,7 @@ struct gimple_resx :  public gimple_node
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const override;
+   void visit(tree_node_visitor * const v) const override;
 
    /// visitor enum
    enum {GETID(gimple_node)=0};
@@ -3982,7 +3982,7 @@ struct gimple_return : public gimple_node
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const override;
+   void visit(tree_node_visitor * const v) const override;
 
    /// visitor enum
    enum {GETID(gimple_node)=0, GETID(op)};
@@ -4013,7 +4013,7 @@ struct return_stmt : public tree_node
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const override;
+   void visit(tree_node_visitor * const v) const override;
 
    /// visitor enum
    enum {GETID(tree_node)=0, GETID(expr)};
@@ -4084,7 +4084,7 @@ struct scope_ref : public expr_node
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const override;
+   void visit(tree_node_visitor * const v) const override;
 
    /// visitor enum
    enum {GETID(expr_node)=0, GETID(op0), GETID(op1)};
@@ -4221,7 +4221,7 @@ struct ssa_name : public tree_node
        * virtual function used to traverse the tree_node data structure.
        * @param v is a reference to the tree_node visitor class
        */
-      virtual void visit(tree_node_visitor * const v) const override;
+      void visit(tree_node_visitor * const v) const override;
 
       /**
        * Return the def stmt (checking that is unique)
@@ -4282,7 +4282,7 @@ struct statement_list : public tree_node
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const override;
+   void visit(tree_node_visitor * const v) const override;
 
    /// visitor enum
    enum {GETID(tree_node)=0, GETID(list_of_stmt), GETID(list_of_bloc)};
@@ -4323,7 +4323,7 @@ struct string_cst : public cst_node
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const override;
+   void visit(tree_node_visitor * const v) const override;
 
    /// visitor enum
    enum {GETID(cst_node)=0};
@@ -4367,7 +4367,7 @@ struct gimple_switch : public gimple_node
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const override;
+   void visit(tree_node_visitor * const v) const override;
 
    /// visitor enum
    enum {GETID(gimple_node)=0, GETID(op0), GETID(op1)};
@@ -4405,7 +4405,7 @@ struct gimple_switch : public gimple_node
         * virtual function used to traverse the tree_node data structure.
         * @param v is a reference to the tree_node visitor class
         */
-       virtual void visit(tree_node_visitor * const v) const override;
+       void visit(tree_node_visitor * const v) const override;
 
        /// visitor enum
        enum {GETID(expr_node)=0, GETID(decl), GETID(init), GETID(clnp)};
@@ -4464,7 +4464,7 @@ struct target_mem_ref : public WeightedNode
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const override;
+   void visit(tree_node_visitor * const v) const override;
 
    /// visitor enum
    enum {GETID(WeightedNode)=0, GETID(type), GETID(symbol), GETID(base), GETID(idx), GETID(step), GETID(offset), GETID(orig), GETID(tag)};
@@ -4518,7 +4518,7 @@ struct target_mem_ref461 : public WeightedNode
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const override;
+   void visit(tree_node_visitor * const v) const override;
 
    /// visitor enum
    enum {GETID(WeightedNode)=0, GETID(type), GETID(base), GETID(idx), GETID(idx2), GETID(step), GETID(offset)};
@@ -4558,7 +4558,7 @@ struct template_decl : public decl_node
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const override;
+   void visit(tree_node_visitor * const v) const override;
 
    /// visitor enum
    enum {GETID(decl_node)=0, GETID(rslt), GETID(inst), GETID(base), GETID(spcs), GETID(prms)};
@@ -4626,7 +4626,7 @@ struct template_parm_index : public tree_node
        * virtual function used to traverse the tree_node data structure.
        * @param v is a reference to the tree_node visitor class
        */
-      virtual void visit(tree_node_visitor * const v) const override;
+      void visit(tree_node_visitor * const v) const override;
 
       /// visitor enum
       enum {GETID(tree_node)=0, GETID(type), GETID(decl)};
@@ -4677,7 +4677,7 @@ struct type_argument_pack : public type_node
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const override;
+   void visit(tree_node_visitor * const v) const override;
 
    /// visitor enum
    enum {GETID(type_node)=0, GETID(arg)};
@@ -4709,7 +4709,7 @@ struct nontype_argument_pack : public expr_node
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const override;
+   void visit(tree_node_visitor * const v) const override;
 
    /// visitor enum
    enum {GETID(expr_node)=0, GETID(arg)};
@@ -4787,7 +4787,7 @@ struct tree_list : public WeightedNode
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const override;
+   void visit(tree_node_visitor * const v) const override;
 
    /// visitor enum
    enum {GETID(WeightedNode)=0, GETID(purp), GETID(valu), GETID(chan)};
@@ -4842,7 +4842,7 @@ struct tree_vec : public tree_node
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const override;
+   void visit(tree_node_visitor * const v) const override;
 
    /// visitor enum
    enum {GETID(tree_node)=0, GETID(list_of_op)};
@@ -4932,7 +4932,7 @@ struct try_block : public tree_node
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const override;
+   void visit(tree_node_visitor * const v) const override;
 
    /// visitor enum
    enum {GETID(tree_node)=0, GETID(body), GETID(hdlr), GETID(next)};
@@ -4984,7 +4984,7 @@ struct type_decl : public decl_node
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const override;
+   void visit(tree_node_visitor * const v) const override;
 
    /// visitor enum
    enum {GETID(decl_node)=0, GETID(tmpl_parms), GETID(tmpl_args)};
@@ -5076,7 +5076,7 @@ struct union_type : public type_node
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const override;
+   void visit(tree_node_visitor * const v) const override;
 
    /// visitor enum
    enum {GETID(type_node)=0, GETID(list_of_flds), GETID(list_of_fncs), GETID(binf)};
@@ -5235,7 +5235,7 @@ struct var_decl : public decl_node, public attr
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const override;
+   void visit(tree_node_visitor * const v) const override;
 
    /// visitor enum
    enum {GETID(decl_node)=0, GETID(attr), GETID(init), GETID(size), GETID(smt_ann)};
@@ -5385,7 +5385,7 @@ struct vector_cst : public cst_node
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const override;
+   void visit(tree_node_visitor * const v) const override;
 
    /// visitor enum
    enum {GETID(cst_node)=0, GETID(list_of_valu)};
@@ -5420,7 +5420,7 @@ struct vector_type : public type_node
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const override;
+   void visit(tree_node_visitor * const v) const override;
 
    /// visitor enum
    enum {GETID(type_node)=0, GETID(elts)};
@@ -5502,7 +5502,7 @@ struct lut_expr : public binary_expr
 {
    GET_KIND_TEXT(lut_expr)
    GET_KIND(lut_expr)
-   virtual void visit(tree_node_visitor * const v) const override;
+   void visit(tree_node_visitor * const v) const override;
    enum {GETID(binary_expr)=0};
    explicit lut_expr(unsigned int i) : binary_expr(i) {}
 };

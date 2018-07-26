@@ -78,18 +78,18 @@ class HLSFunctionStep : public HLS_step
       /**
        * Destructor
        */
-      ~HLSFunctionStep();
+      ~HLSFunctionStep() override;
 
       /**
        * Check if this step has actually to be executed
        * @return true if the step has to be executed
        */
-      virtual bool HasToBeExecuted() const override;
+      bool HasToBeExecuted() const override;
 
       /**
        * Initialize the step (i.e., like a constructor, but executed just before exec
        */
-      virtual void Initialize() override;
+      void Initialize() override;
 
       /**
        * Return a unified identifier of this design step
@@ -111,20 +111,20 @@ class HLSFunctionStep : public HLS_step
        * Return the name of this design step
        * @return the name of the pass (for debug purpose)
        */
-      virtual const std::string GetName() const override;
+      const std::string GetName() const override;
 
       /**
        * Compute the relationships of a step with other steps
        * @param dependencies is where relationships will be stored
        * @param relationship_type is the type of relationship to be computed
        */
-      virtual void ComputeRelationships(DesignFlowStepSet & relationship, const DesignFlowStep::RelationshipType relationship_type) override;
+      void ComputeRelationships(DesignFlowStepSet & relationship, const DesignFlowStep::RelationshipType relationship_type) override;
 
       /**
        * Execute the step
        * @return the exit status of this step
        */
-      virtual DesignFlowStep_Status Exec()
+      DesignFlowStep_Status Exec()
 #if HAVE_STDCXX_11
          final
 #endif

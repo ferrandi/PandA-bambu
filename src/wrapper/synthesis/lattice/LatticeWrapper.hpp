@@ -69,27 +69,27 @@ class LatticeWrapper : public SynthesisTool
       /**
        * Destructor
        */
-      virtual ~LatticeWrapper();
+      ~LatticeWrapper() override;
 
       /**
        * Creates the proper configuration script
        */
-      virtual void generate_synthesis_script(const DesignParametersRef& dp, const std::string& file_name);
+      void generate_synthesis_script(const DesignParametersRef& dp, const std::string& file_name) override;
 
       /**
        * Returns the string-based representation of the XML element
        */
-      virtual std::string toString(const xml_script_node_tRef node, const DesignParametersRef dp) const;
+      std::string toString(const xml_script_node_tRef node, const DesignParametersRef dp) const override;
 
       /**
        * Returns the string-based representation of the XML element
        */
-      virtual std::string getStringValue(const xml_script_node_tRef node, const DesignParametersRef& dp) const;
+      std::string getStringValue(const xml_script_node_tRef node, const DesignParametersRef& dp) const override;
 
       /**
        * Returns the proper command line
        */
-      std::string get_command_line(const DesignParametersRef& dp) const;
+      std::string get_command_line(const DesignParametersRef& dp) const override;
 
 };
 ///Refcount definition for the class

@@ -94,7 +94,7 @@ class FrontendFlowStepFactory : public DesignFlowStepFactory
       /**
        * Destructor
        */
-      virtual ~FrontendFlowStepFactory();
+      ~FrontendFlowStepFactory() override;
 
       /**
        * Create the frontend design flow steps
@@ -126,6 +126,6 @@ class FrontendFlowStepFactory : public DesignFlowStepFactory
       /**
        * Return the prefix of the steps created by the factory
        */
-      const std::string GetPrefix() const;
+      const std::string GetPrefix() const override;
 };
 #endif

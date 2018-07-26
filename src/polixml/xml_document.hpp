@@ -69,7 +69,7 @@ class xml_document : public xml_child
       /**
        * Print the class.
        */
-      void print(std::ostream& os, bool formatted, simple_indent* pp) const
+      void print(std::ostream& os, bool formatted, simple_indent* pp) const override
       {
          os << "<?xml version=\"" << version << "\"";
          if(encoding != "")

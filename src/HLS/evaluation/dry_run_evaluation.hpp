@@ -58,19 +58,19 @@ class DryRunEvaluation : public EvaluationBaseStep
       /**
        * Destructor
        */
-      virtual ~DryRunEvaluation();
+      ~DryRunEvaluation() override;
 
       /**
        * Check if this step has actually to be executed
        * @return true if the step has to be executed
        */
-      virtual bool HasToBeExecuted() const;
+      bool HasToBeExecuted() const override;
 
       /**
        * Execute the step
        * @return the exit status of this step
        */
-      virtual DesignFlowStep_Status InternalExec();
+      DesignFlowStep_Status InternalExec() override;
 };
 #endif
 

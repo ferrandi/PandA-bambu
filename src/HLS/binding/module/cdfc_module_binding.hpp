@@ -77,12 +77,12 @@ class CDFCModuleBindingSpecialization : public HLSFlowStepSpecialization
       /**
        * Return the string representation of this
        */
-      virtual const std::string GetKindText() const;
+      const std::string GetKindText() const override;
 
       /**
        * Return the contribution to the signature of a step given by the specialization
        */
-      virtual const std::string GetSignature() const;
+      const std::string GetSignature() const override;
 };
 
 /// Predicate functor object used to select the proper set of vertices
@@ -247,7 +247,7 @@ class CdfcGraphsCollection : public graphs_collection
       /**
        * Destructor
        */
-      ~CdfcGraphsCollection();
+      ~CdfcGraphsCollection() override;
 
       /**
        * Add an edge with a weight
@@ -307,7 +307,7 @@ class CdfcGraph : public graph
       /**
        * Destructor
        */
-      ~CdfcGraph();
+      ~CdfcGraph() override;
 
       /**
        * Returns the info associated with an edge
@@ -383,13 +383,13 @@ class cdfc_module_binding : public fu_binding_creator
       /**
        * Destructor.
        */
-      ~cdfc_module_binding();
+      ~cdfc_module_binding() override;
 
       /**
        * Execute the step
        * @return the exit status of this step
        */
-      virtual DesignFlowStep_Status InternalExec();
+      DesignFlowStep_Status InternalExec() override;
 };
 
 #endif

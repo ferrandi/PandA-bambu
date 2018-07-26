@@ -76,6 +76,6 @@ class HLSCBackendInformation : public CBackendInformation
       /**
        * Destructor
        */
-      ~HLSCBackendInformation();
+      ~HLSCBackendInformation() override;
 };
 

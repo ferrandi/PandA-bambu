@@ -107,7 +107,7 @@ struct priority_static_mobility : public priority_data<int>
    /**
     * This specialization does not update the priorities at the end of the control step.
    */
-   bool update() {return false;}
+   bool update() override {return false;}
 
 };
 
@@ -125,7 +125,7 @@ struct priority_dynamic_mobility : public priority_data<int>
       /**
        * This specialization does update the priorities at the end of the control step only of ready nodes.
       */
-      bool update();
+      bool update() override;
    
    private:
       /// set of ready vertices.
@@ -148,7 +148,7 @@ struct priority_fixed : public priority_data<int>
    /**
     * This specialization does not update the priorities at the end of the control step.
    */
-   bool update() {return false;}
+   bool update() override {return false;}
 
 };
 

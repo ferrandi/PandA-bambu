@@ -86,7 +86,7 @@ class soft_float_cg_ext : public FunctionFrontendFlowStep
        * Return the set of analyses in relationship with this design step
        * @param relationship_type is the type of relationship to be considered
        */
-      virtual const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const;
+      const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
    public:
       /**
@@ -101,12 +101,12 @@ class soft_float_cg_ext : public FunctionFrontendFlowStep
       /**
        * Destructor
        */
-      virtual ~soft_float_cg_ext();
+      ~soft_float_cg_ext() override;
 
       /**
        * Fixes the var_decl duplication.
        */
-      DesignFlowStep_Status InternalExec();
+      DesignFlowStep_Status InternalExec() override;
 };
 
 #endif

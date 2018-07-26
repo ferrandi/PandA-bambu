@@ -151,7 +151,7 @@ struct StateInfo : public NodeInfo
     * state
     * @param os is the stream reference where you want to print
     */
-   void print(std::ostream& os) const;
+   void print(std::ostream& os) const override;
 
    /**
     * Constructor
@@ -246,7 +246,7 @@ class StateTransitionGraphsCollection : public graphs_collection
       /**
        * Destructor
        */
-      ~StateTransitionGraphsCollection();
+      ~StateTransitionGraphsCollection() override;
 
       /**
        * Add an edge with information associated
@@ -300,7 +300,7 @@ struct StateTransitionGraph : public graph
       /**
        * Destructor
        */
-      virtual ~StateTransitionGraph();
+      ~StateTransitionGraph() override;
 
       /**
        * Return the info associated with a state
@@ -423,7 +423,7 @@ class StateWriter : public VertexWriter
       /**
        * Functor actually called by the boost library to perform the writing
        */
-      virtual void operator()(std::ostream& out, const vertex& v) const;
+      void operator()(std::ostream& out, const vertex& v) const override;
 };
 
 /**
@@ -450,6 +450,6 @@ class TransitionWriter : public EdgeWriter
       /**
        * Functor actually called by the boost library to perform the writing
        */
-      void operator()(std::ostream& out, const EdgeDescriptor& e) const;
+      void operator()(std::ostream& out, const EdgeDescriptor& e) const override;
 };
 #endif

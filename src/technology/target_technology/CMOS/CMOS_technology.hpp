@@ -54,7 +54,7 @@ class CMOS_technology : public target_technology
       /**
        * Initialize the target device based on the given parameters
        */
-      void initialize();
+      void initialize() override;
 
    public:
 
@@ -66,13 +66,13 @@ class CMOS_technology : public target_technology
       /**
        * Destructor of the class
        */
-      virtual ~CMOS_technology();
+      ~CMOS_technology() override;
 
       /**
        * Returns the type of the technology currently implemented in a string format.
        * @return a string representing the type of the technology
        */
-      virtual std::string get_string_type() const;
+      std::string get_string_type() const override;
 
 };
 
