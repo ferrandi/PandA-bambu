@@ -519,7 +519,7 @@ std::string BackendFlow::CreateScripts(const DesignParametersRef dp)
    {
       for(const auto & module_undefined_parameter : module_undefined_parameters)
       {
-         INDENT_DBG_MEX(0,0, "missing definition for parameter " + module_undefined_parameter);
+         PRINT_MSG("missing definition for parameter " + module_undefined_parameter);
       }
       THROW_ERROR("Some parameters still need to be defined: " + STR(module_undefined_parameters.size()));
    }
