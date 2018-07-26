@@ -108,7 +108,7 @@ struct RawGraph : public boost_raw_graph
       /**
        * Destructor
        */
-      ~RawGraph() = default;;
+      ~RawGraph() = default;
 
       inline
       boost::graph_traits<boost_raw_graph>::vertex_descriptor

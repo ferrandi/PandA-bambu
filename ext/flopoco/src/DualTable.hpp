@@ -49,7 +49,7 @@ namespace flopoco{
 		
 		DualTable(Target* target);
 
-		~DualTable() override = default;;
+        ~DualTable() override = default;
 
 	
 		/** The function that will define the values contained in the table

@@ -103,7 +103,7 @@ namespace flopoco{
 		}
 
 		/** Destructor */
-		~YVar()= default;;
+        ~YVar()= default;
 
 		/**
 		 * Fetch the variable size (if known). 0 = unknown
@@ -131,7 +131,7 @@ namespace flopoco{
 		}
 			
 		/* Destructor */
-		~LevelSignal()= default;;
+        ~LevelSignal()= default;
 
 		string getName(){
 			return name_;
@@ -174,7 +174,7 @@ namespace flopoco{
 		}
 			
 		/* Destructor */
-		~Sigma()= default;;
+        ~Sigma()= default;
 
 		unsigned getSize(){
 			return size;
@@ -203,7 +203,7 @@ namespace flopoco{
 		}
 			
 		/* Destructor */
-		~Pi()= default;;
+        ~Pi()= default;
 
 		unsigned getSize(){
 			return size;

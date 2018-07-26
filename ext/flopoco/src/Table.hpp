@@ -65,7 +65,7 @@ namespace flopoco{
 
 		Table(Target* target);
      
-		~Table() override = default;;
+        ~Table() override = default;
 
 
 

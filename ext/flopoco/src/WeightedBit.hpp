@@ -60,7 +60,7 @@ namespace flopoco{
 
 
 			/** destructor */ 
-			~WeightedBit()= default;;
+            ~WeightedBit()= default;
 		
 
 			/** return the cycle at which this bit is defined */
