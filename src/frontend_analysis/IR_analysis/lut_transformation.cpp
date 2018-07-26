@@ -427,12 +427,12 @@ void lut_transformation::MergeLut(const std::list<tree_nodeRef>& gimpleLutList, 
       std::vector<tree_nodeRef> expansionSet = GetInputs(consideredLut->op0);
       auto nodeToExpand  = expansionSet.begin();
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Starting analysis of: " + STR(stmt));
+#ifndef NDEBUG
       for (auto & i3 : expansionSet)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Initial LUT support : "+STR(i3));
-
       }
-
+#endif
 
       while(nodeToExpand != expansionSet.end())
       {
@@ -477,12 +477,12 @@ void lut_transformation::MergeLut(const std::list<tree_nodeRef>& gimpleLutList, 
             ++nodeToExpand;
             continue;
          }
+#ifndef NDEBUG
          for (auto & i3 : inputsOfToMerge)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Merging LUT support : "+STR(i3));
-
          }
-
+#endif
          // Create a "merged set" using the input of the considered lut + the input of the mergin one
          // And remove the merging itself
          std::vector<tree_nodeRef> unmergedSet;
@@ -538,11 +538,12 @@ void lut_transformation::MergeLut(const std::list<tree_nodeRef>& gimpleLutList, 
          std::reverse(newLutValue.begin(),newLutValue.end());
          auto newLutNumber = BinToDec(newLutValue);
          // create new concat
+#ifndef NDEBUG
          for (auto & i3 : mergedSet)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Merged LUT support : "+STR(i3));
-
          }
+#endif
          // create new lut and push it
          tree_nodeRef multiConcat = CreateMultiConcat(mergedSet,bb,GET_NODE(stmt));
          unsigned int lut_id = TM->new_tree_node_id();
