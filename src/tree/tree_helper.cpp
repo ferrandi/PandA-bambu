@@ -4251,7 +4251,7 @@ std::string tree_helper::return_C_qualifiers(const TreeVocabularyTokenTypes_Toke
 long long tree_helper::get_integer_cst_value(const integer_cst * ic)
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "-->Getting integer const value");
-   THROW_ASSERT(ic , "Something wrong");
+   if(!ic) THROW_ERROR("Something wrong");
    THROW_ASSERT(ic->type, "Something wrong");
    tree_nodeRef type = GET_NODE(ic->type);
 #ifndef NDEBUG
