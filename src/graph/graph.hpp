@@ -65,6 +65,7 @@
 #include <boost/graph/strong_components.hpp>
 #include <boost/graph/topological_sort.hpp>
 #include <boost/version.hpp>
+#include <utility>
 #include "exceptions.hpp"
 #include "refcount.hpp"
 
@@ -107,7 +108,7 @@ struct RawGraph : public boost_raw_graph
       /**
        * Destructor
        */
-      ~RawGraph() {};
+      ~RawGraph() = default;
 
       inline
       boost::graph_traits<boost_raw_graph>::vertex_descriptor
@@ -242,7 +243,7 @@ struct EdgeProperty
        */
       EdgeProperty(const int _selector, EdgeInfoRef _info) :
          selector(_selector),
-         info(_info)
+         info(std::move(_info))
       {}
 };
 #if BOOST_VERSION >= 104600
@@ -295,7 +296,7 @@ struct graphs_collection : public boost_graphs_collection
       }
 
       ///Destructor
-      virtual ~graphs_collection(){}
+      virtual ~graphs_collection()= default;
 
       /**
        * Add a selector to an existing edge
@@ -444,10 +445,10 @@ typedef refcount<graphs_collection> graphs_collectionRef;
 struct undirected_graphs_collection : public undirected_boost_graphs_collection
 {
       ///Constructor of graph.
-      undirected_graphs_collection(){}
+      undirected_graphs_collection()= default;
 
       ///Destructor
-      ~undirected_graphs_collection(){}
+      ~undirected_graphs_collection()= default;
 
       /**
        * Add a vertex to this graph
@@ -644,9 +645,9 @@ struct SelectVertex
        * Constructor
        * @param _subset is the set of vertices to be considered
        */
-      explicit SelectVertex(const std::unordered_set<typename boost::graph_traits<Graph>::vertex_descriptor > & _subset) :
+      explicit SelectVertex(std::unordered_set<typename boost::graph_traits<Graph>::vertex_descriptor >  _subset) :
          all(false),
-         subset(_subset)
+         subset(std::move(_subset))
       {}
 
       /**
@@ -708,10 +709,10 @@ struct SelectEdge
        * @param _g is the graph
        * @param _subgraph_vertices is the set of vertices of the filtered graph
        */
-      SelectEdge(const int _selector, Graph * _g, const std::unordered_set<typename boost::graph_traits<Graph>::vertex_descriptor > & _subgraph_vertices) :
+      SelectEdge(const int _selector, Graph * _g, std::unordered_set<typename boost::graph_traits<Graph>::vertex_descriptor >  _subgraph_vertices) :
          selector(_selector),
          g(_g),
-         subgraph_vertices(_subgraph_vertices)
+         subgraph_vertices(std::move(_subgraph_vertices))
       {}
 
       template <typename Edge>
@@ -861,7 +862,7 @@ struct graph : public boost::filtered_graph<boost_graphs_collection, SelectEdge<
       friend boost::graph_traits<graph>::vertex_descriptor VERTEX(const boost::graph_traits<graph>::vertices_size_type, const graph&);
 
       /// Destructor
-      virtual ~graph(){}
+      virtual ~graph()= default;
 
       /**
        * return true in case the vertex is a vertex of the subgraph.
@@ -1153,7 +1154,7 @@ struct ugraph : public  boost::filtered_graph<undirected_boost_graphs_collection
       friend boost::graph_traits<ugraph>::vertex_descriptor VERTEX(const boost::graph_traits<ugraph>::vertices_size_type, const ugraph&);
 
       /// Destructor
-      ~ugraph(){}
+      ~ugraph()= default;
 
       /**
        * return true in case the vertex is a vertex of the subgraph.
@@ -1342,7 +1343,7 @@ class VertexWriter
        * Destructor
        */
       virtual ~VertexWriter()
-      {}
+      = default;
 
       /**
        * Functor actually called by the boost library to perform the writing
@@ -1383,7 +1384,7 @@ class EdgeWriter
        * Destructor
        */
       virtual ~EdgeWriter()
-      {}
+      = default;
 
       /**
        * Functor actually called by the boost library to perform the writing
@@ -1420,7 +1421,7 @@ class GraphWriter
        * Destructor
        */
       virtual ~GraphWriter()
-      {}
+      = default;
 
       /**
        * Functor acturally called by the boost library to perform the writing
@@ -1456,7 +1457,7 @@ class UVertexWriter
        * Destructor
        */
       virtual ~UVertexWriter()
-      {}
+      = default;
 
       /**
        * Functor actually called by the boost library to perform the writing
@@ -1497,7 +1498,7 @@ class UEdgeWriter
        * Destructor
        */
       virtual ~UEdgeWriter()
-      {}
+      = default;
 
       /**
        * Functor actually called by the boost library to perform the writing

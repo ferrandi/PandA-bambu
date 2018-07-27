@@ -17,13 +17,13 @@ namespace flopoco{
 	{
 	public:
 		FPLog(Target* target, int wE, int wF, int inTableSize=0, map<string, double> inputDelays = emptyDelayMap);
-		~FPLog();
+		~FPLog() override;
 
 		//		Overloading the virtual functions of Operator
-		void emulate(TestCase * tc);
-		void buildStandardTestCases(TestCaseList* tcl);
+		void emulate(TestCase * tc) override;
+		void buildStandardTestCases(TestCaseList* tcl) override;
 		/**Overloading the function of Operator with a function that tests only positive FP numbers (full range)*/
-		TestCase* buildRandomTestCase(int i); 
+		TestCase* buildRandomTestCase(int i) override; 
 
 		int wE, wF;
 

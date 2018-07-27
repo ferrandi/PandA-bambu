@@ -44,13 +44,12 @@
 
 #ifndef AUGMENTED_VECTOR_HPP
 #define AUGMENTED_VECTOR_HPP
-
-///STL include
-#include <vector>
-
-///Utility include
-#include <boost/lexical_cast.hpp>
-#include "exceptions.hpp"
+#include <cmath>                  // for sqrtl
+#include <cstddef>                // for size_t, ptrdiff_t
+#include <boost/lexical_cast.hpp>  // for lexical_cast
+#include <string>                  // for string
+#include <vector>                  // for vector
+#include "exceptions.hpp"          // for THROW_ASSERT
 
 template <class T>
 class AugmentedVector
@@ -64,7 +63,7 @@ class AugmentedVector
        * Empty Constructor
        */
       AugmentedVector<T>()
-      {}
+      = default;
 
       /**
        * Construct a vector composed by size element

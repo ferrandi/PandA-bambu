@@ -61,11 +61,11 @@ class function_allocation : public HLS_step
       /**
        * Destructor
        */
-      ~function_allocation();
+      ~function_allocation() override;
 
       /**
        * Initialize the step (i.e., like a constructor, but executed just before exec
        */
-      virtual void Initialize();
+      void Initialize() override;
 };
 #endif

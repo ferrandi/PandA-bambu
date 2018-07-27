@@ -60,7 +60,7 @@ datapath_creator::datapath_creator(const ParameterConstRef _Param, const HLS_man
 {}
 
 datapath_creator::~datapath_creator()
-{}
+= default;
 
 const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > datapath_creator::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {

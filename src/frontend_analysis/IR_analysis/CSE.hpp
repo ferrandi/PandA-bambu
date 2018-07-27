@@ -104,7 +104,7 @@ class CSE : public FunctionFrontendFlowStep
 
 
       const std::unordered_set< std::pair<FrontendFlowStepType, FunctionRelationship> >
-      ComputeFrontendRelationships (const DesignFlowStep::RelationshipType relationship_type) const;
+      ComputeFrontendRelationships (const DesignFlowStep::RelationshipType relationship_type) const override;
 
       ///define the type of the unique table key
       typedef std::pair<enum kind, std::vector<unsigned int> > CSE_tuple_key_type;
@@ -132,18 +132,18 @@ class CSE : public FunctionFrontendFlowStep
       /**
        *  Destructor
        */
-      ~CSE ();
+      ~CSE () override;
       /**
        * perform CSE analysis
        * @return the exit status of this step
        */
       DesignFlowStep_Status
-         InternalExec ();
+         InternalExec () override;
 
       /**
        * Initialize the step (i.e., like a constructor, but executed just before exec)
        */
-      virtual void Initialize();
+      void Initialize() override;
 };
 
 #endif /* CSE_HPP */

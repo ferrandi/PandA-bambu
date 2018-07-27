@@ -66,9 +66,7 @@ liveness_computer::liveness_computer(const ParameterConstRef _Param, const HLS_m
 }
 
 liveness_computer::~liveness_computer()
-{
-
-}
+= default;
 
 const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > liveness_computer::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {

@@ -70,6 +70,6 @@ class HLSFunctionIR : public HLSIR
       /**
        * Destructor
        */
-      ~HLSFunctionIR();
+      ~HLSFunctionIR() override;
 };
 #endif

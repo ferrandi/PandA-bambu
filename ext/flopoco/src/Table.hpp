@@ -65,7 +65,7 @@ namespace flopoco{
 
 		Table(Target* target);
      
-		virtual ~Table() {};
+        ~Table() override = default;
 
 
 
@@ -77,7 +77,7 @@ namespace flopoco{
 
 
 		/** Overloading the method of Operator */
-		void outputVHDL(ostream& o, string name);
+		void outputVHDL(ostream& o, string name) override;
 
 		/** A function that translates an real value into an integer input.
 			 This function should be overridden by an implementation of Table.

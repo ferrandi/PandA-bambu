@@ -58,6 +58,8 @@
 
 ///technology/target_device include
 #include "target_device.hpp"
+#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 FixCharacterization::FixCharacterization(const technology_managerRef _TM, const target_deviceRef _target, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters) :
    TechnologyFlowStep(_TM, _target, _design_flow_manager, TechnologyFlowStep_Type::FIX_CHARACTERIZATION, _parameters),
@@ -67,7 +69,7 @@ FixCharacterization::FixCharacterization(const technology_managerRef _TM, const 
 }
 
 FixCharacterization::~FixCharacterization()
-{}
+= default;
 
 void FixCharacterization::Initialize()
 {
@@ -98,7 +100,8 @@ DesignFlowStep_Status FixCharacterization::Exec()
             if(fu_name == "ASSIGN_REAL_FU" ||
                fu_name == "ASSIGN_SIGNED_FU" ||
                fu_name == "ASSIGN_UNSIGNED_FU" ||
-               fu_name == "ASSIGN_VECTOR_BOOL_FU"
+               fu_name == "ASSIGN_VECTOR_BOOL_FU" ||
+               fu_name == "addr_expr_FU" || fu_name == "fp_view_convert_expr_FU" || fu_name == "ui_view_convert_expr_FU" || fu_name == "view_convert_expr_FU" || fu_name == "assert_expr_FU"
                     )
             {
                single_fu->area_m->set_area_value(1);

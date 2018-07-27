@@ -31,13 +31,13 @@ namespace flopoco{
       /**
 		 *  destructor
 		 */
-      ~FP2Fix();
+      ~FP2Fix() override;
 
 
-      void emulate(TestCase * tc);
-      void buildStandardTestCases(TestCaseList* tcl);
+      void emulate(TestCase * tc) override;
+      void buildStandardTestCases(TestCaseList* tcl) override;
       /* Overloading the Operator method to limit testing of negative numbers when Signed is 0*/
-      TestCase* buildRandomTestCase(int i);
+      TestCase* buildRandomTestCase(int i) override;
 
    private:
 

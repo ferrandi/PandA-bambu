@@ -57,6 +57,7 @@
 
 ///HLS/module_allocation include
 #include "allocation_information.hpp"
+#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_
 
 
 unique_binding::unique_binding(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager) :
@@ -66,9 +67,7 @@ unique_binding::unique_binding(const ParameterConstRef _Param, const HLS_manager
 }
 
 unique_binding::~unique_binding()
-{
-
-}
+= default;
 
 DesignFlowStep_Status unique_binding::InternalExec()
 {
@@ -90,18 +89,18 @@ DesignFlowStep_Status unique_binding::InternalExec()
       if (black_list.find(fu) == black_list.end()) black_list[fu] = std::set<unsigned int>();
 
    }
-   for(std::map<unsigned int, std::list<std::pair<std::string, vertex> > >::iterator k = fu_ops.begin(); k != fu_ops.end(); ++k)
+   for(auto & fu_op : fu_ops)
    {
-      unsigned int fu = k->first;
-      k->second.sort();
-      for(std::list<std::pair<std::string, vertex> >::iterator op = k->second.begin(); op != k->second.end(); ++op)
+      unsigned int fu = fu_op.first;
+      fu_op.second.sort();
+      for(auto & op : fu_op.second)
       {
          unsigned int idx = 0;
          while (black_list[fu].find(idx) != black_list[fu].end())
          {
             idx++;
          }
-         HLS->Rfu->bind(op->second, fu, idx);
+         HLS->Rfu->bind(op.second, fu, idx);
          black_list[fu].insert(idx);
       }
    }

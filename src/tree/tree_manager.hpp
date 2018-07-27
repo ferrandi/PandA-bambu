@@ -48,19 +48,17 @@
 
 ///STL include
 #include <deque>
+#include <iosfwd>
 #include <map>
+#include <string>                                    // for string
 #include <unordered_map>
 #include <unordered_set>
-#include <vector>
-
-///Tree include
-#include "tree_common.hpp"
-#include "tree_node.hpp"
+#include <utility>                                   // for pair
+#include "custom_map.hpp"                            // for CustomMap
+#include "hash_helper.hpp"
 
 ///utility include
-#include <iosfwd>
 #include "refcount.hpp"
-
 
 /**
  * @name forward declarations
@@ -68,6 +66,8 @@
 //@{
 CONSTREF_FORWARD_DECL(Parameter);
 struct ssa_name;
+struct function_decl;
+enum kind : int;
 REF_FORWARD_DECL(tree_manager);
 CONSTREF_FORWARD_DECL(tree_node);
 REF_FORWARD_DECL(tree_node);

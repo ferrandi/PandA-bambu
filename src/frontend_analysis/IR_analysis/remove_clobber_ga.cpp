@@ -64,6 +64,7 @@
 
 ///utility include
 #include "dbgPrintHelper.hpp"
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 remove_clobber_ga::remove_clobber_ga(const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters) :
    FunctionFrontendFlowStep(_AppM, _function_id, REMOVE_CLOBBER_GA, _design_flow_manager, _parameters)
@@ -72,8 +73,7 @@ remove_clobber_ga::remove_clobber_ga(const application_managerRef _AppM, unsigne
 }
 
 remove_clobber_ga::~remove_clobber_ga()
-{
-}
+= default;
 
 const std::unordered_set<std::pair<FrontendFlowStepType, FunctionFrontendFlowStep::FunctionRelationship> > remove_clobber_ga::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
@@ -110,8 +110,8 @@ DesignFlowStep_Status remove_clobber_ga::InternalExec()
    std::map<unsigned int, std::set<tree_nodeRef> > stmt_to_be_removed;
 
    tree_nodeRef temp = TM->get_tree_node_const(function_id);
-   function_decl * fd = GetPointer<function_decl>(temp);
-   statement_list * sl = GetPointer<statement_list>(GET_NODE(fd->body));
+   auto * fd = GetPointer<function_decl>(temp);
+   auto * sl = GetPointer<statement_list>(GET_NODE(fd->body));
    const bool is_single_write_memory = GetPointer<const HLS_manager>(AppM) and GetPointer<const HLS_manager>(AppM)->IsSingleWriteMemory();
 
    for(auto block : sl->list_of_bloc)
@@ -125,7 +125,7 @@ DesignFlowStep_Status remove_clobber_ga::InternalExec()
       {
          /// skip all non-clobber gimple_assign
          tree_nodeRef tn = GET_NODE(stmt);
-         gimple_assign * ga = GetPointer<gimple_assign>(tn);
+         auto * ga = GetPointer<gimple_assign>(tn);
          if(!ga || !ga->clobber)
             continue;
          if(is_single_write_memory)
@@ -146,7 +146,7 @@ DesignFlowStep_Status remove_clobber_ga::InternalExec()
             continue;
          for(const auto& phi : block.second->CGetPhiList())
          {
-            gimple_phi * gp = GetPointer<gimple_phi>(GET_NODE(phi));
+            auto * gp = GetPointer<gimple_phi>(GET_NODE(phi));
             if(gp->virtual_flag)
             {
                for(const auto& def_edge : gp->CGetDefEdgesList())
@@ -166,7 +166,7 @@ DesignFlowStep_Status remove_clobber_ga::InternalExec()
          {
             /// consider only gimple statements using virtual operands
             tree_nodeRef tn = GET_NODE(stmt);
-            gimple_node * gn = GetPointer<gimple_node>(tn);
+            auto * gn = GetPointer<gimple_node>(tn);
             THROW_ASSERT(gn, "unexpected condition");
             if(!gn->memuse)
                continue;
@@ -179,7 +179,7 @@ DesignFlowStep_Status remove_clobber_ga::InternalExec()
 
    /// now remove the clobber gimple_assign
    const std::map<unsigned int, std::set<tree_nodeRef> >::iterator stbr_it_end = stmt_to_be_removed.end();
-   for(std::map<unsigned int, std::set<tree_nodeRef> >::iterator stbr_it = stmt_to_be_removed.begin(); stbr_it != stbr_it_end; ++stbr_it)
+   for(auto stbr_it = stmt_to_be_removed.begin(); stbr_it != stbr_it_end; ++stbr_it)
    {
       unsigned int curr_bb = stbr_it->first;
       for(const auto& to_be_removed : stbr_it->second)

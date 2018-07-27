@@ -61,7 +61,7 @@ ToDataFileStepFactory::ToDataFileStepFactory(
 {}
 
 ToDataFileStepFactory::~ToDataFileStepFactory()
-{}
+= default;
 
 const std::string ToDataFileStepFactory::GetPrefix() const
 {

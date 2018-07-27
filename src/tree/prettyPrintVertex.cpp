@@ -49,11 +49,9 @@
 #include "behavioral_helper.hpp"
 #include "op_graph.hpp"
 
-///STD include
-#include <algorithm>
-
 ///utility include
 #include "var_pp_functor.hpp"
+#include "simple_indent.hpp"      // for simple_indent
 
 void prettyPrintVertex::get_internal_vars(const vertex &v, const OpGraphConstRef g, std::unordered_set<unsigned int> &list_of_variables, const BehavioralHelperConstRef BH)
 {
@@ -69,7 +67,7 @@ void prettyPrintVertex::get_internal_vars(const vertex &v, const OpGraphConstRef
       else if(intermediate_var && BH->is_an_addr_expr(intermediate_var))
       {
          unsigned int var = BH->get_operand_from_unary_expr(intermediate_var);
-         while(1)
+         while(true)
          {
             if (BH->is_a_component_ref(var))
             {

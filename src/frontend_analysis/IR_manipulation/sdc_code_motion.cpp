@@ -73,6 +73,8 @@
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
+#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 SDCCodeMotion::SDCCodeMotion(const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters) :
    FunctionFrontendFlowStep(_AppM, _function_id, SDC_CODE_MOTION, _design_flow_manager, _parameters)
@@ -81,7 +83,7 @@ SDCCodeMotion::SDCCodeMotion(const application_managerRef _AppM, unsigned int _f
 }
 
 SDCCodeMotion::~SDCCodeMotion()
-{}
+= default;
 
 const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship> > SDCCodeMotion::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
@@ -122,8 +124,8 @@ DesignFlowStep_Status SDCCodeMotion::InternalExec()
    const auto design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
 
    const tree_managerRef TM = AppM->get_tree_manager();
-   function_decl * fd = GetPointer<function_decl>(TM->get_tree_node_const(function_id));
-   statement_list * sl = GetPointer<statement_list>(GET_NODE(fd->body));
+   auto * fd = GetPointer<function_decl>(TM->get_tree_node_const(function_id));
+   auto * sl = GetPointer<statement_list>(GET_NODE(fd->body));
    std::map<unsigned int, blocRef> & list_of_bloc = sl->list_of_bloc;
 
    ///Retrieve result of sdc scheduling

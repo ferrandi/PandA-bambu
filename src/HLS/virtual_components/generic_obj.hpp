@@ -47,6 +47,8 @@
 #define GEN_OBJECT_HPP
 
 ///Autoheader include
+#include <utility>
+
 #include "config_HAVE_UNORDERED.hpp"
 
 #include "refcount.hpp"
@@ -109,12 +111,12 @@ class generic_obj
       /**
        * This is the constructor of the object class.
        */
-      generic_obj(const resource_type t, const std::string&_name) : type(t), name(_name) {}
+      generic_obj(const resource_type t, std::string _name) : type(t), name(std::move(_name)) {}
 
       /**
        * Destructor.
        */
-      virtual ~generic_obj() {}
+      virtual ~generic_obj() = default;
 
       /**
        * Prints elements into given stream

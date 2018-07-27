@@ -182,7 +182,7 @@ class ASLAP
       /**
        * Destructor.
        */
-      ~ASLAP() {}
+      ~ASLAP() = default;
 
       /**
        * Possible type of ALAP method currently implemented.

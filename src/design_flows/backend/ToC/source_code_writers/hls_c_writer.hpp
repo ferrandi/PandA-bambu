@@ -165,18 +165,18 @@ class HLSCWriter : public CWriter
       /**
        * Writes the global declarations
        */
-      virtual void WriteGlobalDeclarations();
+      void WriteGlobalDeclarations() override;
 
       /**
        * Write function implementation
        * @param function_id is the index of the function to be written
        */
-      virtual void WriteFunctionImplementation(unsigned int function_index);
+      void WriteFunctionImplementation(unsigned int function_index) override;
 
       /**
        * Writes implementation of __builtin_wait_call
        */
-      virtual void WriteBuiltinWaitCall();
+      void WriteBuiltinWaitCall() override;
 
    public:
       /**
@@ -193,17 +193,17 @@ class HLSCWriter : public CWriter
       /**
        * Destructor
        */
-      virtual ~HLSCWriter();
+      ~HLSCWriter() override;
 
       /**
        * Writes the final C file
        * @param file_name is the name of the file to be generated
        */
-      virtual void WriteFile(const std::string& file_name);
+      void WriteFile(const std::string& file_name) override;
 
       /**
        * Writes the header of the file
        */
-      virtual void WriteHeader();
+      void WriteHeader() override;
 };
 #endif

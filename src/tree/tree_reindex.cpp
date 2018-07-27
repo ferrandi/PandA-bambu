@@ -52,7 +52,7 @@ tree_reindex::tree_reindex(const unsigned int i, const tree_nodeRef & tn)
 
 
 tree_reindex::~tree_reindex()
-{}
+= default;
 
 
 void tree_reindex::print(std::ostream& os) const
@@ -64,15 +64,6 @@ void tree_reindex::print(std::ostream& os) const
    else
    {
       os << "@" << index;
-        //// only for debug purpose
-        /*
-      if(!test_null(actual_tree_node))
-      {
-      os << "{";
-      actual_tree_node->tree_node::print(os);
-      os << "}";
-   }
-        */
    }
 }
 

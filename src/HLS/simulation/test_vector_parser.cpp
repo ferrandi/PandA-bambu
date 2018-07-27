@@ -88,6 +88,7 @@
 #include "SimulationInformation.hpp"
 
 #include <boost/algorithm/string.hpp>
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 TestVectorParser::TestVectorParser
 (
@@ -101,7 +102,7 @@ TestVectorParser::TestVectorParser
 }
 
 TestVectorParser::~TestVectorParser()
-{}
+= default;
 
 void TestVectorParser::ParseUserString
 (
@@ -194,9 +195,9 @@ void TestVectorParser::ParseXMLFile(
          //Walk the tree:
          const xml_element* node = parser.get_document()->get_root_node(); //deleted by DomParser.
          const xml_node::node_list list = node->get_children();
-         for (xml_node::node_list::const_iterator iter = list.begin(); iter != list.end(); ++iter)
+         for (const auto & iter : list)
          {
-            const xml_element* Enode = GetPointer<const xml_element>(*iter);
+            const auto* Enode = GetPointer<const xml_element>(iter);
 
             if(!Enode || Enode->get_name() != "testbench") continue;
 

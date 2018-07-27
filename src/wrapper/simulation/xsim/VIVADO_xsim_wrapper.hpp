@@ -78,7 +78,7 @@ class VIVADO_xsim_wrapper : public SimulationTool
       /**
        * Generates the proper simulation script
        */
-      void GenerateScript(std::ostringstream& script, const std::string& top_filename, const std::list<std::string> & file_list);
+      void GenerateScript(std::ostringstream& script, const std::string& top_filename, const std::list<std::string> & file_list) override;
 
    public:
 
@@ -86,22 +86,22 @@ class VIVADO_xsim_wrapper : public SimulationTool
        * Constructor
        * @param Param is the set of parameters
        */
-      VIVADO_xsim_wrapper(const ParameterConstRef Param, const std::string &suffix);
+      VIVADO_xsim_wrapper(const ParameterConstRef Param, std::string suffix);
 
       /**
        * Destructor
        */
-      ~VIVADO_xsim_wrapper();
+      ~VIVADO_xsim_wrapper() override;
 
       /**
        * Checks if the current specification can be executed or not
        */
-      virtual void CheckExecution();
+      void CheckExecution() override;
 
       /**
        * Remove files created during simulation
        */
-      virtual void Clean() const;
+      void Clean() const override;
 };
 /// Refcount definition for the class
 typedef refcount<VIVADO_xsim_wrapper> VIVADO_xsim_wrapperRef;

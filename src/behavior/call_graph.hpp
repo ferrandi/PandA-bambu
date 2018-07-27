@@ -44,13 +44,16 @@
 */
 #ifndef CALL_GRAPH_HPP
 #define CALL_GRAPH_HPP
-
-///Superclass include
-#include "graph.hpp"
-#include "graph_info.hpp"
-
-///Utility include
-#include "refcount.hpp"
+#include <iosfwd>                                    // for ostream
+#include <map>                                       // for map
+#include <set>                                       // for set
+#include <string>                                    // for string
+#include <unordered_set>                             // for unordered_set
+#include "edge_info.hpp"                             // for EdgeInfo, EdgeIn...
+#include "graph.hpp"                                 // for graph, vertex
+#include "graph_info.hpp"                            // for GraphInfo
+#include "node_info.hpp"                             // for NodeInfo
+#include "refcount.hpp"                              // for refcount, Refcou...
 
 REF_FORWARD_DECL(FunctionBehavior);
 
@@ -122,7 +125,7 @@ class CallGraphsCollection : public graphs_collection
       /**
        * Destructor
        */
-      ~CallGraphsCollection();
+      ~CallGraphsCollection() override;
 
       /**
        * Add an edge with empty information associated
@@ -168,7 +171,7 @@ class CallGraph : public graph
       /**
        * Destructor
        */
-      ~CallGraph();
+      ~CallGraph() override;
 
       /**
        * Return the info associated with an edge
@@ -231,7 +234,7 @@ class FunctionWriter : public VertexWriter
        * @param out is the output stream
        * @param v is the vertex
       */
-      void operator()(std::ostream& out, const vertex& v) const;
+      void operator()(std::ostream& out, const vertex& v) const override;
 };
 
 /**
@@ -253,13 +256,13 @@ class FunctionEdgeWriter : public EdgeWriter
       /**
        * Destructor
        */
-      ~FunctionEdgeWriter();
+      ~FunctionEdgeWriter() override;
 
       /**
        * operator function returning the edge description
        * @param out is the output stream
        * @param e is the edge
        */
-      void operator()(std::ostream& out, const EdgeDescriptor& e) const;
+      void operator()(std::ostream& out, const EdgeDescriptor& e) const override;
 };
 #endif

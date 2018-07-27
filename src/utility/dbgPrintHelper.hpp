@@ -49,9 +49,7 @@
 
 #define NOUTPUT 0
 
-///Autoheader include
-
-#include <iosfwd>
+#include <iostream>
 #include <string>
 
 /**
@@ -84,7 +82,7 @@
 #define DEBUG_LEVEL_PEDANTIC 3
 ///extremely verbose debugging print is performed.
 #define DEBUG_LEVEL_VERY_PEDANTIC 4
-///paranoic level debugging print is performed.
+///paranoid level debugging print is performed.
 #define DEBUG_LEVEL_PARANOIC 5
 ///everything is printed.
 #define DEBUG_LEVEL_INFINITE 11
@@ -201,7 +199,6 @@ extern std::string panda_message;
    ((profLevel <= curprofLevel) ? std::cerr << mex : std::cerr)
 
 #endif
-
 
 
 #define PRINT_MSG(mex) \

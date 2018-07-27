@@ -64,6 +64,7 @@
 #include "constant_strings.hpp"
 ///boost includes for file manipulations
 #include <boost/filesystem.hpp>
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 target_device::target_device(const ParameterConstRef _Param, const technology_managerRef _TM, const TargetDevice_Type type) :
       device_type(type),
@@ -77,9 +78,7 @@ target_device::target_device(const ParameterConstRef _Param, const technology_ma
 }
 
 target_device::~target_device( )
-{
-
-}
+= default;
 
 target_deviceRef target_device::create_device(const TargetDevice_Type type, const ParameterConstRef param, const technology_managerRef TM)
 {
@@ -101,21 +100,21 @@ target_deviceRef target_device::create_device(const TargetDevice_Type type, cons
 void target_device::xload(const target_deviceRef device, const xml_element* node)
 {
    const xml_node::node_list c_list = node->get_children();
-   for(xml_node::node_list::const_iterator n = c_list.begin(); n != c_list.end(); ++n)
+   for(const auto & n : c_list)
    {
-      if ((*n)->get_name() == "device")
+      if (n->get_name() == "device")
       {
-         const xml_element* dev_xml = GetPointer<const xml_element>(*n);
+         const auto* dev_xml = GetPointer<const xml_element>(n);
          xload_device_parameters(dev_xml);
       }
    }
 
-   for(xml_node::node_list::const_iterator n = c_list.begin(); n != c_list.end(); ++n)
+   for(const auto & n : c_list)
    {
       //The second part of the condition is false when we are generating the list of functional units in spider
-      if ((*n)->get_name() == "technology" and (not Param->isOption(OPT_input_format) or Param->getOption<Parameters_FileFormat>(OPT_input_format) != Parameters_FileFormat::FF_XML_TEC))
+      if (n->get_name() == "technology" and (not Param->isOption(OPT_input_format) or Param->getOption<Parameters_FileFormat>(OPT_input_format) != Parameters_FileFormat::FF_XML_TEC))
       {
-         const xml_element* tech_xml = GetPointer<const xml_element>(*n);
+         const auto* tech_xml = GetPointer<const xml_element>(n);
          TM->xload(tech_xml, device);
       }
    }
@@ -124,9 +123,9 @@ void target_device::xload(const target_deviceRef device, const xml_element* node
 void target_device::xload_device_parameters(const xml_element* dev_xml)
 {
    const xml_node::node_list t_list = dev_xml->get_children();
-   for(xml_node::node_list::const_iterator t = t_list.begin(); t != t_list.end(); ++t)
+   for(const auto & t : t_list)
    {
-      const xml_element* t_elem = GetPointer<const xml_element>(*t);
+      const auto* t_elem = GetPointer<const xml_element>(t);
       if (!t_elem) continue;
 
       std::string value;

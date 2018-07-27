@@ -70,7 +70,7 @@
 ///STD include
 #include <fstream>
 #include <iomanip>
-#include <math.h>
+#include <cmath>
 #include <string>
 
 ///STL include
@@ -92,6 +92,7 @@
 #include "xml_helper.hpp"
 #include "polixml.hpp"
 #include "xml_dom_parser.hpp"
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 #define SKIPPED_COLUMN ("Loop_number") ("bit_expr") ("comp_expr") ("const_readings") ("div_expr") ("mult_expr") ("plusminus_expr") ("memory_writings") ("register_accesses") ("memory_readings") ("register_writing") ("Backward_branches")
 
@@ -742,7 +743,7 @@ void Translator::write_to_latex(std::map<std::string, CustomMap<std::string, std
 
          for(const auto& root_child : node->get_children())
          {
-            const xml_element * child = GetPointer<const xml_element>(root_child);
+            const auto * child = GetPointer<const xml_element>(root_child);
             if (not child)
                continue;
             if (child->get_name() == STR_XML_experimental_setup_bambu_version)
@@ -761,7 +762,7 @@ void Translator::write_to_latex(std::map<std::string, CustomMap<std::string, std
             {
                for(const auto& benchmark : child->get_children())
                {
-                  const xml_element * benchmark_xml = GetPointer<const xml_element>(benchmark);
+                  const auto * benchmark_xml = GetPointer<const xml_element>(benchmark);
                   if(not benchmark_xml)
                      continue;
                   benchmarks.push_back(benchmark_xml->get_attribute(STR_XML_experimental_setup_value)->get_value());
@@ -1313,9 +1314,9 @@ void Translator::get_normalization(std::unordered_map<std::string, long double> 
          PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Got Root");
          //Recurse through child nodes:
          const xml_node::node_list list = node->get_children();
-         for(xml_node::node_list::const_iterator iter = list.begin(); iter != list.end(); ++iter)
+         for(const auto & iter : list)
          {
-            const xml_element* feature = GetPointer<const xml_element>(*iter);
+            const auto* feature = GetPointer<const xml_element>(iter);
             if (!feature) 
                continue;
             if (feature->get_name() == "feature")
@@ -1395,7 +1396,7 @@ void Translator::read_column_formats(const XMLDomParserRef parser, std::list<Lat
    xml_node::node_list::const_iterator child, child_end = list.end();
    for (child = list.begin(); child != child_end; ++child)
    {
-      const xml_element * child_element = GetPointer<const xml_element>(*child);
+      const auto * child_element = GetPointer<const xml_element>(*child);
       if (!child_element)
          continue;
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Reading information about new column");
@@ -1407,7 +1408,7 @@ void Translator::read_column_formats(const XMLDomParserRef parser, std::list<Lat
       xml_node::node_list::const_iterator field, field_end = fields.end();
       for (field = fields.begin(); field != field_end; ++field)
       {
-         const xml_element * field_element = GetPointer<const xml_element>(*field);
+         const auto * field_element = GetPointer<const xml_element>(*field);
          if(!field_element)
             continue;
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Read field " + field_element->get_name());
@@ -1436,9 +1437,9 @@ void Translator::read_column_formats(const XMLDomParserRef parser, std::list<Lat
             std::vector<std::string> splitted;
             const std::string values = field_element->get_attribute(STR_XML_latex_table_value)->get_value();
             boost::algorithm::split(splitted, values, boost::algorithm::is_any_of(","));
-            for(size_t column = 0; column < splitted.size(); column++)
+            for(const auto & column : splitted)
             {
-               latex_column_format.compared_columns.insert(splitted[column]);
+               latex_column_format.compared_columns.insert(column);
             }
             if(field_element->get_attribute(STR_XML_latex_table_operator))
             {

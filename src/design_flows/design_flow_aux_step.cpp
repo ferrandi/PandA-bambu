@@ -40,18 +40,22 @@
  * Last modified by $Author$
  *
 */
-
-///Header include
 #include "design_flow_aux_step.hpp"
 
-AuxDesignFlowStep::AuxDesignFlowStep(const std::string&_name, const AuxDesignFlowStepType _type, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters) :
+#include <boost/lexical_cast.hpp>             // for lexical_cast
+#include <ostream>                            // for operator<<, basic_ostream
+#include <utility>
+#include "exceptions.hpp"                     // for THROW_UNREACHABLE
+
+
+AuxDesignFlowStep::AuxDesignFlowStep(std::string _name, const AuxDesignFlowStepType _type, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters) :
    DesignFlowStep(_design_flow_manager, _parameters),
    type(_type),
-   name(_name)
+   name(std::move(_name))
 {}
 
 AuxDesignFlowStep::~AuxDesignFlowStep()
-{}
+= default;
 
 void AuxDesignFlowStep::ComputeRelationships(DesignFlowStepSet &, const DesignFlowStep::RelationshipType)
 {}

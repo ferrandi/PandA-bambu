@@ -43,35 +43,24 @@
 */
 ///Header include
 #include "tree_manipulation.hpp"
+#include <algorithm>                       // for find
+#include <boost/lexical_cast.hpp>          // for lexical_cast
+#include <boost/smart_ptr/shared_ptr.hpp>  // for shared_ptr
 
-///. include
-#include "Parameter.hpp"
-
-///parser/treegcc include
-#include "token_interface.hpp"
-
-///STL include
-#include <unordered_set>
+#include "Parameter.hpp"                   // for Parameter
+#include "dbgPrintHelper.hpp"              // for DEBUG_LEVEL_VERY_PEDANTIC
+#include "exceptions.hpp"                  // for THROW_ASSERT, THROW_ERROR
+#include "string_manipulation.hpp"         // for STR GET_CLASS
 
 ///tree includes
 #include "ext_tree_node.hpp"
-#include "tree_helper.hpp"
+#include "token_interface.hpp"
 #include "tree_basic_block.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
-
-#include "token_interface.hpp"
-
-#include <unordered_set>
-
-///tree include
-#include "tree_helper.hpp"
-
-///utility include
-#include "utility.hpp"
-
+#include <iostream>
 unsigned int tree_manipulation::goto_label_unique_id = 0;
 
 #define TREE_NOT_YET_IMPLEMENTED(token) \
@@ -89,9 +78,7 @@ tree_manipulation::tree_manipulation(const tree_managerRef _TreeM, const Paramet
 
 ///Destructor
 tree_manipulation::~tree_manipulation()
-{
-
-}
+= default;
 
 
 
@@ -1426,7 +1413,7 @@ tree_nodeRef tree_manipulation::create_ssa_name(const tree_nodeConstRef var, con
       GetPointer<ssa_name>(curr_node)->AddDefStmt(gimple_nop_node_ref);
    }
 
-   ssa_name * sn = GetPointer<ssa_name>(curr_node);
+   auto * sn = GetPointer<ssa_name>(curr_node);
    sn->virtual_flag = virtual_flag;
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Created " + node_ref->ToString());
 
@@ -1565,9 +1552,9 @@ tree_nodeRef tree_manipulation::create_return_expr(const tree_nodeRef & decl, tr
 tree_nodeRef tree_manipulation::create_phi_node(tree_nodeRef & ssa_res, const std::vector<std::pair<tree_nodeRef, unsigned int> > & list_of_def_edge, const tree_nodeRef & scpe, unsigned int bb_index, bool virtual_flag) const
 {
 
-   std::vector<std::pair<tree_nodeRef, unsigned int> >::const_iterator iterator=list_of_def_edge.begin();
+   auto iterator=list_of_def_edge.begin();
    tree_nodeRef ssa_ref = iterator->first;
-   ssa_name * sn_ref = GetPointer<ssa_name>(GET_NODE(ssa_ref));
+   auto * sn_ref = GetPointer<ssa_name>(GET_NODE(ssa_ref));
    THROW_ASSERT(ssa_ref->get_kind() == tree_reindex_K, "ssa_name res is not a tree_reindex node");
    for (++iterator; iterator != list_of_def_edge.end(); ++iterator)
    {
@@ -1599,7 +1586,7 @@ tree_nodeRef tree_manipulation::create_phi_node(tree_nodeRef & ssa_res, const st
    tree_nodeRef phi_stmt = TreeM->GetTreeReindex(phi_node_nid);
    GetPointer<gimple_node>(GET_NODE(phi_stmt))->bb_index = bb_index;
 
-   gimple_phi * pn = GetPointer<gimple_phi> (GET_NODE(phi_stmt));
+   auto * pn = GetPointer<gimple_phi> (GET_NODE(phi_stmt));
    pn->virtual_flag = virtual_flag;
 
    for(const auto& def_edge : list_of_def_edge)
@@ -1722,7 +1709,7 @@ void tree_manipulation::bb_remove_successors(blocRef & bb, const std::vector<uns
 void tree_manipulation::bb_remove_successor(blocRef & bb, const unsigned int & successor) const
 {
    std::vector<unsigned int> & list_of_succ = bb->list_of_succ;
-   std::vector<unsigned int>::iterator iterator_stmt = std::find(list_of_succ.begin(), list_of_succ.end(), successor);
+   auto iterator_stmt = std::find(list_of_succ.begin(), list_of_succ.end(), successor);
    THROW_ASSERT(iterator_stmt!=list_of_succ.end(),"Successor not found!");
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Successor " + STR(*iterator_stmt) + " is going to be removed");
    list_of_succ.erase(iterator_stmt);
@@ -1741,7 +1728,7 @@ void tree_manipulation::bb_remove_predecessors(blocRef & bb, const std::vector<u
 void tree_manipulation::bb_remove_predecessor(blocRef & bb, const unsigned int & predecessor) const
 {
    std::vector<unsigned int> & list_of_pred = bb->list_of_pred;
-   std::vector<unsigned int>::iterator iterator_stmt = std::find(list_of_pred.begin(), list_of_pred.end(), predecessor);
+   auto iterator_stmt = std::find(list_of_pred.begin(), list_of_pred.end(), predecessor);
    THROW_ASSERT(iterator_stmt!=list_of_pred.end(),"Successor not found!");
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Successor " + STR(*iterator_stmt) + " is going to be removed");
    list_of_pred.erase(iterator_stmt);
@@ -1778,11 +1765,11 @@ void tree_manipulation::create_label(const blocRef block, const unsigned int fun
    if (block->CGetStmtList().size())
    {
       tree_nodeRef first_stmt = block->CGetStmtList().front();
-      gimple_label * le = GetPointer<gimple_label>(GET_NODE(first_stmt));
+      auto * le = GetPointer<gimple_label>(GET_NODE(first_stmt));
       if (le)
       {
          THROW_ASSERT(le->op && GET_NODE(le->op)->get_kind() == label_decl_K, "label expression pattern not yet supported");
-         label_decl * ld = GetPointer<label_decl>(GET_NODE(le->op));
+         auto * ld = GetPointer<label_decl>(GET_NODE(le->op));
          THROW_ASSERT(!ld->name, "gimple_label already added");
          /// addd the name to the label_decl
          //@436     identifier_node  strg: "GOTOLABEL0"   lngt: 10
@@ -1901,7 +1888,7 @@ void tree_manipulation::create_goto(const blocRef block, const unsigned int, con
 {
    TreeM->add_goto();
    ///compute the label_decl_nid
-   gimple_label * le = GetPointer<gimple_label>(TreeM->get_tree_node_const(label_expr_nid));
+   auto * le = GetPointer<gimple_label>(TreeM->get_tree_node_const(label_expr_nid));
    THROW_ASSERT(le, "expected a label expression");
    unsigned int label_decl_nid = GET_INDEX_NODE(le->op);
    ///create the gimple_goto tree node

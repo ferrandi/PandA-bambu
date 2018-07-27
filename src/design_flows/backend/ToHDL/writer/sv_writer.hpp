@@ -52,17 +52,17 @@ class system_verilog_writer : public verilog_writer
       /**
        * Return the name of the language writer.
       */
-      std::string get_name() const {return "system_verilog";}
+      std::string get_name() const override {return "system_verilog";}
       /**
        * Return the filename extension associted with the verilog_writer.
       */
-      std::string get_extension() const {return ".sv";}
+      std::string get_extension() const override {return ".sv";}
 
       /**
        * Write in the proper language the behavioral description of the module described in "Not Parsed" form.
        * @param cir is the component.
       */
-      void write_NP_functionalities(const structural_objectRef &cir);
+      void write_NP_functionalities(const structural_objectRef &cir) override;
 
       /**
        * Constructor
@@ -72,7 +72,7 @@ class system_verilog_writer : public verilog_writer
       /**
        * Destructor
        */
-      ~system_verilog_writer();
+      ~system_verilog_writer() override;
 
 };
 

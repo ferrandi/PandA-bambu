@@ -64,6 +64,8 @@
 #include "tree_basic_block.hpp"
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
+#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 dead_code_elimination::dead_code_elimination(const ParameterConstRef _parameters, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager) :
    FunctionFrontendFlowStep(_AppM, _function_id, DEAD_CODE_ELIMINATION, _design_flow_manager, _parameters)
@@ -72,7 +74,7 @@ dead_code_elimination::dead_code_elimination(const ParameterConstRef _parameters
 }
 
 dead_code_elimination::~dead_code_elimination()
-{}
+= default;
 
 const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship> > dead_code_elimination::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
@@ -109,8 +111,8 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
    const tree_managerRef TM = AppM->get_tree_manager();
 
    const tree_nodeRef curr_tn = TM->GetTreeNode(function_id);
-   function_decl * fd = GetPointer<function_decl>(curr_tn);
-   statement_list * sl = GetPointer<statement_list>(GET_NODE(fd->body));
+   auto * fd = GetPointer<function_decl>(curr_tn);
+   auto * sl = GetPointer<statement_list>(GET_NODE(fd->body));
    ///Retrieve the list of block
    std::map<unsigned int, blocRef> &blocks = sl->list_of_bloc;
    std::map<unsigned int, blocRef>::iterator block_it, block_it_end;
@@ -147,7 +149,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                   const tree_nodeRef op0 = GET_NODE(ga->op0);
                   if (op0->get_kind() == ssa_name_K)
                   {
-                     ssa_name *ssa = GetPointer<ssa_name>(op0);
+                     auto *ssa = GetPointer<ssa_name>(op0);
                      ///very strict condition for the elimination
                      if (ssa->CGetNumberUses() == 0 and ssa->CGetDefStmts().size() == 1)
                      {
@@ -178,7 +180,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Removing " + STR(stmts_to_be_removed.size()) + " dead assignments");
          for(auto curr_el : stmts_to_be_removed)
          {
-            gimple_assign * ga =  GetPointer<gimple_assign>(GET_NODE(curr_el));
+            auto * ga =  GetPointer<gimple_assign>(GET_NODE(curr_el));
             if (ga and (GET_NODE(ga->op1)->get_kind() == call_expr_K || GET_NODE(ga->op1)->get_kind() == aggr_init_expr_K))
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC,  debug_level, "---Call expr in the right part can be removed");

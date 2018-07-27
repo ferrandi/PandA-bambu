@@ -67,7 +67,7 @@ class fsm_controller : public ControllerCreatorBaseStep
        * Execute the step
        * @return the exit status of this step
        */
-      virtual DesignFlowStep_Status InternalExec();
+      DesignFlowStep_Status InternalExec() override;
 
    public:
 
@@ -80,7 +80,7 @@ class fsm_controller : public ControllerCreatorBaseStep
       /**
        * Destructor.
        */
-      ~fsm_controller();
+      ~fsm_controller() override;
 
 };
 #endif

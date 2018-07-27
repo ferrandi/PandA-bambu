@@ -38,7 +38,7 @@
 #include "config_HAVE_BISON_2_7_OR_GREATER.hpp"
 
 #include "parse_discrepancy.hpp"
-
+#include <iostream>
 #if HAVE_BISON_2_7_OR_GREATER
 #include "discrepancyParser.hpp"
 #else

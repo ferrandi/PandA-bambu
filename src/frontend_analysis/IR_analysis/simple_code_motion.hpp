@@ -81,7 +81,7 @@ class simple_code_motion: public FunctionFrontendFlowStep
        * Return the set of analyses in relationship with this design step
        * @param relationship_type is the type of relationship to be considered
        */
-      virtual const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const;
+      const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
       /**
        * Check if a statement can be moved in a basic block
@@ -108,23 +108,23 @@ class simple_code_motion: public FunctionFrontendFlowStep
       /**
        *  Destructor
        */
-      ~simple_code_motion();
+      ~simple_code_motion() override;
 
       /**
        * Updates the tree to have a more compliant CFG
        */
-      DesignFlowStep_Status InternalExec();
+      DesignFlowStep_Status InternalExec() override;
 
       /**
        * Initialize the step (i.e., like a constructor, but executed just before exec
        */
-      virtual void Initialize();
+      void Initialize() override;
 
       /**
        * Check if this step has actually to be executed
        * @return true if the step has to be executed
        */
-      virtual bool HasToBeExecuted() const;
+      bool HasToBeExecuted() const override;
 
       /**
        * Return true if the last run of this step was based on scheduling

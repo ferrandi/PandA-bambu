@@ -67,7 +67,7 @@
 #include <boost/version.hpp>
 #include "exceptions.hpp"
 #include "fileIO.hpp"
-#include "utility.hpp"
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 unsigned int PragmaParser::number = 0;
 
@@ -86,9 +86,7 @@ PragmaParser::PragmaParser(const pragma_managerRef _PM, const ParameterConstRef 
 
 // destructor
 PragmaParser::~PragmaParser()
-{
-
-}
+= default;
 
 std::string PragmaParser::substitutePragmas(const std::string& OldFile)
 {
@@ -161,26 +159,26 @@ std::string PragmaParser::substitutePragmas(const std::string& OldFile)
 
       /// manage nesting levels
       bool found = false;
-      for(unsigned int i = 0; i < input_line.size(); i++)
+      for(char i : input_line)
       {
-         if (input_line[i] == '{')
+         if (i == '{')
          {
             level++;
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Found {: Current level " + boost::lexical_cast<std::string>(level));
             if (!found)
             {
-               for(std::list<std::string>::iterator it = FloatingPragmas.begin(); it != FloatingPragmas.end(); ++it)
-                  OpenPragmas[level].push_back(*it);
+               for(auto & FloatingPragma : FloatingPragmas)
+                  OpenPragmas[level].push_back(FloatingPragma);
                FloatingPragmas.clear();
             }
             found = true;
          }
-         if (input_line[i] == '}')
+         if (i == '}')
          {
             if (OpenPragmas.count(level))
             {
-               for(std::list<std::string>::iterator open_pragma = OpenPragmas[level].begin(); open_pragma != OpenPragmas[level].end(); ++open_pragma)
-                  fileOutput << std::string(STR_CST_pragma_function_end) + "(\"" << *open_pragma << "\");" << std::endl;
+               for(auto & open_pragma : OpenPragmas[level])
+                  fileOutput << std::string(STR_CST_pragma_function_end) + "(\"" << open_pragma << "\");" << std::endl;
                OpenPragmas[level].clear();
             }
             level--;

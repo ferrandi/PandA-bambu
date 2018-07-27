@@ -65,6 +65,7 @@
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_reindex.hpp"
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 LoopsAnalysisBambu::LoopsAnalysisBambu(const ParameterConstRef _parameters, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager) :
    FunctionFrontendFlowStep(_AppM, _function_id, LOOPS_ANALYSIS_BAMBU, _design_flow_manager, _parameters)
@@ -73,7 +74,7 @@ LoopsAnalysisBambu::LoopsAnalysisBambu(const ParameterConstRef _parameters, cons
 }
 
 LoopsAnalysisBambu::~LoopsAnalysisBambu()
-{}
+= default;
 
 const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship> > LoopsAnalysisBambu::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
@@ -97,7 +98,7 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
                   const auto gp = GetPointer<const gimple_pragma>(GET_NODE(stmt));
                   if (gp and gp->scope and GetPointer<const omp_pragma>(GET_NODE(gp->scope)))
                   {
-                     const omp_simd_pragma * sp = GetPointer<const omp_simd_pragma>(GET_NODE(gp->directive));
+                     const auto * sp = GetPointer<const omp_simd_pragma>(GET_NODE(gp->directive));
                      if (sp)
                      {
                         return true;
@@ -207,7 +208,7 @@ DesignFlowStep_Status LoopsAnalysisBambu::InternalExec()
       }
       const tree_nodeRef op = GET_NODE(GetPointer<const gimple_cond>(last_stmt)->op0);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Condition operand (" + op->get_kind_text() + ") is " + op->ToString());
-      const ssa_name * cond_sn = GetPointer<const ssa_name>(op);
+      const auto * cond_sn = GetPointer<const ssa_name>(op);
       if(not cond_sn)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Argument of cond expression is not a ssa");
@@ -243,7 +244,7 @@ DesignFlowStep_Status LoopsAnalysisBambu::InternalExec()
          continue;
       }
       ///We assume that induction variable is the left one; if it is not, analysis will fail
-      const binary_expr * cond_be = GetPointer<const binary_expr>(cond);
+      const auto * cond_be = GetPointer<const binary_expr>(cond);
       const tree_nodeRef first_operand = GET_NODE(cond_be->op0);
       ///Induction variable must be a ssa name
       if(first_operand->get_kind() != ssa_name_K)
@@ -251,7 +252,7 @@ DesignFlowStep_Status LoopsAnalysisBambu::InternalExec()
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--First operand of gimple cond is not ssa_name");
          continue;
       }
-      const ssa_name * sn = GetPointer<const ssa_name>(first_operand);
+      const auto * sn = GetPointer<const ssa_name>(first_operand);
       ///Look for its definition
       const auto  defs = sn->CGetDefStmts();
       if(defs.size() != 1)
@@ -291,13 +292,13 @@ DesignFlowStep_Status LoopsAnalysisBambu::InternalExec()
          continue;
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Induction variable is assigned in " + def->ToString());
-      const gimple_assign * ga = GetPointer<const gimple_assign>(def);
+      const auto * ga = GetPointer<const gimple_assign>(def);
       if(GET_NODE(ga->op1)->get_kind() != plus_expr_K and GET_NODE(ga->op1)->get_kind() != minus_expr_K)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Induction variable is not incremented or decremented");
          continue;
       }
-      const binary_expr * be = GetPointer<const binary_expr>(GET_NODE(ga->op1));
+      const auto * be = GetPointer<const binary_expr>(GET_NODE(ga->op1));
       if(GET_NODE(be->op1)->get_kind() != integer_cst_K)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Induction variable is not incremnted or decremented of a constant");
@@ -321,7 +322,7 @@ DesignFlowStep_Status LoopsAnalysisBambu::InternalExec()
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Temp induction variable is not defined in a phi");
          continue;
       }
-      const gimple_phi * gp = GetPointer<const gimple_phi>(def2);
+      const auto * gp = GetPointer<const gimple_phi>(def2);
       if(gp->CGetDefEdgesList().size() != 2)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Phi has not two incoming definitions");

@@ -37,15 +37,16 @@
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
 */
-
-///Header include
 #include "complete_bb_graph.hpp"
 
-///. include
-#include "Parameter.hpp"
+#include "config_HAVE_BAMBU_BUILT.hpp"   // for HAVE_BAMBU_BUILT
+#include "config_HAVE_EXPERIMENTAL.hpp"  // for HAVE_EXPERIMENTAL
+#include "config_HAVE_ZEBU_BUILT.hpp"    // for HAVE_ZEBU_BUILT
 
-///utility include
-#include "utility.hpp"
+#include "Parameter.hpp"                 // for Parameter, ParameterConstRef
+#include "exceptions.hpp"                // for THROW_UNREACHABLE
+#include "hash_helper.hpp"               // for hash
+#include "string_manipulation.hpp"       // for GET_CLASS
 
 CompleteBBGraph::CompleteBBGraph(const application_managerRef _AppM, const unsigned int _function_index, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters) :
    FunctionFrontendFlowStep(_AppM, _function_index, COMPLETE_BB_GRAPH, _design_flow_manager, _parameters)
@@ -55,7 +56,7 @@ CompleteBBGraph::CompleteBBGraph(const application_managerRef _AppM, const unsig
 }
 
 CompleteBBGraph::~CompleteBBGraph()
-{}
+= default;
 
 const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship> > CompleteBBGraph::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {

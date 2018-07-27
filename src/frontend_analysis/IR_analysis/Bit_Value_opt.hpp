@@ -76,7 +76,7 @@ class Bit_Value_opt : public FunctionFrontendFlowStep
       bool restart_dead_code;
 
       const std::unordered_set< std::pair<FrontendFlowStepType, FunctionRelationship> >
-      ComputeFrontendRelationships (const DesignFlowStep::RelationshipType relationship_type) const;
+      ComputeFrontendRelationships (const DesignFlowStep::RelationshipType relationship_type) const override;
 
       /**
        * do bit value based optimization such as:
@@ -101,22 +101,22 @@ class Bit_Value_opt : public FunctionFrontendFlowStep
       /**
        *  Destructor
       */
-      ~Bit_Value_opt();
+      ~Bit_Value_opt() override;
 
       /**
        * Extract patterns from the GCC IR.
        * @return the exit status of this step
        */
-      DesignFlowStep_Status InternalExec();
+      DesignFlowStep_Status InternalExec() override;
 
       /**
        * Check if this step has actually to be executed
        * @return true if the step has to be executed
        */
-      virtual bool HasToBeExecuted() const;
+      bool HasToBeExecuted() const override;
       /**
        * Initialize the step (i.e., like a constructor, but executed just before exec
        */
-      virtual void Initialize();
+      void Initialize() override;
 };
 #endif /* Bit_Value_opt_HPP */

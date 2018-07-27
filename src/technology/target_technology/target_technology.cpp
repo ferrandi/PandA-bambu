@@ -69,9 +69,7 @@ target_technology::target_technology(const ParameterConstRef param) :
 }
 
 target_technology::~target_technology( )
-{
-
-}
+= default;
 
 target_technologyRef target_technology::create_technology(const target_t type, const ParameterConstRef param)
 {
@@ -98,11 +96,11 @@ target_technology::target_t target_technology::get_type() const
 void target_technology::xload(const xml_element* node)
 {
    const xml_node::node_list c_list = node->get_children();
-   for(xml_node::node_list::const_iterator n = c_list.begin(); n != c_list.end(); ++n)
+   for(const auto & n : c_list)
    {
-      if ((*n)->get_name() == "technology")
+      if (n->get_name() == "technology")
       {
-         const xml_element* tech_xml = GetPointer<const xml_element>(*n);
+         const auto* tech_xml = GetPointer<const xml_element>(n);
          xload_technology_parameters(tech_xml);
       }
    }
@@ -112,9 +110,9 @@ void target_technology::xload(const xml_element* node)
 void target_technology::xload_technology_parameters(const xml_element* tech_xml)
 {
    const xml_node::node_list t_list = tech_xml->get_children();
-   for(xml_node::node_list::const_iterator t = t_list.begin(); t != t_list.end(); ++t)
+   for(const auto & t : t_list)
    {
-      const xml_element* t_elem = GetPointer<const xml_element>(*t);
+      const auto* t_elem = GetPointer<const xml_element>(t);
       if (!t_elem) continue;
 
       if (t_elem->get_name() == "parameter")

@@ -127,8 +127,6 @@ namespace boost
          ColorMap &CM;
          size_type * heap_container;
          dsatur2_heap_compare_functor<size_type> HCF;
-         //no copy constructor
-         dsatur2_coloring_helper(const dsatur2_coloring_helper& inst) = delete;
 
       public:
          dsatur2_coloring_helper(const VertexListGraph& _G, ColorMap &_CM, const size_type _num_node) : 
@@ -149,6 +147,8 @@ namespace boost
          {
             delete[] heap_container;
          }
+         //no copy constructor
+         dsatur2_coloring_helper(const dsatur2_coloring_helper& inst) = delete;
 
          void AssignColor(size_type node, size_type color)
          {

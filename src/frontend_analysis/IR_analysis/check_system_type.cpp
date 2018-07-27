@@ -74,6 +74,7 @@
 
 ///Wrapper include
 #include "gcc_wrapper.hpp"
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 #define FILENAME_NORM(name) ((boost::filesystem::path(name)).normalize().string())
 
@@ -108,8 +109,7 @@ CheckSystemType::CheckSystemType(const ParameterConstRef _parameters, const appl
 }
 
 CheckSystemType::~CheckSystemType()
-{
-}
+= default;
 
 const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship> > CheckSystemType::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
@@ -145,9 +145,9 @@ DesignFlowStep_Status CheckSystemType::InternalExec()
    }
 
    const tree_nodeRef curr_tn = TM->GetTreeNode(function_id);
-   function_decl * fd = GetPointer<function_decl>(curr_tn);
+   auto * fd = GetPointer<function_decl>(curr_tn);
    recursive_examinate(curr_tn, function_id);
-   statement_list * sl = GetPointer<statement_list>(GET_NODE(fd->body));
+   auto * sl = GetPointer<statement_list>(GET_NODE(fd->body));
 
    for (const auto f : AppM->get_functions_without_body())
    {
@@ -237,8 +237,8 @@ void CheckSystemType::recursive_examinate(const tree_nodeRef & curr_tn, const un
       }
       case CASE_DECL_NODES:
       {
-         decl_node * dn = GetPointer<decl_node>(curr_tn);
-         function_decl * fd = GetPointer<function_decl>(curr_tn);
+         auto * dn = GetPointer<decl_node>(curr_tn);
+         auto * fd = GetPointer<function_decl>(curr_tn);
          bool is_system;
          std::string include = std::get<0>(behavioral_helper->get_definition(index, is_system));
          if(fd and (library_system_functions.find(tree_helper::print_function_name(TM, fd)) != library_system_functions.end()))
@@ -248,7 +248,7 @@ void CheckSystemType::recursive_examinate(const tree_nodeRef & curr_tn, const un
          else if(!dn->operating_system_flag and !dn->library_system_flag and (is_system || is_system_include(include)))
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "System declaration");
-            srcp * sr = GetPointer<srcp>(curr_tn);
+            auto * sr = GetPointer<srcp>(curr_tn);
             if(!is_system && sr && sr->include_name != "")
             {
                std::string new_include;
@@ -275,26 +275,26 @@ void CheckSystemType::recursive_examinate(const tree_nodeRef & curr_tn, const un
          else if(fd and undefined_library_function_include.count(tree_helper::print_function_name(TM, fd)))
          {
             dn->library_system_flag = true;
-            srcp * sr = GetPointer<srcp>(curr_tn);
+            auto * sr = GetPointer<srcp>(curr_tn);
             sr->include_name = undefined_library_function_include[tree_helper::print_function_name(TM, fd)];
          }
          //Checking for implicit declaration
          if(curr_tn->get_kind() == function_decl_K)
          {
             fd = GetPointer<function_decl>(curr_tn);
-            srcp * sr = GetPointer<srcp>(curr_tn);
+            auto * sr = GetPointer<srcp>(curr_tn);
             if(fd->type and fd->undefined_flag and !fd->operating_system_flag and !fd->library_system_flag and sr->include_name != "<built-in>")
             {
-               function_type * ft = GetPointer<function_type>(GET_NODE(fd->type));
+               auto * ft = GetPointer<function_type>(GET_NODE(fd->type));
                if(!ft->prms and ft->retn and GetPointer<integer_type>(GET_NODE(ft->retn)))
                {
-                  integer_type * it = GetPointer<integer_type>(GET_NODE(ft->retn));
+                  auto * it = GetPointer<integer_type>(GET_NODE(ft->retn));
                   if(it->name and GetPointer<type_decl>(GET_NODE(it->name)))
                   {
-                     type_decl * td = GetPointer<type_decl>(GET_NODE(it->name));
+                     auto * td = GetPointer<type_decl>(GET_NODE(it->name));
                      if(td->name and GetPointer<identifier_node>(GET_NODE(td->name)))
                      {
-                        identifier_node * in = GetPointer<identifier_node>(GET_NODE(td->name));
+                        auto * in = GetPointer<identifier_node>(GET_NODE(td->name));
                         if(in->strg == "int")
                            fd->include_name = "<built-in>";
                      }
@@ -303,7 +303,7 @@ void CheckSystemType::recursive_examinate(const tree_nodeRef & curr_tn, const un
             }
             if(fd->name and GET_NODE(fd->name)->get_kind() == identifier_node_K)
             {
-               identifier_node * in = GetPointer<identifier_node>(GET_NODE(fd->name));
+               auto * in = GetPointer<identifier_node>(GET_NODE(fd->name));
 #if HAVE_LEON3
                if(not_supported_leon3_functions.find(in->strg) != not_supported_leon3_functions.end())
                {
@@ -320,10 +320,10 @@ void CheckSystemType::recursive_examinate(const tree_nodeRef & curr_tn, const un
          //Checking for type
          if(curr_tn->get_kind() == type_decl_K)
          {
-            type_decl * td = GetPointer<type_decl>(curr_tn);
+            auto * td = GetPointer<type_decl>(curr_tn);
             if(td->name and GET_NODE(td->name)->get_kind() == identifier_node_K)
             {
-               identifier_node * in = GetPointer<identifier_node>(GET_NODE(td->name));
+               auto * in = GetPointer<identifier_node>(GET_NODE(td->name));
                if(rename_types.find(in->strg) != rename_types.end())
                   in->strg = rename_types.find(in->strg)->second;
             }
@@ -443,7 +443,7 @@ void CheckSystemType::recursive_examinate(const tree_nodeRef & curr_tn, const un
       }
       case gimple_multi_way_if_K:
       {
-         gimple_multi_way_if* gmwi=GetPointer<gimple_multi_way_if>(curr_tn);
+         auto* gmwi=GetPointer<gimple_multi_way_if>(curr_tn);
          for(auto cond : gmwi->list_of_cond)
             if(cond.first)
                recursive_examinate(cond.first);
@@ -478,7 +478,7 @@ void CheckSystemType::recursive_examinate(const tree_nodeRef & curr_tn, const un
       }
       case CASE_TYPE_NODES:
       {
-         type_node * ty = GetPointer<type_node>(curr_tn);
+         auto * ty = GetPointer<type_node>(curr_tn);
          THROW_ASSERT(ty, "expected a name");
          if(ty->name)
             recursive_examinate(ty->name);
@@ -487,13 +487,13 @@ void CheckSystemType::recursive_examinate(const tree_nodeRef & curr_tn, const un
             case boolean_type_K:
             {
                //_Bool is C99: we replace it for MAGIC compatibility
-               boolean_type * bt = GetPointer<boolean_type>(curr_tn);
+               auto * bt = GetPointer<boolean_type>(curr_tn);
                if(bt->name and GetPointer<type_decl>(GET_NODE(bt->name)))
                {
-                  type_decl * td = GetPointer<type_decl>(GET_NODE(bt->name));
+                  auto * td = GetPointer<type_decl>(GET_NODE(bt->name));
                   if(td->name and GetPointer<identifier_node>(GET_NODE(td->name)))
                   {
-                     identifier_node * in = GetPointer<identifier_node>(GET_NODE(td->name));
+                     auto * in = GetPointer<identifier_node>(GET_NODE(td->name));
                      if(parameters->isOption(OPT_gcc_standard) and parameters->getOption<std::string>(OPT_gcc_standard) == "c99" and in->strg == "_Bool")
                      {
                         const std::string INT = "int";
@@ -517,7 +517,7 @@ void CheckSystemType::recursive_examinate(const tree_nodeRef & curr_tn, const un
             }
             case record_type_K:
             {
-               record_type * rt = GetPointer<record_type>(curr_tn);
+               auto * rt = GetPointer<record_type>(curr_tn);
 #if HAVE_BAMBU_BUILT
                const std::vector<tree_nodeRef> & list_of_flds = rt->list_of_flds;
                std::vector<tree_nodeRef>::const_iterator it, it_end = list_of_flds.end();
@@ -538,7 +538,7 @@ void CheckSystemType::recursive_examinate(const tree_nodeRef & curr_tn, const un
             }
             case union_type_K:
             {
-               union_type * ut = GetPointer<union_type>(curr_tn);
+               auto * ut = GetPointer<union_type>(curr_tn);
 #if HAVE_BAMBU_BUILT
                const std::vector<tree_nodeRef> & list_of_flds = ut->list_of_flds;
                std::vector<tree_nodeRef>::const_iterator it, it_end = list_of_flds.end();
@@ -592,10 +592,10 @@ void CheckSystemType::recursive_examinate(const tree_nodeRef & curr_tn, const un
             }
             case integer_type_K:
             {
-               integer_type * it = GetPointer<integer_type>(curr_tn);
+               auto * it = GetPointer<integer_type>(curr_tn);
                if(it->name and GetPointer<identifier_node>(GET_NODE(it->name)))
                {
-                  identifier_node * in = GetPointer<identifier_node>(GET_NODE(it->name));
+                  auto * in = GetPointer<identifier_node>(GET_NODE(it->name));
                   if(in->strg == "sizetype")
                   {
                      const std::string INT = "unsigned long";
@@ -685,7 +685,7 @@ void CheckSystemType::recursive_examinate(const tree_nodeRef & curr_tn, const un
          {
             PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "System type");
             ty->system_flag = true;
-            srcp * sr = GetPointer<srcp>(curr_tn);
+            auto * sr = GetPointer<srcp>(curr_tn);
             if(!is_system && sr && sr->include_name   != "")
             {
                std::string new_include;
@@ -786,9 +786,9 @@ bool CheckSystemType::is_system_include(std::string include) const
    if(include == "<built-in>")
       return true;
    std::string include_p(FILENAME_NORM(include));
-   for (unsigned int i = 0; i < systemIncPath.size(); i++)
+   for (auto & i : systemIncPath)
    {
-      if (include_p.compare(0, systemIncPath[i].size() + 1, systemIncPath[i] + "/") == 0)
+      if (include_p.compare(0, i.size() + 1, i + "/") == 0)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Include is " + include + ": system include");
          return true;
@@ -860,15 +860,15 @@ void CheckSystemType::build_include_structures()
    const GccWrapperConstRef gcc_wrapper(new GccWrapper(parameters, GccWrapper_CompilerTarget::CT_NO_GCC, GccWrapper_OptimizationSet::O0));
    gcc_wrapper->GetSystemIncludes(Splitted);
 
-   for (std::vector<std::string>::iterator tok_iter = Splitted.begin(); tok_iter != Splitted.end(); ++tok_iter)
+   for (auto & tok_iter : Splitted)
    {
-      if (*tok_iter != "")
+      if (tok_iter != "")
       {
          std::string temp;
          if (getenv("MINGW_INST_DIR"))
          {
             std::string mingw_prefix = getenv("MINGW_INST_DIR");
-            temp = *tok_iter;
+            temp = tok_iter;
             if (boost::algorithm::starts_with(temp,"z:/mingw"))
                temp = temp.replace(0, 8, FILENAME_NORM(mingw_prefix)); ///replace z:/mingw at the beginning of the string
             temp = FILENAME_NORM(temp);
@@ -876,7 +876,7 @@ void CheckSystemType::build_include_structures()
          }
          else
          {
-            temp = FILENAME_NORM(*tok_iter);
+            temp = FILENAME_NORM(tok_iter);
             systemIncPath.push_back(temp);
          }
       }
@@ -922,15 +922,15 @@ void CheckSystemType::getRealInclName(const std::string&include, std::string & r
    //Now I have to see if one of the elements in systemIncPath is the start of the include:
    //in case I eliminate it and look the remaining part of the string in the map
    std::string include_p(FILENAME_NORM(include));
-   for (unsigned int i = 0; i < systemIncPath.size(); i++)
+   for (auto & i : systemIncPath)
    {
-      if (include_p.compare(0, systemIncPath[i].size() + 1, systemIncPath[i] + "/") == 0)
+      if (include_p.compare(0, i.size() + 1, i + "/") == 0)
       {
-         std::string trimmed = include_p.substr(systemIncPath[i].size() + 1);
+         std::string trimmed = include_p.substr(i.size() + 1);
          if (inclNameToPath.find(trimmed) != inclNameToPath.end())
             real_name = inclNameToPath.find(trimmed)->second;
 #if HAVE_BAMBU_BUILT
-         else if(LIBBAMBU_SRCDIR == systemIncPath[i] && boost::algorithm::starts_with(trimmed,"libm/"))
+         else if(LIBBAMBU_SRCDIR == i && boost::algorithm::starts_with(trimmed,"libm/"))
             real_name = FILENAME_NORM("math.h");
 #endif
          else

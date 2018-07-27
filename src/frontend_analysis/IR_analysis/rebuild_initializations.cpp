@@ -65,6 +65,8 @@
 #include "tree_manipulation.hpp"
 #include "tree_reindex.hpp"
 #include "tree_helper.hpp"
+#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 
 rebuild_initializations::rebuild_initializations(const ParameterConstRef Param, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager) :
@@ -92,9 +94,7 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
 
 
 rebuild_initializations::~rebuild_initializations()
-{
-
-}
+= default;
 
 DesignFlowStep_Status rebuild_initializations::InternalExec()
 {
@@ -106,16 +106,16 @@ DesignFlowStep_Status rebuild_initializations::InternalExec()
    tree_managerRef TM = AppM->get_tree_manager();
    tree_manipulationRef tree_man(new tree_manipulation(TM, parameters));
    tree_nodeRef tn = TM->get_tree_node_const(function_id);
-   function_decl * fd = GetPointer<function_decl>(tn);
+   auto * fd = GetPointer<function_decl>(tn);
    THROW_ASSERT(fd && fd->body, "Node is not a function or it hasn't a body");
-   statement_list * sl = GetPointer<statement_list>(GET_NODE(fd->body));
+   auto * sl = GetPointer<statement_list>(GET_NODE(fd->body));
    THROW_ASSERT(sl, "Body is not a statement_list");
-   std::map<unsigned int, blocRef>::iterator B_it_end = sl->list_of_bloc.end();
+   auto B_it_end = sl->list_of_bloc.end();
 
    TreeNodeMap<std::map<long long int, tree_nodeRef> > inits;
 
    /// for each basic block B in CFG do > Consider all blocks successively
-   for(std::map<unsigned int, blocRef>::iterator B_it = sl->list_of_bloc.begin(); B_it != B_it_end ; ++B_it)
+   for(auto B_it = sl->list_of_bloc.begin(); B_it != B_it_end ; ++B_it)
    {
       blocRef B = B_it->second;
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining BB" + STR(B->number));
@@ -127,7 +127,7 @@ DesignFlowStep_Status rebuild_initializations::InternalExec()
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining statement " + GET_NODE(*it_los)->ToString());
          if(GET_NODE(*it_los)->get_kind() == gimple_assign_K)
          {
-            gimple_assign * ga =  GetPointer<gimple_assign>(GET_NODE(*it_los));
+            auto * ga =  GetPointer<gimple_assign>(GET_NODE(*it_los));
             enum kind code0 = GET_NODE(ga->op0)->get_kind();
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Left part of assignment " +  GET_NODE(ga->op0)->get_kind_text() + (code0  == array_ref_K ? " - Type is " +  tree_helper::CGetType(GET_NODE(ga->op0))->get_kind_text() : ""));
 
@@ -135,10 +135,10 @@ DesignFlowStep_Status rebuild_initializations::InternalExec()
             if(code0  == array_ref_K and tree_helper::CGetType(GET_NODE(ga->op0))->get_kind() == integer_type_K)
             {
                PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "check for initializations such as var[const_index] = const_value; " + STR(GET_INDEX_NODE(ga->op0)));
-               array_ref * ar = GetPointer<array_ref>(GET_NODE(ga->op0));
+               auto * ar = GetPointer<array_ref>(GET_NODE(ga->op0));
                if(GET_NODE(ar->op0)->get_kind() == var_decl_K && GET_NODE(ar->op1)->get_kind() == integer_cst_K)
                {
-                  var_decl * vd = GetPointer<var_decl>(GET_NODE(ar->op0));
+                  auto * vd = GetPointer<var_decl>(GET_NODE(ar->op0));
                   if(vd->readonly_flag)
                   {
                      THROW_ASSERT(not vd->init, "Writing element of read only array already initialized: " + STR(ga->op0));
@@ -186,7 +186,7 @@ DesignFlowStep_Status rebuild_initializations::InternalExec()
       const auto element_type = TM->GetTreeReindex(tree_helper::GetElements(TM, array_type));
       unsigned int constructor_index = TM->new_tree_node_id();
       TM->create_tree_node(constructor_index, constructor_K, constructor_tree_node_schema);
-      constructor * constr = GetPointer<constructor>(TM->get_tree_node_const(constructor_index));
+      auto * constr = GetPointer<constructor>(TM->get_tree_node_const(constructor_index));
       const long long int last_index = init.second.rbegin()->first;
       long long int index = 0;
       for(index = 0; index <= last_index; index++)

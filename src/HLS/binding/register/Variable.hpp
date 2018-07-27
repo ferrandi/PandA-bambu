@@ -65,12 +65,12 @@ struct variable2obj: public std::map<unsigned int, data_obj>
    * Constructor.
    */
    variable2obj()
-   {}
+   = default;
 
    /**
     * Destructor.
     */
-   virtual ~variable2obj(){}
+   virtual ~variable2obj()= default;
 
    /**
    * Function that print the informations associated with a variable
@@ -84,8 +84,8 @@ struct variable2obj: public std::map<unsigned int, data_obj>
    */
    virtual void print() const
    {
-      typename variable2obj<data_obj>::const_iterator i_end = this->end();
-      for ( typename variable2obj<data_obj>::const_iterator i = this->begin(); i != i_end; ++i)
+      auto i_end = this->end();
+      for ( auto i = this->begin(); i != i_end; ++i)
       {
          print_el(i);
       }

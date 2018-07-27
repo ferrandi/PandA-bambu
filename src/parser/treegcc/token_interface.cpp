@@ -722,8 +722,7 @@ const int treeVocabularyTokenTypes::bisontokens[] =
    NO_TOKEN,
    NO_TOKEN,
    NO_TOKEN,
-
-   static_cast<const int>(TreeVocabularyTokenTypes_TokenEnum::LAST_TOKEN)
+   static_cast<int>(TreeVocabularyTokenTypes_TokenEnum::LAST_TOKEN)
 };
 
 const char* treeVocabularyTokenTypes::tokenNames[] =
@@ -1384,7 +1383,7 @@ const std::string TI_getTokenName(const TreeVocabularyTokenTypes_TokenEnum i)
 
 int treeVocabularyTokenTypes::check_tokens(const char* tok) const
 {
-   std::map<const char *,int>::const_iterator el = token_map.find(tok);
+   auto el = token_map.find(tok);
    if (el == token_map.end())
       return -1;
    else
@@ -1392,7 +1391,7 @@ int treeVocabularyTokenTypes::check_tokens(const char* tok) const
 }
 TreeVocabularyTokenTypes_TokenEnum treeVocabularyTokenTypes::bison2token(int bison) const
 {
-   std::map<int, TreeVocabularyTokenTypes_TokenEnum>::const_iterator el = from_bisontoken_map.find(bison);
+   auto el = from_bisontoken_map.find(bison);
    THROW_ASSERT(el != from_bisontoken_map.end(), "Token " + boost::lexical_cast<std::string>(bison) + " does not exist");
    return el->second;
 }

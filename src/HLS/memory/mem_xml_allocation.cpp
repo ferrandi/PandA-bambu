@@ -64,9 +64,7 @@ mem_xml_allocation::mem_xml_allocation(const ParameterConstRef _parameters, cons
 }
 
 mem_xml_allocation::~mem_xml_allocation()
-{
-
-}
+= default;
 
 DesignFlowStep_Status mem_xml_allocation::Exec()
 {
@@ -90,7 +88,7 @@ bool mem_xml_allocation::parse_xml_allocation(const std::string& xml_file)
 {
    const tree_managerRef TreeM = HLSMgr->get_tree_manager();
    const HLS_targetRef HLS_T = HLSMgr->get_HLS_target();
-   unsigned int max_bram = HLS_T->get_target_device()->get_parameter<unsigned int>("BRAM_bitsize_max");
+   auto max_bram = HLS_T->get_target_device()->get_parameter<unsigned int>("BRAM_bitsize_max");
    bool initial_internal_address_p = parameters->isOption(OPT_initial_internal_address);
    unsigned int initial_internal_address = initial_internal_address_p ? parameters->getOption<unsigned int>(OPT_initial_internal_address) : std::numeric_limits<unsigned int>::max();
    bool null_pointer_check = true;
@@ -106,9 +104,9 @@ bool mem_xml_allocation::parse_xml_allocation(const std::string& xml_file)
    {
       const xml_element* node = parser.get_document()->get_root_node(); //deleted by DomParser.
       const xml_node::node_list list = node->get_children();
-      for (xml_node::node_list::const_iterator l = list.begin(); l != list.end(); ++l)
+      for (const auto & l : list)
       {
-         const xml_element* child = GetPointer<xml_element>(*l);
+         const xml_element* child = GetPointer<xml_element>(l);
          if (!child) continue;
          if (child->get_name() == "HLS_memory")
          {
@@ -119,9 +117,9 @@ bool mem_xml_allocation::parse_xml_allocation(const std::string& xml_file)
             setup_memory_allocation();
 
             const xml_node::node_list mem_list = child->get_children();
-            for (xml_node::node_list::const_iterator it = mem_list.begin(); it != mem_list.end(); ++it)
+            for (const auto & it : mem_list)
             {
-               const xml_element* mem_node = GetPointer<xml_element>(*it);
+               const xml_element* mem_node = GetPointer<xml_element>(it);
                if (!mem_node) continue;
                if (mem_node->get_name() == "external_memory")
                {
@@ -153,9 +151,9 @@ unsigned int get_id(const std::string& var_string)
 void mem_xml_allocation::parse_external_allocation(const xml_element* node)
 {
    const xml_node::node_list mem_list = node->get_children();
-   for (xml_node::node_list::const_iterator it = mem_list.begin(); it != mem_list.end(); ++it)
+   for (const auto & it : mem_list)
    {
-      const xml_element* mem_node = GetPointer<xml_element>(*it);
+      const xml_element* mem_node = GetPointer<xml_element>(it);
       if (!mem_node) continue;
       if (mem_node->get_name() == "variable")
       {
@@ -178,9 +176,9 @@ void mem_xml_allocation::parse_external_allocation(const xml_element* node)
 void mem_xml_allocation::parse_internal_allocation(const xml_element* node)
 {
    const xml_node::node_list mem_list = node->get_children();
-   for (xml_node::node_list::const_iterator it = mem_list.begin(); it != mem_list.end(); ++it)
+   for (const auto & it : mem_list)
    {
-      const xml_element* mem_node = GetPointer<xml_element>(*it);
+      const xml_element* mem_node = GetPointer<xml_element>(it);
       if (!mem_node) continue;
       if (mem_node->get_name() == "scope")
       {
@@ -188,9 +186,9 @@ void mem_xml_allocation::parse_internal_allocation(const xml_element* node)
          LOAD_XVFM(scope_id, mem_node, id);
          unsigned int scp_id = get_id(scope_id);
          const xml_node::node_list var_list = mem_node->get_children();
-         for (xml_node::node_list::const_iterator v = var_list.begin(); v != var_list.end(); ++v)
+         for (const auto & v : var_list)
          {
-            const xml_element* var_node = GetPointer<xml_element>(*v);
+            const xml_element* var_node = GetPointer<xml_element>(v);
             if (!var_node) continue;
             if (var_node->get_name() == "variable")
             {
@@ -233,22 +231,22 @@ void mem_xml_allocation::parse_internal_allocation(const xml_element* node)
 
 void mem_xml_allocation::finalize_memory_allocation()
 {
-   for(std::map<unsigned int, memory_symbolRef>::iterator eIt = ext_variables.begin(); eIt != ext_variables.end(); ++eIt)
+   for(auto & ext_variable : ext_variables)
    {
-      HLSMgr->Rmem->add_external_symbol(eIt->first, eIt->second);
+      HLSMgr->Rmem->add_external_symbol(ext_variable.first, ext_variable.second);
    }
-   for(std::map<unsigned int, std::map<unsigned int, memory_symbolRef> >::iterator iIt = int_variables.begin(); iIt != int_variables.end(); ++iIt)
+   for(auto & int_variable : int_variables)
    {
-      for(std::map<unsigned int, memory_symbolRef>::iterator vIt = iIt->second.begin(); vIt != iIt->second.end(); ++vIt)
+      for(auto vIt = int_variable.second.begin(); vIt != int_variable.second.end(); ++vIt)
       {
-         HLSMgr->Rmem->add_internal_symbol(iIt->first, vIt->first, vIt->second);
+         HLSMgr->Rmem->add_internal_symbol(int_variable.first, vIt->first, vIt->second);
       }
    }
-   for(std::map<unsigned int, std::map<unsigned int, memory_symbolRef> >::iterator pIt = param_variables.begin(); pIt != param_variables.end(); ++pIt)
+   for(auto & param_variable : param_variables)
    {
-      for(std::map<unsigned int, memory_symbolRef>::iterator vIt = pIt->second.begin(); vIt != pIt->second.end(); ++vIt)
+      for(auto vIt = param_variable.second.begin(); vIt != param_variable.second.end(); ++vIt)
       {
-         HLSMgr->Rmem->add_parameter_symbol(pIt->first, vIt->first, vIt->second);
+         HLSMgr->Rmem->add_parameter_symbol(param_variable.first, vIt->first, vIt->second);
       }
    }
    memory_allocation::finalize_memory_allocation();

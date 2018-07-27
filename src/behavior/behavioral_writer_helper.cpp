@@ -42,53 +42,50 @@
  * Last modified by $Author$
  *
 */
-///Autoheader include
-#include "config_HAVE_HOST_PROFILING_BUILT.hpp"
-
-///Header include
 #include "behavioral_writer_helper.hpp"
 
-///behavior includes
-#include "application_manager.hpp"
-#include "basic_block.hpp"
-#include "behavioral_helper.hpp"
-#include "function_behavior.hpp"
-#include "op_graph.hpp"
-#if HAVE_HOST_PROFILING_BUILT
-#include "profiling_information.hpp"
-#endif
+#include "config_HAVE_HOST_PROFILING_BUILT.hpp"
 
+#include <boost/lexical_cast.hpp>                // for lexical_cast
+#include <boost/smart_ptr/shared_ptr.hpp>        // for shared_ptr
+#include <list>                                  // for list
+#include <map>                                   // for _Rb_tree_const_iterator
+#include <string>                                // for string, operator<<
+#include <utility>                               // for pair
 #if HAVE_HLS_BUILT
-///HLS includes
-#include "hls.hpp"
-#include "hls_manager.hpp"
-
-///HLS/scheduling include
-#include "schedule.hpp"
-
-///HLS/module_allocation include
-#include "allocation_information.hpp"
-
+#include "allocation_information.hpp"            // for AllocationInformation
 #endif
-
-///STD include
-#include <algorithm>
-
-///Tree include
+#include "application_manager.hpp"               // for application_manager
+#include "basic_block.hpp"                       // for BBNodeInfoConstRef
+#include "behavioral_helper.hpp"                 // for BehavioralHelper
+#include "cdfg_edge_info.hpp"                    // for CDG_SELECTOR, CFG_SE...
+#include "exceptions.hpp"                        // for THROW_UNREACHABLE
+#include "function_behavior.hpp"                 // for tree_nodeRef, Functi...
+#if HAVE_HLS_BUILT
+#include "hls.hpp"                               // for hls, AllocationInfor...
+#include "hls_manager.hpp"                       // for HLS_manager, hlsRef
+#endif
+#include "op_graph.hpp"                          // for OpEdgeInfo, OpGraph
+#if HAVE_HOST_PROFILING_BUILT
+#include "profiling_information.hpp"             // for ProfilingInformation
+#endif
+#if HAVE_HLS_BUILT
+#include "schedule.hpp"                          // for Schedule, AbsControl...
+#endif
+#include "string_manipulation.hpp"               // for STR
+#include "tree_basic_block.hpp"                  // for bloc, tree_nodeRef
+#include "tree_common.hpp"                       // for aggr_init_expr_K
+#include "tree_node.hpp"                         // for tree_node, CASE_BINA...
 #include "tree_reindex.hpp"
-#include "tree_basic_block.hpp"
+#include "typed_node_info.hpp"                   // for GET_TYPE, GET_NAME
+#include "var_pp_functor.hpp"                    // for std_var_pp_functor
 
-///Utility include
-#include "boost/algorithm/string/replace.hpp"
-#include "exceptions.hpp"
-#include "simple_indent.hpp"
-#include "var_pp_functor.hpp"
 
-BBWriter::BBWriter(const BBGraph * _g, const std::unordered_set<vertex> &_annotated) :
+BBWriter::BBWriter(const BBGraph * _g, std::unordered_set<vertex> _annotated) :
    VertexWriter(_g, 0),
    function_behavior(_g->CGetBBGraphInfo()->AppM->CGetFunctionBehavior(_g->CGetBBGraphInfo()->function_index)),
    helper(function_behavior->CGetBehavioralHelper()),
-   annotated(_annotated)
+   annotated(std::move(_annotated))
 #if HAVE_HLS_BUILT
    ,schedule(GetPointer<const HLS_manager>(_g->CGetBBGraphInfo()->AppM) and GetPointer<const HLS_manager>(_g->CGetBBGraphInfo()->AppM)->get_HLS(helper->get_function_index()) ?  GetPointer<const HLS_manager>(_g->CGetBBGraphInfo()->AppM)->get_HLS(helper->get_function_index())->Rsch : ScheduleConstRef())
 #endif
@@ -140,12 +137,12 @@ void BBWriter::operator()(std::ostream& out, const vertex& v) const
 #endif
             res += " -> " + helper->print_node(phi->index, nullptr, svpf);
             std::string temp;
-            for (unsigned int i = 0; i < res.size(); i++)
+            for (char re : res)
             {
-               if (res[i] == '\"')
+               if (re == '\"')
                   temp += "\\\"";
-               else if (res[i] != '\n')
-                  temp += res[i];
+               else if (re != '\n')
+                  temp += re;
             }
             out << temp << "\\l";
          }
@@ -214,12 +211,12 @@ void BBWriter::operator()(std::ostream& out, const vertex& v) const
                   break;
             }
             std::string temp;
-            for (unsigned int i = 0; i < res.size(); i++)
+            for (char re : res)
             {
-               if (res[i] == '\"')
+               if (re == '\"')
                   temp += "\\\"";
-               else if (res[i] != '\n')
-                  temp += res[i];
+               else if (re != '\n')
+                  temp += re;
             }
             out << temp << "\\l";
          }
@@ -281,7 +278,7 @@ void OpEdgeWriter::operator()(std::ostream& out, const EdgeDescriptor& e) const
    else if((FB_FLG_SELECTOR) & selector & printing_graph->GetSelector(e))
       out << "[color=pink";
 
-   const OpEdgeInfo * edge_info = Cget_edge_info<OpEdgeInfo>(e, *printing_graph);
+   const auto * edge_info = Cget_edge_info<OpEdgeInfo>(e, *printing_graph);
 
    if(edge_info)
    {
@@ -384,7 +381,7 @@ OpWriter::OpWriter(const OpGraph * operation_graph, const int _detail_level) :
 
 void OpWriter::operator()(std::ostream& out, const vertex& v) const
 {
-   const OpGraph * op_graph = dynamic_cast<const OpGraph *>(printing_graph);
+   const auto * op_graph = dynamic_cast<const OpGraph *>(printing_graph);
    if(GET_TYPE(printing_graph, v) & (TYPE_IF | TYPE_SWITCH))
       out << "[color=red,shape=diamond,";
    else if(GET_TYPE(printing_graph, v) & TYPE_LOAD)
@@ -432,7 +429,7 @@ TimedOpWriter::TimedOpWriter(const OpGraph * op_graph, const hlsConstRef _HLS, c
 void TimedOpWriter::operator()(std::ostream& out, const vertex& v) const
 {
    const auto schedule = HLS->Rsch;
-   const OpGraph * op_graph = dynamic_cast<const OpGraph *>(printing_graph);
+   const auto * op_graph = dynamic_cast<const OpGraph *>(printing_graph);
    const unsigned node_id = op_graph->CGetOpNodeInfo(v)->GetNodeId();
    if(critical_paths.find(node_id) != critical_paths.end())
    {
@@ -465,7 +462,7 @@ void TimedOpWriter::operator()(std::ostream& out, const vertex& v) const
 TimedOpEdgeWriter::TimedOpEdgeWriter(const OpGraph * _operation_graph, const hlsConstRef _HLS, CustomSet<unsigned int> _critical_paths) :
    OpEdgeWriter(_operation_graph),
    HLS(_HLS),
-   critical_paths(_critical_paths)
+   critical_paths(std::move(_critical_paths))
 {
 }
 
@@ -473,7 +470,7 @@ void TimedOpEdgeWriter::operator()(std::ostream& out, const EdgeDescriptor& e) c
 {
    const auto source = boost::source(e, *printing_graph);
    const auto target = boost::target(e, *printing_graph);
-   const OpGraph * op_graph = dynamic_cast<const OpGraph *>(printing_graph);
+   const auto * op_graph = dynamic_cast<const OpGraph *>(printing_graph);
    const auto source_id = op_graph->CGetOpNodeInfo(source)->GetNodeId();
    const auto target_id = op_graph->CGetOpNodeInfo(target)->GetNodeId();
    out << "[";

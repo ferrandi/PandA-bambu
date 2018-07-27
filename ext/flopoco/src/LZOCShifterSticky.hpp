@@ -33,7 +33,7 @@ namespace flopoco{
 		LZOCShifterSticky(Target* target, int wIn, int wOut, int wCount, bool compute_sticky, const int countType=-1, map<string, double> inputDelays = emptyDelayMap);
 	
 		/** The LZOCShifterSticky destructor */
-		~LZOCShifterSticky();
+		~LZOCShifterSticky() override;
 
 		/** Sets the type of the entity for this operator
 		 * @param eType the type of the entity for this operator. Can be
@@ -49,7 +49,7 @@ namespace flopoco{
 	
 	
 	
-		void emulate(TestCase* tc);
+		void emulate(TestCase* tc) override;
 	
 		double compDelay(int n){
 			if ( countType_ == -1 )

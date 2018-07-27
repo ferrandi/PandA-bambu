@@ -42,44 +42,21 @@
  * Last modified by $Author$
  *
 */
-
-///Autoheader include
-#include "config_HAVE_HOST_PROFILING_BUILT.hpp"
-#include "config_HAVE_POLIXML_BUILT.hpp"
-
-///Header include
 #include "call_graph.hpp"
 
-///Behavior include
-#include "behavioral_helper.hpp"
-#include "function_behavior.hpp"
-#include "loop.hpp"
-#include "loops.hpp"
-#include "op_graph.hpp"
-#if HAVE_HOST_PROFILING_BUILT
-#include "profiling_information.hpp"
-#endif
-///Boost include
-#include <boost/filesystem/path.hpp>
-#include <boost/filesystem/operations.hpp>
-
-///Graph include
-#include "graph.hpp"
-#include <boost/graph/graphviz.hpp>
-
-///Paramter include
-#include "Parameter.hpp"
-
-///Utility include
-#include <boost/date_time/posix_time/posix_time.hpp>
-
-///XML include
-#if HAVE_POLIXML_BUILT
-#include "xml_helper.hpp"
-#include "polixml.hpp"
-#include "xml_dom_parser.hpp"
-#include "xml_document.hpp"
-#endif
+#include "config_HAVE_HOST_PROFILING_BUILT.hpp"
+#include <boost/filesystem/operations.hpp>        // for create_directories
+#include <boost/iterator/iterator_facade.hpp>     // for operator!=, operator++
+#include <boost/lexical_cast.hpp>                 // for lexical_cast
+#include <ostream>                                // for operator<<, ostream
+#include <utility>                                // for pair
+#include "Parameter.hpp"                          // for OPT_dot_directory
+#include "behavioral_helper.hpp"                  // for BehavioralHelper
+#include "exceptions.hpp"                         // for THROW_ASSERT, THROW...
+#include "function_behavior.hpp"                  // for FunctionBehavior
+#include "graph.hpp"                              // for graph, Cget_edge_info
+#include "loops.hpp"                              // for FunctionBehaviorRef
+#include "string_manipulation.hpp"                // for add_escape
 
 /**
  * @name function graph selector
@@ -96,14 +73,14 @@ FunctionInfo::FunctionInfo() :
 {}
 
 FunctionEdgeInfo::FunctionEdgeInfo()
-{}
+= default;
 
 CallGraphsCollection::CallGraphsCollection(const CallGraphInfoRef call_graph_info, const ParameterConstRef _parameters) :
    graphs_collection(call_graph_info, _parameters)
 {}
 
 CallGraphsCollection::~CallGraphsCollection()
-{}
+= default;
 
 CallGraph::CallGraph(const CallGraphsCollectionRef call_graphs_collection, const int _selector) :
    graph(call_graphs_collection.get(), _selector)
@@ -114,7 +91,7 @@ CallGraph::CallGraph(const CallGraphsCollectionRef call_graphs_collection, const
 {}
 
 CallGraph::~CallGraph()
-{}
+= default;
 
 void CallGraph::WriteDot(const std::string& file_name) const
 {
@@ -141,9 +118,9 @@ void FunctionWriter::operator()(std::ostream & out, const vertex & v) const
    if (mem_nodeID.size())
    {
       out << "\\nMEMORY:";
-      for(std::set<unsigned int>::const_iterator l = mem_nodeID.begin(); l != mem_nodeID.end(); ++l)
+      for(unsigned int l : mem_nodeID)
       {
-         std::string label = FB->CGetBehavioralHelper()->PrintVariable(*l);
+         std::string label = FB->CGetBehavioralHelper()->PrintVariable(l);
          add_escape(label, "\"");
 	 out << "\\n";
          out << label;
@@ -158,7 +135,7 @@ FunctionEdgeWriter::FunctionEdgeWriter(const CallGraph * call_graph) :
 {}
 
 FunctionEdgeWriter::~FunctionEdgeWriter()
-{}
+= default;
 
 void FunctionEdgeWriter::operator()(std::ostream& out, const EdgeDescriptor& e) const
 {

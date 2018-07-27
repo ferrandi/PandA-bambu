@@ -43,7 +43,9 @@
 #ifndef LEVEL_CONSTRUCTOR_HPP
 #define LEVEL_CONSTRUCTOR_HPP
 
-
+#include <map>
+#include <deque>
+#include "graph.hpp"     // for vertex
 #include "refcount.hpp"
 
 /**
@@ -52,10 +54,7 @@
 //@{
 REF_FORWARD_DECL(level_constructor);
 //@}
-#include "Vertex.hpp"
 
-#include <map>
-#include <deque>
 
 /**
  * level manager.

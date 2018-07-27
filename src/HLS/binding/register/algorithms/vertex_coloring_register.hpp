@@ -58,13 +58,13 @@ class vertex_coloring_register : public conflict_based_register
       /**
        * Destructor of the class.
        */
-      ~vertex_coloring_register();
+      ~vertex_coloring_register() override;
 
       /**
        * Execute the step
        * @return the exit status of this step
        */
-      virtual DesignFlowStep_Status InternalExec();
+      DesignFlowStep_Status InternalExec() override;
 
 };
 

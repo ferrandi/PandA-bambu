@@ -88,7 +88,7 @@ class compatibility_based_register : public reg_binding_creator
       /**
        * Destructor
        */
-      virtual ~compatibility_based_register();
+      ~compatibility_based_register() override;
 
       /**
        * Creates the compatibility graph

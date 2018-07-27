@@ -51,6 +51,8 @@
 #include "function_behavior.hpp"
 #include "op_graph.hpp"
 #include "operations_graph_constructor.hpp"
+#include "hash_helper.hpp"
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 OpCdgComputation::OpCdgComputation(const ParameterConstRef _Param, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager) :
    FunctionFrontendFlowStep(_AppM, _function_id, OP_CONTROL_DEPENDENCE_COMPUTATION, _design_flow_manager, _Param)
@@ -59,8 +61,7 @@ OpCdgComputation::OpCdgComputation(const ParameterConstRef _Param, const applica
 }
 
 OpCdgComputation::~OpCdgComputation()
-{
-}
+= default;
 
 const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship> > OpCdgComputation::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {

@@ -42,14 +42,22 @@
 */
 
 ///Autoheader include
-#include "config_HAVE_CODE_ESTIMATION_BUILT.hpp"
-#include "config_HAVE_SPARC_COMPILER.hpp"
-#include "config_HAVE_RTL_BUILT.hpp"
-#include "config_SKIP_WARNING_SECTIONS.hpp"
-#include "config_HAVE_FROM_PRAGMA_BUILT.hpp"
+#include "config_HAVE_ASSERTS.hpp"                // for HAVE_ASSERTS
+#include "config_HAVE_CODE_ESTIMATION_BUILT.hpp"  // for HAVE_CODE_ESTIMATIO...
+#include "config_HAVE_FROM_PRAGMA_BUILT.hpp"      // for HAVE_FROM_PRAGMA_BUILT
+#include "config_HAVE_RTL_BUILT.hpp"              // for HAVE_RTL_BUILT
+#include "config_HAVE_SPARC_COMPILER.hpp"         // for HAVE_SPARC_COMPILER
+#include "config_RELEASE.hpp"                     // for RELEASE
 
 ///Header include
 #include "behavioral_helper.hpp"
+
+#include <cstddef>                               // for size_t
+#include <boost/algorithm/string/replace.hpp>     // for replace_all
+
+#include <string>                                 // for operator+, string
+#include <unordered_map>                          // for unordered_map, unor...
+#include <vector>                                 // for vector, allocator
 
 ///Behavior include
 #include "application_manager.hpp"
@@ -77,8 +85,6 @@
 #include "weight_information.hpp"
 #endif
 
-///STD include
-#include <string>
 
 ///Tree include
 #include "ext_tree_node.hpp"
@@ -94,9 +100,8 @@
 ///Utility include
 #include "boost/lexical_cast.hpp"
 #include "exceptions.hpp"
-#include "simple_indent.hpp"
-#include "utility.hpp"
 #include "var_pp_functor.hpp"
+#include "string_manipulation.hpp"          // for STR
 
 #include "type_casting.hpp"
 
@@ -125,8 +130,7 @@ BehavioralHelper::BehavioralHelper(const application_managerRef _AppM, unsigned 
 }
 
 BehavioralHelper::~BehavioralHelper()
-{
-}
+= default;
 
 std::tuple<std::string, unsigned int, unsigned int> BehavioralHelper::get_definition(unsigned int index, bool &is_system) const
 {
@@ -197,12 +201,12 @@ std::string BehavioralHelper::print_vertex(const OpGraphConstRef g, const vertex
    {
       boost::replace_all(res, "\\\"", "&quot;");
       std::string ret;
-      for (unsigned int i = 0; i < res.size(); i++)
+      for (char re : res)
       {
-         if (res[i] == '\"')
+         if (re == '\"')
             ret += "\\\"";
-         else if (res[i] != '\n')
-            ret += res[i];
+         else if (re != '\n')
+            ret += re;
          else
             ret += "\\\n";
       }
@@ -240,7 +244,7 @@ std::string BehavioralHelper::print_init(unsigned int var, const var_pp_functorC
    {
       case constructor_K:
       {
-         constructor *constr = GetPointer<constructor>(node);
+         auto *constr = GetPointer<constructor>(node);
          bool designated_initializers_needed = false;
          res += '{';
          std::vector<std::pair< tree_nodeRef, tree_nodeRef> >::const_iterator i = constr->list_of_idx_valu.begin();
@@ -249,7 +253,7 @@ std::string BehavioralHelper::print_init(unsigned int var, const var_pp_functorC
          tree_nodeRef firstnode = i != vend ? constr->list_of_idx_valu.begin()->first : tree_nodeRef();
          if (firstnode && GET_NODE(firstnode)->get_kind() == field_decl_K)
          {
-            field_decl * fd = GetPointer<field_decl>(GET_NODE(firstnode));
+            auto * fd = GetPointer<field_decl>(GET_NODE(firstnode));
             tree_nodeRef scpe = GET_NODE(fd->scpe);
             std::vector<tree_nodeRef> field_list;
             if (scpe->get_kind() == record_type_K)
@@ -285,7 +289,7 @@ std::string BehavioralHelper::print_init(unsigned int var, const var_pp_functorC
             THROW_ASSERT(val, "Something of unexpected happen");
             if (val->get_kind() == addr_expr_K)
             {
-               addr_expr *ae = GetPointer<addr_expr>(val);
+               auto *ae = GetPointer<addr_expr>(val);
                tree_nodeRef op = GET_NODE(ae->op);
                if (op->get_kind() == function_decl_K)
                {
@@ -351,7 +355,7 @@ std::string BehavioralHelper::print_init(unsigned int var, const var_pp_functorC
       }
       case var_decl_K:
       {
-         var_decl * vd = GetPointer<var_decl>(node);
+         auto * vd = GetPointer<var_decl>(node);
          THROW_ASSERT(vd->init, "expected a initialization value: "+STR(var));
          res += print_init(GET_INDEX_NODE(vd->init), vppf);
          break;
@@ -512,7 +516,7 @@ std::string BehavioralHelper::print_attributes(unsigned int var, const var_pp_fu
    std::string res;
    if (first)
       res += "__attribute__ (";
-   tree_list* tl = GetPointer<tree_list>(TM->get_tree_node_const(var));
+   auto* tl = GetPointer<tree_list>(TM->get_tree_node_const(var));
    if (tl->purp)
       res += "(" + PrintVariable(GET_INDEX_NODE(tl->purp));
    if (tl->valu && GET_NODE(tl->valu)->get_kind() == tree_list_K)
@@ -549,7 +553,7 @@ std::string BehavioralHelper::PrintVariable(unsigned int var) const
    const tree_nodeRef temp = TM->get_tree_node_const(var);
    if (temp->get_kind() == indirect_ref_K)
    {
-      indirect_ref * ir = GetPointer<indirect_ref>(temp);
+      auto * ir = GetPointer<indirect_ref>(temp);
       unsigned int pointer = GET_INDEX_NODE(ir->op);
       std::string pointer_name = PrintVariable(pointer);
       vars_symbol_table[var] = "*" + pointer_name;
@@ -557,7 +561,7 @@ std::string BehavioralHelper::PrintVariable(unsigned int var) const
    }
    if(temp->get_kind() == misaligned_indirect_ref_K)
    {
-      misaligned_indirect_ref * mir = GetPointer<misaligned_indirect_ref>(temp);
+      auto * mir = GetPointer<misaligned_indirect_ref>(temp);
       unsigned int pointer = GET_INDEX_NODE(mir->op);
       std::string pointer_name = PrintVariable(pointer);
       vars_symbol_table[var] = "*" + pointer_name;
@@ -565,7 +569,7 @@ std::string BehavioralHelper::PrintVariable(unsigned int var) const
    }
    if(temp->get_kind() == mem_ref_K)
    {
-       mem_ref * mr = GetPointer<mem_ref>(temp);
+       auto * mr = GetPointer<mem_ref>(temp);
        long long int offset = tree_helper::get_integer_cst_value(GetPointer<integer_cst>(GET_NODE(mr->op1)));
        tree_managerRef temp_TM(const_cast<tree_manager *>(TM.get()), null_deleter());
        const tree_manipulationRef tm(new tree_manipulation(temp_TM, Param));
@@ -579,16 +583,16 @@ std::string BehavioralHelper::PrintVariable(unsigned int var) const
    }
    if (temp->get_kind() == identifier_node_K)
    {
-      identifier_node * in = GetPointer<identifier_node>(temp);
+      auto * in = GetPointer<identifier_node>(temp);
       vars_symbol_table[var] = in->strg;
       return vars_symbol_table[var];
    }
    if (temp->get_kind() == field_decl_K)
    {
-      field_decl * fd = GetPointer<field_decl>(temp);
+      auto * fd = GetPointer<field_decl>(temp);
       if (fd->name)
       {
-         identifier_node * id = GetPointer<identifier_node>(GET_NODE(fd->name));
+         auto * id = GetPointer<identifier_node>(GET_NODE(fd->name));
          return tree_helper::normalized_ID(id->strg);
       }
       else
@@ -598,12 +602,12 @@ std::string BehavioralHelper::PrintVariable(unsigned int var) const
    }
    if (temp->get_kind() == function_decl_K)
    {
-      function_decl * fd = GetPointer<function_decl>(temp);
+      auto * fd = GetPointer<function_decl>(temp);
       return tree_helper::print_function_name(TM, fd);
    }
    if (temp->get_kind() == ssa_name_K)
    {
-      ssa_name * sa = GetPointer<ssa_name>(temp);
+      auto * sa = GetPointer<ssa_name>(temp);
       std::string name;
       if(sa->var)
       {
@@ -622,10 +626,10 @@ std::string BehavioralHelper::PrintVariable(unsigned int var) const
    }
    if (temp->get_kind() == var_decl_K || temp->get_kind() == parm_decl_K)
    {
-      decl_node * dn = GetPointer<decl_node>(temp);
+      auto * dn = GetPointer<decl_node>(temp);
       if (dn->name)
       {
-         identifier_node * id = GetPointer<identifier_node>(GET_NODE(dn->name));
+         auto * id = GetPointer<identifier_node>(GET_NODE(dn->name));
          vars_symbol_table[var] = tree_helper::normalized_ID(id->strg);
          return vars_symbol_table[var];
       }
@@ -650,9 +654,9 @@ std::string BehavioralHelper::print_constant(unsigned int var, const var_pp_func
       case integer_cst_K:
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->integer_cst");
-         integer_cst *ic = GetPointer<integer_cst>(node);
+         auto *ic = GetPointer<integer_cst>(node);
          tree_nodeRef type = GET_NODE(ic->type);
-         integer_type* it = GetPointer<integer_type>(type);
+         auto* it = GetPointer<integer_type>(type);
          bool unsigned_flag = (it && it->unsigned_flag) || type->get_kind() == pointer_type_K || type->get_kind() == reference_type_K || type->get_kind() == boolean_type_K;
 #if 0
          ///check if the IR type is consistent with the type name
@@ -712,7 +716,7 @@ std::string BehavioralHelper::print_constant(unsigned int var, const var_pp_func
       }
       case real_cst_K:
       {
-         real_cst *rc = GetPointer<real_cst>(node);
+         auto *rc = GetPointer<real_cst>(node);
          if (rc->overflow_flag)
             res += " overflow";
          tree_nodeRef type = GET_NODE(rc->type);
@@ -782,7 +786,7 @@ std::string BehavioralHelper::print_constant(unsigned int var, const var_pp_func
       }
       case complex_cst_K:
       {
-         complex_cst *cc = GetPointer<complex_cst>(node);
+         auto *cc = GetPointer<complex_cst>(node);
 
          res += print_constant(GET_INDEX_NODE(cc->real), vppf);
          res += "+";
@@ -792,12 +796,12 @@ std::string BehavioralHelper::print_constant(unsigned int var, const var_pp_func
       }
       case string_cst_K:
       {
-         string_cst * sc = GetPointer<string_cst>(node);
+         auto * sc = GetPointer<string_cst>(node);
          if (sc->type)
          {
-            array_type *at = GetPointer<array_type>(GET_NODE(sc->type));
+            auto *at = GetPointer<array_type>(GET_NODE(sc->type));
             THROW_ASSERT(at, "Expected an array type");
-            integer_type *elts = GetPointer<integer_type>(GET_NODE(at->elts));
+            auto *elts = GetPointer<integer_type>(GET_NODE(at->elts));
             if (elts->prec == 32)//wide char string
             {
                if(elts->unsigned_flag and not tree_helper::is_system(TM, GET_INDEX_NODE(at->elts)))
@@ -812,7 +816,7 @@ std::string BehavioralHelper::print_constant(unsigned int var, const var_pp_func
       }
       case vector_cst_K:
       {
-         vector_cst *vc = GetPointer<vector_cst>(node);
+         auto *vc = GetPointer<vector_cst>(node);
          THROW_ASSERT(GET_NODE(vc->type)->get_kind() == vector_type_K, "Vector constant of type " + GET_NODE(vc->type)->get_kind_text());
          if(GET_NODE(GetPointer<const vector_type>(GET_NODE(vc->type))->elts)->get_kind() != pointer_type_K)
             res += "(" + tree_helper::print_type(TM, GET_INDEX_NODE(vc->type), false, true) + ") ";
@@ -828,7 +832,7 @@ std::string BehavioralHelper::print_constant(unsigned int var, const var_pp_func
       }
       case case_label_expr_K:
       {
-         case_label_expr * cl = GetPointer<case_label_expr>(node);
+         auto * cl = GetPointer<case_label_expr>(node);
          if (cl->default_flag)
             res += "default";
          else
@@ -853,16 +857,16 @@ std::string BehavioralHelper::print_constant(unsigned int var, const var_pp_func
       }
       case label_decl_K:
       {
-         label_decl * ld = GetPointer<label_decl>(node);
+         auto * ld = GetPointer<label_decl>(node);
          THROW_ASSERT(ld->name, "name expected in a label_decl");
-         identifier_node * id = GetPointer<identifier_node>(GET_NODE(ld->name));
+         auto * id = GetPointer<identifier_node>(GET_NODE(ld->name));
          THROW_ASSERT(id, "expected an identifier_node");
          res += id->strg;
          break;
       }
       case nop_expr_K:
       {
-         unary_expr *ue = GetPointer<unary_expr>(node);
+         auto *ue = GetPointer<unary_expr>(node);
          if (!(GET_NODE(ue->op)->get_kind() == addr_expr_K && GET_NODE(GetPointer<addr_expr>(GET_NODE(ue->op))->op)->get_kind() == label_decl_K))
             res += "(" + tree_helper::print_type(TM, GET_INDEX_NODE(ue->type)) + ") ";
          res += print_constant(GET_INDEX_NODE(ue->op), vppf);
@@ -870,7 +874,7 @@ std::string BehavioralHelper::print_constant(unsigned int var, const var_pp_func
       }
       case addr_expr_K:
       {
-         unary_expr *ue = GetPointer<unary_expr>(node);
+         auto *ue = GetPointer<unary_expr>(node);
          if (is_a_constant(GET_INDEX_NODE(ue->op)))
          {
             res += "(&(" + print_constant(GET_INDEX_NODE(ue->op)) +"))";
@@ -993,26 +997,26 @@ const std::list<unsigned int> BehavioralHelper::get_parameters() const
 {
    std::list<unsigned int> parameters;
    tree_nodeRef fun = TM->get_tree_node_const(function_index);
-   function_decl* fd = GetPointer<function_decl>(fun);
+   auto* fd = GetPointer<function_decl>(fun);
    const std::vector <tree_nodeRef> &list_of_args = fd->list_of_args;
    if (fd->list_of_args.size())
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Parameter list size: " + STR(list_of_args.size()));
-      for (unsigned int i = 0; i < list_of_args.size(); i++)
+      for (const auto & list_of_arg : list_of_args)
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Adding parameter " + STR(GET_INDEX_NODE(list_of_args[i])));
-         parameters.push_back(GET_INDEX_NODE(list_of_args[i]));
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Adding parameter " + STR(GET_INDEX_NODE(list_of_arg)));
+         parameters.push_back(GET_INDEX_NODE(list_of_arg));
       }
    }
    else
    {
-      function_type * ft = GetPointer<function_type>(GET_NODE(fd->type));
+      auto * ft = GetPointer<function_type>(GET_NODE(fd->type));
       if (ft->prms)
       {
          tree_nodeRef currentp = ft->prms;
          while (currentp)
          {
-            tree_list * tl = GetPointer<tree_list>(GET_NODE(currentp));
+            auto * tl = GetPointer<tree_list>(GET_NODE(currentp));
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Adding parameter " + STR(GET_INDEX_NODE(tl->valu)));
             if(GET_NODE(tl->valu)->get_kind() != void_type_K)
                parameters.push_back(GET_INDEX_NODE(tl->valu));
@@ -1128,7 +1132,7 @@ std::string BehavioralHelper::PrintVarDeclaration(unsigned int var, var_pp_funct
 unsigned int BehavioralHelper::is_coming_from_phi_node(unsigned int nodeID) const
 {
    tree_nodeRef tn = TM->get_tree_node_const(nodeID);
-   gimple_assign * gms = GetPointer<gimple_assign>(tn);
+   auto * gms = GetPointer<gimple_assign>(tn);
    if (gms && gms->orig)
       return GET_INDEX_NODE(gms->orig);
    else
@@ -1155,7 +1159,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
       case plus_expr_K:
       {
          const std::string op = tree_helper::op_symbol (node);
-         binary_expr *be = GetPointer<binary_expr>(node);
+         auto *be = GetPointer<binary_expr>(node);
          unsigned int left_op = GET_INDEX_NODE(be->op0);
          unsigned int right_op = GET_INDEX_NODE(be->op1);
          unsigned int left_op_type_index = 0;
@@ -1223,7 +1227,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
       case bit_xor_expr_K:
       case bit_and_expr_K:
       {
-         binary_expr *be = GetPointer<binary_expr>(node);
+         auto *be = GetPointer<binary_expr>(node);
          unsigned int left_op_type_index = 0;
          tree_helper::get_type_node(GET_NODE(be->op0), left_op_type_index);
          unsigned int right_op_type_index = 0;
@@ -1298,7 +1302,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
       }
       case vec_rshift_expr_K:
       {
-         vec_rshift_expr * vre = GetPointer<vec_rshift_expr>(node);
+         auto * vre = GetPointer<vec_rshift_expr>(node);
          const unsigned int element_type = tree_helper::GetElements(TM, GET_INDEX_NODE(vre->type));
          const unsigned int element_size = static_cast<unsigned int>(tree_helper::size(TM, element_type));
          const unsigned int size = static_cast<unsigned int>(tree_helper::size(TM, GET_INDEX_NODE(vre->type)));
@@ -1327,7 +1331,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
       }
       case vec_lshift_expr_K:
       {
-         vec_lshift_expr * vle = GetPointer<vec_lshift_expr>(node);
+         auto * vle = GetPointer<vec_lshift_expr>(node);
          const unsigned int element_type = tree_helper::GetElements(TM, GET_INDEX_NODE(vle->type));
          const unsigned int element_size = static_cast<unsigned int>(tree_helper::size(TM, element_type));
          const unsigned int size = static_cast<unsigned int>(tree_helper::size(TM, GET_INDEX_NODE(vle->type)));
@@ -1379,7 +1383,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
       case truth_xor_expr_K:
       {
          const std::string op = tree_helper::op_symbol (node);
-         binary_expr *be = GetPointer<binary_expr>(node);
+         auto *be = GetPointer<binary_expr>(node);
          unsigned int left_op = GET_INDEX_NODE(be->op0);
          unsigned int right_op = GET_INDEX_NODE(be->op1);
          unsigned int left_op_type_index = 0;
@@ -1450,7 +1454,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
       case widen_mult_expr_K:
       {
          const std::string op = tree_helper::op_symbol (node);
-         binary_expr *be = GetPointer<binary_expr>(node);
+         auto *be = GetPointer<binary_expr>(node);
          unsigned int left_op = GET_INDEX_NODE(be->op0);
          unsigned int right_op = GET_INDEX_NODE(be->op1);
          unsigned int return_index;
@@ -1466,7 +1470,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
          bool binary_op_cast = is_a_pointer(index);
          const std::string op = tree_helper::op_symbol (node);
-         pointer_plus_expr *ppe = GetPointer<pointer_plus_expr>(node);
+         auto *ppe = GetPointer<pointer_plus_expr>(node);
          unsigned int temp = 0;
          tree_nodeRef type_node = tree_helper::get_type_node(GET_NODE(ppe->op0), temp);
          unsigned int left_op = GET_INDEX_NODE(ppe->op0);
@@ -1495,7 +1499,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Pointed type (" +  boost::lexical_cast<std::string>(get_pointed_type(tree_helper::get_type_index(TM,left_op))) + ") is " + pointed_type->get_kind_text());
          if (pointed_type->get_kind() == void_type_K)
          {
-            void_type * vt = GetPointer<void_type>(pointed_type);
+            auto * vt = GetPointer<void_type>(pointed_type);
             deltabit = vt->algn;
          }
          else
@@ -1514,9 +1518,9 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
             else if (pointed_type->get_kind() != array_type_K && deltabit and pointer_offset > deltabit && ((pointer_offset % (deltabit / 8)) == 0))
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Arithmetic pointer pattern matched");
-               integer_cst * ic = GetPointer<integer_cst>(right_op_node);
+               auto * ic = GetPointer<integer_cst>(right_op_node);
                tree_nodeRef ic_type = GET_NODE(ic->type);
-               integer_type* it = GetPointer<integer_type>(ic_type);
+               auto* it = GetPointer<integer_type>(ic_type);
                if (it && (it->prec == 32))
                {
                   pointer_offset = static_cast<int>(pointer_offset) / static_cast<int>(deltabit / 8);
@@ -1548,7 +1552,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
                         exit = true;
                         break;
                      }
-                     ssa_name * rssa = GetPointer<ssa_name>(right_op_node);
+                     auto * rssa = GetPointer<ssa_name>(right_op_node);
                      tree_nodeRef defstmt = GET_NODE(rssa->CGetDefStmt());
                      if(defstmt->get_kind() != gimple_assign_K)
                      {
@@ -1566,7 +1570,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
                   }
                   case(mult_expr_K) :
                   {
-                     mult_expr * mult = GetPointer<mult_expr>(right_op_node);
+                     auto * mult = GetPointer<mult_expr>(right_op_node);
                      if (GET_NODE(mult->op1)->get_kind() == integer_cst_K)
                      {
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Right part of multiply is an integer constant " + boost::lexical_cast<std::string>(GET_INDEX_NODE(mult->op1)));
@@ -1585,7 +1589,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
                            tree_nodeRef temp1 = tree_helper::get_type_node(GET_NODE(mult->op1), integer_type_index);
                            THROW_ASSERT(GetPointer<integer_type>(temp1), "Type of integer cast " + boost::lexical_cast<std::string>(GET_INDEX_NODE(mult->op1)) + " is not an integer type");
                            const integer_type * it = GetPointer<integer_type>(temp1);
-                           unsigned long long max_int = static_cast<unsigned long long>(tree_helper::get_integer_cst_value(GetPointer<integer_cst>(GET_NODE(it->max))));
+                           auto max_int = static_cast<unsigned long long>(tree_helper::get_integer_cst_value(GetPointer<integer_cst>(GET_NODE(it->max))));
                            long long new_size_of_pointer = static_cast<long long>(max_int) + 1 - size_of_pointer;
                            if (new_size_of_pointer == (deltabit / 8))
                            {
@@ -1620,7 +1624,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
                            tree_nodeRef temp1 = tree_helper::get_type_node(GET_NODE(mult->op0), integer_type_index);
                            THROW_ASSERT(GetPointer<integer_type>(temp1), "Type of integer cast " + boost::lexical_cast<std::string>(GET_INDEX_NODE(mult->op0)) + " is not an integer type");
                            const integer_type * it = GetPointer<integer_type>(temp1);
-                           unsigned long long max_int = static_cast<unsigned long long>(tree_helper::get_integer_cst_value(GetPointer<integer_cst>(GET_NODE(it->max))));
+                           auto max_int = static_cast<unsigned long long>(tree_helper::get_integer_cst_value(GetPointer<integer_cst>(GET_NODE(it->max))));
                            long long new_size_of_pointer = static_cast<long long>(max_int) + 1 - size_of_pointer;
                            if (new_size_of_pointer == (deltabit / 8))
                            {
@@ -1642,7 +1646,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
                   case(negate_expr_K) :
                   {
                      right_offset_var += "-";
-                     negate_expr * ne = GetPointer<negate_expr>(right_op_node);
+                     auto * ne = GetPointer<negate_expr>(right_op_node);
                      right_op_node = GET_NODE(ne->op);
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "New op node is " + boost::lexical_cast<std::string>(GET_INDEX_NODE(ne->op)) + " - " + right_op_node->get_kind_text());
                      break;
@@ -1650,7 +1654,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
                   case paren_expr_K:
                   case(nop_expr_K) :
                   {
-                     nop_expr * ne = GetPointer<nop_expr>(right_op_node);
+                     auto * ne = GetPointer<nop_expr>(right_op_node);
                      right_op_node = GET_NODE(ne->op);
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "New op node is " + boost::lexical_cast<std::string>(GET_INDEX_NODE(ne->op)) + " - " + right_op_node->get_kind_text());
                      break;
@@ -1840,7 +1844,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
             {
                res += boost::lexical_cast<std::string>(pointer_offset);
                tree_nodeRef type = GET_NODE(GetPointer<integer_cst>(right_op_node)->type);
-               integer_type* it = GetPointer<integer_type>(type);
+               auto* it = GetPointer<integer_type>(type);
                bool unsigned_flag = (it && it->unsigned_flag) || type->get_kind() == pointer_type_K || type->get_kind() == boolean_type_K || type->get_kind() == enumeral_type_K;
                if (unsigned_flag)
                   res += "u";
@@ -1874,7 +1878,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
          if (binary_op_cast)
             res += "((" + tree_helper::print_type(TM, get_type(index)) + ")(";
          const std::string op = tree_helper::op_symbol (node);
-         binary_expr *be = GetPointer<binary_expr>(node);
+         auto *be = GetPointer<binary_expr>(node);
          unsigned int left_op = GET_INDEX_NODE(be->op0);
          unsigned int right_op = GET_INDEX_NODE(be->op1);
 
@@ -1953,7 +1957,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
          const tree_nodeRef type = TM->get_tree_node_const(type_index);
          if (binary_op_cast)
             res += "((" + tree_helper::print_type(TM, type_index) + ")(";
-         binary_expr *be = GetPointer<binary_expr>(node);
+         auto *be = GetPointer<binary_expr>(node);
          unsigned int left_op = GET_INDEX_NODE(be->op0);
          bool left_op_cast = is_a_pointer(left_op);
          unsigned int right_op = GET_INDEX_NODE(be->op1);
@@ -1995,7 +1999,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
       }
       case lut_expr_K:
       {
-         lut_expr *le = GetPointer<lut_expr>(node);
+         auto *le = GetPointer<lut_expr>(node);
          res = res + "(" + print_node(le->op1->index, v, vppf) + ">>" + print_node(GET_INDEX_NODE(le->op0), v, vppf) + ")&1";
          break;
       }
@@ -2006,7 +2010,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
       case preincrement_expr_K:
       {
          const std::string op = tree_helper::op_symbol (node);
-         unary_expr *ue = GetPointer<unary_expr>(node);
+         auto *ue = GetPointer<unary_expr>(node);
          res = res + " " + op + "(" + print_node(GET_INDEX_NODE(ue->op), v, vppf) + ")";
          break;
       }
@@ -2041,9 +2045,9 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
       case imagpart_expr_K:
       {
          const std::string op = tree_helper::op_symbol (node);
-         unary_expr *ue = GetPointer<unary_expr>(node);
+         auto *ue = GetPointer<unary_expr>(node);
          res = res + " " + op + print_node(GET_INDEX_NODE(ue->op), v, vppf);
-         ssa_name* sa = GetPointer<ssa_name>(GET_NODE(ue->op));
+         auto* sa = GetPointer<ssa_name>(GET_NODE(ue->op));
          if (sa and (sa->volatile_flag || GET_NODE(sa->CGetDefStmt())->get_kind() == gimple_nop_K) and sa->var and GetPointer<var_decl>(GET_NODE(sa->var)))
          {
             res += " = 0";
@@ -2052,7 +2056,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
       }
       case addr_expr_K:
       {
-         addr_expr *ue = GetPointer<addr_expr>(node);
+         auto *ue = GetPointer<addr_expr>(node);
          if(GetPointer<component_ref>(GET_NODE(ue->op)) and has_bit_field(GET_INDEX_NODE(GetPointer<component_ref>(GET_NODE(ue->op))->op1)))
          {
             THROW_ERROR_CODE(BITFIELD_EC, "Trying to get the address of a bitfield");
@@ -2083,7 +2087,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
       }
       case function_decl_K:
       {
-         function_decl * fd = GetPointer<function_decl>(node);
+         auto * fd = GetPointer<function_decl>(node);
          res += tree_helper::print_function_name(TM, fd);
          break;
       }
@@ -2095,7 +2099,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
       case convert_expr_K:
       case nop_expr_K:
       {
-         unary_expr *ue = GetPointer<unary_expr>(node);
+         auto *ue = GetPointer<unary_expr>(node);
          unsigned int return_index = 0;
          const tree_nodeRef type = tree_helper::get_type_node(node, return_index);
          unsigned int prec = 0;
@@ -2173,13 +2177,13 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
       }
       case component_ref_K:
       {
-         component_ref * cr = GetPointer<component_ref>(node);
+         auto * cr = GetPointer<component_ref>(node);
          res = "(" + print_node(GET_INDEX_NODE(cr->op0), v, vppf) + ")." + print_node(GET_INDEX_NODE(cr->op1), v, vppf);
          break;
       }
       case indirect_ref_K:
       {
-         indirect_ref * ir = GetPointer<indirect_ref>(node);
+         auto * ir = GetPointer<indirect_ref>(node);
          res = "*(";
          if(GetPointer<integer_cst>(GET_NODE(ir->op)))
             res += "(" + tree_helper::print_type(TM, get_type(GET_INDEX_NODE(ir->op))) + ")";
@@ -2189,13 +2193,13 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
       }
       case misaligned_indirect_ref_K:
       {
-         misaligned_indirect_ref * mir = GetPointer<misaligned_indirect_ref>(node);
+         auto * mir = GetPointer<misaligned_indirect_ref>(node);
          res = "*(" + print_node(GET_INDEX_NODE(mir->op), v, vppf) + ")";
          break;
       }
       case mem_ref_K:
       {
-         mem_ref * mr = GetPointer<mem_ref>(node);
+         auto * mr = GetPointer<mem_ref>(node);
          long long int offset = tree_helper::get_integer_cst_value(GetPointer<integer_cst>(GET_NODE(mr->op1)));
          tree_managerRef temp_TM(const_cast<tree_manager *>(TM.get()), null_deleter());
          const tree_manipulationRef tm(new tree_manipulation(temp_TM, Param));
@@ -2211,7 +2215,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
       }
       case target_mem_ref_K:
       {
-         target_mem_ref * tmr = GetPointer<target_mem_ref>(node);
+         auto * tmr = GetPointer<target_mem_ref>(node);
          bool need_plus = false;
          res = "(*((" + tree_helper::print_type(TM, GET_INDEX_NODE(tmr->type)) + "*)(";
          if (tmr->symbol)
@@ -2257,7 +2261,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
       }
       case target_mem_ref461_K:
       {
-         target_mem_ref461 * tmr = GetPointer<target_mem_ref461>(node);
+         auto * tmr = GetPointer<target_mem_ref461>(node);
          bool need_plus = false;
          bool isFunctionPointer = tree_helper::is_function_pointer_type(TM, GET_INDEX_NODE(tmr->type));
          res = isFunctionPointer ? "(" : "(*((";
@@ -2303,12 +2307,12 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
       }
       case array_ref_K:
       {
-         array_ref * ar = GetPointer<array_ref>(node);
+         auto * ar = GetPointer<array_ref>(node);
          tree_nodeRef base = GET_NODE(ar->op0);
          //tree_nodeRef offset = GET_NODE(ar->op1);
          if(base->get_kind() == mem_ref_K)
          {
-            mem_ref * mr = GetPointer<mem_ref>(base);
+            auto * mr = GetPointer<mem_ref>(base);
             long long int offset = tree_helper::get_integer_cst_value(GetPointer<integer_cst>(GET_NODE(mr->op1)));
             unsigned int type = GET_INDEX_NODE(mr->type);
             std::string type_string = tree_helper::print_type(TM, type);
@@ -2340,7 +2344,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
             THROW_ERROR_CODE(BITFIELD_EC, "Bitfield not supported by sparc cross compiler");
          }
 #endif
-         bit_field_ref * bf = GetPointer<bit_field_ref>(node);
+         auto * bf = GetPointer<bit_field_ref>(node);
 
          long long int bpos = tree_helper::get_integer_cst_value(GetPointer<integer_cst>(GET_NODE(bf->op2)));
          res += "*((" + tree_helper::print_type(TM, GET_INDEX_NODE(bf->type)) + "* ) (((unsigned long int) &(" + print_node(GET_INDEX_NODE(bf->op0), v, vppf) + ")) + (unsigned long int)" + STR(bpos/8) + "))";
@@ -2353,13 +2357,13 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
       case postincrement_expr_K:
       {
          const std::string op = tree_helper::op_symbol (node);
-         binary_expr *be = GetPointer<binary_expr>(node);
+         auto *be = GetPointer<binary_expr>(node);
          res += print_node(GET_INDEX_NODE(be->op0), v, vppf) + op + print_node(GET_INDEX_NODE(be->op1), v, vppf);
          break;
       }
       case min_expr_K:
       {
-         min_expr *me = GetPointer<min_expr>(node);
+         auto *me = GetPointer<min_expr>(node);
          if(tree_helper::is_a_vector(TM, GET_INDEX_NODE(me->type)))
          {
             const unsigned int element_type = tree_helper::GetElements(TM, GET_INDEX_NODE(me->type));
@@ -2388,7 +2392,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
       }
       case max_expr_K:
       {
-         max_expr *me = GetPointer<max_expr>(node);
+         auto *me = GetPointer<max_expr>(node);
          if(tree_helper::is_a_vector(TM, GET_INDEX_NODE(me->type)))
          {
             const unsigned int element_type = tree_helper::GetElements(TM, GET_INDEX_NODE(me->type));
@@ -2417,68 +2421,68 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
       }
       case unordered_expr_K:
       {
-         binary_expr *be = GetPointer<binary_expr>(node);
+         auto *be = GetPointer<binary_expr>(node);
          std::string op_0 = print_node(GET_INDEX_NODE(be->op0), v, vppf), op_1 = print_node(GET_INDEX_NODE(be->op1), v, vppf);
          res += "__builtin_isunordered(" + op_0 + "," + op_1 + ")";
          break;
       }
       case ordered_expr_K:
       {
-         binary_expr *be = GetPointer<binary_expr>(node);
+         auto *be = GetPointer<binary_expr>(node);
          std::string op_0 = print_node(GET_INDEX_NODE(be->op0), v, vppf), op_1 = print_node(GET_INDEX_NODE(be->op1), v, vppf);
          res += "!__builtin_isunordered(" + op_0 + "," + op_1 + ")";
          break;
       }
       case unlt_expr_K:
       {
-         binary_expr *be = GetPointer<binary_expr>(node);
+         auto *be = GetPointer<binary_expr>(node);
          std::string op_0 = print_node(GET_INDEX_NODE(be->op0), v, vppf), op_1 = print_node(GET_INDEX_NODE(be->op1), v, vppf);
          res += "!__builtin_isgreaterequal(" + op_0 + "," + op_1 + ")";
          break;
       }
       case unle_expr_K:
       {
-         binary_expr *be = GetPointer<binary_expr>(node);
+         auto *be = GetPointer<binary_expr>(node);
          std::string op_0 = print_node(GET_INDEX_NODE(be->op0), v, vppf), op_1 = print_node(GET_INDEX_NODE(be->op1), v, vppf);
          res += "!__builtin_isgreater(" + op_0 + "," + op_1 + ")";
          break;
       }
       case ungt_expr_K:
       {
-         binary_expr *be = GetPointer<binary_expr>(node);
+         auto *be = GetPointer<binary_expr>(node);
          std::string op_0 = print_node(GET_INDEX_NODE(be->op0), v, vppf), op_1 = print_node(GET_INDEX_NODE(be->op1), v, vppf);
          res += "!__builtin_islessequal(" + op_0 + "," + op_1 + ")";
          break;
       }
       case unge_expr_K:
       {
-         binary_expr *be = GetPointer<binary_expr>(node);
+         auto *be = GetPointer<binary_expr>(node);
          std::string op_0 = print_node(GET_INDEX_NODE(be->op0), v, vppf), op_1 = print_node(GET_INDEX_NODE(be->op1), v, vppf);
          res += "!__builtin_isless(" + op_0 + "," + op_1 + ")";
          break;
       }
       case uneq_expr_K:
       {
-         binary_expr *be = GetPointer<binary_expr>(node);
+         auto *be = GetPointer<binary_expr>(node);
          std::string op_0 = print_node(GET_INDEX_NODE(be->op0), v, vppf), op_1 = print_node(GET_INDEX_NODE(be->op1), v, vppf);
          res += "!__builtin_islessgreater(" + op_0 + "," + op_1 + ")";
          break;
       }
       case ltgt_expr_K:
       {
-         binary_expr *be = GetPointer<binary_expr>(node);
+         auto *be = GetPointer<binary_expr>(node);
          std::string op_0 = print_node(GET_INDEX_NODE(be->op0), v, vppf), op_1 = print_node(GET_INDEX_NODE(be->op1), v, vppf);
          res += "__builtin_islessgreater(" + op_0 + "," + op_1 + ")";
          break;
       }
       case abs_expr_K:
       {
-         abs_expr *ae = GetPointer<abs_expr>(node);
+         auto *ae = GetPointer<abs_expr>(node);
          tree_nodeRef type = GET_NODE(ae->type);
          std::string op_0 = print_node(GET_INDEX_NODE(ae->op), v, vppf);
          if (GetPointer<real_type>(type))
          {
-            real_type * rt = GetPointer<real_type>(type);
+            auto * rt = GetPointer<real_type>(type);
             if (rt->prec == 80)
                res += "__builtin_fabsl(" + op_0 + ")";
             else if (rt->prec == 64)
@@ -2495,50 +2499,50 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
       }
       case complex_expr_K:
       {
-         complex_expr *ce = GetPointer<complex_expr>(node);
+         auto *ce = GetPointer<complex_expr>(node);
          std::string op_0 = print_node(GET_INDEX_NODE(ce->op0), v, vppf), op_1 = print_node(GET_INDEX_NODE(ce->op1), v, vppf);
          res += op_0 + "+ 1i*" + op_1;
          break;
       }
       case cond_expr_K:
       {
-         cond_expr *ce = GetPointer<cond_expr>(node);
+         auto *ce = GetPointer<cond_expr>(node);
          res = print_node(GET_INDEX_NODE(ce->op0), v, vppf) + " ? " + print_node(GET_INDEX_NODE(ce->op1), v, vppf) + " : " + print_node(GET_INDEX_NODE(ce->op2), v, vppf);
          break;
       }
       case ternary_plus_expr_K:
       {
-         ternary_expr *te = GetPointer<ternary_expr>(node);
+         auto *te = GetPointer<ternary_expr>(node);
          res = print_node(GET_INDEX_NODE(te->op0), v, vppf) + " + " + print_node(GET_INDEX_NODE(te->op1), v, vppf) + " + " + print_node(GET_INDEX_NODE(te->op2), v, vppf);
          break;
       }
       case ternary_pm_expr_K:
       {
-         ternary_expr *te = GetPointer<ternary_expr>(node);
+         auto *te = GetPointer<ternary_expr>(node);
          res = print_node(GET_INDEX_NODE(te->op0), v, vppf) + " + " + print_node(GET_INDEX_NODE(te->op1), v, vppf) + " - " + print_node(GET_INDEX_NODE(te->op2), v, vppf);
          break;
       }
       case ternary_mp_expr_K:
       {
-         ternary_expr *te = GetPointer<ternary_expr>(node);
+         auto *te = GetPointer<ternary_expr>(node);
          res = print_node(GET_INDEX_NODE(te->op0), v, vppf) + " - " + print_node(GET_INDEX_NODE(te->op1), v, vppf) + " + " + print_node(GET_INDEX_NODE(te->op2), v, vppf);
          break;
       }
       case ternary_mm_expr_K:
       {
-         ternary_expr *te = GetPointer<ternary_expr>(node);
+         auto *te = GetPointer<ternary_expr>(node);
          res = print_node(GET_INDEX_NODE(te->op0), v, vppf) + " - " + print_node(GET_INDEX_NODE(te->op1), v, vppf) + " - " + print_node(GET_INDEX_NODE(te->op2), v, vppf);
          break;
       }
       case bit_ior_concat_expr_K:
       {
-         ternary_expr *te = GetPointer<ternary_expr>(node);
+         auto *te = GetPointer<ternary_expr>(node);
          res = print_node(GET_INDEX_NODE(te->op0), v, vppf) + " | (" + print_node(GET_INDEX_NODE(te->op1), v, vppf) + " & ((1ULL<<" + print_node(GET_INDEX_NODE(te->op2), v, vppf) + ")-1))";
          break;
       }
       case vec_cond_expr_K:
       {
-         vec_cond_expr *vce = GetPointer<vec_cond_expr>(node);
+         auto *vce = GetPointer<vec_cond_expr>(node);
          const unsigned int element_type = tree_helper::GetElements(TM, GET_INDEX_NODE(vce->type));
          const unsigned int element_size = static_cast<unsigned int>(tree_helper::size(TM, element_type));
          const unsigned int size = static_cast<unsigned int>(tree_helper::size(TM, GET_INDEX_NODE(vce->type)));
@@ -2557,7 +2561,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
       }
       case vec_perm_expr_K:
       {
-         vec_perm_expr *vpe = GetPointer<vec_perm_expr>(node);
+         auto *vpe = GetPointer<vec_perm_expr>(node);
          const unsigned int element_type = tree_helper::GetElements(TM, GET_INDEX_NODE(vpe->type));
          const unsigned int element_size = static_cast<unsigned int>(tree_helper::size(TM, element_type));
          const unsigned int size = static_cast<unsigned int>(tree_helper::size(TM, GET_INDEX_NODE(vpe->type)));
@@ -2576,7 +2580,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
       }
       case gimple_cond_K:
       {
-         gimple_cond *gc = GetPointer<gimple_cond>(node);
+         auto *gc = GetPointer<gimple_cond>(node);
          std::vector<tree_nodeRef> pragmas = gc->pragmas;
          std::vector<tree_nodeRef>::const_iterator pragma, pragma_end = pragmas.end();
          for(pragma = pragmas.begin(); pragma != pragma_end; ++pragma)
@@ -2588,7 +2592,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
       }
       case gimple_multi_way_if_K:
       {
-         gimple_multi_way_if *gmwi = GetPointer<gimple_multi_way_if>(node);
+         auto *gmwi = GetPointer<gimple_multi_way_if>(node);
          res = "if (";
          bool first = true;
          for(const auto& cond : gmwi->list_of_cond)
@@ -2607,13 +2611,13 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
       }
       case gimple_while_K:
       {
-         const gimple_while * we = GetPointer<const gimple_while>(node);
+         const auto * we = GetPointer<const gimple_while>(node);
          res = "while (" + print_node(GET_INDEX_NODE(we->op0), v, vppf) + ")";
          break;
       }
       case gimple_for_K:
       {
-         const gimple_for * fe = GetPointer<const gimple_for>(node);
+         const auto * fe = GetPointer<const gimple_for>(node);
 #if !RELEASE
          if(fe->omp_for)
          {
@@ -2628,13 +2632,13 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
       }
       case gimple_switch_K:
       {
-         gimple_switch *se = GetPointer<gimple_switch>(node);
+         auto *se = GetPointer<gimple_switch>(node);
          res += "switch(" + print_node(GET_INDEX_NODE(se->op0), v, vppf) + ")";
          break;
       }
       case gimple_assign_K:
       {
-         gimple_assign * ms = GetPointer<gimple_assign>(node);
+         auto * ms = GetPointer<gimple_assign>(node);
          if(!ms->init_assignment && !ms->clobber)
          {
             std::vector<tree_nodeRef> pragmas = ms->pragmas;
@@ -2682,7 +2686,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
                }
                case vector_cst_K:
                {
-                  vector_cst * vc = GetPointer<vector_cst>(right);
+                  auto * vc = GetPointer<vector_cst>(right);
                   if(get_type(GET_INDEX_NODE(ms->op0)) != GET_INDEX_NODE(vc->type))
                      res += "(" + tree_helper::print_type(TM, get_type(GET_INDEX_NODE(ms->op0))) + ") ";
                   res += print_node(GET_INDEX_NODE(ms->op1), v, vppf);
@@ -2758,7 +2762,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
       }
       case init_expr_K:
       {
-         binary_expr *be = GetPointer<binary_expr>(node);
+         auto *be = GetPointer<binary_expr>(node);
          res = print_node(GET_INDEX_NODE(be->op0), v, vppf) + " = ";
          const tree_nodeRef right = GET_NODE(be->op1);
          ///check for type conversion
@@ -2774,7 +2778,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
             case nop_expr_K:
             case paren_expr_K:
             {
-               unary_expr *ue = GetPointer<unary_expr>(right);
+               auto *ue = GetPointer<unary_expr>(right);
                res = res + "(" + tree_helper::print_type(TM, get_type(GET_INDEX_NODE(be->op0))) + ") ";
                res += print_node(GET_INDEX_NODE(ue->op), v, vppf);
                break;
@@ -2842,7 +2846,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
       }
       case gimple_return_K:
       {
-         gimple_return *re = GetPointer<gimple_return>(node);
+         auto *re = GetPointer<gimple_return>(node);
          std::vector<tree_nodeRef> pragmas = re->pragmas;
          std::vector<tree_nodeRef>::const_iterator pragma, pragma_end = pragmas.end();
          for(pragma = pragmas.begin(); pragma != pragma_end; ++pragma)
@@ -2864,7 +2868,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
                case convert_expr_K:
                case nop_expr_K:
                   {
-                     unary_expr *ue = GetPointer<unary_expr>(return_node);
+                     auto *ue = GetPointer<unary_expr>(return_node);
                      res += "(" + tree_helper::print_type(TM, get_type(GET_INDEX_NODE(re->op))) + ") (";
                      res += print_node(GET_INDEX_NODE(ue->op), v, vppf);
                      res += ")";
@@ -2946,7 +2950,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
       case call_expr_K:
       case aggr_init_expr_K:
       {
-         call_expr *ce = GetPointer<call_expr>(node);
+         auto *ce = GetPointer<call_expr>(node);
          function_decl * fd = nullptr;
          tree_nodeRef op0 = GET_NODE(ce->fn);
          bool is_va_start_end = false;
@@ -2958,7 +2962,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
          {
             case addr_expr_K:
             {
-               unary_expr *ue = GetPointer<unary_expr>(op0);
+               auto *ue = GetPointer<unary_expr>(op0);
                tree_nodeRef fn = GET_NODE(ue->op);
                THROW_ASSERT(fn->get_kind() == function_decl_K, "tree node not currently supported " + fn->get_kind_text());
                fd = GetPointer<function_decl>(fn);
@@ -2983,7 +2987,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
             {
                tree_nodeRef fn = tree_helper::find_obj_type_ref_function(ce->fn);
                THROW_ASSERT(GET_NODE(fn)->get_kind(), "tree node not currently supported " + GET_NODE(fn)->get_kind_text());
-               function_decl * local_fd = GetPointer<function_decl>(GET_NODE(fn));
+               auto * local_fd = GetPointer<function_decl>(GET_NODE(fn));
                if (tree_helper::GetFunctionReturnType(GET_NODE(fn)))
                   res += print_node(GET_INDEX_NODE(fn), v, vppf) + " = ";
                res += tree_helper::print_function_name(TM, local_fd);
@@ -3118,7 +3122,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
       }
       case gimple_call_K:
       {
-         gimple_call *ce = GetPointer<gimple_call>(node);
+         auto *ce = GetPointer<gimple_call>(node);
          function_decl * fd = nullptr;
          std::vector<tree_nodeRef> pragmas = ce->pragmas;
          std::vector<tree_nodeRef>::const_iterator pragma, pragma_end = pragmas.end();
@@ -3136,7 +3140,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
          {
             case addr_expr_K:
             {
-               unary_expr *ue = GetPointer<unary_expr>(op0);
+               auto *ue = GetPointer<unary_expr>(op0);
                tree_nodeRef fn = GET_NODE(ue->op);
                THROW_ASSERT(fn->get_kind() == function_decl_K, "tree node not currently supported " + fn->get_kind_text());
                fd = GetPointer<function_decl>(fn);
@@ -3161,7 +3165,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
             {
                tree_nodeRef fn = tree_helper::find_obj_type_ref_function(ce->fn);
                THROW_ASSERT(GET_NODE(fn)->get_kind() == function_decl_K, "tree node not currently supported " + fn->get_kind_text());
-               function_decl * local_fd = GetPointer<function_decl>(GET_NODE(fn));
+               auto * local_fd = GetPointer<function_decl>(GET_NODE(fn));
                if (tree_helper::GetFunctionReturnType(GET_NODE(fn)))
                   res += print_node(GET_INDEX_NODE(fn), v, vppf) + " = ";
                res += tree_helper::print_function_name(TM, local_fd);
@@ -3297,7 +3301,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
       }
       case gimple_asm_K:
       {
-         gimple_asm *ae = GetPointer<gimple_asm>(node);
+         auto *ae = GetPointer<gimple_asm>(node);
          std::vector<tree_nodeRef> pragmas = ae->pragmas;
          std::vector<tree_nodeRef>::const_iterator pragma, pragma_end = pragmas.end();
          for(pragma = pragmas.begin(); pragma != pragma_end; ++pragma)
@@ -3311,11 +3315,11 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
          if (ae->out)
          {
             res += ":";
-            tree_list * tl = GetPointer<tree_list>(GET_NODE(ae->out));
+            auto * tl = GetPointer<tree_list>(GET_NODE(ae->out));
             std::string out_string;
             do
             {
-               tree_list * tl_purp = GetPointer<tree_list>(GET_NODE(tl->purp));
+               auto * tl_purp = GetPointer<tree_list>(GET_NODE(tl->purp));
                out_string = "";
                do
                {
@@ -3345,11 +3349,11 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
          if (ae->in)
          {
             res += ":";
-            tree_list * tl = GetPointer<tree_list>(GET_NODE(ae->in));
+            auto * tl = GetPointer<tree_list>(GET_NODE(ae->in));
             std::string in_string;
             do
             {
-               tree_list * tl_purp = GetPointer<tree_list>(GET_NODE(tl->purp));
+               auto * tl_purp = GetPointer<tree_list>(GET_NODE(tl->purp));
                in_string = "";
                do
                {
@@ -3379,7 +3383,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
          if (ae->clob)
          {
             res += ":";
-            tree_list * tl = GetPointer<tree_list>(GET_NODE(ae->clob));
+            auto * tl = GetPointer<tree_list>(GET_NODE(ae->clob));
             do
             {
                res += print_node(GET_INDEX_NODE(tl->valu), v, vppf);
@@ -3398,7 +3402,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
       }
       case gimple_phi_K:
       {
-         gimple_phi * pn = GetPointer<gimple_phi>(node);
+         auto * pn = GetPointer<gimple_phi>(node);
          res += "/* " + print_node(GET_INDEX_NODE(pn->res), v, vppf) +" = gimple_phi(";
          for(const auto& def_edge : pn->CGetDefEdgesList())
          {
@@ -3441,10 +3445,10 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
       }
       case label_decl_K:
       {
-         label_decl * ld = GetPointer<label_decl>(node);
+         auto * ld = GetPointer<label_decl>(node);
          if(ld->name)
          {
-            identifier_node * id = GetPointer<identifier_node>(GET_NODE(ld->name));
+            auto * id = GetPointer<identifier_node>(GET_NODE(ld->name));
             res = id->strg;
          }
          else
@@ -3453,7 +3457,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
       }
       case gimple_label_K:
       {
-         gimple_label *le = GetPointer<gimple_label>(node);
+         auto *le = GetPointer<gimple_label>(node);
          if (!GetPointer<label_decl>(GET_NODE(le->op))->artificial_flag)
          {
             res += print_node(GET_INDEX_NODE(le->op), v, vppf);
@@ -3463,7 +3467,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
       }
       case gimple_goto_K:
       {
-         gimple_goto *ge = GetPointer<gimple_goto>(node);
+         auto *ge = GetPointer<gimple_goto>(node);
          bool is_a_label = GetPointer<label_decl>(GET_NODE(ge->op)) != nullptr;
          res += (is_a_label ? "goto " : "goto *") + print_node(GET_INDEX_NODE(ge->op), v, vppf);
          break;
@@ -3475,7 +3479,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
       }
       case with_size_expr_K:
       {
-         with_size_expr * wse = GetPointer<with_size_expr>(node);
+         auto * wse = GetPointer<with_size_expr>(node);
          res += print_node(GET_INDEX_NODE(wse->op0), v, vppf);
          break;
       }
@@ -3486,7 +3490,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
       }
       case gimple_pragma_K:
       {
-         const gimple_pragma * pn = GetPointer<const gimple_pragma>(node);
+         const auto * pn = GetPointer<const gimple_pragma>(node);
 #if 0
          if(pn->directive and (GetPointer<omp_for_pragma>(GET_NODE(pn->directive)) or GetPointer<omp_simd_pragma>(GET_NODE(pn->directive))))
          {
@@ -3527,28 +3531,28 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
       }
       case omp_for_pragma_K:
       {
-         omp_for_pragma * fp = GetPointer<omp_for_pragma>(node);
+         auto * fp = GetPointer<omp_for_pragma>(node);
          res += "for ";
          /// now print clauses
-         for (std::unordered_map<std::string, std::string>::iterator i = fp->clauses.begin(); i != fp->clauses.end(); ++i)
-            res += " " + i->first + "(" + i->second + ")";
+         for (auto & clause : fp->clauses)
+            res += " " + clause.first + "(" + clause.second + ")";
          break;
       }
       case omp_parallel_pragma_K:
       {
-         omp_parallel_pragma * pn = GetPointer<omp_parallel_pragma>(node);
+         auto * pn = GetPointer<omp_parallel_pragma>(node);
          if (!pn->is_shortcut)
          {
             res += "parallel";
          }
          /// now print clauses
-         for (std::unordered_map<std::string, std::string>::iterator i = pn->clauses.begin(); i != pn->clauses.end(); ++i)
-            res += " " + i->first + "(" + i->second + ")";
+         for (auto & clause : pn->clauses)
+            res += " " + clause.first + "(" + clause.second + ")";
          break;
       }
       case omp_sections_pragma_K:
       {
-         omp_sections_pragma * pn = GetPointer<omp_sections_pragma>(node);
+         auto * pn = GetPointer<omp_sections_pragma>(node);
          if (!pn->is_shortcut)
          {
             res += "sections";
@@ -3558,7 +3562,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
       case omp_parallel_sections_pragma_K:
       {
          res += "parallel sections";
-         omp_parallel_sections_pragma * pn = GetPointer<omp_parallel_sections_pragma>(node);
+         auto * pn = GetPointer<omp_parallel_sections_pragma>(node);
          res += print_node(GET_INDEX_NODE(pn->op0), v, vppf);
          res += " ";
          res += print_node(GET_INDEX_NODE(pn->op1), v, vppf);
@@ -3571,20 +3575,20 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
       }
       case omp_declare_simd_pragma_K:
       {
-         omp_declare_simd_pragma * fp = GetPointer<omp_declare_simd_pragma>(node);
+         auto * fp = GetPointer<omp_declare_simd_pragma>(node);
          res += "declare simd ";
          /// now print clauses
-         for (std::unordered_map<std::string, std::string>::iterator i = fp->clauses.begin(); i != fp->clauses.end(); ++i)
-            res += " " + i->first + "(" + i->second + ")";
+         for (auto & clause : fp->clauses)
+            res += " " + clause.first + "(" + clause.second + ")";
          break;
       }
       case omp_simd_pragma_K:
       {
-         omp_simd_pragma * fp = GetPointer<omp_simd_pragma>(node);
+         auto * fp = GetPointer<omp_simd_pragma>(node);
          res += "simd ";
          /// now print clauses
-         for (std::unordered_map<std::string, std::string>::iterator i = fp->clauses.begin(); i != fp->clauses.end(); ++i)
-            res += " " + i->first + "(" + i->second + ")";
+         for (auto & clause : fp->clauses)
+            res += " " + clause.first + "(" + clause.second + ")";
          break;
       }
       case omp_critical_pragma_K:
@@ -3600,7 +3604,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
       case omp_target_pragma_K:
       {
          res += "target";
-         const omp_target_pragma * otp = GetPointer<const omp_target_pragma>(node);
+         const auto * otp = GetPointer<const omp_target_pragma>(node);
          const std::unordered_map<std::string, std::string> & clauses = otp->clauses;
          std::unordered_map<std::string, std::string>::const_iterator clause, clause_end = clauses.end();
          for(clause = clauses.begin(); clause != clause_end; ++clause)
@@ -3612,7 +3616,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
       case omp_task_pragma_K:
       {
          res += "task";
-         const omp_task_pragma * otp = GetPointer<const omp_task_pragma>(node);
+         const auto * otp = GetPointer<const omp_task_pragma>(node);
          const std::unordered_map<std::string, std::string> & clauses = otp->clauses;
          std::unordered_map<std::string, std::string>::const_iterator clause, clause_end = clauses.end();
          for(clause = clauses.begin(); clause != clause_end; ++clause)
@@ -3630,7 +3634,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
       case call_hw_pragma_K:
       {
          res += STR_CST_pragma_keyword_call_hw" ";
-         call_hw_pragma * ch = GetPointer<call_hw_pragma>(node);
+         auto * ch = GetPointer<call_hw_pragma>(node);
          res += ch->HW_component;
          if (ch->ID_implementation.size())
             res += " " + boost::lexical_cast<std::string>(ch->ID_implementation);
@@ -3639,7 +3643,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
       case call_point_hw_pragma_K:
       {
          res += STR_CST_pragma_keyword_call_point_hw" ";
-         call_point_hw_pragma * ch = GetPointer<call_point_hw_pragma>(node);
+         auto * ch = GetPointer<call_point_hw_pragma>(node);
          res += ch->HW_component;
          if (ch->ID_implementation.size())
             res += " " + boost::lexical_cast<std::string>(ch->ID_implementation);
@@ -3680,25 +3684,25 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
       }
       case assert_expr_K:
       {
-         assert_expr* ae = GetPointer<assert_expr>(node);
+         auto* ae = GetPointer<assert_expr>(node);
          res += print_node(GET_INDEX_NODE(ae->op0), v, vppf) + "/* " + print_node(GET_INDEX_NODE(ae->op1), v, vppf) + "*/";
          break;
       }
       case reduc_max_expr_K:
       {
-         reduc_max_expr* rme = GetPointer<reduc_max_expr>(node);
+         auto* rme = GetPointer<reduc_max_expr>(node);
          res += "/*reduc_max_expr*/" + print_node(GET_INDEX_NODE(rme->op), v, vppf);
          break;
       }
       case reduc_min_expr_K:
       {
-         reduc_min_expr* rme = GetPointer<reduc_min_expr>(node);
+         auto* rme = GetPointer<reduc_min_expr>(node);
          res += "/*reduc_min_expr*/" + print_node(GET_INDEX_NODE(rme->op), v, vppf);
          break;
       }
       case reduc_plus_expr_K:
       {
-         reduc_plus_expr* rpe = GetPointer<reduc_plus_expr>(node);
+         auto* rpe = GetPointer<reduc_plus_expr>(node);
          res += "/*reduc_plus_expr*/" ;
          res += "(" + tree_helper::print_type(TM, GET_INDEX_NODE(rpe->type)) + ") ";
          res +="{";
@@ -3716,7 +3720,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
       }
       case vec_unpack_hi_expr_K:
       {
-         vec_unpack_hi_expr* vuh = GetPointer<vec_unpack_hi_expr>(node);
+         auto* vuh = GetPointer<vec_unpack_hi_expr>(node);
          tree_nodeRef op = GET_NODE(vuh->op);
          const unsigned int element_type = tree_helper::GetElements(TM, GET_INDEX_NODE(vuh->type));
          const unsigned int element_size = static_cast<unsigned int>(tree_helper::size(TM, element_type));
@@ -3727,8 +3731,8 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
          res += "{";
          if(op->get_kind() == vector_cst_K)
          {
-            vector_cst *vc = GetPointer<vector_cst>(op);
-            for (unsigned int i = static_cast<unsigned int>((vc->list_of_valu).size()/2); i < (vc->list_of_valu).size(); i++ ) //vector elements
+            auto *vc = GetPointer<vector_cst>(op);
+            for (auto i = static_cast<unsigned int>((vc->list_of_valu).size()/2); i < (vc->list_of_valu).size(); i++ ) //vector elements
             {
                res += "((" + tree_helper::print_type(TM, element_type) + ") (";
                res += print_constant(GET_INDEX_NODE(vc->list_of_valu[i]), vppf);
@@ -3751,7 +3755,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
       }
       case vec_unpack_lo_expr_K:
       {
-         vec_unpack_lo_expr* vul = GetPointer<vec_unpack_lo_expr>(node);
+         auto* vul = GetPointer<vec_unpack_lo_expr>(node);
          tree_nodeRef op = GET_NODE(vul->op);
          const unsigned int element_type = tree_helper::GetElements(TM, GET_INDEX_NODE(vul->type));
          const unsigned int element_size = static_cast<unsigned int>(tree_helper::size(TM, element_type));
@@ -3762,7 +3766,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
          res += "{";
          if(op->get_kind() == vector_cst_K)
          {
-            vector_cst *vc = GetPointer<vector_cst>(op);
+            auto *vc = GetPointer<vector_cst>(op);
             for (unsigned int i = 0; i < (vc->list_of_valu).size()/2; i++ ) //vector elements
             {
                res += "((" + tree_helper::print_type(TM, element_type) + ") (";
@@ -3787,20 +3791,20 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
       case vec_unpack_float_hi_expr_K:
       case vec_unpack_float_lo_expr_K:
       {
-         unary_expr* vie = GetPointer<unary_expr>(node);
+         auto* vie = GetPointer<unary_expr>(node);
          res += "/*"+ vie->get_kind_text() + "*/" + print_node(GET_INDEX_NODE(vie->op), v, vppf);
          break;
       }
       case paren_expr_K:
       {
-         unary_expr* vie = GetPointer<unary_expr>(node);
+         auto* vie = GetPointer<unary_expr>(node);
          res += "(" + print_node(GET_INDEX_NODE(vie->op), v, vppf) + ")";
          break;
       }
 
       case vec_pack_trunc_expr_K:
       {
-         vec_pack_trunc_expr* vpt = GetPointer<vec_pack_trunc_expr>(node);
+         auto* vpt = GetPointer<vec_pack_trunc_expr>(node);
          tree_nodeRef op0 = GET_NODE(vpt->op0);
          tree_nodeRef op1 = GET_NODE(vpt->op1);
          const unsigned int element_type = tree_helper::GetElements(TM, GET_INDEX_NODE(vpt->type));
@@ -3812,11 +3816,11 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
          res += "{";
          if(op0->get_kind() == vector_cst_K)
          {
-            vector_cst *vc = GetPointer<vector_cst>(op0);
-            for (unsigned int i = 0; i < (vc->list_of_valu).size(); i++ ) //vector elements
+            auto *vc = GetPointer<vector_cst>(op0);
+            for (auto & i : (vc->list_of_valu)) //vector elements
             {
                res += "((" + tree_helper::print_type(TM, element_type) + ") (";
-               res += print_constant(GET_INDEX_NODE(vc->list_of_valu[i]), vppf);
+               res += print_constant(GET_INDEX_NODE(i), vppf);
                res += ")), ";
             }
          }
@@ -3829,7 +3833,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
 
          if(op1->get_kind() == vector_cst_K)
          {
-            vector_cst *vc = GetPointer<vector_cst>(op1);
+            auto *vc = GetPointer<vector_cst>(op1);
             for (unsigned int i = 0; i < (vc->list_of_valu).size(); i++ ) //vector elements
             {
                res += "((" + tree_helper::print_type(TM, element_type) + ") (";
@@ -3850,7 +3854,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
       }
       case dot_prod_expr_K:
       {
-         ternary_expr* dpe = GetPointer<ternary_expr>(node);
+         auto* dpe = GetPointer<ternary_expr>(node);
          unsigned int two_op_type_index = 0;
          tree_helper::get_type_node(GET_NODE(dpe->op2), two_op_type_index);
          const unsigned int element_type = tree_helper::GetElements(TM, two_op_type_index);
@@ -3878,7 +3882,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
       }
       case widen_mult_hi_expr_K:
       {
-         widen_mult_hi_expr* wmhe = GetPointer<widen_mult_hi_expr>(node);
+         auto* wmhe = GetPointer<widen_mult_hi_expr>(node);
          const unsigned int element_type = tree_helper::GetElements(TM, GET_INDEX_NODE(wmhe->type));
          const unsigned int element_size = static_cast<unsigned int>(tree_helper::size(TM, element_type));
          const unsigned int size = static_cast<unsigned int>(tree_helper::size(TM, GET_INDEX_NODE(wmhe->type)));
@@ -3900,7 +3904,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
       }
       case widen_mult_lo_expr_K:
       {
-         widen_mult_lo_expr* wmle = GetPointer<widen_mult_lo_expr>(node);
+         auto* wmle = GetPointer<widen_mult_lo_expr>(node);
          const unsigned int element_type = tree_helper::GetElements(TM, GET_INDEX_NODE(wmle->type));
          const unsigned int element_size = static_cast<unsigned int>(tree_helper::size(TM, element_type));
          const unsigned int size = static_cast<unsigned int>(tree_helper::size(TM, GET_INDEX_NODE(wmle->type)));
@@ -3923,13 +3927,13 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
       case vec_pack_sat_expr_K:
       case vec_pack_fix_trunc_expr_K:
       {
-         binary_expr* vie = GetPointer<binary_expr>(node);
+         auto* vie = GetPointer<binary_expr>(node);
          res += "/*"+ vie->get_kind_text() + "*/" + print_node(GET_INDEX_NODE(vie->op0), v, vppf) + " /**/ " + print_node(GET_INDEX_NODE(vie->op1), v, vppf);
          break;
       }
       case vec_extracteven_expr_K:
       {
-         vec_extracteven_expr* vee = GetPointer<vec_extracteven_expr>(node);
+         auto* vee = GetPointer<vec_extracteven_expr>(node);
          const unsigned int element_type = tree_helper::GetElements(TM, GET_INDEX_NODE(vee->type));
          const unsigned int element_size = static_cast<unsigned int>(tree_helper::size(TM, element_type));
          const unsigned int size = static_cast<unsigned int>(tree_helper::size(TM, GET_INDEX_NODE(vee->type)));
@@ -3954,7 +3958,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
       }
       case vec_extractodd_expr_K:
       {
-         vec_extractodd_expr* vee = GetPointer<vec_extractodd_expr>(node);
+         auto* vee = GetPointer<vec_extractodd_expr>(node);
          const unsigned int element_type = tree_helper::GetElements(TM, GET_INDEX_NODE(vee->type));
          const unsigned int element_size = static_cast<unsigned int>(tree_helper::size(TM, element_type));
          const unsigned int size = static_cast<unsigned int>(tree_helper::size(TM, GET_INDEX_NODE(vee->type)));
@@ -3979,7 +3983,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
       }
       case vec_interleavehigh_expr_K:
       {
-         vec_interleavehigh_expr* vie = GetPointer<vec_interleavehigh_expr>(node);
+         auto* vie = GetPointer<vec_interleavehigh_expr>(node);
          const unsigned int element_type = tree_helper::GetElements(TM, GET_INDEX_NODE(vie->type));
          const unsigned int element_size = static_cast<unsigned int>(tree_helper::size(TM, element_type));
          const unsigned int size = static_cast<unsigned int>(tree_helper::size(TM, GET_INDEX_NODE(vie->type)));
@@ -4001,7 +4005,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
       }
       case vec_interleavelow_expr_K:
       {
-         vec_interleavelow_expr* vie = GetPointer<vec_interleavelow_expr>(node);
+         auto* vie = GetPointer<vec_interleavelow_expr>(node);
          const unsigned int element_type = tree_helper::GetElements(TM, GET_INDEX_NODE(vie->type));
          const unsigned int element_size = static_cast<unsigned int>(tree_helper::size(TM, element_type));
          const unsigned int size = static_cast<unsigned int>(tree_helper::size(TM, GET_INDEX_NODE(vie->type)));
@@ -4094,7 +4098,7 @@ std::string BehavioralHelper::print_type_declaration(unsigned int type) const
    {
       case record_type_K:
       {
-         record_type *rt = GetPointer<record_type>(node_type);
+         auto *rt = GetPointer<record_type>(node_type);
          THROW_ASSERT(tree_helper::GetRealType(TM, type) == type, "Printing declaration of fake type " + boost::lexical_cast<std::string>(type));
          if(rt->unql)
          {
@@ -4126,9 +4130,9 @@ std::string BehavioralHelper::print_type_declaration(unsigned int type) const
             null_deleter null_del;
             const var_pp_functorConstRef std_vpf(new std_var_pp_functor(BehavioralHelperConstRef(this, null_del)));
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Printing content of the structure");
-            for (unsigned int i = 0; i < rt->list_of_flds.size();i++)
+            for (auto & list_of_fld : rt->list_of_flds)
             {
-               unsigned int field = GET_INDEX_NODE(rt->list_of_flds[i]);
+               unsigned int field = GET_INDEX_NODE(list_of_fld);
                auto fld_node = TM->get_tree_node_const(field);
                if(fld_node->get_kind() == type_decl_K) continue;
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Printing field " + boost::lexical_cast<std::string>(field));
@@ -4178,7 +4182,7 @@ std::string BehavioralHelper::print_type_declaration(unsigned int type) const
       }
       case union_type_K:
       {
-         union_type * ut = GetPointer<union_type>(node_type);
+         auto * ut = GetPointer<union_type>(node_type);
          THROW_ASSERT(tree_helper::GetRealType(TM, type) == type, "Printing declaration of fake type " + boost::lexical_cast<std::string>(node_type));
          if(ut->unql)
          {
@@ -4209,9 +4213,9 @@ std::string BehavioralHelper::print_type_declaration(unsigned int type) const
             res += "\n{\n";
             null_deleter null_del;
             const var_pp_functorConstRef std_vpf(new std_var_pp_functor(BehavioralHelperConstRef(this, null_del)));
-            for (unsigned int i = 0; i < ut->list_of_flds.size();i++)
+            for (auto & list_of_fld : ut->list_of_flds)
             {
-               unsigned int field = GET_INDEX_NODE(ut->list_of_flds[i]);
+               unsigned int field = GET_INDEX_NODE(list_of_fld);
                res += tree_helper::print_type(TM, get_type(field), false, false, false, field, std_vpf);
                res += ";\n";
             }
@@ -4270,7 +4274,7 @@ std::string BehavioralHelper::print_type_declaration(unsigned int type) const
          if (not et->unql or not GetPointer<enumeral_type>(GET_NODE(et->unql))->name)
          {
             res += "{";
-            tree_list * tl = GetPointer<tree_list>(GET_NODE(et->csts));
+            auto * tl = GetPointer<tree_list>(GET_NODE(et->csts));
             while (tl)
             {
                res += tree_helper::print_type(TM, GET_INDEX_NODE(tl->purp));
@@ -4333,7 +4337,7 @@ std::string BehavioralHelper::print_type_declaration(unsigned int type) const
          const pointer_type * pt = GetPointer<pointer_type>(node_type);
          if (pt->unql && GET_NODE(pt->ptd)->get_kind() == function_type_K)
          {
-            function_type * ft = GetPointer<function_type>(GET_NODE(pt->ptd));
+            auto * ft = GetPointer<function_type>(GET_NODE(pt->ptd));
             const auto quals = GetPointer<type_node>(node_type)->qual;
             res += "typedef ";
             res += tree_helper::print_type(TM, GET_INDEX_NODE(ft->retn));
@@ -4569,7 +4573,7 @@ bool BehavioralHelper::is_a_constant(unsigned int obj) const
       case paren_expr_K:
       case nop_expr_K:
       {
-         unary_expr *ue = GetPointer<unary_expr>(node);
+         auto *ue = GetPointer<unary_expr>(node);
          return is_a_constant(GET_INDEX_NODE(ue->op));
       }
       case integer_cst_K:
@@ -4696,10 +4700,10 @@ unsigned int BehavioralHelper::get_indirect_ref_var(unsigned int obj) const
 {
    THROW_ASSERT(is_an_indirect_ref(obj), "obj assumed to be an inderect_ref object");
    const tree_nodeRef temp = TM->get_tree_node_const(obj);
-   indirect_ref * ir = GetPointer<indirect_ref>(temp);
+   auto * ir = GetPointer<indirect_ref>(temp);
    if(ir)
       return GET_INDEX_NODE(ir->op);
-   misaligned_indirect_ref * mir = GetPointer<misaligned_indirect_ref>(temp);
+   auto * mir = GetPointer<misaligned_indirect_ref>(temp);
    return GET_INDEX_NODE(mir->op);
 }
 
@@ -4707,7 +4711,7 @@ unsigned int BehavioralHelper::get_array_ref_array(unsigned int obj) const
 {
    THROW_ASSERT(is_an_array_ref(obj), "obj assumed to be an array_ref object");
    const tree_nodeRef temp = TM->get_tree_node_const(obj);
-   array_ref * ar = GetPointer<array_ref>(temp);
+   auto * ar = GetPointer<array_ref>(temp);
    return GET_INDEX_NODE(ar->op0);
 }
 
@@ -4715,7 +4719,7 @@ unsigned int BehavioralHelper::get_array_ref_index(unsigned int obj) const
 {
    THROW_ASSERT(is_an_array_ref(obj), "obj assumed to be an array_ref object");
    const tree_nodeRef temp = TM->get_tree_node_const(obj);
-   array_ref * ar = GetPointer<array_ref>(temp);
+   auto * ar = GetPointer<array_ref>(temp);
    return GET_INDEX_NODE(ar->op1);
 }
 
@@ -4723,7 +4727,7 @@ unsigned int BehavioralHelper::get_component_ref_record(unsigned int obj) const
 {
    THROW_ASSERT(is_a_component_ref(obj), "obj assumed to be a component_ref object");
    const tree_nodeRef temp = TM->get_tree_node_const(obj);
-   component_ref * cr = GetPointer<component_ref>(temp);
+   auto * cr = GetPointer<component_ref>(temp);
    return GET_INDEX_NODE(cr->op0);
 }
 
@@ -4731,7 +4735,7 @@ unsigned int BehavioralHelper::get_component_ref_field(unsigned int obj) const
 {
    THROW_ASSERT(is_a_component_ref(obj), "obj assumed to be a component_ref object");
    const tree_nodeRef temp = TM->get_tree_node_const(obj);
-   component_ref * cr = GetPointer<component_ref>(temp);
+   auto * cr = GetPointer<component_ref>(temp);
    return GET_INDEX_NODE(cr->op1);
 }
 
@@ -4739,7 +4743,7 @@ unsigned int BehavioralHelper::get_mem_ref_base(unsigned int obj) const
 {
    THROW_ASSERT(is_a_mem_ref(obj), "obj assumed to be a mem_ref object");
    const tree_nodeRef temp = TM->get_tree_node_const(obj);
-   mem_ref * mr = GetPointer<mem_ref>(temp);
+   auto * mr = GetPointer<mem_ref>(temp);
    return GET_INDEX_NODE(mr->op0);
 }
 
@@ -4747,7 +4751,7 @@ unsigned int BehavioralHelper::get_mem_ref_offset(unsigned int obj) const
 {
    THROW_ASSERT(is_a_mem_ref(obj), "obj assumed to be a mem_ref object");
    const tree_nodeRef temp = TM->get_tree_node_const(obj);
-   mem_ref * mr = GetPointer<mem_ref>(temp);
+   auto * mr = GetPointer<mem_ref>(temp);
    return GET_INDEX_NODE(mr->op1);
 }
 
@@ -4758,14 +4762,14 @@ unsigned int BehavioralHelper::get_operand_from_unary_expr(unsigned int obj) con
    THROW_ASSERT(is_an_addr_expr(obj) || is_a_realpart_expr(obj) || is_a_imagpart_expr(obj), "obj assumed to be an addr_expr, a realpart_expr or an imagpart_expr object. obj is "
                 + boost::lexical_cast<std::string>(obj));
    const tree_nodeRef temp = TM->get_tree_node_const(obj);
-   unary_expr * ue = GetPointer<unary_expr>(temp);
+   auto * ue = GetPointer<unary_expr>(temp);
    return GET_INDEX_NODE(ue->op);
 }
 
 unsigned int BehavioralHelper::GetVarFromSsa(unsigned int index) const
 {
    const tree_nodeRef temp = TM->get_tree_node_const(index);
-   ssa_name * sn = GetPointer<ssa_name>(temp);
+   auto * sn = GetPointer<ssa_name>(temp);
    if (sn)
       return GET_INDEX_NODE(sn->var);
    else
@@ -4780,7 +4784,7 @@ unsigned int BehavioralHelper::get_intermediate_var(unsigned int obj) const
       case modify_expr_K:
       case init_expr_K:
       {
-         binary_expr *be = GetPointer<binary_expr>(node);
+         auto *be = GetPointer<binary_expr>(node);
          const tree_nodeRef right = GET_NODE(be->op1);
          ///check for type conversion
          switch (right->get_kind())
@@ -4797,7 +4801,7 @@ unsigned int BehavioralHelper::get_intermediate_var(unsigned int obj) const
             case imagpart_expr_K:
             case paren_expr_K:
             {
-               unary_expr *ue = GetPointer<unary_expr>(right);
+               auto *ue = GetPointer<unary_expr>(right);
                return GET_INDEX_NODE(ue->op);
             }
             case binfo_K:
@@ -4968,7 +4972,7 @@ const std::unordered_set<unsigned int> BehavioralHelper::GetParameterTypes() con
 {
    std::unordered_set<unsigned int> ret;
    tree_nodeRef node = TM->get_tree_node_const(function_index);
-   function_decl * fd = GetPointer<function_decl>(node);
+   auto * fd = GetPointer<function_decl>(node);
    if (!fd)
       return ret;
    const std::vector<tree_nodeRef> & list_of_args = fd->list_of_args;
@@ -4978,10 +4982,10 @@ const std::unordered_set<unsigned int> BehavioralHelper::GetParameterTypes() con
       const parm_decl * pd = GetPointer<parm_decl>(GET_NODE(*it));
       ret.insert(GET_INDEX_NODE(pd->type));
    }
-   function_type * ft = GetPointer<function_type>(GET_NODE(fd->type));
+   auto * ft = GetPointer<function_type>(GET_NODE(fd->type));
    if (!ft || !ft->prms)
       return ret;
-   tree_list * tl = GetPointer<tree_list>(GET_NODE(ft->prms));
+   auto * tl = GetPointer<tree_list>(GET_NODE(ft->prms));
    while (tl)
    {
       ret.insert(GET_INDEX_NODE(tl->valu));
@@ -5002,7 +5006,7 @@ unsigned int BehavioralHelper::is_named_pointer(const unsigned int index) const
    THROW_ASSERT(Type_node, "this index does not exist: " + boost::lexical_cast<std::string>(type));
    if (Type_node->get_kind() == pointer_type_K)
    {
-      pointer_type * pt = GetPointer<pointer_type>(Type_node);
+      auto * pt = GetPointer<pointer_type>(Type_node);
       if (pt->name)
          return type;
       else
@@ -5019,12 +5023,12 @@ bool BehavioralHelper::is_va_start_call(unsigned int stm) const
       const tree_nodeRef node = TM->get_tree_node_const(stm);
       if (node->get_kind() == gimple_call_K)
       {
-         gimple_call* ce = GetPointer<gimple_call>(node);
+         auto* ce = GetPointer<gimple_call>(node);
          tree_nodeRef cefn = GET_NODE(ce->fn);
          if (cefn->get_kind() == addr_expr_K)
          {
-            unary_expr* ue = GetPointer<unary_expr>(cefn);
-            function_decl * fd = GetPointer<function_decl>(GET_NODE(ue->op));
+            auto* ue = GetPointer<unary_expr>(cefn);
+            auto * fd = GetPointer<function_decl>(GET_NODE(ue->op));
             if (fd and tree_helper::print_function_name(TM, fd) == "__builtin_va_start")
             {
                return true;
@@ -5047,7 +5051,7 @@ bool BehavioralHelper::has_bit_field(unsigned int variable) const
    const tree_nodeRef node = TM->get_tree_node_const(variable);
    if (node->get_kind() == field_decl_K)
    {
-      field_decl * fd = GetPointer<field_decl>(node);
+      auto * fd = GetPointer<field_decl>(node);
       if ((fd->list_attr.find(TreeVocabularyTokenTypes_TokenEnum::TOK_BITFIELD)) != fd->list_attr.end())
          return true;
       else
@@ -5140,7 +5144,7 @@ unsigned int BehavioralHelper::GetInit(unsigned int var, std::unordered_set<unsi
    {
       case ssa_name_K:
       {
-         ssa_name * sn = GetPointer<ssa_name>(node);
+         auto * sn = GetPointer<ssa_name>(node);
          if(!sn->var)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Without init");
@@ -5152,7 +5156,7 @@ unsigned int BehavioralHelper::GetInit(unsigned int var, std::unordered_set<unsi
       }
       case var_decl_K:
       {
-         var_decl *vd = GetPointer<var_decl>(node);
+         auto *vd = GetPointer<var_decl>(node);
          if (vd->init)
          {
             tree_helper::get_used_variables(true, vd->init, list_of_variables);
@@ -5168,7 +5172,7 @@ unsigned int BehavioralHelper::GetInit(unsigned int var, std::unordered_set<unsi
       }
       case constructor_K:
       {
-         constructor * co = GetPointer<constructor>(TM->get_tree_node_const(var));
+         auto * co = GetPointer<constructor>(TM->get_tree_node_const(var));
          std::vector<std::pair< tree_nodeRef, tree_nodeRef> >::const_iterator vend = co->list_of_idx_valu.end();
          for (std::vector<std::pair< tree_nodeRef, tree_nodeRef> >::const_iterator i = co->list_of_idx_valu.begin(); i != vend; ++i)
          {
@@ -5225,7 +5229,7 @@ unsigned int BehavioralHelper::GetInit(unsigned int var, std::unordered_set<unsi
 std::string BehavioralHelper::print_phinode_res(unsigned int phi_node_id, vertex v, const var_pp_functorConstRef vppf) const
 {
    const tree_nodeRef node = TM->get_tree_node_const(phi_node_id);
-   gimple_phi *phi = GetPointer<gimple_phi>(node);
+   auto *phi = GetPointer<gimple_phi>(node);
 
    THROW_ASSERT(phi, "NodeId is not related to a gimple_phi");
 
@@ -5237,10 +5241,10 @@ unsigned int BehavioralHelper::start_with_a_label(const blocRef &block) const
    if (block->CGetStmtList().empty())
       return 0;
    tree_nodeRef first_stmt = block->CGetStmtList().front();
-   gimple_label * le = GetPointer<gimple_label>(GET_NODE(first_stmt));
+   auto * le = GetPointer<gimple_label>(GET_NODE(first_stmt));
    if (le && le->op && GET_NODE(le->op)->get_kind() == label_decl_K)
    {
-      label_decl * ld = GetPointer<label_decl>(GET_NODE(le->op));
+      auto * ld = GetPointer<label_decl>(GET_NODE(le->op));
       if (ld->name)
          return GET_INDEX_NODE(first_stmt);
       else
@@ -5253,11 +5257,11 @@ unsigned int BehavioralHelper::start_with_a_label(const blocRef &block) const
 const std::string BehavioralHelper::get_label_name(unsigned int label_expr_nid) const
 {
    tree_nodeRef tn = TM->get_tree_node_const(label_expr_nid);
-   gimple_label * le = GetPointer<gimple_label>(tn);
+   auto * le = GetPointer<gimple_label>(tn);
    THROW_ASSERT(le->op && GET_NODE(le->op)->get_kind() == label_decl_K, "label decl expected");
-   label_decl * ld = GetPointer<label_decl>(GET_NODE(le->op));
+   auto * ld = GetPointer<label_decl>(GET_NODE(le->op));
    THROW_ASSERT(ld->name && GET_NODE(ld->name)->get_kind() == identifier_node_K, "identifier_node expected");
-   identifier_node * id = GetPointer<identifier_node>(GET_NODE(ld->name));
+   auto * id = GetPointer<identifier_node>(GET_NODE(ld->name));
    return id->strg;
 }
 
@@ -5266,16 +5270,16 @@ unsigned int BehavioralHelper::end_with_a_cond_or_goto(const blocRef &block) con
    if (block->CGetStmtList().empty())
       return 0;
    tree_nodeRef last = block->CGetStmtList().back();
-   gimple_cond * gc = GetPointer<gimple_cond>(GET_NODE(last));
+   auto * gc = GetPointer<gimple_cond>(GET_NODE(last));
    if (gc)
       return GET_INDEX_NODE(last);
-   gimple_switch * se = GetPointer<gimple_switch>(GET_NODE(last));
+   auto * se = GetPointer<gimple_switch>(GET_NODE(last));
    if (se)
       return GET_INDEX_NODE(last);
-   gimple_goto * ge = GetPointer<gimple_goto>(GET_NODE(last));
+   auto * ge = GetPointer<gimple_goto>(GET_NODE(last));
    if (ge)
       return GET_INDEX_NODE(last);
-   gimple_multi_way_if* gmwi =  GetPointer<gimple_multi_way_if>(GET_NODE(last));
+   auto* gmwi =  GetPointer<gimple_multi_way_if>(GET_NODE(last));
    if(gmwi)
       return GET_INDEX_NODE(last);
    return 0;
@@ -5294,7 +5298,7 @@ std::string BehavioralHelper::print_forward_declaration(unsigned int type) const
    {
       case record_type_K:
       {
-         record_type *rt = GetPointer<record_type>(node_type);
+         auto *rt = GetPointer<record_type>(node_type);
          if (rt->name)
             res += "struct " + tree_helper::print_type(TM, GET_INDEX_NODE(rt->name));
          else
@@ -5303,7 +5307,7 @@ std::string BehavioralHelper::print_forward_declaration(unsigned int type) const
       }
       case union_type_K:
       {
-         union_type *rt = GetPointer<union_type>(node_type);
+         auto *rt = GetPointer<union_type>(node_type);
          if (rt->name)
             res += "union " + tree_helper::print_type(TM, GET_INDEX_NODE(rt->name));
          else
@@ -5312,7 +5316,7 @@ std::string BehavioralHelper::print_forward_declaration(unsigned int type) const
       }
       case enumeral_type_K:
       {
-         enumeral_type *rt = GetPointer<enumeral_type>(node_type);
+         auto *rt = GetPointer<enumeral_type>(node_type);
          if (rt->name)
             res += "enum " + tree_helper::print_type(TM, GET_INDEX_NODE(rt->name));
          else
@@ -5376,7 +5380,7 @@ std::string BehavioralHelper::print_forward_declaration(unsigned int type) const
 bool BehavioralHelper::is_empty_return(unsigned int index) const
 {
    const tree_nodeRef retNode = TM->get_tree_node_const(index);
-   gimple_return *re = GetPointer<gimple_return>(retNode);
+   auto *re = GetPointer<gimple_return>(retNode);
    THROW_ASSERT(re, "Expected a return statement");
    return !re->op;
 }
@@ -5410,7 +5414,7 @@ void BehavioralHelper::get_typecast(unsigned int nodeid, std::unordered_set<unsi
 
 bool BehavioralHelper::IsDefaultSsaName(const unsigned int ssa_name_index) const
 {
-   const ssa_name * sn = GetPointer<const ssa_name>(TM->get_tree_node_const(ssa_name_index));
+   const auto * sn = GetPointer<const ssa_name>(TM->get_tree_node_const(ssa_name_index));
    return sn and sn->default_flag;
 }
 
@@ -5484,6 +5488,7 @@ bool BehavioralHelper::CanBeSpeculated(const unsigned int node_index) const
          }
       case (gimple_assign_K):
          {
+            THROW_ASSERT(ga and ga->op1, "unexpected condition"); // to silence the clang static analyzer
             switch(GET_NODE(ga->op1)->get_kind())
             {
                case call_expr_K:
@@ -5667,7 +5672,7 @@ bool BehavioralHelper::CanBeMoved(const unsigned int node_index) const
       return false;
    THROW_ASSERT(node_index, "unexpected condition");
    const auto tn = TM->CGetTreeNode(node_index);
-   const gimple_node * gn = GetPointer<const gimple_node>(tn);
+   const auto * gn = GetPointer<const gimple_node>(tn);
    THROW_ASSERT(gn, "unexpected condition: node " + STR(tn) + " is not a gimple_node");
    /*
     * artificial gimple_node can never be moved because they are created to
@@ -5676,12 +5681,12 @@ bool BehavioralHelper::CanBeMoved(const unsigned int node_index) const
     */
    if (gn->artificial)
       return false;
-   const gimple_call * gc = GetPointer<const gimple_call>(tn);
+   const auto * gc = GetPointer<const gimple_call>(tn);
    if (gc and GET_NODE(gc->fn)->get_kind() == addr_expr_K)
    {
       // the node is a gimple_call to a function (no function pointers
       const auto addr_node = GET_NODE(gc->fn);
-      const addr_expr * ae = GetPointer<const addr_expr>(addr_node);
+      const auto * ae = GetPointer<const addr_expr>(addr_node);
       THROW_ASSERT(GET_NODE(ae->op)->get_kind() == function_decl_K,
             "node  " + STR(GET_NODE(ae->op)) +
             " is not function_decl but " + GET_NODE(ae->op)->get_kind_text());

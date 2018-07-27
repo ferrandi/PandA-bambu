@@ -109,7 +109,7 @@ class ChoiceAsnType : public AsnType
        * Constructor
        * @param element_type_list is the types composing this choice
        */
-      explicit ChoiceAsnType(const std::list<std::pair<std::string, AsnTypeRef> >& element_type_list);
+      explicit ChoiceAsnType(std::list<std::pair<std::string, AsnTypeRef> >  element_type_list);
 };
 
 class EnumeratedAsnType : public AsnType
@@ -122,7 +122,7 @@ class EnumeratedAsnType : public AsnType
        * Constructor
        * @param the list of enum
        */
-      explicit EnumeratedAsnType(const std::list<std::pair<std::string, unsigned int> > &named_number_list);
+      explicit EnumeratedAsnType(std::list<std::pair<std::string, unsigned int> > named_number_list);
 };
 
 class IntegerAsnType : public AsnType
@@ -148,7 +148,7 @@ class OctetStringAsnType : public AsnType
       /**
        * Destructor
        */
-      ~OctetStringAsnType();
+      ~OctetStringAsnType() override;
 };
 
 class RealAsnType : public AsnType
@@ -170,7 +170,7 @@ class RedefineAsnType : public AsnType
        * Constructor
        * @param name is the redefined type
        */
-      explicit RedefineAsnType(const std::string&name);
+      explicit RedefineAsnType(std::string name);
 };
 
 class SequenceAsnType : public AsnType
@@ -182,7 +182,7 @@ class SequenceAsnType : public AsnType
       /**
        * Constructor
        */
-      explicit SequenceAsnType(const std::list<std::pair<std::string, AsnTypeRef> >& element_type_list);
+      explicit SequenceAsnType(std::list<std::pair<std::string, AsnTypeRef> >  element_type_list);
 };
 
 class SequenceOfAsnType : public AsnType
@@ -197,7 +197,7 @@ class SequenceOfAsnType : public AsnType
       /**
        * Constructor
        */
-      SequenceOfAsnType(const std::string&element, const std::string&size);
+      SequenceOfAsnType(std::string element, const std::string&size);
 };
 
 class SetAsnType : public AsnType
@@ -209,7 +209,7 @@ class SetAsnType : public AsnType
       /**
        * Constructor
        */
-      explicit SetAsnType(const std::list<std::pair<std::string, AsnTypeRef> >& element_type_list);
+      explicit SetAsnType(std::list<std::pair<std::string, AsnTypeRef> >  element_type_list);
 };
 
 class SetOfAsnType : public AsnType
@@ -224,7 +224,7 @@ class SetOfAsnType : public AsnType
       /**
        * Constructor
        */
-      SetOfAsnType(const std::string&element, const std::string&size);
+      SetOfAsnType(std::string element, const std::string&size);
 };
 
 typedef refcount<AsnType> AsnTypeRef;

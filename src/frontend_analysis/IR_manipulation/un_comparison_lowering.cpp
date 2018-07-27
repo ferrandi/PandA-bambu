@@ -55,6 +55,8 @@
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
 #include "tree_helper.hpp"
+#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 UnComparisonLowering::UnComparisonLowering(const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters) :
    FunctionFrontendFlowStep(_AppM, _function_id, UN_COMPARISON_LOWERING, _design_flow_manager, _parameters)
@@ -88,8 +90,7 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
 }
 
 UnComparisonLowering::~UnComparisonLowering()
-{
-}
+= default;
 
 DesignFlowStep_Status UnComparisonLowering::InternalExec()
 {
@@ -98,8 +99,8 @@ DesignFlowStep_Status UnComparisonLowering::InternalExec()
    const tree_manipulationRef tree_man = tree_manipulationRef(new tree_manipulation(TreeM, parameters));
    const tree_nodeRef curr_tn = TreeM->GetTreeNode(function_id);
    tree_nodeRef Scpe = TreeM->GetTreeReindex(function_id);
-   function_decl * fd = GetPointer<function_decl>(curr_tn);
-   statement_list * sl = GetPointer<statement_list>(GET_NODE(fd->body));
+   auto * fd = GetPointer<function_decl>(curr_tn);
+   auto * sl = GetPointer<statement_list>(GET_NODE(fd->body));
    for(const auto& block : sl->list_of_bloc)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing BB" + STR(block.first));

@@ -51,14 +51,14 @@
 #include "basic_blocks_graph_constructor.hpp"
 #include "function_behavior.hpp"
 #include "op_graph.hpp"
+#include "hash_helper.hpp"
 
 BBCdgComputation::BBCdgComputation(const ParameterConstRef _Param, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager) :
    FunctionFrontendFlowStep(_AppM, _function_id, BB_CONTROL_DEPENDENCE_COMPUTATION, _design_flow_manager, _Param)
 {}
 
 BBCdgComputation::~BBCdgComputation()
-{
-}
+= default;
 
 const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship> > BBCdgComputation::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
@@ -112,8 +112,8 @@ DesignFlowStep_Status BBCdgComputation::InternalExec()
    boost::topological_sort(*bb, std::front_inserter(bb_levels));
    std::map<vertex, unsigned int> bb_sorted;
    unsigned int counter = 0;
-   for(std::list<vertex>::iterator it = bb_levels.begin(); it != bb_levels.end(); ++it)
-      bb_sorted[*it] = ++counter;
+   for(auto & bb_level : bb_levels)
+      bb_sorted[bb_level] = ++counter;
    //iterate over outgoing edges of the basic block CFG.
    for (boost::tie(ei, ei_end) = boost::edges(*bb); ei != ei_end ; ++ei )
    {
@@ -129,8 +129,8 @@ DesignFlowStep_Status BBCdgComputation::InternalExec()
             std::set<unsigned int> labels = bb->CGetBBEdgeInfo(*ei)->get_labels(CFG_SELECTOR);
             if(labels.size())
             {
-               std::set<unsigned int>::iterator it_end = labels.end();
-               for(std::set<unsigned int>::iterator it = labels.begin(); it != it_end; ++it)
+               auto it_end = labels.end();
+               for(auto it = labels.begin(); it != it_end; ++it)
                {
                   function_behavior->bbgc->add_bb_edge_info(A, current_node, CDG_SELECTOR, *it);
                }

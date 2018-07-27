@@ -61,18 +61,18 @@ class FPGA_technology : public target_technology
       /**
        * Destructor of the class
        */
-      virtual ~FPGA_technology();
+      ~FPGA_technology() override;
 
       /**
        * Initializes the current technology
        */
-      virtual void initialize();
+      void initialize() override;
 
       /**
        * Returns the type of the technology currently implemented in a string format.
        * @return a string representing the type of the technology
        */
-      virtual std::string get_string_type() const;
+      std::string get_string_type() const override;
 
 };
 

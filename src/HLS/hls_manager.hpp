@@ -121,7 +121,7 @@ class HLS_manager : public application_manager
       /**
        * Destructor.
        */
-      ~HLS_manager();
+      ~HLS_manager() override;
 
       /**
        * Returns the HLS datastructure associated with a specific function

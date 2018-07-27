@@ -79,6 +79,7 @@
 
 #include <boost/foreach.hpp>
 #include <boost/range/adaptor/reversed.hpp>
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 FSM_NI_SSA_liveness::FSM_NI_SSA_liveness(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager) :
    liveness_computer(_parameters, _HLSMgr, _funId, _design_flow_manager, HLSFlowStep_Type::FSM_NI_SSA_LIVENESS)
@@ -87,8 +88,7 @@ FSM_NI_SSA_liveness::FSM_NI_SSA_liveness(const ParameterConstRef _parameters, co
 }
 
 FSM_NI_SSA_liveness::~FSM_NI_SSA_liveness()
-{
-}
+= default;
 
 void FSM_NI_SSA_liveness::Initialize()
 {

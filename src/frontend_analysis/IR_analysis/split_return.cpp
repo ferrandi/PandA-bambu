@@ -80,6 +80,8 @@
 #include "tree_reindex.hpp"
 #include "tree_basic_block.hpp"
 #include "tree_helper.hpp"
+#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 SplitReturn::SplitReturn(const ParameterConstRef _parameters, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager) :
    FunctionFrontendFlowStep(_AppM, _function_id, SPLIT_RETURN, _design_flow_manager, _parameters)
@@ -88,8 +90,7 @@ SplitReturn::SplitReturn(const ParameterConstRef _parameters, const application_
 }
 
 SplitReturn::~SplitReturn()
-{
-}
+= default;
 
 const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship> > SplitReturn::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
@@ -200,8 +201,8 @@ DesignFlowStep_Status SplitReturn::InternalExec()
     bool isChanged = false;
     tree_nodeRef temp = TM->get_tree_node_const(function_id);
     std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> gimple_return_schema;
-    function_decl * fd = GetPointer<function_decl>(temp);
-    statement_list * sl = GetPointer<statement_list>(GET_NODE(fd->body));
+    auto * fd = GetPointer<function_decl>(temp);
+    auto * sl = GetPointer<statement_list>(GET_NODE(fd->body));
     std::map<unsigned int, blocRef> & list_of_bloc = sl->list_of_bloc;
     std::map<unsigned int, blocRef>::iterator iit, iit_end = list_of_bloc.end();
     std::list<unsigned int> to_be_erase;

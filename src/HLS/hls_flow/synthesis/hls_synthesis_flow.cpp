@@ -60,9 +60,7 @@ HLSSynthesisFlow::HLSSynthesisFlow(const ParameterConstRef _parameters, const HL
 }
 
 HLSSynthesisFlow::~HLSSynthesisFlow()
-{
-
-}
+= default;
 
 const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > HLSSynthesisFlow::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {

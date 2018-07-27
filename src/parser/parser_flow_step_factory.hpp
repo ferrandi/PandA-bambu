@@ -67,19 +67,19 @@ class ParserFlowStepFactory : public DesignFlowStepFactory
       /**
        * Destructor
        */
-      virtual ~ParserFlowStepFactory();
+      ~ParserFlowStepFactory() override;
 
       /**
        * Return the prefix of the steps created by the factory
        */
-      virtual const std::string GetPrefix() const;
+      const std::string GetPrefix() const override;
 
       /**
        * Return a step given the signature
        * @param signature is the signature of the step to be created
        * @return the created step
        */
-      virtual DesignFlowStepRef CreateFlowStep(const std::string&signature) const;
+      DesignFlowStepRef CreateFlowStep(const std::string&signature) const override;
 };
 #endif
 

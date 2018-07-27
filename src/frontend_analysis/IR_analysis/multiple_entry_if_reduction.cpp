@@ -88,7 +88,7 @@
 #include <fstream>
 #include <limits>
 #include <string>
-#include <math.h>
+#include <cmath>
 #include <boost/range/adaptor/reversed.hpp>
 
 ///Tree include
@@ -101,6 +101,8 @@
 #pragma GCC diagnostic ignored "-Woverloaded-virtual"
 #include "tree_node_dup.hpp"
 #include "tree_reindex.hpp"
+#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 REF_FORWARD_DECL(tree_node_dup);
 
@@ -127,8 +129,7 @@ void MultipleEntryIfReduction::Initialize()
 }
 
 MultipleEntryIfReduction::~MultipleEntryIfReduction ()
-{
-}
+= default;
 
 const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship> > MultipleEntryIfReduction::ComputeFrontendRelationships (const DesignFlowStep::RelationshipType relationship_type) const
 {
@@ -186,7 +187,7 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec ()
       PrintTreeManager(true);
    }
    THROW_ASSERT(parameters->IsParameter("meif_threshold"), "");
-   const double threshold = parameters->GetParameter<double>("meif_threshold");
+   const auto threshold = parameters->GetParameter<double>("meif_threshold");
 
    const size_t max_iteration_number = parameters->IsParameter("meif_max_iterations_number") ? parameters->GetParameter<size_t>("meif_max_iterations_number") : std::numeric_limits<size_t>::max();
 

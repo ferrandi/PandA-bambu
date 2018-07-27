@@ -87,7 +87,7 @@ struct priority_data
       /**
        * Destructor.
       */
-      virtual ~priority_data(){}
+      virtual ~priority_data()= default;
    private:
       /// data structure storing the priority values.
       vertex2obj<dataType> priority_values;
@@ -107,7 +107,7 @@ struct priority_static_mobility : public priority_data<int>
    /**
     * This specialization does not update the priorities at the end of the control step.
    */
-   bool update() {return false;}
+   bool update() override {return false;}
 
 };
 
@@ -125,7 +125,7 @@ struct priority_dynamic_mobility : public priority_data<int>
       /**
        * This specialization does update the priorities at the end of the control step only of ready nodes.
       */
-      bool update();
+      bool update() override;
    
    private:
       /// set of ready vertices.
@@ -148,7 +148,7 @@ struct priority_fixed : public priority_data<int>
    /**
     * This specialization does not update the priorities at the end of the control step.
    */
-   bool update() {return false;}
+   bool update() override {return false;}
 
 };
 
@@ -194,7 +194,7 @@ struct priority_compare_functor
       /**
        * Destructor
        */
-      ~priority_compare_functor() {}
+      ~priority_compare_functor() = default;
 
    private:
 

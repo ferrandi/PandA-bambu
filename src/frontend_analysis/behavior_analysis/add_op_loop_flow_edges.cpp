@@ -44,7 +44,7 @@
 ///Header include
 #include "add_op_loop_flow_edges.hpp"
 
-///Algotithm include
+///Algorithm include
 #include "loop.hpp"
 #include "loops.hpp"
 
@@ -61,6 +61,9 @@
 
 ///Parameter include
 #include "Parameter.hpp"
+#include "hash_helper.hpp"
+#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 AddOpLoopFlowEdges::AddOpLoopFlowEdges(const ParameterConstRef _parameters, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager) :
    FunctionFrontendFlowStep(_AppM, _function_id, ADD_OP_LOOP_FLOW_EDGES, _design_flow_manager, _parameters)
@@ -69,8 +72,7 @@ AddOpLoopFlowEdges::AddOpLoopFlowEdges(const ParameterConstRef _parameters, cons
 }
 
 AddOpLoopFlowEdges::~AddOpLoopFlowEdges()
-{
-}
+= default;
 
 const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship> > AddOpLoopFlowEdges::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {

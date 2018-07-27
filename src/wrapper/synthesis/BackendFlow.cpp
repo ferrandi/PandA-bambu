@@ -107,6 +107,7 @@
 #include "boost/filesystem.hpp"
 
 #include <iosfwd>
+#include <utility>
 
 #if HAVE_IPXACT_BUILT
 #include "ip_xact_xml.hpp"
@@ -190,11 +191,11 @@ void DesignParameters::xload_design_configuration(const ParameterConstRef DEBUG_
 }
 #endif
 
-BackendFlow::BackendFlow(const ParameterConstRef _Param, const std::string& _flow_name, const target_managerRef _manager) :
+BackendFlow::BackendFlow(const ParameterConstRef _Param, std::string  _flow_name, const target_managerRef _manager) :
    Param(_Param),
    debug_level(_Param->getOption<int>(OPT_debug_level)),
    output_level(_Param->getOption<unsigned int>(OPT_output_level)),
-   flow_name(_flow_name),
+   flow_name(std::move(_flow_name)),
    out_dir(Param->getOption<std::string>(OPT_output_directory) + "/" + flow_name),
    target(_manager),
    root(nullptr)
@@ -205,9 +206,7 @@ BackendFlow::BackendFlow(const ParameterConstRef _Param, const std::string& _flo
 }
 
 BackendFlow::~BackendFlow()
-{
-
-}
+= default;
 
 BackendFlow::type_t BackendFlow::DetermineBackendFlowType(const target_deviceRef device, const ParameterConstRef
 #if HAVE_TASTE
@@ -328,9 +327,9 @@ std::string BackendFlow::GenerateSynthesisScripts(const std::string& fu_name, co
 void BackendFlow::ExecuteSynthesis()
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Executing synthesis");
-   for (unsigned int i = 0; i < steps.size(); i++)
+   for (auto & step : steps)
    {
-      steps[i]->tool->CheckExecution();
+      step->tool->CheckExecution();
    }
 
    ToolManagerRef tool(new ToolManager(Param));
@@ -359,9 +358,9 @@ void BackendFlow::parse_flow(const XMLDomParserRef parser)
    root = parser->get_document()->get_root_node(); //deleted by DomParser.
 
    const xml_node::node_list list = root->get_children();
-   for (xml_node::node_list::const_iterator l = list.begin(); l != list.end(); ++l)
+   for (const auto & l : list)
    {
-      const xml_element* child = GetPointer<xml_element>(*l);
+      const xml_element* child = GetPointer<xml_element>(l);
       if (!child || child->get_name() != "flow") continue;
       std::string name;
       LOAD_XVM(name, child);
@@ -376,9 +375,9 @@ void BackendFlow::xload(const xml_element* node)
    THROW_ASSERT(default_flow_parameters->chain_name == flow_name, "wrong values: " + default_flow_parameters->chain_name + " vs. " + flow_name);
 
    const xml_node::node_list list = node->get_children();
-   for (xml_node::node_list::const_iterator l = list.begin(); l != list.end(); ++l)
+   for (const auto & l : list)
    {
-      const xml_element* child = GetPointer<xml_element>(*l);
+      const xml_element* child = GetPointer<xml_element>(l);
       if (!child) continue;
 
       if (child->get_name() == "config")
@@ -504,7 +503,7 @@ std::string BackendFlow::CreateScripts(const DesignParametersRef dp)
    exec_params->component_name = dp->component_name;
    THROW_ASSERT(exec_params->chain_name == dp->chain_name, "Mismatching!! exec = \"" + exec_params->chain_name + "\" vs. dp = \"" + dp->chain_name + "\"");
 
-   for(DesignParameters::map_t::iterator p = dp->parameter_values.begin(); p != dp->parameter_values.end(); ++p)
+   for(auto p = dp->parameter_values.begin(); p != dp->parameter_values.end(); ++p)
    {
       exec_params->parameter_values[p->first] = p->second;
       INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "-->setting parameter \"" + p->first + "\" to value \"" + p->second + "\"");
@@ -518,9 +517,9 @@ std::string BackendFlow::CreateScripts(const DesignParametersRef dp)
 
    if (module_undefined_parameters.size() > 0)
    {
-      for(std::set<std::string>::iterator p = module_undefined_parameters.begin(); p != module_undefined_parameters.end(); ++p)
+      for(const auto & module_undefined_parameter : module_undefined_parameters)
       {
-         INDENT_DBG_MEX(0,0, "missing definition for parameter " + *p);
+         PRINT_MSG("missing definition for parameter " + module_undefined_parameter);
       }
       THROW_ERROR("Some parameters still need to be defined: " + STR(module_undefined_parameters.size()));
    }
@@ -536,9 +535,8 @@ std::string BackendFlow::CreateScripts(const DesignParametersRef dp)
 
    WriteFlowConfiguration(script);
 
-   for (unsigned int s = 0; s < steps.size(); s++)
+   for (const auto & step : steps)
    {
-      const BackendStepRef& step = steps[s];
       THROW_ASSERT(step->tool, "Tool not valid for step: " + step->name);
       script << "# STEP: " << step->name << std::endl;
 
@@ -596,9 +594,8 @@ void BackendFlow::create_xml_scripts(const std::string& xml_file)
    doc.set_name( "synthesis_tools" );
    xml_element * out_root = doc.add_child_element( "synthesis_tools" );
 
-   for ( unsigned int s = 0; s < steps.size(); s++ )
+   for (const auto & step : steps)
    {
-      const BackendStepRef& step = steps[s];
       THROW_ASSERT( step->tool, "Tool not valid for step: " + step->name );
       out_root->add_child_element( step->tool->xwrite() );
    }

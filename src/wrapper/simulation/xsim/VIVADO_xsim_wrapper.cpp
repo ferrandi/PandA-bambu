@@ -60,15 +60,16 @@
 
 #include <fileIO.hpp>
 #include <polixml.hpp>
+#include <utility>
 #include <xml_dom_parser.hpp>
 #include <xml_helper.hpp>
 
 #include <fstream>
 
 //constructor
-VIVADO_xsim_wrapper::VIVADO_xsim_wrapper(const ParameterConstRef _Param, const std::string& _suffix) :
+VIVADO_xsim_wrapper::VIVADO_xsim_wrapper(const ParameterConstRef _Param, std::string  _suffix) :
    SimulationTool(_Param),
-   suffix(_suffix)
+   suffix(std::move(_suffix))
 {
    PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Creating the XSIM wrapper...");
    boost::filesystem::create_directory(XSIM_SUBDIR + suffix + "/" );
@@ -77,9 +78,7 @@ VIVADO_xsim_wrapper::VIVADO_xsim_wrapper(const ParameterConstRef _Param, const s
 
 //destructor
 VIVADO_xsim_wrapper::~VIVADO_xsim_wrapper()
-{
-
-}
+= default;
 
 void VIVADO_xsim_wrapper::CheckExecution()
 {

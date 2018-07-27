@@ -43,11 +43,13 @@
  *
 */
 #include "problem_dim.hpp"
+
+#include <utility>
 #include "meilp_solver.hpp"
 
-problem_dim::problem_dim(const meilp_solverRef & ms): MS(ms)
+problem_dim::problem_dim(meilp_solverRef  ms): MS(std::move(ms))
 {}
 
 problem_dim::~problem_dim() 
-{}
+= default;
 

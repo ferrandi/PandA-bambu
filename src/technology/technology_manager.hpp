@@ -57,11 +57,13 @@
 ///STL include
 #include <set>
 #include <unordered_map>
+#include <vector>
 
 ///utility include
 #include "custom_set.hpp"
 #include "refcount.hpp"
-
+#include "strong_typedef.hpp"
+#include "utility.hpp"
 
 /// working library.
 #define DESIGN std::string("design")
@@ -140,7 +142,7 @@ class technology_manager
       ///The debug level for this class
       int debug_level;
 
-      ///map between library name and the corresponding datastructure
+      ///map between library name and the corresponding data structure
       library_map_type library_map;
 
       ///(reverse) ordered list of libraries; it gives a priority ordering for searching the nodes
@@ -250,16 +252,16 @@ class technology_manager
       void erase_library(const std::string& Name);
 
       /**
-       * Check if a library is contained into the datastructure
+       * Check if a library is contained into the data structure
        * @param Name is the name of the library.
-       * @return true if there is a datastructure corresponding to the library name, false otherwise
+       * @return true if there is a data structure corresponding to the library name, false otherwise
        */
       bool is_library_manager(const std::string& Name) const;
 
       /**
-       * Return the library datastructure corresponding to the given library id
+       * Return the library data structure corresponding to the given library id
        * @param Name is the name of the library.
-       * @return the reference to the datastructure of the library
+       * @return the reference to the data structure of the library
        */
       library_managerRef get_library_manager(const std::string& Name) const;
 
@@ -385,7 +387,7 @@ class technology_manager
 
       /**
        * Return the characterization timestamp of the setup hold time
-       * @return the characeterization timestamp of the setup hold time
+       * @return the characterization timestamp of the setup hold time
        */
       TimeStamp CGetSetupHoldTimeStamp() const;
 };

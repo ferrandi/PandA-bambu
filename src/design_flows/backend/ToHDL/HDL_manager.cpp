@@ -88,6 +88,7 @@
 ///technology includes
 #include "technology_manager.hpp"
 #include "technology_node.hpp"
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 HDL_manager::HDL_manager(const HLS_managerRef _HLSMgr, const target_deviceRef _device, const structural_managerRef _SM, const ParameterConstRef _parameters) :
    HLSMgr(_HLSMgr),
@@ -116,9 +117,7 @@ HDL_manager::HDL_manager(const HLS_managerRef _HLSMgr, const target_deviceRef _d
 
 
 HDL_manager::~HDL_manager()
-{
-
-}
+= default;
 
 std::string HDL_manager::write_components(const std::string& filename, HDLWriter_Language language, const std::list<structural_objectRef>& components, bool equation, std::list<std::string> & aux_files) const
 {
@@ -214,7 +213,7 @@ std::string HDL_manager::write_components(const std::string& filename, HDLWriter
 void HDL_manager::write_components(const std::string &filename,  const std::list<structural_objectRef>& components, bool equation, std::list<std::string> & hdl_files, std::list<std::string> & aux_files)
 {
    ///default language
-   HDLWriter_Language language = static_cast<HDLWriter_Language>(parameters->getOption<unsigned int>(OPT_writer_language));
+   auto language = static_cast<HDLWriter_Language>(parameters->getOption<unsigned int>(OPT_writer_language));
 
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "  Everything seems ok. Let's start with the real job.");
 
@@ -236,9 +235,9 @@ void HDL_manager::write_components(const std::string &filename,  const std::list
 
    ///determine the proper language for each component
    std::map<HDLWriter_Language, std::list<structural_objectRef> > component_language;
-   for (std::list<structural_objectRef>::const_iterator cit = components.begin(); cit != components.end(); ++cit)
+   for (const auto & component : components)
    {
-      module* mod = GetPointer<module>(*cit);
+      auto* mod = GetPointer<module>(component);
       THROW_ASSERT(mod, "Expected a component object");
 
       unsigned int n_elements = mod->get_internal_objects_size();
@@ -249,13 +248,13 @@ void HDL_manager::write_components(const std::string &filename,  const std::list
       if (n_elements || (np && (np->exist_NP_functionality(type) || (language == HDLWriter_Language::VERILOG && np->exist_NP_functionality(NP_functionality::VERILOG_FILE_PROVIDED))
                                 || (language == HDLWriter_Language::VHDL && np->exist_NP_functionality(NP_functionality::VHDL_PROVIDED)))))
       {
-         component_language[language].push_back(*cit);
+         component_language[language].push_back(component);
       }
       else
       {
          if (np and np->exist_NP_functionality(NP_functionality::FSM))
          {
-            component_language[language].push_back(*cit);
+            component_language[language].push_back(component);
          }
          else if (np && (np->exist_NP_functionality(NP_functionality::VERILOG_PROVIDED) || np->exist_NP_functionality(NP_functionality::VERILOG_FILE_PROVIDED)))
          {
@@ -274,7 +273,7 @@ void HDL_manager::write_components(const std::string &filename,  const std::list
                }
             }
 #endif
-            component_language[HDLWriter_Language::VERILOG].push_back(*cit);
+            component_language[HDLWriter_Language::VERILOG].push_back(component);
          }
          else if (np && (np->exist_NP_functionality(NP_functionality::VHDL_PROVIDED) || np->exist_NP_functionality(NP_functionality::FLOPOCO_PROVIDED) || np->exist_NP_functionality(NP_functionality::VHDL_FILE_PROVIDED)))
          {
@@ -285,12 +284,12 @@ void HDL_manager::write_components(const std::string &filename,  const std::list
             }
             else
 #endif
-               THROW_WARNING((*cit)->get_path() + " is available only in VHDL");
-            component_language[HDLWriter_Language::VHDL].push_back(*cit);
+               THROW_WARNING(component->get_path() + " is available only in VHDL");
+            component_language[HDLWriter_Language::VHDL].push_back(component);
          }
          else if (np && np->exist_NP_functionality(NP_functionality::SYSTEM_VERILOG_PROVIDED))
          {
-            component_language[HDLWriter_Language::SYSTEM_VERILOG].push_back(*cit);
+            component_language[HDLWriter_Language::SYSTEM_VERILOG].push_back(component);
          }
          else
             THROW_ERROR("Language not supported! Module " + mod->get_path());
@@ -298,7 +297,7 @@ void HDL_manager::write_components(const std::string &filename,  const std::list
    }
 
    ///generate the auxiliary files
-   for(std::map<HDLWriter_Language, std::list<structural_objectRef> >::iterator l = component_language.begin(); l != component_language.end(); ++l)
+   for(auto l = component_language.begin(); l != component_language.end(); ++l)
    {
       if (language == l->first) continue;
       std::string generated_filename = write_components(filename, l->first, component_language[l->first], equation, aux_files);
@@ -362,7 +361,7 @@ private:
 bool HDL_manager::is_fsm(const structural_objectRef &cir) const
 {
    /// check for a fsm description
-   module * mod_inst = GetPointer<module>(cir);
+   auto * mod_inst = GetPointer<module>(cir);
    THROW_ASSERT(mod_inst, "Expected a component or a channel");
    const NP_functionalityRef &np = mod_inst->get_NP_functionality();
    if (np)
@@ -379,7 +378,7 @@ void HDL_manager::get_post_order_structural_components(const structural_objectRe
       case component_o_K:
       case channel_o_K:
       {
-         module * mod = GetPointer<module>(cir);
+         auto * mod = GetPointer<module>(cir);
          unsigned int n_elements = mod->get_internal_objects_size();
          if(n_elements)
          {
@@ -414,9 +413,8 @@ void HDL_manager::get_post_order_structural_components(const structural_objectRe
          {
             std::string ip_cores = NPF->get_NP_functionality(NP_functionality::IP_COMPONENT);
             std::vector<std::string> ip_cores_list = convert_string_to_vector<std::string>(ip_cores, ",");
-            for(unsigned int ip = 0; ip < ip_cores_list.size(); ip++)
+            for(auto ip_core : ip_cores_list)
             {
-               std::string ip_core = ip_cores_list[ip];
                std::vector<std::string> ip_core_vec = convert_string_to_vector<std::string>(ip_core, ":");
                if (ip_core_vec.size() < 1 or ip_core_vec.size() > 2) THROW_ERROR("Malformed IP component definition \"" + ip_core + "\"");
                std::string library, component_name;
@@ -439,14 +437,14 @@ void HDL_manager::get_post_order_structural_components(const structural_objectRe
                else
                   THROW_ERROR("Unexpected pattern");
                get_post_order_structural_components(core_cir, list_of_com);
-               std::list<structural_objectRef>::iterator fo = std::find_if(list_of_com.begin(), list_of_com.end(), find_eq_module(nullptr, core_cir));
+               auto fo = std::find_if(list_of_com.begin(), list_of_com.end(), find_eq_module(nullptr, core_cir));
                if (fo == list_of_com.end())
                {
                   list_of_com.push_back(core_cir);
                }
             }
          }
-         std::list<structural_objectRef>::iterator fo = std::find_if(list_of_com.begin(), list_of_com.end(), find_eq_module(nullptr, cir));
+         auto fo = std::find_if(list_of_com.begin(), list_of_com.end(), find_eq_module(nullptr, cir));
          if (fo == list_of_com.end())
             list_of_com.push_back(cir);
          break;
@@ -468,7 +466,7 @@ void HDL_manager::get_post_order_structural_components(const structural_objectRe
 void HDL_manager::io_signal_fix_ith(const language_writerRef writer, const structural_objectRef po, bool& lspf) const
 {
    THROW_ASSERT(po && po->get_kind() == port_o_K, "Expected a port; got something different");
-   port_o * p = GetPointer<port_o>(po);
+   auto * p = GetPointer<port_o>(po);
    structural_objectRef po_owner = po->get_owner();
    if (po_owner->get_kind() == port_vector_o_K)
       po_owner = po_owner->get_owner();
@@ -644,9 +642,9 @@ void HDL_manager::write_module(const language_writerRef writer, const structural
          }
          cs.sort();
 
-         for(std::list<std::pair<std::string, structural_objectRef> >::iterator c = cs.begin(); c != cs.end(); ++c)
+         for(auto & c : cs)
          {
-            writer->write_signal_declaration(c->second);
+            writer->write_signal_declaration(c.second);
          }
 
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Writing module instantiation of " + cir->get_id());
@@ -681,9 +679,9 @@ void HDL_manager::write_module(const language_writerRef writer, const structural
          }
          cs.sort();
 
-         for(std::list<std::pair<std::string, structural_objectRef> >::iterator c = cs.begin(); c != cs.end(); ++c)
+         for(auto & c : cs)
          {
-            structural_objectRef obj = c->second;
+            structural_objectRef obj = c.second;
             if(TM->IsBuiltin(GET_TYPE_NAME(obj)))
             {
                writer->WriteBuiltin(obj);
@@ -693,7 +691,7 @@ void HDL_manager::write_module(const language_writerRef writer, const structural
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Writing module instance " + obj->get_id());
                writer->write_module_instance_begin(obj, get_mod_typename(writer.get(), obj), true);
                /// write IO ports binding
-               module * mod_inst = GetPointer<module>(obj);
+               auto * mod_inst = GetPointer<module>(obj);
                bool first_port_analyzed = false;
                /// First output and then input. Some backend could have benefits from this ordering.
                /// Some customizations are possible, like direct translation of gates into built-in statements.
@@ -817,7 +815,7 @@ void HDL_manager::write_module(const language_writerRef writer, const structural
                   io_signal_fix_ith(writer, mod->get_in_port(i), lspf);
                else
                {
-                  port_o * pv = GetPointer<port_o>(mod->get_in_port(i));
+                  auto * pv = GetPointer<port_o>(mod->get_in_port(i));
                   for (unsigned int k = 0; k < pv->get_ports_size(); k++)
                      io_signal_fix_ith(writer, pv->get_port(k), lspf);
                }
@@ -831,7 +829,7 @@ void HDL_manager::write_module(const language_writerRef writer, const structural
                   io_signal_fix_ith(writer, mod->get_out_port(i), lspf);
                else
                {
-                  port_o * pv = GetPointer<port_o>(mod->get_out_port(i));
+                  auto * pv = GetPointer<port_o>(mod->get_out_port(i));
                   for (unsigned int k = 0; k < pv->get_ports_size(); k++)
                      io_signal_fix_ith(writer, pv->get_port(k), lspf);
                }
@@ -845,7 +843,7 @@ void HDL_manager::write_module(const language_writerRef writer, const structural
                   io_signal_fix_ith(writer, mod->get_in_out_port(i), lspf);
                else
                {
-                  port_o * pv = GetPointer<port_o>(mod->get_in_out_port(i));
+                  auto * pv = GetPointer<port_o>(mod->get_in_out_port(i));
                   for (unsigned int k = 0; k < pv->get_ports_size(); k++)
                      io_signal_fix_ith(writer, pv->get_port(k), lspf);
                }
@@ -869,9 +867,8 @@ void HDL_manager::write_module(const language_writerRef writer, const structural
          {
             std::string ip_cores = np->get_NP_functionality(NP_functionality::IP_COMPONENT);
             std::vector<std::string> ip_cores_list = convert_string_to_vector<std::string>(ip_cores, ",");
-            for(unsigned int ip = 0; ip < ip_cores_list.size(); ip++)
+            for(auto ip_core : ip_cores_list)
             {
-               std::string ip_core = ip_cores_list[ip];
                std::vector<std::string> ip_core_vec = convert_string_to_vector<std::string>(ip_core, ":");
                if (ip_core_vec.size() < 1 or ip_core_vec.size() > 2) THROW_ERROR("Malformed IP component definition \"" + ip_core + "\"");
                std::string library, component_name;
@@ -915,7 +912,7 @@ void HDL_manager::write_flopoco_module(const structural_objectRef &cir, std::lis
 #endif
    ) const
 {
-   module * mod_inst = GetPointer<module>(cir);
+   auto * mod_inst = GetPointer<module>(cir);
    long long int mod_size_in = 0, mod_size_out=0;
    for (unsigned int i = 0; i < mod_inst->get_in_port_size(); i++)
    {
@@ -953,10 +950,10 @@ void HDL_manager::write_behavioral(const language_writerRef writer, const struct
    boost::algorithm::split( SplitVec, behav, boost::algorithm::is_any_of(";"));
    THROW_ASSERT(SplitVec.size(), "Expected at least one behavioral description");
 
-   for(unsigned int i = 0; i < SplitVec.size(); i++)
+   for(auto & i : SplitVec)
    {
       std::vector<std::string> SplitVec2;
-      boost::algorithm::split( SplitVec2, SplitVec[i], boost::algorithm::is_any_of("="));
+      boost::algorithm::split( SplitVec2, i, boost::algorithm::is_any_of("="));
       THROW_ASSERT(SplitVec2.size() == 2, "Expected two operands");
       writer->write_assign(SplitVec2[0], SplitVec2[1]);
    }
@@ -1001,13 +998,13 @@ void HDL_manager::write_fsm(const language_writerRef writer, const structural_ob
    THROW_ASSERT(tok_iter == first_line_tokens.end(), "Wrong fsm description: unexpetcted tokens"+*tok_iter);
 
    ++it;
-   std::vector<std::string>::const_iterator first = it;
+   auto first = it;
    for(; it+1 != it_end; ++it)
    {
       tokenizer tokens(*it, sep);
       list_of_states.push_back(convert_to_identifier(writer.get(), *tokens.begin()));
    }
-   std::vector<std::string>::const_iterator end = it;
+   auto end = it;
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Number of states: " << list_of_states.size());
    //std::cout << list_of_states.size() << " " << bitnumber(list_of_states.size()-1) << std::endl;
    THROW_ASSERT(reset_state==*(list_of_states.begin()), "reset state and first state has to be the same " + reset_state + " : " + fsm_desc);
@@ -1039,7 +1036,7 @@ void HDL_manager::write_fsm(const language_writerRef writer, const structural_ob
    ///write transition and output functions
    if(parameters->IsParameter("multi-proc-fsm") and parameters->GetParameter<int>("multi-proc-fsm") == 1)
    {
-      module * mod = GetPointer<module>(cir);
+      auto * mod = GetPointer<module>(cir);
       for (unsigned int output_index = 0; output_index <= mod->get_out_port_size(); output_index++)
          writer->write_transition_output_functions(false, output_index, cir, reset_state, reset_port, start_port, clock_port, first, end);
    }
@@ -1091,7 +1088,7 @@ std::string HDL_manager::convert_to_identifier(const std::string& id)
 std::string HDL_manager::get_mod_typename(const language_writer* lan, const structural_objectRef& cir)
 {
    std::string res = GET_TYPE_NAME(cir);
-   module * mod = GetPointer<module>(cir);
+   auto * mod = GetPointer<module>(cir);
    const NP_functionalityRef &np = mod->get_NP_functionality();
    if (np && np->get_NP_functionality(NP_functionality::FLOPOCO_PROVIDED) != "")
    {

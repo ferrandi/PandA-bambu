@@ -44,29 +44,17 @@
 ///Header include
 #include "loop.hpp"
 
-///behavior include
-#include "basic_block.hpp"
-#include "op_graph.hpp"
-
-///Tree include
-#include "tree_basic_block.hpp"
-
-///STD include
-#include <cmath>
+#include <boost/graph/adjacency_list.hpp>
+#include <boost/graph/filtered_graph.hpp>
+#include <boost/tuple/tuple.hpp>                  // for tie
 #include <limits>
 #include <iosfwd>
-#include <algorithm>
-
-///Utility include
-#include <boost/graph/adjacency_list.hpp>
-#include <boost/graph/copy.hpp>
-#include <boost/graph/depth_first_search.hpp>
-#include <boost/graph/filtered_graph.hpp>
-#include <boost/graph/reverse_graph.hpp>
-#include "dbgPrintHelper.hpp"
+#include "basic_block.hpp"
 #include "exceptions.hpp"
-#include "simple_indent.hpp"
-#include "utility.hpp"
+#include "function_behavior.hpp"                  // for BBGraphRef
+#include "op_graph.hpp"
+#include "tree_basic_block.hpp"
+
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic error "-Weffc++"

@@ -80,7 +80,7 @@ class ISE_isim_wrapper : public SimulationTool
       /**
        * Generates the proper simulation script
        */
-      void GenerateScript(std::ostringstream& script, const std::string& top_filename, const std::list<std::string> & file_list);
+      void GenerateScript(std::ostringstream& script, const std::string& top_filename, const std::list<std::string> & file_list) override;
 
    public:
 
@@ -88,17 +88,17 @@ class ISE_isim_wrapper : public SimulationTool
        * Constructor
        * @param Param is the set of parameters
        */
-      ISE_isim_wrapper(const ParameterConstRef Param, const std::string &suffix);
+      ISE_isim_wrapper(const ParameterConstRef Param, std::string suffix);
 
       /**
        * Destructor
        */
-      ~ISE_isim_wrapper();
+      ~ISE_isim_wrapper() override;
 
       /**
        * Checks if the current specification can be executed or not
        */
-      virtual void CheckExecution();
+      void CheckExecution() override;
 
 };
 /// Refcount definition for the class

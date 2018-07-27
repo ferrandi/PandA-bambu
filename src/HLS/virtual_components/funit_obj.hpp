@@ -80,9 +80,8 @@ class funit_obj : public generic_obj
       /**
        * Destructor.
       */
-      ~funit_obj()
-      {
-      }
+      ~funit_obj() override
+      = default;
 
       /**
        * Get funit name

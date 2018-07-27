@@ -138,6 +138,7 @@ enum class DiopsisInstrumentWriter_Type;
 (generate_vcd) \
 (hls_flow) \
 (hls_div)\
+(hls_fpdiv)\
 (interface) \
 (interface_type) \
 (additional_top) \
@@ -494,12 +495,12 @@ class OptionMap : public std::map<std::string, std::string>
       /**
        * Constructor
        */
-      OptionMap() { }
+      OptionMap() = default;
 
       /**
        * Destructor
        */
-      ~OptionMap() { }
+      ~OptionMap() = default;
 };
 
 #define DEFAULT_OPT_BASE 512

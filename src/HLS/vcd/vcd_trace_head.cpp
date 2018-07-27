@@ -57,6 +57,7 @@
 
 // include from STL
 #include <functional>
+#include <utility>
 
 static bool is_valid_state_string(const std::string& s, bool one_hot_fsm_encoding)
 {
@@ -161,7 +162,7 @@ static bool var_is_later_or_equal(const sig_variation & v, const unsigned long l
 
 vcd_trace_head::vcd_trace_head(
       const DiscrepancyOpInfo & op,
-      const std::string& signame,
+      std::string  signame,
       const std::list<sig_variation> & fv,
       const std::list<sig_variation> & ov,
       const std::list<sig_variation> & sv,
@@ -179,7 +180,7 @@ vcd_trace_head::vcd_trace_head(
    fsm_vars(fv), fsm_ss_it(fv.cbegin()), fsm_end(fv.cend()),
    out_vars(ov), out_var_it(ov.cbegin()), out_var_end(ov.cend()),
    start_vars(sv), sp_var_it(sv.cbegin()), sp_var_end(sv.cend()),
-   fullsigname(signame),
+   fullsigname(std::move(signame)),
    op_start_time(0), op_end_time(0), clock_period(clock_p),
    exec_times_in_current_state(0), consecutive_state_executions(0),
    has_been_initialized(false),
@@ -350,7 +351,7 @@ void vcd_trace_head::update()
       if (is_in_reg and is_phi)
       {
          const auto gp = GetPointer<const gimple_phi>(TM->get_tree_node_const(op_info.op_id));
-         unsigned int state_id = static_cast<unsigned int>(compute_state_id(fsm_ss_it->value, one_hot_fsm_encoding));
+         auto state_id = static_cast<unsigned int>(compute_state_id(fsm_ss_it->value, one_hot_fsm_encoding));
          const StateInfoConstRef state_info =
             HLSMgr->get_HLS(op_info.stg_fun_id)->STG->CGetStg()->CGetStateInfo(state_id);
          if (state_info->is_duplicated and not state_info->isOriginalState and not state_info->all_paths)

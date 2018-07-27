@@ -74,17 +74,17 @@ class values_scheme : public storage_value_insertion
       /**
        * Destructor of the class.
        */
-      ~values_scheme();
+      ~values_scheme() override;
 
       /**
        * Execute the step
        * @return the exit status of this step
        */
-      virtual DesignFlowStep_Status InternalExec();
+      DesignFlowStep_Status InternalExec() override;
 
       /**
        * Initialize the step (i.e., like a constructor, but executed just before exec
        */
-      virtual void Initialize();
+      void Initialize() override;
 };
 #endif

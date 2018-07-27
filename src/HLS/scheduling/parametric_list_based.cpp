@@ -42,6 +42,8 @@
 */
 
 #include "parametric_list_based.hpp"
+
+#include <utility>
 // #include "call_graph.hpp"
 #include "function_behavior.hpp"
 #include "exceptions.hpp"
@@ -81,10 +83,11 @@
 
 ///tree include
 #include "behavioral_helper.hpp"
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 #if ! HAVE_UNORDERED
 PrioritySorter::PrioritySorter(refcount<priority_data<int> > _priority, const OpGraphConstRef _op_graph) :
-   priority(_priority),
+   priority(std::move(_priority)),
    op_graph(_op_graph)
 {}
 
@@ -130,7 +133,7 @@ struct cs_ordering_functor
       /**
        * Destructor
        */
-      ~cs_ordering_functor() {}
+      ~cs_ordering_functor() = default;
 
 };
 
@@ -182,7 +185,7 @@ struct resource_ordering_functor
       /**
        * Destructor
        */
-      ~resource_ordering_functor() {}
+      ~resource_ordering_functor() = default;
 
 };
 
@@ -255,7 +258,7 @@ class edge_integer_order_by_map : std::binary_function<vertex, vertex, bool>
 static
 bool check_if_is_live_in_next_cycle(const std::set<vertex, cs_ordering_functor> &live_vertices, const ControlStep current_cycle, const OpVertexMap<double> & ending_time, double clock_cycle)
 {
-   std::set<vertex, cs_ordering_functor>::const_iterator live_vertex_it = live_vertices.begin();
+   auto live_vertex_it = live_vertices.begin();
    while(live_vertex_it != live_vertices.end())
    {
       if(ending_time.find(*live_vertex_it)->second > (from_strongtype_cast<double>(current_cycle) + 1) * clock_cycle)
@@ -303,9 +306,7 @@ parametric_list_based::parametric_list_based(const ParameterConstRef _parameters
 }
 
 parametric_list_based::~parametric_list_based()
-{
-
-}
+= default;
 
 void parametric_list_based::ComputeRelationships(DesignFlowStepSet & relationship, const DesignFlowStep::RelationshipType relationship_type)
 {
@@ -416,30 +417,30 @@ void parametric_list_based::exec(const OpVertexSet & operations, ControlStep cur
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "   Computing free input vertices...");
    ///compute the set of vertices without input edges.
    /// At least one vertex is expected
-   for(OpVertexSet::const_iterator vi = operations.begin(); vi != operations.end(); ++vi)
+   for(auto operation : operations)
    {
       ///Skip vertex if it is not in the current subgraph
-      if(!flow_graph->is_in_subset(*vi))
+      if(!flow_graph->is_in_subset(operation))
       {
          continue;
       }
       ///Updating structure for already scheduled operations
-      if(schedule->is_scheduled(*vi))
+      if(schedule->is_scheduled(operation))
       {
-         live_vertices.insert(*vi);
+         live_vertices.insert(operation);
 
       }
-      else if(boost::in_degree(*vi, *flow_graph) <= 0)
+      else if(boost::in_degree(operation, *flow_graph) <= 0)
       {
-         ready_vertices.insert(*vi);
-         if(GET_TYPE(flow_graph, *vi) == TYPE_ENTRY)
-            entry_vertex = *vi;
+         ready_vertices.insert(operation);
+         if(GET_TYPE(flow_graph, operation) == TYPE_ENTRY)
+            entry_vertex = operation;
       }
       else
       {
          ///Check if all its predecessors have been scheduled. In this case the vertex is ready
          InEdgeIterator ei, ei_end;
-         for(boost::tie(ei, ei_end) = boost::in_edges(*vi, *flow_graph); ei != ei_end; ei++)
+         for(boost::tie(ei, ei_end) = boost::in_edges(operation, *flow_graph); ei != ei_end; ei++)
          {
             vertex source = boost::source(*ei, *flow_graph);
             if(!schedule->is_scheduled(source))
@@ -447,7 +448,7 @@ void parametric_list_based::exec(const OpVertexSet & operations, ControlStep cur
          }
          if(ei == ei_end)
          {
-            ready_vertices.insert(*vi);
+            ready_vertices.insert(operation);
          }
       }
    }
@@ -521,7 +522,7 @@ void parametric_list_based::exec(const OpVertexSet & operations, ControlStep cur
       CustomMap<unsigned int, OpVertexSet > black_list;
 
       ///Adding information about operation still live
-      std::set<vertex, cs_ordering_functor>::const_iterator live_vertex_it = live_vertices.begin();
+      auto live_vertex_it = live_vertices.begin();
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "         Considering live vertices...");
       while(live_vertex_it != live_vertices.end())
       {
@@ -565,7 +566,7 @@ void parametric_list_based::exec(const OpVertexSet & operations, ControlStep cur
          while(ready_resources.size())
          {
             unsigned int fu_type;
-            std::set<unsigned int, resource_ordering_functor>::const_iterator best_res_it = ready_resources.begin();
+            auto best_res_it = ready_resources.begin();
             fu_type = *best_res_it;
 
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering functional unit type " + STR(fu_type) + "("+ HLS->allocation_information->get_fu_name(fu_type).first + "-" + HLS->allocation_information->get_fu_name(fu_type).second + ")" + " at clock cycle " + STR(current_cycle));
@@ -627,7 +628,7 @@ void parametric_list_based::exec(const OpVertexSet & operations, ControlStep cur
                }
                if(postponed)
                {
-                  PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "                  MEMORY_CTRL cannot run together with BRAM direct accessess " + GET_NAME(flow_graph, current_vertex) + " mapped on " + HLS->allocation_information->get_fu_name(fu_type).first + "at cstep " + STR(current_cycle));
+                  PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "                  MEMORY_CTRL cannot run together with BRAM direct accesses " + GET_NAME(flow_graph, current_vertex) + " mapped on " + HLS->allocation_information->get_fu_name(fu_type).first + "at cstep " + STR(current_cycle));
                   auto insertResult = black_list.insert(make_pair(fu_type, OpVertexSet(flow_graph)));
                   insertResult.first->second.insert(current_vertex);
                   continue;
@@ -729,7 +730,12 @@ void parametric_list_based::exec(const OpVertexSet & operations, ControlStep cur
                   insertResult.first->second.insert(current_vertex);
                   continue;
                }*/
-               else if((current_starting_time > (EPSILON + current_cycle_starting_time)) and (GET_TYPE(flow_graph, current_vertex) & TYPE_LOAD) and HLS->allocation_information->is_one_cycle_direct_access_memory_unit(fu_type) and ((HLSMgr->Rmem->get_maximum_references(HLS->allocation_information->is_memory_unit(fu_type) ? HLS->allocation_information->get_memory_var(fu_type) : HLS->allocation_information->get_proxy_memory_var(fu_type))) > HLS->allocation_information->get_number_channels(fu_type)))
+               else if((current_starting_time > (EPSILON + current_cycle_starting_time)) and (GET_TYPE(flow_graph, current_vertex) & TYPE_LOAD) and
+                       HLS->allocation_information->is_one_cycle_direct_access_memory_unit(fu_type) and
+                       (!HLS->allocation_information->is_readonly_memory_unit(fu_type) ||
+                        (!HLS->Param->isOption(OPT_rom_duplication) || !HLS->Param->getOption<bool>(OPT_rom_duplication))) and
+                       ((HLSMgr->Rmem->get_maximum_references(HLS->allocation_information->is_memory_unit(fu_type) ? HLS->allocation_information->get_memory_var(fu_type) : HLS->allocation_information->get_proxy_memory_var(fu_type))) > HLS->allocation_information->get_number_channels(fu_type))
+                       )
                {
                   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "                  Chaining with an asynchronous load is not possible -> starting time " + boost::lexical_cast<std::string>(current_starting_time) + " ending time: " + boost::lexical_cast<std::string>(current_ending_time));
                   auto insertResult = black_list.insert(make_pair(fu_type, OpVertexSet(flow_graph)));
@@ -870,13 +876,13 @@ void parametric_list_based::exec(const OpVertexSet & operations, ControlStep cur
                   }
                   //successors.sort();
 
-                  for(std::list<std::pair<std::string, vertex> >::iterator s = successors.begin(); s != successors.end(); ++s)
+                  for(auto s = successors.begin(); s != successors.end(); ++s)
                   {
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Considering successor " + s->first);
                      scheduled_predecessors[s->second]++;
                      if(current_ASAP.find(s->second) != current_ASAP.end())
                      {
-                        current_ASAP.find(s->second)->second = MAX(ControlStep(static_cast<unsigned int>(floor(ending_time.find(current_vertex)->second / clock_cycle))), current_ASAP.find(s->second)->second);
+                        current_ASAP.find(s->second)->second = std::max(ControlStep(static_cast<unsigned int>(floor(ending_time.find(current_vertex)->second / clock_cycle))), current_ASAP.find(s->second)->second);
                      }
                      else
                      {
@@ -906,8 +912,8 @@ void parametric_list_based::exec(const OpVertexSet & operations, ControlStep cur
             CustomMap<unsigned int, OpVertexSet >::const_iterator bl_end = postponed_resources.end();
             for(CustomMap<unsigned int, OpVertexSet >::const_iterator bl_it = postponed_resources.begin(); bl_it != bl_end; ++bl_it)
             {
-               OpVertexSet::const_iterator v_end = bl_it->second.end();
-               for(OpVertexSet::const_iterator v = bl_it->second.begin(); v != v_end; ++v)
+               auto v_end = bl_it->second.end();
+               for(auto v = bl_it->second.begin(); v != v_end; ++v)
                {
 #if HAVE_UNORDERED
                   priority_queues[bl_it->first].push(*v);
@@ -921,7 +927,7 @@ void parametric_list_based::exec(const OpVertexSet & operations, ControlStep cur
             if(black_list.empty())
             {
                do_again = true;
-               PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "         Restarted the schedulign loop to accomodate postponed vertices");
+               PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "         Restarted the scheduling loop to accommodate postponed vertices");
             }
          }
       } while(do_again);
@@ -929,8 +935,8 @@ void parametric_list_based::exec(const OpVertexSet & operations, ControlStep cur
       CustomMap<unsigned int, OpVertexSet >::const_iterator bl_end = black_list.end();
       for(CustomMap<unsigned int, OpVertexSet >::const_iterator bl_it = black_list.begin(); bl_it != bl_end; ++bl_it)
       {
-         OpVertexSet::const_iterator v_end = bl_it->second.end();
-         for(OpVertexSet::const_iterator v = bl_it->second.begin(); v != v_end; ++v)
+         auto v_end = bl_it->second.end();
+         for(auto v = bl_it->second.begin(); v != v_end; ++v)
          {
 #if HAVE_UNORDERED
             priority_queues[bl_it->first].push(*v);
@@ -949,7 +955,7 @@ void parametric_list_based::exec(const OpVertexSet & operations, ControlStep cur
          for(unsigned int i = 0; i < n_resources; i++)
             priority_queues[i].rehash();
 #endif
-      /// clear the vuses
+      /// clear the vises
       cstep_vuses_ARRAYs = cstep_vuses_ARRAYs > 0 ? cstep_vuses_ARRAYs-1 : 0;
       cstep_vuses_others = cstep_vuses_others > 0 ? cstep_vuses_others-1 : 0;
       cstep_has_RET_conflict = false;
@@ -965,7 +971,7 @@ void parametric_list_based::exec(const OpVertexSet & operations, ControlStep cur
       const OpGraphConstRef opDFG = FB->CGetOpGraph(FunctionBehavior::DFG, operations);
       const std::deque<vertex>& levels = FB->get_levels();
       std::deque<vertex> sub_levels;
-      for(std::deque<vertex>::const_reverse_iterator rit = levels.rbegin(); rit != levels.rend(); ++rit)
+      for(auto rit = levels.rbegin(); rit != levels.rend(); ++rit)
       {
          vertex candidate_v = *rit;
          if(operations.find(candidate_v) == operations.end()) continue;
@@ -1018,7 +1024,11 @@ void parametric_list_based::compute_starting_ending_time_asap(const vertex v, co
       {
          if(HLS->Param->getOption<double>(OPT_scheduling_mux_margins) != 0.0)
             return HLS->allocation_information->EstimateControllerDelay();
-         if(cs==cs_prev && HLS->allocation_information->is_one_cycle_direct_access_memory_unit(from_fu_type) && HLSMgr->Rmem->get_maximum_references(HLS->allocation_information->is_memory_unit(from_fu_type) ? HLS->allocation_information->get_memory_var(from_fu_type) : HLS->allocation_information->get_proxy_memory_var(from_fu_type))>HLS->allocation_information->get_number_channels(from_fu_type))
+         if(cs==cs_prev &&
+            HLS->allocation_information->is_one_cycle_direct_access_memory_unit(from_fu_type) &&
+            (!HLS->allocation_information->is_readonly_memory_unit(from_fu_type) ||
+             (!HLS->Param->isOption(OPT_rom_duplication) || !HLS->Param->getOption<bool>(OPT_rom_duplication))) &&
+            HLSMgr->Rmem->get_maximum_references(HLS->allocation_information->is_memory_unit(from_fu_type) ? HLS->allocation_information->get_memory_var(from_fu_type) : HLS->allocation_information->get_proxy_memory_var(from_fu_type))>HLS->allocation_information->get_number_channels(from_fu_type))
             return HLS->allocation_information->EstimateControllerDelay();
          return 0.0;
       }();
@@ -1029,7 +1039,7 @@ void parametric_list_based::compute_starting_ending_time_asap(const vertex v, co
       double connection_time = local_connection_map[edge_pair] = (schedule->get_cstep_end(from_vertex).second == cs) ? HLS->allocation_information->GetConnectionTime(from_statement, v_statement, AbsControlStep(v_basic_block_index, cs)) : 0.0;
       /// ending time is equal to the connection time plus the maximum between the controller time and the operation ending time
       double local_ending_time = connection_time + ((cs==cs_prev && starting_time(from_vertex) < (fsm_correction+(from_strongtype_cast<double>(cs) * clock_cycle))) ? ending_time.find(from_vertex)->second + fsm_correction + (from_strongtype_cast<double>(cs) * clock_cycle) - starting_time(from_vertex) : ending_time.find(from_vertex)->second);
-      current_starting_time = MAX(current_starting_time, local_ending_time);
+      current_starting_time = std::max(current_starting_time, local_ending_time);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "current_starting_time of " + STR(GET_NAME(flow_graph, v)) + " updated to " + STR(current_starting_time));
 
       ///Check for chaining
@@ -1055,11 +1065,11 @@ void parametric_list_based::compute_exec_stage_time(const unsigned int fu_type, 
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Computing exec stage time of " + GET_NAME(flow_graph_with_feedbacks, v));
    const auto bb_index = op_graph->CGetOpNodeInfo(v)->bb_index;
-   std::pair<double,double> timeLatency = HLS->allocation_information->GetTimeLatency(v, AbsControlStep(bb_index, cs), fu_type);
+   std::pair<double,double> timeLatency = HLS->allocation_information->GetTimeLatency(v, fu_type);
    op_execution_time = timeLatency.first;
    stage_period = timeLatency.second;
 
-   /// check for PHIs attached to the ouput. They may require one or more muxes.
+   /// check for PHIs attached to the output. They may require one or more muxes.
    phi_extra_time = HLS->allocation_information->GetConnectionTime(flow_graph_with_feedbacks->CGetOpNodeInfo(v)->GetNodeId(), 0, AbsControlStep(bb_index, cs));
 
    double scheduling_mux_margins = HLS->Param->getOption<double>(OPT_scheduling_mux_margins) * HLS->allocation_information->mux_time_unit(32);
@@ -1131,7 +1141,11 @@ void parametric_list_based::compute_starting_ending_time_alap(vertex v, const un
       {
          if(HLS->Param->getOption<double>(OPT_scheduling_mux_margins) != 0.0)
             return HLS->allocation_information->EstimateControllerDelay();
-         if(cs==cs_prev && HLS->allocation_information->is_one_cycle_direct_access_memory_unit(from_fu_type) && HLSMgr->Rmem->get_maximum_references(HLS->allocation_information->is_memory_unit(from_fu_type) ? HLS->allocation_information->get_memory_var(from_fu_type) : HLS->allocation_information->get_proxy_memory_var(from_fu_type))>HLS->allocation_information->get_number_channels(from_fu_type))
+         if(cs==cs_prev &&
+            HLS->allocation_information->is_one_cycle_direct_access_memory_unit(from_fu_type) &&
+            (!HLS->allocation_information->is_readonly_memory_unit(from_fu_type) ||
+             (!HLS->Param->isOption(OPT_rom_duplication) || !HLS->Param->getOption<bool>(OPT_rom_duplication))) &&
+            HLSMgr->Rmem->get_maximum_references(HLS->allocation_information->is_memory_unit(from_fu_type) ? HLS->allocation_information->get_memory_var(from_fu_type) : HLS->allocation_information->get_proxy_memory_var(from_fu_type))>HLS->allocation_information->get_number_channels(from_fu_type))
             return HLS->allocation_information->EstimateControllerDelay();
          return 0.0;
       }();
@@ -1142,7 +1156,7 @@ void parametric_list_based::compute_starting_ending_time_alap(vertex v, const un
       double connection_time = local_connection_map[edge_pair] = HLS->allocation_information->GetConnectionTime(from_statement, v_statement, AbsControlStep(v_basic_block_index, cs));
       /// ending time is equal to the connection time plus the maximum between the controller time and the operation ending time
       double local_ending_time = connection_time + ((cs==cs_prev && starting_time(from_vertex) < (fsm_correction+(from_strongtype_cast<double>(cs) * clock_cycle))) ? ending_time.find(from_vertex)->second + fsm_correction +(from_strongtype_cast<double>(cs) * clock_cycle) - starting_time(from_vertex) : ending_time.find(from_vertex)->second);
-      current_starting_time = MAX(current_starting_time, local_ending_time);
+      current_starting_time = std::max(current_starting_time, local_ending_time);
 
       if((GET_TYPE(flow_graph, from_vertex) & TYPE_STORE) and schedule->get_cstep_end(from_vertex).second == cs and !is_operation_unbounded_and_registered)
          cannot_be_chained = true;
@@ -1156,7 +1170,7 @@ void parametric_list_based::compute_starting_ending_time_alap(vertex v, const un
    for(boost::tie(oi, oi_end) = boost::out_edges(v, *flow_graph); oi != oi_end; oi++)
    {
       vertex to_vertex = boost::target(*oi, *flow_graph);
-      max_ending_time = MIN(max_ending_time, starting_time(to_vertex));
+      max_ending_time = std::min(max_ending_time, starting_time(to_vertex));
    }
 
    compute_exec_stage_time(fu_type, stage_period, cs, flow_graph, v, op_execution_time, phi_extra_time, current_starting_time, setup_hold_time);
@@ -1195,7 +1209,7 @@ void parametric_list_based::add_to_priority_queues(PriorityQueues & priority_que
    {
       const std::set<unsigned int> & fu_set = HLS->allocation_information->can_implement_set(v);
       const std::set<unsigned int>::const_iterator fu_set_it_end = fu_set.end();
-      for(std::set<unsigned int>::const_iterator fu_set_it = fu_set.begin(); fu_set_it != fu_set_it_end; ++fu_set_it)
+      for(auto fu_set_it = fu_set.begin(); fu_set_it != fu_set_it_end; ++fu_set_it)
       {
 #if HAVE_UNORDERED
          priority_queue[*fu_set_it].push(v);
@@ -1223,10 +1237,10 @@ DesignFlowStep_Status parametric_list_based::InternalExec()
    {
       OpVertexSet operations(op_graph);
       std::list<vertex> bb_operations = bbg->CGetBBNodeInfo(*vi)->statements_list;
-      for(std::list<vertex>::iterator l = bb_operations.begin(); l != bb_operations.end(); ++l)
+      for(auto & bb_operation : bb_operations)
       {
-         if(HLS->operations.find(*l) != HLS->operations.end())
-            operations.insert(*l);
+         if(HLS->operations.find(bb_operation) != HLS->operations.end())
+            operations.insert(bb_operation);
       }
       PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "performing scheduling of basic block " + STR(bbg->CGetBBNodeInfo(*vi)->block->number));
       PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "  .operations: " + STR(operations.size()));
@@ -1379,7 +1393,7 @@ void parametric_list_based::update_starting_ending_time(vertex candidate_v, fu_b
    {
       vertex target = boost::target(*eo, *opDFG);
       PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "      starting time target " + GET_NAME(opDFG, target) + " = " + STR(starting_time(target)));
-      current_ending_time = MIN(current_ending_time, starting_time(target));
+      current_ending_time = std::min(current_ending_time, starting_time(target));
    }
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "      current_ending_time = " + STR(current_ending_time));
 
@@ -1390,9 +1404,9 @@ void parametric_list_based::update_starting_ending_time(vertex candidate_v, fu_b
    /// non-pipelined operations move towards the control step border
    if(!is_pipelined)
    {
-      THROW_ASSERT(ending_time[candidate_v]>=starting_time[candidate_v], "unpexected starting/ending time");
+      THROW_ASSERT(ending_time[candidate_v]>=starting_time[candidate_v], "unexpected starting/ending time");
       current_ending_time = std::min(current_ending_time,ctrl_step_border);
-      THROW_ASSERT((current_ending_time - (ending_time[candidate_v]-starting_time[candidate_v]))/clock_cycle>=floor(starting_time[candidate_v]/clock_cycle), "unpexpected starting time");
+      THROW_ASSERT((current_ending_time - (ending_time[candidate_v]-starting_time[candidate_v]))/clock_cycle>=floor(starting_time[candidate_v]/clock_cycle), "unexpected starting time");
       starting_time[candidate_v] = current_ending_time - (ending_time[candidate_v]-starting_time[candidate_v]);
       ending_time[candidate_v] = current_ending_time;
       PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "      non-pipelined op new starting time = " + STR(starting_time[candidate_v]));
@@ -1436,7 +1450,7 @@ void parametric_list_based::update_starting_ending_time_asap(vertex candidate_v,
    /// non-pipelined operations move towards the control step border
    if(!is_pipelined)
    {
-      THROW_ASSERT(ending_time[candidate_v]>=starting_time[candidate_v], "unpexected starting/ending time");
+      THROW_ASSERT(ending_time[candidate_v]>=starting_time[candidate_v], "unexpected starting/ending time");
       ending_time[candidate_v] = current_starting_time+(ending_time[candidate_v]-starting_time[candidate_v]);
       starting_time[candidate_v] = current_starting_time;
       PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "      asap non-pipelined op new starting time = " + STR(starting_time[candidate_v]));
@@ -2054,7 +2068,10 @@ void parametric_list_based::do_balanced_scheduling1(std::deque<vertex> &sub_leve
 bool parametric_list_based::check_non_direct_operation_chaining(vertex current_v, unsigned int v_fu_type, const ControlStep cs, const ScheduleConstRef schedule, fu_bindingRef res_binding) const
 {
    bool v_is_indirect = REMOVE_DIRECT_TO_INDIRECT && HLS->allocation_information->is_indirect_access_memory_unit(v_fu_type);
-   bool v_is_one_cycle_direct_access = HLS->allocation_information->is_one_cycle_direct_access_memory_unit(v_fu_type) && HLSMgr->Rmem->get_maximum_references(HLS->allocation_information->is_memory_unit(v_fu_type) ? HLS->allocation_information->get_memory_var(v_fu_type) : HLS->allocation_information->get_proxy_memory_var(v_fu_type))>HLS->allocation_information->get_number_channels(v_fu_type);
+   bool v_is_one_cycle_direct_access = (HLS->allocation_information->is_one_cycle_direct_access_memory_unit(v_fu_type) &&
+                                        (!HLS->allocation_information->is_readonly_memory_unit(v_fu_type) ||
+                                         (!HLS->Param->isOption(OPT_rom_duplication) || !HLS->Param->getOption<bool>(OPT_rom_duplication)))) &&
+                                       HLSMgr->Rmem->get_maximum_references(HLS->allocation_information->is_memory_unit(v_fu_type) ? HLS->allocation_information->get_memory_var(v_fu_type) : HLS->allocation_information->get_proxy_memory_var(v_fu_type))>HLS->allocation_information->get_number_channels(v_fu_type);
 
    ///Set of already analyzed operations
    OpVertexSet already_analyzed_operations(flow_graph);

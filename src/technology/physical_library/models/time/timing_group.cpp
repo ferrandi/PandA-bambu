@@ -64,10 +64,10 @@ void timing_group::xwrite(xml_element* pin_node, const std::set<std::string>& in
    att->xwrite(pin_node, "intrinsic_fall");
 
    std::string pins;
-   for(std::set<std::string>::const_iterator i = input_set.begin();  i != input_set.end(); ++i)
+   for(const auto & i : input_set)
    {
       if (pins.size()) pins += " ";
-      pins += *i;
+      pins += i;
    }
    att = attributeRef(new attribute(attribute::STRING, pins));
    att->xwrite(pin_node, "related_pin");

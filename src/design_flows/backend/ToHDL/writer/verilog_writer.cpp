@@ -77,6 +77,7 @@
 
 ///utility include
 #include "indented_output_stream.hpp"
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 #define VERILOG_2001_SUPPORTED
 
@@ -146,7 +147,7 @@ std::string verilog_writer::type_converter_size(const structural_objectRef &cir)
 {
    structural_type_descriptorRef Type = cir->get_typeRef();
    const structural_objectRef Owner = cir->get_owner();
-   module * mod = GetPointer<module>(Owner);
+   auto * mod = GetPointer<module>(Owner);
    std::string port_name = cir->get_id();
    bool specialization_string=false;
    if(mod)
@@ -261,7 +262,7 @@ std::string verilog_writer::may_slice_string(const structural_objectRef &cir)
 {
    structural_type_descriptorRef Type = cir->get_typeRef();
    const structural_objectRef Owner = cir->get_owner();
-   module * mod = GetPointer<module>(Owner);
+   auto * mod = GetPointer<module>(Owner);
    std::string port_name = cir->get_id();
    bool specialization_string=false;
    if(mod)
@@ -369,7 +370,7 @@ void verilog_writer::write_library_declaration(const structural_objectRef &)
 
 void verilog_writer::write_module_declaration(const structural_objectRef &cir)
 {
-   module * mod = GetPointer<module>(cir);
+   auto * mod = GetPointer<module>(cir);
    THROW_ASSERT(mod, "Expected a module got something of different");
    indented_output_stream->Append("`timescale 1ns / 1ps\n");
    if(HDL_manager::convert_to_identifier(this, GET_TYPE_NAME(cir)) == register_AR_NORETIME)
@@ -575,7 +576,7 @@ void verilog_writer::write_vector_port_binding(const structural_objectRef &port,
    else
    {
       std::string port_binding;
-      port_o * pv = GetPointer<port_o>(port);
+      auto * pv = GetPointer<port_o>(port);
       bool local_first_port_analyzed = false;
       unsigned int msb, lsb;
       msb = std::numeric_limits<unsigned int>::max();
@@ -591,18 +592,18 @@ void verilog_writer::write_vector_port_binding(const structural_objectRef &port,
 
          if (object_bounded->get_owner()->get_kind() == port_vector_o_K || object_bounded->get_owner()->get_kind() == signal_vector_o_K)
          {
-            unsigned int bit = boost::lexical_cast<unsigned int>(object_bounded->get_id());
+            auto bit = boost::lexical_cast<unsigned int>(object_bounded->get_id());
             if (slice and slice->get_id() != object_bounded->get_owner()->get_id())
             {
                if (local_first_port_analyzed)
                   port_binding += ", ";
                port_binding += HDL_manager::convert_to_identifier(this, slice->get_id());
                unsigned int max=0;
-               port_o *pvs = GetPointer<port_o>(slice);
+               auto *pvs = GetPointer<port_o>(slice);
                if (pvs) max = pvs->get_ports_size();
                else
                {
-                  signal_o *sv = GetPointer<signal_o>(slice);
+                  auto *sv = GetPointer<signal_o>(slice);
                   if (sv) max = sv->get_signals_size();
                }
                if (lsb != 0 || msb != (max - 1))
@@ -633,11 +634,11 @@ void verilog_writer::write_vector_port_binding(const structural_objectRef &port,
             {
                port_binding += HDL_manager::convert_to_identifier(this, slice->get_id());
                unsigned int max=0;
-               port_o *pvs = GetPointer<port_o>(slice);
+               auto *pvs = GetPointer<port_o>(slice);
                if (pvs) max = pvs->get_ports_size();
                else
                {
-                  signal_o *sv = GetPointer<signal_o>(slice);
+                  auto *sv = GetPointer<signal_o>(slice);
                   if (sv) max = sv->get_signals_size();
                }
                if (lsb != 0 || msb != (max - 1))
@@ -652,9 +653,9 @@ void verilog_writer::write_vector_port_binding(const structural_objectRef &port,
                slice = null_object;
                msb = std::numeric_limits<unsigned int>::max();
             }
-            constant_o *con = GetPointer<constant_o>(object_bounded);
+            auto *con = GetPointer<constant_o>(object_bounded);
             std::string trimmed_value = "";
-            unsigned long long int long_value = boost::lexical_cast<unsigned long long int>(con->get_value());
+            auto long_value = boost::lexical_cast<unsigned long long int>(con->get_value());
             for(unsigned int ind = 0; ind < GET_TYPE_SIZE(con); ind++)
                trimmed_value = trimmed_value + (((1LLU << (GET_TYPE_SIZE(con)-ind-1)) & long_value) ? '1' : '0');
             port_binding += STR(GET_TYPE_SIZE(con)) + "'b" + trimmed_value;
@@ -667,11 +668,11 @@ void verilog_writer::write_vector_port_binding(const structural_objectRef &port,
             {
                port_binding += HDL_manager::convert_to_identifier(this, slice->get_id());
                unsigned int max=0;
-               port_o *pvs = GetPointer<port_o>(slice);
+               auto *pvs = GetPointer<port_o>(slice);
                if (pvs) max = pvs->get_ports_size();
                else
                {
-                  signal_o *sv = GetPointer<signal_o>(slice);
+                  auto *sv = GetPointer<signal_o>(slice);
                   if (sv) max = sv->get_signals_size();
                }
                if (lsb != 0 || msb != (max - 1))
@@ -696,11 +697,11 @@ void verilog_writer::write_vector_port_binding(const structural_objectRef &port,
             port_binding += ", ";
          port_binding += HDL_manager::convert_to_identifier(this, slice->get_id());
          unsigned int max=0;
-         port_o *pvs = GetPointer<port_o>(slice);
+         auto *pvs = GetPointer<port_o>(slice);
          if (pvs) max = pvs->get_ports_size();
          else
          {
-            signal_o *sv = GetPointer<signal_o>(slice);
+            auto *sv = GetPointer<signal_o>(slice);
             if (sv) max = sv->get_signals_size();
          }
          if (lsb != 0 || msb != (max - 1))
@@ -756,9 +757,9 @@ void verilog_writer::write_port_binding(const structural_objectRef &port, const 
    }
    else if (object_bounded->get_kind() == constant_o_K)
    {
-      constant_o *con = GetPointer<constant_o>(object_bounded);
+      auto *con = GetPointer<constant_o>(object_bounded);
       std::string trimmed_value = "";
-      unsigned long long int long_value = boost::lexical_cast<unsigned long long int>(con->get_value());
+      auto long_value = boost::lexical_cast<unsigned long long int>(con->get_value());
       for(unsigned int ind = 0; ind < GET_TYPE_SIZE(con); ind++)
          trimmed_value = trimmed_value + (((1LLU << (GET_TYPE_SIZE(con)-ind-1)) & long_value) ? '1' : '0');
       indented_output_stream->Append(STR(GET_TYPE_SIZE(con)) + "'b" + trimmed_value);
@@ -778,9 +779,9 @@ void verilog_writer::write_io_signal_post_fix(const structural_objectRef &port, 
    std::string signal_string;
    if (sig->get_kind() == constant_o_K)
    {
-      constant_o *con = GetPointer<constant_o>(sig);
+      auto *con = GetPointer<constant_o>(sig);
       std::string trimmed_value = "";
-      unsigned long long int long_value = boost::lexical_cast<unsigned long long int>(con->get_value());
+      auto long_value = boost::lexical_cast<unsigned long long int>(con->get_value());
       for(unsigned int ind = 0; ind < GET_TYPE_SIZE(con); ind++)
          trimmed_value = trimmed_value + (((1LLU << (GET_TYPE_SIZE(con)-ind-1)) & long_value) ? '1' : '0');
       signal_string = STR(GET_TYPE_SIZE(con)) + "'b" + trimmed_value;
@@ -805,7 +806,7 @@ void verilog_writer::write_module_parametrization(const structural_objectRef &ci
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Writing module parametrization of " + cir->get_path());
    THROW_ASSERT(cir->get_kind() == component_o_K || cir->get_kind() == channel_o_K, "Expected a component or a channel got something of different");
-   module * mod = GetPointer<module>(cir);
+   auto * mod = GetPointer<module>(cir);
    bool first_it = true;
    const NP_functionalityRef &np = mod->get_NP_functionality();
 
@@ -815,9 +816,9 @@ void verilog_writer::write_module_parametrization(const structural_objectRef &ci
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Writing memory parameters");
       std::string memory_str = mod->get_parameter(MEMORY_PARAMETER);
       std::vector<std::string> mem_tag = convert_string_to_vector<std::string>(memory_str, ";");
-      for(unsigned int i = 0; i < mem_tag.size(); i++)
+      for(const auto & i : mem_tag)
       {
-         std::vector<std::string> mem_add = convert_string_to_vector<std::string>(mem_tag[i], "=");
+         std::vector<std::string> mem_add = convert_string_to_vector<std::string>(i, "=");
          THROW_ASSERT(mem_add.size() == 2, "malformed address");
          if(first_it)
          {
@@ -922,13 +923,13 @@ void verilog_writer::write_state_declaration(const structural_objectRef &cir, co
 {
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Starting state declaration...");
 
-   std::list<std::string>::const_iterator it_end = list_of_states.end();
-   unsigned int n_states = static_cast<unsigned int>(list_of_states.size());
+   auto it_end = list_of_states.end();
+   auto n_states = static_cast<unsigned int>(list_of_states.size());
    unsigned int count = 0;
    unsigned int bitsnumber = language_writer::bitnumber(n_states-1);
    /// adjust in case states are not consecutives
    unsigned max_value = 0;
-   for(std::list<std::string>::const_iterator it = list_of_states.begin(); it != it_end; ++it)
+   for(auto it = list_of_states.begin(); it != it_end; ++it)
    {
       max_value = std::max(max_value, boost::lexical_cast<unsigned int>(it->substr(strlen(STATE_NAME_PREFIX))));
    }
@@ -938,7 +939,7 @@ void verilog_writer::write_state_declaration(const structural_objectRef &cir, co
       indented_output_stream->Append("parameter ["+boost::lexical_cast<std::string>(max_value)+":0] ");
    else
       indented_output_stream->Append("parameter ["+boost::lexical_cast<std::string>(bitsnumber-1)+":0] ");
-   for(std::list<std::string>::const_iterator it = list_of_states.begin(); it != it_end; ++it)
+   for(auto it = list_of_states.begin(); it != it_end; ++it)
    {
       if(one_hot)
          indented_output_stream->Append(*it+" = "+boost::lexical_cast<std::string>(max_value+1)+"'b"+encode_one_hot(1+max_value, boost::lexical_cast<unsigned int>(it->substr(strlen(STATE_NAME_PREFIX)))));
@@ -963,7 +964,7 @@ void verilog_writer::write_state_declaration(const structural_objectRef &cir, co
       indented_output_stream->Append("reg ["+boost::lexical_cast<std::string>(max_value)+":0] _present_state, _next_state;\n");
    else
       indented_output_stream->Append("reg ["+boost::lexical_cast<std::string>(bitsnumber-1)+":0] _present_state, _next_state;\n");
-   module * mod = GetPointer<module>(cir);
+   auto * mod = GetPointer<module>(cir);
    THROW_ASSERT(mod, "Expected a component object");
    THROW_ASSERT(mod->get_out_port_size(), "Expected a FSM with at least one output");
 
@@ -1008,7 +1009,7 @@ void verilog_writer::write_transition_output_functions(bool single_proc, unsigne
    boost::char_separator<char> state_sep(":", nullptr);
    boost::char_separator<char> sep(" ", nullptr);
 
-   module * mod = GetPointer<module>(cir);
+   auto * mod = GetPointer<module>(cir);
    THROW_ASSERT(mod, "Expected a component object");
    THROW_ASSERT(mod->get_out_port_size(), "Expected a FSM with at least one output");
 
@@ -1046,7 +1047,7 @@ void verilog_writer::write_transition_output_functions(bool single_proc, unsigne
    indented_output_stream->Append("case (_present_state)");
    indented_output_stream->Append(soc);
 
-   for(std::vector<std::string>::const_iterator first_it = first; first_it != end; ++first_it)
+   for(auto first_it = first; first_it != end; ++first_it)
    {
       //std::cerr << "writing '" << *first_it << std::endl;
       tokenizer state_tokens_first(*first_it, state_sep);
@@ -1077,9 +1078,8 @@ void verilog_writer::write_transition_output_functions(bool single_proc, unsigne
       {
          ///check if we can skip this state
          bool skip_state = true;
-         for(unsigned int i = 0; i < state_transitions.size(); i++)
+         for(auto current_transition : state_transitions)
          {
-            std::string current_transition = state_transitions[i];
             tokenizer transition_tokens(current_transition, sep);
             tokenizer::const_iterator itt = transition_tokens.begin();
 
@@ -1204,7 +1204,7 @@ void verilog_writer::write_transition_output_functions(bool single_proc, unsigne
                            {
                               unsigned n_bits = vec_size==0 ? port_size : vec_size;
                               res_or_conditions += std::string(" == ")+STR(n_bits)+"'b";
-                              unsigned int pos = boost::lexical_cast<unsigned int>((*in_or_conditions_tokens_it).substr(1));
+                              auto pos = boost::lexical_cast<unsigned int>((*in_or_conditions_tokens_it).substr(1));
                               std::string one_hot_tag;
                               for(unsigned ih=0; ih<n_bits;++ih)
                                  one_hot_tag = (ih==pos?std::string("1"):std::string("0")) + one_hot_tag;
@@ -1295,7 +1295,7 @@ void verilog_writer::write_transition_output_functions(bool single_proc, unsigne
 
 void verilog_writer::write_NP_functionalities(const structural_objectRef &cir)
 {
-   module * mod = GetPointer<module>(cir);
+   auto * mod = GetPointer<module>(cir);
    THROW_ASSERT(mod, "Expected a component object");
    const NP_functionalityRef &np = mod->get_NP_functionality();
    THROW_ASSERT(np, "NP Behavioral description is missing for module: "+HDL_manager::convert_to_identifier(this, GET_TYPE_NAME(cir)));
@@ -1339,7 +1339,7 @@ void verilog_writer::write_port_decl_tail()
 void verilog_writer::write_module_parametrization_decl(const structural_objectRef &cir)
 {
    THROW_ASSERT(cir->get_kind() == component_o_K || cir->get_kind() == channel_o_K, "Expected a component or a channel got something of different");
-   module * mod = GetPointer<module>(cir);
+   auto * mod = GetPointer<module>(cir);
    const NP_functionalityRef &np = mod->get_NP_functionality();
    bool first_it = true;
 
@@ -1348,9 +1348,9 @@ void verilog_writer::write_module_parametrization_decl(const structural_objectRe
    {
       std::string memory_str = mod->get_parameter(MEMORY_PARAMETER);
       std::vector<std::string> mem_tag = convert_string_to_vector<std::string>(memory_str, ";");
-      for(unsigned int i = 0; i < mem_tag.size(); i++)
+      for(const auto & i : mem_tag)
       {
-         std::vector<std::string> mem_add = convert_string_to_vector<std::string>(mem_tag[i], "=");
+         std::vector<std::string> mem_add = convert_string_to_vector<std::string>(i, "=");
          THROW_ASSERT(mem_add.size() == 2, "malformed address");
          if(first_it)
          {
@@ -1743,8 +1743,8 @@ verilog_writer::verilog_writer(const ParameterConstRef _parameters) :
    language_writer(STD_OPENING_CHAR, STD_CLOSING_CHAR, _parameters)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
-   for(unsigned int i = 0; i < sizeof(tokenNames)/sizeof(char*); ++i)
-      keywords.insert(tokenNames[i]);
+   for(auto & tokenName : tokenNames)
+      keywords.insert(tokenName);
    builtin_to_verilog_keyword[AND_GATE_STD] = "and";
    builtin_to_verilog_keyword[NAND_GATE_STD] = "nand";
    builtin_to_verilog_keyword[OR_GATE_STD] = "or";
@@ -1757,9 +1757,7 @@ verilog_writer::verilog_writer(const ParameterConstRef _parameters) :
 }
 
 verilog_writer::~verilog_writer()
-{
-
-}
+= default;
 
 bool verilog_writer::check_keyword(std::string id) const
 {
@@ -1768,7 +1766,7 @@ bool verilog_writer::check_keyword(std::string id) const
 
 void verilog_writer::write_timing_specification(const technology_managerConstRef TM, const structural_objectRef& circ)
 {
-   module* mod_inst = GetPointer<module>(circ);
+   auto* mod_inst = GetPointer<module>(circ);
    if (mod_inst->get_internal_objects_size() > 0) return;
    const NP_functionalityRef &np = mod_inst->get_NP_functionality();
    if (np && np->exist_NP_functionality(NP_functionality::FSM)) return;
@@ -1800,12 +1798,12 @@ void verilog_writer::write_timing_specification(const technology_managerConstRef
       }
       else
       {
-         for(std::map<std::string, std::map<std::string, double> >::iterator d = delays.begin(); d != delays.end(); ++d)
+         for(auto & delay : delays)
          {
-            for(std::map<std::string, double>::iterator o = d->second.begin(); o != d->second.end(); ++o)
+            for(auto o = delay.second.begin(); o != delay.second.end(); ++o)
             {
                if (ops.size() > 1) indented_output_stream->Append("if (sel_" + GetPointer<operation>(ops[i])->operation_name + " == 1'b1) ");
-               indented_output_stream->Append("(" + d->first + " *> " + o->first + ") = " + STR(o->second) + ";\n");
+               indented_output_stream->Append("(" + delay.first + " *> " + o->first + ") = " + STR(o->second) + ";\n");
             }
          }
       }

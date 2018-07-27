@@ -48,8 +48,7 @@ level_constructor::level_constructor(std::map<vertex, unsigned int>& _map_levels
 
 
 level_constructor::~level_constructor()
-{
-}
+= default;
 
 
 void level_constructor::add(vertex v, unsigned int index)

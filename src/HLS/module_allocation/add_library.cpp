@@ -49,11 +49,10 @@
 #include "hls.hpp"                  // for HLS_managerRef
 #include "hls_target.hpp"           // for target_deviceRef
 #include "hls_manager.hpp"          // for HLS_managerRef
-#include "string_manipulation.hpp"  // for STR
+#include "string_manipulation.hpp"  // for STR GET_CLASS
 #include "structural_manager.hpp"   // for technology_managerRef
 #include "technology_manager.hpp"   // for WORK_LIBRARY
 #include "technology_node.hpp"      // for functional_unit, operation (ptr o...
-#include "utility.hpp"              // for GET_CLASS
 
 #include "hls_constraints.hpp"
 #include "state_transition_graph_manager.hpp"
@@ -91,13 +90,11 @@ add_library::add_library(const ParameterConstRef _parameters, const HLS_managerR
 }
 
 add_library::~add_library()
-{
-
-}
+= default;
 
 const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > add_library::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   const AddLibrarySpecialization * const  add_library_specialization = GetPointer<const AddLibrarySpecialization>(hls_flow_step_specialization);
+   const auto * const  add_library_specialization = GetPointer<const AddLibrarySpecialization>(hls_flow_step_specialization);
    THROW_ASSERT(hls_flow_step_specialization, "Empty specialization type");
    THROW_ASSERT(add_library_specialization, "Wrong specialization type: " + hls_flow_step_specialization->GetKindText());
    std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > ret;
@@ -148,14 +145,14 @@ DesignFlowStep_Status add_library::InternalExec()
    double cprf = HLS->HLS_C->get_clock_period_resource_fraction();
    double clk=cprf*clock_period_value;
    const target_deviceRef device = HLS->HLS_T->get_target_device();
-   functional_unit* fu = GetPointer<functional_unit>(TM->get_fu(function_name, WORK_LIBRARY));
+   auto* fu = GetPointer<functional_unit>(TM->get_fu(function_name, WORK_LIBRARY));
    fu->set_clock_period(clock_period_value);
    fu->set_clock_period_resource_fraction(cprf);
    std::string module_parameters = (HLS->top->get_circ() and GetPointer<module>(HLS->top->get_circ()) and GetPointer<module>(HLS->top->get_circ())->get_NP_functionality()) ? GetPointer<module>(HLS->top->get_circ())->get_NP_functionality()->get_NP_functionality(NP_functionality::LIBRARY) : "";
    if(module_parameters.find(" ") != std::string::npos)
       module_parameters = module_parameters.substr(module_parameters.find(" "));
    fu->CM->add_NP_functionality(HLS->top->get_circ(), NP_functionality::LIBRARY, function_name + module_parameters);
-   operation* op = GetPointer<operation>(fu->get_operation(function_name));
+   auto* op = GetPointer<operation>(fu->get_operation(function_name));
    op->time_m = time_model::create_model(device->get_type(), parameters);
    op->primary_inputs_registered = HLS->registered_inputs;
    ///First computing if operation is bounded, then computing call_delay; call_delay depends on the value of bounded
@@ -164,7 +161,7 @@ DesignFlowStep_Status add_library::InternalExec()
       bool is_bounded = !HLSMgr->Rmem->has_proxied_internal_variables(funId) &&
                         !parameters->getOption<bool>(OPT_disable_bounded_function);
       const structural_objectRef cir = HLS->top->get_circ();
-      module *mod = GetPointer<module>(cir);
+      auto *mod = GetPointer<module>(cir);
       for (unsigned int i = 0; i < mod->get_in_port_size() && is_bounded; i++)
       {
          const structural_objectRef& port_obj = mod->get_in_port(i);

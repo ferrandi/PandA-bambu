@@ -189,6 +189,9 @@ class memory
       /// define for each variable the number of loads whenever it is possible
       std::map<unsigned int, size_t> maximum_loads;
 
+      /// define for each variable the number of loads whenever it is possible
+      std::set<unsigned int> need_bus;
+
       /// true when packed vars are used
       bool packed_vars;
 
@@ -619,6 +622,18 @@ class memory
        */
       size_t get_maximum_loads(unsigned int var) const {return maximum_loads.find(var) !=  maximum_loads.end() ? maximum_loads.find(var)->second : 0;}
 
+      /**
+       * the variable is read or written through the bus
+       * @param var is the variable
+       */
+      void add_need_bus(unsigned int var) {need_bus.insert(var);}
+
+      /**
+       * check if a load or a store of the variable is done trough the bus
+       * @param var is the variable
+       * @return true in case var is loaded or stored through the bus
+       */
+      bool does_need_addr(unsigned int var) const {return need_bus.find(var) !=  need_bus.end();}
       /**
        * define if there exist an object used by the Spec with an address not known at compile time
        */

@@ -113,8 +113,7 @@ tree_panda_gcc_parameter::tree_panda_gcc_parameter(const std::string&_program_na
 }
 
 tree_panda_gcc_parameter::~tree_panda_gcc_parameter()
-{
-}
+= default;
 
 int tree_panda_gcc_parameter::Exec()
 {
@@ -148,7 +147,7 @@ int tree_panda_gcc_parameter::Exec()
       return EXIT_SUCCESS;
    }
 
-   while (1)
+   while (true)
    {
       int next_option = getopt_long_only(argc, argv, short_options, long_options, &option_index);
 

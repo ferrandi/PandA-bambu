@@ -51,7 +51,8 @@
 #include "operations_graph_constructor.hpp"
 
 ///utility include
-#include "utility.hpp"
+#include "hash_helper.hpp"
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 MemoryDataFlowAnalysis::MemoryDataFlowAnalysis(const application_managerRef _AppM, const unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters) :
    DataDependenceComputation(_AppM, _function_id, MEMORY_DATA_FLOW_ANALYSIS, _design_flow_manager, _parameters)
@@ -60,7 +61,7 @@ MemoryDataFlowAnalysis::MemoryDataFlowAnalysis(const application_managerRef _App
 }
 
 MemoryDataFlowAnalysis::~MemoryDataFlowAnalysis()
-{}
+= default;
 
 const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship> > MemoryDataFlowAnalysis::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {

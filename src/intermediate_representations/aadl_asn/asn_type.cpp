@@ -43,6 +43,7 @@
 
 ///booost include
 #include <boost/lexical_cast.hpp>
+#include <utility>
 
 ///utility includ
 #include "exceptions.hpp"
@@ -52,7 +53,7 @@ AsnType::AsnType(const AsnType_Kind _kind) :
 {}
 
 AsnType::~AsnType()
-{}
+= default;
 
 AsnType_Kind AsnType::GetKind()
 {
@@ -63,14 +64,14 @@ BooleanAsnType::BooleanAsnType() :
    AsnType(AsnType_Kind::BOOLEAN)
 {}
 
-ChoiceAsnType::ChoiceAsnType(const std::list<std::pair<std::string, AsnTypeRef> > &_element_type_list) :
+ChoiceAsnType::ChoiceAsnType(std::list<std::pair<std::string, AsnTypeRef> > _element_type_list) :
    AsnType(AsnType_Kind::CHOICE),
-   element_type_list(_element_type_list)
+   element_type_list(std::move(_element_type_list))
 {}
 
-EnumeratedAsnType::EnumeratedAsnType(const std::list<std::pair<std::string, unsigned int> >& _named_number_list) :
+EnumeratedAsnType::EnumeratedAsnType(std::list<std::pair<std::string, unsigned int> >  _named_number_list) :
    AsnType(AsnType_Kind::ENUMERATED),
-   named_number_list(_named_number_list)
+   named_number_list(std::move(_named_number_list))
 {}
 
 IntegerAsnType::IntegerAsnType() :
@@ -89,25 +90,25 @@ OctetStringAsnType::OctetStringAsnType(const std::string&_size) :
 }
 
 OctetStringAsnType::~OctetStringAsnType()
-{}
+= default;
 
 RealAsnType::RealAsnType() :
    AsnType(AsnType_Kind::REAL)
 {}
 
-RedefineAsnType::RedefineAsnType(const std::string&_name) :
+RedefineAsnType::RedefineAsnType(std::string _name) :
    AsnType(AsnType_Kind::REDEFINE),
-   name(_name)
+   name(std::move(_name))
 {}
 
-SequenceAsnType::SequenceAsnType(const std::list<std::pair<std::string, AsnTypeRef> > &_fields) :
+SequenceAsnType::SequenceAsnType(std::list<std::pair<std::string, AsnTypeRef> > _fields) :
    AsnType(AsnType_Kind::SEQUENCE),
-   fields(_fields) 
+   fields(std::move(_fields)) 
 {}
 
-SequenceOfAsnType::SequenceOfAsnType(const std::string&_element, const std::string&_size):
+SequenceOfAsnType::SequenceOfAsnType(std::string _element, const std::string&_size):
    AsnType(AsnType_Kind::SEQUENCEOF),
-   element(_element)
+   element(std::move(_element))
 {
    THROW_ASSERT(_size.find("SIZE") != std::string::npos, _size);
    THROW_ASSERT(_size.find("(") != std::string::npos, _size);
@@ -117,15 +118,15 @@ SequenceOfAsnType::SequenceOfAsnType(const std::string&_element, const std::stri
    size = boost::lexical_cast<size_t>(temp2);
 }
 
-SetAsnType::SetAsnType(const std::list<std::pair<std::string, AsnTypeRef> > &_fields) :
+SetAsnType::SetAsnType(std::list<std::pair<std::string, AsnTypeRef> > _fields) :
    AsnType(AsnType_Kind::SET),
-   fields(_fields)
+   fields(std::move(_fields))
 {}
 
 
-SetOfAsnType::SetOfAsnType(const std::string&_element, const std::string&_size):
+SetOfAsnType::SetOfAsnType(std::string _element, const std::string&_size):
    AsnType(AsnType_Kind::SETOF),
-   element(_element),
+   element(std::move(_element)),
    size(boost::lexical_cast<size_t>(_size))
 {}
 

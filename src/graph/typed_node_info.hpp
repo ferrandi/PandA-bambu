@@ -138,13 +138,13 @@ struct TypedNodeInfo : public NodeInfo
    /**
     * Destructor
     */
-   virtual ~TypedNodeInfo();
+   ~TypedNodeInfo() override;
 
    /**
     * Print the information associated with the node of the graph.
     * @param os is the output stream.
    */
-   virtual void print(std::ostream& ) const;
+   void print(std::ostream& ) const override;
 
    /**
     * Friend definition of the << operator.

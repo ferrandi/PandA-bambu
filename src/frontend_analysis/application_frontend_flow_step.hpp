@@ -44,11 +44,11 @@
 #ifndef APPLICATION_FRONTEND_FLOW_STEP_HPP
 #define APPLICATION_FRONTEND_FLOW_STEP_HPP
 
-///Superclass include
-#include "frontend_flow_step.hpp"
-
-///Utility include
-#include "refcount.hpp"
+#include <string>                  // for string
+#include <unordered_set>           // for unordered_set
+#include <utility>                 // for pair
+#include "design_flow_step.hpp"    // for DesignFlowManagerConstRef, DesignF...
+#include "frontend_flow_step.hpp"  // for FrontendFlowStepType, FrontendFlow...
 
 class ApplicationFrontendFlowStep : public FrontendFlowStep
 {
@@ -57,7 +57,7 @@ class ApplicationFrontendFlowStep : public FrontendFlowStep
        * Return the set of analyses in relationship with this design step
        * @param relationship_type is the type of relationship to be considered
        */
-      virtual const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const = 0;
+      const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override = 0;
 
    public:
       /**
@@ -72,24 +72,24 @@ class ApplicationFrontendFlowStep : public FrontendFlowStep
       /**
        * Destructor
        */
-      virtual ~ApplicationFrontendFlowStep();
+      ~ApplicationFrontendFlowStep() override;
 
       /**
        * Execute this step
        * @return the exit status of this step
        */
-      virtual DesignFlowStep_Status Exec() = 0;
+      DesignFlowStep_Status Exec() override = 0;
 
       /**
        * Return the signature of this step
        */
-      virtual const std::string GetSignature() const;
+      const std::string GetSignature() const override;
 
       /**
        * Return the name of this design step
        * @return the name of the pass (for debug purpose)
        */
-      virtual const std::string GetName() const;
+      const std::string GetName() const override;
 
       /**
        * Compute the signature of a function frontend flow step
@@ -103,6 +103,6 @@ class ApplicationFrontendFlowStep : public FrontendFlowStep
        * Check if this step has actually to be executed
        * @return true if the step has to be executed
        */
-      virtual bool HasToBeExecuted() const;
+      bool HasToBeExecuted() const override;
 };
 #endif

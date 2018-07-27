@@ -51,9 +51,7 @@ LUT_model::LUT_model(const ParameterConstRef _Param) :
 }
 
 LUT_model::~LUT_model()
-{
-
-}
+= default;
 
 void LUT_model::xwrite(xml_element*, const std::string&)
 {

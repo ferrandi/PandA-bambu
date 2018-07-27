@@ -40,6 +40,7 @@
 
 ///Header include
 #include "aadl_parser_node.hpp"
+#include <ostream>
 
 std::ostream & operator<<(std::ostream & os, const AadlParserNode & aadl_parser_node)
 {

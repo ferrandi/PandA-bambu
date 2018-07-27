@@ -43,6 +43,7 @@
 
 ///boost include
 #include <boost/algorithm/string/replace.hpp>
+#include "exceptions.hpp"
 
 AadlInformation::AadlParameter::AadlParameter() :
    endianess(NATIVE_ENDIANESS),

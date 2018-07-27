@@ -43,19 +43,13 @@
 #ifndef CG_NODE_HPP
 #define CG_NODE_HPP
 
-///Behavior include
-#include "edge_info.hpp"
-#include "graph_info.hpp"
-#include "typed_node_info.hpp"
-
-///Graph include
-#include "graph.hpp"
-
-///STD include
-#include <algorithm>
-
-///Utility include
-#include "refcount.hpp"
+#include <ostream>                                   // for operator<<, ostream
+#include <string>                                    // for operator<<, string
+#include "edge_info.hpp"                             // for EdgeInfo
+#include "graph.hpp"                                 // for graph, vertex
+#include "graph_info.hpp"                            // for GraphInfo
+#include "refcount.hpp"                              // for REF_FORWARD_DECL
+#include "typed_node_info.hpp"                       // for TypedNodeInfo
 
 /**
  * @name Forward declarations.
@@ -90,7 +84,7 @@ struct cg_node_info : public TypedNodeInfo
     * Print the information associated with the current node of the graph.
     * @param os is the output stream.
     */
-   void print(std::ostream& os) const
+   void print(std::ostream& os) const override
    {
       TypedNodeInfo::print(os);
       os << " " << reference << std::endl;
@@ -217,7 +211,7 @@ struct cg_graph_info : public GraphInfo
    /**
     * Destructor
     */
-   ~cg_graph_info(){}
+   ~cg_graph_info() override{}
 };
 
 class cg_edge_writer

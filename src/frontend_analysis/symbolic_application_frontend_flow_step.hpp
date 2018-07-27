@@ -44,11 +44,12 @@
 #ifndef SYMBOLIC_APPLICATION_FRONTEND_FLOW_STEP_HPP
 #define SYMBOLIC_APPLICATION_FRONTEND_FLOW_STEP_HPP
 
-///Superclass include
-#include "application_frontend_flow_step.hpp"
-
-///Utility include
-#include "refcount.hpp"
+#include <string>                              // for string
+#include <unordered_set>                       // for unordered_set
+#include <utility>                             // for pair
+#include "application_frontend_flow_step.hpp"  // for ApplicationFrontendFlo...
+#include "design_flow_step.hpp"                // for DesignFlowManagerConstRef
+#include "frontend_flow_step.hpp"              // for FrontendFlowStepType
 
 class SymbolicApplicationFrontendFlowStep : public ApplicationFrontendFlowStep
 {
@@ -60,7 +61,7 @@ class SymbolicApplicationFrontendFlowStep : public ApplicationFrontendFlowStep
        * Return the set of analyses in relationship with this design step
        * @param relationship_type is the type of relationship to be considered
        */
-      const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const;
+      const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
    public:
       /**
@@ -75,23 +76,23 @@ class SymbolicApplicationFrontendFlowStep : public ApplicationFrontendFlowStep
       /**
        * Destructor
        */
-      ~SymbolicApplicationFrontendFlowStep();
+      ~SymbolicApplicationFrontendFlowStep() override;
 
       /**
        * Execute this step
        * @return the exit status of this step
        */
-      DesignFlowStep_Status Exec();
+      DesignFlowStep_Status Exec() override;
 
       /**
        * Return the type of this step
        */
-      const std::string GetKindText() const;
+      const std::string GetKindText() const override;
 
       /**
        * Return the signature of this step
        */
-      const std::string GetSignature() const;
+      const std::string GetSignature() const override;
 
       /**
        * Compute the signature of a symbolic application frontend flow step
@@ -105,6 +106,6 @@ class SymbolicApplicationFrontendFlowStep : public ApplicationFrontendFlowStep
        * Check if this step has actually to be executed
        * @return true if the step has to be executed
        */
-      virtual bool HasToBeExecuted() const;
+      bool HasToBeExecuted() const override;
 };
 #endif

@@ -61,7 +61,7 @@ struct xml_att_decl_node : public xml_node, attribute_sequence
     * @param formatted when true the xml is formatted in human readable way.
     * @param pp is the pretty print helper.
     */
-   void print(std::ostream& os, bool , simple_indent* ) const
+   void print(std::ostream& os, bool , simple_indent* ) const override
    {
       os << "<!ATTLIST" << get_name();
       if(has_attributes())

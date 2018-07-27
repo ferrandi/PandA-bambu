@@ -91,7 +91,7 @@ class virtual_phi_nodes_split : public FunctionFrontendFlowStep
        * Return the set of analyses in relationship with this design step
        * @param relationship_type is the type of relationship to be considered
        */
-      const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const;
+      const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
    public:
 
@@ -107,12 +107,12 @@ class virtual_phi_nodes_split : public FunctionFrontendFlowStep
       /**
        * Destructor
        */
-      virtual ~virtual_phi_nodes_split();
+      ~virtual_phi_nodes_split() override;
 
       /**
        * Performes the virtual splitting of the phi-nodes.
        */
-      DesignFlowStep_Status InternalExec();
+      DesignFlowStep_Status InternalExec() override;
 };
 
 #endif

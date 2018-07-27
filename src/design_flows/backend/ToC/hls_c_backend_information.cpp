@@ -44,14 +44,16 @@
 ///Header include
 #include "hls_c_backend_information.hpp"
 
+#include <utility>
+
 HLSCBackendInformation::HLSCBackendInformation
 (
-   const std::string& _results_filename,
+   std::string  _results_filename,
    const HLS_managerConstRef _HLSMgr
 ) :
-   results_filename(_results_filename),
+   results_filename(std::move(_results_filename)),
    HLSMgr(_HLSMgr)
 {}
 
 HLSCBackendInformation::~HLSCBackendInformation()
-{}
+= default;

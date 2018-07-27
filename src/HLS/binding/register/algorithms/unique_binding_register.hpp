@@ -61,13 +61,13 @@ class unique_binding_register : public reg_binding_creator
       /**
        * Destructor of the class.
        */
-      ~unique_binding_register();
+      ~unique_binding_register() override;
 
       /**
        * Unique binding register allocation algorithm execution.
        * @return the exit status of this step
        */
-      virtual DesignFlowStep_Status InternalExec();
+      DesignFlowStep_Status InternalExec() override;
 };
 
 #endif

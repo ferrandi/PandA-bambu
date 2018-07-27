@@ -53,7 +53,7 @@ class IC_device : public target_device
       /**
        * Initialize the target device based on the given parameters
        */
-      void initialize();
+      void initialize() override;
 
    public:
 
@@ -66,12 +66,12 @@ class IC_device : public target_device
       /**
        * Destructor of the class
        */
-      virtual ~IC_device();
+      ~IC_device() override;
 
       /**
        * Load all data specific for a given technology
        */
-      virtual void load_devices(const target_deviceRef device);
+      void load_devices(const target_deviceRef device) override;
 
       /**
        * Set the proper dimension for the target device
@@ -82,7 +82,7 @@ class IC_device : public target_device
        * Method to write an XML node
        * @param node is the node for writing the information
        */
-      virtual void xwrite(xml_element* node);
+      void xwrite(xml_element* node) override;
 
 };
 

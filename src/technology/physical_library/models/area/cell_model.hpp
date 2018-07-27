@@ -85,27 +85,27 @@ class cell_model : public area_model
       /**
        * Destructor
        */
-      virtual ~cell_model();
+      ~cell_model() override;
 
       /**
        * Print method
        */
-      void print(std::ostream& os) const;
+      void print(std::ostream& os) const override;
 
       /**
        * Sets the nominal value for the area of the component
        */
-      void set_area_value(const double& _area_);
+      void set_area_value(const double& _area_) override;
 
       /**
        * Returns the nominal value for the area of the component
        */
-      double get_area_value() const;
+      double get_area_value() const override;
 
       /**
        * Checks if there is a characterization for the given type
        */
-      bool is_characterization(unsigned int characterization_type) const;
+      bool is_characterization(unsigned int characterization_type) const override;
 
       /**
        * Checks if the given element has a characterization

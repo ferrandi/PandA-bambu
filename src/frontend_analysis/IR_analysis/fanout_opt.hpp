@@ -74,7 +74,7 @@ class fanout_opt : public FunctionFrontendFlowStep
 
 
       const std::unordered_set< std::pair<FrontendFlowStepType, FunctionRelationship> >
-      ComputeFrontendRelationships (const DesignFlowStep::RelationshipType relationship_type) const;
+      ComputeFrontendRelationships (const DesignFlowStep::RelationshipType relationship_type) const override;
 
       /// return true in case the use is relevant for the fanout optimization
       bool is_dest_relevant(tree_nodeRef t, bool is_phi);
@@ -92,18 +92,18 @@ class fanout_opt : public FunctionFrontendFlowStep
       /**
        *  Destructor
        */
-      ~fanout_opt ();
+      ~fanout_opt () override;
       /**
        * perform fanout_opt analysis
        * @return the exit status of this step
        */
       DesignFlowStep_Status
-         InternalExec ();
+         InternalExec () override;
 
       /**
        * Initialize the step (i.e., like a constructor, but executed just before exec)
        */
-      virtual void Initialize();
+      void Initialize() override;
 };
 
 #endif /* FANOUT_OPT_HPP */

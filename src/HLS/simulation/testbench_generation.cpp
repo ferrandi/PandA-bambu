@@ -51,7 +51,7 @@ TestbenchGeneration::TestbenchGeneration(const ParameterConstRef _parameters, co
 }
 
 TestbenchGeneration::~TestbenchGeneration()
-{}
+= default;
 
 const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > TestbenchGeneration::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {

@@ -75,12 +75,12 @@ class classic_datapath: public datapath_creator
       /**
        * Destructor.
        */
-      ~classic_datapath();
+      ~classic_datapath() override;
 
       /**
        * Execute the step
        * @return the exit status of this step
        */
-      virtual DesignFlowStep_Status InternalExec();
+      DesignFlowStep_Status InternalExec() override;
 };
 #endif

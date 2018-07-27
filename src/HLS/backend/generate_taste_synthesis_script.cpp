@@ -52,7 +52,7 @@ GenerateTasteSynthesisScript::GenerateTasteSynthesisScript(const ParameterConstR
 {}
 
 GenerateTasteSynthesisScript::~GenerateTasteSynthesisScript()
-{}
+= default;
 
 DesignFlowStep_Status GenerateTasteSynthesisScript::Exec()
 {

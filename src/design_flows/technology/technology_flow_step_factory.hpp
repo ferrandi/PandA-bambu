@@ -75,12 +75,12 @@ class TechnologyFlowStepFactory : public DesignFlowStepFactory
       /**
        * Destructor
        */
-      virtual ~TechnologyFlowStepFactory();
+      ~TechnologyFlowStepFactory() override;
 
       /**
        * Return the prefix of the steps created by the factory
        */
-      virtual const std::string GetPrefix() const;
+      const std::string GetPrefix() const override;
 
       /**
        * Create a scheduling design flow step

@@ -51,16 +51,13 @@ QuartusWrapper::QuartusWrapper(const ParameterConstRef _Param, const std::string
 {}
 
 QuartusWrapper::~QuartusWrapper()
-{
-
-}
+= default;
 std::string QuartusWrapper::get_command_line(const DesignParametersRef& dp) const
 {
    std::ostringstream s;
    s << get_tool_exec() << " -t " << script_name;
-   for (std::vector<xml_parameter_tRef>::const_iterator it = xml_tool_options.begin(); it != xml_tool_options.end(); ++it)
+   for (const auto & option : xml_tool_options)
    {
-      const xml_parameter_tRef & option = *it;
       if (option->checkCondition(dp))
       {
          std::string value = toString(option, dp);

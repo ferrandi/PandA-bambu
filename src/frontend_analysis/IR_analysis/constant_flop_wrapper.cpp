@@ -65,6 +65,7 @@
 #include "Parameter.hpp"
 
 ///STD include
+#include <boost/filesystem/fstream.hpp>
 #include <fstream>
 
 ///STL include
@@ -90,6 +91,7 @@
 
 ///SoftFloat functions include
 #include "config_PANDA_INCLUDE_INSTALLDIR.hpp"
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 static std::set<std::string> functions = {"__float32_addif", "__float32_subif", "__float32_mulif", "__float32_divif", "__float64_addif", "__float64_subif", "__float64_mulif", "__float64_divif"};
 
@@ -104,7 +106,7 @@ constant_flop_wrapper::constant_flop_wrapper(const ParameterConstRef _parameters
 }
 
 constant_flop_wrapper::~constant_flop_wrapper()
-{}
+= default;
 
 const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship> > constant_flop_wrapper::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
@@ -141,8 +143,8 @@ DesignFlowStep_Status constant_flop_wrapper::InternalExec()
       AppM->CGetCallGraphManager()->CGetCallGraph()->WriteDot("call_graph_before_" + GetName() + "_.dot");
    }
    const tree_nodeRef curr_tn = TreeM->GetTreeNode(function_id);
-   function_decl * this_fd = GetPointer<function_decl>(curr_tn);
-   statement_list * sl = GetPointer<statement_list>(GET_NODE(this_fd->body));
+   auto * this_fd = GetPointer<function_decl>(curr_tn);
+   auto * sl = GetPointer<statement_list>(GET_NODE(this_fd->body));
    CustomSet<std::pair<std::string, tree_nodeConstRef> > functions_to_be_created;
    for(const auto& block : sl->list_of_bloc)
    {
@@ -268,7 +270,7 @@ DesignFlowStep_Status constant_flop_wrapper::InternalExec()
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Removing call of " + STR(fd->index) + " (" + AppM->CGetFunctionBehavior(fd->index)->CGetBehavioralHelper()->get_function_name() + ") in " + STR(stmt->index));
 
             tree_nodeRef fun = TreeM->get_tree_node_const(called_function_id);
-            function_decl* fud = GetPointer<function_decl>(fun);
+            auto* fud = GetPointer<function_decl>(fun);
 
             if(fud->scpe && GET_NODE(fud->scpe)->get_kind() == function_decl_K)
             {
@@ -353,7 +355,7 @@ void constant_flop_wrapper::SoftFloatWriter(CustomSet<std::pair<std::string, tre
 
 std::string constant_flop_wrapper::GenerateFunctionName(const std::string& function_name, const tree_nodeConstRef constant)
 {
-   const real_cst * rc = GetPointer<const real_cst>(constant);
+   const auto * rc = GetPointer<const real_cst>(constant);
 
    std::string function_header = function_name + std::string("_") + rc->valr;
    std::replace(function_header.begin(), function_header.end(), '.', '_');

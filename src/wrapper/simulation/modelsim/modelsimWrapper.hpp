@@ -66,7 +66,7 @@ class modelsimWrapper : public SimulationTool
       /**
        * Generates the proper simulation script
        */
-      void GenerateScript(std::ostringstream& script, const std::string& top_filename, const std::list<std::string> & file_list);
+      void GenerateScript(std::ostringstream& script, const std::string& top_filename, const std::list<std::string> & file_list) override;
 
    public:
 
@@ -74,22 +74,22 @@ class modelsimWrapper : public SimulationTool
        * Constructor
        * @param Param is the set of parameters
        */
-      modelsimWrapper(const ParameterConstRef Param, const std::string& suffix);
+      modelsimWrapper(const ParameterConstRef Param, std::string  suffix);
 
       /**
        * Destructor
        */
-      ~modelsimWrapper();
+      ~modelsimWrapper() override;
 
       /**
        * Checks if the current specification can be executed or not
        */
-      virtual void CheckExecution();
+      void CheckExecution() override;
 
       /**
        * Remove files created during simulation
        */
-      void Clean() const;
+      void Clean() const override;
 };
 /// Refcount definition for the modelsimWrapper class
 typedef refcount<modelsimWrapper> modelsimWrapperRef;

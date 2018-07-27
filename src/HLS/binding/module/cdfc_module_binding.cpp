@@ -40,12 +40,11 @@
  * Last modified by $Author$
  *
 */
+#include "cdfc_module_binding.hpp"
 
-///Autoheader include
 #include "config_HAVE_EXPERIMENTAL.hpp"
 
-///Header include
-#include "cdfc_module_binding.hpp"
+#include <boost/filesystem/operations.hpp>
 
 ///. include
 #include "Parameter.hpp"
@@ -136,12 +135,13 @@
 ///utility include
 #include "cpu_time.hpp"
 #include "dbgPrintHelper.hpp"
-#include "utility.hpp"
+#include "hash_helper.hpp"
 
 #ifdef HC_APPROACH
 #include "hierarchical_clustering.hpp"
 struct spec_hierarchical_clustering: public hierarchical_clustering<>{};
 #endif
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 #define TOOSMALL_NORMALIZED_RESOURCE_AREA 0.9
 #define DEFAULT_SMALL_NORMALIZED_RESOURCE_AREA 1.0
@@ -215,7 +215,7 @@ struct cdfc_resource_ordering_functor
       /**
        * Destructor
        */
-      ~cdfc_resource_ordering_functor() {}
+      ~cdfc_resource_ordering_functor() = default;
 
 };
 
@@ -254,7 +254,7 @@ void cdfc_module_binding::initialize_connection_relation(connection_relation &co
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---" + STR(TreeM->CGetTreeNode(tree_var)));
             const std::set<vertex>& running_states = HLS->Rliv->get_state_where_run(current_v);
             const std::set<vertex>::const_iterator rs_it_end = running_states.end();
-            for(std::set<vertex>::const_iterator rs_it = running_states.begin(); rs_it != rs_it_end; ++rs_it)
+            for(auto rs_it = running_states.begin(); rs_it != rs_it_end; ++rs_it)
             {
                vertex state = *rs_it;
                if(tree_helper::is_parameter(TreeM, tree_var) || !HLS->Rliv->has_op_where_defined(tree_var))
@@ -407,7 +407,7 @@ void estimate_muxes(const connection_relation &con_rel, unsigned int mux_prec, d
          {
             const std::set<vertex>& end = HLS->Rliv->get_state_where_end(current_v);
             const std::set<vertex>::const_iterator e_it_end = end.end();
-            for(std::set<vertex>::const_iterator e_it = end.begin(); e_it != e_it_end; ++e_it)
+            for(auto e_it = end.begin(); e_it != e_it_end; ++e_it)
             {
                vertex state = *e_it;
                if(HLS->storage_value_information->is_a_storage_value(state, var_written))
@@ -493,7 +493,7 @@ struct slack_based_filtering : public filter_clique<vertex>
          con_rel(_con_rel)
       {}
 
-      bool select_candidate_to_remove(const std::set<C_vertex> &candidate_clique, C_vertex &v, const std::map<C_vertex, vertex> &converter, const cc_compatibility_graph &cg) const
+      bool select_candidate_to_remove(const std::set<C_vertex> &candidate_clique, C_vertex &v, const std::map<C_vertex, vertex> &converter, const cc_compatibility_graph &cg) const override
       {
          THROW_ASSERT(!candidate_clique.empty(), "candidate clique cannot be empty");
          double min_slack=std::numeric_limits<double>::max();
@@ -512,8 +512,8 @@ struct slack_based_filtering : public filter_clique<vertex>
          }
          if(max_starting_time < controller_delay && total_muxes >0)
             max_starting_time = controller_delay;
-         std::set<C_vertex>::const_iterator vert_it_end = candidate_clique.end();
-         for(std::set<C_vertex>::const_iterator vert_it = candidate_clique.begin(); vert_it != vert_it_end; ++vert_it)
+         auto vert_it_end = candidate_clique.end();
+         for(auto vert_it = candidate_clique.begin(); vert_it != vert_it_end; ++vert_it)
          {
             THROW_ASSERT(converter.find(*vert_it) != converter.end(), "non-existing vertex");
             current_v = converter.find(*vert_it)->second;
@@ -627,7 +627,7 @@ class CdfcWriter : public VertexWriter
        * @param out is the stream where label has to printed
        * @param v is the vertex to be printed
        */
-      void operator()(std::ostream& out, const vertex& v) const
+      void operator()(std::ostream& out, const vertex& v) const override
       {
          operation_writer(out, c2s.find(v)->second);
       }
@@ -650,9 +650,9 @@ class CdfcEdgeWriter : public EdgeWriter
        * @param out is the stream
        * @param e is the edge
        */
-      void operator()(std::ostream& out, const EdgeDescriptor& e) const
+      void operator()(std::ostream& out, const EdgeDescriptor& e) const override
       {
-         const CdfcEdgeInfo * edge_info = Cget_edge_info<CdfcEdgeInfo>(e, *printing_graph);
+         const auto * edge_info = Cget_edge_info<CdfcEdgeInfo>(e, *printing_graph);
          if(edge_info)
             out << "[label=\"" << edge_info->edge_weight << "\"]";
          else
@@ -670,7 +670,7 @@ CdfcGraphsCollection::CdfcGraphsCollection(const CdfcGraphInfoRef cdfc_graph_inf
 {}
 
 CdfcGraphsCollection::~CdfcGraphsCollection()
-{}
+= default;
 
 CdfcGraph::CdfcGraph(const CdfcGraphsCollectionRef  cdfc_graphs_collection, const int _selector) :
    graph(cdfc_graphs_collection.get(), _selector)
@@ -681,11 +681,11 @@ CdfcGraph::CdfcGraph(const CdfcGraphsCollectionRef  cdfc_graphs_collection, cons
 {}
 
 CdfcGraph::~CdfcGraph()
-{}
+= default;
 
 void CdfcGraph::WriteDot(const std::string& file_name, const int) const
 {
-   const CdfcGraphInfo * cdfc_graph_info = GetPointer<const CdfcGraphInfo>(CGetGraphInfo());
+   const auto * cdfc_graph_info = GetPointer<const CdfcGraphInfo>(CGetGraphInfo());
    const BehavioralHelperConstRef behavioral_helper = cdfc_graph_info->operation_graph->CGetOpGraphInfo()->BH;
    const std::string output_directory = collection->parameters->getOption<std::string>(OPT_dot_directory) + "/" + behavioral_helper->get_function_name() + "/";
    if (!boost::filesystem::exists(output_directory))
@@ -704,9 +704,7 @@ cdfc_module_binding::cdfc_module_binding(const ParameterConstRef _parameters, co
 }
 
 cdfc_module_binding::~cdfc_module_binding()
-{
-
-}
+= default;
 
 void cdfc_module_binding::update_slack_starting_time(const OpGraphConstRef fdfg, OpVertexSet & sorted_vertices, std::unordered_map<vertex,double> &slack_time, std::unordered_map<vertex,double> &starting_time, bool update_starting_time, bool only_backward, bool only_forward)
 {
@@ -827,7 +825,7 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
    cdfc_resource_ordering_functor r_functor(allocation_information);
    double setup_hold_time = allocation_information->get_setup_hold_time();
 
-   // pointer to a Control, Data dependence and antidependence graph graph
+   // pointer to a Control, Data dependence and anti-dependence graph graph
    const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(funId);
    const OpGraphConstRef sdg = FB->CGetOpGraph(FunctionBehavior::SDG);
 #ifdef HC_APPROACH
@@ -877,7 +875,14 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
       else
       {
          if(allocation_information->is_vertex_bounded(fu_unit) ||
-               (allocation_information->is_memory_unit(fu_unit) && ((!allocation_information->is_one_cycle_direct_access_memory_unit(fu_unit) && (!parameters->isOption(OPT_rom_duplication) || !parameters->getOption<bool>(OPT_rom_duplication))) || !allocation_information->is_readonly_memory_unit(fu_unit)) && allocation_information->get_number_channels(fu_unit) == 1) || n_shared_fu.find(fu_unit)->second == 1)
+               (allocation_information->is_memory_unit(fu_unit) &&
+                (
+                   !allocation_information->is_readonly_memory_unit(fu_unit) ||
+                   (!allocation_information->is_one_cycle_direct_access_memory_unit(fu_unit) && (!parameters->isOption(OPT_rom_duplication) || !parameters->getOption<bool>(OPT_rom_duplication)))
+                   ) &&
+                allocation_information->get_number_channels(fu_unit) == 1
+                ) ||
+               n_shared_fu.find(fu_unit)->second == 1)
          {
             ++total_modules_allocated;
             total_resource_area += allocation_information->get_area(fu_unit);
@@ -1039,7 +1044,7 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
       {
          std::map<unsigned int, vertex> rep_vertex;
          const std::set<vertex>::const_iterator eb_it_end = fu_eb_it->second.end();
-         for(std::set<vertex>::const_iterator eb_it = fu_eb_it->second.begin(); eb_it != eb_it_end; ++eb_it)
+         for(auto eb_it = fu_eb_it->second.begin(); eb_it != eb_it_end; ++eb_it)
          {
             vertex cur_v = *eb_it;
             unsigned int vertex_index = fu->get_index(cur_v);
@@ -1079,7 +1084,7 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
          s2c[s] = C;
       }
 
-      /// add the control dependences edges and the chained edges to the cdfc graph
+      /// add the control dependencies edges and the chained edges to the cdfc graph
       const OpGraphConstRef dfg = FB->CGetOpGraph(FunctionBehavior::DFG);
       EdgeIterator ei,ei_end;
       for(boost::tie(ei,ei_end) = boost::edges(*sdg); ei != ei_end; ++ei)
@@ -1164,7 +1169,7 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
             }
          }
       }
-      /// add the control dependences edges and the chained edges to the HC graph
+      /// add the control dependencies edges and the chained edges to the HC graph
       for(std::map<unsigned int, std::set<vertex> >::const_iterator fu_cv_it = candidate_vertices.begin(); fu_cv_it != fu_cv_it_end; ++fu_cv_it)
       {
          const std::set<vertex>::const_iterator cv_it_end = fu_cv_it->second.end();
@@ -1214,7 +1219,7 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
       // Do a preliminary register binding to help the sharing of complex operations
       {
         DesignFlowStepRef regb;
-        regb = GetPointer<const HLSFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("HLS"))->CreateHLSFlowStep(HLSFlowStep_Type::WEIGHTED_CLIQUE_REGISTER_BINDING, funId, HLSFlowStepSpecializationConstRef(new WeightedCliqueRegisterBindingSpecialization(CliqueCovering_Algorithm::WEIGHTED_COLORING)));
+        regb = GetPointer<const HLSFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("HLS"))->CreateHLSFlowStep(HLSFlowStep_Type::WEIGHTED_CLIQUE_REGISTER_BINDING, funId, HLSFlowStepSpecializationConstRef(new WeightedCliqueRegisterBindingSpecialization(CliqueCovering_Algorithm::TS_WEIGHTED_CLIQUE_COVERING)));
         regb->Initialize();
         regb->Exec();
       }
@@ -1229,7 +1234,9 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
          const double mux_time = MODULE_BINDING_MUX_MARGIN * allocation_information->estimate_mux_time(fu_s1);
          double controller_delay = allocation_information->EstimateControllerDelay();
          double resource_area = allocation_information->compute_normalized_area(fu_s1);
-         bool disabling_slack_based_binding = ((allocation_information->get_number_channels(fu_s1) >= 1) and ((not allocation_information->is_one_cycle_direct_access_memory_unit(fu_s1) && (!parameters->isOption(OPT_rom_duplication) || !parameters->getOption<bool>(OPT_rom_duplication))) || not allocation_information->is_readonly_memory_unit(fu_s1))) ||
+         bool disabling_slack_based_binding = ((allocation_information->get_number_channels(fu_s1) >= 1) and
+                                               (!allocation_information->is_readonly_memory_unit(fu_s1) ||
+                                                (!parameters->isOption(OPT_rom_duplication) || !parameters->getOption<bool>(OPT_rom_duplication)))) ||
                                               lib_name  == WORK_LIBRARY || lib_name == PROXY_LIBRARY ||
                                               allocation_information->get_number_fu(fu_s1) != INFINITE_UINT;
          double local_mux_time = (disabling_slack_based_binding ? -std::numeric_limits<double>::infinity() : mux_time);
@@ -1251,12 +1258,9 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
                   continue;
                }
                if(
-                     !disabling_slack_based_binding && lib_name != WORK_LIBRARY &&
+                     !disabling_slack_based_binding &&
                      !allocation_information->is_proxy_unit(fu_s1) &&
                      allocation_information->get_number_channels(fu_s1) < 2 &&
-                     !allocation_information->is_indirect_access_memory_unit(fu_s1) &&
-                     !allocation_information->is_direct_access_memory_unit(fu_s1) &&
-                     !allocation_information->is_one_cycle_direct_access_memory_unit(fu_s1) &&
                      allocation_information->get_cycles(fu_s1, *cv1_it, sdg) <= 1  &&
                      allocation_information->get_cycles(fu_s1, *cv2_it, sdg) <= 1)
                {
@@ -1386,7 +1390,12 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
                   size_t cand_out_degree = boost::out_degree(cand_src, *CG) + boost::out_degree(cand_tgt, *CG);
                   int cand_edge_weight = (*CG)[cand_e].weight;
                   if(allocation_information->get_number_channels(fu->get_assign(c2s[boost::get(boost::vertex_index, *CG, cand_src)])) >= 1)
-                     cand_level_difference = -1;
+                  {
+                     if(allocation_information->is_readonly_memory_unit(fu->get_assign(c2s[boost::get(boost::vertex_index, *CG, cand_src)])))
+                        cand_level_difference = -2;
+                     else
+                        cand_level_difference = -1;
+                  }
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing compatibility between operations " + GET_NAME(sdg, c2s[boost::get(boost::vertex_index, *CG, cand_src)]) + " and " + GET_NAME(sdg, c2s[boost::get(boost::vertex_index, *CG, cand_tgt)]) + " - ld = " + STR(cand_level_difference) + " - d= " + STR(cand_out_degree) + " - w = " + STR(cand_edge_weight));
 
                   for(; ce_it != ce_it_end; ++ce_it)
@@ -1536,7 +1545,7 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
          {
            DesignFlowStepRef regb;
            //if(iteration%2)
-              regb = GetPointer<const HLSFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("HLS"))->CreateHLSFlowStep(HLSFlowStep_Type::WEIGHTED_CLIQUE_REGISTER_BINDING, funId, HLSFlowStepSpecializationConstRef(new WeightedCliqueRegisterBindingSpecialization(CliqueCovering_Algorithm::WEIGHTED_COLORING)));
+              regb = GetPointer<const HLSFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("HLS"))->CreateHLSFlowStep(HLSFlowStep_Type::WEIGHTED_CLIQUE_REGISTER_BINDING, funId, HLSFlowStepSpecializationConstRef(new WeightedCliqueRegisterBindingSpecialization(CliqueCovering_Algorithm::TS_WEIGHTED_CLIQUE_COVERING)));
            //else
            //   regb = GetPointer<const HLSFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("HLS"))->CreateHLSFlowStep(HLSFlowStep_Type::WEIGHTED_CLIQUE_REGISTER_BINDING, funId, HLSFlowStepSpecializationConstRef(new WeightedCliqueRegisterBindingSpecialization(CliqueCovering_Algorithm::BIPARTITE_MATCHING)));
            regb->Initialize();
@@ -1548,7 +1557,7 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
          for(std::map<unsigned int, std::unordered_set<cdfc_vertex>, cdfc_resource_ordering_functor >::const_iterator p_it = partitions.begin(); p_it_end != p_it; ++p_it)
          {
             THROW_ASSERT(p_it->second.size()>1, "bad projection");
-            std::unordered_set<cdfc_vertex>::const_iterator vert_it_end = p_it->second.end();
+            auto vert_it_end = p_it->second.end();
             const double mux_time = MODULE_BINDING_MUX_MARGIN * allocation_information->estimate_mux_time(p_it->first);
             double controller_delay = allocation_information->EstimateControllerDelay();
             double resource_area = allocation_information->compute_normalized_area(p_it->first);
@@ -1566,7 +1575,9 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
             const CliqueCovering_Algorithm clique_covering_method_used =clique_covering_algorithm;
             std::string res_name = allocation_information->get_fu_name(p_it->first).first;
             std::string lib_name = HLS->HLS_T->get_technology_manager()->get_library(res_name);
-            bool disabling_slack_based_binding = ((allocation_information->get_number_channels(p_it->first) >= 1) and ((not allocation_information->is_one_cycle_direct_access_memory_unit(p_it->first) && (!parameters->isOption(OPT_rom_duplication) || !parameters->getOption<bool>(OPT_rom_duplication))) || not allocation_information->is_readonly_memory_unit(p_it->first))) ||
+            bool disabling_slack_based_binding = ((allocation_information->get_number_channels(p_it->first) >= 1) and
+                                                  (!allocation_information->is_readonly_memory_unit(p_it->first) ||
+                                                   (!parameters->isOption(OPT_rom_duplication) || !parameters->getOption<bool>(OPT_rom_duplication)))) ||
                                                  lib_name  == WORK_LIBRARY || lib_name == PROXY_LIBRARY ||
                                                  allocation_information->get_number_fu(p_it->first) != INFINITE_UINT;
 
@@ -1575,7 +1586,7 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
             /// build the clique covering solver
             refcount< clique_covering<vertex> > module_clique(clique_covering<vertex>::create_solver(clique_covering_method_used));
             /// add vertex to the clique covering solver
-            for(std::unordered_set<cdfc_vertex>::const_iterator vert_it = p_it->second.begin(); vert_it != vert_it_end; ++vert_it)
+            for(auto vert_it = p_it->second.begin(); vert_it != vert_it_end; ++vert_it)
             {
                std::string el1_name = GET_NAME(sdg, c2s[boost::get(boost::vertex_index, *CG, *vert_it)]) + "(" + sdg->CGetOpNodeInfo(c2s[boost::get(boost::vertex_index, *CG, *vert_it)])->GetOperation() + ")";
                module_clique->add_vertex(c2s[boost::get(boost::vertex_index, *CG, *vert_it)],el1_name);
@@ -1585,11 +1596,11 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
             {
                std::map<vertex, size_t> v2id;
                size_t max_id = 0, curr_id;
-               for(std::unordered_set<cdfc_vertex>::const_iterator vert_it = p_it->second.begin(); vert_it != vert_it_end; ++vert_it)
+               for(auto vert_it = p_it->second.begin(); vert_it != vert_it_end; ++vert_it)
                {
                   const std::set<vertex>& running_states = HLS->Rliv->get_state_where_run(c2s[boost::get(boost::vertex_index, *CG, *vert_it)]);
                   const std::set<vertex>::const_iterator rs_it_end = running_states.end();
-                  for(std::set<vertex>::const_iterator rs_it = running_states.begin(); rs_it != rs_it_end; ++rs_it)
+                  for(auto rs_it = running_states.begin(); rs_it != rs_it_end; ++rs_it)
                   {
                      if(v2id.find(*rs_it) == v2id.end())
                      {
@@ -1673,18 +1684,18 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
                {
                   PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Restarting with BIPARTITE_MATCHING: "+ res_name);
                   module_clique = clique_covering<vertex>::create_solver(CliqueCovering_Algorithm::BIPARTITE_MATCHING);
-                  for(std::unordered_set<cdfc_vertex>::const_iterator vert_it = p_it->second.begin(); vert_it != vert_it_end; ++vert_it)
+                  for(auto vert_it = p_it->second.begin(); vert_it != vert_it_end; ++vert_it)
                   {
                      std::string el1_name = GET_NAME(sdg, c2s[boost::get(boost::vertex_index, *CG, *vert_it)]) + "(" + sdg->CGetOpNodeInfo(c2s[boost::get(boost::vertex_index, *CG, *vert_it)])->GetOperation() + ")";
                      module_clique->add_vertex(c2s[boost::get(boost::vertex_index, *CG, *vert_it)],el1_name);
                   }
                   std::map<vertex, size_t> v2id;
                   size_t max_id = 0, curr_id;
-                  for(std::unordered_set<cdfc_vertex>::const_iterator vert_it = p_it->second.begin(); vert_it != vert_it_end; ++vert_it)
+                  for(auto vert_it = p_it->second.begin(); vert_it != vert_it_end; ++vert_it)
                   {
                      const std::set<vertex>& running_states = HLS->Rliv->get_state_where_run(c2s[boost::get(boost::vertex_index, *CG, *vert_it)]);
                      const std::set<vertex>::const_iterator rs_it_end = running_states.end();
-                     for(std::set<vertex>::const_iterator rs_it = running_states.begin(); rs_it != rs_it_end; ++rs_it)
+                     for(auto rs_it = running_states.begin(); rs_it != rs_it_end; ++rs_it)
                      {
                         if(v2id.find(*rs_it) == v2id.end())
                         {
@@ -1730,8 +1741,10 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
                   if(allocation_information->get_number_fu(p_it->first)!=INFINITE_UINT)
                   {
                      THROW_ASSERT(allocation_information->get_number_channels(p_it->first) == 0 || allocation_information->get_number_channels(p_it->first) == allocation_information->get_number_fu(p_it->first), "unexpected condition");
-                     if(allocation_information->get_number_channels(p_it->first)>0 && module_clique->num_vertices() > allocation_information->get_number_channels(p_it->first))
-                        THROW_ERROR("Something of wrong happen: no feasible solution exist for module binding");
+                     if(allocation_information->get_number_channels(p_it->first)>0 && module_clique->num_vertices() > allocation_information->get_number_channels(p_it->first) && !allocation_information->is_readonly_memory_unit(p_it->first))
+                     {
+                        THROW_ERROR("Something of wrong happen: no feasible solution exist for module binding: "+res_name + "["+STR(module_clique->num_vertices())+"]");
+                     }
                   }
                }
             }
@@ -1888,7 +1901,7 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Slack computed in " + print_cpu_time(slack_cputime) + " seconds");
    if(clique_covering_executed)
    {
-      INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Falseloop computation completed in " + print_cpu_time(falseloop_cputime) + " seconds");
+      INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---False-loop computation completed in " + print_cpu_time(falseloop_cputime) + " seconds");
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Weight computation completed in " + print_cpu_time(weight_cputime) + " seconds");
       if(output_level == OUTPUT_LEVEL_MINIMUM)
       {

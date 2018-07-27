@@ -43,8 +43,9 @@
 #ifndef TREE_NODE_FINDER_HPP
 #define TREE_NODE_FINDER_HPP
 
-///STD include
-#include <ostream>
+#include <map>                                           // for map
+#include <string>                                        // for string
+#include "token_interface.hpp"                           // for TreeVocabula...
 
 ///Tree include
 #include "tree_node.hpp"

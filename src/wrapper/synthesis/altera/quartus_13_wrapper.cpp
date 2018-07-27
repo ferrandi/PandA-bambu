@@ -54,9 +54,7 @@ Quartus13Wrapper::Quartus13Wrapper(const ParameterConstRef _Param, const std::st
 {}
 
 Quartus13Wrapper::~Quartus13Wrapper()
-{
-
-}
+= default;
 std::string Quartus13Wrapper::get_command_line(const DesignParametersRef& dp) const
 {
    std::ostringstream s;
@@ -65,9 +63,8 @@ std::string Quartus13Wrapper::get_command_line(const DesignParametersRef& dp) co
    s << " --64bit ";
 #endif
    s << script_name;
-   for (std::vector<xml_parameter_tRef>::const_iterator it = xml_tool_options.begin(); it != xml_tool_options.end(); ++it)
+   for (const auto & option : xml_tool_options)
    {
-      const xml_parameter_tRef & option = *it;
       if (option->checkCondition(dp))
       {
          std::string value = toString(option, dp);

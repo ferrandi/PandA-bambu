@@ -77,12 +77,12 @@ class ToDataFileStepFactory : public DesignFlowStepFactory
       /**
        * Destructor
        */
-      virtual ~ToDataFileStepFactory();
+      ~ToDataFileStepFactory() override;
 
       /**
        * Return the prefix of the steps created by the factory
        */
-      virtual const std::string GetPrefix() const;
+      const std::string GetPrefix() const override;
 
       /**
        * Creates a step

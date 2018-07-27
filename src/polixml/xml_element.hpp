@@ -47,7 +47,9 @@
 
 #include "xml_node.hpp"
 #include "xml_attribute.hpp"
+#include "exceptions.hpp"
 #include <string>
+
 /**
  * @name forward declarations
  */
@@ -67,7 +69,7 @@ class xml_element : public xml_child, public attribute_sequence
       /**
        * Print the class.
        */
-      void print(std::ostream& os, bool formatted, simple_indent* pp) const
+      void print(std::ostream& os, bool formatted, simple_indent* pp) const override
       {
          THROW_ASSERT(pp, "Null indenter object: unexpected condition");
          if(formatted)

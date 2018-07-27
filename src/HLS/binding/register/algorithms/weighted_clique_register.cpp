@@ -40,11 +40,14 @@
  * Last modified by $Author$
  *
 */
-
-///Header include
 #include "weighted_clique_register.hpp"
 
+#include <boost/filesystem/operations.hpp>
+
 #include "clique_covering.hpp"
+#include "check_clique.hpp"
+#include "filter_clique.hpp"
+
 #include "hls.hpp"
 #include "hls_manager.hpp"
 #include "reg_binding.hpp"
@@ -85,9 +88,7 @@ weighted_clique_register::weighted_clique_register(const ParameterConstRef _para
 }
 
 weighted_clique_register::~weighted_clique_register()
-{
-
-}
+= default;
 
 void weighted_clique_register::Initialize()
 {
@@ -137,8 +138,8 @@ DesignFlowStep_Status weighted_clique_register::InternalExec()
       for (unsigned int i = 0; i < num_registers; ++i)
       {
          std::set<CG_vertex_descriptor> clique = register_clique->get_clique(i);
-         std::set<CG_vertex_descriptor>::const_iterator v_end = clique.end();
-         for (std::set<CG_vertex_descriptor>::const_iterator v = clique.begin(); v != v_end; ++v)
+         auto v_end = clique.end();
+         for (auto v = clique.begin(); v != v_end; ++v)
          {
             v2c[*v] = i;
          }
@@ -148,11 +149,11 @@ DesignFlowStep_Status weighted_clique_register::InternalExec()
       const std::list<vertex> & support = HLS->Rliv->get_support();
 
       const std::list<vertex>::const_iterator vEnd = support.end();
-      for(std::list<vertex>::const_iterator vIt = support.begin(); vIt != vEnd; ++vIt)
+      for(auto vIt = support.begin(); vIt != vEnd; ++vIt)
       {
          const std::set<unsigned int>& live = HLS->Rliv->get_live_in(*vIt);
-         std::set<unsigned int>::iterator k_end = live.end();
-         for(std::set<unsigned int>::iterator k = live.begin(); k != k_end; ++k)
+         auto k_end = live.end();
+         for(auto k = live.begin(); k != k_end; ++k)
          {
             unsigned int storage_value_index = HLS->storage_value_information->get_storage_value_index(*vIt, *k);
             HLS->Rreg->bind(storage_value_index, v2c[verts[storage_value_index]]);

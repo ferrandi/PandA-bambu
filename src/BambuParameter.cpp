@@ -60,6 +60,30 @@
 #include "config_SKIP_WARNING_SECTIONS.hpp"
 #include "config_HAVE_MAPPING_BUILT.hpp"
 #include "config_HAVE_VCD_BUILT.hpp"
+#include "config_HAVE_I386_GCC47_M32.hpp"
+#include "config_HAVE_I386_GCC48_M32.hpp"
+#include "config_HAVE_I386_GCC49_M32.hpp"
+#include "config_HAVE_I386_GCC5_M32.hpp"
+#include "config_HAVE_I386_GCC6_M32.hpp"
+#include "config_HAVE_I386_GCC7_M32.hpp"
+#include "config_HAVE_I386_CLANG4_M32.hpp"
+#include "config_HAVE_I386_CLANG5_M32.hpp"
+#include "config_HAVE_I386_GCC47_MX32.hpp"
+#include "config_HAVE_I386_GCC48_MX32.hpp"
+#include "config_HAVE_I386_GCC49_MX32.hpp"
+#include "config_HAVE_I386_GCC5_MX32.hpp"
+#include "config_HAVE_I386_GCC6_MX32.hpp"
+#include "config_HAVE_I386_GCC7_MX32.hpp"
+#include "config_HAVE_I386_CLANG4_MX32.hpp"
+#include "config_HAVE_I386_CLANG5_MX32.hpp"
+#include "config_HAVE_I386_GCC47_M64.hpp"
+#include "config_HAVE_I386_GCC48_M64.hpp"
+#include "config_HAVE_I386_GCC49_M64.hpp"
+#include "config_HAVE_I386_GCC5_M64.hpp"
+#include "config_HAVE_I386_GCC6_M64.hpp"
+#include "config_HAVE_I386_GCC7_M64.hpp"
+#include "config_HAVE_I386_CLANG4_M64.hpp"
+#include "config_HAVE_I386_CLANG5_M64.hpp"
 #include "config_HAVE_I386_GCC45_COMPILER.hpp"
 #include "config_HAVE_I386_GCC46_COMPILER.hpp"
 #include "config_HAVE_I386_GCC47_COMPILER.hpp"
@@ -144,7 +168,7 @@
 ///STD include
 #include <cstring>
 #include <iosfwd>
-#include <string.h>
+#include <cstring>
 
 ///Technology include
 #include "language_writer.hpp"
@@ -214,7 +238,8 @@
 #define OPT_GENERATE_VCD                        1+OPT_FLOPOCO
 #define OPT_GENERATION                          1+OPT_GENERATE_VCD
 #define OPT_HLS_DIV                             1+OPT_GENERATION
-#define OPT_HOST_PROFILING                      1+OPT_HLS_DIV
+#define OPT_HLS_FPDIV                           1+OPT_HLS_DIV
+#define OPT_HOST_PROFILING                      1+OPT_HLS_FPDIV
 #define OPT_ILP                                 1+OPT_HOST_PROFILING
 #define OPT_ILP_NEWFORM                         1+OPT_ILP
 #define OPT_ILP_SOLVER                          1+OPT_ILP_NEWFORM
@@ -455,7 +480,10 @@ void BambuParameter::PrintHelp(std::ostream &os) const
    << "    --register-allocation=<type>\n"
    << "        Set the algorithm used for register allocation. Possible values for the\n"
    << "        <type> argument are the following:\n"
-   << "            WEIGHTED_COLORING   - use weighted coloring algorithm (default)\n"
+   << "            WEIGHTED_TS        - solve the weighted clique covering problem by\n"
+   << "                                 exploiting the Tseng&Siewiorek heuristics\n"
+   << "                                 (default)\n"
+   << "            WEIGHTED_COLORING   - use weighted coloring algorithm\n"
    << "            COLORING            - use simple coloring algorithm\n"
    << "            CHORDAL_COLORING    - use chordal coloring algorithm\n"
    << "            BIPARTITE_MATCHING  - use bipartite matching algorithm\n"
@@ -759,7 +787,7 @@ void BambuParameter::PrintHelp(std::ostream &os) const
    << "    --max-ulp\n"
    << "        Define the maximal ULP (Unit in the last place, i.e., is the spacing\n"
    << "        between floating-point numbers) accepted.\n\n"
-   << "    --hls-div\n"
+   << "    --hls-div=<method>\n"
    << "        Perform the high-level synthesis of integer division and modulo\n"
    << "        operations starting from a C library based implementation or a HDL component:\n"
    << "             none  - use a HDL based pipelined restoring division\n"
@@ -767,6 +795,11 @@ void BambuParameter::PrintHelp(std::ostream &os) const
    << "             nr2   - use a C-based non-restoring division with unrolling factor equal to 2\n"
    << "             NR    - use a C-based Newton-Raphson division\n"
    << "             as    - use a C-based align divisor shift dividend method\n\n"
+   << "    --hls-fpdiv=<method>\n"
+   << "        Perform the high-level synthesis of floating point division \n"
+   << "        operations starting from a C library based implementation:\n"
+   << "             SRT4 - use a C-based Sweeney, Robertson, Tocher floating point division with radix 4 (default)\n"
+   << "             G    - use a C-based Goldschmidt floating point division.\n"
    << "    --skip-pipe-parameter=<value>\n"
    << "        Used during the allocation of pipelined units. <value> specifies how\n"
    << "        many pipelined units, compliant with the clock period, will be skipped.\n"
@@ -1122,6 +1155,7 @@ int BambuParameter::Exec()
          {"libm-std-rounding",          no_argument,       nullptr, OPT_LIBM_STD_ROUNDING},
          {"soft-fp",                    no_argument,       nullptr, OPT_SOFT_FP},
          {"hls-div",                    optional_argument, nullptr, OPT_HLS_DIV},
+         {"hls-fpdiv",                  optional_argument, nullptr, OPT_HLS_FPDIV},
          {"max-ulp",                    required_argument, nullptr, OPT_MAX_ULP},
          {"skip-pipe-parameter",        required_argument, nullptr, OPT_SKIP_PIPE_PARAMETER},
          {"unaligned-access",           no_argument,       nullptr, OPT_UNALIGNED_ACCESS_PARAMETER},
@@ -1215,7 +1249,7 @@ int BambuParameter::Exec()
       return EXIT_SUCCESS;
    }
 
-   while (1)
+   while (true)
    {
       int next_option = getopt_long(argc, argv, short_options, long_options, &option_index);
 
@@ -1233,11 +1267,11 @@ int BambuParameter::Exec()
             std::vector<std::string> splitted;
             std::string to_be_splitted = std::string(optarg);
             boost::split(splitted, to_be_splitted, boost::is_any_of(","));
-            for(size_t counter = 0; counter < splitted.size(); counter++)
+            for(const auto & counter : splitted)
             {
                if(top_function_names != "")
                   top_function_names += STR_CST_string_separator;
-               top_function_names += splitted[counter];
+               top_function_names += counter;
             }
             setOption(OPT_top_functions_names, top_function_names);
             if(splitted.size() == 1)
@@ -1543,6 +1577,11 @@ int BambuParameter::Exec()
             {
                setOption(OPT_register_allocation_algorithm, HLSFlowStep_Type::WEIGHTED_CLIQUE_REGISTER_BINDING);
                setOption(OPT_weighted_clique_register_algorithm, CliqueCovering_Algorithm::TTT_CLIQUE_COVERING);
+            }
+            else if (std::string(optarg) == "WEIGHTED_TS")
+            {
+               setOption(OPT_register_allocation_algorithm, HLSFlowStep_Type::WEIGHTED_CLIQUE_REGISTER_BINDING);
+               setOption(OPT_weighted_clique_register_algorithm, CliqueCovering_Algorithm::TS_WEIGHTED_CLIQUE_COVERING);
             }
             else if(std::string(optarg) == "UNIQUE_BINDING")
             {
@@ -1875,6 +1914,13 @@ int BambuParameter::Exec()
                setOption(OPT_hls_div, optarg);
             break;
          }
+         case OPT_HLS_FPDIV:
+         {
+            setOption(OPT_hls_fpdiv, "SRT4");
+            if (optarg && std::string(optarg)=="G")
+               setOption(OPT_hls_fpdiv, optarg);
+            break;
+         }
          case OPT_CLOCK_PERIOD_RESOURCE_FRACTION:
          {
             setOption(OPT_clock_period_resource_fraction, optarg);
@@ -2164,10 +2210,10 @@ int BambuParameter::Exec()
             std::vector<std::string> Splitted;
             std::string no_parse_files;
             boost::algorithm::split(Splitted, optarg, boost::algorithm::is_any_of(" ,"));
-            for (unsigned int i = 0; i < Splitted.size(); i++)
+            for (auto & i : Splitted)
             {
-               boost::trim(Splitted[i]);
-               no_parse_files += Splitted[i] + " ";
+               boost::trim(i);
+               no_parse_files += i + " ";
             }
             setOption(OPT_no_parse_files, no_parse_files);
             break;
@@ -2177,10 +2223,10 @@ int BambuParameter::Exec()
             std::vector<std::string> Splitted;
             std::string no_parse_c_python_files;
             boost::algorithm::split(Splitted, optarg, boost::algorithm::is_any_of(" ,"));
-            for (unsigned int i = 0; i < Splitted.size(); i++)
+            for (auto & i : Splitted)
             {
-               boost::trim(Splitted[i]);
-               no_parse_c_python_files += Splitted[i] + " ";
+               boost::trim(i);
+               no_parse_c_python_files += i + " ";
             }
             setOption(OPT_no_parse_c_python, no_parse_c_python_files);
             break;
@@ -3252,7 +3298,7 @@ void BambuParameter::SetDefaults()
    /// -- Register allocation -- //
    /// register allocation algorithm
    setOption(OPT_register_allocation_algorithm, HLSFlowStep_Type::WEIGHTED_CLIQUE_REGISTER_BINDING);
-   setOption(OPT_weighted_clique_register_algorithm, CliqueCovering_Algorithm::WEIGHTED_COLORING);
+   setOption(OPT_weighted_clique_register_algorithm, CliqueCovering_Algorithm::TS_WEIGHTED_CLIQUE_COVERING);
    /// storage value insertion algorithm
    setOption(OPT_storage_value_insertion_algorithm, HLSFlowStep_Type::VALUES_SCHEME_STORAGE_VALUE_INSERTION);
    setOption(OPT_sync_reset, "no");
@@ -3374,6 +3420,8 @@ void BambuParameter::SetDefaults()
    /// -- GCC options -- //
 #if HAVE_I386_GCC49_COMPILER
    setOption(OPT_default_compiler, static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC49));
+#elif HAVE_I386_GCC7_COMPILER
+   setOption(OPT_default_compiler, static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC7));
 #elif HAVE_I386_GCC6_COMPILER
    setOption(OPT_default_compiler, static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC6));
 #elif HAVE_I386_GCC5_COMPILER
@@ -3386,8 +3434,6 @@ void BambuParameter::SetDefaults()
    setOption(OPT_default_compiler, static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC45));
 #elif HAVE_I386_GCC48_COMPILER
    setOption(OPT_default_compiler, static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC48));
-#elif HAVE_I386_GCC7_COMPILER
-   setOption(OPT_default_compiler, static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC7));
 #elif HAVE_I386_CLANG4_COMPILER
    setOption(OPT_default_compiler, static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG4));
 #elif HAVE_I386_CLANG5_COMPILER
@@ -3438,7 +3484,63 @@ void BambuParameter::SetDefaults()
       | static_cast<int>(GccWrapper_CompilerTarget::CT_SPARC_GCC)
 #endif
       );
+
+#if (HAVE_I386_GCC49_COMPILER && HAVE_I386_GCC49_M32)
    setOption(OPT_gcc_m32_mx32, "-m32 -mno-sse2 ");
+#elif (HAVE_I386_GCC49_COMPILER && HAVE_I386_GCC49_MX32)
+   setOption(OPT_gcc_m32_mx32, "-mx32 ");
+#elif (HAVE_I386_GCC49_COMPILER && HAVE_I386_GCC49_M64)
+   setOption(OPT_gcc_m32_mx32, "-m64 ");
+#elif (HAVE_I386_GCC7_COMPILER && HAVE_I386_GCC7_M32)
+   setOption(OPT_gcc_m32_mx32, "-m32 -mno-sse2 ");
+#elif (HAVE_I386_GCC7_COMPILER && HAVE_I386_GCC7_MX32)
+   setOption(OPT_gcc_m32_mx32, "-mx32 ");
+#elif (HAVE_I386_GCC7_COMPILER && HAVE_I386_GCC7_M64)
+   setOption(OPT_gcc_m32_mx32, "-m64 ");
+#elif (HAVE_I386_GCC6_COMPILER && HAVE_I386_GCC6_M32)
+   setOption(OPT_gcc_m32_mx32, "-m32 -mno-sse2 ");
+#elif (HAVE_I386_GCC6_COMPILER && HAVE_I386_GCC6_MX32)
+   setOption(OPT_gcc_m32_mx32, "-mx32 ");
+#elif (HAVE_I386_GCC6_COMPILER && HAVE_I386_GCC6_M64)
+   setOption(OPT_gcc_m32_mx32, "-m64 ");
+#elif (HAVE_I386_GCC5_COMPILER && HAVE_I386_GCC5_M32)
+   setOption(OPT_gcc_m32_mx32, "-m32 -mno-sse2 ");
+#elif (HAVE_I386_GCC5_COMPILER && HAVE_I386_GCC5_MX32)
+   setOption(OPT_gcc_m32_mx32, "-mx32 ");
+#elif (HAVE_I386_GCC5_COMPILER && HAVE_I386_GCC5_M64)
+   setOption(OPT_gcc_m32_mx32, "-m64 ");
+#elif (HAVE_I386_GCC48_COMPILER && HAVE_I386_GCC48_M32)
+   setOption(OPT_gcc_m32_mx32, "-m32 -mno-sse2 ");
+#elif (HAVE_I386_GCC48_COMPILER && HAVE_I386_GCC48_MX32)
+   setOption(OPT_gcc_m32_mx32, "-mx32 ");
+#elif (HAVE_I386_GCC48_COMPILER && HAVE_I386_GCC48_M64)
+   setOption(OPT_gcc_m32_mx32, "-m64 ");
+#elif (HAVE_I386_GCC47_COMPILER && HAVE_I386_GCC47_M32)
+   setOption(OPT_gcc_m32_mx32, "-m32 -mno-sse2 ");
+#elif (HAVE_I386_GCC47_COMPILER && HAVE_I386_GCC47_MX32)
+   setOption(OPT_gcc_m32_mx32, "-mx32 ");
+#elif (HAVE_I386_GCC47_COMPILER && HAVE_I386_GCC47_M64)
+   setOption(OPT_gcc_m32_mx32, "-m64 ");
+#elif (HAVE_I386_GCC46_COMPILER)
+   setOption(OPT_gcc_m32_mx32, "-m32 -mno-sse2 ");
+#elif (HAVE_I386_GCC45_COMPILER)
+   setOption(OPT_gcc_m32_mx32, "-m32 -mno-sse2 ");
+#elif (HAVE_I386_CLANG4_COMPILER && HAVE_I386_CLANG4_M32)
+   setOption(OPT_gcc_m32_mx32, "-m32 -mno-sse2 ");
+#elif (HAVE_I386_CLANG4_COMPILER && HAVE_I386_CLANG4_MX32)
+   setOption(OPT_gcc_m32_mx32, "-mx32 ");
+#elif (HAVE_I386_CLANG4_COMPILER && HAVE_I386_CLANG4_M64)
+   setOption(OPT_gcc_m32_mx32, "-m64 ");
+#elif (HAVE_I386_CLANG5_COMPILER && HAVE_I386_CLANG5_M32)
+   setOption(OPT_gcc_m32_mx32, "-m32 -mno-sse2 ");
+#elif (HAVE_I386_CLANG5_COMPILER && HAVE_I386_CLANG5_MX32)
+   setOption(OPT_gcc_m32_mx32, "-mx32 ");
+#elif (HAVE_I386_CLANG5_COMPILER && HAVE_I386_CLANG5_M64)
+   setOption(OPT_gcc_m32_mx32, "-m64 ");
+#else
+   THROW_ERROR("None of -m32, -mx32, -m64 GCC option is supported");
+#endif
+
    setOption(OPT_without_transformation, true);
    setOption(OPT_compute_size_of, true);
    setOption(OPT_precision, 3);
@@ -3458,6 +3560,7 @@ void BambuParameter::SetDefaults()
 
    setOption(OPT_soft_float, true);
    setOption(OPT_hls_div, "nr1");
+   setOption(OPT_hls_fpdiv, "SRT4");
    setOption(OPT_max_ulp, 1.0);
    setOption(OPT_skip_pipe_parameter, 0);
    setOption(OPT_unaligned_access, false);
@@ -3527,7 +3630,7 @@ void BambuParameter::SetDefaults()
 void BambuParameter::add_bambu_library(std::string lib)
 {
 #if HAVE_I386_GCC45_COMPILER || HAVE_I386_GCC46_COMPILER || HAVE_I386_GCC47_COMPILER || HAVE_I386_GCC48_COMPILER || HAVE_I386_GCC49_COMPILER || HAVE_I386_GCC5_COMPILER || HAVE_I386_GCC6_COMPILER || HAVE_I386_GCC7_COMPILER || HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER
-   unsigned int preferred_compiler = getOption<unsigned int>(OPT_default_compiler);
+   auto preferred_compiler = getOption<unsigned int>(OPT_default_compiler);
    std::string archive_files;
    bool is_subnormals =
        isOption(OPT_softfloat_subnormal) && getOption<bool>(OPT_softfloat_subnormal);

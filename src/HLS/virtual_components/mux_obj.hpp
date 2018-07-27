@@ -91,7 +91,7 @@ class mux_obj : public generic_obj
       /**
        * Destructor.
        */
-      ~mux_obj();
+      ~mux_obj() override;
 
       /**
        * Sets target object for multiplexer

@@ -61,7 +61,7 @@ class VerilatorWrapper : public SimulationTool
       /**
        * Generates the proper simulation script
        */
-      void GenerateScript(std::ostringstream& script, const std::string& top_filename, const std::list<std::string> & file_list);
+      void GenerateScript(std::ostringstream& script, const std::string& top_filename, const std::list<std::string> & file_list) override;
 
    public:
 
@@ -69,22 +69,22 @@ class VerilatorWrapper : public SimulationTool
        * Constructor
        * @param Param is the set of parameters
        */
-      VerilatorWrapper(const ParameterConstRef Param, const std::string& suffix);
+      VerilatorWrapper(const ParameterConstRef Param, std::string  suffix);
 
       /**
        * Destructor
        */
-      ~VerilatorWrapper();
+      ~VerilatorWrapper() override;
 
       /**
        * Checks if the current specification can be executed or not
        */
-      virtual void CheckExecution();
+      void CheckExecution() override;
 
       /**
        * Remove files created during simulation
        */
-      void Clean() const;
+      void Clean() const override;
 
 };
 /// Refcount definition for the VerilatorWrapper class

@@ -44,39 +44,46 @@
  * Last modified by $Author$
  *
 */
-///Autoheader include
-#include "config_HAVE_BAMBU_BUILT.hpp"
-#include "config_HAVE_KOALA_BUILT.hpp"
-#include "config_HAVE_TECHNOLOGY_BUILT.hpp"
-#include "config_RELEASE.hpp"
-
 #include "structural_manager.hpp"
-#include "exceptions.hpp"
-#include "dbgPrintHelper.hpp"
-#include "cg_node.hpp"
-#include "behavioral_writer_helper.hpp"
-#include "utility.hpp"
-#include "graph.hpp"
-#include "graph_info.hpp"
 
-#include "library_manager.hpp"
+#include "config_HAVE_BAMBU_BUILT.hpp"                       // for HAVE_BAM...
+#include "config_HAVE_KOALA_BUILT.hpp"                       // for HAVE_KOA...
+#include "config_HAVE_TECHNOLOGY_BUILT.hpp"                  // for HAVE_TEC...
 
+#include <boost/algorithm/string/classification.hpp>         // for is_any_of
+#include <boost/algorithm/string/predicate.hpp>              // for starts_with
+#include <boost/algorithm/string/split.hpp>                  // for split
+#include <boost/graph/adjacency_list.hpp>                    // for target
+#include <boost/graph/filtered_graph.hpp>                    // for edges
+#include <boost/graph/graph_traits.hpp>                      // for graph_tr...
+#include <boost/graph/graphviz.hpp>                          // for write_gr...
+#include <boost/iterator/iterator_facade.hpp>                // for operator!=
+#include <boost/smart_ptr/shared_ptr.hpp>                    // for shared_ptr
+#include <boost/type_index/type_index_facade.hpp>            // for operator==
+#include <iosfwd>                                            // for ofstream
+#include <list>                                              // for _List_co...
+#include <map>                                               // for map, _Rb...
+#include <memory>                                            // for allocato...
+#include <ostream>                                           // for operator<<
+#include <set>                                               // for set, set...
+#include <utility>                                           // for swap, pair
+#include <vector>                                            // for vector
+#include "Parameter.hpp"                                     // for Parameter
+#include "cg_node.hpp"                                       // for structur...
+#include "dbgPrintHelper.hpp"                                // for DEBUG_LE...
+#include "exceptions.hpp"                                    // for THROW_AS...
+#include "graph.hpp"                                         // for graphs_c...
+#include "graph_info.hpp"                                    // for GraphInf...
+#include "library_manager.hpp"                               // for attribute
+#include "refcount.hpp"                                      // for GetPointer
 #if HAVE_BAMBU_BUILT || HAVE_KOALA_BUILT || HAVE_EUCALYPTUS_BUILT
-#include "technology_node.hpp"
-#include "technology_manager.hpp"
+#include "technology_manager.hpp"                            // for technolo...
+#include "technology_node.hpp"                               // for function...
 #endif
-
-#include "xml_helper.hpp"
-#include "polixml.hpp"
-#include "Parameter.hpp"
-
-#include <boost/algorithm/string/split.hpp>
-#include <boost/algorithm/string/classification.hpp>
-#include <boost/graph/graphviz.hpp>
-#include <boost/lexical_cast.hpp>
-#include <iosfwd>
-#include <vector>
-#include <algorithm>
+#include "typed_node_info.hpp"                               // for ENTRY, EXIT
+#include "string_manipulation.hpp"                           // for GET_CLASS
+#include "xml_element.hpp"                                   // for xml_element
+#include "xml_node.hpp"                                      // for xml_node...
 
 
 structural_manager::structural_manager(const ParameterConstRef _Param):
@@ -222,10 +229,10 @@ structural_objectRef structural_manager::add_port(std::string id, port_o::port_d
                      std::string equation = NPF->get_NP_functionality(NP_functionality::EQUATION);
                      std::vector<std::string> tokens;
                      boost::algorithm::split(tokens, equation, boost::algorithm::is_any_of(";"));
-                     for(unsigned int i = 0; i < tokens.size(); i++)
+                     for(auto & token : tokens)
                      {
-                        if (boost::algorithm::starts_with(tokens[i],id))
-                           equation = tokens[i].substr(tokens[i].find("=") + 1, tokens[i].size());
+                        if (boost::algorithm::starts_with(token,id))
+                           equation = token.substr(token.find("=") + 1, token.size());
                      }
                      attributeRef function(new attribute(attribute::STRING, equation));
                      cp->add_attribute("function", function);
@@ -1659,9 +1666,9 @@ void structural_manager::xload(const xml_element* node, structural_managerRef co
 {
    //Recurse through child nodes:
    const xml_node::node_list list = node->get_children();
-   for (xml_node::node_list::const_iterator iter = list.begin(); iter != list.end(); ++iter)
+   for (const auto & iter : list)
    {
-      const xml_element* Enode = GetPointer<const xml_element>(*iter);
+      const xml_element* Enode = GetPointer<const xml_element>(iter);
       if (!Enode || Enode->get_name() != GET_CLASS_NAME(component_o)) continue;
       CM->get_circ()->xload(Enode, CM->get_circ(), CM);
    }
@@ -1740,8 +1747,8 @@ void structural_manager::remove_module(structural_objectRef obj)
    //std::cerr << "removing signals" << std::endl;
    module* top = GetPointer<module>(top_obj);
    top->remove_internal_object(obj);
-   for(std::set<structural_objectRef>::iterator k = remove.begin(); k != remove.end(); ++k)
-      top->remove_internal_object(*k);
+   for(const auto & k : remove)
+      top->remove_internal_object(k);
 }
 
 void structural_manager::remove_connection(structural_objectRef, structural_objectRef)

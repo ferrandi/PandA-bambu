@@ -60,7 +60,7 @@ WB4Intercon_interface::WB4Intercon_interface(const ParameterConstRef P, const HL
 {}
 
 
-WB4Intercon_interface::~WB4Intercon_interface() {}
+WB4Intercon_interface::~WB4Intercon_interface() = default;
 
 
 static void build_bus_interface(structural_managerRef SM, const hlsRef HLS,
@@ -224,7 +224,7 @@ buildCircuit(
 	     "intercon", WB4_INTERCON, WBLIBRARY,
 	     interfaceObj, HLS->HLS_T->get_technology_manager());
 
-   module * interconModule = GetPointer<module>(interconnect);
+   auto * interconModule = GetPointer<module>(interconnect);
    unsigned int interconPortsNumber = interconModule->get_num_ports();
    for (unsigned int i = 0; i < interconPortsNumber; ++i)
    {
@@ -244,7 +244,7 @@ buildCircuit(
       
          structural_objectRef destPort =
                interfaceObj->find_member(portId, port_o_K, interfaceObj);
-         port_o * portPtr = GetPointer<port_o>(port);
+         auto * portPtr = GetPointer<port_o>(port);
          portPtr->set_type(destPort->get_typeRef());
          portPtr->add_n_ports(1, port);
          SM->add_connection(destPort,
@@ -287,14 +287,14 @@ buildCircuit(
 
 
    const std::set<unsigned int> additionalTops = HLSMgr->CGetCallGraphManager()->GetAddressedFunctions();
-   for (std::set<unsigned int>::const_iterator itr = additionalTops.begin(), end = additionalTops.end(); itr != end; ++itr)
+   for (unsigned int itr : additionalTops)
    {
-      std::string functionName = tree_helper::name_function(TM, *itr);
+      std::string functionName = tree_helper::name_function(TM, itr);
       std::string moduleName = functionName + "_minimal_interface_wb4_interface";
 
-      baseAddressFile << std::bitset<8 * sizeof(unsigned int)>(HLSMgr->Rmem->get_first_address(*itr))
+      baseAddressFile << std::bitset<8 * sizeof(unsigned int)>(HLSMgr->Rmem->get_first_address(itr))
                       << '\n'
-                      << std::bitset<8 * sizeof(unsigned int)>(HLSMgr->Rmem->get_last_address(*itr, HLSMgr))
+                      << std::bitset<8 * sizeof(unsigned int)>(HLSMgr->Rmem->get_last_address(itr, HLSMgr))
                       << '\n';
       structural_objectRef additionalTop = SM->add_module_from_technology_library(
 	  functionName, moduleName, WORK_LIBRARY, interfaceObj,
@@ -330,7 +330,7 @@ buildCircuit(
 	      itr = slaves.begin(), end = slaves.end(); itr != end; ++itr, ++idx)
    {
       // Input ports
-      module * currentModule = GetPointer<module>(*itr);
+      auto * currentModule = GetPointer<module>(*itr);
       unsigned int inPortsNumber = currentModule->get_in_port_size();
       for (unsigned int i = 0; i < inPortsNumber; ++i)
       {
@@ -345,7 +345,7 @@ buildCircuit(
 			       SM->get_circ(), port->get_typeRef());
 	    SM->add_connection(port, signal);
 
-	    port_o * destPortPtr = GetPointer<port_o>(destPort);
+	    auto * destPortPtr = GetPointer<port_o>(destPort);
 	    destPortPtr->set_type(port->get_typeRef());
 	    destPortPtr->add_n_ports(1, destPort);
 	    SM->add_connection(signal,
@@ -367,7 +367,7 @@ buildCircuit(
 			       SM->get_circ(), port->get_typeRef());
 	    SM->add_connection(port, signal);
 
-	    port_o * destPortPtr = GetPointer<port_o>(destPort);
+	    auto * destPortPtr = GetPointer<port_o>(destPort);
 	    destPortPtr->set_type(port->get_typeRef());
 	    destPortPtr->add_n_ports(1, destPort);
 	    SM->add_connection(signal,

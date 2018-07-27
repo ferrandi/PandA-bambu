@@ -63,12 +63,12 @@ struct vertex2obj: public std::map<vertex, data_obj>
     * Constructor.
    */
    vertex2obj()
-   {}
+   = default;
 
    /**
     * Destructor.
     */
-   virtual ~vertex2obj(){}
+   virtual ~vertex2obj()= default;
 
    /**
    * Function that print the informations associated with a vertex.
@@ -102,8 +102,8 @@ struct vertex2obj: public std::map<vertex, data_obj>
    */
    virtual void print(std::ostream& os, const graph * data = nullptr) const
    {
-      typename vertex2obj<data_obj>::const_iterator i_end = this->end();
-      for ( typename vertex2obj<data_obj>::const_iterator i = this->begin(); i != i_end; ++i)
+      auto i_end = this->end();
+      for ( auto i = this->begin(); i != i_end; ++i)
       {
          print_rowHead(os, data, i);
          print_el(os, data, i);

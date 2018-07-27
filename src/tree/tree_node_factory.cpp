@@ -57,10 +57,11 @@
 #if HAVE_CODE_ESTIMATION_BUILT
 #include "weight_information.hpp"
 #endif
+#include "utility.hpp"
 
 #define CREATE_TREE_NODE_CASE_BODY(tree_node_name, node_id)\
 {\
-   tree_node_name * tnn = new tree_node_name(node_id);\
+   auto tnn = new tree_node_name(node_id);\
    tree_nodeRef cur = tree_nodeRef(tnn);\
    TM.AddTreeNode(node_id, cur);\
    curr_tree_node_ptr = tnn;\
@@ -633,14 +634,14 @@ void tree_node_factory::operator()(const attr* obj, unsigned int & mask)
 #define SET_NODE_ID_OPT(token,field,type) \
    if (tree_node_schema.find(TOK(token)) != tree_node_schema.end())\
    {\
-      unsigned int node_id = boost::lexical_cast<unsigned int>(tree_node_schema.find(TOK(token))->second);\
+      auto node_id = boost::lexical_cast<unsigned int>(tree_node_schema.find(TOK(token))->second);\
       dynamic_cast<type*>(curr_tree_node_ptr)->field = TM.GetTreeReindex(node_id);\
    }
 
 #define SET_NODE_ID(token,field,type) \
 {\
    THROW_ASSERT(tree_node_schema.find(TOK(token)) != tree_node_schema.end(), std::string("tree_node_schema must have ") + STOK(token) + " value");\
-   unsigned int node_id = boost::lexical_cast<unsigned int>(tree_node_schema.find(TOK(token))->second);\
+   auto node_id = boost::lexical_cast<unsigned int>(tree_node_schema.find(TOK(token))->second);\
    dynamic_cast<type*>(curr_tree_node_ptr)->field = TM.GetTreeReindex(node_id);\
 }
 

@@ -44,18 +44,17 @@
 #ifndef DESIGN_FLOW_GRAPH_HPP
 #define DESIGN_FLOW_GRAPH_HPP
 
-///Superclass include
-#include "graph.hpp"
-#include "edge_info.hpp"
-#include "node_info.hpp"
+#include <cstddef>                                  // for size_t
+#include <iosfwd>                                    // for ostream
+#include <string>                                    // for string
+#include <unordered_map>                             // for unordered_map
+#include "custom_map.hpp"                            // for CustomMap
+#include "edge_info.hpp"                             // for EdgeInfo, EdgeIn...
+#include "graph.hpp"                                 // for vertex, EdgeDesc...
+#include "graph_info.hpp"                            // for GraphInfo
+#include "node_info.hpp"                             // for NodeInfo
+#include "refcount.hpp"                              // for refcount, Refcou...
 
-///STL include
-#include <unordered_map>
-
-///utility include
-#include "custom_map.hpp"
-#include "custom_set.hpp"
-#include "refcount.hpp"
 
 CONSTREF_FORWARD_DECL(Parameter);
 REF_FORWARD_DECL(DesignFlowGraphsCollection);
@@ -91,7 +90,7 @@ struct DesignFlowDependenceInfo : public EdgeInfo
       /**
        * Desturctor
        */
-      ~DesignFlowDependenceInfo();
+      ~DesignFlowDependenceInfo() override;
 };
 typedef refcount<DesignFlowDependenceInfo> DesignFlowDependenceInfoRef;
 typedef refcount<const DesignFlowDependenceInfo> DesignFlowDependenceInfoConstRef;
@@ -123,7 +122,7 @@ class DesignFlowGraphsCollection : public graphs_collection
       /**
        * Destructor
        */
-      virtual ~DesignFlowGraphsCollection();
+      ~DesignFlowGraphsCollection() override;
 
       /**
        * Return the vertex associated with a design step if exists, NULL_VERTEX otherwise
@@ -188,7 +187,7 @@ class DesignFlowGraph : public graph
       /**
        * Destructor
        */
-      virtual ~DesignFlowGraph();
+      ~DesignFlowGraph() override;
 
       /**
        * Return the vertex associated with a design step if exists, NULL_VERTEX otherwise
@@ -282,14 +281,14 @@ class DesignFlowStepWriter : public VertexWriter
       /**
        * Destructor
        */
-      virtual ~DesignFlowStepWriter();
+      ~DesignFlowStepWriter() override;
 
       /**
        * Functor actually called by the boost library to perform the writing
        * @param out is the stream where the nodes have to be printed
        * @param v is the vertex to be printed
        */
-      void operator()(std::ostream& out, const vertex& v) const;
+      void operator()(std::ostream& out, const vertex& v) const override;
 };
 
 /**
@@ -319,7 +318,7 @@ class DesignFlowEdgeWriter : public EdgeWriter
        * @param out is the stream where the edges have to be printed
        * @param edge is the edge to be printed
        */
-      virtual void operator()(std::ostream& out, const EdgeDescriptor & edge) const;
+      void operator()(std::ostream& out, const EdgeDescriptor & edge) const override;
 };
 
 #endif

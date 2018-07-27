@@ -73,6 +73,7 @@
 #include "utility.hpp"
 
 #include <boost/lexical_cast.hpp>
+#include <utility>
 
 #include "op_graph.hpp"
 
@@ -97,9 +98,9 @@ void computeResources(const structural_objectRef circ, const technology_managerR
  *                                                                                               *
  *************************************************************************************************/
 
-hls::hls(const ParameterConstRef _Param, unsigned int _function_id, const OpVertexSet & _operations, const HLS_targetRef _HLS_T, const HLS_constraintsRef _HLS_C) :
+hls::hls(const ParameterConstRef _Param, unsigned int _function_id, OpVertexSet  _operations, const HLS_targetRef _HLS_T, const HLS_constraintsRef _HLS_C) :
    functionId(_function_id),
-   operations(_operations),
+   operations(std::move(_operations)),
    HLS_T(_HLS_T),
    HLS_C(_HLS_C),
    allocation_information(),
@@ -117,8 +118,7 @@ hls::hls(const ParameterConstRef _Param, unsigned int _function_id, const OpVert
 }
 
 hls::~hls()
-{
-}
+= default;
 
 void hls::xload(const xml_element* node, const OpGraphConstRef data)
 {
@@ -130,9 +130,9 @@ void hls::xload(const xml_element* node, const OpGraphConstRef data)
    std::map<std::string, vertex> String2Vertex;
    std::map<std::pair<std::string, std::string>, std::list<unsigned int> > String2Id;
 
-   for(OpVertexSet::const_iterator op = operations.begin(); op != operations.end(); ++op)
+   for(auto operation : operations)
    {
-      String2Vertex[GET_NAME(data, *op)] = *op;
+      String2Vertex[GET_NAME(data, operation)] = operation;
    }
 
    for(unsigned int id = 0; id < allocation_information->get_number_fu_types(); id++)
@@ -141,14 +141,14 @@ void hls::xload(const xml_element* node, const OpGraphConstRef data)
    }
    //Recurse through child nodes:
    const xml_node::node_list list = node->get_children();
-   for (xml_node::node_list::const_iterator iter = list.begin(); iter != list.end(); ++iter)
+   for (const auto & iter : list)
    {
-      const xml_element* Enode = GetPointer<const xml_element>(*iter);
+      const auto* Enode = GetPointer<const xml_element>(iter);
       if(!Enode || Enode->get_name() != "scheduling") continue;
       const xml_node::node_list list1 = Enode->get_children();
-      for (xml_node::node_list::const_iterator iter1 = list1.begin(); iter1 != list1.end(); ++iter1)
+      for (const auto & iter1 : list1)
       {
-         const xml_element* EnodeC = GetPointer<const xml_element>(*iter1);
+         const auto* EnodeC = GetPointer<const xml_element>(iter1);
          if(!EnodeC) continue;
          if(EnodeC->get_name() == "scheduling_constraints")
          {
@@ -196,16 +196,16 @@ void hls::xwrite(xml_element* rootnode, const OpGraphConstRef data)
 
    xml_element* Enode = rootnode->add_child_element("scheduling");
 
-   for(OpVertexSet::const_iterator op = operations.begin(); op != operations.end(); ++op)
+   for(auto operation : operations)
    {
       xml_element* EnodeC = Enode->add_child_element("scheduling_constraints");
-      std::string vertex_name = GET_NAME(data, *op);
-      const auto cstep = sch->get_cstep(*op).second;
+      std::string vertex_name = GET_NAME(data, operation);
+      const auto cstep = sch->get_cstep(operation).second;
       WRITE_XVM(vertex_name, EnodeC);
       WRITE_XVM(cstep, EnodeC);
 
-      unsigned int fu_type = fu.get_assign(*op);
-      unsigned int fu_index = fu.get_index(*op);
+      unsigned int fu_type = fu.get_assign(operation);
+      unsigned int fu_index = fu.get_index(operation);
       std::string fu_name, library;
       boost::tie(fu_name, library) = allocation_information->get_fu_name(fu_type);
 
@@ -220,11 +220,11 @@ void hls::xwrite(xml_element* rootnode, const OpGraphConstRef data)
       std::map<std::string, unsigned int> resources;
       const technology_managerRef TM = HLS_T->get_technology_manager();
       computeResources(datapath->get_circ(), TM, resources);
-      for (std::map<std::string, unsigned int>::iterator r = resources.begin(); r != resources.end(); ++r)
+      for (auto & resource : resources)
       {
          xml_element* EnodeC = Enode->add_child_element("resource");
-         std::string name = r->first;
-         unsigned int number = r->second;
+         std::string name = resource.first;
+         unsigned int number = resource.second;
          WRITE_XVM(name, EnodeC);
          WRITE_XVM(number, EnodeC);
       }
@@ -258,7 +258,7 @@ void hls::PrintResources() const
    if(output_level <= OUTPUT_LEVEL_PEDANTIC)
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "");
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "-->Summary of resources:");
-   for (std::map<std::string, unsigned int>::iterator r = resources.begin(); r != resources.end(); ++r)
+   for (auto r = resources.begin(); r != resources.end(); ++r)
    {
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "--- - " + r->first + ": " + STR(r->second));
    }

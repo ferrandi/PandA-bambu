@@ -65,16 +65,16 @@ class HLSIR : public IntermediateRepresentation
       /**
        * Destructor
        */
-      virtual ~HLSIR();
+      ~HLSIR() override;
 
       /**
        * Initialize all the data structure
        */
-      virtual void Initialize() = 0;
+      void Initialize() override = 0;
 
       /**
        * Clear all the data structure
        */
-      virtual void Clear() = 0;
+      void Clear() override = 0;
 };
 #endif

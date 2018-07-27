@@ -49,6 +49,8 @@
 #include "xml_script_command.hpp"
 
 #include "Parameter.hpp"
+#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_
+#include <iostream>
 
 //constructor
 trce_wrapper::trce_wrapper(const ParameterConstRef _Param, const std::string& _output_dir, const target_deviceRef _device) :
@@ -59,9 +61,7 @@ trce_wrapper::trce_wrapper(const ParameterConstRef _Param, const std::string& _o
 
 //destructor
 trce_wrapper::~trce_wrapper()
-{
-
-}
+= default;
 
 void trce_wrapper::init_reserved_vars()
 {
@@ -83,9 +83,8 @@ std::string trce_wrapper::get_command_line(const DesignParametersRef& dp) const
 {
    std::ostringstream s;
    s << get_tool_exec();
-   for (std::vector<xml_parameter_tRef>::const_iterator it = xml_tool_options.begin(); it != xml_tool_options.end(); ++it)
+   for (const auto & option : xml_tool_options)
    {
-      const xml_parameter_tRef & option = *it;
       if (option->checkCondition(dp))
       {
          std::string value = toString(option, dp);

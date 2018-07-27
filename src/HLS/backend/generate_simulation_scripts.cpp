@@ -73,13 +73,14 @@
 
 // include from tree
 #include "behavioral_helper.hpp"
+#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_
 
 GenerateSimulationScripts::GenerateSimulationScripts(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, const DesignFlowManagerConstRef _design_flow_manager) :
    HLS_step(_parameters, _HLSMgr, _design_flow_manager, HLSFlowStep_Type::GENERATE_SIMULATION_SCRIPT)
 {}
 
 GenerateSimulationScripts::~GenerateSimulationScripts()
-{}
+= default;
 
 const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > GenerateSimulationScripts::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {

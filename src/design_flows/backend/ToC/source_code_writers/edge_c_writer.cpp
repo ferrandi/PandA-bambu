@@ -84,8 +84,7 @@ EdgeCWriter::EdgeCWriter(const application_managerConstRef _AppM, const Instruct
 }
 
 EdgeCWriter::~EdgeCWriter()
-{
-}
+= default;
 
 void EdgeCWriter::Initialize()
 {
@@ -389,8 +388,8 @@ void EdgeCWriter::writeRoutineInstructions_rec
       if(renaming_table.find(current_vertex) != renaming_table.end())
       {
          const std::map<unsigned int, std::string> & rvt = renaming_table.find(current_vertex)->second;
-         std::map<unsigned int, std::string>::const_iterator rvt_it_end = rvt.end();
-         for(std::map<unsigned int, std::string>::const_iterator rvt_it = rvt.begin(); rvt_it != rvt_it_end; ++rvt_it)
+         auto rvt_it_end = rvt.end();
+         for(auto rvt_it = rvt.begin(); rvt_it != rvt_it_end; ++rvt_it)
             BehavioralHelper::rename_a_variable(rvt_it->first, rvt_it->second);
       }
       bool label_has_to_be_printed = start_with_a_label;
@@ -795,7 +794,7 @@ void EdgeCWriter::writeRoutineInstructions_rec
             unsigned int node_id = cfgGraph->CGetOpNodeInfo(last_stmt)->GetNodeId();
             const tree_nodeRef node = TM->get_tree_node_const(node_id);
             THROW_ASSERT(node->get_kind()== gimple_multi_way_if_K, "unexpected node");
-            gimple_multi_way_if* gmwi = GetPointer<gimple_multi_way_if>(node);
+            auto* gmwi = GetPointer<gimple_multi_way_if>(node);
             std::map<unsigned int, bool> add_elseif_to_goto;
             for(const auto cond : gmwi->list_of_cond)
             {

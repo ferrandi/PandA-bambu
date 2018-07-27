@@ -55,18 +55,18 @@ class sched_based_chaining_computation: public chaining
       /**
        * Destructor
        */
-      ~sched_based_chaining_computation();
+      ~sched_based_chaining_computation() override;
 
       /**
        * Initialize the step (i.e., like a constructor, but executed just before exec
        */
-      virtual void Initialize();
+      void Initialize() override;
 
       /**
        * Execute the step
        * @return the exit status of this step
        */
-      virtual DesignFlowStep_Status InternalExec();
+      DesignFlowStep_Status InternalExec() override;
 };
 
 typedef refcount<sched_based_chaining_computation> sched_based_chaining_computationRef;

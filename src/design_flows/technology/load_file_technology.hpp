@@ -60,7 +60,7 @@ class LoadFileTechnology : public TechnologyFlowStep
        * Return the set of analyses in relationship with this design step
        * @param relationship_type is the type of relationship to be considered
        */
-      virtual const std::unordered_set<TechnologyFlowStep_Type> ComputeTechnologyRelationships(const DesignFlowStep::RelationshipType relationship_type) const;
+      const std::unordered_set<TechnologyFlowStep_Type> ComputeTechnologyRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
    public:
       /**
@@ -74,12 +74,12 @@ class LoadFileTechnology : public TechnologyFlowStep
       /**
        * Destructor
        */
-      ~LoadFileTechnology();
+      ~LoadFileTechnology() override;
 
       /**
        * Execute the step
        * @return the exit status of this step
        */
-      virtual DesignFlowStep_Status Exec();
+      DesignFlowStep_Status Exec() override;
 };
 #endif

@@ -56,15 +56,15 @@ class fixed_scheduling : public Scheduling
       fixed_scheduling(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager);
 
       /**
-       * Deconstructor
+       * Destructor
        */
-      virtual ~fixed_scheduling();
+      ~fixed_scheduling() override;
 
       /**
        * Execute the step
        * @return the exit status of this step
        */
-      virtual DesignFlowStep_Status InternalExec();
+      DesignFlowStep_Status InternalExec() override;
 };
 
 #endif

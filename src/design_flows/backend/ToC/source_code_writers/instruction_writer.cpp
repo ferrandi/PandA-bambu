@@ -90,7 +90,7 @@
 #include <fstream>
 #include <iosfwd>
 #include <ostream>
-#include <math.h>
+#include <cmath>
 
 ///tree includes
 #include "var_pp_functor.hpp"
@@ -98,6 +98,7 @@
 ///utility include
 #include "indented_output_stream.hpp"
 #include "refcount.hpp"
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 InstructionWriter::InstructionWriter(const application_managerConstRef _AppM, const IndentedOutputStreamRef _indented_output_stream, const ParameterConstRef _parameters) :
    AppM(_AppM),
@@ -140,7 +141,7 @@ InstructionWriterRef InstructionWriter::CreateInstructionWriter(const ActorGraph
 }
 
 InstructionWriter::~InstructionWriter()
-{}
+= default;
 
 void InstructionWriter::Initialize()
 {}

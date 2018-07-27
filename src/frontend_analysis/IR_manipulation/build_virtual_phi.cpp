@@ -64,6 +64,8 @@
 #include "tree_manipulation.hpp"
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
+#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship> > BuildVirtualPhi::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
@@ -106,7 +108,7 @@ BuildVirtualPhi::BuildVirtualPhi(const application_managerRef _AppM, unsigned in
 }
 
 BuildVirtualPhi::~BuildVirtualPhi()
-{}
+= default;
 
 DesignFlowStep_Status BuildVirtualPhi::InternalExec()
 {
@@ -605,12 +607,12 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
       {
          auto block = basic_block_graph->CGetBBNodeInfo(*basic_block)->block;
          auto & phi_list = block->CGetPhiList();
-         for(auto phi = phi_list.begin(); phi != phi_list.end(); phi++)
+         for(const auto & phi : phi_list)
          {
-            const auto gp = GetPointer<const gimple_phi>(GET_NODE(*phi));
+            const auto gp = GetPointer<const gimple_phi>(GET_NODE(phi));
             if(gp->virtual_flag)
             {
-               THROW_ASSERT(gp->CGetDefEdgesList().size() == boost::in_degree(*basic_block, *basic_block_graph), STR(*phi) + " of BB" + STR(block->number) + " has wrong number of inputs: " + STR(gp->CGetDefEdgesList().size()) + " vs " + STR(boost::in_degree(*basic_block, *basic_block_graph)));
+               THROW_ASSERT(gp->CGetDefEdgesList().size() == boost::in_degree(*basic_block, *basic_block_graph), STR(phi) + " of BB" + STR(block->number) + " has wrong number of inputs: " + STR(gp->CGetDefEdgesList().size()) + " vs " + STR(boost::in_degree(*basic_block, *basic_block_graph)));
             }
          }
       }

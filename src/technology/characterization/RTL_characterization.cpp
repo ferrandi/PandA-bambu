@@ -95,6 +95,7 @@
 #if HAVE_FLOPOCO
 #include "flopoco_wrapper.hpp"
 #endif
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 
 #define PORT_VECTOR_N_PORTS 2
@@ -102,7 +103,6 @@
 RTLCharacterization::RTLCharacterization(const target_managerRef _target, const std::string&_cells, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters) :
    DesignFlowStep(_design_flow_manager, _parameters),
    FunctionalUnitStep(_target, _design_flow_manager, _parameters),
-   output_level(_parameters->getOption<int>(OPT_output_level)),
    component(ComputeComponent(_cells)),
    cells(ComputeCells(_cells))
 #ifndef NDEBUG
@@ -113,9 +113,7 @@ RTLCharacterization::RTLCharacterization(const target_managerRef _target, const 
 }
 
 RTLCharacterization::~RTLCharacterization()
-{
-
-}
+= default;
 
 void RTLCharacterization::Initialize()
 {
@@ -141,9 +139,9 @@ DesignFlowStep_Status RTLCharacterization::Exec()
 void RTLCharacterization::fix_muxes()
 {
    technology_nodeRef f_unit_br = TM->get_fu(ASSIGN_VECTOR_BOOL_STD, LIBRARY_STD_FU);
-   functional_unit * fu_br= GetPointer<functional_unit>(f_unit_br);
+   auto * fu_br= GetPointer<functional_unit>(f_unit_br);
    technology_nodeRef op_br_node =fu_br->get_operation(ASSIGN);
-   operation * op_ASSIGN = GetPointer<operation>(op_br_node);
+   auto * op_ASSIGN = GetPointer<operation>(op_br_node);
    double ASSIGN_exec_time = op_ASSIGN->time_m->get_execution_time();
    std::vector<unsigned int> bitsizes;
    bitsizes.push_back(8);
@@ -156,23 +154,23 @@ void RTLCharacterization::fix_muxes()
       std::string test_mul_mux_name = std::string(TEST_MUL_MUX_8)+"_"+STR(*b_it)+"_"+STR(*b_it)+"_"+STR(*b_it)+"_"+STR(*b_it)+"_"+STR(*b_it)+"_"+STR(*b_it)+"_"+STR(*b_it)+"_"+STR(*b_it)+"_"+STR(*b_it)+"_"+STR(*b_it)+"_"+STR(*b_it);
       technology_nodeRef f_unit_test = TM->get_fu(test_mul_mux_name, LIBRARY_STD_FU);
       if(!f_unit_test) continue;
-      functional_unit * fu_test= GetPointer<functional_unit>(f_unit_test);
+      auto * fu_test= GetPointer<functional_unit>(f_unit_test);
       technology_nodeRef op_test_node =fu_test->get_operation(TEST_MUL_MUX_8);
-      operation * op_test = GetPointer<operation>(op_test_node);
+      auto * op_test = GetPointer<operation>(op_test_node);
       double test_exec_time = op_test->time_m->get_execution_time();
 
       technology_nodeRef f_unit_mult = TM->get_fu(std::string(MULTIPLIER_STD)+"_"+STR(*b_it)+"_"+STR(*b_it)+"_"+STR(*b_it)+"_0", LIBRARY_STD_FU);
-      functional_unit * fu_mult= GetPointer<functional_unit>(f_unit_mult);
+      auto * fu_mult= GetPointer<functional_unit>(f_unit_mult);
       technology_nodeRef op_mult_node =fu_mult->get_operation("mult_expr");
-      operation * op_mult = GetPointer<operation>(op_mult_node);
+      auto * op_mult = GetPointer<operation>(op_mult_node);
       double mult_exec_time = op_mult->time_m->get_execution_time();
 
       technology_nodeRef f_unit_mux = TM->get_fu(std::string(MUX_GATE_STD)+"_1_"+STR(*b_it)+"_"+STR(*b_it)+"_"+STR(*b_it), LIBRARY_STD_FU);
-      functional_unit * fu_mux= GetPointer<functional_unit>(f_unit_mux);
+      auto * fu_mux= GetPointer<functional_unit>(f_unit_mux);
       const functional_unit::operation_vec &ops = fu_mux->get_operations();
-      for(unsigned int o = 0; o < ops.size(); o++)
+      for(const auto & op : ops)
       {
-         operation * current_op = GetPointer<operation>(ops[o]);
+         auto * current_op = GetPointer<operation>(op);
          if(!current_op->time_m) continue;
          unsigned int curr_cycles = current_op->time_m->get_cycles();
          double curr_exec = current_op->time_m->get_execution_time();
@@ -186,22 +184,22 @@ void RTLCharacterization::fix_muxes()
 void RTLCharacterization::fix_execution_time_std()
 {
    technology_nodeRef f_unit_br = TM->get_fu(ASSIGN_VECTOR_BOOL_STD, LIBRARY_STD_FU);
-   functional_unit * fu_br= GetPointer<functional_unit>(f_unit_br);
+   auto * fu_br= GetPointer<functional_unit>(f_unit_br);
    technology_nodeRef op_br_node =fu_br->get_operation(ASSIGN);
-   operation * op_br_LOAD = GetPointer<operation>(op_br_node);
+   auto * op_br_LOAD = GetPointer<operation>(op_br_node);
    double ASSIGN_exec_time = op_br_LOAD->time_m->get_execution_time();
    if(LM->get_library_name() != LIBRARY_STD_FU && LM->get_library_name() != LIBRARY_PC && LM->get_library_name() != LIBRARY_STD) 
       return;
    const auto tn = LM->get_fu(component);
-   functional_unit * current_fu = GetPointer<functional_unit>(tn);
+   auto * current_fu = GetPointer<functional_unit>(tn);
    if (current_fu)
    {
       if ((!parameters->isOption(OPT_component_name) || current_fu->get_operations_num() == 0) && completed.find(current_fu->functional_unit_name) == completed.end())
          return;
       const functional_unit::operation_vec &ops = current_fu->get_operations();
-      for(unsigned int o = 0; o < ops.size(); o++)
+      for(const auto & op : ops)
       {
-         operation * current_op = GetPointer<operation>(ops[o]);
+         auto * current_op = GetPointer<operation>(op);
          if(!current_op->time_m) continue;
          double curr_exec = current_op->time_m->get_execution_time();
          unsigned int curr_cycles = current_op->time_m->get_cycles();
@@ -221,31 +219,31 @@ void RTLCharacterization::fix_proxies_execution_time_std()
    for(auto high_latency_postfix : high_latency_postfix_list)
    {
       technology_nodeRef f_unit_br = TM->get_fu(ARRAY_1D_STD_BRAM, LIBRARY_STD_FU);
-      functional_unit * fu_br= GetPointer<functional_unit>(f_unit_br);
+      auto * fu_br= GetPointer<functional_unit>(f_unit_br);
       technology_nodeRef op_br_node =fu_br->get_operation("STORE");
-      operation * op_br_STORE = GetPointer<operation>(op_br_node);
+      auto * op_br_STORE = GetPointer<operation>(op_br_node);
       double STORE_exec_time = op_br_STORE->time_m->get_execution_time();
       technology_nodeRef f_unit_br_nn = TM->get_fu(ARRAY_1D_STD_BRAM_NN, LIBRARY_STD_FU);
-      functional_unit * fu_br_nn= GetPointer<functional_unit>(f_unit_br_nn);
+      auto * fu_br_nn= GetPointer<functional_unit>(f_unit_br_nn);
       technology_nodeRef op_br_nn_node =fu_br_nn->get_operation("STORE");
-      operation * op_br_nn_STORE = GetPointer<operation>(op_br_nn_node);
+      auto * op_br_nn_STORE = GetPointer<operation>(op_br_nn_node);
       double nn_STORE_exec_time = op_br_nn_STORE->time_m->get_execution_time();
 
       technology_nodeRef f_unit_br_hl = TM->get_fu(ARRAY_1D_STD_BRAM+high_latency_postfix, LIBRARY_STD_FU);
-      functional_unit * fu_br_hl= GetPointer<functional_unit>(f_unit_br_hl);
+      auto * fu_br_hl= GetPointer<functional_unit>(f_unit_br_hl);
       technology_nodeRef op_br_node_hl =fu_br_hl->get_operation("STORE");
-      operation * op_br_STORE_hl = GetPointer<operation>(op_br_node_hl);
+      auto * op_br_STORE_hl = GetPointer<operation>(op_br_node_hl);
       double STORE_exec_time_hl = op_br_STORE_hl->time_m->get_execution_time();
       technology_nodeRef f_unit_br_nn_hl = TM->get_fu(ARRAY_1D_STD_BRAM_NN+high_latency_postfix, LIBRARY_STD_FU);
-      functional_unit * fu_br_nn_hl = GetPointer<functional_unit>(f_unit_br_nn_hl);
+      auto * fu_br_nn_hl = GetPointer<functional_unit>(f_unit_br_nn_hl);
       technology_nodeRef op_br_nn_node_hl =fu_br_nn_hl->get_operation("STORE");
-      operation * op_br_nn_STORE_hl = GetPointer<operation>(op_br_nn_node_hl);
+      auto * op_br_nn_STORE_hl = GetPointer<operation>(op_br_nn_node_hl);
       double nn_STORE_exec_time_hl = op_br_nn_STORE_hl->time_m->get_execution_time();
 
       if(LM->get_library_name() != LIBRARY_STD_FU && LM->get_library_name() != LIBRARY_PC && LM->get_library_name() != LIBRARY_STD)
          return;
       const auto tn = LM->get_fu(component);
-      functional_unit * current_fu = GetPointer<functional_unit>(tn);
+      auto * current_fu = GetPointer<functional_unit>(tn);
       if(!current_fu)
          return;
       std::string fu_name = current_fu->functional_unit_name;
@@ -256,9 +254,9 @@ void RTLCharacterization::fix_proxies_execution_time_std()
          if ((!parameters->isOption(OPT_component_name) || current_fu->get_operations_num() == 0) && completed.find(fu_name) == completed.end())
             return;
          const functional_unit::operation_vec &ops = current_fu->get_operations();
-         for(unsigned int o = 0; o < ops.size(); o++)
+         for(const auto & op : ops)
          {
-            operation * current_op = GetPointer<operation>(ops[o]);
+            auto * current_op = GetPointer<operation>(op);
             if(!current_op->time_m) continue;
             unsigned int curr_cycles = current_op->time_m->get_cycles();
             if(bram_load_latency == "2")
@@ -285,9 +283,9 @@ void RTLCharacterization::fix_proxies_execution_time_std()
          if ((!parameters->isOption(OPT_component_name) || current_fu->get_operations_num() == 0) && completed.find(fu_name) == completed.end())
             return;
          const functional_unit::operation_vec &ops = current_fu->get_operations();
-         for(unsigned int o = 0; o < ops.size(); o++)
+         for(const auto & op : ops)
          {
-            operation * current_op = GetPointer<operation>(ops[o]);
+            auto * current_op = GetPointer<operation>(op);
             if(!current_op->time_m) continue;
             unsigned int curr_cycles = current_op->time_m->get_cycles();
             if(bram_load_latency == "2")
@@ -358,10 +356,10 @@ void RTLCharacterization::xwrite_characterization(const target_deviceRef device,
          THROW_ERROR(cell + " is not in any technology library");
       }
       technology_nodeRef tn = fus.find(cell)->second;
-      functional_unit * current_fu = GetPointer<functional_unit>(tn);
+      auto * current_fu = GetPointer<functional_unit>(tn);
       if (!current_fu)
       {
-         functional_unit_template * current_fu_temp = GetPointer<functional_unit_template>(tn);
+         auto * current_fu_temp = GetPointer<functional_unit_template>(tn);
          if(current_fu_temp->specialized != "")
          {
             xml_element* template_el = lmRoot->add_child_element("template");
@@ -387,7 +385,7 @@ void RTLCharacterization::xwrite_characterization(const target_deviceRef device,
          WRITE_XNVM2("name", "area", attribute_el);
          WRITE_XNVM2("value_type", "float64", attribute_el);
          attribute_el->add_child_text(STR(current_fu->area_m->get_area_value()));
-         clb_model* clb = GetPointer<clb_model>(current_fu->area_m);
+         auto* clb = GetPointer<clb_model>(current_fu->area_m);
          if(clb && clb->get_resource_value(clb_model::REGISTERS) != 0)
          {
             attribute_el = cell_el->add_child_element("attribute");
@@ -446,10 +444,10 @@ void RTLCharacterization::xwrite_characterization(const target_deviceRef device,
          auto characterization_timestamp_el = cell_el->add_child_element("characterization_timestamp");
          characterization_timestamp_el->add_child_text(STR(TimeStamp::GetCurrentTimeStamp()));
          const functional_unit::operation_vec &ops = current_fu->get_operations();
-         for(unsigned int o = 0; o < ops.size(); o++)
+         for(const auto & op : ops)
          {
-            operation * current_op = GetPointer<operation>(ops[o]);
-            current_op->xwrite(cell_el, ops[o], parameters, device->get_type());
+            auto * current_op = GetPointer<operation>(op);
+            current_op->xwrite(cell_el, op, parameters, device->get_type());
          }
          if(current_fu->CM && current_fu->CM->get_circ() && GetPointer<module>(current_fu->CM->get_circ()) && GetPointer<module>(current_fu->CM->get_circ())->get_specialized() != "")
          {
@@ -617,7 +615,7 @@ void RTLCharacterization::ComputeRelationships(DesignFlowStepSet & relationship,
       case DesignFlowStep::DEPENDENCE_RELATIONSHIP:
          {
             const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
-            const TechnologyFlowStepFactory * technology_flow_step_factory = GetPointer<const TechnologyFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("Technology"));
+            const auto * technology_flow_step_factory = GetPointer<const TechnologyFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("Technology"));
             const std::string technology_flow_signature = TechnologyFlowStep::ComputeSignature(TechnologyFlowStep_Type::LOAD_TECHNOLOGY);
             const vertex technology_flow_step = design_flow_manager.lock()->GetDesignFlowStep(technology_flow_signature);
             const DesignFlowStepRef technology_design_flow_step = technology_flow_step ? design_flow_graph->CGetDesignFlowStepInfo(technology_flow_step)->design_flow_step : technology_flow_step_factory->CreateTechnologyFlowStep(TechnologyFlowStep_Type::LOAD_TECHNOLOGY);
@@ -682,7 +680,7 @@ void RTLCharacterization::AnalyzeCell(functional_unit * fu, const unsigned int p
       structural_objectRef template_circuit = SM->add_module_from_technology_library(fu_base_name, fu_base_name, LM->get_library_name(), circuit, TM);
 
       PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, " - Generating HDL of functional unit " + fu_name);
-      module* spec_module = GetPointer<module>(template_circuit);
+      auto* spec_module = GetPointer<module>(template_circuit);
 
       std::string memory_type = fu->memory_type;
       std::string channels_type = fu->channels_type;
@@ -873,7 +871,7 @@ void RTLCharacterization::AnalyzeCell(functional_unit * fu, const unsigned int p
             e_port = SM->add_constant("constant_" + STR(constPort), circuit, port_in->get_typeRef(), fu->characterizing_constant_value);
             SM->add_connection(port_in, e_port);
          }
-         else if(0 && GetPointer<port_o>(port_in)->get_is_size_bus())
+         else if(false && GetPointer<port_o>(port_in)->get_is_size_bus())
          {
             if(port_in->get_kind() == port_vector_o_K)
             {
@@ -987,9 +985,9 @@ void RTLCharacterization::AnalyzeCell(functional_unit * fu, const unsigned int p
 #endif
       ///setting the timing values for each operation
       const functional_unit::operation_vec &ops = fu->get_operations();
-      for(unsigned int o = 0; o < ops.size(); o++)
+      for(const auto & op : ops)
       {
-         operation * new_op = GetPointer<operation>(ops[o]);
+         auto * new_op = GetPointer<operation>(op);
          time_modelRef synthesis_results;
 #ifndef NDEBUG
          if(not dummy_synthesis)

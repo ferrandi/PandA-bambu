@@ -100,11 +100,11 @@ void read_technology_File(const std::string& fn, const technology_managerRef TM,
             input_libraries = convert_string_to_vector<std::string>(input_libs, ";");
          }
          const std::vector<std::string>& libraries = TM->get_library_list();
-         for (unsigned int i = 0; i < libraries.size(); i++)
+         for (const auto & librarie : libraries)
          {
-            if (WORK_LIBRARY == libraries[i] or DESIGN == libraries[i] or PROXY_LIBRARY == libraries[i]) continue;
-            if (std::find(input_libraries.begin(), input_libraries.end(), libraries[i]) == input_libraries.end())
-               input_libraries.push_back(libraries[i]);
+            if (WORK_LIBRARY == librarie or DESIGN == librarie or PROXY_LIBRARY == librarie) continue;
+            if (std::find(input_libraries.begin(), input_libraries.end(), librarie) == input_libraries.end())
+               input_libraries.push_back(librarie);
          }
          ///FIXME: setting paraemeters
          const_cast<Parameter *>(Param.get())->setOption(OPT_input_libraries, convert_vector_to_string<std::string>(input_libraries, ";"));

@@ -75,6 +75,8 @@
 #include "tree_manipulation.hpp"
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
+#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 #define EPSILON 0.0001
 
@@ -131,7 +133,7 @@ CondExprRestructuring::CondExprRestructuring(const application_managerRef _AppM,
 }
 
 CondExprRestructuring::~CondExprRestructuring()
-{}
+= default;
 
 
 bool CondExprRestructuring::IsCondExprGimple(const tree_nodeConstRef tn) const
@@ -180,8 +182,8 @@ DesignFlowStep_Status CondExprRestructuring::InternalExec()
    }
 
    const tree_manipulationConstRef tree_man = tree_manipulationConstRef(new tree_manipulation(TM, parameters));
-   function_decl * fd = GetPointer<function_decl>(TM->get_tree_node_const(function_id));
-   statement_list * sl = GetPointer<statement_list>(GET_NODE(fd->body));
+   auto * fd = GetPointer<function_decl>(TM->get_tree_node_const(function_id));
+   auto * sl = GetPointer<statement_list>(GET_NODE(fd->body));
    for(const auto& block : sl->list_of_bloc)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining BB" + STR(block.first));
@@ -278,11 +280,11 @@ DesignFlowStep_Status CondExprRestructuring::InternalExec()
          }
 
          ///As cond expr time we consider the worst among the existing operation in the chain
-         const auto cond_expr_time1 = allocation_information->GetTimeLatency((*stmt)->index, schedule->get_cstep((*stmt)->index), fu_binding::UNKNOWN).first;
+         const auto cond_expr_time1 = allocation_information->GetTimeLatency((*stmt)->index, fu_binding::UNKNOWN).first;
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Delay of first operation is " + STR(cond_expr_time1));
-         const auto cond_expr_time2 = allocation_information->GetTimeLatency(second_stmt->index, schedule->get_cstep(second_stmt->index), fu_binding::UNKNOWN).first;
+         const auto cond_expr_time2 = allocation_information->GetTimeLatency(second_stmt->index, fu_binding::UNKNOWN).first;
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Delay of second operation is " + STR(cond_expr_time2));
-         const auto cond_expr_time3 = allocation_information->GetTimeLatency(third_stmt->index, schedule->get_cstep(third_stmt->index), fu_binding::UNKNOWN).first;
+         const auto cond_expr_time3 = allocation_information->GetTimeLatency(third_stmt->index, fu_binding::UNKNOWN).first;
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Delay of third operation is " + STR(cond_expr_time3));
          const auto mux_time = std::max(cond_expr_time1, std::max(cond_expr_time2, cond_expr_time3));
          const auto new_ending_time = operand_ready_time + 2 * mux_time;

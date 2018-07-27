@@ -73,12 +73,12 @@ class XilinxBackendFlow : public BackendFlow
       /**
        * Writes the proper flow configuration in the output script
        */
-      void WriteFlowConfiguration(std::ostream& script);
+      void WriteFlowConfiguration(std::ostream& script) override;
 
       /**
        * Checks the synthesis results and fills the corresponding datastructures
        */
-      void CheckSynthesisResults();
+      void CheckSynthesisResults() override;
 
       /**
        * Parses the utilization file in XML format
@@ -122,17 +122,17 @@ class XilinxBackendFlow : public BackendFlow
       /**
        * Destructor
        */
-      virtual ~XilinxBackendFlow();
+      ~XilinxBackendFlow() override;
 
       /**
        * Initializes the parameters
        */
-      void InitDesignParameters();
+      void InitDesignParameters() override;
 
       /**
        * Checks if the execution can be performed and, in case, performs the synthesis
        */
-      void ExecuteSynthesis();
+      void ExecuteSynthesis() override;
 };
 ///Refcount definition for the class
 typedef refcount<XilinxBackendFlow> XilinxBackendFlowRef;

@@ -62,8 +62,7 @@
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
 
-///utility include
-#include "utility.hpp"
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 HDLFunctionDeclFix::HDLFunctionDeclFix(const application_managerRef _AppM, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters) :
    ApplicationFrontendFlowStep(_AppM, HDL_FUNCTION_DECL_FIX, _design_flow_manager, _parameters)
@@ -72,7 +71,7 @@ HDLFunctionDeclFix::HDLFunctionDeclFix(const application_managerRef _AppM, const
 }
 
 HDLFunctionDeclFix::~HDLFunctionDeclFix()
-{}
+= default;
 
 DesignFlowStep_Status HDLFunctionDeclFix::Exec()
 {

@@ -68,7 +68,7 @@ class CallGraphBuiltinCall : public FunctionFrontendFlowStep
       ///
       /// @param RT Type of the relationship to be considered
       const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> >
-         ComputeFrontendRelationships(DesignFlowStep::RelationshipType RT) const;
+         ComputeFrontendRelationships(DesignFlowStep::RelationshipType RT) const override;
 
    public:
       /// @brief Ctor.
@@ -82,10 +82,10 @@ class CallGraphBuiltinCall : public FunctionFrontendFlowStep
             const DesignFlowManagerConstRef DFM,
             const ParameterConstRef P);
 
-      virtual ~CallGraphBuiltinCall();
-      void Initialize();
+      ~CallGraphBuiltinCall() override;
+      void Initialize() override;
 
-      DesignFlowStep_Status InternalExec();
+      DesignFlowStep_Status InternalExec() override;
 };
 
 #endif /* CALL_GRAPH_BUILTIN_CALL_H */

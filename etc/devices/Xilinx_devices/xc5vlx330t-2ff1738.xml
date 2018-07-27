@@ -1916,7 +1916,7 @@
         <attribute name="SLICE" value_type="float64">16</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">64</attribute>
         <characterization_timestamp>2017-05-05T01:41:47</characterization_timestamp>
-        <operation operation_name="ASSIGN" supported_types="REAL:*" execution_time="0.69599999999999995"/>
+        <operation operation_name="ASSIGN" supported_types="REAL:*" execution_time="0.67000000000000004"/>
       </cell>
       <cell>
         <name>ASSIGN_SIGNED_FU</name>
@@ -1926,7 +1926,7 @@
         <attribute name="SLICE" value_type="float64">16</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">64</attribute>
         <characterization_timestamp>2017-05-05T01:41:49</characterization_timestamp>
-        <operation operation_name="ASSIGN" supported_types="INT:*" execution_time="0.69599999999999995"/>
+        <operation operation_name="ASSIGN" supported_types="INT:*" execution_time="0.67000000000000004"/>
       </cell>
       <cell>
         <name>ASSIGN_SINGLE_UNSIGNED_FU</name>
@@ -1946,7 +1946,7 @@
         <attribute name="SLICE" value_type="float64">16</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">64</attribute>
         <characterization_timestamp>2017-05-05T01:41:57</characterization_timestamp>
-        <operation operation_name="ASSIGN" supported_types="UINT:*" execution_time="0.69599999999999995"/>
+        <operation operation_name="ASSIGN" supported_types="UINT:*" execution_time="0.67000000000000004"/>
       </cell>
       <cell>
         <name>ASSIGN_VECTOR_BOOL_FU</name>
@@ -1956,7 +1956,7 @@
         <attribute name="SLICE" value_type="float64">16</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">64</attribute>
         <characterization_timestamp>2017-05-05T01:41:59</characterization_timestamp>
-        <operation operation_name="ASSIGN" supported_types="VECTOR_BOOL:*" execution_time="0.69599999999999995"/>
+        <operation operation_name="ASSIGN" supported_types="VECTOR_BOOL:*" execution_time="0.67000000000000004"/>
       </cell>
       <cell>
         <name>BAMBU_READ4C</name>
@@ -4386,7 +4386,7 @@
         <attribute name="SLICE" value_type="float64">16</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">64</attribute>
         <characterization_timestamp>2017-05-05T02:37:53</characterization_timestamp>
-        <operation operation_name="addr_expr" execution_time="0.69599999999999995"/>
+        <operation operation_name="addr_expr" execution_time="0.67000000000000004"/>
       </cell>
       <cell>
         <name>assert_expr_FU</name>
@@ -4396,7 +4396,7 @@
         <attribute name="SLICE" value_type="float64">16</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">64</attribute>
         <characterization_timestamp>2017-05-05T02:38:14</characterization_timestamp>
-        <operation operation_name="assert_expr" supported_types="INT:*" execution_time="0.69599999999999995"/>
+        <operation operation_name="assert_expr" supported_types="INT:*" execution_time="0.67000000000000004"/>
       </cell>
       <cell>
         <name>bit_and_expr_FU_0_16_16</name>
@@ -11422,7 +11422,7 @@
         <attribute name="SLICE" value_type="float64">16</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">64</attribute>
         <characterization_timestamp>2017-05-05T05:00:03</characterization_timestamp>
-        <operation operation_name="view_convert_expr" supported_types="REAL:*" execution_time="0.69599999999999995"/>
+        <operation operation_name="view_convert_expr" supported_types="REAL:*" execution_time="0.67000000000000004"/>
       </cell>
       <cell>
         <name>ge_expr_FU_0_16_16</name>
@@ -11769,7 +11769,7 @@
         <attribute name="SLICE" value_type="float64">24</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">96</attribute>
         <characterization_timestamp>2017-05-05T05:05:37</characterization_timestamp>
-        <operation operation_name="imagpart_expr" execution_time="0.69599999999999995"/>
+        <operation operation_name="imagpart_expr" execution_time="0.67000000000000004"/>
       </cell>
       <cell>
         <name>le_expr_FU_0_16_16</name>
@@ -18789,7 +18789,7 @@
         <attribute name="SLICE" value_type="float64">16</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">64</attribute>
         <characterization_timestamp>2017-05-05T06:55:49</characterization_timestamp>
-        <operation operation_name="assert_expr" supported_types="UINT:*" execution_time="0.69599999999999995"/>
+        <operation operation_name="assert_expr" supported_types="UINT:*" execution_time="0.67000000000000004"/>
       </cell>
       <cell>
         <name>ui_bit_and_expr_FU_0_16_16</name>
@@ -31095,7 +31095,7 @@
         <template name="ui_vec_extracteven_expr_FU" parameter="0 16 8 16 8"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2017-05-05T10:20:37</characterization_timestamp>
-        <operation operation_name="vec_extracteven_expr" supported_types="VECTOR_UINT:16" execution_time="0.69599999999999995"/>
+        <operation operation_name="vec_extracteven_expr" supported_types="VECTOR_UINT:16" execution_time="0.67000000000000004"/>
       </cell>
       <cell>
         <name>ui_vec_extracteven_expr_FU_0_1_128_1_128</name>
@@ -31247,7 +31247,7 @@
         <template name="ui_vec_extracteven_expr_FU" parameter="8 16 0 8 16"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2017-05-05T10:22:51</characterization_timestamp>
-        <operation operation_name="vec_extracteven_expr" supported_types="VECTOR_UINT:8" execution_time="0.69599999999999995"/>
+        <operation operation_name="vec_extracteven_expr" supported_types="VECTOR_UINT:8" execution_time="0.67000000000000004"/>
       </cell>
       <cell>
         <name>ui_vec_extracteven_expr_FU_8_16_8_16_8_16</name>
@@ -31282,7 +31282,7 @@
         <template name="ui_vec_extractodd_expr_FU" parameter="0 1 128 1 128"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2017-05-05T10:23:05</characterization_timestamp>
-        <operation operation_name="vec_extractodd_expr" supported_types="VECTOR_UINT:1" execution_time="0.69599999999999995"/>
+        <operation operation_name="vec_extractodd_expr" supported_types="VECTOR_UINT:1" execution_time="0.67000000000000004"/>
       </cell>
       <cell>
         <name>ui_vec_extractodd_expr_FU_0_32_4_32_4</name>
@@ -31318,7 +31318,7 @@
         <template name="ui_vec_extractodd_expr_FU" parameter="0 8 16 8 16"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2017-05-05T10:23:31</characterization_timestamp>
-        <operation operation_name="vec_extractodd_expr" supported_types="VECTOR_UINT:8" execution_time="0.69599999999999995"/>
+        <operation operation_name="vec_extractodd_expr" supported_types="VECTOR_UINT:8" execution_time="0.67000000000000004"/>
       </cell>
       <cell>
         <name>ui_vec_extractodd_expr_FU_16_8_0_16_8</name>
@@ -31811,7 +31811,7 @@
         <template name="ui_vec_interleavehigh_expr_FU" parameter="0 32 4 32 4"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2017-05-05T10:30:56</characterization_timestamp>
-        <operation operation_name="vec_interleavehigh_expr" supported_types="VECTOR_UINT:32" execution_time="0.69599999999999995"/>
+        <operation operation_name="vec_interleavehigh_expr" supported_types="VECTOR_UINT:32" execution_time="0.67000000000000004"/>
       </cell>
       <cell>
         <name>ui_vec_interleavehigh_expr_FU_0_64_2_64_2</name>
@@ -38246,7 +38246,7 @@
         <attribute name="SLICE" value_type="float64">16</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">64</attribute>
         <characterization_timestamp>2017-05-05T11:38:57</characterization_timestamp>
-        <operation operation_name="view_convert_expr" supported_types="UINT:*|VECTOR_BOOL:*" execution_time="0.69599999999999995"/>
+        <operation operation_name="view_convert_expr" supported_types="UINT:*|VECTOR_BOOL:*" execution_time="0.67000000000000004"/>
       </cell>
       <cell>
         <name>ui_widen_mult_expr_FU_0_16_32_0</name>
@@ -42279,7 +42279,7 @@
         <template name="vec_extracteven_expr_FU" parameter="0 16 8 16 8"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2017-05-05T12:25:55</characterization_timestamp>
-        <operation operation_name="vec_extracteven_expr" supported_types="VECTOR_INT:16" execution_time="0.69599999999999995"/>
+        <operation operation_name="vec_extracteven_expr" supported_types="VECTOR_INT:16" execution_time="0.67000000000000004"/>
       </cell>
       <cell>
         <name>vec_extracteven_expr_FU_0_1_128_1_128</name>
@@ -42431,7 +42431,7 @@
         <template name="vec_extracteven_expr_FU" parameter="8 16 0 8 16"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2017-05-05T12:27:43</characterization_timestamp>
-        <operation operation_name="vec_extracteven_expr" supported_types="VECTOR_INT:8" execution_time="0.69599999999999995"/>
+        <operation operation_name="vec_extracteven_expr" supported_types="VECTOR_INT:8" execution_time="0.67000000000000004"/>
       </cell>
       <cell>
         <name>vec_extracteven_expr_FU_8_16_8_16_8_16</name>
@@ -42466,7 +42466,7 @@
         <template name="vec_extractodd_expr_FU" parameter="0 1 128 1 128"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2017-05-05T12:27:54</characterization_timestamp>
-        <operation operation_name="vec_extractodd_expr" supported_types="VECTOR_INT:1" execution_time="0.69599999999999995"/>
+        <operation operation_name="vec_extractodd_expr" supported_types="VECTOR_INT:1" execution_time="0.67000000000000004"/>
       </cell>
       <cell>
         <name>vec_extractodd_expr_FU_0_32_4_32_4</name>
@@ -42502,7 +42502,7 @@
         <template name="vec_extractodd_expr_FU" parameter="0 8 16 8 16"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2017-05-05T12:28:11</characterization_timestamp>
-        <operation operation_name="vec_extractodd_expr" supported_types="VECTOR_INT:8" execution_time="0.69599999999999995"/>
+        <operation operation_name="vec_extractodd_expr" supported_types="VECTOR_INT:8" execution_time="0.67000000000000004"/>
       </cell>
       <cell>
         <name>vec_extractodd_expr_FU_16_8_0_16_8</name>
@@ -42995,7 +42995,7 @@
         <template name="vec_interleavehigh_expr_FU" parameter="0 32 4 32 4"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2017-05-05T12:34:44</characterization_timestamp>
-        <operation operation_name="vec_interleavehigh_expr" supported_types="VECTOR_INT:32" execution_time="0.69599999999999995"/>
+        <operation operation_name="vec_interleavehigh_expr" supported_types="VECTOR_INT:32" execution_time="0.67000000000000004"/>
       </cell>
       <cell>
         <name>vec_interleavehigh_expr_FU_0_64_2_64_2</name>
@@ -49603,7 +49603,7 @@
         <attribute name="SLICE" value_type="float64">16</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">64</attribute>
         <characterization_timestamp>2017-05-05T13:42:06</characterization_timestamp>
-        <operation operation_name="view_convert_expr" supported_types="INT:*" execution_time="0.69599999999999995"/>
+        <operation operation_name="view_convert_expr" supported_types="INT:*" execution_time="0.67000000000000004"/>
       </cell>
       <cell>
         <name>widen_mult_expr_FU_0_16_32_0</name>

@@ -94,27 +94,27 @@ class clb_model : public area_model
       /**
        * Destructor
        */
-      virtual ~clb_model();
+      ~clb_model() override;
 
       /**
        * Prints the used resources into an output stream
        */
-      void print(std::ostream& os) const;
+      void print(std::ostream& os) const override;
 
       /**
        * Sets the nominal value for the area of the component
        */
-      void set_area_value(const double& _area_);
+      void set_area_value(const double& _area_) override;
 
       /**
        * Returns the nominal value for the area of the component
        */
-      double get_area_value() const;
+      double get_area_value() const override;
 
       /**
        * Checks if there is a characterization for the given type
        */
-      bool is_characterization(unsigned int characterization_type) const;
+      bool is_characterization(unsigned int characterization_type) const override;
 
       /**
        * Sets the number of resources used for the specified type

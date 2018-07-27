@@ -53,7 +53,7 @@ struct vcd_trace_head
    public:
       vcd_trace_head(
             const DiscrepancyOpInfo & op_info,
-            const std::string& signame,
+            std::string  signame,
             const std::list<sig_variation> & fv,
             const std::list<sig_variation> & ov, 
             const std::list<sig_variation> & sv,
@@ -63,7 +63,7 @@ struct vcd_trace_head
             const tree_managerConstRef _TM,
             const bool one_hot_fsm_encoding);
 
-      ~vcd_trace_head(){}
+      ~vcd_trace_head()= default;
 
       void advance();
 

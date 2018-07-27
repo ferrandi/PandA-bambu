@@ -70,13 +70,13 @@ class BitValueIPA : public ApplicationFrontendFlowStep, public BitLatticeManipul
 
       std::map<unsigned int, unsigned int> last_bb_ver;
 
-      virtual const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> >
+      const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> >
          ComputeFrontendRelationships(
-            const DesignFlowStep::RelationshipType relationship_type) const;
+            const DesignFlowStep::RelationshipType relationship_type) const override;
 
-      virtual void ComputeRelationships(
+      void ComputeRelationships(
             DesignFlowStepSet & relationships,
-            const DesignFlowStep::RelationshipType relationship_type);
+            const DesignFlowStep::RelationshipType relationship_type) override;
 
    public:
 
@@ -85,24 +85,24 @@ class BitValueIPA : public ApplicationFrontendFlowStep, public BitLatticeManipul
             const DesignFlowManagerConstRef design_flow_manager,
             const ParameterConstRef parameters);
 
-      ~BitValueIPA();
+      ~BitValueIPA() override;
 
       /**
        * Execute the step
        * @return the exit status of this step
        */
-      virtual DesignFlowStep_Status Exec();
+      DesignFlowStep_Status Exec() override;
 
       /**
        * Check if this step has actually to be executed
        * @return true if the step has to be executed
        */
-      virtual bool HasToBeExecuted() const;
+      bool HasToBeExecuted() const override;
 
       /**
        * Initialize the step (i.e., like a constructor, but executed just before exec
        */
-      virtual void Initialize();
+      void Initialize() override;
 };
 
 #endif

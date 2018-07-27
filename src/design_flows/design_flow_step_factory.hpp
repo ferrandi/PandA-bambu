@@ -44,7 +44,7 @@
 #ifndef DESIGN_FLOW_STEP_FACTORY_HPP
 #define DESIGN_FLOW_STEP_FACTORY_HPP
 
-///Utility include
+#include <string>                                    // for string
 #include "refcount.hpp"
 
 CONSTREF_FORWARD_DECL(DesignFlowManager);

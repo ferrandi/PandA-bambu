@@ -82,6 +82,8 @@
 
 ///design_flow_manager include
 #include "design_flow_manager.hpp"
+#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 short_circuit_taf::short_circuit_taf(const ParameterConstRef _parameters, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager) :
    FunctionFrontendFlowStep(_AppM, _function_id, SHORT_CIRCUIT_TAF, _design_flow_manager, _parameters)
@@ -90,8 +92,7 @@ short_circuit_taf::short_circuit_taf(const ParameterConstRef _parameters, const 
 }
 
 short_circuit_taf::~short_circuit_taf()
-{
-}
+= default;
 
 const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship> > short_circuit_taf::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
@@ -137,7 +138,7 @@ bool short_circuit_taf::check_phis(unsigned int curr_bb, std::map<unsigned int, 
 {
    for(const auto& phi : list_of_bloc[curr_bb]->CGetPhiList())
    {
-      gimple_phi *cb_phi = GetPointer<gimple_phi>(GET_NODE(phi));
+      auto *cb_phi = GetPointer<gimple_phi>(GET_NODE(phi));
       if(cb_phi->virtual_flag)
          return false;
    }
@@ -148,8 +149,8 @@ DesignFlowStep_Status short_circuit_taf::InternalExec()
 {
    const tree_managerRef TM = AppM->get_tree_manager();
    tree_nodeRef temp = TM->get_tree_node_const(function_id);
-   function_decl * fd = GetPointer<function_decl>(temp);
-   statement_list * sl = GetPointer<statement_list>(GET_NODE(fd->body));
+   auto * fd = GetPointer<function_decl>(temp);
+   auto * sl = GetPointer<statement_list>(GET_NODE(fd->body));
 
    std::map<unsigned int, blocRef> & list_of_bloc = sl->list_of_bloc;
    std::map<unsigned int, blocRef>::iterator it, it_end = list_of_bloc.end();
@@ -338,7 +339,7 @@ bool short_circuit_taf::create_gimple_cond(unsigned int bb1, unsigned int bb2, b
    list_of_bloc[bb1]->RemoveStmt(cond_statement);
 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---First gimple cond is " + STR(cond_statement));
-   gimple_cond* ce1 = GetPointer<gimple_cond>(GET_NODE(cond_statement));
+   auto* ce1 = GetPointer<gimple_cond>(GET_NODE(cond_statement));
    unsigned int cond1_index = GET_INDEX_NODE(ce1->op0);
    const auto type_node = tree_helper::CGetType(GET_NODE(ce1->op0));
    const tree_manipulationConstRef tree_man = tree_manipulationConstRef(new tree_manipulation(TM, parameters));
@@ -374,7 +375,7 @@ bool short_circuit_taf::create_gimple_cond(unsigned int bb1, unsigned int bb2, b
    {
       for(const auto& phi : list_of_bloc[merging_candidate]->CGetPhiList())
       {
-         gimple_phi *mc_phi = GetPointer<gimple_phi>(GET_NODE(phi));
+         auto *mc_phi = GetPointer<gimple_phi>(GET_NODE(phi));
          std::pair<tree_nodeRef, unsigned int> def_edge_to_be_removed(tree_nodeRef(), 0);
          std::pair<tree_nodeRef, unsigned int> def_edge_to_be_updated(tree_nodeRef(), 0);
          for(const auto& def_edge : mc_phi->CGetDefEdgesList())
@@ -473,7 +474,7 @@ bool short_circuit_taf::create_gimple_cond(unsigned int bb1, unsigned int bb2, b
 
    const auto second_stmt = list_of_stmt_cond2.front();
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Second gimple cond is " + STR(second_stmt));
-   gimple_cond* ce2 = GetPointer<gimple_cond>(GET_NODE(second_stmt));
+   auto* ce2 = GetPointer<gimple_cond>(GET_NODE(second_stmt));
 
    const auto type_node2 = tree_helper::CGetType(GET_NODE(ce2->op0));
    unsigned int cond2_index = GET_INDEX_NODE(ce2->op0);
@@ -581,14 +582,14 @@ void short_circuit_taf::restructure_CFG(unsigned int bb1, unsigned int bb2, unsi
 void short_circuit_taf::fix_multi_way_if(unsigned int curr_bb, std::map<unsigned int, blocRef>& list_of_bloc, unsigned int succ)
 {
    std::vector<unsigned int>::const_iterator lop_it_end = list_of_bloc[curr_bb]->list_of_pred.end();
-   for(std::vector<unsigned int>::iterator lop_it = list_of_bloc[curr_bb]->list_of_pred.begin(); lop_it_end != lop_it; ++lop_it)
+   for(auto lop_it = list_of_bloc[curr_bb]->list_of_pred.begin(); lop_it_end != lop_it; ++lop_it)
    {
       const auto list_of_pred_stmt = list_of_bloc[*lop_it]->CGetStmtList();
       tree_nodeRef cond_statement = list_of_pred_stmt.begin() != list_of_pred_stmt.end() ? list_of_pred_stmt.back() : tree_nodeRef();
       tree_nodeRef cond_statement_node = cond_statement ? GET_NODE(cond_statement) : cond_statement;
       if(cond_statement_node && GetPointer<gimple_multi_way_if>(cond_statement_node))
       {
-         gimple_multi_way_if * gmwi = GetPointer<gimple_multi_way_if>(cond_statement_node);
+         auto * gmwi = GetPointer<gimple_multi_way_if>(cond_statement_node);
          for(auto & cond : gmwi->list_of_cond)
             if(cond.second == curr_bb)
                cond.second = succ;

@@ -46,10 +46,14 @@
 #ifndef GLPK_SOLVER_HPP
 #define GLPK_SOLVER_HPP
 
+#include <meilp_solver.hpp>
+#include <iosfwd>
+#include <map>
+#include <string>
+
+#include "config_HAVE_GLPK.hpp"
 ///Autoheader include
 #include "config_HAVE_GLPK_NESTED.hpp"
-
-#include <meilp_solver.hpp>
 #if HAVE_GLPK_NESTED
 #include <glpk/glpk.h>
 #else
@@ -83,7 +87,7 @@ class glpk_solver : public meilp_solver
       /**
        * Set the lower and upper of the variables using lower_bounds and upper_bounds
        */
-      void set_all_bounds();
+      void set_all_bounds() override;
 
       /**
        * Set the lower and upper of the variables using lower_bounds and upper_bounds
@@ -94,36 +98,36 @@ class glpk_solver : public meilp_solver
        * Print the problem
        * @param os is the stream on which problem has to be printed
        */
-      void print(std::ostream& os);
+      void print(std::ostream& os) override;
 
    public:
       glpk_solver();
-      virtual ~glpk_solver();
-      void make(int nvars);
-      int  solve();
-      int  solve_ilp();
-      void add_row(std::map<int, double> &i_coeffs, double i_rhs, ilp_sign i_sign, const std::string&name);
-      void objective_add(std::map<int, double> &i_coeffs, ilp_dir dir);
+      ~glpk_solver() override;
+      void make(int nvars) override;
+      int  solve() override;
+      int  solve_ilp() override;
+      void add_row(std::map<int, double> &i_coeffs, double i_rhs, ilp_sign i_sign, const std::string&name) override;
+      void objective_add(std::map<int, double> &i_coeffs, ilp_dir dir) override;
 
-      void set_int(int i);
-      void get_vars_solution(std::map<int, double>& vars) const;
-      int  get_number_constraints() const;
-      int get_number_variables() const;
-      void set_col_name(int var, const std::string& name);
+      void set_int(int i) override;
+      void get_vars_solution(std::map<int, double>& vars) const override;
+      int  get_number_constraints() const override;
+      int get_number_variables() const override;
+      void set_col_name(int var, const std::string& name) override;
 
       /**
        * Get name of a variable (column)
        * @param var is the index of the variables
        * return the name of the variable
        */
-      std::string get_col_name(int var);
+      std::string get_col_name(int var) override;
 
-      int add_empty_column();
+      int add_empty_column() override;
 
       /**
        * Print the problem
        * @param file_name is the name of the file to be written
        */
-      virtual void print_to_file(const std::string&file_name);
+      void print_to_file(const std::string&file_name) override;
 };
 #endif

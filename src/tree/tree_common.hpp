@@ -52,7 +52,6 @@
 #include <boost/preprocessor/cat.hpp>
 #include <boost/preprocessor/seq/for_each.hpp>
 #include "refcount.hpp"
-#include "utility.hpp"
 
 #define TREE_NODE_NAME(r, data, elem) #elem,
 
@@ -382,13 +381,13 @@
    UNARY_EXPRESSION_TREE_NODES \
    (last_tree)
 
-enum kind {
+enum kind : int {
    BOOST_PP_SEQ_FOR_EACH(TREE_NODE_KIND, BOOST_PP_EMPTY, TREE_NODE_LIST)
 };
 
 /**
 * Macro which define a function that return the parameter as a enum kind.
 */
-#define GET_KIND(meth) enum kind get_kind() const {return (meth##_K);}
+#define GET_KIND(meth) enum kind get_kind() const override {return (meth##_K);}
 
 #endif

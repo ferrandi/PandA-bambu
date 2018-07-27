@@ -64,7 +64,7 @@ class bitfield_obj : public generic_obj
       /**
        * Destructor.
        */
-      ~bitfield_obj() {}
+      ~bitfield_obj() override = default;
 
       /**
        * add a size to the component

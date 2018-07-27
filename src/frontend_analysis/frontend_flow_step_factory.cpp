@@ -51,6 +51,12 @@
 #include "config_HAVE_HOST_PROFILING_BUILT.hpp"
 #include "config_HAVE_ZEBU_BUILT.hpp"
 #include "config_HAVE_BAMBU_BUILT.hpp"
+#include "config_HAVE_ILP_BUILT.hpp"                    // for HAVE_ILP_BUILT
+#include "config_HAVE_PRAGMA_BUILT.hpp"                 // for HAVE_PRAGMA_B...
+#include "config_HAVE_RTL_BUILT.hpp"                    // for HAVE_RTL_BUILT
+#include "config_HAVE_TASTE.hpp"                        // for HAVE_TASTE
+
+#include "exceptions.hpp"                               // for THROW_UNREACH...
 
 ///Passes includes
 #include "design_flow_step.hpp"
@@ -298,8 +304,6 @@
 #include "virtual_phi_nodes_split.hpp"
 #endif
 
-#include "call_graph_computation.hpp"
-#include "create_tree_manager.hpp"
 #if HAVE_FROM_PRAGMA_BUILT
 #include "pragma_analysis.hpp"
 #endif
@@ -319,7 +323,7 @@ FrontendFlowStepFactory::FrontendFlowStepFactory(const application_managerRef _A
 {}
 
 FrontendFlowStepFactory::~FrontendFlowStepFactory()
-{}
+= default;
 
 const DesignFlowStepSet FrontendFlowStepFactory::GenerateFrontendSteps(const std::unordered_set<FrontendFlowStepType>& frontend_flow_step_types) const
 {

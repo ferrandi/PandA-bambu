@@ -39,8 +39,11 @@
 
 #ifndef BAMBU_FRONTEND_FLOW_HPP
 #define BAMBU_FRONTEND_FLOW_HPP
-///Superclass include
-#include "application_frontend_flow_step.hpp"
+#include <unordered_set>                       // for unordered_set
+#include <utility>                             // for pair
+#include "application_frontend_flow_step.hpp"  // for ApplicationFrontendFlo...
+#include "design_flow_step.hpp"                // for DesignFlowStep, Design...
+#include "frontend_flow_step.hpp"              // for FrontendFlowStep::Func...
 
 class BambuFrontendFlow : public ApplicationFrontendFlowStep
 {
@@ -49,12 +52,12 @@ class BambuFrontendFlow : public ApplicationFrontendFlowStep
        * Return the set of analyses in relationship with this design step
        * @param relationship_type is the type of relationship to be considered
        */
-      virtual const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const;
+      const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
    public:
       /**
        * Constructor
-       * @param AppM is the applicaiton manager
+       * @param AppM is the application manager
        * @param design_flow_manager is the design flow manager
        * @param parameters is the set of input parameters
        */
@@ -63,25 +66,25 @@ class BambuFrontendFlow : public ApplicationFrontendFlowStep
       /**
        * Destructor
        */
-     virtual ~BambuFrontendFlow();
+     ~BambuFrontendFlow() override;
 
       /**
        * Execute this step
        * @return the exit status of this step
        */
-      virtual DesignFlowStep_Status Exec();
+      DesignFlowStep_Status Exec() override;
 
       /**
        * Check if this step has actually to be executed
        * @return true if the step has to be executed
        */
-      virtual bool HasToBeExecuted() const;
+      bool HasToBeExecuted() const override;
 
       /**
        * Compute the relationships of a step with other steps
        * @param dependencies is where relationships will be stored
        * @param relationship_type is the type of relationship to be computed
        */
-      virtual void ComputeRelationships(DesignFlowStepSet & relationship, const DesignFlowStep::RelationshipType relationship_type);
+      void ComputeRelationships(DesignFlowStepSet & relationship, const DesignFlowStep::RelationshipType relationship_type) override;
 };
 #endif

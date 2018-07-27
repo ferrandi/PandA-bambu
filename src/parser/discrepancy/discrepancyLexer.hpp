@@ -49,25 +49,25 @@
 struct DiscrepancyFlexLexer : public yyFlexLexer
 {
    YYSTYPE *lvalp;
-   int yylex();
+   int yylex() override;
 
    DiscrepancyFlexLexer(std::istream* argin, std::ostream* argout);
 
-   ~DiscrepancyFlexLexer();
+   ~DiscrepancyFlexLexer() override;
 
    void yyerror(const char * msg)
    {
       LexerError(msg);
    }
 
-   void LexerError(const char * msg)
+   void LexerError(const char * msg) override
    {
       std::cout << msg << " at line number |" << lineno() << "|\t" ;
       std::cout << "text is |" << YYText() << "|" << std::endl ;
       throw "Parse Error";
    }
 
-   int yywrap()
+   int yywrap() override
    {
       return 1;
    }

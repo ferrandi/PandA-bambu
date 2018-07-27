@@ -56,6 +56,9 @@
 #include "Parameter.hpp"
 
 #include <iosfwd>
+#include "hash_helper.hpp"
+#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 loops_computation::loops_computation(const ParameterConstRef _parameters, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager) :
    FunctionFrontendFlowStep(_AppM, _function_id, LOOPS_IDENTIFICATION, _design_flow_manager, _parameters)
@@ -64,7 +67,7 @@ loops_computation::loops_computation(const ParameterConstRef _parameters, const 
 }
 
 loops_computation::~loops_computation()
-{}
+= default;
 
 const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship> > loops_computation::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {

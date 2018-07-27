@@ -50,12 +50,14 @@
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
 
+#include "string_manipulation.hpp"
+
 BitLatticeManipulator::BitLatticeManipulator(const tree_managerConstRef _TM)
 	: TM(_TM)
 {}
 
 BitLatticeManipulator::~BitLatticeManipulator()
-{}
+= default;
 
 bit_lattice BitLatticeManipulator::bit_sup(const bit_lattice a, const bit_lattice b) const
 {
@@ -98,12 +100,12 @@ std::deque<bit_lattice> BitLatticeManipulator::sup(
       tree_nodeRef fret_type_node;
       if(fu_type->get_kind() == function_type_K)
       {
-         const function_type * ft = GetPointer<const function_type>(fu_type);
+         const auto * ft = GetPointer<const function_type>(fu_type);
          fret_type_node = GET_NODE(ft->retn);
       }
       else
       {
-         const method_type * mt = GetPointer<const method_type>(fu_type);
+         const auto * mt = GetPointer<const method_type>(fu_type);
          fret_type_node = GET_NODE(mt->retn);
       }
       out_type_size = tree_helper::Size(fret_type_node);
@@ -219,7 +221,7 @@ std::deque<bit_lattice> BitLatticeManipulator::inf(
       const tree_nodeConstRef fu_type = tree_helper::CGetType(node);
       THROW_ASSERT(fu_type->get_kind() == function_type_K,
             "node " + STR(output_uid) + " is " + fu_type->get_kind_text());
-      const function_type * ft = GetPointer<const function_type>(fu_type);
+      const auto * ft = GetPointer<const function_type>(fu_type);
       out_type_size = tree_helper::Size(GET_NODE(ft->retn));
    }
    else if (kind == parm_decl_K)
@@ -325,7 +327,7 @@ std::deque<bit_lattice> BitLatticeManipulator::constructor_bitstring(
 {
    const bool ssa_is_signed = tree_helper::is_int(TM, ssa_node_id);
    THROW_ASSERT(ctor_tn->get_kind() == constructor_K, "ctor_tn is not constructor node");
-   constructor * c = GetPointer<constructor>(ctor_tn);
+   auto * c = GetPointer<constructor>(ctor_tn);
    std::vector<unsigned int> array_dims;
    unsigned int elements_bitsize;
    tree_helper::get_array_dim_and_bitsize(TM, GET_INDEX_CONST_NODE(c->type), array_dims, elements_bitsize);
@@ -367,7 +369,7 @@ std::deque<bit_lattice> BitLatticeManipulator::string_cst_bitstring(
       unsigned int ssa_node_id) const
 {
    THROW_ASSERT(strcst_tn->get_kind() == string_cst_K, "strcst_tn is not a string_cst node");
-   string_cst * sc = GetPointer<string_cst>(strcst_tn);
+   auto * sc = GetPointer<string_cst>(strcst_tn);
    const std::string str = sc->strg;
    const bool node_is_signed = tree_helper::is_int(TM, ssa_node_id);
    auto current_inf = create_bitstring_from_constant(0, 8, node_is_signed);
@@ -454,7 +456,7 @@ std::deque<bit_lattice> create_bitstring_from_constant(
       unsigned int len,
       bool signed_value)
 {
-   long long unsigned int value = static_cast<long long unsigned int>(value_int);
+   auto value = static_cast<long long unsigned int>(value_int);
    std::deque<bit_lattice> res;
    if(value == 0){
       res.push_front(bit_lattice::ZERO);

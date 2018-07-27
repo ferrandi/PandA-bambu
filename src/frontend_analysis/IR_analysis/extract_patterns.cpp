@@ -56,7 +56,7 @@
 //STD include
 #include <fstream>
 #include <string>
-#include <math.h>
+#include <cmath>
 
 
 //Tree include
@@ -65,6 +65,8 @@
 #include "tree_reindex.hpp"
 #include "tree_manipulation.hpp"
 #include "tree_helper.hpp"
+#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 extract_patterns::extract_patterns (const ParameterConstRef _parameters, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager) :
    FunctionFrontendFlowStep (_AppM, _function_id, EXTRACT_PATTERNS, _design_flow_manager, _parameters)
@@ -74,8 +76,7 @@ extract_patterns::extract_patterns (const ParameterConstRef _parameters, const a
 }
 
 extract_patterns::~extract_patterns ()
-{
-}
+= default;
 
 const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship> > extract_patterns::ComputeFrontendRelationships (const DesignFlowStep::RelationshipType relationship_type) const
 {
@@ -151,7 +152,7 @@ void extract_patterns::ternary_plus_expr_extraction(statement_list* sl, tree_man
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining statement " + GET_NODE(*it_los)->ToString());
          if(GET_NODE(*it_los)->get_kind() == gimple_assign_K)
          {
-            gimple_assign * ga =  GetPointer<gimple_assign>(GET_NODE(*it_los));
+            auto * ga =  GetPointer<gimple_assign>(GET_NODE(*it_los));
             enum kind code0 = GET_NODE(ga->op0)->get_kind();
             enum kind code1 = GET_NODE(ga->op1)->get_kind();
             if(code0 == ssa_name_K && (code1 == plus_expr_K || code1 == minus_expr_K))
@@ -159,15 +160,15 @@ void extract_patterns::ternary_plus_expr_extraction(statement_list* sl, tree_man
                unsigned int ssa_node_id = GET_INDEX_NODE(ga->op0);
                if(!(tree_helper::is_real(TM, ssa_node_id)|| tree_helper::is_a_complex(TM, ssa_node_id) || tree_helper::is_a_vector(TM, ssa_node_id)))
                {
-                  ssa_name *ssa_defined = GetPointer<ssa_name> (GET_NODE(ga->op0));
+                  auto *ssa_defined = GetPointer<ssa_name> (GET_NODE(ga->op0));
                   unsigned int ssa_defined_size = tree_helper::Size(tree_helper::get_type_node(GET_NODE(ga->op0)));
-                  binary_expr* binop0 = GetPointer<binary_expr> (GET_NODE(ga->op1));
+                  auto* binop0 = GetPointer<binary_expr> (GET_NODE(ga->op1));
                   if(ssa_defined->CGetNumberUses() == 1 and ssa_defined_size == tree_helper::Size(tree_helper::get_type_node(GET_NODE(binop0->op0))) and ssa_defined_size == tree_helper::Size(tree_helper::get_type_node(GET_NODE(binop0->op1))))
                   {
                      auto statement_node = ssa_defined->CGetUseStmts().begin()->first;
                      if(GET_NODE(statement_node)->get_kind() == gimple_assign_K)
                      {
-                        gimple_assign * ga_dest =  GetPointer<gimple_assign>(GET_NODE(statement_node));
+                        auto * ga_dest =  GetPointer<gimple_assign>(GET_NODE(statement_node));
                         enum kind code_dest0 = GET_NODE(ga_dest->op0)->get_kind();
                         enum kind code_dest1 = GET_NODE(ga_dest->op1)->get_kind();
                         unsigned int ssa_dest0_size = tree_helper::Size(tree_helper::get_type_node(GET_NODE(ga_dest->op0)));
@@ -177,7 +178,7 @@ void extract_patterns::ternary_plus_expr_extraction(statement_list* sl, tree_man
                            /// matched
                            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Ternary plus expr statement found ");
                            const std::string srcp_default = ga_dest->include_name + ":" + STR(ga_dest->line_number) + ":" + STR(ga_dest->column_number);
-                           binary_expr* binop_dest = GetPointer<binary_expr> (GET_NODE(ga_dest->op1));
+                           auto* binop_dest = GetPointer<binary_expr> (GET_NODE(ga_dest->op1));
                            if(GET_INDEX_NODE(ga->op0) == GET_INDEX_NODE(binop_dest->op0))
                            {
                               ga_dest->op1 = IRman->create_ternary_operation(binop_dest->type, binop0->op0, binop0->op1, binop_dest->op1, srcp_default, ternary_operation_type0(code1, code_dest1));
@@ -223,9 +224,9 @@ extract_patterns::InternalExec ()
    tree_managerRef TM = AppM->get_tree_manager();
    tree_nodeRef tn = TM->get_tree_node_const(function_id);
    //tree_nodeRef Scpe = TM->GetTreeReindex(function_id);
-   function_decl * fd = GetPointer<function_decl>(tn);
+   auto * fd = GetPointer<function_decl>(tn);
    THROW_ASSERT(fd && fd->body, "Node is not a function or it hasn't a body");
-   statement_list * sl = GetPointer<statement_list>(GET_NODE(fd->body));
+   auto * sl = GetPointer<statement_list>(GET_NODE(fd->body));
    THROW_ASSERT(sl, "Body is not a statement_list");
    /// for each basic block B in CFG do > Consider all blocks successively
    ternary_plus_expr_extraction(sl, TM);

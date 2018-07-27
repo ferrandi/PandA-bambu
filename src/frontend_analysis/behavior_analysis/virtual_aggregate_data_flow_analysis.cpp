@@ -53,6 +53,8 @@
 
 ///tree include
 #include "behavioral_helper.hpp"
+#include "hash_helper.hpp"
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 VirtualAggregateDataFlowAnalysis::VirtualAggregateDataFlowAnalysis(const application_managerRef _AppM, const DesignFlowManagerConstRef _design_flow_manager, const unsigned int _function_index, const ParameterConstRef _parameters) :
    DataDependenceComputation(_AppM, _function_index, VIRTUAL_AGGREGATE_DATA_FLOW_ANALYSIS, _design_flow_manager, _parameters)
@@ -61,7 +63,7 @@ VirtualAggregateDataFlowAnalysis::VirtualAggregateDataFlowAnalysis(const applica
 }
 
 VirtualAggregateDataFlowAnalysis::~VirtualAggregateDataFlowAnalysis()
-{}
+= default;
 
 const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship> > VirtualAggregateDataFlowAnalysis::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {

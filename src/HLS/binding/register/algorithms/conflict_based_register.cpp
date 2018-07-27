@@ -64,9 +64,7 @@ conflict_based_register::conflict_based_register(const ParameterConstRef _Param,
 }
 
 conflict_based_register::~conflict_based_register()
-{
-
-}
+= default;
 
 void conflict_based_register::create_conflict_graph()
 {
@@ -81,14 +79,14 @@ void conflict_based_register::create_conflict_graph()
    const std::list<vertex> & support = HLS->Rliv->get_support();
 
    const std::list<vertex>::const_iterator vEnd = support.end();
-   for(std::list<vertex>::const_iterator vIt = support.begin(); vIt != vEnd; ++vIt)
+   for(auto vIt = support.begin(); vIt != vEnd; ++vIt)
    {
       const std::set<unsigned int>& live = HLS->Rliv->get_live_in(*vIt);
       register_lower_bound = std::max(static_cast<unsigned int>(live.size()), register_lower_bound);
       const std::set<unsigned int>::const_iterator k_end = live.end(); 
-      for(std::set<unsigned int>::const_iterator k = live.begin(); k != k_end; ++k)
+      for(auto k = live.begin(); k != k_end; ++k)
       {
-         std::set<unsigned int>::const_iterator k_inner = k;
+         auto k_inner = k;
          ++k_inner;
          while(k_inner != k_end)
          {
@@ -108,7 +106,7 @@ void conflict_based_register::create_conflict_graph()
    for(unsigned int vj = 1; vj < cg_num_vertices; ++vj)
       for(unsigned int vi = 0; vi < vj; ++vi)
       {
-         if(HLS->storage_value_information->get_storage_value_bitsize(vi) != HLS->storage_value_information->get_storage_value_bitsize(vj))
+         if(!HLS->storage_value_information->are_value_bitsize_compatible(vi,vj))
          {
             boost::graph_traits<conflict_graph>::edge_descriptor e1;
             bool in1;

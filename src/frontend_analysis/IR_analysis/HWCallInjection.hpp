@@ -53,7 +53,7 @@ class HWCallInjection : public FunctionFrontendFlowStep
       ///True if already executed
       bool already_executed;
 
-      const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > ComputeFrontendRelationships(const DesignFlowStep::RelationshipType RT) const;
+      const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > ComputeFrontendRelationships(const DesignFlowStep::RelationshipType RT) const override;
 
       bool isHardwareCall(tree_nodeRef FD);
 
@@ -63,15 +63,15 @@ class HWCallInjection : public FunctionFrontendFlowStep
       HWCallInjection(const ParameterConstRef Param, const application_managerRef AppM,
             unsigned int funId, const DesignFlowManagerConstRef DFM);
 
-      virtual ~HWCallInjection();
+      ~HWCallInjection() override;
 
-      DesignFlowStep_Status InternalExec();
+      DesignFlowStep_Status InternalExec() override;
 
       /**
        * Check if this step has actually to be executed
        * @return true if the step has to be executed
        */
-      virtual bool HasToBeExecuted() const;
+      bool HasToBeExecuted() const override;
 };
 
 #endif

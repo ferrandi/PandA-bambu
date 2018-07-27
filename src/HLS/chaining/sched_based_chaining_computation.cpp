@@ -53,6 +53,7 @@
 
 ///HLS/chaining includes
 #include "chaining_information.hpp"
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 sched_based_chaining_computation::sched_based_chaining_computation(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager) :
    chaining(_Param, _HLSMgr, _funId, _design_flow_manager, HLSFlowStep_Type::SCHED_CHAINING)
@@ -61,8 +62,7 @@ sched_based_chaining_computation::sched_based_chaining_computation(const Paramet
 }
 
 sched_based_chaining_computation::~sched_based_chaining_computation()
-{
-}
+= default;
 
 void sched_based_chaining_computation::Initialize()
 {

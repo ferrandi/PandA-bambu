@@ -42,20 +42,14 @@
  *
 */
 #include "structuralIO.hpp"
-#include "structural_manager.hpp"
-#include "structural_objects.hpp"
-#include "fileIO.hpp"
-#include "exceptions.hpp"
 
-#include "Parameter.hpp"
-#include "constant_strings.hpp"
-
-#include "polixml.hpp"
-#include "xml_dom_parser.hpp"
-
-#include <iosfwd>
-#include <string>
-
+#include <iostream>                        // for operator<<, endl, basic_os...
+#include <string>                          // for operator<<, string, char_t...
+#include "Parameter.hpp"                   // for ParameterRef
+#include "structural_manager.hpp"          // for structural_managerRef, str...
+#include "structural_objects.hpp"          // for structural_type_descriptorRef
+#include "xml_document.hpp"                // for xml_document
+#include "xml_dom_parser.hpp"              // for XMLDomParser
 
 structural_managerRef read_structural_File(const std::string& fn, const ParameterRef& Param)
 {

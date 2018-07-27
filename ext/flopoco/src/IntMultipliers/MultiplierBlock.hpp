@@ -1,9 +1,9 @@
 #ifndef MultiplierBlock_HPP
 #define MultiplierBlock_HPP
 
-#include <stdio.h>
+#include <cstdio>
 #include <string>
-#include <stdlib.h>
+#include <cstdlib>
 
 using namespace std;
 

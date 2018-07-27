@@ -37,6 +37,8 @@
 // class header
 #include "HWCallPathCalculator.hpp"
 
+#include <utility>
+
 // headers from ./
 #include "Parameter.hpp"
 
@@ -66,8 +68,8 @@ HWCallPathCalculator::HWCallPathCalculator(
       HLS_managerRef _HLSMgr,
       ParameterConstRef _parameters,
       std::map<unsigned int, vertex> & _call_id_to_OpVertex)
-   : HLSMgr(_HLSMgr)
-   , parameters(_parameters)
+   : HLSMgr(std::move(_HLSMgr))
+   , parameters(std::move(_parameters))
    , call_id_to_OpVertex(_call_id_to_OpVertex)
 {
    THROW_ASSERT(parameters->isOption(OPT_discrepancy) and
@@ -77,7 +79,7 @@ HWCallPathCalculator::HWCallPathCalculator(
 }
 
 HWCallPathCalculator::~HWCallPathCalculator()
-{}
+= default;
 
 void HWCallPathCalculator::start_vertex(
       const UnfoldedVertexDescriptor & v,

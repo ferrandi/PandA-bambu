@@ -40,11 +40,11 @@
  * Last modified by $Author$
  *
 */
-///Autoheader include
+#include "evaluation.hpp"
+
 #include "config_HAVE_EXPERIMENTAL.hpp"
 
-///Header include
-#include "evaluation.hpp"
+#include <boost/filesystem/operations.hpp>
 
 ///. include
 #include "Parameter.hpp"
@@ -82,6 +82,8 @@
 
 ///wrapper/synthesis include
 #include "BackendFlow.hpp"
+#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 Evaluation::Evaluation(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, const DesignFlowManagerConstRef _design_flow_manager):
    HLS_step(_parameters, _HLSMgr, _design_flow_manager, HLSFlowStep_Type::EVALUATION)

@@ -41,11 +41,8 @@
 #ifndef DESIGN_FLOW_FACTORY_HPP
 #define DESIGN_FLOW_FACTORY_HPP
 
-///Superclass include
-#include "design_flow_step_factory.hpp"
-
-///Utility include
-#include "refcount.hpp"
+#include <string>                        // for string
+#include "design_flow_step_factory.hpp"  // for DesignFlowStepRef, DesignFlo...
 
 enum class DesignFlow_Type;
 
@@ -62,19 +59,19 @@ class DesignFlowFactory : public DesignFlowStepFactory
       /**
        * Destructor
        */
-      virtual ~DesignFlowFactory();
+      ~DesignFlowFactory() override;
 
       /**
        * Return the prefix of the steps created by the factory
        */
-      virtual const std::string GetPrefix() const;
+      const std::string GetPrefix() const override;
 
       /**
        * Return a step given the signature
        * @param signature is the signature of the step to be created
        * @return the created step
        */
-      virtual DesignFlowStepRef CreateFlowStep(const std::string&signature) const;
+      DesignFlowStepRef CreateFlowStep(const std::string&signature) const override;
 
       /**
        * Create a design flow

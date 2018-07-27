@@ -40,8 +40,11 @@
 #ifndef NON_DETERMINISTIC_FLOWS_HPP
 #define NON_DETERMINISTIC_FLOWS_HPP
 
-///Superclass include
-#include "design_flow.hpp"
+#include <cstddef>              // for size_t
+#include <string>                // for string
+#include "design_flow.hpp"       // for DesignFlow
+#include "design_flow_step.hpp"  // for DesignFlowManagerConstRef, DesignFlo...
+
 
 /**
  * Class to test non deterministic flows
@@ -74,13 +77,13 @@ class NonDeterministicFlows : public DesignFlow
       /**
        *  Destructor
        */
-      ~NonDeterministicFlows();
+      ~NonDeterministicFlows() override;
 
       /**
        * Execute the flow
        * @return the exit status of this step
        */
-      DesignFlowStep_Status Exec();
+      DesignFlowStep_Status Exec() override;
 };
 #endif
 

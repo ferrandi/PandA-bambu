@@ -55,8 +55,9 @@
 #include "behavioral_helper.hpp"
 #include "tree_basic_block.hpp"
 
-///utility include
-#include "utility.hpp"
+#include "hash_helper.hpp"
+#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 AddArtificialCallFlowEdges::AddArtificialCallFlowEdges(const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters) :
    FunctionFrontendFlowStep(_AppM, _function_id, ADD_ARTIFICIAL_CALL_FLOW_EDGES, _design_flow_manager, _parameters)
@@ -65,8 +66,7 @@ AddArtificialCallFlowEdges::AddArtificialCallFlowEdges(const application_manager
 }
 
 AddArtificialCallFlowEdges::~AddArtificialCallFlowEdges()
-{
-}
+= default;
 
 const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship> > AddArtificialCallFlowEdges::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {

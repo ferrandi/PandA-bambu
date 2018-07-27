@@ -58,6 +58,7 @@
 
 ///Boost includes
 #include "boost/filesystem.hpp"
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 FPGA_device::FPGA_device(const ParameterConstRef _Param, const technology_managerRef _TM) :
    target_device(_Param, _TM, TargetDevice_Type::FPGA)
@@ -68,8 +69,7 @@ FPGA_device::FPGA_device(const ParameterConstRef _Param, const technology_manage
 }
 
 FPGA_device::~FPGA_device( )
-{
-}
+= default;
 
 void FPGA_device::load_devices(const target_deviceRef device)
 {
@@ -139,7 +139,7 @@ void FPGA_device::load_devices(const target_deviceRef device)
       #include "LFE335EA8FN484C.data"
          ;
 
-   unsigned int output_level = Param->getOption<unsigned int>(OPT_output_level);
+   auto output_level = Param->getOption<unsigned int>(OPT_output_level);
 
    try
    {
@@ -238,7 +238,7 @@ void FPGA_device::xwrite(xml_element* nodeRoot)
    std::string speed_grade = get_parameter<std::string>("speed_grade");
    WRITE_XNVM2("value", speed_grade, speed_grade_el);
 
-   for(std::map<std::string, std::string>::iterator p = parameters.begin(); p != parameters.end(); ++p)
+   for(auto p = parameters.begin(); p != parameters.end(); ++p)
    {
       if(p->first == "vendor" || p->first == "family"  || p->first == "model"  || p->first == "package" || p->first == "speed_grade" || p->first == "clock_period") continue;
       xml_element* elRoot = tmRoot->add_child_element(p->first);

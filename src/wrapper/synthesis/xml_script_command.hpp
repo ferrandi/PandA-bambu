@@ -158,19 +158,19 @@ class xml_set_entry_t : public xml_script_node_t
       std::string *  condition;
 
       xml_set_entry_t(
-            const std::string &    _value,
+            std::string     _value,
             const std::string *  _condition
             );
       explicit xml_set_entry_t(const xml_element *element);
 
-      virtual ~xml_set_entry_t();
+      ~xml_set_entry_t() override;
 
-      std::string get_xml_name() const;
-      xml_nodeRef create_xml_node() const;
+      std::string get_xml_name() const override;
+      xml_nodeRef create_xml_node() const override;
 
-      void clean();
+      void clean() override;
 
-      bool checkCondition(const DesignParametersRef& dp) const;
+      bool checkCondition(const DesignParametersRef& dp) const override;
 };
 typedef refcount<xml_set_entry_t> xml_set_entry_tRef;
 
@@ -187,20 +187,20 @@ class xml_set_variable_t : public xml_script_node_t
       std::string *                    condition;
 
       xml_set_variable_t(
-            const std::string&    _name,
+            std::string     _name,
             const std::string *  _singleValue,
             const std::string *  _condition
             );
       explicit xml_set_variable_t(const xml_element *element);
 
-      virtual ~xml_set_variable_t();
+      ~xml_set_variable_t() override;
 
-      std::string get_xml_name() const;
-      xml_nodeRef create_xml_node() const;
+      std::string get_xml_name() const override;
+      xml_nodeRef create_xml_node() const override;
 
-      void clean();
+      void clean() override;
 
-      bool checkCondition(const DesignParametersRef& dp) const;
+      bool checkCondition(const DesignParametersRef& dp) const override;
 };
 typedef refcount<xml_set_variable_t> xml_set_variable_tRef;
 
@@ -228,14 +228,14 @@ class xml_parameter_t : public xml_script_node_t
             );
       explicit xml_parameter_t(const xml_element * element);
 
-      virtual ~xml_parameter_t();
+      ~xml_parameter_t() override;
 
-      std::string get_xml_name() const;
-      xml_nodeRef create_xml_node() const;
+      std::string get_xml_name() const override;
+      xml_nodeRef create_xml_node() const override;
 
-      void clean();
+      void clean() override;
 
-      bool checkCondition(const DesignParametersRef& dp) const;
+      bool checkCondition(const DesignParametersRef& dp) const override;
 };
 typedef refcount<xml_parameter_t> xml_parameter_tRef;
 
@@ -260,14 +260,14 @@ class xml_command_t : public xml_script_node_t
             );
       explicit xml_command_t(const xml_element * element);
 
-      virtual ~xml_command_t();
+      ~xml_command_t() override;
 
-      std::string get_xml_name() const;
-      xml_nodeRef create_xml_node() const;
+      std::string get_xml_name() const override;
+      xml_nodeRef create_xml_node() const override;
 
-      void clean();
+      void clean() override;
 
-      bool checkCondition(const DesignParametersRef& dp) const;
+      bool checkCondition(const DesignParametersRef& dp) const override;
 };
 typedef refcount<xml_command_t> xml_command_tRef;
 
@@ -292,14 +292,14 @@ class xml_shell_t : public xml_script_node_t
             );
       explicit xml_shell_t(const xml_element * element);
 
-      virtual ~xml_shell_t();
+      ~xml_shell_t() override;
 
-      std::string get_xml_name() const;
-      xml_nodeRef create_xml_node() const;
+      std::string get_xml_name() const override;
+      xml_nodeRef create_xml_node() const override;
 
-      void clean();
+      void clean() override;
 
-      bool checkCondition(const DesignParametersRef& dp) const;
+      bool checkCondition(const DesignParametersRef& dp) const override;
 };
 typedef refcount<xml_shell_t> xml_shell_tRef;
 
@@ -319,14 +319,14 @@ class xml_ite_block_t : public xml_script_node_t
             );
       explicit xml_ite_block_t(const xml_element * element);
 
-      std::string get_xml_name() const;
-      xml_nodeRef create_xml_node() const;
+      std::string get_xml_name() const override;
+      xml_nodeRef create_xml_node() const override;
 
-      virtual ~xml_ite_block_t();
+      ~xml_ite_block_t() override;
 
-      void clean();
+      void clean() override;
 
-      bool checkCondition(const DesignParametersRef& dp) const;
+      bool checkCondition(const DesignParametersRef& dp) const override;
 };
 typedef refcount<xml_ite_block_t> xml_ite_block_tRef;
 
@@ -340,15 +340,15 @@ struct xml_foreach_t : public xml_script_node_t
       std::string                        variable;
       std::vector<xml_script_node_tRef>  Nodes;
 
-      explicit xml_foreach_t(const std::string &_variable);
+      explicit xml_foreach_t(std::string _variable);
       explicit xml_foreach_t(const xml_element * element);
 
-      std::string get_xml_name() const;
-      xml_nodeRef create_xml_node() const;
+      std::string get_xml_name() const override;
+      xml_nodeRef create_xml_node() const override;
 
-      virtual ~xml_foreach_t();
+      ~xml_foreach_t() override;
 
-      void clean();
+      void clean() override;
 
 };
 typedef refcount<xml_foreach_t> xml_foreach_tRef;

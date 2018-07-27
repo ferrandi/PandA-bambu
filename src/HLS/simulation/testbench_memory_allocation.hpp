@@ -53,12 +53,12 @@ class TestbenchMemoryAllocation : public HLS_step
       /**
        * Destructor
        */
-      ~TestbenchMemoryAllocation();
+      ~TestbenchMemoryAllocation() override;
 
       /**
        * Executes the step
        */
-      DesignFlowStep_Status Exec();
+      DesignFlowStep_Status Exec() override;
 
       /**
        * Compute the HLS relationships of this step
@@ -74,7 +74,7 @@ class TestbenchMemoryAllocation : public HLS_step
       >
       ComputeHLSRelationships
       (const DesignFlowStep::RelationshipType relationship_type)
-      const;
+      const override;
 
    protected:
 
@@ -87,6 +87,6 @@ class TestbenchMemoryAllocation : public HLS_step
        * Check if this step has actually to be executed
        * @return true if the step has to be executed
        */
-      virtual bool HasToBeExecuted() const;
+      bool HasToBeExecuted() const override;
 };
 #endif

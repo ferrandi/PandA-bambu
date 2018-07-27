@@ -48,9 +48,7 @@ mux_obj::mux_obj(const generic_objRef _first, const generic_objRef _second, unsi
 {}
 
 mux_obj::~mux_obj()
-{
-
-}
+= default;
 
 void mux_obj::set_target(const generic_objRef tgt)
 { 

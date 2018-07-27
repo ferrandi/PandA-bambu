@@ -40,29 +40,35 @@
  * Last modified by $Author$
  *
 */
-
-///Header include
 #include "design_flow_manager.hpp"
 
-///. include
-#include "Parameter.hpp"
+#include "config_HAVE_ASSERTS.hpp"                // for HAVE_ASSERTS
+#include "config_HAVE_UNORDERED.hpp"              // for HAVE_UNORDERED
 
-///design_flows includes
-#include "design_flow_aux_step.hpp"
-#include "design_flow_graph.hpp"
-#include "design_flow_step.hpp"
-#include "design_flow_step_factory.hpp"
-
+#include <boost/graph/adjacency_list.hpp>         // for adjacency_list, source
+#include <boost/graph/filtered_graph.hpp>         // for in_edges, num_vertices
+#include <boost/iterator/filter_iterator.hpp>     // for filter_iterator
+#include <boost/iterator/iterator_facade.hpp>     // for operator!=, operator++
+#include <boost/lexical_cast.hpp>                 // for lexical_cast
+#include <boost/tuple/tuple.hpp>                  // for tie
+#include <iterator>                               // for advance
+#include <list>                                   // for list
 #if ! HAVE_UNORDERED
 #ifndef NDEBUG
-///STD include
-#include <random>
+#include <random>                                 // for uniform_int_distrib...
 #endif
 #endif
-
-///utility include
-#include "cpu_stats.hpp"
-#include "cpu_time.hpp"
+#include <utility>                                // for pair
+#include "Parameter.hpp"                          // for Parameter, OPT_test...
+#include "cpu_stats.hpp"                          // for PrintVirtualDataMem...
+#include "cpu_time.hpp"                           // for START_TIME, STOP_TIME
+#include "dbgPrintHelper.hpp"                     // for DEBUG_LEVEL_VERY_PE...
+#include "design_flow_aux_step.hpp"               // for AuxDesignFlowStep
+#include "design_flow_graph.hpp"                  // for DesignFlowGraph
+#include "design_flow_step.hpp"                   // for DesignFlowStep_Status
+#include "design_flow_step_factory.hpp"           // for DesignFlowStepRef
+#include "exceptions.hpp"                         // for THROW_UNREACHABLE
+#include "string_manipulation.hpp"                // for STR GET_CLASS
 
 DesignFlowStepNecessitySorter::DesignFlowStepNecessitySorter(const DesignFlowGraphConstRef _design_flow_graph) :
    design_flow_graph(_design_flow_graph)
@@ -136,8 +142,7 @@ DesignFlowManager::DesignFlowManager(const ParameterConstRef _parameters) :
 }
 
 DesignFlowManager::~DesignFlowManager()
-{
-}
+= default;
 
 size_t DesignFlowManager::step_counter = 0;
 

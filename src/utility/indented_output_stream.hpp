@@ -43,11 +43,12 @@
 #ifndef INDENTED_OUTPUT_STREAM_HPP
 #define INDENTED_OUTPUT_STREAM_HPP
 
-///utility include
-#include "refcount.hpp"
-
 ///STD include
 #include <sstream>
+#include <string>
+
+///utility include
+#include "refcount.hpp"
 
 /// Special opening character used to open a new nested level. This character is just a control character and therefore it will not be printed.
 #define STD_OPENING_CHAR (static_cast<char>(1))

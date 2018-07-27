@@ -120,7 +120,7 @@ class DesignCompilerWrapper : public SynopsysWrapper
       /**
        * Initializes the reserved vars
        */
-      void init_reserved_vars();
+      void init_reserved_vars() override;
 
       ///top module
       std::string top_module;
@@ -294,7 +294,7 @@ class DesignCompilerWrapper : public SynopsysWrapper
       /**
        * Evaluates variables
        */
-      void EvaluateVariables(const DesignParametersRef dp);
+      void EvaluateVariables(const DesignParametersRef dp) override;
 
    public:
 
@@ -308,7 +308,7 @@ class DesignCompilerWrapper : public SynopsysWrapper
       /**
        * Destructor
        */
-      virtual ~DesignCompilerWrapper();
+      ~DesignCompilerWrapper() override;
 
       /**
        * Return synthesis time

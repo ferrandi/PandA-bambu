@@ -137,6 +137,8 @@
 #include "tree_manager.hpp"
 #include "tree_manipulation.hpp"
 #include "tree_reindex.hpp"
+#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 ///Constructure implementation
 RemoveEndingIf::RemoveEndingIf(const ParameterConstRef _parameters, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager) :
@@ -148,8 +150,7 @@ RemoveEndingIf::RemoveEndingIf(const ParameterConstRef _parameters, const applic
 }
 
 RemoveEndingIf::~RemoveEndingIf()
-{
-}
+= default;
 
 const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship> > RemoveEndingIf::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {

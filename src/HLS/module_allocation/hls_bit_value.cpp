@@ -76,6 +76,7 @@
 
 ///HLS includes
 #include "hls_flow_step_factory.hpp"
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 
 hls_bit_value::hls_bit_value(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, unsigned _funId, const DesignFlowManagerConstRef _design_flow_manager):
@@ -85,8 +86,7 @@ hls_bit_value::hls_bit_value(const ParameterConstRef _parameters, const HLS_mana
 }
 
 hls_bit_value::~hls_bit_value()
-{
-}
+= default;
 
 void hls_bit_value::Initialize()
 {

@@ -77,9 +77,7 @@ language_writer::language_writer(char open_char, char close_char, const Paramete
 }
 
 language_writer::~language_writer()
-{
-
-}
+= default;
 
 unsigned int language_writer::bitnumber(unsigned int n)
 {
@@ -165,8 +163,8 @@ COPYING3_SHORT_MACRO
 
 void language_writer::WriteLicense()
 {
-   for(unsigned int row=0; row < COPYING3_SHORT_NROW; ++row)
+   for(auto & row : COPYING3_SHORT)
    {
-      write_comment(std::string(COPYING3_SHORT[row]));
+      write_comment(std::string(row));
    }
 }

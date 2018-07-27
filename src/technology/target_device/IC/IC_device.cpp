@@ -58,6 +58,7 @@
 #include "constant_strings.hpp"
 ///boost includes for file manipulations
 #include <boost/filesystem.hpp>
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 IC_device::IC_device(const ParameterConstRef _Param, const technology_managerRef _TM) :
       target_device(_Param, _TM, TargetDevice_Type::IC)
@@ -71,15 +72,13 @@ IC_device::IC_device(const ParameterConstRef _Param, const technology_managerRef
 }
 
 IC_device::~IC_device( )
-{
-
-}
+= default;
 
 void IC_device::xwrite(xml_element* nodeRoot)
 {
    xml_element* tmRoot = nodeRoot->add_child_element("device");
 
-   for(std::map<std::string, std::string>::iterator p = parameters.begin(); p != parameters.end(); ++p)
+   for(auto p = parameters.begin(); p != parameters.end(); ++p)
    {
       xml_element* elRoot = tmRoot->add_child_element(p->first);
       WRITE_XNVM2("value", p->second, elRoot);
@@ -126,7 +125,7 @@ void IC_device::set_dimension(double area)
 
 void IC_device::initialize()
 {
-   unsigned int output_level = Param->getOption<unsigned int>(OPT_output_level);
+   auto output_level = Param->getOption<unsigned int>(OPT_output_level);
 
    PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "   Aspect ratio: " << parameters["aspect_ratio"]);
    PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "   Utilization factor: " << parameters["utilization_factor"]);
@@ -141,7 +140,7 @@ void IC_device::load_devices(const target_deviceRef device)
    #include "Nangate.data"
    };
 
-   int output_level = Param->getOption<int>(OPT_output_level);
+   auto output_level = Param->getOption<int>(OPT_output_level);
 
    ///creating the datastructure representing the target technology
    target = target_technology::create_technology(target_technology::CMOS, Param);

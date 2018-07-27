@@ -46,6 +46,8 @@
 #ifndef _MUX_CONN_HPP_
 #define _MUX_CONN_HPP_
 
+#include <utility>
+
 #include "refcount.hpp"
 #include "connection_obj.hpp"
 #include "generic_obj.hpp"
@@ -71,21 +73,21 @@ class mux_conn : public connection_obj
        * @param live_variable is the set of data transfers
        * @param _mux_tree is mux tree for the new connection
        */
-      mux_conn(const std::set<data_transfer>& _live_variable, const std::vector<std::pair<generic_objRef,unsigned int> >& _mux_tree) :
+      mux_conn(const std::set<data_transfer>& _live_variable, std::vector<std::pair<generic_objRef,unsigned int> >  _mux_tree) :
          connection_obj(BY_MUX, _live_variable),
-         mux_tree(_mux_tree)
+         mux_tree(std::move(_mux_tree))
       {}
 
       /**
        * Destructor.
        */
-      virtual ~mux_conn() {}
+      ~mux_conn() override = default;
 
       /**
        * Returns the name associated with the element
        * @return a string containing the name associated with the element.
        */
-      const std::string get_string() const
+      const std::string get_string() const override
       {
          THROW_ASSERT(mux_tree.size() > 0, "Mux connection without any multiplexer associated");
          return mux_tree[0].first->get_string() + (mux_tree[0].second == T_COND ? "(T)" : "(F)");

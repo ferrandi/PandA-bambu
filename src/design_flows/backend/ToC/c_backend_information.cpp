@@ -45,7 +45,7 @@
 #include "c_backend_information.hpp"
 
 CBackendInformation::CBackendInformation()
-{}
+= default;
 
 CBackendInformation::~CBackendInformation()
-{}
+= default;

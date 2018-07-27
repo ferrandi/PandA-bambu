@@ -65,6 +65,7 @@
 
 ///technology/physical_library include
 #include "technology_node.hpp"
+#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_
 
 reg_binding::reg_binding(const hlsRef& HLS_, const HLS_managerRef HLSMgr_) :
    debug(HLS_->debug_level), used_regs(0), HLS(HLS_), HLSMgr(HLSMgr_), all_regs_without_enable(false)
@@ -72,8 +73,7 @@ reg_binding::reg_binding(const hlsRef& HLS_, const HLS_managerRef HLSMgr_) :
 }
 
 reg_binding::~reg_binding()
-{
-}
+= default;
 
 void reg_binding::print_el(const_iterator &it) const
 {
@@ -85,8 +85,8 @@ std::set<unsigned int> reg_binding::get_vars(const unsigned int & r) const
    std::set<unsigned int> vars;
    THROW_ASSERT(reg2storage_values.find(r) != reg2storage_values.end() && !reg2storage_values.find(r)->second.empty(), "at least a storage value has to be mapped on register r");
 
-   std::set<unsigned int>::const_iterator rs_it_end = reg2storage_values.find(r)->second.end();
-   for(std::set<unsigned int>::const_iterator rs_it = reg2storage_values.find(r)->second.begin(); rs_it != rs_it_end; ++rs_it)
+   auto rs_it_end = reg2storage_values.find(r)->second.end();
+   for(auto rs_it = reg2storage_values.find(r)->second.begin(); rs_it != rs_it_end; ++rs_it)
       vars.insert(HLS->storage_value_information->get_variable_index(*rs_it));
    return vars;
 }
@@ -95,11 +95,11 @@ unsigned int reg_binding::compute_bitsize(unsigned int r)
 {
    std::set<unsigned int> reg_vars = get_vars(r);
    unsigned int max_bits = 0;
-   for (std::set<unsigned int>::const_iterator var = reg_vars.begin(); var != reg_vars.end(); ++var)
+   for (unsigned int reg_var : reg_vars)
    {
-      structural_type_descriptorRef node_type = structural_type_descriptorRef(new structural_type_descriptor(*var, HLSMgr->CGetFunctionBehavior(HLS->functionId)->CGetBehavioralHelper()));
+      structural_type_descriptorRef node_type = structural_type_descriptorRef(new structural_type_descriptor(reg_var, HLSMgr->CGetFunctionBehavior(HLS->functionId)->CGetBehavioralHelper()));
       unsigned int node_size = STD_GET_SIZE(node_type);
-      PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, HLS->debug_level, "- Examinating node " + STR(*var) + ", whose type is " + node_type->get_name() + " (size: " + STR(node_type->size) + ", vector_size: " + STR(node_type->vector_size) + ")");
+      PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, HLS->debug_level, "- Examinating node " + STR(reg_var) + ", whose type is " + node_type->get_name() + " (size: " + STR(node_type->size) + ", vector_size: " + STR(node_type->vector_size) + ")");
       max_bits = max_bits < node_size ? node_size : max_bits;
    }
    bitsize_map[r] = max_bits;
@@ -147,13 +147,13 @@ void reg_binding::compute_is_without_enable()
    std::map<unsigned int, unsigned int> n_out;
    const std::list<vertex> & support_set = HLS->Rliv->get_support();
    const std::list<vertex>::const_iterator ss_it_end = support_set.end();
-   for(std::list<vertex>::const_iterator ss_it = support_set.begin(); ss_it != ss_it_end; ++ss_it)
+   for(auto ss_it = support_set.begin(); ss_it != ss_it_end; ++ss_it)
    {
       vertex v = *ss_it;
       unsigned int dummy_offset = HLS->Rliv->is_a_dummy_state(v) ? 1 : 0;
       const std::set<unsigned int>& LI = HLS->Rliv->get_live_in(v);
       const std::set<unsigned int>::const_iterator li_it_end = LI.end();
-      for(std::set<unsigned int>::const_iterator li_it = LI.begin(); li_it != li_it_end; ++li_it)
+      for(auto li_it = LI.begin(); li_it != li_it_end; ++li_it)
       {
          if(n_in.find(*li_it) == n_in.end())
             n_in[*li_it] = 1 + dummy_offset;
@@ -162,7 +162,7 @@ void reg_binding::compute_is_without_enable()
       }
       const std::set<unsigned int>& LO = HLS->Rliv->get_live_out(v);
       const std::set<unsigned int>::const_iterator lo_it_end = LO.end();
-      for(std::set<unsigned int>::const_iterator lo_it = LO.begin(); lo_it != lo_it_end; ++lo_it)
+      for(auto lo_it = LO.begin(); lo_it != lo_it_end; ++lo_it)
       {
          if(n_out.find(*lo_it) == n_out.end())
          {
@@ -180,7 +180,7 @@ void reg_binding::compute_is_without_enable()
       const std::set<unsigned int> &store_vars_set = get_vars(i);
       const std::set<unsigned int>::const_iterator svs_it_end = store_vars_set.end();
       bool all_woe = true;
-      for(std::set<unsigned int>::const_iterator svs_it = store_vars_set.begin(); svs_it != svs_it_end && all_woe; ++svs_it)
+      for(auto svs_it = store_vars_set.begin(); svs_it != svs_it_end && all_woe; ++svs_it)
       {
          if(n_in.find(*svs_it) == n_in.end() || n_out.find(*svs_it) == n_out.end())
             all_woe = false;
@@ -201,7 +201,7 @@ void reg_binding::bind(unsigned int sv, unsigned int index)
    reverse_map[sv] = index;
    if (unique_table.find(index) == unique_table.end())
       unique_table[index] = generic_objRef(new register_obj(std::string("reg_")+STR(index)));
-   iterator i = this->find(sv);
+   auto i = this->find(sv);
    if (i == this->end())
       this->insert(std::make_pair(sv,unique_table[index]));
    else

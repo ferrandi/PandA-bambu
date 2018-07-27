@@ -90,6 +90,8 @@
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
 #include "op_graph.hpp"
+#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 compute_implicit_calls::compute_implicit_calls(const ParameterConstRef _parameters, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager):
    FunctionFrontendFlowStep(_AppM, _function_id, COMPUTE_IMPLICIT_CALLS, _design_flow_manager, _parameters),
@@ -99,8 +101,7 @@ compute_implicit_calls::compute_implicit_calls(const ParameterConstRef _paramete
 }
 
 compute_implicit_calls::~compute_implicit_calls()
-{
-}
+= default;
 
 const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship> > compute_implicit_calls::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
@@ -131,7 +132,7 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
 DesignFlowStep_Status compute_implicit_calls::InternalExec()
 {
    tree_nodeRef node = TM->get_tree_node_const(function_id);
-   function_decl * fd = GetPointer<function_decl>(node);
+   auto * fd = GetPointer<function_decl>(node);
    if (!fd || !fd->body)
    {
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Node is not a function or it hasn't a body");
@@ -142,7 +143,7 @@ DesignFlowStep_Status compute_implicit_calls::InternalExec()
 
    unsigned int max_loop_id = 0;
 
-   statement_list * sl = GetPointer<statement_list>(GET_NODE(fd->body));
+   auto * sl = GetPointer<statement_list>(GET_NODE(fd->body));
    THROW_ASSERT(sl, "Body is not a statement_list");
    std::map<unsigned int, blocRef>::iterator it_bb, it_bb_end = sl->list_of_bloc.end();
    for(it_bb = sl->list_of_bloc.begin(); it_bb != it_bb_end ; ++it_bb)
@@ -155,7 +156,7 @@ DesignFlowStep_Status compute_implicit_calls::InternalExec()
          tree_nodeRef tn = GET_NODE(stmt);
          if(tn->get_kind() == gimple_assign_K)
          {
-            gimple_assign* gm = GetPointer<gimple_assign>(tn);
+            auto* gm = GetPointer<gimple_assign>(tn);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing node " + tn->ToString());
 
             /// check for implicit memset/memcpy calls
@@ -168,7 +169,7 @@ DesignFlowStep_Status compute_implicit_calls::InternalExec()
             bool is_a_vector_bitfield = false;
             if(op1->get_kind() == bit_field_ref_K)
             {
-               bit_field_ref* bfr = GetPointer<bit_field_ref>(op1);
+               auto* bfr = GetPointer<bit_field_ref>(op1);
                if(tree_helper::is_a_vector(TM, GET_INDEX_NODE(bfr->op0)))
                   is_a_vector_bitfield = true;
             }
@@ -207,7 +208,7 @@ DesignFlowStep_Status compute_implicit_calls::InternalExec()
                changed = true;
                if(op1->get_kind() == constructor_K && GetPointer<constructor>(op1) && GetPointer<constructor>(op1)->list_of_idx_valu.size() == 0)
                {
-                  mem_ref * mr = GetPointer<mem_ref>(op0);
+                  auto * mr = GetPointer<mem_ref>(op0);
                   THROW_ASSERT(mr, "unexpected condition");
                   unsigned int var = tree_helper::get_base_index(TM, GET_INDEX_NODE(mr->op0));
                   bool do_lowering = var != 0;
@@ -335,8 +336,8 @@ DesignFlowStep_Status compute_implicit_calls::InternalExec()
       auto tree_man = tree_manipulationRef(new tree_manipulation(TM, parameters));
 
       /// retrive the starting variable
-      gimple_assign* ga = GetPointer<gimple_assign>(GET_NODE(stmt_bb_pair.first));
-      mem_ref * mr = GetPointer<mem_ref>(GET_NODE(ga->op0));
+      auto* ga = GetPointer<gimple_assign>(GET_NODE(stmt_bb_pair.first));
+      auto * mr = GetPointer<mem_ref>(GET_NODE(ga->op0));
       unsigned int var = tree_helper::get_base_index(TM, GET_INDEX_NODE(mr->op0));
       tree_nodeRef init_var = mr->op0;
       const std::string srcp_default = ga->include_name + ":" + STR(ga->line_number) + ":" + STR(ga->column_number);
@@ -361,13 +362,13 @@ DesignFlowStep_Status compute_implicit_calls::InternalExec()
       list_of_def_edge.push_back(std::pair<tree_nodeRef, unsigned int>(init_var, BB1_index));
       auto phi = tree_man->create_phi_node(new_induction_var, list_of_def_edge, TM->GetTreeReindex(function_id), BBN1_block_index);
       BBN1_block->AddPhi(phi);
-      gimple_phi* gp = GetPointer<gimple_phi>(GET_NODE(phi));
+      auto* gp = GetPointer<gimple_phi>(GET_NODE(phi));
       GetPointer<ssa_name>(GET_NODE(gp->res))->use_set = PointToSolutionRef(new PointToSolution());
       GetPointer<ssa_name>(GET_NODE(gp->res))->use_set->variables.push_back(TM->GetTreeReindex(var));
 
       /// compute the size of memory to be set with memset
       const auto dst_type = tree_helper::CGetType(GET_NODE(mr->op0));
-      const pointer_type * dst_ptr_t = GetPointer<const pointer_type>(dst_type);
+      const auto * dst_ptr_t = GetPointer<const pointer_type>(dst_type);
       THROW_ASSERT(dst_ptr_t, "unexpected condition");
       const auto dst_size = tree_helper::Size(dst_ptr_t->ptd);
       THROW_ASSERT(dst_size % 8 == 0, "unexpected condition");

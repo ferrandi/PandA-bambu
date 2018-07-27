@@ -71,7 +71,7 @@ HLSInstructionWriter::HLSInstructionWriter(const application_managerConstRef _ap
 {}
 
 HLSInstructionWriter::~HLSInstructionWriter()
-{}
+= default;
 
 void HLSInstructionWriter::declareFunction(const unsigned int function_id)
 {
@@ -99,12 +99,12 @@ void HLSInstructionWriter::declareFunction(const unsigned int function_id)
    if(flag_cpp)
    {
       tree_nodeRef fd_node = AppM->get_tree_manager()->get_tree_node_const(function_id);
-      function_decl * fd = GetPointer<function_decl>(fd_node);
+      auto * fd = GetPointer<function_decl>(fd_node);
       std::string simple_name;
       tree_nodeRef id_name = GET_NODE(fd->name);
       if (id_name->get_kind() == identifier_node_K)
       {
-         identifier_node *in = GetPointer<identifier_node>(id_name);
+         auto *in = GetPointer<identifier_node>(id_name);
          if(!in->operator_flag)
             simple_name = in->strg;
       }

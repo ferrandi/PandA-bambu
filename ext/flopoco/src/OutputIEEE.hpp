@@ -42,7 +42,7 @@ namespace flopoco{
 		/**
 		 * OutputIEEE destructor
 		 */
-		~OutputIEEE();
+		~OutputIEEE() override;
 
 
 
@@ -50,7 +50,7 @@ namespace flopoco{
 		 * Emulate the operator. This function overload the method from Operator.
 		 * @param tc a TestCase partially filled with input values 
 		 */
-		void emulate(TestCase * tc);
+		void emulate(TestCase * tc) override;
 
 	
 	private:

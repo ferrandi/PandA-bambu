@@ -50,7 +50,7 @@ TypedNodeInfo::TypedNodeInfo() :
 {}
 
 TypedNodeInfo::~TypedNodeInfo()
-{}
+= default;
 
 void TypedNodeInfo::print(std::ostream& os) const
 {

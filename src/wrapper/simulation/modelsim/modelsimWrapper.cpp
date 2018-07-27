@@ -73,6 +73,7 @@
 
 ///STL include
 #include <unordered_set>
+#include <utility>
 
 #define MODELSIM_BIN (STR(MENTOR_MODELSIM_BIN) != "0" ? \
                       STR(MENTOR_MODELSIM_BIN)+"/" : \
@@ -95,9 +96,9 @@
 #define SIM_SUBDIR       (Param->getOption<std::string>(OPT_output_directory) + std::string("/modelsim"))
 
 //constructor
-modelsimWrapper::modelsimWrapper(const ParameterConstRef _Param, const std::string& _suffix) :
+modelsimWrapper::modelsimWrapper(const ParameterConstRef _Param, std::string  _suffix) :
    SimulationTool(_Param),
-   suffix(_suffix)
+   suffix(std::move(_suffix))
 {
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Creating the modelsim wrapper...");
    boost::filesystem::create_directory(SIM_SUBDIR + suffix + "/" );
@@ -105,9 +106,7 @@ modelsimWrapper::modelsimWrapper(const ParameterConstRef _Param, const std::stri
 
 //destructor
 modelsimWrapper::~modelsimWrapper()
-{
-
-}
+= default;
 
 void modelsimWrapper::CheckExecution()
 {

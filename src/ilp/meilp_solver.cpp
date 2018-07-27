@@ -43,9 +43,12 @@
  *
 */
 
-#include "meilp_solver.hpp"
-#include "utility.hpp"
+#include <utility>
+
+#include "dbgPrintHelper.hpp"
 #include "exceptions.hpp"
+#include "meilp_solver.hpp"
+
 #if HAVE_GLPK
 #include "glpk_solver.hpp"
 #endif
@@ -98,9 +101,9 @@ void meilp_solver::set_priority(const std::map<int, int>& _priority)
 void meilp_solver::copy(const std::map<int,double> &i_coeffs)
 {
    resize(i_coeffs.size());
-   std::map<int,double>::const_iterator i_end = i_coeffs.end();
+   auto i_end = i_coeffs.end();
    int index = 0;
-   for(std::map<int,double>::const_iterator i = i_coeffs.begin(); i != i_end; ++i, index++)
+   for(auto i = i_coeffs.begin(); i != i_end; ++i, index++)
    {
       this->real_buffer[index] = i->second;
       this->int_buffer[index] = i->first+1;

@@ -99,6 +99,4 @@ void chaining::Initialize()
 }
 
 chaining::~chaining()
-{
-
-}
+= default;

@@ -26,7 +26,7 @@ namespace flopoco{
 		DSP(int Shift, int maxMultWidth, int maxMultHeight);
 	
 		/** The destructor */
-		virtual ~DSP() {}
+		virtual ~DSP() = default;
 
 		/** Returns the with of the multiplier that this DSP block is using 
 		 * @return the with of the multiplier that this DSP block is using */

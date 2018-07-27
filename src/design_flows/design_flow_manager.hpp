@@ -44,18 +44,17 @@
 #ifndef DESIGN_FLOW_MANAGER_HPP
 #define DESIGN_FLOW_MANAGER_HPP
 
-///Autoheader
-#include "config_HAVE_STDCXX_11.hpp"
+#include "config_HAVE_STDCXX_11.hpp"                 // for HAVE_STDCXX_11
 
-///Graph include
-#include "graph.hpp"
+#include <cstddef>                                  // for size_t
+#include <functional>                                // for binary_function
+#include <set>                                       // for set
+#include <string>                                    // for string
+#include <unordered_map>                             // for unordered_map
+#include "custom_map.hpp"                            // for CustomMap
+#include "graph.hpp"                                 // for vertex, Paramete...
+#include "refcount.hpp"                              // for REF_FORWARD_DECL
 
-///STL include
-#include <unordered_map>
-
-///utility includes
-#include "custom_map.hpp"
-#include "refcount.hpp"
 
 class DesignFlowStepSet;
 CONSTREF_FORWARD_DECL(DesignFlowGraph);

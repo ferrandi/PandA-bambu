@@ -44,6 +44,7 @@
 #ifndef BASIC_BLOCKS_GRAPH_CONSTRUCTOR_HPP
 #define BASIC_BLOCKS_GRAPH_CONSTRUCTOR_HPP
 
+#include <unordered_map>
 #include "graph.hpp"
 #include "refcount.hpp"
 
@@ -57,7 +58,6 @@ REF_FORWARD_DECL(BBGraphsCollection);
 REF_FORWARD_DECL(bloc);
 //@}
 
-#include <unordered_map>
 
 /**
  * class providing methods to manage a basic blocks graph.

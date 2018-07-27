@@ -40,18 +40,17 @@
  * Last modified by $Author$
  *
 */
-
-///Header include
 #include "design_flow_graph.hpp"
-
-///Design flow include
-#include "design_flow_step.hpp"
-
-///Parameter include
-#include "Parameter.hpp"
-
-///Utility include
-#include "utility.hpp"
+#include <boost/filesystem/operations.hpp>        // for create_directories
+#include <boost/graph/adjacency_list.hpp>         // for adjacency_list, source
+#include <boost/graph/filtered_graph.hpp>         // for source, target
+#include <boost/iterator/iterator_facade.hpp>     // for operator!=, operator++
+#include <map>                                    // for _Rb_tree_const_iter...
+#include <ostream>                                // for operator<<, ostream
+#include <utility>                                // for pair
+#include "Parameter.hpp"                          // for OPT_dot_directory
+#include "design_flow_step.hpp"                   // for DesignFlowStep_Status
+#include "exceptions.hpp"                         // for THROW_UNREACHABLE
 
 DesignFlowStepInfo::DesignFlowStepInfo(const DesignFlowStepRef _design_flow_step, const bool _unnecessary) :
    design_flow_step(_design_flow_step),
@@ -59,17 +58,17 @@ DesignFlowStepInfo::DesignFlowStepInfo(const DesignFlowStepRef _design_flow_step
 {}
 
 DesignFlowDependenceInfo::DesignFlowDependenceInfo()
-{}
+= default;
 
 DesignFlowDependenceInfo::~DesignFlowDependenceInfo()
-{}
+= default;
 
 DesignFlowGraphsCollection::DesignFlowGraphsCollection(const ParameterConstRef _parameters) :
    graphs_collection(GraphInfoRef(new DesignFlowGraphInfo()), _parameters)
 {}
 
 DesignFlowGraphsCollection::~DesignFlowGraphsCollection()
-{}
+= default;
 
 vertex DesignFlowGraphsCollection::AddDesignFlowStep(const DesignFlowStepRef design_flow_step, const bool unnecessary)
 {
@@ -104,7 +103,7 @@ DesignFlowGraph::DesignFlowGraph(const DesignFlowGraphsCollectionRef design_flow
 {}
 
 DesignFlowGraph::~DesignFlowGraph()
-{}
+= default;
 
 vertex DesignFlowGraph::GetDesignFlowStep(const std::string&signature) const
 {
@@ -142,7 +141,7 @@ DesignFlowStepWriter::DesignFlowStepWriter(const DesignFlowGraph * design_flow_g
 {}
 
 DesignFlowStepWriter::~DesignFlowStepWriter()
-{}
+= default;
 
 void DesignFlowStepWriter::operator()(std::ostream& out, const vertex& v) const
 {

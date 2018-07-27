@@ -27,14 +27,14 @@ namespace flopoco{
 		/**
 		 * InputIEEE destructor
 		 */
-		~InputIEEE();
+		~InputIEEE() override;
 
 
 
 		// overloading functions from Operator
 
-		void emulate(TestCase * tc);
-		void buildStandardTestCases(TestCaseList* tcl);
+		void emulate(TestCase * tc) override;
+		void buildStandardTestCases(TestCaseList* tcl) override;
 
 	private:
 		/** The width of the exponent for the input X */
