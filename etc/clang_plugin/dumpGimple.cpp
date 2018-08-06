@@ -306,7 +306,7 @@ namespace clang
         PtoSets_AA(nullptr),
         SignedPointerTypeReference(0),
         last_memory_ssa_vers(std::numeric_limits<int>::max()),
-        last_BB_index(2)
+        last_BB_index(2),RA(nullptr)
    {
       if( EC)
       {
@@ -542,7 +542,7 @@ namespace clang
       {
          std::string declname = std::string(llvm_obj->getName());
          int status;
-         char * demangled_outbuffer = abi::__cxa_demangle(declname.c_str(), NULL, NULL, &status);
+         char * demangled_outbuffer = abi::__cxa_demangle(declname.c_str(), nullptr, nullptr, &status);
          if(status==0)
          {
             free(demangled_outbuffer);
@@ -661,7 +661,7 @@ namespace clang
          {
             declname = std::string(llvm_obj->getName());
             int status;
-            char * demangled_outbuffer = abi::__cxa_demangle(declname.c_str(), NULL, NULL, &status);
+            char * demangled_outbuffer = abi::__cxa_demangle(declname.c_str(), nullptr, nullptr, &status);
             if(status==0)
             {
                if(std::string(demangled_outbuffer).find(':') == std::string::npos && std::string(demangled_outbuffer).find('(') != std::string::npos)
@@ -1498,13 +1498,14 @@ namespace clang
       return ssa->isDefault;
    }
 
-   const void* DumpGimpleRaw::LowerGetElementPtrOffset(const llvm::GEPOperator* gep_op, const llvm::Function * currentFunction, const void *& base_node)
+   const void* DumpGimpleRaw::LowerGetElementPtrOffset(const llvm::GEPOperator* gep_op, const llvm::Function * currentFunction, const void *& base_node, bool &isZero)
    {
       if(gep_op->hasAllConstantIndices())
       {
          llvm::APInt OffsetAI(DL->getPointerTypeSizeInBits(gep_op->getType()), 0);
          auto allconstantoffet = gep_op->accumulateConstantOffset(*DL, OffsetAI);
          assert(allconstantoffet);
+         isZero=!OffsetAI;
          return assignCodeAuto(llvm::ConstantInt::get(gep_op->getContext(), OffsetAI));
       }
       else
@@ -1549,6 +1550,7 @@ namespace clang
            ConstantIndexOffset += Index * llvm::APInt(ConstantIndexOffset.getBitWidth(),
                                    DL->getTypeAllocSize(GTI.getIndexedType()));
          }
+         isZero=!ConstantIndexOffset;
          return assignCodeAuto(llvm::ConstantInt::get(gep_op->getContext(), ConstantIndexOffset));
       }
    }
@@ -1556,16 +1558,20 @@ namespace clang
    const void* DumpGimpleRaw::LowerGetElementPtr(const void* type, const llvm::User* gep, const llvm::Function * currentFunction)
    {
       assert(TREE_CODE(type) == GT(POINTER_TYPE));
-      auto mem_ref_type = TREE_TYPE(type);
+      //auto mem_ref_type = TREE_TYPE(type);
       auto base_node = getOperand(gep->getOperand(0), currentFunction);
       const llvm::GEPOperator* gep_op = dyn_cast<llvm::GEPOperator>(gep);
       assert(gep_op);
-      auto offset_node = LowerGetElementPtrOffset(gep_op, currentFunction, base_node);
-      if(gep_op->isInBounds())
-      {
-         auto mem_ref_node = build2(GT(MEM_REF), mem_ref_type, base_node, offset_node);
-         return build1(GT(ADDR_EXPR), type, mem_ref_node);
-      }
+      bool isZero=false;
+      auto offset_node = LowerGetElementPtrOffset(gep_op, currentFunction, base_node,isZero);
+//      if(gep_op->isInBounds())
+//      {
+//         auto mem_ref_node = build2(GT(MEM_REF), mem_ref_type, base_node, offset_node);
+//         return build1(GT(ADDR_EXPR), type, mem_ref_node);
+//      }
+//      else
+      if(isZero)
+         return base_node;
       else
          return build2(GT(POINTER_PLUS_EXPR), type, base_node, offset_node);
    }
@@ -2200,7 +2206,7 @@ namespace clang
          return 0;
    }
 
-   bool DumpGimpleRaw::DECL_REGISTER(const void* t) const
+   bool DumpGimpleRaw::DECL_REGISTER(const void* ) const
    {
       return false;
    }
@@ -2426,12 +2432,12 @@ namespace clang
       return !CheckSignedTag(ty);
    }
 
-   bool DumpGimpleRaw::COMPLEX_FLOAT_TYPE_P(const void*t) const
+   bool DumpGimpleRaw::COMPLEX_FLOAT_TYPE_P(const void*) const
    {
       llvm_unreachable("unexpected call to COMPLEX_FLOAT_TYPE_P");
    }
 
-   bool DumpGimpleRaw::TYPE_SATURATING(const void*t) const
+   bool DumpGimpleRaw::TYPE_SATURATING(const void*) const
    {
       llvm_unreachable("unexpected call to COMPLEX_FLOAT_TYPE_P");
    }
@@ -2509,7 +2515,7 @@ namespace clang
       return uicTable.find(maxvalue)->second;
    }
 
-   const void* DumpGimpleRaw::TYPE_VALUES(const void* t)
+   const void* DumpGimpleRaw::TYPE_VALUES(const void* )
    {
       llvm_unreachable("unexpected call to TYPE_VALUES");
    }
@@ -2564,7 +2570,7 @@ namespace clang
       }
    }
 
-   const void* DumpGimpleRaw::TYPE_CONTEXT(const void* t)
+   const void* DumpGimpleRaw::TYPE_CONTEXT(const void* )
    {
       return nullptr;/// TBF
    }
@@ -2678,12 +2684,12 @@ namespace clang
       return assignCode(&index2field_decl.find(std::make_pair(scpe, pos))->second, GT(FIELD_DECL));
    }
 
-   const void * DumpGimpleRaw::GET_METHOD_TYPE(const llvm::Type*t, unsigned int pos, const void * scpe)
+   const void * DumpGimpleRaw::GET_METHOD_TYPE(const llvm::Type*, unsigned int , const void *)
    {
       llvm_unreachable("unexpected condition");
    }
 
-   const void* DumpGimpleRaw::TYPE_METHOD_BASETYPE(const void* t)
+   const void* DumpGimpleRaw::TYPE_METHOD_BASETYPE(const void* )
    {
       llvm_unreachable("unexpected condition");
    }
@@ -2779,6 +2785,36 @@ namespace clang
          }
       }
    }
+   /// This does one-way checks to see if Use could theoretically be hoisted above
+   /// MayClobber. This will not check the other way around.
+   ///
+   /// This assumes that, for the purposes of MemorySSA, Use comes directly after
+   /// MayClobber, with no potentially clobbering operations in between them.
+   /// (Where potentially clobbering ops are memory barriers, aliased stores, etc.)
+   static bool areLoadsReorderable(const llvm::LoadInst *Use,
+                                   const llvm::LoadInst *MayClobber) {
+     bool VolatileUse = Use->isVolatile();
+     bool VolatileClobber = MayClobber->isVolatile();
+     // Volatile operations may never be reordered with other volatile operations.
+     if (VolatileUse && VolatileClobber)
+       return false;
+     // Otherwise, volatile doesn't matter here. From the language reference:
+     // 'optimizers may change the order of volatile operations relative to
+     // non-volatile operations.'"
+
+     // If a load is seq_cst, it cannot be moved above other loads. If its ordering
+     // is weaker, it can be moved above other loads. We just need to be sure that
+     // MayClobber isn't an acquire load, because loads can't be moved above
+     // acquire loads.
+     //
+     // Note that this explicitly *does* allow the free reordering of monotonic (or
+     // weaker) loads of the same address.
+     bool SeqCstUse = Use->getOrdering() == llvm::AtomicOrdering::SequentiallyConsistent;
+     bool MayClobberIsAcquire = isAtLeastOrStrongerThan(MayClobber->getOrdering(),
+                                                        llvm::AtomicOrdering::Acquire);
+     return !(SeqCstUse || MayClobberIsAcquire);
+   }
+
    void DumpGimpleRaw::serialize_vops(const void* g)
    {
       assert(TREE_CODE(g) != GT(GIMPLE_PHI_VIRTUAL));
@@ -2800,9 +2836,9 @@ namespace clang
          serialize_child("memdef", vdef);
       }
       /// check for true dependencies by exploiting LLVM alias analysis infrastructure
-      if(ma->getValueID()==llvm::Value::MemoryUseVal || ma->getValueID()==llvm::Value::MemoryDefVal)
+      if(ma->getValueID()==llvm::Value::MemoryUseVal)
       {
-         ///Serialize gimple pairs becuase of use after def chain
+         ///Serialize gimple pairs because of use after def chain
          std::set<llvm::MemoryAccess *>visited;
          auto startingMA = MSSA.getMemoryAccess(inst);
          visited.insert(startingMA);
@@ -2812,9 +2848,56 @@ namespace clang
          {
             const auto Loc = llvm::MemoryLocation::get(inst);
             serialize_gimple_aliased_reaching_defs(startingMA, MSSA, visited, inst->getFunction(), &Loc, "vuse");
+            ///add anti-dependencies
+            auto defMA = MSSA.getWalker()->getClobberingMemoryAccess(inst);
+            const void* VirtDef=MSSA.isLiveOnEntryDef(defMA) ? nullptr : (defMA->getValueID()==llvm::Value::MemoryPhiVal ? gimple_phi_virtual_result(getVirtualGimplePhi(dyn_cast<llvm::MemoryPhi>(defMA), MSSA)) : dyn_cast<llvm::MemoryUseOrDef>(defMA)->getMemoryInst());
+            if(CurrentListofMAEntryDef.find(currentFunction) != CurrentListofMAEntryDef.end() &&
+                  CurrentListofMAEntryDef.find(currentFunction)->second.find(VirtDef) != CurrentListofMAEntryDef.find(currentFunction)->second.end())
+            {
+               for(auto defInst : CurrentListofMAEntryDef.find(currentFunction)->second.find(VirtDef)->second)
+               {
+                  auto &AA = modulePass->getAnalysis<llvm::AAResultsWrapperPass>(*currentFunction).getAAResults();
+                  llvm::ImmutableCallSite UseCS(static_cast<const llvm::Instruction*>(inst));
+                  bool addVuse=false;
+                  if (UseCS)
+                  {
+                     const llvm::ModRefInfo I = AA.getModRefInfo(const_cast<llvm::Instruction*>(defInst), UseCS);
+#if __clang_major__ > 5
+                     addVuse = llvm::isModOrRefSet(I);
+#else
+                     addVuse = I != llvm::MRI_NoModRef;
+#endif
+                  }
+                  else
+                  {
+                     const auto Loc = llvm::MemoryLocation::get(inst);
+                     if (auto *DefLoad = dyn_cast<llvm::LoadInst>(defInst))
+                     {
+                         if (auto *UseLoad = dyn_cast<llvm::LoadInst>(inst))
+                            addVuse = !areLoadsReorderable(UseLoad, DefLoad);
+                     }
+                     else
+                     {
+                        auto I = AA.getModRefInfo(defInst, Loc);
+#if __clang_major__ > 5
+                        addVuse = llvm::isModSet(I);
+#else
+                        addVuse = I & llvm::MRI_Mod;
+#endif
+                     }
+                  }
+                  if(addVuse)
+                  {
+                     auto maDef = modulePass->getAnalysis<llvm::MemorySSAWrapperPass>(*currentFunction).getMSSA().getMemoryAccess(defInst);
+                     assert(maDef);
+                     const void* vuse=getSSA(maDef,defInst,currentFunction,false);
+                     serialize_child("vuse", vuse);
+                  }
+               }
+            }
          }
       }
-      if(ma->getValueID()==llvm::Value::MemoryDefVal)
+      else if(ma->getValueID()==llvm::Value::MemoryDefVal)
       {
          const void* vdef=getSSA(ma,g,currentFunction,false);
          serialize_child("vdef", vdef);
@@ -2822,6 +2905,7 @@ namespace clang
          std::set<llvm::MemoryAccess *>visited;
          auto startingMA = MSSA.getMemoryAccess(inst);
          visited.insert(startingMA);
+         visited.insert(MSSA.getLiveOnEntryDef());
          if (llvm::ImmutableCallSite(inst) || isa<llvm::FenceInst>(inst))
             serialize_gimple_aliased_reaching_defs(startingMA, MSSA, visited, inst->getFunction(), nullptr, "vover");
          else
@@ -2830,7 +2914,6 @@ namespace clang
             serialize_gimple_aliased_reaching_defs(startingMA, MSSA, visited, inst->getFunction(), &Loc, "vover");
          }
       }
-
    }
 
    void DumpGimpleRaw::serialize_gimple_aliased_reaching_defs(llvm::MemoryAccess *MA, llvm::MemorySSA &MSSA, std::set<llvm::MemoryAccess *>&visited, const llvm::Function *currentFunction, const llvm::MemoryLocation* OrigLoc, const char* tag)
@@ -3022,10 +3105,12 @@ namespace clang
                   }
                }
 
+#ifdef DEBUG_RA
                if(isSigned)
                   llvm::errs() << "Range: " << (int64_t)val << ",";
                else
                   llvm::errs() << "Range: " << val << ",";
+#endif
                auto context = TREE_CODE(t)==GT(SIGNEDPOINTERTYPE) ? moduleContext : &ty->getContext();
                if(uicTable.find(val) == uicTable.end())
                   uicTable[val] = assignCodeAuto(llvm::ConstantInt::get(llvm::Type::getInt64Ty(*context), val, false));
@@ -3053,13 +3138,14 @@ namespace clang
                   //               llvm::errs() << "Max: " << (range.getSignedMax()) << "\n";
                   //               upper.print(llvm::errs(), isSigned);
                   //               llvm::errs() << (isSigned?"T":"F") << "\n";
+#ifdef DEBUG_RA
                   if(isSigned)
                      llvm::errs() << "Range: <" << range.getSignedMin() << "," << range.getSignedMax() << "> ";
                   else
                      llvm::errs() << "Range: <" << range.getUnsignedMin().getZExtValue() << "," << range.getUnsignedMax().getZExtValue() << "> ";
                   inst->print(llvm::errs());
                   llvm::errs() << "\n";
-
+#endif
                   return assignCodeAuto(llvm::ConstantInt::get(inst->getContext(), (isSigned?range.getSignedMin():range.getUnsignedMin())));
                }
                else
@@ -3157,12 +3243,14 @@ namespace clang
                   assert(range.getBitWidth() >= active_size);
                }
 
+#ifdef DEBUG_RA
                if(isSigned)
                   llvm::errs() << (int64_t)val << ") ";
                else
                   llvm::errs() << val << ") ";
                inst->print(llvm::errs());
                llvm::errs() << "\n";
+#endif
                //auto maxvalue = llvm::APInt::getMaxValue(std::max((isSigned?active_size-1ULL:active_size),1ULL)).getZExtValue();
                auto maxvalue = val;
                auto context = TREE_CODE(t)==GT(SIGNEDPOINTERTYPE) ? moduleContext : &ty->getContext();
@@ -4854,7 +4942,7 @@ namespace clang
       }
    }
 
-   static void expandMemSetAsLoopLocal(llvm::MemSetInst *Memset)
+   static void expandMemSetAsLoopLocal(llvm::MemSetInst *Memset, const llvm::DataLayout* DL)
    {
       llvm::Instruction *InsertBefore=Memset;
       llvm::Value *DstAddr=Memset->getRawDest();
@@ -4869,6 +4957,21 @@ namespace clang
           OrigBB->splitBasicBlock(InsertBefore, "split");
       llvm::BasicBlock *LoopBB
         = llvm::BasicBlock::Create(F->getContext(), "loadstoreloop", F, NewBB);
+      if(llvm::dyn_cast<llvm::BitCastInst>(DstAddr))
+      {
+         auto srcType=llvm::cast<llvm::BitCastInst>(DstAddr)->getSrcTy();
+         if(srcType->isPointerTy())
+         {
+            auto pointee=llvm::cast<llvm::PointerType>(srcType)->getElementType();
+            if(pointee->isArrayTy())
+            {
+               auto elType=llvm::cast<llvm::ArrayType>(pointee)->getArrayElementType();
+               auto size= elType->isSized() ? DL->getTypeAllocSizeInBits(elType) : 8ULL;
+               if(size<Align*8)
+                  Align=size/8;
+            }
+         }
+      }
 
       bool AlignCanBeUsed = false;
       if(isa<llvm::ConstantInt>(CopyLen) &&
@@ -4926,7 +5029,7 @@ namespace clang
                                NewBB);
    }
 
-   /// Intrinsics lowering
+   /// Intrinsic lowering
    bool DumpGimpleRaw::lowerMemIntrinsics(llvm::Module &M)
    {
       auto res = false;
@@ -4985,7 +5088,7 @@ namespace clang
             }
             else if (llvm::MemSetInst *Memset = dyn_cast<llvm::MemSetInst>(MemCall))
             {
-               expandMemSetAsLoopLocal(Memset);
+               expandMemSetAsLoopLocal(Memset, DL);
                do_erase = true;
             }
             if(do_erase)
@@ -4996,7 +5099,7 @@ namespace clang
       return res;
    }
 
-   /// Intrinsics lowering
+   /// Intrinsic lowering
    bool DumpGimpleRaw::lowerIntrinsics(llvm::Module &M)
    {
       auto res = false;
@@ -5174,6 +5277,278 @@ namespace clang
       }
    }
 
+
+   bool DumpGimpleRaw::LoadStoreOptimizer(llvm::Module &M)
+   {
+      bool changed=false;
+      for (llvm::Function &F : M)
+      {
+         std::list<llvm::Instruction*> StoreLoadList;
+         std::list<llvm::BasicBlock*> BBlist;
+         for(auto& BB: F.getBasicBlockList())
+            BBlist.push_back(&BB);
+         for(auto BB: BBlist)
+         {
+            auto curInstIterator = BB->getInstList().begin();
+            while( curInstIterator != BB->getInstList().end())
+            {
+               llvm::Instruction *I = &*curInstIterator;
+               if(dyn_cast<llvm::StoreInst>(I)||dyn_cast<llvm::LoadInst>(I))
+               {
+                  auto PO = dyn_cast<llvm::StoreInst>(I) ? dyn_cast<llvm::StoreInst>(I)->getPointerOperand() : dyn_cast<llvm::LoadInst>(I)->getPointerOperand();
+                  auto PTS = PtoSets_AA->pointsToSet(PO);
+                  if(PTS->size()>1)
+                  {
+                     bool res=true;
+                     for(auto var: *PTS)
+                     {
+                        auto varValue = PtoSets_AA->getValue(var);
+                        if(!varValue)
+                        {
+                           res = false;
+                           break;
+                        }
+                        auto vid = varValue->getValueID();
+                        if(vid != llvm::Value::InstructionVal+llvm::Instruction::Alloca && vid != llvm::Value::GlobalVariableVal)
+                        {
+                           res = false;
+                           break;
+                        }
+                        auto AI = llvm::dyn_cast<const llvm::AllocaInst>(varValue);
+                        auto GV = llvm::dyn_cast<const llvm::GlobalVariable>(varValue);
+                        if(AI && AI->getAllocatedType()->isAggregateType() && !AI->getAllocatedType()->isArrayTy())
+                        {
+                           res=false;
+                           break;
+                        }
+                        else if(GV && GV->getValueType()->isAggregateType() && !GV->getValueType()->isArrayTy())
+                        {
+                           res=false;
+                           break;
+                        }
+                     }
+                     if(res)
+                     {
+                        StoreLoadList.push_back(I);
+                     }
+                  }
+               }
+               ++curInstIterator;
+            }
+         }
+         for(auto& I: StoreLoadList)
+         {
+            if(llvm::StoreInst* SI = dyn_cast<llvm::StoreInst>(I))
+            {
+               auto PO = SI->getPointerOperand();
+               auto PTS = PtoSets_AA->pointsToSet(PO);
+               llvm::IRBuilder<> Builder(SI);
+               llvm::errs()<<"Store to be optimized: ";
+               SI->print(llvm::errs());
+               llvm::errs()<<"\n";
+               llvm::errs()<<"PO to be used: ";
+               PO->print(llvm::errs());
+               llvm::errs()<<"\n";
+               llvm::errs()<<"Var to be written: ";
+               SI->getValueOperand()->print(llvm::errs());
+               llvm::errs()<<"\n";
+               llvm::BasicBlock *BB0=SI->getParent();
+               auto LastBB = BB0->splitBasicBlock(SI);
+               llvm::BasicBlock *PrevBB=BB0;
+               llvm::IRBuilder<> Builder0(BB0->getTerminator());
+               auto ptrToInt1 = Builder0.CreatePtrToInt(PO,llvm::Type::getInt64Ty(F.getContext()));
+
+               for(auto var: *PTS)
+               {
+                  auto varValue = PtoSets_AA->getValue(var);
+                  auto AI = llvm::dyn_cast<const llvm::AllocaInst>(varValue);
+                  auto GV = llvm::dyn_cast<const llvm::GlobalVariable>(varValue);
+                  assert(AI||GV);
+                  llvm::Type* objType;
+                  if(AI)
+                     objType = AI->getAllocatedType();
+                  else if (GV)
+                     objType = GV->getValueType();
+                  else
+                     llvm_unreachable("unexpected condition");
+
+                  if(objType->isArrayTy())
+                  {
+                     auto gep1 = Builder0.CreateBitCast(const_cast<llvm::Value*>(varValue), PO->getType());
+
+                     auto ptrToInt2 = Builder0.CreatePtrToInt(gep1,llvm::Type::getInt64Ty(F.getContext()));
+                     auto sub1 = Builder0.CreateSub(ptrToInt1,ptrToInt2);
+
+                     auto sge1 = Builder0.CreateICmpSGE(sub1, Builder0.getInt64(0));
+                     auto varValueSize= objType->isSized() ? DL->getTypeAllocSize(objType) : 1ULL;
+
+                     auto ult1 = Builder0.CreateICmpULT(sub1, Builder0.getInt64(varValueSize));
+                     auto and1 = Builder0.CreateAnd(sge1,ult1);
+
+                     llvm::BasicBlock *TrueBB = llvm::BasicBlock::Create(F.getContext(), "StoreBB", &F, LastBB);
+                     llvm::BasicBlock *FalseBB = llvm::BasicBlock::Create(F.getContext(), "StoreBB", &F, LastBB);
+                     PrevBB->getTerminator()->eraseFromParent();
+                     Builder.SetInsertPoint(PrevBB);
+                     Builder.CreateCondBr(and1, TrueBB, FalseBB);
+                     if(PrevBB==BB0)
+                        Builder0.SetInsertPoint(BB0->getTerminator());
+                     PrevBB=FalseBB;
+                     llvm::IRBuilder<> FalseBuilder(FalseBB);
+                     FalseBuilder.CreateBr(LastBB);
+
+                     llvm::IRBuilder<> StoreBuilder(TrueBB);
+                     auto bitcast1 = StoreBuilder.CreateBitCast(gep1, llvm::Type::getInt8PtrTy(F.getContext()));
+                     auto gep3 = StoreBuilder.CreateGEP(bitcast1, sub1);
+                     auto bitcast2 = StoreBuilder.CreateBitCast(gep3,PO->getType());
+                     StoreBuilder.CreateStore(SI->getValueOperand(),bitcast2);
+                     StoreBuilder.CreateBr(LastBB);
+                     changed=true;
+                  }
+                  else
+                  {
+                     auto gep1 = Builder0.CreateBitCast(const_cast<llvm::Value*>(varValue), PO->getType());
+                     auto eq1 = Builder0.CreateICmpEQ(PO, gep1);
+                     llvm::BasicBlock *TrueBB = llvm::BasicBlock::Create(F.getContext(), "StoreBB", &F, LastBB);
+                     llvm::BasicBlock *FalseBB = llvm::BasicBlock::Create(F.getContext(), "StoreBB", &F, LastBB);
+                     PrevBB->getTerminator()->eraseFromParent();
+                     Builder.SetInsertPoint(PrevBB);
+                     Builder.CreateCondBr(eq1, TrueBB, FalseBB);
+                     if(PrevBB==BB0)
+                        Builder0.SetInsertPoint(BB0->getTerminator());
+                     PrevBB=FalseBB;
+                     llvm::IRBuilder<> FalseBuilder(FalseBB);
+                     FalseBuilder.CreateBr(LastBB);
+                     llvm::IRBuilder<> StoreBuilder(TrueBB);
+                     StoreBuilder.CreateStore(SI->getValueOperand(),gep1);
+                     StoreBuilder.CreateBr(LastBB);
+                     changed=true;
+                  }
+               }
+            }
+            else if(llvm::LoadInst* LI = dyn_cast<llvm::LoadInst>(I))
+            {
+               auto PO = LI->getPointerOperand();
+               auto PTS = PtoSets_AA->pointsToSet(PO);
+
+               llvm::BasicBlock *BB0=LI->getParent();
+               auto LastBB = BB0->splitBasicBlock(LI);
+               llvm::BasicBlock *PrevBB=BB0;
+               llvm::IRBuilder<> Builder0(BB0->getTerminator());
+               auto ptrToInt1 = Builder0.CreatePtrToInt(PO,llvm::Type::getInt64Ty(F.getContext()));
+               llvm::IRBuilder<> Builder(LI);
+               auto phi1 = Builder.CreatePHI(LI->getType(), 1+PTS->size());
+               LI->replaceAllUsesWith(phi1);
+               unsigned index = 0;
+
+               for(auto var: *PTS)
+               {
+                  ++index;
+                  auto varValue = PtoSets_AA->getValue(var);
+                  auto AI = llvm::dyn_cast<const llvm::AllocaInst>(varValue);
+                  auto GV = llvm::dyn_cast<const llvm::GlobalVariable>(varValue);
+                  assert(AI||GV);
+                  llvm::Type* objType;
+                  if(AI)
+                     objType = AI->getAllocatedType();
+                  else if (GV)
+                     objType = GV->getValueType();
+                  else
+                     llvm_unreachable("unexpected condition");
+
+                  if(objType->isArrayTy())
+                  {
+                     auto gep1 = Builder0.CreateBitCast(const_cast<llvm::Value*>(varValue), PO->getType());
+
+                     auto ptrToInt2 = Builder0.CreatePtrToInt(gep1,llvm::Type::getInt64Ty(F.getContext()));
+                     auto sub1 = Builder0.CreateSub(ptrToInt1,ptrToInt2);
+
+                     auto sge1 = Builder0.CreateICmpSGE(sub1, Builder0.getInt64(0));
+                     auto varValueSize= objType->isSized() ? DL->getTypeAllocSize(objType) : 1ULL;
+
+                     auto ult1 = Builder0.CreateICmpULT(sub1, Builder0.getInt64(varValueSize));
+                     auto and1 = Builder0.CreateAnd(sge1,ult1);
+
+                     llvm::BasicBlock *TrueBB = llvm::BasicBlock::Create(F.getContext(), "StoreBB", &F, LastBB);
+                     llvm::BasicBlock *FalseBB = llvm::BasicBlock::Create(F.getContext(), "StoreBB", &F, LastBB);
+                     PrevBB->getTerminator()->eraseFromParent();
+                     Builder.SetInsertPoint(PrevBB);
+                     Builder.CreateCondBr(and1, TrueBB, FalseBB);
+                     if(PrevBB==BB0)
+                        Builder0.SetInsertPoint(BB0->getTerminator());
+                     PrevBB=FalseBB;
+                     llvm::IRBuilder<> FalseBuilder(FalseBB);
+                     FalseBuilder.CreateBr(LastBB);
+
+                     llvm::IRBuilder<> LoadBuilder(TrueBB);
+                     auto bitcast1 = LoadBuilder.CreateBitCast(gep1, llvm::Type::getInt8PtrTy(F.getContext()));
+                     auto gep3 = LoadBuilder.CreateGEP(bitcast1, sub1);
+                     auto bitcast2 = LoadBuilder.CreateBitCast(gep3,PO->getType());
+                     auto load1 = LoadBuilder.CreateLoad(bitcast2);
+                     phi1->addIncoming(load1, TrueBB);
+                     LoadBuilder.CreateBr(LastBB);
+                     if(index==PTS->size())
+                        phi1->addIncoming(llvm::UndefValue::get(I->getType()), FalseBB);
+                     changed=true;
+                  }
+                  else
+                  {
+                     auto gep1 = Builder0.CreateBitCast(const_cast<llvm::Value*>(varValue), PO->getType());
+                     auto eq1 = Builder0.CreateICmpEQ(PO, gep1);
+                     llvm::BasicBlock *TrueBB = llvm::BasicBlock::Create(F.getContext(), "LoadBB", &F, LastBB);
+                     llvm::BasicBlock *FalseBB = llvm::BasicBlock::Create(F.getContext(), "LoadBB", &F, LastBB);
+                     PrevBB->getTerminator()->eraseFromParent();
+                     Builder.SetInsertPoint(PrevBB);
+                     Builder.CreateCondBr(eq1, TrueBB, FalseBB);
+                     if(PrevBB==BB0)
+                        Builder0.SetInsertPoint(BB0->getTerminator());
+                     PrevBB=FalseBB;
+                     llvm::IRBuilder<> FalseBuilder(FalseBB);
+                     FalseBuilder.CreateBr(LastBB);
+
+                     llvm::IRBuilder<> LoadBuilder(TrueBB);
+                     auto load1 = LoadBuilder.CreateLoad(gep1);
+                     phi1->addIncoming(load1, TrueBB);
+                     LoadBuilder.CreateBr(LastBB);
+                     if(index==PTS->size())
+                        phi1->addIncoming(llvm::UndefValue::get(I->getType()), FalseBB);
+                     changed=true;
+                  }
+               }
+            }
+            else
+               llvm_unreachable("unexpected condition");
+         }
+         for(auto& I : StoreLoadList)
+            I->eraseFromParent();
+      }
+      //M.print(llvm::errs(),nullptr);
+      return changed;
+   }
+
+   void DumpGimpleRaw::computeMAEntryDefs(const llvm::Function *F, std::map<const llvm::Function*,std::map<const void *, std::set<const llvm::Instruction *>>> &CurrentListofMAEntryDef, llvm::ModulePass *modulePass)
+   {
+      auto &MSSA = modulePass->getAnalysis<llvm::MemorySSAWrapperPass>(*const_cast<llvm::Function *>(F)).getMSSA();
+      for(const auto& BB: F->getBasicBlockList())
+      {
+         for(const auto&inst: BB)
+         {
+            const llvm::MemoryUseOrDef* ma = MSSA.getMemoryAccess(&inst);
+            if(ma && ma->getValueID()==llvm::Value::MemoryDefVal)
+            {
+               auto defMA = MSSA.getWalker()->getClobberingMemoryAccess(&inst);
+               if(MSSA.isLiveOnEntryDef(defMA))
+                  CurrentListofMAEntryDef[F][nullptr].insert(&inst);
+               else if(defMA->getValueID()==llvm::Value::MemoryPhiVal)
+                  CurrentListofMAEntryDef[F][gimple_phi_virtual_result(getVirtualGimplePhi(dyn_cast<llvm::MemoryPhi>(defMA), MSSA))].insert(&inst);
+               else
+               {
+                  assert(defMA->getValueID()==llvm::Value::MemoryDefVal);
+                  CurrentListofMAEntryDef[F][dyn_cast<llvm::MemoryUseOrDef>(defMA)->getMemoryInst()].insert(&inst);
+               }
+            }
+         }
+      }
+   }
    bool DumpGimpleRaw::runOnModule(llvm::Module &M, llvm::ModulePass *_modulePass, const std::string& TopFunctionName)
    {
       DL = &M.getDataLayout();
@@ -5201,6 +5576,8 @@ namespace clang
             PtoSets_AA = new Staged_Flow_Sensitive_AA(starting_function);
 #endif
             PtoSets_AA->computePointToSet(M);
+//            auto changed = LoadStoreOptimizer(M);
+//            res = res | changed;
          }
       }
 #endif
@@ -5212,6 +5589,17 @@ namespace clang
 #ifdef DEBUG_RA
       assert(!llvm::verifyModule(M,&llvm::errs()));
 #endif
+      if(!onlyGlobals)
+      {
+         for(const auto& fun : M.getFunctionList())
+         {
+            if(!fun.isDeclaration() && !fun.isIntrinsic())
+            {
+               computeMAEntryDefs(&fun,CurrentListofMAEntryDef,modulePass);
+            }
+         }
+      }
+
       for(const auto& globalVar : M.getGlobalList())
       {
 #if PRINT_DBG_MSG
@@ -5237,6 +5625,7 @@ namespace clang
                SerializeGimpleGlobalTreeNode(assignCodeAuto(&fun));
             }
          }
+         CurrentListofMAEntryDef.clear();
       }
 #if HAVE_LIBBDD
       if(PtoSets_AA)

@@ -48,7 +48,7 @@
 
 #include "refcount.hpp"
 #include "boost/lexical_cast.hpp"
-#include <limits.h>
+#include <climits>
 
 /**
  * @name Forward declarations.
@@ -75,7 +75,7 @@ class register_obj : public generic_obj
       /**
        * Destructor.
        */
-      ~register_obj() {}
+      ~register_obj() override = default;
 
       /**
        * Gets the write enable object for the given register

@@ -52,7 +52,7 @@
 ///Utility include
 #include "exceptions.hpp"
 #include "fileIO.hpp"
-#include "utility.hpp"
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 ///XML include
 #include "data_xml.hpp"
@@ -65,7 +65,7 @@ DataXmlParser::DataXmlParser(const ParameterConstRef Param) :
 {}
 
 DataXmlParser::~DataXmlParser()
-{}
+= default;
 
 void DataXmlParser::Parse(const CustomSet<std::string> & file_names, std::map<std::string, CustomMap<std::string, std::string> > & output) const
 {
@@ -91,7 +91,7 @@ void DataXmlParser::Parse(const CustomSet<std::string> & file_names, std::map<st
                xml_node::node_list::const_iterator child, child_end = list.end();
                for (child = list.begin(); child != child_end; ++child)
                {
-                  const xml_element* child_element = GetPointer<const xml_element>(*child);
+                  const auto* child_element = GetPointer<const xml_element>(*child);
                   if(!child_element)
                      continue;
                   const std::string child_name = child_element->get_name();

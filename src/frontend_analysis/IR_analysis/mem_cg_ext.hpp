@@ -54,9 +54,9 @@ class mem_cg_ext : public ApplicationFrontendFlowStep
 
       bool already_executed;
 
-      virtual const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> >
+      const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> >
          ComputeFrontendRelationships(
-            const DesignFlowStep::RelationshipType relationship_type) const;
+            const DesignFlowStep::RelationshipType relationship_type) const override;
 
    public:
 
@@ -65,18 +65,18 @@ class mem_cg_ext : public ApplicationFrontendFlowStep
             const DesignFlowManagerConstRef design_flow_manager,
             const ParameterConstRef parameters);
 
-      ~mem_cg_ext();
+      ~mem_cg_ext() override;
 
       /**
        * Execute the step
        * @return the exit status of this step
        */
-      virtual DesignFlowStep_Status Exec();
+      DesignFlowStep_Status Exec() override;
 
       /**
        * Initialize the step (i.e., like a constructor, but executed just before exec
        */
-      virtual void Initialize();
+      void Initialize() override;
 };
 
 #endif

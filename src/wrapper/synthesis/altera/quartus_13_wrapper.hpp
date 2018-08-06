@@ -64,12 +64,12 @@ class Quartus13Wrapper: public AlteraWrapper
       /**
        * Destructor
        */
-      virtual ~Quartus13Wrapper();
+      ~Quartus13Wrapper() override;
 
       /**
        * Returns the proper command line
        */
-      std::string get_command_line(const DesignParametersRef& dp) const;
+      std::string get_command_line(const DesignParametersRef& dp) const override;
 
 };
 #endif

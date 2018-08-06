@@ -51,11 +51,11 @@
 #include "Parameter.hpp"
 
 ///STD include
-#include <iosfwd>
+#include <iostream>
 #include <fstream>
 #include <string>
 
-///tree includde
+///tree include
 #include "tree_manager.hpp"
 
 ///Utility include

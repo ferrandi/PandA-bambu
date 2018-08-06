@@ -48,19 +48,18 @@
 ///Graph include
 #include "graph.hpp"
 
-///STD include
+#include <string>                                    // for string
 #include <ostream>
 #include <unordered_set>
 
 ///Utility include
 #include "refcount.hpp"
-#include "simple_indent.hpp"
 
 /**
  * @name forward declarations
 */
 //@{
-
+class simple_indent;
 CONSTREF_FORWARD_DECL(BehavioralHelper);
 CONSTREF_FORWARD_DECL(OpGraph);
 REF_FORWARD_DECL(prettyPrintVertex);

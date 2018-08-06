@@ -46,8 +46,12 @@
 #ifndef EXT_TREE_NODE_HPP
 #define EXT_TREE_NODE_HPP
 
+#include <list>             // for list
+#include <string>           // for string
+#include <unordered_map>    // for unordered_map
+#include <utility>          // for pair
+#include "tree_common.hpp"  // for GET_KIND, blackbox_pragma_K, call_hw_prag...
 #include "tree_node.hpp"
-#include <unordered_map>
 
 struct null_node : public tree_node
 {
@@ -64,7 +68,7 @@ struct null_node : public tree_node
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const;
+   void visit(tree_node_visitor * const v) const override;
 
    /// visitor enum
    enum {GETID(tree_node)=0};
@@ -100,7 +104,7 @@ struct gimple_pragma : public gimple_node
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const;
+   void visit(tree_node_visitor * const v) const override;
 
    /// visitor enum
    enum {GETID(gimple_node)=0, GETID(scope), GETID(directive)};
@@ -122,7 +126,7 @@ struct profiling_pragma : public tree_node
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const;
+   void visit(tree_node_visitor * const v) const override;
 
    /// visitor enum
    enum {GETID(tree_node)=0};
@@ -143,7 +147,7 @@ struct statistical_profiling : public profiling_pragma
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const;
+   void visit(tree_node_visitor * const v) const override;
 
    /// visitor enum
    enum {GETID(profiling_pragma)=0};
@@ -164,7 +168,7 @@ struct map_pragma : public tree_node
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const;
+   void visit(tree_node_visitor * const v) const override;
 
    /// visitor enum
    enum {GETID(tree_node)=0};
@@ -194,7 +198,7 @@ struct call_hw_pragma : public map_pragma
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const;
+   void visit(tree_node_visitor * const v) const override;
 
    /// visitor enum
    enum {GETID(map_pragma)=0};
@@ -227,7 +231,7 @@ struct call_point_hw_pragma : public map_pragma
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const;
+   void visit(tree_node_visitor * const v) const override;
 
    /// visitor enum
    enum {GETID(map_pragma)=0};
@@ -248,7 +252,7 @@ struct issue_pragma : public tree_node
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const;
+   void visit(tree_node_visitor * const v) const override;
 
    /// visitor enum
    enum {GETID(tree_node)=0};
@@ -269,7 +273,7 @@ struct blackbox_pragma : public issue_pragma
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const;
+   void visit(tree_node_visitor * const v) const override;
 
    /// visitor enum
    enum {GETID(issue_pragma)=0};
@@ -291,7 +295,7 @@ struct omp_pragma : public tree_node
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const;
+   void visit(tree_node_visitor * const v) const override;
 
    /// visitor enum
    enum {GETID(tree_node)=0};
@@ -318,7 +322,7 @@ struct omp_parallel_pragma : public omp_pragma
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const;
+   void visit(tree_node_visitor * const v) const override;
 
    /// visitor enum
    enum {GETID(omp_pragma)=0};
@@ -342,7 +346,7 @@ struct omp_sections_pragma : public omp_pragma
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const;
+   void visit(tree_node_visitor * const v) const override;
 
    /// visitor enum
    enum {GETID(omp_pragma)=0};
@@ -369,7 +373,7 @@ struct omp_parallel_sections_pragma : public omp_pragma
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const;
+   void visit(tree_node_visitor * const v) const override;
 
    /// visitor enum
    enum {GETID(omp_pragma)=0, GETID(op0), GETID(op1)};
@@ -390,7 +394,7 @@ struct omp_section_pragma : public omp_pragma
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const;
+   void visit(tree_node_visitor * const v) const override;
 
    /// visitor enum
    enum {GETID(omp_pragma)=0};
@@ -414,7 +418,7 @@ struct omp_target_pragma : public omp_pragma
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const;
+   void visit(tree_node_visitor * const v) const override;
 
    /// visitor enum
    enum {GETID(omp_pragma)=0};
@@ -438,7 +442,7 @@ struct omp_task_pragma : public omp_pragma
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const;
+   void visit(tree_node_visitor * const v) const override;
 
    /// visitor enum
    enum {GETID(omp_pragma)=0};
@@ -462,7 +466,7 @@ struct omp_critical_pragma : public omp_pragma
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const;
+   void visit(tree_node_visitor * const v) const override;
 
    /// visitor enum
    enum {GETID(omp_pragma)=0};
@@ -483,7 +487,7 @@ struct omp_atomic_pragma : public omp_pragma
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const;
+   void visit(tree_node_visitor * const v) const override;
 
    /// visitor enum
    enum {GETID(omp_pragma)=0};
@@ -507,7 +511,7 @@ struct omp_for_pragma : public omp_pragma
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const;
+   void visit(tree_node_visitor * const v) const override;
 
    /// visitor enum
    enum {GETID(omp_pragma)=0};
@@ -531,7 +535,7 @@ struct omp_simd_pragma : public omp_pragma
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const;
+   void visit(tree_node_visitor * const v) const override;
 
    /// visitor enum
    enum {GETID(omp_pragma)=0};
@@ -555,7 +559,7 @@ struct omp_declare_simd_pragma : public omp_pragma
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const;
+   void visit(tree_node_visitor * const v) const override;
 
    /// visitor enum
    enum {GETID(omp_pragma)=0};
@@ -583,7 +587,7 @@ struct gimple_while :public gimple_node
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const;
+   void visit(tree_node_visitor * const v) const override;
 
    /// visitor enum
    enum {GETID(gimple_node)=0, GETID(op0)};
@@ -617,7 +621,7 @@ struct gimple_for :public gimple_while
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const;
+   void visit(tree_node_visitor * const v) const override;
 
    /// visitor enum
    enum {GETID(gimple_while)=0, GETID(op1), GETID(op2)};
@@ -652,7 +656,7 @@ struct gimple_multi_way_if :public gimple_node
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const;
+   void visit(tree_node_visitor * const v) const override;
 
    /// visitor enum
    enum {GETID(gimple_node)=0, GETID(list_of_cond)};

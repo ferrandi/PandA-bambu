@@ -44,19 +44,18 @@
 #define STRING_MANIPULATION_HPP
 
 ///STD include
-#include <cxxabi.h>
-
-///STL include
+#include <cxxabi.h>                                          // for __cxa_de...
+#include <cstdlib>                                          // for strtod
+#include <boost/algorithm/string/classification.hpp>         // for is_any_of
+#include <boost/algorithm/string/split.hpp>                  // for split
+#include <boost/lexical_cast.hpp>                            // for lexical_...
+#include <boost/type_index/type_index_facade.hpp>            // for operator==
+#include <iosfwd>                                            // for stringst...
+#include <string>                                            // for string
 #include <vector>
-
-///Utility include
-#include <boost/algorithm/string/classification.hpp>
-#include <boost/algorithm/string/split.hpp>
-#include <boost/lexical_cast.hpp>
 
 /**
  * Macro which performs a lexical_cast to a string
- * Temporary is duplicated in utility.hpp and string_manipulation.hpp
  */
 #ifndef STR
 #define STR(s) boost::lexical_cast<std::string>(s)
@@ -118,13 +117,13 @@ std::string TrimSpaces(const std::string& value)
    std::vector<std::string> splitted;
    boost::algorithm::split(splitted, value, boost::algorithm::is_any_of(" \n\t\r"));
    bool first = true;
-   for (unsigned int i = 0; i < splitted.size(); i++)
+   for (auto & i : splitted)
    {
-      if (!first and splitted[i].size())
+      if (!first and i.size())
          temp += " ";
-      if (splitted[i].size())
+      if (i.size())
       {
-         temp += splitted[i];
+         temp += i;
          first = false;
       }
    }
@@ -263,4 +262,11 @@ inline std::string convert_fp_to_string(std::string num, unsigned int precision)
    }
    return res;
 }
+
+/**
+ * Macro returning the actual type of an object
+ */
+#define GET_CLASS(obj) string_demangle(typeid(obj).name())
+
+
 #endif

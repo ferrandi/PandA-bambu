@@ -97,11 +97,11 @@
 static bool is_large_integer(const unsigned int t_id, const tree_managerConstRef T_M)
 {
    const tree_nodeRef node_type = T_M->get_tree_node_const(t_id);
-   type_node * tn = GetPointer<type_node>(node_type);
+   auto * tn = GetPointer<type_node>(node_type);
    THROW_ASSERT(tn, "type_id " + STR(t_id) + " is not a type");
    if (node_type->get_kind() != integer_type_K)
       return false;
-   integer_type * it = GetPointer<integer_type>(node_type);
+   auto * it = GetPointer<integer_type>(node_type);
    THROW_ASSERT(it, "type " + STR(t_id) + " is not an integer type");
    if ((it->prec != tn->algn and it->prec > 64) or (tn->algn == 128))
       return true;
@@ -136,7 +136,7 @@ DiscrepancyAnalysisCWriter::DiscrepancyAnalysisCWriter
 }
 
 DiscrepancyAnalysisCWriter::~DiscrepancyAnalysisCWriter()
-{}
+= default;
 
 void DiscrepancyAnalysisCWriter::writePreInstructionInfo
 (const FunctionBehaviorConstRef FB, const vertex statement)
@@ -160,7 +160,7 @@ void DiscrepancyAnalysisCWriter::writePreInstructionInfo
             "tree node " + STR(st_tn_id) + " calls more than a function");
       const unsigned int called_id = *node_info->called.begin();
       const tree_nodeConstRef called_fun_decl_node = TM->CGetTreeNode(called_id);
-      const function_decl * fu_dec = GetPointer<const function_decl>(called_fun_decl_node);
+      const auto * fu_dec = GetPointer<const function_decl>(called_fun_decl_node);
       if (GetPointer<const identifier_node>(GET_NODE(fu_dec->name))->strg == BUILTIN_WAIT_CALL)
       {
          /*
@@ -178,7 +178,7 @@ void DiscrepancyAnalysisCWriter::writePreInstructionInfo
    }
    else if (kind == gimple_assign_K)
    {
-      const gimple_assign * g_as_node = GetPointer<const gimple_assign>(curr_tn);
+      const auto * g_as_node = GetPointer<const gimple_assign>(curr_tn);
       tree_nodeRef rhs = GET_NODE(g_as_node->op1);
       if (rhs->get_kind() == call_expr_K || rhs->get_kind() == aggr_init_expr_K)
       {
@@ -227,8 +227,8 @@ void DiscrepancyAnalysisCWriter::writePostInstructionInfo
    if (!oper)
       return;
 
-   const gimple_assign * g_as_node = GetPointer<const gimple_assign>(curr_tn);
-   const gimple_phi * g_phi_node = GetPointer<const gimple_phi>(curr_tn);
+   const auto * g_as_node = GetPointer<const gimple_assign>(curr_tn);
+   const auto * g_phi_node = GetPointer<const gimple_phi>(curr_tn);
    bool is_virtual = false;
    unsigned int ssa_node_index;
    tree_nodeRef ssa;
@@ -250,7 +250,7 @@ void DiscrepancyAnalysisCWriter::writePostInstructionInfo
        * print statements that increase the counters used for coverage statistics
        */
       indented_output_stream->Append("__bambu_discrepancy_tot_assigned_ssa++;\n");
-      const ssa_name * ssaname = GetPointer<const ssa_name>(ssa);
+      const auto * ssaname = GetPointer<const ssa_name>(ssa);
       bool is_temporary = ssaname->var ? GetPointer<const decl_node>(GET_NODE(ssaname->var))->artificial_flag : true;
       bool is_discrepancy_address = Discrepancy->address_ssa.find(ssa) != Discrepancy->address_ssa.end();
       bool is_lost = Discrepancy->ssa_to_skip.find(ssa) != Discrepancy->ssa_to_skip.end();
@@ -474,15 +474,15 @@ void DiscrepancyAnalysisCWriter::writePostInstructionInfo
             const BehavioralHelperConstRef BHC = AppM->CGetFunctionBehavior(called_id)->CGetBehavioralHelper();
             if (BHC->has_implementation() and BHC->function_has_to_be_printed(called_id))
             {
-               call_expr *ce = GetPointer<call_expr>(rhs);
+               auto *ce = GetPointer<call_expr>(rhs);
                const std::vector<tree_nodeRef> & actual_args = ce->args;
                tree_nodeRef op0 = GET_NODE(ce->fn);
                if(op0->get_kind() == addr_expr_K && (actual_args.size() == 1 || actual_args.size() == 2))
                {
-                  unary_expr *ue = GetPointer<unary_expr>(op0);
+                  auto *ue = GetPointer<unary_expr>(op0);
                   tree_nodeRef fn = GET_NODE(ue->op);
                   THROW_ASSERT(fn->get_kind() == function_decl_K, "tree node not currently supported " + fn->get_kind_text());
-                  function_decl *fd = GetPointer<function_decl>(fn);
+                  auto *fd = GetPointer<function_decl>(fn);
                   if(fd)
                   {
                      std::map<std::string, std::pair<unsigned int,std::string>>

@@ -95,13 +95,13 @@ class AsnParser : public ParserFlowStep
       /**
        * Destuctor
        */
-      ~AsnParser();
+      ~AsnParser() override;
 
       /**
        * Execute the step
        * @return the exit status of this step
        */
-      virtual DesignFlowStep_Status Exec();
+      DesignFlowStep_Status Exec() override;
 };
 #endif
 

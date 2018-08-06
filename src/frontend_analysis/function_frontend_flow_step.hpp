@@ -45,16 +45,13 @@
 #ifndef FUNCTION_FRONTEND_FLOW_STEP_HPP
 #define FUNCTION_FRONTEND_FLOW_STEP_HPP
 
-///Autoheader include
-#include "config_HAVE_STDCXX_11.hpp"
-#include "config_HAVE_ARCH_BUILT.hpp"
-#include "config_HAVE_BAMBU_BUILT.hpp"
+#include "config_HAVE_BAMBU_BUILT.hpp"               // for HAVE_BAMBU_BUILT
+#include "config_HAVE_STDCXX_11.hpp"                 // for HAVE_STDCXX_11
 
-///Superclass include
-#include "frontend_flow_step.hpp"
-
-///Utility include
-#include "refcount.hpp"
+#include <string>                                    // for string
+#include "design_flow_step.hpp"                      // for DesignFlowStep_S...
+#include "frontend_flow_step.hpp"                    // for FrontendFlowStep...
+#include "refcount.hpp"                              // for REF_FORWARD_DECL
 
 REF_FORWARD_DECL(ArchManager);
 CONSTREF_FORWARD_DECL(DesignFlowManager);
@@ -109,31 +106,31 @@ class FunctionFrontendFlowStep : public FrontendFlowStep
       /**
        * Destructor
        */
-      virtual ~FunctionFrontendFlowStep();
+      ~FunctionFrontendFlowStep() override;
 
       /**
        * Compute the relationships of a step with other steps
        * @param dependencies is where relationships will be stored
        * @param relationship_type is the type of relationship to be computed
        */
-      virtual void ComputeRelationships(DesignFlowStepSet & relationship, const DesignFlowStep::RelationshipType relationship_type);
+      void ComputeRelationships(DesignFlowStepSet & relationship, const DesignFlowStep::RelationshipType relationship_type) override;
 
       /**
        * Return the signature of this step
        */
-      virtual const std::string GetSignature() const;
+      const std::string GetSignature() const override;
 
       /**
        * Return the name of this design step
        * @return the name of the pass (for debug purpose)
        */
-      virtual const std::string GetName() const;
+      const std::string GetName() const override;
 
       /**
        * Execute the step
        * @return the exit status of this step
        */
-      virtual DesignFlowStep_Status Exec()
+      DesignFlowStep_Status Exec()
 #if HAVE_STDCXX_11
          final
 #endif
@@ -152,7 +149,7 @@ class FunctionFrontendFlowStep : public FrontendFlowStep
        * Check if this step has actually to be executed
        * @return true if the step has to be executed
        */
-      virtual bool HasToBeExecuted() const;
+      bool HasToBeExecuted() const override;
 
       /**
        * @return on which bb version this step has been executed last time
@@ -162,11 +159,11 @@ class FunctionFrontendFlowStep : public FrontendFlowStep
       /**
        * Dump the initial intermediate representation
        */
-      virtual void PrintInitialIR() const;
+      void PrintInitialIR() const override;
 
       /**
        * Dump the final intermediate representation
        */
-      virtual void PrintFinalIR() const;
+      void PrintFinalIR() const override;
 };
 #endif

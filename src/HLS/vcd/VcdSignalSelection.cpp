@@ -91,6 +91,7 @@
 
 // include from utility
 #include "cpu_time.hpp"
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 VcdSignalSelection::VcdSignalSelection
 (
@@ -116,7 +117,7 @@ VcdSignalSelection::VcdSignalSelection
 }
 
 VcdSignalSelection::~VcdSignalSelection()
-{}
+= default;
 
 bool VcdSignalSelection::IsAddressType(const unsigned int type_index) const
 {
@@ -167,7 +168,7 @@ void VcdSignalSelection::SelectInitialAddrParam(
       const tree_nodeConstRef fun_decl_node = TM->CGetTreeNode(fun_id);
       THROW_ASSERT(fun_decl_node->get_kind() == function_decl_K,
          fun_decl_node->ToString() + " is of kind " + tree_node::GetString(fun_decl_node->get_kind()));
-      const function_decl * fu_dec = GetPointer<const function_decl>(fun_decl_node);
+      const auto * fu_dec = GetPointer<const function_decl>(fun_decl_node);
       for (const auto & parm_decl_node : fu_dec->list_of_args)
       {
          THROW_ASSERT(GET_NODE(parm_decl_node)->get_kind() == parm_decl_K,
@@ -186,7 +187,7 @@ void VcdSignalSelection::InitialSsaIsAddress(
 {
    THROW_ASSERT(tn->get_kind() == gimple_assign_K,
          tn->ToString() + " is of kind " + tree_node::GetString(tn->get_kind()));
-   const gimple_assign * g_as_node = GetPointer<const gimple_assign>(tn);
+   const auto * g_as_node = GetPointer<const gimple_assign>(tn);
    /* check if the left value is an ssa_name_K */
    const tree_nodeRef ssa_node = GET_NODE(g_as_node->op0);
    if (ssa_node->get_kind() != ssa_name_K)
@@ -245,17 +246,17 @@ void VcdSignalSelection::InitialSsaIsAddress(
    unsigned int rhs_type_index;
    if (rhs_kind == nop_expr_K)
    {
-      const nop_expr * nop = GetPointer<const nop_expr>(rhs);
+      const auto * nop = GetPointer<const nop_expr>(rhs);
       rhs_type_index = tree_helper::get_type_index(TM, GET_INDEX_NODE(nop->op));
    }
    else if (rhs_kind == convert_expr_K)
    {
-      const convert_expr * convert = GetPointer<const convert_expr>(rhs);
+      const auto * convert = GetPointer<const convert_expr>(rhs);
       rhs_type_index = tree_helper::get_type_index(TM, GET_INDEX_NODE(convert->op));
    }
    else if (rhs_kind == view_convert_expr_K)
    {
-      const view_convert_expr * view_convert = GetPointer<const view_convert_expr>(rhs);
+      const auto * view_convert = GetPointer<const view_convert_expr>(rhs);
       rhs_type_index = tree_helper::get_type_index(TM, GET_INDEX_NODE(view_convert->op));
    }
    else
@@ -321,7 +322,7 @@ void VcdSignalSelection::SelectInitialSsa(
           * ssa is not used, the output wire is not placed by the interconnection and
           * the simulator dies when it tries to find it
           */
-         const ssa_name * ssa = GetPointer<const ssa_name>(assigned_ssa_tree_node);
+         const auto * ssa = GetPointer<const ssa_name>(assigned_ssa_tree_node);
          if (ssa->CGetUseStmts().empty())
          {
             Discr->ssa_to_skip.insert(assigned_ssa_tree_node);
@@ -360,14 +361,14 @@ void VcdSignalSelection::SingleStepPropagateParamToSsa(
       const TreeNodeMap<size_t> & used_ssa,
       const TreeNodeSet & address_parameters)
 {
-   TreeNodeMap<size_t>::const_iterator ssause_it = used_ssa.begin();
+   auto ssause_it = used_ssa.begin();
    const TreeNodeMap<size_t>::const_iterator ssause_end = used_ssa.end();
    for (; ssause_it != ssause_end; ++ssause_it)
    {
       THROW_ASSERT(ssause_it->first->get_kind() == tree_reindex_K,
          ssause_it->first->ToString() + " is of kind " + tree_node::GetString(ssause_it->first->get_kind()));
       const tree_nodeRef ssa_node = GET_NODE(ssause_it->first);
-      const ssa_name * ssa = GetPointer<const ssa_name>(ssa_node);
+      const auto * ssa = GetPointer<const ssa_name>(ssa_node);
       if (!ssa->var)
          continue;
       THROW_ASSERT(ssa->var->get_kind() == tree_reindex_K,
@@ -412,7 +413,7 @@ void VcdSignalSelection::PropagateAddrParamToSsa(
          const tree_nodeConstRef curr_tn = TM->CGetTreeNode(st_tn_id);
          if (curr_tn->get_kind() == gimple_assign_K)
          {
-            const gimple_assign * g_as_node = GetPointer<const gimple_assign>(curr_tn);
+            const auto * g_as_node = GetPointer<const gimple_assign>(curr_tn);
             const TreeNodeMap<size_t> used_ssa = tree_helper::ComputeSsaUses(g_as_node->op1);
             SingleStepPropagateParamToSsa(used_ssa, addrp_it->second);
          }
@@ -433,7 +434,7 @@ void VcdSignalSelection::SingleStepPropagateAddrSsa(const tree_nodeRef & curr_tn
    const tree_nodeConstRef tn = GET_NODE(curr_tn);
    if (tn->get_kind() == gimple_assign_K)
    {
-      const gimple_assign * g_as_node = GetPointer<const gimple_assign>(tn);
+      const auto * g_as_node = GetPointer<const gimple_assign>(tn);
       /* check if the left value is an ssa_name_K */
       const tree_nodeRef ssa_node = GET_NODE(g_as_node->op0);
       if (tree_helper::is_real(TM, ssa_node->index) or tree_helper::is_a_complex(TM, ssa_node->index))
@@ -457,7 +458,7 @@ void VcdSignalSelection::SingleStepPropagateAddrSsa(const tree_nodeRef & curr_tn
          bool is_a_vector_bitfield = false;
          if (rhs_kind == bit_field_ref_K)
          {
-            const bit_field_ref* bfr = GetPointer<const bit_field_ref>(rhs);
+            const auto* bfr = GetPointer<const bit_field_ref>(rhs);
             if (tree_helper::is_a_vector(TM, GET_INDEX_NODE(bfr->op0)))
                is_a_vector_bitfield = true;
          }
@@ -470,7 +471,7 @@ void VcdSignalSelection::SingleStepPropagateAddrSsa(const tree_nodeRef & curr_tn
 
          if (rhs_kind == view_convert_expr_K)
          {
-            const view_convert_expr* vc = GetPointer<const view_convert_expr>(rhs);
+            const auto* vc = GetPointer<const view_convert_expr>(rhs);
             const auto vc_kind = tree_helper::get_type_node(GET_NODE(vc->op))->get_kind();
             if (vc_kind == record_type_K || vc_kind == union_type_K)
                rhs_is_load_candidate = true;
@@ -542,7 +543,7 @@ void VcdSignalSelection::DetectInvalidReturns(
          const tree_nodeConstRef tn = TM->CGetTreeNode(node_id);
          if (tn->get_kind() == gimple_return_K)
          {
-            const gimple_return * gr = GetPointer<const gimple_return>(tn);
+            const auto * gr = GetPointer<const gimple_return>(tn);
             if (gr->op != nullptr and
                   (IsAddressType(tree_helper::get_type_index(TM, GET_INDEX_NODE(gr->op))) or
                   (GET_NODE(gr->op)->get_kind() == ssa_name_K and Discr->address_ssa.find(GET_NODE(gr->op)) != Discr->address_ssa.end())))
@@ -607,7 +608,7 @@ void VcdSignalSelection::CrossPropagateAddrSsa(
                HLSMgr->CGetFunctionBehavior(called_id)->CGetBehavioralHelper();
             if (call_node->get_kind() == gimple_assign_K)
             {
-               const gimple_assign * g_as = GetPointer<const gimple_assign>(call_node);
+               const auto * g_as = GetPointer<const gimple_assign>(call_node);
                const tree_nodeRef ssa_node = GET_NODE(g_as->op0);
                const tree_nodeConstRef rhs = GET_NODE(g_as->op1);
                if (ssa_node->get_kind() == ssa_name_K and (rhs->get_kind() == call_expr_K || rhs->get_kind() == aggr_init_expr_K))
@@ -685,12 +686,12 @@ void VcdSignalSelection::CrossPropagateAddrSsa(
             const tree_nodeConstRef direct_called_fun_decl_node =
                TM->CGetTreeNode(direct_called_id);
 #if HAVE_ASSERTS
-            const function_decl * direct_fu_dec =
+            const auto * direct_fu_dec =
                GetPointer<const function_decl>(direct_called_fun_decl_node);
 #endif
             const tree_nodeConstRef called_fun_decl_node =
                TM->CGetTreeNode(called_id);
-            const function_decl * fu_dec =
+            const auto * fu_dec =
                GetPointer<const function_decl>(called_fun_decl_node);
             std::list<unsigned int>::const_iterator par_id_it, par_id_end;
             if (called_id == direct_called_id)
@@ -894,7 +895,7 @@ void VcdSignalSelection::SelectInternalSignals(
          }
          else if (op_node->get_kind() == gimple_phi_K)
          {
-            const gimple_phi * phi = GetPointer<const gimple_phi>(op_node);
+            const auto * phi = GetPointer<const gimple_phi>(op_node);
             if (not phi->virtual_flag)
             {
                const StorageValueInformationRef storage_val_info = HLSMgr->get_HLS(f_id)->storage_value_information;
@@ -1038,7 +1039,7 @@ DesignFlowStep_Status VcdSignalSelection::Exec()
    for (const auto s : Discr->address_ssa)
    {
       const unsigned int ssa_index = s->index;
-      const ssa_name * ssa = GetPointer<const ssa_name>(s);
+      const auto * ssa = GetPointer<const ssa_name>(s);
       if (ssa and IsAddressType(tree_helper::get_type_index(TM, ssa_index)))
       {
          pointers_n++;

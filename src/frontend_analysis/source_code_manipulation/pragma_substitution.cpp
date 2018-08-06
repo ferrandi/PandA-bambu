@@ -52,8 +52,10 @@
 ///Parser include
 #include "PragmaParser.hpp"
 
-///Utility include
-#include "utility.hpp"
+#include "hash_helper.hpp"
+#include "string_manipulation.hpp"          // for GET_CLASS
+#include <boost/filesystem/path.hpp>
+#include <boost/filesystem/operations.hpp>
 
 PragmaSubstitution::PragmaSubstitution(const application_managerRef _AppM, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters) :
    ApplicationFrontendFlowStep(_AppM, PRAGMA_SUBSTITUTION, _design_flow_manager, _parameters)
@@ -62,7 +64,7 @@ PragmaSubstitution::PragmaSubstitution(const application_managerRef _AppM, const
 }
 
 PragmaSubstitution::~PragmaSubstitution()
-{}
+= default;
 
 const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship> > PragmaSubstitution::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {

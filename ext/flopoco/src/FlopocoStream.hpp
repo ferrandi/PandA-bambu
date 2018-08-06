@@ -139,7 +139,7 @@ namespace flopoco{
 				ostringstream vhdlO;
 				istringstream in( vhdlCodeBuffer.str() );
 				/* instantiate the flex++ object  for lexing the buffer info */
-				LexerContext* lexer = new LexerContext(&in, &vhdlO);
+				auto* lexer = new LexerContext(&in, &vhdlO);
 				/* This variable is visible from within the flex++ scanner class */
 				lexer->yyTheCycle = currentCycle;
 				/* call the FlexLexer ++ on the buffer. The lexing output is

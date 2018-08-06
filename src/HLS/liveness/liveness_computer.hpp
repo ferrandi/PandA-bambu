@@ -57,7 +57,7 @@ class liveness_computer : public HLSFunctionStep
        * @param relationship_type is the type of relationship to be considered
        * @return the steps in relationship with this
        */
-      virtual const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const;
+      const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
    public:
       /**
@@ -70,6 +70,6 @@ class liveness_computer : public HLSFunctionStep
       /**
        * Destructor
        */
-      virtual ~liveness_computer();
+      ~liveness_computer() override;
 };
 #endif

@@ -77,6 +77,7 @@
 #include "constant_strings.hpp"
 
 #include "simple_indent.hpp"
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 const unsigned int technology_manager::XML = 1 << 0;
 #if HAVE_FROM_LIBERTY
@@ -92,20 +93,18 @@ technology_manager::technology_manager(const ParameterConstRef _Param) :
 }
 
 technology_manager::~technology_manager()
-{
-
-}
+= default;
 
 
 void technology_manager::print(std::ostream& os) const
 {
-   for (std::vector<std::string>::const_iterator lib = libraries.begin(); lib != libraries.end(); ++lib)
+   for (const auto & librarie : libraries)
    {
-      const library_managerRef library = library_map.find(*lib)->second;
+      const library_managerRef library = library_map.find(librarie)->second;
       const library_manager::fu_map_type& cells = library->get_library_fu();
-      for (library_manager::fu_map_type::const_iterator it = cells.begin(); it != cells.end(); ++it)
+      for (const auto & cell : cells)
       {
-         it->second->print(os);
+         cell.second->print(os);
       }
    }
 }
@@ -209,7 +208,7 @@ void technology_manager::add_operation(const std::string&Library, const std::str
 
 void technology_manager::add(const technology_nodeRef curr, const std::string&Library)
 {
-   std::vector<std::string>::iterator it = std::find(libraries.begin(), libraries.end(), Library);
+   auto it = std::find(libraries.begin(), libraries.end(), Library);
    if (it == libraries.end())
    {
       bool std = true;
@@ -228,14 +227,14 @@ void technology_manager::xload(const xml_element* node, const target_deviceRef d
    std::set<library_managerRef> temp_libraries;
 
    const xml_node::node_list list = node->get_children();
-   for (xml_node::node_list::const_iterator iter = list.begin(); iter != list.end(); ++iter)
+   for (const auto & iter : list)
    {
-      const xml_element* Enode = GetPointer<const xml_element>(*iter);
+      const auto* Enode = GetPointer<const xml_element>(iter);
       if(!Enode) continue;
       if(Enode->get_name() == "information")
       {
          const attribute_sequence::attribute_list& attr_list = Enode->get_attributes();
-         for(attribute_sequence::attribute_list::const_iterator a = attr_list.begin(); a != attr_list.end(); ++a)
+         for(auto a = attr_list.begin(); a != attr_list.end(); ++a)
          {
 #if HAVE_FROM_LIBERTY
             std::string key = (*a)->get_name();
@@ -263,7 +262,7 @@ void technology_manager::xload(const xml_element* node, const target_deviceRef d
          {
             const library_manager::fu_map_type& fus = LM->get_library_fu();
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Updating library " + library_name);
-            for(library_manager::fu_map_type::const_iterator f = fus.begin(); f != fus.end(); ++f)
+            for(auto f = fus.begin(); f != fus.end(); ++f)
             {
                if (library_map[library_name]->is_fu(f->first))
                {
@@ -440,9 +439,9 @@ void technology_manager::lef_write(const std::string& filename, TargetDevice_Typ
 std::string technology_manager::get_library(const std::string& Name) const
 {
    std::string Library;
-   for(unsigned int i = 0; i < libraries.size(); i++)
+   for(const auto & librarie : libraries)
    {
-      Library = libraries[i];
+      Library = librarie;
       THROW_ASSERT(library_map.find(Library) != library_map.end(), "Library " + Library + " not found");
       if (library_map.find(Library)->second->is_fu(Name))
          return Library;

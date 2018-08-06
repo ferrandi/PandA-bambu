@@ -48,14 +48,16 @@
 #ifndef SCHEDULING_HPP
 #define SCHEDULING_HPP
 
+#include <unordered_map>
+
 #include "hls_function_step.hpp"
+#include "graph.hpp"
+#include "strong_typedef.hpp"
+
 CONSTREF_FORWARD_DECL(OpGraph);
 REF_FORWARD_DECL(DesignFlowStep);
 UINT_STRONG_TYPEDEF_FORWARD_DECL(ControlStep);
 
-#include "graph.hpp"
-
-#include <unordered_map>
 
 /**
  * Generic class managing scheduling algorithms.
@@ -125,7 +127,7 @@ class Scheduling : public HLSFunctionStep
        * @param relationship_type is the type of relationship to be considered
        * @return the steps in relationship with this
        */
-      virtual const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const;
+      const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
    public:
       /**
@@ -138,7 +140,7 @@ class Scheduling : public HLSFunctionStep
       /**
        * Destructor.
        */
-      virtual ~Scheduling();
+      ~Scheduling() override;
 
       /**
        * It returns speculation property map
@@ -149,6 +151,6 @@ class Scheduling : public HLSFunctionStep
       /**
        * Initialize the step (i.e., like a constructor, but executed just before exec
        */
-      virtual void Initialize();
+      void Initialize() override;
 };
 #endif

@@ -8,7 +8,7 @@
 #ifdef _WIN32
   #include "pstdint.h"
 #else
-  #include <inttypes.h>
+  #include <cinttypes>
 #endif
 
 namespace flopoco{

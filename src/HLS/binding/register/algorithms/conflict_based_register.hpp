@@ -77,7 +77,7 @@ class conflict_based_register : public reg_binding_creator
       /**
        * Destructor of the class.
        */
-      virtual ~conflict_based_register();
+      ~conflict_based_register() override;
 
       /**
        * Create the conflict graph

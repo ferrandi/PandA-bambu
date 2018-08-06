@@ -46,8 +46,8 @@
 #include "objective_function.hpp"
 
 objective_function::objective_function()
-{}
+= default;
 
 
 objective_function::~objective_function()
-{}
+= default;

@@ -53,8 +53,8 @@
 #include <iosfwd>
 #include <sstream>
 #include <vector>
-#include <math.h>
-#include <string.h>
+#include <cmath>
+#include <cstring>
 
 #include <cstddef>
 #include <gmp.h>
@@ -72,10 +72,10 @@
 #include <list>
 #include <map>
 #include <vector>
-#include <math.h>
+#include <cmath>
 #include <locale>
 
-#include <stdio.h>
+#include <cstdio>
 #include <mpfr.h>
 
 #include "flopoco_wrapper.hpp"
@@ -123,8 +123,7 @@ namespace flopoco{
    }
 
 
-   FPlt_expr::~FPlt_expr() {
-   }
+   FPlt_expr::~FPlt_expr() = default;
 
 
    void FPlt_expr::emulate(TestCase * )

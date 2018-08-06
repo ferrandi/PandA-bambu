@@ -5786,22 +5786,13 @@ float ADD_BUILTIN_PREFIX(powf)(float x, float y)
    {
       eR=eR+1;
       mR1= SELECT_RANGE(mR, 56, 17);
-      sticky_bit = (SELECT_RANGE(mR,20,0) == 0) ? 0 : 1;
-      round_bit = SELECT_BIT(mR1, 4);
-      guard_bit = SELECT_BIT(mR1, 5);
-      LSB_bit = SELECT_BIT(mR1, 6);
    }
    else
    {
       mR1=SELECT_RANGE(mR,55,16);
-      sticky_bit = (SELECT_RANGE(mR,19,0) == 0) ? 0 : 1;
-      round_bit = SELECT_BIT(mR1, 4);
-      guard_bit = SELECT_BIT(mR1, 5);
-      LSB_bit = SELECT_BIT(mR1, 6);
    }
 
-   _Bool _round = guard_bit&(LSB_bit|round_bit|sticky_bit);
-   _round=1;
+   _Bool _round = 1;
    mR3 = (mR1 >> 6) + _round;
    mR2= SELECT_RANGE(mR3,33,0);
 

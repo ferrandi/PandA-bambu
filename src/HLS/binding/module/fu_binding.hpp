@@ -52,6 +52,7 @@
 
 #include "refcount.hpp"
 #include "utility.hpp"
+
 /**
 * @name forward declarations
 */
@@ -242,7 +243,7 @@ class fu_binding
        */
       unsigned int get_number(unsigned int unit) const
       {
-         std::map<unsigned int, unsigned int>::const_iterator it = allocation_map.find(unit);
+         auto it = allocation_map.find(unit);
          if (it != allocation_map.end())
             return it->second;
          else

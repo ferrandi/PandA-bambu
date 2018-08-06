@@ -63,9 +63,7 @@ storage_value_insertion::storage_value_insertion(const ParameterConstRef _Param,
 }
 
 storage_value_insertion::~storage_value_insertion()
-{
-
-}
+= default;
 
 const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > storage_value_insertion::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {

@@ -76,9 +76,7 @@ liveness::liveness(const HLS_managerRef _HLSMgr, const ParameterConstRef _Param)
 }
 
 liveness::~liveness()
-{
-
-}
+= default;
 
 bool liveness::is_defined(unsigned int var) const
 {
@@ -224,7 +222,7 @@ bool liveness::are_in_conflict (vertex op1, vertex op2) const
       const std::set<vertex>& op1_run = get_state_where_run(op1);
       const std::set<vertex>& op2_run = get_state_where_run(op2);
       const std::set<vertex>::const_iterator op1_run_it_end = op1_run.end();
-      for(std::set<vertex>::const_iterator op1_run_it = op1_run.begin(); op1_run_it != op1_run_it_end; ++op1_run_it)
+      for(auto op1_run_it = op1_run.begin(); op1_run_it != op1_run_it_end; ++op1_run_it)
          if(op2_run.find(*op1_run_it) != op2_run.end())
             return true;
       return false;

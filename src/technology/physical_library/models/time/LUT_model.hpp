@@ -84,10 +84,10 @@ class LUT_model : public time_model
       /**
        * Destructor
        */
-      virtual ~LUT_model();
+      ~LUT_model() override;
       //@}
 
-      void xwrite(xml_element* pin_node, const std::string& output_pin);
+      void xwrite(xml_element* pin_node, const std::string& output_pin) override;
 
       /**
        * Sets the timing information for the specified type

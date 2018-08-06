@@ -88,7 +88,7 @@ struct DiscrepancyLog {
          const HLS_managerConstRef HLSMgr,
          const vcd_trace_head & t,
          const uint64_t c_context,
-         const std::string& _c_val,
+         std::string  _c_val,
          const unsigned int el_idx,
          const std::string::size_type _first_c_bit,
          const std::string::size_type _c_size,
@@ -107,15 +107,15 @@ class vcd_utility : public HLS_step
       vcd_utility(const ParameterConstRef parameters, const HLS_managerRef HLSMgr, const DesignFlowManagerConstRef design_flow_manager);
 
       /* Destructor */
-      ~vcd_utility(){}
+      ~vcd_utility() override= default;
 
       /**
        * Execute the step
        * @return the exit status of this step
        */
-      DesignFlowStep_Status Exec();
+      DesignFlowStep_Status Exec() override;
 
-      bool HasToBeExecuted() const;
+      bool HasToBeExecuted() const override;
 
    protected:
 
@@ -144,11 +144,11 @@ class vcd_utility : public HLS_step
        * Return the set of analyses in relationship with this design step
        * @param relationship_type is the type of relationship to be considered
        */
-      virtual const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> >
-      ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const;
+      const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> >
+      ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
-      virtual void ComputeRelationships(DesignFlowStepSet & relationship,
-            const DesignFlowStep::RelationshipType relationship_type);
+      void ComputeRelationships(DesignFlowStepSet & relationship,
+            const DesignFlowStep::RelationshipType relationship_type) override;
 
       bool detect_mismatch(
             const vcd_trace_head & t,

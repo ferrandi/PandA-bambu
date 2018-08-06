@@ -68,6 +68,7 @@ REF_FORWARD_DECL(xml_document);
 #endif
 #include "xmlLexer.hpp"
 #include "exceptions.hpp"
+#include "string_manipulation.hpp"          // for STR
 using namespace std;
 
 ///Skipping warnings due to flex

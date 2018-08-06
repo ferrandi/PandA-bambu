@@ -68,7 +68,7 @@ class compute_implicit_calls : public FunctionFrontendFlowStep
        * Return the set of analyses in relationship with this design step
        * @param relationship_type is the type of relationship to be considered
        */
-      virtual const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const;
+      const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
    public:
       /**
@@ -83,12 +83,12 @@ class compute_implicit_calls : public FunctionFrontendFlowStep
       /**
        *  Destructor
        */
-      ~compute_implicit_calls();
+      ~compute_implicit_calls() override;
 
       /**
        * Determines the variables that require a memory access
        */
-      DesignFlowStep_Status InternalExec();
+      DesignFlowStep_Status InternalExec() override;
 
 };
 #endif

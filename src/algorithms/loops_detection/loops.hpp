@@ -51,13 +51,18 @@
 
 ///Autoheader include
 #include "config_HAVE_HOST_PROFILING_BUILT.hpp"
+#include <cstddef>                                  // for size_t
+#include <list>                                      // for list
+#include <set>                                       // for set
+#include <string>                                    // for string
+#include <unordered_map>                             // for unordered_map
+#include <unordered_set>                             // for unordered_set
+#include <utility>                                   // for pair
+#include <vector>                                    // for vector
 
-#include "refcount.hpp"
 #include "graph.hpp"
+#include "refcount.hpp"
 
-#include <set>
-#include <list>
-#include <unordered_map>
 
 /**
  * @name forward declarations
@@ -69,8 +74,6 @@ CONSTREF_FORWARD_DECL(Loop);
 REF_FORWARD_DECL(Loop);
 CONSTREF_FORWARD_DECL(Parameter);
 CONSTREF_FORWARD_DECL(ProfilingInformation);
-class graph;
-template <typename Graph> class dominance;
 //@}
 
 // This class represents a loop forest for a given method.

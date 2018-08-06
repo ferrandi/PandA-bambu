@@ -56,14 +56,14 @@ class DataDependenceComputation : public FunctionFrontendFlowStep
 {
    protected:
       /**
-       * Compute the dependences
+       * Compute the dependencies
        * @param dfg_selector is the selector to be used for DFG dependence
        * @param fb_dfg_selector is the selector to be used for DFG feedback dependence
        * @param adg_selector is the selector to be used for ADG dependence
        * @param fb_adg_selector is the selector to be used for ADG feedback dependence
        */
       template <typename type>
-      DesignFlowStep_Status ComputeDependences(const int dfg_selector, const int fb_dfg_selector, const int adg_selector, const int fb_adg_selector);
+      DesignFlowStep_Status Computedependencies(const int dfg_selector, const int fb_dfg_selector, const int adg_selector, const int fb_adg_selector);
 
       /**
        * Return the variables accessed in a node
@@ -88,13 +88,13 @@ class DataDependenceComputation : public FunctionFrontendFlowStep
       /**
        *  Destructor
        */
-      virtual ~DataDependenceComputation();
+      ~DataDependenceComputation() override;
 
       /**
-       * Cleans the fake data dependences
+       * Cleans the fake data dependencies
        * @return the exit status of this step
        */
-      virtual DesignFlowStep_Status InternalExec()
+      DesignFlowStep_Status InternalExec()
 #if HAVE_STDCXX_11
          final
 #endif
@@ -103,6 +103,6 @@ class DataDependenceComputation : public FunctionFrontendFlowStep
       /**
        * Initialize the step (i.e., like a constructor, but executed just before exec
        */
-      virtual void Initialize() = 0;
+      void Initialize() override = 0;
 };
 #endif

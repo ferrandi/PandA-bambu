@@ -59,18 +59,18 @@ class FSM_NI_SSA_liveness : public liveness_computer
       /**
        * Destructor
        */
-      virtual ~FSM_NI_SSA_liveness();
+      ~FSM_NI_SSA_liveness() override;
 
       /**
        * Execute the step
        * @return the exit status of this step
        */
-      virtual DesignFlowStep_Status InternalExec();
+      DesignFlowStep_Status InternalExec() override;
 
       /**
        * Initialize the step (i.e., like a constructor, but executed just before exec
        */
-      virtual void Initialize();
+      void Initialize() override;
 };
 #endif
 

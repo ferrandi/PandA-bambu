@@ -33,13 +33,13 @@ namespace flopoco{
 		/**
 		 * FPMultiplier destructor
 		 */
-		~FPMultiplier();
+		~FPMultiplier() override;
 
 		/**
 		 * Emulate the operator using MPFR.
 		 * @param tc a TestCase partially filled with input values 
 		 */
-		void emulate(TestCase * tc);
+		void emulate(TestCase * tc) override;
 
 
 	protected:

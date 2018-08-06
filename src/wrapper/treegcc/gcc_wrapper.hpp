@@ -97,6 +97,8 @@ enum class GccWrapper_OptimizationSet
    O5,      /**< -O5 */
    Og,      /**< -Og */
    Os,      /**< -Os */
+   Oz,      /**< -Oz */
+   Ofast,   /**< -Ofast */
 #if HAVE_BAMBU_BUILT
    OBAMBU,  /**< Bambu optimizationss + OPT_gcc_opt_level */
    OSF,     /**< Bambu optimizations for soft float: O3 + -finline-limit=10000 */

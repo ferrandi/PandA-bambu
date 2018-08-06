@@ -51,6 +51,8 @@
 #include "xml_script_command.hpp"
 
 #include "Parameter.hpp"
+#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_
+#include <iostream>
 
 //constructor
 map_wrapper::map_wrapper(const ParameterConstRef _Param, const std::string& _output_dir, const target_deviceRef _device) :
@@ -61,9 +63,7 @@ map_wrapper::map_wrapper(const ParameterConstRef _Param, const std::string& _out
 
 //destructor
 map_wrapper::~map_wrapper()
-{
-
-}
+= default;
 
 void map_wrapper::init_reserved_vars()
 {
@@ -82,9 +82,8 @@ std::string map_wrapper::get_command_line(const DesignParametersRef& dp) const
 {
    std::ostringstream s;
    s << get_tool_exec();
-   for (std::vector<xml_parameter_tRef>::const_iterator it = xml_tool_options.begin(); it != xml_tool_options.end(); ++it)
+   for (const auto & option : xml_tool_options)
    {
-      const xml_parameter_tRef & option = *it;
       if (option->checkCondition(dp))
       {
          std::string value = toString(option, dp);

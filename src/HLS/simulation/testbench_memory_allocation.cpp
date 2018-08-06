@@ -54,6 +54,8 @@
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
+#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_
+#include "string_manipulation.hpp"          // for STR
 
 TestbenchMemoryAllocation::TestbenchMemoryAllocation
 (
@@ -71,7 +73,7 @@ TestbenchMemoryAllocation::TestbenchMemoryAllocation
 {}
 
 TestbenchMemoryAllocation::~TestbenchMemoryAllocation()
-{}
+= default;
 
 DesignFlowStep_Status TestbenchMemoryAllocation::Exec()
 {

@@ -63,9 +63,7 @@ XilinxWrapper::XilinxWrapper(const ParameterConstRef _Param, const std::string& 
 }
 
 XilinxWrapper::~XilinxWrapper()
-{
-
-}
+= default;
 
 void XilinxWrapper::generate_synthesis_script(const DesignParametersRef& dp, const std::string& file_name)
 {
@@ -111,7 +109,7 @@ std::string XilinxWrapper::getStringValue(const xml_script_node_tRef node, const
          else if (var->multiValues.size())
          {
             result += "{";
-            for (std::vector<xml_set_entry_tRef>::const_iterator it = var->multiValues.begin(); it != var->multiValues.end(); ++it)
+            for (auto it = var->multiValues.begin(); it != var->multiValues.end(); ++it)
             {
                const xml_set_entry_tRef e = *it;
                if (it != var->multiValues.begin())
@@ -175,9 +173,8 @@ std::string XilinxWrapper::toString(const xml_script_node_tRef node, const Desig
          if (comm->name)
             result += *(comm->name);
          if (comm->parameters.size())
-            for (std::vector<xml_parameter_tRef>::const_iterator it = comm->parameters.begin(); it != comm->parameters.end(); ++it)
+            for (auto p : comm->parameters)
             {
-               const xml_parameter_tRef p = *it;
                if (p->condition && !xml_script_node_t::evaluate_condition(p->condition, dp)) continue;
                result += "\n" + toString(p, dp);
             }

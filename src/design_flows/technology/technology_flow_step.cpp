@@ -47,6 +47,7 @@
 
 ///design_flows/technology include
 #include "technology_flow_step_factory.hpp"
+#include "string_manipulation.hpp"
 
 const std::string TechnologyFlowStep::EnumToName(const TechnologyFlowStep_Type technology_flow_step_type)
 {

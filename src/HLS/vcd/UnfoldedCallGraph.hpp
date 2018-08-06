@@ -45,9 +45,9 @@
 class UnfoldedCallGraph : public RawGraph
 {
    public:
-      explicit UnfoldedCallGraph(GraphInfoRef g_info) : RawGraph(g_info) {};
+      explicit UnfoldedCallGraph(GraphInfoRef g_info) : RawGraph(g_info) {}
 
-      ~UnfoldedCallGraph() {};
+      ~UnfoldedCallGraph() = default;
 };
 
 typedef boost::graph_traits<UnfoldedCallGraph>::vertex_descriptor UnfoldedVertexDescriptor;

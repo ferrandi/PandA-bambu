@@ -45,17 +45,13 @@
 #ifndef CALL_GRAPH_MANAGER_HPP
 #define CALL_GRAPH_MANAGER_HPP
 
-///Graph include
-#include "graph.hpp"
-#include "call_graph.hpp"
-
-///STL include
-#include <list>
-#include <set>
-#include <unordered_set>
-
-///Utility include
-#include "refcount.hpp"
+#include <boost/graph/depth_first_search.hpp>        // for default_dfs_visitor
+#include <map>                                       // for map
+#include <set>                                       // for set
+#include <unordered_set>                             // for unordered_set
+#include "call_graph.hpp"                            // for CallGraph (ptr o...
+#include "graph.hpp"                                 // for vertex, EdgeDesc...
+#include "refcount.hpp"                              // for CONSTREF_FORWARD...
 
 CONSTREF_FORWARD_DECL(application_manager);
 CONSTREF_FORWARD_DECL(CallGraph);

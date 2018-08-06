@@ -107,21 +107,25 @@
 
 ///Utility include
 #include <boost/config.hpp>
-#include <boost/lexical_cast.hpp>
+#include <boost/date_time.hpp>
+#include <boost/date_time/posix_time/ptime.hpp>
 #include "boost/filesystem/operations.hpp"
 #include "boost/filesystem/path.hpp"
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/topological_sort.hpp>
 #include <boost/graph/filtered_graph.hpp>
 #include <boost/graph/graph_utility.hpp>
+#include <boost/lexical_cast.hpp>
+#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_NONE
 #include "indented_output_stream.hpp"
 #include "refcount.hpp"
+#include "string_manipulation.hpp"          // for GET_CLASS
 
-CBackend::CBackend(const Type _c_backend_type, const CBackendInformationConstRef c_backend_information, const DesignFlowManagerConstRef _design_flow_manager, const application_managerConstRef _AppM, const std::string&_file_name, const ParameterConstRef _parameters) :
+CBackend::CBackend(const Type _c_backend_type, const CBackendInformationConstRef c_backend_information, const DesignFlowManagerConstRef _design_flow_manager, const application_managerConstRef _AppM, std::string _file_name, const ParameterConstRef _parameters) :
    DesignFlowStep(_design_flow_manager, _parameters),
    indented_output_stream(new IndentedOutputStream()),
    writer(CWriter::CreateCWriter(_c_backend_type, c_backend_information, _AppM, indented_output_stream, _parameters, _parameters->getOption<int>(OPT_debug_level) >= DEBUG_LEVEL_VERBOSE)),
-   file_name(_file_name),
+   file_name(std::move(_file_name)),
    AppM(_AppM),
    TM(_AppM->get_tree_manager()),
    c_backend_type(_c_backend_type)
@@ -130,8 +134,7 @@ CBackend::CBackend(const Type _c_backend_type, const CBackendInformationConstRef
 }
 
 CBackend::~CBackend()
-{
-}
+= default;
 
 const CWriterRef CBackend::GetCWriter() const
 {
@@ -473,7 +476,7 @@ void CBackend::ComputeRelationships(DesignFlowStepSet & relationships, const Des
                // before this is executed. At that time the top
                // function will be ready. The dependencies from HLS steps are
                // added after the check on the call graph for this reason.
-               const FrontendFlowStepFactory * frontend_step_factory =
+               const auto * frontend_step_factory =
                   GetPointer<const FrontendFlowStepFactory>
                      (design_flow_manager.lock()->CGetDesignFlowStepFactory("Frontend"));
 
@@ -497,7 +500,7 @@ void CBackend::ComputeRelationships(DesignFlowStepSet & relationships, const Des
                if(boost::num_vertices(*(call_graph_manager->CGetCallGraph())) == 0)
                   break;
 
-               const HLSFlowStepFactory * hls_step_factory = GetPointer<const HLSFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("HLS"));
+               const auto * hls_step_factory = GetPointer<const HLSFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("HLS"));
 
                relationships.insert(hls_step_factory->CreateHLSFlowStep(HLSFlowStep_Type::TESTBENCH_MEMORY_ALLOCATION, HLSFlowStepSpecializationConstRef()));
 
@@ -552,7 +555,7 @@ void CBackend::ComputeRelationships(DesignFlowStepSet & relationships, const Des
                if(c_backend_type == CB_SEQUENTIAL)
                {
                   const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
-                  const HLSFlowStepFactory * hls_step_factory = GetPointer<const HLSFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("HLS"));
+                  const auto * hls_step_factory = GetPointer<const HLSFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("HLS"));
 
                   const vertex classical_hls_synthesis_flow_vertex = design_flow_manager.lock()->GetDesignFlowStep(HLS_step::ComputeSignature(HLSFlowStep_Type::GENERATE_HDL, HLSFlowStepSpecializationConstRef()));
                   const DesignFlowStepRef classical_hls_synthesis_flow_step = classical_hls_synthesis_flow_vertex ? design_flow_graph->CGetDesignFlowStepInfo(classical_hls_synthesis_flow_vertex)->design_flow_step : hls_step_factory->CreateHLSFlowStep(HLSFlowStep_Type::GENERATE_HDL, HLSFlowStepSpecializationConstRef());

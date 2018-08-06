@@ -68,7 +68,7 @@ class ipa_point_to_analysis : public ApplicationFrontendFlowStep
        * Return the set of analyses in relationship with this design step
        * @param relationship_type is the type of relationship to be considered
        */
-      const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const;
+      const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
    public:
       /**
@@ -82,12 +82,12 @@ class ipa_point_to_analysis : public ApplicationFrontendFlowStep
       /**
        *  Destructor
        */
-      ~ipa_point_to_analysis();
+      ~ipa_point_to_analysis() override;
 
       /**
        * Determines the variables that require a memory access
        */
-      DesignFlowStep_Status Exec();
+      DesignFlowStep_Status Exec() override;
 
 };
 #endif

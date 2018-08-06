@@ -72,7 +72,7 @@ public:
    * This method prints the class to the standard output stream.
    * @param os the output stream.
    */
-  virtual void print(std::ostream&) const {};
+  virtual void print(std::ostream&) const {}
 
 
   virtual void set_objective_function(meilp_solverRef const &MS, problem_dimRef const &p_dimension)=0;
@@ -82,7 +82,7 @@ public:
    */
   objective_function();
   /**
-   * The class distructor.
+   * The class Destructor.
    */
   virtual ~objective_function();
 

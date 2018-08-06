@@ -51,20 +51,20 @@
 #include "config_HAVE_FROM_PRAGMA_BUILT.hpp"
 #include "config_HAVE_HOST_PROFILING_BUILT.hpp"
 #include "config_HAVE_ILP_BUILT.hpp"
-#include "config_HAVE_MPPB.hpp"
 #include "config_HAVE_PRAGMA_BUILT.hpp"
 #include "config_HAVE_RTL_BUILT.hpp"
 #include "config_HAVE_TASTE.hpp"
 #include "config_HAVE_TUCANO_BUILT.hpp"
 #include "config_HAVE_ZEBU_BUILT.hpp"
-///Superclass include
-#include "design_flow_step.hpp"
 
-///STL include
-#include <unordered_map>
+#include <cstddef>                                   // for size_t
+#include <string>                                    // for string
+#include <typeindex>                                 // for hash
+#include <unordered_set>                             // for unordered_set
+#include <utility>                                   // for pair
 
-///Utility include
-#include "refcount.hpp"
+#include "design_flow_step.hpp"                      // for DesignFlowStep
+#include "refcount.hpp"                              // for REF_FORWARD_DECL
 
 ///Forward declaration
 CONSTREF_FORWARD_DECL(application_manager);
@@ -398,20 +398,14 @@ class FrontendFlowStep : public DesignFlowStep
       /**
        * Destructor
        */
-      virtual ~FrontendFlowStep();
-
-      /**
-       * Execute the step
-       * @return the exit status of this step
-       */
-      virtual DesignFlowStep_Status Exec() = 0;
+      ~FrontendFlowStep() override;
 
       /**
        * Compute the relationships of a step with other steps
        * @param dependencies is where relationships will be stored
        * @param relationship_type is the type of relationship to be computed
        */
-      virtual void ComputeRelationships(DesignFlowStepSet & relationship, const DesignFlowStep::RelationshipType relationship_type);
+      void ComputeRelationships(DesignFlowStepSet & relationship, const DesignFlowStep::RelationshipType relationship_type) override;
 
       /**
        * Create the relationship steps of a step with other steps starting from already specified dependencies between frontend flow steps
@@ -424,24 +418,13 @@ class FrontendFlowStep : public DesignFlowStep
       void CreateSteps(const DesignFlowManagerConstRef design_flow_manager, const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > & frontend_relationships, const application_managerConstRef application_manager, DesignFlowStepSet & relationships);
 
       /**
-       * Return the signature of this step
-       */
-      virtual const std::string GetSignature() const = 0;
-
-      /**
-       * Return the name of this design step
-       * @return the name of the pass (for debug purpose)
-       */
-      virtual const std::string GetName() const = 0;
-
-      /**
        * Return the name of the type of this frontend flow step
        */
       virtual const std::string GetKindText() const;
 
       /**
        * Given a frontend flow step type, return the name of the type
-       * @param type is the type to be consiedred
+       * @param type is the type to be considered
        * @return the name of the type
        */
       static
@@ -451,7 +434,7 @@ class FrontendFlowStep : public DesignFlowStep
        * Return the factory to create this type of steps
        * @return the factory to create frontend flow step
        */
-      const DesignFlowStepFactoryConstRef CGetDesignFlowStepFactory() const;
+      const DesignFlowStepFactoryConstRef CGetDesignFlowStepFactory() const override;
 
       /**
        * Dump the tree manager
@@ -461,12 +444,12 @@ class FrontendFlowStep : public DesignFlowStep
       /**
        * Dump the initial intermediate representation
        */
-      void PrintInitialIR() const;
+      void PrintInitialIR() const override;
 
       /**
        * Dump the final intermediate representation
        */
-      void PrintFinalIR() const;
+      void PrintFinalIR() const override;
 };
 
 /**

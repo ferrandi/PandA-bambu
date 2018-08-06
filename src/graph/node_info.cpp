@@ -46,10 +46,10 @@
 #include "node_info.hpp"
 
 NodeInfo::NodeInfo()
-{}
+= default;
 
 NodeInfo::~NodeInfo()
-{}
+= default;
 
 void NodeInfo::print(std::ostream& ) const
 {}

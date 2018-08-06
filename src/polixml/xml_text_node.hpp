@@ -60,7 +60,7 @@ class xml_text_node : public xml_node
        * @param formatted when true the xml is formatted in human readable way.
        * @param pp is the pretty print helper.
        */
-      void print(std::ostream& os, bool formatted, simple_indent* ) const
+      void print(std::ostream& os, bool formatted, simple_indent* ) const override
       {
          std::string escaped(get_name());
          convert_unescaped(escaped);

@@ -50,13 +50,11 @@
 #include "schedule.hpp"
 #endif
 
-///STL include
-#include <iosfwd>
-
 ///tree includes
 #include "tree_helper.hpp"
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
+#include "string_manipulation.hpp"          // for STR
 
 
 const unsigned int bloc::ENTRY_BLOCK_ID = 0;
@@ -75,9 +73,7 @@ bloc::bloc(unsigned int _number) :
 }
 
 bloc::~bloc()
-{
-
-}
+= default;
 
 void bloc::visit(tree_node_visitor * const v) const
 {

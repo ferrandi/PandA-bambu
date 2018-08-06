@@ -53,17 +53,17 @@ class ASICBackendFlow : public BackendFlow
       /**
        * Writes the proper flow configuration in the output script
        */
-      void WriteFlowConfiguration(std::ostream& script);
+      void WriteFlowConfiguration(std::ostream& script) override;
 
       /**
        * Checks the synthesis results and fills the corresponding datastructures
        */
-      void CheckSynthesisResults();
+      void CheckSynthesisResults() override;
 
       /**
        * Evaluates design variables
        */
-      void InitDesignParameters();
+      void InitDesignParameters() override;
 
       /**
        * Creates the constraint file
@@ -80,7 +80,7 @@ class ASICBackendFlow : public BackendFlow
       /**
        * Destructor
        */
-      virtual ~ASICBackendFlow();
+      ~ASICBackendFlow() override;
 
 };
 ///Refcount definition for the class

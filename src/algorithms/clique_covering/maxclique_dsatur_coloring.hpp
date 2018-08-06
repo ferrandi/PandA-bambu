@@ -194,8 +194,6 @@ namespace boost
    class maxclique_dsatur_coloring_helper
    {
       private:
-         //no copy constructor
-         maxclique_dsatur_coloring_helper(const maxclique_dsatur_coloring_helper& inst) = delete;
 
          typedef graph_traits<VertexListGraph> GraphTraits;
          typedef typename GraphTraits::vertex_descriptor Vertex;
@@ -243,6 +241,8 @@ namespace boost
          {
             delete[] heap_container;
          }
+         //no copy constructor
+         maxclique_dsatur_coloring_helper(const maxclique_dsatur_coloring_helper& inst) = delete;
          size_type MaxCliqueGreedy()
          {
             SET_container GreedySupport, G1_support;

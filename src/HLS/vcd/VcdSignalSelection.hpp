@@ -58,7 +58,7 @@ class VcdSignalSelection : public HLS_step
        */
       const std::unordered_set
       <std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> >
-      ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const;
+      ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
       /**
        * Selects the initial set of function parameters to skip, iterating on
@@ -229,13 +229,13 @@ class VcdSignalSelection : public HLS_step
       /**
        * Destructor
        */
-      ~VcdSignalSelection();
+      ~VcdSignalSelection() override;
 
       /**
        * Executes the step
        * @return the exit status of this step
        */
-      DesignFlowStep_Status Exec();
+      DesignFlowStep_Status Exec() override;
 
-      bool HasToBeExecuted() const;
+      bool HasToBeExecuted() const override;
 };

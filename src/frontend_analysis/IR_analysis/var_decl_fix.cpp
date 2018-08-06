@@ -77,6 +77,7 @@
 ///Utility include
 #include "dbgPrintHelper.hpp"
 #include "exceptions.hpp"
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 VarDeclFix::VarDeclFix(const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters, const FrontendFlowStepType _frontend_flow_step_type) :
    FunctionFrontendFlowStep(_AppM, _function_id, _frontend_flow_step_type, _design_flow_manager, _parameters)
@@ -85,7 +86,7 @@ VarDeclFix::VarDeclFix(const application_managerRef _AppM, unsigned int _functio
 }
 
 VarDeclFix::~VarDeclFix()
-{}
+= default;
 
 const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship> > VarDeclFix::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
@@ -120,8 +121,8 @@ DesignFlowStep_Status VarDeclFix::InternalExec()
 {
    const tree_managerRef TM = AppM->get_tree_manager();
    const tree_nodeRef curr_tn = TM->GetTreeNode(function_id);
-   function_decl * fd = GetPointer<function_decl>(curr_tn);
-   statement_list * sl = GetPointer<statement_list>(GET_NODE(fd->body));
+   auto * fd = GetPointer<function_decl>(curr_tn);
+   auto * sl = GetPointer<statement_list>(GET_NODE(fd->body));
 
    for(const auto& arg : fd->list_of_args)
       recursive_examinate(arg);
@@ -173,7 +174,7 @@ void VarDeclFix::recursive_examinate(const tree_nodeRef & tn)
       }
       case gimple_assign_K:
       {
-         gimple_assign * gm = GetPointer<gimple_assign>(curr_tn);
+         auto * gm = GetPointer<gimple_assign>(curr_tn);
          recursive_examinate(gm->op0);
          recursive_examinate(gm->op1);
          if(gm->predicate)
@@ -190,14 +191,14 @@ void VarDeclFix::recursive_examinate(const tree_nodeRef & tn)
          if(already_examinated_decls.find(GET_INDEX_NODE(tn)) == already_examinated_decls.end())
          {
             already_examinated_decls.insert(GET_INDEX_NODE(tn));
-            decl_node * dn = GetPointer<decl_node>(GET_NODE(tn));
+            auto * dn = GetPointer<decl_node>(GET_NODE(tn));
             recursive_examinate(dn->type);
             if(dn->name)
             {
                //check if the var_decl
                if(curr_tn->get_kind() == var_decl_K)
                {  /* this is a variable declaration */
-                  var_decl *cast_res = GetPointer<var_decl>(curr_tn);
+                  auto *cast_res = GetPointer<var_decl>(curr_tn);
                   if(cast_res->static_flag == true)
                   {
                      PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Found a static variable with identifier <" + GetPointer<identifier_node>(GET_NODE(dn->name))->strg + "> within function #" + STR(function_id));
@@ -316,7 +317,7 @@ void VarDeclFix::recursive_examinate(const tree_nodeRef & tn)
       }
       case gimple_multi_way_if_K:
       {
-         gimple_multi_way_if* gmwi=GetPointer<gimple_multi_way_if>(curr_tn);
+         auto* gmwi=GetPointer<gimple_multi_way_if>(curr_tn);
          for(const auto& cond : gmwi->list_of_cond)
             if(cond.first)
                recursive_examinate(cond.first);
@@ -348,7 +349,7 @@ void VarDeclFix::recursive_examinate(const tree_nodeRef & tn)
          if(already_examinated_decls.find(GET_INDEX_NODE(tn)) == already_examinated_decls.end())
          {
             already_examinated_decls.insert(GET_INDEX_NODE(tn));
-            type_node * ty = GetPointer<type_node>(GET_NODE(tn));
+            auto * ty = GetPointer<type_node>(GET_NODE(tn));
             if(ty && ty->name && GET_NODE(ty->name)->get_kind() == type_decl_K)
             {
                recursive_examinate(ty->name);
@@ -384,7 +385,7 @@ void VarDeclFix::recursive_examinate(const tree_nodeRef & tn)
       }
       case type_decl_K:
       {
-         type_decl * td = GetPointer<type_decl>(GET_NODE(tn));
+         auto * td = GetPointer<type_decl>(GET_NODE(tn));
          if(td and td->name and td->include_name != "<built-in>" and (not td->operating_system_flag) and (not td->library_system_flag))
          {
             std::string name_id = GetPointer<identifier_node>(GET_NODE(td->name))->strg;

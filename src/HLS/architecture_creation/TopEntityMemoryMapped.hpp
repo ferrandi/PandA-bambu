@@ -75,13 +75,13 @@ class TopEntityMemoryMapped : public top_entity
       /**
        * Destructor.
        */
-      virtual ~TopEntityMemoryMapped();
+      ~TopEntityMemoryMapped() override;
 
       /**
        * Execute the step
        * @return the exit status of this step
        */
-      virtual DesignFlowStep_Status InternalExec();
+      DesignFlowStep_Status InternalExec() override;
 
    private:
       /**
@@ -110,7 +110,7 @@ class TopEntityMemoryMapped : public top_entity
 
       void resizing_IO(module*fu_module, unsigned int max_n_ports) const;
 
-      virtual void Initialize();
+      void Initialize() override;
 };
 
 #endif /* _TOPENTITYMEMORYMAPPED_H_ */

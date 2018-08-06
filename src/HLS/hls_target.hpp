@@ -71,7 +71,7 @@ class HLS_target : public target_manager
       /**
        * Destructor
        */
-      ~HLS_target();
+      ~HLS_target() override;
 
       /**
        * Factory method from XML file

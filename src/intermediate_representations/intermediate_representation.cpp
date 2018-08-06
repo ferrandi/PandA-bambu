@@ -49,7 +49,7 @@ IntermediateRepresentation::IntermediateRepresentation(const ParameterConstRef _
 {}
 
 IntermediateRepresentation::~IntermediateRepresentation()
-{}
+= default;
 
 void IntermediateRepresentation::Initialize()
 {}

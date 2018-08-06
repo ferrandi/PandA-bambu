@@ -41,8 +41,9 @@
  *
 */
 #include "tree_node_mask.hpp"
+#include <string>             // for operator+, string
+#include "exceptions.hpp"     // for THROW_ERROR
 #include "tree_node.hpp"
-#include "tree_basic_block.hpp"
 #include "ext_tree_node.hpp"
 #include "tree_reindex.hpp"
 

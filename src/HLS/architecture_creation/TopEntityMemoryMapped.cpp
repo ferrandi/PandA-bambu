@@ -69,6 +69,8 @@
 #include "tree_helper.hpp"
 
 #include "copyrights_strings.hpp"
+#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 TopEntityMemoryMapped::TopEntityMemoryMapped(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager) :
    top_entity(_parameters, _HLSMgr, _funId, _design_flow_manager, HLSFlowStep_Type::TOP_ENTITY_MEMORY_MAPPED_CREATION),
@@ -77,7 +79,7 @@ TopEntityMemoryMapped::TopEntityMemoryMapped(const ParameterConstRef _parameters
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
-TopEntityMemoryMapped::~TopEntityMemoryMapped() {}
+TopEntityMemoryMapped::~TopEntityMemoryMapped() = default;
 
 void TopEntityMemoryMapped::Initialize()
 {
@@ -208,10 +210,10 @@ void TopEntityMemoryMapped::allocate_parameters() const
 
    // Allocate every parameter on chip.
    const std::list<unsigned int>& topParams = behavioral_helper->get_parameters();
-   for (std::list<unsigned int>::const_iterator itr = topParams.begin(), end = topParams.end(); itr != end; ++itr)
+   for (unsigned int topParam : topParams)
    {
-      base_address = HLSMgr->Rmem->get_symbol(*itr, topIdx)->get_symbol_name();
-      memory::add_memory_parameter(HLS->top, base_address, STR(HLSMgr->Rmem->get_parameter_base_address(topIdx, *itr)));
+      base_address = HLSMgr->Rmem->get_symbol(topParam, topIdx)->get_symbol_name();
+      memory::add_memory_parameter(HLS->top, base_address, STR(HLSMgr->Rmem->get_parameter_base_address(topIdx, topParam)));
    }
 
    // Allocate the return value on chip.
@@ -368,7 +370,7 @@ TopEntityMemoryMapped::insertStartDoneLogic(
                interfaceObj, HLS->HLS_T->get_technology_manager());
       structural_objectRef port_startOr =
             startOr->find_member("in", port_o_K, startOr);
-      port_o * inPortStartOr = GetPointer<port_o>(port_startOr);
+      auto * inPortStartOr = GetPointer<port_o>(port_startOr);
       inPortStartOr->add_n_ports(2, port_startOr);
 
       SM_mm->add_connection(interfaceObj->find_member(START_PORT_NAME, port_o_K, interfaceObj),
@@ -566,11 +568,11 @@ propagateInterface(structural_managerRef SM,
    THROW_ASSERT(wrappedObj, "Null wrapped object");
    structural_objectRef interfaceObj = SM->get_circ();
 
-   module * wrappedModule = GetPointer<module>(wrappedObj);
+   auto * wrappedModule = GetPointer<module>(wrappedObj);
    for (unsigned int i = 0; i < wrappedModule->get_num_ports(); ++i)
    {
       structural_objectRef port = wrappedModule->get_positional_port(i);
-      port_o * portObj = GetPointer<port_o>(port);
+      auto * portObj = GetPointer<port_o>(port);
 
       std::string portID = portObj->get_id();
       if (portID != CLOCK_PORT_NAME && portID != RESET_PORT_NAME &&
@@ -639,11 +641,11 @@ connectClockAndReset(
    static void
 setBusSizes(structural_objectRef component, memoryRef Mem)
 {
-   module * componentModule = GetPointer<module>(component);
+   auto * componentModule = GetPointer<module>(component);
    for (unsigned int i = 0; i < componentModule->get_num_ports(); ++i)
    {
       structural_objectRef port = componentModule->get_positional_port(i);
-      port_o * portObj = GetPointer<port_o>(port);
+      auto * portObj = GetPointer<port_o>(port);
       if (portObj->get_is_data_bus()) portObj->type_resize(Mem->get_bus_data_bitsize());
       else if (portObj->get_is_addr_bus()) portObj->type_resize(Mem->get_bus_addr_bitsize());
       else if (portObj->get_is_size_bus()) portObj->type_resize(Mem->get_bus_size_bitsize());

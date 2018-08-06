@@ -42,8 +42,16 @@
  *
 */
 #include "basic_blocks_graph_constructor.hpp"
-#include "basic_block.hpp"
-#include "tree_basic_block.hpp"
+#include <cstddef>                               // for size_t
+#include <boost/lexical_cast.hpp>                 // for lexical_cast
+#include <boost/tuple/tuple.hpp>                  // for tie
+#include <string>                                 // for allocator, operator+
+#include <utility>                                // for pair
+#include "basic_block.hpp"                        // for BBGraph, BBGraphsCo...
+#include "cdfg_edge_info.hpp"                     // for CFG_SELECTOR, CDG_S...
+#include "exceptions.hpp"                         // for THROW_ASSERT
+#include "string_manipulation.hpp"                // for STR
+#include "tree_basic_block.hpp"                   // for bloc, BB_ENTRY, BB_...
 
 BasicBlocksGraphConstructor::BasicBlocksGraphConstructor(const BBGraphsCollectionRef _bg) :
    bg(_bg),
@@ -53,8 +61,7 @@ BasicBlocksGraphConstructor::BasicBlocksGraphConstructor(const BBGraphsCollectio
 
 
 BasicBlocksGraphConstructor::~BasicBlocksGraphConstructor()
-{
-}
+= default;
 
 vertex BasicBlocksGraphConstructor::add_vertex(blocRef info)
 {

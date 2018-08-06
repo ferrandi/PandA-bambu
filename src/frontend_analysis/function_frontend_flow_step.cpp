@@ -41,39 +41,40 @@
  * Last modified by $Author$
  *
 */
-
-///Header include
 #include "function_frontend_flow_step.hpp"
-
-///. include
-#include "Parameter.hpp"
-
-///behavior includes
-#include "application_manager.hpp"
-#include "basic_block.hpp"
-#include "behavioral_helper.hpp"
-#include "call_graph.hpp"
-#include "call_graph_manager.hpp"
-#include "function_behavior.hpp"
-
-///design_flow include
-#include "design_flow_graph.hpp"
-#include "design_flow_manager.hpp"
-
-///frontend_analysis include
-#include "frontend_flow_step_factory.hpp"
-#include "symbolic_application_frontend_flow_step.hpp"
-
-///tree includes
-#include "ext_tree_node.hpp"
-#include "tree_basic_block.hpp"
-#include "tree_helper.hpp"
-#include "tree_manager.hpp"
-#include "tree_node.hpp"
+#include <boost/iterator/iterator_facade.hpp>           // for operator!=
+#include <boost/lexical_cast.hpp>                       // for lexical_cast
+#include <boost/tuple/tuple.hpp>                        // for tie
+#include <iostream>                                     // for ios_base::fai...
+#include <unordered_map>                                // for unordered_map
+#include <unordered_set>                                // for unordered_set
+#include <utility>                                      // for pair
+#include "Parameter.hpp"                                // for Parameter
+#include "application_manager.hpp"                      // for application_m...
+#include "basic_block.hpp"                              // for BBGraphsColle...
+#include "behavioral_helper.hpp"                        // for BehavioralHelper
+#include "call_graph.hpp"                               // for CallGraph
+#include "call_graph_manager.hpp"                       // for CallGraphMana...
+#include "cdfg_edge_info.hpp"                           // for CFG_SELECTOR
+#include "custom_set.hpp"                               // for CustomSet
+#include "dbgPrintHelper.hpp"                           // for DEBUG_LEVEL_V...
+#include "design_flow_graph.hpp"                        // for DesignFlowGraph
+#include "design_flow_manager.hpp"                      // for DesignFlowMan...
+#include "design_flow_step_factory.hpp"                 // for DesignFlowMan...
+#include "edge_info.hpp"                                // for EdgeInfoRef
+#include "exceptions.hpp"                               // for THROW_ASSERT
+#include "ext_tree_node.hpp"                            // for gimple_multi_...
+#include "frontend_flow_step_factory.hpp"               // for DesignFlowSte...
+#include "function_behavior.hpp"                        // for FunctionBehavior
+#include "graph.hpp"                                    // for SelectEdge
+#include "hash_helper.hpp"                              // for hash
+#include "string_manipulation.hpp"                      // for STR GET_CLASS
+#include "symbolic_application_frontend_flow_step.hpp"  // for SymbolicAppli...
+#include "tree_basic_block.hpp"                         // for bloc, bloc::E...
+#include "tree_common.hpp"                              // for gimple_multi_...
+#include "tree_manager.hpp"                             // for ParameterCons...
+#include "tree_node.hpp"                                // for function_decl
 #include "tree_reindex.hpp"
-
-///utility include
-#include "utility.hpp"
 
 FunctionFrontendFlowStep::FunctionFrontendFlowStep(const application_managerRef _AppM, const unsigned int _function_id, const FrontendFlowStepType _frontend_flow_step_type,  const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters) :
    FrontendFlowStep(_AppM, _frontend_flow_step_type, _design_flow_manager, _parameters),
@@ -86,7 +87,7 @@ FunctionFrontendFlowStep::FunctionFrontendFlowStep(const application_managerRef 
 }
 
 FunctionFrontendFlowStep::~FunctionFrontendFlowStep()
-{}
+= default;
 
 const std::string FunctionFrontendFlowStep::GetSignature() const
 {
@@ -113,7 +114,7 @@ const std::string FunctionFrontendFlowStep::GetName() const
 void FunctionFrontendFlowStep::ComputeRelationships(DesignFlowStepSet & relationships, const DesignFlowStep::RelationshipType relationship_type)
 {
    const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
-   const FrontendFlowStepFactory * frontend_flow_step_factory = GetPointer<const FrontendFlowStepFactory>(CGetDesignFlowStepFactory());
+   const auto * frontend_flow_step_factory = GetPointer<const FrontendFlowStepFactory>(CGetDesignFlowStepFactory());
    std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > frontend_relationships = ComputeFrontendRelationships(relationship_type);
 
    ///Precedence step whose symbolic application frontend flow step has to be executed can be considered as dependence step

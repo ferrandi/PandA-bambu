@@ -119,6 +119,7 @@
 #include "cpu_time.hpp"
 #include "dbgPrintHelper.hpp"
 #include "exceptions.hpp"
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 const std::string pragma_manager::omp_directive_keywords[pragma_manager::OMP_UNKNOWN] =
 {
@@ -158,8 +159,7 @@ pragma_manager::pragma_manager(const application_managerRef _application_manager
 }
 
 pragma_manager::~pragma_manager()
-{
-}
+= default;
 
 bool pragma_manager::checkCompliant() const
 {
@@ -297,7 +297,7 @@ unsigned int pragma_manager::AddOmpSimdPragma(const std::string&line) const
 
    unsigned int simd_id = TM->new_tree_node_id();
    TM->create_tree_node(simd_id, omp_simd_pragma_K, simd_tree_node_schema);
-   omp_simd_pragma* osp = GetPointer<omp_simd_pragma>(TM->get_tree_node_const(simd_id));
+   auto* osp = GetPointer<omp_simd_pragma>(TM->get_tree_node_const(simd_id));
    if(line != "#pragma omp declare simd")
       osp->clauses = ExtractClauses(line.substr(line.find("#pragma omp declare simd ")));
 
@@ -345,9 +345,8 @@ std::unordered_map<std::string, std::string> pragma_manager::ExtractClauses(cons
    std::vector<std::string> splitted;
    boost::algorithm::split(splitted, trimmed_clauses, boost::algorithm::is_any_of(" \t\n"));
 
-   for(size_t splitted_index = 0; splitted_index < splitted.size(); splitted_index++)
+   for(auto clause : splitted)
    {
-      const std::string clause = splitted[splitted_index];
       if(clause.find("(") != std::string::npos)
       {
          const std::string key = clause.substr(0, clause.find("("));
@@ -388,10 +387,10 @@ bool pragma_manager::CheckOmpFor(const application_managerConstRef app_man, cons
       {
          if (GET_NODE(stmt)->get_kind() == gimple_pragma_K)
          {
-            gimple_pragma* pn = GetPointer<gimple_pragma>(GET_NODE(stmt));
+            auto* pn = GetPointer<gimple_pragma>(GET_NODE(stmt));
             if (pn->scope and GetPointer<omp_pragma>(GET_NODE(pn->scope)))
             {
-               omp_for_pragma * fp = GetPointer<omp_for_pragma>(GET_NODE(pn->directive));
+               auto * fp = GetPointer<omp_for_pragma>(GET_NODE(pn->directive));
                if (fp)
                {
                   return true;
@@ -421,10 +420,10 @@ void pragma_manager::CheckAddOmpFor(const unsigned int function_index, const ver
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Analzying " + STR(stmt));
          if (GET_NODE(stmt)->get_kind() == gimple_pragma_K)
          {
-            gimple_pragma* pn = GetPointer<gimple_pragma>(GET_NODE(stmt));
+            auto* pn = GetPointer<gimple_pragma>(GET_NODE(stmt));
             if (pn->scope and GetPointer<omp_pragma>(GET_NODE(pn->scope)))
             {
-               omp_for_pragma * fp = GetPointer<omp_for_pragma>(GET_NODE(pn->directive));
+               auto * fp = GetPointer<omp_for_pragma>(GET_NODE(pn->directive));
                if (fp)
                {
                   info->block->RemoveStmt(stmt);
@@ -463,10 +462,10 @@ void pragma_manager::CheckAddOmpSimd(const unsigned int function_index, const ve
       {
          if (GET_NODE(stmt)->get_kind() == gimple_pragma_K)
          {
-            gimple_pragma* pn = GetPointer<gimple_pragma>(GET_NODE(stmt));
+            auto* pn = GetPointer<gimple_pragma>(GET_NODE(stmt));
             if (pn->scope and GetPointer<omp_pragma>(GET_NODE(pn->scope)))
             {
-               omp_simd_pragma * sp = GetPointer<omp_simd_pragma>(GET_NODE(pn->directive));
+               auto * sp = GetPointer<omp_simd_pragma>(GET_NODE(pn->directive));
                if (sp)
                {
                   info->block->RemoveStmt(stmt);

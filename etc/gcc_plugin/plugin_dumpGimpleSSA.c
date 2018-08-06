@@ -75,7 +75,7 @@ gimple_opt_pass pass_dump_GSSA =
     (PROP_cfg | PROP_ssa),			/* properties_required */
     0,						/* properties_provided */
     0,						/* properties_destroyed */
-    0,						/* todo_flags_start */
+    TODO_rebuild_alias,	    /* todo_flags_start */
     (/* todo_flags_finish */
 #if __GNUC__ == 4 
      TODO_verify_ssa| 

@@ -46,19 +46,15 @@
 #ifndef TREE_HELPER_HPP
 #define TREE_HELPER_HPP
 
-///STD include
-#include <string>
+#include "config_HAVE_BAMBU_BUILT.hpp"
 
-///STL include
-#include <list>
-#include <set>
-#include <tuple>
-#include <map>
-#include <unordered_set>
-
-///Tree include
-#include "tree_common.hpp"
-#include "tree_node.hpp"
+#include <cstddef>                                  // for size_t
+#include <list>                                      // for list
+#include <set>                                       // for set
+#include <string>                                    // for string
+#include <tuple>                                     // for tuple
+#include <unordered_set>                             // for unordered_set
+#include <vector>                                    // for vector
 
 ///Utility include
 #include "refcount.hpp"
@@ -67,12 +63,13 @@
  * @name Forward declarations.
 */
 //@{
-class lt_tree_reindex;
-class binfo;
-class integer_cst;
-class function_decl;
-class ssa_name;
-class TreeNodeSet;
+struct binfo;
+struct integer_cst;
+struct function_decl;
+struct ssa_name;
+template <typename value>
+class TreeNodeMap;
+enum class TreeVocabularyTokenTypes_TokenEnum;
 CONSTREF_FORWARD_DECL(tree_manager);
 REF_FORWARD_DECL(tree_manager);
 CONSTREF_FORWARD_DECL(tree_node);
@@ -1071,7 +1068,7 @@ class FunctionExpander
       FunctionExpander();
 
       ///Destructor
-      virtual ~FunctionExpander(){}
+      virtual ~FunctionExpander()= default;
 };
 typedef refcount<FunctionExpander> FunctionExpanderRef;
 #endif

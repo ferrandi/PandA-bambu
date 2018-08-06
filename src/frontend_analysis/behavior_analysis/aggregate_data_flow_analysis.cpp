@@ -66,6 +66,8 @@
 #include "hls_target.hpp"
 
 #include "Parameter.hpp"
+#include "hash_helper.hpp"
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 AggregateDataFlowAnalysis::AggregateDataFlowAnalysis(const application_managerRef _AppM, const unsigned int _function_index, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters) :
    FunctionFrontendFlowStep(_AppM, _function_index, AGGREGATE_DATA_FLOW_ANALYSIS, _design_flow_manager, _parameters)
@@ -75,7 +77,7 @@ AggregateDataFlowAnalysis::AggregateDataFlowAnalysis(const application_managerRe
 }
 
 AggregateDataFlowAnalysis::~AggregateDataFlowAnalysis()
-{}
+= default;
 
 DesignFlowStep_Status AggregateDataFlowAnalysis::InternalExec()
 {
@@ -141,7 +143,7 @@ void AggregateDataFlowAnalysis::ComputeRelationships(DesignFlowStepSet & relatio
          {
 #if HAVE_TECHNOLOGY_BUILT
             const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
-            const TechnologyFlowStepFactory * technology_flow_step_factory = GetPointer<const TechnologyFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("Technology"));
+            const auto * technology_flow_step_factory = GetPointer<const TechnologyFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("Technology"));
             const std::string technology_flow_signature = TechnologyFlowStep::ComputeSignature(TechnologyFlowStep_Type::LOAD_TECHNOLOGY);
             const vertex technology_flow_step = design_flow_manager.lock()->GetDesignFlowStep(technology_flow_signature);
             const DesignFlowStepRef technology_design_flow_step = technology_flow_step ? design_flow_graph->CGetDesignFlowStepInfo(technology_flow_step)->design_flow_step : technology_flow_step_factory->CreateTechnologyFlowStep(TechnologyFlowStep_Type::LOAD_TECHNOLOGY);

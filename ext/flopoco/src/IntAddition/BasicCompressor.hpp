@@ -9,8 +9,8 @@
 #include "mpfr.h"
 #include <vector>
 #include <gmpxx.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cstdlib>
 #include "../utils.hpp"
 
 namespace flopoco
@@ -33,7 +33,7 @@ namespace flopoco
 	
 	
 		/** destructor**/
-		~BasicCompressor();
+		~BasicCompressor() override;
 
 		unsigned getColumnSize(int column);
 
@@ -41,7 +41,7 @@ namespace flopoco
 	
 	
 		/** test case generator  **/
-		void emulate(TestCase * tc);
+		void emulate(TestCase * tc) override;
 	};
 }
  

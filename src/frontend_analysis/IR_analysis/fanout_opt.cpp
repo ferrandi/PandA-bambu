@@ -70,7 +70,7 @@
 
 ///STD include
 #include <fstream>
-#include <math.h>
+#include <cmath>
 #include <string>
 
 
@@ -80,6 +80,8 @@
 #include "tree_manipulation.hpp"
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
+#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 
 
@@ -93,8 +95,7 @@ fanout_opt::fanout_opt (const ParameterConstRef _parameters, const application_m
 }
 
 fanout_opt::~fanout_opt ()
-{
-}
+= default;
 
 const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship> > fanout_opt::ComputeFrontendRelationships (const DesignFlowStep::RelationshipType relationship_type) const
 {
@@ -109,6 +110,7 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
       case DEPENDENCE_RELATIONSHIP:
       {
          relationships.insert (std::pair<FrontendFlowStepType, FunctionRelationship> (CSE_STEP, SAME_FUNCTION));
+         relationships.insert (std::pair<FrontendFlowStepType, FunctionRelationship> (EXTRACT_PATTERNS, SAME_FUNCTION));
          break;
       }
       default:
@@ -122,8 +124,15 @@ bool fanout_opt::is_dest_relevant(tree_nodeRef t, bool )
    THROW_ASSERT(t->get_kind() == tree_reindex_K, "t is not a tree_reindex node");
    if(GET_NODE(t)->get_kind() == gimple_assign_K)
    {
-       gimple_assign * temp_assign = GetPointer<gimple_assign>(GET_NODE(t));
-       if(GET_NODE(temp_assign->op1)->get_kind() == mult_expr_K || GET_NODE(temp_assign->op1)->get_kind() == widen_mult_expr_K)
+       auto * temp_assign = GetPointer<gimple_assign>(GET_NODE(t));
+       if(
+             GET_NODE(temp_assign->op1)->get_kind() == mult_expr_K ||
+             GET_NODE(temp_assign->op1)->get_kind() == widen_mult_expr_K ||
+             GET_NODE(temp_assign->op1)->get_kind() == ternary_plus_expr_K ||
+             GET_NODE(temp_assign->op1)->get_kind() == ternary_mm_expr_K ||
+             GET_NODE(temp_assign->op1)->get_kind() == ternary_pm_expr_K ||
+             GET_NODE(temp_assign->op1)->get_kind() == ternary_mp_expr_K
+             )
           return true;
    }
    return false;
@@ -136,8 +145,8 @@ fanout_opt::InternalExec ()
    bool IR_changed = false;
 
    tree_nodeRef temp = TM->get_tree_node_const(function_id);
-   function_decl * fd = GetPointer<function_decl>(temp);
-   statement_list *sl = GetPointer<statement_list>(GET_NODE(fd->body));
+   auto * fd = GetPointer<function_decl>(temp);
+   auto *sl = GetPointer<statement_list>(GET_NODE(fd->body));
    const tree_manipulationRef tree_man = tree_manipulationRef(new tree_manipulation(TM, parameters));
 
    for (auto block : sl->list_of_bloc)
@@ -155,12 +164,12 @@ fanout_opt::InternalExec ()
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining statement " + GET_NODE(stmt)->ToString());
          if (GET_NODE(stmt)->get_kind() == gimple_assign_K)
          {
-            gimple_assign * ga =  GetPointer<gimple_assign>(GET_NODE(stmt));
+            auto * ga =  GetPointer<gimple_assign>(GET_NODE(stmt));
             const std::string srcp_default =
                ga->include_name + ":" + STR(ga->line_number) + ":" + STR(ga->column_number);
             if (GET_NODE(ga->op0)->get_kind() == ssa_name_K)
             {
-               ssa_name *ssa_defined = GetPointer<ssa_name> (GET_NODE(ga->op0));
+               auto *ssa_defined = GetPointer<ssa_name> (GET_NODE(ga->op0));
                if(ssa_defined->CGetNumberUses() > 1)
                {
                   unsigned assigned_ssa_type_index;
@@ -199,7 +208,7 @@ fanout_opt::InternalExec ()
       for(auto phi : block.second->CGetPhiList())
       {
          auto gp = GetPointer<gimple_phi>(GET_NODE(phi));
-         ssa_name *ssa_defined = GetPointer<ssa_name> (GET_NODE(gp->res));
+         auto *ssa_defined = GetPointer<ssa_name> (GET_NODE(gp->res));
 
          if(ssa_defined->CGetNumberUses() > 1)
          {

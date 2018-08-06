@@ -66,14 +66,16 @@
 #include "target_device.hpp"
 
 #include <iosfwd>
+#include <utility>
 #include "clb_model.hpp"
+#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_
 
 attribute::attribute(const std::vector<attributeRef>& _content)
 {
    content_list = _content;
 }
 
-attribute::attribute(const std::string& _value_type, const std::string& _content) : content(_content)
+attribute::attribute(const std::string& _value_type, std::string  _content) : content(std::move(_content))
 {
    xml_node::convert_escaped(content);
    if (_value_type == "float64")
@@ -88,8 +90,8 @@ attribute::attribute(const std::string& _value_type, const std::string& _content
       THROW_ERROR("Not supported attribute type: " + _value_type);
 }
 
-attribute::attribute(const value_t  _value_type, const std::string& _content) :
-   content(_content),
+attribute::attribute(const value_t  _value_type, std::string  _content) :
+   content(std::move(_content)),
    value_type(_value_type)
 {
    xml_node::convert_escaped(content);
@@ -132,9 +134,9 @@ void attribute::xload(const xml_element* EnodeC, std::vector<std::string>& order
    const xml_attribute* att_name = EnodeC->get_attribute("name");
    const xml_node::node_list& list_att = EnodeC->get_children();
    std::vector<attributeRef> _content;
-   for (xml_node::node_list::const_iterator iter_int = list_att.begin(); iter_int != list_att.end(); ++iter_int)
+   for (const auto & iter_int : list_att)
    {
-      const xml_element* EnodeC1 = GetPointer<const xml_element>(*iter_int);
+      const auto* EnodeC1 = GetPointer<const xml_element>(iter_int);
       if(!EnodeC1) continue;
       const xml_text_node* txt_node = EnodeC1->get_child_text();
       _content.push_back(attributeRef(new attribute(EnodeC1->get_name(), txt_node->get_content())));
@@ -165,10 +167,10 @@ void attribute::xwrite(xml_element* xml_node, const std::string& name)
    }
    else
    {
-      for(unsigned int v = 0; v < content_list.size(); v++)
+      for(auto & v : content_list)
       {
-         xml_element* el = attr_name->add_child_element(content_list[v]->get_value_type_str());
-         el->add_child_text(content_list[v]->get_content_str());
+         xml_element* el = attr_name->add_child_element(v->get_value_type_str());
+         el->add_child_text(v->get_content_str());
       }
    }
 }
@@ -212,9 +214,9 @@ library_manager::library_manager(const ParameterConstRef _Param, bool std) :
    set_default_attributes();
 }
 
-library_manager::library_manager(const std::string& library_name, const ParameterConstRef _Param, bool std) :
+library_manager::library_manager(std::string  library_name, const ParameterConstRef _Param, bool std) :
       Param(_Param),
-      name(library_name),
+      name(std::move(library_name)),
       is_std(std)
 {
    set_default_attributes();
@@ -222,20 +224,18 @@ library_manager::library_manager(const std::string& library_name, const Paramete
 
 
 library_manager::~library_manager()
-{
-
-}
+= default;
 
 void library_manager::xload(const xml_element* node, const library_managerRef LM, const ParameterConstRef Param, const target_deviceRef device)
 {
 #ifndef NDEBUG
    int debug_level = Param->get_class_debug_level("library_manager");
 #endif
-   int output_level = Param->getOption<int>(OPT_output_level);
+   auto output_level = Param->getOption<int>(OPT_output_level);
    const xml_node::node_list list_int = node->get_children();
-   for (xml_node::node_list::const_iterator iter_int = list_int.begin(); iter_int != list_int.end(); ++iter_int)
+   for (const auto & iter_int : list_int)
    {
-      const xml_element* EnodeC = GetPointer<const xml_element>(*iter_int);
+      const auto* EnodeC = GetPointer<const xml_element>(iter_int);
       if(!EnodeC) continue;
       if (EnodeC->get_name() == "information")
       {
@@ -280,7 +280,7 @@ void library_manager::xload(const xml_element* node, const library_managerRef LM
       }
       else if (EnodeC->get_name() == "cell")
       {
-         technology_nodeRef fu_curr = technology_nodeRef(new functional_unit(*iter_int));
+         technology_nodeRef fu_curr = technology_nodeRef(new functional_unit(iter_int));
          fu_curr->xload(EnodeC, fu_curr, Param, device);
 
          const auto cell_name = fu_curr->get_name();
@@ -291,7 +291,7 @@ void library_manager::xload(const xml_element* node, const library_managerRef LM
       }
       else if (EnodeC->get_name() == "template")
       {
-         technology_nodeRef fut_curr = technology_nodeRef(new functional_unit_template(*iter_int));
+         technology_nodeRef fut_curr = technology_nodeRef(new functional_unit_template(iter_int));
          fut_curr->xload(EnodeC, fut_curr, Param, device);
          LM->add(fut_curr);
       }
@@ -306,14 +306,14 @@ void library_manager::xload(const xml_element* node, const library_managerRef LM
       unsigned int combinational = 0;
       unsigned int others = 0;
       unsigned int total = 0;
-      for(fu_map_type::iterator l = LM->fu_map.begin(); l != LM->fu_map.end(); ++l)
+      for(auto & l : LM->fu_map)
       {
          /*
           * If the functional unit is a template skip the counting.
           */
-         if (GetPointer<functional_unit>(l->second) == nullptr && GetPointer<functional_unit_template>(l->second)) continue;
+         if (GetPointer<functional_unit>(l.second) == nullptr && GetPointer<functional_unit_template>(l.second)) continue;
          total++;
-         if (GetPointer<functional_unit>(l->second)->logical_type == functional_unit::COMBINATIONAL)
+         if (GetPointer<functional_unit>(l.second)->logical_type == functional_unit::COMBINATIONAL)
             combinational++;
          else
             others++;
@@ -342,10 +342,10 @@ void library_manager::xwrite(xml_element* node, TargetDevice_Type dv_type)
    xml_element* xml_name = library->add_child_element("name");
    xml_name->add_child_text(name);
 
-   for(unsigned int o = 0; o < ordered_attributes.size(); o++)
+   for(const auto & ordered_attribute : ordered_attributes)
    {
-      const attributeRef& attr = attributes[ordered_attributes[o]];
-      attr->xwrite(library, ordered_attributes[o]);
+      const attributeRef& attr = attributes[ordered_attribute];
+      attr->xwrite(library, ordered_attribute);
    }
 
    for(fu_map_type::const_iterator f = fu_map.begin(); f != fu_map.end(); ++f)
@@ -382,7 +382,7 @@ void library_manager::update(const technology_nodeRef& fu_node)
    technology_nodeRef fu = fu_map[_name];
    technology_nodeRef node = fu_node;
    if(!GetPointer<functional_unit>(node)) node = GetPointer<functional_unit_template>(node)->FU;
-   functional_unit * current_fu = GetPointer<functional_unit>(fu);
+   auto * current_fu = GetPointer<functional_unit>(fu);
    if (!current_fu) current_fu = GetPointer<functional_unit>(GetPointer<functional_unit_template>(fu)->FU);
    if (current_fu)
    {
@@ -397,9 +397,9 @@ void library_manager::update(const technology_nodeRef& fu_node)
    if (GetPointer<functional_unit>(node)->layout_m) current_fu->layout_m = GetPointer<functional_unit>(node)->layout_m;
 #endif
    const functional_unit::operation_vec& operations = GetPointer<functional_unit>(node)->get_operations();
-   for(functional_unit::operation_vec::const_iterator o = operations.begin(); o != operations.end(); ++o)
+   for(const auto & o : operations)
    {
-      const operation* op = GetPointer<operation>(*o);
+      const operation* op = GetPointer<operation>(o);
       const technology_nodeRef op_fu = current_fu->get_operation(op->operation_name);
       THROW_ASSERT(op_fu, "Missing operation: " + op->operation_name + "-" + _name);
       if (op->time_m) GetPointer<operation>(op_fu)->time_m = op->time_m;

@@ -55,7 +55,7 @@ class AlteraBackendFlow : public BackendFlow
       /**
        * Writes the proper flow configuration in the output script
        */
-      void WriteFlowConfiguration(std::ostream& script);
+      void WriteFlowConfiguration(std::ostream& script) override;
 
       /**
        * Parses device utilization
@@ -65,7 +65,7 @@ class AlteraBackendFlow : public BackendFlow
       /**
        * Checks the synthesis results and fills the corresponding datastructures
        */
-      void CheckSynthesisResults();
+      void CheckSynthesisResults() override;
 
       /**
        * Creates the constraint file
@@ -82,17 +82,17 @@ class AlteraBackendFlow : public BackendFlow
       /**
        * Destructor
        */
-      virtual ~AlteraBackendFlow();
+      ~AlteraBackendFlow() override;
 
       /**
        * Initializes the parameters
        */
-      void InitDesignParameters();
+      void InitDesignParameters() override;
 
       /**
        * Checks if the execution can be performed and, in case, performs the synthesis
        */
-      void ExecuteSynthesis();
+      void ExecuteSynthesis() override;
 
 };
 ///Refcount definition for the class

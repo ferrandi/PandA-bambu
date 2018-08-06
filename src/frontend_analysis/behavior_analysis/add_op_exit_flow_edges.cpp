@@ -54,8 +54,9 @@
 ///tree include
 #include "behavioral_helper.hpp"
 
-///utility include
-#include "utility.hpp"
+#include "hash_helper.hpp"
+#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 AddOpExitFlowEdges::AddOpExitFlowEdges(const ParameterConstRef _parameters, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager) :
    FunctionFrontendFlowStep(_AppM, _function_id, ADD_OP_EXIT_FLOW_EDGES, _design_flow_manager, _parameters)
@@ -64,8 +65,7 @@ AddOpExitFlowEdges::AddOpExitFlowEdges(const ParameterConstRef _parameters, cons
 }
 
 AddOpExitFlowEdges::~AddOpExitFlowEdges()
-{
-}
+= default;
 
 const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship> > AddOpExitFlowEdges::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {

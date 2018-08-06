@@ -60,7 +60,7 @@
 
 ///utility include
 #include "fileIO.hpp"
-#include "utility.hpp"
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 AsnParserData::AsnParserData(const AadlInformationRef _aadl_information, const ParameterConstRef _parameters) :
    aadl_information(_aadl_information),
@@ -76,7 +76,7 @@ AsnParser::AsnParser(const DesignFlowManagerConstRef _design_flow_manager, const
 }
 
 AsnParser::~AsnParser()
-{}
+= default;
 
 DesignFlowStep_Status AsnParser::Exec()
 {

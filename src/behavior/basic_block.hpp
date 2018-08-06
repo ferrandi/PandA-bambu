@@ -50,28 +50,24 @@
 #ifndef BASIC_BLOCK_HPP
 #define BASIC_BLOCK_HPP
 
-///Autoheader include
-#include "config_HAVE_HOST_PROFILING_BUILT.hpp"
 #include "config_HAVE_UNORDERED.hpp"
 
-///Superclass include
-#include "cdfg_edge_info.hpp"
+#include <cstddef>                                  // for size_t
+#include <functional>                                // for binary_function
+#include <list>                                      // for list
+#include <map>                                       // for map, _Rb_tree_co...
+#include <set>                                       // for set
+#include <string>                                    // for string
+#include <unordered_map>                             // for unordered_map
+#include <unordered_set>                             // for unordered_set
+#include <utility>                                   // for pair
+#include "cdfg_edge_info.hpp"                        // for CdfgEdgeInfo
+#include "edge_info.hpp"                             // for EdgeInfoRef
+#include "graph.hpp"                                 // for vertex, EdgeDesc...
+#include "graph_info.hpp"                            // for GraphInfo
+#include "node_info.hpp"                             // for NodeInfo
+#include "refcount.hpp"                              // for refcount, Refcou...
 
-///Behavior include
-#include "graph.hpp"
-#include "graph_info.hpp"
-
-///STL include
-#include <list>
-#include <unordered_map>
-#include <unordered_set>
-
-///Utility include
-#include <boost/graph/adjacency_list.hpp>
-#include <boost/graph/topological_sort.hpp>
-#include <boost/graph/filtered_graph.hpp>
-#include <boost/graph/graph_utility.hpp>
-#include "refcount.hpp"
 /**
  * @name forward declarations
  */
@@ -205,7 +201,7 @@ struct BBEdgeInfo : public CdfgEdgeInfo
       /**
        * Destructor
        */
-      ~BBEdgeInfo();
+      ~BBEdgeInfo() override;
 
       /**
        * Function returning true when the edge is a then control dependence edge, false otherwise
@@ -303,7 +299,7 @@ class BBGraphsCollection : public graphs_collection
       /**
        * Destructor
        */
-      ~BBGraphsCollection();
+      ~BBGraphsCollection() override;
 
       /**
        * Add an edge with empty information associated
@@ -349,7 +345,7 @@ struct BBGraph : public graph
       /**
        * Destructor
        */
-      ~BBGraph(){}
+      ~BBGraph() override= default;
 
       /**
        * Writes this graph in dot format

@@ -64,10 +64,10 @@ struct GraphInfo
     * Constructor
     */
    GraphInfo()
-   {}
+   = default;
 
    /// Destructor
-   virtual ~GraphInfo(){}
+   virtual ~GraphInfo()= default;
 };
 
 /**

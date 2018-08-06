@@ -48,6 +48,8 @@
 
 // include boost range adaptors
 #include <boost/range/adaptors.hpp>
+#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_
+#include "string_manipulation.hpp"
 
 bool Bit_Value::manage_forward_binary_operands(
       const binary_expr * operation,
@@ -141,7 +143,7 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign * ga) co
 #if 1
    else if (op_kind == plus_expr_K || op_kind == pointer_plus_expr_K)
    {
-      binary_expr *operation = GetPointer<binary_expr> (GET_NODE(ga->op1));
+      auto *operation = GetPointer<binary_expr> (GET_NODE(ga->op1));
 
       std::deque<bit_lattice> arg1_bitstring;
       std::deque<bit_lattice> arg2_bitstring;
@@ -194,7 +196,7 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign * ga) co
 #if 1
    else if (op_kind == ternary_plus_expr_K||op_kind == ternary_pm_expr_K||op_kind == ternary_mp_expr_K||op_kind == ternary_mm_expr_K)
    {
-      ternary_expr *operation = GetPointer<ternary_expr> (GET_NODE(ga->op1));
+      auto *operation = GetPointer<ternary_expr> (GET_NODE(ga->op1));
 
       std::deque<bit_lattice> arg1_bitstring;
       std::deque<bit_lattice> arg2_bitstring;
@@ -391,7 +393,7 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign * ga) co
 #if 1
    else if (op_kind == mult_expr_K || op_kind == widen_mult_expr_K)
    {
-      binary_expr *operation = GetPointer<binary_expr> (GET_NODE(ga->op1));
+      auto *operation = GetPointer<binary_expr> (GET_NODE(ga->op1));
 
       std::deque<bit_lattice> arg1_bitstring;
       std::deque<bit_lattice> arg2_bitstring;
@@ -467,7 +469,7 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign * ga) co
 #if 1
    else if(op_kind == trunc_div_expr_K || op_kind == exact_div_expr_K)
    {
-      binary_expr *operation = GetPointer<binary_expr> (GET_NODE(ga->op1));
+      auto *operation = GetPointer<binary_expr> (GET_NODE(ga->op1));
 
       std::deque<bit_lattice> arg1_bitstring;
       std::deque<bit_lattice> arg2_bitstring;
@@ -488,7 +490,7 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign * ga) co
    }
    else if(op_kind == trunc_mod_expr_K)
    {
-      binary_expr *operation = GetPointer<binary_expr> (GET_NODE(ga->op1));
+      auto *operation = GetPointer<binary_expr> (GET_NODE(ga->op1));
 
       std::deque<bit_lattice> arg1_bitstring;
       std::deque<bit_lattice> arg2_bitstring;
@@ -512,7 +514,7 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign * ga) co
    else if (op_kind == gt_expr_K)
    {
       THROW_ASSERT(tree_helper::is_bool(TM, output_uid), "");
-      gt_expr *operation = GetPointer<gt_expr> (GET_NODE(ga->op1));
+      auto *operation = GetPointer<gt_expr> (GET_NODE(ga->op1));
 
       std::deque<bit_lattice> arg1_bitstring;
       std::deque<bit_lattice> arg2_bitstring;
@@ -590,7 +592,7 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign * ga) co
    else if (op_kind == ge_expr_K)
    {
       THROW_ASSERT(tree_helper::is_bool(TM, output_uid), "");
-      ge_expr *operation = GetPointer<ge_expr> (GET_NODE(ga->op1));
+      auto *operation = GetPointer<ge_expr> (GET_NODE(ga->op1));
 
       std::deque<bit_lattice> arg1_bitstring;
       std::deque<bit_lattice> arg2_bitstring;
@@ -667,7 +669,7 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign * ga) co
    else if (op_kind == lt_expr_K)
    {
       THROW_ASSERT(tree_helper::is_bool(TM, output_uid), "");
-      lt_expr *operation = GetPointer<lt_expr> (GET_NODE(ga->op1));
+      auto *operation = GetPointer<lt_expr> (GET_NODE(ga->op1));
 
       std::deque<bit_lattice> arg1_bitstring;
       std::deque<bit_lattice> arg2_bitstring;
@@ -745,7 +747,7 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign * ga) co
    else if (op_kind == le_expr_K)
    {
       THROW_ASSERT(tree_helper::is_bool(TM, output_uid), "");
-      le_expr *operation = GetPointer<le_expr> (GET_NODE(ga->op1));
+      auto *operation = GetPointer<le_expr> (GET_NODE(ga->op1));
 
       std::deque<bit_lattice> arg1_bitstring;
       std::deque<bit_lattice> arg2_bitstring;
@@ -823,7 +825,7 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign * ga) co
    else if (op_kind == eq_expr_K)
    {
       THROW_ASSERT(tree_helper::is_bool(TM, output_uid), "");
-      eq_expr *operation = GetPointer<eq_expr> (GET_NODE(ga->op1));
+      auto *operation = GetPointer<eq_expr> (GET_NODE(ga->op1));
 
       std::deque<bit_lattice> arg1_bitstring;
       std::deque<bit_lattice> arg2_bitstring;
@@ -879,7 +881,7 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign * ga) co
    else if (op_kind == ne_expr_K)
    {
       THROW_ASSERT(tree_helper::is_bool(TM, output_uid), "");
-      ne_expr *operation = GetPointer<ne_expr> (GET_NODE(ga->op1));
+      auto *operation = GetPointer<ne_expr> (GET_NODE(ga->op1));
 
       std::deque<bit_lattice> arg1_bitstring;
       std::deque<bit_lattice> arg2_bitstring;
@@ -936,7 +938,7 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign * ga) co
 #if 1
    else if (op_kind == minus_expr_K)
    {
-      minus_expr *operation = GetPointer<minus_expr> (GET_NODE(ga->op1));
+      auto *operation = GetPointer<minus_expr> (GET_NODE(ga->op1));
 
       std::deque<bit_lattice> arg1_bitstring;
       std::deque<bit_lattice> arg2_bitstring;
@@ -981,7 +983,7 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign * ga) co
 #if 1
    else if (op_kind == negate_expr_K)
    {
-      negate_expr *operation = GetPointer<negate_expr> (GET_NODE(ga->op1));
+      auto *operation = GetPointer<negate_expr> (GET_NODE(ga->op1));
 
       std::deque<bit_lattice> arg_bitstring;
       unsigned int arg_uid = 0;
@@ -1035,7 +1037,7 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign * ga) co
 #if 1
    else if (op_kind == abs_expr_K)
    {
-      abs_expr *operation = GetPointer<abs_expr> (GET_NODE(ga->op1));
+      auto *operation = GetPointer<abs_expr> (GET_NODE(ga->op1));
 
       const tree_nodeConstRef op_type = tree_helper::CGetType(GET_NODE(operation->op));
       if (not is_handled_by_bitvalue(op_type->index))
@@ -1115,7 +1117,7 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign * ga) co
 #if 1
    else if (op_kind == bit_and_expr_K)
    {
-      bit_and_expr *operation = GetPointer<bit_and_expr> (GET_NODE(ga->op1));
+      auto *operation = GetPointer<bit_and_expr> (GET_NODE(ga->op1));
 
       std::deque<bit_lattice> arg1_bitstring;
       std::deque<bit_lattice> arg2_bitstring;
@@ -1154,7 +1156,7 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign * ga) co
 #if 1
    else if (op_kind == bit_ior_expr_K)
    {
-      bit_ior_expr *operation = GetPointer<bit_ior_expr> (GET_NODE(ga->op1));
+      auto *operation = GetPointer<bit_ior_expr> (GET_NODE(ga->op1));
 
       std::deque<bit_lattice> arg1_bitstring;
       std::deque<bit_lattice> arg2_bitstring;
@@ -1193,7 +1195,7 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign * ga) co
 #if 1
    else if (op_kind == bit_ior_concat_expr_K)
    {
-      bit_ior_concat_expr *operation = GetPointer<bit_ior_concat_expr> (GET_NODE(ga->op1));
+      auto *operation = GetPointer<bit_ior_concat_expr> (GET_NODE(ga->op1));
 
       std::deque<bit_lattice> arg1_bitstring;
       std::deque<bit_lattice> arg2_bitstring;
@@ -1281,7 +1283,7 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign * ga) co
 #if 1
    else if (op_kind == bit_xor_expr_K)
    {
-      bit_xor_expr *operation = GetPointer<bit_xor_expr> (GET_NODE(ga->op1));
+      auto *operation = GetPointer<bit_xor_expr> (GET_NODE(ga->op1));
 
       std::deque<bit_lattice> arg1_bitstring;
       std::deque<bit_lattice> arg2_bitstring;
@@ -1320,7 +1322,7 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign * ga) co
 #if 1
    else if (op_kind == bit_not_expr_K)
    {
-      bit_not_expr *operation = GetPointer<bit_not_expr> (GET_NODE(ga->op1));
+      auto *operation = GetPointer<bit_not_expr> (GET_NODE(ga->op1));
 
       std::deque<bit_lattice> arg1_bitstring;
       unsigned int arg1_uid = 0;
@@ -1369,7 +1371,7 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign * ga) co
    else if (op_kind == truth_and_expr_K)
    {
       THROW_ASSERT(tree_helper::is_bool(TM, output_uid), "");
-      truth_and_expr *operation = GetPointer<truth_and_expr> (GET_NODE(ga->op1));
+      auto *operation = GetPointer<truth_and_expr> (GET_NODE(ga->op1));
 
       std::deque<bit_lattice> arg1_bitstring;
       std::deque<bit_lattice> arg2_bitstring;
@@ -1420,7 +1422,7 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign * ga) co
    else if (op_kind == truth_or_expr_K)
    {
       THROW_ASSERT(tree_helper::is_bool(TM, output_uid), "");
-      truth_or_expr *operation = GetPointer<truth_or_expr> (GET_NODE(ga->op1));
+      auto *operation = GetPointer<truth_or_expr> (GET_NODE(ga->op1));
 
       std::deque<bit_lattice> arg1_bitstring;
       std::deque<bit_lattice> arg2_bitstring;
@@ -1462,7 +1464,7 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign * ga) co
    else if (op_kind == truth_xor_expr_K)
    {
       THROW_ASSERT(tree_helper::is_bool(TM, output_uid), "");
-      truth_xor_expr *operation = GetPointer<truth_xor_expr> (GET_NODE(ga->op1));
+      auto *operation = GetPointer<truth_xor_expr> (GET_NODE(ga->op1));
 
       std::deque<bit_lattice> arg1_bitstring;
       std::deque<bit_lattice> arg2_bitstring;
@@ -1505,7 +1507,7 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign * ga) co
    else if (op_kind == truth_not_expr_K)
    {
       THROW_ASSERT(tree_helper::is_bool(TM, output_uid) || tree_helper::tree_helper::size(TM, output_uid)==1, "");
-      truth_not_expr *operation = GetPointer<truth_not_expr> (GET_NODE(ga->op1));
+      auto *operation = GetPointer<truth_not_expr> (GET_NODE(ga->op1));
 
       std::deque<bit_lattice> arg1_bitstring;
       unsigned int arg1_uid = 0;
@@ -1554,7 +1556,7 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign * ga) co
 #if 1
    else if (op_kind == rshift_expr_K)
    {
-      rshift_expr *operation = GetPointer<rshift_expr> (GET_NODE(ga->op1));
+      auto *operation = GetPointer<rshift_expr> (GET_NODE(ga->op1));
       std::deque<bit_lattice> arg1_bitstring;
       unsigned int arg1_uid = 0;
       if (GET_NODE(operation->op0)->get_kind () == ssa_name_K)
@@ -1590,7 +1592,7 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign * ga) co
       }
       else if (GET_NODE(operation->op1)->get_kind () == integer_cst_K)
       {
-         integer_cst *const2 = GetPointer<integer_cst> (GET_NODE(operation->op1));
+         auto *const2 = GetPointer<integer_cst> (GET_NODE(operation->op1));
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "forward_transfer, second argument is constant -> " + STR(const2->value));
          if(const2->value < 0)
          {
@@ -1626,7 +1628,7 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign * ga) co
 #if 1
    else if (op_kind == lut_expr_K)
    {
-      lut_expr *operation = GetPointer<lut_expr> (GET_NODE(ga->op1));
+      auto *operation = GetPointer<lut_expr> (GET_NODE(ga->op1));
       std::deque<bit_lattice> arg1_bitstring;
       unsigned int arg1_uid = 0;
       THROW_ASSERT(GET_NODE(operation->op1)->get_kind () == integer_cst_K, "unexpected condition");
@@ -1643,7 +1645,7 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign * ga) co
       }
       else if (GET_NODE(operation->op0)->get_kind () == integer_cst_K)
       {
-         integer_cst *const2 = GetPointer<integer_cst> (GET_NODE(operation->op0));
+         auto *const2 = GetPointer<integer_cst> (GET_NODE(operation->op0));
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "forward_transfer, second argument is constant -> " + STR(const2->value));
          if(const2->value < 0)
          {
@@ -1681,7 +1683,7 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign * ga) co
 #if 1
    else if (op_kind == rrotate_expr_K)
    {
-      rrotate_expr *operation = GetPointer<rrotate_expr> (GET_NODE(ga->op1));
+      auto *operation = GetPointer<rrotate_expr> (GET_NODE(ga->op1));
       std::deque<bit_lattice> arg1_bitstring;
       unsigned int arg1_uid = 0;
       if (GET_NODE(operation->op0)->get_kind () == ssa_name_K)
@@ -1715,8 +1717,8 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign * ga) co
       }
       else if (GET_NODE(operation->op1)->get_kind () == integer_cst_K)
       {
-         integer_cst *const2 = GetPointer<integer_cst> (GET_NODE(operation->op1));
-         unsigned int arg2_value = static_cast<unsigned int> (const2->value);
+         auto *const2 = GetPointer<integer_cst> (GET_NODE(operation->op1));
+         auto arg2_value = static_cast<unsigned int> (const2->value);
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "forward_transfer, created bitstring from constant -> " + STR(arg2_value));
          unsigned int precision = tree_helper::Size(tree_helper::CGetType(GET_NODE(ga->op0)));
 
@@ -1739,7 +1741,7 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign * ga) co
    }
    else if (op_kind == lrotate_expr_K)
    {
-      lrotate_expr *operation = GetPointer<lrotate_expr> (GET_NODE(ga->op1));
+      auto *operation = GetPointer<lrotate_expr> (GET_NODE(ga->op1));
       std::deque<bit_lattice> arg1_bitstring;
       unsigned int arg1_uid = 0;
       if (GET_NODE(operation->op0)->get_kind () == ssa_name_K)
@@ -1773,8 +1775,8 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign * ga) co
       }
       else if (GET_NODE(operation->op1)->get_kind () == integer_cst_K)
       {
-         integer_cst *const2 = GetPointer<integer_cst> (GET_NODE(operation->op1));
-         unsigned int arg2_value = static_cast<unsigned int> (const2->value);
+         auto *const2 = GetPointer<integer_cst> (GET_NODE(operation->op1));
+         auto arg2_value = static_cast<unsigned int> (const2->value);
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "forward_transfer, created bitstring from constant -> " + STR(arg2_value));
          unsigned int precision = tree_helper::Size(tree_helper::CGetType(GET_NODE(ga->op0)));
 
@@ -1799,7 +1801,7 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign * ga) co
 #if 1
    else if (op_kind == lshift_expr_K)
    {
-      lshift_expr *operation = GetPointer<lshift_expr> (GET_NODE(ga->op1));
+      auto *operation = GetPointer<lshift_expr> (GET_NODE(ga->op1));
       std::deque<bit_lattice> arg1_bitstring;
       std::deque<bit_lattice> arg2_bitstring;
       unsigned int arg1_uid = 0;
@@ -1853,7 +1855,7 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign * ga) co
       }
       else if (GET_NODE(operation->op1)->get_kind () == integer_cst_K)
       {
-         integer_cst *const2 = GetPointer<integer_cst> (GET_NODE(operation->op1));
+         auto *const2 = GetPointer<integer_cst> (GET_NODE(operation->op1));
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "forward_transfer, created bitstring from constant -> " + STR(const2->value));
          if(const2->value < 0)
          {
@@ -1886,7 +1888,7 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign * ga) co
 #if 1
    else if (op_kind == nop_expr_K || op_kind == convert_expr_K)
    {
-      unary_expr *operation = GetPointer<unary_expr> (GET_NODE(ga->op1));
+      auto *operation = GetPointer<unary_expr> (GET_NODE(ga->op1));
       const auto right_id = GET_INDEX_NODE(operation->op);
       const tree_nodeConstRef right_type = tree_helper::CGetType(GET_NODE(operation->op));
       const unsigned int right_type_size = tree_helper::Size(right_type);
@@ -1937,7 +1939,7 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign * ga) co
 #if 1
    else if (op_kind == cond_expr_K)
    {
-      cond_expr *operation = GetPointer<cond_expr> (GET_NODE(ga->op1));
+      auto *operation = GetPointer<cond_expr> (GET_NODE(ga->op1));
 
       std::deque<bit_lattice> arg1_bitstring;
       std::deque<bit_lattice> arg2_bitstring;
@@ -2070,7 +2072,7 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign * ga) co
 #if 1
    else if(op_kind == min_expr_K || op_kind == max_expr_K )
    {
-      binary_expr *operation = GetPointer<binary_expr> (GET_NODE(ga->op1));
+      auto *operation = GetPointer<binary_expr> (GET_NODE(ga->op1));
 
       std::deque<bit_lattice> arg1_bitstring;
       std::deque<bit_lattice> arg2_bitstring;
@@ -2109,7 +2111,7 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign * ga) co
       {
          const unsigned int called_id = call_it->second;
          const tree_nodeConstRef tn = TM->get_tree_node_const(called_id);
-         const function_decl * fd = GetPointer<const function_decl> (tn);
+         const auto * fd = GetPointer<const function_decl> (tn);
          THROW_ASSERT(fd, "node " + STR(called_id) + " is not a function_decl");
          if (fd->bit_values.empty())
             res = create_u_bitstring(tree_helper::Size(GET_NODE(ga->op0)));
@@ -2135,9 +2137,9 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign * ga) co
 void Bit_Value::forward()
 {
    tree_nodeRef tn = TM->get_tree_node_const (function_id);
-   function_decl * fd = GetPointer<function_decl> (tn);
+   auto * fd = GetPointer<function_decl> (tn);
    THROW_ASSERT(fd && fd->body, "Node is not a function or it hasn't a body");
-   const statement_list * sl = GetPointer<const statement_list> (GET_NODE(fd->body));
+   const auto * sl = GetPointer<const statement_list> (GET_NODE(fd->body));
 
    bool current_updated = true;
    while (current_updated)
@@ -2155,9 +2157,9 @@ void Bit_Value::forward()
             const auto stmt_node = GET_NODE(stmt);
             if (stmt_node->get_kind() == gimple_assign_K)
             {
-               gimple_assign * ga = GetPointer<gimple_assign>(stmt_node);
+               auto * ga = GetPointer<gimple_assign>(stmt_node);
                unsigned int output_uid = GET_INDEX_NODE(ga->op0);
-               ssa_name *ssa = GetPointer<ssa_name>(GET_NODE(ga->op0));
+               auto *ssa = GetPointer<ssa_name>(GET_NODE(ga->op0));
 
                if (ssa)
                {
@@ -2185,13 +2187,13 @@ void Bit_Value::forward()
          for(const auto& phi : B->CGetPhiList())
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing Phi " + STR(phi));
-            gimple_phi * pn = GetPointer<gimple_phi>(GET_NODE(phi));
+            auto * pn = GetPointer<gimple_phi>(GET_NODE(phi));
             bool is_virtual = pn->virtual_flag;
             if(!is_virtual)
             {
                unsigned int output_uid = GET_INDEX_NODE(pn->res);
 #ifndef NDEBUG
-               ssa_name * ssa = GetPointer<ssa_name>(GET_NODE(pn->res));
+               auto * ssa = GetPointer<ssa_name>(GET_NODE(pn->res));
 #endif
                INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "phi: "+STR(GET_INDEX_NODE(phi)));
                if(not is_handled_by_bitvalue(output_uid))

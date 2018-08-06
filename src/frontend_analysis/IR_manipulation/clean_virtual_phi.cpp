@@ -54,8 +54,8 @@
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
 
-///utility include
-#include "utility.hpp"
+#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship> > CleanVirtualPhi::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
@@ -89,7 +89,7 @@ CleanVirtualPhi::CleanVirtualPhi(const application_managerRef _AppM, unsigned in
 }
 
 CleanVirtualPhi::~CleanVirtualPhi()
-{}
+= default;
 
 DesignFlowStep_Status CleanVirtualPhi::InternalExec()
 {
@@ -99,8 +99,8 @@ DesignFlowStep_Status CleanVirtualPhi::InternalExec()
    }
    const auto TM = AppM->get_tree_manager();
    tree_nodeRef temp = TM->get_tree_node_const(function_id);
-   function_decl * fd = GetPointer<function_decl>(temp);
-   statement_list * sl = GetPointer<statement_list>(GET_NODE(fd->body));
+   auto * fd = GetPointer<function_decl>(temp);
+   auto * sl = GetPointer<statement_list>(GET_NODE(fd->body));
    ///Removing all the virtual phi
    ///The virtual phis refer to memory definitions and uses instaed of virtual definitions and uses
 

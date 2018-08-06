@@ -92,8 +92,6 @@ namespace flopoco { class Operator; class Target;}
 class flopoco_wrapper
 {
    private:
-      //no copy constructor
-      flopoco_wrapper(const flopoco_wrapper& inst) = delete;
 #ifndef NDEBUG
       /// Current debug level
       int debug_level;
@@ -179,6 +177,9 @@ class flopoco_wrapper
        * Destructor
        */
       ~flopoco_wrapper();
+
+      //no copy constructor
+      flopoco_wrapper(const flopoco_wrapper& inst) = delete;
 
 
       /**

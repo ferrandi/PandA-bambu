@@ -146,7 +146,7 @@ class CBackend : public DesignFlowStep
        * @param dependencies is where relationships will be stored
        * @param relationship_type is the type of relationship to be computed
        */
-      virtual void ComputeRelationships(DesignFlowStepSet & relationship, const DesignFlowStep::RelationshipType relationship_type);
+      void ComputeRelationships(DesignFlowStepSet & relationship, const DesignFlowStep::RelationshipType relationship_type) override;
 
    public:
       ///The types of backend
@@ -210,7 +210,7 @@ class CBackend : public DesignFlowStep
             const CBackendInformationConstRef c_backend_information,
             const DesignFlowManagerConstRef design_flow_manager,
             const application_managerConstRef AppM,
-            const std::string& file_name,
+            std::string  file_name,
             const ParameterConstRef Param);
 
    public:
@@ -218,24 +218,24 @@ class CBackend : public DesignFlowStep
       /**
        * Destructor
        */
-      virtual ~CBackend();
+      ~CBackend() override;
 
       /**
        * Initialize the step (i.e., like a constructor, but executed just before exec
        */
-      virtual void Initialize();
+      void Initialize() override;
 
       /**
        * Execute the step
        * @return the exit status of this step
        */
-      virtual DesignFlowStep_Status Exec();
+      DesignFlowStep_Status Exec() override;
 
       /**
        * Check if this step has actually to be executed
        * @return true if the step has to be executed
        */
-      virtual bool HasToBeExecuted() const;
+      bool HasToBeExecuted() const override;
 
       /**
        * Compute the signature for a c backend step
@@ -247,18 +247,18 @@ class CBackend : public DesignFlowStep
        * Return a unified identifier of this design step
        * @return the signature of the design step
        */
-      virtual const std::string GetSignature() const;
+      const std::string GetSignature() const override;
 
       /**
        * Return the name of this design step
        * @return the name of the pass (for debug purpose)
        */
-      virtual const std::string GetName() const;
+      const std::string GetName() const override;
 
       /**
        * Return the factory to create this type of steps
        */
-      virtual const DesignFlowStepFactoryConstRef CGetDesignFlowStepFactory() const;
+      const DesignFlowStepFactoryConstRef CGetDesignFlowStepFactory() const override;
 
       /**
        * @return the associated c writer

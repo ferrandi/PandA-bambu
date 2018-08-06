@@ -54,10 +54,7 @@
 #else
 #include <map>
 #endif
-
-///Utility include
-#include <boost/lexical_cast.hpp>
-#include "exceptions.hpp"
+#include <utility>                    // for pair
 
 #if HAVE_UNORDERED
 template <typename T, typename U>

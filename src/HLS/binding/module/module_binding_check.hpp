@@ -121,9 +121,9 @@ struct module_binding_check : public check_clique<vertex_type>
           std::vector<std::set<unsigned int> > variableVector;
 
           std::vector<HLS_manager::io_binding_type> vars_read = HLSMgr->get_required_values(HLS->functionId, operationVertex);
-          for(unsigned int port_index = 0; port_index < vars_read.size(); ++port_index)
+          for(auto & port_index : vars_read)
           {
-              unsigned int tree_var = std::get<0>(vars_read[port_index]);
+              unsigned int tree_var = std::get<0>(port_index);
               std::set<unsigned int> variablesAtPort;
               if(tree_var != 0)
                  variablesAtPort.insert(tree_var);
@@ -163,16 +163,16 @@ struct module_binding_check : public check_clique<vertex_type>
 
     module_binding_check(const module_binding_check &original) : opSlacks(original.opSlacks), input_variables(original.input_variables), fu_prec(original.fu_prec), area_resource(original.area_resource), tree_index_dsets(original.tree_index_dsets), HLS(original.HLS), HLSMgr(original.HLSMgr), slack_time(original.slack_time), starting_time(original.starting_time), controller_delay(original.controller_delay), is_disabled_slack_based_binding(original.is_disabled_slack_based_binding) {}
 
-    module_binding_check* clone() const {return new module_binding_check(*this);}
+    module_binding_check* clone() const override {return new module_binding_check(*this);}
 
     module_binding_check & operator=(const module_binding_check&) = delete;
 
 
-    virtual ~module_binding_check() {}
+    ~module_binding_check() override = default;
 
 
     void initialize_structures(boost_cc_compatibility_graph &graph,
-                               std::map<C_vertex, vertex_type>& Ruv2v)
+                               std::map<C_vertex, vertex_type>& Ruv2v) override
     {
 
 
@@ -214,7 +214,7 @@ struct module_binding_check : public check_clique<vertex_type>
               }
     }
 
-    double cost(size_t clique_count)
+    double cost(size_t clique_count) override
     {
        double area_muxes = 0;
        for(auto input_var : input_variables)
@@ -227,7 +227,7 @@ struct module_binding_check : public check_clique<vertex_type>
        return area_muxes+area_resource*static_cast<double>(clique_count);
     }
 
-    size_t num_mux()
+    size_t num_mux() override
     {
        size_t n_muxes = 0;
        for(auto input_var : input_variables)
@@ -240,7 +240,7 @@ struct module_binding_check : public check_clique<vertex_type>
     }
 
 
-    void update_after_join(C_vertex& rep, C_vertex& child)
+    void update_after_join(C_vertex& rep, C_vertex& child) override
     {
     //aggiungo tutte le variabili in ingresso a child all'ingresso di rep
 
@@ -269,7 +269,7 @@ struct module_binding_check : public check_clique<vertex_type>
      returns false if the two vertex are not compatible, true if the
      two vertex can be inserted in the same clique
      */
-    bool check_edge_compatibility(C_vertex& rep, C_vertex& other)
+    bool check_edge_compatibility(C_vertex& rep, C_vertex& other) override
     {
        double minSlack = std::min(opSlacks[rep], opSlacks[other]);
        THROW_ASSERT(input_variables.find(rep) != input_variables.end(), "unexpected case");
@@ -318,7 +318,7 @@ struct module_binding_check : public check_clique<vertex_type>
     }
 
 
-    bool check_no_mux_needed(C_vertex& rep, C_vertex& other)
+    bool check_no_mux_needed(C_vertex& rep, C_vertex& other) override
     {
        size_t port_number = input_variables[other].size();
        std::set<size_t> port_inputs;

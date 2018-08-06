@@ -86,8 +86,7 @@ Scheduling::Scheduling(const ParameterConstRef _Param, const HLS_managerRef _HLS
 }
 
 Scheduling::~Scheduling()
-{
-}
+= default;
 
 void Scheduling::Initialize()
 {
@@ -188,9 +187,9 @@ unsigned int Scheduling::compute_b_tag(const EdgeDescriptor & e, const OpGraphCo
 
 unsigned int Scheduling::b_tag_normalize(vertex controlling_vertex, unsigned int b_tag_not_normalized) const
 {
-   std::unordered_map<vertex, std::unordered_map< unsigned int, unsigned int> >::const_iterator snp_it = switch_normalizing_map.find(controlling_vertex);
+   auto snp_it = switch_normalizing_map.find(controlling_vertex);
    THROW_ASSERT(snp_it != switch_normalizing_map.end(), "this controlling vertex is not of switch type");
-   std::unordered_map< unsigned int, unsigned int>::const_iterator snp_el_it = snp_it->second.find(b_tag_not_normalized);
+   auto snp_el_it = snp_it->second.find(b_tag_not_normalized);
    THROW_ASSERT(snp_el_it != snp_it->second.end(), "switch_normalizing_map not correctly initialized");
    return snp_el_it->second;
 }
@@ -199,13 +198,13 @@ void Scheduling::init_switch_maps(vertex controlling_vertex, const OpGraphConstR
 {
    unsigned int curr_b_tag = 0;
    switch_normalizing_map.insert(std::pair<vertex, std::unordered_map< unsigned int, unsigned int> >(controlling_vertex, std::unordered_map< unsigned int, unsigned int>()));
-   std::unordered_map<vertex, std::unordered_map< unsigned int, unsigned int> >::iterator snp_it = switch_normalizing_map.find(controlling_vertex);
+   auto snp_it = switch_normalizing_map.find(controlling_vertex);
    OutEdgeIterator eo, eo_end;
    for(boost::tie(eo, eo_end) = boost::out_edges(controlling_vertex, *cdg); eo != eo_end; eo++)
    {
       const std::set<unsigned int> &switch_set = EDGE_GET_NODEID(cdg, *eo, CDG_SELECTOR);
       const std::set<unsigned int>::const_iterator switch_it_end = switch_set.end();
-      for(std::set<unsigned int>::const_iterator switch_it = switch_set.begin(); switch_it != switch_it_end; ++switch_it)
+      for(auto switch_it = switch_set.begin(); switch_it != switch_it_end; ++switch_it)
          if(snp_it->second.find(*switch_it) == snp_it->second.end())
             snp_it->second[*switch_it] = curr_b_tag++;
    }

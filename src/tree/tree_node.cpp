@@ -57,8 +57,7 @@
 #include "weight_information.hpp"
 #endif
 
-///STD include
-#include <iosfwd>
+#include <ostream>                                       // for operator<<
 
 ///Tree include
 #include "gimple_writer.hpp"
@@ -67,10 +66,14 @@
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
+#include "dbgPrintHelper.hpp"                            // for INDENT_DBG_MEX
+#include "string_manipulation.hpp"                       // for STR
 
 ///Utility include
 #include <boost/preprocessor/seq/for_each.hpp>
 #include <boost/preprocessor/facilities/empty.hpp>
+#include <iostream>
+#include <utility>
 
 ///forward declaration macro
 #define VISIT_TREE_NODE_MACRO(r, data, elem)   \
@@ -176,7 +179,7 @@ void WeightedNode::visit(tree_node_visitor * const v) const
 
 
 attr::~attr()
-{}
+= default;
 
 void attr::visit(tree_node_visitor * const v) const
 {
@@ -257,7 +260,7 @@ bool attr::is_bitfield()
 }
 
 srcp::~srcp()
-{}
+= default;
 
 void srcp::visit(tree_node_visitor * const v) const
 {
@@ -298,10 +301,10 @@ const std::string PointToInformation::default_key = "default";
 const std::string PointToInformation::deferenced_key = "pointed";
 
 PointToInformation::PointToInformation()
-{}
+= default;
 
 PointToInformation::~PointToInformation()
-{}
+= default;
 
 void expr_node::visit(tree_node_visitor * const v) const
 {
@@ -479,8 +482,8 @@ void binfo::visit(tree_node_visitor * const v) const
    (*v)(this, mask);
    VISIT_SC(mask,tree_node,visit(v));
    VISIT_MEMBER(mask,type,visit(v));
-   std::vector<std::pair< TreeVocabularyTokenTypes_TokenEnum, tree_nodeRef> >::const_iterator vend = list_of_access_binf.end();
-   for (std::vector<std::pair< TreeVocabularyTokenTypes_TokenEnum, tree_nodeRef> >::const_iterator i = list_of_access_binf.begin(); i != vend; ++i)
+   auto vend = list_of_access_binf.end();
+   for (auto i = list_of_access_binf.begin(); i != vend; ++i)
    {
       VISIT_MEMBER_NAMED(list_of_access_binf,mask,i->second,visit(v));
    }
@@ -508,7 +511,7 @@ PointToSolution::PointToSolution() :
 {}
 
 PointToSolution::~PointToSolution()
-{}
+= default;
 
 void PointToSolution::Add(const std::string&variable)
 {
@@ -533,12 +536,12 @@ void PointToSolution::Add(const tree_nodeRef variable)
 
 bool PointToSolution::is_a_singleton() const
 {
-   return !anything && !escaped && !ipa_escaped && !nonlocal && !null && variables.size() == 1;
+   return !anything && !escaped && !ipa_escaped && !nonlocal && variables.size() == 1;
 }
 
 bool PointToSolution::is_fully_resolved() const
 {
-   return !anything && !escaped && !ipa_escaped && !nonlocal && !null && variables.size() != 0;
+   return !anything && !escaped && !ipa_escaped && !nonlocal && variables.size() != 0;
 }
 
 std::string PointToSolution::ToString() const
@@ -674,8 +677,8 @@ void constructor::visit(tree_node_visitor * const v) const
    unsigned int mask=ALL_VISIT;
    (*v)(this, mask);
    VISIT_MEMBER(mask,type,visit(v));
-   std::vector<std::pair< tree_nodeRef, tree_nodeRef> >::const_iterator vend = list_of_idx_valu.end();
-   for (std::vector<std::pair< tree_nodeRef, tree_nodeRef> >::const_iterator i = list_of_idx_valu.begin(); i != vend; ++i)
+   auto vend = list_of_idx_valu.end();
+   for (auto i = list_of_idx_valu.begin(); i != vend; ++i)
    {
       VISIT_MEMBER_NAMED(list_of_idx_valu,mask,i->first,visit(v));
       VISIT_MEMBER_NAMED(list_of_idx_valu,mask,i->second,visit(v));
@@ -705,7 +708,7 @@ long long int field_decl::offset()
 {
    if (bpos)
    {
-      integer_cst* ic = GetPointer<integer_cst>(GET_NODE(bpos));
+      auto* ic = GetPointer<integer_cst>(GET_NODE(bpos));
       return tree_helper::get_integer_cst_value(ic);
    }
    return 0;
@@ -843,10 +846,10 @@ void handler::visit(tree_node_visitor * const v) const
 }
 
 #if HAVE_TREE_MANIPULATION_BUILT
-identifier_node::identifier_node(unsigned int node_id, const std::string &_strg, tree_manager* TM):
+identifier_node::identifier_node(unsigned int node_id, std::string _strg, tree_manager* TM):
    tree_node(node_id),
    operator_flag(false),
-   strg(_strg)
+   strg(std::move(_strg))
 {
    TM->add_identifier_node(node_id, strg);
 }
@@ -1282,8 +1285,8 @@ void statement_list::visit(tree_node_visitor * const v) const
    (*v)(this, mask);
    VISIT_SC(mask,tree_node,visit(v));
    SEQ_VISIT_MEMBER(mask,list_of_stmt,tree_node,visit,tree_node_visitor,v);
-   std::map<unsigned int, blocRef>::const_iterator mend = list_of_bloc.end();
-   for (std::map<unsigned int, blocRef>::const_iterator i = list_of_bloc.begin(); i != mend; ++i)
+   auto mend = list_of_bloc.end();
+   for (auto i = list_of_bloc.begin(); i != mend; ++i)
       VISIT_MEMBER_NAMED(list_of_bloc,mask,i->second,visit(v));
 }
 
@@ -1489,7 +1492,7 @@ bool TreeNodeConstEqualTo::operator()(const tree_nodeConstRef x, const tree_node
 
 #if not HAVE_UNORDERED
 TreeNodeSorter::TreeNodeSorter()
-{}
+= default;
 
 bool TreeNodeSorter::operator()(const tree_nodeRef x, const tree_nodeRef y) const
 {
@@ -1497,7 +1500,7 @@ bool TreeNodeSorter::operator()(const tree_nodeRef x, const tree_nodeRef y) cons
 }
 
 TreeNodeConstSorter::TreeNodeConstSorter()
-{}
+= default;
 
 TreeNodeSet::TreeNodeSet() :
    std::set<tree_nodeRef, TreeNodeSorter>(TreeNodeSorter())

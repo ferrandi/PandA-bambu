@@ -43,12 +43,8 @@
 
 ///Header include
 #include "function_decl_refs.hpp"
-
-///Tree include
 #include "ext_tree_node.hpp"
-#include "tree_basic_block.hpp"
 #include "tree_node.hpp"
-#include "tree_reindex.hpp"
 
 void function_decl_refs::operator()(const tree_node * obj, unsigned int & )
 {

@@ -44,11 +44,16 @@
 ///Header include
 #include "weak_dominance.hpp"
 
-///Dominance include
+#include <boost/tuple/tuple.hpp>                  // for tie
+#include <iterator>                               // for front_insert_iterator
+#include <list>                                   // for list, _List_iterator
 #include "Dominance.hpp"
+#include "Parameter.hpp"                          // for ParameterConstRef
+#include "dbgPrintHelper.hpp"                     // for DEBUG_LEVEL_NONE
+#include "edge_info.hpp"                          // for EdgeInfoRef
+#include "exceptions.hpp"                         // for THROW_ASSERT
+#include "string_manipulation.hpp"                // for GET_CLASS
 
-///Utility include
-#include "utility.hpp"
 
 void weak_dominance::calculate_weak_dominance_info(graphs_collection * output, std::unordered_map<vertex, vertex> & i2o, std::unordered_map<vertex, vertex> & o2i)
 {
@@ -71,8 +76,8 @@ void weak_dominance::calculate_weak_dominance_info(graphs_collection * output, s
    boost::topological_sort(*input, std::front_inserter(levels));
    std::unordered_map<vertex, unsigned int> sorted_nodes;
    unsigned int counter = 0;
-   for(std::list<vertex>::iterator it = levels.begin(); it != levels.end(); ++it)
-      sorted_nodes[*it] = ++counter;
+   for(auto & level : levels)
+      sorted_nodes[level] = ++counter;
 
    dominance<graph> dm(*input, start, end, param);
    dm.calculate_dominance_info(dominance<graph>::CDI_POST_DOMINATORS);

@@ -71,6 +71,7 @@
 ///Utility include
 #include "Parameter.hpp"
 #include "fileIO.hpp"
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 create_tree_manager::create_tree_manager(const ParameterConstRef _parameters, const application_managerRef _AppM, const DesignFlowManagerConstRef _design_flow_manager) :
    ApplicationFrontendFlowStep(_AppM, CREATE_TREE_MANAGER, _design_flow_manager, _parameters),
@@ -80,9 +81,7 @@ create_tree_manager::create_tree_manager(const ParameterConstRef _parameters, co
 }
 
 create_tree_manager::~create_tree_manager()
-{
-
-}
+= default;
 
 void create_tree_manager::ComputeRelationships(DesignFlowStepSet & relationship, const DesignFlowStep::RelationshipType relationship_type)
 {

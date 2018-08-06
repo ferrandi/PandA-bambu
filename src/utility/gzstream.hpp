@@ -69,11 +69,11 @@
          inline int is_open() { return opened; }
          inline gzstreambuf* open( const char* name, int open_mode);
          inline gzstreambuf* close();
-         inline ~gzstreambuf() { close(); }
+         inline ~gzstreambuf() override { close(); }
 
-         virtual int     overflow( int c = EOF);
-         virtual int     underflow();
-         virtual int     sync();
+         int     overflow( int c = EOF) override;
+         int     underflow() override;
+         int     sync() override;
    };
 
    class gzstreambase : virtual public std::ios
@@ -83,7 +83,7 @@
       public:
          inline gzstreambase() { init(&buf); }
          inline gzstreambase( const char* name, int open_mode);
-         inline ~gzstreambase();
+         inline ~gzstreambase() override;
          inline void open( const char* name, int open_mode);
          inline void close();
          inline gzstreambuf* rdbuf() { return &buf; }
@@ -189,7 +189,7 @@
    {
       // Separate the writing of the buffer from overflow() and
       // sync() operation.
-      int w = static_cast<int>(pptr() - pbase());
+      auto w = static_cast<int>(pptr() - pbase());
       if ( gzwrite( file, pbase(), static_cast<unsigned int>(w)) != w)
          return EOF;
       pbump(-w);

@@ -104,6 +104,9 @@
 #include "cpu_time.hpp"
 
 #include <boost/range/adaptor/reversed.hpp>
+#include "string_manipulation.hpp"          // for GET_CLASS
+
+
 fun_dominator_allocation::fun_dominator_allocation(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type) :
    function_allocation(_parameters, _HLSMgr, _design_flow_manager, _hls_flow_step_type),
    already_executed(false)
@@ -112,9 +115,7 @@ fun_dominator_allocation::fun_dominator_allocation(const ParameterConstRef _para
 }
 
 fun_dominator_allocation::~fun_dominator_allocation()
-{
-
-}
+= default;
 
 void fun_dominator_allocation::ComputeRelationships(DesignFlowStepSet & relationship, const DesignFlowStep::RelationshipType relationship_type)
 {
@@ -141,13 +142,13 @@ void fun_dominator_allocation::ComputeRelationships(DesignFlowStepSet & relation
       case DEPENDENCE_RELATIONSHIP:
          {
             const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
-            const FrontendFlowStepFactory * frontend_flow_step_factory = GetPointer<const FrontendFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("Frontend"));
+            const auto * frontend_flow_step_factory = GetPointer<const FrontendFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("Frontend"));
             const std::string frontend_flow_signature = ApplicationFrontendFlowStep::ComputeSignature(BAMBU_FRONTEND_FLOW);
             const vertex frontend_flow_step = design_flow_manager.lock()->GetDesignFlowStep(frontend_flow_signature);
             const DesignFlowStepRef design_flow_step = frontend_flow_step ? design_flow_graph->CGetDesignFlowStepInfo(frontend_flow_step)->design_flow_step : frontend_flow_step_factory->CreateApplicationFrontendFlowStep(BAMBU_FRONTEND_FLOW);
             relationship.insert(design_flow_step);
 
-            const TechnologyFlowStepFactory * technology_flow_step_factory = GetPointer<const TechnologyFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("Technology"));
+            const auto * technology_flow_step_factory = GetPointer<const TechnologyFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("Technology"));
             const std::string technology_flow_signature = TechnologyFlowStep::ComputeSignature(TechnologyFlowStep_Type::LOAD_TECHNOLOGY);
             const vertex technology_flow_step = design_flow_manager.lock()->GetDesignFlowStep(technology_flow_signature);
             const DesignFlowStepRef technology_design_flow_step = technology_flow_step ? design_flow_graph->CGetDesignFlowStepInfo(technology_flow_step)->design_flow_step : technology_flow_step_factory->CreateTechnologyFlowStep(TechnologyFlowStep_Type::LOAD_TECHNOLOGY);
@@ -250,7 +251,7 @@ DesignFlowStep_Status fun_dominator_allocation::Exec()
                HLS_C->get_number_fu(called_fu_name, WORK_LIBRARY) == 1) // or single instance functions
          {
             fun_dom_map[called_fu_name].insert(vert_dominator);
-            const FunctionEdgeInfo * info =
+            const auto * info =
                Cget_edge_info<FunctionEdgeInfo, const CallGraph>(*eo, *cg);
 
             if (info->direct_call_points.size())
@@ -313,8 +314,8 @@ DesignFlowStep_Status fun_dominator_allocation::Exec()
             funID = CG->get_function(top_vertex);
          else
          {
-            std::set<vertex>::const_iterator vert_it = dom_map.second.begin();
-            std::set<vertex>::const_iterator vert_it_end = dom_map.second.end();
+            auto vert_it = dom_map.second.begin();
+            auto vert_it_end = dom_map.second.end();
             std::list<vertex> dominator_list1;
             vertex cur = *vert_it;
             dominator_list1.push_front(cur);

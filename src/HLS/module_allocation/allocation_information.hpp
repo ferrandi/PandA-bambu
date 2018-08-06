@@ -44,7 +44,7 @@
 ///Superclass include
 #include "hls_function_ir.hpp"
 
-#include <stddef.h>         // for size_t
+#include <cstddef>         // for size_t
 #include <iosfwd>           // for ostream
 #include <string>           // for string
 #include <utility>          // for pair
@@ -53,8 +53,9 @@
 #include "op_graph.hpp"     // for OpGraphConstRef
 #include "refcount.hpp"     // for CONSTREF_FORWARD_DECL, REF_FORWARD_DECL
 #include "utility.hpp"      // for UINT_STRONG_TYPEDEF_FORWARD_DECL
-
+#include "hash_helper.hpp"
 #include "schedule.hpp"
+
 CONSTREF_FORWARD_DECL(AllocationInformation);
 CONSTREF_FORWARD_DECL(BehavioralHelper);
 UINT_STRONG_TYPEDEF_FORWARD_DECL(ControlStep);
@@ -364,12 +365,12 @@ class AllocationInformation : public HLSFunctionIR
       /**
        * Initialize all the data structure
        */
-      virtual void Initialize();
+      void Initialize() override;
 
       /**
        * Clear all the data structure
        */
-      virtual void Clear();
+      void Clear() override;
 
       enum op_target
       {
@@ -380,7 +381,7 @@ class AllocationInformation : public HLSFunctionIR
       /**
        * Destructor
        */
-      virtual ~AllocationInformation();
+      ~AllocationInformation() override;
 
       /**
        * Returns the set of functional units that can be used to implement the operation associated with vertex v.
@@ -878,13 +879,12 @@ class AllocationInformation : public HLSFunctionIR
       /**
        * Return the execution time of (a stage of) an operation
        * @param operation is the operation
-       * @param schedule_step is the step in which the operation is scheduled
        * @param functional_unit is the functional unit
        * @param stage is the stage to be considered for pipelined operation
        * @param ignore_connection specifies if connection delays have to be ignored
        */
-      std::pair<double,double>  GetTimeLatency(const unsigned int operation, const AbsControlStep schedule_step, const unsigned int functional_unit, const unsigned int stage = 0, const bool ignore_connection = false) const;
-      std::pair<double,double>  GetTimeLatency(const vertex operation, const AbsControlStep schedule_step, const unsigned int functional_unit, const unsigned int stage = 0, const bool ignore_connection = false) const;
+      std::pair<double,double>  GetTimeLatency(const unsigned int operation, const unsigned int functional_unit, const unsigned int stage = 0) const;
+      std::pair<double,double>  GetTimeLatency(const vertex operation, const unsigned int functional_unit, const unsigned int stage = 0) const;
 
       /**
        * Return the connection time for a couple of operations or the phi overhead for a single operation
@@ -1050,7 +1050,7 @@ struct updatecopy_HLS_constraints_functor
       /**
        * Destructor
        */
-      ~updatecopy_HLS_constraints_functor() {}
+      ~updatecopy_HLS_constraints_functor() = default;
 
    private:
 

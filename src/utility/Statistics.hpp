@@ -43,12 +43,15 @@
 #ifndef STATISTICS_HPP
 #define STATISTICS_HPP
 
+#include <boost/math/distributions/lognormal.hpp>
+#include <boost/math/distributions/normal.hpp>
 ///Utility include
 #include <boost/version.hpp>
 
 #if BOOST_VERSION >= 104600
 #else
 #include <tuple>
+
 #define BOOST_TR1_TUPLE_HPP_INCLUDED
 #endif
 #include <boost/math/distributions.hpp>

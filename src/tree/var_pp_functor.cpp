@@ -42,7 +42,7 @@
  */
 ///Header include
 #include "var_pp_functor.hpp"
-
+#include <cstddef>               // for size_t
 #include "behavioral_helper.hpp"
 
 pointer_var_pp_functor::pointer_var_pp_functor(const BehavioralHelperConstRef _BH, const CustomSet<unsigned int> vars, bool _add_restrict):

@@ -61,6 +61,7 @@
 
 ///utility include
 #include "indented_output_stream.hpp"
+#include "string_manipulation.hpp"
 
 BasicBlocksProfilingCWriter::BasicBlocksProfilingCWriter(const application_managerConstRef _AppM, const InstructionWriterRef _instruction_writer, const IndentedOutputStreamRef _indented_output_stream, const ParameterConstRef _Param, bool _verbose) :
    CWriter(_AppM, _instruction_writer, _indented_output_stream, _Param, _verbose),
@@ -70,8 +71,7 @@ BasicBlocksProfilingCWriter::BasicBlocksProfilingCWriter(const application_manag
 }
 
 BasicBlocksProfilingCWriter::~BasicBlocksProfilingCWriter()
-{
-}
+= default;
 
 void BasicBlocksProfilingCWriter::print_loop_ending(EdgeDescriptor e)
 {

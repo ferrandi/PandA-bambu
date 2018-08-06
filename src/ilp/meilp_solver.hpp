@@ -45,22 +45,21 @@
 #ifndef MEILP_SOLVER_HPP
 #define MEILP_SOLVER_HPP
 
+#include <cstddef>
+///STD include
+#include <iosfwd>
+///STL include
+#include <map>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
 ///Autoheader include
 #include "config_HAVE_COIN_OR.hpp"
 #include "config_HAVE_GLPK.hpp"
 #include "config_HAVE_LP_SOLVE.hpp"
-
 ///Utility include
 #include "refcount.hpp"
-
-///STD include
-#include <iosfwd>
-#include <string>
-
-///STL include
-#include <map>
-#include <unordered_map>
-#include <vector>
 
 /**
  * @name forward declarations
@@ -88,21 +87,21 @@ class meilp_solver
 
    private:
 
-      /// ???
+      /// number of elements in the constraint buffer
       size_t nel;
 
 
    protected:
-      /// ???
+      /// values in the constraint buffer
       double * real_buffer;
 
-      /// ???
+      /// indexes in the constraint buffer
       int * int_buffer;
 
-      /// ???
+      /// unique column identifier
       int unique_column_id;
 
-      /// ???
+      /// Time-out value
       int MAX_time;
 
       /// debug_level

@@ -83,6 +83,7 @@
 #include "dbgPrintHelper.hpp"
 #include "exceptions.hpp"
 #include "math_function.hpp"
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 
 hls_div_cg_ext::hls_div_cg_ext(const ParameterConstRef _parameters, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager) :
@@ -101,7 +102,7 @@ void hls_div_cg_ext::Initialize()
 }
 
 hls_div_cg_ext::~hls_div_cg_ext()
-{}
+= default;
 
 const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship> > hls_div_cg_ext::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
@@ -134,8 +135,8 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
 DesignFlowStep_Status hls_div_cg_ext::InternalExec()
 {
    const tree_nodeRef curr_tn = TreeM->GetTreeNode(function_id);
-   function_decl * fd = GetPointer<function_decl>(curr_tn);
-   statement_list * sl = GetPointer<statement_list>(GET_NODE(fd->body));
+   auto * fd = GetPointer<function_decl>(curr_tn);
+   auto * sl = GetPointer<statement_list>(GET_NODE(fd->body));
 
    std::map<unsigned int, blocRef> &blocks = sl->list_of_bloc;
    std::map<unsigned int, blocRef>::iterator it, it_end;
@@ -198,7 +199,7 @@ void hls_div_cg_ext::recursive_examinate(const tree_nodeRef & current_tree_node,
       }
       case gimple_assign_K:
       {
-         gimple_assign * gm = GetPointer<gimple_assign>(curr_tn);
+         auto * gm = GetPointer<gimple_assign>(curr_tn);
          recursive_examinate(gm->op0, current_statement);
          recursive_examinate(gm->op1, current_statement);
          if(gm->predicate)
@@ -255,7 +256,7 @@ void hls_div_cg_ext::recursive_examinate(const tree_nodeRef & current_tree_node,
 
                if(GetPointer<integer_cst>(GET_NODE(be->op1)))
                {
-                  integer_cst * ic = GetPointer<integer_cst>(GET_NODE(be->op1));
+                  auto * ic = GetPointer<integer_cst>(GET_NODE(be->op1));
                   if((ic->value & (ic->value - 1)) == 0)
                      is_constant_second_par = true;
                }
@@ -352,7 +353,7 @@ void hls_div_cg_ext::recursive_examinate(const tree_nodeRef & current_tree_node,
       }
       case gimple_multi_way_if_K:
       {
-         gimple_multi_way_if* gmwi=GetPointer<gimple_multi_way_if>(curr_tn);
+         auto* gmwi=GetPointer<gimple_multi_way_if>(curr_tn);
          for(auto cond : gmwi->list_of_cond)
             if(cond.first)
                recursive_examinate(cond.first, current_statement);
@@ -367,7 +368,7 @@ void hls_div_cg_ext::recursive_examinate(const tree_nodeRef & current_tree_node,
       }
       case gimple_for_K:
       {
-         const gimple_for * gf = GetPointer<const gimple_for>(curr_tn);
+         const auto * gf = GetPointer<const gimple_for>(curr_tn);
          recursive_examinate(gf->op0, current_statement);
          recursive_examinate(gf->op1, current_statement);
          recursive_examinate(gf->op2, current_statement);

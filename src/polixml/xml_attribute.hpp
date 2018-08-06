@@ -79,7 +79,7 @@ class xml_attribute : public xml_node
        * @param formatted when true the xml is formatted in human readable way.
        * @param pp is the pretty print helper.
        */
-      void print(std::ostream& os, bool, simple_indent* ) const
+      void print(std::ostream& os, bool, simple_indent* ) const override
       {
          std::string escaped(at_value);
          convert_unescaped(escaped);
@@ -112,8 +112,8 @@ struct attribute_sequence
        */
       void print_attributes(std::ostream& os) const
       {
-         attribute_list::const_iterator it_end =  a_list.end();
-         for(attribute_list::const_iterator it =  a_list.begin(); it != it_end; ++it)
+         auto it_end =  a_list.end();
+         for(auto it =  a_list.begin(); it != it_end; ++it)
          {
             os << " ";
             (*it)->print(os, false, nullptr);
@@ -137,7 +137,7 @@ struct attribute_sequence
          }
          else
          {
-            xml_attribute * at = new xml_attribute(name);
+            auto * at = new xml_attribute(name);
             xml_attributeRef at_ref(at);
             a_list.push_back(at);
             a_map[name] = at_ref;

@@ -58,9 +58,7 @@ function_allocation::function_allocation(const ParameterConstRef _Param, const H
 }
 
 function_allocation::~function_allocation()
-{
-
-}
+= default;
 
 void function_allocation::Initialize()
 {

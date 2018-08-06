@@ -85,6 +85,8 @@
 
 ///utility include
 #include "indented_output_stream.hpp"
+#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_NONE
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 REF_FORWARD_DECL(memory_symbol);
 
@@ -96,7 +98,7 @@ HLSCWriter::HLSCWriter(const HLSCBackendInformationConstRef _hls_c_backend_infor
 }
 
 HLSCWriter::~HLSCWriter()
-{}
+= default;
 
 void HLSCWriter::WriteHeader()
 {
@@ -366,7 +368,7 @@ void HLSCWriter::WriteParamInitialization
                const std::list<tree_nodeConstRef> fields = tree_helper::CGetFieldTypes(TM->CGetTreeNode(base_type));
                size_t n_values = splitted_fields.size();
                unsigned int index = 0;
-               for (std::list<tree_nodeConstRef>::const_iterator it=fields.begin(); it != fields.end(); ++it, ++index)
+               for (auto it=fields.begin(); it != fields.end(); ++it, ++index)
                {
                   if (index < n_values)
                   {
@@ -480,12 +482,12 @@ void HLSCWriter::WriteTestbenchFunctionCall
    if(flag_cpp)
    {
       tree_nodeRef fd_node = TM->get_tree_node_const(function_index);
-      function_decl * fd = GetPointer<function_decl>(fd_node);
+      auto * fd = GetPointer<function_decl>(fd_node);
       std::string simple_name;
       tree_nodeRef id_name = GET_NODE(fd->name);
       if (id_name->get_kind() == identifier_node_K)
       {
-         identifier_node *in = GetPointer<identifier_node>(id_name);
+         auto *in = GetPointer<identifier_node>(id_name);
          if(!in->operator_flag)
             simple_name = in->strg;
       }
@@ -876,7 +878,7 @@ void HLSCWriter::WriteSimulatorInitMemory(const unsigned int function_id)
                   const std::list<tree_nodeConstRef> fields = tree_helper::CGetFieldTypes(TM->CGetTreeNode(ptd_base_type));
                   size_t n_values = splitted_fields.size();
                   unsigned int index=0;
-                  for (std::list<tree_nodeConstRef>::const_iterator it=fields.begin(); it != fields.end(); ++it, ++index)
+                  for (auto it=fields.begin(); it != fields.end(); ++it, ++index)
                   {
                      const tree_nodeConstRef field_type = *it;
                      unsigned int field_size = tree_helper::Size(field_type);
@@ -1096,7 +1098,7 @@ std::string HLSCWriter::convert_in_binary(const BehavioralHelperConstRef behavio
          std::string::size_type sz = 0;
          ll_value = std::stoll (C_value,&sz,0);
       }
-      unsigned long long int ull_value = static_cast<unsigned long long int>(ll_value);
+      auto ull_value = static_cast<unsigned long long int>(ll_value);
       trimmed_value = "";
       for (unsigned int ind = 0; ind < precision; ind++)
          trimmed_value = trimmed_value + (((1LLU << (precision-ind-1)) & ull_value) ? '1' : '0');

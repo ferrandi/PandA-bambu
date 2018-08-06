@@ -42,15 +42,14 @@
  *
 */
 
-///Header include
-#include "simple_indent.hpp"
-
-///STD include
-#include <iosfwd>
+#include <iostream>
 #include <string>
 
+#include "dbgPrintHelper.hpp"
 ///Utility include
 #include "exceptions.hpp"
+///Header include
+#include "simple_indent.hpp"
 
 simple_indent::simple_indent(char o, char c, unsigned int d) :
       indent_spaces(0),

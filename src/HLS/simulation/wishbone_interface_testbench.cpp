@@ -78,6 +78,7 @@
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
+#include "string_manipulation.hpp"          // for STR
 
 WishboneInterfaceTestbench::WishboneInterfaceTestbench(
       const ParameterConstRef _parameters,
@@ -91,7 +92,7 @@ WishboneInterfaceTestbench::WishboneInterfaceTestbench(
 {}
 
 WishboneInterfaceTestbench::~WishboneInterfaceTestbench()
-{}
+= default;
 
 void WishboneInterfaceTestbench::write_wishbone_input_signal_declaration(const tree_managerConstRef TreeM) const
 {
@@ -214,7 +215,7 @@ void WishboneInterfaceTestbench::write_call(bool hasMultiIrq) const
    writer->write("end\n");
 
    unsigned int state = 0;
-   for (std::vector<std::string>::reverse_iterator itr = parameterNames.rbegin(),
+   for (auto itr = parameterNames.rbegin(),
                                                    end = parameterNames.rend(); itr != end; ++itr)
    {
       if (*itr != RETURN_PORT_NAME)
@@ -305,7 +306,7 @@ void WishboneInterfaceTestbench::write_call(bool hasMultiIrq) const
    writer->write("end\n");
 
    state = 0;
-   for (std::vector<std::string>::reverse_iterator itr = parameterNames.rbegin(),
+   for (auto itr = parameterNames.rbegin(),
                                                    end = parameterNames.rend(); itr != end; ++itr)
    {
       if (*itr != RETURN_PORT_NAME)

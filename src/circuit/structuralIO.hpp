@@ -44,7 +44,9 @@
 #ifndef STRUCTURALIO_HPP
 #define STRUCTURALIO_HPP
 
+#include <string>
 #include "refcount.hpp"
+
 /**
  * @name forward declarations
 */
@@ -53,8 +55,6 @@
 REF_FORWARD_DECL(structural_manager);
 REF_FORWARD_DECL(Parameter);
 //@}
-
-#include <string>
 
 /**
  * Read an xml file describing the structural data structures.

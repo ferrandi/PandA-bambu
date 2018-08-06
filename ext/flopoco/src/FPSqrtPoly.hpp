@@ -30,16 +30,16 @@ namespace flopoco{
 		/**
 		 * FPSqrtPoly destructor
 		 */
-		~FPSqrtPoly();
+		~FPSqrtPoly() override;
 
 		/**
 		 * Emulate a correctly rounded square root using MPFR.
 		 * @param tc a TestCase partially filled with input values 
 		 */
-		void emulate(TestCase * tc);
+		void emulate(TestCase * tc) override;
 
 		/* Overloading the Operator method to limit testing of NaNs and negative numbers*/
-		TestCase* buildRandomTestCase(int i);
+		TestCase* buildRandomTestCase(int i) override;
 		//	void buildStandardTestCases(TestCaseList* tcl);
 	private:
 		/** The width of the exponent for the input X */

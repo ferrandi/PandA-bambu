@@ -77,9 +77,7 @@ minimal_interface::minimal_interface(const ParameterConstRef _Param, const HLS_m
 }
 
 minimal_interface::~minimal_interface()
-{
-
-}
+= default;
 
 DesignFlowStep_Status minimal_interface::InternalExec()
 {
@@ -298,7 +296,7 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj,
             std::ofstream init_file_a((init_filename).c_str());
             std::ofstream init_file_b((+"0_"+init_filename).c_str());
 
-            module* shared_memory_module = GetPointer<module>(shared_memory);
+            auto* shared_memory_module = GetPointer<module>(shared_memory);
             shared_memory_module->set_parameter("address_space_begin", boost::lexical_cast<std::string>(base_address));
             shared_memory_module->set_parameter("address_space_rangesize", boost::lexical_cast<std::string>(n_bytes));
             if(parameters->isOption(OPT_sparse_memory) && parameters->getOption<bool>(OPT_sparse_memory))
@@ -353,8 +351,8 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj,
             unsigned int counter=0;
             bool is_even = true;
             std::list<std::pair<unsigned int, memory_symbolRef> > mem_variables;
-            for(std::map<unsigned int, memory_symbolRef>::const_iterator m = mem_vars.begin(); m != mem_vars.end(); ++m)
-               mem_variables.push_back(std::make_pair(m->first, m->second));
+            for(const auto & mem_var : mem_vars)
+               mem_variables.push_back(std::make_pair(mem_var.first, mem_var.second));
             mem_variables.sort(compareMemVarsPair);
 
             std::list<std::pair<unsigned int, memory_symbolRef> >::const_iterator m_next;
@@ -365,9 +363,9 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj,
                unsigned int byte_allocated = 0;
                unsigned int actual_byte = tree_helper::size(HLSMgr->get_tree_manager(), m->first)/8;
                std::vector<std::string> eightbit_string;
-               for(unsigned int i = 0; i < splitted.size(); i++)
+               for(const auto & i : splitted)
                {
-                  current_bits = splitted[i];
+                  current_bits = i;
                   for(unsigned int base_index = 0; base_index < current_bits.size(); base_index = base_index + 8, ++byte_allocated)
                      eightbit_string.push_back(current_bits.substr(current_bits.size()-8-base_index, 8));
                }

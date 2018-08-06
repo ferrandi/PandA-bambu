@@ -71,7 +71,7 @@ InitializeHLS::InitializeHLS(const ParameterConstRef _parameters, const HLS_mana
 {}
 
 InitializeHLS::~InitializeHLS()
-{}
+= default;
 
 const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > InitializeHLS::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {

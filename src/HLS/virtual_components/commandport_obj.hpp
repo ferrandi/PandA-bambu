@@ -48,6 +48,7 @@
 
 #include "refcount.hpp"
 #include <boost/lexical_cast.hpp>
+#include <utility>
 
 #include "generic_obj.hpp"
 
@@ -122,7 +123,7 @@ class commandport_obj : public generic_obj
                or mode == UNBOUNDED,
                "Command mode not allowed into this constructor"); }
 
-      commandport_obj(const generic_objRef& _elem, unsigned int _mode, const std::string&_name) : generic_obj(COMMAND_PORT, _name), elem(_elem), mode(_mode), is_a_phi_write_enable(false)
+      commandport_obj(generic_objRef  _elem, unsigned int _mode, const std::string&_name) : generic_obj(COMMAND_PORT, _name), elem(std::move(_elem)), mode(_mode), is_a_phi_write_enable(false)
       {
          THROW_ASSERT (mode == SELECTOR || mode == WRENABLE || mode == ALUSELECTOR, "Selector port is wrong");
       }
@@ -130,7 +131,7 @@ class commandport_obj : public generic_obj
       /**
        * Destructor.
        */
-      ~commandport_obj() {}
+      ~commandport_obj() override = default;
 
       /**
        * Gets the vertex associated with port

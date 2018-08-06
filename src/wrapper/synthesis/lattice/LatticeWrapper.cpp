@@ -63,9 +63,7 @@ LatticeWrapper::LatticeWrapper(const ParameterConstRef _Param, const std::string
 }
 
 LatticeWrapper::~LatticeWrapper()
-{
-
-}
+= default;
 
 void LatticeWrapper::generate_synthesis_script(const DesignParametersRef& dp, const std::string& file_name)
 {
@@ -101,9 +99,8 @@ std::string LatticeWrapper::get_command_line(const DesignParametersRef& dp) cons
 {
    std::ostringstream s;
    s << get_tool_exec() << " " << script_name;
-   for (std::vector<xml_parameter_tRef>::const_iterator it = xml_tool_options.begin(); it != xml_tool_options.end(); ++it)
+   for (const auto & option : xml_tool_options)
    {
-      const xml_parameter_tRef & option = *it;
       if (option->checkCondition(dp))
       {
          std::string value = toString(option, dp);
@@ -128,7 +125,7 @@ std::string LatticeWrapper::getStringValue(const xml_script_node_tRef node, cons
          else if (var->multiValues.size())
          {
             result += "{";
-            for (std::vector<xml_set_entry_tRef>::const_iterator it = var->multiValues.begin(); it != var->multiValues.end(); ++it)
+            for (auto it = var->multiValues.begin(); it != var->multiValues.end(); ++it)
             {
                const xml_set_entry_tRef e = *it;
                if (it != var->multiValues.begin())
@@ -188,7 +185,7 @@ std::string LatticeWrapper::toString(const xml_script_node_tRef node, const Desi
          else if (par->multiValues.size())
          {
             result += par->curlyBrackets ? "{" : "\"";
-            for (std::vector<xml_set_entry_tRef>::const_iterator it = par->multiValues.begin(); it != par->multiValues.end(); ++it)
+            for (auto it = par->multiValues.begin(); it != par->multiValues.end(); ++it)
             {
                const xml_set_entry_tRef p = *it;
                if (it != par->multiValues.begin())
@@ -211,9 +208,8 @@ std::string LatticeWrapper::toString(const xml_script_node_tRef node, const Desi
          if (comm->value)
             result += *(comm->value);
          if (comm->parameters.size())
-            for (std::vector<xml_parameter_tRef>::const_iterator it = comm->parameters.begin(); it != comm->parameters.end(); ++it)
+            for (auto p : comm->parameters)
             {
-               const xml_parameter_tRef p = *it;
                result += " " + toString(p, dp);
             }
          if (comm->output)
@@ -234,9 +230,8 @@ std::string LatticeWrapper::toString(const xml_script_node_tRef node, const Desi
          if (sh->value)
             result += *(sh->value);
          if (sh->parameters.size())
-            for (std::vector<xml_parameter_tRef>::const_iterator it = sh->parameters.begin(); it != sh->parameters.end(); ++it)
+            for (auto p : sh->parameters)
             {
-               const xml_parameter_tRef p = *it;
                result += " " + toString(p, dp);
             }
          if (sh->output)
@@ -251,9 +246,8 @@ std::string LatticeWrapper::toString(const xml_script_node_tRef node, const Desi
          std::string result;
          bool conditionValue = ite->evaluate_condition(&(ite->condition), dp), first = true;
          const std::vector<xml_script_node_tRef>& block = conditionValue ? ite->thenNodes : ite->elseNodes;
-         for (std::vector<xml_script_node_tRef>::const_iterator it = block.begin(); it != block.end(); ++it)
+         for (auto n : block)
          {
-            const xml_script_node_tRef n = *it;
             if (n->checkCondition(dp))
             {
                if (!first)

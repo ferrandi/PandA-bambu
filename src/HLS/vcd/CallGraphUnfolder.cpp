@@ -41,6 +41,7 @@
 
 // includes from HLS/vcd/
 #include "CallGraphUnfolder.hpp"
+#include "string_manipulation.hpp"          // for STR
 
 CallGraphUnfolder::CallGraphUnfolder(CallGraphManagerConstRef cgman,
       std::unordered_map<unsigned int, std::unordered_set<unsigned int> > & _caller_to_call_id,
@@ -56,7 +57,7 @@ CallGraphUnfolder::CallGraphUnfolder(CallGraphManagerConstRef cgman,
 }
 
 CallGraphUnfolder::~CallGraphUnfolder()
-{}
+= default;
 
 UnfoldedVertexDescriptor
 CallGraphUnfolder::Unfold(UnfoldedCallGraph & ucg) const
@@ -75,7 +76,7 @@ void CallGraphUnfolder::RecursivelyUnfold(const UnfoldedVertexDescriptor caller_
 {
    const unsigned int caller_id = get_node_info<UnfoldedFunctionInfo>(caller_v, ucg)->f_id;
    // if this function does not call other functions we're done
-   std::unordered_map<unsigned int, std::unordered_set<unsigned int> >::const_iterator caller =
+   auto caller =
       caller_to_call_id.find(caller_id);
    if (caller == caller_to_call_id.cend())
       return;

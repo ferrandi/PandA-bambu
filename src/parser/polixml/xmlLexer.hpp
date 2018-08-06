@@ -47,10 +47,14 @@
 
 #define LCLASS_SPECIALIZED
 
+#include <utility>
+
 #include "Lexer_utilities.hpp"
 
 ///utility include
 #include "exceptions.hpp"
+#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_
+#include "string_manipulation.hpp"          // for STR
 
 extern int exit_code;
 
@@ -59,28 +63,28 @@ struct XmlFlexLexer : public yyFlexLexer
    ///The name of the parsed file/string
    const std::string name;
 
-   XmlFlexLexer(const std::string&_name,  std::istream* argin=nullptr, std::ostream* argout=nullptr) :
+   XmlFlexLexer(std::string _name,  std::istream* argin=nullptr, std::ostream* argout=nullptr) :
       yyFlexLexer(argin, argout),
-      name(_name),
+      name(std::move(_name)),
       keep(0)
    {
    }
-   ~XmlFlexLexer() {}
+   ~XmlFlexLexer() override = default;
    void yyerror(const char* msg)
    {
       LexerError(msg);
    }
-   void LexerError(const char* msg)
+   void LexerError(const char* msg) override
    {
       INDENT_OUT_MEX(0,0, STR(msg) + " at line number |" + STR(lineno()) + "|\ttext is |" + STR(YYText()) + "|");
       exit_code = EXIT_FAILURE;
       THROW_ERROR("Error in parsing xml: " + name);
    }
-   int yywrap(){return 1;}
+   int yywrap() override{return 1;}
    ///To store start condition
    int keep;
    YYSTYPE *lvalp;
-   int yylex();
+   int yylex() override;
 };
 
 #endif

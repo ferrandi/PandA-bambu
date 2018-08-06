@@ -48,16 +48,15 @@
 ///Autoheader include
 #include "config_HAVE_UNORDERED.hpp"
 
+#include <algorithm>                  // for set_difference
+#include <iterator>                   // for inserter
+
 ///STL include
 #if HAVE_UNORDERED
 #include <unordered_set>
 #else
 #include <set>
 #endif
-
-///Utility include
-#include <boost/lexical_cast.hpp>
-#include "exceptions.hpp"
 
 #if HAVE_UNORDERED
 template <typename T>

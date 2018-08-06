@@ -98,6 +98,7 @@
 
 ///utility include
 #include "cpu_time.hpp"
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 CONSTREF_FORWARD_DECL(Schedule);
 
@@ -122,7 +123,7 @@ class SDCSorter : std::binary_function<vertex, vertex, bool>
       ///The operation graph
       const OpGraphConstRef op_graph;
 
-      ///The reachability map built on the basis of dependences, consolidated choices and current choice
+      ///The reachability map built on the basis of dependencies, consolidated choices and current choice
       CustomMap<vertex, CustomSet<vertex> > reachability_map;
 
       ///The index basic block map
@@ -237,7 +238,7 @@ SDCScheduling::SDCScheduling(const ParameterConstRef _parameters, const HLS_mana
 }
 
 SDCScheduling::~SDCScheduling()
-{}
+= default;
 
 void SDCScheduling::AddDelayConstraints(const meilp_solverRef solver, const OpGraphConstRef filtered_op_graph,
 #ifndef NDEBUG
@@ -280,7 +281,7 @@ void SDCScheduling::AddDelayConstraints(const meilp_solverRef solver, const OpGr
                   return clock_period;
                if(GET_TYPE(filtered_op_graph, current) & TYPE_PHI)
                   return allocation_information->GetCondExprTimeLatency(filtered_op_graph->CGetOpNodeInfo(current)->GetNodeId());
-               auto timeLatency = allocation_information->GetTimeLatency(current, AbsControlStep(bb_node_info->block->number, AbsControlStep::UNKNOWN), fu_binding::UNKNOWN, allocation_information->GetCycleLatency(current) -1);
+               auto timeLatency = allocation_information->GetTimeLatency(current, fu_binding::UNKNOWN, allocation_information->GetCycleLatency(current) -1);
                ///Stage period of first cycle of operations with registered inputs is 0
                return allocation_information->get_initiation_time(allocation_information->GetFuType(current),current)>0 ? (allocation_information->is_operation_PI_registered(filtered_op_graph, current, allocation_information->GetFuType(current)) ? 0.0 : timeLatency.second): timeLatency.first;
             }();
@@ -643,12 +644,12 @@ DesignFlowStep_Status SDCScheduling::InternalExec()
          AddStageConstraints(solver, operation);
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Added consecutive stages constraints");
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Adding dependences constraints");
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Adding dependencies constraints");
 
       ///Add dependence constraints: target can start in the same clock cycle in which source ends
       for(const auto operation : loop_operations)
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Adding dependences starting from " + GET_NAME(filtered_op_graph, operation));
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Adding dependencies starting from " + GET_NAME(filtered_op_graph, operation));
          OutEdgeIterator oe, oe_end;
          for(boost::tie(oe, oe_end) = boost::out_edges(operation, *filtered_op_graph); oe != oe_end; oe++)
          {
@@ -667,9 +668,9 @@ DesignFlowStep_Status SDCScheduling::InternalExec()
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Skipped dependence -> " + GET_NAME(filtered_op_graph, boost::target(*oe, *filtered_op_graph)));
             }
          }
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Added dependences starting from " + GET_NAME(filtered_op_graph, operation));
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Added dependencies starting from " + GET_NAME(filtered_op_graph, operation));
       }
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Added dependences constraints");
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Added dependencies constraints");
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Adding delay constraint");
       ///Add timing constraints: target can start in the same clock cycle in which source ends only with chaining
       AddDelayConstraints(solver, filtered_op_graph,
@@ -1256,7 +1257,7 @@ DesignFlowStep_Status SDCScheduling::InternalExec()
       for(const auto loop_bb : loop_bbs)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Checking if operations of BB" + STR(basic_block_graph->CGetBBNodeInfo(loop_bb)->block->number) + " can be moved");
-         ///Set of operations which cannot be moved (at the moment) because of dependences from gimple phi
+         ///Set of operations which cannot be moved (at the moment) because of dependencies from gimple phi
          OpVertexSet blocked_ops = OpVertexSet(filtered_op_graph);
 
          for(const auto loop_operation : basic_block_graph->CGetBBNodeInfo(loop_bb)->statements_list)

@@ -6,7 +6,7 @@
 #include "FlopocoStream.hpp"
 
 extern "C" {
-#include <math.h>
+#include <cmath>
 }
 
 using namespace std;

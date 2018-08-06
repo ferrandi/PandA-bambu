@@ -38,14 +38,13 @@
  *
 */
 
-///Header include
 #include "non_deterministic_flows.hpp"
-
-///. include
-#include "Parameter.hpp"
-
-///utility include
-#include "fileIO.hpp"
+#include <boost/filesystem/operations.hpp>  // for create_directory, exists
+#include "Parameter.hpp"                    // for Parameter, OPT_output_tem...
+#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_VERY_PEDANTIC
+#include "exceptions.hpp"                   // for IsError, THROW_ASSERT
+#include "fileIO.hpp"                       // for PandaSystem
+#include "string_manipulation.hpp"          // for STR
 
 const std::string NonDeterministicFlows::ComputeArgString(const size_t seed) const
 {
@@ -99,12 +98,12 @@ NonDeterministicFlows::NonDeterministicFlows(const DesignFlowManagerConstRef _de
 {}
 
 NonDeterministicFlows::~NonDeterministicFlows()
-{}
+= default;
 
 DesignFlowStep_Status NonDeterministicFlows::Exec()
 {
-   const size_t initial_seed = parameters->getOption<size_t>(OPT_seed);
-   const size_t number_of_runs = parameters->getOption<size_t>(OPT_test_multiple_non_deterministic_flows);
+   const auto initial_seed = parameters->getOption<size_t>(OPT_seed);
+   const auto number_of_runs = parameters->getOption<size_t>(OPT_test_multiple_non_deterministic_flows);
    for(size_t run = 0; run < number_of_runs; run++)
    {
       if(not ExecuteTool(initial_seed + run))

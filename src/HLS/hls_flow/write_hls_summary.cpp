@@ -56,7 +56,7 @@ WriteHLSSummary::WriteHLSSummary(const ParameterConstRef _parameters, const HLS_
 {}
 
 WriteHLSSummary::~WriteHLSSummary()
-{}
+= default;
 
 const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > WriteHLSSummary::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {

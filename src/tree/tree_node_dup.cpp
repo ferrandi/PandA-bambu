@@ -44,6 +44,12 @@
 ///Autoheader include
 #include "config_HAVE_CODE_ESTIMATION_BUILT.hpp"
 #include "config_HAVE_RTL_BUILT.hpp"
+#include <string>                                 // for string, operator+
+#include <utility>                                // for pair
+#include <vector>                                 // for vector, vector<>::c...
+#include "exceptions.hpp"                         // for THROW_ASSERT, THROW...
+#include "string_manipulation.hpp"                // for STR
+#include "tree_common.hpp"                        // for CharType_K, abs_expr_K
 
 ///parser/treegcc include
 #include "token_interface.hpp"
@@ -62,7 +68,7 @@
 #define CREATE_TREE_NODE_CASE_BODY(tree_node_name, node_id)\
 {\
    node_id = TM->new_tree_node_id();\
-   tree_node_name * tnn = new tree_node_name(node_id);\
+   auto tnn = new tree_node_name(node_id);\
    tree_nodeRef cur = tree_nodeRef(tnn);\
    if(dynamic_cast<function_decl*>(tnn)) \
    {\

@@ -41,11 +41,11 @@
 #ifndef COMPLETE_BB_GRAPH_HPP
 #define COMPLETE_BB_GRAPH_HPP
 
-///Superclass include
-#include "function_frontend_flow_step.hpp"
-
-///Utility include
-#include "refcount.hpp"
+#include <unordered_set>                    // for unordered_set
+#include <utility>                          // for pair
+#include "design_flow_step.hpp"             // for DesignFlowStep, DesignFlo...
+#include "frontend_flow_step.hpp"           // for FrontendFlowStep::Functio...
+#include "function_frontend_flow_step.hpp"  // for DesignFlowManagerConstRef
 
 class CompleteBBGraph: public FunctionFrontendFlowStep
 {
@@ -54,7 +54,7 @@ class CompleteBBGraph: public FunctionFrontendFlowStep
        * Return the set of analyses in relationship with this design step
        * @param relationship_type is the type of relationship to be considered
        */
-      const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const;
+      const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
    public:
       /**
@@ -69,13 +69,13 @@ class CompleteBBGraph: public FunctionFrontendFlowStep
       /**
        * Destructor
        */
-      ~CompleteBBGraph();
+      ~CompleteBBGraph() override;
 
       /**
        * Execute this step
        * @return the exit status of this step
        */
-      DesignFlowStep_Status InternalExec();
+      DesignFlowStep_Status InternalExec() override;
 };
 #endif
 

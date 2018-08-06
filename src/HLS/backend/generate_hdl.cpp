@@ -94,9 +94,7 @@ const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
 }
 
 generate_hdl::~generate_hdl()
-{
-
-}
+= default;
 
 DesignFlowStep_Status generate_hdl::Exec()
 {

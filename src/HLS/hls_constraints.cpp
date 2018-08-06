@@ -59,6 +59,7 @@
 #include <iosfwd>
 #include <string>
 #include <boost/filesystem.hpp>
+#include <utility>
 #include "fileIO.hpp"
 
 const double HLS_constraints::clock_period_resource_fraction_DEFAULT = 1.0;
@@ -72,17 +73,17 @@ void DECODE_FU_LIB(std::string & fu_name, std::string & fu_library, const std::s
   fu_library = splitted[1];
 }
 
-HLS_constraints::HLS_constraints(const ParameterConstRef _Param, const std::string& _fun_name) :
+HLS_constraints::HLS_constraints(const ParameterConstRef _Param, std::string  _fun_name) :
    clock_period(_Param->getOption<double>(OPT_clock_period)),
    clock_period_resource_fraction(clock_period_resource_fraction_DEFAULT),
    registers(INFINITE_UINT),
-   fun_name(_fun_name),
+   fun_name(std::move(_fun_name)),
    parameters(_Param)
 {
    ///add the general builtin constraints
    add_builtin_constraints();
 
-   unsigned int debug_level = parameters->getOption<unsigned int>(OPT_debug_level);
+   auto debug_level = parameters->getOption<unsigned int>(OPT_debug_level);
    if (parameters->isOption(OPT_xml_input_configuration))
    {
       PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "parsing the configuration file for constraints...");
@@ -96,9 +97,9 @@ HLS_constraints::HLS_constraints(const ParameterConstRef _Param, const std::stri
          {
             xml_element* node = parser.get_document()->get_root_node();
             xml_node::node_list list = node->get_children();
-            for (xml_node::node_list::iterator iter = list.begin(); iter != list.end(); ++iter)
+            for (auto & iter : list)
             {
-               xml_element* Enode = GetPointer<xml_element>(*iter);
+               auto* Enode = GetPointer<xml_element>(iter);
                if(!Enode || Enode->get_name() != GET_CLASS_NAME(HLS_constraints)) continue;
                std::string function_name;
                if (fun_name.size()) /* constraints related to a specific function */
@@ -256,22 +257,22 @@ void HLS_constraints::print(std::ostream& os) const
    if (!tech_constraints.empty())
    {
       os << "- Resource constraints:\n";
-      std::unordered_map<std::string, unsigned int>::const_iterator i_end = tech_constraints.end();
-      for (std::unordered_map<std::string, unsigned int>::const_iterator i = tech_constraints.begin(); i != i_end; ++i)
+      auto i_end = tech_constraints.end();
+      for (auto i = tech_constraints.begin(); i != i_end; ++i)
          os << i->first << " " << i->second << std::endl;
    }
    if (!binding_constraints.empty())
    {
       os << "- Binding constraints:\n";
-      std::unordered_map<std::string, std::pair<std::string, std::pair<std::string, unsigned int> > >::const_iterator i_end = binding_constraints.end();
-      for (std::unordered_map<std::string, std::pair<std::string, std::pair<std::string, unsigned int> > >::const_iterator i = binding_constraints.begin(); i != i_end; ++i)
+      auto i_end = binding_constraints.end();
+      for (auto i = binding_constraints.begin(); i != i_end; ++i)
          os << i->first << " " << i->second.first << " " << i->second.second.first << " " << i->second.second.second << std::endl;
    }
    if (!scheduling_constraints.empty())
    {
       os << "- Scheduling constraints:\n";
-      CustomMap<std::string, int>::const_iterator i_end = scheduling_constraints.end();
-      for (CustomMap<std::string, int>::const_iterator i = scheduling_constraints.begin(); i != i_end; ++i)
+      auto i_end = scheduling_constraints.end();
+      for (auto i = scheduling_constraints.begin(); i != i_end; ++i)
          os << i->first << " " << i->second << std::endl;
    }
 }
@@ -280,9 +281,9 @@ void HLS_constraints::xload(const xml_element* Enode)
 {
    //Recurse through child nodes:
    const xml_node::node_list list = Enode->get_children();
-   for (xml_node::node_list::const_iterator iter = list.begin(); iter != list.end(); ++iter)
+   for (const auto & iter : list)
    {
-      const xml_element* EnodeC = GetPointer<const xml_element>(*iter);
+      const auto* EnodeC = GetPointer<const xml_element>(iter);
       if(!EnodeC) continue;
       if(EnodeC->get_name() == "tech_constraints")
       {
@@ -419,9 +420,9 @@ void HLS_constraints::add_builtin_constraints()
 
          //Recurse through child nodes:
          const xml_node::node_list list = node->get_children();
-         for (xml_node::node_list::const_iterator iter = list.begin(); iter != list.end(); ++iter)
+         for (const auto & iter : list)
          {
-            const xml_element* Enode = GetPointer<const xml_element>(*iter);
+            const auto* Enode = GetPointer<const xml_element>(iter);
             if(!Enode || Enode->get_name() != GET_CLASS_NAME(HLS_constraints)) continue;
             xload(Enode);
          }
@@ -462,9 +463,9 @@ void HLS_constraints::read_HLS_constraints_File(const std::string& fn)
 
          //Recurse through child nodes:
          const xml_node::node_list list = node->get_children();
-         for (xml_node::node_list::const_iterator iter = list.begin(); iter != list.end(); ++iter)
+         for (const auto & iter : list)
          {
-            const xml_element* Enode = GetPointer<const xml_element>(*iter);
+            const auto* Enode = GetPointer<const xml_element>(iter);
             if(!Enode || Enode->get_name() != GET_CLASS_NAME(HLS_constraints)) continue;
             xload(Enode);
          }

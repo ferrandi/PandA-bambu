@@ -80,12 +80,12 @@ class CBackendStepFactory : public DesignFlowStepFactory
       /**
        * Destructor
        */
-      virtual ~CBackendStepFactory();
+      ~CBackendStepFactory() override;
 
       /**
        * Return the prefix of the steps created by the factory
        */
-      const std::string GetPrefix() const;
+      const std::string GetPrefix() const override;
 
       /**
        * Create a backend c step

@@ -43,6 +43,8 @@
 #ifndef function_decl_refs_HPP
 #define function_decl_refs_HPP
 
+#include <unordered_set>                                 // for unordered_set
+
 ///Tree include
 #include "tree_node.hpp"
 

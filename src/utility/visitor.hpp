@@ -77,6 +77,9 @@
 #define OPERATOR_MACRO_HEADER(r, data, elem) virtual void operator()(const elem * , unsigned int & )
 #define OPERATOR_MACRO_DECL(r, data, elem)  OPERATOR_MACRO_HEADER(r, data, elem) ;
 #define OPERATOR_MACRO(r, data, elem) OPERATOR_MACRO_HEADER(r, data, elem) {}
+#define OPERATOR_MACRO_HEADERO(r, data, elem) void operator() (const elem * , unsigned int & ) override
+#define OPERATOR_MACRO_DECLO(r, data, elem)  OPERATOR_MACRO_HEADERO(r, data, elem) ;
+#define OPERATOR_MACROO(r, data, elem) OPERATOR_MACRO_HEADERO(r, data, elem) {}
 
 ///forward declaration macro
 #define FORWARD_DECLARATION_MACRO(r, data, elem) class elem;
@@ -92,7 +95,7 @@ class object_visitor
    public:
 
       ///destructor
-      virtual ~object_visitor(){}
+      virtual ~object_visitor()= default;
       /**
        * virtual template object functor
        * @param obj is the object visited

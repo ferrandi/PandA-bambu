@@ -33,10 +33,10 @@
 /**
  * @author Pietro Fezzardi <pietrofezzardi@gmail.com>
  */
+#include "vcd_utility.hpp"
 
 #include <iterator>
-// include class header
-#include "vcd_utility.hpp"
+#include <boost/filesystem/operations.hpp>
 
 // include from ./
 #include "Parameter.hpp"
@@ -98,14 +98,16 @@
 #include "cpu_stats.hpp"
 
 // external include
-#include <float.h>
+#include <cfloat>
 #include <fstream>
+#include <utility>
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 DiscrepancyLog::DiscrepancyLog(
       const HLS_managerConstRef HLSMgr,
       const vcd_trace_head & t,
       const uint64_t c_context,
-      const std::string& _c_val,
+      std::string  _c_val,
       const unsigned int _el_idx,
       const std::string::size_type _first_c_bit,
       const std::string::size_type _c_size,
@@ -118,7 +120,7 @@ DiscrepancyLog::DiscrepancyLog(
    , op_start_state(t.fsm_ss_it->value)
    , fu_name(HLSMgr->CGetFunctionBehavior(t.op_info.stg_fun_id)->CGetBehavioralHelper()->get_function_name())
    , stmt_string(HLSMgr->get_tree_manager()->CGetTreeNode(t.op_info.op_id)->ToString())
-   , c_val(_c_val)
+   , c_val(std::move(_c_val))
    , vcd_val(t.out_var_it->value)
    , fullsigname(t.fullsigname)
    , context(c_context)
@@ -130,7 +132,7 @@ DiscrepancyLog::DiscrepancyLog(
 {}
 
 DiscrepancyLog::~DiscrepancyLog()
-{}
+= default;
 
 vcd_utility::vcd_utility(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, const DesignFlowManagerConstRef _design_flow_manager) :
    HLS_step(_parameters, _HLSMgr, _design_flow_manager, HLSFlowStep_Type::VCD_UTILITY),
@@ -154,7 +156,7 @@ void vcd_utility::ComputeRelationships
          parameters->getOption<bool>(OPT_discrepancy) == true and
          relationship_type == DEPENDENCE_RELATIONSHIP)
    {
-      const FrontendFlowStepFactory * frontend_step_factory =
+      const auto * frontend_step_factory =
          GetPointer<const FrontendFlowStepFactory>
             (design_flow_manager.lock()->CGetDesignFlowStepFactory("Frontend"));
 
@@ -178,7 +180,7 @@ void vcd_utility::ComputeRelationships
       if(boost::num_vertices(*(call_graph_manager->CGetCallGraph())) == 0)
          return;
 
-      const CBackendStepFactory * c_backend_step_factory =
+      const auto * c_backend_step_factory =
          GetPointer<const CBackendStepFactory>
          (design_flow_manager.lock()->CGetDesignFlowStepFactory("CBackend"));
 
@@ -620,8 +622,8 @@ bool vcd_utility::detect_mismatch(
          vcd_val.find_first_not_of("01") != std::string::npos)
    {
       /*
-       * The user is sayin that he guarantees that there are no uninitialized
-       * variables in the orginal C specification. For this reason any value in
+       * The user is saying that he/she guarantees that there are no uninitialized
+       * variables in the original C specification. For this reason any value in
        * vcd different from 0 or 1 is considered an error, independently of the
        * values in C.
        * The last four parameters are set to 0, because they are irrelevant in
@@ -989,7 +991,7 @@ bool vcd_utility::detect_address_mismatch(
       const std::string& vcd_val,
       unsigned int & base_index)
 {
-   const ssa_name * ssa = GetPointer<const ssa_name>(TM->get_tree_node_const(op_info.ssa_name_node_id));
+   const auto * ssa = GetPointer<const ssa_name>(TM->get_tree_node_const(op_info.ssa_name_node_id));
    base_index = tree_helper::get_base_index(TM, op_info.ssa_name_node_id);
    if (base_index != 0 and HLSMgr->Rmem->has_base_address(base_index))
    {

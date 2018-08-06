@@ -69,6 +69,8 @@
 
 ///utility include
 #include "indented_output_stream.hpp"
+#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 CreateAddressTranslation::CreateAddressTranslation(const application_managerRef _AppM, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters) :
    ApplicationFrontendFlowStep(_AppM, FrontendFlowStepType::CREATE_ADDRESS_TRANSLATION, _design_flow_manager, _parameters),
@@ -78,7 +80,7 @@ CreateAddressTranslation::CreateAddressTranslation(const application_managerRef 
 }
 
 CreateAddressTranslation::~CreateAddressTranslation()
-{}
+= default;
 
 const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship> > CreateAddressTranslation::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {

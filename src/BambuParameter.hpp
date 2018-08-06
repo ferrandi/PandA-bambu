@@ -62,7 +62,7 @@ class BambuParameter : public Parameter
        * Check the compatibility among the different parameters
        * and compute implicated parameters
        */
-      void CheckParameters();
+      void CheckParameters() override;
 
       /**
        * add the library to the raw to be considered
@@ -74,13 +74,13 @@ class BambuParameter : public Parameter
        * Print the usage of this tool
        * @param os is the stream where the message has to be printed
        */
-      void PrintHelp(std::ostream &os) const;
+      void PrintHelp(std::ostream &os) const override;
 
       /**
        * Print the name of the program to be included in the header
        * @param os is the stream on which the program name has to be printed
        */
-      void PrintProgramName(std::ostream & os) const;
+      void PrintProgramName(std::ostream & os) const override;
 
       /**
        * add the following GCC options: -fwhole-program -fno-ipa-cp -fno-ipa-cp-clone and -D'printf(fmt, ...)='
@@ -100,17 +100,17 @@ class BambuParameter : public Parameter
       /**
        * Destructor
        */
-      virtual ~BambuParameter() {}
+      ~BambuParameter() override = default;
 
       /**
        * Execute parameter parsing
        */
-      virtual int Exec();
+      int Exec() override;
 
       /**
        * Sets default values
        */
-      void SetDefaults();
+      void SetDefaults() override;
 };
 
 typedef refcount<BambuParameter> BambuParameterRef;

@@ -26,17 +26,17 @@ namespace flopoco{
 		/**
 		 * FPDiv destructor
 		 */
-		~FPDiv();
+		~FPDiv() override;
 
 
 		/**
 		 * Emulate a correctly rounded division using MPFR.
 		 * @param tc a TestCase partially filled with input values 
 		 */
-		void emulate(TestCase * tc);
+		void emulate(TestCase * tc) override;
 
 		/* Overloading the Operator method */
-		void buildStandardTestCases(TestCaseList* tcl);
+		void buildStandardTestCases(TestCaseList* tcl) override;
 
 	
 	private:

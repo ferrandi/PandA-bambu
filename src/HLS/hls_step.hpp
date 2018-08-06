@@ -274,19 +274,13 @@ class HLS_step : public DesignFlowStep
       /**
        * Destructor
        */
-      virtual ~HLS_step();
-
-      /**
-       * Execute the step
-       * @return the exit status of this step
-       */
-      virtual DesignFlowStep_Status Exec() = 0;
+      ~HLS_step() override;
 
       /**
        * Return a unified identifier of this design step
        * @return the signature of the design step
        */
-      const std::string GetSignature() const;
+      const std::string GetSignature() const override;
 
       /**
        * Compute the signature of a hls flow step
@@ -301,7 +295,7 @@ class HLS_step : public DesignFlowStep
        * Return the name of this design step
        * @return the name of the pass (for debug purpose)
        */
-      virtual const std::string GetName() const;
+      const std::string GetName() const override;
 
       /**
        * Return the name of the type of this frontend flow step
@@ -310,7 +304,7 @@ class HLS_step : public DesignFlowStep
 
       /**
        * Given a HLS flow step type, return the name of the type
-       * @param hls_flow_step_type is the type to be consiedred
+       * @param hls_flow_step_type is the type to be considered
        * @return the name of the type
        */
       static
@@ -319,14 +313,14 @@ class HLS_step : public DesignFlowStep
       /**
        * Return the factory to create this type of steps
        */
-      virtual const DesignFlowStepFactoryConstRef CGetDesignFlowStepFactory() const;
+      const DesignFlowStepFactoryConstRef CGetDesignFlowStepFactory() const override;
 
       /**
        * Compute the relationships of a step with other steps
        * @param dependencies is where relationships will be stored
        * @param relationship_type is the type of relationship to be computed
        */
-      virtual void ComputeRelationships(DesignFlowStepSet & relationship, const DesignFlowStep::RelationshipType relationship_type);
+      void ComputeRelationships(DesignFlowStepSet & relationship, const DesignFlowStep::RelationshipType relationship_type) override;
 };
 ///refcount definition of the class
 typedef refcount<HLS_step> HLS_stepRef;

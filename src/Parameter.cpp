@@ -170,7 +170,7 @@
 
 ///STD include
 #include <iosfwd>
-#include <stdlib.h>
+#include <cstdlib>
 
 ///Utility include
 #include <boost/filesystem/operations.hpp>
@@ -264,16 +264,15 @@ void Parameter::CheckParameters()
 }
 
 Parameter::~Parameter()
-{
-}
+= default;
 
 void Parameter::load_xml_configuration_file_rec(const xml_element* node)
 {
    //Recurse through child nodes:
    const xml_node::node_list list = node->get_children();
-   for (xml_node::node_list::const_iterator iter = list.begin(); iter != list.end(); ++iter)
+   for (const auto & iter : list)
    {
-      const xml_element* EnodeC = GetPointer<const xml_element>(*iter);
+      const auto* EnodeC = GetPointer<const xml_element>(iter);
       if (!EnodeC) continue;
       /// general options
       if (CE_XVM(value, EnodeC))
@@ -296,9 +295,9 @@ void Parameter::load_xml_configuration_file(const std::string& filename)
 
          //Recurse through child nodes:
          const xml_node::node_list list = node->get_children();
-         for (xml_node::node_list::const_iterator iter = list.begin(); iter != list.end(); ++iter)
+         for (const auto & iter : list)
          {
-            const xml_element* EnodeC = GetPointer<const xml_element>(*iter);
+            const auto* EnodeC = GetPointer<const xml_element>(iter);
             if (!EnodeC) continue;
             /// general options
             if (CE_XVM(value, EnodeC))
@@ -365,9 +364,9 @@ void Parameter::SetCommonDefaults()
 void Parameter::print(std::ostream& os) const
 {
    os << "List of parameters: " << std::endl;
-   for(OptionMap::const_iterator i = Options.begin(); i != Options.end(); ++i)
+   for(const auto & Option : Options)
    {
-      os << i->first << ": " << i->second << std::endl;
+      os << Option.first << ": " << Option.second << std::endl;
    }
    std::map<enum enum_option, std::string>::const_iterator option, option_end = enum_options.end();
    for(option = enum_options.begin(); option != option_end; ++option)
@@ -609,9 +608,9 @@ bool Parameter::ManageDefaultOptions(int next_option, char * optarg_param, bool 
       {
          std::vector<std::string> Splitted;
          boost::algorithm::split(Splitted, optarg_param, boost::algorithm::is_any_of(","));
-         for (unsigned int i = 0; i < Splitted.size(); i++)
+         for (const auto & i : Splitted)
          {
-            add_debug_class(Splitted[i]);
+            add_debug_class(i);
          }
          setOption(OPT_no_clean, true);
          break;
@@ -928,6 +927,14 @@ bool Parameter::ManageGccOptions(int next_option, char * optarg_param)
             else if(opt_level == "s")
             {
                setOption(OPT_gcc_opt_level, GccWrapper_OptimizationSet::Os);
+            }
+            else if(opt_level == "fast")
+            {
+               setOption(OPT_gcc_opt_level, GccWrapper_OptimizationSet::Ofast);
+            }
+            else if(opt_level == "z")
+            {
+               setOption(OPT_gcc_opt_level, GccWrapper_OptimizationSet::Oz);
             }
             else
             {

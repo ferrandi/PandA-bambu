@@ -64,7 +64,7 @@
 
 ///utility include
 #include "fileIO.hpp"
-#include "utility.hpp"
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 
 static
@@ -105,7 +105,7 @@ AadlParser::AadlParser(const DesignFlowManagerConstRef _design_flow_manager, con
 }
 
 AadlParser::~AadlParser()
-{}
+= default;
 
 DesignFlowStep_Status AadlParser::Exec()
 {

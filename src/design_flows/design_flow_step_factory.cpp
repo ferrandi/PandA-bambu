@@ -57,7 +57,7 @@ DesignFlowStepFactory::DesignFlowStepFactory(const DesignFlowManagerConstRef _de
 {}
 
 DesignFlowStepFactory::~DesignFlowStepFactory()
-{}
+= default;
 
 DesignFlowStepRef DesignFlowStepFactory::CreateFlowStep(const std::string &) const
 {

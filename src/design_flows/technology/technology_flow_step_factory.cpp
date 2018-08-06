@@ -57,7 +57,7 @@ TechnologyFlowStepFactory::TechnologyFlowStepFactory(const technology_managerRef
 {}
 
 TechnologyFlowStepFactory::~TechnologyFlowStepFactory()
-{}
+= default;
 
 const std::string TechnologyFlowStepFactory::GetPrefix() const
 {

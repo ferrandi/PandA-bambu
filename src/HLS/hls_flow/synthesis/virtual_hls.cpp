@@ -64,6 +64,7 @@
 
 ///HLS/binding/register/algorithms
 #include "weighted_clique_register.hpp"
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 virtual_hls::virtual_hls(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager) :
       HLSFunctionStep(_parameters, _HLSMgr, _funId, _design_flow_manager, HLSFlowStep_Type::VIRTUAL_DESIGN_FLOW)
@@ -73,9 +74,7 @@ virtual_hls::virtual_hls(const ParameterConstRef _parameters, const HLS_managerR
 }
 
 virtual_hls::~virtual_hls()
-{
-
-}
+= default;
 
 const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > virtual_hls::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {

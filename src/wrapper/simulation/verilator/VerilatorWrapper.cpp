@@ -64,6 +64,7 @@
 #include <fstream>
 #include <unistd.h>
 #include <cerrno>
+#include <utility>
 
 #include "Parameter.hpp"
 #include "constant_strings.hpp"
@@ -73,9 +74,9 @@
 #define SIM_SUBDIR       (Param->getOption<std::string>(OPT_output_directory) + std::string("/verilator"))
 
 //constructor
-VerilatorWrapper::VerilatorWrapper(const ParameterConstRef _Param, const std::string& _suffix) :
+VerilatorWrapper::VerilatorWrapper(const ParameterConstRef _Param, std::string  _suffix) :
    SimulationTool(_Param),
-   suffix(_suffix)
+   suffix(std::move(_suffix))
 {
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Creating the VERILATOR wrapper...");
    std::string verilator_beh_dir = SIM_SUBDIR + suffix;
@@ -85,9 +86,7 @@ VerilatorWrapper::VerilatorWrapper(const ParameterConstRef _Param, const std::st
 
 //destructor
 VerilatorWrapper::~VerilatorWrapper()
-{
-
-}
+= default;
 
 void VerilatorWrapper::CheckExecution()
 {

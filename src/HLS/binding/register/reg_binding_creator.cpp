@@ -76,9 +76,7 @@ reg_binding_creator::reg_binding_creator(const ParameterConstRef _Param, const H
 }
 
 reg_binding_creator::~reg_binding_creator()
-{
-
-}
+= default;
 
 const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > reg_binding_creator::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {

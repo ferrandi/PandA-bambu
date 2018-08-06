@@ -186,18 +186,18 @@ class mux_connection_binding : public conn_binding_creator
       /**
        * Destructor
        */
-      virtual ~mux_connection_binding();
+      ~mux_connection_binding() override;
 
       /**
        * Execute the step
        * @return the exit status of this step
        */
-      virtual DesignFlowStep_Status InternalExec();
+      DesignFlowStep_Status InternalExec() override;
 
       /**
        * Initialize the step (i.e., like a constructor, but executed just before exec
        */
-      virtual void Initialize();
+      void Initialize() override;
 
       /**
        * Creates the connections inside the architecture

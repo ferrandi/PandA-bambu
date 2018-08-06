@@ -83,8 +83,8 @@
 #include "behavioral_helper.hpp"
 #include "tree_manager.hpp"
 
-/// utility include
-#include "utility.hpp"
+#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 TasteInterfaceGeneration::TasteInterfaceGeneration(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager) :
    module_interface(_Param, _HLSMgr, _funId, _design_flow_manager, HLSFlowStep_Type::TASTE_INTERFACE_GENERATION)
@@ -93,7 +93,7 @@ TasteInterfaceGeneration::TasteInterfaceGeneration(const ParameterConstRef _Para
 }
 
 TasteInterfaceGeneration::~TasteInterfaceGeneration()
-{}
+= default;
 
 const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > TasteInterfaceGeneration::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {

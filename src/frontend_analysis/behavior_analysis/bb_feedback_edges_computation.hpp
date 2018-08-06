@@ -66,7 +66,7 @@ class bb_feedback_edges_computation : public FunctionFrontendFlowStep
        * Return the set of analyses in relationship with this design step
        * @param relationship_type is the type of relationship to be considered
        */
-      const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const;
+      const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
    public:
 
@@ -82,13 +82,13 @@ class bb_feedback_edges_computation : public FunctionFrontendFlowStep
       /**
        *  Destructor
        */
-      ~bb_feedback_edges_computation();
+      ~bb_feedback_edges_computation() override;
 
       /**
        * Compute the feedback edges for the CFG and the CDG operations graphs (at basic block level).
        * @return the exit status of this step
        */
-      DesignFlowStep_Status InternalExec();
+      DesignFlowStep_Status InternalExec() override;
 };
 
 #endif

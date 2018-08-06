@@ -50,6 +50,8 @@
 #include "config_HAVE_PRAGMA_BUILT.hpp"
 #include "config_NPROFILE.hpp"
 
+#include <boost/filesystem/operations.hpp>
+
 ///. includes
 #include "BambuParameter.hpp"
 
@@ -160,7 +162,7 @@ int main(int argc, char *argv[])
             }
       }
 
-      int output_level = parameters->getOption<int>(OPT_output_level);
+      auto output_level = parameters->getOption<int>(OPT_output_level);
       if(output_level >= OUTPUT_LEVEL_MINIMUM)
          parameters->PrintFullHeader(std::cerr);
 

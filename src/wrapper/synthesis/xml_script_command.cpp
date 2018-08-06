@@ -48,12 +48,11 @@
 #include "boost/algorithm/string/trim.hpp"
 
 #include "xml_script_command.hpp"
-
+#include <boost/algorithm/string/predicate.hpp>
+#include <utility>
 
 xml_script_node_t::~xml_script_node_t()
-{
-
-}
+= default;
 
 
 bool xml_script_node_t::checkCondition(const DesignParametersRef&) const
@@ -124,7 +123,7 @@ bool xml_script_node_t::evaluate_condition(const std::string * condition)
    if (boost::algorithm::starts_with(trimmed,"${__"))
       return false;
 
-   unsigned int length = static_cast<unsigned int>(trimmed.length());
+   auto length = static_cast<unsigned int>(trimmed.length());
    if (length == 0)
       return false;
    try
@@ -163,10 +162,10 @@ bool xml_script_node_t::evaluate_condition(const std::string * condition, const 
          // Iterate trough the parameters map and compare the values
          const DesignParameters::map_t& map = dp->parameter_values;
          if (map.find(var) == map.end()) THROW_ERROR("variable " + var + " not configured");
-         for (DesignParameters::map_t::const_iterator it = map.begin(); it != map.end(); ++it)
+         for (const auto & it : map)
          {
-            const std::string& name = (*it).first;
-            const std::string& value = (*it).second;
+            const std::string& name = it.first;
+            const std::string& value = it.second;
             if (var == name)
                return (negate ? !evaluate_condition(&value) : evaluate_condition(&value));
          }
@@ -178,9 +177,9 @@ bool xml_script_node_t::evaluate_condition(const std::string * condition, const 
 }
 
 
-xml_set_entry_t::xml_set_entry_t(const std::string &_value,
+xml_set_entry_t::xml_set_entry_t(std::string _value,
    const std::string *  _condition
-) : xml_script_node_t(NODE_ENTRY), value(_value)
+) : xml_script_node_t(NODE_ENTRY), value(std::move(_value))
 {
    condition = _condition ? new std::string(*_condition) : nullptr;
 }
@@ -230,10 +229,10 @@ bool xml_set_entry_t::checkCondition(const DesignParametersRef& dp) const
    return evaluate_condition(condition, dp);
 }
 
-xml_set_variable_t::xml_set_variable_t(const std::string &_name,
+xml_set_variable_t::xml_set_variable_t(std::string _name,
    const std::string *  _singleValue,
    const std::string *  _condition
-) : xml_script_node_t(NODE_VARIABLE), name(_name)
+) : xml_script_node_t(NODE_VARIABLE), name(std::move(_name))
 {
    singleValue = _singleValue ? new std::string(*_singleValue) : nullptr;
    multiValues.clear();
@@ -258,9 +257,9 @@ xml_set_variable_t::xml_set_variable_t(
    if (a) singleValue = new std::string(a->get_value());
 
    const xml_node::node_list list = element->get_children();
-   for (xml_node::node_list::const_iterator l = list.begin(); l != list.end(); ++l)
+   for (const auto & l : list)
    {
-      const xml_element* child = GetPointer<xml_element>(*l);
+      const xml_element* child = GetPointer<xml_element>(l);
       if (child && child->get_name() == TAG_ENTRY)
       {
          xml_set_entry_tRef entry = xml_set_entry_tRef(new xml_set_entry_t(child));
@@ -302,9 +301,8 @@ xml_nodeRef xml_set_variable_t::create_xml_node() const
       node->set_attribute("value", *singleValue);
    if (condition)
       node->set_attribute("condition", *condition);
-   for (std::vector<xml_set_entry_tRef>::const_iterator i = multiValues.begin(); i != multiValues.end(); ++i)
+   for (const auto & child : multiValues)
    {
-      const xml_set_entry_tRef & child = *i;
       node->add_child_element(child->create_xml_node());
    }
    return xml_nodeRef(node);
@@ -349,9 +347,9 @@ xml_parameter_t::xml_parameter_t(const xml_element * element) : xml_script_node_
    if (a) singleValue = new std::string(a->get_value());
 
    const xml_node::node_list list = element->get_children();
-   for (xml_node::node_list::const_iterator l = list.begin(); l != list.end(); ++l)
+   for (const auto & l : list)
    {
-      const xml_element* child = GetPointer<xml_element>(*l);
+      const xml_element* child = GetPointer<xml_element>(l);
       if (child && child->get_name() == TAG_ENTRY)
       {
          xml_set_entry_tRef entry = xml_set_entry_tRef(new xml_set_entry_t(child));
@@ -408,9 +406,8 @@ xml_nodeRef xml_parameter_t::create_xml_node() const
       node->set_attribute("condition", *condition);
    if (curlyBrackets)
       node->set_attribute("curly", "true");
-   for (std::vector<xml_set_entry_tRef>::const_iterator i = multiValues.begin(); i != multiValues.end(); ++i)
+   for (const auto & child : multiValues)
    {
-      const xml_set_entry_tRef & child = *i;
       node->add_child_element(child->create_xml_node());
    }
    return xml_nodeRef(node);
@@ -452,9 +449,9 @@ xml_command_t::xml_command_t(const xml_element * element) : xml_script_node_t(NO
    if (a) value = new std::string(a->get_value());
 
    const xml_node::node_list list = element->get_children();
-   for (xml_node::node_list::const_iterator l = list.begin(); l != list.end(); ++l)
+   for (const auto & l : list)
    {
-      const xml_element* child = GetPointer<xml_element>(*l);
+      const xml_element* child = GetPointer<xml_element>(l);
       if (child && child->get_name() == TAG_PARAMETER)
       {
          xml_parameter_tRef param = xml_parameter_tRef(new xml_parameter_t(child));
@@ -504,9 +501,8 @@ xml_nodeRef xml_command_t::create_xml_node() const
       node->set_attribute("condition", *condition);
    if (output)
       node->set_attribute("output", *output);
-   for (std::vector<xml_parameter_tRef>::const_iterator i = parameters.begin(); i != parameters.end(); ++i)
+   for (const auto & child : parameters)
    {
-      const xml_parameter_tRef & child = *i;
       node->add_child_element(child->create_xml_node());
    }
    return xml_nodeRef(node);
@@ -549,9 +545,9 @@ xml_shell_t::xml_shell_t(const xml_element * element) : xml_script_node_t(NODE_S
    if (a) value = new std::string(a->get_value());
 
    const xml_node::node_list list = element->get_children();
-   for (xml_node::node_list::const_iterator l = list.begin(); l != list.end(); ++l)
+   for (const auto & l : list)
    {
-      const xml_element* child = GetPointer<xml_element>(*l);
+      const xml_element* child = GetPointer<xml_element>(l);
       if (child && child->get_name() == TAG_PARAMETER)
       {
          xml_parameter_tRef param = xml_parameter_tRef(new xml_parameter_t(child));
@@ -601,9 +597,8 @@ xml_nodeRef xml_shell_t::create_xml_node() const
       node->set_attribute("condition", *condition);
    if (output)
       node->set_attribute("output", *output);
-   for (std::vector<xml_parameter_tRef>::const_iterator i = parameters.begin(); i != parameters.end(); ++i)
+   for (const auto & child : parameters)
    {
-      const xml_parameter_tRef & child = *i;
       node->add_child_element(child->create_xml_node());
    }
    return xml_nodeRef(node);
@@ -631,18 +626,18 @@ xml_ite_block_t::xml_ite_block_t(const xml_element * element) : xml_script_node_
    bool thenFound = false, elseFound = false;
 
    const xml_node::node_list list = element->get_children();
-   for (xml_node::node_list::const_iterator l = list.begin(); l != list.end(); ++l)
+   for (const auto & l : list)
    {
-      const xml_element* child = GetPointer<xml_element>(*l);
+      const xml_element* child = GetPointer<xml_element>(l);
       if (!child) continue;
       if (child->get_name() == "then")
       {
          if (!thenFound && !elseFound)
          {
             const xml_node::node_list subscript = child->get_children();
-            for (xml_node::node_list::const_iterator s = subscript.begin(); s != subscript.end(); ++s)
+            for (const auto & s : subscript)
             {
-               const xml_element* el = GetPointer<xml_element>(*s);
+               const xml_element* el = GetPointer<xml_element>(s);
                if (!el) continue;
                xml_script_node_tRef node = xml_script_node_tRef(xml_script_node_t::create(el));
                thenNodes.push_back(node);
@@ -656,9 +651,9 @@ xml_ite_block_t::xml_ite_block_t(const xml_element * element) : xml_script_node_
          if (!elseFound)
          {
             const xml_node::node_list subscript = child->get_children();
-            for (xml_node::node_list::const_iterator s = subscript.begin(); s != subscript.end(); ++s)
+            for (const auto & s : subscript)
             {
-               const xml_element* el = GetPointer<xml_element>(*s);
+               const xml_element* el = GetPointer<xml_element>(s);
                if (!el) continue;
                xml_script_node_tRef node = xml_script_node_tRef(xml_script_node_t::create(el));
                elseNodes.push_back(node);
@@ -691,15 +686,13 @@ xml_nodeRef xml_ite_block_t::create_xml_node() const
    xml_element * node = new xml_element(get_xml_name());
    node->set_attribute("condition", condition);
    xml_element * thenElement = node->add_child_element("then");
-   for (std::vector<xml_script_node_tRef>::const_iterator i = thenNodes.begin(); i != thenNodes.end(); ++i)
+   for (const auto & child : thenNodes)
    {
-      const xml_script_node_tRef & child = *i;
       thenElement->add_child_element(child->create_xml_node());
    }
    xml_element * elseElement = node->add_child_element("else");
-   for (std::vector<xml_script_node_tRef>::const_iterator i = elseNodes.begin(); i != elseNodes.end(); ++i)
+   for (const auto & child : elseNodes)
    {
-      const xml_script_node_tRef & child = *i;
       elseElement->add_child_element(child->create_xml_node());
    }
    return xml_nodeRef(node);
@@ -710,7 +703,7 @@ bool xml_ite_block_t::checkCondition(const DesignParametersRef& dp) const
    return evaluate_condition(&condition, dp);
 }
 
-xml_foreach_t::xml_foreach_t(const std::string &_variable) : xml_script_node_t(NODE_FOREACH), variable(_variable)
+xml_foreach_t::xml_foreach_t(std::string _variable) : xml_script_node_t(NODE_FOREACH), variable(std::move(_variable))
 {
 }
 
@@ -723,15 +716,15 @@ xml_foreach_t::xml_foreach_t(const xml_element * element) : xml_script_node_t(NO
       THROW_ERROR("Error: the \"foreach\" block requires the definition of the variable");
    variable = a->get_value();
    const xml_node::node_list list = element->get_children();
-   for (xml_node::node_list::const_iterator l = list.begin(); l != list.end(); ++l)
+   for (const auto & l : list)
    {
-      const xml_element* child = GetPointer<xml_element>(*l);
+      const xml_element* child = GetPointer<xml_element>(l);
       if (!child) continue;
 
       const xml_node::node_list subscript = child->get_children();
-      for (xml_node::node_list::const_iterator s = subscript.begin(); s != subscript.end(); ++s)
+      for (const auto & s : subscript)
       {
-         const xml_element* el = GetPointer<xml_element>(*s);
+         const xml_element* el = GetPointer<xml_element>(s);
          if (!el) continue;
          xml_script_node_tRef node = xml_script_node_tRef(xml_script_node_t::create(el));
          Nodes.push_back(node);

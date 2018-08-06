@@ -54,7 +54,6 @@
 ///STL include
 #include <map>
 #include <set>
-#include <unordered_map>
 
 ///Utility include
 #include "refcount.hpp"
@@ -67,6 +66,7 @@ class xml_element;
  * Map storing path profiling information
  */
 #if HAVE_UNORDERED
+#include <unordered_map>
 class PathProfilingInformation : public std::unordered_map<unsigned int, std::map<std::set<unsigned int>, long double> >
 {};
 #else

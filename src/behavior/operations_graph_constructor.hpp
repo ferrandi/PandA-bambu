@@ -46,13 +46,12 @@
 
 ///Autoheader include
 #include "config_HAVE_EXPERIMENTAL.hpp"
+#include <map>                                       // for map
+#include <string>                                    // for string
 
-///Graph include
 #include "graph.hpp"
-
-///Utility include
 #include "refcount.hpp"
-#include "utility.hpp"
+#include "strong_typedef.hpp"
 
 /**
  * @name Forward declarations
@@ -79,21 +78,21 @@ class operations_graph_constructor
       ///The graph with all the edges
       const OpGraphRef op_graph;
 
-      /// Mapping beetwen id to index
+      /// Mapping between id to index
       std::map<std::string, vertex> index_map;
 
    public:
       /**
        * Return the vertex index given the id of the vertex node.
        * @param source is the name of the vertex.
-       * @return the index associatet with the source.
+       * @return the index associated with the source.
        */
       vertex getIndex(const std::string&source);
 
       /**
        * Return the vertex index given the id of the vertex node.
        * @param source is the name of the vertex.
-       * @return the index associatet with the source.
+       * @return the index associated with the source.
        */
       vertex CgetIndex(const std::string& source) const;
 
@@ -115,7 +114,7 @@ class operations_graph_constructor
 
       /**
        * set the selector of an edge between vertex source and vertex dest
-       * @param edge is the edge decriptor from which the selector has to be removed
+       * @param edge is the edge descriptor from which the selector has to be removed
        * @param selector is the selector to be removed
        */
       void RemoveSelector(const EdgeDescriptor edge, const int selector);

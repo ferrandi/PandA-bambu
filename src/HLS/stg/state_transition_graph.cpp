@@ -42,12 +42,11 @@
  * Last modified by $Author$
  *
  */
+#include "state_transition_graph.hpp"
 
-///Autoheader include
 #include "config_HAVE_HOST_PROFILING_BUILT.hpp"
 
-///Header include
-#include "state_transition_graph.hpp"
+#include <boost/filesystem/operations.hpp>
 
 ///. include
 #include "Parameter.hpp"
@@ -190,7 +189,7 @@ const unsigned int TransitionInfo::DONTCARE  = 1 << 0;
 void TransitionInfo::print(std::ostream& os) const
 {
    const BehavioralHelperConstRef BH = op_function_graph->CGetOpGraphInfo()->BH;
-   for (std::set<std::pair<vertex, unsigned int> >::const_iterator it = conditions.begin(); it != conditions.end(); ++it)
+   for (auto it = conditions.begin(); it != conditions.end(); ++it)
    {
       if (it->second == T_COND)
          os << GET_NAME(op_function_graph, it->first) << "(T)\\n";
@@ -217,7 +216,7 @@ StateTransitionGraphsCollection::StateTransitionGraphsCollection(const StateTran
 {}
 
 StateTransitionGraphsCollection::~StateTransitionGraphsCollection()
-{}
+= default;
 
 StateTransitionGraph::StateTransitionGraph(const StateTransitionGraphsCollectionRef state_transition_graphs_collection, int _selector) :
    graph(state_transition_graphs_collection.get(), _selector)
@@ -228,7 +227,7 @@ StateTransitionGraph::StateTransitionGraph(const StateTransitionGraphsCollection
 {}
 
 StateTransitionGraph::~StateTransitionGraph()
-{}
+= default;
 
 void StateTransitionGraph::WriteDot(const std::string& file_name, const int) const
 {
@@ -277,7 +276,7 @@ StateWriter::StateWriter(const graph* _stg, const OpGraphConstRef _op_function_g
 
 void StateWriter::operator()(std::ostream& out, const vertex& v) const
 {
-   const StateInfo *temp = Cget_node_info< StateInfo > (v, *printing_graph);
+   const auto *temp = Cget_node_info< StateInfo > (v, *printing_graph);
    out << "[";
    if (v == entry_node or v == exit_node)
       out << "color=blue,shape=Msquare,";
@@ -296,7 +295,7 @@ TransitionWriter::TransitionWriter(const graph* _stg, const OpGraphConstRef _op_
 
 void TransitionWriter::operator()(std::ostream& out, const EdgeDescriptor& e) const
 {
-   const TransitionInfo *temp = Cget_edge_info<TransitionInfo>(e, *printing_graph);
+   const auto *temp = Cget_edge_info<TransitionInfo>(e, *printing_graph);
    if (ST_EDGE_NORMAL_T & printing_graph->GetSelector(e))
    {
       out << "[color=red3";

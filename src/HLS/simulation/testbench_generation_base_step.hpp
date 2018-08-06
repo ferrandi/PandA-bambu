@@ -195,7 +195,7 @@ class TestbenchGenerationBaseStep : public HLS_step
       /**
        * Initialize the step (i.e., like a constructor, but executed just before exec
        */
-      virtual void Initialize();
+      void Initialize() override;
 
    protected:
 
@@ -222,7 +222,7 @@ class TestbenchGenerationBaseStep : public HLS_step
        * @param relationship_type is the type of relationship to be considered
        * @return the steps in relationship with this
        */
-      virtual const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const;
+      const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
       /**
        * Constructor.
@@ -230,19 +230,19 @@ class TestbenchGenerationBaseStep : public HLS_step
        * Declared protected to prevent direct instantiation. Use
        * Create() factory methods instead.
        */
-      TestbenchGenerationBaseStep(const ParameterConstRef Param, const HLS_managerRef AppM, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type, const std::string&c_testbench_basename = "values");
+      TestbenchGenerationBaseStep(const ParameterConstRef Param, const HLS_managerRef AppM, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type, std::string c_testbench_basename = "values");
 
    public:
       /**
        * Destructor.
        */
-      virtual ~TestbenchGenerationBaseStep();
+      ~TestbenchGenerationBaseStep() override;
 
       void ComputeRelationships
       (
          DesignFlowStepSet & design_flow_step_set,
          const DesignFlowStep::RelationshipType relationship_type
-      );
+      ) override;
 
       static
       std::string print_var_init(const tree_managerConstRef TreeM, unsigned int var, const memoryRef mem);
@@ -261,12 +261,12 @@ class TestbenchGenerationBaseStep : public HLS_step
        * Execute the step
        * @return the exit status of this step
        */
-      virtual DesignFlowStep_Status Exec();
+      DesignFlowStep_Status Exec() override;
 
       /**
        * Check if this step has actually to be executed
        * @return true if the step has to be executed
        */
-      virtual bool HasToBeExecuted() const;
+      bool HasToBeExecuted() const override;
 };
 #endif

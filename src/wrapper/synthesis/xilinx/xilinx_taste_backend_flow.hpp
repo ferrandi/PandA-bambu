@@ -49,7 +49,7 @@ class XilinxTasteBackendFlow : public XilinxBackendFlow
       /**
        * Creates the UCF file
        */
-      virtual void create_cf(const DesignParametersRef dp, bool xst);
+      void create_cf(const DesignParametersRef dp, bool xst) override;
 
    public:
       /**
@@ -63,6 +63,6 @@ class XilinxTasteBackendFlow : public XilinxBackendFlow
       /**
        * Generates the synthesis scripts for the specified design
        */
-      virtual std::string GenerateSynthesisScripts(const std::string& fu_name, const structural_managerRef SM, const std::list<std::string> & hdl_files, const std::list<std::string> & aux_files);
+      std::string GenerateSynthesisScripts(const std::string& fu_name, const structural_managerRef SM, const std::list<std::string> & hdl_files, const std::list<std::string> & aux_files) override;
 };
 #endif

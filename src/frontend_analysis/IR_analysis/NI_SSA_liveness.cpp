@@ -87,6 +87,8 @@
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_reindex.hpp"
+#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 NI_SSA_liveness::NI_SSA_liveness(const ParameterConstRef _parameters, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager) :
    FunctionFrontendFlowStep(_AppM, _function_id, NI_SSA_LIVENESS, _design_flow_manager, _parameters)
@@ -96,8 +98,7 @@ NI_SSA_liveness::NI_SSA_liveness(const ParameterConstRef _parameters, const appl
 
 
 NI_SSA_liveness::~NI_SSA_liveness()
-{
-}
+= default;
 
 const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship> > NI_SSA_liveness::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
@@ -138,7 +139,7 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
 void NI_SSA_liveness::Up_and_Mark(blocRef B, tree_nodeRef v, statement_list * sl)
 {
    /// if def(v) ∈ B (φ excluded) then return > Killed in the block, stop
-   ssa_name * v_ssa_name = GetPointer<ssa_name>(GET_NODE(v));
+   auto * v_ssa_name = GetPointer<ssa_name>(GET_NODE(v));
    if(!v_ssa_name) return;
    if(v_ssa_name->volatile_flag)
       return;
@@ -159,7 +160,7 @@ void NI_SSA_liveness::Up_and_Mark(blocRef B, tree_nodeRef v, statement_list * sl
    /// if v ∈ PhiDefs(B) then return >   Do not propagate φ definitions
    for(const auto& phi : B->CGetPhiList())
    {
-      gimple_phi * pn = GetPointer<gimple_phi>(GET_NODE(phi));
+      auto * pn = GetPointer<gimple_phi>(GET_NODE(phi));
       if(GET_INDEX_NODE(pn->res) == v_index)
          return;
    }
@@ -177,13 +178,13 @@ DesignFlowStep_Status NI_SSA_liveness::InternalExec()
 {
    const tree_managerRef TM = AppM->get_tree_manager();
    tree_nodeRef tn = TM->get_tree_node_const(function_id);
-   function_decl * fd = GetPointer<function_decl>(tn);
+   auto * fd = GetPointer<function_decl>(tn);
    THROW_ASSERT(fd && fd->body, "Node is not a function or it hasn't a body");
-   statement_list * sl = GetPointer<statement_list>(GET_NODE(fd->body));
+   auto * sl = GetPointer<statement_list>(GET_NODE(fd->body));
    THROW_ASSERT(sl, "Body is not a statement_list");
-   std::map<unsigned int, blocRef>::iterator B_it_end = sl->list_of_bloc.end();
+   auto B_it_end = sl->list_of_bloc.end();
    /// for each basic block B in CFG do > Consider all blocks successively
-   for(std::map<unsigned int, blocRef>::iterator B_it = sl->list_of_bloc.begin(); B_it != B_it_end ; ++B_it)
+   for(auto B_it = sl->list_of_bloc.begin(); B_it != B_it_end ; ++B_it)
    {
       blocRef B = B_it->second;
       unsigned int B_id = B->number;
@@ -194,7 +195,7 @@ DesignFlowStep_Status NI_SSA_liveness::InternalExec()
          const blocRef B_succ = sl->list_of_bloc[*ls_it];
          for(auto const& phi : B_succ->CGetPhiList())
          {
-            gimple_phi * pn = GetPointer<gimple_phi>(GET_NODE(phi));
+            auto * pn = GetPointer<gimple_phi>(GET_NODE(phi));
             bool is_virtual = pn->virtual_flag;
             if(!is_virtual)
             {
@@ -238,19 +239,19 @@ DesignFlowStep_Status NI_SSA_liveness::InternalExec()
       const BehavioralHelperConstRef  BH = AppM->CGetFunctionBehavior(function_id)->CGetBehavioralHelper();
       PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Liveness for function " + BH->get_function_name());
 
-      for(std::map<unsigned int, blocRef>::iterator B_it = sl->list_of_bloc.begin(); B_it != B_it_end ; ++B_it)
+      for(auto B_it = sl->list_of_bloc.begin(); B_it != B_it_end ; ++B_it)
       {
          blocRef B = B_it->second;
-         std::set<unsigned int>::const_iterator li_it_end = B->live_in.end();
+         auto li_it_end = B->live_in.end();
          PRINT_DBG_STRING(DEBUG_LEVEL_PEDANTIC, debug_level, "Live In for BB" + STR(B->number) + ": ");
-         for(std::set<unsigned int>::const_iterator li_it = B->live_in.begin(); li_it != li_it_end; ++li_it)
+         for(auto li_it = B->live_in.begin(); li_it != li_it_end; ++li_it)
          {
             PRINT_DBG_STRING(DEBUG_LEVEL_PEDANTIC, debug_level, BH->PrintVariable(*li_it)  + " ");
          }
          PRINT_DBG_STRING(DEBUG_LEVEL_PEDANTIC, debug_level, "\n");
-         std::set<unsigned int>::const_iterator lo_it_end = B->live_out.end();
+         auto lo_it_end = B->live_out.end();
          PRINT_DBG_STRING(DEBUG_LEVEL_PEDANTIC, debug_level, "Live Out for BB" + STR(B->number) + ": ");
-         for(std::set<unsigned int>::const_iterator lo_it = B->live_out.begin(); lo_it != lo_it_end; ++lo_it)
+         for(auto lo_it = B->live_out.begin(); lo_it != lo_it_end; ++lo_it)
          {
             PRINT_DBG_STRING(DEBUG_LEVEL_PEDANTIC, debug_level,  BH->PrintVariable(*lo_it) + " ");
          }

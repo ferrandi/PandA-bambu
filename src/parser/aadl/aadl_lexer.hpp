@@ -59,7 +59,7 @@ class AadlFlexLexer :public yyFlexLexer
       bool skip;
 
       YYSTYPE *lvalp;
-      int yylex();
+      int yylex() override;
 
       /**
        * Constructor
@@ -69,21 +69,21 @@ class AadlFlexLexer :public yyFlexLexer
       /**
        * Destructor
        */
-      ~AadlFlexLexer();
+      ~AadlFlexLexer() override;
 
       void yyerror(const char * msg)
       {
          LexerError(msg);
       }
 
-      void LexerError(const char * msg)
+      void LexerError(const char * msg) override
       {
          std::cout << msg << " at line number |" << lineno() << "|\t" ;
          std::cout << "text is |" << YYText() << "|" << std::endl ;
          throw "Parse Error";
       }
 
-      int yywrap()
+      int yywrap() override
       {
          return 1;
       }

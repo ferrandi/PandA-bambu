@@ -70,6 +70,8 @@
 
 ///wrapper/treegcc include
 #include "gcc_wrapper.hpp"
+#include "hash_helper.hpp"
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 BasicBlocksProfiling::BasicBlocksProfiling(const application_managerRef _AppM, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters) :
    ApplicationFrontendFlowStep(_AppM, BASIC_BLOCKS_PROFILING, _design_flow_manager, _parameters),
@@ -79,8 +81,7 @@ BasicBlocksProfiling::BasicBlocksProfiling(const application_managerRef _AppM, c
 }
 
 BasicBlocksProfiling::~BasicBlocksProfiling()
-{
-}
+= default;
 
 const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship> > BasicBlocksProfiling::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType) const
 {

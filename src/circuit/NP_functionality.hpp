@@ -47,7 +47,6 @@
 #include <map>
 #include <vector>
 #include "refcount.hpp"
-#include "utility.hpp"
 
 REF_FORWARD_DECL(NP_functionality);
 
@@ -134,13 +133,13 @@ class NP_functionality
 
   public:
     /// Constructor.
-    NP_functionality() {}
+    NP_functionality() = default;
 
     /// Constructor.
     explicit NP_functionality(const NP_functionalityRef& obj);
 
     /// Destructor.
-    ~NP_functionality() {}
+    ~NP_functionality() = default;
 
     /**
      * Add a non SystemC based description.
@@ -191,7 +190,7 @@ class NP_functionality
     /**
      * Definition of get_kind_text()
     */
-    GET_KIND_TEXT(NP_functionality);
+    std::string get_kind_text() const {return std::string("NP_functionality");}
 
 };
 

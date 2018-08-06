@@ -60,9 +60,7 @@ clb_model::clb_model(const ParameterConstRef _Param, const double &_area_) :
 }
 
 clb_model::~clb_model()
-{
-
-}
+= default;
 
 double clb_model::get_area_value() const
 {

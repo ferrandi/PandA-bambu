@@ -43,14 +43,10 @@
 #ifndef _VAR_PP_FUNCTOR_HPP
 #define _VAR_PP_FUNCTOR_HPP
 
-///STL include
-#include <unordered_set>
-
-///Utility include
-#include "custom_set.hpp"
+#include <string>                                    // for string
+#include <utility>
+#include "custom_set.hpp"                            // for CustomSet
 #include "refcount.hpp"
-
-#include "graph.hpp"
 
 /**
  * @name Forward declarations.
@@ -68,7 +64,7 @@ REF_FORWARD_DECL(var_pp_functor);
 struct var_pp_functor
 {
    /// Destructor
-   virtual ~var_pp_functor() {}
+   virtual ~var_pp_functor() = default;
 
    /**
     * This functor returns a string representing the variable (usually the name of the variable). This can be used both in variable declaration and in variable use.
@@ -95,13 +91,13 @@ public:
    explicit std_var_pp_functor(const BehavioralHelperConstRef _BH): BH(_BH) {}
 
    ///Destructor
-   ~std_var_pp_functor() {}
+   ~std_var_pp_functor() override = default;
 
    /**
     * return the name of the variable.
     * @param var is the nodeid of the variable.
    */
-   std::string operator() (unsigned int var) const;
+   std::string operator() (unsigned int var) const override;
 
 };
 
@@ -122,13 +118,13 @@ struct pointer_var_pp_functor : public var_pp_functor
    /**
     * Destructor
     */
-   ~pointer_var_pp_functor() {}
+   ~pointer_var_pp_functor() override = default;
 
    /**
     * return the name of the variable with a star as a prefix.
     * @param var is the nodeid of the variable.
    */
-   std::string operator() (unsigned int var) const;
+   std::string operator() (unsigned int var) const override;
 
 private:
    ///reference to the set of variable that has to have a star in front when returned by operator()
@@ -158,13 +154,13 @@ public:
    address_var_pp_functor(const BehavioralHelperConstRef _BH, const CustomSet<unsigned int> vars, const CustomSet<unsigned int> pointer_vars);
 
    ///Destructor
-   ~address_var_pp_functor() {}
+   ~address_var_pp_functor() override = default;
 
    /**
     * return the name of the variable with a star as a prefix.
     * @param var is the nodeid of the variable.
    */
-   std::string operator() (unsigned int var) const;
+   std::string operator() (unsigned int var) const override;
 
 private:
    ///reference to the set of variable that has to have a star in front when returned by operator()
@@ -187,16 +183,16 @@ private:
 
 public:
    ///Constructor
-   isolated_var_pp_functor(const BehavioralHelperConstRef _BH, unsigned int _repl_var, const std::string& _var_string): BH(_BH), repl_var(_repl_var), var_string(_var_string) {}
+   isolated_var_pp_functor(const BehavioralHelperConstRef _BH, unsigned int _repl_var, std::string  _var_string): BH(_BH), repl_var(_repl_var), var_string(std::move(_var_string)) {}
 
    ///Destructor
-   ~isolated_var_pp_functor() {}
+   ~isolated_var_pp_functor() override = default;
 
    /**
     * return the name of the variable.
     * @param var is the nodeid of the variable.
    */
-   std::string operator() (unsigned int var) const;
+   std::string operator() (unsigned int var) const override;
 };
 
 

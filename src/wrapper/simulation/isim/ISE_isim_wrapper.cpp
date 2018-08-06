@@ -62,15 +62,16 @@
 
 #include <fileIO.hpp>
 #include <polixml.hpp>
+#include <utility>
 #include <xml_dom_parser.hpp>
 #include <xml_helper.hpp>
 
 #include <fstream>
 
 //constructor
-ISE_isim_wrapper::ISE_isim_wrapper(const ParameterConstRef _Param, const std::string& _suffix) :
+ISE_isim_wrapper::ISE_isim_wrapper(const ParameterConstRef _Param, std::string  _suffix) :
    SimulationTool(_Param),
-   suffix(_suffix)
+   suffix(std::move(_suffix))
 {
    PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Creating the ISIM wrapper...");
    boost::filesystem::create_directory(ISIM_SUBDIR + suffix + "/" );
@@ -79,9 +80,7 @@ ISE_isim_wrapper::ISE_isim_wrapper(const ParameterConstRef _Param, const std::st
 
 //destructor
 ISE_isim_wrapper::~ISE_isim_wrapper()
-{
-
-}
+= default;
 
 void ISE_isim_wrapper::CheckExecution()
 {

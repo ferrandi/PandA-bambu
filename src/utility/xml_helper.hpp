@@ -44,7 +44,7 @@
 #define XML_HELPER_HPP
 
 #include <boost/lexical_cast.hpp>
-#include <boost/typeof/typeof.hpp>
+#include <boost/typeof/typeof.hpp>  // for BOOST_TYPEOF_TPL
 
 ///WRITE XML Value Macro. Insert a value in an XML tree.
 #define WRITE_XVM(variable, node) (node)->set_attribute(#variable, boost::lexical_cast<std::string>(variable))

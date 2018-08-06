@@ -306,7 +306,6 @@ gcc_regression_simple/20060110-1.c
 gcc_regression_simple/20060110-2.c
 gcc_regression_simple/20060127-1.c
 gcc_regression_simple/20060412-1.c
-gcc_regression_simple/20060905-1.c
 gcc_regression_simple/20060910-1.c
 gcc_regression_simple/20060929-1.c
 gcc_regression_simple/20060930-1.c
@@ -324,7 +323,6 @@ gcc_regression_simple/20070724-1.c
 gcc_regression_simple/20071011-1.c
 gcc_regression_simple/20071018-1.c
 gcc_regression_simple/20071029-1.c
-gcc_regression_simple/20071108-1.c
 gcc_regression_simple/20071205-1.c
 gcc_regression_simple/20071216-1.c
 gcc_regression_simple/20071219-1.c
@@ -704,7 +702,6 @@ gcc_regression_simple/pr31169.c
 gcc_regression_simple/pr31448-2.c
 gcc_regression_simple/pr31448.c
 gcc_regression_simple/pr32244-1.c
-gcc_regression_simple/pr32500.c
 gcc_regression_simple/pr33142.c
 gcc_regression_simple/pr33382.c
 gcc_regression_simple/pr33631.c

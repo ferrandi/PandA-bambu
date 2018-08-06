@@ -94,18 +94,18 @@ class CreateAddressTranslation : public ApplicationFrontendFlowStep
        * Return the set of analyses in relationship with this design step
        * @param relationship_type is the type of relationship to be considered
        */
-      virtual const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const;
+      const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
       /**
        * Initialize the step (i.e., like a constructor, but executed just before exec
        */
-      virtual void Initialize();
+      void Initialize() override;
 
       /**
        * Check if this step has actually to be executed
        * @return true if the step has to be executed
        */
-      bool HasToBeExecuted() const;
+      bool HasToBeExecuted() const override;
 
    public:
       /**
@@ -119,12 +119,12 @@ class CreateAddressTranslation : public ApplicationFrontendFlowStep
       /**
        * Destructor
        */
-      ~CreateAddressTranslation();
+      ~CreateAddressTranslation() override;
 
       /**
        * Execute this step
        * @return the exit status of this step
        */
-      virtual DesignFlowStep_Status Exec();
+      DesignFlowStep_Status Exec() override;
 };
 #endif

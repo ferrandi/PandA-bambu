@@ -85,6 +85,7 @@
 #include <utility.hpp>
 
 #include <fstream>
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 // Fixed design parameter names
 #define dc_compile_effort_high      "dc_compile_effort_high"      // enable high effort compilation switch
@@ -154,20 +155,20 @@ void DesignCompilerWrapper::EvaluateVariables(const DesignParametersRef dp)
 
    save_design(dp, target_file);
 
-   for(unsigned int l = 0; l < xml_script_nodes.size(); l++)
+   for(auto & xml_script_node : xml_script_nodes)
    {
-      if (xml_script_nodes[l]->nodeType == NODE_COMMAND && *(GetPointer<xml_command_t>(xml_script_nodes[l])->name) == "report_area")
+      if (xml_script_node->nodeType == NODE_COMMAND && *(GetPointer<xml_command_t>(xml_script_node)->name) == "report_area")
       {
-         if (!GetPointer<xml_command_t>(xml_script_nodes[l])->output)
+         if (!GetPointer<xml_command_t>(xml_script_node)->output)
             THROW_ERROR("output file not specified for command \"report_area\"");
-         report_files[REPORT_AREA] = *(GetPointer<xml_command_t>(xml_script_nodes[l])->output);
+         report_files[REPORT_AREA] = *(GetPointer<xml_command_t>(xml_script_node)->output);
          replace_parameters(dp, report_files[REPORT_AREA]);
       }
-      if (xml_script_nodes[l]->nodeType == NODE_COMMAND && *(GetPointer<xml_command_t>(xml_script_nodes[l])->name) == "report_timing")
+      if (xml_script_node->nodeType == NODE_COMMAND && *(GetPointer<xml_command_t>(xml_script_node)->name) == "report_timing")
       {
-         if (!GetPointer<xml_command_t>(xml_script_nodes[l])->output)
+         if (!GetPointer<xml_command_t>(xml_script_node)->output)
             THROW_ERROR("output file not specified for command \"report_timing\"");
-         report_files[REPORT_TIME] = *(GetPointer<xml_command_t>(xml_script_nodes[l])->output);
+         report_files[REPORT_TIME] = *(GetPointer<xml_command_t>(xml_script_node)->output);
          replace_parameters(dp, report_files[REPORT_TIME]);
       }
    }
@@ -215,8 +216,8 @@ DesignCompilerWrapper::~DesignCompilerWrapper()
 
 void DesignCompilerWrapper::add_link_library(const std::vector<std::string>& link_library)
 {
-   for (unsigned int l = 0; l < link_library.size(); l++)
-      add_link_library(link_library[l]);
+   for (const auto & l : link_library)
+      add_link_library(l);
 }
 
 void DesignCompilerWrapper::add_link_library(const std::string& link_library)
@@ -227,8 +228,8 @@ void DesignCompilerWrapper::add_link_library(const std::string& link_library)
 
 void DesignCompilerWrapper::add_target_library(const std::vector<std::string>& target_library)
 {
-   for (unsigned int l = 0; l < target_library.size(); l++)
-      add_target_library(target_library[l]);
+   for (const auto & l : target_library)
+      add_target_library(l);
 }
 
 void DesignCompilerWrapper::add_target_library(const std::string& target_library)
@@ -251,9 +252,9 @@ void DesignCompilerWrapper::set_search_path(const DesignParametersRef)
 {
    xml_set_variable_tRef var_search_path = get_reserved_parameter(dc_search_path);
    var_search_path->clean();
-   for (std::vector<std::string>::iterator l = search_path.begin(); l != search_path.end(); ++l)
+   for (auto & l : search_path)
    {
-      xml_set_entry_tRef entry = xml_set_entry_tRef(new xml_set_entry_t(*l, nullptr));
+      xml_set_entry_tRef entry = xml_set_entry_tRef(new xml_set_entry_t(l, nullptr));
       var_search_path->multiValues.push_back(entry);
    }
 }
@@ -262,9 +263,9 @@ void DesignCompilerWrapper::set_link_libraries(const DesignParametersRef)
 {
    xml_set_variable_tRef var_link_library = get_reserved_parameter(dc_link_library);
    var_link_library->clean();
-   for (std::vector<std::string>::iterator l = link_libs.begin(); l != link_libs.end(); ++l)
+   for (auto & link_lib : link_libs)
    {
-      xml_set_entry_tRef entry = xml_set_entry_tRef(new xml_set_entry_t(*l, nullptr));
+      xml_set_entry_tRef entry = xml_set_entry_tRef(new xml_set_entry_t(link_lib, nullptr));
       var_link_library->multiValues.push_back(entry);
    }
 }
@@ -279,9 +280,9 @@ void DesignCompilerWrapper::set_target_libraries(const DesignParametersRef)
 
    xml_set_variable_tRef var_target_library = get_reserved_parameter(dc_target_library);
    var_target_library->clean();
-   for (std::vector<std::string>::iterator l = target_libs.begin(); l != target_libs.end(); ++l)
+   for (auto & target_lib : target_libs)
    {
-      xml_set_entry_tRef entry = xml_set_entry_tRef(new xml_set_entry_t(*l, nullptr));
+      xml_set_entry_tRef entry = xml_set_entry_tRef(new xml_set_entry_t(target_lib, nullptr));
       var_target_library->multiValues.push_back(entry);
    }
 }
@@ -294,19 +295,19 @@ std::string DesignCompilerWrapper::import_input_design(const DesignParametersRef
    std::string target = top + "_synth.v";
    xml_set_variable_tRef var_file_set = get_reserved_parameter(dc_HDL_file);
    var_file_set->clean();
-   for (unsigned int v = 0; v < file_list.size(); ++v)
+   for (const auto & v : file_list)
    {
-      xml_set_entry_tRef entry = xml_set_entry_tRef(new xml_set_entry_t(file_list[v], nullptr));
+      xml_set_entry_tRef entry = xml_set_entry_tRef(new xml_set_entry_t(v, nullptr));
       var_file_set->multiValues.push_back(entry);
 
-      boost::filesystem::path verilog(file_list[v]);
+      boost::filesystem::path verilog(v);
       std::string extension = boost::filesystem::extension(verilog);
       if (extension == ".v" || extension == ".verilog")
          language = HDLWriter_Language::VERILOG;
       else if (extension == ".vhd" || extension == ".vhdl")
          language = HDLWriter_Language::VHDL;
       else
-         THROW_ERROR("Format of file \"" + file_list[v] + "\" is not compliant with Design Compiler's wrapper");
+         THROW_ERROR("Format of file \"" + v + "\" is not compliant with Design Compiler's wrapper");
       if (top.size() == 0)
       {
          std::string name_v = GetLeafFileName(verilog);

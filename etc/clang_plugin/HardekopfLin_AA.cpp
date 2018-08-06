@@ -33,7 +33,7 @@
 /**
 * @file HardekopfLin_AA.cpp
 * @brief This is an implementation of Andersen's inclusion-based pointer
-*        analysis (interprocedural, flow-insensitive, context-insensitive, and
+*        analysis (inter-procedural, flow-insensitive, context-insensitive, and
 *        field-sensitive). Part of the code comes from a LLVM 2.5 implementation
 *        done by Andrey Petrov and Ben Hardekopf.
 *        The Andersen specific version used here is described in:
@@ -6347,8 +6347,22 @@ const std::vector<u32>* Andersen_AA::pointsToSet(u32 n, u32 off)
 //Return the points-to set of V's node.
 const std::vector<u32>* Andersen_AA::pointsToSet(const llvm::Value *V, u32 off)
 {
-   if(llvm::dyn_cast<const llvm::ConstantExpr>(V) && llvm::dyn_cast<const llvm::ConstantExpr>(V)->getOpcode() == llvm::Instruction::BitCast)
-      return pointsToSet(get_val_node(llvm::dyn_cast<const llvm::ConstantExpr>(V)->getOperand(0)), off);
+   auto CE = llvm::dyn_cast<const llvm::ConstantExpr>(V);
+   if(CE && CE->getOpcode() == llvm::Instruction::BitCast)
+      return pointsToSet(get_val_node(CE->getOperand(0)), off);
+   else if(auto BC = llvm::dyn_cast<const llvm::BitCastInst>(V))
+   {
+      if(auto gepOp = llvm::dyn_cast<const llvm::GetElementPtrInst>(BC->getOperand(0)))
+      {
+         auto CE2 = llvm::dyn_cast<const llvm::ConstantExpr>(gepOp->getPointerOperand());
+         if(CE2 && CE2->getOpcode() == llvm::Instruction::BitCast)
+            return pointsToSet(get_val_node(CE2->getOperand(0)));
+         else
+            return pointsToSet(get_val_node(gepOp->getPointerOperand()));
+      }
+      else
+         return pointsToSet(get_val_node(BC->getOperand(0)), off);
+   }
    else
       return pointsToSet(get_val_node(V), off);
 }
@@ -6382,7 +6396,27 @@ bool Andersen_AA::has_malloc_obj(u32 n, const llvm::TargetLibraryInfo *TLI, u32 
 //Get the rep node of V, or MAX_U32 if it has no node.
 u32 Andersen_AA::PE(const llvm::Value* V)
 {
-   u32 n= get_val_node(V, 1);
+   u32 n;
+   auto CE = llvm::dyn_cast<const llvm::ConstantExpr>(V);
+   if(CE && CE->getOpcode() == llvm::Instruction::BitCast)
+   {
+      n = get_val_node(CE->getOperand(0));
+   }
+   else if(auto BC = llvm::dyn_cast<const llvm::BitCastInst>(V))
+   {
+      if(auto gepOp = llvm::dyn_cast<const llvm::GetElementPtrInst>(BC->getOperand(0)))
+      {
+         auto CE2 = llvm::dyn_cast<const llvm::ConstantExpr>(gepOp->getPointerOperand());
+         if(CE2 && CE2->getOpcode() == llvm::Instruction::BitCast)
+            n = get_val_node(CE2->getOperand(0));
+         else
+            n = get_val_node(gepOp->getPointerOperand());
+      }
+      else
+         n = get_val_node(BC->getOperand(0),1);
+   }
+   else
+      n = get_val_node(V, 1);
    if(!n)
       return NOVAR_ID;
    return get_node_rep(n);
@@ -7932,7 +7966,7 @@ void Staged_Flow_Sensitive_AA::sfs_id(llvm::Module &M)
    prog_start_node = create_node(true); // NP for initializing globals
 
    // create the list of constraints; also construct the ICFG (except
-   // for indirect and interprocedural edges)
+   // for indirect and inter-procedural edges)
    auto MS = getmin_struct(M);
    obj_cons_id(M, MS);
 
@@ -7968,7 +8002,7 @@ void Staged_Flow_Sensitive_AA::sfs_id(llvm::Module &M)
    // optimize the constraints
    cons_opt_wrap();
 
-   // add interprocedural edges to the ICFG
+   // add inter-procedural edges to the ICFG
    icfg_inter_edges(M);
 
    // we can go ahead and process the constraints from indirect calls
@@ -8112,7 +8146,7 @@ void Staged_Flow_Sensitive_AA::processBlock(u32 parent, const llvm::BasicBlock *
             // if there was a call in this BasicBlock prior to the return
             // instruction, we create a new node just for the return
             // instruction so the callsite will have a successor for the
-            // interprocedural edges added later
+            // inter-procedural edges added later
             if (block_call)
             {
                u32 next = create_node();
@@ -8276,7 +8310,7 @@ void Staged_Flow_Sensitive_AA::processBlock(u32 parent, const llvm::BasicBlock *
                   idr_cons.push_back(i);
 
                // we also save the indirect call inst and current node so
-               // we can add the interprocedural control-flow edges later,
+               // we can add the inter-procedural control-flow edges later,
                // as well as process indirect external calls
                idr_calls.push_back(std::make_pair(ci,n));
 
@@ -8284,7 +8318,7 @@ void Staged_Flow_Sensitive_AA::processBlock(u32 parent, const llvm::BasicBlock *
                //
                assert(!get_val_node(ci,true) || get_obj_node(ci));
 
-               // guarantee a single successor for the callsite
+               // guarantee a single successor for the call-site
                assert(!call_succ.count(n));
                u32 next = create_node();
                call_succ[n] = next;
@@ -8408,7 +8442,7 @@ void Staged_Flow_Sensitive_AA::icfg_inter_edges(llvm::Module &M)
    assert(main && fun_start.count(main) && fun_start[main] < ICFG.size());
    add_edge(prog_start_node,fun_start[main]);
 
-   // process indirect calls to add interprocedural ICFG edges (we
+   // process indirect calls to add inter-procedural ICFG edges (we
    // couldn't do it before now because we have to have completed
    // obj_cons_id and clump_addr_taken before we can use PRE's results)
    std::set<u32> has_ext, is_alloc;
@@ -8762,7 +8796,7 @@ void Staged_Flow_Sensitive_AA::partition_vars()
    sq_unmap.clear();
 
    // global objects could have been initialized when they were
-   // decelared, and there won't be any stores for these; the
+   // declared, and there won't be any stores for these; the
    // initialized global object were put in gv2n by sfs_prep()
    //
    // we'll designate the program start node as NP for initialized

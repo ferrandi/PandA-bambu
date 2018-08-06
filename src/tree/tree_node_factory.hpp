@@ -43,8 +43,9 @@
 #ifndef TREE_NODE_FACTORY_HPP
 #define TREE_NODE_FACTORY_HPP
 
-///STD include
-#include <ostream>
+#include <map>                                           // for map
+#include <string>                                        // for string
+#include "token_interface.hpp"                           // for TreeVocabula...
 
 ///Tree include
 #include "tree_node.hpp"
@@ -59,6 +60,7 @@
  * @name forward declarations
  */
 //@{
+enum kind : int;
 REF_FORWARD_DECL(tree_node_factory);
 REF_FORWARD_DECL(tree_manager);
 //@}

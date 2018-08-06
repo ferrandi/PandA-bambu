@@ -43,9 +43,7 @@
 #ifndef TREE_NODE_DUP_HPP
 #define TREE_NODE_DUP_HPP
 
-#include <ostream>
 #include <unordered_map>
-#include <unordered_set>
 #include <boost/preprocessor/seq/for_each.hpp>
 #include <boost/preprocessor/facilities/empty.hpp>
 #include "refcount.hpp"

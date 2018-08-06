@@ -61,25 +61,25 @@ class treeVocabularyTokenTypes;
 struct TreeFlexLexer:public yyFlexLexer
 {
    YYSTYPE *lvalp;
-   int yylex();
+   int yylex() override;
 
    TreeFlexLexer( std::istream* argin, std::ostream* argout);
 
-   ~TreeFlexLexer();
+   ~TreeFlexLexer() override;
 
    void yyerror(const char *msg)
    {
       LexerError(msg);
    }
 
-   void LexerError(const char *msg)
+   void LexerError(const char *msg) override
    {
       std::cout << msg << " at line number |" << lineno() << "|\t" ;
       std::cout << "text is |" << YYText() << "|" << std::endl ;
       THROW_ERROR("Parse error");
    }
 
-   int yywrap()
+   int yywrap() override
    {
       return 1;
    }

@@ -71,6 +71,7 @@
 #include <boost/algorithm/string/replace.hpp>
 #include <boost/algorithm/string/split.hpp>
 #include "utility.hpp"
+#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_
 
 /// PARAMETERS STUFF ***********************///
 #define INPUT_OPT_ACCURACY 256
@@ -213,7 +214,7 @@ int SpiderParameter::Exec()
       PrintUsage(std::cerr);
       return EXIT_SUCCESS;
    }
-   while (1)
+   while (true)
    {
       int next_option = getopt_long(argc, argv, short_options, long_options, &option_index);
 

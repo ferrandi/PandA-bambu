@@ -54,19 +54,19 @@ class tree_panda_gcc_parameter : public Parameter
       /**
        * Checks parameter values to set implicit one
        */
-      virtual void CheckParameters();
+      void CheckParameters() override;
 
       /**
        * Print the usage of this tool
        * @param os is the stream where the message has to be printed
        */
-      void PrintHelp(std::ostream &os) const;
+      void PrintHelp(std::ostream &os) const override;
 
       /**
        * Print the name of the program to be included in the header
        * @param os is the stream on which the program name has to be printed
        */
-      void PrintProgramName(std::ostream & os) const;
+      void PrintProgramName(std::ostream & os) const override;
 
    public:
       /**
@@ -80,17 +80,17 @@ class tree_panda_gcc_parameter : public Parameter
       /**
        * Destructor
        */
-      virtual ~tree_panda_gcc_parameter();
+      ~tree_panda_gcc_parameter() override;
 
       /**
        * Execute parameter parsing
        */
-      virtual int Exec();
+      int Exec() override;
 
       /**
        * Sets the default values for the Zebu tool
        */
-      void SetDefaults();
+      void SetDefaults() override;
 };
 
 #endif

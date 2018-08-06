@@ -180,12 +180,12 @@ struct type_casting : public tree_node_visitor
       ///default constructor
       explicit type_casting(std::unordered_set<unsigned int> & _types) : types(_types){ }
 
-      void operator()(const mem_ref* obj, unsigned int & mask);
+      void operator()(const mem_ref* obj, unsigned int & mask) override;
 
-      void operator()(const indirect_ref* obj, unsigned int & mask);
+      void operator()(const indirect_ref* obj, unsigned int & mask) override;
       ///tree_node visitors
-      BOOST_PP_SEQ_FOR_EACH(OPERATOR_MACRO_DECL, BOOST_PP_EMPTY, OBJ_SPECIALIZED_SEQ)
-      BOOST_PP_SEQ_FOR_EACH(OPERATOR_MACRO, BOOST_PP_EMPTY, LOCAL_OBJ_NOT_SPECIALIZED_SEQ)
+      BOOST_PP_SEQ_FOR_EACH(OPERATOR_MACRO_DECLO, BOOST_PP_EMPTY, OBJ_SPECIALIZED_SEQ)
+      BOOST_PP_SEQ_FOR_EACH(OPERATOR_MACROO, BOOST_PP_EMPTY, LOCAL_OBJ_NOT_SPECIALIZED_SEQ)
 
    private:
 

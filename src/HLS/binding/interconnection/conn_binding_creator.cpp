@@ -69,7 +69,7 @@
 #include "weighted_clique_register.hpp"
 ///behavior include
 #include "call_graph_manager.hpp"
-
+#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_
 
 conn_binding_creator::conn_binding_creator(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type) :
    HLSFunctionStep(_Param, _HLSMgr, _funId, _design_flow_manager, _hls_flow_step_type)
@@ -78,9 +78,7 @@ conn_binding_creator::conn_binding_creator(const ParameterConstRef _Param, const
 }
 
 conn_binding_creator::~conn_binding_creator()
-{
-
-}
+= default;
 
 const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > conn_binding_creator::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {

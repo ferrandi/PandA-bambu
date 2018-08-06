@@ -49,7 +49,7 @@
 
 #if ! HAVE_UNORDERED
 GenericObjSorter::GenericObjSorter()
-{}
+= default;
 
 bool GenericObjSorter::operator()(const generic_objRef x, const generic_objRef y) const
 {
@@ -60,7 +60,7 @@ bool GenericObjSorter::operator()(const generic_objRef x, const generic_objRef y
 }
 
 GenericObjUnsignedIntSorter::GenericObjUnsignedIntSorter()
-{}
+= default;
 
 bool GenericObjUnsignedIntSorter::operator()(const std::pair<generic_objRef,int> &x, const std::pair<generic_objRef,int> &y) const
 {

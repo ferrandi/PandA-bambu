@@ -49,6 +49,15 @@
 ///Header include
 #include "raw_writer.hpp"
 
+#include <cstddef>                                  // for size_t
+#include <list>                                      // for list, list<>::co...
+#include <map>                                       // for map, map<>::cons...
+#include <unordered_set>                             // for unordered_set<>:...
+#include <utility>                                   // for pair
+#include <vector>                                    // for vector, vector<>...
+
+#include "exceptions.hpp"                            // for THROW_ERROR
+
 ///parser/treegcc include
 #include "token_interface.hpp"
 
@@ -261,8 +270,8 @@ void raw_writer::operator()(const gimple_node* obj, unsigned int & mask)
    if(obj->weight_information->instruction_size)
       WRITE_NFIELD(os, STOK(TOK_SIZE_WEIGHT), obj->weight_information->instruction_size);
 #endif
-   std::vector<tree_nodeRef>::const_iterator vend2 = obj->pragmas.end();
-   for (std::vector<tree_nodeRef>::const_iterator i = obj->pragmas.begin(); i != vend2; ++i)
+   auto vend2 = obj->pragmas.end();
+   for (auto i = obj->pragmas.begin(); i != vend2; ++i)
      write_when_not_null(STOK(TOK_PRAGMA), *i);
 #if HAVE_CODE_ESTIMATION_BUILT && HAVE_RTL_BUILT
    write_when_not_null_rtl(obj->weight_information->rtl_nodes);
@@ -329,8 +338,8 @@ void raw_writer::operator()(const memory_tag* obj, unsigned int & mask)
 {
    mask = NO_VISIT;
    obj->decl_node::visit(this);
-   std::vector<tree_nodeRef>::const_iterator vend = obj->list_of_aliases.end();
-   for (std::vector<tree_nodeRef>::const_iterator i = obj->list_of_aliases.begin(); i != vend; ++i)
+   auto vend = obj->list_of_aliases.end();
+   for (auto i = obj->list_of_aliases.begin(); i != vend; ++i)
       write_when_not_null(STOK(TOK_ALIAS), *i);
 }
 
@@ -379,8 +388,8 @@ void raw_writer::operator()(const gimple_bind* obj, unsigned int & mask)
 {
    mask = NO_VISIT;
    obj->expr_node::visit(this);
-   std::vector<tree_nodeRef>::const_iterator vend = obj->list_of_vars.end();
-   for (std::vector<tree_nodeRef>::const_iterator i = obj->list_of_vars.begin(); i != vend; ++i)
+   auto vend = obj->list_of_vars.end();
+   for (auto i = obj->list_of_vars.begin(); i != vend; ++i)
       write_when_not_null(STOK(TOK_VARS), *i);
    write_when_not_null(STOK(TOK_BODY), obj->body);
 }
@@ -393,8 +402,8 @@ void raw_writer::operator()(const binfo* obj, unsigned int & mask)
    if (obj->virt_flag)
       WRITE_TOKEN(os, TOK_VIRT);
    WRITE_NFIELD(os, STOK(TOK_BASES), obj->bases);
-   std::vector<std::pair< TreeVocabularyTokenTypes_TokenEnum, tree_nodeRef> >::const_iterator vend = obj->list_of_access_binf.end();
-   for (std::vector<std::pair< TreeVocabularyTokenTypes_TokenEnum, tree_nodeRef> >::const_iterator i = obj->list_of_access_binf.begin(); i != vend; ++i)
+   auto vend = obj->list_of_access_binf.end();
+   for (auto i = obj->list_of_access_binf.begin(); i != vend; ++i)
    {
       WRITE_TOKEN2(os, i->first);
       write_when_not_null(STOK(TOK_BINF), i->second);
@@ -494,8 +503,8 @@ void raw_writer::operator()(const constructor* obj, unsigned int & mask)
    mask = NO_VISIT;
    obj->tree_node::visit(this);
    write_when_not_null(STOK(TOK_TYPE), obj->type);
-   std::vector<std::pair< tree_nodeRef, tree_nodeRef> >::const_iterator vend = obj->list_of_idx_valu.end();
-   for (std::vector<std::pair< tree_nodeRef, tree_nodeRef> >::const_iterator i = obj->list_of_idx_valu.begin(); i != vend; ++i)
+   auto vend = obj->list_of_idx_valu.end();
+   for (auto i = obj->list_of_idx_valu.begin(); i != vend; ++i)
    {
       write_when_not_null(STOK(TOK_IDX), i->first);
       write_when_not_null(STOK(TOK_VALU), i->second);
@@ -546,8 +555,8 @@ void raw_writer::operator()(const function_decl* obj, unsigned int & mask)
    obj->decl_node::visit(this);
    if (obj->operator_flag)
       WRITE_TOKEN(os, TOK_OPERATOR);
-   std::vector<std::string>::const_iterator vend = obj->list_of_op_names.end();
-   for (std::vector<std::string>::const_iterator i = obj->list_of_op_names.begin(); i != vend; ++i)
+   auto vend = obj->list_of_op_names.end();
+   for (auto i = obj->list_of_op_names.begin(); i != vend; ++i)
       WRITE_UFIELD_STRING(os, *i);
    obj->attr::visit(this);
    write_when_not_null(STOK(TOK_TMPL_PARMS), obj->tmpl_parms);
@@ -558,8 +567,8 @@ void raw_writer::operator()(const function_decl* obj, unsigned int & mask)
    if (obj->virt_flag)
       WRITE_NFIELD(os, STOK(TOK_VIRT), obj->virt);
    write_when_not_null(STOK(TOK_FN), obj->fn);
-   std::vector<tree_nodeRef>::const_iterator vend2 = obj->list_of_args.end();
-   for (std::vector<tree_nodeRef>::const_iterator i = obj->list_of_args.begin(); i != vend2; ++i)
+   auto vend2 = obj->list_of_args.end();
+   for (auto i = obj->list_of_args.begin(); i != vend2; ++i)
       write_when_not_null(STOK(TOK_ARG), *i);
 
    if (obj->undefined_flag)
@@ -767,11 +776,11 @@ void raw_writer::operator()(const record_type* obj, unsigned int & mask)
       WRITE_TOKEN(os, TOK_SPEC);
    if (obj->struct_flag)
       WRITE_TOKEN(os, TOK_STRUCT);
-   std::vector<tree_nodeRef>::const_iterator vend1 = obj->list_of_flds.end();
-   for (std::vector<tree_nodeRef>::const_iterator i = obj->list_of_flds.begin(); i != vend1; ++i)
+   auto vend1 = obj->list_of_flds.end();
+   for (auto i = obj->list_of_flds.begin(); i != vend1; ++i)
       write_when_not_null(STOK(TOK_FLDS), *i);
-   std::vector<tree_nodeRef>::const_iterator vend2 = obj->list_of_fncs.end();
-   for (std::vector<tree_nodeRef>::const_iterator i = obj->list_of_fncs.begin(); i != vend2; ++i)
+   auto vend2 = obj->list_of_fncs.end();
+   for (auto i = obj->list_of_fncs.begin(); i != vend2; ++i)
       write_when_not_null(STOK(TOK_FNCS), *i);
    write_when_not_null(STOK(TOK_BINF), obj->binf);
 }
@@ -857,11 +866,11 @@ void raw_writer::operator()(const statement_list* obj, unsigned int & mask)
 {
    mask = NO_VISIT;
    obj->tree_node::visit(this);
-   std::list<tree_nodeRef>::const_iterator vend = obj->list_of_stmt.end();
-   for (std::list<tree_nodeRef>::const_iterator i = obj->list_of_stmt.begin(); i != vend; ++i)
+   auto vend = obj->list_of_stmt.end();
+   for (auto i = obj->list_of_stmt.begin(); i != vend; ++i)
       write_when_not_null(STOK(TOK_STMT), *i);
-   std::map<unsigned int, blocRef>::const_iterator mend = obj->list_of_bloc.end();
-   for (std::map<unsigned int, blocRef>::const_iterator i = obj->list_of_bloc.begin(); i != mend; ++i)
+   auto mend = obj->list_of_bloc.end();
+   for (auto i = obj->list_of_bloc.begin(); i != mend; ++i)
       write_when_not_null_bloc(STOK(TOK_BLOC), i->second);
 }
 
@@ -929,8 +938,8 @@ void raw_writer::operator()(const tree_vec* obj, unsigned int & mask)
    obj->tree_node::visit(this);
    if (obj->lngt != 0)
       WRITE_NFIELD(os, STOK(TOK_LNGT), obj->lngt);
-   std::vector<tree_nodeRef>::const_iterator vend = obj->list_of_op.end();
-   for (std::vector<tree_nodeRef>::const_iterator i = obj->list_of_op.begin(); i != vend; ++i)
+   auto vend = obj->list_of_op.end();
+   for (auto i = obj->list_of_op.begin(); i != vend; ++i)
       write_when_not_null(STOK(TOK_OP), *i);
 }
 
@@ -958,11 +967,11 @@ void raw_writer::operator()(const union_type* obj, unsigned int & mask)
    mask = NO_VISIT;
    obj->type_node::visit(this);
    WRITE_TOKEN(os, TOK_UNION);
-   std::vector<tree_nodeRef>::const_iterator vend1 = obj->list_of_flds.end();
-   for (std::vector<tree_nodeRef>::const_iterator i = obj->list_of_flds.begin(); i != vend1; ++i)
+   auto vend1 = obj->list_of_flds.end();
+   for (auto i = obj->list_of_flds.begin(); i != vend1; ++i)
       write_when_not_null(STOK(TOK_FLDS), *i);
-   std::vector<tree_nodeRef>::const_iterator vend2 = obj->list_of_fncs.end();
-   for (std::vector<tree_nodeRef>::const_iterator i = obj->list_of_fncs.begin(); i != vend2; ++i)
+   auto vend2 = obj->list_of_fncs.end();
+   for (auto i = obj->list_of_fncs.begin(); i != vend2; ++i)
       write_when_not_null(STOK(TOK_FNCS), *i);
    write_when_not_null(STOK(TOK_BINF), obj->binf);
 }
@@ -1024,8 +1033,8 @@ void raw_writer::operator()(const vector_cst* obj, unsigned int & mask)
 {
    mask = NO_VISIT;
    obj->cst_node::visit(this);
-   std::vector<tree_nodeRef>::const_iterator vend = obj->list_of_valu.end();
-   for (std::vector<tree_nodeRef>::const_iterator i = obj->list_of_valu.begin(); i != vend; ++i)
+   auto vend = obj->list_of_valu.end();
+   for (auto i = obj->list_of_valu.begin(); i != vend; ++i)
       write_when_not_null(STOK(TOK_VALU), *i);
 }
 
@@ -1093,14 +1102,14 @@ void raw_writer::operator()(const bloc* obj, unsigned int & mask)
    if(obj->hpl)
       WRITE_TOKEN(os, TOK_HPL);
    WRITE_NFIELD(os, STOK(TOK_LOOP_ID), obj->loop_id);
-   std::vector<unsigned int>::const_iterator vend1 = obj->list_of_pred.end();
-   for (std::vector<unsigned int>::const_iterator i = obj->list_of_pred.begin(); i != vend1; ++i)
+   auto vend1 = obj->list_of_pred.end();
+   for (auto i = obj->list_of_pred.begin(); i != vend1; ++i)
       if (*i == bloc::ENTRY_BLOCK_ID)
          WRITE_NFIELD(os, STOK(TOK_PRED), STOK(TOK_ENTRY));
    else
       WRITE_NFIELD(os, STOK(TOK_PRED), *i);
-   std::vector<unsigned int>::const_iterator vend2 = obj->list_of_succ.end();
-   for (std::vector<unsigned int>::const_iterator i = obj->list_of_succ.begin(); i != vend2; ++i)
+   auto vend2 = obj->list_of_succ.end();
+   for (auto i = obj->list_of_succ.begin(); i != vend2; ++i)
       if (*i == bloc::EXIT_BLOCK_ID)
          WRITE_NFIELD(os, STOK(TOK_SUCC), STOK(TOK_EXIT));
    else

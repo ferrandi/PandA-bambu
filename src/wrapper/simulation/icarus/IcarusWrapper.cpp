@@ -65,6 +65,7 @@
 
 ///STL include
 #include <unordered_set>
+#include <utility>
 
 #define IVERILOG "iverilog"
 #define IVL "ivl"
@@ -78,9 +79,9 @@
 #define SIM_SUBDIR       (Param->getOption<std::string>(OPT_output_directory) + std::string("/icarus"))
 
 //constructor
-IcarusWrapper::IcarusWrapper(const ParameterConstRef _Param, const std::string& _suffix) :
+IcarusWrapper::IcarusWrapper(const ParameterConstRef _Param, std::string  _suffix) :
    SimulationTool(_Param),
-   suffix(_suffix)
+   suffix(std::move(_suffix))
 {
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Creating the Icarus wrapper...");
    boost::filesystem::create_directory(SIM_SUBDIR + suffix + "/" );
@@ -88,9 +89,7 @@ IcarusWrapper::IcarusWrapper(const ParameterConstRef _Param, const std::string& 
 
 //destructor
 IcarusWrapper::~IcarusWrapper()
-{
-
-}
+= default;
 
 void IcarusWrapper::CheckExecution()
 {

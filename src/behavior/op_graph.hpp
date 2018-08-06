@@ -32,7 +32,7 @@
 */
 /**
 * @file op_graph.hpp
-* @brief Data stuctures used in operations graph
+* @brief Data structures used in operations graph
 *
 * @author Marco Lattuada <lattuada@elet.polimi.it>
 * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
@@ -43,7 +43,6 @@
 */
 #ifndef OP_GRAPH_HPP
 #define OP_GRAPH_HPP
-
 
 ///Autoheader include
 #include "config_HAVE_BAMBU_BUILT.hpp"
@@ -60,18 +59,21 @@
 ///behavior include
 #include "function_behavior.hpp"
 
-///STD include
-#include <iosfwd>
-#include <string>
-
-///STL include
-#include <unordered_map>
+#include <boost/graph/graph_traits.hpp>              // for graph_traits<>::...
+#include <iosfwd>                                    // for ostream
+#include <limits>                                    // for numeric_limits
+#include <list>                                      // for list
+#include <map>                                       // for map
+#include <set>                                       // for set
+#include <string>                                    // for string
+#include <unordered_map>                             // for unordered_map
+#include <unordered_set>                             // for unordered_set
 
 ///utility includes
 #include "custom_map.hpp"
 #include "custom_set.hpp"
 #include "refcount.hpp"
-#include "utility.hpp"
+#include "strong_typedef.hpp"                               // for UINT_STRONG_TYPEDEF
 
 CONSTREF_FORWARD_DECL(BehavioralHelper);
 enum class FunctionBehavior_VariableAccessType;
@@ -390,7 +392,7 @@ struct OpNodeInfo : public TypedNodeInfo
    /**
     * Destructor
     */
-   virtual ~OpNodeInfo();
+   ~OpNodeInfo() override;
 
    /**
     * Initialize variable maps
@@ -542,7 +544,7 @@ class OpEdgeInfo : public CdfgEdgeInfo
       /**
        * Destructor
        */
-      virtual ~OpEdgeInfo();
+      ~OpEdgeInfo() override;
 
       /**
        * Function returning true when the edge is a then flow edge
@@ -571,7 +573,7 @@ struct OpGraphInfo : public GraphInfo
    /**
     * Destructor();
     */
-   ~OpGraphInfo();
+   ~OpGraphInfo() override;
 
    /// Index identifying the entry vertex
    vertex entry_vertex;
@@ -736,7 +738,7 @@ class OpGraphsCollection : public graphs_collection
       /**
        * Destructor
        */
-      virtual ~OpGraphsCollection();
+      ~OpGraphsCollection() override;
 
       /**
        * Add an edge with empty information associated
@@ -759,13 +761,13 @@ class OpGraphsCollection : public graphs_collection
        * @param info is the property to be associated with the new vertex
        * @return the added vertex
        */
-      virtual boost::graph_traits<boost_graphs_collection>::vertex_descriptor AddVertex(const NodeInfoRef info);
+      boost::graph_traits<boost_graphs_collection>::vertex_descriptor AddVertex(const NodeInfoRef info) override;
 
       /**
        * Remove a vertex from this graph
        * @param v is the vertex to be removed
        */
-      virtual void RemoveVertex(boost::graph_traits<boost_graphs_collection>::vertex_descriptor v);
+      void RemoveVertex(boost::graph_traits<boost_graphs_collection>::vertex_descriptor v) override;
 
       /**
        * Return the vertices belonging to the graph
@@ -808,7 +810,7 @@ struct OpGraph : public graph
       /**
        * Destructor
        */
-      ~OpGraph();
+      ~OpGraph() override;
 
       /**
        * Writes this graph in dot format

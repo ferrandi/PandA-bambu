@@ -106,12 +106,12 @@ class AadlParser : public ParserFlowStep
       /**
        * Destuctor
        */
-      ~AadlParser();
+      ~AadlParser() override;
 
       /**
        * Execute the step
        * @return the exit status of this step
        */
-      virtual DesignFlowStep_Status Exec();
+      DesignFlowStep_Status Exec() override;
 };
 #endif

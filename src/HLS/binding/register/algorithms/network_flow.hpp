@@ -264,7 +264,7 @@ class network_flow
       /**
       * Destructor of the class.
       */
-      ~network_flow() {}
+      ~network_flow() = default;
 	
       /**
        * Computes the solution for the min cost flow problem with successive shortest path algorithm

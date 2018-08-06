@@ -41,6 +41,8 @@
 */
 #include "SynthesisTool.hpp"
 
+#include <utility>
+
 ///Autoheader include
 #include "config_HAVE_EXPERIMENTAL.hpp"
 
@@ -88,13 +90,13 @@
 #include "DesignParameters.hpp"
 
 
-SynthesisTool::SynthesisTool(const ParameterConstRef _Param, const std::string& _tool_exec, const target_deviceRef _device, const std::string& _flow_name, const std::string& _output_dir) :
+SynthesisTool::SynthesisTool(const ParameterConstRef _Param, std::string  _tool_exec, const target_deviceRef _device, const std::string& _flow_name, std::string  _output_dir) :
    device(_device),
    Param(_Param),
    debug_level(Param->getOption<int>(OPT_debug_level)),
    output_level(Param->getOption<unsigned int>(OPT_output_level)),
-   tool_exec(_tool_exec),
-   output_dir(_output_dir)
+   tool_exec(std::move(_tool_exec)),
+   output_dir(std::move(_output_dir))
 {
    ///creating the output directory
    create_output_directory(_flow_name);
@@ -103,9 +105,7 @@ SynthesisTool::SynthesisTool(const ParameterConstRef _Param, const std::string& 
 }
 
 SynthesisTool::~SynthesisTool()
-{
-
-}
+= default;
 
 bool SynthesisTool::has_scripts() const
 {
@@ -245,9 +245,9 @@ void SynthesisTool::xload_scripts(const xml_element* child)
 
    bool nodes_found = false;
    const xml_node::node_list lines = child->get_children();
-   for (xml_node::node_list::const_iterator ln = lines.begin(); ln != lines.end(); ++ln)
+   for (const auto & line : lines)
    {
-      const xml_element* script_element = GetPointer<xml_element>(*ln);
+      const xml_element* script_element = GetPointer<xml_element>(line);
       if (!script_element) continue;
       if (xml_script_node_t::find_type(script_element) == NODE_PARAMETER)
       {
@@ -269,9 +269,9 @@ void SynthesisTool::xload(const xml_element* node, const std::string& tool_confi
 {
    bool node_found = false;
    const xml_node::node_list list = node->get_children();
-   for (xml_node::node_list::const_iterator l = list.begin(); l != list.end(); ++l)
+   for (const auto & l : list)
    {
-      const xml_element* child = GetPointer<xml_element>(*l);
+      const xml_element* child = GetPointer<xml_element>(l);
       if (!child) continue;
       if (child->get_name() != get_tool_exec()) continue;
       std::string config;
@@ -290,14 +290,12 @@ void SynthesisTool::xload(const xml_element* node, const std::string& tool_confi
 xml_nodeRef SynthesisTool::xwrite() const
 {
    xml_elementRef root = xml_elementRef(new xml_element(get_tool_exec()));
-   for (std::vector<xml_parameter_tRef>::const_iterator i = xml_tool_options.begin(); i != xml_tool_options.end(); ++i)
+   for (const auto & node : xml_tool_options)
    {
-      const xml_parameter_tRef & node = *i;
       root->add_child_element(node->create_xml_node());
    }
-   for (std::vector<xml_script_node_tRef>::const_iterator i = xml_script_nodes.begin(); i != xml_script_nodes.end(); ++i)
+   for (const auto & node : xml_script_nodes)
    {
-      const xml_script_node_tRef & node = *i;
       root->add_child_element(node->create_xml_node());
    }
    return root;
@@ -306,9 +304,8 @@ xml_nodeRef SynthesisTool::xwrite() const
 std::string SynthesisTool::generate_bare_script(const std::vector<xml_script_node_tRef>& nodes, const DesignParametersRef& dp)
 {
    std::string script = "";
-   for (std::vector<xml_script_node_tRef>::const_iterator it = nodes.begin(); it != nodes.end(); ++it)
+   for (auto node : nodes)
    {
-      const xml_script_node_tRef node = *it;
       if (node->checkCondition(dp) || node->nodeType == NODE_ITE_BLOCK)
       {
          script += toString(node, dp);
@@ -333,10 +330,10 @@ xml_set_variable_tRef SynthesisTool::get_reserved_parameter(const std::string& n
 void SynthesisTool::replace_parameters(const DesignParametersRef& dp, std::string& script) const
 {
    const DesignParameters::map_t map = dp->parameter_values;
-   for (DesignParameters::map_t::const_iterator it = map.begin(); it != map.end(); ++it)
+   for (const auto & it : map)
    {
-      const std::string& name = (*it).first;
-      const std::string& value = (*it).second;
+      const std::string& name = it.first;
+      const std::string& value = it.second;
       boost::algorithm::replace_all(script, "${__" + name + "__}", value);
       boost::algorithm::replace_all(script, "$__" + name + "__", value);
    }

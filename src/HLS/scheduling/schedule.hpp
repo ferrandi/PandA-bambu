@@ -61,7 +61,7 @@
 ///utility includes
 #include "custom_map.hpp"
 #include "refcount.hpp"
-#include "utility.hpp"
+#include "strong_typedef.hpp"
 
 CONSTREF_FORWARD_DECL(AllocationInformation);
 REF_FORWARD_DECL(behavioral_manager);

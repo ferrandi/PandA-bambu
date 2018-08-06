@@ -42,16 +42,14 @@
 */
 #ifndef IR_LOWERING_HPP
 #define IR_LOWERING_HPP
-
-///Super class include
-#include "function_frontend_flow_step.hpp"
-#include "tree_common.hpp"
-
-///STD include
-#include <string>
-
-///Utility include
-#include "refcount.hpp"
+#include <list>                                      // for list, list<>::co...
+#include <string>                                    // for string
+#include <unordered_set>                             // for unordered_set
+#include <utility>                                   // for pair
+#include "design_flow_step.hpp"                      // for DesignFlowStep
+#include "frontend_flow_step.hpp"                    // for FrontendFlowStep...
+#include "function_frontend_flow_step.hpp"           // for DesignFlowManage...
+#include "refcount.hpp"                              // for REF_FORWARD_DECL
 
 /**
  * @name forward declarations
@@ -61,6 +59,7 @@ REF_FORWARD_DECL(bloc);
 class integer_cst;
 class target_mem_ref461;
 class array_ref;
+enum kind : int;
 REF_FORWARD_DECL(IR_lowering);
 REF_FORWARD_DECL(tree_manager);
 REF_FORWARD_DECL(tree_manipulation);
@@ -124,7 +123,7 @@ class IR_lowering : public FunctionFrontendFlowStep
        * Return the set of analyses in relationship with this design step
        * @param relationship_type is the type of relationship to be considered
        */
-      const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const;
+      const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
       tree_nodeRef array_ref_lowering(array_ref * AR, const std::string&srcp_default, std::pair<unsigned int, blocRef> block, std::list<tree_nodeRef>::const_iterator it_los, bool temp_addr);
 
@@ -150,24 +149,24 @@ class IR_lowering : public FunctionFrontendFlowStep
       /**
        *  Destructor
        */
-      ~IR_lowering();
+      ~IR_lowering() override;
 
       /**
        * Computes the operations CFG graph data structure.
        * @return the exit status of this step
        */
-      DesignFlowStep_Status InternalExec();
+      DesignFlowStep_Status InternalExec() override;
 
       /**
        * Initialize the step (i.e., like a constructor, but executed just before exec
        */
-      virtual void Initialize();
+      void Initialize() override;
 
       /**
        * Compute the relationships of a step with other steps
        * @param dependencies is where relationships will be stored
        * @param relationship_type is the type of relationship to be computed
        */
-      virtual void ComputeRelationships(DesignFlowStepSet & relationship, const DesignFlowStep::RelationshipType relationship_type);
+      void ComputeRelationships(DesignFlowStepSet & relationship, const DesignFlowStep::RelationshipType relationship_type) override;
 };
 #endif

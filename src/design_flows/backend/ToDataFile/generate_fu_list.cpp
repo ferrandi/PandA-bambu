@@ -64,6 +64,8 @@
 ///technology/physical_library includes
 #include "library_manager.hpp"
 #include "technology_node.hpp"
+#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_VERY_PEDANTIC
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 GenerateFuList::GenerateFuList(const target_managerRef _target, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters) :
    DesignFlowStep(_design_flow_manager, _parameters),
@@ -119,7 +121,7 @@ void GenerateFuList::ComputeRelationships(DesignFlowStepSet & relationship, cons
       case DEPENDENCE_RELATIONSHIP:
          {
             const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
-            const TechnologyFlowStepFactory * technology_flow_step_factory = GetPointer<const TechnologyFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("Technology"));
+            const auto * technology_flow_step_factory = GetPointer<const TechnologyFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("Technology"));
             {
                const std::string technology_flow_signature = TechnologyFlowStep::ComputeSignature(TechnologyFlowStep_Type::LOAD_FILE_TECHNOLOGY);
                const vertex technology_flow_step = design_flow_manager.lock()->GetDesignFlowStep(technology_flow_signature);

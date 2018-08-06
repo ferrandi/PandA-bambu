@@ -57,7 +57,7 @@
 
 ///Utility include
 #include "fileIO.hpp"
-#include "utility.hpp"
+#include "string_manipulation.hpp"          // for GET_CLASS
 
 #define OUTPUT_FILE "__stdouterr"
 
@@ -219,9 +219,9 @@ std::string ToolManager::create_remote_command_line(const std::vector<std::strin
 std::vector<std::string> ToolManager::determine_paths(std::vector<std::string>& files, bool overwrite)
 {
    std::vector<std::string> effective_files;
-   for(unsigned int i = 0; i < files.size(); i++)
+   for(auto & file : files)
    {
-      effective_files.push_back(determine_paths(files[i], overwrite));
+      effective_files.push_back(determine_paths(file, overwrite));
    }
    return effective_files;
 }
@@ -264,12 +264,12 @@ void ToolManager::prepare_input_files(const std::vector<std::string>& files)
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Preparing input files");
    std::vector<std::string> move_to_host(1, "scp");
-   for(unsigned int i = 0; i < files.size(); i++)
+   for(const auto & i : files)
    {
-      boost::filesystem::path file(files[i]);
+      boost::filesystem::path file(i);
       if (!boost::filesystem::exists(file))
          THROW_ERROR("File \"" + file.string() + "\" does not exists");
-      if (!local) move_to_host.push_back(files[i]);
+      if (!local) move_to_host.push_back(i);
    }
    if (!local and files.size() > 0)
    {
@@ -294,8 +294,8 @@ int ToolManager::execute(const std::vector<std::string>& parameters, const std::
 
    ///execute the command
    std::vector<std::string> command_line(1, executable);
-   for(unsigned int i = 0; i < parameters.size(); i++)
-      command_line.push_back(parameters[i]);
+   for(const auto & parameter : parameters)
+      command_line.push_back(parameter);
    std::string command = local ? create_command_line(command_line) : create_remote_command_line(command_line);
 
    THROW_ASSERT(log_file != "", "Log file not set during executable " + executable);
@@ -311,12 +311,12 @@ int ToolManager::execute(const std::vector<std::string>& parameters, const std::
 void ToolManager::remove_files(const std::vector<std::string>& input_files, const std::vector<std::string>& files)
 {
    std::vector<std::string> removing(1, "rm -rf");
-   for(unsigned int i = 0; i < files.size(); i++)
+   for(const auto & file : files)
    {
-      if (boost::filesystem::exists(files[i]) and std::find(input_files.begin(), input_files.end(), files[i]) == input_files.end())
+      if (boost::filesystem::exists(file) and std::find(input_files.begin(), input_files.end(), file) == input_files.end())
       {
-         removing.push_back(files[i]);
-         boost::filesystem::remove(files[i]);
+         removing.push_back(file);
+         boost::filesystem::remove(file);
       }
    }
    if (removing.size() == 1) return;
@@ -327,17 +327,17 @@ void ToolManager::remove_files(const std::vector<std::string>& input_files, cons
 void ToolManager::check_output_files(const std::vector<std::string>& files)
 {
    std::vector<std::string> move_from_host(1, "scp ");
-   for(unsigned int i = 0; i < files.size(); i++)
+   for(const auto & i : files)
    {
       if (local)
       {
-         boost::filesystem::path file(files[i]);
+         boost::filesystem::path file(i);
          if (!boost::filesystem::exists(file))
             THROW_ERROR("File \"" + file.string() + "\" has not been correctly created");
       }
       else
       {
-         move_from_host.push_back(host + ":" + remote_path + "/" + files[i]);
+         move_from_host.push_back(host + ":" + remote_path + "/" + i);
       }
    }
    if (!local)
@@ -345,7 +345,7 @@ void ToolManager::check_output_files(const std::vector<std::string>& files)
       move_from_host.push_back(".");
       move_from_host.push_back(">& " + std::string(OUTPUT_FILE));
       std::string command = create_command_line(move_from_host);
-      unsigned int output_level = Param->getOption<unsigned int>(OPT_output_level);
+      auto output_level = Param->getOption<unsigned int>(OPT_output_level);
       PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, " Moving output files from the host machine...");
       execute_command(command, "Generated files cannot be moved from the host machine", Param->getOption<std::string>(OPT_output_temporary_directory) + "/check_output_files_output");
    }

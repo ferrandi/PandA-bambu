@@ -61,7 +61,7 @@ class lattice_flow_wrapper : public LatticeWrapper
       /**
        * Evaluates the design variables
        */
-      void EvaluateVariables(const DesignParametersRef dp);
+      void EvaluateVariables(const DesignParametersRef dp) override;
 
    public:
 
@@ -74,7 +74,7 @@ class lattice_flow_wrapper : public LatticeWrapper
       /**
        * Destructor
        */
-      virtual ~lattice_flow_wrapper();
+      ~lattice_flow_wrapper() override;
 
 };
 ///Refcount definition for the class

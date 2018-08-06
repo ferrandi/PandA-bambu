@@ -82,9 +82,7 @@ ASICBackendFlow::ASICBackendFlow(const ParameterConstRef _Param, const std::stri
 }
 
 ASICBackendFlow::~ASICBackendFlow()
-{
-
-}
+= default;
 
 void ASICBackendFlow::create_sdc(const DesignParametersRef dp)
 {
@@ -105,23 +103,23 @@ void ASICBackendFlow::InitDesignParameters()
 {
    create_sdc(actual_parameters);
 
-   for (unsigned int i = 0; i < steps.size(); i++)
+   for (auto & step : steps)
    {
-      steps[i]->tool->EvaluateVariables(actual_parameters);
+      step->tool->EvaluateVariables(actual_parameters);
    }
 }
 
 void ASICBackendFlow::CheckSynthesisResults()
 {
    PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "Analyzing ASIC synthesis results");
-   for(unsigned int s = 0; s < steps.size(); s++)
+   for(auto & step : steps)
    {
-      if (steps[s]->tool->get_tool_exec() == DESIGN_COMPILER_TOOL_ID)
+      if (step->tool->get_tool_exec() == DESIGN_COMPILER_TOOL_ID)
       {
-         area_modelRef area = GetPointer<DesignCompilerWrapper>(steps[s]->tool)->parse_area_reports();
+         area_modelRef area = GetPointer<DesignCompilerWrapper>(step->tool)->parse_area_reports();
          if (area) area_m = area;
 
-         time_modelRef time = GetPointer<DesignCompilerWrapper>(steps[s]->tool)->parse_time_reports();
+         time_modelRef time = GetPointer<DesignCompilerWrapper>(step->tool)->parse_time_reports();
          if (time) time_m = time;
       }
    }

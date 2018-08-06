@@ -47,6 +47,8 @@
 #include "config_HAVE_SIMULATION_WRAPPER_BUILT.hpp"
 #include "config_HAVE_TASTE.hpp"
 
+#include <list>
+
 #include "refcount.hpp"
 CONSTREF_FORWARD_DECL(Parameter);
 REF_FORWARD_DECL(SynthesisTool);
@@ -185,7 +187,7 @@ class BackendFlow
        * @param flow_name is a string representing the name of the flow
        * @param target is the datastructure containing all the information about the target of the synthesis
        */
-      BackendFlow(const ParameterConstRef Param, const std::string& flow_name, const target_managerRef target);
+      BackendFlow(const ParameterConstRef Param, std::string  flow_name, const target_managerRef target);
 
       /**
        * Destructor

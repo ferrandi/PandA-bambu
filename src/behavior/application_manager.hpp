@@ -43,34 +43,21 @@
 #ifndef _APPLICATION_MANAGER_HPP_
 #define _APPLICATION_MANAGER_HPP_
 
-///Autoheader
-#include "config_HAVE_ACTOR_GRAPHS_BUILT.hpp"
-#include "config_HAVE_ARCH_BUILT.hpp"
-#include "config_HAVE_CODE_ESTIMATION_BUILT.hpp"
 #include "config_HAVE_CODESIGN.hpp"
 #include "config_HAVE_FROM_DISCREPANCY_BUILT.hpp"
 #include "config_HAVE_PRAGMA_BUILT.hpp"
-#include "config_HAVE_SOURCE_CODE_STATISTICS_XML.hpp"
 
-///Graph include
-#include "graph.hpp"
-#include "call_graph.hpp"
-
-///STD include
-#include <string>
-
-///STL include
-#include <list>
-#include <map>
-#include <tuple>
+#include <cstddef>                                  // for size_t
+#include <set>                                       // for set
+#include <string>                                    // for string
+#if HAVE_CODESIGN
 #include <unordered_map>
-#include <unordered_set>
-#include <vector>
+#endif
+#include "custom_map.hpp"                            // for CustomMap
+#include "custom_set.hpp"                            // for CustomSet
+#include "graph.hpp"                                 // for vertex
+#include "refcount.hpp"                              // for REF_FORWARD_DECL
 
-///utility include
-#include "custom_map.hpp"
-#include "custom_set.hpp"
-#include "refcount.hpp"
 
 CONSTREF_FORWARD_DECL(ActorGraphManager);
 REF_FORWARD_DECL(ActorGraphManager);
@@ -150,7 +137,7 @@ class application_manager
 
       /**
        * Constructor
-       * @param function_expander is the expander used to determine if a called funciton has to be examinedi
+       * @param function_expander is the expander used to determine if a called function has to be examinedi
        * @param single_root_function specifies if only one root function has to be considered
        * @param allow_recursive_functions specifies if recursive functions are allowed
        * @param _Param is the reference to the class containing all the parameters

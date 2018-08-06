@@ -140,7 +140,7 @@ int EucalyptusParameter::Exec()
       return EXIT_SUCCESS;
    }
 
-   while (1)
+   while (true)
    {
       int next_option = getopt_long(argc, argv, short_options, long_options, &option_index);
 

@@ -74,9 +74,7 @@ ControllerCreatorBaseStep::ControllerCreatorBaseStep(const ParameterConstRef _Pa
 }
 
 ControllerCreatorBaseStep::~ControllerCreatorBaseStep()
-{
-
-}
+= default;
 
 const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > ControllerCreatorBaseStep::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
@@ -218,7 +216,7 @@ void ControllerCreatorBaseStep::add_command_ports(structural_objectRef circuit)
             else if(GetPointer<commandport_obj>(j.second)->get_command_type() == commandport_obj::MULTIIF)
             {
                std::vector<HLS_manager::io_binding_type> var_read = HLSMgr->get_required_values(HLS->functionId, cond_v);
-               unsigned int vect_size = static_cast<unsigned int>(var_read.size());
+               auto vect_size = static_cast<unsigned int>(var_read.size());
                structural_type_descriptorRef multiif_port_type = structural_type_descriptorRef(new structural_type_descriptor("bool", vect_size));
                sel_obj = SM->add_port(GetPointer<commandport_obj>(j.second)->get_string(), port_o::IN, circuit, multiif_port_type);
             }

@@ -46,6 +46,7 @@
 #include <ostream>
 #include <fstream>
 #include <string>
+#include <utility>
 
 #include "refcount.hpp"
 
@@ -64,12 +65,12 @@ class xml_document : public xml_child
       
       /** constructor
        */
-      explicit xml_document(const std::string& _version = "1.0") : xml_child(std::string("")), root_node(nullptr), version(_version){}
+      explicit xml_document(std::string  _version = "1.0") : xml_child(std::string("")), root_node(nullptr), version(std::move(_version)){}
       
       /**
        * Print the class.
        */
-      void print(std::ostream& os, bool formatted, simple_indent* pp) const
+      void print(std::ostream& os, bool formatted, simple_indent* pp) const override
       {
          os << "<?xml version=\"" << version << "\"";
          if(encoding != "")

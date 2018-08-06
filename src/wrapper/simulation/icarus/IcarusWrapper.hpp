@@ -64,7 +64,7 @@ class IcarusWrapper : public SimulationTool
       /**
        * Generates the proper simulation script
        */
-      void GenerateScript(std::ostringstream& script, const std::string& top_filename, const std::list<std::string> & file_list);
+      void GenerateScript(std::ostringstream& script, const std::string& top_filename, const std::list<std::string> & file_list) override;
 
    public:
 
@@ -72,17 +72,17 @@ class IcarusWrapper : public SimulationTool
        * Constructor
        * @param Param is the set of parameters
        */
-      IcarusWrapper(const ParameterConstRef Param, const std::string& suffix);
+      IcarusWrapper(const ParameterConstRef Param, std::string  suffix);
 
       /**
        * Destructor
        */
-      ~IcarusWrapper();
+      ~IcarusWrapper() override;
 
       /**
        * Checks if the current specification can be executed or not
        */
-      virtual void CheckExecution();
+      void CheckExecution() override;
 
 #if HAVE_EXPERIMENTAL
       /**
