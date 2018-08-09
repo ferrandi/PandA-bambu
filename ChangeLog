@@ -16,6 +16,9 @@ New features introduced:
 - Single precision floating point faithfully rounded powf function implemented following the method published in:
   Florent De Dinechin, Pedro Echeverria, Marisa Lopez-Vallejo, Bogdan Pasca. Floating-Point Exponentiation Units for Reconfigurable Computing. ACM Transactions on Reconfigurable Technology and Systems (TRETS), ACM, 2013, 6 (1), pp.4:1–4:15.
   The does not supports subnormals.
+- Ported some parts of the code to C++11 standard by applying clang-tidy modernize-deprecated-headers, modernize-pass-by-value, modernize-use-auto,
+  modernize-use-bool-literals, modernize-use-equals-default, modernize-use-equals-delete, modernize-loop-convert and modernize-use-override.
+- Improved floating point division and added a SRT4 implementation. Added --hls-fpdiv to select which floating point division will be used. Current options: SRT4 for Sweeney, Robertson, Tocher floating point division with radix 4 and G for Goldschmidt floating point division.
 
 This release includes a set of fixes:
     on COND_EXPR_RESTRUCTURING step
