@@ -473,7 +473,7 @@ void TestbenchGenerationBaseStep::exec_C_testbench()
    std::string c_stdout_file = "";
    if (parameters->isOption(OPT_discrepancy) and parameters->getOption<bool>(OPT_discrepancy))
       c_stdout_file = output_directory + "dynamic_discrepancy_stats";
-   // executing the test to generate inputs and exected outputs values
+   // executing the test to generate inputs and outputs values
    if (parameters->isOption(OPT_discrepancy) and
          parameters->getOption<bool>(OPT_discrepancy))
    {
