@@ -2835,6 +2835,10 @@ void BambuParameter::CheckParameters()
       if(isOption(OPT_gcc_includes))
          includes = getOption<std::string>(OPT_gcc_includes) + " " + includes;
       setOption(OPT_gcc_includes, includes);
+      if(!isOption(OPT_gcc_standard))
+      {
+         setOption(OPT_gcc_standard,"c++14");
+      }
    }
    ///add experimental setup options
    if(getOption<std::string>(OPT_experimental_setup) == "VVD")
