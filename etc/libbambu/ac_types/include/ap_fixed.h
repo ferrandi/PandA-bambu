@@ -70,12 +70,14 @@
 #define ap_q_mode ac_q_mode
 #define ap_o_mode ac_o_mode
 
-template<int W, int I, ap_q_mode Q=AC_TRN, 
-         ap_o_mode O=AC_WRAP, int N = 0> 
+template<int W, int I, ap_q_mode Q=AC_TRN,
+         ap_o_mode O=AC_WRAP, int N = 0>
 using ap_fixed =  ac_fixed<W, I, true, Q, O>;
 
-template<int W, int I, ap_q_mode Q=AC_TRN, 
+template<int W, int I, ap_q_mode Q=AC_TRN,
          ap_o_mode O=AC_WRAP, int N = 0>
 using ap_ufixed =  ac_fixed<W, I, false, Q, O>;
+
+#include "ap_int.h"
 
 #endif
