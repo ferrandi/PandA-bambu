@@ -88,6 +88,7 @@ void HLSInstructionWriter::declareFunction(const unsigned int function_id)
          0,
          var_pp_functorConstRef(new std_var_pp_functor(behavioral_helper))
       );
+
    bool flag_cpp = AppM->get_tree_manager()->is_CPP() && !parameters->isOption(OPT_pretty_print);
 
 
@@ -101,6 +102,7 @@ void HLSInstructionWriter::declareFunction(const unsigned int function_id)
       tree_nodeRef fd_node = AppM->get_tree_manager()->get_tree_node_const(function_id);
       auto * fd = GetPointer<function_decl>(fd_node);
       std::string simple_name;
+      std::string mangled_name;
       tree_nodeRef id_name = GET_NODE(fd->name);
       if (id_name->get_kind() == identifier_node_K)
       {
@@ -108,11 +110,33 @@ void HLSInstructionWriter::declareFunction(const unsigned int function_id)
          if(!in->operator_flag)
             simple_name = in->strg;
       }
-      if(simple_name != "")
+      tree_nodeRef mangled_id_name = GET_NODE(fd->mngl);
+      if (mangled_id_name->get_kind() == identifier_node_K)
       {
-         boost::replace_all(stringTemp, " " + name + "(", " " + simple_name + "(");
+         auto *in = GetPointer<identifier_node>(mangled_id_name);
+         if(!in->operator_flag)
+            mangled_name = in->strg;
       }
-      boost::replace_all(stringTemp, "/*&*/*", "&");
+      if(mangled_name != "")
+      {
+         auto pos = stringTemp.find(mangled_name.c_str());
+         if(pos == std::string::npos)
+         {
+            pos = stringTemp.find(name.c_str());
+            THROW_ASSERT(pos != std::string::npos, "unexpected condition");
+         }
+         auto newStr = stringTemp.substr(0, pos);
+         newStr += string_demangle(mangled_name);
+         stringTemp=newStr;
+      }
+      else
+      {
+         if(simple_name != "")
+         {
+            boost::replace_all(stringTemp, " " + name + "(", " " + simple_name + "(");
+         }
+         boost::replace_all(stringTemp, "/*&*/*", "&");
+      }
    }
 
    indented_output_stream->Append(stringTemp);
