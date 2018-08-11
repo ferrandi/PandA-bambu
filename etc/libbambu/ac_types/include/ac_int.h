@@ -1589,14 +1589,29 @@ protected:
                   return (str[0]==charToFind);
                }
          };
-         template<int base, typename Int, size_t NN>
-         static constexpr Int getNumber(const char (&str)[NN],
-                                        size_t begin, size_t end, size_t Index,
-                                        Int accumulated)
+         template<size_t Index,int base, typename Int, size_t NN>
+         struct getNumberImpl
          {
-            return ((NN-1-Index)>=end)  ? accumulated :
-                    getNumber<base,Int,NN>(str,begin,end,Index-1,(((NN-1-Index)<begin) ? 0 : accumulated*base+HhexDigit(str[(NN-1-Index)])));
-         }
+               __attribute__((always_inline))
+               static constexpr inline Int getNumber(const char (&str)[NN],
+                                              size_t begin, size_t end)
+               {
+                  Int increment = (Index < begin || Index>=end) ? 0 : HhexDigit(str[Index]);
+                  Int multiplier = (Index < begin || Index>=end) ? 1 : base;
+                  return increment + multiplier*getNumberImpl<Index-1,base,Int,NN>::getNumber(str,begin,end);
+               }
+         };
+         template<int base, typename Int, size_t NN>
+         struct getNumberImpl<0,base,Int,NN>
+         {
+               __attribute__((always_inline))
+               static constexpr inline Int getNumber(const char (&str)[NN],
+                                              size_t begin, size_t end)
+               {
+                  Int increment = (0 < begin || 0>=end) ? 0 : HhexDigit(str[0]);
+                  return increment;
+               }
+         };
 
 
          // Unportable, but will work for ANSI charset
@@ -1652,9 +1667,10 @@ protected:
          }
 
          template<size_t NN>
-         static constexpr int Hexponent(const char (&str)[NN], const size_t mantissa_end)
+         __attribute__((always_inline))
+         static constexpr inline int Hexponent(const char (&str)[NN], const size_t mantissa_end)
          {
-             return mantissa_end==NN ? 0 : (str[mantissa_end+1]=='-' ? -1 : 1)*getNumber<10,int,NN>(str,mantissa_end+1+HisSign(mantissa_end+1),NN-1,NN-mantissa_end-HisSign(mantissa_end+1),0);
+             return mantissa_end==NN ? 0 : (str[mantissa_end+1]=='-' ? -1 : 1)*getNumberImpl<NN-1,10,int,NN>::getNumber(str,mantissa_end+1+HisSign(mantissa_end+1),NN-1);
          }
 
          static constexpr bool HisSign(char ch) {
@@ -1667,21 +1683,24 @@ protected:
                     2*(str[HisSign(str[0])]=='0' && str[HisSign(str[0])+1]=='x');
          }
          template<size_t NN>
-         static constexpr unsigned long long HbeforePoint(const char (&str)[NN], const size_t point_pos)
+         __attribute__((always_inline))
+         static constexpr inline unsigned long long HbeforePoint(const char (&str)[NN], const size_t point_pos)
          {
-            return getNumber<16,unsigned long long,NN>(str,HmantissaBegin(str),point_pos,NN-1-HmantissaBegin(str),0);
+            return getNumberImpl<NN-1,16,unsigned long long,NN>::getNumber(str,HmantissaBegin(str),point_pos);
          }
 
 
          template<size_t NN>
-         static constexpr unsigned long long Hfraction(const char (&str)[NN], const size_t point_pos, const size_t mantissa_end)
+         __attribute__((always_inline))
+         static constexpr inline unsigned long long Hfraction(const char (&str)[NN], const size_t point_pos, const size_t mantissa_end)
          {
-            return getNumber<16,unsigned long long,NN>(str,point_pos+1,mantissa_end,NN-point_pos,0);
+            return getNumberImpl<NN-1,16,unsigned long long,NN>::getNumber(str,point_pos+1,mantissa_end);
          }
 
 
          template<size_t NN>
-         static constexpr double get0(const char (&str)[NN], const size_t mantissa_end, const size_t point_pos, const size_t exp)
+         __attribute__((always_inline))
+         static constexpr inline double get0(const char (&str)[NN], const size_t mantissa_end, const size_t point_pos, const size_t exp)
          {
 //            printf("%d\n", mantissa_end);
 //            printf("%d\n", point_pos);
@@ -1689,7 +1708,8 @@ protected:
              return (str[0]=='-' ? -1 : 1)*(Hscalbn(HbeforePoint(str,point_pos),exp)+Hscalbn(Hfraction(str,point_pos,mantissa_end),exp-4*(mantissa_end-point_pos-1)));
          }
          template<size_t NN>
-         static constexpr double get1(const char (&str)[NN], const size_t mantissa_end)
+         __attribute__((always_inline))
+         static constexpr inline double get1(const char (&str)[NN], const size_t mantissa_end)
          {
             return get0(str,mantissa_end,HpointPos(str,mantissa_end),Hexponent(str,mantissa_end));
          }
@@ -1697,7 +1717,8 @@ protected:
 
      public:
          template<size_t NN>
-         static constexpr double get(const char (&str)[NN])
+         __attribute__((always_inline))
+         static constexpr inline double get(const char (&str)[NN])
          {
             return get1(str,HmantissaEnd(str));
          }

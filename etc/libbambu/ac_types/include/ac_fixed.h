@@ -390,6 +390,7 @@ public:
             bit_adjust();
     }
     template<size_t NN>
+    __attribute__((always_inline))
     constexpr inline ac_fixed( const char (&str)[NN] ) {
        *this = ac_fixed((double)Base::hex2doubleConverter::get(str));
     }
