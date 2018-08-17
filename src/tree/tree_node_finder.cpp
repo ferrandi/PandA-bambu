@@ -737,6 +737,14 @@ void tree_node_finder::operator()(const nontype_argument_pack* obj, unsigned int
    find_res = find_res && CHECK_TREE_NODE_OPT(TOK_ARG, obj->arg);
 }
 
+void tree_node_finder::operator()(const type_pack_expansion* obj, unsigned int & mask)
+{
+   tree_node_mask::operator()(obj,mask);
+   find_res = find_res && CHECK_TREE_NODE_OPT(TOK_OP, obj->op)
+         && CHECK_TREE_NODE_OPT(TOK_PARAM_PACKS, obj->param_packs)
+         && CHECK_TREE_NODE_OPT(TOK_ARG, obj->arg);
+}
+
 void tree_node_finder::operator()(const expr_pack_expansion* obj, unsigned int & mask)
 {
    tree_node_mask::operator()(obj,mask);

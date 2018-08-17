@@ -1052,6 +1052,15 @@ void raw_writer::operator()(const nontype_argument_pack* obj, unsigned int & mas
    write_when_not_null(STOK(TOK_ARG), obj->arg);
 }
 
+void raw_writer::operator()(const type_pack_expansion* obj, unsigned int & mask)
+{
+   mask = NO_VISIT;
+   obj->type_node::visit(this);
+   write_when_not_null(STOK(TOK_OP), obj->op);
+   write_when_not_null(STOK(TOK_PARAM_PACKS), obj->param_packs);
+   write_when_not_null(STOK(TOK_ARG), obj->arg);
+}
+
 void raw_writer::operator()(const expr_pack_expansion* obj, unsigned int & mask)
 {
    mask = NO_VISIT;

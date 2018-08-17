@@ -421,6 +421,11 @@ void function_decl_refs::operator()(const nontype_argument_pack* obj, unsigned i
    if(visited.find(obj->index) != visited.end()) mask = NO_VISIT;
 }
 
+void function_decl_refs::operator()(const type_pack_expansion* obj, unsigned int & mask)
+{
+   if(visited.find(obj->index) != visited.end()) mask = NO_VISIT;
+}
+
 void function_decl_refs::operator()(const expr_pack_expansion* obj, unsigned int & mask)
 {
    if(visited.find(obj->index) != visited.end()) mask = NO_VISIT;

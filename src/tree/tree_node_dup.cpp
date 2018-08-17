@@ -1491,6 +1491,15 @@ void tree_node_dup::operator()(const nontype_argument_pack* obj, unsigned int & 
    SET_NODE_ID(arg,nontype_argument_pack);
 }
 
+void tree_node_dup::operator()(const type_pack_expansion* obj, unsigned int & mask)
+{
+   THROW_ASSERT(obj==curr_tree_node_ptr, "wrong factory setup");
+   tree_node_mask::operator()(obj,mask);
+   SET_NODE_ID(op,type_pack_expansion);
+   SET_NODE_ID(param_packs,type_pack_expansion);
+   SET_NODE_ID(arg,type_pack_expansion);
+}
+
 void tree_node_dup::operator()(const expr_pack_expansion* obj, unsigned int & mask)
 {
    THROW_ASSERT(obj==curr_tree_node_ptr, "wrong factory setup");

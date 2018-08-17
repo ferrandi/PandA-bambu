@@ -58,7 +58,7 @@
 REF_FORWARD_DECL(type_casting);
 //@}
 
-#define LOCAL_OBJ_NOT_SPECIALIZED_SEQ (translation_unit_decl) (label_decl) (using_decl) (void_cst) (void_type) (template_type_parm) (set_type) (qual_union_type) (offset_type) (lang_type) (CharType) (nullptr_type) (type_pack_expansion) (boolean_type) (typename_type) (none) (vec_new_expr) TERNARY_EXPRESSION_TREE_NODES (ctor_initializer) (trait_expr) (template_id_expr) (placeholder_expr) (new_expr) (gimple_resx) (gimple_predict) (gimple_nop) QUATERNARY_EXPRESSION_TREE_NODES (modop_expr) (PointToSolution) (omp_atomic_pragma) \
+#define LOCAL_OBJ_NOT_SPECIALIZED_SEQ (translation_unit_decl) (label_decl) (using_decl) (void_cst) (void_type) (template_type_parm) (set_type) (qual_union_type) (offset_type) (lang_type) (CharType) (nullptr_type) (boolean_type) (typename_type) (none) (vec_new_expr) TERNARY_EXPRESSION_TREE_NODES (ctor_initializer) (trait_expr) (template_id_expr) (placeholder_expr) (new_expr) (gimple_resx) (gimple_predict) (gimple_nop) QUATERNARY_EXPRESSION_TREE_NODES (modop_expr) (PointToSolution) (omp_atomic_pragma) \
    (abs_expr)\
    (addr_expr)\
    (arrow_expr)\

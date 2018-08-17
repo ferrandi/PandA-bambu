@@ -1406,7 +1406,6 @@ serialize_string_cst (const char *field, const char *str, int length, unsigned i
       serialize_int ("lngt", lngt + 1);
    }
 }
-
 #ifdef CPP_LANGUAGE
 /* Dump a representation of the specific operator for an overloaded
    operator associated with node t.  */
@@ -1633,10 +1632,9 @@ gcc_assert(t!=0);
       }
    }
 
-   if (TREE_CODE(t) == RECORD_TYPE)
+   if (TREE_CODE(t) == RECORD_TYPE && CLASS_TYPE_P(t))
    {
       int i = 0;
-
       /* Indicates whether or not (and how) a template was expanded for this class.
                  0=no information yet/non-template class
                  1=implicit template instantiation
@@ -1927,12 +1925,14 @@ gcc_assert(t!=0);
       case NONTYPE_ARGUMENT_PACK:
          serialize_child ("arg", ARGUMENT_PACK_ARGS(t) );
          break;
+      case TYPE_PACK_EXPANSION:
       case EXPR_PACK_EXPANSION:
          serialize_child ("op", PACK_EXPANSION_PATTERN(t) );
 #if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 7)
          serialize_child ("param_packs", PACK_EXPANSION_PARAMETER_PACKS(t) );
          serialize_child ("arg", PACK_EXPANSION_EXTRA_ARGS(t) );
 #endif
+         break;
       default:
          break;
    }

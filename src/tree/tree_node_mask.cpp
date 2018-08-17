@@ -479,6 +479,12 @@ void tree_node_mask::operator()(const nontype_argument_pack* , unsigned int & ma
    SET_VISIT_INDEX(mask,nontype_argument_pack::expr_node);
 }
 
+void tree_node_mask::operator()(const type_pack_expansion* , unsigned int & mask)
+{
+   mask = NO_VISIT;
+   SET_VISIT_INDEX(mask,type_pack_expansion::type_node);
+}
+
 void tree_node_mask::operator()(const expr_pack_expansion* , unsigned int & mask)
 {
    mask = NO_VISIT;
