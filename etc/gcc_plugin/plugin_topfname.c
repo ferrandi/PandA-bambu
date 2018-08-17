@@ -583,7 +583,7 @@ unsigned int TopFnameIPA (void)
 {
   gcc_assert (!flag_whole_program);
   gcc_assert(*TopFunctionName);
-  printf("TopFnameIPA %s\n", TopFunctionName);
+  //printf("TopFnameIPA %s\n", TopFunctionName);
   whole_program_function_and_variable_visibility();
   return 0;
 }
