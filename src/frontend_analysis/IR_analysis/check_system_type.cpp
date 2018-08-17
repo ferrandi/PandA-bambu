@@ -44,6 +44,7 @@
 ///Autoheader include
 #include "config_HAVE_LEON3.hpp"
 #include "config_LIBBAMBU_SRCDIR.hpp"
+#include "config_PANDA_DATA_INSTALLDIR.hpp"
 
 ///Header include
 #include "check_system_type.hpp"
@@ -676,7 +677,9 @@ void CheckSystemType::recursive_examinate(const tree_nodeRef & curr_tn, const un
          bool is_system;
          std::string include = std::get<0>(behavioral_helper->get_definition(index, is_system));
 #if HAVE_BAMBU_BUILT
-         if(include.find("etc/libbambu") != std::string::npos or (ty->name and GetPointer<const type_decl>(GET_CONST_NODE(ty->name)) and GetPointer<const type_decl>(GET_CONST_NODE(ty->name))->libbambu_flag))
+         if(include.find("etc/libbambu") != std::string::npos or
+               include.find(std::string(PANDA_DATA_INSTALLDIR "/panda/ac_types/include")) != std::string::npos or
+               (ty->name and GetPointer<const type_decl>(GET_CONST_NODE(ty->name)) and GetPointer<const type_decl>(GET_CONST_NODE(ty->name))->libbambu_flag))
          {
             ty->libbambu_flag = true;
          }
