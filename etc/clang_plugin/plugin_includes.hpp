@@ -103,6 +103,7 @@ namespace llvm {
 #if __clang_major__ != 4
    class PredicateInfo;
 #endif
+   class Metadata;
 }
 
 namespace RangeAnalysis {
@@ -586,6 +587,9 @@ namespace clang {
          void dequeue_and_serialize_statement (const void* t);
          std::string getHeaderForBuiltin(const void * t);
          void dequeue_and_serialize();
+
+         std::map<const llvm::Value*,llvm::Metadata*> MetaDataMap;
+         void buildMetaDataMap(llvm::Module &M);
 
          bool lowerMemIntrinsics(llvm::Module &M);
          bool lowerIntrinsics(llvm::Module &M);
