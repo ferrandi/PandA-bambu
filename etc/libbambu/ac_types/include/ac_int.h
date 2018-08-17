@@ -1087,6 +1087,9 @@ inline void iv_udiv(const iv_base<Nn>&n, const iv_base<Nd>&d, iv_base<Nq>&q, iv_
     }
     int n_msi;  // most significant int for n
     for(n_msi = N-1; n_msi > 0 && !n[n_msi]; n_msi--) {}
+#if defined(__clang__)
+#pragma clang loop unroll(full)
+#endif
     for(int i=0; i < Q; i++)
         q.set(i, 0);
 #if defined(__clang__)
