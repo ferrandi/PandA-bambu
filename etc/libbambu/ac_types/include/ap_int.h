@@ -45,4 +45,5 @@ template<int N>
 using ap_uint = ac_int<N,false>;
 template<int N>
 using ap_int = ac_int<N,true>;
+#include "ap_fixed.h"
 #endif
