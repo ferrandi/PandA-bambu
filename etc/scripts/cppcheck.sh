@@ -1,7 +1,7 @@
 #!/bin/bash
 abs_script=$(readlink -e $0)
 dir_script=$(dirname $abs_script)
-cppcheck --enable=all --force --suppress=unusedFunction --suppress=unmatchedSuppression --inline-suppr ${dir_script}/../../src \
+cppcheck -j 20 --xml --xml-version=2 --enable=all --force --suppress=unusedFunction --suppress=unmatchedSuppression --inline-suppr ${dir_script}/../../src \
    -I${dir_script}/../../src \
    -I${dir_script}/../../src/algorithms/bipartite_matching/ \
    -I${dir_script}/../../src/algorithms/clique_covering \
