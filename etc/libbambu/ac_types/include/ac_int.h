@@ -242,182 +242,210 @@ template <int N>
 class iv_base
 {
       int v[N]={};
-public:
-    void set(int x, int value)
-    {
-       v[x]=value;
-    }
-    inline Slong to_int64() const {
-        return N==1 ? v[0] : ((Ulong)v[1] << 32) | (Ulong) (unsigned) v[0];
-    }
-    constexpr int operator[] (int x) const
-    {
-        return v[x];
-    }
-    constexpr iv_base() {}
-    template<int N2>
-    iv_base ( const iv_base<N2> &b )
-    {
-        const int M = AC_MIN(N,N2);
-        for(auto idx=0; idx<M; ++idx)
+   public:
+      template <int W, bool S>
+      inline void bit_adjust() {
+         constexpr const unsigned rem = (32-W)&31;
+         set(N-1,  S ? ((v[N-1]  << rem) >> rem) : (rem ?
+                                                    ((unsigned) v[N-1]  << rem) >> rem : 0));
+      }
+      void set(int x, int value)
+      {
+         v[x]=value;
+      }
+      inline Slong to_int64() const {
+         return N==1 ? v[0] : ((Ulong)v[1] << 32) | (Ulong) (unsigned) v[0];
+         }
+         constexpr int operator[] (int x) const
+         {
+         return v[x];
+      }
+      constexpr iv_base() {}
+      template<int N2>
+      iv_base ( const iv_base<N2> &b )
+      {
+         const int M = AC_MIN(N,N2);
+         for(auto idx=0; idx<M; ++idx)
             set(idx,b[idx]);
-        auto last = v[M-1]< 0 ? ~0 : 0;
-        for(auto idx=M; idx<N; ++idx)
+         auto last = v[M-1]< 0 ? ~0 : 0;
+         for(auto idx=M; idx<N; ++idx)
             set(idx,last);
-    }
+      }
 };
 template <>
 class iv_base<1>
 {
       int v={};
-public:
-    void set(int , int value)
-    {
-       v=value;
-    }
-    inline Slong to_int64() const {
-        return v;
-    }
-    constexpr int operator[] (int ) const
-    {
-        return v;
-    }
-    constexpr iv_base() {}
-    template<int N2>
-    iv_base ( const iv_base<N2> &b ) : v(b[0]) {
-    }
+   public:
+      template <int W, bool S>
+      inline void bit_adjust() {
+         constexpr const unsigned rem = (32-W)&31;
+         v =  S ? ((v  << rem) >> rem) : (rem ? ((unsigned) v  << rem) >> rem : 0);
+      }
+      void set(int , int value)
+      {
+         v=value;
+      }
+      inline Slong to_int64() const {
+         return v;
+      }
+      constexpr int operator[] (int ) const
+      {
+         return v;
+      }
+      constexpr iv_base() {}
+      template<int N2>
+      iv_base ( const iv_base<N2> &b ) : v(b[0]) {
+      }
 };
 template <>
 class iv_base<2>
 {
       long long int v={0};
-public:
-    void set(int x, int value)
-    {
-       if(x)
-          v=(all_ones&v)|(((Slong)value)<<32);
-       else
-          v=((((Ulong) all_ones)<<32)&v)|((Ulong)((unsigned)value));
-    }
-    inline Slong to_int64() const {
-        return v;
-    }
-    constexpr int operator[] (int x) const
-    {
-        return x ? (int)(v>>32) : (int)v;
-    }
-    constexpr iv_base() {}
-    template<int N2>
-    iv_base ( const iv_base<N2> &b ) {
-        const int M = AC_MIN(2,N2);
-        if(M==2)
-        {
+   public:
+      template <int W, bool S>
+      inline void bit_adjust() {
+         constexpr const unsigned rem = (64-W)&63;
+         v =  S ? ((v  << rem) >> rem) : (rem ? ((unsigned long long) v  << rem) >> rem : 0);
+      }
+      void set(int x, int value)
+      {
+         if(x)
+            v=(all_ones&v)|(((Slong)value)<<32);
+         else
+            v=((((Ulong) all_ones)<<32)&v)|((Ulong)((unsigned)value));
+      }
+      inline Slong to_int64() const {
+         return v;
+      }
+      constexpr int operator[] (int x) const
+      {
+         return x ? (int)(v>>32) : (int)v;
+      }
+      constexpr iv_base() {}
+      template<int N2>
+      iv_base ( const iv_base<N2> &b ) {
+         const int M = AC_MIN(2,N2);
+         if(M==2)
+         {
             v=b.to_int64();
-        }
-        else
-        {
+         }
+         else
+         {
             AC_ASSERT(M==1, "unexpected condition");
             v=b[0];
-        }
-    }
+         }
+      }
 };
 template <>
 class iv_base<3>
 {
-    int v0={0};
-    int v1={0};
-    int v2={0};
-public:
-    void set(int x, int value)
-    {
-       x=x&3;
-       (x==0 ? v0 : (x==1 ? v1 : v2))=value;
-    }
-    inline Slong to_int64() const {
-        return ((Ulong)v1 << 32) | (Ulong) (unsigned) v0;
-    }
-    constexpr int operator[] (int x) const
-    {
-        x=x&3;
-        return x==0 ? v0 : (x==1 ? v1 : v2);
-    }
-    constexpr iv_base() {}
-    template<int N2>
-    iv_base ( const iv_base<N2> &b ) {
-        const int M = AC_MIN(2,N2);
-        if(M==3)
-        {
-            v0=b[0];
-            v1=b[1];
+      long long int va={0};
+      int v2={0};
+   public:
+      template <int W, bool S>
+      inline void bit_adjust() {
+         constexpr const unsigned rem = (32-W)&31;
+         v2 =  S ? ((v2  << rem) >> rem) : (rem ? ((unsigned) v2  << rem) >> rem : 0);
+      }
+      void set(int x, int value)
+      {
+         x=x&3;
+         if(x==0)
+            va=((((Ulong) all_ones)<<32)&va)|((Ulong)((unsigned)value));
+         else if(x==1)
+            va=(all_ones&va)|(((Slong)value)<<32);
+         else
+            v2=value;
+      }
+      inline Slong to_int64() const {
+         return va;
+      }
+      constexpr int operator[] (int x) const
+      {
+         x=x&3;
+         return x==0 ? (int)va : (x==1 ? (int)(va>>32) : v2);
+      }
+      constexpr iv_base() {}
+      template<int N2>
+      iv_base ( const iv_base<N2> &b ) {
+         const int M = AC_MIN(2,N2);
+         if(M==3)
+         {
+            va=b.to_int64();
             v2=b[2];
-        }
-        else if(M==2)
-        {
-            v0=b[0];
-            v1=b[1];
-            v2=v1 < 0 ? ~0 : 0;
-        }
-        else
-        {
+         }
+         else if(M==2)
+         {
+            va=b.to_int64();
+            v2=va < 0 ? ~0 : 0;
+         }
+         else
+         {
             AC_ASSERT(M==1, "unexpected condition");
-            v0=b[0];
-            v2=v1=v0 < 0 ? ~0 : 0;
-        }
-    }
+            va=b.to_int64();
+            v2=va < 0 ? ~0 : 0;
+         }
+      }
 };
 
 template <>
 class iv_base<4>
 {
-    int v0={0};
-    int v1={0};
-    int v2={0};
-    int v3={0};
-public:
-    void set(int x, int value)
-    {
-       x=x&3;
-       (x==0 ? v0 : (x==1 ? v1 : (x==2 ? v2 : v3)))=value;
-    }
-    inline Slong to_int64() const {
-        return ((Ulong)v1 << 32) | (Ulong) (unsigned) v0;
-    }
-    constexpr int operator[] (int x) const
-    {
-        x=x&3;
-        return x==0 ? v0 : (x==1 ? v1 : (x==2 ? v2 : v3));
-    }
-    constexpr iv_base() {}
-    template<int N2>
-    iv_base ( const iv_base<N2> &b ) {
-        const int M = AC_MIN(2,N2);
-        if(M==4)
-        {
-            v0=b[0];
-            v1=b[1];
-            v2=b[2];
-            v3=b[3];
-        }
-        else if(M==3)
-        {
-            v0=b[0];
-            v1=b[1];
-            v2=b[2];
-            v3=v2 < 0 ? ~0 : 0;
-        }
-        else if(M==2)
-        {
-            v0=b[0];
-            v1=b[1];
-            v3=v2=v1 < 0 ? ~0 : 0;
-        }
-        else
-        {
+      long long int va={0};
+      long long int vb={0};
+   public:
+      template <int W, bool S>
+      inline void bit_adjust() {
+         constexpr const unsigned rem = (64-W)&63;
+         vb =  S ? ((vb  << rem) >> rem) : (rem ? ((unsigned long long) vb  << rem) >> rem : 0);
+      }
+      void set(int x, int value)
+      {
+         x=x&3;
+         if(x==0)
+            va=((((Ulong) all_ones)<<32)&va)|((Ulong)((unsigned)value));
+         else if(x==1)
+            va=(all_ones&va)|(((Slong)value)<<32);
+         else if(x==2)
+            vb=((((Ulong) all_ones)<<32)&vb)|((Ulong)((unsigned)value));
+         else
+            vb=(all_ones&vb)|(((Slong)value)<<32);
+      }
+      inline Slong to_int64() const {
+         return va;
+      }
+      constexpr int operator[] (int x) const
+      {
+         x=x&3;
+         return x==0 ? (int)va : (x==1 ? (int)(va>>32): (x==2 ? (int)vb : (int)(vb>>32)));
+      }
+      constexpr iv_base() {}
+      template<int N2>
+      iv_base ( const iv_base<N2> &b ) {
+         const int M = AC_MIN(2,N2);
+         if(M==4)
+         {
+            va=b.to_int64();
+            vb=(((Slong) b[3])<<32)|((Ulong)((unsigned)b[2]));
+         }
+         else if(M==3)
+         {
+            va=b.to_int64();
+            vb=b[2];
+         }
+         else if(M==2)
+         {
+            va=b.to_int64();
+            vb=va < 0 ? ~0 : 0;
+         }
+         else
+         {
             AC_ASSERT(M==1, "unexpected condition");
-            v0=b[0];
-            v3=v2=v1=v0 < 0 ? ~0 : 0;
-        }
-    }
+            va=b.to_int64();
+            vb=va < 0 ? ~0LL : 0;
+         }
+      }
 };
 
 
@@ -2502,9 +2530,7 @@ class ac_int : public ac_private::iv_conv<(W+31+!S)/32, S, W<=64>
     typedef ac_private::iv<N>                  Base;
 
     inline void bit_adjust() {
-        const unsigned rem = (32-W)&31;
-        Base::v.set(N-1,  S ? ((Base::v[N-1]  << rem) >> rem) : (rem ?
-                        ((unsigned) Base::v[N-1]  << rem) >> rem : 0));
+        Base::v.template bit_adjust<W,S>();
     }
 
     inline bool is_neg() const {

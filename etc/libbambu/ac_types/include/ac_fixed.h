@@ -111,9 +111,7 @@ class ac_fixed : private ac_private::iv<(W+31+!S)/32>
 
     __attribute__((always_inline))
     inline void bit_adjust() {
-        const unsigned rem = (32-W)&31;
-        Base::v.set(N-1,  S ? ((Base::v[N-1]  << rem) >> rem) : (rem ?
-                        ((unsigned) Base::v[N-1]  << rem) >> rem : 0));
+       Base::v.template bit_adjust<W,S>();
     }
     inline Base &base() {
         return *this;
@@ -541,6 +539,7 @@ public:
     typename rt<W2,I2,S2>::mult operator *( const ac_fixed<W2,I2,S2,Q2,O2> &op2) const {
         typename rt<W2,I2,S2>::mult r;
         Base::mult(op2, r);
+        r.bit_adjust();
         return r;
     }
     template<int W2, int I2, bool S2, ac_q_mode Q2, ac_o_mode O2>
@@ -553,6 +552,7 @@ public:
             Base::add(op2.template shiftl<F-F2>(), r);
         else
             shiftl<F2-F>().add(op2, r);
+        r.bit_adjust();
         return r;
     }
     template<int W2, int I2, bool S2, ac_q_mode Q2, ac_o_mode O2>
@@ -565,6 +565,7 @@ public:
             Base::sub(op2.template shiftl<F-F2>(), r);
         else
             shiftl<F2-F>().sub(op2, r);
+        r.bit_adjust();
         return r;
     }
 #if (defined(__GNUC__) && ( __GNUC__ == 4 && __GNUC_MINOR__ >= 6 || __GNUC__ > 4 ) && !defined(__EDG__))
@@ -582,6 +583,7 @@ public:
              };
         ac_fixed<Num_w, Num_i, S> t = *this;
         t.template div<num_s, N2, den_s, Nr>(op2, r);
+        r.bit_adjust();
         return r;
     }
 #if (defined(__GNUC__) && ( __GNUC__ == 4 && __GNUC_MINOR__ >= 6 || __GNUC__ > 4 ) && !defined(__EDG__))
@@ -590,22 +592,30 @@ public:
     // Arithmetic assign  ------------------------------------------------------
     template<int W2, int I2, bool S2, ac_q_mode Q2, ac_o_mode O2>
     ac_fixed &operator *=( const ac_fixed<W2,I2,S2,Q2,O2> &op2) {
+        bit_adjust();
         *this = this->operator *(op2);
+        bit_adjust();
         return *this;
     }
     template<int W2, int I2, bool S2, ac_q_mode Q2, ac_o_mode O2>
     ac_fixed &operator +=( const ac_fixed<W2,I2,S2,Q2,O2> &op2) {
+        bit_adjust();
         *this = this->operator +(op2);
+        bit_adjust();
         return *this;
     }
     template<int W2, int I2, bool S2, ac_q_mode Q2, ac_o_mode O2>
     ac_fixed &operator -=( const ac_fixed<W2,I2,S2,Q2,O2> &op2) {
+        bit_adjust();
         *this = this->operator -(op2);
+        bit_adjust();
         return *this;
     }
     template<int W2, int I2, bool S2, ac_q_mode Q2, ac_o_mode O2>
     ac_fixed &operator /=( const ac_fixed<W2,I2,S2,Q2,O2> &op2) {
+        bit_adjust();
         *this = this->operator /(op2);
+        bit_adjust();
         return *this;
     }
     // increment/decrement by quantum (smallest difference that can be represented)
@@ -614,16 +624,19 @@ public:
         ac_fixed<1,I-W+1,false> q;
         q.template set_val<AC_VAL_QUANTUM>();
         operator += (q);
+        bit_adjust();
         return *this;
     }
     ac_fixed &operator --() {
         ac_fixed<1,I-W+1,false> q;
         q.template set_val<AC_VAL_QUANTUM>();
         operator -= (q);
+        bit_adjust();
         return *this;
     }
     // Arithmetic postfix increment, decrement ---------------------------------
     const ac_fixed operator ++(int) {
+        bit_adjust();
         ac_fixed t = *this;
         ac_fixed<1,I-W+1,false> q;
         q.template set_val<AC_VAL_QUANTUM>();
@@ -631,6 +644,7 @@ public:
         return t;
     }
     const ac_fixed operator --(int) {
+        bit_adjust();
         ac_fixed t = *this;
         ac_fixed<1,I-W+1,false> q;
         q.template set_val<AC_VAL_QUANTUM>();
@@ -639,6 +653,7 @@ public:
     }
     // Arithmetic Unary --------------------------------------------------------
     ac_fixed operator +() {
+        bit_adjust();
         return *this;
     }
     typename rt_unary::neg operator -() const {
@@ -656,6 +671,7 @@ public:
     ac_fixed<W+!S, I+!S, true> operator ~() const {
         ac_fixed<W+!S, I+!S, true> r;
         Base::bitwise_complement(r);
+        r.bit_adjust();
         return r;
     }
     // Bitwise (not arithmetic) bit complement  -----------------------------
@@ -676,6 +692,7 @@ public:
             Base::bitwise_and(op2.template shiftl<F-F2>(), r);
         else
             shiftl<F2-F>().bitwise_and(op2, r);
+        r.bit_adjust();
         return r;
     }
     template<int W2, int I2, bool S2, ac_q_mode Q2, ac_o_mode O2>
@@ -688,6 +705,7 @@ public:
             Base::bitwise_or(op2.template shiftl<F-F2>(), r);
         else
             shiftl<F2-F>().bitwise_or(op2, r);
+        r.bit_adjust();
         return r;
     }
     template<int W2, int I2, bool S2, ac_q_mode Q2, ac_o_mode O2>
@@ -700,22 +718,26 @@ public:
             Base::bitwise_xor(op2.template shiftl<F-F2>(), r);
         else
             shiftl<F2-F>().bitwise_xor(op2, r);
+        r.bit_adjust();
         return r;
     }
     // Bitwise assign (not arithmetic): and, or, xor ----------------------------
     template<int W2, int I2, bool S2, ac_q_mode Q2, ac_o_mode O2>
     ac_fixed &operator &= ( const ac_fixed<W2,I2,S2,Q2,O2> &op2 ) {
         *this = this->operator &(op2);
+        bit_adjust();
         return *this;
     }
     template<int W2, int I2, bool S2, ac_q_mode Q2, ac_o_mode O2>
     ac_fixed &operator |= ( const ac_fixed<W2,I2,S2,Q2,O2> &op2 ) {
         *this = this->operator |(op2);
+        bit_adjust();
         return *this;
     }
     template<int W2, int I2, bool S2, ac_q_mode Q2, ac_o_mode O2>
     ac_fixed &operator ^= ( const ac_fixed<W2,I2,S2,Q2,O2> &op2 ) {
         *this = this->operator ^(op2);
+        bit_adjust();
         return *this;
     }
     // Shift (result constrained by left operand) -------------------------------
