@@ -249,15 +249,37 @@ class iv_base
          set(N-1,  S ? ((v[N-1]  << rem) >> rem) : (rem ?
                                                     ((unsigned) v[N-1]  << rem) >> rem : 0));
       }
+      void assign_int64(Slong l) {
+         set(0, static_cast<int>(l));
+         if(N > 1) {
+             set(1, static_cast<int>(l >> 32));
+#if defined(__clang__)
+#pragma clang loop unroll(full)
+#endif
+             for(int i=2; i < N; i++)
+                set(i, (v[1] < 0) ? ~0 : 0);
+         }
+      }
+      void assign_uint64(Ulong l) {
+          set(0, static_cast<int>(l));
+          if(N > 1) {
+              set(1, static_cast<int>(l >> 32));
+#if defined(__clang__)
+#pragma clang loop unroll(full)
+#endif
+             for(int i=2; i < N; i++)
+                set(i, 0);
+          }
+      }
       void set(int x, int value)
       {
          v[x]=value;
       }
       inline Slong to_int64() const {
          return N==1 ? v[0] : ((Ulong)v[1] << 32) | (Ulong) (unsigned) v[0];
-         }
-         constexpr int operator[] (int x) const
-         {
+      }
+      constexpr int operator[] (int x) const
+      {
          return v[x];
       }
       constexpr iv_base() {}
@@ -281,6 +303,13 @@ class iv_base<1>
       inline void bit_adjust() {
          constexpr const unsigned rem = (32-W)&31;
          v =  S ? ((v  << rem) >> rem) : (rem ? ((unsigned) v  << rem) >> rem : 0);
+      }
+      void assign_int64(Slong l)
+      {
+         v = static_cast<int>(l);
+      }
+      void assign_uint64(Ulong l) {
+         v = static_cast<int>(l);
       }
       void set(int , int value)
       {
@@ -307,6 +336,13 @@ class iv_base<2>
       inline void bit_adjust() {
          constexpr const unsigned rem = (64-W)&63;
          v =  S ? ((v  << rem) >> rem) : (rem ? ((unsigned long long) v  << rem) >> rem : 0);
+      }
+      void assign_int64(Slong l)
+      {
+         v = l;
+      }
+      void assign_uint64(Ulong l) {
+         v = static_cast<Slong>(l);
       }
       void set(int x, int value)
       {
@@ -347,6 +383,15 @@ class iv_base<3>
       inline void bit_adjust() {
          constexpr const unsigned rem = (32-W)&31;
          v2 =  S ? ((v2  << rem) >> rem) : (rem ? ((unsigned) v2  << rem) >> rem : 0);
+      }
+      void assign_int64(Slong l)
+      {
+         va = l;
+         v2 = va < 0 ? ~0 : 0;
+      }
+      void assign_uint64(Ulong l) {
+         va = static_cast<Slong>(l);
+         v2=0;
       }
       void set(int x, int value)
       {
@@ -399,6 +444,15 @@ class iv_base<4>
       inline void bit_adjust() {
          constexpr const unsigned rem = (64-W)&63;
          vb =  S ? ((vb  << rem) >> rem) : (rem ? ((unsigned long long) vb  << rem) >> rem : 0);
+      }
+      void assign_int64(Slong l)
+      {
+         va = l;
+         vb = va < 0 ? ~0LL : 0;
+      }
+      void assign_uint64(Ulong l) {
+         va = static_cast<Slong>(l);
+         vb=0;
       }
       void set(int x, int value)
       {
@@ -681,35 +735,13 @@ template<> inline void iv_extend<3,2>(iv_base<3>& r, int ext)
 template<int Nr>
 __attribute__((always_inline))
 inline void iv_assign_int64(iv_base<Nr>& r, Slong l) {
-    r.set(0, static_cast<int>(l));
-    if(Nr > 1) {
-        r.set(1, static_cast<int>(l >> 32));
-        iv_extend<Nr, 2>(r, (r[1] < 0) ? ~0 : 0);
-    }
-}
-template<> inline void iv_assign_int64<1>(iv_base<1>& r, Slong l) {
-    r.set(0, static_cast<int>(l));
-}
-template<> inline void iv_assign_int64<2>(iv_base<2>&r, Slong l) {
-    r.set(0, static_cast<int>(l));
-    r.set(1, static_cast<int>(l >> 32));
+    r.assign_int64(l);
 }
 
 template<int Nr>
 __attribute__((always_inline))
 inline void iv_assign_uint64(iv_base<Nr>& r, Ulong l) {
-    r.set(0, static_cast<int>(l));
-    if(Nr > 1) {
-        r.set(1, static_cast<int>(l >> 32));
-        iv_extend<Nr, 2>(r, 0);
-    }
-}
-template<> inline void iv_assign_uint64<1>(iv_base<1>&r, Ulong l) {
-    r.set(0, static_cast<int>(l));
-}
-template<> inline void iv_assign_uint64<2>(iv_base<2>&r, Ulong l) {
-    r.set(0, static_cast<int>(l));
-    r.set(1, static_cast<int>(l >> 32));
+    r.assign_uint64(l);
 }
 
 inline Ulong mult_u_u(int a, int b) {
@@ -738,8 +770,10 @@ __attribute__((always_inline))
 inline void iv_mult(const iv_base<N1>&op1, const iv_base<N2>&op2, iv_base<Nr>&r) {
     if(Nr==1)
         r.set(0, op1[0] * op2[0]);
+    else if(Nr==2)
+       iv_assign_int64<Nr>(r, (op1.to_int64() * op2.to_int64()));
     else if(N1==1 && N2==1)
-        iv_assign_int64<Nr>(r, ((Slong) op1[0]) * ((Slong) op2[0]));
+        iv_assign_int64<Nr>(r, (op1.to_int64() * op2.to_int64()));
     else {
         const int M1 = AC_MAX(N1,N2);
         const int M2 = AC_MIN(N1,N2);
@@ -803,12 +837,6 @@ inline void iv_mult(const iv_base<N1>&op1, const iv_base<N2>&op2, iv_base<Nr>&r)
             }
         }
     }
-}
-template<> inline void iv_mult<1,1,1>(const iv_base<1>&op1, const iv_base<1>&op2, iv_base<1>&r) {
-    r.set(0, op1[0] * op2[0]);
-}
-template<> inline void iv_mult<1,1,2>(const iv_base<1>&op1, const iv_base<1>&op2, iv_base<2>&r) {
-    iv_assign_int64<2>(r, ((Slong) op1[0]) * ((Slong) op2[0]));
 }
 
 template<int N, int START=0>
@@ -1212,18 +1240,8 @@ inline void iv_div(const iv_base<N1>&op1, const iv_base<N2>&op2, iv_base<Nr>&r) 
         r.set(0, op1[0] / op2[0]);
         iv_extend<Nr, 1>(r, ((Num_s || Den_s) && (r[0] < 0)) ? ~0 : 0);
     }
-    else if(N1_over==1 && N2==2)
-        iv_assign_int64<Nr>(r, ( (Slong) op1[0]) / (((Slong) op2[1] << 32) | (unsigned) op2[0]) );
-    else if(N1_over==2 && N2==1)
-        if(N1 == 1)
-            iv_assign_int64<Nr>(r, ( (Slong) op1[0]) / ( (Slong) op2[0]) );
-        else
-            iv_assign_int64<Nr>(r, (((Slong) op1[1] << 32) | (unsigned) op1[0]) / ( (Slong) op2[0]) );
-    else if(N1_over==2 && N2==2)
-        if(N1 == 1)
-            iv_assign_int64<Nr>(r, ( (Slong) op1[0]) / (((Slong) op2[1] << 32) | (unsigned) op2[0]) );
-        else
-            iv_assign_int64<Nr>(r, (((Slong) op1[1] << 32) | (unsigned) op1[0]) / (((Slong) op2[1] << 32) | (unsigned) op2[0]) );
+    else if(N1_over<=2 && N2<=2)
+        iv_assign_int64<Nr>(r, op1.to_int64() / op2.to_int64() );
     else if(!Num_s && !Den_s) {
         iv_base<1> dummy;
         iv_udiv<N1,N2,N1,0,unsigned,Slong,Ulong,16>(op1, op2, r, dummy);
@@ -1252,21 +1270,11 @@ __attribute__((always_inline))
 inline void iv_rem(const iv_base<N1>&op1, const iv_base<N2>&op2, iv_base<Nr>&r) {
     enum { N1_over = N1+(Den_s && (Num_s==2)) };   // N1_over corresponds to the division
     if(N1_over==1 && N2==1) {
-        r[0] = op1[0] % op2[0];
+        r.set(0, op1[0] % op2[0]);
         iv_extend<Nr, 1>(r, Num_s && r[0] < 0 ? ~0 : 0);
     }
-    else if(N1_over==1 && N2==2)
-        iv_assign_int64<Nr>(r, ( (Slong) op1[0]) % (((Slong) op2[1] << 32) | (unsigned) op2[0]) );
-    else if(N1_over==2 && N2==1)
-        if(N1 == 1)
-            iv_assign_int64<Nr>(r, ( (Slong) op1[0]) % ( (Slong) op2[0]) );
-        else
-            iv_assign_int64<Nr>(r, (((Slong) op1[1] << 32) | (unsigned) op1[0]) % ( (Slong) op2[0]) );
-    else if(N1_over==2 && N2==2)
-        if(N1 == 1)
-            iv_assign_int64<Nr>(r, ( (Slong) op1[0]) % (((Slong) op2[1] << 32) | (unsigned) op2[0]) );
-        else
-            iv_assign_int64<Nr>(r, (((Slong) op1[1] << 32) | (unsigned) op1[0]) % (((Slong) op2[1] << 32) | (unsigned) op2[0]) );
+    else if(N1_over<=2 && N2<=2)
+        iv_assign_int64<Nr>(r, op1.to_int64() %  op2.to_int64());
     else if(!Num_s && !Den_s) {
         iv_base<1> dummy;
         iv_udiv<N1,N2,0,N2,unsigned,Slong,Ulong,16>(op1, op2, dummy, r);
