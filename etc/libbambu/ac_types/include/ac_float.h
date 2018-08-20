@@ -134,7 +134,7 @@ private:
         return m < 0;    // is_neg would be more efficient
     }
 
-    enum {NZ_E = !!E, MIN_EXP = -NZ_E << (E-NZ_E), MAX_EXP = (1 << (E-NZ_E))-1};
+    enum {NZ_E = !!E, MIN_EXP = static_cast<unsigned>(-NZ_E) << (E-NZ_E), MAX_EXP = (1 << (E-NZ_E))-1};
 
 public:
     static const int width = W;
