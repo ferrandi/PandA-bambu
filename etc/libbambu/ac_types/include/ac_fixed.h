@@ -432,7 +432,7 @@ public:
                     if(W == 1)
                         Base::v.set(0, 0);
                     else
-                        Base::v.set(0, Base::v[0] = 1);
+                        Base::v.set(0, Base::v[0] | 1);
                 }
             } else if(V == AC_VAL_QUANTUM)
                 Base::v.set(0, 1);
