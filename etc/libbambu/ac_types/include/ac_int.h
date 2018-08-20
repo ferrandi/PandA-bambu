@@ -504,7 +504,7 @@ class iv_base<4>
 
 
 
-template<int N, int N1, int Nr, int START=0>
+template<int N, int START, int N1, int Nr>
 __attribute__((always_inline))
 inline void iv_copy(const iv_base<N1>&op, iv_base<Nr>&r) {
 #if defined(__clang__)
@@ -513,17 +513,17 @@ inline void iv_copy(const iv_base<N1>&op, iv_base<Nr>&r) {
     for(int i=START; i < N; i++)
         r.set(i, op[i]);
 }
-template<> inline void iv_copy<1,1,1>(const iv_base<1>&op, iv_base<1>&r) {
+template<> inline void iv_copy<1,0,1,1>(const iv_base<1>&op, iv_base<1>&r) {
     r.set(0, op[0]);
 }
-template<> inline void iv_copy<1,1,2>(const iv_base<1>&op, iv_base<2>&r) {
+template<> inline void iv_copy<1,0,1,2>(const iv_base<1>&op, iv_base<2>&r) {
     r.set(0, op[0]);
 }
-template<> inline void iv_copy<2,2,2>(const iv_base<2>&op, iv_base<2>&r) {
+template<> inline void iv_copy<2,0,2,2>(const iv_base<2>&op, iv_base<2>&r) {
     r.set(0, op[0]);
     r.set(1, op[1]);
 }
-template<> inline void iv_copy<2,2,3>(const iv_base<2>&op, iv_base<3>&r) {
+template<> inline void iv_copy<2,0,2,3>(const iv_base<2>&op, iv_base<3>&r) {
    r.set(0, op[0]);
    r.set(1, op[1]);
 }
@@ -1125,7 +1125,7 @@ inline void iv_abs(const iv_base<N>&op1, iv_base<Nr>&r) {
     if( S && op1[N-1] < 0) {
         iv_neg<N,Nr>(op1, r);
     } else {
-        iv_copy<AC_MIN(N,Nr)>(op1, r);
+        iv_copy<AC_MIN(N,Nr),0>(op1, r);
         iv_extend<Nr, N>(r, 0);
     }
 }
@@ -1259,7 +1259,7 @@ inline void iv_div(const iv_base<N1>&op1, const iv_base<N2>&op2, iv_base<Nr>&r) 
         if( (Num_s && op1[N1-1] < 0) ^ (Den_s && op2[N2-1] < 0) )
             iv_neg<N1_neg, Nr>(quotient, r);
         else {
-            iv_copy<AC_MIN(N1_neg,Nr)>(quotient, r);
+            iv_copy<AC_MIN(N1_neg,Nr),0>(quotient, r);
             iv_extend<Nr, N1_neg>(r, (Num_s || Den_s) && r[N1_neg-1] < 0 ? ~0 : 0);
         }
     }
@@ -1292,7 +1292,7 @@ inline void iv_rem(const iv_base<N1>&op1, const iv_base<N2>&op2, iv_base<Nr>&r) 
         if( (Num_s && op1[N1-1] < 0) )
             iv_neg<N2, Nr>(remainder, r);
         else {
-            iv_copy<AC_MIN(N2,Nr)>(remainder, r);
+            iv_copy<AC_MIN(N2,Nr),0>(remainder, r);
             iv_extend<Nr, N2>(r, Num_s && r[N2-1] < 0 ? ~0 : 0);
         }
     }
@@ -1560,7 +1560,7 @@ inline void iv_const_shift_l(const iv_base<N>&op1, iv_base<Nr>&r) {
     // B >= 0
     if(!B) {
         const int M1 = AC_MIN(N,Nr);
-        iv_copy<M1>(op1, r);
+        iv_copy<M1,0>(op1, r);
         iv_extend<Nr, M1>(r, r[M1-1] < 0 ? -1 : 0);
     }
     else {
@@ -1605,7 +1605,7 @@ __attribute__((always_inline))
 inline void iv_const_shift_r(const iv_base<N>&op1, iv_base<Nr>&r) {
     if(!B) {
         const int M1 = AC_MIN(N,Nr);
-        iv_copy<M1>(op1, r);
+        iv_copy<M1,0>(op1, r);
         iv_extend<Nr, M1>(r, r[M1-1] < 0 ? ~0 : 0);
     }
     else {
@@ -1665,85 +1665,92 @@ inline void iv_conv_from_fraction(const double d, iv_base<N>&r, bool *qb, bool *
     *o |= b ^ (r[N-1] < 0);
 }
 
-template<ac_base_mode b>
-inline int to_str(int *v, int w, bool left_just, char *r) {
-    const char digits[] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
-    const unsigned char B = b==AC_BIN ? 1 : (b==AC_OCT ? 3 : (b==AC_HEX ? 4 : 0));
-    int k = (w+B-1)/B;
-    int n = (w+31) >> 5;
-    int bits = 0;
-    if(b != AC_BIN && left_just) {
-        if( (bits = -(w % B)) )
-            r[--k] = 0;
-    }
-    for(int i = 0; i < n; i++) {
-        if (b != AC_BIN && bits < 0)
-            r[k] += (unsigned char) ((v[i] << (B+bits)) & (b-1));
-        unsigned int m = (unsigned) v[i] >> -bits;
-        for(bits += 32; bits > 0 && k; bits -= B) {
-            r[--k] = (char) (m & (b-1));
-            m >>= B;
-        }
-    }
-    for(int i=0; i < (w+B-1)/B; i++)
-        r[i] = digits[(int)r[i]];
-    return (w+B-1)/B;
-}
-template<> inline int to_str<AC_DEC>(int *v, int w, bool left_just, char *r) {
-    int k = 0;
-    int msw = (w-1) >> 5;
-    if(left_just) {
-        unsigned bits_msw = w & 31;
-        if(bits_msw) {
-            unsigned left_shift = 32 - bits_msw;
-            for(int i=msw; i > 0; i--)
-                v[i] = v[i] << left_shift | (unsigned) v[i-1] >> bits_msw;
-            v[0] = v[0] << left_shift;
-        }
-        int lsw = 0;
-        while(lsw < msw || v[msw] ) {
-            Ulong l = 0;
-            for(int i=lsw; i <= msw; i++) {
-                l += (Ulong) (unsigned) v[i] * 10;
-                v[i] = l;
-                l >>= 32;
-                if(i==lsw && !v[i])
-                    lsw++;
+template<ac_base_mode b,int N>
+struct to_strImpl
+{
+      static inline int to_str(iv_base<N> &v, int w, bool left_just, char *r) {
+         const char digits[] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
+         const unsigned char B = b==AC_BIN ? 1 : (b==AC_OCT ? 3 : (b==AC_HEX ? 4 : 0));
+         int k = (w+B-1)/B;
+         int n = (w+31) >> 5;
+         int bits = 0;
+         if(b != AC_BIN && left_just) {
+            if( (bits = -(w % B)) )
+               r[--k] = 0;
+         }
+         for(int i = 0; i < n; i++) {
+            if (b != AC_BIN && bits < 0)
+               r[k] += (unsigned char) ((v[i] << (B+bits)) & (b-1));
+            unsigned int m = (unsigned) v[i] >> -bits;
+            for(bits += 32; bits > 0 && k; bits -= B) {
+               r[--k] = (char) (m & (b-1));
+               m >>= B;
             }
-            r[k++] = (char) ('0' + (int) l);
-        }
-    } else {
-        const unsigned d = 1000000000;   // 10E9
-        for(; msw > 0 && !v[msw]; msw--) {}
-        while(msw >= 0) {
-            Ulong nl = 0;
-            for(int i = msw; i >= 0; i--) {
-                nl <<= 32;
-                nl |= (unsigned) v[i];
-                unsigned q = nl/d;
-                nl -= (Ulong) q * d;
-                v[i] = q;
+         }
+         for(int i=0; i < (w+B-1)/B; i++)
+            r[i] = digits[(int)r[i]];
+         return (w+B-1)/B;
+      }
+};
+template<int N>
+struct to_strImpl<AC_DEC,N>
+{
+      static inline int to_str(iv_base<N> &v, int w, bool left_just, char *r) {
+         int k = 0;
+         int msw = (w-1) >> 5;
+         if(left_just) {
+            unsigned bits_msw = w & 31;
+            if(bits_msw) {
+               unsigned left_shift = 32 - bits_msw;
+               for(int i=msw; i > 0; i--)
+                  v.set(i, v[i] << left_shift | (unsigned) v[i-1] >> bits_msw);
+               v.set(0, v[0] << left_shift);
             }
-            if(!v[msw])
-                msw--;
-            bool last = msw == -1;
-            unsigned rem = (unsigned) nl;
-            for(int i=0; (i < 9 && !last) || rem; i++) {
-                r[k++] = (char) ('0' + (int) (rem % 10));
-                rem /= 10;
+            int lsw = 0;
+            while(lsw < msw || v[msw] ) {
+               Ulong l = 0;
+               for(int i=lsw; i <= msw; i++) {
+                  l += (Ulong) (unsigned) v[i] * 10;
+                  v.set(i, l);
+                  l >>= 32;
+                  if(i==lsw && !v[i])
+                     lsw++;
+               }
+               r[k++] = (char) ('0' + (int) l);
             }
-        }
-        for(int i=0; i < k/2; i++) {
-            char c = r[i];
-            r[i] = r[k-1-i];
-            r[k-1-i] = c;
-        }
-    }
-    r[k] = 0;
-    return k;
-}
-
-inline int to_string(int *v, int w, bool sign_mag, ac_base_mode base, bool left_just, char *r) {
+         } else {
+            const unsigned d = 1000000000;   // 10E9
+            for(; msw > 0 && !v[msw]; msw--) {}
+            while(msw >= 0) {
+               Ulong nl = 0;
+               for(int i = msw; i >= 0; i--) {
+                  nl <<= 32;
+                  nl |= (unsigned) v[i];
+                  unsigned q = nl/d;
+                  nl -= (Ulong) q * d;
+                  v.set(i, q);
+               }
+               if(!v[msw])
+                  msw--;
+               bool last = msw == -1;
+               unsigned rem = (unsigned) nl;
+               for(int i=0; (i < 9 && !last) || rem; i++) {
+                  r[k++] = (char) ('0' + (int) (rem % 10));
+                  rem /= 10;
+               }
+            }
+            for(int i=0; i < k/2; i++) {
+               char c = r[i];
+               r[i] = r[k-1-i];
+               r[k-1-i] = c;
+            }
+         }
+         r[k] = 0;
+         return k;
+      }
+};
+template<int N>
+inline int to_string(iv_base<N> &v, int w, bool sign_mag, ac_base_mode base, bool left_just, char *r) {
     int n = (w+31) >> 5;
     bool neg = !sign_mag && v[n-1] < 0;
     if(!left_just) {
@@ -1763,13 +1770,13 @@ inline int to_string(int *v, int w, bool sign_mag, ac_base_mode base, bool left_
         w += !sign_mag;
     }
     if(base == AC_DEC)
-        return to_str<AC_DEC>(v, w, left_just, r);
+        return to_strImpl<AC_DEC,N>::to_str(v, w, left_just, r);
     else if (base == AC_HEX)
-        return to_str<AC_HEX>(v, w, left_just, r);
+        return to_strImpl<AC_HEX,N>::to_str(v, w, left_just, r);
     else if (base == AC_OCT)
-        return to_str<AC_OCT>(v, w, left_just, r);
+        return to_strImpl<AC_OCT,N>::to_str(v, w, left_just, r);
     else if (base == AC_BIN)
-        return to_str<AC_BIN>(v, w, left_just, r);
+        return to_strImpl<AC_BIN,N>::to_str(v, w, left_just, r);
     return 0;
 }
 
@@ -1972,13 +1979,13 @@ protected:
          }
       };
       iv_base<N> v;
-public:
+   public:
     template<int N2> friend class iv;
     constexpr iv() {}
     template<int N2>
     constexpr iv ( const iv<N2> &b ) {
         const int M = AC_MIN(N,N2);
-        iv_copy<M>(b.v, v);
+        iv_copy<M,0>(b.v, v);
         iv_extend<N, M>(v, (v[M-1] < 0) ? ~0 : 0);
     }
     constexpr iv ( Slong t) {
@@ -2725,7 +2732,7 @@ public:
             Base::operator =(0);
             if(S && V == AC_VAL_MIN) {
                 const unsigned int rem = (W-1)&31;
-                Base::v.set(N-1, (-1 << rem));
+                Base::v.set(N-1, (~0u << rem));
             } else if(V == AC_VAL_QUANTUM)
                 Base::v.set(0, 1);
         }
@@ -2899,7 +2906,7 @@ public:
     }
     template<int W2, bool S2>
     __attribute__((always_inline))
-    inline const ac_int &operator %( const ac_int<W2,S2> &op2) const {
+    inline const typename rt<W2,S2>::mod operator %( const ac_int<W2,S2> &op2) const {
         ac_int<W,S> op1_local=*this;
         return op1_local%op2;
     }
