@@ -370,3 +370,5 @@ etc/libbambu/ac_types/gdb
 etc/libbambu/ac_types
 etc/libbambu/ac_types/include
 etc/libbambu/ac_types/pdfdocs
+etc/libbambu/ac_math/include
+etc/libbambu/ac_math/include/ac_math

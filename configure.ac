@@ -2874,6 +2874,7 @@ if test "x$panda_USE_LIBBAMBU" = xyes; then
       etc/libbambu/softfloat/Makefile
       etc/libbambu/soft-fp/Makefile
       etc/libbambu/ac_types/Makefile
+      etc/libbambu/ac_math/Makefile
    )
 fi
 AM_CONDITIONAL(BUILD_LIBBAMBU, test "x$panda_USE_LIBBAMBU" = "xyes")
