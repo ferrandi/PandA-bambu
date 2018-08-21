@@ -57,7 +57,7 @@
 //      ac_arccos_cordic(input, arccos_output);
 //    }
 //
-//    #ifndef __SYNTHESIS__
+//    #ifndef __BAMBU__
 //    #include <mc_scverify.h>
 //
 //    CCS_MAIN(int arg, char **argc)
@@ -89,12 +89,12 @@
 
 namespace ac_math
 {
-  template <bool b> struct MgcAcItrigAssert {};
-  template <> struct MgcAcItrigAssert<true> { static void test() {} };
+  template <bool b> struct MgcAcItrigAssertCOS {};
+  template <> struct MgcAcItrigAssertCOS<true> { static void test() {} };
 
   // Multi-precision approximation of 2*tan(2^-i)/pi
   typedef ac_fixed<128,0,false> val_t;
-  static const ac_fixed<128,0,false> x2_atan_pi_pow2_table[] = {
+  static const ac_fixed<128,0,false> x2_atan_pi_pow2_tableCOS[] = {
     val_t( 5.0000000000000000e-001 ) + val_t( 0.0000000000000000e+000 ) + val_t( 0.0000000000000000e+000 ),
     val_t( 2.9516723530086653e-001 ) + val_t( 2.2191022328947885e-017 ) + val_t( 1.2208189343972259e-033 ),
     val_t( 1.5595826075473865e-001 ) + val_t( 3.0080388310057675e-018 ) + val_t( 2.9135660047960282e-034 ),
@@ -228,13 +228,13 @@ namespace ac_math
   };
 
   template < int ZW >
-  static ac_fixed<ZW, 0, false> x2_atan_pi_2mi(int i)
+  static ac_fixed<ZW, 0, false> x2_atan_pi_2miCOS(int i)
   {
-    MgcAcItrigAssert< ZW <= 128 >::test();
+    MgcAcItrigAssertCOS< ZW <= 128 >::test();
     // Assume no more than 130 entries.
     if (i > 129)
     { return 0; }
-    return x2_atan_pi_pow2_table[i];
+    return x2_atan_pi_pow2_tableCOS[i];
   }
 
   //============================================================================
@@ -252,7 +252,7 @@ namespace ac_math
     const int P_F = 2*(ZW - ZI);
     const int GUARD = 2;
     const int N_I = P_F + 2;
-    MgcAcItrigAssert< P_F <= 128 >::test();
+    MgcAcItrigAssertCOS< P_F <= 128 >::test();
 
     typedef ac_fixed<P_F+3+GUARD,3,true> dp_t;
     typedef ac_fixed<P_F+2,2,true> dp_theta_t;
@@ -273,7 +273,7 @@ namespace ac_math
       bool sel = (x >= tn && y >= 0) || (x < tn && y < 0);
       dp_t x_d = y >> (i - 1);
       dp_t y_d = x >> (i - 1);
-      dp_theta_t theta_d = x2_atan_pi_2mi<P_F>(i);
+      dp_theta_t theta_d = x2_atan_pi_2miCOS<P_F>(i);
       dp_t tn_d = tn >> (2*i);
       x -= x >> (2*i);
       y -= y >> (2*i);

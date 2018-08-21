@@ -62,7 +62,7 @@
 //      ac_sqrt(input, output);
 //    }
 //
-//    #ifndef __SYNTHESIS__
+//    #ifndef __BAMBU__
 //    #include <mc_scverify.h>
 //
 //    CCS_MAIN(int arg, char **argc)

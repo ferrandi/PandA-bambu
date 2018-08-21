@@ -63,7 +63,7 @@
 //      #endif
 //    }
 //
-//    #ifndef __SYNTHESIS__
+//    #ifndef __BAMBU__
 //    #include <mc_scverify.h>
 //    CCS_MAIN(int arg, char **argc)
 //    {
@@ -92,7 +92,7 @@
 // Include headers for required functions
 #include <ac_math/ac_normalize.h>
 
-#if !defined(__SYNTHESIS__) && defined(AC_LOG_PWL_H_DEBUG)
+#if !defined(__BAMBU__) && defined(AC_LOG_PWL_H_DEBUG)
 #include <iostream>
 using namespace std;
 #endif
@@ -182,7 +182,7 @@ namespace ac_math
     // assignment to the final output
     result = (input == 0) ? result_min : t2;
 
-#if !defined(__SYNTHESIS__) && defined(AC_LOG_PWL_H_DEBUG)
+#if !defined(__BAMBU__) && defined(AC_LOG_PWL_H_DEBUG)
     cout << __FILE__ << __LINE__ << endl;
     cout << "input_width" << input_width << endl;
     cout << "input_int" << input_int << endl;
@@ -238,7 +238,7 @@ namespace ac_math
     // If input is zero, then assign minimum value to output.
     result = input != 0 ? (ac_fixed <W2, I2, true, q_mode_out, o_mode_out>)(result_temp * log_constant) : result_min;
 
-#if !defined(__SYNTHESIS__) && defined (AC_LOG_PWL_H_DEBUG)
+#if !defined(__BAMBU__) && defined (AC_LOG_PWL_H_DEBUG)
     cout << "Input to the log base e function = " << input << endl;
     cout << "constant_width = " << constant_width << endl;
     cout << "result_temp = " << result_temp << endl;

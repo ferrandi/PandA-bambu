@@ -72,9 +72,10 @@
 // ac_pow2_pwl()
 // ac_exp_pwl()
 
+#ifndef __BAMBU__
 #include <ac_math/ac_random.h>
 // ac_random()
-
+#endif
 #include <ac_math/ac_reciprocal_pwl.h>
 // ac_reciprocal_pwl()
 

@@ -57,7 +57,7 @@
 //    {
 //      ac_sincos(input, sinoutput, cosoutput);
 //    }
-//    #ifndef __SYNTHESIS__
+//    #ifndef __BAMBU__
 //    CCS_MAIN(int argc, char *argv[])
 //    {
 //      input_type input = 0.26;
@@ -85,7 +85,7 @@
 #include <ac_fixed.h>
 #include <ac_complex.h>
 
-#if !defined(__SYNTHESIS__)
+#if !defined(__BAMBU__)
 #include <iostream>
 using namespace std;
 #endif
@@ -118,7 +118,7 @@ namespace ac_math
   {
     static bool flag = true;
     if (flag && T_in::width-T_in::i_width > 12) {
-#ifndef __SYNTHESIS__
+#ifndef __BAMBU__
       cout << "FILE : " << __FILE__ << ", LINE : " << __LINE__ << endl;
       cout << "Warning: The output will not be accurate" << endl;
 #endif
@@ -704,7 +704,7 @@ namespace ac_math
                                       outputtemp.r();
     }
 
-#if !defined(__SYNTHESIS__) && defined(SINCOS_DEBUG)
+#if !defined(__BAMBU__) && defined(SINCOS_DEBUG)
     cout << "FILE : " << __FILE__ << ", LINE : " << __LINE__ << endl;
     cout << "============AC_FIXED SINCOS============" << endl;
     cout << "positive input is   = " << posinput << endl;

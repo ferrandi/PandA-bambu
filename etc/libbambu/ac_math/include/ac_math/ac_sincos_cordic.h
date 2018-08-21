@@ -58,7 +58,7 @@
 //      ac_cos_cordic(input, cos_output);
 //    }
 //
-//    #ifndef __SYNTHESIS__
+//    #ifndef __BAMBU__
 //    #include <mc_scverify.h>
 //
 //    CCS_MAIN(int arg, char **argc)
@@ -91,10 +91,10 @@
 
 namespace ac_math
 {
-  typedef ac_fixed<TE+2,1,true,AC_RND,AC_WRAP> table_t;
+  typedef ac_fixed<TE+2,1,true,AC_RND,AC_WRAP> table_tSINCOS;
 
   // Scaled atan
-  static table_t atan_pi_pow2_table[] = {
+  static table_tSINCOS atan_pi_pow2_table[] = {
     .25,
     .1475836176504332630798899117507971823215484619140625,
     .07797913037736932395649347427024622447788715362548828125,
@@ -167,7 +167,7 @@ namespace ac_math
     .00000000000000000000042351647362715016953416125033982098102569580078125
   };
 
-  static table_t K_table[] = {
+  static table_tSINCOS K_table[] = {
     -1,
       .707106781186547461715008466853760182857513427734375,
       .63245553203367588235295215781661681830883026123046875,
@@ -240,14 +240,14 @@ namespace ac_math
       .60725293500888122277814318294986151158809661865234375
     };
 
-  static table_t atan_pi_2mi(int i)
+  static table_tSINCOS atan_pi_2mi(int i)
   {
     if (i >= TE)
     { return 0; }
     return atan_pi_pow2_table[i];
   }
 
-  static table_t K(int n)
+  static table_tSINCOS K(int n)
   {
     if (n >= TE)
     { return 0; }

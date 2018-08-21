@@ -82,7 +82,7 @@
 #include <ac_math/ac_sqrt_pwl.h>
 #include <ac_math/ac_inverse_sqrt_pwl.h>
 
-#if !defined(__SYNTHESIS__)
+#if !defined(__BAMBU__)
 #include <iostream>
 using namespace std;
 #endif
@@ -214,7 +214,7 @@ namespace ac_math
     }
     A1(pivot,j) = 0;
 
-#if !defined(__SYNTHESIS__) && defined(AC_QRD_DEBUG)
+#if !defined(__BAMBU__) && defined(AC_QRD_DEBUG)
     cout << "pivot = " << pivot << endl;
     cout << "row1 = " << row1 << endl;
     cout << "row2 = " << row2 << endl;

@@ -49,7 +49,7 @@
 //      return determinant(m);
 //    }
 //
-//    #ifndef __SYNTHESIS__
+//    #ifndef __BAMBU__
 //    #include <iostream>
 //    using namespace std;
 //
@@ -408,7 +408,7 @@ T determinant(ac_matrix<T,2,2> &m)
 }
 
 
-#ifndef __SYNTHESIS__
+#ifndef __BAMBU__
 //#include <iostream>
 
 //----------------------------------------------------------------------
@@ -434,7 +434,7 @@ std::ostream &operator<<(std::ostream &os, const ac_matrix<T,M,N> &m )
   }
   return os;
 }
-#endif // NOT __SYNTHESIS__
+#endif // NOT __BAMBU__
 
 #endif // _INCLUDED_AC_MATRIX_H_
 

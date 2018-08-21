@@ -79,7 +79,7 @@
 #include <ac_math/ac_div.h>
 #include <ac_math/ac_sqrt.h>
 
-#if !defined(__SYNTHESIS__) && defined(AC_CHOL_D_H_DEBUG)
+#if !defined(__BAMBU__) && defined(AC_CHOL_D_H_DEBUG)
 #include <iostream>
 using namespace std;
 #endif
@@ -123,7 +123,7 @@ using namespace std;
 //      ac_chol_d(input, output);
 //    }
 //
-//    #ifndef __SYNTHESIS__
+//    #ifndef __BAMBU__
 //    #include <mc_scverify.h>
 //    CCS_MAIN(int arg, char **argc)
 //    {
@@ -203,7 +203,7 @@ namespace ac_math
         // Store inverse of diagonal element in separate variable (i.e. "recip_Ljj") for later calculations.
         ac_math::ac_div(unity, int_Ljj, recip_Ljj);
       }
-#if !defined(__SYNTHESIS__) && defined(AC_CHOL_D_H_DEBUG)
+#if !defined(__BAMBU__) && defined(AC_CHOL_D_H_DEBUG)
       cout << "FILE : " << __FILE__ << ", LINE : " << __LINE__ << endl;
       cout << "sum_Ajj_Ljk_sq = " << sum_Ajj_Ljk_sq << endl;
       cout << "int_Ljj        = " << int_Ljj << endl;
@@ -277,7 +277,7 @@ namespace ac_math
 //      ac_chol_d(input, output);
 //    }
 //
-//    #ifndef __SYNTHESIS__
+//    #ifndef __BAMBU__
 //    #include <mc_scverify.h>
 //    CCS_MAIN(int arg, char **argc)
 //    {
@@ -365,7 +365,7 @@ namespace ac_math
         // Store inverse of diagonal element in separate variable (i.e. "recip_Ljj") for later calculations.
         ac_math::ac_div(unity, int_Ljj, recip_Ljj);
       }
-#if !defined(__SYNTHESIS__) && defined(AC_CHOL_D_H_DEBUG)
+#if !defined(__BAMBU__) && defined(AC_CHOL_D_H_DEBUG)
       cout << "FILE : " << __FILE__ << ", LINE : " << __LINE__ << endl;
       cout << "j = " << j << endl;
       cout << "sum_Ajj_Ljk_sq = " << sum_Ajj_Ljk_sq << endl;
@@ -468,7 +468,7 @@ namespace ac_math
 //      ac_chol_d(input, output);
 //    }
 //
-//    #ifndef __SYNTHESIS__
+//    #ifndef __BAMBU__
 //    #include <mc_scverify.h>
 //    CCS_MAIN(int arg, char **argc)
 //    {
@@ -534,7 +534,7 @@ namespace ac_math
 //      ac_chol_d(input, output);
 //    }
 //
-//    #ifndef __SYNTHESIS__
+//    #ifndef __BAMBU__
 //    #include <mc_scverify.h>
 //    CCS_MAIN(int arg, char **argc)
 //    {

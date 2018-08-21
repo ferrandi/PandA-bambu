@@ -55,7 +55,7 @@
 //      ac_tan_pwl(input,output);
 //    }
 //
-//    #ifndef __SYNTHESIS__
+//    #ifndef __BAMBU__
 //    #include <mc_scverify.h>
 //
 //    CCS_MAIN(int arg, char **argc)
@@ -90,7 +90,7 @@
 // Include headers for data types supported by these implementations
 #include <ac_fixed.h>
 
-#if !defined(__SYNTHESIS__) && defined(AC_TAN_PWL_H_DEBUG)
+#if !defined(__BAMBU__) && defined(AC_TAN_PWL_H_DEBUG)
 #include <iostream>
 using namespace std;
 #endif
@@ -191,7 +191,7 @@ namespace ac_math
 
     output = output_temp;
 
-#if !defined(__SYNTHESIS__) && defined(AC_TAN_PWL_H_DEBUG)
+#if !defined(__BAMBU__) && defined(AC_TAN_PWL_H_DEBUG)
     cout << "FILE : " << __FILE__ << ", LINE : " << __LINE__ << endl;
     cout << "input           = " << input << endl;
     cout << "sc_constant_lut = " << sc_constant_lut << endl;

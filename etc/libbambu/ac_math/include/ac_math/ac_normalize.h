@@ -58,7 +58,7 @@
 //      expret = ac_normalize(input, output);
 //    }
 //
-//    #ifndef __SYNTHESIS__
+//    #ifndef __BAMBU__
 //    #include <mc_scverify.h>
 //
 //    CCS_MAIN(int arg, char **argc)
@@ -91,7 +91,7 @@
 #include <ac_fixed.h>
 #include <ac_complex.h>
 
-#if !defined(__SYNTHESIS__)
+#if !defined(__BAMBU__)
 #include <iostream>
 using namespace std;
 #endif
@@ -144,7 +144,7 @@ namespace ac_math
     // that corresponds to leading_1.
     int expret = input != 0 ? I - int(S) - leading_1 : 0;
 
-#if !defined(__SYNTHESIS__) && defined(AC_NORMALIZE_H_DEBUG)
+#if !defined(__BAMBU__) && defined(AC_NORMALIZE_H_DEBUG)
     cout << "FILE : " << __FILE__ << ", LINE : " << __LINE__ << endl;
     cout << "input to normalize = " << input << endl;
     cout << "leading_1          = " << leading_1 << endl;
@@ -191,7 +191,7 @@ namespace ac_math
 //      expret = ac_normalize(input, output);
 //    }
 //
-//    #ifndef __SYNTHESIS__
+//    #ifndef __BAMBU__
 //    #include <mc_scverify.h>
 //
 //    CCS_MAIN(int arg, char **argc)
@@ -247,7 +247,7 @@ namespace ac_math
     // that corresponds to leading_1.
     int expret = input != 0 ? I - int(S) - leading_1 : 0;
 
-#if !defined(__SYNTHESIS__) && defined(AC_NORMALIZE_H_DEBUG)
+#if !defined(__BAMBU__) && defined(AC_NORMALIZE_H_DEBUG)
     cout << "FILE : " << __FILE__ << ", LINE : " << __LINE__ << endl;
     cout << "input to normalize = " << input << endl;
     cout << "leading_1          = " << leading_1 << endl;

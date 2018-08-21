@@ -59,7 +59,7 @@
 //      ac_inverse_sqrt_pwl(input,output);
 //    }
 //
-//    #ifndef __SYNTHESIS__
+//    #ifndef __BAMBU__
 //    #include <mc_scverify.h>
 //
 //    CCS_MAIN(int arg, char **argc)
@@ -95,7 +95,7 @@
 #include <ac_math/ac_shift.h>
 #include <ac_math/ac_sqrt_pwl.h>
 
-#if !defined(__SYNTHESIS__) && defined(AC_INVERSE_SQRT_PWL_H_DEBUG)
+#if !defined(__BAMBU__) && defined(AC_INVERSE_SQRT_PWL_H_DEBUG)
 #include <iostream>
 using namespace std;
 #endif
@@ -204,7 +204,7 @@ namespace ac_math
     // on whether a zero was passed or not.
     output = input != 0 ? output_temp : output_temp_max;
 
-#if !defined(__SYNTHESIS__) && defined(AC_INVERSE_SQRT_PWL_H_DEBUG)
+#if !defined(__BAMBU__) && defined(AC_INVERSE_SQRT_PWL_H_DEBUG)
     cout << "input                  = " << input << endl;
     cout << "normalized_input       = " << normalized_input << endl;
     cout << "normalized_exp         = " << normalized_exp << endl;
@@ -281,7 +281,7 @@ namespace ac_math
     // on whether a zero was passed or not at the input.
     output.i() = non_zero_input ? (ac_fixed<W2, I2, true, q2, o2>)output_temp.i() : output_temp_max;
 
-#if !defined(__SYNTHESIS__) && defined(AC_INVERSE_SQRT_PWL_H_DEBUG)
+#if !defined(__BAMBU__) && defined(AC_INVERSE_SQRT_PWL_H_DEBUG)
     cout << "W1              = " << W1 << endl;
     cout << "I1              = " << I1 << endl;
     cout << "input           = " << input << endl;
@@ -354,7 +354,7 @@ namespace ac_math
 
     output = output_temp;
 
-#if !defined(__SYNTHESIS__) && defined(AC_INVERSE_SQRT_PWL_H_DEBUG)
+#if !defined(__BAMBU__) && defined(AC_INVERSE_SQRT_PWL_H_DEBUG)
     cout << "m1          = " << m1 << endl;
     cout << "e1          = " << e1 << endl;
     cout << "e2          = " << e2 << endl;

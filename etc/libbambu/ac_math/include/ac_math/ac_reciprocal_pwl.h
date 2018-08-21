@@ -56,7 +56,7 @@
 //      ac_reciprocal_pwl(input, output);
 //    }
 //
-//    #ifndef __SYNTHESIS__
+//    #ifndef __BAMBU__
 //    #include <mc_scverify.h>
 //
 //    CCS_MAIN(int arg, char **argc)
@@ -109,7 +109,7 @@
 #include <ac_math/ac_normalize.h>
 #include <ac_math/ac_shift.h>
 
-#if !defined(__SYNTHESIS__) && defined(AC_RECIPROCAL_PWL_H_DEBUG)
+#if !defined(__BAMBU__) && defined(AC_RECIPROCAL_PWL_H_DEBUG)
 #include <iostream>
 using namespace std;
 #endif
@@ -230,7 +230,7 @@ namespace ac_math
 
     output = output_temp;
 
-#if !defined(__SYNTHESIS__) && defined(AC_RECIPROCAL_PWL_H_DEBUG)
+#if !defined(__BAMBU__) && defined(AC_RECIPROCAL_PWL_H_DEBUG)
     cout << "FILE : " << __FILE__ << ", LINE : " << __LINE__ << endl;
     cout << "input                   = " << input << endl;
     cout << "input_abs_value         = " << input_abs_value << endl;
@@ -275,7 +275,7 @@ namespace ac_math
 //      ac_reciprocal_pwl(input, output);
 //    }
 //
-//    #ifndef __SYNTHESIS__
+//    #ifndef __BAMBU__
 //    #include <mc_scverify.h>
 //
 //    CCS_MAIN(int arg, char **argc)
@@ -318,7 +318,7 @@ namespace ac_math
 
     output = output_temp;
 
-#if !defined(__SYNTHESIS__) && defined(AC_RECIPROCAL_PWL_H_DEBUG)
+#if !defined(__BAMBU__) && defined(AC_RECIPROCAL_PWL_H_DEBUG)
     cout << "FILE : " << __FILE__ << ", LINE : " << __LINE__ << endl;
     cout << "input                   = " << input << endl;
     cout << "input.mantissa()        = " << input.mantissa() << endl;
@@ -373,7 +373,7 @@ namespace ac_math
 //      ac_reciprocal_pwl(input, output);
 //    }
 //
-//    #ifndef __SYNTHESIS__
+//    #ifndef __BAMBU__
 //    #include <mc_scverify.h>
 //
 //    CCS_MAIN(int arg, char **argc)
@@ -421,7 +421,7 @@ namespace ac_math
 
     output = output_temp;
 
-#if !defined(__SYNTHESIS__) && defined(AC_RECIPROCAL_PWL_H_DEBUG)
+#if !defined(__BAMBU__) && defined(AC_RECIPROCAL_PWL_H_DEBUG)
     cout << "FILE : " << __FILE__ << ", LINE : " << __LINE__ << endl;
     cout << "input.mag_sqr() = " << input.mag_sqr() << endl;
     cout << "recip_mag_sqr   = " << recip_mag_sqr << endl;
@@ -470,7 +470,7 @@ namespace ac_math
 //      ac_reciprocal_pwl(input, output);
 //    }
 //
-//    #ifndef __SYNTHESIS__
+//    #ifndef __BAMBU__
 //    #include <mc_scverify.h>
 //
 //    CCS_MAIN(int arg, char **argc)
@@ -528,7 +528,7 @@ namespace ac_math
 
     output = output_temp;
 
-#if !defined(__SYNTHESIS__) && defined(AC_RECIPROCAL_PWL_H_DEBUG)
+#if !defined(__BAMBU__) && defined(AC_RECIPROCAL_PWL_H_DEBUG)
     cout << "FILE : " << __FILE__ << ", LINE : " << __LINE__ << endl;
     cout << "input                     = " << input << endl;
     cout << "input_mag_sqr             = " << input_mag_sqr << endl;

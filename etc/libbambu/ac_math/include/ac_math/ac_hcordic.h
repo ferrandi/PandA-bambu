@@ -55,7 +55,7 @@
 //      ac_log2_cordic(input, output);
 //    }
 //
-//    #ifndef __SYNTHESIS__
+//    #ifndef __BAMBU__
 //    #include <mc_scverify.h>
 //
 //    CCS_MAIN(int arg, char **argc)
@@ -81,7 +81,7 @@
 #error C++ is required to include this header file
 #endif
 
-#if defined(AC_HCORDIC_H_DEBUG) && !defined(__SYNTHESIS__)
+#if defined(AC_HCORDIC_H_DEBUG) && !defined(__BAMBU__)
 #include <string.h>
 #include <iostream>
 using namespace std;
@@ -479,7 +479,7 @@ namespace ac_math
       z = offset + zc;
     }
 
-#if defined(AC_HCORDIC_H_DEBUG) && !defined(__SYNTHESIS__)
+#if defined(AC_HCORDIC_H_DEBUG) && !defined(__BAMBU__)
     string base_string = (BASE == AcLogRR::BASE_E) ? "Base e logarithm" : "Base 2 logarithm";
     cout << base_string << endl;
     cout << "x = " << x << endl;
@@ -565,7 +565,7 @@ namespace ac_math
 
     z = zs;
 
-#if defined(AC_HCORDIC_H_DEBUG) && !defined(__SYNTHESIS__)
+#if defined(AC_HCORDIC_H_DEBUG) && !defined(__BAMBU__)
     cout << "x = " << x << endl;
     cout << "q_int = " << q_int << endl;
     cout << "q = " << q << endl;
@@ -682,7 +682,7 @@ namespace ac_math
     ac_fixed<ZCW+SHIFT_W,SHIFT_W+2,false> zc_shift = ((ac_fixed<ZCW+SHIFT_W,SHIFT_W+2,false>)zc) << q_int;
     z = zc_shift;
 
-#if defined(AC_HCORDIC_H_DEBUG) && !defined(__SYNTHESIS__)
+#if defined(AC_HCORDIC_H_DEBUG) && !defined(__BAMBU__)
     cout << "zc_shift.type_name() = " << zc_shift.type_name() << endl;
 #endif
   }

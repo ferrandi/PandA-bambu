@@ -65,7 +65,7 @@
 //      ac_determinant(input, output);
 //    }
 //
-//    #ifndef __SYNTHESIS__
+//    #ifndef __BAMBU__
 //    #include <mc_scverify.h>
 //    CCS_MAIN(int arg, char **argc)
 //    {
@@ -102,7 +102,7 @@
 //      ac_determinant<M>(input, output);
 //    }
 //
-//    #ifndef __SYNTHESIS__
+//    #ifndef __BAMBU__
 //    #include <mc_scverify.h>
 //    CCS_MAIN(int arg, char **argc)
 //    {
@@ -129,7 +129,7 @@
 #include <ac_complex.h>
 #include <ac_matrix.h>
 
-#if !defined(__SYNTHESIS__) && defined(AC_DETERMINANT_H_DEBUG)
+#if !defined(__BAMBU__) && defined(AC_DETERMINANT_H_DEBUG)
 #include <iostream>
 using namespace std;
 #endif
@@ -379,7 +379,7 @@ namespace ac_math
     typedef ac_fixed <W1, I1, S1, q1, o1> input_type;
     typedef ac_fixed <W2, I2, true, q2, o2> output_type;
     ac_determinant_combined <M, override, input_type, output_type, internal_type> (a, result);
-#if !defined(__SYNTHESIS__) && defined(AC_DETERMINANT_H_DEBUG)
+#if !defined(__BAMBU__) && defined(AC_DETERMINANT_H_DEBUG)
     cout << "M = " << M << endl;
     cout << "input total bitwidth = " << W1 << endl;
     cout << "input integer bitwidth = " << I1 << endl;
@@ -395,7 +395,7 @@ namespace ac_math
     typedef ac_complex <ac_fixed <W1, I1, S1, q1, o1> > input_type;
     typedef ac_complex <ac_fixed <W2, I2, true, q2, o2> > output_type;
     ac_determinant_combined <M, override, input_type, output_type, internal_type> (a, result);
-#if !defined(__SYNTHESIS__) && defined(AC_DETERMINANT_H_DEBUG)
+#if !defined(__BAMBU__) && defined(AC_DETERMINANT_H_DEBUG)
     cout << "M = " << M << endl;
     cout << "input total bitwidth = " << W1 << endl;
     cout << "input integer bitwidth = " << I1 << endl;

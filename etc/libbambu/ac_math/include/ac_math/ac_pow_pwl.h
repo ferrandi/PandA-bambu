@@ -55,7 +55,7 @@
 //      ac_pow2_pwl(input, output);
 //    }
 //
-//    #ifndef __SYNTHESIS__
+//    #ifndef __BAMBU__
 //    #include <mc_scverify.h>
 //
 //    CCS_MAIN(int arg, char **argc)
@@ -97,7 +97,7 @@
 // Include headers for required functions
 #include <ac_math/ac_shift.h>
 
-#if !defined(__SYNTHESIS__)
+#if !defined(__BAMBU__)
 #include <iostream>
 using namespace std;
 #endif
@@ -184,7 +184,7 @@ namespace ac_math
     // Shift left by the integer part of the input to cancel out the previous normalization.
     ac_math::ac_shift_left(output_pwl, input.to_int(), output);
 
-#if !defined(__SYNTHESIS__) && defined(AC_POW_PWL_H_DEBUG)
+#if !defined(__BAMBU__) && defined(AC_POW_PWL_H_DEBUG)
     cout << "FILE : " << __FILE__ << ", LINE : " << __LINE__ << endl;
     cout << "Actual input              = " << input << endl;
     cout << "normalized input          = " << input_frac_part << endl;
@@ -236,7 +236,7 @@ namespace ac_math
 //      ac_exp_pwl(input, output);
 //    }
 //
-//    #ifndef __SYNTHESIS__
+//    #ifndef __BAMBU__
 //    #include <mc_scverify.h>
 //
 //    CCS_MAIN(int arg, char **argc)
@@ -287,7 +287,7 @@ namespace ac_math
     input_inter = input*log2e;
     ac_pow2_pwl<pwl_Q>(input_inter, output);
 
-#if !defined(__SYNTHESIS__) && defined(AC_POW_PWL_H_DEBUG)
+#if !defined(__BAMBU__) && defined(AC_POW_PWL_H_DEBUG)
     cout << "FILE : " << __FILE__ << ", LINE : " << __LINE__ << endl;
     cout << "input_inter.width       = " << input_inter.width << endl;
     cout << "input_inter.i_width     = " << input_inter.i_width << endl;

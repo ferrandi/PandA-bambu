@@ -59,7 +59,7 @@
 //      ac_sqrt_pwl(input,output);
 //    }
 //
-//    #ifndef __SYNTHESIS__
+//    #ifndef __BAMBU__
 //    #include <mc_scverify.h>
 //
 //    CCS_MAIN(int arg, char **argc)
@@ -94,7 +94,7 @@
 #include <ac_math/ac_shift.h>
 #include <ac_math/ac_normalize.h>
 
-#if !defined(__SYNTHESIS__) && defined(AC_SQRT_PWL_H_DEBUG)
+#if !defined(__BAMBU__) && defined(AC_SQRT_PWL_H_DEBUG)
 #include <iostream>
 using namespace std;
 #endif
@@ -200,7 +200,7 @@ namespace ac_math
     ac_math::ac_shift_left (m1, normalized_exp, output_temp);
     output = (input == 0) ? 0 : output_temp;
 
-#if !defined(__SYNTHESIS__) && defined(AC_SQRT_PWL_H_DEBUG)
+#if !defined(__BAMBU__) && defined(AC_SQRT_PWL_H_DEBUG)
     cout << "W = " << W << endl;
     cout << "I = " << I << endl;
     cout << "outW = " << outW << endl;
@@ -263,7 +263,7 @@ namespace ac_math
 //      ac_sqrt_pwl(input,output);
 //    }
 //
-//    #ifndef __SYNTHESIS__
+//    #ifndef __BAMBU__
 //    #include <mc_scverify.h>
 //
 //    CCS_MAIN(int arg, char **argc)
@@ -306,7 +306,7 @@ namespace ac_math
 
     output = output_temp;
 
-#if !defined(__SYNTHESIS__) && defined(AC_SQRT_PWL_H_DEBUG)
+#if !defined(__BAMBU__) && defined(AC_SQRT_PWL_H_DEBUG)
     cout << "input = " << input << endl;
     cout << "W = " << W << endl;
     cout << "I = " << I << endl;
@@ -351,7 +351,7 @@ namespace ac_math
 //      ac_sqrt_pwl(input,output);
 //    }
 //
-//    #ifndef __SYNTHESIS__
+//    #ifndef __BAMBU__
 //    #include <mc_scverify.h>
 //
 //    CCS_MAIN(int arg, char **argc)
@@ -393,7 +393,7 @@ namespace ac_math
     output.r() = x;
     output.i() = (input.i() < 0) ? -y : (ac_fixed <W2 + 1, I2 + 1, true>)y; // if imaginary part is less than zero, assign output value as negative otherwise positive
 
-#if !defined(__SYNTHESIS__) && defined(AC_SQRT_PWL_H_DEBUG)
+#if !defined(__BAMBU__) && defined(AC_SQRT_PWL_H_DEBUG)
     cout << "initial input = " << input << endl;
     cout << "W1 = " << W1 << endl;
     cout << "I1 = " << I1 << endl;

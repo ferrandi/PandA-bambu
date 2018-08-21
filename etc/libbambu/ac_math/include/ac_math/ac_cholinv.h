@@ -83,7 +83,7 @@
 #include <ac_math/ac_reciprocal_pwl.h>
 #include <ac_math/ac_chol_d.h>
 
-#ifndef __SYNTHESIS__
+#ifndef __BAMBU__
 #include <iostream>
 using namespace std;
 #endif
@@ -115,7 +115,7 @@ using namespace std;
 //      ac_cholinv(input, output);
 //    }
 //
-//    #ifndef __SYNTHESIS__
+//    #ifndef __BAMBU__
 //    CCS_MAIN(int arg, char **argc)
 //    {
 //      input_type input[7][7];
@@ -232,7 +232,7 @@ namespace ac_math
 //      ac_cholinv(input, output);
 //    }
 //
-//    #ifndef __SYNTHESIS__
+//    #ifndef __BAMBU__
 //    CCS_MAIN(int arg, char **argc)
 //    {
 //      input_type input[7][7];
@@ -365,7 +365,7 @@ namespace ac_math
 //      ac_cholinv(input, output);
 //    }
 //
-//    #ifndef __SYNTHESIS__
+//    #ifndef __BAMBU__
 //    CCS_MAIN(int arg, char **argc)
 //    {
 //      input_type input;
@@ -425,7 +425,7 @@ namespace ac_math
 //      ac_cholinv(input, output);
 //    }
 //
-//    #ifndef __SYNTHESIS__
+//    #ifndef __BAMBU__
 //    CCS_MAIN(int arg, char **argc)
 //    {
 //      input_type input;

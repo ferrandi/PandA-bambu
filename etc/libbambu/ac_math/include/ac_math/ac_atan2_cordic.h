@@ -58,7 +58,7 @@
 //      ac_atan2_cordic(y, x, atan2_output);
 //    }
 //
-//    #ifndef __SYNTHESIS__
+//    #ifndef __BAMBU__
 //    #include <mc_scverify.h>
 //
 //    CCS_MAIN(int arg, char **argc)
@@ -91,9 +91,9 @@
 
 namespace ac_math
 {
-  typedef ac_fixed<TE+1,0,false,AC_RND,AC_WRAP> table_t;
+  typedef ac_fixed<TE+1,0,false,AC_RND,AC_WRAP> table_tATAN2;
 
-  static table_t atan_pow2_table[] = {
+  static table_tATAN2 atan_pow2_table[] = {
     .78539816339744827899949086713604629039764404296875,
     .463647609000806093515478778499527834355831146240234375,
     .2449786631268641434733268624768243171274662017822265625,
@@ -166,7 +166,7 @@ namespace ac_math
     .000000000000000000001694065894508600678136645001359283924102783203125
   };
 
-  static table_t atan_2mi(int i)
+  static table_tATAN2 atan_2mi(int i)
   {
     if (i >= TE)
     { return 0; }

@@ -57,7 +57,7 @@
 //    {
 //        ac_matrixmul(A,B,C);
 //    }
-//    #ifndef __SYNTHESIS__
+//    #ifndef __BAMBU__
 //    CCS_MAIN(int argc, char *argv[])
 //    {
 //        input_type1 A;
@@ -82,7 +82,7 @@
 #include <ac_complex.h>
 #include <ac_matrix.h>
 
-#if !defined(__SYNTHESIS__)
+#if !defined(__BAMBU__)
 #include <iostream>
 using namespace std;
 #endif
