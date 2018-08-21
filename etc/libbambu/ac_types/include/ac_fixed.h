@@ -1108,7 +1108,7 @@ public:
     __attribute__((always_inline))
     inline ac_fixed &set_slc(int umsb, int ulsb, const ac_int<W2,S2> &slc) {
         AC_ASSERT((ulsb + umsb+1) <= W, "Out of bounds set_slc");
-        Base::set_slc(ulsb, umsb+1, (ac_int<W2,true>) slc);
+        Base::set_slc(ulsb, umsb+1-ulsb, (ac_int<W2,true>) slc);
         bit_adjust();   // in case sign bit was assigned
         return *this;
     }

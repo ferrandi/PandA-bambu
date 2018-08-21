@@ -883,8 +883,8 @@ inline bool iv_add_int_carry(const iv_base<N>&op1, int op2, bool carry, iv_base<
         r.set(i, (int) l);
         l >>= 32;
     }
-    l += (Slong) op1[START+N-1];
-    r.set(START+N-1, (int) l);
+    l += (Slong) op1[N-1];
+    r.set(N-1, (int) l);
     return (l >> 32) & 1;
 }
 template<> inline bool iv_add_int_carry<1,0,1>(const iv_base<1>& op1, int op2, bool carry, iv_base<1>&r) {
@@ -971,17 +971,9 @@ inline bool iv_sub_int_borrow(const iv_base<N>&op1, int op2, bool borrow, iv_bas
         r.set(i, (int) l);
         l >>= 32;
     }
-    l += (Slong) op1[START+N-1];
-    r.set(START+N-1, (int) l);
+    l += (Slong) op1[N-1];
+    r.set(N-1, (int) l);
     return (l >> 32) & 1;
-}
-template<> inline bool iv_sub_int_borrow<1,0,1>(const iv_base<1>&op1, int op2, bool borrow, iv_base<1>&r) {
-    Ulong l = (Slong) op1[0] - (Slong) op2 - borrow;
-    r.set(0, (int) l);
-    return (l >> 32) & 1;
-}
-template<> inline bool iv_sub_int_borrow<1,1,1>(const iv_base<1>&op1, int op2, bool borrow, iv_base<1>&r) {
-    return borrow;
 }
 
 template<int N, int START=0, int Nr=N>
@@ -1005,17 +997,9 @@ inline bool iv_sub_int_borrow(int op1, const iv_base<N>&op2, bool borrow, iv_bas
         r.set(i, (int) l);
         l >>= 32;
     }
-    l -= (Slong) op2[START+N-1];
-    r.set(START+N-1, (int) l);
+    l -= (Slong) op2[N-1];
+    r.set(N-1, (int) l);
     return (l >> 32) & 1;
-}
-template<> inline bool iv_sub_int_borrow<1,0,1>(int op1, const iv_base<1>&op2, bool borrow, iv_base<1>&r) {
-    Ulong l = (Slong) op1 - (Slong) op2[0] - borrow;
-    r.set(0, (int) l);
-    return (l >> 32) & 1;
-}
-template<> inline bool iv_sub_int_borrow<1,1,1>(int op1, const iv_base<1>&op2, bool borrow, iv_base<1>&r) {
-    return borrow;
 }
 
 template<int N, int N1, int N2, int Nr>
@@ -1067,6 +1051,7 @@ inline void iv_sub(const iv_base<N1>&op1, const iv_base<N2>&op2, iv_base<Nr>&r) 
         const int M2 = AC_MIN(N1,N2);
         const int T1 = AC_MIN(M2-1,Nr);
         const int T2 = AC_MIN(M1,Nr);
+
         bool borrow = iv_usub_n<T1>(op1, op2, r);
         if(N1 > N2)
             borrow = iv_sub_int_borrow<T2,T1>(op1, op2[T1], borrow, r);
@@ -2167,7 +2152,7 @@ protected:
         unsigned msb_b = msb & 31;
         if(N2==1) {
             if(msb_v == lsb_v)
-                v.set(lsb_v, v[lsb_v] ^ ((v[lsb_v] ^ (op2.v[0] << lsb_b)) & ((WS==32 ? ~0 : ((1u<<(WS-lsb))-1)) << lsb_b)));
+                v.set(lsb_v, v[lsb_v] ^ ((v[lsb_v] ^ (op2.v[0] << lsb_b)) & ((WS==32 ? ~0 : ((1u<<WS)-1)) << lsb_b)));
             else {
                 v.set(lsb_v, v[lsb_v] ^ ((v[lsb_v] ^ (op2.v[0] << lsb_b)) & (all_ones << lsb_b)));
                 unsigned m = (((unsigned) op2.v[0] >> 1) >> (31-lsb_b));
@@ -2211,18 +2196,18 @@ template<> inline Ulong iv<2>::to_uint64() const {
 }
 
 template<> template<> inline void iv<1>::set_slc(unsigned lsb, int WS, const iv<1> &op2) {
-    v.set(0, v[0] ^ ((v[0] ^ (op2.v[0] << lsb)) & ((WS==32 ? ~0u : ((1u<<(WS-lsb))-1)) << lsb)));
+    v.set(0, v[0] ^ ((v[0] ^ (op2.v[0] << lsb)) & ((WS==32 ? ~0u : ((1u<<WS)-1)) << lsb)));
 }
 template<> template<> inline void iv<2>::set_slc(unsigned lsb, int WS, const iv<1> &op2) {
     Ulong l = to_uint64();
     Ulong l2 = op2.to_uint64();
-    l ^= (l ^ (l2 << lsb)) & (((1ULL<<(WS-lsb))-1) << lsb);  // WS <= 32
+    l ^= (l ^ (l2 << lsb)) & (((1ULL<<WS)-1) << lsb);  // WS <= 32
     *this = l;
 }
 template<> template<> inline void iv<2>::set_slc(unsigned lsb, int WS, const iv<2> &op2) {
     Ulong l = to_uint64();
     Ulong l2 = op2.to_uint64();
-    l ^= (l ^ (l2 << lsb)) & ((WS==64 ? ~0ULL : ((1ULL<<(WS-lsb))-1)) << lsb);
+    l ^= (l ^ (l2 << lsb)) & ((WS==64 ? ~0ULL : ((1ULL<<WS)-1)) << lsb);
     *this = l;
 }
 
@@ -3570,7 +3555,7 @@ public:
     __attribute__((always_inline))
     inline ac_int &set_slc(int umsb, int ulsb, const ac_int<W2,S2> &slc) {
         AC_ASSERT((ulsb + umsb+1) <= W, "Out of bounds set_slc");
-        Base::set_slc(ulsb, umsb+1, (ac_int<W,false>) slc);
+        Base::set_slc(ulsb, umsb+1-ulsb, (ac_int<W,false>) slc);
         bit_adjust();   // in case sign bit was assigned
         return *this;
     }
