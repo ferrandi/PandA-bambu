@@ -89,7 +89,7 @@ void HLSInstructionWriter::declareFunction(const unsigned int function_id)
          var_pp_functorConstRef(new std_var_pp_functor(behavioral_helper))
       );
 
-   bool flag_cpp = AppM->get_tree_manager()->is_CPP() && !parameters->isOption(OPT_pretty_print);
+   bool flag_cpp = AppM->get_tree_manager()->is_CPP() && !parameters->isOption(OPT_pretty_print) && (!parameters->isOption(OPT_discrepancy) || !parameters->getOption<bool>(OPT_discrepancy));
 
 
    std::string name = AppM->CGetFunctionBehavior(function_id)->CGetBehavioralHelper()->get_function_name();
@@ -110,12 +110,15 @@ void HLSInstructionWriter::declareFunction(const unsigned int function_id)
          if(!in->operator_flag)
             simple_name = in->strg;
       }
-      tree_nodeRef mangled_id_name = GET_NODE(fd->mngl);
-      if (mangled_id_name->get_kind() == identifier_node_K)
+      if(fd->mngl)
       {
-         auto *in = GetPointer<identifier_node>(mangled_id_name);
-         if(!in->operator_flag)
-            mangled_name = in->strg;
+         tree_nodeRef mangled_id_name = GET_NODE(fd->mngl);
+         if (mangled_id_name->get_kind() == identifier_node_K)
+         {
+            auto *in = GetPointer<identifier_node>(mangled_id_name);
+            if(!in->operator_flag)
+               mangled_name = in->strg;
+         }
       }
       if(mangled_name != "")
       {
