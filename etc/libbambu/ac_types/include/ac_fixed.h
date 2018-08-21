@@ -414,6 +414,38 @@ public:
     } else
       bit_adjust();
   }
+  __attribute__((always_inline)) constexpr inline ac_fixed(float d) {
+    // printf("%f\n",d);
+    float di = ac_private::ldexpr<-(I + !S + ((32 - W - !S) & 31))>(d);
+    bool o = false, qb = false, r = false;
+    bool neg_src = d < 0;
+    Base::conv_from_fraction(di, &qb, &r, &o);
+    quantization_adjust(qb, r, neg_src);
+    // a neg number may become non neg (0) after quantization
+    neg_src &= o || Base::v[N - 1] < 0;
+
+    if (O != AC_WRAP) { // saturation
+      bool overflow = false, underflow = false;
+      bool neg_trg = S && (bool)this->operator[](W - 1);
+      if (o) {
+        overflow = !neg_src;
+        underflow = neg_src;
+      } else {
+        bool deleted_bits_zero = !(W & 31) & S || !(Base::v[N - 1] >> (W & 31));
+        bool deleted_bits_one = !(W & 31) & S || !~(Base::v[N - 1] >> (W & 31));
+        overflow = !neg_src && (neg_trg || !deleted_bits_zero);
+        underflow = neg_src && (!neg_trg || !deleted_bits_one);
+      }
+      if (O == AC_SAT_SYM && S)
+        underflow |=
+            neg_src &&
+            (W > 1 ? ac_private::iv_equal_zeros_to<((W > 1) ? W - 1 : 1), N>(
+                         Base::v)
+                   : true);
+      overflow_adjust(underflow, overflow);
+    } else
+      bit_adjust();
+  }
   template <size_t NN>
   __attribute__((always_inline)) constexpr inline ac_fixed(
       const char (&str)[NN]) {
@@ -500,6 +532,9 @@ public:
   }
   inline double to_double() const {
     return ac_private::ldexpr<I - W>(Base::to_double());
+  }
+  inline float to_float() const {
+    return ac_private::ldexpr<I - W>(Base::to_float());
   }
 
   inline int length() const { return W; }
@@ -960,52 +995,6 @@ public:
       const ac_int<W, S> r = ref.slc(high, low);
       return r;
     }
-#if 0
-        operator char () const
-        {
-            return ref.slc(high,low).to_int();
-        }
-        operator signed char () const
-        {
-            return ref.slc(high,low).to_int();
-        }
-        operator unsigned char () const
-        {
-            return ref.slc(high,low).to_uint();
-        }
-        operator signed short () const
-        {
-            return ref.slc(high,low).to_int();
-        }
-        operator unsigned short () const
-        {
-            return ref.slc(high,low).to_uint();
-        }
-        operator signed int () const
-        {
-            return ref.slc(high,low).to_int();
-        }
-        operator unsigned int () const
-        {
-            return ref.slc(high,low).to_uint();
-        }
-        operator signed long () const
-        {
-            return ref.slc(high,low).to_long();
-        }
-        operator unsigned long () const
-        {
-            return ref.slc(high,low).to_ulong();
-        }
-        operator Slong () const
-        {
-            return ref.slc(high,low).to_int64();
-        }
-        operator Ulong () const
-        {
-            return ref.slc(high,low).to_uint64();
-        }
-#endif
     template <class RRF>
     __attribute__((always_inline)) inline const range_ref_fixed &
     operator=(const RRF &b) const {

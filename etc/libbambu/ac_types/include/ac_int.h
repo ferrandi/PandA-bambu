@@ -180,8 +180,10 @@ const unsigned int all_ones = (unsigned)~0;
 
 #ifndef __BAMBU__
 inline double mgc_floor(double d) { return floor(d); }
+inline float mgc_floor(float d) { return floorf(d); }
 #else
 inline double mgc_floor(double d) { return 0.0; }
+inline float mgc_floor(float d) { return 0.0f; }
 #endif
 
 #ifdef __BAMBU__
@@ -251,6 +253,35 @@ template <int N> __attribute__((always_inline)) inline double ldexpr(double d) {
   return ldexpr32<N / 32>(N < 0 ? d / ((unsigned)1 << (-N & 31))
                                 : d * ((unsigned)1 << (N & 31)));
 }
+
+template <int N>
+__attribute__((always_inline)) inline float ldexpr32(float d) {
+  float d2 = d;
+  if (N < 0)
+    for (int i = 0; i < -N; i++)
+      d2 /= (Ulong)1 << 32;
+  else
+    for (int i = 0; i < N; i++)
+      d2 *= (Ulong)1 << 32;
+  return d2;
+}
+template <> inline float ldexpr32<0>(float d) { return d; }
+template <> inline float ldexpr32<1>(float d) { return d * ((Ulong)1 << 32); }
+template <> inline float ldexpr32<-1>(float d) {
+  return d / ((Ulong)1 << 32);
+}
+template <> inline float ldexpr32<2>(float d) {
+  return (d * ((Ulong)1 << 32)) * ((Ulong)1 << 32);
+}
+template <> inline float ldexpr32<-2>(float d) {
+  return (d / ((Ulong)1 << 32)) / ((Ulong)1 << 32);
+}
+
+template <int N> __attribute__((always_inline)) inline float ldexpr(float d) {
+  return ldexpr32<N / 32>(N < 0 ? d / ((unsigned)1 << (-N & 31))
+                                : d * ((unsigned)1 << (N & 31)));
+}
+
 
 template <int N> class iv_base {
   int v[N] = {};
@@ -1652,6 +1683,34 @@ iv_conv_from_fraction(const double d, iv_base<N> &r, bool *qb, bool *rbits,
   *o |= b ^ (r[N - 1] < 0);
 }
 
+template <int N>
+__attribute__((always_inline)) inline void
+iv_conv_from_fraction(const float d, iv_base<N> &r, bool *qb, bool *rbits,
+                      bool *o) {
+  bool b = d < 0;
+  float d2 = b ? -d : d;
+  float dfloor = mgc_floor(d2);
+  *o = dfloor != 0.0;
+  d2 = d2 - dfloor;
+#if defined(__clang__)
+#pragma clang loop unroll(full)
+#endif
+  for (int i = N - 1; i >= 0; i--) {
+    d2 *= (Ulong)1 << 32;
+    unsigned k = (unsigned int)d2;
+    r.set(i, b ? ~k : k);
+    d2 -= k;
+  }
+  d2 *= 2;
+  bool k = ((int)d2) != 0; // is 0 or 1
+  d2 -= k;
+  *rbits = d2 != 0.0;
+  *qb = (b && *rbits) ^ k;
+  if (b && !*rbits && !*qb)
+    iv_uadd_carry<N>(r, true, r);
+  *o |= b ^ (r[N - 1] < 0);
+}
+
 template <ac_base_mode b, int N> struct to_strImpl {
   static inline int to_str(iv_base<N> &v, int w, bool left_just, char *r) {
     const char digits[] = {'0', '1', '2', '3', '4', '5', '6', '7',
@@ -1993,6 +2052,11 @@ public:
     bool qb = false, rbits = false, o = false;
     iv_conv_from_fraction<N>(d2, v, &qb, &rbits, &o);
   }
+  constexpr iv(float d) {
+    float d2 = ldexpr32<-N>(d);
+    bool qb = false, rbits = false, o = false;
+    iv_conv_from_fraction<N>(d2, v, &qb, &rbits, &o);
+  }
 
   template <size_t NN> constexpr iv(const char (&str)[NN]) {
     *this = iv(hex2doubleConverter::get(str));
@@ -2012,7 +2076,21 @@ public:
     }
     return a;
   }
+  inline float to_float() const {
+    float a = v[N - 1];
+#if defined(__clang__)
+#pragma clang loop unroll(full)
+#endif
+    for (int i = N - 2; i >= 0; i--) {
+      a *= (Ulong)1 << 32;
+      a += (unsigned)v[i];
+    }
+    return a;
+  }
   inline void conv_from_fraction(double d, bool *qb, bool *rbits, bool *o) {
+    iv_conv_from_fraction<N>(d, v, qb, rbits, o);
+  }
+  inline void conv_from_fraction(float d, bool *qb, bool *rbits, bool *o) {
     iv_conv_from_fraction<N>(d, v, qb, rbits, o);
   }
 
@@ -2592,6 +2670,7 @@ public:
   inline ac_int(unsigned long b) : ConvBase(b) { bit_adjust(); }
   inline ac_int(Slong b) : ConvBase(b) { bit_adjust(); }
   inline ac_int(Ulong b) : ConvBase(b) { bit_adjust(); }
+  inline ac_int(float d) : ConvBase(d) { bit_adjust(); }
   inline ac_int(double d) : ConvBase(d) { bit_adjust(); }
   template <size_t N> inline ac_int(const char (&str)[N]) : ConvBase(str) {
     bit_adjust();
@@ -2656,6 +2735,7 @@ public:
   inline Slong to_int64() const { return Base::to_int64(); }
   inline Ulong to_uint64() const { return Base::to_uint64(); }
   inline double to_double() const { return Base::to_double(); }
+  inline float to_float() const { return Base::to_float(); }
 
   inline int length() const { return W; }
 
