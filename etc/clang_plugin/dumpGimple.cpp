@@ -623,6 +623,8 @@ namespace clang
          }
          case llvm::Intrinsic::trap:
             return "__builtin_trap";
+         case llvm::Intrinsic::dbg_value:
+            return "__builtin_debug_value";
          case llvm::Intrinsic::rint:
          {
             if(fd->getReturnType()->isFloatTy())
@@ -808,13 +810,11 @@ namespace clang
       {
          res.filename = di->getFilename();
          res.file = res.filename.c_str();
-         res.file = res.filename.c_str();
          res.line = di->getLine();
       }
       else if(auto * di = dyn_cast<llvm::DILocation>(llvm_obj))
       {
          res.filename = di->getFilename();
-         res.file = res.filename.c_str();
          res.file = res.filename.c_str();
          res.line = di->getLine();
          res.column = di->getColumn();
@@ -823,14 +823,12 @@ namespace clang
       {
          res.filename = di->getFilename();
          res.file = res.filename.c_str();
-         res.file = res.filename.c_str();
          res.line = di->getLine();
          res.column = di->getColumn();
       }
       else if(auto * di = dyn_cast<llvm::DIMacroFile>(llvm_obj))
       {
          res.filename = di->getFile()->getFilename();
-         res.file = res.filename.c_str();
          res.file = res.filename.c_str();
          res.line = di->getLine();
       }
@@ -859,6 +857,28 @@ namespace clang
       {
          res.filename = di->getFilename();
          res.file = res.filename.c_str();
+      }
+      else if(auto * di = dyn_cast<llvm::DICompositeType>(llvm_obj))
+      {
+         if(di->getFilename().empty())
+            res = expand_location(di->getBaseType());
+         else
+         {
+            res.filename = di->getFilename();
+            res.file = res.filename.c_str();
+            res.line = di->getLine();
+         }
+      }
+      else if(auto * di = dyn_cast<llvm::DIDerivedType>(llvm_obj))
+      {
+         if(di->getFilename().empty())
+            res = expand_location(di->getBaseType());
+         else
+         {
+            res.filename = di->getFilename();
+            res.file = res.filename.c_str();
+            res.line = di->getLine();
+         }
       }
       else if(auto * di = dyn_cast<llvm::DIType>(llvm_obj))
       {
@@ -898,13 +918,22 @@ namespace clang
             TREE_CODE(g) == GT(GIMPLE_PHI_VIRTUAL) ||
             TREE_CODE(g) == GT(GIMPLE_LABEL)) return false;
       const llvm::Instruction* inst = reinterpret_cast<const llvm::Instruction*>(g);
-      return inst->hasMetadata() && inst->getMetadata(llvm::LLVMContext::MD_dbg) != nullptr;
+
+      if(inst->hasMetadata() && inst->getMetadata(llvm::LLVMContext::MD_dbg) != nullptr)
+         return true;
+      else
+         return MetaDataMap.find(inst) != MetaDataMap.end();
    }
 
    const void *DumpGimpleRaw::gimple_location(const void * g) const
    {
       const llvm::Instruction* inst = reinterpret_cast<const llvm::Instruction*>(g);
-      return inst->getMetadata(llvm::LLVMContext::MD_dbg);
+      if(MetaDataMap.find(inst) != MetaDataMap.end())
+         return MetaDataMap.find(inst)->second;
+      else if(inst->hasMetadata() && inst->getMetadata(llvm::LLVMContext::MD_dbg) != nullptr)
+         return inst->getMetadata(llvm::LLVMContext::MD_dbg);
+      else
+         return nullptr;
    }
 
    const DumpGimpleRaw::pt_info * DumpGimpleRaw::SSA_NAME_PTR_INFO (const void* t) const
@@ -3843,7 +3872,11 @@ namespace clang
          expanded_location xloc = expand_location(gimple_location (g));
          serialize_maybe_newline ();
          snprintf(buffer, LOCAL_BUFFER_LEN, "srcp: \"%s\":%-d:%-6d ", xloc.file, xloc.line, xloc.column);
-         column += 12 + strlen(xloc.file) + 8;
+         if(xloc.file && xloc.file[0])
+         {
+            stream << buffer;
+            column += 12 + strlen(xloc.file) + 8;
+         }
       }
       serialize_int ("time_weight", code == GT(GIMPLE_NOP) ? 0 : 1);
       serialize_int ("size_weight", code == GT(GIMPLE_NOP) ? 0 : 1);
@@ -4941,6 +4974,16 @@ namespace clang
             return false;
       }
    }
+   static bool noLoweringIntrinsic(llvm::Intrinsic::ID id)
+   {
+      switch (id)
+      {
+         case llvm::Intrinsic::dbg_value:
+            return true;
+         default:
+            return false;
+      }
+   }
 
    static void expandMemSetAsLoopLocal(llvm::MemSetInst *Memset, const llvm::DataLayout* DL)
    {
@@ -5029,6 +5072,44 @@ namespace clang
                                NewBB);
    }
 
+
+   void DumpGimpleRaw::buildMetaDataMap(llvm::Module &M)
+   {
+      for(auto& fun : M.getFunctionList())
+      {
+         if(!fun.isIntrinsic() && !fun.isDeclaration())
+         {
+            for(const auto& BB: fun.getBasicBlockList())
+            {
+               for(const auto&inst: BB)
+               {
+                  if (const llvm::DbgValueInst* dbgInstrCall = dyn_cast<llvm::DbgValueInst>(&inst))
+                  {
+                     auto val = dbgInstrCall->getValue();
+                     if(val && !isa<llvm::Constant>(val) && MetaDataMap.find(val) == MetaDataMap.end())
+                     {
+                        MetaDataMap[val]=dbgInstrCall->getRawVariable();
+//                        auto DIExpr = dbgInstrCall->getExpression();
+//                        if(DIExpr)
+                        {
+                           llvm::errs() << "Inst: ";
+                           inst.print(llvm::errs());
+                           llvm::errs() << "\n";
+                           llvm::errs() << "Value: ";
+                           val->print(llvm::errs());
+                           llvm::errs() << "\n";
+                           llvm::errs() << "Metadata: ";
+                           dbgInstrCall->getRawVariable()->print(llvm::errs());
+                           llvm::errs() <<"\n";
+                        }
+                     }
+                  }
+               }
+            }
+         }
+      }
+   }
+
    /// Intrinsic lowering
    bool DumpGimpleRaw::lowerMemIntrinsics(llvm::Module &M)
    {
@@ -5045,21 +5126,21 @@ namespace clang
          {
             for(llvm::BasicBlock::iterator II = BI->begin(), IE = BI->end(); II != IE; ++II)
             {
-               if (llvm::MemIntrinsic* IntrCall = dyn_cast<llvm::MemIntrinsic>(II))
+               if (llvm::MemIntrinsic* InstrCall = dyn_cast<llvm::MemIntrinsic>(II))
                {
 #if PRINT_DBG_MSG
                   llvm::errs() << "Found a memIntrinsic Call\n";
 #endif
-                  MemCalls.push_back(IntrCall);
+                  MemCalls.push_back(InstrCall);
 #if PRINT_DBG_MSG
-                  if (llvm::MemCpyInst *Memcpy = dyn_cast<llvm::MemCpyInst>(IntrCall))
+                  if (llvm::MemCpyInst *Memcpy = dyn_cast<llvm::MemCpyInst>(InstrCall))
                   {
                      if (llvm::ConstantInt *CI = dyn_cast<llvm::ConstantInt>(Memcpy->getLength()))
                         llvm::errs() << "Found a memcpy with a constant number of iterations\n";
                      else
                         llvm::errs() << "Found a memcpy with an unknown number of iterations\n";
                   }
-                  else if (llvm::MemSetInst *Memset = dyn_cast<llvm::MemSetInst>(IntrCall))
+                  else if (llvm::MemSetInst *Memset = dyn_cast<llvm::MemSetInst>(InstrCall))
                   {
                      llvm::errs() << "Found a memset intrinsic\n";
                   }
@@ -5099,6 +5180,7 @@ namespace clang
       return res;
    }
 
+
    /// Intrinsic lowering
    bool DumpGimpleRaw::lowerIntrinsics(llvm::Module &M)
    {
@@ -5124,7 +5206,13 @@ namespace clang
                      bool atBegin(BB.getInstList().begin() == me);
                      if (!atBegin)
                         --me;
-                     IL->LowerIntrinsicCall(&ci);
+                     if(noLoweringIntrinsic(Callee->getIntrinsicID()))
+                     {
+                        assert(ci.use_empty() && "Lowering should have eliminated any uses of the intrinsic call!");
+                        ci.eraseFromParent();
+                     }
+                     else
+                        IL->LowerIntrinsicCall(&ci);
                      if (atBegin)
                         curInstIterator = BB.getInstList().begin();
                      else
@@ -5554,6 +5642,7 @@ namespace clang
       DL = &M.getDataLayout();
       modulePass=_modulePass;
       moduleContext = &M.getContext();
+      buildMetaDataMap(M);
       auto res = lowerMemIntrinsics(M);
       res = res | lowerIntrinsics(M);
       compute_eSSA(M);

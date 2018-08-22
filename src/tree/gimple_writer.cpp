@@ -1357,13 +1357,24 @@ void GimpleWriter::operator()(const nontype_argument_pack* obj, unsigned int & m
    obj->expr_node::visit(this);
 }
 
+void GimpleWriter::operator()(const type_pack_expansion* obj, unsigned int & mask)
+{
+   mask = NO_VISIT;
+   os << "type_pack_expansion ";
+   if(obj->op) obj->op->visit(this);
+   if(obj->param_packs) obj->param_packs->visit(this);
+   if(obj->arg) obj->arg->visit(this);
+   mask = NO_VISIT;
+   obj->type_node::visit(this);
+}
+
 void GimpleWriter::operator()(const expr_pack_expansion* obj, unsigned int & mask)
 {
    mask = NO_VISIT;
    os << "expr_pack_expansion ";
-   obj->op->visit(this);
-   obj->param_packs->visit(this);
-   obj->arg->visit(this);
+   if(obj->op) obj->op->visit(this);
+   if(obj->param_packs) obj->param_packs->visit(this);
+   if(obj->arg) obj->arg->visit(this);
    mask = NO_VISIT;
    obj->expr_node::visit(this);
 }

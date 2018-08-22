@@ -5218,6 +5218,11 @@ std::string tree_helper::print_type(const tree_managerConstRef TM, unsigned int 
                      THROW_ERROR(std::string("Real type not yet supported ") + boost::lexical_cast<std::string>(original_type));
                   break;
                }
+               case type_pack_expansion_K:
+               {
+                  res += "<type_pack_expansion>";
+                  break;
+               }
                case array_type_K:
                case binfo_K:
                case block_K:
@@ -5226,7 +5231,6 @@ std::string tree_helper::print_type(const tree_managerConstRef TM, unsigned int 
                case case_label_expr_K:
                case CharType_K:
                case nullptr_type_K:
-               case type_pack_expansion_K:
                case complex_type_K:
                case constructor_K:
                case function_type_K:

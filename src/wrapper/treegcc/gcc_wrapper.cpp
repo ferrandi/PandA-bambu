@@ -772,6 +772,12 @@ void GccWrapper::SetBambuDefault()
 #if HAVE_I386_GCC46_COMPILER || HAVE_I386_GCC47_COMPILER || HAVE_I386_GCC48_COMPILER || HAVE_I386_GCC49_COMPILER || HAVE_I386_GCC5_COMPILER || HAVE_I386_GCC6_COMPILER || HAVE_I386_GCC7_COMPILER || HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER
    GccWrapper_CompilerTarget compiler = Param->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler);
 #endif
+   bool flag_cpp;
+   if(Param->isOption(OPT_input_format) &&
+         Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_CPP)
+      flag_cpp = true;
+   else
+      flag_cpp = false;
 #if HAVE_I386_CLANG4_COMPILER
    if(compiler == GccWrapper_CompilerTarget::CT_I386_CLANG4)
    {
@@ -780,7 +786,8 @@ void GccWrapper::SetBambuDefault()
       optimization_flags["builtin-memset"] = false;
       optimization_flags["builtin-memcpy"] = false;
       optimization_flags["builtin-memmove"] = false;
-      optimization_flags["unroll-loops"] = false; // it is preferable to have unrolling disabled by default as with GCC
+      if(!flag_cpp)
+         optimization_flags["unroll-loops"] = false; // it is preferable to have unrolling disabled by default as with GCC
       return;
    }
 #endif
@@ -792,7 +799,8 @@ void GccWrapper::SetBambuDefault()
       optimization_flags["builtin-memset"] = false;
       optimization_flags["builtin-memcpy"] = false;
       optimization_flags["builtin-memmove"] = false;
-      optimization_flags["unroll-loops"] = false; // it is preferable to have unrolling disabled by default as with GCC
+      if(!flag_cpp)
+         optimization_flags["unroll-loops"] = false; // it is preferable to have unrolling disabled by default as with GCC
       return;
    }
 #endif
@@ -804,7 +812,8 @@ void GccWrapper::SetBambuDefault()
       optimization_flags["builtin-memset"] = false;
       optimization_flags["builtin-memcpy"] = false;
       optimization_flags["builtin-memmove"] = false;
-      optimization_flags["unroll-loops"] = false; // it is preferable to have unrolling disabled by default as with GCC
+      if(!flag_cpp)
+         optimization_flags["unroll-loops"] = false; // it is preferable to have unrolling disabled by default as with GCC
       return;
    }
 #endif
@@ -1195,8 +1204,7 @@ void GccWrapper::SetGccDefault()
 #endif
    bool flag_cpp;
    if(Param->isOption(OPT_input_format) &&
-         Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_CPP &&
-         !Param->isOption(OPT_pretty_print))
+         Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_CPP)
       flag_cpp = true;
    else
       flag_cpp = false;

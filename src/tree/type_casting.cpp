@@ -453,6 +453,11 @@ void type_casting::operator()(const nontype_argument_pack* obj, unsigned int & m
    if(visited.find(obj->index) != visited.end()) mask = NO_VISIT;
 }
 
+void type_casting::operator()(const type_pack_expansion* obj, unsigned int & mask)
+{
+   if(visited.find(obj->index) != visited.end()) mask = NO_VISIT;
+}
+
 void type_casting::operator()(const expr_pack_expansion* obj, unsigned int & mask)
 {
    if(visited.find(obj->index) != visited.end()) mask = NO_VISIT;

@@ -667,6 +667,14 @@ void tree_node_reached::operator()(const nontype_argument_pack* obj, unsigned in
    CHECK_AND_ADD(obj->arg,nontype_argument_pack::arg);
 }
 
+void tree_node_reached::operator()(const type_pack_expansion* obj, unsigned int & mask)
+{
+   tree_node_mask::operator()(obj,mask);
+   CHECK_AND_ADD(obj->op,type_pack_expansion::op);
+   CHECK_AND_ADD(obj->param_packs,type_pack_expansion::param_packs);
+   CHECK_AND_ADD(obj->arg,type_pack_expansion::arg);
+}
+
 void tree_node_reached::operator()(const expr_pack_expansion* obj, unsigned int & mask)
 {
    tree_node_mask::operator()(obj,mask);
@@ -674,6 +682,7 @@ void tree_node_reached::operator()(const expr_pack_expansion* obj, unsigned int 
    CHECK_AND_ADD(obj->param_packs,expr_pack_expansion::param_packs);
    CHECK_AND_ADD(obj->arg,expr_pack_expansion::arg);
 }
+
 
 void tree_node_reached::operator()(const vector_type* obj, unsigned int & mask)
 {
@@ -2213,6 +2222,16 @@ void tree_node_index_factory::operator()(const nontype_argument_pack* obj, unsig
    THROW_ASSERT(obj==curr_tree_node_ptr, "wrong factory setup");
    tree_node_mask::operator()(obj,mask);
    SET_NODE_ID(arg,nontype_argument_pack);
+
+}
+
+void tree_node_index_factory::operator()(const type_pack_expansion* obj, unsigned int & mask)
+{
+   THROW_ASSERT(obj==curr_tree_node_ptr, "wrong factory setup");
+   tree_node_mask::operator()(obj,mask);
+   SET_NODE_ID(op,type_pack_expansion);
+   SET_NODE_ID(param_packs,type_pack_expansion);
+   SET_NODE_ID(arg,type_pack_expansion);
 }
 
 void tree_node_index_factory::operator()(const expr_pack_expansion* obj, unsigned int & mask)

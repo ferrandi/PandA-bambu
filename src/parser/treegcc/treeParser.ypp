@@ -1119,7 +1119,7 @@ bool pred;
    werror_mark : TOK_BISON_ERROR_MARK{CTN(error_mark)};
 
    //type_pack_expansion: TOK_BISON_TYPE_PACK_EXPANSION^ type_node;
-   wtype_pack_expansion : TOK_BISON_TYPE_PACK_EXPANSION{CTN(type_pack_expansion)} wtype_node;
+   wtype_pack_expansion : TOK_BISON_TYPE_PACK_EXPANSION{CTN(type_pack_expansion)} wtype_node op_opt{OPT($4, NS(type_pack_expansion, op))} param_packs_opt{OPT($6, NS(type_pack_expansion, param_packs))} arg_opt{OPT($8, NS(type_pack_expansion, arg))};
 
    //lang_type:	TOK_BISON_LANG_TYPE^ type_node;
    wlang_type : TOK_BISON_LANG_TYPE{CTN(lang_type)}  wtype_node;

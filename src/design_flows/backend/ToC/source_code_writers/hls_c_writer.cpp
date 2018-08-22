@@ -251,7 +251,7 @@ void HLSCWriter::WriteParamDecl
 {
    std::string type;
    std::string param;
-   bool flag_cpp = TM->is_CPP() && !Param->isOption(OPT_pretty_print);
+   bool flag_cpp = TM->is_CPP() && !Param->isOption(OPT_pretty_print) && (!Param->isOption(OPT_discrepancy) || !Param->getOption<bool>(OPT_discrepancy));
 
    indented_output_stream->Append("// parameters declaration\n");
    for (const auto & p : behavioral_helper->get_parameters())
@@ -305,7 +305,7 @@ void HLSCWriter::WriteParamInitialization
    const unsigned int v_idx
 )
 {
-   bool flag_cpp = TM->is_CPP() && !Param->isOption(OPT_pretty_print);
+   bool flag_cpp = TM->is_CPP() && !Param->isOption(OPT_pretty_print) && (!Param->isOption(OPT_discrepancy) || !Param->getOption<bool>(OPT_discrepancy));
 
    for (const auto & p : behavioral_helper->get_parameters())
    {
@@ -475,7 +475,7 @@ void HLSCWriter::WriteTestbenchFunctionCall
    const unsigned int function_index = behavioral_helper->get_function_index();
    const unsigned int return_type_index = behavioral_helper->
       GetFunctionReturnType(function_index);
-   bool flag_cpp = TM->is_CPP() && !Param->isOption(OPT_pretty_print);
+   bool flag_cpp = TM->is_CPP() && !Param->isOption(OPT_pretty_print) && (!Param->isOption(OPT_discrepancy) || !Param->getOption<bool>(OPT_discrepancy));
 
    std::string function_name;
 
@@ -576,7 +576,7 @@ void HLSCWriter::WriteExpectedResults
    const std::map<std::string, std::string> & curr_test_vector
 )
 {
-   bool flag_cpp = TM->is_CPP() && !Param->isOption(OPT_pretty_print);
+   bool flag_cpp = TM->is_CPP() && !Param->isOption(OPT_pretty_print) && (!Param->isOption(OPT_discrepancy) || !Param->getOption<bool>(OPT_discrepancy));
 
    const unsigned int return_type_index = behavioral_helper->
       GetFunctionReturnType(behavioral_helper->get_function_index());

@@ -133,7 +133,7 @@ BOOST_PP_SEQ_FOR_EACH(VISIT_TREE_NODE_MACRO, cst_node, (void_cst))
 BOOST_PP_SEQ_FOR_EACH(VISIT_TREE_NODE_MACRO, tree_node, (ctor_initializer)(trait_expr))
 BOOST_PP_SEQ_FOR_EACH(VISIT_TREE_NODE_MACRO, decl_node, (label_decl)(using_decl)(translation_unit_decl))
 BOOST_PP_SEQ_FOR_EACH(VISIT_TREE_NODE_MACRO, expr_node, (modop_expr)(new_expr)(placeholder_expr)(template_id_expr)(vec_new_expr))
-BOOST_PP_SEQ_FOR_EACH(VISIT_TREE_NODE_MACRO, type_node, (boolean_type)(CharType)(nullptr_type)(type_pack_expansion)(lang_type)(offset_type)(qual_union_type)(set_type)(template_type_parm)(typename_type)(void_type))
+BOOST_PP_SEQ_FOR_EACH(VISIT_TREE_NODE_MACRO, type_node, (boolean_type)(CharType)(nullptr_type)(lang_type)(offset_type)(qual_union_type)(set_type)(template_type_parm)(typename_type)(void_type))
 #undef VISIT_TREE_NODE_MACRO
 
 void tree_node::visit(tree_node_visitor * const v) const
@@ -1465,6 +1465,16 @@ void nontype_argument_pack::visit(tree_node_visitor * const v) const
    unsigned int mask=ALL_VISIT;
    (*v)(this, mask);
    VISIT_SC(mask,expr_node,visit(v));
+   VISIT_MEMBER(mask,arg,visit(v));
+}
+
+void type_pack_expansion::visit(tree_node_visitor * const v) const
+{
+   unsigned int mask=ALL_VISIT;
+   (*v)(this, mask);
+   VISIT_SC(mask,type_node,visit(v));
+   VISIT_MEMBER(mask,op,visit(v));
+   VISIT_MEMBER(mask,param_packs,visit(v));
    VISIT_MEMBER(mask,arg,visit(v));
 }
 

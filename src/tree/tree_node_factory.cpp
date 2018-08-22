@@ -1425,6 +1425,15 @@ void tree_node_factory::operator()(const nontype_argument_pack* obj, unsigned in
    SET_NODE_ID_OPT(TOK_ARG,arg,nontype_argument_pack);
 }
 
+void tree_node_factory::operator()(const type_pack_expansion* obj, unsigned int & mask)
+{
+   THROW_ASSERT(obj==curr_tree_node_ptr, "wrong factory setup");
+   tree_node_mask::operator()(obj,mask);
+   SET_NODE_ID_OPT(TOK_OP,op,type_pack_expansion);
+   SET_NODE_ID_OPT(TOK_PARAM_PACKS,param_packs,type_pack_expansion);
+   SET_NODE_ID_OPT(TOK_ARG,arg,type_pack_expansion);
+}
+
 void tree_node_factory::operator()(const expr_pack_expansion* obj, unsigned int & mask)
 {
    THROW_ASSERT(obj==curr_tree_node_ptr, "wrong factory setup");

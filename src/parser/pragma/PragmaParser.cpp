@@ -34,7 +34,7 @@
  * @file PragmaParser.cpp
  * @brief Parsing pragma from C sources.
  *
- * A object for retrieving informations about pragma directives in a C/C++ program.
+ * A object for retrieving information about pragma directives in a C/C++ program.
  *
  * @author Matteo Fioroni <matteofioroni@yahoo.it>
  * @author Christian Pilato <pilato@elet.polimi.it>
