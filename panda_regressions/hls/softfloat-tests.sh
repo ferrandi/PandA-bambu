@@ -43,6 +43,7 @@ $(dirname $0)/../../etc/scripts/test_panda.py --tool=bambu \
              --args="--configuration-name=softfloat-tests-GCC5  --soft-float --compiler=I386_GCC5 --max-ulp=0 --experimental-setup=BAMBU-PERFORMANCE-MP"\
              --args="--configuration-name=softfloat-tests-GCC6  --soft-float --compiler=I386_GCC6 --max-ulp=0 --experimental-setup=BAMBU-PERFORMANCE-MP"\
              --args="--configuration-name=softfloat-tests-GCC7  --soft-float --compiler=I386_GCC7 --max-ulp=0 --experimental-setup=BAMBU-PERFORMANCE-MP"\
+             --args="--configuration-name=softfloat-tests-GCC8  --soft-float --compiler=I386_GCC8 --max-ulp=0 --experimental-setup=BAMBU-PERFORMANCE-MP"\
              --args="--configuration-name=softfloat-tests-CLANG4  --soft-float --compiler=I386_CLANG4 --max-ulp=0 --experimental-setup=BAMBU-PERFORMANCE-MP"\
              --args="--configuration-name=softfloat-tests-CLANG5  --soft-float --compiler=I386_CLANG5 --max-ulp=0 --experimental-setup=BAMBU-PERFORMANCE-MP"\
              --args="--configuration-name=softfloat-tests-CLANG6  --soft-float --compiler=I386_CLANG6 --max-ulp=0 --experimental-setup=BAMBU-PERFORMANCE-MP"\

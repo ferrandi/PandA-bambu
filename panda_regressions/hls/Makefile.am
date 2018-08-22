@@ -1072,6 +1072,7 @@ gcc_regression_simple/zero-struct-1.c\
 ./gcc5_regression_simple_default.sh \
 ./gcc6_regression_simple_default.sh \
 ./gcc7_regression_simple_default.sh \
+./gcc8_regression_simple_default.sh \
 ./gcc45_regression_simple_ext_pipelined.sh \
 ./gcc46_regression_simple_ext_pipelined.sh \
 ./gcc47_regression_simple_ext_pipelined.sh \
@@ -1080,6 +1081,7 @@ gcc_regression_simple/zero-struct-1.c\
 ./gcc5_regression_simple_ext_pipelined.sh \
 ./gcc6_regression_simple_ext_pipelined.sh \
 ./gcc7_regression_simple_ext_pipelined.sh \
+./gcc8_regression_simple_ext_pipelined.sh \
 ./gcc45_regression_simple_no_expose_globals.sh \
 ./gcc46_regression_simple_no_expose_globals.sh \
 ./gcc47_regression_simple_no_expose_globals.sh \
@@ -1089,6 +1091,7 @@ gcc_regression_simple/zero-struct-1.c\
 ./gcc6_regression_simple_no_expose_globals.sh \
 ./gcc6_regression_simple_no_expose_globals.sh \
 ./gcc7_regression_simple_no_expose_globals.sh \
+./gcc8_regression_simple_no_expose_globals.sh \
 ./gcc_regression_boards.sh \
 ./gcc_regression_versions.sh \
 ./panda_regression_hls_all_gcc.sh \

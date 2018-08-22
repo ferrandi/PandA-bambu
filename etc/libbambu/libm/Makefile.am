@@ -185,6 +185,25 @@ libm_gcc7_subnormals_std_a_CFLAGS = $(compiler_flags) -ftree-partial-pre --compi
 libm_gcc7_subnormals_std_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_GCC7 $(common_treegccflags) -C
 endif
 
+if BUILD_I386_GCC8
+pkglib_LIBRARIES += libm_gcc8.a libm_gcc8_std.a
+libm_gcc8_a_SOURCES = $(common_libm_src) $(common_libm_src_fr)
+libm_gcc8_a_CFLAGS = $(compiler_flags_nosub) -ftree-partial-pre --compiler=I386_GCC8 
+libm_gcc8_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_GCC8 $(common_treegccflags) -C
+libm_gcc8_std_a_SOURCES = $(common_libm_src) $(common_libm_src_std)
+libm_gcc8_std_a_CFLAGS = $(compiler_flags_nosub) -ftree-partial-pre --compiler=I386_GCC8 
+libm_gcc8_std_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_GCC8 $(common_treegccflags) -C
+
+pkglib_LIBRARIES += libm_gcc8_subnormals.a libm_gcc8_subnormals_std.a
+libm_gcc8_subnormals_a_SOURCES = $(common_libm_src) $(common_libm_src_fr)
+libm_gcc8_subnormals_a_CFLAGS = $(compiler_flags) -ftree-partial-pre --compiler=I386_GCC8 
+libm_gcc8_subnormals_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_GCC8 $(common_treegccflags) -C
+libm_gcc8_subnormals_std_a_SOURCES = $(common_libm_src) $(common_libm_src_std)
+libm_gcc8_subnormals_std_a_CFLAGS = $(compiler_flags) -ftree-partial-pre --compiler=I386_GCC8 
+libm_gcc8_subnormals_std_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_GCC8 $(common_treegccflags) -C
+endif
+
+
 if BUILD_I386_CLANG4
 pkglib_LIBRARIES += libm_clang4.a libm_clang4_std.a
 libm_clang4_a_SOURCES = $(common_libm_src) $(common_libm_src_fr)

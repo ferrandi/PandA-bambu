@@ -51,6 +51,7 @@
 #include "config_HAVE_I386_GCC5_COMPILER.hpp"
 #include "config_HAVE_I386_GCC6_COMPILER.hpp"
 #include "config_HAVE_I386_GCC7_COMPILER.hpp"
+#include "config_HAVE_I386_GCC8_COMPILER.hpp"
 #include "config_HAVE_I386_CLANG4_COMPILER.hpp"
 #include "config_HAVE_I386_CLANG5_COMPILER.hpp"
 #include "config_HAVE_I386_CLANG6_COMPILER.hpp"
@@ -441,6 +442,8 @@ void tree_panda_gcc_parameter::SetDefaults()
    setOption(OPT_default_compiler, static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC6));
 #elif HAVE_I386_GCC7_COMPILER
    setOption(OPT_default_compiler, static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC7));
+#elif HAVE_I386_GCC8_COMPILER
+   setOption(OPT_default_compiler, static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC8));
 #elif HAVE_I386_CLANG4_COMPILER
    setOption(OPT_default_compiler, static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG4));
 #elif HAVE_I386_CLANG5_COMPILER
@@ -474,6 +477,9 @@ void tree_panda_gcc_parameter::SetDefaults()
 #endif
 #if HAVE_I386_GCC7_COMPILER
       | static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC7)
+#endif
+#if HAVE_I386_GCC8_COMPILER
+      | static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC8)
 #endif
 #if HAVE_I386_CLANG4_COMPILER
       | static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG4)

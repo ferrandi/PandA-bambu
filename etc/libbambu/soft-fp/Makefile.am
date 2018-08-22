@@ -204,6 +204,28 @@ libhls_cdiv_gcc7_a_CFLAGS = -finline-limit=10000 --compiler=I386_GCC7  $(common_
 libhls_cdiv_gcc7_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_GCC7 $(common_treegccflags) -C
 endif
 
+if BUILD_I386_GCC8
+pkglib_LIBRARIES += libsoft-fp_gcc8.a libhls-divNR_gcc8.a libhls-divnr1_gcc8.a libhls-divnr2_gcc8.a libhls-divas_gcc8.a  libhls-cdiv_gcc8.a
+libsoft_fp_gcc8_a_SOURCES = $(common_libsoft_fp_src)
+libsoft_fp_gcc8_a_CFLAGS = --compiler=I386_GCC8  $(common_cflags)  -I$(BOOST_DIR)
+libsoft_fp_gcc8_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_GCC8 $(common_treegccflags) -C
+libhls_divNR_gcc8_a_SOURCES = $(common_libhls_div_src)
+libhls_divNR_gcc8_a_CFLAGS = -finline-limit=10000 --compiler=I386_GCC8  $(common_cflags_nr)  -I$(BOOST_DIR)
+libhls_divNR_gcc8_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_GCC8 $(common_treegccflags) -C
+libhls_divnr1_gcc8_a_SOURCES = $(common_libhls_divnr_src)
+libhls_divnr1_gcc8_a_CFLAGS = -finline-limit=10000 --compiler=I386_GCC8  $(common_cflags)  -I$(BOOST_DIR) -DUNROLL_FACTOR=1
+libhls_divnr1_gcc8_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_GCC8 $(common_treegccflags) -C
+libhls_divnr2_gcc8_a_SOURCES = $(common_libhls_divnr_src)
+libhls_divnr2_gcc8_a_CFLAGS = -finline-limit=10000 --compiler=I386_GCC8  $(common_cflags)  -I$(BOOST_DIR) -DUNROLL_FACTOR=2
+libhls_divnr2_gcc8_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_GCC8 $(common_treegccflags) -C
+libhls_divas_gcc8_a_SOURCES = $(common_libhls_divas_src)
+libhls_divas_gcc8_a_CFLAGS = -finline-limit=10000 --compiler=I386_GCC8  $(common_cflags)  -I$(BOOST_DIR)
+libhls_divas_gcc8_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_GCC8 $(common_treegccflags) -C
+libhls_cdiv_gcc8_a_SOURCES = $(common_libhls_cdiv_src)
+libhls_cdiv_gcc8_a_CFLAGS = -finline-limit=10000 --compiler=I386_GCC8  $(common_cflags)  -I$(BOOST_DIR)
+libhls_cdiv_gcc8_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_GCC8 $(common_treegccflags) -C
+endif
+
 if BUILD_I386_CLANG4
 pkglib_LIBRARIES += libsoft-fp_clang4.a libhls-divNR_clang4.a libhls-divnr1_clang4.a libhls-divnr2_clang4.a libhls-divas_clang4.a  libhls-cdiv_clang4.a
 libsoft_fp_clang4_a_SOURCES = $(common_libsoft_fp_src)

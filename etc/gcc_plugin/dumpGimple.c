@@ -199,6 +199,9 @@ dg_descriptor_tree_marked_p(const void *p)
 #pragma GCC diagnostic ignored "-Wunused-function"
 #pragma GCC diagnostic ignored "-Wundef"
 #endif
+#if (__GNUC__ == 8)
+#include "gtype_roots_gcc8.h"
+#endif
 #if (__GNUC__ == 7)
 #include "gtype_roots_gcc7.h"
 #endif
@@ -390,7 +393,9 @@ void
 DumpGimpleInit(char *_outdir_name)
 {
     /* Register our GC root-walking callback: */
-#if (__GNUC__ == 7)
+#if (__GNUC__ == 8)
+    ggc_register_root_tab(gt_ggc_r_gtype_roots_gcc8_h);
+#elif (__GNUC__ == 7)
     ggc_register_root_tab(gt_ggc_r_gtype_roots_gcc7_h);
 #elif (__GNUC__ == 6)
     ggc_register_root_tab(gt_ggc_r_gtype_roots_gcc6_h);
@@ -1413,150 +1418,306 @@ serialize_string_cst (const char *field, const char *str, int length, unsigned i
 static void
 serialize_op (tree t)
 {
+#if (__GNUC__ > 7)
+   switch (DECL_OVERLOADED_OPERATOR_CODE_RAW (t))
+#else
    switch (DECL_OVERLOADED_OPERATOR_P (t))
+#endif
    {
+#if (__GNUC__ > 7)
+      case OVL_OP_NEW_EXPR:
+#else
       case NEW_EXPR:
+#endif
          serialize_string ("new");
          break;
+#if (__GNUC__ > 7)
+      case OVL_OP_VEC_NEW_EXPR:
+#else
       case VEC_NEW_EXPR:
+#endif
          serialize_string ("vecnew");
          break;
+#if (__GNUC__ > 7)
+      case OVL_OP_DELETE_EXPR:
+#else
       case DELETE_EXPR:
+#endif
          serialize_string ("delete");
          break;
+#if (__GNUC__ > 7)
+      case OVL_OP_VEC_DELETE_EXPR:
+#else
       case VEC_DELETE_EXPR:
+#endif
          serialize_string ("vecdelete");
          break;
+#if (__GNUC__ > 7)
+      case OVL_OP_UNARY_PLUS_EXPR:
+#else
       case UNARY_PLUS_EXPR:
+#endif
          serialize_string ("pos");
          break;
+#if (__GNUC__ > 7)
+      case OVL_OP_NEGATE_EXPR:
+#else
       case NEGATE_EXPR:
+#endif
          serialize_string ("neg");
          break;
+#if (__GNUC__ > 7)
+      case OVL_OP_ADDR_EXPR:
+#else
       case ADDR_EXPR:
+#endif
          serialize_string ("addr");
          break;
+#if (__GNUC__ > 7)
+      case OVL_OP_INDIRECT_REF:
+#else
       case INDIRECT_REF:
+#endif
          serialize_string("deref");
          break;
+#if (__GNUC__ > 7)
+      case OVL_OP_BIT_NOT_EXPR:
+#else
       case BIT_NOT_EXPR:
+#endif
          serialize_string("not");
          break;
+#if (__GNUC__ > 7)
+      case OVL_OP_TRUTH_NOT_EXPR:
+#else
       case TRUTH_NOT_EXPR:
+#endif
          serialize_string("lnot");
          break;
+#if (__GNUC__ > 7)
+      case OVL_OP_PREINCREMENT_EXPR:
+#else
       case PREINCREMENT_EXPR:
+#endif
          serialize_string("preinc");
          break;
+#if (__GNUC__ > 7)
+      case OVL_OP_PREDECREMENT_EXPR:
+#else
       case PREDECREMENT_EXPR:
+#endif
          serialize_string("predec");
          break;
+#if (__GNUC__ > 7)
+      case OVL_OP_PLUS_EXPR:
+#else
       case PLUS_EXPR:
+#endif
          if (DECL_ASSIGNMENT_OPERATOR_P (t))
             serialize_string ("plusassign");
          else
             serialize_string("plus");
          break;
+#if (__GNUC__ > 7)
+      case OVL_OP_MINUS_EXPR:
+#else
       case MINUS_EXPR:
+#endif
          if (DECL_ASSIGNMENT_OPERATOR_P (t))
             serialize_string ("minusassign");
          else
             serialize_string("minus");
          break;
+#if (__GNUC__ > 7)
+      case OVL_OP_MULT_EXPR:
+#else
       case MULT_EXPR:
+#endif
          if (DECL_ASSIGNMENT_OPERATOR_P (t))
             serialize_string ("multassign");
          else
             serialize_string ("mult");
          break;
+#if (__GNUC__ > 7)
+      case OVL_OP_TRUNC_DIV_EXPR:
+#else
       case TRUNC_DIV_EXPR:
+#endif
          if (DECL_ASSIGNMENT_OPERATOR_P (t))
             serialize_string ("divassign");
          else
             serialize_string ("div");
          break;
+#if (__GNUC__ > 7)
+      case OVL_OP_TRUNC_MOD_EXPR:
+#else
       case TRUNC_MOD_EXPR:
+#endif
          if (DECL_ASSIGNMENT_OPERATOR_P (t))
             serialize_string ("modassign");
          else
             serialize_string ("mod");
          break;
+#if (__GNUC__ > 7)
+      case OVL_OP_BIT_AND_EXPR:
+#else
       case BIT_AND_EXPR:
+#endif
          if (DECL_ASSIGNMENT_OPERATOR_P (t))
             serialize_string ("andassign");
          else
             serialize_string ("and");
          break;
+#if (__GNUC__ > 7)
+      case OVL_OP_BIT_IOR_EXPR:
+#else
       case BIT_IOR_EXPR:
+#endif
          if (DECL_ASSIGNMENT_OPERATOR_P (t))
             serialize_string ("orassign");
          else
             serialize_string ("or");
          break;
+#if (__GNUC__ > 7)
+      case OVL_OP_BIT_XOR_EXPR:
+#else
       case BIT_XOR_EXPR:
+#endif
          if (DECL_ASSIGNMENT_OPERATOR_P (t))
             serialize_string ("xorassign");
          else
             serialize_string ("xor");
          break;
+#if (__GNUC__ > 7)
+      case OVL_OP_LSHIFT_EXPR:
+#else
       case LSHIFT_EXPR:
+#endif
          if (DECL_ASSIGNMENT_OPERATOR_P (t))
             serialize_string ("lshiftassign");
          else
             serialize_string ("lshift");
          break;
+#if (__GNUC__ > 7)
+      case OVL_OP_RSHIFT_EXPR:
+#else
       case RSHIFT_EXPR:
+#endif
          if (DECL_ASSIGNMENT_OPERATOR_P (t))
             serialize_string ("rshiftassign");
          else
             serialize_string ("rshift");
          break;
+#if (__GNUC__ > 7)
+      case OVL_OP_EQ_EXPR:
+#else
       case EQ_EXPR:
+#endif
          serialize_string ("eq");
          break;
+#if (__GNUC__ > 7)
+      case OVL_OP_NE_EXPR:
+#else
       case NE_EXPR:
+#endif
          serialize_string ("ne");
          break;
+#if (__GNUC__ > 7)
+      case OVL_OP_LT_EXPR:
+#else
       case LT_EXPR:
+#endif
          serialize_string ("lt");
          break;
+#if (__GNUC__ > 7)
+      case OVL_OP_GT_EXPR:
+#else
       case GT_EXPR:
+#endif
          serialize_string ("gt");
          break;
+#if (__GNUC__ > 7)
+      case OVL_OP_LE_EXPR:
+#else
       case LE_EXPR:
+#endif
          serialize_string ("le");
          break;
+#if (__GNUC__ > 7)
+      case OVL_OP_GE_EXPR:
+#else
       case GE_EXPR:
+#endif
          serialize_string ("ge");
          break;
+#if (__GNUC__ > 7)
+      case OVL_OP_TRUTH_ANDIF_EXPR:
+#else
       case TRUTH_ANDIF_EXPR:
+#endif
          serialize_string ("land");
          break;
+#if (__GNUC__ > 7)
+      case OVL_OP_TRUTH_ORIF_EXPR:
+#else
       case TRUTH_ORIF_EXPR:
+#endif
          serialize_string ("lor");
          break;
+#if (__GNUC__ > 7)
+      case OVL_OP_COMPOUND_EXPR:
+#else
       case COMPOUND_EXPR:
+#endif
          serialize_string ("compound");
          break;
+#if (__GNUC__ > 7)
+      case OVL_OP_MEMBER_REF:
+#else
       case MEMBER_REF:
+#endif
          serialize_string ("memref");
          break;
+#if (__GNUC__ > 7)
+      case OVL_OP_COMPONENT_REF:
+#else
       case COMPONENT_REF:
+#endif
          serialize_string ("ref");
          break;
+#if (__GNUC__ > 7)
+      case OVL_OP_ARRAY_REF:
+#else
       case ARRAY_REF:
+#endif
          serialize_string ("subs");
          break;
+#if (__GNUC__ > 7)
+      case OVL_OP_POSTINCREMENT_EXPR:
+#else
       case POSTINCREMENT_EXPR:
+#endif
          serialize_string ("postinc");
          break;
+#if (__GNUC__ > 7)
+      case OVL_OP_POSTDECREMENT_EXPR:
+#else
       case POSTDECREMENT_EXPR:
+#endif
          serialize_string ("postdec");
          break;
+#if (__GNUC__ > 7)
+      case OVL_OP_CALL_EXPR:
+#else
       case CALL_EXPR:
+#endif
          serialize_string ("call");
          break;
+#if (__GNUC__ > 7)
+      case OVL_OP_NOP_EXPR:
+#else
       case NOP_EXPR:
+#endif
          if (DECL_ASSIGNMENT_OPERATOR_P (t))
             serialize_string ("assign");
          break;
@@ -1667,12 +1828,20 @@ gcc_assert(t!=0);
    switch (code)
    {
       case IDENTIFIER_NODE:
+#if (__GNUC__ > 7)
+         if (IDENTIFIER_ANY_OP_P (t))
+#else
          if (IDENTIFIER_OPNAME_P (t))
+#endif
          {
             serialize_string ("operator");
             return true;
          }
+#if (__GNUC__ > 7)
+         else if (IDENTIFIER_CONV_OP_P (t))
+#else
          else if (IDENTIFIER_TYPENAME_P (t))
+#endif
          {
             serialize_child ("tynm", TREE_TYPE (t));
             return true;
@@ -1805,7 +1974,11 @@ gcc_assert(t!=0);
          break;
 
       case OVERLOAD:
+#if (__GNUC__ > 7)
+         serialize_child ("crnt", OVL_FIRST (t));
+#else
          serialize_child ("crnt", OVL_CURRENT (t));
+#endif
          serialize_child ("chan", OVL_CHAIN (t));
          break;
 
@@ -1992,6 +2165,10 @@ dequeue_and_serialize ()
   else if(TREE_CODE (t) == BIT_NOT_EXPR && TREE_CODE (TREE_TYPE (t)) == BOOLEAN_TYPE) /*incorrect encoding of not of a boolean expression*/
     code_name ="truth_not_expr";
 #endif
+#if __GNUC__ > 7
+  else if(TREE_CODE (t) == POINTER_DIFF_EXPR)
+     code_name ="minus_expr";
+#endif
   else
     code_name = GET_TREE_CODE_NAME(TREE_CODE (t));
   fprintf (serialize_gimple_info.stream, "%-16s ", code_name);
@@ -2098,7 +2275,8 @@ dequeue_and_serialize ()
     /* All declarations have names.  */
     if (DECL_NAME (t))
       serialize_child ("name", DECL_NAME (t));
-    if (DECL_ASSEMBLER_NAME_SET_P (t) && DECL_ASSEMBLER_NAME (t) != DECL_NAME (t))
+    if (HAS_DECL_ASSEMBLER_NAME_P (t)
+        && DECL_ASSEMBLER_NAME_SET_P (t) && DECL_ASSEMBLER_NAME (t) != DECL_NAME (t))
       serialize_child ("mngl", DECL_ASSEMBLER_NAME (t));
     if (DECL_ABSTRACT_ORIGIN (t))
       serialize_child ("orig", DECL_ABSTRACT_ORIGIN (t));
@@ -2300,12 +2478,13 @@ dequeue_and_serialize ()
                serialize_child ("fncs", op);
          }
 
+#if __GNUC__ < 8
       if (TYPE_METHODS(t))
          for ( op = TYPE_METHODS (t); op; op = TREE_CHAIN(op))
          {
             serialize_child ("fncs", op);
          }
-
+#endif
       /*serialize_child ("flds", TYPE_FIELDS (t));
       serialize_child ("fncs", TYPE_METHODS (t));*/
       break;
@@ -2487,7 +2666,11 @@ if (!POINTER_TYPE_P (TREE_TYPE (t))
 
 #if (__GNUC__ > 4) || (__GNUC__ == 4 && __GNUC_MINOR__ >= 8)
 	unsigned i;
-	for (i = 0; i < VECTOR_CST_NELTS (t); ++i)
+#if (__GNUC__ > 7)
+    for (i = 0; i < VECTOR_CST_NELTS (t).to_constant (); ++i)
+#else
+    for (i = 0; i < VECTOR_CST_NELTS (t); ++i)
+#endif
             serialize_child ("valu", VECTOR_CST_ELT (t, i));
 #else
          tree elt;

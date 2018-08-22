@@ -57,6 +57,7 @@
 #include "config_HAVE_I386_GCC5_COMPILER.hpp"
 #include "config_HAVE_I386_GCC6_COMPILER.hpp"
 #include "config_HAVE_I386_GCC7_COMPILER.hpp"
+#include "config_HAVE_I386_GCC8_COMPILER.hpp"
 #include "config_HAVE_I386_CLANG4_COMPILER.hpp"
 #include "config_HAVE_I386_CLANG5_COMPILER.hpp"
 #include "config_HAVE_I386_CLANG6_COMPILER.hpp"
@@ -141,21 +142,24 @@ enum class GccWrapper_CompilerTarget
 #if HAVE_I386_GCC7_COMPILER
    CT_I386_GCC7 = 128,
 #endif
+#if HAVE_I386_GCC8_COMPILER
+   CT_I386_GCC8 = 256,
+#endif
 #if HAVE_I386_CLANG4_COMPILER
-   CT_I386_CLANG4 = 256,
+   CT_I386_CLANG4 = 512,
 #endif
 #if HAVE_I386_CLANG5_COMPILER
-   CT_I386_CLANG5 = 512,
+   CT_I386_CLANG5 = 1024,
 #endif
 #if HAVE_I386_CLANG6_COMPILER
-   CT_I386_CLANG6 = 1024,
+   CT_I386_CLANG6 = 2048,
 #endif
 #if HAVE_ARM_COMPILER
-   CT_ARM_GCC = 2048,
+   CT_ARM_GCC = 4096,
 #endif
 #if HAVE_SPARC_COMPILER
-   CT_SPARC_GCC = 4096,
-   CT_SPARC_ELF_GCC = 8192
+   CT_SPARC_GCC = 8192,
+   CT_SPARC_ELF_GCC = 16384
 #endif
 };
 

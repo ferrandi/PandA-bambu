@@ -75,6 +75,13 @@ libbambu_gcc7_a_CFLAGS =$(common_cflags) -fno-tree-loop-distribute-patterns --co
 libbambu_gcc7_a_AR =$(top_builddir)/src/tree-panda-gcc $(common_treegccflags) --compiler=I386_GCC7 -C
 endif
 
+if BUILD_I386_GCC8
+pkglib_LIBRARIES += libbambu_gcc8.a
+libbambu_gcc8_a_SOURCES = $(common_libbambu_src)
+libbambu_gcc8_a_CFLAGS =$(common_cflags) -fno-tree-loop-distribute-patterns --compiler=I386_GCC8 
+libbambu_gcc8_a_AR =$(top_builddir)/src/tree-panda-gcc $(common_treegccflags) --compiler=I386_GCC8 -C
+endif
+
 if BUILD_I386_CLANG4
 pkglib_LIBRARIES += libbambu_clang4.a
 libbambu_clang4_a_SOURCES = $(common_libbambu_src)
