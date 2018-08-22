@@ -945,6 +945,18 @@ void GccWrapper::SetBambuDefault()
 #if HAVE_I386_GCC49_COMPILER
          or compiler == GccWrapper_CompilerTarget::CT_I386_GCC49
 #endif
+#if HAVE_I386_GCC5_COMPILER
+         or compiler == GccWrapper_CompilerTarget::CT_I386_GCC5
+#endif
+#if HAVE_I386_GCC6_COMPILER
+         or compiler == GccWrapper_CompilerTarget::CT_I386_GCC6
+#endif
+#if HAVE_I386_GCC7_COMPILER
+         or compiler == GccWrapper_CompilerTarget::CT_I386_GCC7
+#endif
+#if HAVE_I386_GCC8_COMPILER
+         or compiler == GccWrapper_CompilerTarget::CT_I386_GCC8
+#endif
          )
    {
       parameter_values["max-completely-peeled-insns"]=250;//Set the maximum number of insns of a peeled loop.
