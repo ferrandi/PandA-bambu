@@ -199,6 +199,11 @@ unsigned int tree_helper::Size(const tree_nodeConstRef t)
                max_it = get_integer_cst_value(GetPointer<integer_cst>(GET_NODE(it->max)));
                unsigned_p = it->unsigned_flag;
             }
+            if(min==0 && max==0)
+            {
+               return_value = 1;
+               break;
+            }
             if((min_it == min and min != 0) or max_it == max)
             {
                return_value = sa->var ? Size(GET_NODE(sa->var)) : Size(GET_NODE(sa->type));
@@ -5559,7 +5564,7 @@ std::string tree_helper::print_type(const tree_managerConstRef TM, unsigned int 
       }
       case tree_list_K:
       {
-         THROW_ASSERT(var == 0, "Received somenthing of unexpected");
+         THROW_ASSERT(var == 0, "Received something of unexpected");
          auto *lnode = GetPointer<tree_list>(node_type);
          res += print_type(TM, GET_INDEX_NODE(lnode->valu), global, print_qualifiers);
          ///tree_list are use for parameters declaration: in that case void_type has to be removed from the last type parameter
