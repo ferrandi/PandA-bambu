@@ -40,10 +40,9 @@ main_test (void)
     link_error ();
 }
 
-#ifdef __clang__
 int main()
 {
   main_test();
   exit(0);
 }
-#endif
+
