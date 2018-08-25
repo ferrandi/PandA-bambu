@@ -449,7 +449,7 @@ std::deque<bit_lattice> Bit_Value::backward_transfer(
       while(arg1_bitstring.size()>output_bitstring.size())
          arg1_bitstring.pop_front();
       if(arg1_bitstring.size() != initial_size)
-         arg1_bitstring.push_front(bit_lattice::X);
+         arg1_bitstring.push_front(bit_lattice::U);///we cannot say anything on the sign bits if the output string is shorter than the input one
 
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, " input1: " + bitstring_to_string (arg1_bitstring));
 

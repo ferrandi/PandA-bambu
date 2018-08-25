@@ -1086,8 +1086,8 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign * ga) co
                res.push_front(borrow_and_bit_pair.back());
                borrow = borrow_and_bit_pair.front();
             }
-            if (res.size() < tree_helper::Size(op_type))
-               res.push_front(minus_expr_map.at(bit_lattice::ZERO).at(arg_bitstring.front()).at(borrow).back());
+            /// with abs we do not need to extend the results because the number of bits required to describe the inputs bit are
+            /// always enough for the result
             break;
          }
          case bit_lattice::U:
@@ -1100,15 +1100,15 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign * ga) co
                negated_bitstring.push_front(borrow_and_bit_pair.back());
                borrow = borrow_and_bit_pair.front();
             }
-            if (negated_bitstring.size() < tree_helper::Size(op_type))
-               negated_bitstring.push_front(minus_expr_map.at(bit_lattice::ZERO).at(arg_bitstring.front()).at(borrow).back());
+            /// with abs we do not need to extend the results because the number of bits required to describe the inputs bit are
+            /// always enough for the result
             res = inf(arg_bitstring, negated_bitstring, output_uid);
             break;
          }
-         case bit_lattice::X: // can assume it's zero
+         case bit_lattice::X:
          default:
          {
-            THROW_UNREACHABLE("unexpected bit lattice for sign bit");
+            THROW_UNREACHABLE("unexpected bit lattice for sign bit"+bitstring_to_string(arg_bitstring));
             break;
          }
       }
