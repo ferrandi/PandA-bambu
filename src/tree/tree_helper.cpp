@@ -181,6 +181,11 @@ unsigned int tree_helper::Size(const tree_nodeConstRef t)
             }
             long long max = get_integer_cst_value(GetPointer<integer_cst>(GET_NODE(sa->max)));
             long long min = get_integer_cst_value(GetPointer<integer_cst>(GET_NODE(sa->min)));
+            if(min==max)///It may happen with GCC8 -O0
+            {
+               return_value = Size(type);
+               break;
+            }
 
             long long min_it;
             long long max_it;
