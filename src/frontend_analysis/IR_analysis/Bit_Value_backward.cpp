@@ -439,21 +439,8 @@ std::deque<bit_lattice> Bit_Value::backward_transfer(
    }
    else if (op_kind == abs_expr_K)
    {
-      auto *operation = GetPointer<abs_expr> (GET_NODE(ga->op1));
-
-      unsigned int arg1_uid = GET_INDEX_NODE(operation->op);
-      THROW_ASSERT(output_id == arg1_uid, "unexpected condition");
-
-      std::deque<bit_lattice> arg1_bitstring = best.at(arg1_uid);
-      size_t initial_size = arg1_bitstring.size();
-      while(arg1_bitstring.size()>output_bitstring.size())
-         arg1_bitstring.pop_front();
-      if(arg1_bitstring.size() != initial_size)
-         arg1_bitstring.push_front(bit_lattice::U);///we cannot say anything on the sign bits if the output string is shorter than the input one
-
-      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, " input1: " + bitstring_to_string (arg1_bitstring));
-
-      return arg1_bitstring;
+      ///we cannot say anything on abs_expr
+      return std::deque<bit_lattice>();
    }
    else if (op_kind == truth_not_expr_K)
    {
