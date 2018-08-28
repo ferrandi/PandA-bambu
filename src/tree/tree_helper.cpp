@@ -204,11 +204,6 @@ unsigned int tree_helper::Size(const tree_nodeConstRef t)
                max_it = get_integer_cst_value(GetPointer<integer_cst>(GET_NODE(it->max)));
                unsigned_p = it->unsigned_flag;
             }
-            if(min==0 && max==0)
-            {
-               return_value = 1;
-               break;
-            }
             if((min_it == min and min != 0) or max_it == max)
             {
                return_value = sa->var ? Size(GET_NODE(sa->var)) : Size(GET_NODE(sa->type));
