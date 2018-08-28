@@ -2254,10 +2254,21 @@ dequeue_and_serialize ()
 
        case tcc_binary:
        case tcc_comparison:
-         serialize_child ("op", TREE_OPERAND (t, 0));
-         serialize_child ("op", TREE_OPERAND (t, 1));
+        {
+#if __GNUC__ > 7
+           if(TREE_CODE (t) == POINTER_DIFF_EXPR)
+           {
+              serialize_child ("op", build1 (NOP_EXPR, TREE_TYPE (t), TREE_OPERAND (t, 0)));
+              serialize_child ("op", build1 (NOP_EXPR, TREE_TYPE (t), TREE_OPERAND (t, 1)));
+           }
+           else
+#endif
+           {
+              serialize_child ("op", TREE_OPERAND (t, 0));
+              serialize_child ("op", TREE_OPERAND (t, 1));
+           }
          break;
-
+        }
        case tcc_expression:
        case tcc_reference:
        case tcc_statement:
