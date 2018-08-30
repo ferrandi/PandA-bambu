@@ -12,7 +12,7 @@ Vagrant.configure(2) do |config|
 
   # Every Vagrant development environment requires a box. You can search for
   # boxes at https://atlas.hashicorp.com/search.
-  config.vm.box = "ubuntu/xenial64"
+  config.vm.box = "ubuntu/bionic64"
 
   # Disable automatic box update checking. If you disable this, then
   # boxes will only be checked for updates when the user runs
@@ -52,7 +52,7 @@ Vagrant.configure(2) do |config|
      vb.memory = "4096"
      vb.customize [ 'modifyvm', :id, '--uartmode1', 'disconnected']
      vb.customize [ 'modifyvm', :id, '--vram', '64']
-     vb.customize "pre-boot", ["storageattach", :id, "--storagectl", "IDE Controller", "--port", "1", "--device", "0", "--type", "dvddrive", "--medium", "emptydrive"]
+     vb.customize "pre-boot", ["storageattach", :id, "--storagectl", "IDE", "--port", "1", "--device", "0", "--type", "dvddrive", "--medium", "emptydrive"]
      vb.name = "PandA-bambu-VM_64bit"
    end
   #
@@ -71,27 +71,21 @@ Vagrant.configure(2) do |config|
   # documentation for more information about their specific syntax and use.
   #   apt-get install lubuntu-desktop -y
    config.vm.provision "shell", inline: <<-SHELL
-     sed -i '1ideb mirror:\/\/mirrors.ubuntu.com/mirrors.txt xenial-security main restricted universe multiverse' /etc/apt/sources.list
-     sed -i '1ideb mirror:\/\/mirrors.ubuntu.com/mirrors.txt xenial-backports main restricted universe multiverse' /etc/apt/sources.list
-     sed -i '1ideb mirror:\/\/mirrors.ubuntu.com/mirrors.txt xenial-updates main restricted universe multiverse' /etc/apt/sources.list
-     sed -i '1ideb mirror:\/\/mirrors.ubuntu.com/mirrors.txt xenial main restricted universe multiverse' /etc/apt/sources.list
+     sed -i '1ideb mirror:\/\/mirrors.ubuntu.com/mirrors.txt bionic-security main restricted universe multiverse' /etc/apt/sources.list
+     sed -i '1ideb mirror:\/\/mirrors.ubuntu.com/mirrors.txt bionic-backports main restricted universe multiverse' /etc/apt/sources.list
+     sed -i '1ideb mirror:\/\/mirrors.ubuntu.com/mirrors.txt bionic-updates main restricted universe multiverse' /etc/apt/sources.list
+     sed -i '1ideb mirror:\/\/mirrors.ubuntu.com/mirrors.txt bionic main restricted universe multiverse' /etc/apt/sources.list
      apt-get update -y
      apt-get upgrade -y
      apt-get install -y linux-headers-$(uname -r) build-essential dkms
      apt-get install -y virtualbox-guest-x11
-     apt-get install -y autoconf autoconf-archive automake libtool g++ gcc-4.9 g++-4.9 gcc-4.9-plugin-dev gcc-4.9-multilib g++-4.9-multilib gfortran-4.9 gfortran-4.9-multilib libboost-all-dev libmpc-dev libmpfr-dev libxml2-dev liblzma-dev libmpfi-dev zlib1g-dev libicu-dev bison doxygen flex graphviz xdot verilator make libsuitesparse-dev libglpk-dev
+     apt-get install -y autoconf autoconf-archive automake libtool gcc-7 g++-7 gcc-7-plugin-dev gcc-7-multilib g++-7-multilib gfortran-7 gfortran-7-multilib libboost-all-dev libmpc-dev libmpfr-dev libxml2-dev liblzma-dev libmpfi-dev zlib1g-dev libicu-dev bison doxygen flex graphviz xdot verilator make libsuitesparse-dev libglpk-dev clang-6.0 libclang-6.0-dev
      apt-get autoremove -y
-     wget https://www.veripool.org/ftp/verilator-3.900.tgz
-     tar zxvf verilator-3.900.tgz
-     cd verilator-3.900
-     ./configure
-     make && make install && make clean
-     cd ..
      git clone https://github.com/ferrandi/PandA-bambu.git
      cd PandA-bambu
      make -f Makefile.init
      mkdir build
-     cd build && ../configure --prefix=/home/ubuntu/panda --enable-verilator --enable-glpk --enable-opt --enable-flopoco --with-opt-level=fast && make && make install && make clean
+     cd build && ../configure --prefix=/home/ubuntu/panda --enable-verilator --enable-glpk --enable-opt --enable-flopoco --with-opt-level=fast && make -j2 && make install && make clean
      cd ../.. && chown -R ubuntu.ubuntu PandA-bambu
      chown -R ubuntu.ubuntu panda
      apt-get -y install ubuntu-gnome-desktop
