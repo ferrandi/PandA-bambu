@@ -3,7 +3,8 @@ Seventh public release of PandA framework.
 
 New features introduced:
 - Added an initial support to C++/fortran high-level synthesis. Now, Ubuntu distributions require the installation of g++-multilib package.
-- Added an initial support to CLANG/LLVM compiler version 4, 5 and 6. 
+- Added support to CLANG/LLVM compiler version 4, 5 and 6. 
+- Added support to GCC compiler version 8
 - Added FPT tutorial material
 - Improved the virtual machine generation scripts
 - Improved timing constraints and timing reports
@@ -20,6 +21,7 @@ New features introduced:
   modernize-use-bool-literals, modernize-use-equals-default, modernize-use-equals-delete, modernize-loop-convert and modernize-use-override.
 - Improved floating point division and added a SRT4 implementation. Added --hls-fpdiv to select which floating point division will be used. Current options: SRT4 for Sweeney, Robertson, Tocher floating point division with radix 4 and G for Goldschmidt floating point division.
 - Added support to ac_types and ac_math library from Mentor Graphics. With respect to the original library, the bambu/PandA library does support both LLVM/Clang and GCC compiler and it requires c++14 standard for the compilation. An initial support to ap_* objects used by VIVADO HLS has been added as well.
+- Vagrant scripts now create an Ubuntu 16.04 32bit VirtualBox image and an Ubuntu 18.04 64bit VirtualBox image.
 
 This release includes also a set of fixes:
     on COND_EXPR_RESTRUCTURING step
