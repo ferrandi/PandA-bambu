@@ -1065,7 +1065,7 @@ static void
 serialize_pointer (const char *field, void *ptr)
 {
   serialize_maybe_newline ();
-  fprintf (serialize_gimple_info.stream, "%-4s: %-8lx ", field, (unsigned long) ptr);
+  fprintf (serialize_gimple_info.stream, "%-4s: %-8llx ", field, (unsigned long long) ptr);
   serialize_gimple_info.column += 15;
 }
 
