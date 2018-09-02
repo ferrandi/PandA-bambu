@@ -1,3 +1,6 @@
+#if __GNUC__ > 7
+void link_error (){abort();}
+#endif
 extern void link_error ();
 
 #ifndef __llvm__

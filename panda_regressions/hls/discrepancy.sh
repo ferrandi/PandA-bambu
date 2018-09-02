@@ -6,6 +6,6 @@ $dir_script/../../etc/scripts/test_panda.py --tool=bambu \
    --args="--configuration-name=GCC7_O1 -O1 -lm --simulate --experimental-setup=BAMBU --compiler=I386_GCC7 --discrepancy" \
    --args="--configuration-name=GCC7_O2 -O2 -lm --simulate --experimental-setup=BAMBU --compiler=I386_GCC7 --discrepancy" \
    --args="--configuration-name=GCC7_O3 -O3 -lm --simulate --experimental-setup=BAMBU --compiler=I386_GCC7 --discrepancy" \
-   -ldiscrepancy_list -o output_discrepancy_test --ulimit="-f 5100000 -v 6000000 -s 16384" -j6 \
+   -ldiscrepancy_list -o output_discrepancy_test --ulimit="-f 5000000 -v 5000000 -s 16384" -j7 \
    -b$dir_script --table=output_discrepancy.tex --name="Discrepancy" $@
 exit $?

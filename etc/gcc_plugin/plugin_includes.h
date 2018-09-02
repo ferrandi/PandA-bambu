@@ -144,6 +144,10 @@ typedef gimple* GIMPLE_type;
 #include "builtins.h"
 #endif
 
+#if __GNUC__ > 7
+#include "attribs.h"
+#endif
+
 #if __GNUC__ > 4
 #define PTRCONV(TYPE, data)  (is_a_helper<TYPE>::test(data) ? as_a<TYPE>(data) : 0)
 #else

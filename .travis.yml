@@ -1,6 +1,6 @@
 language: cpp
 cache: ccache
-dist: trusty
+group: travis_latest
 sudo: required
 compiler:
  - gcc
@@ -12,6 +12,9 @@ script: cd build && ../configure --prefix=$HOME/panda --enable-icarus --enable-v
 
 addons:
   apt:
+    sources:
+      - ubuntu-toolchain-r-test
+      - llvm-toolchain-trusty-6.0
     packages:
     - autoconf
     - autoconf-archive
@@ -19,11 +22,13 @@ addons:
     - libtool
     - g++
     - gcc
-    - gcc-4.8-plugin-dev
+    - gcc-8-plugin-dev
     - gcc-multilib
-    - g++-4.8-multilib
-    - gfortran-4.8
-    - gfortran-4.8-multilib
+    - g++-8-multilib
+    - gfortran-8
+    - gfortran-8-multilib
+    - clang++-6.0
+    - libclang-6.0-dev
     - libboost-all-dev
     - libmpc-dev
     - libmpfi-dev
