@@ -4,11 +4,12 @@ Seventh public release of PandA framework.
 New features introduced:
 - Added an initial support to C++/fortran high-level synthesis. Now, Ubuntu distributions require the installation of g++-multilib package.
 - Added support to CLANG/LLVM compiler version 4, 5 and 6. 
-- Added support to GCC compiler version 8
-- Added FPT tutorial material
-- Improved the virtual machine generation scripts
-- Improved timing constraints and timing reports
-- Added --registered-inputs=top option
+- Added support to GCC compiler version 8.
+- Added support to mingw-w64. A Windows-7 64bit binary distribution is now available. This minimal msys2 binary distribution includes bambu and GCC8 with plugin and multilib enabled (see https://github.com/ferrandi/PandAW-installer for the details).
+- Added FPT tutorial material.
+- Improved the vagrant based virtual machine generation scripts. Such scripts now create an Ubuntu 16.04 32bit VirtualBox image and an Ubuntu 18.04 64bit VirtualBox image.
+- Improved timing constraints and timing reports.
+- Added --registered-inputs=top option.
 - Improved the support for discrepancy when Verilator is used as simulator, and a better check of basic floating point operations.
 - Added an example using C++14 constexpr declaration and a simple GCD example written in C++.
 - The building system is now based on a single configure.ac.
@@ -16,12 +17,12 @@ New features introduced:
 - Some performance, style, and c++ improvements have been done following the suggestions coming from cppcheck, clang static analyzer, and Codacy.
 - A single precision floating point faithfully rounded powf function has been added. It follows the method published in:
   Florent De Dinechin, Pedro Echeverria, Marisa Lopez-Vallejo, Bogdan Pasca. Floating-Point Exponentiation Units for Reconfigurable Computing. ACM Transactions on Reconfigurable Technology and Systems (TRETS), ACM, 2013, 6 (1), pp.4:1–4:15.
-  The function currently does not supports subnormals.
+  The powf function currently does not supports subnormals.
 - Ported some parts of the code to C++11 standard by applying clang-tidy modernize-deprecated-headers, modernize-pass-by-value, modernize-use-auto,
   modernize-use-bool-literals, modernize-use-equals-default, modernize-use-equals-delete, modernize-loop-convert and modernize-use-override.
-- Improved floating point division and added a SRT4 implementation. Added --hls-fpdiv to select which floating point division will be used. Current options: SRT4 for Sweeney, Robertson, Tocher floating point division with radix 4 and G for Goldschmidt floating point division.
+- Added a SRT4 implementation. Added --hls-fpdiv to select which floating point division will be used. Current options: SRT4 for Sweeney, Robertson, Tocher floating point division with radix 4 and G for Goldschmidt floating point division.
 - Added support to ac_types and ac_math library from Mentor Graphics. With respect to the original library, the bambu/PandA library does support both LLVM/Clang and GCC compiler and it requires c++14 standard for the compilation. An initial support to ap_* objects used by VIVADO HLS has been added as well.
-- Vagrant scripts now create an Ubuntu 16.04 32bit VirtualBox image and an Ubuntu 18.04 64bit VirtualBox image.
+
 
 This release includes also a set of fixes:
     on COND_EXPR_RESTRUCTURING step
@@ -29,6 +30,7 @@ This release includes also a set of fixes:
     on libm tests
     on make check and on cpp examples
     on c++ struct initialization
+    on floating point division
     on make dist command under github repository
 
 

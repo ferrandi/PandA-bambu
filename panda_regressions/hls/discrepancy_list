@@ -627,7 +627,6 @@ gcc_regression_simple/mayalias-1.c
 gcc_regression_simple/mayalias-2.c
 gcc_regression_simple/medce-1.c
 gcc_regression_simple/memcpy-1.c
-gcc_regression_simple/memcpy-2.c
 gcc_regression_simple/memset-1.c
 gcc_regression_simple/mod-1.c
 gcc_regression_simple/multdi-1.c
@@ -814,7 +813,6 @@ gcc_regression_simple/pushpop_macro.c
 gcc_regression_simple/scope-1.c
 gcc_regression_simple/shiftdi.c
 gcc_regression_simple/shiftopt-1.c
-gcc_regression_simple/strcpy-1.c
 gcc_regression_simple/strct-pack-1.c
 gcc_regression_simple/strct-pack-2.c
 gcc_regression_simple/strct-pack-3.c
