@@ -51,7 +51,7 @@
  * @name forward declarations
  */
 //@{
-REF_FORWARD_DECL(rebuild_initializations);
+REF_FORWARD_DECL(rebuild_initialization);
 //@}
 
 #include <map>
@@ -61,7 +61,7 @@ REF_FORWARD_DECL(rebuild_initializations);
 /**
  * Rebuild initialization function flow front-end step
  */
-class rebuild_initializations : public FunctionFrontendFlowStep
+class rebuild_initialization : public FunctionFrontendFlowStep
 {
    private:
       /**
@@ -78,12 +78,46 @@ class rebuild_initializations : public FunctionFrontendFlowStep
        * @param function_id is the identifier of the function
        * @param DesignFlowManagerConstRef is the design flow manager
        */
-      rebuild_initializations(const ParameterConstRef Param, const application_managerRef AppM, unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager);
+      rebuild_initialization(const ParameterConstRef Param, const application_managerRef AppM, unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager);
 
       /**
        *  Destructor
        */
-      ~rebuild_initializations() override;
+      ~rebuild_initialization() override;
+
+      /**
+       * Rebuild initialization function flow front-end step.
+       * @return the exit status of this step
+       */
+      DesignFlowStep_Status InternalExec() override;
+};
+
+/**
+ * Rebuild initialization function flow front-end step done after IR_lowering
+ */
+class rebuild_initialization2 : public FunctionFrontendFlowStep
+{
+   private:
+      /**
+       * Return the set of analyses in relationship with this design step
+       * @param relationship_type is the type of relationship to be considered
+       */
+      const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+
+   public:
+      /**
+       * Constructor.
+       * @param Param is the set of the parameters
+       * @param AppM is the application manager
+       * @param function_id is the identifier of the function
+       * @param DesignFlowManagerConstRef is the design flow manager
+       */
+      rebuild_initialization2(const ParameterConstRef Param, const application_managerRef AppM, unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager);
+
+      /**
+       *  Destructor
+       */
+      ~rebuild_initialization2() override;
 
       /**
        * Rebuild initialization function flow front-end step.

@@ -69,13 +69,13 @@
 #include "string_manipulation.hpp"          // for GET_CLASS
 
 
-rebuild_initializations::rebuild_initializations(const ParameterConstRef Param, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager) :
+rebuild_initialization::rebuild_initialization(const ParameterConstRef Param, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager) :
    FunctionFrontendFlowStep(_AppM, _function_id, REBUILD_INITIALIZATION, _design_flow_manager, Param)
 {
    debug_level = Param->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
 }
 
-const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship> > rebuild_initializations::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship> > rebuild_initialization::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > relationships;
    switch(relationship_type)
@@ -93,10 +93,10 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
 }
 
 
-rebuild_initializations::~rebuild_initializations()
+rebuild_initialization::~rebuild_initialization()
 = default;
 
-DesignFlowStep_Status rebuild_initializations::InternalExec()
+DesignFlowStep_Status rebuild_initialization::InternalExec()
 {
    if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC)
    {
@@ -213,3 +213,46 @@ DesignFlowStep_Status rebuild_initializations::InternalExec()
    return DesignFlowStep_Status::SUCCESS;
 }
 
+rebuild_initialization2::rebuild_initialization2(const ParameterConstRef Param, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager) :
+   FunctionFrontendFlowStep(_AppM, _function_id, REBUILD_INITIALIZATION2, _design_flow_manager, Param)
+{
+   debug_level = Param->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
+}
+
+const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship> > rebuild_initialization2::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+{
+   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > relationships;
+   switch(relationship_type)
+   {
+      case(DEPENDENCE_RELATIONSHIP) :
+         {
+            relationships.insert(std::make_pair(IR_LOWERING, SAME_FUNCTION));
+            break;
+         }
+      case(INVALIDATION_RELATIONSHIP) :
+      case(PRECEDENCE_RELATIONSHIP) :
+         {
+            break;
+         }
+      default:
+         THROW_UNREACHABLE("");
+   }
+   return relationships;
+}
+
+
+rebuild_initialization2::~rebuild_initialization2()
+= default;
+
+DesignFlowStep_Status rebuild_initialization2::InternalExec()
+{
+   if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC)
+   {
+      PrintTreeManager(true);
+   }
+   if(debug_level >= DEBUG_LEVEL_PEDANTIC)
+   {
+      PrintTreeManager(false);
+   }
+   return DesignFlowStep_Status::SUCCESS;
+}
