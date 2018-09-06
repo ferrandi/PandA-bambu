@@ -2020,12 +2020,21 @@ PLUGIN_TEST
          if test -f plugin_test.so; then
             rm plugin_test.so
          fi
-         $plugin_compiler -I$TOPSRCDIR/etc/gcc_plugin/ -fPIC -shared plugin_test.c -o plugin_test.so -I$I386_GCC8_PLUGIN_DIR/include 2> /dev/null
+         plugin_option=
+         case $host_os in
+           mingw*) 
+             plugin_option="-shared -Wl,--export-all-symbols $I386_GCC8_PLUGIN_DIR/cc1plus.exe.a"
+           ;;
+           *)
+             plugin_option='-fPIC -shared'
+           ;;
+         esac
+         $plugin_compiler -I$TOPSRCDIR/etc/gcc_plugin/ plugin_test.c -o plugin_test.so -I$I386_GCC8_PLUGIN_DIR/include $plugin_option 2> /dev/null
          if test ! -f plugin_test.so; then
-            echo "checking $plugin_compiler -I$TOPSRCDIR/etc/gcc_plugin/ -fPIC -shared plugin_test.c -o plugin_test.so -I$I386_GCC8_PLUGIN_DIR/include... no"
+            echo "checking $plugin_compiler -I$TOPSRCDIR/etc/gcc_plugin/ plugin_test.c -o plugin_test.so -I$I386_GCC8_PLUGIN_DIR/include $plugin_option ... no"
             continue
          fi
-         echo "checking $plugin_compiler -I$TOPSRCDIR/etc/gcc_plugin/ -fPIC -shared plugin_test.c -o plugin_test.so -I$I386_GCC8_PLUGIN_DIR/include... yes"
+         echo "checking $plugin_compiler -I$TOPSRCDIR/etc/gcc_plugin/ plugin_test.c -o plugin_test.so -I$I386_GCC8_PLUGIN_DIR/include $plugin_option... yes"
          ac_save_CC="$CC"
          ac_save_CFLAGS="$CFLAGS"
          CC=$plugin_compiler
@@ -2044,12 +2053,12 @@ PLUGIN_TEST
             continue
          fi
          echo "Looking for gengtype"
-         I386_GCC8_GENGTYPE=`$I386_GCC8_EXE -print-file-name=gengtype`
-         if test "x$I386_GCC8_GENGTYPE" = "xgengtype"; then
-            I386_GCC8_GENGTYPE=`$I386_GCC8_EXE -print-file-name=plugin/gengtype`
-            if test "x$I386_GCC8_GENGTYPE" = "xplugin/gengtype"; then
+         I386_GCC8_GENGTYPE=`$I386_GCC8_EXE -print-file-name=gengtype$ac_exeext`
+         if test "x$I386_GCC8_GENGTYPE" = "xgengtype$ac_exeext"; then
+            I386_GCC8_GENGTYPE=`$I386_GCC8_EXE -print-file-name=plugin/gengtype$ac_exeext`
+            if test "x$I386_GCC8_GENGTYPE" = "xplugin/gengtype$ac_exeext"; then
                I386_GCC8_ROOT_DIR=`dirname $I386_GCC8_EXE`/..
-               I386_GCC8_GENGTYPE=`find $I386_GCC8_ROOT_DIR -name gengtype | head -n1`
+               I386_GCC8_GENGTYPE=`find $I386_GCC8_ROOT_DIR -name gengtype$ac_exeext | head -n1`
                if test "x$I386_GCC8_GENGTYPE" = "x"; then
                   I386_GCC8_PLUGIN_COMPILER=
                   continue
