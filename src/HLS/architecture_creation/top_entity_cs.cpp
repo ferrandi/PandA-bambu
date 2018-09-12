@@ -31,19 +31,32 @@
  *
 */
 /**
- * @file classic_datapath.hpp
+ * @file top_entity_cs.cpp
  * @brief Base class for top entity for context_switch.
  *
  * @author Nicola Saporetti <nicola.saporetti@gmail.com>
  *
 */
+///Header include
 #include "top_entity_cs.hpp"
-#include "structural_objects.hpp"
-#include "omp_functions.hpp"
+
+///.include
 #include "BambuParameter.hpp"
-#include "hls_manager.hpp"
+
+///circuit include
 #include "structural_manager.hpp"
+#include "structural_objects.hpp"
+
+///HLS includes
 #include "hls.hpp"
+#include "hls_manager.hpp"
+#include "hls_target.hpp"
+
+///HLS/functions_allocation
+#include "omp_functions.hpp"
+
+///technology include
+#include "technology_manager.hpp"
 
 top_entity_cs::top_entity_cs(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type) :
    top_entity(_parameters, _HLSMgr, _funId, _design_flow_manager, _hls_flow_step_type)
@@ -59,6 +72,11 @@ top_entity_cs::~top_entity_cs()
 DesignFlowStep_Status top_entity_cs::InternalExec()
 {
    auto omp_functions = GetPointer<OmpFunctions>(HLSMgr->Rfuns);
+   ///Register input because of context switch
+   if(omp_functions->kernel_functions.find(funId) != omp_functions->kernel_functions.end())
+   {
+      HLS->registered_inputs = true;
+   }
    top_entity::InternalExec();
 
    if(omp_functions->kernel_functions.find(funId) != omp_functions->kernel_functions.end())
@@ -117,7 +135,11 @@ void top_entity_cs::add_context_switch_port_kernel()
     structural_type_descriptorRef port_type = structural_type_descriptorRef(new structural_type_descriptor("bool", num_slots));
     PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "\tStart selector signal...");
     structural_objectRef datapath_selector = datapath_circuit->find_member(STR(SELECTOR_REGISTER_FILE), port_o_K, datapath_circuit);
-    structural_objectRef selector_regFile_sign=SM->add_sign(STR(SELECTOR_REGISTER_FILE)+"_signal", circuit, port_type);
+    auto selector_regFile_sign = circuit->find_member(STR(SELECTOR_REGISTER_FILE) + "_signal", signal_o_K, circuit);
+    if(not selector_regFile_sign)
+    {
+      selector_regFile_sign = SM->add_sign(STR(SELECTOR_REGISTER_FILE)+"_signal", circuit, port_type);
+    }
     SM->add_connection(datapath_selector, selector_regFile_sign);
     structural_objectRef controller_selector = controller_circuit->find_member(STR(SELECTOR_REGISTER_FILE), port_o_K, controller_circuit);
     SM->add_connection(selector_regFile_sign, controller_selector);
@@ -143,4 +165,50 @@ void top_entity_cs::add_context_switch_port_kernel()
     GetPointer<module>(datapath_circuit)->SetParameter("KERN_NUM", "KERN_NUM");
     SM->add_NP_functionality(circuit, NP_functionality::LIBRARY, "KERN_NUM");
     GetPointer<module>(circuit)->AddParameter("KERN_NUM", "0");  //taken from kernel instantiation
+}
+
+void top_entity_cs::add_input_register(structural_objectRef port_in, const std::string &port_prefix, structural_objectRef circuit, structural_objectRef clock_port, structural_objectRef, structural_objectRef e_port)
+{
+   auto TM = HLS->HLS_T->get_technology_manager();
+   auto register_library = TM->get_library("register_file");
+   auto register_file_module = SM->add_module_from_technology_library(port_prefix+"_REG", "register_file", register_library, circuit, TM);
+   unsigned int cs_number = HLS->Param->getOption<unsigned int>(OPT_context_switch);
+   GetPointer<module>(register_file_module)->SetParameter("BITSIZE_MEM", STR(cs_number));
+
+   ///Resizing input port
+   GetPointer<module>(register_file_module)->get_in_port(1)->type_resize(GET_TYPE_SIZE(port_in));
+
+   ///Resizing output port
+   GetPointer<module>(register_file_module)->get_out_port(0)->type_resize(GET_TYPE_SIZE(port_in));
+
+   ///Add clock
+   auto rf_clock_port = register_file_module->find_member(CLOCK_PORT_NAME, port_o_K, register_file_module);
+   SM->add_connection(clock_port, rf_clock_port);
+
+   ///Connect write port to start port
+   auto start_port = circuit->find_member(START_PORT_NAME, port_o_K, circuit);
+   auto rf_we_port = GetPointer<module>(register_file_module)->get_in_port(2);
+   SM->add_connection(start_port, rf_we_port);
+
+   ///Connect selector of register file
+   auto controller_circuit = HLS->controller->get_circ();
+   auto register_file_selector_port = controller_circuit->find_member(SELECTOR_REGISTER_FILE, port_o_K, controller_circuit);
+   auto rf_register_file_selector_port = GetPointer<module>(register_file_module)->get_in_port(3);
+   auto register_file_selector_signal = circuit->find_member(SELECTOR_REGISTER_FILE "_signal", signal_o_K, circuit);
+   if(not register_file_selector_signal)
+   {
+      register_file_selector_signal = SM->add_sign(STR(SELECTOR_REGISTER_FILE)+"_signal", circuit, register_file_selector_port->get_typeRef());
+      SM->add_connection(register_file_selector_port, register_file_selector_signal);
+   }
+   SM->add_connection(register_file_selector_signal, rf_register_file_selector_port);
+
+   ///Add signal from external port
+   auto external_port_to_register = SM->add_sign(port_prefix + "_to_reg", circuit, port_in->get_typeRef());
+   SM->add_connection(e_port, external_port_to_register);
+   SM->add_connection(GetPointer<module>(register_file_module)->get_in_port(1), external_port_to_register);
+
+   ///Add signal to datapath
+   auto register_to_internal_port = SM->add_sign(port_prefix + "_from_reg", circuit, GetPointer<module>(register_file_module)->get_out_port(0)->get_typeRef());
+   SM->add_connection(GetPointer<module>(register_file_module)->get_out_port(0), register_to_internal_port);
+   SM->add_connection(port_in, register_to_internal_port);
 }

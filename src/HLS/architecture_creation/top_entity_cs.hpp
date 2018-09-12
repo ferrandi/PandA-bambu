@@ -44,24 +44,33 @@
 class top_entity_cs : public top_entity
 {
    protected:
+      /**
+       * Add the register file to store input parameters
+       * @param port_in is the input parameter port of the datapath
+       * @param port_prefix is the prefix of the port name
+       * @param circuit is the circuit of the top entity
+       * @param clock_port is the port of the clock signal
+       * @param reset_port is the port of the reset signal
+       * @param e_port is the input parameter port of the top entity
+       */
+      void add_input_register(structural_objectRef port_in, const std::string &port_prefix, structural_objectRef circuit, structural_objectRef clock_port, structural_objectRef reset_port, structural_objectRef e_port);
 
-    void add_context_switch_port();
+      void add_context_switch_port();
 
-    void add_context_switch_port_kernel();
-public:
-   top_entity_cs(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type = HLSFlowStep_Type::TOP_ENTITY_CS_CREATION);
+      void add_context_switch_port_kernel();
+   public:
+      top_entity_cs(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type = HLSFlowStep_Type::TOP_ENTITY_CS_CREATION);
 
-   /**
-    * Destructor
-    */
-   virtual ~top_entity_cs();
+      /**
+       * Destructor
+       */
+      virtual ~top_entity_cs();
 
-
-   /**
-    * Add selector and suspension
-    * @return the exit status of this step
-    */
-   virtual DesignFlowStep_Status InternalExec();
+      /**
+       * Add selector and suspension
+       * @return the exit status of this step
+       */
+      virtual DesignFlowStep_Status InternalExec();
 
 };
 

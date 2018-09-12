@@ -71,7 +71,16 @@ class top_entity : public HLSFunctionStep
        */
       virtual const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const;
 
-      void add_input_register(structural_objectRef port_in, const std::string &port_prefix, structural_objectRef circuit, structural_objectRef clock_port, structural_objectRef reset_port, structural_objectRef e_port);
+      /**
+       * Add the register to store input parameters
+       * @param port_in is the input parameter port of the datapath
+       * @param port_prefix is the prefix of the port name
+       * @param circuit is the circuit of the top entity
+       * @param clock_port is the port of the clock signal
+       * @param reset_port is the port of the reset signal
+       * @param e_port is the input parameter port of the top entity
+       */
+      virtual void add_input_register(structural_objectRef port_in, const std::string &port_prefix, structural_objectRef circuit, structural_objectRef clock_port, structural_objectRef reset_port, structural_objectRef e_port);
 
    public:
       /**
