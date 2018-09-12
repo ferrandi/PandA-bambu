@@ -163,11 +163,11 @@ end"/>
       </circuit>
     </cell>
     <cell>
-      <name>rams_dist</name>
+      <name>register_file</name>
       <circuit>
-        <component_o id="rams_dist">
+        <component_o id="register_file">
           <parameter name="BITSIZE_MEM">1</parameter>
-          <structural_type_descriptor id_type="rams_dist"/>
+          <structural_type_descriptor id_type="register_file"/>
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
@@ -187,7 +187,7 @@ end"/>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o> in1
-          <NP_functionality LIBRARY="rams_dist in1 selector_register_file out1 BITSIZE_MEM " VERILOG_PROVIDED="
+          <NP_functionality LIBRARY="register_file in1 selector_register_file out1 BITSIZE_MEM " VERILOG_PROVIDED="
 reg [BITSIZE_in1-1:0] ram [BITSIZE_MEM-1:0];
 always @(posedge clock)
 begin

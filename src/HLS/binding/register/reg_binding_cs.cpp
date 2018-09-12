@@ -57,7 +57,7 @@ reg_binding_cs::~reg_binding_cs()
 
 std::string reg_binding_cs::CalculateRegisterName(unsigned int )
 {
-   return "rams_dist";
+   return "register_file";
 }
 
 void reg_binding_cs::specialise_reg(structural_objectRef & reg, unsigned int r)
