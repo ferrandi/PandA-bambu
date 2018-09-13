@@ -272,7 +272,7 @@ static bool varFound(tree_nodeRef node, unsigned &vd_index, tree_nodeRef &vd_nod
    return true;
 }
 
-#define REBUILD2_DEVEL 1
+#define REBUILD2_DEVEL 0
 static bool unexpetedPattern(tree_nodeRef
 #if REBUILD2_DEVEL
                              node
