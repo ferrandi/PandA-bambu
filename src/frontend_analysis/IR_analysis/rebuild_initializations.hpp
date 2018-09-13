@@ -32,7 +32,7 @@
 */
 /**
  * @file rebuild_initializations.hpp
- * @brief rebuild initializations where it is possible
+ * @brief rebuild initialization where it is possible
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  * $Revision$
@@ -52,6 +52,8 @@
  */
 //@{
 REF_FORWARD_DECL(rebuild_initialization);
+REF_FORWARD_DECL(tree_node);
+class mem_ref;
 //@}
 
 #include <map>
@@ -103,6 +105,31 @@ class rebuild_initialization2 : public FunctionFrontendFlowStep
        * @param relationship_type is the type of relationship to be considered
        */
       const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+
+      /**
+       * @brief extract_var_decl_ppe
+       * @param vd_index is the variable decl index
+       * @param vd_node is the variable decl tree re-index node
+       */
+      bool extract_var_decl_ppe(tree_nodeRef addr_assign_op1, unsigned &vd_index, tree_nodeRef &vd_node);
+
+      /**
+       * @brief extract_var_decl return the variable decl referred by the mem_ref given it is resolvable
+       * @param me is the memory reference node
+       * @param vd_index is the variable decl index
+       * @param vd_node is the variable decl tree re-index node
+       * @param addr_assign_op1 is the pointer expression used by the mem_ref
+       * @return true in case it is possible to compute the variable decl referred, false otherwise
+       */
+      bool extract_var_decl(const mem_ref * me, unsigned &vd_index, tree_nodeRef &vd_node, tree_nodeRef &addr_assign_op1);
+
+      /**
+       * @brief look_for_ROMs transforms the IR by looking for an initial sequence of writes followed
+       * by read only instructions. In case the writes have constant offset and
+       * the written values are constants a constant array may be defined.
+       */
+      bool look_for_ROMs();
+
 
    public:
       /**
