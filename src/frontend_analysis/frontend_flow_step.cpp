@@ -409,6 +409,8 @@ const std::string FrontendFlowStep::EnumToKindText(const FrontendFlowStepType fr
 #if HAVE_BAMBU_BUILT
       case (REBUILD_INITIALIZATION):
          return "RebuildInitialization";
+      case (REBUILD_INITIALIZATION2):
+         return "RebuildInitialization2";
 #endif
 #if HAVE_BAMBU_BUILT && HAVE_EXPERIMENTAL
       case(REDUCED_PDG_COMPUTATION):

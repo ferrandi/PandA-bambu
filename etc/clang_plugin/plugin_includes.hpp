@@ -592,6 +592,7 @@ namespace clang {
          void buildMetaDataMap(llvm::Module &M);
 
          bool lowerMemIntrinsics(llvm::Module &M);
+         bool RebuildConstants(llvm::Module &M);
          bool lowerIntrinsics(llvm::Module &M);
 
          void compute_eSSA(llvm::Module &M);

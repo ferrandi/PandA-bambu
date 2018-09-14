@@ -484,6 +484,7 @@ const DesignFlowStepRef FrontendFlowStepFactory::GenerateFrontendStep(FrontendFl
 #endif
 #if HAVE_BAMBU_BUILT
       case REBUILD_INITIALIZATION:
+      case REBUILD_INITIALIZATION2:
 #endif
 #if HAVE_BAMBU_BUILT && HAVE_EXPERIMENTAL
       case REDUCED_PDG_COMPUTATION:
@@ -875,6 +876,7 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateApplicationFrontendFlowSt
 #endif
 #if HAVE_BAMBU_BUILT
       case REBUILD_INITIALIZATION:
+      case REBUILD_INITIALIZATION2:
 #endif
 #if HAVE_BAMBU_BUILT && HAVE_EXPERIMENTAL
       case REDUCED_PDG_COMPUTATION:
@@ -1334,7 +1336,11 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateFunctionFrontendFlowStep(
 #if HAVE_BAMBU_BUILT
       case REBUILD_INITIALIZATION:
       {
-         return DesignFlowStepRef(new rebuild_initializations(parameters, AppM, function_id, design_flow_manager.lock()));
+         return DesignFlowStepRef(new rebuild_initialization(parameters, AppM, function_id, design_flow_manager.lock()));
+      }
+      case REBUILD_INITIALIZATION2:
+      {
+         return DesignFlowStepRef(new rebuild_initialization2(parameters, AppM, function_id, design_flow_manager.lock()));
       }
 #endif
 

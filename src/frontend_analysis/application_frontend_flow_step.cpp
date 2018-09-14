@@ -216,6 +216,7 @@ const std::string ApplicationFrontendFlowStep::ComputeSignature(const FrontendFl
 #endif
 #if HAVE_BAMBU_BUILT
       case REBUILD_INITIALIZATION:
+      case REBUILD_INITIALIZATION2:
 #endif
 #if HAVE_ZEBU_BUILT
 #if HAVE_EXPERIMENTAL

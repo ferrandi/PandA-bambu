@@ -57,6 +57,7 @@
 #include "llvm/IR/Verifier.h"
 #include "llvm/Analysis/AssumptionCache.h"
 #include "llvm/Analysis/CFG.h"
+#include "llvm/Analysis/ConstantFolding.h"
 #include "llvm/Analysis/InstructionSimplify.h"
 #include "llvm/Analysis/ValueTracking.h"
 #include "llvm/Pass.h"
@@ -4985,6 +4986,231 @@ namespace clang
       }
    }
 
+   static bool addrIsOfIntArrayType(llvm::Value *DstAddr, unsigned &Align, const llvm::DataLayout* DL)
+   {
+      llvm::Type*srcType=nullptr;
+      if(llvm::dyn_cast<llvm::BitCastInst>(DstAddr))
+      {
+         srcType=llvm::cast<llvm::BitCastInst>(DstAddr)->getSrcTy();
+      }
+      else if(llvm::dyn_cast<llvm::ConstantExpr>(DstAddr) && cast<llvm::ConstantExpr>(DstAddr)->getOpcode() == llvm::Instruction::BitCast)
+      {
+         srcType=cast<llvm::ConstantExpr>(DstAddr)->getOperand(0)->getType();
+      }
+      if(srcType)
+      {
+         if(srcType->isPointerTy())
+         {
+            auto pointee=llvm::cast<llvm::PointerType>(srcType)->getElementType();
+            if(pointee->isArrayTy())
+            {
+               auto elType=llvm::cast<llvm::ArrayType>(pointee)->getArrayElementType();
+               auto size= elType->isSized() ? DL->getTypeAllocSizeInBits(elType) : 8ULL;
+               if(size<=Align*8)
+               {
+                  Align=size/8;
+                  return elType->isIntegerTy();
+               }
+            }
+         }
+      }
+      return false;
+   }
+   static unsigned getLoopOperandSizeInBytesLocal(llvm::Type *Type)
+   {
+     if (llvm::VectorType *VTy = dyn_cast<llvm::VectorType>(Type))
+     {
+       return VTy->getBitWidth() / 8;
+     }
+     return Type->getPrimitiveSizeInBits() / 8;
+   }
+
+   static llvm::Type *getMemcpyLoopLoweringTypeLocal(llvm::LLVMContext &Context,
+                                                     llvm::Value *Length,
+                                                     unsigned SrcAlign,
+                                                     unsigned DestAlign,
+                                                     llvm::Value *SrcAddr,
+                                                     llvm::Value *DstAddr,
+                                                     const llvm::DataLayout* DL,
+                                                     bool isVolatile, bool &Optimize)
+   {
+      if(!isVolatile)
+      {
+         unsigned localSrcAlign = SrcAlign;
+         auto srcCheck = addrIsOfIntArrayType(SrcAddr,localSrcAlign,DL);
+         if(srcCheck)
+         {
+            unsigned localDstAlign = DestAlign;
+            auto dstCheck = addrIsOfIntArrayType(DstAddr,localDstAlign,DL);
+            if(dstCheck && localSrcAlign==localDstAlign)
+            {
+               Optimize = true;
+#if PRINT_DBG_MSG
+               llvm::errs() << "memcpy can be optimized\n";
+               llvm::errs() << "Align=" << SrcAlign << "\n";
+#endif
+               return llvm::Type::getIntNTy(Context, SrcAlign*8);
+            }
+         }
+      }
+      return llvm::Type::getInt8Ty(Context);
+   }
+
+   static void getMemcpyLoopResidualLoweringTypeLocal(llvm::SmallVectorImpl<llvm::Type *> &OpsOut,
+                                                      llvm::LLVMContext &Context,
+                                                      unsigned RemainingBytes,
+                                                      unsigned SrcAlign,
+                                                      unsigned DestAlign)
+   {
+      for (unsigned i = 0; i != RemainingBytes; ++i)
+         OpsOut.push_back(llvm::Type::getInt8Ty(Context));
+   }
+
+   static void createMemCpyLoopKnownSizeLocal(llvm::Instruction *InsertBefore, llvm::Value *SrcAddr,
+                                              llvm::Value *DstAddr, llvm::ConstantInt *CopyLen,
+                                              unsigned SrcAlign, unsigned DestAlign,
+                                              bool SrcIsVolatile, bool DstIsVolatile,
+                                              const llvm::DataLayout* DL)
+   {
+      // No need to expand zero length copies.
+      if (CopyLen->isZero())
+         return;
+
+      llvm::BasicBlock *PreLoopBB = InsertBefore->getParent();
+      llvm::BasicBlock *PostLoopBB = nullptr;
+      llvm::Function *ParentFunc = PreLoopBB->getParent();
+      llvm::LLVMContext &Ctx = PreLoopBB->getContext();
+
+      bool PeelCandidate = false;
+      llvm::Type *TypeOfCopyLen = CopyLen->getType();
+      llvm::Type *LoopOpType =
+            getMemcpyLoopLoweringTypeLocal(Ctx,CopyLen,SrcAlign,DestAlign,SrcAddr,DstAddr,DL,SrcIsVolatile||DstIsVolatile, PeelCandidate);
+
+      unsigned LoopOpSize = getLoopOperandSizeInBytesLocal(LoopOpType);
+      uint64_t LoopEndCount = CopyLen->getZExtValue() / LoopOpSize;
+
+      unsigned SrcAS = cast<llvm::PointerType>(SrcAddr->getType())->getAddressSpace();
+      unsigned DstAS = cast<llvm::PointerType>(DstAddr->getType())->getAddressSpace();
+
+      uint64_t BytesCopied = LoopEndCount * LoopOpSize;
+      uint64_t RemainingBytes = CopyLen->getZExtValue() - BytesCopied;
+
+      if( !SrcIsVolatile &&
+          !DstIsVolatile &&
+          llvm::dyn_cast<llvm::ConstantExpr>(SrcAddr) &&
+          cast<llvm::ConstantExpr>(SrcAddr)->getOpcode() == llvm::Instruction::BitCast &&
+          dyn_cast<llvm::GlobalVariable>(cast<llvm::ConstantExpr>(SrcAddr)->getOperand(0)) &&
+          dyn_cast<llvm::GlobalVariable>(cast<llvm::ConstantExpr>(SrcAddr)->getOperand(0))->isConstant() &&
+          llvm::dyn_cast<llvm::BitCastInst>(DstAddr) &&
+          PeelCandidate )
+      {
+         llvm::PointerType *SrcOpType = llvm::PointerType::get(LoopOpType, SrcAS);
+         llvm::PointerType *DstOpType = llvm::PointerType::get(LoopOpType, DstAS);
+         llvm::IRBuilder<> Builder(InsertBefore);
+         auto srcAddress = Builder.CreateBitCast(cast<llvm::ConstantExpr>(SrcAddr)->getOperand(0), SrcOpType);
+         auto dstAddress = Builder.CreateBitCast(llvm::dyn_cast<llvm::BitCastInst>(DstAddr)->getOperand(0), DstOpType);
+         for(auto LI= 0u; LI < LoopEndCount; ++LI)
+         {
+            llvm::Value *SrcGEP =
+                  Builder.CreateInBoundsGEP(LoopOpType, srcAddress, llvm::ConstantInt::get(TypeOfCopyLen, LI));
+            llvm::Value *Load = Builder.CreateLoad(SrcGEP, SrcIsVolatile);
+            llvm::Value *DstGEP =
+                  Builder.CreateInBoundsGEP(LoopOpType, dstAddress, llvm::ConstantInt::get(TypeOfCopyLen, LI));
+            Builder.CreateStore(Load, DstGEP, DstIsVolatile);
+
+         }
+      }
+      else if (LoopEndCount != 0)
+      {
+         // Split
+         PostLoopBB = PreLoopBB->splitBasicBlock(InsertBefore, "memcpy-split");
+         llvm::BasicBlock *LoopBB =
+               llvm::BasicBlock::Create(Ctx, "load-store-loop", ParentFunc, PostLoopBB);
+         PreLoopBB->getTerminator()->setSuccessor(0, LoopBB);
+
+         llvm::IRBuilder<> PLBuilder(PreLoopBB->getTerminator());
+
+         // Cast the Src and Dst pointers to pointers to the loop operand type (if
+         // needed).
+         llvm::PointerType *SrcOpType = llvm::PointerType::get(LoopOpType, SrcAS);
+         llvm::PointerType *DstOpType = llvm::PointerType::get(LoopOpType, DstAS);
+         if (SrcAddr->getType() != SrcOpType)
+         {
+            llvm::errs()<< "Cast src\n";
+            SrcAddr = PLBuilder.CreateBitCast(SrcAddr, SrcOpType);
+         }
+         if (DstAddr->getType() != DstOpType)
+         {
+            llvm::errs()<< "Cast dst\n";
+            DstAddr = PLBuilder.CreateBitCast(DstAddr, DstOpType);
+         }
+
+         llvm::IRBuilder<> LoopBuilder(LoopBB);
+         llvm::PHINode *LoopIndex = LoopBuilder.CreatePHI(TypeOfCopyLen, 2, "loop-index");
+         LoopIndex->addIncoming(llvm::ConstantInt::get(TypeOfCopyLen, 0U), PreLoopBB);
+         // Loop Body
+         llvm::Value *SrcGEP =
+               LoopBuilder.CreateInBoundsGEP(LoopOpType, SrcAddr, LoopIndex);
+         llvm::Value *Load = LoopBuilder.CreateLoad(SrcGEP, SrcIsVolatile);
+         llvm::Value *DstGEP =
+               LoopBuilder.CreateInBoundsGEP(LoopOpType, DstAddr, LoopIndex);
+         LoopBuilder.CreateStore(Load, DstGEP, DstIsVolatile);
+
+         llvm::Value *NewIndex =
+               LoopBuilder.CreateAdd(LoopIndex, llvm::ConstantInt::get(TypeOfCopyLen, 1U));
+         LoopIndex->addIncoming(NewIndex, LoopBB);
+
+         // Create the loop branch condition.
+         llvm::Constant *LoopEndCI = llvm::ConstantInt::get(TypeOfCopyLen, LoopEndCount);
+         LoopBuilder.CreateCondBr(LoopBuilder.CreateICmpULT(NewIndex, LoopEndCI),
+                                  LoopBB, PostLoopBB);
+      }
+
+      if (RemainingBytes)
+      {
+         llvm::IRBuilder<> RBuilder(PostLoopBB ? PostLoopBB->getFirstNonPHI()
+                                               : InsertBefore);
+
+         // Update the alignment based on the copy size used in the loop body.
+         SrcAlign = std::min(SrcAlign, LoopOpSize);
+         DestAlign = std::min(DestAlign, LoopOpSize);
+
+         llvm::SmallVector<llvm::Type *, 5> RemainingOps;
+         getMemcpyLoopResidualLoweringTypeLocal(RemainingOps, Ctx, RemainingBytes,
+                                               SrcAlign, DestAlign);
+
+         for (auto OpTy : RemainingOps)
+         {
+            // Calaculate the new index
+            unsigned OperandSize = getLoopOperandSizeInBytesLocal(OpTy);
+            uint64_t GepIndex = BytesCopied / OperandSize;
+            assert(GepIndex * OperandSize == BytesCopied &&
+                   "Division should have no Remainder!");
+            // Cast source to operand type and load
+            llvm::PointerType *SrcPtrType = llvm::PointerType::get(OpTy, SrcAS);
+            llvm::Value *CastedSrc = SrcAddr->getType() == SrcPtrType
+                                     ? SrcAddr
+                                     : RBuilder.CreateBitCast(SrcAddr, SrcPtrType);
+            llvm::Value *SrcGEP = RBuilder.CreateInBoundsGEP(
+                                     OpTy, CastedSrc, llvm::ConstantInt::get(TypeOfCopyLen, GepIndex));
+            llvm::Value *Load = RBuilder.CreateLoad(SrcGEP, SrcIsVolatile);
+
+            // Cast destination to operand type and store.
+            llvm::PointerType *DstPtrType = llvm::PointerType::get(OpTy, DstAS);
+            llvm::Value *CastedDst = DstAddr->getType() == DstPtrType
+                                     ? DstAddr
+                                     : RBuilder.CreateBitCast(DstAddr, DstPtrType);
+            llvm::Value *DstGEP = RBuilder.CreateInBoundsGEP(
+                                     OpTy, CastedDst, llvm::ConstantInt::get(TypeOfCopyLen, GepIndex));
+            RBuilder.CreateStore(Load, DstGEP, DstIsVolatile);
+
+            BytesCopied += OperandSize;
+         }
+      }
+      assert(BytesCopied == CopyLen->getZExtValue() &&
+             "Bytes copied should match size in the call!");
+   }
+
    static void expandMemSetAsLoopLocal(llvm::MemSetInst *Memset, const llvm::DataLayout* DL)
    {
       llvm::Instruction *InsertBefore=Memset;
@@ -5000,21 +5226,8 @@ namespace clang
           OrigBB->splitBasicBlock(InsertBefore, "split");
       llvm::BasicBlock *LoopBB
         = llvm::BasicBlock::Create(F->getContext(), "loadstoreloop", F, NewBB);
-      if(llvm::dyn_cast<llvm::BitCastInst>(DstAddr))
-      {
-         auto srcType=llvm::cast<llvm::BitCastInst>(DstAddr)->getSrcTy();
-         if(srcType->isPointerTy())
-         {
-            auto pointee=llvm::cast<llvm::PointerType>(srcType)->getElementType();
-            if(pointee->isArrayTy())
-            {
-               auto elType=llvm::cast<llvm::ArrayType>(pointee)->getArrayElementType();
-               auto size= elType->isSized() ? DL->getTypeAllocSizeInBits(elType) : 8ULL;
-               if(size<Align*8)
-                  Align=size/8;
-            }
-         }
-      }
+
+      addrIsOfIntArrayType(DstAddr,Align,DL);
 
       bool AlignCanBeUsed = false;
       if(isa<llvm::ConstantInt>(CopyLen) &&
@@ -5092,15 +5305,15 @@ namespace clang
 //                        auto DIExpr = dbgInstrCall->getExpression();
 //                        if(DIExpr)
                         {
-                           llvm::errs() << "Inst: ";
-                           inst.print(llvm::errs());
-                           llvm::errs() << "\n";
-                           llvm::errs() << "Value: ";
-                           val->print(llvm::errs());
-                           llvm::errs() << "\n";
-                           llvm::errs() << "Metadata: ";
-                           dbgInstrCall->getRawVariable()->print(llvm::errs());
-                           llvm::errs() <<"\n";
+//                           llvm::errs() << "Inst: ";
+//                           inst.print(llvm::errs());
+//                           llvm::errs() << "\n";
+//                           llvm::errs() << "Value: ";
+//                           val->print(llvm::errs());
+//                           llvm::errs() << "\n";
+//                           llvm::errs() << "Metadata: ";
+//                           dbgInstrCall->getRawVariable()->print(llvm::errs());
+//                           llvm::errs() <<"\n";
                         }
                      }
                   }
@@ -5155,9 +5368,30 @@ namespace clang
             do_erase = false;
             if (llvm::MemCpyInst *Memcpy = dyn_cast<llvm::MemCpyInst>(MemCall))
             {
+               if (llvm::ConstantInt *CI = dyn_cast<llvm::ConstantInt>(Memcpy->getLength()))
+               {
+                  createMemCpyLoopKnownSizeLocal(Memcpy,
+                                                 Memcpy->getRawSource(),
+                                                 Memcpy->getRawDest(),
+                                                 CI,
+#if __clang_major__ > 6
+                                                 Memcpy->getSourceAlignment(),
+                                                 Memcpy->getDestAlignment(),
+#else
+                                                 Memcpy->getAlignment(),
+                                                 Memcpy->getAlignment(),
+#endif
+                                                 Memcpy->isVolatile(),
+                                                 Memcpy->isVolatile(),
+                                                 DL);
+                  do_erase = true;
+               }
 #if __clang_major__ != 4
-               llvm::expandMemCpyAsLoop(Memcpy, TTI);
-               do_erase = true;
+               else
+               {
+                  llvm::expandMemCpyAsLoop(Memcpy, TTI);
+                  do_erase = true;
+               }
 #endif
             }
             else if (llvm::MemMoveInst *Memmove = dyn_cast<llvm::MemMoveInst>(MemCall))
@@ -5174,6 +5408,582 @@ namespace clang
             }
             if(do_erase)
                MemCall->eraseFromParent();
+         }
+         ++currFuncIterator;
+      }
+      return res;
+   }
+
+   static bool isSimpleEnoughPointerToCommitLocal(llvm::Constant *C) {
+     // Conservatively, avoid aggregate types. This is because we don't
+     // want to worry about them partially overlapping other stores.
+     if (!cast<llvm::PointerType>(C->getType())->getElementType()->isSingleValueType())
+       return false;
+
+     if (llvm::GlobalVariable *GV = dyn_cast<llvm::GlobalVariable>(C))
+       // Do not allow weak/*_odr/linkonce linkage or external globals.
+       return GV->hasUniqueInitializer();
+
+     if (llvm::ConstantExpr *CE = dyn_cast<llvm::ConstantExpr>(C))
+     {
+       // Handle a constantexpr gep.
+       if (CE->getOpcode() == llvm::Instruction::GetElementPtr &&
+           isa<llvm::GlobalVariable>(CE->getOperand(0)) &&
+           cast<llvm::GEPOperator>(CE)->isInBounds()) {
+         llvm::GlobalVariable *GV = cast<llvm::GlobalVariable>(CE->getOperand(0));
+         // Do not allow weak/*_odr/linkonce/dllimport/dllexport linkage or
+         // external globals.
+         if (!GV->hasUniqueInitializer())
+           return false;
+
+         // The first index must be zero.
+         llvm::ConstantInt *CI = dyn_cast<llvm::ConstantInt>(*std::next(CE->op_begin()));
+         if (!CI || !CI->isZero()) return false;
+
+         // The remaining indices must be compile-time known integers within the
+         // notional bounds of the corresponding static array types.
+         if (!CE->isGEPWithNoNotionalOverIndexing())
+           return false;
+
+         return ConstantFoldLoadThroughGEPConstantExpr(GV->getInitializer(), CE);
+
+       // A constantexpr bitcast from a pointer to another pointer is a no-op,
+       // and we know how to evaluate it by moving the bitcast from the pointer
+       // operand to the value operand.
+       } else if (CE->getOpcode() == llvm::Instruction::BitCast &&
+                  isa<llvm::GlobalVariable>(CE->getOperand(0))) {
+         // Do not allow weak/*_odr/linkonce/dllimport/dllexport linkage or
+         // external globals.
+         return cast<llvm::GlobalVariable>(CE->getOperand(0))->hasUniqueInitializer();
+       }
+     }
+
+     return false;
+   }
+
+   /// This is a customized/local version of EvaluateStoreIntoLocal taken from lib/Analysis/ConstantFolding.cpp
+   static llvm::Constant * ConstantFoldLoadThroughBitcastLocal(llvm::Constant *C, llvm::Type *DestTy, const llvm::DataLayout &DL)
+   {
+      do
+      {
+         llvm::Type *SrcTy = C->getType();
+
+         // If the type sizes are the same and a cast is legal, just directly
+         // cast the constant.
+         if (DL.getTypeSizeInBits(DestTy) == DL.getTypeSizeInBits(SrcTy))
+         {
+            llvm::Instruction::CastOps Cast = llvm::Instruction::BitCast;
+            // If we are going from a pointer to int or vice versa, we spell the cast
+            // differently.
+            if (SrcTy->isIntegerTy() && DestTy->isPointerTy())
+               Cast = llvm::Instruction::IntToPtr;
+            else if (SrcTy->isPointerTy() && DestTy->isIntegerTy())
+               Cast =llvm:: Instruction::PtrToInt;
+
+            if (llvm::CastInst::castIsValid(Cast, C, DestTy))
+               return llvm::ConstantExpr::getCast(Cast, C, DestTy);
+         }
+
+         // If this isn't an aggregate type, there is nothing we can do to drill down
+         // and find a bitcastable constant.
+         if (!SrcTy->isAggregateType())
+            return nullptr;
+
+         // We're simulating a load through a pointer that was bitcast to point to
+         // a different type, so we can try to walk down through the initial
+         // elements of an aggregate to see if some part of th e aggregate is
+         // castable to implement the "load" semantic model.
+         C = C->getAggregateElement(0u);
+      } while (C);
+
+      return nullptr;
+   }
+
+
+   /// This is a customized/local version of EvaluateStoreIntoLocal taken from lib/Transforms/IPO/GlobalOpt.cpp
+   static llvm::Constant *EvaluateStoreIntoLocal(llvm::Constant *Init, llvm::Constant *Val, llvm::ConstantExpr *Addr, unsigned OpNo)
+   {
+     // Base case of the recursion.
+     if (OpNo == Addr->getNumOperands())
+     {
+       assert(Val->getType() == Init->getType() && "Type mismatch!");
+       return Val;
+     }
+
+     llvm::SmallVector<llvm::Constant*, 32> Elts;
+     if (llvm::StructType *STy = dyn_cast<llvm::StructType>(Init->getType()))
+     {
+       // Break up the constant into its elements.
+       for (unsigned i = 0, e = STy->getNumElements(); i != e; ++i)
+         Elts.push_back(Init->getAggregateElement(i));
+
+       // Replace the element that we are supposed to.
+       llvm::ConstantInt *CU = cast<llvm::ConstantInt>(Addr->getOperand(OpNo));
+       unsigned Idx = CU->getZExtValue();
+       assert(Idx < STy->getNumElements() && "Struct index out of range!");
+       Elts[Idx] = EvaluateStoreIntoLocal(Elts[Idx], Val, Addr, OpNo+1);
+
+       // Return the modified struct.
+       return llvm::ConstantStruct::get(STy, Elts);
+     }
+
+     llvm::ConstantInt *CI = cast<llvm::ConstantInt>(Addr->getOperand(OpNo));
+     llvm::SequentialType *InitTy = cast<llvm::SequentialType>(Init->getType());
+     uint64_t NumElts = InitTy->getNumElements();
+
+     // Break up the array into elements.
+     for (uint64_t i = 0, e = NumElts; i != e; ++i)
+       Elts.push_back(Init->getAggregateElement(i));
+
+     assert(CI->getZExtValue() < NumElts);
+     Elts[CI->getZExtValue()] =
+       EvaluateStoreIntoLocal(Elts[CI->getZExtValue()], Val, Addr, OpNo+1);
+
+     if (Init->getType()->isArrayTy())
+       return llvm::ConstantArray::get(cast<llvm::ArrayType>(InitTy), Elts);
+     return llvm::ConstantVector::get(Elts);
+   }
+
+   /// This is a customized/local version of CommitValueTo taken from lib/Transforms/IPO/GlobalOpt.cpp
+   static void CommitValueToLocal(llvm::Constant *Val, llvm::Constant *Addr)
+   {
+     if (llvm::GlobalVariable *GV = dyn_cast<llvm::GlobalVariable>(Addr)) {
+       assert(GV->hasInitializer());
+       GV->setInitializer(Val);
+       return;
+     }
+
+     llvm::ConstantExpr *CE = cast<llvm::ConstantExpr>(Addr);
+     llvm::GlobalVariable *GV = cast<llvm::GlobalVariable>(CE->getOperand(0));
+     GV->setInitializer(EvaluateStoreIntoLocal(GV->getInitializer(), Val, CE, 2));
+   }
+
+   /// This is a customized/local version of BatchCommitValueTo taken from lib/Transforms/IPO/GlobalOpt.cpp
+   static void BatchCommitValueToLocal(const llvm::DenseMap<llvm::Constant*, llvm::Constant*> &Mem)
+   {
+     llvm::SmallVector<std::pair<llvm::GlobalVariable*, llvm::Constant*>, 32> GVs;
+     llvm::SmallVector<std::pair<llvm::ConstantExpr*, llvm::Constant*>, 32> ComplexCEs;
+     llvm::SmallVector<std::pair<llvm::ConstantExpr*, llvm::Constant*>, 32> SimpleCEs;
+     SimpleCEs.reserve(Mem.size());
+
+     for (const auto &I : Mem)
+     {
+       if (auto *GV = dyn_cast<llvm::GlobalVariable>(I.first))
+       {
+         GVs.push_back(std::make_pair(GV, I.second));
+       }
+       else
+       {
+         llvm::ConstantExpr *GEP = cast<llvm::ConstantExpr>(I.first);
+         // We don't handle the deeply recursive case using the batch method.
+         if (GEP->getNumOperands() > 3)
+           ComplexCEs.push_back(std::make_pair(GEP, I.second));
+         else
+           SimpleCEs.push_back(std::make_pair(GEP, I.second));
+       }
+     }
+
+     // The algorithm below doesn't handle cases like nested structs, so use the
+     // slower fully general method if we have to.
+     for (auto ComplexCE : ComplexCEs)
+       CommitValueToLocal(ComplexCE.second, ComplexCE.first);
+
+     for (auto GVPair : GVs)
+     {
+       assert(GVPair.first->hasInitializer());
+       GVPair.first->setInitializer(GVPair.second);
+     }
+
+     if (SimpleCEs.empty())
+       return;
+
+     // We cache a single global's initializer elements in the case where the
+     // subsequent address/val pair uses the same one. This avoids throwing away and
+     // rebuilding the constant struct/vector/array just because one element is
+     // modified at a time.
+     llvm::SmallVector<llvm::Constant *, 32> Elts;
+     Elts.reserve(SimpleCEs.size());
+     llvm::GlobalVariable *CurrentGV = nullptr;
+
+     auto commitAndSetupCache = [&](llvm::GlobalVariable *GV, bool Update) {
+       llvm::Constant *Init = GV->getInitializer();
+       llvm::Type *Ty = Init->getType();
+       if (Update) {
+         if (CurrentGV) {
+           assert(CurrentGV && "Expected a GV to commit to!");
+           llvm::Type *CurrentInitTy = CurrentGV->getInitializer()->getType();
+           // We have a valid cache that needs to be committed.
+           if (llvm::StructType *STy = dyn_cast<llvm::StructType>(CurrentInitTy))
+             CurrentGV->setInitializer(llvm::ConstantStruct::get(STy, Elts));
+           else if (llvm::ArrayType *ArrTy = dyn_cast<llvm::ArrayType>(CurrentInitTy))
+             CurrentGV->setInitializer(llvm::ConstantArray::get(ArrTy, Elts));
+           else
+             CurrentGV->setInitializer(llvm::ConstantVector::get(Elts));
+         }
+         if (CurrentGV == GV)
+           return;
+         // Need to clear and set up cache for new initializer.
+         CurrentGV = GV;
+         Elts.clear();
+         unsigned NumElts;
+         if (auto *STy = dyn_cast<llvm::StructType>(Ty))
+           NumElts = STy->getNumElements();
+         else
+           NumElts = cast<llvm::SequentialType>(Ty)->getNumElements();
+         for (unsigned i = 0, e = NumElts; i != e; ++i)
+           Elts.push_back(Init->getAggregateElement(i));
+       }
+     };
+
+     for (auto CEPair : SimpleCEs) {
+       llvm::ConstantExpr *GEP = CEPair.first;
+       llvm::Constant *Val = CEPair.second;
+
+       llvm::GlobalVariable *GV = cast<llvm::GlobalVariable>(GEP->getOperand(0));
+       commitAndSetupCache(GV, GV != CurrentGV);
+       llvm::ConstantInt *CI = cast<llvm::ConstantInt>(GEP->getOperand(2));
+       Elts[CI->getZExtValue()] = Val;
+     }
+     // The last initializer in the list needs to be committed, others
+     // will be committed on a new initializer being processed.
+     commitAndSetupCache(CurrentGV, true);
+   }
+
+   static bool removableStore(llvm::StoreInst *SI, llvm::GlobalVariable *GV, llvm::TargetLibraryInfo &TLI, const llvm::DataLayout &DL, llvm::Constant* &Ptr, llvm::Constant* &Val, bool firstPart)
+   {
+      if (!SI->isSimple())
+      {
+         //llvm::errs() << "Store is not simple! Can not evaluate.\n";
+         return false;  // no volatile/atomic accesses.
+      }
+
+      if(!dyn_cast<llvm::Constant>(SI->getOperand(1)))
+      {
+         //llvm::errs() << "Ptr is not constant.\n";
+         return false;
+      }
+      Ptr = dyn_cast<llvm::Constant>(SI->getOperand(1));
+      if (auto *FoldedPtr = llvm::ConstantFoldConstant(Ptr, DL, &TLI))
+      {
+         //llvm::errs() << "Folding constant ptr expression: " << *Ptr;
+         Ptr = FoldedPtr;
+         //llvm::errs() << "; To: " << *Ptr << "\n";
+      }
+      if (!isSimpleEnoughPointerToCommitLocal(Ptr))
+      {
+         // If this is too complex for us to commit, reject it.
+         //llvm::errs() << "Pointer is too complex for us to evaluate store.";
+         return false;
+      }
+      if(!dyn_cast<llvm::Constant>(SI->getOperand(0)))
+      {
+         //llvm::errs() << "Value stored is not constant.\n";
+         return false;
+      }
+      Val = dyn_cast<llvm::Constant>(SI->getOperand(0));
+      if (llvm::ConstantExpr *CE = dyn_cast<llvm::ConstantExpr>(Ptr))
+      {
+         if (CE->getOpcode() == llvm::Instruction::BitCast)
+         {
+            //llvm::errs() << "Attempting to resolve bitcast on constant ptr.\n";
+            // If we're evaluating a store through a bitcast, then we need
+            // to pull the bitcast off the pointer type and push it onto the
+            // stored value.
+            Ptr = CE->getOperand(0);
+
+            llvm::Type *NewTy = cast<llvm::PointerType>(Ptr->getType())->getElementType();
+
+            // In order to push the bitcast onto the stored value, a bitcast
+            // from NewTy to Val's type must be legal.  If it's not, we can try
+            // introspecting NewTy to find a legal conversion.
+            llvm::Constant *NewVal;
+            while (!(NewVal = ConstantFoldLoadThroughBitcastLocal(Val, NewTy, DL)))
+            {
+               // If NewTy is a struct, we can convert the pointer to the struct
+               // into a pointer to its first member.
+               // FIXME: This could be extended to support arrays as well.
+               if (llvm::StructType *STy = dyn_cast<llvm::StructType>(NewTy))
+               {
+                  NewTy = STy->getTypeAtIndex(0U);
+
+                  llvm::IntegerType *IdxTy = llvm::IntegerType::get(NewTy->getContext(), 32);
+                  llvm::Constant *IdxZero = llvm::ConstantInt::get(IdxTy, 0, false);
+                  llvm::Constant * const IdxList[] = {IdxZero, IdxZero};
+
+                  Ptr = llvm::ConstantExpr::getGetElementPtr(nullptr, Ptr, IdxList);
+                  if (auto *FoldedPtr = llvm::ConstantFoldConstant(Ptr, DL, &TLI))
+                     Ptr = FoldedPtr;
+
+                  // If we can't improve the situation by introspecting NewTy,
+                  // we have to give up.
+               }
+               else
+               {
+                  //llvm::errs() << "Failed to bitcast constant ptr, can not evaluate.\n";
+                  return false;
+               }
+            }
+            Val = NewVal;
+            //llvm::errs() << "Evaluated bitcast: " << *Val << "\n";
+         }
+      }
+      if(firstPart)
+         return true;
+      if (llvm::GlobalVariable *GVi = dyn_cast<llvm::GlobalVariable>(Ptr))
+      {
+         if(GV==GVi)
+            return true;
+      }
+      else
+      {
+         llvm::ConstantExpr *CEj = cast<llvm::ConstantExpr>(Ptr);
+         llvm::GlobalVariable *GVj = cast<llvm::GlobalVariable>(CEj->getOperand(0));
+         if(GV==GVj)
+            return true;
+      }
+      return false;
+   }
+
+   static llvm::Constant *getInitializerLocal(llvm::Constant *C) {
+     auto *GV = dyn_cast<llvm::GlobalVariable>(C);
+     return GV && GV->hasDefinitiveInitializer() ? GV->getInitializer() : nullptr;
+   }
+
+   llvm::Constant *ComputeLoadResultLocal(llvm::Constant *P, llvm::DenseMap<llvm::Constant*, llvm::Constant*> &MutatedMemory, const llvm::DataLayout &DL)
+   {
+      // If this memory location has been recently stored, use the stored value: it
+      // is the most up-to-date.
+      auto I = MutatedMemory.find(P);
+      if (I != MutatedMemory.end()) return I->second;
+
+      // Access it.
+      if (llvm::GlobalVariable *GV = dyn_cast<llvm::GlobalVariable>(P))
+      {
+         if (GV->hasDefinitiveInitializer())
+            return GV->getInitializer();
+         return nullptr;
+      }
+
+      if (llvm::ConstantExpr *CE = dyn_cast<llvm::ConstantExpr>(P))
+      {
+         switch (CE->getOpcode())
+         {
+            // Handle a constantexpr getelementptr.
+            case llvm::Instruction::GetElementPtr:
+               if (auto *I = getInitializerLocal(CE->getOperand(0)))
+                  return llvm::ConstantFoldLoadThroughGEPConstantExpr(I, CE);
+               break;
+               // Handle a constantexpr bitcast.
+            case llvm::Instruction::BitCast:
+               llvm::Constant *Val = dyn_cast<llvm::Constant>(CE->getOperand(0));
+               auto MM = MutatedMemory.find(Val);
+               auto *I = (MM != MutatedMemory.end()) ? MM->second : getInitializerLocal(CE->getOperand(0));
+               if (I)
+                  return ConstantFoldLoadThroughBitcastLocal(I, P->getType()->getPointerElementType(), DL);
+               break;
+         }
+      }
+
+      return nullptr;  // don't know how to evaluate.
+   }
+
+
+   static void updateLoads(llvm::GlobalVariable *GV, llvm::DenseMap<llvm::Constant*, llvm::Constant*> &MutatedMemory, llvm::TargetLibraryInfo &TLI, const llvm::DataLayout &DL, std::list<llvm::Instruction*> &deadList)
+   {
+      for(auto user : GV->users())
+      {
+         for(auto u : user->users())
+         {
+            if (llvm::LoadInst *LI = dyn_cast<llvm::LoadInst>(u))
+            {
+               if (LI->isSimple())
+               {
+                  if(llvm::Constant *Ptr = dyn_cast<llvm::Constant>(LI->getOperand(0)))
+                  {
+                     if (auto *FoldedPtr = llvm::ConstantFoldConstant(Ptr, DL, &TLI))
+                     {
+                          Ptr = FoldedPtr;
+                     }
+                     auto InstResult = ComputeLoadResultLocal(Ptr,MutatedMemory,DL);
+                     if(InstResult)
+                     {
+                        LI->replaceAllUsesWith(InstResult);
+                        if(llvm::isInstructionTriviallyDead(LI,&TLI))
+                           deadList.push_back(LI);
+                     }
+                  }
+               }
+            }
+         }
+      }
+   }
+   bool DumpGimpleRaw::RebuildConstants(llvm::Module &M)
+   {
+      llvm::TargetLibraryInfo &TLI =
+            modulePass->getAnalysis<llvm::TargetLibraryInfoWrapperPass>().getTLI();
+      llvm::SmallPtrSet<llvm::GlobalVariable*, 8> Invariants;
+      llvm::SmallPtrSet<llvm::Instruction*, 8> Stores;
+      auto res = false;
+      auto currFuncIterator = M.getFunctionList().begin();
+      while(currFuncIterator != M.getFunctionList().end())
+      {
+         auto fname = std::string(currFuncIterator->getName());
+         auto& F = *currFuncIterator;
+         std::list<llvm::Instruction*> deadList;
+         for (llvm::Function::iterator BI = F.begin(), BE = F.end(); BI != BE; ++BI)
+         {
+            for(llvm::BasicBlock::iterator II = BI->begin(), IE = BI->end(); II != IE; ++II)
+            {
+               if(isa<llvm::CallInst>(II)|| isa<llvm::InvokeInst>(II))
+               {
+                  llvm::CallSite CS(&*II);
+                  llvm::IntrinsicInst *IntInst = dyn_cast<llvm::IntrinsicInst>(CS.getInstruction());
+                  if(IntInst && IntInst->getIntrinsicID() == llvm::Intrinsic::invariant_start)
+                  {
+                     llvm::ConstantInt *Size = cast<llvm::ConstantInt>(IntInst->getArgOperand(0));
+                     auto invOp = IntInst->getArgOperand(1)->stripPointerCasts();
+                     if (llvm::GlobalVariable *GV = dyn_cast<llvm::GlobalVariable>(invOp))
+                     {
+                        llvm::Type *ElemTy = GV->getValueType();
+                        if (!Size->isMinusOne() &&
+                            Size->getValue().getLimitedValue() >= DL->getTypeStoreSize(ElemTy))
+                        {
+                           ///Check the pattern first
+                           bool allRemovable=BI->begin()!=II;
+                           for(llvm::BasicBlock::iterator CurInst = BI->begin(); CurInst != II; ++CurInst)
+                           {
+                              llvm::Constant* Val;
+                              llvm::Constant* Ptr;
+                              llvm::StoreInst *SI = dyn_cast<llvm::StoreInst>(CurInst);
+                              allRemovable = SI && removableStore(SI, GV, TLI, *DL, Ptr, Val, false);
+                              if(!allRemovable)
+                                 break;
+                           }
+                           if(allRemovable)
+                           {
+                              llvm::GlobalVariable *GVi=nullptr;
+                              llvm::DenseMap<llvm::Constant*, llvm::Constant*> MutatedMemory;
+                              llvm::errs() << "Found a global var that is an invariant: " << *GV << "\n";
+                              for(llvm::BasicBlock::iterator CurInst = BI->begin(); CurInst != II; )
+                              {
+                                 llvm::Constant* Val;
+                                 llvm::Constant* Ptr;
+                                 llvm::StoreInst *SI = dyn_cast<llvm::StoreInst>(CurInst);
+                                 auto Removable = SI && removableStore(SI, GV, TLI, *DL, Ptr, Val, false);
+                                 assert(Removable);
+                                 MutatedMemory[Ptr] = Val;
+
+                                 auto me = CurInst;
+                                 bool atBegin(BI->begin() == me);
+                                 if (!atBegin)
+                                    --me;
+                                 CurInst->eraseFromParent();
+                                 if (atBegin)
+                                    CurInst = BI->begin();
+                                 else
+                                 {
+                                    CurInst = me;
+                                    ++CurInst;
+                                 }
+                              }
+                              ///check the next statement
+                              llvm::BasicBlock::iterator GuardInst = II;
+                              ++GuardInst;
+                              if(GuardInst != IE)
+                              {
+                                 llvm::Constant* Val;
+                                 llvm::Constant* Ptr;
+                                 llvm::StoreInst *SI = dyn_cast<llvm::StoreInst>(GuardInst);
+                                 auto Removable = SI && removableStore(SI, GV, TLI, *DL, Ptr, Val, true);
+                                 if(Removable)
+                                 {
+                                    GVi = dyn_cast<llvm::GlobalVariable>(Ptr);
+                                    if (!GVi)
+                                    {
+                                       llvm::ConstantExpr *CEj = cast<llvm::ConstantExpr>(Ptr);
+                                       GVi = cast<llvm::GlobalVariable>(CEj->getOperand(0));
+                                    }
+                                    if (GVi)
+                                    {
+                                       if(!GVi->getName().empty())
+                                       {
+                                          std::string declname = std::string(GVi->getName());
+                                          int status;
+                                          char * demangled_outbuffer = abi::__cxa_demangle(declname.c_str(), nullptr, nullptr, &status);
+                                          if(status==0)
+                                          {
+                                             declname=demangled_outbuffer;
+                                             if(declname.find("guard variable for") != std::string::npos)
+                                             {
+                                                std::string declname1 = std::string(GV->getName());
+                                                char * demangled_outbuffer1 = abi::__cxa_demangle(declname1.c_str(), nullptr, nullptr, &status);
+                                                if(status==0)
+                                                {
+                                                   declname1=demangled_outbuffer1;
+                                                   if(declname.find(declname1) != std::string::npos)
+                                                   {
+                                                      MutatedMemory[Ptr] = Val;
+                                                      GuardInst->eraseFromParent();
+                                                   }
+                                                   else
+                                                      GVi=nullptr;
+                                                   free(demangled_outbuffer1);
+                                                }
+                                                else
+                                                {
+                                                   assert(demangled_outbuffer1==nullptr);
+                                                   GVi=nullptr;
+                                                }
+                                             }
+                                             else
+                                                GVi=nullptr;
+                                             free(demangled_outbuffer);
+                                          }
+                                          else
+                                          {
+                                             GVi=nullptr;
+                                             assert(demangled_outbuffer==nullptr);
+                                          }
+                                       }
+                                    }
+                                 }
+                              }
+                              BatchCommitValueToLocal(MutatedMemory);
+                              GV->setConstant(true);
+                              updateLoads(GV, MutatedMemory, TLI, *DL, deadList);
+                              if(GVi)
+                              {
+                                 GVi->setConstant(true);
+                                 updateLoads(GVi, MutatedMemory, TLI, *DL, deadList);
+                              }
+                              res=true;
+                           }
+                        }
+                        else
+                        {
+                           llvm::errs() << "Found a global var, but can not treat it as an invariant.\n";
+                        }
+                     }
+                  }
+               }
+            }
+         }
+         for(auto I : deadList)
+            if (llvm::isInstructionTriviallyDead(I, &TLI))
+               I->eraseFromParent();
+         if(!deadList.empty())
+         {
+            const llvm::TargetTransformInfo &TTI =
+                  modulePass->getAnalysis<llvm::TargetTransformInfoWrapperPass>().getTTI(F);
+            for (llvm::Function::iterator BBIt = F.begin(); BBIt != F.end(); )
+               llvm::SimplifyInstructionsInBlock(&*BBIt++, &TLI);
+            for (llvm::Function::iterator BBIt = F.begin(); BBIt != F.end();)
+#if __clang_major__ >= 6
+               llvm::simplifyCFG(&*BBIt++, TTI, 1);
+#else
+               llvm::SimplifyCFG(&*BBIt++, TTI, 1);
+#endif
+            llvm::removeUnreachableBlocks(F);
          }
          ++currFuncIterator;
       }
@@ -5644,6 +6454,7 @@ namespace clang
       moduleContext = &M.getContext();
       buildMetaDataMap(M);
       auto res = lowerMemIntrinsics(M);
+      res = res | RebuildConstants(M);
       res = res | lowerIntrinsics(M);
       compute_eSSA(M);
 #if HAVE_LIBBDD

@@ -488,16 +488,6 @@ static const ei_pair ei_pairs[]=
    {"keypad", EFT_NOOP},
    {"lchown", EFT_NOOP},
    {"link", EFT_NOOP},
-   {"llvm.memset.i32", EFT_NOOP},
-   {"llvm.memset.i64", EFT_NOOP},
-   {"llvm.stackrestore", EFT_NOOP},
-   {"llvm.va_copy", EFT_NOOP},
-   {"llvm.va_end", EFT_NOOP},
-   {"llvm.va_start", EFT_NOOP},
-   {"llvm.lifetime.start", EFT_NOOP},
-   {"llvm.lifetime.end", EFT_NOOP},
-   {"llvm.lifetime.start.p0i8", EFT_NOOP},
-   {"llvm.lifetime.end.p0i8", EFT_NOOP},
    {"longjmp", EFT_NOOP},
    {"lstat", EFT_NOOP},
    {"lstat64", EFT_NOOP},
@@ -813,7 +803,6 @@ static const ei_pair ei_pairs[]=
    {"gzerror", EFT_NOSTRUCT_ALLOC},
    {"inet_ntoa", EFT_NOSTRUCT_ALLOC},
    {"initscr", EFT_NOSTRUCT_ALLOC},
-   {"llvm.stacksave", EFT_NOSTRUCT_ALLOC},
    {"mmap", EFT_NOSTRUCT_ALLOC},
    {"mmap64", EFT_NOSTRUCT_ALLOC},
    {"newwin", EFT_NOSTRUCT_ALLOC},
@@ -899,7 +888,6 @@ static const ei_pair ei_pairs[]=
    //This will overwrite *arg0 with non-pointer data -
    //  assume that no valid pointer values are created.
    {"memset", EFT_L_A0},
-   {"llvm.memset.p0i8.i32", EFT_L_A0},
    //This may return a new ptr if the region was moved.
    {"mremap", EFT_L_A0},
    {"stpcpy", EFT_L_A0},
@@ -929,11 +917,6 @@ static const ei_pair ei_pairs[]=
    {"inet_ntop", EFT_L_A2},
    {"XGetSubImage", EFT_L_A8},
 
-   {"llvm.memcpy.p0i8.p0i8.i32", EFT_L_A0__A0R_A1R},
-   {"llvm.memmove.p0i8.p0i8.i32", EFT_L_A0__A0R_A1R},
-   {"llvm.memcpy.i32", EFT_L_A0__A0R_A1R},
-   {"llvm.memcpy.i64", EFT_L_A0__A0R_A1R},
-   {"llvm.memmove.i32", EFT_L_A0__A0R_A1R},
    {"memccpy", EFT_L_A0__A0R_A1R},
    {"memmove", EFT_L_A0__A0R_A1R},
    {"bcopy", EFT_A1R_A0R},
@@ -1027,9 +1010,38 @@ extf_t ExtInfo::get_type(const llvm::Function *F) const
    assert(F);
    auto it= info.find(F->getName());
    if(it == info.end())
+   {
+      if(F->isIntrinsic())
+      {
+         auto intID = F->getIntrinsicID();
+         switch(intID)
+         {
+            case llvm::Intrinsic::memset:
+               return EFT_L_A0;
+            case llvm::Intrinsic::memcpy:
+               return EFT_L_A0__A0R_A1R;
+            case llvm::Intrinsic::memmove:
+               return EFT_L_A0__A0R_A1R;
+            case llvm::Intrinsic::invariant_start:
+            case llvm::Intrinsic::invariant_end:
+            case llvm::Intrinsic::lifetime_start:
+            case llvm::Intrinsic::lifetime_end:
+            case llvm::Intrinsic::stackrestore:
+            case llvm::Intrinsic::stacksave:
+            case llvm::Intrinsic::vacopy:
+            case llvm::Intrinsic::vaend:
+            case llvm::Intrinsic::vastart:
+               return EFT_NOOP;
+            default:
+               return EFT_OTHER;
+         }
+      }
       return EFT_OTHER;
+   }
    else
+   {
       return it->second;
+   }
 }
 
 bool ExtInfo::is_ext(const llvm::Function *F)
