@@ -45,12 +45,14 @@ lib_IR_manipulation_la_SOURCES = \
 if BUILD_BAMBU
    noinst_HEADERS += \
       cond_expr_restructuring.hpp \
+      commutative_expr_restructuring.hpp \
       extract_gimple_cond_op.hpp \
       predicate_statements.hpp \
       serialize_mutual_exclusions.hpp \
       un_comparison_lowering.hpp
    lib_IR_manipulation_la_SOURCES += \
       cond_expr_restructuring.cpp \
+      commutative_expr_restructuring.cpp \
       extract_gimple_cond_op.cpp \
       predicate_statements.cpp \
       serialize_mutual_exclusions.cpp \

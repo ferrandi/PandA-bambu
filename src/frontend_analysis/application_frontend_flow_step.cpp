@@ -117,6 +117,7 @@ const std::string ApplicationFrontendFlowStep::ComputeSignature(const FrontendFl
       case COMPLETE_BB_GRAPH:
 #if HAVE_BAMBU_BUILT
       case COMPUTE_IMPLICIT_CALLS:
+      case COMMUTATIVE_EXPR_RESTRUCTURING:
       case COND_EXPR_RESTRUCTURING:
       case CONSTANT_FLOP_WRAPPER:
       case CSE_STEP:

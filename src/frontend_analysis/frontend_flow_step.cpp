@@ -223,6 +223,8 @@ const std::string FrontendFlowStep::EnumToKindText(const FrontendFlowStepType fr
 #if HAVE_BAMBU_BUILT
       case COMPUTE_IMPLICIT_CALLS:
          return "ComputeImplicitCalls";
+      case COMMUTATIVE_EXPR_RESTRUCTURING:
+         return "CommutativeExprRestructuring";
       case COND_EXPR_RESTRUCTURING:
          return "CondExprRestructuring";
       case CSE_STEP:

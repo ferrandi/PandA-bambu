@@ -1701,6 +1701,8 @@ src/frontend_analysis/IR_manipulation/build_virtual_phi.cpp
 src/frontend_analysis/IR_manipulation/build_virtual_phi.hpp
 src/frontend_analysis/IR_manipulation/clean_virtual_phi.cpp
 src/frontend_analysis/IR_manipulation/clean_virtual_phi.hpp
+src/frontend_analysis/IR_manipulation/commutative_expr_restructuring.cpp
+src/frontend_analysis/IR_manipulation/commutative_expr_restructuring.hpp
 src/frontend_analysis/IR_manipulation/cond_expr_restructuring.cpp
 src/frontend_analysis/IR_manipulation/cond_expr_restructuring.hpp
 src/frontend_analysis/IR_manipulation/create_tree_manager.cpp

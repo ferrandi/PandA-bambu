@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2015-2018 Politecnico di Milano
+ *              Copyright (c) 2018 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -31,15 +31,15 @@
  *
 */
 /**
- * @file cond_expr_restructuring.cpp
- * @brief Analysis step restructing tree of cond_expr to reduce critical path delay
+ * @file commutative_expr_restructuring.cpp
+ * @brief Analysis step restructuring tree of commutative expressions to reduce the critical path delay.
  *
- * @author Marco Lattuada <marco.lattuada@polimi.it>
+ * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  *
 */
 
 ///Header include
-#include "cond_expr_restructuring.hpp"
+#include "commutative_expr_restructuring.hpp"
 
 ///. include
 #include "Parameter.hpp"
@@ -80,7 +80,7 @@
 
 #define EPSILON 0.0001
 
-const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship> > CondExprRestructuring::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship> > commutative_expr_restructuring::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > relationships;
    switch(relationship_type)
@@ -116,7 +116,6 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
       {
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship> (MULTI_WAY_IF, SAME_FUNCTION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship> (COMPLETE_BB_GRAPH, SAME_FUNCTION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship> (COMMUTATIVE_EXPR_RESTRUCTURING, SAME_FUNCTION));
          break;
       }
       default:
@@ -127,30 +126,34 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
    return relationships;
 }
 
-CondExprRestructuring::CondExprRestructuring(const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters) :
-   FunctionFrontendFlowStep(_AppM, _function_id, COND_EXPR_RESTRUCTURING, _design_flow_manager, _parameters)
+commutative_expr_restructuring::commutative_expr_restructuring(const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters) :
+   FunctionFrontendFlowStep(_AppM, _function_id, COMMUTATIVE_EXPR_RESTRUCTURING, _design_flow_manager, _parameters)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
 }
 
-CondExprRestructuring::~CondExprRestructuring()
+commutative_expr_restructuring::~commutative_expr_restructuring()
 = default;
 
 
-bool CondExprRestructuring::IsCondExprGimple(const tree_nodeConstRef tn) const
+bool commutative_expr_restructuring::IsCommExprGimple(const tree_nodeConstRef tn) const
 {
    const auto ga = GetPointer<const gimple_assign>(GET_CONST_NODE(tn));
    if(not ga)
       return false;
-   return GET_NODE(ga->op1)->get_kind() == cond_expr_K;
+   auto opKind = GET_NODE(ga->op1)->get_kind();
+   return
+         opKind == mult_expr_K ||
+         opKind == widen_mult_expr_K ||
+         opKind == plus_expr_K ;
 }
 
-tree_nodeRef CondExprRestructuring::IsCondExprChain(const tree_nodeConstRef tn, const bool first) const
+tree_nodeRef commutative_expr_restructuring::IsCommExprChain(const tree_nodeConstRef tn, const bool first) const
 {
    const auto ga = GetPointer<const gimple_assign>(GET_CONST_NODE(tn));
-   const auto ce = GetPointer<const cond_expr>(GET_NODE(ga->op1));
-   const auto operand = first ? GET_NODE(ce->op1) : GET_NODE(ce->op2);
-   const auto other_operand = first ? GET_NODE(ce->op2) : GET_NODE(ce->op1);
+   const auto be = GetPointer<const binary_expr>(GET_NODE(ga->op1));
+   const auto operand = first ? GET_NODE(be->op0) : GET_NODE(be->op1);
+   const auto other_operand = first ? GET_NODE(be->op1) : GET_NODE(be->op0);
    const auto sn = GetPointer<const ssa_name>(operand);
    if(tree_helper::is_constant(TM, other_operand->index))
       return tree_nodeRef();
@@ -163,8 +166,7 @@ tree_nodeRef CondExprRestructuring::IsCondExprChain(const tree_nodeConstRef tn, 
       return tree_nodeRef();
    if(def->bb_index != ga->bb_index)
       return tree_nodeRef();
-   const auto chain_ce = GetPointer<const cond_expr>(GET_NODE(def->op1));
-   if(not chain_ce)
+   if(GET_NODE(def->op1)->get_kind() != GET_NODE(ga->op1)->get_kind())
       return tree_nodeRef();
    if(schedule->GetStartingTime(ga->index) == schedule->GetEndingTime(def->index) or (schedule->get_cstep_end(def->index).second + 1) == schedule->get_cstep(ga->index).second)
       return sn->CGetDefStmt();
@@ -172,7 +174,7 @@ tree_nodeRef CondExprRestructuring::IsCondExprChain(const tree_nodeConstRef tn, 
       return tree_nodeRef();
 }
 
-DesignFlowStep_Status CondExprRestructuring::InternalExec()
+DesignFlowStep_Status commutative_expr_restructuring::InternalExec()
 {
    bool modified = false;
    static size_t counter = 0;
@@ -206,26 +208,26 @@ DesignFlowStep_Status CondExprRestructuring::InternalExec()
          tree_nodeRef first_stmt = *stmt;
          tree_nodeRef second_stmt = tree_nodeRef();
          tree_nodeRef third_stmt = tree_nodeRef();
-         if(not IsCondExprGimple(*stmt))
+         if(not IsCommExprGimple(*stmt))
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Not a cond_expr");
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Not a commutative_expr");
             continue;
          }
          bool first_operand_of_first = true;
          bool first_operand_of_second = true;
-         second_stmt = IsCondExprChain(*stmt, true);
+         second_stmt = IsCommExprChain(*stmt, true);
          if(not second_stmt)
          {
-            second_stmt = IsCondExprChain(*stmt, false);
+            second_stmt = IsCommExprChain(*stmt, false);
             first_operand_of_first = false;
          }
          if(second_stmt)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Chained with a second cond_expr: " + STR(second_stmt));
-            third_stmt = IsCondExprChain(second_stmt, true);
+            third_stmt = IsCommExprChain(second_stmt, true);
             if(not third_stmt)
             {
-               third_stmt = IsCondExprChain(second_stmt, false);
+               third_stmt = IsCommExprChain(second_stmt, false);
                first_operand_of_second = false;
             }
          }
@@ -467,7 +469,7 @@ DesignFlowStep_Status CondExprRestructuring::InternalExec()
    return modified ? DesignFlowStep_Status::SUCCESS : DesignFlowStep_Status::UNCHANGED;
 }
 
-void CondExprRestructuring::Initialize()
+void commutative_expr_restructuring::Initialize()
 {
    FunctionFrontendFlowStep::Initialize();
    TM = AppM->get_tree_manager();
@@ -478,7 +480,7 @@ void CondExprRestructuring::Initialize()
    }
 }
 
-bool CondExprRestructuring::HasToBeExecuted() const
+bool commutative_expr_restructuring::HasToBeExecuted() const
 {
 #if HAVE_ILP_BUILT
    if(parameters->getOption<HLSFlowStep_Type>(OPT_scheduling_algorithm) == HLSFlowStep_Type::SDC_SCHEDULING and GetPointer<const HLS_manager>(AppM) and GetPointer<const HLS_manager>(AppM)->get_HLS(function_id) and GetPointer<const HLS_manager>(AppM)->get_HLS(function_id)->Rsch)

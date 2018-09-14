@@ -114,6 +114,7 @@
 #include "complete_call_graph.hpp"
 #if HAVE_BAMBU_BUILT
 #include "compute_implicit_calls.hpp"
+#include "commutative_expr_restructuring.hpp"
 #include "cond_expr_restructuring.hpp"
 #include "constant_flop_wrapper.hpp"
 #include "CSE.hpp"
@@ -385,6 +386,7 @@ const DesignFlowStepRef FrontendFlowStepFactory::GenerateFrontendStep(FrontendFl
       case COMPLETE_BB_GRAPH:
 #if HAVE_BAMBU_BUILT
       case COMPUTE_IMPLICIT_CALLS:
+      case COMMUTATIVE_EXPR_RESTRUCTURING:
       case COND_EXPR_RESTRUCTURING:
       case CONSTANT_FLOP_WRAPPER:
       case CSE_STEP:
@@ -777,6 +779,7 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateApplicationFrontendFlowSt
       case COMPLETE_BB_GRAPH:
 #if HAVE_BAMBU_BUILT
       case COMPUTE_IMPLICIT_CALLS:
+      case COMMUTATIVE_EXPR_RESTRUCTURING:
       case COND_EXPR_RESTRUCTURING:
       case CONSTANT_FLOP_WRAPPER:
       case CSE_STEP:
@@ -1089,6 +1092,10 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateFunctionFrontendFlowStep(
       case COMPUTE_IMPLICIT_CALLS:
       {
          return DesignFlowStepRef(new compute_implicit_calls(parameters, AppM, function_id, design_flow_manager.lock()));
+      }
+      case COMMUTATIVE_EXPR_RESTRUCTURING:
+      {
+         return DesignFlowStepRef(new commutative_expr_restructuring(AppM, function_id, design_flow_manager.lock(), parameters));
       }
       case COND_EXPR_RESTRUCTURING:
          {
