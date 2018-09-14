@@ -424,7 +424,7 @@ DesignFlowStep_Status CondExprRestructuring::InternalExec()
             counter++;
          }
          const double new_time = schedule->GetEndingTime(root_gimple_node_id);
-         if(new_time > old_time)
+         if(new_time + EPSILON > old_time)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Error in estimation");
             ///Removing added statements
@@ -449,7 +449,7 @@ DesignFlowStep_Status CondExprRestructuring::InternalExec()
          }
          ///Restarting
          modified = true;
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Examined " + STR(*stmt));
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Examined");
          stmt = list_of_stmt.begin();
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Examined BB" + STR(block.first));

@@ -142,9 +142,19 @@ bool commutative_expr_restructuring::IsCommExprGimple(const tree_nodeConstRef tn
    if(not ga)
       return false;
    auto opKind = GET_NODE(ga->op1)->get_kind();
+   unsigned int type_index;
+   auto Type = tree_helper::get_type_node(GET_NODE(ga->op0), type_index );
+   if(not GetPointer<integer_type>(Type))
+      return false;
    return
          opKind == mult_expr_K ||
          opKind == widen_mult_expr_K ||
+         opKind == widen_sum_expr_K ||
+         opKind == bit_ior_expr_K ||
+         opKind == bit_xor_expr_K ||
+         opKind == bit_and_expr_K ||
+         opKind == eq_expr_K ||
+         opKind == ne_expr_K ||
          opKind == plus_expr_K ;
 }
 
@@ -223,7 +233,7 @@ DesignFlowStep_Status commutative_expr_restructuring::InternalExec()
          }
          if(second_stmt)
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Chained with a second cond_expr: " + STR(second_stmt));
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Chained with a second commutative expression: " + STR(second_stmt));
             third_stmt = IsCommExprChain(second_stmt, true);
             if(not third_stmt)
             {
@@ -233,17 +243,21 @@ DesignFlowStep_Status commutative_expr_restructuring::InternalExec()
          }
          if(not third_stmt)
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Not chained with two cond_exprs");
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Not chained with two commutative expression");
             continue;
          }
          const auto first_ga = GetPointer<const gimple_assign>(GET_NODE(*stmt));
-         const auto first_ce = GetPointer<const cond_expr>(GET_NODE(first_ga->op1));
+         auto comm_expr_kind = GET_NODE(first_ga->op1)->get_kind();
+         auto comm_expr_kind_text = GET_NODE(first_ga->op1)->get_kind_text();
+         const auto first_be = GetPointer<const binary_expr>(GET_NODE(first_ga->op1));
 
          const auto second_ga = GetPointer<const gimple_assign>(GET_NODE(second_stmt));
-         const auto second_ce = GetPointer<const cond_expr>(GET_NODE(second_ga->op1));
+         THROW_ASSERT(GET_NODE(second_ga->op1)->get_kind() == comm_expr_kind, "unexpected condition");
+         const auto second_be = GetPointer<const binary_expr>(GET_NODE(second_ga->op1));
 
          const auto third_ga = GetPointer<const gimple_assign>(GET_NODE(third_stmt));
-         const auto third_ce = GetPointer<const cond_expr>(GET_NODE(third_ga->op1));
+         THROW_ASSERT(GET_NODE(third_ga->op1)->get_kind() == comm_expr_kind, "unexpected condition");
+         const auto third_be = GetPointer<const binary_expr>(GET_NODE(third_ga->op1));
 
          const double old_time = schedule->GetEndingTime(first_ga->index);
 
@@ -251,16 +265,13 @@ DesignFlowStep_Status commutative_expr_restructuring::InternalExec()
          ///The time in which last operand is ready
          double operand_ready_time = 0.0;
 
-         const auto other_operand_of_first = first_operand_of_first ? first_ce->op2 : first_ce->op1;
-         const auto other_operand_of_second = first_operand_of_second ? second_ce->op2 : second_ce->op1;
+         const auto other_operand_of_first = first_operand_of_first ? first_be->op1 : first_be->op0;
+         const auto other_operand_of_second = first_operand_of_second ? second_be->op1 : second_be->op0;
          CustomSet<std::pair<tree_nodeRef, tree_nodeRef> > operands;
          operands.insert(std::pair<tree_nodeRef, tree_nodeRef>(other_operand_of_first, *stmt));
          operands.insert(std::pair<tree_nodeRef, tree_nodeRef>(other_operand_of_second, second_stmt));
-         operands.insert(std::pair<tree_nodeRef, tree_nodeRef>(third_ce->op1, third_stmt));
-         operands.insert(std::pair<tree_nodeRef, tree_nodeRef>(third_ce->op2, third_stmt));
-         operands.insert(std::pair<tree_nodeRef, tree_nodeRef>(first_ce->op0, *stmt));
-         operands.insert(std::pair<tree_nodeRef, tree_nodeRef>(second_ce->op0, second_stmt));
-         operands.insert(std::pair<tree_nodeRef, tree_nodeRef>(third_ce->op0, third_stmt));
+         operands.insert(std::pair<tree_nodeRef, tree_nodeRef>(third_be->op0, third_stmt));
+         operands.insert(std::pair<tree_nodeRef, tree_nodeRef>(third_be->op1, third_stmt));
          for(const auto& operand : operands)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Analyzing when " + STR(operand.first) + " used in " + STR(operand.second) + " is ready");
@@ -282,41 +293,40 @@ DesignFlowStep_Status commutative_expr_restructuring::InternalExec()
             }
          }
 
-         ///As cond expr time we consider the worst among the existing operation in the chain
-         const auto cond_expr_time1 = allocation_information->GetTimeLatency((*stmt)->index, fu_binding::UNKNOWN).first;
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Delay of first operation is " + STR(cond_expr_time1));
-         const auto cond_expr_time2 = allocation_information->GetTimeLatency(second_stmt->index, fu_binding::UNKNOWN).first;
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Delay of second operation is " + STR(cond_expr_time2));
-         const auto cond_expr_time3 = allocation_information->GetTimeLatency(third_stmt->index, fu_binding::UNKNOWN).first;
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Delay of third operation is " + STR(cond_expr_time3));
-         const auto mux_time = std::max(cond_expr_time1, std::max(cond_expr_time2, cond_expr_time3));
-         const auto new_ending_time = operand_ready_time + 2 * mux_time;
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Operand ready time " + STR(operand_ready_time) + " - Mux time " + STR(mux_time) + " - New ending time " + STR(new_ending_time) + " - Old ending time " + STR(old_time));
+         ///As commutative expression time we consider the worst among the existing operation in the chain
+         const auto comm_expr_time1 = allocation_information->GetTimeLatency((*stmt)->index, fu_binding::UNKNOWN).first;
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Delay of first operation is " + STR(comm_expr_time1));
+         const auto comm_expr_time2 = allocation_information->GetTimeLatency(second_stmt->index, fu_binding::UNKNOWN).first;
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Delay of second operation is " + STR(comm_expr_time2));
+         const auto comm_expr_time3 = allocation_information->GetTimeLatency(third_stmt->index, fu_binding::UNKNOWN).first;
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Delay of third operation is " + STR(comm_expr_time3));
+         const auto comm_time = std::max(comm_expr_time1, std::max(comm_expr_time2, comm_expr_time3));
+         const auto new_ending_time = operand_ready_time + 2 * comm_time;
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Operand ready time " + STR(operand_ready_time) + " - Commutative expression time " + STR(comm_time) + " - New ending time " + STR(new_ending_time) + " - Old ending time " + STR(old_time));
          if(new_ending_time + EPSILON >= old_time)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Increased execution time");
             continue;
          }
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Chained with a third cond_expr");
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Chained with a third commutative expression");
          THROW_ASSERT(third_stmt and second_stmt, "");
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---" + STR(third_stmt));
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---" + STR(second_stmt));
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---" + STR(*stmt));
 
-         ///Inserting first cond expr after the last one
-         std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> cond_expr_schema, gimple_assign_schema, ssa_schema;
+         ///Inserting first commutative expression after the last one
+         std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> comm_expr_schema, gimple_assign_schema, ssa_schema;
          const auto type_index = tree_helper::get_type_index(TM, (*stmt)->index);
-         const auto cond_expr_id = TM->new_tree_node_id();
-         auto first_value = first_operand_of_second ? second_ce->op2 : second_ce->op1;
-         auto second_value = first_operand_of_first ? first_ce->op2 : first_ce->op1;
+         const auto comm_expr_id = TM->new_tree_node_id();
+         auto first_value = first_operand_of_second ? second_be->op1 : second_be->op0;
+         auto second_value = first_operand_of_first ? first_be->op1 : first_be->op0;
          if(not first_operand_of_first)
             std::swap(first_value, second_value);
-         cond_expr_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
-         cond_expr_schema[TOK(TOK_TYPE)] = boost::lexical_cast<std::string>(type_index);
-         cond_expr_schema[TOK(TOK_OP0)] = boost::lexical_cast<std::string>(first_ce->op0->index);
-         cond_expr_schema[TOK(TOK_OP1)] = boost::lexical_cast<std::string>(first_value->index);
-         cond_expr_schema[TOK(TOK_OP2)] = boost::lexical_cast<std::string>(second_value->index);
-         TM->create_tree_node(cond_expr_id, cond_expr_K, cond_expr_schema);
+         comm_expr_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
+         comm_expr_schema[TOK(TOK_TYPE)] = boost::lexical_cast<std::string>(type_index);
+         comm_expr_schema[TOK(TOK_OP0)] = boost::lexical_cast<std::string>(first_value->index);
+         comm_expr_schema[TOK(TOK_OP1)] = boost::lexical_cast<std::string>(second_value->index);
+         TM->create_tree_node(comm_expr_id, comm_expr_kind, comm_expr_schema);
 
          ///Create the ssa in the left part
          auto ssa_vers = TM->get_next_vers();
@@ -341,77 +351,44 @@ DesignFlowStep_Status commutative_expr_restructuring::InternalExec()
          gimple_assign_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
          gimple_assign_schema[TOK(TOK_TYPE)] = STR(type_index);
          gimple_assign_schema[TOK(TOK_OP0)] = STR(ssa_node_nid);
-         gimple_assign_schema[TOK(TOK_OP1)] = STR(cond_expr_id);
+         gimple_assign_schema[TOK(TOK_OP1)] = STR(comm_expr_id);
          TM->create_tree_node(gimple_node_id, gimple_assign_K, gimple_assign_schema);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created " + STR(TM->GetTreeReindex(gimple_node_id)));
          ///Set the bit value for the intermediate ssa to correctly update execution time
          GetPointer<ssa_name>(TM->get_tree_node_const(ssa_node_nid))->bit_values = GetPointer<ssa_name>(GET_NODE(first_ga->op0))->bit_values;
+         GetPointer<gimple_assign>(TM->get_tree_node_const(gimple_node_id))->orig = *stmt;
          block.second->PushBefore(TM->GetTreeReindex(gimple_node_id), *stmt);
          new_tree_nodes.push_back(TM->GetTreeReindex(gimple_node_id));
 
-         ///Condition of the old root
-         tree_nodeRef first_cond;
-         if(first_operand_of_first)
-         {
-            first_cond = first_ce->op0;
-         }
-         else
-         {
-            first_cond = tree_man->CreateNotExpr(first_ce->op0, blocRef());
-            const auto not_first_cond_def = GetPointer<ssa_name>(GET_NODE(first_cond))->CGetDefStmt();
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created " + STR(not_first_cond_def));
-            block.second->PushBefore(not_first_cond_def, *stmt);
-            new_tree_nodes.push_back(not_first_cond_def);
-         }
 
-         ///Conditon of the second ce
-         tree_nodeRef second_cond;
-         if(first_operand_of_second)
-         {
-            second_cond = second_ce->op0;
-         }
-         else
-         {
-            second_cond = tree_man->CreateNotExpr(second_ce->op0, blocRef());
-            const auto not_second_cond_def = GetPointer<ssa_name>(GET_NODE(second_cond))->CGetDefStmt();
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created " + STR(not_second_cond_def));
-            block.second->PushBefore(not_second_cond_def, *stmt);
-            new_tree_nodes.push_back(not_second_cond_def);
-         }
-         ///Building the condition of the root cond expr
-         tree_nodeRef and_first_cond = tree_man->CreateAndExpr(first_cond, second_cond, blocRef());
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created " + STR(GetPointer<ssa_name>(GET_NODE(and_first_cond))->CGetDefStmt()));
-         block.second->PushBefore(GetPointer<ssa_name>(GET_NODE(and_first_cond))->CGetDefStmt(), *stmt);
-         new_tree_nodes.push_back(GetPointer<ssa_name>(GET_NODE(and_first_cond))->CGetDefStmt());
-
-         ///Inserting last cond expr
-         cond_expr_schema.clear();
-         const auto root_cond_expr_id = TM->new_tree_node_id();
-         cond_expr_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
-         cond_expr_schema[TOK(TOK_TYPE)] = boost::lexical_cast<std::string>(type_index);
-         cond_expr_schema[TOK(TOK_OP0)] = boost::lexical_cast<std::string>(and_first_cond->index);
-         cond_expr_schema[TOK(TOK_OP1)] = boost::lexical_cast<std::string>(first_operand_of_second ? second_ce->op1->index : second_ce->op2->index);
-         cond_expr_schema[TOK(TOK_OP2)] = boost::lexical_cast<std::string>(ssa_node_nid);
-         TM->create_tree_node(root_cond_expr_id, cond_expr_K, cond_expr_schema);
+         ///Inserting last commutative expression
+         comm_expr_schema.clear();
+         const auto root_comm_expr_id = TM->new_tree_node_id();
+         comm_expr_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
+         comm_expr_schema[TOK(TOK_TYPE)] = boost::lexical_cast<std::string>(type_index);
+         comm_expr_schema[TOK(TOK_OP0)] = boost::lexical_cast<std::string>(first_operand_of_second ? second_be->op0->index : second_be->op1->index);
+         comm_expr_schema[TOK(TOK_OP1)] = boost::lexical_cast<std::string>(ssa_node_nid);
+         TM->create_tree_node(root_comm_expr_id, comm_expr_kind, comm_expr_schema);
 
          ///Create the assign
          const auto root_gimple_node_id = TM->new_tree_node_id();
          gimple_assign_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
          gimple_assign_schema[TOK(TOK_TYPE)] = STR(type_index);
          gimple_assign_schema[TOK(TOK_OP0)] = STR(first_ga->op0->index);
-         gimple_assign_schema[TOK(TOK_OP1)] = STR(root_cond_expr_id);
+         gimple_assign_schema[TOK(TOK_OP1)] = STR(root_comm_expr_id);
          TM->create_tree_node(root_gimple_node_id, gimple_assign_K, gimple_assign_schema);
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created " + STR(TM->CGetTreeNode(root_gimple_node_id)));
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created " + STR(TM->GetTreeReindex(root_gimple_node_id)));
+         GetPointer<gimple_assign>(TM->get_tree_node_const(root_gimple_node_id))->orig = second_stmt;
          block.second->Replace(*stmt, TM->GetTreeReindex(root_gimple_node_id), true);
          new_tree_nodes.push_back(TM->GetTreeReindex(root_gimple_node_id));
 #ifndef NDEBUG
          AppM->RegisterTransformation(GetName(), TM->CGetTreeNode(root_gimple_node_id));
 #endif
 
-         ///Check that the second cond expr is actually dead
+         ///Check that the second commutative expression is actually dead
          THROW_ASSERT(GetPointer<const ssa_name>(GET_CONST_NODE(second_ga->op0))->CGetUseStmts().size() == 0, "");
 
-         ///Remove the intermediate cond_expr
+         ///Remove the intermediate commutative expression
          block.second->RemoveStmt(second_stmt);
 
          for(const auto& temp_stmt : list_of_stmt)
@@ -426,7 +403,7 @@ DesignFlowStep_Status commutative_expr_restructuring::InternalExec()
             counter++;
          }
          const double new_time = schedule->GetEndingTime(root_gimple_node_id);
-         if(new_time > old_time)
+         if(new_time+EPSILON > old_time)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Error in estimation");
             ///Removing added statements
@@ -449,9 +426,11 @@ DesignFlowStep_Status commutative_expr_restructuring::InternalExec()
             stmt = std::prev(next_stmt_ptr);
             continue;
          }
+         INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "-->Commutative expression restructuring applied on three " + comm_expr_kind_text + " operations");
+         INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "<--");
          ///Restarting
          modified = true;
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Examined " + STR(*stmt));
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Examined statement");
          stmt = list_of_stmt.begin();
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Examined BB" + STR(block.first));
