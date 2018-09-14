@@ -701,7 +701,7 @@ bool rebuild_initialization2::look_for_ROMs()
                                  if(offset_assign_op1->get_kind() == lshift_expr_K)
                                  {
                                     auto * ls = GetPointer<lshift_expr>(offset_assign_op1);
-                                    auto ls_op1 GET_NODE(ls->op1);
+                                    auto ls_op1 = GET_NODE(ls->op1);
                                     if(ls_op1->get_kind() == integer_cst_K)
                                     {
                                        auto nbit = tree_helper::get_integer_cst_value(GetPointer<const integer_cst>(ls_op1));
