@@ -273,17 +273,14 @@ static bool varFound(tree_nodeRef node, unsigned &vd_index, tree_nodeRef &vd_nod
 }
 
 #define REBUILD2_DEVEL 0
-static bool unexpetedPattern(tree_nodeRef
 #if REBUILD2_DEVEL
-                             node
-#endif
-                             )
+#define unexpetedPattern(node)   THROW_ERROR("unexpected condition: "+ node->get_kind_text() + " --- " + node->ToString());
+#else
+static bool unexpetedPattern(tree_nodeRef)
 {
-#if REBUILD2_DEVEL
-   THROW_ERROR("unexpected condition: "+ node->get_kind_text() + " --- " + node->ToString());
-#endif
    return false;
 }
+#endif
 
 bool rebuild_initialization2::extract_var_decl_ppe(tree_nodeRef addr_assign_op1, unsigned &vd_index, tree_nodeRef &vd_node)
 {
@@ -425,6 +422,8 @@ bool rebuild_initialization2::extract_var_decl_ppe(tree_nodeRef addr_assign_op1,
    else if(addr2_assign_op1->get_kind() == mem_ref_K)
       return false;
    else if(addr2_assign_op1->get_kind() == call_expr_K)
+      return false;
+   else if(addr2_assign_op1->get_kind() == cond_expr_K)
       return false;
    else
       return unexpetedPattern(addr2_assign_op1);
@@ -644,6 +643,11 @@ bool rebuild_initialization2::look_for_ROMs()
                         if(vd->init)
                         {
                            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---variable is initialized: " + TM->get_tree_node_const(vd_index)->ToString());
+                           foundNonConstant(vd_index);
+                        }
+                        else if(not vd->scpe or GET_NODE(vd->scpe)->get_kind() == translation_unit_decl_K)
+                        {
+                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---variable is not local: " + TM->get_tree_node_const(vd_index)->ToString());
                            foundNonConstant(vd_index);
                         }
                         else
