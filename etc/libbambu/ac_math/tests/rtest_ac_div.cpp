@@ -732,9 +732,9 @@ int test_driver_float(
       //Iterate through all possible combinations of mantissa values stored in the arrays above.
       //The denominator will be the negative of the corresponding unsigned value for that iteration. 
       //The numerator will have the same value as the corresponding unsigned value.
-      for (int i = 0; i <= numW - 1; i++) {
+      for (int i = 0; i <= numW - 2; i++) {
         real_num.m = us_real_num_m_arr[i];
-        for (int j = 0; j <= denW - 1; j++) {
+        for (int j = 0; j <= denW - 2; j++) {
           real_den.m = -us_real_den_m_arr[j];
           if(real_den.m == 0) { continue; }
           test_ac_div_float(real_num, real_den, real_quo);
