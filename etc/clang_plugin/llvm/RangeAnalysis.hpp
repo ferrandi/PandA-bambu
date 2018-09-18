@@ -279,7 +279,7 @@ namespace RangeAnalysis {
          char abstractState;
 
       public:
-         explicit VarNode(const llvm::Value *_V, const llvm::Value *_GV);
+         explicit VarNode(const llvm::Value *_V, const llvm::Value *_GV, const llvm::DataLayout *DL);
          ~VarNode();
          VarNode(const VarNode &) = delete;
          VarNode(VarNode &&) = delete;
@@ -287,7 +287,7 @@ namespace RangeAnalysis {
          VarNode &operator=(VarNode &&) = delete;
 
          /// Initializes the value of the node.
-         void init(bool outside);
+         void init(bool outside, const llvm::DataLayout *DL);
          /// Returns the range of the variable represented by this node.
          const Range getRange() const { return interval; }
          /// Returns the variable represented by this node.
@@ -930,14 +930,14 @@ namespace RangeAnalysis {
          /// Add LoadOp in the graph
          void addLoadOp(const llvm::LoadInst *LI, Andersen_AA *PtoSets_AA, bool arePointersResolved, llvm::ModulePass *modulePass, const llvm::DataLayout* DL, llvm::DenseMap<const llvm::Function*, llvm::SmallPtrSet<const llvm::Instruction*,6>>&Function2Store);
          /// Add StoreOp in the graph
-         void addStoreOp(const llvm::StoreInst *SI, Andersen_AA *PtoSets_AA, bool arePointersResolved, llvm::ModulePass *modulePass, llvm::DenseMap<const llvm::Function*, llvm::SmallPtrSet<const llvm::Instruction*,6>>&Function2Store);
+         void addStoreOp(const llvm::StoreInst *SI, Andersen_AA *PtoSets_AA, bool arePointersResolved, llvm::ModulePass *modulePass, llvm::DenseMap<const llvm::Function*, llvm::SmallPtrSet<const llvm::Instruction*,6>>&Function2Store, const llvm::DataLayout *DL);
 
 
          /// Takes an instruction and creates an operation.
          void buildOperations(const llvm::Instruction *I, llvm::ModulePass *modulePass, const llvm::DataLayout *DL, Andersen_AA * PtoSets_AA, bool arePointersResolved, llvm::DenseMap<const llvm::Function*, llvm::SmallPtrSet<const llvm::Instruction*,6>>&Function2Store);
-         void buildValueBranchMap(const llvm::BranchInst *br);
-         void buildValueSwitchMap(const llvm::SwitchInst *sw);
-         void buildValueMaps(const llvm::Function &F);
+         void buildValueBranchMap(const llvm::BranchInst *br, const llvm::DataLayout *DL);
+         void buildValueSwitchMap(const llvm::SwitchInst *sw, const llvm::DataLayout *DL);
+         void buildValueMaps(const llvm::Function &F, const llvm::DataLayout *DL);
 
          //	void clearValueMaps();
 
@@ -969,7 +969,7 @@ namespace RangeAnalysis {
          ConstraintGraph &operator=(const ConstraintGraph &) = delete;
          ConstraintGraph &operator=(ConstraintGraph &&) = delete;
          /// Adds a VarNode in the graph.
-         VarNode *addVarNode(const llvm::Value *V, const llvm::Value *GV);
+         VarNode *addVarNode(const llvm::Value *V, const llvm::Value *GV, const llvm::DataLayout *DL);
 
          GenOprs *getOprs() { return &oprs; }
          DefMap *getDefMap() { return &defMap; }
@@ -978,7 +978,7 @@ namespace RangeAnalysis {
          void addUnaryOp(const llvm::Instruction *I, llvm::ModulePass *modulePass, const llvm::DataLayout *DL);
          /// Iterates through all instructions in the function and builds the graph.
          void buildGraph(const llvm::Function &F, llvm::ModulePass *modulePass, const llvm::DataLayout *DL, Andersen_AA * PtoSets_AA, bool arePointersResolved, llvm::DenseMap<const llvm::Function*, llvm::SmallPtrSet<const llvm::Instruction*,6>>&Function2Store);
-         void buildVarNodes();
+         void buildVarNodes(const llvm::DataLayout *DL);
          void buildSymbolicIntersectMap();
          UseMap buildUseMap(const llvm::SmallPtrSet<VarNode *,32>&component);
          void propagateToNextSCC(const llvm::SmallPtrSet<VarNode *,32>&component);
@@ -1000,7 +1000,7 @@ namespace RangeAnalysis {
             llvm::dbgs() << '\n';
          }
          void computeStats();
-         Range getRange(eValue v);
+         Range getRange(eValue v, const llvm::DataLayout *DL);
    };
 
    class Cousot : public ConstraintGraph
@@ -1117,7 +1117,7 @@ namespace RangeAnalysis {
          static unsigned getMaxBitWidth(const llvm::Module &M);
 
       private:
-         void MatchParametersAndReturnValues(const llvm::Function &F, ConstraintGraph &G);
+         void MatchParametersAndReturnValues(const llvm::Function &F, ConstraintGraph &G,const llvm::DataLayout* DL);
          void finalizeRangeAnalysis(const llvm::Module &M) override;
    };
 
