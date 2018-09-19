@@ -287,9 +287,9 @@ public:
     typedef AC_FL(2) fl2_t;
     enum {
       ST2 = S | S2,
-      WT2 = W2 + (!S2 & S),
-      IT2 = I2 + (!S2 & S),
-      RND = Q != AC_TRN & Q != AC_TRN_ZERO & WT2 > W,
+      WT2 = W2 + (S2==0 && S!=0 ? 1 : 0),
+      IT2 = I2 + (S2==0 && S!=0 ? 1 : 0),
+      RND = Q != AC_TRN && Q != AC_TRN_ZERO && WT2 > W,
       MAX_EXP2 = fl2_t::MAX_EXP,
       MIN_EXP2 = fl2_t::MIN_EXP,
       I_DIFF = IT2 - I,
@@ -310,9 +310,9 @@ public:
     ac_fixed<W + RND, I + RND, S, Q> m_1 = t;
     bool rnd_ovfl = false;
     if (RND) {
-      rnd_ovfl = !m_1[W] & m_1[W - 1];
-      m_1[W - 1] = m_1[W - 1] & !rnd_ovfl;
-      m_1[W - 2] = m_1[W - 2] | rnd_ovfl;
+      rnd_ovfl = !m_1[W] && m_1[W - 1];
+      m_1[W - 1] = m_1[W - 1] && !rnd_ovfl;
+      m_1[W - 2] = m_1[W - 2] || rnd_ovfl;
     }
     m.set_slc(0, m_1.template slc<W>(0));
     if (fx_t::width > W && assert_on_rounding)

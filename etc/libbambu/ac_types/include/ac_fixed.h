@@ -102,7 +102,7 @@ template <typename T> struct rt_ac_fixed_T {
 
 template <int W, int I, bool S = true, ac_q_mode Q = AC_TRN,
           ac_o_mode O = AC_WRAP>
-class ac_fixed : private ac_private::iv<(W + 31 + !S) / 32>
+class ac_fixed : private ac_private::iv<(W + 31 + !S) / 32, W<=64>
 #ifndef __BAMBU__
                      __AC_FIXED_UTILITY_BASE
 #endif
@@ -114,21 +114,19 @@ class ac_fixed : private ac_private::iv<(W + 31 + !S) / 32>
     typedef ac_fixed<w_shiftl, I, S> shiftl;
   };
 
-  typedef ac_private::iv<N> Base;
+  typedef ac_private::iv<N, W<=64> Base;
 
-  __attribute__((always_inline)) inline void bit_adjust() {
-    Base::v.template bit_adjust<W, S>();
-  }
-  inline Base &base() { return *this; }
-  inline const Base &base() const { return *this; }
+  __FORCE_INLINE void bit_adjust() {Base::v.template bit_adjust<W, S>();}
+  __FORCE_INLINE Base &base() { return *this; }
+  __FORCE_INLINE const Base &base() const { return *this; }
 
-  inline void overflow_adjust(bool underflow, bool overflow) {
+  __FORCE_INLINE void overflow_adjust(bool underflow, bool overflow) {
     if (O == AC_WRAP) {
       bit_adjust();
       return;
     } else if (O == AC_SAT_ZERO) {
       if ((overflow || underflow))
-        ac_private::iv_extend<N>(Base::v, 0);
+        ac_private::iv_extend<0>(Base::v, 0);
       else
         bit_adjust();
     } else if (S) {
@@ -159,13 +157,13 @@ class ac_fixed : private ac_private::iv<(W + 31 + !S) / 32>
           Base::v.set(idx, ~0);
         Base::v.set(N - 1, ~((unsigned)~0 << (W & 31)));
       } else if (underflow)
-        ac_private::iv_extend<N>(Base::v, 0);
+        ac_private::iv_extend<0>(Base::v, 0);
       else
         bit_adjust();
     }
   }
 
-  constexpr inline bool quantization_adjust(bool qb, bool r, bool s) {
+  constexpr __FORCE_INLINE bool quantization_adjust(bool qb, bool r, bool s) {
     if (Q == AC_TRN)
       return false;
     if (Q == AC_RND_ZERO)
@@ -180,10 +178,10 @@ class ac_fixed : private ac_private::iv<(W + 31 + !S) / 32>
       qb &= (!(Base::v[0] & 1)) || r;
     else if (Q == AC_TRN_ZERO)
       qb = s && (qb || r);
-    return ac_private::iv_uadd_carry<N>(Base::v, qb, Base::v);
+    return ac_private::iv_uadd_carry(Base::v, qb, Base::v);
   }
 
-  inline bool is_neg() const { return S && Base::v[N - 1] < 0; }
+  __FORCE_INLINE bool is_neg() const { return S && Base::v[N - 1] < 0; }
 
 public:
   static const int width = W;
@@ -286,7 +284,7 @@ public:
 #endif
   }
   template <int W2, int I2, bool S2, ac_q_mode Q2, ac_o_mode O2>
-  __attribute__((always_inline)) inline ac_fixed(
+  __FORCE_INLINE ac_fixed(
       const ac_fixed<W2, I2, S2, Q2, O2> &op) {
     enum {
       N2 = (W2 + 31 + !S2) / 32,
@@ -299,7 +297,7 @@ public:
     if (F2 == F)
       Base::operator=(op);
     else if (F2 > F) {
-      op.template const_shift_r<N, F2 - F>(*this);
+      op.template const_shift_r<F2 - F>(*this);
       //      ac_private::iv_const_shift_r<N2,N,F2-F>(op.v, Base::v);
       if (Q != AC_TRN && !(Q == AC_TRN_ZERO && !S2)) {
         bool qb = (F2 - F > W2) ? (op.v[N2 - 1] < 0) : (bool)op[F2 - F - 1];
@@ -309,18 +307,18 @@ public:
         carry = quantization_adjust(qb, r, S2 && op.v[N2 - 1] < 0);
       }
     } else // no quantization
-      op.template const_shift_l<N, F - F2>(*this);
+      op.template const_shift_l<F - F2>(*this);
     //      ac_private::iv_const_shift_l<N2,N,F-F2>(op.v, Base::v);
     // handle overflow/underflow
     if (O != AC_WRAP &&
-        ((!S && S2) || I - S < I2 - S2 +
+        ((!S && S2) || (I - S < I2 - S2 +
                                    (QUAN_INC || (S2 && O == AC_SAT_SYM &&
                                                  (O2 != AC_SAT_SYM ||
-                                                  F2 > F))))) { // saturation
-      bool deleted_bits_zero = !(W & 31) & S || !(Base::v[N - 1] >> (W & 31));
-      bool deleted_bits_one = !(W & 31) & S || !~(Base::v[N - 1] >> (W & 31));
+                                                  F2 > F)))))) { // saturation
+      bool deleted_bits_zero = (!(W & 31) && S) || 0==(Base::v[N - 1] >> (W & 31));
+      bool deleted_bits_one = (!(W & 31) && S) || 0==(~(Base::v[N - 1] >> (W & 31)));
       bool neg_src;
-      if (F2 - F + 32 * N < W2) {
+      if ((F2 - F + 32 * N) < W2) {
         bool all_ones =
             ac_private::iv_equal_ones_from<F2 - F + 32 * N, N2>(op.v);
         deleted_bits_zero =
@@ -334,7 +332,7 @@ public:
                          op.v) &&
                          !op[F2 - F + 32 * N]
                    : all_ones);
-        neg_src = S2 && op.v[N2 - 1] < 0 && !(carry & all_ones);
+        neg_src = S2 && op.v[N2 - 1] < 0 && 0==(carry & all_ones);
       } else
         neg_src = S2 && op.v[N2 - 1] < 0 && Base::v[N - 1] < 0;
       bool neg_trg = S && (bool)this->operator[](W - 1);
@@ -352,7 +350,7 @@ public:
   }
 
   template <int W2, bool S2>
-  __attribute__((always_inline)) inline ac_fixed(const ac_int<W2, S2> &op) {
+  __FORCE_INLINE ac_fixed(const ac_int<W2, S2> &op) {
     ac_fixed<W2, W2, S2> f_op;
     f_op.base().operator=(op);
     *this = f_op;
@@ -361,28 +359,28 @@ public:
   template <int W2> typename rt_priv<W2>::shiftl shiftl() const {
     typedef typename rt_priv<W2>::shiftl shiftl_t;
     shiftl_t r;
-    Base::template const_shift_l<shiftl_t::N, W2>(r);
+    Base::template const_shift_l<W2>(r);
     return r;
   }
 
-  inline ac_fixed(bool b) { *this = (ac_int<1, false>)b; }
-  inline ac_fixed(char b) { *this = (ac_int<8, true>)b; }
-  inline ac_fixed(signed char b) { *this = (ac_int<8, true>)b; }
-  inline ac_fixed(unsigned char b) { *this = (ac_int<8, false>)b; }
-  inline ac_fixed(signed short b) { *this = (ac_int<16, true>)b; }
-  inline ac_fixed(unsigned short b) { *this = (ac_int<16, false>)b; }
-  inline ac_fixed(signed int b) { *this = (ac_int<32, true>)b; }
-  inline ac_fixed(unsigned int b) { *this = (ac_int<32, false>)b; }
-  inline ac_fixed(signed long b) {
+  __FORCE_INLINE ac_fixed(bool b) { *this = (ac_int<1, false>)b; }
+  __FORCE_INLINE ac_fixed(char b) { *this = (ac_int<8, true>)b; }
+  __FORCE_INLINE ac_fixed(signed char b) { *this = (ac_int<8, true>)b; }
+  __FORCE_INLINE ac_fixed(unsigned char b) { *this = (ac_int<8, false>)b; }
+  __FORCE_INLINE ac_fixed(signed short b) { *this = (ac_int<16, true>)b; }
+  __FORCE_INLINE ac_fixed(unsigned short b) { *this = (ac_int<16, false>)b; }
+  __FORCE_INLINE ac_fixed(signed int b) { *this = (ac_int<32, true>)b; }
+  __FORCE_INLINE ac_fixed(unsigned int b) { *this = (ac_int<32, false>)b; }
+  __FORCE_INLINE ac_fixed(signed long b) {
     *this = (ac_int<ac_private::long_w, true>)b;
   }
-  inline ac_fixed(unsigned long b) {
+  __FORCE_INLINE ac_fixed(unsigned long b) {
     *this = (ac_int<ac_private::long_w, false>)b;
   }
-  inline ac_fixed(Slong b) { *this = (ac_int<64, true>)b; }
-  inline ac_fixed(Ulong b) { *this = (ac_int<64, false>)b; }
+  __FORCE_INLINE ac_fixed(Slong b) { *this = (ac_int<64, true>)b; }
+  __FORCE_INLINE ac_fixed(Ulong b) { *this = (ac_int<64, false>)b; }
 
-  __attribute__((always_inline)) constexpr inline ac_fixed(double d) {
+  constexpr __FORCE_INLINE ac_fixed(double d) {
     // printf("%f\n",d);
     double di = ac_private::ldexpr<-(I + !S + ((32 - W - !S) & 31))>(d);
     bool o = false, qb = false, r = false;
@@ -414,7 +412,7 @@ public:
     } else
       bit_adjust();
   }
-  __attribute__((always_inline)) constexpr inline ac_fixed(float d) {
+  constexpr __FORCE_INLINE ac_fixed(float d) {
     // printf("%f\n",d);
     float di = ac_private::ldexpr<-(I + !S + ((32 - W - !S) & 31))>(d);
     bool o = false, qb = false, r = false;
@@ -447,7 +445,7 @@ public:
       bit_adjust();
   }
   template <size_t NN>
-  __attribute__((always_inline)) constexpr inline ac_fixed(
+  constexpr __FORCE_INLINE ac_fixed(
       const char (&str)[NN]) {
     *this = ac_fixed((double)Base::hex2doubleConverter::get(str));
   }
@@ -466,7 +464,7 @@ public:
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wuninitialized"
 #endif
-  template <ac_special_val V> inline ac_fixed &set_val() {
+  template <ac_special_val V> __FORCE_INLINE ac_fixed &set_val() {
     if (V == AC_VAL_DC) {
       ac_fixed r;
       Base::operator=(r);
@@ -484,7 +482,7 @@ public:
         }
       } else if (V == AC_VAL_QUANTUM)
         Base::v.set(0, 1);
-    } else if (AC_VAL_MAX) {
+    } else if (V == AC_VAL_MAX) {
       Base::operator=(-1);
       const unsigned int rem = (32 - W - (unsigned)!S) & 31;
       Base::v.set(N - 1, ((unsigned)(-1) >> 1) >> rem);
@@ -505,41 +503,41 @@ public:
 
   // Explicit conversion functions to ac_int that captures all integer bits
   // (bits are truncated)
-  __attribute__((always_inline)) inline ac_int<AC_MAX(I, 1), S>
+  __FORCE_INLINE ac_int<AC_MAX(I, 1), S>
   to_ac_int() const {
     return ((ac_fixed<AC_MAX(I, 1), AC_MAX(I, 1), S>)*this)
         .template slc<AC_MAX(I, 1)>(0);
   }
 
   // Explicit conversion functions to C built-in types -------------
-  inline int to_int() const {
+  __FORCE_INLINE int to_int() const {
     return ((I - W) >= 32) ? 0 : (signed int)to_ac_int();
   }
-  inline unsigned to_uint() const {
+  __FORCE_INLINE unsigned to_uint() const {
     return ((I - W) >= 32) ? 0 : (unsigned int)to_ac_int();
   }
-  inline long to_long() const {
+  __FORCE_INLINE long to_long() const {
     return ((I - W) >= ac_private::long_w) ? 0 : (signed long)to_ac_int();
   }
-  inline unsigned long to_ulong() const {
+  __FORCE_INLINE unsigned long to_ulong() const {
     return ((I - W) >= ac_private::long_w) ? 0 : (unsigned long)to_ac_int();
   }
-  inline Slong to_int64() const {
+  __FORCE_INLINE Slong to_int64() const {
     return ((I - W) >= 64) ? 0 : (Slong)to_ac_int();
   }
-  inline Ulong to_uint64() const {
+  __FORCE_INLINE Ulong to_uint64() const {
     return ((I - W) >= 64) ? 0 : (Ulong)to_ac_int();
   }
-  inline double to_double() const {
+  __FORCE_INLINE double to_double() const {
     return ac_private::ldexpr<I - W>(Base::to_double());
   }
-  inline float to_float() const {
+  __FORCE_INLINE float to_float() const {
     return ac_private::ldexpr<I - W>(Base::to_float());
   }
 
-  inline int length() const { return W; }
+  __FORCE_INLINE int length() const { return W; }
 
-  inline std::string to_string(ac_base_mode base_rep,
+  __FORCE_INLINE std::string to_string(ac_base_mode base_rep,
                                bool sign_mag = false) const {
     // base_rep == AC_DEC => sign_mag == don't care (always print decimal in
     // sign magnitude)
@@ -573,7 +571,7 @@ public:
     }
     return std::string(r);
   }
-  inline static std::string type_name() {
+  __FORCE_INLINE static std::string type_name() {
     const char *tf[] = {"false", "true"};
     const char *q[] = {"AC_TRN",      "AC_RND",         "AC_TRN_ZERO",
                        "AC_RND_ZERO", "AC_RND_INF",     "AC_RND_MIN_INF",
@@ -635,7 +633,7 @@ public:
 #pragma GCC diagnostic ignored "-Wenum-compare"
 #endif
   template <int W2, int I2, bool S2, ac_q_mode Q2, ac_o_mode O2>
-  __attribute__((always_inline)) inline typename rt<W2, I2, S2>::div
+  __FORCE_INLINE typename rt<W2, I2, S2>::div
   operator/(const ac_fixed<W2, I2, S2, Q2, O2> &op2) const {
     typename rt<W2, I2, S2>::div r;
     enum {
@@ -652,7 +650,7 @@ public:
       Nr = rt<W2, I2, S2>::div::N
     };
     ac_fixed<Num_w, Num_i, S> t = *this;
-    t.template div<num_s, N2, den_s, Nr>(op2, r);
+    t.template div<num_s,den_s>(op2, r);
     r.bit_adjust();
     return r;
   }
@@ -983,24 +981,24 @@ public:
         : ref(_ref), low(_low), high(_high) {}
 
     template <int W2, bool S2>
-    __attribute__((always_inline)) inline const range_ref_fixed &
+    __FORCE_INLINE const range_ref_fixed &
     operator=(const ac_int<W2, S2> &op) const {
       ref.set_slc(high, low, op);
       return *this;
     }
 
     template <int W2, bool S2>
-    __attribute__((always_inline)) inline
+    __FORCE_INLINE
     operator const ac_int<W2, S2>() const {
       const ac_int<W, S> r = ref.slc(high, low);
       return r;
     }
     template <class RRF>
-    __attribute__((always_inline)) inline const range_ref_fixed &
+    __FORCE_INLINE const range_ref_fixed &
     operator=(const RRF &b) const {
       return operator=(b.operator const ac_int<W, S>());
     }
-    __attribute__((always_inline)) inline const range_ref_fixed &
+    __FORCE_INLINE const range_ref_fixed &
     operator=(const range_ref_fixed &b) const {
       return operator=(b.operator const ac_int<W, S>());
     }
@@ -1008,7 +1006,7 @@ public:
 
   // Bit and Slice Select -----------------------------------------------------
   template <int WS, int WX, bool SX>
-  __attribute__((always_inline)) inline ac_int<WS, S>
+  __FORCE_INLINE ac_int<WS, S>
   slc(const ac_int<WX, SX> &index) const {
     ac_int<WS, S> r;
     AC_ASSERT(index >= 0, "Attempting to read slc with negative indices");
@@ -1017,17 +1015,17 @@ public:
     r.bit_adjust();
     return r;
   }
-  __attribute__((always_inline)) inline ac_int<W, S> operator()(int Hi,
+  __FORCE_INLINE ac_int<W, S> operator()(int Hi,
                                                                 int Lo) const {
     return slc(Hi, Lo);
   }
-  __attribute__((always_inline)) inline const range_ref_fixed
+  __FORCE_INLINE const range_ref_fixed
   operator()(int Hi, int Lo) {
     return range_ref_fixed(*this, Hi, Lo);
   }
 
   template <int W1, int W2, bool S1, bool S2>
-  __attribute__((always_inline)) inline ac_int<W, S>
+  __FORCE_INLINE ac_int<W, S>
   operator()(const ac_int<W1, S1> &_Hi, const ac_int<W1, S2> &_Lo) const {
     int Hi = _Hi.to_int();
     int Lo = _Lo.to_int();
@@ -1036,7 +1034,7 @@ public:
     return operator()(Hi, Lo);
   }
   template <int W1, int W2, bool S1, bool S2>
-  __attribute__((always_inline)) inline range_ref_fixed
+  __FORCE_INLINE range_ref_fixed
   operator()(const ac_int<W1, S1> &_Hi, const ac_int<W1, S2> &_Lo) {
     int Hi = _Hi.to_int();
     int Lo = _Lo.to_int();
@@ -1045,21 +1043,20 @@ public:
     return range_ref_fixed(*this, Hi, Lo);
   }
 
-  __attribute__((always_inline)) inline ac_int<W, S> range(int Hi,
-                                                           int Lo) const {
+  __FORCE_INLINE ac_int<W, S> range(int Hi,int Lo) const {
     return operator()(Hi, Lo);
   }
   template <int W1, int W2, bool S1, bool S2>
-  __attribute__((always_inline)) inline ac_int<W, S>
+  __FORCE_INLINE ac_int<W, S>
   range(const ac_int<W1, S1> &_Hi, const ac_int<W1, S2> &_Lo) const {
     return operator()(_Hi, _Lo);
   }
-  __attribute__((always_inline)) inline range_ref_fixed range(int Hi, int Lo) {
+  __FORCE_INLINE range_ref_fixed range(int Hi, int Lo) {
     return range_ref_fixed(*this, Hi, Lo);
   }
 
   template <int WS>
-  __attribute__((always_inline)) inline ac_int<WS, S> slc(signed index) const {
+  __FORCE_INLINE ac_int<WS, S> slc(signed index) const {
     ac_int<WS, S> r;
     AC_ASSERT(index >= 0, "Attempting to read slc with negative indices");
     unsigned uindex = index & ((unsigned)~0 >> 1);
@@ -1068,14 +1065,14 @@ public:
     return r;
   }
   template <int WS>
-  __attribute__((always_inline)) inline ac_int<WS, S>
+  __FORCE_INLINE ac_int<WS, S>
   slc(unsigned uindex) const {
     ac_int<WS, S> r;
     Base::shift_r(uindex, r);
     r.bit_adjust();
     return r;
   }
-  __attribute__((always_inline)) inline ac_int<W, S> slc(int Hi, int Lo) const {
+  __FORCE_INLINE ac_int<W, S> slc(int Hi, int Lo) const {
     AC_ASSERT(Lo >= 0, "Attempting to read slc with negative indices");
     AC_ASSERT(Hi >= 0, "Attempting to read slc with negative indices");
     AC_ASSERT(Hi >= Lo,
@@ -1088,7 +1085,7 @@ public:
   }
 
   template <int W2, bool S2, int WX, bool SX>
-  __attribute__((always_inline)) inline ac_fixed &
+  __FORCE_INLINE ac_fixed &
   set_slc(const ac_int<WX, SX> lsb, const ac_int<W2, S2> &slc) {
     AC_ASSERT(lsb.to_int() + W2 <= W && lsb.to_int() >= 0,
               "Out of bounds set_slc");
@@ -1098,7 +1095,7 @@ public:
     return *this;
   }
   template <int W2, bool S2>
-  __attribute__((always_inline)) inline ac_fixed &
+  __FORCE_INLINE ac_fixed &
   set_slc(signed lsb, const ac_int<W2, S2> &slc) {
     AC_ASSERT(lsb + W2 <= W && lsb >= 0, "Out of bounds set_slc");
     unsigned ulsb = lsb & ((unsigned)~0 >> 1);
@@ -1107,7 +1104,7 @@ public:
     return *this;
   }
   template <int W2, bool S2>
-  __attribute__((always_inline)) inline ac_fixed &
+  __FORCE_INLINE ac_fixed &
   set_slc(unsigned ulsb, const ac_int<W2, S2> &slc) {
     AC_ASSERT(ulsb + W2 <= W, "Out of bounds set_slc");
     Base::set_slc(ulsb, W2, (ac_int<W2, true>)slc);
@@ -1115,7 +1112,7 @@ public:
     return *this;
   }
   template <int W2, bool S2>
-  __attribute__((always_inline)) inline ac_fixed &
+  __FORCE_INLINE ac_fixed &
   set_slc(int umsb, int ulsb, const ac_int<W2, S2> &slc) {
     AC_ASSERT((ulsb + umsb + 1) <= W, "Out of bounds set_slc");
     Base::set_slc(ulsb, umsb + 1 - ulsb, (ac_int<W2, true>)slc);
@@ -1133,7 +1130,7 @@ public:
       return (d_index < W) ? (d_bv.v[d_index >> 5] >> (d_index & 31) & 1) : 0;
     }
 
-    inline ac_bitref operator=(int val) {
+    __FORCE_INLINE ac_bitref operator=(int val) {
       // lsb of int (val&1) is written to bit
       if (d_index < W) {
         d_bv.v.set(d_index >> 5,
@@ -1145,10 +1142,10 @@ public:
       return *this;
     }
     template <int W2, bool S2>
-    inline ac_bitref operator=(const ac_int<W2, S2> &val) {
+    __FORCE_INLINE ac_bitref operator=(const ac_int<W2, S2> &val) {
       return operator=(val.to_int());
     }
-    inline ac_bitref operator=(const ac_bitref &val) {
+    __FORCE_INLINE ac_bitref operator=(const ac_bitref &val) {
       return operator=((int)(bool)val);
     }
   };
@@ -1204,7 +1201,7 @@ public:
   }
   // returns false if number is denormal
   template <int WE, bool SE>
-  __attribute__((always_inline)) inline bool normalize(ac_int<WE, SE> &exp) {
+  __FORCE_INLINE bool normalize(ac_int<WE, SE> &exp) {
     ac_int<W, S> m = this->template slc<W>(0);
     bool r = m.normalize(exp);
     this->set_slc(0, m);
@@ -1213,14 +1210,14 @@ public:
   // returns false if number is denormal, minimum exponent is reserved (usually
   // for encoding special values/errors)
   template <int WE, bool SE>
-  __attribute__((always_inline)) inline bool
+  __FORCE_INLINE bool
   normalize_RME(ac_int<WE, SE> &exp) {
     ac_int<W, S> m = this->template slc<W>(0);
     bool r = m.normalize_RME(exp);
     this->set_slc(0, m);
     return r;
   }
-  __attribute__((always_inline)) inline void bit_fill_hex(const char *str) {
+  __FORCE_INLINE void bit_fill_hex(const char *str) {
     // Zero Pads if str is too short, throws ms bits away if str is too long
     // Asserts if anything other than 0-9a-fA-F is encountered
     ac_int<W, S> x;
@@ -1228,7 +1225,7 @@ public:
     set_slc(0, x);
   }
   template <int N>
-  __attribute__((always_inline)) inline void bit_fill(const int (&ivec)[N],
+  __FORCE_INLINE void bit_fill(const int (&ivec)[N],
                                                       bool bigendian = true) {
     // bit_fill from integer vector
     //   if W > N*32, missing most significant bits are zeroed
@@ -1311,162 +1308,162 @@ template <typename T> struct rt_ac_fixed_T<c_type<T>> {
 
 // Specializations for constructors on integers that bypass bit adjusting
 //  and are therefore more efficient
-template <> inline ac_fixed<1, 1, true, AC_TRN, AC_WRAP>::ac_fixed(bool b) {
+template <> __FORCE_INLINE ac_fixed<1, 1, true, AC_TRN, AC_WRAP>::ac_fixed(bool b) {
   v.set(0, b ? -1 : 0);
 }
 
-template <> inline ac_fixed<1, 1, false, AC_TRN, AC_WRAP>::ac_fixed(bool b) {
+template <> __FORCE_INLINE ac_fixed<1, 1, false, AC_TRN, AC_WRAP>::ac_fixed(bool b) {
   v.set(0, b);
 }
 template <>
-inline ac_fixed<1, 1, false, AC_TRN, AC_WRAP>::ac_fixed(signed char b) {
+__FORCE_INLINE ac_fixed<1, 1, false, AC_TRN, AC_WRAP>::ac_fixed(signed char b) {
   v.set(0, b & 1);
 }
 template <>
-inline ac_fixed<1, 1, false, AC_TRN, AC_WRAP>::ac_fixed(unsigned char b) {
+__FORCE_INLINE ac_fixed<1, 1, false, AC_TRN, AC_WRAP>::ac_fixed(unsigned char b) {
   v.set(0, b & 1);
 }
 template <>
-inline ac_fixed<1, 1, false, AC_TRN, AC_WRAP>::ac_fixed(signed short b) {
+__FORCE_INLINE ac_fixed<1, 1, false, AC_TRN, AC_WRAP>::ac_fixed(signed short b) {
   v.set(0, b & 1);
 }
 template <>
-inline ac_fixed<1, 1, false, AC_TRN, AC_WRAP>::ac_fixed(unsigned short b) {
+__FORCE_INLINE ac_fixed<1, 1, false, AC_TRN, AC_WRAP>::ac_fixed(unsigned short b) {
   v.set(0, b & 1);
 }
 template <>
-inline ac_fixed<1, 1, false, AC_TRN, AC_WRAP>::ac_fixed(signed int b) {
+__FORCE_INLINE ac_fixed<1, 1, false, AC_TRN, AC_WRAP>::ac_fixed(signed int b) {
   v.set(0, b & 1);
 }
 template <>
-inline ac_fixed<1, 1, false, AC_TRN, AC_WRAP>::ac_fixed(unsigned int b) {
+__FORCE_INLINE ac_fixed<1, 1, false, AC_TRN, AC_WRAP>::ac_fixed(unsigned int b) {
   v.set(0, b & 1);
 }
 template <>
-inline ac_fixed<1, 1, false, AC_TRN, AC_WRAP>::ac_fixed(signed long b) {
+__FORCE_INLINE ac_fixed<1, 1, false, AC_TRN, AC_WRAP>::ac_fixed(signed long b) {
   v.set(0, b & 1);
 }
 template <>
-inline ac_fixed<1, 1, false, AC_TRN, AC_WRAP>::ac_fixed(unsigned long b) {
+__FORCE_INLINE ac_fixed<1, 1, false, AC_TRN, AC_WRAP>::ac_fixed(unsigned long b) {
   v.set(0, b & 1);
 }
-template <> inline ac_fixed<1, 1, false, AC_TRN, AC_WRAP>::ac_fixed(Ulong b) {
+template <> __FORCE_INLINE ac_fixed<1, 1, false, AC_TRN, AC_WRAP>::ac_fixed(Ulong b) {
   v.set(0, (int)b & 1);
 }
-template <> inline ac_fixed<1, 1, false, AC_TRN, AC_WRAP>::ac_fixed(Slong b) {
+template <> __FORCE_INLINE ac_fixed<1, 1, false, AC_TRN, AC_WRAP>::ac_fixed(Slong b) {
   v.set(0, (int)b & 1);
 }
 
-template <> inline ac_fixed<8, 8, true, AC_TRN, AC_WRAP>::ac_fixed(bool b) {
+template <> __FORCE_INLINE ac_fixed<8, 8, true, AC_TRN, AC_WRAP>::ac_fixed(bool b) {
   v.set(0, b);
 }
-template <> inline ac_fixed<8, 8, false, AC_TRN, AC_WRAP>::ac_fixed(bool b) {
-  v.set(0, b);
-}
-template <>
-inline ac_fixed<8, 8, true, AC_TRN, AC_WRAP>::ac_fixed(signed char b) {
+template <> __FORCE_INLINE ac_fixed<8, 8, false, AC_TRN, AC_WRAP>::ac_fixed(bool b) {
   v.set(0, b);
 }
 template <>
-inline ac_fixed<8, 8, false, AC_TRN, AC_WRAP>::ac_fixed(unsigned char b) {
+__FORCE_INLINE ac_fixed<8, 8, true, AC_TRN, AC_WRAP>::ac_fixed(signed char b) {
   v.set(0, b);
 }
 template <>
-inline ac_fixed<8, 8, true, AC_TRN, AC_WRAP>::ac_fixed(unsigned char b) {
+__FORCE_INLINE ac_fixed<8, 8, false, AC_TRN, AC_WRAP>::ac_fixed(unsigned char b) {
+  v.set(0, b);
+}
+template <>
+__FORCE_INLINE ac_fixed<8, 8, true, AC_TRN, AC_WRAP>::ac_fixed(unsigned char b) {
   v.set(0, (signed char)b);
 }
 template <>
-inline ac_fixed<8, 8, false, AC_TRN, AC_WRAP>::ac_fixed(signed char b) {
+__FORCE_INLINE ac_fixed<8, 8, false, AC_TRN, AC_WRAP>::ac_fixed(signed char b) {
   v.set(0, (unsigned char)b);
 }
 
-template <> inline ac_fixed<16, 16, true, AC_TRN, AC_WRAP>::ac_fixed(bool b) {
+template <> __FORCE_INLINE ac_fixed<16, 16, true, AC_TRN, AC_WRAP>::ac_fixed(bool b) {
   v.set(0, b);
 }
-template <> inline ac_fixed<16, 16, false, AC_TRN, AC_WRAP>::ac_fixed(bool b) {
-  v.set(0, b);
-}
-template <>
-inline ac_fixed<16, 16, true, AC_TRN, AC_WRAP>::ac_fixed(signed char b) {
+template <> __FORCE_INLINE ac_fixed<16, 16, false, AC_TRN, AC_WRAP>::ac_fixed(bool b) {
   v.set(0, b);
 }
 template <>
-inline ac_fixed<16, 16, false, AC_TRN, AC_WRAP>::ac_fixed(unsigned char b) {
+__FORCE_INLINE ac_fixed<16, 16, true, AC_TRN, AC_WRAP>::ac_fixed(signed char b) {
   v.set(0, b);
 }
 template <>
-inline ac_fixed<16, 16, true, AC_TRN, AC_WRAP>::ac_fixed(unsigned char b) {
+__FORCE_INLINE ac_fixed<16, 16, false, AC_TRN, AC_WRAP>::ac_fixed(unsigned char b) {
   v.set(0, b);
 }
 template <>
-inline ac_fixed<16, 16, false, AC_TRN, AC_WRAP>::ac_fixed(signed char b) {
+__FORCE_INLINE ac_fixed<16, 16, true, AC_TRN, AC_WRAP>::ac_fixed(unsigned char b) {
+  v.set(0, b);
+}
+template <>
+__FORCE_INLINE ac_fixed<16, 16, false, AC_TRN, AC_WRAP>::ac_fixed(signed char b) {
   v.set(0, (unsigned short)b);
 }
 template <>
-inline ac_fixed<16, 16, true, AC_TRN, AC_WRAP>::ac_fixed(signed short b) {
+__FORCE_INLINE ac_fixed<16, 16, true, AC_TRN, AC_WRAP>::ac_fixed(signed short b) {
   v.set(0, b);
 }
 template <>
-inline ac_fixed<16, 16, false, AC_TRN, AC_WRAP>::ac_fixed(unsigned short b) {
+__FORCE_INLINE ac_fixed<16, 16, false, AC_TRN, AC_WRAP>::ac_fixed(unsigned short b) {
   v.set(0, b);
 }
 template <>
-inline ac_fixed<16, 16, true, AC_TRN, AC_WRAP>::ac_fixed(unsigned short b) {
+__FORCE_INLINE ac_fixed<16, 16, true, AC_TRN, AC_WRAP>::ac_fixed(unsigned short b) {
   v.set(0, (signed short)b);
 }
 template <>
-inline ac_fixed<16, 16, false, AC_TRN, AC_WRAP>::ac_fixed(signed short b) {
+__FORCE_INLINE ac_fixed<16, 16, false, AC_TRN, AC_WRAP>::ac_fixed(signed short b) {
   v.set(0, (unsigned short)b);
 }
 
 template <>
-inline ac_fixed<32, 32, true, AC_TRN, AC_WRAP>::ac_fixed(signed int b) {
+__FORCE_INLINE ac_fixed<32, 32, true, AC_TRN, AC_WRAP>::ac_fixed(signed int b) {
   v.set(0, b);
 }
 template <>
-inline ac_fixed<32, 32, true, AC_TRN, AC_WRAP>::ac_fixed(unsigned int b) {
+__FORCE_INLINE ac_fixed<32, 32, true, AC_TRN, AC_WRAP>::ac_fixed(unsigned int b) {
   v.set(0, b);
 }
 template <>
-inline ac_fixed<32, 32, false, AC_TRN, AC_WRAP>::ac_fixed(signed int b) {
+__FORCE_INLINE ac_fixed<32, 32, false, AC_TRN, AC_WRAP>::ac_fixed(signed int b) {
   v.set(0, b);
   v.set(1, 0);
 }
 template <>
-inline ac_fixed<32, 32, false, AC_TRN, AC_WRAP>::ac_fixed(unsigned int b) {
+__FORCE_INLINE ac_fixed<32, 32, false, AC_TRN, AC_WRAP>::ac_fixed(unsigned int b) {
   v.set(0, b);
   v.set(1, 0);
 }
 
-template <> inline ac_fixed<32, 32, true, AC_TRN, AC_WRAP>::ac_fixed(Slong b) {
+template <> __FORCE_INLINE ac_fixed<32, 32, true, AC_TRN, AC_WRAP>::ac_fixed(Slong b) {
   v.set(0, (int)b);
 }
-template <> inline ac_fixed<32, 32, true, AC_TRN, AC_WRAP>::ac_fixed(Ulong b) {
+template <> __FORCE_INLINE ac_fixed<32, 32, true, AC_TRN, AC_WRAP>::ac_fixed(Ulong b) {
   v.set(0, (int)b);
 }
-template <> inline ac_fixed<32, 32, false, AC_TRN, AC_WRAP>::ac_fixed(Slong b) {
+template <> __FORCE_INLINE ac_fixed<32, 32, false, AC_TRN, AC_WRAP>::ac_fixed(Slong b) {
   v.set(0, (int)b);
   v.set(1, 0);
 }
-template <> inline ac_fixed<32, 32, false, AC_TRN, AC_WRAP>::ac_fixed(Ulong b) {
+template <> __FORCE_INLINE ac_fixed<32, 32, false, AC_TRN, AC_WRAP>::ac_fixed(Ulong b) {
   v.set(0, (int)b);
   v.set(1, 0);
 }
 
-template <> inline ac_fixed<64, 64, true, AC_TRN, AC_WRAP>::ac_fixed(Slong b) {
+template <> __FORCE_INLINE ac_fixed<64, 64, true, AC_TRN, AC_WRAP>::ac_fixed(Slong b) {
   v.set(0, (int)b);
   v.set(1, (int)(b >> 32));
 }
-template <> inline ac_fixed<64, 64, true, AC_TRN, AC_WRAP>::ac_fixed(Ulong b) {
+template <> __FORCE_INLINE ac_fixed<64, 64, true, AC_TRN, AC_WRAP>::ac_fixed(Ulong b) {
   v.set(0, (int)b);
   v.set(1, (int)(b >> 32));
 }
-template <> inline ac_fixed<64, 64, false, AC_TRN, AC_WRAP>::ac_fixed(Slong b) {
+template <> __FORCE_INLINE ac_fixed<64, 64, false, AC_TRN, AC_WRAP>::ac_fixed(Slong b) {
   v.set(0, (int)b);
   v.set(1, (int)((Ulong)b >> 32));
   v.set(2, 0);
 }
-template <> inline ac_fixed<64, 64, false, AC_TRN, AC_WRAP>::ac_fixed(Ulong b) {
+template <> __FORCE_INLINE ac_fixed<64, 64, false, AC_TRN, AC_WRAP>::ac_fixed(Ulong b) {
   v.set(0, (int)b);
   v.set(1, (int)(b >> 32));
   v.set(2, 0);
@@ -1475,7 +1472,7 @@ template <> inline ac_fixed<64, 64, false, AC_TRN, AC_WRAP>::ac_fixed(Ulong b) {
 // Stream --------------------------------------------------------------------
 
 template <int W, int I, bool S, ac_q_mode Q, ac_o_mode O>
-inline std::ostream &operator<<(std::ostream &os,
+__FORCE_INLINE std::ostream &operator<<(std::ostream &os,
                                 const ac_fixed<W, I, S, Q, O> &x) {
 #ifndef __BAMBU__
   os << x.to_string(AC_DEC);
@@ -1488,7 +1485,7 @@ inline std::ostream &operator<<(std::ostream &os,
 
 #define FX_BIN_OP_WITH_INT_2I(BIN_OP, C_TYPE, WI, SI, RTYPE)                   \
   template <int W, int I, bool S, ac_q_mode Q, ac_o_mode O>                    \
-  __attribute__((always_inline)) inline                                        \
+  __FORCE_INLINE                                        \
       typename ac_fixed<W, I, S>::template rt<WI, WI, SI>::RTYPE               \
       operator BIN_OP(const ac_fixed<W, I, S, Q, O> &op, C_TYPE i_op) {        \
     return op.operator BIN_OP(ac_int<WI, SI>(i_op));                           \
@@ -1496,13 +1493,13 @@ inline std::ostream &operator<<(std::ostream &os,
 
 #define FX_BIN_OP_WITH_INT(BIN_OP, C_TYPE, WI, SI, RTYPE)                      \
   template <int W, int I, bool S, ac_q_mode Q, ac_o_mode O>                    \
-  __attribute__((always_inline)) inline                                        \
+  __FORCE_INLINE                                        \
       typename ac_fixed<WI, WI, SI>::template rt<W, I, S>::RTYPE               \
       operator BIN_OP(C_TYPE i_op, const ac_fixed<W, I, S, Q, O> &op) {        \
     return ac_fixed<WI, WI, SI>(i_op).operator BIN_OP(op);                     \
   }                                                                            \
   template <int W, int I, bool S, ac_q_mode Q, ac_o_mode O>                    \
-  __attribute__((always_inline)) inline                                        \
+  __FORCE_INLINE                                        \
       typename ac_fixed<W, I, S>::template rt<WI, WI, SI>::RTYPE               \
       operator BIN_OP(const ac_fixed<W, I, S, Q, O> &op, C_TYPE i_op) {        \
     return op.operator BIN_OP(ac_fixed<WI, WI, SI>(i_op));                     \
@@ -1510,26 +1507,26 @@ inline std::ostream &operator<<(std::ostream &os,
 
 #define FX_REL_OP_WITH_INT(REL_OP, C_TYPE, W2, S2)                             \
   template <int W, int I, bool S, ac_q_mode Q, ac_o_mode O>                    \
-  __attribute__((always_inline)) inline bool operator REL_OP(                  \
+  __FORCE_INLINE bool operator REL_OP(                  \
       const ac_fixed<W, I, S, Q, O> &op, C_TYPE op2) {                         \
     return op.operator REL_OP(ac_fixed<W2, W2, S2>(op2));                      \
   }                                                                            \
   template <int W, int I, bool S, ac_q_mode Q, ac_o_mode O>                    \
-  __attribute__((always_inline)) inline bool operator REL_OP(                  \
+  __FORCE_INLINE bool operator REL_OP(                  \
       C_TYPE op2, const ac_fixed<W, I, S, Q, O> &op) {                         \
     return ac_fixed<W2, W2, S2>(op2).operator REL_OP(op);                      \
   }
 
 #define FX_ASSIGN_OP_WITH_INT_2(ASSIGN_OP, C_TYPE, W2, S2)                     \
   template <int W, int I, bool S, ac_q_mode Q, ac_o_mode O>                    \
-  __attribute__((always_inline)) inline ac_fixed<W, I, S, Q, O>                \
+  __FORCE_INLINE ac_fixed<W, I, S, Q, O>                \
       &operator ASSIGN_OP(ac_fixed<W, I, S, Q, O> &op, C_TYPE op2) {           \
     return op.operator ASSIGN_OP(ac_fixed<W2, W2, S2>(op2));                   \
   }
 
 #define FX_ASSIGN_OP_WITH_INT_2I(ASSIGN_OP, C_TYPE, W2, S2)                    \
   template <int W, int I, bool S, ac_q_mode Q, ac_o_mode O>                    \
-  __attribute__((always_inline)) inline ac_fixed<W, I, S> operator ASSIGN_OP(  \
+  __FORCE_INLINE ac_fixed<W, I, S> operator ASSIGN_OP(  \
       ac_fixed<W, I, S, Q, O> &op, C_TYPE op2) {                               \
     return op.operator ASSIGN_OP(ac_int<W2, S2>(op2));                         \
   }
@@ -1590,7 +1587,7 @@ FX_OPS_WITH_INT(Ulong, 64, false)
 
 #define FX_BIN_OP_WITH_AC_INT_1(BIN_OP, RTYPE)                                 \
   template <int W, int I, bool S, ac_q_mode Q, ac_o_mode O, int WI, bool SI>   \
-  __attribute__((always_inline)) inline                                        \
+  __FORCE_INLINE                                        \
       typename ac_fixed<WI, WI, SI>::template rt<W, I, S>::RTYPE               \
       operator BIN_OP(const ac_int<WI, SI> &i_op,                              \
                       const ac_fixed<W, I, S, Q, O> &op) {                     \
@@ -1599,7 +1596,7 @@ FX_OPS_WITH_INT(Ulong, 64, false)
 
 #define FX_BIN_OP_WITH_AC_INT_2(BIN_OP, RTYPE)                                 \
   template <int W, int I, bool S, ac_q_mode Q, ac_o_mode O, int WI, bool SI>   \
-  __attribute__((always_inline)) inline                                        \
+  __FORCE_INLINE                                        \
       typename ac_fixed<W, I, S>::template rt<WI, WI, SI>::RTYPE               \
       operator BIN_OP(const ac_fixed<W, I, S, Q, O> &op,                       \
                       const ac_int<WI, SI> &i_op) {                            \
@@ -1612,24 +1609,24 @@ FX_OPS_WITH_INT(Ulong, 64, false)
 
 #define FX_REL_OP_WITH_AC_INT(REL_OP)                                          \
   template <int W, int I, bool S, ac_q_mode Q, ac_o_mode O, int WI, bool SI>   \
-  __attribute__((always_inline)) inline bool operator REL_OP(                  \
+  __FORCE_INLINE bool operator REL_OP(                  \
       const ac_fixed<W, I, S, Q, O> &op, const ac_int<WI, SI> &op2) {          \
     return op.operator REL_OP(ac_fixed<WI, WI, SI>(op2));                      \
   }                                                                            \
   template <int W, int I, bool S, ac_q_mode Q, ac_o_mode O, int WI, bool SI>   \
-  __attribute__((always_inline)) inline bool operator REL_OP(                  \
+  __FORCE_INLINE bool operator REL_OP(                  \
       ac_int<WI, SI> &op2, const ac_fixed<W, I, S, Q, O> &op) {                \
     return ac_fixed<WI, WI, SI>(op2).operator REL_OP(op);                      \
   }
 
 #define FX_ASSIGN_OP_WITH_AC_INT(ASSIGN_OP)                                    \
   template <int W, int I, bool S, ac_q_mode Q, ac_o_mode O, int WI, bool SI>   \
-  __attribute__((always_inline)) inline ac_fixed<W, I, S, Q, O> &              \
+  __FORCE_INLINE ac_fixed<W, I, S, Q, O> &              \
   operator ASSIGN_OP(ac_fixed<W, I, S, Q, O> &op, const ac_int<WI, SI> &op2) { \
     return op.operator ASSIGN_OP(ac_fixed<WI, WI, SI>(op2));                   \
   }                                                                            \
   template <int W, int I, bool S, ac_q_mode Q, ac_o_mode O, int WI, bool SI>   \
-  __attribute__((always_inline)) inline ac_int<WI, SI> &operator ASSIGN_OP(    \
+  __FORCE_INLINE ac_int<WI, SI> &operator ASSIGN_OP(    \
       ac_int<WI, SI> &op, const ac_fixed<W, I, S, Q, O> &op2) {                \
     return op.operator ASSIGN_OP(op2.to_ac_int());                             \
   }
@@ -1667,32 +1664,32 @@ FX_ASSIGN_OP_WITH_AC_INT(^=)
 
 // Relational Operators with double --------------------------------------
 template <int W, int I, bool S, ac_q_mode Q, ac_o_mode O>
-__attribute__((always_inline)) inline bool
+__FORCE_INLINE bool
 operator==(double op, const ac_fixed<W, I, S, Q, O> &op2) {
   return op2.operator==(op);
 }
 template <int W, int I, bool S, ac_q_mode Q, ac_o_mode O>
-__attribute__((always_inline)) inline bool
+__FORCE_INLINE bool
 operator!=(double op, const ac_fixed<W, I, S, Q, O> &op2) {
   return op2.operator!=(op);
 }
 template <int W, int I, bool S, ac_q_mode Q, ac_o_mode O>
-__attribute__((always_inline)) inline bool
+__FORCE_INLINE bool
 operator>(double op, const ac_fixed<W, I, S, Q, O> &op2) {
   return op2.operator<(op);
 }
 template <int W, int I, bool S, ac_q_mode Q, ac_o_mode O>
-__attribute__((always_inline)) inline bool
+__FORCE_INLINE bool
 operator<(double op, const ac_fixed<W, I, S, Q, O> &op2) {
   return op2.operator>(op);
 }
 template <int W, int I, bool S, ac_q_mode Q, ac_o_mode O>
-__attribute__((always_inline)) inline bool
+__FORCE_INLINE bool
 operator<=(double op, const ac_fixed<W, I, S, Q, O> &op2) {
   return op2.operator>=(op);
 }
 template <int W, int I, bool S, ac_q_mode Q, ac_o_mode O>
-__attribute__((always_inline)) inline bool
+__FORCE_INLINE bool
 operator>=(double op, const ac_fixed<W, I, S, Q, O> &op2) {
   return op2.operator<=(op);
 }
@@ -1720,7 +1717,7 @@ using namespace ac::ops_with_other_types;
 
 // Global templatized functions for easy initialization to special values
 template <ac_special_val V, int W, int I, bool S, ac_q_mode Q, ac_o_mode O>
-__attribute__((always_inline)) inline ac_fixed<W, I, S, Q, O>
+__FORCE_INLINE ac_fixed<W, I, S, Q, O>
 value(ac_fixed<W, I, S, Q, O>) {
   ac_fixed<W, I, S> r;
   return r.template set_val<V>();
@@ -1730,7 +1727,7 @@ namespace ac {
 // PUBLIC FUNCTIONS
 // function to initialize (or uninitialize) arrays
 template <ac_special_val V, int W, int I, bool S, ac_q_mode Q, ac_o_mode O>
-__attribute__((always_inline)) inline bool
+__FORCE_INLINE bool
 init_array(ac_fixed<W, I, S, Q, O> *a, int n) {
   ac_fixed<W, I, S> t = value<V>(*a);
   for (int i = 0; i < n; i++)
@@ -1738,7 +1735,7 @@ init_array(ac_fixed<W, I, S, Q, O> *a, int n) {
   return true;
 }
 
-__attribute__((always_inline)) inline ac_fixed<54, 2, true>
+__FORCE_INLINE ac_fixed<54, 2, true>
 frexp_d(double d, ac_int<11, true> &exp) {
   enum {
     Min_Exp = -1022,
@@ -1768,7 +1765,7 @@ frexp_d(double d, ac_int<11, true> &exp) {
   r.set_slc(0, f_i);
   return r;
 }
-__attribute__((always_inline)) inline ac_fixed<25, 2, true>
+__FORCE_INLINE ac_fixed<25, 2, true>
 frexp_f(float f, ac_int<8, true> &exp) {
   enum {
     Min_Exp = -126,
@@ -1799,7 +1796,7 @@ frexp_f(float f, ac_int<8, true> &exp) {
   return r;
 }
 
-__attribute__((always_inline)) inline ac_fixed<53, 1, false>
+__FORCE_INLINE ac_fixed<53, 1, false>
 frexp_sm_d(double d, ac_int<11, true> &exp, bool &sign) {
   enum {
     Min_Exp = -1022,
@@ -1830,7 +1827,7 @@ frexp_sm_d(double d, ac_int<11, true> &exp, bool &sign) {
   sign = s;
   return r;
 }
-__attribute__((always_inline)) inline ac_fixed<24, 1, false>
+__FORCE_INLINE ac_fixed<24, 1, false>
 frexp_sm_f(float f, ac_int<8, true> &exp, bool &sign) {
   enum {
     Min_Exp = -126,
