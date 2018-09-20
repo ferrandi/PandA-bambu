@@ -186,10 +186,8 @@ struct priority_compare_functor
       /**
        * Copy constructor
       */
-      priority_compare_functor(const priority_compare_functor&in)
-      {
-         priority_values = in.priority_values;
-      }
+      priority_compare_functor(const priority_compare_functor&in) : priority_values(in.priority_values)
+      {}
 
       /**
        * Destructor

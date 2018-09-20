@@ -750,7 +750,7 @@ choose_mult_variant (unsigned int data_bitsize, long long int val,
    return MULT_COST_LESS (alg.cost, Mult_cost);
  }
 
-tree_nodeRef IR_lowering::expand_mult_const (tree_nodeRef op0, unsigned long long int val, const struct algorithm &alg, enum mult_variant &variant, const tree_nodeRef stmt, const blocRef block, tree_nodeRef &type, const std::string&srcp_default)
+tree_nodeRef IR_lowering::expand_mult_const (tree_nodeRef op0, unsigned long long int ASSERT_PARAMETER(val), const struct algorithm &alg, enum mult_variant &variant, const tree_nodeRef stmt, const blocRef block, tree_nodeRef &type, const std::string&srcp_default)
 {
    long long int val_so_far = 0;
    tree_nodeRef accum, tem;

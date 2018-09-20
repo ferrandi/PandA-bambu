@@ -1003,7 +1003,9 @@ bool rebuild_initialization2::look_for_ROMs()
                   }
                }
                else
+               {
                   THROW_ASSERT(resolved, "unexpected condition");
+               }
             }
             else
             {

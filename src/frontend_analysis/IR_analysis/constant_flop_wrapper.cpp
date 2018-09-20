@@ -176,7 +176,9 @@ DesignFlowStep_Status constant_flop_wrapper::InternalExec()
          //the following three lines check if the functions written by this class are being analyzed multiple times (to avoid infinite loop)
          bool function_already_scanned = operations.find(in->strg) != operations.end();
          if(function_already_scanned)
+         {
             THROW_ASSERT(function_already_scanned, "Inconsistent behaviour: the same function is being analyzed multiple times.");
+         }
 
          if(functions.find(in->strg) != functions.end())
          {
@@ -229,7 +231,9 @@ DesignFlowStep_Status constant_flop_wrapper::InternalExec()
          //the following three lines check if the functions written by this class are being analyzed multiple times (to avoid infinite loop)
          bool function_already_scanned = operations.find(in->strg) != operations.end();
          if(function_already_scanned)
+         {
             THROW_ASSERT(function_already_scanned, "Inconsistent behaviour: the same function is being analyzed multiple times.");
+         }
 
          if(functions.find(in->strg) != functions.end())
          {

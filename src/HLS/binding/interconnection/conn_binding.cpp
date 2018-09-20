@@ -409,7 +409,9 @@ void conn_binding::mux_connection(const hlsRef HLS, const structural_managerRef 
                   port_tgt = GetPointer<port_o>(port_tgt)->get_port(port_index);
                }
                else
+               {
                   THROW_ASSERT(port_index == 0, "expected 0 as port index");
+               }
                break;
             }
             num++;

@@ -115,7 +115,7 @@ enum class ParametricListBased_Metric
 };
 
 /**
- * Information about speciaization of parametric list based step
+ * Information about specialization of parametric list based step
  */
 class ParametricListBasedSpecialization : public HLSFlowStepSpecialization
 {

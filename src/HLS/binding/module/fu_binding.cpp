@@ -639,7 +639,9 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
    if(in_chain)
       SM->add_connection(in_chain, done_port);
    else
+   {
       THROW_ASSERT(!done_port, "done port not connected");
+   }
 
 
    std::map<unsigned int, unsigned int> memory_units = allocation_information->get_memory_units();

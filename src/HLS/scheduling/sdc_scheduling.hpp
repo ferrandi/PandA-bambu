@@ -48,6 +48,7 @@
 #include "custom_map.hpp"
 #include "custom_set.hpp"
 #include "utility.hpp"
+#include "hash_helper.hpp"
 
 CONSTREF_FORWARD_DECL(AllocationInformation);
 class bb_vertex_order_by_map;

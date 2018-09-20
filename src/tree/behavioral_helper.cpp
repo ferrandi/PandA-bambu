@@ -620,7 +620,9 @@ std::string BehavioralHelper::PrintVariable(unsigned int var) const
          name += ("_" + boost::lexical_cast<std::string>(sa->vers));
       }
       else
-         THROW_ASSERT(sa->var, "the name has to be defined for volatiles or parameters");
+      {
+         THROW_ASSERT(sa->var, "the name has to be defined for volatile or parameters");
+      }
       //if(sa->min && sa->max) name += "/*[" + print_constant(GET_INDEX_NODE(sa->min)) + "," + print_constant(GET_INDEX_NODE(sa->max)) + "]*/";
       return name;
    }
