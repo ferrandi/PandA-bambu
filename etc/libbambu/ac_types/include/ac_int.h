@@ -124,6 +124,13 @@
 
 #define __FORCE_INLINE __attribute__((always_inline)) inline
 
+#define __INIT_VALUE /*= {}*/
+#define __INIT_VALUE_LL /*= {}*/
+
+//#define __INIT_VALUE = {0}
+//#define __INIT_VALUE_LL = {0}
+
+
 #ifndef __ASSERT_H__
 #define __ASSERT_H__
 #include <assert.h>
@@ -296,7 +303,7 @@ class iv_base
 //  typedef int type __attribute__((vector_size(sizeof(int)*N)));
 //#endif
 //      type v = {};
-      int v[N] = {};
+      int v[N] __INIT_VALUE;
 
    public:
       template <int W, bool S>
@@ -355,7 +362,7 @@ class iv_base
       }
 };
 template <> class iv_base<1,true> {
-  int v = {0};
+  int v __INIT_VALUE;
 
 public:
   template <int W, bool S> __FORCE_INLINE void bit_adjust() {
@@ -367,11 +374,11 @@ public:
   void set(int, int value) { v = value; }
   __FORCE_INLINE Slong to_int64() const { return v; }
   constexpr int operator[](int) const { return v; }
-  constexpr iv_base() {}
+  /*constexpr*/ iv_base() {}
   template <int N2, bool C2> iv_base(const iv_base<N2,C2> &b) : v(b[0]) {}
 };
 template <> class iv_base<2,true> {
-  long long int v = {0LL};
+  long long int v __INIT_VALUE_LL;
 
 public:
   template <int W, bool S> void bit_adjust() {
@@ -388,7 +395,7 @@ public:
   }
   __FORCE_INLINE Slong to_int64() const { return v; }
   constexpr int operator[](int x) const { return x ? (int)(v >> 32) : (int)v; }
-  constexpr iv_base() {}
+  /*constexpr*/ iv_base() {}
   template <int N2, bool C2> iv_base(const iv_base<N2,C2> &b) {
     const int M = AC_MIN(2, N2);
     if (M == 2) {
@@ -400,7 +407,7 @@ public:
   }
 };
 template <> class iv_base<3,true> {
-  long long int va = {0LL};
+  long long int va __INIT_VALUE_LL;
 
 public:
   template <int W, bool S> __FORCE_INLINE void bit_adjust() {
@@ -423,7 +430,7 @@ public:
     x = x & 3;
     return x == 0 ? (int)va : (x == 1 ? (int)(va >> 32) : 0);
   }
-  constexpr iv_base() {}
+  /*constexpr*/ iv_base() {}
   template <int N2, bool C2> iv_base(const iv_base<N2,C2> &b) {
     const int M = AC_MIN(2, N2);
     if (M == 3) {
@@ -438,8 +445,8 @@ public:
 };
 
 template <> class iv_base<3,false> {
-  long long int va = {0LL};
-  int v2 = {0};
+  long long int va __INIT_VALUE_LL;
+  int v2 __INIT_VALUE;
 
 public:
   template <int W, bool S> __FORCE_INLINE void bit_adjust() {
@@ -468,7 +475,7 @@ public:
     x = x & 3;
     return x == 0 ? (int)va : (x == 1 ? (int)(va >> 32) : v2);
   }
-  constexpr iv_base() {}
+  /*constexpr*/ iv_base() {}
   template <int N2, bool C2> iv_base(const iv_base<N2,C2> &b) {
     const int M = AC_MIN(2, N2);
     if (M == 3) {
@@ -486,8 +493,8 @@ public:
 };
 
 template <> class iv_base<4,false> {
-  long long int va = {0};
-  long long int vb = {0};
+  long long int va __INIT_VALUE_LL;
+  long long int vb __INIT_VALUE_LL;
 
 public:
   template <int W, bool S> __FORCE_INLINE void bit_adjust() {
@@ -520,7 +527,7 @@ public:
                   : (x == 1 ? (int)(va >> 32)
                             : (x == 2 ? (int)vb : (int)(vb >> 32)));
   }
-  constexpr iv_base() {}
+  /*constexpr*/ iv_base() {}
   template <int N2, bool C2> iv_base(const iv_base<N2,C2> &b) {
     const int M = AC_MIN(2, N2);
     if (M == 4) {
@@ -2005,6 +2012,49 @@ public:
       v.set(msb_v, v[msb_v] ^ ((v[msb_v] ^ m) & ~((all_ones << 1) << msb_b)));
     }
   }
+
+  template <int N_2, bool C_2>
+  __FORCE_INLINE void set_slc2(unsigned lsb, int WS, const iv<N_2,C_2> &op2)
+  {
+    AC_ASSERT((31 + WS) / 32 <= N_2,
+              "Bad usage: WS greater than length of slice");
+    auto N2 = (31 + WS) / 32;
+    unsigned msb = lsb + WS - 1;
+    unsigned lsb_v = lsb >> 5;
+    unsigned lsb_b = lsb & 31;
+    unsigned msb_v = msb >> 5;
+    unsigned msb_b = msb & 31;
+    if (N2 == 1) {
+      if (msb_v == lsb_v)
+        v.set(lsb_v,
+              v[lsb_v] ^ ((v[lsb_v] ^ (op2.v[0] << lsb_b)) &
+                          ((WS == 32 ? ~0 : ((1u << WS) - 1)) << lsb_b)));
+      else {
+        v.set(lsb_v, v[lsb_v] ^ ((v[lsb_v] ^ (op2.v[0] << lsb_b)) &
+                                 (all_ones << lsb_b)));
+        unsigned m = (((unsigned)op2.v[0] >> 1) >> (31 - lsb_b));
+        v.set(msb_v, v[msb_v] ^ ((v[msb_v] ^ m) & ~((all_ones << 1) << msb_b)));
+      }
+    } else {
+      v.set(lsb_v, v[lsb_v] ^ ((v[lsb_v] ^ (op2.v[0] << lsb_b)) &
+                               (all_ones << lsb_b)));
+#if defined(__clang__)
+#pragma clang loop unroll(full)
+#endif
+      for (int i = 1; i < N2 - 1; i++)
+        v.set(lsb_v + i, (op2.v[i] << lsb_b) |
+                             (((unsigned)op2.v[i - 1] >> 1) >> (31 - lsb_b)));
+      unsigned t = (op2.v[N2 - 1] << lsb_b) |
+                   (((unsigned)op2.v[N2 - 2] >> 1) >> (31 - lsb_b));
+      unsigned m;
+      if (msb_v - lsb_v == N2) {
+        v.set(msb_v - 1, t);
+        m = (((unsigned)op2.v[N2 - 1] >> 1) >> (31 - lsb_b));
+      } else
+        m = t;
+      v.set(msb_v, v[msb_v] ^ ((v[msb_v] ^ m) & ~((all_ones << 1) << msb_b)));
+    }
+  }
   unsigned leading_bits(bool bit) const { return iv_leading_bits(v, bit); }
 };
 
@@ -3277,8 +3327,8 @@ public:
   __FORCE_INLINE
   ac_int& set_slc(int umsb, int ulsb, const ac_int<W2, S2> &slc)
   {
-    AC_ASSERT((ulsb + umsb + 1) <= W, "Out of bounds set_slc");
-    Base::set_slc(ulsb, umsb + 1 - ulsb, (ac_int<W, false>)slc);
+    AC_ASSERT((umsb + 1) <= W, "Out of bounds set_slc");
+    Base::set_slc2(ulsb, umsb + 1 - ulsb, (ac_int<W2, true>)slc);
     bit_adjust(); // in case sign bit was assigned
     return *this;
   }
@@ -3502,7 +3552,12 @@ public:
         int low;
         int high;
         __FORCE_INLINE range_ref(ac_int<W1,S1> &_ref, int _high, int _low)
-           : ref(_ref), low(_low), high(_high) {}
+           : ref(_ref), low(_low), high(_high)
+        {
+           AC_ASSERT(_high < W1, "Out of bounds range_ref");
+           AC_ASSERT(_low < W1, "Out of bounds range_ref");
+           AC_ASSERT(_low <= _high, "low and high inverted in range_ref");
+        }
 
         template <int W2, bool S2>
         __FORCE_INLINE const range_ref & operator=(const ac_int<W2, S2> &op) const {
