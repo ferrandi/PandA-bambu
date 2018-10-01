@@ -3119,7 +3119,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
 #endif
                auto * gc =  GetPointer<gimple_cond>(GET_NODE(*it_los));
                const std::string srcp_default = gc->include_name + ":" + STR(gc->line_number) + ":" + STR(gc->column_number);
-               /// manage &something as binary operand
+               /// manage something as binary operand
                if(GetPointer<binary_expr>(GET_NODE(gc->op0)))
                {
                   auto* be = GetPointer<binary_expr>(GET_NODE(gc->op0));
@@ -3189,6 +3189,17 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                   {
                      restart_analysis = true;
                   }
+               }
+               else if(tree_helper::Size(GET_NODE(gc->op0))!=1)
+               {
+                  auto bt = tree_man->create_boolean_type();
+                  tree_nodeRef ne = tree_man->create_unary_operation(bt,gc->op0, srcp_default, nop_expr_K);
+                  tree_nodeRef nga = CreateGimpleAssign(bt, ne, block.first, srcp_default);
+                  tree_nodeRef n_vd = GetPointer<gimple_assign>(GET_NODE(nga))->op0;
+                  block.second->PushBefore(nga, *it_los);
+                  gc->op0 = n_vd;
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(nga)->ToString());
+                  restart_analysis = true;
                }
                /// optimize less than 0 or greater than or equal than 0
                if(GET_NODE(gc->op0)->get_kind() == lt_expr_K || GET_NODE(gc->op0)->get_kind() == ge_expr_K)
