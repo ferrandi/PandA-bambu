@@ -262,7 +262,8 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                   }
                   if(GET_NODE(ga->op0)->get_kind() == ssa_name_K and ga->predicate)
                   {
-                     ga->predicate = tree_nodeRef();
+                     auto zeroval = TM->CreateUniqueIntegerCst(static_cast<long long int>(0), type_index);
+                     TM->ReplaceTreeNode(stmt, ga->predicate, zeroval);
                   }
                   if(ssa->CGetUseStmts().empty())
                   {
