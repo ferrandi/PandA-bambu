@@ -62,7 +62,7 @@
         goto BBN1;
     BBN2:
       (xxxxb)*
-  Note that implicit memory virtual definition has to be moved from "var = {};" to "var[i0] = 0;".
+  Note that implicit memory virtual definition has to be translated from "var = {};" into "var[i0] = 0;".
   */
 
 
@@ -335,7 +335,7 @@ DesignFlowStep_Status compute_implicit_calls::InternalExec()
       ///The tree manipulation
       auto tree_man = tree_manipulationRef(new tree_manipulation(TM, parameters));
 
-      /// retrive the starting variable
+      /// retrieve the starting variable
       auto* ga = GetPointer<gimple_assign>(GET_NODE(stmt_bb_pair.first));
       auto * mr = GetPointer<mem_ref>(GET_NODE(ga->op0));
       unsigned int var = tree_helper::get_base_index(TM, GET_INDEX_NODE(mr->op0));
