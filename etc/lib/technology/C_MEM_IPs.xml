@@ -3348,7 +3348,7 @@ assign Mout_we_ram = int_sel_STORE ? 1&apos;b1 : Min_we_ram;
 assign out1 = M_Rdata_ram[BITSIZE_out1-1:0];
 assign Mout_Wdata_ram = int_sel_STORE ? in1 : Min_Wdata_ram;
 assign Mout_data_ram_size = int_sel_STORE || int_sel_LOAD ? in3[BITSIZE_in3-1:0] : Min_data_ram_size;
-assign done_port = M_DataRdy &amp;&amp; (int_sel_STORE || int_sel_LOAD);
+assign done_port = (M_DataRdy &amp;&amp; (int_sel_STORE || int_sel_LOAD)) || (!in4 &amp;&amp; (sel_STORE || sel_LOAD));
 // Add assertion here
 // psl default clock = (posedge clock);
 // psl ERROR_Min_we_ram_Min_oe_ram: assert never {Min_we_ram &amp;&amp; Min_oe_ram};
@@ -3390,6 +3390,10 @@ assign done_port = M_DataRdy &amp;&amp; (int_sel_STORE || int_sel_LOAD);
           <port_o id="in3" dir="IN" is_size_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
             data size
+          </port_o>
+          <port_o id="in4" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+            predicate
           </port_o>
           <port_o id="sel_LOAD" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
@@ -3513,6 +3517,10 @@ assign done_port = delayed_M_DataRdy &amp;&amp; (sel_STORE || sel_LOAD);
           <port_o id="in3" dir="IN" is_size_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
             data size
+          </port_o>
+          <port_o id="in4" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+            predicate
           </port_o>
           <port_o id="sel_LOAD" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
@@ -3646,6 +3654,10 @@ assign done_port = M_DataRdy &amp;&amp; (delayed_sel_STORE || delayed_sel_LOAD);
           <port_o id="in3" dir="IN" is_size_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
             data size
+          </port_o>
+          <port_o id="in4" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+            predicate
           </port_o>
           <port_o id="sel_LOAD" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
@@ -3893,7 +3905,7 @@ generate
     assign Mout_data_ram_size[(i+1)*BITSIZE_Mout_data_ram_size-1:i*BITSIZE_Mout_data_ram_size] = ((i &lt; PORTSIZE_sel_LOAD &amp;&amp; int_sel_LOAD[i]) || (i &lt; PORTSIZE_sel_STORE &amp;&amp; int_sel_STORE[i])) ? (in3[(i+1)*BITSIZE_in3-1:i*BITSIZE_in3]) : Min_data_ram_size[(i+1)*BITSIZE_Min_data_ram_size-1:i*BITSIZE_Min_data_ram_size];
   end
   endgenerate
-assign done_port = M_DataRdy &amp; (int_sel_STORE | int_sel_LOAD);"/>
+assign done_port = (M_DataRdy &amp; (int_sel_STORE | int_sel_LOAD)) | (~in4 &amp; (sel_STORE | sel_LOAD));"/>
         </component_o>
       </circuit>
     </cell>
@@ -4078,6 +4090,10 @@ assign done_port = delayed_M_DataRdy &amp; (int_sel_STORE | (int_sel_LOAD &amp; 
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
             data size
           </port_vector_o>
+          <port_vector_o id="in4" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+            <connected_objects/>
+          </port_vector_o>
           <port_vector_o id="sel_LOAD" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
             <connected_objects/>
@@ -4142,7 +4158,7 @@ assign done_port = delayed_M_DataRdy &amp; (int_sel_STORE | (int_sel_LOAD &amp; 
             <structural_type_descriptor type="BOOL" size="1"/>
             <connected_objects/>
           </port_vector_o>
-          <NP_functionality LIBRARY="MEMORY_CTRLN_D11 in1 in2 in3 sel_LOAD sel_STORE out1 done_port Min_oe_ram Min_we_ram Mout_oe_ram Mout_we_ram M_DataRdy Min_addr_ram Mout_addr_ram M_Rdata_ram Min_Wdata_ram Mout_Wdata_ram Min_data_ram_size Mout_data_ram_size" VERILOG_PROVIDED="
+          <NP_functionality LIBRARY="MEMORY_CTRLN_D11 in1 in2 in3 in4 sel_LOAD sel_STORE out1 done_port Min_oe_ram Min_we_ram Mout_oe_ram Mout_we_ram M_DataRdy Min_addr_ram Mout_addr_ram M_Rdata_ram Min_Wdata_ram Mout_Wdata_ram Min_data_ram_size Mout_data_ram_size" VERILOG_PROVIDED="
 parameter max_n_writes = PORTSIZE_sel_STORE &gt; PORTSIZE_Mout_we_ram ? PORTSIZE_sel_STORE : PORTSIZE_Mout_we_ram;
 parameter max_n_reads = PORTSIZE_sel_LOAD &gt; PORTSIZE_Mout_oe_ram ? PORTSIZE_sel_STORE : PORTSIZE_Mout_oe_ram;
 parameter max_n_rw = max_n_writes &gt; max_n_reads ? max_n_writes : max_n_reads;
@@ -4229,6 +4245,10 @@ assign done_port = M_DataRdy &amp; (delayed_sel_STORE | delayed_sel_LOAD);"/>
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
             data size
           </port_vector_o>
+          <port_vector_o id="in4" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+            <connected_objects/>
+          </port_vector_o>
           <port_vector_o id="sel_LOAD" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
             <connected_objects/>
@@ -4293,7 +4313,7 @@ assign done_port = M_DataRdy &amp; (delayed_sel_STORE | delayed_sel_LOAD);"/>
             <structural_type_descriptor type="BOOL" size="1"/>
             <connected_objects/>
           </port_vector_o>
-          <NP_functionality LIBRARY="MEMORY_CTRLN_D21 in1 in2 in3 sel_LOAD sel_STORE out1 done_port Min_oe_ram Min_we_ram Mout_oe_ram Mout_we_ram M_DataRdy Min_addr_ram Mout_addr_ram M_Rdata_ram Min_Wdata_ram Mout_Wdata_ram Min_data_ram_size Mout_data_ram_size" VERILOG_PROVIDED="parameter max_n_writes = PORTSIZE_sel_STORE &gt; PORTSIZE_Mout_we_ram ? PORTSIZE_sel_STORE : PORTSIZE_Mout_we_ram;
+          <NP_functionality LIBRARY="MEMORY_CTRLN_D21 in1 in2 in3 in4 sel_LOAD sel_STORE out1 done_port Min_oe_ram Min_we_ram Mout_oe_ram Mout_we_ram M_DataRdy Min_addr_ram Mout_addr_ram M_Rdata_ram Min_Wdata_ram Mout_Wdata_ram Min_data_ram_size Mout_data_ram_size" VERILOG_PROVIDED="parameter max_n_writes = PORTSIZE_sel_STORE &gt; PORTSIZE_Mout_we_ram ? PORTSIZE_sel_STORE : PORTSIZE_Mout_we_ram;
 parameter max_n_reads = PORTSIZE_sel_LOAD &gt; PORTSIZE_Mout_oe_ram ? PORTSIZE_sel_STORE : PORTSIZE_Mout_oe_ram;
 parameter max_n_rw = max_n_writes &gt; max_n_reads ? max_n_writes : max_n_reads;
 wire  [(PORTSIZE_in2*BITSIZE_in2)-1:0] tmp_addr;
