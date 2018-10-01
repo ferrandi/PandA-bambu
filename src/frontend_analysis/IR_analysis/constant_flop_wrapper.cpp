@@ -137,11 +137,6 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
 DesignFlowStep_Status constant_flop_wrapper::InternalExec()
 {
    bool changed = false;
-   if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC)
-   {
-      PrintTreeManager(true);
-      AppM->CGetCallGraphManager()->CGetCallGraph()->WriteDot("call_graph_before_" + GetName() + "_.dot");
-   }
    const tree_nodeRef curr_tn = TreeM->GetTreeNode(function_id);
    auto * this_fd = GetPointer<function_decl>(curr_tn);
    auto * sl = GetPointer<statement_list>(GET_NODE(this_fd->body));

@@ -93,10 +93,6 @@ CleanVirtualPhi::~CleanVirtualPhi()
 
 DesignFlowStep_Status CleanVirtualPhi::InternalExec()
 {
-   if(debug_level >= DEBUG_LEVEL_PEDANTIC)
-   {
-      PrintTreeManager(true);
-   }
    const auto TM = AppM->get_tree_manager();
    tree_nodeRef temp = TM->get_tree_node_const(function_id);
    auto * fd = GetPointer<function_decl>(temp);
@@ -132,10 +128,7 @@ DesignFlowStep_Status CleanVirtualPhi::InternalExec()
 
 
    function_behavior->UpdateBBVersion();
-   if(debug_level >= DEBUG_LEVEL_PEDANTIC)
-   {
-      PrintTreeManager(false);
-   }
+
    return DesignFlowStep_Status::SUCCESS;
 }
 

@@ -113,11 +113,6 @@ void AddOpPhiFlowEdges::Initialize()
 
 DesignFlowStep_Status AddOpPhiFlowEdges::InternalExec()
 {
-   if(debug_level >= DEBUG_LEVEL_PEDANTIC)
-   {
-      WriteBBGraphDot("BB_Before_" + GetName() + ".dot");
-      PrintTreeManager(true);
-   }
 
    ///The control flow graph of operation
    const OpGraphConstRef fcfg = function_behavior->CGetOpGraph(FunctionBehavior::FCFG);

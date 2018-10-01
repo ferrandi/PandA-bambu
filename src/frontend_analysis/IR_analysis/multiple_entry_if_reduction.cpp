@@ -37,10 +37,10 @@
  * These operations can be done if the BB contains only conditional statements and phi
  * First duplicate the block on all the n input and add the respective connections to predecessor and successors (bidirectional)
  * Each duplicate starts as an empty one with only connections
- * Then the new BB is populated by conditional functions derivated from the original satement list
+ * Then the new BB is populated by conditional functions derivated from the original statement list
  *    - if cond is defined outside the BB keep them
  *    - if cond is defined in the BB then modify it leaving only the component of the condition defined in the BB predecessor
- * After that the phi statement defined in the original BB are added to thessuccessors blocks changing theis ssa names
+ * After that the phi statement defined in the original BB are added to the successors blocks changing this ssa names
  * To keep the tree coherent each time that an old ssa name of a phi is used substitute it with the new one
  * Then remove the old BB connections from predecessor and successors and eventually eliminate it
  *
@@ -181,11 +181,6 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
 
 DesignFlowStep_Status MultipleEntryIfReduction::InternalExec ()
 {
-   if(debug_level >= DEBUG_LEVEL_PEDANTIC)
-   {
-      WriteBBGraphDot("BB_Before_" + GetName() + ".dot");
-      PrintTreeManager(true);
-   }
    THROW_ASSERT(parameters->IsParameter("meif_threshold"), "");
    const auto threshold = parameters->GetParameter<double>("meif_threshold");
 
@@ -949,12 +944,6 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec ()
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--ending erasing blocks");
 
-      if(debug_level >= DEBUG_LEVEL_PEDANTIC)
-      {
-         WriteBBGraphDot("BB_After_" + GetName() + ".dot");
-         PrintTreeManager(false);
-      }
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "After graph printed");
       return DesignFlowStep_Status::SUCCESS;
    }
    return DesignFlowStep_Status::UNCHANGED;

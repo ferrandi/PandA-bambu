@@ -362,7 +362,7 @@ DesignFlowStep_Status mem_cg_ext::Exec()
                    */
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                         "<--replaced hidden call " + STR(ga) + " id: " + STR(i) + " with call " +
-                        STR(call_node_reindex) + " id: " + STR(call_node_reindex->index));
+                        STR(new_gimple_call) + " id: " + STR(new_gimple_call->index));
                   break;
                }
             }
@@ -372,10 +372,6 @@ DesignFlowStep_Status mem_cg_ext::Exec()
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--analyzed function " + fu_name);
    }
 
-   if(debug_level >= DEBUG_LEVEL_PEDANTIC)
-   {
-      PrintTreeManager(false);
-   }
 
    for (auto i : changed_fu_ids)
    {

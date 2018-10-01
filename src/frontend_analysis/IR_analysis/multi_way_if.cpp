@@ -206,10 +206,6 @@ void multi_way_if::UpdateCfg(unsigned int pred_bb, unsigned int curr_bb)
 
 DesignFlowStep_Status multi_way_if::InternalExec()
 {
-   if(debug_level >= DEBUG_LEVEL_PEDANTIC)
-   {
-      PrintTreeManager(true);
-   }
    std::unordered_map<unsigned int, vertex> inverse_vertex_map;
    BBGraphsCollectionRef GCC_bb_graphs_collection(new BBGraphsCollection(BBGraphInfoRef(new BBGraphInfo(AppM, function_id)), parameters));
    BBGraphRef GCC_bb_graph(new BBGraph(GCC_bb_graphs_collection, CFG_SELECTOR));
@@ -309,7 +305,7 @@ DesignFlowStep_Status multi_way_if::InternalExec()
       }
       AppM->RegisterTransformation(GetName(), tree_nodeConstRef());
 #endif
-      ///check for short circuit conditions: i.e., if they have at least a succcessor in common
+      ///check for short circuit conditions: i.e., if they have at least a successor in common
       ///if so we add a basic block on the shortest path (e.g., predecessor --> common successor)
       ///In this way in the produced gimple_multi_way_if there cannot be multiple conditions with the same next bb
       ///phi_opt will remove the extra basic block
@@ -373,10 +369,6 @@ DesignFlowStep_Status multi_way_if::InternalExec()
    }
    bb_to_be_removed.clear();
 
-   if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC)
-   {
-      PrintTreeManager(false);
-   }
    bb_modified ? function_behavior->UpdateBBVersion() : 0;
    return bb_modified ? DesignFlowStep_Status::SUCCESS : DesignFlowStep_Status::UNCHANGED;
 }

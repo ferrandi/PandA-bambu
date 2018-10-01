@@ -103,11 +103,7 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FunctionFrontendFlowSte
 DesignFlowStep_Status SwitchFix::InternalExec()
 {
    const tree_managerRef TM = AppM->get_tree_manager();
-   if(debug_level >= DEBUG_LEVEL_PEDANTIC)
-   {
-      WriteBBGraphDot("BB_Before_" + GetName() + ".dot");
-      PrintTreeManager(true);
-   }
+
    const auto tree_man = tree_manipulationRef(new tree_manipulation(TM, parameters));
    tree_nodeRef temp = TM->get_tree_node_const(function_id);
    auto * fd = GetPointer<function_decl>(temp);
@@ -460,11 +456,7 @@ DesignFlowStep_Status SwitchFix::InternalExec()
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Examined BB" + boost::lexical_cast<std::string>(basic_block.first));
    }
-   if(debug_level >= DEBUG_LEVEL_PEDANTIC)
-   {
-      WriteBBGraphDot("BB_After_" + GetName() + ".dot");
-      PrintTreeManager(false);
-   }
+
    function_behavior->UpdateBBVersion();
    return DesignFlowStep_Status::SUCCESS;
 }

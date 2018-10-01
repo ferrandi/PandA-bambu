@@ -246,10 +246,7 @@ DesignFlowStep_Status create_tree_manager::Exec()
          raw_file.close();
       }
    }
-   if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC)
-   {
-      PrintTreeManager(false);
-   }
+
    return DesignFlowStep_Status::SUCCESS;
 }
 

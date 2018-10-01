@@ -176,11 +176,6 @@ DesignFlowStep_Status CondExprRestructuring::InternalExec()
 {
    bool modified = false;
    static size_t counter = 0;
-   if(debug_level >= DEBUG_LEVEL_PEDANTIC)
-   {
-      WriteBBGraphDot("BB_Before_" + GetName() + ".dot");
-      PrintTreeManager(true);
-   }
 
    const tree_manipulationConstRef tree_man = tree_manipulationConstRef(new tree_manipulation(TM, parameters));
    auto * fd = GetPointer<function_decl>(TM->get_tree_node_const(function_id));
@@ -455,11 +450,6 @@ DesignFlowStep_Status CondExprRestructuring::InternalExec()
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Examined BB" + STR(block.first));
    }
 
-   if(debug_level >= DEBUG_LEVEL_PEDANTIC)
-   {
-      WriteBBGraphDot("BB_After" + GetName() + ".dot");
-      PrintTreeManager(false);
-   }
    if(modified)
    {
       function_behavior->UpdateBBVersion();

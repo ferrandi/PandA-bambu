@@ -214,11 +214,6 @@ bool RemoveEndingIf::HasToBeExecuted() const
 
 DesignFlowStep_Status RemoveEndingIf::InternalExec()
 {
-   if(debug_level >= DEBUG_LEVEL_PEDANTIC)
-   {
-      WriteBBGraphDot("BB_Before_" + GetName() + ".dot");
-      PrintTreeManager(true);
-   }
    bool bb_modified=false;
    const auto HLS = GetPointer<const HLS_manager>(AppM)->get_HLS(function_id);
    const auto clock_period = HLS->HLS_C->get_clock_period();
@@ -361,12 +356,6 @@ DesignFlowStep_Status RemoveEndingIf::InternalExec()
    }
 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Remove ending if has finished");
-
-   if(debug_level >= DEBUG_LEVEL_PEDANTIC)
-   {
-      WriteBBGraphDot("BB_After_" + GetName() + ".dot");
-      PrintTreeManager(false);
-   }
 
    bb_modified ? function_behavior->UpdateBBVersion() : 0;
    return bb_modified ? DesignFlowStep_Status::SUCCESS : DesignFlowStep_Status::UNCHANGED;

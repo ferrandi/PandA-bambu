@@ -148,10 +148,7 @@ void VarComputation::Initialize()
 DesignFlowStep_Status VarComputation::InternalExec()
 {
    const tree_managerConstRef tree_manager = AppM->get_tree_manager();
-   if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC)
-   {
-      PrintTreeManager(true);
-   }
+
    VertexIterator VerIt, VerItEnd;
    std::list<vertex> Vertices;
    for(boost::tie(VerIt, VerItEnd) = boost::vertices(*cfg); VerIt != VerItEnd; VerIt++)
@@ -188,10 +185,6 @@ DesignFlowStep_Status VarComputation::InternalExec()
    if(parameters->getOption<bool>(OPT_print_dot))
    {
       function_behavior->CGetOpGraph(FunctionBehavior::CFG)->WriteDot("OP_Variables.dot", 1);
-   }
-   if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC)
-   {
-      PrintTreeManager(false);
    }
    return DesignFlowStep_Status::SUCCESS;
 }

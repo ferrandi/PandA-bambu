@@ -175,10 +175,6 @@ void operations_cfg_computation::Initialize()
 DesignFlowStep_Status operations_cfg_computation::InternalExec()
 {
    const tree_managerRef TM = AppM->get_tree_manager();
-   if(debug_level >= DEBUG_LEVEL_PEDANTIC)
-   {
-      PrintTreeManager(true);
-   }
    const BBGraphRef fbb = function_behavior->GetBBGraph(FunctionBehavior::FBB);
    VertexIterator v_iter, v_iter_end;
    const BehavioralHelperConstRef helper = function_behavior->CGetBehavioralHelper();

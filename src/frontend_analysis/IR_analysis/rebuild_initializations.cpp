@@ -99,10 +99,6 @@ rebuild_initialization::~rebuild_initialization()
 
 DesignFlowStep_Status rebuild_initialization::InternalExec()
 {
-   if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC)
-   {
-      PrintTreeManager(true);
-   }
    const auto behavioral_helper = function_behavior->CGetBehavioralHelper();
    tree_managerRef TM = AppM->get_tree_manager();
    tree_manipulationRef tree_man(new tree_manipulation(TM, parameters));
@@ -207,10 +203,6 @@ DesignFlowStep_Status rebuild_initialization::InternalExec()
       GetPointer<var_decl>(GET_NODE(init.first))->init = TM->GetTreeReindex(constructor_index);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Rebuilt init of " + STR(init.first));
    }
-   if(debug_level >= DEBUG_LEVEL_PEDANTIC)
-   {
-      PrintTreeManager(false);
-   }
    return DesignFlowStep_Status::SUCCESS;
 }
 
@@ -248,7 +240,9 @@ rebuild_initialization2::~rebuild_initialization2()
 
 static tree_nodeRef extractOp1(tree_nodeRef opSSA)
 {
-   THROW_ASSERT(opSSA->get_kind() == ssa_name_K, "unexpected condition");
+   if(opSSA->get_kind() == integer_cst_K)
+      return tree_nodeRef();
+   THROW_ASSERT(opSSA->get_kind() == ssa_name_K, "unexpected condition:"+opSSA->ToString());
    auto * ssa_opSSA = GetPointer<ssa_name>(opSSA);
    auto opSSA_def_stmt = GET_NODE(ssa_opSSA->CGetDefStmt());
    if(opSSA_def_stmt->get_kind() == gimple_nop_K ||
@@ -1162,15 +1156,7 @@ bool rebuild_initialization2::look_for_ROMs()
 
 DesignFlowStep_Status rebuild_initialization2::InternalExec()
 {
-   if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC)
-   {
-      PrintTreeManager(true);
-   }
    bool modified = look_for_ROMs();
-   if(debug_level >= DEBUG_LEVEL_PEDANTIC)
-   {
-      PrintTreeManager(false);
-   }
    if(modified)
       function_behavior->UpdateBBVersion();
    return modified ? DesignFlowStep_Status::SUCCESS : DesignFlowStep_Status::UNCHANGED;

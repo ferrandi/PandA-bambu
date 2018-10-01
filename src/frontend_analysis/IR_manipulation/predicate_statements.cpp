@@ -109,11 +109,6 @@ bool PredicateStatements::HasToBeExecuted() const
 
 DesignFlowStep_Status PredicateStatements::InternalExec()
 {
-   if(debug_level >= DEBUG_LEVEL_PEDANTIC)
-   {
-      PrintTreeManager(true);
-      WriteBBGraphDot("BB_Before_" + GetName() + ".dot");
-   }
    const auto behavioral_helper = function_behavior->CGetBehavioralHelper();
    const auto TM = AppM->get_tree_manager();
    const auto tree_man = tree_manipulationRef(new tree_manipulation(TM, parameters));
@@ -139,11 +134,6 @@ DesignFlowStep_Status PredicateStatements::InternalExec()
             ga->predicate = true_value;
          }
       }
-   }
-   if(debug_level >= DEBUG_LEVEL_PEDANTIC)
-   {
-      PrintTreeManager(false);
-      WriteBBGraphDot("BB_After_" + GetName() + ".dot");
    }
 
    bb_modified ? function_behavior->UpdateBBVersion() : 0;

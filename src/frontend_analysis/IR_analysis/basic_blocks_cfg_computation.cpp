@@ -166,11 +166,6 @@ void BasicBlocksCfgComputation::Initialize()
 
 DesignFlowStep_Status BasicBlocksCfgComputation::InternalExec()
 {
-   if(debug_level >= DEBUG_LEVEL_PEDANTIC)
-   {
-      PrintTreeManager(true);
-   }
-
    const tree_managerRef TM = AppM->get_tree_manager();
    const BasicBlocksGraphConstructorRef bbgc = function_behavior->bbgc;
    tree_nodeRef tn = TM->get_tree_node_const(function_id);
