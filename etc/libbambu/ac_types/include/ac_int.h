@@ -366,8 +366,8 @@ template <> class iv_base<1,true> {
 
 public:
   template <int W, bool S> __FORCE_INLINE void bit_adjust() {
-     if(W<=0||W%32==0)return;
-     v = S ? ((v << (32 - (W%32))) >> (32 - (W%32))) : ((((unsigned)v) << (32 - (W%32))) >> (32 - (W%32))) ;
+     constexpr const unsigned rem = (32 - W) & 31;
+     v= S ? ((v << rem) >> rem) : (rem ? ((unsigned)v << rem) >> rem : 0);
   }
   void assign_int64(Slong l) { v = static_cast<int>(l); }
   void assign_uint64(Ulong l) { v = static_cast<int>(l); }
@@ -382,8 +382,8 @@ template <> class iv_base<2,true> {
 
 public:
   template <int W, bool S> void bit_adjust() {
-     if(W%64==0)return;
-     v = S ? ((v << (64 - (W%64))) >> (64- (W%64))) : ((((unsigned long long)v) << (64 - (W%64))) >> (64 - (W%64))) ;
+     constexpr const unsigned rem = (64 - W) & 63;
+     v= S ? ((v << rem) >> rem) : (rem ? ((unsigned long long)v << rem) >> rem : 0);
   }
   void assign_int64(Slong l) { v = l; }
   void assign_uint64(Ulong l) { v = static_cast<Slong>(l); }
@@ -450,8 +450,8 @@ template <> class iv_base<3,false> {
 
 public:
   template <int W, bool S> __FORCE_INLINE void bit_adjust() {
-     if(W<=0||W%32==0)return;
-     v2 = S ? ((v2 << (32 - (W%32))) >> (32 - (W%32))) : ((((unsigned)v2) << (32 - (W%32))) >> (32 - (W%32))) ;
+     constexpr const unsigned rem = (32 - W) & 31;
+     v2= S ? ((v2 << rem) >> rem) : (rem ? ((unsigned)v2 << rem) >> rem : 0);
   }
   void assign_int64(Slong l) {
     va = l;
@@ -498,8 +498,8 @@ template <> class iv_base<4,false> {
 
 public:
   template <int W, bool S> __FORCE_INLINE void bit_adjust() {
-     if(W<=0||W%64==0)return;
-     vb = S ? ((vb << (64 - (W%64))) >> (64- (W%64))) : ((((unsigned long long)vb) << (64 - (W%64))) >> (64 - (W%64))) ;
+     constexpr const unsigned rem = (64 - W) & 63;
+     vb= S ? ((vb << rem) >> rem) : (rem ? ((unsigned long long)vb << rem) >> rem : 0);
   }
   void assign_int64(Slong l) {
     va = l;
@@ -1023,6 +1023,17 @@ __FORCE_INLINE void iv_udiv(const iv_base<Nn,Cn> &n, const iv_base<Nd,Cd> &d, iv
     for (int k = n_msi; k >= 0; k--)
       r1[k] = n[k];
     for (int k = n_mss; k >= d_mss; k--) {
+
+//#if defined(__clang__)
+//#pragma clang loop unroll(full)
+//#endif
+//    for (int k = N; k >= 0; k--)
+//      if(k<=n_msi) r1[k] = n[k];
+//#if defined(__clang__)
+//#pragma clang loop unroll(full)
+//#endif
+//    for (int k = 2*N-1; k >= 0; k--)
+//    if(k<=n_mss&&k>=d_mss){
       int k_msi = k >> 1;
       bool odd = k & 1;
       uw2 r1m1 = k_msi > 0 ? r1[k_msi - 1] : (uw2)0;
