@@ -131,6 +131,7 @@ DesignFlowStep_Status PredicateStatements::InternalExec()
          else
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Predicating " + STR(stmt));
+            THROW_ASSERT(!ga->predicate, "unexpected condition");
             ga->predicate = true_value;
          }
       }
