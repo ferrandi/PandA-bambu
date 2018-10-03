@@ -418,7 +418,6 @@ T determinant(ac_matrix<T,2,2> &m)
 template <class T, unsigned M, unsigned N>
 std::ostream &operator<<(std::ostream &os, const ac_matrix<T,M,N> &m )
 {
-  char buf[20];
   // column header
   os << "   " ;
   for ( unsigned j = 0; j < N; j++ ) {

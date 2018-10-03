@@ -373,7 +373,7 @@ public:
   void assign_uint64(Ulong l) { v = static_cast<int>(l); }
   void set(int, int value) { v = value; }
   __FORCE_INLINE Slong to_int64() const { return v; }
-  constexpr int operator[](int) const { return v; }
+  /*constexpr*/ int operator[](int) const { return v; }
   /*constexpr*/ iv_base() {}
   template <int N2, bool C2> iv_base(const iv_base<N2,C2> &b) : v(b[0]) {}
 };
@@ -394,7 +394,7 @@ public:
       v = ((((Ulong)all_ones) << 32) & v) | ((Ulong)((unsigned)value));
   }
   __FORCE_INLINE Slong to_int64() const { return v; }
-  constexpr int operator[](int x) const { return x ? (int)(v >> 32) : (int)v; }
+  /*constexpr*/ int operator[](int x) const { return x ? (int)(v >> 32) : (int)v; }
   /*constexpr*/ iv_base() {}
   template <int N2, bool C2> iv_base(const iv_base<N2,C2> &b) {
     const int M = AC_MIN(2, N2);
@@ -426,7 +426,7 @@ public:
       va = (all_ones & va) | (((Slong)value) << 32);
   }
   __FORCE_INLINE Slong to_int64() const { return va; }
-  constexpr int operator[](int x) const {
+  /*constexpr*/ int operator[](int x) const {
     x = x & 3;
     return x == 0 ? (int)va : (x == 1 ? (int)(va >> 32) : 0);
   }
@@ -471,7 +471,7 @@ public:
       v2 = value;
   }
   __FORCE_INLINE Slong to_int64() const { return va; }
-  constexpr int operator[](int x) const {
+  /*constexpr*/ int operator[](int x) const {
     x = x & 3;
     return x == 0 ? (int)va : (x == 1 ? (int)(va >> 32) : v2);
   }
@@ -521,7 +521,7 @@ public:
       vb = (all_ones & vb) | (((Slong)value) << 32);
   }
   __FORCE_INLINE Slong to_int64() const { return va; }
-  constexpr int operator[](int x) const {
+  /*constexpr*/ int operator[](int x) const {
     x = x & 3;
     return x == 0 ? (int)va
                   : (x == 1 ? (int)(va >> 32)
@@ -2058,7 +2058,7 @@ public:
       unsigned t = (op2.v[N2 - 1] << lsb_b) |
                    (((unsigned)op2.v[N2 - 2] >> 1) >> (31 - lsb_b));
       unsigned m;
-      if (msb_v - lsb_v == N2) {
+      if (static_cast<int>(msb_v - lsb_v) == N2) {
         v.set(msb_v - 1, t);
         m = (((unsigned)op2.v[N2 - 1] >> 1) >> (31 - lsb_b));
       } else
