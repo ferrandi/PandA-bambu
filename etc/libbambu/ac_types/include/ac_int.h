@@ -124,12 +124,13 @@
 
 #define __FORCE_INLINE __attribute__((always_inline)) inline
 
+#ifdef AC_TYPES_INIT
+#define __INIT_VALUE = {0}
+#define __INIT_VALUE_LL = {0}
+#else
 #define __INIT_VALUE /*= {}*/
 #define __INIT_VALUE_LL /*= {}*/
-
-//#define __INIT_VALUE = {0}
-//#define __INIT_VALUE_LL = {0}
-
+#endif
 
 #ifndef __ASSERT_H__
 #define __ASSERT_H__
