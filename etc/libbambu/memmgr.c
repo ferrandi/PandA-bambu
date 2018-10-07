@@ -239,7 +239,7 @@ void* malloc(size_t nbytes)
 // list. In any case, if the block being freed is adjacent to either neighbor,
 // the adjacent blocks are combined.
 //
-void free(void* ap)
+void __attribute__ ((noinline)) free(void* ap)
 {
     SAMM_header_t* block;
     SAMM_header_t* p;
