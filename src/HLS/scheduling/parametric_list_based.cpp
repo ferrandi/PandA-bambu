@@ -487,7 +487,7 @@ void parametric_list_based::exec(const OpVertexSet & operations, ControlStep cur
    ///priory queues set up
    unsigned int n_resources = HLS->allocation_information->get_number_fu_types();
 #if HAVE_UNORDERED
-   priority_compare_functor<int>  priority_functors(*Priority, flow_graph);
+   priority_compare_functor<int>  priority_functors(Priority);
    PriorityQueues priority_queues(n_resources, priority_functors);
 #else
    PriorityQueues priority_queues(n_resources, std::set<vertex, PrioritySorter>(PrioritySorter(Priority, flow_graph)));
