@@ -181,12 +181,13 @@ struct priority_compare_functor
       priority_compare_functor& operator=(const priority_compare_functor&in)
       {
          priority_values = in.priority_values;
+         data = in.data;
          return *this;
       }
       /**
        * Copy constructor
       */
-      priority_compare_functor(const priority_compare_functor&in) : priority_values(in.priority_values)
+      priority_compare_functor(const priority_compare_functor&in) : priority_values(in.priority_values), data(in.data)
       {}
 
       /**
