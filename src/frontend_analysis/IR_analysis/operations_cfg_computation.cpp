@@ -128,9 +128,7 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(LOOPS_ANALYSIS_ZEBU, SAME_FUNCTION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(LOOP_REGIONS_COMPUTATION, SAME_FUNCTION));
 #endif
-#if HAVE_BAMBU_BUILT && HAVE_EXPERIMENTAL
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(VECTORIZE, SAME_FUNCTION));
-#endif
          break;
       }
       default:
