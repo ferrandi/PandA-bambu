@@ -149,15 +149,11 @@ DesignFlowStep_Status CBackend::Exec()
    indented_output_stream->Append("/*\n");
    indented_output_stream->Append(" * Politecnico di Milano\n");
    indented_output_stream->Append(std::string(" * Code created using ") + PACKAGE_NAME + " - " + parameters->PrintVersion());
-#if !RELEASE
    boost::posix_time::ptime current_time = boost::posix_time::second_clock::local_time();
    indented_output_stream->Append( " - Date " + boost::posix_time::to_simple_string(current_time));
-#endif
    indented_output_stream->Append("\n");
-#if !RELEASE
    if (parameters->isOption(OPT_cat_args))
       indented_output_stream->Append(" * " + parameters->getOption<std::string>(OPT_program_name) + " executed with: " + parameters->getOption<std::string>(OPT_cat_args) + "\n");
-#endif
    indented_output_stream->Append(" */\n");
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--CBackend: written panda header");
    // write cwriter specific header
