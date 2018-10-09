@@ -104,6 +104,7 @@ namespace llvm {
    class PredicateInfo;
 #endif
    class Metadata;
+   class Argument;
 }
 
 namespace RangeAnalysis {
@@ -202,6 +203,9 @@ namespace clang {
          llvm::raw_fd_ostream stream;
          ///when true only the global variables are serialized
          bool onlyGlobals;
+         /// map function with name of its parameters
+         const std::map<std::string,std::vector<std::string>> *fun2params;
+         std::map<const llvm::Argument*,std::string> argNameTable;
          const llvm::DataLayout* DL;
          /// current module pass
          llvm::ModulePass* modulePass;
@@ -603,8 +607,7 @@ namespace clang {
          void computeMAEntryDefs(const llvm::Function *F, std::map<const llvm::Function*,std::map<const void *, std::set<const llvm::Instruction *>>> &CurrentListofMAEntryDef, llvm::ModulePass *modulePass);
 
       public:
-         DumpGimpleRaw(CompilerInstance &_Instance,
-                       const std::string& _outdir_name, const std::string& _InFile, bool onlyGlobals);
+         DumpGimpleRaw(CompilerInstance &_Instance, const std::string& _outdir_name, const std::string& _InFile, bool onlyGlobals, std::map<std::string,std::vector<std::string>> *fun2params);
 
          bool runOnModule(llvm::Module &M, llvm::ModulePass *modulePass, const std::string& TopFunctionName);
 

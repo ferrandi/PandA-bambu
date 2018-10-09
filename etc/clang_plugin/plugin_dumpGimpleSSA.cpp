@@ -42,6 +42,7 @@
 
 #include "clang/Frontend/FrontendPluginRegistry.h"
 #include "clang/AST/AST.h"
+#include "clang/AST/Mangle.h"
 #include "clang/AST/ASTConsumer.h"
 #include "clang/AST/RecursiveASTVisitor.h"
 #include "clang/Frontend/CompilerInstance.h"
@@ -56,8 +57,55 @@ namespace llvm {
 
 static clang::DumpGimpleRaw *gimpleRawWriter;
 static std::string TopFunctionName;
+static std::map<std::string,std::vector<std::string>> Fun2Params;
 
 namespace clang {
+
+   class FunctionArgConsumer : public clang::ASTConsumer
+   {
+      public:
+         FunctionArgConsumer() {}
+         bool HandleTopLevelDecl(DeclGroupRef DG) override {
+            for (DeclGroupRef::iterator i = DG.begin(), e = DG.end(); i != e; ++i) {
+               const Decl *D = *i;
+               if(const FunctionDecl * FD = dyn_cast<FunctionDecl>(D))
+               {
+                  if(!FD->isVariadic() && FD->hasBody())
+                  {
+                     const auto getMangledName = [&](const FunctionDecl* decl) {
+
+                       auto mangleContext = decl->getASTContext().createMangleContext();
+
+                       if (!mangleContext->shouldMangleDeclName(decl)) {
+                         return decl->getNameInfo().getName().getAsString();
+                       }
+                       std::string mangledName;
+                       llvm::raw_string_ostream ostream(mangledName);
+
+                       mangleContext->mangleName(decl, ostream);
+
+                       ostream.flush();
+
+                       delete mangleContext;
+
+                       return mangledName;
+                     };
+                     auto funName = getMangledName(FD);
+                     for(const auto par : FD->parameters())
+                     {
+                        if (const NamedDecl *ND = dyn_cast<NamedDecl>(par))
+                        {
+                           Fun2Params[funName].push_back(ND->getNameAsString());
+                        }
+                     }
+                  }
+               }
+            }
+
+            return true;
+         }
+
+   };
 
    class CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSA) : public PluginASTAction
    {
@@ -72,9 +120,9 @@ namespace clang {
             if(outdir_name=="")
                D.Report(D.getCustomDiagID(DiagnosticsEngine::Error,
                                        "outputdir argument not specified"));
-            gimpleRawWriter = new DumpGimpleRaw(CI, outdir_name, InFile, false);
+            gimpleRawWriter = new DumpGimpleRaw(CI, outdir_name, InFile, false, &Fun2Params);
             TopFunctionName = topfname;
-            return llvm::make_unique<dummyConsumer>();
+            return llvm::make_unique<FunctionArgConsumer>();
          }
 
          bool ParseArgs(const CompilerInstance &CI,

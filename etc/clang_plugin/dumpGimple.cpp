@@ -299,9 +299,9 @@ namespace clang
 
 
    DumpGimpleRaw::DumpGimpleRaw(CompilerInstance &_Instance,
-                          const std::string& _outdir_name, const std::string& _InFile, bool _onlyGlobals)
+                          const std::string& _outdir_name, const std::string& _InFile, bool _onlyGlobals, std::map<std::string,std::vector<std::string>> *_fun2params)
       : outdir_name(_outdir_name), InFile(_InFile), filename(create_file_name_string(_outdir_name,_InFile)), Instance(_Instance),
-        stream(create_file_name_string(_outdir_name,_InFile), EC, llvm::sys::fs::F_RW), onlyGlobals(_onlyGlobals),
+        stream(create_file_name_string(_outdir_name,_InFile), EC, llvm::sys::fs::F_RW), onlyGlobals(_onlyGlobals), fun2params(_fun2params),
         DL(nullptr),modulePass(nullptr),
         last_used_index(0), column(0),
         PtoSets_AA(nullptr),
@@ -687,13 +687,21 @@ namespace clang
       else if (TREE_CODE(t) == GT(PARM_DECL))
       {
          const llvm::Argument *arg = reinterpret_cast<const llvm::Argument*>(t);
-         const llvm::Function *currentFunction = arg->getParent();
-         llvm::ModuleSlotTracker MST(currentFunction->getParent());
-         MST.incorporateFunction(*currentFunction);
-         auto id = MST.getLocalSlot(arg);
-         assert(id>=0);
-         snprintf(buffer, LOCAL_BUFFER_LEN, "P%d", id);
-         std::string declname = buffer;
+         std::string declname;
+         if(argNameTable.find(arg) != argNameTable.end())
+         {
+            declname = argNameTable.find(arg)->second;
+         }
+         else
+         {
+            const llvm::Function *currentFunction = arg->getParent();
+            llvm::ModuleSlotTracker MST(currentFunction->getParent());
+            MST.incorporateFunction(*currentFunction);
+            auto id = MST.getLocalSlot(arg);
+            assert(id>=0);
+            snprintf(buffer, LOCAL_BUFFER_LEN, "P%d", id);
+            declname = buffer;
+         }
          if(identifierTable.find(declname) == identifierTable.end())
             identifierTable.insert(declname);
          const void * dn = identifierTable.find(declname)->c_str();
@@ -2727,10 +2735,20 @@ namespace clang
    const std::list<const void*> DumpGimpleRaw::DECL_ARGUMENTS (const void*t)
    {
       const llvm::Function *fd = reinterpret_cast<const llvm::Function *>(t);
+      bool nameAreKnown = false;
+      if(fd->hasName() && fun2params->find(fd->getName()) != fun2params->end() && fun2params->find(fd->getName())->second.size() == fd->arg_size())
+      {
+         nameAreKnown = true;
+      }
+
       std::list<const void*> res;
+      unsigned int par_index=0;
       for(const auto& par: fd->args())
       {
          res.push_back(assignCodeAuto(&par));
+         if(nameAreKnown)
+            argNameTable[&par]=fun2params->find(fd->getName())->second[par_index];
+         ++par_index;
       }
       return res;
    }

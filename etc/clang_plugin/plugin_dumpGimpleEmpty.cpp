@@ -63,7 +63,7 @@ namespace clang {
             if(outdir_name=="")
                D.Report(D.getCustomDiagID(DiagnosticsEngine::Error,
                                           "outputdir not specified"));
-            gimpleRawWriter = new DumpGimpleRaw(CI, outdir_name, InFile, true);
+            gimpleRawWriter = new DumpGimpleRaw(CI, outdir_name, InFile, true, nullptr);
             return llvm::make_unique<dummyConsumer>();
          }
 
