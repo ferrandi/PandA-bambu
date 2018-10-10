@@ -205,41 +205,45 @@ fanout_opt::InternalExec ()
 
       }
 #if 1
-      for(auto phi : block.second->CGetPhiList())
+      ///fanout duplication may prevent openmp simd detection
+      if(!parameters->getOption<int>(OPT_gcc_openmp_simd))
       {
-         auto gp = GetPointer<gimple_phi>(GET_NODE(phi));
-         auto *ssa_defined = GetPointer<ssa_name> (GET_NODE(gp->res));
-
-         if(ssa_defined->CGetNumberUses() > 1)
+         for(auto phi : block.second->CGetPhiList())
          {
-            bool is_first_stmt = true;
-            std::list<tree_nodeRef> list_of_dest_statements;
-            for(auto dest_statement : ssa_defined->CGetUseStmts())
+            auto gp = GetPointer<gimple_phi>(GET_NODE(phi));
+            auto *ssa_defined = GetPointer<ssa_name> (GET_NODE(gp->res));
+
+            if(ssa_defined->CGetNumberUses() > 1)
             {
-               if(is_first_stmt)
-                  is_first_stmt = false;
-               else if(is_dest_relevant(dest_statement.first, true))
-                  list_of_dest_statements.push_back(dest_statement.first);
-            }
-            for(auto dest_statement : list_of_dest_statements)
-            {
-               ///Copy the list of def edges
-               std::vector<std::pair<tree_nodeRef, unsigned int> > list_of_def_edge;
-               for(const auto& def_edge : gp->CGetDefEdgesList())
+               bool is_first_stmt = true;
+               std::list<tree_nodeRef> list_of_dest_statements;
+               for(auto dest_statement : ssa_defined->CGetUseStmts())
                {
-                  list_of_def_edge.push_back(std::pair<tree_nodeRef, unsigned int>(def_edge.first, def_edge.second));
+                  if(is_first_stmt)
+                     is_first_stmt = false;
+                  else if(is_dest_relevant(dest_statement.first, true))
+                     list_of_dest_statements.push_back(dest_statement.first);
                }
-               tree_nodeRef new_res_var;
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---starting from phi " + phi->ToString());
-               auto new_phi = tree_man->create_phi_node(new_res_var, list_of_def_edge, gp->scpe, block.first);
-               GetPointer<gimple_phi>(GET_NODE(new_phi))->SetSSAUsesComputed();
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---created a new phi " + new_phi->ToString());
-               block.second->AddPhi(new_phi);
-               GetPointer<gimple_phi>(GET_NODE(new_phi))->keep = true;
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---dest statement before replacement " + dest_statement->ToString());
-               TM->ReplaceTreeNode(dest_statement, gp->res, new_res_var);
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---dest statement after replacement " + dest_statement->ToString());
-               IR_changed = true;
+               for(auto dest_statement : list_of_dest_statements)
+               {
+                  ///Copy the list of def edges
+                  std::vector<std::pair<tree_nodeRef, unsigned int> > list_of_def_edge;
+                  for(const auto& def_edge : gp->CGetDefEdgesList())
+                  {
+                     list_of_def_edge.push_back(std::pair<tree_nodeRef, unsigned int>(def_edge.first, def_edge.second));
+                  }
+                  tree_nodeRef new_res_var;
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---starting from phi " + phi->ToString());
+                  auto new_phi = tree_man->create_phi_node(new_res_var, list_of_def_edge, gp->scpe, block.first);
+                  GetPointer<gimple_phi>(GET_NODE(new_phi))->SetSSAUsesComputed();
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---created a new phi " + new_phi->ToString());
+                  block.second->AddPhi(new_phi);
+                  GetPointer<gimple_phi>(GET_NODE(new_phi))->keep = true;
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---dest statement before replacement " + dest_statement->ToString());
+                  TM->ReplaceTreeNode(dest_statement, gp->res, new_res_var);
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---dest statement after replacement " + dest_statement->ToString());
+                  IR_changed = true;
+               }
             }
          }
       }

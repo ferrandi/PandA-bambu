@@ -1297,11 +1297,6 @@ DesignFlowStep_Status Vectorize::InternalExec()
 {
    if(parameters->IsParameter("vectorize") and parameters->GetParameter<std::string>("vectorize")=="disable")
       return DesignFlowStep_Status::UNCHANGED;
-   if(debug_level >= DEBUG_LEVEL_PEDANTIC)
-   {
-      PrintTreeManager(true);
-      WriteBBGraphDot("BB_Before_" + GetName() + ".dot");
-   }
 
    ///Classify loop
    ClassifyLoop(function_behavior->GetLoops()->GetLoop(0), 0);

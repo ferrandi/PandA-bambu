@@ -313,8 +313,6 @@ int test_driver_pwl(
   cout << "RESULT: ";
 
   double input_double[M][M];
-  double Q_double_arr[M][M];
-  double R_double_arr[M][M];
   double Q_actual_double[M][M];
   double R_actual_double[M][M];
   double Q_actual_matrix_double[M][M];
@@ -322,8 +320,6 @@ int test_driver_pwl(
   double recovered_double[M][M];
   double recovered_matrix_double[M][M];
   ac_complex<double> input_cmplx_double[M][M];
-  ac_complex<double> Q_cmplx_double_arr[M][M];
-  ac_complex<double> R_cmplx_double_arr[M][M];
   ac_complex<double> Q_actual_cmplx_double[M][M];
   ac_complex<double> R_actual_cmplx_double[M][M];
   ac_complex<double> Q_actual_matrix_cmplx_double[M][M];
@@ -433,8 +429,6 @@ int test_driver_accurate(
   cout << "RESULT: ";
 
   double input_double[M][M];
-  double Q_double_arr[M][M];
-  double R_double_arr[M][M];
   double Q_actual_double[M][M];
   double R_actual_double[M][M];
   double Q_actual_matrix_double[M][M];
@@ -442,8 +436,6 @@ int test_driver_accurate(
   double recovered_double[M][M];
   double recovered_matrix_double[M][M];
   ac_complex<double> input_cmplx_double[M][M];
-  ac_complex<double> Q_cmplx_double_arr[M][M];
-  ac_complex<double> R_cmplx_double_arr[M][M];
   ac_complex<double> Q_actual_cmplx_double[M][M];
   ac_complex<double> R_actual_cmplx_double[M][M];
   ac_complex<double> Q_actual_matrix_cmplx_double[M][M];

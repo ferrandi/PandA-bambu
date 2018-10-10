@@ -13,7 +13,7 @@ GCC_EXEC = g++
 endif
 
 
-CXXFLAGS = -O2 -std=c++14
+CXXFLAGS = -O2 -std=c++14 -DAC_TYPES_INIT
 LDFLAGS = -s -static-libstdc++
 WD = $(shell pwd)
 GCOV_ENABLED = false

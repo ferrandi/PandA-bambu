@@ -105,7 +105,7 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
    return relationships;
 }
 
-///single sweep analisys, block by block, from the bottom to up. Each ssa which is used zero times is eliminated and the uses of the variables used in the assignment are recompuded
+///single sweep analysis, block by block, from the bottom to up. Each ssa which is used zero times is eliminated and the uses of the variables used in the assignment are recompuded
 DesignFlowStep_Status dead_code_elimination::InternalExec()
 {
    const tree_managerRef TM = AppM->get_tree_manager();
@@ -145,7 +145,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                ///in case of virtual uses it is better not perform the elimination
                if (not ga->vdef)
                {
-                  ///op0 is the left side of the assignemt, op1 is the right side
+                  ///op0 is the left side of the assignment, op1 is the right side
                   const tree_nodeRef op0 = GET_NODE(ga->op0);
                   if (op0->get_kind() == ssa_name_K)
                   {

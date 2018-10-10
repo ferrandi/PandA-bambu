@@ -102,10 +102,6 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FunctionFrontendFlowSte
 DesignFlowStep_Status remove_clobber_ga::InternalExec()
 {
    const tree_managerRef TM = AppM->get_tree_manager();
-   if(debug_level >= DEBUG_LEVEL_PEDANTIC)
-   {
-      PrintTreeManager(true);
-   }
    std::map<unsigned int,tree_nodeRef > var_substitution_table;
    std::map<unsigned int, std::set<tree_nodeRef> > stmt_to_be_removed;
 
@@ -188,11 +184,6 @@ DesignFlowStep_Status remove_clobber_ga::InternalExec()
       }
    }
 
-
-   if(debug_level >= DEBUG_LEVEL_PEDANTIC)
-   {
-      PrintTreeManager(false);
-   }
    function_behavior->UpdateBBVersion();
    return DesignFlowStep_Status::SUCCESS;
 }

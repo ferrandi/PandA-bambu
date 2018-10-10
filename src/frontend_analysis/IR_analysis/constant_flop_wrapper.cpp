@@ -137,11 +137,6 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
 DesignFlowStep_Status constant_flop_wrapper::InternalExec()
 {
    bool changed = false;
-   if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC)
-   {
-      PrintTreeManager(true);
-      AppM->CGetCallGraphManager()->CGetCallGraph()->WriteDot("call_graph_before_" + GetName() + "_.dot");
-   }
    const tree_nodeRef curr_tn = TreeM->GetTreeNode(function_id);
    auto * this_fd = GetPointer<function_decl>(curr_tn);
    auto * sl = GetPointer<statement_list>(GET_NODE(this_fd->body));
@@ -176,7 +171,9 @@ DesignFlowStep_Status constant_flop_wrapper::InternalExec()
          //the following three lines check if the functions written by this class are being analyzed multiple times (to avoid infinite loop)
          bool function_already_scanned = operations.find(in->strg) != operations.end();
          if(function_already_scanned)
+         {
             THROW_ASSERT(function_already_scanned, "Inconsistent behaviour: the same function is being analyzed multiple times.");
+         }
 
          if(functions.find(in->strg) != functions.end())
          {
@@ -229,7 +226,9 @@ DesignFlowStep_Status constant_flop_wrapper::InternalExec()
          //the following three lines check if the functions written by this class are being analyzed multiple times (to avoid infinite loop)
          bool function_already_scanned = operations.find(in->strg) != operations.end();
          if(function_already_scanned)
+         {
             THROW_ASSERT(function_already_scanned, "Inconsistent behaviour: the same function is being analyzed multiple times.");
+         }
 
          if(functions.find(in->strg) != functions.end())
          {

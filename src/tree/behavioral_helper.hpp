@@ -95,7 +95,7 @@ class BehavioralHelper
       ///the debug level
       int debug_level;
 
-      ///Maps between unqualified type and definition of a correspoinding qualified type
+      ///Maps between unqualified type and definition of a corresponding qualified type
       static std::map<unsigned int, std::pair<std::string, int> > definitions;
 
       ///Set of variables name already used

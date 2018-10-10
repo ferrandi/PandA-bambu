@@ -102,10 +102,6 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FunctionFrontendFlowSte
 DesignFlowStep_Status call_expr_fix::InternalExec()
 {
    const tree_managerRef TM = AppM->get_tree_manager();
-   if(debug_level >= DEBUG_LEVEL_PEDANTIC)
-   {
-      PrintTreeManager(true);
-   }
    tree_nodeRef temp = TM->get_tree_node_const(function_id);
    auto * fdcur = GetPointer<function_decl>(temp);
    auto * sl = GetPointer<statement_list>(GET_NODE(fdcur->body));
@@ -211,11 +207,6 @@ DesignFlowStep_Status call_expr_fix::InternalExec()
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
    }
 
-   if(debug_level >= DEBUG_LEVEL_PEDANTIC)
-   {
-      WriteBBGraphDot("BB_After_" + GetName() + ".dot");
-      PrintTreeManager(false);
-   }
    bb_modified ? function_behavior->UpdateBBVersion() : 0;
    return bb_modified ? DesignFlowStep_Status::SUCCESS : DesignFlowStep_Status::UNCHANGED;
 }

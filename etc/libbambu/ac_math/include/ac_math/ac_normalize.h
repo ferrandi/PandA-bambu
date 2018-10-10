@@ -128,7 +128,7 @@ namespace ac_math
   )
   {
     // Temporary variable to hold the normalized value.
-    ac_fixed<W, int(S), S> normalized_fixed_temp;
+    ac_fixed<W, int(S), S> normalized_fixed_temp(0);
 
     // Slice out all the bits, place them in the normalized_fixed_temp variable, then
     // find the position of the leading 1 there.

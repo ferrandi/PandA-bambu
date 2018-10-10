@@ -462,10 +462,6 @@ DesignFlowStep_Status PragmaAnalysis::Exec()
 {
    const tree_managerRef TM = AppM->get_tree_manager();
    const pragma_managerRef PM = AppM->get_pragma_manager();
-   if(debug_level >= DEBUG_LEVEL_PEDANTIC)
-   {
-      PrintTreeManager(true);
-   }
 
    const std::unordered_set<unsigned int> & functions = TM->GetAllFunctions();
    for(const auto function : functions)
@@ -573,10 +569,6 @@ DesignFlowStep_Status PragmaAnalysis::Exec()
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Examined function " + STR(function));
    }
 
-   if(debug_level >= DEBUG_LEVEL_PEDANTIC)
-   {
-      PrintTreeManager(false);
-   }
    return DesignFlowStep_Status::SUCCESS;
 }
 

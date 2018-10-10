@@ -122,6 +122,16 @@
 #error DO NOT use defines before including third party header files.
 #endif
 
+#define __FORCE_INLINE __attribute__((always_inline)) inline
+
+#ifdef AC_TYPES_INIT
+#define __INIT_VALUE = {0}
+#define __INIT_VALUE_LL = {0}
+#else
+#define __INIT_VALUE /*= {}*/
+#define __INIT_VALUE_LL /*= {}*/
+#endif
+
 #ifndef __ASSERT_H__
 #define __ASSERT_H__
 #include <assert.h>
@@ -179,11 +189,11 @@ const unsigned int all_ones = (unsigned)~0;
 // PRIVATE FUNCTIONS in namespace: for implementing ac_int/ac_fixed
 
 #ifndef __BAMBU__
-inline double mgc_floor(double d) { return floor(d); }
-inline float mgc_floor(float d) { return floorf(d); }
+__FORCE_INLINE double mgc_floor(double d) { return floor(d); }
+__FORCE_INLINE float mgc_floor(float d) { return floorf(d); }
 #else
-inline double mgc_floor(double d) { return 0.0; }
-inline float mgc_floor(float d) { return 0.0f; }
+__FORCE_INLINE double mgc_floor(double d) { return 0.0; }
+__FORCE_INLINE float mgc_floor(float d) { return 0.0f; }
 #endif
 
 #ifdef __BAMBU__
@@ -191,8 +201,8 @@ inline float mgc_floor(float d) { return 0.0f; }
 #else
 #define AC_ASSERT(cond, msg)                                                   \
   ac_private::ac_assert(cond, __FILE__, __LINE__, msg)
-inline void ac_assert(bool condition, const char *file = 0, int line = 0,
-                      const char *msg = 0) {
+__FORCE_INLINE void ac_assert(bool condition, const char *file = nullptr, int line = 0,
+                      const char *msg = nullptr) {
 #ifndef AC_USER_DEFINED_ASSERT
   if (!condition) {
     std::cerr << "Assert";
@@ -227,7 +237,9 @@ template <> struct s_N<0> {
 };
 
 template <int N>
-__attribute__((always_inline)) inline double ldexpr32(double d) {
+__FORCE_INLINE
+double ldexpr32(double d)
+{
   double d2 = d;
   if (N < 0)
     for (int i = 0; i < -N; i++)
@@ -237,25 +249,25 @@ __attribute__((always_inline)) inline double ldexpr32(double d) {
       d2 *= (Ulong)1 << 32;
   return d2;
 }
-template <> inline double ldexpr32<0>(double d) { return d; }
-template <> inline double ldexpr32<1>(double d) { return d * ((Ulong)1 << 32); }
-template <> inline double ldexpr32<-1>(double d) {
+template <> __FORCE_INLINE double ldexpr32<0>(double d) { return d; }
+template <> __FORCE_INLINE double ldexpr32<1>(double d) { return d * ((Ulong)1 << 32); }
+template <> __FORCE_INLINE double ldexpr32<-1>(double d) {
   return d / ((Ulong)1 << 32);
 }
-template <> inline double ldexpr32<2>(double d) {
+template <> __FORCE_INLINE double ldexpr32<2>(double d) {
   return (d * ((Ulong)1 << 32)) * ((Ulong)1 << 32);
 }
-template <> inline double ldexpr32<-2>(double d) {
+template <> __FORCE_INLINE double ldexpr32<-2>(double d) {
   return (d / ((Ulong)1 << 32)) / ((Ulong)1 << 32);
 }
 
-template <int N> __attribute__((always_inline)) inline double ldexpr(double d) {
+template <int N> __FORCE_INLINE double ldexpr(double d) {
   return ldexpr32<N / 32>(N < 0 ? d / ((unsigned)1 << (-N & 31))
                                 : d * ((unsigned)1 << (N & 31)));
 }
 
 template <int N>
-__attribute__((always_inline)) inline float ldexpr32(float d) {
+__FORCE_INLINE float ldexpr32(float d) {
   float d2 = d;
   if (N < 0)
     for (int i = 0; i < -N; i++)
@@ -265,94 +277,114 @@ __attribute__((always_inline)) inline float ldexpr32(float d) {
       d2 *= (Ulong)1 << 32;
   return d2;
 }
-template <> inline float ldexpr32<0>(float d) { return d; }
-template <> inline float ldexpr32<1>(float d) { return d * ((Ulong)1 << 32); }
-template <> inline float ldexpr32<-1>(float d) {
+template <> __FORCE_INLINE float ldexpr32<0>(float d) { return d; }
+template <> __FORCE_INLINE float ldexpr32<1>(float d) { return d * ((Ulong)1 << 32); }
+template <> __FORCE_INLINE float ldexpr32<-1>(float d) {
   return d / ((Ulong)1 << 32);
 }
-template <> inline float ldexpr32<2>(float d) {
+template <> __FORCE_INLINE float ldexpr32<2>(float d) {
   return (d * ((Ulong)1 << 32)) * ((Ulong)1 << 32);
 }
-template <> inline float ldexpr32<-2>(float d) {
+template <> __FORCE_INLINE float ldexpr32<-2>(float d) {
   return (d / ((Ulong)1 << 32)) / ((Ulong)1 << 32);
 }
 
-template <int N> __attribute__((always_inline)) inline float ldexpr(float d) {
+template <int N> __FORCE_INLINE float ldexpr(float d) {
   return ldexpr32<N / 32>(N < 0 ? d / ((unsigned)1 << (-N & 31))
                                 : d * ((unsigned)1 << (N & 31)));
 }
 
 
-template <int N> class iv_base {
-  int v[N] = {};
+template <int N,bool C>
+class iv_base
+{
+//#if defined(__clang__)
+//  typedef int type __attribute__((ext_vector_type(N)));
+//#else
+//  typedef int type __attribute__((vector_size(sizeof(int)*N)));
+//#endif
+//      type v = {};
+      int v[N] __INIT_VALUE;
 
-public:
-  template <int W, bool S> inline void bit_adjust() {
-    constexpr const unsigned rem = (32 - W) & 31;
-    set(N - 1, S ? ((v[N - 1] << rem) >> rem)
-                 : (rem ? ((unsigned)v[N - 1] << rem) >> rem : 0));
-  }
-  void assign_int64(Slong l) {
-    set(0, static_cast<int>(l));
-    if (N > 1) {
-      set(1, static_cast<int>(l >> 32));
+   public:
+      template <int W, bool S>
+      __FORCE_INLINE void bit_adjust()
+      {
+         constexpr const unsigned rem = (32 - W) & 31;
+         set(N - 1, S ? ((v[N - 1] << rem) >> rem)
+            : (rem ? ((unsigned)v[N - 1] << rem) >> rem : 0));
+      }
+
+      __FORCE_INLINE void assign_int64(Slong l)
+      {
+         set(0, static_cast<int>(l));
+         if (N > 1) {
+            set(1, static_cast<int>(l >> 32));
 #if defined(__clang__)
 #pragma clang loop unroll(full)
 #endif
-      for (int i = 2; i < N; i++)
-        set(i, (v[1] < 0) ? ~0 : 0);
-    }
-  }
-  void assign_uint64(Ulong l) {
-    set(0, static_cast<int>(l));
-    if (N > 1) {
-      set(1, static_cast<int>(l >> 32));
+            for (int i = 2; i < N; i++)
+               set(i, (v[1] < 0) ? ~0 : 0);
+         }
+      }
+
+      __FORCE_INLINE void assign_uint64(Ulong l)
+      {
+         set(0, static_cast<int>(l));
+         if (N > 1) {
+            set(1, static_cast<int>(l >> 32));
 #if defined(__clang__)
 #pragma clang loop unroll(full)
 #endif
-      for (int i = 2; i < N; i++)
-        set(i, 0);
-    }
-  }
-  void set(int x, int value) { v[x] = value; }
-  inline Slong to_int64() const {
-    return N == 1 ? v[0] : ((Ulong)v[1] << 32) | (Ulong)(unsigned)v[0];
-  }
-  constexpr int operator[](int x) const { return v[x]; }
-  constexpr iv_base() {}
-  template <int N2> iv_base(const iv_base<N2> &b) {
-    const int M = AC_MIN(N, N2);
-    for (auto idx = 0; idx < M; ++idx)
-      set(idx, b[idx]);
-    auto last = v[M - 1] < 0 ? ~0 : 0;
-    for (auto idx = M; idx < N; ++idx)
-      set(idx, last);
-  }
+            for (int i = 2; i < N; i++)
+               set(i, 0);
+         }
+      }
+      __FORCE_INLINE void set(int x, int value) { v[x] = value; }
+
+      __FORCE_INLINE Slong to_int64() const
+      {
+         return N == 1 ? v[0] : ((Ulong)v[1] << 32) | (Ulong)(unsigned)v[0];
+      }
+
+      __FORCE_INLINE constexpr int operator[](int x) const { return v[x]; }
+
+      __FORCE_INLINE constexpr iv_base() {}
+
+      template <int N2, bool C2>
+      __FORCE_INLINE iv_base(const iv_base<N2,C2> &b)
+      {
+         const int M = AC_MIN(N, N2);
+         for (auto idx = 0; idx < M; ++idx)
+            set(idx, b[idx]);
+         auto last = v[M - 1] < 0 ? ~0 : 0;
+         for (auto idx = M; idx < N; ++idx)
+            set(idx, last);
+      }
 };
-template <> class iv_base<1> {
-  int v = {};
+template <> class iv_base<1,true> {
+  int v __INIT_VALUE;
 
 public:
-  template <int W, bool S> inline void bit_adjust() {
-    constexpr const unsigned rem = (32 - W) & 31;
-    v = S ? ((v << rem) >> rem) : (rem ? ((unsigned)v << rem) >> rem : 0);
+  template <int W, bool S> __FORCE_INLINE void bit_adjust() {
+     constexpr const unsigned rem = (32 - W) & 31;
+     v= S ? ((v << rem) >> rem) : (rem ? ((unsigned)v << rem) >> rem : 0);
   }
   void assign_int64(Slong l) { v = static_cast<int>(l); }
   void assign_uint64(Ulong l) { v = static_cast<int>(l); }
   void set(int, int value) { v = value; }
-  inline Slong to_int64() const { return v; }
-  constexpr int operator[](int) const { return v; }
-  constexpr iv_base() {}
-  template <int N2> iv_base(const iv_base<N2> &b) : v(b[0]) {}
+  __FORCE_INLINE Slong to_int64() const { return v; }
+  /*constexpr*/ int operator[](int) const { return v; }
+  /*constexpr*/ iv_base() {}
+  template <int N2, bool C2> iv_base(const iv_base<N2,C2> &b) : v(b[0]) {}
 };
-template <> class iv_base<2> {
-  long long int v = {0};
+template <> class iv_base<2,true> {
+  long long int v __INIT_VALUE_LL;
 
 public:
-  template <int W, bool S> inline void bit_adjust() {
-    constexpr const unsigned rem = (64 - W) & 63;
-    v = S ? ((v << rem) >> rem)
-          : (rem ? ((unsigned long long)v << rem) >> rem : 0);
+  template <int W, bool S> void bit_adjust() {
+     constexpr const unsigned rem = (64 - W) & 63;
+     v= S ? ((v << rem) >> rem) : (rem ? ((unsigned long long)v << rem) >> rem : 0);
   }
   void assign_int64(Slong l) { v = l; }
   void assign_uint64(Ulong l) { v = static_cast<Slong>(l); }
@@ -362,10 +394,10 @@ public:
     else
       v = ((((Ulong)all_ones) << 32) & v) | ((Ulong)((unsigned)value));
   }
-  inline Slong to_int64() const { return v; }
-  constexpr int operator[](int x) const { return x ? (int)(v >> 32) : (int)v; }
-  constexpr iv_base() {}
-  template <int N2> iv_base(const iv_base<N2> &b) {
+  __FORCE_INLINE Slong to_int64() const { return v; }
+  /*constexpr*/ int operator[](int x) const { return x ? (int)(v >> 32) : (int)v; }
+  /*constexpr*/ iv_base() {}
+  template <int N2, bool C2> iv_base(const iv_base<N2,C2> &b) {
     const int M = AC_MIN(2, N2);
     if (M == 2) {
       v = b.to_int64();
@@ -375,14 +407,52 @@ public:
     }
   }
 };
-template <> class iv_base<3> {
-  long long int va = {0};
-  int v2 = {0};
+template <> class iv_base<3,true> {
+  long long int va __INIT_VALUE_LL;
 
 public:
-  template <int W, bool S> inline void bit_adjust() {
-    constexpr const unsigned rem = (32 - W) & 31;
-    v2 = S ? ((v2 << rem) >> rem) : (rem ? ((unsigned)v2 << rem) >> rem : 0);
+  template <int W, bool S> __FORCE_INLINE void bit_adjust() {
+  }
+  void assign_int64(Slong l) {
+    va = l;
+  }
+  void assign_uint64(Ulong l) {
+    va = static_cast<Slong>(l);
+  }
+  void set(int x, int value) {
+    x = x & 3;
+    if (x == 0)
+      va = ((((Ulong)all_ones) << 32) & va) | ((Ulong)((unsigned)value));
+    else if (x == 1)
+      va = (all_ones & va) | (((Slong)value) << 32);
+  }
+  __FORCE_INLINE Slong to_int64() const { return va; }
+  /*constexpr*/ int operator[](int x) const {
+    x = x & 3;
+    return x == 0 ? (int)va : (x == 1 ? (int)(va >> 32) : 0);
+  }
+  /*constexpr*/ iv_base() {}
+  template <int N2, bool C2> iv_base(const iv_base<N2,C2> &b) {
+    const int M = AC_MIN(2, N2);
+    if (M == 3) {
+      va = b.to_int64();
+    } else if (M == 2) {
+      va = b.to_int64();
+    } else {
+      AC_ASSERT(M == 1, "unexpected condition");
+      va = b.to_int64();
+    }
+  }
+};
+
+template <> class iv_base<3,false> {
+  long long int va __INIT_VALUE_LL;
+  int v2 __INIT_VALUE;
+
+public:
+  template <int W, bool S> __FORCE_INLINE void bit_adjust() {
+     constexpr const unsigned rem = (32 - W) & 31;
+     v2= S ? ((v2 << rem) >> rem) : (rem ? ((unsigned)v2 << rem) >> rem : 0);
   }
   void assign_int64(Slong l) {
     va = l;
@@ -401,13 +471,13 @@ public:
     else
       v2 = value;
   }
-  inline Slong to_int64() const { return va; }
-  constexpr int operator[](int x) const {
+  __FORCE_INLINE Slong to_int64() const { return va; }
+  /*constexpr*/ int operator[](int x) const {
     x = x & 3;
     return x == 0 ? (int)va : (x == 1 ? (int)(va >> 32) : v2);
   }
-  constexpr iv_base() {}
-  template <int N2> iv_base(const iv_base<N2> &b) {
+  /*constexpr*/ iv_base() {}
+  template <int N2, bool C2> iv_base(const iv_base<N2,C2> &b) {
     const int M = AC_MIN(2, N2);
     if (M == 3) {
       va = b.to_int64();
@@ -423,15 +493,14 @@ public:
   }
 };
 
-template <> class iv_base<4> {
-  long long int va = {0};
-  long long int vb = {0};
+template <> class iv_base<4,false> {
+  long long int va __INIT_VALUE_LL;
+  long long int vb __INIT_VALUE_LL;
 
 public:
-  template <int W, bool S> inline void bit_adjust() {
-    constexpr const unsigned rem = (64 - W) & 63;
-    vb = S ? ((vb << rem) >> rem)
-           : (rem ? ((unsigned long long)vb << rem) >> rem : 0);
+  template <int W, bool S> __FORCE_INLINE void bit_adjust() {
+     constexpr const unsigned rem = (64 - W) & 63;
+     vb= S ? ((vb << rem) >> rem) : (rem ? ((unsigned long long)vb << rem) >> rem : 0);
   }
   void assign_int64(Slong l) {
     va = l;
@@ -452,15 +521,15 @@ public:
     else
       vb = (all_ones & vb) | (((Slong)value) << 32);
   }
-  inline Slong to_int64() const { return va; }
-  constexpr int operator[](int x) const {
+  __FORCE_INLINE Slong to_int64() const { return va; }
+  /*constexpr*/ int operator[](int x) const {
     x = x & 3;
     return x == 0 ? (int)va
                   : (x == 1 ? (int)(va >> 32)
                             : (x == 2 ? (int)vb : (int)(vb >> 32)));
   }
-  constexpr iv_base() {}
-  template <int N2> iv_base(const iv_base<N2> &b) {
+  /*constexpr*/ iv_base() {}
+  template <int N2, bool C2> iv_base(const iv_base<N2,C2> &b) {
     const int M = AC_MIN(2, N2);
     if (M == 4) {
       va = b.to_int64();
@@ -479,36 +548,17 @@ public:
   }
 };
 
-template <int N, int START, int N1, int Nr>
-__attribute__((always_inline)) inline void iv_copy(const iv_base<N1> &op,
-                                                   iv_base<Nr> &r) {
+template <int N, int START, int N1, bool C1, int Nr, bool Cr>
+__FORCE_INLINE void iv_copy(const iv_base<N1,C1> &op, iv_base<Nr,Cr> &r) {
 #if defined(__clang__)
 #pragma clang loop unroll(full)
 #endif
   for (int i = START; i < N; i++)
     r.set(i, op[i]);
 }
-template <>
-inline void iv_copy<1, 0, 1, 1>(const iv_base<1> &op, iv_base<1> &r) {
-  r.set(0, op[0]);
-}
-template <>
-inline void iv_copy<1, 0, 1, 2>(const iv_base<1> &op, iv_base<2> &r) {
-  r.set(0, op[0]);
-}
-template <>
-inline void iv_copy<2, 0, 2, 2>(const iv_base<2> &op, iv_base<2> &r) {
-  r.set(0, op[0]);
-  r.set(1, op[1]);
-}
-template <>
-inline void iv_copy<2, 0, 2, 3>(const iv_base<2> &op, iv_base<3> &r) {
-  r.set(0, op[0]);
-  r.set(1, op[1]);
-}
 
-template <int N, int START = 0>
-__attribute__((always_inline)) inline bool iv_equal_zero(const iv_base<N> &op) {
+template <int START, int N, int N1, bool C1>
+__FORCE_INLINE bool iv_equal_zero(const iv_base<N1,C1> &op) {
 #if defined(__clang__)
 #pragma clang loop unroll(full)
 #endif
@@ -517,15 +567,10 @@ __attribute__((always_inline)) inline bool iv_equal_zero(const iv_base<N> &op) {
       return false;
   return true;
 }
-template <> inline bool iv_equal_zero<1, 0>(const iv_base<1> &op) {
-  return !op[0];
-}
-template <> inline bool iv_equal_zero<2, 0>(const iv_base<2> &op) {
-  return !(op[0] || op[1]);
-}
 
-template <int N, int START = 0>
-__attribute__((always_inline)) inline bool iv_equal_ones(const iv_base<N> &op) {
+
+template <int START, int N, int N1, bool C1>
+__FORCE_INLINE bool iv_equal_ones(const iv_base<N1,C1> &op) {
 #if defined(__clang__)
 #pragma clang loop unroll(full)
 #endif
@@ -534,34 +579,18 @@ __attribute__((always_inline)) inline bool iv_equal_ones(const iv_base<N> &op) {
       return false;
   return true;
 }
-template <> inline bool iv_equal_ones<0, 0>(const iv_base<0> & /*op*/) {
-  return true;
-}
-template <> inline bool iv_equal_ones<1, 0>(const iv_base<1> &op) {
-  return !~op[0];
-}
-template <> inline bool iv_equal_ones<1, 1>(const iv_base<1> &op) {
-  return true;
-}
-template <> inline bool iv_equal_ones<2, 0>(const iv_base<2> &op) {
-  return !(~op[0] || ~op[1]);
-}
-template <> inline bool iv_equal_ones<2, 1>(const iv_base<2> &op) {
-  return !(~op[1]);
-}
-template <> inline bool iv_equal_ones<2, 2>(const iv_base<2> &op) {
-  return true;
-}
 
-template <int N1, int N2>
-__attribute__((always_inline)) inline bool iv_equal(const iv_base<N1> &op1,
-                                                    const iv_base<N2> &op2) {
+template <int N1, bool C1, int N2, bool C2>
+__FORCE_INLINE bool iv_equal(const iv_base<N1,C1> &op1,
+                                                    const iv_base<N2,C2> &op2) {
   const int M1 = AC_MAX(N1, N2);
   const int M2 = AC_MIN(N1, N2);
-  const iv_base<M1> &OP1 =
-      N1 >= N2 ? static_cast<iv_base<M1>>(op1) : static_cast<iv_base<M1>>(op2);
-  const iv_base<M2> &OP2 =
-      N1 >= N2 ? static_cast<iv_base<M2>>(op2) : static_cast<iv_base<M2>>(op1);
+  const bool M1C1 = N1 >= N2 ? C1 : C2;
+  const iv_base<M1,M1C1> &OP1 =
+      N1 >= N2 ? static_cast<iv_base<M1,M1C1>>(op1) : static_cast<iv_base<M1,M1C1>>(op2);
+  const bool M2C1 = N1 >= N2 ? C2 : C1;
+  const iv_base<M2,M2C1> &OP2 =
+      N1 >= N2 ? static_cast<iv_base<M2,M2C1>>(op2) : static_cast<iv_base<M2,M2C1>>(op1);
 #if defined(__clang__)
 #pragma clang loop unroll(full)
 #endif
@@ -577,80 +606,54 @@ __attribute__((always_inline)) inline bool iv_equal(const iv_base<N1> &op1,
       return false;
   return true;
 }
-template <>
-inline bool iv_equal<1, 1>(const iv_base<1> &op1, const iv_base<1> &op2) {
-  return op1[0] == op2[0];
-}
 
-template <int B, int N>
-__attribute__((always_inline)) inline bool
-iv_equal_ones_from(const iv_base<N> &op) {
+template <int B, int N, bool C>
+__FORCE_INLINE bool
+iv_equal_ones_from(const iv_base<N,C> &op) {
   if ((B >= 32 * N && op[N - 1] >= 0) || (B & 31 && ~(op[B / 32] >> (B & 31))))
     return false;
-  return iv_equal_ones<N, (B + 31) / 32>(op);
-}
-template <> inline bool iv_equal_ones_from<0, 1>(const iv_base<1> &op) {
-  return iv_equal_ones<1>(op);
-}
-template <> inline bool iv_equal_ones_from<0, 2>(const iv_base<2> &op) {
-  return iv_equal_ones<2>(op);
+  return iv_equal_ones<(B + 31) / 32,N>(op);
 }
 
-template <int B, int N>
-__attribute__((always_inline)) inline bool
-iv_equal_zeros_from(const iv_base<N> &op) {
+template <int B, int N, bool C>
+__FORCE_INLINE bool
+iv_equal_zeros_from(const iv_base<N,C> &op) {
   if ((B >= 32 * N && op[N - 1] < 0) || (B & 31 && (op[B / 32] >> (B & 31))))
     return false;
-  return iv_equal_zero<N, (B + 31) / 32>(op);
-}
-template <> inline bool iv_equal_zeros_from<0, 1>(const iv_base<1> &op) {
-  return iv_equal_zero<1, 0>(op);
-}
-template <> inline bool iv_equal_zeros_from<0, 2>(const iv_base<2> &op) {
-  return iv_equal_zero<2, 0>(op);
+  return iv_equal_zero<(B+31)/32, N>(op);
 }
 
-template <int B, int N>
-__attribute__((always_inline)) inline bool
-iv_equal_ones_to(const iv_base<N> &op) {
+template <int B, int N, bool C>
+__FORCE_INLINE bool
+iv_equal_ones_to(const iv_base<N,C> &op) {
   if ((B >= 32 * N && op[N - 1] >= 0) ||
       (B & 31 && ~(op[B / 32] | (all_ones << (B & 31)))))
     return false;
-  return iv_equal_ones<B / 32>(op);
-}
-template <> inline bool iv_equal_ones_to<0, 1>(const iv_base<1> &op) {
-  return iv_equal_ones<1>(op);
-}
-template <> inline bool iv_equal_ones_to<0, 2>(const iv_base<2> &op) {
-  return iv_equal_ones<2>(op);
+  return iv_equal_ones<0, B / 32>(op);
 }
 
-template <int B, int N>
-__attribute__((always_inline)) inline bool
-iv_equal_zeros_to(const iv_base<N> &op) {
+template <int B, int N, bool C>
+__FORCE_INLINE bool
+iv_equal_zeros_to(const iv_base<N,C> &op) {
   if ((B >= 32 * N && op[N - 1] < 0) ||
       (B & 31 && (op[B / 32] & ~(all_ones << (B & 31)))))
     return false;
   if (B < 32)
     return true;
-  return iv_equal_zero < (B >= 32) ? (B / 32) : 1 > (op);
-}
-template <> inline bool iv_equal_zeros_to<0, 1>(const iv_base<1> &op) {
-  return iv_equal_zero<1>(op);
-}
-template <> inline bool iv_equal_zeros_to<0, 2>(const iv_base<2> &op) {
-  return iv_equal_zero<2>(op);
+  return iv_equal_zero <0,(B / 32)> (op);
 }
 
-template <int N1, int N2, bool greater>
-__attribute__((always_inline)) inline bool iv_compare(const iv_base<N1> &op1,
-                                                      const iv_base<N2> &op2) {
+template <bool greater, int N1, bool C1, int N2, bool C2>
+__FORCE_INLINE bool iv_compare(const iv_base<N1,C1> &op1,
+                                                      const iv_base<N2,C2> &op2) {
   const int M1 = AC_MAX(N1, N2);
   const int M2 = AC_MIN(N1, N2);
-  const iv_base<M1> &OP1 =
-      N1 >= N2 ? static_cast<iv_base<M1>>(op1) : static_cast<iv_base<M1>>(op2);
-  const iv_base<M2> &OP2 =
-      N1 >= N2 ? static_cast<iv_base<M2>>(op2) : static_cast<iv_base<M2>>(op1);
+  const bool M1C1 = N1 >= N2 ? C1 : C2;
+  const iv_base<M1,M1C1> &OP1 =
+      N1 >= N2 ? static_cast<iv_base<M1,M1C1>>(op1) : static_cast<iv_base<M1,M1C1>>(op2);
+  const bool M2C1 = N1 >= N2 ? C2 : C1;
+  const iv_base<M2,M2C1> &OP2 =
+      N1 >= N2 ? static_cast<iv_base<M2,M2C1>>(op2) : static_cast<iv_base<M2,M2C1>>(op1);
   const bool b = (N1 >= N2) == greater;
   int ext = OP2[M2 - 1] < 0 ? ~0 : 0;
   int i2 = M1 > M2 ? ext : OP2[M1 - 1];
@@ -672,97 +675,54 @@ __attribute__((always_inline)) inline bool iv_compare(const iv_base<N1> &op1,
   }
   return false;
 }
-template <>
-inline bool iv_compare<1, 1, true>(const iv_base<1> &op1,
-                                   const iv_base<1> &op2) {
-  return op1[0] > op2[0];
-}
-template <>
-inline bool iv_compare<1, 1, false>(const iv_base<1> &op1,
-                                    const iv_base<1> &op2) {
-  return op1[0] < op2[0];
-}
 
-template <int N, int START = 0>
-__attribute__((always_inline)) inline void iv_extend(iv_base<N> &r, int ext) {
+template <int START, int N, bool C>
+__FORCE_INLINE void iv_extend(iv_base<N,C> &r, int ext) {
 #if defined(__clang__)
 #pragma clang loop unroll(full)
 #endif
   for (int i = START; i < N; i++)
     r.set(i, ext);
 }
-template <> inline void iv_extend<1, 0>(iv_base<1> &r, int ext) {
-  r.set(0, ext);
-}
-template <> inline void iv_extend<2, 0>(iv_base<2> &r, int ext) {
-  r.set(0, ext);
-  r.set(1, ext);
-}
-template <> inline void iv_extend<2, 1>(iv_base<2> &r, int ext) {
-  r.set(1, ext);
-}
-template <> inline void iv_extend<3, 0>(iv_base<3> &r, int ext) {
-  r.set(0, ext);
-  r.set(1, ext);
-  r.set(2, ext);
-}
-template <> inline void iv_extend<3, 1>(iv_base<3> &r, int ext) {
-  r.set(1, ext);
-  r.set(2, ext);
-}
-template <> inline void iv_extend<3, 2>(iv_base<3> &r, int ext) {
-  r.set(2, ext);
-}
 
-template <int Nr>
-__attribute__((always_inline)) inline void iv_assign_int64(iv_base<Nr> &r,
-                                                           Slong l) {
-  r.assign_int64(l);
-}
 
-template <int Nr>
-__attribute__((always_inline)) inline void iv_assign_uint64(iv_base<Nr> &r,
-                                                            Ulong l) {
-  r.assign_uint64(l);
-}
+template <int Nr, bool Cr>
+__FORCE_INLINE void iv_assign_int64(iv_base<Nr,Cr> &r, Slong l) { r.assign_int64(l);}
 
-inline Ulong mult_u_u(int a, int b) {
-  return (Ulong)(unsigned)a * (Ulong)(unsigned)b;
-}
-inline Slong mult_u_s(int a, int b) {
-  return (Ulong)(unsigned)a * (Slong)(signed)b;
-}
-inline Slong mult_s_u(int a, int b) {
-  return (Slong)(signed)a * (Ulong)(unsigned)b;
-}
-inline Slong mult_s_s(int a, int b) {
-  return (Slong)(signed)a * (Slong)(signed)b;
-}
-inline void accumulate(Ulong a, Ulong &l1, Slong &l2) {
+template <int Nr, bool Cr>
+__FORCE_INLINE void iv_assign_uint64(iv_base<Nr,Cr> &r, Ulong l) { r.assign_uint64(l);}
+
+__FORCE_INLINE Ulong mult_u_u(int a, int b) {return (Ulong)(unsigned)a * (Ulong)(unsigned)b;}
+__FORCE_INLINE Slong mult_u_s(int a, int b) {return (Ulong)(unsigned)a * (Slong)(signed)b;}
+__FORCE_INLINE Slong mult_s_u(int a, int b) { return (Slong)(signed)a * (Ulong)(unsigned)b;}
+__FORCE_INLINE Slong mult_s_s(int a, int b) { return (Slong)(signed)a * (Slong)(signed)b;}
+__FORCE_INLINE void accumulate(Ulong a, Ulong &l1, Slong &l2)
+{
   l1 += (Ulong)(unsigned)a;
   l2 += a >> 32;
 }
-inline void accumulate(Slong a, Ulong &l1, Slong &l2) {
+__FORCE_INLINE void accumulate(Slong a, Ulong &l1, Slong &l2)
+{
   l1 += (Ulong)(unsigned)a;
   l2 += a >> 32;
 }
 
-template <int N1, int N2, int Nr>
-__attribute__((always_inline)) inline void
-iv_mult(const iv_base<N1> &op1, const iv_base<N2> &op2, iv_base<Nr> &r) {
+template <int N1, bool C1, int N2, bool C2, int Nr, bool Cr>
+__FORCE_INLINE void iv_mult(const iv_base<N1,C1> &op1, const iv_base<N2,C2> &op2, iv_base<Nr,Cr> &r)
+{
   if (Nr == 1)
     r.set(0, op1[0] * op2[0]);
   else if (Nr == 2)
-    iv_assign_int64<Nr>(r, (op1.to_int64() * op2.to_int64()));
+    iv_assign_int64(r, (op1.to_int64() * op2.to_int64()));
   else if (N1 == 1 && N2 == 1)
-    iv_assign_int64<Nr>(r, (op1.to_int64() * op2.to_int64()));
+    iv_assign_int64(r, (op1.to_int64() * op2.to_int64()));
   else {
     const int M1 = AC_MAX(N1, N2);
     const int M2 = AC_MIN(N1, N2);
-    const iv_base<M1> OP1 = N1 >= N2 ? static_cast<iv_base<M1>>(op1)
-                                     : static_cast<iv_base<M1>>(op2);
-    const iv_base<M2> OP2 = N1 >= N2 ? static_cast<iv_base<M2>>(op2)
-                                     : static_cast<iv_base<M2>>(op1);
+    const bool M1C1 = N1 >= N2 ? C1 : C2;
+    const iv_base<M1,M1C1> OP1 = N1 >= N2 ? static_cast<iv_base<M1,M1C1>>(op1) : static_cast<iv_base<M1,M1C1>>(op2);
+    const bool M2C1 = N1 >= N2 ? C2 : C1;
+    const iv_base<M2,M2C1> OP2 = N1 >= N2 ? static_cast<iv_base<M2,M2C1>>(op2) : static_cast<iv_base<M2,M2C1>>(op1);
     const int T1 = AC_MIN(M2 - 1, Nr);
     const int T2 = AC_MIN(M1 - 1, Nr);
     const int T3 = AC_MIN(M1 + M2 - 2, Nr);
@@ -817,42 +777,31 @@ iv_mult(const iv_base<N1> &op1, const iv_base<N2> &op2, iv_base<Nr> &r) {
       if (Nr >= M1 + M2) {
         l2 += (Ulong)(unsigned)(l1 >> 32);
         r.set(M1 + M2 - 1, (int)l2);
-        iv_extend<Nr, (M1 + M2)>(r, (r[M1 + M2 - 1] < 0) ? ~0 : 0);
+        iv_extend<M1+M2>(r, (r[M1 + M2 - 1] < 0) ? ~0 : 0);
       }
     }
   }
 }
 
-template <int N, int START = 0>
-__attribute__((always_inline)) inline bool
-iv_uadd_carry(const iv_base<N> &op1, bool carry, iv_base<N> &r) {
+template <int N, bool C>
+__FORCE_INLINE bool iv_uadd_carry(const iv_base<N,C> &op1, bool carry, iv_base<N,C> &r)
+{
   Slong l = carry;
 #if defined(__clang__)
 #pragma clang loop unroll(full)
 #endif
-  for (int i = START; i < N; i++) {
+  for (int i = 0; i < N; i++) {
     l += (Ulong)(unsigned)op1[i];
     r.set(i, (int)l);
     l >>= 32;
   }
   return l != 0;
 }
-template <>
-inline bool iv_uadd_carry<1, 0>(const iv_base<1> &op1, bool carry,
-                                iv_base<1> &r) {
-  Ulong l = carry + (Ulong)(unsigned)op1[0];
-  r.set(0, (int)l);
-  return (l >> 32) & 1;
-}
-template <>
-inline bool iv_uadd_carry<1, 1>(const iv_base<1> &op1, bool carry,
-                                iv_base<1> &r) {
-  return carry != 0;
-}
 
-template <int N, int START = 0, int Nr = N>
-__attribute__((always_inline)) inline bool
-iv_add_int_carry(const iv_base<N> &op1, int op2, bool carry, iv_base<Nr> &r) {
+
+template <int START, int N, bool C, int Nr, bool Cr>
+__FORCE_INLINE bool iv_add_int_carry(const iv_base<N,C> &op1, int op2, bool carry, iv_base<Nr,Cr> &r)
+{
   if (N == START)
     return carry;
   if (N == START + 1) {
@@ -875,22 +824,9 @@ iv_add_int_carry(const iv_base<N> &op1, int op2, bool carry, iv_base<Nr> &r) {
   r.set(N - 1, (int)l);
   return (l >> 32) & 1;
 }
-template <>
-inline bool iv_add_int_carry<1, 0, 1>(const iv_base<1> &op1, int op2,
-                                      bool carry, iv_base<1> &r) {
-  Ulong l = carry + (Slong)op1[0] + (Slong)op2;
-  r.set(0, (int)l);
-  return (l >> 32) & 1;
-}
-template <>
-inline bool iv_add_int_carry<1, 1, 1>(const iv_base<1> &op1, int op2,
-                                      bool carry, iv_base<1> &r) {
-  return carry;
-}
 
-template <int N, int N1, int N2, int Nr>
-__attribute__((always_inline)) inline bool
-iv_uadd_n(const iv_base<N1> &op1, const iv_base<N2> &op2, iv_base<Nr> &r) {
+template <int N, int N1, bool C1, int N2, bool C2, int Nr, bool Cr>
+__FORCE_INLINE bool iv_uadd_n(const iv_base<N1,C1> &op1, const iv_base<N2,C2> &op2, iv_base<Nr,Cr> &r) {
   AC_ASSERT(AC_MIN(N, AC_MIN(N1, AC_MIN(N2, Nr))) == N, "unexpected condition");
   Ulong l = 0;
 #if defined(__clang__)
@@ -903,58 +839,33 @@ iv_uadd_n(const iv_base<N1> &op1, const iv_base<N2> &op2, iv_base<Nr> &r) {
   }
   return l & 1;
 }
-template <>
-inline bool iv_uadd_n<1, 1, 1, 1>(const iv_base<1> &op1, const iv_base<1> &op2,
-                                  iv_base<1> &r) {
-  Ulong l = (Ulong)(unsigned)op1[0] + (Ulong)(unsigned)op2[0];
-  r.set(0, (int)l);
-  return (l >> 32) & 1;
-}
-template <>
-inline bool iv_uadd_n<2, 2, 2, 2>(const iv_base<2> &op1, const iv_base<2> &op2,
-                                  iv_base<2> &r) {
-  Ulong l = (Ulong)(unsigned)op1[0] + (Ulong)(unsigned)op2[0];
-  r.set(0, (int)l);
-  l >>= 32;
-  l += (Ulong)(unsigned)op1[1] + (Ulong)(unsigned)op2[1];
-  r.set(1, (int)l);
-  return (l >> 32) & 1;
-}
 
-template <int N1, int N2, int Nr>
-__attribute__((always_inline)) inline void
-iv_add(const iv_base<N1> &op1, const iv_base<N2> &op2, iv_base<Nr> &r) {
+
+template <int N1, bool C1, int N2, bool C2, int Nr, bool Cr>
+__FORCE_INLINE void
+iv_add(const iv_base<N1,C1> &op1, const iv_base<N2,C2> &op2, iv_base<Nr,Cr> &r)
+{
   if (Nr == 1)
     r.set(0, op1[0] + op2[0]);
   else {
     const int M1 = AC_MAX(N1, N2);
     const int M2 = AC_MIN(N1, N2);
-    const iv_base<M1> OP1 = N1 >= N2 ? static_cast<iv_base<M1>>(op1)
-                                     : static_cast<iv_base<M1>>(op2);
-    const iv_base<M2> OP2 = N1 >= N2 ? static_cast<iv_base<M2>>(op2)
-                                     : static_cast<iv_base<M2>>(op1);
+    const bool M1C1 = N1 >= N2 ? C1 : C2;
+    const iv_base<M1,M1C1> OP1 = N1 >= N2 ? static_cast<iv_base<M1,M1C1>>(op1) : static_cast<iv_base<M1,M1C1>>(op2);
+    const bool M2C1 = N1 >= N2 ? C2 : C1;
+    const iv_base<M2,M2C1> OP2 = N1 >= N2 ? static_cast<iv_base<M2,M2C1>>(op2) : static_cast<iv_base<M2,M2C1>>(op1);
     const int T1 = AC_MIN(M2 - 1, Nr);
     const int T2 = AC_MIN(M1, Nr);
 
     bool carry = iv_uadd_n<T1>(OP1, OP2, r);
-    carry = iv_add_int_carry<T2, T1>(OP1, OP2[T1], carry, r);
-    iv_extend<Nr, T2>(r, carry ? ~0 : 0);
+    carry = iv_add_int_carry<T1>(OP1, OP2[T1], carry, r);
+    iv_extend<T2>(r, carry ? ~0 : 0);
   }
 }
-template <>
-inline void iv_add<1, 1, 1>(const iv_base<1> &op1, const iv_base<1> &op2,
-                            iv_base<1> &r) {
-  r.set(0, op1[0] + op2[0]);
-}
-template <>
-inline void iv_add<1, 1, 2>(const iv_base<1> &op1, const iv_base<1> &op2,
-                            iv_base<2> &r) {
-  iv_assign_int64<2>(r, (Slong)op1[0] + (Slong)op2[0]);
-}
 
-template <int N, int START = 0, int Nr = N>
-__attribute__((always_inline)) inline bool
-iv_sub_int_borrow(const iv_base<N> &op1, int op2, bool borrow, iv_base<Nr> &r) {
+template <int N, int START, int N1, bool C1, int Nr, bool Cr>
+__FORCE_INLINE bool iv_sub_int_borrow(const iv_base<N1,C1> &op1, int op2, bool borrow, iv_base<Nr,Cr> &r)
+{
   if (START == N)
     return borrow;
   if (N == (START + 1)) {
@@ -978,9 +889,9 @@ iv_sub_int_borrow(const iv_base<N> &op1, int op2, bool borrow, iv_base<Nr> &r) {
   return (l >> 32) & 1;
 }
 
-template <int N, int START = 0, int Nr = N>
-__attribute__((always_inline)) inline bool
-iv_sub_int_borrow(int op1, const iv_base<N> &op2, bool borrow, iv_base<Nr> &r) {
+template <int N, int START, int N2, bool C2, int Nr, bool Cr>
+__FORCE_INLINE bool iv_sub_int_borrow(int op1, const iv_base<N2,C2> &op2, bool borrow, iv_base<Nr,Cr> &r)
+{
   if (START == N)
     return borrow;
   if (N == START + 1) {
@@ -1004,9 +915,9 @@ iv_sub_int_borrow(int op1, const iv_base<N> &op2, bool borrow, iv_base<Nr> &r) {
   return (l >> 32) & 1;
 }
 
-template <int N, int N1, int N2, int Nr>
-__attribute__((always_inline)) inline bool
-iv_usub_n(const iv_base<N1> &op1, const iv_base<N2> &op2, iv_base<Nr> &r) {
+template <int N, int N1, bool C1, int N2, bool C2, int Nr, bool Cr>
+__FORCE_INLINE bool iv_usub_n(const iv_base<N1,C1> &op1, const iv_base<N2,C2> &op2, iv_base<Nr,Cr> &r)
+{
   AC_ASSERT(AC_MIN(N, AC_MIN(N1, AC_MIN(N2, Nr))) == N, "unexpected condition");
   Slong l = 0;
 #if defined(__clang__)
@@ -1019,41 +930,10 @@ iv_usub_n(const iv_base<N1> &op1, const iv_base<N2> &op2, iv_base<Nr> &r) {
   }
   return l & 1;
 }
-template <>
-inline bool iv_usub_n<1, 1, 1, 1>(const iv_base<1> &op1, const iv_base<1> &op2,
-                                  iv_base<1> &r) {
-  Ulong l = (Ulong)(unsigned)op1[0] - (Ulong)(unsigned)op2[0];
-  r.set(0, (int)l);
-  return (l >> 32) & 1;
-}
-template <>
-inline bool iv_usub_n<1, 2, 1, 2>(const iv_base<2> &op1, const iv_base<1> &op2,
-                                  iv_base<2> &r) {
-  Ulong l = (Ulong)(unsigned)op1[0] - (Ulong)(unsigned)op2[0];
-  r.set(0, (int)l);
-  return (l >> 32) & 1;
-}
-template <>
-inline bool iv_usub_n<1, 1, 2, 2>(const iv_base<1> &op1, const iv_base<2> &op2,
-                                  iv_base<2> &r) {
-  Ulong l = (Ulong)(unsigned)op1[0] - (Ulong)(unsigned)op2[0];
-  r.set(0, (int)l);
-  return (l >> 32) & 1;
-}
-template <>
-inline bool iv_usub_n<2, 2, 2, 2>(const iv_base<2> &op1, const iv_base<2> &op2,
-                                  iv_base<2> &r) {
-  Slong l = (Ulong)(unsigned)op1[0] - (Ulong)(unsigned)op2[0];
-  r.set(0, (int)l);
-  l >>= 32;
-  l += (Ulong)(unsigned)op1[1] - (Ulong)(unsigned)op2[1];
-  r.set(1, (int)l);
-  return (l >> 32) & 1;
-}
 
-template <int N1, int N2, int Nr>
-__attribute__((always_inline)) inline void
-iv_sub(const iv_base<N1> &op1, const iv_base<N2> &op2, iv_base<Nr> &r) {
+template <int N1, bool C1, int N2, bool C2, int Nr, bool Cr>
+__FORCE_INLINE void iv_sub(const iv_base<N1,C1> &op1, const iv_base<N2,C2> &op2, iv_base<Nr,Cr> &r)
+{
   if (Nr == 1)
     r.set(0, op1[0] - op2[0]);
   else {
@@ -1067,43 +947,14 @@ iv_sub(const iv_base<N1> &op1, const iv_base<N2> &op2, iv_base<Nr> &r) {
       borrow = iv_sub_int_borrow<T2, T1>(op1, op2[T1], borrow, r);
     else
       borrow = iv_sub_int_borrow<T2, T1>(op1[T1], op2, borrow, r);
-    iv_extend<Nr, T2>(r, borrow ? ~0 : 0);
+    iv_extend<T2>(r, borrow ? ~0 : 0);
   }
 }
-template <>
-inline void iv_sub<1, 1, 1>(const iv_base<1> &op1, const iv_base<1> &op2,
-                            iv_base<1> &r) {
-  r.set(0, op1[0] - op2[0]);
-}
-template <>
-inline void iv_sub<1, 1, 2>(const iv_base<1> &op1, const iv_base<1> &op2,
-                            iv_base<2> &r) {
-  iv_assign_int64<2>(r, (Slong)op1[0] - (Slong)op2[0]);
-}
 
-template <int N>
-__attribute__((always_inline)) inline bool
-iv_all_bits_same(const iv_base<N> &op, bool bit) {
-  int t = bit ? ~0 : 0;
-#if defined(__clang__)
-#pragma clang loop unroll(full)
-#endif
-  for (int i = 0; i < N; i++)
-    if (op[i] != t)
-      return false;
-  return true;
-}
-template <>
-inline bool iv_all_bits_same<0>(const iv_base<0> & /*op*/, bool /*bit*/) {
-  return true;
-}
-template <> inline bool iv_all_bits_same<1>(const iv_base<1> &op, bool bit) {
-  return op[0] == (bit ? ~0 : 0);
-}
 
-template <int N, int Nr>
-__attribute__((always_inline)) inline void iv_neg(const iv_base<N> &op1,
-                                                  iv_base<Nr> &r) {
+template <int N, bool C, int Nr, bool Cr>
+__FORCE_INLINE void iv_neg(const iv_base<N,C> &op1, iv_base<Nr,Cr> &r)
+{
   Slong l = 0;
 #if defined(__clang__)
 #pragma clang loop unroll(full)
@@ -1115,26 +966,25 @@ __attribute__((always_inline)) inline void iv_neg(const iv_base<N> &op1,
   }
   if (Nr > N) {
     r.set(N, (unsigned)(l - (op1[N - 1] < 0 ? ~0 : 0)));
-    iv_extend<Nr, N + 1>(r, r[N] < 0 ? ~0 : 0);
+    iv_extend<N+1>(r, r[N] < 0 ? ~0 : 0);
   }
 }
 
-template <int N, bool S, int Nr>
-__attribute__((always_inline)) inline void iv_abs(const iv_base<N> &op1,
-                                                  iv_base<Nr> &r) {
+template <bool S, int N, bool C, int Nr, bool Cr>
+__FORCE_INLINE void iv_abs(const iv_base<N,C> &op1, iv_base<Nr,Cr> &r)
+{
   if (S && op1[N - 1] < 0) {
-    iv_neg<N, Nr>(op1, r);
+    iv_neg(op1, r);
   } else {
     iv_copy<AC_MIN(N, Nr), 0>(op1, r);
-    iv_extend<Nr, N>(r, 0);
+    iv_extend<N>(r, 0);
   }
 }
 
 template <int N, int D, int Q, int R, typename uw2, typename sw4, typename uw4,
-          int w1_length, int Nn, int Nd, int Nq, int Nr>
-__attribute__((always_inline)) inline void
-iv_udiv(const iv_base<Nn> &n, const iv_base<Nd> &d, iv_base<Nq> &q,
-        iv_base<Nr> &r) {
+          int w1_length, int Nn, bool Cn, int Nd, bool Cd, int Nq, bool Cq, int Nr, bool Cr>
+__FORCE_INLINE void iv_udiv(const iv_base<Nn,Cn> &n, const iv_base<Nd,Cd> &d, iv_base<Nq,Cq> &q,
+        iv_base<Nr,Cr> &r) {
   const int w2_length = 2 * w1_length;
   int d_msi; // most significant int for d
   for (d_msi = D - 1; d_msi > 0 && !d[d_msi]; d_msi--) {
@@ -1174,6 +1024,17 @@ iv_udiv(const iv_base<Nn> &n, const iv_base<Nd> &d, iv_base<Nq> &q,
     for (int k = n_msi; k >= 0; k--)
       r1[k] = n[k];
     for (int k = n_mss; k >= d_mss; k--) {
+
+//#if defined(__clang__)
+//#pragma clang loop unroll(full)
+//#endif
+//    for (int k = N; k >= 0; k--)
+//      if(k<=n_msi) r1[k] = n[k];
+//#if defined(__clang__)
+//#pragma clang loop unroll(full)
+//#endif
+//    for (int k = 2*N-1; k >= 0; k--)
+//    if(k<=n_mss&&k>=d_mss){
       int k_msi = k >> 1;
       bool odd = k & 1;
       uw2 r1m1 = k_msi > 0 ? r1[k_msi - 1] : (uw2)0;
@@ -1239,245 +1100,178 @@ iv_udiv(const iv_base<Nn> &n, const iv_base<Nd> &d, iv_base<Nq> &q,
   }
 }
 
-template <int N1, int Num_s, int N2, int Den_s, int Nr>
-__attribute__((always_inline)) inline void
-iv_div(const iv_base<N1> &op1, const iv_base<N2> &op2, iv_base<Nr> &r) {
+template <int Num_s, int Den_s, int N1, bool C1, int N2, bool C2, int Nr, bool Cr>
+__FORCE_INLINE void iv_div(const iv_base<N1,C1> &op1, const iv_base<N2,C2> &op2, iv_base<Nr,Cr> &r) {
   enum { N1_over = N1 + (Den_s && (Num_s == 2)) };
   if (N1_over == 1 && N2 == 1) {
     r.set(0, op1[0] / op2[0]);
-    iv_extend<Nr, 1>(r, ((Num_s || Den_s) && (r[0] < 0)) ? ~0 : 0);
+    iv_extend<1>(r, ((Num_s || Den_s) && (r[0] < 0)) ? ~0 : 0);
   } else if (N1_over <= 2 && N2 <= 2)
-    iv_assign_int64<Nr>(r, op1.to_int64() / op2.to_int64());
+    iv_assign_int64(r, op1.to_int64() / op2.to_int64());
   else if (!Num_s && !Den_s) {
-    iv_base<1> dummy;
+    iv_base<1,true> dummy;
     iv_udiv<N1, N2, N1, 0, unsigned, Slong, Ulong, 16>(op1, op2, r, dummy);
-    iv_extend<Nr, N1>(r, 0);
+    iv_extend<N1>(r, 0);
   } else {
     enum { N1_neg = N1 + (Num_s == 2), N2_neg = N2 + (Den_s == 2) };
-    iv_base<N1_neg> numerator;
-    iv_base<N2_neg> denominator;
-    iv_base<N1_neg> quotient;
-    iv_abs<N1, (bool)Num_s, N1_neg>(op1, numerator);
-    iv_abs<N2, (bool)Den_s, N2_neg>(op2, denominator);
-    iv_base<1> dummy;
+    iv_base<N1_neg,false> numerator;
+    iv_base<N2_neg,false> denominator;
+    iv_base<N1_neg,false> quotient;
+    iv_abs<(bool)Num_s>(op1, numerator);
+    iv_abs<(bool)Den_s>(op2, denominator);
+    iv_base<1,true> dummy;
     iv_udiv<N1_neg, N2_neg, N1_neg, 0, unsigned, Slong, Ulong, 16>(
         numerator, denominator, quotient, dummy);
     if ((Num_s && op1[N1 - 1] < 0) ^ (Den_s && op2[N2 - 1] < 0))
-      iv_neg<N1_neg, Nr>(quotient, r);
+      iv_neg(quotient, r);
     else {
       iv_copy<AC_MIN(N1_neg, Nr), 0>(quotient, r);
-      iv_extend<Nr, N1_neg>(r, (Num_s || Den_s) && r[N1_neg - 1] < 0 ? ~0 : 0);
+      iv_extend<N1_neg>(r, (Num_s || Den_s) && r[N1_neg - 1] < 0 ? ~0 : 0);
     }
   }
 }
 
-template <int N1, int Num_s, int N2, int Den_s, int Nr>
-__attribute__((always_inline)) inline void
-iv_rem(const iv_base<N1> &op1, const iv_base<N2> &op2, iv_base<Nr> &r) {
+template <int Num_s, int Den_s, int N1, bool C1, int N2, bool C2, int Nr, bool Cr>
+__FORCE_INLINE void iv_rem(const iv_base<N1,C1> &op1, const iv_base<N2,C2> &op2, iv_base<Nr,Cr> &r) {
   enum {
     N1_over = N1 + (Den_s && (Num_s == 2))
   }; // N1_over corresponds to the division
   if (N1_over == 1 && N2 == 1) {
     r.set(0, op1[0] % op2[0]);
-    iv_extend<Nr, 1>(r, Num_s && r[0] < 0 ? ~0 : 0);
+    iv_extend<1>(r, Num_s && r[0] < 0 ? ~0 : 0);
   } else if (N1_over <= 2 && N2 <= 2)
-    iv_assign_int64<Nr>(r, op1.to_int64() % op2.to_int64());
+    iv_assign_int64(r, op1.to_int64() % op2.to_int64());
   else if (!Num_s && !Den_s) {
-    iv_base<1> dummy;
+    iv_base<1,true> dummy;
     iv_udiv<N1, N2, 0, N2, unsigned, Slong, Ulong, 16>(op1, op2, dummy, r);
-    iv_extend<Nr, N2>(r, 0);
+    iv_extend<N2>(r, 0);
   } else {
     enum { N1_neg = N1 + (Num_s == 2), N2_neg = N2 + (Den_s == 2) };
-    iv_base<N1_neg> numerator;
-    iv_base<N2_neg> denominator;
-    iv_base<N2> remainder;
-    iv_abs<N1, (bool)Num_s, N1_neg>(op1, numerator);
-    iv_abs<N2, (bool)Den_s, N2_neg>(op2, denominator);
-    iv_base<1> dummy;
+    iv_base<N1_neg,false> numerator;
+    iv_base<N2_neg,false> denominator;
+    iv_base<N2,false> remainder;
+    iv_abs<(bool)Num_s>(op1, numerator);
+    iv_abs<(bool)Den_s>(op2, denominator);
+    iv_base<1,true> dummy;
     iv_udiv<N1_neg, N2_neg, 0, N2, unsigned, Slong, Ulong, 16>(
         numerator, denominator, dummy, remainder);
     if ((Num_s && op1[N1 - 1] < 0))
-      iv_neg<N2, Nr>(remainder, r);
+      iv_neg(remainder, r);
     else {
       iv_copy<AC_MIN(N2, Nr), 0>(remainder, r);
-      iv_extend<Nr, N2>(r, Num_s && r[N2 - 1] < 0 ? ~0 : 0);
+      iv_extend<N2>(r, Num_s && r[N2 - 1] < 0 ? ~0 : 0);
     }
   }
 }
 
-template <int N, int N1, int Nr, int START> struct iv_bitwise_complement_nImpl {
-  static inline void iv_bitwise_complement_n(const iv_base<N1> &op,
-                                             iv_base<Nr> &r) {
+template <int N, int START, int N1, bool C1, int Nr, bool Cr>
+__FORCE_INLINE void iv_bitwise_complement_n(const iv_base<N1,C1> &op, iv_base<Nr,Cr> &r)
+{
 #if defined(__clang__)
 #pragma clang loop unroll(full)
 #endif
-    for (int i = START; i < N; i++)
+   for (int i = START; i < N; i++)
       r.set(i, ~op[i]);
-  }
-};
-template <int N1, int Nr, int START>
-struct iv_bitwise_complement_nImpl<1, N1, Nr, START> {
-  static inline void iv_bitwise_complement_n(const iv_base<N1> &op,
-                                             iv_base<Nr> &r) {
-    if (START == 0)
-      r.set(0, ~op[0]);
-  }
-};
-template <int N1, int Nr, int START>
-struct iv_bitwise_complement_nImpl<2, N1, Nr, START> {
-  static inline void iv_bitwise_complement_n(const iv_base<N1> &op,
-                                             iv_base<Nr> &r) {
-    if (START == 0)
-      r.set(0, ~op[0]);
-    if (START <= 1)
-      r.set(1, ~op[1]);
-  }
-};
-
-template <int N, int Nr>
-__attribute__((always_inline)) inline void
-iv_bitwise_complement(const iv_base<N> &op, iv_base<Nr> &r) {
-  const int M = AC_MIN(N, Nr);
-  iv_bitwise_complement_nImpl<M, N, Nr, 0>::iv_bitwise_complement_n(op, r);
-  iv_extend<Nr, M>(r, (r[M - 1] < 0) ? ~0 : 0);
 }
 
-template <int N, int N1, int N2, int Nr> struct iv_bitwise_and_nImpl {
-  static inline void iv_bitwise_and_n(const iv_base<N1> &op1,
-                                      const iv_base<N2> &op2, iv_base<Nr> &r) {
+template <int N, bool C, int Nr, bool Cr>
+__FORCE_INLINE void iv_bitwise_complement(const iv_base<N,C> &op, iv_base<Nr,Cr> &r)
+{
+  const int M = AC_MIN(N, Nr);
+  iv_bitwise_complement_n<M,0>(op, r);
+  iv_extend<M>(r, (r[M - 1] < 0) ? ~0 : 0);
+}
+
+template <int N, int N1, bool C1, int N2, bool C2, int Nr, bool Cr>
+__FORCE_INLINE void iv_bitwise_and_n(const iv_base<N1,C1> &op1, const iv_base<N2,C2> &op2, iv_base<Nr,Cr> &r)
+{
 #if defined(__clang__)
 #pragma clang loop unroll(full)
 #endif
-    for (int i = 0; i < N; i++)
+   for (int i = 0; i < N; i++)
       r.set(i, op1[i] & op2[i]);
-  }
-};
+}
 
-template <int N1, int N2, int Nr> struct iv_bitwise_and_nImpl<1, N1, N2, Nr> {
-  static inline void iv_bitwise_and_n(const iv_base<N1> &op1,
-                                      const iv_base<N2> &op2, iv_base<Nr> &r) {
-    r.set(0, op1[0] & op2[0]);
-  }
-};
-template <int N1, int N2, int Nr> struct iv_bitwise_and_nImpl<2, N1, N2, Nr> {
-  static inline void iv_bitwise_and_n(const iv_base<N1> &op1,
-                                      const iv_base<N2> &op2, iv_base<Nr> &r) {
-    r.set(0, op1[0] & op2[0]);
-    r.set(1, op1[1] & op2[1]);
-  }
-};
 
-template <int N1, int N2, int Nr>
-__attribute__((always_inline)) inline void
-iv_bitwise_and(const iv_base<N1> &op1, const iv_base<N2> &op2, iv_base<Nr> &r) {
+template <int N1, bool C1, int N2, bool C2, int Nr, bool Cr>
+__FORCE_INLINE void iv_bitwise_and(const iv_base<N1,C1> &op1, const iv_base<N2,C2> &op2, iv_base<Nr,Cr> &r)
+{
   const int M1 = AC_MIN(AC_MAX(N1, N2), Nr);
   const int M2 = AC_MIN(AC_MIN(N1, N2), Nr);
-  const iv_base<AC_MAX(N1, N2)> &OP1 =
-      N1 > N2 ? static_cast<iv_base<AC_MAX(N1, N2)>>(op1)
-              : static_cast<iv_base<AC_MAX(N1, N2)>>(op2);
-  const iv_base<AC_MIN(N1, N2)> &OP2 =
-      N1 > N2 ? static_cast<iv_base<AC_MIN(N1, N2)>>(op2)
-              : static_cast<iv_base<AC_MIN(N1, N2)>>(op1);
+  const bool M1C1 = N1 > N2 ? C1 : C2;
+  const iv_base<AC_MAX(N1, N2),M1C1> &OP1 = N1 > N2 ? static_cast<iv_base<AC_MAX(N1, N2),M1C1>>(op1) : static_cast<iv_base<AC_MAX(N1, N2),M1C1>>(op2);
+  const bool M2C1 = N1 > N2 ? C2 : C1;
+  const iv_base<AC_MIN(N1, N2),M2C1> &OP2 = N1 > N2 ? static_cast<iv_base<AC_MIN(N1, N2),M2C1>>(op2) : static_cast<iv_base<AC_MIN(N1, N2),M2C1>>(op1);
 
-  iv_bitwise_and_nImpl<M2, N1, N2, Nr>::iv_bitwise_and_n(op1, op2, r);
+  iv_bitwise_and_n<M2>(op1, op2, r);
   if (OP2[M2 - 1] < 0)
     iv_copy<M1, M2>(OP1, r);
   else
-    iv_extend<M1, M2>(r, 0);
-  iv_extend<Nr, M1>(r, (r[M1 - 1] < 0) ? ~0 : 0);
+    iv_extend<M2>(r, 0);
+  iv_extend<M1>(r, (r[M1 - 1] < 0) ? ~0 : 0);
 }
 
-template <int N, int N1, int N2, int Nr> struct iv_bitwise_or_nImpl {
-  static inline void iv_bitwise_or_n(const iv_base<N1> &op1,
-                                     const iv_base<N2> &op2, iv_base<Nr> &r) {
+template <int N, int N1, bool C1, int N2, bool C2, int Nr, bool Cr>
+__FORCE_INLINE void iv_bitwise_or_n(const iv_base<N1,C1> &op1, const iv_base<N2,C2> &op2, iv_base<Nr,Cr> &r)
+  {
 #if defined(__clang__)
 #pragma clang loop unroll(full)
 #endif
     for (int i = 0; i < N; i++)
       r.set(i, op1[i] | op2[i]);
   }
-};
 
-template <int N1, int N2, int Nr> struct iv_bitwise_or_nImpl<1, N1, N2, Nr> {
-  static inline void iv_bitwise_or_n(const iv_base<N1> &op1,
-                                     const iv_base<N2> &op2, iv_base<Nr> &r) {
-    r.set(0, op1[0] | op2[0]);
-  }
-};
-template <int N1, int N2, int Nr> struct iv_bitwise_or_nImpl<2, N1, N2, Nr> {
-  static inline void iv_bitwise_or_n(const iv_base<N1> &op1,
-                                     const iv_base<N2> &op2, iv_base<Nr> &r) {
-    r.set(0, op1[0] | op2[0]);
-    r.set(1, op1[1] | op2[1]);
-  }
-};
 
-template <int N1, int N2, int Nr>
-__attribute__((always_inline)) inline void
-iv_bitwise_or(const iv_base<N1> &op1, const iv_base<N2> &op2, iv_base<Nr> &r) {
+
+template <int N1, bool C1, int N2, bool C2, int Nr, bool Cr>
+__FORCE_INLINE void iv_bitwise_or(const iv_base<N1,C1> &op1, const iv_base<N2,C2> &op2, iv_base<Nr,Cr> &r)
+{
   const int M1 = AC_MIN(AC_MAX(N1, N2), Nr);
   const int M2 = AC_MIN(AC_MIN(N1, N2), Nr);
-  const iv_base<M1> &OP1 =
-      N1 >= N2 ? static_cast<iv_base<M1>>(op1) : static_cast<iv_base<M1>>(op2);
-  const iv_base<M2> &OP2 =
-      N1 >= N2 ? static_cast<iv_base<M2>>(op2) : static_cast<iv_base<M2>>(op1);
+  const bool M1C1 = N1 >= N2 ? C1 : C2;
+  const iv_base<M1,M1C1> &OP1 = N1 >= N2 ? static_cast<iv_base<M1,M1C1>>(op1) : static_cast<iv_base<M1,M1C1>>(op2);
+  const bool M2C1 = N1 >= N2 ? C2 : C1;
+  const iv_base<M2,M2C1> &OP2 = N1 >= N2 ? static_cast<iv_base<M2,M2C1>>(op2) : static_cast<iv_base<M2,M2C1>>(op1);
 
-  iv_bitwise_or_nImpl<M2, N1, N2, Nr>::iv_bitwise_or_n(op1, op2, r);
+  iv_bitwise_or_n<M2>(op1, op2, r);
   if (OP2[M2 - 1] < 0)
-    iv_extend<M1, M2>(r, ~0);
+    iv_extend<M2>(r, ~0);
   else
     iv_copy<M1, M2>(OP1, r);
-  iv_extend<Nr, M1>(r, (r[M1 - 1] < 0) ? ~0 : 0);
+  iv_extend<M1>(r, (r[M1 - 1] < 0) ? ~0 : 0);
 }
 
-template <int N, int N1, int N2, int Nr> struct iv_bitwise_xor_nImpl {
-  static inline void iv_bitwise_xor_n(const iv_base<N1> &op1,
-                                      const iv_base<N2> &op2, iv_base<Nr> &r) {
+template <int N, int N1, bool C1, int N2, bool C2, int Nr, bool Cr>
+__FORCE_INLINE void iv_bitwise_xor_n(const iv_base<N1,C1> &op1, const iv_base<N2,C2> &op2, iv_base<Nr,Cr> &r)
+{
 #if defined(__clang__)
 #pragma clang loop unroll(full)
 #endif
-    for (int i = 0; i < N; i++)
+   for (int i = 0; i < N; i++)
       r.set(i, op1[i] ^ op2[i]);
-  }
-};
-template <int N1, int N2, int Nr> struct iv_bitwise_xor_nImpl<1, N1, N2, Nr> {
-  static inline void iv_bitwise_xor_n(const iv_base<N1> &op1,
-                                      const iv_base<N2> &op2, iv_base<Nr> &r) {
-    r.set(0, op1[0] ^ op2[0]);
-  }
-};
-template <int N1, int N2, int Nr> struct iv_bitwise_xor_nImpl<2, N1, N2, Nr> {
-  static inline void iv_bitwise_xor_n(const iv_base<N1> &op1,
-                                      const iv_base<N2> &op2, iv_base<Nr> &r) {
-    r.set(0, op1[0] ^ op2[0]);
-    r.set(1, op1[1] ^ op2[1]);
-  }
-};
-
-template <int N1, int N2, int Nr>
-__attribute__((always_inline)) inline void
-iv_bitwise_xor(const iv_base<N1> &op1, const iv_base<N2> &op2, iv_base<Nr> &r) {
-  const int M1 = AC_MIN(AC_MAX(N1, N2), Nr);
-  const int M2 = AC_MIN(AC_MIN(N1, N2), Nr);
-  const iv_base<AC_MAX(N1, N2)> &OP1 =
-      N1 >= N2 ? static_cast<iv_base<AC_MAX(N1, N2)>>(op1)
-               : static_cast<iv_base<AC_MAX(N1, N2)>>(op2);
-  const iv_base<AC_MIN(N1, N2)> &OP2 =
-      N1 >= N2 ? static_cast<iv_base<AC_MIN(N1, N2)>>(op2)
-               : static_cast<iv_base<AC_MIN(N1, N2)>>(op1);
-
-  iv_bitwise_xor_nImpl<M2, N1, N2, Nr>::iv_bitwise_xor_n(op1, op2, r);
-  if (OP2[M2 - 1] < 0)
-    iv_bitwise_complement_nImpl<M1, AC_MAX(N1, N2), Nr,
-                                M2>::iv_bitwise_complement_n(OP1, r);
-  else
-    iv_copy<M1, M2>(OP1, r);
-  iv_extend<Nr, M1>(r, (r[M1 - 1] < 0) ? ~0 : 0);
 }
 
-template <int N, int Nr>
-__attribute__((always_inline)) inline void
-iv_shift_l(const iv_base<N> &op1, unsigned op2, iv_base<Nr> &r) {
+
+template <int N1, bool C1, int N2, bool C2, int Nr, bool Cr>
+__FORCE_INLINE void iv_bitwise_xor(const iv_base<N1,C1> &op1, const iv_base<N2,C2> &op2, iv_base<Nr,Cr> &r) {
+  const int M1 = AC_MIN(AC_MAX(N1, N2), Nr);
+  const int M2 = AC_MIN(AC_MIN(N1, N2), Nr);
+  const bool M1C1 = N1 >= N2 ? C1 : C2;
+  const iv_base<AC_MAX(N1, N2),M1C1> &OP1 = N1 >= N2 ? static_cast<iv_base<AC_MAX(N1, N2),M1C1>>(op1) : static_cast<iv_base<AC_MAX(N1, N2),M1C1>>(op2);
+  const bool M2C1 = N1 >= N2 ? C2 : C1;
+  const iv_base<AC_MIN(N1, N2),M2C1> &OP2 = N1 >= N2 ? static_cast<iv_base<AC_MIN(N1, N2),M2C1>>(op2) : static_cast<iv_base<AC_MIN(N1, N2),M2C1>>(op1);
+
+  iv_bitwise_xor_n<M2>(op1, op2, r);
+  if (OP2[M2 - 1] < 0)
+    iv_bitwise_complement_n<M1,M2>(OP1, r);
+  else
+    iv_copy<M1, M2>(OP1, r);
+  iv_extend<M1>(r, (r[M1 - 1] < 0) ? ~0 : 0);
+}
+
+template <int N, bool C, int Nr, bool Cr>
+__FORCE_INLINE void iv_shift_l(const iv_base<N,C> &op1, unsigned op2, iv_base<Nr,Cr> &r)
+{
   AC_ASSERT(Nr <= N, "iv_shift_l, incorrect usage Nr > N");
   unsigned s31 = op2 & 31;
   unsigned ishift = (op2 >> 5) > Nr ? Nr : (op2 >> 5);
@@ -1500,9 +1294,9 @@ iv_shift_l(const iv_base<N> &op1, unsigned op2, iv_base<Nr> &r) {
   }
 }
 
-template <int N, int Nr>
-__attribute__((always_inline)) inline void
-iv_shift_r(const iv_base<N> &op1, unsigned op2, iv_base<Nr> &r) {
+template <int N, bool C, int Nr, bool Cr>
+__FORCE_INLINE void iv_shift_r(const iv_base<N,C> &op1, unsigned op2, iv_base<Nr,Cr> &r)
+{
   unsigned s31 = op2 & 31;
   unsigned ishift = (op2 >> 5) > N ? N : (op2 >> 5);
   int ext = op1[N - 1] < 0 ? ~0 : 0;
@@ -1525,56 +1319,31 @@ iv_shift_r(const iv_base<N> &op1, unsigned op2, iv_base<Nr> &r) {
   }
 }
 
-template <int N, int Nr, bool S>
-__attribute__((always_inline)) inline void
-iv_shift_l2(const iv_base<N> &op1, signed op2, iv_base<Nr> &r) {
+template <bool S, int N, bool C, int Nr, bool Cr>
+__FORCE_INLINE void iv_shift_l2(const iv_base<N,C> &op1, signed op2, iv_base<Nr,Cr> &r) {
   if (S && op2 < 0)
-    iv_shift_r<N, Nr>(op1, -op2, r);
+    iv_shift_r(op1, -op2, r);
   else
-    iv_shift_l<N, Nr>(op1, op2, r);
+    iv_shift_l(op1, op2, r);
 }
 
-template <>
-inline void iv_shift_l2<1, 1, false>(const iv_base<1> &op1, signed op2,
-                                     iv_base<1> &r) {
-  r.set(0, (op2 < 32) ? (op1[0] << op2) : 0);
-}
-template <>
-inline void iv_shift_l2<1, 1, true>(const iv_base<1> &op1, signed op2,
-                                    iv_base<1> &r) {
-  r.set(0, (op2 >= 0) ? (op2 < 32) ? (op1[0] << op2) : 0
-                      : (op2 > -32) ? (op1[0] >> -op2) : (op1[0] >> 31));
-}
 
-template <int N, int Nr, bool S>
-__attribute__((always_inline)) inline void
-iv_shift_r2(const iv_base<N> &op1, signed op2, iv_base<Nr> &r) {
+template <bool S, int N, bool C, int Nr, bool Cr>
+__FORCE_INLINE void iv_shift_r2(const iv_base<N,C> &op1, signed op2, iv_base<Nr,Cr> &r) {
   if (S && op2 < 0)
-    iv_shift_l<N, Nr>(op1, -op2, r);
+    iv_shift_l(op1, -op2, r);
   else
-    iv_shift_r<N, Nr>(op1, op2, r);
+    iv_shift_r(op1, op2, r);
 }
 
-template <>
-inline void iv_shift_r2<1, 1, false>(const iv_base<1> &op1, signed op2,
-                                     iv_base<1> &r) {
-  r.set(0, (op2 < 32) ? (op1[0] >> op2) : (op1[0] >> 31));
-}
-template <>
-inline void iv_shift_r2<1, 1, true>(const iv_base<1> &op1, signed op2,
-                                    iv_base<1> &r) {
-  r.set(0, (op2 >= 0) ? (op2 < 32) ? (op1[0] >> op2) : (op1[0] >> 31)
-                      : (op2 > -32) ? (op1[0] << -op2) : 0);
-}
-
-template <int N, int Nr, int B>
-__attribute__((always_inline)) inline void
-iv_const_shift_l(const iv_base<N> &op1, iv_base<Nr> &r) {
+template <int B, int N, bool C, int Nr, bool Cr>
+__FORCE_INLINE void iv_const_shift_l(const iv_base<N,C> &op1, iv_base<Nr,Cr> &r)
+{
   // B >= 0
   if (!B) {
     const int M1 = AC_MIN(N, Nr);
     iv_copy<M1, 0>(op1, r);
-    iv_extend<Nr, M1>(r, r[M1 - 1] < 0 ? -1 : 0);
+    iv_extend<M1>(r, r[M1 - 1] < 0 ? -1 : 0);
   } else {
     const unsigned s31 = B & 31;
     const int ishift = (((B >> 5) > Nr) ? Nr : (B >> 5));
@@ -1594,7 +1363,7 @@ iv_const_shift_l(const iv_base<N> &op1, iv_base<Nr> &r) {
       }
       if (Nr > M1) {
         r.set(M1, (signed)lw >> ((32 - s31) & 31)); // &31 is to quiet compilers
-        iv_extend<Nr, M1 + 1>(r, r[M1] < 0 ? ~0 : 0);
+        iv_extend<M1+1>(r, r[M1] < 0 ? ~0 : 0);
       }
     } else {
 #if defined(__clang__)
@@ -1602,26 +1371,20 @@ iv_const_shift_l(const iv_base<N> &op1, iv_base<Nr> &r) {
 #endif
       for (int i = ishift; i < M1; i++)
         r.set(i, op1[i - ishift]);
-      iv_extend<Nr, M1>(r, r[M1 - 1] < 0 ? -1 : 0);
+      iv_extend<M1>(r, r[M1 - 1] < 0 ? -1 : 0);
     }
   }
 }
-template <>
-inline void iv_const_shift_l<1, 1, 0>(const iv_base<1> &op1, iv_base<1> &r) {
-  r.set(0, op1[0]);
-}
-template <>
-inline void iv_const_shift_l<2, 1, 0>(const iv_base<2> &op1, iv_base<1> &r) {
-  r.set(0, op1[0]);
-}
 
-template <int N, int Nr, int B>
-__attribute__((always_inline)) inline void
-iv_const_shift_r(const iv_base<N> &op1, iv_base<Nr> &r) {
+
+
+template <int B, int N, bool C, int Nr, bool Cr>
+__FORCE_INLINE void
+iv_const_shift_r(const iv_base<N,C> &op1, iv_base<Nr,Cr> &r) {
   if (!B) {
     const int M1 = AC_MIN(N, Nr);
     iv_copy<M1, 0>(op1, r);
-    iv_extend<Nr, M1>(r, r[M1 - 1] < 0 ? ~0 : 0);
+    iv_extend<M1>(r, r[M1 - 1] < 0 ? ~0 : 0);
   } else {
     const unsigned s31 = B & 31;
     const int ishift = (((B >> 5) > N) ? N : (B >> 5));
@@ -1646,19 +1409,11 @@ iv_const_shift_r(const iv_base<N> &op1, iv_base<Nr> &r) {
     }
   }
 }
-template <>
-inline void iv_const_shift_r<1, 1, 0>(const iv_base<1> &op1, iv_base<1> &r) {
-  r.set(0, op1[0]);
-}
-template <>
-inline void iv_const_shift_r<2, 1, 0>(const iv_base<2> &op1, iv_base<1> &r) {
-  r.set(0, op1[0]);
-}
 
-template <int N>
-__attribute__((always_inline)) inline void
-iv_conv_from_fraction(const double d, iv_base<N> &r, bool *qb, bool *rbits,
-                      bool *o) {
+template <int N, bool C>
+__FORCE_INLINE void
+iv_conv_from_fraction(const double d, iv_base<N,C> &r, bool *qb, bool *rbits, bool *o)
+{
   bool b = d < 0;
   double d2 = b ? -d : d;
   double dfloor = mgc_floor(d2);
@@ -1679,14 +1434,14 @@ iv_conv_from_fraction(const double d, iv_base<N> &r, bool *qb, bool *rbits,
   *rbits = d2 != 0.0;
   *qb = (b && *rbits) ^ k;
   if (b && !*rbits && !*qb)
-    iv_uadd_carry<N>(r, true, r);
+    iv_uadd_carry(r, true, r);
   *o |= b ^ (r[N - 1] < 0);
 }
 
-template <int N>
-__attribute__((always_inline)) inline void
-iv_conv_from_fraction(const float d, iv_base<N> &r, bool *qb, bool *rbits,
-                      bool *o) {
+template <int N, bool C>
+__FORCE_INLINE void
+iv_conv_from_fraction(const float d, iv_base<N,C> &r, bool *qb, bool *rbits, bool *o)
+{
   bool b = d < 0;
   float d2 = b ? -d : d;
   float dfloor = mgc_floor(d2);
@@ -1707,12 +1462,12 @@ iv_conv_from_fraction(const float d, iv_base<N> &r, bool *qb, bool *rbits,
   *rbits = d2 != 0.0;
   *qb = (b && *rbits) ^ k;
   if (b && !*rbits && !*qb)
-    iv_uadd_carry<N>(r, true, r);
+    iv_uadd_carry(r, true, r);
   *o |= b ^ (r[N - 1] < 0);
 }
 
-template <ac_base_mode b, int N> struct to_strImpl {
-  static inline int to_str(iv_base<N> &v, int w, bool left_just, char *r) {
+template <ac_base_mode b, int N, bool C> struct to_strImpl {
+  static __FORCE_INLINE int to_str(iv_base<N,C> &v, int w, bool left_just, char *r) {
     const char digits[] = {'0', '1', '2', '3', '4', '5', '6', '7',
                            '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
     const unsigned char B =
@@ -1738,8 +1493,10 @@ template <ac_base_mode b, int N> struct to_strImpl {
     return (w + B - 1) / B;
   }
 };
-template <int N> struct to_strImpl<AC_DEC, N> {
-  static inline int to_str(iv_base<N> &v, int w, bool left_just, char *r) {
+template <int N, bool C> struct to_strImpl<AC_DEC, N,C>
+{
+  static __FORCE_INLINE int to_str(iv_base<N,C> &v, int w, bool left_just, char *r)
+  {
     int k = 0;
     int msw = (w - 1) >> 5;
     if (left_just) {
@@ -1794,9 +1551,9 @@ template <int N> struct to_strImpl<AC_DEC, N> {
     return k;
   }
 };
-template <int N>
-inline int to_string(iv_base<N> &v, int w, bool sign_mag, ac_base_mode base,
-                     bool left_just, char *r) {
+template <int N, bool C>
+__FORCE_INLINE int to_string(iv_base<N,C> &v, int w, bool sign_mag, ac_base_mode base, bool left_just, char *r)
+{
   int n = (w + 31) >> 5;
   bool neg = !sign_mag && v[n - 1] < 0;
   if (!left_just) {
@@ -1817,19 +1574,19 @@ inline int to_string(iv_base<N> &v, int w, bool sign_mag, ac_base_mode base,
     w += !sign_mag;
   }
   if (base == AC_DEC)
-    return to_strImpl<AC_DEC, N>::to_str(v, w, left_just, r);
+    return to_strImpl<AC_DEC,N,C>::to_str(v, w, left_just, r);
   else if (base == AC_HEX)
-    return to_strImpl<AC_HEX, N>::to_str(v, w, left_just, r);
+    return to_strImpl<AC_HEX,N,C>::to_str(v, w, left_just, r);
   else if (base == AC_OCT)
-    return to_strImpl<AC_OCT, N>::to_str(v, w, left_just, r);
+    return to_strImpl<AC_OCT,N,C>::to_str(v, w, left_just, r);
   else if (base == AC_BIN)
-    return to_strImpl<AC_BIN, N>::to_str(v, w, left_just, r);
+    return to_strImpl<AC_BIN,N,C>::to_str(v, w, left_just, r);
   return 0;
 }
 
-template <int N>
-__attribute__((always_inline)) inline unsigned
-iv_leading_bits_base(const iv_base<N> &op, bool bit, int POS) {
+template <int N, bool C>
+__FORCE_INLINE unsigned
+iv_leading_bits_base(const iv_base<N,C> &op, bool bit, int POS) {
   const unsigned char tab[] = {4, 3, 2, 2, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0};
   unsigned t = bit ? ~op[POS] : op[POS];
   unsigned cnt = 0;
@@ -1849,20 +1606,20 @@ iv_leading_bits_base(const iv_base<N> &op, bool bit, int POS) {
   return cnt;
 }
 
-template <int N>
-__attribute__((always_inline)) inline unsigned
-iv_leading_bits(const iv_base<N> &op, bool bit) {
+template <int N, bool C>
+__FORCE_INLINE unsigned
+iv_leading_bits(const iv_base<N,C> &op, bool bit) {
   int ext_sign = bit ? -1 : 0;
   int k;
   for (k = N - 1; k >= 0 && op[k] == ext_sign; k--) {
   }
-  return 32 * (N - 1 - k) + (k < 0 ? 0 : iv_leading_bits_base<N>(op, bit, k));
+  return 32 * (N - 1 - k) + (k < 0 ? 0 : iv_leading_bits_base(op, bit, k));
 }
 
 //////////////////////////////////////////////////////////////////////////////
 //  Integer Vector class: iv
 //////////////////////////////////////////////////////////////////////////////
-template <int N> class iv {
+template <int N, bool C> class iv {
 
 protected:
   class hex2doubleConverter {
@@ -1887,7 +1644,7 @@ protected:
     };
     template <size_t Index, int base, typename Int, size_t NN>
     struct getNumberImpl {
-      __attribute__((always_inline)) static constexpr inline Int
+      __FORCE_INLINE static constexpr Int
       getNumber(const char (&str)[NN], size_t begin, size_t end) {
         Int increment =
             (Index < begin || Index >= end) ? 0 : HhexDigit(str[Index]);
@@ -1899,7 +1656,7 @@ protected:
     };
     template <int base, typename Int, size_t NN>
     struct getNumberImpl<0, base, Int, NN> {
-      __attribute__((always_inline)) static constexpr inline Int
+      __FORCE_INLINE static constexpr Int
       getNumber(const char (&str)[NN], size_t begin, size_t end) {
         Int increment = (0 < begin || 0 >= end) ? 0 : HhexDigit(str[0]);
         return increment;
@@ -1956,7 +1713,7 @@ protected:
     }
 
     template <size_t NN>
-    __attribute__((always_inline)) static constexpr inline int
+    __FORCE_INLINE static constexpr int
     Hexponent(const char (&str)[NN], const size_t mantissa_end) {
       return mantissa_end == NN
                  ? 0
@@ -1973,14 +1730,14 @@ protected:
                                     str[HisSign(str[0]) + 1] == 'x');
     }
     template <size_t NN>
-    __attribute__((always_inline)) static constexpr inline unsigned long long
+    __FORCE_INLINE static constexpr unsigned long long
     HbeforePoint(const char (&str)[NN], const size_t point_pos) {
       return getNumberImpl<NN - 1, 16, unsigned long long, NN>::getNumber(
           str, HmantissaBegin(str), point_pos);
     }
 
     template <size_t NN>
-    __attribute__((always_inline)) static constexpr inline unsigned long long
+    __FORCE_INLINE static constexpr unsigned long long
     Hfraction(const char (&str)[NN], const size_t point_pos,
               const size_t mantissa_end) {
       return getNumberImpl<NN - 1, 16, unsigned long long, NN>::getNumber(
@@ -1988,7 +1745,7 @@ protected:
     }
 
     template <size_t NN>
-    __attribute__((always_inline)) static constexpr inline double
+    __FORCE_INLINE static constexpr double
     get0(const char (&str)[NN], const size_t mantissa_end,
          const size_t point_pos, const size_t exp) {
       //            printf("%d\n", mantissa_end);
@@ -2000,7 +1757,7 @@ protected:
                       exp - 4 * (mantissa_end - point_pos - 1)));
     }
     template <size_t NN>
-    __attribute__((always_inline)) static constexpr inline double
+    __FORCE_INLINE static constexpr double
     get1(const char (&str)[NN], const size_t mantissa_end) {
       return get0(str, mantissa_end, HpointPos(str, mantissa_end),
                   Hexponent(str, mantissa_end));
@@ -2008,195 +1765,227 @@ protected:
 
   public:
     template <size_t NN>
-    __attribute__((always_inline)) static constexpr inline double
+    __FORCE_INLINE static constexpr double
     get(const char (&str)[NN]) {
       return get1(str, HmantissaEnd(str));
     }
   };
-  iv_base<N> v;
+  iv_base<N,C> v;
 
 public:
-  template <int N2> friend class iv;
+  template <int N2, bool C2> friend class iv;
+  __FORCE_INLINE
   constexpr iv() {}
-  template <int N2> constexpr iv(const iv<N2> &b) {
+
+  template <int N2, bool C2>
+  __FORCE_INLINE
+  constexpr iv(const iv<N2,C2> &b) {
     const int M = AC_MIN(N, N2);
     iv_copy<M, 0>(b.v, v);
-    iv_extend<N, M>(v, (v[M - 1] < 0) ? ~0 : 0);
-  }
-  constexpr iv(Slong t) { iv_assign_int64<N>(v, t); }
-  constexpr iv(Ulong t) { iv_assign_uint64<N>(v, t); }
-  constexpr iv(int t) {
-    v.set(0, t);
-    iv_extend<N, 1>(v, (t < 0) ? ~0 : 0);
-  }
-  constexpr iv(unsigned int t) {
-    v.set(0, t);
-    iv_extend<N, 1>(v, 0);
-  }
-  constexpr iv(long t) {
-    if (long_w == 32) {
-      v.set(0, t);
-      iv_extend<N, 1>(v, (t < 0) ? ~0 : 0);
-    } else
-      iv_assign_int64<N>(v, t);
-  }
-  constexpr iv(unsigned long t) {
-    if (long_w == 32) {
-      v.set(0, t);
-      iv_extend<N, 1>(v, 0);
-    } else
-      iv_assign_uint64<N>(v, t);
-  }
-  constexpr iv(double d) {
-    double d2 = ldexpr32<-N>(d);
-    bool qb = false, rbits = false, o = false;
-    iv_conv_from_fraction<N>(d2, v, &qb, &rbits, &o);
-  }
-  constexpr iv(float d) {
-    float d2 = ldexpr32<-N>(d);
-    bool qb = false, rbits = false, o = false;
-    iv_conv_from_fraction<N>(d2, v, &qb, &rbits, &o);
+    iv_extend<M>(v, (v[M - 1] < 0) ? ~0 : 0);
   }
 
-  template <size_t NN> constexpr iv(const char (&str)[NN]) {
+  __FORCE_INLINE constexpr iv(Slong t) { iv_assign_int64(v, t); }
+
+  __FORCE_INLINE constexpr iv(Ulong t) { iv_assign_uint64(v, t); }
+
+  __FORCE_INLINE constexpr iv(int t)
+  {
+    v.set(0, t);
+    iv_extend<1>(v, (t < 0) ? ~0 : 0);
+  }
+
+  __FORCE_INLINE constexpr iv(unsigned int t)
+  {
+    v.set(0, t);
+    iv_extend<1>(v, 0);
+  }
+
+  __FORCE_INLINE constexpr iv(long t)
+  {
+    if (long_w == 32) {
+      v.set(0, t);
+      iv_extend<1>(v, (t < 0) ? ~0 : 0);
+    } else
+      iv_assign_int64(v, t);
+  }
+
+  __FORCE_INLINE constexpr iv(unsigned long t)
+  {
+    if (long_w == 32) {
+      v.set(0, t);
+      iv_extend<1>(v, 0);
+    } else
+      iv_assign_uint64(v, t);
+  }
+
+  __FORCE_INLINE constexpr iv(double d)
+  {
+    double d2 = ldexpr32<-N>(d);
+    bool qb = false, rbits = false, o = false;
+    iv_conv_from_fraction(d2, v, &qb, &rbits, &o);
+  }
+
+  __FORCE_INLINE constexpr iv(float d)
+  {
+    float d2 = ldexpr32<-N>(d);
+    bool qb = false, rbits = false, o = false;
+    iv_conv_from_fraction(d2, v, &qb, &rbits, &o);
+  }
+
+  template <size_t NN>
+  __FORCE_INLINE constexpr iv(const char (&str)[NN]) {
     *this = iv(hex2doubleConverter::get(str));
   }
 
   // Explicit conversion functions to C built-in types -------------
-  inline Slong to_int64() const { return v.to_int64(); }
-  inline Ulong to_uint64() const { return (Ulong)v.to_int64(); }
-  inline double to_double() const {
+  __FORCE_INLINE Slong to_int64() const { return v.to_int64(); }
+  __FORCE_INLINE Ulong to_uint64() const { return (Ulong)v.to_int64(); }
+  __FORCE_INLINE double to_double() const
+  {
     double a = v[N - 1];
 #if defined(__clang__)
 #pragma clang loop unroll(full)
 #endif
-    for (int i = N - 2; i >= 0; i--) {
+    for (int i = N - 2; i >= 0; i--)
+    {
       a *= (Ulong)1 << 32;
       a += (unsigned)v[i];
     }
     return a;
   }
-  inline float to_float() const {
+  __FORCE_INLINE float to_float() const
+  {
     float a = v[N - 1];
 #if defined(__clang__)
 #pragma clang loop unroll(full)
 #endif
-    for (int i = N - 2; i >= 0; i--) {
+    for (int i = N - 2; i >= 0; i--)
+    {
       a *= (Ulong)1 << 32;
       a += (unsigned)v[i];
     }
     return a;
   }
-  inline void conv_from_fraction(double d, bool *qb, bool *rbits, bool *o) {
-    iv_conv_from_fraction<N>(d, v, qb, rbits, o);
+  __FORCE_INLINE void conv_from_fraction(double d, bool *qb, bool *rbits, bool *o)
+  {
+    iv_conv_from_fraction(d, v, qb, rbits, o);
   }
-  inline void conv_from_fraction(float d, bool *qb, bool *rbits, bool *o) {
-    iv_conv_from_fraction<N>(d, v, qb, rbits, o);
+  __FORCE_INLINE void conv_from_fraction(float d, bool *qb, bool *rbits, bool *o)
+  {
+    iv_conv_from_fraction(d, v, qb, rbits, o);
   }
 
-  template <int N2, int Nr>
-  __attribute__((always_inline)) inline void mult(const iv<N2> &op2,
-                                                  iv<Nr> &r) const {
-    iv_mult<N, N2, Nr>(v, op2.v, r.v);
+  template <int N2, bool C2, int Nr, bool Cr>
+  __FORCE_INLINE void mult(const iv<N2,C2> &op2, iv<Nr,Cr> &r) const
+  {
+    iv_mult(v, op2.v, r.v);
   }
-  template <int N2, int Nr>
-  __attribute__((always_inline)) inline void add(const iv<N2> &op2,
-                                                 iv<Nr> &r) const {
-    iv_add<N, N2, Nr>(v, op2.v, r.v);
+  template <int N2, bool C2, int Nr, bool Cr>
+  __FORCE_INLINE void add(const iv<N2,C2> &op2, iv<Nr,Cr> &r) const
+  {
+    iv_add(v, op2.v, r.v);
   }
-  template <int N2, int Nr>
-  __attribute__((always_inline)) inline void sub(const iv<N2> &op2,
-                                                 iv<Nr> &r) const {
-    iv_sub<N, N2, Nr>(v, op2.v, r.v);
+  template <int N2, bool C2, int Nr, bool Cr>
+  __FORCE_INLINE void sub(const iv<N2,C2> &op2, iv<Nr,Cr> &r) const
+  {
+    iv_sub(v, op2.v, r.v);
   }
-  template <int Num_s, int N2, int Den_s, int Nr>
-  __attribute__((always_inline)) inline void div(const iv<N2> &op2,
-                                                 iv<Nr> &r) const {
-    iv_div<N, Num_s, N2, Den_s, Nr>(v, op2.v, r.v);
+  template <int Num_s, int Den_s, int N2, bool C2, int Nr, bool Cr>
+  __FORCE_INLINE void div(const iv<N2,C2> &op2, iv<Nr,Cr> &r) const
+  {
+    iv_div<Num_s,Den_s>(v, op2.v, r.v);
   }
-  template <int Num_s, int N2, int Den_s, int Nr>
-  __attribute__((always_inline)) inline void rem(const iv<N2> &op2,
-                                                 iv<Nr> &r) const {
-    iv_rem<N, Num_s, N2, Den_s, Nr>(v, op2.v, r.v);
+  template <int Num_s, int Den_s, int N2, bool C2, int Nr, bool Cr>
+  __FORCE_INLINE void rem(const iv<N2,C2> &op2, iv<Nr,Cr> &r) const
+  {
+    iv_rem<Num_s,Den_s>(v, op2.v, r.v);
   }
-  __attribute__((always_inline)) inline void increment() {
-    iv_uadd_carry<N>(v, true, v);
+  __FORCE_INLINE void increment()
+  {
+    iv_uadd_carry(v, true, v);
   }
-  __attribute__((always_inline)) inline void decrement() {
+  __FORCE_INLINE void decrement()
+  {
     iv_sub_int_borrow<N>(v, 0, true, v);
   }
-  template <int Nr>
-  __attribute__((always_inline)) inline void neg(iv<Nr> &r) const {
-    iv_neg<N, Nr>(v, r.v);
+  template <int Nr, bool Cr>
+  __FORCE_INLINE void neg(iv<Nr,Cr> &r) const
+  {
+    iv_neg(v, r.v);
   }
-  template <int Nr>
-  __attribute__((always_inline)) inline void shift_l(unsigned op2,
-                                                     iv<Nr> &r) const {
-    iv_shift_l<N, Nr>(v, op2, r.v);
+  template <int Nr, bool Cr>
+  __FORCE_INLINE void shift_l(unsigned op2, iv<Nr,Cr> &r) const
+  {
+    iv_shift_l(v, op2, r.v);
   }
-  template <int Nr>
-  __attribute__((always_inline)) inline void shift_l2(signed op2,
-                                                      iv<Nr> &r) const {
-    iv_shift_l2<N, Nr, true>(v, op2, r.v);
+  template <int Nr, bool Cr>
+  __FORCE_INLINE void shift_l2(signed op2, iv<Nr,Cr> &r) const
+  {
+    iv_shift_l2<true>(v, op2, r.v);
   }
-  template <int Nr>
-  __attribute__((always_inline)) inline void shift_r(unsigned op2,
-                                                     iv<Nr> &r) const {
-    iv_shift_r<N, Nr>(v, op2, r.v);
+  template <int Nr, bool Cr>
+  __FORCE_INLINE void shift_r(unsigned op2, iv<Nr,Cr> &r) const
+  {
+    iv_shift_r(v, op2, r.v);
   }
-  template <int Nr>
-  __attribute__((always_inline)) inline void shift_r2(signed op2,
-                                                      iv<Nr> &r) const {
-    iv_shift_r2<N, Nr, true>(v, op2, r.v);
+  template <int Nr, bool Cr>
+  __FORCE_INLINE void shift_r2(signed op2, iv<Nr,Cr> &r) const
+  {
+    iv_shift_r2<true>(v, op2, r.v);
   }
-  template <int Nr, int B>
-  __attribute__((always_inline)) inline void const_shift_l(iv<Nr> &r) const {
-    iv_const_shift_l<N, Nr, B>(v, r.v);
+  template <int B, int Nr, bool Cr>
+  __FORCE_INLINE void const_shift_l(iv<Nr,Cr> &r) const
+  {
+    iv_const_shift_l<B>(v, r.v);
   }
-  template <int Nr, int B>
-  __attribute__((always_inline)) inline void const_shift_r(iv<Nr> &r) const {
-    iv_const_shift_r<N, Nr, B>(v, r.v);
+  template <int B, int Nr, bool Cr>
+  __FORCE_INLINE void const_shift_r(iv<Nr,Cr> &r) const
+  {
+    iv_const_shift_r<B>(v, r.v);
   }
-  template <int Nr>
-  __attribute__((always_inline)) inline void
-  bitwise_complement(iv<Nr> &r) const {
-    iv_bitwise_complement<N, Nr>(v, r.v);
+  template <int Nr, bool Cr>
+  __FORCE_INLINE void bitwise_complement(iv<Nr,Cr> &r) const
+  {
+    iv_bitwise_complement(v, r.v);
   }
-  template <int N2, int Nr>
-  __attribute__((always_inline)) inline void bitwise_and(const iv<N2> &op2,
-                                                         iv<Nr> &r) const {
-    iv_bitwise_and<N, N2, Nr>(v, op2.v, r.v);
+  template <int N2, bool C2, int Nr, bool Cr>
+  __FORCE_INLINE void bitwise_and(const iv<N2,C2> &op2,iv<Nr,Cr> &r) const
+  {
+    iv_bitwise_and(v, op2.v, r.v);
   }
-  template <int N2, int Nr>
-  __attribute__((always_inline)) inline void bitwise_or(const iv<N2> &op2,
-                                                        iv<Nr> &r) const {
-    iv_bitwise_or<N, N2, Nr>(v, op2.v, r.v);
+  template <int N2, bool C2, int Nr, bool Cr>
+  __FORCE_INLINE void bitwise_or(const iv<N2,C2> &op2, iv<Nr,Cr> &r) const
+  {
+    iv_bitwise_or(v, op2.v, r.v);
   }
-  template <int N2, int Nr>
-  __attribute__((always_inline)) inline void bitwise_xor(const iv<N2> &op2,
-                                                         iv<Nr> &r) const {
-    iv_bitwise_xor<N, N2, Nr>(v, op2.v, r.v);
+  template <int N2, bool C2, int Nr, bool Cr>
+  __FORCE_INLINE void bitwise_xor(const iv<N2,C2> &op2, iv<Nr,Cr> &r) const
+  {
+    iv_bitwise_xor(v, op2.v, r.v);
   }
-  template <int N2>
-  __attribute__((always_inline)) inline bool equal(const iv<N2> &op2) const {
-    return iv_equal<N, N2>(v, op2.v);
+  template <int N2, bool C2>
+  __FORCE_INLINE bool equal(const iv<N2,C2> &op2) const
+  {
+    return iv_equal(v, op2.v);
   }
-  template <int N2>
-  __attribute__((always_inline)) inline bool
-  greater_than(const iv<N2> &op2) const {
-    return iv_compare<N, N2, true>(v, op2.v);
+  template <int N2, bool C2>
+  __FORCE_INLINE bool greater_than(const iv<N2,C2> &op2) const
+  {
+    return iv_compare<true>(v, op2.v);
   }
-  template <int N2>
-  __attribute__((always_inline)) inline bool
-  less_than(const iv<N2> &op2) const {
-    return iv_compare<N, N2, false>(v, op2.v);
+  template <int N2, bool C2>
+  __FORCE_INLINE bool less_than(const iv<N2,C2> &op2) const
+  {
+    return iv_compare<false>(v, op2.v);
   }
-  __attribute__((always_inline)) inline bool equal_zero() const {
-    return iv_equal_zero<N>(v);
+  __FORCE_INLINE bool equal_zero() const
+  {
+    return iv_equal_zero<0,N>(v);
   }
-  template <int N2>
-  __attribute__((always_inline)) inline void set_slc(unsigned lsb, int WS,
-                                                     const iv<N2> &op2) {
+  template <int N2, bool C2>
+  __FORCE_INLINE void set_slc(unsigned lsb, int WS, const iv<N2,C2> &op2)
+  {
     AC_ASSERT((31 + WS) / 32 == N2,
               "Bad usage: WS greater than length of slice");
     unsigned msb = lsb + WS - 1;
@@ -2235,65 +2024,117 @@ public:
       v.set(msb_v, v[msb_v] ^ ((v[msb_v] ^ m) & ~((all_ones << 1) << msb_b)));
     }
   }
-  unsigned leading_bits(bool bit) const { return iv_leading_bits<N>(v, bit); }
+
+  template <int N_2, bool C_2>
+  __FORCE_INLINE void set_slc2(unsigned lsb, int WS, const iv<N_2,C_2> &op2)
+  {
+    AC_ASSERT((31 + WS) / 32 <= N_2,
+              "Bad usage: WS greater than length of slice");
+    auto N2 = (31 + WS) / 32;
+    unsigned msb = lsb + WS - 1;
+    unsigned lsb_v = lsb >> 5;
+    unsigned lsb_b = lsb & 31;
+    unsigned msb_v = msb >> 5;
+    unsigned msb_b = msb & 31;
+    if (N2 == 1) {
+      if (msb_v == lsb_v)
+        v.set(lsb_v,
+              v[lsb_v] ^ ((v[lsb_v] ^ (op2.v[0] << lsb_b)) &
+                          ((WS == 32 ? ~0 : ((1u << WS) - 1)) << lsb_b)));
+      else {
+        v.set(lsb_v, v[lsb_v] ^ ((v[lsb_v] ^ (op2.v[0] << lsb_b)) &
+                                 (all_ones << lsb_b)));
+        unsigned m = (((unsigned)op2.v[0] >> 1) >> (31 - lsb_b));
+        v.set(msb_v, v[msb_v] ^ ((v[msb_v] ^ m) & ~((all_ones << 1) << msb_b)));
+      }
+    } else {
+      v.set(lsb_v, v[lsb_v] ^ ((v[lsb_v] ^ (op2.v[0] << lsb_b)) &
+                               (all_ones << lsb_b)));
+#if defined(__clang__)
+#pragma clang loop unroll(full)
+#endif
+      for (int i = 1; i < N2 - 1; i++)
+        v.set(lsb_v + i, (op2.v[i] << lsb_b) |
+                             (((unsigned)op2.v[i - 1] >> 1) >> (31 - lsb_b)));
+      unsigned t = (op2.v[N2 - 1] << lsb_b) |
+                   (((unsigned)op2.v[N2 - 2] >> 1) >> (31 - lsb_b));
+      unsigned m;
+      if (static_cast<int>(msb_v - lsb_v) == N2) {
+        v.set(msb_v - 1, t);
+        m = (((unsigned)op2.v[N2 - 1] >> 1) >> (31 - lsb_b));
+      } else
+        m = t;
+      v.set(msb_v, v[msb_v] ^ ((v[msb_v] ^ m) & ~((all_ones << 1) << msb_b)));
+    }
+  }
+  unsigned leading_bits(bool bit) const { return iv_leading_bits(v, bit); }
 };
 
-template <> inline Slong iv<1>::to_int64() const { return v.to_int64(); }
-template <> inline Ulong iv<1>::to_uint64() const {
-  return (Ulong)v.to_int64();
-}
+template <> __FORCE_INLINE Slong iv<1,true>::to_int64() const { return v.to_int64(); }
+template <> __FORCE_INLINE Ulong iv<1,true>::to_uint64() const {return (Ulong)v.to_int64();}
 
-template <> inline Slong iv<2>::to_int64() const { return v.to_int64(); }
-template <> inline Ulong iv<2>::to_uint64() const {
-  return (Ulong)v.to_int64();
-}
+template <> __FORCE_INLINE Slong iv<2,true>::to_int64() const { return v.to_int64(); }
+template <> __FORCE_INLINE Ulong iv<2,true>::to_uint64() const { return (Ulong)v.to_int64();}
 
 template <>
 template <>
-inline void iv<1>::set_slc(unsigned lsb, int WS, const iv<1> &op2) {
+__FORCE_INLINE void iv<1,true>::set_slc(unsigned lsb, int WS, const iv<1,true> &op2) {
   v.set(0, v[0] ^ ((v[0] ^ (op2.v[0] << lsb)) &
                    ((WS == 32 ? ~0u : ((1u << WS) - 1)) << lsb)));
 }
 template <>
 template <>
-inline void iv<2>::set_slc(unsigned lsb, int WS, const iv<1> &op2) {
+__FORCE_INLINE void iv<2,true>::set_slc(unsigned lsb, int WS, const iv<1,true> &op2) {
   Ulong l = to_uint64();
   Ulong l2 = op2.to_uint64();
   l ^= (l ^ (l2 << lsb)) & (((1ULL << WS) - 1) << lsb); // WS <= 32
-  *this = l;
+  *this = iv(l);
 }
 template <>
 template <>
-inline void iv<2>::set_slc(unsigned lsb, int WS, const iv<2> &op2) {
+__FORCE_INLINE void iv<2,true>::set_slc(unsigned lsb, int WS, const iv<2,true> &op2)
+{
   Ulong l = to_uint64();
   Ulong l2 = op2.to_uint64();
   l ^= (l ^ (l2 << lsb)) & ((WS == 64 ? ~0ULL : ((1ULL << WS) - 1)) << lsb);
-  *this = l;
+  *this = iv(l);
 }
 
 // add automatic conversion to Slong/Ulong depending on S and C
-template <int N, bool S, bool C> class iv_conv : public iv<N> {
-protected:
-  iv_conv() {}
-  template <class T> iv_conv(const T &t) : iv<N>(t) {}
+template <int N, bool S, bool C> class iv_conv : public iv<N,C>
+{
+   protected:
+      __FORCE_INLINE
+      iv_conv() {}
+      template <class T>
+      __FORCE_INLINE
+      iv_conv(const T &t) : iv<N,C>(t) {}
 };
 
-template <int N> class iv_conv<N, false, true> : public iv<N> {
+template <int N> class iv_conv<N, false, true> : public iv<N,true> {
 public:
-  operator Ulong() const { return iv<N>::to_uint64(); }
+  __FORCE_INLINE
+  operator Ulong() const { return iv<N,true>::to_uint64(); }
 
 protected:
+  __FORCE_INLINE
   iv_conv() {}
-  template <class T> iv_conv(const T &t) : iv<N>(t) {}
+  template <class T>
+  __FORCE_INLINE
+  iv_conv(const T &t) : iv<N,true>(t) {}
 };
 
-template <int N> class iv_conv<N, true, true> : public iv<N> {
+template <int N> class iv_conv<N, true, true> : public iv<N,true> {
 public:
-  operator Slong() const { return iv<N>::to_int64(); }
+  __FORCE_INLINE
+  operator Slong() const { return iv<N,true>::to_int64(); }
 
 protected:
+  __FORCE_INLINE
   iv_conv() {}
-  template <class T> iv_conv(const T &t) : iv<N>(t) {}
+  template <class T>
+  __FORCE_INLINE
+  iv_conv(const T &t) : iv<N,true>(t) {}
 };
 
 // Set default to promote to int as this is the case for almost all types
@@ -2345,37 +2186,37 @@ template <typename T> struct c_type_params {
   // will error out for T for which this template struct is not specialized
 };
 
-template <typename T> inline const char *c_type_name() { return "unknown"; }
-template <> inline const char *c_type_name<bool>() { return "bool"; }
-template <> inline const char *c_type_name<char>() { return "char"; }
-template <> inline const char *c_type_name<signed char>() {
+template <typename T> __FORCE_INLINE const char *c_type_name() { return "unknown"; }
+template <> __FORCE_INLINE const char *c_type_name<bool>() { return "bool"; }
+template <> __FORCE_INLINE const char *c_type_name<char>() { return "char"; }
+template <> __FORCE_INLINE const char *c_type_name<signed char>() {
   return "signed char";
 }
-template <> inline const char *c_type_name<unsigned char>() {
+template <> __FORCE_INLINE const char *c_type_name<unsigned char>() {
   return "unsigned char";
 }
-template <> inline const char *c_type_name<signed short>() {
+template <> __FORCE_INLINE const char *c_type_name<signed short>() {
   return "signed short";
 }
-template <> inline const char *c_type_name<unsigned short>() {
+template <> __FORCE_INLINE const char *c_type_name<unsigned short>() {
   return "unsigned short";
 }
-template <> inline const char *c_type_name<int>() { return "int"; }
-template <> inline const char *c_type_name<unsigned>() { return "unsigned"; }
-template <> inline const char *c_type_name<signed long>() {
+template <> __FORCE_INLINE const char *c_type_name<int>() { return "int"; }
+template <> __FORCE_INLINE const char *c_type_name<unsigned>() { return "unsigned"; }
+template <> __FORCE_INLINE const char *c_type_name<signed long>() {
   return "signed long";
 }
-template <> inline const char *c_type_name<unsigned long>() {
+template <> __FORCE_INLINE const char *c_type_name<unsigned long>() {
   return "unsigned long";
 }
-template <> inline const char *c_type_name<signed long long>() {
+template <> __FORCE_INLINE const char *c_type_name<signed long long>() {
   return "signed long long";
 }
-template <> inline const char *c_type_name<unsigned long long>() {
+template <> __FORCE_INLINE const char *c_type_name<unsigned long long>() {
   return "unsigned long long";
 }
-template <> inline const char *c_type_name<float>() { return "float"; }
-template <> inline const char *c_type_name<double>() { return "double"; }
+template <> __FORCE_INLINE const char *c_type_name<float>() { return "float"; }
+template <> __FORCE_INLINE const char *c_type_name<double>() { return "double"; }
 
 template <typename T> struct c_type;
 
@@ -2407,7 +2248,7 @@ template <typename T> struct c_type {
     typedef typename rt_c_type_T<T2>::template op1<T>::div div;
     typedef typename rt_c_type_T<T2>::template op1<T>::div2 div2;
   };
-  inline static std::string type_name() {
+  __FORCE_INLINE static std::string type_name() {
     std::string r = c_type_name<T>();
     return r;
   }
@@ -2525,6 +2366,7 @@ enum ac_q_mode {
 };
 enum ac_o_mode { AC_WRAP, AC_SAT, AC_SAT_ZERO, AC_SAT_SYM };
 template <int W2, int I2, bool S2, ac_q_mode Q2, ac_o_mode O2> class ac_fixed;
+template<int W1, bool S1> struct range_ref;
 
 //////////////////////////////////////////////////////////////////////////////
 //  Arbitrary-Length Integer: ac_int
@@ -2538,16 +2380,17 @@ class ac_int : public ac_private::iv_conv<(W + 31 + !S) / 32, S, W <= 64>
 {
   enum { N = (W + 31 + !S) / 32 };
   typedef ac_private::iv_conv<N, S, W <= 64> ConvBase;
-  typedef ac_private::iv<N> Base;
+  typedef ac_private::iv<N,W <= 64> Base;
 
-  inline void bit_adjust() { Base::v.template bit_adjust<W, S>(); }
+  __FORCE_INLINE void bit_adjust() { Base::v.template bit_adjust<W, S>(); }
 
-  inline bool is_neg() const { return S && Base::v[N - 1] < 0; }
+  __FORCE_INLINE bool is_neg() const { return S && Base::v[N - 1] < 0; }
 
   // returns false if number is denormal
   template <int WE, bool SE>
-  __attribute__((always_inline)) inline bool
-  normalize_private(ac_int<WE, SE> &exp, bool reserved_min_exp = false) {
+  __FORCE_INLINE bool
+  normalize_private(ac_int<WE, SE> &exp, bool reserved_min_exp = false)
+  {
     int expt = exp;
     int lshift = leading_sign();
     bool fully_normalized = true;
@@ -2648,33 +2491,39 @@ public:
   template <int W2, bool S2> friend class ac_int;
   template <int W2, int I2, bool S2, ac_q_mode Q2, ac_o_mode O2>
   friend class ac_fixed;
+
+  __FORCE_INLINE
   ac_int() {
 #if !defined(__BAMBU__) && defined(AC_DEFAULT_IN_RANGE)
     bit_adjust();
 #endif
   }
-  template <int W2, bool S2> inline ac_int(const ac_int<W2, S2> &op) {
+
+  template <int W2, bool S2>
+  __FORCE_INLINE
+  ac_int(const ac_int<W2, S2> &op) {
     Base::operator=(op);
     bit_adjust();
   }
 
-  inline ac_int(bool b) : ConvBase(b) { bit_adjust(); }
-  inline ac_int(char b) : ConvBase(b) { bit_adjust(); }
-  inline ac_int(signed char b) : ConvBase(b) { bit_adjust(); }
-  inline ac_int(unsigned char b) : ConvBase(b) { bit_adjust(); }
-  inline ac_int(signed short b) : ConvBase(b) { bit_adjust(); }
-  inline ac_int(unsigned short b) : ConvBase(b) { bit_adjust(); }
-  inline ac_int(signed int b) : ConvBase(b) { bit_adjust(); }
-  inline ac_int(unsigned int b) : ConvBase(b) { bit_adjust(); }
-  inline ac_int(signed long b) : ConvBase(b) { bit_adjust(); }
-  inline ac_int(unsigned long b) : ConvBase(b) { bit_adjust(); }
-  inline ac_int(Slong b) : ConvBase(b) { bit_adjust(); }
-  inline ac_int(Ulong b) : ConvBase(b) { bit_adjust(); }
-  inline ac_int(float d) : ConvBase(d) { bit_adjust(); }
-  inline ac_int(double d) : ConvBase(d) { bit_adjust(); }
-  template <size_t N> inline ac_int(const char (&str)[N]) : ConvBase(str) {
-    bit_adjust();
-  }
+  __FORCE_INLINE ac_int(bool b) : ConvBase(b) { bit_adjust(); }
+  __FORCE_INLINE ac_int(char b) : ConvBase(b) { bit_adjust(); }
+  __FORCE_INLINE ac_int(signed char b) : ConvBase(b) { bit_adjust(); }
+  __FORCE_INLINE ac_int(unsigned char b) : ConvBase(b) { bit_adjust(); }
+  __FORCE_INLINE ac_int(signed short b) : ConvBase(b) { bit_adjust(); }
+  __FORCE_INLINE ac_int(unsigned short b) : ConvBase(b) { bit_adjust(); }
+  __FORCE_INLINE ac_int(signed int b) : ConvBase(b) { bit_adjust(); }
+  __FORCE_INLINE ac_int(unsigned int b) : ConvBase(b) { bit_adjust(); }
+  __FORCE_INLINE ac_int(signed long b) : ConvBase(b) { bit_adjust(); }
+  __FORCE_INLINE ac_int(unsigned long b) : ConvBase(b) { bit_adjust(); }
+  __FORCE_INLINE ac_int(Slong b) : ConvBase(b) { bit_adjust(); }
+  __FORCE_INLINE ac_int(Ulong b) : ConvBase(b) { bit_adjust(); }
+  __FORCE_INLINE ac_int(float d) : ConvBase(d) { bit_adjust(); }
+  __FORCE_INLINE ac_int(double d) : ConvBase(d) { bit_adjust(); }
+
+  template <size_t N>
+  __FORCE_INLINE
+  ac_int(const char (&str)[N]) : ConvBase(str) {bit_adjust();}
 
 #if (defined(_MSC_VER) && !defined(__EDG__))
 #pragma warning(push)
@@ -2691,7 +2540,8 @@ public:
 #pragma clang diagnostic ignored "-Wuninitialized"
 #endif
   template <ac_special_val V>
-  __attribute__((always_inline)) inline ac_int &set_val() {
+  __FORCE_INLINE
+  ac_int &set_val() {
     if (V == AC_VAL_DC) {
       ac_int r;
       Base::operator=(r);
@@ -2703,7 +2553,7 @@ public:
         Base::v.set(N - 1, (~0u << rem));
       } else if (V == AC_VAL_QUANTUM)
         Base::v.set(0, 1);
-    } else if (AC_VAL_MAX) {
+    } else if (V==AC_VAL_MAX) {
       Base::operator=(-1);
       const unsigned int rem = (32 - W - (unsigned)!S) & 31;
       Base::v.set(N - 1, ((unsigned)(-1) >> 1) >> rem);
@@ -2723,24 +2573,27 @@ public:
 #endif
 
   // Explicit conversion functions to C built-in types -------------
-  inline int to_int() const { return Base::v[0]; }
-  inline unsigned to_uint() const { return Base::v[0]; }
-  inline long to_long() const {
+  __FORCE_INLINE int to_int() const { return Base::v[0]; }
+  __FORCE_INLINE unsigned to_uint() const { return Base::v[0]; }
+  __FORCE_INLINE long to_long() const
+  {
     return ac_private::long_w == 32 ? (long)Base::v[0] : (long)Base::to_int64();
   }
-  inline unsigned long to_ulong() const {
+  __FORCE_INLINE unsigned long to_ulong() const
+    {
     return ac_private::long_w == 32 ? (unsigned long)Base::v[0]
                                     : (unsigned long)Base::to_uint64();
   }
-  inline Slong to_int64() const { return Base::to_int64(); }
-  inline Ulong to_uint64() const { return Base::to_uint64(); }
-  inline double to_double() const { return Base::to_double(); }
-  inline float to_float() const { return Base::to_float(); }
+  __FORCE_INLINE Slong to_int64() const { return Base::to_int64(); }
+  __FORCE_INLINE Ulong to_uint64() const { return Base::to_uint64(); }
+  __FORCE_INLINE double to_double() const { return Base::to_double(); }
+  __FORCE_INLINE float to_float() const { return Base::to_float(); }
 
-  inline int length() const { return W; }
+  __FORCE_INLINE int length() const { return W; }
 
-  inline std::string to_string(ac_base_mode base_rep,
-                               bool sign_mag = false) const {
+  __FORCE_INLINE std::string to_string(ac_base_mode base_rep,
+                               bool sign_mag = false) const
+  {
     // base_rep == AC_DEC => sign_mag == don't care (always print decimal in
     // sign magnitude)
     char r[N * 32 + 4] = {0};
@@ -2769,7 +2622,8 @@ public:
     }
     return std::string(r);
   }
-  inline static std::string type_name() {
+  __FORCE_INLINE
+  static std::string type_name() {
     const char *tf[] = {",false>", ",true>"};
     std::string r = "ac_int<";
     r += ac_int<32, true>(W).to_string(AC_DEC);
@@ -2779,7 +2633,7 @@ public:
 
   // Arithmetic : Binary ----------------------------------------------------
   template <int W2, bool S2>
-  __attribute__((always_inline)) inline typename rt<W2, S2>::mult
+  __FORCE_INLINE typename rt<W2, S2>::mult
   operator*(const ac_int<W2, S2> &op2) {
     bit_adjust();
     ac_int<W2, S2> op2_local = op2;
@@ -2790,13 +2644,13 @@ public:
     return r;
   }
   template <int W2, bool S2>
-  __attribute__((always_inline)) inline const typename rt<W2, S2>::mult
+  __FORCE_INLINE const typename rt<W2, S2>::mult
   operator*(const ac_int<W2, S2> &op2) const {
     ac_int<W, S> op1_local = *this;
     return op1_local * op2;
   }
   template <int W2, bool S2>
-  __attribute__((always_inline)) inline typename rt<W2, S2>::plus
+  __FORCE_INLINE typename rt<W2, S2>::plus
   operator+(const ac_int<W2, S2> &op2) {
     bit_adjust();
     ac_int<W2, S2> op2_local = op2;
@@ -2807,13 +2661,13 @@ public:
     return r;
   }
   template <int W2, bool S2>
-  __attribute__((always_inline)) inline const typename rt<W2, S2>::plus
+  __FORCE_INLINE const typename rt<W2, S2>::plus
   operator+(const ac_int<W2, S2> &op2) const {
     ac_int<W, S> op1_local = *this;
     return op1_local + op2;
   }
   template <int W2, bool S2>
-  __attribute__((always_inline)) inline typename rt<W2, S2>::minus
+  __FORCE_INLINE typename rt<W2, S2>::minus
   operator-(const ac_int<W2, S2> &op2) {
     bit_adjust();
     ac_int<W2, S2> op2_local = op2;
@@ -2824,7 +2678,7 @@ public:
     return r;
   }
   template <int W2, bool S2>
-  __attribute__((always_inline)) inline const typename rt<W2, S2>::minus
+  __FORCE_INLINE const typename rt<W2, S2>::minus
   operator-(const ac_int<W2, S2> &op2) const {
     ac_int<W, S> op1_local = *this;
     return op1_local - op2;
@@ -2836,7 +2690,7 @@ public:
 #pragma GCC diagnostic ignored "-Wenum-compare"
 #endif
   template <int W2, bool S2>
-  __attribute__((always_inline)) inline typename rt<W2, S2>::div
+  __FORCE_INLINE typename rt<W2, S2>::div
   operator/(const ac_int<W2, S2> &op2) {
     bit_adjust();
     ac_int<W2, S2> op2_local = op2;
@@ -2850,18 +2704,18 @@ public:
       den_s = S2 + (N2minus > N2),
       Nr = rt<W2, S2>::div::N
     };
-    Base::template div<num_s, N2, den_s, Nr>(op2_local, r);
+    Base::template div<num_s, den_s>(op2_local, r);
     r.bit_adjust();
     return r;
   }
   template <int W2, bool S2>
-  __attribute__((always_inline)) inline const typename rt<W2, S2>::div
+  __FORCE_INLINE const typename rt<W2, S2>::div
   operator/(const ac_int<W2, S2> &op2) const {
     ac_int<W, S> op1_local = *this;
     return op1_local / op2;
   }
   template <int W2, bool S2>
-  __attribute__((always_inline)) inline typename rt<W2, S2>::mod
+  __FORCE_INLINE typename rt<W2, S2>::mod
   operator%(const ac_int<W2, S2> &op2) {
     bit_adjust();
     ac_int<W2, S2> op2_local = op2;
@@ -2875,12 +2729,12 @@ public:
       den_s = S2 + (N2minus > N2),
       Nr = rt<W2, S2>::mod::N
     };
-    Base::template rem<num_s, N2, den_s, Nr>(op2_local, r);
+    Base::template rem<num_s, den_s>(op2_local, r);
     r.bit_adjust();
     return r;
   }
   template <int W2, bool S2>
-  __attribute__((always_inline)) inline const typename rt<W2, S2>::mod
+  __FORCE_INLINE const typename rt<W2, S2>::mod
   operator%(const ac_int<W2, S2> &op2) const {
     ac_int<W, S> op1_local = *this;
     return op1_local % op2;
@@ -2892,7 +2746,7 @@ public:
 #endif
   // Arithmetic assign  ------------------------------------------------------
   template <int W2, bool S2>
-  __attribute__((always_inline)) inline ac_int &
+  __FORCE_INLINE ac_int &
   operator*=(const ac_int<W2, S2> &op2) {
     bit_adjust();
     ac_int<W2, S2> op2_local = op2;
@@ -2904,7 +2758,7 @@ public:
     return *this;
   }
   template <int W2, bool S2>
-  __attribute__((always_inline)) inline ac_int &
+  __FORCE_INLINE ac_int &
   operator+=(const ac_int<W2, S2> &op2) {
     bit_adjust();
     ac_int<W2, S2> op2_local = op2;
@@ -2916,7 +2770,7 @@ public:
     return *this;
   }
   template <int W2, bool S2>
-  __attribute__((always_inline)) inline ac_int &
+  __FORCE_INLINE ac_int &
   operator-=(const ac_int<W2, S2> &op2) {
     bit_adjust();
     ac_int<W2, S2> op2_local = op2;
@@ -2934,7 +2788,7 @@ public:
 #pragma GCC diagnostic ignored "-Wenum-compare"
 #endif
   template <int W2, bool S2>
-  __attribute__((always_inline)) inline ac_int &
+  __FORCE_INLINE ac_int &
   operator/=(const ac_int<W2, S2> &op2) {
     bit_adjust();
     ac_int<W2, S2> op2_local = op2;
@@ -2948,13 +2802,13 @@ public:
       Nr = N
     };
     Base r;
-    Base::template div<num_s, N2, den_s, Nr>(op2_local, r);
+    Base::template div<num_s, den_s>(op2_local, r);
     Base::operator=(r);
     bit_adjust();
     return *this;
   }
   template <int W2, bool S2>
-  __attribute__((always_inline)) inline ac_int &
+  __FORCE_INLINE ac_int &
   operator%=(const ac_int<W2, S2> &op2) {
     bit_adjust();
     ac_int<W2, S2> op2_local = op2;
@@ -2968,7 +2822,7 @@ public:
       Nr = N
     };
     Base r;
-    Base::template rem<num_s, N2, den_s, Nr>(op2_local, r);
+    Base::template rem<num_s, den_s>(op2_local, r);
     Base::operator=(r);
     bit_adjust();
     return *this;
@@ -2979,25 +2833,25 @@ public:
 #pragma GCC diagnostic pop
 #endif
   // Arithmetic prefix increment, decrement ----------------------------------
-  __attribute__((always_inline)) inline ac_int &operator++() {
+  __FORCE_INLINE ac_int &operator++() {
     Base::increment();
     bit_adjust();
     return *this;
   }
-  __attribute__((always_inline)) inline ac_int &operator--() {
+  __FORCE_INLINE ac_int &operator--() {
     Base::decrement();
     bit_adjust();
     return *this;
   }
   // Arithmetic postfix increment, decrement ---------------------------------
-  __attribute__((always_inline)) inline const ac_int operator++(int) {
+  __FORCE_INLINE const ac_int operator++(int) {
     bit_adjust();
     ac_int t = *this;
     Base::increment();
     t.bit_adjust();
     return t;
   }
-  __attribute__((always_inline)) inline const ac_int operator--(int) {
+  __FORCE_INLINE const ac_int operator--(int) {
     bit_adjust();
     ac_int t = *this;
     Base::decrement();
@@ -3005,65 +2859,65 @@ public:
     return t;
   }
   // Arithmetic Unary --------------------------------------------------------
-  __attribute__((always_inline)) inline ac_int operator+() {
+  __FORCE_INLINE ac_int operator+() {
     bit_adjust();
     return *this;
   }
-  __attribute__((always_inline)) inline const ac_int operator+() const {
+  __FORCE_INLINE const ac_int operator+() const {
     ac_int<W, S> op1_local = *this;
     return op1_local.operator+();
   }
-  __attribute__((always_inline)) inline typename rt_unary::neg operator-() {
+  __FORCE_INLINE typename rt_unary::neg operator-() {
     bit_adjust();
     typename rt_unary::neg r;
     Base::neg(r);
     r.bit_adjust();
     return r;
   }
-  __attribute__((always_inline)) inline const typename rt_unary::neg
+  __FORCE_INLINE const typename rt_unary::neg
   operator-() const {
     ac_int<W, S> op1_local = *this;
     return -op1_local;
   }
   // ! ------------------------------------------------------------------------
-  __attribute__((always_inline)) inline bool operator!() {
+  __FORCE_INLINE bool operator!() {
     bit_adjust();
     return Base::equal_zero();
   }
-  __attribute__((always_inline)) inline bool operator!() const {
+  __FORCE_INLINE bool operator!() const {
     ac_int<W, S> op1_local = *this;
     return !op1_local;
   }
 
   // Bitwise (arithmetic) unary: complement  -----------------------------
-  __attribute__((always_inline)) inline ac_int<W + !S, true> operator~() {
+  __FORCE_INLINE ac_int<W + !S, true> operator~() {
     bit_adjust();
     ac_int<W + !S, true> r;
     Base::bitwise_complement(r);
     r.bit_adjust();
     return r;
   }
-  __attribute__((always_inline)) inline const ac_int<W + !S, true>
+  __FORCE_INLINE const ac_int<W + !S, true>
   operator~() const {
     ac_int<W, S> op1_local = *this;
     return ~op1_local;
   }
   // Bitwise (non-arithmetic) bit_complement  -----------------------------
-  __attribute__((always_inline)) inline ac_int<W, false> bit_complement() {
+  __FORCE_INLINE ac_int<W, false> bit_complement() {
     bit_adjust();
     ac_int<W, false> r;
     Base::bitwise_complement(r);
     r.bit_adjust();
     return r;
   }
-  __attribute__((always_inline)) inline const ac_int<W, false>
+  __FORCE_INLINE const ac_int<W, false>
   bit_complement() const {
     ac_int<W, S> op1_local = *this;
     return op1_local.bit_complement();
   }
   // Bitwise (arithmetic): and, or, xor ----------------------------------
   template <int W2, bool S2>
-  __attribute__((always_inline)) inline typename rt<W2, S2>::logic
+  __FORCE_INLINE typename rt<W2, S2>::logic
   operator&(const ac_int<W2, S2> &op2) {
     bit_adjust();
     ac_int<W2, S2> op2_local = op2;
@@ -3074,13 +2928,13 @@ public:
     return r;
   }
   template <int W2, bool S2>
-  __attribute__((always_inline)) inline const typename rt<W2, S2>::logic
+  __FORCE_INLINE const typename rt<W2, S2>::logic
   operator&(const ac_int<W2, S2> &op2) const {
     ac_int<W, S> op1_local = *this;
     return op1_local & op2;
   }
   template <int W2, bool S2>
-  __attribute__((always_inline)) inline typename rt<W2, S2>::logic
+  __FORCE_INLINE typename rt<W2, S2>::logic
   operator|(const ac_int<W2, S2> &op2) {
     bit_adjust();
     ac_int<W2, S2> op2_local = op2;
@@ -3091,13 +2945,13 @@ public:
     return r;
   }
   template <int W2, bool S2>
-  __attribute__((always_inline)) inline const typename rt<W2, S2>::logic
+  __FORCE_INLINE const typename rt<W2, S2>::logic
   operator|(const ac_int<W2, S2> &op2) const {
     ac_int<W, S> op1_local = *this;
     return op1_local | op2;
   }
   template <int W2, bool S2>
-  __attribute__((always_inline)) inline typename rt<W2, S2>::logic
+  __FORCE_INLINE typename rt<W2, S2>::logic
   operator^(const ac_int<W2, S2> &op2) {
     bit_adjust();
     ac_int<W2, S2> op2_local = op2;
@@ -3108,14 +2962,14 @@ public:
     return r;
   }
   template <int W2, bool S2>
-  __attribute__((always_inline)) inline const typename rt<W2, S2>::logic
+  __FORCE_INLINE const typename rt<W2, S2>::logic
   operator^(const ac_int<W2, S2> &op2) const {
     ac_int<W, S> op1_local = *this;
     return op1_local ^ op2;
   }
   // Bitwise assign (not arithmetic): and, or, xor ----------------------------
   template <int W2, bool S2>
-  __attribute__((always_inline)) inline ac_int &
+  __FORCE_INLINE ac_int &
   operator&=(const ac_int<W2, S2> &op2) {
     bit_adjust();
     ac_int<W2, S2> op2_local = op2;
@@ -3127,7 +2981,7 @@ public:
     return *this;
   }
   template <int W2, bool S2>
-  __attribute__((always_inline)) inline ac_int &
+  __FORCE_INLINE ac_int &
   operator|=(const ac_int<W2, S2> &op2) {
     bit_adjust();
     ac_int<W2, S2> op2_local = op2;
@@ -3139,7 +2993,7 @@ public:
     return *this;
   }
   template <int W2, bool S2>
-  __attribute__((always_inline)) inline ac_int &
+  __FORCE_INLINE ac_int &
   operator^=(const ac_int<W2, S2> &op2) {
     bit_adjust();
     ac_int<W2, S2> op2_local = op2;
@@ -3152,7 +3006,7 @@ public:
   }
   // Shift (result constrained by left operand) -------------------------------
   template <int W2>
-  __attribute__((always_inline)) inline ac_int
+  __FORCE_INLINE ac_int
   operator<<(const ac_int<W2, true> &op2) {
     bit_adjust();
     ac_int<W2, true> op2_local = op2;
@@ -3163,13 +3017,13 @@ public:
     return r;
   }
   template <int W2>
-  __attribute__((always_inline)) inline const ac_int
+  __FORCE_INLINE const ac_int
   operator<<(const ac_int<W2, true> &op2) const {
     ac_int<W, S> op1_local = *this;
     return op1_local << op2;
   }
   template <int W2>
-  __attribute__((always_inline)) inline ac_int
+  __FORCE_INLINE ac_int
   operator<<(const ac_int<W2, false> &op2) {
     bit_adjust();
     ac_int<W2, false> op2_local = op2;
@@ -3180,13 +3034,13 @@ public:
     return r;
   }
   template <int W2>
-  __attribute__((always_inline)) inline const ac_int
+  __FORCE_INLINE const ac_int
   operator<<(const ac_int<W2, false> &op2) const {
     ac_int<W, S> op1_local = *this;
     return op1_local << op2;
   }
   template <int W2>
-  __attribute__((always_inline)) inline ac_int
+  __FORCE_INLINE ac_int
   operator>>(const ac_int<W2, true> &op2) {
     bit_adjust();
     ac_int<W2, true> op2_local = op2;
@@ -3197,13 +3051,13 @@ public:
     return r;
   }
   template <int W2>
-  __attribute__((always_inline)) inline const ac_int
+  __FORCE_INLINE const ac_int
   operator>>(const ac_int<W2, true> &op2) const {
     ac_int<W, S> op1_local = *this;
     return op1_local >> op2;
   }
   template <int W2>
-  __attribute__((always_inline)) inline ac_int
+  __FORCE_INLINE ac_int
   operator>>(const ac_int<W2, false> &op2) {
     bit_adjust();
     ac_int<W2, false> op2_local = op2;
@@ -3214,7 +3068,7 @@ public:
     return r;
   }
   template <int W2>
-  __attribute__((always_inline)) inline const ac_int
+  __FORCE_INLINE const ac_int
   operator>>(const ac_int<W2, false> &op2) const {
     ac_int<W, S> op1_local = *this;
     return op1_local >> op2;
@@ -3222,7 +3076,7 @@ public:
 
   // Shift assign ------------------------------------------------------------
   template <int W2>
-  __attribute__((always_inline)) inline ac_int &
+  __FORCE_INLINE ac_int &
   operator<<=(const ac_int<W2, true> &op2) {
     bit_adjust();
     ac_int<W2, true> op2_local = op2;
@@ -3234,7 +3088,7 @@ public:
     return *this;
   }
   template <int W2>
-  __attribute__((always_inline)) inline ac_int &
+  __FORCE_INLINE ac_int &
   operator<<=(const ac_int<W2, false> &op2) {
     bit_adjust();
     ac_int<W2, false> op2_local = op2;
@@ -3246,7 +3100,7 @@ public:
     return *this;
   }
   template <int W2>
-  __attribute__((always_inline)) inline ac_int &
+  __FORCE_INLINE ac_int &
   operator>>=(const ac_int<W2, true> &op2) {
     bit_adjust();
     ac_int<W2, true> op2_local = op2;
@@ -3258,7 +3112,7 @@ public:
     return *this;
   }
   template <int W2>
-  __attribute__((always_inline)) inline ac_int &
+  __FORCE_INLINE ac_int &
   operator>>=(const ac_int<W2, false> &op2) {
     bit_adjust();
     ac_int<W2, false> op2_local = op2;
@@ -3271,7 +3125,7 @@ public:
   }
   // Relational ---------------------------------------------------------------
   template <int W2, bool S2>
-  __attribute__((always_inline)) inline bool
+  __FORCE_INLINE bool
   operator==(const ac_int<W2, S2> &op2) {
     bit_adjust();
     ac_int<W2, S2> op2_local = op2;
@@ -3279,13 +3133,13 @@ public:
     return Base::equal(op2_local);
   }
   template <int W2, bool S2>
-  __attribute__((always_inline)) inline bool
+  __FORCE_INLINE bool
   operator==(const ac_int<W2, S2> &op2) const {
     ac_int<W, S> op1_local = *this;
     return op1_local == op2;
   }
   template <int W2, bool S2>
-  __attribute__((always_inline)) inline bool
+  __FORCE_INLINE bool
   operator!=(const ac_int<W2, S2> &op2) {
     bit_adjust();
     ac_int<W2, S2> op2_local = op2;
@@ -3293,13 +3147,13 @@ public:
     return !Base::equal(op2_local);
   }
   template <int W2, bool S2>
-  __attribute__((always_inline)) inline bool
+  __FORCE_INLINE bool
   operator!=(const ac_int<W2, S2> &op2) const {
     ac_int<W, S> op1_local = *this;
     return op1_local != op2;
   }
   template <int W2, bool S2>
-  __attribute__((always_inline)) inline bool
+  __FORCE_INLINE bool
   operator<(const ac_int<W2, S2> &op2) {
     bit_adjust();
     ac_int<W2, S2> op2_local = op2;
@@ -3307,13 +3161,13 @@ public:
     return Base::less_than(op2_local);
   }
   template <int W2, bool S2>
-  __attribute__((always_inline)) inline bool
+  __FORCE_INLINE bool
   operator<(const ac_int<W2, S2> &op2) const {
     ac_int<W, S> op1_local = *this;
     return op1_local < op2;
   }
   template <int W2, bool S2>
-  __attribute__((always_inline)) inline bool
+  __FORCE_INLINE bool
   operator>=(const ac_int<W2, S2> &op2) {
     bit_adjust();
     ac_int<W2, S2> op2_local = op2;
@@ -3321,13 +3175,13 @@ public:
     return !Base::less_than(op2_local);
   }
   template <int W2, bool S2>
-  __attribute__((always_inline)) inline bool
+  __FORCE_INLINE bool
   operator>=(const ac_int<W2, S2> &op2) const {
     ac_int<W, S> op1_local = *this;
     return op1_local >= op2;
   }
   template <int W2, bool S2>
-  __attribute__((always_inline)) inline bool
+  __FORCE_INLINE bool
   operator>(const ac_int<W2, S2> &op2) {
     bit_adjust();
     ac_int<W2, S2> op2_local = op2;
@@ -3335,13 +3189,13 @@ public:
     return Base::greater_than(op2);
   }
   template <int W2, bool S2>
-  __attribute__((always_inline)) inline bool
+  __FORCE_INLINE bool
   operator>(const ac_int<W2, S2> &op2) const {
     ac_int<W, S> op1_local = *this;
     return op1_local > op2;
   }
   template <int W2, bool S2>
-  __attribute__((always_inline)) inline bool
+  __FORCE_INLINE bool
   operator<=(const ac_int<W2, S2> &op2) {
     bit_adjust();
     ac_int<W2, S2> op2_local = op2;
@@ -3349,60 +3203,17 @@ public:
     return !Base::greater_than(op2_local);
   }
   template <int W2, bool S2>
-  __attribute__((always_inline)) inline bool
-  operator<=(const ac_int<W2, S2> &op2) const {
+  __FORCE_INLINE
+  bool operator<=(const ac_int<W2, S2> &op2) const
+  {
     ac_int<W, S> op1_local = *this;
     return op1_local <= op2;
   }
 
-  struct range_ref {
-    ac_int &ref;
-    int low;
-    int high;
-    range_ref(ac_int &_ref, int _high, int _low)
-        : ref(_ref), low(_low), high(_high) {}
-
-    template <int W2, bool S2>
-    const range_ref &operator=(const ac_int<W2, S2> &op) const {
-      ref.set_slc(high, low, op);
-      return *this;
-    }
-    template <int W2, bool S2> operator const ac_int<W2, S2>() const {
-      const ac_int<W, S> r = ref.slc(high, low);
-      return r;
-    }
-    operator char() const { return ref.slc(high, low).to_int(); }
-    operator signed char() const { return ref.slc(high, low).to_int(); }
-    operator unsigned char() const { return ref.slc(high, low).to_uint(); }
-    operator signed short() const { return ref.slc(high, low).to_int(); }
-    operator unsigned short() const { return ref.slc(high, low).to_uint(); }
-    operator signed int() const { return ref.slc(high, low).to_int(); }
-    operator unsigned int() const { return ref.slc(high, low).to_uint(); }
-    operator signed long() const { return ref.slc(high, low).to_long(); }
-    operator unsigned long() const { return ref.slc(high, low).to_ulong(); }
-    operator Slong() const { return ref.slc(high, low).to_int64(); }
-    operator Ulong() const { return ref.slc(high, low).to_uint64(); }
-
-    template <class RRF>
-    __attribute__((always_inline)) inline const range_ref &
-    operator=(const RRF &b) const {
-      return operator=(b.operator const ac_int<W, S>());
-    }
-    template <int W2, int I2, bool S2, ac_q_mode Q2, ac_o_mode O2>
-    __attribute__((always_inline)) inline const range_ref &
-    operator=(const ac_fixed<W2, I2, S2, Q2, O2> &b) const {
-      return operator=(b.to_ac_int());
-    }
-    __attribute__((always_inline)) inline const range_ref &
-    operator=(const range_ref &b) const {
-      return operator=(b.operator const ac_int<W, S>());
-    }
-  };
-
   // Bit and Slice Select -----------------------------------------------------
   template <int WS, int WX, bool SX>
-  __attribute__((always_inline)) inline ac_int<WS, S>
-  slc(const ac_int<WX, SX> &index) const {
+  __FORCE_INLINE ac_int<WS, S> slc(const ac_int<WX, SX> &index) const
+  {
     using ac_intX = ac_int<WX, SX>;
     ac_int<WS, S> r;
     AC_ASSERT(index >= ac_intX(0),
@@ -3412,17 +3223,22 @@ public:
     r.bit_adjust();
     return r;
   }
-  __attribute__((always_inline)) inline ac_int<W, S> operator()(int Hi,
-                                                                int Lo) const {
+  __FORCE_INLINE
+  ac_int<W, S> operator()(int Hi,
+                          int Lo) const
+  {
     return slc(Hi, Lo);
   }
 
-  __attribute__((always_inline)) inline range_ref operator()(int Hi, int Lo) {
-    return range_ref(*this, Hi, Lo);
+  __FORCE_INLINE
+  range_ref<W, S> operator()(int Hi, int Lo)
+  {
+    return range_ref<W, S>(*this, Hi, Lo);
   }
   template <int W1, int W2, bool S1, bool S2>
-  __attribute__((always_inline)) inline ac_int<W, S>
-  operator()(const ac_int<W1, S1> &_Hi, const ac_int<W1, S2> &_Lo) const {
+  __FORCE_INLINE
+  ac_int<W, S> operator()(const ac_int<W1, S1> &_Hi, const ac_int<W1, S2> &_Lo) const
+  {
     int Hi = _Hi.to_int();
     int Lo = _Lo.to_int();
     AC_ASSERT(Lo >= 0, "Attempting to read slc with negative indices");
@@ -3430,30 +3246,37 @@ public:
     return operator()(Hi, Lo);
   }
   template <int W1, int W2, bool S1, bool S2>
-  __attribute__((always_inline)) inline range_ref
-  operator()(const ac_int<W1, S1> &_Hi, const ac_int<W1, S2> &_Lo) {
+  __FORCE_INLINE
+  range_ref<W, S> operator()(const ac_int<W1, S1> &_Hi, const ac_int<W1, S2> &_Lo)
+  {
     int Hi = _Hi.to_int();
     int Lo = _Lo.to_int();
     AC_ASSERT(Lo >= 0, "Attempting to read slc with negative indices");
     AC_ASSERT(Hi >= 0, "Attempting to read slc with negative indices");
-    return range_ref(*this, Hi, Lo);
+    return range_ref<W, S>(*this, Hi, Lo);
   }
 
-  __attribute__((always_inline)) inline ac_int<W, S> range(int Hi,
-                                                           int Lo) const {
+  __FORCE_INLINE
+  ac_int<W, S> range(int Hi,
+                     int Lo) const
+  {
     return operator()(Hi, Lo);
   }
   template <int W1, int W2, bool S1, bool S2>
-  __attribute__((always_inline)) inline ac_int<W, S>
-  range(const ac_int<W1, S1> &_Hi, const ac_int<W1, S2> &_Lo) const {
+  __FORCE_INLINE
+  ac_int<W, S> range(const ac_int<W1, S1> &_Hi, const ac_int<W1, S2> &_Lo) const
+  {
     return operator()(_Hi, _Lo);
   }
-  __attribute__((always_inline)) inline range_ref range(int Hi, int Lo) {
-    return range_ref(*this, Hi, Lo);
+  __FORCE_INLINE
+  range_ref<W, S> range(int Hi, int Lo)
+  {
+    return range_ref<W, S>(*this, Hi, Lo);
   }
 
   template <int WS>
-  __attribute__((always_inline)) inline ac_int<WS, S> slc(signed index) const {
+  __FORCE_INLINE ac_int<WS, S> slc(signed index) const
+  {
     ac_int<WS, S> r;
     AC_ASSERT(index >= 0, "Attempting to read slc with negative indices");
     unsigned uindex = index & ((unsigned)~0 >> 1);
@@ -3462,28 +3285,30 @@ public:
     return r;
   }
   template <int WS>
-  __attribute__((always_inline)) inline ac_int<WS, S>
-  slc(unsigned uindex) const {
+  __FORCE_INLINE ac_int<WS, S> slc(unsigned uindex) const
+  {
     ac_int<WS, S> r;
     Base::shift_r(uindex, r);
     r.bit_adjust();
     return r;
   }
-  __attribute__((always_inline)) inline ac_int<W, S> slc(int Hi, int Lo) const {
+  __FORCE_INLINE ac_int<W, S> slc(int Hi, int Lo) const
+  {
     AC_ASSERT(Lo >= 0, "Attempting to read slc with negative indices");
     AC_ASSERT(Hi >= 0, "Attempting to read slc with negative indices");
     AC_ASSERT(Hi >= Lo,
               "Most significant bit greater than the least significant bit");
     AC_ASSERT(W > Hi, "Out of range selection");
-    ac_int<W, S> r;
-    Base::shift_l(W - 1 - Hi, r);
+    ac_int<W, false> r(*this);
+    r = r << ac_int<W, false>(W - 1 - Hi);
     r.bit_adjust();
-    return r >> (Lo + W - 1 - Hi);
+    return r >> ac_int<W, false>(Lo + W - 1 - Hi);
   }
 
   template <int W2, bool S2, int WX, bool SX>
-  __attribute__((always_inline)) inline ac_int &
-  set_slc(const ac_int<WX, SX> lsb, const ac_int<W2, S2> &slc) {
+  __FORCE_INLINE
+  ac_int& set_slc(const ac_int<WX, SX> lsb, const ac_int<W2, S2> &slc)
+  {
     AC_ASSERT(lsb.to_int() + W2 <= W && lsb.to_int() >= 0,
               "Out of bounds set_slc");
     ac_int<WX - SX, false> ulsb = lsb;
@@ -3492,8 +3317,9 @@ public:
     return *this;
   }
   template <int W2, bool S2>
-  __attribute__((always_inline)) inline ac_int &
-  set_slc(signed lsb, const ac_int<W2, S2> &slc) {
+  __FORCE_INLINE
+  ac_int& set_slc(signed lsb, const ac_int<W2, S2> &slc)
+  {
     AC_ASSERT(lsb + W2 <= W && lsb >= 0, "Out of bounds set_slc");
     unsigned ulsb = lsb & ((unsigned)~0 >> 1);
     Base::set_slc(ulsb, W2, (ac_int<W2, true>)slc);
@@ -3501,18 +3327,20 @@ public:
     return *this;
   }
   template <int W2, bool S2>
-  __attribute__((always_inline)) inline ac_int &
-  set_slc(unsigned ulsb, const ac_int<W2, S2> &slc) {
+  __FORCE_INLINE
+  ac_int& set_slc(unsigned ulsb, const ac_int<W2, S2> &slc)
+  {
     AC_ASSERT(ulsb + W2 <= W, "Out of bounds set_slc");
     Base::set_slc(ulsb, W2, (ac_int<W2, true>)slc);
     bit_adjust(); // in case sign bit was assigned
     return *this;
   }
   template <int W2, bool S2>
-  __attribute__((always_inline)) inline ac_int &
-  set_slc(int umsb, int ulsb, const ac_int<W2, S2> &slc) {
-    AC_ASSERT((ulsb + umsb + 1) <= W, "Out of bounds set_slc");
-    Base::set_slc(ulsb, umsb + 1 - ulsb, (ac_int<W, false>)slc);
+  __FORCE_INLINE
+  ac_int& set_slc(int umsb, int ulsb, const ac_int<W2, S2> &slc)
+  {
+    AC_ASSERT((umsb + 1) <= W, "Out of bounds set_slc");
+    Base::set_slc2(ulsb, umsb + 1 - ulsb, (ac_int<W2, true>)slc);
     bit_adjust(); // in case sign bit was assigned
     return *this;
   }
@@ -3522,16 +3350,23 @@ public:
     unsigned d_index;
 
   public:
-    ac_bitref(ac_int *bv, unsigned index = 0) : d_bv(*bv), d_index(index) {}
-    operator bool() const {
+    __FORCE_INLINE ac_bitref(ac_int *bv, unsigned index = 0) : d_bv(*bv), d_index(index) {}
+    __FORCE_INLINE
+    operator bool() const
+    {
       return (d_index < W) ? (d_bv.v[d_index >> 5] >> (d_index & 31) & 1) : 0;
     }
 
-    template <int W2, bool S2> operator ac_int<W2, S2>() const {
+    template <int W2, bool S2>
+    __FORCE_INLINE
+    operator ac_int<W2, S2>() const
+    {
       return operator bool();
     }
 
-    __attribute__((always_inline)) inline ac_bitref operator=(int val) {
+    __FORCE_INLINE
+    ac_bitref operator=(int val)
+    {
       // lsb of int (val&1) is written to bit
       if (d_index < W) {
         d_bv.v.set(d_index >> 5,
@@ -3543,22 +3378,28 @@ public:
       return *this;
     }
     template <int W2, bool S2>
-    __attribute__((always_inline)) inline ac_bitref
-    operator=(const ac_int<W2, S2> &val) {
+    __FORCE_INLINE
+    ac_bitref operator=(const ac_int<W2, S2> &val)
+    {
       return operator=(val.to_int());
     }
-    __attribute__((always_inline)) inline ac_bitref
-    operator=(const ac_bitref &val) {
+    __FORCE_INLINE
+    ac_bitref operator=(const ac_bitref &val)
+    {
       return operator=((int)(bool)val);
     }
   };
 
-  __attribute__((always_inline)) ac_bitref operator[](unsigned int uindex) {
+  __FORCE_INLINE
+  ac_bitref operator[](unsigned int uindex)
+  {
     AC_ASSERT(uindex < W, "Attempting to read bit beyond MSB");
     ac_bitref bvh(this, uindex);
     return bvh;
   }
-  __attribute__((always_inline)) ac_bitref operator[](int index) {
+  __FORCE_INLINE
+  ac_bitref operator[](int index)
+  {
     AC_ASSERT(index >= 0, "Attempting to read bit with negative index");
     AC_ASSERT(index < W, "Attempting to read bit beyond MSB");
     unsigned uindex = index & ((unsigned)~0 >> 1);
@@ -3566,28 +3407,33 @@ public:
     return bvh;
   }
   template <int W2, bool S2>
-  __attribute__((always_inline)) ac_bitref
-  operator[](const ac_int<W2, S2> &index) {
+  __FORCE_INLINE
+  ac_bitref operator[](const ac_int<W2, S2> &index)
+  {
     AC_ASSERT(index >= 0, "Attempting to read bit with negative index");
     AC_ASSERT(index < W, "Attempting to read bit beyond MSB");
     ac_int<W2 - S2, false> uindex = index;
     ac_bitref bvh(this, uindex.to_uint());
     return bvh;
   }
-  __attribute__((always_inline)) constexpr bool
-  operator[](unsigned int uindex) const {
+  __FORCE_INLINE
+  constexpr bool operator[](unsigned int uindex) const
+  {
     AC_ASSERT(uindex < W, "Attempting to read bit beyond MSB");
     return (uindex < W) ? (Base::v[uindex >> 5] >> (uindex & 31) & 1) : 0;
   }
-  __attribute__((always_inline)) constexpr bool operator[](int index) const {
+  __FORCE_INLINE
+  constexpr bool operator[](int index) const
+  {
     AC_ASSERT(index >= 0, "Attempting to read bit with negative index");
     AC_ASSERT(index < W, "Attempting to read bit beyond MSB");
     unsigned uindex = index & ((unsigned)~0 >> 1);
     return (uindex < W) ? (Base::v[uindex >> 5] >> (uindex & 31) & 1) : 0;
   }
   template <int W2, bool S2>
-  __attribute__((always_inline)) constexpr bool
-  operator[](const ac_int<W2, S2> &index) const {
+  __FORCE_INLINE
+  constexpr bool operator[](const ac_int<W2, S2> &index) const
+  {
     AC_ASSERT(index >= 0, "Attempting to read bit with negative index");
     AC_ASSERT(index < W, "Attempting to read bit beyond MSB");
     ac_int<W2 - S2, false> uindex = index;
@@ -3599,13 +3445,15 @@ public:
         return Base::leading_bits(bit) - (32*N - W);
     }
 #endif
-  __attribute__((always_inline)) inline typename rt_unary::leading_sign
+  __FORCE_INLINE
+  typename rt_unary::leading_sign
   leading_sign() const {
     unsigned ls =
         Base::leading_bits(S & (Base::v[N - 1] < 0)) - (32 * N - W) - S;
     return ls;
   }
-  __attribute__((always_inline)) inline typename rt_unary::leading_sign
+  __FORCE_INLINE
+  typename rt_unary::leading_sign
   leading_sign(bool &all_sign) const {
     unsigned ls =
         Base::leading_bits(S & (Base::v[N - 1] < 0)) - (32 * N - W) - S;
@@ -3614,23 +3462,28 @@ public:
   }
   // returns false if number is denormal
   template <int WE, bool SE>
-  __attribute__((always_inline)) inline bool normalize(ac_int<WE, SE> &exp) {
+  __FORCE_INLINE
+  bool normalize(ac_int<WE, SE> &exp) {
     return normalize_private(exp);
   }
   // returns false if number is denormal, minimum exponent is reserved (usually
   // for encoding special values/errors)
   template <int WE, bool SE>
-  __attribute__((always_inline)) inline bool
+  __FORCE_INLINE
+  bool
   normalize_RME(ac_int<WE, SE> &exp) {
     return normalize_private(exp, true);
   }
-  __attribute__((always_inline)) inline bool and_reduce() const {
+  __FORCE_INLINE
+  bool and_reduce() const {
     return ac_private::iv_equal_ones_to<W, N>(Base::v);
   }
-  __attribute__((always_inline)) inline bool or_reduce() const {
+  __FORCE_INLINE
+  bool or_reduce() const {
     return !Base::equal_zero();
   }
-  __attribute__((always_inline)) inline bool xor_reduce() const {
+  __FORCE_INLINE
+  bool xor_reduce() const {
     unsigned r = Base::v[N - 1];
     if (S) {
       const unsigned rem = (32 - W) & 31;
@@ -3658,7 +3511,8 @@ public:
     return r & 1;
   }
 
-  __attribute__((always_inline)) inline void bit_fill_hex(const char *str) {
+  __FORCE_INLINE
+  void bit_fill_hex(const char *str) {
     // Zero Pads if str is too short, throws ms bits away if str is too long
     // Asserts if anything other than 0-9a-fA-F is encountered
     ac_int<W, S> res = 0;
@@ -3683,7 +3537,8 @@ public:
   }
 
   template <int Na>
-  __attribute__((always_inline)) inline void bit_fill(const int (&ivec)[Na],
+  __FORCE_INLINE
+  void bit_fill(const int (&ivec)[Na],
                                                       bool bigendian = true) {
     // bit_fill from integer vector
     //   if W > N*32, missing most significant bits are zeroed
@@ -3701,6 +3556,79 @@ public:
     *this = res;
   }
 };
+
+  template<int W1, bool S1>
+  struct range_ref
+  {
+        ac_int<W1,S1> &ref;
+        int low;
+        int high;
+        __FORCE_INLINE range_ref(ac_int<W1,S1> &_ref, int _high, int _low)
+           : ref(_ref), low(_low), high(_high)
+        {
+           AC_ASSERT(_high < W1, "Out of bounds range_ref");
+           AC_ASSERT(_low < W1, "Out of bounds range_ref");
+           AC_ASSERT(_low <= _high, "low and high inverted in range_ref");
+        }
+
+        template <int W2, bool S2>
+        __FORCE_INLINE const range_ref & operator=(const ac_int<W2, S2> &op) const {
+           ref.set_slc(high, low, op);
+           return *this;
+        }
+        template <int W2, bool S2>
+        __FORCE_INLINE operator ac_int<W2, S2>() const {
+           const ac_int<W1, false> r = ref.slc(high, low);
+           return r;
+        }
+        template <int W2, int I2, bool S2, ac_q_mode Q2, ac_o_mode O2>
+        __FORCE_INLINE const range_ref & operator=(const ac_fixed<W2, I2, S2, Q2, O2> &b) const {
+                 return operator=(b.to_ac_int());
+        }
+        template <int W2, bool S2>
+        __FORCE_INLINE const range_ref & operator=(const range_ref<W2,S2> &b) const {
+           const ac_int<W1, false> r = b.ref.slc(b.high, b.low);
+           return operator=(r);
+        }
+        __FORCE_INLINE int to_int() const
+        {
+           const ac_int<W1, false> r = ref.slc(high, low);
+           return r.to_int();
+        }
+        __FORCE_INLINE unsigned to_uint() const
+        {
+           const ac_int<W1, false> r = ref.slc(high, low);
+           return r.to_uint();
+        }
+        __FORCE_INLINE long to_long() const
+        {
+           const ac_int<W1, false> r = ref.slc(high, low);
+           return r.to_long();
+        }
+        __FORCE_INLINE unsigned long to_ulong() const
+        {
+           const ac_int<W1, false> r = ref.slc(high, low);
+           return r.to_ulong();
+        }
+        __FORCE_INLINE Slong to_int64() const
+        {
+           const ac_int<W1, false> r = ref.slc(high, low);
+           return r.to_int64();
+        }
+        __FORCE_INLINE Ulong to_uint64() const
+        {
+           const ac_int<W1, false> r = ref.slc(high, low);
+           return r.to_uint64();
+        }
+        __FORCE_INLINE double to_double() const
+        {
+           const ac_int<W1, false> r = ref.slc(high, low);
+           return r.to_double();
+        }
+
+        __FORCE_INLINE int length() const { return W1; }
+
+  };
 
 namespace ac {
 template <typename T, typename T2> struct rt_2T {
@@ -3768,90 +3696,90 @@ template <typename T> struct rt_ac_int_T<c_type<T>> {
 
 // Specializations for constructors on integers that bypass bit adjusting
 //  and are therefore more efficient
-template <> inline ac_int<1, true>::ac_int(bool b) { v.set(0, b ? -1 : 0); }
+template <> __FORCE_INLINE ac_int<1, true>::ac_int(bool b) { v.set(0, b ? -1 : 0); }
 
-template <> inline ac_int<1, false>::ac_int(bool b) { v.set(0, b); }
-template <> inline ac_int<1, false>::ac_int(signed char b) { v.set(0, b & 1); }
-template <> inline ac_int<1, false>::ac_int(unsigned char b) {
+template <> __FORCE_INLINE ac_int<1, false>::ac_int(bool b) { v.set(0, b); }
+template <> __FORCE_INLINE ac_int<1, false>::ac_int(signed char b) { v.set(0, b & 1); }
+template <> __FORCE_INLINE ac_int<1, false>::ac_int(unsigned char b) {
   v.set(0, b & 1);
 }
-template <> inline ac_int<1, false>::ac_int(signed short b) { v.set(0, b & 1); }
-template <> inline ac_int<1, false>::ac_int(unsigned short b) {
+template <> __FORCE_INLINE ac_int<1, false>::ac_int(signed short b) { v.set(0, b & 1); }
+template <> __FORCE_INLINE ac_int<1, false>::ac_int(unsigned short b) {
   v.set(0, b & 1);
 }
-template <> inline ac_int<1, false>::ac_int(signed int b) { v.set(0, b & 1); }
-template <> inline ac_int<1, false>::ac_int(unsigned int b) { v.set(0, b & 1); }
-template <> inline ac_int<1, false>::ac_int(signed long b) { v.set(0, b & 1); }
-template <> inline ac_int<1, false>::ac_int(unsigned long b) {
+template <> __FORCE_INLINE ac_int<1, false>::ac_int(signed int b) { v.set(0, b & 1); }
+template <> __FORCE_INLINE ac_int<1, false>::ac_int(unsigned int b) { v.set(0, b & 1); }
+template <> __FORCE_INLINE ac_int<1, false>::ac_int(signed long b) { v.set(0, b & 1); }
+template <> __FORCE_INLINE ac_int<1, false>::ac_int(unsigned long b) {
   v.set(0, b & 1);
 }
-template <> inline ac_int<1, false>::ac_int(Ulong b) { v.set(0, (int)b & 1); }
-template <> inline ac_int<1, false>::ac_int(Slong b) { v.set(0, (int)b & 1); }
+template <> __FORCE_INLINE ac_int<1, false>::ac_int(Ulong b) { v.set(0, (int)b & 1); }
+template <> __FORCE_INLINE ac_int<1, false>::ac_int(Slong b) { v.set(0, (int)b & 1); }
 
-template <> inline ac_int<8, true>::ac_int(bool b) { v.set(0, b); }
-template <> inline ac_int<8, false>::ac_int(bool b) { v.set(0, b); }
-template <> inline ac_int<8, true>::ac_int(signed char b) { v.set(0, b); }
-template <> inline ac_int<8, false>::ac_int(unsigned char b) { v.set(0, b); }
-template <> inline ac_int<8, true>::ac_int(unsigned char b) {
+template <> __FORCE_INLINE ac_int<8, true>::ac_int(bool b) { v.set(0, b); }
+template <> __FORCE_INLINE ac_int<8, false>::ac_int(bool b) { v.set(0, b); }
+template <> __FORCE_INLINE ac_int<8, true>::ac_int(signed char b) { v.set(0, b); }
+template <> __FORCE_INLINE ac_int<8, false>::ac_int(unsigned char b) { v.set(0, b); }
+template <> __FORCE_INLINE ac_int<8, true>::ac_int(unsigned char b) {
   v.set(0, (signed char)b);
 }
-template <> inline ac_int<8, false>::ac_int(signed char b) {
+template <> __FORCE_INLINE ac_int<8, false>::ac_int(signed char b) {
   v.set(0, (unsigned char)b);
 }
 
-template <> inline ac_int<16, true>::ac_int(bool b) { v.set(0, b); }
-template <> inline ac_int<16, false>::ac_int(bool b) { v.set(0, b); }
-template <> inline ac_int<16, true>::ac_int(signed char b) { v.set(0, b); }
-template <> inline ac_int<16, false>::ac_int(unsigned char b) { v.set(0, b); }
-template <> inline ac_int<16, true>::ac_int(unsigned char b) { v.set(0, b); }
-template <> inline ac_int<16, false>::ac_int(signed char b) {
+template <> __FORCE_INLINE ac_int<16, true>::ac_int(bool b) { v.set(0, b); }
+template <> __FORCE_INLINE ac_int<16, false>::ac_int(bool b) { v.set(0, b); }
+template <> __FORCE_INLINE ac_int<16, true>::ac_int(signed char b) { v.set(0, b); }
+template <> __FORCE_INLINE ac_int<16, false>::ac_int(unsigned char b) { v.set(0, b); }
+template <> __FORCE_INLINE ac_int<16, true>::ac_int(unsigned char b) { v.set(0, b); }
+template <> __FORCE_INLINE ac_int<16, false>::ac_int(signed char b) {
   v.set(0, (unsigned short)b);
 }
-template <> inline ac_int<16, true>::ac_int(signed short b) { v.set(0, b); }
-template <> inline ac_int<16, false>::ac_int(unsigned short b) { v.set(0, b); }
-template <> inline ac_int<16, true>::ac_int(unsigned short b) {
+template <> __FORCE_INLINE ac_int<16, true>::ac_int(signed short b) { v.set(0, b); }
+template <> __FORCE_INLINE ac_int<16, false>::ac_int(unsigned short b) { v.set(0, b); }
+template <> __FORCE_INLINE ac_int<16, true>::ac_int(unsigned short b) {
   v.set(0, (signed short)b);
 }
-template <> inline ac_int<16, false>::ac_int(signed short b) {
+template <> __FORCE_INLINE ac_int<16, false>::ac_int(signed short b) {
   v.set(0, (unsigned short)b);
 }
 
-template <> inline ac_int<32, true>::ac_int(signed int b) { v.set(0, b); }
-template <> inline ac_int<32, true>::ac_int(unsigned int b) { v.set(0, b); }
-template <> inline ac_int<32, false>::ac_int(signed int b) {
+template <> __FORCE_INLINE ac_int<32, true>::ac_int(signed int b) { v.set(0, b); }
+template <> __FORCE_INLINE ac_int<32, true>::ac_int(unsigned int b) { v.set(0, b); }
+template <> __FORCE_INLINE ac_int<32, false>::ac_int(signed int b) {
   v.set(0, b);
   v.set(1, 0);
 }
-template <> inline ac_int<32, false>::ac_int(unsigned int b) {
+template <> __FORCE_INLINE ac_int<32, false>::ac_int(unsigned int b) {
   v.set(0, b);
   v.set(1, 0);
 }
 
-template <> inline ac_int<32, true>::ac_int(Slong b) { v.set(0, (int)b); }
-template <> inline ac_int<32, true>::ac_int(Ulong b) { v.set(0, (int)b); }
-template <> inline ac_int<32, false>::ac_int(Slong b) {
+template <> __FORCE_INLINE ac_int<32, true>::ac_int(Slong b) { v.set(0, (int)b); }
+template <> __FORCE_INLINE ac_int<32, true>::ac_int(Ulong b) { v.set(0, (int)b); }
+template <> __FORCE_INLINE ac_int<32, false>::ac_int(Slong b) {
   v.set(0, (int)b);
   v.set(1, 0);
 }
-template <> inline ac_int<32, false>::ac_int(Ulong b) {
+template <> __FORCE_INLINE ac_int<32, false>::ac_int(Ulong b) {
   v.set(0, (int)b);
   v.set(1, 0);
 }
 
-template <> inline ac_int<64, true>::ac_int(Slong b) {
+template <> __FORCE_INLINE ac_int<64, true>::ac_int(Slong b) {
   v.set(0, (int)b);
   v.set(1, (int)(b >> 32));
 }
-template <> inline ac_int<64, true>::ac_int(Ulong b) {
+template <> __FORCE_INLINE ac_int<64, true>::ac_int(Ulong b) {
   v.set(0, (int)b);
   v.set(1, (int)(b >> 32));
 }
-template <> inline ac_int<64, false>::ac_int(Slong b) {
+template <> __FORCE_INLINE ac_int<64, false>::ac_int(Slong b) {
   v.set(0, (int)b);
   v.set(1, (int)((Ulong)b >> 32));
   v.set(2, 0);
 }
-template <> inline ac_int<64, false>::ac_int(Ulong b) {
+template <> __FORCE_INLINE ac_int<64, false>::ac_int(Ulong b) {
   v.set(0, (int)b);
   v.set(1, (int)(b >> 32));
   v.set(2, 0);
@@ -3861,7 +3789,7 @@ template <> inline ac_int<64, false>::ac_int(Ulong b) {
 
 #ifndef __BAMBU__
 template <int W, bool S>
-inline std::ostream &operator<<(std::ostream &os, const ac_int<W, S> &x) {
+__FORCE_INLINE std::ostream &operator<<(std::ostream &os, const ac_int<W, S> &x) {
   if ((os.flags() & std::ios::hex) != 0) {
     os << x.to_string(AC_HEX);
   } else if ((os.flags() & std::ios::oct) != 0) {
@@ -3878,13 +3806,13 @@ inline std::ostream &operator<<(std::ostream &os, const ac_int<W, S> &x) {
 
 #define BIN_OP_WITH_INT(BIN_OP, C_TYPE, WI, SI, RTYPE)                         \
   template <int W, bool S>                                                     \
-  __attribute__((always_inline)) inline                                        \
+  __FORCE_INLINE                                        \
       typename ac_int<WI, SI>::template rt<W, S>::RTYPE                        \
       operator BIN_OP(C_TYPE i_op, const ac_int<W, S> &op) {                   \
     return ac_int<WI, SI>(i_op).operator BIN_OP(op);                           \
   }                                                                            \
   template <int W, bool S>                                                     \
-  __attribute__((always_inline)) inline                                        \
+  __FORCE_INLINE                                        \
       typename ac_int<W, S>::template rt<WI, SI>::RTYPE                        \
       operator BIN_OP(const ac_int<W, S> &op, C_TYPE i_op) {                   \
     return op.operator BIN_OP(ac_int<WI, SI>(i_op));                           \
@@ -3892,19 +3820,19 @@ inline std::ostream &operator<<(std::ostream &os, const ac_int<W, S> &x) {
 
 #define REL_OP_WITH_INT(REL_OP, C_TYPE, W2, S2)                                \
   template <int W, bool S>                                                     \
-  __attribute__((always_inline)) inline bool operator REL_OP(                  \
+  __FORCE_INLINE bool operator REL_OP(                  \
       const ac_int<W, S> &op, C_TYPE op2) {                                    \
     return op.operator REL_OP(ac_int<W2, S2>(op2));                            \
   }                                                                            \
   template <int W, bool S>                                                     \
-  __attribute__((always_inline)) inline bool operator REL_OP(                  \
+  __FORCE_INLINE bool operator REL_OP(                  \
       C_TYPE op2, const ac_int<W, S> &op) {                                    \
     return ac_int<W2, S2>(op2).operator REL_OP(op);                            \
   }
 
 #define ASSIGN_OP_WITH_INT(ASSIGN_OP, C_TYPE, W2, S2)                          \
   template <int W, bool S>                                                     \
-  __attribute__((always_inline)) inline ac_int<W, S> &operator ASSIGN_OP(      \
+  __FORCE_INLINE ac_int<W, S> &operator ASSIGN_OP(      \
       ac_int<W, S> &op, C_TYPE op2) {                                          \
     return op.operator ASSIGN_OP(ac_int<W2, S2>(op2));                         \
   }
@@ -3942,6 +3870,70 @@ inline std::ostream &operator<<(std::ostream &os, const ac_int<W, S> &x) {
 // ------------------------------------- End of Macros for Binary Operators with
 // Integers
 
+// --- Macro for range_ref
+#define OP_BIN_RANGE(BIN_OP, RTYPE)                                \
+  template<int W1, bool S1, int W2, bool S2>                       \
+   __FORCE_INLINE                           \
+  typename ac_int<W1, S1>::template rt<W2, S2>::RTYPE              \
+  operator BIN_OP ( const range_ref<W1,S1>& op1,                   \
+                    const range_ref<W2,S2>& op2) {                 \
+    return ac_int<W1, false>(op1) BIN_OP (ac_int<W2, false>(op2)); \
+  }                                                                \
+  template<int W1, bool S1, int W2, bool S2>                       \
+  __FORCE_INLINE                            \
+  typename ac_int<W1, S1>::template rt<W2, S2>::RTYPE              \
+  operator BIN_OP ( const range_ref<W1,S1> & op1,                  \
+                    const ac_int<W2,S2>& op2) {                    \
+     return ac_int<W1, false>(op1) BIN_OP (op2);                   \
+  }                                                                \
+  template<int W1, bool S1, int W2, bool S2>                       \
+   __FORCE_INLINE                           \
+  typename ac_int<W1,S1>::template RType<W2,S2>::RTYPE             \
+  operator BIN_OP ( const ac_int<W1,S1>& op1,                      \
+                    const range_ref<W2,S2>& op2) {                 \
+    return op1 BIN_OP (ac_int<W2, false>(op2));                    \
+  }
+
+#define OP_REL_RANGE(REL_OP)                                                         \
+  template<int W1, bool S1, int W2, bool S2>                                         \
+  __FORCE_INLINE                                              \
+  bool operator REL_OP ( const range_ref<W1,S1>& op1, const range_ref<W2,S2>& op2) { \
+    return ac_int<W1,false>(op1).operator REL_OP (op2.operator ac_int<W2, false>()); \
+  }                                                                                  \
+   template<int W1, bool S1, int W2, bool S2>                                        \
+  __FORCE_INLINE                                              \
+  bool operator REL_OP ( const range_ref<W1,S1>& op1, const ac_int<W2,S2>& op2) {    \
+     return ac_int<W1,false>(op1).operator REL_OP (op2);                             \
+  }                                                                                  \
+  template<int W1, bool S1, int W2, bool S2>                                         \
+  __FORCE_INLINE                                              \
+  bool operator REL_OP ( const ac_int<W1,S1>& op1, const range_ref<W2,S2>& op2) {    \
+    return op1.operator REL_OP (op2.operator ac_int<W2, false>());                   \
+  }
+
+#define OP_ASSIGN_RANGE(ASSIGN_OP)                                                       \
+  template<int W1, bool S1, int W2, bool S2>                                             \
+  __FORCE_INLINE                                                  \
+  ac_int<W1,S1>& operator ASSIGN_OP ( ac_int<W1,S1>& op1, range_ref<W2,S2>& op2) {       \
+    return op1.operator ASSIGN_OP (ac_int<W2, false>(op2));                              \
+  }                                                                                      \
+  template<int W1, bool S1, int W2, bool S2>                                             \
+  __FORCE_INLINE                                                  \
+  range_ref<W1,S1>& operator ASSIGN_OP ( range_ref<W1,S1>& op1, ac_int<W2,S2>& op2) {    \
+    ac_int<W1, false> tmp(op1);                                                          \
+    tmp.operator ASSIGN_OP (op2);                                                        \
+    op1 = tmp;                                                                           \
+    return op1;                                                                          \
+  }                                                                                      \
+  template<int W1, bool S1, int W2, bool S2>                                             \
+  __FORCE_INLINE                                                  \
+  range_ref<W1,S1>& operator ASSIGN_OP ( range_ref<W1,S1>& op1, range_ref<W2,S2>& op2) { \
+    ac_int<W1, false> tmp(op1);                                                          \
+    tmp.operator ASSIGN_OP (ac_int<W2, false>(op2));                                     \
+    op1 = tmp;                                                                           \
+    return op1;                                                                          \
+  }
+
 namespace ac {
 namespace ops_with_other_types {
 //  Mixed Operators with Integers
@@ -3962,10 +3954,41 @@ OPS_WITH_INT(Ulong, 64, false)
 // Integers
 } // namespace ops_with_other_types
 
+namespace ops_with_range_types {
+   OP_ASSIGN_RANGE(+=)
+   OP_ASSIGN_RANGE(-=)
+   OP_ASSIGN_RANGE(*=)
+   OP_ASSIGN_RANGE(/=)
+   OP_ASSIGN_RANGE(%=)
+   OP_ASSIGN_RANGE(>>=)
+   OP_ASSIGN_RANGE(<<=)
+   OP_ASSIGN_RANGE(&=)
+   OP_ASSIGN_RANGE(|=)
+   OP_ASSIGN_RANGE(^=)
+
+   OP_REL_RANGE(==)
+   OP_REL_RANGE(!=)
+   OP_REL_RANGE(>)
+   OP_REL_RANGE(>=)
+   OP_REL_RANGE(<)
+   OP_REL_RANGE(<=)
+
+   OP_BIN_RANGE(+, plus)
+   OP_BIN_RANGE(-, minus)
+   OP_BIN_RANGE(*, mult)
+   OP_BIN_RANGE(/, div)
+   OP_BIN_RANGE(%, mod)
+   OP_BIN_RANGE(>>, arg1)
+   OP_BIN_RANGE(<<, arg1)
+   OP_BIN_RANGE(&, logic)
+   OP_BIN_RANGE(|, logic)
+   OP_BIN_RANGE(^, logic)
+}
+
 // Functions to fill bits
 
 template <typename T>
-__attribute__((always_inline)) inline T bit_fill_hex(const char *str) {
+__FORCE_INLINE T bit_fill_hex(const char *str) {
   T res;
   res.bit_fill_hex(str);
   return res;
@@ -3976,7 +3999,7 @@ __attribute__((always_inline)) inline T bit_fill_hex(const char *str) {
 //   ac_int<80,false> x = ac::bit_fill< ac_int<80,false> > ((int [3])
 //   {0xffffa987, 0x6543210f, 0xedcba987 });
 template <typename T, int N>
-__attribute__((always_inline)) inline T bit_fill(const int (&ivec)[N],
+__FORCE_INLINE T bit_fill(const int (&ivec)[N],
                                                  bool bigendian = true) {
   T res;
   res.bit_fill(ivec, bigendian);
@@ -3990,18 +4013,18 @@ __attribute__((always_inline)) inline T bit_fill(const int (&ivec)[N],
 
 // Addition of ac_int and  pointer
 template <typename T, int W, bool S>
-__attribute__((always_inline)) inline T *operator+(T *ptr,
+__FORCE_INLINE T *operator+(T *ptr,
                                                    const ac_int<W, S> &op2) {
   return ptr + op2.to_int64();
 }
 template <typename T, int W, bool S>
-__attribute__((always_inline)) inline T *operator+(const ac_int<W, S> &op2,
+__FORCE_INLINE T *operator+(const ac_int<W, S> &op2,
                                                    T *ptr) {
   return ptr + op2.to_int64();
 }
 // Subtraction of ac_int from pointer
 template <typename T, int W, bool S>
-__attribute__((always_inline)) inline T *operator-(T *ptr,
+__FORCE_INLINE T *operator-(T *ptr,
                                                    const ac_int<W, S> &op2) {
   return ptr - op2.to_int64();
 }
@@ -4009,6 +4032,7 @@ __attribute__((always_inline)) inline T *operator-(T *ptr,
 // Pointers
 
 using namespace ac::ops_with_other_types;
+using namespace ac::ops_with_range_types;
 
 namespace ac_intN {
 ///////////////////////////////////////////////////////////////////////////////
@@ -4164,17 +4188,17 @@ using namespace ac_intN;
 
 // Global templatized functions for easy initialization to special values
 template <ac_special_val V, int W, bool S>
-__attribute__((always_inline)) inline ac_int<W, S> value(ac_int<W, S>) {
+__FORCE_INLINE ac_int<W, S> value(ac_int<W, S>) {
   ac_int<W, S> r;
   return r.template set_val<V>();
 }
 // forward declaration, otherwise GCC errors when calling init_array
 template <ac_special_val V, int W, int I, bool S, ac_q_mode Q, ac_o_mode O>
-__attribute__((always_inline)) inline ac_fixed<W, I, S, Q, O>
+__FORCE_INLINE ac_fixed<W, I, S, Q, O>
     value(ac_fixed<W, I, S, Q, O>);
 
 #define SPECIAL_VAL_FOR_INTS_DC(C_TYPE, WI, SI)                                \
-  template <> inline C_TYPE value<AC_VAL_DC>(C_TYPE) {                         \
+  template <> __FORCE_INLINE C_TYPE value<AC_VAL_DC>(C_TYPE) {                         \
     C_TYPE x;                                                                  \
     return x;                                                                  \
   }
@@ -4182,16 +4206,16 @@ __attribute__((always_inline)) inline ac_fixed<W, I, S, Q, O>
 // -- C int types
 // -----------------------------------------------------------------
 #define SPECIAL_VAL_FOR_INTS(C_TYPE, WI, SI)                                   \
-  template <ac_special_val val> inline C_TYPE value(C_TYPE);                   \
-  template <> inline C_TYPE value<AC_VAL_0>(C_TYPE) { return (C_TYPE)0; }      \
+  template <ac_special_val val> __FORCE_INLINE C_TYPE value(C_TYPE);                   \
+  template <> __FORCE_INLINE C_TYPE value<AC_VAL_0>(C_TYPE) { return (C_TYPE)0; }      \
   SPECIAL_VAL_FOR_INTS_DC(C_TYPE, WI, SI)                                      \
-  template <> inline C_TYPE value<AC_VAL_QUANTUM>(C_TYPE) {                    \
+  template <> __FORCE_INLINE C_TYPE value<AC_VAL_QUANTUM>(C_TYPE) {                    \
     return (C_TYPE)1;                                                          \
   }                                                                            \
-  template <> inline C_TYPE value<AC_VAL_MAX>(C_TYPE) {                        \
+  template <> __FORCE_INLINE C_TYPE value<AC_VAL_MAX>(C_TYPE) {                        \
     return (C_TYPE)(SI ? ~(((C_TYPE)1) << (WI - 1)) : (C_TYPE)-1);             \
   }                                                                            \
-  template <> inline C_TYPE value<AC_VAL_MIN>(C_TYPE) {                        \
+  template <> __FORCE_INLINE C_TYPE value<AC_VAL_MIN>(C_TYPE) {                        \
     return (C_TYPE)(SI ? ((C_TYPE)1) << (WI - 1) : (C_TYPE)0);                 \
   }
 
@@ -4210,7 +4234,7 @@ SPECIAL_VAL_FOR_INTS(Ulong, 64, false)
 
 #define INIT_ARRAY_SPECIAL_VAL_FOR_INTS(C_TYPE)                                \
   template <ac_special_val V>                                                  \
-  __attribute__((always_inline)) inline bool init_array(C_TYPE *a, int n) {    \
+  __FORCE_INLINE bool init_array(C_TYPE *a, int n) {    \
     C_TYPE t = value<V>(*a);                                                   \
     for (int i = 0; i < n; i++)                                                \
       a[i] = t;                                                                \
@@ -4221,7 +4245,7 @@ namespace ac {
 // PUBLIC FUNCTIONS
 // function to initialize (or uninitialize) arrays
 template <ac_special_val V, int W, bool S>
-__attribute__((always_inline)) inline bool init_array(ac_int<W, S> *a, int n) {
+__FORCE_INLINE bool init_array(ac_int<W, S> *a, int n) {
   ac_int<W, S> t = value<V>(*a);
   for (int i = 0; i < n; i++)
     a[i] = t;

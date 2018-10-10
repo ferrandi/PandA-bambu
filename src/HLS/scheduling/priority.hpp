@@ -166,14 +166,14 @@ struct priority_compare_functor
        */
       bool operator() (const vertex & a, const vertex & b) const 
       {
-         return priority_values(a) < priority_values(b) || (priority_values(a) == priority_values(b) && GET_NAME(data, a) > GET_NAME(data, b));
+         return priority_values->operator()(a) < priority_values->operator()(b) || (priority_values->operator()(a) == priority_values->operator()(b) && a > b);
       }
 
       /**
        * Constructor
        * @param pri is the priority data structure which associate at each vertex a priority value of type Type.
        */
-      priority_compare_functor(const priority_data<Type> & pri, const OpGraphConstRef d) : priority_values(pri), data(d) {}
+      priority_compare_functor(const refcount<priority_data<Type>> pri) : priority_values(pri) {}
 
       /**
        * Copy assignment
@@ -186,10 +186,8 @@ struct priority_compare_functor
       /**
        * Copy constructor
       */
-      priority_compare_functor(const priority_compare_functor&in)
-      {
-         priority_values = in.priority_values;
-      }
+      priority_compare_functor(const priority_compare_functor&in) : priority_values(in.priority_values)
+      {}
 
       /**
        * Destructor
@@ -199,10 +197,7 @@ struct priority_compare_functor
    private:
 
       ///copy of the priority values
-      const priority_data<Type> & priority_values;
-
-      const OpGraphConstRef data;
-      
+      const refcount<priority_data<Type>> priority_values;
 };
 
 #endif

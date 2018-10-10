@@ -140,10 +140,6 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
 
 DesignFlowStep_Status CheckSystemType::InternalExec()
 {
-   if(debug_level >= DEBUG_LEVEL_PEDANTIC)
-   {
-      PrintTreeManager(true);
-   }
 
    const tree_nodeRef curr_tn = TM->GetTreeNode(function_id);
    auto * fd = GetPointer<function_decl>(curr_tn);
@@ -169,10 +165,6 @@ DesignFlowStep_Status CheckSystemType::InternalExec()
       }
    }
 
-   if(debug_level >= DEBUG_LEVEL_PEDANTIC)
-   {
-      PrintTreeManager(false);
-   }
    already_executed = true;
    return DesignFlowStep_Status::SUCCESS;
 }

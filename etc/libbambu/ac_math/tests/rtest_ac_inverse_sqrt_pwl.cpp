@@ -357,7 +357,7 @@ int test_driver_float(
   double max_error_float = 0.0; // reset for this run
 
   ac_float<   Wfl,    Ifl,    Efl, AC_TRN> input_float;
-  ac_float<outWfl, outIfl, outEfl, AC_TRN> output_float;
+  ac_float<outWfl, outIfl, outEfl, AC_TRN> output_float(0);
 
   // Declare an ac_fixed variable of same type as mantissa
   ac_fixed<Wfl, Ifl, true> sample_mantissa;

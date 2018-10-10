@@ -49,6 +49,7 @@
 #include "config_PACKAGE_BUGREPORT.hpp"
 #include "config_PACKAGE_NAME.hpp"
 #include "config_PACKAGE_VERSION.hpp"
+#include "config_HAVE_ASSERTS.hpp"                // for HAVE_ASSERTS
 
 #include "structural_manager.hpp"
 #include "structural_objects.hpp"
@@ -326,11 +327,13 @@ void HDL_manager::hdl_gen(const std::string& filename, const std::unordered_set<
       get_post_order_structural_components(cir, list_of_com);
    if (list_of_com.empty())
    {
+#if HAVE_ASSERTS
       for(const auto& cir : cirs)
       {
          THROW_ASSERT(GetPointer<module>(cir), "Expected a component or a channel");
          THROW_ASSERT(GetPointer<module>(cir)->get_NP_functionality(), "Structural empty description received");
       }
+#endif
       return;
    }
 

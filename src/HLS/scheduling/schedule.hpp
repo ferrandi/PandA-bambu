@@ -59,7 +59,6 @@
 #include <unordered_map>
 
 ///utility includes
-#include "custom_map.hpp"
 #include "refcount.hpp"
 #include "strong_typedef.hpp"
 
@@ -87,6 +86,7 @@ REF_FORWARD_DECL(fu_binding);
 #include <iosfwd>
 #include "custom_map.hpp"
 #include "custom_set.hpp"
+#include "hash_helper.hpp"
 
 /**
  * Absolute Control step

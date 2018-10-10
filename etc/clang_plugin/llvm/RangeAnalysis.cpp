@@ -422,7 +422,7 @@ namespace RangeAnalysis {
          }
          return elmtSize;
       }
-      unsigned LoadStoreOperationBW(const Value *V, const Value *GV)
+      unsigned LoadStoreOperationBW(const Value *V, const Value *GV, const llvm::DataLayout* DL)
       {
          if(auto ST= dyn_cast<StoreInst>(V))
             return ST->getValueOperand()->getType()->isPointerTy() ? POINTER_BITSIZE : ST->getValueOperand()->getType()->getPrimitiveSizeInBits();
@@ -434,8 +434,30 @@ namespace RangeAnalysis {
             return POINTER_BITSIZE;
          else if(auto bw = V->getType()->getPrimitiveSizeInBits())
             return bw;
+         else if(auto IV=dyn_cast<InsertValueInst>(V))
+            return IV->getInsertedValueOperand()->getType()->isPointerTy() ? POINTER_BITSIZE : IV->getInsertedValueOperand()->getType()->getPrimitiveSizeInBits();
+         else if(V->getType()->isSized())
+         {
+            return DL->getTypeAllocSizeInBits(V->getType());
+         }
          else
+         {
+            V->getType()->print(llvm::errs());
+            llvm::errs()<<"\n";
+            if(V->getType()->isVectorTy())
+               llvm::errs()<<"Is a vector type\n";
+            if(V->getType()->isStructTy())
+               llvm::errs()<<"Is a struct type\n";
+
+            V->print(llvm::errs());
+            llvm::errs()<<"\n";
+            if(GV)
+            {
+               GV->print(llvm::errs());
+               llvm::errs()<<"\n";
+            }
             llvm_unreachable("unexpected condition");
+         }
       }
 
    } // end anonymous namespace
@@ -2306,10 +2328,10 @@ namespace RangeAnalysis {
    // ========================================================================== //
 
    /// The ctor.
-   VarNode::VarNode(const Value *_V, const Value *_GV)
+   VarNode::VarNode(const Value *_V, const Value *_GV, const llvm::DataLayout* DL)
       : V(_V),
         GV(_GV),
-        interval(Unknown,LoadStoreOperationBW(_V,_GV), Min, Max),
+        interval(Unknown,LoadStoreOperationBW(_V,_GV, DL), Min, Max),
         abstractState(0)
    {
       if(dyn_cast<FPToSIInst>(_V))
@@ -2328,9 +2350,9 @@ namespace RangeAnalysis {
    VarNode::~VarNode() = default;
 
    /// Initializes the value of the node.
-   void VarNode::init(bool outside)
+   void VarNode::init(bool outside, const llvm::DataLayout* DL)
    {
-      auto bw = LoadStoreOperationBW(V,GV);
+      auto bw = LoadStoreOperationBW(V,GV,DL);
       assert(bw);
       if (const ConstantInt *CI = dyn_cast<ConstantInt>(V))
       {
@@ -3235,7 +3257,7 @@ namespace RangeAnalysis {
       }
    }
 
-   Range ConstraintGraph::getRange(eValue v)
+   Range ConstraintGraph::getRange(eValue v, const llvm::DataLayout* DL)
    {
       auto vit = this->vars.find(v);
       if (vit == this->vars.end())
@@ -3249,7 +3271,7 @@ namespace RangeAnalysis {
          // I decided NOT to insert these uncovered
          // values to the node set after their range
          // is created here.
-         auto bw = LoadStoreOperationBW(v.first, v.second);
+         auto bw = LoadStoreOperationBW(v.first, v.second,DL);
          assert(bw);
          const ConstantInt *ci = dyn_cast<ConstantInt>(v.first);
          if (ci == nullptr)
@@ -3263,14 +3285,14 @@ namespace RangeAnalysis {
    }
 
    /// Adds a VarNode to the graph.
-   VarNode *ConstraintGraph::addVarNode(const Value *V, const Value *GV)
+   VarNode *ConstraintGraph::addVarNode(const Value *V, const Value *GV, const llvm::DataLayout* DL)
    {
       eValue ev(V,GV);
       auto vit = this->vars.find(ev);
       if (vit != this->vars.end())
          return vit->second;
 
-      VarNode *node = new VarNode(V,GV);
+      VarNode *node = new VarNode(V,GV,DL);
       this->vars.insert(std::make_pair(ev, node));
 
       // Inserts the node in the use map list.
@@ -3284,7 +3306,7 @@ namespace RangeAnalysis {
    {
       assert(I->getNumOperands() == 1U);
       // Create the sink.
-      VarNode *sink = addVarNode(I,nullptr);
+      VarNode *sink = addVarNode(I,nullptr,DL);
       // Create the source.
       VarNode *source = nullptr;
 
@@ -3293,7 +3315,7 @@ namespace RangeAnalysis {
          case Instruction::Trunc:
          case Instruction::ZExt:
          case Instruction::SExt:
-            source = addVarNode(I->getOperand(0),nullptr);
+            source = addVarNode(I->getOperand(0),nullptr,DL);
             break;
          default:
             return;
@@ -3315,11 +3337,11 @@ namespace RangeAnalysis {
    {
       assert(I->getNumOperands() == 2U);
       // Create the sink.
-      VarNode *sink = addVarNode(I,nullptr);
+      VarNode *sink = addVarNode(I,nullptr,DL);
 
       // Create the sources.
-      VarNode *source1 = addVarNode(I->getOperand(0),nullptr);
-      VarNode *source2 = addVarNode(I->getOperand(1),nullptr);
+      VarNode *source1 = addVarNode(I->getOperand(0),nullptr,DL);
+      VarNode *source2 = addVarNode(I->getOperand(1),nullptr,DL);
 
       // Create the operation using the intersect to constrain sink's interval.
       std::shared_ptr<BasicInterval> BI = std::shared_ptr<BasicInterval>(new BasicInterval(getLLVM_range(I,modulePass, DL)));
@@ -3340,12 +3362,12 @@ namespace RangeAnalysis {
    {
       assert(I->getNumOperands() == 3U);
       // Create the sink.
-      VarNode *sink = addVarNode(I,nullptr);
+      VarNode *sink = addVarNode(I,nullptr,DL);
 
       // Create the sources.
-      VarNode *source1 = addVarNode(I->getOperand(0),nullptr);
-      VarNode *source2 = addVarNode(I->getOperand(1),nullptr);
-      VarNode *source3 = addVarNode(I->getOperand(2),nullptr);
+      VarNode *source1 = addVarNode(I->getOperand(0),nullptr,DL);
+      VarNode *source2 = addVarNode(I->getOperand(1),nullptr,DL);
+      VarNode *source3 = addVarNode(I->getOperand(2),nullptr,DL);
 
       // Create the operation using the intersect to constrain sink's interval.
       std::shared_ptr<BasicInterval> BI = std::shared_ptr<BasicInterval>(new BasicInterval(getLLVM_range(I,modulePass,DL)));
@@ -3367,7 +3389,7 @@ namespace RangeAnalysis {
    void ConstraintGraph::addPhiOp(const PHINode *Phi, ModulePass *modulePass, const llvm::DataLayout* DL)
    {
       // Create the sink.
-      VarNode *sink = addVarNode(Phi,nullptr);
+      VarNode *sink = addVarNode(Phi,nullptr,DL);
       std::shared_ptr<BasicInterval> BI = std::shared_ptr<BasicInterval>(new BasicInterval(getLLVM_range(Phi,modulePass,DL)));
       PhiOp *phiOp = new PhiOp(BI, sink, Phi);
 
@@ -3380,7 +3402,7 @@ namespace RangeAnalysis {
       // Create the sources.
       for (const Value *operand : Phi->operands())
       {
-         VarNode *source = addVarNode(operand,nullptr);
+         VarNode *source = addVarNode(operand,nullptr,DL);
          phiOp->addSource(source);
          // Inserts the sources of the operation in the use map list.
          this->useMap.find(source->getValue())->second.insert(phiOp);
@@ -3391,14 +3413,14 @@ namespace RangeAnalysis {
    {
       assert(Sigma->getNumOperands() == 1U);
       // Create the sink.
-      VarNode *sink = addVarNode(Sigma,nullptr);
+      VarNode *sink = addVarNode(Sigma,nullptr,DL);
       std::shared_ptr<BasicInterval> BItv;
       SigmaOp *sigmaOp = nullptr;
 
       const BasicBlock *thisbb = Sigma->getParent();
       for (const Value *operand : Sigma->operands())
       {
-         VarNode *source = addVarNode(operand,nullptr);
+         VarNode *source = addVarNode(operand,nullptr,DL);
 
          // Create the operation (two cases from: branch or switch)
          auto vbmit = this->valuesBranchMap.find(operand);
@@ -3455,7 +3477,7 @@ namespace RangeAnalysis {
             if(auto symb= dyn_cast<SymbInterval>(BItv.get()))
             {
                auto bound = symb->getBound();
-               SymbSrc=addVarNode(bound.first,bound.second);
+               SymbSrc=addVarNode(bound.first,bound.second,DL);
             }
             sigmaOp = new SigmaOp(BItv, sink, Sigma, source, SymbSrc, Sigma->getOpcode());
             if(SymbSrc)
@@ -3545,7 +3567,7 @@ namespace RangeAnalysis {
       }
       else
          intersection = getLLVM_range(LI,modulePass,DL);
-      VarNode *sink = addVarNode(LI,nullptr);
+      VarNode *sink = addVarNode(LI,nullptr,DL);
       LoadOp *loadOp = new LoadOp(std::shared_ptr<BasicInterval>(new BasicInterval(intersection)), sink, LI);
       // Insert the operation in the graph.
       this->oprs.insert(loadOp);
@@ -3571,7 +3593,7 @@ namespace RangeAnalysis {
 //                  llvm::errs() << "  source: ";
 //                  operand->print(llvm::errs());
 //                  llvm::errs() << "\n";
-                  VarNode *source = addVarNode(operand,varValue);
+                  VarNode *source = addVarNode(operand,varValue,DL);
                   loadOp->addSource(source);
                   this->useMap.find(source->getValue())->second.insert(loadOp);
                }
@@ -3861,7 +3883,7 @@ namespace RangeAnalysis {
          llvm_unreachable("unexpected condition");
       }
    }
-   void ConstraintGraph::addStoreOp(const llvm::StoreInst *SI, Andersen_AA * PtoSets_AA, bool arePointersResolved, llvm::ModulePass *modulePass, llvm::DenseMap<const Function*, SmallPtrSet<const Instruction*,6>>&Function2Store)
+   void ConstraintGraph::addStoreOp(const llvm::StoreInst *SI, Andersen_AA * PtoSets_AA, bool arePointersResolved, llvm::ModulePass *modulePass, llvm::DenseMap<const Function*, SmallPtrSet<const Instruction*,6>>&Function2Store, const llvm::DataLayout* DL)
    {
 #if HAVE_LIBBDD
       if(arePointersResolved)
@@ -3876,7 +3898,7 @@ namespace RangeAnalysis {
          {
             auto varValue = PtoSets_AA->getValue(var);
             assert(varValue);
-            VarNode *sink = addVarNode(SI,varValue);
+            VarNode *sink = addVarNode(SI,varValue,DL);
             StoreOp* storeOp;
             if(dyn_cast<llvm::GlobalVariable>(varValue) && dyn_cast<llvm::GlobalVariable>(varValue)->hasInitializer())
                storeOp = new StoreOp(sink, SI, getLLVM_range(dyn_cast<llvm::GlobalVariable>(varValue)->getInitializer()));
@@ -3884,7 +3906,7 @@ namespace RangeAnalysis {
                storeOp = new StoreOp(sink, SI, Range(Empty,bw));
             this->oprs.insert(storeOp);
             this->defMap[sink->getValue()] = storeOp;
-            VarNode *source = addVarNode(SI->getValueOperand(),nullptr);
+            VarNode *source = addVarNode(SI->getValueOperand(),nullptr,DL);
             storeOp->addSource(source);
             this->useMap.find(source->getValue())->second.insert(storeOp);
 
@@ -3901,7 +3923,7 @@ namespace RangeAnalysis {
 //                  llvm::errs() << "  source: ";
 //                  operand->print(llvm::errs());
 //                  llvm::errs() << "\n";
-                  VarNode *source = addVarNode(operand,varValue);
+                  VarNode *source = addVarNode(operand,varValue,DL);
                   storeOp->addSource(source);
                   this->useMap.find(source->getValue())->second.insert(storeOp);
                }
@@ -3924,7 +3946,7 @@ namespace RangeAnalysis {
       if(auto LI = dyn_cast<LoadInst>(I))
          addLoadOp(LI,PtoSets_AA,arePointersResolved,modulePass,DL,Function2Store);
       else if(auto SI = dyn_cast<StoreInst>(I))
-         addStoreOp(SI,PtoSets_AA,arePointersResolved,modulePass,Function2Store);
+         addStoreOp(SI,PtoSets_AA,arePointersResolved,modulePass,Function2Store,DL);
       else if (I->isBinaryOp())
          addBinaryOp(I,modulePass,DL);
       else if (isTernaryOp(I))
@@ -3949,7 +3971,7 @@ namespace RangeAnalysis {
       }
    }
 
-   void ConstraintGraph::buildValueSwitchMap(const SwitchInst *sw)
+   void ConstraintGraph::buildValueSwitchMap(const SwitchInst *sw,const llvm::DataLayout* DL)
    {
       const Value *condition = sw->getCondition();
       // Verify conditions
@@ -3958,7 +3980,7 @@ namespace RangeAnalysis {
          return;
 
       // Create VarNode for switch condition explicitly
-      addVarNode(condition,nullptr);
+      addVarNode(condition,nullptr,DL);
       unsigned bw = condition->getType()->getPrimitiveSizeInBits();
 
       SmallVector<std::pair<std::shared_ptr<BasicInterval>, const BasicBlock *>, 4> BBsuccs;
@@ -4015,7 +4037,7 @@ namespace RangeAnalysis {
       }
    }
 
-   void ConstraintGraph::buildValueBranchMap(const BranchInst *br)
+   void ConstraintGraph::buildValueBranchMap(const BranchInst *br,const llvm::DataLayout* DL)
    {
       // Verify conditions
       if (!br->isConditional())
@@ -4030,8 +4052,8 @@ namespace RangeAnalysis {
          return;
 
       // Create VarNodes for comparison operands explicitly
-      addVarNode(ici->getOperand(0),nullptr);
-      addVarNode(ici->getOperand(1),nullptr);
+      addVarNode(ici->getOperand(0),nullptr,DL);
+      addVarNode(ici->getOperand(1),nullptr,DL);
 
       // Gets the successors of the current basic block.
       const BasicBlock *TBlock = br->getSuccessor(0);
@@ -4151,7 +4173,7 @@ namespace RangeAnalysis {
       }
    }
 
-   void ConstraintGraph::buildValueMaps(const Function &F)
+   void ConstraintGraph::buildValueMaps(const Function &F,const llvm::DataLayout* DL)
    {
       for (const BasicBlock &BB : F) {
          const TerminatorInst *ti = BB.getTerminator();
@@ -4159,9 +4181,9 @@ namespace RangeAnalysis {
          const SwitchInst *sw = dyn_cast<SwitchInst>(ti);
 
          if (br != nullptr) {
-            buildValueBranchMap(br);
+            buildValueBranchMap(br,DL);
          } else if (sw != nullptr) {
-            buildValueSwitchMap(sw);
+            buildValueSwitchMap(sw,DL);
          }
       }
    }
@@ -4415,7 +4437,7 @@ namespace RangeAnalysis {
    void ConstraintGraph::buildGraph(const Function &F, ModulePass *modulePass, const llvm::DataLayout* DL, Andersen_AA * PtoSets_AA, bool arePointersResolved, llvm::DenseMap<const Function*, SmallPtrSet<const Instruction*,6>>&Function2Store)
    {
       this->func = &F;
-      buildValueMaps(F);
+      buildValueMaps(F,DL);
       for (auto &I : instructions(F))
       {
          // Only integers are dealt with
@@ -4427,11 +4449,11 @@ namespace RangeAnalysis {
       }
    }
 
-   void ConstraintGraph::buildVarNodes()
+   void ConstraintGraph::buildVarNodes(const llvm::DataLayout* DL)
    {
       // Initializes the nodes and the use map structure.
       for (auto &pair : vars)
-         pair.second->init(this->defMap.count(pair.first) == 0u);
+         pair.second->init(this->defMap.count(pair.first) == 0u, DL);
    }
 
    // FIXME: do it just for component
@@ -5809,9 +5831,9 @@ namespace RangeAnalysis {
          if (F.isDeclaration() || F.isVarArg()) continue;
 
          CG->buildGraph(F, modulePass, &M.getDataLayout(), PtoSets_AA, arePointersResolved, Function2Store);
-         MatchParametersAndReturnValues(F, *CG);
+         MatchParametersAndReturnValues(F, *CG, &M.getDataLayout());
       }
-      CG->buildVarNodes();
+      CG->buildVarNodes(&M.getDataLayout());
 
 #ifdef STATS
       timer->stopTimer();
@@ -5851,7 +5873,7 @@ namespace RangeAnalysis {
       return max+1;
    }
 
-   void InterProceduralRACropDFSHelper::MatchParametersAndReturnValues(const Function &F, ConstraintGraph &G)
+   void InterProceduralRACropDFSHelper::MatchParametersAndReturnValues(const Function &F, ConstraintGraph &G, const llvm::DataLayout* DL)
    {
       // Only do the matching if F has any use
       unsigned int countUses = 0;
@@ -5916,7 +5938,7 @@ namespace RangeAnalysis {
 
       for (auto i = 0ul, e = parameters.size(); i < e; ++i)
       {
-         VarNode *sink = G.addVarNode(parameters[i].first,nullptr);
+         VarNode *sink = G.addVarNode(parameters[i].first,nullptr,DL);
          sink->setRange(Range(Regular, sink->getBitWidth(), Min, Max));
          matchers[i] = new PhiOp(std::shared_ptr<BasicInterval>(new BasicInterval()), sink, nullptr);
          // Insert the operation in the graph.
@@ -5931,7 +5953,7 @@ namespace RangeAnalysis {
       for (Value *returnValue : returnValues)
       {
          // Add VarNode to the CG
-         VarNode *from = G.addVarNode(returnValue,nullptr);
+         VarNode *from = G.addVarNode(returnValue,nullptr,DL);
          returnVars.push_back(from);
       }
 
@@ -5965,7 +5987,7 @@ namespace RangeAnalysis {
          for (i = 0; i < parameters.size(); ++i)
          {
             // Add real parameter to the CG
-            from = G.addVarNode(parameters[i].second,nullptr);
+            from = G.addVarNode(parameters[i].second,nullptr,DL);
 
             // Connect nodes
             matchers[i]->addSource(from);
@@ -5978,7 +6000,7 @@ namespace RangeAnalysis {
          if (!noReturn)
          {
             // Add caller instruction to the CG (it receives the return value)
-            to = G.addVarNode(caller,nullptr);
+            to = G.addVarNode(caller,nullptr,DL);
             to->setRange(Range(Regular, to->getBitWidth(), Min, Max));
 
             PhiOp *phiOp = new PhiOp(std::shared_ptr<BasicInterval>(new BasicInterval()), to, nullptr);
@@ -6052,7 +6074,7 @@ namespace RangeAnalysis {
          for (auto &I : instructions(F))
          {
             if(I.getType()->isVoidTy()) continue;
-            ranges.insert(std::make_pair(&I, CG->getRange(std::make_pair(&I,nullptr))));
+            ranges.insert(std::make_pair(&I, CG->getRange(std::make_pair(&I,nullptr),&M.getDataLayout())));
          }
       }
       delete CG;

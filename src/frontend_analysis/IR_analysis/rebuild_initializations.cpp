@@ -99,10 +99,6 @@ rebuild_initialization::~rebuild_initialization()
 
 DesignFlowStep_Status rebuild_initialization::InternalExec()
 {
-   if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC)
-   {
-      PrintTreeManager(true);
-   }
    const auto behavioral_helper = function_behavior->CGetBehavioralHelper();
    tree_managerRef TM = AppM->get_tree_manager();
    tree_manipulationRef tree_man(new tree_manipulation(TM, parameters));
@@ -207,10 +203,6 @@ DesignFlowStep_Status rebuild_initialization::InternalExec()
       GetPointer<var_decl>(GET_NODE(init.first))->init = TM->GetTreeReindex(constructor_index);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Rebuilt init of " + STR(init.first));
    }
-   if(debug_level >= DEBUG_LEVEL_PEDANTIC)
-   {
-      PrintTreeManager(false);
-   }
    return DesignFlowStep_Status::SUCCESS;
 }
 
@@ -248,7 +240,9 @@ rebuild_initialization2::~rebuild_initialization2()
 
 static tree_nodeRef extractOp1(tree_nodeRef opSSA)
 {
-   THROW_ASSERT(opSSA->get_kind() == ssa_name_K, "unexpected condition");
+   if(opSSA->get_kind() == integer_cst_K)
+      return tree_nodeRef();
+   THROW_ASSERT(opSSA->get_kind() == ssa_name_K, "unexpected condition:"+opSSA->ToString());
    auto * ssa_opSSA = GetPointer<ssa_name>(opSSA);
    auto opSSA_def_stmt = GET_NODE(ssa_opSSA->CGetDefStmt());
    if(opSSA_def_stmt->get_kind() == gimple_nop_K ||
@@ -273,17 +267,14 @@ static bool varFound(tree_nodeRef node, unsigned &vd_index, tree_nodeRef &vd_nod
 }
 
 #define REBUILD2_DEVEL 0
-static bool unexpetedPattern(tree_nodeRef
 #if REBUILD2_DEVEL
-                             node
-#endif
-                             )
+#define unexpetedPattern(node)   THROW_ERROR("unexpected condition: "+ node->get_kind_text() + " --- " + node->ToString());
+#else
+static bool unexpetedPattern(tree_nodeRef)
 {
-#if REBUILD2_DEVEL
-   THROW_ERROR("unexpected condition: "+ node->get_kind_text() + " --- " + node->ToString());
-#endif
    return false;
 }
+#endif
 
 bool rebuild_initialization2::extract_var_decl_ppe(tree_nodeRef addr_assign_op1, unsigned &vd_index, tree_nodeRef &vd_node)
 {
@@ -425,6 +416,8 @@ bool rebuild_initialization2::extract_var_decl_ppe(tree_nodeRef addr_assign_op1,
    else if(addr2_assign_op1->get_kind() == mem_ref_K)
       return false;
    else if(addr2_assign_op1->get_kind() == call_expr_K)
+      return false;
+   else if(addr2_assign_op1->get_kind() == cond_expr_K)
       return false;
    else
       return unexpetedPattern(addr2_assign_op1);
@@ -644,6 +637,11 @@ bool rebuild_initialization2::look_for_ROMs()
                         if(vd->init)
                         {
                            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---variable is initialized: " + TM->get_tree_node_const(vd_index)->ToString());
+                           foundNonConstant(vd_index);
+                        }
+                        else if(not vd->scpe or GET_NODE(vd->scpe)->get_kind() == translation_unit_decl_K)
+                        {
+                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---variable is not local: " + TM->get_tree_node_const(vd_index)->ToString());
                            foundNonConstant(vd_index);
                         }
                         else
@@ -999,7 +997,9 @@ bool rebuild_initialization2::look_for_ROMs()
                   }
                }
                else
+               {
                   THROW_ASSERT(resolved, "unexpected condition");
+               }
             }
             else
             {
@@ -1156,15 +1156,7 @@ bool rebuild_initialization2::look_for_ROMs()
 
 DesignFlowStep_Status rebuild_initialization2::InternalExec()
 {
-   if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC)
-   {
-      PrintTreeManager(true);
-   }
    bool modified = look_for_ROMs();
-   if(debug_level >= DEBUG_LEVEL_PEDANTIC)
-   {
-      PrintTreeManager(false);
-   }
    if(modified)
       function_behavior->UpdateBBVersion();
    return modified ? DesignFlowStep_Status::SUCCESS : DesignFlowStep_Status::UNCHANGED;

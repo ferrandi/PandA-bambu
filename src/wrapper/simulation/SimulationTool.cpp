@@ -40,6 +40,7 @@
  *
 */
 #include "SimulationTool.hpp"
+#include "config_HAVE_ASSERTS.hpp"           // for HAVE_ASSERTS
 
 #include "ToolManager.hpp"
 
@@ -258,8 +259,9 @@ unsigned long long int SimulationTool::DetermineCycles(unsigned long long int &a
          PRINT_OUT_MEX(OUTPUT_LEVEL_PEDANTIC, output_level, "File \"" + profiling_result_file + "\" opened");
          double clock_period = Param->isOption(OPT_clock_period) ? Param->getOption<double>(OPT_clock_period) : 10;
          double time_stamp = 0.0 ;
+#if HAVE_ASSERTS
          unsigned int prev_state = 3;
-
+#endif
          while(!profiling_res_file.eof())
          {
             std::string line;
@@ -277,13 +279,17 @@ unsigned long long int SimulationTool::DetermineCycles(unsigned long long int &a
             if(filevalues[0] == "2")
             {
                THROW_ASSERT(prev_state == 3, "Something wrong happen during the reading of the profiling results");
+#if HAVE_ASSERTS
                prev_state = 2;
+#endif
                time_stamp = time_stamp - boost::lexical_cast<double>(filevalues[1]);
             }
             else
             {
                THROW_ASSERT(prev_state == 2, "Something wrong happen during the reading of the profiling results");
+#if HAVE_ASSERTS
                prev_state = 3;
+#endif
                time_stamp = time_stamp - clock_period + boost::lexical_cast<double>(filevalues[1]);
             }
             i++;

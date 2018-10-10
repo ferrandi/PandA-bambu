@@ -128,9 +128,7 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(LOOPS_ANALYSIS_ZEBU, SAME_FUNCTION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(LOOP_REGIONS_COMPUTATION, SAME_FUNCTION));
 #endif
-#if HAVE_BAMBU_BUILT && HAVE_EXPERIMENTAL
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(VECTORIZE, SAME_FUNCTION));
-#endif
          break;
       }
       default:
@@ -175,10 +173,6 @@ void operations_cfg_computation::Initialize()
 DesignFlowStep_Status operations_cfg_computation::InternalExec()
 {
    const tree_managerRef TM = AppM->get_tree_manager();
-   if(debug_level >= DEBUG_LEVEL_PEDANTIC)
-   {
-      PrintTreeManager(true);
-   }
    const BBGraphRef fbb = function_behavior->GetBBGraph(FunctionBehavior::FBB);
    VertexIterator v_iter, v_iter_end;
    const BehavioralHelperConstRef helper = function_behavior->CGetBehavioralHelper();

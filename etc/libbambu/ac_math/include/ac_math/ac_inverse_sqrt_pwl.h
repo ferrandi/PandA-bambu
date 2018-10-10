@@ -176,7 +176,7 @@ namespace ac_math
     // (x_min_lut and and x_max_lut are the lower and upper limits of the domain)
     ac_fixed<n_frac_bits + int_bits, int_bits, false> input_sc = ((ac_fixed<n_frac_bits + int_bits + 4, int_bits, false>)(normalized_input - x_min_lut)) << 4;
     // Take out the fractional bits of the scaled input
-    ac_fixed<n_frac_bits, 0, false> input_sc_frac;
+    ac_fixed<n_frac_bits, 0, false> input_sc_frac(0);
     input_sc_frac.set_slc(0, input_sc.template slc<n_frac_bits>(0));
     // index is taken as integer part of scaled value and used for selection of m and c values
     ac_int<int_bits, false> index = input_sc.to_int();
@@ -198,7 +198,7 @@ namespace ac_math
 
     // If a zero input is encountered, the output must saturate regardless of whether the assert has been activated or not.
     // Assign a variable that stores the saturated output value.
-    ac_fixed<W2, I2, false, q2, o2> output_temp_max;
+    ac_fixed<W2, I2, false, q2, o2> output_temp_max(0);
     output_temp_max.template set_val<AC_VAL_MAX>();
     // Use a ternary operator to decide whether the output should store the PWL-calculated value or the saturated value, based
     // on whether a zero was passed or not.
@@ -252,7 +252,7 @@ namespace ac_math
     const int sqrt_W = find_rt_sqrt_pwl<t_W, t_I - 1>::W1 + 1;
     const int sqrt_I = find_rt_sqrt_pwl<t_W, t_I - 1>::I1 + 1;
 
-    ac_complex <ac_fixed <sqrt_W, sqrt_I, true, q_mode_temp> > sqrt_conj;
+    ac_complex <ac_fixed <sqrt_W, sqrt_I, true, q_mode_temp> > sqrt_conj(0);
     // Calculate square root of conjugate of input
     ac_sqrt_pwl<q_mode_temp> (input.conj(), sqrt_conj);
 

@@ -193,11 +193,6 @@ void create_return_and_fix_cfg(const tree_managerRef TM, std::map<TreeVocabulary
 DesignFlowStep_Status SplitReturn::InternalExec()
 {
     const tree_managerRef TM = AppM->get_tree_manager();
-    if(debug_level >= DEBUG_LEVEL_PEDANTIC)
-    {
-       WriteBBGraphDot("BB_Before_" + GetName() + ".dot");
-       PrintTreeManager(true);
-    }
     bool isChanged = false;
     tree_nodeRef temp = TM->get_tree_node_const(function_id);
     std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> gimple_return_schema;
@@ -282,11 +277,7 @@ DesignFlowStep_Status SplitReturn::InternalExec()
     }
     for(auto bb_index : to_be_erase)
        list_of_bloc.erase(bb_index);
-    if(debug_level >= DEBUG_LEVEL_PEDANTIC)
-    {
-       WriteBBGraphDot("BB_After_" + GetName() + ".dot");
-       PrintTreeManager(false);
-    }
+
     if(isChanged) {
        function_behavior->UpdateBBVersion();
        return DesignFlowStep_Status::SUCCESS;
