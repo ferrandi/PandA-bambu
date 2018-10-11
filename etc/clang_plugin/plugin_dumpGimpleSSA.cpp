@@ -45,8 +45,13 @@
 #include "clang/AST/Mangle.h"
 #include "clang/AST/ASTConsumer.h"
 #include "clang/AST/RecursiveASTVisitor.h"
+#include "clang/AST/Type.h"
 #include "clang/Frontend/CompilerInstance.h"
+#include "clang/Lex/Preprocessor.h"
+#include "clang/Lex/LexDiagnostic.h"
 #include "clang/Sema/Sema.h"
+#include <sstream>
+#include "llvm/Support/raw_ostream.h"
 
 #define PRINT_DBG_MSG 0
 //#define UNIFYFUNCTIONEXITNODES
@@ -58,14 +63,58 @@ namespace llvm {
 static clang::DumpGimpleRaw *gimpleRawWriter;
 static std::string TopFunctionName;
 static std::map<std::string,std::vector<std::string>> Fun2Params;
+static std::map<std::string,std::string> HLS_interface_PragmaMap;
+
+static std::map<std::string,std::vector<std::string>> HLS_interfaceMap;
+static std::string interface_XML_filename;
+
 
 namespace clang {
 
+   static std::string create_file_name_string(const std::string &outdir_name, const std::string & original_filename, const std::string & fileSuffix)
+   {
+      std::size_t found = original_filename.find_last_of("/\\");
+      std::string dump_base_name;
+      if(found == std::string::npos)
+         dump_base_name = original_filename;
+      else
+         dump_base_name = original_filename.substr(found+1);
+      return outdir_name + "/" + dump_base_name + fileSuffix;
+   }
+
+   static void writeXML_interfaceFile(const std::string filename)
+   {
+      std::error_code EC;
+      llvm::raw_fd_ostream stream(filename, EC, llvm::sys::fs::F_RW);
+
+      stream << "<?xml version=\"1.0\"?>\n";
+      stream << "<module>\n";
+      for(auto funArgPair: Fun2Params)
+      {
+         bool hasInterfaceType = HLS_interfaceMap.find(funArgPair.first) != HLS_interfaceMap.end();
+         if(hasInterfaceType)
+         {
+            stream << "  <function id=\""<<funArgPair.first<<"\">\n";
+            const auto & interfaceTypeVec = HLS_interfaceMap.find(funArgPair.first)->second;
+            unsigned int ArgIndex=0;
+            for(auto par: funArgPair.second)
+            {
+               stream << "    <arg id=\""<<par<<"\" interface_type=\""<< interfaceTypeVec.at(ArgIndex)<<"\"/>\n";
+               ++ArgIndex;
+            }
+            stream << "  </function>\n";
+         }
+      }
+      stream << "</module>\n";
+
+   }
    class FunctionArgConsumer : public clang::ASTConsumer
    {
+         CompilerInstance &CI;
       public:
-         FunctionArgConsumer() {}
-         bool HandleTopLevelDecl(DeclGroupRef DG) override {
+         FunctionArgConsumer(CompilerInstance &Instance) : CI(Instance) {}
+         bool HandleTopLevelDecl(DeclGroupRef DG) override
+         {
             for (DeclGroupRef::iterator i = DG.begin(), e = DG.end(); i != e; ++i) {
                const Decl *D = *i;
                if(const FunctionDecl * FD = dyn_cast<FunctionDecl>(D))
@@ -74,38 +123,203 @@ namespace clang {
                   {
                      const auto getMangledName = [&](const FunctionDecl* decl) {
 
-                       auto mangleContext = decl->getASTContext().createMangleContext();
+                        auto mangleContext = decl->getASTContext().createMangleContext();
 
-                       if (!mangleContext->shouldMangleDeclName(decl)) {
-                         return decl->getNameInfo().getName().getAsString();
-                       }
-                       std::string mangledName;
-                       llvm::raw_string_ostream ostream(mangledName);
-
-                       mangleContext->mangleName(decl, ostream);
-
-                       ostream.flush();
-
-                       delete mangleContext;
-
-                       return mangledName;
+                        if (!mangleContext->shouldMangleDeclName(decl)) {
+                           return decl->getNameInfo().getName().getAsString();
+                        }
+                        std::string mangledName;
+                        llvm::raw_string_ostream ostream(mangledName);
+                        mangleContext->mangleName(decl, ostream);
+                        ostream.flush();
+                        delete mangleContext;
+                        return mangledName;
                      };
                      auto funName = getMangledName(FD);
                      for(const auto par : FD->parameters())
                      {
-                        if (const NamedDecl *ND = dyn_cast<NamedDecl>(par))
+                        if (const ParmVarDecl *ND = dyn_cast<ParmVarDecl>(par))
                         {
-                           Fun2Params[funName].push_back(ND->getNameAsString());
+                           std::string interfaceType="default";
+                           std::string UserDefinedInterfaceType;
+                           auto parName = ND->getNameAsString();
+                           bool UDIT_p = false;
+                           if(HLS_interface_PragmaMap.find(parName) != HLS_interface_PragmaMap.end())
+                           {
+                              UserDefinedInterfaceType = HLS_interface_PragmaMap.find(parName)->second;
+                              UDIT_p = true;
+                           }
+                           auto argType = ND->getType().getTypePtr();
+                           //argType->dump (llvm::errs() );
+                           if(isa<DecayedType>(argType))
+                           {
+                              auto DT = cast<DecayedType>(argType);
+                              if(DT->getOriginalType()->isConstantArrayType())
+                              {
+                                 auto CA = cast<ConstantArrayType>(DT->getOriginalType());
+                                 auto OrigTotArraySize=CA->getSize();
+                                 while(CA->getElementType()->isConstantArrayType())
+                                 {
+                                    CA = cast<ConstantArrayType>(CA->getElementType());
+                                    OrigTotArraySize *= CA->getSize();
+                                 }
+                                 if(CA->getElementType()->isBuiltinType())
+                                 {
+                                    interfaceType="array-"+OrigTotArraySize.toString(10,false);
+                                 }
+                              }
+                              if(UDIT_p)
+                              {
+                                 if(UserDefinedInterfaceType != "handshake" &&
+                                       UserDefinedInterfaceType != "fifo" &&
+                                       UserDefinedInterfaceType.find("array")==std::string::npos &&
+                                       UserDefinedInterfaceType != "bus")
+                                 {
+                                    DiagnosticsEngine &D = CI.getDiagnostics();
+                                    D.Report(D.getCustomDiagID(DiagnosticsEngine::Error,
+                                                            "#pragma HLS_interface non-consistent with parameter of constant array type, where user defined interface is: %0")).AddString(UserDefinedInterfaceType);
+                                 }
+                                 else
+                                    interfaceType=UserDefinedInterfaceType;
+                              }
+                           }
+                           else if(argType->isPointerType() || argType->isReferenceType())
+                           {
+                              auto PT = cast<PointerType>(argType);
+                              if(PT->getPointeeType()->isBuiltinType())
+                                 interfaceType="ptrdefault";
+                              if(UDIT_p)
+                              {
+                                 if(UserDefinedInterfaceType != "none" &&
+                                       UserDefinedInterfaceType != "handshake" &&
+                                       UserDefinedInterfaceType != "valid" &&
+                                       UserDefinedInterfaceType != "acknowledge" &&
+                                       UserDefinedInterfaceType != "fifo" &&
+                                       UserDefinedInterfaceType != "bus")
+                                 {
+                                    DiagnosticsEngine &D = CI.getDiagnostics();
+                                    D.Report(D.getCustomDiagID(DiagnosticsEngine::Error,
+                                                            "#pragma HLS_interface non-consistent with parameter of pointer type, where user defined interface is: %0")).AddString(UserDefinedInterfaceType);
+                                 }
+                                 else
+                                    interfaceType=UserDefinedInterfaceType;
+                              }
+                           }
+                           else
+                           {
+                              if(UDIT_p)
+                              {
+                                 if(UserDefinedInterfaceType != "none" &&
+                                       UserDefinedInterfaceType != "handshake" &&
+                                       UserDefinedInterfaceType != "valid" &&
+                                       UserDefinedInterfaceType != "acknowledge")
+                                 {
+                                    DiagnosticsEngine &D = CI.getDiagnostics();
+                                    D.Report(D.getCustomDiagID(DiagnosticsEngine::Error,
+                                                            "#pragma HLS_interface non-consistent with parameter of builtin type, where user defined interface is: %0")).AddString(UserDefinedInterfaceType);
+                                 }
+                                 else
+                                    interfaceType=UserDefinedInterfaceType;
+                              }
+                           }
+
+                           HLS_interfaceMap[funName].push_back(interfaceType);
+                           Fun2Params[funName].push_back(parName);
                         }
                      }
                   }
+                  if(!HLS_interface_PragmaMap.empty())
+                  {
+                     HLS_interface_PragmaMap.clear();
+                  }
                }
             }
-
             return true;
          }
 
    };
+
+   class HLS_interface_PragmaHandler : public PragmaHandler
+   {
+      public:
+         HLS_interface_PragmaHandler() : PragmaHandler("HLS_interface") { }
+
+         void HandlePragma(Preprocessor &PP, PragmaIntroducerKind Introducer,
+                           Token &PragmaTok) override
+         {
+
+            Token Tok;
+            unsigned int index=0;
+            std::string par;
+            std::string interface;
+            while(Tok.isNot(tok::eod))
+            {
+               PP.Lex(Tok);
+               if(Tok.isNot(tok::eod))
+               {
+                  if(index==0)
+                     par=PP.getSpelling(Tok);
+                  else if(index>=1)
+                  {
+                     auto tokString = PP.getSpelling(Tok);
+                     if(index==1)
+                     {
+                        if(tokString!="none" &&
+                              tokString!="array" &&
+                              tokString!="bus" &&
+                              tokString!="fifo" &&
+                              tokString!="handshake" &&
+                              tokString!="valid")
+                        {
+                           DiagnosticsEngine &D = PP.getDiagnostics();
+                           unsigned ID = D.getCustomDiagID(
+                                            DiagnosticsEngine::Error,
+                                            "#pragma HLS_interface unexpected interface type. Currently accepted keywords are: none,array,bus,fifo,handshake,valid,acknowledge");
+                           D.Report(PragmaTok.getLocation(), ID);
+                        }
+                     }
+                     else if(index==2)
+                     {
+                        if(tokString != "-" && interface != "array")
+                        {
+                           DiagnosticsEngine &D = PP.getDiagnostics();
+                           unsigned ID = D.getCustomDiagID(
+                                            DiagnosticsEngine::Error,
+                                            "#pragma HLS_interface malformed");
+                           D.Report(PragmaTok.getLocation(), ID);
+                        }
+                     }
+                     else if(index==3)
+                     {
+                        if(Tok.isNot(tok::numeric_constant) || interface != "array-")
+                        {
+                           DiagnosticsEngine &D = PP.getDiagnostics();
+                           unsigned ID = D.getCustomDiagID(
+                                            DiagnosticsEngine::Error,
+                                            "#pragma HLS_interface malformed");
+                           D.Report(PragmaTok.getLocation(), ID);
+                        }
+                     }
+                     interface+=tokString;
+                  }
+                  ++index;
+               }
+            }
+            if(index>=2)
+            {
+               HLS_interface_PragmaMap[par]=interface;
+            }
+            else
+            {
+               DiagnosticsEngine &D = PP.getDiagnostics();
+               unsigned ID = D.getCustomDiagID(
+                                DiagnosticsEngine::Error,
+                       "#pragma HLS_interface malformed");
+               D.Report(PragmaTok.getLocation(), ID);
+            }
+         }
+   };
+
 
    class CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSA) : public PluginASTAction
    {
@@ -120,9 +334,12 @@ namespace clang {
             if(outdir_name=="")
                D.Report(D.getCustomDiagID(DiagnosticsEngine::Error,
                                        "outputdir argument not specified"));
+            clang::Preprocessor &PP = CI.getPreprocessor();
+            PP.AddPragmaHandler(new HLS_interface_PragmaHandler());
             gimpleRawWriter = new DumpGimpleRaw(CI, outdir_name, InFile, false, &Fun2Params);
             TopFunctionName = topfname;
-            return llvm::make_unique<FunctionArgConsumer>();
+            interface_XML_filename=create_file_name_string(outdir_name,InFile,".interface.xml");
+            return llvm::make_unique<FunctionArgConsumer>(CI);
          }
 
          bool ParseArgs(const CompilerInstance &CI,
@@ -252,6 +469,8 @@ namespace llvm {
             llvm::errs() << "Top function name: " << TopFunctionName << "\n";
 #endif
             assert(gimpleRawWriter);
+            assert(interface_XML_filename!="");
+            clang::writeXML_interfaceFile(interface_XML_filename);
             auto res = gimpleRawWriter->runOnModule(M, this, TopFunctionName);
             delete gimpleRawWriter;
             gimpleRawWriter = nullptr;
