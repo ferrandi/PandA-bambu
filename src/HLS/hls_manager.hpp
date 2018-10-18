@@ -113,6 +113,9 @@ class HLS_manager : public application_manager
       const AadlInformationRef aadl_information;
 #endif
 
+      /// store the design interface directives coming from an xml file
+      std::map<std::string,std::map<std::string,std::string>> design_interface;
+
       /**
        * Constructor.
        */

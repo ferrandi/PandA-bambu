@@ -172,9 +172,10 @@
 #include "HWCallInjection.hpp"
 #endif
 #if HAVE_BAMBU_BUILT
+#include "interface_infer.hpp"
 #include "ipa_point_to_analysis.hpp"
-#endif
 #include "IR_lowering.hpp"
+#endif
 #if HAVE_ZEBU_BUILT
 #include "instruction_sequences_computation.hpp"
 #include "loop_regions_computation.hpp"
@@ -433,6 +434,7 @@ const DesignFlowStepRef FrontendFlowStepFactory::GenerateFrontendStep(FrontendFl
 #if HAVE_BAMBU_BUILT
       case HLS_DIV_CG_EXT:
       case HWCALL_INJECTION:
+      case INTERFACE_INFER:
       case IR_LOWERING:
 #endif
       case LOOP_COMPUTATION:
@@ -826,6 +828,7 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateApplicationFrontendFlowSt
 #if HAVE_BAMBU_BUILT
       case HLS_DIV_CG_EXT:
       case HWCALL_INJECTION:
+      case INTERFACE_INFER:
       case IR_LOWERING:
 #endif
       case LOOP_COMPUTATION:
@@ -1208,6 +1211,10 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateFunctionFrontendFlowStep(
       case HWCALL_INJECTION:
       {
          return DesignFlowStepRef(new HWCallInjection(parameters, AppM, function_id, design_flow_manager.lock()));
+      }
+      case INTERFACE_INFER:
+      {
+         return DesignFlowStepRef(new interface_infer(AppM, function_id, design_flow_manager.lock(), parameters));
       }
       case IR_LOWERING:
       {

@@ -382,7 +382,8 @@ void BambuParameter::PrintHelp(std::ostream &os) const
    << "    --generate-interface=<type>\n"
    << "        Wrap the top level module with an external interface.\n"
    << "        Possible values for <type> and related interfaces:\n"
-   << "            minimal  -  (minimal interface - default)\n"
+   << "            MINIMAL  -  (minimal interface - default)\n"
+   << "            INFER    -  (top function is built with an hardware interface inferred from the pragmas or from the top function signature)\n"
    << "            WB4      -  (WishBone 4 interface)\n"
 #if HAVE_EXPERIMENTAL
    << "            AXI4LITE -  (AXI4-Lite interface)\n"
@@ -2464,6 +2465,10 @@ int BambuParameter::Exec()
                if (std::string(optarg) == "MINIMAL")
                {
                   setOption(OPT_interface_type, HLSFlowStep_Type::MINIMAL_INTERFACE_GENERATION);
+               }
+               if (std::string(optarg) == "INFER")
+               {
+                  setOption(OPT_interface_type, HLSFlowStep_Type::INFER_INTERFACE_GENERATION);
                }
                else if (std::string(optarg) == "WB4")
                {

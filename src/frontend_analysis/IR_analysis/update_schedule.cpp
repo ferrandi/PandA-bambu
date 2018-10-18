@@ -74,7 +74,6 @@ UpdateSchedule::~UpdateSchedule()
 
 const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship> > UpdateSchedule::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   const auto TM = AppM->get_tree_manager();
    std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > relationships;
    switch(relationship_type)
    {

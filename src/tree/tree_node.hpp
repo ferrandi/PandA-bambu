@@ -3359,7 +3359,7 @@ struct parm_decl : public decl_node
 
    /**
     * argt field is the type in which the argument is actually passed,
-    * which may be different from its type within the funtion.
+    * which may be different from its type within the function.
     * (macro DECL_ARG_TYPE)
    */
    tree_nodeRef argt;

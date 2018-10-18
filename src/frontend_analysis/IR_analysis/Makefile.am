@@ -75,6 +75,7 @@ if BUILD_BAMBU
      hdl_var_decl_fix.hpp \
      hls_div_cg_ext.hpp \
      HWCallInjection.hpp \
+     interface_infer.hpp \
      ipa_point_to_analysis.hpp\
      IR_lowering.hpp \
      loops_analysis_bambu.hpp \
@@ -117,6 +118,7 @@ if BUILD_BAMBU
      hdl_var_decl_fix.cpp \
      hls_div_cg_ext.cpp \
      HWCallInjection.cpp \
+     interface_infer.cpp \
      ipa_point_to_analysis.cpp\
      loops_analysis_bambu.cpp \
      lut_transformation.cpp \

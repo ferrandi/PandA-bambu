@@ -37,6 +37,8 @@
  * This class defines some useful functions to create tree nodes and to manipulate the tree manager.
  *
  * @author ste <stefano.viazzi@gmail.com>
+ * @author Marco Lattuada <marco.lattuada@polimi.it>
+ * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  *
 */
 #ifndef TREE_MANIPULATION_HPP
@@ -86,6 +88,7 @@ REF_FORWARD_DECL(bloc);
 #define SIZE_VALUE_UNSIGNED_LONG_LONG_INT 64
 #define SIZE_VALUE_INT 32
 #define SIZE_VALUE_BOOL 8
+#define SIZE_VALUE_FUNCTION 8
 #define SIZE_VALUE_POINTER 32
 
 #define MIN_VALUE_BIT_SIZE 0
@@ -235,7 +238,7 @@ class tree_manipulation
             unsigned int algn,
             int used,
             bool register_flag = false,
-            bool readonly_flag=false);
+            bool readonly_flag=false) const;
 
       /// create or find a global scope
       tree_nodeRef create_translation_unit_decl() const;
@@ -417,6 +420,7 @@ class tree_manipulation
        * @param  srcp is the definition of the source position.
        * @return the tree_reindex node of the gimple_cond created.
        * @param  bb_index is the basic block index associated with the gimple statement
+       * @return the tree_reindex node of the gimple_cond created.
        */
       tree_nodeRef create_gimple_cond(const tree_nodeRef & expr, std::string srcp, unsigned int bb_index) const;
 
@@ -424,13 +428,13 @@ class tree_manipulation
 
       /**
        * Function used to create a new gimple_return.
-       * @param  decl is the result_decl node.
-       * @param  op_gimple is the value to return.
+       * @param  type is the type of the expression returned.
+       * @param  expr is the value to return.
        * @param  srcp is the definition of the source position.
        * @param  bb_index is the basic block index associated with the gimple statement
        * @return the tree_reindex node of the gimple_return created.
        */
-      tree_nodeRef create_return_expr(const tree_nodeRef & decl, tree_nodeRef & op_gimple, std::string srcp, unsigned int bb_index) const;
+      tree_nodeRef create_gimple_return(const tree_nodeRef& type, const tree_nodeRef & expr, std::string srcp, unsigned int bb_index) const;
 
       /**
        * create a label expression in a header of a loop.
@@ -446,6 +450,17 @@ class tree_manipulation
        * @param label_expr_nid is the node id of the label expression associated with the goto expression.
        */
       void create_goto(const blocRef block, unsigned int function_decl_nid, unsigned int label_expr_nid) const;
+
+      /**
+       * @brief create the declaration of a function without its body
+       * @param function_name is the function name
+       * @param scpe is the function scope
+       * @param args is the vector of argument types
+       * @param srcp is the source references
+       * @param with_body when true a stub of the body is created
+       * @return is the the tree_reindex associated with the function_decl created.
+       */
+      tree_nodeRef create_function_decl(const std::string& function_name, const tree_nodeRef& scpe, const std::vector<tree_nodeRef>& argsT, const tree_nodeRef& returnType, std::string srcp, bool with_body) const;
 
       ///BASIC BLOCK
 

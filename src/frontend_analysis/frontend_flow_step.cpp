@@ -319,6 +319,8 @@ const std::string FrontendFlowStep::EnumToKindText(const FrontendFlowStepType fr
          return "InstructionSequencesComputation";
 #endif
 #if HAVE_BAMBU_BUILT
+      case(INTERFACE_INFER) :
+         return "InterfaceInfer";
       case(IPA_POINT_TO_ANALYSIS) :
          return "IpaPointToAnalysis";
       case(IR_LOWERING) :

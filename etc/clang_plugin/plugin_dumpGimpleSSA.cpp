@@ -91,6 +91,7 @@ namespace clang {
       stream << "<module>\n";
       for(auto funArgPair: Fun2Params)
       {
+         if(TopFunctionName != "" && funArgPair.first != TopFunctionName) continue;
          bool hasInterfaceType = HLS_interfaceMap.find(funArgPair.first) != HLS_interfaceMap.end();
          if(hasInterfaceType)
          {

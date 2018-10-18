@@ -102,8 +102,10 @@ void HWCallPathCalculator::start_vertex(
 
    // top interface scope (depending on the interface)
    if (parameters->isOption(OPT_interface_type) and
-         parameters->getOption<HLSFlowStep_Type>(OPT_interface_type) ==
-         HLSFlowStep_Type::MINIMAL_INTERFACE_GENERATION)
+         (parameters->getOption<HLSFlowStep_Type>(OPT_interface_type) ==
+         HLSFlowStep_Type::MINIMAL_INTERFACE_GENERATION ||
+          parameters->getOption<HLSFlowStep_Type>(OPT_interface_type) ==
+                   HLSFlowStep_Type::INFER_INTERFACE_GENERATION))
    {
       top_interface_name = top_fu_name + "_minimal_interface";
       interface_scope = top_interface_name + STR(HIERARCHY_SEPARATOR);

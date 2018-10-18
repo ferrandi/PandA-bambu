@@ -244,6 +244,8 @@ const std::string HLS_step::EnumToName(const HLSFlowStep_Type hls_flow_step_type
 #endif
       case HLSFlowStep_Type::MINIMAL_INTERFACE_GENERATION:
          return "MinimalInterfaceGeneration";
+      case HLSFlowStep_Type::INFER_INTERFACE_GENERATION:
+            return "InferInterfaceGeneration";
       case HLSFlowStep_Type::MINIMAL_TESTBENCH_GENERATION:
          return "MinimalTestbenchGeneration";
       case HLSFlowStep_Type::MUX_INTERCONNECTION_BINDING:
