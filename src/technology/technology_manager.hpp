@@ -73,6 +73,8 @@
 #define OPENMP_LIBRARY std::string("OpenMP_library")
 /// proxy library
 #define PROXY_LIBRARY std::string("proxy_library")
+/// interface library
+#define INTERFACE_LIBRARY std::string("interface_library")
 /// standard library where all built-in ports are defined.
 #define LIBRARY_STD std::string("STD")
 /// standard library where all standard HLS resources are defined
@@ -85,8 +87,6 @@
 #define LIBRARY_PC std::string("STD_PC")
 /// FPGA modules
 #define FPGA_LIBRARY std::string("FPGA_LIBRARY")
-/// standard library where all standard HLS resources are defined
-#define LIBRARY_SOFT_FLOAT_FU std::string("STD_SOFT_FLOAT")
 
 /**
  * @name Forward declarations.

@@ -287,7 +287,7 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj,
                shared_memory = SM_minimal_interface->add_module_from_technology_library("shared_memory", STD_BRAMN+latency_postfix, LIBRARY_STD, interfaceObj, HLSMgr->get_HLS_target()->get_technology_manager());
             }
             unsigned int bus_data_bitsize = HLSMgr->Rmem->get_bus_data_bitsize();
-            unsigned int bus_addr_bitsize = HLSMgr->Rmem->get_bus_addr_bitsize();
+            unsigned int bus_addr_bitsize = HLSMgr->get_address_bitsize();
             unsigned int bus_size_bitsize = HLSMgr->Rmem->get_bus_size_bitsize();
             unsigned int bram_bitsize = HLSMgr->Rmem->get_bram_bitsize();
             unsigned int n_bytes = HLSMgr->Rmem->get_memory_address()-base_address;

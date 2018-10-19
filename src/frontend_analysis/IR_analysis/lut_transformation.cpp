@@ -34,11 +34,11 @@
  * @file lut_transformation.hpp
  * @brief recognize lut expressions.
  * @author Di Simone Jacopo
- * @author  Cappello Paolo
+ * @author Cappello Paolo
  * @author Inajjar Ilyas
  * @author Angelo Gallarello
- * @author  Stefano Longari
- * Marco Lattuada <marco.lattuada@polimi.it>
+ * @author Stefano Longari
+ * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
  */
 

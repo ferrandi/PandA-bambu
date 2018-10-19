@@ -68,7 +68,7 @@
 /// we start to allocate from internal_base_address_alignment byte to align address to internal_base_address_alignment bits
 /// we can use address 0 in some cases but it is not safe in general.
 
-memory::memory(const tree_managerRef _TreeM, unsigned int _off_base_address, unsigned int max_bram, bool _null_pointer_check, bool initial_internal_address_p, unsigned int initial_internal_address, unsigned int &_address_bitsize) :
+memory::memory(const tree_managerRef _TreeM, unsigned int _off_base_address, unsigned int max_bram, bool _null_pointer_check, bool initial_internal_address_p, unsigned int initial_internal_address, const unsigned& _bus_addr_bitsize) :
    TreeM(_TreeM),
    maximum_private_memory_size(0),
    total_amount_of_private_memory(0),
@@ -76,7 +76,6 @@ memory::memory(const tree_managerRef _TreeM, unsigned int _off_base_address, uns
    off_base_address(_off_base_address),
    next_off_base_address(_off_base_address),
    bus_data_bitsize(0),
-   bus_addr_bitsize(_address_bitsize),
    bus_size_bitsize(0),
    aligned_bitsize(0),
    bram_bitsize(0),
@@ -89,7 +88,8 @@ memory::memory(const tree_managerRef _TreeM, unsigned int _off_base_address, uns
    implicit_memcpy(false),
    parameter_alignment(16),
    null_pointer_check(_null_pointer_check),
-   packed_vars(false)
+   packed_vars(false),
+   bus_addr_bitsize(_bus_addr_bitsize)
 {
    unsigned int max_bus_size = 2*max_bram;
    external_base_address_alignment= internal_base_address_alignment= max_bus_size/8;

@@ -135,9 +135,6 @@ class memory
       /// bus data bitsize
       unsigned int bus_data_bitsize;
 
-      /// bus address bitsize
-      unsigned int &bus_addr_bitsize;
-
       /// bus size bitsize
       unsigned int bus_size_bitsize;
 
@@ -195,6 +192,8 @@ class memory
       /// true when packed vars are used
       bool packed_vars;
 
+      const unsigned& bus_addr_bitsize;
+
 
       /**
        * Alignment utility function
@@ -210,7 +209,7 @@ class memory
       /**
        * Constructor
        */
-      memory(const tree_managerRef TreeM, unsigned int off_base_address, unsigned int max_bram, bool null_pointer_check, bool initial_internal_address_p, unsigned int initial_internal_address, unsigned int &_address_bitsize);
+      memory(const tree_managerRef TreeM, unsigned int off_base_address, unsigned int max_bram, bool null_pointer_check, bool initial_internal_address_p, unsigned int initial_internal_address, const unsigned& _bus_addr_bitsize);
 
       /**
        * Destructor
@@ -533,16 +532,6 @@ class memory
        * return the bitsize of the data bus
        */
       unsigned int get_bus_data_bitsize() const {return bus_data_bitsize;}
-
-      /**
-       * set the bus address bitsize
-       */
-      void set_bus_addr_bitsize(unsigned int bitsize) {bus_addr_bitsize=bitsize;}
-
-      /**
-       * return the bitsize of the address bus
-       */
-      unsigned int get_bus_addr_bitsize() const {return bus_addr_bitsize;}
 
       /**
        * set the bus size bitsize

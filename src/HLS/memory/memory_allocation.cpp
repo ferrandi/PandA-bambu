@@ -452,7 +452,7 @@ void memory_allocation::finalize_memory_allocation()
       if(HLSMgr->Rmem->count_non_private_internal_symbols()==1)
          ++addr_bus_bitsize;
    }
-   HLSMgr->Rmem->set_bus_addr_bitsize(addr_bus_bitsize);
+   HLSMgr->set_address_bitsize(addr_bus_bitsize);
    if(needMemoryMappedRegisters)
       maximum_bus_size = std::max(maximum_bus_size, addr_bus_bitsize);
    data_bus_bitsize = maximum_bus_size;

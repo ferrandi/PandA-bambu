@@ -533,7 +533,7 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Managing parameter initialization: " + STR(function_parameter));
          unsigned int bus_data_bitsize = HLSMgr->Rmem->get_bus_data_bitsize();
-         unsigned int bus_addr_bitsize = HLSMgr->Rmem->get_bus_addr_bitsize();
+         unsigned int bus_addr_bitsize = HLSMgr->get_address_bitsize();
          unsigned int bus_size_bitsize = HLSMgr->Rmem->get_bus_size_bitsize();
          structural_objectRef curr_gate;
          bool is_multiport;
@@ -1366,7 +1366,7 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
    const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(HLS->functionId);
    unsigned int bus_data_bitsize = HLSMgr->Rmem->get_bus_data_bitsize();
    unsigned int bus_size_bitsize = HLSMgr->Rmem->get_bus_size_bitsize();
-   unsigned int bus_addr_bitsize = HLSMgr->Rmem->get_bus_addr_bitsize();
+   unsigned int bus_addr_bitsize = HLSMgr->get_address_bitsize();
    auto* fu_module = GetPointer<module>(fu_obj);
    const technology_nodeRef fu_tech_obj = allocation_information->get_fu(fu);
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Specializing " + fu_obj->get_path() + " of type " + GET_TYPE_NAME(fu_obj));
@@ -1641,7 +1641,7 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
                        paramList = node->chan;
                        if(GET_NODE(node->valu)->get_kind() != void_type_K)
                        {
-                          std::string str_address = convert_to_binary(static_cast<unsigned long long int>(address), HLSMgr->Rmem->get_bus_addr_bitsize());
+                          std::string str_address = convert_to_binary(static_cast<unsigned long long int>(address), HLSMgr->get_address_bitsize());
                           parameterAddressFile << str_address <<"\n";
                           HLSMgr->Rmem->compute_next_base_address(address, GET_INDEX_NODE(node->valu), alignment);
                           count_param++;
@@ -1650,7 +1650,7 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
                      tree_nodeRef return_type = GetPointer<function_type>(functionType)->retn;
                      if(return_type && GET_NODE(return_type)->get_kind() != void_type_K && hasreturn_value)
                      {
-                        std::string str_address = convert_to_binary(static_cast<unsigned long long int>(address), HLSMgr->Rmem->get_bus_addr_bitsize());
+                        std::string str_address = convert_to_binary(static_cast<unsigned long long int>(address), HLSMgr->get_address_bitsize());
                         parameterAddressFile << str_address <<"\n";
                      }
                      parameterAddressFile.close();

@@ -139,6 +139,7 @@ if BUILD_BAMBU
      virtual_phi_nodes_split.cpp \
      constant_flop_wrapper.cpp
    lib_IR_analysis_la_CPPFLAGS += \
+      -I$(top_srcdir)/src/circuit \
       -I$(top_srcdir)/src/design_flows/backend/ToHDL \
       -I$(top_srcdir)/src/design_flows/technology \
       -I$(top_srcdir)/src/HLS \

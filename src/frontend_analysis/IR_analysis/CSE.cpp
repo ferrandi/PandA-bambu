@@ -74,8 +74,6 @@
 #include "schedule.hpp"
 #endif
 
-///HLS/memory include
-#include "memory.hpp"
 
 ///STD include
 #include <fstream>

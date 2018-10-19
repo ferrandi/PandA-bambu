@@ -209,7 +209,7 @@ const std::tuple<const std::vector<unsigned int> &, const std::vector<unsigned i
 static const double epsilon = 0.000000001;
 
 AllocationInformation::AllocationInformation(const HLS_managerRef _hls_manager, const unsigned int _function_index, const ParameterConstRef _parameters) :
-   HLSFunctionIR(_hls_manager, _function_index, _parameters)
+   HLSFunctionIR(_hls_manager, _function_index, _parameters), address_bitsize(_hls_manager->Rget_address_bitsize())
 {
    debug_level = _parameters->get_class_debug_level(GET_CLASS(*this));
 }
@@ -2196,9 +2196,7 @@ double AllocationInformation::get_correction_time(unsigned int fu, const std::st
          if(dims.size()>1 && n_not_power_of_two>0)
          {
             const technology_managerRef TM = HLS_T->get_technology_manager();
-            unsigned int bus_addr_bitsize = resize_to_1_8_16_32_64_128_256_512(Rmem->get_bus_addr_bitsize());
-            if(bus_addr_bitsize>32)
-               bus_addr_bitsize = 32;
+            unsigned int bus_addr_bitsize = resize_to_1_8_16_32_64_128_256_512(address_bitsize);
             technology_nodeRef f_unit = TM->get_fu(ADDER_STD + std::string("_"+STR(bus_addr_bitsize)+"_"+STR(bus_addr_bitsize)+"_"+STR(bus_addr_bitsize)), LIBRARY_STD_FU);
             THROW_ASSERT(f_unit, "Library miss component: " + std::string(ADDER_STD) + std::string("_"+STR(bus_addr_bitsize)+"_"+STR(bus_addr_bitsize)+"_"+STR(bus_addr_bitsize)));
             functional_unit * Fu= GetPointer<functional_unit>(f_unit);
@@ -2237,9 +2235,7 @@ double AllocationInformation::get_correction_time(unsigned int fu, const std::st
          if((dims.size()>1 && n_not_power_of_two>0))
          {
             const technology_managerRef TM = HLS_T->get_technology_manager();
-            unsigned int bus_addr_bitsize = resize_to_1_8_16_32_64_128_256_512(Rmem->get_bus_addr_bitsize());
-            if(bus_addr_bitsize>32)
-               bus_addr_bitsize = 32;
+            unsigned int bus_addr_bitsize = resize_to_1_8_16_32_64_128_256_512(address_bitsize);
             technology_nodeRef f_unit = TM->get_fu(ADDER_STD + std::string("_"+STR(bus_addr_bitsize)+"_"+STR(bus_addr_bitsize)+"_"+STR(bus_addr_bitsize)), LIBRARY_STD_FU);
             THROW_ASSERT(f_unit, "Library miss component: " + std::string(ADDER_STD) + std::string("_"+STR(bus_addr_bitsize)+"_"+STR(bus_addr_bitsize)+"_"+STR(bus_addr_bitsize)));
             functional_unit * Fu= GetPointer<functional_unit>(f_unit);
@@ -2275,9 +2271,7 @@ double AllocationInformation::get_correction_time(unsigned int fu, const std::st
          if((dims.size()>1 && n_not_power_of_two>0))
          {
             const technology_managerRef TM = HLS_T->get_technology_manager();
-            unsigned int bus_addr_bitsize = resize_to_1_8_16_32_64_128_256_512(Rmem->get_bus_addr_bitsize());
-            if(bus_addr_bitsize>32)
-               bus_addr_bitsize = 32;
+            unsigned int bus_addr_bitsize = resize_to_1_8_16_32_64_128_256_512(address_bitsize);
             technology_nodeRef f_unit = TM->get_fu(ADDER_STD + std::string("_"+STR(bus_addr_bitsize)+"_"+STR(bus_addr_bitsize)+"_"+STR(bus_addr_bitsize)), LIBRARY_STD_FU);
             THROW_ASSERT(f_unit, "Library miss component: " + std::string(ADDER_STD) + std::string("_"+STR(bus_addr_bitsize)+"_"+STR(bus_addr_bitsize)+"_"+STR(bus_addr_bitsize)));
             functional_unit * Fu= GetPointer<functional_unit>(f_unit);
@@ -2373,9 +2367,7 @@ double AllocationInformation::get_correction_time(unsigned int fu, const std::st
          if(dims.size()>1 && n_not_power_of_two>0)
          {
             const technology_managerRef TM = HLS_T->get_technology_manager();
-            unsigned int bus_addr_bitsize = resize_to_1_8_16_32_64_128_256_512(Rmem->get_bus_addr_bitsize());
-            if(bus_addr_bitsize>32)
-               bus_addr_bitsize = 32;
+            unsigned int bus_addr_bitsize = resize_to_1_8_16_32_64_128_256_512(address_bitsize);
             technology_nodeRef f_unit = TM->get_fu(ADDER_STD + std::string("_"+STR(bus_addr_bitsize)+"_"+STR(bus_addr_bitsize)+"_"+STR(bus_addr_bitsize)), LIBRARY_STD_FU);
             functional_unit * Fu= GetPointer<functional_unit>(f_unit);
             technology_nodeRef op_node =Fu->get_operation("plus_expr");

@@ -143,7 +143,7 @@ unsigned int WB4_interface::get_data_bus_bitsize()
 
 unsigned int WB4_interface::get_addr_bus_bitsize()
 {
-   unsigned int addr_bus_bitsize = HLSMgr->Rmem->get_bus_addr_bitsize();
+   unsigned int addr_bus_bitsize = HLSMgr->get_address_bitsize();
    unsigned int allocated_space = HLSMgr->Rmem->get_max_address();
    unsigned int parameter_addr_bit = 1;
    while (allocated_space >>= 1) ++parameter_addr_bit;

@@ -251,7 +251,8 @@ class application_manager
       /**
        * return the address bitsize
        */
-      unsigned int &get_address_bitsize() {return address_bitsize;}
+      unsigned int &Rget_address_bitsize() {return address_bitsize;}
+      unsigned int get_address_bitsize() const {return address_bitsize;}
 
 #if HAVE_CODESIGN
       /**

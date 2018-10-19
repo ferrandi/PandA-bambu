@@ -372,7 +372,7 @@ DesignFlowStep_Status TasteInterfaceGeneration::InternalExec()
 
       /// component specialization
       unsigned int bus_data_bitsize = HLSMgr->Rmem->get_bus_data_bitsize();
-      unsigned int bus_addr_bitsize = HLSMgr->Rmem->get_bus_addr_bitsize();
+      unsigned int bus_addr_bitsize = HLSMgr->get_address_bitsize();
       unsigned int bus_size_bitsize = HLSMgr->Rmem->get_bus_size_bitsize();
       unsigned int bus_data_bytesize = HLSMgr->Rmem->get_bus_data_bitsize()/8;
 
@@ -409,7 +409,7 @@ DesignFlowStep_Status TasteInterfaceGeneration::InternalExec()
       const auto in1_port = memory->find_member("in1", port_vector_o_K, memory);
       in1_port->type_resize(HLSMgr->Rmem->get_bus_data_bitsize());
       const auto in2_port = memory->find_member("in2", port_vector_o_K, memory);
-      in2_port->type_resize(HLSMgr->Rmem->get_bus_addr_bitsize());
+      in2_port->type_resize(HLSMgr->get_address_bitsize());
       const auto in3_port = memory->find_member("in3", port_vector_o_K, memory);
       in3_port->type_resize(HLSMgr->Rmem->get_bus_size_bitsize());
 /*
@@ -454,13 +454,13 @@ DesignFlowStep_Status TasteInterfaceGeneration::InternalExec()
       const auto proxy_in1_port = memory->find_member("proxy_in1", port_vector_o_K, memory);
       proxy_in1_port->type_resize(HLSMgr->Rmem->get_bus_data_bitsize());
       const auto proxy_in2_port = memory->find_member("proxy_in2", port_vector_o_K, memory);
-      proxy_in2_port->type_resize(HLSMgr->Rmem->get_bus_addr_bitsize());
+      proxy_in2_port->type_resize(HLSMgr->get_address_bitsize());
       const auto proxy_in3_port = memory->find_member("proxy_in3", port_vector_o_K, memory);
       proxy_in3_port->type_resize(HLSMgr->Rmem->get_bus_size_bitsize());
       AddConstant(SM_taste_interface, memory, "proxy_in1[0]", STR(0), HLSMgr->Rmem->get_bus_data_bitsize());
       AddConstant(SM_taste_interface, memory, "proxy_in1[1]", STR(0), HLSMgr->Rmem->get_bus_data_bitsize());
-      AddConstant(SM_taste_interface, memory, "proxy_in2[0]", STR(0), HLSMgr->Rmem->get_bus_addr_bitsize());
-      AddConstant(SM_taste_interface, memory, "proxy_in2[1]", STR(0), HLSMgr->Rmem->get_bus_addr_bitsize());
+      AddConstant(SM_taste_interface, memory, "proxy_in2[0]", STR(0), HLSMgr->get_address_bitsize());
+      AddConstant(SM_taste_interface, memory, "proxy_in2[1]", STR(0), HLSMgr->get_address_bitsize());
       AddConstant(SM_taste_interface, memory, "proxy_in3[0]", STR(0), HLSMgr->Rmem->get_bus_size_bitsize());
       AddConstant(SM_taste_interface, memory, "proxy_in3[1]", STR(0), HLSMgr->Rmem->get_bus_size_bitsize());
 
@@ -519,7 +519,7 @@ DesignFlowStep_Status TasteInterfaceGeneration::InternalExec()
       const auto in2_converter = SM_taste_interface->add_module_from_technology_library("in2_converter", UUDATA_CONVERTER_STD, TM->get_library(UUDATA_CONVERTER_STD), taste_interface_circuit, TM);
       AddSignal(SM_taste_interface, memory_translation, RETURN_PORT_NAME, in2_converter, "in1", "in2_converter_output");
       AddSignal(SM_taste_interface, in2_converter, "out1", memory, "in2[0]", "in2_0");
-      AddConstant(SM_taste_interface, memory, "in2[1]", "0", HLSMgr->Rmem->get_bus_addr_bitsize());
+      AddConstant(SM_taste_interface, memory, "in2[1]", "0", HLSMgr->get_address_bitsize());
       ///Connecting input of memory - in3
       const auto in3_converter = SM_taste_interface->add_module_from_technology_library("in3_converter", UUDATA_CONVERTER_STD, TM->get_library(UUDATA_CONVERTER_STD), taste_interface_circuit, TM);
       AddSignal(SM_taste_interface, data_size, RETURN_PORT_NAME, in3_converter, "in1", "in3_converter_outpuT");

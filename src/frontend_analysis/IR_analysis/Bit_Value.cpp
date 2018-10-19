@@ -407,7 +407,7 @@ unsigned int Bit_Value::pointer_resizing(unsigned int output_id) const
          }
          else
          {
-            address_bitsize = hm->Rmem->get_bus_addr_bitsize();
+            address_bitsize = hm->get_address_bitsize();
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Address bus bitsize " + STR(address_bitsize));
          }
       }

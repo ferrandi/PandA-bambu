@@ -96,7 +96,7 @@ void TopEntityMemoryMapped::Initialize()
 
 void TopEntityMemoryMapped::resizing_IO(module*fu_module, unsigned int max_n_ports) const
 {
-    unsigned int bus_addr_bitsize = HLSMgr->Rmem->get_bus_addr_bitsize();
+    unsigned int bus_addr_bitsize = HLSMgr->get_address_bitsize();
     unsigned int bus_data_bitsize = HLSMgr->Rmem->get_bus_data_bitsize();
     unsigned int bus_size_bitsize = HLSMgr->Rmem->get_bus_size_bitsize();
     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Resizing input ports");
@@ -237,7 +237,7 @@ connectClockAndReset(
       structural_objectRef component);
 
 static void
-setBusSizes(structural_objectRef component, memoryRef Mem);
+setBusSizes(structural_objectRef component, const HLS_managerRef HLSMgr);
    void
 TopEntityMemoryMapped::insertMemoryMappedRegister(
       structural_managerRef SM_mm,
@@ -270,7 +270,7 @@ TopEntityMemoryMapped::insertMemoryMappedRegister(
          resizing_IO(GetPointer<module>(memoryMappedRegister), HLS->Param->getOption<unsigned int>(OPT_channels_number));
       GetPointer<module>(memoryMappedRegister)->set_parameter(
             "ALLOCATED_ADDRESS", HLSMgr->Rmem->get_symbol(function_parameter.first, HLS->functionId)->get_symbol_name());
-      setBusSizes(memoryMappedRegister, HLSMgr->Rmem);
+      setBusSizes(memoryMappedRegister, HLSMgr);
 
       connectClockAndReset(SM_mm, interfaceObj, memoryMappedRegister);
 
@@ -325,7 +325,7 @@ TopEntityMemoryMapped::insertMemoryMappedRegister(
       resizing_IO(GetPointer<module>(returnRegister), HLS->Param->getOption<unsigned int>(OPT_channels_number));
    GetPointer<module>(returnRegister)->set_parameter(
          "ALLOCATED_ADDRESS", HLSMgr->Rmem->get_symbol(returnType, HLS->functionId)->get_symbol_name());
-   setBusSizes(returnRegister, HLSMgr->Rmem);
+   setBusSizes(returnRegister, HLSMgr);
    connectClockAndReset(SM_mm, interfaceObj, returnRegister);
 
    AddedComponents.insert(returnRegister);
@@ -407,7 +407,7 @@ TopEntityMemoryMapped::insertStartDoneLogic(
                interfaceObj, HLS->HLS_T->get_technology_manager());
       if(multi_channel_bus)
          resizing_IO(GetPointer<module>(notifyCaller), HLS->Param->getOption<unsigned int>(OPT_channels_number));
-      setBusSizes(notifyCaller, HLSMgr->Rmem);
+      setBusSizes(notifyCaller, HLSMgr);
       connectClockAndReset(SM_mm, interfaceObj, notifyCaller);
       HLS->Rfu->manage_module_ports(HLSMgr, HLS, SM_mm, notifyCaller, 0);
       AddedComponents.insert(notifyCaller);
@@ -448,7 +448,7 @@ TopEntityMemoryMapped::insertStatusRegister(
          resizing_IO(GetPointer<module>(statusRegister), HLS->Param->getOption<unsigned int>(OPT_channels_number));
       GetPointer<module>(statusRegister)->set_parameter(
             "ALLOCATED_ADDRESS", HLSMgr->Rmem->get_symbol(HLS->functionId, HLS->functionId)->get_symbol_name());
-      setBusSizes(statusRegister, HLSMgr->Rmem);
+      setBusSizes(statusRegister, HLSMgr);
       connectClockAndReset(SM_mm, interfaceObj, statusRegister);
 
       HLS->Rfu->manage_module_ports(HLSMgr, HLS, SM_mm, statusRegister, 0);
@@ -501,7 +501,7 @@ TopEntityMemoryMapped::insertStatusRegister(
          resizing_IO(GetPointer<module>(statusRegister), HLS->Param->getOption<unsigned int>(OPT_channels_number));
       GetPointer<module>(statusRegister)->set_parameter(
             "ALLOCATED_ADDRESS", HLSMgr->Rmem->get_symbol(HLS->functionId, HLS->functionId)->get_symbol_name());
-      setBusSizes(statusRegister, HLSMgr->Rmem);
+      setBusSizes(statusRegister, HLSMgr);
       connectClockAndReset(SM_mm, interfaceObj, statusRegister);
 
       HLS->Rfu->manage_module_ports(HLSMgr, HLS, SM_mm, statusRegister, 0);
@@ -639,15 +639,15 @@ connectClockAndReset(
 }
 
    static void
-setBusSizes(structural_objectRef component, memoryRef Mem)
+setBusSizes(structural_objectRef component, const HLS_managerRef HLSMgr)
 {
    auto * componentModule = GetPointer<module>(component);
    for (unsigned int i = 0; i < componentModule->get_num_ports(); ++i)
    {
       structural_objectRef port = componentModule->get_positional_port(i);
       auto * portObj = GetPointer<port_o>(port);
-      if (portObj->get_is_data_bus()) portObj->type_resize(Mem->get_bus_data_bitsize());
-      else if (portObj->get_is_addr_bus()) portObj->type_resize(Mem->get_bus_addr_bitsize());
-      else if (portObj->get_is_size_bus()) portObj->type_resize(Mem->get_bus_size_bitsize());
+      if (portObj->get_is_data_bus()) portObj->type_resize(HLSMgr->Rmem->get_bus_data_bitsize());
+      else if (portObj->get_is_addr_bus()) portObj->type_resize(HLSMgr->get_address_bitsize());
+      else if (portObj->get_is_size_bus()) portObj->type_resize(HLSMgr->Rmem->get_bus_size_bitsize());
    }
 }

@@ -39,6 +39,7 @@
  * @author Alessandro Nacci <alenacci@gmail.com>
  * @author Gianluca Durelli <durellinux@gmail.com>
  * @author Marco Lattuada <marco.lattuada@polimi.it>
+ * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  *
 */
 ///header include
@@ -92,6 +93,7 @@
 #include "fileIO.hpp"
 #include "math_function.hpp"
 #include "string_manipulation.hpp"          // for GET_CLASS
+#include "constant_strings.hpp"
 
 moduleGenerator::moduleGenerator(const HLS_managerConstRef _HLSMgr, const ParameterConstRef _parameters) :
    HLSMgr(_HLSMgr),
@@ -208,7 +210,7 @@ std::string moduleGenerator::GenerateHDL(const std::string& hdl_template, std::v
    }
 
    cpp_code_body += "std::string data_bus_bitsize = \"" + STR(HLSMgr->Rmem->get_bus_data_bitsize()) + "\";\n";
-   cpp_code_body += "std::string addr_bus_bitsize = \"" + STR(HLSMgr->Rmem->get_bus_addr_bitsize()) + "\";\n";
+   cpp_code_body += "std::string addr_bus_bitsize = \"" + STR(HLSMgr->get_address_bitsize()) + "\";\n";
    cpp_code_body += "std::string size_bus_bitsize = \"" + STR(HLSMgr->Rmem->get_bus_size_bitsize()) + "\";\n";
    cpp_code_body += "std::string _specializing_string = \"" + specializing_string + "\";\n";
    if(parameters->isOption(OPT_channels_number) && parameters->getOption<unsigned int>(OPT_channels_number) > 1)
@@ -308,6 +310,8 @@ void moduleGenerator::specialize_fu(std::string fuName, vertex ve, std::string l
       if(return_type && GET_NODE(return_type)->get_kind() != void_type_K && hasreturn_value)
          specializing_string = STR(tree_helper::size(TreeM, GET_INDEX_NODE(return_type)));
    }
+   else if(cfg->CGetOpNodeInfo(ve)->GetOperation().find(STR_CST_interface_parameter_keyword) != std::string::npos)
+      specializing_string = cfg->CGetOpNodeInfo(ve)->GetOperation().substr(0, cfg->CGetOpNodeInfo(ve)->GetOperation().find(STR_CST_interface_parameter_keyword));
 
    const library_managerRef libraryManager = TM->get_library_manager(libraryId);
 

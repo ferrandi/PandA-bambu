@@ -196,7 +196,7 @@ generic_objRef mux_connection_binding::dynamic_multidimensional_array_handler(ar
    generic_objRef mult;
    unsigned int tree_index = GET_INDEX_NODE(ar->op1);
    generic_objRef adder;
-   unsigned int bus_addr_bitsize = HLSMgr->Rmem->get_bus_addr_bitsize();
+   unsigned int bus_addr_bitsize = HLSMgr->get_address_bitsize();
    bus_addr_bitsize = address_precision(bus_addr_bitsize, op, data, TreeM);
    if(GET_NODE(ar->op0)->get_kind()==array_ref_K)
    {
@@ -376,7 +376,7 @@ void mux_connection_binding::determine_connection(const vertex& op, const HLS_ma
    bool is_not_a_phi = (GET_TYPE(data, op) & TYPE_PHI)==0;
    unsigned int tree_var = std::get<0>(_var);
    unsigned int constant_value = std::get<1>(_var);
-   unsigned int bus_addr_bitsize = HLSMgr->Rmem->get_bus_addr_bitsize();
+   unsigned int bus_addr_bitsize = HLSMgr->get_address_bitsize();
    bus_addr_bitsize = std::min(precision,bus_addr_bitsize);
    memory_symbolRef m_sym;
    const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(funId);
@@ -1574,7 +1574,7 @@ void mux_connection_binding::create_connections()
    const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(funId);
    const BehavioralHelperConstRef behavioral_helper = FB->CGetBehavioralHelper();
    const OpGraphConstRef data = FB->CGetOpGraph(FunctionBehavior::FDFG);
-   unsigned int bus_addr_bitsize = HLSMgr->Rmem->get_bus_addr_bitsize();
+   unsigned int bus_addr_bitsize = HLSMgr->get_address_bitsize();
 #if HAVE_EXPERIMENTAL
    if(parameters->getOption<int>(OPT_memory_banks_number) > 1)
    {
@@ -2731,7 +2731,7 @@ unsigned int mux_connection_binding::object_bitsize(const tree_managerRef TreeM,
    if(first)
    {
       unsigned int type_index = tree_helper::get_type_index(TreeM, first);
-      unsigned int bus_addr_bitsize = HLSMgr->Rmem->get_bus_addr_bitsize();
+      unsigned int bus_addr_bitsize = HLSMgr->get_address_bitsize();
 
       if(tree_helper::is_an_array(TreeM, type_index) || tree_helper::is_a_struct(TreeM, type_index) || tree_helper::is_an_union(TreeM, type_index) /*|| tree_helper::is_a_complex(TreeM, type_index)*/)
          return bus_addr_bitsize;

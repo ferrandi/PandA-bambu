@@ -44,10 +44,19 @@
 ///. include
 #include "Parameter.hpp"
 
+///design_flows includes
+#include "design_flow_graph.hpp"
+#include "design_flow_manager.hpp"
+
+///design_flows/technology includes
+#include "technology_flow_step.hpp"
+#include "technology_flow_step_factory.hpp"
+
 
 ///behavior include
 #include "application_manager.hpp"
 #include "hls_manager.hpp"
+#include "hls_target.hpp"
 #include "call_graph.hpp"
 #include "call_graph_manager.hpp"
 
@@ -72,6 +81,21 @@
 #include "polixml.hpp"
 #include "xml_dom_parser.hpp"
 
+
+#include "library_manager.hpp"
+#include "technology_manager.hpp"
+#include "technology_node.hpp"
+#include "area_model.hpp"
+#include "time_model.hpp"
+
+#include "structural_manager.hpp"
+#include "structural_objects.hpp"
+
+#include "copyrights_strings.hpp"
+#include "constant_strings.hpp"
+
+
+#define EPSILON 0.000000001
 
 const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship> > interface_infer::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
@@ -99,6 +123,35 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
    }
    return relationships;
 }
+
+void interface_infer::ComputeRelationships(DesignFlowStepSet & relationship, const DesignFlowStep::RelationshipType relationship_type)
+{
+   switch(relationship_type)
+   {
+      case(PRECEDENCE_RELATIONSHIP):
+         {
+            break;
+         }
+      case DEPENDENCE_RELATIONSHIP:
+         {
+            const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
+            const auto * technology_flow_step_factory = GetPointer<const TechnologyFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("Technology"));
+            const std::string technology_flow_signature = TechnologyFlowStep::ComputeSignature(TechnologyFlowStep_Type::LOAD_TECHNOLOGY);
+            const vertex technology_flow_step = design_flow_manager.lock()->GetDesignFlowStep(technology_flow_signature);
+            const DesignFlowStepRef technology_design_flow_step = technology_flow_step ? design_flow_graph->CGetDesignFlowStepInfo(technology_flow_step)->design_flow_step : technology_flow_step_factory->CreateTechnologyFlowStep(TechnologyFlowStep_Type::LOAD_TECHNOLOGY);
+            relationship.insert(technology_design_flow_step);
+            break;
+         }
+      case INVALIDATION_RELATIONSHIP:
+         {
+            break;
+         }
+      default:
+         THROW_UNREACHABLE("");
+   }
+   FunctionFrontendFlowStep::ComputeRelationships(relationship, relationship_type);
+}
+
 
 interface_infer::interface_infer(const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters) :
    FunctionFrontendFlowStep(_AppM, _function_id, INTERFACE_INFER, _design_flow_manager, _parameters)
@@ -178,7 +231,8 @@ DesignFlowStep_Status interface_infer::InternalExec()
          }
 
          bool modified = false;
-         const auto& DesignInterface = GetPointer<HLS_manager>(AppM)->design_interface;
+         auto HLSMgr = GetPointer<HLS_manager>(AppM);
+         const auto& DesignInterface = HLSMgr->design_interface;
          const auto TM = AppM->get_tree_manager();
          auto fnode = TM->get_tree_node_const(function_id);
          auto fname = tree_helper::name_function(TM, function_id);
@@ -242,6 +296,7 @@ DesignFlowStep_Status interface_infer::InternalExec()
                      bool isWrite=false;
                      bool unkwown_pattern = false;
                      tree_nodeRef readType;
+                     const auto inputBitWidth = tree_helper::size(TM, tree_helper::get_pointed_type(TM, GET_INDEX_NODE(a->type)));
                      std::list<tree_nodeRef> usedStmt_defs;
                      for(auto par_use: argSSA->CGetUseStmts())
                      {
@@ -257,6 +312,8 @@ DesignFlowStep_Status interface_infer::InternalExec()
                            if (GET_NODE(ga->op1)->get_kind() == mem_ref_K)
                            {
                               isRead = true;
+                              if(readType && GET_INDEX_NODE(GetPointer<mem_ref>(GET_NODE(ga->op1))->type) != GET_INDEX_NODE(readType))
+                                 canBeMovedToBB2=false; /// reading different objects
                               readType = GetPointer<mem_ref>(GET_NODE(ga->op1))->type;
                               usedStmt_defs.push_back(ga->op0);
                               if(ga->vdef)
@@ -299,48 +356,52 @@ DesignFlowStep_Status interface_infer::InternalExec()
                            }
                            THROW_ASSERT(destBB != bloc::ENTRY_BLOCK_ID, "unexpected condition");
                            ///create the function_decl
-                           std::string fdName = "__bambu_artificial_"+argName_string+"_Read_"+interfaceType;
+                           std::string fdName = argName_string+STR_CST_interface_parameter_keyword+"_Read_"+interfaceType;
                            std::vector<tree_nodeRef> argsT;
                            argsT.push_back(a->type);
                            const std::string srcp = fd->include_name + ":" + STR(fd->line_number) + ":" + STR(fd->column_number);
-                           auto function_decl_node = tree_man->create_function_decl(fdName, fd->scpe, argsT, readType, srcp, true);
+                           bool generateBody = false;
+                           auto function_decl_node = tree_man->create_function_decl(fdName, fd->scpe, argsT, readType, srcp, generateBody);
                            auto fdCreated=GetPointer<function_decl>(GET_NODE(function_decl_node));
-                           ///add body
-                           auto slCreated = GetPointer<statement_list>(GET_NODE(fdCreated->body));
-                           std::vector<unsigned int> bb_list_of_pred;
-                           std::vector<unsigned int> bb_list_of_succ;
-                           bb_list_of_pred.push_back(BB_ENTRY);
-                           bb_list_of_succ.push_back(BB_EXIT);
-                           std::vector<tree_nodeRef> stmts;
-                           /// create ssa for function decl parameter
                            auto par = fdCreated->list_of_args.front();
-                           tree_nodeRef ssa_par = tree_man->create_ssa_name(par, a->type);
-                           /// create vuse var
-                           auto void_type_node = tree_man->create_void_type();
-                           tree_nodeRef ssa_vuse = tree_man->create_ssa_name(tree_nodeRef(), void_type_node, false, true);
-                           std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> nop_IR_schema;
-                           const auto nop_id= TM->new_tree_node_id();
-                           nop_IR_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
-                           TM->create_tree_node(nop_id, gimple_nop_K, nop_IR_schema);
-                           GetPointer<ssa_name>(GET_NODE(ssa_vuse))->AddDefStmt(TM->GetTreeReindex(nop_id));
-                           GetPointer<ssa_name>(GET_NODE(ssa_vuse))->default_flag=true;
-                           ///create load expression
-                           auto offset = TM->CreateUniqueIntegerCst(0, GET_INDEX_NODE(a->type));
-                           auto loadExpr = tree_man->create_binary_operation(readType, ssa_par, offset, srcp, mem_ref_K);
-                           auto assignLoad = tree_man->CreateGimpleAssign(readType, loadExpr,2,srcp);
-                           stmts.push_back(assignLoad);
-                           tree_nodeRef load_ssa_var = GetPointer<gimple_assign>(GET_NODE(assignLoad))->op0;
-                           GetPointer<gimple_assign>(GET_NODE(assignLoad))->AddVuse(ssa_vuse);
-                           auto gr = tree_man->create_gimple_return(readType,load_ssa_var,srcp,2);
-                           stmts.push_back(gr);
-                           tree_man->create_basic_block(slCreated->list_of_bloc,bb_list_of_pred,bb_list_of_succ,stmts,2);
+                           if(generateBody)
+                           {
+                              ///add body
+                              auto slCreated = GetPointer<statement_list>(GET_NODE(fdCreated->body));
+                              std::vector<unsigned int> bb_list_of_pred;
+                              std::vector<unsigned int> bb_list_of_succ;
+                              bb_list_of_pred.push_back(BB_ENTRY);
+                              bb_list_of_succ.push_back(BB_EXIT);
+                              std::vector<tree_nodeRef> stmts;
+                              /// create ssa for function decl parameter
+                              tree_nodeRef ssa_par = tree_man->create_ssa_name(par, a->type);
+                              /// create vuse var
+                              auto void_type_node = tree_man->create_void_type();
+                              tree_nodeRef ssa_vuse = tree_man->create_ssa_name(tree_nodeRef(), void_type_node, false, true);
+                              std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> nop_IR_schema;
+                              const auto nop_id= TM->new_tree_node_id();
+                              nop_IR_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
+                              TM->create_tree_node(nop_id, gimple_nop_K, nop_IR_schema);
+                              GetPointer<ssa_name>(GET_NODE(ssa_vuse))->AddDefStmt(TM->GetTreeReindex(nop_id));
+                              GetPointer<ssa_name>(GET_NODE(ssa_vuse))->default_flag=true;
+                              ///create load expression
+                              auto offset = TM->CreateUniqueIntegerCst(0, GET_INDEX_NODE(a->type));
+                              auto loadExpr = tree_man->create_binary_operation(readType, ssa_par, offset, srcp, mem_ref_K);
+                              auto assignLoad = tree_man->CreateGimpleAssign(readType, loadExpr,2,srcp);
+                              stmts.push_back(assignLoad);
+                              tree_nodeRef load_ssa_var = GetPointer<gimple_assign>(GET_NODE(assignLoad))->op0;
+                              GetPointer<gimple_assign>(GET_NODE(assignLoad))->AddVuse(ssa_vuse);
+                              auto gr = tree_man->create_gimple_return(readType,load_ssa_var,srcp,2);
+                              stmts.push_back(gr);
+                              tree_man->create_basic_block(slCreated->list_of_bloc,bb_list_of_pred,bb_list_of_succ,stmts,2);
+                           }
 
                            std::vector<tree_nodeRef> args;
                            args.push_back(TM->GetTreeReindex(argSSA_id));
                            auto call_expr_node = tree_man->CreateCallExpr(function_decl_node, args, srcp);
                            auto new_assignment = tree_man->CreateGimpleAssign(readType, call_expr_node, destBB, srcp);
                            sl->list_of_bloc[destBB]->PushBack(new_assignment);
-                           BehavioralHelperRef helper = BehavioralHelperRef(new BehavioralHelper(AppM, GET_INDEX_NODE(function_decl_node), true, parameters));
+                           BehavioralHelperRef helper = BehavioralHelperRef(new BehavioralHelper(AppM, GET_INDEX_NODE(function_decl_node), generateBody, parameters));
                            FunctionBehaviorRef FB = FunctionBehaviorRef(new FunctionBehavior(AppM, helper, parameters));
                            AppM->GetCallGraphManager()->AddFunctionAndCallPoint(function_id, GET_INDEX_NODE(function_decl_node), new_assignment->index, FB, FunctionEdgeInfo::CallType::direct_call);
                            tree_nodeRef temp_ssa_var = GetPointer<gimple_assign>(GET_NODE(new_assignment))->op0;
@@ -359,10 +420,60 @@ DesignFlowStep_Status interface_infer::InternalExec()
                               }
                            }
                            modified=true;
+                           auto HLS_T = HLSMgr->get_HLS_target();
+                           auto TechMan = HLS_T->get_technology_manager();
+                           if(!TechMan->is_library_manager(INTERFACE_LIBRARY) || !TechMan->get_library_manager(INTERFACE_LIBRARY)->is_fu(fdName))
+                           {
+                              INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Creating interface resource: " + INTERFACE_LIBRARY + ":" + fdName);
+                              structural_objectRef interface_top;
+                              structural_managerRef CM = structural_managerRef(new structural_manager(parameters));
+                              structural_type_descriptorRef module_type = structural_type_descriptorRef(new structural_type_descriptor(fdName));
+                              CM->set_top_info(fdName, module_type);
+                              interface_top = CM->get_circ();
+                              ///add description and license
+                              GetPointer<module>(interface_top)->set_description("Interface module for function: " + fdName);
+                              GetPointer<module>(interface_top)->set_copyright(GENERATED_COPYRIGHT);
+                              GetPointer<module>(interface_top)->set_authors("Component automatically generated by bambu");
+                              GetPointer<module>(interface_top)->set_license(GENERATED_LICENSE);
 
+                              unsigned int address_bitsize = HLSMgr->get_address_bitsize();
+                              structural_type_descriptorRef word_bool_type = structural_type_descriptorRef(new structural_type_descriptor("bool", address_bitsize));
+                              auto pd = GetPointer<parm_decl>(GET_NODE(par));
+                              THROW_ASSERT(GetPointer<identifier_node>(GET_NODE(pd->name)), "unexpected condition");
+                              auto addrPort = CM->add_port("in1", port_o::IN, interface_top, word_bool_type);//this port has a fixed name
+                              GetPointer<port_o>(addrPort)->set_is_addr_bus(true);
+                              GetPointer<port_o>(addrPort)->set_is_var_args(true);///required to activate the module generation
+                              structural_type_descriptorRef Intype = structural_type_descriptorRef(new structural_type_descriptor("bool",inputBitWidth));
+                              auto ReadPort = CM->add_port("out1", port_o::OUT, interface_top, Intype);
+                              auto inPort = CM->add_port(argName_string+"_", port_o::IN, interface_top, Intype);
+                              GetPointer<port_o>(inPort)->set_is_extern(true);
+                              GetPointer<port_o>(inPort)->set_is_global(true);
+
+                              CM->add_NP_functionality(interface_top, NP_functionality::LIBRARY, "out1");
+                              CM->add_NP_functionality(interface_top, NP_functionality::VERILOG_GENERATOR, "Read_"+interfaceType+".cpp");
+                              TechMan->add_resource(INTERFACE_LIBRARY, fdName, CM);
+                              TechMan->add_operation(INTERFACE_LIBRARY, fdName, fdName);
+                              auto* fu = GetPointer<functional_unit>(TechMan->get_fu(fdName, INTERFACE_LIBRARY));
+                              const target_deviceRef device = HLS_T->get_target_device();
+                              fu->area_m = area_model::create_model(device->get_type(), parameters);
+                              fu->area_m->set_area_value(0);
+                              fu->logical_type = functional_unit::COMBINATIONAL;
+
+                              auto* op = GetPointer<operation>(fu->get_operation(fdName));
+                              op->time_m = time_model::create_model(device->get_type(), parameters);
+                              op->bounded = true;
+                              op->time_m->set_execution_time(EPSILON, 0);
+                              op->time_m->set_stage_period(0.0);
+                              op->time_m->set_synthesis_dependent(true);
+
+
+                              INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Interface resource created: ");
+                           }
                         }
                      }
                   }
+                  else
+                     THROW_ERROR("not yet supported input parameter type");
                }
             }
 

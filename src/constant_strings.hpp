@@ -174,6 +174,10 @@
 #define NUM_CST_variable_estimation_precision 3
 
 
+/// interface_parameter_keyword
+#define STR_CST_interface_parameter_keyword "_bambu_artificial_ParmMgr"
+
+
 
 /**
  * XML Nodes: a3 files
