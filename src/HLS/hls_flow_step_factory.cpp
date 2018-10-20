@@ -175,7 +175,6 @@
 #include "FSL_interface.hpp"
 #endif
 
-///HLS/interface/minmal include
 #include "minimal_interface.hpp"
 
 ///HLS/interface/NPI include
@@ -524,7 +523,7 @@ DesignFlowStepRef HLSFlowStepFactory::CreateHLSFlowStep(const HLSFlowStep_Type t
             design_flow_step = DesignFlowStepRef(new minimal_interface(parameters, HLS_mgr, funId, design_flow_manager.lock()));
             break;
          }
-      case HLSFlowStep_Type::INFER_INTERFACE_GENERATION:
+      case HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION:
          {
             design_flow_step = DesignFlowStepRef(new minimal_interface(parameters, HLS_mgr, funId, design_flow_manager.lock()));
             break;
@@ -833,7 +832,7 @@ const DesignFlowStepSet HLSFlowStepFactory::CreateHLSFlowSteps(const std::unorde
          case HLSFlowStep_Type::ILP_NEW_FORM_SCHEDULING:
          case HLSFlowStep_Type::ILP_SCHEDULING:
 #endif
-         case HLSFlowStep_Type::INFER_INTERFACE_GENERATION:
+         case HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION:
          case HLSFlowStep_Type::INITIALIZE_HLS:
 #if HAVE_EXPERIMENTAL
          case HLSFlowStep_Type::K_COFAMILY_REGISTER_BINDING:

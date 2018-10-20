@@ -94,25 +94,21 @@ void HWCallPathCalculator::start_vertex(
    std::string top_name = top_fu_name + "_i0" + STR(HIERARCHY_SEPARATOR);
    if (HLSMgr->CGetCallGraphManager()->ExistsAddressedFunction() or
          (parameters->isOption(OPT_interface_type) and
-          parameters->getOption<HLSFlowStep_Type>(OPT_interface_type) ==
-          HLSFlowStep_Type::WB4_INTERFACE_GENERATION))
+          parameters->getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::WB4_INTERFACE_GENERATION))
    {
       top_name += top_fu_name + "_int_i0" + STR(HIERARCHY_SEPARATOR);
    }
 
    // top interface scope (depending on the interface)
    if (parameters->isOption(OPT_interface_type) and
-         (parameters->getOption<HLSFlowStep_Type>(OPT_interface_type) ==
-         HLSFlowStep_Type::MINIMAL_INTERFACE_GENERATION ||
-          parameters->getOption<HLSFlowStep_Type>(OPT_interface_type) ==
-                   HLSFlowStep_Type::INFER_INTERFACE_GENERATION))
+         (parameters->getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::MINIMAL_INTERFACE_GENERATION ||
+          parameters->getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION))
    {
       top_interface_name = top_fu_name + "_minimal_interface";
       interface_scope = top_interface_name + STR(HIERARCHY_SEPARATOR);
    }
    else if (parameters->isOption(OPT_interface_type) and
-         parameters->getOption<HLSFlowStep_Type>(OPT_interface_type) ==
-         HLSFlowStep_Type::WB4_INTERFACE_GENERATION)
+         parameters->getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::WB4_INTERFACE_GENERATION)
    {
       top_interface_name = top_fu_name + "_minimal_interface_wb4_interface";
       interface_scope = top_interface_name + STR(HIERARCHY_SEPARATOR) +

@@ -63,15 +63,16 @@ const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
             const HLSFlowStep_Type interface_type = parameters->getOption<HLSFlowStep_Type>(OPT_interface_type);
 #ifndef NDEBUG
             bool interface = interface_type == HLSFlowStep_Type::MINIMAL_INTERFACE_GENERATION or
-                             interface_type == HLSFlowStep_Type::INFER_INTERFACE_GENERATION or
+                             interface_type == HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION or
+                             interface_type == HLSFlowStep_Type::WB4_INTERFACE_GENERATION
 #if HAVE_TASTE
-               interface_type == HLSFlowStep_Type::TASTE_INTERFACE_GENERATION or
+                          or interface_type == HLSFlowStep_Type::TASTE_INTERFACE_GENERATION
 #endif
-               interface_type == HLSFlowStep_Type::WB4_INTERFACE_GENERATION;
+                          ;
             THROW_ASSERT(interface, "Unexpected interface type");
 #endif
             ret.insert(std::make_tuple(interface_type == HLSFlowStep_Type::MINIMAL_INTERFACE_GENERATION or
-                                       interface_type == HLSFlowStep_Type::INFER_INTERFACE_GENERATION ?
+                                       interface_type == HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION ?
                      HLSFlowStep_Type::MINIMAL_TESTBENCH_GENERATION :
                      HLSFlowStep_Type::WB4_TESTBENCH_GENERATION,
                   HLSFlowStepSpecializationConstRef(),

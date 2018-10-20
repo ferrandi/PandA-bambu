@@ -2468,7 +2468,7 @@ int BambuParameter::Exec()
                }
                if (std::string(optarg) == "INFER")
                {
-                  setOption(OPT_interface_type, HLSFlowStep_Type::INFER_INTERFACE_GENERATION);
+                  setOption(OPT_interface_type, HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION);
                }
                else if (std::string(optarg) == "WB4")
                {

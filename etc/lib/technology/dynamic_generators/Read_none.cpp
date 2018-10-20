@@ -38,6 +38,6 @@
  *
 */
 
-std::cout << "assign out1 = "<< _specializing_string<<"_ >> (8*in1);" <<std::endl;
+std::cout << "assign out1 = _"<< _specializing_string<<" >> (8*in1);" <<std::endl;
 
 
