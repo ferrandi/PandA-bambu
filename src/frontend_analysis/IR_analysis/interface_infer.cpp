@@ -425,8 +425,7 @@ DesignFlowStep_Status interface_infer::InternalExec()
                               structural_type_descriptorRef Intype = structural_type_descriptorRef(new structural_type_descriptor("bool", inputBitWidth));
                               auto ReadPort = CM->add_port("out1", port_o::OUT, interface_top, Intype);
                               auto inPort = CM->add_port("_"+argName_string, port_o::IN, interface_top, Intype);
-                              GetPointer<port_o>(inPort)->set_is_extern(true);
-                              GetPointer<port_o>(inPort)->set_is_global(true);
+                              GetPointer<port_o>(inPort)->set_port_interface(port_o::port_interface::PI_RNONE);
 
                               CM->add_NP_functionality(interface_top, NP_functionality::LIBRARY, "out1");
                               CM->add_NP_functionality(interface_top, NP_functionality::VERILOG_GENERATOR, "Read_" + interfaceType + ".cpp");

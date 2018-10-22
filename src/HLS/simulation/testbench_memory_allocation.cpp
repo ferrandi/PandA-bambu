@@ -29,51 +29,40 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 
 #include "testbench_memory_allocation.hpp"
 
-///behavior include
+/// behavior include
 #include "behavioral_helper.hpp"
 #include "call_graph_manager.hpp"
 #include "function_behavior.hpp"
 #include "var_pp_functor.hpp"
 
-///HLS include
+/// HLS include
 #include "hls_manager.hpp"
 
-///HLS/memory include
+/// HLS/memory include
 #include "memory.hpp"
 
-///HLS/simulation include
-#include "testbench_generation_base_step.hpp"
+/// HLS/simulation include
 #include "SimulationInformation.hpp"
+#include "testbench_generation_base_step.hpp"
 
-///tree include
+/// tree include
+#include "dbgPrintHelper.hpp"      // for DEBUG_LEVEL_
+#include "string_manipulation.hpp" // for STR
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
-#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_
-#include "string_manipulation.hpp"          // for STR
 
-TestbenchMemoryAllocation::TestbenchMemoryAllocation
-(
-   const ParameterConstRef _parameters,
-   const HLS_managerRef _HLSMgr,
-   const DesignFlowManagerConstRef _design_flow_manager
-) :
-   HLS_step
-   (
-      _parameters,
-      _HLSMgr,
-      _design_flow_manager,
-      HLSFlowStep_Type::TESTBENCH_MEMORY_ALLOCATION
-   )
-{}
+TestbenchMemoryAllocation::TestbenchMemoryAllocation(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, const DesignFlowManagerConstRef _design_flow_manager)
+    : HLS_step(_parameters, _HLSMgr, _design_flow_manager, HLSFlowStep_Type::TESTBENCH_MEMORY_ALLOCATION)
+{
+}
 
-TestbenchMemoryAllocation::~TestbenchMemoryAllocation()
-= default;
+TestbenchMemoryAllocation::~TestbenchMemoryAllocation() = default;
 
 DesignFlowStep_Status TestbenchMemoryAllocation::Exec()
 {
@@ -87,68 +76,58 @@ void TestbenchMemoryAllocation::AllocTestbenchMemory(void) const
    const auto top_function_ids = HLSMgr->CGetCallGraphManager()->GetRootFunctions();
    THROW_ASSERT(top_function_ids.size() == 1, "Multiple top functions");
    const auto function_id = *(top_function_ids.begin());
-   const BehavioralHelperConstRef behavioral_helper =
-      HLSMgr->CGetFunctionBehavior(function_id)->CGetBehavioralHelper();
+   const BehavioralHelperConstRef behavioral_helper = HLSMgr->CGetFunctionBehavior(function_id)->CGetBehavioralHelper();
 
-   const std::map<unsigned int, memory_symbolRef>& mem_vars =
-      HLSMgr->Rmem->get_ext_memory_variables();
+   const std::map<unsigned int, memory_symbolRef>& mem_vars = HLSMgr->Rmem->get_ext_memory_variables();
    // get the mapping between variables in external memory and their external
    // base address
    std::map<unsigned int, unsigned int> address;
-   for (const auto & m : mem_vars)
-      address[HLSMgr->Rmem->get_external_base_address(m.first)] = m.first;
+   for(const auto& m : mem_vars) address[HLSMgr->Rmem->get_external_base_address(m.first)] = m.first;
 
    std::list<unsigned int> mem;
-   for (const auto & ma : address)
-      mem.push_back(ma.second);
+   for(const auto& ma : address) mem.push_back(ma.second);
 
-   const std::list<unsigned int>& func_parameters =
-      behavioral_helper->get_parameters();
+   const std::list<unsigned int>& func_parameters = behavioral_helper->get_parameters();
    for(const auto& p : func_parameters)
    {
       // if the function has some pointer func_parameters some memory needs to be
       // reserved for the place where they point to
-      if (behavioral_helper->is_a_pointer(p) && mem_vars.find(p) == mem_vars.end())
-         mem.push_back(p);
+      if(behavioral_helper->is_a_pointer(p) && mem_vars.find(p) == mem_vars.end()) mem.push_back(p);
    }
 
    // loop on the test vectors
    unsigned int v_idx = 0;
-   for (const auto & curr_test_vector : HLSMgr->RSim->test_vectors)
+   for(const auto& curr_test_vector : HLSMgr->RSim->test_vectors)
    {
       HLSMgr->RSim->param_address[v_idx] = std::map<unsigned int, unsigned int>();
       // loop on the variables in memory
-      for (std::list<unsigned int>::const_iterator l = mem.begin(); l != mem.end(); ++l)
+      for(std::list<unsigned int>::const_iterator l = mem.begin(); l != mem.end(); ++l)
       {
          std::string param = behavioral_helper->PrintVariable(*l);
-         if (param[0] == '"')
-            param = "@"+STR(*l);
+         if(param[0] == '"') param = "@" + STR(*l);
 
          bool is_memory = false;
          std::string test_v = "0";
-         if (mem_vars.find(*l) != mem_vars.end() &&
-               std::find(func_parameters.begin(), func_parameters.end(), *l) == func_parameters.end())
+         if(mem_vars.find(*l) != mem_vars.end() && std::find(func_parameters.begin(), func_parameters.end(), *l) == func_parameters.end())
          {
             is_memory = true;
             test_v = TestbenchGenerationBaseStep::print_var_init(TM, *l, HLSMgr->Rmem);
          }
-         else if (curr_test_vector.find(param) != curr_test_vector.end())
+         else if(curr_test_vector.find(param) != curr_test_vector.end())
          {
             test_v = curr_test_vector.find(param)->second;
          }
 
-         if (v_idx > 0 && is_memory)
-            continue;//memory has been already initialized
+         if(v_idx > 0 && is_memory) continue; // memory has been already initialized
 
          unsigned int reserved_bytes = tree_helper::size(TM, *l) / 8;
-         if (reserved_bytes == 0)
-            reserved_bytes = 1;
+         if(reserved_bytes == 0) reserved_bytes = 1;
 
-         if (tree_helper::is_a_pointer(TM, *l) && !is_memory)
+         if(tree_helper::is_a_pointer(TM, *l) && !is_memory)
          {
             unsigned int base_type = tree_helper::get_type_index(TM, *l);
             tree_nodeRef pt_node = TM->get_tree_node_const(base_type);
-            unsigned int ptd_base_type=0;
+            unsigned int ptd_base_type = 0;
             if(pt_node->get_kind() == pointer_type_K)
                ptd_base_type = GET_INDEX_NODE(GetPointer<pointer_type>(pt_node)->ptd);
             else if(pt_node->get_kind() == reference_type_K)
@@ -164,25 +143,21 @@ void TestbenchMemoryAllocation::AllocTestbenchMemory(void) const
             else
                base_type_byte_size = tree_helper::size(TM, ptd_base_type) / 8;
 
-            if (base_type_byte_size == 0)
-               base_type_byte_size = 1;
+            if(base_type_byte_size == 0) base_type_byte_size = 1;
 
             std::vector<std::string> splitted;
-            boost::algorithm::split(splitted, test_v , boost::algorithm::is_any_of(","));
+            boost::algorithm::split(splitted, test_v, boost::algorithm::is_any_of(","));
             reserved_bytes = (static_cast<unsigned int>(splitted.size())) * base_type_byte_size;
 
-            if (HLSMgr->RSim->param_address[v_idx].find(*l) ==
-                  HLSMgr->RSim->param_address[v_idx].end())
+            if(HLSMgr->RSim->param_address[v_idx].find(*l) == HLSMgr->RSim->param_address[v_idx].end())
             {
                HLSMgr->RSim->param_address[v_idx][*l] = HLSMgr->Rmem->get_memory_address();
                HLSMgr->RSim->param_mem_size[v_idx][*l] = reserved_bytes;
                HLSMgr->Rmem->reserve_space(reserved_bytes);
 
                INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level,
-                     "---Parameter " + param + " (testvector "+ STR(v_idx)+") allocated at " +
-                     STR(HLSMgr->RSim->param_address.at(v_idx).find(*l)->second) +
-                     " : reserved_mem_size = " +
-                     STR(HLSMgr->RSim->param_mem_size.at(v_idx).find(*l)->second));
+                              "---Parameter " + param + " (testvector " + STR(v_idx) + ") allocated at " + STR(HLSMgr->RSim->param_address.at(v_idx).find(*l)->second) +
+                                  " : reserved_mem_size = " + STR(HLSMgr->RSim->param_mem_size.at(v_idx).find(*l)->second));
             }
          }
          else if(!is_memory)
@@ -195,48 +170,22 @@ void TestbenchMemoryAllocation::AllocTestbenchMemory(void) const
          ++l_next;
          unsigned int next_object_offset = 0;
          /// check the next free aligned address
-         if (l_next != mem.end() &&
-               mem_vars.find(*l_next) != mem_vars.end() &&
-               mem_vars.find(*l) != mem_vars.end())
+         if(l_next != mem.end() && mem_vars.find(*l_next) != mem_vars.end() && mem_vars.find(*l) != mem_vars.end()) { next_object_offset = HLSMgr->Rmem->get_base_address(*l_next, function_id) - HLSMgr->Rmem->get_base_address(*l, function_id); }
+         else if(mem_vars.find(*l) != mem_vars.end() && (l_next == mem.end() || HLSMgr->RSim->param_address.at(v_idx).find(*l_next) == HLSMgr->RSim->param_address.at(v_idx).end()))
          {
-            next_object_offset =
-               HLSMgr->Rmem->get_base_address(*l_next, function_id) -
-               HLSMgr->Rmem->get_base_address(*l, function_id);
+            next_object_offset = HLSMgr->Rmem->get_memory_address() - HLSMgr->Rmem->get_base_address(*l, function_id);
          }
-         else if (mem_vars.find(*l) != mem_vars.end() &&
-               (l_next == mem.end() ||
-                  HLSMgr->RSim->param_address.at(v_idx).find(*l_next) ==
-                  HLSMgr->RSim->param_address.at(v_idx).end()))
+         else if(l_next != mem.end() && mem_vars.find(*l) != mem_vars.end() && HLSMgr->RSim->param_address.at(v_idx).find(*l_next) != HLSMgr->RSim->param_address.at(v_idx).end())
          {
-            next_object_offset =
-               HLSMgr->Rmem->get_memory_address() -
-               HLSMgr->Rmem->get_base_address(*l, function_id);
+            next_object_offset = HLSMgr->RSim->param_address.at(v_idx).find(*l_next)->second - HLSMgr->Rmem->get_base_address(*l, function_id);
          }
-         else if (l_next != mem.end() &&
-               mem_vars.find(*l) != mem_vars.end() &&
-               HLSMgr->RSim->param_address.at(v_idx).find(*l_next) !=
-               HLSMgr->RSim->param_address.at(v_idx).end())
+         else if(l_next != mem.end() && HLSMgr->RSim->param_address.at(v_idx).find(*l) != HLSMgr->RSim->param_address.at(v_idx).end() && HLSMgr->RSim->param_address.at(v_idx).find(*l_next) != HLSMgr->RSim->param_address.at(v_idx).end())
          {
-            next_object_offset =
-               HLSMgr->RSim->param_address.at(v_idx).find(*l_next)->second -
-               HLSMgr->Rmem->get_base_address(*l, function_id);
+            next_object_offset = HLSMgr->RSim->param_address.at(v_idx).find(*l_next)->second - HLSMgr->RSim->param_address.at(v_idx).find(*l)->second;
          }
-         else if (l_next != mem.end() &&
-               HLSMgr->RSim->param_address.at(v_idx).find(*l) !=
-               HLSMgr->RSim->param_address.at(v_idx).end() &&
-               HLSMgr->RSim->param_address.at(v_idx).find(*l_next) !=
-               HLSMgr->RSim->param_address.at(v_idx).end())
+         else if(HLSMgr->RSim->param_address.at(v_idx).find(*l) != HLSMgr->RSim->param_address.at(v_idx).end())
          {
-            next_object_offset =
-               HLSMgr->RSim->param_address.at(v_idx).find(*l_next)->second -
-               HLSMgr->RSim->param_address.at(v_idx).find(*l)->second;
-         }
-         else if (HLSMgr->RSim->param_address.at(v_idx).find(*l) !=
-               HLSMgr->RSim->param_address.at(v_idx).end())
-         {
-            next_object_offset =
-               HLSMgr->Rmem->get_memory_address() -
-               HLSMgr->RSim->param_address.at(v_idx).find(*l)->second;
+            next_object_offset = HLSMgr->Rmem->get_memory_address() - HLSMgr->RSim->param_address.at(v_idx).find(*l)->second;
          }
          else
          {
@@ -251,55 +200,28 @@ void TestbenchMemoryAllocation::AllocTestbenchMemory(void) const
    return;
 }
 
-const std::unordered_set
-<
-   std::tuple
-   <
-      HLSFlowStep_Type,
-      HLSFlowStepSpecializationConstRef,
-      HLSFlowStep_Relationship
-   >
->
-TestbenchMemoryAllocation::ComputeHLSRelationships
-(const DesignFlowStep::RelationshipType relationship_type)
-const
+const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> TestbenchMemoryAllocation::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set
-   <
-      std::tuple<HLSFlowStep_Type,
-      HLSFlowStepSpecializationConstRef,
-      HLSFlowStep_Relationship>
-   > ret;
+   std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:
-         {
-            ret.insert
-            (
-               std::make_tuple
-               (
-                  HLSFlowStep_Type::TEST_VECTOR_PARSER,
-                  HLSFlowStepSpecializationConstRef(),
-                  HLSFlowStep_Relationship::TOP_FUNCTION
-               )
-            );
-            break;
-         }
+      {
+         ret.insert(std::make_tuple(HLSFlowStep_Type::TEST_VECTOR_PARSER, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::TOP_FUNCTION));
+         break;
+      }
       case INVALIDATION_RELATIONSHIP:
-         {
-            break;
-         }
+      {
+         break;
+      }
       case PRECEDENCE_RELATIONSHIP:
-         {
-            break;
-         }
+      {
+         break;
+      }
       default:
          THROW_UNREACHABLE("");
    }
    return ret;
 }
 
-bool TestbenchMemoryAllocation::HasToBeExecuted() const
-{
-   return true;
-}
+bool TestbenchMemoryAllocation::HasToBeExecuted() const { return true; }

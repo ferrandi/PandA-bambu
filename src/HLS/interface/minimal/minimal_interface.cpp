@@ -647,16 +647,18 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
       {
          structural_objectRef ext_port = interfaceObj->find_member(port_name, port_o_K, interfaceObj);
          structural_objectRef int_port = wrappedObj->find_member("_" + port_name, port_o_K, wrappedObj);
-
-         if(!ext_port)
+         if(int_port)
          {
-            if(port_in->get_kind() == port_vector_o_K)
-               ext_port = SM_minimal_interface->add_port_vector(port_name, port_o::IN, GetPointer<port_o>(int_port)->get_ports_size(), interfaceObj, int_port->get_typeRef());
-            else
-               ext_port = SM_minimal_interface->add_port(port_name, port_o::IN, interfaceObj, int_port->get_typeRef());
+            if(!ext_port)
+            {
+               if(port_in->get_kind() == port_vector_o_K)
+                  ext_port = SM_minimal_interface->add_port_vector(port_name, port_o::IN, GetPointer<port_o>(int_port)->get_ports_size(), interfaceObj, int_port->get_typeRef());
+               else
+                  ext_port = SM_minimal_interface->add_port(port_name, port_o::IN, interfaceObj, int_port->get_typeRef());
+            }
+            port_o::fix_port_properties(int_port, ext_port);
+            SM_minimal_interface->add_connection(int_port, ext_port);
          }
-         port_o::fix_port_properties(int_port, ext_port);
-         SM_minimal_interface->add_connection(int_port, ext_port);
       }
 
       if(port_name[0] == '_' && param_renamed.find(port_name.substr(1)) != param_renamed.end())

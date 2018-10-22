@@ -866,10 +866,16 @@ const char* port_o::port_directionNames[] =
       "IN", "OUT", "IO", "GEN", "UNKNOWN"
    };
 
+const char* port_o::port_interfaceNames[] =
+   {
+      "PI_DEFAULT", "PI_RNONE"
+   };
+
 port_o::port_o(int _debug_level, const structural_objectRef o, port_direction _dir, so_kind _port_type) :
    structural_object(_debug_level, o),
    dir(_dir),
    end(NONE),
+   pi(port_interface::PI_DEFAULT),
    is_var_args(is_var_args_DEFAULT),
    is_clock(is_clock_DEFAULT), is_extern(is_extern_DEFAULT), is_global(is_global_DEFAULT),
    is_reverse(is_reverse_DEFAULT),
@@ -1000,6 +1006,16 @@ port_o::port_endianess port_o::get_port_endianess() const
 void port_o::set_port_endianess(port_endianess _end)
 {
    end = _end;
+}
+
+port_o::port_interface port_o::get_port_interface() const
+{
+   return pi;
+}
+
+void port_o::set_port_interface(port_interface _pi)
+{
+   pi = _pi;
 }
 
 void port_o::set_is_var_args(bool c)
@@ -1278,6 +1294,7 @@ void port_o::copy(structural_objectRef dest) const
    structural_object::copy(dest);
    GetPointer<port_o>(dest)->dir = dir;
    GetPointer<port_o>(dest)->end = end;
+   GetPointer<port_o>(dest)->pi = pi;
    GetPointer<port_o>(dest)->bus_bundle = bus_bundle;
    GetPointer<port_o>(dest)->size_parameter = size_parameter;
    GetPointer<port_o>(dest)->is_var_args = is_var_args;
@@ -1334,6 +1351,12 @@ void port_o::xload(const xml_element* Enode, structural_objectRef _owner, struct
       LOAD_XVFM(dir_string,Enode, dir);
       dir = to_port_direction(dir_string);
    }
+   if (CE_XVM(pi, Enode))
+   {
+      std::string pi_string;
+      LOAD_XVFM(pi_string,Enode, pi);
+      pi = to_port_interface(pi_string);
+   }
    if (CE_XVM(is_var_args, Enode)) LOAD_XVM(is_var_args, Enode);
    if (CE_XVM(is_clock, Enode)) LOAD_XVM(is_clock, Enode);
    if (CE_XVM(is_extern, Enode)) LOAD_XVM(is_extern, Enode);
@@ -1388,6 +1411,15 @@ port_o::port_direction port_o::to_port_direction(const std::string& val)
    return port_direction(i);
 }
 
+port_o::port_interface port_o::to_port_interface(const std::string& val)
+{
+   unsigned int i;
+   for (i = 0; i < UNKNOWN; i++)
+      if (val == port_interfaceNames[i])
+         break;
+   return port_interface(i);
+}
+
 void port_o::xwrite(xml_element* rootnode)
 {
    xml_element* Enode = rootnode->add_child_element(get_kind_text());
@@ -1408,6 +1440,7 @@ void port_o::xwrite(xml_element* rootnode)
 #endif
 //   WRITE_XVM(structural_object::get_typeRef()->id_type,Enode);
    WRITE_XNVM(dir, port_directionNames[dir], Enode);
+   if(pi != port_interface::PI_DEFAULT) WRITE_XNVM(pi, port_interfaceNames[pi], Enode);
    xml_element* Enode_CO = Enode->add_child_element("connected_objects");
    for (unsigned int i = 0; i < connected_objects.size(); i++)
       WRITE_XNVM2("CON" + boost::lexical_cast<std::string>(i), connected_objects[i].lock()->get_path(), Enode_CO);
@@ -1468,6 +1501,7 @@ void port_o::print(std::ostream& os) const
    PP(os, "PORT:\n");
    structural_object::print(os);
    PP(os, "[Dir: " + std::string(port_directionNames[dir]));
+   if(pi != port_interface::PI_DEFAULT) PP(os, "[Interface: " + std::string(port_interfaceNames[pi]));
    if (connected_objects.size()) PP(os, " [CON: ");
    for (const auto & connected_object : connected_objects)
       os << connected_object.lock()->get_path() + "-" + convert_so_short(connected_object.lock()->get_kind()) << " ";
@@ -4187,6 +4221,8 @@ void port_o::resize_std_port(unsigned int bitsize_variable, unsigned int n_eleme
 
 void port_o::fix_port_properties(structural_objectRef port_i, structural_objectRef cir_port)
 {
+   if(GetPointer<port_o>(port_i)->get_port_interface() != port_o::port_interface::PI_DEFAULT)
+      GetPointer<port_o>(cir_port)->set_port_interface(GetPointer<port_o>(port_i)->get_port_interface());
    if(GetPointer<port_o>(port_i)->get_is_extern())
       GetPointer<port_o>(cir_port)->set_is_extern(true);
    if(GetPointer<port_o>(port_i)->get_is_global())

@@ -581,6 +581,9 @@ struct port_o : public structural_object
       /// Enumerative type describing the endianess of a port; NONE means that it has not been specified yet.
       enum port_endianess {LITTLE = 0, BIG, NONE};
 
+      /// Enumerative type describing if the port is associated with a specific interface type.
+      enum port_interface {PI_DEFAULT=0,PI_RNONE};
+
       static const unsigned int PARAMETRIC_PORT = static_cast<unsigned int>(-1);
 
       /**
@@ -588,6 +591,12 @@ struct port_o : public structural_object
           * @param val is the string version of the enum.
           */
       static port_direction to_port_direction(const std::string &val);
+
+      /**
+          * Convert a string into the corresponding port_interface enumerative type
+          * @param val is the string version of the enum.
+          */
+      static port_interface to_port_interface(const std::string &val);
 
       /**
           * Constructor.
@@ -648,6 +657,16 @@ struct port_o : public structural_object
        * Set the endianess of the port.
       */
       void set_port_endianess(port_endianess end);
+
+      /**
+       * Return the port interface type of the port.
+      */
+      port_interface get_port_interface() const;
+
+      /**
+       * Set the port interface type of the port.
+      */
+      void set_port_interface(port_interface pi);
 
       /**
        * Return the connected signal, if any. Null pointer otherwise.
@@ -948,6 +967,9 @@ struct port_o : public structural_object
       /// endianess of a port
       port_endianess end;
 
+      /// port interface type of a port
+      port_interface pi;
+
       /// when true the port must be specialized at runtime depending on the number of input
       bool is_var_args;
 
@@ -1003,6 +1025,9 @@ struct port_o : public structural_object
 
       /// store the names of the enumerative port_direction.
       static const char* port_directionNames[];
+
+      /// store the names of the enumerative port_interface.
+      static const char* port_interfaceNames[];
 
       /// port type
       so_kind port_type;

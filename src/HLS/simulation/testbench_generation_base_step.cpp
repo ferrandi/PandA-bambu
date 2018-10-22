@@ -29,10 +29,10 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file testbench_generation_base_step.cpp
- * @brief hls testbenches automatic generation
+ * @brief hls testbench automatic generation
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  * @author Marco Minutoli <mminutoli@gmail.com>
@@ -40,11 +40,11 @@
  * @author Christian Pilato <pilato@elet.polimi.it>
  * @author Pietro Fezzardi <pietrofezzardi@gmail.com>
  *
-*/
-///Autoheader include
-#include "config_PACKAGE_BUGREPORT.hpp"
-#include "config_PACKAGE_NAME.hpp"
-#include "config_PACKAGE_VERSION.hpp"
+ */
+/// Autoheader include
+#include "config_HAVE_I386_CLANG4_COMPILER.hpp"
+#include "config_HAVE_I386_CLANG5_COMPILER.hpp"
+#include "config_HAVE_I386_CLANG6_COMPILER.hpp"
 #include "config_HAVE_I386_GCC47_COMPILER.hpp"
 #include "config_HAVE_I386_GCC48_COMPILER.hpp"
 #include "config_HAVE_I386_GCC49_COMPILER.hpp"
@@ -52,11 +52,11 @@
 #include "config_HAVE_I386_GCC6_COMPILER.hpp"
 #include "config_HAVE_I386_GCC7_COMPILER.hpp"
 #include "config_HAVE_I386_GCC8_COMPILER.hpp"
-#include "config_HAVE_I386_CLANG4_COMPILER.hpp"
-#include "config_HAVE_I386_CLANG5_COMPILER.hpp"
-#include "config_HAVE_I386_CLANG6_COMPILER.hpp"
+#include "config_PACKAGE_BUGREPORT.hpp"
+#include "config_PACKAGE_NAME.hpp"
+#include "config_PACKAGE_VERSION.hpp"
 
-///Header include
+/// Header include
 #include "testbench_generation_base_step.hpp"
 
 #include <utility>
@@ -64,38 +64,38 @@
 ///. include
 #include "Parameter.hpp"
 
-///behavior include
+/// behavior include
 #include "call_graph_manager.hpp"
 
-///circuit include
+/// circuit include
 #include "structural_manager.hpp"
 #include "structural_objects.hpp"
 
-///design_flows includes
+/// design_flows includes
 #include "design_flow_graph.hpp"
 #include "design_flow_manager.hpp"
 
-///design_flows/backend/ToC/progModels include
+/// design_flows/backend/ToC/progModels include
 #include "c_backend.hpp"
 
-///design_flows/backend/ToC include
+/// design_flows/backend/ToC include
 #include "c_backend_step_factory.hpp"
 #include "hls_c_backend_information.hpp"
 
-///design_flows/backend/ToHDL includes
+/// design_flows/backend/ToHDL includes
 #include "HDL_manager.hpp"
 #include "language_writer.hpp"
 
-///HLS include
+/// HLS include
 #include "hls.hpp"
 #include "hls_constraints.hpp"
 #include "hls_manager.hpp"
 #include "hls_target.hpp"
 
-///HLS/binding/module include
+/// HLS/binding/module include
 #include "fu_binding.hpp"
 
-///HLS/memory include
+/// HLS/memory include
 #include "memory.hpp"
 
 // include from HLS/simulation
@@ -106,92 +106,76 @@
 #include "Discrepancy.hpp"
 #endif
 
-///technology/physical_library
+/// technology/physical_library
 #include "technology_wishbone.hpp"
 
-///tree include
+/// tree include
 #include "behavioral_helper.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
 
-///utility include
+/// utility include
 #include "fileIO.hpp"
 
-///wrapper/treegcc include
+/// wrapper/treegcc include
 #include "gcc_wrapper.hpp"
 
-TestbenchGenerationBaseStep::TestbenchGenerationBaseStep(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type, std::string  _c_testbench_basename) :
-   HLS_step(_parameters, _HLSMgr, _design_flow_manager, _hls_flow_step_type),
-   writer(language_writer::create_writer(HDLWriter_Language::VERILOG, _HLSMgr->get_HLS_target()->get_technology_manager(), _parameters)),
-   mod(nullptr),
-   target_period(0.0),
-   output_directory(parameters->getOption<std::string>(OPT_output_directory) + "/simulation/"),
-   c_testbench_basename(std::move(_c_testbench_basename))
+TestbenchGenerationBaseStep::TestbenchGenerationBaseStep(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type, std::string _c_testbench_basename)
+    : HLS_step(_parameters, _HLSMgr, _design_flow_manager, _hls_flow_step_type),
+      writer(language_writer::create_writer(HDLWriter_Language::VERILOG, _HLSMgr->get_HLS_target()->get_technology_manager(), _parameters)),
+      mod(nullptr),
+      target_period(0.0),
+      output_directory(parameters->getOption<std::string>(OPT_output_directory) + "/simulation/"),
+      c_testbench_basename(std::move(_c_testbench_basename))
 {
-   if (!boost::filesystem::exists(output_directory))
-      boost::filesystem::create_directories(output_directory);
+   if(!boost::filesystem::exists(output_directory)) boost::filesystem::create_directories(output_directory);
 }
 
-TestbenchGenerationBaseStep::~TestbenchGenerationBaseStep()
-= default;
+TestbenchGenerationBaseStep::~TestbenchGenerationBaseStep() = default;
 
-const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > TestbenchGenerationBaseStep::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> TestbenchGenerationBaseStep::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > ret;
+   std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:
-         {
-            ret.insert(std::make_tuple(HLSFlowStep_Type::TEST_VECTOR_PARSER,
-                  HLSFlowStepSpecializationConstRef(),
-                  HLSFlowStep_Relationship::TOP_FUNCTION));
-            ret.insert(std::make_tuple(HLSFlowStep_Type::TESTBENCH_MEMORY_ALLOCATION,
-                  HLSFlowStepSpecializationConstRef(),
-                  HLSFlowStep_Relationship::TOP_FUNCTION));
+      {
+         ret.insert(std::make_tuple(HLSFlowStep_Type::TEST_VECTOR_PARSER, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::TOP_FUNCTION));
+         ret.insert(std::make_tuple(HLSFlowStep_Type::TESTBENCH_MEMORY_ALLOCATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::TOP_FUNCTION));
 #if HAVE_VCD_BUILT
-            if (parameters->isOption(OPT_discrepancy) and parameters->getOption<bool>(OPT_discrepancy))
-            {
-               ret.insert(std::make_tuple(HLSFlowStep_Type::VCD_SIGNAL_SELECTION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::TOP_FUNCTION));
-            }
+         if(parameters->isOption(OPT_discrepancy) and parameters->getOption<bool>(OPT_discrepancy)) { ret.insert(std::make_tuple(HLSFlowStep_Type::VCD_SIGNAL_SELECTION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::TOP_FUNCTION)); }
 #endif
-            break;
-         }
+         break;
+      }
       case INVALIDATION_RELATIONSHIP:
-         {
-            break;
-         }
+      {
+         break;
+      }
       case PRECEDENCE_RELATIONSHIP:
-         {
-            break;
-         }
+      {
+         break;
+      }
       default:
          THROW_UNREACHABLE("");
    }
    return ret;
 }
 
-void TestbenchGenerationBaseStep::ComputeRelationships
-(
-   DesignFlowStepSet & design_flow_step_set,
-   const DesignFlowStep::RelationshipType relationship_type
-)
+void TestbenchGenerationBaseStep::ComputeRelationships(DesignFlowStepSet& design_flow_step_set, const DesignFlowStep::RelationshipType relationship_type)
 {
    HLS_step::ComputeRelationships(design_flow_step_set, relationship_type);
 
-   switch (relationship_type)
+   switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:
       {
-         const auto * c_backend_factory = GetPointer<const CBackendStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("CBackend"));
+         const auto* c_backend_factory = GetPointer<const CBackendStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("CBackend"));
 
          CBackend::Type hls_c_backend_type;
 #if HAVE_HLS_BUILT
-         if (parameters->isOption(OPT_discrepancy) and parameters->getOption<bool>(OPT_discrepancy))
-         {
-            hls_c_backend_type = CBackend::CB_DISCREPANCY_ANALYSIS;
-         }
+         if(parameters->isOption(OPT_discrepancy) and parameters->getOption<bool>(OPT_discrepancy)) { hls_c_backend_type = CBackend::CB_DISCREPANCY_ANALYSIS; }
          else
 #endif
          {
@@ -199,28 +183,17 @@ void TestbenchGenerationBaseStep::ComputeRelationships
             if(parameters->isOption(OPT_pretty_print))
             {
                const auto design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
-               const auto * c_backend_step_factory = GetPointer<const CBackendStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("CBackend"));
+               const auto* c_backend_step_factory = GetPointer<const CBackendStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("CBackend"));
                const std::string output_file_name = parameters->getOption<std::string>(OPT_pretty_print);
                const vertex c_backend_vertex = design_flow_manager.lock()->GetDesignFlowStep(CBackend::ComputeSignature(CBackend::CB_SEQUENTIAL));
-               const DesignFlowStepRef c_backend_step = c_backend_vertex ? design_flow_graph->CGetDesignFlowStepInfo(c_backend_vertex)->design_flow_step : c_backend_step_factory->CreateCBackendStep(CBackend::CB_SEQUENTIAL, output_file_name, CBackendInformationConstRef());
+               const DesignFlowStepRef c_backend_step =
+                   c_backend_vertex ? design_flow_graph->CGetDesignFlowStepInfo(c_backend_vertex)->design_flow_step : c_backend_step_factory->CreateCBackendStep(CBackend::CB_SEQUENTIAL, output_file_name, CBackendInformationConstRef());
                design_flow_step_set.insert(c_backend_step);
             }
          }
 
          const DesignFlowStepRef hls_c_backend_step =
-            c_backend_factory->CreateCBackendStep
-            (
-             hls_c_backend_type,
-             output_directory + c_testbench_basename + ".c",
-             CBackendInformationConstRef
-             (
-              new HLSCBackendInformation
-              (
-               output_directory + c_testbench_basename + ".txt",
-               HLSMgr
-              )
-             )
-            );
+             c_backend_factory->CreateCBackendStep(hls_c_backend_type, output_directory + c_testbench_basename + ".c", CBackendInformationConstRef(new HLSCBackendInformation(output_directory + c_testbench_basename + ".txt", HLSMgr)));
          design_flow_step_set.insert(hls_c_backend_step);
          break;
       }
@@ -244,7 +217,7 @@ void TestbenchGenerationBaseStep::Initialize()
 {
    const auto top_function_ids = HLSMgr->CGetCallGraphManager()->GetRootFunctions();
    THROW_ASSERT(top_function_ids.size() == 1, "Multiple top functions");
-   const auto top_function_id= *(top_function_ids.begin());
+   const auto top_function_id = *(top_function_ids.begin());
    const auto top_hls = HLSMgr->get_HLS(top_function_id);
    cir = top_hls->top->get_circ();
    THROW_ASSERT(GetPointer<const module>(cir), "Not a module");
@@ -271,48 +244,42 @@ std::string TestbenchGenerationBaseStep::print_var_init(const tree_managerConstR
    std::vector<std::string> init_els;
    const tree_nodeRef& tn = TreeM->get_tree_node_const(var);
    tree_nodeRef init_node;
-   auto * vd = GetPointer<var_decl>(tn);
-   if(vd && vd->init)
-      init_node = GET_NODE(vd->init);
+   auto* vd = GetPointer<var_decl>(tn);
+   if(vd && vd->init) init_node = GET_NODE(vd->init);
 
-   if (init_node && (!GetPointer<constructor>(init_node) || GetPointer<constructor>(init_node)->list_of_idx_valu.size()))
-   {
-      fu_binding::write_init(TreeM, tn, init_node, init_els, mem, 0);
-   }
+   if(init_node && (!GetPointer<constructor>(init_node) || GetPointer<constructor>(init_node)->list_of_idx_valu.size())) { fu_binding::write_init(TreeM, tn, init_node, init_els, mem, 0); }
    else if(GetPointer<string_cst>(tn) || GetPointer<integer_cst>(tn) || GetPointer<real_cst>(tn))
    {
       fu_binding::write_init(TreeM, tn, tn, init_els, mem, 0);
    }
-   else if (!GetPointer<gimple_call>(tn))
+   else if(!GetPointer<gimple_call>(tn))
    {
-      if (tree_helper::is_an_array(TreeM, var))
+      if(tree_helper::is_an_array(TreeM, var))
       {
          unsigned int type_index;
          tree_helper::get_type_node(tn, type_index);
          unsigned int data_bitsize = tree_helper::get_array_data_bitsize(TreeM, type_index);
          unsigned int num_elements = tree_helper::get_array_num_elements(TreeM, type_index);
          std::string value;
-         for (unsigned int l = 0; l < num_elements; l++)
+         for(unsigned int l = 0; l < num_elements; l++)
          {
             value = "";
-            for (unsigned int i = 0; i < data_bitsize; i++)
-               value += "0";
+            for(unsigned int i = 0; i < data_bitsize; i++) value += "0";
             init_els.push_back(value);
          }
       }
       else
       {
-          unsigned int data_bitsize = tree_helper::size(TreeM, var);
+         unsigned int data_bitsize = tree_helper::size(TreeM, var);
          std::string value;
-         for (unsigned int i = 0; i < data_bitsize; i++)
-            value += "0";
+         for(unsigned int i = 0; i < data_bitsize; i++) value += "0";
          init_els.push_back(value);
       }
    }
    std::string init;
-   for (unsigned int l = 0; l < init_els.size(); l++)
+   for(unsigned int l = 0; l < init_els.size(); l++)
    {
-      if (l) init += ",";
+      if(l) init += ",";
       init += init_els[l];
    }
    return init;
@@ -341,79 +308,77 @@ void TestbenchGenerationBaseStep::exec_C_testbench()
       if(parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) != GccWrapper_CompilerTarget::CT_I386_CLANG4)
 #endif
 #if HAVE_I386_CLANG5_COMPILER
-      if(parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) != GccWrapper_CompilerTarget::CT_I386_CLANG5)
+         if(parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) != GccWrapper_CompilerTarget::CT_I386_CLANG5)
 #endif
 #if HAVE_I386_CLANG6_COMPILER
-      if(parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) != GccWrapper_CompilerTarget::CT_I386_CLANG6)
+            if(parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) != GccWrapper_CompilerTarget::CT_I386_CLANG6)
 #endif
-         compiler_flags += " -fexcess-precision=standard ";
-   if (parameters->isOption(OPT_testbench_extra_gcc_flags))
-      compiler_flags += " " + parameters->getOption<std::string>(OPT_testbench_extra_gcc_flags) + " ";
-   if (parameters->isOption(OPT_discrepancy) and
-         parameters->getOption<bool>(OPT_discrepancy))
+               compiler_flags += " -fexcess-precision=standard ";
+   if(parameters->isOption(OPT_testbench_extra_gcc_flags)) compiler_flags += " " + parameters->getOption<std::string>(OPT_testbench_extra_gcc_flags) + " ";
+   if(parameters->isOption(OPT_discrepancy) and parameters->getOption<bool>(OPT_discrepancy))
    {
-      if (false
+      if(false
 #if HAVE_I386_GCC48_COMPILER
-           or parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC48
+         or parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC48
 #endif
 #if HAVE_I386_GCC49_COMPILER
-           or parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC49
+         or parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC49
 #endif
 #if HAVE_I386_GCC5_COMPILER
-           or parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC5
+         or parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC5
 #endif
 #if HAVE_I386_GCC6_COMPILER
-           or parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC6
+         or parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC6
 #endif
 #if HAVE_I386_GCC7_COMPILER
-          or parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC7
+         or parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC7
 #endif
 #if HAVE_I386_GCC8_COMPILER
-          or parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC8
+         or parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC8
 #endif
 #if HAVE_I386_CLANG4_COMPILER
-          or parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANG4
+         or parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANG4
 #endif
 #if HAVE_I386_CLANG5_COMPILER
-          or parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANG5
+         or parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANG5
 #endif
 #if HAVE_I386_CLANG6_COMPILER
-          or parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANG6
+         or parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANG6
 #endif
-         )
+      )
       {
          compiler_flags += " -g -fsanitize=address -fno-omit-frame-pointer -fno-common ";
       }
-   if (false
+      if(false
 #if HAVE_I386_GCC5_COMPILER
-       or parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC5
+         or parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC5
 #endif
 #if HAVE_I386_GCC6_COMPILER
-       or parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC6
+         or parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC6
 #endif
 #if HAVE_I386_GCC7_COMPILER
-       or parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC7
+         or parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC7
 #endif
 #if HAVE_I386_GCC8_COMPILER
-       or parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC8
+         or parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC8
 #endif
 #if HAVE_I386_CLANG4_COMPILER
-       or parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANG4
+         or parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANG4
 #endif
 #if HAVE_I386_CLANG5_COMPILER
-       or parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANG5
+         or parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANG5
 #endif
 #if HAVE_I386_CLANG6_COMPILER
-       or parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANG6
+         or parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANG6
 #endif
-         )
+      )
       {
          compiler_flags += " -fsanitize=undefined -fsanitize-recover=undefined ";
       }
    }
    if(parameters->isOption(OPT_gcc_optimizations))
    {
-      const auto gcc_parameters= parameters->getOption<const CustomSet<std::string> >(OPT_gcc_optimizations);
+      const auto gcc_parameters = parameters->getOption<const CustomSet<std::string>>(OPT_gcc_optimizations);
       if(gcc_parameters.find("tree-vectorize") != gcc_parameters.end())
       {
          boost::replace_all(compiler_flags, "-msse2", "");
@@ -425,52 +390,37 @@ void TestbenchGenerationBaseStep::exec_C_testbench()
    file_sources.push_front(output_directory + c_testbench_basename + ".c");
    // add source files to interface with python golden reference, if any
    std::string exec_name = output_directory + "test";
-   if (parameters->isOption(OPT_no_parse_c_python))
+   if(parameters->isOption(OPT_no_parse_c_python))
    {
-      const auto no_parse_files = parameters->getOption<const CustomSet<std::string> >(OPT_no_parse_c_python);
-      for(const auto& no_parse_file : no_parse_files)
-      {
-         file_sources.push_back(no_parse_file);
-      }
+      const auto no_parse_files = parameters->getOption<const CustomSet<std::string>>(OPT_no_parse_c_python);
+      for(const auto& no_parse_file : no_parse_files) { file_sources.push_back(no_parse_file); }
    }
    // compute top function name and use it to setup the artificial main for cosimulation
    const auto top_function_ids = HLSMgr->CGetCallGraphManager()->GetRootFunctions();
    THROW_ASSERT(top_function_ids.size() == 1, "Multiple top functions");
-   const auto top_function_id= *(top_function_ids.begin());
+   const auto top_function_id = *(top_function_ids.begin());
    const auto top_function_name = HLSMgr->CGetFunctionBehavior(top_function_id)->CGetBehavioralHelper()->get_function_name();
-   if (parameters->isOption(OPT_discrepancy) and parameters->getOption<bool>(OPT_discrepancy))
+   if(parameters->isOption(OPT_discrepancy) and parameters->getOption<bool>(OPT_discrepancy))
    {
-      ///Nothing to do
+      /// Nothing to do
    }
    else if(top_function_name != "main")
    {
-      if(parameters->isOption(OPT_pretty_print))
-      {
-         file_sources.push_back(parameters->getOption<std::string>(OPT_pretty_print));
-      }
+      if(parameters->isOption(OPT_pretty_print)) { file_sources.push_back(parameters->getOption<std::string>(OPT_pretty_print)); }
       else
       {
          compiler_flags += " -Wl,--allow-multiple-definition ";
-         for(const auto& input_file : parameters->getOption<const CustomSet<std::string> > (OPT_input_file))
-         {
-            file_sources.push_back(input_file);
-         }
+         for(const auto& input_file : parameters->getOption<const CustomSet<std::string>>(OPT_input_file)) { file_sources.push_back(input_file); }
       }
    }
    else
    {
       const std::string main_file_name = output_directory + "main_exec";
       CustomSet<std::string> main_sources;
-      if(parameters->isOption(OPT_pretty_print))
-      {
-         main_sources.insert(parameters->getOption<std::string>(OPT_pretty_print));
-      }
+      if(parameters->isOption(OPT_pretty_print)) { main_sources.insert(parameters->getOption<std::string>(OPT_pretty_print)); }
       else
       {
-         for(const auto& input_file : parameters->getOption<const CustomSet<std::string> > (OPT_input_file))
-         {
-            main_sources.insert(input_file);
-         }
+         for(const auto& input_file : parameters->getOption<const CustomSet<std::string>>(OPT_input_file)) { main_sources.insert(input_file); }
       }
       gcc_wrapper->CreateExecutable(main_sources, main_file_name, compiler_flags);
    }
@@ -478,64 +428,57 @@ void TestbenchGenerationBaseStep::exec_C_testbench()
    gcc_wrapper->CreateExecutable(file_sources, exec_name, compiler_flags);
    // set some parameters for redirection of discrepancy statistics
    std::string c_stdout_file = "";
-   if (parameters->isOption(OPT_discrepancy) and parameters->getOption<bool>(OPT_discrepancy))
-      c_stdout_file = output_directory + "dynamic_discrepancy_stats";
+   if(parameters->isOption(OPT_discrepancy) and parameters->getOption<bool>(OPT_discrepancy)) c_stdout_file = output_directory + "dynamic_discrepancy_stats";
    // executing the test to generate inputs and outputs values
-   if (parameters->isOption(OPT_discrepancy) and
-         parameters->getOption<bool>(OPT_discrepancy))
+   if(parameters->isOption(OPT_discrepancy) and parameters->getOption<bool>(OPT_discrepancy))
    {
-      if (false
+      if(false
 #if HAVE_I386_GCC49_COMPILER
-          or parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC49
+         or parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC49
 #endif
 #if HAVE_I386_GCC5_COMPILER
-          or parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC5
+         or parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC5
 #endif
 #if HAVE_I386_GCC6_COMPILER
-          or parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC6
+         or parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC6
 #endif
 #if HAVE_I386_GCC7_COMPILER
-          or parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC7
+         or parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC7
 #endif
 #if HAVE_I386_GCC8_COMPILER
-          or parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC8
+         or parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC8
 #endif
 #if HAVE_I386_CLANG4_COMPILER
-          or parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANG4
+         or parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANG4
 #endif
 #if HAVE_I386_CLANG5_COMPILER
-          or parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANG5
+         or parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANG5
 #endif
 #if HAVE_I386_CLANG6_COMPILER
-          or parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANG6
+         or parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANG6
 #endif
-          )
+      )
       {
          exec_name.insert(0, "ASAN_OPTIONS='symbolize=1:redzone=2048' ");
       }
    }
    int ret = PandaSystem(parameters, exec_name, c_stdout_file);
-   if(IsError(ret))
-   {
-      THROW_ERROR("Error in generating the expected test results");
-   }
+   if(IsError(ret)) { THROW_ERROR("Error in generating the expected test results"); }
    INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "<--Executed C testbench");
 }
 
 std::string TestbenchGenerationBaseStep::verilator_testbench() const
 {
-   if (not parameters->getOption<bool>(OPT_generate_testbench))
-      return "";
+   if(not parameters->getOption<bool>(OPT_generate_testbench)) return "";
    std::string simulation_values_path = output_directory + c_testbench_basename + ".txt";
 
-   PRINT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "  . Generation of the Verilator testbenches");
+   PRINT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "  . Generation of the Verilator testbench");
 
-   if (not boost::filesystem::exists(simulation_values_path))
-      THROW_ERROR("Error in generating verilator testbenches, values file missing!");
+   if(not boost::filesystem::exists(simulation_values_path)) THROW_ERROR("Error in generating Verilator testbench, values file missing!");
 
    std::string fileName = write_verilator_testbench(simulation_values_path);
 
-   PRINT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "  . End of the Verilator testbenches");
+   PRINT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "  . End of the Verilator testbench");
 
    return fileName;
 }
@@ -547,13 +490,13 @@ std::string TestbenchGenerationBaseStep::write_verilator_testbench(const std::st
    const tree_managerRef TreeM = HLSMgr->get_tree_manager();
 
    this->write_underlying_testbench(input_file, false, false, TreeM);
-   std::string file_name = output_directory + testbench_basename +"_tb.v";
+   std::string file_name = output_directory + testbench_basename + "_tb.v";
    writer->WriteFile(file_name);
    std::ostringstream os;
    simple_indent PP('{', '}', 3);
 
    // Creating output file
-   std::string fileName = output_directory + testbench_basename +"_main.cpp";
+   std::string fileName = output_directory + testbench_basename + "_main.cpp";
    std::ofstream fileOut(fileName.c_str(), std::ios::out);
 
    std::string top_fname = mod->get_typeRef()->id_type;
@@ -566,9 +509,9 @@ std::string TestbenchGenerationBaseStep::write_verilator_testbench(const std::st
    PP(os, "#endif\n");
    PP(os, "\n");
    PP(os, "\n");
-   PP(os,"#define SIMULATION_MAX "+ STR(parameters->getOption<int>(OPT_max_sim_cycles)) + "\n\n");
-   PP(os,"static const double CLOCK_PERIOD ="+boost::lexical_cast<std::string>(target_period)+";\n");
-   PP(os,"static const double HALF_CLOCK_PERIOD = CLOCK_PERIOD/2;\n");
+   PP(os, "#define SIMULATION_MAX " + STR(parameters->getOption<int>(OPT_max_sim_cycles)) + "\n\n");
+   PP(os, "static const double CLOCK_PERIOD =" + boost::lexical_cast<std::string>(target_period) + ";\n");
+   PP(os, "static const double HALF_CLOCK_PERIOD = CLOCK_PERIOD/2;\n");
    PP(os, "\n");
    PP(os, "double main_time = 0;\n");
    PP(os, "\n");
@@ -625,14 +568,12 @@ std::string TestbenchGenerationBaseStep::write_verilator_testbench(const std::st
 
 std::string TestbenchGenerationBaseStep::create_HDL_testbench(bool xilinx_isim) const
 {
-   if (!parameters->getOption<bool>(OPT_generate_testbench))
-      return "";
+   if(!parameters->getOption<bool>(OPT_generate_testbench)) return "";
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Creating HDL testbench");
    const tree_managerRef TreeM = HLSMgr->get_tree_manager();
 
    std::string simulation_values_path = output_directory + c_testbench_basename + ".txt";
-   bool generate_vcd_output = (parameters->isOption(OPT_generate_vcd) and parameters->getOption<bool>(OPT_generate_vcd)) or
-      (parameters->isOption(OPT_discrepancy) and parameters->getOption<bool>(OPT_discrepancy));
+   bool generate_vcd_output = (parameters->isOption(OPT_generate_vcd) and parameters->getOption<bool>(OPT_generate_vcd)) or (parameters->isOption(OPT_discrepancy) and parameters->getOption<bool>(OPT_discrepancy));
 
    std::string file_name = output_directory + testbench_basename + writer->get_extension();
 
@@ -640,15 +581,14 @@ std::string TestbenchGenerationBaseStep::create_HDL_testbench(bool xilinx_isim) 
    writer->write_comment(std::string("File automatically generated by: ") + PACKAGE_NAME + " framework version=" + PACKAGE_VERSION + "\n");
    writer->write_comment(std::string("Send any bug to: ") + PACKAGE_BUGREPORT + "\n");
    writer->WriteLicense();
-   //write testbech for simulation
+   // write testbench for simulation
    this->write_hdl_testbench(simulation_values_path, generate_vcd_output, xilinx_isim, TreeM);
    writer->WriteFile(file_name);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Created HDL testbench");
    return file_name;
 }
 
-void TestbenchGenerationBaseStep::write_hdl_testbench(std::string simulation_values_path, bool generate_vcd_output,
-    bool xilinx_isim, const tree_managerConstRef TreeM) const
+void TestbenchGenerationBaseStep::write_hdl_testbench(std::string simulation_values_path, bool generate_vcd_output, bool xilinx_isim, const tree_managerConstRef TreeM) const
 {
    this->write_underlying_testbench(simulation_values_path, generate_vcd_output, xilinx_isim, TreeM);
 
@@ -660,45 +600,34 @@ void TestbenchGenerationBaseStep::write_hdl_testbench(std::string simulation_val
 
    write_clock_process();
 
-   writer->write(mod->get_id() + "_tb DUT(." + STR(CLOCK_PORT_NAME)
-                 + "(" + STR(CLOCK_PORT_NAME) + "));\n");
+   writer->write(mod->get_id() + "_tb DUT(." + STR(CLOCK_PORT_NAME) + "(" + STR(CLOCK_PORT_NAME) + "));\n");
    writer->write("endmodule\n");
 }
 
-void TestbenchGenerationBaseStep::write_initial_block(const std::string& simulation_values_path,
-      bool withMemory,
-      const tree_managerConstRef TreeM,
-      bool generate_vcd_output)
-   const
+void TestbenchGenerationBaseStep::write_initial_block(const std::string& simulation_values_path, bool withMemory, const tree_managerConstRef TreeM, bool generate_vcd_output) const
 {
    begin_initial_block();
 
    /// VCD output generation (optional)
    std::string vcd_output_filename = output_directory + "test.vcd";
-   if (generate_vcd_output)
+   if(generate_vcd_output)
    {
       writer->write_comment("VCD file generation\n");
       writer->write("$dumpfile(\"" + vcd_output_filename + "\");\n");
-      bool simulator_supports_dumpvars_directive =
-         parameters->getOption<std::string>(OPT_simulator) == "MODELSIM" ||
-         parameters->getOption<std::string>(OPT_simulator) == "ICARUS";
-      bool dump_all_signals = parameters->isOption(OPT_generate_vcd) &&
-         parameters->getOption<bool>(OPT_generate_vcd);
-      if (dump_all_signals
-            or not simulator_supports_dumpvars_directive
+      bool simulator_supports_dumpvars_directive = parameters->getOption<std::string>(OPT_simulator) == "MODELSIM" || parameters->getOption<std::string>(OPT_simulator) == "ICARUS";
+      bool dump_all_signals = parameters->isOption(OPT_generate_vcd) && parameters->getOption<bool>(OPT_generate_vcd);
+      if(dump_all_signals or not simulator_supports_dumpvars_directive
 #if HAVE_FROM_DISCREPANCY_BUILT
-            or not parameters->isOption(OPT_discrepancy)
-            or not parameters->getOption<bool>(OPT_discrepancy)
-            or HLSMgr->RDiscr->selected_vcd_signals.empty()
+         or not parameters->isOption(OPT_discrepancy) or not parameters->getOption<bool>(OPT_discrepancy) or HLSMgr->RDiscr->selected_vcd_signals.empty()
 #endif
-         )
+      )
       {
          writer->write("$dumpvars;\n");
       }
 #if HAVE_FROM_DISCREPANCY_BUILT
       else
       {
-         for (const auto & sig_scope : HLSMgr->RDiscr->selected_vcd_signals)
+         for(const auto& sig_scope : HLSMgr->RDiscr->selected_vcd_signals)
          {
             /*
              * since the SignalSelectorVisitor used to select the signals is
@@ -713,8 +642,7 @@ void TestbenchGenerationBaseStep::write_initial_block(const std::string& simulat
              */
             std::string sigscope = sig_scope.first;
             boost::replace_all(sigscope, STR(HIERARCHY_SEPARATOR), ".");
-            for (const std::string& signame : sig_scope.second)
-               writer->write("$dumpvars(1, " + sigscope + signame + ");\n");
+            for(const std::string& signame : sig_scope.second) writer->write("$dumpvars(1, " + sigscope + signame + ");\n");
          }
       }
 #endif
@@ -738,30 +666,22 @@ void TestbenchGenerationBaseStep::write_initial_block(const std::string& simulat
 
 void TestbenchGenerationBaseStep::init_extra_signals(bool withMemory) const
 {
-   if (mod->find_member(RETURN_PORT_NAME, port_o_K, cir))
+   if(mod->find_member(RETURN_PORT_NAME, port_o_K, cir))
    {
       writer->write("ex_" + STR(RETURN_PORT_NAME) + " = 0;\n");
       writer->write("registered_" + STR(RETURN_PORT_NAME) + " = 0;\n");
       writer->write("\n");
    }
-   if (withMemory)
+   if(withMemory)
    {
       structural_objectRef M_Rdata_ram_port = mod->find_member("M_Rdata_ram", port_o_K, cir);
       THROW_ASSERT(M_Rdata_ram_port, "M_Rdata_ram port is missing");
-      unsigned int M_Rdata_ram_port_n_ports =
-         M_Rdata_ram_port->get_kind() == port_vector_o_K ?
-         GetPointer<port_o>(M_Rdata_ram_port)->get_ports_size() :
-         1;
-      for (unsigned int i = 0; i < M_Rdata_ram_port_n_ports; ++i) 
-      {
-         writer->write("reg_DataReady["+boost::lexical_cast<std::string>(i)+"] = 0;\n\n");
-      }
+      unsigned int M_Rdata_ram_port_n_ports = M_Rdata_ram_port->get_kind() == port_vector_o_K ? GetPointer<port_o>(M_Rdata_ram_port)->get_ports_size() : 1;
+      for(unsigned int i = 0; i < M_Rdata_ram_port_n_ports; ++i) { writer->write("reg_DataReady[" + boost::lexical_cast<std::string>(i) + "] = 0;\n\n"); }
    }
 }
 
-void TestbenchGenerationBaseStep::write_output_checks(
-      const tree_managerConstRef TreeM)
-   const
+void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef TreeM) const
 {
    writer->write("always @(negedge " + std::string(CLOCK_PORT_NAME) + ")\n");
    writer->write(STR(STD_OPENING_CHAR));
@@ -770,203 +690,254 @@ void TestbenchGenerationBaseStep::write_output_checks(
    writer->write(STR(STD_OPENING_CHAR));
    writer->write("begin\n");
 
-   for (unsigned int i = 0; i < mod->get_in_port_size(); i++)
+   for(unsigned int i = 0; i < mod->get_in_port_size(); i++)
    {
-      if (GetPointer<port_o>(mod->get_in_port(i))->get_is_memory() ||
-              (GetPointer<port_o>(mod->get_in_port(i))->get_is_extern() && GetPointer<port_o>(mod->get_in_port(i))->get_is_global()) ||
-              !mod->get_in_port(i)->get_typeRef()->treenode ||
-              !tree_helper::is_a_pointer(TreeM, mod->get_in_port(i)->get_typeRef()->treenode)) continue;
-
-      std::string unmangled_name = mod->get_in_port(i)->get_id();
-      std::string port_name = HDL_manager::convert_to_identifier(writer.get(), unmangled_name);
-      std::string output_name = "ex_" + unmangled_name;
-      unsigned int pt_type_index = tree_helper::get_pointed_type(TreeM, tree_helper::get_type_index(TreeM,mod->get_in_port(i)->get_typeRef()->treenode));
-      tree_nodeRef pt_node = TreeM->get_tree_node_const(pt_type_index);
-      if(GetPointer<array_type>(pt_node))
+      auto InterfaceType = GetPointer<port_o>(mod->get_in_port(i))->get_port_interface();
+      if(InterfaceType == port_o::port_interface::PI_DEFAULT)
       {
-         while(GetPointer<array_type>(pt_node))
+         if(GetPointer<port_o>(mod->get_in_port(i))->get_is_memory() || (GetPointer<port_o>(mod->get_in_port(i))->get_is_extern() && GetPointer<port_o>(mod->get_in_port(i))->get_is_global()) || !mod->get_in_port(i)->get_typeRef()->treenode ||
+               !tree_helper::is_a_pointer(TreeM, mod->get_in_port(i)->get_typeRef()->treenode))
+            continue;
+
+         std::string unmangled_name = mod->get_in_port(i)->get_id();
+         std::string port_name = HDL_manager::convert_to_identifier(writer.get(), unmangled_name);
+         std::string output_name = "ex_" + unmangled_name;
+         unsigned int pt_type_index = tree_helper::get_pointed_type(TreeM, tree_helper::get_type_index(TreeM, mod->get_in_port(i)->get_typeRef()->treenode));
+         tree_nodeRef pt_node = TreeM->get_tree_node_const(pt_type_index);
+         if(GetPointer<array_type>(pt_node))
          {
-            pt_type_index = GET_INDEX_NODE(GetPointer<array_type>(pt_node)->elts);
-            pt_node = GET_NODE(GetPointer<array_type>(pt_node)->elts);
-         }
-      }
-      long long int bitsize = tree_helper::size(TreeM, pt_type_index);
-      bool is_real = tree_helper::is_real(TreeM, pt_type_index);
-
-
-      writer->write("\n");
-      writer->write_comment("OPTIONAL - Read a value for " + output_name + " --------------------------------------------------------------\n");
-
-      writer->write("_i_ = 0;\n");
-      writer->write("while (_ch_ == \"/\" || _ch_ == \"\\n\" || _ch_ == \"o\")\n");
-      writer->write(STR(STD_OPENING_CHAR));
-      writer->write("begin\n");
-      {
-
-      writer->write("if (_ch_ == \"o\")\n");
-      writer->write(STR(STD_OPENING_CHAR));
-      writer->write("begin\n");
-      {
-
-      writer->write("compare_outputs = 1;\n");
-      writer->write("_r_ = $fscanf(file,\"%b\\n\", " + output_name + "); ");
-      writer->write_comment("expected format: bbb...b (example: 00101110)\n");
-
-      writer->write("if (_r_ != 1)\n");
-      writer->write(STR(STD_OPENING_CHAR));
-      writer->write("begin\n");
-      {
-
-      writer->write_comment("error\n");
-      writer->write("$display(\"ERROR - Unknown error while reading the file. Character found: %c\", _ch_[7:0]);\n");
-      writer->write("$fclose(res_file);\n");
-      writer->write("$fclose(file);\n");
-      writer->write("$finish;\n");
-
-      }
-      writer->write(STR(STD_CLOSING_CHAR));
-      writer->write("end\n");
-      writer->write("else\n");
-      writer->write(STR(STD_OPENING_CHAR));
-      writer->write("begin\n");
-      {
-
-      if (output_level > OUTPUT_LEVEL_MINIMUM)
-         writer->write("$display(\"Value found for output " + output_name + ": %b\", " + output_name + ");\n");
-
-      }
-      writer->write(STR(STD_CLOSING_CHAR));
-      writer->write("end\n");
-
-      size_t escaped_pos = port_name.find('\\');
-      std::string nonescaped_name = port_name;
-      if(escaped_pos != std::string::npos)
-         nonescaped_name.erase (std::remove(nonescaped_name.begin(), nonescaped_name.end(), '\\'), nonescaped_name.end());
-      if(is_real)
-      {
-         if (output_level > OUTPUT_LEVEL_MINIMUM)
-         {
-            writer->write("$display(\" res = %b " + nonescaped_name + " = %d " " _bambu_testbench_mem_[" + nonescaped_name  + " + %d - base_addr] = %20.20f  expected = %20.20f \", ");
-            writer->write("{");
-            for(unsigned int bitsize_index=0; bitsize_index < bitsize; bitsize_index = bitsize_index + 8)
+            while(GetPointer<array_type>(pt_node))
             {
-               if(bitsize_index) writer->write(", ");
-               writer->write("_bambu_testbench_mem_[" + port_name + " + _i_*" + boost::lexical_cast<std::string>(bitsize/8) + " + " + boost::lexical_cast<std::string>((bitsize - bitsize_index)/8-1) + " - base_addr]");
+               pt_type_index = GET_INDEX_NODE(GetPointer<array_type>(pt_node)->elts);
+               pt_node = GET_NODE(GetPointer<array_type>(pt_node)->elts);
             }
-            writer->write( "} == " + output_name + ", ");
-            writer->write( port_name + ", _i_*" + boost::lexical_cast<std::string>(bitsize/8) + ", " + (bitsize==32?"bits32_to_real64":"$bitstoreal")+ "({");
-            for(unsigned int bitsize_index=0; bitsize_index < bitsize; bitsize_index = bitsize_index + 8)
-            {
-               if(bitsize_index) writer->write(", ");
-               writer->write("_bambu_testbench_mem_[" + port_name + " + _i_*" + boost::lexical_cast<std::string>(bitsize/8) + " + " + boost::lexical_cast<std::string>((bitsize - bitsize_index)/8-1) + " - base_addr]");
-            }
-            writer->write(std::string("}), ") + (bitsize==32?"bits32_to_real64":"$bitstoreal")+ "(" + output_name+ "));\n");
          }
-         if(bitsize==32 || bitsize==64)
+         long long int bitsize = tree_helper::size(TreeM, pt_type_index);
+         bool is_real = tree_helper::is_real(TreeM, pt_type_index);
+
+         writer->write("\n");
+         writer->write_comment("OPTIONAL - Read a value for " + output_name + " --------------------------------------------------------------\n");
+
+         writer->write("_i_ = 0;\n");
+         writer->write("while (_ch_ == \"/\" || _ch_ == \"\\n\" || _ch_ == \"o\")\n");
+         writer->write(STR(STD_OPENING_CHAR));
+         writer->write("begin\n");
          {
-            if (output_level > OUTPUT_LEVEL_MINIMUM)
+            writer->write("if (_ch_ == \"o\")\n");
+            writer->write(STR(STD_OPENING_CHAR));
+            writer->write("begin\n");
             {
-               writer->write("$display(\" FP error %f \\n\", compute_ulp"+(bitsize==32?STR(32):STR(64))+"({");
-               for(unsigned int bitsize_index=0; bitsize_index < bitsize; bitsize_index = bitsize_index + 8)
+               writer->write("compare_outputs = 1;\n");
+               writer->write("_r_ = $fscanf(file,\"%b\\n\", " + output_name + "); ");
+               writer->write_comment("expected format: bbb...b (example: 00101110)\n");
+
+               writer->write("if (_r_ != 1)\n");
+               writer->write(STR(STD_OPENING_CHAR));
+               writer->write("begin\n");
                {
-                  if(bitsize_index) writer->write(", ");
-                  writer->write("_bambu_testbench_mem_[" + port_name + " + _i_*" + boost::lexical_cast<std::string>(bitsize/8) + " + " + boost::lexical_cast<std::string>((bitsize - bitsize_index)/8-1) + " - base_addr]");
+                  writer->write_comment("error\n");
+                  writer->write("$display(\"ERROR - Unknown error while reading the file. Character found: %c\", _ch_[7:0]);\n");
+                  writer->write("$fclose(res_file);\n");
+                  writer->write("$fclose(file);\n");
+                  writer->write("$finish;\n");
                }
-               writer->write( "}, " + output_name);
-               writer->write("));\n");
-            }
-            writer->write("if (compute_ulp"+(bitsize==32?STR(32):STR(64))+"({");
-            for(unsigned int bitsize_index=0; bitsize_index < bitsize; bitsize_index = bitsize_index + 8)
-            {
-               if(bitsize_index) writer->write(", ");
-               writer->write("_bambu_testbench_mem_[" + port_name + " + _i_*" + boost::lexical_cast<std::string>(bitsize/8) + " + " + boost::lexical_cast<std::string>((bitsize - bitsize_index)/8-1) + " - base_addr]");
-            }
-            writer->write( "}, " + output_name);
-            writer->write(") > "+ STR(parameters->getOption<double>(OPT_max_ulp)) +")\n");
-         }
-         else
-            THROW_ERROR_CODE(NODE_NOT_YET_SUPPORTED_EC, "floating point precision not yet supported: " + STR(bitsize));
+               writer->write(STR(STD_CLOSING_CHAR));
+               writer->write("end\n");
+               writer->write("else\n");
+               writer->write(STR(STD_OPENING_CHAR));
+               writer->write("begin\n");
+               {
+                  if(output_level > OUTPUT_LEVEL_MINIMUM) writer->write("$display(\"Value found for output " + output_name + ": %b\", " + output_name + ");\n");
+               }
+               writer->write(STR(STD_CLOSING_CHAR));
+               writer->write("end\n");
 
+               size_t escaped_pos = port_name.find('\\');
+               std::string nonescaped_name = port_name;
+               if(escaped_pos != std::string::npos) nonescaped_name.erase(std::remove(nonescaped_name.begin(), nonescaped_name.end(), '\\'), nonescaped_name.end());
+               if(is_real)
+               {
+                  if(output_level > OUTPUT_LEVEL_MINIMUM)
+                  {
+                     writer->write("$display(\" res = %b " + nonescaped_name +
+                                   " = %d "
+                                   " _bambu_testbench_mem_[" +
+                                   nonescaped_name + " + %d - base_addr] = %20.20f  expected = %20.20f \", ");
+                     writer->write("{");
+                     for(unsigned int bitsize_index = 0; bitsize_index < bitsize; bitsize_index = bitsize_index + 8)
+                     {
+                        if(bitsize_index) writer->write(", ");
+                        writer->write("_bambu_testbench_mem_[" + port_name + " + _i_*" + boost::lexical_cast<std::string>(bitsize / 8) + " + " + boost::lexical_cast<std::string>((bitsize - bitsize_index) / 8 - 1) + " - base_addr]");
+                     }
+                     writer->write("} == " + output_name + ", ");
+                     writer->write(port_name + ", _i_*" + boost::lexical_cast<std::string>(bitsize / 8) + ", " + (bitsize == 32 ? "bits32_to_real64" : "$bitstoreal") + "({");
+                     for(unsigned int bitsize_index = 0; bitsize_index < bitsize; bitsize_index = bitsize_index + 8)
+                     {
+                        if(bitsize_index) writer->write(", ");
+                        writer->write("_bambu_testbench_mem_[" + port_name + " + _i_*" + boost::lexical_cast<std::string>(bitsize / 8) + " + " + boost::lexical_cast<std::string>((bitsize - bitsize_index) / 8 - 1) + " - base_addr]");
+                     }
+                     writer->write(std::string("}), ") + (bitsize == 32 ? "bits32_to_real64" : "$bitstoreal") + "(" + output_name + "));\n");
+                  }
+                  if(bitsize == 32 || bitsize == 64)
+                  {
+                     if(output_level > OUTPUT_LEVEL_MINIMUM)
+                     {
+                        writer->write("$display(\" FP error %f \\n\", compute_ulp" + (bitsize == 32 ? STR(32) : STR(64)) + "({");
+                        for(unsigned int bitsize_index = 0; bitsize_index < bitsize; bitsize_index = bitsize_index + 8)
+                        {
+                           if(bitsize_index) writer->write(", ");
+                           writer->write("_bambu_testbench_mem_[" + port_name + " + _i_*" + boost::lexical_cast<std::string>(bitsize / 8) + " + " + boost::lexical_cast<std::string>((bitsize - bitsize_index) / 8 - 1) + " - base_addr]");
+                        }
+                        writer->write("}, " + output_name);
+                        writer->write("));\n");
+                     }
+                     writer->write("if (compute_ulp" + (bitsize == 32 ? STR(32) : STR(64)) + "({");
+                     for(unsigned int bitsize_index = 0; bitsize_index < bitsize; bitsize_index = bitsize_index + 8)
+                     {
+                        if(bitsize_index) writer->write(", ");
+                        writer->write("_bambu_testbench_mem_[" + port_name + " + _i_*" + boost::lexical_cast<std::string>(bitsize / 8) + " + " + boost::lexical_cast<std::string>((bitsize - bitsize_index) / 8 - 1) + " - base_addr]");
+                     }
+                     writer->write("}, " + output_name);
+                     writer->write(") > " + STR(parameters->getOption<double>(OPT_max_ulp)) + ")\n");
+                  }
+                  else
+                     THROW_ERROR_CODE(NODE_NOT_YET_SUPPORTED_EC, "floating point precision not yet supported: " + STR(bitsize));
+               }
+               else
+               {
+                  if(output_level > OUTPUT_LEVEL_MINIMUM)
+                  {
+                     writer->write("$display(\" res = %b " + nonescaped_name +
+                                   " = %d "
+                                   " _bambu_testbench_mem_[" +
+                                   nonescaped_name + " + %d - base_addr] = %d  expected = %d \\n\", ");
+                     writer->write("{");
+                     for(unsigned int bitsize_index = 0; bitsize_index < bitsize; bitsize_index = bitsize_index + 8)
+                     {
+                        if(bitsize_index) writer->write(", ");
+                        writer->write("_bambu_testbench_mem_[" + port_name + " + _i_*" + boost::lexical_cast<std::string>(bitsize / 8) + " + " + boost::lexical_cast<std::string>((bitsize - bitsize_index) / 8 - 1) + " - base_addr]");
+                     }
+                     writer->write("} == " + output_name + ", ");
+                     writer->write(port_name + ", _i_*" + boost::lexical_cast<std::string>(bitsize / 8) + ", {");
+                     for(unsigned int bitsize_index = 0; bitsize_index < bitsize; bitsize_index = bitsize_index + 8)
+                     {
+                        if(bitsize_index) writer->write(", ");
+                        writer->write("_bambu_testbench_mem_[" + port_name + " + _i_*" + boost::lexical_cast<std::string>(bitsize / 8) + " + " + boost::lexical_cast<std::string>((bitsize - bitsize_index) / 8 - 1) + " - base_addr]");
+                     }
+                     writer->write("}, " + output_name + ");\n");
+                  }
+                  writer->write("if ({");
+                  for(unsigned int bitsize_index = 0; bitsize_index < bitsize; bitsize_index = bitsize_index + 8)
+                  {
+                     if(bitsize_index) writer->write(", ");
+                     writer->write("_bambu_testbench_mem_[" + port_name + " + _i_*" + boost::lexical_cast<std::string>(bitsize / 8) + " + " + boost::lexical_cast<std::string>((bitsize - bitsize_index) / 8 - 1) + " - base_addr]");
+                  }
+                  writer->write("} !== " + output_name);
+                  writer->write(")\n");
+               }
+               writer->write(STR(STD_OPENING_CHAR));
+               writer->write("begin\n");
+               writer->write("success = 0;\n");
+               writer->write(STR(STD_CLOSING_CHAR));
+               writer->write("end\n");
+
+               writer->write("_i_ = _i_ + 1;\n");
+               writer->write("_ch_ = $fgetc(file);\n");
+            }
+            writer->write(STR(STD_CLOSING_CHAR));
+            writer->write("end\n");
+
+            writer->write("else\n");
+            writer->write(STR(STD_OPENING_CHAR));
+            writer->write("begin\n");
+            {
+               writer->write_comment("skip comments and empty lines\n");
+               writer->write("_r_ = $fgets(line, file);\n");
+               writer->write("_ch_ = $fgetc(file);\n");
+            }
+            writer->write(STR(STD_CLOSING_CHAR));
+            writer->write("end\n");
+         }
+         writer->write(STR(STD_CLOSING_CHAR));
+         writer->write("end\n");
+
+         writer->write("if (_ch_ == \"e\")\n");
+         writer->write(STR(STD_OPENING_CHAR));
+         writer->write("begin\n");
+         writer->write("_r_ = $fgets(line, file);\n");
+         writer->write("_ch_ = $fgetc(file);\n");
+         writer->write(STR(STD_CLOSING_CHAR));
+         writer->write("end\n");
+         writer->write("else\n");
+         writer->write("begin\n");
+         writer->write(STR(STD_OPENING_CHAR));
+         writer->write_comment("error\n");
+         writer->write("$display(\"ERROR - Unknown error while reading the file. Character found: %c\", _ch_[7:0]);\n");
+         writer->write("$fclose(res_file);\n");
+         writer->write("$fclose(file);\n");
+         writer->write("$finish;\n");
+         writer->write(STR(STD_CLOSING_CHAR));
+         writer->write("end\n");
+      }
+      else if(InterfaceType == port_o::port_interface::PI_RNONE)
+      {
+         writer->write("\n");
+         writer->write_comment("OPTIONAL - skip expected value for " + mod->get_in_port(i)->get_id() + " --------------------------------------------------------------\n");
+
+         writer->write("_i_ = 0;\n");
+         writer->write("while (_ch_ == \"/\" || _ch_ == \"\\n\" || _ch_ == \"o\")\n");
+         writer->write(STR(STD_OPENING_CHAR));
+         writer->write("begin\n");
+         {
+            writer->write("if (_ch_ == \"o\")\n");
+            writer->write(STR(STD_OPENING_CHAR));
+            writer->write("begin\n");
+            {
+               writer->write("compare_outputs = 1;\n");
+               writer->write("_r_ = $fgets(line, file);\n");
+               writer->write("_i_ = _i_ + 1;\n");
+               writer->write("_ch_ = $fgetc(file);\n");
+            }
+            writer->write(STR(STD_CLOSING_CHAR));
+            writer->write("end\n");
+
+            writer->write("else\n");
+            writer->write(STR(STD_OPENING_CHAR));
+            writer->write("begin\n");
+            {
+               writer->write_comment("skip comments and empty lines\n");
+               writer->write("_r_ = $fgets(line, file);\n");
+               writer->write("_ch_ = $fgetc(file);\n");
+            }
+            writer->write(STR(STD_CLOSING_CHAR));
+            writer->write("end\n");
+         }
+         writer->write(STR(STD_CLOSING_CHAR));
+         writer->write("end\n");
+
+         writer->write("if (_ch_ == \"e\")\n");
+         writer->write(STR(STD_OPENING_CHAR));
+         writer->write("begin\n");
+         writer->write("_r_ = $fgets(line, file);\n");
+         writer->write("_ch_ = $fgetc(file);\n");
+         writer->write(STR(STD_CLOSING_CHAR));
+         writer->write("end\n");
+         writer->write("else\n");
+         writer->write("begin\n");
+         writer->write(STR(STD_OPENING_CHAR));
+         writer->write_comment("error\n");
+         writer->write("$display(\"ERROR - Unknown error while reading the file. Character found: %c\", _ch_[7:0]);\n");
+         writer->write("$fclose(res_file);\n");
+         writer->write("$fclose(file);\n");
+         writer->write("$finish;\n");
+         writer->write(STR(STD_CLOSING_CHAR));
+         writer->write("end\n");
       }
       else
-      {
-         if (output_level > OUTPUT_LEVEL_MINIMUM)
-         {
-            writer->write("$display(\" res = %b " + nonescaped_name + " = %d " " _bambu_testbench_mem_[" + nonescaped_name  + " + %d - base_addr] = %d  expected = %d \\n\", ");
-            writer->write("{");
-            for(unsigned int bitsize_index=0; bitsize_index < bitsize; bitsize_index = bitsize_index + 8)
-            {
-               if(bitsize_index) writer->write(", ");
-               writer->write("_bambu_testbench_mem_[" + port_name + " + _i_*" + boost::lexical_cast<std::string>(bitsize/8) + " + " + boost::lexical_cast<std::string>((bitsize - bitsize_index)/8-1) + " - base_addr]");
-            }
-            writer->write( "} == " + output_name + ", ");
-            writer->write( port_name + ", _i_*" + boost::lexical_cast<std::string>(bitsize/8) + ", {");
-            for(unsigned int bitsize_index=0; bitsize_index < bitsize; bitsize_index = bitsize_index + 8)
-            {
-               if(bitsize_index) writer->write(", ");
-               writer->write("_bambu_testbench_mem_[" + port_name + " + _i_*" + boost::lexical_cast<std::string>(bitsize/8) + " + " + boost::lexical_cast<std::string>((bitsize - bitsize_index)/8-1) + " - base_addr]");
-            }
-            writer->write("}, " + output_name+ ");\n");
-         }
-         writer->write("if ({");
-         for(unsigned int bitsize_index=0; bitsize_index < bitsize; bitsize_index = bitsize_index + 8)
-         {
-            if(bitsize_index) writer->write(", ");
-            writer->write("_bambu_testbench_mem_[" + port_name + " + _i_*" + boost::lexical_cast<std::string>(bitsize/8) + " + " + boost::lexical_cast<std::string>((bitsize - bitsize_index)/8-1) + " - base_addr]");
-         }
-         writer->write( "} !== " + output_name);
-         writer->write(")\n");
-      }
-      writer->write(STR(STD_OPENING_CHAR));
-      writer->write("begin\n");
-      writer->write("success = 0;\n");
-      writer->write(STR(STD_CLOSING_CHAR));
-      writer->write("end\n");
-
-      writer->write("_i_ = _i_ + 1;\n");
-      writer->write("_ch_ = $fgetc(file);\n");
-
-      }
-      writer->write(STR(STD_CLOSING_CHAR));
-      writer->write("end\n");
-
-      writer->write("else\n");
-      writer->write(STR(STD_OPENING_CHAR));
-      writer->write("begin\n");
-      {
-
-      writer->write_comment("skip comments and empty lines\n");
-      writer->write("_r_ = $fgets(line, file);\n");
-      writer->write("_ch_ = $fgetc(file);\n");
-
-      }
-      writer->write(STR(STD_CLOSING_CHAR));
-      writer->write("end\n");
-
-      }
-      writer->write(STR(STD_CLOSING_CHAR));
-      writer->write("end\n");
-
-      writer->write("if (_ch_ == \"e\")\n");
-      writer->write(STR(STD_OPENING_CHAR));
-      writer->write("begin\n");
-      writer->write("_r_ = $fgets(line, file);\n");
-      writer->write("_ch_ = $fgetc(file);\n");
-      writer->write(STR(STD_CLOSING_CHAR));
-      writer->write("end\n");
-      writer->write("else\n");
-      writer->write("begin\n");
-      writer->write(STR(STD_OPENING_CHAR));
-      writer->write_comment("error\n");
-      writer->write("$display(\"ERROR - Unknown error while reading the file. Character found: %c\", _ch_[7:0]);\n");
-      writer->write("$fclose(res_file);\n");
-      writer->write("$fclose(file);\n");
-      writer->write("$finish;\n");
-      writer->write(STR(STD_CLOSING_CHAR));
-      writer->write("end\n");
+         THROW_ERROR("not supported port interface type");
    }
 
-   if (mod->find_member(RETURN_PORT_NAME, port_o_K, cir))
+   if(mod->find_member(RETURN_PORT_NAME, port_o_K, cir))
    {
       std::string output_name = "ex_" + std::string(RETURN_PORT_NAME);
       structural_objectRef return_port = mod->find_member(RETURN_PORT_NAME, port_o_K, cir);
@@ -976,90 +947,79 @@ void TestbenchGenerationBaseStep::write_output_checks(
       writer->write(STR(STD_OPENING_CHAR));
       writer->write("begin\n");
       {
-
-      writer->write("if (_ch_ == \"o\")\n");
-      writer->write(STR(STD_OPENING_CHAR));
-      writer->write("begin\n");
-      {
-
-      writer->write("compare_outputs = 1;\n");
-      writer->write("_r_ = $fscanf(file,\"%b\\n\", " + output_name + "); ");
-      writer->write_comment("expected format: bbb...b (example: 00101110)\n");
-
-      writer->write("if (_r_ != 1)\n");
-      writer->write(STR(STD_OPENING_CHAR));
-      writer->write("begin\n");
-      {
-
-      writer->write_comment("error\n");
-      writer->write("$display(\"ERROR - Unknown error while reading the file. Character found: %c\", _ch_[7:0]);\n");
-      writer->write("$fclose(res_file);\n");
-      writer->write("$fclose(file);\n");
-      writer->write("$finish;\n");
-
-      }
-      writer->write(STR(STD_CLOSING_CHAR));
-      writer->write("end\n");
-      writer->write("else\n");
-      writer->write(STR(STD_OPENING_CHAR));
-      writer->write("begin\n");
-      {
-
-      if (output_level > OUTPUT_LEVEL_MINIMUM)
-         writer->write("$display(\"Value found for output " + output_name + ": %b\", " + output_name + ");\n");
-
-      }
-      writer->write(STR(STD_CLOSING_CHAR));
-      writer->write("end\n");
-
-      if(return_port->get_typeRef()->type == structural_type_descriptor::REAL)
-      {
-         if(GET_TYPE_SIZE(return_port)==32)
+         writer->write("if (_ch_ == \"o\")\n");
+         writer->write(STR(STD_OPENING_CHAR));
+         writer->write("begin\n");
          {
-            writer->write("$display(\" " + std::string(RETURN_PORT_NAME) + " = %20.20f   expected = %20.20f \", bits32_to_real64(registered_" + std::string(RETURN_PORT_NAME) + "), bits32_to_real64(ex_" + std::string(RETURN_PORT_NAME) + "));\n");
-            writer->write("$display(\" FP error %f \\n\", compute_ulp32(registered_" + std::string(RETURN_PORT_NAME) + ", " + output_name + "));\n");
-            writer->write("if (compute_ulp32(registered_" + std::string(RETURN_PORT_NAME) + ", " + output_name + ") > "+ STR(parameters->getOption<double>(OPT_max_ulp)) +")\n");
+            writer->write("compare_outputs = 1;\n");
+            writer->write("_r_ = $fscanf(file,\"%b\\n\", " + output_name + "); ");
+            writer->write_comment("expected format: bbb...b (example: 00101110)\n");
+
+            writer->write("if (_r_ != 1)\n");
+            writer->write(STR(STD_OPENING_CHAR));
+            writer->write("begin\n");
+            {
+               writer->write_comment("error\n");
+               writer->write("$display(\"ERROR - Unknown error while reading the file. Character found: %c\", _ch_[7:0]);\n");
+               writer->write("$fclose(res_file);\n");
+               writer->write("$fclose(file);\n");
+               writer->write("$finish;\n");
+            }
+            writer->write(STR(STD_CLOSING_CHAR));
+            writer->write("end\n");
+            writer->write("else\n");
+            writer->write(STR(STD_OPENING_CHAR));
+            writer->write("begin\n");
+            {
+               if(output_level > OUTPUT_LEVEL_MINIMUM) writer->write("$display(\"Value found for output " + output_name + ": %b\", " + output_name + ");\n");
+            }
+            writer->write(STR(STD_CLOSING_CHAR));
+            writer->write("end\n");
+
+            if(return_port->get_typeRef()->type == structural_type_descriptor::REAL)
+            {
+               if(GET_TYPE_SIZE(return_port) == 32)
+               {
+                  writer->write("$display(\" " + std::string(RETURN_PORT_NAME) + " = %20.20f   expected = %20.20f \", bits32_to_real64(registered_" + std::string(RETURN_PORT_NAME) + "), bits32_to_real64(ex_" + std::string(RETURN_PORT_NAME) + "));\n");
+                  writer->write("$display(\" FP error %f \\n\", compute_ulp32(registered_" + std::string(RETURN_PORT_NAME) + ", " + output_name + "));\n");
+                  writer->write("if (compute_ulp32(registered_" + std::string(RETURN_PORT_NAME) + ", " + output_name + ") > " + STR(parameters->getOption<double>(OPT_max_ulp)) + ")\n");
+               }
+               else if(GET_TYPE_SIZE(return_port) == 64)
+               {
+                  writer->write("$display(\" " + std::string(RETURN_PORT_NAME) + " = %20.20f   expected = %20.20f \", $bitstoreal(registered_" + std::string(RETURN_PORT_NAME) + "), $bitstoreal(ex_" + std::string(RETURN_PORT_NAME) + "));\n");
+                  writer->write("$display(\" FP error %f \\n\", compute_ulp64(registered_" + std::string(RETURN_PORT_NAME) + ", " + output_name + "));\n");
+                  writer->write("if (compute_ulp64(registered_" + std::string(RETURN_PORT_NAME) + ", " + output_name + ") > " + STR(parameters->getOption<double>(OPT_max_ulp)) + ")\n");
+               }
+               else
+                  THROW_ERROR_CODE(NODE_NOT_YET_SUPPORTED_EC, "floating point precision not yet supported: " + STR(GET_TYPE_SIZE(return_port)));
+            }
+            else
+            {
+               writer->write("$display(\" " + std::string(RETURN_PORT_NAME) + " = %d   expected = %d \\n\", registered_" + std::string(RETURN_PORT_NAME) + ", ex_" + std::string(RETURN_PORT_NAME) + ");\n");
+               writer->write("if (registered_" + std::string(RETURN_PORT_NAME) + " !== " + output_name + ")\n");
+            }
+            writer->write(STR(STD_OPENING_CHAR));
+            writer->write("begin\n");
+            writer->write("success = 0;\n");
+            writer->write(STR(STD_CLOSING_CHAR));
+            writer->write("end\n");
+
+            writer->write("_i_ = _i_ + 1;\n");
+            writer->write("_ch_ = $fgetc(file);\n");
          }
-         else if(GET_TYPE_SIZE(return_port)==64)
+         writer->write(STR(STD_CLOSING_CHAR));
+         writer->write("end\n");
+
+         writer->write("else\n");
+         writer->write(STR(STD_OPENING_CHAR));
+         writer->write("begin\n");
          {
-            writer->write("$display(\" " + std::string(RETURN_PORT_NAME) + " = %20.20f   expected = %20.20f \", $bitstoreal(registered_" + std::string(RETURN_PORT_NAME) + "), $bitstoreal(ex_" + std::string(RETURN_PORT_NAME) + "));\n");
-            writer->write("$display(\" FP error %f \\n\", compute_ulp64(registered_" + std::string(RETURN_PORT_NAME) + ", " + output_name + "));\n");
-            writer->write("if (compute_ulp64(registered_" + std::string(RETURN_PORT_NAME) + ", " + output_name + ") > "+ STR(parameters->getOption<double>(OPT_max_ulp)) +")\n");
+            writer->write_comment("skip comments and empty lines\n");
+            writer->write("_r_ = $fgets(line, file);\n");
+            writer->write("_ch_ = $fgetc(file);\n");
          }
-         else
-            THROW_ERROR_CODE(NODE_NOT_YET_SUPPORTED_EC, "floating point precision not yet supported: " + STR(GET_TYPE_SIZE(return_port)));
-      }
-      else
-      {
-         writer->write("$display(\" " + std::string(RETURN_PORT_NAME) + " = %d   expected = %d \\n\", registered_" + std::string(RETURN_PORT_NAME) + ", ex_" + std::string(RETURN_PORT_NAME) + ");\n");
-         writer->write("if (registered_" + std::string(RETURN_PORT_NAME) + " !== " + output_name + ")\n");
-      }
-      writer->write(STR(STD_OPENING_CHAR));
-      writer->write("begin\n");
-      writer->write("success = 0;\n");
-      writer->write(STR(STD_CLOSING_CHAR));
-      writer->write("end\n");
-
-      writer->write("_i_ = _i_ + 1;\n");
-      writer->write("_ch_ = $fgetc(file);\n");
-
-      }
-      writer->write(STR(STD_CLOSING_CHAR));
-      writer->write("end\n");
-
-      writer->write("else\n");
-      writer->write(STR(STD_OPENING_CHAR));
-      writer->write("begin\n");
-      {
-
-      writer->write_comment("skip comments and empty lines\n");
-      writer->write("_r_ = $fgets(line, file);\n");
-      writer->write("_ch_ = $fgetc(file);\n");
-
-      }
-      writer->write(STR(STD_CLOSING_CHAR));
-      writer->write("end\n");
-
+         writer->write(STR(STD_CLOSING_CHAR));
+         writer->write("end\n");
       }
       writer->write(STR(STD_CLOSING_CHAR));
       writer->write("end\n");
@@ -1088,16 +1048,25 @@ void TestbenchGenerationBaseStep::write_output_checks(
    writer->write(STR(STD_OPENING_CHAR));
    writer->write("begin\n");
    {
-
-   writer->write("$display(\"Simulation ended after %d cycles.\\n\", sim_time);\n");
-   writer->write("if (success == 1)\n");
-   writer->write(STR(STD_OPENING_CHAR));
-   writer->write("begin\n");
-   {
-
-      writer->write("$display(\"Simulation completed with success\\n\");\n");
-      writer->write("$fwrite(res_file, \"1\\t\");\n");
-
+      writer->write("$display(\"Simulation ended after %d cycles.\\n\", sim_time);\n");
+      writer->write("if (success == 1)\n");
+      writer->write(STR(STD_OPENING_CHAR));
+      writer->write("begin\n");
+      {
+         writer->write("$display(\"Simulation completed with success\\n\");\n");
+         writer->write("$fwrite(res_file, \"1\\t\");\n");
+      }
+      writer->write(STR(STD_CLOSING_CHAR));
+      writer->write("end\n");
+      writer->write("else\n");
+      writer->write(STR(STD_OPENING_CHAR));
+      writer->write("begin\n");
+      {
+         writer->write("$display(\"Simulation FAILED\\n\");\n");
+         writer->write("$fwrite(res_file, \"0\\t\");\n");
+      }
+      writer->write(STR(STD_CLOSING_CHAR));
+      writer->write("end\n");
    }
    writer->write(STR(STD_CLOSING_CHAR));
    writer->write("end\n");
@@ -1105,25 +1074,8 @@ void TestbenchGenerationBaseStep::write_output_checks(
    writer->write(STR(STD_OPENING_CHAR));
    writer->write("begin\n");
    {
-
-      writer->write("$display(\"Simulation FAILED\\n\");\n");
-      writer->write("$fwrite(res_file, \"0\\t\");\n");
-
-   }
-   writer->write(STR(STD_CLOSING_CHAR));
-   writer->write("end\n");
-
-   }
-   writer->write(STR(STD_CLOSING_CHAR));
-   writer->write("end\n");
-   writer->write("else\n");
-   writer->write(STR(STD_OPENING_CHAR));
-   writer->write("begin\n");
-   {
-
-   writer->write("$display(\"Simulation ended after %d cycles (no expected outputs specified).\\n\", sim_time);\n");
-   writer->write("$fwrite(res_file, \"-\\t\");\n");
-
+      writer->write("$display(\"Simulation ended after %d cycles (no expected outputs specified).\\n\", sim_time);\n");
+      writer->write("$fwrite(res_file, \"-\\t\");\n");
    }
    writer->write(STR(STD_CLOSING_CHAR));
    writer->write("end\n");
@@ -1135,17 +1087,9 @@ void TestbenchGenerationBaseStep::write_output_checks(
    writer->write("end\n\n");
 }
 
-void TestbenchGenerationBaseStep::write_underlying_testbench(
-      const std::string simulation_values_path,
-      bool generate_vcd_output,
-      bool xilinx_isim,
-      const tree_managerConstRef TreeM)
-   const
+void TestbenchGenerationBaseStep::write_underlying_testbench(const std::string simulation_values_path, bool generate_vcd_output, bool xilinx_isim, const tree_managerConstRef TreeM) const
 {
-   if (mod->get_in_out_port_size())
-   {
-      THROW_ERROR("Module with IO ports cannot synthesized");
-   }
+   if(mod->get_in_out_port_size()) { THROW_ERROR("Module with IO ports cannot be synthesized"); }
    write_hdl_testbench_prolog();
    write_module_begin();
    write_compute_ulps_functions();
@@ -1161,8 +1105,7 @@ void TestbenchGenerationBaseStep::write_underlying_testbench(
    memory_initialization_from_file();
    write_file_reading_operations();
    end_file_reading_operation();
-   if (withMemory)
-      write_memory_handler();
+   if(withMemory) write_memory_handler();
    write_call(hasMultiIrq);
    write_output_checks(TreeM);
    testbench_controller_machine();
@@ -1188,22 +1131,21 @@ void TestbenchGenerationBaseStep::write_hdl_testbench_prolog() const
 
    writer->write("`timescale 1ns / 1ps\n");
    writer->write_comment("CONSTANTS DECLARATION\n");
-   writer->write("`define EOF 32'hFFFF_FFFF\n`define NULL 0\n`define MAX_COMMENT_LENGTH 1000\n`define SIMULATION_LENGTH "+ STR(parameters->getOption<int>(OPT_max_sim_cycles)) + "\n\n");
-   std::string half_target_period_string = STR(target_period/2);
-   //If the value it is integer, we add .0 to describe a float otherwise modelsim returns conversion error
-   if(half_target_period_string.find(".") == std::string::npos)
-      half_target_period_string += ".0";
-   writer->write("`define HALF_CLOCK_PERIOD "+ half_target_period_string +"\n\n");
+   writer->write("`define EOF 32'hFFFF_FFFF\n`define NULL 0\n`define MAX_COMMENT_LENGTH 1000\n`define SIMULATION_LENGTH " + STR(parameters->getOption<int>(OPT_max_sim_cycles)) + "\n\n");
+   std::string half_target_period_string = STR(target_period / 2);
+   // If the value it is integer, we add .0 to describe a float otherwise modelsim returns conversion error
+   if(half_target_period_string.find(".") == std::string::npos) half_target_period_string += ".0";
+   writer->write("`define HALF_CLOCK_PERIOD " + half_target_period_string + "\n\n");
    writer->write("`define CLOCK_PERIOD (2*`HALF_CLOCK_PERIOD)\n\n");
    if(parameters->getOption<std::string>(OPT_bram_high_latency) != "" && parameters->getOption<std::string>(OPT_bram_high_latency) == "_3")
       writer->write("`define MEM_DELAY_READ 3\n\n");
    else if(parameters->getOption<std::string>(OPT_bram_high_latency) != "" && parameters->getOption<std::string>(OPT_bram_high_latency) == "_4")
       writer->write("`define MEM_DELAY_READ 4\n\n");
    else if(parameters->getOption<std::string>(OPT_bram_high_latency) == "")
-      writer->write("`define MEM_DELAY_READ "+ parameters->getOption<std::string>(OPT_mem_delay_read) + "\n\n");
+      writer->write("`define MEM_DELAY_READ " + parameters->getOption<std::string>(OPT_mem_delay_read) + "\n\n");
    else
       THROW_ERROR("unexpected bram high latency delay");
-   writer->write("`define MEM_DELAY_WRITE "+ parameters->getOption<std::string>(OPT_mem_delay_write) + "\n\n");
+   writer->write("`define MEM_DELAY_WRITE " + parameters->getOption<std::string>(OPT_mem_delay_write) + "\n\n");
 }
 
 void TestbenchGenerationBaseStep::write_module_begin() const
@@ -1232,62 +1174,51 @@ void TestbenchGenerationBaseStep::write_module_instantiation(bool xilinx_isim) c
    /// write module instantiation and ports binding
    writer->write_comment("MODULE INSTANTIATION AND PORTS BINDING\n");
    auto module_name = HDL_manager::get_mod_typename(target_writer.get(), cir);
-   if(module_name[0] == '\\' and target_language == HDLWriter_Language::VHDL)
-      module_name = "\\" + module_name;
+   if(module_name[0] == '\\' and target_language == HDLWriter_Language::VHDL) module_name = "\\" + module_name;
    writer->write_module_instance_begin(cir, module_name, !xilinx_isim);
    std::string prefix = "";
-   if (mod->get_in_port_size())
+   if(mod->get_in_port_size())
    {
-      for (unsigned int i = 0; i < mod->get_in_port_size(); i++)
+      for(unsigned int i = 0; i < mod->get_in_port_size(); i++)
       {
          if(i == 0)
             prefix = ".";
          else
             prefix = ", .";
 
-         writer->write(prefix + HDL_manager::convert_to_identifier(writer.get(), mod->get_in_port(i)->get_id()) +
-            "(" + HDL_manager::convert_to_identifier(writer.get(), mod->get_in_port(i)->get_id()) + ")");
+         writer->write(prefix + HDL_manager::convert_to_identifier(writer.get(), mod->get_in_port(i)->get_id()) + "(" + HDL_manager::convert_to_identifier(writer.get(), mod->get_in_port(i)->get_id()) + ")");
       }
    }
-   if (mod->get_out_port_size())
+   if(mod->get_out_port_size())
    {
-      for (unsigned int i = 0; i < mod->get_out_port_size(); i++)
-      {
-         writer->write(prefix + HDL_manager::convert_to_identifier(writer.get(), mod->get_out_port(i)->get_id()) +
-            "(" + HDL_manager::convert_to_identifier(writer.get(), mod->get_out_port(i)->get_id()) + ")");
-      }
-   }
+      for(unsigned int i = 0; i < mod->get_out_port_size(); i++)
+      { writer->write(prefix + HDL_manager::convert_to_identifier(writer.get(), mod->get_out_port(i)->get_id()) + "(" + HDL_manager::convert_to_identifier(writer.get(), mod->get_out_port(i)->get_id()) + ")"); } }
 
    writer->write_module_instance_end(cir);
 
-   if(xilinx_isim)
-      writer->write("glbl #("+ STR(target_period/2*1000) + ", 0) glbl();");
+   if(xilinx_isim) writer->write("glbl #(" + STR(target_period / 2 * 1000) + ", 0) glbl();");
 }
 
 void TestbenchGenerationBaseStep::write_auxiliary_signal_declaration() const
 {
-   unsigned int testbench_memsize = HLSMgr->Rmem->get_memory_address()-parameters->getOption<unsigned int>(OPT_base_address);
-   if(testbench_memsize==0)
-      testbench_memsize=1;
+   unsigned int testbench_memsize = HLSMgr->Rmem->get_memory_address() - parameters->getOption<unsigned int>(OPT_base_address);
+   if(testbench_memsize == 0) testbench_memsize = 1;
    writer->write("parameter MEMSIZE = " + STR(testbench_memsize));
 
-   ///writing memory-related parameters
-   if (mod->is_parameter(MEMORY_PARAMETER))
+   /// writing memory-related parameters
+   if(mod->is_parameter(MEMORY_PARAMETER))
    {
       std::string memory_str = mod->get_parameter(MEMORY_PARAMETER);
       std::vector<std::string> mem_tag = convert_string_to_vector<std::string>(memory_str, ";");
-      for(const auto & i : mem_tag)
+      for(const auto& i : mem_tag)
       {
          std::vector<std::string> mem_add = convert_string_to_vector<std::string>(i, "=");
          THROW_ASSERT(mem_add.size() == 2, "malformed address");
          writer->write(", ");
          std::string name = mem_add[0];
          std::string value = mem_add[1];
-         if (value.find("\"\"") != std::string::npos)
-         {
-            boost::replace_all(value, "\"\"", "\"");
-         }
-         else if (value.find("\"") != std::string::npos)
+         if(value.find("\"\"") != std::string::npos) { boost::replace_all(value, "\"\"", "\""); }
+         else if(value.find("\"") != std::string::npos)
          {
             boost::replace_all(value, "\"", "");
             value = boost::lexical_cast<std::string>(value.size()) + "'b" + value;
@@ -1304,7 +1235,7 @@ void TestbenchGenerationBaseStep::write_auxiliary_signal_declaration() const
    writer->write("reg compare_outputs, success; // Flag: True if input vector specifies expected outputs\n");
    writer->write("reg [8*`MAX_COMMENT_LENGTH:0] line; // Comment line read from file\n\n");
 
-   writer->write("reg [31:0] addr, base_addr;\n");
+   writer->write("reg [31:0] addr, base_addr, paddr;\n");
    writer->write("reg signed [7:0] _bambu_testbench_mem_ [0:MEMSIZE-1];\n\n");
    writer->write("reg signed [7:0] _bambu_databyte_;\n\n");
    writer->write("reg [3:0] __state, __next_state;\n");
@@ -1382,18 +1313,14 @@ void TestbenchGenerationBaseStep::initialize_auxiliary_variables() const
 
 void TestbenchGenerationBaseStep::initialize_input_signals(const tree_managerConstRef TreeM) const
 {
-   if (mod->get_in_port_size())
+   if(mod->get_in_port_size())
    {
-      for (unsigned int i = 0; i < mod->get_in_port_size(); i++)
+      for(unsigned int i = 0; i < mod->get_in_port_size(); i++)
       {
          const structural_objectRef& port_obj = mod->get_in_port(i);
          if(GetPointer<port_o>(port_obj)->get_is_memory() || WB_ACKIM_PORT_NAME == port_obj->get_id()) continue;
-         if(CLOCK_PORT_NAME != port_obj->get_id() && START_PORT_NAME != port_obj->get_id() && RESET_PORT_NAME != port_obj->get_id())
-            writer->write(HDL_manager::convert_to_identifier(writer.get(), port_obj->get_id()) + " = 0;\n");
-         if (port_obj->get_typeRef()->treenode > 0 && tree_helper::is_a_pointer(TreeM, port_obj->get_typeRef()->treenode))
-         {
-            writer->write("ex_" + port_obj->get_id() + " = 0;\n");
-         }
+         if(CLOCK_PORT_NAME != port_obj->get_id() && START_PORT_NAME != port_obj->get_id() && RESET_PORT_NAME != port_obj->get_id()) writer->write(HDL_manager::convert_to_identifier(writer.get(), port_obj->get_id()) + " = 0;\n");
+         if(port_obj->get_typeRef()->treenode > 0 && tree_helper::is_a_pointer(TreeM, port_obj->get_typeRef()->treenode)) { writer->write("ex_" + port_obj->get_id() + " = 0;\n"); }
       }
       writer->write("\n");
    }
@@ -1451,7 +1378,7 @@ void TestbenchGenerationBaseStep::testbench_controller_machine() const
    writer->write("         end\n");
    writer->write("       5:\n");
    writer->write("         begin\n");
-   if (HLSMgr->RSim->test_vectors.size() <= 1)
+   if(HLSMgr->RSim->test_vectors.size() <= 1)
    {
       writer->write_comment("wait a cycle (needed for a correct simulation)\n");
       writer->write("            $fclose(res_file);\n");
@@ -1516,12 +1443,10 @@ void TestbenchGenerationBaseStep::reading_base_memory_address_from_file() const
    writer->write(STR(STD_OPENING_CHAR));
    writer->write("begin\n");
    {
-
-   writer->write("$display(\"No more values found. Simulation(s) executed: %d.\\n\", _n_);\n");
-   writer->write("$fclose(res_file);\n");
-   writer->write("$fclose(file);\n");
-   writer->write("$finish;\n");
-
+      writer->write("$display(\"No more values found. Simulation(s) executed: %d.\\n\", _n_);\n");
+      writer->write("$fclose(res_file);\n");
+      writer->write("$fclose(file);\n");
+      writer->write("$finish;\n");
    }
    writer->write(STR(STD_CLOSING_CHAR));
    writer->write("end\n");
@@ -1529,21 +1454,19 @@ void TestbenchGenerationBaseStep::reading_base_memory_address_from_file() const
    writer->write(STR(STD_OPENING_CHAR));
    writer->write("begin\n");
    {
-
-   writer->write("if (_ch_ == \"b\")\n");
-   writer->write(STR(STD_OPENING_CHAR));
-   writer->write("begin\n");
-   writer->write("_r_ = $fscanf(file,\"%b\\n\", base_addr); ");
-   writer->write(STR(STD_CLOSING_CHAR));
-   writer->write("end\n");
-   writer->write("else\n");
-   writer->write(STR(STD_OPENING_CHAR));
-   writer->write("begin\n");
-   writer->write("_r_ = $fgets(line, file);\n");
-   writer->write(STR(STD_CLOSING_CHAR));
-   writer->write("end\n");
-   writer->write("_ch_ = $fgetc(file);\n");
-
+      writer->write("if (_ch_ == \"b\")\n");
+      writer->write(STR(STD_OPENING_CHAR));
+      writer->write("begin\n");
+      writer->write("_r_ = $fscanf(file,\"%b\\n\", base_addr); ");
+      writer->write(STR(STD_CLOSING_CHAR));
+      writer->write("end\n");
+      writer->write("else\n");
+      writer->write(STR(STD_OPENING_CHAR));
+      writer->write("begin\n");
+      writer->write("_r_ = $fgets(line, file);\n");
+      writer->write(STR(STD_CLOSING_CHAR));
+      writer->write("end\n");
+      writer->write("_ch_ = $fgetc(file);\n");
    }
    writer->write(STR(STD_CLOSING_CHAR));
    writer->write("end\n");
@@ -1556,27 +1479,23 @@ void TestbenchGenerationBaseStep::memory_initialization_from_file() const
    writer->write(STR(STD_OPENING_CHAR));
    writer->write("begin\n");
    {
-
-   writer->write("if (_ch_ == \"m\")\n");
-   writer->write(STR(STD_OPENING_CHAR));
-   writer->write("begin\n");
-   {
-
-   writer->write("_r_ = $fscanf(file,\"%b\\n\", _bambu_databyte_);\n");
-   writer->write("_bambu_testbench_mem_[_addr_i_] = _bambu_databyte_;\n");
-   writer->write("_addr_i_ = _addr_i_ + 1;\n");
-
-   }
-   writer->write(STR(STD_CLOSING_CHAR));
-   writer->write("end\n");
-   writer->write("else\n");
-   writer->write(STR(STD_OPENING_CHAR));
-   writer->write("begin\n");
-   writer->write("_r_ = $fgets(line, file);\n");
-   writer->write(STR(STD_CLOSING_CHAR));
-   writer->write("end\n");
-   writer->write("_ch_ = $fgetc(file);\n");
-
+      writer->write("if (_ch_ == \"m\")\n");
+      writer->write(STR(STD_OPENING_CHAR));
+      writer->write("begin\n");
+      {
+         writer->write("_r_ = $fscanf(file,\"%b\\n\", _bambu_databyte_);\n");
+         writer->write("_bambu_testbench_mem_[_addr_i_] = _bambu_databyte_;\n");
+         writer->write("_addr_i_ = _addr_i_ + 1;\n");
+      }
+      writer->write(STR(STD_CLOSING_CHAR));
+      writer->write("end\n");
+      writer->write("else\n");
+      writer->write(STR(STD_OPENING_CHAR));
+      writer->write("begin\n");
+      writer->write("_r_ = $fgets(line, file);\n");
+      writer->write(STR(STD_CLOSING_CHAR));
+      writer->write("end\n");
+      writer->write("_ch_ = $fgetc(file);\n");
    }
    writer->write(STR(STD_CLOSING_CHAR));
    writer->write("end\n");
@@ -1627,28 +1546,25 @@ void TestbenchGenerationBaseStep::write_sim_time_calc() const
    writer->write("end\n");
 }
 
-void TestbenchGenerationBaseStep::read_input_value_from_file(const std::string&input_name, bool &first_valid_input) const
+void TestbenchGenerationBaseStep::read_input_value_from_file(const std::string& input_name, bool& first_valid_input) const
 {
    if(input_name != CLOCK_PORT_NAME && input_name != RESET_PORT_NAME && input_name != START_PORT_NAME)
    {
       writer->write("\n");
       writer->write_comment("Read a value for " + input_name + " --------------------------------------------------------------\n");
-      if (!first_valid_input)
-         writer->write("_ch_ = $fgetc(file);\n");
+      if(!first_valid_input) writer->write("_ch_ = $fgetc(file);\n");
 
       writer->write("while (_ch_ == \"/\" || _ch_ == \"\\n\")\n");
       writer->write(STR(STD_OPENING_CHAR));
       writer->write("begin\n");
       {
-
-      writer->write("_r_ = $fgets(line, file);\n");
-      writer->write("_ch_ = $fgetc(file);\n");
-
+         writer->write("_r_ = $fgets(line, file);\n");
+         writer->write("_ch_ = $fgetc(file);\n");
       }
       writer->write(STR(STD_CLOSING_CHAR));
       writer->write("end\n");
 
-      if (first_valid_input)
+      if(first_valid_input)
       {
          /// write statement for new vectors' check
          writer->write_comment("If no character found\n");
@@ -1656,12 +1572,10 @@ void TestbenchGenerationBaseStep::read_input_value_from_file(const std::string&i
          writer->write(STR(STD_OPENING_CHAR));
          writer->write("begin\n");
          {
-
-         writer->write("$display(\"No more values found. Simulation(s) executed: %d.\\n\", _n_);\n");
-         writer->write("$fclose(res_file);\n");
-         writer->write("$fclose(file);\n");
-         writer->write("$finish;\n");
-
+            writer->write("$display(\"No more values found. Simulation(s) executed: %d.\\n\", _n_);\n");
+            writer->write("$fclose(res_file);\n");
+            writer->write("$fclose(file);\n");
+            writer->write("$finish;\n");
          }
          writer->write(STR(STD_CLOSING_CHAR));
          writer->write("end\n");
@@ -1669,11 +1583,9 @@ void TestbenchGenerationBaseStep::read_input_value_from_file(const std::string&i
          writer->write(STR(STD_OPENING_CHAR));
          writer->write("begin\n");
          {
-
-         writer->write_comment("Vectors count\n");
-         writer->write("_n_ = _n_ + 1;\n");
-         writer->write("$display(\"Start reading vector %d's values from input file.\\n\", _n_);\n");
-
+            writer->write_comment("Vectors count\n");
+            writer->write("_n_ = _n_ + 1;\n");
+            writer->write("$display(\"Start reading vector %d's values from input file.\\n\", _n_);\n");
          }
          writer->write(STR(STD_CLOSING_CHAR));
          writer->write("end\n");
@@ -1684,10 +1596,8 @@ void TestbenchGenerationBaseStep::read_input_value_from_file(const std::string&i
       writer->write(STR(STD_OPENING_CHAR));
       writer->write("begin\n");
       {
-
-      writer->write("_r_ = $fscanf(file,\"%b\\n\", " + input_name + "); ");
-      writer->write_comment("expected format: bbb...b (example: 00101110)\n");
-
+         writer->write("_r_ = $fscanf(file,\"%b\\n\", " + input_name + "); ");
+         writer->write_comment("expected format: bbb...b (example: 00101110)\n");
       }
       writer->write(STR(STD_CLOSING_CHAR));
       writer->write("end\n");
@@ -1697,37 +1607,31 @@ void TestbenchGenerationBaseStep::read_input_value_from_file(const std::string&i
       writer->write(STR(STD_OPENING_CHAR));
       writer->write("begin\n");
       {
-
-      writer->write("_ch_ = $fgetc(file);\n");
-      writer->write("if (_ch_ == `EOF) ");
-      writer->write_comment("end-of-file reached\n");
-      writer->write(STR(STD_OPENING_CHAR));
-      writer->write("begin\n");
-      {
-
-      writer->write("$display(\"ERROR - End of file reached before getting all the values for the parameters\");\n");
-      writer->write("$fclose(res_file);\n");
-      writer->write("$fclose(file);\n");
-      writer->write("$finish;\n");
-
-      }
-      writer->write(STR(STD_CLOSING_CHAR));
-      writer->write("end\n");
-      writer->write("else ");
-      writer->write_comment("generic error\n");
-      writer->write(STR(STD_OPENING_CHAR));
-      writer->write("begin\n");
-      {
-
-      writer->write("$display(\"ERROR - Unknown error while reading the file. Character found: %c\", _ch_[7:0]);\n");
-      writer->write("$fclose(res_file);\n");
-      writer->write("$fclose(file);\n");
-      writer->write("$finish;\n");
-
-      }
-      writer->write(STR(STD_CLOSING_CHAR));
-      writer->write("end\n");
-
+         writer->write("_ch_ = $fgetc(file);\n");
+         writer->write("if (_ch_ == `EOF) ");
+         writer->write_comment("end-of-file reached\n");
+         writer->write(STR(STD_OPENING_CHAR));
+         writer->write("begin\n");
+         {
+            writer->write("$display(\"ERROR - End of file reached before getting all the values for the parameters\");\n");
+            writer->write("$fclose(res_file);\n");
+            writer->write("$fclose(file);\n");
+            writer->write("$finish;\n");
+         }
+         writer->write(STR(STD_CLOSING_CHAR));
+         writer->write("end\n");
+         writer->write("else ");
+         writer->write_comment("generic error\n");
+         writer->write(STR(STD_OPENING_CHAR));
+         writer->write("begin\n");
+         {
+            writer->write("$display(\"ERROR - Unknown error while reading the file. Character found: %c\", _ch_[7:0]);\n");
+            writer->write("$fclose(res_file);\n");
+            writer->write("$fclose(file);\n");
+            writer->write("$finish;\n");
+         }
+         writer->write(STR(STD_CLOSING_CHAR));
+         writer->write("end\n");
       }
       writer->write(STR(STD_CLOSING_CHAR));
       writer->write("end\n");
@@ -1735,13 +1639,10 @@ void TestbenchGenerationBaseStep::read_input_value_from_file(const std::string&i
       writer->write(STR(STD_OPENING_CHAR));
       writer->write("begin\n");
       {
-
-      size_t escaped_pos = input_name.find('\\');
-      std::string nonescaped_name = input_name;
-      if(escaped_pos != std::string::npos)
-         nonescaped_name.erase (std::remove(nonescaped_name.begin(), nonescaped_name.end(), '\\'), nonescaped_name.end());
-      if (output_level > OUTPUT_LEVEL_MINIMUM)
-         writer->write("$display(\"Value found for input " + nonescaped_name + ": %b\", " + input_name + ");\n");
+         size_t escaped_pos = input_name.find('\\');
+         std::string nonescaped_name = input_name;
+         if(escaped_pos != std::string::npos) nonescaped_name.erase(std::remove(nonescaped_name.begin(), nonescaped_name.end(), '\\'), nonescaped_name.end());
+         if(output_level > OUTPUT_LEVEL_MINIMUM) writer->write("$display(\"Value found for input " + nonescaped_name + ": %b\", " + input_name + ");\n");
       }
       writer->write(STR(STD_CLOSING_CHAR));
       writer->write("end\n");
@@ -1835,10 +1736,6 @@ void TestbenchGenerationBaseStep::write_compute_ulps_functions() const
    writer->write("  end\n");
    writer->write("end\n");
    writer->write("endfunction\n");
-
 }
 
-bool TestbenchGenerationBaseStep::HasToBeExecuted() const
-{
-   return true;
-}
+bool TestbenchGenerationBaseStep::HasToBeExecuted() const { return true; }

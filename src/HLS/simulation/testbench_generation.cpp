@@ -29,76 +29,63 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file testbench_generation.cpp
  * @brief .
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
-*/
+ */
 
-///Header include
+/// Header include
 #include "testbench_generation.hpp"
 
 ///. include
 #include "Parameter.hpp"
 
-TestbenchGeneration::TestbenchGeneration(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, const DesignFlowManagerConstRef _design_flow_manager) :
-   HLS_step(_parameters, _HLSMgr, _design_flow_manager, HLSFlowStep_Type::TESTBENCH_GENERATION)
+TestbenchGeneration::TestbenchGeneration(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, const DesignFlowManagerConstRef _design_flow_manager) : HLS_step(_parameters, _HLSMgr, _design_flow_manager, HLSFlowStep_Type::TESTBENCH_GENERATION)
 {
    composed = true;
 }
 
-TestbenchGeneration::~TestbenchGeneration()
-= default;
+TestbenchGeneration::~TestbenchGeneration() = default;
 
-const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > TestbenchGeneration::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> TestbenchGeneration::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > ret;
+   std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:
-         {
-            const HLSFlowStep_Type interface_type = parameters->getOption<HLSFlowStep_Type>(OPT_interface_type);
+      {
+         const HLSFlowStep_Type interface_type = parameters->getOption<HLSFlowStep_Type>(OPT_interface_type);
 #ifndef NDEBUG
-            bool interface = interface_type == HLSFlowStep_Type::MINIMAL_INTERFACE_GENERATION or
-                             interface_type == HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION or
-                             interface_type == HLSFlowStep_Type::WB4_INTERFACE_GENERATION
+         bool interface = interface_type == HLSFlowStep_Type::MINIMAL_INTERFACE_GENERATION or interface_type == HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION or interface_type == HLSFlowStep_Type::WB4_INTERFACE_GENERATION
 #if HAVE_TASTE
                           or interface_type == HLSFlowStep_Type::TASTE_INTERFACE_GENERATION
 #endif
-                          ;
-            THROW_ASSERT(interface, "Unexpected interface type");
+             ;
+         THROW_ASSERT(interface, "Unexpected interface type");
 #endif
-            ret.insert(std::make_tuple(interface_type == HLSFlowStep_Type::MINIMAL_INTERFACE_GENERATION or
-                                       interface_type == HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION ?
-                     HLSFlowStep_Type::MINIMAL_TESTBENCH_GENERATION :
-                     HLSFlowStep_Type::WB4_TESTBENCH_GENERATION,
-                  HLSFlowStepSpecializationConstRef(),
-                  HLSFlowStep_Relationship::TOP_FUNCTION));
-            break;
-         }
+         ret.insert(std::make_tuple(interface_type == HLSFlowStep_Type::MINIMAL_INTERFACE_GENERATION or interface_type == HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION ? HLSFlowStep_Type::MINIMAL_TESTBENCH_GENERATION :
+                                                                                                                                                                            HLSFlowStep_Type::WB4_TESTBENCH_GENERATION,
+                                    HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::TOP_FUNCTION));
+         break;
+      }
       case INVALIDATION_RELATIONSHIP:
-         {
-            break;
-         }
+      {
+         break;
+      }
       case PRECEDENCE_RELATIONSHIP:
-         {
-            break;
-         }
+      {
+         break;
+      }
       default:
          THROW_UNREACHABLE("");
    }
    return ret;
 }
 
-DesignFlowStep_Status TestbenchGeneration::Exec()
-{
-   return DesignFlowStep_Status::EMPTY;
-}
+DesignFlowStep_Status TestbenchGeneration::Exec() { return DesignFlowStep_Status::EMPTY; }
 
-bool TestbenchGeneration::HasToBeExecuted() const
-{
-   return true;
-}
+bool TestbenchGeneration::HasToBeExecuted() const { return true; }

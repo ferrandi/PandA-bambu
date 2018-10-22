@@ -9,44 +9,43 @@
 
 REF_FORWARD_DECL(SimulationTool);
 
-class SimulationInformation {
+class SimulationInformation
+{
+ public:
+   /// every element of this vector maps the parameters of the top function
+   //  to be tested onto strings representing their values for in a certain
+   //  test vector
+   std::vector<std::map<std::string, std::string>> test_vectors;
 
-   public :
+   /// for a given test vector index, this map gives the address map of the
+   //  paramters of the top function to be tested
+   std::map<unsigned int, std::map<unsigned int, unsigned int>> param_address;
 
-      /// every element of this vector maps the parameters of the top function
-      //  to be tested onto strings representing their values for in a certain
-      //  test vector
-      std::vector<std::map<std::string, std::string> > test_vectors;
+   /// for a given test vector index, this map gives, for every parameter
+   //  index, the total size of the memory reserved for it
+   std::map<unsigned int, std::map<unsigned int, size_t>> param_mem_size;
 
-      /// for a given test vector index, this map gives the address map of the
-      //  paramters of the top function to be tested
-      std::map<unsigned int, std::map<unsigned int, unsigned int> > param_address;
+   /// for a given test vector index, this map gives, for every parameter
+   //  index, the offset (in bytes) of the position of the next aligned byte
+   std::map<unsigned int, std::map<unsigned int, size_t>> param_next_off;
 
-      /// for a given test vector index, this map gives, for every parameter
-      //  index, the total size of the memory reserved for it
-      std::map<unsigned int, std::map<unsigned int, size_t> > param_mem_size;
+   /// filename for cosimulation
+   std::string filename_bench;
 
-      /// for a given test vector index, this map gives, for every parameter
-      //  index, the offset (in bytes) of the position of the next aligned byte
-      std::map<unsigned int, std::map<unsigned int, size_t> > param_next_off;
+   /// reference to the simulation tool
+   SimulationToolRef sim_tool;
 
-      /// filename for cosimulation
-      std::string filename_bench;
+   /// name of the simulation script
+   std::string generated_simulation_script;
 
-      /// reference to the simulation tool
-      SimulationToolRef sim_tool;
+   /// total number of executed simulations
+   unsigned int n_testcases = 0;
 
-      /// name of the simulation script
-      std::string generated_simulation_script;
+   /// total number of cycles of the executed simulations
+   unsigned long long int tot_n_cycles = 0;
 
-      /// total number of executed simulations
-      unsigned int n_testcases = 0;
-
-      /// total number of cycles of the executed simulations
-      unsigned long long int tot_n_cycles = 0;
-
-      /// average number of cycles of the executed simulations
-      unsigned long long avg_n_cycles = 0;
+   /// average number of cycles of the executed simulations
+   unsigned long long avg_n_cycles = 0;
 };
 
 typedef refcount<SimulationInformation> SimulationInformationRef;

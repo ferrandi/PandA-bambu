@@ -1357,6 +1357,28 @@ void fu_binding::manage_extern_global_port(const structural_managerRef SM, struc
       }
       SM->add_connection(port_in,ext_port);
    }
+   else if(GetPointer<port_o>(port_in)->get_port_interface() != port_o::port_interface::PI_DEFAULT)
+   {
+      structural_objectRef ext_port;
+      std::string port_name = GetPointer<port_o>(port_in)->get_id();
+      ext_port = circuit->find_member(port_name, port_in->get_kind(), circuit);
+      THROW_ASSERT(!ext_port || GetPointer<port_o>(ext_port), "should be a port or null");
+      if(ext_port && GetPointer<port_o>(ext_port)->get_port_direction() != dir)
+      {
+         SM->change_port_direction(ext_port, dir, circuit);
+         if(STD_GET_SIZE(ext_port->get_typeRef()) < STD_GET_SIZE(port_in->get_typeRef()))
+            port_o::resize_std_port(STD_GET_SIZE(port_in->get_typeRef()), 0, 0, ext_port);
+      }
+      else if(!ext_port)
+      {
+         if(port_in->get_kind() == port_vector_o_K)
+            ext_port = SM->add_port_vector(port_name, dir, GetPointer<port_o>(port_in)->get_ports_size(), circuit, port_in->get_typeRef());
+         else
+            ext_port = SM->add_port(port_name, dir, circuit, port_in->get_typeRef());
+      }
+      port_o::fix_port_properties(port_in, ext_port);
+      SM->add_connection(port_in,ext_port);
+   }
 }
 
 

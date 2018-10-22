@@ -84,10 +84,10 @@
 #include "language_writer.hpp"
 #include "call_graph_manager.hpp"
 
-static bool is_memory_port (const structural_objectRef & port)
+static bool is_other_port (const structural_objectRef & port)
 {
    const auto p = GetPointer<port_o>(port);
-   return p->get_is_memory() or p->get_is_global() or p->get_is_extern();
+   return p->get_is_memory() or p->get_is_global() or p->get_is_extern() or p->get_port_interface() != port_o::port_interface::PI_DEFAULT;
 }
 
 static bool is_a_skip_operation(const std::string& op_name)
@@ -350,7 +350,7 @@ void allocation::BuildProxyWrapper(functional_unit* current_fu, const std::strin
       const std::string port_name = curr_port->get_id();
       if (port_name != CLOCK_PORT_NAME and port_name != RESET_PORT_NAME)
       {
-         if (is_memory_port(curr_port))
+         if (is_other_port(curr_port))
          {
             structural_objectRef wrapper_mem_port = wrapper_obj->find_member(port_name, port_o_K, wrapper_obj);
             structural_objectRef wrapped_mem_port = orig_top_obj->find_member(port_name, port_o_K, orig_top_obj);
@@ -392,7 +392,7 @@ void allocation::BuildProxyWrapper(functional_unit* current_fu, const std::strin
    {
       structural_objectRef curr_port = orig_fu_module->get_out_port(currentPort);
       const std::string port_name = curr_port->get_id();
-      if (is_memory_port(curr_port))
+      if (is_other_port(curr_port))
       {
          structural_objectRef wrapper_mem_port = wrapper_obj->find_member(port_name, port_o_K, wrapper_obj);
          structural_objectRef wrapped_mem_port = orig_top_obj->find_member(port_name, port_o_K, orig_top_obj);
@@ -460,7 +460,7 @@ void allocation::add_proxy_function_wrapper(
    for (unsigned int currentPort = 0; currentPort < inPortSize; ++currentPort)
    {
       structural_objectRef curr_port = fu_module->get_in_port(currentPort);
-      if (not is_memory_port(curr_port))
+      if (not is_other_port(curr_port))
       {
          const std::string port_name = curr_port->get_id();
          if(port_name != CLOCK_PORT_NAME && port_name != RESET_PORT_NAME)
@@ -494,7 +494,7 @@ void allocation::add_proxy_function_wrapper(
    for (unsigned int currentPort = 0; currentPort < outPortSize; ++currentPort)
    {
       structural_objectRef curr_port = fu_module->get_out_port(currentPort);
-      if (not is_memory_port(curr_port))
+      if (not is_other_port(curr_port))
       {
          structural_objectRef proxy_generated_port;
          const std::string proxy_port_name = PROXY_PREFIX + curr_port->get_id();
@@ -586,7 +586,7 @@ void allocation::BuildProxyFunctionVerilog(functional_unit* current_fu)
    for(unsigned int currentPort=0; currentPort<inPortSize; ++currentPort)
    {
       structural_objectRef curr_port = fu_module->get_in_port(currentPort);
-      if (is_memory_port(curr_port))
+      if (is_other_port(curr_port))
          continue;
       std::string port_name=curr_port->get_id();
       if(port_name != CLOCK_PORT_NAME && port_name != RESET_PORT_NAME)
@@ -602,7 +602,7 @@ void allocation::BuildProxyFunctionVerilog(functional_unit* current_fu)
    for(unsigned int currentPort=0; currentPort<outPortSize; ++currentPort)
    {
       structural_objectRef curr_port = fu_module->get_out_port(currentPort);
-      if (is_memory_port(curr_port))
+      if (is_other_port(curr_port))
          continue;
       std::string port_name=curr_port->get_id();
       if(verilog_description != "")
@@ -649,7 +649,7 @@ void allocation::BuildProxyFunctionVHDL(functional_unit* current_fu)
    for(unsigned int currentPort=0; currentPort<inPortSize; ++currentPort)
    {
       structural_objectRef curr_port = fu_module->get_in_port(currentPort);
-      if (is_memory_port(curr_port))
+      if (is_other_port(curr_port))
          continue;
       std::string port_name=curr_port->get_id();
       if(port_name != CLOCK_PORT_NAME && port_name != RESET_PORT_NAME)
@@ -665,7 +665,7 @@ void allocation::BuildProxyFunctionVHDL(functional_unit* current_fu)
    for(unsigned int currentPort=0; currentPort<outPortSize; ++currentPort)
    {
       structural_objectRef curr_port = fu_module->get_out_port(currentPort);
-      if (is_memory_port(curr_port))
+      if (is_other_port(curr_port))
          continue;
       std::string port_name=curr_port->get_id();
       if(VHDL_description != "")
@@ -759,7 +759,7 @@ void allocation::add_proxy_function_module(
    for (unsigned int currentPort = 0; currentPort < inPortSize; ++currentPort)
    {
       structural_objectRef curr_port = fu_module->get_in_port(currentPort);
-      if (is_memory_port(curr_port))
+      if (is_other_port(curr_port))
          continue;
 
       const std::string port_name = curr_port->get_id();
@@ -782,7 +782,7 @@ void allocation::add_proxy_function_module(
    for (unsigned int currentPort = 0; currentPort < outPortSize; ++currentPort)
    {
       structural_objectRef curr_port = fu_module->get_out_port(currentPort);
-      if (is_memory_port(curr_port))
+      if (is_other_port(curr_port))
          continue;
       /*
        * Add an output port to the proxy for every output port of the proxied function.
@@ -800,7 +800,7 @@ void allocation::add_proxy_function_module(
    for (unsigned int currentPort = 0; currentPort < inPortSize; ++currentPort)
    {
       structural_objectRef curr_port = fu_module->get_in_port(currentPort);
-      if (is_memory_port(curr_port))
+      if (is_other_port(curr_port))
          continue;
 
       const std::string port_name = curr_port->get_id();
@@ -828,7 +828,7 @@ void allocation::add_proxy_function_module(
    for (unsigned int currentPort = 0; currentPort < outPortSize; ++currentPort)
    {
       structural_objectRef curr_port = fu_module->get_out_port(currentPort);
-      if (is_memory_port(curr_port))
+      if (is_other_port(curr_port))
          continue;
       /*
        * add an input port to the proxy for every output port of the proxied function.

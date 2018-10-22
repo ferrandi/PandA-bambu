@@ -393,6 +393,17 @@ void top_entity::add_ports(structural_objectRef circuit, structural_objectRef cl
             SM->add_connection(port_in, null_values[GET_TYPE_SIZE(port_in)]);
          }
       }
+      else if(GetPointer<port_o>(port_in)->get_port_interface() != port_o::port_interface::PI_DEFAULT)
+      {
+         structural_objectRef ext_port;
+         if(port_in->get_kind() == port_vector_o_K)
+            ext_port = this->SM->add_port_vector(GetPointer<port_o>(port_in)->get_id(), port_o::IN, GetPointer<port_o>(port_in)->get_ports_size(), circuit, port_in->get_typeRef());
+         else
+            ext_port = this->SM->add_port(GetPointer<port_o>(port_in)->get_id(), port_o::IN, circuit, port_in->get_typeRef());
+         port_o::fix_port_properties(port_in, ext_port);
+         //adding connection between datapath interface port and top interface port
+         this->SM->add_connection(port_in, ext_port);
+      }
    }
    /// creating extern OUT port on top starting from extern ports on datapath and add connection
    for(unsigned int j = 0; j < GetPointer<module>(Datapath)->get_out_port_size(); j++)
@@ -421,6 +432,17 @@ void top_entity::add_ports(structural_objectRef circuit, structural_objectRef cl
          //adding connection between datapath extern port and top extern port
          this->SM->add_connection(port_out,ext_port);
 
+      }
+      else if(GetPointer<port_o>(port_out)->get_port_interface() != port_o::port_interface::PI_DEFAULT)
+      {
+         structural_objectRef ext_port;
+         if(port_out->get_kind() == port_vector_o_K)
+            ext_port = this->SM->add_port_vector(GetPointer<port_o>(port_out)->get_id(), port_o::OUT, GetPointer<port_o>(port_out)->get_ports_size(),  circuit, port_out->get_typeRef());
+         else
+            ext_port = this->SM->add_port(GetPointer<port_o>(port_out)->get_id(), port_o::OUT, circuit, port_out->get_typeRef());
+         port_o::fix_port_properties(port_out, ext_port);
+         //adding connection between datapath interface port and top interface port
+         this->SM->add_connection(port_out,ext_port);
       }
    }
 
