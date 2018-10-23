@@ -191,7 +191,9 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
                auto argTypeNode = GET_NODE(a->type);
                if(tree_helper::is_a_pointer(TM, GET_INDEX_NODE(a->type)))
                {
-                  portsToConstant.insert(wrappedObj->find_member(argName_string, port_o_K, wrappedObj));
+                  auto p = wrappedObj->find_member(argName_string, port_o_K, wrappedObj);
+                  THROW_ASSERT(p, "unexpected condition");
+                  portsToConstant.insert(p);
                   param_renamed.insert(argName_string);
                }
             }
@@ -658,6 +660,21 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
             }
             port_o::fix_port_properties(int_port, ext_port);
             SM_minimal_interface->add_connection(int_port, ext_port);
+         }
+         else if(!ext_port)
+         {
+            int_port = wrappedObj->find_member(port_name, port_o_K, wrappedObj);
+            THROW_ASSERT(int_port, "unexpected condition");
+            auto tnIndex = int_port->get_typeRef()->treenode;
+            auto TreeM = HLSMgr->get_tree_manager();
+            if(tnIndex> 0&& tree_helper::is_a_pointer(TreeM, tnIndex))
+            {
+               unsigned int pt_type_index = tree_helper::get_pointed_type(TreeM, tree_helper::get_type_index(TreeM, tnIndex));
+               tree_nodeRef pt_node = TreeM->get_tree_node_const(pt_type_index);
+               structural_type_descriptorRef Intype = structural_type_descriptorRef(new structural_type_descriptor("bool", tree_helper::Size(pt_node)));
+               ext_port = SM_minimal_interface->add_port(port_name, port_o::IN, interfaceObj, Intype);
+               GetPointer<port_o>(ext_port)->set_port_interface(port_o::port_interface::PI_RNONE);
+            }
          }
       }
 

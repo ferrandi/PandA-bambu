@@ -1235,7 +1235,17 @@ void TestbenchGenerationBaseStep::write_auxiliary_signal_declaration() const
    writer->write("reg compare_outputs, success; // Flag: True if input vector specifies expected outputs\n");
    writer->write("reg [8*`MAX_COMMENT_LENGTH:0] line; // Comment line read from file\n\n");
 
-   writer->write("reg [31:0] addr, base_addr, paddr;\n");
+   writer->write("reg [31:0] addr, base_addr;\n");
+   if(mod->get_in_port_size())
+   {
+      for(unsigned int i = 0; i < mod->get_in_port_size(); i++)
+      {
+         const structural_objectRef& port_obj = mod->get_in_port(i);
+         if(GetPointer<port_o>(port_obj)->get_port_interface() == port_o::port_interface::PI_RNONE)
+            writer->write("reg [31:0] paddr"+port_obj->get_id()+";\n");
+      }
+      writer->write("\n");
+   }
    writer->write("reg signed [7:0] _bambu_testbench_mem_ [0:MEMSIZE-1];\n\n");
    writer->write("reg signed [7:0] _bambu_databyte_;\n\n");
    writer->write("reg [3:0] __state, __next_state;\n");

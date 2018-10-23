@@ -565,7 +565,7 @@ void MinimalInterfaceTestbench::read_input_value_from_file_RNONE(const std::stri
       writer->write(STR(STD_OPENING_CHAR));
       writer->write("begin\n");
       {
-         writer->write("_r_ = $fscanf(file,\"%b\\n\", paddr); ");
+         writer->write("_r_ = $fscanf(file,\"%b\\n\", paddr"+input_name+"); ");
          writer->write_comment("expected format: bbb...b (example: 00101110)\n");
       }
       writer->write(STR(STD_CLOSING_CHAR));
@@ -612,7 +612,7 @@ void MinimalInterfaceTestbench::read_input_value_from_file_RNONE(const std::stri
          for(unsigned int bitsize_index = 0; bitsize_index < bitsize; bitsize_index = bitsize_index + 8)
          {
             if(bitsize_index) mem_aggregate += ", ";
-            mem_aggregate += "_bambu_testbench_mem_[paddr + " + STR((bitsize - bitsize_index) / 8 - 1) +
+            mem_aggregate += "_bambu_testbench_mem_[paddr"+input_name+" + " + STR((bitsize - bitsize_index) / 8 - 1) +
                              " - base_addr]";
          }
          mem_aggregate += "}";
