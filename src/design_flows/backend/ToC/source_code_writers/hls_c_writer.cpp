@@ -253,12 +253,14 @@ void HLSCWriter::WriteParamDecl
    std::string param;
    bool flag_cpp = TM->is_CPP() && !Param->isOption(OPT_pretty_print) && (!Param->isOption(OPT_discrepancy) || !Param->getOption<bool>(OPT_discrepancy));
 
+   hls_c_backend_information->HLSMgr->RSim->simulationArgSignature.clear();
    indented_output_stream->Append("// parameters declaration\n");
    for (const auto & p : behavioral_helper->get_parameters())
    {
       unsigned int type_id = behavioral_helper->get_type(p);
       type = behavioral_helper->print_type(type_id);
       param = behavioral_helper->PrintVariable(p);
+      hls_c_backend_information->HLSMgr->RSim->simulationArgSignature.push_back(param);
 
       if (tree_helper::is_a_vector(TM, type_id))
       {

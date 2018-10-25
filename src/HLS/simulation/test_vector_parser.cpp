@@ -100,16 +100,6 @@ TestVectorParser::~TestVectorParser() = default;
 void TestVectorParser::ParseUserString(std::vector<std::map<std::string, std::string>>& test_vectors) const
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining " + user_input_string);
-   bool ParameterRenaming = false;
-#if HAVE_I386_CLANG4_COMPILER
-   if(parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANG4) ParameterRenaming = true;
-#endif
-#if HAVE_I386_CLANG5_COMPILER
-   if(parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANG5) ParameterRenaming = true;
-#endif
-#if HAVE_I386_CLANG6_COMPILER
-   if(parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANG6) ParameterRenaming = true;
-#endif
 
    test_vectors.push_back(std::map<std::string, std::string>());
    std::vector<std::string> testbench_parameters;
@@ -121,16 +111,8 @@ void TestVectorParser::ParseUserString(std::vector<std::map<std::string, std::st
       std::vector<std::string> temp;
       boost::algorithm::split(temp, parameter, boost::algorithm::is_any_of("="));
       if(temp.size() != 2) { THROW_ERROR("Error in processing --simulate arg"); }
-      if(ParameterRenaming)
-      {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---P" + STR(index) + "=" + temp[1]);
-         test_vectors.back()["P" + STR(index)] = temp[1];
-      }
-      else
-      {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---" + temp[0] + "=" + temp[1]);
-         test_vectors.back()[temp[0]] = temp[1];
-      }
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---" + temp[0] + "=" + temp[1]);
+      test_vectors.back()[temp[0]] = temp[1];
       ++index;
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Examined " + user_input_string);

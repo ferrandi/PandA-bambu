@@ -46,6 +46,15 @@
 ///utility includes
 #include "refcount.hpp"
 
+REF_FORWARD_DECL(tree_node);
+REF_FORWARD_DECL(tree_manipulation);
+REF_FORWARD_DECL(tree_manager);
+class statement_list;
+class function_decl;
+class parm_decl;
+
+#include <list>
+
 class interface_infer : public FunctionFrontendFlowStep
 {
    private:
@@ -55,6 +64,16 @@ class interface_infer : public FunctionFrontendFlowStep
        * @param relationship_type is the type of relationship to be considered
        */
       const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+
+      void classifyArg(statement_list*sl, tree_nodeRef argSSANode, bool &canBeMovedToBB2, bool &isRead, bool &isWrite, bool &unkwown_pattern, std::list<tree_nodeRef> &writeStmt, std::list<tree_nodeRef> &readStmt);
+      void addGimpleNOPxVirtual(tree_nodeRef origStmt, statement_list*sl, const tree_managerRef TM);
+
+      void create_Read_function(tree_nodeRef origStmt, unsigned int destBB, statement_list*sl, function_decl* fd, const std::string &fdName, tree_nodeRef argSSANode, parm_decl* a, tree_nodeRef readType, const std::list<tree_nodeRef> &usedStmt_defs, const tree_manipulationRef tree_man, const tree_managerRef TM);
+      void create_Write_function(tree_nodeRef origStmt, unsigned int destBB, statement_list*sl, function_decl* fd, const std::string &fdName, tree_nodeRef argSSANode, tree_nodeRef writeValue, parm_decl* a, tree_nodeRef writeType, const tree_manipulationRef tree_man, const tree_managerRef TM);
+
+      void create_resource_Read_none(std::vector<std::string> &operations, const std::string &argName_string, const std::string& interfaceType, unsigned int inputBitWidth, bool IO_port);
+      void create_resource_Write_none(std::vector<std::string> & operations, const std::string& argName_string, const std::string &interfaceType, unsigned int inputBitWidth, bool IO_port);
+      void create_resource(std::vector<std::string> & operationsR, std::vector<std::string> & operationsW, const std::string& argName_string, const std::string &interfaceType, unsigned int inputBitWidth);
 
    public:
       /**

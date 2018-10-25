@@ -112,9 +112,9 @@ hls::hls(const ParameterConstRef _Param, unsigned int _function_id, OpVertexSet 
    output_level (_Param->getOption<int>(OPT_output_level)),
    HLS_execution_time(0)
 {
-   THROW_ASSERT(HLS_T, "HLS initalization: HLS_target not available");
-   THROW_ASSERT(HLS_C, "HLS initalization: HLS_constraints not available");
-   THROW_ASSERT(Param, "HLS initalization: Parameter not available");
+   THROW_ASSERT(HLS_T, "HLS initialization: HLS_target not available");
+   THROW_ASSERT(HLS_C, "HLS initialization: HLS_constraints not available");
+   THROW_ASSERT(Param, "HLS initialization: Parameter not available");
 }
 
 hls::~hls()

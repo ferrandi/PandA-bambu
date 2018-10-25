@@ -46,6 +46,9 @@ class SimulationInformation
 
    /// average number of cycles of the executed simulations
    unsigned long long avg_n_cycles = 0;
+
+   /// store the list of parameter name of the function under test
+   std::vector<std::string> simulationArgSignature;
 };
 
 typedef refcount<SimulationInformation> SimulationInformationRef;

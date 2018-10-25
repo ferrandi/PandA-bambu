@@ -66,6 +66,7 @@ class MinimalInterfaceTestbench : public TestbenchGenerationBaseStep
 
    /// specialize read_input_value_from_file for interface PI_RNONE
    void read_input_value_from_file_RNONE(const std::string& input_name, bool& first_valid_input, unsigned bitsize) const;
+   void read_input_value_from_file_WNONE(const std::string& input_name, bool& first_valid_input) const;
 
    void write_file_reading_operations() const override;
 

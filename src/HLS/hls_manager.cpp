@@ -117,10 +117,17 @@ hlsRef HLS_manager::create_HLS(const HLS_managerRef HLSMgr, unsigned int functio
    Operations.insert(OperationsList.begin(), OperationsList.end());
    if(HLSMgr->hlsMap.find(functionId) == HLSMgr->hlsMap.end())
    {
-      ///creates the new HLS datastructure associated with the function
+      ///creates the new HLS data structure associated with the function
       const std::string function_name = tree_helper::name_function(HLSMgr->get_tree_manager(), functionId);
       HLS_constraintsRef HLS_C = HLS_constraintsRef(new HLS_constraints(HLSMgr->get_parameter(), function_name));
       HLSMgr->hlsMap[functionId] = hlsRef(new hls(HLSMgr->get_parameter(), functionId, Operations, HLSMgr->get_HLS_target(), HLS_C));
+      if(HLSMgr->design_interface_constraints.find(functionId) != HLSMgr->design_interface_constraints.end())
+      {
+         const auto& function_design_interface_constraints = HLSMgr->design_interface_constraints.find(functionId)->second;
+         for(const auto& lib_resmap : function_design_interface_constraints)
+            for(const auto& res_num : lib_resmap.second)
+               HLS_C->set_number_fu(res_num.first, lib_resmap.first, res_num.second);
+      }
    }
    else
    {

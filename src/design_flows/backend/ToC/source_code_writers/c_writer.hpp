@@ -95,10 +95,10 @@ class instrumented_call_instr_writer;
 template <typename Graph> class dominance;
 
 /**
- * Class use to write the C code representing a parallelized program,
- * i.e. a program composed of many tasks; this class can't be directly
- * instantiated since the backend is not specified yet. So a subclass must
- * be created which redefines all the abstract methods of this class.
+ * Class used to write the C code representing a program,
+ * this class can't be directly instantiated since the backend
+ * is not specified yet. So a subclass must be created which
+ * redefines all the abstract methods of this class.
  */
 class CWriter
 {

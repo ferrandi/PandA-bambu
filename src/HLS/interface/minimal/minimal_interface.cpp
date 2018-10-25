@@ -651,38 +651,64 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
          structural_objectRef int_port = wrappedObj->find_member("_" + port_name, port_o_K, wrappedObj);
          if(int_port)
          {
-            if(!ext_port)
+            if(GetPointer<port_o>(int_port)->get_port_interface() == port_o::port_interface::PI_RNONE)
             {
-               if(port_in->get_kind() == port_vector_o_K)
-                  ext_port = SM_minimal_interface->add_port_vector(port_name, port_o::IN, GetPointer<port_o>(int_port)->get_ports_size(), interfaceObj, int_port->get_typeRef());
-               else
-                  ext_port = SM_minimal_interface->add_port(port_name, port_o::IN, interfaceObj, int_port->get_typeRef());
+               portsToSkip.insert(int_port);
+               if(!ext_port)
+               {
+                  if(port_in->get_kind() == port_vector_o_K)
+                     ext_port = SM_minimal_interface->add_port_vector(port_name, port_o::IN, GetPointer<port_o>(int_port)->get_ports_size(), interfaceObj, int_port->get_typeRef());
+                  else
+                     ext_port = SM_minimal_interface->add_port(port_name, port_o::IN, interfaceObj, int_port->get_typeRef());
+               }
+               port_o::fix_port_properties(int_port, ext_port);
+               SM_minimal_interface->add_connection(int_port, ext_port);
             }
-            port_o::fix_port_properties(int_port, ext_port);
-            SM_minimal_interface->add_connection(int_port, ext_port);
-         }
-         else if(!ext_port)
-         {
-            int_port = wrappedObj->find_member(port_name, port_o_K, wrappedObj);
-            THROW_ASSERT(int_port, "unexpected condition");
-            auto tnIndex = int_port->get_typeRef()->treenode;
-            auto TreeM = HLSMgr->get_tree_manager();
-            if(tnIndex> 0&& tree_helper::is_a_pointer(TreeM, tnIndex))
+            else if(GetPointer<port_o>(int_port)->get_port_interface() == port_o::port_interface::PI_WNONE)
             {
-               unsigned int pt_type_index = tree_helper::get_pointed_type(TreeM, tree_helper::get_type_index(TreeM, tnIndex));
-               tree_nodeRef pt_node = TreeM->get_tree_node_const(pt_type_index);
-               structural_type_descriptorRef Intype = structural_type_descriptorRef(new structural_type_descriptor("bool", tree_helper::Size(pt_node)));
-               ext_port = SM_minimal_interface->add_port(port_name, port_o::IN, interfaceObj, Intype);
-               GetPointer<port_o>(ext_port)->set_port_interface(port_o::port_interface::PI_RNONE);
+               THROW_ASSERT(GetPointer<port_o>(int_port)->get_port_direction()==port_o::port_direction::OUT, "unexpected condition");
+            }
+            else if(GetPointer<port_o>(int_port)->get_port_interface() != port_o::port_interface::PI_DEFAULT)
+               THROW_ERROR("not yet supported port interface");
+         }
+         else
+         {
+            /// Check if we have an I/O interface
+            int_port = wrappedObj->find_member("_" + port_name+"_i", port_o_K, wrappedObj);
+            if(int_port)
+            {
+               if(GetPointer<port_o>(int_port)->get_port_interface() == port_o::port_interface::PI_RNONE)
+               {
+                  portsToSkip.insert(int_port);
+                  if(port_in->get_kind() == port_vector_o_K)
+                     ext_port = SM_minimal_interface->add_port_vector(port_name+"_i", port_o::IN, GetPointer<port_o>(int_port)->get_ports_size(), interfaceObj, int_port->get_typeRef());
+                  else
+                     ext_port = SM_minimal_interface->add_port(port_name+"_i", port_o::IN, interfaceObj, int_port->get_typeRef());
+                  port_o::fix_port_properties(int_port, ext_port);
+                  SM_minimal_interface->add_connection(int_port, ext_port);
+               }
+               else if(GetPointer<port_o>(int_port)->get_port_interface() != port_o::port_interface::PI_DEFAULT)
+                  THROW_ERROR("not yet supported port interface");
+            }
+            if(!int_port)
+            {
+               int_port = wrappedObj->find_member(port_name, port_o_K, wrappedObj);
+               THROW_ASSERT(int_port, "unexpected condition");
+               auto tnIndex = int_port->get_typeRef()->treenode;
+               auto TreeM = HLSMgr->get_tree_manager();
+               if(tnIndex> 0&& tree_helper::is_a_pointer(TreeM, tnIndex))
+               {
+                  unsigned int pt_type_index = tree_helper::get_pointed_type(TreeM, tree_helper::get_type_index(TreeM, tnIndex));
+                  tree_nodeRef pt_node = TreeM->get_tree_node_const(pt_type_index);
+                  structural_type_descriptorRef Intype = structural_type_descriptorRef(new structural_type_descriptor("bool", tree_helper::Size(pt_node)));
+                  ext_port = SM_minimal_interface->add_port(port_name, port_o::IN, interfaceObj, Intype);
+                  GetPointer<port_o>(ext_port)->set_port_interface(port_o::port_interface::PI_RNONE);
+               }
             }
          }
       }
 
-      if(port_name[0] == '_' && param_renamed.find(port_name.substr(1)) != param_renamed.end())
-      {
-         ; /// do nothing
-      }
-      else if(portsToSkip.find(port_in) == portsToSkip.end() && portsToConnect.find(port_in) == portsToConnect.end() && portsToConstant.find(port_in) == portsToConstant.end())
+      if(portsToSkip.find(port_in) == portsToSkip.end() && portsToConnect.find(port_in) == portsToConnect.end() && portsToConstant.find(port_in) == portsToConstant.end())
       {
          structural_objectRef ext_port = interfaceObj->find_member(port_name, port_o_K, interfaceObj);
 
@@ -730,6 +756,27 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
    for(unsigned int i = 0; i < GetPointer<module>(wrappedObj)->get_out_port_size(); ++i)
    {
       structural_objectRef port_out = GetPointer<module>(wrappedObj)->get_out_port(i);
+      if(GetPointer<port_o>(port_out)->get_port_interface() != port_o::port_interface::PI_DEFAULT)
+      {
+         if(GetPointer<port_o>(port_out)->get_port_interface() == port_o::port_interface::PI_WNONE)
+         {
+            portsToSkip.insert(port_out);
+            auto port_name = GetPointer<port_o>(port_out)->get_id();
+            std::string ext_name = port_name[0] == '_' ? port_name.substr(1) : port_name;
+            structural_objectRef ext_port = interfaceObj->find_member(ext_name, port_o_K, interfaceObj);
+            if(!ext_port)
+            {
+               if(port_out->get_kind() == port_vector_o_K)
+                  ext_port = SM_minimal_interface->add_port_vector(ext_name, port_o::OUT, GetPointer<port_o>(port_out)->get_ports_size(), interfaceObj, port_out->get_typeRef());
+               else
+                  ext_port = SM_minimal_interface->add_port(ext_name, port_o::OUT, interfaceObj, port_out->get_typeRef());
+            }
+            port_o::fix_port_properties(port_out, ext_port);
+            SM_minimal_interface->add_connection(port_out, ext_port);
+         }
+         else
+            THROW_ERROR("not yet supported port interface");
+      }
       if(portsToSkip.find(port_out) == portsToSkip.end() && portsToConnect.find(port_out) == portsToConnect.end())
       {
          structural_objectRef ext_port;

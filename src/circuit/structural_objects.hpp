@@ -582,7 +582,7 @@ struct port_o : public structural_object
       enum port_endianess {LITTLE = 0, BIG, NONE};
 
       /// Enumerative type describing if the port is associated with a specific interface type.
-      enum port_interface {PI_DEFAULT=0,PI_RNONE};
+      enum port_interface {PI_DEFAULT=0,PI_RNONE, PI_WNONE};
 
       static const unsigned int PARAMETRIC_PORT = static_cast<unsigned int>(-1);
 

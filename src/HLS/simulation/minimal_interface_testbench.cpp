@@ -67,6 +67,9 @@
 #include "Discrepancy.hpp"
 #endif
 
+// include from HLS/simulation
+#include "SimulationInformation.hpp"
+
 /// tree include
 #include "string_manipulation.hpp" // for GET_CLASS
 #include "tree_helper.hpp"
@@ -479,14 +482,20 @@ void MinimalInterfaceTestbench::write_output_signal_declaration() const
       writer->write_comment("OUTPUT SIGNALS\n");
       for(unsigned int i = 0; i < mod->get_out_port_size(); i++)
       {
-         writer->write("wire " + writer->type_converter(mod->get_out_port(i)->get_typeRef()) + writer->type_converter_size(mod->get_out_port(i)));
-         writer->write(HDL_manager::convert_to_identifier(writer.get(), mod->get_out_port(i)->get_id()) + ";\n");
-         if(mod->get_out_port(i)->get_id() == RETURN_PORT_NAME)
+         auto portInst = mod->get_out_port(i);
+         writer->write("wire " + writer->type_converter(portInst->get_typeRef()) + writer->type_converter_size(portInst));
+         writer->write(HDL_manager::convert_to_identifier(writer.get(), portInst->get_id()) + ";\n");
+         if(portInst->get_id() == RETURN_PORT_NAME)
          {
-            writer->write("reg " + writer->type_converter(mod->get_out_port(i)->get_typeRef()) + writer->type_converter_size(mod->get_out_port(i)));
-            writer->write("ex_" + HDL_manager::convert_to_identifier(writer.get(), mod->get_out_port(i)->get_id()) + ";\n");
-            writer->write("reg " + writer->type_converter(mod->get_out_port(i)->get_typeRef()) + writer->type_converter_size(mod->get_out_port(i)));
-            writer->write("registered_" + HDL_manager::convert_to_identifier(writer.get(), mod->get_out_port(i)->get_id()) + ";\n");
+            writer->write("reg " + writer->type_converter(portInst->get_typeRef()) + writer->type_converter_size(portInst));
+            writer->write("ex_" + HDL_manager::convert_to_identifier(writer.get(), portInst->get_id()) + ";\n");
+            writer->write("reg " + writer->type_converter(portInst->get_typeRef()) + writer->type_converter_size(portInst));
+            writer->write("registered_" + HDL_manager::convert_to_identifier(writer.get(), portInst->get_id()) + ";\n");
+         }
+         if(GetPointer<port_o>(portInst)->get_port_interface() == port_o::port_interface::PI_WNONE)
+         {
+            writer->write("reg " + writer->type_converter(portInst->get_typeRef()) + writer->type_converter_size(portInst));
+            writer->write("ex_" + HDL_manager::convert_to_identifier(writer.get(), portInst->get_id()) + ";\n");
          }
       }
       writer->write("\n");
@@ -629,31 +638,130 @@ void MinimalInterfaceTestbench::read_input_value_from_file_RNONE(const std::stri
 }
 
 
+void MinimalInterfaceTestbench::read_input_value_from_file_WNONE(const std::string& input_name, bool& first_valid_input) const
+{
+   if(input_name != CLOCK_PORT_NAME && input_name != RESET_PORT_NAME && input_name != START_PORT_NAME)
+   {
+      writer->write("\n");
+      writer->write_comment("Read a value for " + input_name + " --------------------------------------------------------------\n");
+      if(!first_valid_input) writer->write("_ch_ = $fgetc(file);\n");
+
+      writer->write("while (_ch_ == \"/\" || _ch_ == \"\\n\")\n");
+      writer->write(STR(STD_OPENING_CHAR));
+      writer->write("begin\n");
+      {
+         writer->write("_r_ = $fgets(line, file);\n");
+         writer->write("_ch_ = $fgetc(file);\n");
+      }
+      writer->write(STR(STD_CLOSING_CHAR));
+      writer->write("end\n");
+
+      if(first_valid_input)
+      {
+         /// write statement for new vectors' check
+         writer->write_comment("If no character found\n");
+         writer->write("if (_ch_ == -1)\n");
+         writer->write(STR(STD_OPENING_CHAR));
+         writer->write("begin\n");
+         {
+            writer->write("$display(\"No more values found. Simulation(s) executed: %d.\\n\", _n_);\n");
+            writer->write("$fclose(res_file);\n");
+            writer->write("$fclose(file);\n");
+            writer->write("$finish;\n");
+         }
+         writer->write(STR(STD_CLOSING_CHAR));
+         writer->write("end\n");
+         writer->write("else\n");
+         writer->write(STR(STD_OPENING_CHAR));
+         writer->write("begin\n");
+         {
+            writer->write_comment("Vectors count\n");
+            writer->write("_n_ = _n_ + 1;\n");
+            writer->write("$display(\"Start reading vector %d's values from input file.\\n\", _n_);\n");
+         }
+         writer->write(STR(STD_CLOSING_CHAR));
+         writer->write("end\n");
+         first_valid_input = false;
+      }
+
+      writer->write("if (_ch_ == \"p\")\n");
+      writer->write(STR(STD_OPENING_CHAR));
+      writer->write("begin\n");
+      {
+         writer->write("_r_ = $fscanf(file,\"%b\\n\", paddr"+input_name+"); ");
+         writer->write_comment("expected format: bbb...b (example: 00101110)\n");
+      }
+      writer->write(STR(STD_CLOSING_CHAR));
+      writer->write("end\n");
+
+      writer->write("if (_r_ != 1) ");
+      writer->write_comment("error\n");
+      writer->write(STR(STD_OPENING_CHAR));
+      writer->write("begin\n");
+      {
+         writer->write("_ch_ = $fgetc(file);\n");
+         writer->write("if (_ch_ == `EOF) ");
+         writer->write_comment("end-of-file reached\n");
+         writer->write(STR(STD_OPENING_CHAR));
+         writer->write("begin\n");
+         {
+            writer->write("$display(\"ERROR - End of file reached before getting all the values for the parameters\");\n");
+            writer->write("$fclose(res_file);\n");
+            writer->write("$fclose(file);\n");
+            writer->write("$finish;\n");
+         }
+         writer->write(STR(STD_CLOSING_CHAR));
+         writer->write("end\n");
+         writer->write("else ");
+         writer->write_comment("generic error\n");
+         writer->write(STR(STD_OPENING_CHAR));
+         writer->write("begin\n");
+         {
+            writer->write("$display(\"ERROR - Unknown error while reading the file. Character found: %c\", _ch_[7:0]);\n");
+            writer->write("$fclose(res_file);\n");
+            writer->write("$fclose(file);\n");
+            writer->write("$finish;\n");
+         }
+         writer->write(STR(STD_CLOSING_CHAR));
+         writer->write("end\n");
+      }
+      writer->write(STR(STD_CLOSING_CHAR));
+      writer->write("end\n");
+      writer->write_comment("Value for " + input_name + " found ---------------------------------------------------------------\n");
+   }
+}
+
+
 void MinimalInterfaceTestbench::write_file_reading_operations() const
 {
    /// file reading operations
    // cppcheck-suppress variableScope
    bool first_valid_input = true;
-   /// iterate over all input ports
-   if(mod->get_in_port_size())
+   /// iterate over all interface ports
+   const auto& DesignSignature=HLSMgr->RSim->simulationArgSignature;
+   for(auto par: DesignSignature)
    {
-      /// write code for input values extraction
-      for(unsigned int i = 0; i < mod->get_in_port_size(); i++)
+      auto portInst = mod->find_member(par, port_o_K, cir);
+      if(!portInst)
       {
-         if(GetPointer<port_o>(mod->get_in_port(i))->get_is_memory()) continue;
-         if(GetPointer<port_o>(mod->get_in_port(i))->get_is_extern() && GetPointer<port_o>(mod->get_in_port(i))->get_is_global()) continue;
-         std::string input_name = HDL_manager::convert_to_identifier(writer.get(), mod->get_in_port(i)->get_id());
-         auto interfaceType = GetPointer<port_o>(mod->get_in_port(i))->get_port_interface();
-         if(interfaceType == port_o::port_interface::PI_DEFAULT)
-            read_input_value_from_file(input_name, first_valid_input);
-         else if(interfaceType == port_o::port_interface::PI_RNONE)
-         {
-            auto bitsize = resize_to_1_8_16_32_64_128_256_512(GetPointer<port_o>(mod->get_in_port(i))->get_typeRef()->size * GetPointer<port_o>(mod->get_in_port(i))->get_typeRef()->vector_size);
-            read_input_value_from_file_RNONE(input_name, first_valid_input, bitsize);
-         }
-         else
-            THROW_ERROR("not yet supported port interface");
+         portInst = mod->find_member(par+"_i", port_o_K, cir);
+         THROW_ASSERT(portInst, "unexpected condition");
+         THROW_ASSERT(GetPointer<port_o>(portInst)->get_port_interface() != port_o::port_interface::PI_DEFAULT, "unexpected condition");
       }
+      THROW_ASSERT(portInst, "unexpected condition");
+      auto InterfaceType = GetPointer<port_o>(portInst)->get_port_interface();
+      std::string input_name = HDL_manager::convert_to_identifier(writer.get(), portInst->get_id());
+      if(InterfaceType == port_o::port_interface::PI_DEFAULT)
+         read_input_value_from_file(input_name, first_valid_input);
+      else if(InterfaceType == port_o::port_interface::PI_RNONE)
+      {
+         auto bitsize = resize_to_1_8_16_32_64_128_256_512(GetPointer<port_o>(portInst)->get_typeRef()->size * GetPointer<port_o>(portInst)->get_typeRef()->vector_size);
+         read_input_value_from_file_RNONE(input_name, first_valid_input, bitsize);
+      }
+      else if(InterfaceType == port_o::port_interface::PI_WNONE)
+         read_input_value_from_file("paddr"+input_name, first_valid_input);
+      else
+         THROW_ERROR("not yet supported port interface");
    }
    if(not first_valid_input) writer->write("_ch_ = $fgetc(file);\n");
 }

@@ -868,7 +868,7 @@ const char* port_o::port_directionNames[] =
 
 const char* port_o::port_interfaceNames[] =
    {
-      "PI_DEFAULT", "PI_RNONE"
+      "PI_DEFAULT", "PI_RNONE", "PI_WNONE"
    };
 
 port_o::port_o(int _debug_level, const structural_objectRef o, port_direction _dir, so_kind _port_type) :
