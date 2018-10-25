@@ -66,6 +66,7 @@ REF_FORWARD_DECL(structural_object);
 REF_FORWARD_DECL(structural_type_descriptor);
 REF_FORWARD_DECL(technology_manager);
 REF_FORWARD_DECL(technology_node);
+class module;
 
 
 class moduleGenerator
@@ -98,9 +99,9 @@ class moduleGenerator
 
       void add_port_parameters(structural_objectRef generated_port, structural_objectRef currentPort);
 
-      std::string GenerateHDL(const std::string& hdl_template, std::vector<std::tuple<unsigned int,unsigned int> >& required_variables, const std::string& specializing_string, const FunctionBehaviorConstRef FB, const std::string& path_dynamic_generators, HDLWriter_Language);
+      std::string GenerateHDL(const module* mod, const std::string& hdl_template, std::vector<std::tuple<unsigned int,unsigned int> >& required_variables, const std::string& specializing_string, const FunctionBehaviorConstRef FB, const std::string& path_dynamic_generators, HDLWriter_Language);
 
-      std::string get_specialized_name(std::vector<std::tuple<unsigned int,unsigned int> >& required_variables, const FunctionBehaviorConstRef FB) const;
+      std::string get_specialized_name(unsigned int firstIndexToSpecialize, std::vector<std::tuple<unsigned int,unsigned int> >& required_variables, const FunctionBehaviorConstRef FB) const;
 
       void specialize_fu(std::string fuName, vertex ve, std::string libraryId, const technology_managerRef TM, const FunctionBehaviorConstRef FB, std::string new_fu_name, std::map<std::string,technology_nodeRef> & new_fu, const TargetDevice_Type dv_type);
 };

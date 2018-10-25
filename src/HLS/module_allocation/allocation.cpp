@@ -1685,7 +1685,16 @@ DesignFlowStep_Status allocation::InternalExec()
                   std::string asm_unique_id;
                   if(g->CGetOpNodeInfo(vert)->GetOperation() == GIMPLE_ASM)
                      asm_unique_id = STR(g->CGetOpNodeInfo(vert)->GetNodeId());
-                  current_op=current_fu->get_name()+asm_unique_id+modGen->get_specialized_name(required_variables, function_behavior);
+                  unsigned int firstIndexToSpecialize;
+                  auto mod = GetPointer<module>(structManager_obj->get_circ());
+                  for (firstIndexToSpecialize = 0; firstIndexToSpecialize < mod->get_in_port_size(); ++firstIndexToSpecialize)
+                  {
+                     const structural_objectRef& port_obj = mod->get_in_port(firstIndexToSpecialize);
+                     if(GetPointer<port_o>(port_obj)->get_is_var_args())
+                        break;
+                  }
+                  THROW_ASSERT(required_variables.size()>=firstIndexToSpecialize, "unexpected condition");
+                  current_op=current_fu->get_name()+asm_unique_id+modGen->get_specialized_name(firstIndexToSpecialize,required_variables, function_behavior);
                   specialized_fuName=current_op;
 
                   std::string fu_name=current_fu->get_name();

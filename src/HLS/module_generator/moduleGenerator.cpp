@@ -122,19 +122,24 @@ unsigned int resize_to_8_or_greater(unsigned int value)
       return resize_to_1_8_16_32_64_128_256_512(value);
 }
 
-std::string moduleGenerator::get_specialized_name(std::vector<std::tuple<unsigned int,unsigned int> >& required_variables, const FunctionBehaviorConstRef FB) const
+std::string moduleGenerator::get_specialized_name(unsigned int firstIndexToSpecialize, std::vector<std::tuple<unsigned int,unsigned int> >& required_variables, const FunctionBehaviorConstRef FB) const
 {
    std::string fuName="";
+   unsigned int index=0;
    for(auto & required_variable : required_variables)
    {
-      unsigned int dataSize=getDataType(std::get<0>(required_variable), FB)->vector_size!=0?getDataType(std::get<0>(required_variable), FB)->vector_size:getDataType(std::get<0>(required_variable), FB)->size;
-      structural_type_descriptorRef typeRef=getDataType(std::get<0>(required_variable), FB);
-      fuName=fuName+NAMESEPARATOR+typeRef->get_name()+STR(resize_to_8_or_greater(dataSize));
+      if(index>=firstIndexToSpecialize)
+      {
+         unsigned int dataSize=getDataType(std::get<0>(required_variable), FB)->vector_size!=0?getDataType(std::get<0>(required_variable), FB)->vector_size:getDataType(std::get<0>(required_variable), FB)->size;
+         structural_type_descriptorRef typeRef=getDataType(std::get<0>(required_variable), FB);
+         fuName=fuName+NAMESEPARATOR+typeRef->get_name()+STR(resize_to_8_or_greater(dataSize));
+      }
+      ++index;
    }
    return fuName;
 }
 
-std::string moduleGenerator::GenerateHDL(const std::string& hdl_template, std::vector<std::tuple<unsigned int,unsigned int> >& required_variables, const std::string& specializing_string, const FunctionBehaviorConstRef FB, const std::string& path_dynamic_generators, const HDLWriter_Language language)
+std::string moduleGenerator::GenerateHDL(const module* mod, const std::string& hdl_template, std::vector<std::tuple<unsigned int,unsigned int> >& required_variables, const std::string& specializing_string, const FunctionBehaviorConstRef FB, const std::string& path_dynamic_generators, const HDLWriter_Language language)
 {
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "dynamic_generators @ Reading cpp-template input file '" << (path_dynamic_generators+"/"+hdl_template).c_str() << "'...");
 
@@ -199,6 +204,7 @@ std::string moduleGenerator::GenerateHDL(const std::string& hdl_template, std::v
 
    int portNum=0;
 
+
    for(auto & required_variable : required_variables)
    {
       structural_type_descriptorRef typeRef=getDataType(std::get<0>(required_variable), FB);
@@ -207,6 +213,36 @@ std::string moduleGenerator::GenerateHDL(const std::string& hdl_template, std::v
       unsigned int dataSize = typeRef->vector_size !=0 ? typeRef->vector_size : typeRef->size;
       cpp_code_body += "   _p["+STR(portNum)+"].type_size = "+ STR(resize_to_8_or_greater(dataSize)) +";\n";
       portNum++;
+   }
+
+   cpp_code_body += "   parameter _ports_in["+ STR(mod->get_in_port_size()) +"];\n";
+   cpp_code_body += "   parameter _ports_out["+ STR(mod->get_out_port_size()) +"];\n";
+   if(mod->get_in_out_port_size())
+      cpp_code_body += "   parameter _ports_inout["+ STR(mod->get_in_out_port_size()) +"];\n";
+
+   for(unsigned int i = 0; i < mod->get_in_port_size(); ++i)
+   {
+      structural_objectRef port_in = mod->get_in_port(i);
+      cpp_code_body += "   _ports_in["+STR(i)+"].name = \""+port_in->get_id()+"\";\n";
+      cpp_code_body += "   _ports_in["+STR(i)+"].type = \""+port_in->get_typeRef()->get_name()+"\";\n";
+      unsigned int dataSize = port_in->get_typeRef()->vector_size !=0 ? port_in->get_typeRef()->vector_size : port_in->get_typeRef()->size;
+      cpp_code_body += "   _ports_in["+STR(i)+"].type_size = "+ STR(resize_to_8_or_greater(dataSize)) +";\n";
+   }
+   for(unsigned int i = 0; i < mod->get_out_port_size(); ++i)
+   {
+      structural_objectRef port_out = mod->get_out_port(i);
+      cpp_code_body += "   _ports_out["+STR(i)+"].name = \""+port_out->get_id()+"\";\n";
+      cpp_code_body += "   _ports_out["+STR(i)+"].type = \""+port_out->get_typeRef()->get_name()+"\";\n";
+      unsigned int dataSize = port_out->get_typeRef()->vector_size !=0 ? port_out->get_typeRef()->vector_size : port_out->get_typeRef()->size;
+      cpp_code_body += "   _ports_out["+STR(i)+"].type_size = "+ STR(resize_to_8_or_greater(dataSize)) +";\n";
+   }
+   for(unsigned int i = 0; i < mod->get_in_out_port_size(); ++i)
+   {
+      structural_objectRef port_inout = mod->get_out_port(i);
+      cpp_code_body += "   _ports_inout["+STR(i)+"].name = \""+port_inout->get_id()+"\";\n";
+      cpp_code_body += "   _ports_inout["+STR(i)+"].type = \""+port_inout->get_typeRef()->get_name()+"\";\n";
+      unsigned int dataSize = port_inout->get_typeRef()->vector_size !=0 ? port_inout->get_typeRef()->vector_size : port_inout->get_typeRef()->size;
+      cpp_code_body += "   _ports_inout["+STR(i)+"].type_size = "+ STR(resize_to_8_or_greater(dataSize)) +";\n";
    }
 
    cpp_code_body += "std::string data_bus_bitsize = \"" + STR(HLSMgr->Rmem->get_bus_data_bitsize()) + "\";\n";
@@ -352,7 +388,6 @@ void moduleGenerator::specialize_fu(std::string fuName, vertex ve, std::string l
 
       //std::cout<<"Module created, adding ports"<<std::endl;
 
-      int portNum=1;
       std::string param_list= fu_module->get_NP_functionality()->get_NP_functionality(NP_functionality::LIBRARY);
 
       /*Adding ports*/
@@ -365,27 +400,35 @@ void moduleGenerator::specialize_fu(std::string fuName, vertex ve, std::string l
       unsigned int currentPort=0;
       for(currentPort=0;currentPort<inPortSize;currentPort++){
          structural_objectRef curr_port = fu_module->get_in_port(currentPort);
-         if(GetPointer<port_o>(curr_port)->get_is_var_args()){
+         if(GetPointer<port_o>(curr_port)->get_is_var_args())
+         {
+            unsigned portNum=1;
+            unsigned indexPort=0;
             for(auto & required_variable : required_variables)
             {
-               unsigned int var = std::get<0>(required_variable);
-               structural_type_descriptorRef dt = getDataType(var,FB);
-               /// normalize type
-               if(dt->vector_size == 0)
-                  dt->size = resize_to_8_or_greater(dt->size);
-               else
-                  dt->vector_size = resize_to_8_or_greater(dt->vector_size);
+               if(indexPort>=currentPort)
+               {
+                  unsigned int var = std::get<0>(required_variable);
+                  structural_type_descriptorRef dt = getDataType(var,FB);
+                  /// normalize type
+                  if(dt->vector_size == 0)
+                     dt->size = resize_to_8_or_greater(dt->size);
+                  else
+                     dt->vector_size = resize_to_8_or_greater(dt->vector_size);
 
-               port_name="in"+STR(portNum);
-               generated_port=CM->add_port(port_name, port_o::IN, top, dt);
-               generated_port->get_typeRef()->size=dt->size;
-               generated_port->get_typeRef()->vector_size=dt->vector_size;
-               param_list=param_list+" "+port_name;
-               portNum++;
+                  port_name="in"+STR(portNum+currentPort);
+                  generated_port=CM->add_port(port_name, port_o::IN, top, dt);
+                  generated_port->get_typeRef()->size=dt->size;
+                  generated_port->get_typeRef()->vector_size=dt->vector_size;
+                  param_list=param_list+" "+port_name;
+                  portNum++;
+               }
+               ++indexPort;
                //std::cout<<"Added port NAME: "<<generated_port->get_id()<<" TYPE: "<<generated_port->get_typeRef()->get_name()<<" CLOCK: "<<GetPointer<port_o>(generated_port)->get_is_clock()<<" DATA_SIZE:"<<STR(generated_port->get_typeRef()->size)<<" VECTOR_SIZE:"<<STR(generated_port->get_typeRef()->vector_size)<<std::endl;
             }
          }
-         else{
+         else
+         {
             port_name=curr_port->get_id();
             if(curr_port->get_kind() == port_vector_o_K)
             {
@@ -448,7 +491,7 @@ void moduleGenerator::specialize_fu(std::string fuName, vertex ve, std::string l
 
       std::string hdl_template = fu_module->get_NP_functionality()->get_NP_functionality(writer == HDLWriter_Language::VERILOG ? NP_functionality::VERILOG_GENERATOR : NP_functionality::VHDL_GENERATOR);
       PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, new_fu_name+": Generating dynamic hdl code");
-      std::string hdl_code = GenerateHDL(hdl_template, required_variables, specializing_string, FB, parameters->getOption<std::string>("dynamic_generators_dir"), writer);
+      std::string hdl_code = GenerateHDL(GetPointer<module>(top), hdl_template, required_variables, specializing_string, FB, parameters->getOption<std::string>("dynamic_generators_dir"), writer);
 
       CM->add_NP_functionality(top, writer == HDLWriter_Language::VERILOG ? NP_functionality::VERILOG_PROVIDED : NP_functionality::VHDL_PROVIDED, hdl_code);
 
