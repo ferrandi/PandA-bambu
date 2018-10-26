@@ -693,14 +693,12 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
    const auto& DesignSignature=HLSMgr->RSim->simulationArgSignature;
    for(auto par: DesignSignature)
    {
-      bool IO_P=false;
       auto portInst = mod->find_member(par, port_o_K, cir);
       if(!portInst)
       {
          portInst = mod->find_member(par+"_o", port_o_K, cir);
          THROW_ASSERT(portInst, "unexpected condition");
          THROW_ASSERT(GetPointer<port_o>(portInst)->get_port_interface() != port_o::port_interface::PI_DEFAULT, "unexpected condition");
-         IO_P=true;
       }
       THROW_ASSERT(portInst, "unexpected condition");
       auto InterfaceType = GetPointer<port_o>(portInst)->get_port_interface();
