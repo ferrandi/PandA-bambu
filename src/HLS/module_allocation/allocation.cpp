@@ -1685,15 +1685,18 @@ DesignFlowStep_Status allocation::InternalExec()
                   std::string asm_unique_id;
                   if(g->CGetOpNodeInfo(vert)->GetOperation() == GIMPLE_ASM)
                      asm_unique_id = STR(g->CGetOpNodeInfo(vert)->GetNodeId());
-                  unsigned int firstIndexToSpecialize;
+                  unsigned int firstIndexToSpecialize=0;
                   auto mod = GetPointer<module>(structManager_obj->get_circ());
-                  for (firstIndexToSpecialize = 0; firstIndexToSpecialize < mod->get_in_port_size(); ++firstIndexToSpecialize)
+                  for (auto Pindex = 0u; Pindex < mod->get_in_port_size(); ++Pindex)
                   {
-                     const structural_objectRef& port_obj = mod->get_in_port(firstIndexToSpecialize);
+                     const structural_objectRef& port_obj = mod->get_in_port(Pindex);
+                     auto port_name=port_obj->get_id();
                      if(GetPointer<port_o>(port_obj)->get_is_var_args())
                         break;
+                     if(port_name != CLOCK_PORT_NAME && port_name != RESET_PORT_NAME && port_name != START_PORT_NAME)
+                        ++firstIndexToSpecialize;
                   }
-                  THROW_ASSERT(required_variables.size()>=firstIndexToSpecialize, "unexpected condition");
+                  THROW_ASSERT(required_variables.size()>=firstIndexToSpecialize, "unexpected condition:"+STR(required_variables.size())+ " " + STR(firstIndexToSpecialize));
                   current_op=current_fu->get_name()+asm_unique_id+modGen->get_specialized_name(firstIndexToSpecialize,required_variables, function_behavior);
                   specialized_fuName=current_op;
 

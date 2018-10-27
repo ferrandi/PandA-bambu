@@ -398,15 +398,19 @@ void moduleGenerator::specialize_fu(std::string fuName, vertex ve, std::string l
       structural_objectRef generated_port;
       std::string port_name="";
       unsigned int currentPort=0;
-      for(currentPort=0;currentPort<inPortSize;currentPort++){
+      unsigned int toSkip=0;
+      for(currentPort=0;currentPort<inPortSize;currentPort++)
+      {
          structural_objectRef curr_port = fu_module->get_in_port(currentPort);
+         if(port_name == CLOCK_PORT_NAME || port_name == RESET_PORT_NAME || port_name == START_PORT_NAME)
+            ++toSkip;
          if(GetPointer<port_o>(curr_port)->get_is_var_args())
          {
             unsigned portNum=1;
             unsigned indexPort=0;
             for(auto & required_variable : required_variables)
             {
-               if(indexPort>=currentPort)
+               if(indexPort>=(currentPort-toSkip))
                {
                   unsigned int var = std::get<0>(required_variable);
                   structural_type_descriptorRef dt = getDataType(var,FB);
@@ -416,7 +420,7 @@ void moduleGenerator::specialize_fu(std::string fuName, vertex ve, std::string l
                   else
                      dt->vector_size = resize_to_8_or_greater(dt->vector_size);
 
-                  port_name="in"+STR(portNum+currentPort);
+                  port_name="in"+STR(portNum+currentPort-toSkip);
                   generated_port=CM->add_port(port_name, port_o::IN, top, dt);
                   generated_port->get_typeRef()->size=dt->size;
                   generated_port->get_typeRef()->vector_size=dt->vector_size;
