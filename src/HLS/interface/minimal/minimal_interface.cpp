@@ -173,11 +173,12 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
    {
       const auto TM = HLSMgr->get_tree_manager();
       auto fnode = TM->get_tree_node_const(funId);
-      auto fname = tree_helper::name_function(TM, funId);
+      auto fd = GetPointer<function_decl>(fnode);
+      std::string fname;
+      tree_helper::get_mangled_fname(fd, fname);
       if(DesignInterface.find(fname) != DesignInterface.end())
       {
          const auto& DesignInterfaceArgs = DesignInterface.find(fname)->second;
-         auto fd = GetPointer<function_decl>(fnode);
          for(auto arg : fd->list_of_args)
          {
             auto a = GetPointer<parm_decl>(GET_NODE(arg));

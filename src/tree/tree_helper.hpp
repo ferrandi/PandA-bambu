@@ -845,6 +845,14 @@ class tree_helper
       std::string normalized_ID(const std::string&id);
 
       /**
+       * Return the mangled function name
+       * @param fd is the function decl
+       * @param fname is the returned function name
+       */
+      static
+      void get_mangled_fname(const function_decl*fd, std::string &fname);
+
+      /**
        * Return the name of the function in a string
        * @param node is the function_decl
       */

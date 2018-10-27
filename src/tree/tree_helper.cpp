@@ -554,7 +554,7 @@ std::string tree_helper::name_type(const tree_managerConstRef tm, int unsigned i
             else if (GET_NODE(rect->name)->get_kind() == identifier_node_K)
             {
                auto* idn = GetPointer<identifier_node>(GET_NODE(rect->name));
-               nt = "struct "+ idn->strg;
+               nt = "struct "+ normalized_ID(idn->strg);
             }
             else
                THROW_ERROR("unexpected record type pattern: " + STR(index));
@@ -815,6 +815,28 @@ std::string tree_helper::name_function(const tree_managerConstRef tm, const unsi
    else
       THROW_ERROR(std::string("Node not yet supported ") + t->get_kind_text());
    return "";
+}
+
+void tree_helper::get_mangled_fname(const function_decl*fd, std::string &fname)
+{
+   if(fd->builtin_flag)
+   {
+      THROW_ASSERT(fd->name, "unexpected condition");
+      THROW_ASSERT(GET_NODE(fd->name)->get_kind()==identifier_node_K, "unexpected condition");
+      fname=tree_helper::normalized_ID(GetPointer<identifier_node>(GET_NODE(fd->name))->strg);
+   }
+   else if(fd->mngl)
+   {
+      THROW_ASSERT(GET_NODE(fd->mngl)->get_kind()==identifier_node_K, "unexpected condition");
+      fname=tree_helper::normalized_ID(GetPointer<identifier_node>(GET_NODE(fd->mngl))->strg);
+   }
+   else if(fd->name)
+   {
+      THROW_ASSERT(GET_NODE(fd->name)->get_kind()==identifier_node_K, "unexpected condition");
+      fname=tree_helper::normalized_ID(GetPointer<identifier_node>(GET_NODE(fd->name))->strg);
+   }
+   else
+      THROW_ERROR("unexpected condition");
 }
 
 std::string tree_helper::print_function_name(const tree_managerConstRef TM, const function_decl * fd)
@@ -4897,9 +4919,11 @@ std::string tree_helper::normalized_ID(const std::string&id)
    {
       if (i == '*')
          i = '_';
-      if (i == '$')
+      else if (i == '$')
          i = '_';
-      if (i == '.')
+      else if (i == '.')
+         i = '_';
+      else if (i == ':')
          i = '_';
    }
    return strg;
@@ -5538,7 +5562,7 @@ std::string tree_helper::print_type(const tree_managerConstRef TM, unsigned int 
             if(struct_name == "_IO_FILE")
                res += "FILE";
             else
-               res += "struct " + struct_name;
+               res += "struct " + normalized_ID(struct_name);
          }
          else if (rt->unql)
             res += "Internal_" + boost::lexical_cast<std::string>(type);

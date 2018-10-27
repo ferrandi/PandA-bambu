@@ -1800,8 +1800,11 @@ void GccWrapper::CreateExecutable(const CustomSet<std::string> & file_names, con
 void GccWrapper::CreateExecutable(const std::list<std::string> & file_names, const std::string& executable_name, const std::string& extra_gcc_options) const
 {
    std::string file_names_string;
+   bool has_cpp_file=false;
    for(const auto& file_name : file_names)
    {
+      if(Param->GetFileFormat(file_name, false) == Parameters_FileFormat::FF_CPP)
+         has_cpp_file=true;
       file_names_string += file_name + " ";
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Creating executable " + executable_name + " from " + file_names_string);
@@ -1813,6 +1816,8 @@ void GccWrapper::CreateExecutable(const std::list<std::string> & file_names, con
    command += file_names_string + " ";
 
    command += gcc_compiling_parameters + " " + AddSourceCodeIncludes(file_names) + " " + gcc_linking_parameters + " ";
+   if(!has_cpp_file && command.find("--std=c++14") != std::string::npos)
+      boost::replace_all(command, "--std=c++14", "");
 
    command += "-D__NO_INLINE__ "; ///needed to avoid problem with glibc inlines
 

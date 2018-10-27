@@ -63,6 +63,9 @@ namespace llvm {
 static clang::DumpGimpleRaw *gimpleRawWriter;
 static std::string TopFunctionName;
 static std::map<std::string,std::vector<std::string>> Fun2Params;
+static std::map<std::string,std::vector<std::string>> Fun2ParamType;
+static std::map<std::string,std::vector<std::string>> Fun2ParamInclude;
+static std::map<std::string,std::string> Fun2Demangled;
 static std::map<std::string,std::string> HLS_interface_PragmaMap;
 
 static std::map<std::string,std::vector<std::string>> HLS_interfaceMap;
@@ -91,16 +94,18 @@ namespace clang {
       stream << "<module>\n";
       for(auto funArgPair: Fun2Params)
       {
-         if(TopFunctionName != "" && funArgPair.first != TopFunctionName) continue;
+         if(TopFunctionName != "" && Fun2Demangled.find(funArgPair.first)->second != TopFunctionName && funArgPair.first != TopFunctionName) continue;
          bool hasInterfaceType = HLS_interfaceMap.find(funArgPair.first) != HLS_interfaceMap.end();
          if(hasInterfaceType)
          {
             stream << "  <function id=\""<<funArgPair.first<<"\">\n";
             const auto & interfaceTypeVec = HLS_interfaceMap.find(funArgPair.first)->second;
+            const auto & interfaceTypenameVec = Fun2ParamType.find(funArgPair.first)->second;
+            const auto & interfaceTypenameIncludeVec = Fun2ParamInclude.find(funArgPair.first)->second;
             unsigned int ArgIndex=0;
             for(auto par: funArgPair.second)
             {
-               stream << "    <arg id=\""<<par<<"\" interface_type=\""<< interfaceTypeVec.at(ArgIndex)<<"\"/>\n";
+               stream << "    <arg id=\""<<par<<"\" interface_type=\""<< interfaceTypeVec.at(ArgIndex)<<"\" interface_typename=\""<< interfaceTypenameVec.at(ArgIndex)<<"\" interface_typename_include=\""<< interfaceTypenameIncludeVec.at(ArgIndex)<<"\"/>\n";
                ++ArgIndex;
             }
             stream << "  </function>\n";
@@ -112,6 +117,24 @@ namespace clang {
    class FunctionArgConsumer : public clang::ASTConsumer
    {
          CompilerInstance &CI;
+         const NamedDecl * getBaseTypeDecl(const QualType& qt) const
+         {
+            const Type* ty = qt.getTypePtr();
+            NamedDecl *ND = nullptr;
+
+            if (ty->isPointerType() || ty->isReferenceType())
+               return getBaseTypeDecl(ty->getPointeeType());
+            else if (ty->isRecordType())
+               ND = ty->getAs<RecordType>()->getDecl();
+            else if (ty->isEnumeralType())
+               ND = ty->getAs<EnumType>()->getDecl();
+            else if (ty->getTypeClass() == Type::Typedef)
+               ND = ty->getAs<TypedefType>()->getDecl();
+            else if (ty->isArrayType())
+               return getBaseTypeDecl(ty->castAsArrayTypeUnsafe()->getElementType());
+            return ND;
+         }
+
       public:
          FunctionArgConsumer(CompilerInstance &Instance) : CI(Instance) {}
          bool HandleTopLevelDecl(DeclGroupRef DG) override
@@ -120,6 +143,7 @@ namespace clang {
                const Decl *D = *i;
                if(const FunctionDecl * FD = dyn_cast<FunctionDecl>(D))
                {
+                  auto& SM = FD->getASTContext().getSourceManager();
                   if(!FD->isVariadic() && FD->hasBody())
                   {
                      const auto getMangledName = [&](const FunctionDecl* decl) {
@@ -137,6 +161,8 @@ namespace clang {
                         return mangledName;
                      };
                      auto funName = getMangledName(FD);
+                     Fun2Demangled[funName]=FD->getNameInfo().getName().getAsString();
+                     //llvm::errs()<<"funName:"<<funName<<"\n";
                      for(const auto par : FD->parameters())
                      {
                         if (const ParmVarDecl *ND = dyn_cast<ParmVarDecl>(par))
@@ -150,10 +176,11 @@ namespace clang {
                               UserDefinedInterfaceType = HLS_interface_PragmaMap.find(parName)->second;
                               UDIT_p = true;
                            }
-                           auto argType = ND->getType().getTypePtr();
+                           auto argType = ND->getType();
                            //argType->dump (llvm::errs() );
                            if(isa<DecayedType>(argType))
                            {
+                              llvm::errs()<<"here\n";
                               auto DT = cast<DecayedType>(argType);
                               if(DT->getOriginalType()->isConstantArrayType())
                               {
@@ -164,10 +191,7 @@ namespace clang {
                                     CA = cast<ConstantArrayType>(CA->getElementType());
                                     OrigTotArraySize *= CA->getSize();
                                  }
-                                 if(CA->getElementType()->isBuiltinType())
-                                 {
-                                    interfaceType="array-"+OrigTotArraySize.toString(10,false);
-                                 }
+                                 interfaceType="array-"+OrigTotArraySize.toString(10,false);
                               }
                               if(UDIT_p)
                               {
@@ -186,9 +210,7 @@ namespace clang {
                            }
                            else if(argType->isPointerType() || argType->isReferenceType())
                            {
-                              auto PT = cast<PointerType>(argType);
-                              if(PT->getPointeeType()->isBuiltinType())
-                                 interfaceType="ptrdefault";
+                              interfaceType="ptrdefault";
                               if(UDIT_p)
                               {
                                  if(UserDefinedInterfaceType != "none" &&
@@ -208,6 +230,8 @@ namespace clang {
                            }
                            else
                            {
+                              if(!argType->isBuiltinType())
+                                 interfaceType="none";
                               if(UDIT_p)
                               {
                                  if(UserDefinedInterfaceType != "none" &&
@@ -221,11 +245,21 @@ namespace clang {
                                  }
                                  else
                                     interfaceType=UserDefinedInterfaceType;
+                                 if(argType->isBuiltinType() && interfaceType=="none")
+                                    interfaceType="default";
                               }
                            }
 
                            HLS_interfaceMap[funName].push_back(interfaceType);
                            Fun2Params[funName].push_back(parName);
+                           Fun2ParamType[funName].push_back(ND->getType().getAsString());
+                           if(auto BTD = getBaseTypeDecl(ND->getType()))
+                           {
+                              Fun2ParamInclude[funName].push_back(SM.getPresumedLoc(BTD->getLocStart(),false).getFilename());
+                           }
+                           else
+                              Fun2ParamInclude[funName].push_back("");
+
                         }
                      }
                   }

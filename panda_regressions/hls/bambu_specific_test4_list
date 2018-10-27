@@ -1,6 +1,6 @@
 bambu_specific_test4/simple_c1_none.c --generate-tb=a=1,b=2,c=3,d=6 --top-fname=sum3numbers
 bambu_specific_test4/simple_c2_none.c --generate-tb=a=1,b=2,c=3,d=6 --top-fname=sum3numbers
 bambu_specific_test4/simple_c3_none.c --generate-tb=a=1,b=2,c=3,d=6 --top-fname=sum3numbers
-bambu_specific_test4/simple_c1.c --generate-tb=a=1,b=2,c=3,d=6 --top-fname=sum3numbers
-#bambu_specific_test4/ac_types1.cpp --top-fname=sum3numbers
+bambu_specific_test4/ac_types1.cpp --generate-tb=a=1,b=2,c=3,d=6 --top-fname=sum3numbers
+#bambu_specific_test4/simple_c1.c --generate-tb=a=1,b=2,c=3,d=6 --top-fname=sum3numbers
 

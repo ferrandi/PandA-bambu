@@ -52,6 +52,7 @@ REF_FORWARD_DECL(tree_manager);
 class statement_list;
 class function_decl;
 class parm_decl;
+class ssa_name;
 
 #include <list>
 
@@ -65,6 +66,7 @@ class interface_infer : public FunctionFrontendFlowStep
        */
       const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
+      void classifyArgRecurse(std::set<unsigned>&Visited, ssa_name*argSSA, unsigned int destBB, statement_list*sl, bool &canBeMovedToBB2, bool &isRead, bool &isWrite, bool &unkwown_pattern, std::list<tree_nodeRef> &writeStmt, std::list<tree_nodeRef> &readStmt);
       void classifyArg(statement_list*sl, tree_nodeRef argSSANode, bool &canBeMovedToBB2, bool &isRead, bool &isWrite, bool &unkwown_pattern, std::list<tree_nodeRef> &writeStmt, std::list<tree_nodeRef> &readStmt);
       void addGimpleNOPxVirtual(tree_nodeRef origStmt, statement_list*sl, const tree_managerRef TM);
 
