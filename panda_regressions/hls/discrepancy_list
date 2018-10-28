@@ -530,7 +530,6 @@ gcc_regression_simple/990524-1.c
 gcc_regression_simple/990527-1.c
 gcc_regression_simple/990531-1.c
 gcc_regression_simple/990604-1.c
-gcc_regression_simple/990628-1.c
 gcc_regression_simple/990804-1.c
 gcc_regression_simple/990811-1.c
 gcc_regression_simple/990826-0.c
