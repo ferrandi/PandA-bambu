@@ -727,7 +727,7 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
             bool is_real = tree_helper::is_real(TreeM, pt_type_index);
 
             writer->write("\n");
-            writer->write_comment("OPTIONAL - Read a value for " + output_name + " --------------------------------------------------------------\n");
+            writer->write_comment("OPTIONAL - Read a value for " + unmangled_name + " --------------------------------------------------------------\n");
 
             writer->write("_i_ = 0;\n");
             writer->write("while (_ch_ == \"/\" || _ch_ == \"\\n\" || _ch_ == \"o\")\n");
@@ -758,7 +758,7 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
                   writer->write(STR(STD_OPENING_CHAR));
                   writer->write("begin\n");
                   {
-                     if(output_level > OUTPUT_LEVEL_MINIMUM) writer->write("$display(\"Value found for output " + output_name + ": %b\", " + output_name + ");\n");
+                     if(output_level > OUTPUT_LEVEL_MINIMUM) writer->write("$display(\"Value found for output " + unmangled_name + ": %b\", " + output_name + ");\n");
                   }
                   writer->write(STR(STD_CLOSING_CHAR));
                   writer->write("end\n");
@@ -949,7 +949,7 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
             auto orig_name = portInst->get_id();
             std::string output_name = "ex_" + orig_name;
             writer->write("\n");
-            writer->write_comment("OPTIONAL - Read a value for " + output_name + " --------------------------------------------------------------\n");
+            writer->write_comment("OPTIONAL - Read a value for " + orig_name + " --------------------------------------------------------------\n");
 
             writer->write("_i_ = 0;\n");
             writer->write("while (_ch_ == \"/\" || _ch_ == \"\\n\" || _ch_ == \"o\")\n");
@@ -979,7 +979,7 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
                   writer->write(STR(STD_OPENING_CHAR));
                   writer->write("begin\n");
                   {
-                     if(output_level > OUTPUT_LEVEL_MINIMUM) writer->write("$display(\"Value found for output " + output_name + ": %b\", " + output_name + ");\n");
+                     if(output_level > OUTPUT_LEVEL_MINIMUM) writer->write("$display(\"Value found for output " + orig_name + ": %b\", " + output_name + ");\n");
                   }
                   writer->write(STR(STD_CLOSING_CHAR));
                   writer->write("end\n");
@@ -1084,7 +1084,7 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
             bool is_real = tree_helper::is_real(TreeM, pt_type_index);
 
             writer->write("\n");
-            writer->write_comment("OPTIONAL - Read a value for " + output_name + " --------------------------------------------------------------\n");
+            writer->write_comment("OPTIONAL - Read a value for " + variableName + " --------------------------------------------------------------\n");
 
             writer->write("_i_ = 0;\n");
                         writer->write("while (_ch_ == \"/\" || _ch_ == \"\\n\" || _ch_ == \"o\")\n");
@@ -1115,7 +1115,7 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
                               writer->write(STR(STD_OPENING_CHAR));
                               writer->write("begin\n");
                               {
-                                 if(output_level > OUTPUT_LEVEL_MINIMUM) writer->write("$display(\"Value found for output " + output_name + ": %b\", " + output_name + ");\n");
+                                 if(output_level > OUTPUT_LEVEL_MINIMUM) writer->write("$display(\"Value found for output " + variableName + ": %b\", " + output_name + ");\n");
                               }
                               writer->write(STR(STD_CLOSING_CHAR));
                               writer->write("end\n");
