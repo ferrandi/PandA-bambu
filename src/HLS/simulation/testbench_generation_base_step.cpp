@@ -690,365 +690,568 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
    writer->write(STR(STD_OPENING_CHAR));
    writer->write("begin\n");
 
-   const auto& DesignSignature=HLSMgr->RSim->simulationArgSignature;
-   for(auto par: DesignSignature)
+   const HLSFlowStep_Type interface_type = parameters->getOption<HLSFlowStep_Type>(OPT_interface_type);
+   if(interface_type == HLSFlowStep_Type::MINIMAL_INTERFACE_GENERATION or interface_type == HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION)
    {
-      auto portInst = mod->find_member(par, port_o_K, cir);
-      if(!portInst)
+      const auto& DesignSignature=HLSMgr->RSim->simulationArgSignature;
+      for(auto par: DesignSignature)
       {
-         portInst = mod->find_member(par+"_o", port_o_K, cir);
-         THROW_ASSERT(portInst, "unexpected condition");
-         THROW_ASSERT(GetPointer<port_o>(portInst)->get_port_interface() != port_o::port_interface::PI_DEFAULT, "unexpected condition");
-      }
-      THROW_ASSERT(portInst, "unexpected condition");
-      auto InterfaceType = GetPointer<port_o>(portInst)->get_port_interface();
-      if(InterfaceType == port_o::port_interface::PI_DEFAULT)
-      {
-         if(GetPointer<port_o>(portInst)->get_is_memory() || (GetPointer<port_o>(portInst)->get_is_extern() && GetPointer<port_o>(portInst)->get_is_global()) || !portInst->get_typeRef()->treenode ||
-               !tree_helper::is_a_pointer(TreeM, portInst->get_typeRef()->treenode))
-            continue;
-         std::string unmangled_name = portInst->get_id();
-         std::string port_name = HDL_manager::convert_to_identifier(writer.get(), unmangled_name);
-         std::string output_name = "ex_" + unmangled_name;
-         unsigned int pt_type_index = tree_helper::get_pointed_type(TreeM, tree_helper::get_type_index(TreeM, portInst->get_typeRef()->treenode));
-         tree_nodeRef pt_node = TreeM->get_tree_node_const(pt_type_index);
-         if(GetPointer<array_type>(pt_node))
+         auto portInst = mod->find_member(par, port_o_K, cir);
+         if(!portInst)
          {
-            while(GetPointer<array_type>(pt_node))
-            {
-               pt_type_index = GET_INDEX_NODE(GetPointer<array_type>(pt_node)->elts);
-               pt_node = GET_NODE(GetPointer<array_type>(pt_node)->elts);
-            }
+            portInst = mod->find_member(par+"_o", port_o_K, cir);
+            THROW_ASSERT(portInst, "unexpected condition");
+            THROW_ASSERT(GetPointer<port_o>(portInst)->get_port_interface() != port_o::port_interface::PI_DEFAULT, "unexpected condition");
          }
-         long long int bitsize = tree_helper::size(TreeM, pt_type_index);
-         bool is_real = tree_helper::is_real(TreeM, pt_type_index);
-
-         writer->write("\n");
-         writer->write_comment("OPTIONAL - Read a value for " + output_name + " --------------------------------------------------------------\n");
-
-         writer->write("_i_ = 0;\n");
-         writer->write("while (_ch_ == \"/\" || _ch_ == \"\\n\" || _ch_ == \"o\")\n");
-         writer->write(STR(STD_OPENING_CHAR));
-         writer->write("begin\n");
+         THROW_ASSERT(portInst, "unexpected condition");
+         auto InterfaceType = GetPointer<port_o>(portInst)->get_port_interface();
+         if(InterfaceType == port_o::port_interface::PI_DEFAULT)
          {
-            writer->write("if (_ch_ == \"o\")\n");
+            if(GetPointer<port_o>(portInst)->get_is_memory() || (GetPointer<port_o>(portInst)->get_is_extern() && GetPointer<port_o>(portInst)->get_is_global()) || !portInst->get_typeRef()->treenode ||
+                  !tree_helper::is_a_pointer(TreeM, portInst->get_typeRef()->treenode))
+               continue;
+            std::string unmangled_name = portInst->get_id();
+            std::string port_name = HDL_manager::convert_to_identifier(writer.get(), unmangled_name);
+            std::string output_name = "ex_" + unmangled_name;
+            unsigned int pt_type_index = tree_helper::get_pointed_type(TreeM, tree_helper::get_type_index(TreeM, portInst->get_typeRef()->treenode));
+            tree_nodeRef pt_node = TreeM->get_tree_node_const(pt_type_index);
+            if(GetPointer<array_type>(pt_node))
+            {
+               while(GetPointer<array_type>(pt_node))
+               {
+                  pt_type_index = GET_INDEX_NODE(GetPointer<array_type>(pt_node)->elts);
+                  pt_node = GET_NODE(GetPointer<array_type>(pt_node)->elts);
+               }
+            }
+            long long int bitsize = tree_helper::size(TreeM, pt_type_index);
+            bool is_real = tree_helper::is_real(TreeM, pt_type_index);
+
+            writer->write("\n");
+            writer->write_comment("OPTIONAL - Read a value for " + output_name + " --------------------------------------------------------------\n");
+
+            writer->write("_i_ = 0;\n");
+            writer->write("while (_ch_ == \"/\" || _ch_ == \"\\n\" || _ch_ == \"o\")\n");
             writer->write(STR(STD_OPENING_CHAR));
             writer->write("begin\n");
             {
-               writer->write("compare_outputs = 1;\n");
-               writer->write("_r_ = $fscanf(file,\"%b\\n\", " + output_name + "); ");
-               writer->write_comment("expected format: bbb...b (example: 00101110)\n");
-
-               writer->write("if (_r_ != 1)\n");
+               writer->write("if (_ch_ == \"o\")\n");
                writer->write(STR(STD_OPENING_CHAR));
                writer->write("begin\n");
                {
-                  writer->write_comment("error\n");
-                  writer->write("$display(\"ERROR - Unknown error while reading the file. Character found: %c\", _ch_[7:0]);\n");
-                  writer->write("$fclose(res_file);\n");
-                  writer->write("$fclose(file);\n");
-                  writer->write("$finish;\n");
-               }
-               writer->write(STR(STD_CLOSING_CHAR));
-               writer->write("end\n");
-               writer->write("else\n");
-               writer->write(STR(STD_OPENING_CHAR));
-               writer->write("begin\n");
-               {
-                  if(output_level > OUTPUT_LEVEL_MINIMUM) writer->write("$display(\"Value found for output " + output_name + ": %b\", " + output_name + ");\n");
-               }
-               writer->write(STR(STD_CLOSING_CHAR));
-               writer->write("end\n");
+                  writer->write("compare_outputs = 1;\n");
+                  writer->write("_r_ = $fscanf(file,\"%b\\n\", " + output_name + "); ");
+                  writer->write_comment("expected format: bbb...b (example: 00101110)\n");
 
-               size_t escaped_pos = port_name.find('\\');
-               std::string nonescaped_name = port_name;
-               if(escaped_pos != std::string::npos) nonescaped_name.erase(std::remove(nonescaped_name.begin(), nonescaped_name.end(), '\\'), nonescaped_name.end());
-               if(is_real)
-               {
-                  if(output_level > OUTPUT_LEVEL_MINIMUM)
+                  writer->write("if (_r_ != 1)\n");
+                  writer->write(STR(STD_OPENING_CHAR));
+                  writer->write("begin\n");
                   {
-                     writer->write("$display(\" res = %b " + nonescaped_name +
-                                   " = %d "
-                                   " _bambu_testbench_mem_[" +
-                                   nonescaped_name + " + %d - base_addr] = %20.20f  expected = %20.20f \", ");
-                     writer->write("{");
-                     for(unsigned int bitsize_index = 0; bitsize_index < bitsize; bitsize_index = bitsize_index + 8)
-                     {
-                        if(bitsize_index) writer->write(", ");
-                        writer->write("_bambu_testbench_mem_[" + port_name + " + _i_*" + boost::lexical_cast<std::string>(bitsize / 8) + " + " + boost::lexical_cast<std::string>((bitsize - bitsize_index) / 8 - 1) + " - base_addr]");
-                     }
-                     writer->write("} == " + output_name + ", ");
-                     writer->write(port_name + ", _i_*" + boost::lexical_cast<std::string>(bitsize / 8) + ", " + (bitsize == 32 ? "bits32_to_real64" : "$bitstoreal") + "({");
-                     for(unsigned int bitsize_index = 0; bitsize_index < bitsize; bitsize_index = bitsize_index + 8)
-                     {
-                        if(bitsize_index) writer->write(", ");
-                        writer->write("_bambu_testbench_mem_[" + port_name + " + _i_*" + boost::lexical_cast<std::string>(bitsize / 8) + " + " + boost::lexical_cast<std::string>((bitsize - bitsize_index) / 8 - 1) + " - base_addr]");
-                     }
-                     writer->write(std::string("}), ") + (bitsize == 32 ? "bits32_to_real64" : "$bitstoreal") + "(" + output_name + "));\n");
+                     writer->write_comment("error\n");
+                     writer->write("$display(\"ERROR - Unknown error while reading the file. Character found: %c\", _ch_[7:0]);\n");
+                     writer->write("$fclose(res_file);\n");
+                     writer->write("$fclose(file);\n");
+                     writer->write("$finish;\n");
                   }
-                  if(bitsize == 32 || bitsize == 64)
+                  writer->write(STR(STD_CLOSING_CHAR));
+                  writer->write("end\n");
+                  writer->write("else\n");
+                  writer->write(STR(STD_OPENING_CHAR));
+                  writer->write("begin\n");
+                  {
+                     if(output_level > OUTPUT_LEVEL_MINIMUM) writer->write("$display(\"Value found for output " + output_name + ": %b\", " + output_name + ");\n");
+                  }
+                  writer->write(STR(STD_CLOSING_CHAR));
+                  writer->write("end\n");
+
+                  size_t escaped_pos = port_name.find('\\');
+                  std::string nonescaped_name = port_name;
+                  if(escaped_pos != std::string::npos) nonescaped_name.erase(std::remove(nonescaped_name.begin(), nonescaped_name.end(), '\\'), nonescaped_name.end());
+                  if(is_real)
                   {
                      if(output_level > OUTPUT_LEVEL_MINIMUM)
                      {
-                        writer->write("$display(\" FP error %f \\n\", compute_ulp" + (bitsize == 32 ? STR(32) : STR(64)) + "({");
+                        writer->write("$display(\" res = %b " + nonescaped_name +
+                                      " = %d "
+                                      " _bambu_testbench_mem_[" +
+                                      nonescaped_name + " + %d - base_addr] = %20.20f  expected = %20.20f \", ");
+                        writer->write("{");
+                        for(unsigned int bitsize_index = 0; bitsize_index < bitsize; bitsize_index = bitsize_index + 8)
+                        {
+                           if(bitsize_index) writer->write(", ");
+                           writer->write("_bambu_testbench_mem_[" + port_name + " + _i_*" + boost::lexical_cast<std::string>(bitsize / 8) + " + " + boost::lexical_cast<std::string>((bitsize - bitsize_index) / 8 - 1) + " - base_addr]");
+                        }
+                        writer->write("} == " + output_name + ", ");
+                        writer->write(port_name + ", _i_*" + boost::lexical_cast<std::string>(bitsize / 8) + ", " + (bitsize == 32 ? "bits32_to_real64" : "$bitstoreal") + "({");
+                        for(unsigned int bitsize_index = 0; bitsize_index < bitsize; bitsize_index = bitsize_index + 8)
+                        {
+                           if(bitsize_index) writer->write(", ");
+                           writer->write("_bambu_testbench_mem_[" + port_name + " + _i_*" + boost::lexical_cast<std::string>(bitsize / 8) + " + " + boost::lexical_cast<std::string>((bitsize - bitsize_index) / 8 - 1) + " - base_addr]");
+                        }
+                        writer->write(std::string("}), ") + (bitsize == 32 ? "bits32_to_real64" : "$bitstoreal") + "(" + output_name + "));\n");
+                     }
+                     if(bitsize == 32 || bitsize == 64)
+                     {
+                        if(output_level > OUTPUT_LEVEL_MINIMUM)
+                        {
+                           writer->write("$display(\" FP error %f \\n\", compute_ulp" + (bitsize == 32 ? STR(32) : STR(64)) + "({");
+                           for(unsigned int bitsize_index = 0; bitsize_index < bitsize; bitsize_index = bitsize_index + 8)
+                           {
+                              if(bitsize_index) writer->write(", ");
+                              writer->write("_bambu_testbench_mem_[" + port_name + " + _i_*" + boost::lexical_cast<std::string>(bitsize / 8) + " + " + boost::lexical_cast<std::string>((bitsize - bitsize_index) / 8 - 1) + " - base_addr]");
+                           }
+                           writer->write("}, " + output_name);
+                           writer->write("));\n");
+                        }
+                        writer->write("if (compute_ulp" + (bitsize == 32 ? STR(32) : STR(64)) + "({");
                         for(unsigned int bitsize_index = 0; bitsize_index < bitsize; bitsize_index = bitsize_index + 8)
                         {
                            if(bitsize_index) writer->write(", ");
                            writer->write("_bambu_testbench_mem_[" + port_name + " + _i_*" + boost::lexical_cast<std::string>(bitsize / 8) + " + " + boost::lexical_cast<std::string>((bitsize - bitsize_index) / 8 - 1) + " - base_addr]");
                         }
                         writer->write("}, " + output_name);
-                        writer->write("));\n");
+                        writer->write(") > " + STR(parameters->getOption<double>(OPT_max_ulp)) + ")\n");
                      }
-                     writer->write("if (compute_ulp" + (bitsize == 32 ? STR(32) : STR(64)) + "({");
-                     for(unsigned int bitsize_index = 0; bitsize_index < bitsize; bitsize_index = bitsize_index + 8)
-                     {
-                        if(bitsize_index) writer->write(", ");
-                        writer->write("_bambu_testbench_mem_[" + port_name + " + _i_*" + boost::lexical_cast<std::string>(bitsize / 8) + " + " + boost::lexical_cast<std::string>((bitsize - bitsize_index) / 8 - 1) + " - base_addr]");
-                     }
-                     writer->write("}, " + output_name);
-                     writer->write(") > " + STR(parameters->getOption<double>(OPT_max_ulp)) + ")\n");
+                     else
+                        THROW_ERROR_CODE(NODE_NOT_YET_SUPPORTED_EC, "floating point precision not yet supported: " + STR(bitsize));
                   }
                   else
-                     THROW_ERROR_CODE(NODE_NOT_YET_SUPPORTED_EC, "floating point precision not yet supported: " + STR(bitsize));
-               }
-               else
-               {
-                  if(output_level > OUTPUT_LEVEL_MINIMUM)
                   {
-                     writer->write("$display(\" res = %b " + nonescaped_name +
-                                   " = %d "
-                                   " _bambu_testbench_mem_[" +
-                                   nonescaped_name + " + %d - base_addr] = %d  expected = %d \\n\", ");
-                     writer->write("{");
+                     if(output_level > OUTPUT_LEVEL_MINIMUM)
+                     {
+                        writer->write("$display(\" res = %b " + nonescaped_name +
+                                      " = %d "
+                                      " _bambu_testbench_mem_[" +
+                                      nonescaped_name + " + %d - base_addr] = %d  expected = %d \\n\", ");
+                        writer->write("{");
+                        for(unsigned int bitsize_index = 0; bitsize_index < bitsize; bitsize_index = bitsize_index + 8)
+                        {
+                           if(bitsize_index) writer->write(", ");
+                           writer->write("_bambu_testbench_mem_[" + port_name + " + _i_*" + boost::lexical_cast<std::string>(bitsize / 8) + " + " + boost::lexical_cast<std::string>((bitsize - bitsize_index) / 8 - 1) + " - base_addr]");
+                        }
+                        writer->write("} == " + output_name + ", ");
+                        writer->write(port_name + ", _i_*" + boost::lexical_cast<std::string>(bitsize / 8) + ", {");
+                        for(unsigned int bitsize_index = 0; bitsize_index < bitsize; bitsize_index = bitsize_index + 8)
+                        {
+                           if(bitsize_index) writer->write(", ");
+                           writer->write("_bambu_testbench_mem_[" + port_name + " + _i_*" + boost::lexical_cast<std::string>(bitsize / 8) + " + " + boost::lexical_cast<std::string>((bitsize - bitsize_index) / 8 - 1) + " - base_addr]");
+                        }
+                        writer->write("}, " + output_name + ");\n");
+                     }
+                     writer->write("if ({");
                      for(unsigned int bitsize_index = 0; bitsize_index < bitsize; bitsize_index = bitsize_index + 8)
                      {
                         if(bitsize_index) writer->write(", ");
                         writer->write("_bambu_testbench_mem_[" + port_name + " + _i_*" + boost::lexical_cast<std::string>(bitsize / 8) + " + " + boost::lexical_cast<std::string>((bitsize - bitsize_index) / 8 - 1) + " - base_addr]");
                      }
-                     writer->write("} == " + output_name + ", ");
-                     writer->write(port_name + ", _i_*" + boost::lexical_cast<std::string>(bitsize / 8) + ", {");
-                     for(unsigned int bitsize_index = 0; bitsize_index < bitsize; bitsize_index = bitsize_index + 8)
-                     {
-                        if(bitsize_index) writer->write(", ");
-                        writer->write("_bambu_testbench_mem_[" + port_name + " + _i_*" + boost::lexical_cast<std::string>(bitsize / 8) + " + " + boost::lexical_cast<std::string>((bitsize - bitsize_index) / 8 - 1) + " - base_addr]");
-                     }
-                     writer->write("}, " + output_name + ");\n");
+                     writer->write("} !== " + output_name);
+                     writer->write(")\n");
                   }
-                  writer->write("if ({");
-                  for(unsigned int bitsize_index = 0; bitsize_index < bitsize; bitsize_index = bitsize_index + 8)
-                  {
-                     if(bitsize_index) writer->write(", ");
-                     writer->write("_bambu_testbench_mem_[" + port_name + " + _i_*" + boost::lexical_cast<std::string>(bitsize / 8) + " + " + boost::lexical_cast<std::string>((bitsize - bitsize_index) / 8 - 1) + " - base_addr]");
-                  }
-                  writer->write("} !== " + output_name);
-                  writer->write(")\n");
-               }
-               writer->write(STR(STD_OPENING_CHAR));
-               writer->write("begin\n");
-               writer->write("success = 0;\n");
-               writer->write(STR(STD_CLOSING_CHAR));
-               writer->write("end\n");
+                  writer->write(STR(STD_OPENING_CHAR));
+                  writer->write("begin\n");
+                  writer->write("success = 0;\n");
+                  writer->write(STR(STD_CLOSING_CHAR));
+                  writer->write("end\n");
 
-               writer->write("_i_ = _i_ + 1;\n");
-               writer->write("_ch_ = $fgetc(file);\n");
-            }
-            writer->write(STR(STD_CLOSING_CHAR));
-            writer->write("end\n");
-
-            writer->write("else\n");
-            writer->write(STR(STD_OPENING_CHAR));
-            writer->write("begin\n");
-            {
-               writer->write_comment("skip comments and empty lines\n");
-               writer->write("_r_ = $fgets(line, file);\n");
-               writer->write("_ch_ = $fgetc(file);\n");
-            }
-            writer->write(STR(STD_CLOSING_CHAR));
-            writer->write("end\n");
-         }
-         writer->write(STR(STD_CLOSING_CHAR));
-         writer->write("end\n");
-
-         writer->write("if (_ch_ == \"e\")\n");
-         writer->write(STR(STD_OPENING_CHAR));
-         writer->write("begin\n");
-         writer->write("_r_ = $fgets(line, file);\n");
-         writer->write("_ch_ = $fgetc(file);\n");
-         writer->write(STR(STD_CLOSING_CHAR));
-         writer->write("end\n");
-         writer->write("else\n");
-         writer->write("begin\n");
-         writer->write(STR(STD_OPENING_CHAR));
-         writer->write_comment("error\n");
-         writer->write("$display(\"ERROR - Unknown error while reading the file. Character found: %c\", _ch_[7:0]);\n");
-         writer->write("$fclose(res_file);\n");
-         writer->write("$fclose(file);\n");
-         writer->write("$finish;\n");
-         writer->write(STR(STD_CLOSING_CHAR));
-         writer->write("end\n");
-      }
-      else if(InterfaceType == port_o::port_interface::PI_RNONE)
-      {
-         writer->write("\n");
-         writer->write_comment("OPTIONAL - skip expected value for " + portInst->get_id() + " --------------------------------------------------------------\n");
-
-         writer->write("_i_ = 0;\n");
-         writer->write("while (_ch_ == \"/\" || _ch_ == \"\\n\" || _ch_ == \"o\")\n");
-         writer->write(STR(STD_OPENING_CHAR));
-         writer->write("begin\n");
-         {
-            writer->write("if (_ch_ == \"o\")\n");
-            writer->write(STR(STD_OPENING_CHAR));
-            writer->write("begin\n");
-            {
-               writer->write("compare_outputs = 1;\n");
-               writer->write("_r_ = $fgets(line, file);\n");
-               writer->write("_i_ = _i_ + 1;\n");
-               writer->write("_ch_ = $fgetc(file);\n");
-            }
-            writer->write(STR(STD_CLOSING_CHAR));
-            writer->write("end\n");
-
-            writer->write("else\n");
-            writer->write(STR(STD_OPENING_CHAR));
-            writer->write("begin\n");
-            {
-               writer->write_comment("skip comments and empty lines\n");
-               writer->write("_r_ = $fgets(line, file);\n");
-               writer->write("_ch_ = $fgetc(file);\n");
-            }
-            writer->write(STR(STD_CLOSING_CHAR));
-            writer->write("end\n");
-         }
-         writer->write(STR(STD_CLOSING_CHAR));
-         writer->write("end\n");
-
-         writer->write("if (_ch_ == \"e\")\n");
-         writer->write(STR(STD_OPENING_CHAR));
-         writer->write("begin\n");
-         writer->write("_r_ = $fgets(line, file);\n");
-         writer->write("_ch_ = $fgetc(file);\n");
-         writer->write(STR(STD_CLOSING_CHAR));
-         writer->write("end\n");
-         writer->write("else\n");
-         writer->write("begin\n");
-         writer->write(STR(STD_OPENING_CHAR));
-         writer->write_comment("error\n");
-         writer->write("$display(\"ERROR - Unknown error while reading the file. Character found: %c\", _ch_[7:0]);\n");
-         writer->write("$fclose(res_file);\n");
-         writer->write("$fclose(file);\n");
-         writer->write("$finish;\n");
-         writer->write(STR(STD_CLOSING_CHAR));
-         writer->write("end\n");
-      }
-      else if(InterfaceType == port_o::port_interface::PI_WNONE)
-      {
-         auto orig_name = portInst->get_id();
-         std::string output_name = "ex_" + orig_name;
-         writer->write("\n");
-         writer->write_comment("OPTIONAL - Read a value for " + output_name + " --------------------------------------------------------------\n");
-
-         writer->write("_i_ = 0;\n");
-         writer->write("while (_ch_ == \"/\" || _ch_ == \"\\n\" || _ch_ == \"o\")\n");
-         writer->write(STR(STD_OPENING_CHAR));
-         writer->write("begin\n");
-         {
-            writer->write("if (_ch_ == \"o\")\n");
-            writer->write(STR(STD_OPENING_CHAR));
-            writer->write("begin\n");
-            {
-               writer->write("compare_outputs = 1;\n");
-               writer->write("_r_ = $fscanf(file,\"%b\\n\", " + output_name + "); ");
-               writer->write_comment("expected format: bbb...b (example: 00101110)\n");
-               writer->write("if (_r_ != 1)\n");
-               writer->write(STR(STD_OPENING_CHAR));
-               writer->write("begin\n");
-               {
-                  writer->write_comment("error\n");
-                  writer->write("$display(\"ERROR - Unknown error while reading the file. Character found: %c\", _ch_[7:0]);\n");
-                  writer->write("$fclose(res_file);\n");
-                  writer->write("$fclose(file);\n");
-                  writer->write("$finish;\n");
+                  writer->write("_i_ = _i_ + 1;\n");
+                  writer->write("_ch_ = $fgetc(file);\n");
                }
                writer->write(STR(STD_CLOSING_CHAR));
                writer->write("end\n");
+
                writer->write("else\n");
                writer->write(STR(STD_OPENING_CHAR));
                writer->write("begin\n");
                {
-                  if(output_level > OUTPUT_LEVEL_MINIMUM) writer->write("$display(\"Value found for output " + output_name + ": %b\", " + output_name + ");\n");
+                  writer->write_comment("skip comments and empty lines\n");
+                  writer->write("_r_ = $fgets(line, file);\n");
+                  writer->write("_ch_ = $fgetc(file);\n");
                }
                writer->write(STR(STD_CLOSING_CHAR));
                writer->write("end\n");
-
-               if(portInst->get_typeRef()->type == structural_type_descriptor::REAL)
-               {
-                  if(GET_TYPE_SIZE(portInst) == 32)
-                  {
-                     writer->write("$display(\" " + orig_name + " = %20.20f   expected = %20.20f \", bits32_to_real64(" + orig_name + "), bits32_to_real64(" + output_name + "));\n");
-                     writer->write("$display(\" FP error %f \\n\", compute_ulp32(" + orig_name + ", " + output_name + "));\n");
-                     writer->write("if (compute_ulp32(" + orig_name + ", " + output_name + ") > " + STR(parameters->getOption<double>(OPT_max_ulp)) + ")\n");
-                  }
-                  else if(GET_TYPE_SIZE(portInst) == 64)
-                  {
-                     writer->write("$display(\" " + orig_name + " = %20.20f   expected = %20.20f \", $bitstoreal(" + orig_name + "), $bitstoreal(ex_" + orig_name + "));\n");
-                     writer->write("$display(\" FP error %f \\n\", compute_ulp64(" + orig_name + ", " + output_name + "));\n");
-                     writer->write("if (compute_ulp64(" + orig_name + ", " + output_name + ") > " + STR(parameters->getOption<double>(OPT_max_ulp)) + ")\n");
-                  }
-                  else
-                     THROW_ERROR_CODE(NODE_NOT_YET_SUPPORTED_EC, "floating point precision not yet supported: " + STR(GET_TYPE_SIZE(portInst)));
-               }
-               else
-               {
-                  writer->write("$display(\" " + orig_name + " = %d   expected = %d \\n\", " + orig_name + ", ex_" + orig_name + ");\n");
-                  writer->write("if (" + orig_name + " !== " + output_name + ")\n");
-               }
-               writer->write(STR(STD_OPENING_CHAR));
-               writer->write("begin\n");
-               writer->write("success = 0;\n");
-               writer->write(STR(STD_CLOSING_CHAR));
-               writer->write("end\n");
-
-               writer->write("_i_ = _i_ + 1;\n");
-               writer->write("_ch_ = $fgetc(file);\n");
             }
             writer->write(STR(STD_CLOSING_CHAR));
             writer->write("end\n");
 
-            writer->write("else\n");
+            writer->write("if (_ch_ == \"e\")\n");
             writer->write(STR(STD_OPENING_CHAR));
             writer->write("begin\n");
-            {
-               writer->write_comment("skip comments and empty lines\n");
-               writer->write("_r_ = $fgets(line, file);\n");
-               writer->write("_ch_ = $fgetc(file);\n");
-            }
+            writer->write("_r_ = $fgets(line, file);\n");
+            writer->write("_ch_ = $fgetc(file);\n");
+            writer->write(STR(STD_CLOSING_CHAR));
+            writer->write("end\n");
+            writer->write("else\n");
+            writer->write("begin\n");
+            writer->write(STR(STD_OPENING_CHAR));
+            writer->write_comment("error\n");
+            writer->write("$display(\"ERROR - Unknown error while reading the file. Character found: %c\", _ch_[7:0]);\n");
+            writer->write("$fclose(res_file);\n");
+            writer->write("$fclose(file);\n");
+            writer->write("$finish;\n");
             writer->write(STR(STD_CLOSING_CHAR));
             writer->write("end\n");
          }
-         writer->write(STR(STD_CLOSING_CHAR));
-         writer->write("end\n");
+         else if(InterfaceType == port_o::port_interface::PI_RNONE)
+         {
+            writer->write("\n");
+            writer->write_comment("OPTIONAL - skip expected value for " + portInst->get_id() + " --------------------------------------------------------------\n");
 
-         writer->write("if (_ch_ == \"e\")\n");
-         writer->write(STR(STD_OPENING_CHAR));
-         writer->write("begin\n");
-         writer->write("_r_ = $fgets(line, file);\n");
-         writer->write("_ch_ = $fgetc(file);\n");
-         writer->write(STR(STD_CLOSING_CHAR));
-         writer->write("end\n");
-         writer->write("else\n");
-         writer->write("begin\n");
-         writer->write(STR(STD_OPENING_CHAR));
-         writer->write_comment("error\n");
-         writer->write("$display(\"ERROR - Unknown error while reading the file. Character found: %c\", _ch_[7:0]);\n");
-         writer->write("$fclose(res_file);\n");
-         writer->write("$fclose(file);\n");
-         writer->write("$finish;\n");
-         writer->write(STR(STD_CLOSING_CHAR));
-         writer->write("end\n");
+            writer->write("_i_ = 0;\n");
+            writer->write("while (_ch_ == \"/\" || _ch_ == \"\\n\" || _ch_ == \"o\")\n");
+            writer->write(STR(STD_OPENING_CHAR));
+            writer->write("begin\n");
+            {
+               writer->write("if (_ch_ == \"o\")\n");
+               writer->write(STR(STD_OPENING_CHAR));
+               writer->write("begin\n");
+               {
+                  writer->write("compare_outputs = 1;\n");
+                  writer->write("_r_ = $fgets(line, file);\n");
+                  writer->write("_i_ = _i_ + 1;\n");
+                  writer->write("_ch_ = $fgetc(file);\n");
+               }
+               writer->write(STR(STD_CLOSING_CHAR));
+               writer->write("end\n");
+
+               writer->write("else\n");
+               writer->write(STR(STD_OPENING_CHAR));
+               writer->write("begin\n");
+               {
+                  writer->write_comment("skip comments and empty lines\n");
+                  writer->write("_r_ = $fgets(line, file);\n");
+                  writer->write("_ch_ = $fgetc(file);\n");
+               }
+               writer->write(STR(STD_CLOSING_CHAR));
+               writer->write("end\n");
+            }
+            writer->write(STR(STD_CLOSING_CHAR));
+            writer->write("end\n");
+
+            writer->write("if (_ch_ == \"e\")\n");
+            writer->write(STR(STD_OPENING_CHAR));
+            writer->write("begin\n");
+            writer->write("_r_ = $fgets(line, file);\n");
+            writer->write("_ch_ = $fgetc(file);\n");
+            writer->write(STR(STD_CLOSING_CHAR));
+            writer->write("end\n");
+            writer->write("else\n");
+            writer->write("begin\n");
+            writer->write(STR(STD_OPENING_CHAR));
+            writer->write_comment("error\n");
+            writer->write("$display(\"ERROR - Unknown error while reading the file. Character found: %c\", _ch_[7:0]);\n");
+            writer->write("$fclose(res_file);\n");
+            writer->write("$fclose(file);\n");
+            writer->write("$finish;\n");
+            writer->write(STR(STD_CLOSING_CHAR));
+            writer->write("end\n");
+         }
+         else if(InterfaceType == port_o::port_interface::PI_WNONE)
+         {
+            auto orig_name = portInst->get_id();
+            std::string output_name = "ex_" + orig_name;
+            writer->write("\n");
+            writer->write_comment("OPTIONAL - Read a value for " + output_name + " --------------------------------------------------------------\n");
+
+            writer->write("_i_ = 0;\n");
+            writer->write("while (_ch_ == \"/\" || _ch_ == \"\\n\" || _ch_ == \"o\")\n");
+            writer->write(STR(STD_OPENING_CHAR));
+            writer->write("begin\n");
+            {
+               writer->write("if (_ch_ == \"o\")\n");
+               writer->write(STR(STD_OPENING_CHAR));
+               writer->write("begin\n");
+               {
+                  writer->write("compare_outputs = 1;\n");
+                  writer->write("_r_ = $fscanf(file,\"%b\\n\", " + output_name + "); ");
+                  writer->write_comment("expected format: bbb...b (example: 00101110)\n");
+                  writer->write("if (_r_ != 1)\n");
+                  writer->write(STR(STD_OPENING_CHAR));
+                  writer->write("begin\n");
+                  {
+                     writer->write_comment("error\n");
+                     writer->write("$display(\"ERROR - Unknown error while reading the file. Character found: %c\", _ch_[7:0]);\n");
+                     writer->write("$fclose(res_file);\n");
+                     writer->write("$fclose(file);\n");
+                     writer->write("$finish;\n");
+                  }
+                  writer->write(STR(STD_CLOSING_CHAR));
+                  writer->write("end\n");
+                  writer->write("else\n");
+                  writer->write(STR(STD_OPENING_CHAR));
+                  writer->write("begin\n");
+                  {
+                     if(output_level > OUTPUT_LEVEL_MINIMUM) writer->write("$display(\"Value found for output " + output_name + ": %b\", " + output_name + ");\n");
+                  }
+                  writer->write(STR(STD_CLOSING_CHAR));
+                  writer->write("end\n");
+
+                  if(portInst->get_typeRef()->type == structural_type_descriptor::REAL)
+                  {
+                     if(GET_TYPE_SIZE(portInst) == 32)
+                     {
+                        writer->write("$display(\" " + orig_name + " = %20.20f   expected = %20.20f \", bits32_to_real64(" + orig_name + "), bits32_to_real64(" + output_name + "));\n");
+                        writer->write("$display(\" FP error %f \\n\", compute_ulp32(" + orig_name + ", " + output_name + "));\n");
+                        writer->write("if (compute_ulp32(" + orig_name + ", " + output_name + ") > " + STR(parameters->getOption<double>(OPT_max_ulp)) + ")\n");
+                     }
+                     else if(GET_TYPE_SIZE(portInst) == 64)
+                     {
+                        writer->write("$display(\" " + orig_name + " = %20.20f   expected = %20.20f \", $bitstoreal(" + orig_name + "), $bitstoreal(ex_" + orig_name + "));\n");
+                        writer->write("$display(\" FP error %f \\n\", compute_ulp64(" + orig_name + ", " + output_name + "));\n");
+                        writer->write("if (compute_ulp64(" + orig_name + ", " + output_name + ") > " + STR(parameters->getOption<double>(OPT_max_ulp)) + ")\n");
+                     }
+                     else
+                        THROW_ERROR_CODE(NODE_NOT_YET_SUPPORTED_EC, "floating point precision not yet supported: " + STR(GET_TYPE_SIZE(portInst)));
+                  }
+                  else
+                  {
+                     writer->write("$display(\" " + orig_name + " = %d   expected = %d \\n\", " + orig_name + ", ex_" + orig_name + ");\n");
+                     writer->write("if (" + orig_name + " !== " + output_name + ")\n");
+                  }
+                  writer->write(STR(STD_OPENING_CHAR));
+                  writer->write("begin\n");
+                  writer->write("success = 0;\n");
+                  writer->write(STR(STD_CLOSING_CHAR));
+                  writer->write("end\n");
+
+                  writer->write("_i_ = _i_ + 1;\n");
+                  writer->write("_ch_ = $fgetc(file);\n");
+               }
+               writer->write(STR(STD_CLOSING_CHAR));
+               writer->write("end\n");
+
+               writer->write("else\n");
+               writer->write(STR(STD_OPENING_CHAR));
+               writer->write("begin\n");
+               {
+                  writer->write_comment("skip comments and empty lines\n");
+                  writer->write("_r_ = $fgets(line, file);\n");
+                  writer->write("_ch_ = $fgetc(file);\n");
+               }
+               writer->write(STR(STD_CLOSING_CHAR));
+               writer->write("end\n");
+            }
+            writer->write(STR(STD_CLOSING_CHAR));
+            writer->write("end\n");
+
+            writer->write("if (_ch_ == \"e\")\n");
+            writer->write(STR(STD_OPENING_CHAR));
+            writer->write("begin\n");
+            writer->write("_r_ = $fgets(line, file);\n");
+            writer->write("_ch_ = $fgetc(file);\n");
+            writer->write(STR(STD_CLOSING_CHAR));
+            writer->write("end\n");
+            writer->write("else\n");
+            writer->write("begin\n");
+            writer->write(STR(STD_OPENING_CHAR));
+            writer->write_comment("error\n");
+            writer->write("$display(\"ERROR - Unknown error while reading the file. Character found: %c\", _ch_[7:0]);\n");
+            writer->write("$fclose(res_file);\n");
+            writer->write("$fclose(file);\n");
+            writer->write("$finish;\n");
+            writer->write(STR(STD_CLOSING_CHAR));
+            writer->write("end\n");
+         }
+         else
+            THROW_ERROR("not supported port interface type");
       }
-      else
-         THROW_ERROR("not supported port interface type");
+   }
+   else if(interface_type == HLSFlowStep_Type::WB4_INTERFACE_GENERATION)
+   {
+      const auto top_functions = HLSMgr->CGetCallGraphManager()->GetRootFunctions();
+      THROW_ASSERT(top_functions.size() == 1, "");
+      const unsigned int topFunctionId = *(top_functions.begin());
+      const BehavioralHelperConstRef behavioral_helper = HLSMgr->CGetFunctionBehavior(topFunctionId)->CGetBehavioralHelper();
+      const memoryRef mem = HLSMgr->Rmem;
+      const std::map<unsigned int, memory_symbolRef>& function_parameters = mem->get_function_parameters(topFunctionId);
+      for(auto const& function_parameter : function_parameters)
+      {
+         unsigned int var = function_parameter.first;
+         if (tree_helper::is_a_pointer(TreeM, var) && var != behavioral_helper->GetFunctionReturnType(topFunctionId))
+         {
+            std::string variableName = behavioral_helper->PrintVariable(var);
+            std::string port_name = HDL_manager::convert_to_identifier(writer.get(), variableName);
+            std::string output_name = "ex_" + variableName;
+            unsigned int pt_type_index = tree_helper::get_pointed_type(TreeM, tree_helper::get_type_index(TreeM,var));
+            tree_nodeRef pt_node = TreeM->get_tree_node_const(pt_type_index);
+            if(GetPointer<array_type>(pt_node))
+            {
+               while(GetPointer<array_type>(pt_node))
+               {
+                  pt_type_index = GET_INDEX_NODE(GetPointer<array_type>(pt_node)->elts);
+                  pt_node = GET_NODE(GetPointer<array_type>(pt_node)->elts);
+               }
+            }
+            long long int bitsize = tree_helper::size(TreeM, pt_type_index);
+            bool is_real = tree_helper::is_real(TreeM, pt_type_index);
+
+            writer->write("\n");
+            writer->write_comment("OPTIONAL - Read a value for " + output_name + " --------------------------------------------------------------\n");
+
+            writer->write("_i_ = 0;\n");
+                        writer->write("while (_ch_ == \"/\" || _ch_ == \"\\n\" || _ch_ == \"o\")\n");
+                        writer->write(STR(STD_OPENING_CHAR));
+                        writer->write("begin\n");
+                        {
+                           writer->write("if (_ch_ == \"o\")\n");
+                           writer->write(STR(STD_OPENING_CHAR));
+                           writer->write("begin\n");
+                           {
+                              writer->write("compare_outputs = 1;\n");
+                              writer->write("_r_ = $fscanf(file,\"%b\\n\", " + output_name + "); ");
+                              writer->write_comment("expected format: bbb...b (example: 00101110)\n");
+
+                              writer->write("if (_r_ != 1)\n");
+                              writer->write(STR(STD_OPENING_CHAR));
+                              writer->write("begin\n");
+                              {
+                                 writer->write_comment("error\n");
+                                 writer->write("$display(\"ERROR - Unknown error while reading the file. Character found: %c\", _ch_[7:0]);\n");
+                                 writer->write("$fclose(res_file);\n");
+                                 writer->write("$fclose(file);\n");
+                                 writer->write("$finish;\n");
+                              }
+                              writer->write(STR(STD_CLOSING_CHAR));
+                              writer->write("end\n");
+                              writer->write("else\n");
+                              writer->write(STR(STD_OPENING_CHAR));
+                              writer->write("begin\n");
+                              {
+                                 if(output_level > OUTPUT_LEVEL_MINIMUM) writer->write("$display(\"Value found for output " + output_name + ": %b\", " + output_name + ");\n");
+                              }
+                              writer->write(STR(STD_CLOSING_CHAR));
+                              writer->write("end\n");
+
+                              size_t escaped_pos = port_name.find('\\');
+                              std::string nonescaped_name = port_name;
+                              if(escaped_pos != std::string::npos) nonescaped_name.erase(std::remove(nonescaped_name.begin(), nonescaped_name.end(), '\\'), nonescaped_name.end());
+                              if(is_real)
+                              {
+                                 if(output_level > OUTPUT_LEVEL_MINIMUM)
+                                 {
+                                    writer->write("$display(\" res = %b " + nonescaped_name +
+                                                  " = %d "
+                                                  " _bambu_testbench_mem_[" +
+                                                  nonescaped_name + " + %d - base_addr] = %20.20f  expected = %20.20f \", ");
+                                    writer->write("{");
+                                    for(unsigned int bitsize_index = 0; bitsize_index < bitsize; bitsize_index = bitsize_index + 8)
+                                    {
+                                       if(bitsize_index) writer->write(", ");
+                                       writer->write("_bambu_testbench_mem_[" + port_name + " + _i_*" + boost::lexical_cast<std::string>(bitsize / 8) + " + " + boost::lexical_cast<std::string>((bitsize - bitsize_index) / 8 - 1) + " - base_addr]");
+                                    }
+                                    writer->write("} == " + output_name + ", ");
+                                    writer->write(port_name + ", _i_*" + boost::lexical_cast<std::string>(bitsize / 8) + ", " + (bitsize == 32 ? "bits32_to_real64" : "$bitstoreal") + "({");
+                                    for(unsigned int bitsize_index = 0; bitsize_index < bitsize; bitsize_index = bitsize_index + 8)
+                                    {
+                                       if(bitsize_index) writer->write(", ");
+                                       writer->write("_bambu_testbench_mem_[" + port_name + " + _i_*" + boost::lexical_cast<std::string>(bitsize / 8) + " + " + boost::lexical_cast<std::string>((bitsize - bitsize_index) / 8 - 1) + " - base_addr]");
+                                    }
+                                    writer->write(std::string("}), ") + (bitsize == 32 ? "bits32_to_real64" : "$bitstoreal") + "(" + output_name + "));\n");
+                                 }
+                                 if(bitsize == 32 || bitsize == 64)
+                                 {
+                                    if(output_level > OUTPUT_LEVEL_MINIMUM)
+                                    {
+                                       writer->write("$display(\" FP error %f \\n\", compute_ulp" + (bitsize == 32 ? STR(32) : STR(64)) + "({");
+                                       for(unsigned int bitsize_index = 0; bitsize_index < bitsize; bitsize_index = bitsize_index + 8)
+                                       {
+                                          if(bitsize_index) writer->write(", ");
+                                          writer->write("_bambu_testbench_mem_[" + port_name + " + _i_*" + boost::lexical_cast<std::string>(bitsize / 8) + " + " + boost::lexical_cast<std::string>((bitsize - bitsize_index) / 8 - 1) + " - base_addr]");
+                                       }
+                                       writer->write("}, " + output_name);
+                                       writer->write("));\n");
+                                    }
+                                    writer->write("if (compute_ulp" + (bitsize == 32 ? STR(32) : STR(64)) + "({");
+                                    for(unsigned int bitsize_index = 0; bitsize_index < bitsize; bitsize_index = bitsize_index + 8)
+                                    {
+                                       if(bitsize_index) writer->write(", ");
+                                       writer->write("_bambu_testbench_mem_[" + port_name + " + _i_*" + boost::lexical_cast<std::string>(bitsize / 8) + " + " + boost::lexical_cast<std::string>((bitsize - bitsize_index) / 8 - 1) + " - base_addr]");
+                                    }
+                                    writer->write("}, " + output_name);
+                                    writer->write(") > " + STR(parameters->getOption<double>(OPT_max_ulp)) + ")\n");
+                                 }
+                                 else
+                                    THROW_ERROR_CODE(NODE_NOT_YET_SUPPORTED_EC, "floating point precision not yet supported: " + STR(bitsize));
+                              }
+                              else
+                              {
+                                 long long int bytesize = bitsize / 8;
+                                 if (output_level > OUTPUT_LEVEL_MINIMUM)
+                                 {
+                                    writer->write("$display(\" res = %b " + nonescaped_name +
+                                                  " = %d "
+                                                  " _bambu_testbench_mem_[" +
+                                                  nonescaped_name + " + %d - base_addr] = %d  expected = %d \\n\", ");
+                                    writer->write("{");
+                                    for(unsigned int index = 0; index < bytesize; ++index)
+                                    {
+                                       if(index) writer->write(", ");
+                                       writer->write("_bambu_testbench_mem_[(" + port_name + " - base_addr) + _i_*" + boost::lexical_cast<std::string>(bytesize) + " + "
+                                               + boost::lexical_cast<std::string>(bytesize - index - 1) +"]");
+                                    }
+                                    writer->write("} == " + output_name + ", ");
+                                    writer->write(port_name + ", _i_*" + boost::lexical_cast<std::string>(bitsize / 8) + ", {");
+                                    for(unsigned int index = 0; index < bytesize; ++index)
+                                    {
+                                       if(index) writer->write(", ");
+                                       writer->write("_bambu_testbench_mem_[(" + port_name + " - base_addr) + _i_*" + boost::lexical_cast<std::string>(bytesize) + " + "
+                                               + boost::lexical_cast<std::string>(bytesize - index - 1) + "]");
+                                    }
+                                    writer->write("}, " + output_name + ");\n");
+                                 }
+                                 writer->write("if ({");
+                                 for(unsigned int index=0; index < bytesize; ++index)
+                                 {
+                                    if(index) writer->write(", ");
+                                    writer->write("_bambu_testbench_mem_[(" + port_name + " - base_addr) + _i_*" + boost::lexical_cast<std::string>(bytesize) + " + "
+                                            + boost::lexical_cast<std::string>(bytesize - index - 1) + "]");
+                                 }
+                                 writer->write("} !== " + output_name);
+                                 writer->write(")\n");
+                              }
+                              writer->write(STR(STD_OPENING_CHAR));
+                              writer->write("begin\n");
+                              writer->write("success = 0;\n");
+                              writer->write(STR(STD_CLOSING_CHAR));
+                              writer->write("end\n");
+
+                              writer->write("_i_ = _i_ + 1;\n");
+                              writer->write("_ch_ = $fgetc(file);\n");
+                           }
+                           writer->write(STR(STD_CLOSING_CHAR));
+                           writer->write("end\n");
+
+                           writer->write("else\n");
+                           writer->write(STR(STD_OPENING_CHAR));
+                           writer->write("begin\n");
+                           {
+                              writer->write_comment("skip comments and empty lines\n");
+                              writer->write("_r_ = $fgets(line, file);\n");
+                              writer->write("_ch_ = $fgetc(file);\n");
+                           }
+                           writer->write(STR(STD_CLOSING_CHAR));
+                           writer->write("end\n");
+                        }
+                        writer->write(STR(STD_CLOSING_CHAR));
+                        writer->write("end\n");
+
+                        writer->write("if (_ch_ == \"e\")\n");
+                        writer->write(STR(STD_OPENING_CHAR));
+                        writer->write("begin\n");
+                        writer->write("_r_ = $fgets(line, file);\n");
+                        writer->write("_ch_ = $fgetc(file);\n");
+                        writer->write(STR(STD_CLOSING_CHAR));
+                        writer->write("end\n");
+                        writer->write("else\n");
+                        writer->write("begin\n");
+                        writer->write(STR(STD_OPENING_CHAR));
+                        writer->write_comment("error\n");
+                        writer->write("$display(\"ERROR - Unknown error while reading the file. Character found: %c\", _ch_[7:0]);\n");
+                        writer->write("$fclose(res_file);\n");
+                        writer->write("$fclose(file);\n");
+                        writer->write("$finish;\n");
+                        writer->write(STR(STD_CLOSING_CHAR));
+                        writer->write("end\n");
+         }
+      }
    }
 
 
@@ -1351,28 +1554,31 @@ void TestbenchGenerationBaseStep::write_auxiliary_signal_declaration() const
    writer->write("reg [8*`MAX_COMMENT_LENGTH:0] line; // Comment line read from file\n\n");
 
    writer->write("reg [31:0] addr, base_addr;\n");
-   const auto& DesignSignature=HLSMgr->RSim->simulationArgSignature;
-   bool writeP=false;
-   for(auto par: DesignSignature)
+   if(!HLSMgr->design_interface.empty())
    {
-      auto portInst = mod->find_member(par, port_o_K, cir);
-      if(!portInst)
+      const auto& DesignSignature=HLSMgr->RSim->simulationArgSignature;
+      bool writeP=false;
+      for(auto par: DesignSignature)
       {
-         portInst = mod->find_member(par+"_i", port_o_K, cir);
+         auto portInst = mod->find_member(par, port_o_K, cir);
+         if(!portInst)
+         {
+            portInst = mod->find_member(par+"_i", port_o_K, cir);
+            THROW_ASSERT(portInst, "unexpected condition");
+            THROW_ASSERT(GetPointer<port_o>(portInst)->get_port_interface() != port_o::port_interface::PI_DEFAULT, "unexpected condition");
+         }
          THROW_ASSERT(portInst, "unexpected condition");
-         THROW_ASSERT(GetPointer<port_o>(portInst)->get_port_interface() != port_o::port_interface::PI_DEFAULT, "unexpected condition");
+         auto InterfaceType = GetPointer<port_o>(portInst)->get_port_interface();
+         std::string input_name = HDL_manager::convert_to_identifier(writer.get(), portInst->get_id());
+         if(InterfaceType == port_o::port_interface::PI_RNONE || InterfaceType == port_o::port_interface::PI_WNONE)
+         {
+            writer->write("reg [31:0] paddr"+input_name+";\n");
+            writeP=true;
+         }
       }
-      THROW_ASSERT(portInst, "unexpected condition");
-      auto InterfaceType = GetPointer<port_o>(portInst)->get_port_interface();
-      std::string input_name = HDL_manager::convert_to_identifier(writer.get(), portInst->get_id());
-      if(InterfaceType == port_o::port_interface::PI_RNONE || InterfaceType == port_o::port_interface::PI_WNONE)
-      {
-         writer->write("reg [31:0] paddr"+input_name+";\n");
-         writeP=true;
-      }
+      if(writeP)
+         writer->write("\n");
    }
-   if(writeP)
-      writer->write("\n");
    writer->write("reg signed [7:0] _bambu_testbench_mem_ [0:MEMSIZE-1];\n\n");
    writer->write("reg signed [7:0] _bambu_databyte_;\n\n");
    writer->write("reg [3:0] __state, __next_state;\n");

@@ -515,7 +515,7 @@ void WishboneInterfaceTestbench::write_signals(const tree_managerConstRef TreeM,
    const BehavioralHelperConstRef behavioral_helper = HLSMgr->CGetFunctionBehavior(topFunctionId)->CGetBehavioralHelper();
    const memoryRef mem = HLSMgr->Rmem;
    const std::map<unsigned int, memory_symbolRef>& function_parameters = mem->get_function_parameters(topFunctionId);
-   for(auto const function_parameter : function_parameters)
+   for(auto const& function_parameter : function_parameters)
    {
       unsigned int var = function_parameter.first;
       std::string variableName = (var == behavioral_helper->GetFunctionReturnType(topFunctionId)) ? RETURN_PORT_NAME : behavioral_helper->PrintVariable(var);
