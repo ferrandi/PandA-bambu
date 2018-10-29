@@ -202,7 +202,7 @@ void interface_infer::classifyArgRecurse(std::set<unsigned>&Visited, ssa_name*ar
             canBeMovedToBB2 = false;
             THROW_WARNING("Pattern currently not supported: parameter passed as a parameter to another function " + use_stmt->ToString());
          }
-         else if(GET_NODE(ga->op1)->get_kind() == nop_expr_K || GET_NODE(ga->op1)->get_kind() == ssa_name_K)
+         else if(GET_NODE(ga->op1)->get_kind() == nop_expr_K || GET_NODE(ga->op1)->get_kind() == ssa_name_K || GET_NODE(ga->op1)->get_kind() == pointer_plus_expr_K)
          {
             canBeMovedToBB2 = false;
             auto op0SSA = GetPointer<ssa_name>(GET_NODE(ga->op0));
