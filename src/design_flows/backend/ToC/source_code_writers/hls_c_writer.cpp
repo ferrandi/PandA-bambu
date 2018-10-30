@@ -183,7 +183,13 @@ void HLSCWriter::WriteTestbenchHelperFunctions()
    indented_output_stream->Append("{\n");
    indented_output_stream->Append("unsigned int i, j;\n");
    indented_output_stream->Append("char value;\n");
-   indented_output_stream->Append("for (i = 0; i < precision; i = i + 8)\n");
+   indented_output_stream->Append("if (precision%8)\n");
+   indented_output_stream->Append("{\n");
+   indented_output_stream->Append("value = *(num+precision/8);\n");
+   indented_output_stream->Append("for (j = 0; j < precision%8; ++j)\n");
+   indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"%c\", (((1LLU << (8 - j - 1)) & value) ? '1' : '0'));\n");
+   indented_output_stream->Append("}\n");
+   indented_output_stream->Append("for (i = 0; i < 8*(precision/8); i = i + 8)\n");
    indented_output_stream->Append("{\n");
    indented_output_stream->Append("value = *(num + (precision / 8) - (i / 8) - 1);\n");
    indented_output_stream->Append("for (j = 0; j < 8; ++j)\n");
@@ -636,25 +642,41 @@ void HLSCWriter::WriteExpectedResults(const BehavioralHelperConstRef behavioral_
          }
          else
             THROW_ERROR("A pointer type is expected");
+         unsigned int base_type_bitsize = tree_helper::size(TM, base_type);
          if(hasInterface)
          {
             auto argTypename = DesignInterfaceTypename.find(fname)->second.find(param)->second;
             if((*argTypename.rbegin())!='*')
                reference_type_p=true;
+            auto acTypeBw=ac_type_bitwidth(argTypename);
+            if(acTypeBw)
+               base_type_bitsize=acTypeBw;
          }
 
-         unsigned int base_type_bitsize = tree_helper::size(TM, base_type);
-
-         if(!reference_type_p && (behavioral_helper->is_real(base_type) || behavioral_helper->is_a_struct(base_type) || behavioral_helper->is_an_union(base_type)))
+         if((behavioral_helper->is_real(base_type) || behavioral_helper->is_a_struct(base_type) || behavioral_helper->is_an_union(base_type)))
          {
-            indented_output_stream->Append("for (__testbench_index2 = 0; __testbench_index2 < " + STR(splitted.size()) + "; ++__testbench_index2)\n{\n");
-            if(output_level > OUTPUT_LEVEL_MINIMUM)
-               indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"//expected value for output " + param + "[__testbench_index2]: %" + (behavioral_helper->is_real(base_type) ? std::string("g") : std::string("d")) + "\\n\", " + param +
-                                              "[__testbench_index2]);\n");
-            indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"o\");\n");
-            indented_output_stream->Append("_Ptd2Bin_(__bambu_testbench_fp, (unsigned char*)&" + param + "[__testbench_index2], " + STR(base_type_bitsize) + ");\n");
-            indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"\\n\");\n");
-            indented_output_stream->Append("}\n");
+            if(splitted.size() == 1 && flag_cpp && reference_type_p)
+            {
+
+               indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"//expected value for output " + param + ": %" + (behavioral_helper->is_real(base_type) ? std::string("g") : std::string("d")) + "\\n\", " + param +
+                                              ");\n");
+               indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"o\");\n");
+               indented_output_stream->Append("_Ptd2Bin_(__bambu_testbench_fp, (unsigned char*)&" + param + ", " + STR(base_type_bitsize) + ");\n");
+               indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"\\n\");\n");
+            }
+            else
+            {
+               indented_output_stream->Append("for (__testbench_index2 = 0; __testbench_index2 < " + STR(splitted.size()) + "; ++__testbench_index2)\n{\n");
+               if(output_level > OUTPUT_LEVEL_MINIMUM)
+               {
+                  indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"//expected value for output " + param + "[__testbench_index2]: %" + (behavioral_helper->is_real(base_type) ? std::string("g") : std::string("d")) + "\\n\", " + param +
+                                                 "[__testbench_index2]);\n");
+               }
+               indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"o\");\n");
+               indented_output_stream->Append("_Ptd2Bin_(__bambu_testbench_fp, (unsigned char*)&" + param + "[__testbench_index2], " + STR(base_type_bitsize) + ");\n");
+               indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"\\n\");\n");
+               indented_output_stream->Append("}\n");
+            }
          }
          else if(!reference_type_p && behavioral_helper->is_an_array(base_type))
          {
@@ -1090,7 +1112,13 @@ std::string HLSCWriter::convert_in_binary(const BehavioralHelperConstRef behavio
       }
       auto ull_value = static_cast<unsigned long long int>(ll_value);
       trimmed_value = "";
-      for(unsigned int ind = 0; ind < precision; ind++) trimmed_value = trimmed_value + (((1LLU << (precision - ind - 1)) & ull_value) ? '1' : '0');
+      if(precision<=64)
+         for(unsigned int ind = 0; ind < precision; ind++) trimmed_value = trimmed_value + (((1LLU << (precision - ind - 1)) & ull_value) ? '1' : '0');
+      else
+      {
+         for(unsigned int ind = 0; ind < (precision-64); ind++) trimmed_value = trimmed_value + '0';
+         for(unsigned int ind = 0; ind < 64; ind++) trimmed_value = trimmed_value + (((1LLU << (64 - ind - 1)) & ull_value) ? '1' : '0');
+      }
    }
    return trimmed_value;
 }

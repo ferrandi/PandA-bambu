@@ -34,7 +34,8 @@
  * @file string_manipulation.hpp
  * @brief Auxiliary methods for manipulating string
  *
- * @author Marco Lattuada <lattuada@elet.polimi.it>
+ * @author Marco Lattuada <marco.lattuada@polimi.it>
+ * @author Fabrizio Ferrandi <fabrizio,ferrandi@polimi.it>
  * $Revision$
  * $Date$
  * Last modified by $Author$
@@ -268,5 +269,46 @@ inline std::string convert_fp_to_string(std::string num, unsigned int precision)
  */
 #define GET_CLASS(obj) string_demangle(typeid(obj).name())
 
+inline unsigned int ac_type_bitwidth(const std::string interfaceTypename)
+{
+   unsigned int inputBitWidth = 0;
+   if(interfaceTypename.find("ac_int<") == 0)
+   {
+      auto subtypeArg=interfaceTypename.substr(std::string("ac_int<").size());
+      auto sizeString = subtypeArg.substr(0,subtypeArg.find_first_of(",> "));
+      inputBitWidth=boost::lexical_cast<unsigned>(sizeString);
+   }
+   else if(interfaceTypename.find("ac_fixed<") == 0)
+   {
+      auto subtypeArg=interfaceTypename.substr(std::string("ac_fixed<").size());
+      auto sizeString = subtypeArg.substr(0,subtypeArg.find_first_of(",> "));
+      inputBitWidth=boost::lexical_cast<unsigned>(sizeString);
+   }
+   else if(interfaceTypename.find("ap_int<") == 0)
+   {
+      auto subtypeArg=interfaceTypename.substr(std::string("ap_int<").size());
+      auto sizeString = subtypeArg.substr(0,subtypeArg.find_first_of(",> "));
+      inputBitWidth=boost::lexical_cast<unsigned>(sizeString);
+   }
+   else if(interfaceTypename.find("ap_uint<") == 0)
+   {
+      auto subtypeArg=interfaceTypename.substr(std::string("ap_uint<").size());
+      auto sizeString = subtypeArg.substr(0,subtypeArg.find_first_of(",> "));
+      inputBitWidth=boost::lexical_cast<unsigned>(sizeString);
+   }
+   else if(interfaceTypename.find("ap_fixed<") == 0)
+   {
+      auto subtypeArg=interfaceTypename.substr(std::string("ap_fixed<").size());
+      auto sizeString = subtypeArg.substr(0,subtypeArg.find_first_of(",> "));
+      inputBitWidth=boost::lexical_cast<unsigned>(sizeString);
+   }
+   else if(interfaceTypename.find("ap_ufixed<") == 0)
+   {
+      auto subtypeArg=interfaceTypename.substr(std::string("ap_ufixed<").size());
+      auto sizeString = subtypeArg.substr(0,subtypeArg.find_first_of(",> "));
+      inputBitWidth=boost::lexical_cast<unsigned>(sizeString);
+   }
+   return inputBitWidth;
+}
 
 #endif

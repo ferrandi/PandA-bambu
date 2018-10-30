@@ -226,7 +226,7 @@ std::string moduleGenerator::GenerateHDL(const module* mod, const std::string& h
       cpp_code_body += "   _ports_in["+STR(i)+"].name = \""+port_in->get_id()+"\";\n";
       cpp_code_body += "   _ports_in["+STR(i)+"].type = \""+port_in->get_typeRef()->get_name()+"\";\n";
       unsigned int dataSize = port_in->get_typeRef()->vector_size !=0 ? port_in->get_typeRef()->vector_size : port_in->get_typeRef()->size;
-      cpp_code_body += "   _ports_in["+STR(i)+"].type_size = "+ STR(resize_to_8_or_greater(dataSize)) +";\n";
+      cpp_code_body += "   _ports_in["+STR(i)+"].type_size = "+ STR(dataSize) +";\n";
    }
    for(unsigned int i = 0; i < mod->get_out_port_size(); ++i)
    {
@@ -234,7 +234,7 @@ std::string moduleGenerator::GenerateHDL(const module* mod, const std::string& h
       cpp_code_body += "   _ports_out["+STR(i)+"].name = \""+port_out->get_id()+"\";\n";
       cpp_code_body += "   _ports_out["+STR(i)+"].type = \""+port_out->get_typeRef()->get_name()+"\";\n";
       unsigned int dataSize = port_out->get_typeRef()->vector_size !=0 ? port_out->get_typeRef()->vector_size : port_out->get_typeRef()->size;
-      cpp_code_body += "   _ports_out["+STR(i)+"].type_size = "+ STR(resize_to_8_or_greater(dataSize)) +";\n";
+      cpp_code_body += "   _ports_out["+STR(i)+"].type_size = "+ STR(dataSize) +";\n";
    }
    for(unsigned int i = 0; i < mod->get_in_out_port_size(); ++i)
    {
@@ -242,7 +242,7 @@ std::string moduleGenerator::GenerateHDL(const module* mod, const std::string& h
       cpp_code_body += "   _ports_inout["+STR(i)+"].name = \""+port_inout->get_id()+"\";\n";
       cpp_code_body += "   _ports_inout["+STR(i)+"].type = \""+port_inout->get_typeRef()->get_name()+"\";\n";
       unsigned int dataSize = port_inout->get_typeRef()->vector_size !=0 ? port_inout->get_typeRef()->vector_size : port_inout->get_typeRef()->size;
-      cpp_code_body += "   _ports_inout["+STR(i)+"].type_size = "+ STR(resize_to_8_or_greater(dataSize)) +";\n";
+      cpp_code_body += "   _ports_inout["+STR(i)+"].type_size = "+ STR(dataSize) +";\n";
    }
 
    cpp_code_body += "std::string data_bus_bitsize = \"" + STR(HLSMgr->Rmem->get_bus_data_bitsize()) + "\";\n";

@@ -1003,7 +1003,10 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
                   }
                   else
                   {
-                     writer->write("$display(\" " + orig_name + " = %d   expected = %d \\n\", " + orig_name + ", ex_" + orig_name + ");\n");
+                     if(GET_TYPE_SIZE(portInst) > 64)
+                        writer->write("$display(\" " + orig_name + " = %x   expected = %x \\n\", " + orig_name + ", ex_" + orig_name + ");\n");
+                     else
+                        writer->write("$display(\" " + orig_name + " = %d   expected = %d \\n\", " + orig_name + ", ex_" + orig_name + ");\n");
                      writer->write("if (" + orig_name + " !== " + output_name + ")\n");
                   }
                   writer->write(STR(STD_OPENING_CHAR));

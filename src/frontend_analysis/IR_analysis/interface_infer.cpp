@@ -374,7 +374,7 @@ void interface_infer::create_resource_Read_none(std::vector<std::string> & opera
    }
 }
 
-void interface_infer::create_resource_Write_none(std::vector<std::string> & operations, const std::string& argName_string, const std::string &interfaceType, unsigned int inputBitWidth, bool IO_port)
+void interface_infer::create_resource_Write_none(std::vector<std::string> & operations, const std::string& argName_string, const std::string &interfaceType, unsigned int inputBitWidth, bool IO_port, bool isDiffSize)
 {
    const std::string ResourceName = ENCODE_FDNAME(argName_string,"_Write_",interfaceType);
    auto HLSMgr = GetPointer<HLS_manager>(AppM);
@@ -399,6 +399,13 @@ void interface_infer::create_resource_Write_none(std::vector<std::string> & oper
       structural_type_descriptorRef Intype = structural_type_descriptorRef(new structural_type_descriptor("bool", inputBitWidth));
       structural_type_descriptorRef rwsize = structural_type_descriptorRef(new structural_type_descriptor("bool", 1));
       structural_type_descriptorRef rwtype = structural_type_descriptorRef(new structural_type_descriptor("bool", 1));
+      if(isDiffSize)
+      {
+         structural_type_descriptorRef bool_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 0));
+         CM->add_port(CLOCK_PORT_NAME, port_o::IN, interface_top, bool_type);
+         CM->add_port(RESET_PORT_NAME, port_o::IN, interface_top, bool_type);
+         CM->add_port(START_PORT_NAME, port_o::IN, interface_top, bool_type);
+      }
       auto rwPort = CM->add_port("in1", port_o::IN, interface_top, rwsize);
       auto writePort = CM->add_port("in2", port_o::IN, interface_top, rwtype);
       auto addrPort = CM->add_port("in3", port_o::IN, interface_top, word_bool_type);
@@ -408,7 +415,7 @@ void interface_infer::create_resource_Write_none(std::vector<std::string> & oper
       GetPointer<port_o>(inPort_o)->set_port_interface(port_o::port_interface::PI_WNONE);
 
       CM->add_NP_functionality(interface_top, NP_functionality::LIBRARY, "in1 in2");
-      CM->add_NP_functionality(interface_top, NP_functionality::VERILOG_GENERATOR, "Write_" + interfaceType + ".cpp");
+      CM->add_NP_functionality(interface_top, NP_functionality::VERILOG_GENERATOR, "Write_" + interfaceType + (isDiffSize?"DS":"") +".cpp");
       TechMan->add_resource(INTERFACE_LIBRARY, ResourceName, CM);
       for(auto fdName: operations)
          TechMan->add_operation(INTERFACE_LIBRARY, ResourceName, fdName);
@@ -416,15 +423,22 @@ void interface_infer::create_resource_Write_none(std::vector<std::string> & oper
       const target_deviceRef device = HLS_T->get_target_device();
       fu->area_m = area_model::create_model(device->get_type(), parameters);
       fu->area_m->set_area_value(0);
-      fu->logical_type = functional_unit::COMBINATIONAL;
+      if(!isDiffSize)
+         fu->logical_type = functional_unit::COMBINATIONAL;
 
       for(auto fdName: operations)
       {
          auto* op = GetPointer<operation>(fu->get_operation(fdName));
          op->time_m = time_model::create_model(device->get_type(), parameters);
          op->bounded = true;
-         op->time_m->set_execution_time(EPSILON, 0);
-         op->time_m->set_stage_period(0.0);
+         op->time_m->set_execution_time(EPSILON, isDiffSize?2:0);
+         if(isDiffSize)
+         {
+            op->time_m->set_stage_period(HLS_T->get_technology_manager()->CGetSetupHoldTime()+EPSILON);
+            op->time_m->set_initiation_time(ControlStep(1));
+         }
+         else
+            op->time_m->set_stage_period(0.0);
          op->time_m->set_synthesis_dependent(true);
       }
       /// add constraint on resource
@@ -432,7 +446,7 @@ void interface_infer::create_resource_Write_none(std::vector<std::string> & oper
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Interface resource created: ");
    }
 }
-void interface_infer::create_resource(std::vector<std::string> & operationsR, std::vector<std::string> & operationsW, const std::string& argName_string, const std::string &interfaceType, unsigned int inputBitWidth)
+void interface_infer::create_resource(std::vector<std::string> & operationsR, std::vector<std::string> & operationsW, const std::string& argName_string, const std::string &interfaceType, unsigned int inputBitWidth, bool isDiffSize)
 {
    if(interfaceType=="none")
    {
@@ -441,7 +455,7 @@ void interface_infer::create_resource(std::vector<std::string> & operationsR, st
       if(!operationsR.empty())
          create_resource_Read_none(operationsR, argName_string, interfaceType, inputBitWidth, IO_P);
       if(!operationsW.empty())
-            create_resource_Write_none(operationsW, argName_string, interfaceType, inputBitWidth, IO_P);
+            create_resource_Write_none(operationsW, argName_string, interfaceType, inputBitWidth, IO_P, isDiffSize);
    }
    else
       THROW_ERROR("interface not supported: " + interfaceType);
@@ -620,42 +634,9 @@ DesignFlowStep_Status interface_infer::InternalExec()
                      std::cerr << "is a pointer\n";
                      std::cerr << "list of statement that use this parameter\n";
                      auto inputBitWidth = tree_helper::size(TM, tree_helper::get_pointed_type(TM, GET_INDEX_NODE(a->type)));
-                     if(interfaceTypename.find("ac_int<") == 0)
-                     {
-                        auto subtypeArg=interfaceTypename.substr(std::string("ac_int<").size());
-                        auto sizeString = subtypeArg.substr(0,subtypeArg.find_first_of(",> "));
-                        inputBitWidth=boost::lexical_cast<unsigned>(sizeString);
-                     }
-                     else if(interfaceTypename.find("ac_fixed<") == 0)
-                     {
-                        auto subtypeArg=interfaceTypename.substr(std::string("ac_fixed<").size());
-                        auto sizeString = subtypeArg.substr(0,subtypeArg.find_first_of(",> "));
-                        inputBitWidth=boost::lexical_cast<unsigned>(sizeString);
-                     }
-                     else if(interfaceTypename.find("ap_int<") == 0)
-                     {
-                        auto subtypeArg=interfaceTypename.substr(std::string("ap_int<").size());
-                        auto sizeString = subtypeArg.substr(0,subtypeArg.find_first_of(",> "));
-                        inputBitWidth=boost::lexical_cast<unsigned>(sizeString);
-                     }
-                     else if(interfaceTypename.find("ap_uint<") == 0)
-                     {
-                        auto subtypeArg=interfaceTypename.substr(std::string("ap_uint<").size());
-                        auto sizeString = subtypeArg.substr(0,subtypeArg.find_first_of(",> "));
-                        inputBitWidth=boost::lexical_cast<unsigned>(sizeString);
-                     }
-                     else if(interfaceTypename.find("ap_fixed<") == 0)
-                     {
-                        auto subtypeArg=interfaceTypename.substr(std::string("ap_fixed<").size());
-                        auto sizeString = subtypeArg.substr(0,subtypeArg.find_first_of(",> "));
-                        inputBitWidth=boost::lexical_cast<unsigned>(sizeString);
-                     }
-                     else if(interfaceTypename.find("ap_ufixed<") == 0)
-                     {
-                        auto subtypeArg=interfaceTypename.substr(std::string("ap_ufixed<").size());
-                        auto sizeString = subtypeArg.substr(0,subtypeArg.find_first_of(",> "));
-                        inputBitWidth=boost::lexical_cast<unsigned>(sizeString);
-                     }
+                     auto acTypeBw=ac_type_bitwidth(interfaceTypename);
+                     if(acTypeBw)
+                        inputBitWidth = acTypeBw;
                      THROW_ASSERT(inputBitWidth, "unexpected condition");
 
                      auto argSSANode = TM->GetTreeReindex(par2ssa.find(arg_id)->second);
@@ -730,7 +711,7 @@ DesignFlowStep_Status interface_infer::InternalExec()
                            create_Read_function(tree_nodeRef(), destBB, sl, fd, fdName, argSSANode, a, readType, usedStmt_defs, tree_man, TM);
                            for(auto rs: readStmt)
                               addGimpleNOPxVirtual(rs,sl,TM);
-                           create_resource(operationsR, operationsW, argName_string, interfaceType, inputBitWidth);
+                           create_resource(operationsR, operationsW, argName_string, interfaceType, inputBitWidth, false);
                            modified = true;
                         }
                         else if(isRead && !isWrite)
@@ -751,7 +732,7 @@ DesignFlowStep_Status interface_infer::InternalExec()
                               usedStmt_defs.clear();
                               ++loadIdIndex;
                            }
-                           create_resource(operationsR, operationsW, argName_string, interfaceType, inputBitWidth);
+                           create_resource(operationsR, operationsW, argName_string, interfaceType, inputBitWidth, false);
                            modified = true;
                         }
                         else if (canBeMovedToBB2 && isRead && isWrite)
@@ -784,16 +765,26 @@ DesignFlowStep_Status interface_infer::InternalExec()
                               addGimpleNOPxVirtual(rs,sl,TM);
                            unsigned int IdIndex=0;
                            fdName = ENCODE_FDNAME(argName_string,"_Write_",interfaceType);
+                           bool isDiffSize=false;
+                           unsigned WrittenSize=0;
                            for(auto ws : writeStmt)
                            {
                               auto ws_node = GET_NODE(ws);
                               auto ws_ga = GetPointer<gimple_assign>(ws_node);
+                              if(WrittenSize==0)
+                              {
+                                 WrittenSize=tree_helper::Size(ws_ga->op1);
+                                 if(WrittenSize<inputBitWidth)
+                                    isDiffSize=true;
+                              }
+                              else if(WrittenSize!=tree_helper::Size(ws_ga->op1) || WrittenSize<inputBitWidth)
+                                 isDiffSize=true;
                               std::string instanceFname = fdName+STR(IdIndex);
                               operationsW.push_back(instanceFname);
                               create_Write_function(ws, ws_ga->bb_index, sl, fd, instanceFname, argSSANode, ws_ga->op1, a, GetPointer<mem_ref>(GET_NODE(ws_ga->op0))->type, tree_man, TM);
                               ++IdIndex;
                            }
-                           create_resource(operationsR, operationsW, argName_string, interfaceType, inputBitWidth);
+                           create_resource(operationsR, operationsW, argName_string, interfaceType, inputBitWidth,isDiffSize);
                            modified = true;
                         }
                         else if(isRead && isWrite)
@@ -816,33 +807,53 @@ DesignFlowStep_Status interface_infer::InternalExec()
                            }
                            IdIndex=0;
                            fdName = ENCODE_FDNAME(argName_string,"_Write_",interfaceType);
+                           bool isDiffSize=false;
+                           unsigned WrittenSize=0;
                            for(auto ws : writeStmt)
                            {
                               auto ws_node = GET_NODE(ws);
                               auto ws_ga = GetPointer<gimple_assign>(ws_node);
+                              if(WrittenSize==0)
+                              {
+                                 WrittenSize=tree_helper::Size(ws_ga->op1);
+                                 if(WrittenSize<inputBitWidth)
+                                    isDiffSize=true;
+                              }
+                              else if(WrittenSize!=tree_helper::Size(ws_ga->op1) || WrittenSize<inputBitWidth)
+                                 isDiffSize=true;
                               std::string instanceFname = fdName+STR(IdIndex);
                               operationsW.push_back(instanceFname);
                               create_Write_function(ws, ws_ga->bb_index, sl, fd, instanceFname, argSSANode, ws_ga->op1, a, GetPointer<mem_ref>(GET_NODE(ws_ga->op0))->type, tree_man, TM);
                               ++IdIndex;
                            }
-                           create_resource(operationsR, operationsW, argName_string, interfaceType, inputBitWidth);
+                           create_resource(operationsR, operationsW, argName_string, interfaceType, inputBitWidth, isDiffSize);
                            modified = true;
                         }
                         else if(!isRead && isWrite)
                         {
                            std::vector<std::string> operationsR,operationsW;
                            unsigned int IdIndex=0;
-                           std::string fdName = ENCODE_FDNAME(argName_string,"_Write_",interfaceType);;
+                           std::string fdName = ENCODE_FDNAME(argName_string,"_Write_",interfaceType);
+                           bool isDiffSize=false;
+                           unsigned WrittenSize=0;
                            for(auto ws : writeStmt)
                            {
                               auto ws_node = GET_NODE(ws);
                               auto ws_ga = GetPointer<gimple_assign>(ws_node);
+                              if(WrittenSize==0)
+                              {
+                                 WrittenSize=tree_helper::Size(ws_ga->op1);
+                                 if(WrittenSize<inputBitWidth)
+                                    isDiffSize=true;
+                              }
+                              else if(WrittenSize!=tree_helper::Size(ws_ga->op1) || WrittenSize<inputBitWidth)
+                                 isDiffSize=true;
                               std::string instanceFname = fdName+STR(IdIndex);
                               operationsW.push_back(instanceFname);
                               create_Write_function(ws, ws_ga->bb_index, sl, fd, instanceFname, argSSANode, ws_ga->op1, a, GetPointer<mem_ref>(GET_NODE(ws_ga->op0))->type, tree_man, TM);
                               ++IdIndex;
                            }
-                           create_resource(operationsR, operationsW, argName_string, interfaceType, inputBitWidth);
+                           create_resource(operationsR, operationsW, argName_string, interfaceType, inputBitWidth, isDiffSize);
                            modified = true;
                         }
                         else
