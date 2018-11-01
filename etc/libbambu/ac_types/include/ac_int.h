@@ -2633,30 +2633,14 @@ public:
 
   // Arithmetic : Binary ----------------------------------------------------
   template <int W2, bool S2>
-  __FORCE_INLINE typename rt<W2, S2>::mult
-  operator*(const ac_int<W2, S2> &op2) {
-    bit_adjust();
-    ac_int<W2, S2> op2_local = op2;
-    op2_local.bit_adjust();
-    typename rt<W2, S2>::mult r;
-    Base::mult(op2_local, r);
-    r.bit_adjust();
-    return r;
-  }
-  template <int W2, bool S2>
   __FORCE_INLINE const typename rt<W2, S2>::mult
   operator*(const ac_int<W2, S2> &op2) const {
     ac_int<W, S> op1_local = *this;
-    return op1_local * op2;
-  }
-  template <int W2, bool S2>
-  __FORCE_INLINE typename rt<W2, S2>::plus
-  operator+(const ac_int<W2, S2> &op2) {
-    bit_adjust();
+    op1_local.bit_adjust();
     ac_int<W2, S2> op2_local = op2;
     op2_local.bit_adjust();
-    typename rt<W2, S2>::plus r;
-    Base::add(op2_local, r);
+    typename rt<W2, S2>::mult r;
+    op1_local.Base::mult(op2_local,r);
     r.bit_adjust();
     return r;
   }
@@ -2664,16 +2648,11 @@ public:
   __FORCE_INLINE const typename rt<W2, S2>::plus
   operator+(const ac_int<W2, S2> &op2) const {
     ac_int<W, S> op1_local = *this;
-    return op1_local + op2;
-  }
-  template <int W2, bool S2>
-  __FORCE_INLINE typename rt<W2, S2>::minus
-  operator-(const ac_int<W2, S2> &op2) {
-    bit_adjust();
+    op1_local.bit_adjust();
     ac_int<W2, S2> op2_local = op2;
     op2_local.bit_adjust();
-    typename rt<W2, S2>::minus r;
-    Base::sub(op2_local, r);
+    typename rt<W2, S2>::plus r;
+    op1_local.Base::add(op2_local, r);
     r.bit_adjust();
     return r;
   }
@@ -2681,7 +2660,13 @@ public:
   __FORCE_INLINE const typename rt<W2, S2>::minus
   operator-(const ac_int<W2, S2> &op2) const {
     ac_int<W, S> op1_local = *this;
-    return op1_local - op2;
+    op1_local.bit_adjust();
+    ac_int<W2, S2> op2_local = op2;
+    op2_local.bit_adjust();
+    typename rt<W2, S2>::minus r;
+    op1_local.Base::sub(op2_local, r);
+    r.bit_adjust();
+    return r;
   }
 #if (defined(__GNUC__) &&                                                      \
      (__GNUC__ == 4 && __GNUC_MINOR__ >= 6 || __GNUC__ > 4) &&                 \
@@ -2689,10 +2674,12 @@ public:
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wenum-compare"
 #endif
+
   template <int W2, bool S2>
-  __FORCE_INLINE typename rt<W2, S2>::div
-  operator/(const ac_int<W2, S2> &op2) {
-    bit_adjust();
+  __FORCE_INLINE const typename rt<W2, S2>::div
+  operator/(const ac_int<W2, S2> &op2) const {
+    ac_int<W, S> op1_local = *this;
+    op1_local.bit_adjust();
     ac_int<W2, S2> op2_local = op2;
     op2_local.bit_adjust();
     typename rt<W2, S2>::div r;
@@ -2704,20 +2691,15 @@ public:
       den_s = S2 + (N2minus > N2),
       Nr = rt<W2, S2>::div::N
     };
-    Base::template div<num_s, den_s>(op2_local, r);
+    op1_local.Base::template div<num_s, den_s>(op2_local, r);
     r.bit_adjust();
     return r;
   }
   template <int W2, bool S2>
-  __FORCE_INLINE const typename rt<W2, S2>::div
-  operator/(const ac_int<W2, S2> &op2) const {
+  __FORCE_INLINE const typename rt<W2, S2>::mod
+  operator%(const ac_int<W2, S2> &op2) const {
     ac_int<W, S> op1_local = *this;
-    return op1_local / op2;
-  }
-  template <int W2, bool S2>
-  __FORCE_INLINE typename rt<W2, S2>::mod
-  operator%(const ac_int<W2, S2> &op2) {
-    bit_adjust();
+    op1_local.bit_adjust();
     ac_int<W2, S2> op2_local = op2;
     op2_local.bit_adjust();
     typename rt<W2, S2>::mod r;
@@ -2729,15 +2711,9 @@ public:
       den_s = S2 + (N2minus > N2),
       Nr = rt<W2, S2>::mod::N
     };
-    Base::template rem<num_s, den_s>(op2_local, r);
+    op1_local.Base::template rem<num_s, den_s>(op2_local, r);
     r.bit_adjust();
     return r;
-  }
-  template <int W2, bool S2>
-  __FORCE_INLINE const typename rt<W2, S2>::mod
-  operator%(const ac_int<W2, S2> &op2) const {
-    ac_int<W, S> op1_local = *this;
-    return op1_local % op2;
   }
 #if (defined(__GNUC__) &&                                                      \
      (__GNUC__ == 4 && __GNUC_MINOR__ >= 6 || __GNUC__ > 4) &&                 \
@@ -2834,11 +2810,13 @@ public:
 #endif
   // Arithmetic prefix increment, decrement ----------------------------------
   __FORCE_INLINE ac_int &operator++() {
+    bit_adjust();
     Base::increment();
     bit_adjust();
     return *this;
   }
   __FORCE_INLINE ac_int &operator--() {
+    bit_adjust();
     Base::decrement();
     bit_adjust();
     return *this;
@@ -2859,88 +2837,55 @@ public:
     return t;
   }
   // Arithmetic Unary --------------------------------------------------------
-  __FORCE_INLINE ac_int operator+() {
-    bit_adjust();
-    return *this;
-  }
   __FORCE_INLINE const ac_int operator+() const {
     ac_int<W, S> op1_local = *this;
-    return op1_local.operator+();
-  }
-  __FORCE_INLINE typename rt_unary::neg operator-() {
-    bit_adjust();
-    typename rt_unary::neg r;
-    Base::neg(r);
-    r.bit_adjust();
-    return r;
+    op1_local.bit_adjust();
+    return op1_local;
   }
   __FORCE_INLINE const typename rt_unary::neg
   operator-() const {
     ac_int<W, S> op1_local = *this;
-    return -op1_local;
-  }
-  // ! ------------------------------------------------------------------------
-  __FORCE_INLINE bool operator!() {
-    bit_adjust();
-    return Base::equal_zero();
-  }
-  __FORCE_INLINE bool operator!() const {
-    ac_int<W, S> op1_local = *this;
-    return !op1_local;
-  }
-
-  // Bitwise (arithmetic) unary: complement  -----------------------------
-  __FORCE_INLINE ac_int<W + !S, true> operator~() {
-    bit_adjust();
-    ac_int<W + !S, true> r;
-    Base::bitwise_complement(r);
+    op1_local.bit_adjust();
+    typename rt_unary::neg r;
+    op1_local.Base::neg(r);
     r.bit_adjust();
     return r;
+  }
+  // ! ------------------------------------------------------------------------
+  __FORCE_INLINE bool operator!() const {
+    ac_int<W, S> op1_local = *this;
+    op1_local.bit_adjust();
+    return op1_local.Base::equal_zero();
   }
   __FORCE_INLINE const ac_int<W + !S, true>
   operator~() const {
     ac_int<W, S> op1_local = *this;
-    return ~op1_local;
-  }
-  // Bitwise (non-arithmetic) bit_complement  -----------------------------
-  __FORCE_INLINE ac_int<W, false> bit_complement() {
-    bit_adjust();
-    ac_int<W, false> r;
-    Base::bitwise_complement(r);
+    op1_local.bit_adjust();
+    ac_int<W + !S, true> r;
+    op1_local.Base::bitwise_complement(r);
     r.bit_adjust();
     return r;
   }
+  // Bitwise (non-arithmetic) bit_complement  -----------------------------
   __FORCE_INLINE const ac_int<W, false>
   bit_complement() const {
     ac_int<W, S> op1_local = *this;
-    return op1_local.bit_complement();
-  }
-  // Bitwise (arithmetic): and, or, xor ----------------------------------
-  template <int W2, bool S2>
-  __FORCE_INLINE typename rt<W2, S2>::logic
-  operator&(const ac_int<W2, S2> &op2) {
-    bit_adjust();
-    ac_int<W2, S2> op2_local = op2;
-    op2_local.bit_adjust();
-    typename rt<W2, S2>::logic r;
-    Base::bitwise_and(op2_local, r);
+    op1_local.bit_adjust();
+    ac_int<W, false> r;
+    op1_local.Base::bitwise_complement(r);
     r.bit_adjust();
     return r;
   }
+  // Bitwise (arithmetic): and, or, xor ----------------------------------
   template <int W2, bool S2>
   __FORCE_INLINE const typename rt<W2, S2>::logic
   operator&(const ac_int<W2, S2> &op2) const {
     ac_int<W, S> op1_local = *this;
-    return op1_local & op2;
-  }
-  template <int W2, bool S2>
-  __FORCE_INLINE typename rt<W2, S2>::logic
-  operator|(const ac_int<W2, S2> &op2) {
-    bit_adjust();
+    op1_local.bit_adjust();
     ac_int<W2, S2> op2_local = op2;
     op2_local.bit_adjust();
     typename rt<W2, S2>::logic r;
-    Base::bitwise_or(op2_local, r);
+    op1_local.Base::bitwise_and(op2_local, r);
     r.bit_adjust();
     return r;
   }
@@ -2948,16 +2893,11 @@ public:
   __FORCE_INLINE const typename rt<W2, S2>::logic
   operator|(const ac_int<W2, S2> &op2) const {
     ac_int<W, S> op1_local = *this;
-    return op1_local | op2;
-  }
-  template <int W2, bool S2>
-  __FORCE_INLINE typename rt<W2, S2>::logic
-  operator^(const ac_int<W2, S2> &op2) {
-    bit_adjust();
+    op1_local.bit_adjust();
     ac_int<W2, S2> op2_local = op2;
     op2_local.bit_adjust();
     typename rt<W2, S2>::logic r;
-    Base::bitwise_xor(op2_local, r);
+    op1_local.Base::bitwise_or(op2_local, r);
     r.bit_adjust();
     return r;
   }
@@ -2965,7 +2905,13 @@ public:
   __FORCE_INLINE const typename rt<W2, S2>::logic
   operator^(const ac_int<W2, S2> &op2) const {
     ac_int<W, S> op1_local = *this;
-    return op1_local ^ op2;
+    op1_local.bit_adjust();
+    ac_int<W2, S2> op2_local = op2;
+    op2_local.bit_adjust();
+    typename rt<W2, S2>::logic r;
+    op1_local.Base::bitwise_xor(op2_local, r);
+    r.bit_adjust();
+    return r;
   }
   // Bitwise assign (not arithmetic): and, or, xor ----------------------------
   template <int W2, bool S2>
@@ -3006,30 +2952,14 @@ public:
   }
   // Shift (result constrained by left operand) -------------------------------
   template <int W2>
-  __FORCE_INLINE ac_int
-  operator<<(const ac_int<W2, true> &op2) {
-    bit_adjust();
-    ac_int<W2, true> op2_local = op2;
-    op2_local.bit_adjust();
-    ac_int r;
-    Base::shift_l2(op2_local.to_int(), r);
-    r.bit_adjust();
-    return r;
-  }
-  template <int W2>
   __FORCE_INLINE const ac_int
   operator<<(const ac_int<W2, true> &op2) const {
     ac_int<W, S> op1_local = *this;
-    return op1_local << op2;
-  }
-  template <int W2>
-  __FORCE_INLINE ac_int
-  operator<<(const ac_int<W2, false> &op2) {
-    bit_adjust();
-    ac_int<W2, false> op2_local = op2;
+    op1_local.bit_adjust();
+    ac_int<W2, true> op2_local = op2;
     op2_local.bit_adjust();
     ac_int r;
-    Base::shift_l(op2_local.to_uint(), r);
+    op1_local.Base::shift_l2(op2_local.to_int(), r);
     r.bit_adjust();
     return r;
   }
@@ -3037,16 +2967,11 @@ public:
   __FORCE_INLINE const ac_int
   operator<<(const ac_int<W2, false> &op2) const {
     ac_int<W, S> op1_local = *this;
-    return op1_local << op2;
-  }
-  template <int W2>
-  __FORCE_INLINE ac_int
-  operator>>(const ac_int<W2, true> &op2) {
-    bit_adjust();
-    ac_int<W2, true> op2_local = op2;
+    op1_local.bit_adjust();
+    ac_int<W2, false> op2_local = op2;
     op2_local.bit_adjust();
     ac_int r;
-    Base::shift_r2(op2_local.to_int(), r);
+    op1_local.Base::shift_l(op2_local.to_uint(), r);
     r.bit_adjust();
     return r;
   }
@@ -3054,16 +2979,11 @@ public:
   __FORCE_INLINE const ac_int
   operator>>(const ac_int<W2, true> &op2) const {
     ac_int<W, S> op1_local = *this;
-    return op1_local >> op2;
-  }
-  template <int W2>
-  __FORCE_INLINE ac_int
-  operator>>(const ac_int<W2, false> &op2) {
-    bit_adjust();
-    ac_int<W2, false> op2_local = op2;
+    op1_local.bit_adjust();
+    ac_int<W2, true> op2_local = op2;
     op2_local.bit_adjust();
     ac_int r;
-    Base::shift_r(op2_local.to_uint(), r);
+    op1_local.Base::shift_r2(op2_local.to_int(), r);
     r.bit_adjust();
     return r;
   }
@@ -3071,7 +2991,13 @@ public:
   __FORCE_INLINE const ac_int
   operator>>(const ac_int<W2, false> &op2) const {
     ac_int<W, S> op1_local = *this;
-    return op1_local >> op2;
+    op1_local.bit_adjust();
+    ac_int<W2, false> op2_local = op2;
+    op2_local.bit_adjust();
+    ac_int r;
+    op1_local.Base::shift_r(op2_local.to_uint(), r);
+    r.bit_adjust();
+    return r;
   }
 
   // Shift assign ------------------------------------------------------------
@@ -3126,88 +3052,58 @@ public:
   // Relational ---------------------------------------------------------------
   template <int W2, bool S2>
   __FORCE_INLINE bool
-  operator==(const ac_int<W2, S2> &op2) {
-    bit_adjust();
-    ac_int<W2, S2> op2_local = op2;
-    op2_local.bit_adjust();
-    return Base::equal(op2_local);
-  }
-  template <int W2, bool S2>
-  __FORCE_INLINE bool
   operator==(const ac_int<W2, S2> &op2) const {
     ac_int<W, S> op1_local = *this;
-    return op1_local == op2;
-  }
-  template <int W2, bool S2>
-  __FORCE_INLINE bool
-  operator!=(const ac_int<W2, S2> &op2) {
-    bit_adjust();
+    op1_local.bit_adjust();
     ac_int<W2, S2> op2_local = op2;
     op2_local.bit_adjust();
-    return !Base::equal(op2_local);
+    return op1_local.Base::equal(op2_local);
   }
   template <int W2, bool S2>
   __FORCE_INLINE bool
   operator!=(const ac_int<W2, S2> &op2) const {
     ac_int<W, S> op1_local = *this;
-    return op1_local != op2;
-  }
-  template <int W2, bool S2>
-  __FORCE_INLINE bool
-  operator<(const ac_int<W2, S2> &op2) {
-    bit_adjust();
+    op1_local.bit_adjust();
     ac_int<W2, S2> op2_local = op2;
     op2_local.bit_adjust();
-    return Base::less_than(op2_local);
+    return !op1_local.Base::equal(op2_local);
   }
   template <int W2, bool S2>
   __FORCE_INLINE bool
   operator<(const ac_int<W2, S2> &op2) const {
     ac_int<W, S> op1_local = *this;
-    return op1_local < op2;
-  }
-  template <int W2, bool S2>
-  __FORCE_INLINE bool
-  operator>=(const ac_int<W2, S2> &op2) {
-    bit_adjust();
+    op1_local.bit_adjust();
     ac_int<W2, S2> op2_local = op2;
     op2_local.bit_adjust();
-    return !Base::less_than(op2_local);
+    return op1_local.Base::less_than(op2_local);
   }
   template <int W2, bool S2>
   __FORCE_INLINE bool
   operator>=(const ac_int<W2, S2> &op2) const {
     ac_int<W, S> op1_local = *this;
-    return op1_local >= op2;
-  }
-  template <int W2, bool S2>
-  __FORCE_INLINE bool
-  operator>(const ac_int<W2, S2> &op2) {
-    bit_adjust();
+    op1_local.bit_adjust();
     ac_int<W2, S2> op2_local = op2;
     op2_local.bit_adjust();
-    return Base::greater_than(op2);
+    return !op1_local.Base::less_than(op2_local);
   }
   template <int W2, bool S2>
   __FORCE_INLINE bool
   operator>(const ac_int<W2, S2> &op2) const {
     ac_int<W, S> op1_local = *this;
-    return op1_local > op2;
-  }
-  template <int W2, bool S2>
-  __FORCE_INLINE bool
-  operator<=(const ac_int<W2, S2> &op2) {
-    bit_adjust();
+    op1_local.bit_adjust();
     ac_int<W2, S2> op2_local = op2;
     op2_local.bit_adjust();
-    return !Base::greater_than(op2_local);
+    return op1_local.Base::greater_than(op2);
   }
   template <int W2, bool S2>
   __FORCE_INLINE
   bool operator<=(const ac_int<W2, S2> &op2) const
   {
     ac_int<W, S> op1_local = *this;
-    return op1_local <= op2;
+    op1_local.bit_adjust();
+    ac_int<W2, S2> op2_local = op2;
+    op2_local.bit_adjust();
+    return !op1_local.Base::greater_than(op2_local);
   }
 
   // Bit and Slice Select -----------------------------------------------------
