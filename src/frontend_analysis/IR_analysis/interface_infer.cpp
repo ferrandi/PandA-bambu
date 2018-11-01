@@ -547,7 +547,7 @@ DesignFlowStep_Status interface_infer::InternalExec()
                                  std::string value = attrArg->get_value();
                                  if (key == "id") argName = value;
                                  if (key == "interface_type") interfaceType = value;
-                                 if (key == "interface_typename") interfaceTypename = value;
+                                 if (key == "interface_typename") {interfaceTypename = value; xml_node::convert_escaped(interfaceTypename);}
                                  if (key == "interface_typename_include") interfaceTypenameInclude = value;
                               }
                               if (argName == "") THROW_ERROR("malformed interface file");
@@ -555,6 +555,7 @@ DesignFlowStep_Status interface_infer::InternalExec()
                               std::cerr << "|" << argName << "|" << interfaceType << "|\n";
                               HLSMgr->design_interface[fname][argName] = interfaceType;
                               HLSMgr->design_interface_typename[fname][argName] = interfaceTypename;
+                              HLSMgr->design_interface_typename_signature[fname].push_back(interfaceTypename);
                               if((interfaceTypename.find("ap_int<") != std::string::npos || interfaceTypename.find("ap_uint<") != std::string::npos) && interfaceTypenameInclude.find("ac_int.h") != std::string::npos)
                                  boost::replace_all(interfaceTypenameInclude, "ac_int.h", "ap_int.h");
                               if((interfaceTypename.find("ap_fixed<") != std::string::npos || interfaceTypename.find("ap_ufixed<") != std::string::npos) && interfaceTypenameInclude.find("ac_fixed.h") != std::string::npos)

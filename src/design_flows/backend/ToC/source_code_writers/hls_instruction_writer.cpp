@@ -47,6 +47,7 @@
 
 ///behavior include
 #include "application_manager.hpp"
+#include "hls_manager.hpp"
 #include "function_behavior.hpp"
 
 ///tree include
@@ -136,7 +137,27 @@ void HLSInstructionWriter::declareFunction(const unsigned int function_id)
       {
          if(simple_name != "")
          {
-            boost::replace_all(stringTemp, " " + name + "(", " " + simple_name + "(");
+            auto HLSMgr = GetPointer<const HLS_manager>(AppM);
+            if(HLSMgr && simple_name==name && HLSMgr->design_interface_typename_signature.find(name) != HLSMgr->design_interface_typename_signature.end())
+            {
+               auto searchString = " " + name + "(";
+               stringTemp=stringTemp.substr(0,stringTemp.find(searchString)+searchString.size());
+               const auto& typenameArgs = HLSMgr->design_interface_typename_signature.find(name)->second;
+               bool firstPar=true;
+               for(auto argType : typenameArgs)
+               {
+                  if(firstPar)
+                  {
+                     stringTemp += argType;
+                     firstPar=false;
+                  }
+                  else
+                     stringTemp += ", " + argType;
+               }
+               stringTemp += ")";
+            }
+            else
+               boost::replace_all(stringTemp, " " + name + "(", " " + simple_name + "(");
          }
          boost::replace_all(stringTemp, "/*&*/*", "&");
       }

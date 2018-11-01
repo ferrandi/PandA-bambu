@@ -42,6 +42,7 @@
 
 #include "clang/Frontend/FrontendPluginRegistry.h"
 #include "clang/AST/AST.h"
+#include "clang/AST/DeclCXX.h"
 #include "clang/AST/Mangle.h"
 #include "clang/AST/ASTConsumer.h"
 #include "clang/AST/RecursiveASTVisitor.h"
@@ -66,7 +67,8 @@ static std::map<std::string,std::vector<std::string>> Fun2Params;
 static std::map<std::string,std::vector<std::string>> Fun2ParamType;
 static std::map<std::string,std::vector<std::string>> Fun2ParamInclude;
 static std::map<std::string,std::string> Fun2Demangled;
-static std::map<std::string,std::string> HLS_interface_PragmaMap;
+static std::map<std::string, std::map<clang::SourceLocation, std::pair<std::string,std::string>>> HLS_interface_PragmaMap;
+static std::map<std::string,clang::SourceLocation> prevLoc;
 
 static std::map<std::string,std::vector<std::string>> HLS_interfaceMap;
 static std::string interface_XML_filename;
@@ -74,6 +76,36 @@ static std::string interface_XML_filename;
 
 namespace clang {
 
+   static
+   void convert_unescaped(std::string& ioString)
+   {
+      std::string::size_type lPos = 0;
+      while ((lPos = ioString.find_first_of("&<>'\"", lPos)) != std::string::npos)
+      {
+         switch (ioString[lPos])
+         {
+            case '&':
+               ioString.replace(lPos++, 1, "&amp;");
+               break;
+            case '<':
+               ioString.replace(lPos++, 1, "&lt;");
+               break;
+            case '>':
+               ioString.replace(lPos++, 1, "&gt;");
+               break;
+            case '\'':
+               ioString.replace(lPos++, 1, "&apos;");
+               break;
+            case '"':
+               ioString.replace(lPos++, 1, "&quot;");
+               break;
+            default:
+               {
+                  //Do nothing
+               }
+         }
+      }
+   }
    static std::string create_file_name_string(const std::string &outdir_name, const std::string & original_filename, const std::string & fileSuffix)
    {
       std::size_t found = original_filename.find_last_of("/\\");
@@ -105,7 +137,9 @@ namespace clang {
             unsigned int ArgIndex=0;
             for(auto par: funArgPair.second)
             {
-               stream << "    <arg id=\""<<par<<"\" interface_type=\""<< interfaceTypeVec.at(ArgIndex)<<"\" interface_typename=\""<< interfaceTypenameVec.at(ArgIndex)<<"\" interface_typename_include=\""<< interfaceTypenameIncludeVec.at(ArgIndex)<<"\"/>\n";
+               std::string typenameArg=interfaceTypenameVec.at(ArgIndex);
+               convert_unescaped(typenameArg);
+               stream << "    <arg id=\""<<par<<"\" interface_type=\""<< interfaceTypeVec.at(ArgIndex)<<"\" interface_typename=\""<< typenameArg <<"\" interface_typename_include=\""<< interfaceTypenameIncludeVec.at(ArgIndex)<<"\"/>\n";
                ++ArgIndex;
             }
             stream << "  </function>\n";
@@ -135,143 +169,182 @@ namespace clang {
             return ND;
          }
 
+         void AnalyzeFunctionDecl(const FunctionDecl * FD)
+         {
+            auto& SM = FD->getASTContext().getSourceManager();
+            std::map<std::string,std::string> interface_PragmaMap;
+            auto locEnd = FD->getLocEnd();
+            auto filename=SM.getPresumedLoc(locEnd,false).getFilename();
+            if(HLS_interface_PragmaMap.find(filename) != HLS_interface_PragmaMap.end())
+            {
+               SourceLocation prev;
+               if(prevLoc.find(filename) != prevLoc.end())
+               {
+                  prev=prevLoc.find(filename)->second;
+               }
+               for(auto& loc2pair : HLS_interface_PragmaMap.find(filename)->second)
+               {
+                  if((prev.isInvalid() || prev < loc2pair.first) && (loc2pair.first < locEnd))
+                  {
+                     interface_PragmaMap[loc2pair.second.first]=loc2pair.second.second;
+                  }
+               }
+            }
+
+            if(!FD->isVariadic() && FD->hasBody())
+            {
+               const auto getMangledName = [&](const FunctionDecl* decl) {
+
+                  auto mangleContext = decl->getASTContext().createMangleContext();
+
+                  if (!mangleContext->shouldMangleDeclName(decl)) {
+                     return decl->getNameInfo().getName().getAsString();
+                  }
+                  std::string mangledName;
+                  llvm::raw_string_ostream ostream(mangledName);
+                  mangleContext->mangleName(decl, ostream);
+                  ostream.flush();
+                  delete mangleContext;
+                  return mangledName;
+               };
+               auto funName = getMangledName(FD);
+               Fun2Demangled[funName]=FD->getNameInfo().getName().getAsString();
+               //llvm::errs()<<"funName:"<<funName<<"\n";
+               for(const auto par : FD->parameters())
+               {
+                  if (const ParmVarDecl *ND = dyn_cast<ParmVarDecl>(par))
+                  {
+                     std::string interfaceType="default";
+                     std::string UserDefinedInterfaceType;
+                     auto parName = ND->getNameAsString();
+                     bool UDIT_p = false;
+                     if(interface_PragmaMap.find(parName) != interface_PragmaMap.end())
+                     {
+                        UserDefinedInterfaceType = interface_PragmaMap.find(parName)->second;
+                        UDIT_p = true;
+                     }
+                     auto argType = ND->getType();
+                     //argType->dump (llvm::errs() );
+                     if(isa<DecayedType>(argType))
+                     {
+                        auto DT = cast<DecayedType>(argType);
+                        if(DT->getOriginalType()->isConstantArrayType())
+                        {
+                           auto CA = cast<ConstantArrayType>(DT->getOriginalType());
+                           auto OrigTotArraySize=CA->getSize();
+                           while(CA->getElementType()->isConstantArrayType())
+                           {
+                              CA = cast<ConstantArrayType>(CA->getElementType());
+                              OrigTotArraySize *= CA->getSize();
+                           }
+                           interfaceType="array-"+OrigTotArraySize.toString(10,false);
+                        }
+                        if(UDIT_p)
+                        {
+                           if(UserDefinedInterfaceType != "handshake" &&
+                                 UserDefinedInterfaceType != "fifo" &&
+                                 UserDefinedInterfaceType.find("array")==std::string::npos &&
+                                 UserDefinedInterfaceType != "bus")
+                           {
+                              DiagnosticsEngine &D = CI.getDiagnostics();
+                              D.Report(D.getCustomDiagID(DiagnosticsEngine::Error,
+                                                      "#pragma HLS_interface non-consistent with parameter of constant array type, where user defined interface is: %0")).AddString(UserDefinedInterfaceType);
+                           }
+                           else
+                              interfaceType=UserDefinedInterfaceType;
+                        }
+                     }
+                     else if(argType->isPointerType() || argType->isReferenceType())
+                     {
+                        interfaceType="ptrdefault";
+                        if(UDIT_p)
+                        {
+                           if(UserDefinedInterfaceType != "none" &&
+                                 UserDefinedInterfaceType != "handshake" &&
+                                 UserDefinedInterfaceType != "valid" &&
+                                 UserDefinedInterfaceType != "acknowledge" &&
+                                 UserDefinedInterfaceType != "fifo" &&
+                                 UserDefinedInterfaceType != "bus")
+                           {
+                              DiagnosticsEngine &D = CI.getDiagnostics();
+                              D.Report(D.getCustomDiagID(DiagnosticsEngine::Error,
+                                                      "#pragma HLS_interface non-consistent with parameter of pointer type, where user defined interface is: %0")).AddString(UserDefinedInterfaceType);
+                           }
+                           else
+                              interfaceType=UserDefinedInterfaceType;
+                        }
+                     }
+                     else
+                     {
+                        if(!argType->isBuiltinType())
+                           interfaceType="none";
+                        if(UDIT_p)
+                        {
+                           if(UserDefinedInterfaceType != "none" &&
+                                 UserDefinedInterfaceType != "handshake" &&
+                                 UserDefinedInterfaceType != "valid" &&
+                                 UserDefinedInterfaceType != "acknowledge")
+                           {
+                              DiagnosticsEngine &D = CI.getDiagnostics();
+                              D.Report(D.getCustomDiagID(DiagnosticsEngine::Error,
+                                                      "#pragma HLS_interface non-consistent with parameter of builtin type, where user defined interface is: %0")).AddString(UserDefinedInterfaceType);
+                           }
+                           else
+                              interfaceType=UserDefinedInterfaceType;
+                           if(argType->isBuiltinType() && interfaceType=="none")
+                              interfaceType="default";
+                        }
+                     }
+
+                     HLS_interfaceMap[funName].push_back(interfaceType);
+                     Fun2Params[funName].push_back(parName);
+                     Fun2ParamType[funName].push_back(ND->getType().getAsString());
+                     if(auto BTD = getBaseTypeDecl(ND->getType()))
+                     {
+                        Fun2ParamInclude[funName].push_back(SM.getPresumedLoc(BTD->getLocStart(),false).getFilename());
+                     }
+                     else
+                        Fun2ParamInclude[funName].push_back("");
+
+                  }
+               }
+            }
+         }
+
       public:
          FunctionArgConsumer(CompilerInstance &Instance) : CI(Instance) {}
          bool HandleTopLevelDecl(DeclGroupRef DG) override
          {
-            for (DeclGroupRef::iterator i = DG.begin(), e = DG.end(); i != e; ++i) {
+            for (DeclGroupRef::iterator i = DG.begin(), e = DG.end(); i != e; ++i)
+            {
                const Decl *D = *i;
                if(const FunctionDecl * FD = dyn_cast<FunctionDecl>(D))
                {
+                  AnalyzeFunctionDecl(FD);
+                  auto endLoc = FD->getLocEnd();
                   auto& SM = FD->getASTContext().getSourceManager();
-                  if(!FD->isVariadic() && FD->hasBody())
+                  auto filename=SM.getPresumedLoc(endLoc,false).getFilename();
+                  prevLoc[filename]=endLoc;
+               }
+               else if(const LinkageSpecDecl* LSD=dyn_cast<LinkageSpecDecl>(D))
+               {
+                  for(auto d : LSD->decls())
                   {
-                     const auto getMangledName = [&](const FunctionDecl* decl) {
-
-                        auto mangleContext = decl->getASTContext().createMangleContext();
-
-                        if (!mangleContext->shouldMangleDeclName(decl)) {
-                           return decl->getNameInfo().getName().getAsString();
-                        }
-                        std::string mangledName;
-                        llvm::raw_string_ostream ostream(mangledName);
-                        mangleContext->mangleName(decl, ostream);
-                        ostream.flush();
-                        delete mangleContext;
-                        return mangledName;
-                     };
-                     auto funName = getMangledName(FD);
-                     Fun2Demangled[funName]=FD->getNameInfo().getName().getAsString();
-                     //llvm::errs()<<"funName:"<<funName<<"\n";
-                     for(const auto par : FD->parameters())
+                     if(const FunctionDecl * fd = dyn_cast<FunctionDecl>(d))
                      {
-                        if (const ParmVarDecl *ND = dyn_cast<ParmVarDecl>(par))
-                        {
-                           std::string interfaceType="default";
-                           std::string UserDefinedInterfaceType;
-                           auto parName = ND->getNameAsString();
-                           bool UDIT_p = false;
-                           if(HLS_interface_PragmaMap.find(parName) != HLS_interface_PragmaMap.end())
-                           {
-                              UserDefinedInterfaceType = HLS_interface_PragmaMap.find(parName)->second;
-                              UDIT_p = true;
-                           }
-                           auto argType = ND->getType();
-                           //argType->dump (llvm::errs() );
-                           if(isa<DecayedType>(argType))
-                           {
-                              llvm::errs()<<"here\n";
-                              auto DT = cast<DecayedType>(argType);
-                              if(DT->getOriginalType()->isConstantArrayType())
-                              {
-                                 auto CA = cast<ConstantArrayType>(DT->getOriginalType());
-                                 auto OrigTotArraySize=CA->getSize();
-                                 while(CA->getElementType()->isConstantArrayType())
-                                 {
-                                    CA = cast<ConstantArrayType>(CA->getElementType());
-                                    OrigTotArraySize *= CA->getSize();
-                                 }
-                                 interfaceType="array-"+OrigTotArraySize.toString(10,false);
-                              }
-                              if(UDIT_p)
-                              {
-                                 if(UserDefinedInterfaceType != "handshake" &&
-                                       UserDefinedInterfaceType != "fifo" &&
-                                       UserDefinedInterfaceType.find("array")==std::string::npos &&
-                                       UserDefinedInterfaceType != "bus")
-                                 {
-                                    DiagnosticsEngine &D = CI.getDiagnostics();
-                                    D.Report(D.getCustomDiagID(DiagnosticsEngine::Error,
-                                                            "#pragma HLS_interface non-consistent with parameter of constant array type, where user defined interface is: %0")).AddString(UserDefinedInterfaceType);
-                                 }
-                                 else
-                                    interfaceType=UserDefinedInterfaceType;
-                              }
-                           }
-                           else if(argType->isPointerType() || argType->isReferenceType())
-                           {
-                              interfaceType="ptrdefault";
-                              if(UDIT_p)
-                              {
-                                 if(UserDefinedInterfaceType != "none" &&
-                                       UserDefinedInterfaceType != "handshake" &&
-                                       UserDefinedInterfaceType != "valid" &&
-                                       UserDefinedInterfaceType != "acknowledge" &&
-                                       UserDefinedInterfaceType != "fifo" &&
-                                       UserDefinedInterfaceType != "bus")
-                                 {
-                                    DiagnosticsEngine &D = CI.getDiagnostics();
-                                    D.Report(D.getCustomDiagID(DiagnosticsEngine::Error,
-                                                            "#pragma HLS_interface non-consistent with parameter of pointer type, where user defined interface is: %0")).AddString(UserDefinedInterfaceType);
-                                 }
-                                 else
-                                    interfaceType=UserDefinedInterfaceType;
-                              }
-                           }
-                           else
-                           {
-                              if(!argType->isBuiltinType())
-                                 interfaceType="none";
-                              if(UDIT_p)
-                              {
-                                 if(UserDefinedInterfaceType != "none" &&
-                                       UserDefinedInterfaceType != "handshake" &&
-                                       UserDefinedInterfaceType != "valid" &&
-                                       UserDefinedInterfaceType != "acknowledge")
-                                 {
-                                    DiagnosticsEngine &D = CI.getDiagnostics();
-                                    D.Report(D.getCustomDiagID(DiagnosticsEngine::Error,
-                                                            "#pragma HLS_interface non-consistent with parameter of builtin type, where user defined interface is: %0")).AddString(UserDefinedInterfaceType);
-                                 }
-                                 else
-                                    interfaceType=UserDefinedInterfaceType;
-                                 if(argType->isBuiltinType() && interfaceType=="none")
-                                    interfaceType="default";
-                              }
-                           }
-
-                           HLS_interfaceMap[funName].push_back(interfaceType);
-                           Fun2Params[funName].push_back(parName);
-                           Fun2ParamType[funName].push_back(ND->getType().getAsString());
-                           if(auto BTD = getBaseTypeDecl(ND->getType()))
-                           {
-                              Fun2ParamInclude[funName].push_back(SM.getPresumedLoc(BTD->getLocStart(),false).getFilename());
-                           }
-                           else
-                              Fun2ParamInclude[funName].push_back("");
-
-                        }
+                        AnalyzeFunctionDecl(fd);
+                        auto endLoc = fd->getLocEnd();
+                        auto& SM = fd->getASTContext().getSourceManager();
+                        auto filename=SM.getPresumedLoc(endLoc,false).getFilename();
+                        prevLoc[filename]=endLoc;
                      }
                   }
-                  if(!HLS_interface_PragmaMap.empty())
-                  {
-                     HLS_interface_PragmaMap.clear();
-                  }
                }
+//               else
+//                  prevLoc=D->getLocEnd().isValid() ? D->getLocEnd() : prevLoc;
             }
             return true;
          }
-
    };
 
    class HLS_interface_PragmaHandler : public PragmaHandler
@@ -287,6 +360,7 @@ namespace clang {
             unsigned int index=0;
             std::string par;
             std::string interface;
+            auto loc = PragmaTok.getLocation();
             while(Tok.isNot(tok::eod))
             {
                PP.Lex(Tok);
@@ -342,7 +416,10 @@ namespace clang {
             }
             if(index>=2)
             {
-               HLS_interface_PragmaMap[par]=interface;
+               auto& SM = PP.getSourceManager();
+               std::map<std::string,std::string> interface_PragmaMap;
+               auto filename=SM.getPresumedLoc(loc,false).getFilename();
+               HLS_interface_PragmaMap[filename][loc]= std::make_pair(par,interface);
             }
             else
             {

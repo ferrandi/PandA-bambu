@@ -133,7 +133,8 @@ void HLSCWriter::WriteHeader()
          for(auto argInclude: DesignInterfaceArgsInclude)
             includes.insert(argInclude.second);
          for(auto inc : includes)
-            indented_output_stream->Append("#include \"" + inc + "\"\n");
+            if(inc != "")
+               indented_output_stream->Append("#include \"" + inc + "\"\n");
       }
       indented_output_stream->Append("\n");
    }
@@ -314,6 +315,10 @@ void HLSCWriter::WriteParamDecl(const BehavioralHelperConstRef behavioral_helper
             }
             THROW_ASSERT(DesignInterfaceArgsTypename.find(param) != DesignInterfaceArgsTypename.end(), "unexpected condition");
             auto argTypename = DesignInterfaceArgsTypename.find(param)->second;
+            if(argTypename.find("const ")==0)
+               argTypename=argTypename.substr(std::string("const ").size());
+            if(argTypename.at(argTypename.size()-1) == '&')
+               argTypename=argTypename.substr(0,argTypename.size()-1);
             indented_output_stream->Append(argTypename + " " + param + ";\n");
             ++pIndex;
          }
