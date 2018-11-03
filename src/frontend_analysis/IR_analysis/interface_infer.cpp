@@ -202,7 +202,7 @@ void interface_infer::classifyArgRecurse(std::set<unsigned>&Visited, ssa_name*ar
             canBeMovedToBB2 = false;
             THROW_WARNING("Pattern currently not supported: parameter passed as a parameter to another function " + use_stmt->ToString());
          }
-         else if(GET_NODE(ga->op1)->get_kind() == nop_expr_K || GET_NODE(ga->op1)->get_kind() == ssa_name_K || GET_NODE(ga->op1)->get_kind() == pointer_plus_expr_K)
+         else if(GET_NODE(ga->op1)->get_kind() == nop_expr_K || GET_NODE(ga->op1)->get_kind() == view_convert_expr_K || GET_NODE(ga->op1)->get_kind() == ssa_name_K || GET_NODE(ga->op1)->get_kind() == pointer_plus_expr_K)
          {
             canBeMovedToBB2 = false;
             auto op0SSA = GetPointer<ssa_name>(GET_NODE(ga->op0));
@@ -368,8 +368,7 @@ void interface_infer::create_resource_Read_none(std::vector<std::string> & opera
          op->time_m->set_stage_period(0.0);
          op->time_m->set_synthesis_dependent(true);
       }
-      /// add constraint on resource
-      HLSMgr->design_interface_constraints[function_id][INTERFACE_LIBRARY][ResourceName]=1;
+      /// no constraint required for this resource
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Interface resource created: ");
    }
 }
