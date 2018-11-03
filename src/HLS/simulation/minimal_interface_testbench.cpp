@@ -755,7 +755,17 @@ void MinimalInterfaceTestbench::write_file_reading_operations() const
          read_input_value_from_file(input_name, first_valid_input);
       else if(InterfaceType == port_o::port_interface::PI_RNONE)
       {
-         auto bitsize = resize_to_1_8_16_32_64_128_256_512(GetPointer<port_o>(portInst)->get_typeRef()->size * GetPointer<port_o>(portInst)->get_typeRef()->vector_size);
+         auto port_bitwidth = GetPointer<port_o>(portInst)->get_typeRef()->size * GetPointer<port_o>(portInst)->get_typeRef()->vector_size;
+         unsigned bitsize=0;
+         if(port_bitwidth<=512)
+            bitsize = resize_to_1_8_16_32_64_128_256_512(port_bitwidth);
+         else
+         {
+            if(port_bitwidth%8)
+               bitsize = 8*(port_bitwidth/8)+8;
+            else
+               bitsize = port_bitwidth;
+         }
          read_input_value_from_file_RNONE(input_name, first_valid_input, bitsize);
       }
       else if(InterfaceType == port_o::port_interface::PI_WNONE)

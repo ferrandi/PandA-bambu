@@ -136,7 +136,9 @@ void TestbenchMemoryAllocation::AllocTestbenchMemory(void) const
                THROW_ERROR("A pointer type is expected");
             unsigned int base_type_byte_size;
 
-            if(behavioral_helper->is_an_array(ptd_base_type))
+            if(behavioral_helper->is_a_struct(ptd_base_type))
+               base_type_byte_size = tree_helper::size(TM, ptd_base_type) / 8;
+            else if(behavioral_helper->is_an_array(ptd_base_type))
                base_type_byte_size = tree_helper::get_array_data_bitsize(TM, ptd_base_type) / 8;
             else if(tree_helper::size(TM, ptd_base_type) == 1)
                base_type_byte_size = 1;

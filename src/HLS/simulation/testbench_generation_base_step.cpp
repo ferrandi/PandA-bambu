@@ -905,9 +905,10 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
                writer->write("begin\n");
                {
                   writer->write("compare_outputs = 1;\n");
-                  writer->write("_r_ = $fgets(line, file);\n");
-                  writer->write("_i_ = _i_ + 1;\n");
                   writer->write("_ch_ = $fgetc(file);\n");
+                  writer->write("while (_ch_ == \"\\n\" || _ch_ == \"0\" || _ch_ == \"1\") ");
+                  writer->write("_ch_ = $fgetc(file);\n");
+                  writer->write("_i_ = _i_ + 1;\n");
                }
                writer->write(STR(STD_CLOSING_CHAR));
                writer->write("end\n");
