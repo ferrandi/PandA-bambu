@@ -238,7 +238,7 @@ enum class TargetDevice_Type;
 /**
 * Macro which defines the get_kind_text function that returns the parameter as a string.
 */
-#define GET_KIND_TEXT(meth) std::string get_kind_text() const override {return std::string(#meth);}
+#define GET_TEC_KIND_TEXT(meth) std::string get_kind_text() const override {return std::string(#meth);}
 
 /**
  * Enumerative type for technology object classes, it is used with get_kind() function
@@ -456,7 +456,7 @@ struct operation: public technology_node
    /**
     * Redefinition of get_kind_text()
     */
-   GET_KIND_TEXT(operation)
+   GET_TEC_KIND_TEXT(operation)
 
       /**
        * Redefinition of get_kind()
@@ -663,7 +663,7 @@ struct functional_unit: public technology_node
    /**
     * Redefinition of get_kind_text()
     */
-   GET_KIND_TEXT(functional_unit)
+   GET_TEC_KIND_TEXT(functional_unit)
 
       /**
        * Redefinition of get_kind()
@@ -759,7 +759,7 @@ struct functional_unit: public technology_node
    /**
     * Redefinition of get_kind_text()
     */
-   GET_KIND_TEXT(functional_unit_template)
+   GET_TEC_KIND_TEXT(functional_unit_template)
 
       /**
        * Redefinition of get_kind()
@@ -832,7 +832,7 @@ struct functional_unit: public technology_node
    /**
     * Redefinition of get_kind_text()
     */
-   GET_KIND_TEXT(storage_unit)
+   GET_TEC_KIND_TEXT(storage_unit)
    /**
     * Redefinition of get_kind()
     */
