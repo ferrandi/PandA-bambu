@@ -81,7 +81,6 @@
 ///polixml include
 #include "xml_document.hpp"
 
-///tree include
 #include "behavioral_helper.hpp"
 #include "string_manipulation.hpp"          // for GET_CLASS
 
@@ -502,6 +501,33 @@ void parametric_list_based::exec(const OpVertexSet & operations, ControlStep cur
    for(rv = ready_vertices.begin(); rv != rv_end; ++rv)
       add_to_priority_queues(priority_queues, ready_resources, *rv);
 
+   std::unordered_set<vertex> RW_stmts;
+   for(auto bb2arg2stmtsR : HLSMgr->design_interface_loads)
+   {
+      for(auto arg2stms : bb2arg2stmtsR.second)
+      {
+         if(arg2stms.second.size()>1)
+            for(auto stmt : arg2stms.second)
+            {
+               THROW_ASSERT(flow_graph->CGetOpGraphInfo()->tree_node_to_operation.find(stmt) != flow_graph->CGetOpGraphInfo()->tree_node_to_operation.end(), "unexpected condition");
+               RW_stmts.insert(flow_graph->CGetOpGraphInfo()->tree_node_to_operation.find(stmt)->second);
+            }
+      }
+   }
+   for(auto bb2arg2stmtsW : HLSMgr->design_interface_stores)
+   {
+      for(auto arg2stms : bb2arg2stmtsW.second)
+      {
+         if(arg2stms.second.size()>1)
+            for(auto stmt : arg2stms.second)
+            {
+               THROW_ASSERT(flow_graph->CGetOpGraphInfo()->tree_node_to_operation.find(stmt) != flow_graph->CGetOpGraphInfo()->tree_node_to_operation.end(), "unexpected condition");
+               RW_stmts.insert(flow_graph->CGetOpGraphInfo()->tree_node_to_operation.find(stmt)->second);
+            }
+      }
+   }
+
+
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "   Starting scheduling...");
    unsigned int already_sch = schedule->num_scheduled();
    while((schedule->num_scheduled() - already_sch) != operations_number)
@@ -517,9 +543,10 @@ void parametric_list_based::exec(const OpVertexSet & operations, ControlStep cur
       ///First index is the functional unit type, second index is the controller node, third index is the condition
       CustomMap<unsigned int, unsigned int> used_resources;
 
-      ///Operations which can be scheduled in this control step because precedence has satisfied, but can't be scheduled in this control step
+      ///Operations which can be scheduled in this control step because precedences are satisfied, but they can't be scheduled in this control step for some reasons
       ///Index is the functional unit type
       CustomMap<unsigned int, OpVertexSet > black_list;
+
 
       ///Adding information about operation still live
       auto live_vertex_it = live_vertices.begin();
@@ -557,12 +584,15 @@ void parametric_list_based::exec(const OpVertexSet & operations, ControlStep cur
       }
 
 
+
       CustomMap<unsigned int, OpVertexSet > postponed_resources;
+      CustomMap<unsigned int, OpVertexSet > restarted_resources;
       bool do_again;
 
       do
       {
          do_again = false;
+         auto prev_scheduled=schedule->num_scheduled();
          while(ready_resources.size())
          {
             unsigned int fu_type;
@@ -630,6 +660,78 @@ void parametric_list_based::exec(const OpVertexSet & operations, ControlStep cur
                {
                   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "                  MEMORY_CTRL cannot run together with BRAM direct accesses " + GET_NAME(flow_graph, current_vertex) + " mapped on " + HLS->allocation_information->get_fu_name(fu_type).first + "at cstep " + STR(current_cycle));
                   auto insertResult = black_list.insert(make_pair(fu_type, OpVertexSet(flow_graph)));
+                  insertResult.first->second.insert(current_vertex);
+                  continue;
+               }
+               bool restarted = false;
+               if(RW_stmts.find(current_vertex) != RW_stmts.end())
+               {
+                  auto bb_index=flow_graph->CGetOpNodeInfo(current_vertex)->bb_index;
+                  if(HLSMgr->design_interface_loads.find(bb_index) != HLSMgr->design_interface_loads.end())
+                  {
+                     for(auto par2stmts: HLSMgr->design_interface_loads.find(bb_index)->second)
+                     {
+                        std::set<vertex> OpCluster;
+                        for(auto stmt : par2stmts.second)
+                        {
+                           THROW_ASSERT(flow_graph->CGetOpGraphInfo()->tree_node_to_operation.find(stmt) != flow_graph->CGetOpGraphInfo()->tree_node_to_operation.end(), "unexpected condition");
+                           OpCluster.insert(flow_graph->CGetOpGraphInfo()->tree_node_to_operation.find(stmt)->second);
+                        }
+                        if(OpCluster.find(current_vertex) != OpCluster.end())
+                        {
+                           bool allReadyOrScheduled=true;
+                           for(auto op : OpCluster)
+                           {
+                              if(op != current_vertex && !schedule->is_scheduled(op))
+                              {
+                                 if(std::find(queue.begin(), queue.end(), op) == queue.end())
+                                 {
+                                    allReadyOrScheduled=false;
+                                    break;
+                                 }
+                              }
+                           }
+                           if(!allReadyOrScheduled)
+                              restarted=true;
+                           break;
+                        }
+                     }
+                  }
+                  if(HLSMgr->design_interface_stores.find(bb_index) != HLSMgr->design_interface_stores.end())
+                  {
+                     for(auto par2stmts: HLSMgr->design_interface_stores.find(bb_index)->second)
+                     {
+                        std::set<vertex> OpCluster;
+                        for(auto stmt : par2stmts.second)
+                        {
+                           THROW_ASSERT(flow_graph->CGetOpGraphInfo()->tree_node_to_operation.find(stmt) != flow_graph->CGetOpGraphInfo()->tree_node_to_operation.end(), "unexpected condition");
+                           OpCluster.insert(flow_graph->CGetOpGraphInfo()->tree_node_to_operation.find(stmt)->second);
+                        }
+                        if(OpCluster.find(current_vertex) != OpCluster.end())
+                        {
+                           bool allReadyOrScheduled=true;
+                           for(auto op : OpCluster)
+                           {
+                              if(op != current_vertex && !schedule->is_scheduled(op))
+                              {
+                                 if(std::find(queue.begin(), queue.end(), op) == queue.end())
+                                 {
+                                    allReadyOrScheduled=false;
+                                    break;
+                                 }
+                              }
+                           }
+                           if(!allReadyOrScheduled)
+                              restarted=true;
+                           break;
+                        }
+                     }
+                  }
+               }
+               if(restarted)
+               {
+                  PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "                  Interface operation restarted " + GET_NAME(flow_graph, current_vertex) + " mapped on " + HLS->allocation_information->get_fu_name(fu_type).first + "at cstep " + STR(current_cycle));
+                  auto insertResult = restarted_resources.insert(make_pair(fu_type, OpVertexSet(flow_graph)));
                   insertResult.first->second.insert(current_vertex);
                   continue;
                }
@@ -906,6 +1008,30 @@ void parametric_list_based::exec(const OpVertexSet & operations, ControlStep cur
                }
             }
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Finished with unit type " + STR(fu_type));
+         }
+         if(!restarted_resources.empty())
+         {
+            CustomMap<unsigned int, OpVertexSet >::const_iterator bl_end = restarted_resources.end();
+            for(CustomMap<unsigned int, OpVertexSet >::const_iterator bl_it = restarted_resources.begin(); bl_it != bl_end; ++bl_it)
+            {
+               auto v_end = bl_it->second.end();
+               for(auto v = bl_it->second.begin(); v != v_end; ++v)
+               {
+#if HAVE_UNORDERED
+                  priority_queues[bl_it->first].push(*v);
+#else
+                  priority_queues[bl_it->first].insert(*v);
+#endif
+               }
+               ready_resources.insert(bl_it->first);
+            }
+            restarted_resources.clear();
+            if(prev_scheduled!=schedule->num_scheduled())
+            {
+               do_again = true;
+               prev_scheduled=schedule->num_scheduled();
+               PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "         Restarted the scheduling loop to accommodate restarted vertices");
+            }
          }
          if(!postponed_resources.empty())
          {

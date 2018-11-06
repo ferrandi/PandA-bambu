@@ -238,7 +238,7 @@ void interface_infer::classifyArg(statement_list*sl, tree_nodeRef argSSANode, bo
    classifyArgRecurse(Visited, argSSA, destBB, sl, canBeMovedToBB2, isRead, isWrite, unkwown_pattern, writeStmt, readStmt);
 }
 
-void interface_infer::create_Read_function(tree_nodeRef origStmt, unsigned int destBB, statement_list*sl, function_decl* fd, const std::string &fdName, tree_nodeRef argSSANode, parm_decl* a, tree_nodeRef readType, const std::list<tree_nodeRef> &usedStmt_defs, const tree_manipulationRef tree_man, const tree_managerRef TM)
+void interface_infer::create_Read_function(const std::string& argName_string, tree_nodeRef origStmt, unsigned int destBB, statement_list*sl, function_decl* fd, const std::string &fdName, tree_nodeRef argSSANode, parm_decl* a, tree_nodeRef readType, const std::list<tree_nodeRef> &usedStmt_defs, const tree_manipulationRef tree_man, const tree_managerRef TM)
 {
    /// create the function_decl
    std::vector<tree_nodeRef> argsT;
@@ -272,12 +272,13 @@ void interface_infer::create_Read_function(tree_nodeRef origStmt, unsigned int d
       sl->list_of_bloc[destBB]->PushBefore(new_assignment, origStmt);
    else
       sl->list_of_bloc[destBB]->PushBack(new_assignment);
+   GetPointer<HLS_manager>(AppM)->design_interface_loads[destBB][argName_string].push_back(GET_INDEX_NODE(new_assignment));
    BehavioralHelperRef helper = BehavioralHelperRef(new BehavioralHelper(AppM, GET_INDEX_NODE(function_decl_node), false, parameters));
    FunctionBehaviorRef FB = FunctionBehaviorRef(new FunctionBehavior(AppM, helper, parameters));
    AppM->GetCallGraphManager()->AddFunctionAndCallPoint(function_id, GET_INDEX_NODE(function_decl_node), new_assignment->index, FB, FunctionEdgeInfo::CallType::direct_call);
 }
 
-void interface_infer::create_Write_function(tree_nodeRef origStmt, unsigned int destBB, statement_list*sl, function_decl* fd, const std::string &fdName, tree_nodeRef argSSANode, tree_nodeRef writeValue, parm_decl* a, tree_nodeRef writeType, const tree_manipulationRef tree_man, const tree_managerRef TM)
+void interface_infer::create_Write_function(const std::string& argName_string, tree_nodeRef origStmt, unsigned int destBB, statement_list*sl, function_decl* fd, const std::string &fdName, tree_nodeRef argSSANode, tree_nodeRef writeValue, parm_decl* a, tree_nodeRef writeType, const tree_manipulationRef tree_man, const tree_managerRef TM)
 {
    const auto size_value_id = TM->new_tree_node_id();
    const auto bit_size_type = tree_man->create_bit_size_type();
@@ -304,16 +305,16 @@ void interface_infer::create_Write_function(tree_nodeRef origStmt, unsigned int 
    }
    else
       args.push_back(argSSANode);
-   tree_nodeRef new_readwritecall;
 
-   new_readwritecall = tree_man->create_gimple_call(function_decl_node, args, srcp, destBB);
+   auto new_writecall = tree_man->create_gimple_call(function_decl_node, args, srcp, destBB);
 
    THROW_ASSERT(origStmt, "unexpected condition");
-   sl->list_of_bloc[destBB]->PushBefore(new_readwritecall, origStmt);
+   sl->list_of_bloc[destBB]->PushBefore(new_writecall, origStmt);
+   GetPointer<HLS_manager>(AppM)->design_interface_stores[destBB][argName_string].push_back(GET_INDEX_NODE(new_writecall));
    addGimpleNOPxVirtual(origStmt,sl,TM);
    BehavioralHelperRef helper = BehavioralHelperRef(new BehavioralHelper(AppM, GET_INDEX_NODE(function_decl_node), false, parameters));
    FunctionBehaviorRef FB = FunctionBehaviorRef(new FunctionBehavior(AppM, helper, parameters));
-   AppM->GetCallGraphManager()->AddFunctionAndCallPoint(function_id, GET_INDEX_NODE(function_decl_node), new_readwritecall->index, FB, FunctionEdgeInfo::CallType::direct_call);
+   AppM->GetCallGraphManager()->AddFunctionAndCallPoint(function_id, GET_INDEX_NODE(function_decl_node), new_writecall->index, FB, FunctionEdgeInfo::CallType::direct_call);
 }
 
 
@@ -722,7 +723,7 @@ DesignFlowStep_Status interface_infer::InternalExec()
                               if(!readType)
                                  readType=GetPointer<mem_ref>(GET_NODE(rs_ga->op1))->type;
                            }
-                           create_Read_function(tree_nodeRef(), destBB, sl, fd, fdName, argSSANode, a, readType, usedStmt_defs, tree_man, TM);
+                           create_Read_function(argName_string, tree_nodeRef(), destBB, sl, fd, fdName, argSSANode, a, readType, usedStmt_defs, tree_man, TM);
                            for(auto rs: readStmt)
                               addGimpleNOPxVirtual(rs,sl,TM);
                            create_resource(operationsR, operationsW, argName_string, interfaceType, inputBitWidth, false);
@@ -741,7 +742,7 @@ DesignFlowStep_Status interface_infer::InternalExec()
                               usedStmt_defs.push_back(rs_ga->op0);
                               std::string instanceFname = fdName+STR(loadIdIndex);
                               operationsR.push_back(instanceFname);
-                              create_Read_function(rs, rs_ga->bb_index, sl, fd, instanceFname, argSSANode, a, GetPointer<mem_ref>(GET_NODE(rs_ga->op1))->type, usedStmt_defs, tree_man, TM);
+                              create_Read_function(argName_string, rs, rs_ga->bb_index, sl, fd, instanceFname, argSSANode, a, GetPointer<mem_ref>(GET_NODE(rs_ga->op1))->type, usedStmt_defs, tree_man, TM);
                               addGimpleNOPxVirtual(rs,sl,TM);
                               usedStmt_defs.clear();
                               ++loadIdIndex;
@@ -774,7 +775,7 @@ DesignFlowStep_Status interface_infer::InternalExec()
                               if(!readType)
                                  readType=GetPointer<mem_ref>(GET_NODE(rs_ga->op1))->type;
                            }
-                           create_Read_function(tree_nodeRef(), destBB, sl, fd, fdName, argSSANode, a, readType, usedStmt_defs, tree_man, TM);
+                           create_Read_function(argName_string, tree_nodeRef(), destBB, sl, fd, fdName, argSSANode, a, readType, usedStmt_defs, tree_man, TM);
                            for(auto rs: readStmt)
                               addGimpleNOPxVirtual(rs,sl,TM);
                            unsigned int IdIndex=0;
@@ -795,7 +796,7 @@ DesignFlowStep_Status interface_infer::InternalExec()
                                  isDiffSize=true;
                               std::string instanceFname = fdName+STR(IdIndex);
                               operationsW.push_back(instanceFname);
-                              create_Write_function(ws, ws_ga->bb_index, sl, fd, instanceFname, argSSANode, ws_ga->op1, a, GetPointer<mem_ref>(GET_NODE(ws_ga->op0))->type, tree_man, TM);
+                              create_Write_function(argName_string, ws, ws_ga->bb_index, sl, fd, instanceFname, argSSANode, ws_ga->op1, a, GetPointer<mem_ref>(GET_NODE(ws_ga->op0))->type, tree_man, TM);
                               ++IdIndex;
                            }
                            create_resource(operationsR, operationsW, argName_string, interfaceType, inputBitWidth,isDiffSize);
@@ -814,7 +815,7 @@ DesignFlowStep_Status interface_infer::InternalExec()
                               usedStmt_defs.push_back(rs_ga->op0);
                               std::string instanceFname = fdName+STR(IdIndex);
                               operationsR.push_back(instanceFname);
-                              create_Read_function(rs, rs_ga->bb_index, sl, fd, instanceFname, argSSANode, a, GetPointer<mem_ref>(GET_NODE(rs_ga->op1))->type, usedStmt_defs, tree_man, TM);
+                              create_Read_function(argName_string, rs, rs_ga->bb_index, sl, fd, instanceFname, argSSANode, a, GetPointer<mem_ref>(GET_NODE(rs_ga->op1))->type, usedStmt_defs, tree_man, TM);
                               addGimpleNOPxVirtual(rs,sl,TM);
                               usedStmt_defs.clear();
                               ++IdIndex;
@@ -837,7 +838,7 @@ DesignFlowStep_Status interface_infer::InternalExec()
                                  isDiffSize=true;
                               std::string instanceFname = fdName+STR(IdIndex);
                               operationsW.push_back(instanceFname);
-                              create_Write_function(ws, ws_ga->bb_index, sl, fd, instanceFname, argSSANode, ws_ga->op1, a, GetPointer<mem_ref>(GET_NODE(ws_ga->op0))->type, tree_man, TM);
+                              create_Write_function(argName_string, ws, ws_ga->bb_index, sl, fd, instanceFname, argSSANode, ws_ga->op1, a, GetPointer<mem_ref>(GET_NODE(ws_ga->op0))->type, tree_man, TM);
                               ++IdIndex;
                            }
                            create_resource(operationsR, operationsW, argName_string, interfaceType, inputBitWidth, isDiffSize);
@@ -864,7 +865,7 @@ DesignFlowStep_Status interface_infer::InternalExec()
                                  isDiffSize=true;
                               std::string instanceFname = fdName+STR(IdIndex);
                               operationsW.push_back(instanceFname);
-                              create_Write_function(ws, ws_ga->bb_index, sl, fd, instanceFname, argSSANode, ws_ga->op1, a, GetPointer<mem_ref>(GET_NODE(ws_ga->op0))->type, tree_man, TM);
+                              create_Write_function(argName_string, ws, ws_ga->bb_index, sl, fd, instanceFname, argSSANode, ws_ga->op1, a, GetPointer<mem_ref>(GET_NODE(ws_ga->op0))->type, tree_man, TM);
                               ++IdIndex;
                            }
                            create_resource(operationsR, operationsW, argName_string, interfaceType, inputBitWidth, isDiffSize);
