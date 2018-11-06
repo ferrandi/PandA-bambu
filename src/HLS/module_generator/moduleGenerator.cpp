@@ -385,6 +385,8 @@ void moduleGenerator::specialize_fu(std::string fuName, vertex ve, std::string l
       GetPointer<module>(top)->set_license(fu_module->get_license());
       std::map<std::string,std::string> p = fu_module->get_parameters();
       GetPointer<module>(top)->set_parameters(p);
+      auto multiplicitiy=fu_module->get_multi_unit_multiplicity();
+      GetPointer<module>(top)->set_multi_unit_multiplicity(multiplicitiy);
 
       //std::cout<<"Module created, adding ports"<<std::endl;
 
@@ -421,7 +423,14 @@ void moduleGenerator::specialize_fu(std::string fuName, vertex ve, std::string l
                      dt->vector_size = resize_to_8_or_greater(dt->vector_size);
 
                   port_name="in"+STR(portNum+currentPort-toSkip);
-                  generated_port=CM->add_port(port_name, port_o::IN, top, dt);
+                  if(curr_port->get_kind()==port_vector_o_K)
+                  {
+                     auto ps=GetPointer<port_o>(curr_port)->get_ports_size();
+                     THROW_ASSERT(multiplicitiy==ps,"unexpected condition");
+                     generated_port=CM->add_port_vector(port_name, port_o::IN, ps, top, dt);
+                  }
+                  else
+                     generated_port=CM->add_port(port_name, port_o::IN, top, dt);
                   generated_port->get_typeRef()->size=dt->size;
                   generated_port->get_typeRef()->vector_size=dt->vector_size;
                   param_list=param_list+" "+port_name;
@@ -436,7 +445,14 @@ void moduleGenerator::specialize_fu(std::string fuName, vertex ve, std::string l
             port_name=curr_port->get_id();
             if(curr_port->get_kind() == port_vector_o_K)
             {
-               generated_port=CM->add_port_vector(port_name, port_o::IN, n_ports, top, curr_port->get_typeRef());
+               if(multiplicitiy)
+               {
+                  auto ps=GetPointer<port_o>(curr_port)->get_ports_size();
+                  THROW_ASSERT(multiplicitiy==ps,"unexpected condition");
+                  generated_port=CM->add_port_vector(port_name, port_o::IN, ps, top, curr_port->get_typeRef());
+               }
+               else
+                  generated_port=CM->add_port_vector(port_name, port_o::IN, n_ports, top, curr_port->get_typeRef());
             }
             else
                generated_port=CM->add_port(port_name, port_o::IN, top, curr_port->get_typeRef());

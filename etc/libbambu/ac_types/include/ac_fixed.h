@@ -511,13 +511,17 @@ namespace __AC_NAMESPACE
 
       // Explicit conversion functions to C built-in types -------------
       __FORCE_INLINE int to_int() const { return ((I - W) >= 32) ? 0 : (signed int)to_ac_int(); }
+      __FORCE_INLINE explicit operator int() const { return to_int(); }
       __FORCE_INLINE unsigned to_uint() const { return ((I - W) >= 32) ? 0 : (unsigned int)to_ac_int(); }
+      __FORCE_INLINE explicit operator unsigned() const { return to_uint(); }
       __FORCE_INLINE long to_long() const { return ((I - W) >= ac_private::long_w) ? 0 : (signed long)to_ac_int(); }
       __FORCE_INLINE unsigned long to_ulong() const { return ((I - W) >= ac_private::long_w) ? 0 : (unsigned long)to_ac_int(); }
       __FORCE_INLINE Slong to_int64() const { return ((I - W) >= 64) ? 0 : (Slong)to_ac_int(); }
       __FORCE_INLINE Ulong to_uint64() const { return ((I - W) >= 64) ? 0 : (Ulong)to_ac_int(); }
       __FORCE_INLINE double to_double() const { return ac_private::ldexpr<I - W>(Base::to_double()); }
+      __FORCE_INLINE explicit operator double() const { return to_double(); }
       __FORCE_INLINE float to_float() const { return ac_private::ldexpr<I - W>(Base::to_float()); }
+      __FORCE_INLINE explicit operator float() const { return to_float(); }
 
       __FORCE_INLINE int length() const { return W; }
 

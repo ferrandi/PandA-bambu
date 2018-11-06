@@ -269,9 +269,12 @@ inline std::string convert_fp_to_string(std::string num, unsigned int precision)
  */
 #define GET_CLASS(obj) string_demangle(typeid(obj).name())
 
-inline unsigned int ac_type_bitwidth(const std::string interfaceTypename)
+inline unsigned int ac_type_bitwidth(const std::string intType)
 {
    unsigned int inputBitWidth = 0;
+   auto interfaceTypename=intType;
+   if(interfaceTypename.find("const ") == 0)
+      interfaceTypename = interfaceTypename.substr(std::string("const ").size());
    if(interfaceTypename.find("ac_int<") == 0)
    {
       auto subtypeArg=interfaceTypename.substr(std::string("ac_int<").size());

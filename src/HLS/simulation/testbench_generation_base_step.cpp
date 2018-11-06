@@ -537,7 +537,7 @@ std::string TestbenchGenerationBaseStep::write_verilator_testbench(const std::st
    PP(os, "   tfp->open (vcd_output_filename.c_str());\n");
    PP(os, "#endif\n");
    PP(os, "   int cycleCounter = 0;\n");
-   PP(os, "   top->" + std::string(CLOCK_PORT_NAME) + " = 0;\n");
+   PP(os, "   top->" + std::string(CLOCK_PORT_NAME) + " = 1;\n");
    PP(os, "   while (!Verilated::gotFinish() && cycleCounter < SIMULATION_MAX)\n");
    PP(os, "   {\n");
    PP(os, "     top->" + std::string(CLOCK_PORT_NAME) + " = top->" + std::string(CLOCK_PORT_NAME) + " == 0 ? 1 : 0;\n");

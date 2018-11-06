@@ -67,6 +67,7 @@
 //     - the range operator over a slice of bits
 //     - a constructor from a constant string able to convert such string
 //       in a double.
+//     - conversion operators from string to ac_int
 //
 //   - Most frequent migration issues:
 //      - need to cast to common type when using question mark operator:
@@ -2671,7 +2672,18 @@ typedef signed long long Slong;
       typedef ac_private::iv<N, W <= 64> Base;
 
       __FORCE_INLINE void bit_adjust() { Base::v.template bit_adjust<W, S>(); }
-
+      template <size_t N>
+      __FORCE_INLINE void bit_fill(const char (&str)[N])
+      {
+         if(str[0] == '0' && str[1] == 'x')
+            bit_fill_hex(str,2);
+         if(str[0] == '0' && str[1] == 'o')
+            bit_fill_oct(str,2);
+         else if(str[0] == '0' && str[1] == 'b')
+            bit_fill_bin(str,2);
+         else
+            AC_ASSERT(false, "unexpected string format");
+      }
       __FORCE_INLINE bool is_neg() const { return S && Base::v[N - 1] < 0; }
 
       // returns false if number is denormal
@@ -2821,8 +2833,9 @@ typedef signed long long Slong;
       __FORCE_INLINE ac_int(double d) : ConvBase(d) { bit_adjust(); }
 
       template <size_t N>
-      __FORCE_INLINE ac_int(const char (&str)[N]) : ConvBase(str)
+      __FORCE_INLINE ac_int(const char (&str)[N])
       {
+         bit_fill(str);
          bit_adjust();
       }
 
@@ -2878,13 +2891,17 @@ typedef signed long long Slong;
 
       // Explicit conversion functions to C built-in types -------------
       __FORCE_INLINE int to_int() const { return Base::v[0]; }
+      __FORCE_INLINE explicit operator int() const { return to_int(); }
       __FORCE_INLINE unsigned to_uint() const { return Base::v[0]; }
+      __FORCE_INLINE explicit operator unsigned() const { return to_uint(); }
       __FORCE_INLINE long to_long() const { return ac_private::long_w == 32 ? (long)Base::v[0] : (long)Base::to_int64(); }
       __FORCE_INLINE unsigned long to_ulong() const { return ac_private::long_w == 32 ? (unsigned long)Base::v[0] : (unsigned long)Base::to_uint64(); }
       __FORCE_INLINE Slong to_int64() const { return Base::to_int64(); }
       __FORCE_INLINE Ulong to_uint64() const { return Base::to_uint64(); }
       __FORCE_INLINE double to_double() const { return Base::to_double(); }
+      __FORCE_INLINE explicit operator double() const { return to_double(); }
       __FORCE_INLINE float to_float() const { return Base::to_float(); }
+      __FORCE_INLINE explicit operator float() const { return to_float(); }
 
       __FORCE_INLINE int length() const { return W; }
 
@@ -3661,15 +3678,70 @@ typedef signed long long Slong;
          return r & 1;
       }
 
-      __FORCE_INLINE
-      void bit_fill_hex(const char* str)
+      template <size_t NN>
+      __FORCE_INLINE constexpr void bit_fill_bin(const char (&str)[NN], unsigned start=0)
+      {
+         ac_int<W, S> res = 0;
+#if defined(__clang__)
+#pragma clang loop unroll(full)
+#endif
+         for(auto i = start; i < NN; ++i)
+         {
+            char c = str[i];
+            int h = 0;
+            if(c == '0')
+               h = 0;
+            else if(c == '1')
+               h = 1;
+            else
+            {
+               AC_ASSERT(!c, "Invalid hex digit");
+               break;
+            }
+            res <<= ac_int<1, false>(1);
+            res |= ac_int<1, false>(h);
+         }
+         *this = res;
+      }
+
+      template <size_t NN>
+      __FORCE_INLINE constexpr void bit_fill_oct(const char (&str)[NN], unsigned start=0)
       {
          // Zero Pads if str is too short, throws ms bits away if str is too long
          // Asserts if anything other than 0-9a-fA-F is encountered
          ac_int<W, S> res = 0;
-         while(str)
+#if defined(__clang__)
+#pragma clang loop unroll(full)
+#endif
+         for(auto i = start; i < NN; ++i)
          {
-            char c = *str;
+            char c = str[i];
+            int h = 0;
+            if(c >= '0' && c <= '8')
+               h = c - '0';
+            else
+            {
+               AC_ASSERT(!c, "Invalid hex digit");
+               break;
+            }
+            res <<= ac_int<W, false>(3);
+            res |= ac_int<4, false>(h);
+         }
+         *this = res;
+      }
+
+      template <size_t NN>
+      __FORCE_INLINE constexpr void bit_fill_hex(const char (&str)[NN], unsigned start=0)
+      {
+         // Zero Pads if str is too short, throws ms bits away if str is too long
+         // Asserts if anything other than 0-9a-fA-F is encountered
+         ac_int<W, S> res = 0;
+#if defined(__clang__)
+#pragma clang loop unroll(full)
+#endif
+         for(auto i = start; i < NN; ++i)
+         {
+            char c = str[i];
             int h = 0;
             if(c >= '0' && c <= '9')
                h = c - '0';
@@ -3682,9 +3754,8 @@ typedef signed long long Slong;
                AC_ASSERT(!c, "Invalid hex digit");
                break;
             }
-            res <<= 4;
-            res |= h;
-            str++;
+            res <<= ac_int<W, false>(4);
+            res |= ac_int<4, false>(h);
          }
          *this = res;
       }

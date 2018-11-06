@@ -311,24 +311,34 @@ void conn_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, cons
          //std::cerr << "port_i " << port_i->get_path() << " of size " << GET_TYPE_SIZE(port_i) << std::endl;
          if ((port_i->get_kind() == port_o_K || port_i->get_kind() == port_vector_o_K) && GetPointer<port_o>(port_i)->find_bounded_object()) continue;
          if (port_i->get_kind() == port_vector_o_K && check_pv_allconnected(port_i)) continue;
-         //std::cerr << "  empty" << std::endl;
-         if (null_values.find(GET_TYPE_SIZE(port_i)) == null_values.end())
-         {
-            structural_type_descriptorRef bool_type = structural_type_descriptorRef(new structural_type_descriptor("bool", GET_TYPE_SIZE(port_i)));
-            structural_objectRef const_obj = SM->add_constant("null_value_" + STR(GET_TYPE_SIZE(port_i)), circuit, bool_type, STR(0));
-            null_values[GET_TYPE_SIZE(port_i)] = const_obj;
-         }
+         //std::cerr << "  empty\n";
          if (port_i->get_kind() == port_vector_o_K)
          {
             for(unsigned int p = 0; p < GetPointer<port_o>(port_i)->get_ports_size(); ++p)
             {
                structural_objectRef port_d = GetPointer<port_o>(port_i)->get_port(p);
+               auto bw=GET_TYPE_SIZE(port_d);
+               if (null_values.find(bw) == null_values.end())
+               {
+                  structural_type_descriptorRef bool_type = structural_type_descriptorRef(new structural_type_descriptor("bool", bw));
+                  structural_objectRef const_obj = SM->add_constant("null_value_" + STR(bw), circuit, bool_type, STR(0));
+                  null_values[bw] = const_obj;
+               }
                if(!GetPointer<port_o>(port_d)->find_bounded_object())
-                  SM->add_connection(port_d, null_values[GET_TYPE_SIZE(port_d)]);
+                  SM->add_connection(port_d, null_values[bw]);
             }
          }
          else
-            SM->add_connection(port_i, null_values[GET_TYPE_SIZE(port_i)]);
+         {
+            auto bw=GET_TYPE_SIZE(port_i);
+            if (null_values.find(bw) == null_values.end())
+            {
+               structural_type_descriptorRef bool_type = structural_type_descriptorRef(new structural_type_descriptor("bool", bw));
+               structural_objectRef const_obj = SM->add_constant("null_value_" + STR(bw), circuit, bool_type, STR(0));
+               null_values[bw] = const_obj;
+            }
+            SM->add_connection(port_i, null_values[bw]);
+         }
       }
       for(unsigned int j = 0; j < GetPointer<module>(curr_gate)->get_out_port_size(); j++)
       {
@@ -907,6 +917,7 @@ void conn_binding::add_command_ports(const HLS_managerRef HLSMgr, const hlsRef H
 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Adding inputs");
    std::map<structural_objectRef, std::list<structural_objectRef> > calls;
+   std::map<structural_objectRef, std::list<vertex> > start_to_vertex;
    if (selectors.find(conn_binding::IN) != selectors.end())
    {
       auto connection_binding_sets = selectors.find(conn_binding::IN)->second;
@@ -969,6 +980,7 @@ void conn_binding::add_command_ports(const HLS_managerRef HLSMgr, const hlsRef H
                   structural_objectRef start = fu_obj->find_member(START_PORT_NAME, port_o_K, fu_obj);
                   THROW_ASSERT(start, fu_obj->get_path());
                   calls[start].push_back(sel_obj);
+                  start_to_vertex[start].push_back(op);
                }
                break;
             }
@@ -990,19 +1002,70 @@ void conn_binding::add_command_ports(const HLS_managerRef HLSMgr, const hlsRef H
       }
       else
       {
-         const technology_managerRef TM = HLS->HLS_T->get_technology_manager();
-         std::string library = TM->get_library(OR_GATE_STD);
-         structural_objectRef or_gate = SM->add_module_from_technology_library("or_" + c->first->get_owner()->get_id(), OR_GATE_STD, library, SM->get_circ(), TM);
-         structural_objectRef sig = SM->add_sign("s_" + c->first->get_owner()->get_id(), SM->get_circ(), boolean_port_type);
-         SM->add_connection(sig, or_gate->find_member("out1", port_o_K, or_gate));
-         SM->add_connection(sig, c->first);
-         structural_objectRef in = or_gate->find_member("in", port_vector_o_K, or_gate);
-         auto *port = GetPointer<port_o>(in);
-         port->add_n_ports(static_cast<unsigned int>(c->second.size()), in);
-         unsigned int num = 0;
-         for(auto a = c->second.begin(); a != c->second.end(); ++a, ++num)
+         if(GetPointer<module>(c->first->get_owner()) && GetPointer<module>(c->first->get_owner())->get_multi_unit_multiplicity())
          {
-            SM->add_connection(*a, port->get_port(num));
+            THROW_ASSERT(start_to_vertex.find(c->first) != start_to_vertex.end(), "unexpected condition");
+            THROW_ASSERT(c->first->get_kind()==port_vector_o_K, "unexpected condition");
+            std::map<structural_objectRef, std::list<structural_objectRef>> toOred;
+            auto ports_it=c->second.begin();
+            for(auto v: start_to_vertex.find(c->first)->second)
+            {
+               technology_nodeRef tn = HLS->allocation_information->get_fu(HLS->Rfu->get_assign(v));
+               auto index =0u;
+               auto& ops = GetPointer<functional_unit>(tn)->get_operations();
+               for (auto o : ops)
+               {
+                  if(GetPointer<operation>(o)->get_name()==data->CGetOpNodeInfo(v)->GetOperation())
+                     break;
+                  ++index;
+               }
+               THROW_ASSERT(index<ops.size(), "unexpected condition");
+               auto sp_i = GetPointer<port_o>(c->first)->get_port(index);
+               toOred[sp_i].push_back(*ports_it);
+
+               THROW_ASSERT(ports_it!=c->second.end(), "unexpected condition");
+               ++ports_it;
+            }
+            for(auto pp_pair: toOred)
+            {
+               if(pp_pair.second.size()==1)
+                  SM->add_connection(pp_pair.first, pp_pair.second.front());
+               else
+               {
+                  const technology_managerRef TM = HLS->HLS_T->get_technology_manager();
+                  std::string library = TM->get_library(OR_GATE_STD);
+                  structural_objectRef or_gate = SM->add_module_from_technology_library("or_" + pp_pair.first->get_owner()->get_id(), OR_GATE_STD, library, SM->get_circ(), TM);
+                  structural_objectRef sig = SM->add_sign("s_" + pp_pair.first->get_owner()->get_id(), SM->get_circ(), boolean_port_type);
+                  SM->add_connection(sig, or_gate->find_member("out1", port_o_K, or_gate));
+                  SM->add_connection(sig, pp_pair.first);
+                  structural_objectRef in = or_gate->find_member("in", port_vector_o_K, or_gate);
+                  auto *port = GetPointer<port_o>(in);
+                  port->add_n_ports(static_cast<unsigned int>(pp_pair.second.size()), in);
+                  unsigned int num = 0;
+                  for(auto a = pp_pair.second.begin(); a != pp_pair.second.end(); ++a, ++num)
+                  {
+                     SM->add_connection(*a, port->get_port(num));
+                  }
+
+               }
+            }
+         }
+         else
+         {
+            const technology_managerRef TM = HLS->HLS_T->get_technology_manager();
+            std::string library = TM->get_library(OR_GATE_STD);
+            structural_objectRef or_gate = SM->add_module_from_technology_library("or_" + c->first->get_owner()->get_id(), OR_GATE_STD, library, SM->get_circ(), TM);
+            structural_objectRef sig = SM->add_sign("s_" + c->first->get_owner()->get_id(), SM->get_circ(), boolean_port_type);
+            SM->add_connection(sig, or_gate->find_member("out1", port_o_K, or_gate));
+            SM->add_connection(sig, c->first);
+            structural_objectRef in = or_gate->find_member("in", port_vector_o_K, or_gate);
+            auto *port = GetPointer<port_o>(in);
+            port->add_n_ports(static_cast<unsigned int>(c->second.size()), in);
+            unsigned int num = 0;
+            for(auto a = c->second.begin(); a != c->second.end(); ++a, ++num)
+            {
+               SM->add_connection(*a, port->get_port(num));
+            }
          }
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Added connections of " + c->first->get_path());

@@ -1078,7 +1078,6 @@ void parametric_list_based::compute_exec_stage_time(const unsigned int fu_type, 
    unsigned int n_cycles = std::max(1u, HLS->allocation_information->get_cycles(fu_type, v, flow_graph));
    if((HLS->allocation_information->is_indirect_access_memory_unit(fu_type)) && op_execution_time+setup_hold_time>= clock_cycle*n_cycles)
       op_execution_time = clock_cycle*n_cycles-setup_hold_time-phi_extra_time-scheduling_mux_margins-EPSILON;
-
    if((HLS->allocation_information->is_indirect_access_memory_unit(fu_type)) && stage_period+setup_hold_time>= clock_cycle)
       stage_period = clock_cycle-setup_hold_time-phi_extra_time-scheduling_mux_margins-EPSILON;
 

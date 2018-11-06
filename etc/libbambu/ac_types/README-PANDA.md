@@ -23,6 +23,7 @@ With respect the original library these are the changes mainly done:
      - the range operator over a slice of bits
      - a constructor from a constant string able to convert such string
        in a double.
+     - conversion operators from string to ac_int
      - two headers files ap_int.h and ap_fixed.h for ap_types library 
        compatibility.
 

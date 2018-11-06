@@ -38,12 +38,24 @@
  *
 */
 
-std::cout << "reg [" << _ports_out[0].type_size << "-1:0] reg_" << _ports_out[0].name << " 1INIT_ZERO_VALUE;\n";
-std::cout << "assign " << _ports_out[0].name << " = reg_" << _ports_out[0].name << ";\n";
+std::cout << "integer ii=0;\n";
+std::cout << "reg [" << _ports_out[0].type_size << "-1:0] reg_" << _ports_out[0].name << "_frst 1INIT_ZERO_VALUE;\n";
+std::cout << "reg [" << _ports_out[0].type_size << "-1:0] reg_" << _ports_out[0].name << "_snd;\n";
+std::cout << "assign " << _ports_out[0].name << " = reg_" << _ports_out[0].name << "_frst;\n";
+std::cout << "always @(*)\n";
+std::cout << "begin\n";
+std::cout << "  reg_" << _ports_out[0].name << "_snd = reg_" << _ports_out[0].name << "_frst;\n";
+std::cout << "  for(ii=0; ii<PORTSIZE_"<< _ports_in[3].name << "; ii=ii+1)\n";
+std::cout << "  begin\n";
+std::cout << "    if (start_port[ii])\n";
+std::cout << "      reg_" << _ports_out[0].name << "_snd = (" << _ports_in[3].name <<"[(BITSIZE_" << _ports_in[3].name <<")*ii+:BITSIZE_" << _ports_in[3].name<<"]>=" << _ports_out[0].type_size << ")?" << _ports_in[4].name <<"[(BITSIZE_" << _ports_in[4].name <<")*ii+:BITSIZE_" << _ports_in[4].name<<"]:(reg_" << _ports_out[0].name << "_snd^((((BITSIZE_" << _ports_in[4].name <<">=" << _ports_out[0].type_size << "?" << _ports_in[4].name <<"[(BITSIZE_" << _ports_in[4].name <<")*ii+:BITSIZE_" << _ports_in[4].name<<"]:{{(" << _ports_out[0].type_size << "-BITSIZE_" << _ports_in[4].name <<"){1'b0}}," << _ports_in[4].name <<"[(BITSIZE_" << _ports_in[4].name <<")*ii+:BITSIZE_" << _ports_in[4].name<<"]})<<" << _ports_in[5].name <<"[(BITSIZE_" << _ports_in[5].name <<")*ii+:BITSIZE_" << _ports_in[5].name<<"]*8)^reg_" << _ports_out[0].name << "_snd) & (((" << _ports_in[3].name <<"[(BITSIZE_" << _ports_in[3].name <<")*ii+:BITSIZE_" << _ports_in[3].name<<"]+" << _ports_in[5].name <<"[(BITSIZE_" << _ports_in[5].name <<")*ii+:BITSIZE_" << _ports_in[5].name<<"]*8)>" << _ports_out[0].type_size << ") ? ((({(" << _ports_out[0].type_size << "){1'b1}})>>(" << _ports_in[5].name <<"[(BITSIZE_" << _ports_in[5].name <<")*ii+:BITSIZE_" << _ports_in[5].name<<"]*8))<<(" << _ports_in[5].name <<"[(BITSIZE_" << _ports_in[5].name <<")*ii+:BITSIZE_" << _ports_in[5].name<<"]*8)) : ((((({(" << _ports_out[0].type_size << "){1'b1}})>>(" << _ports_in[5].name <<"[(BITSIZE_" << _ports_in[5].name <<")*ii+:BITSIZE_" << _ports_in[5].name<<"]*8))<<(" << _ports_in[5].name <<"[(BITSIZE_" << _ports_in[5].name <<")*ii+:BITSIZE_" << _ports_in[5].name<<"]*8))<<(" << _ports_out[0].type_size << "-" << _ports_in[3].name <<"[(BITSIZE_" << _ports_in[3].name <<")*ii+:BITSIZE_" << _ports_in[3].name<<"]-" << _ports_in[5].name <<"[(BITSIZE_" << _ports_in[5].name <<")*ii+:BITSIZE_" << _ports_in[5].name<<"]*8))>>(" << _ports_out[0].type_size << "-" << _ports_in[3].name <<"[(BITSIZE_" << _ports_in[3].name <<")*ii+:BITSIZE_" << _ports_in[3].name<<"]-" << _ports_in[5].name <<"[(BITSIZE_" << _ports_in[5].name <<")*ii+:BITSIZE_" << _ports_in[5].name<<"]*8)))));\n";
+std::cout << "  end\n";
+std::cout << "end\n";
+
 std::cout << "always @(posedge clock 1RESET_EDGE)\n";
 std::cout << "  if (1RESET_VALUE)\n";
-std::cout << "    reg_" << _ports_out[0].name << " <= 0;\n";
-std::cout << "  else if (start_port)\n";
-std::cout << "    reg_" << _ports_out[0].name << " <= (" << _ports_in[3].name <<">=" << _ports_out[0].type_size << ")?" << _ports_in[4].name <<":(reg_" << _ports_out[0].name << "^((((BITSIZE_" << _ports_in[4].name <<">=" << _ports_out[0].type_size << "?" << _ports_in[4].name <<":{{(" << _ports_out[0].type_size << "-BITSIZE_" << _ports_in[4].name <<"){1'b0}}," << _ports_in[4].name <<"})<<" << _ports_in[5].name <<"*8)^reg_" << _ports_out[0].name << ") & (((" << _ports_in[3].name <<"+" << _ports_in[5].name <<"*8)>" << _ports_out[0].type_size << ") ? ((({(" << _ports_out[0].type_size << "){1'b1}})>>(" << _ports_in[5].name <<"*8))<<(" << _ports_in[5].name <<"*8)) : ((((({(" << _ports_out[0].type_size << "){1'b1}})>>(" << _ports_in[5].name <<"*8))<<(" << _ports_in[5].name <<"*8))<<(" << _ports_out[0].type_size << "-" << _ports_in[3].name <<"-" << _ports_in[5].name <<"*8))>>(" << _ports_out[0].type_size << "-" << _ports_in[3].name <<"-" << _ports_in[5].name <<"*8)))));\n";
+std::cout << "    reg_" << _ports_out[0].name << "_frst <= 0;\n";
+std::cout << "  else\n";
+std::cout << "    reg_" << _ports_out[0].name << "_frst <= reg_" << _ports_out[0].name << "_snd;\n";
 
 

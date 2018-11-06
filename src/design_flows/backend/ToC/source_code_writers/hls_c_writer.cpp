@@ -187,7 +187,7 @@ void HLSCWriter::WriteTestbenchHelperFunctions()
    indented_output_stream->Append("if (precision%8)\n");
    indented_output_stream->Append("{\n");
    indented_output_stream->Append("value = *(num+precision/8);\n");
-   indented_output_stream->Append("for (j = 0; j < precision%8; ++j)\n");
+   indented_output_stream->Append("for (j = 8-precision%8; j < 8; ++j)\n");
    indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"%c\", (((1LLU << (8 - j - 1)) & value) ? '1' : '0'));\n");
    indented_output_stream->Append("}\n");
    indented_output_stream->Append("for (i = 0; i < 8*(precision/8); i = i + 8)\n");
@@ -663,7 +663,7 @@ void HLSCWriter::WriteExpectedResults(const BehavioralHelperConstRef behavioral_
             if(splitted.size() == 1 && flag_cpp && reference_type_p)
             {
 
-               indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"//expected value for output " + param + ": %" + (behavioral_helper->is_real(base_type) ? std::string("g") : std::string("d")) + "\\n\", " + param +
+               indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"//expected value for output " + param + ": %" + (behavioral_helper->is_real(base_type) ? std::string("g") : std::string("d")) + "\\n\", " + (behavioral_helper->is_real(base_type) ? std::string("") : std::string("(int)")) + param +
                                               ");\n");
                indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"o\");\n");
                indented_output_stream->Append("_Ptd2Bin_(__bambu_testbench_fp, (unsigned char*)&" + param + ", " + STR(base_type_bitsize) + ");\n");
@@ -674,7 +674,7 @@ void HLSCWriter::WriteExpectedResults(const BehavioralHelperConstRef behavioral_
                indented_output_stream->Append("for (__testbench_index2 = 0; __testbench_index2 < " + STR(splitted.size()) + "; ++__testbench_index2)\n{\n");
                if(output_level > OUTPUT_LEVEL_MINIMUM)
                {
-                  indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"//expected value for output " + param + "[__testbench_index2]: %" + (behavioral_helper->is_real(base_type) ? std::string("g") : std::string("d")) + "\\n\", " + param +
+                  indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"//expected value for output " + param + "[__testbench_index2]: %" + (behavioral_helper->is_real(base_type) ? std::string("g") : std::string("d")) + "\\n\", " + (behavioral_helper->is_real(base_type) ? std::string("") : std::string("(int)")) + param +
                                                  "[__testbench_index2]);\n");
                }
                indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"o\");\n");
@@ -739,7 +739,7 @@ void HLSCWriter::WriteExpectedResults(const BehavioralHelperConstRef behavioral_
             if(splitted.size() == 1 && flag_cpp && reference_type_p)
             {
                if(output_level > OUTPUT_LEVEL_MINIMUM)
-                  indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"//expected value for output " + param + ": %" + (behavioral_helper->is_real(base_type) ? std::string("g") : std::string("d")) + "\\n\", " + param + ");\n");
+                  indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"//expected value for output " + param + ": %" + (behavioral_helper->is_real(base_type) ? std::string("g") : std::string("d")) + "\\n\", " + (behavioral_helper->is_real(base_type) ? std::string("") : std::string("(int)")) + param + ");\n");
                indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"o\");\n");
                indented_output_stream->Append("_Dec2Bin_(__bambu_testbench_fp, " + param + ", " + STR(base_type_bitsize) + ");\n");
                indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"\\n\");\n");
@@ -748,7 +748,7 @@ void HLSCWriter::WriteExpectedResults(const BehavioralHelperConstRef behavioral_
             {
                indented_output_stream->Append("for (__testbench_index2 = 0; __testbench_index2 < " + STR(splitted.size()) + "; ++__testbench_index2)\n{\n");
                if(output_level > OUTPUT_LEVEL_MINIMUM)
-                  indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"//expected value for output " + param + "[__testbench_index2]: %" + (behavioral_helper->is_real(base_type) ? std::string("g") : std::string("d")) + "\\n\", " + param +
+                  indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"//expected value for output " + param + "[__testbench_index2]: %" + (behavioral_helper->is_real(base_type) ? std::string("g") : std::string("d")) + "\\n\", " + (behavioral_helper->is_real(base_type) ? std::string("") : std::string("(int)")) + param +
                                                  "[__testbench_index2]);\n");
                indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"o\");\n");
                indented_output_stream->Append("_Dec2Bin_(__bambu_testbench_fp, " + param + "[__testbench_index2], " + STR(base_type_bitsize) + ");\n");
@@ -890,7 +890,8 @@ void HLSCWriter::WriteSimulatorInitMemory(const unsigned int function_id)
                std::string init_value_copy = initial_string;
                boost::replace_all(init_value_copy, "\\", "\\\\");
                boost::replace_all(init_value_copy, "\n", "");
-               if(output_level > OUTPUT_LEVEL_MINIMUM) indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"//memory initialization for variable " + param + " value: " + init_value_copy + "\\n\");\n");
+               boost::replace_all(init_value_copy, "\"", "");
+               if(output_level > OUTPUT_LEVEL_MINIMUM) indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"//memory initialization for variable " + param /*+ " value: " + init_value_copy */+ "\\n\");\n");
                tree_nodeRef pt_node = TM->get_tree_node_const(base_type);
                unsigned int ptd_base_type = 0;
                if(pt_node->get_kind() == pointer_type_K)
@@ -1094,7 +1095,77 @@ std::string HLSCWriter::convert_in_binary(const BehavioralHelperConstRef behavio
    else
    {
       long long int ll_value;
-      if(C_value[0] == '\'')
+      if(C_value[0] == '\"')
+      {
+         trimmed_value = C_value.substr(1);
+         trimmed_value = trimmed_value.substr(0, trimmed_value.find('\"'));
+         if(trimmed_value[0]== '0' && trimmed_value[1]== 'b')
+            trimmed_value = trimmed_value.substr(2);
+         else if(trimmed_value[0]== '0' && (trimmed_value[1]== 'x' || trimmed_value[1]== 'o'))
+         {
+            bool is_hex = trimmed_value[1]== 'x';
+            std::string initial_string = trimmed_value.substr(2);
+            trimmed_value="";
+            std::string hexTable[16]={"0000",
+                                      "0001",
+                                      "0010",
+                                      "0011",
+                                      "0100",
+                                      "0101",
+                                      "0110",
+                                      "0111",
+                                      "1000",
+                                      "1001",
+                                      "1010",
+                                      "1011",
+                                      "1100",
+                                      "1101",
+                                      "1110",
+                                      "1111"};
+            std::string octTable[16]={"000",
+                                      "001",
+                                      "010",
+                                      "011",
+                                      "100",
+                                      "101",
+                                      "110",
+                                      "111"
+                                     };
+            for(auto i=0u; i < initial_string.size(); ++i)
+            {
+               auto curChar=initial_string.at(i);
+               int off=0;
+               if(is_hex)
+               {
+                  if(curChar >= '0' && curChar <= '9')
+                     off = curChar - '0';
+                  else if(curChar >= 'A' && curChar <= 'F')
+                     off = curChar - 'A' + 10;
+                  else if(curChar >= 'a' && curChar <= 'f')
+                     off = curChar - 'a' + 10;
+                  else
+                     THROW_ERROR("unexpected char in hex string");
+               }
+               else
+               {
+                  if(curChar >= '0' && curChar <= '8')
+                     off = curChar - '0';
+                  else
+                     THROW_ERROR("unexpected char in octal string");
+               }
+               trimmed_value = trimmed_value + (is_hex?hexTable[off]:octTable[off]);
+            }
+         }
+         else
+            THROW_ERROR("unsupported format");
+
+         while(trimmed_value.size()<precision)
+            trimmed_value = "0"+trimmed_value;
+         while(trimmed_value.size()>precision)
+            trimmed_value = trimmed_value.substr(1);
+         return trimmed_value;
+      }
+      else if(C_value[0] == '\'')
       {
          trimmed_value = C_value.substr(1);
          THROW_ASSERT(trimmed_value.find('\'') != std::string::npos, "unxpected case");

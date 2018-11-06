@@ -1551,7 +1551,7 @@ DesignFlowStep_Status allocation::InternalExec()
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Considered library " + lib_name);
          continue;
       }
-      for (const auto fu : library->get_library_fu())
+      for (const auto& fu : library->get_library_fu())
       {
          technology_nodeRef current_fu = fu.second;
          if (GetPointer<functional_unit_template>(current_fu))
@@ -1761,7 +1761,21 @@ DesignFlowStep_Status allocation::InternalExec()
                      }
                      else if(memory_ctrl_type != "")
                         set_number_channels(specializedId, 1);
-                     add_tech_constraint(new_fu.find(functionalUnitName)->second, tech_constrain_value, current_id, library_name == PROXY_LIBRARY);
+                     auto fuUnit=new_fu.find(functionalUnitName)->second;
+                     if(fuUnit->get_kind() == functional_unit_K)
+                     {
+                        auto fuUnitModule = GetPointer<functional_unit>(fuUnit)->CM->get_circ();
+                        if(GetPointer<module>(fuUnitModule))
+                        {
+                           auto multiplicity=GetPointer<module>(fuUnitModule)->get_multi_unit_multiplicity();
+                           if(multiplicity)
+                           {
+                              PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Added multiplicity of "+ STR(multiplicity )+ " to " + functionalUnitName);
+                              set_number_channels(specializedId, multiplicity);
+                           }
+                        }
+                     }
+                     add_tech_constraint(fuUnit, tech_constrain_value, current_id, library_name == PROXY_LIBRARY);
                      current_id++;
                   }
                }
