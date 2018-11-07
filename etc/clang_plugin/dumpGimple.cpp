@@ -1267,13 +1267,7 @@ namespace clang
             else if(isa<llvm::ReturnInst>(U))
                return false;
             else
-            {
-               U->print(llvm::errs(), true);
-               llvm::errs() << "\n";
-               llvm::errs() << cast<llvm::Instruction>(U)->getOpcodeName() << "\n";
-               stream.close();
-               llvm_unreachable((std::string("unexpected condition: ") + std::string(ValueTyNames[U->getValueID()])).c_str());
-            }
+               return false;
          }
       }
       return true;
