@@ -87,6 +87,9 @@ struct rehashed_heap : public std::priority_queue<vertex,
                      std::priority_queue<vertex, std::vector<vertex>, priority_compare_functor<_Type> >::comp);
    }
 
+   std::vector<vertex>::const_iterator begin() {return rehashed_heap::c.begin();}
+   std::vector<vertex>::const_iterator end() {return rehashed_heap::c.end();}
+
 };
 
 /**
