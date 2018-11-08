@@ -378,7 +378,8 @@ namespace clang {
                               tokString!="bus" &&
                               tokString!="fifo" &&
                               tokString!="handshake" &&
-                              tokString!="valid")
+                              tokString!="valid" &&
+                              tokString!="acknowledge")
                         {
                            DiagnosticsEngine &D = PP.getDiagnostics();
                            unsigned ID = D.getCustomDiagID(
