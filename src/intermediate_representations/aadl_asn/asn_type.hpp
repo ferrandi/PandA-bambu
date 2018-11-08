@@ -170,7 +170,7 @@ class RedefineAsnType : public AsnType
        * Constructor
        * @param name is the redefined type
        */
-      explicit RedefineAsnType(std::string name);
+      explicit RedefineAsnType(std::string  name);
 };
 
 class SequenceAsnType : public AsnType
@@ -182,7 +182,7 @@ class SequenceAsnType : public AsnType
       /**
        * Constructor
        */
-      explicit SequenceAsnType(std::list<std::pair<std::string, AsnTypeRef> >  element_type_list);
+      explicit SequenceAsnType(std::list<std::pair<std::string, AsnTypeRef> >   element_type_list);
 };
 
 class SequenceOfAsnType : public AsnType
@@ -197,7 +197,7 @@ class SequenceOfAsnType : public AsnType
       /**
        * Constructor
        */
-      SequenceOfAsnType(std::string element, const std::string&size);
+      SequenceOfAsnType(std::string  element, const std::string&size);
 };
 
 class SetAsnType : public AsnType
@@ -224,7 +224,7 @@ class SetOfAsnType : public AsnType
       /**
        * Constructor
        */
-      SetOfAsnType(std::string element, const std::string&size);
+      SetOfAsnType(std::string  element, const std::string&size);
 };
 
 typedef refcount<AsnType> AsnTypeRef;

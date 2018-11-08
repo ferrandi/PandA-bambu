@@ -65,7 +65,7 @@ DryRunEvaluation::DryRunEvaluation(const ParameterConstRef _parameters, const HL
 }
 
 DryRunEvaluation::~DryRunEvaluation()
-{}
+= default;
 
 bool DryRunEvaluation::HasToBeExecuted() const
 {
@@ -86,18 +86,18 @@ DesignFlowStep_Status DryRunEvaluation::InternalExec()
       }
       if (objective == "FREQUENCY" or objective == "TIME" or objective == "TOTAL_TIME" or objective == "AREAxTIME")
       {
-         double clock_period = parameters->getOption<double>(OPT_clock_period);
+         auto clock_period = parameters->getOption<double>(OPT_clock_period);
          HLSMgr->evaluations["PERIOD"] = std::vector<double>(1, clock_period);
       }
       if(objective == "TIME")
       {
-         double clock_period = parameters->getOption<double>(OPT_clock_period);
+         auto clock_period = parameters->getOption<double>(OPT_clock_period);
          HLSMgr->evaluations["CYCLES"] = std::vector<double>(1, 0.0);
          HLSMgr->evaluations["FREQUENCY"] = std::vector<double>(1, 1000/clock_period);
       }
       if(objective == "PERIOD")
       {
-         double clock_period = parameters->getOption<double>(OPT_clock_period);
+         auto clock_period = parameters->getOption<double>(OPT_clock_period);
          HLSMgr->evaluations[objective] = std::vector<double>(1, clock_period);
       }
    }

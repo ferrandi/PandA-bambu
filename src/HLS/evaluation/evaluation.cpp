@@ -92,9 +92,7 @@ Evaluation::Evaluation(const ParameterConstRef _parameters, const HLS_managerRef
 }
 
 Evaluation::~Evaluation()
-{
-
-}
+= default;
 
 const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > Evaluation::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
@@ -244,7 +242,7 @@ DesignFlowStep_Status Evaluation::Exec()
          THROW_ASSERT(evaluations.find("NUM_EXECUTIONS") != evaluations.end(), "");
          THROW_ASSERT(evaluations.at("NUM_EXECUTIONS").size() == 1, "");
          unsigned long long int num_executions = static_cast<unsigned long long int>(evaluations.at("NUM_EXECUTIONS")[0]);
-         unsigned long long int avg_cycles = static_cast<unsigned long long int>(evaluation);
+         auto avg_cycles = static_cast<unsigned long long int>(evaluation);
          INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Total cycles             : " + STR(tot_cycles) + " cycles");
          INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Number of executions     : " + STR(num_executions));
          INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Average execution        : " + STR(avg_cycles) + " cycles");
@@ -298,7 +296,7 @@ DesignFlowStep_Status Evaluation::Exec()
       {
          ///get the timing information after the synthesis
          double minimum_period = evaluation;
-         double clock_period = parameters->getOption<double>(OPT_clock_period); 
+         auto clock_period = parameters->getOption<double>(OPT_clock_period); 
          INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Clock period             : " + boost::lexical_cast<std::string>(clock_period));
          INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Design minimum period    : " + boost::lexical_cast<std::string>(minimum_period));
       }

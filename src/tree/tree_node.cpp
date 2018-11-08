@@ -846,7 +846,7 @@ void handler::visit(tree_node_visitor * const v) const
 }
 
 #if HAVE_TREE_MANIPULATION_BUILT
-identifier_node::identifier_node(unsigned int node_id, std::string _strg, tree_manager* TM):
+identifier_node::identifier_node(unsigned int node_id, std::string  _strg, tree_manager* TM):
    tree_node(node_id),
    operator_flag(false),
    strg(std::move(_strg))

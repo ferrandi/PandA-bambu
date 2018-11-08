@@ -165,7 +165,7 @@ struct structural_type_descriptor
     * Object factory for module objects.
     * @param treenode is the treenode descriptor of the type.
     */
-   explicit structural_type_descriptor(std::string module_name) : type(OTHER), size(size_DEFAULT), vector_size(vector_size_DEFAULT), id_type(std::move(module_name)), treenode(treenode_DEFAULT) {}
+   explicit structural_type_descriptor(std::string  module_name) : type(OTHER), size(size_DEFAULT), vector_size(vector_size_DEFAULT), id_type(std::move(module_name)), treenode(treenode_DEFAULT) {}
 
 #if HAVE_TUCANO_BUILT
    /**
@@ -1420,7 +1420,7 @@ class constant_o : public structural_object
     * @param o is the owner of the value
     * @param value is the constant value
     */
-   constant_o(int debug_level, const structural_objectRef o, const std::string& value);
+   constant_o(int debug_level, const structural_objectRef o, std::string  value);
 
    /// Destructor
    ~constant_o() override = default;

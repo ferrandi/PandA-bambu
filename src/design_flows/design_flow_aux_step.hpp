@@ -72,9 +72,9 @@ class AuxDesignFlowStep : public DesignFlowStep
        * @param name is the name of the step
        * @param type is the type of the step
        * @param design_flow_manager is the design flow manager
-       * @param paramters is the set of input parameters
+       * @param parameters is the set of input parameters
        */
-      AuxDesignFlowStep(std::string name, const AuxDesignFlowStepType type, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
+      AuxDesignFlowStep(std::string  name, const AuxDesignFlowStepType type, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
 
       /**
        * Destructor

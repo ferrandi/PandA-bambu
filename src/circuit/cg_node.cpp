@@ -67,7 +67,7 @@ cg_edge_writer::cg_edge_writer(const graph * _g) : g(_g) {}
 
 void cg_edge_writer::operator()(std::ostream& out, const EdgeDescriptor& e) const
 {
-   const cg_edge_info * edge_info = Cget_edge_info<cg_edge_info>(e, *g);
+   const auto * edge_info = Cget_edge_info<cg_edge_info>(e, *g);
    bool is_critical = false;
    if (edge_info) is_critical = edge_info->is_critical;
    if (is_critical)

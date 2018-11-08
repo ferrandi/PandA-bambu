@@ -4281,10 +4281,7 @@ long long tree_helper::get_integer_cst_value(const integer_cst * ic)
    if(!ic) THROW_ERROR("Something wrong");
    THROW_ASSERT(ic->type, "Something wrong");
    tree_nodeRef type = GET_NODE(ic->type);
-#ifndef NDEBUG
-   auto* it = GetPointer<integer_type>(type);
-   THROW_ASSERT(it or type->get_kind() == pointer_type_K or type->get_kind() == reference_type_K or type->get_kind() == boolean_type_K or type->get_kind() == enumeral_type_K, "Expected a integer_type, pointer_type, reference_type, boolean_type, enumeral_type. Found: " + STR(GET_INDEX_NODE(ic->type)) + " " + type->get_kind_text());
-#endif
+   THROW_ASSERT(GetPointer<integer_type>(type) or type->get_kind() == pointer_type_K or type->get_kind() == reference_type_K or type->get_kind() == boolean_type_K or type->get_kind() == enumeral_type_K, "Expected a integer_type, pointer_type, reference_type, boolean_type, enumeral_type. Found: " + STR(GET_INDEX_NODE(ic->type)) + " " + type->get_kind_text());
    long long result = 0;
    ///If high is null or if high is a sign extension or low is enough to express an int (64 bit system)
 

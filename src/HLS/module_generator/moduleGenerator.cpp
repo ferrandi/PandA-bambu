@@ -401,6 +401,7 @@ void moduleGenerator::specialize_fu(std::string fuName, vertex ve, std::string l
       std::string port_name="";
       unsigned int currentPort=0;
       unsigned int toSkip=0;
+      PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Adding input ports");
       for(currentPort=0;currentPort<inPortSize;currentPort++)
       {
          structural_objectRef curr_port = fu_module->get_in_port(currentPort);

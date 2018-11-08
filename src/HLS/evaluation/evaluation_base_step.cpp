@@ -46,7 +46,7 @@ EvaluationBaseStep::EvaluationBaseStep(const ParameterConstRef _parameters, cons
 {}
 
 EvaluationBaseStep::~EvaluationBaseStep()
-{}
+= default;
 
 const std::vector<double> & EvaluationBaseStep::GetEvaluations() const
 {

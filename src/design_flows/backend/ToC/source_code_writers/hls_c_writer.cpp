@@ -1131,9 +1131,8 @@ std::string HLSCWriter::convert_in_binary(const BehavioralHelperConstRef behavio
                                       "110",
                                       "111"
                                      };
-            for(auto i=0u; i < initial_string.size(); ++i)
+            for(char curChar : initial_string)
             {
-               auto curChar=initial_string.at(i);
                int off=0;
                if(is_hex)
                {

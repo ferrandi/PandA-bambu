@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file hls_c_backend_information.hpp
  * @brief Class to pass information to the hls backend
@@ -39,12 +39,12 @@
  * $Date: $
  * Last modified by $Author: $
  *
-*/
+ */
 
-///Super class include
+/// Super class include
 #include "c_backend_information.hpp"
 
-///STL include
+/// STL include
 #include <map>
 #include <vector>
 
@@ -52,30 +52,25 @@ CONSTREF_FORWARD_DECL(HLS_manager);
 
 class HLSCBackendInformation : public CBackendInformation
 {
-   public:
-      ///The file containing input
-      const std::string results_filename;
+ public:
+   /// The file containing input
+   const std::string results_filename;
 
-      /// A reference to the HLS manager to retrieve information if needed
-      const HLS_managerConstRef HLSMgr;
+   /// A reference to the HLS manager to retrieve information if needed
+   const HLS_managerConstRef HLSMgr;
 
-      /**
-       * Constructor
-       * @param results_filename It is the name of the file where the the C
-       * program will put its results when it will be executed. This file is a
-       * necessary input for the generation of a hdl testbench
-       * @param HLSMgr A reference to the HLS_manager where the information on
-       * the HLS can be found
-       */
-      HLSCBackendInformation
-      (
-         std::string  results_filename,
-         const HLS_managerConstRef HLSMgr
-      );
+   /**
+    * Constructor
+    * @param results_filename It is the name of the file where the the C
+    * program will put its results when it will be executed. This file is a
+    * necessary input for the generation of a HDL testbench
+    * @param HLSMgr A reference to the HLS_manager where the information on
+    * the HLS can be found
+    */
+   HLSCBackendInformation(std::string  results_filename, const HLS_managerConstRef HLSMgr);
 
-      /**
-       * Destructor
-       */
-      ~HLSCBackendInformation() override;
+   /**
+    * Destructor
+    */
+   ~HLSCBackendInformation() override;
 };
-

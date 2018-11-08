@@ -45,6 +45,7 @@
 
 #include <ostream>                                   // for operator<<, ostream
 #include <string>                                    // for operator<<, string
+#include <utility>
 #include "edge_info.hpp"                             // for EdgeInfo
 #include "graph.hpp"                                 // for graph, vertex
 #include "graph_info.hpp"                            // for GraphInfo
@@ -201,7 +202,7 @@ struct cg_graph_info : public GraphInfo
    /**
     * Constructor
     */
-   cg_graph_info(vertex en, const std::string& en_name, vertex ex, const std::string& ex_name) : Entry(en), Exit(ex), Entry_name(en_name), Exit_name(ex_name) {}
+   cg_graph_info(vertex en, std::string  en_name, vertex ex, std::string  ex_name) : Entry(en), Exit(ex), Entry_name(std::move(en_name)), Exit_name(std::move(ex_name)) {}
 
    /**
     * Empty constructor
@@ -211,7 +212,7 @@ struct cg_graph_info : public GraphInfo
    /**
     * Destructor
     */
-   ~cg_graph_info() override{}
+   ~cg_graph_info() override= default;
 };
 
 class cg_edge_writer
