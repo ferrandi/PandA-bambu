@@ -1140,7 +1140,7 @@ void port_o::copy(structural_objectRef dest) const
       }
    }
    else
-      THROW_ERROR("unexpected copy");
+      THROW_ERROR("unexpected copy: src=" + get_path() + " dest=" + dest->get_path());
    GetPointer<port_o>(dest)->lsb = lsb;
    /// connected_objects has to be updated outside!!!
 }

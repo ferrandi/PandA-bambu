@@ -73,9 +73,9 @@ class interface_infer : public FunctionFrontendFlowStep
       void create_Read_function(const std::string& argName_string, tree_nodeRef origStmt, unsigned int destBB, statement_list*sl, function_decl* fd, const std::string &fdName, tree_nodeRef argSSANode, parm_decl* a, tree_nodeRef readType, const std::list<tree_nodeRef> &usedStmt_defs, const tree_manipulationRef tree_man, const tree_managerRef TM);
       void create_Write_function(const std::string& argName_string, tree_nodeRef origStmt, unsigned int destBB, statement_list*sl, function_decl* fd, const std::string &fdName, tree_nodeRef argSSANode, tree_nodeRef writeValue, parm_decl* a, tree_nodeRef writeType, const tree_manipulationRef tree_man, const tree_managerRef TM);
 
-      void create_resource_Read_none(std::vector<std::string> &operations, const std::string &argName_string, const std::string& interfaceType, unsigned int inputBitWidth, bool IO_port);
-      void create_resource_Write_none(std::vector<std::string> & operations, const std::string& argName_string, const std::string &interfaceType, unsigned int inputBitWidth, bool IO_port, bool isDiffSize);
-      void create_resource(std::vector<std::string> & operationsR, std::vector<std::string> & operationsW, const std::string& argName_string, const std::string &interfaceType, unsigned int inputBitWidth, bool isDiffSize);
+      void create_resource_Read_simple(const std::vector<std::string> &operations, const std::string &argName_string, const std::string& interfaceType, unsigned int inputBitWidth, bool IO_port);
+      void create_resource_Write_simple(const std::vector<std::string> & operations, const std::string& argName_string, const std::string &interfaceType, unsigned int inputBitWidth, bool IO_port, bool isDiffSize);
+      void create_resource(const std::vector<std::string> & operationsR, const std::vector<std::string> & operationsW, const std::string& argName_string, const std::string &interfaceType, unsigned int inputBitWidth, bool isDiffSize);
 
    public:
       /**

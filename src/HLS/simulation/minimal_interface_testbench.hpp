@@ -60,6 +60,8 @@ class MinimalInterfaceTestbench : public TestbenchGenerationBaseStep
 
    void write_memory_handler() const override;
 
+   void write_interface_handler() const override;
+
    void write_signals(const tree_managerConstRef TreeM, bool& withMemory, bool& hasMultiIrq) const override;
 
    void write_slave_initializations(bool withMemory) const override;

@@ -96,7 +96,7 @@ void MinimalInterfaceTestbench::cond_load(long long int Mout_addr_ram_bitsize, s
 
 void MinimalInterfaceTestbench::write_call(bool) const
 {
-   writer->write("always @(negedge clock)\n");
+   writer->write("always @(negedge "+std::string(CLOCK_PORT_NAME)+")\n");
    writer->write("begin\n");
    writer->write(STR(STD_OPENING_CHAR));
    writer->write("if (done_port == 1)\n");
@@ -133,7 +133,7 @@ void MinimalInterfaceTestbench::write_memory_handler() const
       writer->write("assign mask = (1 << Mout_data_ram_size) -1;\n");
 
    writer->write_comment("OffChip Memory write\n");
-   writer->write("always @(posedge clock)\n");
+   writer->write("always @(posedge "+std::string(CLOCK_PORT_NAME)+")\n");
    writer->write("begin");
    writer->write(STR(STD_OPENING_CHAR) + "\n");
 
@@ -205,7 +205,7 @@ void MinimalInterfaceTestbench::write_memory_handler() const
          if(memory_allocation_policy == MemoryAllocation_Policy::ALL_BRAM or memory_allocation_policy == MemoryAllocation_Policy::EXT_PIPELINED_BRAM)
          {
             cond_load(Mout_addr_ram_bitsize, post_slice1, post_slice2, "M_Rdata_ram_delayed_temporary", i, STR(bitsize) + "'b0", mem_aggregate);
-            writer->write("always @(posedge clock)\n");
+            writer->write("always @(posedge "+std::string(CLOCK_PORT_NAME)+")\n");
             writer->write("begin");
             writer->write(STR(STD_OPENING_CHAR) + "\n");
             writer->write("for (_i_=0; _i_<`MEM_DELAY_READ-1; _i_=_i_+1)");
@@ -244,7 +244,7 @@ void MinimalInterfaceTestbench::write_memory_handler() const
          if(memory_allocation_policy == MemoryAllocation_Policy::ALL_BRAM or memory_allocation_policy == MemoryAllocation_Policy::EXT_PIPELINED_BRAM)
          {
             cond_load(Mout_addr_ram_bitsize, post_slice1, post_slice2, "M_Rdata_ram_delayed_temporary", i, STR(bitsize) + "'b0", mem_aggregate);
-            writer->write("always @(posedge clock)\n");
+            writer->write("always @(posedge "+std::string(CLOCK_PORT_NAME)+")\n");
             writer->write("begin");
             writer->write(STR(STD_OPENING_CHAR) + "\n");
             writer->write("for (_i_=0; _i_<`MEM_DELAY_READ-1; _i_=_i_+1)");
@@ -271,7 +271,7 @@ void MinimalInterfaceTestbench::write_memory_handler() const
    structural_objectRef Sin_Wdata_ram_port = mod->find_member("S_Wdata_ram", port_o_K, cir);
    if(Sin_Wdata_ram_port) writer->write("assign S_Wdata_ram = Mout_Wdata_ram;\n");
 
-   writer->write("always @(posedge clock)\n");
+   writer->write("always @(posedge "+std::string(CLOCK_PORT_NAME)+")\n");
    writer->write("begin");
    writer->write(STR(STD_OPENING_CHAR) + "\n");
    for(unsigned int i = 0; i < M_Rdata_ram_port_n_ports; ++i)
@@ -380,7 +380,7 @@ void MinimalInterfaceTestbench::write_memory_handler() const
    structural_objectRef S_data_ram_size_port = mod->find_member("S_data_ram_size", port_o_K, cir);
    if(S_data_ram_size_port) { writer->write("assign S_data_ram_size = Mout_data_ram_size;\n"); }
 
-   writer->write("always @(posedge clock)\n");
+   writer->write("always @(posedge "+std::string(CLOCK_PORT_NAME)+")\n");
    writer->write("begin");
    writer->write(STR(STD_OPENING_CHAR) + "\n");
    for(unsigned int i = 0; i < M_Rdata_ram_port_n_ports && i < Mout_Wdata_ram_n_ports; ++i)
@@ -402,6 +402,47 @@ void MinimalInterfaceTestbench::write_memory_handler() const
    writer->write("end\n\n");
 
    return;
+}
+
+void MinimalInterfaceTestbench::write_interface_handler() const
+{
+   if(mod->get_in_port_size())
+   {
+      bool firstValid=true;
+      for(unsigned int i = 0; i < mod->get_in_port_size(); i++)
+      {
+         const structural_objectRef& portInst = mod->get_in_port(i);
+         auto InterfaceType = GetPointer<port_o>(portInst)->get_port_interface();
+         if(InterfaceType != port_o::port_interface::PI_DEFAULT)
+         {
+            if(InterfaceType == port_o::port_interface::PI_RVALID)
+            {
+               if(firstValid)
+               {
+                  firstValid = false;
+                  writer->write("reg __vld_port_state = 0;\n");
+               }
+               writer->write_comment("RVALID handler\n");
+               writer->write("always @ (posedge "+std::string(CLOCK_PORT_NAME)+")\n");
+               writer->write(STR(STD_OPENING_CHAR));
+               writer->write("begin\n");
+               writer->write("if(__state == 3 && __vld_port_state == 0)");
+               writer->write(STR(STD_OPENING_CHAR));
+               writer->write("begin\n");
+               writer->write(HDL_manager::convert_to_identifier(writer.get(), portInst->get_id()) + " = 1'b1;");
+               writer->write("__vld_port_state <= 1;");
+               writer->write(STR(STD_CLOSING_CHAR));
+               writer->write("end\n");
+               writer->write("else");
+               writer->write(STR(STD_OPENING_CHAR) + "\n");
+               writer->write(HDL_manager::convert_to_identifier(writer.get(), portInst->get_id()) + " <= 1'b0;");
+               writer->write(STR(STD_CLOSING_CHAR) + "\n");
+               writer->write(STR(STD_CLOSING_CHAR));
+               writer->write("end\n");
+            }
+         }
+      }
+   }
 }
 
 void MinimalInterfaceTestbench::write_slave_initializations(bool with_memory) const
@@ -496,6 +537,8 @@ void MinimalInterfaceTestbench::write_output_signal_declaration() const
          {
             writer->write("reg " + writer->type_converter(portInst->get_typeRef()) + writer->type_converter_size(portInst));
             writer->write("ex_" + HDL_manager::convert_to_identifier(writer.get(), portInst->get_id()) + ";\n");
+            writer->write("reg " + writer->type_converter(portInst->get_typeRef()) + writer->type_converter_size(portInst));
+            writer->write("registered_" + HDL_manager::convert_to_identifier(writer.get(), portInst->get_id()) + ";\n");
          }
       }
       writer->write("\n");

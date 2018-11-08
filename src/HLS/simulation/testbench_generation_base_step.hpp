@@ -187,6 +187,9 @@ class TestbenchGenerationBaseStep : public HLS_step
 
    virtual void write_memory_handler() const = 0;
 
+   virtual void write_interface_handler() const = 0;
+
+
    virtual void write_call(bool hasMultiIrq) const = 0;
 
    virtual void write_file_reading_operations() const = 0;

@@ -996,13 +996,14 @@ void conn_binding::add_command_ports(const HLS_managerRef HLSMgr, const hlsRef H
    for (auto c = calls.begin(); c != calls.end(); ++c)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Adding connections of " + c->first->get_path());
-      if (c->second.size() == 1)
+      auto isMultipleModule=GetPointer<module>(c->first->get_owner()) && GetPointer<module>(c->first->get_owner())->get_multi_unit_multiplicity();
+      if (c->second.size() == 1 && !isMultipleModule)
       {
          SM->add_connection(c->first, c->second.front());
       }
       else
       {
-         if(GetPointer<module>(c->first->get_owner()) && GetPointer<module>(c->first->get_owner())->get_multi_unit_multiplicity())
+         if(isMultipleModule)
          {
             THROW_ASSERT(start_to_vertex.find(c->first) != start_to_vertex.end(), "unexpected condition");
             THROW_ASSERT(c->first->get_kind()==port_vector_o_K, "unexpected condition");

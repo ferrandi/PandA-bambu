@@ -31,13 +31,48 @@
  *
 */
 /**
- * @file Read_none.cpp
- * @brief Snippet for the Read_none dynamic generator.
+ * @file Read_valid.cpp
+ * @brief Snippet for the Read_valid dynamic generator.
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  *
 */
 
-std::cout << "assign " << _ports_out[0].name << " = "<< _ports_in[1].name <<" >> (8*"<< _ports_in[0].name <<");" <<std::endl;
+std::cout << "integer ii=0;\n";
+std::cout << "reg [PORTSIZE_" << _ports_out[1].name << "-1:0] started 1INIT_ZERO_VALUE;\n";
+std::cout << "reg [PORTSIZE_" << _ports_out[1].name << "-1:0] validated 1INIT_ZERO_VALUE;\n";
+std::cout << "reg [(PORTSIZE_" << _ports_out[1].name << "*BITSIZE_" << _ports_out[1].name << ")-1:0] " << _ports_out[1].name << " 1INIT_ZERO_VALUE;\n";
+std::cout << "reg [PORTSIZE_" << _ports_out[1].name << "-1:0] " << _ports_out[0].name << " 1INIT_ZERO_VALUE;\n";
+std::cout << "reg [" << _ports_in[4].type_size << "-1:0] reg_" << _ports_in[4].name << " 1INIT_ZERO_VALUE;\n";
+std::cout << "always @(posedge clock 1RESET_EDGE)\n";
+std::cout << "  if (1RESET_VALUE)\n";
+std::cout << "    started <= 0;\n";
+std::cout << "  else\n";
+std::cout << "    for(ii=0; ii<PORTSIZE_"<< _ports_out[1].name << "; ii=ii+1)\n";
+std::cout << "      started[ii] <= (started[ii] | " << _ports_in[2].name << "[ii]) & !(validated[ii] | " << _ports_in[5].name << ");\n";
+std::cout << "always @(posedge clock 1RESET_EDGE)\n";
+std::cout << "  if (1RESET_VALUE)\n";
+std::cout << "    validated <= 0;\n";
+std::cout << "  else\n";
+std::cout << "    for(ii=0; ii<PORTSIZE_"<< _ports_out[1].name << "; ii=ii+1)\n";
+std::cout << "      validated[ii] <= (validated[ii] | " << _ports_in[5].name << ") & !(started[ii] | " << _ports_in[2].name << "[ii]);\n";
+std::cout << "always @(posedge clock 1RESET_EDGE)\n";
+std::cout << "  if (1RESET_VALUE)\n";
+std::cout << "    reg_" << _ports_in[4].name << " <= 0;\n";
+std::cout << "  else if(" << _ports_in[5].name << ")\n";
+std::cout << "    reg_" << _ports_in[4].name << " <= "<< _ports_in[4].name <<";\n";
+
+std::cout << "always @(*)\n";
+std::cout << "begin\n";
+std::cout << "  for(ii=0; ii<PORTSIZE_"<< _ports_out[1].name << "; ii=ii+1)\n";
+std::cout << "    " << _ports_out[1].name << "[(BITSIZE_" << _ports_out[1].name <<")*ii+:BITSIZE_" << _ports_out[1].name<<"] = " << _ports_in[5].name << " ? ("<< _ports_in[4].name <<" >> (8*"<< _ports_in[3].name <<"[(BITSIZE_" << _ports_in[3].name <<")*ii+:BITSIZE_" << _ports_in[3].name<<"])) : (reg_" << _ports_in[4].name << " >> (8*"<< _ports_in[3].name <<"[(BITSIZE_" << _ports_in[3].name <<")*ii+:BITSIZE_" << _ports_in[3].name<<"]));" <<std::endl;
+std::cout << "end\n";
+
+std::cout << "always @(*)\n";
+std::cout << "begin\n";
+std::cout << "  for(ii=0; ii<PORTSIZE_"<< _ports_out[1].name << "; ii=ii+1)\n";
+std::cout << "    " << _ports_out[0].name << "[ii] = ("<< _ports_in[2].name <<"[ii] & " << _ports_in[5].name << ") | (started[ii] & " << _ports_in[5].name << ")  | (validated[ii] & "<< _ports_in[2].name <<"[ii]);" <<std::endl;
+ std::cout << "end\n";
+
 
 

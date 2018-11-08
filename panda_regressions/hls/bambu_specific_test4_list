@@ -3,8 +3,10 @@ bambu_specific_test4/simple_c2_none.c --generate-tb=a=1,b=2,c=3,d=6 --top-fname=
 bambu_specific_test4/simple_c3_none.c --generate-tb=a=1,b=2,c=3,d=6 --top-fname=sum3numbers
 bambu_specific_test4/ac_types1.cpp --generate-tb=a=1,b=2,c=3,d=6 --top-fname=sum3numbers
 bambu_specific_test4/ac_types2.cpp --generate-tb=a=\"0b1010000000000000000000000000000000000000000000000000000000000000101\",b=\"0b1100000000000000000000000000000000000000000000000000000000000000110\",c=\"0b1110000000000000000000000000000000000000000000000000000000000000111\",d=6 --top-fname=sum3numbers
+bambu_specific_test4/ac_types2_valid.cpp --generate-tb=a=\"0b1010000000000000000000000000000000000000000000000000000000000000101\",b=\"0b1100000000000000000000000000000000000000000000000000000000000000110\",c=\"0b1110000000000000000000000000000000000000000000000000000000000000111\",d=6 --top-fname=sum3numbers
 bambu_specific_test4/ac_types3.cpp --generate-tb=a=\"0o1234\",b=\"0x1ABCDaBCD\",c=3,d=6 --top-fname=sum3numbers
 bambu_specific_test4/ac_types4.cpp --generate-tb=a=2,b=3,d=6 --top-fname=mul2numbers
 bambu_specific_test4/simpleif_c1_none.c --generate-tb=i1=9,i2=1,i3=5,i4=6,i5=17,i6=19,c1=2,c2=6,c3=13,c4=17,c6=9,COND1=1,COND2=1 --top-fname=kim
-#bambu_specific_test4/simple_c1.c --generate-tb=a=1,b=2,c=3,d=6 --top-fname=sum3numbers
+bambu_specific_test4/simple_c1.c --generate-tb=a=1,b=2,c=3,d=6 --top-fname=sum3numbers
+bambu_specific_test4/simple_c1_in_valid.c --generate-tb=a=1,b=2,c=3,d=6 --top-fname=sum3numbers --benchmark-name=simple_c1_in_valid
 

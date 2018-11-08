@@ -468,7 +468,14 @@ void moduleGenerator::specialize_fu(std::string fuName, vertex ve, std::string l
          structural_objectRef curr_port = fu_module->get_out_port(currentPort);
          if(curr_port->get_kind() == port_vector_o_K)
          {
-            generated_port=CM->add_port_vector(curr_port->get_id(), port_o::OUT, n_ports, top, curr_port->get_typeRef());
+            if(multiplicitiy)
+            {
+               auto ps=GetPointer<port_o>(curr_port)->get_ports_size();
+               THROW_ASSERT(multiplicitiy==ps,"unexpected condition");
+               generated_port=CM->add_port_vector(curr_port->get_id(), port_o::OUT, ps, top, curr_port->get_typeRef());
+            }
+            else
+               generated_port=CM->add_port_vector(curr_port->get_id(), port_o::OUT, n_ports, top, curr_port->get_typeRef());
          }
          else
             generated_port=CM->add_port(curr_port->get_id(), port_o::OUT, top, curr_port->get_typeRef());

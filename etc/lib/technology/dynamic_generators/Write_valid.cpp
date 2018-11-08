@@ -31,8 +31,8 @@
  *
 */
 /**
- * @file Write_noneDS.cpp
- * @brief Snippet for the Write_noneDS dynamic generator.
+ * @file Write_valid.cpp
+ * @brief Snippet for the Write_valid dynamic generator.
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  *
@@ -51,5 +51,5 @@ std::cout << "      reg_" << _ports_out[0].name << " = (" << _ports_in[1].name <
 std::cout << "  end\n";
 std::cout << "end\n";
 
-
+std::cout << "assign " << _ports_out[1].name << " = |start_port;\n";
 

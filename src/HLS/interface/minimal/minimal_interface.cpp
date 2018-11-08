@@ -187,7 +187,7 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
             const std::string& argName_string = GetPointer<identifier_node>(argName)->strg;
             THROW_ASSERT(DesignInterfaceArgs.find(argName_string) != DesignInterfaceArgs.end(), "unexpected condition");
             auto interfaceType = DesignInterfaceArgs.find(argName_string)->second;
-            if(interfaceType == "none")
+            if(interfaceType != "default")
             {
                auto argTypeNode = GET_NODE(a->type);
                if(tree_helper::is_a_pointer(TM, GET_INDEX_NODE(a->type)))
@@ -197,6 +197,8 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
                   portsToConstant.insert(p);
                   param_renamed.insert(argName_string);
                }
+               else
+                  THROW_ERROR("unexpected parameter type for "+argName_string + "(" + interfaceType+")");
             }
          }
       }
@@ -759,7 +761,9 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
       structural_objectRef port_out = GetPointer<module>(wrappedObj)->get_out_port(i);
       if(GetPointer<port_o>(port_out)->get_port_interface() != port_o::port_interface::PI_DEFAULT)
       {
-         if(GetPointer<port_o>(port_out)->get_port_interface() == port_o::port_interface::PI_WNONE)
+         if(GetPointer<port_o>(port_out)->get_port_interface() == port_o::port_interface::PI_WNONE ||
+               GetPointer<port_o>(port_out)->get_port_interface() == port_o::port_interface::PI_WVALID ||
+               GetPointer<port_o>(port_out)->get_port_interface() == port_o::port_interface::PI_RACK)
          {
             portsToSkip.insert(port_out);
             auto port_name = GetPointer<port_o>(port_out)->get_id();

@@ -683,6 +683,40 @@ void TestbenchGenerationBaseStep::init_extra_signals(bool withMemory) const
 
 void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef TreeM) const
 {
+   const HLSFlowStep_Type interface_type = parameters->getOption<HLSFlowStep_Type>(OPT_interface_type);
+   if(interface_type == HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION)
+   {
+      const auto& DesignSignature=HLSMgr->RSim->simulationArgSignature;
+      for(auto par: DesignSignature)
+      {
+         auto portInst = mod->find_member(par, port_o_K, cir);
+         if(!portInst)
+         {
+            portInst = mod->find_member(par+"_o", port_o_K, cir);
+            THROW_ASSERT(portInst, "unexpected condition");
+            THROW_ASSERT(GetPointer<port_o>(portInst)->get_port_interface() != port_o::port_interface::PI_DEFAULT, "unexpected condition");
+         }
+         THROW_ASSERT(portInst, "unexpected condition");
+         auto InterfaceType = GetPointer<port_o>(portInst)->get_port_interface();
+         if(InterfaceType == port_o::port_interface::PI_WNONE)
+         {
+            auto port_vld = mod->find_member(portInst->get_id()+"_vld", port_o_K, cir);
+            auto has_valid = port_vld && GetPointer<port_o>(port_vld)->get_port_interface() == port_o::port_interface::PI_WVALID;
+            auto orig_name = portInst->get_id();
+            writer->write("always @(negedge " + std::string(CLOCK_PORT_NAME) + ")\n");
+            writer->write(STR(STD_OPENING_CHAR));
+            writer->write("begin\n");
+            writer->write("if (" + (has_valid ? port_vld->get_id() : DONE_PORT_NAME) + " == 1)\n");
+            writer->write(STR(STD_OPENING_CHAR));
+            writer->write("begin\n");
+            writer->write("registered_" + orig_name + " = " + orig_name + ";\n");
+            writer->write(STR(STD_CLOSING_CHAR));
+            writer->write("end\n");
+            writer->write(STR(STD_CLOSING_CHAR));
+            writer->write("end\n");
+         }
+      }
+   }
    writer->write("always @(negedge " + std::string(CLOCK_PORT_NAME) + ")\n");
    writer->write(STR(STD_OPENING_CHAR));
    writer->write("begin\n");
@@ -690,7 +724,6 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
    writer->write(STR(STD_OPENING_CHAR));
    writer->write("begin\n");
 
-   const HLSFlowStep_Type interface_type = parameters->getOption<HLSFlowStep_Type>(OPT_interface_type);
    if(interface_type == HLSFlowStep_Type::MINIMAL_INTERFACE_GENERATION or interface_type == HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION)
    {
       const auto& DesignSignature=HLSMgr->RSim->simulationArgSignature;
@@ -948,6 +981,8 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
          else if(InterfaceType == port_o::port_interface::PI_WNONE)
          {
             auto orig_name = portInst->get_id();
+            auto port_to_be_compared = orig_name;
+            port_to_be_compared = "registered_" + port_to_be_compared;
             std::string output_name = "ex_" + orig_name;
             writer->write("\n");
             writer->write_comment("OPTIONAL - Read a value for " + orig_name + " --------------------------------------------------------------\n");
@@ -989,15 +1024,15 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
                   {
                      if(GET_TYPE_SIZE(portInst) == 32)
                      {
-                        writer->write("$display(\" " + orig_name + " = %20.20f   expected = %20.20f \", bits32_to_real64(" + orig_name + "), bits32_to_real64(" + output_name + "));\n");
-                        writer->write("$display(\" FP error %f \\n\", compute_ulp32(" + orig_name + ", " + output_name + "));\n");
-                        writer->write("if (compute_ulp32(" + orig_name + ", " + output_name + ") > " + STR(parameters->getOption<double>(OPT_max_ulp)) + ")\n");
+                        writer->write("$display(\" " + orig_name + " = %20.20f   expected = %20.20f \", bits32_to_real64(" + port_to_be_compared + "), bits32_to_real64(" + output_name + "));\n");
+                        writer->write("$display(\" FP error %f \\n\", compute_ulp32(" + port_to_be_compared + ", " + output_name + "));\n");
+                        writer->write("if (compute_ulp32(" + port_to_be_compared + ", " + output_name + ") > " + STR(parameters->getOption<double>(OPT_max_ulp)) + ")\n");
                      }
                      else if(GET_TYPE_SIZE(portInst) == 64)
                      {
-                        writer->write("$display(\" " + orig_name + " = %20.20f   expected = %20.20f \", $bitstoreal(" + orig_name + "), $bitstoreal(ex_" + orig_name + "));\n");
-                        writer->write("$display(\" FP error %f \\n\", compute_ulp64(" + orig_name + ", " + output_name + "));\n");
-                        writer->write("if (compute_ulp64(" + orig_name + ", " + output_name + ") > " + STR(parameters->getOption<double>(OPT_max_ulp)) + ")\n");
+                        writer->write("$display(\" " + orig_name + " = %20.20f   expected = %20.20f \", $bitstoreal(" + port_to_be_compared + "), $bitstoreal(" + output_name + "));\n");
+                        writer->write("$display(\" FP error %f \\n\", compute_ulp64(" + port_to_be_compared + ", " + output_name + "));\n");
+                        writer->write("if (compute_ulp64(" + port_to_be_compared + ", " + output_name + ") > " + STR(parameters->getOption<double>(OPT_max_ulp)) + ")\n");
                      }
                      else
                         THROW_ERROR_CODE(NODE_NOT_YET_SUPPORTED_EC, "floating point precision not yet supported: " + STR(GET_TYPE_SIZE(portInst)));
@@ -1005,10 +1040,10 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
                   else
                   {
                      if(GET_TYPE_SIZE(portInst) > 64)
-                        writer->write("$display(\" " + orig_name + " = %x   expected = %x \\n\", " + orig_name + ", ex_" + orig_name + ");\n");
+                        writer->write("$display(\" " + orig_name + " = %x   expected = %x \\n\", " + port_to_be_compared + ", " + output_name + ");\n");
                      else
-                        writer->write("$display(\" " + orig_name + " = %d   expected = %d \\n\", " + orig_name + ", ex_" + orig_name + ");\n");
-                     writer->write("if (" + orig_name + " !== " + output_name + ")\n");
+                        writer->write("$display(\" " + orig_name + " = %d   expected = %d \\n\", " + port_to_be_compared + ", " + output_name + ");\n");
+                     writer->write("if (" + port_to_be_compared + " !== " + output_name + ")\n");
                   }
                   writer->write(STR(STD_OPENING_CHAR));
                   writer->write("begin\n");
@@ -1428,6 +1463,7 @@ void TestbenchGenerationBaseStep::write_underlying_testbench(const std::string s
    write_file_reading_operations();
    end_file_reading_operation();
    if(withMemory) write_memory_handler();
+   write_interface_handler();
    write_call(hasMultiIrq);
    write_output_checks(TreeM);
    testbench_controller_machine();
@@ -1680,6 +1716,7 @@ void TestbenchGenerationBaseStep::initialize_input_signals(const tree_managerCon
          if(interfaceType==port_o::port_interface::PI_WNONE)
          {
             writer->write("ex_" + port_obj->get_id() + " = 0;\n");
+            writer->write("registered_" + port_obj->get_id() + " = 0;\n");
          }
       }
       writer->write("\n");
