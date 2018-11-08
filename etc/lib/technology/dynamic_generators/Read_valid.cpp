@@ -41,7 +41,7 @@
 std::cout << "integer ii=0;\n";
 std::cout << "reg [PORTSIZE_" << _ports_out[1].name << "-1:0] started 1INIT_ZERO_VALUE;\n";
 std::cout << "reg [PORTSIZE_" << _ports_out[1].name << "-1:0] validated 1INIT_ZERO_VALUE;\n";
-std::cout << "reg [(PORTSIZE_" << _ports_out[1].name << "*BITSIZE_" << _ports_out[1].name << ")-1:0] " << _ports_out[1].name << " 1INIT_ZERO_VALUE;\n";
+std::cout << "reg [(PORTSIZE_" << _ports_out[1].name << "*BITSIZE_" << _ports_out[1].name << ")-1:0] " << _ports_out[1].name << " ;\n";
 std::cout << "reg [PORTSIZE_" << _ports_out[1].name << "-1:0] " << _ports_out[0].name << " 1INIT_ZERO_VALUE;\n";
 std::cout << "reg [" << _ports_in[4].type_size << "-1:0] reg_" << _ports_in[4].name << " 1INIT_ZERO_VALUE;\n";
 std::cout << "always @(posedge clock 1RESET_EDGE)\n";
