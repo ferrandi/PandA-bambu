@@ -11,4 +11,5 @@ bambu_specific_test4/simpleif_c1_none.c --generate-tb=i1=9,i2=1,i3=5,i4=6,i5=17,
 bambu_specific_test4/simple_c1.c --generate-tb=a=1,b=2,c=3,d=6 --top-fname=sum3numbers
 bambu_specific_test4/simple_c1_in_valid.c --generate-tb=a=1,b=2,c=3,d=6 --top-fname=sum3numbers --benchmark-name=simple_c1_in_valid
 bambu_specific_test4/simple_c1_in_ack.c --generate-tb=a=1,b=2,c=3,d=6 --top-fname=sum3numbers 
+bambu_specific_test4/simple_c1_ack.c --generate-tb=a=1,b=2,c=3,d=6 --top-fname=sum3numbers 
 

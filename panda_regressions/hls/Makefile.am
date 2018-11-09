@@ -1140,6 +1140,7 @@ gcc_regression_simple/zero-struct-1.c\
 ./bambu_specific_test4/simple_c3_none.c\
 ./bambu_specific_test4/simple_c1_in_valid.c\
 ./bambu_specific_test4/simple_c1_in_ack.c\
+./bambu_specific_test4/simple_c1_ack.c\
 ./bambu_specific_test4.sh\
 ./bambu_specific_test4_list\
 ./function_pointers.sh\
